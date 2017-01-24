@@ -363,7 +363,7 @@ void processRx(timeUs_t currentTimeUs)
 
     if (!cliMode) {
         updateAdjustmentStates();
-        processRcAdjustments(currentControlRateProfile);
+        processRcAdjustments(CONST_CAST(controlRateConfig_t*, currentControlRateProfile));
     }
 
     bool canUseHorizonMode = true;

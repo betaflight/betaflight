@@ -562,7 +562,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #endif
         sbufWriteU16(dst, packSensorStatus());
         sbufWriteU32(dst, packFlightModeFlags());
-        sbufWriteU8(dst, getCurrentProfileIndex());
+        sbufWriteU8(dst, getConfigProfile());
         sbufWriteU16(dst, averageSystemLoadPercent);
         sbufWriteU16(dst, armingFlags);
         sbufWriteU8(dst, getAccelerometerCalibrationAxisFlags());
@@ -577,7 +577,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #endif
         sbufWriteU16(dst, packSensorStatus());
         sbufWriteU32(dst, packFlightModeFlags());
-        sbufWriteU8(dst, getCurrentProfileIndex());
+        sbufWriteU8(dst, getConfigProfile());
         break;
 
     case MSP_RAW_IMU:
@@ -1280,9 +1280,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SELECT_SETTING:
         if (!ARMING_FLAG(ARMED)) {
             const uint8_t profileIndex = sbufReadU8(src);
-            setProfile(profileIndex);
-            writeEEPROM();
-            readEEPROM();
+            setConfigProfileAndWriteEEPROM(profileIndex);
         }
         break;
 

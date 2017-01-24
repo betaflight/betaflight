@@ -223,7 +223,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus, bool disarm_kill_s
     else if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_HI)     // ROLL right -> Profile 3
         i = 3;
     if (i) {
-        changeProfile(i - 1);
+        setConfigProfileAndWriteEEPROM(i - 1);
         return;
     }
 

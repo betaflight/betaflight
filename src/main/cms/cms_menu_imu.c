@@ -51,10 +51,6 @@ static uint8_t tmpProfileIndex;
 static uint8_t profileIndex;
 static char profileIndexString[] = " p";
 
-static uint8_t tmpRateProfileIndex;
-static uint8_t rateProfileIndex;
-static char rateProfileIndexString[] = " r";
-
 static void cmsx_ReadPidToArray(uint8_t *dst, int pidIndex)
 {
     dst[0] = pidProfile()->P8[pidIndex];
@@ -71,13 +67,9 @@ static void cmsx_WritebackPidFromArray(uint8_t *src, int pidIndex)
 
 static long cmsx_menuImu_onEnter(void)
 {
-    profileIndex = getCurrentProfileIndex();
+    profileIndex = getConfigProfile();
     tmpProfileIndex = profileIndex + 1;
     profileIndexString[1] = '0' + tmpProfileIndex;
-
-    rateProfileIndex = getCurrentControlRateProfile();
-    tmpRateProfileIndex = rateProfileIndex + 1;
-    rateProfileIndexString[1] = '0' + tmpProfileIndex;
 
     return 0;
 }
@@ -86,8 +78,7 @@ static long cmsx_menuImu_onExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    setProfile(profileIndex);
-    changeControlRateProfile(rateProfileIndex); // XXX setControlRateProfile???
+    setConfigProfile(profileIndex);
 
     return 0;
 }
@@ -99,17 +90,6 @@ static long cmsx_profileIndexOnChange(displayPort_t *displayPort, const void *pt
 
     profileIndex = tmpProfileIndex - 1;
     profileIndexString[1] = '0' + tmpProfileIndex;
-
-    return 0;
-}
-
-static long cmsx_rateProfileIndexOnChange(displayPort_t *displayPort, const void *ptr)
-{
-    UNUSED(displayPort);
-    UNUSED(ptr);
-
-    rateProfileIndex = tmpRateProfileIndex - 1;
-    rateProfileIndexString[1] = '0' + tmpProfileIndex;
 
     return 0;
 }
@@ -288,7 +268,7 @@ static uint16_t cmsx_rateYaw;
 
 static long cmsx_RateProfileRead(void)
 {
-    memcpy(&rateProfile, controlRateProfiles(rateProfileIndex), sizeof(controlRateConfig_t));
+    memcpy(&rateProfile, controlRateProfiles(profileIndex), sizeof(controlRateConfig_t));
 
     cmsx_rateRoll  = DEKADEGREES_TO_DEGREES(rateProfile.rates[FD_ROLL]);
     cmsx_ratePitch = DEKADEGREES_TO_DEGREES(rateProfile.rates[FD_PITCH]);
@@ -305,14 +285,13 @@ static long cmsx_RateProfileWriteback(const OSD_Entry *self)
     rateProfile.rates[FD_PITCH] = DEGREES_TO_DEKADEGREES(cmsx_ratePitch);
     rateProfile.rates[FD_YAW]   = DEGREES_TO_DEKADEGREES(cmsx_rateYaw);
 
-    memcpy((controlRateConfig_t *)controlRateProfiles(rateProfileIndex), &rateProfile, sizeof(controlRateConfig_t));
+    memcpy((controlRateConfig_t *)controlRateProfiles(profileIndex), &rateProfile, sizeof(controlRateConfig_t));
 
     return 0;
 }
 
 static long cmsx_RateProfileOnEnter(void)
 {
-    rateProfileIndexString[1] = '0' + tmpRateProfileIndex;
     cmsx_RateProfileRead();
 
     return 0;
@@ -320,7 +299,7 @@ static long cmsx_RateProfileOnEnter(void)
 
 static OSD_Entry cmsx_menuRateProfileEntries[] =
 {
-    { "-- RATE --", OME_Label, NULL, rateProfileIndexString, 0 },
+    { "-- RATE --", OME_Label, NULL, profileIndexString, 0 },
 
 #if 0
     { "RC RATE",     OME_FLOAT,  NULL, &(OSD_FLOAT_t){ &rateProfile.rcRate8,    0, 255, 1, 10 }, 0 },
@@ -528,7 +507,7 @@ static OSD_Entry cmsx_menuImuEntries[] =
     {"FILT PP",   OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterPerProfile,                                  0},
 
     // Rate profile dependent
-    {"RATE PROF", OME_UINT8,   cmsx_rateProfileIndexOnChange, &(OSD_UINT8_t){ &tmpRateProfileIndex, 1, MAX_CONTROL_RATE_PROFILE_COUNT, 1}, 0},
+    {"RATE PROF", OME_UINT8,   cmsx_profileIndexOnChange, &(OSD_UINT8_t){ &tmpProfileIndex, 1, MAX_CONTROL_RATE_PROFILE_COUNT, 1}, 0},
     {"RATE",      OME_Submenu, cmsMenuChange,                 &cmsx_menuRateProfile,                                       0},
 
     // Global

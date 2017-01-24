@@ -76,7 +76,6 @@ typedef enum {
 typedef struct systemConfig_s {
     uint16_t accTaskFrequency;
     uint16_t attitudeTaskFrequency;
-    uint8_t currentControlRateProfileIndex;
     uint8_t current_profile_index;
     uint8_t asyncMode;
     uint8_t debug_mode;
@@ -115,9 +114,9 @@ void ensureEEPROMContainsValidData(void);
 void saveConfigAndNotify(void);
 void validateAndFixConfig(void);
 
-uint8_t getCurrentProfileIndex(void);
-bool setProfile(uint8_t profileIndex);
-void changeProfile(uint8_t profileIndex);
+uint8_t getConfigProfile(void);
+bool setConfigProfile(uint8_t profileIndex);
+void setConfigProfileAndWriteEEPROM(uint8_t profileIndex);
 
 bool canSoftwareSerialBeUsed(void);
 void applyAndSaveBoardAlignmentDelta(int16_t roll, int16_t pitch);

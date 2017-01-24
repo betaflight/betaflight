@@ -679,10 +679,6 @@ static const clivalue_t valueTable[] = {
     { "pos_hold_deadband",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 10,  250 }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, pos_hold_deadband) },
     { "alt_hold_deadband",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 10,  250 }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, alt_hold_deadband) },
 
-#ifdef USE_SERVOS
-//!!    { "fw_iterm_throw_limit",       VAR_INT16  | PROFILE_VALUE, .config.minmax = { FW_ITERM_THROW_LIMIT_MIN,  FW_ITERM_THROW_LIMIT_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, alt_hold_deadband) },
-#endif
-
 // PG_PID_PROFILE
 //    { "default_rate_profile",       VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0,  MAX_CONTROL_RATE_PROFILE_COUNT - 1 }, PG_PID_CONFIG, offsetof(pidProfile_t, defaultRateProfileIndex) },
     { "p_pitch",                    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0,  200 }, PG_PID_PROFILE, offsetof(pidProfile_t, P8[PITCH]) },
@@ -705,7 +701,9 @@ static const clivalue_t valueTable[] = {
     { "dterm_lpf_hz",               VAR_UINT8  | PROFILE_VALUE, .config.minmax = {0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_lpf_hz) },
     { "yaw_lpf_hz",                 VAR_UINT8  | PROFILE_VALUE, .config.minmax = {0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, yaw_lpf_hz) },
     { "dterm_setpoint_weight",      VAR_FLOAT  | PROFILE_VALUE, .config.minmax = {0, 2 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_setpoint_weight) },
-
+#ifdef USE_SERVOS
+    { "fw_iterm_throw_limit",       VAR_UINT16 | PROFILE_VALUE, .config.minmax = { FW_ITERM_THROW_LIMIT_MIN,  FW_ITERM_THROW_LIMIT_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, fixedWingItermThrowLimit) },
+#endif
 #ifdef USE_DTERM_NOTCH
     { "dterm_notch_hz",             VAR_UINT16 | PROFILE_VALUE, .config.minmax = {0, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_soft_notch_hz) },
     { "dterm_notch_cutoff",         VAR_UINT16 | PROFILE_VALUE, .config.minmax = {1, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_soft_notch_cutoff) },
@@ -1222,7 +1220,13 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.defaultConfig = ledStripConfig();
         break;
 #endif
-     case PG_SYSTEM_CONFIG:
+#ifdef OSD
+    case PG_OSD_CONFIG:
+       ret.currentConfig = &osdConfigCopy;
+       ret.defaultConfig = osdConfig();
+       break;
+#endif
+    case PG_SYSTEM_CONFIG:
         ret.currentConfig = &systemConfigCopy;
         ret.defaultConfig = systemConfig();
         break;
@@ -1235,7 +1239,7 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.defaultConfig = controlRateProfiles(0);
         break;
     case PG_PID_PROFILE:
-        ret.currentConfig = &pidProfileCopy[getCurrentProfileIndex()];
+        ret.currentConfig = &pidProfileCopy[getConfigProfile()];
         ret.defaultConfig = pidProfile();
         break;
     case PG_RX_FAILSAFE_CHANNEL_CONFIG:
@@ -1284,11 +1288,10 @@ static uint16_t getValueOffset(const clivalue_t *value)
 {
     switch (value->type & VALUE_SECTION_MASK) {
     case MASTER_VALUE:
-        return value->offset;
-    case CONTROL_RATE_VALUE:
-        return value->offset + sizeof(controlRateConfig_t) * getCurrentControlRateProfile();
     case PROFILE_VALUE:
         return value->offset;
+    case CONTROL_RATE_VALUE:
+        return value->offset + sizeof(controlRateConfig_t) * getConfigProfile();
     }
     return 0;
 }
@@ -1299,11 +1302,10 @@ static void *getValuePointer(const clivalue_t *value)
 
     switch (value->type & VALUE_SECTION_MASK) {
     case MASTER_VALUE:
+    case PROFILE_VALUE:
         return rec->address + value->offset;
     case CONTROL_RATE_VALUE:
-        return rec->address + value->offset + sizeof(controlRateConfig_t) * getCurrentControlRateProfile();
-    case PROFILE_VALUE:
-        return *rec->ptr + value->offset;
+        return rec->address + value->offset + sizeof(controlRateConfig_t) * getConfigProfile();
     }
     return NULL;
 }
@@ -3086,27 +3088,13 @@ static void cliPlaySound(char *cmdline)
 static void cliProfile(char *cmdline)
 {
     if (isEmpty(cmdline)) {
-        cliPrintf("profile %d\r\n", getCurrentProfileIndex());
+        cliPrintf("profile %d\r\n", getConfigProfile());
         return;
     } else {
-        const int i = atoi(cmdline);
+        const int i = atoi(cmdline) - 1; // make CLI index 1-based
         if (i >= 0 && i < MAX_PROFILE_COUNT) {
-            changeProfile(i);
+            setConfigProfileAndWriteEEPROM(i);
             cliProfile("");
-        }
-    }
-}
-
-static void cliRateProfile(char *cmdline)
-{
-    if (isEmpty(cmdline)) {
-        cliPrintf("rateprofile %d\r\n", getCurrentControlRateProfile());
-        return;
-    } else {
-        const int i = atoi(cmdline);
-        if (i >= 0 && i < MAX_CONTROL_RATE_PROFILE_COUNT) {
-            changeControlRateProfile(i);
-            cliRateProfile("");
         }
     }
 }
@@ -3117,21 +3105,10 @@ static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask)
         // Faulty values
         return;
     }
-    setProfile(profileIndex);
+    setConfigProfile(profileIndex);
     cliPrintHashLine("profile");
-    cliPrintf("profile %d\r\n\r\n", getCurrentProfileIndex());
+    cliPrintf("profile %d\r\n\r\n", getConfigProfile());
     dumpAllValues(PROFILE_VALUE, dumpMask);
-}
-
-static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask)
-{
-    if (rateProfileIndex >= MAX_CONTROL_RATE_PROFILE_COUNT) {
-        // Faulty values
-        return;
-    }
-    changeControlRateProfile(rateProfileIndex);
-    cliPrintHashLine("rateprofile");
-    cliPrintf("rateprofile %d\r\n\r\n", getCurrentControlRateProfile());
     dumpAllValues(CONTROL_RATE_VALUE, dumpMask);
 }
 
@@ -3140,7 +3117,7 @@ static void cliSave(char *cmdline)
     UNUSED(cmdline);
 
     cliPrint("Saving");
-    //copyCurrentProfileToProfileSlot(getCurrentProfileIndex();
+    //copyCurrentProfileToProfileSlot(getConfigProfile();
     writeEEPROM();
     cliReboot();
 }
@@ -3462,8 +3439,6 @@ static void printConfig(const char *cmdline, bool doDiff)
         dumpMask = DUMP_MASTER; // only
     } else if ((options = checkCommand(cmdline, "profile"))) {
         dumpMask = DUMP_PROFILE; // only
-    } else if ((options = checkCommand(cmdline, "rates"))) {
-        dumpMask = DUMP_RATES; // only
     } else if ((options = checkCommand(cmdline, "all"))) {
         dumpMask = DUMP_ALL;   // all profiles and rates
     } else {
@@ -3474,14 +3449,12 @@ static void printConfig(const char *cmdline, bool doDiff)
         dumpMask = dumpMask | DO_DIFF;
     }
 
-    const int currentProfileIndexSave = getCurrentProfileIndex();
-    const int currentControlRateProfileSave = getCurrentControlRateProfile();
+    const int currentProfileIndexSave = getConfigProfile();
     backupConfigs();
     // reset all configs to defaults to do differencing
     resetConfigs();
     // restore the profile indices, since they should not be reset for proper comparison
-    setProfile(currentProfileIndexSave);
-    setControlRateProfile(currentControlRateProfileSave);
+    setConfigProfile(currentProfileIndexSave);
 
     if (checkCommand(options, "showdefaults")) {
         dumpMask = dumpMask | SHOW_DEFAULTS;   // add default values as comments for changed values
@@ -3563,34 +3536,24 @@ static void printConfig(const char *cmdline, bool doDiff)
         dumpAllValues(MASTER_VALUE, dumpMask);
 
         if (dumpMask & DUMP_ALL) {
-            const int activeProfile = getCurrentProfileIndex();
+            // dump all profiles
+            const int currentProfileIndexSave = getConfigProfile();
             for (int ii = 0; ii < MAX_PROFILE_COUNT; ++ii) {
                 cliDumpProfile(ii, dumpMask);
             }
-            setProfile(activeProfile);
+            setConfigProfile(currentProfileIndexSave);
             cliPrintHashLine("restore original profile selection");
-            cliPrintf("profile %d\r\n", getCurrentProfileIndex());
+            cliPrintf("profile %d\r\n", currentProfileIndexSave);
 
-            const int currentRateIndex = getCurrentControlRateProfile();
-            for (int ii = 0; ii < MAX_CONTROL_RATE_PROFILE_COUNT; ++ii) {
-                cliDumpRateProfile(ii, dumpMask);
-            }
-            changeControlRateProfile(currentRateIndex);
-            cliPrintHashLine("restore original rateprofile selection");
-            cliPrintf("rateprofile %d\r\n", getCurrentControlRateProfile());
             cliPrintHashLine("save configuration\r\nsave");
         } else {
-            cliDumpProfile(getCurrentProfileIndex(), dumpMask);
-            cliDumpRateProfile(getCurrentControlRateProfile(), dumpMask);
+            // dump just the current profile
+            cliDumpProfile(getConfigProfile(), dumpMask);
         }
     }
 
     if (dumpMask & DUMP_PROFILE) {
-        cliDumpProfile(getCurrentProfileIndex(), dumpMask);
-    }
-
-    if (dumpMask & DUMP_RATES) {
-        cliDumpRateProfile(getCurrentControlRateProfile(), dumpMask);
+        cliDumpProfile(getConfigProfile(), dumpMask);
     }
     // restore configs from copies
     restoreConfigs();
@@ -3694,7 +3657,6 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("profile", "change profile",
         "[<index>]", cliProfile),
-    CLI_COMMAND_DEF("rateprofile", "change rate profile", "[<index>]", cliRateProfile),
 #if !defined(SKIP_TASK_STATISTICS) && !defined(SKIP_CLI_RESOURCES)
     CLI_COMMAND_DEF("resource", "view currently used resources", NULL, cliResource),
 #endif

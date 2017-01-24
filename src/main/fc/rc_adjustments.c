@@ -47,7 +47,7 @@
 
 PG_REGISTER_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges, PG_ADJUSTMENT_RANGE_CONFIG, 0);
 
-uint8_t adjustmentStateMask = 0;
+static uint8_t adjustmentStateMask = 0;
 
 #define MARK_ADJUSTMENT_FUNCTION_AS_BUSY(adjustmentIndex) adjustmentStateMask |= (1 << adjustmentIndex)
 #define MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentIndex) adjustmentStateMask &= ~(1 << adjustmentIndex)
@@ -60,110 +60,94 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .adjustmentFunction = ADJUSTMENT_RC_RATE,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
-    },
-    {
+    }, {
         .adjustmentFunction = ADJUSTMENT_RC_EXPO,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
-    },
-    {
+    }, {
         .adjustmentFunction = ADJUSTMENT_THROTTLE_EXPO,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
-    },
-    {
+    }, {
         .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_RATE,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
-    },
-    {
+    }, {
         .adjustmentFunction = ADJUSTMENT_YAW_RATE,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
-    },
-    {
+    }, {
         .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_P,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
-    },
-    {
+    }, {
         .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_I,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
-    },
-    {
+    }, {
         .adjustmentFunction = ADJUSTMENT_PITCH_ROLL_D,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
-    },
-    {
+    }, {
         .adjustmentFunction = ADJUSTMENT_YAW_P,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
-    },
-    {
+    }, {
         .adjustmentFunction = ADJUSTMENT_YAW_I,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
-    },
-    {
+    }, {
         .adjustmentFunction = ADJUSTMENT_YAW_D,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
-    },
-    {
-        .adjustmentFunction = ADJUSTMENT_RATE_PROFILE,
-        .mode = ADJUSTMENT_MODE_SELECT,
-        .data = { .selectConfig = { .switchPositions = 3 }}
-    },
-    {
+    }, {
         .adjustmentFunction = ADJUSTMENT_PITCH_RATE,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
-    },
-    {
+    }, {
         .adjustmentFunction = ADJUSTMENT_ROLL_RATE,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
-    },
-    {
+    }, {
         .adjustmentFunction = ADJUSTMENT_PITCH_P,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
-    },
-    {
+    }, {
         .adjustmentFunction = ADJUSTMENT_PITCH_I,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
-    },
-    {
+    }, {
         .adjustmentFunction = ADJUSTMENT_PITCH_D,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
-    },
-    {
+    }, {
         .adjustmentFunction = ADJUSTMENT_ROLL_P,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
-    },
-    {
+    }, {
         .adjustmentFunction = ADJUSTMENT_ROLL_I,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
-    },
-    {
+    }, {
         .adjustmentFunction = ADJUSTMENT_ROLL_D,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
+#ifdef USE_INFLIGHT_PROFILE_ADJUSTMENT
+    }, {
+        .adjustmentFunction = ADJUSTMENT_PROFILE,
+        .mode = ADJUSTMENT_MODE_SELECT,
+        .data = { .selectConfig = { .switchPositions = 3 }}
+#endif
     }
 };
 
 #define ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET 1
 
-adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENT_COUNT];
+static adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENT_COUNT];
 
-void configureAdjustment(uint8_t index, uint8_t auxSwitchChannelIndex, const adjustmentConfig_t *adjustmentConfig) {
-    adjustmentState_t *adjustmentState = &adjustmentStates[index];
+static void configureAdjustment(uint8_t index, uint8_t auxSwitchChannelIndex, const adjustmentConfig_t *adjustmentConfig)
+{
+    adjustmentState_t * const adjustmentState = &adjustmentStates[index];
 
     if (adjustmentState->config == adjustmentConfig) {
         // already configured
@@ -176,7 +160,8 @@ void configureAdjustment(uint8_t index, uint8_t auxSwitchChannelIndex, const adj
     MARK_ADJUSTMENT_FUNCTION_AS_READY(index);
 }
 
-static void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue) {
+static void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue)
+{
 #ifndef BLACKBOX
     UNUSED(adjustmentFunction);
     UNUSED(newValue);
@@ -192,7 +177,8 @@ static void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFu
 }
 
 #if 0
-static void blackboxLogInflightAdjustmentEventFloat(adjustmentFunction_e adjustmentFunction, float newFloatValue) {
+static void blackboxLogInflightAdjustmentEventFloat(adjustmentFunction_e adjustmentFunction, float newFloatValue)
+{
 #ifndef BLACKBOX
     UNUSED(adjustmentFunction);
     UNUSED(newFloatValue);
@@ -208,14 +194,14 @@ static void blackboxLogInflightAdjustmentEventFloat(adjustmentFunction_e adjustm
 }
 #endif
 
-static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentFunction, int delta) {
-    int newValue;
-
+static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentFunction, int delta)
+{
     if (delta > 0) {
         beeperConfirmationBeeps(2);
     } else {
         beeperConfirmationBeeps(1);
     }
+    int newValue;
     switch(adjustmentFunction) {
         case ADJUSTMENT_RC_EXPO:
             newValue = constrain((int)controlRateConfig->rcExpo8 + delta, 0, 100); // FIXME magic numbers repeated in serial_cli.c
@@ -321,7 +307,8 @@ static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t 
     };
 }
 
-void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
+#ifdef USE_INFLIGHT_PROFILE_ADJUSTMENT
+static void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
 {
     bool applied = false;
 
@@ -339,30 +326,29 @@ void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
         beeperConfirmationBeeps(position + 1);
     }
 }
+#endif
 
 #define RESET_FREQUENCY_2HZ (1000 / 2)
 
-void processRcAdjustments(const controlRateConfig_t *controlRateConfig)
+void processRcAdjustments(controlRateConfig_t *controlRateConfig)
 {
-    uint8_t adjustmentIndex;
-    uint32_t now = millis();
+    const uint32_t now = millis();
 
-    bool canUseRxData = rxIsReceivingSignal();
+    const bool canUseRxData = rxIsReceivingSignal();
 
-
-    for (adjustmentIndex = 0; adjustmentIndex < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT; adjustmentIndex++) {
-        adjustmentState_t *adjustmentState = &adjustmentStates[adjustmentIndex];
+    for (int adjustmentIndex = 0; adjustmentIndex < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT; adjustmentIndex++) {
+        adjustmentState_t * const adjustmentState = &adjustmentStates[adjustmentIndex];
 
         if (!adjustmentState->config) {
             continue;
         }
-        uint8_t adjustmentFunction = adjustmentState->config->adjustmentFunction;
+        const uint8_t adjustmentFunction = adjustmentState->config->adjustmentFunction;
         if (adjustmentFunction == ADJUSTMENT_NONE) {
             continue;
         }
 
-        int32_t signedDiff = now - adjustmentState->timeoutAt;
-        bool canResetReadyStates = signedDiff >= 0L;
+        const int32_t signedDiff = now - adjustmentState->timeoutAt;
+        const bool canResetReadyStates = signedDiff >= 0L;
 
         if (canResetReadyStates) {
             adjustmentState->timeoutAt = now + RESET_FREQUENCY_2HZ;
@@ -373,7 +359,7 @@ void processRcAdjustments(const controlRateConfig_t *controlRateConfig)
             continue;
         }
 
-        uint8_t channelIndex = NON_AUX_CHANNEL_COUNT + adjustmentState->auxChannelIndex;
+        const uint8_t channelIndex = NON_AUX_CHANNEL_COUNT + adjustmentState->auxChannelIndex;
 
         if (adjustmentState->config->mode == ADJUSTMENT_MODE_STEP) {
             int delta;
@@ -392,12 +378,14 @@ void processRcAdjustments(const controlRateConfig_t *controlRateConfig)
             }
 
             // it is legitimate to adjust an otherwise const item here
-            applyStepAdjustment((controlRateConfig_t*)controlRateConfig, adjustmentFunction, delta);
+            applyStepAdjustment(controlRateConfig, adjustmentFunction, delta);
+#ifdef USE_INFLIGHT_PROFILE_ADJUSTMENT
         } else if (adjustmentState->config->mode == ADJUSTMENT_MODE_SELECT) {
-            uint16_t rangeWidth = ((2100 - 900) / adjustmentState->config->data.selectConfig.switchPositions);
-            uint8_t position = (constrain(rcData[channelIndex], 900, 2100 - 1) - 900) / rangeWidth;
+            const uint16_t rangeWidth = ((2100 - 900) / adjustmentState->config->data.selectConfig.switchPositions);
+            const uint8_t position = (constrain(rcData[channelIndex], 900, 2100 - 1) - 900) / rangeWidth;
 
             applySelectAdjustment(adjustmentFunction, position);
+#endif
         }
         MARK_ADJUSTMENT_FUNCTION_AS_BUSY(adjustmentIndex);
     }
@@ -411,7 +399,7 @@ void resetAdjustmentStates(void)
 void updateAdjustmentStates(void)
 {
     for (int index = 0; index < MAX_ADJUSTMENT_RANGE_COUNT; index++) {
-        const adjustmentRange_t *adjustmentRange = adjustmentRanges(index);
+        const adjustmentRange_t * const adjustmentRange = adjustmentRanges(index);
 
         if (isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range)) {
 

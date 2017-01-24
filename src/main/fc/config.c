@@ -95,7 +95,6 @@ PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
 
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
-    .currentControlRateProfileIndex = 0,
     .current_profile_index = 0,
     .debug_mode = DEBUG_NONE,
     .i2c_overclock = 0,
@@ -407,8 +406,7 @@ void resetConfigs(void)
 
     createDefaultConfig();
 
-    setProfile(getCurrentProfileIndex());
-    setControlRateProfile(getCurrentProfileIndex());
+    setConfigProfile(getConfigProfile());
 #ifdef LED_STRIP
     reevaluateLedConfig();
 #endif
@@ -443,9 +441,7 @@ void readEEPROM(void)
         failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
     }
 
-    setProfile(getCurrentProfileIndex());
-    pgActivateProfile(getCurrentProfileIndex());
-    setControlRateProfile(getCurrentProfileIndex());
+    setConfigProfile(getConfigProfile());
 
     validateAndFixConfig();
     activateConfig();
@@ -483,27 +479,30 @@ void saveConfigAndNotify(void)
     beeperConfirmationBeeps(1);
 }
 
-uint8_t getCurrentProfileIndex(void)
+uint8_t getConfigProfile(void)
 {
     return systemConfig()->current_profile_index;
 }
 
-bool setProfile(uint8_t profileIndex)
+bool setConfigProfile(uint8_t profileIndex)
 {
+    bool ret = true; // return true if current_profile_index has changed
     if (systemConfig()->current_profile_index == profileIndex) {
-        return false;
+        ret =  false;
     }
     if (profileIndex >= MAX_PROFILE_COUNT) {// sanity check
         profileIndex = 0;
     }
+    pgActivateProfile(profileIndex);
     systemConfigMutable()->current_profile_index = profileIndex;
-    // return true if current_profile_index has changed
-    return true;
+    // set the control rate profile to match
+    setControlRateProfile(profileIndex);
+    return ret;
 }
 
-void changeProfile(uint8_t profileIndex)
+void setConfigProfileAndWriteEEPROM(uint8_t profileIndex)
 {
-    if (setProfile(profileIndex)) {
+    if (setConfigProfile(profileIndex)) {
         // profile has changed, so ensure current values saved before new profile is loaded
         writeEEPROM();
         readEEPROM();
