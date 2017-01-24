@@ -406,9 +406,15 @@ void onSerialTimer(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 
 void onSerialTimerOvr(timerOvrHandlerRec_t *cbRec, captureCompare_t capture)
 {
+#if 0
 uint32_t nowUs = micros();
-debug[2] = nowUs - lastOnTimerUs;
+debug[3] = nowUs - lastOnTimerUs;
 lastOnTimerUs = nowUs;
+#endif
+
+debug[1] = (TIM7->CR1)|(TIM7->DIER << 8);
+debug[2] = (TIM7->SR);
+debug[3] = (TIM7->ARR);
 
     UNUSED(capture);
     softSerial_t *softSerial = container_of(cbRec, softSerial_t, overCb);
@@ -425,7 +431,6 @@ debug[0]++;
 void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 {
     UNUSED(capture);
-debug[1]++;
 
     softSerial_t *softSerial = container_of(cbRec, softSerial_t, edgeCb);
     bool inverted = softSerial->port.options & SERIAL_INVERTED;

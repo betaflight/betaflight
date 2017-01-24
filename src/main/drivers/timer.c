@@ -34,8 +34,6 @@
 #include "timer.h"
 #include "timer_impl.h"
 
-#include "build/debug.h"
-
 #define TIM_N(n) (1 << (n))
 
 /*
@@ -552,7 +550,6 @@ static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
         tim_status &= mask;
         switch(bit) {
             case __builtin_clz(TIM_IT_Update): {
-debug[3]++;
                 if(timerConfig->forcedOverflowTimerValue != 0){
                     capture = timerConfig->forcedOverflowTimerValue - 1;
                     timerConfig->forcedOverflowTimerValue = 0;
