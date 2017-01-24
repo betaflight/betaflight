@@ -25,6 +25,9 @@
 
 #include "common/utils.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/timer.h"
 #include "drivers/serial.h"
 #include "drivers/serial_softserial.h"
@@ -50,29 +53,35 @@
 #include "telemetry/srxl.h"
 #include "telemetry/ibus.h"
 
+#ifndef USE_PARAMETER_GROUPS
 static telemetryConfig_t *telemetryConfig;
+#endif
 
 void telemetryUseConfig(telemetryConfig_t *telemetryConfigToUse)
 {
+#ifdef USE_PARAMETER_GROUPS
+    UNUSED(telemetryConfigToUse);
+#else
     telemetryConfig = telemetryConfigToUse;
+#endif
 }
 
 void telemetryInit(void)
 {
 #ifdef TELEMETRY_FRSKY
-    initFrSkyTelemetry(telemetryConfig);
+    initFrSkyTelemetry(telemetryConfig());
 #endif
 #ifdef TELEMETRY_HOTT
-    initHoTTTelemetry(telemetryConfig);
+    initHoTTTelemetry(telemetryConfig());
 #endif
 #ifdef TELEMETRY_SMARTPORT
-    initSmartPortTelemetry(telemetryConfig);
+    initSmartPortTelemetry(telemetryConfig());
 #endif
 #ifdef TELEMETRY_LTM
-    initLtmTelemetry(telemetryConfig);
+    initLtmTelemetry(telemetryConfig());
 #endif
 #ifdef TELEMETRY_JETIEXBUS
-    initJetiExBusTelemetry(telemetryConfig);
+    initJetiExBusTelemetry(telemetryConfig());
 #endif
 #ifdef TELEMETRY_MAVLINK
     initMAVLinkTelemetry();
@@ -95,7 +104,7 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing)
     bool enabled = portSharing == PORTSHARING_NOT_SHARED;
 
     if (portSharing == PORTSHARING_SHARED) {
-        if (telemetryConfig->telemetry_switch)
+        if (telemetryConfig()->telemetry_switch)
             enabled = IS_RC_MODE_ACTIVE(BOXTELEMETRY);
         else
             enabled = ARMING_FLAG(ARMED);
@@ -142,7 +151,7 @@ void telemetryCheckState(void)
 #endif
 }
 
-void telemetryProcess(uint32_t currentTime, rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
+void telemetryProcess(uint32_t currentTime, const rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
 {
 #ifdef TELEMETRY_FRSKY
     handleFrSkyTelemetry(rxConfig, deadband3d_throttle);

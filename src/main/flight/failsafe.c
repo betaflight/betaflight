@@ -24,6 +24,9 @@
 
 #include "common/axis.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/system.h"
 
 #include "fc/config.h"
@@ -50,9 +53,10 @@
 
 static failsafeState_t failsafeState;
 
-static failsafeConfig_t *failsafeConfig;
-
-static rxConfig_t *rxConfig;
+#ifndef USE_PARAMETER_GROPUS
+static const failsafeConfig_t *failsafeConfig;
+static const rxConfig_t *rxConfig;
+#endif
 
 static uint16_t deadband3dThrottle;           // default throttle deadband from MIDRC
 
@@ -72,15 +76,23 @@ static void failsafeReset(void)
 /*
  * Should called when the failsafe config needs to be changed - e.g. a different profile has been selected.
  */
-void useFailsafeConfig(failsafeConfig_t *failsafeConfigToUse)
+void useFailsafeConfig(const failsafeConfig_t *failsafeConfigToUse)
 {
+#ifdef USE_PARAMETER_GROUPS
+    (void)(failsafeConfigToUse);
+#else
     failsafeConfig = failsafeConfigToUse;
+#endif
     failsafeReset();
 }
 
-void failsafeInit(rxConfig_t *intialRxConfig, uint16_t deadband3d_throttle)
+void failsafeInit(const rxConfig_t *intialRxConfig, uint16_t deadband3d_throttle)
 {
+#ifdef USE_PARAMETER_GROUPS
+    (void)(intialRxConfig);
+#else
     rxConfig = intialRxConfig;
+#endif
 
     deadband3dThrottle = deadband3d_throttle;
     failsafeState.events = 0;

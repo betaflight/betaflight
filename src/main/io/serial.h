@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
 #include "drivers/serial.h"
 
 typedef enum {
@@ -110,6 +111,8 @@ typedef struct serialConfig_s {
     uint16_t serial_update_rate_hz;
     uint8_t reboot_character;               // which byte is used to reboot. Default 'R', could be changed carefully to something else.
 } serialConfig_t;
+
+PG_DECLARE(serialConfig_t, serialConfig);
 
 typedef void serialConsumer(uint8_t);
 

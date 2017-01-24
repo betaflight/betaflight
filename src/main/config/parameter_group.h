@@ -100,6 +100,7 @@ extern const uint8_t __pg_resetdata_end[];
     } while(0)                                                          \
     /**/
 
+#ifdef USE_PARAMETER_GROUPS
 // Declare system config
 #define PG_DECLARE(_type, _name)                                        \
     extern _type _name ## _System;                                      \
@@ -124,6 +125,20 @@ extern const uint8_t __pg_resetdata_end[];
     static inline _type* _name ## Mutable(void) { return _name ## _ProfileCurrent; } \
     struct _dummy                                                       \
     /**/
+
+#else
+
+#define PG_DECLARE(_type, _name)                                        \
+    extern _type _name ## _System
+
+#define PG_DECLARE_ARRAY(_type, _size, _name)                           \
+    extern _type _name ## _SystemArray[_size]
+
+// Declare profile config
+#define PG_DECLARE_PROFILE(_type, _name)                                \
+    extern _type *_name ## _ProfileCurrent
+
+#endif // USE_PARAMETER_GROUPS
 
 // Register system config
 #define PG_REGISTER_I(_type, _name, _pgn, _version, _reset)             \

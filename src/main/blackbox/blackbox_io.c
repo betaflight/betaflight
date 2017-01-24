@@ -8,6 +8,7 @@
 
 #ifdef BLACKBOX
 
+#include "blackbox.h"
 #include "blackbox_io.h"
 
 #include "build/version.h"
@@ -16,6 +17,10 @@
 #include "common/encoding.h"
 #include "common/printf.h"
 
+#include "config/config_profile.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 
@@ -23,11 +28,9 @@
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/flashfs.h"
+#include "io/serial.h"
 
 #include "msp/msp_serial.h"
-
-#include "config/config_profile.h"
-#include "config/config_master.h"
 
 #define BLACKBOX_SERIAL_PORT_MODE MODE_TX
 

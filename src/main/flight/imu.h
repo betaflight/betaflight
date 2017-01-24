@@ -21,6 +21,8 @@
 #include "common/maths.h"
 #include "common/time.h"
 
+#include "config/parameter_group.h"
+
 #include "sensors/acceleration.h"
 
 // Exported symbols
@@ -64,6 +66,8 @@ typedef struct imuConfig_s {
     uint8_t acc_unarmedcal;                 // turn automatic acc compensation on/off
     accDeadband_t accDeadband;
 } imuConfig_t;
+
+PG_DECLARE(imuConfig_t, imuConfig);
 
 typedef struct imuRuntimeConfig_s {
     float dcm_ki;
