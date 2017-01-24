@@ -50,13 +50,7 @@ bool sensorsAutodetect(void)
         return false;
     }
 
-#ifdef ASYNC_GYRO_PROCESSING
-     // ACC will be updated at its own rate
     accInit(getAccUpdateRate());
-#else
-    // acc updated at same frequency in taskMainPidLoop in mw.c
-    accInit(gyro.targetLooptime);
-#endif
 
 #ifdef BARO
     baroInit();

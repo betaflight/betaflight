@@ -204,12 +204,7 @@ void pidInit(void)
 #ifdef USE_DTERM_NOTCH
 bool pidInitFilters(void)
 {
-    uint32_t refreshRate;
-    #ifdef ASYNC_GYRO_PROCESSING
-        refreshRate =  getPidUpdateRate();
-    #else
-        refreshRate= gyro.targetLooptime;
-    #endif
+    const uint32_t refreshRate = getPidUpdateRate();
     notchFilterApplyFn = nullFilterApply;
     if(refreshRate != 0 && pidProfile()->dterm_soft_notch_hz != 0){
         notchFilterApplyFn = (filterApplyFnPtr)biquadFilterApply;
