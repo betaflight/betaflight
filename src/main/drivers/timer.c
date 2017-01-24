@@ -34,6 +34,8 @@
 #include "timer.h"
 #include "timer_impl.h"
 
+#include "build/debug.h"
+
 #define TIM_N(n) (1 << (n))
 
 /*
@@ -249,7 +251,8 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
 {
     configTimeBase(timerHardwarePtr->tim, period, mhz);
     TIM_Cmd(timerHardwarePtr->tim, ENABLE);
-
+if (timerHardwarePtr->tim == TIM7)
+return;
     uint8_t irq = timerInputIrq(timerHardwarePtr->tim);
     timerNVICConfigure(irq);
     // HACK - enable second IRQ on timers that need it
@@ -549,7 +552,6 @@ static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
         tim_status &= mask;
         switch(bit) {
             case __builtin_clz(TIM_IT_Update): {
-
                 if(timerConfig->forcedOverflowTimerValue != 0){
                     capture = timerConfig->forcedOverflowTimerValue - 1;
                     timerConfig->forcedOverflowTimerValue = 0;

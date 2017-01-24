@@ -75,6 +75,7 @@ typedef struct softSerial_s {
 
     uint8_t          softSerialPortIndex;
 
+    timerOvrHandlerRec_t overCb;
     timerCCHandlerRec_t timerCb;
     timerCCHandlerRec_t edgeCb;
 } softSerial_t;
@@ -84,6 +85,7 @@ extern const struct serialPortVTable softSerialVTable[];
 softSerial_t softSerialPorts[MAX_SOFTSERIAL_PORTS];
 
 void onSerialTimer(timerCCHandlerRec_t *cbRec, captureCompare_t capture);
+void onSerialTimerOvr(timerOvrHandlerRec_t *cbRec, captureCompare_t capture);
 void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture);
 
 void setTxSignal(softSerial_t *softSerial, uint8_t state)
@@ -146,8 +148,12 @@ static void serialTimerConfigure(const timerHardware_t *timerHardwarePtr, uint32
 static void serialTimerTxConfig(const timerHardware_t *timerHardwarePtr, uint8_t reference, uint32_t baud)
 {
     serialTimerConfigure(timerHardwarePtr, baud);
-    timerChCCHandlerInit(&softSerialPorts[reference].timerCb, onSerialTimer);
-    timerChConfigCallbacks(timerHardwarePtr, &softSerialPorts[reference].timerCb, NULL);
+
+    //timerChCCHandlerInit(&softSerialPorts[reference].timerCb, onSerialTimer);
+    //timerChConfigCallbacks(timerHardwarePtr, &softSerialPorts[reference].timerCb, NULL);
+
+    timerChOvrHandlerInit(&softSerialPorts[reference].overCb, onSerialTimerOvr);
+    timerChConfigCallbacks(timerHardwarePtr, NULL, &softSerialPorts[reference].overCb);
 }
 
 static void serialICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
@@ -246,8 +252,9 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 // XXX Use generic timer for bit clock
 softSerial->txTimerHardware = timerGetByTag(IO_TAG_NONE, TIM_USE_GENERIC);
 
-    if (mode & MODE_TX)
+    if (mode & MODE_TX) {
         serialTimerTxConfig(softSerial->txTimerHardware, portIndex, baud);
+    }
 
     if (mode & MODE_RX) {
         // If RX is on a different timer from TX, or TX doesn't exist,
@@ -396,6 +403,20 @@ debug[0]++;
     if (softSerial->port.mode & MODE_RX)
         processRxState(softSerial);
 }
+
+void onSerialTimerOvr(timerOvrHandlerRec_t *cbRec, captureCompare_t capture)
+{
+    UNUSED(capture);
+    softSerial_t *softSerial = container_of(cbRec, softSerial_t, overCb);
+
+debug[0]++;
+    if (softSerial->port.mode & MODE_TX)
+        processTxState(softSerial);
+
+    if (softSerial->port.mode & MODE_RX)
+        processRxState(softSerial);
+}
+
 
 void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 {
