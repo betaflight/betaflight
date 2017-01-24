@@ -552,13 +552,13 @@ static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
         tim_status &= mask;
         switch(bit) {
             case __builtin_clz(TIM_IT_Update): {
+debug[3]++;
                 if(timerConfig->forcedOverflowTimerValue != 0){
                     capture = timerConfig->forcedOverflowTimerValue - 1;
                     timerConfig->forcedOverflowTimerValue = 0;
                 } else {
                     capture = tim->ARR;
                 }
-
                 timerOvrHandlerRec_t *cb = timerConfig->overflowCallbackActive;
                 while(cb) {
                     cb->fn(cb, capture);
@@ -654,6 +654,12 @@ _TIM_IRQ_HANDLER(TIM4_IRQHandler, 4);
 #endif
 #if USED_TIMERS & TIM_N(5)
 _TIM_IRQ_HANDLER(TIM5_IRQHandler, 5);
+#endif
+#if USED_TIMERS & TIM_N(6)
+_TIM_IRQ_HANDLER(TIM6_IRQHandler, 6);
+#endif
+#if USED_TIMERS & TIM_N(7)
+_TIM_IRQ_HANDLER(TIM7_IRQHandler, 7);
 #endif
 #if USED_TIMERS & TIM_N(8)
 _TIM_IRQ_HANDLER(TIM8_CC_IRQHandler, 8);

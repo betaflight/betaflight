@@ -396,7 +396,6 @@ void onSerialTimer(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
     UNUSED(capture);
     softSerial_t *softSerial = container_of(cbRec, softSerial_t, timerCb);
 
-debug[0]++;
     if (softSerial->port.mode & MODE_TX)
         processTxState(softSerial);
 
