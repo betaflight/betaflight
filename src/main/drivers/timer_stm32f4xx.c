@@ -30,7 +30,7 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = TIM4,  .rcc = RCC_APB1(TIM4),  .inputIrq = TIM4_IRQn},
     { .TIMx = TIM5,  .rcc = RCC_APB1(TIM5),  .inputIrq = TIM5_IRQn},
     { .TIMx = TIM6,  .rcc = RCC_APB1(TIM6),  .inputIrq = 0},
-    { .TIMx = TIM7,  .rcc = RCC_APB1(TIM7),  .inputIrq = 0},
+    { .TIMx = TIM7,  .rcc = RCC_APB1(TIM7),  .inputIrq = TIM7_IRQn}, // XXX Experimental
 #ifndef STM32F411xE
     { .TIMx = TIM8,  .rcc = RCC_APB2(TIM8),  .inputIrq = TIM8_CC_IRQn},
 #endif

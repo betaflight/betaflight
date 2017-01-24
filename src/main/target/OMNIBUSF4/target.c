@@ -48,5 +48,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 #else
     DEF_TIM(TIM5,  CH2, PA1,  TIM_USE_MOTOR | TIM_USE_LED, TIMER_OUTPUT_STANDARD, 0), // S5_OUT
     DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0), // S6_OUT
+    // XXX Experimental TIM7 for softserial bit clock (TIM6 has weird irq)
+    { TIM7, IO_TAG_NONE, TIM_Channel_1, TIM_USE_GENERIC, TIMER_OUTPUT_NONE, 0, 0, 0, NULL},
 #endif
 };

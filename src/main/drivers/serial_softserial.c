@@ -79,11 +79,7 @@ typedef struct softSerial_s {
     timerCCHandlerRec_t edgeCb;
 } softSerial_t;
 
-extern timerHardware_t* serialTimerHardware;
-extern softSerial_t softSerialPorts[];
-
 extern const struct serialPortVTable softSerialVTable[];
-
 
 softSerial_t softSerialPorts[MAX_SOFTSERIAL_PORTS];
 
@@ -245,6 +241,10 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
     }
 
     delay(50);
+
+// XXX Experimental
+// XXX Use generic timer for bit clock
+softSerial->txTimerHardware = timerGetByTag(IO_TAG_NONE, TIM_USE_GENERIC);
 
     if (mode & MODE_TX)
         serialTimerTxConfig(softSerial->txTimerHardware, portIndex, baud);
