@@ -31,7 +31,7 @@ compiler: clang
 before_install: ./install-toolchain.sh
 
 install:
-  - export PATH=$PATH:$PWD/gcc-arm-none-eabi-5_4-2016q2/bin
+  - export PATH=$PATH:$PWD/gcc-arm-none-eabi-6_2-2016q4/bin
 
 before_script: arm-none-eabi-gcc --version
 script: ./.travis.sh
@@ -39,7 +39,7 @@ script: ./.travis.sh
 cache: 
   apt: true
   directories:
-  - $PWD/gcc-arm-none-eabi-5_4-2016q2
+  - $PWD/gcc-arm-none-eabi-6_2-2016q4
 
 notifications:
   #slack: inavflight:UWRoWFJ4cbbpHXT8HJJlAPXa
