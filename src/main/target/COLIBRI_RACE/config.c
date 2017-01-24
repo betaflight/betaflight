@@ -45,7 +45,6 @@ void targetConfiguration(void)
 
     featureSet(FEATURE_VBAT);
     featureSet(FEATURE_LED_STRIP);
-    featureSet(FEATURE_FAILSAFE);
 
     serialConfigMutable()->portConfigs[0].functionMask = FUNCTION_MSP;
     if (featureConfigured(FEATURE_RX_SERIAL)) {

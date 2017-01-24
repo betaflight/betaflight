@@ -147,19 +147,11 @@ static const char * const mixerNames[] = {
 // sync this with features_e
 static const char * const featureNames[] = {
     "RX_PPM", "VBAT", "UNUSED_1", "RX_SERIAL", "MOTOR_STOP",
-    "SERVO_TILT", "SOFTSERIAL", "GPS", "FAILSAFE",
+    "SERVO_TILT", "SOFTSERIAL", "GPS", "UNUSED_3",
     "SONAR", "TELEMETRY", "CURRENT_METER", "3D", "RX_PARALLEL_PWM",
     "RX_MSP", "RSSI_ADC", "LED_STRIP", "DASHBOARD", "UNUSED_2",
     "BLACKBOX", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE",
     "SUPEREXPO", "VTX", "RX_SPI", "SOFTSPI", "PWM_SERVO_DRIVER", "PWM_OUTPUT_ENABLE", "OSD", NULL
-};
-
-// sync this with rxFailsafeChannelMode_e
-static const char rxFailsafeModeCharacters[] = "ahs";
-
-static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT][RX_FAILSAFE_MODE_COUNT] = {
-    { RX_FAILSAFE_MODE_AUTO, RX_FAILSAFE_MODE_HOLD, RX_FAILSAFE_MODE_INVALID },
-    { RX_FAILSAFE_MODE_INVALID, RX_FAILSAFE_MODE_HOLD, RX_FAILSAFE_MODE_SET }
 };
 
 /* Sensor names (used in lookup tables for *_hardware settings and in status command output) */
@@ -897,7 +889,6 @@ static rxConfig_t rxConfigCopy;
 #ifdef BLACKBOX
 static blackboxConfig_t blackboxConfigCopy;
 #endif
-static rxFailsafeChannelConfig_t rxFailsafeChannelConfigsCopy[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 static rxChannelRangeConfig_t rxChannelRangeConfigsCopy[NON_AUX_CHANNEL_COUNT];
 static motorConfig_t motorConfigCopy;
 static failsafeConfig_t failsafeConfigCopy;
@@ -1261,10 +1252,6 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.currentConfig = &pidProfileCopy[getConfigProfile()];
         ret.defaultConfig = pidProfile();
         break;
-    case PG_RX_FAILSAFE_CHANNEL_CONFIG:
-        ret.currentConfig = &rxFailsafeChannelConfigsCopy[0];
-        ret.defaultConfig = rxFailsafeChannelConfigs(0);
-        break;
     case PG_RX_CHANNEL_RANGE_CONFIG:
         ret.currentConfig = &rxChannelRangeConfigsCopy[0];
         ret.defaultConfig = rxChannelRangeConfigs(0);
@@ -1476,133 +1463,6 @@ static const char *processChannelRangeArgs(const char *ptr, channelRange_t *rang
 static bool isEmpty(const char *string)
 {
     return (string == NULL || *string == '\0') ? true : false;
-}
-
-static void printRxFailsafe(uint8_t dumpMask, const rxFailsafeChannelConfig_t *rxFailsafeChannelConfigs, const rxFailsafeChannelConfig_t *defaultRxFailsafeChannelConfigs)
-{
-    // print out rxConfig failsafe settings
-    for (uint32_t channel = 0; channel < MAX_SUPPORTED_RC_CHANNEL_COUNT; channel++) {
-        const rxFailsafeChannelConfig_t *channelFailsafeConfig = &rxFailsafeChannelConfigs[channel];
-        const rxFailsafeChannelConfig_t *channelFailsafeConfigDefault;
-        bool equalsDefault = true;
-        if (defaultRxFailsafeChannelConfigs) {
-            channelFailsafeConfigDefault = &defaultRxFailsafeChannelConfigs[channel];
-            equalsDefault = (channelFailsafeConfig->mode == channelFailsafeConfigDefault->mode)
-                    && (channelFailsafeConfig->step == channelFailsafeConfigDefault->step);
-        }
-        const bool requireValue = channelFailsafeConfig->mode == RX_FAILSAFE_MODE_SET;
-        if (requireValue) {
-            const char *format = "rxfail %u %c %d\r\n";
-            if (defaultRxFailsafeChannelConfigs) {
-                cliDefaultPrintf(dumpMask, equalsDefault, format,
-                    channel,
-                    rxFailsafeModeCharacters[channelFailsafeConfigDefault->mode],
-                    RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfigDefault->step)
-                );
-            }
-            cliDumpPrintf(dumpMask, equalsDefault, format,
-                channel,
-                rxFailsafeModeCharacters[channelFailsafeConfig->mode],
-                RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfig->step)
-            );
-        } else {
-            const char *format = "rxfail %u %c\r\n";
-            if (defaultRxFailsafeChannelConfigs) {
-                cliDefaultPrintf(dumpMask, equalsDefault, format,
-                    channel,
-                    rxFailsafeModeCharacters[channelFailsafeConfigDefault->mode]
-                );
-            }
-            cliDumpPrintf(dumpMask, equalsDefault, format,
-                channel,
-                rxFailsafeModeCharacters[channelFailsafeConfig->mode]
-            );
-        }
-    }
-}
-
-static void cliRxFailsafe(char *cmdline)
-{
-    uint8_t channel;
-    char buf[3];
-
-    if (isEmpty(cmdline)) {
-        // print out rxConfig failsafe settings
-        for (channel = 0; channel < MAX_SUPPORTED_RC_CHANNEL_COUNT; channel++) {
-            cliRxFailsafe(itoa(channel, buf, 10));
-        }
-    } else {
-        const char *ptr = cmdline;
-        channel = atoi(ptr++);
-        if ((channel < MAX_SUPPORTED_RC_CHANNEL_COUNT)) {
-
-            // const cast
-            rxFailsafeChannelConfig_t *channelFailsafeConfig = rxFailsafeChannelConfigsMutable(channel);
-
-            const rxFailsafeChannelType_e type = (channel < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_TYPE_FLIGHT : RX_FAILSAFE_TYPE_AUX;
-            rxFailsafeChannelMode_e mode = channelFailsafeConfig->mode;
-            bool requireValue = channelFailsafeConfig->mode == RX_FAILSAFE_MODE_SET;
-
-            ptr = nextArg(ptr);
-            if (ptr) {
-                const char *p = strchr(rxFailsafeModeCharacters, *(ptr));
-                if (p) {
-                    const uint8_t requestedMode = p - rxFailsafeModeCharacters;
-                    mode = rxFailsafeModesTable[type][requestedMode];
-                } else {
-                    mode = RX_FAILSAFE_MODE_INVALID;
-                }
-                if (mode == RX_FAILSAFE_MODE_INVALID) {
-                    cliShowParseError();
-                    return;
-                }
-
-                requireValue = mode == RX_FAILSAFE_MODE_SET;
-
-                ptr = nextArg(ptr);
-                if (ptr) {
-                    if (!requireValue) {
-                        cliShowParseError();
-                        return;
-                    }
-                    uint16_t value = atoi(ptr);
-                    value = CHANNEL_VALUE_TO_RXFAIL_STEP(value);
-                    if (value > MAX_RXFAIL_RANGE_STEP) {
-                        cliPrint("Value out of range\r\n");
-                        return;
-                    }
-
-                    channelFailsafeConfig->step = value;
-                } else if (requireValue) {
-                    cliShowParseError();
-                    return;
-                }
-                channelFailsafeConfig->mode = mode;
-            }
-
-            char modeCharacter = rxFailsafeModeCharacters[channelFailsafeConfig->mode];
-
-            // triple use of cliPrintf below
-            // 1. acknowledge interpretation on command,
-            // 2. query current setting on single item,
-            // 3. recursive use for full list.
-
-            if (requireValue) {
-                cliPrintf("rxfail %u %c %d\r\n",
-                    channel,
-                    modeCharacter,
-                    RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfig->step)
-                );
-            } else {
-                cliPrintf("rxfail %u %c\r\n",
-                    channel,
-                    modeCharacter
-                );
-            }
-        } else {
-            cliShowArgumentRangeError("channel", 0, MAX_SUPPORTED_RC_CHANNEL_COUNT - 1);
-        }
-    }
 }
 
 #if defined(USE_ASSERT)
@@ -3548,9 +3408,6 @@ static void printConfig(const char *cmdline, bool doDiff)
         cliPrintHashLine("rxrange");
         printRxRange(dumpMask, rxChannelRangeConfigsCopy, rxChannelRangeConfigs(0));
 
-        cliPrintHashLine("rxfail");
-        printRxFailsafe(dumpMask, rxFailsafeChannelConfigsCopy, rxFailsafeChannelConfigs(0));
-
         cliPrintHashLine("master");
         dumpAllValues(MASTER_VALUE, dumpMask);
 
@@ -3680,7 +3537,6 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("resource", "view currently used resources", NULL, cliResource),
 #endif
     CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),
-    CLI_COMMAND_DEF("rxfail", "show/set rx failsafe settings", NULL, cliRxFailsafe),
     CLI_COMMAND_DEF("save", "save and reboot", NULL, cliSave),
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
 #ifdef USE_SERVOS

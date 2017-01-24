@@ -538,7 +538,7 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
             warningFlags = 0;
             if (feature(FEATURE_VBAT) && getBatteryState() != BATTERY_OK)
                 warningFlags |= 1 << WARNING_LOW_BATTERY;
-            if (feature(FEATURE_FAILSAFE) && failsafeIsActive())
+            if (failsafeIsActive())
                 warningFlags |= 1 << WARNING_FAILSAFE;
             if (!ARMING_FLAG(ARMED) && !ARMING_FLAG(OK_TO_ARM))
                 warningFlags |= 1 << WARNING_ARMING_DISABLED;

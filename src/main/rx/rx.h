@@ -85,28 +85,6 @@ extern int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];       // interval [1000;2
 #define RSSI_SCALE_MAX 255
 #define RSSI_SCALE_DEFAULT 30
 
-typedef enum {
-    RX_FAILSAFE_MODE_AUTO = 0,
-    RX_FAILSAFE_MODE_HOLD,
-    RX_FAILSAFE_MODE_SET,
-    RX_FAILSAFE_MODE_INVALID
-} rxFailsafeChannelMode_e;
-
-#define RX_FAILSAFE_MODE_COUNT 3
-
-typedef enum {
-    RX_FAILSAFE_TYPE_FLIGHT = 0,
-    RX_FAILSAFE_TYPE_AUX
-} rxFailsafeChannelType_e;
-
-#define RX_FAILSAFE_TYPE_COUNT 2
-
-typedef struct rxFailsafeChannelConfig_s {
-    uint8_t mode; // See rxFailsafeChannelMode_e
-    uint8_t step;
-} rxFailsafeChannelConfig_t;
-PG_DECLARE_ARRAY(rxFailsafeChannelConfig_t, MAX_SUPPORTED_RC_CHANNEL_COUNT, rxFailsafeChannelConfigs);
-
 typedef struct rxChannelRangeConfig_s {
     uint16_t min;
     uint16_t max;

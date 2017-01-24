@@ -302,14 +302,12 @@ void processRx(timeUs_t currentTimeUs)
 
     updateRSSI(currentTimeUs);
 
-    if (feature(FEATURE_FAILSAFE)) {
-
-        if (currentTimeUs > FAILSAFE_POWER_ON_DELAY_US && !failsafeIsMonitoring()) {
-            failsafeStartMonitoring();
-        }
-
-        failsafeUpdateState();
+    // Update failsafe monitoring system
+    if (currentTimeUs > FAILSAFE_POWER_ON_DELAY_US && !failsafeIsMonitoring()) {
+        failsafeStartMonitoring();
     }
+
+    failsafeUpdateState();
 
     const throttleStatus_e throttleStatus = calculateThrottleStatus(flight3DConfig()->deadband3d_throttle);
 
@@ -368,7 +366,7 @@ void processRx(timeUs_t currentTimeUs)
 
     bool canUseHorizonMode = true;
 
-    if ((IS_RC_MODE_ACTIVE(BOXANGLE) || (feature(FEATURE_FAILSAFE) && failsafeIsActive()) || naivationRequiresAngleMode()) && sensors(SENSOR_ACC)) {
+    if ((IS_RC_MODE_ACTIVE(BOXANGLE) || failsafeIsActive() || naivationRequiresAngleMode()) && sensors(SENSOR_ACC)) {
         // bumpless transfer to Level mode
         canUseHorizonMode = false;
 
