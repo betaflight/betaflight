@@ -44,6 +44,7 @@ PG_DECLARE(failsafeConfig_t, failsafeConfig);
 typedef enum {
     FAILSAFE_IDLE = 0,
     FAILSAFE_RX_LOSS_DETECTED,
+    FAILSAFE_RX_LOSS_IDLE,
 #if defined(NAV)
     FAILSAFE_RETURN_TO_HOME,
 #endif
@@ -61,7 +62,8 @@ typedef enum {
 typedef enum {
     FAILSAFE_PROCEDURE_AUTO_LANDING = 0,
     FAILSAFE_PROCEDURE_DROP_IT,
-    FAILSAFE_PROCEDURE_RTH
+    FAILSAFE_PROCEDURE_RTH,
+    FAILSAFE_PROCEDURE_NONE
 } failsafeProcedure_e;
 
 // FIXME ProDrone: The next enum must be deleted from here and defined in RTH.H file, which has to be included in failsafe.c

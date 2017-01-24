@@ -127,10 +127,10 @@ static bool failsafeShouldHaveCausedLandingByNow(void)
     return (millis() > failsafeState.landingShouldBeFinishedAt);
 }
 
-static void failsafeActivate(void)
+static void failsafeActivate(failsafePhase_e newPhase)
 {
     failsafeState.active = true;
-    failsafeState.phase = FAILSAFE_LANDING;
+    failsafeState.phase = newPhase;
     ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
     failsafeState.landingShouldBeFinishedAt = millis() + failsafeConfig()->failsafe_off_delay * MILLIS_PER_TENTH_SECOND;
 
@@ -208,16 +208,14 @@ void failsafeUpdateState(void)
                     // Kill switch logic (must be independent of receivingRxData to skip PERIOD_RXDATA_FAILURE delay before disarming)
                     if (failsafeSwitchIsOn && failsafeConfig()->failsafe_kill_switch) {
                         // KillswitchEvent: failsafe switch is configured as KILL switch and is switched ON
-                        failsafeActivate();
-                        failsafeState.phase = FAILSAFE_LANDED;      // skip auto-landing procedure
+                        failsafeActivate(FAILSAFE_LANDED);  // skip auto-landing procedure
                         failsafeState.receivingRxDataPeriodPreset = PERIOD_OF_1_SECONDS;    // require 1 seconds of valid rxData
                         reprocessState = true;
                     } else if (!receivingRxData) {
                         if ((failsafeConfig()->failsafe_throttle_low_delay && (millis() > failsafeState.throttleLowPeriod)) || STATE(NAV_MOTOR_STOP_OR_IDLE)) {
                             // JustDisarm: throttle was LOW for at least 'failsafe_throttle_low_delay' seconds or waiting for launch
                             // Don't disarm at all if `failsafe_throttle_low_delay` is set to zero
-                            failsafeActivate();
-                            failsafeState.phase = FAILSAFE_LANDED;      // skip auto-landing procedure
+                            failsafeActivate(FAILSAFE_LANDED);  // skip auto-landing procedure
                             failsafeState.receivingRxDataPeriodPreset = PERIOD_OF_3_SECONDS; // require 3 seconds of valid rxData
                         } else {
                             failsafeState.phase = FAILSAFE_RX_LOSS_DETECTED;
@@ -241,30 +239,40 @@ void failsafeUpdateState(void)
                     failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                 } else {
                     switch (failsafeConfig()->failsafe_procedure) {
-                        default:
                         case FAILSAFE_PROCEDURE_AUTO_LANDING:
                             // Stabilize, and set Throttle to specified level
-                            failsafeActivate();
+                            failsafeActivate(FAILSAFE_LANDING);
                             break;
 
                         case FAILSAFE_PROCEDURE_DROP_IT:
                             // Drop the craft
-                            failsafeActivate();
-                            failsafeState.phase = FAILSAFE_LANDED;      // skip auto-landing procedure
+                            failsafeActivate(FAILSAFE_LANDED);      // skip auto-landing procedure
                             failsafeState.receivingRxDataPeriodPreset = PERIOD_OF_3_SECONDS; // require 3 seconds of valid rxData
                             break;
 
 #if defined(NAV)
                         case FAILSAFE_PROCEDURE_RTH:
                             // Proceed to handling & monitoring RTH navigation
-                            failsafeActivate();
+                            failsafeActivate(FAILSAFE_RETURN_TO_HOME);
                             activateForcedRTH();
-                            failsafeState.phase = FAILSAFE_RETURN_TO_HOME;
                             break;
 #endif
+                        case FAILSAFE_PROCEDURE_NONE:
+                        default:
+                            // Do nothing procedure
+                            failsafeActivate(FAILSAFE_RX_LOSS_IDLE);
+                            break;
                     }
                 }
                 reprocessState = true;
+                break;
+
+            /* A very simple do-nothing failsafe procedure. The only thing it will do is monitor the receiver state and switch out of FAILSAFE condition */
+            case FAILSAFE_RX_LOSS_IDLE:
+                if (receivingRxData) {
+                    failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
+                    reprocessState = true;
+                }
                 break;
 
 #if defined(NAV)

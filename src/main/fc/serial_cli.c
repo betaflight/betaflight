@@ -279,7 +279,7 @@ static const char * const lookupTableGyroLpf[] = {
 };
 
 static const char * const lookupTableFailsafeProcedure[] = {
-    "SET-THR", "DROP", "RTH"
+    "SET-THR", "DROP", "RTH", "NONE"
 };
 
 #ifdef NAV
