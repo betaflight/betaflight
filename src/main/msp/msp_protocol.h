@@ -111,6 +111,9 @@
 #define MSP_CALIBRATION_DATA            14
 #define MSP_SET_CALIBRATION_DATA        15
 
+#define MSP_POSITION_ESTIMATION_CONFIG  16
+#define MSP_SET_POSITION_ESTIMATION_CONFIG  17
+
 //
 // MSP commands for Cleanflight original features
 //
