@@ -137,10 +137,10 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
 
 static void resetPidProfile(pidProfile_t *pidProfile)
 {
-    pidProfile->P8[ROLL] = 40;
+    pidProfile->P8[ROLL] = 44;
     pidProfile->I8[ROLL] = 40;
     pidProfile->D8[ROLL] = 20;
-    pidProfile->P8[PITCH] = 55;
+    pidProfile->P8[PITCH] = 58;
     pidProfile->I8[PITCH] = 50;
     pidProfile->D8[PITCH] = 22;
     pidProfile->P8[YAW] = 70;
