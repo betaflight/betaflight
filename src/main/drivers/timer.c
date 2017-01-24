@@ -655,11 +655,13 @@ _TIM_IRQ_HANDLER(TIM4_IRQHandler, 4);
 #if USED_TIMERS & TIM_N(5)
 _TIM_IRQ_HANDLER(TIM5_IRQHandler, 5);
 #endif
-#if USED_TIMERS & TIM_N(6)
+#ifndef STM32F411xE
+# if USED_TIMERS & TIM_N(6)
 _TIM_IRQ_HANDLER(TIM6_DAC_IRQHandler, 6);
-#endif
-#if USED_TIMERS & TIM_N(7)
+# endif
+# if USED_TIMERS & TIM_N(7)
 _TIM_IRQ_HANDLER(TIM7_IRQHandler, 7);
+# endif
 #endif
 #if USED_TIMERS & TIM_N(8)
 _TIM_IRQ_HANDLER(TIM8_CC_IRQHandler, 8);

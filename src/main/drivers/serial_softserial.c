@@ -84,6 +84,8 @@ extern const struct serialPortVTable softSerialVTable[];
 
 softSerial_t softSerialPorts[MAX_SOFTSERIAL_PORTS];
 
+static volatile uint32_t lastOnTimerUs;
+
 void onSerialTimer(timerCCHandlerRec_t *cbRec, captureCompare_t capture);
 void onSerialTimerOvr(timerOvrHandlerRec_t *cbRec, captureCompare_t capture);
 void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture);
@@ -142,6 +144,7 @@ static void serialTimerConfigure(const timerHardware_t *timerHardwarePtr, uint32
 
     uint8_t mhz = baseClock / 1000000;
 
+lastOnTimerUs = micros();
     timerConfigure(timerHardwarePtr, timerPeriod, mhz);
 }
 
@@ -357,8 +360,6 @@ void extractAndStoreRxByte(softSerial_t *softSerial)
 
     uint8_t rxByte = (softSerial->internalRxBuffer >> 1) & 0xFF;
 
-debug[2] = rxByte;
-
     if (softSerial->port.rxCallback) {
         softSerial->port.rxCallback(rxByte);
     } else {
@@ -405,6 +406,10 @@ void onSerialTimer(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 
 void onSerialTimerOvr(timerOvrHandlerRec_t *cbRec, captureCompare_t capture)
 {
+uint32_t nowUs = micros();
+debug[2] = nowUs - lastOnTimerUs;
+lastOnTimerUs = nowUs;
+
     UNUSED(capture);
     softSerial_t *softSerial = container_of(cbRec, softSerial_t, overCb);
 
