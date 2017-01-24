@@ -951,6 +951,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, rxConfig()->rx_spi_protocol);
         sbufWriteU32(dst, rxConfig()->rx_spi_id);
         sbufWriteU8(dst, rxConfig()->rx_spi_rf_channel_count);
+        sbufWriteU8(dst, rxConfig()->fpvCamAngleDegrees);
         break;
 
     case MSP_FAILSAFE_CONFIG:
@@ -1744,6 +1745,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             rxConfig()->rx_spi_protocol = sbufReadU8(src);
             rxConfig()->rx_spi_id = sbufReadU32(src);
             rxConfig()->rx_spi_rf_channel_count = sbufReadU8(src);
+        }
+        if (dataSize > 22) {
+            rxConfig()->fpvCamAngleDegrees = sbufReadU8(src);
         }
         break;
 
