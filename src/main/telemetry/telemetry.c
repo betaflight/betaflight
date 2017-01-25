@@ -137,6 +137,9 @@ void telemetryCheckState(void)
 #ifdef TELEMETRY_SRXL
     checkSrxlTelemetryState();
 #endif
+#ifdef TELEMETRY_IBUS
+    checkIbusTelemetryState();
+#endif
 }
 
 void telemetryProcess(uint32_t currentTime, rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
@@ -169,6 +172,9 @@ void telemetryProcess(uint32_t currentTime, rxConfig_t *rxConfig, uint16_t deadb
 #endif
 #ifdef TELEMETRY_SRXL
     handleSrxlTelemetry(currentTime);
+#endif
+#ifdef TELEMETRY_IBUS
+    handleIbusTelemetry();
 #endif
 }
 
