@@ -174,23 +174,29 @@ void annexCode(void)
 
     int32_t throttleValue;
 
-    // Compute ROLL PITCH and YAW command
-    rcCommand[ROLL] = getAxisRcCommand(rcData[ROLL], currentControlRateProfile->rcExpo8, rcControlsConfig()->deadband);
-    rcCommand[PITCH] = getAxisRcCommand(rcData[PITCH], currentControlRateProfile->rcExpo8, rcControlsConfig()->deadband);
-    rcCommand[YAW] = -getAxisRcCommand(rcData[YAW], currentControlRateProfile->rcYawExpo8, rcControlsConfig()->yaw_deadband);
+    // Handle failsafe - if we are in failsafe rcCommand is driven by either failsafe or navigation controls
+    if (failsafeIsActive()) {
+        failsafeApplyControlInput();
+    }
+    else {
+        // Compute ROLL PITCH and YAW command
+        rcCommand[ROLL] = getAxisRcCommand(rcData[ROLL], currentControlRateProfile->rcExpo8, rcControlsConfig()->deadband);
+        rcCommand[PITCH] = getAxisRcCommand(rcData[PITCH], currentControlRateProfile->rcExpo8, rcControlsConfig()->deadband);
+        rcCommand[YAW] = -getAxisRcCommand(rcData[YAW], currentControlRateProfile->rcYawExpo8, rcControlsConfig()->yaw_deadband);
 
-    //Compute THROTTLE command
-    throttleValue = constrain(rcData[THROTTLE], rxConfig()->mincheck, PWM_RANGE_MAX);
-    throttleValue = (uint32_t)(throttleValue - rxConfig()->mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - rxConfig()->mincheck);       // [MINCHECK;2000] -> [0;1000]
-    rcCommand[THROTTLE] = rcLookupThrottle(throttleValue);
+        //Compute THROTTLE command
+        throttleValue = constrain(rcData[THROTTLE], rxConfig()->mincheck, PWM_RANGE_MAX);
+        throttleValue = (uint32_t)(throttleValue - rxConfig()->mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - rxConfig()->mincheck);       // [MINCHECK;2000] -> [0;1000]
+        rcCommand[THROTTLE] = rcLookupThrottle(throttleValue);
 
-    if (FLIGHT_MODE(HEADFREE_MODE)) {
-        const float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
-        const float cosDiff = cos_approx(radDiff);
-        const float sinDiff = sin_approx(radDiff);
-        const int16_t rcCommand_PITCH = rcCommand[PITCH] * cosDiff + rcCommand[ROLL] * sinDiff;
-        rcCommand[ROLL] = rcCommand[ROLL] * cosDiff - rcCommand[PITCH] * sinDiff;
-        rcCommand[PITCH] = rcCommand_PITCH;
+        if (FLIGHT_MODE(HEADFREE_MODE)) {
+            const float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
+            const float cosDiff = cos_approx(radDiff);
+            const float sinDiff = sin_approx(radDiff);
+            const int16_t rcCommand_PITCH = rcCommand[PITCH] * cosDiff + rcCommand[ROLL] * sinDiff;
+            rcCommand[ROLL] = rcCommand[ROLL] * cosDiff - rcCommand[PITCH] * sinDiff;
+            rcCommand[PITCH] = rcCommand_PITCH;
+        }
     }
 
     if (ARMING_FLAG(ARMED)) {

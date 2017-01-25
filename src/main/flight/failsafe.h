@@ -37,6 +37,10 @@ typedef struct failsafeConfig_s {
     uint8_t failsafe_off_delay;             // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example (200)
     uint8_t failsafe_kill_switch;           // failsafe switch action is 0: identical to rc link loss, 1: disarms instantly
     uint8_t failsafe_procedure;             // selected full failsafe procedure is 0: auto-landing, 1: Drop it, 2: Return To Home (RTH)
+
+    int16_t failsafe_fw_roll_angle;         // Settings to be applies during "LAND" procedure on a fixed-wing
+    int16_t failsafe_fw_pitch_angle;
+    int16_t failsafe_fw_yaw_rate;
 } failsafeConfig_t;
 
 PG_DECLARE(failsafeConfig_t, failsafeConfig);
@@ -77,6 +81,7 @@ typedef struct failsafeState_s {
     int16_t events;
     bool monitoring;
     bool active;
+    bool shouldApplyControlInput;
     timeMs_t rxDataFailurePeriod;
     timeMs_t rxDataRecoveryPeriod;
     timeMs_t validRxDataReceivedAt;
@@ -102,6 +107,7 @@ bool failsafeIsReceivingRxData(void);
 void failsafeOnRxSuspend(uint32_t suspendPeriod);
 void failsafeOnRxResume(void);
 bool failsafeMayRequireNavigationMode(void);
+void failsafeApplyControlInput(void);
 
 void failsafeOnValidDataReceived(void);
 void failsafeOnValidDataFailed(void);
