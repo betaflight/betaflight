@@ -101,10 +101,10 @@ static inline uint8_t __basepriSetRetVal(uint8_t prio)
 // this macro uses local function for cleanup. CLang block can be substituded
 #define ATOMIC_BARRIER(data)                                            \
     __extension__ void  __UNIQL(__barrierEnd)(typeof(data) **__d) {     \
-        __asm__ volatile ("\t# barier(" #data ")  end\n" : : "m" (**__d));                          \
+        __asm__ volatile ("\t# barrier(" #data ")  end\n" : : "m" (**__d));                          \
     }                                                                   \
     typeof(data)  __attribute__((__cleanup__(__UNIQL(__barrierEnd)))) *__UNIQL(__barrier) = &data; \
-    __asm__ volatile ("\t# barier (" #data ") start\n" : "+m" (*__UNIQL(__barrier)))
+    __asm__ volatile ("\t# barrier (" #data ") start\n" : "+m" (*__UNIQL(__barrier)))
 
 
 // define these wrappers for atomic operations, use gcc buildins
