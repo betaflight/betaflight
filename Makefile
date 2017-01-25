@@ -707,26 +707,20 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/serial.c \
             drivers/serial_uart.c \
             drivers/sound_beeper.c \
-            drivers/stack_check.c \
             drivers/system.c \
             drivers/timer.c \
+            fc/fc_core.c \
             fc/fc_tasks.c \
             fc/mw.c \
             fc/rc_controls.c \
-            fc/rc_curves.c \
             fc/runtime_config.c \
-            flight/altitudehold.c \
-            flight/failsafe.c \
             flight/imu.c \
             flight/mixer.c \
             flight/pid.c \
             flight/servos.c \
-            io/beeper.c \
             io/serial.c \
-            io/statusindicator.c \
             rx/ibus.c \
             rx/jetiexbus.c \
-            rx/msp.c \
             rx/nrf24_cx10.c \
             rx/nrf24_inav.c \
             rx/nrf24_h8_3d.c \
@@ -747,25 +741,12 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             sensors/gyro.c \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC) \
-            blackbox/blackbox.c \
-            blackbox/blackbox_io.c \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
             drivers/serial_softserial.c \
             io/dashboard.c \
             io/displayport_max7456.c \
-            io/displayport_msp.c \
-            io/displayport_oled.c \
-            io/ledstrip.c \
             io/osd.c \
-            telemetry/telemetry.c \
-            telemetry/crsf.c \
-            telemetry/frsky.c \
-            telemetry/hott.c \
-            telemetry/smartport.c \
-            telemetry/ltm.c \
-            telemetry/mavlink.c \
-            telemetry/esc_telemetry.c \
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/serial_escserial.c \
