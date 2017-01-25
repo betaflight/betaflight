@@ -113,6 +113,7 @@ typedef struct navConfig_s {
         uint16_t emerg_descent_rate;            // emergency landing descent rate
         uint16_t rth_altitude;                  // altitude to maintain when RTH is active (depends on rth_alt_control_mode) (cm)
         uint16_t min_rth_distance;              // 0 Disables. Minimal distance for RTL in cm, otherwise it will just autoland
+        uint16_t rth_abort_threshold;           // Initiate emergency landing if during RTH we get this much [cm] away from home
     } general;
 
     struct {
