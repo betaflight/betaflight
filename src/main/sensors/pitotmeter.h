@@ -48,9 +48,9 @@ typedef struct pito_s {
 extern pitot_t pitot;
 
 bool pitotInit(void);
-bool isPitotCalibrationComplete(void);
+bool pitotIsCalibrationComplete(void);
 void pitotSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 uint32_t pitotUpdate(void);
-bool isPitotReady(void);
+bool pitotIsReady(void);
 int32_t pitotCalculateAirSpeed(void);
-bool isPitotmeterHealthy(void);
+bool pitotIsHealthy(void);

@@ -420,8 +420,8 @@ static void activateConfig(void)
 
     failsafeReset();
 
-    setAccelerationCalibrationValues();
-    setAccelerationFilter();
+    accSetCalibrationValues();
+    accInitFilters();
 
     imuConfigure();
 

@@ -3275,6 +3275,13 @@ static void cliSet(char *cmdline)
     }
 }
 
+static const char * getBatteryStateString(void)
+{
+    static const char * const batteryStateStrings[] = {"OK", "WARNING", "CRITICAL", "NOT PRESENT"};
+
+    return batteryStateStrings[getBatteryState()];
+}
+
 static void cliStatus(char *cmdline)
 {
     UNUSED(cmdline);

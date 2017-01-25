@@ -56,11 +56,11 @@ typedef struct accelerometerConfig_s {
 PG_DECLARE(accelerometerConfig_t, accelerometerConfig);
 
 bool accInit(uint32_t accTargetLooptime);
-bool isAccelerationCalibrationComplete(void);
+bool accIsCalibrationComplete(void);
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
-void updateAccelerationReadings(void);
-void setAccelerationCalibrationValues(void);
-void setAccelerationFilter(void);
-bool isAccelerometerHealthy(void);
-bool getAccelerometerCalibrationAxisStatus(int axis);
-uint8_t getAccelerometerCalibrationAxisFlags(void);
+void accUpdate(void);
+void accSetCalibrationValues(void);
+void accInitFilters(void);
+bool accIsHealthy(void);
+bool accGetCalibrationAxisStatus(int axis);
+uint8_t accGetCalibrationAxisFlags(void);

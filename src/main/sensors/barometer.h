@@ -47,9 +47,9 @@ typedef struct baro_s {
 extern baro_t baro;
 
 bool baroInit(void);
-bool isBaroCalibrationComplete(void);
+bool baroIsCalibrationComplete(void);
 void baroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 uint32_t baroUpdate(void);
-bool isBaroReady(void);
+bool baroIsReady(void);
 int32_t baroCalculateAltitude(void);
-bool isBarometerHealthy(void);
+bool baroIsHealthy(void);

@@ -610,12 +610,12 @@ void imuUpdateAccelerometer(void)
 {
 #ifdef HIL
     if (sensors(SENSOR_ACC) && !hilActive) {
-        updateAccelerationReadings();
+        accUpdate();
         isAccelUpdatedAtLeastOnce = true;
     }
 #else
     if (sensors(SENSOR_ACC)) {
-        updateAccelerationReadings();
+        accUpdate();
         isAccelUpdatedAtLeastOnce = true;
     }
 #endif
