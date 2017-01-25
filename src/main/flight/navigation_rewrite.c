@@ -86,7 +86,7 @@ PG_RESET_TEMPLATE(navConfig_t, navConfig,
         .emerg_descent_rate = 500,    // 5 m/s
         .min_rth_distance = 500,      // If closer than 5m - land immediately
         .rth_altitude = 1000,         // 10m
-        .rth_abort_threshold = 15000, // 150m
+        .rth_abort_threshold = 50000, // 500m - should be safe for all aircraft
     },
 
     // MC-specific
