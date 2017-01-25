@@ -27,18 +27,24 @@ extern uint8_t __config_start;   // configured via linker script when building b
 extern uint8_t __config_end;
 
 #if !defined(FLASH_PAGE_SIZE)
+// F1
 # if defined(STM32F10X_MD)
 #  define FLASH_PAGE_SIZE                 (0x400)
 # elif defined(STM32F10X_HD)
 #  define FLASH_PAGE_SIZE                 (0x800)
+// F3
 # elif defined(STM32F303xC)
 #  define FLASH_PAGE_SIZE                 (0x800)
+// F4
 # elif defined(STM32F40_41xxx)
 #  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
 # elif defined (STM32F411xE)
 #  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
 # elif defined(STM32F427_437xx)
 #  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000) // 128K sectors
+// F7
+#elif defined(STM32F722xx)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
 # elif defined(STM32F745xx)
 #  define FLASH_PAGE_SIZE                 ((uint32_t)0x40000)
 # elif defined(STM32F746xx)
