@@ -688,7 +688,6 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             common/filter.c \
             common/maths.c \
             common/typeconversion.c \
-            drivers/adc.c \
             drivers/buf_writer.c \
             drivers/bus_i2c_soft.c \
             drivers/bus_spi.c \
@@ -701,7 +700,6 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/rx_nrf24l01.c \
             drivers/rx_spi.c \
             drivers/rx_xn297.c \
-            drivers/pwm_output.c \
             drivers/rcc.c \
             drivers/rx_pwm.c \
             drivers/serial.c \
@@ -718,10 +716,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             flight/altitudehold.c \
             flight/failsafe.c \
             flight/imu.c \
-            flight/mixer.c \
             flight/pid.c \
-            flight/servos.c \
-            io/beeper.c \
             io/serial.c \
             io/statusindicator.c \
             rx/ibus.c \
@@ -756,7 +751,6 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             io/displayport_max7456.c \
             io/displayport_msp.c \
             io/displayport_oled.c \
-            io/ledstrip.c \
             io/osd.c \
             telemetry/telemetry.c \
             telemetry/crsf.c \
@@ -768,9 +762,19 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             telemetry/esc_telemetry.c \
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
+            drivers/adc.c \
+            drivers/dma.c \
+            drivers/pwm_output.c \
             drivers/serial_escserial.c \
+            drivers/serial_uart_stm32f30x.c \
             drivers/vtx_common.c \
+            fc/fc_init.c \
+            fc/config.c \
+            flight/servos.c \
+            flight/mixer.c \
+            io/beeper.c \
             io/cli.c \
+            io/ledstrip.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \

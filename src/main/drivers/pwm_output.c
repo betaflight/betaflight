@@ -25,6 +25,10 @@
 #include "timer.h"
 #include "pwm_output.h"
 
+// Experiment on Ofast with function attribute
+#define _OPTSPEED_ __attribute__((optimize("-Ofast")))
+//#define _OPTSPEED_
+
 #define MULTISHOT_5US_PW    (MULTISHOT_TIMER_MHZ * 5)
 #define MULTISHOT_20US_MULT (MULTISHOT_TIMER_MHZ * 20 / 1000.0f)
 
@@ -107,32 +111,32 @@ static void pwmOutConfig(pwmOutputPort_t *port, const timerHardware_t *timerHard
     *port->ccr = 0;
 }
 
-static void pwmWriteBrushed(uint8_t index, uint16_t value)
+static void _OPTSPEED_ pwmWriteBrushed(uint8_t index, uint16_t value)
 {
     *motors[index].ccr = (value - 1000) * motors[index].period / 1000;
 }
 
-static void pwmWriteStandard(uint8_t index, uint16_t value)
+static void _OPTSPEED_ pwmWriteStandard(uint8_t index, uint16_t value)
 {
     *motors[index].ccr = value;
 }
 
-static void pwmWriteOneShot125(uint8_t index, uint16_t value)
+static void _OPTSPEED_ pwmWriteOneShot125(uint8_t index, uint16_t value)
 {
     *motors[index].ccr = lrintf((float)(value * ONESHOT125_TIMER_MHZ/8.0f));
 }
 
-static void pwmWriteOneShot42(uint8_t index, uint16_t value)
+static void _OPTSPEED_ pwmWriteOneShot42(uint8_t index, uint16_t value)
 {
     *motors[index].ccr = lrintf((float)(value * ONESHOT42_TIMER_MHZ/24.0f));
 }
 
-static void pwmWriteMultiShot(uint8_t index, uint16_t value)
+static void _OPTSPEED_ pwmWriteMultiShot(uint8_t index, uint16_t value)
 {
     *motors[index].ccr = lrintf(((float)(value-1000) * MULTISHOT_20US_MULT) + MULTISHOT_5US_PW);
 }
 
-void pwmWriteMotor(uint8_t index, uint16_t value)
+void _OPTSPEED_ pwmWriteMotor(uint8_t index, uint16_t value)
 {
     pwmWritePtr(index, value);
 }
@@ -163,7 +167,7 @@ bool pwmAreMotorsEnabled(void)
     return pwmMotorsEnabled;
 }
 
-static void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
+static void _OPTSPEED_ pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
 {
     for (int index = 0; index < motorCount; index++) {
         bool overflowed = false;
@@ -183,7 +187,7 @@ static void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
     }
 }
 
-void pwmCompleteMotorUpdate(uint8_t motorCount)
+void _OPTSPEED_ pwmCompleteMotorUpdate(uint8_t motorCount)
 {
     if (pwmCompleteWritePtr) {
         pwmCompleteWritePtr(motorCount);
