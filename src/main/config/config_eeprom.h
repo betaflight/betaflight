@@ -17,8 +17,12 @@
 
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
+
 #define EEPROM_CONF_VERSION 154
 
 bool isEEPROMContentValid(void);
 bool loadEEPROM(void);
 void writeConfigToEEPROM(void);
+uint16_t getEEPROMConfigSize(void);
