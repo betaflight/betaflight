@@ -103,7 +103,7 @@ void taskUpdateBattery(timeUs_t currentTimeUs)
         if (cmpTimeUs(currentTimeUs, vbatLastServiced) >= VBATINTERVAL) {
             timeUs_t vbatTimeDelta = currentTimeUs - vbatLastServiced;
             vbatLastServiced = currentTimeUs;
-            updateBattery(vbatTimeDelta);
+            batteryUpdate(vbatTimeDelta);
         }
     }
 
@@ -112,7 +112,7 @@ void taskUpdateBattery(timeUs_t currentTimeUs)
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
             ibatLastServiced = currentTimeUs;
-            updateCurrentMeter(ibatTimeSinceLastServiced, flight3DConfig()->deadband3d_throttle);
+            currentMeterUpdate(ibatTimeSinceLastServiced, flight3DConfig()->deadband3d_throttle);
         }
     }
 }

@@ -419,7 +419,7 @@ static void updateBaroTopic(timeUs_t currentTimeUs)
             initialBaroAltitudeOffset = newBaroAlt;
         }
 
-        if (sensors(SENSOR_BARO) && isBaroCalibrationComplete()) {
+        if (sensors(SENSOR_BARO) && baroIsCalibrationComplete()) {
             posEstimator.baro.alt = newBaroAlt - initialBaroAltitudeOffset;
             posEstimator.baro.epv = positionEstimationConfig()->baro_epv;
             posEstimator.baro.lastUpdateTime = currentTimeUs;
@@ -443,7 +443,7 @@ static void updatePitotTopic(timeUs_t currentTimeUs)
 
     if (updateTimer(&pitotUpdateTimer, HZ2US(INAV_PITOT_UPDATE_RATE), currentTimeUs)) {
         float newTAS = pitotCalculateAirSpeed();
-        if (sensors(SENSOR_PITOT) && isPitotCalibrationComplete()) {
+        if (sensors(SENSOR_PITOT) && pitotIsCalibrationComplete()) {
             posEstimator.pitot.airspeed = newTAS;
         }
         else {

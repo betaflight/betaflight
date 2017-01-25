@@ -264,7 +264,7 @@ bool accInit(uint32_t targetLooptime)
     acc.dev.acc_1G = 256; // set default
     acc.dev.init(&acc.dev);
     acc.accTargetLooptime = targetLooptime;
-    setAccelerationFilter();
+    accInitFilters();
     if (accelerometerConfig()->acc_align != ALIGN_DEFAULT) {
         acc.dev.accAlign = accelerometerConfig()->acc_align;
     }
@@ -276,17 +276,17 @@ void accSetCalibrationCycles(uint16_t calibrationCyclesRequired)
     calibratingA = calibrationCyclesRequired;
 }
 
-bool isAccelerationCalibrationComplete(void)
+bool accIsCalibrationComplete(void)
 {
     return calibratingA == 0;
 }
 
-bool isOnFinalAccelerationCalibrationCycle(void)
+static bool isOnFinalAccelerationCalibrationCycle(void)
 {
     return calibratingA == 1;
 }
 
-bool isOnFirstAccelerationCalibrationCycle(void)
+static bool isOnFirstAccelerationCalibrationCycle(void)
 {
     return calibratingA == CALIBRATING_ACC_CYCLES;
 }
@@ -296,9 +296,9 @@ static bool calibratedAxis[6];
 static int32_t accSamples[6][3];
 static int  calibratedAxisCount = 0;
 
-bool getAccelerometerCalibrationAxisStatus(int axis)
+bool accGetCalibrationAxisStatus(int axis)
 {
-    if (isAccelerationCalibrationComplete()) {
+    if (accIsCalibrationComplete()) {
         if (STATE(ACCELEROMETER_CALIBRATED)) {
             return true;    // if calibration is valid - all axis are calibrated
         }
@@ -311,11 +311,11 @@ bool getAccelerometerCalibrationAxisStatus(int axis)
     }
 }
 
-uint8_t getAccelerometerCalibrationAxisFlags(void)
+uint8_t accGetCalibrationAxisFlags(void)
 {
     uint8_t flags = 0;
     for (int i = 0; i < 6; i++) {
-        if (getAccelerometerCalibrationAxisStatus(0)) {
+        if (accGetCalibrationAxisStatus(0)) {
             flags |= (1 << i);
         }
     }
@@ -342,7 +342,7 @@ int getPrimaryAxisIndex(int32_t sample[3])
         return -1;
 }
 
-void performAcclerationCalibration(void)
+static void performAcclerationCalibration(void)
 {
     int axisIndex = getPrimaryAxisIndex(acc.accADC);
 
@@ -420,7 +420,7 @@ static void applyAccelerationZero(const flightDynamicsTrims_t * accZero, const f
     acc.accADC[Z] = (acc.accADC[Z] - accZero->raw[Z]) * accGain->raw[Z] / 4096;
 }
 
-void updateAccelerationReadings(void)
+void accUpdate(void)
 {
     if (!acc.dev.read(&acc.dev)) {
         return;
@@ -436,7 +436,7 @@ void updateAccelerationReadings(void)
         }
     }
 
-    if (!isAccelerationCalibrationComplete()) {
+    if (!accIsCalibrationComplete()) {
         performAcclerationCalibration();
     }
 
@@ -445,7 +445,7 @@ void updateAccelerationReadings(void)
     alignSensors(acc.accADC, acc.dev.accAlign);
 }
 
-void setAccelerationCalibrationValues(void)
+void accSetCalibrationValues(void)
 {
     if ((accelerometerConfig()->accZero.raw[X] == 0) && (accelerometerConfig()->accZero.raw[Y] == 0) && (accelerometerConfig()->accZero.raw[Z] == 0) &&
         (accelerometerConfig()->accGain.raw[X] == 4096) && (accelerometerConfig()->accGain.raw[Y] == 4096) &&(accelerometerConfig()->accGain.raw[Z] == 4096)) {
@@ -456,7 +456,7 @@ void setAccelerationCalibrationValues(void)
     }
 }
 
-void setAccelerationFilter(void)
+void accInitFilters(void)
 {
     if (acc.accTargetLooptime && accelerometerConfig()->acc_lpf_hz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -465,7 +465,7 @@ void setAccelerationFilter(void)
     }
 }
 
-bool isAccelerometerHealthy(void)
+bool accIsHealthy(void)
 {
     return true;
 }
