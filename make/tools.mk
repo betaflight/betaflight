@@ -14,16 +14,16 @@
 ##############################
 
 # Set up ARM (STM32) SDK
-ARM_SDK_DIR := $(TOOLS_DIR)/gcc-arm-none-eabi-5_4-2016q3
+ARM_SDK_DIR := $(TOOLS_DIR)/gcc-arm-none-eabi-6_2-2016q4
 # Checked below, Should match the output of $(shell arm-none-eabi-gcc -dumpversion)
-GCC_REQUIRED_VERSION ?= 5.4.1
+GCC_REQUIRED_VERSION ?= 6.2.1
 
 ## arm_sdk_install   : Install Arm SDK
 .PHONY: arm_sdk_install
 
-ARM_SDK_URL_BASE  := https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q3-update/+download/gcc-arm-none-eabi-5_4-2016q3-20160926
+ARM_SDK_URL_BASE  := https://developer.arm.com/-/media/Files/downloads/gnu-rm/6-2016q4/gcc-arm-none-eabi-6_2-2016q4-20161216
 
-# source: https://launchpad.net/gcc-arm-embedded/5.0/
+# source: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads
 ifdef LINUX
   ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-linux.tar.bz2
 endif
@@ -33,7 +33,7 @@ ifdef MACOSX
 endif
 
 ifdef WINDOWS
-  ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-win32.zip
+  ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-win32-zip.zip
 endif
 
 ARM_SDK_FILE := $(notdir $(ARM_SDK_URL))
