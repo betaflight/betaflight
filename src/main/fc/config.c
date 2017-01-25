@@ -134,7 +134,7 @@ uint32_t getPidUpdateRate(void)
         return gyroConfig()->looptime;
     }
 #else
-    gyro.targetLooptime;
+    return gyro.targetLooptime;
 #endif
 }
 
@@ -153,7 +153,7 @@ uint16_t getAccUpdateRate(void)
     }
 #else
     // ACC updated at same frequency in taskMainPidLoop in mw.c
-    gyro.targetLooptime;
+    return gyro.targetLooptime;
 #endif
 }
 
