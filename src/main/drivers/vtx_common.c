@@ -53,10 +53,10 @@ void vtxCommonProcess(uint32_t currentTimeUs)
 
 vtxDevType_e vtxCommonGetDeviceType(void)
 {
-    if (!vtxDevice)
+    if (!vtxDevice || !vtxDevice->vTable->getDeviceType)
         return VTXDEV_UNKNOWN;
 
-    return vtxDevice->devtype;
+    return vtxDevice->vTable->getDeviceType();
 }
 
 // band and chan are 1 origin
@@ -65,6 +65,9 @@ void vtxCommonSetBandChan(uint8_t band, uint8_t chan)
     if (!vtxDevice)
         return;
 
+    if ((band > vtxDevice->numBand)|| (chan > vtxDevice->numChan))
+        return;
+    
     if (vtxDevice->vTable->setBandChan)
         vtxDevice->vTable->setBandChan(band, chan);
 }
@@ -75,6 +78,9 @@ void vtxCommonSetPowerByIndex(uint8_t index)
     if (!vtxDevice)
         return;
 
+    if (index > vtxDevice->numPower)
+        return;
+    
     if (vtxDevice->vTable->setPowerByIndex)
         vtxDevice->vTable->setPowerByIndex(index);
 }
