@@ -186,35 +186,33 @@ typedef enum {
 
     NAV_STATE_RTH_2D_INITIALIZE,                // 9
     NAV_STATE_RTH_2D_HEAD_HOME,                 // 10
-    NAV_STATE_RTH_2D_GPS_FAILING,               // 11
-    NAV_STATE_RTH_2D_FINISHING,                 // 12
-    NAV_STATE_RTH_2D_FINISHED,                  // 13
+    NAV_STATE_RTH_2D_FINISHING,                 // 11
+    NAV_STATE_RTH_2D_FINISHED,                  // 12
 
-    NAV_STATE_RTH_3D_INITIALIZE,                // 14
-    NAV_STATE_RTH_3D_CLIMB_TO_SAFE_ALT,         // 15
-    NAV_STATE_RTH_3D_HEAD_HOME,                 // 16
-    NAV_STATE_RTH_3D_GPS_FAILING,               // 17
-    NAV_STATE_RTH_3D_HOVER_PRIOR_TO_LANDING,    // 18
-    NAV_STATE_RTH_3D_LANDING,                   // 19
-    NAV_STATE_RTH_3D_FINISHING,                 // 20
-    NAV_STATE_RTH_3D_FINISHED,                  // 21
+    NAV_STATE_RTH_3D_INITIALIZE,                // 13
+    NAV_STATE_RTH_3D_CLIMB_TO_SAFE_ALT,         // 14
+    NAV_STATE_RTH_3D_HEAD_HOME,                 // 15
+    NAV_STATE_RTH_3D_HOVER_PRIOR_TO_LANDING,    // 16
+    NAV_STATE_RTH_3D_LANDING,                   // 17
+    NAV_STATE_RTH_3D_FINISHING,                 // 18
+    NAV_STATE_RTH_3D_FINISHED,                  // 19
 
-    NAV_STATE_WAYPOINT_INITIALIZE,              // 22
-    NAV_STATE_WAYPOINT_PRE_ACTION,              // 23
-    NAV_STATE_WAYPOINT_IN_PROGRESS,             // 24
-    NAV_STATE_WAYPOINT_REACHED,                 // 25
-    NAV_STATE_WAYPOINT_NEXT,                    // 26
-    NAV_STATE_WAYPOINT_FINISHED,                // 27
-    NAV_STATE_WAYPOINT_RTH_LAND,                // 28
+    NAV_STATE_WAYPOINT_INITIALIZE,              // 20
+    NAV_STATE_WAYPOINT_PRE_ACTION,              // 21
+    NAV_STATE_WAYPOINT_IN_PROGRESS,             // 22
+    NAV_STATE_WAYPOINT_REACHED,                 // 23
+    NAV_STATE_WAYPOINT_NEXT,                    // 24
+    NAV_STATE_WAYPOINT_FINISHED,                // 25
+    NAV_STATE_WAYPOINT_RTH_LAND,                // 26
 
-    NAV_STATE_EMERGENCY_LANDING_INITIALIZE,     // 29
-    NAV_STATE_EMERGENCY_LANDING_IN_PROGRESS,    // 30
-    NAV_STATE_EMERGENCY_LANDING_FINISHED,       // 31
+    NAV_STATE_EMERGENCY_LANDING_INITIALIZE,     // 27
+    NAV_STATE_EMERGENCY_LANDING_IN_PROGRESS,    // 28
+    NAV_STATE_EMERGENCY_LANDING_FINISHED,       // 29
 
-    NAV_STATE_LAUNCH_INITIALIZE,                // 32
-    NAV_STATE_LAUNCH_WAIT,                      // 33
-    NAV_STATE_LAUNCH_MOTOR_DELAY,               // 34
-    NAV_STATE_LAUNCH_IN_PROGRESS,               // 35
+    NAV_STATE_LAUNCH_INITIALIZE,                // 30
+    NAV_STATE_LAUNCH_WAIT,                      // 31
+    NAV_STATE_LAUNCH_MOTOR_DELAY,               // 32
+    NAV_STATE_LAUNCH_IN_PROGRESS,               // 33
 
     NAV_STATE_COUNT,
 } navigationFSMState_t;
@@ -254,6 +252,12 @@ typedef struct {
 } navigationFSMStateDescriptor_t;
 
 typedef struct {
+    timeMs_t        lastCheckTime;
+    t_fp_vector     initialPosition;
+    float           minimalDistanceToHome;
+} rthSanityChecker_t;
+
+typedef struct {
     /* Flags and navigation system state */
     navigationFSMState_t        navState;
 
@@ -275,6 +279,7 @@ typedef struct {
     gpsOrigin_s                 gpsOrigin;
 
     /* Home parameters (NEU coordinated), geodetic position of home (LLH) is stores in GPS_home variable */
+    rthSanityChecker_t          rthSanityChecker;
     navWaypointPosition_t       homePosition;       // Special waypoint, stores original yaw (heading when launched)
     navWaypointPosition_t       homeWaypointAbove;  // NEU-coordinates and initial bearing + desired RTH altitude
 
