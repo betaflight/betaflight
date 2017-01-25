@@ -267,7 +267,7 @@ void fcTasksInit(void)
     }
 
 #else
-    rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
+    rescheduleTask(TASK_GYROPID, getGyroUpdateRate());
     setTaskEnabled(TASK_GYROPID, true);
 #endif
 
