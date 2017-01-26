@@ -38,9 +38,6 @@ void serialInitHardwareMap(serialPinConfig_t *pSerialPinConfig)
 
 static void handleUsartTxDma(uartPort_t *s);
 
-#define UART_RX_BUFFER_SIZE UART1_RX_BUFFER_SIZE
-#define UART_TX_BUFFER_SIZE UART1_TX_BUFFER_SIZE
-
 typedef enum UARTDevice {
     UARTDEV_1 = 0,
     UARTDEV_2 = 1,
