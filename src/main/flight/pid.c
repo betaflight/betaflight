@@ -240,8 +240,9 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
         // -----calculate I component
         float ITerm = previousGyroIf[axis];
-        if (motorMixRange < 1.0f) {
-            // Only increase ITerm if motor output is not saturated
+        const float ITermNoiseThresholdDps = 0.5;
+        if (motorMixRange < 1.0f && (errorRate > ITermNoiseThresholdDps || errorRate < -ITermNoiseThresholdDps)) {
+            // Only increase ITerm if motor output is not saturated and errorRate exceeds noise threshold
             // Reduce strong Iterm accumulation during higher stick inputs
             const float accumulationThreshold = (axis == FD_YAW) ? pidProfile->yawItermIgnoreRate : pidProfile->rollPitchItermIgnoreRate;
             const float setpointRateScaler = constrainf(1.0f - (ABS(currentPidSetpoint) / accumulationThreshold), 0.0f, 1.0f);
