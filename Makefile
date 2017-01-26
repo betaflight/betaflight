@@ -332,9 +332,71 @@ else ifeq ($(TARGET),$(filter $(TARGET), $(F7_TARGETS)))
 #STDPERIPH
 STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F7xx_HAL_Driver
 STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/Src/*.c))
-EXCLUDES        = stm32f7xx_hal_timebase_rtc_wakeup_template.c \
+EXCLUDES        = stm32f7xx_hal_can.c \
+                  stm32f7xx_hal_cec.c \
+                  stm32f7xx_hal_crc.c \
+                  stm32f7xx_hal_crc_ex.c \
+                  stm32f7xx_hal_cryp.c \
+                  stm32f7xx_hal_cryp_ex.c \
+                  stm32f7xx_hal_dac.c \
+                  stm32f7xx_hal_dac_ex.c \
+                  stm32f7xx_hal_dcmi.c \
+                  stm32f7xx_hal_dcmi_ex.c \
+                  stm32f7xx_hal_dfsdm.c \
+                  stm32f7xx_hal_dma2d.c \
+                  stm32f7xx_hal_dsi.c \
+                  stm32f7xx_hal_eth.c \
+                  stm32f7xx_hal_hash.c \
+                  stm32f7xx_hal_hash_ex.c \
+                  stm32f7xx_hal_hcd.c \
+                  stm32f7xx_hal_i2s.c \
+                  stm32f7xx_hal_irda.c \
+                  stm32f7xx_hal_iwdg.c \
+                  stm32f7xx_hal_jpeg.c \
+                  stm32f7xx_hal_lptim.c \
+                  stm32f7xx_hal_ltdc.c \
+                  stm32f7xx_hal_ltdc_ex.c \
+                  stm32f7xx_hal_mdios.c \
+                  stm32f7xx_hal_mmc.c \
+                  stm32f7xx_hal_msp_template.c \
+                  stm32f7xx_hal_nand.c \
+                  stm32f7xx_hal_nor.c \
+                  stm32f7xx_hal_qspi.c \
+                  stm32f7xx_hal_rng.c \
+                  stm32f7xx_hal_rtc.c \
+                  stm32f7xx_hal_rtc_ex.c \
+                  stm32f7xx_hal_sai.c \
+                  stm32f7xx_hal_sai_ex.c \
+                  stm32f7xx_hal_sd.c \
+                  stm32f7xx_hal_sdram.c \
+                  stm32f7xx_hal_smartcard.c \
+                  stm32f7xx_hal_smartcard_ex.c \
+                  stm32f7xx_hal_smbus.c \
+                  stm32f7xx_hal_spdifrx.c \
+                  stm32f7xx_hal_sram.c \
                   stm32f7xx_hal_timebase_rtc_alarm_template.c \
-                  stm32f7xx_hal_timebase_tim_template.c
+                  stm32f7xx_hal_timebase_rtc_wakeup_template.c \
+                  stm32f7xx_hal_timebase_tim_template.c \
+                  stm32f7xx_hal_wwdg.c \
+                  stm32f7xx_ll_adc.c \
+                  stm32f7xx_ll_crc.c \
+                  stm32f7xx_ll_dac.c \
+                  stm32f7xx_ll_dma.c \
+                  stm32f7xx_ll_dma2d.c \
+                  stm32f7xx_ll_exti.c \
+                  stm32f7xx_ll_fmc.c \
+                  stm32f7xx_ll_gpio.c \
+                  stm32f7xx_ll_i2c.c \
+                  stm32f7xx_ll_lptim.c \
+                  stm32f7xx_ll_pwr.c \
+                  stm32f7xx_ll_rcc.c \
+                  stm32f7xx_ll_rng.c \
+                  stm32f7xx_ll_rtc.c \
+                  stm32f7xx_ll_sdmmc.c \
+                  stm32f7xx_ll_spi.c \
+                  stm32f7xx_ll_tim.c \
+                  stm32f7xx_ll_usart.c \
+                  stm32f7xx_ll_utils.c
 
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 
@@ -499,6 +561,7 @@ COMMON_SRC = \
             config/config_eeprom.c \
             config/feature.c \
             config/parameter_group.c \
+            config/config_streamer.c \
             drivers/adc.c \
             drivers/buf_writer.c \
             drivers/bus_i2c_soft.c \
@@ -645,26 +708,20 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/serial.c \
             drivers/serial_uart.c \
             drivers/sound_beeper.c \
-            drivers/stack_check.c \
             drivers/system.c \
             drivers/timer.c \
+            fc/fc_core.c \
             fc/fc_tasks.c \
             fc/mw.c \
             fc/rc_controls.c \
-            fc/rc_curves.c \
             fc/runtime_config.c \
-            flight/altitudehold.c \
-            flight/failsafe.c \
             flight/imu.c \
             flight/mixer.c \
             flight/pid.c \
             flight/servos.c \
-            io/beeper.c \
             io/serial.c \
-            io/statusindicator.c \
             rx/ibus.c \
             rx/jetiexbus.c \
-            rx/msp.c \
             rx/nrf24_cx10.c \
             rx/nrf24_inav.c \
             rx/nrf24_h8_3d.c \
@@ -685,25 +742,12 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             sensors/gyro.c \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC) \
-            blackbox/blackbox.c \
-            blackbox/blackbox_io.c \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
             drivers/serial_softserial.c \
             io/dashboard.c \
             io/displayport_max7456.c \
-            io/displayport_msp.c \
-            io/displayport_oled.c \
-            io/ledstrip.c \
             io/osd.c \
-            telemetry/telemetry.c \
-            telemetry/crsf.c \
-            telemetry/frsky.c \
-            telemetry/hott.c \
-            telemetry/smartport.c \
-            telemetry/ltm.c \
-            telemetry/mavlink.c \
-            telemetry/esc_telemetry.c \
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/serial_escserial.c \

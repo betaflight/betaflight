@@ -18,17 +18,18 @@
 /* Created by jflyper */
 
 typedef enum {
-    VTXDEV_UNKNOWN    = 0,
+    VTXDEV_UNSUPPORTED = 0, // reserved for MSP
+    // 1 reserved
+    // 2 reserved
     VTXDEV_SMARTAUDIO = 3,
     VTXDEV_TRAMP      = 4,
+    VTXDEV_UNKNOWN    = 0xFF,
 } vtxDevType_e;
 
 struct vtxVTable_s;
 
 typedef struct vtxDevice_s {
     const struct vtxVTable_s *vTable;
-
-    vtxDevType_e devtype;      // 3.1 only; eventually goes away
 
     uint8_t numBand;
     uint8_t numChan;

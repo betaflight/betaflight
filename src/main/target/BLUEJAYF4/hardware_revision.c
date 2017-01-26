@@ -50,10 +50,10 @@ void detectHardwareRevision(void)
         IO_t pin2 = IOGetByTag(IO_TAG(PB13));
         IOInit(pin2, OWNER_SYSTEM, 2);
         IOConfigGPIO(pin2, IOCFG_IPU);
-        
+
         if (!IORead(pin2)) {
             hardwareRevision = BJF4_REV4;
-        }        
+        }
     } else {
         IO_t pin2 = IOGetByTag(IO_TAG(PB13));
         IOInit(pin2, OWNER_SYSTEM, 2);

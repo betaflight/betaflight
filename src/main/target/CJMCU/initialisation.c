@@ -32,5 +32,5 @@ void targetBusInit(void)
     if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
         serialRemovePort(SERIAL_PORT_USART3);
         i2cInit(I2C_DEVICE);
-    }		
+    }
 }

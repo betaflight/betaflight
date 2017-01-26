@@ -276,7 +276,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
     case SERIALRX_SRXL:
 #ifdef TELEMETRY
         srxlEnabled = (feature(FEATURE_TELEMETRY) && !portShared && rxConfig->serialrx_provider == SERIALRX_SRXL);
-#endif    
+#endif
     case SERIALRX_SPEKTRUM2048:
         // 11 bit frames
         spek_chan_shift = 3;
@@ -298,11 +298,11 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
     rxRuntimeConfig->rcReadRawFn = spektrumReadRawRC;
     rxRuntimeConfig->rcFrameStatusFn = spektrumFrameStatus;
 
-    serialPort = openSerialPort(portConfig->identifier, 
-        FUNCTION_RX_SERIAL, 
-        spektrumDataReceive, 
-        SPEKTRUM_BAUDRATE, 
-        portShared || srxlEnabled ? MODE_RXTX : MODE_RX, 
+    serialPort = openSerialPort(portConfig->identifier,
+        FUNCTION_RX_SERIAL,
+        spektrumDataReceive,
+        SPEKTRUM_BAUDRATE,
+        portShared || srxlEnabled ? MODE_RXTX : MODE_RX,
         SERIAL_NOT_INVERTED | (srxlEnabled ? SERIAL_BIDIR : 0));
 
 #ifdef TELEMETRY
