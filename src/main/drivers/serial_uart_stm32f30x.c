@@ -317,7 +317,7 @@ void serialUARTInitIO(IO_t tx, IO_t rx, portMode_t mode, portOptions_t options, 
         }
 
         if (mode & MODE_RX) {
-            IOInit(rx, OWNER_SERIAL_RX, RESOUCE_INDEX(device));
+            IOInit(rx, OWNER_SERIAL_RX, RESOURCE_INDEX(device));
             IOConfigGPIOAF(rx, ioCfg, af);
         }
     }
