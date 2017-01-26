@@ -60,6 +60,8 @@ static uint8_t motorCount;
 int16_t motor[MAX_SUPPORTED_MOTORS];
 int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 
+float motorMixRange;
+
 static mixerConfig_t *mixerConfig;
 static flight3DConfig_t *flight3DConfig;
 static motorConfig_t *motorConfig;
@@ -500,7 +502,7 @@ void mixTable(pidProfile_t *pidProfile)
         }
     }
 
-    const float motorMixRange = motorMixMax - motorMixMin;
+    motorMixRange = motorMixMax - motorMixMin;
 
     if (motorMixRange > 1.0f) {
         for (int i = 0; i < motorCount; i++) {

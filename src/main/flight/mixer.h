@@ -113,6 +113,8 @@ typedef struct airplaneConfig_s {
 extern const mixer_t mixers[];
 extern int16_t motor[MAX_SUPPORTED_MOTORS];
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
+extern float motorMixRange;
+
 struct motorConfig_s;
 struct rxConfig_s;
 

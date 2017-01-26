@@ -34,6 +34,7 @@
 
 #include "flight/pid.h"
 #include "flight/imu.h"
+#include "flight/mixer.h"
 #include "flight/navigation.h"
 
 #include "sensors/gyro.h"
@@ -238,15 +239,23 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         }
 
         // -----calculate I component
-        // Reduce strong Iterm accumulation during higher stick inputs
-        const float accumulationThreshold = (axis == FD_YAW) ? pidProfile->yawItermIgnoreRate : pidProfile->rollPitchItermIgnoreRate;
-        const float setpointRateScaler = constrainf(1.0f - (ABS(currentPidSetpoint) / accumulationThreshold), 0.0f, 1.0f);
-
         float ITerm = previousGyroIf[axis];
-        ITerm += Ki[axis] * errorRate * dT * setpointRateScaler * itermAccelerator;
-        // limit maximum integrator value to prevent WindUp
-        ITerm = constrainf(ITerm, -250.0f, 250.0f);
-        previousGyroIf[axis] = ITerm;
+        if (motorMixRange < 1.0f) {
+            // Only increase ITerm if motor output is not saturated
+            // Reduce strong Iterm accumulation during higher stick inputs
+            const float accumulationThreshold = (axis == FD_YAW) ? pidProfile->yawItermIgnoreRate : pidProfile->rollPitchItermIgnoreRate;
+            const float setpointRateScaler = constrainf(1.0f - (ABS(currentPidSetpoint) / accumulationThreshold), 0.0f, 1.0f);
+            float ITermDelta = Ki[axis] * errorRate * dT * setpointRateScaler * itermAccelerator;
+            // gradually scale back integration when above windup point (somewhat arbitrarily set at 75%)
+            const float windupPoint = 0.75f;
+            if (motorMixRange > windupPoint) {
+                ITermDelta *= (1.0f - motorMixRange) / (1.0f - windupPoint);
+            }
+            ITerm += ITermDelta;
+            // also limit maximum integrator value to prevent windup
+            ITerm = constrainf(ITerm, -250.0f, 250.0f);
+            previousGyroIf[axis] = ITerm;
+        }
 
         // -----calculate D component (Yaw D not yet supported)
         float DTerm = 0.0;
