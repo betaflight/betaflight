@@ -69,6 +69,7 @@ typedef struct softSerial_s {
     uint8_t          rxBitIndex;
     uint8_t          rxLastLeadingEdgeAtBitIndex;
     uint8_t          rxEdge;
+    uint8_t          rxActive;
 
     uint8_t          isTransmittingData;
     int8_t           bitsLeftToTransmit;
@@ -112,6 +113,7 @@ void setTxSignal(softSerial_t *softSerial, uint8_t state)
 
 void serialInputPortActivate(softSerial_t *softSerial)
 {
+    softSerial->rxActive = true;
 #ifdef STM32F1
     IOConfigGPIO(softSerial->rxIO, IOCFG_IPU);
 #else
@@ -120,11 +122,20 @@ void serialInputPortActivate(softSerial_t *softSerial)
 
     softSerial->isSearchingForStartBit = true;
     softSerial->rxBitIndex = 0;
+
+debug[2]++;
+
+    timerChConfigCallbacks(softSerial->timerHardware, &softSerial->edgeCb, NULL);
 }
 
 static void serialInputPortDeActivate(softSerial_t *softSerial)
 {
+debug[2]--;
+    // Disable input capture, but keep bit clock running
+    timerChConfigCallbacks(softSerial->timerHardware, NULL, NULL);
+
     IOConfigGPIO(softSerial->rxIO, IOCFG_IN_FLOATING);
+    softSerial->rxActive = false;
 }
 
 static void serialOutputPortActivate(softSerial_t *softSerial)
@@ -226,31 +237,31 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
     softSerial->port.vTable = &softSerialVTable;
     softSerial->port.baudRate = baud;
     softSerial->port.mode = mode;
-    softSerial->port.options = options;
+    //softSerial->port.options = options;
+    softSerial->port.options = options | SERIAL_BIDIR;
     softSerial->port.rxCallback = rxCallback;
 
     resetBuffers(softSerial);
 
     softSerial->softSerialPortIndex = portIndex;
+
     softSerial->transmissionErrors = 0;
     softSerial->receiveErrors = 0;
 
+    softSerial->rxActive = false;
     softSerial->isTransmittingData = false;
 
     if (mode & MODE_TX) {
         IOInit(softSerial->txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(portIndex) + RESOURCE_SOFT_OFFSET);
-        serialOutputPortActivate(softSerial);
-        setTxSignal(softSerial, ENABLE);
     }
 
     if (mode & MODE_RX) {
         IOInit(softSerial->rxIO, OWNER_SERIAL_RX, RESOURCE_INDEX(portIndex) + RESOURCE_SOFT_OFFSET);
-        serialInputPortActivate(softSerial);
     }
 
     delay(50);
 
-    // Configure master timer (on RX)
+    // Configure master timer (on RX); time base and input capture
     serialTimerConfigureTimebase(softSerial->timerHardware, baud);
     serialICConfig(softSerial->timerHardware->tim, softSerial->timerHardware->channel, (options & SERIAL_INVERTED) ? TIM_ICPolarity_Rising : TIM_ICPolarity_Falling);
 
@@ -260,18 +271,24 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 
     softSerial->timerMode = TIMER_MODE_SINGLE;
 
+    // Configure bit clock interrupt & handler.
+    // Receiver input capture is configured when input is activated.
     if ((mode & MODE_TX) && softSerial->exTimerHardware && softSerial->exTimerHardware->tim != softSerial->timerHardware->tim) {
         // Special case of dual timer configuration.
         // Extra timer (on TX) is initialized and configured for overflow interrupt.
         serialTimerConfigureTimebase(softSerial->exTimerHardware, baud);
         timerChConfigCallbacks(softSerial->exTimerHardware, NULL, &softSerial->overCb);
-        // Master timer is configured for edge interrupt.
-        timerChConfigCallbacks(softSerial->timerHardware, &softSerial->edgeCb, NULL);
         softSerial->timerMode = TIMER_MODE_DUAL;
     } else {
-        // Master timer is configured for both overflow and edge interrupt.
-        timerChConfigCallbacks(softSerial->timerHardware, &softSerial->edgeCb, &softSerial->overCb);
+        timerChConfigCallbacks(softSerial->timerHardware, NULL, &softSerial->overCb);
     }
+
+    if (!(options & SERIAL_BIDIR)) {
+        serialOutputPortActivate(softSerial);
+        setTxSignal(softSerial, ENABLE);
+    }
+
+    serialInputPortActivate(softSerial);
 
     return &softSerial->port;
 }
@@ -287,13 +304,18 @@ void processTxState(softSerial_t *softSerial)
     uint8_t mask;
 
     if (!softSerial->isTransmittingData) {
-        char byteToSend;
         if (isSoftSerialTransmitBufferEmpty((serialPort_t *)softSerial)) {
+            // Transmit buffer empty.
+            // Start listening if not already in if half-duplex
+            if (!softSerial->rxActive && softSerial->port.options & SERIAL_BIDIR) {
+                serialOutputPortDeActivate(softSerial);
+                serialInputPortActivate(softSerial);
+            }
             return;
         }
 
         // data to send
-        byteToSend = softSerial->port.txBuffer[softSerial->port.txBufferTail++];
+        char byteToSend = softSerial->port.txBuffer[softSerial->port.txBufferTail++];
         if (softSerial->port.txBufferTail >= softSerial->port.txBufferSize) {
             softSerial->port.txBufferTail = 0;
         }
@@ -302,6 +324,12 @@ void processTxState(softSerial_t *softSerial)
         softSerial->internalTxBuffer = (1 << (TX_TOTAL_BITS - 1)) | (byteToSend << 1);
         softSerial->bitsLeftToTransmit = TX_TOTAL_BITS;
         softSerial->isTransmittingData = true;
+
+        if (softSerial->rxActive && (softSerial->port.options & SERIAL_BIDIR)) {
+            // Half-duplex: Deactivate receiver, activate transmitter
+            serialInputPortDeActivate(softSerial);
+            serialOutputPortActivate(softSerial);
+        }
 
         return;
     }
