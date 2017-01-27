@@ -47,6 +47,8 @@ typedef enum {
     OSD_PITCH_PIDS,
     OSD_YAW_PIDS,
     OSD_POWER,
+    OSD_PIDRATE_PROFILE,
+    OSD_MAIN_BATT_WARNING,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
