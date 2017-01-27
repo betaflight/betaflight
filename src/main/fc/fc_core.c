@@ -45,13 +45,13 @@
 #include "sensors/gyro.h"
 #include "sensors/battery.h"
 
+#include "fc/cli.h"
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
-#include "fc/serial_cli.h"
 
 #include "io/beeper.h"
 #include "io/dashboard.h"
