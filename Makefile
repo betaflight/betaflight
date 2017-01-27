@@ -649,6 +649,7 @@ HIGHEND_SRC = \
             cms/cms_menu_osd.c \
             cms/cms_menu_vtx.c \
             common/colorconversion.c \
+            common/gps_conversion.c \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
             drivers/serial_escserial.c \
@@ -656,7 +657,6 @@ HIGHEND_SRC = \
             drivers/sonar_hcsr04.c \
             drivers/vtx_common.c \
             flight/navigation.c \
-            flight/gps_conversion.c \
             io/dashboard.c \
             io/displayport_max7456.c \
             io/displayport_msp.c \
