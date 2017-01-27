@@ -571,6 +571,7 @@ HIGHEND_SRC = \
             cms/cms_menu_misc.c \
             cms/cms_menu_osd.c \
             common/colorconversion.c \
+            common/gps_conversion.c \
             drivers/display_ug2864hsweg01.c \
             drivers/sonar_hcsr04.c \
             drivers/sonar_srf10.c \
@@ -580,7 +581,6 @@ HIGHEND_SRC = \
             flight/navigation_rewrite_fw_launch.c \
             flight/navigation_rewrite_pos_estimator.c \
             flight/navigation_rewrite_geo.c \
-            flight/gps_conversion.c \
             io/dashboard.c \
             io/displayport_max7456.c \
             io/displayport_msp.c \
