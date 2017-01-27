@@ -1174,7 +1174,6 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, currentProfile->pidProfile.yawRateAccelLimit * 10);
         sbufWriteU8(dst, currentProfile->pidProfile.levelAngleLimit);
         sbufWriteU8(dst, currentProfile->pidProfile.levelSensitivity);
-        sbufWriteU8(dst, currentProfile->pidProfile.itermWindupPointPercent);
         break;
 
     case MSP_SENSOR_CONFIG:
@@ -1565,9 +1564,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (dataSize > 17) {
             currentProfile->pidProfile.levelAngleLimit = sbufReadU8(src);
             currentProfile->pidProfile.levelSensitivity = sbufReadU8(src);
-        }
-        if (sbufBytesRemaining(src)) {
-            currentProfile->pidProfile.itermWindupPointPercent = sbufReadU8(src);
         }
         pidInitConfig(&currentProfile->pidProfile);
         break;
