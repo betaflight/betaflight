@@ -172,6 +172,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->pidSumLimit = PIDSUM_LIMIT;
     pidProfile->yaw_lpf_hz = 0;
     pidProfile->itermWindupPointPercent = 75;
+    pidProfile->itermNoiseThreshold = 0;
     pidProfile->dterm_filter_type = FILTER_BIQUAD;
     pidProfile->dterm_lpf_hz = 100;    // filtering ON by default
     pidProfile->dterm_notch_hz = 260;

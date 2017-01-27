@@ -148,7 +148,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 }
 
 static float Kp[3], Ki[3], Kd[3], c[3], maxVelocity[3], relaxFactor[3];
-static float levelGain, horizonGain, horizonTransition, itermWindupPoint;
+static float levelGain, horizonGain, horizonTransition, ITermWindupPoint, ITermNoiseThresholdDps;
 
 void pidInitConfig(const pidProfile_t *pidProfile) {
     for(int axis = FD_ROLL; axis <= FD_YAW; axis++) {
@@ -163,7 +163,8 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
     horizonTransition = 100.0f / pidProfile->D8[PIDLEVEL];
     maxVelocity[FD_ROLL] = maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 1000 * dT;
     maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 1000 * dT;
-    itermWindupPoint = pidProfile->itermWindupPointPercent / 100.0f;
+    ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
+    ITermNoiseThresholdDps = (float)pidProfile->itermNoiseThreshold / 10.0f;
 }
 
 static float calcHorizonLevelStrength(void) {
@@ -242,15 +243,14 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
         // -----calculate I component
         float ITerm = previousGyroIf[axis];
-        const float ITermNoiseThresholdDps = 0.5;
         const float motorMixRangeAbs = ABS(getMotorMixRange());
         if (motorMixRangeAbs < 1.0f && (errorRate > ITermNoiseThresholdDps || errorRate < -ITermNoiseThresholdDps)) {
             // Only increase ITerm if motor output is not saturated and errorRate exceeds noise threshold
             // Reduce strong Iterm accumulation during higher stick inputs
             float ITermDelta = Ki[axis] * errorRate * dT * itermAccelerator;
             // gradually scale back integration when above windup point (default is 75%)
-            if (motorMixRangeAbs > itermWindupPoint) {
-                ITermDelta *= (1.0f - motorMixRangeAbs) / (1.0f - itermWindupPoint);
+            if (motorMixRangeAbs > ITermWindupPoint) {
+                ITermDelta *= (1.0f - motorMixRangeAbs) / (1.0f - ITermWindupPoint);
             }
             ITerm += ITermDelta;
             // also limit maximum integrator value to prevent windup
