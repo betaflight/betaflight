@@ -43,6 +43,11 @@ typedef struct displayPortVTable_s {
     uint32_t (*txBytesFree)(const displayPort_t *displayPort);
 } displayPortVTable_t;
 
+typedef struct displayPortProfile_s {
+    int8_t colAdjust;
+    int8_t rowAdjust;
+} displayPortProfile_t;
+
 void displayGrab(displayPort_t *instance);
 void displayRelease(displayPort_t *instance);
 void displayReleaseAll(displayPort_t *instance);

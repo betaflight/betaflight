@@ -62,7 +62,7 @@ static void i2cUnstick(IO_t scl, IO_t sda);
 #define I2C3_SDA PB4
 #endif
 
-#if defined(USE_I2C4) 
+#if defined(USE_I2C4)
 #ifndef I2C4_SCL
 #define I2C4_SCL PD12
 #endif
@@ -198,7 +198,7 @@ void i2cInit(I2CDevice device)
     case I2CDEV_3:
         __HAL_RCC_I2C3_CLK_ENABLE();
         break;
-#ifdef USE_I2C4        
+#ifdef USE_I2C4
     case I2CDEV_4:
         __HAL_RCC_I2C4_CLK_ENABLE();
         break;

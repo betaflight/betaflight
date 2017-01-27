@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_pwr.c
   * @author  MCD Application Team
-  * @version V1.1.2
-  * @date    23-September-2016 
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   PWR HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Power Controller (PWR) peripheral:
@@ -176,7 +176,7 @@ void HAL_PWR_DisableBkUpAccess(void)
     [..]
       (+) Wake-up pin is used to wake up the system from Standby mode. This pin is 
           forced in input pull-down configuration and is active on rising edges.
-      (+) There are to 6 Wake-up pin in the STM32F7 devices family
+      (+) There are up to 6 Wake-up pin in the STM32F7 devices family
 
     *** Low Power modes configuration ***
     =====================================
@@ -404,7 +404,7 @@ void HAL_PWR_DisableWakeUpPin(uint32_t WakeUpPinx)
   */
 void HAL_PWR_EnterSLEEPMode(uint32_t Regulator, uint8_t SLEEPEntry)
 {
-  (void)Regulator;
+  UNUSED(Regulator);
   /* Check the parameters */
   assert_param(IS_PWR_REGULATOR(Regulator));
   assert_param(IS_PWR_SLEEP_ENTRY(SLEEPEntry));

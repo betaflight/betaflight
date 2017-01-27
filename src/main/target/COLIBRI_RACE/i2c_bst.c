@@ -29,7 +29,7 @@
 #include "drivers/rx_pwm.h"
 
 #include "fc/config.h"
-#include "fc/fc_main.h"
+#include "fc/fc_core.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -44,6 +44,8 @@
 
 #include "rx/rx.h"
 #include "rx/msp.h"
+
+#include "scheduler/scheduler.h"
 
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
@@ -269,7 +271,6 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 extern volatile uint8_t CRC8;
 extern volatile bool coreProReady;
-extern uint16_t cycleTime; // FIXME dependency on mw.c
 
 // this is calculated at startup based on enabled features.
 static uint8_t activeBoxIds[CHECKBOX_ITEM_COUNT];
@@ -562,7 +563,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
 
         case BST_STATUS:
-            bstWrite16(cycleTime);
+            bstWrite16(getTaskDeltaTime(TASK_GYROPID));
 #ifdef USE_I2C
             bstWrite16(i2cGetErrorCounter());
 #else
@@ -691,7 +692,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
         case BST_LOOP_TIME:
             //bstWrite16(masterConfig.looptime);
-            bstWrite16(cycleTime);
+            bstWrite16(getTaskDeltaTime(TASK_GYROPID));
             break;
         case BST_RC_TUNING:
             bstWrite8(currentControlRateProfile->rcRate8);
@@ -1043,7 +1044,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             break;
         case BST_SET_LOOP_TIME:
             //masterConfig.looptime = bstRead16();
-            cycleTime = bstRead16();
+            bstRead16();
             break;
         case BST_SET_PID_CONTROLLER:
             break;
@@ -1266,7 +1267,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             } else {
                 serialConfig()->portConfigs[SERIALRX_UART].functionMask = FUNCTION_NONE;
             }
-#endif            
+#endif
             break;
         case BST_SET_BOARD_ALIGNMENT:
             boardAlignment()->rollDegrees = bstRead16();

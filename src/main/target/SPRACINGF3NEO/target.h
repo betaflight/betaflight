@@ -152,17 +152,6 @@
 #define WS2811_TIMER_GPIO_AF            GPIO_AF_6
 
 #define TRANSPONDER
-#define TRANSPONDER_GPIO                     GPIOB
-#define TRANSPONDER_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOB
-#define TRANSPONDER_GPIO_AF                  GPIO_AF_1
-#define TRANSPONDER_PIN                      GPIO_Pin_8 // TIM16_CH1
-#define TRANSPONDER_PIN_SOURCE               GPIO_PinSource8
-#define TRANSPONDER_TIMER                    TIM16
-#define TRANSPONDER_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
-#define TRANSPONDER_DMA_CHANNEL              DMA1_Channel3
-#define TRANSPONDER_IRQ                      DMA1_Channel3_IRQn
-#define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC3
-#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 

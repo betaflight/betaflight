@@ -25,9 +25,9 @@
 #include "drivers/timer_def.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    DEF_TIM(TIM2,  CH4, PA3,  TIM_USE_MOTOR, 1, 1),  
-    DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_MOTOR, 1, 0),  
-    DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_MOTOR, 1, 0),  
-    DEF_TIM(TIM2,  CH3, PA2,  TIM_USE_MOTOR, 1, 0),  
-    DEF_TIM(TIM4,  CH2, PB7,  TIM_USE_LED,   0, 0),  // LED 
+    DEF_TIM(TIM2,  CH4, PA3,  TIM_USE_MOTOR, 1, 1),
+    DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_MOTOR, 1, 0),
+    DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_MOTOR, 1, 0),
+    DEF_TIM(TIM2,  CH3, PA2,  TIM_USE_MOTOR, 1, 0),
+    DEF_TIM(TIM4,  CH2, PB7,  TIM_USE_LED,   0, 0),  // LED
 };

@@ -37,8 +37,9 @@ typedef enum {
     FUNCTION_BLACKBOX            = (1 << 7),  // 128
     FUNCTION_TELEMETRY_MAVLINK   = (1 << 9),  // 512
     FUNCTION_ESC_SENSOR          = (1 << 10), // 1024
-    FUNCTION_VTX_CONTROL         = (1 << 11), // 2048
-    FUNCTION_TELEMETRY_IBUS      = (1 << 12)  // 4096
+    FUNCTION_VTX_SMARTAUDIO      = (1 << 11), // 2048
+    FUNCTION_TELEMETRY_IBUS      = (1 << 12), // 4096
+    FUNCTION_VTX_TRAMP           = (1 << 13), // 8192
 } serialPortFunction_e;
 
 typedef enum {
@@ -96,8 +97,8 @@ serialPort_t *findNextSharedSerialPort(uint16_t functionMask, serialPortFunction
 // configuration
 //
 typedef struct serialPortConfig_s {
-    serialPortIdentifier_e identifier;
     uint16_t functionMask;
+    serialPortIdentifier_e identifier;
     uint8_t msp_baudrateIndex;
     uint8_t gps_baudrateIndex;
     uint8_t blackbox_baudrateIndex;
@@ -105,8 +106,9 @@ typedef struct serialPortConfig_s {
 } serialPortConfig_t;
 
 typedef struct serialConfig_s {
-    uint8_t reboot_character;               // which byte is used to reboot. Default 'R', could be changed carefully to something else.
     serialPortConfig_t portConfigs[SERIAL_PORT_COUNT];
+    uint16_t serial_update_rate_hz;
+    uint8_t reboot_character;               // which byte is used to reboot. Default 'R', could be changed carefully to something else.
 } serialConfig_t;
 
 typedef void serialConsumer(uint8_t);

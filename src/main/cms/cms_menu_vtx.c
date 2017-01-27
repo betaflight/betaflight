@@ -52,10 +52,12 @@ static long cmsx_Vtx_FeatureRead(void)
 
 static long cmsx_Vtx_FeatureWriteback(void)
 {
-    if (cmsx_featureVtx)
-        featureSet(FEATURE_VTX);
-    else
-        featureClear(FEATURE_VTX);
+    if (featureRead) {
+        if (cmsx_featureVtx)
+            featureSet(FEATURE_VTX);
+        else
+            featureClear(FEATURE_VTX);
+    }
 
     return 0;
 }

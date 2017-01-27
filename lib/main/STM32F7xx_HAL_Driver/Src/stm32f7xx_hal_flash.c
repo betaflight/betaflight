@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_flash.c
   * @author  MCD Application Team
-  * @version V1.1.2
-  * @date    23-September-2016 
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   FLASH HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the internal FLASH memory:
@@ -800,6 +800,13 @@ static void FLASH_SetErrorCode(void)
   {
     pFlash.ErrorCode |= HAL_FLASH_ERROR_ERS;
   }
+  
+#if defined (FLASH_OPTCR2_PCROP)
+  if(__HAL_FLASH_GET_FLAG(FLASH_FLAG_RDERR) != RESET)
+  { 
+   pFlash.ErrorCode |= HAL_FLASH_ERROR_RD;
+  }  
+#endif /* FLASH_OPTCR2_PCROP */
   
   /* Clear error programming flags */
   __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_ALL_ERRORS);
