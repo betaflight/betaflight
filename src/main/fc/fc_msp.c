@@ -1160,8 +1160,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_PID_ADVANCED:
-        sbufWriteU16(dst, currentProfile->pidProfile.rollPitchItermIgnoreRate);
-        sbufWriteU16(dst, currentProfile->pidProfile.yawItermIgnoreRate);
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
         sbufWriteU16(dst, currentProfile->pidProfile.yaw_p_limit);
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, currentProfile->pidProfile.vbatPidCompensation);
@@ -1174,6 +1174,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, currentProfile->pidProfile.yawRateAccelLimit * 10);
         sbufWriteU8(dst, currentProfile->pidProfile.levelAngleLimit);
         sbufWriteU8(dst, currentProfile->pidProfile.levelSensitivity);
+        sbufWriteU8(dst, currentProfile->pidProfile.itermWindupPointPercent);
         break;
 
     case MSP_SENSOR_CONFIG:
@@ -1549,8 +1550,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_PID_ADVANCED:
-        currentProfile->pidProfile.rollPitchItermIgnoreRate = sbufReadU16(src);
-        currentProfile->pidProfile.yawItermIgnoreRate = sbufReadU16(src);
+        sbufReadU16(src);
+        sbufReadU16(src);
         currentProfile->pidProfile.yaw_p_limit = sbufReadU16(src);
         sbufReadU8(src); // reserved
         currentProfile->pidProfile.vbatPidCompensation = sbufReadU8(src);
@@ -1564,6 +1565,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (dataSize > 17) {
             currentProfile->pidProfile.levelAngleLimit = sbufReadU8(src);
             currentProfile->pidProfile.levelSensitivity = sbufReadU8(src);
+        }
+        if (sbufBytesRemaining(src)) {
+            currentProfile->pidProfile.itermWindupPointPercent = sbufReadU8(src);
         }
         pidInitConfig(&currentProfile->pidProfile);
         break;

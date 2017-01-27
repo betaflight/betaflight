@@ -56,11 +56,10 @@
 #define EXTERNAL_CONVERSION_MAX_VALUE 2000
 
 static uint8_t motorCount;
+static float motorMixRange;
 
 int16_t motor[MAX_SUPPORTED_MOTORS];
 int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
-
-float motorMixRange;
 
 static mixerConfig_t *mixerConfig;
 static flight3DConfig_t *flight3DConfig;
@@ -245,6 +244,11 @@ static float rcCommandThrottleRange, rcCommandThrottleRange3dLow, rcCommandThrot
 uint8_t getMotorCount()
 {
     return motorCount;
+}
+
+float getMotorMixRange()
+{
+    return motorMixRange;
 }
 
 bool isMotorProtocolDshot(void) {

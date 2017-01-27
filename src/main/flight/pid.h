@@ -66,8 +66,7 @@ typedef struct pidProfile_s {
     uint16_t yaw_lpf_hz;                    // Additional yaw filter when yaw axis too noisy
     uint16_t dterm_notch_hz;                // Biquad dterm notch hz
     uint16_t dterm_notch_cutoff;            // Biquad dterm notch low cutoff
-    uint16_t rollPitchItermIgnoreRate;      // Experimental threshold for resetting iterm for pitch and roll on certain rates
-    uint16_t yawItermIgnoreRate;            // Experimental threshold for resetting iterm for yaw on certain rates
+    uint8_t itermWindupPointPercent;        // Experimental ITerm windup threshold, percent motor saturation
     uint16_t yaw_p_limit;
     float pidSumLimit;
     uint8_t dterm_average_count;            // Configurable delta count for dterm

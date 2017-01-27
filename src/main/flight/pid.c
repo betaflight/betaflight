@@ -147,7 +147,8 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 }
 
-static float Kp[3], Ki[3], Kd[3], c[3], levelGain, horizonGain, horizonTransition, maxVelocity[3], relaxFactor[3];
+static float Kp[3], Ki[3], Kd[3], c[3], maxVelocity[3], relaxFactor[3];
+static float levelGain, horizonGain, horizonTransition, itermWindupPoint;
 
 void pidInitConfig(const pidProfile_t *pidProfile) {
     for(int axis = FD_ROLL; axis <= FD_YAW; axis++) {
@@ -162,6 +163,7 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
     horizonTransition = 100.0f / pidProfile->D8[PIDLEVEL];
     maxVelocity[FD_ROLL] = maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 1000 * dT;
     maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 1000 * dT;
+    itermWindupPoint = pidProfile->itermWindupPointPercent / 100.0f;
 }
 
 static float calcHorizonLevelStrength(void) {
@@ -241,16 +243,14 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         // -----calculate I component
         float ITerm = previousGyroIf[axis];
         const float ITermNoiseThresholdDps = 0.5;
-        if (motorMixRange < 1.0f && (errorRate > ITermNoiseThresholdDps || errorRate < -ITermNoiseThresholdDps)) {
+        const float motorMixRangeAbs = ABS(getMotorMixRange());
+        if (motorMixRangeAbs < 1.0f && (errorRate > ITermNoiseThresholdDps || errorRate < -ITermNoiseThresholdDps)) {
             // Only increase ITerm if motor output is not saturated and errorRate exceeds noise threshold
             // Reduce strong Iterm accumulation during higher stick inputs
-            const float accumulationThreshold = (axis == FD_YAW) ? pidProfile->yawItermIgnoreRate : pidProfile->rollPitchItermIgnoreRate;
-            const float setpointRateScaler = constrainf(1.0f - (ABS(currentPidSetpoint) / accumulationThreshold), 0.0f, 1.0f);
-            float ITermDelta = Ki[axis] * errorRate * dT * setpointRateScaler * itermAccelerator;
-            // gradually scale back integration when above windup point (somewhat arbitrarily set at 75%)
-            const float windupPoint = 0.75f;
-            if (motorMixRange > windupPoint) {
-                ITermDelta *= (1.0f - motorMixRange) / (1.0f - windupPoint);
+            float ITermDelta = Ki[axis] * errorRate * dT * itermAccelerator;
+            // gradually scale back integration when above windup point (default is 75%)
+            if (motorMixRangeAbs > itermWindupPoint) {
+                ITermDelta *= (1.0f - motorMixRangeAbs) / (1.0f - itermWindupPoint);
             }
             ITerm += ITermDelta;
             // also limit maximum integrator value to prevent windup
