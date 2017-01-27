@@ -1078,9 +1078,13 @@ void validateAndFixGyroConfig(void)
         samplingTime = 0.00003125;
         // F1 and F3 can't handle high sample speed.
 #if defined(STM32F1)
-        gyroConfig()->gyro_sync_denom = constrain(gyroConfig()->gyro_sync_denom, 16, 16);
+        gyroConfig()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 16);
 #elif defined(STM32F3)
-        gyroConfig()->gyro_sync_denom = constrain(gyroConfig()->gyro_sync_denom, 4, 16);
+        gyroConfig()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 4);
+#endif
+    } else {
+#if defined(STM32F1)
+        gyroConfig()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 4);
 #endif
     }
 
