@@ -411,7 +411,7 @@ void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
     telemetryConfig->pidValuesAsTelemetry = 0;
 #ifdef TELEMETRY_IBUS
     telemetryConfig->ibus_report_cell_voltage = 0;
-    telemetryConfig->ibus_task_freq = 2000;
+    telemetryConfig->ibus_task_freq = 1000;
 #endif
 }
 #endif
