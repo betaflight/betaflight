@@ -125,6 +125,8 @@ void serialInputPortActivate(softSerial_t *softSerial)
 
 debug[2]++;
 
+delay(1);
+
     timerChConfigCallbacks(softSerial->timerHardware, &softSerial->edgeCb, NULL);
 }
 
@@ -273,6 +275,7 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 
     // Configure bit clock interrupt & handler.
     // Receiver input capture is configured when input is activated.
+
     if ((mode & MODE_TX) && softSerial->exTimerHardware && softSerial->exTimerHardware->tim != softSerial->timerHardware->tim) {
         // Special case of dual timer configuration.
         // Extra timer (on TX) is initialized and configured for overflow interrupt.
