@@ -755,7 +755,7 @@ static int gcd(int num, int denom)
     return gcd(denom, num % denom);
 }
 
-static void validateBlackboxConfig()
+void validateBlackboxConfig()
 {
     int div;
 

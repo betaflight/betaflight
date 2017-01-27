@@ -32,6 +32,7 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data);
 
 void initBlackbox(void);
 void handleBlackbox(timeUs_t currentTimeUs);
+void validateBlackboxConfig();
 void startBlackbox(void);
 void finishBlackbox(void);
 
