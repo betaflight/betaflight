@@ -125,27 +125,39 @@ void validateNavConfig(void)
 #define SECOND_PORT_INDEX 1
 #endif
 
+uint32_t getPidUpdateRate(void)
+{
 #ifdef ASYNC_GYRO_PROCESSING
-uint32_t getPidUpdateRate(void) {
     if (systemConfig()->asyncMode == ASYNC_MODE_NONE) {
         return getGyroUpdateRate();
     } else {
         return gyroConfig()->looptime;
     }
+#else
+    return gyro.targetLooptime;
+#endif
 }
 
-timeDelta_t getGyroUpdateRate(void) {
+timeDelta_t getGyroUpdateRate(void)
+{
     return gyro.targetLooptime;
 }
-
-uint16_t getAccUpdateRate(void) {
+uint16_t getAccUpdateRate(void)
+{
+#ifdef ASYNC_GYRO_PROCESSING
+    // ACC will be updated at its own rate
     if (systemConfig()->asyncMode == ASYNC_MODE_ALL) {
         return 1000000 / systemConfig()->accTaskFrequency;
     } else {
         return getPidUpdateRate();
     }
+#else
+    // ACC updated at same frequency in taskMainPidLoop in mw.c
+    return gyro.targetLooptime;
+#endif
 }
 
+#ifdef ASYNC_GYRO_PROCESSING
 uint16_t getAttitudeUpdateRate(void) {
     if (systemConfig()->asyncMode == ASYNC_MODE_ALL) {
         return 1000000 / systemConfig()->attitudeTaskFrequency;
@@ -420,8 +432,8 @@ static void activateConfig(void)
 
     failsafeReset();
 
-    setAccelerationCalibrationValues();
-    setAccelerationFilter();
+    accSetCalibrationValues();
+    accInitFilters();
 
     imuConfigure();
 

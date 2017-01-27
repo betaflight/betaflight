@@ -1361,11 +1361,7 @@ static bool blackboxWriteSysinfo()
             }
             );
 
-    #ifdef ASYNC_GYRO_PROCESSING
         BLACKBOX_PRINT_HEADER_LINE("looptime:%d",                           getPidUpdateRate());
-    #else
-        BLACKBOX_PRINT_HEADER_LINE("looptime:%d",                           gyro.targetLooptime);
-    #endif
         BLACKBOX_PRINT_HEADER_LINE("rcExpo:%d",                             currentControlRateProfile->rcExpo8);
         BLACKBOX_PRINT_HEADER_LINE("rcYawExpo:%d",                          currentControlRateProfile->rcYawExpo8);
         BLACKBOX_PRINT_HEADER_LINE("thrMid:%d",                             currentControlRateProfile->thrMid8);

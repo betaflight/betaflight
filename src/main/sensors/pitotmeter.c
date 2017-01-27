@@ -118,7 +118,7 @@ bool pitotInit(void)
     return true;
 }
 
-bool isPitotCalibrationComplete(void)
+bool pitotIsCalibrationComplete(void)
 {
     return calibratingP == 0;
 }
@@ -160,7 +160,7 @@ typedef enum {
 } pitotmeterState_e;
 
 
-bool isPitotReady(void) {
+bool pitotIsReady(void) {
     return pitotReady;
 }
 
@@ -202,10 +202,7 @@ static void performPitotCalibrationCycle(void)
 
 int32_t pitotCalculateAirSpeed(void)
 {
-    if (!isPitotCalibrationComplete()) {
-        performPitotCalibrationCycle();
-        pitot.airSpeed = 0;
-    } else {
+    if (pitotIsCalibrationComplete()) {
         const float CalibratedAirspeed_tmp = pitotmeterConfig()->pitot_scale * CASFACTOR * sqrtf(powf(fabsf(pitotPressure - pitotPressureZero) / P0 + 1.0f, CCEXPONENT) - 1.0f);
         CalibratedAirspeed = CalibratedAirspeed * pitotmeterConfig()->pitot_noise_lpf + CalibratedAirspeed_tmp * (1.0f - pitotmeterConfig()->pitot_noise_lpf); // additional LPF to reduce baro noise
         float TrueAirspeed = CalibratedAirspeed * TASFACTOR * sqrtf(pitotTemperature);
@@ -215,11 +212,14 @@ int32_t pitotCalculateAirSpeed(void)
         //debug[1] = (int16_t)(TrueAirspeed*100);
         //debug[2] = (int16_t)((pitotTemperature-273.15f)*100);
         //debug[3] = AirSpeed;
+    } else {
+        performPitotCalibrationCycle();
+        pitot.airSpeed = 0;
     }
     return pitot.airSpeed;
 }
 
-bool isPitotmeterHealthy(void)
+bool pitotIsHealthy(void)
 {
     return true;
 }

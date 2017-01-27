@@ -71,11 +71,10 @@ extern int32_t mAhDrawn;
 
 uint16_t batteryAdcToVoltage(uint16_t src);
 batteryState_e getBatteryState(void);
-const  char * getBatteryStateString(void);
-void updateBattery(uint32_t vbatTimeDelta);
+void batteryUpdate(uint32_t vbatTimeDelta);
 void batteryInit(void);
 
-void updateCurrentMeter(int32_t lastUpdateAt, uint16_t deadband3d_throttle);
+void currentMeterUpdate(int32_t lastUpdateAt, uint16_t deadband3d_throttle);
 int32_t currentMeterToCentiamps(uint16_t src);
 
 uint8_t calculateBatteryPercentage(void);

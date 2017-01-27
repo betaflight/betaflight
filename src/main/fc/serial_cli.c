@@ -1533,7 +1533,7 @@ static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActi
     // print out aux channel settings
     for (uint32_t i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
         const modeActivationCondition_t *mac = &modeActivationConditions[i];
-        bool equalsDefault = true;
+        bool equalsDefault = false;
         if (defaultModeActivationConditions) {
             const modeActivationCondition_t *macDefault = &defaultModeActivationConditions[i];
             equalsDefault = mac->modeId == macDefault->modeId
@@ -1605,7 +1605,7 @@ static void printSerial(uint8_t dumpMask, const serialConfig_t *serialConfig, co
         if (!serialIsPortAvailable(serialConfig->portConfigs[i].identifier)) {
             continue;
         };
-        bool equalsDefault = true;
+        bool equalsDefault = false;
         if (serialConfigDefault) {
             equalsDefault = serialConfig->portConfigs[i].identifier == serialConfigDefault->portConfigs[i].identifier
                 && serialConfig->portConfigs[i].functionMask == serialConfigDefault->portConfigs[i].functionMask
@@ -1719,7 +1719,7 @@ static void printAdjustmentRange(uint8_t dumpMask, const adjustmentRange_t *adju
      // print out adjustment ranges channel settings
     for (uint32_t i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
         const adjustmentRange_t *ar = &adjustmentRanges[i];
-        bool equalsDefault = true;
+        bool equalsDefault = false;
         if (defaultAdjustmentRanges) {
             const adjustmentRange_t *arDefault = &defaultAdjustmentRanges[i];
             equalsDefault = ar->auxChannelIndex == arDefault->auxChannelIndex
@@ -1825,7 +1825,7 @@ static void printMotorMix(uint8_t dumpMask, const motorMixer_t *customMotorMixer
         const float roll = customMotorMixer[i].roll;
         const float pitch = customMotorMixer[i].pitch;
         const float yaw = customMotorMixer[i].yaw;
-        bool equalsDefault = true;
+        bool equalsDefault = false;
         if (defaultCustomMotorMixer) {
             const float thrDefault = defaultCustomMotorMixer[i].throttle;
             const float rollDefault = defaultCustomMotorMixer[i].roll;
@@ -1923,7 +1923,7 @@ static void printRxRange(uint8_t dumpMask, const rxChannelRangeConfig_t *channel
 {
     const char *format = "rxrange %u %u %u\r\n";
     for (uint32_t i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
-        bool equalsDefault = true;
+        bool equalsDefault = false;
         if (defaultChannelRangeConfigs) {
             equalsDefault = channelRangeConfigs[i].min == defaultChannelRangeConfigs[i].min
                 && channelRangeConfigs[i].max == defaultChannelRangeConfigs[i].max;
@@ -1992,7 +1992,7 @@ static void printLed(uint8_t dumpMask, const ledConfig_t *ledConfigs, const ledC
     for (uint32_t i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
         ledConfig_t ledConfig = ledConfigs[i];
         generateLedConfig(&ledConfig, ledConfigBuffer, sizeof(ledConfigBuffer));
-        bool equalsDefault = true;
+        bool equalsDefault = false;
         if (defaultLedConfigs) {
             ledConfig_t ledConfigDefault = defaultLedConfigs[i];
             equalsDefault = ledConfig == ledConfigDefault;
@@ -2029,7 +2029,7 @@ static void printColor(uint8_t dumpMask, const hsvColor_t *colors, const hsvColo
     const char *format = "color %u %d,%u,%u\r\n";
     for (uint32_t i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
         const hsvColor_t *color = &colors[i];
-        bool equalsDefault = true;
+        bool equalsDefault = false;
         if (defaultColors) {
             const hsvColor_t *colorDefault = &defaultColors[i];
             equalsDefault = color->h == colorDefault->h
@@ -2065,7 +2065,7 @@ static void printModeColor(uint8_t dumpMask, const ledStripConfig_t *ledStripCon
     for (uint32_t i = 0; i < LED_MODE_COUNT; i++) {
         for (uint32_t j = 0; j < LED_DIRECTION_COUNT; j++) {
             int colorIndex = ledStripConfig->modeColors[i].color[j];
-            bool equalsDefault = true;
+            bool equalsDefault = false;
             if (defaultLedStripConfig) {
                 int colorIndexDefault = defaultLedStripConfig->modeColors[i].color[j];
                 equalsDefault = colorIndex == colorIndexDefault;
@@ -2077,7 +2077,7 @@ static void printModeColor(uint8_t dumpMask, const ledStripConfig_t *ledStripCon
 
     for (uint32_t j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
         const int colorIndex = ledStripConfig->specialColors.color[j];
-        bool equalsDefault = true;
+        bool equalsDefault = false;
         if (defaultLedStripConfig) {
             const int colorIndexDefault = defaultLedStripConfig->specialColors.color[j];
             equalsDefault = colorIndex == colorIndexDefault;
@@ -2126,7 +2126,7 @@ static void printServo(uint8_t dumpMask, const servoParam_t *servoParam, const s
     const char *format = "servo %u %d %d %d %d %d %d %d\r\n";
     for (uint32_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         const servoParam_t *servoConf = &servoParam[i];
-        bool equalsDefault = true;
+        bool equalsDefault = false;
         if (defaultServoParam) {
             const servoParam_t *servoConfDefault = &defaultServoParam[i];
             equalsDefault = servoConf->min == servoConfDefault->min
@@ -2265,7 +2265,7 @@ static void printServoMix(uint8_t dumpMask, const servoMixer_t *customServoMixer
             break;
         }
 
-        bool equalsDefault = true;
+        bool equalsDefault = false;
         if (defaultCustomServoMixers) {
             servoMixer_t customServoMixerDefault = defaultCustomServoMixers[i];
             equalsDefault = customServoMixer.targetChannel == customServoMixerDefault.targetChannel
@@ -2738,7 +2738,7 @@ static void cliBeeper(char *cmdline)
 
 static void printMap(uint8_t dumpMask, const rxConfig_t *rxConfig, const rxConfig_t *defaultRxConfig)
 {
-    bool equalsDefault = true;
+    bool equalsDefault = false;
     char buf[16];
     char bufDefault[16];
     uint32_t i;
@@ -3136,6 +3136,13 @@ static void cliSet(char *cmdline)
         // no equals, check for matching variables.
         cliGet(cmdline);
     }
+}
+
+static const char * getBatteryStateString(void)
+{
+    static const char * const batteryStateStrings[] = {"OK", "WARNING", "CRITICAL", "NOT PRESENT"};
+
+    return batteryStateStrings[getBatteryState()];
 }
 
 static void cliStatus(char *cmdline)

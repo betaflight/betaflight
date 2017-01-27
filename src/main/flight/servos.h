@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
+
 #if defined(USE_QUAD_MIXER_ONLY)
 #define MAX_SUPPORTED_SERVOS 1
 #else

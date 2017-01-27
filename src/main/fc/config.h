@@ -125,10 +125,10 @@ void createDefaultConfig(void);
 void resetConfigs(void);
 void targetConfiguration(void);
 
-#ifdef ASYNC_GYRO_PROCESSING
 uint32_t getPidUpdateRate(void);
 timeDelta_t getGyroUpdateRate(void);
 uint16_t getAccUpdateRate(void);
+#ifdef ASYNC_GYRO_PROCESSING
 uint16_t getAttitudeUpdateRate(void);
 uint8_t getAsyncMode(void);
 #endif

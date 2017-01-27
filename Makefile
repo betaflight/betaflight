@@ -106,20 +106,20 @@ endif
 -include $(ROOT)/src/main/target/$(BASE_TARGET)/target.mk
 
 F4_TARGETS      = $(F405_TARGETS) $(F411_TARGETS) $(F427_TARGETS)
-F7_TARGETS      = $(F7X5XE_TARGETS) $(F7X5XG_TARGETS) $(F7X5XI_TARGETS)
+F7_TARGETS      = $(F7X2RE_TARGETS) $(F7X5XE_TARGETS) $(F7X5XG_TARGETS) $(F7X5XI_TARGETS) $(F7X6XG_TARGETS)
 
 ifeq ($(filter $(TARGET),$(VALID_TARGETS)),)
 $(error Target '$(TARGET)' is not valid, must be one of $(VALID_TARGETS). Have you prepared a valid target.mk?)
 endif
 
 ifeq ($(filter $(TARGET),$(F1_TARGETS) $(F3_TARGETS) $(F4_TARGETS) $(F7_TARGETS)),)
-$(error Target '$(TARGET)' has not specified a valid STM group, must be one of F1, F3, F405, F411, F427 or F7x5. Have you prepared a valid target.mk?)
+$(error Target '$(TARGET)' has not specified a valid STM group, must be one of F1, F3, F405, F411, F427 or F7x. Have you prepared a valid target.mk?)
 endif
 
 128K_TARGETS  = $(F1_TARGETS)
 256K_TARGETS  = $(F3_TARGETS)
-512K_TARGETS  = $(F411_TARGETS) $(F7X5XE_TARGETS)
-1024K_TARGETS = $(F405_TARGETS) $(F7X5XG_TARGETS)
+512K_TARGETS  = $(F411_TARGETS) $(F7X2RE_TARGETS) $(F7X5XE_TARGETS)
+1024K_TARGETS = $(F405_TARGETS) $(F7X5XG_TARGETS) $(F7X6XG_TARGETS)
 2048K_TARGETS = $(F427_TARGETS) $(F7X5XI_TARGETS)
 
 # Configure default flash sizes for the targets (largest size specified gets hit first) if flash not specified already.
@@ -239,7 +239,6 @@ EXCLUDES        = stm32f4xx_crc.c \
                   stm32f4xx_dbgmcu.c \
                   stm32f4xx_cryp_tdes.c \
                   stm32f4xx_hash_sha1.c
-
 
 ifeq ($(TARGET),$(filter $(TARGET), $(F411_TARGETS)))
 EXCLUDES += stm32f4xx_fsmc.c
@@ -465,23 +464,22 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
 VPATH           := $(VPATH):$(TARGET_DIR)
 
 COMMON_SRC = \
+            $(TARGET_DIR_SRC) \
+            main.c \
+            build/assert.c \
             build/build_config.c \
             build/debug.c \
             build/version.c \
-            build/assert.c \
-            $(TARGET_DIR_SRC) \
-            main.c \
             common/encoding.c \
             common/filter.c \
             common/maths.c \
             common/printf.c \
-            common/typeconversion.c \
             common/streambuf.c \
-            config/feature.c \
+            common/typeconversion.c \
             config/config_eeprom.c \
             config/config_streamer.c \
+            config/feature.c \
             config/parameter_group.c \
-            drivers/logging.c \
             drivers/adc.c \
             drivers/buf_writer.c \
             drivers/bus_i2c_soft.c \
@@ -492,7 +490,9 @@ COMMON_SRC = \
             drivers/gps_i2cnav.c \
             drivers/gyro_sync.c \
             drivers/io.c \
+            drivers/io_pca9685.c \
             drivers/light_led.c \
+            drivers/logging.c \
             drivers/rx_nrf24l01.c \
             drivers/rx_spi.c \
             drivers/rx_xn297.c \
@@ -506,13 +506,6 @@ COMMON_SRC = \
             drivers/stack_check.c \
             drivers/system.c \
             drivers/timer.c \
-            drivers/io_pca9685.c \
-            flight/failsafe.c \
-            flight/imu.c \
-            flight/hil.c \
-            flight/mixer.c \
-            flight/servos.c \
-            flight/pid.c \
             fc/config.c \
             fc/controlrate_profile.c \
             fc/fc_init.c \
@@ -525,13 +518,19 @@ COMMON_SRC = \
             fc/rc_curves.c \
             fc/runtime_config.c \
             fc/serial_cli.c \
+            flight/failsafe.c \
+            flight/hil.c \
+            flight/imu.c \
+            flight/mixer.c \
+            flight/pid.c \
+            flight/servos.c \
             io/beeper.c \
+            io/pwmdriver_i2c.c \
             io/serial.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
             io/statusindicator.c \
-            io/pwmdriver_i2c.c \
             msp/msp_serial.c \
             rx/ibus.c \
             rx/jetiexbus.c \
@@ -555,9 +554,9 @@ COMMON_SRC = \
             sensors/battery.c \
             sensors/boardalignment.c \
             sensors/compass.c \
+            sensors/diagnostics.c \
             sensors/gyro.c \
             sensors/initialisation.c \
-            sensors/diagnostics.c \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC)
 
@@ -593,17 +592,17 @@ HIGHEND_SRC = \
             io/gps_i2cnav.c \
             io/ledstrip.c \
             io/osd.c \
-            sensors/rangefinder.c \
             sensors/barometer.c \
             sensors/pitotmeter.c \
-            telemetry/telemetry.c \
+            sensors/rangefinder.c \
             telemetry/crsf.c \
             telemetry/frsky.c \
             telemetry/hott.c \
-            telemetry/smartport.c \
-            telemetry/mavlink.c \
+            telemetry/ibus.c \
             telemetry/ltm.c \
-            telemetry/ibus.c
+            telemetry/mavlink.c \
+            telemetry/smartport.c \
+            telemetry/telemetry.c
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
 VCP_SRC = \
@@ -824,6 +823,9 @@ TARGET_MAP      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 CLEAN_ARTIFACTS := $(TARGET_BIN)
 CLEAN_ARTIFACTS += $(TARGET_HEX)
 CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
+
+# Make sure build date and revision is updated on every incremental build
+$(OBJECT_DIR)/$(TARGET)/build/version.o : $(TARGET_SRC)
 
 # List of buildable ELF files and their object dependencies.
 # It would be nice to compute these lists, but that seems to be just beyond make.

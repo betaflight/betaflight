@@ -166,7 +166,7 @@ bool baroInit(void)
     return true;
 }
 
-bool isBaroCalibrationComplete(void)
+bool baroIsCalibrationComplete(void)
 {
     return calibratingB == 0;
 }
@@ -207,7 +207,7 @@ typedef enum {
     BAROMETER_NEEDS_CALCULATION
 } barometerState_e;
 
-bool isBaroReady(void)
+bool baroIsReady(void)
 {
     return baroReady;
 }
@@ -249,7 +249,7 @@ static void performBaroCalibrationCycle(void)
 
 int32_t baroCalculateAltitude(void)
 {
-    if (!isBaroCalibrationComplete()) {
+    if (!baroIsCalibrationComplete()) {
         performBaroCalibrationCycle();
         baro.BaroAlt = 0;
     }
@@ -269,7 +269,7 @@ int32_t baroCalculateAltitude(void)
     return baro.BaroAlt;
 }
 
-bool isBarometerHealthy(void)
+bool baroIsHealthy(void)
 {
     return true;
 }

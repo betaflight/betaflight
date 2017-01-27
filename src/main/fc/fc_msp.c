@@ -563,7 +563,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, getConfigProfile());
         sbufWriteU16(dst, averageSystemLoadPercent);
         sbufWriteU16(dst, armingFlags);
-        sbufWriteU8(dst, getAccelerometerCalibrationAxisFlags());
+        sbufWriteU8(dst, accGetCalibrationAxisFlags());
         break;
 
     case MSP_STATUS:

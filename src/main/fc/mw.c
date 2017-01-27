@@ -105,14 +105,14 @@ static bool isRXDataNew;
 bool isCalibrating(void)
 {
 #ifdef BARO
-    if (sensors(SENSOR_BARO) && !isBaroCalibrationComplete()) {
+    if (sensors(SENSOR_BARO) && !baroIsCalibrationComplete()) {
         return true;
     }
 #endif
 
     // Note: compass calibration is handled completely differently, outside of the main loop, see f.CALIBRATE_MAG
 
-    return (!isAccelerationCalibrationComplete() && sensors(SENSOR_ACC)) || (!gyroIsCalibrationComplete());
+    return (!accIsCalibrationComplete() && sensors(SENSOR_ACC)) || (!gyroIsCalibrationComplete());
 }
 
 int16_t getAxisRcCommand(int16_t rawData, int16_t rate, int16_t deadband)
@@ -523,11 +523,7 @@ void filterRc(bool isRXDataNew)
 
     // Calculate average cycle time (1Hz LPF on cycle time)
     if (!filterInitialised) {
-    #ifdef ASYNC_GYRO_PROCESSING
         biquadFilterInitLPF(&filteredCycleTimeState, 1, getPidUpdateRate());
-    #else
-        biquadFilterInitLPF(&filteredCycleTimeState, 1, gyro.targetLooptime);
-    #endif
         filterInitialised = true;
     }
 
@@ -557,17 +553,13 @@ void filterRc(bool isRXDataNew)
 
 // Function for loop trigger
 void taskGyro(timeUs_t currentTimeUs) {
-    // getTaskDeltaTime() returns delta time freezed at the moment of entering the scheduler. currentTime is freezed at the very same point.
+    // getTaskDeltaTime() returns delta time frozen at the moment of entering the scheduler. currentTime is frozen at the very same point.
     // To make busy-waiting timeout work we need to account for time spent within busy-waiting loop
     const timeDelta_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
 
     if (gyroConfig()->gyroSync) {
         while (true) {
-        #ifdef ASYNC_GYRO_PROCESSING
             if (gyroSyncCheckUpdate(&gyro.dev) || ((currentDeltaTime + cmpTimeUs(micros(), currentTimeUs)) >= (getGyroUpdateRate() + GYRO_WATCHDOG_DELAY))) {
-        #else
-            if (gyroSyncCheckUpdate(&gyro.dev) || ((currentDeltaTime + cmpTimeUs(micros(), currentTimeUs)) >= ((timeDelta_t)gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
-        #endif
                 break;
             }
         }
