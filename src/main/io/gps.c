@@ -47,7 +47,7 @@
 #include "io/gps.h"
 #include "io/gps_private.h"
 
-#include "flight/navigation_rewrite.h"
+#include "navigation/navigation.h"
 
 #include "config/feature.h"
 

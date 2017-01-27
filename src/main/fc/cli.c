@@ -75,7 +75,6 @@ extern uint8_t __config_end;
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
-#include "flight/navigation_rewrite.h"
 #include "flight/pid.h"
 #include "flight/servos.h"
 
@@ -87,6 +86,8 @@ extern uint8_t __config_end;
 #include "io/ledstrip.h"
 #include "io/osd.h"
 #include "io/serial.h"
+
+#include "navigation/navigation.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"

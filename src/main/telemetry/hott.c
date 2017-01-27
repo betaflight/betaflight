@@ -73,14 +73,15 @@
 
 #include "fc/runtime_config.h"
 
+#include "flight/pid.h"
+
 #include "io/serial.h"
 #include "io/gps.h"
 
+#include "navigation/navigation.h"
+
 #include "sensors/sensors.h"
 #include "sensors/battery.h"
-
-#include "flight/pid.h"
-#include "flight/navigation_rewrite.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/hott.h"

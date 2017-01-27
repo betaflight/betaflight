@@ -40,11 +40,12 @@
 #include "fc/runtime_config.h"
 
 #include "flight/imu.h"
-#include "flight/navigation_rewrite.h"
-#include "flight/navigation_rewrite_private.h"
 #include "flight/pid.h"
 
 #include "io/gps.h"
+
+#include "navigation/navigation.h"
+#include "navigation/navigation_private.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"

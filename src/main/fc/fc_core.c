@@ -63,6 +63,8 @@
 
 #include "msp/msp_serial.h"
 
+#include "navigation/navigation.h"
+
 #include "rx/rx.h"
 #include "rx/msp.h"
 
@@ -74,8 +76,8 @@
 #include "flight/servos.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
+
 #include "flight/failsafe.h"
-#include "flight/navigation_rewrite.h"
 
 #include "config/feature.h"
 

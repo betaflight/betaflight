@@ -15,32 +15,34 @@
 #include "common/color.h"
 #include "common/maths.h"
 
+#include "config/feature.h"
+
 #include "drivers/system.h"
 #include "drivers/serial.h"
-
-#include "rx/rx.h"
-#include "rx/msp.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/imu.h"
+
 #include "io/gps.h"
-#include "io/serial.h"
 #include "io/ledstrip.h"
+#include "io/serial.h"
+
+#include "navigation/navigation.h"
+
+#include "rx/rx.h"
+#include "rx/msp.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/barometer.h"
 #include "sensors/pitotmeter.h"
 
-#include "flight/imu.h"
-#include "flight/navigation_rewrite.h"
-
 #include "telemetry/telemetry.h"
 #include "telemetry/smartport.h"
 
-#include "config/feature.h"
 
 enum
 {

@@ -31,15 +31,18 @@
 #include "common/maths.h"
 #include "common/filter.h"
 
+#include "config/feature.h"
+#include "config/config_reset.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
-#include "config/config_reset.h"
 
 #include "drivers/pwm_output.h"
 #include "drivers/pwm_mapping.h"
 #include "drivers/system.h"
 
 #include "io/gimbal.h"
+
+#include "navigation/navigation.h"
 
 #include "rx/rx.h"
 
@@ -56,9 +59,6 @@
 #include "flight/failsafe.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
-#include "flight/navigation_rewrite.h"
-
-#include "config/feature.h"
 
 
 extern const mixer_t mixers[];

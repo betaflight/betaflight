@@ -48,7 +48,6 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
-#include "flight/navigation_rewrite.h"
 #include "flight/pid.h"
 #include "flight/servos.h"
 
@@ -57,6 +56,10 @@
 #include "io/ledstrip.h"
 #include "io/serial.h"
 
+#include "navigation/navigation.h"
+
+#include "rx/rx.h"
+
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
@@ -64,8 +67,6 @@
 #include "sensors/gyro.h"
 #include "sensors/pitotmeter.h"
 #include "sensors/sensors.h"
-
-#include "rx/rx.h"
 
 #include "telemetry/mavlink.h"
 #include "telemetry/telemetry.h"

@@ -31,29 +31,30 @@
 #include "common/maths.h"
 #include "common/axis.h"
 
+#include "config/feature.h"
+
 #include "drivers/system.h"
 #include "drivers/serial.h"
 
-#include "sensors/sensors.h"
-#include "sensors/acceleration.h"
-#include "sensors/gyro.h"
-#include "sensors/barometer.h"
-#include "sensors/battery.h"
-
-#include "io/serial.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
-
-#include "io/gps.h"
 
 #include "fc/config.h"
 
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
-#include "flight/navigation_rewrite.h"
 
-#include "config/feature.h"
+#include "io/gps.h"
+#include "io/serial.h"
+
+#include "navigation/navigation.h"
+
+#include "sensors/acceleration.h"
+#include "sensors/barometer.h"
+#include "sensors/battery.h"
+#include "sensors/gyro.h"
+#include "sensors/sensors.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/frsky.h"
