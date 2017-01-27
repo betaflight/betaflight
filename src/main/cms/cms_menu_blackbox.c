@@ -21,6 +21,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -42,7 +43,10 @@
 #include "config/config_master.h"
 #include "config/feature.h"
 
+#include "io/asyncfatfs/asyncfatfs.h"
 #include "io/flashfs.h"
+
+#include "blackbox/blackbox_io.h"
 
 #ifdef USE_FLASHFS
 static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
@@ -65,15 +69,106 @@ static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
 }
 #endif // USE_FLASHFS
 
+static const char * const cmsx_BlackboxDeviceNames[] = {
+    "SERIAL",
+    "FLASH ",
+    "SDCARD"
+};
+
 static bool featureRead = false;
+
 static uint8_t cmsx_FeatureBlackbox;
 
-static long cmsx_Blackbox_FeatureRead(void)
+static uint8_t cmsx_BlackboxDevice;
+static OSD_TAB_t cmsx_BlackboxDeviceTable = { &cmsx_BlackboxDevice, 2, cmsx_BlackboxDeviceNames };
+
+#define CMS_BLACKBOX_STATUS_LENGTH 8
+static char cmsx_BlackboxStatus[CMS_BLACKBOX_STATUS_LENGTH];
+
+static uint16_t cmsx_BlackboxDeviceStorageTotal;
+static uint16_t cmsx_BlackboxDeviceStorageUsed;
+static uint16_t cmsx_BlackboxDeviceStorageFree;
+
+static void cmsx_Blackbox_GetDeviceStatus()
 {
+    /* Reset storage counters */
+    cmsx_BlackboxDeviceStorageTotal = 0;
+    cmsx_BlackboxDeviceStorageFree = 0;
+    cmsx_BlackboxDeviceStorageUsed = 0;
+
+    switch (blackboxConfig()->device)
+    {
+#ifdef USE_SDCARD
+    case BLACKBOX_DEVICE_SDCARD:
+        if (!sdcard_isInserted()) {
+            snprintf(cmsx_BlackboxStatus, CMS_BLACKBOX_STATUS_LENGTH, "NO CARD");
+        } else if (!sdcard_isFunctional()) {
+            snprintf(cmsx_BlackboxStatus, CMS_BLACKBOX_STATUS_LENGTH, "FAULT");
+        } else {
+            switch (afatfs_getFilesystemState()) {
+            case AFATFS_FILESYSTEM_STATE_READY:
+                snprintf(cmsx_BlackboxStatus, CMS_BLACKBOX_STATUS_LENGTH, "READY");
+                break;
+            case AFATFS_FILESYSTEM_STATE_INITIALIZATION:
+                snprintf(cmsx_BlackboxStatus, CMS_BLACKBOX_STATUS_LENGTH, "INIT");
+                break;
+            case AFATFS_FILESYSTEM_STATE_FATAL:
+            case AFATFS_FILESYSTEM_STATE_UNKNOWN:
+            default:
+                snprintf(cmsx_BlackboxStatus, CMS_BLACKBOX_STATUS_LENGTH, "FAULT");
+                break;
+            }
+        }
+
+        /* Size in MB for SD card */
+        cmsx_BlackboxDeviceStorageTotal = sdcard_getMetadata()->numBlocks / 2000;
+        cmsx_BlackboxDeviceStorageFree = afatfs_getContiguousFreeSpace() / 1024000;
+        cmsx_BlackboxDeviceStorageUsed = cmsx_BlackboxDeviceStorageTotal - cmsx_BlackboxDeviceStorageFree;
+
+        break;
+#endif
+
+#ifdef USE_FLASHFS
+    case BLACKBOX_DEVICE_FLASH:
+        const flashGeometry_t *geometry = flashfsGetGeometry();
+        if (flashfsIsReady()) {
+          snprintf(cmsx_BlackboxStatus, CMS_BLACKBOX_STATUS_LENGTH, "READY");
+
+          /* Size in KB for flash */
+          cmsx_BlackboxDeviceStorageTotal = geometry->totalSize;
+          cmsx_BlackboxDeviceStorageUsed = flashfsGetOffset();
+          cmsx_BlackboxDeviceStorageFree = cmsx_BlackboxDeviceStorageTotal - cmsx_BlackboxDeviceStorageUsed;
+        } else {
+          snprintf(cmsx_BlackboxStatus, CMS_BLACKBOX_STATUS_LENGTH, "FAULT");
+        }
+
+        break;
+#endif
+
+    default:
+        snprintf(cmsx_BlackboxStatus, CMS_BLACKBOX_STATUS_LENGTH, "---");
+    }
+}
+
+static long cmsx_Blackbox_onEnter(void)
+{
+    cmsx_Blackbox_GetDeviceStatus();
+    cmsx_BlackboxDevice = blackboxConfig()->device;
+
     if (!featureRead) {
         cmsx_FeatureBlackbox = feature(FEATURE_BLACKBOX) ? 1 : 0;
         featureRead = true;
     }
+
+    return 0;
+}
+
+static long cmsx_Blackbox_onExit(const OSD_Entry *self)
+{
+    UNUSED(self);
+
+    blackboxConfig()->device = cmsx_BlackboxDevice;
+    validateBlackboxConfig();
 
     return 0;
 }
@@ -93,11 +188,16 @@ static long cmsx_Blackbox_FeatureWriteback(void)
 static OSD_Entry cmsx_menuBlackboxEntries[] =
 {
     { "-- BLACKBOX --", OME_Label, NULL, NULL, 0},
-    { "ENABLED",     OME_Bool,    NULL,            &cmsx_FeatureBlackbox,                                      0 },
-    { "RATE DENOM",  OME_UINT8,   NULL,            &(OSD_UINT8_t){ &blackboxConfig()->rate_denom,1,32,1 }, 0 },
+    { "ENABLED",     OME_Bool,    NULL,            &cmsx_FeatureBlackbox,                                         0 },
+    { "DEVICE",      OME_TAB,     NULL,            &cmsx_BlackboxDeviceTable,                                     0 },
+    { "(STATUS)",    OME_String,  NULL,            &cmsx_BlackboxStatus,                                          0 },
+    { "(USED)",      OME_UINT16,  NULL,            &(OSD_UINT16_t){ &cmsx_BlackboxDeviceStorageUsed, 0, 0, 0 },   DYNAMIC },
+    { "(FREE)",      OME_UINT16,  NULL,            &(OSD_UINT16_t){ &cmsx_BlackboxDeviceStorageFree, 0, 0, 0 },   DYNAMIC },
+    /* { "(TOTAL)",     OME_UINT16,  NULL,            &(OSD_UINT16_t){ &cmsx_BlackboxDeviceStorageTotal, 0, 0, 0 },  DYNAMIC }, */
+    { "RATE DENOM",  OME_UINT8,   NULL,            &(OSD_UINT8_t){ &blackboxConfig()->rate_denom, 1, 32, 1 },     0 },
 
 #ifdef USE_FLASHFS
-    { "ERASE FLASH", OME_Funcall, cmsx_EraseFlash, NULL,                                                       0 },
+    { "ERASE FLASH", OME_Funcall, cmsx_EraseFlash, NULL,                                                          0 },
 #endif // USE_FLASHFS
 
     { "BACK", OME_Back, NULL, NULL, 0 },
@@ -107,9 +207,10 @@ static OSD_Entry cmsx_menuBlackboxEntries[] =
 CMS_Menu cmsx_menuBlackbox = {
     .GUARD_text = "MENUBB",
     .GUARD_type = OME_MENU,
-    .onEnter = cmsx_Blackbox_FeatureRead,
-    .onExit = NULL,
+    .onEnter = cmsx_Blackbox_onEnter,
+    .onExit = cmsx_Blackbox_onExit,
     .onGlobalExit = cmsx_Blackbox_FeatureWriteback,
     .entries = cmsx_menuBlackboxEntries
 };
+
 #endif
