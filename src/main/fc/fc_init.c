@@ -67,11 +67,11 @@
 #include "drivers/exti.h"
 #include "drivers/io_pca9685.h"
 
+#include "fc/cli.h"
 #include "fc/fc_tasks.h"
 #include "fc/rc_controls.h"
 #include "fc/fc_msp.h"
 #include "fc/runtime_config.h"
-#include "fc/serial_cli.h"
 
 #include "io/beeper.h"
 #include "io/serial.h"

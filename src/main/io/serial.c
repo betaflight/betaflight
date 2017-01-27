@@ -47,7 +47,7 @@
 
 #include "io/serial.h"
 
-#include "fc/serial_cli.h"
+#include "fc/cli.h"
 
 #include "msp/msp_serial.h"
 

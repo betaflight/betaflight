@@ -32,20 +32,20 @@
 
 #include "common/axis.h"
 
-#include "drivers/system.h"
 #include "drivers/serial.h"
+#include "drivers/system.h"
 
-#include "io/serial.h"
+#include "fc/fc_core.h"
 #include "fc/rc_controls.h"
 
-#include "sensors/sensors.h"
+#include "io/serial.h"
+
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
+#include "sensors/sensors.h"
 
-#include "telemetry/telemetry.h"
 #include "telemetry/ibus.h"
-
-#include "fc/mw.h"
+#include "telemetry/telemetry.h"
 
 /*
  * iBus Telemetry is a half-duplex serial protocol. It shares 1 line for
