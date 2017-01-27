@@ -377,6 +377,10 @@ void osdDrawElements(void)
 {
     displayClearScreen(osdDisplayPort);
 
+    /* Hide OSD when OSDSW mode is active */
+    if (IS_RC_MODE_ACTIVE(BOXOSD))
+      return;
+
 #if 0
     if (currentElement)
         osdDrawElementPositioningHelp();
