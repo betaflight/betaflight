@@ -83,15 +83,11 @@ typedef struct softSerial_s {
     uint8_t          softSerialPortIndex;
     timerMode_e      timerMode;
 
-    //timerCCHandlerRec_t timerCb;
     timerOvrHandlerRec_t overCb;
     timerCCHandlerRec_t edgeCb;
 } softSerial_t;
 
-//extern timerHardware_t* serialTimerHardware;
-//extern softSerial_t softSerialPorts[];
-
-static const struct serialPortVTable softSerialVTable;
+static const struct serialPortVTable softSerialVTable; // Forward
 
 static softSerial_t softSerialPorts[MAX_SOFTSERIAL_PORTS];
 
@@ -264,6 +260,7 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
     delay(50);
 
     // Configure master timer (on RX); time base and input capture
+
     serialTimerConfigureTimebase(softSerial->timerHardware, baud);
     serialICConfig(softSerial->timerHardware->tim, softSerial->timerHardware->channel, (options & SERIAL_INVERTED) ? TIM_ICPolarity_Rising : TIM_ICPolarity_Falling);
 
@@ -274,11 +271,11 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
     softSerial->timerMode = TIMER_MODE_SINGLE;
 
     // Configure bit clock interrupt & handler.
+    // If we have an extra timer (on TX), it is initialized and configured
+    // for overflow interrupt.
     // Receiver input capture is configured when input is activated.
 
     if ((mode & MODE_TX) && softSerial->exTimerHardware && softSerial->exTimerHardware->tim != softSerial->timerHardware->tim) {
-        // Special case of dual timer configuration.
-        // Extra timer (on TX) is initialized and configured for overflow interrupt.
         serialTimerConfigureTimebase(softSerial->exTimerHardware, baud);
         timerChConfigCallbacks(softSerial->exTimerHardware, NULL, &softSerial->overCb);
         softSerial->timerMode = TIMER_MODE_DUAL;
