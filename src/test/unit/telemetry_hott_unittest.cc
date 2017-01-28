@@ -27,6 +27,7 @@ extern "C" {
     #include "build/debug.h"
 
     #include "common/axis.h"
+    #include "common/gps_conversion.h"
 
     #include "config/parameter_group.h"
     #include "config/parameter_group_ids.h"
@@ -44,7 +45,6 @@ extern "C" {
     #include "telemetry/hott.h"
 
     #include "flight/pid.h"
-    #include "flight/gps_conversion.h"
 
     #include "fc/runtime_config.h"
 
