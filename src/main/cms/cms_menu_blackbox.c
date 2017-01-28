@@ -91,8 +91,8 @@ static void cmsx_Blackbox_GetDeviceStatus()
 {
     char * unit = "B";
     bool storageDeviceIsWorking = false;
-    uint16_t storageUsed = 0;
-    uint16_t storageFree = 0;
+    uint32_t storageUsed = 0;
+    uint32_t storageFree = 0;
 
     switch (blackboxConfig()->device)
     {
@@ -133,14 +133,13 @@ static void cmsx_Blackbox_GetDeviceStatus()
     case BLACKBOX_DEVICE_FLASH:
         unit = "KB";
 
-        const flashGeometry_t *geometry = flashfsGetGeometry();
         storageDeviceIsWorking = flashfsIsReady();
-
         if (storageDeviceIsWorking) {
             snprintf(cmsx_BlackboxStatus, CMS_BLACKBOX_STRING_LENGTH, "READY");
 
-            storageUsed = flashfsGetOffset();
-            storageFree = geometry->totalSize - storageUsed;
+            const flashGeometry_t *geometry = flashfsGetGeometry();
+            storageUsed = flashfsGetOffset() / 1024;
+            storageFree = (geometry->totalSize / 1024) - storageUsed;
         } else {
             snprintf(cmsx_BlackboxStatus, CMS_BLACKBOX_STRING_LENGTH, "FAULT");
         }
@@ -154,8 +153,8 @@ static void cmsx_Blackbox_GetDeviceStatus()
     }
 
     /* Storage counters */
-    snprintf(cmsx_BlackboxDeviceStorageUsed, CMS_BLACKBOX_STRING_LENGTH, "%d%s", storageUsed, unit);
-    snprintf(cmsx_BlackboxDeviceStorageFree, CMS_BLACKBOX_STRING_LENGTH, "%d%s", storageFree, unit);
+    snprintf(cmsx_BlackboxDeviceStorageUsed, CMS_BLACKBOX_STRING_LENGTH, "%ld%s", storageUsed, unit);
+    snprintf(cmsx_BlackboxDeviceStorageFree, CMS_BLACKBOX_STRING_LENGTH, "%ld%s", storageFree, unit);
 }
 
 static long cmsx_Blackbox_onEnter(void)
