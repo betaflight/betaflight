@@ -76,6 +76,7 @@ typedef struct gyroCalibration_s {
 } gyroCalibration_t;
 
 STATIC_UNIT_TESTED gyroCalibration_t gyroCalibration;
+static int32_t gyroADC[XYZ_AXIS_COUNT];
 
 static filterApplyFnPtr softLpfFilterApplyFn;
 static void *softLpfFilter[XYZ_AXIS_COUNT];
@@ -360,19 +361,16 @@ void gyroUpdate(void)
     if (gyro.dev.read(&gyro.dev)) {
         if (isCalibrationComplete(&gyroCalibration)) {
             // Copy gyro value into int32_t (to prevent overflow) and then apply calibration and alignment
-            gyro.gyroADC[X] = gyro.dev.gyroADCRaw[X];
-            gyro.gyroADC[X] -= gyro.dev.gyroZero[X];
-            gyro.gyroADC[Y] = gyro.dev.gyroADCRaw[Y];
-            gyro.gyroADC[Y] -= gyro.dev.gyroZero[Y];
-            gyro.gyroADC[Z] = gyro.dev.gyroADCRaw[Z];
-            gyro.gyroADC[Z] -= gyro.dev.gyroZero[Z];
-            alignSensors(gyro.gyroADC, gyro.dev.gyroAlign);
+            gyroADC[X] = (int32_t)gyro.dev.gyroADCRaw[X] - (int32_t)gyro.dev.gyroZero[X];
+            gyroADC[Y] = (int32_t)gyro.dev.gyroADCRaw[Y] - (int32_t)gyro.dev.gyroZero[Y];
+            gyroADC[Z] = (int32_t)gyro.dev.gyroADCRaw[Z] - (int32_t)gyro.dev.gyroZero[Z];
+            alignSensors(gyroADC, gyro.dev.gyroAlign);
         } else {
             performGyroCalibration(&gyro.dev, &gyroCalibration, gyroConfig()->gyroMovementCalibrationThreshold);
-            // Reset gyro value to zero to prevent other code from using uncalibrated data
-            gyro.gyroADC[X] = 0;
-            gyro.gyroADC[Y] = 0;
-            gyro.gyroADC[Z] = 0;
+            // Reset gyro values to zero to prevent other code from using uncalibrated data
+            gyro.gyroADCf[X] = 0.0f;
+            gyro.gyroADCf[Y] = 0.0f;
+            gyro.gyroADCf[Z] = 0.0f;
             // still calibrating, so no need to further process gyro data
             return;
         }
@@ -382,7 +380,7 @@ void gyroUpdate(void)
     }
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        float gyroADCf = (float)gyro.gyroADC[axis];
+        float gyroADCf = (float)gyroADC[axis] * gyro.dev.scale;
 
         DEBUG_SET(DEBUG_GYRO, axis, lrintf(gyroADCf));
 
@@ -396,6 +394,6 @@ void gyroUpdate(void)
 #ifdef USE_GYRO_NOTCH_2
         gyroADCf = notchFilter2ApplyFn(notchFilter2[axis], gyroADCf);
 #endif
-        gyro.gyroADC[axis] = lrintf(gyroADCf);
+        gyro.gyroADCf[axis] = gyroADCf;
     }
 }

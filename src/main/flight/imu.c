@@ -89,7 +89,7 @@ attitudeEulerAngles_t attitude = { { 0, 0, 0 } };     // absolute angle inclinat
 
 static imuRuntimeConfig_t imuRuntimeConfig;
 
-static float gyroScale;
+static const float gyroScale = (M_PIf / 180.0f);  // gyro output scaled to rad per second
 
 static bool gpsHeadingInitialized = false;
 
@@ -118,7 +118,7 @@ void imuUpdateGyroscope(uint32_t gyroUpdateDeltaUs)
     const float gyroUpdateDelta = gyroUpdateDeltaUs * 1e-6f;
 
     for (int axis = 0; axis < 3; axis++) {
-        imuAccumulatedRate[axis] += gyro.gyroADC[axis] * gyroScale * gyroUpdateDelta;
+        imuAccumulatedRate[axis] += gyro.gyroADCf[axis] * gyroScale * gyroUpdateDelta;
     }
 
     imuAccumulatedRateTime += gyroUpdateDelta;
@@ -164,7 +164,6 @@ void imuConfigure(void)
 void imuInit(void)
 {
     smallAngleCosZ = cos_approx(degreesToRadians(imuRuntimeConfig.small_angle));
-    gyroScale = gyro.dev.scale * (M_PIf / 180.0f);  // gyro output scaled to rad per second
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         imuAccelInBodyFrame.A[axis] = 0;
@@ -550,7 +549,7 @@ static void imuUpdateMeasuredRotationRate(void)
     imuAccumulatedRateTime = 0.0f;
 #else
     for (axis = 0; axis < 3; axis++) {
-        imuMeasuredRotationBF.A[axis] = gyro.gyroADC[axis] * gyroScale;
+        imuMeasuredRotationBF.A[axis] = gyro.gyroADCf[axis];
     }
 #endif
 }
