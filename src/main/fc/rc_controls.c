@@ -43,11 +43,12 @@
 #include "fc/runtime_config.h"
 
 #include "flight/pid.h"
-#include "flight/navigation_rewrite.h"
 #include "flight/failsafe.h"
 
 #include "io/gps.h"
 #include "io/beeper.h"
+
+#include "navigation/navigation.h"
 
 #include "rx/rx.h"
 

@@ -575,12 +575,6 @@ HIGHEND_SRC = \
             drivers/display_ug2864hsweg01.c \
             drivers/sonar_hcsr04.c \
             drivers/sonar_srf10.c \
-            flight/navigation_rewrite.c \
-            flight/navigation_rewrite_multicopter.c \
-            flight/navigation_rewrite_fixedwing.c \
-            flight/navigation_rewrite_fw_launch.c \
-            flight/navigation_rewrite_pos_estimator.c \
-            flight/navigation_rewrite_geo.c \
             io/dashboard.c \
             io/displayport_max7456.c \
             io/displayport_msp.c \
@@ -592,6 +586,12 @@ HIGHEND_SRC = \
             io/gps_i2cnav.c \
             io/ledstrip.c \
             io/osd.c \
+            navigation/navigation.c \
+            navigation/navigation_fixedwing.c \
+            navigation/navigation_fw_launch.c \
+            navigation/navigation_geo.c \
+            navigation/navigation_multicopter.c \
+            navigation/navigation_pos_estimator.c \
             sensors/barometer.c \
             sensors/pitotmeter.c \
             sensors/rangefinder.c \

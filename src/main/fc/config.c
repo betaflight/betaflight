@@ -22,6 +22,7 @@
 #include "platform.h"
 
 #include "build/build_config.h"
+#include "build/debug.h"
 
 #include "blackbox/blackbox_io.h"
 
@@ -62,7 +63,6 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
-#include "flight/navigation_rewrite.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -71,7 +71,7 @@
 #include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
 
-#include "build/debug.h"
+#include "navigation/navigation.h"
 
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM

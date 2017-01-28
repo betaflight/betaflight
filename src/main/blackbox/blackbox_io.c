@@ -19,16 +19,21 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include "platform.h"
+
+#ifdef BLACKBOX
+
 #include "blackbox.h"
 #include "blackbox_io.h"
 
-#include "build/version.h"
 #include "build/build_config.h"
+#include "build/version.h"
 
-#include "common/maths.h"
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/encoding.h"
+#include "common/maths.h"
+#include "common/printf.h"
 #include "common/streambuf.h"
 
 #include "drivers/gpio.h"
@@ -42,17 +47,18 @@
 #include "drivers/light_led.h"
 #include "drivers/gyro_sync.h"
 
-#include "sensors/sensors.h"
-#include "sensors/boardalignment.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/pitotmeter.h"
-#include "sensors/gyro.h"
-#include "sensors/battery.h"
-
-#include "io/beeper.h"
+#include "fc/config.h"
 #include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 
+#include "flight/mixer.h"
+#include "flight/servos.h"
+#include "flight/failsafe.h"
+#include "flight/imu.h"
+
+#include "io/asyncfatfs/asyncfatfs.h"
+#include "io/beeper.h"
+#include "io/flashfs.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
@@ -61,25 +67,20 @@
 
 #include "msp/msp_serial.h"
 
+#include "navigation/navigation.h"
+
 #include "rx/msp.h"
 #include "rx/rx.h"
 
+#include "sensors/acceleration.h"
+#include "sensors/battery.h"
+#include "sensors/boardalignment.h"
+#include "sensors/barometer.h"
+#include "sensors/gyro.h"
+#include "sensors/pitotmeter.h"
+#include "sensors/sensors.h"
+
 #include "telemetry/telemetry.h"
-#include "common/printf.h"
-
-#include "flight/mixer.h"
-#include "flight/servos.h"
-#include "flight/failsafe.h"
-#include "flight/imu.h"
-#include "flight/navigation_rewrite.h"
-
-#include "fc/config.h"
-#include "fc/runtime_config.h"
-
-#include "io/flashfs.h"
-#include "io/asyncfatfs/asyncfatfs.h"
-
-#ifdef BLACKBOX
 
 #define BLACKBOX_SERIAL_PORT_MODE MODE_TX
 
