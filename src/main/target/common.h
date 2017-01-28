@@ -49,6 +49,7 @@
 
 #ifdef STM32F3
 #define USE_DSHOT
+#undef GPS
 #endif
 
 #ifdef STM32F1
