@@ -32,33 +32,29 @@
 
 #define INVERTER_PIN_USART2     PC15 //Sbus on USART 2 of nano.
 
-#define MPU9250_CS_PIN          PB12
-#define MPU9250_SPI_INSTANCE    SPI2
+#define MPU6500_CS_PIN          PB12
+#define MPU6500_SPI_INSTANCE    SPI2
 
 #define ACC
-#define USE_ACC_MPU9250
-#define USE_ACC_SPI_MPU9250
-#define ACC_MPU9250_ALIGN       CW270_DEG
+#define USE_ACC_MPU6500
+#define USE_ACC_SPI_MPU6500
+#define ACC_MPU6500_ALIGN       CW270_DEG
 
 #define GYRO
-#define USE_GYRO_MPU9250
-#define USE_GYRO_SPI_MPU9250
-#define GYRO_MPU9250_ALIGN      CW270_DEG
-
-//#define MAG
-//#define USE_MAG_HMC5883
+#define USE_GYRO_MPU6500
+#define USE_GYRO_SPI_MPU6500
+#define GYRO_MPU6500_ALIGN      CW270_DEG
 
 #define BARO
 #define USE_BARO_MS5611
 
-// MPU9250 interrupts
+// MPU6500 interrupts
 #define USE_EXTI
 #define MPU_INT_EXTI            PA15
 #define USE_MPU_DATA_READY_SIGNAL
-//#define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define USE_VCP
-#define VBUS_SENSING_PIN        PA9
+//#define VBUS_SENSING_PIN        PA9
 
 #define USE_UART1
 #define UART1_RX_PIN            PB7
@@ -68,15 +64,13 @@
 #define UART2_RX_PIN            PA3
 #define UART2_TX_PIN            PA2
 
-#define SERIAL_PORT_COUNT       3 //VCP, USART1, USART2
+#define SERIAL_PORT_COUNT       3 
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 
 
 #define USE_SPI
-//#define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
-//#define USE_SPI_DEVICE_3
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_3)
