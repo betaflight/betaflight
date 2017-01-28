@@ -22,6 +22,8 @@
 
 #include "platform.h"
 
+#include "build/build_config.h"
+
 #include "common/axis.h"
 #include "common/maths.h"
 #include "common/filter.h"
@@ -65,9 +67,9 @@
 #include "hardware_revision.h"
 #endif
 
-gyro_t gyro;                      // gyro access functions
+gyro_t gyro; // gyro sensor object
 
-static int32_t gyroZero[XYZ_AXIS_COUNT] = { 0, 0, 0 };
+STATIC_UNIT_TESTED int32_t gyroZero[XYZ_AXIS_COUNT] = { 0, 0, 0 };
 
 static uint16_t calibratingG = 0;
 
@@ -99,6 +101,7 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .gyro_soft_notch_cutoff_2 = 1
 );
 
+#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050)
 static const extiConfig_t *selectMPUIntExtiConfig(void)
 {
 #if defined(MPU_INT_EXTI)
@@ -110,8 +113,9 @@ static const extiConfig_t *selectMPUIntExtiConfig(void)
     return NULL;
 #endif
 }
+#endif
 
-static bool gyroDetect(gyroDev_t *dev, const extiConfig_t *extiConfig)
+STATIC_UNIT_TESTED bool gyroDetect(gyroDev_t *dev, const extiConfig_t *extiConfig)
 {
     dev->mpuIntExtiConfig =  extiConfig;
 
@@ -228,6 +232,8 @@ bool gyroInit(void)
     const extiConfig_t *extiConfig = selectMPUIntExtiConfig();
     mpuDetect(&gyro.dev);
     mpuReset = gyro.dev.mpuConfiguration.reset;
+#else
+    const extiConfig_t *extiConfig = NULL;
 #endif
 
     if (!gyroDetect(&gyro.dev, extiConfig)) {
@@ -310,7 +316,7 @@ static bool isOnFirstGyroCalibrationCycle(void)
     return calibratingG == CALIBRATING_GYRO_CYCLES;
 }
 
-static void performAcclerationCalibration(uint8_t gyroMovementCalibrationThreshold)
+STATIC_UNIT_TESTED void performGyroCalibration(uint8_t gyroMovementCalibrationThreshold)
 {
     static int32_t g[3];
     static stdev_t var[3];
@@ -363,7 +369,7 @@ void gyroUpdate(void)
     gyro.gyroADC[Z] = gyro.dev.gyroADCRaw[Z];
 
     if (!gyroIsCalibrationComplete()) {
-        performAcclerationCalibration(gyroConfig()->gyroMovementCalibrationThreshold);
+        performGyroCalibration(gyroConfig()->gyroMovementCalibrationThreshold);
     }
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {

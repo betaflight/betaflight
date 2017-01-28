@@ -37,6 +37,12 @@ typedef struct
     void* test;
 } TIM_TypeDef;
 
+typedef enum {
+  EXTI_Trigger_Rising = 0x08,
+  EXTI_Trigger_Falling = 0x0C,
+  EXTI_Trigger_Rising_Falling = 0x10
+} EXTITrigger_TypeDef;
+
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 typedef enum {TEST_IRQ = 0 } IRQn_Type;
