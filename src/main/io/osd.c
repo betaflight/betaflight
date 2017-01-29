@@ -40,8 +40,14 @@
 #include "drivers/max7456_symbols.h"
 #include "drivers/display.h"
 #include "drivers/system.h"
+
+// XXX This will eventurally be gone.
 #ifdef USE_RTC6705
 #include "drivers/vtx_soft_spi_rtc6705.h"
+#endif
+
+#ifdef VTX_COMMON
+#include "drivers/vtx_common.h"
 #endif
 
 #include "cms/cms.h"
@@ -50,9 +56,6 @@
 
 #include "io/flashfs.h"
 #include "io/osd.h"
-
-#include "io/vtx.h"
-
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -103,7 +106,6 @@ uint16_t refreshTimeout = 0;
 static uint8_t armState;
 
 static displayPort_t *osdDisplayPort;
-
 
 #define AH_MAX_PITCH 200 // Specify maximum AHI pitch value displayed. Default 200 = 20.0 degrees
 #define AH_MAX_ROLL 400  // Specify maximum AHI roll value displayed. Default 400 = 40.0 degrees
@@ -258,12 +260,34 @@ static void osdDrawSingleElement(uint8_t item)
         }
 
 #ifdef USE_RTC6705
+
+#endif
+
+// This will eventually be gone.
+#ifdef USE_RTC6705
         case OSD_VTX_CHANNEL:
         {
             sprintf(buff, "CH:%d", current_vtx_channel % CHANNELS_PER_BAND + 1);
             break;
         }
-#endif // VTX
+#endif // USE_RTC6705
+
+#ifdef VTX_COMMON
+        case OSD_VTX_CHANNEL:
+        {
+            // Some devices may be operating in non-band/chan mode,
+            // in which case current operating frequency is displayed.
+            char *str;
+            if ((str = vtxCommonGetBandChanString()) != NULL) {
+                sprintf(buff, "CH:%s", vtxCommonGetBandChanString());
+            } else if ((str = vtxCommonGetBandChanString()) != NULL) {
+                sprintf(buff, "%s", vtxCommonGetBandChanString());
+            } else {
+                sprintf(buff, "CH:--");
+            }
+            break;
+        }
+#endif // VTX_COMMON
 
         case OSD_CROSSHAIRS:
             elemPosX = 14 - 1; // Offset for 1 char to the left
