@@ -657,11 +657,6 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #else
         sbufWriteU32(dst, 0);
 #endif
-#if defined(SONAR)
-        sbufWriteU32(dst, rangefinderGetLatestAltitude());
-#else
-        sbufWriteU32(dst, 0);
-#endif
         break;
 
     case MSP_SONAR_ALTITUDE:
