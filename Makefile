@@ -743,9 +743,15 @@ VPATH        := $(VPATH):$(STDPERIPH_DIR)/src
 #
 
 # Tool names
+ifneq ($(TOOLCHAINPATH),)
+CC          = $(TOOLCHAINPATH)/arm-none-eabi-gcc
+OBJCOPY     = $(TOOLCHAINPATH)/arm-none-eabi-objcopy
+SIZE        = $(TOOLCHAINPATH)/arm-none-eabi-size
+else
 CC          = arm-none-eabi-gcc
 OBJCOPY     = arm-none-eabi-objcopy
 SIZE        = arm-none-eabi-size
+endif
 
 #
 # Tool options.
