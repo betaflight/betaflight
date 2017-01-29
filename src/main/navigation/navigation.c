@@ -34,21 +34,23 @@
 
 #include "drivers/system.h"
 
-#include "sensors/sensors.h"
-#include "sensors/acceleration.h"
-#include "sensors/boardalignment.h"
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
+
+#include "flight/imu.h"
+#include "flight/pid.h"
 
 #include "io/beeper.h"
 #include "io/gps.h"
 
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/navigation_rewrite.h"
-#include "flight/navigation_rewrite_private.h"
+#include "navigation/navigation.h"
+#include "navigation/navigation_private.h"
 
-#include "fc/config.h"
-#include "fc/rc_controls.h"
-#include "fc/runtime_config.h"
+#include "sensors/sensors.h"
+#include "sensors/acceleration.h"
+#include "sensors/boardalignment.h"
+
 
 /*-----------------------------------------------------------
  * Compatibility for home position

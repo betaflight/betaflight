@@ -37,17 +37,18 @@
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
-#include "fc/mw.h"
+#include "fc/fc_core.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
 
 #include "flight/pid.h"
-#include "flight/navigation_rewrite.h"
 #include "flight/failsafe.h"
 
 #include "io/gps.h"
 #include "io/beeper.h"
+
+#include "navigation/navigation.h"
 
 #include "rx/rx.h"
 

@@ -27,6 +27,7 @@
 #include "build/debug.h"
 
 #include "common/axis.h"
+#include "common/gps_conversion.h"
 #include "common/maths.h"
 #include "common/utils.h"
 
@@ -34,17 +35,18 @@
 #include "drivers/serial.h"
 #include "drivers/system.h"
 
-#include "io/serial.h"
-#include "io/gps.h"
-#include "io/gps_private.h"
-
-#include "flight/gps_conversion.h"
-#include "flight/pid.h"
-#include "flight/hil.h"
-#include "flight/navigation_rewrite.h"
-
 #include "fc/config.h"
 #include "fc/runtime_config.h"
+
+#include "flight/hil.h"
+#include "flight/pid.h"
+
+#include "io/gps.h"
+#include "io/gps_private.h"
+#include "io/serial.h"
+
+#include "navigation/navigation.h"
+
 
 #define GPS_I2C_POLL_RATE_HZ    20  // Poll I2C GPS at this rate
 

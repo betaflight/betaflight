@@ -33,13 +33,13 @@
 #include "drivers/serial.h"
 #include "drivers/stack_check.h"
 
+#include "fc/cli.h"
 #include "fc/config.h"
+#include "fc/fc_core.h"
 #include "fc/fc_msp.h"
 #include "fc/fc_tasks.h"
-#include "fc/mw.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
-#include "fc/serial_cli.h"
 
 #include "flight/imu.h"
 #include "flight/mixer.h"

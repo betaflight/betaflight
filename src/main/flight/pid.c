@@ -39,9 +39,10 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
-#include "flight/navigation_rewrite.h"
 
 #include "io/gps.h"
+
+#include "navigation/navigation.h"
 
 #include "rx/rx.h"
 

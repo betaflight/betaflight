@@ -45,7 +45,6 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
-#include "flight/navigation_rewrite.h"
 
 #include "io/dashboard.h"
 #include "io/displayport_oled.h"
@@ -53,6 +52,8 @@
 #ifdef GPS
 #include "io/gps.h"
 #endif
+
+#include "navigation/navigation.h"
 
 #include "rx/rx.h"
 

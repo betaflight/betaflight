@@ -67,11 +67,11 @@
 #include "drivers/exti.h"
 #include "drivers/io_pca9685.h"
 
+#include "fc/cli.h"
 #include "fc/fc_tasks.h"
 #include "fc/rc_controls.h"
 #include "fc/fc_msp.h"
 #include "fc/runtime_config.h"
-#include "fc/serial_cli.h"
 
 #include "io/beeper.h"
 #include "io/serial.h"
@@ -86,6 +86,8 @@
 #include "io/displayport_msp.h"
 
 #include "msp/msp_serial.h"
+
+#include "navigation/navigation.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -110,7 +112,6 @@
 #include "flight/mixer.h"
 #include "flight/servos.h"
 #include "flight/failsafe.h"
-#include "flight/navigation_rewrite.h"
 
 #include "config/config_eeprom.h"
 #include "config/feature.h"

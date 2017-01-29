@@ -43,10 +43,12 @@
 
 #include "flight/pid.h"
 #include "flight/imu.h"
-#include "flight/navigation_rewrite.h"
-#include "flight/navigation_rewrite_private.h"
 #include "flight/failsafe.h"
 #include "flight/mixer.h"
+
+#include "navigation/navigation.h"
+#include "navigation/navigation_private.h"
+
 
 /*-----------------------------------------------------------
  * Altitude controller for multicopter aircraft

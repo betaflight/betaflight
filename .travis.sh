@@ -63,6 +63,8 @@ elif [ $TARGET ] ; then
 	else
 		make -j2 $MAKEFILE
 	fi
+elif [ $GOAL ] ; then
+    make V=0 $GOAL
 else
     # No target specified, build all with very low verbosity.
     make V=0 all

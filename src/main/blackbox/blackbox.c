@@ -23,6 +23,10 @@
 
 #ifdef BLACKBOX
 
+#include "blackbox.h"
+#include "blackbox_io.h"
+
+#include "build/debug.h"
 #include "build/version.h"
 
 #include "common/maths.h"
@@ -31,31 +35,28 @@
 #include "common/encoding.h"
 #include "common/utils.h"
 
+#include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/sensor.h"
-#include "drivers/system.h"
-#include "drivers/serial.h"
-#include "drivers/compass.h"
-#include "drivers/pwm_rx.h"
 #include "drivers/accgyro.h"
+#include "drivers/compass.h"
 #include "drivers/light_led.h"
-
-#include "sensors/sensors.h"
-#include "sensors/boardalignment.h"
-#include "sensors/rangefinder.h"
-#include "sensors/compass.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/pitotmeter.h"
-#include "sensors/gyro.h"
-#include "sensors/battery.h"
+#include "drivers/pwm_rx.h"
+#include "drivers/sensor.h"
+#include "drivers/serial.h"
+#include "drivers/system.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+
+#include "flight/failsafe.h"
+#include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
+#include "flight/servos.h"
 
 #include "io/beeper.h"
 #include "io/gimbal.h"
@@ -64,24 +65,23 @@
 #include "io/serial.h"
 #include "io/statusindicator.h"
 
+#include "navigation/navigation.h"
+
 #include "rx/rx.h"
 #include "rx/msp.h"
 
+#include "sensors/acceleration.h"
+#include "sensors/barometer.h"
+#include "sensors/battery.h"
+#include "sensors/boardalignment.h"
+#include "sensors/compass.h"
+#include "sensors/gyro.h"
+#include "sensors/pitotmeter.h"
+#include "sensors/rangefinder.h"
+#include "sensors/sensors.h"
+
 #include "telemetry/telemetry.h"
 
-#include "flight/mixer.h"
-#include "flight/servos.h"
-#include "flight/failsafe.h"
-#include "flight/imu.h"
-#include "flight/navigation_rewrite.h"
-#include "flight/pid.h"
-
-#include "config/feature.h"
-
-#include "blackbox.h"
-#include "blackbox_io.h"
-
-#include "build/debug.h"
 
 #ifdef ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 #define DEFAULT_BLACKBOX_DEVICE BLACKBOX_DEVICE_FLASH

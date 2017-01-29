@@ -27,11 +27,14 @@
 
 #include "build/build_config.h"
 
+#include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
+#include "common/printf.h"
 #include "common/typeconversion.h"
 #include "common/utils.h"
 
+#include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
@@ -39,14 +42,25 @@
 #include "drivers/serial.h"
 #include "drivers/system.h"
 
-#include "common/axis.h"
-#include "common/printf.h"
-#include "common/utils.h"
-
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/failsafe.h"
+#include "flight/mixer.h"
+#include "flight/servos.h"
+#include "flight/pid.h"
+#include "flight/imu.h"
+
+#include "io/ledstrip.h"
+#include "io/beeper.h"
+#include "io/gimbal.h"
+#include "io/serial.h"
+#include "io/gps.h"
+
+#include "navigation/navigation.h"
+
+#include "rx/rx.h"
 #include "sensors/acceleration.h"
 #include "sensors/diagnostics.h"
 #include "sensors/barometer.h"
@@ -56,24 +70,8 @@
 #include "sensors/sensors.h"
 #include "sensors/pitotmeter.h"
 
-#include "io/ledstrip.h"
-#include "io/beeper.h"
-#include "io/gimbal.h"
-#include "io/serial.h"
-#include "io/gps.h"
-
-#include "rx/rx.h"
-
 #include "telemetry/telemetry.h"
 
-#include "flight/failsafe.h"
-#include "flight/mixer.h"
-#include "flight/servos.h"
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/navigation_rewrite.h"
-
-#include "config/feature.h"
 
 extern uint16_t rssi; // FIXME dependency on mw.c
 

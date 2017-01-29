@@ -39,8 +39,9 @@
 #include "fc/controlrate_profile.h"
 
 #include "flight/failsafe.h"
-#include "flight/navigation_rewrite.h"
 #include "flight/pid.h"
+
+#include "navigation/navigation.h"
 
 #include "rx/rx.h"
 

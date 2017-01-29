@@ -45,13 +45,13 @@
 #include "sensors/gyro.h"
 #include "sensors/battery.h"
 
+#include "fc/cli.h"
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
-#include "fc/serial_cli.h"
 
 #include "io/beeper.h"
 #include "io/dashboard.h"
@@ -62,6 +62,8 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 
 #include "msp/msp_serial.h"
+
+#include "navigation/navigation.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -74,8 +76,8 @@
 #include "flight/servos.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
+
 #include "flight/failsafe.h"
-#include "flight/navigation_rewrite.h"
 
 #include "config/feature.h"
 

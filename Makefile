@@ -506,18 +506,18 @@ COMMON_SRC = \
             drivers/stack_check.c \
             drivers/system.c \
             drivers/timer.c \
+            fc/cli.c \
             fc/config.c \
             fc/controlrate_profile.c \
+            fc/fc_core.c \
             fc/fc_init.c \
             fc/fc_tasks.c \
             fc/fc_hardfaults.c \
             fc/fc_msp.c \
-            fc/mw.c \
             fc/rc_adjustments.c \
             fc/rc_controls.c \
             fc/rc_curves.c \
             fc/runtime_config.c \
-            fc/serial_cli.c \
             flight/failsafe.c \
             flight/hil.c \
             flight/imu.c \
@@ -571,16 +571,10 @@ HIGHEND_SRC = \
             cms/cms_menu_misc.c \
             cms/cms_menu_osd.c \
             common/colorconversion.c \
+            common/gps_conversion.c \
             drivers/display_ug2864hsweg01.c \
             drivers/sonar_hcsr04.c \
             drivers/sonar_srf10.c \
-            flight/navigation_rewrite.c \
-            flight/navigation_rewrite_multicopter.c \
-            flight/navigation_rewrite_fixedwing.c \
-            flight/navigation_rewrite_fw_launch.c \
-            flight/navigation_rewrite_pos_estimator.c \
-            flight/navigation_rewrite_geo.c \
-            flight/gps_conversion.c \
             io/dashboard.c \
             io/displayport_max7456.c \
             io/displayport_msp.c \
@@ -592,6 +586,12 @@ HIGHEND_SRC = \
             io/gps_i2cnav.c \
             io/ledstrip.c \
             io/osd.c \
+            navigation/navigation.c \
+            navigation/navigation_fixedwing.c \
+            navigation/navigation_fw_launch.c \
+            navigation/navigation_geo.c \
+            navigation/navigation_multicopter.c \
+            navigation/navigation_pos_estimator.c \
             sensors/barometer.c \
             sensors/pitotmeter.c \
             sensors/rangefinder.c \
@@ -743,9 +743,15 @@ VPATH        := $(VPATH):$(STDPERIPH_DIR)/src
 #
 
 # Tool names
-CC          = arm-none-eabi-gcc
+ifneq ($(TOOLCHAINPATH),)
+CROSS_CC    = $(TOOLCHAINPATH)/arm-none-eabi-gcc
+OBJCOPY     = $(TOOLCHAINPATH)/arm-none-eabi-objcopy
+SIZE        = $(TOOLCHAINPATH)/arm-none-eabi-size
+else
+CROSS_CC    = arm-none-eabi-gcc
 OBJCOPY     = arm-none-eabi-objcopy
 SIZE        = arm-none-eabi-size
+endif
 
 #
 # Tool options.
@@ -838,25 +844,25 @@ $(TARGET_BIN): $(TARGET_ELF)
 
 $(TARGET_ELF):  $(TARGET_OBJS)
 	$(V1) echo Linking $(TARGET)
-	$(V1) $(CC) -o $@ $^ $(LDFLAGS)
+	$(V1) $(CROSS_CC) -o $@ $^ $(LDFLAGS)
 	$(V0) $(SIZE) $(TARGET_ELF)
 
 # Compile
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
 	$(V1) mkdir -p $(dir $@)
 	$(V1) echo %% $(notdir $<) "$(STDOUT)"
-	$(V1) $(CC) -c -o $@ $(CFLAGS) $<
+	$(V1) $(CROSS_CC) -c -o $@ $(CFLAGS) $<
 
 # Assemble
 $(OBJECT_DIR)/$(TARGET)/%.o: %.s
 	$(V1) mkdir -p $(dir $@)
 	$(V1) echo %% $(notdir $<) "$(STDOUT)"
-	$(V1) $(CC) -c -o $@ $(ASFLAGS) $<
+	$(V1) $(CROSS_CC) -c -o $@ $(ASFLAGS) $<
 
 $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 	$(V1) mkdir -p $(dir $@)
 	$(V1) echo %% $(notdir $<) "$(STDOUT)"
-	$(V1) $(CC) -c -o $@ $(ASFLAGS) $<
+	$(V1) $(CROSS_CC) -c -o $@ $(ASFLAGS) $<
 
 
 ## all               : Build all valid targets
