@@ -366,6 +366,23 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
+        case OSD_PIDRATE_PROFILE:
+        {
+            uint8_t profileIndex = masterConfig.current_profile_index;
+            uint8_t rateProfileIndex = masterConfig.profile[profileIndex].activeRateProfile;
+            sprintf(buff, "%d-%d", profileIndex + 1, rateProfileIndex + 1);
+            break;
+        }
+
+        case OSD_MAIN_BATT_WARNING:
+        {
+            if (getVbat() > (batteryWarningVoltage - 1))
+              return;
+
+            sprintf(buff, "LOW VOLTAGE");
+            break;
+        }
+
         default:
             return;
     }
@@ -409,6 +426,8 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_PITCH_PIDS);
     osdDrawSingleElement(OSD_YAW_PIDS);
     osdDrawSingleElement(OSD_POWER);
+    osdDrawSingleElement(OSD_PIDRATE_PROFILE);
+    osdDrawSingleElement(OSD_MAIN_BATT_WARNING);
 
 #ifdef GPS
 #ifdef CMS
@@ -444,6 +463,8 @@ void osdResetConfig(osd_profile_t *osdProfile)
     osdProfile->item_pos[OSD_PITCH_PIDS] = OSD_POS(2, 11);
     osdProfile->item_pos[OSD_YAW_PIDS] = OSD_POS(2, 12);
     osdProfile->item_pos[OSD_POWER] = OSD_POS(15, 1);
+    osdProfile->item_pos[OSD_PIDRATE_PROFILE] = OSD_POS(2, 13);
+    osdProfile->item_pos[OSD_MAIN_BATT_WARNING] = OSD_POS(8, 6);
 
     osdProfile->rssi_alarm = 20;
     osdProfile->cap_alarm = 2200;
@@ -502,10 +523,13 @@ void osdUpdateAlarms(void)
     else
         pOsdProfile->item_pos[OSD_RSSI_VALUE] &= ~BLINK_FLAG;
 
-    if (getVbat() <= (batteryWarningVoltage - 1))
+    if (getVbat() <= (batteryWarningVoltage - 1)) {
         pOsdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] |= BLINK_FLAG;
-    else
+        pOsdProfile->item_pos[OSD_MAIN_BATT_WARNING] |= BLINK_FLAG;
+    } else {
         pOsdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] &= ~BLINK_FLAG;
+        pOsdProfile->item_pos[OSD_MAIN_BATT_WARNING] &= ~BLINK_FLAG;
+    }
 
     if (STATE(GPS_FIX) == 0)
         pOsdProfile->item_pos[OSD_GPS_SATS] |= BLINK_FLAG;
