@@ -1144,6 +1144,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, gyroConfig()->gyro_use_32khz);
         //!!TODO gyro_isr_update to be added pending decision
         //sbufWriteU8(dst, gyroConfig()->gyro_isr_update);
+        sbufWriteU8(dst, motorConfig()->motorPwmInversion);
         break;
 
     case MSP_FILTER_CONFIG :
@@ -1509,7 +1510,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         motorConfig()->motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_BRUSHED);
 #endif
         motorConfig()->motorPwmRate = sbufReadU16(src);
-        if (dataSize > 7) {
+        if (sbufBytesRemaining(src) >= 2) {
             motorConfig()->digitalIdleOffsetPercent = sbufReadU16(src) / 100.0f;
         }
         if (sbufBytesRemaining(src)) {
@@ -1520,6 +1521,10 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             gyroConfig()->gyro_isr_update = sbufReadU8(src);
         }*/
         validateAndFixGyroConfig();
+
+        if (sbufBytesRemaining(src)) {        
+            motorConfig()->motorPwmInversion = sbufReadU8(src);
+        }
         break;
 
     case MSP_SET_FILTER_CONFIG:
