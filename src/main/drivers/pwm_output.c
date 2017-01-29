@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 #include <math.h>
 
 #include "platform.h"
@@ -134,7 +135,9 @@ static void pwmWriteMultiShot(uint8_t index, uint16_t value)
 
 void pwmWriteMotor(uint8_t index, uint16_t value)
 {
-    pwmWritePtr(index, value);
+    if (motors[index].enabled) {
+        pwmWritePtr(index, value);
+    }
 }
 
 void pwmShutdownPulsesForAllMotors(uint8_t motorCount)
@@ -166,6 +169,11 @@ bool pwmAreMotorsEnabled(void)
 static void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
 {
     for (int index = 0; index < motorCount; index++) {
+
+        if (!motors[index].enabled) {
+            continue;
+        }
+
         bool overflowed = false;
         // If we have not already overflowed this timer
         for (int j = 0; j < index; j++) {
@@ -192,6 +200,8 @@ void pwmCompleteMotorUpdate(uint8_t motorCount)
 
 void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount)
 {
+    memset(motors, 0, sizeof(motors));
+    
     uint32_t timerMhzCounter = 0;
     bool useUnsyncedPwm = motorConfig->useUnsyncedPwm;
     bool isDigital = false;
@@ -277,6 +287,7 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
         }
         motors[motorIndex].enabled = true;
     }
+
     pwmMotorsEnabled = true;
 }
 
