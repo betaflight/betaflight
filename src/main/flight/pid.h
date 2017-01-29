@@ -67,7 +67,6 @@ typedef struct pidProfile_s {
     uint16_t dterm_notch_hz;                // Biquad dterm notch hz
     uint16_t dterm_notch_cutoff;            // Biquad dterm notch low cutoff
     uint8_t itermWindupPointPercent;        // Experimental ITerm windup threshold, percent motor saturation
-    uint8_t itermNoiseThreshold;            // Experimental ITerm noise threshold
     uint16_t yaw_p_limit;
     float pidSumLimit;
     uint8_t dterm_average_count;            // Configurable delta count for dterm
