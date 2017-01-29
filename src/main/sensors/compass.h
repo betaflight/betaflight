@@ -57,7 +57,8 @@ typedef struct compassConfig_s {
     sensor_align_e mag_align;               // mag alignment
     uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
     flightDynamicsTrims_t magZero;
-    uint8_t mag_hold_rate_limit;            //Maximum rotation rate MAG_HOLD mode can feed to yaw rate PID controller
+    uint8_t mag_hold_rate_limit;            // Maximum rotation rate MAG_HOLD mode can feed to yaw rate PID controller
+    uint8_t magCalibrationTimeLimit;        // Time for compass calibration (seconds)
 } compassConfig_t;
 
 PG_DECLARE(compassConfig_t, compassConfig);
