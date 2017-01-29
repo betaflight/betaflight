@@ -1911,6 +1911,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         sbufReadU8(src); // mixerMode ignored
 #else
         mixerConfigMutable()->mixerMode = sbufReadU8(src); // mixerMode
+        mixerUpdateStateFlags();    // Required for correct preset functionality
 #endif
 
         featureClearAll();
