@@ -1279,7 +1279,7 @@ static void printRxFailsafe(uint8_t dumpMask, const rxConfig_t *rxConfig, const 
     for (uint32_t channel = 0; channel < MAX_SUPPORTED_RC_CHANNEL_COUNT; channel++) {
         const rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &rxConfig->failsafe_channel_configurations[channel];
         const rxFailsafeChannelConfiguration_t *channelFailsafeConfigurationDefault;
-        bool equalsDefault = true;
+        bool equalsDefault = false;
         if (defaultRxConfig) {
             channelFailsafeConfigurationDefault = &defaultRxConfig->failsafe_channel_configurations[channel];
             equalsDefault = channelFailsafeConfiguration->mode == channelFailsafeConfigurationDefault->mode
@@ -1402,7 +1402,7 @@ static void printAux(uint8_t dumpMask, const modeActivationProfile_t *modeActiva
     // print out aux channel settings
     for (uint32_t i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
         const modeActivationCondition_t *mac = &modeActivationProfile->modeActivationConditions[i];
-        bool equalsDefault = true;
+        bool equalsDefault = false;
         if (defaultModeActivationProfile) {
             const modeActivationCondition_t *macDefault = &defaultModeActivationProfile->modeActivationConditions[i];
             equalsDefault = mac->modeId == macDefault->modeId
@@ -1474,7 +1474,7 @@ static void printSerial(uint8_t dumpMask, const serialConfig_t *serialConfig, co
         if (!serialIsPortAvailable(serialConfig->portConfigs[i].identifier)) {
             continue;
         };
-        bool equalsDefault = true;
+        bool equalsDefault = false;
         if (serialConfigDefault) {
             equalsDefault = serialConfig->portConfigs[i].identifier == serialConfigDefault->portConfigs[i].identifier
                 && serialConfig->portConfigs[i].functionMask == serialConfigDefault->portConfigs[i].functionMask
@@ -1664,7 +1664,7 @@ static void printAdjustmentRange(uint8_t dumpMask, const adjustmentProfile_t *ad
     // print out adjustment ranges channel settings
     for (uint32_t i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
         const adjustmentRange_t *ar = &adjustmentProfile->adjustmentRanges[i];
-        bool equalsDefault = true;
+        bool equalsDefault = false;
         if (defaultAdjustmentProfile) {
             const adjustmentRange_t *arDefault = &defaultAdjustmentProfile->adjustmentRanges[i];
             equalsDefault = ar->auxChannelIndex == arDefault->auxChannelIndex
@@ -1770,7 +1770,7 @@ static void printMotorMix(uint8_t dumpMask, const motorMixer_t *customMotorMixer
         const float roll = customMotorMixer[i].roll;
         const float pitch = customMotorMixer[i].pitch;
         const float yaw = customMotorMixer[i].yaw;
-        bool equalsDefault = true;
+        bool equalsDefault = false;
         if (defaultCustomMotorMixer) {
             const float thrDefault = defaultCustomMotorMixer[i].throttle;
             const float rollDefault = defaultCustomMotorMixer[i].roll;
@@ -1868,7 +1868,7 @@ static void printRxRange(uint8_t dumpMask, const rxConfig_t *rxConfig, const rxC
     const char *format = "rxrange %u %u %u\r\n";
     for (uint32_t i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
         const rxChannelRangeConfiguration_t *channelRangeConfiguration = &rxConfig->channelRanges[i];
-        bool equalsDefault = true;
+        bool equalsDefault = false;
         if (defaultRxConfig) {
             const rxChannelRangeConfiguration_t *channelRangeConfigurationDefault = &defaultRxConfig->channelRanges[i];
             equalsDefault = channelRangeConfiguration->min == channelRangeConfigurationDefault->min
@@ -1938,7 +1938,7 @@ static void printLed(uint8_t dumpMask, const ledConfig_t *ledConfigs, const ledC
     for (uint32_t i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
         ledConfig_t ledConfig = ledConfigs[i];
         generateLedConfig(&ledConfig, ledConfigBuffer, sizeof(ledConfigBuffer));
-        bool equalsDefault = true;
+        bool equalsDefault = false;
         if (defaultLedConfigs) {
             ledConfig_t ledConfigDefault = defaultLedConfigs[i];
             equalsDefault = ledConfig == ledConfigDefault;
@@ -1975,7 +1975,7 @@ static void printColor(uint8_t dumpMask, const hsvColor_t *colors, const hsvColo
     const char *format = "color %u %d,%u,%u\r\n";
     for (uint32_t i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
         const hsvColor_t *color = &colors[i];
-        bool equalsDefault = true;
+        bool equalsDefault = false;
         if (defaultColors) {
             const hsvColor_t *colorDefault = &defaultColors[i];
             equalsDefault = color->h == colorDefault->h
@@ -2014,7 +2014,7 @@ static void printModeColor(uint8_t dumpMask, const ledStripConfig_t *ledStripCon
     for (uint32_t i = 0; i < LED_MODE_COUNT; i++) {
         for (uint32_t j = 0; j < LED_DIRECTION_COUNT; j++) {
             int colorIndex = ledStripConfig->modeColors[i].color[j];
-            bool equalsDefault = true;
+            bool equalsDefault = false;
             if (defaultLedStripConfig) {
                 int colorIndexDefault = defaultLedStripConfig->modeColors[i].color[j];
                 equalsDefault = colorIndex == colorIndexDefault;
@@ -2026,7 +2026,7 @@ static void printModeColor(uint8_t dumpMask, const ledStripConfig_t *ledStripCon
 
     for (uint32_t j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
         const int colorIndex = ledStripConfig->specialColors.color[j];
-        bool equalsDefault = true;
+        bool equalsDefault = false;
         if (defaultLedStripConfig) {
             const int colorIndexDefault = defaultLedStripConfig->specialColors.color[j];
             equalsDefault = colorIndex == colorIndexDefault;
@@ -2036,7 +2036,7 @@ static void printModeColor(uint8_t dumpMask, const ledStripConfig_t *ledStripCon
     }
 
     const int ledStripAuxChannel = ledStripConfig->ledstrip_aux_channel;
-    bool equalsDefault = true;
+    bool equalsDefault = false;
     if (defaultLedStripConfig) {
         const int ledStripAuxChannelDefault = defaultLedStripConfig->ledstrip_aux_channel;
         equalsDefault = ledStripAuxChannel == ledStripAuxChannelDefault;
@@ -2084,7 +2084,7 @@ static void printServo(uint8_t dumpMask, servoProfile_t *defaultServoProfile)
     const char *format = "servo %u %d %d %d %d %d %d %d\r\n";
     for (uint32_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         const servoParam_t *servoConf = &servoProfile()->servoConf[i];
-        bool equalsDefault = true;
+        bool equalsDefault = false;
         if (defaultServoProfile) {
             const servoParam_t *servoConfDefault = &defaultServoProfile->servoConf[i];
             equalsDefault = servoConf->min == servoConfDefault->min
@@ -2204,7 +2204,7 @@ static void printServoMix(uint8_t dumpMask, const master_t *defaultConfig)
             break;
         }
 
-        bool equalsDefault = true;
+        bool equalsDefault = false;
         if (defaultConfig) {
             servoMixer_t customServoMixerDefault = defaultConfig->customServoMixer[i];
             equalsDefault = customServoMixer.targetChannel == customServoMixerDefault.targetChannel
@@ -2550,7 +2550,7 @@ static void printVtx(uint8_t dumpMask, const master_t *defaultConfig)
 {
     // print out vtx channel settings
     const char *format = "vtx %u %u %u %u %u %u\r\n";
-    bool equalsDefault = true;
+    bool equalsDefault = false;
     for (uint32_t i = 0; i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT; i++) {
         const vtxChannelActivationCondition_t *cac = &masterConfig.vtxChannelActivationConditions[i];
         if (defaultConfig) {
@@ -2824,7 +2824,7 @@ static void cliBeeper(char *cmdline)
 
 static void printMap(uint8_t dumpMask, const rxConfig_t *rxConfig, const rxConfig_t *defaultRxConfig)
 {
-    bool equalsDefault = true;
+    bool equalsDefault = false;
     char buf[16];
     char bufDefault[16];
     uint32_t i;
