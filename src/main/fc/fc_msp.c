@@ -1140,7 +1140,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, motorConfig()->useUnsyncedPwm);
         sbufWriteU8(dst, motorConfig()->motorPwmProtocol);
         sbufWriteU16(dst, motorConfig()->motorPwmRate);
-        sbufWriteU16(dst, (uint16_t)(motorConfig()->digitalIdleOffsetPercent * 100));
+        sbufWriteU16(dst, (uint16_t)lrintf(motorConfig()->digitalIdleOffsetPercent * 100));
         sbufWriteU8(dst, gyroConfig()->gyro_use_32khz);
         //!!TODO gyro_isr_update to be added pending decision
         //sbufWriteU8(dst, gyroConfig()->gyro_isr_update);
@@ -1170,8 +1170,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, 0); // reserved
-        sbufWriteU16(dst, currentProfile->pidProfile.rateAccelLimit * 10);
-        sbufWriteU16(dst, currentProfile->pidProfile.yawRateAccelLimit * 10);
+        sbufWriteU16(dst, (uint16_t)lrintf(currentProfile->pidProfile.rateAccelLimit * 10));
+        sbufWriteU16(dst, (uint16_t)lrintf(currentProfile->pidProfile.yawRateAccelLimit * 10));
         sbufWriteU8(dst, currentProfile->pidProfile.levelAngleLimit);
         sbufWriteU8(dst, currentProfile->pidProfile.levelSensitivity);
         break;
