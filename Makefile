@@ -564,6 +564,7 @@ COMMON_SRC = \
             config/config_streamer.c \
             drivers/adc.c \
             drivers/buf_writer.c \
+            drivers/bus_i2c.c \
             drivers/bus_i2c_soft.c \
             drivers/bus_spi.c \
             drivers/bus_spi_soft.c \
@@ -750,6 +751,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             io/osd.c \
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
+            drivers/bus_i2c.c \
             drivers/serial_escserial.c \
             drivers/vtx_common.c \
             io/cli.c \

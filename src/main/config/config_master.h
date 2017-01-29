@@ -34,6 +34,9 @@
 #include "drivers/light_led.h"
 #include "drivers/flash.h"
 #include "drivers/display.h"
+#include "drivers/bus_i2c.h"
+#include "drivers/bus_i2c.h"
+#include "drivers/display_ug2864hsweg01.h"
 
 #include "fc/rc_controls.h"
 
