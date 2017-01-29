@@ -148,7 +148,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 }
 
 static float Kp[3], Ki[3], Kd[3], c[3], maxVelocity[3], relaxFactor[3];
-static float levelGain, horizonGain, horizonTransition, ITermWindupPoint;
+static float levelGain, horizonGain, horizonTransition, ITermWindupPoint, ITermWindupPointInv;
 
 void pidInitConfig(const pidProfile_t *pidProfile) {
     for(int axis = FD_ROLL; axis <= FD_YAW; axis++) {
@@ -156,7 +156,7 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
         Ki[axis] = ITERM_SCALE * pidProfile->I8[axis];
         Kd[axis] = DTERM_SCALE * pidProfile->D8[axis];
         c[axis] = pidProfile->dtermSetpointWeight / 100.0f;
-        relaxFactor[axis] = 1.0f - (pidProfile->setpointRelaxRatio / 100.0f);
+        relaxFactor[axis] = pidProfile->setpointRelaxRatio / 100.0f;
     }
     levelGain = pidProfile->P8[PIDLEVEL] / 10.0f;
     horizonGain = pidProfile->I8[PIDLEVEL] / 10.0f;
@@ -164,6 +164,7 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
     maxVelocity[FD_ROLL] = maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 1000 * dT;
     maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 1000 * dT;
     ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
+    ITermWindupPointInv = 1.0f - ITermWindupPoint;
 }
 
 static float calcHorizonLevelStrength(void) {
@@ -246,10 +247,12 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         float ITerm = previousGyroIf[axis];
         if (motorMixRange < 1.0f) {
             // Only increase ITerm if motor output is not saturated and errorRate exceeds noise threshold
-            float ITermDelta = Ki[axis] * errorRate * dT * itermAccelerator;
+            float ITermDelta = Ki[axis] * errorRate * dT;
             // gradually scale back integration when above windup point
             if (motorMixRange > ITermWindupPoint) {
-                ITermDelta *= (1.0f - motorMixRange) * ITermWindupPoint;
+                ITermDelta *= (1.0f - motorMixRange) / ITermWindupPointInv;
+            } else {
+                ITermDelta *= itermAccelerator;
             }
             ITerm += ITermDelta;
             // also limit maximum integrator value to prevent windup
@@ -266,10 +269,10 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                 dynC = c[axis];
                 if (currentPidSetpoint > 0) {
                     if ((currentPidSetpoint - previousSetpoint[axis]) < previousSetpoint[axis])
-                        dynC *= (1.0f - rcDeflection) * relaxFactor[axis];
+                        dynC *= MIN((1.0f - rcDeflection) / relaxFactor[axis], 1.0f);
                 } else if (currentPidSetpoint < 0) {
                     if ((currentPidSetpoint - previousSetpoint[axis]) > previousSetpoint[axis])
-                        dynC *= (1.0f - rcDeflection) * relaxFactor[axis];
+                        dynC *= MIN((1.0f - rcDeflection) / relaxFactor[axis], 1.0f);
                 }
             }
             const float rD = dynC * currentPidSetpoint - gyroRate;    // cr - y
