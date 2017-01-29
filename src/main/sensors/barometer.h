@@ -52,4 +52,5 @@ void baroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 uint32_t baroUpdate(void);
 bool baroIsReady(void);
 int32_t baroCalculateAltitude(void);
+int32_t baroGetLatestAltitude(void);
 bool baroIsHealthy(void);

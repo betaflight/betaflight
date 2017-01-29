@@ -646,11 +646,21 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_ALTITUDE:
 #if defined(NAV)
-        sbufWriteU32(dst, (uint32_t)lrintf(getEstimatedActualPosition(Z)));
-        sbufWriteU16(dst, (uint32_t)lrintf(getEstimatedActualVelocity(Z)));
+        sbufWriteU32(dst, lrintf(getEstimatedActualPosition(Z)));
+        sbufWriteU16(dst, lrintf(getEstimatedActualVelocity(Z)));
 #else
         sbufWriteU32(dst, 0);
         sbufWriteU16(dst, 0);
+#endif
+#if defined(BARO)
+        sbufWriteU32(dst, baroGetLatestAltitude());
+#else
+        sbufWriteU32(dst, 0);
+#endif
+#if defined(SONAR)
+        sbufWriteU32(dst, rangefinderGetLatestAltitude());
+#else
+        sbufWriteU32(dst, 0);
 #endif
         break;
 
