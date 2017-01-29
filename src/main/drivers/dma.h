@@ -38,11 +38,12 @@ typedef struct dmaChannelDescriptor_s {
     uint8_t                     resourceIndex;
 } dmaChannelDescriptor_t;
 
-#if defined(STM32F4) || defined(STM32F7)
-
+#if defined(STM32F7)
 #define HAL_CLEANINVALIDATECACHE(addr, size) (SCB_CleanInvalidateDCache_by_Addr((uint32_t*)((uint32_t)addr & ~0x1f), ((uint32_t)(addr + size + 0x1f) & ~0x1f) - ((uint32_t)addr & ~0x1f)))
 #define HAL_CLEANCACHE(addr, size) (SCB_CleanDCache_by_Addr((uint32_t*)((uint32_t)addr & ~0x1f), ((uint32_t)(addr + size + 0x1f) & ~0x1f) - ((uint32_t)addr & ~0x1f)))
+#endif
 
+#if defined(STM32F4) || defined(STM32F7)
 uint32_t dmaFlag_IT_TCIF(const DMA_Stream_TypeDef *stream);
 
 typedef enum {
@@ -87,6 +88,7 @@ typedef enum {
 #define DMA_IT_FEIF         ((uint32_t)0x00000001)
 
 dmaIdentifier_e dmaGetIdentifier(const DMA_Stream_TypeDef* stream);
+dmaChannelDescriptor_t* getDmaDescriptor(const DMA_Stream_TypeDef* stream);
 
 #else
 
@@ -127,7 +129,7 @@ typedef enum {
 #define DMA_IT_TEIF         ((uint32_t)0x00000008)
 
 dmaIdentifier_e dmaGetIdentifier(const DMA_Channel_TypeDef* channel);
-
+dmaChannelDescriptor_t* getDmaDescriptor(const DMA_Channel_TypeDef* channel);
 #endif
 
 void dmaInit(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resourceIndex);

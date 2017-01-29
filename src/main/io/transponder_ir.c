@@ -75,19 +75,12 @@ void transponderUpdate(timeUs_t currentTimeUs)
 
 void transponderInit(uint8_t* transponderData)
 {
-    transponderInitialised = false;
-    transponderIrInit();
+    transponderInitialised = transponderIrInit();
+    if (!transponderInitialised) {
+        return;
+    }
+
     transponderIrUpdateData(transponderData);
-}
-
-void transponderEnable(void)
-{
-    transponderInitialised = true;
-}
-
-void transponderDisable(void)
-{
-    transponderInitialised = false;
 }
 
 void transponderStopRepeating(void)
@@ -97,11 +90,19 @@ void transponderStopRepeating(void)
 
 void transponderStartRepeating(void)
 {
+    if (!transponderInitialised) {
+        return;
+    }
+
     transponderRepeat = true;
 }
 
 void transponderUpdateData(uint8_t* transponderData)
 {
+    if (!transponderInitialised) {
+        return;
+    }
+
     transponderIrUpdateData(transponderData);
 }
 

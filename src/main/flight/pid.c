@@ -28,7 +28,7 @@
 #include "common/maths.h"
 #include "common/filter.h"
 
-#include "fc/fc_main.h"
+#include "fc/fc_core.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -63,6 +63,12 @@ void pidResetErrorGyroState(void)
     for (int axis = 0; axis < 3; axis++) {
         previousGyroIf[axis] = 0.0f;
     }
+}
+
+static float itermAccelerator = 1.0f;
+
+void pidSetItermAccelerator(float newItermAccelerator) {
+    itermAccelerator = newItermAccelerator;
 }
 
 void pidStabilisationState(pidStabilisationState_e pidControllerState)
@@ -157,7 +163,7 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
     maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 1000 * dT;
 }
 
-float calcHorizonLevelStrength(void) {
+static float calcHorizonLevelStrength(void) {
     float horizonLevelStrength = 0.0f;
     if (horizonTransition > 0.0f) {
         const float mostDeflectedPos = MAX(getRcDeflectionAbs(FD_ROLL), getRcDeflectionAbs(FD_PITCH));
@@ -167,7 +173,7 @@ float calcHorizonLevelStrength(void) {
     return horizonLevelStrength;
 }
 
-float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint) {
+static float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint) {
     // calculate error angle and limit the angle to the max inclination
     float errorAngle = pidProfile->levelSensitivity * getRcDeflection(axis);
 #ifdef GPS
@@ -187,7 +193,7 @@ float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims
     return currentPidSetpoint;
 }
 
-float accelerationLimit(int axis, float currentPidSetpoint) {
+static float accelerationLimit(int axis, float currentPidSetpoint) {
     static float previousSetpoint[3];
     const float currentVelocity = currentPidSetpoint- previousSetpoint[axis];
 
@@ -200,14 +206,12 @@ float accelerationLimit(int axis, float currentPidSetpoint) {
 
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
 // Based on 2DOF reference design (matlab)
-void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim)
+void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float tpaFactor)
 {
     static float previousRateError[2];
     static float previousSetpoint[3];
 
     // ----------PID controller----------
-    const float tpaFactor = getThrottlePIDAttenuation();
-
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         float currentPidSetpoint = getSetpointRate(axis);
 
@@ -239,7 +243,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         const float setpointRateScaler = constrainf(1.0f - (ABS(currentPidSetpoint) / accumulationThreshold), 0.0f, 1.0f);
 
         float ITerm = previousGyroIf[axis];
-        ITerm += Ki[axis] * errorRate * dT * setpointRateScaler;
+        ITerm += Ki[axis] * errorRate * dT * setpointRateScaler * itermAccelerator;
         // limit maximum integrator value to prevent WindUp
         ITerm = constrainf(ITerm, -250.0f, 250.0f);
         previousGyroIf[axis] = ITerm;

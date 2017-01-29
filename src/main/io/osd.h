@@ -24,6 +24,7 @@
 #define VISIBLE(x)    (x & VISIBLE_FLAG)
 #define BLINK(x)      ((x & BLINK_FLAG) && blinkState)
 #define BLINK_OFF(x)  (x & ~BLINK_FLAG)
+#define OSD_POS_MAX   0x3FF
 
 typedef enum {
     OSD_RSSI_VALUE,

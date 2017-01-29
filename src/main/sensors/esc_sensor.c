@@ -186,7 +186,7 @@ bool escSensorInit(void)
     // Initialize serial port
     escSensorPort = openSerialPort(portConfig->identifier, FUNCTION_ESC_SENSOR, escSensorDataReceive, ESC_SENSOR_BAUDRATE, MODE_RX, options);
 
-    for (int i; i < MAX_SUPPORTED_MOTORS; i = i + 1) {
+    for (int i = 0; i < MAX_SUPPORTED_MOTORS; i = i + 1) {
         escSensorData[i].dataAge = ESC_DATA_INVALID;
     }
 

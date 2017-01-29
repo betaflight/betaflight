@@ -15,5 +15,3 @@ void checkSmartPortTelemetryState(void);
 void configureSmartPortTelemetryPort(void);
 void freeSmartPortTelemetryPort(void);
 
-bool isSmartPortTimedOut(void);
-

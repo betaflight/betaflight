@@ -50,15 +50,6 @@
 
 mpuResetFuncPtr mpuReset;
 
-static bool mpuReadRegisterI2C(uint8_t reg, uint8_t length, uint8_t* data);
-static bool mpuWriteRegisterI2C(uint8_t reg, uint8_t data);
-
-static void mpu6050FindRevision(gyroDev_t *gyro);
-
-#ifdef USE_SPI
-static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro);
-#endif
-
 #ifndef MPU_I2C_INSTANCE
 #define MPU_I2C_INSTANCE I2C_DEVICE
 #endif
@@ -70,110 +61,6 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro);
 #define MPUx0x0_WHO_AM_I_CONST              (0x68)
 
 #define MPU_INQUIRY_MASK   0x7E
-
-mpuDetectionResult_t *mpuDetect(gyroDev_t *gyro)
-{
-    bool ack;
-    uint8_t sig;
-    uint8_t inquiryResult;
-
-    // MPU datasheet specifies 30ms.
-    delay(35);
-
-#ifndef USE_I2C
-    ack = false;
-    sig = 0;
-#else
-    ack = mpuReadRegisterI2C(MPU_RA_WHO_AM_I, 1, &sig);
-#endif
-    if (ack) {
-        gyro->mpuConfiguration.read = mpuReadRegisterI2C;
-        gyro->mpuConfiguration.write = mpuWriteRegisterI2C;
-    } else {
-#ifdef USE_SPI
-        bool detectedSpiSensor = detectSPISensorsAndUpdateDetectionResult(gyro);
-        UNUSED(detectedSpiSensor);
-#endif
-
-        return &gyro->mpuDetectionResult;
-    }
-
-    gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
-
-    // If an MPU3050 is connected sig will contain 0.
-    ack = mpuReadRegisterI2C(MPU_RA_WHO_AM_I_LEGACY, 1, &inquiryResult);
-    inquiryResult &= MPU_INQUIRY_MASK;
-    if (ack && inquiryResult == MPUx0x0_WHO_AM_I_CONST) {
-        gyro->mpuDetectionResult.sensor = MPU_3050;
-        gyro->mpuConfiguration.gyroReadXRegister = MPU3050_GYRO_OUT;
-        return &gyro->mpuDetectionResult;
-    }
-
-    sig &= MPU_INQUIRY_MASK;
-
-    if (sig == MPUx0x0_WHO_AM_I_CONST) {
-
-        gyro->mpuDetectionResult.sensor = MPU_60x0;
-
-        mpu6050FindRevision(gyro);
-    } else if (sig == MPU6500_WHO_AM_I_CONST) {
-        gyro->mpuDetectionResult.sensor = MPU_65xx_I2C;
-    }
-
-    return &gyro->mpuDetectionResult;
-}
-
-#ifdef USE_SPI
-static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
-{
-#ifdef USE_GYRO_SPI_MPU6500
-    uint8_t mpu6500Sensor = mpu6500SpiDetect();
-    if (mpu6500Sensor != MPU_NONE) {
-        gyro->mpuDetectionResult.sensor = mpu6500Sensor;
-        gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
-        gyro->mpuConfiguration.read = mpu6500ReadRegister;
-        gyro->mpuConfiguration.write = mpu6500WriteRegister;
-        return true;
-    }
-#endif
-
-#ifdef USE_GYRO_SPI_ICM20689
-    if (icm20689SpiDetect()) {
-        gyro->mpuDetectionResult.sensor = ICM_20689_SPI;
-        gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
-        gyro->mpuConfiguration.read = icm20689ReadRegister;
-        gyro->mpuConfiguration.write = icm20689WriteRegister;
-        return true;
-    }
-#endif
-
-#ifdef USE_GYRO_SPI_MPU6000
-    if (mpu6000SpiDetect()) {
-        gyro->mpuDetectionResult.sensor = MPU_60x0_SPI;
-        gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
-        gyro->mpuConfiguration.read = mpu6000ReadRegister;
-        gyro->mpuConfiguration.write = mpu6000WriteRegister;
-        return true;
-    }
-#endif
-
-#ifdef  USE_GYRO_SPI_MPU9250
-    if (mpu9250SpiDetect()) {
-        gyro->mpuDetectionResult.sensor = MPU_9250_SPI;
-        gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
-        gyro->mpuConfiguration.read = mpu9250ReadRegister;
-        gyro->mpuConfiguration.slowread = mpu9250SlowReadRegister;
-        gyro->mpuConfiguration.verifywrite = verifympu9250WriteRegister;
-        gyro->mpuConfiguration.write = mpu9250WriteRegister;
-        gyro->mpuConfiguration.reset = mpu9250ResetGyro;
-        return true;
-    }
-#endif
-
-    UNUSED(gyro);
-    return false;
-}
-#endif
 
 static void mpu6050FindRevision(gyroDev_t *gyro)
 {
@@ -324,11 +211,6 @@ bool mpuGyroRead(gyroDev_t *gyro)
     return true;
 }
 
-void mpuGyroInit(gyroDev_t *gyro)
-{
-    mpuIntExtiInit(gyro);
-}
-
 bool mpuCheckDataReady(gyroDev_t* gyro)
 {
     bool ret;
@@ -339,4 +221,113 @@ bool mpuCheckDataReady(gyroDev_t* gyro)
         ret = false;
     }
     return ret;
+}
+
+#ifdef USE_SPI
+static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
+{
+#ifdef USE_GYRO_SPI_MPU6000
+    if (mpu6000SpiDetect()) {
+        gyro->mpuDetectionResult.sensor = MPU_60x0_SPI;
+        gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
+        gyro->mpuConfiguration.read = mpu6000ReadRegister;
+        gyro->mpuConfiguration.write = mpu6000WriteRegister;
+        return true;
+    }
+#endif
+
+#ifdef USE_GYRO_SPI_MPU6500
+    uint8_t mpu6500Sensor = mpu6500SpiDetect();
+    if (mpu6500Sensor != MPU_NONE) {
+        gyro->mpuDetectionResult.sensor = mpu6500Sensor;
+        gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
+        gyro->mpuConfiguration.read = mpu6500ReadRegister;
+        gyro->mpuConfiguration.write = mpu6500WriteRegister;
+        return true;
+    }
+#endif
+
+#ifdef  USE_GYRO_SPI_MPU9250
+    if (mpu9250SpiDetect()) {
+        gyro->mpuDetectionResult.sensor = MPU_9250_SPI;
+        gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
+        gyro->mpuConfiguration.read = mpu9250ReadRegister;
+        gyro->mpuConfiguration.slowread = mpu9250SlowReadRegister;
+        gyro->mpuConfiguration.verifywrite = verifympu9250WriteRegister;
+        gyro->mpuConfiguration.write = mpu9250WriteRegister;
+        gyro->mpuConfiguration.reset = mpu9250ResetGyro;
+        return true;
+    }
+#endif
+
+#ifdef USE_GYRO_SPI_ICM20689
+    if (icm20689SpiDetect()) {
+        gyro->mpuDetectionResult.sensor = ICM_20689_SPI;
+        gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
+        gyro->mpuConfiguration.read = icm20689ReadRegister;
+        gyro->mpuConfiguration.write = icm20689WriteRegister;
+        return true;
+    }
+#endif
+
+    UNUSED(gyro);
+    return false;
+}
+#endif
+
+mpuDetectionResult_t *mpuDetect(gyroDev_t *gyro)
+{
+    bool ack;
+    uint8_t sig;
+    uint8_t inquiryResult;
+
+    // MPU datasheet specifies 30ms.
+    delay(35);
+
+#ifndef USE_I2C
+    ack = false;
+    sig = 0;
+#else
+    ack = mpuReadRegisterI2C(MPU_RA_WHO_AM_I, 1, &sig);
+#endif
+    if (ack) {
+        gyro->mpuConfiguration.read = mpuReadRegisterI2C;
+        gyro->mpuConfiguration.write = mpuWriteRegisterI2C;
+    } else {
+#ifdef USE_SPI
+        bool detectedSpiSensor = detectSPISensorsAndUpdateDetectionResult(gyro);
+        UNUSED(detectedSpiSensor);
+#endif
+
+        return &gyro->mpuDetectionResult;
+    }
+
+    gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
+
+    // If an MPU3050 is connected sig will contain 0.
+    ack = mpuReadRegisterI2C(MPU_RA_WHO_AM_I_LEGACY, 1, &inquiryResult);
+    inquiryResult &= MPU_INQUIRY_MASK;
+    if (ack && inquiryResult == MPUx0x0_WHO_AM_I_CONST) {
+        gyro->mpuDetectionResult.sensor = MPU_3050;
+        gyro->mpuConfiguration.gyroReadXRegister = MPU3050_GYRO_OUT;
+        return &gyro->mpuDetectionResult;
+    }
+
+    sig &= MPU_INQUIRY_MASK;
+
+    if (sig == MPUx0x0_WHO_AM_I_CONST) {
+
+        gyro->mpuDetectionResult.sensor = MPU_60x0;
+
+        mpu6050FindRevision(gyro);
+    } else if (sig == MPU6500_WHO_AM_I_CONST) {
+        gyro->mpuDetectionResult.sensor = MPU_65xx_I2C;
+    }
+
+    return &gyro->mpuDetectionResult;
+}
+
+void mpuGyroInit(gyroDev_t *gyro)
+{
+    mpuIntExtiInit(gyro);
 }

@@ -1258,7 +1258,8 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("pidAtMinThrottle:%d",                 currentProfile->pidProfile.pidAtMinThrottle);
 
         // Betaflight PID controller parameters
-        BLACKBOX_PRINT_HEADER_LINE("itermThrottleThreshold:%d",           currentProfile->pidProfile.itermThrottleThreshold);
+        BLACKBOX_PRINT_HEADER_LINE("anti_gravity_threshold:%d",           currentProfile->pidProfile.itermThrottleThreshold);
+        BLACKBOX_PRINT_HEADER_LINE("anti_gravity_gain:%d",                castFloatBytesToInt(currentProfile->pidProfile.itermAcceleratorGain));
         BLACKBOX_PRINT_HEADER_LINE("setpointRelaxRatio:%d",               currentProfile->pidProfile.setpointRelaxRatio);
         BLACKBOX_PRINT_HEADER_LINE("dtermSetpointWeight:%d",              currentProfile->pidProfile.dtermSetpointWeight);
         BLACKBOX_PRINT_HEADER_LINE("yawRateAccelLimit:%d",                castFloatBytesToInt(currentProfile->pidProfile.yawRateAccelLimit));

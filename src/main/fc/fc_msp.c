@@ -47,9 +47,10 @@
 #include "drivers/vtx_soft_spi_rtc6705.h"
 #include "drivers/pwm_output.h"
 #include "drivers/serial_escserial.h"
+#include "drivers/vtx_common.h"
 
 #include "fc/config.h"
-#include "fc/fc_main.h"
+#include "fc/fc_core.h"
 #include "fc/fc_msp.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -104,7 +105,6 @@
 #endif
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
-extern void resetProfile(profile_t *profile);
 
 static const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
@@ -614,7 +614,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_STATUS_EX:
-        sbufWriteU16(dst, cycleTime);
+        sbufWriteU16(dst, getTaskDeltaTime(TASK_GYROPID));
 #ifdef USE_I2C
         sbufWriteU16(dst, i2cGetErrorCounter());
 #else
@@ -638,7 +638,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_STATUS:
-        sbufWriteU16(dst, cycleTime);
+        sbufWriteU16(dst, getTaskDeltaTime(TASK_GYROPID));
 #ifdef USE_I2C
         sbufWriteU16(dst, i2cGetErrorCounter());
 #else
@@ -951,6 +951,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, rxConfig()->rx_spi_protocol);
         sbufWriteU32(dst, rxConfig()->rx_spi_id);
         sbufWriteU8(dst, rxConfig()->rx_spi_rf_channel_count);
+        sbufWriteU8(dst, rxConfig()->fpvCamAngleDegrees);
         break;
 
     case MSP_FAILSAFE_CONFIG:
@@ -1143,6 +1144,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, gyroConfig()->gyro_use_32khz);
         //!!TODO gyro_isr_update to be added pending decision
         //sbufWriteU8(dst, gyroConfig()->gyro_isr_update);
+        sbufWriteU8(dst, motorConfig()->motorPwmInversion);
         break;
 
     case MSP_FILTER_CONFIG :
@@ -1184,6 +1186,35 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         if (mspPostProcessFn) {
             *mspPostProcessFn = mspRebootFn;
         }
+        break;
+
+#if defined(VTX_COMMON)
+    case MSP_VTX_CONFIG:
+        {
+            uint8_t deviceType = vtxCommonGetDeviceType();
+            if (deviceType != VTXDEV_UNKNOWN) {
+
+                uint8_t band=0, channel=0;
+                vtxCommonGetBandChan(&band,&channel);
+                
+                uint8_t powerIdx=0; // debug
+                vtxCommonGetPowerIndex(&powerIdx);
+                
+                uint8_t pitmode=0;
+                vtxCommonGetPitmode(&pitmode);
+                
+                sbufWriteU8(dst, deviceType);
+                sbufWriteU8(dst, band);
+                sbufWriteU8(dst, channel);
+                sbufWriteU8(dst, powerIdx);
+                sbufWriteU8(dst, pitmode);
+                // future extensions here...
+            }
+            else {
+                sbufWriteU8(dst, VTXDEV_UNKNOWN); // no VTX detected
+            }
+        }
+#endif
         break;
 
     default:
@@ -1237,7 +1268,6 @@ static void mspFcDataFlashReadCommand(sbuf_t *dst, sbuf_t *src)
 static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 {
     uint32_t i;
-    uint16_t tmp;
     uint8_t value;
     const unsigned int dataSize = sbufBytesRemaining(src);
 #ifdef GPS
@@ -1375,10 +1405,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_MISC:
-        tmp = sbufReadU16(src);
-        if (tmp < 1600 && tmp > 1400)
-            rxConfig()->midrc = tmp;
-
+        rxConfig()->midrc = sbufReadU16(src);
         motorConfig()->minthrottle = sbufReadU16(src);
         motorConfig()->maxthrottle = sbufReadU16(src);
         motorConfig()->mincommand = sbufReadU16(src);
@@ -1483,7 +1510,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         motorConfig()->motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_BRUSHED);
 #endif
         motorConfig()->motorPwmRate = sbufReadU16(src);
-        if (dataSize > 7) {
+        if (sbufBytesRemaining(src) >= 2) {
             motorConfig()->digitalIdleOffsetPercent = sbufReadU16(src) / 100.0f;
         }
         if (sbufBytesRemaining(src)) {
@@ -1494,6 +1521,10 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             gyroConfig()->gyro_isr_update = sbufReadU8(src);
         }*/
         validateAndFixGyroConfig();
+
+        if (sbufBytesRemaining(src)) {        
+            motorConfig()->motorPwmInversion = sbufReadU8(src);
+        }
         break;
 
     case MSP_SET_FILTER_CONFIG:
@@ -1637,14 +1668,44 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 #endif
 
-#ifdef USE_RTC6705
+#if defined(USE_RTC6705) || defined(VTX_COMMON)
     case MSP_SET_VTX_CONFIG:
-        tmp = sbufReadU16(src);
-        if  (tmp < 40)
-            masterConfig.vtx_channel = tmp;
-        if (current_vtx_channel != masterConfig.vtx_channel) {
-            current_vtx_channel = masterConfig.vtx_channel;
-            rtc6705_soft_spi_set_channel(vtx_freq[current_vtx_channel]);
+        {
+            uint16_t tmp = sbufReadU16(src);
+#if defined(USE_RTC6705)
+            if  (tmp < 40)
+                masterConfig.vtx_channel = tmp;
+            if (current_vtx_channel != masterConfig.vtx_channel) {
+                current_vtx_channel = masterConfig.vtx_channel;
+                rtc6705_soft_spi_set_channel(vtx_freq[current_vtx_channel]);
+            }
+#else
+            if (vtxCommonGetDeviceType() != VTXDEV_UNKNOWN) {
+
+                uint8_t band    = (tmp / 8) + 1;
+                uint8_t channel = (tmp % 8) + 1;
+
+                uint8_t current_band=0, current_channel=0;
+                vtxCommonGetBandChan(&current_band,&current_channel);
+                if ((current_band != band) || (current_channel != channel))
+                    vtxCommonSetBandChan(band,channel);
+
+                if (sbufBytesRemaining(src) < 2)
+                    break;
+            
+                uint8_t power = sbufReadU8(src);
+                uint8_t current_power = 0;
+                vtxCommonGetPowerIndex(&current_power);
+                if (current_power != power)
+                    vtxCommonSetPowerByIndex(power);
+            
+                uint8_t pitmode = sbufReadU8(src);
+                uint8_t current_pitmode = 0;
+                vtxCommonGetPitmode(&current_pitmode);
+                if (current_pitmode != pitmode)
+                    vtxCommonSetPitmode(pitmode);
+            }
+#endif
         }
         break;
 #endif
@@ -1747,6 +1808,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             rxConfig()->rx_spi_protocol = sbufReadU8(src);
             rxConfig()->rx_spi_id = sbufReadU32(src);
             rxConfig()->rx_spi_rf_channel_count = sbufReadU8(src);
+        }
+        if (dataSize > 22) {
+            rxConfig()->fpvCamAngleDegrees = sbufReadU8(src);
         }
         break;
 

@@ -79,6 +79,8 @@ static void *notchFilter1[3];
 static filterApplyFnPtr notchFilter2ApplyFn;
 static void *notchFilter2[3];
 
+#define DEBUG_GYRO_CALIBRATION 3
+
 static const extiConfig_t *selectMPUIntExtiConfig(void)
 {
 #if defined(MPU_INT_EXTI)
@@ -173,7 +175,7 @@ static bool gyroDetect(gyroDev_t *dev)
             case ICM_20602_SPI:
                 gyroHardware = GYRO_ICM20602;
                 break;
-            default:        
+            default:
                 gyroHardware = GYRO_MPU6500;
             }
 #ifdef GYRO_MPU6500_ALIGN
@@ -242,6 +244,22 @@ bool gyroInit(const gyroConfig_t *gyroConfigToUse)
     if (!gyroDetect(&gyro.dev)) {
         return false;
     }
+
+    switch (detectedSensors[SENSOR_INDEX_GYRO]) {
+    default:
+        // gyro does not support 32kHz
+        // cast away constness, legitimate as this is cross-validation
+        ((gyroConfig_t*)gyroConfig)->gyro_use_32khz = false;
+        break;
+    case GYRO_MPU6500:
+    case GYRO_MPU9250:
+    case GYRO_ICM20689:
+    case GYRO_ICM20608G:
+    case GYRO_ICM20602:
+        // do nothing, as gyro supports 32kHz
+        break;
+    }
+
     // Must set gyro sample rate before initialisation
     gyro.targetLooptime = gyroSetSampleRate(&gyro.dev, gyroConfig->gyro_lpf, gyroConfig->gyro_sync_denom, gyroConfig->gyro_use_32khz);
     gyro.dev.lpf = gyroConfig->gyro_lpf;
@@ -351,6 +369,9 @@ static void performGyroCalibration(uint8_t gyroMovementCalibrationThreshold)
 
         if (isOnFinalGyroCalibrationCycle()) {
             float dev = devStandardDeviation(&var[axis]);
+
+            DEBUG_SET(DEBUG_GYRO, DEBUG_GYRO_CALIBRATION, lrintf(dev));
+
             // check deviation and startover in case the model was moved
             if (gyroMovementCalibrationThreshold && dev > gyroMovementCalibrationThreshold) {
                 gyroSetCalibrationCycles();
@@ -401,15 +422,20 @@ static bool gyroUpdateISR(gyroDev_t* gyroDev)
 void gyroUpdate(void)
 {
     // range: +/- 8192; +/- 2000 deg/sec
-#if defined(MPU_INT_EXTI)
-    if (!gyro.dev.dataReady || !gyro.dev.read(&gyro.dev)) {
+    if (gyro.dev.update) {
+        // if the gyro update function is set then return, since the gyro is read in gyroUpdateISR
         return;
     }
-#else
     if (!gyro.dev.read(&gyro.dev)) {
         return;
     }
-#endif
+    gyro.dev.dataReady = false;
+    // move gyro data into 32-bit variables to avoid overflows in calculations
+    gyroADC[X] = gyro.dev.gyroADCRaw[X];
+    gyroADC[Y] = gyro.dev.gyroADCRaw[Y];
+    gyroADC[Z] = gyro.dev.gyroADCRaw[Z];
+
+    alignSensors(gyroADC, gyro.dev.gyroAlign);
 
     const bool calibrationComplete = isGyroCalibrationComplete();
     if (calibrationComplete) {
@@ -423,16 +449,7 @@ void gyroUpdate(void)
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT
         debug[3] = (uint16_t)(micros() & 0xffff);
 #endif
-    }
-    gyro.dev.dataReady = false;
-    // move gyro data into 32-bit variables to avoid overflows in calculations
-    gyroADC[X] = gyro.dev.gyroADCRaw[X];
-    gyroADC[Y] = gyro.dev.gyroADCRaw[Y];
-    gyroADC[Z] = gyro.dev.gyroADCRaw[Z];
-
-    alignSensors(gyroADC, gyro.dev.gyroAlign);
-
-    if (!calibrationComplete) {
+    } else {
         performGyroCalibration(gyroConfig->gyroMovementCalibrationThreshold);
     }
 
@@ -450,9 +467,11 @@ void gyroUpdate(void)
         gyroADCf = notchFilter1ApplyFn(notchFilter1[axis], gyroADCf);
         gyroADCf = notchFilter2ApplyFn(notchFilter2[axis], gyroADCf);
         gyro.gyroADCf[axis] = gyroADCf;
+    }
 
-        if (!calibrationComplete) {
-            gyroADC[axis] = lrintf(gyro.gyroADCf[axis] / gyro.dev.scale);
-        }
+    if (!calibrationComplete) {
+        gyroADC[X] = lrintf(gyro.gyroADCf[X] / gyro.dev.scale);
+        gyroADC[Y] = lrintf(gyro.gyroADCf[Y] / gyro.dev.scale);
+        gyroADC[Z] = lrintf(gyro.gyroADCf[Z] / gyro.dev.scale);
     }
 }

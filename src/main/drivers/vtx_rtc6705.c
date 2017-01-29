@@ -87,7 +87,9 @@
 #define DISABLE_RTC6705 GPIO_SetBits(RTC6705_CS_GPIO,   RTC6705_CS_PIN)
 #define ENABLE_RTC6705  GPIO_ResetBits(RTC6705_CS_GPIO, RTC6705_CS_PIN)
 
+#if defined(SPRACINGF3NEO)
 static IO_t vtxPowerPin        = IO_NONE;
+#endif
 
 #define ENABLE_VTX_POWER       IOLo(vtxPowerPin)
 #define DISABLE_VTX_POWER      IOHi(vtxPowerPin)
@@ -143,7 +145,7 @@ bool rtc6705Init(void)
     vtxPowerPin = IOGetByTag(IO_TAG(RTC6705_POWER_PIN));
     IOInit(vtxPowerPin, OWNER_VTX, 0);
     IOConfigGPIO(vtxPowerPin, IOCFG_OUT_PP);
-    
+
     ENABLE_VTX_POWER;
 #endif
 

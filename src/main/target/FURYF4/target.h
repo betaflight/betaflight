@@ -28,8 +28,7 @@
 #define BEEPER                  PA8
 #define BEEPER_INVERTED
 
-#define INVERTER PC0 // PC0 used as inverter select GPIO
-#define INVERTER_USART USART1
+#define INVERTER_PIN_USART1     PC0 // PC0 used as inverter select GPIO
 
 // MPU6000 interrupts
 #define USE_EXTI

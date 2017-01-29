@@ -28,8 +28,7 @@
 
 #define BEEPER                  PA8
 
-#define INVERTER PC0 // PC0 used as inverter select GPIO
-#define INVERTER_USART USART1
+#define INVERTER_PIN_USART1 PC0 // PC0 used as inverter select GPIO
 
 // MPU6000 interrupts
 #define USE_EXTI
@@ -51,8 +50,8 @@
 
 #define OSD
 #define USE_MAX7456
-#define MAX7456_SPI_INSTANCE    			SPI2
-#define MAX7456_SPI_CS_PIN      			PB12
+#define MAX7456_SPI_INSTANCE                SPI2
+#define MAX7456_SPI_CS_PIN                  PB12
 //#define MAX7456_DMA_CHANNEL_TX              DMA1_Stream5
 //#define MAX7456_DMA_CHANNEL_RX              DMA1_Stream0
 //#define MAX7456_DMA_IRQ_HANDLER_ID          DMA1_ST0_HANDLER
