@@ -743,9 +743,15 @@ VPATH        := $(VPATH):$(STDPERIPH_DIR)/src
 #
 
 # Tool names
-CC          = arm-none-eabi-gcc
+ifneq ($(TOOLCHAINPATH),)
+CROSS_CC    = $(TOOLCHAINPATH)/arm-none-eabi-gcc
+OBJCOPY     = $(TOOLCHAINPATH)/arm-none-eabi-objcopy
+SIZE        = $(TOOLCHAINPATH)/arm-none-eabi-size
+else
+CROSS_CC    = arm-none-eabi-gcc
 OBJCOPY     = arm-none-eabi-objcopy
 SIZE        = arm-none-eabi-size
+endif
 
 #
 # Tool options.
@@ -838,25 +844,25 @@ $(TARGET_BIN): $(TARGET_ELF)
 
 $(TARGET_ELF):  $(TARGET_OBJS)
 	$(V1) echo Linking $(TARGET)
-	$(V1) $(CC) -o $@ $^ $(LDFLAGS)
+	$(V1) $(CROSS_CC) -o $@ $^ $(LDFLAGS)
 	$(V0) $(SIZE) $(TARGET_ELF)
 
 # Compile
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
 	$(V1) mkdir -p $(dir $@)
 	$(V1) echo %% $(notdir $<) "$(STDOUT)"
-	$(V1) $(CC) -c -o $@ $(CFLAGS) $<
+	$(V1) $(CROSS_CC) -c -o $@ $(CFLAGS) $<
 
 # Assemble
 $(OBJECT_DIR)/$(TARGET)/%.o: %.s
 	$(V1) mkdir -p $(dir $@)
 	$(V1) echo %% $(notdir $<) "$(STDOUT)"
-	$(V1) $(CC) -c -o $@ $(ASFLAGS) $<
+	$(V1) $(CROSS_CC) -c -o $@ $(ASFLAGS) $<
 
 $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 	$(V1) mkdir -p $(dir $@)
 	$(V1) echo %% $(notdir $<) "$(STDOUT)"
-	$(V1) $(CC) -c -o $@ $(ASFLAGS) $<
+	$(V1) $(CROSS_CC) -c -o $@ $(ASFLAGS) $<
 
 
 ## all               : Build all valid targets
