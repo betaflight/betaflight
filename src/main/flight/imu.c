@@ -549,7 +549,7 @@ static void imuUpdateMeasuredRotationRate(void)
     imuAccumulatedRateTime = 0.0f;
 #else
     for (axis = 0; axis < 3; axis++) {
-        imuMeasuredRotationBF.A[axis] = gyro.gyroADCf[axis];
+        imuMeasuredRotationBF.A[axis] = gyro.gyroADCf[axis] * gyroScale;
     }
 #endif
 }
