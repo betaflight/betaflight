@@ -24,10 +24,10 @@
 
 #include "common/utils.h"
 
-#include "config/config_master.h"
-
 #include "drivers/display.h"
 #include "drivers/max7456.h"
+
+#include "io/osd.h"
 
 displayPort_t max7456DisplayPort; // Referenced from osd.c
 

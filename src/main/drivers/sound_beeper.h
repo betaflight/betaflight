@@ -29,13 +29,13 @@
 #define BEEP_ON     do {} while(0)
 #endif
 
-typedef struct beeperConfig_s {
+typedef struct beeperDevConfig_s {
     ioTag_t ioTag;
     unsigned isInverted : 1;
     unsigned isOD : 1;
-} beeperConfig_t;
+} beeperDevConfig_t;
 
 void systemBeep(bool on);
 void systemBeepToggle(void);
-void beeperInit(const beeperConfig_t *beeperConfig);
+void beeperInit(const beeperDevConfig_t *beeperConfig);
 

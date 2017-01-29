@@ -17,9 +17,6 @@
 
 #pragma once
 
-// !!Temporarily remove blackbox until ROM recovered for NAZE target
-#undef BLACKBOX
-
 #define TARGET_BOARD_IDENTIFIER "AFNA" // AFroNAze - NAZE might be considered misleading on Naze clones like the flip32.
 
 #define LED0                    PB3
@@ -31,8 +28,10 @@
 #define INVERTER_USART          USART2
 
 #define USE_EXTI
-#define MAG_INT_EXTI            PC14
+#define MPU_INT_EXTI            PC13
 #define USE_MPU_DATA_READY_SIGNAL
+#define MAG_INT_EXTI            PC14
+#define USE_MAG_DATA_READY_SIGNAL
 
 // SPI2
 // PB15 28 SPI2_MOSI
@@ -61,7 +60,7 @@
     #define UART3_RX_PIN            PB11
     #define UART3_TX_PIN            PB10
 
-    #define SERIAL_PORT_COUNT       5
+    #define SERIAL_PORT_COUNT       4
 
     #define MPU6500_CS_GPIO_CLK_PERIPHERAL  NAZE_CS_GPIO_CLK_PERIPHERAL
     #define MPU6500_CS_GPIO                 NAZE_SPI_CS_GPIO
@@ -75,7 +74,7 @@
     #define M25P16_CS_PIN           NAZE_SPI_CS_PIN
     #define M25P16_SPI_INSTANCE     NAZE_SPI_INSTANCE
 
-    #define SERIAL_PORT_COUNT       4
+    #define SERIAL_PORT_COUNT       5
 
     #define USE_FLASHFS
     #define USE_FLASH_M25P16
@@ -185,7 +184,6 @@
 //#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_MOTOR_COUNT      6
-#define DISABLE_UNCOMMON_MIXERS
 
 #define DEFAULT_FEATURES        FEATURE_VBAT
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM

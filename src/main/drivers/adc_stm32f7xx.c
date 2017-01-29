@@ -37,13 +37,13 @@
 #define ADC_INSTANCE                ADC1
 #endif
 
-const adcDevice_t adcHardware[] = { 
+const adcDevice_t adcHardware[] = {
     { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream4, .channel = DMA_CHANNEL_0 },
-    //{ .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream1, .channel = DMA_Channel_0 }  
+    //{ .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream1, .channel = DMA_Channel_0 }
 };
 
 /* note these could be packed up for saving space */
-const adcTagMap_t adcTagMap[] = { 
+const adcTagMap_t adcTagMap[] = {
 /*
     { DEFIO_TAG_E__PF3,  ADC_Channel_9  },
     { DEFIO_TAG_E__PF4,  ADC_Channel_14 },
@@ -199,7 +199,7 @@ void adcInit(drv_adc_config_t *init)
         }
     }
 
-    HAL_CLEANINVALIDATECACHE((uint32_t*)&adcValues, configuredAdcChannels);
+    //HAL_CLEANINVALIDATECACHE((uint32_t*)&adcValues, configuredAdcChannels);
     /*##-4- Start the conversion process #######################################*/
     if(HAL_ADC_Start_DMA(&adc.ADCHandle, (uint32_t*)&adcValues, configuredAdcChannels) != HAL_OK)
     {

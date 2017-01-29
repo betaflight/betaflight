@@ -45,8 +45,7 @@ typedef enum {
 #define LTM_MAX_PAYLOAD_SIZE 14
 #define LTM_MAX_MESSAGE_SIZE (LTM_MAX_PAYLOAD_SIZE+4)
 
-struct telemetryConfig_s;
-void initLtmTelemetry(struct telemetryConfig_s *initialTelemetryConfig);
+void initLtmTelemetry(void);
 void handleLtmTelemetry(void);
 void checkLtmTelemetryState(void);
 

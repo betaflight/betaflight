@@ -66,11 +66,11 @@
 #include "drivers/exti.h"
 #include "drivers/io_pca9685.h"
 
+#include "fc/cli.h"
 #include "fc/fc_tasks.h"
 #include "fc/rc_controls.h"
 #include "fc/fc_msp.h"
 #include "fc/runtime_config.h"
-#include "fc/serial_cli.h"
 
 #include "io/beeper.h"
 #include "io/serial.h"
@@ -85,6 +85,8 @@
 #include "io/displayport_msp.h"
 
 #include "msp/msp_serial.h"
+
+#include "navigation/navigation.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -109,11 +111,8 @@
 #include "flight/mixer.h"
 #include "flight/servos.h"
 #include "flight/failsafe.h"
-#include "flight/navigation_rewrite.h"
 
 #include "config/config_eeprom.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -176,11 +175,11 @@ void init(void)
     addBootlogEvent2(BOOT_EVENT_CONFIG_LOADED, BOOT_EVENT_FLAGS_NONE);
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
 
-    debugMode = masterConfig.debug_mode;
+    debugMode = systemConfig()->debug_mode;
 
     systemInit();
 
-    i2cSetOverclock(masterConfig.i2c_overclock);
+    i2cSetOverclock(systemConfig()->i2c_overclock);
 
     // initialize IO (needed for all IO operations)
     IOInitGlobal();
@@ -241,7 +240,7 @@ void init(void)
 #endif
 
 #ifdef USE_SERVOS
-    servosInit(masterConfig.customServoMixer);
+    servosInit();
 #endif
 
     drv_pwm_config_t pwm_params;
@@ -314,7 +313,7 @@ void init(void)
     pwm_params.enablePWMOutput = feature(FEATURE_PWM_OUTPUT_ENABLE);
 
 #if defined(USE_RX_PWM) || defined(USE_RX_PPM)
-    pwmRxInit(pwmRxConfig());
+    pwmRxInit(systemConfig()->pwmRxInputFilteringMode);
 #endif
 
 #ifdef USE_PMW_SERVO_DRIVER
@@ -339,7 +338,7 @@ void init(void)
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
-    beeperConfig_t beeperConfig = {
+    beeperDevConfig_t beeperDevConfig = {
         .ioTag = IO_TAG(BEEPER),
 #ifdef BEEPER_INVERTED
         .isOD = false,
@@ -353,12 +352,12 @@ void init(void)
 #if defined(NAZE) && defined(USE_HARDWARE_REVISION_DETECTION)
     if (hardwareRevision >= NAZE32_REV5) {
         // naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.
-        beeperConfig.isOD = false;
-        beeperConfig.isInverted = true;
+        beeperDevConfig.isOD = false;
+        beeperDevConfig.isInverted = true;
     }
 #endif
 
-    beeperInit(&beeperConfig);
+    beeperInit(&beeperDevConfig);
 #endif
 
 #ifdef INVERTER
@@ -499,9 +498,9 @@ void init(void)
     flashLedsAndBeep();
 
 #ifdef USE_DTERM_NOTCH
-    pidInitFilters(&currentProfile->pidProfile);
+    pidInitFilters();
 #endif
-    
+
     imuInit();
 
     mspFcInit();
@@ -517,7 +516,7 @@ void init(void)
 
     failsafeInit(flight3DConfig()->deadband3d_throttle);
 
-    rxInit(masterConfig.modeActivationConditions);
+    rxInit();
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
@@ -527,18 +526,11 @@ void init(void)
 #endif
 
 #ifdef NAV
-    navigationInit(
-        &masterConfig.navConfig,
-        &currentProfile->pidProfile,
-        rcControlsConfig(),
-        rxConfig(),
-        flight3DConfig(),
-        motorConfig()
-    );
+    navigationInit();
 #endif
 
 #ifdef LED_STRIP
-    ledStripInit(ledStripConfig()->ledConfigs, ledStripConfig()->colors, ledStripConfig()->modeColors, &ledStripConfig()->specialColors);
+    ledStripInit();
 
     if (feature(FEATURE_LED_STRIP)) {
         ledStripEnable();

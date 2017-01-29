@@ -1,16 +1,9 @@
 env:
+# Specify the main Mafile supported goals.
+  - GOAL=test
+  - GOAL=all
 #  - TARGET=CC3D
-#  - TARGET=CJMCU
-#  - TARGET=NAZE
-#  - TARGET=STM32F3DISCOVERY
-#  - TARGET=RMDO
-#  - TARGET=SPRACINGF3
-#  - TARGET=SPRACINGF3EVO
-#  - TARGET=SPARKY
-#  - TARGET=FURYF3
-#  - TARGET=RCEXPLORERF3
-#  - TARGET=REVO
-  
+
 # use new docker environment
 sudo: false
 
@@ -28,18 +21,23 @@ addons:
 language: cpp
 compiler: clang
 
-before_install: ./install-toolchain.sh
+before_install:
 
 install:
-  - export PATH=$PATH:$PWD/gcc-arm-none-eabi-5_4-2016q2/bin
+  - ./install-toolchain.sh
+  - export TOOLCHAINPATH=$PWD/gcc-arm-none-eabi-6_2-2016q4/bin
 
-before_script: arm-none-eabi-gcc --version
+before_script:
+  - $TOOLCHAINPATH/arm-none-eabi-gcc --version
+  - clang --version
+  - clang++ --version
+
 script: ./.travis.sh
 
 cache: 
   apt: true
   directories:
-  - $PWD/gcc-arm-none-eabi-5_4-2016q2
+  - $PWD/gcc-arm-none-eabi-6_2-2016q4
 
 notifications:
   #slack: inavflight:UWRoWFJ4cbbpHXT8HJJlAPXa

@@ -76,7 +76,7 @@ static bool rxIsInFailsafeModeNotDataDriven = true;
 
 static timeUs_t rxUpdateAt = 0;
 static timeUs_t needRxSignalBefore = 0;
-static uint32_t needRxSignalMaxDelayUs = 0;
+static timeDelta_t needRxSignalMaxDelayUs = 0;
 static timeUs_t suspendRxSignalUntil = 0;
 static uint8_t  skipRxSamples = 0;
 
@@ -105,14 +105,17 @@ PG_REGISTER_WITH_RESET_TEMPLATE(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
 #define SERIALRX_PROVIDER 0
 #endif
 
+#define RX_MIDRC 1500
+#define RX_MIN_USEX 885
 PG_RESET_TEMPLATE(rxConfig_t, rxConfig,
     .serialrx_provider = SERIALRX_PROVIDER,
     .rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL,
     .spektrum_sat_bind = 0,
-    .midrc = 1500,
+    .sbus_inversion = 1,
+    .midrc = RX_MIDRC,
     .mincheck = 1100,
     .maxcheck = 1900,
-    .rx_min_usec = 885,          // any of first 4 channels below this value will trigger rx loss detection
+    .rx_min_usec = RX_MIN_USEX,          // any of first 4 channels below this value will trigger rx loss detection
     .rx_max_usec = 2115,         // any of first 4 channels above this value will trigger rx loss detection
     .rssi_channel = 0,
     .rssi_scale = RSSI_SCALE_DEFAULT,
@@ -129,7 +132,7 @@ void resetAllRxChannelRangeConfigurations(void)
     }
 }
 
-PG_REGISTER_ARR_WITH_RESET_FN(rxChannelRangeConfig_t, NON_AUX_CHANNEL_COUNT, rxChannelRangeConfigs, PG_RX_CHANNEL_RANGE_CONFIG, 0);
+PG_REGISTER_ARRAY_WITH_RESET_FN(rxChannelRangeConfig_t, NON_AUX_CHANNEL_COUNT, rxChannelRangeConfigs, PG_RX_CHANNEL_RANGE_CONFIG, 0);
 
 void pgResetFn_rxChannelRangeConfigs(rxChannelRangeConfig_t *rxChannelRangeConfigs)
 {
@@ -140,17 +143,17 @@ void pgResetFn_rxChannelRangeConfigs(rxChannelRangeConfig_t *rxChannelRangeConfi
     }
 }
 
-PG_REGISTER_ARR_WITH_RESET_FN(rxFailsafeChannelConfig_t, MAX_SUPPORTED_RC_CHANNEL_COUNT, rxFailsafeChannelConfigs, PG_RX_FAILSAFE_CHANNEL_CONFIG, 0);
+PG_REGISTER_ARRAY_WITH_RESET_FN(rxFailsafeChannelConfig_t, MAX_SUPPORTED_RC_CHANNEL_COUNT, rxFailsafeChannelConfigs, PG_RX_FAILSAFE_CHANNEL_CONFIG, 0);
 
 void pgResetFn_rxFailsafeChannelConfigs(rxFailsafeChannelConfig_t *rxFailsafeChannelConfigs)
 {
     for (int i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
         if (i== THROTTLE) {
             rxFailsafeChannelConfigs[i].mode = RX_FAILSAFE_MODE_HOLD;
-            rxFailsafeChannelConfigs[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(rxConfig()->rx_min_usec);
+            rxFailsafeChannelConfigs[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(RX_MIN_USEX);
         } else {
             rxFailsafeChannelConfigs[i].mode = (i < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_MODE_AUTO : RX_FAILSAFE_MODE_HOLD;
-            rxFailsafeChannelConfigs[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(rxConfig()->midrc);
+            rxFailsafeChannelConfigs[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(RX_MIDRC);
         }
     }
 }
@@ -251,7 +254,7 @@ bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 }
 #endif
 
-void rxInit(const modeActivationCondition_t *modeActivationConditions)
+void rxInit(void)
 {
     rxRuntimeConfig.rcReadRawFn = nullReadRawRC;
     rxRuntimeConfig.rcFrameStatusFn = nullFrameStatus;
@@ -267,17 +270,16 @@ void rxInit(const modeActivationCondition_t *modeActivationConditions)
 
     // Initialize ARM switch to OFF position when arming via switch is defined
     for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-        const modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[i];
-        if (modeActivationCondition->modeId == BOXARM && IS_RANGE_USABLE(&modeActivationCondition->range)) {
+        if (modeActivationConditions(i)->modeId == BOXARM && IS_RANGE_USABLE(&modeActivationConditions(i)->range)) {
             // ARM switch is defined, determine an OFF value
             uint16_t value;
-            if (modeActivationCondition->range.startStep > 0) {
-                value = MODE_STEP_TO_CHANNEL_VALUE((modeActivationCondition->range.startStep - 1));
+            if (modeActivationConditions(i)->range.startStep > 0) {
+                value = MODE_STEP_TO_CHANNEL_VALUE((modeActivationConditions(i)->range.startStep - 1));
             } else {
-                value = MODE_STEP_TO_CHANNEL_VALUE((modeActivationCondition->range.endStep + 1));
+                value = MODE_STEP_TO_CHANNEL_VALUE((modeActivationConditions(i)->range.endStep + 1));
             }
             // Initialize ARM AUX channel to OFF value
-            rcData[modeActivationCondition->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = value;
+            rcData[modeActivationConditions(i)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = value;
         }
     }
 
@@ -483,7 +485,7 @@ static void detectAndApplySignalLossBehaviour(void)
 {
     bool useValueFromRx = true;
     const bool rxIsDataDriven = isRxDataDriven();
-    const uint32_t currentMilliTime = millis();
+    const timeMs_t currentMilliTime = millis();
 
     if (!rxIsDataDriven) {
         rxSignalReceived = rxSignalReceivedNotDataDriven;

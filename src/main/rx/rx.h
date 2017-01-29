@@ -105,13 +105,13 @@ typedef struct rxFailsafeChannelConfig_s {
     uint8_t mode; // See rxFailsafeChannelMode_e
     uint8_t step;
 } rxFailsafeChannelConfig_t;
-PG_DECLARE_ARR(rxFailsafeChannelConfig_t, MAX_SUPPORTED_RC_CHANNEL_COUNT, rxFailsafeChannelConfigs);
+PG_DECLARE_ARRAY(rxFailsafeChannelConfig_t, MAX_SUPPORTED_RC_CHANNEL_COUNT, rxFailsafeChannelConfigs);
 
 typedef struct rxChannelRangeConfig_s {
     uint16_t min;
     uint16_t max;
 } rxChannelRangeConfig_t;
-PG_DECLARE_ARR(rxChannelRangeConfig_t, NON_AUX_CHANNEL_COUNT, rxChannelRangeConfigs);
+PG_DECLARE_ARRAY(rxChannelRangeConfig_t, NON_AUX_CHANNEL_COUNT, rxChannelRangeConfigs);
 
 typedef struct rxConfig_s {
     uint8_t rcmap[MAX_MAPPABLE_RX_INPUTS];  // mapping of radio channels to internal RPYTA+ order
@@ -128,10 +128,9 @@ typedef struct rxConfig_s {
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
-    uint8_t rcSmoothing;                    // Enable/Disable RC filtering
-
     uint16_t rx_min_usec;
     uint16_t rx_max_usec;
+    uint8_t rcSmoothing;                    // Enable/Disable RC filtering
 } rxConfig_t;
 
 PG_DECLARE(rxConfig_t, rxConfig);
@@ -150,9 +149,9 @@ typedef struct rxRuntimeConfig_s {
 } rxRuntimeConfig_t;
 
 extern rxRuntimeConfig_t rxRuntimeConfig; //!!TODO remove this extern, only needed once for channelCount
+extern uint16_t rssi;
 
-struct modeActivationCondition_s;
-void rxInit(const struct modeActivationCondition_s *modeActivationConditions);
+void rxInit(void);
 bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime);
 bool rxIsReceivingSignal(void);
 bool rxAreFlightChannelsValid(void);

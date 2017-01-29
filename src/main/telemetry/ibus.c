@@ -32,20 +32,20 @@
 
 #include "common/axis.h"
 
-#include "drivers/system.h"
 #include "drivers/serial.h"
+#include "drivers/system.h"
 
-#include "io/serial.h"
+#include "fc/fc_core.h"
 #include "fc/rc_controls.h"
 
-#include "sensors/sensors.h"
+#include "io/serial.h"
+
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
+#include "sensors/sensors.h"
 
-#include "telemetry/telemetry.h"
 #include "telemetry/ibus.h"
-
-#include "fc/mw.h"
+#include "telemetry/telemetry.h"
 
 /*
  * iBus Telemetry is a half-duplex serial protocol. It shares 1 line for
@@ -191,7 +191,6 @@ static const uint8_t SENSOR_ADDRESS_TYPE_LOOKUP[] = {
 static serialPort_t *ibusSerialPort = NULL;
 static serialPortConfig_t *ibusSerialPortConfig;
 
-static telemetryConfig_t *telemetryConfig;
 static bool ibusTelemetryEnabled = false;
 static portSharing_e ibusPortSharing;
 
@@ -274,8 +273,7 @@ static void pushOntoTail(uint8_t buffer[IBUS_MIN_LEN], size_t bufferLength, uint
     ibusReceiveBuffer[bufferLength - 1] = value;
 }
 
-void initIbusTelemetry(telemetryConfig_t *initialTelemetryConfig) {
-    telemetryConfig = initialTelemetryConfig;
+void initIbusTelemetry(void) {
     ibusSerialPortConfig = findSerialPortConfig(FUNCTION_TELEMETRY_IBUS);
     ibusPortSharing = determinePortSharing(ibusSerialPortConfig, FUNCTION_TELEMETRY_IBUS);
 }

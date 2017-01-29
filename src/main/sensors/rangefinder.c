@@ -209,7 +209,7 @@ int32_t rangefinderGetLatestAltitude(void)
     return rangefinder.calculatedAltitude;
 }
 
-bool isRangefinderHealthy(void)
+bool rangefinderIsHealthy(void)
 {
     return true;
 }

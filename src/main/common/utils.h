@@ -23,6 +23,8 @@
 #define ARRAYLEN(x) (sizeof(x) / sizeof((x)[0]))
 #define ARRAYEND(x) (&(x)[ARRAYLEN(x)])
 
+#define CONST_CAST(type, value) ((type)(value))
+
 #define CONCAT_HELPER(x,y) x ## y
 #define CONCAT(x,y) CONCAT_HELPER(x, y)
 

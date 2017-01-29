@@ -96,7 +96,7 @@ static void updateBatteryVoltage(uint32_t vbatTimeDelta)
 /* Batt Hysteresis of +/-100mV */
 #define VBATT_HYSTERESIS 1
 
-void updateBattery(uint32_t vbatTimeDelta)
+void batteryUpdate(uint32_t vbatTimeDelta)
 {
     updateBatteryVoltage(vbatTimeDelta);
 
@@ -166,13 +166,6 @@ batteryState_e getBatteryState(void)
     return batteryState;
 }
 
-const char * const batteryStateStrings[] = {"OK", "WARNING", "CRITICAL", "NOT PRESENT"};
-
-const char * getBatteryStateString(void)
-{
-    return batteryStateStrings[batteryState];
-}
-
 void batteryInit(void)
 {
     batteryState = BATTERY_NOT_PRESENT;
@@ -192,7 +185,7 @@ int32_t currentSensorToCentiamps(uint16_t src)
     return (millivolts * 1000) / (int32_t)batteryConfig()->currentMeterScale; // current in 0.01A steps
 }
 
-void updateCurrentMeter(int32_t lastUpdateAt, uint16_t deadband3d_throttle)
+void currentMeterUpdate(int32_t lastUpdateAt, uint16_t deadband3d_throttle)
 {
     static int32_t amperageRaw = 0;
     static int64_t mAhdrawnRaw = 0;

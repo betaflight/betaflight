@@ -20,34 +20,18 @@
 
 #include "platform.h"
 
-#include "config/config_master.h"
 #include "config/feature.h"
 
 static uint32_t activeFeaturesLatch = 0;
 
-void intFeatureSet(uint32_t mask, uint32_t *features)
-{
-    *features |= mask;
-}
-
-void intFeatureClear(uint32_t mask, uint32_t *features)
-{
-    *features &= ~(mask);
-}
-
-void intFeatureClearAll(uint32_t *features)
-{
-    *features = 0;
-}
-
 void latchActiveFeatures()
 {
-    activeFeaturesLatch = masterConfig.enabledFeatures;
+    activeFeaturesLatch = featureConfig()->enabledFeatures;
 }
 
 bool featureConfigured(uint32_t mask)
 {
-    return masterConfig.enabledFeatures & mask;
+    return featureConfig()->enabledFeatures & mask;
 }
 
 bool feature(uint32_t mask)
@@ -57,20 +41,20 @@ bool feature(uint32_t mask)
 
 void featureSet(uint32_t mask)
 {
-    intFeatureSet(mask, &masterConfig.enabledFeatures);
+    featureConfigMutable()->enabledFeatures |= mask;
 }
 
 void featureClear(uint32_t mask)
 {
-    intFeatureClear(mask, &masterConfig.enabledFeatures);
+    featureConfigMutable()->enabledFeatures &= ~(mask);
 }
 
 void featureClearAll()
 {
-    intFeatureClearAll(&masterConfig.enabledFeatures);
+    featureConfigMutable()->enabledFeatures = 0;
 }
 
 uint32_t featureMask(void)
 {
-    return masterConfig.enabledFeatures;
+    return featureConfig()->enabledFeatures;
 }

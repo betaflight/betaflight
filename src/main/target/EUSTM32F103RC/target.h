@@ -46,8 +46,8 @@
 #define ACC
 #define USE_FAKE_ACC
 #define USE_ACC_ADXL345
-#define USE_ACC_BMA280
-#define USE_ACC_MMA8452
+//#define USE_ACC_BMA280
+//#define USE_ACC_MMA8452
 #define USE_ACC_MPU6050
 //#define USE_ACC_SPI_MPU6000
 #define USE_ACC_SPI_MPU6500
@@ -70,7 +70,7 @@
 #define SONAR_TRIGGER_PIN_PWM   PB8
 #define SONAR_ECHO_PIN_PWM      PB9
 
-#define USE_DASHBOARD
+//#define USE_DASHBOARD
 
 #define USE_UART1
 #define USE_UART2

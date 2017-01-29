@@ -54,9 +54,9 @@
 #include "flight/mixer.h"
 #include "flight/servos.h"
 
-#include "config/config_profile.h"
-#include "config/config_master.h"
 #include "config/feature.h"
+
+#include "rx/rx.h"
 
 // For VISIBLE* (Actually, included by config_master.h)
 #include "io/osd.h"

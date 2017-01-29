@@ -40,6 +40,7 @@
 #include "io/gps.h"
 #include "io/serial.h"
 
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -53,7 +54,6 @@
 
 #include "config/feature.h"
 //#include "config/config.h"
-#include "config/config_master.h"
 
 #define CRSF_CYCLETIME_US                   100000 // 100ms, 10 Hz
 

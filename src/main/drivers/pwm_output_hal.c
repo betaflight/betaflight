@@ -70,7 +70,7 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8
 {
     TIM_HandleTypeDef* Handle = timerFindTimerHandle(tim);
     if(Handle == NULL) return;
-    
+
     TIM_OC_InitTypeDef  TIM_OCInitStructure;
     TIM_OCInitStructure.OCMode = TIM_OCMODE_PWM2;
     TIM_OCInitStructure.Pulse = value;
@@ -79,7 +79,7 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8
     TIM_OCInitStructure.OCIdleState = TIM_OCIDLESTATE_SET;
     TIM_OCInitStructure.OCNIdleState = TIM_OCNIDLESTATE_RESET;
     TIM_OCInitStructure.OCFastMode = TIM_OCFAST_DISABLE;
-    
+
     HAL_TIM_PWM_ConfigChannel(Handle, &TIM_OCInitStructure, channel);
     //HAL_TIM_PWM_Start(Handle, channel);
 }

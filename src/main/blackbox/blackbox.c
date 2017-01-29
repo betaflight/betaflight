@@ -23,6 +23,10 @@
 
 #ifdef BLACKBOX
 
+#include "blackbox.h"
+#include "blackbox_io.h"
+
+#include "build/debug.h"
 #include "build/version.h"
 
 #include "common/maths.h"
@@ -31,31 +35,28 @@
 #include "common/encoding.h"
 #include "common/utils.h"
 
+#include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/sensor.h"
-#include "drivers/system.h"
-#include "drivers/serial.h"
-#include "drivers/compass.h"
-#include "drivers/pwm_rx.h"
 #include "drivers/accgyro.h"
+#include "drivers/compass.h"
 #include "drivers/light_led.h"
-
-#include "sensors/sensors.h"
-#include "sensors/boardalignment.h"
-#include "sensors/rangefinder.h"
-#include "sensors/compass.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/pitotmeter.h"
-#include "sensors/gyro.h"
-#include "sensors/battery.h"
+#include "drivers/pwm_rx.h"
+#include "drivers/sensor.h"
+#include "drivers/serial.h"
+#include "drivers/system.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+
+#include "flight/failsafe.h"
+#include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
+#include "flight/servos.h"
 
 #include "io/beeper.h"
 #include "io/gimbal.h"
@@ -64,25 +65,23 @@
 #include "io/serial.h"
 #include "io/statusindicator.h"
 
+#include "navigation/navigation.h"
+
 #include "rx/rx.h"
 #include "rx/msp.h"
 
+#include "sensors/acceleration.h"
+#include "sensors/barometer.h"
+#include "sensors/battery.h"
+#include "sensors/boardalignment.h"
+#include "sensors/compass.h"
+#include "sensors/gyro.h"
+#include "sensors/pitotmeter.h"
+#include "sensors/rangefinder.h"
+#include "sensors/sensors.h"
+
 #include "telemetry/telemetry.h"
 
-#include "flight/mixer.h"
-#include "flight/servos.h"
-#include "flight/failsafe.h"
-#include "flight/imu.h"
-#include "flight/navigation_rewrite.h"
-
-#include "config/config_profile.h"
-#include "config/config_master.h"
-#include "config/feature.h"
-
-#include "blackbox.h"
-#include "blackbox_io.h"
-
-#include "build/debug.h"
 
 #ifdef ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 #define DEFAULT_BLACKBOX_DEVICE BLACKBOX_DEVICE_FLASH
@@ -487,7 +486,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0:
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1:
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2:
-            return currentProfile->pidProfile.D8[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0] != 0;
+            return pidBank()->pid[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0].D != 0;
 
         case FLIGHT_LOG_FIELD_CONDITION_MAG:
 #ifdef MAG
@@ -1025,7 +1024,7 @@ void startBlackbox(void)
          */
         blackboxBuildConditionCache();
 
-        blackboxModeActivationConditionPresent = isModeActivationConditionPresent(masterConfig.modeActivationConditions, BOXBLACKBOX);
+        blackboxModeActivationConditionPresent = isModeActivationConditionPresent(BOXBLACKBOX);
 
         blackboxIteration = 0;
         blackboxPFrameIndex = 0;
@@ -1362,11 +1361,7 @@ static bool blackboxWriteSysinfo()
             }
             );
 
-    #ifdef ASYNC_GYRO_PROCESSING
         BLACKBOX_PRINT_HEADER_LINE("looptime:%d",                           getPidUpdateRate());
-    #else
-        BLACKBOX_PRINT_HEADER_LINE("looptime:%d",                           gyro.targetLooptime);
-    #endif
         BLACKBOX_PRINT_HEADER_LINE("rcExpo:%d",                             currentControlRateProfile->rcExpo8);
         BLACKBOX_PRINT_HEADER_LINE("rcYawExpo:%d",                          currentControlRateProfile->rcYawExpo8);
         BLACKBOX_PRINT_HEADER_LINE("thrMid:%d",                             currentControlRateProfile->thrMid8);
@@ -1376,46 +1371,43 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("rates:%d,%d,%d",                        currentControlRateProfile->rates[ROLL],
                                                                             currentControlRateProfile->rates[PITCH],
                                                                             currentControlRateProfile->rates[YAW]);
-        BLACKBOX_PRINT_HEADER_LINE("rollPID:%d,%d,%d",                      currentProfile->pidProfile.P8[ROLL],
-                                                                            currentProfile->pidProfile.I8[ROLL],
-                                                                            currentProfile->pidProfile.D8[ROLL]);
-        BLACKBOX_PRINT_HEADER_LINE("pitchPID:%d,%d,%d",                     currentProfile->pidProfile.P8[PITCH],
-                                                                            currentProfile->pidProfile.I8[PITCH],
-                                                                            currentProfile->pidProfile.D8[PITCH]);
-        BLACKBOX_PRINT_HEADER_LINE("yawPID:%d,%d,%d",                       currentProfile->pidProfile.P8[YAW],
-                                                                            currentProfile->pidProfile.I8[YAW],
-                                                                            currentProfile->pidProfile.D8[YAW]);
-        BLACKBOX_PRINT_HEADER_LINE("altPID:%d,%d,%d",                       currentProfile->pidProfile.P8[PIDALT],
-                                                                            currentProfile->pidProfile.I8[PIDALT],
-                                                                            currentProfile->pidProfile.D8[PIDALT]);
-        BLACKBOX_PRINT_HEADER_LINE("posPID:%d,%d,%d",                       currentProfile->pidProfile.P8[PIDPOS],
-                                                                            currentProfile->pidProfile.I8[PIDPOS],
-                                                                            currentProfile->pidProfile.D8[PIDPOS]);
-        BLACKBOX_PRINT_HEADER_LINE("posrPID:%d,%d,%d",                      currentProfile->pidProfile.P8[PIDPOSR],
-                                                                            currentProfile->pidProfile.I8[PIDPOSR],
-                                                                            currentProfile->pidProfile.D8[PIDPOSR]);
-        BLACKBOX_PRINT_HEADER_LINE("navrPID:%d,%d,%d",                      currentProfile->pidProfile.P8[PIDNAVR],
-                                                                            currentProfile->pidProfile.I8[PIDNAVR],
-                                                                            currentProfile->pidProfile.D8[PIDNAVR]);
-        BLACKBOX_PRINT_HEADER_LINE("levelPID:%d,%d,%d",                     currentProfile->pidProfile.P8[PIDLEVEL],
-                                                                            currentProfile->pidProfile.I8[PIDLEVEL],
-                                                                            currentProfile->pidProfile.D8[PIDLEVEL]);
-        BLACKBOX_PRINT_HEADER_LINE("magPID:%d",                             currentProfile->pidProfile.P8[PIDMAG]);
-        BLACKBOX_PRINT_HEADER_LINE("velPID:%d,%d,%d",                       currentProfile->pidProfile.P8[PIDVEL],
-                                                                            currentProfile->pidProfile.I8[PIDVEL],
-                                                                            currentProfile->pidProfile.D8[PIDVEL]);
-        BLACKBOX_PRINT_HEADER_LINE("yaw_p_limit:%d",                        currentProfile->pidProfile.yaw_p_limit);
-        BLACKBOX_PRINT_HEADER_LINE("yaw_lpf_hz:%d",                         (int)(currentProfile->pidProfile.yaw_lpf_hz * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("dterm_lpf_hz:%d",                       (int)(currentProfile->pidProfile.dterm_lpf_hz * 100.0f));
+        BLACKBOX_PRINT_HEADER_LINE("rollPID:%d,%d,%d",                      pidBank()->pid[PID_ROLL].P,
+                                                                            pidBank()->pid[PID_ROLL].I,
+                                                                            pidBank()->pid[PID_ROLL].D);
+        BLACKBOX_PRINT_HEADER_LINE("pitchPID:%d,%d,%d",                     pidBank()->pid[PID_PITCH].P,
+                                                                            pidBank()->pid[PID_PITCH].I,
+                                                                            pidBank()->pid[PID_PITCH].D);
+        BLACKBOX_PRINT_HEADER_LINE("yawPID:%d,%d,%d",                       pidBank()->pid[PID_YAW].P,
+                                                                            pidBank()->pid[PID_YAW].I,
+                                                                            pidBank()->pid[PID_YAW].D);
+        BLACKBOX_PRINT_HEADER_LINE("altPID:%d,%d,%d",                       pidBank()->pid[PID_POS_Z].P,
+                                                                            pidBank()->pid[PID_POS_Z].I,
+                                                                            pidBank()->pid[PID_POS_Z].D);
+        BLACKBOX_PRINT_HEADER_LINE("posPID:%d,%d,%d",                       pidBank()->pid[PID_POS_XY].P,
+                                                                            pidBank()->pid[PID_POS_XY].I,
+                                                                            pidBank()->pid[PID_POS_XY].D);
+        BLACKBOX_PRINT_HEADER_LINE("posrPID:%d,%d,%d",                      pidBank()->pid[PID_VEL_XY].P,
+                                                                            pidBank()->pid[PID_VEL_XY].I,
+                                                                            pidBank()->pid[PID_VEL_XY].D);
+        BLACKBOX_PRINT_HEADER_LINE("levelPID:%d,%d,%d",                     pidBank()->pid[PID_LEVEL].P,
+                                                                            pidBank()->pid[PID_LEVEL].I,
+                                                                            pidBank()->pid[PID_LEVEL].D);
+        BLACKBOX_PRINT_HEADER_LINE("magPID:%d",                             pidBank()->pid[PID_HEADING].P);
+        BLACKBOX_PRINT_HEADER_LINE("velPID:%d,%d,%d",                       pidBank()->pid[PID_VEL_Z].P,
+                                                                            pidBank()->pid[PID_VEL_Z].I,
+                                                                            pidBank()->pid[PID_VEL_Z].D);
+        BLACKBOX_PRINT_HEADER_LINE("yaw_p_limit:%d",                        pidProfile()->yaw_p_limit);
+        BLACKBOX_PRINT_HEADER_LINE("yaw_lpf_hz:%d",                         (int)(pidProfile()->yaw_lpf_hz * 100.0f));
+        BLACKBOX_PRINT_HEADER_LINE("dterm_lpf_hz:%d",                       (int)(pidProfile()->dterm_lpf_hz * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("deadband:%d",                           rcControlsConfig()->deadband);
         BLACKBOX_PRINT_HEADER_LINE("yaw_deadband:%d",                       rcControlsConfig()->yaw_deadband);
         BLACKBOX_PRINT_HEADER_LINE("gyro_lpf:%d",                           gyroConfig()->gyro_lpf);
         BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_hz:%d",                    gyroConfig()->gyro_soft_lpf_hz);
-        BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz:%d",                         (int)(currentProfile->pidProfile.acc_soft_lpf_hz * 100.0f));
+        BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz:%d",                         (int)(pidProfile()->acc_soft_lpf_hz * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("acc_hardware:%d",                       accelerometerConfig()->acc_hardware);
         BLACKBOX_PRINT_HEADER_LINE("baro_hardware:%d",                      barometerConfig()->baro_hardware);
         BLACKBOX_PRINT_HEADER_LINE("mag_hardware:%d",                       compassConfig()->mag_hardware);
-        BLACKBOX_PRINT_HEADER_LINE("features:%d",                           masterConfig.enabledFeatures);
+        BLACKBOX_PRINT_HEADER_LINE("features:%d",                           featureConfig()->enabledFeatures);
 
         default:
             return true;
@@ -1456,6 +1448,9 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
         case FLIGHT_LOG_EVENT_LOGGING_RESUME:
             blackboxWriteUnsignedVB(data->loggingResume.logIteration);
             blackboxWriteUnsignedVB(data->loggingResume.currentTimeUs);
+        break;
+        case FLIGHT_LOG_EVENT_IMU_FAILURE:
+            blackboxWrite(0);
         break;
         case FLIGHT_LOG_EVENT_LOG_END:
             blackboxPrint("End of log");

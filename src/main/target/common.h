@@ -32,8 +32,6 @@
 #define USE_SERIALRX_IBUS       // Cheap FlySky & Turnigy receivers
 
 #if (FLASH_SIZE > 64)
-#define ASYNC_GYRO_PROCESSING
-#define BOOTLOG
 #define BLACKBOX
 #define GPS
 #define GPS_PROTO_UBLOX
@@ -43,21 +41,25 @@
 #define USE_FLM_HEADLOCK
 #define USE_FLM_TURN_ASSIST
 #define TELEMETRY_FRSKY
+#endif
+
+#if defined(STM_FAST_TARGET)
+#define SCHEDULER_DELAY_LIMIT           10
 #else
-#define USE_PARAMETER_GROUPS // !!TODO temporarily set while implementing parameter groups
-#define SKIP_TASK_STATISTICS
-#define SKIP_CLI_COMMAND_HELP
-#define SKIP_CLI_RESOURCES
+#define SCHEDULER_DELAY_LIMIT           100
 #endif
 
 #if (FLASH_SIZE > 128)
+#define ASYNC_GYRO_PROCESSING
+#define BOOTLOG
+#define BOOTLOG_DESCRIPTIONS
+#define USE_64BIT_TIME
 #define USE_GYRO_NOTCH_1
 #define USE_GYRO_NOTCH_2
 #define USE_DTERM_NOTCH
 #define CMS
 #define USE_DASHBOARD
 #define USE_MSP_DISPLAYPORT
-#define BOOTLOG_DESCRIPTIONS
 #define DASHBOARD_ARMED_BITMAP
 #define GPS_PROTO_NMEA
 #define GPS_PROTO_I2C_NAV
@@ -82,6 +84,7 @@
 #define MAX_BOOTLOG_ENTRIES     64
 #else
 #define CLI_MINIMAL_VERBOSITY
+#define SKIP_TASK_STATISTICS
 #define SKIP_CLI_COMMAND_HELP
 #define SKIP_CLI_RESOURCES
 #define DISABLE_UNCOMMON_MIXERS

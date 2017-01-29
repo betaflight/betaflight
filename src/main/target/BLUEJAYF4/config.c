@@ -19,20 +19,14 @@
 
 #include <platform.h>
 
-#include "config/config_master.h"
-#include "config/config_profile.h"
-
-#include "fc/config.h"
-
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 
 #include "hardware_revision.h"
 
 // alternative defaults settings for BlueJayF4 targets
-void targetConfiguration(master_t *config)
+void targetConfiguration(void)
 {
-    (void)config;
     if (hardwareRevision == BJF4_REV1 || hardwareRevision == BJF4_REV2) {
         gyroConfigMutable()->gyro_align = CW180_DEG;
         accelerometerConfigMutable()->acc_align  = CW180_DEG;

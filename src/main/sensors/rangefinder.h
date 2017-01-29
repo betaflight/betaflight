@@ -53,4 +53,4 @@ int32_t rangefinderGetLatestAltitude(void);
 
 void rangefinderUpdate(void);
 int32_t rangefinderRead(void);
-bool isRangefinderHealthy(void);
+bool rangefinderIsHealthy(void);

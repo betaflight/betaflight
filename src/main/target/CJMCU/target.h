@@ -70,7 +70,7 @@
 #define USE_RX_NRF24
 //#define USE_RX_CX10
 #define USE_RX_H8_3D
-#define USE_RX_INAV
+//#define USE_RX_INAV
 //#define USE_RX_SYMA
 //#define USE_RX_V202
 //#define RX_SPI_DEFAULT_PROTOCOL NRF24RX_SYMA_X5
@@ -108,8 +108,6 @@
 
 // Number of available PWM outputs
 #define MAX_PWM_OUTPUT_PORTS    4
-
-#define USE_PARAMETER_GROUPS
 
 // IO - assuming all IOs on 48pin package TODO
 #define TARGET_IO_PORTA         0xffff

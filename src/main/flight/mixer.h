@@ -21,15 +21,10 @@
 
 #if defined(USE_QUAD_MIXER_ONLY)
 #define MAX_SUPPORTED_MOTORS 4
-#define MAX_SUPPORTED_SERVOS 1
-
 #elif defined(TARGET_MOTOR_COUNT)
 #define MAX_SUPPORTED_MOTORS TARGET_MOTOR_COUNT
-#define MAX_SUPPORTED_SERVOS 8
-
 #else
 #define MAX_SUPPORTED_MOTORS 12
-#define MAX_SUPPORTED_SERVOS 8
 #endif
 
 #define YAW_JUMP_PREVENTION_LIMIT_LOW 80
@@ -81,13 +76,13 @@ typedef struct motorMixer_s {
     float yaw;
 } motorMixer_t;
 
-PG_DECLARE_ARR(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer);
+PG_DECLARE_ARRAY(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer);
 
 // Custom mixer configuration
 typedef struct mixer_s {
+    const motorMixer_t *motor;
     uint8_t motorCount;
     uint8_t useServo;
-    const motorMixer_t *motor;
     bool enabled;
 } mixer_t;
 
@@ -131,7 +126,6 @@ void mixerUsePWMIOConfiguration(void);
 void mixerResetDisarmedMotors(void);
 void mixTable(void);
 void writeMotors(void);
-void servoMixer(uint16_t flaperon_throw_offset, uint8_t flaperon_throw_inverted);
 void processServoTilt(void);
 void processServoAutotrim(void);
 void stopMotors(void);

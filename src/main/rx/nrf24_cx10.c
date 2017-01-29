@@ -200,8 +200,8 @@ rx_spi_received_e cx10Nrf24DataReceived(uint8_t *payload)
 {
     static uint8_t ackCount;
     rx_spi_received_e ret = RX_SPI_RECEIVED_NONE;
-    int totalDelayUs;
-    uint32_t timeNowUs;
+    timeDelta_t totalDelayUs;
+    timeUs_t timeNowUs;
 
     switch (protocolState) {
     case STATE_BIND:

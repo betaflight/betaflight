@@ -266,7 +266,7 @@ void uartStartTxDMA(uartPort_t *s)
         s->port.txBufferTail = 0;
     }
     s->txDMAEmpty = false;
-    HAL_CLEANCACHE((uint8_t *)&s->port.txBuffer[fromwhere],size);
+    //HAL_CLEANCACHE((uint8_t *)&s->port.txBuffer[fromwhere],size);
     HAL_UART_Transmit_DMA(&s->Handle, (uint8_t *)&s->port.txBuffer[fromwhere], size);
 }
 

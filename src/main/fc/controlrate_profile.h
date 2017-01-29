@@ -50,7 +50,7 @@ typedef struct controlRateConfig_s {
     uint8_t rcYawExpo8;
 } controlRateConfig_t;
 
-PG_DECLARE_ARR(const controlRateConfig_t, MAX_CONTROL_RATE_PROFILE_COUNT, controlRateProfiles);
+PG_DECLARE_ARRAY(controlRateConfig_t, MAX_CONTROL_RATE_PROFILE_COUNT, controlRateProfiles);
 
 extern const controlRateConfig_t *currentControlRateProfile;
 

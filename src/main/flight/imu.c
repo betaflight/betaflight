@@ -21,15 +21,17 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "common/maths.h"
+#include "build/build_config.h"
 
 #include "platform.h"
 
-#include "build/build_config.h"
-#include "build/debug.h"
+#include "blackbox/blackbox.h"
 
 #include "common/axis.h"
 #include "common/filter.h"
+#include "common/maths.h"
+
+#include "config/feature.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -86,8 +88,6 @@ STATIC_UNIT_TESTED float rMat[3][3];
 attitudeEulerAngles_t attitude = { { 0, 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 
 static imuRuntimeConfig_t imuRuntimeConfig;
-
-static pidProfile_t *pidProfile;
 
 static float gyroScale;
 
@@ -152,24 +152,21 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
     rMat[2][2] = 1.0f - 2.0f * q1q1 - 2.0f * q2q2;
 }
 
-void imuConfigure(pidProfile_t *initialPidProfile)
+void imuConfigure(void)
 {
     imuRuntimeConfig.dcm_kp_acc = imuConfig()->dcm_kp_acc / 10000.0f;
     imuRuntimeConfig.dcm_ki_acc = imuConfig()->dcm_ki_acc / 10000.0f;
     imuRuntimeConfig.dcm_kp_mag = imuConfig()->dcm_kp_mag / 10000.0f;
     imuRuntimeConfig.dcm_ki_mag = imuConfig()->dcm_ki_mag / 10000.0f;
     imuRuntimeConfig.small_angle = imuConfig()->small_angle;
-    pidProfile = initialPidProfile;
 }
 
 void imuInit(void)
 {
-    int axis;
-
     smallAngleCosZ = cos_approx(degreesToRadians(imuRuntimeConfig.small_angle));
     gyroScale = gyro.dev.scale * (M_PIf / 180.0f);  // gyro output scaled to rad per second
 
-    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         imuAccelInBodyFrame.A[axis] = 0;
     }
 
@@ -248,6 +245,43 @@ static float imuGetPGainScaleFactor(void)
     }
     else {
         return 1.0f;
+    }
+}
+
+static void imuResetOrientationQuaternion(const float ax, const float ay, const float az)
+{
+    const float accNorm = sqrtf(ax * ax + ay * ay + az * az);
+
+    q0 = az + accNorm;
+    q1 = ay;
+    q2 = -ax;
+    q3 = 0.0f;
+
+    const float recipNorm = invSqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
+
+    q0 *= recipNorm;
+    q1 *= recipNorm;
+    q2 *= recipNorm;
+    q3 *= recipNorm;
+}
+
+static void imuCheckAndResetOrientationQuaternion(const float ax, const float ay, const float az)
+{
+    // Check if some calculation in IMU update yield NAN or zero quaternion
+    // Reset quaternion from accelerometer - this might be incorrect, but it's better than no attitude at all
+
+    const bool isNan = (isnan(q0) || isnan(q1) || isnan(q2) || isnan(q3));
+    const bool isInf = (isinf(q0) || isinf(q1) || isinf(q2) || isinf(q3));
+    const bool isZero = (ABS(q0) < 1e-3f && ABS(q1) < 1e-3f && ABS(q2) < 1e-3f && ABS(q3) < 1e-3f);
+
+    if (isNan || isZero || isInf) {
+        imuResetOrientationQuaternion(ax, ay, az);
+
+#ifdef BLACKBOX
+        if (feature(FEATURE_BLACKBOX)) {
+            blackboxLogEvent(FLIGHT_LOG_EVENT_IMU_FAILURE, NULL);
+        }
+#endif
     }
 }
 
@@ -395,6 +429,9 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     q1 *= recipNorm;
     q2 *= recipNorm;
     q3 *= recipNorm;
+
+    // Check for invalid quaternion
+    imuCheckAndResetOrientationQuaternion(ax, ay, az);
 
     // Pre-compute rotation matrix from quaternion
     imuComputeRotationMatrix();
@@ -573,12 +610,12 @@ void imuUpdateAccelerometer(void)
 {
 #ifdef HIL
     if (sensors(SENSOR_ACC) && !hilActive) {
-        updateAccelerationReadings();
+        accUpdate();
         isAccelUpdatedAtLeastOnce = true;
     }
 #else
     if (sensors(SENSOR_ACC)) {
-        updateAccelerationReadings();
+        accUpdate();
         isAccelUpdatedAtLeastOnce = true;
     }
 #endif
@@ -634,15 +671,4 @@ bool isImuHeadingValid(void)
 float calculateCosTiltAngle(void)
 {
     return rMat[2][2];
-}
-
-float calculateThrottleTiltCompensationFactor(uint8_t throttleTiltCompensationStrength)
-{
-    if (throttleTiltCompensationStrength) {
-        float tiltCompFactor = 1.0f / constrainf(rMat[2][2], 0.6f, 1.0f);  // max tilt about 50 deg
-        return 1.0f + (tiltCompFactor - 1.0f) * (throttleTiltCompensationStrength / 100.f);
-    }
-    else {
-        return 1.0f;
-    }
 }

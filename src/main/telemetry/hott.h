@@ -23,9 +23,7 @@
  * Texmode add-on by Michi (mamaretti32@gmail.com)
  */
 
-#ifndef HOTT_TELEMETRY_H_
-#define HOTT_TELEMETRY_H_
-
+#pragma once
 
 #define HOTTV4_RXTX 4
 
@@ -490,12 +488,10 @@ typedef struct HOTT_AIRESC_MSG_s {
 void handleHoTTTelemetry(timeUs_t currentTimeUs);
 void checkHoTTTelemetryState(void);
 
-void initHoTTTelemetry(telemetryConfig_t *telemetryConfig);
+void initHoTTTelemetry(void);
 void configureHoTTTelemetryPort(void);
 void freeHoTTTelemetryPort(void);
 
 uint32_t getHoTTTelemetryProviderBaudRate(void);
 
 void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage);
-
-#endif /* HOTT_TELEMETRY_H_ */

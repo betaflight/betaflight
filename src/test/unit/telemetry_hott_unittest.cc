@@ -27,6 +27,10 @@ extern "C" {
     #include "build/debug.h"
 
     #include "common/axis.h"
+    #include "common/gps_conversion.h"
+
+    #include "config/parameter_group.h"
+    #include "config/parameter_group_ids.h"
 
     #include "drivers/system.h"
     #include "drivers/serial.h"
@@ -41,9 +45,10 @@ extern "C" {
     #include "telemetry/hott.h"
 
     #include "flight/pid.h"
-    #include "flight/gps_conversion.h"
 
     #include "fc/runtime_config.h"
+
+    PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
@@ -153,7 +158,7 @@ extern "C" {
 
 int16_t debug[DEBUG16_VALUE_COUNT];
 
-uint8_t stateFlags;
+uint32_t stateFlags;
 
 uint16_t batteryWarningVoltage;
 uint8_t useHottAlarmSoundPeriod (void) { return 0; }
@@ -183,7 +188,7 @@ uint32_t serialRxBytesWaiting(const serialPort_t *instance) {
     return 0;
 }
 
-uint8_t serialTxBytesFree(const serialPort_t *instance) {
+uint32_t serialTxBytesFree(const serialPort_t *instance) {
     UNUSED(instance);
     return 0;
 }
@@ -234,7 +239,7 @@ bool telemetryDetermineEnabledState(portSharing_e) {
     return true;
 }
 
-portSharing_e determinePortSharing(serialPortConfig_t *, serialPortFunction_e) {
+portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunction_e) {
     return PORTSHARING_NOT_SHARED;
 }
 

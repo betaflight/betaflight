@@ -17,7 +17,6 @@
 
 #pragma once
 
-struct telemetryConfig_s;
-void initJetiExBusTelemetry(struct telemetryConfig_s *initialTelemetryConfig);
+void initJetiExBusTelemetry(void);
 void checkJetiExBusTelemetryState(void);
 void handleJetiExBusTelemetry(void);
