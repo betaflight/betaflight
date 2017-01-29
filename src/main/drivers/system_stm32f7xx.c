@@ -33,8 +33,8 @@ void SystemClock_Config(void);
 
 void systemReset(void)
 {
-    if (mpuReset) {
-        mpuReset();
+    if (mpuResetFn) {
+        mpuResetFn();
     }
 
     __disable_irq();
@@ -43,8 +43,8 @@ void systemReset(void)
 
 void systemResetToBootloader(void)
 {
-    if (mpuReset) {
-        mpuReset();
+    if (mpuResetFn) {
+        mpuResetFn();
     }
 
     (*(__IO uint32_t *) (BKPSRAM_BASE + 4)) = 0xDEADBEEF;   // flag that will be readable after reboot
