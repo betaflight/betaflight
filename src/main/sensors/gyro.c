@@ -45,6 +45,7 @@
 #include "drivers/accgyro_lsm303dlhc.h"
 #include "drivers/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro_spi_mpu6500.h"
+#include "drivers/accgyro_spi_mpu9250.h"
 #include "drivers/gyro_sync.h"
 #include "drivers/io.h"
 #include "drivers/logging.h"
@@ -106,9 +107,13 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .gyro_soft_notch_cutoff_2 = 1
 );
 
-#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050)
+#if defined(USE_GYRO_MPU3050) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250)
+#define USE_GYRO_MPU
+#endif
+
 static const extiConfig_t *selectMPUIntExtiConfig(void)
 {
+#ifdef USE_GYRO_MPU
 #if defined(MPU_INT_EXTI)
     static const extiConfig_t mpuIntExtiConfig = { .tag = IO_TAG(MPU_INT_EXTI) };
     return &mpuIntExtiConfig;
@@ -116,9 +121,12 @@ static const extiConfig_t *selectMPUIntExtiConfig(void)
     return selectMPUIntExtiConfigByHardwareRevision();
 #else
     return NULL;
+#endif // MPU_INT_EXTI
+    return NULL;
+#else
+    return NULL;
 #endif
 }
-#endif
 
 STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev, gyroSensor_e gyroHardware)
 {
@@ -126,9 +134,10 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev, gyroSensor_e gyroHard
 
     switch(gyroHardware) {
     case GYRO_AUTODETECT:
-        ; // fallthrough
-    case GYRO_MPU6050:
+        // fallthrough
+
 #ifdef USE_GYRO_MPU6050
+    case GYRO_MPU6050:
         if (mpu6050GyroDetect(dev)) {
             gyroHardware = GYRO_MPU6050;
 #ifdef GYRO_MPU6050_ALIGN
@@ -136,10 +145,11 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev, gyroSensor_e gyroHard
 #endif
             break;
         }
+        // fallthrough
 #endif
-        ; // fallthrough
-    case GYRO_L3G4200D:
+
 #ifdef USE_GYRO_L3G4200D
+    case GYRO_L3G4200D:
         if (l3g4200dDetect(dev)) {
             gyroHardware = GYRO_L3G4200D;
 #ifdef GYRO_L3G4200D_ALIGN
@@ -147,11 +157,11 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev, gyroSensor_e gyroHard
 #endif
             break;
         }
+        // fallthrough
 #endif
-        ; // fallthrough
 
-    case GYRO_MPU3050:
 #ifdef USE_GYRO_MPU3050
+    case GYRO_MPU3050:
         if (mpu3050Detect(dev)) {
             gyroHardware = GYRO_MPU3050;
 #ifdef GYRO_MPU3050_ALIGN
@@ -159,11 +169,11 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev, gyroSensor_e gyroHard
 #endif
             break;
         }
+        // fallthrough
 #endif
-        ; // fallthrough
 
-    case GYRO_L3GD20:
 #ifdef USE_GYRO_L3GD20
+    case GYRO_L3GD20:
         if (l3gd20Detect(dev)) {
             gyroHardware = GYRO_L3GD20;
 #ifdef GYRO_L3GD20_ALIGN
@@ -171,11 +181,11 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev, gyroSensor_e gyroHard
 #endif
             break;
         }
+        // fallthrough
 #endif
-        ; // fallthrough
 
-    case GYRO_MPU6000:
 #ifdef USE_GYRO_SPI_MPU6000
+    case GYRO_MPU6000:
         if (mpu6000SpiGyroDetect(dev)) {
             gyroHardware = GYRO_MPU6000;
 #ifdef GYRO_MPU6000_ALIGN
@@ -183,11 +193,11 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev, gyroSensor_e gyroHard
 #endif
             break;
         }
+        // fallthrough
 #endif
-        ; // fallthrough
 
-    case GYRO_MPU6500:
 #if defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500)
+    case GYRO_MPU6500:
 #ifdef USE_GYRO_SPI_MPU6500
         if (mpu6500GyroDetect(dev) || mpu6500SpiGyroDetect(dev)) {
 #else
@@ -199,17 +209,30 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev, gyroSensor_e gyroHard
 #endif
             break;
         }
+        // fallthrough
 #endif
-        ; // fallthrough
 
-    case GYRO_FAKE:
+#ifdef USE_GYRO_SPI_MPU9250
+    case GYRO_MPU9250:
+        if (mpu9250SpiGyroDetect(dev)) {
+            gyroHardware = GYRO_MPU9250;
+#ifdef GYRO_MPU9250_ALIGN
+            dev->gyroAlign = GYRO_MPU9250_ALIGN;
+#endif
+            break;
+        }
+        // fallthrough
+#endif
+
 #ifdef USE_FAKE_GYRO
+    case GYRO_FAKE:
         if (fakeGyroDetect(dev)) {
             gyroHardware = GYRO_FAKE;
             break;
         }
+        // fallthrough
 #endif
-        ; // fallthrough
+
     default:
     case GYRO_NONE:
         gyroHardware = GYRO_NONE;
@@ -227,12 +250,10 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev, gyroSensor_e gyroHard
 bool gyroInit(void)
 {
     memset(&gyro, 0, sizeof(gyro));
-#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050)
     const extiConfig_t *extiConfig = selectMPUIntExtiConfig();
+#ifdef USE_GYRO_MPU
     mpuDetect(&gyro.dev);
     mpuReset = gyro.dev.mpuConfiguration.reset;
-#else
-    const extiConfig_t *extiConfig = NULL;
 #endif
     gyro.dev.mpuIntExtiConfig =  extiConfig;
     if (gyroDetect(&gyro.dev, GYRO_AUTODETECT) == GYRO_NONE) {

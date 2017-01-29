@@ -69,6 +69,7 @@ TEST(SensorGyro, Init)
 TEST(SensorGyro, Read)
 {
     gyroInit();
+    EXPECT_EQ(GYRO_FAKE, detectedSensors[SENSOR_INDEX_GYRO]);
     fakeGyroSet(5, 6, 7);
     const bool read = gyro.dev.read(&gyro.dev);
     EXPECT_EQ(true, read);
