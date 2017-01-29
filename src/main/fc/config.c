@@ -429,6 +429,8 @@ static void activateConfig(void)
     activateControlRateConfig();
 
     resetAdjustmentStates();
+    
+    useRcControlsConfig();
 
     failsafeReset();
 
