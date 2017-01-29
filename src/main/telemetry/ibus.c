@@ -37,6 +37,7 @@
 
 #include "io/serial.h"
 #include "fc/rc_controls.h"
+#include "scheduler/scheduler.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
@@ -153,6 +154,7 @@
  *
  */
 
+#define IBUS_TASK_PERIOD_US (500)
 #define IBUS_UART_MODE     (MODE_RXTX)
 #define IBUS_BAUDRATE      (115200)
 #define IBUS_CYCLE_TIME_MS (8)
@@ -304,6 +306,7 @@ void checkIbusTelemetryState(void) {
     }
 
     if (newTelemetryEnabledValue) {
+        rescheduleTask(TASK_TELEMETRY, IBUS_TASK_PERIOD_US);
         configureIbusTelemetryPort();
     } else {
         freeIbusTelemetryPort();
