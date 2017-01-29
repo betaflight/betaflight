@@ -50,6 +50,7 @@ typedef struct gyroDev_s {
     extiCallbackRec_t exti;
     float scale;                                            // scalefactor
     int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+    int16_t gyroZero[XYZ_AXIS_COUNT];
     uint8_t lpf;
     gyroRateKHz_e gyroRateKHz;
     uint8_t mpuDividerDrops;

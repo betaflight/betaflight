@@ -1135,7 +1135,7 @@ static void loadMainState(timeUs_t currentTimeUs)
     }
 
     for (i = 0; i < XYZ_AXIS_COUNT; i++) {
-        blackboxCurrent->gyroADC[i] = gyro.gyroADC[i];
+        blackboxCurrent->gyroADC[i] = lrintf(gyro.gyroADCf[i]);
     }
 
     for (i = 0; i < XYZ_AXIS_COUNT; i++) {
@@ -1338,7 +1338,7 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("rcRate:%d",                             100); //For compatibility reasons write rc_rate 100
         BLACKBOX_PRINT_HEADER_LINE("minthrottle:%d",                        motorConfig()->minthrottle);
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle:%d",                        motorConfig()->maxthrottle);
-        BLACKBOX_PRINT_HEADER_LINE("gyro.scale:0x%x",                       castFloatBytesToInt(gyro.dev.scale));
+        BLACKBOX_PRINT_HEADER_LINE("gyro_scale:0x%x",                       castFloatBytesToInt(1.0f));
         BLACKBOX_PRINT_HEADER_LINE("acc_1G:%u",                             acc.dev.acc_1G);
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
