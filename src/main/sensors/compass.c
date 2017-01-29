@@ -66,7 +66,8 @@ PG_RESET_TEMPLATE(compassConfig_t, compassConfig,
     .mag_align = ALIGN_DEFAULT,
     .mag_hardware = MAG_HARDWARE_DEFAULT,
     .mag_declination = 0,
-    .mag_hold_rate_limit = MAG_HOLD_RATE_LIMIT_DEFAULT
+    .mag_hold_rate_limit = MAG_HOLD_RATE_LIMIT_DEFAULT,
+    .magCalibrationTimeLimit = 30
 );
 
 #ifdef MAG
@@ -309,7 +310,7 @@ void compassUpdate(timeUs_t currentTimeUs)
     }
 
     if (calStartedAt != 0) {
-        if ((currentTimeUs - calStartedAt) < 30000000) {    // 30s: you have 30s to turn the multi in all directions
+        if ((currentTimeUs - calStartedAt) < (compassConfig()->magCalibrationTimeLimit * 1000000)) {
             LED0_TOGGLE;
 
             float diffMag = 0;
