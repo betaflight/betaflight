@@ -123,6 +123,7 @@ extern bool motorLimitReached;
 void writeAllMotors(int16_t mc);
 void mixerLoadMix(int index, motorMixer_t *customMixers);
 void mixerUsePWMIOConfiguration(void);
+void mixerUpdateStateFlags(void);
 void mixerResetDisarmedMotors(void);
 void mixTable(void);
 void writeMotors(void);

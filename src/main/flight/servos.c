@@ -199,21 +199,6 @@ int servoDirection(int servoIndex, int inputSource)
 void servosInit(void)
 {
     const mixerMode_e currentMixerMode = mixerConfig()->mixerMode;
-    // set flag that we're on something with wings
-    if (currentMixerMode == MIXER_FLYING_WING ||
-        currentMixerMode == MIXER_AIRPLANE ||
-        currentMixerMode == MIXER_CUSTOM_AIRPLANE
-    ) {
-        ENABLE_STATE(FIXED_WING);
-    } else {
-        DISABLE_STATE(FIXED_WING);
-    }
-
-    if (currentMixerMode == MIXER_AIRPLANE || currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
-        ENABLE_STATE(FLAPERON_AVAILABLE);
-    } else {
-        DISABLE_STATE(FLAPERON_AVAILABLE);
-    }
 
     minServoIndex = servoMixers[currentMixerMode].minServoIndex;
     maxServoIndex = servoMixers[currentMixerMode].maxServoIndex;
