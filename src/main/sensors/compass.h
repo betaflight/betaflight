@@ -44,10 +44,11 @@ typedef struct compassConfig_s {
                                             // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
     sensor_align_e mag_align;               // mag alignment
     uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
+    uint8_t mag_i2cBus;
     flightDynamicsTrims_t magZero;
 } compassConfig_t;
 
-bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse);
+bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse, uint8_t i2cBusToUse);
 void compassInit(const compassConfig_t *compassConfig);
 union flightDynamicsTrims_u;
 void compassUpdate(uint32_t currentTime, union flightDynamicsTrims_u *magZero);

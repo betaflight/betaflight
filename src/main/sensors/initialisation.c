@@ -67,7 +67,7 @@ bool sensorsAutodetect(const gyroConfig_t *gyroConfig,
 
     mag.magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
 #ifdef MAG
-    if (compassDetect(&mag.dev, compassConfig->mag_hardware)) {
+    if (compassDetect(&mag.dev, compassConfig->mag_hardware, compassConfig->mag_i2cBus)) {
         compassInit(compassConfig);
     }
 #else

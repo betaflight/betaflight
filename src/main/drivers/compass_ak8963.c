@@ -177,18 +177,20 @@ static bool ak8963SensorCompleteRead(uint8_t *buf)
     return true;
 }
 #else
+static uint8_t i2cBus = I2C_INVALID;
+
 static bool ak8963SensorRead(uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
-    return i2cRead(MAG_I2C_INSTANCE, addr_, reg_, len, buf);
+    return i2cRead(i2cBus, addr_, reg_, len, buf);
 }
 
 static bool ak8963SensorWrite(uint8_t addr_, uint8_t reg_, uint8_t data)
 {
-    return i2cWrite(MAG_I2C_INSTANCE, addr_, reg_, data);
+    return i2cWrite(i2cBus, addr_, reg_, data);
 }
 #endif
 
-static bool ak8963Init()
+static bool ak8963Init(void)
 {
     uint8_t calibration[3];
     uint8_t status;
@@ -309,8 +311,10 @@ restart:
 #endif
 }
 
-bool ak8963Detect(magDev_t *mag)
+bool ak8963Detect(magDev_t *mag, uint8_t i2cBusToUse)
 {
+    i2cBus = i2cBusToUse;
+
     uint8_t sig = 0;
 
 #if defined(USE_SPI) && defined(MPU9250_SPI_INSTANCE)

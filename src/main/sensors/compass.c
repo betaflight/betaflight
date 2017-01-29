@@ -48,7 +48,7 @@ mag_t mag;                   // mag access functions
 static int16_t magADCRaw[XYZ_AXIS_COUNT];
 static uint8_t magInit = 0;
 
-bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse)
+bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse, uint8_t i2cBusToUse)
 {
     magSensor_e magHardware;
 
@@ -89,7 +89,7 @@ retry:
 
     case MAG_HMC5883:
 #ifdef USE_MAG_HMC5883
-        if (hmc5883lDetect(dev, hmc5883Config)) {
+        if (hmc5883lDetect(dev, hmc5883Config, i2cBusToUse)) {
 #ifdef MAG_HMC5883_ALIGN
             dev->magAlign = MAG_HMC5883_ALIGN;
 #endif
@@ -101,7 +101,7 @@ retry:
 
     case MAG_AK8975:
 #ifdef USE_MAG_AK8975
-        if (ak8975Detect(dev)) {
+        if (ak8975Detect(dev, i2cBusToUse)) {
 #ifdef MAG_AK8975_ALIGN
             dev->magAlign = MAG_AK8975_ALIGN;
 #endif
@@ -113,7 +113,7 @@ retry:
 
     case MAG_AK8963:
 #ifdef USE_MAG_AK8963
-        if (ak8963Detect(dev)) {
+        if (ak8963Detect(dev, i2cBusToUse)) {
 #ifdef MAG_AK8963_ALIGN
             dev->magAlign = MAG_AK8963_ALIGN;
 #endif

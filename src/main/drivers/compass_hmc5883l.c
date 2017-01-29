@@ -119,6 +119,7 @@
 
 static float magGain[3] = { 1.0f, 1.0f, 1.0f };
 
+static uint8_t i2cBus = I2CINVALID;
 static const hmc5883Config_t *hmc5883Config = NULL;
 
 #ifdef USE_MAG_DATA_READY_SIGNAL
@@ -171,7 +172,7 @@ static bool hmc5883lRead(int16_t *magData)
 {
     uint8_t buf[6];
 
-    bool ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, MAG_DATA_REGISTER, 6, buf);
+    bool ack = i2cRead(i2cBus, MAG_ADDRESS, MAG_DATA_REGISTER, 6, buf);
     if (!ack) {
         return false;
     }
@@ -191,16 +192,17 @@ static bool hmc5883lInit(void)
     int32_t xyz_total[3] = { 0, 0, 0 }; // 32 bit totals so they won't overflow.
     bool bret = true;           // Error indicator
 
+
     delay(50);
-    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_POS_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to pos bias
+    i2cWrite(i2cBus, MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_POS_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to pos bias
     // Note that the  very first measurement after a gain change maintains the same gain as the previous setting.
     // The new gain setting is effective from the second measurement and on.
-    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFB, 0x60); // Set the Gain to 2.5Ga (7:5->011)
+    i2cWrite(i2cBus, MAG_ADDRESS, HMC58X3_R_CONFB, 0x60); // Set the Gain to 2.5Ga (7:5->011)
     delay(100);
     hmc5883lRead(magADC);
 
     for (i = 0; i < 10; i++) {  // Collect 10 samples
-        i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_MODE, 1);
+        i2cWrite(i2cBus, MAG_ADDRESS, HMC58X3_R_MODE, 1);
         delay(50);
         hmc5883lRead(magADC);       // Get the raw values in case the scales have already been changed.
 
@@ -218,9 +220,9 @@ static bool hmc5883lInit(void)
     }
 
     // Apply the negative bias. (Same gain)
-    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_NEG_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to negative bias.
+    i2cWrite(i2cBus, MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_NEG_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to negative bias.
     for (i = 0; i < 10; i++) {
-        i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_MODE, 1);
+        i2cWrite(i2cBus, MAG_ADDRESS, HMC58X3_R_MODE, 1);
         delay(50);
         hmc5883lRead(magADC);               // Get the raw values in case the scales have already been changed.
 
@@ -242,9 +244,9 @@ static bool hmc5883lInit(void)
     magGain[Z] = fabsf(660.0f * HMC58X3_Z_SELF_TEST_GAUSS * 2.0f * 10.0f / xyz_total[Z]);
 
     // leave test mode
-    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFA, 0x70);   // Configuration Register A  -- 0 11 100 00  num samples: 8 ; output rate: 15Hz ; normal measurement mode
-    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFB, 0x20);   // Configuration Register B  -- 001 00000    configuration gain 1.3Ga
-    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_MODE, 0x00);    // Mode register             -- 000000 00    continuous Conversion Mode
+    i2cWrite(i2cBus, MAG_ADDRESS, HMC58X3_R_CONFA, 0x70);   // Configuration Register A  -- 0 11 100 00  num samples: 8 ; output rate: 15Hz ; normal measurement mode
+    i2cWrite(i2cBus, MAG_ADDRESS, HMC58X3_R_CONFB, 0x20);   // Configuration Register B  -- 001 00000    configuration gain 1.3Ga
+    i2cWrite(i2cBus, MAG_ADDRESS, HMC58X3_R_MODE, 0x00);    // Mode register             -- 000000 00    continuous Conversion Mode
     delay(100);
 
     if (!bret) {                // Something went wrong so get a best guess
@@ -257,12 +259,14 @@ static bool hmc5883lInit(void)
     return true;
 }
 
-bool hmc5883lDetect(magDev_t* mag, const hmc5883Config_t *hmc5883ConfigToUse)
+bool hmc5883lDetect(magDev_t* mag, const hmc5883Config_t *hmc5883ConfigToUse, uint8_t i2cBusToUse)
 {
     hmc5883Config = hmc5883ConfigToUse;
 
+    i2cBus = i2cBusToUse;
+
     uint8_t sig = 0;
-    bool ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, 0x0A, 1, &sig);
+    bool ack = i2cRead(i2cBus, MAG_ADDRESS, 0x0A, 1, &sig);
 
     if (!ack || sig != 'H')
         return false;

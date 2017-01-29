@@ -17,4 +17,4 @@
 
 #pragma once
 
-bool ak8975Detect(magDev_t *mag);
+bool ak8975Detect(magDev_t *mag, uint8_t i2cBusToUse);

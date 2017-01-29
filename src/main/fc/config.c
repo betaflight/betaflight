@@ -660,6 +660,8 @@ void createDefaultConfig(master_t *config)
     // xxx_hardware: 0:default/autodetect, 1: disable
     config->compassConfig.mag_hardware = 1;
 
+    config->compassConfig.mag_i2cBus = MAG_I2C_INSTANCE;
+
     config->barometerConfig.baro_hardware = 1;
 
     resetBatteryConfig(&config->batteryConfig);
