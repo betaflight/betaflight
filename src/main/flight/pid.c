@@ -254,8 +254,6 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                 dynKi *= itermAccelerator;
             float ITermDelta = Ki[axis] * errorRate * dT * dynKi;
             ITerm += ITermDelta;
-            // also limit maximum integrator value to prevent windup
-            ITerm = constrainf(ITerm, -250.0f, 250.0f);
             previousGyroIf[axis] = ITerm;
         }
 
