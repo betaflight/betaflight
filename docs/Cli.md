@@ -251,13 +251,39 @@ Re-apply any new defaults as desired.
 |  blackbox_rate_num  | 1 | Blackbox logging rate numerator. Use num/denom settings to decide if a frame should be logged, allowing control of the portion of logged loop iterations |
 |  blackbox_rate_denom  | 1 | Blackbox logging rate denominator. See blackbox_rate_num. |
 |  blackbox_device  | SPIFLASH | Selection of where to write blackbox data |
+|  ledstrip_visual_beeper  | OFF |  |
+|  osd_video_system     | 0     |  |
+|  osd_row_shiftdown    | 0     |  |
+|  osd_units            | 0     |  |
+|  osd_rssi_alarm       | 20    |  |
+|  osd_cap_alarm        | 2200  |  |
+|  osd_time_alarm       | 10    |  |
+|  osd_alt_alarm        | 100   |  |
+|  osd_main_voltage_pos | 0     |  |
+|  osd_rssi_pos         | 0     |  |
+|  osd_flytimer_pos     | 0     |  |
+|  osd_ontime_pos       | 0     |  |
+|  osd_flymode_pos      | 0     |  |
+|  osd_throttle_pos     | 0     |  |
+|  osd_vtx_channel_pos  | 0     |  |
+|  osd_crosshairs       | 0     |  |
+|  osd_artificial_horizon  | 0  |  |
+|  osd_current_draw_pos | 0     |  |
+|  osd_mah_drawn_pos    | 0     |  |
+|  osd_craft_name_pos   | 0     |  |
+|  osd_gps_speed_pos    | 0     |  |
+|  osd_gps_sats_pos     | 0     |  |
+|  osd_altitude_pos     | 0     |  |
+|  osd_pid_roll_pos     | 0     |  |
+|  osd_pid_pitch_pos    | 0     |  |
+|  osd_pid_yaw_pos      | 0     |  |
+|  osd_power_pos        | 0     |  |
 |  magzero_x  | 0 | Magnetometer calibration X offset. If its 0 none offset has been applied and calibration is failed. |
 |  magzero_y  | 0 | Magnetometer calibration Y offset. If its 0 none offset has been applied and calibration is failed. |
 |  magzero_z  | 0 | Magnetometer calibration Z offset. If its 0 none offset has been applied and calibration is failed. |
 |  acczero_x  | 0 | Calculated value after '6 position avanced calibration'. See Wiki page. |
 |  acczero_y  | 0 | Calculated value after '6 position avanced calibration'. See Wiki page. |
 |  acczero_z  | 0 | Calculated value after '6 position avanced calibration'. See Wiki page. |
-|  ledstrip_visual_beeper  | OFF |  |
 |  accgain_x  | 4096 | Calculated value after '6 position avanced calibration'. Uncalibrated value is 4096. See Wiki page. |
 |  accgain_y  | 4096 | Calculated value after '6 position avanced calibration'. Uncalibrated value is 4096. See Wiki page. |
 |  accgain_z  | 4096 | Calculated value after '6 position avanced calibration'. Uncalibrated value is 4096. See Wiki page. |
