@@ -61,7 +61,7 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
 
     motorDmaOutput_t * const motor = &dmaMotors[index];
 
-    if (!motor->timerHardware->dmaChannel) {
+    if (!motor->timerHardware || !motor->timerHardware->dmaChannel) {
         return;
     }
 

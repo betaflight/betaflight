@@ -47,11 +47,17 @@
 #define USE_ACC_MPU6050
 #define ACC_MPU6050_ALIGN       CW180_DEG
 
+#define USE_SOFTSERIAL
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
+#ifdef KISSCC
+#define USE_SOFTSERIAL1
+#define SERIAL_PORT_COUNT       5
+#else
 #define SERIAL_PORT_COUNT       4
+#endif
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
@@ -61,6 +67,12 @@
 
 #define UART3_TX_PIN            PB10 // PB10 (AF7)
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
+
+#ifdef KISSCC
+#define SOFTSERIAL_1_TIMER      TIM16
+#define SOFTSERIAL_1_TIMER_RX_HARDWARE 11
+#define SOFTSERIAL_1_TIMER_TX_HARDWARE 11
+#endif
 
 #define USE_I2C
 #define I2C_DEVICE              (I2CDEV_1) // PB6/SCL, PB7/SDA
@@ -72,7 +84,11 @@
 //#define CURRENT_METER_ADC_PIN   PA5
 //#define RSSI_ADC_PIN            PB2
 
+#ifdef KISSCC
+#define DEFAULT_FEATURES       (FEATURE_VBAT | FEATURE_SOFTSERIAL | FEATURE_TELEMETRY)
+#else
 #define DEFAULT_FEATURES        FEATURE_VBAT
+#endif
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART2
@@ -88,5 +104,9 @@
 #define TARGET_IO_PORTD         0xffff
 #define TARGET_IO_PORTF         (BIT(4))
 
+#ifdef KISSCC
+#define USABLE_TIMER_CHANNEL_COUNT 11
+#else
 #define USABLE_TIMER_CHANNEL_COUNT 10
+#endif
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(15) | TIM_N(16) | TIM_N(17))

@@ -21,6 +21,7 @@
 
 extern int16_t magHold;
 extern bool isRXDataNew;
+extern int16_t headFreeModeHold;
 
 union rollAndPitchTrims_u;
 void applyAndSaveAccelerometerTrimsDelta(union rollAndPitchTrims_u *rollAndPitchTrimsDelta);
@@ -34,6 +35,3 @@ void updateLEDs(void);
 void updateRcCommands(void);
 
 void taskMainPidLoop(timeUs_t currentTimeUs);
-float getSetpointRate(int axis);
-float getRcDeflection(int axis);
-float getRcDeflectionAbs(int axis);
