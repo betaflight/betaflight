@@ -214,7 +214,6 @@ static float accelerationLimit(int axis, float currentPidSetpoint) {
 void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float tpaFactor)
 {
     static float previousRateError[2];
-    static float previousSetpoint[3];
 
     const float motorMixRange = getMotorMixRange();
     // Dynamic ki component to gradually scale back integration when above windup point
@@ -265,15 +264,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         if (axis != FD_YAW) {
             float dynC = c[axis];
             if (pidProfile->setpointRelaxRatio < 100) {
-                const float rcDeflection = getRcDeflectionAbs(axis);
-                dynC = c[axis];
-                if (currentPidSetpoint > 0) {
-                    if ((currentPidSetpoint - previousSetpoint[axis]) < previousSetpoint[axis])
-                        dynC *= MIN((1.0f - rcDeflection) * relaxFactor[axis], 1.0f);
-                } else if (currentPidSetpoint < 0) {
-                    if ((currentPidSetpoint - previousSetpoint[axis]) > previousSetpoint[axis])
-                        dynC *= MIN((1.0f - rcDeflection) * relaxFactor[axis], 1.0f);
-                }
+                dynC *= MIN(getRcDeflectionAbs(axis) * relaxFactor[axis], 1.0f);
             }
             const float rD = dynC * currentPidSetpoint - gyroRate;    // cr - y
             // Divide rate change by dT to get differential (ie dr/dt)
@@ -288,7 +279,6 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             DTerm = dtermLpfApplyFn(dtermFilterLpf[axis], DTerm);
 
         }
-        previousSetpoint[axis] = currentPidSetpoint;
 
         // -----calculate total PID output
         axisPIDf[axis] = PTerm + ITerm + DTerm;
