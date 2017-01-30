@@ -20,11 +20,9 @@
 #include "common/time.h"
 
 #define VISIBLE_FLAG  0x0800
-#define BLINK_FLAG    0x0400
 #define VISIBLE(x)    (x & VISIBLE_FLAG)
-#define BLINK(x)      ((x & BLINK_FLAG) && blinkState)
-#define BLINK_OFF(x)  (x & ~BLINK_FLAG)
 #define OSD_POS_MAX   0x3FF
+#define OSD_POSCFG_MAX   (VISIBLE_FLAG|0x3FF) // For CLI values
 
 typedef enum {
     OSD_RSSI_VALUE,
