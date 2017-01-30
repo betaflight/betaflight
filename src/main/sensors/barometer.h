@@ -18,6 +18,7 @@
 #pragma once
 
 #include "drivers/barometer.h"
+#include "drivers/bus_i2c.h"
 
 typedef enum {
     BARO_DEFAULT = 0,
@@ -31,6 +32,7 @@ typedef enum {
 
 typedef struct barometerConfig_s {
     uint8_t baro_hardware;                  // Barometer hardware to use
+    I2CDevice baro_i2cBus;
     uint8_t baro_sample_count;              // size of baro filter array
     float baro_noise_lpf;                   // additional LPF to reduce baro noise
     float baro_cf_vel;                      // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity)
@@ -45,7 +47,7 @@ typedef struct baro_s {
 
 extern baro_t baro;
 
-bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse);
+bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse, I2CDevice i2cBusToUse);
 void useBarometerConfig(const barometerConfig_t *barometerConfigToUse);
 bool isBaroCalibrationComplete(void);
 void baroSetCalibrationCycles(uint16_t calibrationCyclesRequired);

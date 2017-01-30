@@ -221,6 +221,8 @@ void resetBarometerConfig(barometerConfig_t *barometerConfig)
     barometerConfig->baro_noise_lpf = 0.6f;
     barometerConfig->baro_cf_vel = 0.985f;
     barometerConfig->baro_cf_alt = 0.965f;
+
+    barometerConfig->baro_i2cBus = BARO_I2C_INSTANCE;
 }
 #endif
 

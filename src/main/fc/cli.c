@@ -700,6 +700,7 @@ static const clivalue_t valueTable[] = {
     { "baro_cf_vel",                VAR_FLOAT  | MASTER_VALUE, &barometerConfig()->baro_cf_vel, .config.minmax = { 0 , 1 } },
     { "baro_cf_alt",                VAR_FLOAT  | MASTER_VALUE, &barometerConfig()->baro_cf_alt, .config.minmax = { 0 , 1 } },
     { "baro_hardware",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &barometerConfig()->baro_hardware, .config.lookup = { TABLE_BARO_HARDWARE } },
+    { "baro_i2c_bus",               VAR_INT8   | MASTER_VALUE, &barometerConfig()->baro_i2cBus, .config.minmax = { I2CINVALID, I2CDEV_COUNT - 1 } },
 #endif
 
 #ifdef MAG

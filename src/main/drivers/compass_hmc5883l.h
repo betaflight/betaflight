@@ -23,4 +23,4 @@ typedef struct hmc5883Config_s {
     ioTag_t intTag;
 } hmc5883Config_t;
 
-bool hmc5883lDetect(magDev_t* mag, const hmc5883Config_t *hmc5883ConfigToUse, uint8_t i2cBusToUse);
+bool hmc5883lDetect(magDev_t* mag, const hmc5883Config_t *hmc5883ConfigToUse, I2CDevice i2cBusToUse);

@@ -177,7 +177,7 @@ static bool ak8963SensorCompleteRead(uint8_t *buf)
     return true;
 }
 #else
-static uint8_t i2cBus = I2C_INVALID;
+static I2CDevice i2cBus;
 
 static bool ak8963SensorRead(uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
@@ -311,7 +311,7 @@ restart:
 #endif
 }
 
-bool ak8963Detect(magDev_t *mag, uint8_t i2cBusToUse)
+bool ak8963Detect(magDev_t *mag, I2CDevice i2cBusToUse)
 {
     i2cBus = i2cBusToUse;
 

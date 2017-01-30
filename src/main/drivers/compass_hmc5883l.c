@@ -119,7 +119,7 @@
 
 static float magGain[3] = { 1.0f, 1.0f, 1.0f };
 
-static uint8_t i2cBus = I2CINVALID;
+static I2CDevice i2cBus;
 static const hmc5883Config_t *hmc5883Config = NULL;
 
 #ifdef USE_MAG_DATA_READY_SIGNAL
@@ -259,7 +259,7 @@ static bool hmc5883lInit(void)
     return true;
 }
 
-bool hmc5883lDetect(magDev_t* mag, const hmc5883Config_t *hmc5883ConfigToUse, uint8_t i2cBusToUse)
+bool hmc5883lDetect(magDev_t* mag, const hmc5883Config_t *hmc5883ConfigToUse, int8_t i2cBusToUse)
 {
     hmc5883Config = hmc5883ConfigToUse;
 

@@ -23,6 +23,8 @@
 
 #include "common/maths.h"
 
+#include "drivers/bus_i2c.h"
+
 #include "drivers/barometer.h"
 #include "drivers/barometer_bmp085.h"
 #include "drivers/barometer_bmp280.h"
@@ -53,7 +55,7 @@ static uint32_t baroPressureSum = 0;
 
 static const barometerConfig_t *barometerConfig;
 
-bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
+bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse, I2CDevice i2cBus)
 {
     // Detect what pressure sensors are available. baro->update() is set to sensor-specific update function
 
@@ -83,7 +85,7 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
         ; // fallthough
     case BARO_BMP085:
 #ifdef USE_BARO_BMP085
-        if (bmp085Detect(bmp085Config, dev)) {
+        if (bmp085Detect(bmp085Config, dev, i2cBus)) {
             baroHardware = BARO_BMP085;
             break;
         }
@@ -91,15 +93,20 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
         ; // fallthough
     case BARO_MS5611:
 #ifdef USE_BARO_MS5611
-        if (ms5611Detect(dev)) {
+        if (ms5611Detect(dev, i2cBus)) {
             baroHardware = BARO_MS5611;
             break;
         }
 #endif
         ; // fallthough
     case BARO_BMP280:
-#if defined(USE_BARO_BMP280) || defined(USE_BARO_SPI_BMP280)
-        if (bmp280Detect(dev)) {
+#if defined(USE_BARO_BMP280)
+# if defined(USE_BARO_SPI_BMP280)
+        if (bmp280Detect(dev))
+# else
+        if (bmp280Detect(dev, i2cBus))
+# endif
+        {
             baroHardware = BARO_BMP280;
             break;
         }

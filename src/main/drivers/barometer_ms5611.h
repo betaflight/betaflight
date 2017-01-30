@@ -17,4 +17,4 @@
 
 #pragma once
 
-bool ms5611Detect(baroDev_t *baro);
+bool ms5611Detect(baroDev_t *baro, I2CDevice i2cBusToUse);

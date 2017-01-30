@@ -24,7 +24,7 @@ typedef struct bmp085Config_s {
     ioTag_t eocIO;
 } bmp085Config_t;
 
-bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro);
+bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro, I2CDevice i2cBusToUse);
 void bmp085Disable(const bmp085Config_t *config);
 
 #if defined(BARO_EOC_GPIO)

@@ -75,7 +75,7 @@ bool sensorsAutodetect(const gyroConfig_t *gyroConfig,
 #endif
 
 #ifdef BARO
-    baroDetect(&baro.dev, barometerConfig->baro_hardware);
+    baroDetect(&baro.dev, barometerConfig->baro_hardware, barometerConfig->baro_i2cBus);
 #else
     UNUSED(barometerConfig);
 #endif

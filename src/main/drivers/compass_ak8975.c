@@ -61,7 +61,7 @@
 #define AK8975A_ASAY 0x11 // Fuse ROM y-axis sensitivity adjustment value
 #define AK8975A_ASAZ 0x12 // Fuse ROM z-axis sensitivity adjustment value
 
-static uint8_t i2cBus;
+static I2CDevice i2cBus;
 
 static bool ak8975Init()
 {
@@ -129,7 +129,7 @@ static bool ak8975Read(int16_t *magData)
     return true;
 }
 
-bool ak8975Detect(magDev_t *mag, uint8_t i2cBusToUse)
+bool ak8975Detect(magDev_t *mag, I2CDevice i2cBusToUse)
 {
     i2cBus = i2cBusToUse;
 

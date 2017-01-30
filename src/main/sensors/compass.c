@@ -22,6 +22,7 @@
 
 #include "common/axis.h"
 
+#include "drivers/bus_i2c.h"
 #include "drivers/compass.h"
 #include "drivers/compass_ak8975.h"
 #include "drivers/compass_ak8963.h"
@@ -48,7 +49,7 @@ mag_t mag;                   // mag access functions
 static int16_t magADCRaw[XYZ_AXIS_COUNT];
 static uint8_t magInit = 0;
 
-bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse, uint8_t i2cBusToUse)
+bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse, I2CDevice i2cBusToUse)
 {
     magSensor_e magHardware;
 
