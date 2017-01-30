@@ -29,6 +29,8 @@
 #include "common/filter.h"
 
 #include "fc/fc_core.h"
+#include "fc/fc_rc.h"
+
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -211,11 +213,12 @@ static float accelerationLimit(int axis, float currentPidSetpoint) {
 
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
 // Based on 2DOF reference design (matlab)
-void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float tpaFactor)
+void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim)
 {
     static float previousRateError[2];
-
+    const float tpaFactor = getThrottlePIDAttenuation();
     const float motorMixRange = getMotorMixRange();
+
     // Dynamic ki component to gradually scale back integration when above windup point
     float dynKi = MIN((1.0f - motorMixRange) * ITermWindupPointInv, 1.0f);
 

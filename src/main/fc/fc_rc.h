@@ -14,24 +14,18 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #pragma once
 
-#include "common/time.h"
+#include <stdbool.h>
 
-extern int16_t magHold;
-extern bool isRXDataNew;
-extern int16_t headFreeModeHold;
-
-union rollAndPitchTrims_u;
-void applyAndSaveAccelerometerTrimsDelta(union rollAndPitchTrims_u *rollAndPitchTrimsDelta);
-void handleInflightCalibrationStickPosition();
-
-void mwDisarm(void);
-void mwArm(void);
-
-void processRx(timeUs_t currentTimeUs);
-void updateLEDs(void);
+void calculateSetpointRate(int axis, int16_t rc);
+void scaleRcCommandToFpvCamAngle(void);
+void checkForThrottleErrorResetState(uint16_t rxRefreshRate);
+void checkForThrottleErrorResetState(uint16_t rxRefreshRate);
+void processRcCommand(void);
+float getSetpointRate(int axis);
+float getRcDeflection(int axis);
+float getRcDeflectionAbs(int axis);
+float getThrottlePIDAttenuation(void);
 void updateRcCommands(void);
-
-void taskMainPidLoop(timeUs_t currentTimeUs);
+void resetYawAxis(void);
