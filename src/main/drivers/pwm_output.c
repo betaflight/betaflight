@@ -108,6 +108,12 @@ static void pwmOutConfig(pwmOutputPort_t *port, const timerHardware_t *timerHard
     *port->ccr = 0;
 }
 
+static void pwmWriteUnused(uint8_t index, uint16_t value)
+{
+    UNUSED(index);
+    UNUSED(value);
+}
+
 static void pwmWriteBrushed(uint8_t index, uint16_t value)
 {
     *motors[index].ccr = (value - 1000) * motors[index].period / 1000;
@@ -135,9 +141,7 @@ static void pwmWriteMultiShot(uint8_t index, uint16_t value)
 
 void pwmWriteMotor(uint8_t index, uint16_t value)
 {
-    if (motors[index].enabled) {
-        pwmWritePtr(index, value);
-    }
+    pwmWritePtr(index, value);
 }
 
 void pwmShutdownPulsesForAllMotors(uint8_t motorCount)
@@ -158,7 +162,8 @@ void pwmDisableMotors(void)
 
 void pwmEnableMotors(void)
 {
-    pwmMotorsEnabled = true;
+    /* check motors can be enabled */
+    pwmMotorsEnabled = (pwmWritePtr != pwmWriteUnused);
 }
 
 bool pwmAreMotorsEnabled(void)
@@ -166,23 +171,15 @@ bool pwmAreMotorsEnabled(void)
     return pwmMotorsEnabled;
 }
 
+static void pwmCompleteWriteUnused(uint8_t motorCount)
+{
+    UNUSED(motorCount);    
+}
+
 static void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
 {
     for (int index = 0; index < motorCount; index++) {
-
-        if (!motors[index].enabled) {
-            continue;
-        }
-
-        bool overflowed = false;
-        // If we have not already overflowed this timer
-        for (int j = 0; j < index; j++) {
-            if (motors[j].tim == motors[index].tim) {
-                overflowed = true;
-                break;
-            }
-        }
-        if (!overflowed) {
+        if (motors[index].forceOverflow) {
             timerForceOverflow(motors[index].tim);
         }
         // Set the compare register to 0, which stops the output pulsing if the timer overflows before the main loop completes again.
@@ -193,9 +190,7 @@ static void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
 
 void pwmCompleteMotorUpdate(uint8_t motorCount)
 {
-    if (pwmCompleteWritePtr) {
-        pwmCompleteWritePtr(motorCount);
-    }
+    pwmCompleteWritePtr(motorCount);
 }
 
 void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount)
@@ -244,22 +239,20 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
 #endif
     }
 
-    if (!useUnsyncedPwm && !isDigital) {
-        pwmCompleteWritePtr = pwmCompleteOneshotMotorUpdate;
+    if (!isDigital) {
+        pwmCompleteWritePtr = useUnsyncedPwm ? pwmCompleteWriteUnused : pwmCompleteOneshotMotorUpdate;
     }
 
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
         const ioTag_t tag = motorConfig->ioTags[motorIndex];
-
-        if (!tag) {
-            break;
-        }
-
         const timerHardware_t *timerHardware = timerGetByTag(tag, TIM_USE_ANY);
 
         if (timerHardware == NULL) {
-            /* flag failure and disable ability to arm */
-            break;
+            /* not enough motors initialised for the mixer or a break in the motors */
+            pwmWritePtr = pwmWriteUnused;
+            pwmCompleteWritePtr = pwmCompleteWriteUnused;
+            /* TODO: block arming and add reason system cannot arm */
+            return;
         }
 
         motors[motorIndex].io = IOGetByTag(tag);
@@ -285,6 +278,15 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
         } else {
             pwmOutConfig(&motors[motorIndex], timerHardware, timerMhzCounter, 0xFFFF, 0);
         }
+
+        bool timerAlreadyUsed = false;
+        for (int i = 0; i < motorIndex; i++) {
+            if (motors[i].tim == motors[motorIndex].tim) {
+                timerAlreadyUsed = true;
+                break;
+            }
+        }
+        motors[motorIndex].forceOverflow = !timerAlreadyUsed;
         motors[motorIndex].enabled = true;
     }
 
