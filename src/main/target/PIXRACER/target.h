@@ -49,7 +49,7 @@
     #define MPU6500_CS_PIN          PC15
     #define MPU6500_SPI_INSTANCE    SPI1
 
-    #define MPU_INT_EXTI            PD15        // ICM20608
+    #define MPU_INT_EXTI            PC14        // ICM20608
 #else
     // Variant to use MPU9250 gyro/acc/mag
     #define USE_MAG_AK8963
