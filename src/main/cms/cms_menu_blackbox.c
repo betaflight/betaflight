@@ -46,6 +46,7 @@
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/flashfs.h"
+#include "io/beeper.h"
 
 #include "blackbox/blackbox_io.h"
 
@@ -63,6 +64,7 @@ static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
         delay(100);
     }
 
+    beeper(BEEPER_BLACKBOX_ERASE);
     displayClearScreen(pDisplay);
     displayResync(pDisplay); // Was max7456RefreshAll(); wedges during heavy SPI?
 
