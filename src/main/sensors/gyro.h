@@ -36,7 +36,7 @@ typedef enum {
 typedef struct gyro_s {
     gyroDev_t dev;
     uint32_t targetLooptime;
-    int32_t gyroADC[XYZ_AXIS_COUNT];
+    float gyroADCf[XYZ_AXIS_COUNT];
 } gyro_t;
 
 extern gyro_t gyro;

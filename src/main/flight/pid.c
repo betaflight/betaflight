@@ -684,7 +684,7 @@ void pidController(void)
 
     for (int axis = 0; axis < 3; axis++) {
         // Step 1: Calculate gyro rates
-        pidState[axis].gyroRate = gyro.gyroADC[axis] * gyro.dev.scale;
+        pidState[axis].gyroRate = gyro.gyroADCf[axis];
 
         // Step 2: Read target
         float rateTarget;

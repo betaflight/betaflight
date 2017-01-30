@@ -169,8 +169,13 @@ typedef enum {
     MPU_65xx_I2C,
     MPU_65xx_SPI,
     MPU_9250_SPI,
+    ICM_20601_SPI,
+    ICM_20602_SPI,
+    ICM_20608_SPI,
+    ICM_20649_SPI,
+    ICM_20679_SPI,
     ICM_20689_SPI
-} detectedMPUSensor_e;
+} mpuSensor_e;
 
 typedef enum {
     MPU_HALF_RESOLUTION,
@@ -178,7 +183,7 @@ typedef enum {
 } mpu6050Resolution_e;
 
 typedef struct mpuDetectionResult_s {
-    detectedMPUSensor_e sensor;
+    mpuSensor_e sensor;
     mpu6050Resolution_e resolution;
 } mpuDetectionResult_t;
 
@@ -187,7 +192,7 @@ void mpuGyroInit(struct gyroDev_s *gyro);
 struct accDev_s;
 bool mpuAccRead(struct accDev_s *acc);
 bool mpuGyroRead(struct gyroDev_s *gyro);
-mpuDetectionResult_t *mpuDetect(struct gyroDev_s *gyro);
+void mpuDetect(struct gyroDev_s *gyro);
 bool mpuCheckDataReady(struct gyroDev_s *gyro);
 void mpuGyroSetIsrUpdate(struct gyroDev_s *gyro, sensorGyroUpdateFuncPtr updateFn);
 

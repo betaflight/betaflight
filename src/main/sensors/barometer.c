@@ -269,6 +269,11 @@ int32_t baroCalculateAltitude(void)
     return baro.BaroAlt;
 }
 
+int32_t baroGetLatestAltitude(void)
+{
+    return baro.BaroAlt;
+}
+
 bool baroIsHealthy(void)
 {
     return true;

@@ -273,14 +273,12 @@ static void initActiveBoxIds(void)
     if (feature(FEATURE_SERVO_TILT))
         activeBoxIds[activeBoxIdCount++] = BOXCAMSTAB;
 
-    bool isFixedWing = mixerConfig()->mixerMode == MIXER_FLYING_WING || mixerConfig()->mixerMode == MIXER_AIRPLANE || mixerConfig()->mixerMode == MIXER_CUSTOM_AIRPLANE;
-
 #ifdef GPS
-    if (sensors(SENSOR_BARO) || (isFixedWing && feature(FEATURE_GPS))) {
+    if (sensors(SENSOR_BARO) || (STATE(FIXED_WING) && feature(FEATURE_GPS))) {
         activeBoxIds[activeBoxIdCount++] = BOXNAVALTHOLD;
         activeBoxIds[activeBoxIdCount++] = BOXSURFACE;
     }
-    if ((feature(FEATURE_GPS) && sensors(SENSOR_MAG) && sensors(SENSOR_ACC)) || (isFixedWing && sensors(SENSOR_ACC) && feature(FEATURE_GPS))) {
+    if ((feature(FEATURE_GPS) && sensors(SENSOR_MAG) && sensors(SENSOR_ACC)) || (STATE(FIXED_WING) && sensors(SENSOR_ACC) && feature(FEATURE_GPS))) {
         activeBoxIds[activeBoxIdCount++] = BOXNAVPOSHOLD;
         activeBoxIds[activeBoxIdCount++] = BOXNAVRTH;
         activeBoxIds[activeBoxIdCount++] = BOXNAVWP;
@@ -289,7 +287,7 @@ static void initActiveBoxIds(void)
     }
 #endif
 
-    if (isFixedWing) {
+    if (STATE(FIXED_WING)) {
         activeBoxIds[activeBoxIdCount++] = BOXPASSTHRU;
         activeBoxIds[activeBoxIdCount++] = BOXNAVLAUNCH;
         activeBoxIds[activeBoxIdCount++] = BOXAUTOTRIM;
@@ -300,7 +298,7 @@ static void initActiveBoxIds(void)
      * FLAPERON mode active only in case of airplane and custom airplane. Activating on
      * flying wing can cause bad thing
      */
-    if (mixerConfig()->mixerMode == MIXER_AIRPLANE || mixerConfig()->mixerMode == MIXER_CUSTOM_AIRPLANE) {
+    if (STATE(FLAPERON_AVAILABLE)) {
         activeBoxIds[activeBoxIdCount++] = BOXFLAPERON;
     }
 #endif
@@ -587,7 +585,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
                 sbufWriteU16(dst, acc.accADC[i] / scale);
             }
             for (int i = 0; i < 3; i++) {
-                sbufWriteU16(dst, gyro.gyroADC[i]);
+                sbufWriteU16(dst, lrintf(gyro.gyroADCf[i] / gyro.dev.scale));
             }
             for (int i = 0; i < 3; i++) {
                 sbufWriteU16(dst, mag.magADC[i]);
@@ -644,11 +642,16 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_ALTITUDE:
 #if defined(NAV)
-        sbufWriteU32(dst, (uint32_t)lrintf(getEstimatedActualPosition(Z)));
-        sbufWriteU16(dst, (uint32_t)lrintf(getEstimatedActualVelocity(Z)));
+        sbufWriteU32(dst, lrintf(getEstimatedActualPosition(Z)));
+        sbufWriteU16(dst, lrintf(getEstimatedActualVelocity(Z)));
 #else
         sbufWriteU32(dst, 0);
         sbufWriteU16(dst, 0);
+#endif
+#if defined(BARO)
+        sbufWriteU32(dst, baroGetLatestAltitude());
+#else
+        sbufWriteU32(dst, 0);
 #endif
         break;
 
@@ -1148,7 +1151,11 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #else
         sbufWriteU8(dst, 0);
 #endif
-        sbufWriteU8(dst, 0);    // rangefinder hardware
+#ifdef SONAR
+        sbufWriteU8(dst, rangefinderConfig()->rangefinder_hardware);
+#else
+        sbufWriteU8(dst, 0);
+#endif
         sbufWriteU8(dst, 0);    // optical flow hardware
         break;
 
@@ -1836,6 +1843,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifndef USE_QUAD_MIXER_ONLY
     case MSP_SET_MIXER:
         mixerConfigMutable()->mixerMode = sbufReadU8(src);
+        mixerUpdateStateFlags();    // Required for correct preset functionality
         break;
 #endif
 
@@ -1893,6 +1901,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         sbufReadU8(src); // mixerMode ignored
 #else
         mixerConfigMutable()->mixerMode = sbufReadU8(src); // mixerMode
+        mixerUpdateStateFlags();    // Required for correct preset functionality
 #endif
 
         featureClearAll();
