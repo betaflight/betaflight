@@ -181,8 +181,9 @@ bool isMotorBrushed(uint16_t motorPwmRate)
     return (motorPwmRate > 500);
 }
 
-void pwmMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse, motorPwmProtocolTypes_e proto)
+void pwmMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse, motorPwmProtocolTypes_e proto, bool enableOutput)
 {
+    UNUSED(enableOutput);
     uint32_t timerMhzCounter;
     pwmWriteFuncPtr pwmWritePtr;
 
@@ -221,8 +222,9 @@ void pwmMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, ui
 }
 
 #ifdef USE_SERVOS
-void pwmServoConfig(const timerHardware_t *timerHardware, uint8_t servoIndex, uint16_t servoPwmRate, uint16_t servoCenterPulse)
+void pwmServoConfig(const timerHardware_t *timerHardware, uint8_t servoIndex, uint16_t servoPwmRate, uint16_t servoCenterPulse, bool enableOutput)
 {
+    UNUSED(enableOutput);
     servos[servoIndex] = pwmOutConfig(timerHardware, PWM_TIMER_MHZ, 1000000 / servoPwmRate, servoCenterPulse);
 }
 

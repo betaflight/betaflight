@@ -91,23 +91,23 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
     /* Set hdma_tim instance */
     hdma_tim.Instance = WS2811_DMA_STREAM;
 
-    uint32_t channelAddress = 0;
+    //uint32_t channelAddress = 0;
     switch (WS2811_TIMER_CHANNEL) {
         case TIM_CHANNEL_1:
             timDMASource = TIM_DMA_ID_CC1;
-            channelAddress = (uint32_t)(&WS2811_TIMER->CCR1);
+            //channelAddress = (uint32_t)(&WS2811_TIMER->CCR1);
             break;
         case TIM_CHANNEL_2:
             timDMASource = TIM_DMA_ID_CC2;
-            channelAddress = (uint32_t)(&WS2811_TIMER->CCR2);
+            //channelAddress = (uint32_t)(&WS2811_TIMER->CCR2);
             break;
         case TIM_CHANNEL_3:
             timDMASource = TIM_DMA_ID_CC3;
-            channelAddress = (uint32_t)(&WS2811_TIMER->CCR3);
+            //channelAddress = (uint32_t)(&WS2811_TIMER->CCR3);
             break;
         case TIM_CHANNEL_4:
             timDMASource = TIM_DMA_ID_CC4;
-            channelAddress = (uint32_t)(&WS2811_TIMER->CCR4);
+            //channelAddress = (uint32_t)(&WS2811_TIMER->CCR4);
             break;
     }
 
