@@ -148,7 +148,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 }
 
 static float Kp[3], Ki[3], Kd[3], c[3], maxVelocity[3], relaxFactor[3];
-static float levelGain, horizonGain, horizonTransition, ITermWindupPoint, ITermWindupPointInv;
+static float levelGain, horizonGain, horizonTransition, ITermWindupPoint, ITermWindupPointInv, itermAcceleratorRateLimit;
 
 void pidInitConfig(const pidProfile_t *pidProfile) {
     for(int axis = FD_ROLL; axis <= FD_YAW; axis++) {
@@ -165,6 +165,7 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
     maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 1000 * dT;
     ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
     ITermWindupPointInv = 1.0f - ITermWindupPoint;
+    itermAcceleratorRateLimit = (float)pidProfile->itermAcceleratorRateLimit;
 }
 
 static float calcHorizonLevelStrength(void) {
@@ -216,6 +217,8 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     static float previousSetpoint[3];
 
     const float motorMixRange = getMotorMixRange();
+    // Dynamic ki component to gradually scale back integration when above windup point
+    float dynKi = MIN((1.0f - motorMixRange) / ITermWindupPointInv, 1.0f);
 
     // ----------PID controller----------
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
@@ -247,13 +250,10 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         float ITerm = previousGyroIf[axis];
         if (motorMixRange < 1.0f) {
             // Only increase ITerm if motor output is not saturated and errorRate exceeds noise threshold
-            float ITermDelta = Ki[axis] * errorRate * dT;
-            // gradually scale back integration when above windup point
-            if (motorMixRange > ITermWindupPoint) {
-                ITermDelta *= (1.0f - motorMixRange) / ITermWindupPointInv;
-            } else {
-                ITermDelta *= itermAccelerator;
-            }
+            // Iterm will only be accelerated below steady rate threshold
+            if (ABS(currentPidSetpoint) < itermAcceleratorRateLimit)
+                dynKi *= itermAccelerator;
+            float ITermDelta = Ki[axis] * errorRate * dT * dynKi;
             ITerm += ITermDelta;
             // also limit maximum integrator value to prevent windup
             ITerm = constrainf(ITerm, -250.0f, 250.0f);
