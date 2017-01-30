@@ -21,13 +21,14 @@
 
 #include <platform.h>
 
+#ifdef USE_BARO_SPI_BMP280
+
 #include "bus_spi.h"
 
 #include "barometer.h"
 #include "barometer_bmp280.h"
 #include "io.h"
 
-#ifdef USE_BARO_SPI_BMP280
 #define DISABLE_BMP280       IOHi(bmp280CsPin)
 #define ENABLE_BMP280        IOLo(bmp280CsPin)
 

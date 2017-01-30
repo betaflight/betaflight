@@ -22,15 +22,21 @@
 
 #include "build/build_config.h"
 
+#if defined(USE_BARO_BMP280) || defined(USE_BARO_SPI_BMP280)
+
 #include "barometer.h"
 
 #include "system.h"
+
+#ifndef USE_BARO_SPI_BMP280
 #include "bus_i2c.h"
+#endif
 
 #include "barometer_bmp280.h"
-#include "barometer_spi_bmp280.h"
 
-#ifdef BARO
+#ifdef USE_BARO_SPI_BMP280
+#include "barometer_spi_bmp280.h"
+#endif
 
 // BMP280, address 0x76
 
@@ -91,7 +97,7 @@ bool bmp280Detect(baroDev_t *baro, I2CDevice i2cBusToUse)
     // set oversampling + power mode (forced), and start sampling
     bmp280WriteRegister(BMP280_CTRL_MEAS_REG, BMP280_MODE);
 #else
-    i2cBus = i2cBusToUse
+    i2cBus = i2cBusToUse;
 
     i2cRead(i2cBus, BMP280_I2C_ADDR, BMP280_CHIP_ID_REG, 1, &bmp280_chip_id);  /* read Chip Id */
     if (bmp280_chip_id != BMP280_DEFAULT_CHIP_ID)

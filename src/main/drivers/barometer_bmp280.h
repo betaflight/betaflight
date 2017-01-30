@@ -61,4 +61,3 @@ bool bmp280Detect(baroDev_t *baro);
 #else
 bool bmp280Detect(baroDev_t *baro, I2CDevice i2cBusToUse);
 #endif
-
