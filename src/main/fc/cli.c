@@ -3375,7 +3375,7 @@ static void printResource(uint8_t dumpMask, const master_t *defaultConfig)
 
 static void resourceCheck(uint8_t resourceIndex, uint8_t index, ioTag_t tag)
 {
-    const char * format = "\r\n* WARNING * %c%d also used by %s";
+    const char * format = "\r\n* NOTE * %c%d moved from %s";
     for (int r = 0; r < (int)ARRAYLEN(resourceTable); r++) {
         for (int i = 0; i < MAX_RESOURCE_INDEX(resourceTable[r].maxIndex); i++) {
             if (*(resourceTable[r].ptr + i) == tag) {
