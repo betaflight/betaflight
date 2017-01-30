@@ -131,8 +131,6 @@ static void cliBootlog(char *cmdline);
 static char cliBuffer[64];
 static uint32_t bufferIndex = 0;
 
-static const char* const emptyName = "-";
-
 #ifndef USE_QUAD_MIXER_ONLY
 // sync this with mixerMode_e
 static const char * const mixerNames[] = {
@@ -168,6 +166,7 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
 static const char * const gyroNames[] = { "NONE", "AUTO", "MPU6050", "L3G4200D", "MPU3050", "L3GD20", "MPU6000", "MPU6500", "FAKE"};
 // sync with accelerationSensor_e
 static const char * const lookupTableAccHardware[] = { "NONE", "AUTO", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "FAKE"};
+#if (FLASH_SIZE > 64)
 // sync with baroSensor_e
 static const char * const lookupTableBaroHardware[] = { "NONE", "AUTO", "BMP085", "MS5611", "BMP280", "FAKE"};
 // sync with magSensor_e
@@ -177,7 +176,6 @@ static const char * const lookupTableRangefinderHardware[] = { "NONE", "HCSR04",
 // sync with pitotSensor_e
 static const char * const lookupTablePitotHardware[] = { "NONE", "AUTO", "MS4525", "FAKE"};
 
-#if (FLASH_SIZE > 64)
 // sync this with sensors_e
 static const char * const sensorTypeNames[] = {
     "GYRO", "ACC", "BARO", "MAG", "SONAR", "PITOT", "GPS", "GPS+MAG", NULL
