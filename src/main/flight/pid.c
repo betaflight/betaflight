@@ -156,7 +156,7 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
         Ki[axis] = ITERM_SCALE * pidProfile->I8[axis];
         Kd[axis] = DTERM_SCALE * pidProfile->D8[axis];
         c[axis] = pidProfile->dtermSetpointWeight / 100.0f;
-        relaxFactor[axis] = pidProfile->setpointRelaxRatio / 100.0f;
+        relaxFactor[axis] = 1.0f / (pidProfile->setpointRelaxRatio / 100.0f);
     }
     levelGain = pidProfile->P8[PIDLEVEL] / 10.0f;
     horizonGain = pidProfile->I8[PIDLEVEL] / 10.0f;
@@ -164,7 +164,7 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
     maxVelocity[FD_ROLL] = maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 1000 * dT;
     maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 1000 * dT;
     ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
-    ITermWindupPointInv = 1.0f - ITermWindupPoint;
+    ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
     itermAcceleratorRateLimit = (float)pidProfile->itermAcceleratorRateLimit;
 }
 
@@ -218,7 +218,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
     const float motorMixRange = getMotorMixRange();
     // Dynamic ki component to gradually scale back integration when above windup point
-    float dynKi = MIN((1.0f - motorMixRange) / ITermWindupPointInv, 1.0f);
+    float dynKi = MIN((1.0f - motorMixRange) * ITermWindupPointInv, 1.0f);
 
     // ----------PID controller----------
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
@@ -269,10 +269,10 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                 dynC = c[axis];
                 if (currentPidSetpoint > 0) {
                     if ((currentPidSetpoint - previousSetpoint[axis]) < previousSetpoint[axis])
-                        dynC *= MIN((1.0f - rcDeflection) / relaxFactor[axis], 1.0f);
+                        dynC *= MIN((1.0f - rcDeflection) * relaxFactor[axis], 1.0f);
                 } else if (currentPidSetpoint < 0) {
                     if ((currentPidSetpoint - previousSetpoint[axis]) > previousSetpoint[axis])
-                        dynC *= MIN((1.0f - rcDeflection) / relaxFactor[axis], 1.0f);
+                        dynC *= MIN((1.0f - rcDeflection) * relaxFactor[axis], 1.0f);
                 }
             }
             const float rD = dynC * currentPidSetpoint - gyroRate;    // cr - y
