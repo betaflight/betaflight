@@ -28,30 +28,30 @@ extern "C" {
 
     #include "common/axis.h"
     #include "common/filter.h"
+    #include "common/gps_conversion.h"
     #include "common/maths.h"
 
     #include "config/parameter_group.h"
     #include "config/parameter_group_ids.h"
 
-    #include "drivers/system.h"
     #include "drivers/serial.h"
+    #include "drivers/system.h"
 
     #include "fc/runtime_config.h"
+
+    #include "flight/pid.h"
+    #include "flight/imu.h"
 
     #include "io/gps.h"
     #include "io/serial.h"
 
     #include "rx/crsf.h"
 
-    #include "sensors/sensors.h"
     #include "sensors/battery.h"
+    #include "sensors/sensors.h"
 
-    #include "telemetry/telemetry.h"
     #include "telemetry/crsf.h"
-
-    #include "flight/pid.h"
-    #include "flight/imu.h"
-    #include "flight/gps_conversion.h"
+    #include "telemetry/telemetry.h"
 
     bool airMode;
     uint16_t vbat;

@@ -82,7 +82,7 @@ install:
   - make arm_sdk_install
 
 before_script:
-  - tools/gcc-arm-none-eabi-5_4-2016q3/bin/arm-none-eabi-gcc --version
+  - tools/gcc-arm-none-eabi-6_2-2016q4/bin/arm-none-eabi-gcc --version
   - clang --version
   - clang++ --version
 
