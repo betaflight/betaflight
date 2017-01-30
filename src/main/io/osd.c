@@ -279,11 +279,11 @@ static void osdDrawSingleElement(uint8_t item)
             // in which case current operating frequency is displayed.
             char *str;
             if ((str = vtxCommonGetBandChanString()) != NULL) {
-                sprintf(buff, "CH:%s", vtxCommonGetBandChanString());
-            } else if ((str = vtxCommonGetBandChanString()) != NULL) {
-                sprintf(buff, "%s", vtxCommonGetBandChanString());
+                sprintf(buff, "CH:%s", str);
+            } else if ((str = vtxCommonGetFreqString()) != NULL) {
+                sprintf(buff, "%s", str);
             } else {
-                sprintf(buff, "CH:--");
+                memcpy(buff, "CH:--", 6);
             }
             break;
         }
