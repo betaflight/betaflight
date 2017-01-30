@@ -173,27 +173,24 @@ static void updatePreArmingChecks(void)
 
 void annexCode(void)
 {
-    bool needRPY = true;
-    bool needThrottle = true;
     int32_t throttleValue;
 
     if (failsafeIsActive()) {
-        const failsafeControlChannels_e failsafeControlInput = failsafeShouldApplyControlInput();
-
-        // In some cases our failsafe logic will still allow values from RX to be used
-        if (failsafeControlInput != FAILSAFE_CONTROL_NONE) {
-            failsafeApplyControlInput();
-
-            needRPY = !(failsafeControlInput & FAILSAFE_CONTROL_RPY);
-            needThrottle = !(failsafeControlInput & FAILSAFE_CONTROL_THROTTLE);
-        }
+        failsafeApplyControlInput();
     }
-
-    if (needRPY) {
+    else {
         // Compute ROLL PITCH and YAW command
         rcCommand[ROLL] = getAxisRcCommand(rcData[ROLL], currentControlRateProfile->rcExpo8, rcControlsConfig()->deadband);
         rcCommand[PITCH] = getAxisRcCommand(rcData[PITCH], currentControlRateProfile->rcExpo8, rcControlsConfig()->deadband);
         rcCommand[YAW] = -getAxisRcCommand(rcData[YAW], currentControlRateProfile->rcYawExpo8, rcControlsConfig()->yaw_deadband);
+
+        //Compute THROTTLE command
+        throttleValue = constrain(rcData[THROTTLE], rxConfig()->mincheck, PWM_RANGE_MAX);
+        throttleValue = (uint32_t)(throttleValue - rxConfig()->mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - rxConfig()->mincheck);       // [MINCHECK;2000] -> [0;1000]
+        rcCommand[THROTTLE] = rcLookupThrottle(throttleValue);
+
+        // Signal updated rcCommand values to Failsafe system
+        failsafeUpdateRcCommandValues();
 
         if (FLIGHT_MODE(HEADFREE_MODE)) {
             const float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
@@ -203,13 +200,6 @@ void annexCode(void)
             rcCommand[ROLL] = rcCommand[ROLL] * cosDiff - rcCommand[PITCH] * sinDiff;
             rcCommand[PITCH] = rcCommand_PITCH;
         }
-    }
-
-    if (needThrottle) {
-        //Compute THROTTLE command
-        throttleValue = constrain(rcData[THROTTLE], rxConfig()->mincheck, PWM_RANGE_MAX);
-        throttleValue = (uint32_t)(throttleValue - rxConfig()->mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - rxConfig()->mincheck);       // [MINCHECK;2000] -> [0;1000]
-        rcCommand[THROTTLE] = rcLookupThrottle(throttleValue);
     }
 
     if (ARMING_FLAG(ARMED)) {
