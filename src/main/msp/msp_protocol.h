@@ -189,8 +189,9 @@
 #define MSP_FAILSAFE_CONFIG             75 //out message         Returns FC Fail-Safe settings
 #define MSP_SET_FAILSAFE_CONFIG         76 //in message          Sets FC Fail-Safe settings
 
-#define MSP_RXFAIL_CONFIG               77 //out message         Returns RXFAIL settings
-#define MSP_SET_RXFAIL_CONFIG           78 //in message          Sets RXFAIL settings
+// DEPRECATED
+//#define MSP_RXFAIL_CONFIG               77 //out message         Returns RXFAIL settings
+//#define MSP_SET_RXFAIL_CONFIG           78 //in message          Sets RXFAIL settings
 
 #define MSP_SDCARD_SUMMARY              79 //out message         Get the state of the SD card
 

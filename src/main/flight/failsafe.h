@@ -37,6 +37,10 @@ typedef struct failsafeConfig_s {
     uint8_t failsafe_off_delay;             // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example (200)
     uint8_t failsafe_kill_switch;           // failsafe switch action is 0: identical to rc link loss, 1: disarms instantly
     uint8_t failsafe_procedure;             // selected full failsafe procedure is 0: auto-landing, 1: Drop it, 2: Return To Home (RTH)
+
+    int16_t failsafe_fw_roll_angle;         // Settings to be applies during "LAND" procedure on a fixed-wing
+    int16_t failsafe_fw_pitch_angle;
+    int16_t failsafe_fw_yaw_rate;
 } failsafeConfig_t;
 
 PG_DECLARE(failsafeConfig_t, failsafeConfig);
@@ -44,6 +48,7 @@ PG_DECLARE(failsafeConfig_t, failsafeConfig);
 typedef enum {
     FAILSAFE_IDLE = 0,
     FAILSAFE_RX_LOSS_DETECTED,
+    FAILSAFE_RX_LOSS_IDLE,
 #if defined(NAV)
     FAILSAFE_RETURN_TO_HOME,
 #endif
@@ -61,15 +66,22 @@ typedef enum {
 typedef enum {
     FAILSAFE_PROCEDURE_AUTO_LANDING = 0,
     FAILSAFE_PROCEDURE_DROP_IT,
-    FAILSAFE_PROCEDURE_RTH
+    FAILSAFE_PROCEDURE_RTH,
+    FAILSAFE_PROCEDURE_NONE
 } failsafeProcedure_e;
 
-// FIXME ProDrone: The next enum must be deleted from here and defined in RTH.H file, which has to be included in failsafe.c
 typedef enum {
     RTH_IDLE = 0,               // RTH is waiting
     RTH_IN_PROGRESS,            // RTH is active
     RTH_HAS_LANDED              // RTH is active and has landed.
 } rthState_e;
+
+typedef enum {
+    FAILSAFE_CONTROL_NONE       = 0,
+    FAILSAFE_CONTROL_RPY        = 1 << 0,
+    FAILSAFE_CONTROL_THROTTLE   = 1 << 1,
+    FAILSAFE_CONTROL_ALL        = (FAILSAFE_CONTROL_RPY | FAILSAFE_CONTROL_THROTTLE)
+} failsafeControlChannels_e;
 
 typedef struct failsafeState_s {
     int16_t events;
@@ -85,6 +97,7 @@ typedef struct failsafeState_s {
     timeMs_t receivingRxDataPeriodPreset;   // preset for the required period of valid rxData
     failsafePhase_e phase;
     failsafeRxLinkState_e rxLinkState;
+    failsafeControlChannels_e shouldApplyControlInput;
 } failsafeState_t;
 
 void failsafeInit(uint16_t deadband3d_throttle);
@@ -100,6 +113,8 @@ bool failsafeIsReceivingRxData(void);
 void failsafeOnRxSuspend(uint32_t suspendPeriod);
 void failsafeOnRxResume(void);
 bool failsafeMayRequireNavigationMode(void);
+void failsafeApplyControlInput(void);
+failsafeControlChannels_e failsafeShouldApplyControlInput(void);
 
 void failsafeOnValidDataReceived(void);
 void failsafeOnValidDataFailed(void);

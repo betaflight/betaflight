@@ -478,16 +478,13 @@ bool isFixedWingLandingDetected(void)
 /*-----------------------------------------------------------
  * FixedWing emergency landing
  *-----------------------------------------------------------*/
-#define FW_EMERGENCY_DIVE_DECIDEG   100
-#define FW_EMERGENCY_ROLL_DECIDEG   200
-#define FW_EMERGENCY_YAW_RATE_DPS   20
 void applyFixedWingEmergencyLandingController(void)
 {
-    // FIXME: Make this configurable, use altitude controller if available (similar to MC code)
-    rcCommand[PITCH] = pidAngleToRcCommand(-FW_EMERGENCY_DIVE_DECIDEG, pidProfile()->max_angle_inclination[FD_PITCH]);
-    rcCommand[ROLL] = pidAngleToRcCommand(-FW_EMERGENCY_ROLL_DECIDEG, pidProfile()->max_angle_inclination[FD_ROLL]);
-    rcCommand[YAW] = pidRateToRcCommand(-FW_EMERGENCY_YAW_RATE_DPS, currentControlRateProfile->rates[FD_YAW]);
-    rcCommand[THROTTLE] = navConfig()->fw.min_throttle;
+    // FIXME: Use altitude controller if available (similar to MC code)
+    rcCommand[ROLL] = pidAngleToRcCommand(failsafeConfig()->failsafe_fw_roll_angle, pidProfile()->max_angle_inclination[FD_ROLL]);
+    rcCommand[PITCH] = pidAngleToRcCommand(failsafeConfig()->failsafe_fw_pitch_angle, pidProfile()->max_angle_inclination[FD_PITCH]);
+    rcCommand[YAW] = pidRateToRcCommand(failsafeConfig()->failsafe_fw_yaw_rate, currentControlRateProfile->rates[FD_YAW]);
+    rcCommand[THROTTLE] = failsafeConfig()->failsafe_throttle;
 }
 
 /*-----------------------------------------------------------

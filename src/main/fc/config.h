@@ -49,8 +49,8 @@ typedef enum {
     FEATURE_SERVO_TILT = 1 << 5,
     FEATURE_SOFTSERIAL = 1 << 6,
     FEATURE_GPS = 1 << 7,
-    FEATURE_FAILSAFE = 1 << 8,
-    //FEATURE_SONAR = 1 << 9,           // Deprecated
+    FEATURE_UNUSED_3 = 1 << 8,          // was FEATURE_FAILSAFE
+    FEATURE_UNUSED_4 = 1 << 9,          // was FEATURE_SONAR
     FEATURE_TELEMETRY = 1 << 10,
     FEATURE_CURRENT_METER = 1 << 11,
     FEATURE_3D = 1 << 12,

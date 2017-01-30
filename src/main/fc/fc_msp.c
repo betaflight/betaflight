@@ -324,9 +324,7 @@ static void initActiveBoxIds(void)
     }
 #endif
 
-    if (feature(FEATURE_FAILSAFE)){
-        activeBoxIds[activeBoxIdCount++] = BOXFAILSAFE;
-    }
+    activeBoxIds[activeBoxIdCount++] = BOXFAILSAFE;
 }
 
 #define IS_ENABLED(mask) (mask == 0 ? 0 : 1)
@@ -906,13 +904,6 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, failsafeConfig()->failsafe_throttle_low_delay);
         sbufWriteU8(dst, failsafeConfig()->failsafe_procedure);
         sbufWriteU8(dst, failsafeConfig()->failsafe_recovery_delay);
-        break;
-
-    case MSP_RXFAIL_CONFIG:
-        for (int i = 0; i < rxRuntimeConfig.channelCount; i++) {
-            sbufWriteU8(dst, rxFailsafeChannelConfigs(i)->mode);
-            sbufWriteU16(dst, RXFAIL_STEP_TO_CHANNEL_VALUE(rxFailsafeChannelConfigs(i)->step));
-        }
         break;
 
     case MSP_RSSI_CONFIG:
@@ -1892,16 +1883,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         failsafeConfigMutable()->failsafe_procedure = sbufReadU8(src);
         if (dataSize > 8) {
             failsafeConfigMutable()->failsafe_recovery_delay = sbufReadU8(src);
-        }
-        break;
-
-    case MSP_SET_RXFAIL_CONFIG:
-        i = sbufReadU8(src);
-        if (i < MAX_SUPPORTED_RC_CHANNEL_COUNT) {
-            rxFailsafeChannelConfigsMutable(i)->mode = sbufReadU8(src);
-            rxFailsafeChannelConfigsMutable(i)->step = CHANNEL_VALUE_TO_RXFAIL_STEP(sbufReadU16(src));
-        } else {
-            return MSP_RESULT_ERROR;
         }
         break;
 
