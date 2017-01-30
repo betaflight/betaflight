@@ -90,7 +90,7 @@ void failsafeReset(void)
     failsafeState.receivingRxDataPeriodPreset = 0;
     failsafeState.phase = FAILSAFE_IDLE;
     failsafeState.rxLinkState = FAILSAFE_RXLINK_DOWN;
-    failsafeState.shouldApplyControlInput = false;
+    failsafeState.shouldApplyControlInput = FAILSAFE_CONTROL_NONE;
 }
 
 void failsafeInit(uint16_t deadband3d_throttle)
@@ -129,12 +129,17 @@ void failsafeStartMonitoring(void)
     failsafeState.monitoring = true;
 }
 
+failsafeControlChannels_e failsafeShouldApplyControlInput(void)
+{
+    return failsafeState.shouldApplyControlInput;
+}
+
 static bool failsafeShouldHaveCausedLandingByNow(void)
 {
     return (millis() > failsafeState.landingShouldBeFinishedAt);
 }
 
-static void failsafeActivate(failsafePhase_e newPhase, bool applyControlInput)
+static void failsafeActivate(failsafePhase_e newPhase, failsafeControlChannels_e applyControlInput)
 {
     failsafeState.active = true;
     failsafeState.phase = newPhase;
@@ -147,21 +152,29 @@ static void failsafeActivate(failsafePhase_e newPhase, bool applyControlInput)
 
 void failsafeApplyControlInput(void)
 {
-    if (!failsafeState.shouldApplyControlInput)
-        return;
-
-    if (STATE(FIXED_WING)) {
-        rcCommand[ROLL] = pidAngleToRcCommand(failsafeConfig()->failsafe_fw_roll_angle, pidProfile()->max_angle_inclination[FD_ROLL]);
-        rcCommand[PITCH] = pidAngleToRcCommand(failsafeConfig()->failsafe_fw_pitch_angle, pidProfile()->max_angle_inclination[FD_PITCH]);
-        rcCommand[YAW] = pidRateToRcCommand(failsafeConfig()->failsafe_fw_yaw_rate, currentControlRateProfile->rates[FD_YAW]);
-    }
-    else {
-        for (int i = 0; i < 3; i++) {
-            rcCommand[i] = rxConfig()->midrc;
+    if (failsafeState.shouldApplyControlInput & FAILSAFE_CONTROL_RPY) {
+        if (STATE(FIXED_WING)) {
+            if (failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_RTH) {
+                for (int i = 0; i < 3; i++) {
+                    rcCommand[i] = 0;
+                }
+            }
+            else {
+                rcCommand[ROLL] = pidAngleToRcCommand(failsafeConfig()->failsafe_fw_roll_angle, pidProfile()->max_angle_inclination[FD_ROLL]);
+                rcCommand[PITCH] = pidAngleToRcCommand(failsafeConfig()->failsafe_fw_pitch_angle, pidProfile()->max_angle_inclination[FD_PITCH]);
+                rcCommand[YAW] = pidRateToRcCommand(failsafeConfig()->failsafe_fw_yaw_rate, currentControlRateProfile->rates[FD_YAW]);
+            }
+        }
+        else {
+            for (int i = 0; i < 3; i++) {
+                rcCommand[i] = 0;
+            }
         }
     }
 
-    rcCommand[THROTTLE] = failsafeConfig()->failsafe_throttle;
+    if (failsafeState.shouldApplyControlInput & FAILSAFE_CONTROL_THROTTLE) {
+        rcCommand[THROTTLE] = failsafeConfig()->failsafe_throttle;
+    }
 }
 
 bool failsafeIsReceivingRxData(void)
@@ -227,14 +240,14 @@ void failsafeUpdateState(void)
                     // Kill switch logic (must be independent of receivingRxData to skip PERIOD_RXDATA_FAILURE delay before disarming)
                     if (failsafeSwitchIsOn && failsafeConfig()->failsafe_kill_switch) {
                         // KillswitchEvent: failsafe switch is configured as KILL switch and is switched ON
-                        failsafeActivate(FAILSAFE_LANDED, true);  // skip auto-landing procedure
+                        failsafeActivate(FAILSAFE_LANDED, FAILSAFE_CONTROL_ALL);  // skip auto-landing procedure
                         failsafeState.receivingRxDataPeriodPreset = PERIOD_OF_1_SECONDS;    // require 1 seconds of valid rxData
                         reprocessState = true;
                     } else if (!receivingRxData) {
                         if ((failsafeConfig()->failsafe_throttle_low_delay && (millis() > failsafeState.throttleLowPeriod)) || STATE(NAV_MOTOR_STOP_OR_IDLE)) {
                             // JustDisarm: throttle was LOW for at least 'failsafe_throttle_low_delay' seconds or waiting for launch
                             // Don't disarm at all if `failsafe_throttle_low_delay` is set to zero
-                            failsafeActivate(FAILSAFE_LANDED, true);  // skip auto-landing procedure
+                            failsafeActivate(FAILSAFE_LANDED, FAILSAFE_CONTROL_ALL);  // skip auto-landing procedure
                             failsafeState.receivingRxDataPeriodPreset = PERIOD_OF_3_SECONDS; // require 3 seconds of valid rxData
                         } else {
                             failsafeState.phase = FAILSAFE_RX_LOSS_DETECTED;
@@ -260,26 +273,26 @@ void failsafeUpdateState(void)
                     switch (failsafeConfig()->failsafe_procedure) {
                         case FAILSAFE_PROCEDURE_AUTO_LANDING:
                             // Stabilize, and set Throttle to specified level
-                            failsafeActivate(FAILSAFE_LANDING, true);
+                            failsafeActivate(FAILSAFE_LANDING, FAILSAFE_CONTROL_ALL);
                             break;
 
                         case FAILSAFE_PROCEDURE_DROP_IT:
                             // Drop the craft
-                            failsafeActivate(FAILSAFE_LANDED, true);      // skip auto-landing procedure
+                            failsafeActivate(FAILSAFE_LANDED, FAILSAFE_CONTROL_ALL);      // skip auto-landing procedure
                             failsafeState.receivingRxDataPeriodPreset = PERIOD_OF_3_SECONDS; // require 3 seconds of valid rxData
                             break;
 
 #if defined(NAV)
                         case FAILSAFE_PROCEDURE_RTH:
                             // Proceed to handling & monitoring RTH navigation
-                            failsafeActivate(FAILSAFE_RETURN_TO_HOME, false);
+                            failsafeActivate(FAILSAFE_RETURN_TO_HOME, FAILSAFE_CONTROL_RPY);
                             activateForcedRTH();
                             break;
 #endif
                         case FAILSAFE_PROCEDURE_NONE:
                         default:
                             // Do nothing procedure
-                            failsafeActivate(FAILSAFE_RX_LOSS_IDLE, false);
+                            failsafeActivate(FAILSAFE_RX_LOSS_IDLE, FAILSAFE_CONTROL_NONE);
                             break;
                     }
                 }

@@ -70,18 +70,23 @@ typedef enum {
     FAILSAFE_PROCEDURE_NONE
 } failsafeProcedure_e;
 
-// FIXME ProDrone: The next enum must be deleted from here and defined in RTH.H file, which has to be included in failsafe.c
 typedef enum {
     RTH_IDLE = 0,               // RTH is waiting
     RTH_IN_PROGRESS,            // RTH is active
     RTH_HAS_LANDED              // RTH is active and has landed.
 } rthState_e;
 
+typedef enum {
+    FAILSAFE_CONTROL_NONE       = 0,
+    FAILSAFE_CONTROL_RPY        = 1 << 0,
+    FAILSAFE_CONTROL_THROTTLE   = 1 << 1,
+    FAILSAFE_CONTROL_ALL        = (FAILSAFE_CONTROL_RPY | FAILSAFE_CONTROL_THROTTLE)
+} failsafeControlChannels_e;
+
 typedef struct failsafeState_s {
     int16_t events;
     bool monitoring;
     bool active;
-    bool shouldApplyControlInput;
     timeMs_t rxDataFailurePeriod;
     timeMs_t rxDataRecoveryPeriod;
     timeMs_t validRxDataReceivedAt;
@@ -92,6 +97,7 @@ typedef struct failsafeState_s {
     timeMs_t receivingRxDataPeriodPreset;   // preset for the required period of valid rxData
     failsafePhase_e phase;
     failsafeRxLinkState_e rxLinkState;
+    failsafeControlChannels_e shouldApplyControlInput;
 } failsafeState_t;
 
 void failsafeInit(uint16_t deadband3d_throttle);
@@ -108,6 +114,7 @@ void failsafeOnRxSuspend(uint32_t suspendPeriod);
 void failsafeOnRxResume(void);
 bool failsafeMayRequireNavigationMode(void);
 void failsafeApplyControlInput(void);
+failsafeControlChannels_e failsafeShouldApplyControlInput(void);
 
 void failsafeOnValidDataReceived(void);
 void failsafeOnValidDataFailed(void);
