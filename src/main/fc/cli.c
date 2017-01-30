@@ -3315,6 +3315,8 @@ static void cliVersion(char *cmdline)
 
 #if defined(USE_RESOURCE_MGMT)
 
+#define MAX_RESOURCE_INDEX(x) (x == 0 ? 1 : x)
+
 typedef struct {
     const uint8_t owner;
     ioTag_t *ptr;
@@ -3348,76 +3350,55 @@ static void printResource(uint8_t dumpMask, const master_t *defaultConfig)
         const char* owner;
         owner = ownerNames[resourceTable[i].owner];
 
-        if (resourceTable[i].maxIndex > 0) {
-            for (int index = 0; index < resourceTable[i].maxIndex; index++) {
-                ioTag_t ioTag = *(resourceTable[i].ptr + index);
-                ioTag_t ioTagDefault = *(resourceTable[i].ptr + index - (uint32_t)&masterConfig + (uint32_t)defaultConfig);
-
-                bool equalsDefault = ioTag == ioTagDefault;
-                const char *format = "resource %s %d %c%02d\r\n";
-                const char *formatUnassigned = "resource %s %d NONE\r\n";
-                if (!ioTagDefault) {
-                    cliDefaultPrintf(dumpMask, equalsDefault, formatUnassigned, owner, RESOURCE_INDEX(index));
-                } else {
-                    cliDefaultPrintf(dumpMask, equalsDefault, format, owner, RESOURCE_INDEX(index), IO_GPIOPortIdxByTag(ioTagDefault) + 'A', IO_GPIOPinIdxByTag(ioTagDefault));
-                }
-                if (!ioTag) {
-                    if (!(dumpMask & HIDE_UNUSED)) {
-                        cliDumpPrintf(dumpMask, equalsDefault, formatUnassigned, owner, RESOURCE_INDEX(index));
-                    }
-                } else {
-                    cliDumpPrintf(dumpMask, equalsDefault, format, owner, RESOURCE_INDEX(index), IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag));
-                }
-            }
-        } else {
-            ioTag_t ioTag = *resourceTable[i].ptr;
-            ioTag_t ioTagDefault = *(resourceTable[i].ptr - (uint32_t)&masterConfig + (uint32_t)defaultConfig);
+        for (int index = 0; index < MAX_RESOURCE_INDEX(resourceTable[i].maxIndex); index++) {
+            ioTag_t ioTag = *(resourceTable[i].ptr + index);
+            ioTag_t ioTagDefault = *(resourceTable[i].ptr + index - (uint32_t)&masterConfig + (uint32_t)defaultConfig);
 
             bool equalsDefault = ioTag == ioTagDefault;
-            const char *format = "resource %s %c%02d\r\n";
-            const char *formatUnassigned = "resource %s NONE\r\n";
+            const char *format = "resource %s %d %c%02d\r\n";
+            const char *formatUnassigned = "resource %s %d NONE\r\n";
             if (!ioTagDefault) {
-                cliDefaultPrintf(dumpMask, equalsDefault, formatUnassigned, owner);
+                cliDefaultPrintf(dumpMask, equalsDefault, formatUnassigned, owner, RESOURCE_INDEX(index));
             } else {
-                cliDefaultPrintf(dumpMask, equalsDefault, format, owner, IO_GPIOPortIdxByTag(ioTagDefault) + 'A', IO_GPIOPinIdxByTag(ioTagDefault));
+                cliDefaultPrintf(dumpMask, equalsDefault, format, owner, RESOURCE_INDEX(index), IO_GPIOPortIdxByTag(ioTagDefault) + 'A', IO_GPIOPinIdxByTag(ioTagDefault));
             }
             if (!ioTag) {
                 if (!(dumpMask & HIDE_UNUSED)) {
-                    cliDumpPrintf(dumpMask, equalsDefault, formatUnassigned, owner);
+                    cliDumpPrintf(dumpMask, equalsDefault, formatUnassigned, owner, RESOURCE_INDEX(index));
                 }
             } else {
-                cliDumpPrintf(dumpMask, equalsDefault, format, owner, IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag));
+                cliDumpPrintf(dumpMask, equalsDefault, format, owner, RESOURCE_INDEX(index), IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag));
             }
         }
     }
 }
 
-static bool resourceCheck(uint8_t resourceIndex, uint8_t index, ioTag_t tag)
+static void resourceCheck(uint8_t resourceIndex, uint8_t index, ioTag_t tag)
 {
-    const char * format = "\r\n* %s * %c%d also used by %s";
+    const char * format = "\r\n* WARNING * %c%d also used by %s";
     for (int r = 0; r < (int)ARRAYLEN(resourceTable); r++) {
-        for (int i = 0; i < (resourceTable[r].maxIndex == 0 ? 1 : resourceTable[r].maxIndex); i++) {
+        for (int i = 0; i < MAX_RESOURCE_INDEX(resourceTable[r].maxIndex); i++) {
             if (*(resourceTable[r].ptr + i) == tag) {
-                bool error = false;
+                bool cleared = false;
                 if (r == resourceIndex) {
                     if (i == index) {
                         continue;
                     }
-                    error = true;
+                    *(resourceTable[r].ptr + i) = IO_TAG_NONE;
+                    cleared = true;
                 }
 
-                cliPrintf(format, error ? "ERROR" : "WARNING", DEFIO_TAG_GPIOID(tag) + 'A', DEFIO_TAG_PIN(tag), ownerNames[resourceTable[r].owner]);
+                cliPrintf(format, DEFIO_TAG_GPIOID(tag) + 'A', DEFIO_TAG_PIN(tag), ownerNames[resourceTable[r].owner]);
                 if (resourceTable[r].maxIndex > 0) {
                     cliPrintf(" %d", RESOURCE_INDEX(i));
                 }
-                cliPrint("\r\n");
-                if (error) {
-                    return false;
+                if (cleared) {
+                    cliPrintf(". Cleared.");
                 }
+                cliPrint("\r\n");
             }
         }
     }
-    return true;
 }
 
 static void cliResource(char *cmdline)
@@ -3430,7 +3411,7 @@ static void cliResource(char *cmdline)
         return;
     } else if (strncasecmp(cmdline, "list", len) == 0) {
 #ifdef MINIMAL_CLI
-        cliPrintf("Resources:\r\n");
+        cliPrintf("IO\r\n");
 #else
         cliPrintf("Currently active IO resource assignments:\r\n(reboot to update)\r\n");
         cliRepeat('-', 20);
@@ -3439,17 +3420,18 @@ static void cliResource(char *cmdline)
             const char* owner;
             owner = ownerNames[ioRecs[i].owner];
 
+            cliPrintf("%c%02d: %s ", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
             if (ioRecs[i].index > 0) {
-                cliPrintf("%c%02d: %s %d\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, ioRecs[i].index);
-            } else {
-                cliPrintf("%c%02d: %s \r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
-            }
+                cliPrintf("%d", ioRecs[i].index);
+            } 
+            cliPrintf("\r\n");
         }
 
+        cliPrintf("\r\n\r\n");
 #ifdef MINIMAL_CLI
-        cliPrintf("\r\n\r\nDMA:\r\n");
+        cliPrintf("DMA:\r\n");
 #else
-        cliPrintf("\r\n\r\nCurrently active DMA:\r\n");
+        cliPrintf("Currently active DMA:\r\n");
         cliRepeat('-', 20);
 #endif
         for (int i = 0; i < DMA_MAX_DESCRIPTORS; i++) {
@@ -3480,7 +3462,7 @@ static void cliResource(char *cmdline)
     pch = strtok_r(cmdline, " ", &saveptr);
     for (resourceIndex = 0; ; resourceIndex++) {
         if (resourceIndex >= ARRAYLEN(resourceTable)) {
-            cliPrint("Invalid resource\r\n");
+            cliPrint("Invalid\r\n");
             return;
         }
 
@@ -3489,25 +3471,30 @@ static void cliResource(char *cmdline)
         }
     }
 
-    if (resourceTable[resourceIndex].maxIndex > 0) {
-        pch = strtok_r(NULL, " ", &saveptr);
-        index = atoi(pch);
+    pch = strtok_r(NULL, " ", &saveptr);
+    index = atoi(pch);
 
-        if (index <= 0 || index > resourceTable[resourceIndex].maxIndex) {
-            cliShowArgumentRangeError("index", 1, resourceTable[resourceIndex].maxIndex);
+    if (resourceTable[resourceIndex].maxIndex > 0 || index > 0) {
+        if (index <= 0 || index > MAX_RESOURCE_INDEX(resourceTable[resourceIndex].maxIndex)) {
+            cliShowArgumentRangeError("index", 1, MAX_RESOURCE_INDEX(resourceTable[resourceIndex].maxIndex));
             return;
         }
         index -= 1;
+
+        pch = strtok_r(NULL, " ", &saveptr);
     }
 
-    pch = strtok_r(NULL, " ", &saveptr);
     ioTag_t *tag = (ioTag_t*)(resourceTable[resourceIndex].ptr + index);
 
     uint8_t pin = 0;
     if (strlen(pch) > 0) {
         if (strcasecmp(pch, "NONE") == 0) {
             *tag = IO_TAG_NONE;
-            cliPrintf("Resource freed.\r\n");
+#ifdef MINIMAL_CLI
+            cliPrintf("Freed\r\n");
+#else
+            cliPrintf("Resource is freed\r\n");
+#endif
             return;
         } else {
             uint8_t port = (*pch) - 'A';
@@ -3521,14 +3508,15 @@ static void cliResource(char *cmdline)
                 if (pin < 16) {
                     ioRec_t *rec = IO_Rec(IOGetByTag(DEFIO_TAG_MAKE(port, pin)));
                     if (rec) {
-                        if (!resourceCheck(resourceIndex, index, DEFIO_TAG_MAKE(port, pin))) {
-                            return;
-                        }
-                        cliPrintf("\r\nResource set to %c%02d!\r\n", port + 'A', pin);
-
+                        resourceCheck(resourceIndex, index, DEFIO_TAG_MAKE(port, pin));
+#ifdef MINIMAL_CLI
+                        cliPrintf(" %c%02d set\r\n", port + 'A', pin);
+#else
+                        cliPrintf("\r\nResource is set to %c%02d!\r\n", port + 'A', pin);
+#endif
                         *tag = DEFIO_TAG_MAKE(port, pin);
                     } else {
-                        cliPrintf("Resource invalid!\r\n");
+                        cliShowParseError();
                     }
                     return;
                 }
