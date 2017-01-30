@@ -24,12 +24,15 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 
 #include "platform.h"
 
 #ifdef OSD
+
+#include "blackbox/blackbox_io.h"
 
 #include "build/debug.h"
 #include "build/version.h"
@@ -50,9 +53,8 @@
 
 #include "io/flashfs.h"
 #include "io/osd.h"
-
 #include "io/vtx.h"
-
+#include "io/asyncfatfs/asyncfatfs.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -610,6 +612,47 @@ static void osdUpdateStats(void)
         stats.max_altitude = baro.BaroAlt;
 }
 
+static void osdGetBlackboxStatusString(char * buff, uint8_t len)
+{
+    bool storageDeviceIsWorking = false;
+    uint32_t storageUsed = 0;
+    uint32_t storageTotal = 0;
+
+    switch (blackboxConfig()->device)
+    {
+#ifdef USE_SDCARD
+    case BLACKBOX_DEVICE_SDCARD:
+        storageDeviceIsWorking = sdcard_isInserted() && sdcard_isFunctional() && (afatfs_getFilesystemState() == AFATFS_FILESYSTEM_STATE_READY);
+        if (storageDeviceIsWorking) {
+            storageTotal = sdcard_getMetadata()->numBlocks / 2000;
+            storageUsed = storageTotal - (afatfs_getContiguousFreeSpace() / 1024000);
+        }
+        break;
+#endif
+
+#ifdef USE_FLASHFS
+    case BLACKBOX_DEVICE_FLASH:
+        storageDeviceIsWorking = flashfsIsReady();
+        if (storageDeviceIsWorking) {
+            const flashGeometry_t *geometry = flashfsGetGeometry();
+            storageTotal = geometry->totalSize / 1024;
+            storageUsed = flashfsGetOffset() / 1024;
+        }
+        break;
+#endif
+
+    default:
+        storageDeviceIsWorking = true;
+    }
+
+    if (storageDeviceIsWorking) {
+        uint16_t storageUsedPercent = (storageUsed * 100) / storageTotal;
+        snprintf(buff, len, "%d%%", storageUsedPercent);
+    } else {
+        snprintf(buff, len, "FAULT");
+    }
+}
+
 static void osdShowStats(void)
 {
     uint8_t top = 2;
@@ -649,6 +692,12 @@ static void osdShowStats(void)
     int32_t alt = osdGetAltitude(stats.max_altitude);
     sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
     displayWrite(osdDisplayPort, 22, top++, buff);
+
+    if (feature(FEATURE_BLACKBOX) && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
+        displayWrite(osdDisplayPort, 2, top, "BLACKBOX         :");
+        osdGetBlackboxStatusString(buff, 10);
+        displayWrite(osdDisplayPort, 22, top++, buff);
+    }
 
     refreshTimeout = 60 * REFRESH_1S;
 }
