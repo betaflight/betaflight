@@ -29,12 +29,18 @@
 
 #include "cms/cms.h"
 
-#include "common/color.h"
 #include "common/axis.h"
-#include "common/maths.h"
+#include "common/color.h"
 #include "common/filter.h"
+#include "common/maths.h"
 
-#include "drivers/sensor.h"
+#include "config/config_eeprom.h"
+#include "config/config_master.h"
+#include "config/config_profile.h"
+#include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
 #include "drivers/io.h"
@@ -45,6 +51,7 @@
 #include "drivers/rx_pwm.h"
 #include "drivers/rx_spi.h"
 #include "drivers/sdcard.h"
+#include "drivers/sensor.h"
 #include "drivers/serial.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
@@ -56,41 +63,36 @@
 #include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
 
-#include "sensors/sensors.h"
-#include "sensors/gyro.h"
-#include "sensors/compass.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/battery.h"
-#include "sensors/boardalignment.h"
+#include "flight/altitudehold.h"
+#include "flight/failsafe.h"
+#include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/navigation.h"
+#include "flight/pid.h"
+#include "flight/servos.h"
 
 #include "io/beeper.h"
-#include "io/serial.h"
 #include "io/gimbal.h"
-#include "io/motors.h"
-#include "io/servos.h"
-#include "io/ledstrip.h"
 #include "io/gps.h"
+#include "io/ledstrip.h"
+#include "io/motors.h"
 #include "io/osd.h"
+#include "io/serial.h"
+#include "io/servos.h"
 #include "io/vtx.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
 
+#include "sensors/acceleration.h"
+#include "sensors/barometer.h"
+#include "sensors/battery.h"
+#include "sensors/boardalignment.h"
+#include "sensors/compass.h"
+#include "sensors/gyro.h"
+#include "sensors/sensors.h"
+
 #include "telemetry/telemetry.h"
-
-#include "flight/mixer.h"
-#include "flight/servos.h"
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/failsafe.h"
-#include "flight/altitudehold.h"
-#include "flight/navigation.h"
-
-#include "config/config_eeprom.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
-#include "config/feature.h"
 
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
@@ -137,10 +139,10 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
 
 static void resetPidProfile(pidProfile_t *pidProfile)
 {
-    pidProfile->P8[ROLL] = 40;
+    pidProfile->P8[ROLL] = 44;
     pidProfile->I8[ROLL] = 40;
     pidProfile->D8[ROLL] = 20;
-    pidProfile->P8[PITCH] = 55;
+    pidProfile->P8[PITCH] = 58;
     pidProfile->I8[PITCH] = 50;
     pidProfile->D8[PITCH] = 22;
     pidProfile->P8[YAW] = 70;
@@ -407,6 +409,9 @@ void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
     telemetryConfig->frsky_vfas_cell_voltage = 0;
     telemetryConfig->hottAlarmSoundInterval = 5;
     telemetryConfig->pidValuesAsTelemetry = 0;
+#ifdef TELEMETRY_IBUS
+    telemetryConfig->report_cell_voltage = false;
+#endif
 }
 #endif
 
@@ -622,6 +627,10 @@ void resetSerialConfig(serialConfig_t *serialConfig)
     }
 
     serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
+#if defined(USE_VCP) && defined(USE_MSP_UART)
+    // This allows MSP connection via USART & VCP so the board can be reconfigured.
+    serialConfig->portConfigs[1].functionMask = FUNCTION_MSP;
+#endif
 }
 
 void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
@@ -692,7 +701,7 @@ void resetStatusLedConfig(statusLedConfig_t *statusLedConfig)
 #ifdef LED2_INVERTED
     | BIT(2)
 #endif
-    ;    
+    ;
 }
 
 #ifdef USE_FLASHFS
@@ -711,7 +720,7 @@ uint8_t getCurrentProfile(void)
     return masterConfig.current_profile_index;
 }
 
-void setProfile(uint8_t profileIndex)
+static void setProfile(uint8_t profileIndex)
 {
     currentProfile = &masterConfig.profile[profileIndex];
     currentControlRateProfileIndex = currentProfile->activeRateProfile;
@@ -1024,7 +1033,7 @@ void createDefaultConfig(master_t *config)
 
     /* merely to force a reset if the person inadvertently flashes the wrong target */
     strncpy(config->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER));
-    
+
 #if defined(TARGET_CONFIG)
     targetConfiguration(config);
 #endif
@@ -1035,11 +1044,14 @@ void createDefaultConfig(master_t *config)
     }
 }
 
-static void resetConf(void)
+void resetConfigs(void)
 {
     createDefaultConfig(&masterConfig);
+    pgResetAll(MAX_PROFILE_COUNT);
+    pgActivateProfile(0);
 
     setProfile(0);
+    setControlRateProfile(0);
 
 #ifdef LED_STRIP
     reevaluateLedConfig();
@@ -1289,19 +1301,51 @@ void validateAndFixGyroConfig(void)
     }
 }
 
+void readEEPROM(void)
+{
+    suspendRxSignal();
+
+    // Sanity check, read flash
+    if (!loadEEPROM()) {
+        failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
+    }
+
+//    pgActivateProfile(getCurrentProfile());
+//    setControlRateProfile(rateProfileSelection()->defaultRateProfileIndex);
+
+    if (masterConfig.current_profile_index > MAX_PROFILE_COUNT - 1) {// sanity check
+        masterConfig.current_profile_index = 0;
+    }
+
+    setProfile(masterConfig.current_profile_index);
+
+    validateAndFixConfig();
+    activateConfig();
+
+    resumeRxSignal();
+}
+
+void writeEEPROM(void)
+{
+    suspendRxSignal();
+
+    writeConfigToEEPROM();
+
+    resumeRxSignal();
+}
+
+void resetEEPROM(void)
+{
+    resetConfigs();
+    writeEEPROM();
+}
+
 void ensureEEPROMContainsValidData(void)
 {
     if (isEEPROMContentValid()) {
         return;
     }
-
     resetEEPROM();
-}
-
-void resetEEPROM(void)
-{
-    resetConf();
-    writeEEPROM();
 }
 
 void saveConfigAndNotify(void)

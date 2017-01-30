@@ -217,6 +217,8 @@ void USB_Interrupts_Config(void)
     NVIC_Init(&NVIC_InitStructure);
 }
 
+#ifdef STM32F10X
+
 /*******************************************************************************
  * Function Name  : USB_Interrupts_Disable
  * Description    : Disables the USB interrupts
@@ -237,6 +239,7 @@ void USB_Interrupts_Disable(void)
     NVIC_InitStructure.NVIC_IRQChannelCmd = DISABLE;
     NVIC_Init(&NVIC_InitStructure);
 }
+#endif
 
 /*******************************************************************************
  * Function Name  : USB_Cable_Config

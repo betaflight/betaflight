@@ -22,8 +22,8 @@
 #define LED_NUMBER 3
 
 typedef struct statusLedConfig_s {
-	ioTag_t ledTags[LED_NUMBER];
-	uint8_t polarity;
+    ioTag_t ledTags[LED_NUMBER];
+    uint8_t polarity;
 } statusLedConfig_t;
 
 // Helpful macros
