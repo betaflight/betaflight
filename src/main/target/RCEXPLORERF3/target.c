@@ -44,20 +44,20 @@ const uint16_t multiPWM[] = {
 
 const uint16_t airPPM[] = {
     PWM6  | (MAP_TO_PPM_INPUT << 8),    // PPM input
-    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
-    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM17 - can be switched to servo
-    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
+    PWM3  | (MAP_TO_SERVO_OUTPUT << 8), // TIM3
+    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM17
+    PWM4  | (MAP_TO_SERVO_OUTPUT << 8), // TIM3
     PWM1  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM1
-    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
+    PWM5  | (MAP_TO_SERVO_OUTPUT << 8), // TIM3
     0xFFFF
 };
 
 const uint16_t airPWM[] = {
-    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
-    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM17 - can be switched to servo
-    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
+    PWM3  | (MAP_TO_SERVO_OUTPUT << 8), // TIM3
+    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM17
+    PWM4  | (MAP_TO_SERVO_OUTPUT << 8), // TIM3
     PWM1  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM1
-    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
+    PWM5  | (MAP_TO_SERVO_OUTPUT << 8), // TIM3
     0xFFFF
 };
 
