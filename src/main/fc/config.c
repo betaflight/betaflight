@@ -171,8 +171,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->pidSumLimit = PIDSUM_LIMIT;
     pidProfile->yaw_lpf_hz = 0;
-    pidProfile->rollPitchItermIgnoreRate = 200;
-    pidProfile->yawItermIgnoreRate = 55;
+    pidProfile->itermWindupPointPercent = 50;
     pidProfile->dterm_filter_type = FILTER_BIQUAD;
     pidProfile->dterm_lpf_hz = 100;    // filtering ON by default
     pidProfile->dterm_notch_hz = 260;
@@ -186,7 +185,8 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->yawRateAccelLimit = 10.0f;
     pidProfile->rateAccelLimit = 0.0f;
     pidProfile->itermThrottleThreshold = 300;
-    pidProfile->itermAcceleratorGain = 4.0f;
+    pidProfile->itermAcceleratorGain = 3.0f;
+    pidProfile->itermAcceleratorRateLimit = 80;
 }
 
 void resetProfile(profile_t *profile)
@@ -283,7 +283,7 @@ void resetMotorConfig(motorConfig_t *motorConfig)
 #endif
     motorConfig->maxthrottle = 2000;
     motorConfig->mincommand = 1000;
-    motorConfig->digitalIdleOffsetPercent = 3.0f;
+    motorConfig->digitalIdleOffsetPercent = 4.5f;
 
     int motorIndex = 0;
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && motorIndex < MAX_SUPPORTED_MOTORS; i++) {
@@ -1083,9 +1083,13 @@ void validateAndFixGyroConfig(void)
         samplingTime = 0.00003125;
         // F1 and F3 can't handle high sample speed.
 #if defined(STM32F1)
-        gyroConfig()->gyro_sync_denom = constrain(gyroConfig()->gyro_sync_denom, 16, 16);
+        gyroConfig()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 16);
 #elif defined(STM32F3)
-        gyroConfig()->gyro_sync_denom = constrain(gyroConfig()->gyro_sync_denom, 4, 16);
+        gyroConfig()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 4);
+#endif
+    } else {
+#if defined(STM32F1)
+        gyroConfig()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 4);
 #endif
     }
 

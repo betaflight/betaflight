@@ -49,6 +49,8 @@
 
 #ifdef STM32F3
 #define USE_DSHOT
+#undef GPS
+#define MINIMAL_CLI
 #endif
 
 #ifdef STM32F1
@@ -56,7 +58,7 @@
 #define USE_UART1_RX_DMA
 #define USE_UART1_TX_DMA
 
-#define CLI_MINIMAL_VERBOSITY
+#define MINIMAL_CLI
 #endif
 
 #define SERIAL_RX
@@ -108,7 +110,5 @@
 #define VTX_SMARTAUDIO
 #define VTX_TRAMP
 #define USE_SENSOR_NAMES
-#else
-#define SKIP_CLI_COMMAND_HELP
 #endif
 

@@ -105,6 +105,7 @@ typedef void(*pwmCompleteWriteFuncPtr)(uint8_t motorCount);   // function pointe
 typedef struct {
     volatile timCCR_t *ccr;
     TIM_TypeDef *tim;
+    bool forceOverflow;
     uint16_t period;
     bool enabled;
     IO_t io;
