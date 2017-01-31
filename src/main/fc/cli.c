@@ -320,6 +320,10 @@ static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "NOTCH"
 };
 
+static const char * const lookupTableNoSignalThrottle[] = {
+    "HOLD", "DROP"
+};
+
 typedef struct lookupTableEntry_s {
     const char * const *values;
     const uint8_t valueCount;
@@ -375,6 +379,7 @@ typedef enum {
     TABLE_OSD,
 #endif
     TABLE_DEBUG,
+    TABLE_RX_NOSIGNAL_THROTTLE,
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
@@ -428,6 +433,7 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
 #endif
     { lookupTableDebug, sizeof(lookupTableDebug) / sizeof(char *) },
+    { lookupTableNoSignalThrottle, sizeof(lookupTableNoSignalThrottle) / sizeof(char *) },
 };
 
 #define VALUE_TYPE_OFFSET 0
@@ -567,6 +573,7 @@ static const clivalue_t valueTable[] = {
 #endif
     { "rx_min_usec",                VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rx_min_usec) },
     { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rx_max_usec) },
+    { "rx_nosignal_throttle",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RX_NOSIGNAL_THROTTLE }, PG_RX_CONFIG, offsetof(rxConfig_t, rxNoSignalThrottleBehavior) },
 
 // PG_BLACKBOX_CONFIG
 #ifdef BLACKBOX
