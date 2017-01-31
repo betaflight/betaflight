@@ -36,7 +36,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM2, CH1, PA15, TIM_USE_PWM,                 TIMER_INPUT_ENABLED),
     DEF_TIM(TIM2, CH3, PA2,  TIM_USE_PWM,                 TIMER_INPUT_ENABLED),
     DEF_TIM(TIM2, CH4, PB11, TIM_USE_PWM,                 TIMER_INPUT_ENABLED),
-    DEF_TIM(TIM16,CH1N,PA13, TIM_USE_PWM,                 TIMER_INPUT_ENABLED), // KISSCC new softserial?
+    //DEF_TIM(TIM16,CH1N,PA13, TIM_USE_PWM,                 TIMER_INPUT_ENABLED), // KISSCC bidirectional softserial needs to be added
 #else
     DEF_TIM(TIM1, CH2N,PB14, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED),
     DEF_TIM(TIM8, CH2N,PB0,  TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED),
