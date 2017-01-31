@@ -3373,9 +3373,18 @@ static void printResource(uint8_t dumpMask, const master_t *defaultConfig)
     }
 }
 
+static void printResourceOwner(uint8_t owner, uint8_t index)
+{
+    cliPrintf("%s", ownerNames[resourceTable[owner].owner]);
+
+    if (resourceTable[owner].maxIndex > 0) {
+        cliPrintf(" %d", RESOURCE_INDEX(index));
+    }
+}
+
 static void resourceCheck(uint8_t resourceIndex, uint8_t index, ioTag_t tag)
 {
-    const char * format = "\r\n* NOTE * %c%d moved from %s";
+    const char * format = "\r\nNOTE: %c%02d already assigned to ";
     for (int r = 0; r < (int)ARRAYLEN(resourceTable); r++) {
         for (int i = 0; i < MAX_RESOURCE_INDEX(resourceTable[r].maxIndex); i++) {
             if (*(resourceTable[r].ptr + i) == tag) {
@@ -3388,14 +3397,17 @@ static void resourceCheck(uint8_t resourceIndex, uint8_t index, ioTag_t tag)
                     cleared = true;
                 }
 
-                cliPrintf(format, DEFIO_TAG_GPIOID(tag) + 'A', DEFIO_TAG_PIN(tag), ownerNames[resourceTable[r].owner]);
-                if (resourceTable[r].maxIndex > 0) {
-                    cliPrintf(" %d", RESOURCE_INDEX(i));
-                }
+                cliPrintf(format, DEFIO_TAG_GPIOID(tag) + 'A', DEFIO_TAG_PIN(tag));
+
+                printResourceOwner(r, i);
+
                 if (cleared) {
-                    cliPrintf(". Cleared.");
+                    cliPrintf(". ");
+                    printResourceOwner(r, i);
+                    cliPrintf(" disabled");
                 }
-                cliPrint("\r\n");
+
+                cliPrint(".\r\n");
             }
         }
     }
