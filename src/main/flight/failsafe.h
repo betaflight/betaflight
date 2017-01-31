@@ -95,7 +95,7 @@ typedef struct failsafeState_s {
     int16_t lastGoodRcCommand[4];
 } failsafeState_t;
 
-void failsafeInit(uint16_t deadband3d_throttle);
+void failsafeInit(void);
 void failsafeReset(void);
 
 void failsafeStartMonitoring(void);
