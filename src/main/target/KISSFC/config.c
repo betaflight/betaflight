@@ -19,18 +19,34 @@
 #include <stdint.h>
 
 #include <platform.h>
+
+#include "common/utils.h"
+
 #include "drivers/io.h"
 
-#include "drivers/timer.h"
-#include "drivers/timer_def.h"
-#include "drivers/dma.h"
+#include "fc/rc_controls.h"
 
-const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    DEF_TIM(TIM1,  CH1, PA8, TIM_USE_MOTOR, 1), // PWM3 - PA8
-    DEF_TIM(TIM17, CH1, PA7, TIM_USE_MOTOR, 1), // PWM2 - PA7
-    DEF_TIM(TIM3,  CH3, PB0, TIM_USE_MOTOR, 1), // PWM4 - PB0
-    DEF_TIM(TIM3,  CH2, PA4, TIM_USE_MOTOR, 1), // PWM1 - PA4
-    DEF_TIM(TIM3,  CH4, PB1, TIM_USE_MOTOR, 1), // PWM5 - PB1
-    DEF_TIM(TIM2,  CH2, PA1, TIM_USE_PPM,   0), // PWM6 - PPM
-    DEF_TIM(TIM16, CH1, PB8, TIM_USE_LED,   0), // PWM6 - PPM
-};
+#include "flight/failsafe.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
+
+#include "rx/rx.h"
+
+#include "config/config_profile.h"
+#include "config/config_master.h"
+
+#include "sensors/boardalignment.h"
+
+
+void targetConfiguration(master_t *config)
+{
+    UNUSED(config);
+
+#ifdef KISSCC
+    // alternative defaults settings for Beebrain target
+    config->boardAlignment.rollDegrees = 180;
+    config->boardAlignment.pitchDegrees = 0;
+    config->boardAlignment.yawDegrees = 0;
+#endif
+}
+
