@@ -26,25 +26,29 @@ typedef enum {
     VTXDEV_UNKNOWN    = 0xFF,
 } vtxDevType_e;
 
-struct vtxVTable_s;
-
-typedef struct vtxDevice_s {
-    const struct vtxVTable_s *vTable;
+typedef struct vtxDeviceParameter_s {
+    uint8_t deviceType;
 
     uint8_t numBand;
     uint8_t numChan;
     uint8_t numPower;
 
     uint16_t *freqTable;  // Array of [numBand][numChan]
-    char **bandNames;    // char *bandNames[numBand]
-    char **chanNames;    // char *chanNames[numChan]
-    char **powerNames;   // char *powerNames[numPower]
+    char **bandNames;    // char *bandNames[numBand + 1]
+    char *bandLetters;   // char bandLetters[numBand + 1]
+    char **chanNames;    // char *chanNames[numChan + 1]
+    char **powerNames;   // char *powerNames[numPower + 1]
+} vtxDeviceParameter_t;
 
+struct vtxVTable_s;
+
+typedef struct vtxDevice_s {
+    const struct vtxVTable_s *vTable;
+    const vtxDeviceParameter_t devParam;
     uint8_t curBand;
     uint8_t curChan;
     uint8_t curPowerIndex;
     uint8_t curPitState; // 0 = non-PIT, 1 = PIT
-
 } vtxDevice_t;
 
 // {set,get}BandChan: band and chan are 1 origin
@@ -63,6 +67,8 @@ typedef struct vtxVTable_s {
     bool (*getBandChan)(uint8_t *pBand, uint8_t *pChan);
     bool (*getPowerIndex)(uint8_t *pIndex);
     bool (*getPitmode)(uint8_t *pOnoff);
+
+    vtxDeviceParameter_t (*getDeviceParameter)(void);
 } vtxVTable_t;
 
 // 3.1.0
@@ -82,3 +88,8 @@ void vtxCommonSetPitmode(uint8_t onoff);
 bool vtxCommonGetBandChan(uint8_t *pBand, uint8_t *pChan);
 bool vtxCommonGetPowerIndex(uint8_t *pIndex);
 bool vtxCommonGetPitmode(uint8_t *pOnoff);
+
+// API 1.1
+const vtxDeviceParameter_t *vtxCommonGetDeviceParameter(void);
+char *vtxCommonGetBandChanString(void);
+char *vtxCommonGetFreqString(void);

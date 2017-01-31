@@ -23,9 +23,11 @@
 #include <string.h>
 
 #include "platform.h"
-#include "build/debug.h"
-
 #if defined(VTX_COMMON)
+
+#include "common/typeconversion.h"
+
+#include "build/debug.h"
 
 #include "vtx_common.h"
 
@@ -65,7 +67,7 @@ void vtxCommonSetBandChan(uint8_t band, uint8_t chan)
     if (!vtxDevice)
         return;
 
-    if ((band > vtxDevice->numBand)|| (chan > vtxDevice->numChan))
+    if ((band > vtxDevice->devParam.numBand)|| (chan > vtxDevice->devParam.numChan))
         return;
     
     if (vtxDevice->vTable->setBandChan)
@@ -78,7 +80,7 @@ void vtxCommonSetPowerByIndex(uint8_t index)
     if (!vtxDevice)
         return;
 
-    if (index > vtxDevice->numPower)
+    if (index > vtxDevice->devParam.numPower)
         return;
     
     if (vtxDevice->vTable->setPowerByIndex)
@@ -126,5 +128,44 @@ bool vtxCommonGetPitmode(uint8_t *pOnoff)
         return vtxDevice->vTable->getPitmode(pOnoff);
     else
         return false;
+}
+
+const vtxDeviceParameter_t *vtxCommonGetDeviceParameter(void)
+{
+    if (!vtxDevice)
+        return NULL;
+
+    return(&vtxDevice->devParam);
+}
+
+char *vtxCommonGetBandChanString(void)
+{
+    static char strbuf[3];
+    uint8_t curBand;
+    uint8_t curChan;
+
+    if (vtxDevice && vtxCommonGetBandChan(&curBand, &curChan)) {
+        strbuf[0] = vtxDevice->devParam.bandLetters[curBand];
+        strbuf[1] = vtxDevice->devParam.chanNames[curChan][0];
+        strbuf[2] = 0;
+        return strbuf;
+    }
+
+    return NULL;
+}
+
+// XXX Some device operating in non-band/chan mode requires special handling.
+char *vtxCommonGetFreqString(void)
+{
+    static char strbuf[5];
+    uint8_t curBand;
+    uint8_t curChan;
+
+    if (vtxDevice && vtxCommonGetBandChan(&curBand, &curChan)) {
+        itoa(vtxDevice->devParam.freqTable[(curBand - 1) * vtxDevice->devParam.numBand + curChan], strbuf, 10);
+        return strbuf;
+    }
+
+    return NULL;
 }
 #endif
