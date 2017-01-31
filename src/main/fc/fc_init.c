@@ -512,7 +512,7 @@ void init(void)
     cliInit(serialConfig());
 #endif
 
-    failsafeInit(flight3DConfig()->deadband3d_throttle);
+    failsafeInit();
 
     rxInit();
 

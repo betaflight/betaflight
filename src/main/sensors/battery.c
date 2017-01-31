@@ -185,7 +185,7 @@ int32_t currentSensorToCentiamps(uint16_t src)
     return (millivolts * 1000) / (int32_t)batteryConfig()->currentMeterScale; // current in 0.01A steps
 }
 
-void currentMeterUpdate(int32_t lastUpdateAt, uint16_t deadband3d_throttle)
+void currentMeterUpdate(int32_t lastUpdateAt)
 {
     static int32_t amperageRaw = 0;
     static int64_t mAhdrawnRaw = 0;
@@ -201,7 +201,7 @@ void currentMeterUpdate(int32_t lastUpdateAt, uint16_t deadband3d_throttle)
         case CURRENT_SENSOR_VIRTUAL:
             amperage = (int32_t)batteryConfig()->currentMeterOffset;
             if (ARMING_FLAG(ARMED)) {
-                throttleStatus_e throttleStatus = calculateThrottleStatus(deadband3d_throttle);
+                throttleStatus_e throttleStatus = calculateThrottleStatus();
                 if (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP))
                     throttleOffset = 0;
                 throttleFactor = throttleOffset + (throttleOffset * throttleOffset / 50);

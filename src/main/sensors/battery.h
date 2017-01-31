@@ -74,7 +74,7 @@ batteryState_e getBatteryState(void);
 void batteryUpdate(uint32_t vbatTimeDelta);
 void batteryInit(void);
 
-void currentMeterUpdate(int32_t lastUpdateAt, uint16_t deadband3d_throttle);
+void currentMeterUpdate(int32_t lastUpdateAt);
 int32_t currentMeterToCentiamps(uint16_t src);
 
 uint8_t calculateBatteryPercentage(void);

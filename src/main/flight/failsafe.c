@@ -60,8 +60,6 @@
 
 static failsafeState_t failsafeState;
 
-static uint16_t deadband3dThrottle;           // default throttle deadband from MIDRC
-
 PG_REGISTER_WITH_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
 
 PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
@@ -148,9 +146,8 @@ void failsafeReset(void)
     failsafeState.rxLinkState = FAILSAFE_RXLINK_DOWN;
 }
 
-void failsafeInit(uint16_t deadband3d_throttle)
+void failsafeInit(void)
 {
-    deadband3dThrottle = deadband3d_throttle;
     failsafeState.events = 0;
     failsafeState.monitoring = false;
 
@@ -332,7 +329,7 @@ void failsafeUpdateState(void)
             case FAILSAFE_IDLE:
                 if (armed) {
                     // Track throttle command below minimum time
-                    if (THROTTLE_HIGH == calculateThrottleStatus(deadband3dThrottle)) {
+                    if (THROTTLE_HIGH == calculateThrottleStatus()) {
                         failsafeState.throttleLowPeriod = millis() + failsafeConfig()->failsafe_throttle_low_delay * MILLIS_PER_TENTH_SECOND;
                     }
                     // Kill switch logic (must be independent of receivingRxData to skip PERIOD_RXDATA_FAILURE delay before disarming)

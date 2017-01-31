@@ -188,12 +188,12 @@ static void sendGpsAltitude(void)
 }
 #endif
 
-static void sendThrottleOrBatterySizeAsRpm(uint16_t deadband3d_throttle)
+static void sendThrottleOrBatterySizeAsRpm(void)
 {
     uint16_t throttleForRPM = rcCommand[THROTTLE] / BLADE_NUMBER_DIVIDER;
     sendDataHead(ID_RPM);
     if (ARMING_FLAG(ARMED)) {
-        const throttleStatus_e throttleStatus = calculateThrottleStatus(deadband3d_throttle);
+        const throttleStatus_e throttleStatus = calculateThrottleStatus();
         if (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP))
                     throttleForRPM = 0;
         serialize16(throttleForRPM);
@@ -519,7 +519,7 @@ void handleFrSkyTelemetry(void)
 
     if ((cycleNum % 8) == 0) {      // Sent every 1s
         sendTemperature1();
-        sendThrottleOrBatterySizeAsRpm(flight3DConfig()->deadband3d_throttle);
+        sendThrottleOrBatterySizeAsRpm();
 
         if (feature(FEATURE_VBAT)) {
             sendVoltage();
