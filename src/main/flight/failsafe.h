@@ -41,6 +41,8 @@ typedef struct failsafeConfig_s {
     int16_t failsafe_fw_roll_angle;         // Settings to be applies during "LAND" procedure on a fixed-wing
     int16_t failsafe_fw_pitch_angle;
     int16_t failsafe_fw_yaw_rate;
+
+    uint16_t failsafe_stick_motion_threshold;
 } failsafeConfig_t;
 
 PG_DECLARE(failsafeConfig_t, failsafeConfig);
@@ -76,13 +78,6 @@ typedef enum {
     RTH_HAS_LANDED              // RTH is active and has landed.
 } rthState_e;
 
-typedef enum {
-    FAILSAFE_CONTROL_NONE       = 0,
-    FAILSAFE_CONTROL_RPY        = 1 << 0,
-    FAILSAFE_CONTROL_THROTTLE   = 1 << 1,
-    FAILSAFE_CONTROL_ALL        = (FAILSAFE_CONTROL_RPY | FAILSAFE_CONTROL_THROTTLE)
-} failsafeControlChannels_e;
-
 typedef struct failsafeState_s {
     int16_t events;
     bool monitoring;
@@ -97,7 +92,7 @@ typedef struct failsafeState_s {
     timeMs_t receivingRxDataPeriodPreset;   // preset for the required period of valid rxData
     failsafePhase_e phase;
     failsafeRxLinkState_e rxLinkState;
-    failsafeControlChannels_e shouldApplyControlInput;
+    int16_t lastGoodRcCommand[4];
 } failsafeState_t;
 
 void failsafeInit(uint16_t deadband3d_throttle);
@@ -114,7 +109,8 @@ void failsafeOnRxSuspend(uint32_t suspendPeriod);
 void failsafeOnRxResume(void);
 bool failsafeMayRequireNavigationMode(void);
 void failsafeApplyControlInput(void);
-failsafeControlChannels_e failsafeShouldApplyControlInput(void);
+bool failsafeRequiresAngleMode(void);
+void failsafeUpdateRcCommandValues(void);
 
 void failsafeOnValidDataReceived(void);
 void failsafeOnValidDataFailed(void);

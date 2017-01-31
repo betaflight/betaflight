@@ -120,7 +120,8 @@ PG_RESET_TEMPLATE(rxConfig_t, rxConfig,
     .rssi_channel = 0,
     .rssi_scale = RSSI_SCALE_DEFAULT,
     .rssi_ppm_invert = 0,
-    .rcSmoothing = 1
+    .rcSmoothing = 1,
+    .rxNoSignalThrottleBehavior = RX_NOSIGNAL_THROTTLE_HOLD,
 );
 
 void resetAllRxChannelRangeConfigurations(void)
@@ -417,11 +418,12 @@ static uint16_t getRxNosignalValue(uint8_t channel)
             return rxConfig()->midrc;
 
         case THROTTLE:
-            if (feature(FEATURE_3D))
-                return rxConfig()->midrc;
-            else
-                //return rxConfig()->rx_min_usec;
+            if (rxConfig()->rxNoSignalThrottleBehavior == RX_NOSIGNAL_THROTTLE_DROP) {
+                return feature(FEATURE_3D) ? rxConfig()->midrc : rxConfig()->rx_min_usec;
+            }
+            else {
                 return rcData[channel];
+            }
 
         default:
             return rcData[channel];
