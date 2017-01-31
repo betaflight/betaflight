@@ -107,6 +107,7 @@ void failsafeOnRxSuspend(uint32_t suspendPeriod);
 void failsafeOnRxResume(void);
 bool failsafeMayRequireNavigationMode(void);
 void failsafeApplyControlInput(void);
+bool failsafeRequiresAngleMode(void);
 void failsafeUpdateRcCommandValues(void);
 
 void failsafeOnValidDataReceived(void);

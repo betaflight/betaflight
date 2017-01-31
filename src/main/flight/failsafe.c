@@ -84,11 +84,13 @@ typedef enum {
 } failsafeChannelBehavior_e;
 
 typedef struct {
+    bool                        forceAngleMode;
     failsafeChannelBehavior_e   channelBehavior[4];
 } failsafeProcedureLogic_t;
 
 static const failsafeProcedureLogic_t failsafeProcedureLogic[] = {
     [FAILSAFE_PROCEDURE_AUTO_LANDING] = {
+            .forceAngleMode = true,
             .channelBehavior = {
                 FAILSAFE_CHANNEL_AUTO,          // ROLL
                 FAILSAFE_CHANNEL_AUTO,          // PITCH
@@ -98,6 +100,7 @@ static const failsafeProcedureLogic_t failsafeProcedureLogic[] = {
     },
 
     [FAILSAFE_PROCEDURE_DROP_IT] = {
+            .forceAngleMode = true,
             .channelBehavior = {
                 FAILFAFE_CHANNEL_NEUTRAL,       // ROLL
                 FAILFAFE_CHANNEL_NEUTRAL,       // PITCH
@@ -107,6 +110,7 @@ static const failsafeProcedureLogic_t failsafeProcedureLogic[] = {
     },
 
     [FAILSAFE_PROCEDURE_RTH] = {
+            .forceAngleMode = true,
             .channelBehavior = {
                 FAILFAFE_CHANNEL_NEUTRAL,       // ROLL
                 FAILFAFE_CHANNEL_NEUTRAL,       // PITCH
@@ -116,6 +120,7 @@ static const failsafeProcedureLogic_t failsafeProcedureLogic[] = {
     },
 
     [FAILSAFE_PROCEDURE_NONE] = {
+            .forceAngleMode = false,
             .channelBehavior = {
                 FAILSAFE_CHANNEL_HOLD,          // ROLL
                 FAILSAFE_CHANNEL_HOLD,          // PITCH
@@ -171,6 +176,11 @@ bool failsafeIsMonitoring(void)
 bool failsafeIsActive(void)
 {
     return failsafeState.active;
+}
+
+bool failsafeRequiresAngleMode(void)
+{
+    return failsafeState.active && failsafeProcedureLogic[failsafeConfig()->failsafe_procedure].forceAngleMode;
 }
 
 void failsafeStartMonitoring(void)
