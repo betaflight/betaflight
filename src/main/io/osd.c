@@ -456,9 +456,9 @@ void pgResetFn_osdConfig(osdConfig_t *instance)
     instance->item_pos[OSD_GPS_SPEED] = OSD_POS(2, 2);
     instance->item_pos[OSD_GPS_SATS] = OSD_POS(2, 12);
     instance->item_pos[OSD_ALTITUDE] = OSD_POS(1, 5);
-    instance->item_pos[OSD_ROLL_PIDS] = OSD_POS(2, 10) | VISIBLE_FLAG;
-    instance->item_pos[OSD_PITCH_PIDS] = OSD_POS(2, 11) | VISIBLE_FLAG;
-    instance->item_pos[OSD_YAW_PIDS] = OSD_POS(2, 12) | VISIBLE_FLAG;
+    instance->item_pos[OSD_ROLL_PIDS] = OSD_POS(2, 10);
+    instance->item_pos[OSD_PITCH_PIDS] = OSD_POS(2, 11);
+    instance->item_pos[OSD_YAW_PIDS] = OSD_POS(2, 12);
     instance->item_pos[OSD_POWER] = OSD_POS(15, 1);
 
     instance->rssi_alarm = 20;
