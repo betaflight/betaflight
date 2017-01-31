@@ -41,6 +41,8 @@ typedef struct failsafeConfig_s {
     int16_t failsafe_fw_roll_angle;         // Settings to be applies during "LAND" procedure on a fixed-wing
     int16_t failsafe_fw_pitch_angle;
     int16_t failsafe_fw_yaw_rate;
+
+    uint16_t failsafe_stick_motion_threshold;
 } failsafeConfig_t;
 
 PG_DECLARE(failsafeConfig_t, failsafeConfig);

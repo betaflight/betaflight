@@ -75,6 +75,7 @@ PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
     .failsafe_fw_roll_angle = -200,     // 20 deg left
     .failsafe_fw_pitch_angle = 100,     // 10 deg dive (yes, positive means dive)
     .failsafe_fw_yaw_rate = -45,        // 45 deg/s left yaw (4s for full turn)
+    .failsafe_stick_motion_threshold = 0,
 );
 
 typedef enum {
@@ -289,15 +290,32 @@ void failsafeOnValidDataFailed(void)
     }
 }
 
+static bool failsafeCheckStickMotion(void)
+{
+    if (failsafeConfig()->failsafe_stick_motion_threshold > 0) {
+        uint32_t totalRcDelta = 0;
+
+        totalRcDelta += ABS(rcData[ROLL] - rxConfig()->midrc);
+        totalRcDelta += ABS(rcData[PITCH] - rxConfig()->midrc);
+        totalRcDelta += ABS(rcData[YAW] - rxConfig()->midrc);
+
+        return totalRcDelta >= failsafeConfig()->failsafe_stick_motion_threshold;
+    }
+    else {
+        return true;
+    }
+}
+
 void failsafeUpdateState(void)
 {
     if (!failsafeIsMonitoring()) {
         return;
     }
 
-    bool receivingRxData = failsafeIsReceivingRxData();
-    bool armed = ARMING_FLAG(ARMED);
-    bool failsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
+    const bool receivingRxData = failsafeIsReceivingRxData();
+    const bool armed = ARMING_FLAG(ARMED);
+    const bool failsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
+    const bool sticksAreMoving = failsafeCheckStickMotion();
     beeperMode_e beeperMode = BEEPER_SILENCE;
 
     // Beep RX lost only if we are not seeing data and we have been armed earlier
@@ -381,7 +399,7 @@ void failsafeUpdateState(void)
 
             /* A very simple do-nothing failsafe procedure. The only thing it will do is monitor the receiver state and switch out of FAILSAFE condition */
             case FAILSAFE_RX_LOSS_IDLE:
-                if (receivingRxData) {
+                if (receivingRxData && sticksAreMoving) {
                     failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                     reprocessState = true;
                 }
@@ -389,7 +407,7 @@ void failsafeUpdateState(void)
 
 #if defined(NAV)
             case FAILSAFE_RETURN_TO_HOME:
-                if (receivingRxData) {
+                if (receivingRxData && sticksAreMoving) {
                     abortForcedRTH();
                     failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                     reprocessState = true;
@@ -420,7 +438,7 @@ void failsafeUpdateState(void)
 #endif
 
             case FAILSAFE_LANDING:
-                if (receivingRxData) {
+                if (receivingRxData && sticksAreMoving) {
                     failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                     reprocessState = true;
                 }
