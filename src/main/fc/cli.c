@@ -950,6 +950,9 @@ static systemConfig_t systemConfigCopy;
 #ifdef BEEPER
 static beeperConfig_t beeperConfigCopy;
 #endif
+#ifdef SONAR
+static rangefinderConfig_t rangefinderConfigCopy;
+#endif
 static controlRateConfig_t controlRateProfilesCopy[MAX_CONTROL_RATE_PROFILE_COUNT];
 static pidProfile_t pidProfileCopy[MAX_PROFILE_COUNT];
 static modeActivationOperatorConfig_t modeActivationOperatorConfigCopy;
@@ -1300,9 +1303,15 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.defaultConfig = adjustmentRanges(0);
         break;
     case PG_BEEPER_CONFIG:
-       ret.currentConfig = &beeperConfigCopy;
-       ret.defaultConfig = beeperConfig();
-       break;
+        ret.currentConfig = &beeperConfigCopy;
+        ret.defaultConfig = beeperConfig();
+        break;
+#ifdef SONAR
+    case PG_RANGEFINDER_CONFIG:
+        ret.currentConfig = &rangefinderConfigCopy;
+        ret.defaultConfig = rangefinderConfig();
+        break;
+#endif
     default:
         ret.currentConfig = NULL;
         ret.defaultConfig = NULL;
