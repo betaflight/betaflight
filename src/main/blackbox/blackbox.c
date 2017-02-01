@@ -24,6 +24,9 @@
 
 #ifdef BLACKBOX
 
+#include "blackbox.h"
+#include "blackbox_io.h"
+
 #include "build/debug.h"
 #include "build/version.h"
 
@@ -31,8 +34,10 @@
 #include "common/encoding.h"
 #include "common/utils.h"
 
-#include "blackbox.h"
-#include "blackbox_io.h"
+#include "config/config_profile.h"
+#include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/sensor.h"
 #include "drivers/compass.h"
@@ -43,17 +48,21 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/failsafe.h"
 #include "flight/pid.h"
 
 #include "io/beeper.h"
+#include "io/serial.h"
 
-#include "sensors/sensors.h"
+#include "rx/rx.h"
+
+#include "sensors/acceleration.h"
+#include "sensors/barometer.h"
+#include "sensors/battery.h"
 #include "sensors/compass.h"
+#include "sensors/compass.h"
+#include "sensors/gyro.h"
 #include "sensors/sonar.h"
-
-#include "config/config_profile.h"
-#include "config/config_master.h"
-#include "config/feature.h"
 
 #define BLACKBOX_I_INTERVAL 32
 #define BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS 200
@@ -761,16 +770,16 @@ void validateBlackboxConfig()
 
     if (blackboxConfig()->rate_num == 0 || blackboxConfig()->rate_denom == 0
             || blackboxConfig()->rate_num >= blackboxConfig()->rate_denom) {
-        blackboxConfig()->rate_num = 1;
-        blackboxConfig()->rate_denom = 1;
+        blackboxConfigMutable()->rate_num = 1;
+        blackboxConfigMutable()->rate_denom = 1;
     } else {
         /* Reduce the fraction the user entered as much as possible (makes the recorded/skipped frame pattern repeat
          * itself more frequently)
          */
         div = gcd(blackboxConfig()->rate_num, blackboxConfig()->rate_denom);
 
-        blackboxConfig()->rate_num /= div;
-        blackboxConfig()->rate_denom /= div;
+        blackboxConfigMutable()->rate_num /= div;
+        blackboxConfigMutable()->rate_denom /= div;
     }
 
     // If we've chosen an unsupported device, change the device to serial
@@ -786,7 +795,7 @@ void validateBlackboxConfig()
         break;
 
         default:
-            blackboxConfig()->device = BLACKBOX_DEVICE_SERIAL;
+            blackboxConfigMutable()->device = BLACKBOX_DEVICE_SERIAL;
     }
 }
 
@@ -820,7 +829,7 @@ void startBlackbox(void)
          */
         blackboxBuildConditionCache();
 
-        blackboxModeActivationConditionPresent = isModeActivationConditionPresent(modeActivationProfile()->modeActivationConditions, BOXBLACKBOX);
+        blackboxModeActivationConditionPresent = isModeActivationConditionPresent(modeActivationConditions(0), BOXBLACKBOX);
 
         blackboxIteration = 0;
         blackboxPFrameIndex = 0;

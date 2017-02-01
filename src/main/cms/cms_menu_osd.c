@@ -21,6 +21,8 @@
 
 #include "platform.h"
 
+#if defined(OSD) && defined(CMS)
+
 #include "build/version.h"
 
 #include "cms/cms.h"
@@ -28,10 +30,9 @@
 #include "cms/cms_menu_osd.h"
 
 #include "config/config_profile.h"
-#include "config/config_master.h"
 #include "config/feature.h"
-
-#if defined(OSD) && defined(CMS)
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 OSD_UINT8_t entryAlarmRssi = {&osdProfile()->rssi_alarm, 5, 90, 5};
 OSD_UINT16_t entryAlarmCapacity = {&osdProfile()->cap_alarm, 50, 30000, 50};

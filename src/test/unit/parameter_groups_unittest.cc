@@ -29,7 +29,7 @@ extern "C" {
 
     #include "io/motors.h"
 
-PG_DECLARE(motorConfig_t, motorConfig);
+//PG_DECLARE(motorConfig_t, motorConfig);
 
 PG_REGISTER_WITH_RESET_TEMPLATE(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 1);
 

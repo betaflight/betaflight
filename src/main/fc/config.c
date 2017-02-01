@@ -914,7 +914,7 @@ void activateConfig(void)
 #endif
 
     useFailsafeConfig(&masterConfig.failsafeConfig);
-    setAccelerationTrims(&accelerometerConfig()->accZero);
+    setAccelerationTrims(&accelerometerConfigMutable()->accZero);
     setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
 
     mixerUseConfigs(
@@ -951,7 +951,7 @@ void activateConfig(void)
 void validateAndFixConfig(void)
 {
     if((motorConfig()->motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)){
-        motorConfig()->mincommand = 1000;
+        motorConfigMutable()->mincommand = 1000;
     }
 
     if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP) || featureConfigured(FEATURE_RX_SPI))) {
@@ -1064,18 +1064,18 @@ void validateAndFixGyroConfig(void)
 {
     // Prevent invalid notch cutoff
     if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1) {
-        gyroConfig()->gyro_soft_notch_hz_1 = 0;
+        gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
     }
     if (gyroConfig()->gyro_soft_notch_cutoff_2 >= gyroConfig()->gyro_soft_notch_hz_2) {
-        gyroConfig()->gyro_soft_notch_hz_2 = 0;
+        gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
     }
 
     float samplingTime = 0.000125f;
 
     if (gyroConfig()->gyro_lpf != GYRO_LPF_256HZ && gyroConfig()->gyro_lpf != GYRO_LPF_NONE) {
-        pidConfig()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
-        gyroConfig()->gyro_sync_denom = 1;
-        gyroConfig()->gyro_use_32khz = false;
+        pidConfigMutable()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
+        gyroConfigMutable()->gyro_sync_denom = 1;
+        gyroConfigMutable()->gyro_use_32khz = false;
         samplingTime = 0.001f;
     }
 
@@ -1083,18 +1083,18 @@ void validateAndFixGyroConfig(void)
         samplingTime = 0.00003125;
         // F1 and F3 can't handle high sample speed.
 #if defined(STM32F1)
-        gyroConfig()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 16);
+        gyroConfigMutable()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 16);
 #elif defined(STM32F3)
-        gyroConfig()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 4);
+        gyroConfigMutable()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 4);
 #endif
     } else {
 #if defined(STM32F1)
-        gyroConfig()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 4);
+        gyroConfigMutable()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 4);
 #endif
     }
 
 #if !defined(GYRO_USES_SPI) || !defined(USE_MPU_DATA_READY_SIGNAL)
-    gyroConfig()->gyro_isr_update = false;
+    gyroConfigMutable()->gyro_isr_update = false;
 #endif
 
     // check for looptime restrictions based on motor protocol. Motor times have safety margin
@@ -1123,14 +1123,14 @@ void validateAndFixGyroConfig(void)
     }
 
     if(pidLooptime < motorUpdateRestriction)
-        pidConfig()->pid_process_denom = motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom);
+        pidConfigMutable()->pid_process_denom = motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom);
 
     // Prevent overriding the max rate of motors
     if(motorConfig()->useUnsyncedPwm && (motorConfig()->motorPwmProtocol <= PWM_TYPE_BRUSHED)) {
         uint32_t maxEscRate = lrintf(1.0f / motorUpdateRestriction);
 
         if(motorConfig()->motorPwmRate > maxEscRate)
-            motorConfig()->motorPwmRate = maxEscRate;
+            motorConfigMutable()->motorPwmRate = maxEscRate;
     }
 }
 

@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
 #include "drivers/accgyro.h"
 #include "common/axis.h"
 
@@ -58,6 +59,8 @@ typedef struct gyroConfig_s {
     uint16_t gyro_soft_notch_hz_2;
     uint16_t gyro_soft_notch_cutoff_2;
 } gyroConfig_t;
+
+PG_DECLARE(gyroConfig_t, gyroConfig);
 
 void gyroSetCalibrationCycles(void);
 bool gyroInit(const gyroConfig_t *gyroConfigToUse);

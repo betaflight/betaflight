@@ -23,11 +23,11 @@ typedef enum {
 } frskyVFasPrecision_e;
 
 struct rxConfig_s;
-void handleFrSkyTelemetry(struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);
+void handleFrSkyTelemetry(const struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);
 void checkFrSkyTelemetryState(void);
 
 struct telemetryConfig_s;
-void initFrSkyTelemetry(struct telemetryConfig_s *telemetryConfig);
+void initFrSkyTelemetry(const struct telemetryConfig_s *telemetryConfig);
 void configureFrSkyTelemetryPort(void);
 void freeFrSkyTelemetryPort(void);
 

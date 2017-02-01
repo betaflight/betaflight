@@ -19,6 +19,8 @@
 #include <string.h>
 #include <stdint.h>
 
+#include "platform.h"
+
 #include "parameter_group.h"
 #include "common/maths.h"
 
@@ -122,4 +124,3 @@ void pgActivateProfile(int profileIndex)
         }
     }
 }
-

@@ -34,7 +34,7 @@
 #define THROTTLE_LOOKUP_LENGTH 12
 static int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];    // lookup table for expo & mid THROTTLE
 
-void generateThrottleCurve(controlRateConfig_t *controlRateConfig, motorConfig_t *motorConfig)
+void generateThrottleCurve(controlRateConfig_t *controlRateConfig, const motorConfig_t *motorConfig)
 {
     uint8_t i;
     uint16_t minThrottle = (feature(FEATURE_3D && IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH)) ? PWM_RANGE_MIN : motorConfig->minthrottle);
