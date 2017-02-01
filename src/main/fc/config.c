@@ -913,13 +913,7 @@ void activateConfig(void)
     setAccelerationTrims(&accelerometerConfigMutable()->accZero);
     setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
 
-    mixerUseConfigs(
-        &masterConfig.flight3DConfig,
-        &masterConfig.motorConfig,
-        &masterConfig.mixerConfig,
-        &masterConfig.airplaneConfig,
-        &masterConfig.rxConfig
-    );
+    mixerUseConfigs(&masterConfig.airplaneConfig);
 
 #ifdef USE_SERVOS
     servoUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoProfile.servoConf, &masterConfig.gimbalConfig);

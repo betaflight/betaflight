@@ -551,7 +551,7 @@ void init(void)
     // Now that everything has powered up the voltage and cell count be determined.
 
     if (feature(FEATURE_VBAT | FEATURE_CURRENT_METER))
-        batteryInit(batteryConfig());
+        batteryInit();
 
 #ifdef USE_DASHBOARD
     if (feature(FEATURE_DASHBOARD)) {

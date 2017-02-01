@@ -87,7 +87,7 @@ extern const batteryConfig_t *batteryConfig;
 batteryState_e getBatteryState(void);
 const  char * getBatteryStateString(void);
 void updateBattery(void);
-void batteryInit(const batteryConfig_t *initialBatteryConfig);
+void batteryInit(void);
 
 struct rxConfig_s;
 void updateCurrentMeter(int32_t lastUpdateAt, const struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);
