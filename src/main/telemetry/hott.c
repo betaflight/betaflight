@@ -112,9 +112,6 @@ static uint8_t hottMsgCrc;
 static serialPort_t *hottPort = NULL;
 static serialPortConfig_t *portConfig;
 
-#ifndef USE_PARAMETER_GROUPS
-static const telemetryConfig_t *telemetryConfig;
-#endif
 static bool hottTelemetryEnabled =  false;
 static portSharing_e hottPortSharing;
 
@@ -295,13 +292,8 @@ void freeHoTTTelemetryPort(void)
     hottTelemetryEnabled = false;
 }
 
-void initHoTTTelemetry(const telemetryConfig_t *initialTelemetryConfig)
+void initHoTTTelemetry(void)
 {
-#ifdef USE_PARAMETER_GROUPS
-    UNUSED(initialTelemetryConfig);
-#else
-    telemetryConfig = initialTelemetryConfig;
-#endif
     portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_HOTT);
     hottPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_HOTT);
 

@@ -54,7 +54,6 @@
 #include "telemetry/telemetry.h"
 #endif
 
-static const serialConfig_t *serialConfig;
 static serialPortUsage_t serialPortUsageList[SERIAL_PORT_COUNT];
 
 const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
@@ -396,16 +395,12 @@ void closeSerialPort(serialPort_t *serialPort)
     serialPortUsage->serialPort = NULL;
 }
 
-void serialInit(const serialConfig_t *initialSerialConfig, bool softserialEnabled, serialPortIdentifier_e serialPortToDisable)
+void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisable)
 {
-    uint8_t index;
-
-    serialConfig = initialSerialConfig;
-
     serialPortCount = SERIAL_PORT_COUNT;
     memset(&serialPortUsageList, 0, sizeof(serialPortUsageList));
 
-    for (index = 0; index < SERIAL_PORT_COUNT; index++) {
+    for (int index = 0; index < SERIAL_PORT_COUNT; index++) {
         serialPortUsageList[index].identifier = serialPortIdentifiers[index];
 
         if (serialPortToDisable != SERIAL_PORT_NONE) {
@@ -471,7 +466,7 @@ void serialEvaluateNonMspData(serialPort_t *serialPort, uint8_t receivedChar)
         cliEnter(serialPort);
     }
 #endif
-    if (receivedChar == serialConfig->reboot_character) {
+    if (receivedChar == serialConfig()->reboot_character) {
         systemResetToBootloader();
     }
 }
@@ -488,8 +483,7 @@ static void nopConsumer(uint8_t data)
  arbitrary serial passthrough "proxy". Optional callbacks can be given to allow
  for specialized data processing.
  */
-void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer
-                       *leftC, serialConsumer *rightC)
+void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *leftC, serialConsumer *rightC)
 {
     waitForSerialPortToFinishTransmitting(left);
     waitForSerialPortToFinishTransmitting(right);

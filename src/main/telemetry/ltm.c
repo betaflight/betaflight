@@ -81,9 +81,6 @@
 
 static serialPort_t *ltmPort;
 static serialPortConfig_t *portConfig;
-#ifndef USE_PARAMETER_GROUPS
-static const telemetryConfig_t *telemetryConfig;
-#endif
 static bool ltmEnabled;
 static portSharing_e ltmPortSharing;
 static uint8_t ltm_crc;
@@ -271,13 +268,8 @@ void freeLtmTelemetryPort(void)
     ltmEnabled = false;
 }
 
-void initLtmTelemetry(const telemetryConfig_t *initialTelemetryConfig)
+void initLtmTelemetry(void)
 {
-#ifdef USE_PARAMETER_GROUPS
-    UNUSED(initialTelemetryConfig);
-#else
-    telemetryConfig = initialTelemetryConfig;
-#endif
     portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_LTM);
     ltmPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_LTM);
 }

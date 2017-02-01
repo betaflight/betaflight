@@ -904,16 +904,12 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-#ifdef TELEMETRY
-    telemetryUseConfig(&masterConfig.telemetryConfig);
-#endif
-
 #ifdef GPS
     gpsUseProfile(&masterConfig.gpsProfile);
     gpsUsePIDs(&currentProfile->pidProfile);
 #endif
 
-    useFailsafeConfig(&masterConfig.failsafeConfig);
+    failsafeReset();
     setAccelerationTrims(&accelerometerConfigMutable()->accZero);
     setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
 
@@ -942,10 +938,6 @@ void activateConfig(void)
         &masterConfig.rcControlsConfig,
         &masterConfig.motorConfig
     );
-
-#ifdef BARO
-    useBarometerConfig(&masterConfig.barometerConfig);
-#endif
 }
 
 void validateAndFixConfig(void)

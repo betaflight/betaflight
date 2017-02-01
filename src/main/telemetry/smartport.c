@@ -150,9 +150,6 @@ const uint16_t frSkyDataIdTable[] = {
 static serialPort_t *smartPortSerialPort = NULL; // The 'SmartPort'(tm) Port.
 static serialPortConfig_t *portConfig;
 
-#ifndef USE_PARAMETER_GROUPS
-static const telemetryConfig_t *telemetryConfig;
-#endif
 static bool smartPortTelemetryEnabled =  false;
 static portSharing_e smartPortPortSharing;
 
@@ -306,13 +303,8 @@ static void smartPortSendPackage(uint16_t id, uint32_t val)
     smartPortSendPackageEx(FSSP_DATA_FRAME,payload);
 }
 
-void initSmartPortTelemetry(const telemetryConfig_t *initialTelemetryConfig)
+void initSmartPortTelemetry(void)
 {
-#ifdef USE_PARAMETER_GROUPS
-    UNUSED(initialTelemetryConfig);
-#else
-    telemetryConfig = initialTelemetryConfig;
-#endif
     portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_SMARTPORT);
     smartPortPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_SMARTPORT);
 }

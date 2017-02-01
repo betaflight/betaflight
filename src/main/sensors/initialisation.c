@@ -61,12 +61,12 @@ bool sensorsAutodetect(void)
         return false;
     }
 
-    accInit(accelerometerConfig(), gyro.targetLooptime);
+    accInit(gyro.targetLooptime);
 
     mag.magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
 #ifdef MAG
     if (compassDetect(&mag.dev, compassConfig()->mag_hardware)) {
-        compassInit(compassConfig());
+        compassInit();
     }
 #endif
 
