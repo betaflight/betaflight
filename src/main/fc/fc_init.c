@@ -403,12 +403,7 @@ void init(void)
     }
 #endif
 
-#ifdef SONAR
-    const sonarConfig_t *sonarConfig = sonarConfig();
-#else
-    const void *sonarConfig = NULL;
-#endif
-    if (!sensorsAutodetect(gyroConfig(), accelerometerConfig(), compassConfig(), barometerConfig(), sonarConfig)) {
+    if (!sensorsAutodetect()) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
