@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <math.h>
 
 #include "platform.h"
 
@@ -29,7 +30,6 @@
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
-#include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
 #include "fc/fc_rc.h"
 #include "fc/fc_core.h"
@@ -266,7 +266,14 @@ void updateRcCommands(void)
         tmp = constrain(rcData[THROTTLE], rxConfig()->mincheck, PWM_RANGE_MAX);
         tmp = (uint32_t)(tmp - rxConfig()->mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - rxConfig()->mincheck);
     }
-    rcCommand[THROTTLE] = rcLookupThrottle(tmp);
+
+    if (currentControlRateProfile->thrExpo8) {
+        float expof = currentControlRateProfile->thrExpo8 / 100.0f;
+        float tmpf = (tmp  / (PWM_RANGE_MAX - PWM_RANGE_MIN));
+        tmp = lrintf(tmp * sq(tmpf) * expof + tmp * (1-expof));
+    }
+
+    rcCommand[THROTTLE] = tmp + (PWM_RANGE_MAX - PWM_RANGE_MIN);
 
     if (feature(FEATURE_3D) && IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH) && !failsafeIsActive()) {
         fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
