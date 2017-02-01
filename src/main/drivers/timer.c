@@ -249,7 +249,8 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
 {
     configTimeBase(timerHardwarePtr->tim, period, mhz);
     TIM_Cmd(timerHardwarePtr->tim, ENABLE);
-
+if (timerHardwarePtr->tim == TIM7)
+return;
     uint8_t irq = timerInputIrq(timerHardwarePtr->tim);
     timerNVICConfigure(irq);
     // HACK - enable second IRQ on timers that need it
@@ -549,14 +550,12 @@ static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
         tim_status &= mask;
         switch(bit) {
             case __builtin_clz(TIM_IT_Update): {
-
                 if(timerConfig->forcedOverflowTimerValue != 0){
                     capture = timerConfig->forcedOverflowTimerValue - 1;
                     timerConfig->forcedOverflowTimerValue = 0;
                 } else {
                     capture = tim->ARR;
                 }
-
                 timerOvrHandlerRec_t *cb = timerConfig->overflowCallbackActive;
                 while(cb) {
                     cb->fn(cb, capture);
@@ -653,6 +652,14 @@ _TIM_IRQ_HANDLER(TIM4_IRQHandler, 4);
 #if USED_TIMERS & TIM_N(5)
 _TIM_IRQ_HANDLER(TIM5_IRQHandler, 5);
 #endif
+#ifndef STM32F411xE
+# if USED_TIMERS & TIM_N(6)
+_TIM_IRQ_HANDLER(TIM6_DAC_IRQHandler, 6);
+# endif
+# if USED_TIMERS & TIM_N(7)
+_TIM_IRQ_HANDLER(TIM7_IRQHandler, 7);
+# endif
+#endif
 #if USED_TIMERS & TIM_N(8)
 _TIM_IRQ_HANDLER(TIM8_CC_IRQHandler, 8);
 # if defined(STM32F10X_XL)
@@ -705,6 +712,10 @@ void timerInit(void)
 #if defined(STM32F3) || defined(STM32F4)
     for (int timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
         const timerHardware_t *timerHardwarePtr = &timerHardware[timerIndex];
+
+        // XXX Experimental
+        // Generic timers (TIM6 & TIM7) don't have associated pin,
+        // but IOConfigGPIOAF can handle io == 0 case.
         IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->tag), IOCFG_AF_PP, timerHardwarePtr->alternateFunction);
     }
 #endif
