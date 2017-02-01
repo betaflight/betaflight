@@ -3443,7 +3443,7 @@ static void cliVersion(char *cmdline)
 
 #if defined(USE_RESOURCE_MGMT)
 
-#define MAX_RESOURCE_INDEX(x) (x == 0 ? 1 : x)
+#define MAX_RESOURCE_INDEX(x) ((x) == 0 ? 1 : (x))
 
 typedef struct {
     const uint8_t owner;
@@ -3512,6 +3512,10 @@ static void printResourceOwner(uint8_t owner, uint8_t index)
 
 static void resourceCheck(uint8_t resourceIndex, uint8_t index, ioTag_t tag)
 {
+    if (!tag) {
+        return;
+    }
+
     const char * format = "\r\nNOTE: %c%02d already assigned to ";
     for (int r = 0; r < (int)ARRAYLEN(resourceTable); r++) {
         for (int i = 0; i < MAX_RESOURCE_INDEX(resourceTable[r].maxIndex); i++) {
