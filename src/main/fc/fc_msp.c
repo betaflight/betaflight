@@ -1511,9 +1511,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
         motorConfigMutable()->motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_BRUSHED);
 #endif
-        motorConfig()->motorPwmRate = sbufReadU16(src);
+        motorConfigMutable()->motorPwmRate = sbufReadU16(src);
         if (sbufBytesRemaining(src) >= 2) {
-            motorConfig()->digitalIdleOffsetPercent = sbufReadU16(src) / 100.0f;
+            motorConfigMutable()->digitalIdleOffsetPercent = sbufReadU16(src) / 100.0f;
         }
         if (sbufBytesRemaining(src)) {
             gyroConfigMutable()->gyro_use_32khz = sbufReadU8(src);
@@ -1525,7 +1525,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         validateAndFixGyroConfig();
 
         if (sbufBytesRemaining(src)) {        
-            motorConfig()->motorPwmInversion = sbufReadU8(src);
+            motorConfigMutable()->motorPwmInversion = sbufReadU8(src);
         }
         break;
 
@@ -1812,7 +1812,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             rxConfigMutable()->rx_spi_rf_channel_count = sbufReadU8(src);
         }
         if (dataSize > 22) {
-            rxConfig()->fpvCamAngleDegrees = sbufReadU8(src);
+            rxConfigMutable()->fpvCamAngleDegrees = sbufReadU8(src);
         }
         break;
 

@@ -69,7 +69,7 @@ int32_t amperageLatest = 0;        // most recent value
 int32_t mAhDrawn = 0;               // milliampere hours drawn from the battery since start
 
 #ifndef USE_PARAMETER_GROUPS
-batteryConfig_t *batteryConfig;
+const batteryConfig_t *batteryConfig;
 #endif
 
 static batteryState_e vBatState;
@@ -213,7 +213,7 @@ const char * getBatteryStateString(void)
     return batteryStateStrings[getBatteryState()];
 }
 
-void batteryInit(batteryConfig_t *initialBatteryConfig)
+void batteryInit(const batteryConfig_t *initialBatteryConfig)
 {
 #ifndef USE_PARAMETER_GROUPS
     (void)initialBatteryConfig;
