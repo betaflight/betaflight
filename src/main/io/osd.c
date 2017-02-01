@@ -246,7 +246,7 @@ static void osdDrawSingleElement(uint8_t item)
 #endif
 
             if (FLIGHT_MODE(FAILSAFE_MODE))
-                p = "!FS";
+                p = "FS";
             else if (FLIGHT_MODE(ANGLE_MODE))
                 p = "STAB";
             else if (FLIGHT_MODE(HORIZON_MODE))
