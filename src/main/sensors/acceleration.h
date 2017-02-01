@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
 #include "drivers/accgyro.h"
 #include "sensors/sensors.h"
 
@@ -65,6 +66,8 @@ typedef struct accelerometerConfig_s {
     flightDynamicsTrims_t accZero;
     rollAndPitchTrims_t accelerometerTrims;
 } accelerometerConfig_t;
+
+PG_DECLARE(accelerometerConfig_t, accelerometerConfig);
 
 bool accInit(const accelerometerConfig_t *accelerometerConfig, uint32_t gyroTargetLooptime);
 bool isAccelerationCalibrationComplete(void);

@@ -19,6 +19,8 @@
 
 #include <stdbool.h>
 
+#include "config/parameter_group.h"
+
 #define PID_CONTROLLER_BETAFLIGHT 1
 #define PID_MIXER_SCALING 1000.0f
 #define PID_SERVO_MIXER_SCALING 0.7f
@@ -84,6 +86,8 @@ typedef struct pidProfile_s {
     float yawRateAccelLimit;                // yaw accel limiter for deg/sec/ms
     float rateAccelLimit;                   // accel limiter roll/pitch deg/sec/ms
 } pidProfile_t;
+
+PG_DECLARE_PROFILE(pidProfile_t, pidProfile);
 
 typedef struct pidConfig_s {
     uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate

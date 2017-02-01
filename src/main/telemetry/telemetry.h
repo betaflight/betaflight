@@ -24,6 +24,9 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
+#include "io/serial.h"
+
 typedef enum {
     FRSKY_FORMAT_DMS = 0,
     FRSKY_FORMAT_NMEA
@@ -49,13 +52,15 @@ typedef struct telemetryConfig_s {
     uint8_t report_cell_voltage;
 } telemetryConfig_t;
 
+PG_DECLARE(telemetryConfig_t, telemetryConfig);
+
 void telemetryInit(void);
 bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig);
 extern serialPort_t *telemetrySharedPort;
 
 void telemetryCheckState(void);
 struct rxConfig_s;
-void telemetryProcess(uint32_t currentTime, struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);
+void telemetryProcess(uint32_t currentTime, const struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);
 
 bool telemetryDetermineEnabledState(portSharing_e portSharing);
 

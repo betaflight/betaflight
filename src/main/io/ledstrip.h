@@ -19,6 +19,7 @@
 
 #include "common/color.h"
 #include "common/time.h"
+#include "config/parameter_group.h"
 #include "drivers/io_types.h"
 
 #define LED_MAX_STRIP_LENGTH           32
@@ -146,6 +147,8 @@ typedef struct ledStripConfig_s {
     uint8_t ledstrip_aux_channel;
     ioTag_t ioTag;
 } ledStripConfig_t;
+
+PG_DECLARE(ledStripConfig_t, ledStripConfig);
 
 ledConfig_t *ledConfigs;
 hsvColor_t *colors;

@@ -19,6 +19,8 @@
 
 #include "common/time.h"
 
+#include "config/parameter_group.h"
+
 #define LAT 0
 #define LON 1
 
@@ -67,6 +69,8 @@ typedef struct gpsConfig_s {
     gpsAutoConfig_e autoConfig;
     gpsAutoBaud_e autoBaud;
 } gpsConfig_t;
+
+PG_DECLARE(gpsConfig_t, gpsConfig);
 
 typedef struct gpsCoordinateDDDMMmmmm_s {
     int16_t dddmm;
