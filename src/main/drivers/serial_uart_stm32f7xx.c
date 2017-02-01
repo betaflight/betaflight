@@ -30,10 +30,13 @@
 #include "serial_uart.h"
 #include "serial_uart_impl.h"
 
-static void handleUsartTxDma(uartPort_t *s);
+void serialInitHardwareMap(serialPinConfig_t *pSerialPinConfig)
+{
+    // F7 isn't converted yet.
+    UNUSED(pSerialPinConfig);
+}
 
-#define UART_RX_BUFFER_SIZE UART1_RX_BUFFER_SIZE
-#define UART_TX_BUFFER_SIZE UART1_TX_BUFFER_SIZE
+static void handleUsartTxDma(uartPort_t *s);
 
 typedef enum UARTDevice {
     UARTDEV_1 = 0,

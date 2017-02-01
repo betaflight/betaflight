@@ -754,6 +754,8 @@ void createDefaultConfig(master_t *config)
     config->gpsConfig.autoBaud = GPS_AUTOBAUD_OFF;
 #endif
 
+    serialPinConfigReset(&config->serialPinConfig);
+
     resetSerialConfig(&config->serialConfig);
 
     resetProfile(&config->profile[0]);

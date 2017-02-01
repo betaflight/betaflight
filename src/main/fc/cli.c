@@ -3470,6 +3470,8 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef LED_STRIP
     { OWNER_LED_STRIP,     &ledStripConfig()->ioTag,   0 },
 #endif
+    { OWNER_SERIAL_TX,     &serialPinConfig()->ioTagTx[0], SERIAL_PORT_MAX_COUNT },
+    { OWNER_SERIAL_RX,     &serialPinConfig()->ioTagRx[0], SERIAL_PORT_MAX_COUNT },
 };
 
 static void printResource(uint8_t dumpMask, const master_t *defaultConfig)

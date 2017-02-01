@@ -25,6 +25,8 @@
 
 #include "common/utils.h"
 
+#include "config/config_master.h"
+
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
@@ -90,6 +92,154 @@ const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 };
 
 static uint8_t serialPortCount;
+
+// Default pins (NONE).
+// XXX Does this mess belong here??? serial_default.h ???
+#ifdef USE_UART1
+# if !defined(UART1_RX_PIN)
+#  define UART1_RX_PIN NONE
+# endif
+# if !defined(UART1_TX_PIN)
+#  define UART1_TX_PIN NONE
+# endif
+#endif
+
+#ifdef USE_UART2
+# if !defined(UART2_RX_PIN)
+#  define UART2_RX_PIN NONE
+# endif
+# if !defined(UART2_TX_PIN)
+#  define UART2_TX_PIN NONE
+# endif
+#endif
+
+#ifdef USE_UART3
+# if !defined(UART3_RX_PIN)
+#  define UART3_RX_PIN NONE
+# endif
+# if !defined(UART3_TX_PIN)
+#  define UART3_TX_PIN NONE
+# endif
+#endif
+
+#ifdef USE_UART4
+# if !defined(UART4_RX_PIN)
+#  define UART4_RX_PIN NONE
+# endif
+# if !defined(UART4_TX_PIN)
+#  define UART4_TX_PIN NONE
+# endif
+#endif
+
+#ifdef USE_UART5
+# if !defined(UART5_RX_PIN)
+#  define UART5_RX_PIN NONE
+# endif
+# if !defined(UART5_TX_PIN)
+#  define UART5_TX_PIN NONE
+# endif
+#endif
+
+#ifdef USE_UART6
+# if !defined(UART6_RX_PIN)
+#  define UART6_RX_PIN NONE
+# endif
+# if !defined(UART6_TX_PIN)
+#  define UART6_TX_PIN NONE
+# endif
+#endif
+
+#ifdef USE_UART7
+# if !defined(UART7_RX_PIN)
+#  define UART7_RX_PIN NONE
+# endif
+# if !defined(UART7_TX_PIN)
+#  define UART7_TX_PIN NONE
+# endif
+#endif
+
+#ifdef USE_UART8
+# if !defined(UART8_RX_PIN)
+#  define UART8_RX_PIN NONE
+# endif
+# if !defined(UART8_TX_PIN)
+#  define UART8_TX_PIN NONE
+# endif
+#endif
+
+#ifdef USE_SOFTSERIAL1
+# if !defined(SOFTSERIAL1_RX_PIN)
+#  define SOFTSERIAL1_RX_PIN NONE
+# endif
+# if !defined(SOFTSERIAL1_TX_PIN)
+#  define SOFTSERIAL1_TX_PIN NONE
+# endif
+#endif
+
+#ifdef USE_SOFTSERIAL2
+# if !defined(SOFTSERIAL2_RX_PIN)
+#  define SOFTSERIAL2_RX_PIN NONE
+# endif
+# if !defined(SOFTSERIAL2_TX_PIN)
+#  define SOFTSERIAL2_TX_PIN NONE
+# endif
+#endif
+
+// XXX For compatibility; reset pin configuration as specified in target.h.
+// XXX Does this belong here? Driver layer???
+
+typedef struct serialPinDefault_s {
+    serialPortIdentifier_e portId;
+    ioTag_t rx, tx;
+} serialPinDefault_t;
+
+static serialPinDefault_t serialPinDefault[] = {
+#ifdef USE_UART1
+    { SERIAL_PORT_USART1, IO_TAG(UART1_RX_PIN), IO_TAG(UART1_TX_PIN) },
+#endif
+#ifdef USE_UART2
+    { SERIAL_PORT_USART2, IO_TAG(UART2_RX_PIN), IO_TAG(UART2_TX_PIN) },
+#endif
+#ifdef USE_UART3
+    { SERIAL_PORT_USART3, IO_TAG(UART3_RX_PIN), IO_TAG(UART3_TX_PIN) },
+#endif
+#ifdef USE_UART4
+    { SERIAL_PORT_USART4, IO_TAG(UART4_RX_PIN), IO_TAG(UART4_TX_PIN) },
+#endif
+#ifdef USE_UART5
+    { SERIAL_PORT_USART5, IO_TAG(UART5_RX_PIN), IO_TAG(UART5_TX_PIN) },
+#endif
+#ifdef USE_UART6
+    { SERIAL_PORT_USART6, IO_TAG(UART6_RX_PIN), IO_TAG(UART6_TX_PIN) },
+#endif
+#ifdef USE_UART7
+    { SERIAL_PORT_USART7, IO_TAG(UART7_RX_PIN), IO_TAG(UART7_TX_PIN) },
+#endif
+#ifdef USE_UART8
+    { SERIAL_PORT_USART8, IO_TAG(UART8_RX_PIN), IO_TAG(UART8_TX_PIN) },
+#endif
+#ifdef USE_SOFTSERIAL1
+    { SERIAL_PORT_SOFTSERIAL1, IO_TAG(SOFTSERIAL1_RX_PIN), IO_TAG(SOFTSERIAL1_TX_PIN) },
+#endif
+#ifdef USE_SOFTSERIAL2
+    { SERIAL_PORT_SOFTSERIAL2, IO_TAG(SOFTSERIAL2_RX_PIN), IO_TAG(SOFTSERIAL2_TX_PIN) },
+#endif
+};
+
+void serialPinConfigReset(serialPinConfig_t *pSerialPinConfig)
+{
+
+    for (int port = 0 ; port < SERIAL_PORT_MAX_COUNT ; port++) {
+        pSerialPinConfig->ioTagRx[port] = IO_TAG(NONE);
+        pSerialPinConfig->ioTagTx[port] = IO_TAG(NONE);
+    }
+
+    for (size_t port = 0 ; port < ARRAYLEN(serialPinDefault) ; port++) {
+        serialPinDefault_t *pDefault = &serialPinDefault[port];
+            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(pDefault->portId)] = pDefault->rx;
+            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(pDefault->portId)] = pDefault->tx;
+    }
+}
 
 const uint32_t baudRates[] = {0, 9600, 19200, 38400, 57600, 115200, 230400, 250000,
         400000, 460800, 500000, 921600, 1000000, 1500000, 2000000, 2470000}; // see baudRate_e
@@ -352,14 +502,12 @@ serialPort_t *openSerialPort(
 #endif
 #ifdef USE_SOFTSERIAL1
         case SERIAL_PORT_SOFTSERIAL1:
-            serialPort = openSoftSerial(SOFTSERIAL1, rxCallback, baudRate, options);
-            serialSetMode(serialPort, mode);
+            serialPort = openSoftSerial(SOFTSERIAL1, rxCallback, baudRate, mode, options);
             break;
 #endif
 #ifdef USE_SOFTSERIAL2
         case SERIAL_PORT_SOFTSERIAL2:
-            serialPort = openSoftSerial(SOFTSERIAL2, rxCallback, baudRate, options);
-            serialSetMode(serialPort, mode);
+            serialPort = openSoftSerial(SOFTSERIAL2, rxCallback, baudRate, mode, options);
             break;
 #endif
         default:
