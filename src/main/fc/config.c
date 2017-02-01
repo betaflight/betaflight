@@ -178,11 +178,11 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->levelAngleLimit = 55;
     pidProfile->levelSensitivity = 55;
     pidProfile->setpointRelaxRatio = 30;
-    pidProfile->dtermSetpointWeight = 200;
+    pidProfile->dtermSetpointWeight = 190;
     pidProfile->yawRateAccelLimit = 10.0f;
     pidProfile->rateAccelLimit = 0.0f;
-    pidProfile->itermThrottleThreshold = 300;
-    pidProfile->itermAcceleratorGain = 3.0f;
+    pidProfile->itermThrottleThreshold = 350;
+    pidProfile->itermAcceleratorGain = 1.5f;
     pidProfile->itermAcceleratorRateLimit = 80;
 }
 
