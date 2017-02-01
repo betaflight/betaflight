@@ -81,13 +81,13 @@ extern int32_t amperageLatest;
 extern int32_t amperage;
 extern int32_t mAhDrawn;
 #ifndef USE_PARAMETER_GROUPS
-extern batteryConfig_t *batteryConfig;
+extern const batteryConfig_t *batteryConfig;
 #endif
 
 batteryState_e getBatteryState(void);
 const  char * getBatteryStateString(void);
 void updateBattery(void);
-void batteryInit(batteryConfig_t *initialBatteryConfig);
+void batteryInit(const batteryConfig_t *initialBatteryConfig);
 
 struct rxConfig_s;
 void updateCurrentMeter(int32_t lastUpdateAt, const struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);

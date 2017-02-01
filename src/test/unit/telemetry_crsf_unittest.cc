@@ -306,7 +306,7 @@ serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) {return NULL;}
 bool telemetryDetermineEnabledState(portSharing_e) {return true;}
 bool telemetryCheckRxPortShared(const serialPortConfig_t *) {return true;}
 
-portSharing_e determinePortSharing(serialPortConfig_t *, serialPortFunction_e) {return PORTSHARING_NOT_SHARED;}
+portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunction_e) {return PORTSHARING_NOT_SHARED;}
 
 uint8_t batteryCapacityRemainingPercentage(void) {return 67;}
 uint8_t calculateBatteryCapacityRemainingPercentage(void) {return 67;}

@@ -59,6 +59,8 @@ typedef struct throttleCorrectionConfig_s {
     uint8_t throttle_correction_value;      // the correction that will be applied at throttle_correction_angle.
 } throttleCorrectionConfig_t;
 
+PG_DECLARE(throttleCorrectionConfig_t, throttleCorrectionConfig);
+
 typedef struct imuConfig_s {
     uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
     uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
