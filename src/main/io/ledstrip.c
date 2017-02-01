@@ -646,7 +646,7 @@ static void applyLedGpsLayer(bool updateNow, timeUs_t *timer)
     if (updateNow) {
         if (gpsPauseCounter > 0) {
             gpsPauseCounter--;
-        } else if (gpsFlashCounter >= gpsSol.numSat) {
+        } else if (gpsFlashCounter >= (gpsSol.numSat - 1)) {
             gpsFlashCounter = 0;
             gpsPauseCounter = blinkPauseLength;
         } else {
