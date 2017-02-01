@@ -76,7 +76,7 @@ static void mpu6050FindRevision(gyroDev_t *gyro)
 
     // determine product ID and accel revision
     ack = gyro->mpuConfiguration.read(MPU_RA_XA_OFFS_H, 6, readBuffer);
-    revision = ((readBuffer[5] & 0x01) << 2) | ((readBuffer[3] & 0x01) << 1) | (readBuffer[1] & 0x01);
+    revision = (uint8_t)(((readBuffer[5] & 0x01) << 2) | ((readBuffer[3] & 0x01) << 1) | (readBuffer[1] & 0x01));
     if (revision) {
         /* Congrats, these parts are better. */
         if (revision == 1) {
