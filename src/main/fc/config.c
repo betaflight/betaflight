@@ -53,7 +53,6 @@
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
-#include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
 
 #include "sensors/sensors.h"
@@ -882,15 +881,8 @@ static void resetConf(void)
 #endif
 }
 
-void activateControlRateConfig(void)
-{
-    generateThrottleCurve(currentControlRateProfile, &masterConfig.motorConfig);
-}
-
 void activateConfig(void)
 {
-    activateControlRateConfig();
-
     resetAdjustmentStates();
 
     useRcControlsConfig(
@@ -1168,7 +1160,6 @@ void changeControlRateProfile(uint8_t profileIndex)
         profileIndex = MAX_RATEPROFILES - 1;
     }
     setControlRateProfile(profileIndex);
-    activateControlRateConfig();
 }
 
 void beeperOffSet(uint32_t mask)

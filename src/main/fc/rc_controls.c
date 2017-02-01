@@ -37,7 +37,6 @@
 #include "fc/config.h"
 #include "fc/fc_core.h"
 #include "fc/rc_controls.h"
-#include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
 
 #include "io/gps.h"
@@ -524,7 +523,6 @@ static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t 
         case ADJUSTMENT_THROTTLE_EXPO:
             newValue = constrain((int)controlRateConfig->thrExpo8 + delta, 0, 100); // FIXME magic numbers repeated in cli.c
             controlRateConfig->thrExpo8 = newValue;
-            generateThrottleCurve(controlRateConfig, motorConfig);
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_THROTTLE_EXPO, newValue);
         break;
         case ADJUSTMENT_PITCH_ROLL_RATE:

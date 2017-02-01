@@ -594,7 +594,6 @@ COMMON_SRC = \
             fc/fc_msp.c \
             fc/fc_tasks.c \
             fc/rc_controls.c \
-            fc/rc_curves.c \
             fc/runtime_config.c \
             fc/cli.c \
             flight/altitudehold.c \
@@ -714,7 +713,6 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             fc/fc_tasks.c \
             fc/fc_rc.c \
             fc/rc_controls.c \
-            fc/rc_curves.c \
             fc/runtime_config.c \
             flight/altitudehold.c \
             flight/failsafe.c \
