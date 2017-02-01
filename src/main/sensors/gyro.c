@@ -238,7 +238,7 @@ bool gyroInit(const gyroConfig_t *gyroConfigToUse)
 #if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
     gyro.dev.mpuIntExtiConfig = selectMPUIntExtiConfig();
     mpuDetect(&gyro.dev);
-    mpuReset = gyro.dev.mpuConfiguration.reset;
+    mpuResetFn = gyro.dev.mpuConfiguration.resetFn;
 #endif
 
     if (!gyroDetect(&gyro.dev)) {
