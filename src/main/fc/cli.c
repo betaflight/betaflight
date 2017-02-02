@@ -2729,7 +2729,7 @@ static void cliFlashErase(char *cmdline)
 #endif
         delay(100);
     }
-
+    beeper(BEEPER_BLACKBOX_ERASE);
     cliPrintf("\r\nDone.\r\n");
 }
 
