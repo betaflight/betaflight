@@ -295,7 +295,7 @@ bool isAirmodeActive(void);
 void resetAdjustmentStates(void);
 void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
 struct rxConfig_s;
-void processRcAdjustments(controlRateConfig_t *controlRateConfig, const struct rxConfig_s *rxConfig);
+void processRcAdjustments(controlRateConfig_t *controlRateConfig);
 
 bool isUsingSticksForArming(void);
 

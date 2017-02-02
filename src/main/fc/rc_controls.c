@@ -646,7 +646,7 @@ static void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
 
 #define RESET_FREQUENCY_2HZ (1000 / 2)
 
-void processRcAdjustments(controlRateConfig_t *controlRateConfig, const rxConfig_t *rxConfig)
+void processRcAdjustments(controlRateConfig_t *controlRateConfig)
 {
     uint8_t adjustmentIndex;
     uint32_t now = millis();

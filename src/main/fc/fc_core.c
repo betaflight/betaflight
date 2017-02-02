@@ -373,7 +373,7 @@ void processRx(timeUs_t currentTimeUs)
 
     if (!cliMode) {
         updateAdjustmentStates(adjustmentProfile()->adjustmentRanges);
-        processRcAdjustments(currentControlRateProfile, rxConfig());
+        processRcAdjustments(currentControlRateProfile);
     }
 
     bool canUseHorizonMode = true;
