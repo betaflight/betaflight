@@ -197,9 +197,8 @@ PG_DECLARE(armingConfig_t, armingConfig);
 bool areUsingSticksToArm(void);
 
 bool areSticksInApModePosition(uint16_t ap_mode);
-struct rxConfig_s;
 throttleStatus_e calculateThrottleStatus(void);
-void processRcStickPositions(const struct rxConfig_s *rxConfig, throttleStatus_e throttleStatus, bool disarm_kill_switch);
+void processRcStickPositions(throttleStatus_e throttleStatus);
 
 bool isRangeActive(uint8_t auxChannelIndex, channelRange_t *range);
 void updateActivatedModes(modeActivationCondition_t *modeActivationConditions);
@@ -295,6 +294,7 @@ typedef struct adjustmentProfile_s {
 bool isAirmodeActive(void);
 void resetAdjustmentStates(void);
 void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
+struct rxConfig_s;
 void processRcAdjustments(controlRateConfig_t *controlRateConfig, const struct rxConfig_s *rxConfig);
 
 bool isUsingSticksForArming(void);

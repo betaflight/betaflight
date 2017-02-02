@@ -363,7 +363,7 @@ void processRx(timeUs_t currentTimeUs)
         }
     }
 
-    processRcStickPositions(rxConfig(), throttleStatus, armingConfig()->disarm_kill_switch);
+    processRcStickPositions(throttleStatus);
 
     if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
         updateInflightCalibrationState();

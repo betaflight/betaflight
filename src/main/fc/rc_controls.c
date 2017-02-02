@@ -128,7 +128,7 @@ throttleStatus_e calculateThrottleStatus(void)
     return THROTTLE_HIGH;
 }
 
-void processRcStickPositions(const rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool disarm_kill_switch)
+void processRcStickPositions(throttleStatus_e throttleStatus)
 {
     static uint8_t rcDelayCommand;      // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
     static uint8_t rcSticks;            // this hold sticks position for command combos
@@ -140,9 +140,9 @@ void processRcStickPositions(const rxConfig_t *rxConfig, throttleStatus_e thrott
     // checking sticks positions
     for (i = 0; i < 4; i++) {
         stTmp >>= 2;
-        if (rcData[i] > rxConfig->mincheck)
+        if (rcData[i] > rxConfig()->mincheck)
             stTmp |= 0x80;  // check for MIN
-        if (rcData[i] < rxConfig->maxcheck)
+        if (rcData[i] < rxConfig()->maxcheck)
             stTmp |= 0x40;  // check for MAX
     }
     if (stTmp == rcSticks) {
@@ -169,7 +169,7 @@ void processRcStickPositions(const rxConfig_t *rxConfig, throttleStatus_e thrott
             if (ARMING_FLAG(ARMED) && rxIsReceivingSignal() && !failsafeIsActive()  ) {
                 rcDisarmTicks++;
                 if (rcDisarmTicks > 3) {
-                    if (disarm_kill_switch) {
+                    if (armingConfig()->disarm_kill_switch) {
                         mwDisarm();
                     } else if (throttleStatus == THROTTLE_LOW) {
                         mwDisarm();
@@ -681,9 +681,9 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, const rxConfig
 
         if (adjustmentState->config->mode == ADJUSTMENT_MODE_STEP) {
             int delta;
-            if (rcData[channelIndex] > rxConfig->midrc + 200) {
+            if (rcData[channelIndex] > rxConfig()->midrc + 200) {
                 delta = adjustmentState->config->data.stepConfig.step;
-            } else if (rcData[channelIndex] < rxConfig->midrc - 200) {
+            } else if (rcData[channelIndex] < rxConfig()->midrc - 200) {
                 delta = 0 - adjustmentState->config->data.stepConfig.step;
             } else {
                 // returning the switch to the middle immediately resets the ready state
