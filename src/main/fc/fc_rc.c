@@ -66,10 +66,10 @@ float getThrottlePIDAttenuation(void) {
 #define SETPOINT_RATE_LIMIT 1998.0f
 #define RC_RATE_INCREMENTAL 14.54f
 
-void calculateSetpointRate(int axis, int16_t rc) {
-    float angleRate, rcRate, rcSuperfactor, rcCommandf;
+static void calculateSetpointRate(int axis)
+{
     uint8_t rcExpo;
-
+    float rcRate;
     if (axis != YAW) {
         rcExpo = currentControlRateProfile->rcExpo8;
         rcRate = currentControlRateProfile->rcRate8 / 100.0f;
@@ -77,21 +77,23 @@ void calculateSetpointRate(int axis, int16_t rc) {
         rcExpo = currentControlRateProfile->rcYawExpo8;
         rcRate = currentControlRateProfile->rcYawRate8 / 100.0f;
     }
-
-    if (rcRate > 2.0f) rcRate = rcRate + (RC_RATE_INCREMENTAL * (rcRate - 2.0f));
-    rcCommandf = rc / 500.0f;
-    rcDeflection[axis] = rcCommandf;
-    rcDeflectionAbs[axis] = ABS(rcCommandf);
-
-    if (rcExpo) {
-        float expof = rcExpo / 100.0f;
-        rcCommandf = rcCommandf * power3(rcDeflectionAbs[axis]) * expof + rcCommandf * (1-expof);
+    if (rcRate > 2.0f) {
+        rcRate += RC_RATE_INCREMENTAL * (rcRate - 2.0f);
     }
 
-    angleRate = 200.0f * rcRate * rcCommandf;
+    float rcCommandf = rcCommand[axis] / 500.0f;
+    rcDeflection[axis] = rcCommandf;
+    const float rcCommandfAbs = ABS(rcCommandf);
+    rcDeflectionAbs[axis] = rcCommandfAbs;
 
+    if (rcExpo) {
+        const float expof = rcExpo / 100.0f;
+        rcCommandf = rcCommandf * power3(rcCommandfAbs) * expof + rcCommandf * (1-expof);
+    }
+
+    float angleRate = 200.0f * rcRate * rcCommandf;
     if (currentControlRateProfile->rates[axis]) {
-        rcSuperfactor = 1.0f / (constrainf(1.0f - (ABS(rcCommandf) * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
+        const float rcSuperfactor = 1.0f / (constrainf(1.0f - (rcCommandfAbs * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
         angleRate *= rcSuperfactor;
     }
 
@@ -100,7 +102,7 @@ void calculateSetpointRate(int axis, int16_t rc) {
     setpointRate[axis] = constrainf(angleRate, -SETPOINT_RATE_LIMIT, SETPOINT_RATE_LIMIT); // Rate limit protection (deg/sec)
 }
 
-void scaleRcCommandToFpvCamAngle(void) {
+static void scaleRcCommandToFpvCamAngle(void) {
     //recalculate sin/cos only when rxConfig()->fpvCamAngleDegrees changed
     static uint8_t lastFpvCamAngleDegrees = 0;
     static float cosFactor = 1.0;
@@ -121,7 +123,7 @@ void scaleRcCommandToFpvCamAngle(void) {
 #define THROTTLE_BUFFER_MAX 20
 #define THROTTLE_DELTA_MS 100
 
- void checkForThrottleErrorResetState(uint16_t rxRefreshRate) {
+ static void checkForThrottleErrorResetState(uint16_t rxRefreshRate) {
     static int index;
     static int16_t rcCommandThrottlePrevious[THROTTLE_BUFFER_MAX];
     const int rxRefreshRateMs = rxRefreshRate / 1000;
@@ -208,7 +210,7 @@ void processRcCommand(void)
             readyToCalculateRateAxisCnt = FD_YAW;
 
         for (int axis = 0; axis <= readyToCalculateRateAxisCnt; axis++)
-            calculateSetpointRate(axis, rcCommand[axis]);
+            calculateSetpointRate(axis);
 
         // Scaling of AngleRate to camera angle (Mixing Roll and Yaw)
         if (rxConfig()->fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE))
