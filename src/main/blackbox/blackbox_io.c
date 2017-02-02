@@ -66,6 +66,14 @@ static struct {
 
 #endif
 
+void blackboxOpen()
+{
+    serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP);
+    if (sharedBlackboxAndMspPort) {
+        mspSerialReleasePortIfAllocated(sharedBlackboxAndMspPort);
+    }
+}
+
 void blackboxWrite(uint8_t value)
 {
     switch (blackboxConfig()->device) {
@@ -599,6 +607,43 @@ bool blackboxDeviceOpen(void)
 #endif
         default:
             return false;
+    }
+}
+
+/**
+ * Erase all blackbox logs
+ */
+void blackboxEraseAll(void)
+{
+    switch (blackboxConfig()->device) {
+#ifdef USE_FLASHFS
+    case BLACKBOX_DEVICE_FLASH:
+        flashfsEraseCompletely();
+        break;
+#endif
+    default:
+        //not supported
+        break;
+
+    }
+}
+
+/**
+ * Check to see if erasing is done
+ */
+bool isBlackboxErased(void)
+{
+    switch (blackboxConfig()->device) {
+#ifdef USE_FLASHFS
+    case BLACKBOX_DEVICE_FLASH:
+        return flashfsIsReady();
+        break;
+#endif
+    default:
+    //not supported
+        return true;
+        break;
+
     }
 }
 

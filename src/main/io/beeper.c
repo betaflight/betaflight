@@ -171,9 +171,9 @@ typedef struct beeperTableEntry_s {
     { BEEPER_ENTRY(BEEPER_ARMED,                 15, beep_armedBeep,       "ARMED") },
     { BEEPER_ENTRY(BEEPER_SYSTEM_INIT,           16, NULL,                 "SYSTEM_INIT") },
     { BEEPER_ENTRY(BEEPER_USB,                   17, NULL,                 "ON_USB") },
-
-    { BEEPER_ENTRY(BEEPER_ALL,                   18, NULL,                 "ALL") },
-    { BEEPER_ENTRY(BEEPER_PREFERENCE,            19, NULL,                 "PREFERRED") },
+    { BEEPER_ENTRY(BEEPER_BLACKBOX_ERASE,        18, beep_2shortBeeps,     "BLACKBOX_ERASE") },
+    { BEEPER_ENTRY(BEEPER_ALL,                   19, NULL,                 "ALL") },
+    { BEEPER_ENTRY(BEEPER_PREFERENCE,            20, NULL,                 "PREFERRED") },
 };
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;

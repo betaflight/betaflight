@@ -241,21 +241,21 @@ static const blackboxSimpleFieldDefinition_t blackboxSlowFields[] = {
 
 typedef enum BlackboxState {
     BLACKBOX_STATE_DISABLED = 0,
-    BLACKBOX_STATE_STOPPED,
-    BLACKBOX_STATE_PREPARE_LOG_FILE,
-    BLACKBOX_STATE_SEND_HEADER,
-    BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER,
-    BLACKBOX_STATE_SEND_GPS_H_HEADER,
-    BLACKBOX_STATE_SEND_GPS_G_HEADER,
-    BLACKBOX_STATE_SEND_SLOW_HEADER,
-    BLACKBOX_STATE_SEND_SYSINFO,
-    BLACKBOX_STATE_PAUSED,
-    BLACKBOX_STATE_RUNNING,
-    BLACKBOX_STATE_SHUTTING_DOWN
+    BLACKBOX_STATE_STOPPED, //1
+    BLACKBOX_STATE_PREPARE_LOG_FILE, //2
+    BLACKBOX_STATE_SEND_HEADER, //3
+    BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER, //4
+    BLACKBOX_STATE_SEND_GPS_H_HEADER, //5
+    BLACKBOX_STATE_SEND_GPS_G_HEADER, //6
+    BLACKBOX_STATE_SEND_SLOW_HEADER, //7
+    BLACKBOX_STATE_SEND_SYSINFO, //8
+    BLACKBOX_STATE_PAUSED, //9
+    BLACKBOX_STATE_RUNNING, //10
+    BLACKBOX_STATE_SHUTTING_DOWN, //11
+    BLACKBOX_STATE_START_ERASE, //12
+    BLACKBOX_STATE_ERASING, //13
 } BlackboxState;
 
-#define BLACKBOX_FIRST_HEADER_SENDING_STATE BLACKBOX_STATE_SEND_HEADER
-#define BLACKBOX_LAST_HEADER_SENDING_STATE BLACKBOX_STATE_SEND_SYSINFO
 
 typedef struct blackboxMainState_s {
     uint32_t time;
@@ -804,47 +804,44 @@ void validateBlackboxConfig()
  */
 void startBlackbox(void)
 {
-    if (blackboxState == BLACKBOX_STATE_STOPPED) {
-        validateBlackboxConfig();
+    validateBlackboxConfig();
 
-        if (!blackboxDeviceOpen()) {
-            blackboxSetState(BLACKBOX_STATE_DISABLED);
-            return;
-        }
-
-        memset(&gpsHistory, 0, sizeof(gpsHistory));
-
-        blackboxHistory[0] = &blackboxHistoryRing[0];
-        blackboxHistory[1] = &blackboxHistoryRing[1];
-        blackboxHistory[2] = &blackboxHistoryRing[2];
-
-        vbatReference = vbatLatest;
-
-        //No need to clear the content of blackboxHistoryRing since our first frame will be an intra which overwrites it
-
-        /*
-         * We use conditional tests to decide whether or not certain fields should be logged. Since our headers
-         * must always agree with the logged data, the results of these tests must not change during logging. So
-         * cache those now.
-         */
-        blackboxBuildConditionCache();
-
-        blackboxModeActivationConditionPresent = isModeActivationConditionPresent(modeActivationConditions(0), BOXBLACKBOX);
-
-        blackboxIteration = 0;
-        blackboxPFrameIndex = 0;
-        blackboxIFrameIndex = 0;
-
-        /*
-         * Record the beeper's current idea of the last arming beep time, so that we can detect it changing when
-         * it finally plays the beep for this arming event.
-         */
-        blackboxLastArmingBeep = getArmingBeepTimeMicros();
-        blackboxLastFlightModeFlags = rcModeActivationMask; // record startup status
-
-
-        blackboxSetState(BLACKBOX_STATE_PREPARE_LOG_FILE);
+    if (!blackboxDeviceOpen()) {
+        blackboxSetState(BLACKBOX_STATE_DISABLED);
+        return;
     }
+
+    memset(&gpsHistory, 0, sizeof(gpsHistory));
+
+    blackboxHistory[0] = &blackboxHistoryRing[0];
+    blackboxHistory[1] = &blackboxHistoryRing[1];
+    blackboxHistory[2] = &blackboxHistoryRing[2];
+
+    vbatReference = vbatLatest;
+
+    //No need to clear the content of blackboxHistoryRing since our first frame will be an intra which overwrites it
+
+    /*
+        * We use conditional tests to decide whether or not certain fields should be logged. Since our headers
+        * must always agree with the logged data, the results of these tests must not change during logging. So
+        * cache those now.
+        */
+    blackboxBuildConditionCache();
+
+	blackboxModeActivationConditionPresent = isModeActivationConditionPresent(modeActivationConditions(0), BOXBLACKBOX);
+
+    blackboxIteration = 0;
+    blackboxPFrameIndex = 0;
+    blackboxIFrameIndex = 0;
+
+    /*
+        * Record the beeper's current idea of the last arming beep time, so that we can detect it changing when
+        * it finally plays the beep for this arming event.
+        */
+    blackboxLastArmingBeep = getArmingBeepTimeMicros();
+    blackboxLastFlightModeFlags = rcModeActivationMask; // record startup status
+
+    blackboxSetState(BLACKBOX_STATE_PREPARE_LOG_FILE);
 }
 
 /**
@@ -1469,18 +1466,26 @@ static void blackboxLogIteration(timeUs_t currentTimeUs)
 void handleBlackbox(timeUs_t currentTimeUs)
 {
     int i;
-
-    if (blackboxState >= BLACKBOX_FIRST_HEADER_SENDING_STATE && blackboxState <= BLACKBOX_LAST_HEADER_SENDING_STATE) {
-        blackboxReplenishHeaderBudget();
-    }
+    static bool erasedOnce = false; //Only allow one erase per FC reboot.
 
     switch (blackboxState) {
+        case BLACKBOX_STATE_STOPPED:
+            if (ARMING_FLAG(ARMED)) {
+                blackboxOpen();  
+                startBlackbox();
+            }
+            if (IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE) && !erasedOnce) {
+                blackboxSetState(BLACKBOX_STATE_START_ERASE);
+                erasedOnce = true;
+            }
+        break;
         case BLACKBOX_STATE_PREPARE_LOG_FILE:
             if (blackboxDeviceBeginLog()) {
                 blackboxSetState(BLACKBOX_STATE_SEND_HEADER);
             }
         break;
         case BLACKBOX_STATE_SEND_HEADER:
+            blackboxReplenishHeaderBudget();
             //On entry of this state, xmitState.headerIndex is 0 and startTime is intialised
 
             /*
@@ -1501,6 +1506,7 @@ void handleBlackbox(timeUs_t currentTimeUs)
             }
         break;
         case BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER:
+            blackboxReplenishHeaderBudget();
             //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
             if (!sendFieldDefinition('I', 'P', blackboxMainFields, blackboxMainFields + 1, ARRAY_LENGTH(blackboxMainFields),
                     &blackboxMainFields[0].condition, &blackboxMainFields[1].condition)) {
@@ -1514,6 +1520,7 @@ void handleBlackbox(timeUs_t currentTimeUs)
         break;
 #ifdef GPS
         case BLACKBOX_STATE_SEND_GPS_H_HEADER:
+            blackboxReplenishHeaderBudget();
             //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
             if (!sendFieldDefinition('H', 0, blackboxGpsHFields, blackboxGpsHFields + 1, ARRAY_LENGTH(blackboxGpsHFields),
                     NULL, NULL)) {
@@ -1521,6 +1528,7 @@ void handleBlackbox(timeUs_t currentTimeUs)
             }
         break;
         case BLACKBOX_STATE_SEND_GPS_G_HEADER:
+            blackboxReplenishHeaderBudget();
             //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
             if (!sendFieldDefinition('G', 0, blackboxGpsGFields, blackboxGpsGFields + 1, ARRAY_LENGTH(blackboxGpsGFields),
                     &blackboxGpsGFields[0].condition, &blackboxGpsGFields[1].condition)) {
@@ -1529,6 +1537,7 @@ void handleBlackbox(timeUs_t currentTimeUs)
         break;
 #endif
         case BLACKBOX_STATE_SEND_SLOW_HEADER:
+            blackboxReplenishHeaderBudget();
             //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
             if (!sendFieldDefinition('S', 0, blackboxSlowFields, blackboxSlowFields + 1, ARRAY_LENGTH(blackboxSlowFields),
                     NULL, NULL)) {
@@ -1536,6 +1545,7 @@ void handleBlackbox(timeUs_t currentTimeUs)
             }
         break;
         case BLACKBOX_STATE_SEND_SYSINFO:
+            blackboxReplenishHeaderBudget();
             //On entry of this state, xmitState.headerIndex is 0
 
             //Keep writing chunks of the system info headers until it returns true to signal completion
@@ -1565,7 +1575,6 @@ void handleBlackbox(timeUs_t currentTimeUs)
 
                 blackboxLogIteration(currentTimeUs);
             }
-
             // Keep the logging timers ticking so our log iteration continues to advance
             blackboxAdvanceIterationTimers();
         break;
@@ -1577,7 +1586,6 @@ void handleBlackbox(timeUs_t currentTimeUs)
             } else {
                 blackboxLogIteration(currentTimeUs);
             }
-
             blackboxAdvanceIterationTimers();
         break;
         case BLACKBOX_STATE_SHUTTING_DOWN:
@@ -1594,15 +1602,29 @@ void handleBlackbox(timeUs_t currentTimeUs)
                 blackboxSetState(BLACKBOX_STATE_STOPPED);
             }
         break;
+        case BLACKBOX_STATE_START_ERASE:
+	        blackboxEraseAll();
+	        blackboxSetState(BLACKBOX_STATE_ERASING);
+            beeper(BEEPER_BLACKBOX_ERASE);
+        break;
+        case BLACKBOX_STATE_ERASING:
+	        if (isBlackboxErased()) {
+                //Done eraseing
+                blackboxSetState(BLACKBOX_STATE_STOPPED);
+                beeper(BEEPER_BLACKBOX_ERASE);
+            }
+
         default:
         break;
     }
 
     // Did we run out of room on the device? Stop!
     if (isBlackboxDeviceFull()) {
-        blackboxSetState(BLACKBOX_STATE_STOPPED);
-        // ensure we reset the test mode flag if we stop due to full memory card
-        if (startedLoggingInTestMode) startedLoggingInTestMode = false;
+        if (blackboxState != BLACKBOX_STATE_ERASING && blackboxState != BLACKBOX_STATE_START_ERASE) {
+            blackboxSetState(BLACKBOX_STATE_STOPPED);
+            // ensure we reset the test mode flag if we stop due to full memory card
+            if (startedLoggingInTestMode) startedLoggingInTestMode = false;
+        }
     } else { // Only log in test mode if there is room!
 
         if(blackboxConfig()->on_motor_test) {
