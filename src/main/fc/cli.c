@@ -1518,18 +1518,14 @@ static bool isEmpty(const char *string)
     return (string == NULL || *string == '\0') ? true : false;
 }
 
-static void printRxFailsafe(uint8_t dumpMask, const rxConfig_t *rxConfig, const rxConfig_t *defaultRxConfig)
+static void printRxFailsafe(uint8_t dumpMask, const rxFailsafeChannelConfiguration_t *failsafeChannelConfigurations, const rxFailsafeChannelConfiguration_t *failsafeChannelConfigurationsDefault)
 {
     // print out rxConfig failsafe settings
     for (uint32_t channel = 0; channel < MAX_SUPPORTED_RC_CHANNEL_COUNT; channel++) {
-        const rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &rxConfig->failsafe_channel_configurations[channel];
-        const rxFailsafeChannelConfiguration_t *channelFailsafeConfigurationDefault;
-        bool equalsDefault = false;
-        if (defaultRxConfig) {
-            channelFailsafeConfigurationDefault = &defaultRxConfig->failsafe_channel_configurations[channel];
-            equalsDefault = channelFailsafeConfiguration->mode == channelFailsafeConfigurationDefault->mode
-                    && channelFailsafeConfiguration->step == channelFailsafeConfigurationDefault->step;
-        }
+        const rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &failsafeChannelConfigurations[channel];
+        const rxFailsafeChannelConfiguration_t *channelFailsafeConfigurationDefault = &failsafeChannelConfigurationsDefault[channel];
+        const bool equalsDefault = channelFailsafeConfiguration->mode == channelFailsafeConfigurationDefault->mode
+                && channelFailsafeConfiguration->step == channelFailsafeConfigurationDefault->step;
         const bool requireValue = channelFailsafeConfiguration->mode == RX_FAILSAFE_MODE_SET;
         if (requireValue) {
             const char *format = "rxfail %u %c %d\r\n";
@@ -1641,15 +1637,15 @@ static void cliRxFailsafe(char *cmdline)
     }
 }
 
-static void printAux(uint8_t dumpMask, const modeActivationProfile_t *modeActivationProfile, const modeActivationProfile_t *defaultModeActivationProfile)
+static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActivationConditions, const modeActivationCondition_t *defaultModeActivationConditions)
 {
     const char *format = "aux %u %u %u %u %u\r\n";
     // print out aux channel settings
     for (uint32_t i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-        const modeActivationCondition_t *mac = &modeActivationProfile->modeActivationConditions[i];
+        const modeActivationCondition_t *mac = &modeActivationConditions[i];
         bool equalsDefault = false;
-        if (defaultModeActivationProfile) {
-            const modeActivationCondition_t *macDefault = &defaultModeActivationProfile->modeActivationConditions[i];
+        if (defaultModeActivationConditions) {
+            const modeActivationCondition_t *macDefault = &defaultModeActivationConditions[i];
             equalsDefault = mac->modeId == macDefault->modeId
                 && mac->auxChannelIndex == macDefault->auxChannelIndex
                 && mac->range.startStep == macDefault->range.startStep
@@ -1678,7 +1674,7 @@ static void cliAux(char *cmdline)
     const char *ptr;
 
     if (isEmpty(cmdline)) {
-        printAux(DUMP_MASTER, modeActivationProfile(), NULL);
+        printAux(DUMP_MASTER, modeActivationProfile()->modeActivationConditions, NULL);
     } else {
         ptr = cmdline;
         i = atoi(ptr++);
@@ -1903,15 +1899,15 @@ static void cliSerialPassthrough(char *cmdline)
 }
 #endif
 
-static void printAdjustmentRange(uint8_t dumpMask, const adjustmentProfile_t *adjustmentProfile, const adjustmentProfile_t *defaultAdjustmentProfile)
+static void printAdjustmentRange(uint8_t dumpMask, const adjustmentRange_t *adjustmentRanges, const adjustmentRange_t *defaultAdjustmentRanges)
 {
     const char *format = "adjrange %u %u %u %u %u %u %u\r\n";
     // print out adjustment ranges channel settings
     for (uint32_t i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
-        const adjustmentRange_t *ar = &adjustmentProfile->adjustmentRanges[i];
+        const adjustmentRange_t *ar = &adjustmentRanges[i];
         bool equalsDefault = false;
-        if (defaultAdjustmentProfile) {
-            const adjustmentRange_t *arDefault = &defaultAdjustmentProfile->adjustmentRanges[i];
+        if (defaultAdjustmentRanges) {
+            const adjustmentRange_t *arDefault = &defaultAdjustmentRanges[i];
             equalsDefault = ar->auxChannelIndex == arDefault->auxChannelIndex
                 && ar->range.startStep == arDefault->range.startStep
                 && ar->range.endStep == arDefault->range.endStep
@@ -1946,7 +1942,7 @@ static void cliAdjustmentRange(char *cmdline)
     const char *ptr;
 
     if (isEmpty(cmdline)) {
-        printAdjustmentRange(DUMP_MASTER, adjustmentProfile(), NULL);
+        printAdjustmentRange(DUMP_MASTER, adjustmentProfile()->adjustmentRanges, NULL);
     } else {
         ptr = cmdline;
         i = atoi(ptr++);
@@ -2053,8 +2049,9 @@ static void cliMotorMix(char *cmdline)
         printMotorMix(DUMP_MASTER, customMotorMixer(0), NULL);
     } else if (strncasecmp(cmdline, "reset", 5) == 0) {
         // erase custom mixer
-        for (uint32_t i = 0; i < MAX_SUPPORTED_MOTORS; i++)
+        for (uint32_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
             customMotorMixerMutable(i)->throttle = 0.0f;
+        }
     } else if (strncasecmp(cmdline, "load", 4) == 0) {
         ptr = nextArg(cmdline);
         if (ptr) {
@@ -2108,26 +2105,24 @@ static void cliMotorMix(char *cmdline)
 #endif
 }
 
-static void printRxRange(uint8_t dumpMask, const rxConfig_t *rxConfig, const rxConfig_t *defaultRxConfig)
+static void printRxRange(uint8_t dumpMask, const rxChannelRangeConfiguration_t *channelRangeConfigs, const rxChannelRangeConfiguration_t *defaultChannelRangeConfigs)
 {
     const char *format = "rxrange %u %u %u\r\n";
     for (uint32_t i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
-        const rxChannelRangeConfiguration_t *channelRangeConfiguration = &rxConfig->channelRanges[i];
         bool equalsDefault = false;
-        if (defaultRxConfig) {
-            const rxChannelRangeConfiguration_t *channelRangeConfigurationDefault = &defaultRxConfig->channelRanges[i];
-            equalsDefault = channelRangeConfiguration->min == channelRangeConfigurationDefault->min
-                && channelRangeConfiguration->max == channelRangeConfigurationDefault->max;
+        if (defaultChannelRangeConfigs) {
+            equalsDefault = channelRangeConfigs[i].min == defaultChannelRangeConfigs[i].min
+                && channelRangeConfigs[i].max == defaultChannelRangeConfigs[i].max;
             cliDefaultPrintf(dumpMask, equalsDefault, format,
                 i,
-                channelRangeConfigurationDefault->min,
-                channelRangeConfigurationDefault->max
+                defaultChannelRangeConfigs[i].min,
+                defaultChannelRangeConfigs[i].max
             );
         }
         cliDumpPrintf(dumpMask, equalsDefault, format,
             i,
-            channelRangeConfiguration->min,
-            channelRangeConfiguration->max
+            channelRangeConfigs[i].min,
+            channelRangeConfigs[i].max
         );
     }
 }
@@ -2138,7 +2133,7 @@ static void cliRxRange(char *cmdline)
     const char *ptr;
 
     if (isEmpty(cmdline)) {
-        printRxRange(DUMP_MASTER, rxConfig(), NULL);
+        printRxRange(DUMP_MASTER, rxConfig()->channelRanges, NULL);
     } else if (strcasecmp(cmdline, "reset") == 0) {
         resetAllRxChannelRangeConfigurations(rxConfig()->channelRanges);
     } else {
@@ -2299,7 +2294,7 @@ static void cliModeColor(char *cmdline)
         int args[ARGS_COUNT];
         int argNo = 0;
         char *saveptr;
-        char* ptr = strtok_r(cmdline, " ", &saveptr);
+        const char* ptr = strtok_r(cmdline, " ", &saveptr);
         while (ptr && argNo < ARGS_COUNT) {
             args[argNo++] = atoi(ptr);
             ptr = strtok_r(NULL, " ", &saveptr);
@@ -2324,15 +2319,15 @@ static void cliModeColor(char *cmdline)
 #endif
 
 #ifdef USE_SERVOS
-static void printServo(uint8_t dumpMask, servoProfile_t *defaultServoProfile)
+static void printServo(uint8_t dumpMask, const servoParam_t *servoParams, const servoParam_t *servoParamsDefault)
 {
     // print out servo settings
     const char *format = "servo %u %d %d %d %d %d %d %d\r\n";
     for (uint32_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        const servoParam_t *servoConf = &servoProfile()->servoConf[i];
+        const servoParam_t *servoConf = &servoParams[i];
         bool equalsDefault = false;
-        if (defaultServoProfile) {
-            const servoParam_t *servoConfDefault = &defaultServoProfile->servoConf[i];
+        if (servoParamsDefault) {
+            const servoParam_t *servoConfDefault = &servoParamsDefault[i];
             equalsDefault = servoConf->min == servoConfDefault->min
                 && servoConf->max == servoConfDefault->max
                 && servoConf->middle == servoConfDefault->middle
@@ -2374,7 +2369,7 @@ static void cliServo(char *cmdline)
     char *ptr;
 
     if (isEmpty(cmdline)) {
-        printServo(DUMP_MASTER, NULL);
+        printServo(DUMP_MASTER, servoProfile()->servoConf, NULL);
     } else {
         int validArgumentCount = 0;
 
@@ -4029,7 +4024,7 @@ static void printConfig(char *cmdline, bool doDiff)
 
 #ifdef USE_SERVOS
         cliPrintHashLine("servo");
-        printServo(dumpMask, &defaultConfig.servoProfile);
+        printServo(dumpMask, servoProfile()->servoConf, defaultConfig.servoProfile.servoConf);
 
         cliPrintHashLine("servo mix");
         // print custom servo mixer if exists
@@ -4064,13 +4059,13 @@ static void printConfig(char *cmdline, bool doDiff)
 #endif
 
         cliPrintHashLine("aux");
-        printAux(dumpMask, modeActivationProfile(), &defaultConfig.modeActivationProfile);
+        printAux(dumpMask, modeActivationProfile()->modeActivationConditions, defaultConfig.modeActivationProfile.modeActivationConditions);
 
         cliPrintHashLine("adjrange");
-        printAdjustmentRange(dumpMask, adjustmentProfile(), &defaultConfig.adjustmentProfile);
+        printAdjustmentRange(dumpMask, adjustmentProfile()->adjustmentRanges, defaultConfig.adjustmentProfile.adjustmentRanges);
 
         cliPrintHashLine("rxrange");
-        printRxRange(dumpMask, rxConfig(), &defaultConfig.rxConfig);
+        printRxRange(dumpMask, rxConfig()->channelRanges, defaultConfig.rxConfig.channelRanges);
 
 #ifdef VTX
         cliPrintHashLine("vtx");
@@ -4078,7 +4073,7 @@ static void printConfig(char *cmdline, bool doDiff)
 #endif
 
         cliPrintHashLine("rxfail");
-        printRxFailsafe(dumpMask, rxConfig(), &defaultConfig.rxConfig);
+        printRxFailsafe(dumpMask, rxConfig()->failsafe_channel_configurations, defaultConfig.rxConfig.failsafe_channel_configurations);
 
         cliPrintHashLine("master");
         dumpValues(MASTER_VALUE, dumpMask, &defaultConfig);
