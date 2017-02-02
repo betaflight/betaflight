@@ -223,7 +223,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     const float motorMixRange = getMotorMixRange();
 
     // Dynamic ki component to gradually scale back integration when above windup point
-    float dynKi = MIN((1.0f - motorMixRange) * ITermWindupPointInv, 1.0f);
+    const float dynKi = MIN((1.0f - motorMixRange) * ITermWindupPointInv, 1.0f);
 
     // ----------PID controller----------
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
@@ -254,11 +254,12 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         // -----calculate I component
         float ITerm = previousGyroIf[axis];
         if (motorMixRange < 1.0f) {
-            // Only increase ITerm if motor output is not saturated and errorRate exceeds noise threshold
-            // Iterm will only be accelerated below steady rate threshold
-            if (ABS(currentPidSetpoint) < itermAcceleratorRateLimit)
-                dynKi *= itermAccelerator;
+            // Only increase ITerm if motor output is not saturated
             float ITermDelta = Ki[axis] * errorRate * dT * dynKi;
+            if (ABS(currentPidSetpoint) < itermAcceleratorRateLimit) {
+                // ITerm will only be accelerated below steady rate threshold
+                ITermDelta *= itermAccelerator;
+            }
             ITerm += ITermDelta;
             previousGyroIf[axis] = ITerm;
         }
