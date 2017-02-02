@@ -131,7 +131,7 @@ static void taskUpdateBattery(timeUs_t currentTimeUs)
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
             ibatLastServiced = currentTimeUs;
-            updateCurrentMeter(ibatTimeSinceLastServiced, rxConfig(), flight3DConfig()->deadband3d_throttle);
+            updateCurrentMeter(ibatTimeSinceLastServiced);
         }
     }
 }

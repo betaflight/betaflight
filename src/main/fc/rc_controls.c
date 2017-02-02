@@ -60,7 +60,6 @@
 #include "flight/failsafe.h"
 
 
-static const motorConfig_t *motorConfig;
 static pidProfile_t *pidProfile;
 
 // true if arming is done via the sticks (as opposed to a switch)
@@ -116,13 +115,13 @@ bool areSticksInApModePosition(uint16_t ap_mode)
     return ABS(rcCommand[ROLL]) < ap_mode && ABS(rcCommand[PITCH]) < ap_mode;
 }
 
-throttleStatus_e calculateThrottleStatus(const rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
+throttleStatus_e calculateThrottleStatus(void)
 {
     if (feature(FEATURE_3D) && !IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH)) {
-        if ((rcData[THROTTLE] > (rxConfig->midrc - deadband3d_throttle) && rcData[THROTTLE] < (rxConfig->midrc + deadband3d_throttle)))
+        if ((rcData[THROTTLE] > (rxConfig()->midrc - flight3DConfig()->deadband3d_throttle) && rcData[THROTTLE] < (rxConfig()->midrc + flight3DConfig()->deadband3d_throttle)))
             return THROTTLE_LOW;
     } else {
-        if (rcData[THROTTLE] < rxConfig->mincheck)
+        if (rcData[THROTTLE] < rxConfig()->mincheck)
             return THROTTLE_LOW;
     }
 
@@ -728,9 +727,8 @@ int32_t getRcStickDeflection(int32_t axis, uint16_t midrc) {
     return MIN(ABS(rcData[axis] - midrc), 500);
 }
 
-void useRcControlsConfig(const modeActivationCondition_t *modeActivationConditions, const motorConfig_t *motorConfigToUse, pidProfile_t *pidProfileToUse)
+void useRcControlsConfig(const modeActivationCondition_t *modeActivationConditions, pidProfile_t *pidProfileToUse)
 {
-    motorConfig = motorConfigToUse;
     pidProfile = pidProfileToUse;
 
     isUsingSticksToArm = !isModeActivationConditionPresent(modeActivationConditions, BOXARM);

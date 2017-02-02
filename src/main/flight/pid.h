@@ -93,6 +93,8 @@ typedef struct pidConfig_s {
     uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate
 } pidConfig_t;
 
+PG_DECLARE(pidConfig_t, pidConfig);
+
 union rollAndPitchTrims_u;
 void pidController(const pidProfile_t *pidProfile, const union rollAndPitchTrims_u *angleTrim);
 

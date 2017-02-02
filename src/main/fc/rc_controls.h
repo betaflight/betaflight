@@ -177,6 +177,15 @@ typedef struct rcControlsConfig_s {
 
 PG_DECLARE(rcControlsConfig_t, rcControlsConfig);
 
+typedef struct flight3DConfig_s {
+    uint16_t deadband3d_low;                // min 3d value
+    uint16_t deadband3d_high;               // max 3d value
+    uint16_t neutral3d;                     // center 3d value
+    uint16_t deadband3d_throttle;           // default throttle deadband from MIDRC
+} flight3DConfig_t;
+
+PG_DECLARE(flight3DConfig_t, flight3DConfig);
+
 typedef struct armingConfig_s {
     uint8_t gyro_cal_on_first_arm;          // allow disarm/arm on throttle down + roll left/right
     uint8_t disarm_kill_switch;             // allow disarm via AUX switch regardless of throttle value
@@ -189,7 +198,7 @@ bool areUsingSticksToArm(void);
 
 bool areSticksInApModePosition(uint16_t ap_mode);
 struct rxConfig_s;
-throttleStatus_e calculateThrottleStatus(const struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);
+throttleStatus_e calculateThrottleStatus(void);
 void processRcStickPositions(const struct rxConfig_s *rxConfig, throttleStatus_e throttleStatus, bool disarm_kill_switch);
 
 bool isRangeActive(uint8_t auxChannelIndex, channelRange_t *range);
@@ -294,4 +303,4 @@ int32_t getRcStickDeflection(int32_t axis, uint16_t midrc);
 bool isModeActivationConditionPresent(const modeActivationCondition_t *modeActivationConditions, boxId_e modeId);
 struct pidProfile_s;
 struct motorConfig_s;
-void useRcControlsConfig(const modeActivationCondition_t *modeActivationConditions, const struct motorConfig_s *motorConfigToUse, struct pidProfile_s *pidProfileToUse);
+void useRcControlsConfig(const modeActivationCondition_t *modeActivationConditions, struct pidProfile_s *pidProfileToUse);
