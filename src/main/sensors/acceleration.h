@@ -69,7 +69,7 @@ typedef struct accelerometerConfig_s {
 
 PG_DECLARE(accelerometerConfig_t, accelerometerConfig);
 
-bool accInit(const accelerometerConfig_t *accelerometerConfig, uint32_t gyroTargetLooptime);
+bool accInit(uint32_t gyroTargetLooptime);
 bool isAccelerationCalibrationComplete(void);
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims);

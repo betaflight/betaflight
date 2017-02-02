@@ -72,9 +72,6 @@ gyro_t gyro;                      // gyro access functions
 static int32_t gyroADC[XYZ_AXIS_COUNT];
 
 static int32_t gyroZero[XYZ_AXIS_COUNT] = { 0, 0, 0 };
-#ifndef USE_PARAMETER_GROUPS
-static const gyroConfig_t *gyroConfig;
-#endif
 static uint16_t calibratingG = 0;
 
 static filterApplyFnPtr softLpfFilterApplyFn;
@@ -85,6 +82,29 @@ static filterApplyFnPtr notchFilter2ApplyFn;
 static void *notchFilter2[3];
 
 #define DEBUG_GYRO_CALIBRATION 3
+
+#ifdef STM32F10X
+#define GYRO_SYNC_DENOM_DEFAULT 8
+#elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500)  || defined(USE_GYRO_SPI_ICM20689)
+#define GYRO_SYNC_DENOM_DEFAULT 1
+#else
+#define GYRO_SYNC_DENOM_DEFAULT 4
+#endif
+
+PG_REGISTER_WITH_RESET_TEMPLATE(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
+
+PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
+    .gyro_lpf = GYRO_LPF_256HZ,
+    .gyro_sync_denom = GYRO_SYNC_DENOM_DEFAULT,
+    .gyro_soft_lpf_type = FILTER_PT1,
+    .gyro_soft_lpf_hz = 90,
+    .gyro_soft_notch_hz_1 = 400,
+    .gyro_soft_notch_cutoff_1 = 300,
+    .gyro_soft_notch_hz_2 = 200,
+    .gyro_soft_notch_cutoff_2 = 100,
+    .gyro_align = ALIGN_DEFAULT,
+    .gyroMovementCalibrationThreshold = 32
+);
 
 static const extiConfig_t *selectMPUIntExtiConfig(void)
 {
@@ -236,13 +256,8 @@ static bool gyroDetect(gyroDev_t *dev)
     return true;
 }
 
-bool gyroInit(const gyroConfig_t *gyroConfigToUse)
+bool gyroInit(void)
 {
-#ifdef USE_PARAMETER_GROUPS
-    (void)(gyroConfigToUse);
-#else
-    gyroConfig = gyroConfigToUse;
-#endif
     memset(&gyro, 0, sizeof(gyro));
 #if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
     gyro.dev.mpuIntExtiConfig = selectMPUIntExtiConfig();
@@ -257,8 +272,7 @@ bool gyroInit(const gyroConfig_t *gyroConfigToUse)
     switch (detectedSensors[SENSOR_INDEX_GYRO]) {
     default:
         // gyro does not support 32kHz
-        // cast away constness, legitimate as this is cross-validation
-        ((gyroConfig_t*)gyroConfig)->gyro_use_32khz = false;
+        gyroConfigMutable()->gyro_use_32khz = false;
         break;
     case GYRO_MPU6500:
     case GYRO_MPU9250:

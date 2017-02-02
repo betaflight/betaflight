@@ -60,7 +60,6 @@
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
-#include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
 
 #include "flight/altitudehold.h"
@@ -181,11 +180,11 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->levelAngleLimit = 55;
     pidProfile->levelSensitivity = 55;
     pidProfile->setpointRelaxRatio = 30;
-    pidProfile->dtermSetpointWeight = 200;
+    pidProfile->dtermSetpointWeight = 190;
     pidProfile->yawRateAccelLimit = 10.0f;
     pidProfile->rateAccelLimit = 0.0f;
-    pidProfile->itermThrottleThreshold = 300;
-    pidProfile->itermAcceleratorGain = 3.0f;
+    pidProfile->itermThrottleThreshold = 350;
+    pidProfile->itermAcceleratorGain = 1.5f;
     pidProfile->itermAcceleratorRateLimit = 80;
 }
 
@@ -887,15 +886,8 @@ void resetConfigs(void)
 #endif
 }
 
-void activateControlRateConfig(void)
-{
-    generateThrottleCurve(currentControlRateProfile, &masterConfig.motorConfig);
-}
-
 void activateConfig(void)
 {
-    activateControlRateConfig();
-
     resetAdjustmentStates();
 
     useRcControlsConfig(
@@ -904,26 +896,16 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-#ifdef TELEMETRY
-    telemetryUseConfig(&masterConfig.telemetryConfig);
-#endif
-
 #ifdef GPS
     gpsUseProfile(&masterConfig.gpsProfile);
     gpsUsePIDs(&currentProfile->pidProfile);
 #endif
 
-    useFailsafeConfig(&masterConfig.failsafeConfig);
+    failsafeReset();
     setAccelerationTrims(&accelerometerConfigMutable()->accZero);
     setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
 
-    mixerUseConfigs(
-        &masterConfig.flight3DConfig,
-        &masterConfig.motorConfig,
-        &masterConfig.mixerConfig,
-        &masterConfig.airplaneConfig,
-        &masterConfig.rxConfig
-    );
+    mixerUseConfigs(&masterConfig.airplaneConfig);
 
 #ifdef USE_SERVOS
     servoUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoProfile.servoConf, &masterConfig.gimbalConfig);
@@ -942,10 +924,6 @@ void activateConfig(void)
         &masterConfig.rcControlsConfig,
         &masterConfig.motorConfig
     );
-
-#ifdef BARO
-    useBarometerConfig(&masterConfig.barometerConfig);
-#endif
 }
 
 void validateAndFixConfig(void)
@@ -1205,7 +1183,6 @@ void changeControlRateProfile(uint8_t profileIndex)
         profileIndex = MAX_RATEPROFILES - 1;
     }
     setControlRateProfile(profileIndex);
-    activateControlRateConfig();
 }
 
 void beeperOffSet(uint32_t mask)

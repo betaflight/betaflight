@@ -595,7 +595,6 @@ COMMON_SRC = \
             fc/fc_msp.c \
             fc/fc_tasks.c \
             fc/rc_controls.c \
-            fc/rc_curves.c \
             fc/runtime_config.c \
             fc/cli.c \
             flight/altitudehold.c \

@@ -53,35 +53,23 @@
 #include "telemetry/srxl.h"
 #include "telemetry/ibus.h"
 
-#ifndef USE_PARAMETER_GROUPS
-static telemetryConfig_t *telemetryConfig;
-#endif
-
-void telemetryUseConfig(telemetryConfig_t *telemetryConfigToUse)
-{
-#ifdef USE_PARAMETER_GROUPS
-    UNUSED(telemetryConfigToUse);
-#else
-    telemetryConfig = telemetryConfigToUse;
-#endif
-}
 
 void telemetryInit(void)
 {
 #ifdef TELEMETRY_FRSKY
-    initFrSkyTelemetry(telemetryConfig());
+    initFrSkyTelemetry();
 #endif
 #ifdef TELEMETRY_HOTT
-    initHoTTTelemetry(telemetryConfig());
+    initHoTTTelemetry();
 #endif
 #ifdef TELEMETRY_SMARTPORT
-    initSmartPortTelemetry(telemetryConfig());
+    initSmartPortTelemetry();
 #endif
 #ifdef TELEMETRY_LTM
-    initLtmTelemetry(telemetryConfig());
+    initLtmTelemetry();
 #endif
 #ifdef TELEMETRY_JETIEXBUS
-    initJetiExBusTelemetry(telemetryConfig());
+    initJetiExBusTelemetry();
 #endif
 #ifdef TELEMETRY_MAVLINK
     initMAVLinkTelemetry();
@@ -151,13 +139,10 @@ void telemetryCheckState(void)
 #endif
 }
 
-void telemetryProcess(uint32_t currentTime, const rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
+void telemetryProcess(uint32_t currentTime)
 {
 #ifdef TELEMETRY_FRSKY
-    handleFrSkyTelemetry(rxConfig, deadband3d_throttle);
-#else
-    UNUSED(rxConfig);
-    UNUSED(deadband3d_throttle);
+    handleFrSkyTelemetry();
 #endif
 #ifdef TELEMETRY_HOTT
     handleHoTTTelemetry(currentTime);

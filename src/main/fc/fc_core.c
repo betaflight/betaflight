@@ -47,7 +47,6 @@
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
-#include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
 #include "fc/cli.h"
 #include "fc/fc_rc.h"

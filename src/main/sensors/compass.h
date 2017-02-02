@@ -50,7 +50,7 @@ typedef struct compassConfig_s {
 PG_DECLARE(compassConfig_t, compassConfig);
 
 bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse);
-void compassInit(const compassConfig_t *compassConfig);
+void compassInit(void);
 union flightDynamicsTrims_u;
 void compassUpdate(uint32_t currentTime, union flightDynamicsTrims_u *magZero);
 
