@@ -824,6 +824,10 @@ static const clivalue_t valueTable[] = {
     { "displayport_max7456_col_adjust", VAR_INT8    | MASTER_VALUE, &displayPortProfileMax7456()->colAdjust, .config.minmax = { -6, 0 } },
     { "displayport_max7456_row_adjust", VAR_INT8    | MASTER_VALUE, &displayPortProfileMax7456()->rowAdjust, .config.minmax = { -3, 0 } },
 #endif
+#ifdef USE_RSSI_SOFTPWM
+    { "rssi_softpwm_minFollow",     VAR_UINT16  | MASTER_VALUE, &rssiSoftPwmConfig()->minFollow, .config.minmax = { 0, 1 } },
+    { "rssi_softpwm_monitor",       VAR_UINT8   | MASTER_VALUE, &rssiSoftPwmConfig()->monitor, .config.minmax = { 0, 1 } },
+#endif
 };
 #endif
 
@@ -3712,6 +3716,9 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 #ifdef LED_STRIP
     { OWNER_LED_STRIP,     &ledStripConfig()->ioTag,   0 },
+#endif
+#ifdef USE_RSSI_SOFTPWM
+    { OWNER_RSSIPWM,       &masterConfig.rssiSoftPwmConfig.ioTag,   0 },
 #endif
 };
 

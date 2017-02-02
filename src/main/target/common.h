@@ -111,5 +111,6 @@
 #define VTX_SMARTAUDIO
 #define VTX_TRAMP
 #define USE_SENSOR_NAMES
+#define USE_RSSI_SOFTPWM
 #endif
 

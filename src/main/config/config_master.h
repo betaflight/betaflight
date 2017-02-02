@@ -34,6 +34,7 @@
 #include "drivers/light_led.h"
 #include "drivers/flash.h"
 #include "drivers/display.h"
+#include "drivers/rssi_softpwm.h"
 
 #include "fc/rc_controls.h"
 
@@ -110,8 +111,6 @@
 #define displayPortProfileMsp(x) (&masterConfig.displayPortProfileMsp)
 #define displayPortProfileMax7456(x) (&masterConfig.displayPortProfileMax7456)
 #define displayPortProfileOled(x) (&masterConfig.displayPortProfileOled)
-
-
 #define motorConfigMutable(x) (&masterConfig.motorConfig)
 #define flight3DConfigMutable(x) (&masterConfig.flight3DConfig)
 #define servoConfigMutable(x) (&masterConfig.servoConfig)
@@ -169,6 +168,7 @@
 #define rxFailsafeChannelConfigsMutable(x) (&masterConfig.rxConfig.>failsafe_channel_configurations[x])
 #define osdConfigMutable(x) (&masterConfig.osdProfile)
 #define modeActivationConditionsMutable(x) (&masterConfig.modeActivationProfile.modeActivationConditions[x])
+#define rssiSoftPwmConfig(x) (&masterConfig.rssiSoftPwmConfig)
 #endif
 
 // System-wide
@@ -312,6 +312,10 @@ typedef struct master_s {
 
     uint32_t beeper_off_flags;
     uint32_t preferred_beeper_off_flags;
+
+#ifdef USE_RSSI_SOFTPWM
+    rssiSoftPwmConfig_t rssiSoftPwmConfig;
+#endif
 
     char name[MAX_NAME_LENGTH + 1];
     char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER)];

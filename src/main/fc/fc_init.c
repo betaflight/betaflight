@@ -370,6 +370,10 @@ void init(void)
     adcInit(adcConfig());
 #endif
 
+#ifdef USE_RSSI_SOFTPWM
+    rssiSoftPwmInit(rssiSoftPwmConfig());
+#endif
+
     initBoardAlignment(boardAlignment());
 
 #ifdef CMS

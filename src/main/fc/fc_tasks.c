@@ -38,6 +38,7 @@
 #include "drivers/serial.h"
 #include "drivers/stack_check.h"
 #include "drivers/vtx_common.h"
+#include "drivers/rssi_softpwm.h"
 
 #include "fc/config.h"
 #include "fc/fc_msp.h"
@@ -222,6 +223,14 @@ void taskVtxControl(uint32_t currentTime)
 }
 #endif
 
+#ifdef USE_RSSI_SOFTPWM
+static void taskRssiSoftPwm(uint32_t currentTimeUs)
+{
+    // Feature switch here?
+    rssiSoftPwmUpdate(currentTimeUs);
+}
+#endif
+
 void fcTasksInit(void)
 {
     schedulerInit();
@@ -307,6 +316,9 @@ void fcTasksInit(void)
 #if defined(VTX_SMARTAUDIO) || defined(VTX_TRAMP)
     setTaskEnabled(TASK_VTXCTRL, true);
 #endif
+#endif
+#ifdef USE_RSSI_SOFTPWM
+    setTaskEnabled(TASK_RSSI_SOFTPWM, true); // XXX Feature switch?
 #endif
 }
 
@@ -508,6 +520,15 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskFunc = taskVtxControl,
         .desiredPeriod = TASK_PERIOD_HZ(5),          // 5Hz @200msec
         .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
+
+#ifdef USE_RSSI_SOFTPWM
+    [TASK_RSSI_SOFTPWM] = {
+        .taskName = "RSSIPWM",
+        .taskFunc = taskRssiSoftPwm,
+        .desiredPeriod = TASK_PERIOD_HZ(10),        // 10 Hz
+        .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 };
