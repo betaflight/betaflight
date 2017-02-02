@@ -922,8 +922,12 @@ void activateConfig(void)
 
 void validateAndFixConfig(void)
 {
-    if((motorConfig()->motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)){
+    if((motorConfig()->motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)) {
         motorConfigMutable()->mincommand = 1000;
+    }
+
+    if((motorConfig()->motorPwmProtocol == PWM_TYPE_STANDARD) && (motorConfig()->motorPwmRate > 900)) {
+        motorConfig()->motorPwmRate = 400;
     }
 
     if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP) || featureConfigured(FEATURE_RX_SPI))) {
