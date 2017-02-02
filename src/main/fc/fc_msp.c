@@ -1150,13 +1150,15 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     case MSP_FILTER_CONFIG :
         sbufWriteU8(dst, gyroConfig()->gyro_soft_lpf_hz);
         sbufWriteU16(dst, currentProfile->pidProfile.dterm_lpf_hz);
-        sbufWriteU16(dst, currentProfile->pidProfile.yaw_lpf_hz);
+        sbufWriteU16(dst, 0);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_hz_1);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_cutoff_1);
         sbufWriteU16(dst, currentProfile->pidProfile.dterm_notch_hz);
         sbufWriteU16(dst, currentProfile->pidProfile.dterm_notch_cutoff);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_hz_2);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_cutoff_2);
+        sbufWriteU16(dst, currentProfile->pidProfile.yaw_notch_hz);
+        sbufWriteU16(dst, currentProfile->pidProfile.yaw_notch_cutoff);
         break;
 
     case MSP_PID_ADVANCED:
@@ -1526,7 +1528,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_FILTER_CONFIG:
         gyroConfig()->gyro_soft_lpf_hz = sbufReadU8(src);
         currentProfile->pidProfile.dterm_lpf_hz = sbufReadU16(src);
-        currentProfile->pidProfile.yaw_lpf_hz = sbufReadU16(src);
+        sbufReadU16(src);
         if (dataSize > 5) {
             gyroConfig()->gyro_soft_notch_hz_1 = sbufReadU16(src);
             gyroConfig()->gyro_soft_notch_cutoff_1 = sbufReadU16(src);
@@ -1536,6 +1538,10 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (dataSize > 13) {
             gyroConfig()->gyro_soft_notch_hz_2 = sbufReadU16(src);
             gyroConfig()->gyro_soft_notch_cutoff_2 = sbufReadU16(src);
+        }
+        if (dataSize > 17) {
+            currentProfile->pidProfile.yaw_notch_hz = sbufReadU16(src);
+            currentProfile->pidProfile.yaw_notch_cutoff = sbufReadU16(src);
         }
         // reinitialize the gyro filters with the new values
         validateAndFixGyroConfig();

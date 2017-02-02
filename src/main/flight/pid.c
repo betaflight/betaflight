@@ -81,12 +81,12 @@ void pidStabilisationState(pidStabilisationState_e pidControllerState)
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
+static filterApplyFnPtr yawNotchFilterApplyFn;
+static void *yawFilterNotch;
 static filterApplyFnPtr dtermNotchFilterApplyFn;
 static void *dtermFilterNotch[2];
 static filterApplyFnPtr dtermLpfApplyFn;
 static void *dtermFilterLpf[2];
-static filterApplyFnPtr ptermYawFilterApplyFn;
-static void *ptermYawFilter;
 
 void pidInitFilters(const pidProfile_t *pidProfile)
 {
@@ -94,7 +94,6 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     static pt1Filter_t pt1Filter[2];
     static biquadFilter_t biquadFilter[2];
     static firFilterDenoise_t denoisingFilter[2];
-    static pt1Filter_t pt1FilterYaw;
 
     BUILD_BUG_ON(FD_YAW != 2); // only setting up Dterm filters on roll and pitch axes, so ensure yaw axis is 2
 
@@ -107,6 +106,15 @@ void pidInitFilters(const pidProfile_t *pidProfile)
             dtermFilterNotch[axis] = &biquadFilterNotch[axis];
             biquadFilterInit(dtermFilterNotch[axis], pidProfile->dterm_notch_hz, targetPidLooptime, notchQ, FILTER_NOTCH);
         }
+    }
+
+    if (pidProfile->yaw_notch_hz == 0) {
+        yawNotchFilterApplyFn = nullFilterApply;
+    } else {
+        yawNotchFilterApplyFn = (filterApplyFnPtr)biquadFilterApply;
+        const float notchQ = filterGetNotchQ(pidProfile->yaw_notch_hz, pidProfile->yaw_notch_cutoff);
+        yawFilterNotch = &biquadFilterNotch;
+        biquadFilterInit(yawFilterNotch, pidProfile->yaw_notch_hz, targetPidLooptime, notchQ, FILTER_NOTCH);
     }
 
     if (pidProfile->dterm_lpf_hz == 0) {
@@ -138,14 +146,6 @@ void pidInitFilters(const pidProfile_t *pidProfile)
             }
             break;
         }
-    }
-
-    if (pidProfile->yaw_lpf_hz == 0) {
-        ptermYawFilterApplyFn = nullFilterApply;
-    } else {
-        ptermYawFilterApplyFn = (filterApplyFnPtr)pt1FilterApply;
-        ptermYawFilter = &pt1FilterYaw;
-        pt1FilterInit(ptermYawFilter, pidProfile->yaw_lpf_hz, dT);
     }
 }
 
@@ -248,7 +248,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         // -----calculate P component and add Dynamic Part based on stick input
         float PTerm = Kp[axis] * errorRate * tpaFactor;
         if (axis == FD_YAW) {
-            PTerm = ptermYawFilterApplyFn(ptermYawFilter, PTerm);
+            PTerm = yawNotchFilterApplyFn(yawFilterNotch, PTerm);
         }
 
         // -----calculate I component

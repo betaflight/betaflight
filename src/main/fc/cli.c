@@ -698,6 +698,8 @@ const clivalue_t valueTable[] = {
     { "d_lowpass",                  VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_lpf_hz, .config.minmax = {0, 16000 } },
     { "d_notch_hz",                 VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_notch_hz, .config.minmax = { 0,  16000 } },
     { "d_notch_cut",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_notch_cutoff, .config.minmax = { 1,  16000 } },
+    { "yaw_notch_hz",               VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_notch_hz, .config.minmax = { 0,  16000 } },
+    { "yaw_notch_cut",              VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_notch_cutoff, .config.minmax = { 1,  16000 } },
     { "vbat_pid_gain",              VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.vbatPidCompensation, .config.lookup = { TABLE_OFF_ON } },
     { "pid_at_min_throttle",        VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.pidAtMinThrottle, .config.lookup = { TABLE_OFF_ON } },
     { "anti_gravity_thresh",        VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.itermThrottleThreshold, .config.minmax = {20, 1000 } },
@@ -709,7 +711,6 @@ const clivalue_t valueTable[] = {
     { "accel_limit",                VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.rateAccelLimit, .config.minmax = {0.1f, 50.0f } },
 
     { "iterm_windup",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.itermWindupPointPercent, .config.minmax = {30, 100 } },
-    { "yaw_lowpass",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_lpf_hz, .config.minmax = {0, 500 } },
     { "pid_process_denom",          VAR_UINT8  | MASTER_VALUE,  &pidConfig()->pid_process_denom, .config.minmax = { 1,  16 } },
 
     { "p_pitch",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PITCH], .config.minmax = { 0,  200 } },

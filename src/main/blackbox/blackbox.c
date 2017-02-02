@@ -1247,7 +1247,8 @@ static bool blackboxWriteSysinfo()
                                                                           currentProfile->pidProfile.D8[PIDVEL]);
         BLACKBOX_PRINT_HEADER_LINE("dterm_filter_type:%d",                currentProfile->pidProfile.dterm_filter_type);
         BLACKBOX_PRINT_HEADER_LINE("dterm_lpf_hz:%d",                     currentProfile->pidProfile.dterm_lpf_hz);
-        BLACKBOX_PRINT_HEADER_LINE("yaw_lpf_hz:%d",                       currentProfile->pidProfile.yaw_lpf_hz);
+        BLACKBOX_PRINT_HEADER_LINE("yaw_notch_hz:%d",                     currentProfile->pidProfile.yaw_notch_hz);
+        BLACKBOX_PRINT_HEADER_LINE("yaw_notch_cutoff:%d",                 currentProfile->pidProfile.yaw_notch_cutoff);
         BLACKBOX_PRINT_HEADER_LINE("dterm_notch_hz:%d",                   currentProfile->pidProfile.dterm_notch_hz);
         BLACKBOX_PRINT_HEADER_LINE("dterm_notch_cutoff:%d",               currentProfile->pidProfile.dterm_notch_cutoff);
         BLACKBOX_PRINT_HEADER_LINE("itermWindupPointPercent:%d",          currentProfile->pidProfile.itermWindupPointPercent);
