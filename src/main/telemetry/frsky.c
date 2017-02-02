@@ -74,9 +74,6 @@ static serialPortConfig_t *portConfig;
 #define FRSKY_BAUDRATE 9600
 #define FRSKY_INITIAL_PORT_MODE MODE_TX
 
-#ifndef USE_PARAMETER_GROUPS
-static const telemetryConfig_t *telemetryConfig;
-#endif
 static bool frskyTelemetryEnabled =  false;
 static portSharing_e frskyPortSharing;
 
@@ -457,13 +454,8 @@ static void sendHeading(void)
     serialize16(0);
 }
 
-void initFrSkyTelemetry(const telemetryConfig_t *initialTelemetryConfig)
+void initFrSkyTelemetry(void)
 {
-#ifdef USE_PARAMETER_GROUPS
-    UNUSED(initialTelemetryConfig);
-#else
-    telemetryConfig = initialTelemetryConfig;
-#endif
     portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_FRSKY);
     frskyPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_FRSKY);
 }
@@ -515,7 +507,7 @@ void checkFrSkyTelemetryState(void)
     }
 }
 
-void handleFrSkyTelemetry(const rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
+void handleFrSkyTelemetry(void)
 {
     if (!frskyTelemetryEnabled) {
         return;
@@ -546,7 +538,7 @@ void handleFrSkyTelemetry(const rxConfig_t *rxConfig, uint16_t deadband3d_thrott
 
     if ((cycleNum % 8) == 0) {      // Sent every 1s
         sendTemperature1();
-        sendThrottleOrBatterySizeAsRpm(rxConfig, deadband3d_throttle);
+        sendThrottleOrBatterySizeAsRpm(rxConfig(), flight3DConfig()->deadband3d_throttle);
 
         if ((feature(FEATURE_VBAT) || feature(FEATURE_ESC_SENSOR)) && batteryCellCount > 0) {
             sendVoltage();

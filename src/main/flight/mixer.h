@@ -141,12 +141,7 @@ struct rxConfig_s;
 uint8_t getMotorCount();
 float getMotorMixRange();
 
-void mixerUseConfigs(
-        flight3DConfig_t *flight3DConfigToUse,
-        motorConfig_t *motorConfigToUse,
-        mixerConfig_t *mixerConfigToUse,
-        airplaneConfig_t *airplaneConfigToUse,
-        struct rxConfig_s *rxConfigToUse);
+void mixerUseConfigs(airplaneConfig_t *airplaneConfigToUse);
 
 void mixerLoadMix(int index, motorMixer_t *customMixers);
 void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers);

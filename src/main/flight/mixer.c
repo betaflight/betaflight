@@ -63,12 +63,6 @@ int16_t motor[MAX_SUPPORTED_MOTORS];
 int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 
 static airplaneConfig_t *airplaneConfig;
-#ifndef USE_PARAMETER_GROUPS
-static const mixerConfig_t *mixerConfig;
-static const flight3DConfig_t *flight3DConfig;
-static const motorConfig_t *motorConfig;
-const rxConfig_t *rxConfig;
-#endif
 
 mixerMode_e currentMixerMode;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
@@ -297,24 +291,8 @@ void initEscEndpoints(void) {
     rcCommandThrottleRange3dHigh = PWM_RANGE_MAX - rxConfig()->midrc - flight3DConfig()->deadband3d_throttle;
 }
 
-void mixerUseConfigs(
-        flight3DConfig_t *flight3DConfigToUse,
-        motorConfig_t *motorConfigToUse,
-        mixerConfig_t *mixerConfigToUse,
-        airplaneConfig_t *airplaneConfigToUse,
-        rxConfig_t *rxConfigToUse)
+void mixerUseConfigs(airplaneConfig_t *airplaneConfigToUse)
 {
-#ifdef USE_PARAMETER_GROUPS
-    (void)(flight3DConfigToUse);
-    (void)(motorConfigToUse);
-    (void)(mixerConfigToUse);
-    (void)(rxConfigToUse);
-#else
-    flight3DConfig = flight3DConfigToUse;
-    motorConfig = motorConfigToUse;
-    mixerConfig = mixerConfigToUse;
-    rxConfig = rxConfigToUse;
-#endif
     airplaneConfig = airplaneConfigToUse;
 }
 
@@ -494,7 +472,7 @@ void mixTable(pidProfile_t *pidProfile)
     }
 
     // Calculate voltage compensation
-    const float vbatCompensationFactor = (batteryConfig && pidProfile->vbatPidCompensation)  ? calculateVbatPidCompensation() : 1.0f;
+    const float vbatCompensationFactor = pidProfile->vbatPidCompensation  ? calculateVbatPidCompensation() : 1.0f;
 
     // Find roll/pitch/yaw desired output
     float motorMix[MAX_SUPPORTED_MOTORS];

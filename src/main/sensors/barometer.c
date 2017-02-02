@@ -54,10 +54,6 @@ static int32_t baroGroundAltitude = 0;
 static int32_t baroGroundPressure = 0;
 static uint32_t baroPressureSum = 0;
 
-#ifndef USE_PARAMETER_GROUPS
-static const barometerConfig_t *barometerConfig;
-#endif
-
 bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 {
     // Detect what pressure sensors are available. baro->update() is set to sensor-specific update function
@@ -122,15 +118,6 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
     detectedSensors[SENSOR_INDEX_BARO] = baroHardware;
     sensorsSet(SENSOR_BARO);
     return true;
-}
-
-void useBarometerConfig(const barometerConfig_t *barometerConfigToUse)
-{
-#ifdef USE_PARAMETER_GROUPS
-    (void)(barometerConfigToUse);
-#else
-    barometerConfig = barometerConfigToUse;
-#endif
 }
 
 bool isBaroCalibrationComplete(void)

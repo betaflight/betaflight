@@ -204,7 +204,7 @@ static void taskTelemetry(timeUs_t currentTimeUs)
     telemetryCheckState();
 
     if (!cliMode && feature(FEATURE_TELEMETRY)) {
-        telemetryProcess(currentTimeUs, rxConfig(), flight3DConfig()->deadband3d_throttle);
+        telemetryProcess(currentTimeUs);
     }
 }
 #endif

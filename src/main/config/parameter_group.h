@@ -140,6 +140,7 @@ extern const uint8_t __pg_resetdata_end[];
 
 #endif // USE_PARAMETER_GROUPS
 
+#ifdef USE_PARAMETER_GROUPS
 // Register system config
 #define PG_REGISTER_I(_type, _name, _pgn, _version, _reset)             \
     _type _name ## _System;                                             \
@@ -242,6 +243,29 @@ extern const uint8_t __pg_resetdata_end[];
         __VA_ARGS__                                                     \
     }                                                                   \
     /**/
+#else
+#define PG_REGISTER_I(_type, _name, _pgn, _version, _reset)             \
+    _type _name ## _System
+
+#define PG_REGISTER(_type, _name, _pgn, _version)                       \
+    PG_REGISTER_I(_type, _name, _pgn, _version, .reset = {.ptr = 0})    \
+    /**/
+
+#define PG_REGISTER_WITH_RESET_FN(_type, _name, _pgn, _version)         \
+    extern void pgResetFn_ ## _name(_type *);                           \
+    PG_REGISTER_I(_type, _name, _pgn, _version, .reset = {.fn = (pgResetFunc*)&pgResetFn_ ## _name }) \
+    /**/
+
+#define PG_REGISTER_WITH_RESET_TEMPLATE(_type, _name, _pgn, _version)   \
+    extern const _type pgResetTemplate_ ## _name;                       \
+    PG_REGISTER_I(_type, _name, _pgn, _version, .reset = {.ptr = (void*)&pgResetTemplate_ ## _name}) \
+    /**/
+#define PG_RESET_TEMPLATE(_type, _name, ...)                            \
+    const _type pgResetTemplate_ ## _name PG_RESETDATA_ATTRIBUTES = {   \
+        __VA_ARGS__                                                     \
+    }                                                                   \
+    /**/
+#endif
 
 const pgRegistry_t* pgFind(pgn_t pgn);
 
