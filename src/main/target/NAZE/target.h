@@ -60,7 +60,7 @@
     #define UART3_RX_PIN            PB11
     #define UART3_TX_PIN            PB10
 
-    #define SERIAL_PORT_COUNT       4
+    #define SERIAL_PORT_COUNT       4       // UART1, UART2, UART3, SS1
 
     #define MPU6500_CS_GPIO_CLK_PERIPHERAL  NAZE_CS_GPIO_CLK_PERIPHERAL
     #define MPU6500_CS_GPIO                 NAZE_SPI_CS_GPIO
@@ -74,7 +74,7 @@
     #define M25P16_CS_PIN           NAZE_SPI_CS_PIN
     #define M25P16_SPI_INSTANCE     NAZE_SPI_INSTANCE
 
-    #define SERIAL_PORT_COUNT       5
+    #define SERIAL_PORT_COUNT       4       // UART1, UART2, SS1, SS2
 
     #define USE_FLASHFS
     #define USE_FLASH_M25P16
