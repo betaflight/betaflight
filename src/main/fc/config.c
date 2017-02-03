@@ -941,7 +941,7 @@ void validateAndFixConfig(void)
         motorConfigMutable()->mincommand = 1000;
     }
 
-    if((motorConfig()->motorPwmProtocol == PWM_TYPE_STANDARD) && (motorConfig()->motorPwmRate > 900)) {
+    if((motorConfig()->motorPwmProtocol == PWM_TYPE_STANDARD) && (motorConfig()->motorPwmRate > 400)) {
         motorConfig()->motorPwmRate = 400;
     }
 
