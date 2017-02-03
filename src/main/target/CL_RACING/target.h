@@ -111,7 +111,10 @@
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/master
 #define USE_ADC
 #define VBAT_ADC_PIN            PC1
 #define CURRENT_METER_ADC_PIN   PC2
