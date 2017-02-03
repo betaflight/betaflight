@@ -241,8 +241,10 @@ Re-apply any new defaults as desired.
 |  failsafe_kill_switch  | OFF | Set to ON to use an AUX channel as a failsafe kill switch. |
 |  failsafe_throttle_low_delay  | 100 | Activate failsafe when throttle is low and no RX data has been received since this value, in 10th of seconds |
 |  failsafe_procedure  | SET-THR | What failsafe procedure to initiate in Stage 2. See [Failsafe documentation](Failsafe.md#failsafe_throttle). |
+|  failsafe_stick_threshold  | 0 | Threshold for stick motion to consider failsafe condition resolved. If non-zero failsafe won't clear even if RC link is restored - you have to move sticks to exit failsafe. |
 |  rx_min_usec  | 885 | Defines the shortest pulse width value used when ensuring the channel value is valid. If the receiver gives a pulse value lower than this value then the channel will be marked as bad and will default to the value of mid_rc. |
 |  rx_max_usec  | 2115 | Defines the longest pulse width value used when ensuring the channel value is valid. If the receiver gives a pulse value higher than this value then the channel will be marked as bad and will default to the value of mid_rc. |
+|  rx_nosignal_throttle  | HOLD | Defines behavior of throttle channel after signal loss is detected and until `failsafe_procedure` kicks in. Possible values - `HOLD` and `DROP`. |
 |  acc_hardware  | AUTO | Selection of acc hardware. See Wiki Sensor auto detect and hardware failure detection for more info |
 |  baro_use_median_filter  | ON | 3-point median filtering for barometer readouts. Default: ON. No reason to change this setting |
 |  baro_hardware  | AUTO | Selection of baro hardware. See Wiki Sensor auto detect and hardware failure detection for more info |
