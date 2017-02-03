@@ -204,104 +204,11 @@ void processRcStickPositions(throttleStatus_e throttleStatus);
 bool isRangeActive(uint8_t auxChannelIndex, channelRange_t *range);
 void updateActivatedModes(modeActivationCondition_t *modeActivationConditions);
 
-
-typedef enum {
-    ADJUSTMENT_NONE = 0,
-    ADJUSTMENT_RC_RATE,
-    ADJUSTMENT_RC_EXPO,
-    ADJUSTMENT_THROTTLE_EXPO,
-    ADJUSTMENT_PITCH_ROLL_RATE,
-    ADJUSTMENT_YAW_RATE,
-    ADJUSTMENT_PITCH_ROLL_P,
-    ADJUSTMENT_PITCH_ROLL_I,
-    ADJUSTMENT_PITCH_ROLL_D,
-    ADJUSTMENT_YAW_P,
-    ADJUSTMENT_YAW_I,
-    ADJUSTMENT_YAW_D,
-    ADJUSTMENT_RATE_PROFILE,
-    ADJUSTMENT_PITCH_RATE,
-    ADJUSTMENT_ROLL_RATE,
-    ADJUSTMENT_PITCH_P,
-    ADJUSTMENT_PITCH_I,
-    ADJUSTMENT_PITCH_D,
-    ADJUSTMENT_ROLL_P,
-    ADJUSTMENT_ROLL_I,
-    ADJUSTMENT_ROLL_D,
-    ADJUSTMENT_RC_RATE_YAW,
-    ADJUSTMENT_D_SETPOINT,
-    ADJUSTMENT_D_SETPOINT_TRANSITION,
-    ADJUSTMENT_FUNCTION_COUNT
-} adjustmentFunction_e;
-
-
-typedef enum {
-    ADJUSTMENT_MODE_STEP,
-    ADJUSTMENT_MODE_SELECT
-} adjustmentMode_e;
-
-typedef struct adjustmentStepConfig_s {
-    uint8_t step;
-} adjustmentStepConfig_t;
-
-typedef struct adjustmentSelectConfig_s {
-    uint8_t switchPositions;
-} adjustmentSelectConfig_t;
-
-typedef union adjustmentConfig_u {
-    adjustmentStepConfig_t stepConfig;
-    adjustmentSelectConfig_t selectConfig;
-} adjustmentData_t;
-
-typedef struct adjustmentConfig_s {
-    uint8_t adjustmentFunction;
-    uint8_t mode;
-    adjustmentData_t data;
-} adjustmentConfig_t;
-
-typedef struct adjustmentRange_s {
-    // when aux channel is in range...
-    uint8_t auxChannelIndex;
-    channelRange_t range;
-
-    // ..then apply the adjustment function to the auxSwitchChannel ...
-    uint8_t adjustmentFunction;
-    uint8_t auxSwitchChannelIndex;
-
-    // ... via slot
-    uint8_t adjustmentIndex;
-} adjustmentRange_t;
-
-#define ADJUSTMENT_INDEX_OFFSET 1
-
-typedef struct adjustmentState_s {
-    uint8_t auxChannelIndex;
-    const adjustmentConfig_t *config;
-    uint32_t timeoutAt;
-} adjustmentState_t;
-
-
-#ifndef MAX_SIMULTANEOUS_ADJUSTMENT_COUNT
-#define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 4 // enough for 4 x 3position switches / 4 aux channel
-#endif
-
-#define MAX_ADJUSTMENT_RANGE_COUNT 15
-
-PG_DECLARE_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges);
-
-typedef struct adjustmentProfile_s {
-    adjustmentRange_t adjustmentRanges[MAX_ADJUSTMENT_RANGE_COUNT];
-} adjustmentProfile_t;
-
 bool isAirmodeActive(void);
-void resetAdjustmentStates(void);
-void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
-struct rxConfig_s;
-void processRcAdjustments(controlRateConfig_t *controlRateConfig);
 
 bool isUsingSticksForArming(void);
 
 int32_t getRcStickDeflection(int32_t axis, uint16_t midrc);
 bool isModeActivationConditionPresent(const modeActivationCondition_t *modeActivationConditions, boxId_e modeId);
 struct pidProfile_s;
-struct motorConfig_s;
 void useRcControlsConfig(const modeActivationCondition_t *modeActivationConditions, struct pidProfile_s *pidProfileToUse);
