@@ -24,6 +24,9 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
+#include "io/serial.h"
+
 typedef enum {
     FRSKY_FORMAT_DMS = 0,
     FRSKY_FORMAT_NMEA
@@ -35,11 +38,11 @@ typedef enum {
 } frskyUnit_e;
 
 typedef struct telemetryConfig_s {
+    float gpsNoFixLatitude;
+    float gpsNoFixLongitude;
     uint8_t telemetry_switch;               // Use aux channel to change serial output & baudrate( MSP / Telemetry ). It disables automatic switching to Telemetry when armed.
     uint8_t telemetry_inversion;            // also shared with smartport inversion
     uint8_t sportHalfDuplex;
-    float gpsNoFixLatitude;
-    float gpsNoFixLongitude;
     frskyGpsCoordFormat_e frsky_coordinate_format;
     frskyUnit_e frsky_unit;
     uint8_t frsky_vfas_precision;
@@ -49,18 +52,18 @@ typedef struct telemetryConfig_s {
     uint8_t report_cell_voltage;
 } telemetryConfig_t;
 
-void telemetryInit(void);
-bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig);
-extern serialPort_t *telemetrySharedPort;
-
-void telemetryCheckState(void);
-struct rxConfig_s;
-void telemetryProcess(uint32_t currentTime, struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);
-
-bool telemetryDetermineEnabledState(portSharing_e portSharing);
-
-void telemetryUseConfig(telemetryConfig_t *telemetryConfig);
+PG_DECLARE(telemetryConfig_t, telemetryConfig);
 
 #define TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_MAVLINK)
+
+extern serialPort_t *telemetrySharedPort;
+
+void telemetryInit(void);
+bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig);
+
+void telemetryCheckState(void);
+void telemetryProcess(uint32_t currentTime);
+
+bool telemetryDetermineEnabledState(portSharing_e portSharing);
 
 void releaseSharedTelemetryPorts(void);

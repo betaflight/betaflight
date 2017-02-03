@@ -19,6 +19,8 @@
 
 #include <stdbool.h>
 
+#include "config/parameter_group.h"
+
 typedef enum {
     BOXARM = 0,
     BOXANGLE,
@@ -51,6 +53,7 @@ typedef enum {
     BOXAIRMODE,
     BOX3DDISABLESWITCH,
     BOXFPVANGLEMIX,
+    BOXBLACKBOXERASE,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 
@@ -140,6 +143,8 @@ typedef struct modeActivationCondition_s {
     channelRange_t range;
 } modeActivationCondition_t;
 
+PG_DECLARE_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions);
+
 typedef struct modeActivationProfile_s {
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
 } modeActivationProfile_t;
@@ -158,6 +163,8 @@ typedef struct controlRateConfig_s {
     uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
 } controlRateConfig_t;
 
+//!!TODO PG_DECLARE_ARRAY(controlRateConfig_t, MAX_CONTROL_RATE_PROFILE_COUNT, controlRateProfiles);
+
 extern int16_t rcCommand[4];
 extern int16_t rcCommandSmooth[4];
 
@@ -169,18 +176,22 @@ typedef struct rcControlsConfig_s {
     int8_t yaw_control_direction;           // change control direction of yaw (inverted, normal)
 } rcControlsConfig_t;
 
+PG_DECLARE(rcControlsConfig_t, rcControlsConfig);
+
 typedef struct armingConfig_s {
     uint8_t gyro_cal_on_first_arm;          // allow disarm/arm on throttle down + roll left/right
     uint8_t disarm_kill_switch;             // allow disarm via AUX switch regardless of throttle value
     uint8_t auto_disarm_delay;              // allow automatically disarming multicopters after auto_disarm_delay seconds of zero throttle. Disabled when 0
 } armingConfig_t;
 
+PG_DECLARE(armingConfig_t, armingConfig);
+
 bool areUsingSticksToArm(void);
 
 bool areSticksInApModePosition(uint16_t ap_mode);
 struct rxConfig_s;
-throttleStatus_e calculateThrottleStatus(struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);
-void processRcStickPositions(struct rxConfig_s *rxConfig, throttleStatus_e throttleStatus, bool disarm_kill_switch);
+throttleStatus_e calculateThrottleStatus(const struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);
+void processRcStickPositions(const struct rxConfig_s *rxConfig, throttleStatus_e throttleStatus, bool disarm_kill_switch);
 
 bool isRangeActive(uint8_t auxChannelIndex, channelRange_t *range);
 void updateActivatedModes(modeActivationCondition_t *modeActivationConditions);
@@ -267,6 +278,8 @@ typedef struct adjustmentState_s {
 
 #define MAX_ADJUSTMENT_RANGE_COUNT 15
 
+PG_DECLARE_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges);
+
 typedef struct adjustmentProfile_s {
     adjustmentRange_t adjustmentRanges[MAX_ADJUSTMENT_RANGE_COUNT];
 } adjustmentProfile_t;
@@ -274,12 +287,12 @@ typedef struct adjustmentProfile_s {
 bool isAirmodeActive(void);
 void resetAdjustmentStates(void);
 void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
-void processRcAdjustments(controlRateConfig_t *controlRateConfig, struct rxConfig_s *rxConfig);
+void processRcAdjustments(controlRateConfig_t *controlRateConfig, const struct rxConfig_s *rxConfig);
 
 bool isUsingSticksForArming(void);
 
 int32_t getRcStickDeflection(int32_t axis, uint16_t midrc);
-bool isModeActivationConditionPresent(modeActivationCondition_t *modeActivationConditions, boxId_e modeId);
+bool isModeActivationConditionPresent(const modeActivationCondition_t *modeActivationConditions, boxId_e modeId);
 struct pidProfile_s;
 struct motorConfig_s;
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, struct motorConfig_s *motorConfigToUse, struct pidProfile_s *pidProfileToUse);
+void useRcControlsConfig(const modeActivationCondition_t *modeActivationConditions, const struct motorConfig_s *motorConfigToUse, struct pidProfile_s *pidProfileToUse);

@@ -27,9 +27,9 @@
 
 #include "platform.h"
 
-#include "build/version.h"
-
 #ifdef CMS
+
+#include "build/version.h"
 
 #include "drivers/system.h"
 
@@ -40,11 +40,13 @@
 #include "common/utils.h"
 
 #include "config/config_profile.h"
-#include "config/config_master.h"
 #include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/flashfs.h"
+#include "io/beeper.h"
 
 #include "blackbox/blackbox_io.h"
 
@@ -62,6 +64,7 @@ static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
         delay(100);
     }
 
+    beeper(BEEPER_BLACKBOX_ERASE);
     displayClearScreen(pDisplay);
     displayResync(pDisplay); // Was max7456RefreshAll(); wedges during heavy SPI?
 

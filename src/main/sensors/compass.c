@@ -22,6 +22,9 @@
 
 #include "common/axis.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/compass.h"
 #include "drivers/compass_ak8975.h"
 #include "drivers/compass_ak8963.h"
@@ -143,12 +146,12 @@ retry:
     return true;
 }
 
-void compassInit(const compassConfig_t *compassConfig)
+void compassInit(void)
 {
     // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)
     // calculate magnetic declination
-    const int16_t deg = compassConfig->mag_declination / 100;
-    const int16_t min = compassConfig->mag_declination % 100;
+    const int16_t deg = compassConfig()->mag_declination / 100;
+    const int16_t min = compassConfig()->mag_declination % 100;
     mag.magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units
     LED1_ON;
     mag.dev.init();

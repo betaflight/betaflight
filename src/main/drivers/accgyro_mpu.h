@@ -124,18 +124,18 @@
 // RF = Register Flag
 #define MPU_RF_DATA_RDY_EN (1 << 0)
 
-typedef bool (*mpuReadRegisterFunc)(uint8_t reg, uint8_t length, uint8_t* data);
-typedef bool (*mpuWriteRegisterFunc)(uint8_t reg, uint8_t data);
-typedef void(*mpuResetFuncPtr)(void);
+typedef bool (*mpuReadRegisterFnPtr)(uint8_t reg, uint8_t length, uint8_t* data);
+typedef bool (*mpuWriteRegisterFnPtr)(uint8_t reg, uint8_t data);
+typedef void(*mpuResetFnPtr)(void);
 
-extern mpuResetFuncPtr mpuReset;
+extern mpuResetFnPtr mpuResetFn;
 
 typedef struct mpuConfiguration_s {
-    mpuReadRegisterFunc read;
-    mpuWriteRegisterFunc write;
-    mpuReadRegisterFunc slowread;
-    mpuWriteRegisterFunc verifywrite;
-    mpuResetFuncPtr reset;
+    mpuReadRegisterFnPtr readFn;
+    mpuWriteRegisterFnPtr writeFn;
+    mpuReadRegisterFnPtr slowreadFn;
+    mpuWriteRegisterFnPtr verifywriteFn;
+    mpuResetFnPtr resetFn;
     uint8_t gyroReadXRegister; // Y and Z must registers follow this, 2 words each
 } mpuConfiguration_t;
 
@@ -178,7 +178,7 @@ typedef enum {
     ICM_20689_SPI,
     ICM_20608_SPI,
     ICM_20602_SPI
-} detectedMPUSensor_e;
+} mpuSensor_e;
 
 typedef enum {
     MPU_HALF_RESOLUTION,
@@ -186,7 +186,7 @@ typedef enum {
 } mpu6050Resolution_e;
 
 typedef struct mpuDetectionResult_s {
-    detectedMPUSensor_e sensor;
+    mpuSensor_e sensor;
     mpu6050Resolution_e resolution;
 } mpuDetectionResult_t;
 

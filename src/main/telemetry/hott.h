@@ -490,7 +490,7 @@ typedef struct HOTT_AIRESC_MSG_s {
 void handleHoTTTelemetry(timeUs_t currentTimeUs);
 void checkHoTTTelemetryState(void);
 
-void initHoTTTelemetry(telemetryConfig_t *telemetryConfig);
+void initHoTTTelemetry(void);
 void configureHoTTTelemetryPort(void);
 void freeHoTTTelemetryPort(void);
 

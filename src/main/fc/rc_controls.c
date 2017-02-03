@@ -31,6 +31,8 @@
 #include "common/maths.h"
 
 #include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/system.h"
 
@@ -58,7 +60,7 @@
 #include "flight/failsafe.h"
 
 
-static motorConfig_t *motorConfig;
+static const motorConfig_t *motorConfig;
 static pidProfile_t *pidProfile;
 
 // true if arming is done via the sticks (as opposed to a switch)
@@ -114,7 +116,7 @@ bool areSticksInApModePosition(uint16_t ap_mode)
     return ABS(rcCommand[ROLL]) < ap_mode && ABS(rcCommand[PITCH]) < ap_mode;
 }
 
-throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
+throttleStatus_e calculateThrottleStatus(const rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
 {
     if (feature(FEATURE_3D) && !IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH)) {
         if ((rcData[THROTTLE] > (rxConfig->midrc - deadband3d_throttle) && rcData[THROTTLE] < (rxConfig->midrc + deadband3d_throttle)))
@@ -127,7 +129,7 @@ throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband
     return THROTTLE_HIGH;
 }
 
-void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool disarm_kill_switch)
+void processRcStickPositions(const rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool disarm_kill_switch)
 {
     static uint8_t rcDelayCommand;      // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
     static uint8_t rcSticks;            // this hold sticks position for command combos
@@ -317,12 +319,12 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
 
 }
 
-bool isModeActivationConditionPresent(modeActivationCondition_t *modeActivationConditions, boxId_e modeId)
+bool isModeActivationConditionPresent(const modeActivationCondition_t *modeActivationConditions, boxId_e modeId)
 {
     uint8_t index;
 
     for (index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
-        modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[index];
+        const modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[index];
 
         if (modeActivationCondition->modeId == modeId && IS_RANGE_USABLE(&modeActivationCondition->range)) {
             return true;
@@ -645,7 +647,7 @@ static void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
 
 #define RESET_FREQUENCY_2HZ (1000 / 2)
 
-void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig)
+void processRcAdjustments(controlRateConfig_t *controlRateConfig, const rxConfig_t *rxConfig)
 {
     uint8_t adjustmentIndex;
     uint32_t now = millis();
@@ -726,7 +728,7 @@ int32_t getRcStickDeflection(int32_t axis, uint16_t midrc) {
     return MIN(ABS(rcData[axis] - midrc), 500);
 }
 
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, motorConfig_t *motorConfigToUse, pidProfile_t *pidProfileToUse)
+void useRcControlsConfig(const modeActivationCondition_t *modeActivationConditions, const motorConfig_t *motorConfigToUse, pidProfile_t *pidProfileToUse)
 {
     motorConfig = motorConfigToUse;
     pidProfile = pidProfileToUse;
@@ -738,4 +740,3 @@ void resetAdjustmentStates(void)
 {
     memset(adjustmentStates, 0, sizeof(adjustmentStates));
 }
-

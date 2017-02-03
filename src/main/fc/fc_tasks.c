@@ -27,6 +27,11 @@
 #include "common/color.h"
 #include "common/utils.h"
 
+#include "config/feature.h"
+#include "config/config_profile.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
@@ -43,8 +48,10 @@
 #include "fc/cli.h"
 #include "fc/fc_dispatch.h"
 
-#include "flight/pid.h"
 #include "flight/altitudehold.h"
+#include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
 
 #include "io/beeper.h"
 #include "io/dashboard.h"
@@ -72,10 +79,6 @@
 
 #include "telemetry/telemetry.h"
 
-#include "config/feature.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
-
 #ifdef USE_BST
 void taskBstMasterProcess(timeUs_t currentTimeUs);
 #endif
@@ -94,7 +97,7 @@ static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
 
-    accUpdate(&accelerometerConfig()->accelerometerTrims);
+    accUpdate(&accelerometerConfigMutable()->accelerometerTrims);
 }
 
 static void taskHandleSerial(timeUs_t currentTimeUs)
@@ -128,7 +131,7 @@ static void taskUpdateBattery(timeUs_t currentTimeUs)
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
             ibatLastServiced = currentTimeUs;
-            updateCurrentMeter(ibatTimeSinceLastServiced, &masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
+            updateCurrentMeter(ibatTimeSinceLastServiced, rxConfig(), flight3DConfig()->deadband3d_throttle);
         }
     }
 }
@@ -201,7 +204,7 @@ static void taskTelemetry(timeUs_t currentTimeUs)
     telemetryCheckState();
 
     if (!cliMode && feature(FEATURE_TELEMETRY)) {
-        telemetryProcess(currentTimeUs, &masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
+        telemetryProcess(currentTimeUs);
     }
 }
 #endif

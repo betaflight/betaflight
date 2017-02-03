@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include "common/axis.h"
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "flight/pid.h"

@@ -16,6 +16,11 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
+#include "config/config_profile.h"
+#include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/system.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
@@ -51,9 +56,6 @@
 
 #include "telemetry/telemetry.h"
 #include "telemetry/smartport.h"
-
-#include "config/config_profile.h"
-#include "config/feature.h"
 
 #include "msp/msp.h"
 
@@ -148,7 +150,6 @@ const uint16_t frSkyDataIdTable[] = {
 static serialPort_t *smartPortSerialPort = NULL; // The 'SmartPort'(tm) Port.
 static serialPortConfig_t *portConfig;
 
-static telemetryConfig_t *telemetryConfig;
 static bool smartPortTelemetryEnabled =  false;
 static portSharing_e smartPortPortSharing;
 
@@ -302,9 +303,8 @@ static void smartPortSendPackage(uint16_t id, uint32_t val)
     smartPortSendPackageEx(FSSP_DATA_FRAME,payload);
 }
 
-void initSmartPortTelemetry(telemetryConfig_t *initialTelemetryConfig)
+void initSmartPortTelemetry(void)
 {
-    telemetryConfig = initialTelemetryConfig;
     portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_SMARTPORT);
     smartPortPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_SMARTPORT);
 }
@@ -326,11 +326,11 @@ void configureSmartPortTelemetryPort(void)
 
     portOptions_t portOptions = 0;
 
-    if (telemetryConfig->sportHalfDuplex) {
+    if (telemetryConfig()->sportHalfDuplex) {
         portOptions |= SERIAL_BIDIR;
     }
 
-    if (telemetryConfig->telemetry_inversion) {
+    if (telemetryConfig()->telemetry_inversion) {
         portOptions |= SERIAL_INVERTED;
     }
 
@@ -622,7 +622,7 @@ void handleSmartPortTelemetry(void)
             case FSSP_DATAID_VFAS       :
                 if (feature(FEATURE_VBAT) && batteryCellCount > 0) {
                     uint16_t vfasVoltage;
-                    if (telemetryConfig->frsky_vfas_cell_voltage) {
+                    if (telemetryConfig()->frsky_vfas_cell_voltage) {
                         vfasVoltage = getVbat() / batteryCellCount;
                     } else {
                         vfasVoltage = getVbat();
@@ -752,7 +752,7 @@ void handleSmartPortTelemetry(void)
                 } else if (feature(FEATURE_GPS)) {
                     smartPortSendPackage(id, 0);
                     smartPortHasRequest = 0;
-                } else if (telemetryConfig->pidValuesAsTelemetry){
+                } else if (telemetryConfig()->pidValuesAsTelemetry){
                     switch (t2Cnt) {
                         case 0:
                             tmp2 = currentProfile->pidProfile.P8[ROLL];

@@ -17,15 +17,9 @@
 
 #pragma once
 
-typedef enum {
-    FRSKY_VFAS_PRECISION_LOW = 0,
-    FRSKY_VFAS_PRECISION_HIGH
-} frskyVFasPrecision_e;
+struct controlRateConfig_s;
+struct motorConfig_s;
+void generateThrottleCurve(struct controlRateConfig_s *controlRateConfig, const struct motorConfig_s *motorConfig);
 
-void handleFrSkyTelemetry(void);
-void checkFrSkyTelemetryState(void);
-
-void initFrSkyTelemetry(void);
-void configureFrSkyTelemetryPort(void);
-void freeFrSkyTelemetryPort(void);
+int16_t rcLookupThrottle(int32_t tmp);
 

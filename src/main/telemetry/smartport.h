@@ -7,7 +7,7 @@
 
 #pragma once
 
-void initSmartPortTelemetry(telemetryConfig_t *);
+void initSmartPortTelemetry(void);
 
 void handleSmartPortTelemetry(void);
 void checkSmartPortTelemetryState(void);

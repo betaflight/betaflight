@@ -17,6 +17,10 @@
 
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
+
+#include "config/parameter_group.h"
 #include "drivers/serial.h"
 
 typedef enum {
@@ -111,23 +115,25 @@ typedef struct serialConfig_s {
     uint8_t reboot_character;               // which byte is used to reboot. Default 'R', could be changed carefully to something else.
 } serialConfig_t;
 
+PG_DECLARE(serialConfig_t, serialConfig);
+
 typedef void serialConsumer(uint8_t);
 
 //
 // configuration
 //
-void serialInit(serialConfig_t *initialSerialConfig, bool softserialEnabled, serialPortIdentifier_e serialPortToDisable);
+void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisable);
 void serialRemovePort(serialPortIdentifier_e identifier);
 uint8_t serialGetAvailablePortCount(void);
 bool serialIsPortAvailable(serialPortIdentifier_e identifier);
-bool isSerialConfigValid(serialConfig_t *serialConfig);
+bool isSerialConfigValid(const serialConfig_t *serialConfig);
 serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e identifier);
 bool doesConfigurationUsePort(serialPortIdentifier_e portIdentifier);
 serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function);
 serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function);
 
-portSharing_e determinePortSharing(serialPortConfig_t *portConfig, serialPortFunction_e function);
-bool isSerialPortShared(serialPortConfig_t *portConfig, uint16_t functionMask, serialPortFunction_e sharedWithFunction);
+portSharing_e determinePortSharing(const serialPortConfig_t *portConfig, serialPortFunction_e function);
+bool isSerialPortShared(const serialPortConfig_t *portConfig, uint16_t functionMask, serialPortFunction_e sharedWithFunction);
 
 serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identifier);
 int findSerialPortIndexByIdentifier(serialPortIdentifier_e identifier);

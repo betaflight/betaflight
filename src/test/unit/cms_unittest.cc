@@ -26,6 +26,7 @@
 #define BARO
 
 extern "C" {
+    #include "platform.h"
     #include "target.h"
     #include "drivers/display.h"
     #include "cms/cms.h"

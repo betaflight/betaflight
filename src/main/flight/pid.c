@@ -28,6 +28,9 @@
 #include "common/maths.h"
 #include "common/filter.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "fc/fc_core.h"
 #include "fc/fc_rc.h"
 

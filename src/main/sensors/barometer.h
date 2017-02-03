@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
 #include "drivers/barometer.h"
 
 typedef enum {
@@ -37,6 +38,8 @@ typedef struct barometerConfig_s {
     float baro_cf_alt;                      // apply CF to use ACC for height estimation
 } barometerConfig_t;
 
+PG_DECLARE(barometerConfig_t, barometerConfig);
+
 typedef struct baro_s {
     baroDev_t dev;
     int32_t BaroAlt;
@@ -46,7 +49,6 @@ typedef struct baro_s {
 extern baro_t baro;
 
 bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse);
-void useBarometerConfig(const barometerConfig_t *barometerConfigToUse);
 bool isBaroCalibrationComplete(void);
 void baroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 uint32_t baroUpdate(void);

@@ -20,6 +20,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "build/build_config.h"
+
 typedef uint16_t pgn_t;
 
 // parameter group registry flags
@@ -54,6 +56,7 @@ static inline uint16_t pgN(const pgRegistry_t* reg) {return reg->pgn & PGR_PGN_M
 static inline uint8_t pgVersion(const pgRegistry_t* reg) {return reg->pgn >> 12;}
 static inline uint16_t pgSize(const pgRegistry_t* reg) {return reg->size & PGR_SIZE_MASK;}
 static inline uint16_t pgIsSystem(const pgRegistry_t* reg) {return (reg->size & PGR_SIZE_PROFILE_FLAG) == 0;}
+static inline uint16_t pgIsProfile(const pgRegistry_t* reg) {return (reg->size & PGR_SIZE_PROFILE_FLAG) == PGR_SIZE_PROFILE_FLAG;}
 
 #define PG_PACKED __attribute__((packed))
 
@@ -97,28 +100,47 @@ extern const uint8_t __pg_resetdata_end[];
     } while(0)                                                          \
     /**/
 
+#ifdef USE_PARAMETER_GROUPS
 // Declare system config
 #define PG_DECLARE(_type, _name)                                        \
     extern _type _name ## _System;                                      \
-    static inline _type* _name(void) { return &_name ## _System; }      \
+    static inline const _type* _name(void) { return &_name ## _System; }\
+    static inline _type* _name ## Mutable(void) { return &_name ## _System; }\
     struct _dummy                                                       \
     /**/
 
 // Declare system config array
-#define PG_DECLARE_ARR(_type, _size, _name)                             \
+#define PG_DECLARE_ARRAY(_type, _size, _name)                             \
     extern _type _name ## _SystemArray[_size];                          \
-    static inline _type* _name(int _index) { return &_name ## _SystemArray[_index]; } \
-    static inline _type (* _name ## _arr(void))[_size] { return &_name ## _SystemArray; } \
+    static inline const _type* _name(int _index) { return &_name ## _SystemArray[_index]; } \
+    static inline _type* _name ## Mutable(int _index) { return &_name ## _SystemArray[_index]; } \
+    static inline _type (* _name ## _array(void))[_size] { return &_name ## _SystemArray; } \
     struct _dummy                                                       \
     /**/
 
 // Declare profile config
 #define PG_DECLARE_PROFILE(_type, _name)                                \
     extern _type *_name ## _ProfileCurrent;                             \
-    static inline _type* _name(void) { return _name ## _ProfileCurrent; } \
+    static inline const _type* _name(void) { return _name ## _ProfileCurrent; } \
+    static inline _type* _name ## Mutable(void) { return _name ## _ProfileCurrent; } \
     struct _dummy                                                       \
     /**/
 
+#else
+
+#define PG_DECLARE(_type, _name)                                        \
+    extern _type _name ## _System
+
+#define PG_DECLARE_ARRAY(_type, _size, _name)                           \
+    extern _type _name ## _SystemArray[_size]
+
+// Declare profile config
+#define PG_DECLARE_PROFILE(_type, _name)                                \
+    extern _type *_name ## _ProfileCurrent
+
+#endif // USE_PARAMETER_GROUPS
+
+#ifdef USE_PARAMETER_GROUPS
 // Register system config
 #define PG_REGISTER_I(_type, _name, _pgn, _version, _reset)             \
     _type _name ## _System;                                             \
@@ -148,7 +170,7 @@ extern const uint8_t __pg_resetdata_end[];
     /**/
 
 // Register system config array
-#define PG_REGISTER_ARR_I(_type, _size, _name, _pgn, _version, _reset)  \
+#define PG_REGISTER_ARRAY_I(_type, _size, _name, _pgn, _version, _reset)  \
     _type _name ## _SystemArray[_size];                                 \
     extern const pgRegistry_t _name ##_Registry;                        \
     const pgRegistry_t _name ## _Registry PG_REGISTER_ATTRIBUTES = {    \
@@ -160,20 +182,20 @@ extern const uint8_t __pg_resetdata_end[];
     }                                                                   \
     /**/
 
-#define PG_REGISTER_ARR(_type, _size, _name, _pgn, _version)            \
-    PG_REGISTER_ARR_I(_type, _size, _name, _pgn, _version, .reset = {.ptr = 0}) \
+#define PG_REGISTER_ARRAY(_type, _size, _name, _pgn, _version)            \
+    PG_REGISTER_ARRAY_I(_type, _size, _name, _pgn, _version, .reset = {.ptr = 0}) \
     /**/
 
-#define PG_REGISTER_ARR_WITH_RESET_FN(_type, _size, _name, _pgn, _version) \
+#define PG_REGISTER_ARRAY_WITH_RESET_FN(_type, _size, _name, _pgn, _version) \
     extern void pgResetFn_ ## _name(_type *);    \
-    PG_REGISTER_ARR_I(_type, _size, _name, _pgn, _version, .reset = {.fn = (pgResetFunc*)&pgResetFn_ ## _name}) \
+    PG_REGISTER_ARRAY_I(_type, _size, _name, _pgn, _version, .reset = {.fn = (pgResetFunc*)&pgResetFn_ ## _name}) \
     /**/
 
 #if 0
 // ARRAY reset mechanism is not implemented yet, only few places in code would benefit from it - See pgResetInstance
-#define PG_REGISTER_ARR_WITH_RESET_TEMPLATE(_type, _size, _name, _pgn, _version) \
+#define PG_REGISTER_ARRAY_WITH_RESET_TEMPLATE(_type, _size, _name, _pgn, _version) \
     extern const _type pgResetTemplate_ ## _name;                       \
-    PG_REGISTER_ARR_I(_type, _size, _name, _pgn, _version, .reset = {.ptr = (void*)&pgResetTemplate_ ## _name}) \
+    PG_REGISTER_ARRAY_I(_type, _size, _name, _pgn, _version, .reset = {.ptr = (void*)&pgResetTemplate_ ## _name}) \
     /**/
 #endif
 
@@ -221,6 +243,29 @@ extern const uint8_t __pg_resetdata_end[];
         __VA_ARGS__                                                     \
     }                                                                   \
     /**/
+#else
+#define PG_REGISTER_I(_type, _name, _pgn, _version, _reset)             \
+    _type _name ## _System
+
+#define PG_REGISTER(_type, _name, _pgn, _version)                       \
+    PG_REGISTER_I(_type, _name, _pgn, _version, .reset = {.ptr = 0})    \
+    /**/
+
+#define PG_REGISTER_WITH_RESET_FN(_type, _name, _pgn, _version)         \
+    extern void pgResetFn_ ## _name(_type *);                           \
+    PG_REGISTER_I(_type, _name, _pgn, _version, .reset = {.fn = (pgResetFunc*)&pgResetFn_ ## _name }) \
+    /**/
+
+#define PG_REGISTER_WITH_RESET_TEMPLATE(_type, _name, _pgn, _version)   \
+    extern const _type pgResetTemplate_ ## _name;                       \
+    PG_REGISTER_I(_type, _name, _pgn, _version, .reset = {.ptr = (void*)&pgResetTemplate_ ## _name}) \
+    /**/
+#define PG_RESET_TEMPLATE(_type, _name, ...)                            \
+    const _type pgResetTemplate_ ## _name PG_RESETDATA_ATTRIBUTES = {   \
+        __VA_ARGS__                                                     \
+    }                                                                   \
+    /**/
+#endif
 
 const pgRegistry_t* pgFind(pgn_t pgn);
 
