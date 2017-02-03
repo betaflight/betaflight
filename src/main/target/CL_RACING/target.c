@@ -27,17 +27,10 @@
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
     DEF_TIM(TIM4,  CH3, PB8,  TIM_USE_PWM | TIM_USE_PPM,   TIMER_OUTPUT_NONE,     0), // PPM
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/master
     DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0), // S1_OUT D1_ST7
     DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0), // S2_OUT D1_ST2
     DEF_TIM(TIM2,  CH4, PA3,  TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 1), // S3_OUT D1_ST6
     DEF_TIM(TIM2,  CH3, PA2,  TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0), // S4_OUT D1_ST1
     DEF_TIM(TIM4,  CH4, PB9,  TIM_USE_MOTOR | TIM_USE_LED, TIMER_OUTPUT_STANDARD, 0), // S5_OUT
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/master
 };
