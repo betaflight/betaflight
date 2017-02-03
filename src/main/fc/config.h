@@ -66,6 +66,10 @@ typedef struct systemConfig_s {
 } systemConfig_t;
 
 //!!TODOPG_DECLARE(systemConfig_t, systemConfig);
+struct profile_s;
+extern struct profile_s *currentProfile;
+struct controlRateConfig_s;
+extern struct controlRateConfig_s *currentControlRateProfile;
 
 void beeperOffSet(uint32_t mask);
 void beeperOffSetAll(uint8_t beeperCount);

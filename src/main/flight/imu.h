@@ -32,11 +32,6 @@ extern float accVelScale;
 extern int32_t accSum[XYZ_AXIS_COUNT];
 
 
-#define DEGREES_TO_DECIDEGREES(angle) (angle * 10)
-#define DECIDEGREES_TO_DEGREES(angle) (angle / 10)
-#define DECIDEGREES_TO_RADIANS(angle) ((angle / 10.0f) * 0.0174532925f)
-#define DEGREES_TO_RADIANS(angle) ((angle) * 0.0174532925f)
-
 typedef union {
     int16_t raw[XYZ_AXIS_COUNT];
     struct {

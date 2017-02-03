@@ -18,7 +18,6 @@
 #pragma once
 
 #include "config/parameter_group.h"
-#include "common/maths.h" // for fix12_t
 
 #ifndef VBAT_SCALE_DEFAULT
 #define VBAT_SCALE_DEFAULT 110
@@ -80,9 +79,6 @@ extern uint16_t batteryWarningVoltage;
 extern int32_t amperageLatest;
 extern int32_t amperage;
 extern int32_t mAhDrawn;
-#ifndef USE_PARAMETER_GROUPS
-extern const batteryConfig_t *batteryConfig;
-#endif
 
 batteryState_e getBatteryState(void);
 const  char * getBatteryStateString(void);
@@ -90,7 +86,7 @@ void updateBattery(void);
 void batteryInit(void);
 
 struct rxConfig_s;
-void updateCurrentMeter(int32_t lastUpdateAt, const struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);
+void updateCurrentMeter(int32_t lastUpdateAt);
 int32_t currentMeterToCentiamps(uint16_t src);
 
 float calculateVbatPidCompensation(void);

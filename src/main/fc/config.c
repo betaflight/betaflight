@@ -892,7 +892,6 @@ void activateConfig(void)
 
     useRcControlsConfig(
         modeActivationProfile()->modeActivationConditions,
-        &masterConfig.motorConfig,
         &currentProfile->pidProfile
     );
 
@@ -918,12 +917,7 @@ void activateConfig(void)
         throttleCorrectionConfig()->throttle_correction_angle
     );
 
-    configureAltitudeHold(
-        &currentProfile->pidProfile,
-        &masterConfig.barometerConfig,
-        &masterConfig.rcControlsConfig,
-        &masterConfig.motorConfig
-    );
+    configureAltitudeHold(&currentProfile->pidProfile);
 }
 
 void validateAndFixConfig(void)
