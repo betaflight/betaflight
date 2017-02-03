@@ -1065,7 +1065,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                     mac->range.startStep = bstRead8();
                     mac->range.endStep = bstRead8();
 
-                    useRcControlsConfig(modeActivationProfile()->modeActivationConditions, &masterConfig.motorConfig, &currentProfile->pidProfile);
+                    useRcControlsConfig(modeActivationProfile()->modeActivationConditions, &currentProfile->pidProfile);
                 } else {
                     ret = BST_FAILED;
                 }

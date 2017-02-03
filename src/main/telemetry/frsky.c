@@ -195,18 +195,15 @@ static void sendGpsAltitude(void)
 }
 #endif
 
-static void sendThrottleOrBatterySizeAsRpm(const rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
+static void sendThrottleOrBatterySizeAsRpm(void)
 {
     sendDataHead(ID_RPM);
 #ifdef USE_ESC_SENSOR
-    UNUSED(rxConfig);
-    UNUSED(deadband3d_throttle);
-
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
     serialize16(escData->dataAge < ESC_DATA_INVALID ? escData->rpm : 0);
 #else
     if (ARMING_FLAG(ARMED)) {
-        throttleStatus_e throttleStatus = calculateThrottleStatus(rxConfig, deadband3d_throttle);
+        const throttleStatus_e throttleStatus = calculateThrottleStatus();
         uint16_t throttleForRPM = rcCommand[THROTTLE] / BLADE_NUMBER_DIVIDER;
         if (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP))
                     throttleForRPM = 0;
@@ -538,7 +535,7 @@ void handleFrSkyTelemetry(void)
 
     if ((cycleNum % 8) == 0) {      // Sent every 1s
         sendTemperature1();
-        sendThrottleOrBatterySizeAsRpm(rxConfig(), flight3DConfig()->deadband3d_throttle);
+        sendThrottleOrBatterySizeAsRpm();
 
         if ((feature(FEATURE_VBAT) || feature(FEATURE_ESC_SENSOR)) && batteryCellCount > 0) {
             sendVoltage();

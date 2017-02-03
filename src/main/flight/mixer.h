@@ -104,15 +104,6 @@ typedef struct mixerConfig_s {
 
 PG_DECLARE(mixerConfig_t, mixerConfig);
 
-typedef struct flight3DConfig_s {
-    uint16_t deadband3d_low;                // min 3d value
-    uint16_t deadband3d_high;               // max 3d value
-    uint16_t neutral3d;                     // center 3d value
-    uint16_t deadband3d_throttle;           // default throttle deadband from MIDRC
-} flight3DConfig_t;
-
-PG_DECLARE(flight3DConfig_t, flight3DConfig);
-
 typedef struct motorConfig_s {
     uint16_t minthrottle;                   // Set the minimum throttle command sent to the ESC (Electronic Speed Controller). This is the minimum value that allow motors to run at a idle speed.
     uint16_t maxthrottle;                   // This is the maximum value for the ESCs at full power this value can be increased up to 2000

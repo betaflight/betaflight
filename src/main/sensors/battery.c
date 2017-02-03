@@ -22,29 +22,23 @@
 
 #include "build/debug.h"
 
-#include "common/maths.h"
 #include "common/filter.h"
+#include "common/utils.h"
 
+#include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
 #include "drivers/adc.h"
 #include "drivers/system.h"
 
-#include "fc/config.h"
 #include "fc/runtime_config.h"
 
-#include "config/feature.h"
+#include "io/beeper.h"
 
 #include "sensors/battery.h"
 #include "sensors/esc_sensor.h"
 
-#include "fc/rc_controls.h"
-#include "io/beeper.h"
-
-#include "rx/rx.h"
-
-#include "common/utils.h"
 
 #define VBAT_LPF_FREQ  0.4f
 #define IBAT_LPF_FREQ  0.4f
@@ -64,7 +58,7 @@ uint16_t vbat = 0;                  // battery voltage in 0.1V steps (filtered)
 uint16_t vbatLatest = 0;            // most recent unsmoothed value
 
 int32_t amperage = 0;               // amperage read by current sensor in centiampere (1/100th A)
-int32_t amperageLatest = 0;        // most recent value
+int32_t amperageLatest = 0;         // most recent value
 
 int32_t mAhDrawn = 0;               // milliampere hours drawn from the battery since start
 
@@ -266,9 +260,8 @@ void updateConsumptionWarning(void)
     }
 }
 
-void updateCurrentMeter(int32_t lastUpdateAt, const rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
+void updateCurrentMeter(int32_t lastUpdateAt)
 {
-    (void)(rxConfig);
     if (getBatteryState() != BATTERY_NOT_PRESENT) {
         switch(batteryConfig()->currentMeterType) {
             case CURRENT_SENSOR_ADC:
@@ -279,7 +272,7 @@ void updateCurrentMeter(int32_t lastUpdateAt, const rxConfig_t *rxConfig, uint16
             case CURRENT_SENSOR_VIRTUAL:
                 amperageLatest = (int32_t)batteryConfig()->currentMeterOffset;
                 if (ARMING_FLAG(ARMED)) {
-                    throttleStatus_e throttleStatus = calculateThrottleStatus(rxConfig(), deadband3d_throttle);
+                    throttleStatus_e throttleStatus = calculateThrottleStatus();
                     int throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
                     if (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP)) {
                         throttleOffset = 0;
