@@ -2285,7 +2285,7 @@ static void cliServo(char *cmdline)
 #ifdef USE_SERVOS
 static void printServoMix(uint8_t dumpMask, const servoMixer_t *customServoMixers, const servoMixer_t *defaultCustomServoMixers)
 {
-    const char *format = "smix %d %d %d %d %d %d %d %d\r\n";
+    const char *format = "smix %d %d %d %d %d %d %d\r\n";
     for (uint32_t i = 0; i < MAX_SERVO_RULES; i++) {
         servoMixer_t customServoMixer = customServoMixers[i];
         if (customServoMixer.rate == 0) {

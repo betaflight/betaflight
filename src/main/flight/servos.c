@@ -266,6 +266,7 @@ void loadCustomServoMixer(void)
             maxServoIndex = customServoMixers(i)->targetChannel;
         }
 
+        memcpy(&currentServoMixer[i], customServoMixers(i), sizeof(servoMixer_t));
         servoRuleCount++;
     }
 }
