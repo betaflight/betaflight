@@ -1838,7 +1838,8 @@ static void cliSerialPassthrough(char *cmdline)
     int id = -1;
     uint32_t baud = 0;
     unsigned mode = 0;
-    char* tok = strtok(cmdline, " ");
+    char *saveptr;
+    char* tok = strtok_r(cmdline, " ", &saveptr);
     int index = 0;
 
     while (tok != NULL) {
@@ -1857,7 +1858,7 @@ static void cliSerialPassthrough(char *cmdline)
                 break;
         }
         index++;
-        tok = strtok(NULL, " ");
+        tok = strtok_r(NULL, " ", &saveptr);
     }
 
     serialPort_t *passThroughPort;
@@ -2297,10 +2298,11 @@ static void cliModeColor(char *cmdline)
         enum {MODE = 0, FUNCTION, COLOR, ARGS_COUNT};
         int args[ARGS_COUNT];
         int argNo = 0;
-        char* ptr = strtok(cmdline, " ");
+        char *saveptr;
+        char* ptr = strtok_r(cmdline, " ", &saveptr);
         while (ptr && argNo < ARGS_COUNT) {
             args[argNo++] = atoi(ptr);
-            ptr = strtok(NULL, " ");
+            ptr = strtok_r(NULL, " ", &saveptr);
         }
 
         if (ptr != NULL || argNo != ARGS_COUNT) {
@@ -2560,10 +2562,11 @@ static void cliServoMix(char *cmdline)
             return;
         }
 
-        ptr = strtok(ptr, " ");
+        char *saveptr;
+        ptr = strtok_r(ptr, " ", &saveptr);
         while (ptr != NULL && check < ARGS_COUNT - 1) {
             args[check++] = atoi(ptr);
-            ptr = strtok(NULL, " ");
+            ptr = strtok_r(NULL, " ", &saveptr);
         }
 
         if (ptr == NULL || check != ARGS_COUNT - 1) {
@@ -2584,10 +2587,11 @@ static void cliServoMix(char *cmdline)
         cliServoMix("reverse");
     } else {
         enum {RULE = 0, TARGET, INPUT, RATE, SPEED, MIN, MAX, BOX, ARGS_COUNT};
-        char *ptr = strtok(cmdline, " ");
+        char *saveptr;
+        char *ptr = strtok_r(cmdline, " ", &saveptr);
         while (ptr != NULL && check < ARGS_COUNT) {
             args[check++] = atoi(ptr);
-            ptr = strtok(NULL, " ");
+            ptr = strtok_r(NULL, " ", &saveptr);
         }
 
         if (ptr != NULL || check != ARGS_COUNT) {
