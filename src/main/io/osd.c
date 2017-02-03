@@ -425,7 +425,7 @@ void osdDrawElements(void)
 
 void osdResetConfig(osd_profile_t *osdProfile)
 {
-    osdProfile->item_pos[OSD_RSSI_VALUE] = OSD_POS(22, 0) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_RSSI_VALUE] = OSD_POS(22, 0);
     osdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 0) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(8, 6) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_HORIZON_SIDEBARS] = OSD_POS(8, 6) | VISIBLE_FLAG;
@@ -440,9 +440,9 @@ void osdResetConfig(osd_profile_t *osdProfile)
     osdProfile->item_pos[OSD_GPS_SPEED] = OSD_POS(2, 2);
     osdProfile->item_pos[OSD_GPS_SATS] = OSD_POS(2, 12);
     osdProfile->item_pos[OSD_ALTITUDE] = OSD_POS(1, 5);
-    osdProfile->item_pos[OSD_ROLL_PIDS] = OSD_POS(2, 10) | VISIBLE_FLAG;
-    osdProfile->item_pos[OSD_PITCH_PIDS] = OSD_POS(2, 11) | VISIBLE_FLAG;
-    osdProfile->item_pos[OSD_YAW_PIDS] = OSD_POS(2, 12) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_ROLL_PIDS] = OSD_POS(2, 10);
+    osdProfile->item_pos[OSD_PITCH_PIDS] = OSD_POS(2, 11);
+    osdProfile->item_pos[OSD_YAW_PIDS] = OSD_POS(2, 12);
     osdProfile->item_pos[OSD_POWER] = OSD_POS(15, 1);
 
     osdProfile->rssi_alarm = 20;
@@ -453,6 +453,8 @@ void osdResetConfig(osd_profile_t *osdProfile)
 
 void osdInit(displayPort_t *osdDisplayPortToUse)
 {
+    BUILD_BUG_ON(OSD_POS_MAX != OSD_POS(31,31));
+
     osdDisplayPort = osdDisplayPortToUse;
 #ifdef CMS
     cmsDisplayPortRegister(osdDisplayPort);

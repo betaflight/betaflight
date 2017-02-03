@@ -1267,7 +1267,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             } else {
                 serialConfig()->portConfigs[SERIALRX_UART].functionMask = FUNCTION_NONE;
             }
-#endif            
+#endif
             break;
         case BST_SET_BOARD_ALIGNMENT:
             boardAlignment()->rollDegrees = bstRead16();

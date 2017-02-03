@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_eth.h
   * @author  MCD Application Team
-  * @version V1.1.2
-  * @date    23-September-2016 
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   Header file of ETH HAL module.
   ******************************************************************************
   * @attention
@@ -43,10 +43,10 @@
  extern "C" {
 #endif
 
-#if defined (ETH)   
-
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f7xx_hal_def.h"
+
+#if defined (ETH)
 
 /** @addtogroup STM32F7xx_HAL_Driver
   * @{

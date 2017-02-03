@@ -175,7 +175,7 @@ static bool gyroDetect(gyroDev_t *dev)
             case ICM_20602_SPI:
                 gyroHardware = GYRO_ICM20602;
                 break;
-            default:        
+            default:
                 gyroHardware = GYRO_MPU6500;
             }
 #ifdef GYRO_MPU6500_ALIGN

@@ -78,7 +78,7 @@ typedef enum {
     GPS_MESSAGE_STATE_IDLE = 0,
     GPS_MESSAGE_STATE_INIT,
     GPS_MESSAGE_STATE_SBAS,
-	GPS_MESSAGE_STATE_ENTRY_COUNT
+    GPS_MESSAGE_STATE_ENTRY_COUNT
 } gpsMessageState_e;
 
 typedef struct gpsData_s {

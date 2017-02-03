@@ -126,8 +126,7 @@
 #define DEFAULT_FEATURES        (FEATURE_BLACKBOX |  FEATURE_CURRENT_METER)
 
 #define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN                PB11
+#define BIND_PIN                UART2_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

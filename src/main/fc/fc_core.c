@@ -129,6 +129,7 @@ bool isCalibrating()
     return (!isAccelerationCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
 }
 
+#define SETPOINT_RATE_LIMIT 1998.0f
 #define RC_RATE_INCREMENTAL 14.54f
 
 void calculateSetpointRate(int axis, int16_t rc) {
@@ -162,7 +163,7 @@ void calculateSetpointRate(int axis, int16_t rc) {
 
     DEBUG_SET(DEBUG_ANGLERATE, axis, angleRate);
 
-    setpointRate[axis] = constrainf(angleRate, -1998.0f, 1998.0f); // Rate limit protection (deg/sec)
+    setpointRate[axis] = constrainf(angleRate, -SETPOINT_RATE_LIMIT, SETPOINT_RATE_LIMIT); // Rate limit protection (deg/sec)
 }
 
 void scaleRcCommandToFpvCamAngle(void) {
@@ -177,10 +178,10 @@ void scaleRcCommandToFpvCamAngle(void) {
         sinFactor = sin_approx(rxConfig()->fpvCamAngleDegrees * RAD);
     }
 
-    int16_t roll = rcCommand[ROLL];
-    int16_t yaw = rcCommand[YAW];
-    rcCommand[ROLL] = constrain(roll * cosFactor -  yaw * sinFactor, -500, 500);
-    rcCommand[YAW]  = constrain(yaw  * cosFactor + roll * sinFactor, -500, 500);
+    float roll = setpointRate[ROLL];
+    float yaw = setpointRate[YAW];
+    setpointRate[ROLL] = constrainf(roll * cosFactor -  yaw * sinFactor, -SETPOINT_RATE_LIMIT, SETPOINT_RATE_LIMIT);
+    setpointRate[YAW]  = constrainf(yaw  * cosFactor + roll * sinFactor, -SETPOINT_RATE_LIMIT, SETPOINT_RATE_LIMIT);
 }
 
 #define THROTTLE_BUFFER_MAX 20
@@ -200,7 +201,9 @@ void scaleRcCommandToFpvCamAngle(void) {
     const int16_t rcCommandSpeed = rcCommand[THROTTLE] - rcCommandThrottlePrevious[index];
 
     if(ABS(rcCommandSpeed) > throttleVelocityThreshold)
-        pidResetErrorGyroState();
+        pidSetItermAccelerator(currentProfile->pidProfile.itermAcceleratorGain);
+    else
+        pidSetItermAccelerator(1.0f);
 }
 
 void processRcCommand(void)
@@ -217,10 +220,6 @@ void processRcCommand(void)
     if (isRXDataNew) {
         currentRxRefreshRate = constrain(getTaskDeltaTime(TASK_RX),1000,20000);
         checkForThrottleErrorResetState(currentRxRefreshRate);
-
-        // Scaling of AngleRate to camera angle (Mixing Roll and Yaw)
-        if (rxConfig()->fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE))
-            scaleRcCommandToFpvCamAngle();
     }
 
     if (rxConfig()->rcInterpolation || flightModeFlags) {
@@ -276,6 +275,10 @@ void processRcCommand(void)
 
         for (int axis = 0; axis <= readyToCalculateRateAxisCnt; axis++)
             calculateSetpointRate(axis, rcCommand[axis]);
+
+        // Scaling of AngleRate to camera angle (Mixing Roll and Yaw)
+        if (rxConfig()->fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE))
+            scaleRcCommandToFpvCamAngle();
 
         isRXDataNew = false;
     }

@@ -57,14 +57,14 @@
 #define USE_UART2
 #define USE_UART3
 
-#define UART1_TX_PIN            PB6 
-#define UART1_RX_PIN            PB7 
+#define UART1_TX_PIN            PB6
+#define UART1_RX_PIN            PB7
 
-#define UART2_TX_PIN            PA14 
+#define UART2_TX_PIN            PA14
 #define UART2_RX_PIN            PA15
 
-#define UART3_TX_PIN            PB10 
-#define UART3_RX_PIN            PB11 
+#define UART3_TX_PIN            PB10
+#define UART3_RX_PIN            PB11
 
 #define SBUS_TELEMETRY_UART     SERIAL_PORT_USART2
 
@@ -77,7 +77,7 @@
 #define SPI1_MOSI_PIN           PA7
 
 #define USE_SPI
-#define USE_SPI_DEVICE_2 
+#define USE_SPI_DEVICE_2
 
 #define SPI2_NSS_PIN            PB12
 #define SPI2_SCK_PIN            PB13
@@ -108,7 +108,7 @@
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_CURRENT_METER | FEATURE_BLACKBOX | FEATURE_TELEMETRY)
-#define TARGET_CONFIG 
+#define TARGET_CONFIG
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

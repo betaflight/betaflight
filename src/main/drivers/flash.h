@@ -32,5 +32,5 @@ typedef struct flashGeometry_s {
 } flashGeometry_t;
 
 typedef struct flashConfig_s {
-	ioTag_t csTag;
+    ioTag_t csTag;
 } flashConfig_t;

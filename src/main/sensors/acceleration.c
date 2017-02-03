@@ -192,9 +192,9 @@ retry:
             case ICM_20602_SPI:
                 accHardware = ACC_ICM20602;
                 break;
-            default:        
+            default:
                 accHardware = ACC_MPU6500;
-            }            
+            }
             break;
         }
 #endif

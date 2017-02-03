@@ -28,7 +28,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 #ifdef TINYBEEF3
     // PPM / UART2 RX
     DEF_TIM(TIM8,  CH1,  PA15, TIM_USE_PPM,   0 ),  // PPM
-    DEF_TIM(TIM2,  CH2,  PA1,  TIM_USE_MOTOR, 1 ),  // PWM1 
+    DEF_TIM(TIM2,  CH2,  PA1,  TIM_USE_MOTOR, 1 ),  // PWM1
     DEF_TIM(TIM2,  CH1,  PA0,  TIM_USE_MOTOR, 1 ),  // PWM2
     DEF_TIM(TIM3,  CH3,  PB0,  TIM_USE_MOTOR, 1 ),  // PWM3
     DEF_TIM(TIM3,  CH4,  PB1,  TIM_USE_MOTOR, 1 ),  // PWM4

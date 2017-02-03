@@ -137,7 +137,7 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
 
 static void resetPidProfile(pidProfile_t *pidProfile)
 {
-    pidProfile->P8[ROLL] = 43;
+    pidProfile->P8[ROLL] = 44;
     pidProfile->I8[ROLL] = 40;
     pidProfile->D8[ROLL] = 20;
     pidProfile->P8[PITCH] = 58;
@@ -177,13 +177,14 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->dterm_notch_cutoff = 160;
     pidProfile->vbatPidCompensation = 0;
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
-    pidProfile->levelAngleLimit = 70;    // 70 degrees
-    pidProfile->levelSensitivity = 100;  // 100 degrees at full stick
+    pidProfile->levelAngleLimit = 55;
+    pidProfile->levelSensitivity = 55;
     pidProfile->setpointRelaxRatio = 30;
     pidProfile->dtermSetpointWeight = 200;
     pidProfile->yawRateAccelLimit = 10.0f;
     pidProfile->rateAccelLimit = 0.0f;
-    pidProfile->itermThrottleThreshold = 350;
+    pidProfile->itermThrottleThreshold = 300;
+    pidProfile->itermAcceleratorGain = 4.0f;
 }
 
 void resetProfile(profile_t *profile)
@@ -452,6 +453,10 @@ void resetSerialConfig(serialConfig_t *serialConfig)
     }
 
     serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
+#if defined(USE_VCP) && defined(USE_MSP_UART)
+    // This allows MSP connection via USART & VCP so the board can be reconfigured.
+    serialConfig->portConfigs[1].functionMask = FUNCTION_MSP;
+#endif
 }
 
 void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
@@ -464,6 +469,11 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
 
 void resetMixerConfig(mixerConfig_t *mixerConfig)
 {
+#ifdef TARGET_DEFAULT_MIXER
+    mixerConfig->mixerMode = TARGET_DEFAULT_MIXER;
+#else
+    mixerConfig->mixerMode = MIXER_QUADX;
+#endif
     mixerConfig->yaw_motor_direction = 1;
 }
 
@@ -517,7 +527,7 @@ void resetStatusLedConfig(statusLedConfig_t *statusLedConfig)
 #ifdef LED2_INVERTED
     | BIT(2)
 #endif
-    ;    
+    ;
 }
 
 #ifdef USE_FLASHFS
@@ -602,7 +612,6 @@ void createDefaultConfig(master_t *config)
 #endif
 
     config->version = EEPROM_CONF_VERSION;
-    config->mixerConfig.mixerMode = MIXER_QUADX;
 
     // global settings
     config->current_profile_index = 0;    // default profile
@@ -848,7 +857,7 @@ void createDefaultConfig(master_t *config)
 
     /* merely to force a reset if the person inadvertently flashes the wrong target */
     strncpy(config->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER));
-    
+
 #if defined(TARGET_CONFIG)
     targetConfiguration(config);
 #endif

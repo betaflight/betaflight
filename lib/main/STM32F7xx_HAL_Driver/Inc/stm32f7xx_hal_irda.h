@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_irda.h
   * @author  MCD Application Team
-  * @version V1.1.2
-  * @date    23-September-2016 
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   Header file of IRDA HAL module.
   ******************************************************************************
   * @attention
@@ -599,7 +599,7 @@ typedef struct
 #include "stm32f7xx_hal_irda_ex.h"  
 
 /* Exported functions --------------------------------------------------------*/
-/** @addtogroup IRDA_Exported_Functions IrDA Exported Functions
+/** @addtogroup IRDA_Exported_Functions IRDA Exported Functions
   * @{
   */
 

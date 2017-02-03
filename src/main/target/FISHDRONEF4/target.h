@@ -75,8 +75,8 @@
 #define USE_SPI_DEVICE_2
 #define SPI2_NSS_PIN            PB12
 #define SPI2_SCK_PIN            PB13
-#define SPI2_MISO_PIN   	PC2
-#define SPI2_MOSI_PIN   	PC3
+#define SPI2_MISO_PIN       PC2
+#define SPI2_MOSI_PIN       PC3
 
 #define OSD
 #define USE_MAX7456
