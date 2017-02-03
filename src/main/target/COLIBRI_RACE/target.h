@@ -95,6 +95,7 @@
 #define UART3_RX_PIN            PB11
 
 #define USE_I2C
+#define USE_I2C2
 #define I2C_DEVICE (I2CDEV_2)
 
 #define I2C2_SCL_PIN            PA9

@@ -75,9 +75,10 @@
 #define UART3_RX_PIN            PB11 //(AF7)
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_2) // SDA (PA10/AF4), SCL (PA9/AF4)
+#define USE_I2C2 // SDA (PA10/AF4), SCL (PA9/AF4)
 #define I2C2_SCL                PA9
 #define I2C2_SDA                PA10
+#define I2C_DEVICE (I2CDEV_2) 
 
 #define USE_SPI
 #define USE_SPI_DEVICE_2

@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "drivers/bus_i2c.h"
+
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 
@@ -34,12 +36,16 @@
 #define VERTICAL_BARGRAPH_ZERO_CHARACTER (128 + 32)
 #define VERTICAL_BARGRAPH_CHARACTER_COUNT 7
 
-bool ug2864hsweg01InitI2C(void);
+typedef struct oledi2cConfig_s {
+    int8_t bus;
+} oledi2cConfig_t;
 
+void i2c_OLED_configInit(oledi2cConfig_t *oledi2cConfig);
+void i2c_OLED_init(oledi2cConfig_t *oledi2cConfig);
+bool i2c_OLED_present(void);
 void i2c_OLED_set_xy(uint8_t col, uint8_t row);
 void i2c_OLED_set_line(uint8_t row);
 void i2c_OLED_send_char(unsigned char ascii);
 void i2c_OLED_send_string(const char *string);
 void i2c_OLED_clear_display(void);
 void i2c_OLED_clear_display_quick(void);
-

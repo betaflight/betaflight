@@ -33,6 +33,12 @@ void targetBusInit(void)
 
     if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
         serialRemovePort(SERIAL_PORT_USART3);
+<<<<<<< HEAD
         i2cInitAll(i2cPinConfig());
     }		
 }
+=======
+        i2cInit(I2C_DEVICE);
+    }
+}
+>>>>>>> betaflight/master

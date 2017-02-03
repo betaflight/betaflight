@@ -80,7 +80,11 @@
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_1) // PB6/SCL, PB7/SDA
+#define USE_I2C1                // PB6/SCL, PB7/SDA
+//#define I2C1_SCL                PB6
+//#define I2C2_SDA                PB7
+
+#define I2C_DEVICE (I2CDEV_1)	// Backward compatibility for OLED driver
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1

@@ -20,14 +20,14 @@
 
 #include <platform.h>
 
+#if defined(USE_I2C) && !defined(SOFT_I2C)
+
 #include "system.h"
 #include "io.h"
 #include "io_impl.h"
 #include "rcc.h"
 
 #include "bus_i2c.h"
-
-#ifndef SOFT_I2C
 
 #if defined(USE_I2C_PULLUP)
 #define IOCFG_I2C IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_OD, GPIO_PuPd_UP)
@@ -42,28 +42,46 @@
 #define I2C_LONG_TIMEOUT    ((uint32_t)(10 * I2C_SHORT_TIMEOUT))
 #define I2C_GPIO_AF         GPIO_AF_4
 
-#ifndef I2C1_SCL
-#define I2C1_SCL PB6
+#define I2C_DEF(busid, sclpin, sdapin, rccdef) \
+    { .dev = (busid), .scl = IO_TAG(sclpin), .sda = IO_TAG(sdapin), .rcc = rccdef, .overClock = busid##_OVERCLOCK }
+
+i2cDevice_t i2cPinMap[] = {
+    I2C_DEF(I2C1, PA15, PA14, RCC_APB1(I2C1)),
+    I2C_DEF(I2C1, PB6,  PB7,  RCC_APB1(I2C1)),
+    I2C_DEF(I2C1, PB8,  PB9,  RCC_APB1(I2C1)),
+    I2C_DEF(I2C2, PA9,  PA10, RCC_APB1(I2C2)),
+};
+
+unsigned int i2cPinMapSize(void)
+{
+    return ARRAYLEN(i2cPinMap);
+}
+
+i2cDevice_t i2cHardwareConfig[I2CDEV_COUNT];
+
+// Setup i2cPinConfig as specified by target.h (or default pins defined above).
+// Pins can be defined as NONE in target.h
+// XXX Invalid pins (except "NONE") should be flagged and reported at this point?
+
+i2cTargetConfig_t i2cTargetConfig[] = {
+#ifdef USE_I2C1
+    { I2CDEV_1, IO_TAG(I2C1_SCL), IO_TAG(I2C1_SDA) },
 #endif
-#ifndef I2C1_SDA
-#define I2C1_SDA PB7
+#ifdef USE_I2C2
+    { I2CDEV_2, IO_TAG(I2C2_SCL), IO_TAG(I2C2_SDA) },
 #endif
-#ifndef I2C2_SCL
-#define I2C2_SCL PF4
-#endif
-#ifndef I2C2_SDA
-#define I2C2_SDA PA10
-#endif
+};
+
+size_t i2cTargetConfigSize(void)
+{
+    return ARRAYLEN(i2cTargetConfig);
+}
+
 
 static uint32_t i2cTimeout;
 
 static volatile uint16_t i2cErrorCount = 0;
 //static volatile uint16_t i2c2ErrorCount = 0;
-
-static i2cDevice_t i2cHardwareMap[] = {
-    { .dev = I2C1, .scl = IO_TAG(I2C1_SCL), .sda = IO_TAG(I2C1_SDA), .rcc = RCC_APB1(I2C1), .overClock = I2C1_OVERCLOCK },
-    { .dev = I2C2, .scl = IO_TAG(I2C2_SCL), .sda = IO_TAG(I2C2_SDA), .rcc = RCC_APB1(I2C2), .overClock = I2C2_OVERCLOCK }
-};
 
 ///////////////////////////////////////////////////////////////////////////////
 // I2C TimeoutUserCallback
@@ -75,11 +93,11 @@ uint32_t i2cTimeoutUserCallback(void)
     return false;
 }
 
-void i2cInit(I2CDevice device)
+void i2cInitBus(I2CDevice device)
 {
 
     i2cDevice_t *i2c;
-    i2c = &(i2cHardwareMap[device]);
+    i2c = &(i2cHardwareConfig[device]);
 
     I2C_TypeDef *I2Cx;
     I2Cx = i2c->dev;
@@ -120,10 +138,13 @@ uint16_t i2cGetErrorCounter(void)
 
 bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
 {
+    if (device == I2CINVALID || !i2cHardwareConfig[device].configured)
+        return false;
+
     addr_ <<= 1;
 
     I2C_TypeDef *I2Cx;
-    I2Cx = i2cHardwareMap[device].dev;
+    I2Cx = i2cHardwareConfig[device].dev;
 
     /* Test on BUSY Flag */
     i2cTimeout = I2C_LONG_TIMEOUT;
@@ -186,10 +207,13 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
 
 bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf)
 {
+    if (device == I2CINVALID || !i2cHardwareConfig[device].configured)
+        return false;
+
     addr_ <<= 1;
 
     I2C_TypeDef *I2Cx;
-    I2Cx = i2cHardwareMap[device].dev;
+    I2Cx = i2cHardwareConfig[device].dev;
 
     /* Test on BUSY Flag */
     i2cTimeout = I2C_LONG_TIMEOUT;

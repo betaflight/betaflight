@@ -592,10 +592,10 @@ COMMON_SRC = \
             fc/fc_dispatch.c \
             fc/fc_hardfaults.c \
             fc/fc_core.c \
-            fc/fc_rc.c \
             fc/fc_msp.c \
             fc/fc_tasks.c \
             fc/rc_controls.c \
+            fc/rc_curves.c \
             fc/runtime_config.c \
             fc/cli.c \
             flight/altitudehold.c \
@@ -650,7 +650,6 @@ HIGHEND_SRC = \
             cms/cms_menu_osd.c \
             cms/cms_menu_vtx.c \
             common/colorconversion.c \
-            common/gps_conversion.c \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
             drivers/serial_escserial.c \
@@ -658,6 +657,7 @@ HIGHEND_SRC = \
             drivers/sonar_hcsr04.c \
             drivers/vtx_common.c \
             flight/navigation.c \
+            flight/gps_conversion.c \
             io/dashboard.c \
             io/displayport_max7456.c \
             io/displayport_msp.c \
@@ -713,7 +713,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/timer.c \
             fc/fc_core.c \
             fc/fc_tasks.c \
-            fc/fc_rc.c \
+            fc/mw.c \
             fc/rc_controls.c \
             fc/runtime_config.c \
             flight/imu.c \
@@ -751,10 +751,14 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             io/osd.c \
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
-            drivers/bus_i2c.c \
             drivers/serial_escserial.c \
+<<<<<<< HEAD
+            drivers/bus_i2c.c \
+            io/serial_cli.c \
+=======
             drivers/vtx_common.c \
             io/cli.c \
+>>>>>>> betaflight/master
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
@@ -852,7 +856,6 @@ STM32F7xx_COMMON_SRC = \
             drivers/serial_uart_hal.c
 
 F7EXCLUDES = drivers/bus_spi.c \
-            drivers/bus_i2c.c \
             drivers/timer.c \
             drivers/serial_uart.c
 

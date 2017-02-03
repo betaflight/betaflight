@@ -39,3 +39,12 @@
 #define REQUIRE_PRINTF_LONG_SUPPORT
 #endif
 
+// Cleanup dependency on I2C, USE_OLEDI2C and USE_DASHBOARD
+
+#ifndef USE_I2C
+# undef USE_OLEDI2C
+#endif
+
+#ifndef USE_OLEDI2C
+# undef USE_DASHBOARD
+#endif

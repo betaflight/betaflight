@@ -24,6 +24,8 @@
 #include "io/serial.h"
 #include "hardware_revision.h"
 
+#include "config/config_master.h"
+
 void targetBusInit(void)
 {
     #ifdef USE_SPI
@@ -33,12 +35,15 @@ void targetBusInit(void)
     #endif
 
     if (hardwareRevision != NAZE32_SP) {
-        i2cInit(I2C_DEVICE);
         serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
     } else {
         if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
             serialRemovePort(SERIAL_PORT_USART3);
-            i2cInit(I2C_DEVICE);
         }
     }
+
+    // Regardless of the board revision, initialize I2C as
+    // pre-configured or according to the current resource assignment.
+
+    i2cInitAll(i2cPinConfig());
 }

@@ -134,6 +134,7 @@
 #define SOFTSERIAL_1_TIMER_TX_HARDWARE 2
 
 #define USE_I2C
+#define USE_I2C1
 #define I2C_DEVICE              (I2CDEV_1) // SDA (PB9/AF4), SCL (PB8/AF4)
 
 #define I2C1_SCL            PB8

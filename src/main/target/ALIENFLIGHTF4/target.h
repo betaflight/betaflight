@@ -137,10 +137,11 @@
 #define USE_SPI_DEVICE_3
 
 #define USE_I2C
-#define I2C_DEVICE              (I2CDEV_1)
-//#define I2C_DEVICE_EXT          (I2CDEV_2)
+#define USE_I2C1
 #define I2C1_SCL                PB6
 #define I2C1_SDA                PB7
+#define I2C_DEVICE              (I2CDEV_1)
+//#define I2C_DEVICE_EXT          (I2CDEV_2)
 
 #define USE_ADC
 //#define BOARD_HAS_VOLTAGE_DIVIDER

@@ -22,6 +22,8 @@
 
 #include "platform.h"
 
+// XXX Dependency on USE_OLEDI2C and USE_I2C will eventually be gone when dashboard operates on displayport.
+
 #ifdef USE_DASHBOARD
 
 #include "common/utils.h"
@@ -153,7 +155,7 @@ typedef struct pageState_s {
 static pageState_t pageState;
 
 void resetDisplay(void) {
-    dashboardPresent = ug2864hsweg01InitI2C();
+    dashboardPresent = i2c_OLED_present();
 }
 
 void LCDprint(uint8_t i) {

@@ -27,8 +27,12 @@
 
 #include "display_ug2864hsweg01.h"
 
-#ifndef OLED_I2C_INSTANCE
+#if !defined(OLED_I2C_INSTANCE)
+#if defined(I2C_DEVICE)
 #define OLED_I2C_INSTANCE I2C_DEVICE
+#else
+#define OLED_I2C_INSTANCE I2C_NONE
+#endif
 #endif
 
 I2CDevice i2cBus;
@@ -254,8 +258,12 @@ void i2c_OLED_send_string(const char *string)
 /**
 * according to http://www.adafruit.com/datasheets/UG-2864HSWEG01.pdf Chapter 4.4 Page 15
 */
+<<<<<<< HEAD
 #if 1
 static bool ug2864hsweg01InitI2C(void)
+=======
+bool ug2864hsweg01InitI2C(void)
+>>>>>>> betaflight/master
 {
     if (i2cBus == I2CINVALID)
         return false;
@@ -292,6 +300,7 @@ static bool ug2864hsweg01InitI2C(void)
 
     return true;
 }
+<<<<<<< HEAD
 #else
 static void ug2864hsweg01InitI2C(void)
 {
@@ -348,3 +357,5 @@ bool i2c_OLED_present(void)
 }
 
 #endif // USE_OLEDI2C
+=======
+>>>>>>> betaflight/master
