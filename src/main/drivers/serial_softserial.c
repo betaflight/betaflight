@@ -61,6 +61,7 @@ typedef struct softSerial_s {
 
     const timerHardware_t *timerHardware;
     const timerHardware_t *exTimerHardware;
+    uint32_t         ccEnableBit;
 
     volatile uint8_t rxBuffer[SOFTSERIAL_BUFFER_SIZE];
     volatile uint8_t txBuffer[SOFTSERIAL_BUFFER_SIZE];
@@ -94,7 +95,7 @@ static softSerial_t softSerialPorts[MAX_SOFTSERIAL_PORTS];
 void onSerialTimerOverflow(timerOvrHandlerRec_t *cbRec, captureCompare_t capture);
 void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture);
 
-void setTxSignal(softSerial_t *softSerial, uint8_t state)
+static void setTxSignal(softSerial_t *softSerial, uint8_t state)
 {
     if (softSerial->port.options & SERIAL_INVERTED) {
         state = !state;
@@ -107,7 +108,25 @@ void setTxSignal(softSerial_t *softSerial, uint8_t state)
     }
 }
 
-void serialInputPortActivate(softSerial_t *softSerial)
+static uint32_t CCEnableBit(int channel)
+{
+    uint32_t bit;
+
+    switch (channel) {
+    case 0:
+        bit = TIM_CCER_CC1E;
+    case 1:
+        bit = TIM_CCER_CC2E;
+    case 2:
+        bit = TIM_CCER_CC3E;
+    case 3:
+        bit = TIM_CCER_CC4E;
+    }
+
+    return bit;
+}
+
+static void serialInputPortActivate(softSerial_t *softSerial)
 {
     softSerial->rxActive = true;
 #ifdef STM32F1
@@ -119,18 +138,16 @@ void serialInputPortActivate(softSerial_t *softSerial)
     softSerial->isSearchingForStartBit = true;
     softSerial->rxBitIndex = 0;
 
-debug[2]++;
+    // Enable input capture
 
-delay(1);
-
-    timerChConfigCallbacks(softSerial->timerHardware, &softSerial->edgeCb, NULL);
+    softSerial->timerHardware->tim->CCER |= softSerial->ccEnableBit;
 }
 
 static void serialInputPortDeActivate(softSerial_t *softSerial)
 {
-debug[2]--;
-    // Disable input capture, but keep bit clock running
-    timerChConfigCallbacks(softSerial->timerHardware, NULL, NULL);
+    // Disable input capture
+
+    softSerial->timerHardware->tim->CCER &= ~softSerial->ccEnableBit;
 
     IOConfigGPIO(softSerial->rxIO, IOCFG_IN_FLOATING);
     softSerial->rxActive = false;
@@ -220,6 +237,8 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 
         if (!softSerial->timerHardware)
             return NULL;
+
+        softSerial->ccEnableBit = CCEnableBit(softSerial->timerHardware->channel);
     }
 
     ioTag_t tagTx = serialPinConfig()->ioTagTx[pinCfgIndex];
@@ -280,7 +299,7 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
         timerChConfigCallbacks(softSerial->exTimerHardware, NULL, &softSerial->overCb);
         softSerial->timerMode = TIMER_MODE_DUAL;
     } else {
-        timerChConfigCallbacks(softSerial->timerHardware, NULL, &softSerial->overCb);
+        timerChConfigCallbacks(softSerial->timerHardware, &softSerial->edgeCb, &softSerial->overCb);
     }
 
     if (!(options & SERIAL_BIDIR)) {
