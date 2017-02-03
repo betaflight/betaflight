@@ -56,6 +56,8 @@
 #define ACC
 #define USE_ACC_MPU6050
 #define ACC_MPU6050_ALIGN       CW180_DEG
+
+#define LED_STRIP
 #endif
 
 #define USE_SOFTSERIAL
