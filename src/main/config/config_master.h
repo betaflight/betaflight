@@ -34,6 +34,7 @@
 #include "drivers/light_led.h"
 #include "drivers/flash.h"
 #include "drivers/display.h"
+#include "drivers/serial.h"
 
 #include "fc/rc_controls.h"
 
@@ -86,6 +87,7 @@
 #define mixerConfig(x) (&masterConfig.mixerConfig)
 #define airplaneConfig(x) (&masterConfig.airplaneConfig)
 #define failsafeConfig(x) (&masterConfig.failsafeConfig)
+#define serialPinConfig(x) (&masterConfig.serialPinConfig)
 #define serialConfig(x) (&masterConfig.serialConfig)
 #define telemetryConfig(x) (&masterConfig.telemetryConfig)
 #define ibusTelemetryConfig(x) (&masterConfig.telemetryConfig)
@@ -173,6 +175,7 @@ typedef struct master_s {
     airplaneConfig_t airplaneConfig;
 
     failsafeConfig_t failsafeConfig;
+    serialPinConfig_t serialPinConfig;
     serialConfig_t serialConfig;
     telemetryConfig_t telemetryConfig;
 

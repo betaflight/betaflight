@@ -428,6 +428,175 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
     batteryConfig->consumptionWarningPercentage = 10;
 }
 
+// Default pin (NONE).
+// XXX Does this mess belong here???
+#ifdef USE_UART1
+# if !defined(UART1_RX_PIN)
+#  define UART1_RX_PIN NONE
+# endif
+# if !defined(UART1_TX_PIN)
+#  define UART1_TX_PIN NONE
+# endif
+#endif
+
+#ifdef USE_UART2
+# if !defined(UART2_RX_PIN)
+#  define UART2_RX_PIN NONE
+# endif
+# if !defined(UART2_TX_PIN)
+#  define UART2_TX_PIN NONE
+# endif
+#endif
+
+#ifdef USE_UART3
+# if !defined(UART3_RX_PIN)
+#  define UART3_RX_PIN NONE
+# endif
+# if !defined(UART3_TX_PIN)
+#  define UART3_TX_PIN NONE
+# endif
+#endif
+
+#ifdef USE_UART4
+# if !defined(UART4_RX_PIN)
+#  define UART4_RX_PIN NONE
+# endif
+# if !defined(UART4_TX_PIN)
+#  define UART4_TX_PIN NONE
+# endif
+#endif
+
+#ifdef USE_UART5
+# if !defined(UART5_RX_PIN)
+#  define UART5_RX_PIN NONE
+# endif
+# if !defined(UART5_TX_PIN)
+#  define UART5_TX_PIN NONE
+# endif
+#endif
+
+#ifdef USE_UART6
+# if !defined(UART6_RX_PIN)
+#  define UART6_RX_PIN NONE
+# endif
+# if !defined(UART6_TX_PIN)
+#  define UART6_TX_PIN NONE
+# endif
+#endif
+
+#ifdef USE_UART7
+# if !defined(UART7_RX_PIN)
+#  define UART7_RX_PIN NONE
+# endif
+# if !defined(UART7_TX_PIN)
+#  define UART7_TX_PIN NONE
+# endif
+#endif
+
+#ifdef USE_UART8
+# if !defined(UART8_RX_PIN)
+#  define UART8_RX_PIN NONE
+# endif
+# if !defined(UART8_TX_PIN)
+#  define UART8_TX_PIN NONE
+# endif
+#endif
+
+#ifdef USE_SOFTSERIAL1
+# if !defined(SOFTSERIAL1_RX_PIN)
+#  define SOFTSERIAL1_RX_PIN NONE
+# endif
+# if !defined(SOFTSERIAL1_TX_PIN)
+#  define SOFTSERIAL1_TX_PIN NONE
+# endif
+#endif
+
+#ifdef USE_SOFTSERIAL2
+# if !defined(SOFTSERIAL2_RX_PIN)
+#  define SOFTSERIAL2_RX_PIN NONE
+# endif
+# if !defined(SOFTSERIAL2_TX_PIN)
+#  define SOFTSERIAL2_TX_PIN NONE
+# endif
+#endif
+
+void resetSerialPinConfig(serialPinConfig_t *pSerialPinConfig)
+{
+    for (int port = 0 ; port < SERIAL_PORT_MAX_INDEX ; port++) {
+        pSerialPinConfig->ioTagRx[port] = IO_TAG(NONE);
+        pSerialPinConfig->ioTagTx[port] = IO_TAG(NONE);
+    }
+
+    for (int index = 0 ; index < SERIAL_PORT_COUNT ; index++) {
+        switch (serialPortIdentifiers[index]) {
+        case SERIAL_PORT_USART1:
+#ifdef USE_UART1
+            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART1)] = IO_TAG(UART1_RX_PIN);
+            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART1)] = IO_TAG(UART1_TX_PIN);
+#endif
+            break;
+        case SERIAL_PORT_USART2:
+#ifdef USE_UART2
+            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART2)] = IO_TAG(UART2_RX_PIN);
+            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART2)] = IO_TAG(UART2_TX_PIN);
+#endif
+            break;
+        case SERIAL_PORT_USART3:
+#ifdef USE_UART3
+            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART3)] = IO_TAG(UART3_RX_PIN);
+            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART3)] = IO_TAG(UART3_TX_PIN);
+#endif
+            break;
+        case SERIAL_PORT_USART4:
+#ifdef USE_UART4
+            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART4)] = IO_TAG(UART4_RX_PIN);
+            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART4)] = IO_TAG(UART4_TX_PIN);
+#endif
+            break;
+        case SERIAL_PORT_USART5:
+#ifdef USE_UART5
+            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART5)] = IO_TAG(UART5_RX_PIN);
+            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART5)] = IO_TAG(UART5_TX_PIN);
+#endif
+            break;
+        case SERIAL_PORT_USART6:
+#ifdef USE_UART6
+            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART6)] = IO_TAG(UART6_RX_PIN);
+            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART6)] = IO_TAG(UART6_TX_PIN);
+#endif
+            break;
+        case SERIAL_PORT_USART7:
+#ifdef USE_UART7
+            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART7)] = IO_TAG(UART7_RX_PIN);
+            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART7)] = IO_TAG(UART7_TX_PIN);
+#endif
+            break;
+        case SERIAL_PORT_USART8:
+#ifdef USE_UART8
+            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART8)] = IO_TAG(UART8_RX_PIN);
+            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART8)] = IO_TAG(UART8_TX_PIN);
+#endif
+            break;
+        case SERIAL_PORT_SOFTSERIAL1:
+#ifdef USE_SOFTSERIAL1
+            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL1)] = IO_TAG(SOFTSERIAL1_RX_PIN);
+            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL1)] = IO_TAG(SOFTSERIAL1_TX_PIN);
+#endif
+            break;
+        case SERIAL_PORT_SOFTSERIAL2:
+#ifdef USE_SOFTSERIAL2
+            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL2)] = IO_TAG(SOFTSERIAL2_RX_PIN);
+            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL2)] = IO_TAG(SOFTSERIAL2_TX_PIN);
+#endif
+            break;
+        case SERIAL_PORT_USB_VCP:
+            break;
+        case SERIAL_PORT_NONE:
+            break;
+        }
+    }
+}
+
 #ifdef SWAP_SERIAL_PORT_0_AND_1_DEFAULTS
 #define FIRST_PORT_INDEX 1
 #define SECOND_PORT_INDEX 0
@@ -746,6 +915,8 @@ void createDefaultConfig(master_t *config)
     config->gpsConfig.autoConfig = GPS_AUTOCONFIG_ON;
     config->gpsConfig.autoBaud = GPS_AUTOBAUD_OFF;
 #endif
+
+    resetSerialPinConfig(&config->serialPinConfig);
 
     resetSerialConfig(&config->serialConfig);
 
