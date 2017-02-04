@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "drivers/io.h"
+
 typedef enum portMode_t {
     MODE_RX = 1 << 0,
     MODE_TX = 1 << 1,
@@ -67,6 +69,21 @@ typedef struct serialPort_s {
 
     serialReceiveCallbackPtr rxCallback;
 } serialPort_t;
+
+#if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
+# ifdef USE_SOFTSERIAL2
+#  define SERIAL_PORT_MAX_INDEX (RESOURCE_SOFT_OFFSET + 2)
+# else
+#  define SERIAL_PORT_MAX_INDEX (RESOURCE_SOFT_OFFSET + 1)
+# endif
+#else
+# define SERIAL_PORT_MAX_INDEX RESOURCE_SOFT_OFFSET
+#endif
+
+typedef struct serialPinConfig_s {
+    ioTag_t ioTagTx[SERIAL_PORT_MAX_INDEX];
+    ioTag_t ioTagRx[SERIAL_PORT_MAX_INDEX];
+} serialPinConfig_t;
 
 struct serialPortVTable {
     void (*serialWrite)(serialPort_t *instance, uint8_t ch);
