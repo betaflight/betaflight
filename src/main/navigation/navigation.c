@@ -78,6 +78,7 @@ PG_RESET_TEMPLATE(navConfig_t, navConfig,
         // General navigation parameters
         .pos_failure_timeout = 5,     // 5 sec
         .waypoint_radius = 100,       // 2m diameter
+        .waypoint_safe_distance = 10000,    // 100m - first waypoint should be closer than this
         .max_speed = 300,             // 3 m/s = 10.8 km/h
         .max_climb_rate = 500,        // 5 m/s
         .max_manual_speed = 500,
@@ -2208,6 +2209,17 @@ void resetWaypointList(void)
     }
 }
 
+static void mapWaypointToLocalPosition(t_fp_vector * localPos, const navWaypoint_t * waypoint)
+{
+    gpsLocation_t wpLLH;
+
+    wpLLH.lat = waypoint->lat;
+    wpLLH.lon = waypoint->lon;
+    wpLLH.alt = waypoint->alt;
+
+    geoConvertGeodeticToLocal(&posControl.gpsOrigin, &wpLLH, localPos, GEO_ALT_RELATIVE);
+}
+
 static void calcualteAndSetActiveWaypointToLocalPosition(const t_fp_vector * pos)
 {
     posControl.activeWaypoint.pos = *pos;
@@ -2221,14 +2233,8 @@ static void calcualteAndSetActiveWaypointToLocalPosition(const t_fp_vector * pos
 
 static void calcualteAndSetActiveWaypoint(const navWaypoint_t * waypoint)
 {
-    gpsLocation_t wpLLH;
     t_fp_vector localPos;
-
-    wpLLH.lat = waypoint->lat;
-    wpLLH.lon = waypoint->lon;
-    wpLLH.alt = waypoint->alt;
-
-    geoConvertGeodeticToLocal(&posControl.gpsOrigin, &wpLLH, &localPos, GEO_ALT_RELATIVE);
+    mapWaypointToLocalPosition(&localPos, waypoint);
     calcualteAndSetActiveWaypointToLocalPosition(&localPos);
 }
 
@@ -2529,6 +2535,18 @@ bool naivationBlockArming(void)
     // Don't allow arming if any of NAV modes is active
     if (!ARMING_FLAG(ARMED) && navBoxModesEnabled && !navLaunchComboModesEnabled) {
         shouldBlockArming = true;
+    }
+
+    // Don't allow arming if first waypoint is farther than configured safe distance
+    if (posControl.waypointCount > 0) {
+        t_fp_vector startingWaypointPos;
+        mapWaypointToLocalPosition(&startingWaypointPos, &posControl.waypointList[0]);
+
+        const bool navWpMissionStartTooFar = calculateDistanceToDestination(&startingWaypointPos) > navConfig()->general.waypoint_safe_distance;
+
+        if (navWpMissionStartTooFar) {
+            shouldBlockArming = true;
+        }
     }
 
     return shouldBlockArming;

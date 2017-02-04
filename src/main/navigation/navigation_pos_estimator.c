@@ -236,6 +236,8 @@ static bool shouldResetReferenceAltitude(void)
         case NAV_RESET_ALTITUDE_ON_EACH_ARM:
             return !ARMING_FLAG(ARMED);
     }
+
+    return false;
 }
 
 #if defined(GPS)
