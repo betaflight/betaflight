@@ -290,6 +290,11 @@ static const char * const lookupTableNavControlMode[] = {
 static const char * const lookupTableNavRthAltMode[] = {
     "CURRENT", "EXTRA", "FIXED", "MAX", "AT_LEAST"
 };
+
+static const char * const lookupTableNavResetAltitude[] = {
+    "NEVER", "FIRST_ARM", "EACH_ARM"
+};
+
 #endif
 
 static const char * const lookupTableAuxOperator[] = {
@@ -368,6 +373,7 @@ typedef enum {
 #ifdef NAV
     TABLE_NAV_USER_CTL_MODE,
     TABLE_NAV_RTH_ALT_MODE,
+    TABLE_NAV_RESET_ALTITUDE,
 #endif
     TABLE_AUX_OPERATOR,
     TABLE_MOTOR_PWM_PROTOCOL,
@@ -422,6 +428,7 @@ static const lookupTableEntry_t lookupTables[] = {
 #ifdef NAV
     { lookupTableNavControlMode, sizeof(lookupTableNavControlMode) / sizeof(char *) },
     { lookupTableNavRthAltMode, sizeof(lookupTableNavRthAltMode) / sizeof(char *) },
+    { lookupTableNavResetAltitude, sizeof(lookupTableNavResetAltitude) / sizeof(char *) },
 #endif
     { lookupTableAuxOperator, sizeof(lookupTableAuxOperator) / sizeof(char *) },
     { lookupTablePwmProtocol, sizeof(lookupTablePwmProtocol) / sizeof(char *) },
@@ -678,6 +685,7 @@ static const clivalue_t valueTable[] = {
     { "gps_dyn_model",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GPS_DYN_MODEL }, PG_GPS_CONFIG, offsetof(gpsConfig_t, dynModel) },
     { "gps_auto_config",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GPS_CONFIG, offsetof(gpsConfig_t, autoConfig) },
     { "gps_auto_baud",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GPS_CONFIG, offsetof(gpsConfig_t, autoBaud) },
+    { "gps_min_sats",               VAR_UINT8  | MASTER_VALUE, .config.minmax = { 5,  10}, PG_GPS_CONFIG, offsetof(gpsConfig_t, gpsMinSats) },
 #endif
 
 // PG_RC_CONTROLS_CONFIG
@@ -771,7 +779,7 @@ static const clivalue_t valueTable[] = {
     { "inav_accz_unarmedcal",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, accz_unarmed_cal) },
     { "inav_use_gps_velned",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, use_gps_velned) },
     { "inav_gps_delay",             VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  500 }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, gps_delay_ms) },
-    { "inav_gps_min_sats",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 5,  10}, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, gps_min_sats) },
+    { "inav_reset_altitude",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_NAV_RESET_ALTITUDE }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, use_gps_velned) },
 
     { "inav_w_z_baro_p",            VAR_FLOAT  | MASTER_VALUE, .config.minmax = { 0,  10 }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, w_z_baro_p) },
     { "inav_w_z_gps_p",             VAR_FLOAT  | MASTER_VALUE, .config.minmax = { 0,  10 }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, w_z_gps_p) },

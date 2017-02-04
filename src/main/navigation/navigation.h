@@ -59,9 +59,15 @@ enum {
     NAV_HEADING_CONTROL_MANUAL
 };
 
+enum {
+    NAV_RESET_ALTITUDE_NEVER = 0,
+    NAV_RESET_ALTITUDE_ON_FIRST_ARM,
+    NAV_RESET_ALTITUDE_ON_EACH_ARM,
+};
+
 typedef struct positionEstimationConfig_s {
     uint8_t automatic_mag_declination;
-    uint8_t gps_min_sats;
+    uint8_t reset_altitude_type;
     uint8_t accz_unarmed_cal;
     uint8_t use_gps_velned;
     uint16_t gps_delay_ms;

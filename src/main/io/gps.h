@@ -85,6 +85,7 @@ typedef struct gpsConfig_s {
     gpsAutoConfig_e autoConfig;
     gpsAutoBaud_e autoBaud;
     gpsDynModel_e dynModel;
+    uint8_t gpsMinSats;
 } gpsConfig_t;
 
 PG_DECLARE(gpsConfig_t, gpsConfig);

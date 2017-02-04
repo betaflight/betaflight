@@ -2328,7 +2328,7 @@ void applyWaypointNavigationAndAltitudeHold(void)
     if (posControl.flags.hasValidAltitudeSensor)    navFlags |= (1 << 0);
     if (posControl.flags.hasValidSurfaceSensor)     navFlags |= (1 << 1);
     if (posControl.flags.hasValidPositionSensor)    navFlags |= (1 << 2);
-    if ((STATE(GPS_FIX) && gpsSol.numSat >= positionEstimationConfig()->gps_min_sats)) navFlags |= (1 << 3);
+    //if (STATE(GPS_FIX))                             navFlags |= (1 << 3);
 #if defined(NAV_GPS_GLITCH_DETECTION)
     if (isGPSGlitchDetected())                      navFlags |= (1 << 4);
 #endif
