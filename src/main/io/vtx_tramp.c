@@ -89,8 +89,14 @@ uint16_t trampCurConfigPower = 0; // Configured transmitting power
 int16_t trampCurTemp = 0;
 uint8_t trampCurPitmode = 0;
 
+// Maximum number of requests sent to try a config change
+#define TRAMP_MAX_RETRIES 2
+
 uint32_t trampConfFreq = 0;
+uint8_t  trampFreqRetries = 0;
+
 uint16_t trampConfPower = 0;
+uint8_t  trampPowerRetries = 0;
 
 #ifdef CMS
 static void trampCmsUpdateStatusString(void); // Forward
@@ -157,6 +163,13 @@ bool trampCommitChanges()
         return false;
 
     trampStatus = TRAMP_STATUS_SET_FREQ_PW;
+
+    if(trampConfFreq != trampCurFreq)
+        trampFreqRetries = TRAMP_MAX_RETRIES;
+
+    if(trampConfPower != trampCurPower)
+        trampPowerRetries = TRAMP_MAX_RETRIES;
+
     return true;
 }
 
@@ -194,6 +207,9 @@ char trampHandleResponse(void)
                 trampCurPitmode = trampRespBuffer[7];
                 trampCurPower = trampRespBuffer[8]|(trampRespBuffer[9] << 8);
                 vtx58_Freq2Bandchan(trampCurFreq, &trampCurBand, &trampCurChan);
+
+                if(trampConfFreq == 0)  trampConfFreq  = trampCurFreq;
+                if(trampConfPower == 0) trampConfPower = trampCurPower;
                 return 'v';
             }
 
@@ -361,15 +377,17 @@ void vtxTrampProcess(uint32_t currentTimeUs)
     case TRAMP_STATUS_SET_FREQ_PW:
         {
             bool done = true;
-            if (trampConfFreq != trampCurFreq) {
+            if (trampConfFreq && trampFreqRetries && (trampConfFreq != trampCurFreq)) {
                 trampSendFreq(trampConfFreq);
+                trampFreqRetries--;
 #ifdef TRAMP_DEBUG
                 debugFreqReqCounter++;
 #endif
                 done = false;
             }
-            else if (trampConfPower != trampCurConfigPower) {
+            else if (trampConfPower && trampPowerRetries && (trampConfPower != trampCurConfigPower)) {
                 trampSendRFPower(trampConfPower);
+                trampPowerRetries--;
 #ifdef TRAMP_DEBUG
                 debugPowReqCounter++;
 #endif
@@ -385,6 +403,10 @@ void vtxTrampProcess(uint32_t currentTimeUs)
             else {
                 // everything has been done, let's return to original state
                 trampStatus = TRAMP_STATUS_ONLINE;
+                // reset configuration value in case it failed (no more retries)
+                trampConfFreq  = trampCurFreq;
+                trampConfPower = trampCurPower;
+                trampFreqRetries = trampPowerRetries = 0;
             }
         }
         break;
