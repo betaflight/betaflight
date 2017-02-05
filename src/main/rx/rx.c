@@ -119,7 +119,7 @@ PG_RESET_TEMPLATE(rxConfig_t, rxConfig,
     .rx_max_usec = 2115,         // any of first 4 channels above this value will trigger rx loss detection
     .rssi_channel = 0,
     .rssi_scale = RSSI_SCALE_DEFAULT,
-    .rssi_ppm_invert = 0,
+    .rssiInvert = 0,
     .rcSmoothing = 1,
     .rxNoSignalThrottleBehavior = RX_NOSIGNAL_THROTTLE_HOLD,
 );
@@ -559,11 +559,6 @@ static void updateRSSIPWM(void)
     // Read value of AUX channel as rssi
     pwmRssi = rcData[rxConfig()->rssi_channel - 1];
 
-    // RSSI_Invert option
-    if (rxConfig()->rssi_ppm_invert) {
-        pwmRssi = ((2000 - pwmRssi) + 1000);
-    }
-
     // Range of rawPwmRssi is [1000;2000]. rssi should be in [0;1023];
     rssi = (uint16_t)((constrain(pwmRssi - 1000, 0, 1000) / 1000.0f) * 1023.0f);
 }
@@ -605,12 +600,18 @@ static void updateRSSIADC(timeUs_t currentTimeUs)
 
 void updateRSSI(timeUs_t currentTimeUs)
 {
-
+    // Read RSSI
     if (rxConfig()->rssi_channel > 0) {
         updateRSSIPWM();
     } else if (feature(FEATURE_RSSI_ADC)) {
         updateRSSIADC(currentTimeUs);
     }
+
+    // Apply RSSI inversion
+    if (rxConfig()->rssiInvert) {
+        rssi = 1023 - rssi;
+    }
+    
 }
 
 uint16_t rxGetRefreshRate(void)
