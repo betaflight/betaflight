@@ -43,9 +43,11 @@ static IO_t mpuSpi6500CsPin = IO_NONE;
 bool mpu6500WriteRegister(uint8_t reg, uint8_t data)
 {
     ENABLE_MPU6500;
+    delayMicroseconds(1);
     spiTransferByte(MPU6500_SPI_INSTANCE, reg);
     spiTransferByte(MPU6500_SPI_INSTANCE, data);
     DISABLE_MPU6500;
+    delayMicroseconds(1);
 
     return true;
 }
