@@ -937,11 +937,11 @@ void activateConfig(void)
 
 void validateAndFixConfig(void)
 {
-    if((motorConfig()->motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)) {
+    if ((motorConfig()->motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)) {
         motorConfigMutable()->mincommand = 1000;
     }
 
-    if((motorConfig()->motorPwmProtocol == PWM_TYPE_STANDARD) && (motorConfig()->motorPwmRate > 400)) {
+    if ((motorConfig()->motorPwmProtocol == PWM_TYPE_STANDARD) && (motorConfig()->motorPwmRate > 400)) {
         motorConfig()->motorPwmRate = 400;
     }
 
@@ -1093,7 +1093,7 @@ void validateAndFixGyroConfig(void)
     float motorUpdateRestriction;
     switch(motorConfig()->motorPwmProtocol) {
         case (PWM_TYPE_STANDARD):
-            motorUpdateRestriction = 0.002f;
+            motorUpdateRestriction = 0.0025f;
             break;
         case (PWM_TYPE_ONESHOT125):
             motorUpdateRestriction = 0.0005f;
@@ -1113,11 +1113,13 @@ void validateAndFixGyroConfig(void)
             motorUpdateRestriction = 0.00003125f;
     }
 
-    if(pidLooptime < motorUpdateRestriction)
-        pidConfig()->pid_process_denom = motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom);
+    if (pidLooptime < motorUpdateRestriction) {
+        const uint8_t maxPidProcessDenom = constrain(motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom), 1, MAX_PID_PROCESS_DENOM);
+        pidConfigMutable()->pid_process_denom = MIN(pidConfigMutable()->pid_process_denom, maxPidProcessDenom);
+    }
 
     // Prevent overriding the max rate of motors
-    if(motorConfig()->useUnsyncedPwm && (motorConfig()->motorPwmProtocol <= PWM_TYPE_BRUSHED)) {
+    if (motorConfig()->useUnsyncedPwm && (motorConfig()->motorPwmProtocol <= PWM_TYPE_BRUSHED)) {
         uint32_t maxEscRate = lrintf(1.0f / motorUpdateRestriction);
 
         if(motorConfig()->motorPwmRate > maxEscRate)

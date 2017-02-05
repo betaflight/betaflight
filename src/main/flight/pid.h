@@ -19,12 +19,13 @@
 
 #include <stdbool.h>
 
-#define PID_CONTROLLER_BETAFLIGHT 1
-#define PID_MIXER_SCALING 1000.0f
-#define PID_SERVO_MIXER_SCALING 0.7f
-#define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
-#define YAW_P_LIMIT_MAX 500                 // Maximum value for yaw P limiter
-#define PIDSUM_LIMIT 0.5f
+#define MAX_PID_PROCESS_DENOM       16
+#define PID_CONTROLLER_BETAFLIGHT   1
+#define PID_MIXER_SCALING           1000.0f
+#define PID_SERVO_MIXER_SCALING     0.7f
+#define YAW_P_LIMIT_MIN             100                 // Maximum value for yaw P limiter
+#define YAW_P_LIMIT_MAX             500                 // Maximum value for yaw P limiter
+#define PIDSUM_LIMIT                0.5f
 
 // Scaling factors for Pids for better tunable range in configurator for betaflight pid controller. The scaling is based on legacy pid controller or previous float
 #define PTERM_SCALE 0.032029f
