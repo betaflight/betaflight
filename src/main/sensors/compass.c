@@ -44,6 +44,7 @@
 #include "hardware_revision.h"
 #endif
 
+magDev_t magDev;
 mag_t mag;                   // mag access functions
 
 #ifdef MAG
@@ -146,17 +147,25 @@ retry:
     return true;
 }
 
-void compassInit(void)
+bool compassInit(void)
 {
     // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)
     // calculate magnetic declination
+    mag.magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
+    if (!compassDetect(&magDev, compassConfig()->mag_hardware)) {
+        return false;
+    }
     const int16_t deg = compassConfig()->mag_declination / 100;
     const int16_t min = compassConfig()->mag_declination % 100;
     mag.magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units
     LED1_ON;
-    mag.dev.init();
+    magDev.init();
     LED1_OFF;
     magInit = 1;
+    if (compassConfig()->mag_align != ALIGN_DEFAULT) {
+        magDev.magAlign = compassConfig()->mag_align;
+    }
+    return true;
 }
 
 void compassUpdate(uint32_t currentTime, flightDynamicsTrims_t *magZero)
@@ -165,11 +174,11 @@ void compassUpdate(uint32_t currentTime, flightDynamicsTrims_t *magZero)
     static flightDynamicsTrims_t magZeroTempMin;
     static flightDynamicsTrims_t magZeroTempMax;
 
-    mag.dev.read(magADCRaw);
+    magDev.read(magADCRaw);
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         mag.magADC[axis] = magADCRaw[axis];
     }
-    alignSensors(mag.magADC, mag.dev.magAlign);
+    alignSensors(mag.magADC, magDev.magAlign);
 
     if (STATE(CALIBRATE_MAG)) {
         tCal = currentTime;

@@ -18,7 +18,6 @@
 #pragma once
 
 #include "config/parameter_group.h"
-#include "drivers/accgyro.h"
 #include "common/axis.h"
 
 typedef enum {
@@ -38,7 +37,6 @@ typedef enum {
 } gyroSensor_e;
 
 typedef struct gyro_s {
-    gyroDev_t dev;
     uint32_t targetLooptime;
     float gyroADCf[XYZ_AXIS_COUNT];
 } gyro_t;
@@ -62,8 +60,13 @@ typedef struct gyroConfig_s {
 
 PG_DECLARE(gyroConfig_t, gyroConfig);
 
-void gyroSetCalibrationCycles(void);
 bool gyroInit(void);
 void gyroInitFilters(void);
 void gyroUpdate(void);
+const mpuConfiguration_t *gyroMpuConfiguration(void);
+const mpuDetectionResult_t *gyroMpuDetectionResult(void);
+void gyroSetCalibrationCycles(void);
 bool isGyroCalibrationComplete(void);
+void gyroReadTemperature(void);
+int16_t gyroGetTemperature(void);
+int16_t gyroRateDps(int axis);

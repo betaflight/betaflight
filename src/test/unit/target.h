@@ -19,6 +19,7 @@
 
 #define CMS
 #define CMS_MAX_DEVICE 4
+#define USE_FAKE_GYRO
 #define MAG
 #define BARO
 #define GPS

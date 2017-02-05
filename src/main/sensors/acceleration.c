@@ -35,18 +35,18 @@
 #include "drivers/accgyro_bma280.h"
 #include "drivers/accgyro_fake.h"
 #include "drivers/accgyro_l3g4200d.h"
+#include "drivers/accgyro_l3gd20.h"
+#include "drivers/accgyro_lsm303dlhc.h"
 #include "drivers/accgyro_mma845x.h"
 #include "drivers/accgyro_mpu.h"
 #include "drivers/accgyro_mpu3050.h"
 #include "drivers/accgyro_mpu6050.h"
 #include "drivers/accgyro_mpu6500.h"
-#include "drivers/accgyro_l3gd20.h"
-#include "drivers/accgyro_lsm303dlhc.h"
-#include "drivers/bus_spi.h"
 #include "drivers/accgyro_spi_icm20689.h"
 #include "drivers/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro_spi_mpu6500.h"
 #include "drivers/accgyro_spi_mpu9250.h"
+#include "drivers/bus_spi.h"
 #include "drivers/system.h"
 
 #include "fc/config.h"
@@ -250,8 +250,8 @@ bool accInit(uint32_t gyroSamplingInverval)
 {
     memset(&acc, 0, sizeof(acc));
     // copy over the common gyro mpu settings
-    acc.dev.mpuConfiguration = gyro.dev.mpuConfiguration;
-    acc.dev.mpuDetectionResult = gyro.dev.mpuDetectionResult;
+    acc.dev.mpuConfiguration = *gyroMpuConfiguration();
+    acc.dev.mpuDetectionResult = *gyroMpuDetectionResult();
     if (!accDetect(&acc.dev, accelerometerConfig()->acc_hardware)) {
         return false;
     }
@@ -277,6 +277,9 @@ bool accInit(uint32_t gyroSamplingInverval)
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, acc.accSamplingInterval);
         }
+    }
+    if (accelerometerConfig()->acc_align != ALIGN_DEFAULT) {
+        acc.dev.accAlign = accelerometerConfig()->acc_align;
     }
     return true;
 }

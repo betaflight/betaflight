@@ -93,7 +93,6 @@ int16_t headFreeModeHold;
 
 uint8_t motorControlEnable = false;
 
-int16_t telemTemperature1;      // gyro sensor temperature
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
 bool isRXDataNew;
@@ -470,8 +469,8 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
 
     // Read out gyro temperature if used for telemmetry
-    if (feature(FEATURE_TELEMETRY) && gyro.dev.temperature) {
-        gyro.dev.temperature(&gyro.dev, &telemTemperature1);
+    if (feature(FEATURE_TELEMETRY)) {
+        gyroReadTemperature();
     }
 
 #ifdef MAG
