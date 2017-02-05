@@ -890,10 +890,8 @@ void activateConfig(void)
 {
     resetAdjustmentStates();
 
-    useRcControlsConfig(
-        modeActivationProfile()->modeActivationConditions,
-        &currentProfile->pidProfile
-    );
+    useRcControlsConfig(modeActivationProfile()->modeActivationConditions, &currentProfile->pidProfile);
+    useAdjustmentConfig(&currentProfile->pidProfile);
 
 #ifdef GPS
     gpsUseProfile(&masterConfig.gpsProfile);

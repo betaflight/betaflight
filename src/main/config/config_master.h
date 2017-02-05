@@ -35,6 +35,7 @@
 #include "drivers/flash.h"
 #include "drivers/display.h"
 
+#include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 
 #include "flight/failsafe.h"
