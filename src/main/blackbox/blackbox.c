@@ -32,6 +32,7 @@
 
 #include "common/axis.h"
 #include "common/encoding.h"
+#include "common/maths.h"
 #include "common/utils.h"
 
 #include "config/config_profile.h"

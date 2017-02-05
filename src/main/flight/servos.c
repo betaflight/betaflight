@@ -27,6 +27,7 @@
 #include "build/build_config.h"
 
 #include "common/filter.h"
+#include "common/maths.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
