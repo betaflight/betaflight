@@ -73,6 +73,7 @@ PG_RESET_TEMPLATE(navConfig_t, navConfig,
             .rth_climb_first = 1,                         // Climb first, turn after reaching safe altitude
             .rth_tail_first = 0,
             .disarm_on_landing = 0,
+            .rth_allow_landing = 1,
         },
 
         // General navigation parameters
@@ -1152,11 +1153,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
             return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
         }
 
-        if (STATE(FIXED_WING)) {
-            // FIXME: Continue loitering at home altitude
-            return NAV_FSM_EVENT_NONE;
-        }
-        else {
+        if (navConfig()->general.flags.rth_allow_landing) {
             // A safeguard - if sonar is available and it is reading < 50cm altitude - drop to low descend speed
             if (posControl.flags.hasValidSurfaceSensor && posControl.actualState.surface >= 0 && posControl.actualState.surface < 50.0f) {
                 // land_descent_rate == 200 : descend speed = 30 cm/s, gentle touchdown
@@ -1175,9 +1172,9 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
                 float descentVelLimited = MIN(-descentVelScaling * navConfig()->general.land_descent_rate, -50.0f);
                 updateAltitudeTargetFromClimbRate(descentVelLimited, CLIMB_RATE_RESET_SURFACE_TARGET);
             }
-
-            return NAV_FSM_EVENT_NONE;
         }
+
+        return NAV_FSM_EVENT_NONE;
     }
 }
 

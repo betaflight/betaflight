@@ -99,6 +99,7 @@ typedef struct navConfig_s {
             uint8_t rth_climb_first;            // Controls the logic for initial RTH climbout
             uint8_t rth_tail_first;             // Return to home tail first
             uint8_t disarm_on_landing;          //
+            uint8_t rth_allow_landing;          // Enable landing as last stage of RTH
         } flags;
 
         uint8_t  pos_failure_timeout;           // Time to wait before switching to emergency landing (0 - disable)
