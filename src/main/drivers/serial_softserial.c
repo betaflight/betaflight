@@ -108,6 +108,8 @@ static void setTxSignal(softSerial_t *softSerial, uint8_t state)
     }
 }
 
+#if 0
+// @ledvinap suggested the use of TIM_CCxCmd.
 // XXX CCEnableBit: Compute CCxE bit.
 // XXX (Note: timer.c:timerChICPolarity() uses "TIM_CCER_CC1P << timHw->channel".)
 
@@ -149,6 +151,7 @@ static uint32_t CCEnableBit(int channel)
 
     return bit;
 }
+#endif
 
 static void serialInputPortActivate(softSerial_t *softSerial)
 {
@@ -164,14 +167,18 @@ static void serialInputPortActivate(softSerial_t *softSerial)
 
     // Enable input capture
 
-    softSerial->timerHardware->tim->CCER |= softSerial->ccEnableBit;
+    // @ledvinap suggested the use of TIM_CCxCmd.
+    //softSerial->timerHardware->tim->CCER |= softSerial->ccEnableBit;
+    TIM_CCxCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_Enable);
 }
 
 static void serialInputPortDeActivate(softSerial_t *softSerial)
 {
     // Disable input capture
 
-    softSerial->timerHardware->tim->CCER &= ~softSerial->ccEnableBit;
+    // @ledvinap suggested the use of TIM_CCxCmd.
+    //softSerial->timerHardware->tim->CCER &= ~softSerial->ccEnableBit;
+    TIM_CCxCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_Disable);
 
     IOConfigGPIO(softSerial->rxIO, IOCFG_IN_FLOATING);
     softSerial->rxActive = false;
@@ -290,7 +297,7 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
         }
     }
 
-    softSerial->ccEnableBit = CCEnableBit(softSerial->timerHardware->channel);
+    //softSerial->ccEnableBit = CCEnableBit(softSerial->timerHardware->channel);
 
     //debug[2] = softSerial->ccEnableBit;
 
@@ -366,7 +373,7 @@ void processTxState(softSerial_t *softSerial)
         }
 
         // data to send
-        char byteToSend = softSerial->port.txBuffer[softSerial->port.txBufferTail++];
+        uint8_t byteToSend = softSerial->port.txBuffer[softSerial->port.txBufferTail++];
         if (softSerial->port.txBufferTail >= softSerial->port.txBufferSize) {
             softSerial->port.txBufferTail = 0;
         }
@@ -481,13 +488,13 @@ void onSerialTimerOverflow(timerOvrHandlerRec_t *cbRec, captureCompare_t capture
     UNUSED(capture);
     //debug[0]++;
 
-    softSerial_t *softSerial = container_of(cbRec, softSerial_t, overCb);
+    softSerial_t *self = container_of(cbRec, softSerial_t, overCb);
 
-    if (softSerial->port.mode & MODE_TX)
-        processTxState(softSerial);
+    if (self->port.mode & MODE_TX)
+        processTxState(self);
 
-    if (softSerial->port.mode & MODE_RX)
-        processRxState(softSerial);
+    if (self->port.mode & MODE_RX)
+        processRxState(self);
 }
 
 void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
@@ -495,44 +502,44 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
     UNUSED(capture);
     //debug[1]++;
 
-    softSerial_t *softSerial = container_of(cbRec, softSerial_t, edgeCb);
-    bool inverted = softSerial->port.options & SERIAL_INVERTED;
+    softSerial_t *self = container_of(cbRec, softSerial_t, edgeCb);
+    bool inverted = self->port.options & SERIAL_INVERTED;
 
-    if ((softSerial->port.mode & MODE_RX) == 0) {
+    if ((self->port.mode & MODE_RX) == 0) {
         return;
     }
 
-    if (softSerial->isSearchingForStartBit) {
+    if (self->isSearchingForStartBit) {
         // synchronise bit counter
         // FIXME this reduces functionality somewhat as receiving breaks concurrent transmission on all ports because
         // the next callback to the onSerialTimer will happen too early causing transmission errors.
-        TIM_SetCounter(softSerial->timerHardware->tim, softSerial->timerHardware->tim->ARR / 2);
-        if ((softSerial->timerMode != TIMER_MODE_DUAL) && softSerial->isTransmittingData) {
-            softSerial->transmissionErrors++;
+        TIM_SetCounter(self->timerHardware->tim, self->timerHardware->tim->ARR / 2);
+        if ((self->timerMode != TIMER_MODE_DUAL) && self->isTransmittingData) {
+            self->transmissionErrors++;
         }
 
-        serialICConfig(softSerial->timerHardware->tim, softSerial->timerHardware->channel, inverted ? TIM_ICPolarity_Falling : TIM_ICPolarity_Rising);
-        softSerial->rxEdge = LEADING;
+        serialICConfig(self->timerHardware->tim, self->timerHardware->channel, inverted ? TIM_ICPolarity_Falling : TIM_ICPolarity_Rising);
+        self->rxEdge = LEADING;
 
-        softSerial->rxBitIndex = 0;
-        softSerial->rxLastLeadingEdgeAtBitIndex = 0;
-        softSerial->internalRxBuffer = 0;
-        softSerial->isSearchingForStartBit = false;
+        self->rxBitIndex = 0;
+        self->rxLastLeadingEdgeAtBitIndex = 0;
+        self->internalRxBuffer = 0;
+        self->isSearchingForStartBit = false;
         return;
     }
 
-    if (softSerial->rxEdge == LEADING) {
-        softSerial->rxLastLeadingEdgeAtBitIndex = softSerial->rxBitIndex;
+    if (self->rxEdge == LEADING) {
+        self->rxLastLeadingEdgeAtBitIndex = self->rxBitIndex;
     }
 
-    applyChangedBits(softSerial);
+    applyChangedBits(self);
 
-    if (softSerial->rxEdge == TRAILING) {
-        softSerial->rxEdge = LEADING;
-        serialICConfig(softSerial->timerHardware->tim, softSerial->timerHardware->channel, inverted ? TIM_ICPolarity_Falling : TIM_ICPolarity_Rising);
+    if (self->rxEdge == TRAILING) {
+        self->rxEdge = LEADING;
+        serialICConfig(self->timerHardware->tim, self->timerHardware->channel, inverted ? TIM_ICPolarity_Falling : TIM_ICPolarity_Rising);
     } else {
-        softSerial->rxEdge = TRAILING;
-        serialICConfig(softSerial->timerHardware->tim, softSerial->timerHardware->channel, inverted ? TIM_ICPolarity_Rising : TIM_ICPolarity_Falling);
+        self->rxEdge = TRAILING;
+        serialICConfig(self->timerHardware->tim, self->timerHardware->channel, inverted ? TIM_ICPolarity_Rising : TIM_ICPolarity_Falling);
     }
 }
 
