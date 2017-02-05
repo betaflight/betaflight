@@ -171,7 +171,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(positionEstimationConfig_t, positionEstimationCo
 PG_RESET_TEMPLATE(positionEstimationConfig_t, positionEstimationConfig,
         // Inertial position estimator parameters
         .automatic_mag_declination = 1,
-        .gps_min_sats = 6,
+        .reset_altitude_type = NAV_RESET_ALTITUDE_ON_FIRST_ARM,
         .gps_delay_ms = 200,
         .accz_unarmed_cal = 1,
         .use_gps_velned = 1,         // "Disabled" is mandatory with gps_dyn_model = Pedestrian
@@ -224,6 +224,20 @@ static bool updateTimer(navigationTimer_t * tim, uint32_t interval, timeUs_t cur
     else {
         return false;
     }
+}
+
+static bool shouldResetReferenceAltitude(void)
+{
+    switch (positionEstimationConfig()->reset_altitude_type) {
+        case NAV_RESET_ALTITUDE_NEVER:
+            return false;
+        case NAV_RESET_ALTITUDE_ON_FIRST_ARM:
+            return !ARMING_FLAG(ARMED) && !ARMING_FLAG(WAS_EVER_ARMED);
+        case NAV_RESET_ALTITUDE_ON_EACH_ARM:
+            return !ARMING_FLAG(ARMED);
+    }
+
+    return false;
 }
 
 #if defined(GPS)
@@ -306,7 +320,7 @@ void onNewGPSData(void)
     newLLH.alt = gpsSol.llh.alt;
 
     if (sensors(SENSOR_GPS)) {
-        if (!(STATE(GPS_FIX) && gpsSol.numSat >= positionEstimationConfig()->gps_min_sats)) {
+        if (!STATE(GPS_FIX)) {
             isFirstGPSUpdate = true;
             return;
         }
@@ -318,24 +332,24 @@ void onNewGPSData(void)
 #if defined(NAV_AUTO_MAG_DECLINATION)
         /* Automatic magnetic declination calculation - do this once */
         static bool magDeclinationSet = false;
-        if (positionEstimationConfig()->automatic_mag_declination && !magDeclinationSet && (gpsSol.numSat >= positionEstimationConfig()->gps_min_sats)) {
+        if (positionEstimationConfig()->automatic_mag_declination && !magDeclinationSet) {
             mag.magneticDeclination = geoCalculateMagDeclination(&newLLH) * 10.0f; // heading is in 0.1deg units
             magDeclinationSet = true;
         }
 #endif
 
         /* Process position update if GPS origin is already set, or precision is good enough */
-        // FIXME: use HDOP here
-        if ((posControl.gpsOrigin.valid) || (gpsSol.numSat >= positionEstimationConfig()->gps_min_sats)) {
-            /* Set GPS origin or reset the origin altitude - keep initial pre-arming altitude at zero */
-            if (!posControl.gpsOrigin.valid) {
-                geoSetOrigin(&posControl.gpsOrigin, &newLLH, GEO_ORIGIN_SET);
-            }
-            else if (!ARMING_FLAG(ARMED) && !ARMING_FLAG(WAS_EVER_ARMED)) {
-                /* If we were never armed - keep altitude at zero */
-                geoSetOrigin(&posControl.gpsOrigin, &newLLH, GEO_ORIGIN_RESET_ALTITUDE);
-            }
+        // FIXME: Add HDOP check for acquisition of GPS origin
+        /* Set GPS origin or reset the origin altitude - keep initial pre-arming altitude at zero */
+        if (!posControl.gpsOrigin.valid) {
+            geoSetOrigin(&posControl.gpsOrigin, &newLLH, GEO_ORIGIN_SET);
+        }
+        else if (shouldResetReferenceAltitude()) {
+            /* If we were never armed - keep altitude at zero */
+            geoSetOrigin(&posControl.gpsOrigin, &newLLH, GEO_ORIGIN_RESET_ALTITUDE);
+        }
 
+        if (posControl.gpsOrigin.valid) {
             /* Convert LLH position to local coordinates */
             geoConvertGeodeticToLocal(&posControl.gpsOrigin, &newLLH, & posEstimator.gps.pos, GEO_ALT_ABSOLUTE);
 
@@ -415,8 +429,8 @@ static void updateBaroTopic(timeUs_t currentTimeUs)
         static float initialBaroAltitudeOffset = 0.0f;
         float newBaroAlt = baroCalculateAltitude();
 
-        /* If we were never armed - keep altitude at zero */
-        if (!ARMING_FLAG(ARMED) && !ARMING_FLAG(WAS_EVER_ARMED)) {
+        /* If we are required - keep altitude at zero */
+        if (shouldResetReferenceAltitude()) {
             initialBaroAltitudeOffset = newBaroAlt;
         }
 

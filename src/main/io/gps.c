@@ -120,7 +120,8 @@ PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
     .sbasMode = SBAS_NONE,
     .autoConfig = GPS_AUTOCONFIG_ON,
     .autoBaud = GPS_AUTOBAUD_ON,
-    .dynModel = GPS_DYNMODEL_AIR_1G
+    .dynModel = GPS_DYNMODEL_AIR_1G,
+    .gpsMinSats = 6
 );
 
 void gpsSetState(gpsState_e state)
@@ -141,7 +142,7 @@ static void gpsHandleProtocol(void)
     // Received new update for solution data
     if (newDataReceived) {
         // Set GPS fix flag only if we have 3D fix
-        if (gpsSol.fixType == GPS_FIX_3D) {
+        if (gpsSol.fixType == GPS_FIX_3D && gpsSol.numSat >= gpsConfig()->gpsMinSats) {
             ENABLE_STATE(GPS_FIX);
         }
         else {

@@ -137,11 +137,12 @@ Re-apply any new defaults as desired.
 |  gps_dyn_model  | AIR_1G | GPS navigation model: Pedestrian, Air_1g, Air_4g. Default is AIR_1G. Use pedestrian with caution, can cause flyaways with fast flying. |
 |  gps_auto_config  | ON | Enable automatic configuration of UBlox GPS receivers. |
 |  gps_auto_baud  | ON | Automatic configuration of GPS baudrate(The spesified baudrate in configured in ports will be used) when used with UBLOX GPS. When used with NAZA/DJI it will automatic detect GPS baudrate and change to it, ignoring the selected baudrate set in ports |
+|  gps_min_sats  | 6 | Minimum number of GPS satellites in view to acquire GPS_FIX and consider GPS position valid. Some GPS receivers appeared to be very inaccurate with low satellite count. |
 |  inav_auto_mag_decl  | ON | Automatic setting of magnetic declination based on GPS position. When used manual magnetic declination is ignored. |
 |  inav_accz_unarmedcal  | ON | Controls if inertial position estimator should compute gravity offset on accelerometer Z-axis dynamically when drone is unarmed. Mostly affects accuracy of altitude estimation and althold performace. No real reason to disable this feature. |
 |  inav_use_gps_velned  | ON | Defined if iNav should use velocity data provided by GPS module for doing position and speed estimation. If set to OFF iNav will fallback to calculating velocity from GPS coordinates. Using native velocity data may improve performance on some GPS modules. Some GPS modules introduce significant delay and using native velocity may actually result in much worse performance. |
 |  inav_gps_delay  | 200 | GPS position and velocity data usually arrive with a delay. This parameter defines this delay. Default (200) should be reasonable for most GPS receivers. |
-|  inav_gps_min_sats  | 6 | Minimum number of GPS satellites in view to consider GPS position valid. Some GPS receivers appeared to be very inaccurate with low satellite count. |
+|  inav_reset_altitude | FIRST_ARM | Defines when relative estimated altitude is reset to zero. Variants - `NEVER` (once reference is acquired it's used regardless); `FIRST_ARM` (keep altitude at zero until firstly armed), `EACH_ARM` (altitude is reset to zero on each arming) |
 |  inav_w_z_baro_p  | 0.350 | Weight of barometer measurements in estimated altitude and climb rate |
 |  inav_w_z_gps_p  | 0.200 | Weight of GPS altitude measurements in estimated altitude. Setting is used only of airplanes |
 |  inav_w_z_gps_v  | 0.500 | Weight of GPS climb rate measurements in estimated climb rate. Setting is used on both airplanes and multirotors. If GPS doesn't support native climb rate reporting (i.e. NMEA GPS) you may consider setting this to zero |
@@ -158,6 +159,7 @@ Re-apply any new defaults as desired.
 |  nav_user_control_mode  | ATTI | Defines how Pitch/Roll input from RC receiver affects flight in POSHOLD mode: ATTI - right stick controls attitude like in ANGLE mode; CRUISE - right stick controls velocity in forward and right direction. |
 |  nav_position_timeout  | 5 | If GPS fails wait for this much seconds before switching to emergency landing mode (0 - disable) |
 |  nav_wp_radius  | 100 | Waypoint radius [cm]. Waypoint would be considered reached if machine is within this radius |
+|  nav_wp_safe_distance  | 10000 | First waypoint in the mission should be closer than this value (cm) |
 |  nav_max_speed  | 300 | Maximum velocity firmware is allowed in full auto modes (POSHOLD, RTH, WP) [cm/s] [Multirotor only] |
 |  nav_max_climb_rate  | 500 | Maximum climb/descent rate that UAV is allowed to reach during navigation modes. In cm/s |
 |  nav_manual_speed  | 500 | Maximum velocity firmware is allowed when processing pilot input for POSHOLD/CRUISE control mode [cm/s] [Multirotor only] |
