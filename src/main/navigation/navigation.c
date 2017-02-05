@@ -70,9 +70,11 @@ PG_RESET_TEMPLATE(navConfig_t, navConfig,
             .extra_arming_safety = 1,
             .user_control_mode = NAV_GPS_ATTI,
             .rth_alt_control_mode = NAV_RTH_AT_LEAST_ALT,
-            .rth_climb_first = 1,                         // Climb first, turn after reaching safe altitude
+            .rth_climb_first = 1,                   // Climb first, turn after reaching safe altitude
+            .rth_climb_ignore_emerg = 0,            // Ignore GPS loss on initial climb
             .rth_tail_first = 0,
             .disarm_on_landing = 0,
+            .rth_allow_landing = 1,
         },
 
         // General navigation parameters
@@ -992,7 +994,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_INITIALIZE(navig
         return NAV_FSM_EVENT_SWITCH_TO_IDLE;
     }
     else {
-        if (posControl.flags.hasValidPositionSensor) {
+        if (posControl.flags.hasValidPositionSensor || navConfig()->general.flags.rth_climb_ignore_emerg) {
             // If close to home - reset home position and land
             if (posControl.homeDistance < navConfig()->general.min_rth_distance) {
                 setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
@@ -1035,36 +1037,43 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_CLIMB_TO_SAFE_AL
 {
     UNUSED(previousState);
 
-    // If no position sensor available - land immediately
-    if (!(posControl.flags.hasValidPositionSensor && posControl.flags.hasValidHeadingSensor) && checkForPositionSensorTimeout()) {
-        return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
-    }
-
-    if (((posControl.actualState.pos.V.Z - posControl.homeWaypointAbove.pos.V.Z) > -50.0f) || (!navConfig()->general.flags.rth_climb_first)) {
-        // Delayed initialization for RTH sanity check on airplanes - allow to finish climb first as it can take some distance
-        if (STATE(FIXED_WING)) {
-            initializeRTHSanityChecker(&posControl.actualState.pos);
-        }
-
-        return NAV_FSM_EVENT_SUCCESS;   // NAV_STATE_RTH_3D_HEAD_HOME
-    }
-    else {
-        /* For multi-rotors execute sanity check during initial ascent as well */
-        if (!STATE(FIXED_WING)) {
-            if (!validateRTHSanityChecker()) {
-                return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
+    // If we have valid pos sensor OR we are configured to ignore GPS loss
+    if (posControl.flags.hasValidPositionSensor || !checkForPositionSensorTimeout() || navConfig()->general.flags.rth_climb_ignore_emerg) {
+        if (((posControl.actualState.pos.V.Z - posControl.homeWaypointAbove.pos.V.Z) > -50.0f) || (!navConfig()->general.flags.rth_climb_first)) {
+            // Delayed initialization for RTH sanity check on airplanes - allow to finish climb first as it can take some distance
+            if (STATE(FIXED_WING)) {
+                initializeRTHSanityChecker(&posControl.actualState.pos);
             }
-        }
 
-        // Climb to safe altitude and turn to correct direction
-        if (navConfig()->general.flags.rth_tail_first && !STATE(FIXED_WING)) {
-            setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_Z | NAV_POS_UPDATE_BEARING_TAIL_FIRST);
+            return NAV_FSM_EVENT_SUCCESS;   // NAV_STATE_RTH_3D_HEAD_HOME
         }
         else {
-            setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_Z | NAV_POS_UPDATE_BEARING);
-        }
+            /* For multi-rotors execute sanity check during initial ascent as well */
+            if (!STATE(FIXED_WING)) {
+                if (!validateRTHSanityChecker()) {
+                    return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
+                }
+            }
 
-        return NAV_FSM_EVENT_NONE;
+            // Climb to safe altitude and turn to correct direction
+            if (STATE(FIXED_WING)) {
+                setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_Z);
+            }
+            else {
+                if (navConfig()->general.flags.rth_tail_first) {
+                    setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_Z | NAV_POS_UPDATE_BEARING_TAIL_FIRST);
+                }
+                else {
+                    setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_Z | NAV_POS_UPDATE_BEARING);
+                }
+            }
+
+            return NAV_FSM_EVENT_NONE;
+        }
+    }
+    /* Position sensor failure timeout - land */
+    else {
+        return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
     }
 }
 
@@ -1152,11 +1161,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
             return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
         }
 
-        if (STATE(FIXED_WING)) {
-            // FIXME: Continue loitering at home altitude
-            return NAV_FSM_EVENT_NONE;
-        }
-        else {
+        if (navConfig()->general.flags.rth_allow_landing) {
             // A safeguard - if sonar is available and it is reading < 50cm altitude - drop to low descend speed
             if (posControl.flags.hasValidSurfaceSensor && posControl.actualState.surface >= 0 && posControl.actualState.surface < 50.0f) {
                 // land_descent_rate == 200 : descend speed = 30 cm/s, gentle touchdown
@@ -1175,9 +1180,9 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
                 float descentVelLimited = MIN(-descentVelScaling * navConfig()->general.land_descent_rate, -50.0f);
                 updateAltitudeTargetFromClimbRate(descentVelLimited, CLIMB_RATE_RESET_SURFACE_TARGET);
             }
-
-            return NAV_FSM_EVENT_NONE;
         }
+
+        return NAV_FSM_EVENT_NONE;
     }
 }
 
