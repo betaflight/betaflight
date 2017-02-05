@@ -36,6 +36,7 @@ typedef enum {
     ADJUSTMENT_YAW_P,
     ADJUSTMENT_YAW_I,
     ADJUSTMENT_YAW_D,
+    ADJUSTMENT_RATE_PROFILE,    // Unused, placeholder for compatibility
     ADJUSTMENT_PITCH_RATE,
     ADJUSTMENT_ROLL_RATE,
     ADJUSTMENT_PITCH_P,
