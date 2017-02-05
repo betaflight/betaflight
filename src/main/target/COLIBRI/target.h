@@ -117,8 +117,6 @@
 #define I2C3_SCL                PA8
 #define I2C3_SDA                PC9
 
-#define SENSORS_SET             (SENSOR_ACC)
-
 #define LED_STRIP
 
 // alternative defaults for Colibri/Gemini target
