@@ -100,7 +100,7 @@ typedef struct navConfig_s {
             uint8_t rth_tail_first;             // Return to home tail first
             uint8_t disarm_on_landing;          //
             uint8_t rth_allow_landing;          // Enable landing as last stage of RTH
-            uint8_t rth_ignore_energency_on_climb;  // Option to ignore GPS loss on initial climb stage of RTH
+            uint8_t rth_climb_ignore_emerg;     // Option to ignore GPS loss on initial climb stage of RTH
         } flags;
 
         uint8_t  pos_failure_timeout;           // Time to wait before switching to emergency landing (0 - disable)

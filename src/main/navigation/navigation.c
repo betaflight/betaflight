@@ -70,8 +70,8 @@ PG_RESET_TEMPLATE(navConfig_t, navConfig,
             .extra_arming_safety = 1,
             .user_control_mode = NAV_GPS_ATTI,
             .rth_alt_control_mode = NAV_RTH_AT_LEAST_ALT,
-            .rth_climb_first = 1,                       // Climb first, turn after reaching safe altitude
-            .rth_ignore_energency_on_climb = 0,         // Ignore GPS loss on initial climb
+            .rth_climb_first = 1,                   // Climb first, turn after reaching safe altitude
+            .rth_climb_ignore_emerg = 0,            // Ignore GPS loss on initial climb
             .rth_tail_first = 0,
             .disarm_on_landing = 0,
             .rth_allow_landing = 1,
@@ -994,7 +994,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_INITIALIZE(navig
         return NAV_FSM_EVENT_SWITCH_TO_IDLE;
     }
     else {
-        if (posControl.flags.hasValidPositionSensor || navConfig()->general.flags.rth_ignore_energency_on_climb) {
+        if (posControl.flags.hasValidPositionSensor || navConfig()->general.flags.rth_climb_ignore_emerg) {
             // If close to home - reset home position and land
             if (posControl.homeDistance < navConfig()->general.min_rth_distance) {
                 setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
@@ -1038,7 +1038,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_CLIMB_TO_SAFE_AL
     UNUSED(previousState);
 
     // If we have valid pos sensor OR we are configured to ignore GPS loss
-    if (posControl.flags.hasValidPositionSensor || !checkForPositionSensorTimeout() || navConfig()->general.flags.rth_ignore_energency_on_climb) {
+    if (posControl.flags.hasValidPositionSensor || !checkForPositionSensorTimeout() || navConfig()->general.flags.rth_climb_ignore_emerg) {
         if (((posControl.actualState.pos.V.Z - posControl.homeWaypointAbove.pos.V.Z) > -50.0f) || (!navConfig()->general.flags.rth_climb_first)) {
             // Delayed initialization for RTH sanity check on airplanes - allow to finish climb first as it can take some distance
             if (STATE(FIXED_WING)) {
