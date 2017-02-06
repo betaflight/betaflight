@@ -100,11 +100,7 @@
 #endif
 
 #define BRUSHED_MOTORS_PWM_RATE 16000
-#ifdef STM32F4
-#define BRUSHLESS_MOTORS_PWM_RATE 2000
-#else
-#define BRUSHLESS_MOTORS_PWM_RATE 400
-#endif
+#define BRUSHLESS_MOTORS_PWM_RATE 480
 
 master_t masterConfig;                 // master config struct with data independent from profiles
 profile_t *currentProfile;
@@ -944,8 +940,8 @@ void validateAndFixConfig(void)
         motorConfig()->mincommand = 1000;
     }
 
-    if ((motorConfig()->motorPwmProtocol == PWM_TYPE_STANDARD) && (motorConfig()->motorPwmRate > 400)) {
-        motorConfig()->motorPwmRate = 400;
+    if ((motorConfig()->motorPwmProtocol == PWM_TYPE_STANDARD) && (motorConfig()->motorPwmRate > BRUSHLESS_MOTORS_PWM_RATE)) {
+        motorConfig()->motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
     }
 
     if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP) || featureConfigured(FEATURE_RX_SPI))) {
@@ -1096,7 +1092,7 @@ void validateAndFixGyroConfig(void)
     float motorUpdateRestriction;
     switch(motorConfig()->motorPwmProtocol) {
         case (PWM_TYPE_STANDARD):
-            motorUpdateRestriction = 0.0025f;
+            motorUpdateRestriction = 0.002f;
             break;
         case (PWM_TYPE_ONESHOT125):
             motorUpdateRestriction = 0.0005f;
