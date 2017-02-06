@@ -1099,8 +1099,8 @@ void validateAndFixGyroConfig(void)
     }
 
     if (pidLooptime < motorUpdateRestriction) {
-        const uint8_t maxPidProcessDenom = constrain(motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom), 1, MAX_PID_PROCESS_DENOM);
-        pidConfigMutable()->pid_process_denom = MIN(pidConfigMutable()->pid_process_denom, maxPidProcessDenom);
+        const uint8_t maxPidProcessDenom = motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom);
+        pidConfigMutable()->pid_process_denom = constrain(MAX(pidConfigMutable()->pid_process_denom, maxPidProcessDenom), 1, MAX_PID_PROCESS_DENOM);
     }
 
     // Prevent overriding the max rate of motors
