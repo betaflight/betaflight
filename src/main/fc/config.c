@@ -294,7 +294,7 @@ void validateAndFixConfig(void)
 #if defined(LED_STRIP) && (defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
     if (featureConfigured(FEATURE_SOFTSERIAL) && (
             0
-#ifdef USE_SOFTSERIAL1
+#if defined(USE_SOFTSERIAL1) && defined(SOFTSERIAL_1_TIMER)
             || (WS2811_TIMER == SOFTSERIAL_1_TIMER)
 #endif
 #ifdef USE_SOFTSERIAL2
