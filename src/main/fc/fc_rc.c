@@ -181,7 +181,8 @@ void processRcCommand(void)
 
     if (isRXDataNew) {
         currentRxRefreshRate = constrain(getTaskDeltaTime(TASK_RX),1000,20000);
-        checkForThrottleErrorResetState(currentRxRefreshRate);
+        if (currentProfile->pidProfile.itermAcceleratorGain > 1.0f)
+            checkForThrottleErrorResetState(currentRxRefreshRate);
     }
 
     if (rxConfig()->rcInterpolation || flightModeFlags) {
