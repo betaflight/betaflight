@@ -30,6 +30,7 @@
 
 #ifdef TELEMETRY
 
+#include "common/maths.h"
 #include "common/axis.h"
 
 #include "drivers/serial.h"
@@ -37,16 +38,26 @@
 
 #include "fc/fc_core.h"
 #include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 #include "scheduler/scheduler.h"
 
 #include "io/serial.h"
 
+#include "sensors/barometer.h"
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
+#include "io/gps.h"
+
+#include "flight/imu.h"
+#include "flight/failsafe.h"
+
+#include "navigation/navigation.h"
 
 #include "telemetry/ibus.h"
 #include "telemetry/telemetry.h"
+#include "fc/config.h"
+#include "config/feature.h"
 
 /*
  * iBus Telemetry is a half-duplex serial protocol. It shares 1 line for
@@ -177,17 +188,42 @@ typedef enum {
 } ibusCommand_e;
 
 typedef enum {
-    IBUS_SENSOR_TYPE_INTERNAL_VOLTAGE = 0x00,
-    IBUS_SENSOR_TYPE_TEMPERATURE      = 0x01,
-    IBUS_SENSOR_TYPE_RPM              = 0x02,
-    IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE = 0x03
+    IBUS_MEAS_TYPE_INTERNAL_VOLTAGE = 0x00, // Internal Voltage
+    IBUS_MEAS_TYPE_TEMPERATURE      = 0x01, // Temperature -##0.0 C, 0=-40.0 C, 400=0.0 C, 65535=6513.5 C
+    IBUS_MEAS_TYPE_RPM              = 0x02, // Rotation RPM, ####0RPM, 0=0RPM, 65535=65535RPM
+    IBUS_MEAS_TYPE_EXTERNAL_VOLTAGE = 0x03, // External Voltage, -##0.00V, 0=0.00V, 32767=327.67V, 32768=na, 32769=-327.67V, 65535=-0.01V
+    IBUS_MEAS_TYPE_PRES             = 0x41, // Pressure, not work
+    IBUS_MEAS_TYPE_ODO1             = 0x7c, // Odometer1, 0.0km, 0.0 only
+    IBUS_MEAS_TYPE_ODO2             = 0x7d, // Odometer2, 0.0km, 0.0 only
+    IBUS_MEAS_TYPE_SPE              = 0x7e, // Speed km/h, ###0km/h, 0=0Km/h, 1000=100Km/h
+    IBUS_MEAS_TYPE_ALT              = 0xf9, // Altitude m, not work
+    IBUS_MEAS_TYPE_SNR              = 0xfa, // SNR, not work
+    IBUS_MEAS_TYPE_NOISE            = 0xfb, // Noise, not work
+    IBUS_MEAS_TYPE_RSSI             = 0xfc, // RSSI, not work
+    IBUS_MEAS_TYPE_ERR              = 0xfe  // Error rate, #0%
 } ibusSensorType_e;
 
-static const uint8_t SENSOR_ADDRESS_TYPE_LOOKUP[] = {
-    IBUS_SENSOR_TYPE_INTERNAL_VOLTAGE,  // Address 0, not usable since it is reserved for internal voltage
-    IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE,  // Address 1, VBAT
-    IBUS_SENSOR_TYPE_TEMPERATURE,       // Address 2, Gyro Temp
-    IBUS_SENSOR_TYPE_RPM                // Address 3, Throttle command
+static uint8_t SENSOR_ADDRESS_TYPE_LOOKUP[] = {
+    IBUS_MEAS_TYPE_INTERNAL_VOLTAGE,  // Address 0, sensor 1, not usable since it is reserved for internal voltage
+    IBUS_MEAS_TYPE_EXTERNAL_VOLTAGE,  // Address 1 ,sensor 2, VBAT
+    IBUS_MEAS_TYPE_TEMPERATURE,       // Address 2, sensor 3, Baro/Gyro Temp	
+    IBUS_MEAS_TYPE_RPM,               // Address 3, sensor 4, Status AS RPM
+    IBUS_MEAS_TYPE_RPM,               // Address 4, sensor 5, MAG_COURSE in deg AS RPM
+    IBUS_MEAS_TYPE_EXTERNAL_VOLTAGE,  // Address 5, sensor 6, Current in A AS ExtV
+    IBUS_MEAS_TYPE_EXTERNAL_VOLTAGE   // Address 6, sensor 7, Baro Alt in cm AS ExtV
+#if defined(GPS)
+   ,IBUS_MEAS_TYPE_RPM,               // Address 7, sensor 8, HOME_DIR in deg AS RPM	
+    IBUS_MEAS_TYPE_RPM,               // Address 8, sensor 9, HOME_DIST in m AS RPM
+    IBUS_MEAS_TYPE_RPM,               // Address 9, sensor 10,GPS_COURSE in deg AS RPM
+    IBUS_MEAS_TYPE_RPM,               // Address 10,sensor 11,GPS_ALT in m AS RPM
+    IBUS_MEAS_TYPE_RPM,               // Address 11,sensor 12,GPS_LAT2 AS RPM 5678
+    IBUS_MEAS_TYPE_RPM,               // Address 12,sensor 13,GPS_LON2 AS RPM 6789
+    IBUS_MEAS_TYPE_EXTERNAL_VOLTAGE,  // Address 13,sensor 14,GPS_LAT1 AS ExtV -12.45 (-12.3456789 N)
+    IBUS_MEAS_TYPE_EXTERNAL_VOLTAGE,  // Address 14,sensor 15,GPS_LON1 AS ExtV -123.45 (-123.4567890 E)
+    IBUS_MEAS_TYPE_RPM                // Address 15,sensor 16,GPS_SPEED in km/h AS RPM
+#endif
+    //IBUS_MEAS_TYPE_TX_VOLTAGE,
+    //IBUS_MEAS_TYPE_ERR
 };
 
 static serialPort_t *ibusSerialPort = NULL;
@@ -245,13 +281,73 @@ static ibusAddress_t getAddress(uint8_t ibusPacket[static IBUS_MIN_LEN]) {
 }
 
 static void dispatchMeasurementRequest(ibusAddress_t address) {
-    if (1 == address) {
+    if (address == 1) { //2. VBAT
         sendIbusMeasurement(address, vbat * 10);
-    } else if (2 == address) {
-        sendIbusMeasurement(address, (uint16_t) telemTemperature1 + IBUS_TEMPERATURE_OFFSET);
-    } else if (3 == address) {
-        sendIbusMeasurement(address, (uint16_t) rcCommand[THROTTLE]);
+    } else if (address == 2) { //3. BARO_TEMP\GYRO_TEMP
+        if (sensors(SENSOR_BARO)) sendIbusMeasurement(address, (uint16_t) ((baro.baroTemperature + 50) / 10  + IBUS_TEMPERATURE_OFFSET)); //int32_t 
+        else sendIbusMeasurement(address, (uint16_t) (telemTemperature1 + IBUS_TEMPERATURE_OFFSET)); //int16_t
+    } else if (address == 3) { //4. STATUS (sat num AS #0, FIX AS 0, HDOP AS 0, Mode AS 0)
+        int16_t status = 0;
+        if (ARMING_FLAG(ARMED)) status = 1; //Rate
+        if (FLIGHT_MODE(HORIZON_MODE)) status = 2;
+        if (FLIGHT_MODE(ANGLE_MODE)) status = 3;
+        if (FLIGHT_MODE(HEADFREE_MODE) || FLIGHT_MODE(MAG_MODE)) status = 4; 
+	if (FLIGHT_MODE(NAV_ALTHOLD_MODE)) status = 5; 
+        if (FLIGHT_MODE(NAV_POSHOLD_MODE)) status = 6;
+        if (FLIGHT_MODE(NAV_RTH_MODE)) status = 7;
+        if (failsafeIsActive()) {
+        if (FLIGHT_MODE(NAV_RTH_MODE)) status = 8; else status = 9; 
     }
+#if defined(GPS)
+    if (sensors(SENSOR_GPS)) {
+        status += gpsSol.numSat * 1000;
+        if (gpsSol.fixType == GPS_NO_FIX) status += 100;
+        else if (gpsSol.fixType == GPS_FIX_2D) status += 200;
+        else if (gpsSol.fixType == GPS_FIX_3D) status += 300;
+        if (STATE(GPS_FIX_HOME)) status += 500;
+            status += constrain(gpsSol.hdop / 1000, 0, 9) * 10;
+        }
+#endif
+        sendIbusMeasurement(address, (uint16_t) status);
+    } else if (address == 4) { //5. MAG_COURSE (0-360*, 0=north) //In ddeg ==> deg, 10ddeg = 1deg
+        sendIbusMeasurement(address, (uint16_t) (attitude.values.yaw / 10));
+    } else if (address == 5) { //6. CURR //In 10*mA, 1 = 10 mA
+        if (feature(FEATURE_CURRENT_METER)) sendIbusMeasurement(address, (uint16_t) amperage); //int32_t
+        else sendIbusMeasurement(address, 0); 
+    } else if (address == 6) { //7. BARO_ALT //In cm => m
+        if (sensors(SENSOR_BARO)) sendIbusMeasurement(address, (uint16_t) baro.BaroAlt); //int32_t 
+        else sendIbusMeasurement(address, 0);
+    }
+#if defined(GPS)
+      else if (address == 7) { //8. HOME_DIR (0-360deg, 0=head)
+        if (sensors(SENSOR_GPS)) sendIbusMeasurement(address, (uint16_t) GPS_directionToHome); //int16_t
+        else sendIbusMeasurement(address, 0);
+    } else if (address == 8) { //9. HOME_DIST //In m
+        if (sensors(SENSOR_GPS)) sendIbusMeasurement(address, (uint16_t) GPS_distanceToHome); //uint16_t
+        else sendIbusMeasurement(address, 0);
+    } else if (address == 9) { //10.GPS_COURSE (0-360deg, 0=north)
+        if (sensors(SENSOR_GPS)) sendIbusMeasurement(address, (uint16_t) (gpsSol.groundCourse / 10)); //int16_t
+        else sendIbusMeasurement(address, 0);
+    } else if (address == 10) { //11. GPS_ALT //In cm => m
+        if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) sendIbusMeasurement(address, (uint16_t) (gpsSol.llh.alt / 100));
+        else sendIbusMeasurement(address, 0);
+    } else if (address == 11) { //12. GPS_LAT2 //Lattitude * 1e+7
+        if (sensors(SENSOR_GPS)) sendIbusMeasurement(address, (uint16_t) ((gpsSol.llh.lat % 100000)/10));
+        else sendIbusMeasurement(address, 0);
+    } else if (address == 12) { //13. GPS_LON2 //Longitude * 1e+7
+        if (sensors(SENSOR_GPS)) sendIbusMeasurement(address, (uint16_t) ((gpsSol.llh.lon % 100000)/10));
+        else sendIbusMeasurement(address, 0);
+    } else if (address == 13) { //14. GPS_LAT1 //Lattitude * 1e+7
+        if (sensors(SENSOR_GPS)) sendIbusMeasurement(address, (uint16_t) (gpsSol.llh.lat / 100000)); 
+        else sendIbusMeasurement(address, 0);
+    } else if (address == 14) { //15. GPS_LON1 //Longitude * 1e+7
+        if (sensors(SENSOR_GPS)) sendIbusMeasurement(address, (uint16_t) (gpsSol.llh.lon / 100000));
+        else sendIbusMeasurement(address, 0);
+    } else if (address == 15) { //16. GPS_SPEED //In cm/s => km/h, 1cm/s = 0.0194384449 knots
+        if (sensors(SENSOR_GPS)) sendIbusMeasurement(address, (uint16_t) gpsSol.groundSpeed * 1944 / 10000); //int16_t
+        else sendIbusMeasurement(address, 0);
+    }
+#endif
 }
 
 static void respondToIbusRequest(uint8_t ibusPacket[static IBUS_RX_BUF_LEN]) {
@@ -277,6 +373,11 @@ static void pushOntoTail(uint8_t buffer[IBUS_MIN_LEN], size_t bufferLength, uint
 
 void initIbusTelemetry(void) {
     ibusSerialPortConfig = findSerialPortConfig(FUNCTION_TELEMETRY_IBUS);
+    uint8_t type = telemetryConfig()->ibusTelemetryType;
+#if defined(GPS)
+    if (type == 1 || type == 2) SENSOR_ADDRESS_TYPE_LOOKUP[15] = IBUS_MEAS_TYPE_SPE;
+    if (type == 2) SENSOR_ADDRESS_TYPE_LOOKUP[10] = IBUS_MEAS_TYPE_ALT;
+#endif	
     ibusPortSharing = determinePortSharing(ibusSerialPortConfig, FUNCTION_TELEMETRY_IBUS);
 }
 

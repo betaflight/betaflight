@@ -66,7 +66,8 @@ PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
     .frsky_vfas_precision = 0,
     .frsky_vfas_cell_voltage = 0,
     .hottAlarmSoundInterval = 5,
-    .smartportUartUnidirectional = 0
+    .smartportUartUnidirectional = 0,
+    .ibusTelemetryType = 0
 );
 
 void telemetryInit(void)

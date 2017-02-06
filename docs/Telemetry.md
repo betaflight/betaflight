@@ -154,3 +154,109 @@ set telemetry_inversion = OFF
 ```
 
 This has been tested with Flip32 F4 / Airbot F4 and FrSky X4R-SB receiver.
+
+## Ibus telemetry
+
+Ibus telemetry requires a single connection from the TX pin of a bidirectional serial port to the Ibus sens pin on an FlySky telemetry receiver. (tested with fs-iA6B receiver, iA10 should work)
+
+It shares 1 line for both TX and RX, the rx pin cannot be used for other serial port stuff.
+It runs at a fixed baud rate of 115200, so it need hardware uart (softserial is limit to 19200).
+```
+     _______
+    /       \                                              /---------\
+    | STM32 |-->UART TX-->[Bi-directional @ 115200 baud]-->| IBUS RX |
+    |  uC   |-  UART RX--x[not connected]                  \---------/
+    \_______/
+```
+It is possible to daisy chain multiple sensors with ibus, but telemetry sensor will be overwrite by value sensor.
+In this case sensor should be connected to RX and FC to sensor.
+```
+     _______
+    /       \                                              /---------\   /-------------\   /---------\
+    | STM32 |-->UART TX-->[Bi-directional @ 115200 baud]-->| CVT-01  |-->|others sensor|-->| IBUS RX |
+    |  uC   |-  UART RX--x[not connected]                  \---------/   \-------------/   \---------/
+    \_______/
+```
+
+### Configuration
+
+Ibus telemetry is default enabled in the all firmware.
+IBUS telemetry is disabled on ALIENWIIF3, RMDO at build time using defines in target.h.
+```
+#undef TELEMETRY_IBUS
+```
+### Available sensors
+
+The following sensors are transmitted :
+
+Sensors number:
+
+1.Internal voltage in volts (not usable).
+
+2.Valtage sensor in volts (Voltage type).
+
+3.If baro sensor is avaliable then return temperature from baro sensor in °C else return temperature from gyro sensor in °C (Temperatyre type).
+
+4.Status (Rpm type).
+
+5.Course in degree (Rpm type).
+
+6.Current in ampers (Voltage type).
+
+7.Altitude in meters (Voltage type).
+
+8.Direction to home in degree (Rpm type).
+
+9.Distance to home in meters(Rpm type).
+
+10.GPS course in degree (Rpm type).
+
+11.GPS altitude in meters (Rpm type).
+
+12.Second part of Lattitude (Rpm type), for example 5678 (-12.3456789 N).
+
+13.Second part of Longitude (Rpm type), for example 6789 (-123.4567891 E).
+
+14.First part of Lattitude (Voltage type), for example -12.45 (-12.3456789 N).
+
+15.First part of Longitude (Voltage type), for example -123.45 (-123.4567890 E).
+
+16.GPS speed in km/h (Rpm type).
+
+1.Transmitter voltage in volts (not usable).
+
+1.Error percent in % (not usable).
+
+Sensors from 8 to 16 are avaliable only if GPS is at built time.
+
+STATUS (number of satelites AS #0, FIX AS 0, HDOP AS 0, Mode AS 0)
+
+FIX: 1 is No, 2 is 2D, 3 is 3D, 6 is No+FixHome, 7 is 2D+FixHome, 8 is 3D+FixHome
+
+HDOP: 0 is 0-9m, 8 is 80-90m, 9 is >90m
+
+Mode: 1-Armed(rate), 2-Horizon, 3-Angle, 4-HeadFree or Mag, 5-AltHold, 6-PosHold, 7-Rth, 8-Fail and Rth, 9-Fail
+
+Example: 12803 is 12 satelites, Fix3D, FixHome, 0-9m HDOP, Angle Mode 
+
+### CLI command
+
+inav_telemetry_type
+
+0.Standard sensor type are used (Temp,Rpm,ExtV). Each transmitter should support this. (FS-i6, FS-i6S)
+
+1.This same as 0, but GPS ground speed (sensor 16) is of type Speed in km/h. (FS-i6 10ch_MOD_i6_Programmer_V1_5.exe from https://github.com/benb0jangles/FlySky-i6-Mod-)
+
+2.This same as 1, but GPS altitude (sensor 11) is of type ALT in m. (FS-i6 10ch_Timer_MOD_i6_Programmer_V1_4.exe from https://github.com/benb0jangles/FlySky-i6-Mod-)
+
+### RX hardware
+
+These receivers are reported to work with i-bus telemetry:
+
+- FlySky/Turnigy FS-iA6B 6-Channel Receiver (http://www.flysky-cn.com/products_detail/&productId=51.html)
+- FlySky/Turnigy FS-iA10B 10-Channel Receiver (http://www.flysky-cn.com/products_detail/productId=52.html)
+
+Note that the FlySky/Turnigy FS-iA4B 4-Channel Receiver (http://www.flysky-cn.com/products_detail/productId=46.html) seems to work but has a bug that might lose the binding, DO NOT FLY the FS-iA4B!
+
+
+
