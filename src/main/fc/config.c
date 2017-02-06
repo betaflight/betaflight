@@ -920,8 +920,12 @@ void activateConfig(void)
 
 void validateAndFixConfig(void)
 {
-    if((motorConfig()->motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)){
+    if ((motorConfig()->motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)) {
         motorConfigMutable()->mincommand = 1000;
+    }
+
+    if ((motorConfig()->motorPwmProtocol == PWM_TYPE_STANDARD) && (motorConfig()->motorPwmRate > 480)) {
+        motorConfig()->motorPwmRate = 480;
     }
 
     if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP) || featureConfigured(FEATURE_RX_SPI))) {
@@ -1072,7 +1076,7 @@ void validateAndFixGyroConfig(void)
     float motorUpdateRestriction;
     switch(motorConfig()->motorPwmProtocol) {
         case (PWM_TYPE_STANDARD):
-            motorUpdateRestriction = 0.002f;
+            motorUpdateRestriction = 0.0021f;
             break;
         case (PWM_TYPE_ONESHOT125):
             motorUpdateRestriction = 0.0005f;
@@ -1092,11 +1096,13 @@ void validateAndFixGyroConfig(void)
             motorUpdateRestriction = 0.00003125f;
     }
 
-    if(pidLooptime < motorUpdateRestriction)
-        pidConfigMutable()->pid_process_denom = motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom);
+    if (pidLooptime < motorUpdateRestriction) {
+        const uint8_t maxPidProcessDenom = motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom);
+        pidConfigMutable()->pid_process_denom = constrain(MAX(pidConfigMutable()->pid_process_denom, maxPidProcessDenom), 1, MAX_PID_PROCESS_DENOM);
+    }
 
     // Prevent overriding the max rate of motors
-    if(motorConfig()->useUnsyncedPwm && (motorConfig()->motorPwmProtocol <= PWM_TYPE_BRUSHED)) {
+    if (motorConfig()->useUnsyncedPwm && (motorConfig()->motorPwmProtocol <= PWM_TYPE_BRUSHED)) {
         uint32_t maxEscRate = lrintf(1.0f / motorUpdateRestriction);
 
         if(motorConfig()->motorPwmRate > maxEscRate)
