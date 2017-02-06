@@ -938,7 +938,7 @@ void activateConfig(void)
 void validateAndFixConfig(void)
 {
     if ((motorConfig()->motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)) {
-        motorConfigMutable()->mincommand = 1000;
+        motorConfig()->mincommand = 1000;
     }
 
     if ((motorConfig()->motorPwmProtocol == PWM_TYPE_STANDARD) && (motorConfig()->motorPwmRate > 400)) {
@@ -1115,7 +1115,7 @@ void validateAndFixGyroConfig(void)
 
     if (pidLooptime < motorUpdateRestriction) {
         const uint8_t maxPidProcessDenom = constrain(motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom), 1, MAX_PID_PROCESS_DENOM);
-        pidConfigMutable()->pid_process_denom = MIN(pidConfigMutable()->pid_process_denom, maxPidProcessDenom);
+        pidConfig()->pid_process_denom = MIN(pidConfig()->pid_process_denom, maxPidProcessDenom);
     }
 
     // Prevent overriding the max rate of motors
