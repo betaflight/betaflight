@@ -63,6 +63,32 @@ float getThrottlePIDAttenuation(void) {
     return throttlePIDAttenuation;
 }
 
+#define THROTTLE_LOOKUP_LENGTH 12
+static int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];    // lookup table for expo & mid THROTTLE
+
+void generateThrottleCurve(void)
+{
+    uint8_t i;
+
+    for (i = 0; i < THROTTLE_LOOKUP_LENGTH; i++) {
+        int16_t tmp = 10 * i - currentControlRateProfile->thrMid8;
+        uint8_t y = 1;
+        if (tmp > 0)
+            y = 100 - currentControlRateProfile->thrMid8;
+        if (tmp < 0)
+            y = currentControlRateProfile->thrMid8;
+        lookupThrottleRC[i] = 10 * currentControlRateProfile->thrMid8 + tmp * (100 - currentControlRateProfile->thrExpo8 + (int32_t) currentControlRateProfile->thrExpo8 * (tmp * tmp) / (y * y)) / 10;
+        lookupThrottleRC[i] = PWM_RANGE_MIN + (PWM_RANGE_MAX - PWM_RANGE_MIN) * lookupThrottleRC[i] / 1000; // [MINTHROTTLE;MAXTHROTTLE]
+    }
+}
+
+int16_t rcLookupThrottle(int32_t tmp)
+{
+    const int32_t tmp2 = tmp / 100;
+    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
+    return lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;
+}
+
 #define SETPOINT_RATE_LIMIT 1998.0f
 #define RC_RATE_INCREMENTAL 14.54f
 
@@ -269,13 +295,7 @@ void updateRcCommands(void)
         tmp = (uint32_t)(tmp - rxConfig()->mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - rxConfig()->mincheck);
     }
 
-    if (currentControlRateProfile->thrExpo8) {
-        float expof = currentControlRateProfile->thrExpo8 / 100.0f;
-        float tmpf = (tmp  / (PWM_RANGE_MAX - PWM_RANGE_MIN));
-        tmp = lrintf(tmp * sq(tmpf) * expof + tmp * (1-expof));
-    }
-
-    rcCommand[THROTTLE] = tmp + (PWM_RANGE_MAX - PWM_RANGE_MIN);
+    rcLookupThrottle(tmp);
 
     if (feature(FEATURE_3D) && IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH) && !failsafeIsActive()) {
         fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);

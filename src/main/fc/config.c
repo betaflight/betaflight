@@ -53,6 +53,7 @@
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
+#include "fc/fc_rc.h"
 #include "fc/runtime_config.h"
 
 #include "sensors/sensors.h"
@@ -883,6 +884,8 @@ static void resetConf(void)
 
 void activateConfig(void)
 {
+    generateThrottleCurve();
+
     resetAdjustmentStates();
 
     useRcControlsConfig(

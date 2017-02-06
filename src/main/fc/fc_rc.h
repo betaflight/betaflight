@@ -23,3 +23,4 @@ float getRcDeflectionAbs(int axis);
 float getThrottlePIDAttenuation(void);
 void updateRcCommands(void);
 void resetYawAxis(void);
+void generateThrottleCurve(void);

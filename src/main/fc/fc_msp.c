@@ -52,6 +52,7 @@
 #include "fc/config.h"
 #include "fc/fc_core.h"
 #include "fc/fc_msp.h"
+#include "fc/fc_rc.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -1399,6 +1400,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             if (dataSize >= 12) {
                 currentControlRateProfile->rcYawRate8 = sbufReadU8(src);
             }
+            generateThrottleCurve();
         } else {
             return MSP_RESULT_ERROR;
         }
