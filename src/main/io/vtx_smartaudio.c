@@ -1206,7 +1206,6 @@ static long saCmsCommence(displayPort_t *pDisp, const void *self)
         // Setup band, freq and power.
 
         saSetBandChan(saCmsBand - 1, saCmsChan - 1);
-        saSetPowerByIndex(saCmsPower - 1);
 
         // If in pit mode, cancel it.
 
@@ -1222,6 +1221,8 @@ static long saCmsCommence(displayPort_t *pDisp, const void *self)
         else
             saSetFreq(saCmsUserFreq);
     }
+
+    saSetPowerByIndex(saCmsPower - 1);
 
     return MENU_CHAIN_BACK;
 }
@@ -1268,15 +1269,15 @@ static long saCmsSetUserFreqOnEnter(void)
     return 0;
 }
 
-static long saCmsSetUserFreq(displayPort_t *pDisp, const void *self)
+static long saCmsConfigUserFreq(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
 
     saCmsUserFreq = saCmsUserFreqNew;
-    saSetFreq(saCmsUserFreq);
+    //saSetFreq(saCmsUserFreq);
 
-    return 0;
+    return MENU_CHAIN_BACK;
 }
 
 static OSD_Entry saCmsMenuPORFreqEntries[] = {
@@ -1305,7 +1306,7 @@ static OSD_Entry saCmsMenuUserFreqEntries[] = {
 
     { "CUR FREQ",      OME_UINT16,  NULL,             &(OSD_UINT16_t){ &saCmsUserFreq, 5000, 5900, 0 },    DYNAMIC },
     { "NEW FREQ",      OME_UINT16,  NULL,             &(OSD_UINT16_t){ &saCmsUserFreqNew, 5000, 5900, 1 }, 0 },
-    { "SET",           OME_Funcall, saCmsSetUserFreq, NULL,                                                0 },
+    { "SET",           OME_Funcall, saCmsConfigUserFreq, NULL,                                                0 },
 
     { "BACK",          OME_Back,    NULL,             NULL,                                                0 },
     { NULL,            OME_END,     NULL,             NULL,                                                0 }
