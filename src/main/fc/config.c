@@ -1092,7 +1092,7 @@ void validateAndFixGyroConfig(void)
     float motorUpdateRestriction;
     switch(motorConfig()->motorPwmProtocol) {
         case (PWM_TYPE_STANDARD):
-            motorUpdateRestriction = 0.002f;
+            motorUpdateRestriction = 1.0f/BRUSHLESS_MOTORS_PWM_RATE;
             break;
         case (PWM_TYPE_ONESHOT125):
             motorUpdateRestriction = 0.0005f;
