@@ -946,8 +946,14 @@ else
     saCmsPitFMode = 0;
 
     saCmsStatusString[0] = "-FR"[saCmsOpmodel];
-    saCmsStatusString[2] = "ABEFR"[saDevice.chan / 8];
-    saCmsStatusString[3] = '1' + (saDevice.chan % 8);
+
+    if (saCmsFselMode == 0) {
+        saCmsStatusString[2] = "ABEFR"[saDevice.chan / 8];
+        saCmsStatusString[3] = '1' + (saDevice.chan % 8);
+    } else {
+        saCmsStatusString[2] = 'U';
+        saCmsStatusString[3] = 'F';
+    }
 
     if ((saDevice.mode & SA_MODE_GET_PITMODE)
        && (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE))
@@ -1063,6 +1069,8 @@ static long saCmsConfigPitFModeByGvar(displayPort_t *pDisp, const void *self)
     return 0;
 }
 
+static long saCmsConfigFreqModeByGvar(displayPort_t *pDisp, const void *self); // Forward
+
 static long saCmsConfigOpmodelByGvar(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
@@ -1082,6 +1090,10 @@ static long saCmsConfigOpmodelByGvar(displayPort_t *pDisp, const void *self)
         // out-range receivers from getting blinded.
         saCmsPitFMode = 0;
         saCmsConfigPitFModeByGvar(pDisp, self);
+
+        // Direct frequency mode is not available in RACE opmodel
+        saCmsFselMode = 0;
+        saCmsConfigFreqModeByGvar(pDisp, self);
     } else {
         // Trying to go back to unknown state; bounce back
         saCmsOpmodel = SACMS_OPMODEL_UNDEF + 1;
@@ -1310,8 +1322,8 @@ static OSD_TAB_t saCmsEntFselMode = { &saCmsFselMode, 1, saCmsFselModeNames };
 static OSD_Entry saCmsMenuConfigEntries[] = {
     { "- SA CONFIG -", OME_Label, NULL, NULL, 0 },
 
-    { "OP MODEL",  OME_TAB,     saCmsConfigOpmodelByGvar,              &(OSD_TAB_t){ &saCmsOpmodel, 2, saCmsOpmodelNames }, 0 },
-    { "FSEL MODE", OME_TAB,     saCmsConfigFreqModeByGvar,             &saCmsEntFselMode,                                   0 },
+    { "OP MODEL",  OME_TAB,     saCmsConfigOpmodelByGvar,              &(OSD_TAB_t){ &saCmsOpmodel, 2, saCmsOpmodelNames }, DYNAMIC },
+    { "FSEL MODE", OME_TAB,     saCmsConfigFreqModeByGvar,             &saCmsEntFselMode,                                   DYNAMIC },
     { "PIT FMODE", OME_TAB,     saCmsConfigPitFModeByGvar,             &saCmsEntPitFMode,                                   0 },
     { "POR FREQ",  OME_Submenu, (CMSEntryFuncPtr)saCmsORFreqGetString, &saCmsMenuPORFreq,                                   OPTSTRING },
     { "STATX",     OME_Submenu, cmsMenuChange,                         &saCmsMenuStats,                                     0 },
