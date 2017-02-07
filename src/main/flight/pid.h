@@ -79,7 +79,6 @@ typedef struct pidProfile_s {
     // Betaflight PID controller parameters
     uint16_t itermThrottleThreshold;        // max allowed throttle delta before iterm accelerated in ms
     float itermAcceleratorGain;             // Iterm Accelerator Gain when itermThrottlethreshold is hit
-    uint16_t itermAcceleratorRateLimit;     // Setpointrate limit for iterm accelerator to operate within
     uint8_t setpointRelaxRatio;             // Setpoint weight relaxation effect
     uint8_t dtermSetpointWeight;            // Setpoint weight for Dterm (0= measurement, 1= full error, 1 > agressive derivative)
     float yawRateAccelLimit;                // yaw accel limiter for deg/sec/ms

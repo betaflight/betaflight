@@ -180,7 +180,6 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->rateAccelLimit = 0.0f;
     pidProfile->itermThrottleThreshold = 350;
     pidProfile->itermAcceleratorGain = 1.0f;
-    pidProfile->itermAcceleratorRateLimit = 80;
 }
 
 void resetProfile(profile_t *profile)
