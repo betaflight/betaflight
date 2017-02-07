@@ -261,6 +261,7 @@ bool navigationPositionEstimateIsHealthy(void);
 /* Access to estimated position and velocity */
 float getEstimatedActualVelocity(int axis);
 float getEstimatedActualPosition(int axis);
+int32_t getTotalTravelDistance(void);
 
 /* Waypoint list access functions */
 void getWaypoint(uint8_t wpNumber, navWaypoint_t * wpData);

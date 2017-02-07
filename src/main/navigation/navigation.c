@@ -1896,6 +1896,26 @@ void updateHomePosition(void)
 }
 
 /*-----------------------------------------------------------
+ * Update flight statistics
+ *-----------------------------------------------------------*/
+static void updateNavigationFlightStatistics(void)
+{
+    static timeMs_t previousTimeMs = 0;
+    const timeMs_t currentTimeMs = millis();
+    const timeDelta_t timeDeltaMs = currentTimeMs - previousTimeMs;
+    previousTimeMs = currentTimeMs;
+
+    if (ARMING_FLAG(ARMED)) {
+        posControl.totalTripDistance += posControl.actualState.velXY * MS2S(timeDeltaMs);
+    }
+}
+
+int32_t getTotalTravelDistance(void)
+{
+    return lrintf(posControl.totalTripDistance);
+}
+
+/*-----------------------------------------------------------
  * Set surface tracking target
  *-----------------------------------------------------------*/
 void setDesiredSurfaceOffset(float surfaceOffset)
@@ -2596,6 +2616,9 @@ void updateWaypointsAndNavigationMode(void)
     /* Initiate home position update */
     updateHomePosition();
 
+    /* Update flight statistics */
+    updateNavigationFlightStatistics();
+
     /* Update NAV ready status */
     updateReadyStatus();
 
@@ -2685,6 +2708,9 @@ void navigationInit(void)
     posControl.actualState.surfaceVel = 0.0f;
     posControl.actualState.surfaceMin = -1.0f;
 
+    /* Reset statistics */
+    posControl.totalTripDistance = 0.0f;
+
     /* Use system config */
     navigationUsePIDs();
 }
@@ -2738,6 +2764,7 @@ rthState_e getStateOfForcedRTH(void)
 #ifdef GPS
 /* Fallback if navigation is not compiled in - handle GPS home coordinates */
 static float GPS_scaleLonDown;
+static float GPS_totalTravelDistance = 0;
 
 static void GPS_distance_cm_bearing(int32_t currentLat1, int32_t currentLon1, int32_t destinationLat2, int32_t destinationLon2, uint32_t *dist, int32_t *bearing)
 {
@@ -2752,12 +2779,18 @@ static void GPS_distance_cm_bearing(int32_t currentLat1, int32_t currentLon1, in
         *bearing += 36000;
 }
 
-void onNewGPSData()
+void onNewGPSData(void)
 {
+    static timeMs_t previousTimeMs = 0;
+    const timeMs_t currentTimeMs = millis();
+    const timeDelta_t timeDeltaMs = currentTimeMs - previousTimeMs;
+    previousTimeMs = currentTimeMs;
+
     if (!(sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5))
         return;
 
     if (ARMING_FLAG(ARMED)) {
+        /* Update home distance and direction */
         if (STATE(GPS_FIX_HOME)) {
             uint32_t dist;
             int32_t dir;
@@ -2768,6 +2801,9 @@ void onNewGPSData()
             GPS_distanceToHome = 0;
             GPS_directionToHome = 0;
         }
+
+        /* Update trip distance */
+        GPS_totalTravelDistance += gpsSol.groundSpeed * MS2S(timeDeltaMs);
     }
     else {
         // Set home position to current GPS coordinates
@@ -2779,6 +2815,11 @@ void onNewGPSData()
         GPS_directionToHome = 0;
         GPS_scaleLonDown = cos_approx((ABS((float)gpsSol.llh.lat) / 10000000.0f) * 0.0174532925f);
     }
+}
+
+int32_t getTotalTravelDistance(void)
+{
+    return lrintf(GPS_totalTravelDistance);
 }
 #endif
 
