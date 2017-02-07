@@ -340,7 +340,7 @@ void updatePIDCoefficients(void)
     for (int axis = 0; axis < 3; axis++) {
         if (STATE(FIXED_WING)) {
             // Airplanes - scale all PIDs according to TPA
-            pidState[axis].kP  = pidBank()->pid[axis].P / FP_PID_RATE_P_MULTIPLIER  * tpaFactor * tpaFactor;
+            pidState[axis].kP  = pidBank()->pid[axis].P / FP_PID_RATE_P_MULTIPLIER  * tpaFactor;
             pidState[axis].kI  = pidBank()->pid[axis].I / FP_PID_RATE_I_MULTIPLIER  * tpaFactor;
             pidState[axis].kD  = 0.0f;
             pidState[axis].kFF = pidBank()->pid[axis].D / FP_PID_RATE_FF_MULTIPLIER * tpaFactor;
