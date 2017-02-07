@@ -134,6 +134,8 @@ void trampCmdU16(uint8_t cmd, uint16_t param)
 void trampSetFreq(uint16_t freq)
 {
     trampConfFreq = freq;
+    if(trampConfFreq != trampCurFreq)
+        trampFreqRetries = TRAMP_MAX_RETRIES;
 }
 
 void trampSendFreq(uint16_t freq)
@@ -149,6 +151,8 @@ void trampSetBandChan(uint8_t band, uint8_t chan)
 void trampSetRFPower(uint16_t level)
 {
     trampConfPower = level;
+    if(trampConfPower != trampCurPower)
+        trampPowerRetries = TRAMP_MAX_RETRIES;
 }
 
 void trampSendRFPower(uint16_t level)
@@ -163,13 +167,6 @@ bool trampCommitChanges()
         return false;
 
     trampStatus = TRAMP_STATUS_SET_FREQ_PW;
-
-    if(trampConfFreq != trampCurFreq)
-        trampFreqRetries = TRAMP_MAX_RETRIES;
-
-    if(trampConfPower != trampCurPower)
-        trampPowerRetries = TRAMP_MAX_RETRIES;
-
     return true;
 }
 
