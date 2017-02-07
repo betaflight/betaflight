@@ -1164,6 +1164,7 @@ void changeControlRateProfile(uint8_t profileIndex)
         profileIndex = MAX_RATEPROFILES - 1;
     }
     setControlRateProfile(profileIndex);
+    generateThrottleCurve();
 }
 
 void beeperOffSet(uint32_t mask)
