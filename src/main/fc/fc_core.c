@@ -24,20 +24,26 @@
 
 #include "blackbox/blackbox.h"
 
-#include "common/maths.h"
 #include "common/axis.h"
-#include "common/utils.h"
 #include "common/filter.h"
+#include "common/maths.h"
+#include "common/utils.h"
+
+#include "config/config_profile.h"
+#include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/light_led.h"
 #include "drivers/system.h"
 #include "drivers/gyro_sync.h"
 
-#include "sensors/sensors.h"
-#include "sensors/boardalignment.h"
 #include "sensors/acceleration.h"
-#include "sensors/gyro.h"
+#include "sensors/barometer.h"
 #include "sensors/battery.h"
+#include "sensors/boardalignment.h"
+#include "sensors/gyro.h"
+#include "sensors/sensors.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -59,15 +65,15 @@
 
 #include "scheduler/scheduler.h"
 
+#include "telemetry/telemetry.h"
+
 #include "flight/mixer.h"
 #include "flight/servos.h"
 #include "flight/pid.h"
 #include "flight/failsafe.h"
 #include "flight/altitudehold.h"
+#include "flight/imu.h"
 
-#include "config/config_profile.h"
-#include "config/config_master.h"
-#include "config/feature.h"
 
 // June 2013     V2.2-dev
 
@@ -95,8 +101,8 @@ static bool armingCalibrationWasInitialised;
 
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
 {
-    accelerometerConfig()->accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
-    accelerometerConfig()->accelerometerTrims.values.pitch += rollAndPitchTrimsDelta->values.pitch;
+    accelerometerConfigMutable()->accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
+    accelerometerConfigMutable()->accelerometerTrims.values.pitch += rollAndPitchTrimsDelta->values.pitch;
 
     saveConfigAndNotify();
 }
@@ -183,15 +189,6 @@ void mwArm(void)
             ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
             headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 
-#ifdef BLACKBOX
-            if (feature(FEATURE_BLACKBOX)) {
-                serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP);
-                if (sharedBlackboxAndMspPort) {
-                    mspSerialReleasePortIfAllocated(sharedBlackboxAndMspPort);
-                }
-                startBlackbox();
-            }
-#endif
             disarmAt = millis() + armingConfig()->auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
 
             //beep to indicate arming
@@ -291,7 +288,7 @@ void processRx(timeUs_t currentTimeUs)
         failsafeUpdateState();
     }
 
-    throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
+    const throttleStatus_e throttleStatus = calculateThrottleStatus();
 
     if (isAirmodeActive() && ARMING_FLAG(ARMED)) {
         if (rcCommand[THROTTLE] >= rxConfig()->airModeActivateThreshold) airmodeIsActivated = true; // Prevent Iterm from being reset
@@ -357,7 +354,7 @@ void processRx(timeUs_t currentTimeUs)
         }
     }
 
-    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, armingConfig()->disarm_kill_switch);
+    processRcStickPositions(throttleStatus);
 
     if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
         updateInflightCalibrationState();
@@ -367,7 +364,7 @@ void processRx(timeUs_t currentTimeUs)
 
     if (!cliMode) {
         updateAdjustmentStates(adjustmentProfile()->adjustmentRanges);
-        processRcAdjustments(currentControlRateProfile, rxConfig());
+        processRcAdjustments(currentControlRateProfile);
     }
 
     bool canUseHorizonMode = true;
@@ -488,7 +485,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
     updateRcCommands();
     if (sensors(SENSOR_BARO) || sensors(SENSOR_SONAR)) {
         if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(SONAR_MODE)) {
-            applyAltHold(&masterConfig.airplaneConfig);
+            applyAltHold();
         }
     }
 #endif

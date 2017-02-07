@@ -85,9 +85,13 @@ typedef struct pidProfile_s {
     float rateAccelLimit;                   // accel limiter roll/pitch deg/sec/ms
 } pidProfile_t;
 
+PG_DECLARE_PROFILE(pidProfile_t, pidProfile);
+
 typedef struct pidConfig_s {
     uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate
 } pidConfig_t;
+
+PG_DECLARE(pidConfig_t, pidConfig);
 
 union rollAndPitchTrims_u;
 void pidController(const pidProfile_t *pidProfile, const union rollAndPitchTrims_u *angleTrim);

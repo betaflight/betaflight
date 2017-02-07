@@ -28,6 +28,12 @@
 #include "common/maths.h"
 #include "common/printf.h"
 
+#include "config/config_eeprom.h"
+#include "config/config_profile.h"
+#include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 
@@ -115,10 +121,6 @@
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
 
-#include "config/config_eeprom.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
-#include "config/feature.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -257,16 +259,16 @@ void init(void)
     timerInit();  // timer must be initialized before any channel is allocated
 
 #if defined(AVOID_UART1_FOR_PWM_PPM)
-    serialInit(serialConfig(), feature(FEATURE_SOFTSERIAL),
+    serialInit(feature(FEATURE_SOFTSERIAL),
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART1 : SERIAL_PORT_NONE);
 #elif defined(AVOID_UART2_FOR_PWM_PPM)
-    serialInit(serialConfig(), feature(FEATURE_SOFTSERIAL),
+    serialInit(feature(FEATURE_SOFTSERIAL),
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART2 : SERIAL_PORT_NONE);
 #elif defined(AVOID_UART3_FOR_PWM_PPM)
-    serialInit(serialConfig(), feature(FEATURE_SOFTSERIAL),
+    serialInit(feature(FEATURE_SOFTSERIAL),
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART3 : SERIAL_PORT_NONE);
 #else
-    serialInit(serialConfig(), feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
+    serialInit(feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
 #endif
 
     mixerInit(mixerConfig()->mixerMode, masterConfig.customMotorMixer);
@@ -401,12 +403,7 @@ void init(void)
     }
 #endif
 
-#ifdef SONAR
-    const sonarConfig_t *sonarConfig = sonarConfig();
-#else
-    const void *sonarConfig = NULL;
-#endif
-    if (!sensorsAutodetect(gyroConfig(), accelerometerConfig(), compassConfig(), barometerConfig(), sonarConfig)) {
+    if (!sensorsAutodetect()) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
@@ -446,7 +443,7 @@ void init(void)
     cliInit(serialConfig());
 #endif
 
-    failsafeInit(rxConfig(), flight3DConfig()->deadband3d_throttle);
+    failsafeInit();
 
     rxInit(rxConfig(), modeActivationProfile()->modeActivationConditions);
 
@@ -554,7 +551,7 @@ void init(void)
     // Now that everything has powered up the voltage and cell count be determined.
 
     if (feature(FEATURE_VBAT | FEATURE_CURRENT_METER))
-        batteryInit(batteryConfig());
+        batteryInit();
 
 #ifdef USE_DASHBOARD
     if (feature(FEATURE_DASHBOARD)) {

@@ -22,16 +22,14 @@
 #include <limits.h>
 
 extern "C" {
-    #include "build/debug.h"
-
     #include <platform.h>
-
+    #include "build/debug.h"
     #include "config/parameter_group.h"
     #include "config/parameter_group_ids.h"
 
     #include "io/motors.h"
 
-PG_DECLARE(motorConfig_t, motorConfig);
+//PG_DECLARE(motorConfig_t, motorConfig);
 
 PG_REGISTER_WITH_RESET_TEMPLATE(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 1);
 
@@ -49,7 +47,7 @@ PG_RESET_TEMPLATE(motorConfig_t, motorConfig,
 
 TEST(ParameterGroupsfTest, Test_pgResetAll)
 {
-    memset(motorConfig(), 0, sizeof(motorConfig_t));
+    memset(motorConfigMutable(), 0, sizeof(motorConfig_t));
     pgResetAll(0);
     EXPECT_EQ(1150, motorConfig()->minthrottle);
     EXPECT_EQ(1850, motorConfig()->maxthrottle);
@@ -59,7 +57,7 @@ TEST(ParameterGroupsfTest, Test_pgResetAll)
 
 TEST(ParameterGroupsfTest, Test_pgFind)
 {
-    memset(motorConfig(), 0, sizeof(motorConfig_t));
+    memset(motorConfigMutable(), 0, sizeof(motorConfig_t));
     const pgRegistry_t *pgRegistry = pgFind(PG_MOTOR_CONFIG);
     pgResetCurrent(pgRegistry);
     EXPECT_EQ(1150, motorConfig()->minthrottle);
@@ -69,7 +67,7 @@ TEST(ParameterGroupsfTest, Test_pgFind)
 
     motorConfig_t motorConfig2;
     memset(&motorConfig2, 0, sizeof(motorConfig_t));
-    motorConfig()->motorPwmRate = 500;
+    motorConfigMutable()->motorPwmRate = 500;
     pgStore(pgRegistry, &motorConfig2, sizeof(motorConfig_t), 0);
     EXPECT_EQ(1150, motorConfig2.minthrottle);
     EXPECT_EQ(1850, motorConfig2.maxthrottle);

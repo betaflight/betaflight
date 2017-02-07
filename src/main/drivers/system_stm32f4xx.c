@@ -31,8 +31,8 @@ void SetSysClock(void);
 
 void systemReset(void)
 {
-    if (mpuReset) {
-        mpuReset();
+    if (mpuResetFn) {
+        mpuResetFn();
     }
 
     __disable_irq();
@@ -41,8 +41,8 @@ void systemReset(void)
 
 void systemResetToBootloader(void)
 {
-    if (mpuReset) {
-        mpuReset();
+    if (mpuResetFn) {
+        mpuResetFn();
     }
 
     *((uint32_t *)0x2001FFFC) = 0xDEADBEEF; // 128KB SRAM STM32F4XX

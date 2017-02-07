@@ -83,7 +83,7 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8
 #endif
 }
 
-static void pwmOutConfig(pwmOutputPort_t *port, const timerHardware_t *timerHardware, uint8_t mhz, uint16_t period, uint16_t value)
+static void pwmOutConfig(pwmOutputPort_t *port, const timerHardware_t *timerHardware, uint8_t mhz, uint16_t period, uint16_t value, uint8_t inversion)
 {
 #if defined(USE_HAL_DRIVER)
     TIM_HandleTypeDef* Handle = timerFindTimerHandle(timerHardware->tim);
@@ -91,7 +91,8 @@ static void pwmOutConfig(pwmOutputPort_t *port, const timerHardware_t *timerHard
 #endif
 
     configTimeBase(timerHardware->tim, period, mhz);
-    pwmOCConfig(timerHardware->tim, timerHardware->channel, value, timerHardware->output);
+    pwmOCConfig(timerHardware->tim, timerHardware->channel, value,
+        inversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output);
 
 #if defined(USE_HAL_DRIVER)
     HAL_TIM_PWM_Start(Handle, timerHardware->channel);
@@ -259,7 +260,8 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
 
 #ifdef USE_DSHOT
         if (isDigital) {
-            pwmDigitalMotorHardwareConfig(timerHardware, motorIndex, motorConfig->motorPwmProtocol);
+            pwmDigitalMotorHardwareConfig(timerHardware, motorIndex, motorConfig->motorPwmProtocol,
+                motorConfig->motorPwmInversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output);
             motors[motorIndex].enabled = true;
             continue;
         }
@@ -274,9 +276,9 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
 
         if (useUnsyncedPwm) {
             const uint32_t hz = timerMhzCounter * 1000000;
-            pwmOutConfig(&motors[motorIndex], timerHardware, timerMhzCounter, hz / motorConfig->motorPwmRate, idlePulse);
+            pwmOutConfig(&motors[motorIndex], timerHardware, timerMhzCounter, hz / motorConfig->motorPwmRate, idlePulse, motorConfig->motorPwmInversion);
         } else {
-            pwmOutConfig(&motors[motorIndex], timerHardware, timerMhzCounter, 0xFFFF, 0);
+            pwmOutConfig(&motors[motorIndex], timerHardware, timerMhzCounter, 0xFFFF, 0, motorConfig->motorPwmInversion);
         }
 
         bool timerAlreadyUsed = false;
@@ -348,7 +350,7 @@ void servoInit(const servoConfig_t *servoConfig)
             break;
         }
 
-        pwmOutConfig(&servos[servoIndex], timer, PWM_TIMER_MHZ, 1000000 / servoConfig->servoPwmRate, servoConfig->servoCenterPulse);
+        pwmOutConfig(&servos[servoIndex], timer, PWM_TIMER_MHZ, 1000000 / servoConfig->servoPwmRate, servoConfig->servoCenterPulse, 0);
         servos[servoIndex].enabled = true;
     }
 }

@@ -31,6 +31,9 @@
 #include "common/maths.h"
 #include "common/typeconversion.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/light_ws2811strip.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
@@ -43,6 +46,11 @@
 #include "common/printf.h"
 #include "common/axis.h"
 #include "common/utils.h"
+
+#include "config/config_profile.h"
+#include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -72,10 +80,6 @@
 #include "rx/rx.h"
 
 #include "telemetry/telemetry.h"
-
-#include "config/config_profile.h"
-#include "config/config_master.h"
-#include "config/feature.h"
 
 /*
 PG_REGISTER_ARR_WITH_RESET_FN(ledConfig_t, LED_MAX_STRIP_LENGTH, ledConfigs, PG_LED_STRIP_CONFIG, 0);

@@ -44,18 +44,23 @@
 
 #include "drivers/system.h"
 
+// For rcData, stopAllMotors, stopPwmAllMotors
+#include "config/config_profile.h"
+#include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 // For 'ARM' related
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-// For rcData, stopAllMotors, stopPwmAllMotors
-#include "config/config_profile.h"
-#include "config/config_master.h"
-#include "config/feature.h"
+#include "flight/mixer.h"
 
-// For VISIBLE* (Actually, included by config_master.h)
+// For VISIBLE*
 #include "io/osd.h"
+
+#include "rx/rx.h"
 
 // DisplayPort management
 

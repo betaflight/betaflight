@@ -17,7 +17,10 @@
 
 #pragma once
 
+#include <stdint.h>
 #include <stdbool.h>
+
+#include "config/parameter_group.h"
 
 #if FLASH_SIZE <= 128
 #define MAX_PROFILE_COUNT 2
@@ -58,6 +61,16 @@ typedef enum {
     FEATURE_ESC_SENSOR = 1 << 27,
 } features_e;
 
+typedef struct systemConfig_s {
+    uint8_t debug_mode;
+} systemConfig_t;
+
+//!!TODOPG_DECLARE(systemConfig_t, systemConfig);
+struct profile_s;
+extern struct profile_s *currentProfile;
+struct controlRateConfig_s;
+extern struct controlRateConfig_s *currentControlRateProfile;
+
 void beeperOffSet(uint32_t mask);
 void beeperOffSetAll(uint8_t beeperCount);
 void beeperOffClear(uint32_t mask);
@@ -69,7 +82,10 @@ void setPreferredBeeperOffMask(uint32_t mask);
 
 void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex);
 
+void initEEPROM(void);
 void resetEEPROM(void);
+void readEEPROM(void);
+void writeEEPROM();
 void ensureEEPROMContainsValidData(void);
 
 void saveConfigAndNotify(void);
@@ -79,14 +95,16 @@ void activateConfig(void);
 
 uint8_t getCurrentProfile(void);
 void changeProfile(uint8_t profileIndex);
-void setProfile(uint8_t profileIndex);
+struct profile_s;
+void resetProfile(struct profile_s *profile);
 
 uint8_t getCurrentControlRateProfile(void);
 void changeControlRateProfile(uint8_t profileIndex);
 bool canSoftwareSerialBeUsed(void);
 
 uint16_t getCurrentMinthrottle(void);
-struct master_s;
 
+void resetConfigs(void);
+struct master_s;
 void targetConfiguration(struct master_s *config);
 void targetValidateConfiguration(struct master_s *config);

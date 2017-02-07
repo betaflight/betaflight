@@ -29,27 +29,32 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 
-#include "common/maths.h"
 #include "common/axis.h"
+#include "common/gps_conversion.h"
+#include "common/maths.h"
 #include "common/utils.h"
+
+#include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/system.h"
 #include "drivers/light_led.h"
 
-#include "sensors/sensors.h"
+#include "drivers/light_led.h"
+#include "drivers/system.h"
 
-#include "io/serial.h"
 #include "io/dashboard.h"
 #include "io/gps.h"
-
-#include "flight/gps_conversion.h"
-#include "flight/pid.h"
-#include "flight/navigation.h"
+#include "io/serial.h"
 
 #include "fc/config.h"
 #include "fc/runtime_config.h"
 
-#include "config/feature.h"
+#include "flight/navigation.h"
+#include "flight/pid.h"
+
+#include "sensors/sensors.h"
 
 #define LOG_ERROR        '?'
 #define LOG_IGNORED      '!'

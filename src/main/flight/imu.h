@@ -21,6 +21,8 @@
 #include "common/maths.h"
 #include "common/time.h"
 
+#include "config/parameter_group.h"
+
 #include "sensors/acceleration.h"
 
 // Exported symbols
@@ -29,11 +31,6 @@ extern int accSumCount;
 extern float accVelScale;
 extern int32_t accSum[XYZ_AXIS_COUNT];
 
-
-#define DEGREES_TO_DECIDEGREES(angle) (angle * 10)
-#define DECIDEGREES_TO_DEGREES(angle) (angle / 10)
-#define DECIDEGREES_TO_RADIANS(angle) ((angle / 10.0f) * 0.0174532925f)
-#define DEGREES_TO_RADIANS(angle) ((angle) * 0.0174532925f)
 
 typedef union {
     int16_t raw[XYZ_AXIS_COUNT];
@@ -57,6 +54,8 @@ typedef struct throttleCorrectionConfig_s {
     uint8_t throttle_correction_value;      // the correction that will be applied at throttle_correction_angle.
 } throttleCorrectionConfig_t;
 
+PG_DECLARE(throttleCorrectionConfig_t, throttleCorrectionConfig);
+
 typedef struct imuConfig_s {
     uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
     uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
@@ -64,6 +63,8 @@ typedef struct imuConfig_s {
     uint8_t acc_unarmedcal;                 // turn automatic acc compensation on/off
     accDeadband_t accDeadband;
 } imuConfig_t;
+
+PG_DECLARE(imuConfig_t, imuConfig);
 
 typedef struct imuRuntimeConfig_s {
     float dcm_ki;

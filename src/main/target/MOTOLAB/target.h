@@ -84,8 +84,6 @@
 #define M25P16_CS_PIN           PB12
 #define M25P16_SPI_INSTANCE     SPI2
 
-#define SENSORS_SET             (SENSOR_ACC)
-
 #undef GPS
 #define USE_FLASHFS
 #define USE_FLASH_M25P16

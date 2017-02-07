@@ -27,6 +27,9 @@
 #include "common/axis.h"
 #include "common/filter.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/accgyro.h"
 #include "drivers/accgyro_adxl345.h"
 #include "drivers/accgyro_bma280.h"
@@ -243,13 +246,13 @@ retry:
     return true;
 }
 
-bool accInit(const accelerometerConfig_t *accelerometerConfig, uint32_t gyroSamplingInverval)
+bool accInit(uint32_t gyroSamplingInverval)
 {
     memset(&acc, 0, sizeof(acc));
     // copy over the common gyro mpu settings
     acc.dev.mpuConfiguration = gyro.dev.mpuConfiguration;
     acc.dev.mpuDetectionResult = gyro.dev.mpuDetectionResult;
-    if (!accDetect(&acc.dev, accelerometerConfig->acc_hardware)) {
+    if (!accDetect(&acc.dev, accelerometerConfig()->acc_hardware)) {
         return false;
     }
     acc.dev.acc_1G = 256; // set default

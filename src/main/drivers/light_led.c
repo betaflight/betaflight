@@ -25,7 +25,7 @@
 static IO_t leds[LED_NUMBER];
 static uint8_t ledPolarity = 0;
 
-void ledInit(statusLedConfig_t *statusLedConfig)
+void ledInit(const statusLedConfig_t *statusLedConfig)
 {
     LED0_OFF;
     LED1_OFF;
