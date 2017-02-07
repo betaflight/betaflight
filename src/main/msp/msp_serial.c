@@ -127,20 +127,21 @@ static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet)
     serialBeginWrite(msp->port);
     const int len = sbufBytesRemaining(&packet->buf);
     const int mspLen = len < JUMBO_FRAME_SIZE_LIMIT ? len : JUMBO_FRAME_SIZE_LIMIT;
-    const uint8_t hdr[5] = {'$', 'M', packet->result == MSP_RESULT_ERROR ? '!' : '>', mspLen, packet->cmd};
-    serialWriteBuf(msp->port, hdr, sizeof(hdr));
-    uint8_t checksum = mspSerialChecksumBuf(0, hdr + 3, 2); // checksum starts from len field
+    uint8_t hdr[8] = {'$', 'M', packet->result == MSP_RESULT_ERROR ? '!' : '>', mspLen, packet->cmd};
+    int hdrLen = 5;
+#define CHECKSUM_STARTPOS 3  // checksum starts from mspLen field
     if (len >= JUMBO_FRAME_SIZE_LIMIT) {
-        serialWrite(msp->port, len & 0xff);
-        checksum ^= len & 0xff;
-        serialWrite(msp->port, (len >> 8) & 0xff);
-        checksum ^= (len >> 8) & 0xff;
+        hdrLen += 2;
+        hdr[5] = len & 0xff;
+        hdr[6] = (len >> 8) & 0xff;
     }
+    serialWriteBuf(msp->port, hdr, hdrLen);
+    uint8_t checksum = mspSerialChecksumBuf(0, hdr + CHECKSUM_STARTPOS, hdrLen - CHECKSUM_STARTPOS);
     if (len > 0) {
         serialWriteBuf(msp->port, sbufPtr(&packet->buf), len);
         checksum = mspSerialChecksumBuf(checksum, sbufPtr(&packet->buf), len);
     }
-    serialWrite(msp->port, checksum);
+    serialWriteBuf(msp->port, &checksum, 1);
     serialEndWrite(msp->port);
     return sizeof(hdr) + len + 1; // header, data, and checksum
 }
