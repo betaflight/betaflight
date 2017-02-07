@@ -53,10 +53,20 @@
 
 #define SPEKTRUM_BAUDRATE 115200
 
+#define SPEKTRUM_MAX_FADE_PER_SEC 40
+#define SPEKTRUM_FADE_REPORTS_PER_SEC 2
+
 static uint8_t spek_chan_shift;
 static uint8_t spek_chan_mask;
 static bool rcFrameComplete = false;
 static bool spekHiRes = false;
+
+// Variables used for calculating a signal strength from satellite fade.
+//  This is time-variant and computed every second based on the fade
+//  count over the last second.
+static uint32_t spek_fade_last_sec = 0; // Stores the timestamp of the last second.
+static uint16_t spek_fade_last_sec_count = 0; // Stores the fade count at the last second.
+static uint8_t rssi_channel; // Stores the RX RSSI channel.
 
 static volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
 
@@ -101,17 +111,45 @@ static uint32_t spekChannelData[SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT];
 uint8_t spektrumFrameStatus(void)
 {
     uint8_t b;
+    uint16_t fade;
+    uint32_t current_secs;
 
     if (!rcFrameComplete) {
         return RX_FRAME_PENDING;
     }
-
+    
     rcFrameComplete = false;
 
+    // Fetch the fade count
+    fade = (spekFrame[0] << 8) + spekFrame[1];
+    current_secs = micros() / 1000 / (1000 / SPEKTRUM_FADE_REPORTS_PER_SEC);
+    
+    if (spek_fade_last_sec == 0) {
+        // This is the first frame status received.
+        spek_fade_last_sec_count = fade;
+        spek_fade_last_sec = current_secs;
+    } else if(spek_fade_last_sec != current_secs) {
+        // If the difference is > 1, then we missed several seconds worth of frames and 
+        // should just throw out the fade calc (as it's likely a full signal loss).
+        if((current_secs - spek_fade_last_sec) == 1) {
+            if(rssi_channel != 0) {
+                if (spekHiRes)
+                    spekChannelData[rssi_channel] = 2048 - ((fade - spek_fade_last_sec_count) * 2048 / (SPEKTRUM_MAX_FADE_PER_SEC / SPEKTRUM_FADE_REPORTS_PER_SEC));
+                else
+                    spekChannelData[rssi_channel] = 1024 - ((fade - spek_fade_last_sec_count) * 1024 / (SPEKTRUM_MAX_FADE_PER_SEC / SPEKTRUM_FADE_REPORTS_PER_SEC));
+            }
+        }
+        spek_fade_last_sec_count = fade;
+        spek_fade_last_sec = current_secs;
+    }
+        
+        
     for (b = 3; b < SPEK_FRAME_SIZE; b += 2) {
         uint8_t spekChannel = 0x0F & (spekFrame[b - 1] >> spek_chan_shift);
         if (spekChannel < rxRuntimeConfigPtr->channelCount && spekChannel < SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT) {
-            spekChannelData[spekChannel] = ((uint32_t)(spekFrame[b - 1] & spek_chan_mask) << 8) + spekFrame[b];
+            if(rssi_channel != 0 && spekChannel != rssi_channel) {
+                spekChannelData[spekChannel] = ((uint32_t)(spekFrame[b - 1] & spek_chan_mask) << 8) + spekFrame[b];
+            }
         }
     }
 
@@ -256,6 +294,11 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
     }
 #endif
 
+    rssi_channel = rxConfig->rssi_channel - 1; // -1 because rxConfig->rssi_channel is 1-based and rssi_channel is 0-based.
+    if (rssi_channel >= rxRuntimeConfig->channelCount) {
+        rssi_channel = 0;
+    }
+    
     return spektrumPort != NULL;
 }
 #endif // USE_SERIALRX_SPEKTRUM
