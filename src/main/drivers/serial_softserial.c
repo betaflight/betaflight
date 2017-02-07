@@ -15,6 +15,11 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*
+ * Cleanflight (or Baseflight): original 
+ * jflyper: Mono-timer and single-wire half-duplex
+ */
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -108,67 +113,28 @@ static void setTxSignal(softSerial_t *softSerial, uint8_t state)
     }
 }
 
-#if 0
-// @ledvinap suggested the use of TIM_CCxCmd.
-// XXX CCEnableBit: Compute CCxE bit.
-// XXX (Note: timer.c:timerChICPolarity() uses "TIM_CCER_CC1P << timHw->channel".)
-
-static uint32_t CCEnableBit(int channel)
-{
-    uint32_t bit;
-
-#if defined(STM32F7)
-    switch (channel) {
-    case TIM_CHANNEL_1:
-        bit = TIM_CCER_CC1E;
-        break;
-    case TIM_CHANNEL_2:
-        bit = TIM_CCER_CC2E;
-        break;
-    case TIM_CHANNEL_3:
-        bit = TIM_CCER_CC3E;
-        break;
-    case TIM_CHANNEL_4:
-        bit = TIM_CCER_CC4E;
-        break;
-    }
-#else
-    switch (channel) {
-    case TIM_Channel_1:
-        bit = TIM_CCER_CC1E;
-        break;
-    case TIM_Channel_2:
-        bit = TIM_CCER_CC2E;
-        break;
-    case TIM_Channel_3:
-        bit = TIM_CCER_CC3E;
-        break;
-    case TIM_Channel_4:
-        bit = TIM_CCER_CC4E;
-        break;
-    }
-#endif
-
-    return bit;
-}
-#endif
-
 static void serialInputPortActivate(softSerial_t *softSerial)
 {
-    softSerial->rxActive = true;
+    if (softSerial->port.options & SERIAL_INVERTED) {
 #ifdef STM32F1
-    IOConfigGPIO(softSerial->rxIO, IOCFG_IPU);
+        IOConfigGPIO(softSerial->rxIO, IOCFG_IPD);
 #else
-    IOConfigGPIO(softSerial->rxIO, IOCFG_AF_PP_UP);
+        IOConfigGPIO(softSerial->rxIO, IOCFG_AF_PP_PD);
 #endif
+    } else {
+#ifdef STM32F1
+        IOConfigGPIO(softSerial->rxIO, IOCFG_IPU);
+#else
+        IOConfigGPIO(softSerial->rxIO, IOCFG_AF_PP_UP);
+#endif
+    }
 
+    softSerial->rxActive = true;
     softSerial->isSearchingForStartBit = true;
     softSerial->rxBitIndex = 0;
 
     // Enable input capture
 
-    // @ledvinap suggested the use of TIM_CCxCmd.
-    //softSerial->timerHardware->tim->CCER |= softSerial->ccEnableBit;
     TIM_CCxCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_Enable);
 }
 
@@ -176,8 +142,6 @@ static void serialInputPortDeActivate(softSerial_t *softSerial)
 {
     // Disable input capture
 
-    // @ledvinap suggested the use of TIM_CCxCmd.
-    //softSerial->timerHardware->tim->CCER &= ~softSerial->ccEnableBit;
     TIM_CCxCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_Disable);
 
     IOConfigGPIO(softSerial->rxIO, IOCFG_IN_FLOATING);
@@ -221,6 +185,10 @@ static void serialTimerConfigureTimebase(const timerHardware_t *timerHardwarePtr
 
     timerConfigure(timerHardwarePtr, timerPeriod, mhz);
 }
+
+
+// XXX This is almost identical to timerChConfigIC.
+// XXX Expensive? Direct register manipulation?
 
 static void serialICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 {
@@ -297,10 +265,6 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
         }
     }
 
-    //softSerial->ccEnableBit = CCEnableBit(softSerial->timerHardware->channel);
-
-    //debug[2] = softSerial->ccEnableBit;
-
     softSerial->port.vTable = &softSerialVTable;
     softSerial->port.baudRate = baud;
     softSerial->port.mode = mode;
@@ -351,11 +315,10 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
     return &softSerial->port;
 }
 
-/*********************************************/
 
-//
-// Serial engines
-//
+/*
+ * Serial Engine
+ */
 
 void processTxState(softSerial_t *softSerial)
 {
@@ -486,7 +449,6 @@ void processRxState(softSerial_t *softSerial)
 void onSerialTimerOverflow(timerOvrHandlerRec_t *cbRec, captureCompare_t capture)
 {
     UNUSED(capture);
-    //debug[0]++;
 
     softSerial_t *self = container_of(cbRec, softSerial_t, overCb);
 
@@ -500,7 +462,6 @@ void onSerialTimerOverflow(timerOvrHandlerRec_t *cbRec, captureCompare_t capture
 void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 {
     UNUSED(capture);
-    //debug[1]++;
 
     softSerial_t *self = container_of(cbRec, softSerial_t, edgeCb);
     bool inverted = self->port.options & SERIAL_INVERTED;
@@ -510,10 +471,15 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
     }
 
     if (self->isSearchingForStartBit) {
-        // synchronise bit counter
-        // FIXME this reduces functionality somewhat as receiving breaks concurrent transmission on all ports because
-        // the next callback to the onSerialTimer will happen too early causing transmission errors.
+        // Synchronize the bit timing so that it will interrupt at the center
+        // of the bit period.
+
         TIM_SetCounter(self->timerHardware->tim, self->timerHardware->tim->ARR / 2);
+        // For a mono-timer full duplex configuration, this may clobber the
+        // transmission because the next callback to the onSerialTimerOverflow
+        // will happen too early causing transmission errors.
+        // For a dual-timer configuration, there is no problem.
+
         if ((self->timerMode != TIMER_MODE_DUAL) && self->isTransmittingData) {
             self->transmissionErrors++;
         }
@@ -543,9 +509,10 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
     }
 }
 
-//
-// Standard serial driver API
-//
+
+/*
+ * Standard serial driver API
+ */
 
 uint32_t softSerialRxBytesWaiting(const serialPort_t *instance)
 {
