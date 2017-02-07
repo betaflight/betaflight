@@ -108,7 +108,6 @@ PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
                                                break;
 #endif
 
-#define BLACKBOX_I_INTERVAL 32
 #define BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS 200
 #define SLOW_FRAME_INTERVAL 4096
 
@@ -125,8 +124,7 @@ PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
 
 static const char blackboxHeader[] =
     "H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
-    "H Data version:2\n"
-    "H I interval:" STR(BLACKBOX_I_INTERVAL) "\n";
+    "H Data version:2\n";
 
 static const char* const blackboxFieldHeaderNames[] = {
     "name",
@@ -428,6 +426,7 @@ static uint32_t blackboxConditionCache;
 
 STATIC_ASSERT((sizeof(blackboxConditionCache) * 8) >= FLIGHT_LOG_FIELD_CONDITION_NEVER, too_many_flight_log_conditions);
 
+static uint32_t blackboxIFrameInterval;
 static uint32_t blackboxIteration;
 static uint16_t blackboxPFrameIndex, blackboxIFrameIndex;
 static uint16_t blackboxSlowFrameIterationTimer;
@@ -461,7 +460,7 @@ bool blackboxMayEditConfig(void)
 
 static bool blackboxIsOnlyLoggingIntraframes()
 {
-    return blackboxConfig()->rate_num == 1 && blackboxConfig()->rate_denom == 32;
+    return blackboxConfig()->rate_num == 1 && blackboxConfig()->rate_denom == blackboxIFrameInterval;
 }
 
 static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
@@ -1497,7 +1496,7 @@ static void blackboxAdvanceIterationTimers()
     blackboxIteration++;
     blackboxPFrameIndex++;
 
-    if (blackboxPFrameIndex == BLACKBOX_I_INTERVAL) {
+    if (blackboxPFrameIndex == blackboxIFrameInterval) {
         blackboxPFrameIndex = 0;
         blackboxIFrameIndex++;
     }
@@ -1539,7 +1538,7 @@ static void blackboxLogIteration(timeUs_t currentTimeUs)
              * still be interpreted correctly.
              */
             if (GPS_home.lat != gpsHistory.GPS_home[0] || GPS_home.lon != gpsHistory.GPS_home[1]
-                || (blackboxPFrameIndex == BLACKBOX_I_INTERVAL / 2 && blackboxIFrameIndex % 128 == 0)) {
+                || (blackboxPFrameIndex == (blackboxIFrameInterval / 2) && blackboxIFrameIndex % 128 == 0)) {
 
                 writeGPSHomeFrame(currentTimeUs);
                 writeGPSFrame(currentTimeUs);
@@ -1588,6 +1587,7 @@ void handleBlackbox(timeUs_t currentTimeUs)
                     }
 
                     if (blackboxHeader[xmitState.headerIndex] == '\0') {
+                        blackboxPrintfHeaderLine("I interval:%d", blackboxIFrameInterval);
                         blackboxSetState(BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER);
                     }
                 }
@@ -1710,6 +1710,20 @@ void initBlackbox(void)
         blackboxSetState(BLACKBOX_STATE_STOPPED);
     } else {
         blackboxSetState(BLACKBOX_STATE_DISABLED);
+    }
+
+    /* Decide on how ofter are we going to log I-frames*/
+    if (blackboxConfig()->rate_denom <= 32) {
+        blackboxIFrameInterval = 32;
+    }
+    else if (blackboxConfig()->rate_denom <= 64) {
+        blackboxIFrameInterval = 64;
+    }
+    else if (blackboxConfig()->rate_denom <= 128) {
+        blackboxIFrameInterval = 128;
+    }
+    else {
+        blackboxIFrameInterval = 256;
     }
 }
 
