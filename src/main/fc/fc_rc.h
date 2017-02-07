@@ -16,12 +16,6 @@
  */
 #pragma once
 
-#include <stdbool.h>
-
-void calculateSetpointRate(int axis, int16_t rc);
-void scaleRcCommandToFpvCamAngle(void);
-void checkForThrottleErrorResetState(uint16_t rxRefreshRate);
-void checkForThrottleErrorResetState(uint16_t rxRefreshRate);
 void processRcCommand(void);
 float getSetpointRate(int axis);
 float getRcDeflection(int axis);
@@ -29,3 +23,4 @@ float getRcDeflectionAbs(int axis);
 float getThrottlePIDAttenuation(void);
 void updateRcCommands(void);
 void resetYawAxis(void);
+void generateThrottleCurve(void);

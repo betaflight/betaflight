@@ -75,7 +75,7 @@
 #define USE_PPM
 
 #if defined(STM_FAST_TARGET)
-#define MAX_AUX_CHANNELS                99
+#define MAX_AUX_CHANNELS                20
 #define TASK_GYROPID_DESIRED_PERIOD     125
 #define SCHEDULER_DELAY_LIMIT           10
 #else

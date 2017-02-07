@@ -19,14 +19,13 @@
 
 #include <stdbool.h>
 
-#include "config/parameter_group.h"
-
-#define PID_CONTROLLER_BETAFLIGHT 1
-#define PID_MIXER_SCALING 1000.0f
-#define PID_SERVO_MIXER_SCALING 0.7f
-#define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
-#define YAW_P_LIMIT_MAX 500                 // Maximum value for yaw P limiter
-#define PIDSUM_LIMIT 0.5f
+#define MAX_PID_PROCESS_DENOM       16
+#define PID_CONTROLLER_BETAFLIGHT   1
+#define PID_MIXER_SCALING           1000.0f
+#define PID_SERVO_MIXER_SCALING     0.7f
+#define YAW_P_LIMIT_MIN             100                 // Maximum value for yaw P limiter
+#define YAW_P_LIMIT_MAX             500                 // Maximum value for yaw P limiter
+#define PIDSUM_LIMIT                0.5f
 
 // Scaling factors for Pids for better tunable range in configurator for betaflight pid controller. The scaling is based on legacy pid controller or previous float
 #define PTERM_SCALE 0.032029f
@@ -80,7 +79,6 @@ typedef struct pidProfile_s {
     // Betaflight PID controller parameters
     uint16_t itermThrottleThreshold;        // max allowed throttle delta before iterm accelerated in ms
     float itermAcceleratorGain;             // Iterm Accelerator Gain when itermThrottlethreshold is hit
-    uint16_t itermAcceleratorRateLimit;     // Setpointrate limit for iterm accelerator to operate within
     uint8_t setpointRelaxRatio;             // Setpoint weight relaxation effect
     uint8_t dtermSetpointWeight;            // Setpoint weight for Dterm (0= measurement, 1= full error, 1 > agressive derivative)
     float yawRateAccelLimit;                // yaw accel limiter for deg/sec/ms

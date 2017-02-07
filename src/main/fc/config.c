@@ -60,6 +60,7 @@
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
+#include "fc/fc_rc.h"
 #include "fc/runtime_config.h"
 
 #include "flight/altitudehold.h"
@@ -101,11 +102,7 @@
 #endif
 
 #define BRUSHED_MOTORS_PWM_RATE 16000
-#ifdef STM32F4
-#define BRUSHLESS_MOTORS_PWM_RATE 2000
-#else
-#define BRUSHLESS_MOTORS_PWM_RATE 400
-#endif
+#define BRUSHLESS_MOTORS_PWM_RATE 480
 
 master_t masterConfig;                 // master config struct with data independent from profiles
 profile_t *currentProfile;
@@ -179,13 +176,12 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
     pidProfile->levelAngleLimit = 55;
     pidProfile->levelSensitivity = 55;
-    pidProfile->setpointRelaxRatio = 30;
+    pidProfile->setpointRelaxRatio = 25;
     pidProfile->dtermSetpointWeight = 190;
     pidProfile->yawRateAccelLimit = 10.0f;
     pidProfile->rateAccelLimit = 0.0f;
     pidProfile->itermThrottleThreshold = 350;
-    pidProfile->itermAcceleratorGain = 2.0f;
-    pidProfile->itermAcceleratorRateLimit = 80;
+    pidProfile->itermAcceleratorGain = 1.0f;
 }
 
 void resetProfile(profile_t *profile)
@@ -888,6 +884,8 @@ void resetConfigs(void)
 
 void activateConfig(void)
 {
+    generateThrottleCurve();
+
     resetAdjustmentStates();
 
     useRcControlsConfig(modeActivationProfile()->modeActivationConditions, &currentProfile->pidProfile);
@@ -922,6 +920,10 @@ void validateAndFixConfig(void)
 {
     if((motorConfig()->motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)){
         motorConfigMutable()->mincommand = 1000;
+    }
+
+    if ((motorConfig()->motorPwmProtocol == PWM_TYPE_STANDARD) && (motorConfig()->motorPwmRate > BRUSHLESS_MOTORS_PWM_RATE)) {
+        motorConfig()->motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
     }
 
     if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP) || featureConfigured(FEATURE_RX_SPI))) {
@@ -1072,7 +1074,7 @@ void validateAndFixGyroConfig(void)
     float motorUpdateRestriction;
     switch(motorConfig()->motorPwmProtocol) {
         case (PWM_TYPE_STANDARD):
-            motorUpdateRestriction = 0.002f;
+            motorUpdateRestriction = 1.0f/BRUSHLESS_MOTORS_PWM_RATE;
             break;
         case (PWM_TYPE_ONESHOT125):
             motorUpdateRestriction = 0.0005f;
@@ -1092,11 +1094,13 @@ void validateAndFixGyroConfig(void)
             motorUpdateRestriction = 0.00003125f;
     }
 
-    if(pidLooptime < motorUpdateRestriction)
-        pidConfigMutable()->pid_process_denom = motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom);
+    if (pidLooptime < motorUpdateRestriction) {
+        const uint8_t maxPidProcessDenom = constrain(motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom), 1, MAX_PID_PROCESS_DENOM);
+        pidConfigMutable()->pid_process_denom = MIN(pidConfigMutable()->pid_process_denom, maxPidProcessDenom);
+    }
 
     // Prevent overriding the max rate of motors
-    if(motorConfig()->useUnsyncedPwm && (motorConfig()->motorPwmProtocol <= PWM_TYPE_BRUSHED)) {
+    if (motorConfig()->useUnsyncedPwm && (motorConfig()->motorPwmProtocol <= PWM_TYPE_BRUSHED) && motorConfig()->motorPwmProtocol != PWM_TYPE_STANDARD) {
         uint32_t maxEscRate = lrintf(1.0f / motorUpdateRestriction);
 
         if(motorConfig()->motorPwmRate > maxEscRate)
