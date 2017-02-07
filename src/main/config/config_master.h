@@ -71,6 +71,7 @@
 #define servoConfig(x) (&masterConfig.servoConfig)
 #define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
 #define gimbalConfig(x) (&masterConfig.gimbalConfig)
+#define channelForwardingConfig(x) (&masterConfig.channelForwardingConfig)
 #define boardAlignment(x) (&masterConfig.boardAlignment)
 #define imuConfig(x) (&masterConfig.imuConfig)
 #define gyroConfig(x) (&masterConfig.gyroConfig)
@@ -193,6 +194,8 @@ typedef struct master_s {
     servoProfile_t servoProfile;
     // gimbal-related configuration
     gimbalConfig_t gimbalConfig;
+    // Channel forwarding start channel
+    channelForwardingConfig_t channelForwardingConfig;
 #endif
 
     boardAlignment_t boardAlignment;
