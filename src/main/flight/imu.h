@@ -64,7 +64,7 @@ void imuConfigure(void);
 
 void imuUpdateAttitude(timeUs_t currentTimeUs);
 void imuUpdateAccelerometer(void);
-void imuUpdateGyroscope(uint32_t gyroUpdateDeltaUs);
+void imuUpdateGyroscope(timeUs_t gyroUpdateDeltaUs);
 float calculateCosTiltAngle(void);
 bool isImuReady(void);
 bool isImuHeadingValid(void);

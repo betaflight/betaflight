@@ -21,6 +21,8 @@
 #include <stdint.h>
 #include <math.h>
 
+#include "build/build_config.h"
+
 #include "platform.h"
 
 #include "blackbox/blackbox.h"
@@ -105,13 +107,13 @@ PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
 #ifdef ASYNC_GYRO_PROCESSING
 /* Asynchronous update accumulators */
 static float imuAccumulatedRate[XYZ_AXIS_COUNT];
-static float imuAccumulatedRateTime;
+static timeUs_t imuAccumulatedRateTimeUs;
 static float imuAccumulatedAcc[XYZ_AXIS_COUNT];
 static int   imuAccumulatedAccCount;
 #endif
 
 #ifdef ASYNC_GYRO_PROCESSING
-void imuUpdateGyroscope(uint32_t gyroUpdateDeltaUs)
+void imuUpdateGyroscope(timeUs_t gyroUpdateDeltaUs)
 {
     const float gyroUpdateDelta = gyroUpdateDeltaUs * 1e-6f;
 
@@ -119,7 +121,7 @@ void imuUpdateGyroscope(uint32_t gyroUpdateDeltaUs)
         imuAccumulatedRate[axis] += gyro.gyroADCf[axis] * gyroScale * gyroUpdateDelta;
     }
 
-    imuAccumulatedRateTime += gyroUpdateDelta;
+    imuAccumulatedRateTimeUs += gyroUpdateDeltaUs;
 }
 #endif
 
@@ -534,12 +536,13 @@ static void imuUpdateMeasuredRotationRate(void)
     int axis;
 
 #ifdef ASYNC_GYRO_PROCESSING
+    const float imuAccumulatedRateTime = imuAccumulatedRateTimeUs * 1e-6;
+    imuAccumulatedRateTimeUs = 0;
+
     for (axis = 0; axis < 3; axis++) {
         imuMeasuredRotationBF.A[axis] = imuAccumulatedRate[axis] / imuAccumulatedRateTime;
         imuAccumulatedRate[axis] = 0.0f;
     }
-
-    imuAccumulatedRateTime = 0.0f;
 #else
     for (axis = 0; axis < 3; axis++) {
         imuMeasuredRotationBF.A[axis] = gyro.gyroADCf[axis] * gyroScale;
