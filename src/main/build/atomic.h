@@ -20,6 +20,12 @@
 // only set_BASEPRI is implemented in device library. It does always create memory barrier
 // missing versions are implemented here
 
+#ifdef UNIT_TEST
+static inline void __set_BASEPRI(uint32_t basePri) {(void)basePri;}
+static inline void __set_BASEPRI_MAX(uint32_t basePri) {(void)basePri;}
+static inline void __set_BASEPRI_nb(uint32_t basePri) {(void)basePri;}
+static inline void __set_BASEPRI_MAX_nb(uint32_t basePri) {(void)basePri;}
+#else
 // set BASEPRI and BASEPRI_MAX register, but do not create memory barrier
 __attribute__( ( always_inline ) ) static inline void __set_BASEPRI_nb(uint32_t basePri)
 {
@@ -30,6 +36,7 @@ __attribute__( ( always_inline ) ) static inline void __set_BASEPRI_MAX_nb(uint3
 {
    __ASM volatile ("\tMSR basepri_max, %0\n" : : "r" (basePri) );
 }
+#endif // UNIT_TEST
 
 // cleanup BASEPRI restore function, with global memory barrier
 static inline void __basepriRestoreMem(uint8_t *val)
@@ -59,6 +66,10 @@ static inline uint8_t __basepriSetRetVal(uint8_t prio)
 
 // Run block with elevated BASEPRI (using BASEPRI_MAX), restoring BASEPRI on exit. All exit paths are handled
 // Full memory barrier is placed at start and exit of block
+#ifdef UNIT_TEST
+#define ATOMIC_BLOCK(prio) {}
+#define ATOMIC_BLOCK_NB(prio) {}
+#else
 #define ATOMIC_BLOCK(prio) for ( uint8_t __basepri_save __attribute__((__cleanup__(__basepriRestoreMem))) = __get_BASEPRI(), \
                                      __ToDo = __basepriSetMemRetVal(prio); __ToDo ; __ToDo = 0 )
 
@@ -70,6 +81,8 @@ static inline uint8_t __basepriSetRetVal(uint8_t prio)
 //    but that can change in future versions
 #define ATOMIC_BLOCK_NB(prio) for ( uint8_t __basepri_save __attribute__((__cleanup__(__basepriRestore))) = __get_BASEPRI(), \
                                     __ToDo = __basepriSetRetVal(prio); __ToDo ; __ToDo = 0 ) \
+
+#endif // UNIT_TEST
 
 // ATOMIC_BARRIER
 // Create memory barrier
