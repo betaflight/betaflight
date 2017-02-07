@@ -20,25 +20,11 @@
 
 #include <platform.h>
 
-#include "common/utils.h"
-
-#include "drivers/io.h"
-
-#include "fc/rc_controls.h"
-
-#include "flight/failsafe.h"
-#include "flight/mixer.h"
-#include "flight/pid.h"
-
-#include "rx/rx.h"
-
-#include "config/config_profile.h"
 #include "config/config_master.h"
+#include "config/feature.h"
 
 void targetConfiguration(master_t *config)
 {
-    UNUSED(config);
-
-    batteryConfig->currentMeterScale = 235;
+    config->batteryConfig.currentMeterScale = 235;
 }
 

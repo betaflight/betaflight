@@ -22,40 +22,42 @@
 #include <limits.h>
 
 extern "C" {
-    #include "build/debug.h"
-
     #include <platform.h>
+
+    #include "build/debug.h"
 
     #include "common/axis.h"
     #include "common/filter.h"
+    #include "common/gps_conversion.h"
     #include "common/maths.h"
 
     #include "config/parameter_group.h"
     #include "config/parameter_group_ids.h"
 
-    #include "drivers/system.h"
     #include "drivers/serial.h"
+    #include "drivers/system.h"
 
     #include "fc/runtime_config.h"
+
+    #include "flight/pid.h"
+    #include "flight/imu.h"
 
     #include "io/gps.h"
     #include "io/serial.h"
 
     #include "rx/crsf.h"
 
-    #include "sensors/sensors.h"
     #include "sensors/battery.h"
+    #include "sensors/sensors.h"
 
-    #include "telemetry/telemetry.h"
     #include "telemetry/crsf.h"
-
-    #include "flight/pid.h"
-    #include "flight/imu.h"
-    #include "flight/gps_conversion.h"
+    #include "telemetry/telemetry.h"
 
     bool airMode;
     uint16_t vbat;
     serialPort_t *telemetrySharedPort;
+    PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
+    PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
@@ -135,10 +137,7 @@ TEST(TelemetryCrsfTest, TestGPS)
 TEST(TelemetryCrsfTest, TestBattery)
 {
     uint8_t frame[CRSF_FRAME_SIZE_MAX];
-    batteryConfig_t workingBatteryConfig;
 
-    batteryConfig = &workingBatteryConfig;
-    memset(batteryConfig, 0, sizeof(batteryConfig_t));
     vbat = 0; // 0.1V units
     int frameLen = getCrsfFrame(frame, CRSF_FRAME_BATTERY_SENSOR);
     EXPECT_EQ(CRSF_FRAME_BATTERY_SENSOR_PAYLOAD_SIZE + FRAME_HEADER_FOOTER_LEN, frameLen);
@@ -157,7 +156,7 @@ TEST(TelemetryCrsfTest, TestBattery)
 
     vbat = 33; // 3.3V = 3300 mv
     amperage = 2960; // = 29.60A = 29600mA - amperage is in 0.01A steps
-    batteryConfig->batteryCapacity = 1234;
+    batteryConfigMutable()->batteryCapacity = 1234;
     frameLen = getCrsfFrame(frame, CRSF_FRAME_BATTERY_SENSOR);
     voltage = frame[3] << 8 | frame[4]; // mV * 100
     EXPECT_EQ(33, voltage);
@@ -307,7 +306,7 @@ serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) {return NULL;}
 bool telemetryDetermineEnabledState(portSharing_e) {return true;}
 bool telemetryCheckRxPortShared(const serialPortConfig_t *) {return true;}
 
-portSharing_e determinePortSharing(serialPortConfig_t *, serialPortFunction_e) {return PORTSHARING_NOT_SHARED;}
+portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunction_e) {return PORTSHARING_NOT_SHARED;}
 
 uint8_t batteryCapacityRemainingPercentage(void) {return 67;}
 uint8_t calculateBatteryCapacityRemainingPercentage(void) {return 67;}

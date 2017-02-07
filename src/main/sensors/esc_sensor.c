@@ -21,26 +21,28 @@
 
 #include <platform.h>
 
-#include "fc/config.h"
+#include "build/debug.h"
+
 #include "config/feature.h"
-#include "config/config_master.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "common/utils.h"
 
-#include "drivers/system.h"
+#include "drivers/pwm_output.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
-#include "drivers/pwm_output.h"
+#include "drivers/system.h"
 
-#include "io/serial.h"
+#include "esc_sensor.h"
+
+#include "fc/config.h"
 
 #include "flight/mixer.h"
 
 #include "sensors/battery.h"
 
-#include "build/debug.h"
-
-#include "esc_sensor.h"
+#include "io/serial.h"
 
 /*
 KISS ESC TELEMETRY PROTOCOL

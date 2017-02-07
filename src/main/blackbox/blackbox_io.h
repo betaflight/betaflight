@@ -49,6 +49,7 @@ typedef enum {
 
 extern int32_t blackboxHeaderBudget;
 
+void blackboxOpen(void);
 void blackboxWrite(uint8_t value);
 
 int blackboxPrintf(const char *fmt, ...);
@@ -70,6 +71,9 @@ void blackboxDeviceFlush(void);
 bool blackboxDeviceFlushForce(void);
 bool blackboxDeviceOpen(void);
 void blackboxDeviceClose(void);
+
+void blackboxEraseAll(void);
+bool isBlackboxErased(void);
 
 bool blackboxDeviceBeginLog(void);
 bool blackboxDeviceEndLog(bool retainLog);

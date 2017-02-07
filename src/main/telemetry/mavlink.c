@@ -32,26 +32,18 @@
 #include "common/axis.h"
 #include "common/color.h"
 
+#include "config/config_profile.h"
+#include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/system.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 
+#include "fc/config.h"
 #include "fc/rc_controls.h"
-
-#include "io/serial.h"
-#include "io/gimbal.h"
-#include "io/gps.h"
-#include "io/ledstrip.h"
-#include "io/motors.h"
-
-#include "sensors/sensors.h"
-#include "sensors/acceleration.h"
-#include "sensors/gyro.h"
-#include "sensors/barometer.h"
-#include "sensors/boardalignment.h"
-#include "sensors/battery.h"
-
-#include "rx/rx.h"
+#include "fc/runtime_config.h"
 
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -60,15 +52,23 @@
 #include "flight/navigation.h"
 #include "flight/altitudehold.h"
 
+#include "io/serial.h"
+#include "io/gimbal.h"
+#include "io/gps.h"
+#include "io/ledstrip.h"
+#include "io/motors.h"
+
+#include "rx/rx.h"
+
+#include "sensors/sensors.h"
+#include "sensors/acceleration.h"
+#include "sensors/gyro.h"
+#include "sensors/barometer.h"
+#include "sensors/boardalignment.h"
+#include "sensors/battery.h"
+
 #include "telemetry/telemetry.h"
 #include "telemetry/mavlink.h"
-
-#include "fc/config.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
-#include "config/feature.h"
-
-#include "fc/runtime_config.h"
 
 // mavlink library uses unnames unions that's causes GCC to complain if -Wpedantic is used
 // until this is resolved in mavlink library - ignore -Wpedantic for mavlink code

@@ -18,6 +18,7 @@
 #pragma once
 
 #include "common/time.h"
+#include "config/parameter_group.h"
 
 #define STICK_CHANNEL_COUNT 4
 
@@ -105,10 +106,16 @@ typedef struct rxFailsafeChannelConfiguration_s {
     uint8_t step;
 } rxFailsafeChannelConfiguration_t;
 
+//!!TODO change to rxFailsafeChannelConfig_t
+PG_DECLARE_ARRAY(rxFailsafeChannelConfiguration_t, MAX_SUPPORTED_RC_CHANNEL_COUNT, rxFailsafeChannelConfigs);
+
 typedef struct rxChannelRangeConfiguration_s {
     uint16_t min;
     uint16_t max;
 } rxChannelRangeConfiguration_t;
+
+//!!TODO change to rxChannelRangeConfig_t
+PG_DECLARE_ARRAY(rxChannelRangeConfiguration_t, NON_AUX_CHANNEL_COUNT, rxChannelRangeConfigs);
 
 typedef struct rxConfig_s {
     uint8_t rcmap[MAX_MAPPABLE_RX_INPUTS];  // mapping of radio channels to internal RPYTA+ order
@@ -138,6 +145,8 @@ typedef struct rxConfig_s {
 
     rxChannelRangeConfiguration_t channelRanges[NON_AUX_CHANNEL_COUNT];
 } rxConfig_t;
+
+PG_DECLARE(rxConfig_t, rxConfig);
 
 #define REMAPPABLE_CHANNEL_COUNT (sizeof(((rxConfig_t *)0)->rcmap) / sizeof(((rxConfig_t *)0)->rcmap[0]))
 

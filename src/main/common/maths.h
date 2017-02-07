@@ -30,6 +30,10 @@
 #define M_PIf       3.14159265358979323846f
 
 #define RAD    (M_PIf / 180.0f)
+#define DEGREES_TO_DECIDEGREES(angle) (angle * 10)
+#define DECIDEGREES_TO_DEGREES(angle) (angle / 10)
+#define DECIDEGREES_TO_RADIANS(angle) ((angle / 10.0f) * 0.0174532925f)
+#define DEGREES_TO_RADIANS(angle) ((angle) * 0.0174532925f)
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))

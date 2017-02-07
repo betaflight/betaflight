@@ -186,8 +186,6 @@
 
 #define LED_STRIP
 
-#define SENSORS_SET             (SENSOR_ACC)
-
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #if defined(PODIUMF4)
 #define SERIALRX_PROVIDER       SERIALRX_SBUS

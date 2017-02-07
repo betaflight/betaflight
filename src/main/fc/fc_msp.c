@@ -34,20 +34,27 @@
 #include "common/maths.h"
 #include "common/streambuf.h"
 
+#include "config/config_eeprom.h"
+#include "config/config_profile.h"
+#include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/system.h"
 #include "drivers/accgyro.h"
-#include "drivers/compass.h"
-#include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
-#include "drivers/io.h"
+#include "drivers/compass.h"
 #include "drivers/flash.h"
-#include "drivers/sdcard.h"
-#include "drivers/vcd.h"
+#include "drivers/io.h"
 #include "drivers/max7456.h"
-#include "drivers/vtx_soft_spi_rtc6705.h"
 #include "drivers/pwm_output.h"
+#include "drivers/sdcard.h"
+#include "drivers/serial.h"
 #include "drivers/serial_escserial.h"
+#include "drivers/system.h"
+#include "drivers/vcd.h"
 #include "drivers/vtx_common.h"
+#include "drivers/vtx_soft_spi_rtc6705.h"
 
 #include "fc/config.h"
 #include "fc/fc_core.h"
@@ -56,17 +63,25 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/altitudehold.h"
+#include "flight/failsafe.h"
+#include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/navigation.h"
+#include "flight/pid.h"
+#include "flight/servos.h"
+
+#include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
-#include "io/motors.h"
-#include "io/servos.h"
+#include "io/flashfs.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
-#include "io/serial.h"
 #include "io/ledstrip.h"
-#include "io/flashfs.h"
-#include "io/transponder_ir.h"
-#include "io/asyncfatfs/asyncfatfs.h"
+#include "io/motors.h"
+#include "io/serial.h"
 #include "io/serial_4way.h"
+#include "io/servos.h"
+#include "io/transponder_ir.h"
 
 #include "msp/msp.h"
 #include "msp/msp_protocol.h"
@@ -77,36 +92,22 @@
 
 #include "scheduler/scheduler.h"
 
-#include "sensors/boardalignment.h"
-#include "sensors/sensors.h"
-#include "sensors/battery.h"
-#include "sensors/sonar.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
+#include "sensors/battery.h"
+#include "sensors/boardalignment.h"
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
+#include "sensors/sensors.h"
+#include "sensors/sonar.h"
 
 #include "telemetry/telemetry.h"
-
-#include "flight/mixer.h"
-#include "flight/servos.h"
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/failsafe.h"
-#include "flight/navigation.h"
-#include "flight/altitudehold.h"
-
-#include "config/config_eeprom.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
-#include "config/feature.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
-extern void resetProfile(profile_t *profile);
 
 static const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
@@ -150,6 +151,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXAIRMODE, "AIR MODE;", 28 },
     { BOX3DDISABLESWITCH, "DISABLE 3D SWITCH;", 29},
     { BOXFPVANGLEMIX, "FPV ANGLE MIX;", 30},
+    { BOXBLACKBOXERASE, "BLACKBOX ERASE;", 31 },
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -378,6 +380,7 @@ void initActiveBoxIds(void)
 #ifdef BLACKBOX
     if (feature(FEATURE_BLACKBOX)) {
         activeBoxIds[activeBoxIdCount++] = BOXBLACKBOX;
+        activeBoxIds[activeBoxIdCount++] = BOXBLACKBOXERASE;
     }
 #endif
 
@@ -442,6 +445,7 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(FLIGHT_MODE(SONAR_MODE)) << BOXSONAR |
         IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE)) << BOXBLACKBOXERASE |
         IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX)) << BOXFPVANGLEMIX;
@@ -675,25 +679,25 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
     case MSP_SERVO_CONFIGURATIONS:
         for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-            sbufWriteU16(dst, servoProfile()->servoConf[i].min);
-            sbufWriteU16(dst, servoProfile()->servoConf[i].max);
-            sbufWriteU16(dst, servoProfile()->servoConf[i].middle);
-            sbufWriteU8(dst, servoProfile()->servoConf[i].rate);
-            sbufWriteU8(dst, servoProfile()->servoConf[i].angleAtMin);
-            sbufWriteU8(dst, servoProfile()->servoConf[i].angleAtMax);
-            sbufWriteU8(dst, servoProfile()->servoConf[i].forwardFromChannel);
-            sbufWriteU32(dst, servoProfile()->servoConf[i].reversedSources);
+            sbufWriteU16(dst, servoParams(i)->min);
+            sbufWriteU16(dst, servoParams(i)->max);
+            sbufWriteU16(dst, servoParams(i)->middle);
+            sbufWriteU8(dst, servoParams(i)->rate);
+            sbufWriteU8(dst, servoParams(i)->angleAtMin);
+            sbufWriteU8(dst, servoParams(i)->angleAtMax);
+            sbufWriteU8(dst, servoParams(i)->forwardFromChannel);
+            sbufWriteU32(dst, servoParams(i)->reversedSources);
         }
         break;
     case MSP_SERVO_MIX_RULES:
         for (int i = 0; i < MAX_SERVO_RULES; i++) {
-            sbufWriteU8(dst, customServoMixer(i)->targetChannel);
-            sbufWriteU8(dst, customServoMixer(i)->inputSource);
-            sbufWriteU8(dst, customServoMixer(i)->rate);
-            sbufWriteU8(dst, customServoMixer(i)->speed);
-            sbufWriteU8(dst, customServoMixer(i)->min);
-            sbufWriteU8(dst, customServoMixer(i)->max);
-            sbufWriteU8(dst, customServoMixer(i)->box);
+            sbufWriteU8(dst, customServoMixers(i)->targetChannel);
+            sbufWriteU8(dst, customServoMixers(i)->inputSource);
+            sbufWriteU8(dst, customServoMixers(i)->rate);
+            sbufWriteU8(dst, customServoMixers(i)->speed);
+            sbufWriteU8(dst, customServoMixers(i)->min);
+            sbufWriteU8(dst, customServoMixers(i)->max);
+            sbufWriteU8(dst, customServoMixers(i)->box);
         }
         break;
 #endif
@@ -800,7 +804,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_ADJUSTMENT_RANGES:
         for (int i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
-            adjustmentRange_t *adjRange = &adjustmentProfile()->adjustmentRanges[i];
+            const adjustmentRange_t *adjRange = adjustmentRanges(i);
             sbufWriteU8(dst, adjRange->adjustmentIndex);
             sbufWriteU8(dst, adjRange->auxChannelIndex);
             sbufWriteU8(dst, adjRange->range.startStep);
@@ -967,8 +971,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_RXFAIL_CONFIG:
         for (int i = 0; i < rxRuntimeConfig.channelCount; i++) {
-            sbufWriteU8(dst, rxConfig()->failsafe_channel_configurations[i].mode);
-            sbufWriteU16(dst, RXFAIL_STEP_TO_CHANNEL_VALUE(rxConfig()->failsafe_channel_configurations[i].step));
+            sbufWriteU8(dst, rxFailsafeChannelConfigs(i)->mode);
+            sbufWriteU16(dst, RXFAIL_STEP_TO_CHANNEL_VALUE(rxFailsafeChannelConfigs(i)->step));
         }
         break;
 
@@ -1014,7 +1018,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #ifdef LED_STRIP
     case MSP_LED_COLORS:
         for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-            hsvColor_t *color = &ledStripConfig()->colors[i];
+            const hsvColor_t *color = &ledStripConfig()->colors[i];
             sbufWriteU16(dst, color->h);
             sbufWriteU8(dst, color->s);
             sbufWriteU8(dst, color->v);
@@ -1023,7 +1027,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_LED_STRIP_CONFIG:
         for (int i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
-            ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
+            const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
             sbufWriteU32(dst, *ledConfig);
         }
         break;
@@ -1091,13 +1095,13 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #else
         sbufWriteU8(dst, 0);
 #endif
-        sbufWriteU8(dst, osdProfile()->units);
-        sbufWriteU8(dst, osdProfile()->rssi_alarm);
-        sbufWriteU16(dst, osdProfile()->cap_alarm);
-        sbufWriteU16(dst, osdProfile()->time_alarm);
-        sbufWriteU16(dst, osdProfile()->alt_alarm);
+        sbufWriteU8(dst, osdConfig()->units);
+        sbufWriteU8(dst, osdConfig()->rssi_alarm);
+        sbufWriteU16(dst, osdConfig()->cap_alarm);
+        sbufWriteU16(dst, osdConfig()->time_alarm);
+        sbufWriteU16(dst, osdConfig()->alt_alarm);
         for (int i = 0; i < OSD_ITEM_COUNT; i++) {
-            sbufWriteU16(dst, osdProfile()->item_pos[i]);
+            sbufWriteU16(dst, osdConfig()->item_pos[i]);
         }
 #else
         sbufWriteU8(dst, 0); // OSD not supported
@@ -1146,6 +1150,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, gyroConfig()->gyro_use_32khz);
         //!!TODO gyro_isr_update to be added pending decision
         //sbufWriteU8(dst, gyroConfig()->gyro_isr_update);
+        sbufWriteU8(dst, motorConfig()->motorPwmInversion);
         break;
 
     case MSP_FILTER_CONFIG :
@@ -1316,12 +1321,12 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
         break;
     case MSP_SET_ACC_TRIM:
-        accelerometerConfig()->accelerometerTrims.values.pitch = sbufReadU16(src);
-        accelerometerConfig()->accelerometerTrims.values.roll  = sbufReadU16(src);
+        accelerometerConfigMutable()->accelerometerTrims.values.pitch = sbufReadU16(src);
+        accelerometerConfigMutable()->accelerometerTrims.values.roll  = sbufReadU16(src);
         break;
     case MSP_SET_ARMING_CONFIG:
-        armingConfig()->auto_disarm_delay = sbufReadU8(src);
-        armingConfig()->disarm_kill_switch = sbufReadU8(src);
+        armingConfigMutable()->auto_disarm_delay = sbufReadU8(src);
+        armingConfigMutable()->disarm_kill_switch = sbufReadU8(src);
         break;
 
     case MSP_SET_LOOP_TIME:
@@ -1343,7 +1348,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_MODE_RANGE:
         i = sbufReadU8(src);
         if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
-            modeActivationCondition_t *mac = &modeActivationProfile()->modeActivationConditions[i];
+            modeActivationCondition_t *mac = modeActivationConditionsMutable(i);
             i = sbufReadU8(src);
             const box_t *box = findBoxByPermenantId(i);
             if (box) {
@@ -1352,7 +1357,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 mac->range.startStep = sbufReadU8(src);
                 mac->range.endStep = sbufReadU8(src);
 
-                useRcControlsConfig(modeActivationProfile()->modeActivationConditions, &masterConfig.motorConfig, &currentProfile->pidProfile);
+                useRcControlsConfig(modeActivationConditions(0), &currentProfile->pidProfile);
             } else {
                 return MSP_RESULT_ERROR;
             }
@@ -1364,7 +1369,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_ADJUSTMENT_RANGE:
         i = sbufReadU8(src);
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
-            adjustmentRange_t *adjRange = &adjustmentProfile()->adjustmentRanges[i];
+            adjustmentRange_t *adjRange = adjustmentRangesMutable(i);
             i = sbufReadU8(src);
             if (i < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT) {
                 adjRange->adjustmentIndex = i;
@@ -1407,32 +1412,32 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_MISC:
-        rxConfig()->midrc = sbufReadU16(src);
-        motorConfig()->minthrottle = sbufReadU16(src);
-        motorConfig()->maxthrottle = sbufReadU16(src);
-        motorConfig()->mincommand = sbufReadU16(src);
+        rxConfigMutable()->midrc = sbufReadU16(src);
+        motorConfigMutable()->minthrottle = sbufReadU16(src);
+        motorConfigMutable()->maxthrottle = sbufReadU16(src);
+        motorConfigMutable()->mincommand = sbufReadU16(src);
 
-        failsafeConfig()->failsafe_throttle = sbufReadU16(src);
+        failsafeConfigMutable()->failsafe_throttle = sbufReadU16(src);
 
 #ifdef GPS
-        gpsConfig()->provider = sbufReadU8(src); // gps_type
+        gpsConfigMutable()->provider = sbufReadU8(src); // gps_type
         sbufReadU8(src); // gps_baudrate
-        gpsConfig()->sbasMode = sbufReadU8(src); // gps_ubx_sbas
+        gpsConfigMutable()->sbasMode = sbufReadU8(src); // gps_ubx_sbas
 #else
         sbufReadU8(src); // gps_type
         sbufReadU8(src); // gps_baudrate
         sbufReadU8(src); // gps_ubx_sbas
 #endif
-        batteryConfig()->multiwiiCurrentMeterOutput = sbufReadU8(src);
-        rxConfig()->rssi_channel = sbufReadU8(src);
+        batteryConfigMutable()->multiwiiCurrentMeterOutput = sbufReadU8(src);
+        rxConfigMutable()->rssi_channel = sbufReadU8(src);
         sbufReadU8(src);
 
-        compassConfig()->mag_declination = sbufReadU16(src) * 10;
+        compassConfigMutable()->mag_declination = sbufReadU16(src) * 10;
 
-        batteryConfig()->vbatscale = sbufReadU8(src);           // actual vbatscale as intended
-        batteryConfig()->vbatmincellvoltage = sbufReadU8(src);  // vbatlevel_warn1 in MWC2.3 GUI
-        batteryConfig()->vbatmaxcellvoltage = sbufReadU8(src);  // vbatlevel_warn2 in MWC2.3 GUI
-        batteryConfig()->vbatwarningcellvoltage = sbufReadU8(src);  // vbatlevel when buzzer starts to alert
+        batteryConfigMutable()->vbatscale = sbufReadU8(src);           // actual vbatscale as intended
+        batteryConfigMutable()->vbatmincellvoltage = sbufReadU8(src);  // vbatlevel_warn1 in MWC2.3 GUI
+        batteryConfigMutable()->vbatmaxcellvoltage = sbufReadU8(src);  // vbatlevel_warn2 in MWC2.3 GUI
+        batteryConfigMutable()->vbatwarningcellvoltage = sbufReadU8(src);  // vbatlevel when buzzer starts to alert
         break;
 
     case MSP_SET_MOTOR:
@@ -1450,14 +1455,14 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (i >= MAX_SUPPORTED_SERVOS) {
             return MSP_RESULT_ERROR;
         } else {
-            servoProfile()->servoConf[i].min = sbufReadU16(src);
-            servoProfile()->servoConf[i].max = sbufReadU16(src);
-            servoProfile()->servoConf[i].middle = sbufReadU16(src);
-            servoProfile()->servoConf[i].rate = sbufReadU8(src);
-            servoProfile()->servoConf[i].angleAtMin = sbufReadU8(src);
-            servoProfile()->servoConf[i].angleAtMax = sbufReadU8(src);
-            servoProfile()->servoConf[i].forwardFromChannel = sbufReadU8(src);
-            servoProfile()->servoConf[i].reversedSources = sbufReadU32(src);
+            servoParamsMutable(i)->min = sbufReadU16(src);
+            servoParamsMutable(i)->max = sbufReadU16(src);
+            servoParamsMutable(i)->middle = sbufReadU16(src);
+            servoParamsMutable(i)->rate = sbufReadU8(src);
+            servoParamsMutable(i)->angleAtMin = sbufReadU8(src);
+            servoParamsMutable(i)->angleAtMax = sbufReadU8(src);
+            servoParamsMutable(i)->forwardFromChannel = sbufReadU8(src);
+            servoParamsMutable(i)->reversedSources = sbufReadU32(src);
         }
 #endif
         break;
@@ -1468,76 +1473,80 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (i >= MAX_SERVO_RULES) {
             return MSP_RESULT_ERROR;
         } else {
-            customServoMixer(i)->targetChannel = sbufReadU8(src);
-            customServoMixer(i)->inputSource = sbufReadU8(src);
-            customServoMixer(i)->rate = sbufReadU8(src);
-            customServoMixer(i)->speed = sbufReadU8(src);
-            customServoMixer(i)->min = sbufReadU8(src);
-            customServoMixer(i)->max = sbufReadU8(src);
-            customServoMixer(i)->box = sbufReadU8(src);
+            customServoMixersMutable(i)->targetChannel = sbufReadU8(src);
+            customServoMixersMutable(i)->inputSource = sbufReadU8(src);
+            customServoMixersMutable(i)->rate = sbufReadU8(src);
+            customServoMixersMutable(i)->speed = sbufReadU8(src);
+            customServoMixersMutable(i)->min = sbufReadU8(src);
+            customServoMixersMutable(i)->max = sbufReadU8(src);
+            customServoMixersMutable(i)->box = sbufReadU8(src);
             loadCustomServoMixer();
         }
 #endif
         break;
 
     case MSP_SET_3D:
-        flight3DConfig()->deadband3d_low = sbufReadU16(src);
-        flight3DConfig()->deadband3d_high = sbufReadU16(src);
-        flight3DConfig()->neutral3d = sbufReadU16(src);
+        flight3DConfigMutable()->deadband3d_low = sbufReadU16(src);
+        flight3DConfigMutable()->deadband3d_high = sbufReadU16(src);
+        flight3DConfigMutable()->neutral3d = sbufReadU16(src);
         break;
 
     case MSP_SET_RC_DEADBAND:
-        rcControlsConfig()->deadband = sbufReadU8(src);
-        rcControlsConfig()->yaw_deadband = sbufReadU8(src);
-        rcControlsConfig()->alt_hold_deadband = sbufReadU8(src);
-        flight3DConfig()->deadband3d_throttle = sbufReadU16(src);
+        rcControlsConfigMutable()->deadband = sbufReadU8(src);
+        rcControlsConfigMutable()->yaw_deadband = sbufReadU8(src);
+        rcControlsConfigMutable()->alt_hold_deadband = sbufReadU8(src);
+        flight3DConfigMutable()->deadband3d_throttle = sbufReadU16(src);
         break;
 
     case MSP_SET_RESET_CURR_PID:
         resetProfile(currentProfile);
         break;
     case MSP_SET_SENSOR_ALIGNMENT:
-        gyroConfig()->gyro_align = sbufReadU8(src);
-        accelerometerConfig()->acc_align = sbufReadU8(src);
-        compassConfig()->mag_align = sbufReadU8(src);
+        gyroConfigMutable()->gyro_align = sbufReadU8(src);
+        accelerometerConfigMutable()->acc_align = sbufReadU8(src);
+        compassConfigMutable()->mag_align = sbufReadU8(src);
         break;
 
     case MSP_SET_ADVANCED_CONFIG:
-        gyroConfig()->gyro_sync_denom = sbufReadU8(src);
-        pidConfig()->pid_process_denom = sbufReadU8(src);
-        motorConfig()->useUnsyncedPwm = sbufReadU8(src);
+        gyroConfigMutable()->gyro_sync_denom = sbufReadU8(src);
+        pidConfigMutable()->pid_process_denom = sbufReadU8(src);
+        motorConfigMutable()->useUnsyncedPwm = sbufReadU8(src);
 #ifdef USE_DSHOT
-        motorConfig()->motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_MAX - 1);
+        motorConfigMutable()->motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_MAX - 1);
 #else
-        motorConfig()->motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_BRUSHED);
+        motorConfigMutable()->motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_BRUSHED);
 #endif
-        motorConfig()->motorPwmRate = sbufReadU16(src);
-        if (dataSize > 7) {
-            motorConfig()->digitalIdleOffsetPercent = sbufReadU16(src) / 100.0f;
+        motorConfigMutable()->motorPwmRate = sbufReadU16(src);
+        if (sbufBytesRemaining(src) >= 2) {
+            motorConfigMutable()->digitalIdleOffsetPercent = sbufReadU16(src) / 100.0f;
         }
         if (sbufBytesRemaining(src)) {
-            gyroConfig()->gyro_use_32khz = sbufReadU8(src);
+            gyroConfigMutable()->gyro_use_32khz = sbufReadU8(src);
         }
         //!!TODO gyro_isr_update to be added pending decision
         /*if (sbufBytesRemaining(src)) {
-            gyroConfig()->gyro_isr_update = sbufReadU8(src);
+            gyroConfigMutable()->gyro_isr_update = sbufReadU8(src);
         }*/
         validateAndFixGyroConfig();
+
+        if (sbufBytesRemaining(src)) {        
+            motorConfigMutable()->motorPwmInversion = sbufReadU8(src);
+        }
         break;
 
     case MSP_SET_FILTER_CONFIG:
-        gyroConfig()->gyro_soft_lpf_hz = sbufReadU8(src);
+        gyroConfigMutable()->gyro_soft_lpf_hz = sbufReadU8(src);
         currentProfile->pidProfile.dterm_lpf_hz = sbufReadU16(src);
         currentProfile->pidProfile.yaw_lpf_hz = sbufReadU16(src);
         if (dataSize > 5) {
-            gyroConfig()->gyro_soft_notch_hz_1 = sbufReadU16(src);
-            gyroConfig()->gyro_soft_notch_cutoff_1 = sbufReadU16(src);
+            gyroConfigMutable()->gyro_soft_notch_hz_1 = sbufReadU16(src);
+            gyroConfigMutable()->gyro_soft_notch_cutoff_1 = sbufReadU16(src);
             currentProfile->pidProfile.dterm_notch_hz = sbufReadU16(src);
             currentProfile->pidProfile.dterm_notch_cutoff = sbufReadU16(src);
         }
         if (dataSize > 13) {
-            gyroConfig()->gyro_soft_notch_hz_2 = sbufReadU16(src);
-            gyroConfig()->gyro_soft_notch_cutoff_2 = sbufReadU16(src);
+            gyroConfigMutable()->gyro_soft_notch_hz_2 = sbufReadU16(src);
+            gyroConfigMutable()->gyro_soft_notch_cutoff_2 = sbufReadU16(src);
         }
         // reinitialize the gyro filters with the new values
         validateAndFixGyroConfig();
@@ -1567,9 +1576,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_SENSOR_CONFIG:
-        accelerometerConfig()->acc_hardware = sbufReadU8(src);
-        barometerConfig()->baro_hardware = sbufReadU8(src);
-        compassConfig()->mag_hardware = sbufReadU8(src);
+        accelerometerConfigMutable()->acc_hardware = sbufReadU8(src);
+        barometerConfigMutable()->baro_hardware = sbufReadU8(src);
+        compassConfigMutable()->mag_hardware = sbufReadU8(src);
         break;
 
     case MSP_RESET_CONF:
@@ -1601,9 +1610,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_BLACKBOX_CONFIG:
         // Don't allow config to be updated while Blackbox is logging
         if (blackboxMayEditConfig()) {
-            blackboxConfig()->device = sbufReadU8(src);
-            blackboxConfig()->rate_num = sbufReadU8(src);
-            blackboxConfig()->rate_denom = sbufReadU8(src);
+            blackboxConfigMutable()->device = sbufReadU8(src);
+            blackboxConfigMutable()->rate_num = sbufReadU8(src);
+            blackboxConfigMutable()->rate_denom = sbufReadU8(src);
         }
         break;
 #endif
@@ -1759,85 +1768,85 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_BOARD_ALIGNMENT:
-        boardAlignment()->rollDegrees = sbufReadU16(src);
-        boardAlignment()->pitchDegrees = sbufReadU16(src);
-        boardAlignment()->yawDegrees = sbufReadU16(src);
+        boardAlignmentMutable()->rollDegrees = sbufReadU16(src);
+        boardAlignmentMutable()->pitchDegrees = sbufReadU16(src);
+        boardAlignmentMutable()->yawDegrees = sbufReadU16(src);
         break;
 
     case MSP_SET_VOLTAGE_METER_CONFIG:
-        batteryConfig()->vbatscale = sbufReadU8(src);           // actual vbatscale as intended
-        batteryConfig()->vbatmincellvoltage = sbufReadU8(src);  // vbatlevel_warn1 in MWC2.3 GUI
-        batteryConfig()->vbatmaxcellvoltage = sbufReadU8(src);  // vbatlevel_warn2 in MWC2.3 GUI
-        batteryConfig()->vbatwarningcellvoltage = sbufReadU8(src);  // vbatlevel when buzzer starts to alert
+        batteryConfigMutable()->vbatscale = sbufReadU8(src);           // actual vbatscale as intended
+        batteryConfigMutable()->vbatmincellvoltage = sbufReadU8(src);  // vbatlevel_warn1 in MWC2.3 GUI
+        batteryConfigMutable()->vbatmaxcellvoltage = sbufReadU8(src);  // vbatlevel_warn2 in MWC2.3 GUI
+        batteryConfigMutable()->vbatwarningcellvoltage = sbufReadU8(src);  // vbatlevel when buzzer starts to alert
         if (dataSize > 4) {
-            batteryConfig()->batteryMeterType = sbufReadU8(src);
+            batteryConfigMutable()->batteryMeterType = sbufReadU8(src);
         }
         break;
 
     case MSP_SET_CURRENT_METER_CONFIG:
-        batteryConfig()->currentMeterScale = sbufReadU16(src);
-        batteryConfig()->currentMeterOffset = sbufReadU16(src);
-        batteryConfig()->currentMeterType = sbufReadU8(src);
-        batteryConfig()->batteryCapacity = sbufReadU16(src);
+        batteryConfigMutable()->currentMeterScale = sbufReadU16(src);
+        batteryConfigMutable()->currentMeterOffset = sbufReadU16(src);
+        batteryConfigMutable()->currentMeterType = sbufReadU8(src);
+        batteryConfigMutable()->batteryCapacity = sbufReadU16(src);
         break;
 
 #ifndef USE_QUAD_MIXER_ONLY
     case MSP_SET_MIXER:
-        mixerConfig()->mixerMode = sbufReadU8(src);
+        mixerConfigMutable()->mixerMode = sbufReadU8(src);
         break;
 #endif
 
     case MSP_SET_RX_CONFIG:
-        rxConfig()->serialrx_provider = sbufReadU8(src);
-        rxConfig()->maxcheck = sbufReadU16(src);
-        rxConfig()->midrc = sbufReadU16(src);
-        rxConfig()->mincheck = sbufReadU16(src);
-        rxConfig()->spektrum_sat_bind = sbufReadU8(src);
+        rxConfigMutable()->serialrx_provider = sbufReadU8(src);
+        rxConfigMutable()->maxcheck = sbufReadU16(src);
+        rxConfigMutable()->midrc = sbufReadU16(src);
+        rxConfigMutable()->mincheck = sbufReadU16(src);
+        rxConfigMutable()->spektrum_sat_bind = sbufReadU8(src);
         if (dataSize > 8) {
-            rxConfig()->rx_min_usec = sbufReadU16(src);
-            rxConfig()->rx_max_usec = sbufReadU16(src);
+            rxConfigMutable()->rx_min_usec = sbufReadU16(src);
+            rxConfigMutable()->rx_max_usec = sbufReadU16(src);
         }
         if (dataSize > 12) {
-            rxConfig()->rcInterpolation = sbufReadU8(src);
-            rxConfig()->rcInterpolationInterval = sbufReadU8(src);
-            rxConfig()->airModeActivateThreshold = sbufReadU16(src);
+            rxConfigMutable()->rcInterpolation = sbufReadU8(src);
+            rxConfigMutable()->rcInterpolationInterval = sbufReadU8(src);
+            rxConfigMutable()->airModeActivateThreshold = sbufReadU16(src);
         }
         if (dataSize > 16) {
-            rxConfig()->rx_spi_protocol = sbufReadU8(src);
-            rxConfig()->rx_spi_id = sbufReadU32(src);
-            rxConfig()->rx_spi_rf_channel_count = sbufReadU8(src);
+            rxConfigMutable()->rx_spi_protocol = sbufReadU8(src);
+            rxConfigMutable()->rx_spi_id = sbufReadU32(src);
+            rxConfigMutable()->rx_spi_rf_channel_count = sbufReadU8(src);
         }
         if (dataSize > 22) {
-            rxConfig()->fpvCamAngleDegrees = sbufReadU8(src);
+            rxConfigMutable()->fpvCamAngleDegrees = sbufReadU8(src);
         }
         break;
 
     case MSP_SET_FAILSAFE_CONFIG:
-        failsafeConfig()->failsafe_delay = sbufReadU8(src);
-        failsafeConfig()->failsafe_off_delay = sbufReadU8(src);
-        failsafeConfig()->failsafe_throttle = sbufReadU16(src);
-        failsafeConfig()->failsafe_kill_switch = sbufReadU8(src);
-        failsafeConfig()->failsafe_throttle_low_delay = sbufReadU16(src);
-        failsafeConfig()->failsafe_procedure = sbufReadU8(src);
+        failsafeConfigMutable()->failsafe_delay = sbufReadU8(src);
+        failsafeConfigMutable()->failsafe_off_delay = sbufReadU8(src);
+        failsafeConfigMutable()->failsafe_throttle = sbufReadU16(src);
+        failsafeConfigMutable()->failsafe_kill_switch = sbufReadU8(src);
+        failsafeConfigMutable()->failsafe_throttle_low_delay = sbufReadU16(src);
+        failsafeConfigMutable()->failsafe_procedure = sbufReadU8(src);
         break;
 
     case MSP_SET_RXFAIL_CONFIG:
         i = sbufReadU8(src);
         if (i < MAX_SUPPORTED_RC_CHANNEL_COUNT) {
-            rxConfig()->failsafe_channel_configurations[i].mode = sbufReadU8(src);
-            rxConfig()->failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(sbufReadU16(src));
+            rxConfigMutable()->failsafe_channel_configurations[i].mode = sbufReadU8(src);
+            rxConfigMutable()->failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(sbufReadU16(src));
         } else {
             return MSP_RESULT_ERROR;
         }
         break;
 
     case MSP_SET_RSSI_CONFIG:
-        rxConfig()->rssi_channel = sbufReadU8(src);
+        rxConfigMutable()->rssi_channel = sbufReadU8(src);
         break;
 
     case MSP_SET_RX_MAP:
         for (int i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
-            rxConfig()->rcmap[i] = sbufReadU8(src);
+            rxConfigMutable()->rcmap[i] = sbufReadU8(src);
         }
         break;
 
@@ -1845,20 +1854,20 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef USE_QUAD_MIXER_ONLY
         sbufReadU8(src); // mixerMode ignored
 #else
-        mixerConfig()->mixerMode = sbufReadU8(src); // mixerMode
+        mixerConfigMutable()->mixerMode = sbufReadU8(src); // mixerMode
 #endif
 
         featureClearAll();
         featureSet(sbufReadU32(src)); // features bitmap
 
-        rxConfig()->serialrx_provider = sbufReadU8(src); // serialrx_type
+        rxConfigMutable()->serialrx_provider = sbufReadU8(src); // serialrx_type
 
-        boardAlignment()->rollDegrees = sbufReadU16(src); // board_align_roll
-        boardAlignment()->pitchDegrees = sbufReadU16(src); // board_align_pitch
-        boardAlignment()->yawDegrees = sbufReadU16(src); // board_align_yaw
+        boardAlignmentMutable()->rollDegrees = sbufReadU16(src); // board_align_roll
+        boardAlignmentMutable()->pitchDegrees = sbufReadU16(src); // board_align_pitch
+        boardAlignmentMutable()->yawDegrees = sbufReadU16(src); // board_align_yaw
 
-        batteryConfig()->currentMeterScale = sbufReadU16(src);
-        batteryConfig()->currentMeterOffset = sbufReadU16(src);
+        batteryConfigMutable()->currentMeterScale = sbufReadU16(src);
+        batteryConfigMutable()->currentMeterOffset = sbufReadU16(src);
         break;
 
     case MSP_SET_CF_SERIAL_CONFIG:
@@ -1892,7 +1901,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef LED_STRIP
     case MSP_SET_LED_COLORS:
         for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-            hsvColor_t *color = &ledStripConfig()->colors[i];
+            hsvColor_t *color = &ledStripConfigMutable()->colors[i];
             color->h = sbufReadU16(src);
             color->s = sbufReadU8(src);
             color->v = sbufReadU8(src);
@@ -1905,7 +1914,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             if (i >= LED_MAX_STRIP_LENGTH || dataSize != (1 + 4)) {
                 return MSP_RESULT_ERROR;
             }
-            ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
+            ledConfig_t *ledConfig = &ledStripConfigMutable()->ledConfigs[i];
             *ledConfig = sbufReadU32(src);
             reevaluateLedConfig();
         }

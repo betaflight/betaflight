@@ -18,6 +18,7 @@
 #pragma once
 
 #include "common/time.h"
+#include "config/parameter_group.h"
 
 #define VISIBLE_FLAG  0x0800
 #define VISIBLE(x)    (x & VISIBLE_FLAG)
@@ -66,6 +67,9 @@ typedef struct osd_profile_s {
 
     osd_unit_e units;
 } osd_profile_t;
+
+// !!TODO change to osdConfig_t
+PG_DECLARE(osd_profile_t, osdConfig);
 
 struct displayPort_s;
 void osdInit(struct displayPort_s *osdDisplayPort);
