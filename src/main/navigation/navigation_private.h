@@ -40,6 +40,7 @@
 #define US2S(us)    ((us) * 1e-6f)
 #define US2MS(us)   ((us) * 1e-3f)
 #define MS2US(ms)   ((ms) * 1000)
+#define MS2S(ms)    ((ms) * 1e-3f)
 #define HZ2S(hz)    US2S(HZ2US(hz))
 
 typedef enum {
@@ -294,9 +295,9 @@ typedef struct {
     navWaypointPosition_t       activeWaypoint;     // Local position and initial bearing, filled on waypoint activation
     int8_t                      activeWaypointIndex;
 
-    /* Internals */
+    /* Internals & statistics */
     int16_t                     rcAdjustment[4];
-
+    float                       totalTripDistance;
 } navigationPosControl_t;
 
 extern navigationPosControl_t posControl;
