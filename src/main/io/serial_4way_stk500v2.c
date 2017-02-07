@@ -31,7 +31,7 @@
 #include "drivers/buf_writer.h"
 #include "drivers/pwm_mapping.h"
 #include "drivers/serial.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "fc/config.h"
 

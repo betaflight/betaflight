@@ -32,7 +32,7 @@
 #include "common/utils.h"
 #include "common/time.h"
 
-#include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/serial.h"
 
 #include "sensors/battery.h"

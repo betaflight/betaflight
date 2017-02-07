@@ -24,6 +24,7 @@
 #include "common/maths.h"
 
 #include "system.h"
+#include "time.h"
 #include "exti.h"
 #include "io.h"
 #include "bus_spi.h"

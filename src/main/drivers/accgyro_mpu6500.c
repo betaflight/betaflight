@@ -25,6 +25,7 @@
 #include "common/maths.h"
 
 #include "system.h"
+#include "time.h"
 #include "exti.h"
 #include "gpio.h"
 #include "gyro_sync.h"

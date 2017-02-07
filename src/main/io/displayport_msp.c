@@ -27,7 +27,7 @@
 #include "common/utils.h"
 
 #include "drivers/display.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "fc/fc_msp.h"
 

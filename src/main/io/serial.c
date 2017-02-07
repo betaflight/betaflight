@@ -30,6 +30,7 @@
 #include "config/parameter_group_ids.h"
 
 #include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/serial.h"
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
 #include "drivers/serial_softserial.h"

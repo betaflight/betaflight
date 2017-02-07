@@ -30,7 +30,7 @@
 #include "drivers/bus_spi.h"
 #include "drivers/light_led.h"
 #include "drivers/io.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/nvic.h"
 #include "drivers/dma.h"
 

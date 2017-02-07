@@ -27,7 +27,7 @@
 #include "build/version.h"
 #include "build/build_config.h"
 
-#include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/display_ug2864hsweg01.h"
 
 #include "cms/cms.h"

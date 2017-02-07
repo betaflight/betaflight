@@ -17,7 +17,7 @@
 
 #include "config/feature.h"
 
-#include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/serial.h"
 
 #include "fc/config.h"

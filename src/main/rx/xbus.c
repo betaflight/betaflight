@@ -24,7 +24,7 @@
 #ifdef USE_SERIALRX_XBUS
 
 #include "drivers/serial.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "io/serial.h"
 

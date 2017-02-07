@@ -34,7 +34,7 @@
 #include "drivers/pwm_mapping.h"
 #include "drivers/pwm_output.h"
 #include "drivers/light_led.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 #include "flight/mixer.h"
 #include "io/beeper.h"
 #include "io/serial_4way.h"

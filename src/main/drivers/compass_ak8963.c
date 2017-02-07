@@ -31,7 +31,7 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
-#include "system.h"
+#include "time.h"
 #include "bus_i2c.h"
 #include "bus_spi.h"
 

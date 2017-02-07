@@ -45,7 +45,7 @@
 #include "drivers/pwm_rx.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"

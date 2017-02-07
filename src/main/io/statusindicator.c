@@ -20,7 +20,7 @@
 
 #include "platform.h"
 
-#include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/light_led.h"
 
 #include "statusindicator.h"

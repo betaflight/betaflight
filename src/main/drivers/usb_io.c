@@ -23,7 +23,7 @@
 #ifdef USB_IO
 
 #include "io.h"
-#include "system.h"
+#include "time.h"
 #include "usb_io.h"
 #include "sdcard.h"
 

@@ -37,7 +37,7 @@ USBD_HandleTypeDef USBD_Device;
 #include "hw_config.h"
 #endif
 
-#include "system.h"
+#include "time.h"
 
 #include "serial.h"
 #include "serial_usb_vcp.h"

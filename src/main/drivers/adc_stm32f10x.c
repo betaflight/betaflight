@@ -25,7 +25,7 @@
 
 #include "build/build_config.h"
 
-#include "system.h"
+#include "time.h"
 #include "sensor.h"
 #include "accgyro.h"
 #include "adc.h"

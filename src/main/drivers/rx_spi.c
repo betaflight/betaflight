@@ -28,7 +28,7 @@
 
 #include "build/build_config.h"
 
-#include "system.h"
+#include "time.h"
 #include "gpio.h"
 #include "io.h"
 #include "io_impl.h"

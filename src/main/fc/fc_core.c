@@ -34,7 +34,7 @@
 #include "drivers/light_led.h"
 #include "drivers/gyro_sync.h"
 #include "drivers/serial.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "sensors/sensors.h"
 #include "sensors/diagnostics.h"

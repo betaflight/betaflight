@@ -54,7 +54,7 @@
 #include "drivers/display.h"
 #include "drivers/max7456.h"
 #include "drivers/max7456_symbols.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "io/displayport_max7456.h"
 #include "io/flashfs.h"

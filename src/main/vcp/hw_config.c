@@ -36,7 +36,7 @@
 #include "usb_pwr.h"
 
 #include <stdbool.h>
-#include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/nvic.h"
 
 #include "common/utils.h"

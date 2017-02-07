@@ -68,7 +68,7 @@
 #include "common/axis.h"
 #include "common/time.h"
 
-#include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/serial.h"
 
 #include "fc/runtime_config.h"

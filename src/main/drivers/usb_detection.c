@@ -20,7 +20,7 @@
 
 #include "platform.h"
 #include "io.h"
-#include "system.h"
+#include "time.h"
 
 static IO_t usbDetectPin = IO_NONE;
 

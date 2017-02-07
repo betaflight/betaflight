@@ -32,7 +32,7 @@
 #include "common/maths.h"
 #include "common/filter.h"
 
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"

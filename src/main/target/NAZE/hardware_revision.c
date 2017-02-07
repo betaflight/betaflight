@@ -25,6 +25,7 @@
 
 
 #include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/bus_spi.h"
 #include "drivers/sensor.h"
 #include "drivers/io.h"

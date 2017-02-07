@@ -38,7 +38,7 @@
 
 #include "drivers/gpio.h"
 #include "drivers/sensor.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/serial.h"
 #include "drivers/compass.h"
 #include "drivers/timer.h"

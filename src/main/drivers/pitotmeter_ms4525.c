@@ -22,7 +22,7 @@
 
 #include "bus_i2c.h"
 #include "pitotmeter.h"
-#include "system.h"
+#include "time.h"
 
 #include "common/utils.h"
 
