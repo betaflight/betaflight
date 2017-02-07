@@ -21,18 +21,16 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "build/build_config.h"
-
 #include "platform.h"
 
 #include "blackbox/blackbox.h"
+#include "build/build_config.h"
 
 #include "common/axis.h"
 #include "common/filter.h"
 #include "common/maths.h"
 
 #include "config/feature.h"
-
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
@@ -41,10 +39,10 @@
 #include "fc/config.h"
 #include "fc/runtime_config.h"
 
+#include "flight/hil.h"
+#include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/hil.h"
 
 #include "io/gps.h"
 
@@ -78,7 +76,7 @@
 t_fp_vector imuAccelInBodyFrame;
 t_fp_vector imuMeasuredGravityBF;
 t_fp_vector imuMeasuredRotationBF;
-float smallAngleCosZ = 0;
+static float smallAngleCosZ = 0;
 
 static bool isAccelUpdatedAtLeastOnce = false;
 
@@ -174,12 +172,10 @@ void imuInit(void)
 
 void imuTransformVectorBodyToEarth(t_fp_vector * v)
 {
-    float x,y,z;
-
     /* From body frame to earth frame */
-    x = rMat[0][0] * v->V.X + rMat[0][1] * v->V.Y + rMat[0][2] * v->V.Z;
-    y = rMat[1][0] * v->V.X + rMat[1][1] * v->V.Y + rMat[1][2] * v->V.Z;
-    z = rMat[2][0] * v->V.X + rMat[2][1] * v->V.Y + rMat[2][2] * v->V.Z;
+    const float x = rMat[0][0] * v->V.X + rMat[0][1] * v->V.Y + rMat[0][2] * v->V.Z;
+    const float y = rMat[1][0] * v->V.X + rMat[1][1] * v->V.Y + rMat[1][2] * v->V.Z;
+    const float z = rMat[2][0] * v->V.X + rMat[2][1] * v->V.Y + rMat[2][2] * v->V.Z;
 
     v->V.X = x;
     v->V.Y = -y;
@@ -188,14 +184,12 @@ void imuTransformVectorBodyToEarth(t_fp_vector * v)
 
 void imuTransformVectorEarthToBody(t_fp_vector * v)
 {
-    float x,y,z;
-
     v->V.Y = -v->V.Y;
 
     /* From earth frame to body frame */
-    x = rMat[0][0] * v->V.X + rMat[1][0] * v->V.Y + rMat[2][0] * v->V.Z;
-    y = rMat[0][1] * v->V.X + rMat[1][1] * v->V.Y + rMat[2][1] * v->V.Z;
-    z = rMat[0][2] * v->V.X + rMat[1][2] * v->V.Y + rMat[2][2] * v->V.Z;
+    const float x = rMat[0][0] * v->V.X + rMat[1][0] * v->V.Y + rMat[2][0] * v->V.Z;
+    const float y = rMat[0][1] * v->V.X + rMat[1][1] * v->V.Y + rMat[2][1] * v->V.Z;
+    const float z = rMat[0][2] * v->V.X + rMat[1][2] * v->V.Y + rMat[2][2] * v->V.Z;
 
     v->V.X = x;
     v->V.Y = y;
@@ -214,14 +208,14 @@ STATIC_UNIT_TESTED void imuComputeQuaternionFromRPY(int16_t initialRoll, int16_t
     if (initialPitch > 1800) initialPitch -= 3600;
     if (initialYaw > 1800) initialYaw -= 3600;
 
-    float cosRoll = cos_approx(DECIDEGREES_TO_RADIANS(initialRoll) * 0.5f);
-    float sinRoll = sin_approx(DECIDEGREES_TO_RADIANS(initialRoll) * 0.5f);
+    const float cosRoll = cos_approx(DECIDEGREES_TO_RADIANS(initialRoll) * 0.5f);
+    const float sinRoll = sin_approx(DECIDEGREES_TO_RADIANS(initialRoll) * 0.5f);
 
-    float cosPitch = cos_approx(DECIDEGREES_TO_RADIANS(initialPitch) * 0.5f);
-    float sinPitch = sin_approx(DECIDEGREES_TO_RADIANS(initialPitch) * 0.5f);
+    const float cosPitch = cos_approx(DECIDEGREES_TO_RADIANS(initialPitch) * 0.5f);
+    const float sinPitch = sin_approx(DECIDEGREES_TO_RADIANS(initialPitch) * 0.5f);
 
-    float cosYaw = cos_approx(DECIDEGREES_TO_RADIANS(-initialYaw) * 0.5f);
-    float sinYaw = sin_approx(DECIDEGREES_TO_RADIANS(-initialYaw) * 0.5f);
+    const float cosYaw = cos_approx(DECIDEGREES_TO_RADIANS(-initialYaw) * 0.5f);
+    const float sinYaw = sin_approx(DECIDEGREES_TO_RADIANS(-initialYaw) * 0.5f);
 
     q0 = cosRoll * cosPitch * cosYaw + sinRoll * sinPitch * sinYaw;
     q1 = sinRoll * cosPitch * cosYaw - cosRoll * sinPitch * sinYaw;
@@ -293,10 +287,9 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     static float integralMagX = 0.0f,  integralMagY = 0.0f, integralMagZ = 0.0f;    // integral error terms scaled by Ki
     float recipNorm;
     float ex, ey, ez;
-    float qa, qb, qc;
 
     /* Calculate general spin rate (rad/s) */
-    float spin_rate_sq = sq(gx) + sq(gy) + sq(gz);
+    const float spin_rate_sq = sq(gx) + sq(gy) + sq(gz);
 
     /* Step 1: Yaw correction */
     // Use measured magnetic field vector
@@ -316,12 +309,12 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
 
             // (hx; hy; 0) - measured mag field vector in EF (assuming Z-component is zero)
             // (bx; 0; 0) - reference mag field vector heading due North in EF (assuming Z-component is zero)
-            float hx = rMat[0][0] * mx + rMat[0][1] * my + rMat[0][2] * mz;
-            float hy = rMat[1][0] * mx + rMat[1][1] * my + rMat[1][2] * mz;
-            float bx = sqrtf(hx * hx + hy * hy);
+            const float hx = rMat[0][0] * mx + rMat[0][1] * my + rMat[0][2] * mz;
+            const float hy = rMat[1][0] * mx + rMat[1][1] * my + rMat[1][2] * mz;
+            const float bx = sqrtf(hx * hx + hy * hy);
 
             // magnetometer error is cross product between estimated magnetic north and measured magnetic north (calculated in EF)
-            float ez_ef = -(hy * bx);
+            const float ez_ef = -(hy * bx);
 
             // Rotate mag error vector back to BF and accumulate
             ex = rMat[2][0] * ez_ef;
@@ -337,7 +330,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
             // (Rxx; Ryx) - measured (estimated) heading vector (EF)
             // (cos(COG), sin(COG)) - reference heading vector (EF)
             // error is cross product between reference heading and estimated heading (calculated in EF)
-            float ez_ef = - sin_approx(courseOverGround) * rMat[0][0] - cos_approx(courseOverGround) * rMat[1][0];
+            const float ez_ef = - sin_approx(courseOverGround) * rMat[0][0] - cos_approx(courseOverGround) * rMat[1][0];
 
             ex = rMat[2][0] * ez_ef;
             ey = rMat[2][1] * ez_ef;
@@ -382,7 +375,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
         ay *= (1.0f / GRAVITY_CMSS);
         az *= (1.0f / GRAVITY_CMSS);
 
-        float fAccWeightScaler = accWeight / (float)MAX_ACC_SQ_NEARNESS;
+        const float fAccWeightScaler = accWeight / (float)MAX_ACC_SQ_NEARNESS;
 
         // Error is sum of cross product between estimated direction and measured direction of gravity
         ex = (ay * rMat[2][2] - az * rMat[2][1]) * fAccWeightScaler;
@@ -414,9 +407,9 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     gy *= (0.5f * dt);
     gz *= (0.5f * dt);
 
-    qa = q0;
-    qb = q1;
-    qc = q2;
+    const float qa = q0;
+    const float qb = q1;
+    const float qc = q2;
     q0 += (-qb * gx - qc * gy - q3 * gz);
     q1 += (qa * gx + qc * gz - q3 * gy);
     q2 += (qa * gy - qb * gz + q3 * gx);
