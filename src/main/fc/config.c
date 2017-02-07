@@ -1118,7 +1118,7 @@ void validateAndFixGyroConfig(void)
     }
 
     // Prevent overriding the max rate of motors
-    if (motorConfig()->useUnsyncedPwm && (motorConfig()->motorPwmProtocol <= PWM_TYPE_BRUSHED)) {
+    if (motorConfig()->useUnsyncedPwm && (motorConfig()->motorPwmProtocol <= PWM_TYPE_BRUSHED) && motorConfig()->motorPwmProtocol != PWM_TYPE_STANDARD) {
         uint32_t maxEscRate = lrintf(1.0f / motorUpdateRestriction);
 
         if(motorConfig()->motorPwmRate > maxEscRate)
