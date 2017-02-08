@@ -38,6 +38,7 @@
 #include "build/version.h"
 
 #include "common/printf.h"
+#include "common/maths.h"
 #include "common/utils.h"
 
 #include "config/config_profile.h"

@@ -21,6 +21,7 @@
 #include <platform.h>
 
 #include "common/axis.h"
+#include "common/maths.h"
 
 #include "drivers/sensor.h"
 #include "drivers/compass.h"

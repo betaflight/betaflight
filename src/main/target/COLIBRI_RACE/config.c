@@ -15,19 +15,21 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <platform.h>
 
+#include "common/maths.h"
+
+#include "config/config_master.h"
+#include "config/feature.h"
+
+#include "io/ledstrip.h"
 #include "io/motors.h"
 
 #include "sensors/battery.h"
 
-#include "config/config_master.h"
-#include "config/feature.h"
-#include "io/ledstrip.h"
 
 void targetApplyDefaultLedStripConfig(ledConfig_t *ledConfigs)
 {

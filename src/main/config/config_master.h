@@ -37,6 +37,7 @@
 
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
+#include "fc/fc_core.h"
 
 #include "flight/failsafe.h"
 #include "flight/mixer.h"
