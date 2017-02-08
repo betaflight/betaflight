@@ -151,7 +151,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXAIRMODE, "AIR MODE;", 28 },
     { BOX3DDISABLESWITCH, "DISABLE 3D SWITCH;", 29},
     { BOXFPVANGLEMIX, "FPV ANGLE MIX;", 30},
-    { BOXBLACKBOXERASE, "BLACKBOX ERASE;", 31 },
+    { BOXBLACKBOXERASE, "BLACKBOX ERASE (>30s);", 31 },
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -380,7 +380,9 @@ void initActiveBoxIds(void)
 #ifdef BLACKBOX
     if (feature(FEATURE_BLACKBOX)) {
         activeBoxIds[activeBoxIdCount++] = BOXBLACKBOX;
+#ifdef USE_FLASHFS
         activeBoxIds[activeBoxIdCount++] = BOXBLACKBOXERASE;
+#endif
     }
 #endif
 
