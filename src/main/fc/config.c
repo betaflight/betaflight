@@ -431,7 +431,7 @@ static void activateConfig(void)
 
     resetAdjustmentStates();
     
-    useRcControlsConfig();
+    updateUsedModeActivationConditionFlags();
 
     failsafeReset();
 

@@ -171,4 +171,4 @@ bool isUsingNavigationModes(void);
 
 int32_t getRcStickDeflection(int32_t axis, uint16_t midrc);
 bool isModeActivationConditionPresent(boxId_e modeId);
-void useRcControlsConfig(void);
+void updateUsedModeActivationConditionFlags(void);
