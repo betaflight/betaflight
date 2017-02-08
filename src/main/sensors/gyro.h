@@ -19,6 +19,7 @@
 
 #include "config/parameter_group.h"
 #include "common/axis.h"
+#include "drivers/sensor.h"
 
 typedef enum {
     GYRO_NONE = 0,
@@ -63,8 +64,10 @@ PG_DECLARE(gyroConfig_t, gyroConfig);
 bool gyroInit(void);
 void gyroInitFilters(void);
 void gyroUpdate(void);
-const mpuConfiguration_t *gyroMpuConfiguration(void);
-const mpuDetectionResult_t *gyroMpuDetectionResult(void);
+struct mpuConfiguration_s;
+const struct mpuConfiguration_s *gyroMpuConfiguration(void);
+struct mpuDetectionResult_s;
+const struct mpuDetectionResult_s *gyroMpuDetectionResult(void);
 void gyroSetCalibrationCycles(void);
 bool isGyroCalibrationComplete(void);
 void gyroReadTemperature(void);
