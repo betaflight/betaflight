@@ -710,7 +710,7 @@ void createDefaultConfig(master_t *config)
     config->rxConfig.rcInterpolationChannels = 0;
     config->rxConfig.rcInterpolationInterval = 19;
     config->rxConfig.fpvCamAngleDegrees = 0;
-    config->rxConfig.max_aux_channel = MAX_AUX_CHANNELS;
+    config->rxConfig.max_aux_channel = DEFAULT_AUX_CHANNEL_COUNT;
     config->rxConfig.airModeActivateThreshold = 1350;
 
     resetAllRxChannelRangeConfigurations(config->rxConfig.channelRanges);
