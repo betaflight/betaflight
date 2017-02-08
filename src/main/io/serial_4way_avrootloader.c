@@ -27,7 +27,7 @@
 #ifdef  USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #include "common/utils.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/serial.h"
 #include "drivers/buf_writer.h"
 #include "drivers/pwm_mapping.h"

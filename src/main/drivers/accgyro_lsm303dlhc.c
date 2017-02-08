@@ -27,7 +27,7 @@
 #include "common/maths.h"
 #include "common/axis.h"
 
-#include "system.h"
+#include "time.h"
 #include "io.h"
 #include "bus_i2c.h"
 

@@ -27,7 +27,7 @@
 #include "dma.h"
 
 #include "bus_spi.h"
-#include "system.h"
+#include "time.h"
 
 #include "sdcard.h"
 #include "sdcard_standard.h"

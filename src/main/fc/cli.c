@@ -63,6 +63,7 @@ extern uint8_t __config_end;
 #include "drivers/serial.h"
 #include "drivers/stack_check.h"
 #include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/timer.h"
 
 #include "fc/cli.h"

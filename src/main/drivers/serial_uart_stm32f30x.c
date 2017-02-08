@@ -28,7 +28,7 @@
 
 #include <platform.h>
 
-#include "system.h"
+#include "time.h"
 #include "io.h"
 #include "nvic.h"
 #include "dma.h"

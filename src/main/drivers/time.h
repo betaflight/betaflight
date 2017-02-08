@@ -15,33 +15,18 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
+#pragma once
+
 #include <stdint.h>
-#include <stdlib.h>
 
-#include "platform.h"
+#include "common/time.h"
 
-#include "build/build_config.h"
+void delayMicroseconds(timeUs_t us);
+void delay(timeMs_t ms);
 
+timeUs_t micros(void);
+timeUs_t microsISR(void);
+timeMs_t millis(void);
 
-#include "time.h"
-#include "gpio.h"
-
-#include "sound_beeper.h"
-
-void initBeeperHardware(beeperConfig_t *config)
-{
-#ifndef BEEPER
-    UNUSED(config);
-#else
-    gpio_config_t gpioConfig = {
-        config->gpioPin,
-        config->gpioMode,
-        Speed_2MHz
-    };
-
-    RCC_APB2PeriphClockCmd(config->gpioPeripheral, ENABLE);
-
-    gpioInit(config->gpioPort, &gpioConfig);
-#endif
-}
+uint32_t ticks(void);
+timeDelta_t ticks_diff_us(uint32_t begin, uint32_t end);

@@ -38,7 +38,7 @@
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/logging.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "fc/config.h"
 #include "fc/runtime_config.h"

@@ -38,7 +38,7 @@
 #include "drivers/pwm_rx.h"
 #include "drivers/rx_spi.h"
 #include "drivers/serial.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"

@@ -30,7 +30,7 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
-#include "system.h"
+#include "time.h"
 #include "gpio.h"
 #include "bus_i2c.h"
 

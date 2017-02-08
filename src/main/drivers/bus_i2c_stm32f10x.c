@@ -24,7 +24,7 @@
 #include "build/atomic.h"
 
 #include "io.h"
-#include "system.h"
+#include "time.h"
 
 #include "bus_i2c.h"
 #include "nvic.h"

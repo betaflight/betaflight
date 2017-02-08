@@ -31,6 +31,7 @@
 #include "nvic.h"
 
 #include "system.h"
+#include "time.h"
 #include "io.h"
 #include "exti.h"
 #include "bus_i2c.h"

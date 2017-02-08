@@ -29,7 +29,7 @@
 
 #include "io.h"
 #include "rcc.h"
-#include "system.h"
+#include "time.h"
 
 #include "timer.h"
 #include "timer_impl.h"

@@ -20,7 +20,7 @@
 #include <string.h>
 
 #include "platform.h"
-#include "system.h"
+#include "time.h"
 
 #include "io.h"
 #include "io_impl.h"

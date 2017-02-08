@@ -36,6 +36,7 @@
 #include "io.h"
 
 #include "system.h"
+#include "time.h"
 #include "exti.h"
 #include "bus_spi.h"
 #include "gyro_sync.h"

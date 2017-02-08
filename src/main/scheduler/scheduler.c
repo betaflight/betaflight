@@ -30,7 +30,7 @@
 #include "common/time.h"
 #include "common/utils.h"
 
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 static cfTask_t *currentTask = NULL;
 

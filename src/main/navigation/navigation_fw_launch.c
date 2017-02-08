@@ -32,7 +32,7 @@
 
 #include "config/feature.h"
 
-#include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 

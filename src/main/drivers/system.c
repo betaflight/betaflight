@@ -28,6 +28,7 @@
 #include "build/build_config.h"
 
 #include "system.h"
+#include "time.h"
 
 #ifndef EXTI_CALLBACK_HANDLER_COUNT
 #define EXTI_CALLBACK_HANDLER_COUNT 1

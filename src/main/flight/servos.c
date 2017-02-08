@@ -38,7 +38,7 @@
 
 #include "drivers/pwm_output.h"
 #include "drivers/pwm_mapping.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "io/gimbal.h"
 

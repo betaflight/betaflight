@@ -29,7 +29,7 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
-#include "system.h"
+#include "time.h"
 #include "nvic.h"
 #include "io.h"
 #include "exti.h"

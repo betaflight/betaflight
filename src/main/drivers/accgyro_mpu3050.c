@@ -23,6 +23,7 @@
 #include "common/maths.h"
 
 #include "system.h"
+#include "time.h"
 #include "exti.h"
 #include "bus_i2c.h"
 

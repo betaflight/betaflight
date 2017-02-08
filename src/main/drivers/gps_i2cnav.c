@@ -26,7 +26,7 @@
 #include "gps_i2cnav.h"
 
 #include "gpio.h"
-#include "system.h"
+#include "time.h"
 #include "bus_i2c.h"
 
 #ifndef GPS_I2C_INSTANCE

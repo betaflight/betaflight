@@ -23,7 +23,7 @@
 #include "build/build_config.h"
 
 
-#include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/io.h"
 #include "drivers/exti.h"
 #include "hardware_revision.h"

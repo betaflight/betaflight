@@ -38,7 +38,7 @@
 #include "config/feature.h"
 
 #include "drivers/serial.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "fc/config.h"
 #include "fc/fc_core.h"
