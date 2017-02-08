@@ -1364,7 +1364,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 mac->range.startStep = sbufReadU8(src);
                 mac->range.endStep = sbufReadU8(src);
 
-                useRcControlsConfig();
+                updateUsedModeActivationConditionFlags();
             } else {
                 return MSP_RESULT_ERROR;
             }
