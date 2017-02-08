@@ -122,6 +122,10 @@ typedef struct servoProfile_s {
     servoParam_t servoConf[MAX_SUPPORTED_SERVOS];
 } servoProfile_t;
 
+typedef struct channelForwardingConfig_s {
+    uint8_t startChannel;
+} channelForwardingConfig_t;
+
 extern int16_t servo[MAX_SUPPORTED_SERVOS];
 
 void servoTable(void);
@@ -131,7 +135,7 @@ void filterServos(void);
 
 void servoMixerInit(servoMixer_t *customServoMixers);
 struct gimbalConfig_s;
-void servoUseConfigs(servoMixerConfig_t *servoConfigToUse, servoParam_t *servoParamsToUse, struct gimbalConfig_s *gimbalConfigToUse);
+void servoUseConfigs(servoMixerConfig_t *servoConfigToUse, servoParam_t *servoParamsToUse, struct gimbalConfig_s *gimbalConfigToUse, struct channelForwardingConfig_s *channelForwardingConfigToUse);
 void servoMixerLoadMix(int index, servoMixer_t *customServoMixers);
 void loadCustomServoMixer(void);
 void servoConfigureOutput(void);

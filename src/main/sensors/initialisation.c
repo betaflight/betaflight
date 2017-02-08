@@ -63,11 +63,8 @@ bool sensorsAutodetect(void)
 
     accInit(gyro.targetLooptime);
 
-    mag.magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
 #ifdef MAG
-    if (compassDetect(&mag.dev, compassConfig()->mag_hardware)) {
-        compassInit();
-    }
+    compassInit();
 #endif
 
 #ifdef BARO
@@ -79,16 +76,6 @@ bool sensorsAutodetect(void)
         sonarInit(sonarConfig());
     }
 #endif
-
-    if (gyroConfig()->gyro_align != ALIGN_DEFAULT) {
-        gyro.dev.gyroAlign = gyroConfig()->gyro_align;
-    }
-    if (accelerometerConfig()->acc_align != ALIGN_DEFAULT) {
-        acc.dev.accAlign = accelerometerConfig()->acc_align;
-    }
-    if (compassConfig()->mag_align != ALIGN_DEFAULT) {
-        mag.dev.magAlign = compassConfig()->mag_align;
-    }
 
     return true;
 }

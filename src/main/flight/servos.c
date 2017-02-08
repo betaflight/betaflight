@@ -27,6 +27,7 @@
 #include "build/build_config.h"
 
 #include "common/filter.h"
+#include "common/maths.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -59,6 +60,7 @@ static gimbalConfig_t *gimbalConfig;
 int16_t servo[MAX_SUPPORTED_SERVOS];
 static int useServo;
 static servoParam_t *servoConf;
+static channelForwardingConfig_t *channelForwardingConfig;
 
 
 #define COUNT_SERVO_RULES(rules) (sizeof(rules) / sizeof(servoMixer_t))
@@ -144,11 +146,12 @@ const mixerRules_t servoMixers[] = {
 
 static servoMixer_t *customServoMixers;
 
-void servoUseConfigs(servoMixerConfig_t *servoMixerConfigToUse, servoParam_t *servoParamsToUse, struct gimbalConfig_s *gimbalConfigToUse)
+void servoUseConfigs(servoMixerConfig_t *servoMixerConfigToUse, servoParam_t *servoParamsToUse, struct gimbalConfig_s *gimbalConfigToUse, struct channelForwardingConfig_s *channelForwardingConfigToUse)
 {
     servoMixerConfig = servoMixerConfigToUse;
     servoConf = servoParamsToUse;
     gimbalConfig = gimbalConfigToUse;
+    channelForwardingConfig = channelForwardingConfigToUse;
 }
 
 int16_t determineServoMiddleOrForwardFromChannel(servoIndex_e servoIndex)
@@ -252,7 +255,7 @@ void servoMixerLoadMix(int index, servoMixer_t *customServoMixers)
 STATIC_UNIT_TESTED void forwardAuxChannelsToServos(uint8_t firstServoIndex)
 {
     // start forwarding from this channel
-    uint8_t channelOffset = AUX1;
+    uint8_t channelOffset = channelForwardingConfig->startChannel;
 
     uint8_t servoOffset;
     for (servoOffset = 0; servoOffset < MAX_AUX_CHANNEL_COUNT && channelOffset < MAX_SUPPORTED_RC_CHANNEL_COUNT; servoOffset++) {

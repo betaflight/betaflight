@@ -134,6 +134,8 @@ void trampCmdU16(uint8_t cmd, uint16_t param)
 void trampSetFreq(uint16_t freq)
 {
     trampConfFreq = freq;
+    if(trampConfFreq != trampCurFreq)
+        trampFreqRetries = TRAMP_MAX_RETRIES;
 }
 
 void trampSendFreq(uint16_t freq)
@@ -149,6 +151,8 @@ void trampSetBandChan(uint8_t band, uint8_t chan)
 void trampSetRFPower(uint16_t level)
 {
     trampConfPower = level;
+    if(trampConfPower != trampCurPower)
+        trampPowerRetries = TRAMP_MAX_RETRIES;
 }
 
 void trampSendRFPower(uint16_t level)
@@ -163,13 +167,6 @@ bool trampCommitChanges()
         return false;
 
     trampStatus = TRAMP_STATUS_SET_FREQ_PW;
-
-    if(trampConfFreq != trampCurFreq)
-        trampFreqRetries = TRAMP_MAX_RETRIES;
-
-    if(trampConfPower != trampCurPower)
-        trampPowerRetries = TRAMP_MAX_RETRIES;
-
     return true;
 }
 
@@ -511,6 +508,18 @@ static long trampCmsConfigChan(displayPort_t *pDisp, const void *self)
     return 0;
 }
 
+static long trampCmsConfigPower(displayPort_t *pDisp, const void *self)
+{
+    UNUSED(pDisp);
+    UNUSED(self);
+
+    if (trampCmsPower == 0)
+        // Bounce back
+        trampCmsPower = 1;
+
+    return 0;
+}
+
 static OSD_INT16_t trampCmsEntTemp = { &trampCurTemp, -100, 300, 0 };
 
 static const char * const trampCmsPitmodeNames[] = {
@@ -598,7 +607,7 @@ static OSD_Entry trampMenuEntries[] =
     { "BAND",   OME_TAB,     trampCmsConfigBand,     &trampCmsEntBand,      0 },
     { "CHAN",   OME_TAB,     trampCmsConfigChan,     &trampCmsEntChan,      0 },
     { "(FREQ)", OME_UINT16,  NULL,                   &trampCmsEntFreqRef,   DYNAMIC },
-    { "POWER",  OME_TAB,     NULL,                   &trampCmsEntPower,     0 },
+    { "POWER",  OME_TAB,     trampCmsConfigPower,    &trampCmsEntPower,     0 },
     { "T(C)",   OME_INT16,   NULL,                   &trampCmsEntTemp,      DYNAMIC },
     { "SET",    OME_Submenu, cmsMenuChange,          &trampCmsMenuCommence, 0 },
 

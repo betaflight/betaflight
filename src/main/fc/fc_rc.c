@@ -296,7 +296,7 @@ void updateRcCommands(void)
         tmp = (uint32_t)(tmp - rxConfig()->mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - rxConfig()->mincheck);
     }
 
-    rcLookupThrottle(tmp);
+    rcCommand[THROTTLE] = rcLookupThrottle(tmp);
 
     if (feature(FEATURE_3D) && IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH) && !failsafeIsActive()) {
         fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);

@@ -32,6 +32,7 @@
 
 #include "common/axis.h"
 #include "common/encoding.h"
+#include "common/maths.h"
 #include "common/utils.h"
 
 #include "config/config_profile.h"
@@ -254,6 +255,7 @@ typedef enum BlackboxState {
     BLACKBOX_STATE_SHUTTING_DOWN, //11
     BLACKBOX_STATE_START_ERASE, //12
     BLACKBOX_STATE_ERASING, //13
+    BLACKBOX_STATE_ERASED //14
 } BlackboxState;
 
 
@@ -1466,17 +1468,15 @@ static void blackboxLogIteration(timeUs_t currentTimeUs)
 void handleBlackbox(timeUs_t currentTimeUs)
 {
     int i;
-    static bool erasedOnce = false; //Only allow one erase per FC reboot.
-
+  
     switch (blackboxState) {
         case BLACKBOX_STATE_STOPPED:
             if (ARMING_FLAG(ARMED)) {
                 blackboxOpen();  
                 startBlackbox();
             }
-            if (IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE) && !erasedOnce) {
+            if (IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE)) {
                 blackboxSetState(BLACKBOX_STATE_START_ERASE);
-                erasedOnce = true;
             }
         break;
         case BLACKBOX_STATE_PREPARE_LOG_FILE:
@@ -1610,17 +1610,24 @@ void handleBlackbox(timeUs_t currentTimeUs)
         case BLACKBOX_STATE_ERASING:
 	        if (isBlackboxErased()) {
                 //Done eraseing
-                blackboxSetState(BLACKBOX_STATE_STOPPED);
+                blackboxSetState(BLACKBOX_STATE_ERASED);
                 beeper(BEEPER_BLACKBOX_ERASE);
             }
-
+        break;  
+        case BLACKBOX_STATE_ERASED:
+	        if (!IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE)) {
+                blackboxSetState(BLACKBOX_STATE_STOPPED);
+            }
+        break;
         default:
         break;
     }
 
     // Did we run out of room on the device? Stop!
     if (isBlackboxDeviceFull()) {
-        if (blackboxState != BLACKBOX_STATE_ERASING && blackboxState != BLACKBOX_STATE_START_ERASE) {
+        if (blackboxState != BLACKBOX_STATE_ERASING 
+            && blackboxState != BLACKBOX_STATE_START_ERASE
+            && blackboxState != BLACKBOX_STATE_ERASED) {
             blackboxSetState(BLACKBOX_STATE_STOPPED);
             // ensure we reset the test mode flag if we stop due to full memory card
             if (startedLoggingInTestMode) startedLoggingInTestMode = false;

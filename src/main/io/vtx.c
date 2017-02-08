@@ -26,6 +26,8 @@
 #include "io/osd.h"
 
 //External dependencies
+#include "common/maths.h"
+
 #include "config/config_eeprom.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
