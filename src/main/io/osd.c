@@ -90,10 +90,6 @@
 
 // Things in both OSD and CMS
 
-#define IS_HI(X)  (rcData[X] > 1750)
-#define IS_LO(X)  (rcData[X] < 1250)
-#define IS_MID(X) (rcData[X] > 1250 && rcData[X] < 1750)
-
 bool blinkState = true;
 
 //extern uint8_t RSSI; // TODO: not used?
@@ -858,7 +854,7 @@ static void osdRefresh(timeUs_t currentTimeUs)
     }
 
     if (refreshTimeout) {
-        if (IS_HI(THROTTLE) || IS_HI(PITCH)) // hide statistics
+        if (checkStickPosition(THR_HI) || checkStickPosition(PIT_HI)) // hide statistics
             refreshTimeout = 1;
         refreshTimeout--;
         if (!refreshTimeout)
