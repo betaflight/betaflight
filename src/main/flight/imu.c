@@ -281,7 +281,7 @@ static void imuCheckAndResetOrientationQuaternion(const float ax, const float ay
 }
 
 static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
-                                int accWeight, float ax, float ay, float az,
+                                bool useAcc, float ax, float ay, float az,
                                 bool useMag, float mx, float my, float mz,
                                 bool useCOG, float courseOverGround)
 {
@@ -366,7 +366,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
 
 
     /* Step 2: Roll and pitch correction -  use measured acceleration vector */
-    if (accWeight > 0) {
+    if (useAcc) {
         float kpAcc = imuRuntimeConfig.dcm_kp_acc * imuGetPGainScaleFactor();
 
         // Just scale by 1G length - That's our vector adjustment. Rather than
@@ -377,12 +377,10 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
         ay *= (1.0f / GRAVITY_CMSS);
         az *= (1.0f / GRAVITY_CMSS);
 
-        const float fAccWeightScaler = accWeight / (float)MAX_ACC_SQ_NEARNESS;
-
         // Error is sum of cross product between estimated direction and measured direction of gravity
-        ex = (ay * rMat[2][2] - az * rMat[2][1]) * fAccWeightScaler;
-        ey = (az * rMat[2][0] - ax * rMat[2][2]) * fAccWeightScaler;
-        ez = (ax * rMat[2][1] - ay * rMat[2][0]) * fAccWeightScaler;
+        ex = (ay * rMat[2][2] - az * rMat[2][1]);
+        ey = (az * rMat[2][0] - ax * rMat[2][2]);
+        ez = (ax * rMat[2][1] - ay * rMat[2][0]);
 
         // Compute and apply integral feedback if enabled
         if(imuRuntimeConfig.dcm_ki_acc > 0.0f) {
@@ -449,22 +447,19 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
     }
 }
 
-// Idea by MasterZap
-static int imuCalculateAccelerometerConfidence(void)
+static bool imuCanUseAccelerometerForCorrection(void)
 {
     int32_t axis;
-    int32_t accMagnitude = 0;
+    int32_t accMagnitudeSq = 0;
 
     for (axis = 0; axis < 3; axis++) {
-        accMagnitude += (int32_t)acc.accADC[axis] * acc.accADC[axis];
+        accMagnitudeSq += (int32_t)acc.accADC[axis] * acc.accADC[axis];
     }
 
     // Magnitude^2 in percent of G^2
-    accMagnitude = accMagnitude * 100 / ((int32_t)acc.dev.acc_1G * acc.dev.acc_1G);
+    const int nearness = ABS(100 - (accMagnitudeSq * 100 / ((int32_t)acc.dev.acc_1G * acc.dev.acc_1G)));
 
-    int32_t nearness = ABS(100 - accMagnitude);
-
-    return (nearness > MAX_ACC_SQ_NEARNESS) ? 0 : MAX_ACC_SQ_NEARNESS - nearness;
+    return (nearness > MAX_ACC_SQ_NEARNESS) ? false : true;
 }
 
 static void imuCalculateEstimatedAttitude(float dT)
@@ -475,7 +470,7 @@ static void imuCalculateEstimatedAttitude(float dT)
     const bool canUseMAG = false;
 #endif
 
-    const int accWeight = imuCalculateAccelerometerConfidence();
+    const bool useAcc = imuCanUseAccelerometerForCorrection();
 
     float courseOverGround = 0;
     bool useMag = false;
@@ -523,7 +518,7 @@ static void imuCalculateEstimatedAttitude(float dT)
 #endif
 
     imuMahonyAHRSupdate(dT,     imuMeasuredRotationBF.A[X], imuMeasuredRotationBF.A[Y], imuMeasuredRotationBF.A[Z],
-                        accWeight, imuMeasuredGravityBF.A[X], imuMeasuredGravityBF.A[Y], imuMeasuredGravityBF.A[Z],
+                        useAcc, imuMeasuredGravityBF.A[X], imuMeasuredGravityBF.A[Y], imuMeasuredGravityBF.A[Z],
                         useMag, mag.magADC[X], mag.magADC[Y], mag.magADC[Z],
                         useCOG, courseOverGround);
 
