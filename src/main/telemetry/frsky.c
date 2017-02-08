@@ -223,7 +223,7 @@ static void sendTemperature1(void)
 #elif defined(BARO)
     serialize16((baro.baroTemperature + 50)/ 100); //Airmamaf
 #else
-    serialize16(telemTemperature1 / 10);
+    serialize16(gyroGetTemperature() / 10);
 #endif
 }
 

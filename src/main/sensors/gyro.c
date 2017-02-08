@@ -36,13 +36,13 @@
 #include "drivers/accgyro_bma280.h"
 #include "drivers/accgyro_fake.h"
 #include "drivers/accgyro_l3g4200d.h"
+#include "drivers/accgyro_l3gd20.h"
+#include "drivers/accgyro_lsm303dlhc.h"
 #include "drivers/accgyro_mma845x.h"
 #include "drivers/accgyro_mpu.h"
 #include "drivers/accgyro_mpu3050.h"
 #include "drivers/accgyro_mpu6050.h"
 #include "drivers/accgyro_mpu6500.h"
-#include "drivers/accgyro_l3gd20.h"
-#include "drivers/accgyro_lsm303dlhc.h"
 #include "drivers/accgyro_spi_icm20689.h"
 #include "drivers/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro_spi_mpu6500.h"
@@ -59,19 +59,22 @@
 
 #include "scheduler/scheduler.h"
 
-#include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
 #include "sensors/gyro.h"
+#include "sensors/sensors.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
 
-gyro_t gyro;                      // gyro access functions
+gyro_t gyro;
+
+STATIC_UNIT_TESTED gyroDev_t gyroDev0;
+static int16_t gyroTemperature0;
 
 static int32_t gyroADC[XYZ_AXIS_COUNT];
 
-static int32_t gyroZero[XYZ_AXIS_COUNT] = { 0, 0, 0 };
+STATIC_UNIT_TESTED int32_t gyroZero[XYZ_AXIS_COUNT] = { 0, 0, 0 };
 static uint16_t calibratingG = 0;
 
 static filterApplyFnPtr softLpfFilterApplyFn;
@@ -106,6 +109,7 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .gyroMovementCalibrationThreshold = 32
 );
 
+#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
 static const extiConfig_t *selectMPUIntExtiConfig(void)
 {
 #if defined(MPU_INT_EXTI)
@@ -117,8 +121,18 @@ static const extiConfig_t *selectMPUIntExtiConfig(void)
     return NULL;
 #endif
 }
+#endif
 
-static bool gyroDetect(gyroDev_t *dev)
+const mpuConfiguration_t *gyroMpuConfiguration(void)
+{
+    return &gyroDev0.mpuConfiguration;
+}
+const mpuDetectionResult_t *gyroMpuDetectionResult(void)
+{
+    return &gyroDev0.mpuDetectionResult;
+}
+
+STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
 {
     gyroSensor_e gyroHardware = GYRO_DEFAULT;
 
@@ -246,34 +260,29 @@ static bool gyroDetect(gyroDev_t *dev)
         gyroHardware = GYRO_NONE;
     }
 
-    if (gyroHardware == GYRO_NONE) {
-        return false;
+    if (gyroHardware != GYRO_NONE) {
+        detectedSensors[SENSOR_INDEX_GYRO] = gyroHardware;
+        sensorsSet(SENSOR_GYRO);
     }
 
-    detectedSensors[SENSOR_INDEX_GYRO] = gyroHardware;
-    sensorsSet(SENSOR_GYRO);
 
-    return true;
+    return gyroHardware;
 }
 
 bool gyroInit(void)
 {
     memset(&gyro, 0, sizeof(gyro));
 #if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
-    gyro.dev.mpuIntExtiConfig = selectMPUIntExtiConfig();
-    mpuDetect(&gyro.dev);
-    mpuResetFn = gyro.dev.mpuConfiguration.resetFn;
+    gyroDev0.mpuIntExtiConfig = selectMPUIntExtiConfig();
+    mpuDetect(&gyroDev0);
+    mpuResetFn = gyroDev0.mpuConfiguration.resetFn;
 #endif
-
-    if (!gyroDetect(&gyro.dev)) {
+    const gyroSensor_e gyroHardware = gyroDetect(&gyroDev0);
+    if (gyroHardware == GYRO_NONE) {
         return false;
     }
 
-    switch (detectedSensors[SENSOR_INDEX_GYRO]) {
-    default:
-        // gyro does not support 32kHz
-        gyroConfigMutable()->gyro_use_32khz = false;
-        break;
+    switch (gyroHardware) {
     case GYRO_MPU6500:
     case GYRO_MPU9250:
     case GYRO_ICM20689:
@@ -281,12 +290,19 @@ bool gyroInit(void)
     case GYRO_ICM20602:
         // do nothing, as gyro supports 32kHz
         break;
+    default:
+        // gyro does not support 32kHz
+        gyroConfigMutable()->gyro_use_32khz = false;
+        break;
     }
 
     // Must set gyro sample rate before initialisation
-    gyro.targetLooptime = gyroSetSampleRate(&gyro.dev, gyroConfig()->gyro_lpf, gyroConfig()->gyro_sync_denom, gyroConfig()->gyro_use_32khz);
-    gyro.dev.lpf = gyroConfig()->gyro_lpf;
-    gyro.dev.init(&gyro.dev);
+    gyro.targetLooptime = gyroSetSampleRate(&gyroDev0, gyroConfig()->gyro_lpf, gyroConfig()->gyro_sync_denom, gyroConfig()->gyro_use_32khz);
+    gyroDev0.lpf = gyroConfig()->gyro_lpf;
+    gyroDev0.init(&gyroDev0);
+    if (gyroConfig()->gyro_align != ALIGN_DEFAULT) {
+        gyroDev0.gyroAlign = gyroConfig()->gyro_align;
+    }
     gyroInitFilters();
     return true;
 }
@@ -369,7 +385,7 @@ void gyroSetCalibrationCycles(void)
     calibratingG = gyroCalculateCalibratingCycles();
 }
 
-static void performGyroCalibration(uint8_t gyroMovementCalibrationThreshold)
+STATIC_UNIT_TESTED void performGyroCalibration(uint8_t gyroMovementCalibrationThreshold)
 {
     static int32_t g[3];
     static stdev_t var[3];
@@ -445,27 +461,27 @@ static bool gyroUpdateISR(gyroDev_t* gyroDev)
 void gyroUpdate(void)
 {
     // range: +/- 8192; +/- 2000 deg/sec
-    if (gyro.dev.update) {
+    if (gyroDev0.update) {
         // if the gyro update function is set then return, since the gyro is read in gyroUpdateISR
         return;
     }
-    if (!gyro.dev.read(&gyro.dev)) {
+    if (!gyroDev0.read(&gyroDev0)) {
         return;
     }
-    gyro.dev.dataReady = false;
+    gyroDev0.dataReady = false;
     // move gyro data into 32-bit variables to avoid overflows in calculations
-    gyroADC[X] = gyro.dev.gyroADCRaw[X];
-    gyroADC[Y] = gyro.dev.gyroADCRaw[Y];
-    gyroADC[Z] = gyro.dev.gyroADCRaw[Z];
+    gyroADC[X] = gyroDev0.gyroADCRaw[X];
+    gyroADC[Y] = gyroDev0.gyroADCRaw[Y];
+    gyroADC[Z] = gyroDev0.gyroADCRaw[Z];
 
-    alignSensors(gyroADC, gyro.dev.gyroAlign);
+    alignSensors(gyroADC, gyroDev0.gyroAlign);
 
     const bool calibrationComplete = isGyroCalibrationComplete();
     if (calibrationComplete) {
 #if defined(GYRO_USES_SPI) && defined(USE_MPU_DATA_READY_SIGNAL)
         // SPI-based gyro so can read and update in ISR
         if (gyroConfig()->gyro_isr_update) {
-            mpuGyroSetIsrUpdate(&gyro.dev, gyroUpdateISR);
+            mpuGyroSetIsrUpdate(&gyroDev0, gyroUpdateISR);
             return;
         }
 #endif
@@ -479,7 +495,7 @@ void gyroUpdate(void)
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         gyroADC[axis] -= gyroZero[axis];
         // scale gyro output to degrees per second
-        float gyroADCf = (float)gyroADC[axis] * gyro.dev.scale;
+        float gyroADCf = (float)gyroADC[axis] * gyroDev0.scale;
 
         // Apply LPF
         DEBUG_SET(DEBUG_GYRO, axis, lrintf(gyroADCf));
@@ -493,8 +509,25 @@ void gyroUpdate(void)
     }
 
     if (!calibrationComplete) {
-        gyroADC[X] = lrintf(gyro.gyroADCf[X] / gyro.dev.scale);
-        gyroADC[Y] = lrintf(gyro.gyroADCf[Y] / gyro.dev.scale);
-        gyroADC[Z] = lrintf(gyro.gyroADCf[Z] / gyro.dev.scale);
+        gyroADC[X] = lrintf(gyro.gyroADCf[X] / gyroDev0.scale);
+        gyroADC[Y] = lrintf(gyro.gyroADCf[Y] / gyroDev0.scale);
+        gyroADC[Z] = lrintf(gyro.gyroADCf[Z] / gyroDev0.scale);
     }
+}
+
+void gyroReadTemperature(void)
+{
+    if (gyroDev0.temperature) {
+        gyroDev0.temperature(&gyroDev0, &gyroTemperature0);
+    }
+}
+
+int16_t gyroGetTemperature(void)
+{
+    return gyroTemperature0;
+}
+
+int16_t gyroRateDps(int axis)
+{
+    return lrintf(gyro.gyroADCf[axis] / gyroDev0.scale);
 }
