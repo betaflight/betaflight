@@ -17,6 +17,45 @@
 
 #pragma once
 
+//VTX enums and struct
+typedef enum
+{
+	FATSHARK,
+	RACEBAND,
+	E,
+	B,
+	A
+} DSMX_VTX_BAND;
+
+typedef enum
+{
+	POWER_25MW,
+	POWER_250MW,
+	POWER_500MW
+} DSMX_VTX_POWER;
+
+typedef enum
+{
+	US,
+	EU
+} DSMX_VTX_REGION;
+
+typedef enum
+{
+	ACTIVE,      // turn on power
+	PIT          // low power mode while in pit
+} DSMX_VTX_PIT;
+
+typedef struct
+{
+	uint8_t vtxChannel;
+	DSMX_VTX_BAND vtxBand;
+	DSMX_VTX_POWER vtxPower;
+	DSMX_VTX_REGION vtxRegion;
+	DSMX_VTX_PIT vtxPit;
+} DSMX_VTX_DATA;
+extern DSMX_VTX_DATA vtxData;
+
 #define SPEKTRUM_SAT_BIND_DISABLED     0
 #define SPEKTRUM_SAT_BIND_MAX         10
 

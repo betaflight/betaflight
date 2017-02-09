@@ -89,6 +89,7 @@
 
 #include "rx/rx.h"
 #include "rx/msp.h"
+#include "rx/spektrum.h"
 
 #include "scheduler/scheduler.h"
 
@@ -1188,6 +1189,16 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, accelerometerConfig()->acc_hardware);
         sbufWriteU8(dst, barometerConfig()->baro_hardware);
         sbufWriteU8(dst, compassConfig()->mag_hardware);
+        break;
+
+    case MSP_SPM_VTX_CONFIG:
+        sbufWriteU8(dst, vtxData.vtxChannel);
+        sbufWriteU8(dst, vtxData.vtxBand);
+        sbufWriteU8(dst, vtxData.vtxPower);
+        sbufWriteU8(dst, vtxData.vtxRegion);
+        sbufWriteU8(dst, vtxData.vtxPit);
+        // reset spm vtx data
+        memset(&vtxData, 0xFF, sizeof(DSMX_VTX_DATA));
         break;
 
     case MSP_REBOOT:

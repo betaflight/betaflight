@@ -83,10 +83,29 @@ static IO_t BindPin = DEFIO_IO(NONE);
 static IO_t BindPlug = DEFIO_IO(NONE);
 #endif
 
+DSMX_VTX_DATA vtxData = {0xFF,0xFF,0xFF,0xFF,0xFF};
+
 static uint8_t telemetryBuf[SRXL_FRAME_SIZE_MAX];
 static uint8_t telemetryBufLen = 0;
 
 void srxlRxSendTelemetryDataDispatch(dispatchEntry_t *self);
+
+// decode vtx data sent from a spektrum TX
+static void spektrumDecodeVTXData(void)
+{
+    //Check for vtx data packet
+    if (spekFrame[12] == 0xE0) {
+		vtxData.vtxChannel = (spekFrame[13] & 0x0F) + 1;
+		vtxData.vtxBand = (spekFrame[13] >> 5) & 0x07;
+    }
+
+    //Check channel slot 7 for vtx power, pit, and region data
+    if (spekFrame[14] == 0xE0) {
+		vtxData.vtxPower = spekFrame[15] & 0x03;
+		vtxData.vtxRegion = (spekFrame[15] >> 3) & 0x01;
+		vtxData.vtxPit = (spekFrame[15] >> 4) & 0x01;
+    }
+}
 
 // Receive ISR callback
 static void spektrumDataReceive(uint16_t c)
@@ -156,10 +175,13 @@ static uint8_t spektrumFrameStatus(void)
         }
     }
 
-    /* only process if srxl enabled, some data in buffer AND servos in phase 0 */
     if (srxlEnabled && telemetryBufLen && (spekFrame[2] & 0x80)) {
+    /* only process if srxl enabled, some data in buffer AND servos in phase 0 */
         dispatchAdd(&srxlTelemetryDispatch, 100);
     }
+
+    spektrumDecodeVTXData();
+
     return RX_FRAME_COMPLETE;
 }
 
