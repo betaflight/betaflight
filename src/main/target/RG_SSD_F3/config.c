@@ -23,5 +23,5 @@
 
 void targetConfiguration(master_t *config) {
     config->batteryConfig.vbatmaxcellvoltage = 45;
-    config->batteryConfig.currentMeterScale = 119;
+    config->batteryConfig.vbatscale          = VBAT_SCALE_DEFAULT;
 }
