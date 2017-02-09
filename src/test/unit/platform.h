@@ -68,6 +68,11 @@ void DMA_ClearFlag(uint32_t);
 typedef struct
 {
     void* test;
+} SPI_TypeDef;
+
+typedef struct
+{
+    void* test;
 } USART_TypeDef;
 
 #define WS2811_DMA_TC_FLAG (void *)1

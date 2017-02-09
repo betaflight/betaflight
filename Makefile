@@ -594,6 +594,7 @@ COMMON_SRC = \
             fc/fc_rc.c \
             fc/fc_msp.c \
             fc/fc_tasks.c \
+            fc/rc_adjustments.c \
             fc/rc_controls.c \
             fc/runtime_config.c \
             fc/cli.c \

@@ -21,12 +21,15 @@
 
 #include <platform.h>
 
+#ifdef USE_DSHOT
+
 #include "build/debug.h"
 
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "common/maths.h"
 #include "common/utils.h"
 
 #include "drivers/pwm_output.h"
@@ -71,7 +74,6 @@ set debug_mode = DEBUG_ESC_TELEMETRY in cli
 
 */
 
-#ifdef USE_DSHOT
 enum {
     DEBUG_ESC_MOTOR_INDEX = 0,
     DEBUG_ESC_NUM_TIMEOUTS = 1,

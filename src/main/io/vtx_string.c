@@ -53,10 +53,12 @@ const char * const vtx58ChannelNames[] = {
 
 bool vtx58_Freq2Bandchan(uint16_t freq, uint8_t *pBand, uint8_t *pChan)
 {
-    uint8_t band;
+    int8_t band;
     uint8_t chan;
 
-    for (band = 0 ; band < 5 ; band++) {
+    // Use reverse lookup order so that 5880Mhz
+    // get Raceband 7 instead of Fatshark 8.
+    for (band = 4 ; band >= 0 ; band--) {
         for (chan = 0 ; chan < 8 ; chan++) {
             if (vtx58FreqTable[band][chan] == freq) {
                 *pBand = band + 1;

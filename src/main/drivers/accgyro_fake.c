@@ -20,14 +20,14 @@
 
 #include "platform.h"
 
+#ifdef USE_FAKE_GYRO
+
 #include "common/axis.h"
 #include "common/utils.h"
 
 #include "accgyro.h"
 #include "accgyro_fake.h"
 
-
-#ifdef USE_FAKE_GYRO
 
 static int16_t fakeGyroADC[XYZ_AXIS_COUNT];
 
