@@ -1980,6 +1980,22 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 #endif
 
+#ifdef NAV_NON_VOLATILE_WAYPOINT_STORAGE
+    case MSP_WP_MISSION_LOAD:
+        sbufReadU8(src);    // Mission ID (reserved)
+        if (!loadNonVolatileWaypointList()) {
+            return MSP_RESULT_ERROR;
+        }
+        break;
+
+    case MSP_WP_MISSION_SAVE:
+        sbufReadU8(src);    // Mission ID (reserved)
+        if (!saveNonVolatileWaypointList()) {
+            return MSP_RESULT_ERROR;
+        }
+        break;
+#endif
+
     default:
         return MSP_RESULT_ERROR;
     }

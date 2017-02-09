@@ -60,6 +60,9 @@ uint16_t      GPS_distanceToHome;        // distance to home point in meters
 int16_t       GPS_directionToHome;       // direction to home point in degrees
 
 #if defined(NAV)
+PG_DECLARE_ARRAY(navWaypoint_t, NAV_MAX_WAYPOINTS, nonVolatileWaypointList);
+PG_REGISTER_ARRAY(navWaypoint_t, NAV_MAX_WAYPOINTS, nonVolatileWaypointList, PG_WAYPOINT_MISSION_STORAGE, 0);
+
 PG_REGISTER_WITH_RESET_TEMPLATE(navConfig_t, navConfig, PG_NAV_CONFIG, 0);
 
 PG_RESET_TEMPLATE(navConfig_t, navConfig,
@@ -2233,6 +2236,46 @@ void resetWaypointList(void)
         posControl.waypointListValid = false;
     }
 }
+
+#ifdef NAV_NON_VOLATILE_WAYPOINT_STORAGE
+bool loadNonVolatileWaypointList(void)
+{
+    if (ARMING_FLAG(ARMED))
+        return false;
+
+    resetWaypointList();
+
+    for (int i = 0; i < NAV_MAX_WAYPOINTS; i++) {
+        // Load waypoint 
+        setWaypoint(i + 1, nonVolatileWaypointList(i));
+
+        // Check if this is the last waypoint
+        if (nonVolatileWaypointList(i)->flag == NAV_WP_FLAG_LAST)
+            break;
+    }
+
+    // Mission sanity check failed - reset the list
+    if (!posControl.waypointListValid) {
+        resetWaypointList();
+    }
+
+    return posControl.waypointListValid;
+}
+
+bool saveNonVolatileWaypointList(void)
+{
+    if (ARMING_FLAG(ARMED) || !posControl.waypointListValid)
+        return false;
+
+    for (int i = 0; i < NAV_MAX_WAYPOINTS; i++) {
+        getWaypoint(i + 1, nonVolatileWaypointListMutable(i));
+    }
+
+    saveConfigAndNotify();
+
+    return true;
+}
+#endif
 
 static void mapWaypointToLocalPosition(t_fp_vector * localPos, const navWaypoint_t * waypoint)
 {
