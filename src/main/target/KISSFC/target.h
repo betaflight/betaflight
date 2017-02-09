@@ -65,7 +65,7 @@
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-#define SERIAL_PORT_COUNT       4
+#define SERIAL_PORT_COUNT       5
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
@@ -76,13 +76,10 @@
 #define UART3_TX_PIN            PB10 // PB10 (AF7)
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
-/* Fix this when Softserial is supported on single pin and add 1 more serial port
 #ifdef KISSCC
-#define SOFTSERIAL_1_TIMER      TIM16
 #define SOFTSERIAL_1_TIMER_RX_HARDWARE 11
 #define SOFTSERIAL_1_TIMER_TX_HARDWARE 11
 #endif
-*/
 
 #define USE_I2C
 #define I2C_DEVICE              (I2CDEV_1) // PB6/SCL, PB7/SDA
@@ -110,5 +107,5 @@
 #define TARGET_IO_PORTD         0xffff
 #define TARGET_IO_PORTF         (BIT(4))
 
-#define USABLE_TIMER_CHANNEL_COUNT 10
+#define USABLE_TIMER_CHANNEL_COUNT 11
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(15) | TIM_N(16) | TIM_N(17))
