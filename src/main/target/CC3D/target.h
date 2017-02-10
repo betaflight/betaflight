@@ -76,16 +76,14 @@
 #define SERIAL_PORT_COUNT       3
 #else
 #define USE_SOFTSERIAL1
+#define SOFTSERIAL1_TX_PIN      PB5 // PWM 2
+#define SOFTSERIAL1_RX_PIN      PB0 // PWM 3
 #define SERIAL_PORT_COUNT       4
 #endif
 
 #ifdef USE_UART1_RX_DMA
 #undef USE_UART1_RX_DMA
 #endif
-
-#define SOFTSERIAL_1_TIMER      TIM3
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 1 // PWM 2
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 2 // PWM 3
 
 #define UART3_RX_PIN            PB11
 #define UART3_TX_PIN            PB10

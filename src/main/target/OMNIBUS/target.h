@@ -68,8 +68,7 @@
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-#define USE_SOFTSERIAL1
-#define SERIAL_PORT_COUNT       5
+#define SERIAL_PORT_COUNT       4
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10

@@ -129,9 +129,8 @@
 #define UART3_TX_PIN            PB10 // PB10 (AF7)
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
-#define SOFTSERIAL_1_TIMER      TIM3
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 1
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 2
+#define SOFTSERIAL1_RX_PIN      PB0
+#define SOFTSERIAL1_TX_PIN      PB1
 
 #define USE_I2C
 #define I2C_DEVICE              (I2CDEV_1) // SDA (PB9/AF4), SCL (PB8/AF4)

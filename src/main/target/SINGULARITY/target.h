@@ -59,10 +59,8 @@
 #define UART3_TX_PIN            PB10
 #define UART3_RX_PIN            PB11
 
-
-#define SOFTSERIAL_1_TIMER      TIM15
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 7 //Not connected
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 8
+#define SOFTSERIAL1_RX_PIN      PA2 //Not connected
+#define SOFTSERIAL1_TX_PIN      PA3
 
 #define USE_I2C
 #define I2C_DEVICE              (I2CDEV_1) // PB6/SCL, PB7/SDA

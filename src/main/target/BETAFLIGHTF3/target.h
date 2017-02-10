@@ -70,8 +70,8 @@
 #define UART3_TX_PIN            PB10
 #define UART3_RX_PIN            PB11
 
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 6 // PWM 5
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 7 // PWM 6
+#define SOFTSERIAL1_RX_PIN      PB0 // PWM 5
+#define SOFTSERIAL1_TX_PIN      PB1 // PWM 6
 
 #undef USE_I2C
 
