@@ -93,7 +93,9 @@ static char cmsx_BlackboxDeviceStorageFree[CMS_BLACKBOX_STRING_LENGTH];
 static void cmsx_Blackbox_GetDeviceStatus()
 {
     char * unit = "B";
+#if defined(USE_SDCARD) || defined(USE_FLASHFS)
     bool storageDeviceIsWorking = false;
+#endif
     uint32_t storageUsed = 0;
     uint32_t storageFree = 0;
 
@@ -151,7 +153,6 @@ static void cmsx_Blackbox_GetDeviceStatus()
 #endif
 
     default:
-        storageDeviceIsWorking = true;
         snprintf(cmsx_BlackboxStatus, CMS_BLACKBOX_STRING_LENGTH, "---");
     }
 
