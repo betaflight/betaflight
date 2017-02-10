@@ -260,7 +260,16 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
                 return NULL;
 
             softSerial->txIO = txIO;
-            softSerial->exTimerHardware = timerTx;
+
+            if (!(mode & MODE_RX)) {
+                // TX Simplex, must have a timer
+                if (!timerTx)
+                    return NULL;
+                softSerial->timerHardware = timerTx;
+            } else {
+                // Duplex
+                softSerial->exTimerHardware = timerTx;
+            }
             IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(portIndex) + RESOURCE_SOFT_OFFSET);
         }
     }
@@ -449,7 +458,6 @@ void processRxState(softSerial_t *softSerial)
 void onSerialTimerOverflow(timerOvrHandlerRec_t *cbRec, captureCompare_t capture)
 {
     UNUSED(capture);
-
     softSerial_t *self = container_of(cbRec, softSerial_t, overCb);
 
     if (self->port.mode & MODE_TX)
