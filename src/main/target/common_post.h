@@ -27,15 +27,8 @@
 # undef VTX_TRAMP
 #endif
 
-// Forced configuration of two software serials and SERIAL_PORT_COUNT recalc
-#ifndef USE_SOFTSERIAL1
-#  define USE_SOFTSERIAL1
-#endif
-
-#ifndef USE_SOFTSERIAL2
-#  define USE_SOFTSERIAL2
-#endif
-
+// Forced config of USE_SOFTSERIAL{1,2} in common.h makes SERIAL_PORT_COUNT
+// defined in target.h invalid. Count them and re-define SERIAL_PORT_COUNT.
 #ifdef USE_VCP
 #  define N_VCP 1
 #else
