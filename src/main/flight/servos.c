@@ -67,8 +67,8 @@ PG_REGISTER_WITH_RESET_TEMPLATE(servoConfig_t, servoConfig, PG_SERVO_CONFIG, 0);
 
 PG_RESET_TEMPLATE(servoConfig_t, servoConfig,
     .servoCenterPulse = 1500,
-    .servoPwmRate = 50,
-    .servo_lowpass_freq = 0,
+    .servoPwmRate = 50,             // Default for analog servos
+    .servo_lowpass_freq = 20,       // Default servo update rate is 50Hz, everything above Nyquist frequency (25Hz) is going to fold and cause distortions
     .flaperon_throw_offset = FLAPERON_THROW_DEFAULT,
     .flaperon_throw_inverted = 0,
     .tri_unarmed_servo = 1
