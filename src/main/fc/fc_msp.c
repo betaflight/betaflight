@@ -17,7 +17,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
@@ -40,7 +39,6 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/system.h"
 #include "drivers/accgyro.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/compass.h"
@@ -74,8 +72,8 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/flashfs.h"
-#include "io/gps.h"
 #include "io/gimbal.h"
+#include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/motors.h"
 #include "io/serial.h"
@@ -87,8 +85,8 @@
 #include "msp/msp_protocol.h"
 #include "msp/msp_serial.h"
 
-#include "rx/rx.h"
 #include "rx/msp.h"
+#include "rx/rx.h"
 
 #include "scheduler/scheduler.h"
 
@@ -256,14 +254,6 @@ static void mspRebootFn(serialPort_t *serialPort)
     while (true) ;
 }
 
-static void serializeNames(sbuf_t *dst, const char *s)
-{
-    const char *c;
-    for (c = s; *c; c++) {
-        sbufWriteU8(dst, *c);
-    }
-}
-
 static const box_t *findBoxByActiveBoxId(uint8_t activeBoxId)
 {
     for (uint8_t boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
@@ -288,20 +278,19 @@ static const box_t *findBoxByPermenantId(uint8_t permenantId)
 
 static void serializeBoxNamesReply(sbuf_t *dst)
 {
-    int activeBoxId, flag = 1, count = 0, len;
+    int flag = 1, count = 0;
 
 reset:
     // in first run of the loop, we grab total size of junk to be sent
     // then come back and actually send it
     for (int i = 0; i < activeBoxIdCount; i++) {
-        activeBoxId = activeBoxIds[i];
-
+        const int activeBoxId = activeBoxIds[i];
         const box_t *box = findBoxByActiveBoxId(activeBoxId);
         if (!box) {
             continue;
         }
 
-        len = strlen(box->boxName);
+        const int len = strlen(box->boxName);
         if (flag) {
             count += len;
         } else {
@@ -579,9 +568,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_FC_VARIANT:
-        for (int i = 0; i < FLIGHT_CONTROLLER_IDENTIFIER_LENGTH; i++) {
-            sbufWriteU8(dst, flightControllerIdentifier[i]);
-        }
+        sbufWriteData(dst, flightControllerIdentifier, FLIGHT_CONTROLLER_IDENTIFIER_LENGTH);
         break;
 
     case MSP_FC_VERSION:
@@ -591,9 +578,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_BOARD_INFO:
-        for (int i = 0; i < BOARD_IDENTIFIER_LENGTH; i++) {
-            sbufWriteU8(dst, boardIdentifier[i]);
-        }
+        sbufWriteData(dst, boardIdentifier, BOARD_IDENTIFIER_LENGTH);
 #ifdef USE_HARDWARE_REVISION_DETECTION
         sbufWriteU16(dst, hardwareRevision);
 #else
@@ -602,15 +587,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_BUILD_INFO:
-        for (int i = 0; i < BUILD_DATE_LENGTH; i++) {
-            sbufWriteU8(dst, buildDate[i]);
-        }
-        for (int i = 0; i < BUILD_TIME_LENGTH; i++) {
-            sbufWriteU8(dst, buildTime[i]);
-        }
-        for (int i = 0; i < GIT_SHORT_REVISION_LENGTH; i++) {
-            sbufWriteU8(dst, shortGitRevision[i]);
-        }
+        sbufWriteData(dst, buildDate, BUILD_DATE_LENGTH);
+        sbufWriteData(dst, buildTime, BUILD_TIME_LENGTH);
+        sbufWriteData(dst, shortGitRevision, GIT_SHORT_REVISION_LENGTH);
         break;
 
     // DEPRECATED - Use MSP_API_VERSION
@@ -786,7 +765,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_PIDNAMES:
-        serializeNames(dst, pidnames);
+        for (const char *c = pidnames; *c; c++) {
+            sbufWriteU8(dst, *c);
+        }
         break;
 
     case MSP_PID_CONTROLLER:
@@ -983,9 +964,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_RX_MAP:
-        for (int i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
-            sbufWriteU8(dst, rxConfig()->rcmap[i]);
-        }
+        sbufWriteData(dst, rxConfig()->rcmap, MAX_MAPPABLE_RX_INPUTS);
         break;
 
     case MSP_BF_CONFIG:
@@ -1111,9 +1090,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_BF_BUILD_INFO:
-        for (int i = 0; i < 11; i++) {
-            sbufWriteU8(dst, buildDate[i]); // MMM DD YYYY as ascii, MMM = Jan/Feb... etc
-        }
+        sbufWriteData(dst, buildDate, 11); // MMM DD YYYY as ascii, MMM = Jan/Feb... etc
         sbufWriteU32(dst, 0); // future exp
         sbufWriteU32(dst, 0); // future exp
         break;
