@@ -45,6 +45,17 @@ Lemon Rx DSMX Compatible PPM 8-Channel Receiver + Lemon DSMX Compatible Satellit
 http://www.lemon-rx.com/shop/index.php?route=product/product&product_id=118
 
 
+#### Spektrum pesudo RSSI
+
+As of iNav 1.6, a pseudo RSSI, based on satellite fade count is supported and reported as normal iNav RSSI (0-1023 range). In order to use this feature, the following is necessary:
+
+* Bind the satellite receiver using a physical RX; the bind function provided by the flight controller is not sufficient.
+* The CLI variable `rssi_channel` is set to channel 9:
+````
+set rssi_channel = 9
+````
+This pseudo-RSSI should work on all makes of Spektrum satellite RX; it is tested as working on Lemon RX satellites http://www.lemon-rx.com/index.php?route=product/product&path=72&product_id=109 and http://www.lemon-rx.com/index.php?route=product/product&path=72&product_id=135 (recommended).
+
 ### S.BUS
 
 16 channels via serial currently supported.  See below how to set up your transmitter.
