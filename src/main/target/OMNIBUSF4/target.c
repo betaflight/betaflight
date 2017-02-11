@@ -74,7 +74,7 @@ const uint16_t airPWM[] = {
 
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-#ifdef OMNIBUSF4SD
+#ifdef OMNIBUSF4PRO
     { TIM4,  IO_TAG(PB8),  TIM_Channel_3, TIM4_IRQn,           0, IOCFG_AF_PP_PD, GPIO_AF_TIM4}, // PPM
     { TIM4,  IO_TAG(PB9),  TIM_Channel_4, TIM4_IRQn,           0, IOCFG_AF_PP_PD, GPIO_AF_TIM4}, // S2_IN
 #else

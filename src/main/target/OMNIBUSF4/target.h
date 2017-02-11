@@ -17,7 +17,7 @@
 
 #pragma once
 
-#ifdef OMNIBUSF4SD
+#ifdef OMNIBUSF4PRO
 #define TARGET_BOARD_IDENTIFIER "OBSD"
 #else
 #define TARGET_BOARD_IDENTIFIER "OBF4"
@@ -46,7 +46,7 @@
 #define ACC
 #define USE_ACC_SPI_MPU6000
 
-#ifdef OMNIBUSF4SD
+#ifdef OMNIBUSF4PRO
   #define GYRO_MPU6000_ALIGN      CW270_DEG
   #define ACC_MPU6000_ALIGN       CW270_DEG
 #else
@@ -66,7 +66,7 @@
 #define USE_BARO_BMP280
 #define USE_BARO_MS5611
 
-#ifdef OMNIBUSF4SD
+#ifdef OMNIBUSF4PRO
   #define USE_BARO_SPI_BMP280
   #define BMP280_SPI_INSTANCE     SPI3
   #define BMP280_CS_PIN           PB3 // v1
@@ -103,7 +103,7 @@
 
 #define USE_SPI_DEVICE_1
 
-#ifdef OMNIBUSF4SD
+#ifdef OMNIBUSF4PRO
   #define USE_SPI_DEVICE_2
   #define SPI2_NSS_PIN          PB12
   #define SPI2_SCK_PIN          PB13
@@ -112,7 +112,7 @@
 #endif
 
 #define USE_SPI_DEVICE_3
-#ifdef OMNIBUSF4SD
+#ifdef OMNIBUSF4PRO
   #define SPI3_NSS_PIN          PA15
 #else
   #define SPI3_NSS_PIN          PB3
@@ -128,7 +128,7 @@
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
-#ifdef OMNIBUSF4SD
+#ifdef OMNIBUSF4PRO
   #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
   #define USE_SDCARD
   #define USE_SDCARD_SPI2
@@ -199,7 +199,7 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 12
 
-#ifdef OMNIBUSF4SD
+#ifdef OMNIBUSF4PRO
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(4) | TIM_N(8) | TIM_N(9) )
 #else 
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9) )
