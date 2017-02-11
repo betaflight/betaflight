@@ -126,15 +126,12 @@
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-
-#if defined(ZCOREF3)
-#define SERIAL_PORT_COUNT       3
-
-#else
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
+
 #define SERIAL_PORT_COUNT       5
 
+#if !defined(ZCOREF3)
 #define SOFTSERIAL1_RX_PIN      PB4 // PWM 5
 #define SOFTSERIAL1_TX_PIN      PB5 // PWM 6
 

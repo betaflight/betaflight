@@ -76,7 +76,10 @@
 //#define UART5_RX_PIN            PD2
 //#define UART5_TX_PIN            PC12
 
-#define SERIAL_PORT_COUNT 3
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT 5
 
 #define USE_SPI
 

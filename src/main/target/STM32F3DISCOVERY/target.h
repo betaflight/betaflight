@@ -151,7 +151,10 @@
 #define USE_UART3
 #define USE_UART4
 #define USE_UART5
-#define SERIAL_PORT_COUNT       6
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT       8
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1

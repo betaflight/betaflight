@@ -581,6 +581,7 @@ COMMON_SRC = \
             drivers/rx_pwm.c \
             drivers/serial.c \
             drivers/serial_uart.c \
+            drivers/serial_softserial.c \
             drivers/sound_beeper.c \
             drivers/stack_check.c \
             drivers/system.c \
@@ -651,7 +652,6 @@ HIGHEND_SRC = \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
             drivers/serial_escserial.c \
-            drivers/serial_softserial.c \
             drivers/sonar_hcsr04.c \
             drivers/vtx_common.c \
             flight/navigation.c \

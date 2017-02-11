@@ -64,6 +64,10 @@
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT       6
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
@@ -75,11 +79,7 @@
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
 #ifdef KISSCC
-#define USE_SOFTSERIAL1
 #define SOFTSERIAL1_TX_PIN      PA13
-#define SERIAL_PORT_COUNT       5
-#else
-#define SERIAL_PORT_COUNT       4
 #endif
 
 #define USE_I2C

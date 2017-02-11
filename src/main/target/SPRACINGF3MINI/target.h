@@ -97,7 +97,8 @@
 #define SERIAL_PORT_COUNT       4
 #else
 #define USE_SOFTSERIAL1
-#define SERIAL_PORT_COUNT       5
+#define USE_SOFTSERIAL2
+#define SERIAL_PORT_COUNT       6
 #endif
 
 #define USE_ESCSERIAL

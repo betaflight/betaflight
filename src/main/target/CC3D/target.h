@@ -71,14 +71,14 @@
 #define USE_VCP
 #define USE_UART1
 #define USE_UART3
-
-#ifdef CC3D_OPBL
-#define SERIAL_PORT_COUNT       3
-#else
 #define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT       5
+
+#ifndef CC3D_OPBL
 #define SOFTSERIAL1_TX_PIN      PB5 // PWM 2
 #define SOFTSERIAL1_RX_PIN      PB0 // PWM 3
-#define SERIAL_PORT_COUNT       4
 #endif
 
 #ifdef USE_UART1_RX_DMA
