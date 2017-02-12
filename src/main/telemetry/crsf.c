@@ -175,7 +175,7 @@ void crsfFrameBatterySensor(sbuf_t *dst)
     // use sbufWrite since CRC does not include frame length
     sbufWriteU8(dst, CRSF_FRAME_BATTERY_SENSOR_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
     crsfSerialize8(dst, CRSF_FRAMETYPE_BATTERY_SENSOR);
-    crsfSerialize16(dst, vbat); // vbat is in units of 0.1V
+    crsfSerialize16(dst, getVbat()); // vbat is in units of 0.1V
 #ifdef CLEANFLIGHT
     const amperageMeter_t *amperageMeter = getAmperageMeter(batteryConfig()->amperageMeterSource);
     const int16_t amperage = constrain(amperageMeter->amperage, -0x8000, 0x7FFF) / 10; // send amperage in 0.01 A steps, range is -320A to 320A

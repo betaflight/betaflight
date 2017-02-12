@@ -29,7 +29,7 @@
 #include "drivers/rx_pwm.h"
 
 #include "fc/config.h"
-#include "fc/fc_main.h"
+#include "fc/fc_core.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -44,6 +44,8 @@
 
 #include "rx/rx.h"
 #include "rx/msp.h"
+
+#include "scheduler/scheduler.h"
 
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
@@ -269,7 +271,6 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 extern volatile uint8_t CRC8;
 extern volatile bool coreProReady;
-extern uint16_t cycleTime; // FIXME dependency on mw.c
 
 // this is calculated at startup based on enabled features.
 static uint8_t activeBoxIds[CHECKBOX_ITEM_COUNT];
@@ -562,7 +563,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
 
         case BST_STATUS:
-            bstWrite16(cycleTime);
+            bstWrite16(getTaskDeltaTime(TASK_GYROPID));
 #ifdef USE_I2C
             bstWrite16(i2cGetErrorCounter());
 #else
@@ -677,7 +678,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 #endif
             break;
         case BST_ANALOG:
-            bstWrite8((uint8_t)constrain(vbat, 0, 255));
+            bstWrite8((uint8_t)constrain(getVbat(), 0, 255));
             bstWrite16((uint16_t)constrain(mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
             bstWrite16(rssi);
             if(batteryConfig()->multiwiiCurrentMeterOutput) {
@@ -691,7 +692,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
         case BST_LOOP_TIME:
             //bstWrite16(masterConfig.looptime);
-            bstWrite16(cycleTime);
+            bstWrite16(getTaskDeltaTime(TASK_GYROPID));
             break;
         case BST_RC_TUNING:
             bstWrite8(currentControlRateProfile->rcRate8);
@@ -704,6 +705,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8(currentControlRateProfile->thrExpo8);
             bstWrite16(currentControlRateProfile->tpa_breakpoint);
             bstWrite8(currentControlRateProfile->rcYawExpo8);
+            bstWrite8(currentControlRateProfile->rcYawRate8);
             break;
         case BST_PID:
             for (i = 0; i < PID_ITEM_COUNT; i++) {
@@ -1042,7 +1044,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             break;
         case BST_SET_LOOP_TIME:
             //masterConfig.looptime = bstRead16();
-            cycleTime = bstRead16();
+            bstRead16();
             break;
         case BST_SET_PID_CONTROLLER:
             break;
@@ -1107,6 +1109,9 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                 currentControlRateProfile->tpa_breakpoint = bstRead16();
                 if (bstReadDataSize() >= 11) {
                     currentControlRateProfile->rcYawExpo8 = bstRead8();
+                }
+                if (bstReadDataSize() >= 12) {
+                    currentControlRateProfile->rcYawRate8 = bstRead8();
                 }
             } else {
                 ret = BST_FAILED;
@@ -1256,6 +1261,13 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
         case BST_SET_FEATURE:
             featureClearAll();
             featureSet(bstRead32()); // features bitmap
+#ifdef SERIALRX_UART
+            if (featureConfigured(FEATURE_RX_SERIAL)) {
+                serialConfig()->portConfigs[SERIALRX_UART].functionMask = FUNCTION_RX_SERIAL;
+            } else {
+                serialConfig()->portConfigs[SERIALRX_UART].functionMask = FUNCTION_NONE;
+            }
+#endif
             break;
         case BST_SET_BOARD_ALIGNMENT:
             boardAlignment()->rollDegrees = bstRead16();

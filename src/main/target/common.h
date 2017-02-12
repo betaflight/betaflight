@@ -34,6 +34,7 @@
 #define STM_FAST_TARGET
 #define I2C3_OVERCLOCK true
 #define I2C4_OVERCLOCK true
+#define TELEMETRY_IBUS
 #endif
 
 /****************************
@@ -43,7 +44,7 @@
 #define STM_FAST_TARGET
 #define USE_DSHOT
 #define I2C3_OVERCLOCK true
-#define GPS
+#define TELEMETRY_IBUS
 #endif
 
 #ifdef STM32F3
@@ -60,7 +61,7 @@
 
 #define SERIAL_RX
 #define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
-#define USE_SERIALRX_SPEKTRUM   // DSM2 and DSMX protocol
+#define USE_SERIALRX_SPEKTRUM   // SRXL, DSM2 and DSMX protocol
 #define USE_SERIALRX_SBUS       // Frsky and Futaba receivers
 #define USE_SERIALRX_IBUS       // FlySky and Turnigy receivers
 #define USE_SERIALRX_SUMD       // Graupner Hott protocol
@@ -86,13 +87,14 @@
 
 #if (FLASH_SIZE > 64)
 #define BLACKBOX
+#define GPS
 #define TELEMETRY
 #define TELEMETRY_FRSKY
 #define TELEMETRY_HOTT
-#define TELEMETRY_IBUS
 #define TELEMETRY_LTM
 #define TELEMETRY_SMARTPORT
 #define USE_SERVOS
+#define USE_RESOURCE_MGMT
 #endif
 
 #if (FLASH_SIZE > 128)
@@ -105,6 +107,12 @@
 #define TELEMETRY_MAVLINK
 #define USE_RX_MSP
 #define USE_SERIALRX_JETIEXBUS
+#define VTX_COMMON
+#define VTX_CONTROL
+#define VTX_SMARTAUDIO
+#define VTX_TRAMP
+#define USE_SENSOR_NAMES
 #else
 #define SKIP_CLI_COMMAND_HELP
 #endif
+

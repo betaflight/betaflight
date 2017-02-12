@@ -256,24 +256,24 @@ $(OBJECT_DIR)/altitude_hold_unittest : \
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
 
-$(OBJECT_DIR)/flight/gps_conversion.o : \
-	$(USER_DIR)/flight/gps_conversion.c \
-	$(USER_DIR)/flight/gps_conversion.h \
+$(OBJECT_DIR)/common/gps_conversion.o : \
+	$(USER_DIR)/common/gps_conversion.c \
+	$(USER_DIR)/common/gps_conversion.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/gps_conversion.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/gps_conversion.c -o $@
 
 $(OBJECT_DIR)/gps_conversion_unittest.o : \
 	$(TEST_DIR)/gps_conversion_unittest.cc \
-	$(USER_DIR)/flight/gps_conversion.h \
+	$(USER_DIR)/common/gps_conversion.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/gps_conversion_unittest.cc -o $@
 
 $(OBJECT_DIR)/gps_conversion_unittest : \
-	$(OBJECT_DIR)/flight/gps_conversion.o \
+	$(OBJECT_DIR)/common/gps_conversion.o \
 	$(OBJECT_DIR)/gps_conversion_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
@@ -359,7 +359,7 @@ $(OBJECT_DIR)/telemetry_hott_unittest.o : \
 $(OBJECT_DIR)/telemetry_hott_unittest : \
 	$(OBJECT_DIR)/telemetry/hott.o \
 	$(OBJECT_DIR)/telemetry_hott_unittest.o \
-	$(OBJECT_DIR)/flight/gps_conversion.o \
+	$(OBJECT_DIR)/common/gps_conversion.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
@@ -537,7 +537,7 @@ $(OBJECT_DIR)/telemetry_crsf_unittest : \
 	$(OBJECT_DIR)/telemetry_crsf_unittest.o \
 	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/common/streambuf.o \
-	$(OBJECT_DIR)/flight/gps_conversion.o \
+	$(OBJECT_DIR)/common/gps_conversion.o \
 	$(OBJECT_DIR)/fc/runtime_config.o \
 	$(OBJECT_DIR)/gtest_main.a
 

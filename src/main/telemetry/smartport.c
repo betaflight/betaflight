@@ -64,8 +64,7 @@ enum
 {
     SPSTATE_UNINITIALIZED,
     SPSTATE_INITIALIZED,
-    SPSTATE_WORKING,
-    SPSTATE_TIMEDOUT
+    SPSTATE_WORKING
 };
 
 enum
@@ -145,7 +144,6 @@ const uint16_t frSkyDataIdTable[] = {
 #define SMARTPORT_BAUD 57600
 #define SMARTPORT_UART_MODE MODE_RXTX
 #define SMARTPORT_SERVICE_TIMEOUT_MS 1 // max allowed time to find a value to send
-#define SMARTPORT_NOT_CONNECTED_TIMEOUT_MS 7000
 
 static serialPort_t *smartPortSerialPort = NULL; // The 'SmartPort'(tm) Port.
 static serialPortConfig_t *portConfig;
@@ -322,20 +320,20 @@ void freeSmartPortTelemetryPort(void)
 
 void configureSmartPortTelemetryPort(void)
 {
-    portOptions_t portOptions;
-
     if (!portConfig) {
         return;
     }
 
+    portOptions_t portOptions = 0;
+
     if (telemetryConfig->sportHalfDuplex) {
-        portOptions = SERIAL_BIDIR;
+        portOptions |= SERIAL_BIDIR;
     }
-    
+
     if (telemetryConfig->telemetry_inversion) {
         portOptions |= SERIAL_INVERTED;
     }
-    
+
     smartPortSerialPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_SMARTPORT, NULL, SMARTPORT_BAUD, SMARTPORT_UART_MODE, portOptions);
 
     if (!smartPortSerialPort) {
@@ -352,15 +350,9 @@ bool canSendSmartPortTelemetry(void)
     return smartPortSerialPort && (smartPortState == SPSTATE_INITIALIZED || smartPortState == SPSTATE_WORKING);
 }
 
-bool isSmartPortTimedOut(void)
-{
-    return smartPortState >= SPSTATE_TIMEDOUT;
-}
-
 void checkSmartPortTelemetryState(void)
 {
     bool newTelemetryEnabledValue = telemetryDetermineEnabledState(smartPortPortSharing);
-
     if (newTelemetryEnabledValue == smartPortTelemetryEnabled) {
         return;
     }
@@ -578,14 +570,6 @@ void handleSmartPortTelemetry(void)
         smartPortDataReceive(c);
     }
 
-    uint32_t now = millis();
-
-    // if timed out, reconfigure the UART back to normal so the GUI or CLI works
-    if ((now - smartPortLastRequestTime) > SMARTPORT_NOT_CONNECTED_TIMEOUT_MS) {
-        smartPortState = SPSTATE_TIMEDOUT;
-        return;
-    }
-
     if(smartPortFrameReceived) {
         smartPortFrameReceived = false;
         // do not check the physical ID here again
@@ -639,9 +623,9 @@ void handleSmartPortTelemetry(void)
                 if (feature(FEATURE_VBAT) && batteryCellCount > 0) {
                     uint16_t vfasVoltage;
                     if (telemetryConfig->frsky_vfas_cell_voltage) {
-                        vfasVoltage = vbat / batteryCellCount;
+                        vfasVoltage = getVbat() / batteryCellCount;
                     } else {
-                        vfasVoltage = vbat;
+                        vfasVoltage = getVbat();
                     }
                     smartPortSendPackage(id, vfasVoltage * 10); // given in 0.1V, convert to volts
                     smartPortHasRequest = 0;
@@ -810,7 +794,7 @@ void handleSmartPortTelemetry(void)
 #endif
             case FSSP_DATAID_A4         :
                 if (feature(FEATURE_VBAT) && batteryCellCount > 0) {
-                    smartPortSendPackage(id, vbat * 10 / batteryCellCount ); // given in 0.1V, convert to volts
+                    smartPortSendPackage(id, getVbat() * 10 / batteryCellCount ); // given in 0.1V, convert to volts
                     smartPortHasRequest = 0;
                 }
                 break;

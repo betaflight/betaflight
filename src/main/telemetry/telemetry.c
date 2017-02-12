@@ -48,6 +48,7 @@
 #include "telemetry/mavlink.h"
 #include "telemetry/crsf.h"
 #include "telemetry/srxl.h"
+#include "telemetry/ibus.h"
 
 static telemetryConfig_t *telemetryConfig;
 
@@ -81,6 +82,9 @@ void telemetryInit(void)
 #endif
 #ifdef TELEMETRY_SRXL
     initSrxlTelemetry();
+#endif
+#ifdef TELEMETRY_IBUS
+    initIbusTelemetry();
 #endif
 
     telemetryCheckState();
@@ -133,6 +137,9 @@ void telemetryCheckState(void)
 #ifdef TELEMETRY_SRXL
     checkSrxlTelemetryState();
 #endif
+#ifdef TELEMETRY_IBUS
+    checkIbusTelemetryState();
+#endif
 }
 
 void telemetryProcess(uint32_t currentTime, rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
@@ -165,6 +172,9 @@ void telemetryProcess(uint32_t currentTime, rxConfig_t *rxConfig, uint16_t deadb
 #endif
 #ifdef TELEMETRY_SRXL
     handleSrxlTelemetry(currentTime);
+#endif
+#ifdef TELEMETRY_IBUS
+    handleIbusTelemetry();
 #endif
 }
 

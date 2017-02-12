@@ -50,6 +50,8 @@
 
 #define ADCVREF 3300   // in mV
 
+#define MAX_ESC_BATTERY_AGE 10
+
 // Battery monitoring stuff
 uint8_t batteryCellCount;
 uint16_t batteryWarningVoltage;
@@ -59,7 +61,7 @@ uint16_t vbat = 0;                  // battery voltage in 0.1V steps (filtered)
 uint16_t vbatLatest = 0;            // most recent unsmoothed value
 
 int32_t amperage = 0;               // amperage read by current sensor in centiampere (1/100th A)
-uint16_t amperageLatest = 0;        // most recent value
+int32_t amperageLatest = 0;        // most recent value
 
 int32_t mAhDrawn = 0;               // milliampere hours drawn from the battery since start
 
@@ -85,8 +87,8 @@ static void updateBatteryVoltage(void)
 
     #ifdef USE_ESC_SENSOR
     if (feature(FEATURE_ESC_SENSOR) && batteryConfig->batteryMeterType == BATTERY_SENSOR_ESC) {
-        escSensorData_t escData = getEscSensorData(ESC_SENSOR_COMBINED);
-        vbatLatest = escData.stale ? 0 : escData.voltage / 10;
+        escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
+        vbatLatest = escData->dataAge <= MAX_ESC_BATTERY_AGE ? escData->voltage / 10 : 0;
         if (debugMode == DEBUG_BATTERY) {
             debug[0] = -1;
         }
@@ -264,56 +266,61 @@ void updateConsumptionWarning(void)
 
 void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
 {
-    switch(batteryConfig->currentMeterType) {
-        case CURRENT_SENSOR_ADC:
-            updateBatteryCurrent();
+    if (getBatteryState() != BATTERY_NOT_PRESENT) {
+        switch(batteryConfig->currentMeterType) {
+            case CURRENT_SENSOR_ADC:
+                updateBatteryCurrent();
 
-            updateCurrentDrawn(lastUpdateAt);
+                updateCurrentDrawn(lastUpdateAt);
 
-            updateConsumptionWarning();
+                updateConsumptionWarning();
 
-            break;
-        case CURRENT_SENSOR_VIRTUAL:
-            amperageLatest = (int32_t)batteryConfig->currentMeterOffset;
-            if (ARMING_FLAG(ARMED)) {
-                throttleStatus_e throttleStatus = calculateThrottleStatus(rxConfig, deadband3d_throttle);
-                int throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
-                if (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP)) {
-                    throttleOffset = 0;
-                }
-                int throttleFactor = throttleOffset + (throttleOffset * throttleOffset / 50);
-                amperageLatest += throttleFactor * (int32_t)batteryConfig->currentMeterScale  / 1000;
-            }
-            amperage = amperageLatest;
-
-            updateCurrentDrawn(lastUpdateAt);
-
-            updateConsumptionWarning();
-
-            break;
-        case CURRENT_SENSOR_ESC:
-            #ifdef USE_ESC_SENSOR
-            if (feature(FEATURE_ESC_SENSOR)) {
-                escSensorData_t escData = getEscSensorData(ESC_SENSOR_COMBINED);
-                if (!escData.stale) {
-                    amperageLatest = escData.current;
-                    mAhDrawn = escData.consumption;
-                } else {
-                    amperageLatest = 0;
-                    mAhDrawn = 0;
+                break;
+            case CURRENT_SENSOR_VIRTUAL:
+                amperageLatest = (int32_t)batteryConfig->currentMeterOffset;
+                if (ARMING_FLAG(ARMED)) {
+                    throttleStatus_e throttleStatus = calculateThrottleStatus(rxConfig, deadband3d_throttle);
+                    int throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
+                    if (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP)) {
+                        throttleOffset = 0;
+                    }
+                    int throttleFactor = throttleOffset + (throttleOffset * throttleOffset / 50);
+                    amperageLatest += throttleFactor * (int32_t)batteryConfig->currentMeterScale  / 1000;
                 }
                 amperage = amperageLatest;
 
+                updateCurrentDrawn(lastUpdateAt);
+
                 updateConsumptionWarning();
-            }
 
-            break;
-            #endif
-        case CURRENT_SENSOR_NONE:
-            amperage = 0;
-            amperageLatest = 0;
+                break;
+            case CURRENT_SENSOR_ESC:
+#ifdef USE_ESC_SENSOR
+                if (feature(FEATURE_ESC_SENSOR)) {
+                    escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
+                    if (escData->dataAge <= MAX_ESC_BATTERY_AGE) {
+                        amperageLatest = escData->current;
+                        mAhDrawn = escData->consumption;
+                    } else {
+                        amperageLatest = 0;
+                        mAhDrawn = 0;
+                    }
+                    amperage = amperageLatest;
 
-            break;
+                    updateConsumptionWarning();
+                }
+
+                break;
+#endif
+            case CURRENT_SENSOR_NONE:
+                amperage = 0;
+                amperageLatest = 0;
+
+                break;
+        }
+    } else {
+        amperage = 0;
+        amperageLatest = 0;
     }
 }
 
@@ -339,4 +346,9 @@ uint8_t calculateBatteryPercentage(void)
     }
 
     return batteryPercentage;
+}
+
+uint16_t getVbat(void)
+{
+    return vbat;
 }

@@ -48,6 +48,7 @@
 
 #define USE_ESC_SENSOR
 #define REMAP_TIM17_DMA
+#define REMAP_TIM16_DMA
 
 #define USE_VCP
 #define USE_UART1

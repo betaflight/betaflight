@@ -148,9 +148,9 @@
 
 #define LED_STRIP
 
-//#define SONAR
-//#define SONAR_ECHO_PIN          PB1
-//#define SONAR_TRIGGER_PIN       PB0
+#define SONAR
+#define SONAR_ECHO_PIN          PB1
+#define SONAR_TRIGGER_PIN       PB0
 
 #define DEFAULT_FEATURES        FEATURE_BLACKBOX
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM

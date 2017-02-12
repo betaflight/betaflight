@@ -28,21 +28,38 @@
 
 void targetPreInit(void)
 {
-    /* enable the built in inverter if telemetry is setup for the UART1 */
-    if (serialConfig()->portConfigs[SERIAL_PORT_USART1].functionMask & FUNCTION_TELEMETRY_SMARTPORT && 
-        telemetryConfig()->telemetry_inversion &&
-        feature(FEATURE_TELEMETRY)) {
-        IO_t io = IOGetByTag(IO_TAG(UART1_INVERTER));
-        IOInit(io, OWNER_INVERTER, 1);
-        IOConfigGPIO(io, IOCFG_OUT_PP);
-        IOHi(io);
+    switch (hardwareRevision) {
+    case BJF4_REV3:
+    case BJF4_MINI_REV3A:
+    case BJF4_REV4:
+        break;
+    default:
+        return;
     }
-    
+
+    IO_t inverter = IOGetByTag(IO_TAG(UART1_INVERTER));
+    IOInit(inverter, OWNER_INVERTER, 1);
+    IOConfigGPIO(inverter, IOCFG_OUT_PP);
+
+    bool high = false;
+    serialPortConfig_t *portConfig = serialFindPortConfiguration(SERIAL_PORT_USART1);
+    if (portConfig) {
+        bool smartportEnabled = (portConfig->functionMask & FUNCTION_TELEMETRY_SMARTPORT);
+        if (smartportEnabled && (telemetryConfig()->telemetry_inversion) && (feature(FEATURE_TELEMETRY))) {
+            high = true;
+        }
+    }
+    /* reverse this for rev4, as it does not use the XOR gate */
+    if (hardwareRevision == BJF4_REV4) {
+        high = !high;
+    }
+    IOWrite(inverter, high);
+
     /* ensure the CS pin for the flash is pulled hi so any SD card initialisation does not impact the chip */
     if (hardwareRevision == BJF4_REV3) {
         IO_t io = IOGetByTag(IO_TAG(M25P16_CS_PIN));
         IOConfigGPIO(io, IOCFG_OUT_PP);
         IOHi(io);
-    }    
+    }
 }
 

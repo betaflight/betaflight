@@ -81,6 +81,9 @@ OSD_Entry menuOsdActiveElemsEntries[] =
 #endif // GPS
     {"ALTITUDE", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_ALTITUDE], 0},
     {"POWER", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_POWER], 0},
+    {"ROLL PID", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_ROLL_PIDS], 0},
+    {"PITCH PID", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_PITCH_PIDS], 0},
+    {"YAW PID", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_YAW_PIDS], 0},
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
 };

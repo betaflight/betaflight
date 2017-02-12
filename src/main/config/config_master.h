@@ -33,6 +33,7 @@
 #include "drivers/vcd.h"
 #include "drivers/light_led.h"
 #include "drivers/flash.h"
+#include "drivers/display.h"
 
 #include "fc/rc_controls.h"
 
@@ -86,6 +87,7 @@
 #define failsafeConfig(x) (&masterConfig.failsafeConfig)
 #define serialConfig(x) (&masterConfig.serialConfig)
 #define telemetryConfig(x) (&masterConfig.telemetryConfig)
+#define ibusTelemetryConfig(x) (&masterConfig.telemetryConfig)
 #define ppmConfig(x) (&masterConfig.ppmConfig)
 #define pwmConfig(x) (&masterConfig.pwmConfig)
 #define adcConfig(x) (&masterConfig.adcConfig)
@@ -104,7 +106,9 @@
 #define servoProfile(x) (&masterConfig.servoProfile)
 #define customMotorMixer(i) (&masterConfig.customMotorMixer[i])
 #define customServoMixer(i) (&masterConfig.customServoMixer[i])
-
+#define displayPortProfileMsp(x) (&masterConfig.displayPortProfileMsp)
+#define displayPortProfileMax7456(x) (&masterConfig.displayPortProfileMax7456)
+#define displayPortProfileOled(x) (&masterConfig.displayPortProfileOled)
 
 // System-wide
 typedef struct master_s {
@@ -136,6 +140,7 @@ typedef struct master_s {
     pidConfig_t pidConfig;
 
     uint8_t debug_mode;                     // Processing denominator for PID controller vs gyro sampling rate
+    uint8_t task_statistics;
 
     gyroConfig_t gyroConfig;
     compassConfig_t compassConfig;
@@ -198,7 +203,7 @@ typedef struct master_s {
     uint8_t transponderData[6];
 #endif
 
-#ifdef USE_RTC6705
+#if defined(USE_RTC6705)
     uint8_t vtx_channel;
     uint8_t vtx_power;
 #endif
@@ -210,6 +215,13 @@ typedef struct master_s {
 #ifdef USE_MAX7456
     vcdProfile_t vcdProfile;
 #endif
+
+# ifdef USE_MSP_DISPLAYPORT
+    displayPortProfile_t displayPortProfileMsp;
+# endif
+# ifdef USE_MAX7456
+    displayPortProfile_t displayPortProfileMax7456;
+# endif
 
 #ifdef USE_SDCARD
     sdcardConfig_t sdcardConfig;
@@ -241,6 +253,7 @@ typedef struct master_s {
     uint32_t preferred_beeper_off_flags;
 
     char name[MAX_NAME_LENGTH + 1];
+    char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER)];
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum

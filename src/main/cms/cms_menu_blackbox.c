@@ -80,10 +80,12 @@ static long cmsx_Blackbox_FeatureRead(void)
 
 static long cmsx_Blackbox_FeatureWriteback(void)
 {
-    if (cmsx_FeatureBlackbox)
-        featureSet(FEATURE_BLACKBOX);
-    else
-        featureClear(FEATURE_BLACKBOX);
+    if (featureRead) {
+        if (cmsx_FeatureBlackbox)
+            featureSet(FEATURE_BLACKBOX);
+        else
+            featureClear(FEATURE_BLACKBOX);
+    }
 
     return 0;
 }

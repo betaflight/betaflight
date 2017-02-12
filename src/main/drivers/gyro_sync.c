@@ -14,7 +14,6 @@
 #include "accgyro.h"
 #include "gyro_sync.h"
 
-static uint8_t mpuDividerDrops;
 
 bool gyroSyncCheckUpdate(gyroDev_t *gyro)
 {
@@ -23,24 +22,31 @@ bool gyroSyncCheckUpdate(gyroDev_t *gyro)
     return gyro->intStatus(gyro);
 }
 
-uint32_t gyroSetSampleRate(uint8_t lpf, uint8_t gyroSyncDenominator)
+uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenominator, bool gyro_use_32khz)
 {
-    int gyroSamplePeriod;
+    float gyroSamplePeriod;
 
     if (lpf == GYRO_LPF_256HZ || lpf == GYRO_LPF_NONE) {
-        gyroSamplePeriod = 125;
+        if (gyro_use_32khz) {
+            gyro->gyroRateKHz = GYRO_RATE_32_kHz;
+            gyroSamplePeriod = 31.5f;
+        } else {
+            gyro->gyroRateKHz = GYRO_RATE_8_kHz;
+            gyroSamplePeriod = 125.0f;
+        }
     } else {
-        gyroSamplePeriod = 1000;
+        gyro->gyroRateKHz = GYRO_RATE_1_kHz;
+        gyroSamplePeriod = 1000.0f;
         gyroSyncDenominator = 1; // Always full Sampling 1khz
     }
 
     // calculate gyro divider and targetLooptime (expected cycleTime)
-    mpuDividerDrops  = gyroSyncDenominator - 1;
-    const uint32_t targetLooptime = gyroSyncDenominator * gyroSamplePeriod;
+    gyro->mpuDividerDrops  = gyroSyncDenominator - 1;
+    const uint32_t targetLooptime = (uint32_t)(gyroSyncDenominator * gyroSamplePeriod);
     return targetLooptime;
 }
 
-uint8_t gyroMPU6xxxGetDividerDrops(void)
+uint8_t gyroMPU6xxxGetDividerDrops(const gyroDev_t *gyro)
 {
-    return mpuDividerDrops;
+    return gyro->mpuDividerDrops;
 }

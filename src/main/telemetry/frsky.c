@@ -79,8 +79,6 @@ static portSharing_e frskyPortSharing;
 
 extern batteryConfig_t *batteryConfig;
 
-extern int16_t telemTemperature1; // FIXME dependency on mw.c
-
 #define CYCLETIME             125
 
 #define PROTOCOL_HEADER       0x5E
@@ -205,8 +203,8 @@ static void sendThrottleOrBatterySizeAsRpm(rxConfig_t *rxConfig, uint16_t deadba
     UNUSED(rxConfig);
     UNUSED(deadband3d_throttle);
 
-    escSensorData_t escData = getEscSensorData(ESC_SENSOR_COMBINED);
-    serialize16(escData.stale ? 0 : escData.rpm);
+    escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
+    serialize16(escData->dataAge < ESC_DATA_INVALID ? escData->rpm : 0);
 #else
     if (ARMING_FLAG(ARMED)) {
         throttleStatus_e throttleStatus = calculateThrottleStatus(rxConfig, deadband3d_throttle);
@@ -224,8 +222,8 @@ static void sendTemperature1(void)
 {
     sendDataHead(ID_TEMPRATURE1);
 #if defined(USE_ESC_SENSOR)
-    escSensorData_t escData = getEscSensorData(ESC_SENSOR_COMBINED);
-    serialize16(escData.stale ? 0 : escData.temperature);
+    escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
+    serialize16(escData->dataAge < ESC_DATA_INVALID ? escData->temperature : 0);
 #elif defined(BARO)
     serialize16((baro.baroTemperature + 50)/ 100); //Airmamaf
 #else
@@ -388,7 +386,7 @@ static void sendVoltage(void)
      * The actual value sent for cell voltage has resolution of 0.002 volts
      * Since vbat has resolution of 0.1 volts it has to be multiplied by 50
      */
-    cellVoltage = ((uint32_t)vbat * 100 + batteryCellCount) / (batteryCellCount * 2);
+    cellVoltage = ((uint32_t)getVbat() * 100 + batteryCellCount) / (batteryCellCount * 2);
 
     // Cell number is at bit 9-12
     payload = (currentCell << 4);
@@ -416,9 +414,9 @@ static void sendVoltageAmp(void)
          * Use new ID 0x39 to send voltage directly in 0.1 volts resolution
          */
         sendDataHead(ID_VOLTAGE_AMP);
-        serialize16(vbat);
+        serialize16(getVbat());
     } else {
-        uint16_t voltage = (vbat * 110) / 21;
+        uint16_t voltage = (getVbat() * 110) / 21;
         uint16_t vfasVoltage;
         if (telemetryConfig->frsky_vfas_cell_voltage) {
             vfasVoltage = voltage / batteryCellCount;

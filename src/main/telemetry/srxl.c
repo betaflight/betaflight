@@ -161,7 +161,7 @@ void srxlFrameRpm(sbuf_t *dst)
     srxlSerialize8(dst, SRXL_FRAMETYPE_TELE_RPM);
     srxlSerialize8(dst, SRXL_FRAMETYPE_SID);
     srxlSerialize16(dst, 0xFFFF); // pulse leading edges
-    srxlSerialize16(dst, vbat * 10);   // vbat is in units of 0.1V
+    srxlSerialize16(dst, getVbat() * 10);   // vbat is in units of 0.1V
     srxlSerialize16(dst, 0x7FFF); // temperature
     srxlSerialize8(dst, 0xFF);    // dbmA
     srxlSerialize8(dst, 0xFF);    // dbmB
@@ -200,8 +200,8 @@ void srxlFramePowerBox(sbuf_t *dst)
 {
     srxlSerialize8(dst, SRXL_FRAMETYPE_POWERBOX);
     srxlSerialize8(dst, SRXL_FRAMETYPE_SID);
-    srxlSerialize16(dst, vbat * 10); // vbat is in units of 0.1V - vbat1
-    srxlSerialize16(dst, vbat * 10); // vbat is in units of 0.1V - vbat2
+    srxlSerialize16(dst, getVbat() * 10); // vbat is in units of 0.1V - vbat1
+    srxlSerialize16(dst, getVbat() * 10); // vbat is in units of 0.1V - vbat2
     srxlSerialize16(dst, amperage / 10);
     srxlSerialize16(dst, 0xFFFF);
 

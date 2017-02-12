@@ -78,7 +78,7 @@ typedef enum {
     GPS_MESSAGE_STATE_IDLE = 0,
     GPS_MESSAGE_STATE_INIT,
     GPS_MESSAGE_STATE_SBAS,
-	GPS_MESSAGE_STATE_ENTRY_COUNT
+    GPS_MESSAGE_STATE_ENTRY_COUNT
 } gpsMessageState_e;
 
 typedef struct gpsData_s {
@@ -121,3 +121,6 @@ struct serialConfig_s;
 void gpsInit(struct serialConfig_s *serialConfig, gpsConfig_t *initialGpsConfig);
 void gpsUpdate(timeUs_t currentTimeUs);
 bool gpsNewFrame(uint8_t c);
+struct serialPort_s;
+void gpsEnablePassthrough(struct serialPort_s *gpsPassthroughPort);
+

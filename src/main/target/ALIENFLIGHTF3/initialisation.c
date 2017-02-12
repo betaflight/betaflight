@@ -25,7 +25,7 @@
 
 void targetBusInit(void)
 {
-	#ifdef USE_SPI
+    #ifdef USE_SPI
     #ifdef USE_SPI_DEVICE_1
         spiInit(SPIDEV_1);
     #endif

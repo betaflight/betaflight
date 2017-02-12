@@ -39,7 +39,7 @@ uint8_t transponderIrDMABuffer[TRANSPONDER_DMA_BUFFER_SIZE];
 
 volatile uint8_t transponderIrDataTransferInProgress = 0;
 
-void transponderIrInit(void)
+bool transponderIrInit(void)
 {
     memset(&transponderIrDMABuffer, 0, TRANSPONDER_DMA_BUFFER_SIZE);
 
@@ -51,7 +51,13 @@ void transponderIrInit(void)
         }
     }
 
+    if (!ioTag) {
+        return false;
+    }
+
+
     transponderIrHardwareInit(ioTag);
+    return true;
 }
 
 bool isTransponderIrReady(void)

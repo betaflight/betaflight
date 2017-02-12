@@ -46,7 +46,7 @@
 #include "accgyro_mpu.h"
 #include "accgyro_spi_mpu9250.h"
 
-static void mpu9250AccAndGyroInit(uint8_t lpf);
+static void mpu9250AccAndGyroInit(gyroDev_t *gyro);
 
 static bool mpuSpi9250InitDone = false;
 
@@ -100,7 +100,7 @@ void mpu9250SpiGyroInit(gyroDev_t *gyro)
 {
     mpuGyroInit(gyro);
 
-    mpu9250AccAndGyroInit(gyro->lpf);
+    mpu9250AccAndGyroInit(gyro);
 
     spiResetErrorCounter(MPU9250_SPI_INSTANCE);
 
@@ -140,7 +140,7 @@ bool verifympu9250WriteRegister(uint8_t reg, uint8_t data)
     return false;
 }
 
-static void mpu9250AccAndGyroInit(uint8_t lpf) {
+static void mpu9250AccAndGyroInit(gyroDev_t *gyro) {
 
     if (mpuSpi9250InitDone) {
         return;
@@ -153,17 +153,19 @@ static void mpu9250AccAndGyroInit(uint8_t lpf) {
 
     verifympu9250WriteRegister(MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
 
-    verifympu9250WriteRegister(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3 | FCB_DISABLED); //Fchoice_b defaults to 00 which makes fchoice 11
+    //Fchoice_b defaults to 00 which makes fchoice 11
+    const uint8_t raGyroConfigData = gyro->gyroRateKHz > GYRO_RATE_8_kHz ? (INV_FSR_2000DPS << 3 | FCB_3600_32) : (INV_FSR_2000DPS << 3 | FCB_DISABLED);
+    verifympu9250WriteRegister(MPU_RA_GYRO_CONFIG, raGyroConfigData);
 
-    if (lpf == 4) {
+    if (gyro->lpf == 4) {
         verifympu9250WriteRegister(MPU_RA_CONFIG, 1); //1KHz, 184DLPF
-    } else if (lpf < 4) {
+    } else if (gyro->lpf < 4) {
         verifympu9250WriteRegister(MPU_RA_CONFIG, 7); //8KHz, 3600DLPF
-    } else if (lpf > 4) {
+    } else if (gyro->lpf > 4) {
         verifympu9250WriteRegister(MPU_RA_CONFIG, 0); //8KHz, 250DLPF
     }
 
-    verifympu9250WriteRegister(MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops()); // Get Divider Drops
+    verifympu9250WriteRegister(MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops(gyro));
 
     verifympu9250WriteRegister(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
     verifympu9250WriteRegister(MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN

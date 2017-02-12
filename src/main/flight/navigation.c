@@ -27,6 +27,7 @@
 #include "build/debug.h"
 
 #include "common/axis.h"
+#include "common/gps_conversion.h"
 #include "common/maths.h"
 #include "common/time.h"
 
@@ -36,20 +37,19 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "sensors/sensors.h"
-#include "sensors/boardalignment.h"
-#include "sensors/acceleration.h"
+#include "flight/imu.h"
+#include "flight/navigation.h"
+#include "flight/pid.h"
 
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "io/gps.h"
 
-#include "flight/pid.h"
-#include "flight/navigation.h"
-#include "flight/gps_conversion.h"
-#include "flight/imu.h"
-
 #include "rx/rx.h"
+
+#include "sensors/acceleration.h"
+#include "sensors/boardalignment.h"
+#include "sensors/sensors.h"
 
 
 extern int16_t magHold;

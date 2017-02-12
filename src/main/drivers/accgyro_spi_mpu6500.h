@@ -17,7 +17,7 @@
 
 #pragma once
 
-bool mpu6500SpiDetect(void);
+uint8_t mpu6500SpiDetect(void);
 
 void mpu6500SpiAccInit(accDev_t *acc);
 void mpu6500SpiGyroInit(gyroDev_t *gyro);

@@ -36,6 +36,8 @@
 
 static displayPort_t mspDisplayPort;
 
+static displayPortProfile_t *mspDisplayPortProfile;
+
 static int output(displayPort_t *displayPort, uint8_t cmd, const uint8_t *buf, int len)
 {
     UNUSED(displayPort);
@@ -116,8 +118,8 @@ static bool isTransferInProgress(const displayPort_t *displayPort)
 
 static void resync(displayPort_t *displayPort)
 {
-    displayPort->rows = 13; // XXX Will reflect NTSC/PAL in the future
-    displayPort->cols = 30;
+    displayPort->rows = 13 + mspDisplayPortProfile->rowAdjust; // XXX Will reflect NTSC/PAL in the future
+    displayPort->cols = 30 + mspDisplayPortProfile->colAdjust;
 }
 
 static uint32_t txBytesFree(const displayPort_t *displayPort)
@@ -140,8 +142,9 @@ static const displayPortVTable_t mspDisplayPortVTable = {
     .txBytesFree = txBytesFree
 };
 
-displayPort_t *displayPortMspInit(void)
+displayPort_t *displayPortMspInit(displayPortProfile_t *displayPortProfileToUse)
 {
+    mspDisplayPortProfile = displayPortProfileToUse;
     displayInit(&mspDisplayPort, &mspDisplayPortVTable);
     resync(&mspDisplayPort);
     return &mspDisplayPort;

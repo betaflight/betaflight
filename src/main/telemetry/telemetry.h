@@ -46,6 +46,7 @@ typedef struct telemetryConfig_s {
     uint8_t frsky_vfas_cell_voltage;
     uint8_t hottAlarmSoundInterval;
     uint8_t pidValuesAsTelemetry;
+    uint8_t report_cell_voltage;
 } telemetryConfig_t;
 
 void telemetryInit(void);

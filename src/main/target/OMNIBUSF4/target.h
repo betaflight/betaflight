@@ -35,8 +35,7 @@
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 
-#define INVERTER                PC0 // PC0 used as inverter select GPIO
-#define INVERTER_USART          USART1
+#define INVERTER_PIN_USART1     PC0 // PC0 used as inverter select GPIO
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
@@ -174,10 +173,10 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC 0xffff
-#define TARGET_IO_PORTD 0xffff
+#define TARGET_IO_PORTA (0xffff & ~(BIT(14)|BIT(13)))
+#define TARGET_IO_PORTB (0xffff & ~(BIT(2)))
+#define TARGET_IO_PORTC (0xffff & ~(BIT(15)|BIT(14)|BIT(13)))
+#define TARGET_IO_PORTD BIT(2)
 
 #define USABLE_TIMER_CHANNEL_COUNT 12
 #define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9))

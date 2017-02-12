@@ -204,8 +204,8 @@ serialPort_t *usbVcpOpen(void)
 #else
     Set_System();
     Set_USBClock();
-    USB_Interrupts_Config();
     USB_Init();
+    USB_Interrupts_Config();
 #endif
 
     s = &vcpPort;

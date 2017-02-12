@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_adc_ex.c
   * @author  MCD Application Team
-  * @version V1.1.2
-  * @date    23-September-2016 
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   This file provides firmware functions to manage the following 
   *          functionalities of the ADC extension peripheral:
   *           + Extended features functions
@@ -756,7 +756,7 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeStop_DMA(ADC_HandleTypeDef* hadc)
   */
 uint32_t HAL_ADCEx_MultiModeGetValue(ADC_HandleTypeDef* hadc)
 {
-  (void)hadc;
+  UNUSED(hadc);
   /* Return the multi mode conversion value */
   return ADC->CDR;
 }

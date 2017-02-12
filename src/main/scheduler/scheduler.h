@@ -23,6 +23,7 @@ typedef enum {
     TASK_PRIORITY_IDLE = 0,     // Disables dynamic scheduling, task is executed only if no other task is active this cycle
     TASK_PRIORITY_LOW = 1,
     TASK_PRIORITY_MEDIUM = 3,
+    TASK_PRIORITY_MEDIUM_HIGH = 4,
     TASK_PRIORITY_HIGH = 5,
     TASK_PRIORITY_REALTIME = 6,
     TASK_PRIORITY_MAX = 255
@@ -54,6 +55,7 @@ typedef enum {
     TASK_ATTITUDE,
     TASK_RX,
     TASK_SERIAL,
+    TASK_DISPATCH,
     TASK_BATTERY,
 #ifdef BEEPER
     TASK_BEEPER,
@@ -100,6 +102,9 @@ typedef enum {
 #ifdef CMS
     TASK_CMS,
 #endif
+#ifdef VTX_CONTROL
+    TASK_VTXCTRL,
+#endif
 
     /* Count of real tasks */
     TASK_COUNT,
@@ -141,6 +146,8 @@ void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t *taskInfo);
 void rescheduleTask(cfTaskId_e taskId, uint32_t newPeriodMicros);
 void setTaskEnabled(cfTaskId_e taskId, bool newEnabledState);
 uint32_t getTaskDeltaTime(cfTaskId_e taskId);
+void schedulerSetCalulateTaskStatistics(bool calculateTaskStatistics);
+void schedulerResetTaskStatistics(cfTaskId_e taskId);
 
 void schedulerInit(void);
 void scheduler(void);

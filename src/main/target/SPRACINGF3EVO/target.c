@@ -29,7 +29,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM8,  CH1,  PA15, TIM_USE_PPM,   0 ),  // PPM
 #ifdef AIORACERF3
     DEF_TIM(TIM3,  CH4,  PB1,  TIM_USE_MOTOR, 1 ),  // PWM1
-    DEF_TIM(TIM3,  CH2,  PA7,  TIM_USE_MOTOR, 1 ),  // PWM2
+    DEF_TIM(TIM17, CH1,  PA7,  TIM_USE_MOTOR, 1 ),  // PWM2
     DEF_TIM(TIM15, CH1,  PA2,  TIM_USE_MOTOR, 1 ),  // PWM3
     DEF_TIM(TIM2,  CH2,  PA1,  TIM_USE_MOTOR, 1 ),  // PWM4
     DEF_TIM(TIM3,  CH3,  PB0,  TIM_USE_MOTOR, 1 ),  // PWM5
