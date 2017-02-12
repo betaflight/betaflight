@@ -74,7 +74,7 @@ it can do without overeating (150mA on 4S gives 1.5W of waste heat!). OSD, LED S
 
 ## LED Strip
 
-Right now, LED strip is not functioning correctly on this target. It is a known bug. When bug will be fixed, LED Strip should be connected to **MOTOR 5** output, not dedicated "LED" connector.
+LED strip is enabled on Motor 5 pin (PA1)
 
 ## SoftwareSerial
 
