@@ -102,11 +102,12 @@ static uint16_t flyTime = 0;
 static uint8_t statRssi;
 
 typedef struct statistic_s {
-    int16_t max_speed;
+    uint16_t max_speed;
     int16_t min_voltage; // /10
     int16_t max_current; // /10
     int16_t min_rssi;
-    int16_t max_altitude;
+    int32_t max_altitude;
+    uint16_t max_distance;
 } statistic_t;
 
 static statistic_t stats;
@@ -191,21 +192,101 @@ static void osdDrawSingleElement(uint8_t item)
         case OSD_MAH_DRAWN:
         {
             buff[0] = SYM_MAH;
-            sprintf(buff + 1, "%d", mAhDrawn);
+            sprintf(buff + 1, "%d", abs(mAhDrawn));
             break;
         }
 
 #ifdef GPS
         case OSD_GPS_SATS:
         {
-            buff[0] = 0x1f;
-            sprintf(buff + 1, "%d", gpsSol.numSat);
+            buff[0] = 0x1e;
+            buff[1] = 0x1f;
+            sprintf(buff + 2, "%d", gpsSol.numSat);
             break;
         }
 
         case OSD_GPS_SPEED:
         {
-            sprintf(buff, "%d", gpsSol.groundSpeed * 36 / 1000);
+            sprintf(buff, "%d%c", gpsSol.groundSpeed * 36 / 1000, 0xA1);
+            break;
+        }
+
+        case OSD_GPS_LAT:
+        case OSD_GPS_LON:
+        {
+            int32_t val;
+
+            if (item == OSD_GPS_LAT)
+            {
+                buff[0] = 0xA6;
+                val = gpsSol.llh.lat;
+            }
+            else
+            {
+                buff[0] = 0xA7;
+                val = gpsSol.llh.lon;
+            }
+
+            if (val >= 0)
+            {
+                itoa(1000000000 + val, &buff[1], 10);
+                buff[1] = buff[2];
+                buff[2] = buff[3];
+                buff[3] = '.';
+            }
+            else
+            {
+                itoa(-1000000000 + val, &buff[1], 10);
+                buff[2] = buff[3];
+                buff[3] = buff[4];
+                buff[4] = '.';
+            }
+            break;
+        }
+
+        case OSD_HOME_DIR:
+        {
+            int16_t h;
+
+            if (STATE(FIXED_WING) && !sensors(SENSOR_MAG))
+                h = GPS_directionToHome - gpsSol.groundCourse/10;
+            else
+                h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+
+            if (h < 0)
+                h += 360;
+            if (h >= 360)
+                h -= 360;
+
+            h = h*2/45;
+
+            buff[0] = 0x60+h;
+            buff[1] = 0;
+            break;
+        }
+
+        case OSD_HOME_DIST:
+        {
+            int32_t dist = osdGetAltitude(GPS_distanceToHome * 100);
+            buff[0] = 0xA0;
+            sprintf(&buff[1], "%d%c", dist / 100 , osdGetAltitudeSymbol());
+            break;
+        }
+
+        case OSD_HEADING:
+        {
+            int16_t h;
+
+            buff[0] = 0xA9;
+
+            if (STATE(FIXED_WING) && !sensors(SENSOR_MAG))
+                h = gpsSol.groundCourse/10;
+            else
+                h = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+
+            if (h < 0) h+=360;
+
+            sprintf(buff, "%c%d%c", 0xA9, h , 0xA8 );
             break;
         }
 #endif // GPS
@@ -217,7 +298,10 @@ static void osdDrawSingleElement(uint8_t item)
 #else
             int32_t alt = osdGetAltitude(baro.BaroAlt);
 #endif
-            sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
+            if (alt < 0)
+                sprintf(buff, "%c-%d.%01d%c", 0xAA, abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
+            else
+                sprintf(buff, "%c%d.%01d%c", 0xAA, abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
             break;
         }
 
@@ -245,12 +329,25 @@ static void osdDrawSingleElement(uint8_t item)
                 p = "AIR";
 #endif
 
-            if (FLIGHT_MODE(FAILSAFE_MODE))
-                p = "FS";
+            if (FLIGHT_MODE(PASSTHRU_MODE))
+                p="PASS";
+            else if (FLIGHT_MODE(FAILSAFE_MODE))
+                p="!FS!";
+            else if (FLIGHT_MODE(HEADFREE_MODE))
+                p="!HF!";
+            else if (FLIGHT_MODE(NAV_RTH_MODE))
+                p="RTL ";
+            else if (FLIGHT_MODE(NAV_POSHOLD_MODE))
+                p=" PH ";
+            else if (FLIGHT_MODE(NAV_WP_MODE))
+                p=" WP ";
+            else if (FLIGHT_MODE(NAV_ALTHOLD_MODE))
+                p=" AH ";
             else if (FLIGHT_MODE(ANGLE_MODE))
-                p = "STAB";
+                p="STAB";
             else if (FLIGHT_MODE(HORIZON_MODE))
-                p = "HOR";
+                p="HOR";
+
 
             max7456Write(elemPosX, elemPosY, p);
             return;
@@ -358,6 +455,52 @@ static void osdDrawSingleElement(uint8_t item)
             return;
         }
 
+        case OSD_VARIO:
+        {
+            int16_t v = getEstimatedActualVelocity(Z) / 50; //50cm = 1 arrow
+            uint8_t vchars[] = {0x20,0x20,0x20,0x20,0x20};
+
+            if (v >= 6)
+                vchars[0] = 0xA2;
+            else if (v == 5)
+                vchars[0] = 0xA3;
+            if (v >=4)
+                vchars[1] = 0xA2;
+            else if (v == 3)
+                vchars[1] = 0xA3;
+            if (v >=2)
+                vchars[2] = 0xA2;
+            else if (v == 1)
+                vchars[2] = 0xA3;
+            if (v <= -2)
+                vchars[2] = 0xA5;
+            else if (v == -1)
+                vchars[2] = 0xA4;
+            if (v <= -4)
+                vchars[3] = 0xA5;
+            else if (v == -3)
+                vchars[3] = 0xA4;
+            if (v <= -6)
+                vchars[4] = 0xA5;
+            else if (v == -5)
+                vchars[4] = 0xA4;
+
+            max7456WriteChar(elemPosX, elemPosY, vchars[0]);
+            max7456WriteChar(elemPosX, elemPosY+1, vchars[1]);
+            max7456WriteChar(elemPosX, elemPosY+2, vchars[2]);
+            max7456WriteChar(elemPosX, elemPosY+3, vchars[3]);
+            max7456WriteChar(elemPosX, elemPosY+4, vchars[4]);
+            return;
+        }
+
+        case OSD_VARIO_NUM:
+        {
+            int16_t value = getEstimatedActualVelocity(Z) / 10; //limit precision to 10cm
+
+            sprintf(buff, "%c%d.%01d%c", value < 0 ? '-' : ' ', abs(value / 10), abs((value % 10)), 0x9F);
+            break;
+        }
+
         case OSD_ROLL_PIDS:
         {
             sprintf(buff, "ROL %3d %3d %3d", pidBank()->pid[PID_ROLL].P, pidBank()->pid[PID_ROLL].I, pidBank()->pid[PID_ROLL].D);
@@ -417,8 +560,11 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_FLYMODE);
     osdDrawSingleElement(OSD_THROTTLE_POS);
     osdDrawSingleElement(OSD_VTX_CHANNEL);
-    osdDrawSingleElement(OSD_CURRENT_DRAW);
-    osdDrawSingleElement(OSD_MAH_DRAWN);
+    if (feature(FEATURE_CURRENT_METER))
+    {
+        osdDrawSingleElement(OSD_CURRENT_DRAW);
+        osdDrawSingleElement(OSD_MAH_DRAWN);
+    }
     osdDrawSingleElement(OSD_CRAFT_NAME);
     osdDrawSingleElement(OSD_ALTITUDE);
     osdDrawSingleElement(OSD_ROLL_PIDS);
@@ -435,27 +581,52 @@ void osdDrawElements(void)
     {
         osdDrawSingleElement(OSD_GPS_SATS);
         osdDrawSingleElement(OSD_GPS_SPEED);
+        osdDrawSingleElement(OSD_GPS_LAT);
+        osdDrawSingleElement(OSD_GPS_LON);
+        osdDrawSingleElement(OSD_HOME_DIR);
+        osdDrawSingleElement(OSD_HOME_DIST);
+        osdDrawSingleElement(OSD_HEADING);
     }
 #endif // GPS
+
+#if defined(BARO) || defined(GPS)
+    osdDrawSingleElement(OSD_VARIO);
+    osdDrawSingleElement(OSD_VARIO_NUM);
+#endif // defined
+
 }
 
 void pgResetFn_osdConfig(osdConfig_t *instance)
 {
-    instance->item_pos[OSD_RSSI_VALUE] = OSD_POS(22, 0) | VISIBLE_FLAG;
+    instance->item_pos[OSD_ALTITUDE] = OSD_POS(1, 0) | VISIBLE_FLAG;
     instance->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 0) | VISIBLE_FLAG;
+    instance->item_pos[OSD_RSSI_VALUE] = OSD_POS(23, 0) | VISIBLE_FLAG;
+    //line 2
+    instance->item_pos[OSD_HOME_DIST] = OSD_POS(1, 1) | VISIBLE_FLAG;  
+    instance->item_pos[OSD_HEADING] = OSD_POS(12, 1) | VISIBLE_FLAG;
+    instance->item_pos[OSD_GPS_SPEED] = OSD_POS(23, 1) | VISIBLE_FLAG;
+    
+    instance->item_pos[OSD_THROTTLE_POS] = OSD_POS(1, 2) | VISIBLE_FLAG;    
+    instance->item_pos[OSD_CURRENT_DRAW] = OSD_POS(1, 3) | VISIBLE_FLAG;
+    instance->item_pos[OSD_MAH_DRAWN] = OSD_POS(1, 4) | VISIBLE_FLAG;
+
+    instance->item_pos[OSD_VARIO] = OSD_POS(22,5) | VISIBLE_FLAG;
+    instance->item_pos[OSD_VARIO_NUM] = OSD_POS(23,7) | VISIBLE_FLAG;
+    instance->item_pos[OSD_HOME_DIR] = OSD_POS(14, 11) | VISIBLE_FLAG;
     instance->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(8, 6) | VISIBLE_FLAG;
     instance->item_pos[OSD_HORIZON_SIDEBARS] = OSD_POS(8, 6) | VISIBLE_FLAG;
-    instance->item_pos[OSD_ONTIME] = OSD_POS(22, 11) | VISIBLE_FLAG;
-    instance->item_pos[OSD_FLYTIME] = OSD_POS(22, 12) | VISIBLE_FLAG;
-    instance->item_pos[OSD_FLYMODE] = OSD_POS(12, 11) | VISIBLE_FLAG;
-    instance->item_pos[OSD_CRAFT_NAME] = OSD_POS(12, 12);
-    instance->item_pos[OSD_THROTTLE_POS] = OSD_POS(1, 4);
-    instance->item_pos[OSD_VTX_CHANNEL] = OSD_POS(8, 6);
-    instance->item_pos[OSD_CURRENT_DRAW] = OSD_POS(1, 3);
-    instance->item_pos[OSD_MAH_DRAWN] = OSD_POS(15, 3);
-    instance->item_pos[OSD_GPS_SPEED] = OSD_POS(2, 2);
-    instance->item_pos[OSD_GPS_SATS] = OSD_POS(2, 12);
-    instance->item_pos[OSD_ALTITUDE] = OSD_POS(1, 5);
+    
+    instance->item_pos[OSD_CRAFT_NAME] = OSD_POS(20, 2)  | VISIBLE_FLAG;
+    instance->item_pos[OSD_VTX_CHANNEL] = OSD_POS(8, 6) | VISIBLE_FLAG;
+
+    instance->item_pos[OSD_ONTIME] = OSD_POS(23, 10) | VISIBLE_FLAG;
+    instance->item_pos[OSD_FLYTIME] = OSD_POS(23, 11) | VISIBLE_FLAG;
+    instance->item_pos[OSD_GPS_SATS] = OSD_POS(0, 11) | VISIBLE_FLAG;
+    
+    instance->item_pos[OSD_GPS_LAT] = OSD_POS(0, 12) | VISIBLE_FLAG;
+    instance->item_pos[OSD_FLYMODE] = OSD_POS(12, 12) | VISIBLE_FLAG;
+    instance->item_pos[OSD_GPS_LON] = OSD_POS(18, 12) | VISIBLE_FLAG;    
+    
     instance->item_pos[OSD_ROLL_PIDS] = OSD_POS(2, 10);
     instance->item_pos[OSD_PITCH_PIDS] = OSD_POS(2, 11);
     instance->item_pos[OSD_YAW_PIDS] = OSD_POS(2, 12);
@@ -578,16 +749,20 @@ static void osdUpdateStats(void)
 {
     int16_t value;
 
-#ifdef GPS_notyet
-    value = GPS_speed * 36 / 1000;
-    if (stats.max_speed < value)
-        stats.max_speed = value;
-#endif
+    if (feature(FEATURE_GPS))
+    {
+        value = gpsSol.groundSpeed * 36 / 1000;
+        if (stats.max_speed < value)
+            stats.max_speed = value;
+            
+        if (stats.max_distance < GPS_distanceToHome)
+            stats.max_distance = GPS_distanceToHome;
+    }
 
     if (stats.min_voltage > vbat)
         stats.min_voltage = vbat;
 
-    value = amperage / 100;
+    value = abs(amperage / 100);
     if (stats.max_current < value)
         stats.max_current = value;
 
@@ -612,8 +787,19 @@ static void osdShowStats(void)
     max7456Write(2, top++, "  --- STATS ---");
 
     if (STATE(GPS_FIX)) {
+        int32_t dist;
         max7456Write(2, top, "MAX SPEED        :");
         itoa(stats.max_speed, buff, 10);
+        max7456Write(22, top++, buff);
+        
+        max7456Write(2, top, "MAX DISTANCE     :");
+        dist = osdGetAltitude(stats.max_distance*100); //convert to feet or meters
+        sprintf(buff, "%d%c", dist / 100 , osdGetAltitudeSymbol());
+        max7456Write(22, top++, buff);
+
+        max7456Write(2, top, "TRAVELED DISTANCE:");
+        dist = osdGetAltitude(getTotalTravelDistance()); //convert to feet or meters
+        sprintf(buff, "%d%c", dist / 100 , osdGetAltitudeSymbol());
         max7456Write(22, top++, buff);
     }
 

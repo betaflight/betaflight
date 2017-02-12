@@ -111,9 +111,18 @@ OSD_Entry menuOsdActiveElemsEntries[] =
     {"CURRENT (A)", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CURRENT_DRAW], 0},
     {"USED MAH", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAH_DRAWN], 0},
 #ifdef GPS
+    {"HOME DIR.", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HOME_DIR], 0},
+    {"HOME DIST.", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HOME_DIST], 0},
     {"GPS SPEED", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_SPEED], 0},
     {"GPS SATS.", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_SATS], 0},
+    {"GPS LAT", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_LAT], 0},
+    {"GPS LON.", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_LON], 0},
+    {"HEADING", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HEADING], 0},
 #endif // GPS
+#if defined(BARO) || defined(GPS)
+    {"VARIO", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_VARIO], 0},
+    {"VARIO NUM", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_VARIO_NUM], 0},
+#endif // defined
     {"ALTITUDE", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ALTITUDE], 0},
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
