@@ -58,6 +58,9 @@ typedef enum {
     TIMER_MODE_DUAL,
 } timerMode_e;
 
+#define ICPOLARITY_RISING true
+#define ICPOLARITY_FALLING false
+
 typedef struct softSerial_s {
     serialPort_t     port;
 
@@ -65,8 +68,10 @@ typedef struct softSerial_s {
     IO_t txIO;
 
     const timerHardware_t *timerHardware;
+#ifdef USE_HAL_DRIVER
+    const TIM_HandleTypeDef *timerHandle;
+#endif
     const timerHardware_t *exTimerHardware;
-    uint32_t         ccEnableBit;
 
     volatile uint8_t rxBuffer[SOFTSERIAL_BUFFER_SIZE];
     volatile uint8_t txBuffer[SOFTSERIAL_BUFFER_SIZE];
@@ -135,14 +140,22 @@ static void serialInputPortActivate(softSerial_t *softSerial)
 
     // Enable input capture
 
+#ifdef USE_HAL_DRIVER
+    TIM_CCxChannelCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_ENABLE);
+#else
     TIM_CCxCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_Enable);
+#endif
 }
 
 static void serialInputPortDeActivate(softSerial_t *softSerial)
 {
     // Disable input capture
 
+#ifdef USE_HAL_DRIVER
+    TIM_CCxChannelCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_DISABLE);
+#else
     TIM_CCxCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_Disable);
+#endif
 
     IOConfigGPIO(softSerial->rxIO, IOCFG_IN_FLOATING);
     softSerial->rxActive = false;
@@ -186,10 +199,7 @@ static void serialTimerConfigureTimebase(const timerHardware_t *timerHardwarePtr
     timerConfigure(timerHardwarePtr, timerPeriod, mhz);
 }
 
-
-// XXX This is almost identical to timerChConfigIC.
-// XXX Expensive? Direct register manipulation?
-
+#if 0
 static void serialICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 {
     TIM_ICInitTypeDef TIM_ICInitStructure;
@@ -203,6 +213,7 @@ static void serialICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 
     TIM_ICInit(tim, &TIM_ICInitStructure);
 }
+#endif
 
 static void resetBuffers(softSerial_t *softSerial)
 {
@@ -293,7 +304,7 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
     // Configure master timer (on RX); time base and input capture
 
     serialTimerConfigureTimebase(softSerial->timerHardware, baud);
-    serialICConfig(softSerial->timerHardware->tim, softSerial->timerHardware->channel, (options & SERIAL_INVERTED) ? TIM_ICPolarity_Rising : TIM_ICPolarity_Falling);
+    timerChConfigIC(softSerial->timerHardware, (options & SERIAL_INVERTED) ? ICPOLARITY_RISING : ICPOLARITY_FALLING, 0);
 
     // Initialize callbacks
     timerChCCHandlerInit(&softSerial->edgeCb, onSerialRxPinChange);
@@ -313,6 +324,10 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
         softSerial->timerMode = TIMER_MODE_SINGLE;
         timerChConfigCallbacks(softSerial->timerHardware, &softSerial->edgeCb, &softSerial->overCb);
     }
+
+#ifdef USE_HAL_DRIVER
+    softSerial->timerHandle = timerFindTimerHandle(softSerial->timerHardware->tim);
+#endif
 
     if (!(options & SERIAL_BIDIR)) {
         serialOutputPortActivate(softSerial);
@@ -398,9 +413,7 @@ void prepareForNextRxByte(softSerial_t *softSerial)
     softSerial->isSearchingForStartBit = true;
     if (softSerial->rxEdge == LEADING) {
         softSerial->rxEdge = TRAILING;
-        serialICConfig(softSerial->timerHardware->tim, softSerial->timerHardware->channel,
-            (softSerial->port.options & SERIAL_INVERTED) ? TIM_ICPolarity_Rising : TIM_ICPolarity_Falling
-        );
+        timerChConfigIC(softSerial->timerHardware, (softSerial->port.options & SERIAL_INVERTED) ? ICPOLARITY_RISING : ICPOLARITY_FALLING, 0);
     }
 }
 
@@ -482,7 +495,12 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
         // Synchronize the bit timing so that it will interrupt at the center
         // of the bit period.
 
+#ifdef USE_HAL_DRIVER
+        __HAL_TIM_SetCounter(self->timerHandle, __HAL_TIM_GetAutoreload(self->timerHandle) / 2);
+#else
         TIM_SetCounter(self->timerHardware->tim, self->timerHardware->tim->ARR / 2);
+#endif
+
         // For a mono-timer full duplex configuration, this may clobber the
         // transmission because the next callback to the onSerialTimerOverflow
         // will happen too early causing transmission errors.
@@ -492,7 +510,7 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
             self->transmissionErrors++;
         }
 
-        serialICConfig(self->timerHardware->tim, self->timerHardware->channel, inverted ? TIM_ICPolarity_Falling : TIM_ICPolarity_Rising);
+        timerChConfigIC(self->timerHardware, inverted ? ICPOLARITY_FALLING : ICPOLARITY_RISING, 0);
         self->rxEdge = LEADING;
 
         self->rxBitIndex = 0;
@@ -510,10 +528,10 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 
     if (self->rxEdge == TRAILING) {
         self->rxEdge = LEADING;
-        serialICConfig(self->timerHardware->tim, self->timerHardware->channel, inverted ? TIM_ICPolarity_Falling : TIM_ICPolarity_Rising);
+        timerChConfigIC(self->timerHardware, inverted ? ICPOLARITY_FALLING : ICPOLARITY_RISING, 0);
     } else {
         self->rxEdge = TRAILING;
-        serialICConfig(self->timerHardware->tim, self->timerHardware->channel, inverted ? TIM_ICPolarity_Rising : TIM_ICPolarity_Falling);
+        timerChConfigIC(self->timerHardware, inverted ? ICPOLARITY_RISING : ICPOLARITY_FALLING, 0);
     }
 }
 

@@ -151,6 +151,9 @@
 #define USE_UART3
 #define USE_UART4
 #define USE_UART5
+//#define USE_SOFTSERIAL1
+//#define USE_SOFTSERIAL2
+
 #define SERIAL_PORT_COUNT       6
 
 #define USE_ESCSERIAL
