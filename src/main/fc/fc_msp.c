@@ -93,7 +93,7 @@
 
 #include "telemetry/telemetry.h"
 
-#ifdef NAZE
+#ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
 
@@ -509,7 +509,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_BOARD_INFO:
         sbufWriteData(dst, boardIdentifier, BOARD_IDENTIFIER_LENGTH);
-#ifdef NAZE
+#ifdef USE_HARDWARE_REVISION_DETECTION
         sbufWriteU16(dst, hardwareRevision);
 #else
         sbufWriteU16(dst, 0); // No other build targets currently have hardware revision detection.
