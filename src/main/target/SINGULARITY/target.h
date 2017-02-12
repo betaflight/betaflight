@@ -45,7 +45,9 @@
 #define USE_UART2          // Input - TX (NC) RX (PA15)
 #define USE_UART3          // Solder Pads - TX (PB10) RX (PB11)
 #define USE_SOFTSERIAL1     // Telemetry
-#define SERIAL_PORT_COUNT 5
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT 6
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1

@@ -48,14 +48,16 @@
   #define USE_VCP
   #define USB_IO
   #define USBD_PRODUCT_STRING "tinyFISH"
-  #define SERIAL_PORT_COUNT 4
+  #define SERIAL_PORT_COUNT 6
 #else
-  #define SERIAL_PORT_COUNT 3
+  #define SERIAL_PORT_COUNT 5
 #endif
 
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
 
 #define UART1_TX_PIN            PB6
 #define UART1_RX_PIN            PB7
