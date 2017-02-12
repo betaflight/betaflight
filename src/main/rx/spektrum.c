@@ -111,26 +111,22 @@ static uint32_t spekChannelData[SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT];
 
 uint8_t spektrumFrameStatus(void)
 {
-    uint8_t b;
-    uint16_t fade;
-    uint32_t current_secs;
-
     if (!rcFrameComplete) {
         return RX_FRAME_PENDING;
     }
-    
+
     rcFrameComplete = false;
 
     // Fetch the fade count
-    fade = (spekFrame[0] << 8) + spekFrame[1];
-    current_secs = micros() / 1000 / (1000 / SPEKTRUM_FADE_REPORTS_PER_SEC);
-    
+    const uint16_t fade = (spekFrame[0] << 8) + spekFrame[1];
+    const uint32_t current_secs = micros() / 1000 / (1000 / SPEKTRUM_FADE_REPORTS_PER_SEC);
+
     if (spek_fade_last_sec == 0) {
         // This is the first frame status received.
         spek_fade_last_sec_count = fade;
         spek_fade_last_sec = current_secs;
     } else if(spek_fade_last_sec != current_secs) {
-        // If the difference is > 1, then we missed several seconds worth of frames and 
+        // If the difference is > 1, then we missed several seconds worth of frames and
         // should just throw out the fade calc (as it's likely a full signal loss).
         if((current_secs - spek_fade_last_sec) == 1) {
             if(rssi_channel != 0) {
@@ -143,12 +139,12 @@ uint8_t spektrumFrameStatus(void)
         spek_fade_last_sec_count = fade;
         spek_fade_last_sec = current_secs;
     }
-        
-        
-    for (b = 3; b < SPEK_FRAME_SIZE; b += 2) {
-        uint8_t spekChannel = 0x0F & (spekFrame[b - 1] >> spek_chan_shift);
+
+
+    for (int b = 3; b < SPEK_FRAME_SIZE; b += 2) {
+        const uint8_t spekChannel = 0x0F & (spekFrame[b - 1] >> spek_chan_shift);
         if (spekChannel < rxRuntimeConfigPtr->channelCount && spekChannel < SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT) {
-            if(rssi_channel != 0 && spekChannel != rssi_channel) {
+            if(rssi_channel == 0 || spekChannel != rssi_channel) {
                 spekChannelData[spekChannel] = ((uint32_t)(spekFrame[b - 1] & spek_chan_mask) << 8) + spekFrame[b];
             }
         }
@@ -299,7 +295,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
     if (rssi_channel >= rxRuntimeConfig->channelCount) {
         rssi_channel = 0;
     }
-    
+
     return spektrumPort != NULL;
 }
 #endif // USE_SERIALRX_SPEKTRUM
