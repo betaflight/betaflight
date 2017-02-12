@@ -1475,9 +1475,11 @@ void handleBlackbox(timeUs_t currentTimeUs)
                 blackboxOpen();  
                 startBlackbox();
             }
+#ifdef USE_FLASHFS
             if (IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE)) {
                 blackboxSetState(BLACKBOX_STATE_START_ERASE);
             }
+#endif
         break;
         case BLACKBOX_STATE_PREPARE_LOG_FILE:
             if (blackboxDeviceBeginLog()) {
@@ -1602,6 +1604,7 @@ void handleBlackbox(timeUs_t currentTimeUs)
                 blackboxSetState(BLACKBOX_STATE_STOPPED);
             }
         break;
+#ifdef USE_FLASHFS
         case BLACKBOX_STATE_START_ERASE:
 	        blackboxEraseAll();
 	        blackboxSetState(BLACKBOX_STATE_ERASING);
@@ -1609,7 +1612,7 @@ void handleBlackbox(timeUs_t currentTimeUs)
         break;
         case BLACKBOX_STATE_ERASING:
 	        if (isBlackboxErased()) {
-                //Done eraseing
+                //Done erasing
                 blackboxSetState(BLACKBOX_STATE_ERASED);
                 beeper(BEEPER_BLACKBOX_ERASE);
             }
@@ -1619,21 +1622,25 @@ void handleBlackbox(timeUs_t currentTimeUs)
                 blackboxSetState(BLACKBOX_STATE_STOPPED);
             }
         break;
+#endif
         default:
         break;
     }
 
     // Did we run out of room on the device? Stop!
     if (isBlackboxDeviceFull()) {
+#ifdef USE_FLASHFS
         if (blackboxState != BLACKBOX_STATE_ERASING 
             && blackboxState != BLACKBOX_STATE_START_ERASE
             && blackboxState != BLACKBOX_STATE_ERASED) {
+#endif
             blackboxSetState(BLACKBOX_STATE_STOPPED);
             // ensure we reset the test mode flag if we stop due to full memory card
             if (startedLoggingInTestMode) startedLoggingInTestMode = false;
+#ifdef USE_FLASHFS
         }
+#endif
     } else { // Only log in test mode if there is room!
-
         if(blackboxConfig()->on_motor_test) {
             // Handle Motor Test Mode
             if(inMotorTestMode()) {
