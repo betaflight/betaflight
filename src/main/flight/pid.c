@@ -28,12 +28,18 @@
 #include "common/maths.h"
 #include "common/filter.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "fc/fc_core.h"
+#include "fc/fc_rc.h"
+
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
+#include "flight/mixer.h"
 #include "flight/navigation.h"
 
 #include "sensors/gyro.h"
@@ -146,21 +152,26 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 }
 
-static float Kp[3], Ki[3], Kd[3], c[3], levelGain, horizonGain, horizonTransition, maxVelocity[3], relaxFactor[3];
+static float Kp[3], Ki[3], Kd[3], maxVelocity[3];
+static float relaxFactor;
+static float dtermSetpointWeight;
+static float levelGain, horizonGain, horizonTransition, ITermWindupPoint, ITermWindupPointInv;
 
 void pidInitConfig(const pidProfile_t *pidProfile) {
     for(int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         Kp[axis] = PTERM_SCALE * pidProfile->P8[axis];
         Ki[axis] = ITERM_SCALE * pidProfile->I8[axis];
         Kd[axis] = DTERM_SCALE * pidProfile->D8[axis];
-        c[axis] = pidProfile->dtermSetpointWeight / 100.0f;
-        relaxFactor[axis] = 1.0f - (pidProfile->setpointRelaxRatio / 100.0f);
     }
+    dtermSetpointWeight = pidProfile->dtermSetpointWeight / 100.0f;
+    relaxFactor = 1.0f / (pidProfile->setpointRelaxRatio / 100.0f);
     levelGain = pidProfile->P8[PIDLEVEL] / 10.0f;
     horizonGain = pidProfile->I8[PIDLEVEL] / 10.0f;
     horizonTransition = 100.0f / pidProfile->D8[PIDLEVEL];
     maxVelocity[FD_ROLL] = maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 1000 * dT;
     maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 1000 * dT;
+    ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
+    ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
 }
 
 static float calcHorizonLevelStrength(void) {
@@ -206,10 +217,14 @@ static float accelerationLimit(int axis, float currentPidSetpoint) {
 
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
 // Based on 2DOF reference design (matlab)
-void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float tpaFactor)
+void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim)
 {
     static float previousRateError[2];
-    static float previousSetpoint[3];
+    const float tpaFactor = getThrottlePIDAttenuation();
+    const float motorMixRange = getMotorMixRange();
+
+    // Dynamic ki component to gradually scale back integration when above windup point
+    const float dynKi = MIN((1.0f - motorMixRange) * ITermWindupPointInv, 1.0f);
 
     // ----------PID controller----------
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
@@ -226,7 +241,8 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
 
         // --------low-level gyro-based PID based on 2DOF PID controller. ----------
-        //  ---------- 2-DOF PID controller with optional filter on derivative term. b = 1 and only c can be tuned (amount derivative on measurement or error).  ----------
+        // 2-DOF PID controller with optional filter on derivative term.
+        // b = 1 and only c (dtermSetpointWeight) can be tuned (amount derivative on measurement or error).
 
         // -----calculate error rate
         const float errorRate = currentPidSetpoint - gyroRate;       // r - y
@@ -238,55 +254,50 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         }
 
         // -----calculate I component
-        // Reduce strong Iterm accumulation during higher stick inputs
-        const float accumulationThreshold = (axis == FD_YAW) ? pidProfile->yawItermIgnoreRate : pidProfile->rollPitchItermIgnoreRate;
-        const float setpointRateScaler = constrainf(1.0f - (ABS(currentPidSetpoint) / accumulationThreshold), 0.0f, 1.0f);
-
         float ITerm = previousGyroIf[axis];
-        ITerm += Ki[axis] * errorRate * dT * setpointRateScaler * itermAccelerator;
-        // limit maximum integrator value to prevent WindUp
-        ITerm = constrainf(ITerm, -250.0f, 250.0f);
-        previousGyroIf[axis] = ITerm;
+        if (motorMixRange < 1.0f) {
+            // Only increase ITerm if motor output is not saturated
+            ITerm += Ki[axis] * errorRate * dT * dynKi * itermAccelerator;
+            previousGyroIf[axis] = ITerm;
+        }
 
-        // -----calculate D component (Yaw D not yet supported)
-        float DTerm = 0.0;
-        if (axis != FD_YAW) {
-            float dynC = c[axis];
+        // -----calculate D component
+        if (axis == FD_YAW) {
+            // no DTerm for yaw axis
+            // -----calculate total PID output
+            axisPIDf[FD_YAW] = PTerm + ITerm;
+#ifdef BLACKBOX
+            axisPID_P[FD_YAW] = PTerm;
+            axisPID_I[FD_YAW] = ITerm;
+            axisPID_D[FD_YAW] = 0;
+#endif
+        } else {
+            float dynC = dtermSetpointWeight;
             if (pidProfile->setpointRelaxRatio < 100) {
-                const float rcDeflection = getRcDeflectionAbs(axis);
-                dynC = c[axis];
-                if (currentPidSetpoint > 0) {
-                    if ((currentPidSetpoint - previousSetpoint[axis]) < previousSetpoint[axis])
-                        dynC = dynC * sq(rcDeflection) * relaxFactor[axis] + dynC * (1-relaxFactor[axis]);
-                } else if (currentPidSetpoint < 0) {
-                    if ((currentPidSetpoint - previousSetpoint[axis]) > previousSetpoint[axis])
-                        dynC = dynC * sq(rcDeflection) * relaxFactor[axis] + dynC * (1-relaxFactor[axis]);
-                }
+                dynC *= MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f);
             }
             const float rD = dynC * currentPidSetpoint - gyroRate;    // cr - y
             // Divide rate change by dT to get differential (ie dr/dt)
             const float delta = (rD - previousRateError[axis]) / dT;
             previousRateError[axis] = rD;
 
-            DTerm = Kd[axis] * delta * tpaFactor;
+            float DTerm = Kd[axis] * delta * tpaFactor;
             DEBUG_SET(DEBUG_DTERM_FILTER, axis, DTerm);
 
             // apply filters
             DTerm = dtermNotchFilterApplyFn(dtermFilterNotch[axis], DTerm);
             DTerm = dtermLpfApplyFn(dtermFilterLpf[axis], DTerm);
 
+            // -----calculate total PID output
+            axisPIDf[axis] = PTerm + ITerm + DTerm;
+#ifdef BLACKBOX
+            axisPID_P[axis] = PTerm;
+            axisPID_I[axis] = ITerm;
+            axisPID_D[axis] = DTerm;
+#endif
         }
-        previousSetpoint[axis] = currentPidSetpoint;
 
-        // -----calculate total PID output
-        axisPIDf[axis] = PTerm + ITerm + DTerm;
         // Disable PID control at zero throttle
         if (!pidStabilisationEnabled) axisPIDf[axis] = 0;
-
-#ifdef BLACKBOX
-        axisPID_P[axis] = PTerm;
-        axisPID_I[axis] = ITerm;
-        axisPID_D[axis] = DTerm;
-#endif
     }
 }

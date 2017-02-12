@@ -136,8 +136,6 @@
 
 //#define I2C_DEVICE_EXT (I2CDEV_2)
 
-#define SENSORS_SET (SENSOR_ACC|SENSOR_MAG|SENSOR_BARO)
-
 #define USE_ADC
 #define VBAT_ADC_PIN                PA3
 #define CURRENT_METER_ADC_PIN       PC0

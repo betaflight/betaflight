@@ -61,6 +61,16 @@ typedef enum {
     FEATURE_ESC_SENSOR = 1 << 27,
 } features_e;
 
+typedef struct systemConfig_s {
+    uint8_t debug_mode;
+} systemConfig_t;
+
+//!!TODOPG_DECLARE(systemConfig_t, systemConfig);
+struct profile_s;
+extern struct profile_s *currentProfile;
+struct controlRateConfig_s;
+extern struct controlRateConfig_s *currentControlRateProfile;
+
 void beeperOffSet(uint32_t mask);
 void beeperOffSetAll(uint8_t beeperCount);
 void beeperOffClear(uint32_t mask);

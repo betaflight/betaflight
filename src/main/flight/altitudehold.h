@@ -23,13 +23,9 @@ extern int32_t vario;
 void calculateEstimatedAltitude(timeUs_t currentTimeUs);
 
 struct pidProfile_s;
-struct barometerConfig_s;
-struct rcControlsConfig_s;
-struct motorConfig_s;
-void configureAltitudeHold(struct pidProfile_s *initialPidProfile, struct barometerConfig_s *intialBarometerConfig, struct rcControlsConfig_s *initialRcControlsConfig, struct motorConfig_s *initialMotorConfig);
+void configureAltitudeHold(struct pidProfile_s *initialPidProfile);
 
-struct airplaneConfig_s;
-void applyAltHold(struct airplaneConfig_s *airplaneConfig);
+void applyAltHold(void);
 void updateAltHoldState(void);
 void updateSonarAltHoldState(void);
 

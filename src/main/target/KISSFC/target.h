@@ -38,7 +38,17 @@
 #define MPU_INT_EXTI            PB2
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
+#ifdef KISSCC
+#define TARGET_CONFIG
 
+#define GYRO
+#define USE_GYRO_MPU6050
+#define GYRO_MPU6050_ALIGN      CW90_DEG
+
+#define ACC
+#define USE_ACC_MPU6050
+#define ACC_MPU6050_ALIGN       CW90_DEG
+#else
 #define GYRO
 #define USE_GYRO_MPU6050
 #define GYRO_MPU6050_ALIGN      CW180_DEG
@@ -46,7 +56,9 @@
 #define ACC
 #define USE_ACC_MPU6050
 #define ACC_MPU6050_ALIGN       CW180_DEG
+#endif
 
+#define USE_SOFTSERIAL
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
@@ -61,6 +73,14 @@
 
 #define UART3_TX_PIN            PB10 // PB10 (AF7)
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
+
+/* Fix this when Softserial is supported on single pin and add 1 more serial port
+#ifdef KISSCC
+#define SOFTSERIAL_1_TIMER      TIM16
+#define SOFTSERIAL_1_TIMER_RX_HARDWARE 11
+#define SOFTSERIAL_1_TIMER_TX_HARDWARE 11
+#endif
+*/
 
 #define USE_I2C
 #define I2C_DEVICE              (I2CDEV_1) // PB6/SCL, PB7/SDA

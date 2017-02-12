@@ -19,6 +19,7 @@
 
 #define CMS
 #define CMS_MAX_DEVICE 4
+#define USE_FAKE_GYRO
 #define MAG
 #define BARO
 #define GPS
@@ -55,8 +56,6 @@
 #define USE_SOFTSERIAL2
 
 #define SERIAL_PORT_COUNT 8
-
-#define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 6
 
 #define TARGET_BOARD_IDENTIFIER "TEST"
 

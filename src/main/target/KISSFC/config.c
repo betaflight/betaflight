@@ -15,11 +15,38 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdbool.h>
+#include <stdint.h>
 
-struct controlRateConfig_s;
-struct motorConfig_s;
-void generateThrottleCurve(struct controlRateConfig_s *controlRateConfig, struct motorConfig_s *motorConfig);
+#include <platform.h>
 
-int16_t rcLookupThrottle(int32_t tmp);
+#include "common/utils.h"
+
+#include "drivers/io.h"
+
+#include "fc/rc_controls.h"
+
+#include "flight/failsafe.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
+
+#include "rx/rx.h"
+
+#include "config/config_profile.h"
+#include "config/config_master.h"
+
+#include "sensors/boardalignment.h"
+
+
+void targetConfiguration(master_t *config)
+{
+    UNUSED(config);
+
+#ifdef KISSCC
+    // alternative defaults settings for Beebrain target
+    config->boardAlignment.rollDegrees = 180;
+    config->boardAlignment.pitchDegrees = 0;
+    config->boardAlignment.yawDegrees = 0;
+#endif
+}
 

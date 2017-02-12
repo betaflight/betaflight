@@ -28,13 +28,14 @@
 
 #include "drivers/system.h"
 
-#include "config/config_profile.h"
-#include "config/config_master.h"
-#include "config/feature.h"
-
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 #include "cms/cms_menu_ledstrip.h"
+
+#include "config/config_profile.h"
+#include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 //
 // Misc

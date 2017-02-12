@@ -68,8 +68,6 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_2
 
-#define SENSORS_SET             (SENSOR_ACC)
-
 #define TELEMETRY
 #define BLACKBOX
 #define SERIAL_RX

@@ -29,6 +29,10 @@ extern "C" {
     #include "common/axis.h"
     #include "common/gps_conversion.h"
 
+    #include "config/parameter_group.h"
+    #include "config/parameter_group_ids.h"
+
+    #include "drivers/system.h"
     #include "drivers/serial.h"
     #include "drivers/system.h"
 
@@ -45,6 +49,8 @@ extern "C" {
 
     #include "telemetry/telemetry.h"
     #include "telemetry/hott.h"
+
+    PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
@@ -246,7 +252,7 @@ bool telemetryDetermineEnabledState(portSharing_e)
     return true;
 }
 
-portSharing_e determinePortSharing(serialPortConfig_t *, serialPortFunction_e)
+portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunction_e)
 {
     return PORTSHARING_NOT_SHARED;
 }

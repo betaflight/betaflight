@@ -17,6 +17,8 @@
 
 #pragma once
 
+#define USE_PARAMETER_GROUPS
+
 #define U_ID_0 0
 #define U_ID_1 1
 #define U_ID_2 2
@@ -29,8 +31,6 @@
 #define LED_STRIP
 #define USE_SERVOS
 #define TRANSPONDER
-
-#define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 6
 
 typedef enum
 {
@@ -64,6 +64,11 @@ typedef struct {
 uint8_t DMA_GetFlagStatus(void *);
 void DMA_Cmd(DMA_Channel_TypeDef*, FunctionalState );
 void DMA_ClearFlag(uint32_t);
+
+typedef struct
+{
+    void* test;
+} SPI_TypeDef;
 
 typedef struct
 {

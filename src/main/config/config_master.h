@@ -35,17 +35,19 @@
 #include "drivers/flash.h"
 #include "drivers/display.h"
 
+#include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
+#include "fc/fc_core.h"
 
 #include "flight/failsafe.h"
 #include "flight/mixer.h"
 #include "flight/servos.h"
 #include "flight/imu.h"
 #include "flight/navigation.h"
+#include "flight/pid.h"
 
 #include "io/serial.h"
 #include "io/gimbal.h"
-#include "io/motors.h"
 #include "io/servos.h"
 #include "io/gps.h"
 #include "io/osd.h"
@@ -64,11 +66,13 @@
 #include "sensors/battery.h"
 #include "sensors/compass.h"
 
+#ifndef USE_PARAMETER_GROUPS
 #define motorConfig(x) (&masterConfig.motorConfig)
 #define flight3DConfig(x) (&masterConfig.flight3DConfig)
 #define servoConfig(x) (&masterConfig.servoConfig)
 #define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
 #define gimbalConfig(x) (&masterConfig.gimbalConfig)
+#define channelForwardingConfig(x) (&masterConfig.channelForwardingConfig)
 #define boardAlignment(x) (&masterConfig.boardAlignment)
 #define imuConfig(x) (&masterConfig.imuConfig)
 #define gyroConfig(x) (&masterConfig.gyroConfig)
@@ -105,10 +109,70 @@
 #define modeActivationProfile(x) (&masterConfig.modeActivationProfile)
 #define servoProfile(x) (&masterConfig.servoProfile)
 #define customMotorMixer(i) (&masterConfig.customMotorMixer[i])
-#define customServoMixer(i) (&masterConfig.customServoMixer[i])
+#define customServoMixers(i) (&masterConfig.customServoMixer[i])
 #define displayPortProfileMsp(x) (&masterConfig.displayPortProfileMsp)
 #define displayPortProfileMax7456(x) (&masterConfig.displayPortProfileMax7456)
 #define displayPortProfileOled(x) (&masterConfig.displayPortProfileOled)
+
+
+#define motorConfigMutable(x) (&masterConfig.motorConfig)
+#define flight3DConfigMutable(x) (&masterConfig.flight3DConfig)
+#define servoConfigMutable(x) (&masterConfig.servoConfig)
+#define servoMixerConfigMutable(x) (&masterConfig.servoMixerConfig)
+#define gimbalConfigMutable(x) (&masterConfig.gimbalConfig)
+#define boardAlignmentMutable(x) (&masterConfig.boardAlignment)
+#define imuConfigMutable(x) (&masterConfig.imuConfig)
+#define gyroConfigMutable(x) (&masterConfig.gyroConfig)
+#define compassConfigMutable(x) (&masterConfig.compassConfig)
+#define accelerometerConfigMutable(x) (&masterConfig.accelerometerConfig)
+#define barometerConfigMutable(x) (&masterConfig.barometerConfig)
+#define throttleCorrectionConfigMutable(x) (&masterConfig.throttleCorrectionConfig)
+#define batteryConfigMutable(x) (&masterConfig.batteryConfig)
+#define rcControlsConfigMutable(x) (&masterConfig.rcControlsConfig)
+#define gpsProfileMutable(x) (&masterConfig.gpsProfile)
+#define gpsConfigMutable(x) (&masterConfig.gpsConfig)
+#define rxConfigMutable(x) (&masterConfig.rxConfig)
+#define armingConfigMutable(x) (&masterConfig.armingConfig)
+#define mixerConfigMutable(x) (&masterConfig.mixerConfig)
+#define airplaneConfigMutable(x) (&masterConfig.airplaneConfig)
+#define failsafeConfigMutable(x) (&masterConfig.failsafeConfig)
+#define serialConfigMutable(x) (&masterConfig.serialConfig)
+#define telemetryConfigMutable(x) (&masterConfig.telemetryConfig)
+#define ibusTelemetryConfigMutable(x) (&masterConfig.telemetryConfig)
+#define ppmConfigMutable(x) (&masterConfig.ppmConfig)
+#define pwmConfigMutable(x) (&masterConfig.pwmConfig)
+#define adcConfigMutable(x) (&masterConfig.adcConfig)
+#define beeperConfigMutable(x) (&masterConfig.beeperConfig)
+#define sonarConfigMutable(x) (&masterConfig.sonarConfig)
+#define ledStripConfigMutable(x) (&masterConfig.ledStripConfig)
+#define statusLedConfigMutable(x) (&masterConfig.statusLedConfig)
+#define osdProfileMutable(x) (&masterConfig.osdProfile)
+#define vcdProfileMutable(x) (&masterConfig.vcdProfile)
+#define sdcardConfigMutable(x) (&masterConfig.sdcardConfig)
+#define blackboxConfigMutable(x) (&masterConfig.blackboxConfig)
+#define flashConfigMutable(x) (&masterConfig.flashConfig)
+#define pidConfigMutable(x) (&masterConfig.pidConfig)
+#define adjustmentProfileMutable(x) (&masterConfig.adjustmentProfile)
+#define modeActivationProfileMutable(x) (&masterConfig.modeActivationProfile)
+#define servoProfileMutable(x) (&masterConfig.servoProfile)
+#define customMotorMixerMutable(i) (&masterConfig.customMotorMixer[i])
+#define customServoMixersMutable(i) (&masterConfig.customServoMixer[i])
+#define displayPortProfileMspMutable(x) (&masterConfig.displayPortProfileMsp)
+#define displayPortProfileMax7456Mutable(x) (&masterConfig.displayPortProfileMax7456)
+#define displayPortProfileOledMutable(x) (&masterConfig.displayPortProfileOled)
+
+#define servoParams(x) (&servoProfile()->servoConf[i])
+#define adjustmentRanges(x) (&adjustmentProfile()->adjustmentRanges[x])
+#define rxFailsafeChannelConfigs(x) (&masterConfig.rxConfig.failsafe_channel_configurations[x])
+#define osdConfig(x) (&masterConfig.osdProfile)
+#define modeActivationConditions(x) (&masterConfig.modeActivationProfile.modeActivationConditions[x])
+
+#define servoParamsMutable(x) (&servoProfile()->servoConf[i])
+#define adjustmentRangesMutable(x) (&masterConfig.adjustmentProfile.adjustmentRanges[i])
+#define rxFailsafeChannelConfigsMutable(x) (&masterConfig.rxConfig.>failsafe_channel_configurations[x])
+#define osdConfigMutable(x) (&masterConfig.osdProfile)
+#define modeActivationConditionsMutable(x) (&masterConfig.modeActivationProfile.modeActivationConditions[x])
+#endif
 
 // System-wide
 typedef struct master_s {
@@ -131,6 +195,8 @@ typedef struct master_s {
     servoProfile_t servoProfile;
     // gimbal-related configuration
     gimbalConfig_t gimbalConfig;
+    // Channel forwarding start channel
+    channelForwardingConfig_t channelForwardingConfig;
 #endif
 
     boardAlignment_t boardAlignment;
@@ -264,7 +330,5 @@ typedef struct master_s {
 } master_t;
 
 extern master_t masterConfig;
-extern profile_t *currentProfile;
-extern controlRateConfig_t *currentControlRateProfile;
 
 void createDefaultConfig(master_t *config);

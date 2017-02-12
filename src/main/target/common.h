@@ -17,6 +17,7 @@
 
 #pragma once
 
+//#define USE_PARAMETER_GROUPS
 // type conversion warnings.
 // -Wconversion can be turned on to enable the process of eliminating these warnings
 //#pragma GCC diagnostic warning "-Wconversion"
@@ -49,6 +50,8 @@
 
 #ifdef STM32F3
 #define USE_DSHOT
+#undef GPS
+#define MINIMAL_CLI
 #endif
 
 #ifdef STM32F1
@@ -56,7 +59,7 @@
 #define USE_UART1_RX_DMA
 #define USE_UART1_TX_DMA
 
-#define CLI_MINIMAL_VERBOSITY
+#define MINIMAL_CLI
 #endif
 
 #define SERIAL_RX
@@ -76,7 +79,7 @@
 #endif
 
 #if defined(STM_FAST_TARGET)
-#define MAX_AUX_CHANNELS                99
+#define MAX_AUX_CHANNELS                20
 #define TASK_GYROPID_DESIRED_PERIOD     125
 #define SCHEDULER_DELAY_LIMIT           10
 #else
@@ -112,7 +115,5 @@
 #define VTX_SMARTAUDIO
 #define VTX_TRAMP
 #define USE_SENSOR_NAMES
-#else
-#define SKIP_CLI_COMMAND_HELP
 #endif
 

@@ -60,7 +60,7 @@
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
-#include "fc/rc_curves.h"
+#include "fc/fc_rc.h"
 #include "fc/runtime_config.h"
 
 #include "flight/altitudehold.h"
@@ -102,11 +102,7 @@
 #endif
 
 #define BRUSHED_MOTORS_PWM_RATE 16000
-#ifdef STM32F4
-#define BRUSHLESS_MOTORS_PWM_RATE 2000
-#else
-#define BRUSHLESS_MOTORS_PWM_RATE 400
-#endif
+#define BRUSHLESS_MOTORS_PWM_RATE 480
 
 master_t masterConfig;                 // master config struct with data independent from profiles
 profile_t *currentProfile;
@@ -171,8 +167,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->pidSumLimit = PIDSUM_LIMIT;
     pidProfile->yaw_lpf_hz = 0;
-    pidProfile->rollPitchItermIgnoreRate = 200;
-    pidProfile->yawItermIgnoreRate = 55;
+    pidProfile->itermWindupPointPercent = 50;
     pidProfile->dterm_filter_type = FILTER_BIQUAD;
     pidProfile->dterm_lpf_hz = 100;    // filtering ON by default
     pidProfile->dterm_notch_hz = 260;
@@ -181,12 +176,12 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
     pidProfile->levelAngleLimit = 55;
     pidProfile->levelSensitivity = 55;
-    pidProfile->setpointRelaxRatio = 30;
-    pidProfile->dtermSetpointWeight = 200;
+    pidProfile->setpointRelaxRatio = 25;
+    pidProfile->dtermSetpointWeight = 190;
     pidProfile->yawRateAccelLimit = 10.0f;
     pidProfile->rateAccelLimit = 0.0f;
-    pidProfile->itermThrottleThreshold = 300;
-    pidProfile->itermAcceleratorGain = 4.0f;
+    pidProfile->itermThrottleThreshold = 350;
+    pidProfile->itermAcceleratorGain = 1.0f;
 }
 
 void resetProfile(profile_t *profile)
@@ -283,7 +278,7 @@ void resetMotorConfig(motorConfig_t *motorConfig)
 #endif
     motorConfig->maxthrottle = 2000;
     motorConfig->mincommand = 1000;
-    motorConfig->digitalIdleOffsetPercent = 3.0f;
+    motorConfig->digitalIdleOffsetPercent = 4.5f;
 
     int motorIndex = 0;
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && motorIndex < MAX_SUPPORTED_MOTORS; i++) {
@@ -805,6 +800,9 @@ void createDefaultConfig(master_t *config)
 
     // gimbal
     config->gimbalConfig.mode = GIMBAL_MODE_NORMAL;
+
+    // Channel forwarding;
+    config->channelForwardingConfig.startChannel = AUX1;
 #endif
 
 #ifdef GPS
@@ -887,48 +885,29 @@ void resetConfigs(void)
 #endif
 }
 
-void activateControlRateConfig(void)
-{
-    generateThrottleCurve(currentControlRateProfile, &masterConfig.motorConfig);
-}
-
 void activateConfig(void)
 {
-    activateControlRateConfig();
+    generateThrottleCurve();
 
     resetAdjustmentStates();
 
-    useRcControlsConfig(
-        modeActivationProfile()->modeActivationConditions,
-        &masterConfig.motorConfig,
-        &currentProfile->pidProfile
-    );
-
-#ifdef TELEMETRY
-    telemetryUseConfig(&masterConfig.telemetryConfig);
-#endif
+    useRcControlsConfig(modeActivationProfile()->modeActivationConditions, &currentProfile->pidProfile);
+    useAdjustmentConfig(&currentProfile->pidProfile);
 
 #ifdef GPS
     gpsUseProfile(&masterConfig.gpsProfile);
     gpsUsePIDs(&currentProfile->pidProfile);
 #endif
 
-    useFailsafeConfig(&masterConfig.failsafeConfig);
-    setAccelerationTrims(&accelerometerConfig()->accZero);
+    failsafeReset();
+    setAccelerationTrims(&accelerometerConfigMutable()->accZero);
     setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
 
-    mixerUseConfigs(
-        &masterConfig.flight3DConfig,
-        &masterConfig.motorConfig,
-        &masterConfig.mixerConfig,
-        &masterConfig.airplaneConfig,
-        &masterConfig.rxConfig
-    );
+    mixerUseConfigs(&masterConfig.airplaneConfig);
 
 #ifdef USE_SERVOS
-    servoUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoProfile.servoConf, &masterConfig.gimbalConfig);
+    servoUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoProfile.servoConf, &masterConfig.gimbalConfig, &masterConfig.channelForwardingConfig);
 #endif
-
 
     imuConfigure(
         &masterConfig.imuConfig,
@@ -936,22 +915,17 @@ void activateConfig(void)
         throttleCorrectionConfig()->throttle_correction_angle
     );
 
-    configureAltitudeHold(
-        &currentProfile->pidProfile,
-        &masterConfig.barometerConfig,
-        &masterConfig.rcControlsConfig,
-        &masterConfig.motorConfig
-    );
-
-#ifdef BARO
-    useBarometerConfig(&masterConfig.barometerConfig);
-#endif
+    configureAltitudeHold(&currentProfile->pidProfile);
 }
 
 void validateAndFixConfig(void)
 {
     if((motorConfig()->motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)){
-        motorConfig()->mincommand = 1000;
+        motorConfigMutable()->mincommand = 1000;
+    }
+
+    if ((motorConfig()->motorPwmProtocol == PWM_TYPE_STANDARD) && (motorConfig()->motorPwmRate > BRUSHLESS_MOTORS_PWM_RATE)) {
+        motorConfig()->motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
     }
 
     if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP) || featureConfigured(FEATURE_RX_SPI))) {
@@ -1064,18 +1038,18 @@ void validateAndFixGyroConfig(void)
 {
     // Prevent invalid notch cutoff
     if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1) {
-        gyroConfig()->gyro_soft_notch_hz_1 = 0;
+        gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
     }
     if (gyroConfig()->gyro_soft_notch_cutoff_2 >= gyroConfig()->gyro_soft_notch_hz_2) {
-        gyroConfig()->gyro_soft_notch_hz_2 = 0;
+        gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
     }
 
     float samplingTime = 0.000125f;
 
     if (gyroConfig()->gyro_lpf != GYRO_LPF_256HZ && gyroConfig()->gyro_lpf != GYRO_LPF_NONE) {
-        pidConfig()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
-        gyroConfig()->gyro_sync_denom = 1;
-        gyroConfig()->gyro_use_32khz = false;
+        pidConfigMutable()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
+        gyroConfigMutable()->gyro_sync_denom = 1;
+        gyroConfigMutable()->gyro_use_32khz = false;
         samplingTime = 0.001f;
     }
 
@@ -1083,14 +1057,18 @@ void validateAndFixGyroConfig(void)
         samplingTime = 0.00003125;
         // F1 and F3 can't handle high sample speed.
 #if defined(STM32F1)
-        gyroConfig()->gyro_sync_denom = constrain(gyroConfig()->gyro_sync_denom, 16, 16);
+        gyroConfigMutable()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 16);
 #elif defined(STM32F3)
-        gyroConfig()->gyro_sync_denom = constrain(gyroConfig()->gyro_sync_denom, 4, 16);
+        gyroConfigMutable()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 4);
+#endif
+    } else {
+#if defined(STM32F1)
+        gyroConfigMutable()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 4);
 #endif
     }
 
 #if !defined(GYRO_USES_SPI) || !defined(USE_MPU_DATA_READY_SIGNAL)
-    gyroConfig()->gyro_isr_update = false;
+    gyroConfigMutable()->gyro_isr_update = false;
 #endif
 
     // check for looptime restrictions based on motor protocol. Motor times have safety margin
@@ -1098,7 +1076,7 @@ void validateAndFixGyroConfig(void)
     float motorUpdateRestriction;
     switch(motorConfig()->motorPwmProtocol) {
         case (PWM_TYPE_STANDARD):
-            motorUpdateRestriction = 0.002f;
+            motorUpdateRestriction = 1.0f/BRUSHLESS_MOTORS_PWM_RATE;
             break;
         case (PWM_TYPE_ONESHOT125):
             motorUpdateRestriction = 0.0005f;
@@ -1118,15 +1096,17 @@ void validateAndFixGyroConfig(void)
             motorUpdateRestriction = 0.00003125f;
     }
 
-    if(pidLooptime < motorUpdateRestriction)
-        pidConfig()->pid_process_denom = motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom);
+    if (pidLooptime < motorUpdateRestriction) {
+        const uint8_t maxPidProcessDenom = constrain(motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom), 1, MAX_PID_PROCESS_DENOM);
+        pidConfigMutable()->pid_process_denom = MIN(pidConfigMutable()->pid_process_denom, maxPidProcessDenom);
+    }
 
     // Prevent overriding the max rate of motors
-    if(motorConfig()->useUnsyncedPwm && (motorConfig()->motorPwmProtocol <= PWM_TYPE_BRUSHED)) {
+    if (motorConfig()->useUnsyncedPwm && (motorConfig()->motorPwmProtocol <= PWM_TYPE_BRUSHED) && motorConfig()->motorPwmProtocol != PWM_TYPE_STANDARD) {
         uint32_t maxEscRate = lrintf(1.0f / motorUpdateRestriction);
 
         if(motorConfig()->motorPwmRate > maxEscRate)
-            motorConfig()->motorPwmRate = maxEscRate;
+            motorConfigMutable()->motorPwmRate = maxEscRate;
     }
 }
 
@@ -1201,7 +1181,7 @@ void changeControlRateProfile(uint8_t profileIndex)
         profileIndex = MAX_RATEPROFILES - 1;
     }
     setControlRateProfile(profileIndex);
-    activateControlRateConfig();
+    generateThrottleCurve();
 }
 
 void beeperOffSet(uint32_t mask)

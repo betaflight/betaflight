@@ -19,32 +19,36 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 #include <ctype.h>
 
 #include "platform.h"
 
 #if defined(VTX_SMARTAUDIO) && defined(VTX_CONTROL)
 
+#include "build/build_config.h"
+
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 
-#include "string.h"
 #include "common/printf.h"
 #include "common/utils.h"
+
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #include "drivers/vtx_common.h"
-#include "io/serial.h"
-#include "io/vtx_smartaudio.h"
-#include "io/vtx_string.h"
 
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
 #include "flight/pid.h"
-#include "config/config_master.h"
 
-#include "build/build_config.h"
+#include "io/serial.h"
+#include "io/vtx_smartaudio.h"
+#include "io/vtx_string.h"
 
 //#define SMARTAUDIO_DPRINTF
 //#define SMARTAUDIO_DEBUG_MONITOR
@@ -946,8 +950,14 @@ else
     saCmsPitFMode = 0;
 
     saCmsStatusString[0] = "-FR"[saCmsOpmodel];
-    saCmsStatusString[2] = "ABEFR"[saDevice.chan / 8];
-    saCmsStatusString[3] = '1' + (saDevice.chan % 8);
+
+    if (saCmsFselMode == 0) {
+        saCmsStatusString[2] = "ABEFR"[saDevice.chan / 8];
+        saCmsStatusString[3] = '1' + (saDevice.chan % 8);
+    } else {
+        saCmsStatusString[2] = 'U';
+        saCmsStatusString[3] = 'F';
+    }
 
     if ((saDevice.mode & SA_MODE_GET_PITMODE)
        && (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE))
@@ -1063,6 +1073,8 @@ static long saCmsConfigPitFModeByGvar(displayPort_t *pDisp, const void *self)
     return 0;
 }
 
+static long saCmsConfigFreqModeByGvar(displayPort_t *pDisp, const void *self); // Forward
+
 static long saCmsConfigOpmodelByGvar(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
@@ -1082,6 +1094,10 @@ static long saCmsConfigOpmodelByGvar(displayPort_t *pDisp, const void *self)
         // out-range receivers from getting blinded.
         saCmsPitFMode = 0;
         saCmsConfigPitFModeByGvar(pDisp, self);
+
+        // Direct frequency mode is not available in RACE opmodel
+        saCmsFselMode = 0;
+        saCmsConfigFreqModeByGvar(pDisp, self);
     } else {
         // Trying to go back to unknown state; bounce back
         saCmsOpmodel = SACMS_OPMODEL_UNDEF + 1;
@@ -1190,7 +1206,6 @@ static long saCmsCommence(displayPort_t *pDisp, const void *self)
         // Setup band, freq and power.
 
         saSetBandChan(saCmsBand - 1, saCmsChan - 1);
-        saSetPowerByIndex(saCmsPower - 1);
 
         // If in pit mode, cancel it.
 
@@ -1206,6 +1221,8 @@ static long saCmsCommence(displayPort_t *pDisp, const void *self)
         else
             saSetFreq(saCmsUserFreq);
     }
+
+    saSetPowerByIndex(saCmsPower - 1);
 
     return MENU_CHAIN_BACK;
 }
@@ -1252,15 +1269,15 @@ static long saCmsSetUserFreqOnEnter(void)
     return 0;
 }
 
-static long saCmsSetUserFreq(displayPort_t *pDisp, const void *self)
+static long saCmsConfigUserFreq(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
 
     saCmsUserFreq = saCmsUserFreqNew;
-    saSetFreq(saCmsUserFreq);
+    //saSetFreq(saCmsUserFreq);
 
-    return 0;
+    return MENU_CHAIN_BACK;
 }
 
 static OSD_Entry saCmsMenuPORFreqEntries[] = {
@@ -1289,7 +1306,7 @@ static OSD_Entry saCmsMenuUserFreqEntries[] = {
 
     { "CUR FREQ",      OME_UINT16,  NULL,             &(OSD_UINT16_t){ &saCmsUserFreq, 5000, 5900, 0 },    DYNAMIC },
     { "NEW FREQ",      OME_UINT16,  NULL,             &(OSD_UINT16_t){ &saCmsUserFreqNew, 5000, 5900, 1 }, 0 },
-    { "SET",           OME_Funcall, saCmsSetUserFreq, NULL,                                                0 },
+    { "SET",           OME_Funcall, saCmsConfigUserFreq, NULL,                                                0 },
 
     { "BACK",          OME_Back,    NULL,             NULL,                                                0 },
     { NULL,            OME_END,     NULL,             NULL,                                                0 }
@@ -1310,8 +1327,8 @@ static OSD_TAB_t saCmsEntFselMode = { &saCmsFselMode, 1, saCmsFselModeNames };
 static OSD_Entry saCmsMenuConfigEntries[] = {
     { "- SA CONFIG -", OME_Label, NULL, NULL, 0 },
 
-    { "OP MODEL",  OME_TAB,     saCmsConfigOpmodelByGvar,              &(OSD_TAB_t){ &saCmsOpmodel, 2, saCmsOpmodelNames }, 0 },
-    { "FSEL MODE", OME_TAB,     saCmsConfigFreqModeByGvar,             &saCmsEntFselMode,                                   0 },
+    { "OP MODEL",  OME_TAB,     saCmsConfigOpmodelByGvar,              &(OSD_TAB_t){ &saCmsOpmodel, 2, saCmsOpmodelNames }, DYNAMIC },
+    { "FSEL MODE", OME_TAB,     saCmsConfigFreqModeByGvar,             &saCmsEntFselMode,                                   DYNAMIC },
     { "PIT FMODE", OME_TAB,     saCmsConfigPitFModeByGvar,             &saCmsEntPitFMode,                                   0 },
     { "POR FREQ",  OME_Submenu, (CMSEntryFuncPtr)saCmsORFreqGetString, &saCmsMenuPORFreq,                                   OPTSTRING },
     { "STATX",     OME_Submenu, cmsMenuChange,                         &saCmsMenuStats,                                     0 },

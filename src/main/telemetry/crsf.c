@@ -32,11 +32,10 @@
 #define CLEANFLIGHT
 #endif
 
-#ifdef CLEANFLIGHT
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
-#endif
 
+#include "common/maths.h"
 #include "common/streambuf.h"
 #include "common/utils.h"
 
@@ -184,7 +183,7 @@ void crsfFrameBatterySensor(sbuf_t *dst)
     const uint8_t batteryRemainingPercentage = batteryCapacityRemainingPercentage();
 #else
     crsfSerialize16(dst, amperage / 10);
-    const uint32_t batteryCapacity = batteryConfig->batteryCapacity;
+    const uint32_t batteryCapacity = batteryConfig()->batteryCapacity;
     const uint8_t batteryRemainingPercentage = calculateBatteryPercentage();
 #endif
     crsfSerialize8(dst, (batteryCapacity >> 16));

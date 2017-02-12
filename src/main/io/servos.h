@@ -26,3 +26,5 @@ typedef struct servoConfig_s {
     uint16_t servoPwmRate;                  // The update rate of servo outputs (50-498Hz)
     ioTag_t  ioTags[MAX_SUPPORTED_SERVOS];
 } servoConfig_t;
+
+PG_DECLARE(servoConfig_t, servoConfig);

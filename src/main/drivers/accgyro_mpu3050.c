@@ -53,21 +53,21 @@ static void mpu3050Init(gyroDev_t *gyro)
 
     delay(25); // datasheet page 13 says 20ms. other stuff could have been running meanwhile. but we'll be safe
 
-    ack = gyro->mpuConfiguration.write(MPU3050_SMPLRT_DIV, 0);
+    ack = gyro->mpuConfiguration.writeFn(MPU3050_SMPLRT_DIV, 0);
     if (!ack)
         failureMode(FAILURE_ACC_INIT);
 
-    gyro->mpuConfiguration.write(MPU3050_DLPF_FS_SYNC, MPU3050_FS_SEL_2000DPS | gyro->lpf);
-    gyro->mpuConfiguration.write(MPU3050_INT_CFG, 0);
-    gyro->mpuConfiguration.write(MPU3050_USER_CTRL, MPU3050_USER_RESET);
-    gyro->mpuConfiguration.write(MPU3050_PWR_MGM, MPU3050_CLK_SEL_PLL_GX);
+    gyro->mpuConfiguration.writeFn(MPU3050_DLPF_FS_SYNC, MPU3050_FS_SEL_2000DPS | gyro->lpf);
+    gyro->mpuConfiguration.writeFn(MPU3050_INT_CFG, 0);
+    gyro->mpuConfiguration.writeFn(MPU3050_USER_CTRL, MPU3050_USER_RESET);
+    gyro->mpuConfiguration.writeFn(MPU3050_PWR_MGM, MPU3050_CLK_SEL_PLL_GX);
 }
 
 static bool mpu3050ReadTemperature(gyroDev_t *gyro, int16_t *tempData)
 {
     UNUSED(gyro);
     uint8_t buf[2];
-    if (!gyro->mpuConfiguration.read(MPU3050_TEMP_OUT, 2, buf)) {
+    if (!gyro->mpuConfiguration.readFn(MPU3050_TEMP_OUT, 2, buf)) {
         return false;
     }
 

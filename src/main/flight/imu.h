@@ -18,10 +18,9 @@
 #pragma once
 
 #include "common/axis.h"
-#include "common/maths.h"
 #include "common/time.h"
 
-#include "sensors/acceleration.h"
+#include "config/parameter_group.h"
 
 // Exported symbols
 extern uint32_t accTimeSum;
@@ -29,11 +28,6 @@ extern int accSumCount;
 extern float accVelScale;
 extern int32_t accSum[XYZ_AXIS_COUNT];
 
-
-#define DEGREES_TO_DECIDEGREES(angle) (angle * 10)
-#define DECIDEGREES_TO_DEGREES(angle) (angle / 10)
-#define DECIDEGREES_TO_RADIANS(angle) ((angle / 10.0f) * 0.0174532925f)
-#define DEGREES_TO_RADIANS(angle) ((angle) * 0.0174532925f)
 
 typedef union {
     int16_t raw[XYZ_AXIS_COUNT];
@@ -52,11 +46,6 @@ typedef struct accDeadband_s {
     uint8_t z;                  // set the acc deadband for z-Axis, this ignores small accelerations
 } accDeadband_t;
 
-typedef struct throttleCorrectionConfig_s {
-    uint16_t throttle_correction_angle;     // the angle when the throttle correction is maximal. in 0.1 degres, ex 225 = 22.5 ,30.0, 450 = 45.0 deg
-    uint8_t throttle_correction_value;      // the correction that will be applied at throttle_correction_angle.
-} throttleCorrectionConfig_t;
-
 typedef struct imuConfig_s {
     uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
     uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
@@ -64,6 +53,8 @@ typedef struct imuConfig_s {
     uint8_t acc_unarmedcal;                 // turn automatic acc compensation on/off
     accDeadband_t accDeadband;
 } imuConfig_t;
+
+PG_DECLARE(imuConfig_t, imuConfig);
 
 typedef struct imuRuntimeConfig_s {
     float dcm_ki;
@@ -73,38 +64,13 @@ typedef struct imuRuntimeConfig_s {
     accDeadband_t accDeadband;
 } imuRuntimeConfig_t;
 
-typedef enum {
-    ACCPROC_READ = 0,
-    ACCPROC_CHUNK_1,
-    ACCPROC_CHUNK_2,
-    ACCPROC_CHUNK_3,
-    ACCPROC_CHUNK_4,
-    ACCPROC_CHUNK_5,
-    ACCPROC_CHUNK_6,
-    ACCPROC_CHUNK_7,
-    ACCPROC_COPY
-} accProcessorState_e;
-
-typedef struct accProcessor_s {
-    accProcessorState_e state;
-} accProcessor_t;
-
 struct pidProfile_s;
-void imuConfigure(
-    imuConfig_t *imuConfig,
-    struct pidProfile_s *initialPidProfile,
-    uint16_t throttle_correction_angle
-);
+void imuConfigure(imuConfig_t *imuConfig, struct pidProfile_s *initialPidProfile, uint16_t throttle_correction_angle);
 
 float getCosTiltAngle(void);
 void calculateEstimatedAltitude(timeUs_t currentTimeUs);
 void imuUpdateAttitude(timeUs_t currentTimeUs);
-float calculateThrottleAngleScale(uint16_t throttle_correction_angle);
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value);
-float calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_hz);
-
-union u_fp_vector;
-int16_t imuCalculateHeading(union u_fp_vector *vec);
 
 void imuResetAccelerationSum(void);
 void imuInit(void);

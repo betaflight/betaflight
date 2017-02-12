@@ -28,6 +28,12 @@
 #include "common/maths.h"
 #include "common/printf.h"
 
+#include "config/config_eeprom.h"
+#include "config/config_profile.h"
+#include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 
@@ -115,10 +121,6 @@
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
 
-#include "config/config_eeprom.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
-#include "config/feature.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -256,7 +258,7 @@ void init(void)
     servoMixerInit(masterConfig.customServoMixer);
 #endif
 
-#ifdef SPEKTRUM_BIND
+#ifdef SPEKTRUM_BIND && defined(USE_SERIALRX_SPEKTRUM) && defined(SPEKTRUM_BIND)
     if (feature(FEATURE_RX_SERIAL)) {
         switch (rxConfig()->serialrx_provider) {
             case SERIALRX_SPEKTRUM1024:
@@ -273,8 +275,6 @@ void init(void)
     delay(100);
 
     timerInit();  // timer must be initialized before any channel is allocated
-
-
 
     uint16_t idlePulse = motorConfig()->mincommand;
     if (feature(FEATURE_3D)) {
@@ -403,12 +403,7 @@ void init(void)
     }
 #endif
 
-#ifdef SONAR
-    const sonarConfig_t *sonarConfig = sonarConfig();
-#else
-    const void *sonarConfig = NULL;
-#endif
-    if (!sensorsAutodetect(gyroConfig(), accelerometerConfig(), compassConfig(), barometerConfig(), sonarConfig)) {
+    if (!sensorsAutodetect()) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
@@ -448,7 +443,7 @@ void init(void)
     cliInit(serialConfig());
 #endif
 
-    failsafeInit(rxConfig(), flight3DConfig()->deadband3d_throttle);
+    failsafeInit();
 
     rxInit(rxConfig(), modeActivationProfile()->modeActivationConditions);
 
@@ -556,7 +551,7 @@ void init(void)
     // Now that everything has powered up the voltage and cell count be determined.
 
     if (feature(FEATURE_VBAT | FEATURE_CURRENT_METER))
-        batteryInit(batteryConfig());
+        batteryInit();
 
 #ifdef USE_DASHBOARD
     if (feature(FEATURE_DASHBOARD)) {

@@ -52,6 +52,7 @@
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN CW180_DEG
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
+#define TARGET_CONFIG
 
 #define USE_EXTI
 #define MPU_INT_EXTI PC13
@@ -119,7 +120,7 @@
 
 #define VBAT_ADC_PIN             PA4
 #define CURRENT_METER_ADC_PIN    PA5
-
+#define VBAT_SCALE_DEFAULT       119
 #define LED_STRIP
 
 #define TRANSPONDER
@@ -151,10 +152,6 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define SPEKTRUM_BIND
-
-#define BIND_PIN PB11
-
 // IO - stm32f303rc in 64pin package
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
@@ -165,4 +162,3 @@
 #define USED_TIMERS  (TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(16) | TIM_N(17))
 
 #define USABLE_TIMER_CHANNEL_COUNT 9
-

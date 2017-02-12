@@ -92,8 +92,6 @@
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
 
-#define SENSORS_SET (SENSOR_ACC | SENSOR_BARO | SENSOR_GPS | SENSOR_MAG)
-
 #define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER
 
