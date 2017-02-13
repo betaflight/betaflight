@@ -635,10 +635,6 @@ COMMON_SRC = \
             sensors/compass.c \
             sensors/gyro.c \
             sensors/initialisation.c \
-            $(CMSIS_SRC) \
-            $(DEVICE_STDPERIPH_SRC)
-
-HIGHEND_SRC = \
             blackbox/blackbox.c \
             blackbox/blackbox_io.c \
             cms/cms.c \
@@ -679,7 +675,10 @@ HIGHEND_SRC = \
             sensors/esc_sensor.c \
             io/vtx_string.c \
             io/vtx_smartaudio.c \
-            io/vtx_tramp.c
+            io/vtx_tramp.c \
+            $(CMSIS_SRC) \
+            $(DEVICE_STDPERIPH_SRC)
+
 
 SPEED_OPTIMISED_SRC := ""
 SIZE_OPTIMISED_SRC  := ""
@@ -872,13 +871,8 @@ TARGET_SRC += \
             io/flashfs.c
 endif
 
-ifeq ($(TARGET),$(filter $(TARGET),$(F7_TARGETS) $(F4_TARGETS) $(F3_TARGETS)))
-TARGET_SRC += $(HIGHEND_SRC)
-else ifneq ($(filter HIGHEND,$(FEATURES)),)
-TARGET_SRC += $(HIGHEND_SRC)
-endif
-
 TARGET_SRC += $(COMMON_SRC)
+
 #excludes
 ifeq ($(TARGET),$(filter $(TARGET),$(F7_TARGETS)))
 TARGET_SRC   := $(filter-out ${F7EXCLUDES}, $(TARGET_SRC))
