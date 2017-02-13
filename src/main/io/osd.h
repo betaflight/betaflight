@@ -43,11 +43,18 @@ typedef enum {
     OSD_MAH_DRAWN,
     OSD_GPS_SPEED,
     OSD_GPS_SATS,
+    OSD_GPS_LON,
+    OSD_GPS_LAT,
+    OSD_HOME_DIR,
+    OSD_HOME_DIST,
+    OSD_HEADING,
     OSD_ALTITUDE,
+    OSD_VARIO,
+    OSD_VARIO_NUM,    
     OSD_ROLL_PIDS,
     OSD_PITCH_PIDS,
     OSD_YAW_PIDS,
-    OSD_POWER,
+    OSD_POWER,    
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
