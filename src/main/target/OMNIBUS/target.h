@@ -29,7 +29,6 @@
 #define USE_EXTI
 #define MPU_INT_EXTI PC13
 #define USE_MPU_DATA_READY_SIGNAL
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
 
 #define MPU6000_SPI_INSTANCE    SPI1
 #define MPU6000_CS_PIN          PA4
@@ -182,3 +181,11 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 8 // PPM + 6 Outputs (2 shared with UART3)
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(15))
+
+// RSSI_PWM uses interrupt based PWM input
+#define USE_RSSI_SOFTPWM       // Interrupt based measurements
+//#define RSSI_SOFTPWM_PIN      PB2 // Requires 1K inline to be bypassed?
+//#define RSSI_SOFTPWM_PIN      PB4 // Shared with PPM (OK, can be rsrc switched)
+//#define RSSI_SOFTPWM_PIN      PB7 // Shared with PWM7 & I2C (OK, disable I2C)
+//#define RSSI_SOFTPWM_PIN      PB6 // Shared with PWM8 & I2C (OK, disable I2C)
+#define RSSI_SOFTPWM_PIN      NONE

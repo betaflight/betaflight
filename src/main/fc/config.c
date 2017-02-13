@@ -541,6 +541,18 @@ void resetFlashConfig(flashConfig_t *flashConfig)
 }
 #endif
 
+#ifdef USE_RSSI_SOFTPWM
+void resetRssiSoftPwmConfig(rssiSoftPwmConfig_t *rssiSoftPwmConfig)
+{
+#ifndef RSSI_SOFTPWM_PIN
+# define RSSI_SOFTPWM_PIN NONE
+#endif
+
+    rssiSoftPwmConfig->ioTag = IO_TAG(RSSI_SOFTPWM_PIN);
+    rssiSoftPwmConfig->device = RXTYPE_FRSKY_X4R;
+}
+#endif
+
 uint8_t getCurrentProfile(void)
 {
     return masterConfig.current_profile_index;
@@ -857,6 +869,10 @@ void createDefaultConfig(master_t *config)
 #endif
 
     resetStatusLedConfig(&config->statusLedConfig);
+
+#ifdef USE_RSSI_SOFTPWM
+    resetRssiSoftPwmConfig(&config->rssiSoftPwmConfig);
+#endif
 
     /* merely to force a reset if the person inadvertently flashes the wrong target */
     strncpy(config->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER));

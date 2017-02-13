@@ -105,6 +105,9 @@ typedef enum {
 #ifdef VTX_CONTROL
     TASK_VTXCTRL,
 #endif
+#ifdef USE_RSSI_SOFTPWM
+    TASK_RSSI_SOFTPWM,
+#endif
 
     /* Count of real tasks */
     TASK_COUNT,

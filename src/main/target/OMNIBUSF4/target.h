@@ -1,5 +1,8 @@
 /*
  * This is free software: you can redistribute it and/or modify
+ * This file is part of Cleanflight.
+ *
+ * Cleanflight is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
@@ -178,3 +181,9 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 12
 #define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9))
+
+// RSSI_PWM uses interrupt based PWM input
+#define USE_RSSI_SOFTPWM       // Interrupt based measurements
+//#define RSSI_SOFTPWM_PIN      PB2 // Requires 1K inline to be bypassed.
+//#define RSSI_SOFTPWM_PIN      PB4 // Shared with PPM
+//#define RSSI_SOFTPWM_PIN      PA8 // Shared with PWM6

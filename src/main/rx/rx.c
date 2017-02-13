@@ -37,6 +37,7 @@
 #include "drivers/rx_pwm.h"
 #include "drivers/rx_spi.h"
 #include "drivers/system.h"
+#include "drivers/rssi_softpwm.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -597,7 +598,14 @@ static void updateRSSIADC(timeUs_t currentTimeUs)
 #endif
 }
 
-void updateRSSI(timeUs_t currentTimeUs)
+void updateRSSISoftPwm(uint32_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+    rssi = rssiSoftPwmRead();
+}
+
+void updateRSSI(uint32_t currentTimeUs)
 {
 
     if (rxConfig()->rssi_channel > 0) {
@@ -605,6 +613,11 @@ void updateRSSI(timeUs_t currentTimeUs)
     } else if (feature(FEATURE_RSSI_ADC)) {
         updateRSSIADC(currentTimeUs);
     }
+#ifdef USE_RSSI_SOFTPWM
+      else {
+        updateRSSISoftPwm(currentTimeUs);
+    }
+#endif
 }
 
 uint16_t rxGetRefreshRate(void)

@@ -408,6 +408,10 @@ void init(void)
         failureMode(FAILURE_MISSING_ACC);
     }
 
+#ifdef USE_RSSI_SOFTPWM
+    rssiSoftPwmInit();
+#endif
+
     systemState |= SYSTEM_STATE_SENSORS_READY;
 
     LED1_ON;
