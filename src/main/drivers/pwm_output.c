@@ -21,6 +21,7 @@
 #include <math.h>
 
 #include "platform.h"
+#include "system.h"
 
 #include "io.h"
 #include "pwm_output.h"
@@ -28,6 +29,8 @@
 
 #define MULTISHOT_5US_PW    (MULTISHOT_TIMER_MHZ * 5)
 #define MULTISHOT_20US_MULT (MULTISHOT_TIMER_MHZ * 20 / 1000.0f)
+
+#define DSHOT_MAX_COMMAND 47
 
 static pwmWriteFuncPtr pwmWritePtr;
 static pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
@@ -313,6 +316,27 @@ uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType)
         default:
         case(PWM_TYPE_DSHOT150):
             return MOTOR_DSHOT150_MHZ * 1000000;
+    }
+}
+
+void pwmWriteDshotCommand(uint8_t index, uint8_t command)
+{
+    if (command <= DSHOT_MAX_COMMAND) {
+        motorDmaOutput_t *const motor = getMotorDmaOutput(index);
+
+        unsigned repeats;
+        if ((command >= 7 && command <= 10) || command == 12) {
+            repeats = 10;
+        } else {
+            repeats = 1;
+        }
+        for (; repeats; repeats--) {
+            motor->requestTelemetry = true;
+            pwmWritePtr(index, command);
+            pwmCompleteMotorUpdate(0);
+
+            delay(1);
+        }
     }
 }
 #endif

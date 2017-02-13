@@ -3161,64 +3161,96 @@ static void cliGpsPassthrough(char *cmdline)
 #ifdef USE_ESCSERIAL
 static void cliEscPassthrough(char *cmdline)
 {
-    uint8_t mode = 0;
-    int index = 0;
-    int i = 0;
-    char *pch = NULL;
-    char *saveptr;
-
     if (isEmpty(cmdline)) {
         cliShowParseError();
+
         return;
     }
 
-    pch = strtok_r(cmdline, " ", &saveptr);
+    char *saveptr;
+    char *pch = strtok_r(cmdline, " ", &saveptr);
+    int pos = 0;
+    uint8_t mode = 0;
+    int escNumber = 0;
     while (pch != NULL) {
-        switch (i) {
+        switch (pos) {
             case 0:
-                if(strncasecmp(pch, "sk", strlen(pch)) == 0)
-                {
-                    mode = 0;
+                if(strncasecmp(pch, "sk", strlen(pch)) == 0) {
+                    mode = PROTOCOL_SIMONK;
+                } else if(strncasecmp(pch, "bl", strlen(pch)) == 0) {
+                    mode = PROTOCOL_BLHELI;
+                } else if(strncasecmp(pch, "ki", strlen(pch)) == 0) {
+                    mode = PROTOCOL_KISS;
+                } else if(strncasecmp(pch, "cc", strlen(pch)) == 0) {
+                    mode = PROTOCOL_KISSALL;
                 }
-                else if(strncasecmp(pch, "bl", strlen(pch)) == 0)
-                {
-                    mode = 1;
+#ifdef USE_DSHOT
+                else if(strncasecmp(pch, "ds", strlen(pch)) == 0) {
+                    mode = PROTOCOL_DSHOT;
+
+                    motorControlEnable = false;
                 }
-                else if(strncasecmp(pch, "ki", strlen(pch)) == 0)
-                {
-                    mode = 2;
-                }
-                else if(strncasecmp(pch, "cc", strlen(pch)) == 0)
-                {
-                    mode = 4;
-                }
+#endif
                 else
                 {
                     cliShowParseError();
+
                     return;
                 }
                 break;
             case 1:
-                index = atoi(pch);
-                if(mode == 2 && index == 255)
-                {
-                    printf("passthrough on all outputs enabled\r\n");
-                }
-                else{
-                    if ((index >= 0) && (index < USABLE_TIMER_CHANNEL_COUNT)) {
-                        printf("passthrough on output %d enabled\r\n", index);
-                    }
-                    else {
-                        printf("invalid output, range: 1 to %d\r\n", USABLE_TIMER_CHANNEL_COUNT);
+                escNumber = atoi(pch);
+                if ((mode == PROTOCOL_KISS || mode == PROTOCOL_DSHOT) && escNumber == ALL_ESCS) {
+                    printf("Programming on all ESCs.\r\n");
+                } else {
+                    if ((escNumber >= 0) && (escNumber < getMotorCount())) {
+                        printf("Programming on ESC %d.\r\n", escNumber);
+                    } else {
+                        printf("Invalid ESC number, range: 1 to %d.\r\n", getMotorCount());
+
                         return;
                     }
                 }
                 break;
+            default:
+#ifdef USE_DSHOT
+                if (mode == PROTOCOL_DSHOT && motorConfig()->dev.motorPwmProtocol >= PWM_TYPE_DSHOT150) {
+                    int command = atoi(pch);
+                    if (command >= 0 && command < DSHOT_MIN_THROTTLE) {
+                        if (escNumber == ALL_ESCS) {
+                            for (unsigned i = 0; i < getMotorCount(); i++) {
+                                pwmWriteDshotCommand(i, command);
+                            }
+                        } else {
+                            pwmWriteDshotCommand(escNumber, command);
+                        }
+
+                        if (command <= 5) {
+                            delay(10);
+                        }
+
+                        printf("Command %d written.\r\n", command);
+                    } else {
+                        printf("Invalid command, range 1 to %d.\r\n", DSHOT_MIN_THROTTLE - 1);
+                    }
+
+                    break;
+                } else
+#endif
+                    cliShowParseError();
+
+                return;
+
         }
-        i++;
+        pos++;
         pch = strtok_r(NULL, " ", &saveptr);
     }
-    escEnablePassthrough(cliPort,index,mode);
+
+    if (mode != PROTOCOL_DSHOT) {
+        escEnablePassthrough(cliPort, escNumber, mode);
+    } else {
+        motorControlEnable = true;
+    }
 }
 #endif
 
@@ -3293,13 +3325,13 @@ static void cliMotor(char *cmdline)
     if (index == 2) {
         if (motor_value < PWM_RANGE_MIN || motor_value > PWM_RANGE_MAX) {
             cliShowArgumentRangeError("value", 1000, 2000);
-            return;
         } else {
             motor_disarmed[motor_index] = convertExternalToMotor(motor_value);
+
+            cliPrintf("motor %d: %d\r\n", motor_index, convertMotorToExternal(motor_disarmed[motor_index]));
         }
     }
 
-    cliPrintf("motor %d: %d\r\n", motor_index, convertMotorToExternal(motor_disarmed[motor_index]));
 }
 
 #ifndef MINIMAL_CLI
@@ -4157,7 +4189,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("dump", "dump configuration",
         "[master|profile|rates|all] {showdefaults}", cliDump),
 #ifdef USE_ESCSERIAL
-    CLI_COMMAND_DEF("escprog", "passthrough esc to serial", "<mode [sk/bl/ki/cc]> <index>", cliEscPassthrough),
+    CLI_COMMAND_DEF("escprog", "passthrough esc to serial", "<mode [sk/bl/ki/cc/ds]> <index>", cliEscPassthrough),
 #endif
     CLI_COMMAND_DEF("exit", NULL, NULL, cliExit),
     CLI_COMMAND_DEF("feature", "configure features",

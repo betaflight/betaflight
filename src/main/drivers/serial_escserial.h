@@ -30,8 +30,11 @@ typedef enum {
     PROTOCOL_KISS = 2,
     PROTOCOL_KISSALL = 3,
     PROTOCOL_CASTLE = 4,
+    PROTOCOL_DSHOT = 5,
     PROTOCOL_COUNT
 } escProtocol_e;
+
+#define ALL_ESCS 255
 
 serialPort_t *openEscSerial(escSerialPortIndex_e portIndex, serialReceiveCallbackPtr callback, uint16_t output, uint32_t baud, portOptions_t options, uint8_t mode);
 

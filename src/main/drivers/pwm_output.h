@@ -141,6 +141,7 @@ void pwmServoConfig(const struct timerHardware_s *timerHardware, uint8_t servoIn
 
 #ifdef USE_DSHOT
 uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType);
+void pwmWriteDshotCommand(uint8_t index, uint8_t command);
 void pwmWriteDigital(uint8_t index, uint16_t value);
 void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output);
 void pwmCompleteDigitalMotorUpdate(uint8_t motorCount);
