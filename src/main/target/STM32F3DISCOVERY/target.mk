@@ -1,5 +1,5 @@
 F3_TARGETS  += $(TARGET)
-FEATURES    = VCP SDCARD HIGHEND
+FEATURES    = VCP SDCARD
 
 TARGET_SRC = \
             drivers/accgyro_adxl345.c \
