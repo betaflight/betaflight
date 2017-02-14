@@ -856,6 +856,7 @@ void createDefaultConfig(master_t *config)
 #else
     config->rxConfig.serialrx_provider = 0;
 #endif
+    config->rxConfig.halfDuplex = 0;
     config->rxConfig.rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL;
     config->rxConfig.sbus_inversion = 1;
     config->rxConfig.spektrum_sat_bind = 0;
