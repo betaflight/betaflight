@@ -45,11 +45,13 @@
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
+#include "fc/cli.h"
 #include "fc/config.h"
+#include "fc/fc_core.h"
+#include "fc/fc_rc.h"
+#include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
-#include "fc/cli.h"
-#include "fc/fc_rc.h"
 
 #include "msp/msp_serial.h"
 
@@ -359,10 +361,10 @@ void processRx(timeUs_t currentTimeUs)
         updateInflightCalibrationState();
     }
 
-    updateActivatedModes(modeActivationProfile()->modeActivationConditions);
+    updateActivatedModes();
 
     if (!cliMode) {
-        updateAdjustmentStates(adjustmentProfile()->adjustmentRanges);
+        updateAdjustmentStates();
         processRcAdjustments(currentControlRateProfile);
     }
 
@@ -527,6 +529,8 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
     if (!cliMode && feature(FEATURE_BLACKBOX)) {
         handleBlackbox(currentTimeUs);
     }
+#else
+    UNUSED(currentTimeUs);
 #endif
 
 #ifdef TRANSPONDER

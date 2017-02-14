@@ -109,7 +109,7 @@ typedef struct adjustmentProfile_s {
 } adjustmentProfile_t;
 
 void resetAdjustmentStates(void);
-void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
+void updateAdjustmentStates(void);
 struct controlRateConfig_s;
 void processRcAdjustments(struct controlRateConfig_s *controlRateConfig);
 struct pidProfile_s;

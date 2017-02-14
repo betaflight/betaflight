@@ -188,7 +188,7 @@ void init(void)
 
     //i2cSetOverclock(masterConfig.i2c_overclock);
 
-    debugMode = masterConfig.debug_mode;
+    debugMode = systemConfig()->debug_mode;
 
     // Latch active features to be used for feature() in the remainder of init().
     latchActiveFeatures();
@@ -271,7 +271,7 @@ void init(void)
     serialInit(feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
 #endif
 
-    mixerInit(mixerConfig()->mixerMode, masterConfig.customMotorMixer);
+    mixerInit(mixerConfig()->mixerMode, customMotorMixerMutable(0));
 #ifdef USE_SERVOS
     servoMixerInit(masterConfig.customServoMixer);
 #endif
@@ -445,7 +445,7 @@ void init(void)
 
     failsafeInit();
 
-    rxInit(rxConfig(), modeActivationProfile()->modeActivationConditions);
+    rxInit(rxConfig(), modeActivationConditions(0));
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {

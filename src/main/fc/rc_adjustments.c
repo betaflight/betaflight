@@ -435,20 +435,20 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
     }
 }
 
-void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges)
+void resetAdjustmentStates(void)
+{
+    memset(adjustmentStates, 0, sizeof(adjustmentStates));
+}
+
+void updateAdjustmentStates(void)
 {
     for (int index = 0; index < MAX_ADJUSTMENT_RANGE_COUNT; index++) {
-        adjustmentRange_t *adjustmentRange = &adjustmentRanges[index];
+        const adjustmentRange_t * const adjustmentRange = adjustmentRanges(index);
         if (isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range)) {
             const adjustmentConfig_t *adjustmentConfig = &defaultAdjustmentConfigs[adjustmentRange->adjustmentFunction - ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET];
             configureAdjustment(adjustmentRange->adjustmentIndex, adjustmentRange->auxSwitchChannelIndex, adjustmentConfig);
         }
     }
-}
-
-void resetAdjustmentStates(void)
-{
-    memset(adjustmentStates, 0, sizeof(adjustmentStates));
 }
 
 void useAdjustmentConfig(pidProfile_t *pidProfileToUse)

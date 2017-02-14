@@ -63,9 +63,11 @@ typedef enum {
 
 typedef struct systemConfig_s {
     uint8_t debug_mode;
+    char name[MAX_NAME_LENGTH + 1];
 } systemConfig_t;
 
-//!!TODOPG_DECLARE(systemConfig_t, systemConfig);
+PG_DECLARE(systemConfig_t, systemConfig);
+
 struct profile_s;
 extern struct profile_s *currentProfile;
 struct controlRateConfig_s;
