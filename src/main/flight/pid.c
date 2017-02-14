@@ -271,7 +271,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         } else {
             float dynC = dtermSetpointWeight;
             if (pidProfile->setpointRelaxRatio < 100) {
-                dynC *= MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f);
+                dynC *= MIN(sq(getRcDeflectionAbs(axis)) * relaxFactor, 1.0f);
             }
             const float rD = dynC * currentPidSetpoint - gyroRate;    // cr - y
             // Divide rate change by dT to get differential (ie dr/dt)
