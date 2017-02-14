@@ -948,7 +948,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_2D_HEAD_HOME(naviga
         return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
     }
     else if (posControl.flags.hasValidPositionSensor) {
-        if (isWaypointReached(&posControl.homeWaypointAbove)) {
+        if (isWaypointReached(&posControl.homeWaypointAbove, true)) {
             // Successfully reached position target
             return NAV_FSM_EVENT_SUCCESS;       // NAV_STATE_RTH_2D_FINISHING
         }
@@ -1091,7 +1091,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_HEAD_HOME(naviga
         return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
     }
     else if (posControl.flags.hasValidPositionSensor) {
-        if (isWaypointReached(&posControl.homeWaypointAbove)) {
+        if (isWaypointReached(&posControl.homeWaypointAbove, true)) {
             // Successfully reached position target - update XYZ-position
             setDesiredPosition(&posControl.homeWaypointAbove.pos, posControl.homeWaypointAbove.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING);
             return NAV_FSM_EVENT_SUCCESS;       // NAV_STATE_RTH_3D_HOVER_PRIOR_TO_LANDING
@@ -1253,11 +1253,13 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_IN_PROGRESS(na
 
     // If no position sensor available - land immediately
     if (posControl.flags.hasValidPositionSensor && posControl.flags.hasValidHeadingSensor) {
+        const bool isDoingRTH = (posControl.waypointList[posControl.activeWaypointIndex].action == NAV_WP_ACTION_RTH);
+
         switch (posControl.waypointList[posControl.activeWaypointIndex].action) {
             case NAV_WP_ACTION_WAYPOINT:
             case NAV_WP_ACTION_RTH:
             default:
-                if (isWaypointReached(&posControl.activeWaypoint) || isWaypointMissed(&posControl.activeWaypoint)) {
+                if (isWaypointReached(&posControl.activeWaypoint, isDoingRTH) || isWaypointMissed(&posControl.activeWaypoint)) {
                     // Waypoint reached
                     return NAV_FSM_EVENT_SUCCESS;   // will switch to NAV_STATE_WAYPOINT_REACHED
                 }
@@ -1750,11 +1752,19 @@ bool isWaypointMissed(const navWaypointPosition_t * waypoint)
     return ABS(bearingError) > 10000; // TRUE if we passed the waypoint by 100 degrees
 }
 
-bool isWaypointReached(const navWaypointPosition_t * waypoint)
+bool isWaypointReached(const navWaypointPosition_t * waypoint, const bool isWaypointHome)
 {
     // We consider waypoint reached if within specified radius
     const uint32_t wpDistance = calculateDistanceToDestination(&waypoint->pos);
-    return (wpDistance <= navConfig()->general.waypoint_radius);
+
+    if (STATE(FIXED_WING) && isWaypointHome) {
+        // Airplane will do a circular loiter over home and might never approach it closer than waypoint_radius - need extra check
+        return (wpDistance <= navConfig()->general.waypoint_radius)
+                || (wpDistance <= (navConfig()->fw.loiter_radius * 1.10f));  // 10% margin of desired circular loiter radius
+    }
+    else {
+        return (wpDistance <= navConfig()->general.waypoint_radius);
+    }
 }
 
 static void updateHomePositionCompatibility(void)
