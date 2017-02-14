@@ -167,10 +167,11 @@ static void sendAccel(void)
 
 static void sendBaro(void)
 {
+    const int32_t alt = getEstimatedActualPosition(Z);
     sendDataHead(ID_ALTITUDE_BP);
-    serialize16(baro.BaroAlt / 100);
+    serialize16(alt / 100);
     sendDataHead(ID_ALTITUDE_AP);
-    serialize16(ABS(baro.BaroAlt % 100));
+    serialize16(ABS(alt % 100));
 }
 
 #ifdef GPS

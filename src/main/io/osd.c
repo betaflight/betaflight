@@ -246,12 +246,7 @@ static void osdDrawSingleElement(uint8_t item)
 
         case OSD_HOME_DIR:
         {
-            int16_t h;
-
-            if (STATE(FIXED_WING) && !sensors(SENSOR_MAG))
-                h = GPS_directionToHome - gpsSol.groundCourse/10;
-            else
-                h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+            int16_t h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 
             if (h < 0)
                 h += 360;
@@ -275,16 +270,11 @@ static void osdDrawSingleElement(uint8_t item)
 
         case OSD_HEADING:
         {
-            int16_t h;
+            int16_t h = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+            if (h < 0) h+=360;
 
             buff[0] = 0xA9;
 
-            if (STATE(FIXED_WING) && !sensors(SENSOR_MAG))
-                h = gpsSol.groundCourse/10;
-            else
-                h = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
-
-            if (h < 0) h+=360;
 
             sprintf(buff, "%c%d%c", 0xA9, h , 0xA8 );
             break;
