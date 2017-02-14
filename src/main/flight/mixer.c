@@ -54,6 +54,7 @@
 #define EXTERNAL_DSHOT_CONVERSION_OFFSET 977
 #define EXTERNAL_CONVERSION_MIN_VALUE 1000
 #define EXTERNAL_CONVERSION_MAX_VALUE 2000
+#define EXTERNAL_CONVERSION_3D_MID_VALUE 1500
 
 static uint8_t motorCount;
 static float motorMixRange;
@@ -561,6 +562,14 @@ uint16_t convertExternalToMotor(uint16_t externalValue)
 #ifdef USE_DSHOT
     if (isMotorProtocolDshot()) {
         motorValue = externalValue <= EXTERNAL_CONVERSION_MIN_VALUE ? DSHOT_DISARM_COMMAND : constrain((externalValue - EXTERNAL_DSHOT_CONVERSION_OFFSET) * EXTERNAL_DSHOT_CONVERSION_FACTOR, DSHOT_MIN_THROTTLE, DSHOT_MAX_THROTTLE);
+
+        if (feature(FEATURE_3D)) {
+            if (externalValue == EXTERNAL_CONVERSION_3D_MID_VALUE) {
+                motorValue = DSHOT_DISARM_COMMAND;
+            } else if (motorValue >= DSHOT_MIN_THROTTLE && motorValue <= DSHOT_3D_DEADBAND_LOW) {
+                motorValue = DSHOT_MIN_THROTTLE + (DSHOT_3D_DEADBAND_LOW - motorValue);
+            }
+        }
     }
 #endif
 
@@ -572,7 +581,15 @@ uint16_t convertMotorToExternal(uint16_t motorValue)
     uint16_t externalValue = motorValue;
 #ifdef USE_DSHOT
     if (isMotorProtocolDshot()) {
+        if (feature(FEATURE_3D) && motorValue >= DSHOT_MIN_THROTTLE && motorValue <= DSHOT_3D_DEADBAND_LOW) {
+            motorValue = DSHOT_MIN_THROTTLE + (DSHOT_3D_DEADBAND_LOW - motorValue);
+        }
+
         externalValue = motorValue < DSHOT_MIN_THROTTLE ? EXTERNAL_CONVERSION_MIN_VALUE : constrain((motorValue / EXTERNAL_DSHOT_CONVERSION_FACTOR) + EXTERNAL_DSHOT_CONVERSION_OFFSET, EXTERNAL_CONVERSION_MIN_VALUE + 1, EXTERNAL_CONVERSION_MAX_VALUE);
+
+        if (feature(FEATURE_3D) && motorValue == DSHOT_DISARM_COMMAND) {
+            externalValue = EXTERNAL_CONVERSION_3D_MID_VALUE;
+        }
     }
 #endif
 
