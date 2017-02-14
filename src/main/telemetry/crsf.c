@@ -40,6 +40,8 @@
 #include "io/gps.h"
 #include "io/serial.h"
 
+#include "navigation/navigation.h"
+
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -146,8 +148,7 @@ void crsfFrameGps(sbuf_t *dst)
     crsfSerialize32(dst, gpsSol.llh.lon);
     crsfSerialize16(dst, (gpsSol.groundSpeed * 36 + 50) / 100); // gpsSol.groundSpeed is in cm/s
     crsfSerialize16(dst, DECIDEGREES_TO_CENTIDEGREES(gpsSol.groundCourse)); // gpsSol.groundCourse is 0.1 degrees, need 0.01 deg
-    //Send real GPS altitude only if it's reliable (there's a GPS fix)
-    const uint16_t altitude = (STATE(GPS_FIX) ? gpsSol.llh.alt : 0) + 1000;
+    const uint16_t altitude = (getEstimatedActualPosition(Z) / 100) + 1000;
     crsfSerialize16(dst, altitude);
     crsfSerialize8(dst, gpsSol.numSat);
 }
