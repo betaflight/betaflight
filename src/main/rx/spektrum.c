@@ -119,7 +119,7 @@ uint8_t spektrumFrameStatus(void)
 
     // Fetch the fade count
     const uint16_t fade = (spekFrame[0] << 8) + spekFrame[1];
-    const uint32_t current_secs = micros() / 1000 / (1000 / SPEKTRUM_FADE_REPORTS_PER_SEC);
+    const uint32_t current_secs = millis() / (1000 / SPEKTRUM_FADE_REPORTS_PER_SEC);
 
     if (spek_fade_last_sec == 0) {
         // This is the first frame status received.
