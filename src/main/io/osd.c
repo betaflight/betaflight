@@ -310,7 +310,7 @@ static void osdDrawSingleElement(uint8_t item)
             pitchAngle = (pitchAngle / 8) - 41; // 41 = 4 * 9 + 5
 
             for (int8_t x = -4; x <= 4; x++) {
-                int y = (rollAngle * x) / 64;
+                int y = (-rollAngle * x) / 64;
                 y -= pitchAngle;
                 // y += 41; // == 4 * 9 + 5
                 if (y >= 0 && y <= 81) {
