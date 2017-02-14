@@ -26,6 +26,7 @@
 #define BLINK(x)      ((x & BLINK_FLAG) && blinkState)
 #define BLINK_OFF(x)  (x & ~BLINK_FLAG)
 #define OSD_POS_MAX   0x3FF
+#define OSD_POS_MAX_CLI   (OSD_POS_MAX | VISIBLE_FLAG | BLINK_FLAG)
 
 typedef enum {
     OSD_RSSI_VALUE,
