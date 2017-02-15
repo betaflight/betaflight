@@ -657,16 +657,14 @@ _TIM_IRQ_HANDLER(TIM5_IRQ, 5);
 #endif
 #if USED_TIMERS & TIM_N(8)
 _TIM_IRQ_HANDLER(TIM8_CC_IRQ, 8);
-# if defined(STM32F10X_XL)
+# if defined(STM32F10X_XL) || defined(STM32F40_41xxx)
 _TIM_IRQ_HANDLER(TIM8_UP_TIM13_IRQ, 8);
 # else  // f10x_hd, f30x
 _TIM_IRQ_HANDLER(TIM8_UP_IRQ, 8);
 # endif
 # if defined(STM32F40_41xxx)
-#  if USED_TIMERS & TIM_N(13)
+#  if (USED_TIMERS & TIM_N(13)) && (USED_TIMERS & TIM_N(8))
 _TIM_IRQ_HANDLER2(TIM8_UP_TIM13_IRQ, 8, 13);  // both timers are in use
-#  else
-_TIM_IRQ_HANDLER(TIM8_UP_TIM13_IRQ, 8);     // timer13 is not used
 #  endif
 # endif
 # if defined (STM32F411xE)
