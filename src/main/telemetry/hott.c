@@ -449,10 +449,24 @@ static void hottCheckSerialData(uint32_t currentMicros)
     }
 }
 
+static void workAroundForHottTelemetryOnUsart(serialPort_t *instance, portMode_t mode)
+{
+    if ((portConfig->identifier == SERIAL_PORT_USART1) || (portConfig->identifier == SERIAL_PORT_USART2) || (portConfig->identifier == SERIAL_PORT_USART3) ||
+        (portConfig->identifier == SERIAL_PORT_USART4) || (portConfig->identifier == SERIAL_PORT_USART5) || (portConfig->identifier == SERIAL_PORT_USART6) ||
+        (portConfig->identifier == SERIAL_PORT_USART7) || (portConfig->identifier == SERIAL_PORT_USART8)) {
+        closeSerialPort(hottPort);
+        hottPort = openSerialPort(instance->identifier, FUNCTION_TELEMETRY_HOTT, NULL, HOTT_BAUDRATE, mode, SERIAL_NOT_INVERTED);
+    }
+    else {
+        serialSetMode(hottPort, mode);
+    }
+}
+
+
 static void hottSendTelemetryData(void) {
     if (!hottIsSending) {
         hottIsSending = true;
-        serialSetMode(hottPort, MODE_TX);
+        workAroundForHottTelemetryOnUsart(hottPort, MODE_TX);
         hottMsgCrc = 0;
         return;
     }
@@ -460,7 +474,7 @@ static void hottSendTelemetryData(void) {
     if (hottMsgRemainingBytesToSendCount == 0) {
         hottMsg = NULL;
         hottIsSending = false;
-        serialSetMode(hottPort, MODE_RX);
+        workAroundForHottTelemetryOnUsart(hottPort, MODE_RX);
         flushHottRxBuffer();
         return;
     }
