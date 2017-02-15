@@ -610,6 +610,7 @@ static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
 }
 
 // handler for shared interrupts when both timers need to check status bits
+// Unused timer case will be optimized (deleted) by compiler
 #define _TIM_IRQ_HANDLER2(name, i, j)                                   \
     IRQHANDLER(name)                                                    \
     {                                                                   \
@@ -634,10 +635,10 @@ _TIM_IRQ_HANDLER(TIM2_IRQ, 2);
 _TIM_IRQ_HANDLER(TIM3_IRQ, 3);
 _TIM_IRQ_HANDLER(TIM4_IRQ, 4);
 
-#elif defined(STM32F10X_XL)
+#elif defined(STM32F10X_XL) // Who uses this?
 
 # error Not handled
-# if 0 // Who uses this?
+# if 0
 _TIM_IRQ_HANDLER(TIM1_CC_IRQ, 1);
 _TIM_IRQ_HANDLER(TIM1_UP_IRQ, 1);
 _TIM_IRQ_HANDLER2(TIM1_UP_TIM10_IRQ, 1, 10);
