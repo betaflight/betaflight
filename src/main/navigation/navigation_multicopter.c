@@ -179,14 +179,19 @@ void resetMulticopterAltitudeController(void)
 {
     navPidReset(&posControl.pids.vel[Z]);
     navPidReset(&posControl.pids.surface);
-    pt1FilterReset(&altholdThrottleFilterState, 0.0f);
-    posControl.desiredState.vel.V.Z = posControl.actualState.vel.V.Z;   // Gradually transition from current climb
     posControl.rcAdjustment[THROTTLE] = 0;
 
-    /* Prevent jump if activated with zero throttle - start with -50% throttle adjustment. That's obviously too much, but it will prevent jumping */
     if (prepareForTakeoffOnReset) {
+        /* If we are preparing for takeoff - start with lowset possible climb rate, adjust alt target and make sure throttle doesn't jump */
+        posControl.desiredState.vel.V.Z = -navConfig()->general.max_manual_climb_rate;
+        updateAltitudeTargetFromClimbRate(-navConfig()->general.max_manual_climb_rate, CLIMB_RATE_UPDATE_SURFACE_TARGET);
         posControl.pids.vel[Z].integrator = -500.0f;
+        pt1FilterReset(&altholdThrottleFilterState, -500.0f);
         prepareForTakeoffOnReset = false;
+    }
+    else {
+        posControl.desiredState.vel.V.Z = posControl.actualState.vel.V.Z;   // Gradually transition from current climb
+        pt1FilterReset(&altholdThrottleFilterState, 0.0f);
     }
 }
 
