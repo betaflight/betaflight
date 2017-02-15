@@ -33,6 +33,7 @@
 #include "nvic.h"
 #include "dma.h"
 #include "rcc.h"
+#include "drivers/irq.h"
 
 #include "serial.h"
 #include "serial_uart.h"
