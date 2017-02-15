@@ -287,7 +287,6 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
 {
     static float integralAccX = 0.0f,  integralAccY = 0.0f, integralAccZ = 0.0f;    // integral error terms scaled by Ki
     static float integralMagX = 0.0f,  integralMagY = 0.0f, integralMagZ = 0.0f;    // integral error terms scaled by Ki
-    float recipNorm;
     float ex, ey, ez;
 
     /* Calculate general spin rate (rad/s) */
@@ -297,14 +296,14 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     // Use measured magnetic field vector
     if (useMag || useCOG) {
         float kpMag = imuRuntimeConfig.dcm_kp_mag * imuGetPGainScaleFactor();
+        const float magMagnitudeSq = mx * mx + my * my + mz * mz;
 
-        recipNorm = mx * mx + my * my + mz * mz;
-        if (useMag && recipNorm > 0.01f) {
+        if (useMag && magMagnitudeSq > 0.01f) {
             // Normalise magnetometer measurement
-            recipNorm = invSqrt(recipNorm);
-            mx *= recipNorm;
-            my *= recipNorm;
-            mz *= recipNorm;
+            const float magRecipNorm = invSqrt(magMagnitudeSq);
+            mx *= magRecipNorm;
+            my *= magRecipNorm;
+            mz *= magRecipNorm;
 
             // For magnetometer correction we make an assumption that magnetic field is perpendicular to gravity (ignore Z-component in EF).
             // This way magnetic field will only affect heading and wont mess roll/pitch angles
@@ -368,14 +367,15 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     /* Step 2: Roll and pitch correction -  use measured acceleration vector */
     if (useAcc) {
         float kpAcc = imuRuntimeConfig.dcm_kp_acc * imuGetPGainScaleFactor();
+        const float accRecipNorm = invSqrt(ax * ax + ay * ay + az * az);
 
         // Just scale by 1G length - That's our vector adjustment. Rather than
         // using one-over-exact length (which needs a costly square root), we already
         // know the vector is enough "roughly unit length" and since it is only weighted
         // in by a certain amount anyway later, having that exact is meaningless. (c) MasterZap
-        ax *= (1.0f / GRAVITY_CMSS);
-        ay *= (1.0f / GRAVITY_CMSS);
-        az *= (1.0f / GRAVITY_CMSS);
+        ax *= accRecipNorm;
+        ay *= accRecipNorm;
+        az *= accRecipNorm;
 
         // Error is sum of cross product between estimated direction and measured direction of gravity
         ex = (ay * rMat[2][2] - az * rMat[2][1]);
@@ -416,11 +416,11 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     q3 += (qa * gz + qb * gy - qc * gx);
 
     // Normalise quaternion
-    recipNorm = invSqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
-    q0 *= recipNorm;
-    q1 *= recipNorm;
-    q2 *= recipNorm;
-    q3 *= recipNorm;
+    const float quatRecipNorm = invSqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
+    q0 *= quatRecipNorm;
+    q1 *= quatRecipNorm;
+    q2 *= quatRecipNorm;
+    q3 *= quatRecipNorm;
 
     // Check for invalid quaternion
     imuCheckAndResetOrientationQuaternion(ax, ay, az);
@@ -562,18 +562,6 @@ static void imuUpdateMeasuredAcceleration(void)
     for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         imuAccelInBodyFrame.A[axis] = acc.accADC[axis] * (GRAVITY_CMSS / acc.dev.acc_1G);
         imuMeasuredGravityBF.A[axis] = imuAccelInBodyFrame.A[axis];
-    }
-#endif
-
-#ifdef GPS
-    /** Centrifugal force compensation on a fixed-wing aircraft
-      * a_c_body = omega x vel_tangential_body
-      * assumption: tangential velocity only along body x-axis
-      * assumption: GPS velocity equal to body x-axis velocity
-      */
-    if (STATE(FIXED_WING) && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5) {
-        imuMeasuredGravityBF.A[Y] -= gpsSol.groundSpeed * imuMeasuredRotationBF.A[Z];
-        imuMeasuredGravityBF.A[Z] += gpsSol.groundSpeed * imuMeasuredRotationBF.A[Y];
     }
 #endif
 }
