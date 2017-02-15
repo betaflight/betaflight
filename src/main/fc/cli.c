@@ -573,7 +573,7 @@ static const clivalue_t valueTable[] = {
     { "rc_interp",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &rxConfig()->rcInterpolation, .config.lookup = { TABLE_RC_INTERPOLATION } },
     { "rc_interp_ch",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &rxConfig()->rcInterpolationChannels, .config.lookup = { TABLE_RC_INTERPOLATION_CHANNELS } },
     { "rc_interp_int",              VAR_UINT8  | MASTER_VALUE,  &rxConfig()->rcInterpolationInterval, .config.minmax = { 1,  50 } },
-    { "rssi_ppm_invert",            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &rxConfig()->rssi_ppm_invert, .config.lookup = { TABLE_OFF_ON } },
+    { "rssi_invert",            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &rxConfig()->rssi_invert, .config.lookup = { TABLE_OFF_ON } },
 #if defined(USE_PWM)
     { "input_filtering_mode",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &pwmConfig()->inputFilteringMode, .config.lookup = { TABLE_OFF_ON } },
 #endif
