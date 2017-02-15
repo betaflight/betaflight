@@ -3017,11 +3017,12 @@ static void cliPlaySound(char *cmdline)
 
 static void cliProfile(char *cmdline)
 {
+    // CLI profile index is 1-based
     if (isEmpty(cmdline)) {
-        cliPrintf("profile %d\r\n", getConfigProfile());
+        cliPrintf("profile %d\r\n", getConfigProfile() + 1);
         return;
     } else {
-        const int i = atoi(cmdline) - 1; // make CLI index 1-based
+        const int i = atoi(cmdline) - 1;
         if (i >= 0 && i < MAX_PROFILE_COUNT) {
             setConfigProfileAndWriteEEPROM(i);
             cliProfile("");
@@ -3037,7 +3038,7 @@ static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask)
     }
     setConfigProfile(profileIndex);
     cliPrintHashLine("profile");
-    cliPrintf("profile %d\r\n\r\n", getConfigProfile());
+    cliPrintf("profile %d\r\n\r\n", getConfigProfile() + 1);
     dumpAllValues(PROFILE_VALUE, dumpMask);
     dumpAllValues(CONTROL_RATE_VALUE, dumpMask);
 }
@@ -3477,7 +3478,7 @@ static void printConfig(const char *cmdline, bool doDiff)
             }
             setConfigProfile(currentProfileIndexSave);
             cliPrintHashLine("restore original profile selection");
-            cliPrintf("profile %d\r\n", currentProfileIndexSave);
+            cliPrintf("profile %d\r\n", currentProfileIndexSave + 1);
 
             cliPrintHashLine("save configuration\r\nsave");
         } else {
