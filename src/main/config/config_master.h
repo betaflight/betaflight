@@ -166,7 +166,7 @@
 #define displayPortProfileMax7456Mutable(x) (&masterConfig.displayPortProfileMax7456)
 #define displayPortProfileOledMutable(x) (&masterConfig.displayPortProfileOled)
 
-#define servoParams(x) (&servoProfile()->servoConf[i])
+#define servoParams(x) (&servoProfile()->servoConf[x])
 #define adjustmentRanges(x) (&adjustmentProfile()->adjustmentRanges[x])
 #define rxFailsafeChannelConfigs(x) (&masterConfig.rxConfig.failsafe_channel_configurations[x])
 #define osdConfig(x) (&masterConfig.osdProfile)

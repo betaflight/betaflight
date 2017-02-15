@@ -183,7 +183,7 @@ bool parseLedStripConfig(int ledIndex, const char *config);
 void generateLedConfig(ledConfig_t *ledConfig, char *ledConfigBuffer, size_t bufferSize);
 void reevaluateLedConfig(void);
 
-void ledStripInit(ledStripConfig_t *ledStripConfig);
+void ledStripInit(void);
 void ledStripEnable(void);
 void ledStripUpdate(timeUs_t currentTimeUs);
 

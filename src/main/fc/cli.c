@@ -23,7 +23,6 @@
 #include <math.h>
 #include <ctype.h>
 
-//#define USE_PARAMETER_GROUPS
 #include "platform.h"
 
 // FIXME remove this for targets that don't need a CLI.  Perhaps use a no-op macro when USE_CLI is not enabled
