@@ -72,7 +72,7 @@ typedef enum {
 #define DMA_OUTPUT_STRING   "DMA%d Stream %d:"
 
 #define DEFINE_DMA_CHANNEL(d, s, f, i, r) {.dma = d, .stream = s, .irqHandlerCallback = NULL, .flagsShift = f, .irqN = i, .rcc = r, .userParam = 0, .owner = 0, .resourceIndex = 0 }
-#define DEFINE_DMA_IRQ_HANDLER(d, s, i) void DMA ## d ## _Stream ## s ## _IRQHandler(void) {\
+#define DEFINE_DMA_IRQ_HANDLER(d, s, i) IRQHANDLER(DMA ## d ## _Stream ## s ## _IRQ) {\
                                                                 if (dmaDescriptors[i].irqHandlerCallback)\
                                                                     dmaDescriptors[i].irqHandlerCallback(&dmaDescriptors[i]);\
                                                             }

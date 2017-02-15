@@ -6,6 +6,7 @@
 
 #include "nvic.h"
 #include "io_impl.h"
+#include "drivers/irq.h"
 #include "exti.h"
 
 #ifdef USE_EXTI
@@ -198,25 +199,25 @@ void EXTI_IRQHandler(void)
 }
 
 #define _EXTI_IRQ_HANDLER(name)                 \
-    void name(void) {                           \
+    IRQHANDLER(name) {                           \
         EXTI_IRQHandler();                      \
     }                                           \
     struct dummy                                \
     /**/
 
 
-_EXTI_IRQ_HANDLER(EXTI0_IRQHandler);
-_EXTI_IRQ_HANDLER(EXTI1_IRQHandler);
+_EXTI_IRQ_HANDLER(EXTI0_IRQ);
+_EXTI_IRQ_HANDLER(EXTI1_IRQ);
 #if defined(STM32F1) || defined(STM32F7)
-_EXTI_IRQ_HANDLER(EXTI2_IRQHandler);
+_EXTI_IRQ_HANDLER(EXTI2_IRQ);
 #elif defined(STM32F3) || defined(STM32F4)
-_EXTI_IRQ_HANDLER(EXTI2_TS_IRQHandler);
+_EXTI_IRQ_HANDLER(EXTI2_TS_IRQ);
 #else
 # warning "Unknown CPU"
 #endif
-_EXTI_IRQ_HANDLER(EXTI3_IRQHandler);
-_EXTI_IRQ_HANDLER(EXTI4_IRQHandler);
-_EXTI_IRQ_HANDLER(EXTI9_5_IRQHandler);
-_EXTI_IRQ_HANDLER(EXTI15_10_IRQHandler);
+_EXTI_IRQ_HANDLER(EXTI3_IRQ);
+_EXTI_IRQ_HANDLER(EXTI4_IRQ);
+_EXTI_IRQ_HANDLER(EXTI9_5_IRQ);
+_EXTI_IRQ_HANDLER(EXTI15_10_IRQ);
 
 #endif

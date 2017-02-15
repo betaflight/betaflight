@@ -31,6 +31,7 @@
 #include "io.h"
 #include "nvic.h"
 #include "dma.h"
+#include "drivers/irq.h"
 #include "rcc.h"
 
 #include "serial.h"
@@ -155,7 +156,7 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
 }
 
 // USART1 Rx/Tx IRQ Handler
-void USART1_IRQHandler(void)
+IRQHANDLER(USART1_IRQ)
 {
     uartPort_t *s = &uartPort1;
     uartIrqCallback(s);
@@ -219,7 +220,7 @@ uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t option
 
 
 // USART2 Rx/Tx IRQ Handler
-void USART2_IRQHandler(void)
+IRQHANDLER(USART2_IRQ)
 {
     uartPort_t *s = &uartPort2;
     uartIrqCallback(s);
@@ -280,7 +281,7 @@ uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t option
 }
 
 // USART2 Rx/Tx IRQ Handler
-void USART3_IRQHandler(void)
+IRQHANDLER(USART3_IRQ)
 {
     uartPort_t *s = &uartPort3;
     uartIrqCallback(s);

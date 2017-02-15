@@ -23,6 +23,7 @@
 
 #include "io.h"
 #include "system.h"
+#include "drivers/irq.h"
 
 #include "bus_i2c.h"
 #include "nvic.h"
@@ -99,28 +100,34 @@ static i2cState_t i2cState[] = {
     { false, false, 0, 0, 0, 0, 0, 0, 0 }
 };
 
-void I2C1_ER_IRQHandler(void) {
+IRQHANDLER(I2C1_ER_IRQ)
+{
     i2c_er_handler(I2CDEV_1);
 }
 
-void I2C1_EV_IRQHandler(void) {
+IRQHANDLER(I2C1_EV_IRQ)
+{
     i2c_ev_handler(I2CDEV_1);
 }
 
-void I2C2_ER_IRQHandler(void) {
+IRQHANDLER(I2C2_ER_IRQ)
+{
     i2c_er_handler(I2CDEV_2);
 }
 
-void I2C2_EV_IRQHandler(void) {
+IRQHANDLER(I2C2_EV_IRQ)
+{
     i2c_ev_handler(I2CDEV_2);
 }
 
 #ifdef STM32F4
-void I2C3_ER_IRQHandler(void) {
+IRQHANDLER(I2C3_ER_IRQ)
+{
     i2c_er_handler(I2CDEV_3);
 }
 
-void I2C3_EV_IRQHandler(void) {
+IRQHANDLER(I2C3_EV_IRQ)
+{
     i2c_ev_handler(I2CDEV_3);
 }
 #endif
