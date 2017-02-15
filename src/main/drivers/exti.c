@@ -208,7 +208,7 @@ void EXTI_IRQHandler(void)
 
 _EXTI_IRQ_HANDLER(EXTI0_IRQ);
 _EXTI_IRQ_HANDLER(EXTI1_IRQ);
-#if defined(STM32F1) || defined(STM32F7)
+#if defined(STM32F1) || defined(STM32F4) || defined(STM32F7)
 _EXTI_IRQ_HANDLER(EXTI2_IRQ);
 #elif defined(STM32F3)
 _EXTI_IRQ_HANDLER(EXTI2_TS_IRQ);

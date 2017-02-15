@@ -613,80 +613,105 @@ static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
 #define _TIM_IRQ_HANDLER2(name, i, j)                                   \
     IRQHANDLER(name)                                                    \
     {                                                                   \
-        timCCxHandler(TIM ## i, &timerConfig[TIMER_INDEX(i)]);          \
-        timCCxHandler(TIM ## j, &timerConfig[TIMER_INDEX(j)]);          \
+        if (USED_TIMERS & TIM_N(i))                                     \
+            timCCxHandler(TIM ## i, &timerConfig[TIMER_INDEX(i)]);      \
+        if (USED_TIMERS & TIM_N(j))                                     \
+            timCCxHandler(TIM ## j, &timerConfig[TIMER_INDEX(j)]);      \
     } struct dummy
 
 #define _TIM_IRQ_HANDLER(name, i)                                       \
     IRQHANDLER(name)                                                    \
     {                                                                   \
-        timCCxHandler(TIM ## i, &timerConfig[TIMER_INDEX(i)]);          \
+        if (USED_TIMERS & TIM_N(i))                                     \
+            timCCxHandler(TIM ## i, &timerConfig[TIMER_INDEX(i)]);      \
     } struct dummy
 
-#if USED_TIMERS & TIM_N(1)
+#if defined(STM32F10X)
+
+_TIM_IRQ_HANDLER(TIM1_UP_IRQ, 1);
 _TIM_IRQ_HANDLER(TIM1_CC_IRQ, 1);
-# if defined(STM32F10X)
-_TIM_IRQ_HANDLER(TIM1_UP_IRQ, 1);       // timer can't be shared
-# endif
-# if defined(STM32F40_41xxx) || defined (STM32F411xE)
-#  if USED_TIMERS & TIM_N(10)
-_TIM_IRQ_HANDLER2(TIM1_UP_TIM10_IRQ, 1, 10);  // both timers are in use
-#  else
-_TIM_IRQ_HANDLER(TIM1_UP_TIM10_IRQ, 1);     // timer10 is not used
-#  endif
-# endif
-# ifdef STM32F303xC
-#  if USED_TIMERS & TIM_N(16)
-_TIM_IRQ_HANDLER2(TIM1_UP_TIM16_IRQ, 1, 16);  // both timers are in use
-#  else
-_TIM_IRQ_HANDLER(TIM1_UP_TIM16_IRQ, 1);       // timer16 is not used
-#  endif
-# endif
-#endif
-#if USED_TIMERS & TIM_N(2)
+//_TIM_IRQ_HANDLER2(TIM1_UP_TIM10_IRQ, 1, 10);
+//_TIM_IRQ_HANDLER2(TIM1_UP_TIM16_IRQ, 1, 16);
 _TIM_IRQ_HANDLER(TIM2_IRQ, 2);
-#endif
-#if USED_TIMERS & TIM_N(3)
 _TIM_IRQ_HANDLER(TIM3_IRQ, 3);
-#endif
-#if USED_TIMERS & TIM_N(4)
 _TIM_IRQ_HANDLER(TIM4_IRQ, 4);
-#endif
-#if USED_TIMERS & TIM_N(5)
+//_TIM_IRQ_HANDLER(TIM5_IRQ, 5);
+//_TIM_IRQ_HANDLER(TIM8_CC_IRQ, 8);
+//_TIM_IRQ_HANDLER2(TIM8_UP_TIM13_IRQ, 8, 13);
+//_TIM_IRQ_HANDLER(TIM8_UP_IRQ, 8);
+//_TIM_IRQ_HANDLER(TIM8_BRK_TIM12_IRQ, 12);
+//_TIM_IRQ_HANDLER(TIM1_BRK_TIM15_IRQ, 15);
+//_TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM17_IRQ, 17);
+
+#elif defined(STM32F10X_XL)
+
+_TIM_IRQ_HANDLER(TIM1_CC_IRQ, 1);
+_TIM_IRQ_HANDLER(TIM1_UP_IRQ, 1);
+_TIM_IRQ_HANDLER2(TIM1_UP_TIM10_IRQ, 1, 10);
+_TIM_IRQ_HANDLER2(TIM1_UP_TIM16_IRQ, 1, 16);
+_TIM_IRQ_HANDLER(TIM2_IRQ, 2);
+_TIM_IRQ_HANDLER(TIM3_IRQ, 3);
+_TIM_IRQ_HANDLER(TIM4_IRQ, 4);
 _TIM_IRQ_HANDLER(TIM5_IRQ, 5);
-#endif
-#if USED_TIMERS & TIM_N(8)
 _TIM_IRQ_HANDLER(TIM8_CC_IRQ, 8);
-# if defined(STM32F10X_XL) || defined(STM32F40_41xxx)
-_TIM_IRQ_HANDLER(TIM8_UP_TIM13_IRQ, 8);
-# else  // f10x_hd, f30x
+_TIM_IRQ_HANDLER2(TIM8_UP_TIM13_IRQ, 8, 13);
 _TIM_IRQ_HANDLER(TIM8_UP_IRQ, 8);
-# endif
-# if defined(STM32F40_41xxx)
-#  if (USED_TIMERS & TIM_N(13)) && (USED_TIMERS & TIM_N(8))
-_TIM_IRQ_HANDLER2(TIM8_UP_TIM13_IRQ, 8, 13);  // both timers are in use
-#  endif
-# endif
-# if defined (STM32F411xE)
-# endif
-#endif
-#if USED_TIMERS & TIM_N(9)
-_TIM_IRQ_HANDLER(TIM1_BRK_TIM9_IRQ, 9);
-#endif
-#  if USED_TIMERS & TIM_N(11)
-_TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM11_IRQ, 11);
-#  endif
-#if USED_TIMERS & TIM_N(12)
 _TIM_IRQ_HANDLER(TIM8_BRK_TIM12_IRQ, 12);
-#endif
-#if USED_TIMERS & TIM_N(15)
 _TIM_IRQ_HANDLER(TIM1_BRK_TIM15_IRQ, 15);
-#endif
-#if defined(STM32F303xC) && ((USED_TIMERS & (TIM_N(1)|TIM_N(16))) == (TIM_N(16)))
-_TIM_IRQ_HANDLER(TIM1_UP_TIM16_IRQ, 16);    // only timer16 is used, not timer1
-#endif
-#if USED_TIMERS & TIM_N(17)
 _TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM17_IRQ, 17);
+
+#elif defined(STM32F40_41xxx)
+
+_TIM_IRQ_HANDLER(TIM1_CC_IRQ, 1);
+//_TIM_IRQ_HANDLER(TIM1_UP_IRQ, 1);
+_TIM_IRQ_HANDLER2(TIM1_UP_TIM10_IRQ, 1, 10);
+//_TIM_IRQ_HANDLER2(TIM1_UP_TIM16_IRQ, 1, 16);
+_TIM_IRQ_HANDLER(TIM2_IRQ, 2);
+_TIM_IRQ_HANDLER(TIM3_IRQ, 3);
+_TIM_IRQ_HANDLER(TIM4_IRQ, 4);
+_TIM_IRQ_HANDLER(TIM5_IRQ, 5);
+_TIM_IRQ_HANDLER(TIM8_CC_IRQ, 8);
+_TIM_IRQ_HANDLER2(TIM8_UP_TIM13_IRQ, 8, 13);
+//_TIM_IRQ_HANDLER(TIM8_UP_IRQ, 8);
+_TIM_IRQ_HANDLER(TIM8_BRK_TIM12_IRQ, 12);
+//_TIM_IRQ_HANDLER(TIM1_BRK_TIM15_IRQ, 15);
+//_TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM17_IRQ, 17);
+
+#elif defined(STM32F411xE)
+
+_TIM_IRQ_HANDLER(TIM1_CC_IRQ, 1);
+//_TIM_IRQ_HANDLER(TIM1_UP_IRQ, 1);
+_TIM_IRQ_HANDLER2(TIM1_UP_TIM10_IRQ, 1, 10);
+//_TIM_IRQ_HANDLER2(TIM1_UP_TIM16_IRQ, 1, 16);
+_TIM_IRQ_HANDLER(TIM2_IRQ, 2);
+_TIM_IRQ_HANDLER(TIM3_IRQ, 3);
+_TIM_IRQ_HANDLER(TIM4_IRQ, 4);
+_TIM_IRQ_HANDLER(TIM5_IRQ, 5);
+//_TIM_IRQ_HANDLER(TIM8_CC_IRQ, 8);
+//_TIM_IRQ_HANDLER2(TIM8_UP_TIM13_IRQ, 8, 13);
+//_TIM_IRQ_HANDLER(TIM8_UP_IRQ, 8);
+//_TIM_IRQ_HANDLER(TIM8_BRK_TIM12_IRQ, 12);
+//_TIM_IRQ_HANDLER(TIM1_BRK_TIM15_IRQ, 15);
+//_TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM17_IRQ, 17);
+
+#elif defined(STM32F303xC)
+_TIM_IRQ_HANDLER(TIM1_CC_IRQ, 1);
+//_TIM_IRQ_HANDLER(TIM1_UP_IRQ, 1);
+//_TIM_IRQ_HANDLER2(TIM1_UP_TIM10_IRQ, 1, 10);
+_TIM_IRQ_HANDLER2(TIM1_UP_TIM16_IRQ, 1, 16);
+_TIM_IRQ_HANDLER(TIM2_IRQ, 2);
+_TIM_IRQ_HANDLER(TIM3_IRQ, 3);
+_TIM_IRQ_HANDLER(TIM4_IRQ, 4);
+//_TIM_IRQ_HANDLER(TIM5_IRQ, 5);
+_TIM_IRQ_HANDLER(TIM8_CC_IRQ, 8);
+//_TIM_IRQ_HANDLER2(TIM8_UP_TIM13_IRQ, 8, 13);
+_TIM_IRQ_HANDLER(TIM8_UP_IRQ, 8);
+//_TIM_IRQ_HANDLER(TIM8_BRK_TIM12_IRQ, 12);
+_TIM_IRQ_HANDLER(TIM1_BRK_TIM15_IRQ, 15);
+_TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM17_IRQ, 17);
+
+#elif
+# error Unknown CPU
 #endif
 
 void timerInit(void)
