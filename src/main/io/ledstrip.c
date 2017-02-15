@@ -233,7 +233,7 @@ void reevaluateLedConfig(void)
 }
 
 // get specialColor by index
-static hsvColor_t* getSC(ledSpecialColorIds_e index)
+static const hsvColor_t* getSC(ledSpecialColorIds_e index)
 {
     return &ledStripConfig()->colors[ledStripConfig()->specialColors.color[index]];
 }
@@ -259,7 +259,7 @@ bool parseLedStripConfig(int ledIndex, const char *config)
     };
     static const char chunkSeparators[PARSE_STATE_COUNT] = {',', ':', ':', ':', '\0'};
 
-    ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[ledIndex];
+    ledConfig_t *ledConfig = &ledStripConfigMutable()->ledConfigs[ledIndex];
     memset(ledConfig, 0, sizeof(ledConfig_t));
 
     int x = 0, y = 0, color = 0;   // initialize to prevent warnings
@@ -418,7 +418,7 @@ static const struct {
     {LED_DIRECTION_UP,    QUADRANT_ANY},
 };
 
-static hsvColor_t* getDirectionalModeColor(const int ledIndex, const modeColorIndexes_t *modeColors)
+static const hsvColor_t* getDirectionalModeColor(const int ledIndex, const modeColorIndexes_t *modeColors)
 {
     const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[ledIndex];
 
@@ -468,7 +468,7 @@ static void applyLedFixedLayers()
             case LED_FUNCTION_FLIGHT_MODE:
                 for (unsigned i = 0; i < ARRAYLEN(flightModeToLed); i++)
                     if (!flightModeToLed[i].flightMode || FLIGHT_MODE(flightModeToLed[i].flightMode)) {
-                        hsvColor_t *directionalColor = getDirectionalModeColor(ledIndex, &ledStripConfig()->modeColors[flightModeToLed[i].ledMode]);
+                        const hsvColor_t *directionalColor = getDirectionalModeColor(ledIndex, &ledStripConfig()->modeColors[flightModeToLed[i].ledMode]);
                         if (directionalColor) {
                             color = *directionalColor;
                         }
@@ -597,7 +597,7 @@ static void applyLedBatteryLayer(bool updateNow, timeUs_t *timer)
     *timer += timerDelayUs;
 
     if (!flash) {
-       hsvColor_t *bgc = getSC(LED_SCOLOR_BACKGROUND);
+       const hsvColor_t *bgc = getSC(LED_SCOLOR_BACKGROUND);
        applyLedHsv(LED_MOV_FUNCTION(LED_FUNCTION_BATTERY), bgc);
     }
 }
@@ -626,7 +626,7 @@ static void applyLedRssiLayer(bool updateNow, timeUs_t *timer)
     *timer += timerDelay;
 
     if (!flash) {
-        hsvColor_t *bgc = getSC(LED_SCOLOR_BACKGROUND);
+        const hsvColor_t *bgc = getSC(LED_SCOLOR_BACKGROUND);
         applyLedHsv(LED_MOV_FUNCTION(LED_FUNCTION_RSSI), bgc);
     }
 }
@@ -983,7 +983,7 @@ bool parseColor(int index, const char *colorConfig)
 {
     const char *remainingCharacters = colorConfig;
 
-    hsvColor_t *color = &ledStripConfig()->colors[index];
+    hsvColor_t *color = &ledStripConfigMutable()->colors[index];
 
     bool result = true;
     static const uint16_t hsv_limit[HSV_COLOR_COMPONENT_COUNT] = {
@@ -1036,15 +1036,15 @@ bool setModeColor(ledModeIndex_e modeIndex, int modeColorIndex, int colorIndex)
     if (modeIndex < LED_MODE_COUNT) {  // modeIndex_e is unsigned, so one-sided test is enough
         if(modeColorIndex < 0 || modeColorIndex >= LED_DIRECTION_COUNT)
             return false;
-        ledStripConfig()->modeColors[modeIndex].color[modeColorIndex] = colorIndex;
+        ledStripConfigMutable()->modeColors[modeIndex].color[modeColorIndex] = colorIndex;
     } else if (modeIndex == LED_SPECIAL) {
         if (modeColorIndex < 0 || modeColorIndex >= LED_SPECIAL_COLOR_COUNT)
             return false;
-        ledStripConfig()->specialColors.color[modeColorIndex] = colorIndex;
+        ledStripConfigMutable()->specialColors.color[modeColorIndex] = colorIndex;
     } else if (modeIndex == LED_AUX_CHANNEL) {
         if (modeColorIndex < 0 || modeColorIndex >= 1)
             return false;
-        ledStripConfig()->ledstrip_aux_channel = colorIndex;
+        ledStripConfigMutable()->ledstrip_aux_channel = colorIndex;
     } else {
         return false;
     }
@@ -1104,8 +1104,7 @@ void applyDefaultSpecialColors(specialColorIndexes_t *specialColors)
 
 void ledStripInit()
 {
-    ledConfigs = ledStripConfig()->ledConfigs;
-    colors = ledStripConfig()->colors;
+    colors = ledStripConfigMutable()->colors;
     modeColors = ledStripConfig()->modeColors;
     specialColors = ledStripConfig()->specialColors;
     ledStripInitialised = false;

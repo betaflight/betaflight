@@ -62,8 +62,6 @@ static float motorMixRange;
 int16_t motor[MAX_SUPPORTED_MOTORS];
 int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 
-static airplaneConfig_t *airplaneConfig;
-
 mixerMode_e currentMixerMode;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 
@@ -289,11 +287,6 @@ void initEscEndpoints(void) {
     rcCommandThrottleRange = (PWM_RANGE_MAX - rxConfig()->mincheck);
     rcCommandThrottleRange3dLow = rxConfig()->midrc - rxConfig()->mincheck - flight3DConfig()->deadband3d_throttle;
     rcCommandThrottleRange3dHigh = PWM_RANGE_MAX - rxConfig()->midrc - flight3DConfig()->deadband3d_throttle;
-}
-
-void mixerUseConfigs(airplaneConfig_t *airplaneConfigToUse)
-{
-    airplaneConfig = airplaneConfigToUse;
 }
 
 void mixerInit(mixerMode_e mixerMode, const motorMixer_t *initialCustomMixers)

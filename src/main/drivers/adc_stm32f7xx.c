@@ -83,7 +83,7 @@ ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
     return ADCINVALID;
 }
 
-void adcInit(adcConfig_t *config)
+void adcInit(const adcConfig_t *config)
 {
     uint8_t i;
     uint8_t configuredAdcChannels = 0;

@@ -573,8 +573,8 @@ static const clivalue_t valueTable[] = {
 #endif
 
 #ifdef BEEPER
-    { "beeper_inversion",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &beeperConfig()->isInverted, .config.lookup = { TABLE_OFF_ON } },
-    { "beeper_od",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &beeperConfig()->isOpenDrain, .config.lookup = { TABLE_OFF_ON } },
+    { "beeper_inversion",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &beeperDevConfig()->isInverted, .config.lookup = { TABLE_OFF_ON } },
+    { "beeper_od",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &beeperDevConfig()->isOpenDrain, .config.lookup = { TABLE_OFF_ON } },
 #endif
 
 #ifdef SERIAL_RX
@@ -884,12 +884,11 @@ static osdConfig_t osdConfigCopy;
 #endif
 static systemConfig_t systemConfigCopy;
 #ifdef BEEPER
-static beeperConfig_t beeperConfigCopy;
+static beeperDevConfig_t beeperDevConfigCopy;
 #endif
 static controlRateConfig_t controlRateProfilesCopy[MAX_CONTROL_RATE_PROFILE_COUNT];
 static pidProfile_t pidProfileCopy[MAX_PROFILE_COUNT];
 static modeActivationOperatorConfig_t modeActivationOperatorConfigCopy;
-static beeperConfig_t beeperConfigCopy;
 #endif // USE_PARAMETER_GROUPS
 
 static void cliPrint(const char *str)
@@ -1234,8 +1233,8 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.defaultConfig = adjustmentRanges(0);
         break;
     case PG_BEEPER_CONFIG:
-       ret.currentConfig = &beeperConfigCopy;
-       ret.defaultConfig = beeperConfig();
+       ret.currentConfig = &beeperDevConfigCopy;
+       ret.defaultConfig = beeperDevConfig();
        break;
     default:
         ret.currentConfig = NULL;
@@ -1518,36 +1517,36 @@ static bool isEmpty(const char *string)
     return (string == NULL || *string == '\0') ? true : false;
 }
 
-static void printRxFailsafe(uint8_t dumpMask, const rxFailsafeChannelConfiguration_t *failsafeChannelConfigurations, const rxFailsafeChannelConfiguration_t *failsafeChannelConfigurationsDefault)
+static void printRxFailsafe(uint8_t dumpMask, const rxFailsafeChannelConfig_t *failsafeChannelConfig, const rxFailsafeChannelConfig_t *failsafeChannelConfigDefault)
 {
     // print out rxConfig failsafe settings
     for (uint32_t channel = 0; channel < MAX_SUPPORTED_RC_CHANNEL_COUNT; channel++) {
-        const rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &failsafeChannelConfigurations[channel];
-        const rxFailsafeChannelConfiguration_t *channelFailsafeConfigurationDefault = &failsafeChannelConfigurationsDefault[channel];
-        const bool equalsDefault = channelFailsafeConfiguration->mode == channelFailsafeConfigurationDefault->mode
-                && channelFailsafeConfiguration->step == channelFailsafeConfigurationDefault->step;
-        const bool requireValue = channelFailsafeConfiguration->mode == RX_FAILSAFE_MODE_SET;
+        const rxFailsafeChannelConfig_t *channelFailsafeConfig = &failsafeChannelConfig[channel];
+        const rxFailsafeChannelConfig_t *channelFailsafeConfigDefault = &failsafeChannelConfigDefault[channel];
+        const bool equalsDefault = channelFailsafeConfig->mode == channelFailsafeConfigDefault->mode
+                && channelFailsafeConfig->step == channelFailsafeConfigDefault->step;
+        const bool requireValue = channelFailsafeConfig->mode == RX_FAILSAFE_MODE_SET;
         if (requireValue) {
             const char *format = "rxfail %u %c %d\r\n";
             cliDefaultPrintf(dumpMask, equalsDefault, format,
                 channel,
-                rxFailsafeModeCharacters[channelFailsafeConfigurationDefault->mode],
-                RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfigurationDefault->step)
+                rxFailsafeModeCharacters[channelFailsafeConfigDefault->mode],
+                RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfigDefault->step)
             );
             cliDumpPrintf(dumpMask, equalsDefault, format,
                 channel,
-                rxFailsafeModeCharacters[channelFailsafeConfiguration->mode],
-                RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfiguration->step)
+                rxFailsafeModeCharacters[channelFailsafeConfig->mode],
+                RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfig->step)
             );
         } else {
             const char *format = "rxfail %u %c\r\n";
             cliDefaultPrintf(dumpMask, equalsDefault, format,
                 channel,
-                rxFailsafeModeCharacters[channelFailsafeConfigurationDefault->mode]
+                rxFailsafeModeCharacters[channelFailsafeConfigDefault->mode]
             );
             cliDumpPrintf(dumpMask, equalsDefault, format,
                 channel,
-                rxFailsafeModeCharacters[channelFailsafeConfiguration->mode]
+                rxFailsafeModeCharacters[channelFailsafeConfig->mode]
             );
         }
     }
@@ -1568,12 +1567,12 @@ static void cliRxFailsafe(char *cmdline)
         channel = atoi(ptr++);
         if ((channel < MAX_SUPPORTED_RC_CHANNEL_COUNT)) {
 
-            rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &rxConfig()->failsafe_channel_configurations[channel];
+            rxFailsafeChannelConfig_t *channelFailsafeConfig = &rxConfig()->failsafe_channel_configurations[channel];
 
             uint16_t value;
             rxFailsafeChannelType_e type = (channel < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_TYPE_FLIGHT : RX_FAILSAFE_TYPE_AUX;
-            rxFailsafeChannelMode_e mode = channelFailsafeConfiguration->mode;
-            bool requireValue = channelFailsafeConfiguration->mode == RX_FAILSAFE_MODE_SET;
+            rxFailsafeChannelMode_e mode = channelFailsafeConfig->mode;
+            bool requireValue = channelFailsafeConfig->mode == RX_FAILSAFE_MODE_SET;
 
             ptr = nextArg(ptr);
             if (ptr) {
@@ -1604,16 +1603,16 @@ static void cliRxFailsafe(char *cmdline)
                         return;
                     }
 
-                    channelFailsafeConfiguration->step = value;
+                    channelFailsafeConfig->step = value;
                 } else if (requireValue) {
                     cliShowParseError();
                     return;
                 }
-                channelFailsafeConfiguration->mode = mode;
+                channelFailsafeConfig->mode = mode;
 
             }
 
-            char modeCharacter = rxFailsafeModeCharacters[channelFailsafeConfiguration->mode];
+            char modeCharacter = rxFailsafeModeCharacters[channelFailsafeConfig->mode];
 
             // double use of cliPrintf below
             // 1. acknowledge interpretation on command,
@@ -1623,7 +1622,7 @@ static void cliRxFailsafe(char *cmdline)
                 cliPrintf("rxfail %u %c %d\r\n",
                     channel,
                     modeCharacter,
-                    RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfiguration->step)
+                    RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfig->step)
                 );
             } else {
                 cliPrintf("rxfail %u %c\r\n",
@@ -2105,7 +2104,7 @@ static void cliMotorMix(char *cmdline)
 #endif
 }
 
-static void printRxRange(uint8_t dumpMask, const rxChannelRangeConfiguration_t *channelRangeConfigs, const rxChannelRangeConfiguration_t *defaultChannelRangeConfigs)
+static void printRxRange(uint8_t dumpMask, const rxChannelRangeConfig_t *channelRangeConfigs, const rxChannelRangeConfig_t *defaultChannelRangeConfigs)
 {
     const char *format = "rxrange %u %u %u\r\n";
     for (uint32_t i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
@@ -2159,9 +2158,9 @@ static void cliRxRange(char *cmdline)
             } else if (rangeMin < PWM_PULSE_MIN || rangeMin > PWM_PULSE_MAX || rangeMax < PWM_PULSE_MIN || rangeMax > PWM_PULSE_MAX) {
                 cliShowParseError();
             } else {
-                rxChannelRangeConfiguration_t *channelRangeConfiguration = &rxConfigMutable()->channelRanges[i];
-                channelRangeConfiguration->min = rangeMin;
-                channelRangeConfiguration->max = rangeMax;
+                rxChannelRangeConfig_t *channelRangeConfig = &rxConfigMutable()->channelRanges[i];
+                channelRangeConfig->min = rangeMin;
+                channelRangeConfig->max = rangeMax;
             }
         } else {
             cliShowArgumentRangeError("channel", 0, NON_AUX_CHANNEL_COUNT - 1);
@@ -3695,7 +3694,7 @@ typedef struct {
 
 const cliResourceValue_t resourceTable[] = {
 #ifdef BEEPER
-    { OWNER_BEEPER,        &beeperConfig()->ioTag, 0 },
+    { OWNER_BEEPER,        &beeperDevConfig()->ioTag, 0 },
 #endif
     { OWNER_MOTOR,         &motorConfig()->ioTags[0], MAX_SUPPORTED_MOTORS },
 #ifdef USE_SERVOS
@@ -4389,7 +4388,7 @@ void cliEnter(serialPort_t *serialPort)
     ENABLE_ARMING_FLAG(PREVENT_ARMING);
 }
 
-void cliInit(serialConfig_t *serialConfig)
+void cliInit(const serialConfig_t *serialConfig)
 {
     UNUSED(serialConfig);
 }

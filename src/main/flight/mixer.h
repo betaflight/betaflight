@@ -118,10 +118,6 @@ typedef struct motorConfig_s {
 
 PG_DECLARE(motorConfig_t, motorConfig);
 
-typedef struct airplaneConfig_s {
-    int8_t fixedwing_althold_dir;           // +1 or -1 for pitch/althold gain. later check if need more than just sign
-} airplaneConfig_t;
-
 #define CHANNEL_FORWARDING_DISABLED (uint8_t)0xFF
 
 extern const mixer_t mixers[];
@@ -131,8 +127,6 @@ struct rxConfig_s;
 
 uint8_t getMotorCount();
 float getMotorMixRange();
-
-void mixerUseConfigs(airplaneConfig_t *airplaneConfigToUse);
 
 void mixerLoadMix(int index, motorMixer_t *customMixers);
 void mixerInit(mixerMode_e mixerMode, const motorMixer_t *customMotorMixers);

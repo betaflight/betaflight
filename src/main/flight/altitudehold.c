@@ -34,6 +34,7 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/altitudehold.h"
 #include "flight/imu.h"
 #include "flight/pid.h"
 

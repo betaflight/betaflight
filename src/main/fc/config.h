@@ -68,6 +68,13 @@ typedef struct systemConfig_s {
 
 PG_DECLARE(systemConfig_t, systemConfig);
 
+/*typedef struct beeperConfig_s {
+    uint32_t beeper_off_flags;
+    uint32_t preferred_beeper_off_flags;
+} beeperConfig_t;
+PG_DECLARE(beeperConfig_t, beeperConfig);
+*/
+
 struct profile_s;
 extern struct profile_s *currentProfile;
 struct controlRateConfig_s;

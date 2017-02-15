@@ -340,16 +340,16 @@ void resetAdcConfig(adcConfig_t *adcConfig)
 
 
 #ifdef BEEPER
-void resetBeeperConfig(beeperConfig_t *beeperConfig)
+void resetBeeperConfig(beeperDevConfig_t *beeperDevConfig)
 {
 #ifdef BEEPER_INVERTED
-    beeperConfig->isOpenDrain = false;
-    beeperConfig->isInverted = true;
+    beeperDevConfig->isOpenDrain = false;
+    beeperDevConfig->isInverted = true;
 #else
-    beeperConfig->isOpenDrain = true;
-    beeperConfig->isInverted = false;
+    beeperDevConfig->isOpenDrain = true;
+    beeperDevConfig->isInverted = false;
 #endif
-    beeperConfig->ioTag = IO_TAG(BEEPER);
+    beeperDevConfig->ioTag = IO_TAG(BEEPER);
 }
 #endif
 
@@ -672,7 +672,7 @@ void createDefaultConfig(master_t *config)
 #endif
 
 #ifdef BEEPER
-    resetBeeperConfig(&config->beeperConfig);
+    resetBeeperConfig(&config->beeperDevConfig);
 #endif
 
 #ifdef SONAR
@@ -700,9 +700,9 @@ void createDefaultConfig(master_t *config)
     config->rxConfig.rx_max_usec = 2115;         // any of first 4 channels above this value will trigger rx loss detection
 
     for (int i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
-        rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &config->rxConfig.failsafe_channel_configurations[i];
-        channelFailsafeConfiguration->mode = (i < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_MODE_AUTO : RX_FAILSAFE_MODE_HOLD;
-        channelFailsafeConfiguration->step = (i == THROTTLE) ? CHANNEL_VALUE_TO_RXFAIL_STEP(config->rxConfig.rx_min_usec) : CHANNEL_VALUE_TO_RXFAIL_STEP(config->rxConfig.midrc);
+        rxFailsafeChannelConfig_t *channelFailsafeConfig = &config->rxConfig.failsafe_channel_configurations[i];
+        channelFailsafeConfig->mode = (i < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_MODE_AUTO : RX_FAILSAFE_MODE_HOLD;
+        channelFailsafeConfig->step = (i == THROTTLE) ? CHANNEL_VALUE_TO_RXFAIL_STEP(config->rxConfig.rx_min_usec) : CHANNEL_VALUE_TO_RXFAIL_STEP(config->rxConfig.midrc);
     }
 
     config->rxConfig.rssi_channel = 0;
@@ -902,8 +902,6 @@ void activateConfig(void)
     failsafeReset();
     setAccelerationTrims(&accelerometerConfigMutable()->accZero);
     setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
-
-    mixerUseConfigs(&masterConfig.airplaneConfig);
 
 #ifdef USE_SERVOS
     servoUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoProfile.servoConf, &masterConfig.channelForwardingConfig);
