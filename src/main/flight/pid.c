@@ -160,7 +160,7 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
         Ki[axis] = ITERM_SCALE * pidProfile->I8[axis];
         Kd[axis] = DTERM_SCALE * pidProfile->D8[axis];
     }
-    dtermSetpointWeight = pidProfile->dtermSetpointWeight / 100.0f;
+    dtermSetpointWeight = pidProfile->dtermSetpointWeight / 127.0f;
     relaxFactor = 1.0f / (pidProfile->setpointRelaxRatio / 100.0f);
     levelGain = pidProfile->P8[PIDLEVEL] / 10.0f;
     horizonGain = pidProfile->I8[PIDLEVEL] / 10.0f;

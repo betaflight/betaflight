@@ -707,7 +707,7 @@ const clivalue_t valueTable[] = {
     { "anti_gravity_thresh",        VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.itermThrottleThreshold, .config.minmax = {20, 1000 } },
     { "anti_gravity_gain",          VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.itermAcceleratorGain, .config.minmax = {1, 30 } },
     { "setpoint_relax_ratio",       VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.setpointRelaxRatio, .config.minmax = {0, 100 } },
-    { "d_setpoint_weight",          VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dtermSetpointWeight, .config.minmax = {0, 255 } },
+    { "d_setpoint_weight",          VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dtermSetpointWeight, .config.minmax = {0, 254 } },
     { "yaw_accel_limit",            VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yawRateAccelLimit, .config.minmax = {0.1f, 50.0f } },
     { "accel_limit",                VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.rateAccelLimit, .config.minmax = {0.1f, 50.0f } },
 
