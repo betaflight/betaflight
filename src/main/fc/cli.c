@@ -3072,7 +3072,7 @@ static void cliBeeper(char *cmdline)
 
 static void printMap(uint8_t dumpMask, const rxConfig_t *rxConfig, const rxConfig_t *defaultRxConfig)
 {
-    bool equalsDefault = true;
+    bool equalsDefault = false;
     char buf[16];
     char bufDefault[16];
     uint32_t i;
