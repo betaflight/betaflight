@@ -39,6 +39,7 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
+#ifdef TARGET_CONFIG
 // alternative defaults settings for MULTIFLITEPICO targets
 void targetConfiguration(master_t *config)
 {
@@ -83,5 +84,5 @@ void targetConfiguration(master_t *config)
 
     config->profile[0].controlRateProfile[0].rcRate8 = 70;
     config->profile[0].pidProfile.I8[PIDLEVEL] = 40;
-
 }
+#endif

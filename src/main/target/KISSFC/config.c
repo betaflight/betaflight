@@ -37,7 +37,7 @@
 
 #include "sensors/boardalignment.h"
 
-
+#ifdef TARGET_CONFIG
 void targetConfiguration(master_t *config)
 {
     UNUSED(config);
@@ -49,4 +49,4 @@ void targetConfiguration(master_t *config)
     config->boardAlignment.yawDegrees = 0;
 #endif
 }
-
+#endif

@@ -29,6 +29,7 @@
 #include "config/feature.h"
 #include "io/ledstrip.h"
 
+#ifdef TARGET_CONFIG
 void targetApplyDefaultLedStripConfig(ledConfig_t *ledConfigs)
 {
     const ledConfig_t defaultLedStripConfig[] = {
@@ -95,5 +96,5 @@ void targetConfiguration(master_t *config)
     config->profile[0].controlRateProfile[0].rates[FD_YAW] = 80;
 
     targetApplyDefaultLedStripConfig(config->ledStripConfig.ledConfigs);
-
 }
+#endif

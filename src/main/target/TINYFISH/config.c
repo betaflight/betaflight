@@ -33,6 +33,7 @@
 
 #define TARGET_CPU_VOLTAGE 3.0
 
+#ifdef TARGET_CONFIG
 // set default settings to match our target
 void targetConfiguration(master_t *config)
 {
@@ -53,4 +54,4 @@ void targetConfiguration(master_t *config)
 
     intFeatureSet(FEATURE_CURRENT_METER | FEATURE_VBAT, &config->enabledFeatures);
 }
-
+#endif

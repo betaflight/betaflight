@@ -24,7 +24,7 @@
 
 #include "config/config_master.h"
 
-
+#ifdef TARGET_CONFIG
 // alternative defaults settings for COLIBRI RACE targets
 void targetConfiguration(master_t *config)
 {
@@ -32,3 +32,4 @@ void targetConfiguration(master_t *config)
     config->rxConfig.rssi_scale = 19;
     config->rxConfig.serialrx_provider = SERIALRX_SBUS;
 }
+#endif
