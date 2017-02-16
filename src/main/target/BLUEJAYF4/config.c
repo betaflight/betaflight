@@ -29,6 +29,7 @@
 
 #include "hardware_revision.h"
 
+#ifdef TARGET_CONFIG
 // alternative defaults settings for BlueJayF4 targets
 void targetConfiguration(master_t *config)
 {
@@ -58,3 +59,4 @@ void targetValidateConfiguration(master_t *config)
         }
     }
 }
+#endif

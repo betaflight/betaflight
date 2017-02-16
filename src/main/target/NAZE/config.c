@@ -37,6 +37,7 @@
 
 #include "hardware_revision.h"
 
+#ifdef TARGET_CONFIG
 void targetConfiguration(master_t *config)
 {
     UNUSED(config);
@@ -97,4 +98,4 @@ void targetConfiguration(master_t *config)
     }
 #endif
 }
-
+#endif
