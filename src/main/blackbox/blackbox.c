@@ -35,6 +35,7 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
+#include "config/config_master.h"
 #include "config/config_profile.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
@@ -1183,7 +1184,7 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("Firmware type:%s",                    "Cleanflight");
         BLACKBOX_PRINT_HEADER_LINE("Firmware revision:%s %s (%s) %s", FC_FIRMWARE_NAME, FC_VERSION_STRING, shortGitRevision, targetName);
         BLACKBOX_PRINT_HEADER_LINE("Firmware date:%s %s",                 buildDate, buildTime);
-        BLACKBOX_PRINT_HEADER_LINE("Craft name:%s",                       masterConfig.name);
+        BLACKBOX_PRINT_HEADER_LINE("Craft name:%s",                       systemConfig()->name);
         BLACKBOX_PRINT_HEADER_LINE("P interval:%d/%d",                    blackboxConfig()->rate_num, blackboxConfig()->rate_denom);
         BLACKBOX_PRINT_HEADER_LINE("minthrottle:%d",                      motorConfig()->minthrottle);
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle:%d",                      motorConfig()->maxthrottle);
@@ -1295,8 +1296,8 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("fast_pwm_protocol:%d",                motorConfig()->motorPwmProtocol);
         BLACKBOX_PRINT_HEADER_LINE("motor_pwm_rate:%d",                   motorConfig()->motorPwmRate);
         BLACKBOX_PRINT_HEADER_LINE("digitalIdleOffset:%d",          (int)(motorConfig()->digitalIdleOffsetPercent * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("debug_mode:%d",                       masterConfig.debug_mode);
-        BLACKBOX_PRINT_HEADER_LINE("features:%d",                         masterConfig.enabledFeatures);
+        BLACKBOX_PRINT_HEADER_LINE("debug_mode:%d",                       systemConfig()->debug_mode);
+        BLACKBOX_PRINT_HEADER_LINE("features:%d",                         featureConfig()->enabledFeatures);
 
         default:
             return true;

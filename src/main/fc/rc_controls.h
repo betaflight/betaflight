@@ -200,8 +200,8 @@ bool areSticksInApModePosition(uint16_t ap_mode);
 throttleStatus_e calculateThrottleStatus(void);
 void processRcStickPositions(throttleStatus_e throttleStatus);
 
-bool isRangeActive(uint8_t auxChannelIndex, channelRange_t *range);
-void updateActivatedModes(modeActivationCondition_t *modeActivationConditions);
+bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range);
+void updateActivatedModes(void);
 
 bool isAirmodeActive(void);
 

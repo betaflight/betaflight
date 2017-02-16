@@ -51,6 +51,6 @@ void targetConfiguration(master_t *config)
     config->telemetryConfig.telemetry_inversion = 0;
     config->rxConfig.sbus_inversion = 0;
 
-    intFeatureSet(FEATURE_CURRENT_METER | FEATURE_VBAT, &config->enabledFeatures);
+    intFeatureSet(FEATURE_CURRENT_METER | FEATURE_VBAT, &config->featureConfig.enabledFeatures);
 }
 

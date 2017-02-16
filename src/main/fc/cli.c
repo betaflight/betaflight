@@ -46,6 +46,7 @@ uint8_t cliMode = 0;
 #include "common/printf.h"
 #include "common/typeconversion.h"
 
+#include "config/config_master.h"
 #include "config/config_eeprom.h"
 #include "config/config_profile.h"
 #include "config/feature.h"
@@ -522,7 +523,7 @@ static const clivalue_t valueTable[] = {
 #endif
     { "fpv_mix_degrees",            VAR_UINT8  | MASTER_VALUE,  &rxConfig()->fpvCamAngleDegrees, .config.minmax = { 0,  50 } },
     { "max_aux_channels",           VAR_UINT8  | MASTER_VALUE,  &rxConfig()->max_aux_channel, .config.minmax = { 0,  MAX_AUX_CHANNELS } },
-    { "debug_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.debug_mode, .config.lookup = { TABLE_DEBUG } },
+    { "debug_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &systemConfig()->debug_mode, .config.lookup = { TABLE_DEBUG } },
 
     { "min_throttle",               VAR_UINT16 | MASTER_VALUE,  &motorConfig()->minthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "max_throttle",               VAR_UINT16 | MASTER_VALUE,  &motorConfig()->maxthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
@@ -2135,7 +2136,7 @@ static void cliRxRange(char *cmdline)
     if (isEmpty(cmdline)) {
         printRxRange(DUMP_MASTER, rxConfig()->channelRanges, NULL);
     } else if (strcasecmp(cmdline, "reset") == 0) {
-        resetAllRxChannelRangeConfigurations(rxConfig()->channelRanges);
+        resetAllRxChannelRangeConfigurations(rxConfigMutable()->channelRanges);
     } else {
         ptr = cmdline;
         i = atoi(ptr);
@@ -2159,7 +2160,7 @@ static void cliRxRange(char *cmdline)
             } else if (rangeMin < PWM_PULSE_MIN || rangeMin > PWM_PULSE_MAX || rangeMax < PWM_PULSE_MIN || rangeMax > PWM_PULSE_MAX) {
                 cliShowParseError();
             } else {
-                rxChannelRangeConfiguration_t *channelRangeConfiguration = &rxConfig()->channelRanges[i];
+                rxChannelRangeConfiguration_t *channelRangeConfiguration = &rxConfigMutable()->channelRanges[i];
                 channelRangeConfiguration->min = rangeMin;
                 channelRangeConfiguration->max = rangeMax;
             }
@@ -2874,26 +2875,26 @@ static void cliVtx(char *cmdline)
 
 static void printName(uint8_t dumpMask)
 {
-    bool equalsDefault = strlen(masterConfig.name) == 0;
-    cliDumpPrintf(dumpMask, equalsDefault, "name %s\r\n", equalsDefault ? emptyName : masterConfig.name);
+    const bool equalsDefault = strlen(systemConfig()->name) == 0;
+    cliDumpPrintf(dumpMask, equalsDefault, "name %s\r\n", equalsDefault ? emptyName : systemConfig()->name);
 }
 
 static void cliName(char *cmdline)
 {
-    uint32_t len = strlen(cmdline);
+    const uint32_t len = strlen(cmdline);
     if (len > 0) {
-        memset(masterConfig.name, 0, ARRAYLEN(masterConfig.name));
+        memset(systemConfigMutable()->name, 0, ARRAYLEN(systemConfig()->name));
         if (strncmp(cmdline, emptyName, len)) {
-            strncpy(masterConfig.name, cmdline, MIN(len, MAX_NAME_LENGTH));
+            strncpy(systemConfigMutable()->name, cmdline, MIN(len, MAX_NAME_LENGTH));
         }
     }
     printName(DUMP_MASTER);
 }
 
-static void printFeature(uint8_t dumpMask, const master_t *defaultConfig)
+static void printFeature(uint8_t dumpMask, const featureConfig_t *featureConfigDefault)
 {
-    uint32_t mask = featureMask();
-    uint32_t defaultMask = defaultConfig->enabledFeatures;
+    const uint32_t mask = featureMask();
+    const uint32_t defaultMask = featureConfigDefault->enabledFeatures;
     for (uint32_t i = 0; ; i++) { // disable all feature first
         if (featureNames[i] == NULL)
             break;
@@ -4034,7 +4035,7 @@ static void printConfig(char *cmdline, bool doDiff)
 #endif
 
         cliPrintHashLine("feature");
-        printFeature(dumpMask, &defaultConfig);
+        printFeature(dumpMask, &defaultConfig.featureConfig);
 
 #ifdef BEEPER
         cliPrintHashLine("beeper");

@@ -33,6 +33,7 @@
 #include "common/maths.h"
 #include "common/streambuf.h"
 
+#include "config/config_master.h"
 #include "config/config_eeprom.h"
 #include "config/config_profile.h"
 #include "config/feature.h"
@@ -58,6 +59,7 @@
 #include "fc/fc_core.h"
 #include "fc/fc_msp.h"
 #include "fc/fc_rc.h"
+#include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -617,9 +619,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_NAME:
         {
-            const int nameLen = strlen(masterConfig.name);
+            const int nameLen = strlen(systemConfig()->name);
             for (int i = 0; i < nameLen; i++) {
-                sbufWriteU8(dst, masterConfig.name[i]);
+                sbufWriteU8(dst, systemConfig()->name[i]);
             }
         }
         break;
@@ -776,7 +778,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_MODE_RANGES:
         for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-            modeActivationCondition_t *mac = &modeActivationProfile()->modeActivationConditions[i];
+            const modeActivationCondition_t *mac = modeActivationConditions(i);
             const box_t *box = &boxes[mac->modeId];
             sbufWriteU8(dst, box->permanentId);
             sbufWriteU8(dst, mac->auxChannelIndex);
@@ -1912,9 +1914,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
 
     case MSP_SET_NAME:
-        memset(masterConfig.name, 0, ARRAYLEN(masterConfig.name));
+        memset(systemConfigMutable()->name, 0, ARRAYLEN(systemConfig()->name));
         for (unsigned int i = 0; i < MIN(MAX_NAME_LENGTH, dataSize); i++) {
-            masterConfig.name[i] = sbufReadU8(src);
+            systemConfigMutable()->name[i] = sbufReadU8(src);
         }
         break;
 

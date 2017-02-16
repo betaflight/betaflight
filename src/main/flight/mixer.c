@@ -232,7 +232,7 @@ const mixer_t mixers[] = {
 };
 #endif
 
-static motorMixer_t *customMixers;
+static const motorMixer_t *customMixers;
 
 static uint16_t disarmMotorOutput, deadbandMotor3dHigh, deadbandMotor3dLow;
 uint16_t motorOutputHigh, motorOutputLow;
@@ -296,7 +296,7 @@ void mixerUseConfigs(airplaneConfig_t *airplaneConfigToUse)
     airplaneConfig = airplaneConfigToUse;
 }
 
-void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers)
+void mixerInit(mixerMode_e mixerMode, const motorMixer_t *initialCustomMixers)
 {
     currentMixerMode = mixerMode;
 

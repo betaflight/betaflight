@@ -20,6 +20,7 @@
 #include <stdlib.h>
 
 #include "config/config_profile.h"
+#include "config/feature.h"
 
 #include "blackbox/blackbox.h"
 
@@ -67,6 +68,8 @@
 #include "sensors/compass.h"
 
 #ifndef USE_PARAMETER_GROUPS
+#define featureConfig(x) (&masterConfig.featureConfig)
+#define systemConfig(x) (&masterConfig.systemConfig)
 #define motorConfig(x) (&masterConfig.motorConfig)
 #define flight3DConfig(x) (&masterConfig.flight3DConfig)
 #define servoConfig(x) (&masterConfig.servoConfig)
@@ -115,6 +118,8 @@
 #define displayPortProfileOled(x) (&masterConfig.displayPortProfileOled)
 
 
+#define featureConfigMutable(x) (&masterConfig.featureConfig)
+#define systemConfigMutable(x) (&masterConfig.systemConfig)
 #define motorConfigMutable(x) (&masterConfig.motorConfig)
 #define flight3DConfigMutable(x) (&masterConfig.flight3DConfig)
 #define servoConfigMutable(x) (&masterConfig.servoConfig)
@@ -180,7 +185,9 @@ typedef struct master_s {
     uint16_t size;
     uint8_t magic_be;                       // magic number, should be 0xBE
 
-    uint32_t enabledFeatures;
+    featureConfig_t featureConfig;
+
+    systemConfig_t systemConfig;
 
     // motor/esc/servo related stuff
     motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
@@ -205,7 +212,6 @@ typedef struct master_s {
 
     pidConfig_t pidConfig;
 
-    uint8_t debug_mode;                     // Processing denominator for PID controller vs gyro sampling rate
     uint8_t task_statistics;
 
     gyroConfig_t gyroConfig;
@@ -318,7 +324,6 @@ typedef struct master_s {
     uint32_t beeper_off_flags;
     uint32_t preferred_beeper_off_flags;
 
-    char name[MAX_NAME_LENGTH + 1];
     char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER)];
 
     uint8_t magic_ef;                       // magic number, should be 0xEF

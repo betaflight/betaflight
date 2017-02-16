@@ -33,6 +33,8 @@
 #include "drivers/adc.h"
 #include "drivers/system.h"
 
+#include "fc/config.h"
+#include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
 #include "io/beeper.h"
@@ -273,7 +275,7 @@ void updateCurrentMeter(int32_t lastUpdateAt)
             case CURRENT_SENSOR_VIRTUAL:
                 amperageLatest = (int32_t)batteryConfig()->currentMeterOffset;
                 if (ARMING_FLAG(ARMED)) {
-                    throttleStatus_e throttleStatus = calculateThrottleStatus();
+                    const throttleStatus_e throttleStatus = calculateThrottleStatus();
                     int throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
                     if (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP)) {
                         throttleOffset = 0;

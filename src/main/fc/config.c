@@ -581,7 +581,7 @@ void createDefaultConfig(master_t *config)
     // Clear all configuration
     memset(config, 0, sizeof(master_t));
 
-    uint32_t *featuresPtr = &config->enabledFeatures;
+    uint32_t *featuresPtr = &config->featureConfig.enabledFeatures;
 
     intFeatureClearAll(featuresPtr);
     intFeatureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE , featuresPtr);
@@ -635,7 +635,7 @@ void createDefaultConfig(master_t *config)
     config->gyroConfig.gyro_soft_notch_hz_2 = 200;
     config->gyroConfig.gyro_soft_notch_cutoff_2 = 100;
 
-    config->debug_mode = DEBUG_MODE;
+    config->systemConfig.debug_mode = DEBUG_MODE;
     config->task_statistics = true;
 
     resetAccelerometerTrims(&config->accelerometerConfig.accZero);
@@ -891,7 +891,7 @@ void activateConfig(void)
 
     resetAdjustmentStates();
 
-    useRcControlsConfig(modeActivationProfile()->modeActivationConditions, &currentProfile->pidProfile);
+    useRcControlsConfig(modeActivationConditions(0), &currentProfile->pidProfile);
     useAdjustmentConfig(&currentProfile->pidProfile);
 
 #ifdef GPS
@@ -909,11 +909,7 @@ void activateConfig(void)
     servoUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoProfile.servoConf, &masterConfig.gimbalConfig, &masterConfig.channelForwardingConfig);
 #endif
 
-    imuConfigure(
-        &masterConfig.imuConfig,
-        &currentProfile->pidProfile,
-        throttleCorrectionConfig()->throttle_correction_angle
-    );
+    imuConfigure(throttleCorrectionConfig()->throttle_correction_angle);
 
     configureAltitudeHold(&currentProfile->pidProfile);
 }
@@ -925,7 +921,7 @@ void validateAndFixConfig(void)
     }
 
     if ((motorConfig()->motorPwmProtocol == PWM_TYPE_STANDARD) && (motorConfig()->motorPwmRate > BRUSHLESS_MOTORS_PWM_RATE)) {
-        motorConfig()->motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
+        motorConfigMutable()->motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
     }
 
     if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP) || featureConfigured(FEATURE_RX_SPI))) {

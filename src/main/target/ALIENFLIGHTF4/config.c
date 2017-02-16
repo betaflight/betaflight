@@ -75,7 +75,7 @@ void targetConfiguration(master_t *config)
         config->rxConfig.sbus_inversion = 0;
         config->serialConfig.portConfigs[findSerialPortIndexByIdentifier(TELEMETRY_UART)].functionMask = FUNCTION_TELEMETRY_FRSKY;
         config->telemetryConfig.telemetry_inversion = 0;
-        intFeatureSet(FEATURE_CURRENT_METER | FEATURE_VBAT | FEATURE_TELEMETRY, &config->enabledFeatures);
+        intFeatureSet(FEATURE_CURRENT_METER | FEATURE_VBAT | FEATURE_TELEMETRY, &config->featureConfig.enabledFeatures);
     }
 
     config->profile[0].pidProfile.P8[ROLL] = 53;

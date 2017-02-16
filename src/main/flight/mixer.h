@@ -135,7 +135,7 @@ float getMotorMixRange();
 void mixerUseConfigs(airplaneConfig_t *airplaneConfigToUse);
 
 void mixerLoadMix(int index, motorMixer_t *customMixers);
-void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers);
+void mixerInit(mixerMode_e mixerMode, const motorMixer_t *customMotorMixers);
 
 void mixerConfigureOutput(void);
 

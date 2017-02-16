@@ -64,8 +64,7 @@ typedef struct imuRuntimeConfig_s {
     accDeadband_t accDeadband;
 } imuRuntimeConfig_t;
 
-struct pidProfile_s;
-void imuConfigure(imuConfig_t *imuConfig, struct pidProfile_s *initialPidProfile, uint16_t throttle_correction_angle);
+void imuConfigure(uint16_t throttle_correction_angle);
 
 float getCosTiltAngle(void);
 void calculateEstimatedAltitude(timeUs_t currentTimeUs);

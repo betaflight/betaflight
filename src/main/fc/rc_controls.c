@@ -302,24 +302,22 @@ bool isModeActivationConditionPresent(const modeActivationCondition_t *modeActiv
     return false;
 }
 
-bool isRangeActive(uint8_t auxChannelIndex, channelRange_t *range) {
+bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range) {
     if (!IS_RANGE_USABLE(range)) {
         return false;
     }
 
-    uint16_t channelValue = constrain(rcData[auxChannelIndex + NON_AUX_CHANNEL_COUNT], CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX - 1);
+    const uint16_t channelValue = constrain(rcData[auxChannelIndex + NON_AUX_CHANNEL_COUNT], CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX - 1);
     return (channelValue >= 900 + (range->startStep * 25) &&
             channelValue < 900 + (range->endStep * 25));
 }
 
-void updateActivatedModes(modeActivationCondition_t *modeActivationConditions)
+void updateActivatedModes(void)
 {
     rcModeActivationMask = 0;
 
-    uint8_t index;
-
-    for (index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
-        modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[index];
+    for (int index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
+        const modeActivationCondition_t *modeActivationCondition = modeActivationConditions(index);
 
         if (isRangeActive(modeActivationCondition->auxChannelIndex, &modeActivationCondition->range)) {
             ACTIVATE_RC_MODE(modeActivationCondition->modeId);
