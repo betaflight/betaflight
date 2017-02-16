@@ -55,24 +55,37 @@
 #define PG_NAVIGATION_CONFIG 34 // structs OK
 #define PG_ACCELEROMETER_CONFIG 35 // no accelerometerConfig_t in betaflight
 #define PG_RATE_PROFILE_SELECTION 36 // part of profile in betaflight
-#define PG_ADJUSTMENT_PROFILE 37 // array needs to be made into struct
+//#define PG_ADJUSTMENT_PROFILE 37 // array needs to be made into struct
+#define PG_ADJUSTMENT_RANGE_CONFIG 37
 #define PG_BAROMETER_CONFIG 38 // structs OK
 #define PG_THROTTLE_CORRECTION_CONFIG 39
 #define PG_COMPASS_CONFIGURATION 40 // structs OK
 #define PG_MODE_ACTIVATION_PROFILE 41 // array needs to be made into struct
-#define PG_SERVO_PROFILE 42
-#define PG_FAILSAFE_CHANNEL_CONFIG 43 // structs OK
-#define PG_CHANNEL_RANGE_CONFIG 44 // structs OK
+//#define PG_SERVO_PROFILE 42
+#define PG_SERVO_PARAMS 42
+//#define PG_FAILSAFE_CHANNEL_CONFIG 43 // structs OK
+#define PG_RX_FAILSAFE_CHANNEL_CONFIG 43
+//#define PG_CHANNEL_RANGE_CONFIG 44 // structs OK
+#define PG_RX_CHANNEL_RANGE_CONFIG 44
 #define PG_MODE_COLOR_CONFIG 45  // part of led strip, structs OK
 #define PG_SPECIAL_COLOR_CONFIG 46  // part of led strip, structs OK
 #define PG_PILOT_CONFIG 47 // does not exist in betaflight
 #define PG_MSP_SERVER_CONFIG 48 // does not exist in betaflight
 #define PG_VOLTAGE_METER_CONFIG 49 // Cleanflight has voltageMeterConfig_t, betaflight has batteryConfig_t
 #define PG_AMPERAGE_METER_CONFIG 50 // Cleanflight has amperageMeterConfig_t, betaflight has batteryConfig_t
+#define PG_SERVO_CONFIG 52
 
 // Driver configuration
 #define PG_DRIVER_PWM_RX_CONFIG 100 // does not exist in betaflight
 #define PG_DRIVER_FLASHCHIP_CONFIG 101 // does not exist in betaflight
+
+// betaflight specific parameter group ids start at 500
+#define PG_BETAFLIGHT_START 500
+#define PG_MODE_ACTIVATION_OPERATOR_CONFIG 500
+#define PG_OSD_CONFIG 501
+#define PG_BEEPER_CONFIG 5002
+#define PG_BETAFLIGHT_END 1002
+
 
 // OSD configuration (subject to change)
 #define PG_OSD_FONT_CONFIG 2047

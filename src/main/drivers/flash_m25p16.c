@@ -208,7 +208,7 @@ static bool m25p16_readIdentification()
  * Attempts to detect a connected m25p16. If found, true is returned and device capacity can be fetched with
  * m25p16_getGeometry().
  */
-bool m25p16_init(flashConfig_t *flashConfig)
+bool m25p16_init(const flashConfig_t *flashConfig)
 {
     /*
         if we have already detected a flash device we can simply exit
