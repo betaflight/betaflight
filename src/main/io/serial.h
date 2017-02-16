@@ -22,6 +22,7 @@
 
 #include "config/parameter_group.h"
 #include "drivers/serial.h"
+#include "drivers/io_types.h"
 
 typedef enum {
     PORTSHARING_UNUSED = 0,
@@ -131,6 +132,7 @@ serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e identifie
 bool doesConfigurationUsePort(serialPortIdentifier_e portIdentifier);
 serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function);
 serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function);
+IO_t serialGetRxPin(const serialPortConfig_t *portConfig);	//to determine bind pin for spektrum sat
 
 portSharing_e determinePortSharing(const serialPortConfig_t *portConfig, serialPortFunction_e function);
 bool isSerialPortShared(const serialPortConfig_t *portConfig, uint16_t functionMask, serialPortFunction_e sharedWithFunction);

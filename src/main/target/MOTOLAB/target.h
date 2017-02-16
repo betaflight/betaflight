@@ -98,10 +98,6 @@
 #define LED_STRIP
 #define USE_ESC_SENSOR
 
-#define SPEKTRUM_BIND
-// USART2, PB4
-#define BIND_PIN                PB4
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - stm32f303cc in 48pin package

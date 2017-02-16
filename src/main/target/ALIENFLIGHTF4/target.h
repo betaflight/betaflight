@@ -152,10 +152,6 @@
 // LED strip configuration using RC5 pin.
 #define LED_STRIP
 
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
-
 #define HARDWARE_BIND_PLUG
 // Hardware bind plug at PB2 (Pin 28)
 #define BINDPLUG_PIN            PB2
@@ -178,4 +174,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT      13
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(8) )
-

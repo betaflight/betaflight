@@ -71,10 +71,6 @@
 
 #define LED_STRIP
 
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
-
 #define BRUSHED_MOTORS
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL

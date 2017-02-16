@@ -122,11 +122,6 @@
 
 #define LED_STRIP
 
-
-#define SPEKTRUM_BIND
-// USART3 Rx, PB11
-#define BIND_PIN                PB11
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA         0xffff
@@ -140,4 +135,3 @@
 
 #define CMS
 #define USE_MSP_DISPLAYPORT
-

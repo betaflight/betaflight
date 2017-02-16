@@ -159,10 +159,6 @@
 #define DEFAULT_FEATURES        FEATURE_TELEMETRY
 #endif
 
-#define SPEKTRUM_BIND
-// USART1, PC5
-#define BIND_PIN                PC5
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define USE_ESCSERIAL

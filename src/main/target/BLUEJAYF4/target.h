@@ -160,9 +160,6 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define SPEKTRUM_BIND
-#define BIND_PIN                PB11
-
 #define TARGET_IO_PORTA             0xffff
 #define TARGET_IO_PORTB             0xffff
 #define TARGET_IO_PORTC             0xffff

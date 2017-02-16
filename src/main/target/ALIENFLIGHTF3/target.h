@@ -109,10 +109,6 @@
 #define VBAT_ADC_PIN            PA4
 #define VBAT_SCALE_DEFAULT      20
 
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
-
 #define HARDWARE_BIND_PLUG
 // Hardware bind plug at PB12 (Pin 25)
 #define BINDPLUG_PIN            PB12
@@ -135,4 +131,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 11
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15) | TIM_N(17) )
-

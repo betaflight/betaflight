@@ -214,9 +214,19 @@ void spektrumBind(rxConfig_t *rxConfig)
         return;
     }
 
-    LED1_ON;
+	//find bind pin automatically
+	const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
+	if (!portConfig) {
+		return;
+	}
 
-    BindPin = IOGetByTag(IO_TAG(BIND_PIN));
+	BindPin = serialGetRxPin(portConfig);
+	if (BindPin == DEFIO_IO(NONE)) {
+		return;
+	}
+
+	LED1_ON;
+
     IOInit(BindPin, OWNER_RX_BIND, 0);
     IOConfigGPIO(BindPin, IOCFG_OUT_PP);
 
@@ -345,4 +355,3 @@ bool srxlRxIsActive(void)
 }
 
 #endif // SERIAL_RX
-

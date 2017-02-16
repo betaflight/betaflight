@@ -119,10 +119,6 @@
 #define USE_SERVOS
 #define USE_CLI
 
-#define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN   PA3
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA 0xffff

@@ -95,10 +95,6 @@
 #define VBAT_ADC_PIN            PA0
 #define RSSI_ADC_PIN            PB0
 
-#define SPEKTRUM_BIND
-// USART3, PB11 (Flexport)
-#define BIND_PIN   PB11
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 //#define SONAR

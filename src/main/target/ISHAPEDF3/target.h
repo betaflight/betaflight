@@ -108,10 +108,6 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define DEFAULT_FEATURES        FEATURE_BLACKBOX
 
-#define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN   PB11
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - stm32f303cc in 48pin package
@@ -122,5 +118,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 17
 #define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
-
-

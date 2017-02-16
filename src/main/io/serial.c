@@ -36,9 +36,11 @@
 
 #if defined(USE_UART1) || defined(USE_UART2) || defined(USE_UART3) || defined(USE_UART4) || defined(USE_UART5) || defined(USE_UART6)
 #include "drivers/serial_uart.h"
+#include "drivers/serial_uart_pins.h"
 #endif
 
 #include "drivers/light_led.h"
+#include "drivers/io.h"
 
 #if defined(USE_VCP)
 #include "drivers/serial_usb_vcp.h"
@@ -167,6 +169,58 @@ serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function)
         }
     }
     return NULL;
+}
+
+IO_t serialGetRxPin(const serialPortConfig_t *portConfig)
+{
+	IO_t pin = DEFIO_IO(NONE);
+
+	switch(portConfig->identifier){
+#ifdef USE_UART1
+		case SERIAL_PORT_USART1:
+			pin = IOGetByTag(IO_TAG(UART1_RX_PIN));
+		break;
+#endif
+#ifdef USE_UART2
+		case SERIAL_PORT_USART2:
+			pin = IOGetByTag(IO_TAG(UART2_RX_PIN));
+		break;
+#endif
+#ifdef USE_UART3
+		case SERIAL_PORT_USART3:
+			pin = IOGetByTag(IO_TAG(UART3_RX_PIN));
+		break;
+#endif
+#ifdef USE_UART4
+		case SERIAL_PORT_USART4:
+			pin = IOGetByTag(IO_TAG(UART4_RX_PIN));
+		break;
+#endif
+#ifdef USE_UART5
+		case SERIAL_PORT_USART5:
+			pin = IOGetByTag(IO_TAG(UART5_RX_PIN));
+		break;
+#endif
+#ifdef USE_UART6
+		case SERIAL_PORT_USART6:
+			pin = IOGetByTag(IO_TAG(UART6_RX_PIN));
+		break;
+#endif
+#ifdef USE_UART7
+		case SERIAL_PORT_USART7:
+			pin = IOGetByTag(IO_TAG(UART7_RX_PIN));
+		break;
+#endif
+#ifdef USE_UART8
+		case SERIAL_PORT_USART8:
+			pin = IOGetByTag(IO_TAG(UART8_RX_PIN));
+		break;
+#endif
+		default:
+		break;
+	}
+
+	return pin;
 }
 
 typedef struct findSharedSerialPortState_s {

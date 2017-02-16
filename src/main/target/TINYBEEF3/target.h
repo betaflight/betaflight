@@ -17,15 +17,9 @@
 
 #pragma once
 
-#ifdef AIORACERF3
-#define TARGET_BOARD_IDENTIFIER "ARF3"
-#else
-#define TARGET_BOARD_IDENTIFIER "SPEV"
-#endif
+#define TARGET_BOARD_IDENTIFIER "TBF3"
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
-
-#define BRUSHED_ESC_AUTODETECT
 
 #define LED0                    PB8
 
@@ -41,7 +35,7 @@
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 
-#define USE_ESC_SENSOR
+#define USE_ESC_TELEMETRY
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6500
@@ -49,14 +43,14 @@
 #define ACC
 #define USE_ACC_SPI_MPU6500
 
-#define ACC_MPU6500_ALIGN       CW180_DEG
-#define GYRO_MPU6500_ALIGN      CW180_DEG
+#define ACC_MPU6500_ALIGN       CW270_DEG
+#define GYRO_MPU6500_ALIGN      CW270_DEG
 
 #define BARO
 #define USE_BARO_BMP280
 
-#define MAG
-#define USE_MAG_AK8963
+//#define MAG
+//#define USE_MAG_AK8963
 //#define USE_MAG_HMC5883 // External
 
 #define MAG_AK8963_ALIGN CW90_DEG_FLIP
@@ -124,14 +118,9 @@
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
 #define ADC_INSTANCE            ADC2
-#define RSSI_ADC_PIN            PB2
-#ifdef AIORACERF3
-#define VBAT_ADC_PIN            PA5
-#define CURRENT_METER_ADC_PIN   PA4
-#else
 #define VBAT_ADC_PIN            PA4
 #define CURRENT_METER_ADC_PIN   PA5
-#endif
+#define RSSI_ADC_PIN            PB2
 
 #define LED_STRIP
 
@@ -151,8 +140,4 @@
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
 #define USABLE_TIMER_CHANNEL_COUNT 12 // PPM, 8 PWM, UART3 RX/TX, LED Strip
-#ifdef AIORACERF3
-#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(15) | TIM_N(17))
-#else
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(15))
-#endif

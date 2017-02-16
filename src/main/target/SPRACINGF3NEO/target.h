@@ -165,10 +165,6 @@
 #define BUTTONS
 #define BUTTON_A_PIN            PD2
 
-#define SPEKTRUM_BIND
-// USART3
-#define BIND_PIN                PA3
-
 #define HARDWARE_BIND_PLUG
 #define BINDPLUG_PIN            PD2
 

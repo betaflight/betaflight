@@ -240,24 +240,6 @@ void init(void)
     }
 #endif
 
-#ifdef SPEKTRUM_BIND
-    if (feature(FEATURE_RX_SERIAL)) {
-        switch (rxConfig()->serialrx_provider) {
-            case SERIALRX_SPEKTRUM1024:
-            case SERIALRX_SPEKTRUM2048:
-                // Spektrum satellite binding if enabled on startup.
-                // Must be called before that 100ms sleep so that we don't lose satellite's binding window after startup.
-                // The rest of Spektrum initialization will happen later - via spektrumInit()
-                spektrumBind(rxConfig());
-                break;
-        }
-    }
-#endif
-
-    delay(100);
-
-    timerInit();  // timer must be initialized before any channel is allocated
-
 #if defined(AVOID_UART1_FOR_PWM_PPM)
     serialInit(feature(FEATURE_SOFTSERIAL),
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART1 : SERIAL_PORT_NONE);
@@ -275,6 +257,24 @@ void init(void)
 #ifdef USE_SERVOS
     servoMixerInit(masterConfig.customServoMixer);
 #endif
+
+#if defined(SPEKTRUM_BIND) && defined(USE_SERIALRX_SPEKTRUM) && defined(SPEKTRUM_BIND)
+    if (feature(FEATURE_RX_SERIAL)) {
+        switch (rxConfig()->serialrx_provider) {
+            case SERIALRX_SPEKTRUM1024:
+            case SERIALRX_SPEKTRUM2048:
+                // Spektrum satellite binding if enabled on startup.
+                // Must be called before that 100ms sleep so that we don't lose satellite's binding window after startup.
+                // The rest of Spektrum initialization will happen later - via spektrumInit()
+                spektrumBind(rxConfig());
+                break;
+        }
+    }
+#endif
+
+    delay(100);
+
+    timerInit();  // timer must be initialized before any channel is allocated
 
     uint16_t idlePulse = motorConfig()->mincommand;
     if (feature(FEATURE_3D)) {

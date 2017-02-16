@@ -195,10 +195,6 @@
 #define DEFAULT_FEATURES        (FEATURE_BLACKBOX)
 #endif
 
-#define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN                PB11
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA         0xffff
