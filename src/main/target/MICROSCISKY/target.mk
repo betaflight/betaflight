@@ -1,5 +1,4 @@
 F1_TARGETS  += $(TARGET)
-FEATURES    = HIGHEND
 
 TARGET_SRC = \
             drivers/accgyro_mpu.c \
