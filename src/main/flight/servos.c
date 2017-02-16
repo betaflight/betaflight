@@ -56,7 +56,6 @@ static servoMixerConfig_t *servoMixerConfig;
 
 static uint8_t servoRuleCount = 0;
 static servoMixer_t currentServoMixer[MAX_SERVO_RULES];
-static gimbalConfig_t *gimbalConfig;
 int16_t servo[MAX_SUPPORTED_SERVOS];
 static int useServo;
 static servoParam_t *servoConf;
@@ -146,11 +145,10 @@ const mixerRules_t servoMixers[] = {
 
 static servoMixer_t *customServoMixers;
 
-void servoUseConfigs(servoMixerConfig_t *servoMixerConfigToUse, servoParam_t *servoParamsToUse, struct gimbalConfig_s *gimbalConfigToUse, struct channelForwardingConfig_s *channelForwardingConfigToUse)
+void servoUseConfigs(servoMixerConfig_t *servoMixerConfigToUse, servoParam_t *servoParamsToUse, struct channelForwardingConfig_s *channelForwardingConfigToUse)
 {
     servoMixerConfig = servoMixerConfigToUse;
     servoConf = servoParamsToUse;
-    gimbalConfig = gimbalConfigToUse;
     channelForwardingConfig = channelForwardingConfigToUse;
 }
 

@@ -243,13 +243,13 @@ void init(void)
 #ifdef SPEKTRUM_BIND
     if (feature(FEATURE_RX_SERIAL)) {
         switch (rxConfig()->serialrx_provider) {
-            case SERIALRX_SPEKTRUM1024:
-            case SERIALRX_SPEKTRUM2048:
-                // Spektrum satellite binding if enabled on startup.
-                // Must be called before that 100ms sleep so that we don't lose satellite's binding window after startup.
-                // The rest of Spektrum initialization will happen later - via spektrumInit()
-                spektrumBind(rxConfig());
-                break;
+        case SERIALRX_SPEKTRUM1024:
+        case SERIALRX_SPEKTRUM2048:
+            // Spektrum satellite binding if enabled on startup.
+            // Must be called before that 100ms sleep so that we don't lose satellite's binding window after startup.
+            // The rest of Spektrum initialization will happen later - via spektrumInit()
+            spektrumBind(rxConfigMutable());
+            break;
         }
     }
 #endif
@@ -273,7 +273,7 @@ void init(void)
 
     mixerInit(mixerConfig()->mixerMode, customMotorMixerMutable(0));
 #ifdef USE_SERVOS
-    servoMixerInit(masterConfig.customServoMixer);
+    servoMixerInit(customServoMixers(0));
 #endif
 
     uint16_t idlePulse = motorConfig()->mincommand;
@@ -461,7 +461,7 @@ void init(void)
 #endif
 
 #ifdef LED_STRIP
-    ledStripInit(ledStripConfig());
+    ledStripInit();
 
     if (feature(FEATURE_LED_STRIP)) {
         ledStripEnable();

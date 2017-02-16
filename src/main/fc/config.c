@@ -906,7 +906,7 @@ void activateConfig(void)
     mixerUseConfigs(&masterConfig.airplaneConfig);
 
 #ifdef USE_SERVOS
-    servoUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoProfile.servoConf, &masterConfig.gimbalConfig, &masterConfig.channelForwardingConfig);
+    servoUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoProfile.servoConf, &masterConfig.channelForwardingConfig);
 #endif
 
     imuConfigure(throttleCorrectionConfig()->throttle_correction_angle);
