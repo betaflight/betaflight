@@ -78,6 +78,7 @@
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/motors.h"
+#include "io/osd.h"
 #include "io/serial.h"
 #include "io/serial_4way.h"
 #include "io/servos.h"
@@ -1617,20 +1618,20 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             // set all the other settings
             if ((int8_t)addr == -1) {
 #ifdef USE_MAX7456
-                vcdProfile()->video_system = sbufReadU8(src);
+                vcdProfileMutable()->video_system = sbufReadU8(src);
 #else
                 sbufReadU8(src); // Skip video system
 #endif
-                osdProfile()->units = sbufReadU8(src);
-                osdProfile()->rssi_alarm = sbufReadU8(src);
-                osdProfile()->cap_alarm = sbufReadU16(src);
-                osdProfile()->time_alarm = sbufReadU16(src);
-                osdProfile()->alt_alarm = sbufReadU16(src);
+                osdConfigMutable()->units = sbufReadU8(src);
+                osdConfigMutable()->rssi_alarm = sbufReadU8(src);
+                osdConfigMutable()->cap_alarm = sbufReadU16(src);
+                osdConfigMutable()->time_alarm = sbufReadU16(src);
+                osdConfigMutable()->alt_alarm = sbufReadU16(src);
             } else {
                 // set a position setting
                 const uint16_t pos  = sbufReadU16(src);
                 if (addr < OSD_ITEM_COUNT) {
-                    osdProfile()->item_pos[addr] = pos;
+                    osdConfigMutable()->item_pos[addr] = pos;
                 }
             }
         }

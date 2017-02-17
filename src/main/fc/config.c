@@ -887,7 +887,6 @@ void activateConfig(void)
     useAdjustmentConfig(&currentProfile->pidProfile);
 
 #ifdef GPS
-    gpsUseProfile(&masterConfig.gpsProfile);
     gpsUsePIDs(&currentProfile->pidProfile);
 #endif
 

@@ -379,7 +379,7 @@ void init(void)
 
 #ifdef USE_DASHBOARD
     if (feature(FEATURE_DASHBOARD)) {
-        dashboardInit(rxConfig());
+        dashboardInit();
     }
 #endif
 
@@ -450,14 +450,8 @@ void init(void)
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
-        gpsInit(
-            serialConfig(),
-            gpsConfig()
-        );
-        navigationInit(
-            gpsProfile(),
-            &currentProfile->pidProfile
-        );
+        gpsInit();
+        navigationInit(&currentProfile->pidProfile);
     }
 #endif
 

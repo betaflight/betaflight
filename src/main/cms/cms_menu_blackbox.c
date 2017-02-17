@@ -31,7 +31,8 @@
 
 #include "build/version.h"
 
-#include "drivers/system.h"
+#include "blackbox/blackbox.h"
+#include "blackbox/blackbox_io.h"
 
 #include "cms/cms.h"
 #include "cms/cms_types.h"
@@ -44,11 +45,12 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "drivers/system.h"
+
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/flashfs.h"
 #include "io/beeper.h"
 
-#include "blackbox/blackbox_io.h"
 
 #ifdef USE_FLASHFS
 static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
@@ -178,7 +180,7 @@ static long cmsx_Blackbox_onExit(const OSD_Entry *self)
     UNUSED(self);
 
     if (blackboxMayEditConfig()) {
-        blackboxConfig()->device = cmsx_BlackboxDevice;
+        blackboxConfigMutable()->device = cmsx_BlackboxDevice;
         validateBlackboxConfig();
     }
 

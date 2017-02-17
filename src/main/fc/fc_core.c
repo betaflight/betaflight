@@ -56,6 +56,7 @@
 #include "msp/msp_serial.h"
 
 #include "io/beeper.h"
+#include "io/gps.h"
 #include "io/motors.h"
 #include "io/servos.h"
 #include "io/serial.h"
@@ -69,12 +70,13 @@
 
 #include "telemetry/telemetry.h"
 
-#include "flight/mixer.h"
-#include "flight/servos.h"
-#include "flight/pid.h"
-#include "flight/failsafe.h"
 #include "flight/altitudehold.h"
+#include "flight/failsafe.h"
 #include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/navigation.h"
+#include "flight/pid.h"
+#include "flight/servos.h"
 
 
 // June 2013     V2.2-dev
