@@ -272,9 +272,9 @@ void init(void)
     serialInit(feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
 #endif
 
-    mixerInit(mixerConfig()->mixerMode, customMotorMixerMutable(0));
+    mixerInit(mixerConfig()->mixerMode);
 #ifdef USE_SERVOS
-    servoMixerInit(customServoMixers(0));
+    servosInit();
 #endif
 
     uint16_t idlePulse = motorConfig()->mincommand;
@@ -288,13 +288,13 @@ void init(void)
     }
 
     mixerConfigureOutput();
-    motorInit(&motorConfig()->dev, idlePulse, getMotorCount());
+    motorDevInit(&motorConfig()->dev, idlePulse, getMotorCount());
 
 #ifdef USE_SERVOS
     servoConfigureOutput();
     if (isMixerUsingServos()) {
         //pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
-        servoInit(&servoConfig()->dev);
+        servoDevInit(&servoConfig()->dev);
     }
 #endif
 

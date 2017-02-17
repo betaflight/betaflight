@@ -147,8 +147,6 @@ const mixerRules_t servoMixers[] = {
     { 0, NULL },
 };
 
-static const servoMixer_t *customServoMixers;
-
 void servoUseConfigs(servoParam_t *servoParamsToUse, struct channelForwardingConfig_s *channelForwardingConfigToUse)
 {
     servoConf = servoParamsToUse;
@@ -157,7 +155,7 @@ void servoUseConfigs(servoParam_t *servoParamsToUse, struct channelForwardingCon
 
 int16_t determineServoMiddleOrForwardFromChannel(servoIndex_e servoIndex)
 {
-    uint8_t channelToForwardFrom = servoConf[servoIndex].forwardFromChannel;
+    const uint8_t channelToForwardFrom = servoConf[servoIndex].forwardFromChannel;
 
     if (channelToForwardFrom != CHANNEL_FORWARDING_DISABLED && channelToForwardFrom < rxRuntimeConfig.channelCount) {
         return rcData[channelToForwardFrom];
@@ -165,7 +163,6 @@ int16_t determineServoMiddleOrForwardFromChannel(servoIndex_e servoIndex)
 
     return servoConf[servoIndex].middle;
 }
-
 
 int servoDirection(int servoIndex, int inputSource)
 {
@@ -176,10 +173,8 @@ int servoDirection(int servoIndex, int inputSource)
         return 1;
 }
 
-void servoMixerInit(const servoMixer_t *initialCustomServoMixers)
+void servosInit(void)
 {
-    customServoMixers = initialCustomServoMixers;
-
     // enable servos for mixes that require them. note, this shifts motor counts.
     useServo = mixers[currentMixerMode].useServo;
     // if we want camstab/trig, that also enables servos, even if mixer doesn't
@@ -201,10 +196,10 @@ void loadCustomServoMixer(void)
     // load custom mixer into currentServoMixer
     for (uint8_t i = 0; i < MAX_SERVO_RULES; i++) {
         // check if done
-        if (customServoMixers[i].rate == 0)
+        if (customServoMixers(i)->rate == 0)
             break;
 
-        currentServoMixer[i] = customServoMixers[i];
+        currentServoMixer[i] = *customServoMixers(i);
         servoRuleCount++;
     }
 }

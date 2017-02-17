@@ -194,7 +194,7 @@ void pwmCompleteMotorUpdate(uint8_t motorCount)
     pwmCompleteWritePtr(motorCount);
 }
 
-void motorInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount)
+void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount)
 {
     memset(motors, 0, sizeof(motors));
     
@@ -325,7 +325,7 @@ void pwmWriteServo(uint8_t index, uint16_t value)
     }
 }
 
-void servoInit(const servoDevConfig_t *servoConfig)
+void servoDevInit(const servoDevConfig_t *servoConfig)
 {
     for (uint8_t servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
         const ioTag_t tag = servoConfig->ioTags[servoIndex];
