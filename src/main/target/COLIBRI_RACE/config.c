@@ -21,6 +21,7 @@
 
 #include <platform.h>
 
+#ifdef TARGET_CONFIG
 #include "io/motors.h"
 
 #include "sensors/battery.h"
@@ -29,7 +30,6 @@
 #include "config/feature.h"
 #include "io/ledstrip.h"
 
-#ifdef TARGET_CONFIG
 void targetApplyDefaultLedStripConfig(ledConfig_t *ledConfigs)
 {
     const ledConfig_t defaultLedStripConfig[] = {

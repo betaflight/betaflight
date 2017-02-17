@@ -18,6 +18,8 @@
 #include <stdint.h>
 
 #include <platform.h>
+
+#ifdef TARGET_CONFIG
 #include "drivers/io.h"
 
 #include "drivers/timer.h"
@@ -33,7 +35,6 @@
 
 #define TARGET_CPU_VOLTAGE 3.0
 
-#ifdef TARGET_CONFIG
 // set default settings to match our target
 void targetConfiguration(master_t *config)
 {

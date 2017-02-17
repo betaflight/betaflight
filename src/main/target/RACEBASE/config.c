@@ -20,11 +20,11 @@
 
 #include <platform.h>
 
+#ifdef TARGET_CONFIG
 #include "rx/rx.h"
 
 #include "config/config_master.h"
 
-#ifdef TARGET_CONFIG
 // alternative defaults settings for COLIBRI RACE targets
 void targetConfiguration(master_t *config)
 {

@@ -20,6 +20,7 @@
 
 #include <platform.h>
 
+#ifdef TARGET_CONFIG
 #include "blackbox/blackbox_io.h"
 
 #include "config/config_master.h"
@@ -29,7 +30,6 @@
 
 #include "hardware_revision.h"
 
-#ifdef TARGET_CONFIG
 // alternative defaults settings for BlueJayF4 targets
 void targetConfiguration(master_t *config)
 {
