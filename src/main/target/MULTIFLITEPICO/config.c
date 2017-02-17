@@ -20,6 +20,7 @@
 
 #include <platform.h>
 
+#ifdef TARGET_CONFIG
 #include "common/axis.h"
 
 #include "drivers/sensor.h"
@@ -39,7 +40,6 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-#ifdef TARGET_CONFIG
 // alternative defaults settings for MULTIFLITEPICO targets
 void targetConfiguration(master_t *config)
 {

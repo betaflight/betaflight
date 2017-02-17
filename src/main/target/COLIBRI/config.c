@@ -20,6 +20,7 @@
 
 #include "platform.h"
 
+#ifdef TARGET_CONFIG
 #include "drivers/serial.h"
 
 #include "fc/rc_controls.h"
@@ -35,7 +36,6 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-#ifdef TARGET_CONFIG
 // alternative defaults settings for Colibri/Gemini targets
 void targetConfiguration(master_t *config)
 {

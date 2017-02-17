@@ -20,6 +20,7 @@
 
 #include <platform.h>
 
+#ifdef TARGET_CONFIG
 #include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
 
@@ -36,7 +37,6 @@
 
 #define BRUSHED_MOTORS_PWM_RATE 32000           // 32kHz
 
-#ifdef TARGET_CONFIG
 // alternative defaults settings for AlienFlight targets
 void targetConfiguration(master_t *config)
 {

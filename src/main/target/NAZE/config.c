@@ -20,6 +20,7 @@
 
 #include <platform.h>
 
+#ifdef TARGET_CONFIG
 #include "common/utils.h"
 
 #include "drivers/io.h"
@@ -37,7 +38,6 @@
 
 #include "hardware_revision.h"
 
-#ifdef TARGET_CONFIG
 void targetConfiguration(master_t *config)
 {
     UNUSED(config);

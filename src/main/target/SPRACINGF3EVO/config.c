@@ -16,9 +16,10 @@
  */
 
 #include <platform.h>
-#include "config/config_master.h"
 
 #ifdef TARGET_CONFIG
+#include "config/config_master.h"
+
 void targetConfiguration(master_t *config)
 {
     // Temporary workaround: Disable SDCard DMA by default since it causes errors on this target
