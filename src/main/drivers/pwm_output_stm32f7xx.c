@@ -30,8 +30,6 @@
 #include "system.h"
 #include "rcc.h"
 
-#include "flight/mixer.h" //!!TODO remove dependency on this
-
 static uint8_t dmaMotorTimerCount = 0;
 static motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
 static motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];

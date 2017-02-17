@@ -54,7 +54,7 @@ void targetConfiguration(master_t *config)
     config->motorConfig.minthrottle = 1025;
     config->motorConfig.maxthrottle = 1980;
     config->motorConfig.mincommand = 1000;
-    config->servoConfig.servoCenterPulse = 1500;
+    config->servoConfig.dev.servoCenterPulse = 1500;
 
     config->batteryConfig.vbatmaxcellvoltage = 45;
     config->batteryConfig.vbatmincellvoltage = 30;

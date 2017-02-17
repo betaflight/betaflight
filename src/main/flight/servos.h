@@ -19,8 +19,7 @@
 
 #include "config/parameter_group.h"
 #include "drivers/io_types.h"
-
-#define MAX_SUPPORTED_SERVOS 8
+#include "drivers/pwm_output.h"
 
 // These must be consecutive, see 'reversedSources'
 enum {
@@ -107,11 +106,9 @@ PG_DECLARE_ARRAY(servoParam_t, MAX_SUPPORTED_SERVOS, servoParams);
 
 typedef struct servoConfig_s {
     // PWM values, in milliseconds, common range is 1000-2000 (1 to 2ms)
-    uint16_t servoCenterPulse;              // This is the value for servos when they should be in the middle. e.g. 1500.
-    uint16_t servoPwmRate;                  // The update rate of servo outputs (50-498Hz)
+    servoDevConfig_t dev;
     uint16_t servo_lowpass_freq;            // lowpass servo filter frequency selection; 1/1000ths of loop freq
     uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
-    ioTag_t  ioTags[MAX_SUPPORTED_SERVOS];
 } servoConfig_t;
 
 PG_DECLARE(servoConfig_t, servoConfig);
