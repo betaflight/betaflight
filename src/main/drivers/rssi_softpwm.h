@@ -10,4 +10,5 @@ typedef struct rssiSoftPwmConfig_s {
 
 bool rssiSoftPwmInit(rssiSoftPwmConfig_t *pConfigToUse);
 void rssiSoftPwmUpdate(uint32_t currentTime);
+bool rssiSoftPwmActive(void);
 uint16_t rssiSoftPwmRead(void);

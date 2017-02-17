@@ -602,7 +602,8 @@ void updateRSSISoftPwm(uint32_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
 
-    rssi = rssiSoftPwmRead();
+    if (rssiSoftPwmActive())
+        rssi = rssiSoftPwmRead();
 }
 
 void updateRSSI(timeUs_t currentTimeUs)

@@ -43,6 +43,7 @@
 #include "drivers/compass.h"
 #include "drivers/system.h"
 #include "drivers/pwm_output.h"
+#include "drivers/rssi_softpwm.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -414,7 +415,13 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
 #endif
 
         case FLIGHT_LOG_FIELD_CONDITION_RSSI:
-            return rxConfig()->rssi_channel > 0 || feature(FEATURE_RSSI_ADC);
+            if (rxConfig()->rssi_channel > 0 || feature(FEATURE_RSSI_ADC))
+                return true;
+#ifdef USE_RSSI_SOFTPWM
+            if (rssiSoftPwmActive())
+                return true;
+#endif
+            return false;
 
         case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
             return blackboxConfig()->rate_num < blackboxConfig()->rate_denom;

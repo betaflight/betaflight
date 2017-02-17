@@ -199,6 +199,11 @@ restart:
     EXTIEnable(rspIO, true);
 }
 
+bool rssiSoftPwmActive(void)
+{
+    return (rspIO != IO_NONE);
+}
+
 uint16_t rssiSoftPwmRead(void)
 {
     return rspValue;
