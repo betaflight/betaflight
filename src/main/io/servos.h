@@ -17,14 +17,3 @@
 
 #pragma once
 
-#include "drivers/io_types.h"
-#include "flight/servos.h"
-
-typedef struct servoConfig_s {
-    // PWM values, in milliseconds, common range is 1000-2000 (1 to 2ms)
-    uint16_t servoCenterPulse;              // This is the value for servos when they should be in the middle. e.g. 1500.
-    uint16_t servoPwmRate;                  // The update rate of servo outputs (50-498Hz)
-    ioTag_t  ioTags[MAX_SUPPORTED_SERVOS];
-} servoConfig_t;
-
-PG_DECLARE(servoConfig_t, servoConfig);

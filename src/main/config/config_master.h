@@ -197,7 +197,6 @@ typedef struct master_s {
 
 #ifdef USE_SERVOS
     servoConfig_t servoConfig;
-    servoMixerConfig_t servoMixerConfig;
     servoMixer_t customServoMixer[MAX_SERVO_RULES];
     // Servo-related stuff
     servoProfile_t servoProfile;
