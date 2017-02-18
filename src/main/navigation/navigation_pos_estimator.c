@@ -636,8 +636,8 @@ static void updateEstimatedTopic(timeUs_t currentTimeUs)
 #endif
 
     /* Validate EPV for GPS and calculate altitude/climb rate correction flags */
-    const bool isGPSZValid = (posEstimator.gps.epv < positionEstimationConfig()->max_eph_epv);
-    const bool useGpsZPos = STATE(FIXED_WING) && isGPSValid && !sensors(SENSOR_BARO) && isGPSZValid;
+    const bool isGPSZValid = isGPSValid && (posEstimator.gps.epv < positionEstimationConfig()->max_eph_epv);
+    const bool useGpsZPos = STATE(FIXED_WING) && !sensors(SENSOR_BARO) && isGPSValid && isGPSZValid;
     const bool useGpsZVel = isGPSValid && isGPSZValid;
 
     /* Estimate validity */
@@ -688,9 +688,15 @@ static void updateEstimatedTopic(timeUs_t currentTimeUs)
     }
 
     /* Prediction step: XY-axis */
-    if (isEstXYValid && isImuHeadingValid()) {
-        inavFilterPredict(X, dt, posEstimator.imu.accelNEU.V.X);
-        inavFilterPredict(Y, dt, posEstimator.imu.accelNEU.V.Y);
+    if (isEstXYValid) {
+        if (isImuHeadingValid()) {
+            inavFilterPredict(X, dt, posEstimator.imu.accelNEU.V.X);
+            inavFilterPredict(Y, dt, posEstimator.imu.accelNEU.V.Y);
+        }
+        else {
+            inavFilterPredict(X, dt, 0.0f);
+            inavFilterPredict(Y, dt, 0.0f);
+        }
     }
 
     /* Calculate residual */
@@ -792,8 +798,7 @@ static void updateEstimatedTopic(timeUs_t currentTimeUs)
             accelBiasCorr.V.Z -= baroResidual * sq(positionEstimationConfig()->w_z_baro_p);
         }
 
-        const accelBiasCorrMagnitudeSq = sq(accelBiasCorr.V.X) + sq(accelBiasCorr.V.Y) + sq(accelBiasCorr.V.Z);
-
+        const float accelBiasCorrMagnitudeSq = sq(accelBiasCorr.V.X) + sq(accelBiasCorr.V.Y) + sq(accelBiasCorr.V.Z);
         if (accelBiasCorrMagnitudeSq < sq(INAV_ACC_BIAS_ACCEPTANCE_VALUE)) {
             /* transform error vector from NEU frame to body frame */
             imuTransformVectorEarthToBody(&accelBiasCorr);
