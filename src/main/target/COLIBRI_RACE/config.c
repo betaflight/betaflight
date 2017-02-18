@@ -91,6 +91,8 @@ void targetConfiguration(master_t *config)
 
     config->motorConfig.motorPwmProtocol = PWM_TYPE_MULTISHOT;
 
+//    serialConfig()->portConfigs[SERIALRX_UART].functionMask = FUNCTION_RX_SERIAL;
+
     targetApplyDefaultLedStripConfig(config->ledStripConfig.ledConfigs);
 
 }

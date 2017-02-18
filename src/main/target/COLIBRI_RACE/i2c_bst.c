@@ -1263,6 +1263,11 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             featureSet(bstRead32()); // features bitmap
 #ifdef SERIALRX_UART
             if (featureConfigured(FEATURE_RX_SERIAL)) {
+                for (i = 0; i < SERIAL_PORT_COUNT; i++) {
+                    if(serialConfig()->portConfigs[i].functionMask == FUNCTION_RX_SERIAL
+                            && i != SERIALRX_UART)
+                        serialConfig()->portConfigs[i].functionMask = FUNCTION_NONE;
+                }
                 serialConfig()->portConfigs[SERIALRX_UART].functionMask = FUNCTION_RX_SERIAL;
             } else {
                 serialConfig()->portConfigs[SERIALRX_UART].functionMask = FUNCTION_NONE;
