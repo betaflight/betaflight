@@ -89,7 +89,7 @@
 #define VBAT_SCALE_DEFAULT      160
 #define ADC_INSTANCE            ADC1
 #define VBAT_ADC_PIN            PA0
-//#define CURRENT_METER_ADC_PIN   PA5
+#define CURRENT_METER_ADC_PIN   PA14
 //#define RSSI_ADC_PIN            PB2
 
 #define DEFAULT_FEATURES        FEATURE_VBAT
