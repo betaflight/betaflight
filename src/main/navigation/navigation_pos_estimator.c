@@ -600,7 +600,7 @@ static void updateEstimatedTopic(timeUs_t currentTimeUs)
     bool isGPSValid = sensors(SENSOR_GPS) &&
                       posControl.gpsOrigin.valid &&
                       ((currentTimeUs - posEstimator.gps.lastUpdateTime) <= MS2US(INAV_GPS_TIMEOUT_MS)) &&
-                      (posEstimator.gps.eph > positionEstimationConfig()->max_eph_epv);   // EPV is checked later
+                      (posEstimator.gps.eph < positionEstimationConfig()->max_eph_epv);   // EPV is checked later
     bool isBaroValid = sensors(SENSOR_BARO) && ((currentTimeUs - posEstimator.baro.lastUpdateTime) <= MS2US(INAV_BARO_TIMEOUT_MS));
     bool isSonarValid = sensors(SENSOR_SONAR) && ((currentTimeUs - posEstimator.sonar.lastUpdateTime) <= MS2US(INAV_SONAR_TIMEOUT_MS));
 
@@ -636,7 +636,7 @@ static void updateEstimatedTopic(timeUs_t currentTimeUs)
 #endif
 
     /* Validate EPV for GPS and calculate altitude/climb rate correction flags */
-    const bool isGPSZValid = (posEstimator.gps.epv > positionEstimationConfig()->max_eph_epv);
+    const bool isGPSZValid = (posEstimator.gps.epv < positionEstimationConfig()->max_eph_epv);
     const bool useGpsZPos = STATE(FIXED_WING) && isGPSValid && !sensors(SENSOR_BARO) && isGPSZValid;
     const bool useGpsZVel = isGPSValid && isGPSZValid;
 
