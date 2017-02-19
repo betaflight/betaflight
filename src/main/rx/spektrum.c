@@ -78,9 +78,9 @@ static serialPort_t *serialPort;
 
 #ifdef SPEKTRUM_BIND
 static IO_t BindPin = DEFIO_IO(NONE);
-#endif
-#ifdef HARDWARE_BIND_PLUG
+#ifdef BINDPLUG_PIN
 static IO_t BindPlug = DEFIO_IO(NONE);
+#endif
 #endif
 
 static uint8_t telemetryBuf[SRXL_FRAME_SIZE_MAX];
@@ -183,7 +183,7 @@ static uint16_t spektrumReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint
 
 bool spekShouldBind(uint8_t spektrum_sat_bind)
 {
-#ifdef HARDWARE_BIND_PLUG
+#ifdef BINDPLUG_PIN
     BindPlug = IOGetByTag(IO_TAG(BINDPLUG_PIN));
     IOInit(BindPlug, OWNER_RX_BIND, 0);
     IOConfigGPIO(BindPlug, IOCFG_IPU);
@@ -243,7 +243,7 @@ void spektrumBind(rxConfig_t *rxConfig)
 
     }
 
-#ifndef HARDWARE_BIND_PLUG
+#ifndef BINDPLUG_PIN
     // If we came here as a result of hard  reset (power up, with spektrum_sat_bind set), then reset it back to zero and write config
     // Don't reset if hardware bind plug is present
     // Reset only when autoreset is enabled

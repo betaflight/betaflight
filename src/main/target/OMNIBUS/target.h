@@ -58,9 +58,6 @@
 //#define SONAR_ECHO_PIN          PB1
 //#define SONAR_TRIGGER_PIN       PB0
 
-#define USB_IO
-#define USB_CABLE_DETECTION
-
 #define USB_DETECT_PIN          PB5
 
 #undef GPS
@@ -175,7 +172,6 @@
 // USART3,
 #define BIND_PIN                PB11
 
-#define HARDWARE_BIND_PLUG
 #define BINDPLUG_PIN            PB0
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
