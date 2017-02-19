@@ -22,7 +22,7 @@
 
 #define M25P16_PAGESIZE 256
 
-bool m25p16_init(flashConfig_t *flashConfig);
+bool m25p16_init(const flashConfig_t *flashConfig);
 
 void m25p16_eraseSector(uint32_t address);
 void m25p16_eraseCompletely();

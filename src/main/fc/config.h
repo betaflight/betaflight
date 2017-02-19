@@ -22,6 +22,11 @@
 
 #include "config/parameter_group.h"
 
+#include "drivers/adc.h"
+#include "drivers/flash.h"
+#include "drivers/rx_pwm.h"
+#include "drivers/sound_beeper.h"
+
 #if FLASH_SIZE <= 128
 #define MAX_PROFILE_COUNT 2
 #else
@@ -67,6 +72,11 @@ typedef struct systemConfig_s {
 } systemConfig_t;
 
 PG_DECLARE(systemConfig_t, systemConfig);
+PG_DECLARE(adcConfig_t, adcConfig);
+PG_DECLARE(beeperDevConfig_t, beeperDevConfig);
+PG_DECLARE(flashConfig_t, flashConfig);
+PG_DECLARE(ppmConfig_t, ppmConfig);
+PG_DECLARE(pwmConfig_t, pwmConfig);
 
 /*typedef struct beeperConfig_s {
     uint32_t beeper_off_flags;

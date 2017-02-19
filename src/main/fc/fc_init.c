@@ -364,9 +364,9 @@ void init(void)
 
 #ifdef USE_ADC
     /* these can be removed from features! */
-    adcConfig()->vbat.enabled = feature(FEATURE_VBAT);
-    adcConfig()->currentMeter.enabled = feature(FEATURE_CURRENT_METER);
-    adcConfig()->rssi.enabled = feature(FEATURE_RSSI_ADC);
+    adcConfigMutable()->vbat.enabled = feature(FEATURE_VBAT);
+    adcConfigMutable()->currentMeter.enabled = feature(FEATURE_CURRENT_METER);
+    adcConfigMutable()->rssi.enabled = feature(FEATURE_RSSI_ADC);
     adcInit(adcConfig());
 #endif
 

@@ -1567,10 +1567,9 @@ static void cliRxFailsafe(char *cmdline)
         channel = atoi(ptr++);
         if ((channel < MAX_SUPPORTED_RC_CHANNEL_COUNT)) {
 
-            rxFailsafeChannelConfig_t *channelFailsafeConfig = &rxConfig()->failsafe_channel_configurations[channel];
+            rxFailsafeChannelConfig_t *channelFailsafeConfig = &rxConfigMutable()->failsafe_channel_configurations[channel];
 
-            uint16_t value;
-            rxFailsafeChannelType_e type = (channel < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_TYPE_FLIGHT : RX_FAILSAFE_TYPE_AUX;
+            const rxFailsafeChannelType_e type = (channel < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_TYPE_FLIGHT : RX_FAILSAFE_TYPE_AUX;
             rxFailsafeChannelMode_e mode = channelFailsafeConfig->mode;
             bool requireValue = channelFailsafeConfig->mode == RX_FAILSAFE_MODE_SET;
 
@@ -1596,7 +1595,7 @@ static void cliRxFailsafe(char *cmdline)
                         cliShowParseError();
                         return;
                     }
-                    value = atoi(ptr);
+                    uint16_t value = atoi(ptr);
                     value = CHANNEL_VALUE_TO_RXFAIL_STEP(value);
                     if (value > MAX_RXFAIL_RANGE_STEP) {
                         cliPrint("Value out of range\r\n");
@@ -2004,7 +2003,7 @@ static void printMotorMix(uint8_t dumpMask, const motorMixer_t *customMotorMixer
     char buf2[8];
     char buf3[8];
     for (uint32_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
-        if (customMotorMixer(i)->throttle == 0.0f)
+        if (customMotorMixer[i].throttle == 0.0f)
             break;
         const float thr = customMotorMixer[i].throttle;
         const float roll = customMotorMixer[i].roll;
