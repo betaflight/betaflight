@@ -33,7 +33,7 @@
 #define BEEPER_INVERTED
 
 #define INVERTER                PC13
-#define INVERTER_USART          USART1
+#define INVERTER_USART          USART6
 
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500

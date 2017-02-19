@@ -13,3 +13,9 @@
 * HMC5983 compass
 * MS5611 baro
 * 6 pwm outputs + PPM/SBus input
+
+## Warnings
+
+* PicRacers native Flight controller (PX4 & ArduPilot) motor layout is different to iNAV
+  * Either Swap your ESC PWM cables to match iNav
+  * Or make a custom mix
