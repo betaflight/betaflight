@@ -20,13 +20,12 @@
 
 #include "platform.h"
 
-#ifdef USB_IO
+#ifdef USE_VCP
 
 #include "io.h"
 #include "system.h"
 #include "usb_io.h"
 #include "sdcard.h"
-
 
 
 #ifdef USB_DETECT_PIN
@@ -75,5 +74,4 @@ void usbGenerateDisconnectPulse(void)
 
     IOLo(usbPin);
 }
-
 #endif

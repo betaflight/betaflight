@@ -60,7 +60,11 @@
 
 #define USB_IO
 #define USB_CABLE_DETECTION
+
 #define USB_DETECT_PIN          PB5
+
+#undef GPS
+
 
 #define USE_VCP
 #define USE_UART1

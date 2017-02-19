@@ -108,8 +108,6 @@
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
 
-#define USB_IO
-
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2

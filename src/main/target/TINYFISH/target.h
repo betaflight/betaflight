@@ -46,7 +46,6 @@
 
 #if USB_VCP_ENABLED
   #define USE_VCP
-  #define USB_IO
   #define USBD_PRODUCT_STRING "tinyFISH"
   #define SERIAL_PORT_COUNT 6
 #else
