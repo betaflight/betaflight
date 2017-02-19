@@ -78,8 +78,6 @@
 
 #define BRUSHED_ESC_AUTODETECT
 
-#define USB_IO
-
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
@@ -107,11 +105,12 @@
 #define UART3_TX_PIN            PB10 // PB10 (AF7)
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
-
 #ifndef TINYBEEF3
 #define SOFTSERIAL1_RX_PIN      PA0 // PA0 / PAD3
 #define SOFTSERIAL1_TX_PIN      PA1 // PA1 / PAD4
 #endif
+
+#define USB_DETECT_PIN          PB5
 
 #define SONAR_SOFTSERIAL1_EXCLUSIVE
 
