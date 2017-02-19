@@ -21,6 +21,7 @@
 #include <platform.h>
 
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "config/config_master.h"
 #include "config/feature.h"
@@ -98,4 +99,16 @@ void targetConfiguration(master_t *config)
 
     targetApplyDefaultLedStripConfig(config->ledStripConfig.ledConfigs);
 
+}
+
+void targetValidateConfiguration(master_t *config)
+{
+    UNUSED(config);
+
+    serialConfig()->portConfigs[0].functionMask = FUNCTION_MSP;
+    if (featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_MSP)) {
+        featureClear(FEATURE_RX_PARALLEL_PWM);
+        featureClear(FEATURE_RX_MSP);
+        featureSet(FEATURE_RX_PPM);
+    }
 }

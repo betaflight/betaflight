@@ -119,11 +119,9 @@
 
 static float magGain[3] = { 1.0f, 1.0f, 1.0f };
 
-static const hmc5883Config_t *hmc5883Config = NULL;
-
 #ifdef USE_MAG_DATA_READY_SIGNAL
 
-static IO_t intIO;
+static IO_t hmc5883InterruptIO;
 static extiCallbackRec_t hmc5883_extiCallbackRec;
 
 static void hmc5883_extiHandler(extiCallbackRec_t* cb)
@@ -150,20 +148,19 @@ static void hmc5883lConfigureDataReadyInterruptHandling(void)
 {
 #ifdef USE_MAG_DATA_READY_SIGNAL
 
-    if (!(hmc5883Config->intTag)) {
+    if (!(hmc5883InterruptIO)) {
         return;
     }
-    intIO = IOGetByTag(hmc5883Config->intTag);
 #ifdef ENSURE_MAG_DATA_READY_IS_HIGH
-    uint8_t status = IORead(intIO);
+    uint8_t status = IORead(hmc5883InterruptIO);
     if (!status) {
         return;
     }
 #endif
 
     EXTIHandlerInit(&hmc5883_extiCallbackRec, hmc5883_extiHandler);
-    EXTIConfig(intIO, &hmc5883_extiCallbackRec, NVIC_PRIO_MAG_INT_EXTI, EXTI_Trigger_Rising);
-    EXTIEnable(intIO, true);
+    EXTIConfig(hmc5883InterruptIO, &hmc5883_extiCallbackRec, NVIC_PRIO_MAG_INT_EXTI, EXTI_Trigger_Rising);
+    EXTIEnable(hmc5883InterruptIO, true);
 #endif
 }
 
@@ -257,9 +254,13 @@ static bool hmc5883lInit(void)
     return true;
 }
 
-bool hmc5883lDetect(magDev_t* mag, const hmc5883Config_t *hmc5883ConfigToUse)
+bool hmc5883lDetect(magDev_t* mag, ioTag_t interruptTag)
 {
-    hmc5883Config = hmc5883ConfigToUse;
+#ifdef USE_MAG_DATA_READY_SIGNAL
+    hmc5883InterruptIO = IOGetByTag(interruptTag);
+#else
+    UNUSED(interruptTag);
+#endif
 
     uint8_t sig = 0;
     bool ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, 0x0A, 1, &sig);

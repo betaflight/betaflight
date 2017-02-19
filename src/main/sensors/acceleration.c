@@ -98,11 +98,7 @@ retry:
 #ifdef USE_ACC_ADXL345
         acc_params.useFifo = false;
         acc_params.dataRate = 800; // unused currently
-#ifdef NAZE
-        if (hardwareRevision < NAZE32_REV5 && adxl345Detect(&acc_params, dev)) {
-#else
         if (adxl345Detect(&acc_params, dev)) {
-#endif
 #ifdef ACC_ADXL345_ALIGN
             dev->accAlign = ACC_ADXL345_ALIGN;
 #endif
@@ -135,12 +131,7 @@ retry:
         ; // fallthrough
     case ACC_MMA8452: // MMA8452
 #ifdef USE_ACC_MMA8452
-#ifdef NAZE
-        // Not supported with this frequency
-        if (hardwareRevision < NAZE32_REV5 && mma8452Detect(dev)) {
-#else
         if (mma8452Detect(dev)) {
-#endif
 #ifdef ACC_MMA8452_ALIGN
             dev->accAlign = ACC_MMA8452_ALIGN;
 #endif

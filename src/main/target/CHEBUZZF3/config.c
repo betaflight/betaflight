@@ -15,8 +15,17 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <platform.h>
 
-#include "io_types.h"
+#include "config/config_master.h"
+#include "config/feature.h"
 
-bool hmc5883lDetect(magDev_t* mag, ioTag_t interruptTag);
+void targetValidateConfiguration(master_t *config)
+{
+	UNUSED(config);
+
+    if (featureConfigured(FEATURE_RX_PARALLEL_PWM)) {
+        // led strip needs the same ports
+        featureClear(FEATURE_LED_STRIP);
+    }
+}
