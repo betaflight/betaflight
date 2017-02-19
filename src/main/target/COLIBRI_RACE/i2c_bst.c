@@ -70,10 +70,6 @@
 #include "config/config_master.h"
 #include "config/feature.h"
 
-#ifdef NAZE
-#include "hardware_revision.h"
-#endif
-
 #include "bus_bst.h"
 #include "i2c_bst.h"
 

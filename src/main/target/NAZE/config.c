@@ -96,5 +96,19 @@ void targetConfiguration(master_t *config)
         config->flashConfig.csTag = IO_TAG_NONE;
     }
 #endif
+
+#ifdef MAG_INT_EXTI
+    if (hardwareRevision < NAZE32_REV5) {
+        config->compassConfig.interruptTag = IO_TAG(PB12);
+    }
+#endif
 }
 
+void targetValidateConfiguration(master_t *config)
+{
+    UNUSED(config);
+
+    if (hardwareRevision < NAZE32_REV5 && config->accelerometerConfig.acc_hardware == ACC_ADXL345) {
+        config->accelerometerConfig.acc_hardware = ACC_NONE;
+    }  
+}

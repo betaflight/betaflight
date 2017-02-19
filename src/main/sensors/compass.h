@@ -18,9 +18,10 @@
 #pragma once
 
 #include "config/parameter_group.h"
+
+#include "drivers/io.h"
 #include "drivers/sensor.h"
 #include "sensors/sensors.h"
-
 
 // Type of magnetometer used/detected
 typedef enum {
@@ -43,6 +44,7 @@ typedef struct compassConfig_s {
                                             // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
     sensor_align_e mag_align;               // mag alignment
     uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
+    ioTag_t interruptTag;
     flightDynamicsTrims_t magZero;
 } compassConfig_t;
 

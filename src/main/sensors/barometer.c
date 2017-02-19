@@ -71,12 +71,6 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
     bmp085Config = &defaultBMP085Config;
 #endif
 
-#ifdef NAZE
-    if (hardwareRevision == NAZE32) {
-        bmp085Disable(bmp085Config);
-    }
-#endif
-
 #endif
 
     switch (baroHardware) {
