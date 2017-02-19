@@ -308,7 +308,7 @@ void init(void)
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
-    beeperInit(beeperConfig());
+    beeperInit(beeperDevConfig());
 #endif
 /* temp until PGs are implemented. */
 #ifdef USE_INVERTER

@@ -140,12 +140,12 @@ STATIC_UNIT_TESTED void rxUpdateFlightChannelStatus(uint8_t channel, bool valid)
     }
 }
 
-void resetAllRxChannelRangeConfigurations(rxChannelRangeConfiguration_t *rxChannelRangeConfiguration) {
+void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRangeConfig) {
     // set default calibration to full range and 1:1 mapping
     for (int i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
-        rxChannelRangeConfiguration->min = PWM_RANGE_MIN;
-        rxChannelRangeConfiguration->max = PWM_RANGE_MAX;
-        rxChannelRangeConfiguration++;
+        rxChannelRangeConfig->min = PWM_RANGE_MIN;
+        rxChannelRangeConfig->max = PWM_RANGE_MAX;
+        rxChannelRangeConfig++;
     }
 }
 
@@ -377,9 +377,9 @@ static uint16_t calculateNonDataDrivenChannel(uint8_t chan, uint16_t sample)
 
 static uint16_t getRxfailValue(uint8_t channel)
 {
-    const rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &rxConfig()->failsafe_channel_configurations[channel];
+    const rxFailsafeChannelConfig_t *channelFailsafeConfig = &rxConfig()->failsafe_channel_configurations[channel];
 
-    switch(channelFailsafeConfiguration->mode) {
+    switch(channelFailsafeConfig->mode) {
     case RX_FAILSAFE_MODE_AUTO:
         switch (channel) {
         case ROLL:
@@ -400,11 +400,11 @@ static uint16_t getRxfailValue(uint8_t channel)
         return rcData[channel];
 
     case RX_FAILSAFE_MODE_SET:
-        return RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfiguration->step);
+        return RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfig->step);
     }
 }
 
-STATIC_UNIT_TESTED uint16_t applyRxChannelRangeConfiguraton(int sample, rxChannelRangeConfiguration_t range)
+STATIC_UNIT_TESTED uint16_t applyRxChannelRangeConfiguraton(int sample, rxChannelRangeConfig_t range)
 {
     // Avoid corruption of channel with a value of PPM_RCVR_TIMEOUT
     if (sample == PPM_RCVR_TIMEOUT) {

@@ -77,7 +77,7 @@ const adcTagMap_t adcTagMap[] = {
 // NAZE rev.5 hardware has PA5 (ADC1_IN5) on breakout pad on bottom of board
 //
 
-void adcInit(adcConfig_t *config)
+void adcInit(const adcConfig_t *config)
 {
 
     uint8_t configuredAdcChannels = 0;

@@ -143,7 +143,7 @@ const mixerRules_t servoMixers[] = {
     { 0, NULL },
 };
 
-static servoMixer_t *customServoMixers;
+static const servoMixer_t *customServoMixers;
 
 void servoUseConfigs(servoMixerConfig_t *servoMixerConfigToUse, servoParam_t *servoParamsToUse, struct channelForwardingConfig_s *channelForwardingConfigToUse)
 {
@@ -173,7 +173,7 @@ int servoDirection(int servoIndex, int inputSource)
         return 1;
 }
 
-void servoMixerInit(servoMixer_t *initialCustomServoMixers)
+void servoMixerInit(const servoMixer_t *initialCustomServoMixers)
 {
     customServoMixers = initialCustomServoMixers;
 

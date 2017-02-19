@@ -40,6 +40,7 @@
 #include "fc/rc_controls.h"
 #include "fc/fc_core.h"
 
+#include "flight/altitudehold.h"
 #include "flight/failsafe.h"
 #include "flight/mixer.h"
 #include "flight/servos.h"
@@ -98,7 +99,7 @@
 #define ppmConfig(x) (&masterConfig.ppmConfig)
 #define pwmConfig(x) (&masterConfig.pwmConfig)
 #define adcConfig(x) (&masterConfig.adcConfig)
-#define beeperConfig(x) (&masterConfig.beeperConfig)
+#define beeperDevConfig(x) (&masterConfig.beeperDevConfig)
 #define sonarConfig(x) (&masterConfig.sonarConfig)
 #define ledStripConfig(x) (&masterConfig.ledStripConfig)
 #define statusLedConfig(x) (&masterConfig.statusLedConfig)
@@ -147,7 +148,7 @@
 #define ppmConfigMutable(x) (&masterConfig.ppmConfig)
 #define pwmConfigMutable(x) (&masterConfig.pwmConfig)
 #define adcConfigMutable(x) (&masterConfig.adcConfig)
-#define beeperConfigMutable(x) (&masterConfig.beeperConfig)
+#define beeperDevConfigMutable(x) (&masterConfig.beeperDevConfig)
 #define sonarConfigMutable(x) (&masterConfig.sonarConfig)
 #define ledStripConfigMutable(x) (&masterConfig.ledStripConfig)
 #define statusLedConfigMutable(x) (&masterConfig.statusLedConfig)
@@ -260,7 +261,7 @@ typedef struct master_s {
 #endif
 
 #ifdef BEEPER
-    beeperConfig_t beeperConfig;
+    beeperDevConfig_t beeperDevConfig;
 #endif
 
 #ifdef SONAR

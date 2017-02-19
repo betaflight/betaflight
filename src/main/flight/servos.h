@@ -133,7 +133,7 @@ bool isMixerUsingServos(void);
 void writeServos(void);
 void filterServos(void);
 
-void servoMixerInit(servoMixer_t *customServoMixers);
+void servoMixerInit(const servoMixer_t *customServoMixers);
 void servoUseConfigs(servoMixerConfig_t *servoConfigToUse, servoParam_t *servoParamsToUse, struct channelForwardingConfig_s *channelForwardingConfigToUse);
 void servoMixerLoadMix(int index, servoMixer_t *customServoMixers);
 void loadCustomServoMixer(void);
