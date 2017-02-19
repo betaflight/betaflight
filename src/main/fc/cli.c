@@ -52,13 +52,11 @@ uint8_t cliMode = 0;
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
-
 #include "drivers/accgyro.h"
 #include "drivers/buf_writer.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/compass.h"
+#include "drivers/display.h"
 #include "drivers/dma.h"
 #include "drivers/flash.h"
 #include "drivers/io.h"
@@ -72,12 +70,12 @@ uint8_t cliMode = 0;
 #include "drivers/system.h"
 #include "drivers/timer.h"
 #include "drivers/vcd.h"
-#include "drivers/display.h"
 
+#include "fc/cli.h"
 #include "fc/config.h"
+#include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
-#include "fc/cli.h"
 
 #include "flight/failsafe.h"
 #include "flight/imu.h"
@@ -92,10 +90,8 @@ uint8_t cliMode = 0;
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
-#include "io/motors.h"
 #include "io/osd.h"
 #include "io/serial.h"
-#include "io/servos.h"
 #include "io/vtx.h"
 
 #include "rx/rx.h"
@@ -397,6 +393,7 @@ typedef enum {
 #ifdef OSD
     TABLE_OSD,
 #endif
+    LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -887,7 +884,6 @@ static beeperDevConfig_t beeperDevConfigCopy;
 #endif
 static controlRateConfig_t controlRateProfilesCopy[MAX_CONTROL_RATE_PROFILE_COUNT];
 static pidProfile_t pidProfileCopy[MAX_PROFILE_COUNT];
-static modeActivationOperatorConfig_t modeActivationOperatorConfigCopy;
 #endif // USE_PARAMETER_GROUPS
 
 static void cliPrint(const char *str)
@@ -968,52 +964,52 @@ static void cliPrintf(const char *format, ...)
     bufWriterFlush(cliWriter);
 }
 
-static void printValuePointer(const clivalue_t *var, void *valuePointer, uint32_t full)
+static void printValuePointer(const clivalue_t *var, const void *valuePointer, uint32_t full)
 {
     int32_t value = 0;
     char buf[8];
 
     switch (var->type & VALUE_TYPE_MASK) {
-        case VAR_UINT8:
-            value = *(uint8_t *)valuePointer;
-            break;
+    case VAR_UINT8:
+        value = *(uint8_t *)valuePointer;
+        break;
 
-        case VAR_INT8:
-            value = *(int8_t *)valuePointer;
-            break;
+    case VAR_INT8:
+        value = *(int8_t *)valuePointer;
+        break;
 
-        case VAR_UINT16:
-            value = *(uint16_t *)valuePointer;
-            break;
+    case VAR_UINT16:
+        value = *(uint16_t *)valuePointer;
+        break;
 
-        case VAR_INT16:
-            value = *(int16_t *)valuePointer;
-            break;
+    case VAR_INT16:
+        value = *(int16_t *)valuePointer;
+        break;
 
 /* not currently used
-        case VAR_UINT32:
-            value = *(uint32_t *)valuePointer;
-            break; */
+    case VAR_UINT32:
+        value = *(uint32_t *)valuePointer;
+        break; */
 
-        case VAR_FLOAT:
-            cliPrintf("%s", ftoa(*(float *)valuePointer, buf));
-            if (full && (var->type & VALUE_MODE_MASK) == MODE_DIRECT) {
-                cliPrintf(" %s", ftoa((float)var->config.minmax.min, buf));
-                cliPrintf(" %s", ftoa((float)var->config.minmax.max, buf));
-            }
-            return; // return from case for float only
+    case VAR_FLOAT:
+        cliPrintf("%s", ftoa(*(float *)valuePointer, buf));
+        if (full && (var->type & VALUE_MODE_MASK) == MODE_DIRECT) {
+            cliPrintf(" %s", ftoa((float)var->config.minmax.min, buf));
+            cliPrintf(" %s", ftoa((float)var->config.minmax.max, buf));
+        }
+        return; // return from case for float only
     }
 
     switch(var->type & VALUE_MODE_MASK) {
-        case MODE_DIRECT:
-            cliPrintf("%d", value);
-            if (full) {
-                cliPrintf(" %d %d", var->config.minmax.min, var->config.minmax.max);
-            }
-            break;
-        case MODE_LOOKUP:
-            cliPrintf(lookupTables[var->config.lookup.tableIndex].values[value]);
-            break;
+    case MODE_DIRECT:
+        cliPrintf("%d", value);
+        if (full) {
+            cliPrintf(" %d %d", var->config.minmax.min, var->config.minmax.max);
+        }
+        break;
+    case MODE_LOOKUP:
+        cliPrintf(lookupTables[var->config.lookup.tableIndex].values[value]);
+        break;
     }
 }
 
@@ -1189,10 +1185,6 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.currentConfig = &systemConfigCopy;
         ret.defaultConfig = systemConfig();
         break;
-    case PG_MODE_ACTIVATION_OPERATOR_CONFIG:
-        ret.currentConfig = &modeActivationOperatorConfigCopy;
-        ret.defaultConfig = modeActivationOperatorConfig();
-        break;
     case PG_CONTROL_RATE_PROFILES:
         ret.currentConfig = &controlRateProfilesCopy[0];
         ret.defaultConfig = controlRateProfiles(0);
@@ -1336,37 +1328,37 @@ static bool valueEqualsDefault(const clivalue_t *value, const master_t *defaultC
 
     bool result = false;
     switch (value->type & VALUE_TYPE_MASK) {
-        case VAR_UINT8:
-            result = *(uint8_t *)ptr == *(uint8_t *)ptrDefault;
-            break;
+    case VAR_UINT8:
+        result = *(uint8_t *)ptr == *(uint8_t *)ptrDefault;
+        break;
 
-        case VAR_INT8:
-            result = *(int8_t *)ptr == *(int8_t *)ptrDefault;
-            break;
+    case VAR_INT8:
+        result = *(int8_t *)ptr == *(int8_t *)ptrDefault;
+        break;
 
-        case VAR_UINT16:
-            result = *(uint16_t *)ptr == *(uint16_t *)ptrDefault;
-            break;
+    case VAR_UINT16:
+        result = *(uint16_t *)ptr == *(uint16_t *)ptrDefault;
+        break;
 
-        case VAR_INT16:
-            result = *(int16_t *)ptr == *(int16_t *)ptrDefault;
-            break;
+    case VAR_INT16:
+        result = *(int16_t *)ptr == *(int16_t *)ptrDefault;
+        break;
 
 /* not currently used
-        case VAR_UINT32:
-            result = *(uint32_t *)ptr == *(uint32_t *)ptrDefault;
-            break; */
+    case VAR_UINT32:
+        result = *(uint32_t *)ptr == *(uint32_t *)ptrDefault;
+        break; */
 
-        case VAR_FLOAT:
-            result = *(float *)ptr == *(float *)ptrDefault;
-            break;
+    case VAR_FLOAT:
+        result = *(float *)ptr == *(float *)ptrDefault;
+        break;
     }
     return result;
 }
 
 static void cliPrintVar(const clivalue_t *var, uint32_t full)
 {
-    void *ptr = getValuePointer(var);
+    const void *ptr = getValuePointer(var);
 
     printValuePointer(var, ptr, full);
 }
@@ -1405,21 +1397,21 @@ static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *
 static void cliPrintVarRange(const clivalue_t *var)
 {
     switch (var->type & VALUE_MODE_MASK) {
-        case (MODE_DIRECT): {
-            cliPrintf("Allowed range: %d - %d\r\n", var->config.minmax.min, var->config.minmax.max);
+    case (MODE_DIRECT): {
+        cliPrintf("Allowed range: %d - %d\r\n", var->config.minmax.min, var->config.minmax.max);
+    }
+    break;
+    case (MODE_LOOKUP): {
+        const lookupTableEntry_t *tableEntry = &lookupTables[var->config.lookup.tableIndex];
+        cliPrint("Allowed values:");
+        for (uint32_t i = 0; i < tableEntry->valueCount ; i++) {
+            if (i > 0)
+                cliPrint(",");
+            cliPrintf(" %s", tableEntry->values[i]);
         }
-        break;
-        case (MODE_LOOKUP): {
-            const lookupTableEntry_t *tableEntry = &lookupTables[var->config.lookup.tableIndex];
-            cliPrint("Allowed values:");
-            for (uint32_t i = 0; i < tableEntry->valueCount ; i++) {
-                if (i > 0)
-                    cliPrint(",");
-                cliPrintf(" %s", tableEntry->values[i]);
-            }
-            cliPrint("\r\n");
-        }
-        break;
+        cliPrint("\r\n");
+    }
+    break;
     }
 }
 
@@ -1433,24 +1425,24 @@ static void cliSetVar(const clivalue_t *var, const int_float_value_t value)
     void *ptr = getValuePointer(var);
 
     switch (var->type & VALUE_TYPE_MASK) {
-        case VAR_UINT8:
-        case VAR_INT8:
-            *(int8_t *)ptr = value.int_value;
-            break;
+    case VAR_UINT8:
+    case VAR_INT8:
+        *(int8_t *)ptr = value.int_value;
+        break;
 
-        case VAR_UINT16:
-        case VAR_INT16:
-            *(int16_t *)ptr = value.int_value;
-            break;
+    case VAR_UINT16:
+    case VAR_INT16:
+        *(int16_t *)ptr = value.int_value;
+        break;
 
 /* not currently used
-        case VAR_UINT32:
-            *(uint32_t *)ptr = value.int_value;
-            break; */
+    case VAR_UINT32:
+        *(uint32_t *)ptr = value.int_value;
+        break; */
 
-        case VAR_FLOAT:
-            *(float *)ptr = (float)value.float_value;
-            break;
+    case VAR_FLOAT:
+        *(float *)ptr = (float)value.float_value;
+        break;
     }
 }
 
@@ -1574,9 +1566,9 @@ static void cliRxFailsafe(char *cmdline)
 
             ptr = nextArg(ptr);
             if (ptr) {
-                char *p = strchr(rxFailsafeModeCharacters, *(ptr));
+                const char *p = strchr(rxFailsafeModeCharacters, *(ptr));
                 if (p) {
-                    uint8_t requestedMode = p - rxFailsafeModeCharacters;
+                    const uint8_t requestedMode = p - rxFailsafeModeCharacters;
                     mode = rxFailsafeModesTable[type][requestedMode];
                 } else {
                     mode = RX_FAILSAFE_MODE_INVALID;
@@ -1607,7 +1599,6 @@ static void cliRxFailsafe(char *cmdline)
                     return;
                 }
                 channelFailsafeConfig->mode = mode;
-
             }
 
             char modeCharacter = rxFailsafeModeCharacters[channelFailsafeConfig->mode];
@@ -2226,14 +2217,11 @@ static void printColor(uint8_t dumpMask, const hsvColor_t *colors, const hsvColo
 
 static void cliColor(char *cmdline)
 {
-    int i;
-    const char *ptr;
-
     if (isEmpty(cmdline)) {
         printColor(DUMP_MASTER, ledStripConfig()->colors, NULL);
     } else {
-        ptr = cmdline;
-        i = atoi(ptr);
+        const char *ptr = cmdline;
+        const int i = atoi(ptr);
         if (i < LED_CONFIGURABLE_COLOR_COUNT) {
             ptr = nextArg(cmdline);
             if (!parseColor(i, ptr)) {
@@ -2626,7 +2614,8 @@ static void cliWriteBytes(const uint8_t *buffer, int count)
     }
 }
 
-static void cliSdInfo(char *cmdline) {
+static void cliSdInfo(char *cmdline)
+{
     UNUSED(cmdline);
 
     cliPrint("SD card: ");
@@ -2704,7 +2693,7 @@ static void cliFlashErase(char *cmdline)
     UNUSED(cmdline);
 
 #ifndef MINIMAL_CLI
-    uint32_t i;
+    uint32_t i = 0;
     cliPrintf("Erasing, please wait ... \r\n");
 #else
     cliPrintf("Erasing,\r\n");
@@ -2733,8 +2722,8 @@ static void cliFlashErase(char *cmdline)
 
 static void cliFlashWrite(char *cmdline)
 {
-    uint32_t address = atoi(cmdline);
-    char *text = strchr(cmdline, ' ');
+    const uint32_t address = atoi(cmdline);
+    const char *text = strchr(cmdline, ' ');
 
     if (!text) {
         cliShowParseError();
@@ -2750,7 +2739,6 @@ static void cliFlashWrite(char *cmdline)
 static void cliFlashRead(char *cmdline)
 {
     uint32_t address = atoi(cmdline);
-    uint32_t length;
 
     uint8_t buffer[32];
 
@@ -2759,7 +2747,7 @@ static void cliFlashRead(char *cmdline)
     if (!nextArg) {
         cliShowParseError();
     } else {
-        length = atoi(nextArg);
+        uint32_t length = atoi(nextArg);
 
         cliPrintf("Reading %u bytes at %u:\r\n", length, address);
 
@@ -2981,9 +2969,9 @@ static void cliFeature(char *cmdline)
 #ifdef BEEPER
 static void printBeeper(uint8_t dumpMask, const master_t *defaultConfig)
 {
-    uint8_t beeperCount = beeperTableEntryCount();
-    uint32_t mask = getBeeperOffMask();
-    uint32_t defaultMask = defaultConfig->beeper_off_flags;
+    const uint8_t beeperCount = beeperTableEntryCount();
+    const uint32_t mask = getBeeperOffMask();
+    const uint32_t defaultMask = defaultConfig->beeper_off_flags;
     for (int32_t i = 0; i < beeperCount - 2; i++) {
         const char *formatOff = "beeper -%s\r\n";
         const char *formatOn = "beeper %s\r\n";
@@ -3352,13 +3340,11 @@ static void cliPlaySound(char *cmdline)
 
 static void cliProfile(char *cmdline)
 {
-    int i;
-
     if (isEmpty(cmdline)) {
         cliPrintf("profile %d\r\n", getCurrentProfile());
         return;
     } else {
-        i = atoi(cmdline);
+        const int i = atoi(cmdline);
         if (i >= 0 && i < MAX_PROFILE_COUNT) {
             masterConfig.current_profile_index = i;
             writeEEPROM();
@@ -3370,13 +3356,11 @@ static void cliProfile(char *cmdline)
 
 static void cliRateProfile(char *cmdline)
 {
-    int i;
-
     if (isEmpty(cmdline)) {
         cliPrintf("rateprofile %d\r\n", getCurrentControlRateProfile());
         return;
     } else {
-        i = atoi(cmdline);
+        const int i = atoi(cmdline);
         if (i >= 0 && i < MAX_RATEPROFILES) {
             changeControlRateProfile(i);
             cliRateProfile("");
@@ -4389,5 +4373,6 @@ void cliEnter(serialPort_t *serialPort)
 void cliInit(const serialConfig_t *serialConfig)
 {
     UNUSED(serialConfig);
+    BUILD_BUG_ON(LOOKUP_TABLE_COUNT != ARRAYLEN(lookupTables));
 }
 #endif // USE_CLI

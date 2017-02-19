@@ -126,7 +126,7 @@ typedef struct motorDevConfig_s {
     ioTag_t  ioTags[MAX_SUPPORTED_MOTORS];
 } motorDevConfig_t;
 
-void motorInit(const motorDevConfig_t *motorDevConfig, uint16_t idlePulse, uint8_t motorCount);
+void motorDevInit(const motorDevConfig_t *motorDevConfig, uint16_t idlePulse, uint8_t motorCount);
 
 typedef struct servoDevConfig_s {
     // PWM values, in milliseconds, common range is 1000-2000 (1ms to 2ms)
@@ -135,7 +135,7 @@ typedef struct servoDevConfig_s {
     ioTag_t  ioTags[MAX_SUPPORTED_SERVOS];
 } servoDevConfig_t;
 
-void servoInit(const servoDevConfig_t *servoDevConfig);
+void servoDevInit(const servoDevConfig_t *servoDevConfig);
 
 void pwmServoConfig(const struct timerHardware_s *timerHardware, uint8_t servoIndex, uint16_t servoPwmRate, uint16_t servoCenterPulse);
 

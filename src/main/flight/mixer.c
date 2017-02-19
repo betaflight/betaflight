@@ -230,8 +230,6 @@ const mixer_t mixers[] = {
 };
 #endif
 
-static const motorMixer_t *customMixers;
-
 static uint16_t disarmMotorOutput, deadbandMotor3dHigh, deadbandMotor3dLow;
 uint16_t motorOutputHigh, motorOutputLow;
 static float rcCommandThrottleRange, rcCommandThrottleRange3dLow, rcCommandThrottleRange3dHigh;
@@ -289,11 +287,9 @@ void initEscEndpoints(void) {
     rcCommandThrottleRange3dHigh = PWM_RANGE_MAX - rxConfig()->midrc - flight3DConfig()->deadband3d_throttle;
 }
 
-void mixerInit(mixerMode_e mixerMode, const motorMixer_t *initialCustomMixers)
+void mixerInit(mixerMode_e mixerMode)
 {
     currentMixerMode = mixerMode;
-
-    customMixers = initialCustomMixers;
 
     initEscEndpoints();
 }
@@ -308,9 +304,9 @@ void mixerConfigureOutput(void)
         // load custom mixer into currentMixer
         for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
             // check if done
-            if (customMixers[i].throttle == 0.0f)
+            if (customMotorMixer(i)->throttle == 0.0f)
                 break;
-            currentMixer[i] = customMixers[i];
+            currentMixer[i] = *customMotorMixer(i);
             motorCount++;
         }
     } else {

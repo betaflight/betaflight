@@ -124,7 +124,7 @@ uint8_t getMotorCount();
 float getMotorMixRange();
 
 void mixerLoadMix(int index, motorMixer_t *customMixers);
-void mixerInit(mixerMode_e mixerMode, const motorMixer_t *customMotorMixers);
+void mixerInit(mixerMode_e mixerMode);
 
 void mixerConfigureOutput(void);
 

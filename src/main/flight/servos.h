@@ -105,7 +105,6 @@ typedef struct servoParam_s {
 PG_DECLARE_ARRAY(servoParam_t, MAX_SUPPORTED_SERVOS, servoParams);
 
 typedef struct servoConfig_s {
-    // PWM values, in milliseconds, common range is 1000-2000 (1 to 2ms)
     servoDevConfig_t dev;
     uint16_t servo_lowpass_freq;            // lowpass servo filter frequency selection; 1/1000ths of loop freq
     uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
@@ -125,11 +124,9 @@ extern int16_t servo[MAX_SUPPORTED_SERVOS];
 
 bool isMixerUsingServos(void);
 void writeServos(void);
-
-void servoMixerInit(const servoMixer_t *customServoMixers);
-void servoUseConfigs(servoParam_t *servoParamsToUse, struct channelForwardingConfig_s *channelForwardingConfigToUse);
 void servoMixerLoadMix(int index, servoMixer_t *customServoMixers);
 void loadCustomServoMixer(void);
-void servoConfigureOutput(void);
+void servoUseConfigs(servoParam_t *servoParamsToUse, struct channelForwardingConfig_s *channelForwardingConfigToUse);
 int servoDirection(int servoIndex, int fromChannel);
-
+void servoConfigureOutput(void);
+void servosInit(void);
