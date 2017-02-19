@@ -93,7 +93,6 @@ static char cmsx_BlackboxDeviceStorageFree[CMS_BLACKBOX_STRING_LENGTH];
 static void cmsx_Blackbox_GetDeviceStatus()
 {
     char * unit = "B";
-    bool storageDeviceIsWorking = false;
     uint32_t storageUsed = 0;
     uint32_t storageFree = 0;
 
@@ -101,6 +100,7 @@ static void cmsx_Blackbox_GetDeviceStatus()
     {
 #ifdef USE_SDCARD
     case BLACKBOX_DEVICE_SDCARD:
+        bool storageDeviceIsWorking = false;
         unit = "MB";
 
         if (!sdcard_isInserted()) {
@@ -136,8 +136,7 @@ static void cmsx_Blackbox_GetDeviceStatus()
     case BLACKBOX_DEVICE_FLASH:
         unit = "KB";
 
-        storageDeviceIsWorking = flashfsIsReady();
-        if (storageDeviceIsWorking) {
+        if (flashfsIsReady()) {
             snprintf(cmsx_BlackboxStatus, CMS_BLACKBOX_STRING_LENGTH, "READY");
 
             const flashGeometry_t *geometry = flashfsGetGeometry();
@@ -151,7 +150,6 @@ static void cmsx_Blackbox_GetDeviceStatus()
 #endif
 
     default:
-        storageDeviceIsWorking = true;
         snprintf(cmsx_BlackboxStatus, CMS_BLACKBOX_STRING_LENGTH, "---");
     }
 
