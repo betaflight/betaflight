@@ -16,7 +16,6 @@
  */
 
 #define TARGET_BOARD_IDENTIFIER "CC3D" // CopterControl 3D
-#define TARGET_VALIDATECONFIG
 
 #define LED0                    PB3
 

@@ -108,12 +108,6 @@ void targetValidateConfiguration(master_t *config)
 {
     UNUSED(config);
 
-#if defined(SONAR)
-    if (featureConfigured(FEATURE_RX_PARALLEL_PWM) && featureConfigured(FEATURE_SONAR) && featureConfigured(FEATURE_CURRENT_METER) && batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC) {
-        featureClear(FEATURE_CURRENT_METER);
-    }
-#endif
-
     if (hardwareRevision < NAZE32_REV5 && config->accelerometerConfig.acc_hardware == ACC_ADXL345) {
         config->accelerometerConfig.acc_hardware = ACC_NONE;
     }  
