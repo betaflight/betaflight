@@ -50,6 +50,8 @@
 
 #include "blackbox/blackbox_io.h"
 
+#include "blackbox/blackbox_io.h"
+
 #ifdef USE_FLASHFS
 static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
 {
