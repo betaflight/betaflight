@@ -37,6 +37,13 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "flight/mixer.h"
+
+#include "rx/rx.h"
+
+#include "sensors/battery.h"
+
+
 //
 // Misc
 //

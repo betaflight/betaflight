@@ -29,6 +29,9 @@
 
 #include "drivers/display.h"
 #include "drivers/max7456.h"
+#include "drivers/vcd.h"
+
+#include "io/osd.h"
 
 displayPort_t max7456DisplayPort; // Referenced from osd.c
 displayPortProfile_t *max7456DisplayPortProfile;

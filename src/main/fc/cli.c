@@ -778,34 +778,34 @@ static const clivalue_t valueTable[] = {
     { "sdcard_dma",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &sdcardConfig()->useDma, .config.lookup = { TABLE_OFF_ON } },
 #endif
 #ifdef OSD
-    { "osd_units",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &osdProfile()->units, .config.lookup = { TABLE_UNIT } },
+    { "osd_units",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &osdConfig()->units, .config.lookup = { TABLE_UNIT } },
 
-    { "osd_rssi_alarm",             VAR_UINT8  | MASTER_VALUE, &osdProfile()->rssi_alarm, .config.minmax = { 0, 100 } },
-    { "osd_cap_alarm",              VAR_UINT16 | MASTER_VALUE, &osdProfile()->cap_alarm, .config.minmax = { 0, 20000 } },
-    { "osd_time_alarm",             VAR_UINT16 | MASTER_VALUE, &osdProfile()->time_alarm, .config.minmax = { 0, 60 } },
-    { "osd_alt_alarm",              VAR_UINT16 | MASTER_VALUE, &osdProfile()->alt_alarm, .config.minmax = { 0, 10000 } },
+    { "osd_rssi_alarm",             VAR_UINT8  | MASTER_VALUE, &osdConfig()->rssi_alarm, .config.minmax = { 0, 100 } },
+    { "osd_cap_alarm",              VAR_UINT16 | MASTER_VALUE, &osdConfig()->cap_alarm, .config.minmax = { 0, 20000 } },
+    { "osd_time_alarm",             VAR_UINT16 | MASTER_VALUE, &osdConfig()->time_alarm, .config.minmax = { 0, 60 } },
+    { "osd_alt_alarm",              VAR_UINT16 | MASTER_VALUE, &osdConfig()->alt_alarm, .config.minmax = { 0, 10000 } },
 
-    { "osd_vbat_pos",               VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_MAIN_BATT_VOLTAGE], .config.minmax = { 0, OSD_POSCFG_MAX } },
-    { "osd_rssi_pos",               VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_RSSI_VALUE], .config.minmax = { 0, OSD_POSCFG_MAX } },
-    { "osd_flytimer_pos",           VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_FLYTIME], .config.minmax = { 0, OSD_POSCFG_MAX } },
-    { "osd_ontimer_pos",            VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_ONTIME], .config.minmax = { 0, OSD_POSCFG_MAX } },
-    { "osd_flymode_pos",            VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_FLYMODE], .config.minmax = { 0, OSD_POSCFG_MAX } },
-    { "osd_throttle_pos",           VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_THROTTLE_POS], .config.minmax = { 0, OSD_POSCFG_MAX } },
-    { "osd_vtx_channel_pos",        VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_VTX_CHANNEL], .config.minmax = { 0, OSD_POSCFG_MAX } },
-    { "osd_crosshairs",             VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_CROSSHAIRS], .config.minmax = { 0, OSD_POSCFG_MAX } },
-    { "osd_horizon_pos",            VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_ARTIFICIAL_HORIZON], .config.minmax = { 0, OSD_POSCFG_MAX } },
-    { "osd_current_pos",            VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_CURRENT_DRAW], .config.minmax = { 0, OSD_POSCFG_MAX } },
-    { "osd_mah_drawn_pos",          VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_MAH_DRAWN], .config.minmax = { 0, OSD_POSCFG_MAX } },
-    { "osd_craft_name_pos",         VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_CRAFT_NAME], .config.minmax = { 0, OSD_POSCFG_MAX } },
-    { "osd_gps_speed_pos",          VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_GPS_SPEED], .config.minmax = { 0, OSD_POSCFG_MAX } },
-    { "osd_gps_sats_pos",           VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_GPS_SATS], .config.minmax = { 0, OSD_POSCFG_MAX } },
-    { "osd_altitude_pos",           VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_ALTITUDE], .config.minmax = { 0, OSD_POSCFG_MAX } },
-    { "osd_pid_roll_pos",           VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_ROLL_PIDS], .config.minmax = { 0, OSD_POSCFG_MAX } },
-    { "osd_pid_pitch_pos",          VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_PITCH_PIDS], .config.minmax = { 0, OSD_POSCFG_MAX } },
-    { "osd_pid_yaw_pos",            VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_YAW_PIDS], .config.minmax = { 0, OSD_POSCFG_MAX } },
-    { "osd_power_pos",              VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_POWER], .config.minmax = { 0, OSD_POSCFG_MAX } },
-    { "osd_pidrate_profile_pos",    VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_PIDRATE_PROFILE], .config.minmax = { 0, OSD_POSCFG_MAX } },
-    { "osd_battery_warning_pos",    VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_MAIN_BATT_WARNING], .config.minmax = { 0, OSD_POSCFG_MAX } },
+    { "osd_vbat_pos",               VAR_UINT16  | MASTER_VALUE, &osdConfig()->item_pos[OSD_MAIN_BATT_VOLTAGE], .config.minmax = { 0, OSD_POSCFG_MAX } },
+    { "osd_rssi_pos",               VAR_UINT16  | MASTER_VALUE, &osdConfig()->item_pos[OSD_RSSI_VALUE], .config.minmax = { 0, OSD_POSCFG_MAX } },
+    { "osd_flytimer_pos",           VAR_UINT16  | MASTER_VALUE, &osdConfig()->item_pos[OSD_FLYTIME], .config.minmax = { 0, OSD_POSCFG_MAX } },
+    { "osd_ontimer_pos",            VAR_UINT16  | MASTER_VALUE, &osdConfig()->item_pos[OSD_ONTIME], .config.minmax = { 0, OSD_POSCFG_MAX } },
+    { "osd_flymode_pos",            VAR_UINT16  | MASTER_VALUE, &osdConfig()->item_pos[OSD_FLYMODE], .config.minmax = { 0, OSD_POSCFG_MAX } },
+    { "osd_throttle_pos",           VAR_UINT16  | MASTER_VALUE, &osdConfig()->item_pos[OSD_THROTTLE_POS], .config.minmax = { 0, OSD_POSCFG_MAX } },
+    { "osd_vtx_channel_pos",        VAR_UINT16  | MASTER_VALUE, &osdConfig()->item_pos[OSD_VTX_CHANNEL], .config.minmax = { 0, OSD_POSCFG_MAX } },
+    { "osd_crosshairs",             VAR_UINT16  | MASTER_VALUE, &osdConfig()->item_pos[OSD_CROSSHAIRS], .config.minmax = { 0, OSD_POSCFG_MAX } },
+    { "osd_horizon_pos",            VAR_UINT16  | MASTER_VALUE, &osdConfig()->item_pos[OSD_ARTIFICIAL_HORIZON], .config.minmax = { 0, OSD_POSCFG_MAX } },
+    { "osd_current_pos",            VAR_UINT16  | MASTER_VALUE, &osdConfig()->item_pos[OSD_CURRENT_DRAW], .config.minmax = { 0, OSD_POSCFG_MAX } },
+    { "osd_mah_drawn_pos",          VAR_UINT16  | MASTER_VALUE, &osdConfig()->item_pos[OSD_MAH_DRAWN], .config.minmax = { 0, OSD_POSCFG_MAX } },
+    { "osd_craft_name_pos",         VAR_UINT16  | MASTER_VALUE, &osdConfig()->item_pos[OSD_CRAFT_NAME], .config.minmax = { 0, OSD_POSCFG_MAX } },
+    { "osd_gps_speed_pos",          VAR_UINT16  | MASTER_VALUE, &osdConfig()->item_pos[OSD_GPS_SPEED], .config.minmax = { 0, OSD_POSCFG_MAX } },
+    { "osd_gps_sats_pos",           VAR_UINT16  | MASTER_VALUE, &osdConfig()->item_pos[OSD_GPS_SATS], .config.minmax = { 0, OSD_POSCFG_MAX } },
+    { "osd_altitude_pos",           VAR_UINT16  | MASTER_VALUE, &osdConfig()->item_pos[OSD_ALTITUDE], .config.minmax = { 0, OSD_POSCFG_MAX } },
+    { "osd_pid_roll_pos",           VAR_UINT16  | MASTER_VALUE, &osdConfig()->item_pos[OSD_ROLL_PIDS], .config.minmax = { 0, OSD_POSCFG_MAX } },
+    { "osd_pid_pitch_pos",          VAR_UINT16  | MASTER_VALUE, &osdConfig()->item_pos[OSD_PITCH_PIDS], .config.minmax = { 0, OSD_POSCFG_MAX } },
+    { "osd_pid_yaw_pos",            VAR_UINT16  | MASTER_VALUE, &osdConfig()->item_pos[OSD_YAW_PIDS], .config.minmax = { 0, OSD_POSCFG_MAX } },
+    { "osd_power_pos",              VAR_UINT16  | MASTER_VALUE, &osdConfig()->item_pos[OSD_POWER], .config.minmax = { 0, OSD_POSCFG_MAX } },
+    { "osd_pidrate_profile_pos",    VAR_UINT16  | MASTER_VALUE, &osdConfig()->item_pos[OSD_PIDRATE_PROFILE], .config.minmax = { 0, OSD_POSCFG_MAX } },
+    { "osd_battery_warning_pos",    VAR_UINT16  | MASTER_VALUE, &osdConfig()->item_pos[OSD_MAIN_BATT_WARNING], .config.minmax = { 0, OSD_POSCFG_MAX } },
 #endif
 #ifdef USE_MAX7456
     { "vcd_video_system",           VAR_UINT8   | MASTER_VALUE, &vcdProfile()->video_system, .config.minmax = { 0, 2 } },
@@ -876,7 +876,7 @@ static adjustmentRange_t adjustmentRangesCopy[MAX_ADJUSTMENT_RANGE_COUNT];
 static ledStripConfig_t ledStripConfigCopy;
 #endif
 #ifdef OSD
-static osdConfig_t osdConfigCopy;
+static osd_profile_t osdConfigCopy;
 #endif
 static systemConfig_t systemConfigCopy;
 #ifdef BEEPER
@@ -1189,10 +1189,10 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.currentConfig = &controlRateProfilesCopy[0];
         ret.defaultConfig = controlRateProfiles(0);
         break;
-    case PG_PID_PROFILE:
+/*!!TODO    case PG_PID_PROFILE:
         ret.currentConfig = &pidProfileCopy[getConfigProfile()];
         ret.defaultConfig = pidProfile();
-        break;
+        break;*/
     case PG_RX_FAILSAFE_CHANNEL_CONFIG:
         ret.currentConfig = &rxFailsafeChannelConfigsCopy[0];
         ret.defaultConfig = rxFailsafeChannelConfigs(0);
@@ -1662,12 +1662,12 @@ static void cliAux(char *cmdline)
     const char *ptr;
 
     if (isEmpty(cmdline)) {
-        printAux(DUMP_MASTER, modeActivationProfile()->modeActivationConditions, NULL);
+        printAux(DUMP_MASTER, modeActivationConditions(0), NULL);
     } else {
         ptr = cmdline;
         i = atoi(ptr++);
         if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
-            modeActivationCondition_t *mac = &modeActivationProfile()->modeActivationConditions[i];
+            modeActivationCondition_t *mac = modeActivationConditionsMutable(i);
             uint8_t validArgumentCount = 0;
             ptr = nextArg(ptr);
             if (ptr) {
@@ -1930,12 +1930,12 @@ static void cliAdjustmentRange(char *cmdline)
     const char *ptr;
 
     if (isEmpty(cmdline)) {
-        printAdjustmentRange(DUMP_MASTER, adjustmentProfile()->adjustmentRanges, NULL);
+        printAdjustmentRange(DUMP_MASTER, adjustmentRanges(0), NULL);
     } else {
         ptr = cmdline;
         i = atoi(ptr++);
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
-            adjustmentRange_t *ar = &adjustmentProfile()->adjustmentRanges[i];
+            adjustmentRange_t *ar = adjustmentRangesMutable(i);
             uint8_t validArgumentCount = 0;
 
             ptr = nextArg(ptr);
@@ -2354,7 +2354,7 @@ static void cliServo(char *cmdline)
     char *ptr;
 
     if (isEmpty(cmdline)) {
-        printServo(DUMP_MASTER, servoProfile()->servoConf, NULL);
+        printServo(DUMP_MASTER, servoParams(0), NULL);
     } else {
         int validArgumentCount = 0;
 
@@ -2393,7 +2393,7 @@ static void cliServo(char *cmdline)
             return;
         }
 
-        servo = &servoProfile()->servoConf[i];
+        servo = servoParamsMutable(i);
 
         if (
             arguments[MIN] < PWM_PULSE_MIN || arguments[MIN] > PWM_PULSE_MAX ||
@@ -2469,7 +2469,7 @@ static void printServoMix(uint8_t dumpMask, const master_t *defaultConfig)
     // print servo directions
     for (uint32_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         const char *format = "smix reverse %d %d r\r\n";
-        const servoParam_t *servoConf = &servoProfile()->servoConf[i];
+        const servoParam_t *servoConf = servoParams(i);
         if (defaultConfig) {
             const servoParam_t *servoConfDefault = &defaultConfig->servoProfile.servoConf[i];
             bool equalsDefault = servoConf->reversedSources == servoConfDefault->reversedSources;
@@ -2503,7 +2503,7 @@ static void cliServoMix(char *cmdline)
         // erase custom mixer
         memset(masterConfig.customServoMixer, 0, sizeof(masterConfig.customServoMixer));
         for (uint32_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-            servoProfile()->servoConf[i].reversedSources = 0;
+            servoParamsMutable(i)->reversedSources = 0;
         }
     } else if (strncasecmp(cmdline, "load", 4) == 0) {
         const char *ptr = nextArg(cmdline);
@@ -2536,7 +2536,7 @@ static void cliServoMix(char *cmdline)
             for (uint32_t servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
                 cliPrintf("%d", servoIndex);
                 for (uint32_t inputSource = 0; inputSource < INPUT_SOURCE_COUNT; inputSource++)
-                    cliPrintf("\t%s  ", (servoProfile()->servoConf[servoIndex].reversedSources & (1 << inputSource)) ? "r" : "n");
+                    cliPrintf("\t%s  ", (servoParams(servoIndex)->reversedSources & (1 << inputSource)) ? "r" : "n");
                 cliPrintf("\r\n");
             }
             return;
@@ -2558,9 +2558,9 @@ static void cliServoMix(char *cmdline)
                 && args[INPUT] >= 0 && args[INPUT] < INPUT_SOURCE_COUNT
                 && (*ptr == 'r' || *ptr == 'n')) {
             if (*ptr == 'r')
-                servoProfile()->servoConf[args[SERVO]].reversedSources |= 1 << args[INPUT];
+                servoParamsMutable(args[SERVO])->reversedSources |= 1 << args[INPUT];
             else
-                servoProfile()->servoConf[args[SERVO]].reversedSources &= ~(1 << args[INPUT]);
+                servoParamsMutable(args[SERVO])->reversedSources &= ~(1 << args[INPUT]);
         } else
             cliShowParseError();
 
@@ -2740,8 +2740,6 @@ static void cliFlashRead(char *cmdline)
 {
     uint32_t address = atoi(cmdline);
 
-    uint8_t buffer[32];
-
     const char *nextArg = strchr(cmdline, ' ');
 
     if (!nextArg) {
@@ -2751,6 +2749,7 @@ static void cliFlashRead(char *cmdline)
 
         cliPrintf("Reading %u bytes at %u:\r\n", length, address);
 
+        uint8_t buffer[32];
         while (length > 0) {
             int bytesRead = flashfsReadAbs(address, buffer, length < sizeof(buffer) ? length : sizeof(buffer));
 
@@ -4005,7 +4004,7 @@ static void printConfig(char *cmdline, bool doDiff)
 
 #ifdef USE_SERVOS
         cliPrintHashLine("servo");
-        printServo(dumpMask, servoProfile()->servoConf, defaultConfig.servoProfile.servoConf);
+        printServo(dumpMask, servoParams(0), defaultConfig.servoProfile.servoConf);
 
         cliPrintHashLine("servo mix");
         // print custom servo mixer if exists
@@ -4040,10 +4039,10 @@ static void printConfig(char *cmdline, bool doDiff)
 #endif
 
         cliPrintHashLine("aux");
-        printAux(dumpMask, modeActivationProfile()->modeActivationConditions, defaultConfig.modeActivationProfile.modeActivationConditions);
+        printAux(dumpMask, modeActivationConditions(0), defaultConfig.modeActivationProfile.modeActivationConditions);
 
         cliPrintHashLine("adjrange");
-        printAdjustmentRange(dumpMask, adjustmentProfile()->adjustmentRanges, defaultConfig.adjustmentProfile.adjustmentRanges);
+        printAdjustmentRange(dumpMask, adjustmentRanges(0), defaultConfig.adjustmentProfile.adjustmentRanges);
 
         cliPrintHashLine("rxrange");
         printRxRange(dumpMask, rxConfig()->channelRanges, defaultConfig.rxConfig.channelRanges);
