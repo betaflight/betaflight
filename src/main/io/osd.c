@@ -25,6 +25,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -43,6 +44,7 @@
 #include "common/typeconversion.h"
 #include "common/utils.h"
 
+#include "config/config_master.h"
 #include "config/config_profile.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
@@ -391,8 +393,8 @@ static void osdDrawSingleElement(uint8_t item)
 
         case OSD_PIDRATE_PROFILE:
         {
-            uint8_t profileIndex = masterConfig.current_profile_index;
-            uint8_t rateProfileIndex = masterConfig.profile[profileIndex].activeRateProfile;
+            const uint8_t profileIndex = masterConfig.current_profile_index;
+            const uint8_t rateProfileIndex = masterConfig.profile[profileIndex].activeRateProfile;
             sprintf(buff, "%d-%d", profileIndex + 1, rateProfileIndex + 1);
             break;
         }

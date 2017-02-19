@@ -3674,6 +3674,9 @@ typedef struct {
 } cliResourceValue_t;
 
 const cliResourceValue_t resourceTable[] = {
+#ifdef USE_PARAMETER_GROUPS
+    { OWNER_MOTOR,         NULL, MAX_SUPPORTED_MOTORS },
+#else
 #ifdef BEEPER
     { OWNER_BEEPER,        &beeperDevConfig()->ioTag, 0 },
 #endif
@@ -3691,6 +3694,7 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 #ifdef LED_STRIP
     { OWNER_LED_STRIP,     &ledStripConfig()->ioTag,   0 },
+#endif
 #endif
 };
 

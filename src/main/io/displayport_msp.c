@@ -26,6 +26,8 @@
 
 #include "common/utils.h"
 
+#include "config/config_master.h"
+
 #include "drivers/display.h"
 #include "drivers/system.h"
 
@@ -34,9 +36,9 @@
 #include "msp/msp_protocol.h"
 #include "msp/msp_serial.h"
 
-static displayPort_t mspDisplayPort;
+#include "io/displayport_msp.h"
 
-static displayPortProfile_t *mspDisplayPortProfile;
+static displayPort_t mspDisplayPort;
 
 static int output(displayPort_t *displayPort, uint8_t cmd, const uint8_t *buf, int len)
 {
@@ -118,8 +120,8 @@ static bool isTransferInProgress(const displayPort_t *displayPort)
 
 static void resync(displayPort_t *displayPort)
 {
-    displayPort->rows = 13 + mspDisplayPortProfile->rowAdjust; // XXX Will reflect NTSC/PAL in the future
-    displayPort->cols = 30 + mspDisplayPortProfile->colAdjust;
+    displayPort->rows = 13 + displayPortProfileMsp()->rowAdjust; // XXX Will reflect NTSC/PAL in the future
+    displayPort->cols = 30 + displayPortProfileMsp()->colAdjust;
 }
 
 static uint32_t txBytesFree(const displayPort_t *displayPort)
@@ -142,9 +144,8 @@ static const displayPortVTable_t mspDisplayPortVTable = {
     .txBytesFree = txBytesFree
 };
 
-displayPort_t *displayPortMspInit(displayPortProfile_t *displayPortProfileToUse)
+displayPort_t *displayPortMspInit(void)
 {
-    mspDisplayPortProfile = displayPortProfileToUse;
     displayInit(&mspDisplayPort, &mspDisplayPortVTable);
     resync(&mspDisplayPort);
     return &mspDisplayPort;

@@ -31,10 +31,10 @@
 #include "drivers/max7456.h"
 #include "drivers/vcd.h"
 
+#include "io/displayport_max7456.h"
 #include "io/osd.h"
 
 displayPort_t max7456DisplayPort; // Referenced from osd.c
-displayPortProfile_t *max7456DisplayPortProfile;
 
 extern uint16_t refreshTimeout;
 
@@ -106,8 +106,8 @@ static void resync(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     max7456RefreshAll();
-    displayPort->rows = max7456GetRowsCount() + max7456DisplayPortProfile->rowAdjust;
-    displayPort->cols = 30 + max7456DisplayPortProfile->colAdjust;
+    displayPort->rows = max7456GetRowsCount() + displayPortProfileMax7456()->rowAdjust;
+    displayPort->cols = 30 + displayPortProfileMax7456()->colAdjust;
 }
 
 static int heartbeat(displayPort_t *displayPort)
@@ -136,9 +136,8 @@ static const displayPortVTable_t max7456VTable = {
     .txBytesFree = txBytesFree,
 };
 
-displayPort_t *max7456DisplayPortInit(const vcdProfile_t *vcdProfile, displayPortProfile_t *displayPortProfileToUse)
+displayPort_t *max7456DisplayPortInit(const vcdProfile_t *vcdProfile)
 {
-    max7456DisplayPortProfile = displayPortProfileToUse;
     displayInit(&max7456DisplayPort, &max7456VTable);
     max7456Init(vcdProfile);
     resync(&max7456DisplayPort);

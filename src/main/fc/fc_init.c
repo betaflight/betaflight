@@ -396,7 +396,7 @@ void init(void)
     if (feature(FEATURE_OSD)) {
 #ifdef USE_MAX7456
         // if there is a max7456 chip for the OSD then use it, otherwise use MSP
-        displayPort_t *osdDisplayPort = max7456DisplayPortInit(vcdProfile(), displayPortProfileMax7456());
+        displayPort_t *osdDisplayPort = max7456DisplayPortInit(vcdProfile());
 #else
         displayPort_t *osdDisplayPort = displayPortMspInit(displayPortProfileMax7456());
 #endif
@@ -437,7 +437,7 @@ void init(void)
     mspSerialInit();
 
 #if defined(USE_MSP_DISPLAYPORT) && defined(CMS)
-    cmsDisplayPortRegister(displayPortMspInit(displayPortProfileMsp()));
+    cmsDisplayPortRegister(displayPortMspInit());
 #endif
 
 #ifdef USE_CLI
