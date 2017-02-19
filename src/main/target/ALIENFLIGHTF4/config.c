@@ -62,7 +62,7 @@ void targetConfiguration(master_t *config)
     config->compassConfig.mag_hardware = MAG_NONE;            // disabled by default
 
     if (hardwareMotorType == MOTOR_BRUSHED) {
-        config->motorConfig.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
+        config->motorConfig.dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
         config->pidConfig.pid_process_denom = 1;
     }
 

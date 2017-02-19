@@ -535,10 +535,10 @@ static const clivalue_t valueTable[] = {
     { "3d_neutral",                 VAR_UINT16 | MASTER_VALUE,  &flight3DConfig()->neutral3d, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "3d_deadband_throttle",       VAR_UINT16 | MASTER_VALUE,  &flight3DConfig()->deadband3d_throttle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
 
-    { "use_unsynced_pwm",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &motorConfig()->useUnsyncedPwm, .config.lookup = { TABLE_OFF_ON } },
-    { "motor_pwm_protocol",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &motorConfig()->motorPwmProtocol, .config.lookup = { TABLE_MOTOR_PWM_PROTOCOL } },
-    { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &motorConfig()->motorPwmRate, .config.minmax = { 200, 32000 } },
-    { "motor_pwm_inversion",        VAR_UINT8  | MASTER_VALUE,  &motorConfig()->motorPwmInversion, .config.lookup = { TABLE_OFF_ON } },
+    { "use_unsynced_pwm",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &motorConfig()->dev.useUnsyncedPwm, .config.lookup = { TABLE_OFF_ON } },
+    { "motor_pwm_protocol",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &motorConfig()->dev.motorPwmProtocol, .config.lookup = { TABLE_MOTOR_PWM_PROTOCOL } },
+    { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &motorConfig()->dev.motorPwmRate, .config.minmax = { 200, 32000 } },
+    { "motor_pwm_inversion",        VAR_UINT8  | MASTER_VALUE,  &motorConfig()->dev.motorPwmInversion, .config.lookup = { TABLE_OFF_ON } },
 
     { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &armingConfig()->disarm_kill_switch, .config.lookup = { TABLE_OFF_ON } },
     { "gyro_cal_on_first_arm",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &armingConfig()->gyro_cal_on_first_arm, .config.lookup = { TABLE_OFF_ON } },
@@ -658,10 +658,10 @@ static const clivalue_t valueTable[] = {
     { "yaw_p_limit",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_p_limit, .config.minmax = { YAW_P_LIMIT_MIN, YAW_P_LIMIT_MAX } },
     { "pidsum_limit",               VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.pidSumLimit, .config.minmax = { 0.1, 1.0 } },
 #ifdef USE_SERVOS
-    { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &servoConfig()->servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
+    { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &servoConfig()->dev.servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &servoConfig()->tri_unarmed_servo, .config.lookup = { TABLE_OFF_ON } },
     { "servo_lowpass_hz",           VAR_UINT16 | MASTER_VALUE, &servoConfig()->servo_lowpass_freq, .config.minmax = { 0,  400} },
-    { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &servoConfig()->servoPwmRate, .config.minmax = { 50,  498 } },
+    { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &servoConfig()->dev.servoPwmRate, .config.minmax = { 50,  498 } },
     { "gimbal_mode",                VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &gimbalConfig()->mode, .config.lookup = { TABLE_GIMBAL_MODE } },
     { "channel_forwarding_start",    VAR_UINT8  | MASTER_VALUE, &channelForwardingConfig()->startChannel, .config.minmax = { AUX1, MAX_SUPPORTED_RC_CHANNEL_COUNT } },
 #endif
@@ -3694,9 +3694,9 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef BEEPER
     { OWNER_BEEPER,        &beeperDevConfig()->ioTag, 0 },
 #endif
-    { OWNER_MOTOR,         &motorConfig()->ioTags[0], MAX_SUPPORTED_MOTORS },
+    { OWNER_MOTOR,         &motorConfig()->dev.ioTags[0], MAX_SUPPORTED_MOTORS },
 #ifdef USE_SERVOS
-    { OWNER_SERVO,         &servoConfig()->ioTags[0], MAX_SUPPORTED_SERVOS },
+    { OWNER_SERVO,         &servoConfig()->dev.ioTags[0], MAX_SUPPORTED_SERVOS },
 #endif
 #if defined(USE_PWM) || defined(USE_PPM)
     { OWNER_PPMINPUT,      &ppmConfig()->ioTag, 0 },

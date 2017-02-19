@@ -1292,9 +1292,9 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("rc_interpolation_interval:%d",        rxConfig()->rcInterpolationInterval);
         BLACKBOX_PRINT_HEADER_LINE("airmode_activate_throttle:%d",        rxConfig()->airModeActivateThreshold);
         BLACKBOX_PRINT_HEADER_LINE("serialrx_provider:%d",                rxConfig()->serialrx_provider);
-        BLACKBOX_PRINT_HEADER_LINE("unsynced_fast_pwm:%d",                motorConfig()->useUnsyncedPwm);
-        BLACKBOX_PRINT_HEADER_LINE("fast_pwm_protocol:%d",                motorConfig()->motorPwmProtocol);
-        BLACKBOX_PRINT_HEADER_LINE("motor_pwm_rate:%d",                   motorConfig()->motorPwmRate);
+        BLACKBOX_PRINT_HEADER_LINE("unsynced_fast_pwm:%d",                motorConfig()->dev.useUnsyncedPwm);
+        BLACKBOX_PRINT_HEADER_LINE("fast_pwm_protocol:%d",                motorConfig()->dev.motorPwmProtocol);
+        BLACKBOX_PRINT_HEADER_LINE("motor_pwm_rate:%d",                   motorConfig()->dev.motorPwmRate);
         BLACKBOX_PRINT_HEADER_LINE("digitalIdleOffset:%d",          (int)(motorConfig()->digitalIdleOffsetPercent * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("debug_mode:%d",                       systemConfig()->debug_mode);
         BLACKBOX_PRINT_HEADER_LINE("features:%d",                         featureConfig()->enabledFeatures);

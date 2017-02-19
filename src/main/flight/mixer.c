@@ -248,7 +248,7 @@ float getMotorMixRange()
 
 bool isMotorProtocolDshot(void) {
 #ifdef USE_DSHOT
-    switch(motorConfig()->motorPwmProtocol) {
+    switch(motorConfig()->dev.motorPwmProtocol) {
     case PWM_TYPE_DSHOT1200:
     case PWM_TYPE_DSHOT600:
     case PWM_TYPE_DSHOT300:

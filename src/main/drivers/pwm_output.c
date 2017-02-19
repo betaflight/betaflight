@@ -23,11 +23,8 @@
 #include "platform.h"
 
 #include "io.h"
-#include "timer.h"
 #include "pwm_output.h"
-
-#include "flight/mixer.h" //!!TODO remove dependency on this
-#include "flight/servos.h" //!!TODO remove dependency on this
+#include "timer.h"
 
 #define MULTISHOT_5US_PW    (MULTISHOT_TIMER_MHZ * 5)
 #define MULTISHOT_20US_MULT (MULTISHOT_TIMER_MHZ * 20 / 1000.0f)
@@ -197,7 +194,7 @@ void pwmCompleteMotorUpdate(uint8_t motorCount)
     pwmCompleteWritePtr(motorCount);
 }
 
-void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount)
+void motorInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount)
 {
     memset(motors, 0, sizeof(motors));
     
@@ -328,7 +325,7 @@ void pwmWriteServo(uint8_t index, uint16_t value)
     }
 }
 
-void servoInit(const servoConfig_t *servoConfig)
+void servoInit(const servoDevConfig_t *servoConfig)
 {
     for (uint8_t servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
         const ioTag_t tag = servoConfig->ioTags[servoIndex];

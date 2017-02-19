@@ -241,15 +241,15 @@ void resetLedStripConfig(ledStripConfig_t *ledStripConfig)
 #ifdef USE_SERVOS
 void resetServoConfig(servoConfig_t *servoConfig)
 {
-    servoConfig->servoCenterPulse = 1500;
-    servoConfig->servoPwmRate = 50;
+    servoConfig->dev.servoCenterPulse = 1500;
+    servoConfig->dev.servoPwmRate = 50;
     servoConfig->tri_unarmed_servo = 1;
     servoConfig->servo_lowpass_freq = 0;
 
     int servoIndex = 0;
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && servoIndex < MAX_SUPPORTED_SERVOS; i++) {
         if (timerHardware[i].usageFlags & TIM_USE_SERVO) {
-            servoConfig->ioTags[servoIndex] = timerHardware[i].tag;
+            servoConfig->dev.ioTags[servoIndex] = timerHardware[i].tag;
             servoIndex++;
         }
     }
@@ -260,22 +260,22 @@ void resetMotorConfig(motorConfig_t *motorConfig)
 {
 #ifdef BRUSHED_MOTORS
     motorConfig->minthrottle = 1000;
-    motorConfig->motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
-    motorConfig->motorPwmProtocol = PWM_TYPE_BRUSHED;
-    motorConfig->useUnsyncedPwm = true;
+    motorConfig->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
+    motorConfig->dev.motorPwmProtocol = PWM_TYPE_BRUSHED;
+    motorConfig->dev.useUnsyncedPwm = true;
 #else
 #ifdef BRUSHED_ESC_AUTODETECT
     if (hardwareMotorType == MOTOR_BRUSHED) {
         motorConfig->minthrottle = 1000;
-        motorConfig->motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
-        motorConfig->motorPwmProtocol = PWM_TYPE_BRUSHED;
-        motorConfig->useUnsyncedPwm = true;
+        motorConfig->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
+        motorConfig->dev.motorPwmProtocol = PWM_TYPE_BRUSHED;
+        motorConfig->dev.useUnsyncedPwm = true;
     } else
 #endif
     {
         motorConfig->minthrottle = 1070;
-        motorConfig->motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
-        motorConfig->motorPwmProtocol = PWM_TYPE_ONESHOT125;
+        motorConfig->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
+        motorConfig->dev.motorPwmProtocol = PWM_TYPE_ONESHOT125;
     }
 #endif
     motorConfig->maxthrottle = 2000;
@@ -285,7 +285,7 @@ void resetMotorConfig(motorConfig_t *motorConfig)
     int motorIndex = 0;
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && motorIndex < MAX_SUPPORTED_MOTORS; i++) {
         if (timerHardware[i].usageFlags & TIM_USE_MOTOR) {
-            motorConfig->ioTags[motorIndex] = timerHardware[i].tag;
+            motorConfig->dev.ioTags[motorIndex] = timerHardware[i].tag;
             motorIndex++;
         }
     }
@@ -906,12 +906,12 @@ void activateConfig(void)
 
 void validateAndFixConfig(void)
 {
-    if((motorConfig()->motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)){
+    if((motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)){
         motorConfigMutable()->mincommand = 1000;
     }
 
-    if ((motorConfig()->motorPwmProtocol == PWM_TYPE_STANDARD) && (motorConfig()->motorPwmRate > BRUSHLESS_MOTORS_PWM_RATE)) {
-        motorConfigMutable()->motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
+    if ((motorConfig()->dev.motorPwmProtocol == PWM_TYPE_STANDARD) && (motorConfig()->dev.motorPwmRate > BRUSHLESS_MOTORS_PWM_RATE)) {
+        motorConfigMutable()->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
     }
 
     if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP) || featureConfigured(FEATURE_RX_SPI))) {
@@ -1060,7 +1060,7 @@ void validateAndFixGyroConfig(void)
     // check for looptime restrictions based on motor protocol. Motor times have safety margin
     const float pidLooptime = samplingTime * gyroConfig()->gyro_sync_denom * pidConfig()->pid_process_denom;
     float motorUpdateRestriction;
-    switch(motorConfig()->motorPwmProtocol) {
+    switch(motorConfig()->dev.motorPwmProtocol) {
         case (PWM_TYPE_STANDARD):
             motorUpdateRestriction = 1.0f/BRUSHLESS_MOTORS_PWM_RATE;
             break;
@@ -1088,11 +1088,11 @@ void validateAndFixGyroConfig(void)
     }
 
     // Prevent overriding the max rate of motors
-    if (motorConfig()->useUnsyncedPwm && (motorConfig()->motorPwmProtocol <= PWM_TYPE_BRUSHED) && motorConfig()->motorPwmProtocol != PWM_TYPE_STANDARD) {
+    if (motorConfig()->dev.useUnsyncedPwm && (motorConfig()->dev.motorPwmProtocol <= PWM_TYPE_BRUSHED) && motorConfig()->dev.motorPwmProtocol != PWM_TYPE_STANDARD) {
         uint32_t maxEscRate = lrintf(1.0f / motorUpdateRestriction);
 
-        if(motorConfig()->motorPwmRate > maxEscRate)
-            motorConfigMutable()->motorPwmRate = maxEscRate;
+        if(motorConfig()->dev.motorPwmRate > maxEscRate)
+            motorConfigMutable()->dev.motorPwmRate = maxEscRate;
     }
 }
 

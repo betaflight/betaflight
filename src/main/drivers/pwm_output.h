@@ -17,8 +17,17 @@
 
 #pragma once
 
-#include "drivers/timer.h"
-#include "drivers/dma.h"
+#include "dma.h"
+#include "io_types.h"
+#include "timer.h"
+
+#define MAX_SUPPORTED_MOTORS 12
+
+#if defined(USE_QUAD_MIXER_ONLY)
+#define MAX_SUPPORTED_SERVOS 1
+#else
+#define MAX_SUPPORTED_SERVOS 8
+#endif
 
 typedef enum {
     PWM_TYPE_STANDARD = 0,
@@ -109,10 +118,24 @@ typedef struct {
     IO_t io;
 } pwmOutputPort_t;
 
-struct motorConfig_s;
-void motorInit(const struct motorConfig_s *motorConfig, uint16_t idlePulse, uint8_t motorCount);
-struct servoConfig_s;
-void servoInit(const struct servoConfig_s *servoConfig);
+typedef struct motorDevConfig_s {
+    uint16_t motorPwmRate;                  // The update rate of motor outputs (50-498Hz)
+    uint8_t  motorPwmProtocol;              // Pwm Protocol
+    uint8_t  motorPwmInversion;             // Active-High vs Active-Low. Useful for brushed FCs converted for brushless operation
+    uint8_t  useUnsyncedPwm;
+    ioTag_t  ioTags[MAX_SUPPORTED_MOTORS];
+} motorDevConfig_t;
+
+void motorInit(const motorDevConfig_t *motorDevConfig, uint16_t idlePulse, uint8_t motorCount);
+
+typedef struct servoDevConfig_s {
+    // PWM values, in milliseconds, common range is 1000-2000 (1ms to 2ms)
+    uint16_t servoCenterPulse;              // This is the value for servos when they should be in the middle. e.g. 1500.
+    uint16_t servoPwmRate;                  // The update rate of servo outputs (50-498Hz)
+    ioTag_t  ioTags[MAX_SUPPORTED_SERVOS];
+} servoDevConfig_t;
+
+void servoInit(const servoDevConfig_t *servoDevConfig);
 
 void pwmServoConfig(const struct timerHardware_s *timerHardware, uint8_t servoIndex, uint16_t servoPwmRate, uint16_t servoCenterPulse);
 

@@ -57,6 +57,15 @@ typedef struct
     void* test;
 } TIM_TypeDef;
 
+typedef struct
+{
+    void* test;
+} TIM_OCInitTypeDef;
+
+typedef struct {
+    void* test;
+} DMA_TypeDef;
+
 typedef struct {
     void* test;
 } DMA_Channel_TypeDef;

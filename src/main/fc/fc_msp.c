@@ -1124,14 +1124,14 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
             sbufWriteU8(dst, gyroConfig()->gyro_sync_denom);
             sbufWriteU8(dst, pidConfig()->pid_process_denom);
         }
-        sbufWriteU8(dst, motorConfig()->useUnsyncedPwm);
-        sbufWriteU8(dst, motorConfig()->motorPwmProtocol);
-        sbufWriteU16(dst, motorConfig()->motorPwmRate);
+        sbufWriteU8(dst, motorConfig()->dev.useUnsyncedPwm);
+        sbufWriteU8(dst, motorConfig()->dev.motorPwmProtocol);
+        sbufWriteU16(dst, motorConfig()->dev.motorPwmRate);
         sbufWriteU16(dst, (uint16_t)lrintf(motorConfig()->digitalIdleOffsetPercent * 100));
         sbufWriteU8(dst, gyroConfig()->gyro_use_32khz);
         //!!TODO gyro_isr_update to be added pending decision
         //sbufWriteU8(dst, gyroConfig()->gyro_isr_update);
-        sbufWriteU8(dst, motorConfig()->motorPwmInversion);
+        sbufWriteU8(dst, motorConfig()->dev.motorPwmInversion);
         break;
 
     case MSP_FILTER_CONFIG :
@@ -1491,13 +1491,13 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_ADVANCED_CONFIG:
         gyroConfigMutable()->gyro_sync_denom = sbufReadU8(src);
         pidConfigMutable()->pid_process_denom = sbufReadU8(src);
-        motorConfigMutable()->useUnsyncedPwm = sbufReadU8(src);
+        motorConfigMutable()->dev.useUnsyncedPwm = sbufReadU8(src);
 #ifdef USE_DSHOT
-        motorConfigMutable()->motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_MAX - 1);
+        motorConfigMutable()->dev.motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_MAX - 1);
 #else
-        motorConfigMutable()->motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_BRUSHED);
+        motorConfigMutable()->dev.motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_BRUSHED);
 #endif
-        motorConfigMutable()->motorPwmRate = sbufReadU16(src);
+        motorConfigMutable()->dev.motorPwmRate = sbufReadU16(src);
         if (sbufBytesRemaining(src) >= 2) {
             motorConfigMutable()->digitalIdleOffsetPercent = sbufReadU16(src) / 100.0f;
         }
@@ -1511,7 +1511,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         validateAndFixGyroConfig();
 
         if (sbufBytesRemaining(src)) {        
-            motorConfigMutable()->motorPwmInversion = sbufReadU8(src);
+            motorConfigMutable()->dev.motorPwmInversion = sbufReadU8(src);
         }
         break;
 

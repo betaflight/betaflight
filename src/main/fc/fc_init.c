@@ -282,25 +282,25 @@ void init(void)
         idlePulse = flight3DConfig()->neutral3d;
     }
 
-    if (motorConfig()->motorPwmProtocol == PWM_TYPE_BRUSHED) {
+    if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) {
         featureClear(FEATURE_3D);
         idlePulse = 0; // brushed motors
     }
 
     mixerConfigureOutput();
-    motorInit(motorConfig(), idlePulse, getMotorCount());
+    motorInit(&motorConfig()->dev, idlePulse, getMotorCount());
 
 #ifdef USE_SERVOS
     servoConfigureOutput();
     if (isMixerUsingServos()) {
         //pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
-        servoInit(servoConfig());
+        servoInit(&servoConfig()->dev);
     }
 #endif
 
 #if defined(USE_PWM) || defined(USE_PPM)
     if (feature(FEATURE_RX_PPM)) {
-        ppmRxInit(ppmConfig(), motorConfig()->motorPwmProtocol);
+        ppmRxInit(ppmConfig(), motorConfig()->dev.motorPwmProtocol);
     } else if (feature(FEATURE_RX_PARALLEL_PWM)) {
         pwmRxInit(pwmConfig());
     }

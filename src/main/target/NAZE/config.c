@@ -43,7 +43,7 @@ void targetConfiguration(master_t *config)
 
 #ifdef BEEBRAIN
     // alternative defaults settings for Beebrain target
-    config->motorConfig.motorPwmRate = 4000;
+    config->motorConfig.dev.motorPwmRate = 4000;
     config->failsafeConfig.failsafe_delay = 2;
     config->failsafeConfig.failsafe_off_delay = 0;
 
