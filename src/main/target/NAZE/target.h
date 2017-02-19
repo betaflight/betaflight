@@ -50,7 +50,7 @@
 #define USE_EXTI
 #define MAG_INT_EXTI            PC14
 #define MPU_INT_EXTI            PC13
-#define MMA8451_INT_PIN			PA5
+#define MMA8451_INT_PIN         PA5
 
 #define USE_MPU_DATA_READY_SIGNAL
 #define USE_MAG_DATA_READY_SIGNAL
