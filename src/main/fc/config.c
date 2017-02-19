@@ -578,6 +578,7 @@ void createDefaultConfig(master_t *config)
 
     intFeatureClearAll(featuresPtr);
     intFeatureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE , featuresPtr);
+
 #ifdef DEFAULT_FEATURES
     intFeatureSet(DEFAULT_FEATURES, featuresPtr);
 #endif
@@ -594,7 +595,6 @@ void createDefaultConfig(master_t *config)
 #endif
 
 #ifdef OSD
-    intFeatureSet(FEATURE_OSD, featuresPtr);
     osdResetConfig(&config->osdProfile);
 #endif
 
