@@ -1508,21 +1508,21 @@ static bool isEmpty(const char *string)
     return (string == NULL || *string == '\0') ? true : false;
 }
 
-static void printRxFailsafe(uint8_t dumpMask, const rxFailsafeChannelConfig_t *failsafeChannelConfig, const rxFailsafeChannelConfig_t *failsafeChannelConfigDefault)
+static void printRxFailsafe(uint8_t dumpMask, const rxFailsafeChannelConfig_t *rxFailsafeChannelConfigs, const rxFailsafeChannelConfig_t *defaultRxFailsafeChannelConfigs)
 {
     // print out rxConfig failsafe settings
     for (uint32_t channel = 0; channel < MAX_SUPPORTED_RC_CHANNEL_COUNT; channel++) {
-        const rxFailsafeChannelConfig_t *channelFailsafeConfig = &failsafeChannelConfig[channel];
-        const rxFailsafeChannelConfig_t *channelFailsafeConfigDefault = &failsafeChannelConfigDefault[channel];
-        const bool equalsDefault = channelFailsafeConfig->mode == channelFailsafeConfigDefault->mode
-                && channelFailsafeConfig->step == channelFailsafeConfigDefault->step;
+        const rxFailsafeChannelConfig_t *channelFailsafeConfig = &rxFailsafeChannelConfigs[channel];
+        const rxFailsafeChannelConfig_t *defaultChannelFailsafeConfig = &defaultRxFailsafeChannelConfigs[channel];
+        const bool equalsDefault = channelFailsafeConfig->mode == defaultChannelFailsafeConfig->mode
+                && channelFailsafeConfig->step == defaultChannelFailsafeConfig->step;
         const bool requireValue = channelFailsafeConfig->mode == RX_FAILSAFE_MODE_SET;
         if (requireValue) {
             const char *format = "rxfail %u %c %d\r\n";
             cliDefaultPrintf(dumpMask, equalsDefault, format,
                 channel,
-                rxFailsafeModeCharacters[channelFailsafeConfigDefault->mode],
-                RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfigDefault->step)
+                rxFailsafeModeCharacters[defaultChannelFailsafeConfig->mode],
+                RXFAIL_STEP_TO_CHANNEL_VALUE(defaultChannelFailsafeConfig->step)
             );
             cliDumpPrintf(dumpMask, equalsDefault, format,
                 channel,
@@ -1533,7 +1533,7 @@ static void printRxFailsafe(uint8_t dumpMask, const rxFailsafeChannelConfig_t *f
             const char *format = "rxfail %u %c\r\n";
             cliDefaultPrintf(dumpMask, equalsDefault, format,
                 channel,
-                rxFailsafeModeCharacters[channelFailsafeConfigDefault->mode]
+                rxFailsafeModeCharacters[defaultChannelFailsafeConfig->mode]
             );
             cliDumpPrintf(dumpMask, equalsDefault, format,
                 channel,
@@ -2304,30 +2304,30 @@ static void cliModeColor(char *cmdline)
 #endif
 
 #ifdef USE_SERVOS
-static void printServo(uint8_t dumpMask, const servoParam_t *servoParams, const servoParam_t *servoParamsDefault)
+static void printServo(uint8_t dumpMask, const servoParam_t *servoParams, const servoParam_t *defaultServoParams)
 {
     // print out servo settings
     const char *format = "servo %u %d %d %d %d %d %d %d\r\n";
     for (uint32_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         const servoParam_t *servoConf = &servoParams[i];
         bool equalsDefault = false;
-        if (servoParamsDefault) {
-            const servoParam_t *servoConfDefault = &servoParamsDefault[i];
-            equalsDefault = servoConf->min == servoConfDefault->min
-                && servoConf->max == servoConfDefault->max
-                && servoConf->middle == servoConfDefault->middle
-                && servoConf->angleAtMin == servoConfDefault->angleAtMax
-                && servoConf->rate == servoConfDefault->rate
-                && servoConf->forwardFromChannel == servoConfDefault->forwardFromChannel;
+        if (defaultServoParams) {
+            const servoParam_t *defaultServoConf = &defaultServoParams[i];
+            equalsDefault = servoConf->min == defaultServoConf->min
+                && servoConf->max == defaultServoConf->max
+                && servoConf->middle == defaultServoConf->middle
+                && servoConf->angleAtMin == defaultServoConf->angleAtMax
+                && servoConf->rate == defaultServoConf->rate
+                && servoConf->forwardFromChannel == defaultServoConf->forwardFromChannel;
             cliDefaultPrintf(dumpMask, equalsDefault, format,
                 i,
-                servoConfDefault->min,
-                servoConfDefault->max,
-                servoConfDefault->middle,
-                servoConfDefault->angleAtMin,
-                servoConfDefault->angleAtMax,
-                servoConfDefault->rate,
-                servoConfDefault->forwardFromChannel
+                defaultServoConf->min,
+                defaultServoConf->max,
+                defaultServoConf->middle,
+                defaultServoConf->angleAtMin,
+                defaultServoConf->angleAtMax,
+                defaultServoConf->rate,
+                defaultServoConf->forwardFromChannel
             );
         }
         cliDumpPrintf(dumpMask, equalsDefault, format,
