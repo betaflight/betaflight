@@ -83,6 +83,7 @@ static const char * const cmsx_BlackboxDeviceNames[] = {
 static bool featureRead = false;
 
 static uint8_t cmsx_FeatureBlackbox;
+static uint8_t blackboxConfig_rate_denom;
 
 static uint8_t cmsx_BlackboxDevice;
 static OSD_TAB_t cmsx_BlackboxDeviceTable = { &cmsx_BlackboxDevice, 2, cmsx_BlackboxDeviceNames };
@@ -171,7 +172,7 @@ static long cmsx_Blackbox_onEnter(void)
         cmsx_FeatureBlackbox = feature(FEATURE_BLACKBOX) ? 1 : 0;
         featureRead = true;
     }
-
+    blackboxConfig_rate_denom = blackboxConfig()->rate_denom;
     return 0;
 }
 
@@ -183,7 +184,7 @@ static long cmsx_Blackbox_onExit(const OSD_Entry *self)
         blackboxConfigMutable()->device = cmsx_BlackboxDevice;
         validateBlackboxConfig();
     }
-
+    blackboxConfigMutable()->rate_denom = blackboxConfig_rate_denom;
     return 0;
 }
 
@@ -207,7 +208,7 @@ static OSD_Entry cmsx_menuBlackboxEntries[] =
     { "(STATUS)",    OME_String,  NULL,            &cmsx_BlackboxStatus,                                      0 },
     { "(USED)",      OME_String,  NULL,            &cmsx_BlackboxDeviceStorageUsed,                           0 },
     { "(FREE)",      OME_String,  NULL,            &cmsx_BlackboxDeviceStorageFree,                           0 },
-    { "RATE DENOM",  OME_UINT8,   NULL,            &(OSD_UINT8_t){ &blackboxConfig()->rate_denom, 1, 32, 1 }, 0 },
+    { "RATE DENOM",  OME_UINT8,   NULL,            &(OSD_UINT8_t){ &blackboxConfig_rate_denom, 1, 32, 1 },    0 },
 
 #ifdef USE_FLASHFS
     { "ERASE FLASH", OME_Funcall, cmsx_EraseFlash, NULL,                                                      0 },
