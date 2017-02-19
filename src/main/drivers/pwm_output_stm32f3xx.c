@@ -20,6 +20,8 @@
 
 #include "platform.h"
 
+#ifdef USE_DSHOT
+
 #include "build/debug.h"
 
 #include "io.h"
@@ -30,7 +32,7 @@
 #include "system.h"
 #include "rcc.h"
 
-#ifdef USE_DSHOT
+#include "flight/mixer.h" //!!TODO remove dependency on this
 
 static uint8_t dmaMotorTimerCount = 0;
 static motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];

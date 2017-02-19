@@ -26,6 +26,9 @@
 #include "timer.h"
 #include "pwm_output.h"
 
+#include "flight/mixer.h" //!!TODO remove dependency on this
+#include "flight/servos.h" //!!TODO remove dependency on this
+
 #define MULTISHOT_5US_PW    (MULTISHOT_TIMER_MHZ * 5)
 #define MULTISHOT_20US_MULT (MULTISHOT_TIMER_MHZ * 20 / 1000.0f)
 

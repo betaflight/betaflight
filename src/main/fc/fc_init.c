@@ -102,24 +102,25 @@
 
 #include "scheduler/scheduler.h"
 
-#include "sensors/sensors.h"
-#include "sensors/sonar.h"
-#include "sensors/barometer.h"
-#include "sensors/compass.h"
 #include "sensors/acceleration.h"
-#include "sensors/gyro.h"
+#include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
+#include "sensors/compass.h"
+#include "sensors/esc_sensor.h"
+#include "sensors/gyro.h"
 #include "sensors/initialisation.h"
+#include "sensors/sensors.h"
+#include "sensors/sonar.h"
 
 #include "telemetry/telemetry.h"
-#include "sensors/esc_sensor.h"
 
-#include "flight/pid.h"
+#include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
-#include "flight/failsafe.h"
 #include "flight/navigation.h"
+#include "flight/pid.h"
+#include "flight/servos.h"
 
 
 #ifdef USE_HARDWARE_REVISION_DETECTION

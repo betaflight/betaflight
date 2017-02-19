@@ -243,6 +243,8 @@ void resetServoConfig(servoConfig_t *servoConfig)
 {
     servoConfig->servoCenterPulse = 1500;
     servoConfig->servoPwmRate = 50;
+    servoConfig->tri_unarmed_servo = 1;
+    servoConfig->servo_lowpass_freq = 0;
 
     int servoIndex = 0;
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && servoIndex < MAX_SUPPORTED_SERVOS; i++) {
@@ -476,15 +478,6 @@ void resetMixerConfig(mixerConfig_t *mixerConfig)
 #endif
     mixerConfig->yaw_motor_direction = 1;
 }
-
-#ifdef USE_SERVOS
-void resetServoMixerConfig(servoMixerConfig_t *servoMixerConfig)
-{
-    servoMixerConfig->tri_unarmed_servo = 1;
-    servoMixerConfig->servo_lowpass_freq = 400;
-    servoMixerConfig->servo_lowpass_enable = 0;
-}
-#endif
 
 #ifdef USE_MAX7456
 void resetMax7456Config(vcdProfile_t *pVcdProfile)
@@ -732,7 +725,6 @@ void createDefaultConfig(master_t *config)
     resetMixerConfig(&config->mixerConfig);
     resetMotorConfig(&config->motorConfig);
 #ifdef USE_SERVOS
-    resetServoMixerConfig(&config->servoMixerConfig);
     resetServoConfig(&config->servoConfig);
 #endif
     resetFlight3DConfig(&config->flight3DConfig);
@@ -904,7 +896,7 @@ void activateConfig(void)
     setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
 
 #ifdef USE_SERVOS
-    servoUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoProfile.servoConf, &masterConfig.channelForwardingConfig);
+    servoUseConfigs(masterConfig.servoProfile.servoConf, &masterConfig.channelForwardingConfig);
 #endif
 
     imuConfigure(throttleCorrectionConfig()->throttle_correction_angle);
