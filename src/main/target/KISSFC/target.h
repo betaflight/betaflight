@@ -80,6 +80,9 @@
 
 #ifdef KISSCC
 #define SOFTSERIAL1_TX_PIN      PA13
+#else
+#define SOFTSERIAL1_TX_PIN      PA13 // AUX1
+#define SOFTSERIAL2_TX_PIN      PA15 // ROLL
 #endif
 
 #define USE_I2C
