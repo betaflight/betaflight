@@ -1252,7 +1252,7 @@ void validateAndFixGyroConfig(void)
 #endif
     } else {
 #if defined(STM32F1)
-        gyroConfig()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 4);
+        gyroConfig()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 3);
 #endif
     }
 
