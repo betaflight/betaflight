@@ -20,6 +20,7 @@
 
 #include <platform.h>
 
+#ifdef TARGET_CONFIG
 #include "common/utils.h"
 
 #include "drivers/io.h"
@@ -112,3 +113,4 @@ void targetValidateConfiguration(master_t *config)
         config->accelerometerConfig.acc_hardware = ACC_NONE;
     }  
 }
+#endif

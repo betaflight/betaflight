@@ -99,9 +99,11 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     static firFilterDenoise_t denoisingFilter[2];
     static pt1Filter_t pt1FilterYaw;
 
+    uint32_t pidFrequencyNyquist = (1.0f / dT) / 2; // No rounding needed
+
     BUILD_BUG_ON(FD_YAW != 2); // only setting up Dterm filters on roll and pitch axes, so ensure yaw axis is 2
 
-    if (pidProfile->dterm_notch_hz == 0) {
+    if (pidProfile->dterm_notch_hz == 0 || pidProfile->dterm_notch_hz > pidFrequencyNyquist) {
         dtermNotchFilterApplyFn = nullFilterApply;
     } else {
         dtermNotchFilterApplyFn = (filterApplyFnPtr)biquadFilterApply;
@@ -112,7 +114,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         }
     }
 
-    if (pidProfile->dterm_lpf_hz == 0) {
+    if (pidProfile->dterm_lpf_hz == 0 || pidProfile->dterm_lpf_hz > pidFrequencyNyquist) {
         dtermLpfApplyFn = nullFilterApply;
     } else {
         switch (pidProfile->dterm_filter_type) {
@@ -143,7 +145,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         }
     }
 
-    if (pidProfile->yaw_lpf_hz == 0) {
+    if (pidProfile->yaw_lpf_hz == 0 || pidProfile->yaw_lpf_hz > pidFrequencyNyquist) {
         ptermYawFilterApplyFn = nullFilterApply;
     } else {
         ptermYawFilterApplyFn = (filterApplyFnPtr)pt1FilterApply;
@@ -163,7 +165,7 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
         Ki[axis] = ITERM_SCALE * pidProfile->I8[axis];
         Kd[axis] = DTERM_SCALE * pidProfile->D8[axis];
     }
-    dtermSetpointWeight = pidProfile->dtermSetpointWeight / 100.0f;
+    dtermSetpointWeight = pidProfile->dtermSetpointWeight / 127.0f;
     relaxFactor = 1.0f / (pidProfile->setpointRelaxRatio / 100.0f);
     levelGain = pidProfile->P8[PIDLEVEL] / 10.0f;
     horizonGain = pidProfile->I8[PIDLEVEL] / 10.0f;

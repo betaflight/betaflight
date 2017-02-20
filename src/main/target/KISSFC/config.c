@@ -20,6 +20,7 @@
 
 #include <platform.h>
 
+#ifdef TARGET_CONFIG
 #include "common/utils.h"
 
 #include "drivers/io.h"
@@ -37,7 +38,6 @@
 
 #include "sensors/boardalignment.h"
 
-
 void targetConfiguration(master_t *config)
 {
     UNUSED(config);
@@ -49,4 +49,4 @@ void targetConfiguration(master_t *config)
     config->boardAlignment.yawDegrees = 0;
 #endif
 }
-
+#endif

@@ -45,7 +45,9 @@
 #define USE_UART2          // Input - TX (NC) RX (PA15)
 #define USE_UART3          // Solder Pads - TX (PB10) RX (PB11)
 #define USE_SOFTSERIAL1     // Telemetry
-#define SERIAL_PORT_COUNT 5
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT 6
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
@@ -59,10 +61,8 @@
 #define UART3_TX_PIN            PB10
 #define UART3_RX_PIN            PB11
 
-
-#define SOFTSERIAL_1_TIMER      TIM15
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 7 //Not connected
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 8
+#define SOFTSERIAL1_RX_PIN      PA2 //Not connected
+#define SOFTSERIAL1_TX_PIN      PA3
 
 #define USE_I2C
 #define I2C_DEVICE              (I2CDEV_1) // PB6/SCL, PB7/SDA

@@ -121,7 +121,10 @@
 //#define UART5_RX_PIN            PD2
 //#define UART5_TX_PIN            PC12
 
-#define SERIAL_PORT_COUNT       4
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT       6
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1

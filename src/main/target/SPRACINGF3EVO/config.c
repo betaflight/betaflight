@@ -15,22 +15,14 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <platform.h>
 
-#define SOFTSERIAL_BUFFER_SIZE 256
+#ifdef TARGET_CONFIG
+#include "config/config_master.h"
 
-typedef enum {
-    SOFTSERIAL1 = 0,
-    SOFTSERIAL2
-} softSerialPortIndex_e;
-
-serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallbackPtr rxCallback, uint32_t baud, portMode_t mode, portOptions_t options);
-
-// serialPort API
-void softSerialWriteByte(serialPort_t *instance, uint8_t ch);
-uint32_t softSerialRxBytesWaiting(const serialPort_t *instance);
-uint32_t softSerialTxBytesFree(const serialPort_t *instance);
-uint8_t softSerialReadByte(serialPort_t *instance);
-void softSerialSetBaudRate(serialPort_t *s, uint32_t baudRate);
-bool isSoftSerialTransmitBufferEmpty(const serialPort_t *s);
-
+void targetConfiguration(master_t *config)
+{
+    // Temporary workaround: Disable SDCard DMA by default since it causes errors on this target
+    config->sdcardConfig.useDma = false;
+}
+#endif

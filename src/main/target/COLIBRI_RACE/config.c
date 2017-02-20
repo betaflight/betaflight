@@ -20,6 +20,8 @@
 
 #include <platform.h>
 
+#ifdef TARGET_CONFIG
+
 #include "common/maths.h"
 #include "common/utils.h"
 
@@ -98,7 +100,6 @@ void targetConfiguration(master_t *config)
     config->profile[0].controlRateProfile[0].rates[FD_YAW] = 80;
 
     targetApplyDefaultLedStripConfig(config->ledStripConfig.ledConfigs);
-
 }
 
 void targetValidateConfiguration(master_t *config)
@@ -112,3 +113,4 @@ void targetValidateConfiguration(master_t *config)
         featureSet(FEATURE_RX_PPM);
     }
 }
+#endif
