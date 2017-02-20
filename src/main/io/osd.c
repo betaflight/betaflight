@@ -592,30 +592,30 @@ void pgResetFn_osdConfig(osdConfig_t *instance)
     instance->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 0) | VISIBLE_FLAG;
     instance->item_pos[OSD_RSSI_VALUE] = OSD_POS(23, 0) | VISIBLE_FLAG;
     //line 2
-    instance->item_pos[OSD_HOME_DIST] = OSD_POS(1, 1) | VISIBLE_FLAG;  
-    instance->item_pos[OSD_HEADING] = OSD_POS(12, 1) | VISIBLE_FLAG;
-    instance->item_pos[OSD_GPS_SPEED] = OSD_POS(23, 1) | VISIBLE_FLAG;
+    instance->item_pos[OSD_HOME_DIST] = OSD_POS(1, 1);  
+    instance->item_pos[OSD_HEADING] = OSD_POS(12, 1);
+    instance->item_pos[OSD_GPS_SPEED] = OSD_POS(23, 1);
     
     instance->item_pos[OSD_THROTTLE_POS] = OSD_POS(1, 2) | VISIBLE_FLAG;    
     instance->item_pos[OSD_CURRENT_DRAW] = OSD_POS(1, 3) | VISIBLE_FLAG;
     instance->item_pos[OSD_MAH_DRAWN] = OSD_POS(1, 4) | VISIBLE_FLAG;
 
-    instance->item_pos[OSD_VARIO] = OSD_POS(22,5) | VISIBLE_FLAG;
-    instance->item_pos[OSD_VARIO_NUM] = OSD_POS(23,7) | VISIBLE_FLAG;
-    instance->item_pos[OSD_HOME_DIR] = OSD_POS(14, 11) | VISIBLE_FLAG;
+    instance->item_pos[OSD_VARIO] = OSD_POS(22,5);
+    instance->item_pos[OSD_VARIO_NUM] = OSD_POS(23,7);
+    instance->item_pos[OSD_HOME_DIR] = OSD_POS(14, 11);
     instance->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(8, 6) | VISIBLE_FLAG;
     instance->item_pos[OSD_HORIZON_SIDEBARS] = OSD_POS(8, 6) | VISIBLE_FLAG;
     
-    instance->item_pos[OSD_CRAFT_NAME] = OSD_POS(20, 2)  | VISIBLE_FLAG;
+    instance->item_pos[OSD_CRAFT_NAME] = OSD_POS(20, 2);
     instance->item_pos[OSD_VTX_CHANNEL] = OSD_POS(8, 6) | VISIBLE_FLAG;
 
     instance->item_pos[OSD_ONTIME] = OSD_POS(23, 10) | VISIBLE_FLAG;
     instance->item_pos[OSD_FLYTIME] = OSD_POS(23, 11) | VISIBLE_FLAG;
     instance->item_pos[OSD_GPS_SATS] = OSD_POS(0, 11) | VISIBLE_FLAG;
     
-    instance->item_pos[OSD_GPS_LAT] = OSD_POS(0, 12) | VISIBLE_FLAG;
+    instance->item_pos[OSD_GPS_LAT] = OSD_POS(0, 12);
     instance->item_pos[OSD_FLYMODE] = OSD_POS(12, 12) | VISIBLE_FLAG;
-    instance->item_pos[OSD_GPS_LON] = OSD_POS(18, 12) | VISIBLE_FLAG;    
+    instance->item_pos[OSD_GPS_LON] = OSD_POS(18, 12);    
     
     instance->item_pos[OSD_ROLL_PIDS] = OSD_POS(2, 10);
     instance->item_pos[OSD_PITCH_PIDS] = OSD_POS(2, 11);
