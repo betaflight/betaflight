@@ -53,7 +53,7 @@ typedef struct pgRegistry_s {
 } pgRegistry_t;
 
 static inline uint16_t pgN(const pgRegistry_t* reg) {return reg->pgn & PGR_PGN_MASK;}
-static inline uint8_t pgVersion(const pgRegistry_t* reg) {return reg->pgn >> 12;}
+static inline uint8_t pgVersion(const pgRegistry_t* reg) {return (uint8_t)(reg->pgn >> 12);}
 static inline uint16_t pgSize(const pgRegistry_t* reg) {return reg->size & PGR_SIZE_MASK;}
 static inline uint16_t pgIsSystem(const pgRegistry_t* reg) {return (reg->size & PGR_SIZE_PROFILE_FLAG) == 0;}
 static inline uint16_t pgIsProfile(const pgRegistry_t* reg) {return (reg->size & PGR_SIZE_PROFILE_FLAG) == PGR_SIZE_PROFILE_FLAG;}
@@ -154,6 +154,10 @@ extern const uint8_t __pg_resetdata_end[];
         _reset,                                                         \
     }                                                                   \
     /**/
+#else
+#define PG_REGISTER_I(_type, _name, _pgn, _version, _reset)             \
+    _type _name ## _System
+#endif
 
 #define PG_REGISTER(_type, _name, _pgn, _version)                       \
     PG_REGISTER_I(_type, _name, _pgn, _version, .reset = {.ptr = 0})    \
@@ -169,6 +173,7 @@ extern const uint8_t __pg_resetdata_end[];
     PG_REGISTER_I(_type, _name, _pgn, _version, .reset = {.ptr = (void*)&pgResetTemplate_ ## _name}) \
     /**/
 
+#ifdef USE_PARAMETER_GROUPS
 // Register system config array
 #define PG_REGISTER_ARRAY_I(_type, _size, _name, _pgn, _version, _reset)  \
     _type _name ## _SystemArray[_size];                                 \
@@ -181,6 +186,10 @@ extern const uint8_t __pg_resetdata_end[];
         _reset,                                                         \
     }                                                                   \
     /**/
+#else
+#define PG_REGISTER_ARRAY_I(_type, _size, _name, _pgn, _version, _reset)  \
+    _type _name ## _SystemArray[_size]
+#endif
 
 #define PG_REGISTER_ARRAY(_type, _size, _name, _pgn, _version)            \
     PG_REGISTER_ARRAY_I(_type, _size, _name, _pgn, _version, .reset = {.ptr = 0}) \
@@ -207,6 +216,7 @@ extern const uint8_t __pg_resetdata_end[];
     _type *_name ## _ProfileCurrent;
 #endif
 
+#ifdef USE_PARAMETER_GROUPS
 // register profile config
 #define PG_REGISTER_PROFILE_I(_type, _name, _pgn, _version, _reset)     \
     STATIC_UNIT_TESTED _type _name ## _Storage[MAX_PROFILE_COUNT];      \
@@ -220,6 +230,10 @@ extern const uint8_t __pg_resetdata_end[];
         _reset,                                                         \
     }                                                                   \
     /**/
+#else
+#define PG_REGISTER_PROFILE_I(_type, _name, _pgn, _version, _reset)     \
+    STATIC_UNIT_TESTED _type _name ## _Storage[MAX_PROFILE_COUNT]
+#endif
 
 #define PG_REGISTER_PROFILE(_type, _name, _pgn, _version)               \
     PG_REGISTER_PROFILE_I(_type, _name, _pgn, _version, .reset = {.ptr = 0}) \
@@ -243,29 +257,6 @@ extern const uint8_t __pg_resetdata_end[];
         __VA_ARGS__                                                     \
     }                                                                   \
     /**/
-#else
-#define PG_REGISTER_I(_type, _name, _pgn, _version, _reset)             \
-    _type _name ## _System
-
-#define PG_REGISTER(_type, _name, _pgn, _version)                       \
-    PG_REGISTER_I(_type, _name, _pgn, _version, .reset = {.ptr = 0})    \
-    /**/
-
-#define PG_REGISTER_WITH_RESET_FN(_type, _name, _pgn, _version)         \
-    extern void pgResetFn_ ## _name(_type *);                           \
-    PG_REGISTER_I(_type, _name, _pgn, _version, .reset = {.fn = (pgResetFunc*)&pgResetFn_ ## _name }) \
-    /**/
-
-#define PG_REGISTER_WITH_RESET_TEMPLATE(_type, _name, _pgn, _version)   \
-    extern const _type pgResetTemplate_ ## _name;                       \
-    PG_REGISTER_I(_type, _name, _pgn, _version, .reset = {.ptr = (void*)&pgResetTemplate_ ## _name}) \
-    /**/
-#define PG_RESET_TEMPLATE(_type, _name, ...)                            \
-    const _type pgResetTemplate_ ## _name PG_RESETDATA_ATTRIBUTES = {   \
-        __VA_ARGS__                                                     \
-    }                                                                   \
-    /**/
-#endif
 
 const pgRegistry_t* pgFind(pgn_t pgn);
 

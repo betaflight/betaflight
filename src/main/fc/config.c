@@ -110,13 +110,16 @@ profile_t *currentProfile;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
+#ifndef USE_PARAMETER_GROUPS
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
     accelerometerTrims->values.pitch = 0;
     accelerometerTrims->values.roll = 0;
     accelerometerTrims->values.yaw = 0;
 }
+#endif
 
+#ifndef USE_PARAMETER_GROUPS
 static void resetCompassConfig(compassConfig_t* compassConfig)
 {
     compassConfig->mag_align = ALIGN_DEFAULT;
@@ -126,6 +129,7 @@ static void resetCompassConfig(compassConfig_t* compassConfig)
     compassConfig->interruptTag = IO_TAG_NONE;
 #endif
 }
+#endif
 
 static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
 {
@@ -219,6 +223,7 @@ void resetGpsProfile(gpsProfile_t *gpsProfile)
 #endif
 
 #ifdef BARO
+#ifndef USE_PARAMETER_GROUPS
 void resetBarometerConfig(barometerConfig_t *barometerConfig)
 {
     barometerConfig->baro_sample_count = 21;
@@ -226,6 +231,7 @@ void resetBarometerConfig(barometerConfig_t *barometerConfig)
     barometerConfig->baro_cf_vel = 0.985f;
     barometerConfig->baro_cf_alt = 0.965f;
 }
+#endif
 #endif
 
 #ifdef LED_STRIP
@@ -422,6 +428,7 @@ void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 }
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 void resetBatteryConfig(batteryConfig_t *batteryConfig)
 {
     batteryConfig->vbatscale = VBAT_SCALE_DEFAULT;
@@ -441,6 +448,7 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
     batteryConfig->useConsumptionAlerts = false;
     batteryConfig->consumptionWarningPercentage = 10;
 }
+#endif
 
 // Default pin (NONE).
 // XXX Does this mess belong here???
@@ -789,6 +797,7 @@ void createDefaultConfig(master_t *config)
     config->current_profile_index = 0;    // default profile
     config->imuConfig.dcm_kp = 2500;                // 1.0 * 10000
     config->imuConfig.dcm_ki = 0;                   // 0.003 * 10000
+#ifndef USE_PARAMETER_GROUPS
     config->gyroConfig.gyro_lpf = GYRO_LPF_256HZ;    // 256HZ default
 #ifdef STM32F10X
     config->gyroConfig.gyro_sync_denom = 8;
@@ -806,30 +815,39 @@ void createDefaultConfig(master_t *config)
     config->gyroConfig.gyro_soft_notch_cutoff_1 = 300;
     config->gyroConfig.gyro_soft_notch_hz_2 = 200;
     config->gyroConfig.gyro_soft_notch_cutoff_2 = 100;
+    config->gyroConfig.gyro_align = ALIGN_DEFAULT;
+    config->gyroConfig.gyroMovementCalibrationThreshold = 48;
+#endif
 
     config->systemConfig.debug_mode = DEBUG_MODE;
     config->task_statistics = true;
 
-    resetAccelerometerTrims(&config->accelerometerConfig.accZero);
 
-    config->gyroConfig.gyro_align = ALIGN_DEFAULT;
-    config->accelerometerConfig.acc_align = ALIGN_DEFAULT;
     
+#ifndef USE_PARAMETER_GROUPS
     resetCompassConfig(&config->compassConfig);
+#endif
 
+#ifndef USE_PARAMETER_GROUPS
+    resetAccelerometerTrims(&config->accelerometerConfig.accZero);
+    config->accelerometerConfig.acc_align = ALIGN_DEFAULT;
+    config->accelerometerConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
+    resetRollAndPitchTrims(&config->accelerometerConfig.accelerometerTrims);
+    config->accelerometerConfig.acc_lpf_hz = 10.0f;
+#endif
     config->boardAlignment.rollDegrees = 0;
     config->boardAlignment.pitchDegrees = 0;
     config->boardAlignment.yawDegrees = 0;
-    config->accelerometerConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
     config->rcControlsConfig.yaw_control_direction = 1;
-    config->gyroConfig.gyroMovementCalibrationThreshold = 48;
 
     // xxx_hardware: 0:default/autodetect, 1: disable
     config->compassConfig.mag_hardware = 1;
 
     config->barometerConfig.baro_hardware = 1;
 
+#ifndef USE_PARAMETER_GROUPS
     resetBatteryConfig(&config->batteryConfig);
+#endif
 
 #if defined(USE_PWM) || defined(USE_PPM)
     resetPpmConfig(&config->ppmConfig);
@@ -857,6 +875,7 @@ void createDefaultConfig(master_t *config)
     resetsdcardConfig(&config->sdcardConfig);
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef SERIALRX_PROVIDER
     config->rxConfig.serialrx_provider = SERIALRX_PROVIDER;
 #else
@@ -890,6 +909,7 @@ void createDefaultConfig(master_t *config)
     config->rxConfig.airModeActivateThreshold = 1350;
 
     resetAllRxChannelRangeConfigurations(config->rxConfig.channelRanges);
+#endif
 
 #ifdef USE_PWM
     config->pwmConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
@@ -928,17 +948,16 @@ void createDefaultConfig(master_t *config)
 
     resetProfile(&config->profile[0]);
 
-    resetRollAndPitchTrims(&config->accelerometerConfig.accelerometerTrims);
-
     config->compassConfig.mag_declination = 0;
-    config->accelerometerConfig.acc_lpf_hz = 10.0f;
 
     config->imuConfig.accDeadband.xy = 40;
     config->imuConfig.accDeadband.z = 40;
     config->imuConfig.acc_unarmedcal = 1;
 
 #ifdef BARO
+#ifndef USE_PARAMETER_GROUPS
     resetBarometerConfig(&config->barometerConfig);
+#endif
 #endif
 
     // Radio
@@ -1144,8 +1163,6 @@ void validateAndFixConfig(void)
 #endif
     }
 #endif
-
-    useRxConfig(&masterConfig.rxConfig);
 
     serialConfig_t *serialConfig = &masterConfig.serialConfig;
 

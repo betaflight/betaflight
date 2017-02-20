@@ -446,7 +446,7 @@ void init(void)
 
     failsafeInit();
 
-    rxInit(rxConfig(), modeActivationConditions(0));
+    rxInit();
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {

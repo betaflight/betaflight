@@ -26,6 +26,7 @@
 #include "drivers/flash.h"
 #include "drivers/rx_pwm.h"
 #include "drivers/sdcard.h"
+#include "drivers/serial.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/vcd.h"
 
@@ -81,7 +82,7 @@ PG_DECLARE(ppmConfig_t, ppmConfig);
 PG_DECLARE(pwmConfig_t, pwmConfig);
 PG_DECLARE(vcdProfile_t, vcdProfile);
 PG_DECLARE(sdcardConfig_t, sdcardConfig);
-
+PG_DECLARE(serialPinConfig_t, serialPinConfig);
 
 /*typedef struct beeperConfig_s {
     uint32_t beeper_off_flags;

@@ -29,6 +29,7 @@
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
+#include "config/config_reset.h"
 
 #include "drivers/accgyro.h"
 #include "drivers/accgyro_adxl345.h"
@@ -79,6 +80,51 @@ static flightDynamicsTrims_t *accelerationTrims;
 
 static uint16_t accLpfCutHz = 0;
 static biquadFilter_t accFilter[XYZ_AXIS_COUNT];
+
+PG_REGISTER_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
+
+void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
+{
+#ifdef USE_PARAMETER_GROUPS
+    RESET_CONFIG_2(rollAndPitchTrims_t, rollAndPitchTrims,
+        .values.roll = 0,
+        .values.pitch = 0,
+    );
+#else
+    rollAndPitchTrims->values.roll = 0;
+    rollAndPitchTrims->values.pitch = 0;
+#endif
+}
+
+void accResetRollAndPitchTrims(void)
+{
+    resetRollAndPitchTrims(&accelerometerConfigMutable()->accelerometerTrims);
+}
+
+static void resetFlightDynamicsTrims(flightDynamicsTrims_t *accZero)
+{
+    accZero->values.roll = 0;
+    accZero->values.pitch = 0;
+    accZero->values.yaw = 0;
+}
+
+void accResetFlightDynamicsTrims(void)
+{
+    resetFlightDynamicsTrims(&accelerometerConfigMutable()->accZero);
+}
+
+#ifdef USE_PARAMETER_GROUPS
+void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
+{
+    RESET_CONFIG_2(accelerometerConfig_t, instance,
+        .acc_lpf_hz = 15,
+        .acc_align = ALIGN_DEFAULT,
+        .acc_hardware = ACC_DEFAULT
+    );
+    resetRollAndPitchTrims(&instance->accelerometerTrims);
+    resetFlightDynamicsTrims(&instance->accZero);
+}
+#endif
 
 bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse)
 {
@@ -293,12 +339,6 @@ static bool isOnFinalAccelerationCalibrationCycle(void)
 static bool isOnFirstAccelerationCalibrationCycle(void)
 {
     return calibratingA == CALIBRATING_ACC_CYCLES;
-}
-
-void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
-{
-    rollAndPitchTrims->values.roll = 0;
-    rollAndPitchTrims->values.pitch = 0;
 }
 
 static void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
