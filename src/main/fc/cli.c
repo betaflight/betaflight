@@ -562,7 +562,7 @@ typedef struct {
 
 static const clivalue_t valueTable[] = {
 #ifndef SKIP_TASK_STATISTICS
-    { "task_statistics",            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.task_statistics, .config.lookup = { TABLE_OFF_ON } },
+    { "task_statistics",            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &systemConfig()->task_statistics, .config.lookup = { TABLE_OFF_ON } },
 #endif
     { "mid_rc",                     VAR_UINT16 | MASTER_VALUE,  &rxConfig()->midrc, .config.minmax = { 1200,  1700 } },
     { "min_check",                  VAR_UINT16 | MASTER_VALUE,  &rxConfig()->mincheck, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
@@ -818,10 +818,10 @@ static const clivalue_t valueTable[] = {
 #endif
 
 #ifdef VTX
-    { "vtx_band",                   VAR_UINT8  | MASTER_VALUE,  &masterConfig.vtx_band, .config.minmax = { 1, 5 } },
-    { "vtx_channel",                VAR_UINT8  | MASTER_VALUE,  &masterConfig.vtx_channel, .config.minmax = { 1, 8 } },
-    { "vtx_mode",                   VAR_UINT8  | MASTER_VALUE,  &masterConfig.vtx_mode, .config.minmax = { 0, 2 } },
-    { "vtx_mhz",                    VAR_UINT16 | MASTER_VALUE,  &masterConfig.vtx_mhz, .config.minmax = { 5600, 5950 } },
+    { "vtx_band",                   VAR_UINT8  | MASTER_VALUE,  &vtxConfig()->vtx_band, .config.minmax = { 1, 5 } },
+    { "vtx_channel",                VAR_UINT8  | MASTER_VALUE,  &vtxConfig()->vtx_channel, .config.minmax = { 1, 8 } },
+    { "vtx_mode",                   VAR_UINT8  | MASTER_VALUE,  &vtxConfig()->vtx_mode, .config.minmax = { 0, 2 } },
+    { "vtx_mhz",                    VAR_UINT16 | MASTER_VALUE,  &vtxConfig()->vtx_mhz, .config.minmax = { 5600, 5950 } },
 #endif
 
 #ifdef MAG
@@ -833,8 +833,8 @@ static const clivalue_t valueTable[] = {
     { "ledstrip_visual_beeper",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &ledStripConfig()->ledstrip_visual_beeper, .config.lookup = { TABLE_OFF_ON } },
 #endif
 #if defined(USE_RTC6705)
-    { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, &masterConfig.vtx_channel, .config.minmax = { 0,  39 } },
-    { "vtx_power",                  VAR_UINT8  | MASTER_VALUE, &masterConfig.vtx_power,   .config.minmax = { 0,  1 } },
+    { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, &vtxConfig()->vtx_channel, .config.minmax = { 0,  39 } },
+    { "vtx_power",                  VAR_UINT8  | MASTER_VALUE, &vtxConfig()->vtx_power,   .config.minmax = { 0,  1 } },
 #endif
 #ifdef USE_SDCARD
     { "sdcard_dma",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &sdcardConfig()->useDma, .config.lookup = { TABLE_OFF_ON } },
@@ -1366,11 +1366,11 @@ void *getValuePointer(const clivalue_t *value)
     void *ptr = value->ptr;
 
     if ((value->type & VALUE_SECTION_MASK) == PROFILE_VALUE) {
-        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index);
+        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * systemConfig()->current_profile_index);
     }
 
     if ((value->type & VALUE_SECTION_MASK) == PROFILE_RATE_VALUE) {
-        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index) + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile());
+        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * systemConfig()->current_profile_index) + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile());
     }
 
     return ptr;
@@ -2841,9 +2841,9 @@ static void printVtx(uint8_t dumpMask, const master_t *defaultConfig)
     const char *format = "vtx %u %u %u %u %u %u\r\n";
     bool equalsDefault = false;
     for (uint32_t i = 0; i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT; i++) {
-        const vtxChannelActivationCondition_t *cac = &masterConfig.vtxChannelActivationConditions[i];
+        const vtxChannelActivationCondition_t *cac = &vtxConfig()->vtxChannelActivationConditions[i];
         if (defaultConfig) {
-            const vtxChannelActivationCondition_t *cacDefault = &defaultConfig->vtxChannelActivationConditions[i];
+            const vtxChannelActivationCondition_t *cacDefault = &defaultConfig->vtxConfig.vtxChannelActivationConditions[i];
             equalsDefault = cac->auxChannelIndex == cacDefault->auxChannelIndex
                 && cac->band == cacDefault->band
                 && cac->channel == cacDefault->channel
@@ -2880,7 +2880,7 @@ static void cliVtx(char *cmdline)
         ptr = cmdline;
         i = atoi(ptr++);
         if (i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT) {
-            vtxChannelActivationCondition_t *cac = &masterConfig.vtxChannelActivationConditions[i];
+            vtxChannelActivationCondition_t *cac = &vtxConfig()->vtxChannelActivationConditions[i];
             uint8_t validArgumentCount = 0;
             ptr = nextArg(ptr);
             if (ptr) {
@@ -3032,7 +3032,7 @@ static void printBeeper(uint8_t dumpMask, const master_t *defaultConfig)
 {
     const uint8_t beeperCount = beeperTableEntryCount();
     const uint32_t mask = getBeeperOffMask();
-    const uint32_t defaultMask = defaultConfig->beeper_off_flags;
+    const uint32_t defaultMask = defaultConfig->beeperConfig.beeper_off_flags;
     for (int32_t i = 0; i < beeperCount - 2; i++) {
         const char *formatOff = "beeper -%s\r\n";
         const char *formatOn = "beeper %s\r\n";
@@ -3407,7 +3407,7 @@ static void cliProfile(char *cmdline)
     } else {
         const int i = atoi(cmdline);
         if (i >= 0 && i < MAX_PROFILE_COUNT) {
-            masterConfig.current_profile_index = i;
+            systemConfigMutable()->current_profile_index = i;
             writeEEPROM();
             readEEPROM();
             cliProfile("");
@@ -3659,7 +3659,7 @@ static void cliTasks(char *cmdline)
     int averageLoadSum = 0;
 
 #ifndef MINIMAL_CLI
-    if (masterConfig.task_statistics) {
+    if (systemConfig()->task_statistics) {
         cliPrintf("Task list           rate/hz  max/us  avg/us maxload avgload     total/ms\r\n");
     } else {
         cliPrintf("Task list\r\n");
@@ -3690,7 +3690,7 @@ static void cliTasks(char *cmdline)
                 maxLoadSum += maxLoad;
                 averageLoadSum += averageLoad;
             }
-            if (masterConfig.task_statistics) {
+            if (systemConfig()->task_statistics) {
                 cliPrintf("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d\r\n",
                         taskFrequency, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime,
                         maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10, taskInfo.totalExecutionTime / 1000);
@@ -3702,7 +3702,7 @@ static void cliTasks(char *cmdline)
             }
         }
     }
-    if (masterConfig.task_statistics) {
+    if (systemConfig()->task_statistics) {
         cfCheckFuncInfo_t checkFuncInfo;
         getCheckFuncInfo(&checkFuncInfo);
         cliPrintf("RX Check Function %17d %7d %25d\r\n", checkFuncInfo.maxExecutionTime, checkFuncInfo.averageExecutionTime, checkFuncInfo.totalExecutionTime / 1000);
@@ -4127,7 +4127,7 @@ static void printConfig(char *cmdline, bool doDiff)
         dumpValues(MASTER_VALUE, dumpMask, &defaultConfig);
 
         if (dumpMask & DUMP_ALL) {
-            uint8_t activeProfile = masterConfig.current_profile_index;
+            uint8_t activeProfile = systemConfig()->current_profile_index;
             for (uint32_t profileCount=0; profileCount<MAX_PROFILE_COUNT;profileCount++) {
                 cliDumpProfile(profileCount, dumpMask, &defaultConfig);
 
@@ -4148,13 +4148,13 @@ static void printConfig(char *cmdline, bool doDiff)
             cliPrintHashLine("save configuration");
             cliPrint("save");
         } else {
-            cliDumpProfile(masterConfig.current_profile_index, dumpMask, &defaultConfig);
+            cliDumpProfile(systemConfig()->current_profile_index, dumpMask, &defaultConfig);
             cliDumpRateProfile(currentProfile->activeRateProfile, dumpMask, &defaultConfig);
         }
     }
 
     if (dumpMask & DUMP_PROFILE) {
-        cliDumpProfile(masterConfig.current_profile_index, dumpMask, &defaultConfig);
+        cliDumpProfile(systemConfig()->current_profile_index, dumpMask, &defaultConfig);
     }
 
     if (dumpMask & DUMP_RATES) {
@@ -4425,7 +4425,7 @@ void cliEnter(serialPort_t *serialPort)
     setPrintfSerialPort(cliPort);
     cliWriter = bufWriterInit(cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufShim, serialPort);
 
-    schedulerSetCalulateTaskStatistics(masterConfig.task_statistics);
+    schedulerSetCalulateTaskStatistics(systemConfig()->task_statistics);
 
 #ifndef MINIMAL_CLI
     cliPrint("\r\nEntering CLI Mode, type 'exit' to return, or 'help'\r\n");

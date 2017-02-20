@@ -64,7 +64,7 @@ static controlRateConfig_t rateProfile;
 
 static long cmsx_menuImu_onEnter(void)
 {
-    profileIndex = masterConfig.current_profile_index;
+    profileIndex = systemConfig()->current_profile_index;
     tmpProfileIndex = profileIndex + 1;
 
     rateProfileIndex = masterConfig.profile[profileIndex].activeRateProfile;
@@ -77,7 +77,7 @@ static long cmsx_menuImu_onExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    masterConfig.current_profile_index = profileIndex;
+    systemConfigMutable()->current_profile_index = profileIndex;
     masterConfig.profile[profileIndex].activeRateProfile = rateProfileIndex;
 
     return 0;

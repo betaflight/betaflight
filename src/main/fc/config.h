@@ -70,7 +70,9 @@ typedef enum {
 } features_e;
 
 typedef struct systemConfig_s {
+    uint8_t current_profile_index;
     uint8_t debug_mode;
+    uint8_t task_statistics;
     char name[MAX_NAME_LENGTH + 1];
 } systemConfig_t;
 
@@ -83,13 +85,6 @@ PG_DECLARE(pwmConfig_t, pwmConfig);
 PG_DECLARE(vcdProfile_t, vcdProfile);
 PG_DECLARE(sdcardConfig_t, sdcardConfig);
 PG_DECLARE(serialPinConfig_t, serialPinConfig);
-
-/*typedef struct beeperConfig_s {
-    uint32_t beeper_off_flags;
-    uint32_t preferred_beeper_off_flags;
-} beeperConfig_t;
-PG_DECLARE(beeperConfig_t, beeperConfig);
-*/
 
 struct profile_s;
 extern struct profile_s *currentProfile;

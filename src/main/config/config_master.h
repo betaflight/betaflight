@@ -49,12 +49,13 @@
 #include "flight/navigation.h"
 #include "flight/pid.h"
 
-#include "io/serial.h"
+#include "io/beeper.h"
 #include "io/gimbal.h"
-#include "io/servos.h"
 #include "io/gps.h"
-#include "io/osd.h"
 #include "io/ledstrip.h"
+#include "io/osd.h"
+#include "io/serial.h"
+#include "io/servos.h"
 #include "io/vtx.h"
 
 #include "rx/rx.h"
@@ -119,6 +120,8 @@
 #define displayPortProfileMsp(x) (&masterConfig.displayPortProfileMsp)
 #define displayPortProfileMax7456(x) (&masterConfig.displayPortProfileMax7456)
 #define displayPortProfileOled(x) (&masterConfig.displayPortProfileOled)
+#define vtxConfig(x) (&masterConfig.vtxConfig)
+#define beeperConfig(x) (&masterConfig.beeperConfig)
 
 
 #define featureConfigMutable(x) (&masterConfig.featureConfig)
@@ -168,6 +171,8 @@
 #define displayPortProfileMspMutable(x) (&masterConfig.displayPortProfileMsp)
 #define displayPortProfileMax7456Mutable(x) (&masterConfig.displayPortProfileMax7456)
 #define displayPortProfileOledMutable(x) (&masterConfig.displayPortProfileOled)
+#define vtxConfigMutable(x) (&masterConfig.vtxConfig)
+#define beeperConfigMutable(x) (&masterConfig.beeperConfig)
 
 #define servoParams(x) (&servoProfile()->servoConf[x])
 #define adjustmentRanges(x) (&adjustmentProfile()->adjustmentRanges[x])
@@ -213,8 +218,6 @@ typedef struct master_s {
     imuConfig_t imuConfig;
 
     pidConfig_t pidConfig;
-
-    uint8_t task_statistics;
 
     gyroConfig_t gyroConfig;
     compassConfig_t compassConfig;
@@ -278,11 +281,6 @@ typedef struct master_s {
     uint8_t transponderData[6];
 #endif
 
-#if defined(USE_RTC6705)
-    uint8_t vtx_channel;
-    uint8_t vtx_power;
-#endif
-
 #ifdef OSD
     osd_profile_t osdProfile;
 #endif
@@ -303,19 +301,12 @@ typedef struct master_s {
 #endif
 
     profile_t profile[MAX_PROFILE_COUNT];
-    uint8_t current_profile_index;
 
     modeActivationProfile_t modeActivationProfile;
     adjustmentProfile_t adjustmentProfile;
-#ifdef VTX
-    uint8_t vtx_band; //1=A, 2=B, 3=E, 4=F(Airwaves/Fatshark), 5=Raceband
-    uint8_t vtx_channel; //1-8
-    uint8_t vtx_mode; //0=ch+band 1=mhz
-    uint16_t vtx_mhz; //5740
-
-    vtxChannelActivationCondition_t vtxChannelActivationConditions[MAX_CHANNEL_ACTIVATION_CONDITION_COUNT];
+#if defined(USE_RTC6705) || defined(VTX)
+    vtxConfig_t vtxConfig;
 #endif
-
 #ifdef BLACKBOX
     blackboxConfig_t blackboxConfig;
 #endif
@@ -324,8 +315,7 @@ typedef struct master_s {
     flashConfig_t flashConfig;
 #endif
 
-    uint32_t beeper_off_flags;
-    uint32_t preferred_beeper_off_flags;
+    beeperConfig_t beeperConfig;
 
     char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER)];
 

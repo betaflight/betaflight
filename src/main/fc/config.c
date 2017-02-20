@@ -723,7 +723,8 @@ void resetFlashConfig(flashConfig_t *flashConfig)
 
 uint8_t getCurrentProfile(void)
 {
-    return masterConfig.current_profile_index;
+    return systemConfig()->current_profile_index;
+;
 }
 
 static void setProfile(uint8_t profileIndex)
@@ -794,7 +795,7 @@ void createDefaultConfig(master_t *config)
     config->version = EEPROM_CONF_VERSION;
 
     // global settings
-    config->current_profile_index = 0;    // default profile
+    config->systemConfig.current_profile_index = 0;    // default profile
     config->imuConfig.dcm_kp = 2500;                // 1.0 * 10000
     config->imuConfig.dcm_ki = 0;                   // 0.003 * 10000
 #ifndef USE_PARAMETER_GROUPS
@@ -820,7 +821,7 @@ void createDefaultConfig(master_t *config)
 #endif
 
     config->systemConfig.debug_mode = DEBUG_MODE;
-    config->task_statistics = true;
+    config->systemConfig.task_statistics = true;
 
 
     
@@ -1009,10 +1010,10 @@ void createDefaultConfig(master_t *config)
     }
 
 #ifdef VTX
-    config->vtx_band = 4;    //Fatshark/Airwaves
-    config->vtx_channel = 1; //CH1
-    config->vtx_mode = 0;    //CH+BAND mode
-    config->vtx_mhz = 5740;  //F0
+    config->vtxConfig.vtx_band = 4;    //Fatshark/Airwaves
+    config->vtxConfig.vtx_channel = 1; //CH1
+    config->vtxConfig.vtx_mode = 0;    //CH+BAND mode
+    config->vtxConfig.vtx_mhz = 5740;  //F0
 #endif
 
 #ifdef TRANSPONDER
@@ -1265,11 +1266,11 @@ void readEEPROM(void)
 //    pgActivateProfile(getCurrentProfile());
 //    setControlRateProfile(rateProfileSelection()->defaultRateProfileIndex);
 
-    if (masterConfig.current_profile_index > MAX_PROFILE_COUNT - 1) {// sanity check
-        masterConfig.current_profile_index = 0;
+    if (systemConfig()->current_profile_index > MAX_PROFILE_COUNT - 1) {// sanity check
+        systemConfig()->current_profile_index = 0;
     }
 
-    setProfile(masterConfig.current_profile_index);
+    setProfile(systemConfig()->current_profile_index);
 
     validateAndFixConfig();
     activateConfig();
@@ -1312,7 +1313,7 @@ void changeProfile(uint8_t profileIndex)
     if (profileIndex >= MAX_PROFILE_COUNT) {
         profileIndex = MAX_PROFILE_COUNT - 1;
     }
-    masterConfig.current_profile_index = profileIndex;
+    systemConfig()->current_profile_index = profileIndex;
     writeEEPROM();
     readEEPROM();
     beeperConfirmationBeeps(profileIndex + 1);
@@ -1329,40 +1330,40 @@ void changeControlRateProfile(uint8_t profileIndex)
 
 void beeperOffSet(uint32_t mask)
 {
-    masterConfig.beeper_off_flags |= mask;
+    beeperConfigMutable()->beeper_off_flags |= mask;
 }
 
 void beeperOffSetAll(uint8_t beeperCount)
 {
-    masterConfig.beeper_off_flags = (1 << beeperCount) -1;
+    beeperConfigMutable()->beeper_off_flags = (1 << beeperCount) -1;
 }
 
 void beeperOffClear(uint32_t mask)
 {
-    masterConfig.beeper_off_flags &= ~(mask);
+    beeperConfigMutable()->beeper_off_flags &= ~(mask);
 }
 
 void beeperOffClearAll(void)
 {
-    masterConfig.beeper_off_flags = 0;
+    beeperConfigMutable()->beeper_off_flags = 0;
 }
 
 uint32_t getBeeperOffMask(void)
 {
-    return masterConfig.beeper_off_flags;
+    return beeperConfig()->beeper_off_flags;
 }
 
 void setBeeperOffMask(uint32_t mask)
 {
-    masterConfig.beeper_off_flags = mask;
+    beeperConfigMutable()->beeper_off_flags = mask;
 }
 
 uint32_t getPreferredBeeperOffMask(void)
 {
-    return masterConfig.preferred_beeper_off_flags;
+    return beeperConfig()->preferred_beeper_off_flags;
 }
 
 void setPreferredBeeperOffMask(uint32_t mask)
 {
-    masterConfig.preferred_beeper_off_flags = mask;
+    beeperConfigMutable()->preferred_beeper_off_flags = mask;
 }

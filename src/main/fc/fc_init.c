@@ -386,9 +386,9 @@ void init(void)
 #ifdef USE_RTC6705
     if (feature(FEATURE_VTX)) {
         rtc6705_soft_spi_init();
-        current_vtx_channel = masterConfig.vtx_channel;
+        current_vtx_channel = vtxConfig()->vtx_channel;
         rtc6705_soft_spi_set_channel(vtx_freq[current_vtx_channel]);
-        rtc6705_soft_spi_set_rf_power(masterConfig.vtx_power);
+        rtc6705_soft_spi_set_rf_power(vtxConfig()->vtx_power);
     }
 #endif
 

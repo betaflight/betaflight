@@ -598,7 +598,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
                     junk |= 1 << i;
             }
             bstWrite32(junk);
-            bstWrite8(masterConfig.current_profile_index);
+            bstWrite8(systemConfig()->current_profile_index);
             break;
         case BST_RAW_IMU:
             {
@@ -1002,9 +1002,9 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
     switch(bstWriteCommand) {
         case BST_SELECT_SETTING:
             if (!ARMING_FLAG(ARMED)) {
-                masterConfig.current_profile_index = bstRead8();
-                if (masterConfig.current_profile_index > 2) {
-                    masterConfig.current_profile_index = 0;
+                systemConfigMutable()->current_profile_index = bstRead8();
+                if (systemConfig()->current_profile_index > 2) {
+                    systemConfigMutable()->current_profile_index = 0;
                 }
                 writeEEPROM();
                 readEEPROM();

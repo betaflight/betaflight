@@ -48,9 +48,9 @@ magDev_t magDev;
 mag_t mag;                   // mag access functions
 
 #ifdef MAG_INT_EXTI
-#define COMPASS_INTERRUPT_TAG IO_TAG(MAG_INT_EXTI)
+#define COMPASS_INTERRUPT_TAG   IO_TAG(MAG_INT_EXTI)
 #else
-#define COMPASS_INTERRUPT_TAG IO_TAG_NONE
+#define COMPASS_INTERRUPT_TAG   IO_TAG_NONE
 #endif
 
 PG_REGISTER_WITH_RESET_TEMPLATE(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 0);

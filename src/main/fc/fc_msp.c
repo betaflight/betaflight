@@ -636,7 +636,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #endif
         sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
         sbufWriteU32(dst, packFlightModeFlags());
-        sbufWriteU8(dst, masterConfig.current_profile_index);
+        sbufWriteU8(dst, systemConfig()->current_profile_index);
         sbufWriteU16(dst, constrain(averageSystemLoadPercent, 0, 100));
         sbufWriteU16(dst, 0); // gyro cycle time
         break;
@@ -1663,9 +1663,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             uint16_t tmp = sbufReadU16(src);
 #if defined(USE_RTC6705)
             if  (tmp < 40)
-                masterConfig.vtx_channel = tmp;
-            if (current_vtx_channel != masterConfig.vtx_channel) {
-                current_vtx_channel = masterConfig.vtx_channel;
+                vtxConfig()->vtx_channel = tmp;
+            if (current_vtx_channel != vtxConfig()->vtx_channel) {
+                current_vtx_channel = vtxConfig()->vtx_channel;
                 rtc6705_soft_spi_set_channel(vtx_freq[current_vtx_channel]);
             }
 #else
