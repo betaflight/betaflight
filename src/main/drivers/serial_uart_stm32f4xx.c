@@ -25,6 +25,7 @@
 #include "rcc.h"
 #include "nvic.h"
 #include "dma.h"
+#include "drivers/irq.h"
 
 #include "serial.h"
 #include "serial_uart.h"
@@ -358,7 +359,7 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
 }
 
 // USART1 Rx/Tx IRQ Handler
-void USART1_IRQHandler(void)
+IRQHANDLER(USART1_IRQ)
 {
     uartPort_t *s = &(uartHardwareMap[UARTDEV_1]->port);
     uartIrqHandler(s);
@@ -373,7 +374,7 @@ uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t option
     return serialUART(UARTDEV_2, baudRate, mode, options);
 }
 
-void USART2_IRQHandler(void)
+IRQHANDLER(USART2_IRQ)
 {
     uartPort_t *s = &(uartHardwareMap[UARTDEV_2]->port);
     uartIrqHandler(s);
@@ -387,7 +388,7 @@ uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t option
     return serialUART(UARTDEV_3, baudRate, mode, options);
 }
 
-void USART3_IRQHandler(void)
+IRQHANDLER(USART3_IRQ)
 {
     uartPort_t *s = &(uartHardwareMap[UARTDEV_3]->port);
     uartIrqHandler(s);
@@ -401,7 +402,7 @@ uartPort_t *serialUART4(uint32_t baudRate, portMode_t mode, portOptions_t option
     return serialUART(UARTDEV_4, baudRate, mode, options);
 }
 
-void UART4_IRQHandler(void)
+IRQHANDLER(UART4_IRQ)
 {
     uartPort_t *s = &(uartHardwareMap[UARTDEV_4]->port);
     uartIrqHandler(s);
@@ -415,7 +416,7 @@ uartPort_t *serialUART5(uint32_t baudRate, portMode_t mode, portOptions_t option
     return serialUART(UARTDEV_5, baudRate, mode, options);
 }
 
-void UART5_IRQHandler(void)
+IRQHANDLER(UART5_IRQ)
 {
     uartPort_t *s = &(uartHardwareMap[UARTDEV_5]->port);
     uartIrqHandler(s);
@@ -429,7 +430,7 @@ uartPort_t *serialUART6(uint32_t baudRate, portMode_t mode, portOptions_t option
     return serialUART(UARTDEV_6, baudRate, mode, options);
 }
 
-void USART6_IRQHandler(void)
+IRQHANDLER(USART6_IRQ)
 {
     uartPort_t *s = &(uartHardwareMap[UARTDEV_6]->port);
     uartIrqHandler(s);

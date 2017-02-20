@@ -23,6 +23,7 @@
 
 #include "nvic.h"
 #include "dma.h"
+#include "drivers/irq.h"
 #include "resource.h"
 
 /*

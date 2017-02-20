@@ -31,6 +31,8 @@
 #include "rcc.h"
 #include "system.h"
 
+#include "drivers/irq.h"
+
 #include "timer.h"
 #include "timer_impl.h"
 
@@ -678,67 +680,37 @@ static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
 
 // handler for shared interrupts when both timers need to check status bits
 #define _TIM_IRQ_HANDLER2(name, i, j)                                   \
-    void name(void)                                                     \
+    IRQHANDLER(name)                                                    \
     {                                                                   \
-        timCCxHandler(TIM ## i, &timerConfig[TIMER_INDEX(i)]);          \
-        timCCxHandler(TIM ## j, &timerConfig[TIMER_INDEX(j)]);          \
+        if (USED_TIMERS & TIM_N(i))                                     \
+            timCCxHandler(TIM ## i, &timerConfig[TIMER_INDEX(i)]);      \
+        if (USED_TIMERS & TIM_N(j))                                     \
+            timCCxHandler(TIM ## j, &timerConfig[TIMER_INDEX(j)]);      \
     } struct dummy
 
 #define _TIM_IRQ_HANDLER(name, i)                                       \
-    void name(void)                                                     \
+    IRQHANDLER(name)                                                    \
     {                                                                   \
-        timCCxHandler(TIM ## i, &timerConfig[TIMER_INDEX(i)]);          \
+        if (USED_TIMERS & TIM_N(i))                                     \
+            timCCxHandler(TIM ## i, &timerConfig[TIMER_INDEX(i)]);      \
     } struct dummy
 
-#if USED_TIMERS & TIM_N(1)
-_TIM_IRQ_HANDLER(TIM1_CC_IRQHandler, 1);
-#  if USED_TIMERS & TIM_N(10)
-_TIM_IRQ_HANDLER2(TIM1_UP_TIM10_IRQHandler, 1, 10);  // both timers are in use
-#  else
-_TIM_IRQ_HANDLER(TIM1_UP_TIM10_IRQHandler, 1);     // timer10 is not used
-#  endif
-#endif
+#if defined(STM32F7)
 
-#if USED_TIMERS & TIM_N(2)
-_TIM_IRQ_HANDLER(TIM2_IRQHandler, 2);
-#endif
-#if USED_TIMERS & TIM_N(3)
-_TIM_IRQ_HANDLER(TIM3_IRQHandler, 3);
-#endif
-#if USED_TIMERS & TIM_N(4)
-_TIM_IRQ_HANDLER(TIM4_IRQHandler, 4);
-#endif
-#if USED_TIMERS & TIM_N(5)
-_TIM_IRQ_HANDLER(TIM5_IRQHandler, 5);
-#endif
+_TIM_IRQ_HANDLER(TIM1_CC_IRQ, 1);
+_TIM_IRQ_HANDLER2(TIM1_UP_TIM10_IRQ, 1, 10);  // both timers are in use
+_TIM_IRQ_HANDLER(TIM2_IRQ, 2);
+_TIM_IRQ_HANDLER(TIM3_IRQ, 3);
+_TIM_IRQ_HANDLER(TIM4_IRQ, 4);
+_TIM_IRQ_HANDLER(TIM5_IRQ, 5);
+_TIM_IRQ_HANDLER(TIM8_CC_IRQ, 8);
+_TIM_IRQ_HANDLER2(TIM8_UP_TIM13_IRQ, 8, 13);
+_TIM_IRQ_HANDLER(TIM1_BRK_TIM9_IRQ, 9);
+_TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM11_IRQ, 11);
+_TIM_IRQ_HANDLER(TIM8_BRK_TIM12_IRQ, 12);
 
-#if USED_TIMERS & TIM_N(8)
-_TIM_IRQ_HANDLER(TIM8_CC_IRQHandler, 8);
-
-#  if USED_TIMERS & TIM_N(13)
-_TIM_IRQ_HANDLER2(TIM8_UP_TIM13_IRQHandler, 8, 13);  // both timers are in use
-#  else
-_TIM_IRQ_HANDLER(TIM8_UP_TIM13_IRQHandler, 8);     // timer13 is not used
-#  endif
-#endif
-
-#if USED_TIMERS & TIM_N(9)
-_TIM_IRQ_HANDLER(TIM1_BRK_TIM9_IRQHandler, 9);
-#endif
-#  if USED_TIMERS & TIM_N(11)
-_TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM11_IRQHandler, 11);
-#  endif
-#if USED_TIMERS & TIM_N(12)
-_TIM_IRQ_HANDLER(TIM8_BRK_TIM12_IRQHandler, 12);
-#endif
-#if USED_TIMERS & TIM_N(15)
-_TIM_IRQ_HANDLER(TIM1_BRK_TIM15_IRQHandler, 15);
-#endif
-#if defined(STM32F303xC) && ((USED_TIMERS & (TIM_N(1)|TIM_N(16))) == (TIM_N(16)))
-_TIM_IRQ_HANDLER(TIM1_UP_TIM16_IRQHandler, 16);    // only timer16 is used, not timer1
-#endif
-#if USED_TIMERS & TIM_N(17)
-_TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM17_IRQHandler, 17);
+#else
+# error Unknown CPU
 #endif
 
 void timerInit(void)
