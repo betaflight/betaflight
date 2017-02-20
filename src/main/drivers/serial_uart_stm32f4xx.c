@@ -20,6 +20,8 @@
 
 #include "platform.h"
 
+#include "build/debug.h"
+
 #include "system.h"
 #include "io.h"
 #include "rcc.h"
@@ -247,33 +249,33 @@ void uartIrqHandler(uartPort_t *s)
 
 static void handleUsartTxDma(uartPort_t *s)
 {
-    DMA_Cmd(s->txDMAStream, DISABLE);
-
-    if (s->port.txBufferHead != s->port.txBufferTail)
-        uartStartTxDMA(s);
-    else
-        s->txDMAEmpty = true;
+    uartTryStartTxDMA(s);
 }
 
 void dmaIRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     uartPort_t *s = &(((uartDevice_t*)(descriptor->userParam))->port);
+    debug[3]++;
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF))
     {
+        debug[1]++;
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
         DMA_CLEAR_FLAG(descriptor, DMA_IT_HTIF);
         if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_FEIF))
         {
+            debug[2]++;
             DMA_CLEAR_FLAG(descriptor, DMA_IT_FEIF);
         }
         handleUsartTxDma(s);
     }
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF))
     {
+        //debug[3]++;
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TEIF);
     }
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_DMEIF))
     {
+        //debug[3]++; // Same counter with TEIF
         DMA_CLEAR_FLAG(descriptor, DMA_IT_DMEIF);
     }
 }

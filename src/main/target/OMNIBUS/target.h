@@ -79,6 +79,10 @@
 #define UART3_TX_PIN            PB10 // PB10 (AF7)
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
+#define USE_UART1_TX_DMA
+#define USE_UART2_TX_DMA
+#define USE_UART3_TX_DMA
+
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1) // PB6/SCL, PB7/SDA
 
