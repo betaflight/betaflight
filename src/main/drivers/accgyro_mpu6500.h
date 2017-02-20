@@ -19,6 +19,7 @@
 
 #define MPU6500_WHO_AM_I_CONST              (0x70)
 #define MPU9250_WHO_AM_I_CONST              (0x71)
+#define MPU9255_WHO_AM_I_CONST              (0x73)
 #define ICM20608G_WHO_AM_I_CONST            (0xAF)
 #define ICM20602_WHO_AM_I_CONST             (0x12)
 

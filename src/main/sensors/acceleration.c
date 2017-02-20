@@ -162,10 +162,20 @@ retry:
         }
 #endif
         ; // fallthrough
+    case ACC_MPU9250:
+#ifdef USE_ACC_SPI_MPU9250
+        if (mpu9250SpiAccDetect(dev)) {
+#ifdef ACC_MPU9250_ALIGN
+            dev->accAlign = ACC_MPU9250_ALIGN;
+#endif
+            accHardware = ACC_MPU9250;
+            break;
+        }
+#endif
+        ; // fallthrough
     case ACC_MPU6500:
     case ACC_ICM20608G:
     case ACC_ICM20602:
-    case ACC_MPU9250:
 #if defined(USE_ACC_MPU6500) || defined(USE_ACC_SPI_MPU6500)
 #ifdef USE_ACC_SPI_MPU6500
         if (mpu6500AccDetect(dev) || mpu6500SpiAccDetect(dev))
