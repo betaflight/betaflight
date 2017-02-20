@@ -561,6 +561,7 @@ COMMON_SRC = \
             config/config_eeprom.c \
             config/feature.c \
             config/parameter_group.c \
+            config/config_streamer.c \
             drivers/adc.c \
             drivers/buf_writer.c \
             drivers/bus_i2c_soft.c \
@@ -594,6 +595,7 @@ COMMON_SRC = \
             fc/fc_rc.c \
             fc/fc_msp.c \
             fc/fc_tasks.c \
+            fc/rc_adjustments.c \
             fc/rc_controls.c \
             fc/runtime_config.c \
             fc/cli.c \
@@ -634,10 +636,6 @@ COMMON_SRC = \
             sensors/compass.c \
             sensors/gyro.c \
             sensors/initialisation.c \
-            $(CMSIS_SRC) \
-            $(DEVICE_STDPERIPH_SRC)
-
-HIGHEND_SRC = \
             blackbox/blackbox.c \
             blackbox/blackbox_io.c \
             cms/cms.c \
@@ -649,13 +647,13 @@ HIGHEND_SRC = \
             cms/cms_menu_osd.c \
             cms/cms_menu_vtx.c \
             common/colorconversion.c \
+            common/gps_conversion.c \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
             drivers/serial_escserial.c \
             drivers/sonar_hcsr04.c \
             drivers/vtx_common.c \
             flight/navigation.c \
-            flight/gps_conversion.c \
             io/dashboard.c \
             io/displayport_max7456.c \
             io/displayport_msp.c \
@@ -677,7 +675,10 @@ HIGHEND_SRC = \
             sensors/esc_sensor.c \
             io/vtx_string.c \
             io/vtx_smartaudio.c \
-            io/vtx_tramp.c
+            io/vtx_tramp.c \
+            $(CMSIS_SRC) \
+            $(DEVICE_STDPERIPH_SRC)
+
 
 SPEED_OPTIMISED_SRC := ""
 SIZE_OPTIMISED_SRC  := ""
@@ -707,25 +708,20 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/serial.c \
             drivers/serial_uart.c \
             drivers/sound_beeper.c \
-            drivers/stack_check.c \
             drivers/system.c \
             drivers/timer.c \
+            fc/fc_core.c \
             fc/fc_tasks.c \
             fc/fc_rc.c \
             fc/rc_controls.c \
             fc/runtime_config.c \
-            flight/altitudehold.c \
-            flight/failsafe.c \
             flight/imu.c \
             flight/mixer.c \
             flight/pid.c \
             flight/servos.c \
-            io/beeper.c \
             io/serial.c \
-            io/statusindicator.c \
             rx/ibus.c \
             rx/jetiexbus.c \
-            rx/msp.c \
             rx/nrf24_cx10.c \
             rx/nrf24_inav.c \
             rx/nrf24_h8_3d.c \
@@ -746,25 +742,12 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             sensors/gyro.c \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC) \
-            blackbox/blackbox.c \
-            blackbox/blackbox_io.c \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
             drivers/serial_softserial.c \
             io/dashboard.c \
             io/displayport_max7456.c \
-            io/displayport_msp.c \
-            io/displayport_oled.c \
-            io/ledstrip.c \
             io/osd.c \
-            telemetry/telemetry.c \
-            telemetry/crsf.c \
-            telemetry/frsky.c \
-            telemetry/hott.c \
-            telemetry/smartport.c \
-            telemetry/ltm.c \
-            telemetry/mavlink.c \
-            telemetry/esc_telemetry.c \
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/serial_escserial.c \
@@ -888,13 +871,8 @@ TARGET_SRC += \
             io/flashfs.c
 endif
 
-ifeq ($(TARGET),$(filter $(TARGET),$(F7_TARGETS) $(F4_TARGETS) $(F3_TARGETS)))
-TARGET_SRC += $(HIGHEND_SRC)
-else ifneq ($(filter HIGHEND,$(FEATURES)),)
-TARGET_SRC += $(HIGHEND_SRC)
-endif
-
 TARGET_SRC += $(COMMON_SRC)
+
 #excludes
 ifeq ($(TARGET),$(filter $(TARGET),$(F7_TARGETS)))
 TARGET_SRC   := $(filter-out ${F7EXCLUDES}, $(TARGET_SRC))

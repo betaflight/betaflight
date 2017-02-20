@@ -44,7 +44,7 @@ void targetConfiguration(master_t *config)
 
 #ifdef BEEBRAIN
     // alternative defaults settings for Beebrain target
-    config->motorConfig.motorPwmRate = 4000;
+    config->motorConfig.dev.motorPwmRate = 4000;
     config->failsafeConfig.failsafe_delay = 2;
     config->failsafeConfig.failsafe_off_delay = 0;
 
@@ -89,13 +89,28 @@ void targetConfiguration(master_t *config)
 #if !defined(AFROMINI) && !defined(BEEBRAIN)
     if (hardwareRevision >= NAZE32_REV5) {
         // naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.
-        config->beeperConfig.isOpenDrain = false;
-        config->beeperConfig.isInverted = true;
+        config->beeperDevConfig.isOpenDrain = false;
+        config->beeperDevConfig.isInverted = true;
     } else {
-        config->beeperConfig.isOpenDrain = true;
-        config->beeperConfig.isInverted = false;
+        config->beeperDevConfig.isOpenDrain = true;
+        config->beeperDevConfig.isInverted = false;
         config->flashConfig.csTag = IO_TAG_NONE;
     }
 #endif
+
+#ifdef MAG_INT_EXTI
+    if (hardwareRevision < NAZE32_REV5) {
+        config->compassConfig.interruptTag = IO_TAG(PB12);
+    }
+#endif
+}
+
+void targetValidateConfiguration(master_t *config)
+{
+    UNUSED(config);
+
+    if (hardwareRevision < NAZE32_REV5 && config->accelerometerConfig.acc_hardware == ACC_ADXL345) {
+        config->accelerometerConfig.acc_hardware = ACC_NONE;
+    }  
 }
 #endif

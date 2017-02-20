@@ -28,6 +28,12 @@
 #include "common/maths.h"
 #include "common/printf.h"
 
+#include "config/config_eeprom.h"
+#include "config/config_profile.h"
+#include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 
@@ -96,29 +102,26 @@
 
 #include "scheduler/scheduler.h"
 
-#include "sensors/sensors.h"
-#include "sensors/sonar.h"
-#include "sensors/barometer.h"
-#include "sensors/compass.h"
 #include "sensors/acceleration.h"
-#include "sensors/gyro.h"
+#include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
+#include "sensors/compass.h"
+#include "sensors/esc_sensor.h"
+#include "sensors/gyro.h"
 #include "sensors/initialisation.h"
+#include "sensors/sensors.h"
+#include "sensors/sonar.h"
 
 #include "telemetry/telemetry.h"
-#include "sensors/esc_sensor.h"
 
-#include "flight/pid.h"
+#include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
-#include "flight/failsafe.h"
 #include "flight/navigation.h"
+#include "flight/pid.h"
+#include "flight/servos.h"
 
-#include "config/config_eeprom.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
-#include "config/feature.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -186,7 +189,7 @@ void init(void)
 
     //i2cSetOverclock(masterConfig.i2c_overclock);
 
-    debugMode = masterConfig.debug_mode;
+    debugMode = systemConfig()->debug_mode;
 
     // Latch active features to be used for feature() in the remainder of init().
     latchActiveFeatures();
@@ -241,13 +244,13 @@ void init(void)
 #ifdef SPEKTRUM_BIND
     if (feature(FEATURE_RX_SERIAL)) {
         switch (rxConfig()->serialrx_provider) {
-            case SERIALRX_SPEKTRUM1024:
-            case SERIALRX_SPEKTRUM2048:
-                // Spektrum satellite binding if enabled on startup.
-                // Must be called before that 100ms sleep so that we don't lose satellite's binding window after startup.
-                // The rest of Spektrum initialization will happen later - via spektrumInit()
-                spektrumBind(rxConfig());
-                break;
+        case SERIALRX_SPEKTRUM1024:
+        case SERIALRX_SPEKTRUM2048:
+            // Spektrum satellite binding if enabled on startup.
+            // Must be called before that 100ms sleep so that we don't lose satellite's binding window after startup.
+            // The rest of Spektrum initialization will happen later - via spektrumInit()
+            spektrumBind(rxConfigMutable());
+            break;
         }
     }
 #endif
@@ -257,21 +260,21 @@ void init(void)
     timerInit();  // timer must be initialized before any channel is allocated
 
 #if defined(AVOID_UART1_FOR_PWM_PPM)
-    serialInit(serialConfig(), feature(FEATURE_SOFTSERIAL),
+    serialInit(feature(FEATURE_SOFTSERIAL),
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART1 : SERIAL_PORT_NONE);
 #elif defined(AVOID_UART2_FOR_PWM_PPM)
-    serialInit(serialConfig(), feature(FEATURE_SOFTSERIAL),
+    serialInit(feature(FEATURE_SOFTSERIAL),
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART2 : SERIAL_PORT_NONE);
 #elif defined(AVOID_UART3_FOR_PWM_PPM)
-    serialInit(serialConfig(), feature(FEATURE_SOFTSERIAL),
+    serialInit(feature(FEATURE_SOFTSERIAL),
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART3 : SERIAL_PORT_NONE);
 #else
-    serialInit(serialConfig(), feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
+    serialInit(feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
 #endif
 
-    mixerInit(mixerConfig()->mixerMode, masterConfig.customMotorMixer);
+    mixerInit(mixerConfig()->mixerMode);
 #ifdef USE_SERVOS
-    servoMixerInit(masterConfig.customServoMixer);
+    servosInit();
 #endif
 
     uint16_t idlePulse = motorConfig()->mincommand;
@@ -279,25 +282,25 @@ void init(void)
         idlePulse = flight3DConfig()->neutral3d;
     }
 
-    if (motorConfig()->motorPwmProtocol == PWM_TYPE_BRUSHED) {
+    if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) {
         featureClear(FEATURE_3D);
         idlePulse = 0; // brushed motors
     }
 
     mixerConfigureOutput();
-    motorInit(motorConfig(), idlePulse, getMotorCount());
+    motorDevInit(&motorConfig()->dev, idlePulse, getMotorCount());
 
 #ifdef USE_SERVOS
     servoConfigureOutput();
     if (isMixerUsingServos()) {
         //pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
-        servoInit(servoConfig());
+        servoDevInit(&servoConfig()->dev);
     }
 #endif
 
 #if defined(USE_PWM) || defined(USE_PPM)
     if (feature(FEATURE_RX_PPM)) {
-        ppmRxInit(ppmConfig(), motorConfig()->motorPwmProtocol);
+        ppmRxInit(ppmConfig(), motorConfig()->dev.motorPwmProtocol);
     } else if (feature(FEATURE_RX_PARALLEL_PWM)) {
         pwmRxInit(pwmConfig());
     }
@@ -306,7 +309,7 @@ void init(void)
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
-    beeperInit(beeperConfig());
+    beeperInit(beeperDevConfig());
 #endif
 /* temp until PGs are implemented. */
 #ifdef USE_INVERTER
@@ -362,9 +365,9 @@ void init(void)
 
 #ifdef USE_ADC
     /* these can be removed from features! */
-    adcConfig()->vbat.enabled = feature(FEATURE_VBAT);
-    adcConfig()->currentMeter.enabled = feature(FEATURE_CURRENT_METER);
-    adcConfig()->rssi.enabled = feature(FEATURE_RSSI_ADC);
+    adcConfigMutable()->vbat.enabled = feature(FEATURE_VBAT);
+    adcConfigMutable()->currentMeter.enabled = feature(FEATURE_CURRENT_METER);
+    adcConfigMutable()->rssi.enabled = feature(FEATURE_RSSI_ADC);
     adcInit(adcConfig());
 #endif
 
@@ -376,7 +379,7 @@ void init(void)
 
 #ifdef USE_DASHBOARD
     if (feature(FEATURE_DASHBOARD)) {
-        dashboardInit(rxConfig());
+        dashboardInit();
     }
 #endif
 
@@ -393,7 +396,7 @@ void init(void)
     if (feature(FEATURE_OSD)) {
 #ifdef USE_MAX7456
         // if there is a max7456 chip for the OSD then use it, otherwise use MSP
-        displayPort_t *osdDisplayPort = max7456DisplayPortInit(vcdProfile(), displayPortProfileMax7456());
+        displayPort_t *osdDisplayPort = max7456DisplayPortInit(vcdProfile());
 #else
         displayPort_t *osdDisplayPort = displayPortMspInit(displayPortProfileMax7456());
 #endif
@@ -401,12 +404,7 @@ void init(void)
     }
 #endif
 
-#ifdef SONAR
-    const sonarConfig_t *sonarConfig = sonarConfig();
-#else
-    const void *sonarConfig = NULL;
-#endif
-    if (!sensorsAutodetect(gyroConfig(), accelerometerConfig(), compassConfig(), barometerConfig(), sonarConfig)) {
+    if (!sensorsAutodetect()) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
@@ -439,32 +437,26 @@ void init(void)
     mspSerialInit();
 
 #if defined(USE_MSP_DISPLAYPORT) && defined(CMS)
-    cmsDisplayPortRegister(displayPortMspInit(displayPortProfileMsp()));
+    cmsDisplayPortRegister(displayPortMspInit());
 #endif
 
 #ifdef USE_CLI
     cliInit(serialConfig());
 #endif
 
-    failsafeInit(rxConfig(), flight3DConfig()->deadband3d_throttle);
+    failsafeInit();
 
-    rxInit(rxConfig(), modeActivationProfile()->modeActivationConditions);
+    rxInit(rxConfig(), modeActivationConditions(0));
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
-        gpsInit(
-            serialConfig(),
-            gpsConfig()
-        );
-        navigationInit(
-            gpsProfile(),
-            &currentProfile->pidProfile
-        );
+        gpsInit();
+        navigationInit(&currentProfile->pidProfile);
     }
 #endif
 
 #ifdef LED_STRIP
-    ledStripInit(ledStripConfig());
+    ledStripInit();
 
     if (feature(FEATURE_LED_STRIP)) {
         ledStripEnable();
@@ -554,7 +546,7 @@ void init(void)
     // Now that everything has powered up the voltage and cell count be determined.
 
     if (feature(FEATURE_VBAT | FEATURE_CURRENT_METER))
-        batteryInit(batteryConfig());
+        batteryInit();
 
 #ifdef USE_DASHBOARD
     if (feature(FEATURE_DASHBOARD)) {

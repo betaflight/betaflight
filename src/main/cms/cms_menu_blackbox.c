@@ -27,11 +27,12 @@
 
 #include "platform.h"
 
-#include "build/version.h"
-
 #ifdef CMS
 
-#include "drivers/system.h"
+#include "build/version.h"
+
+#include "blackbox/blackbox.h"
+#include "blackbox/blackbox_io.h"
 
 #include "cms/cms.h"
 #include "cms/cms_types.h"
@@ -40,13 +41,16 @@
 #include "common/utils.h"
 
 #include "config/config_profile.h"
-#include "config/config_master.h"
 #include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
+#include "drivers/system.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/flashfs.h"
+#include "io/beeper.h"
 
-#include "blackbox/blackbox_io.h"
 
 #ifdef USE_FLASHFS
 static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
@@ -62,6 +66,7 @@ static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
         delay(100);
     }
 
+    beeper(BEEPER_BLACKBOX_ERASE);
     displayClearScreen(pDisplay);
     displayResync(pDisplay); // Was max7456RefreshAll(); wedges during heavy SPI?
 
@@ -78,6 +83,7 @@ static const char * const cmsx_BlackboxDeviceNames[] = {
 static bool featureRead = false;
 
 static uint8_t cmsx_FeatureBlackbox;
+static uint8_t blackboxConfig_rate_denom;
 
 static uint8_t cmsx_BlackboxDevice;
 static OSD_TAB_t cmsx_BlackboxDeviceTable = { &cmsx_BlackboxDevice, 2, cmsx_BlackboxDeviceNames };
@@ -167,7 +173,7 @@ static long cmsx_Blackbox_onEnter(void)
         cmsx_FeatureBlackbox = feature(FEATURE_BLACKBOX) ? 1 : 0;
         featureRead = true;
     }
-
+    blackboxConfig_rate_denom = blackboxConfig()->rate_denom;
     return 0;
 }
 
@@ -176,10 +182,10 @@ static long cmsx_Blackbox_onExit(const OSD_Entry *self)
     UNUSED(self);
 
     if (blackboxMayEditConfig()) {
-        blackboxConfig()->device = cmsx_BlackboxDevice;
+        blackboxConfigMutable()->device = cmsx_BlackboxDevice;
         validateBlackboxConfig();
     }
-
+    blackboxConfigMutable()->rate_denom = blackboxConfig_rate_denom;
     return 0;
 }
 
@@ -203,7 +209,7 @@ static OSD_Entry cmsx_menuBlackboxEntries[] =
     { "(STATUS)",    OME_String,  NULL,            &cmsx_BlackboxStatus,                                      0 },
     { "(USED)",      OME_String,  NULL,            &cmsx_BlackboxDeviceStorageUsed,                           0 },
     { "(FREE)",      OME_String,  NULL,            &cmsx_BlackboxDeviceStorageFree,                           0 },
-    { "RATE DENOM",  OME_UINT8,   NULL,            &(OSD_UINT8_t){ &blackboxConfig()->rate_denom, 1, 32, 1 }, 0 },
+    { "RATE DENOM",  OME_UINT8,   NULL,            &(OSD_UINT8_t){ &blackboxConfig_rate_denom, 1, 32, 1 },    0 },
 
 #ifdef USE_FLASHFS
     { "ERASE FLASH", OME_Funcall, cmsx_EraseFlash, NULL,                                                      0 },

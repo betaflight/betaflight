@@ -32,7 +32,8 @@
 
 #if defined(TELEMETRY) && defined(TELEMETRY_IBUS)
 
-#include "config/config_master.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "common/axis.h"
 
@@ -299,7 +300,7 @@ static void dispatchMeasurementReply(ibusAddress_t address)
         #ifdef BARO
             value = (baro.baroTemperature + 5) / 10; // +5 to make integer division rounding correct
         #else
-            value = telemTemperature1 * 10;
+            value = gyroGetTemperature() * 10;
         #endif
         sendIbusMeasurement(address, value + IBUS_TEMPERATURE_OFFSET);
         break;

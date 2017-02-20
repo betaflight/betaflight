@@ -20,6 +20,8 @@
 
 #include "platform.h"
 
+#ifdef USE_DSHOT
+
 #include "io.h"
 #include "timer.h"
 #include "pwm_output.h"
@@ -27,8 +29,6 @@
 #include "dma.h"
 #include "system.h"
 #include "rcc.h"
-
-#ifdef USE_DSHOT
 
 static uint8_t dmaMotorTimerCount = 0;
 static motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
@@ -96,7 +96,7 @@ void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
     UNUSED(motorCount);
 }
 
-void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType)
+void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
 {
     motorDmaOutput_t * const motor = &dmaMotors[motorIndex];
     motor->timerHardware = timerHardware;
@@ -174,9 +174,13 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
 
     /* PWM1 Mode configuration: Channel1 */
     TIM_OCInitStructure.OCMode = TIM_OCMODE_PWM1;
-    TIM_OCInitStructure.OCPolarity = TIM_OCPOLARITY_HIGH;
-    TIM_OCInitStructure.OCIdleState = TIM_OCIDLESTATE_RESET;
-    TIM_OCInitStructure.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+    if (output & TIMER_OUTPUT_N_CHANNEL) {
+        TIM_OCInitStructure.OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPOLARITY_HIGH : TIM_OCNPOLARITY_LOW;
+        TIM_OCInitStructure.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+    } else {
+        TIM_OCInitStructure.OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPOLARITY_LOW : TIM_OCPOLARITY_HIGH;
+        TIM_OCInitStructure.OCIdleState = TIM_OCIDLESTATE_SET;
+    }
     TIM_OCInitStructure.OCFastMode = TIM_OCFAST_DISABLE;
     TIM_OCInitStructure.Pulse = 0;
 

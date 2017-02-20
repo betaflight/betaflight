@@ -36,6 +36,8 @@
 #include "pwm_output.h"
 #include "rx_pwm.h"
 
+#include "flight/mixer.h" //!!TODO remove dependency on this
+
 #define DEBUG_PPM_ISR
 
 #define PPM_CAPTURE_COUNT 12

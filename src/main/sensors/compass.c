@@ -22,6 +22,9 @@
 
 #include "common/axis.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/compass.h"
 #include "drivers/compass_ak8975.h"
 #include "drivers/compass_ak8963.h"
@@ -41,6 +44,7 @@
 #include "hardware_revision.h"
 #endif
 
+magDev_t magDev;
 mag_t mag;                   // mag access functions
 
 #ifdef MAG
@@ -52,33 +56,6 @@ bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse)
 {
     magSensor_e magHardware;
 
-#ifdef USE_MAG_HMC5883
-    const hmc5883Config_t *hmc5883Config = 0;
-
-#ifdef NAZE // TODO remove this target specific define
-    static const hmc5883Config_t nazeHmc5883Config_v1_v4 = {
-            .intTag = IO_TAG(PB12) /* perhaps disabled? */
-    };
-    static const hmc5883Config_t nazeHmc5883Config_v5 = {
-            .intTag = IO_TAG(MAG_INT_EXTI)
-    };
-    if (hardwareRevision < NAZE32_REV5) {
-        hmc5883Config = &nazeHmc5883Config_v1_v4;
-    } else {
-        hmc5883Config = &nazeHmc5883Config_v5;
-    }
-#endif
-
-#ifdef MAG_INT_EXTI
-    static const hmc5883Config_t extiHmc5883Config = {
-        .intTag = IO_TAG(MAG_INT_EXTI)
-    };
-
-    hmc5883Config = &extiHmc5883Config;
-#endif
-
-#endif
-
 retry:
 
     dev->magAlign = ALIGN_DEFAULT;
@@ -89,7 +66,7 @@ retry:
 
     case MAG_HMC5883:
 #ifdef USE_MAG_HMC5883
-        if (hmc5883lDetect(dev, hmc5883Config)) {
+        if (hmc5883lDetect(dev, compassConfig()->interruptTag)) {
 #ifdef MAG_HMC5883_ALIGN
             dev->magAlign = MAG_HMC5883_ALIGN;
 #endif
@@ -143,17 +120,25 @@ retry:
     return true;
 }
 
-void compassInit(const compassConfig_t *compassConfig)
+bool compassInit(void)
 {
     // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)
     // calculate magnetic declination
-    const int16_t deg = compassConfig->mag_declination / 100;
-    const int16_t min = compassConfig->mag_declination % 100;
+    mag.magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
+    if (!compassDetect(&magDev, compassConfig()->mag_hardware)) {
+        return false;
+    }
+    const int16_t deg = compassConfig()->mag_declination / 100;
+    const int16_t min = compassConfig()->mag_declination % 100;
     mag.magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units
     LED1_ON;
-    mag.dev.init();
+    magDev.init();
     LED1_OFF;
     magInit = 1;
+    if (compassConfig()->mag_align != ALIGN_DEFAULT) {
+        magDev.magAlign = compassConfig()->mag_align;
+    }
+    return true;
 }
 
 void compassUpdate(uint32_t currentTime, flightDynamicsTrims_t *magZero)
@@ -162,11 +147,11 @@ void compassUpdate(uint32_t currentTime, flightDynamicsTrims_t *magZero)
     static flightDynamicsTrims_t magZeroTempMin;
     static flightDynamicsTrims_t magZeroTempMax;
 
-    mag.dev.read(magADCRaw);
+    magDev.read(magADCRaw);
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         mag.magADC[axis] = magADCRaw[axis];
     }
-    alignSensors(mag.magADC, mag.dev.magAlign);
+    alignSensors(mag.magADC, magDev.magAlign);
 
     if (STATE(CALIBRATE_MAG)) {
         tCal = currentTime;

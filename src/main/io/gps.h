@@ -19,6 +19,8 @@
 
 #include "common/time.h"
 
+#include "config/parameter_group.h"
+
 #define LAT 0
 #define LON 1
 
@@ -67,6 +69,8 @@ typedef struct gpsConfig_s {
     gpsAutoConfig_e autoConfig;
     gpsAutoBaud_e autoBaud;
 } gpsConfig_t;
+
+PG_DECLARE(gpsConfig_t, gpsConfig);
 
 typedef struct gpsCoordinateDDDMMmmmm_s {
     int16_t dddmm;
@@ -117,8 +121,7 @@ extern uint8_t GPS_svinfo_cno[16];         // Carrier to Noise Ratio (Signal Str
 #define GPS_DBHZ_MIN 0
 #define GPS_DBHZ_MAX 55
 
-struct serialConfig_s;
-void gpsInit(struct serialConfig_s *serialConfig, gpsConfig_t *initialGpsConfig);
+void gpsInit(void);
 void gpsUpdate(timeUs_t currentTimeUs);
 bool gpsNewFrame(uint8_t c);
 struct serialPort_s;

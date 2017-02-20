@@ -18,25 +18,28 @@
 #pragma once
 
 #include <stdint.h>
-#include "flash.h"
+#include <stdbool.h>
 
-#define M25P16_PAGESIZE 256
+// Streams data out to the EEPROM, padding to the write size as
+// needed, and updating the checksum as it goes.
 
-bool m25p16_init(const flashConfig_t *flashConfig);
+typedef struct config_streamer_s {
+    uintptr_t address;
+    int size;
+    union {
+        uint8_t b[4];
+        uint32_t w;
+    } buffer;
+    int at;
+    int err;
+    bool unlocked;
+} config_streamer_t;
 
-void m25p16_eraseSector(uint32_t address);
-void m25p16_eraseCompletely();
+void config_streamer_init(config_streamer_t *c);
 
-void m25p16_pageProgram(uint32_t address, const uint8_t *data, int length);
+void config_streamer_start(config_streamer_t *c, uintptr_t base, int size);
+int config_streamer_write(config_streamer_t *c, const uint8_t *p, uint32_t size);
+int config_streamer_flush(config_streamer_t *c);
 
-void m25p16_pageProgramBegin(uint32_t address);
-void m25p16_pageProgramContinue(const uint8_t *data, int length);
-void m25p16_pageProgramFinish();
-
-int m25p16_readBytes(uint32_t address, uint8_t *buffer, int length);
-
-bool m25p16_isReady();
-bool m25p16_waitForReady(uint32_t timeoutMillis);
-
-struct flashGeometry_s;
-const struct flashGeometry_s* m25p16_getGeometry();
+int config_streamer_finish(config_streamer_t *c);
+int config_streamer_status(config_streamer_t *c);

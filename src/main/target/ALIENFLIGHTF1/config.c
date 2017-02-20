@@ -44,7 +44,7 @@ void targetConfiguration(master_t *config)
     config->rxConfig.spektrum_sat_bind_autoreset = 1;
 
     if (hardwareMotorType == MOTOR_BRUSHED) {
-        config->motorConfig.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
+        config->motorConfig.dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
     }
 
     config->profile[0].pidProfile.P8[ROLL] = 90;

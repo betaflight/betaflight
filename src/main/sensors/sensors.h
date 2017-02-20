@@ -25,7 +25,6 @@ typedef enum {
     SENSOR_INDEX_COUNT
 } sensorIndex_e;
 
-extern int16_t telemTemperature1; //FIXME move to temp sensor...?
 extern uint8_t detectedSensors[SENSOR_INDEX_COUNT];
 
 typedef struct int16_flightDynamicsTrims_s {

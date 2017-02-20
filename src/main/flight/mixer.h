@@ -17,7 +17,9 @@
 
 #pragma once
 
-#define MAX_SUPPORTED_MOTORS 12
+#include "config/parameter_group.h"
+#include "drivers/io_types.h"
+#include "drivers/pwm_output.h"
 
 #define QUAD_MOTOR_COUNT 4
 
@@ -85,6 +87,8 @@ typedef struct motorMixer_s {
     float yaw;
 } motorMixer_t;
 
+PG_DECLARE_ARRAY(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer);
+
 // Custom mixer configuration
 typedef struct mixer_s {
     uint8_t motorCount;
@@ -97,38 +101,30 @@ typedef struct mixerConfig_s {
     int8_t yaw_motor_direction;
 } mixerConfig_t;
 
-typedef struct flight3DConfig_s {
-    uint16_t deadband3d_low;                // min 3d value
-    uint16_t deadband3d_high;               // max 3d value
-    uint16_t neutral3d;                     // center 3d value
-    uint16_t deadband3d_throttle;           // default throttle deadband from MIDRC
-} flight3DConfig_t;
+PG_DECLARE(mixerConfig_t, mixerConfig);
 
-typedef struct airplaneConfig_s {
-    int8_t fixedwing_althold_dir;           // +1 or -1 for pitch/althold gain. later check if need more than just sign
-} airplaneConfig_t;
+typedef struct motorConfig_s {
+    motorDevConfig_t dev;
+    float    digitalIdleOffsetPercent;
+    uint16_t minthrottle;                   // Set the minimum throttle command sent to the ESC (Electronic Speed Controller). This is the minimum value that allow motors to run at a idle speed.
+    uint16_t maxthrottle;                   // This is the maximum value for the ESCs at full power this value can be increased up to 2000
+    uint16_t mincommand;                    // This is the value for the ESCs when they are not armed. In some cases, this value must be lowered down to 900 for some specific ESCs
+} motorConfig_t;
+
+PG_DECLARE(motorConfig_t, motorConfig);
 
 #define CHANNEL_FORWARDING_DISABLED (uint8_t)0xFF
 
 extern const mixer_t mixers[];
 extern int16_t motor[MAX_SUPPORTED_MOTORS];
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
-
-struct motorConfig_s;
 struct rxConfig_s;
 
 uint8_t getMotorCount();
 float getMotorMixRange();
 
-void mixerUseConfigs(
-        flight3DConfig_t *flight3DConfigToUse,
-        struct motorConfig_s *motorConfigToUse,
-        mixerConfig_t *mixerConfigToUse,
-        airplaneConfig_t *airplaneConfigToUse,
-        struct rxConfig_s *rxConfigToUse);
-
 void mixerLoadMix(int index, motorMixer_t *customMixers);
-void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers);
+void mixerInit(mixerMode_e mixerMode);
 
 void mixerConfigureOutput(void);
 

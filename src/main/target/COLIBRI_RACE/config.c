@@ -15,20 +15,24 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <platform.h>
 
 #ifdef TARGET_CONFIG
+
+#include "common/maths.h"
+#include "common/utils.h"
+
+#include "config/config_master.h"
+#include "config/feature.h"
+
+#include "io/ledstrip.h"
 #include "io/motors.h"
 
 #include "sensors/battery.h"
 
-#include "config/config_master.h"
-#include "config/feature.h"
-#include "io/ledstrip.h"
 
 void targetApplyDefaultLedStripConfig(ledConfig_t *ledConfigs)
 {
@@ -53,7 +57,7 @@ void targetConfiguration(master_t *config)
     config->motorConfig.minthrottle = 1025;
     config->motorConfig.maxthrottle = 1980;
     config->motorConfig.mincommand = 1000;
-    config->servoConfig.servoCenterPulse = 1500;
+    config->servoConfig.dev.servoCenterPulse = 1500;
 
     config->batteryConfig.vbatmaxcellvoltage = 45;
     config->batteryConfig.vbatmincellvoltage = 30;
@@ -96,5 +100,17 @@ void targetConfiguration(master_t *config)
     config->profile[0].controlRateProfile[0].rates[FD_YAW] = 80;
 
     targetApplyDefaultLedStripConfig(config->ledStripConfig.ledConfigs);
+}
+
+void targetValidateConfiguration(master_t *config)
+{
+    UNUSED(config);
+
+    serialConfig()->portConfigs[0].functionMask = FUNCTION_MSP;
+    if (featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_MSP)) {
+        featureClear(FEATURE_RX_PARALLEL_PWM);
+        featureClear(FEATURE_RX_MSP);
+        featureSet(FEATURE_RX_PPM);
+    }
 }
 #endif

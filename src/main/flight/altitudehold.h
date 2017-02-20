@@ -17,19 +17,23 @@
 
 #pragma once
 
+#include "common/time.h"
+
 extern int32_t AltHold;
 extern int32_t vario;
+
+typedef struct airplaneConfig_s {
+    int8_t fixedwing_althold_dir;           // +1 or -1 for pitch/althold gain. later check if need more than just sign
+} airplaneConfig_t;
+
+PG_DECLARE(airplaneConfig_t, airplaneConfig);
 
 void calculateEstimatedAltitude(timeUs_t currentTimeUs);
 
 struct pidProfile_s;
-struct barometerConfig_s;
-struct rcControlsConfig_s;
-struct motorConfig_s;
-void configureAltitudeHold(struct pidProfile_s *initialPidProfile, struct barometerConfig_s *intialBarometerConfig, struct rcControlsConfig_s *initialRcControlsConfig, struct motorConfig_s *initialMotorConfig);
+void configureAltitudeHold(struct pidProfile_s *initialPidProfile);
 
-struct airplaneConfig_s;
-void applyAltHold(struct airplaneConfig_s *airplaneConfig);
+void applyAltHold(void);
 void updateAltHoldState(void);
 void updateSonarAltHoldState(void);
 

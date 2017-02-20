@@ -17,7 +17,17 @@
 
 #pragma once
 
+#include <stdint.h>
 #include <stdbool.h>
+
+#include "config/parameter_group.h"
+
+#include "drivers/adc.h"
+#include "drivers/flash.h"
+#include "drivers/rx_pwm.h"
+#include "drivers/sdcard.h"
+#include "drivers/sound_beeper.h"
+#include "drivers/vcd.h"
 
 #if FLASH_SIZE <= 128
 #define MAX_PROFILE_COUNT 2
@@ -58,6 +68,33 @@ typedef enum {
     FEATURE_ESC_SENSOR = 1 << 27,
 } features_e;
 
+typedef struct systemConfig_s {
+    uint8_t debug_mode;
+    char name[MAX_NAME_LENGTH + 1];
+} systemConfig_t;
+
+PG_DECLARE(systemConfig_t, systemConfig);
+PG_DECLARE(adcConfig_t, adcConfig);
+PG_DECLARE(beeperDevConfig_t, beeperDevConfig);
+PG_DECLARE(flashConfig_t, flashConfig);
+PG_DECLARE(ppmConfig_t, ppmConfig);
+PG_DECLARE(pwmConfig_t, pwmConfig);
+PG_DECLARE(vcdProfile_t, vcdProfile);
+PG_DECLARE(sdcardConfig_t, sdcardConfig);
+
+
+/*typedef struct beeperConfig_s {
+    uint32_t beeper_off_flags;
+    uint32_t preferred_beeper_off_flags;
+} beeperConfig_t;
+PG_DECLARE(beeperConfig_t, beeperConfig);
+*/
+
+struct profile_s;
+extern struct profile_s *currentProfile;
+struct controlRateConfig_s;
+extern struct controlRateConfig_s *currentControlRateProfile;
+
 void beeperOffSet(uint32_t mask);
 void beeperOffSetAll(uint8_t beeperCount);
 void beeperOffClear(uint32_t mask);
@@ -69,7 +106,10 @@ void setPreferredBeeperOffMask(uint32_t mask);
 
 void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex);
 
+void initEEPROM(void);
 void resetEEPROM(void);
+void readEEPROM(void);
+void writeEEPROM();
 void ensureEEPROMContainsValidData(void);
 
 void saveConfigAndNotify(void);
@@ -79,14 +119,16 @@ void activateConfig(void);
 
 uint8_t getCurrentProfile(void);
 void changeProfile(uint8_t profileIndex);
-void setProfile(uint8_t profileIndex);
+struct profile_s;
+void resetProfile(struct profile_s *profile);
 
 uint8_t getCurrentControlRateProfile(void);
 void changeControlRateProfile(uint8_t profileIndex);
 bool canSoftwareSerialBeUsed(void);
 
 uint16_t getCurrentMinthrottle(void);
-struct master_s;
 
+void resetConfigs(void);
+struct master_s;
 void targetConfiguration(struct master_s *config);
 void targetValidateConfiguration(struct master_s *config);

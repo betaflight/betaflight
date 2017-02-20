@@ -24,30 +24,39 @@
 
 #include "blackbox/blackbox.h"
 
-#include "common/maths.h"
 #include "common/axis.h"
-#include "common/utils.h"
 #include "common/filter.h"
+#include "common/maths.h"
+#include "common/utils.h"
+
+#include "config/config_profile.h"
+#include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/light_led.h"
 #include "drivers/system.h"
 #include "drivers/gyro_sync.h"
 
-#include "sensors/sensors.h"
-#include "sensors/boardalignment.h"
 #include "sensors/acceleration.h"
-#include "sensors/gyro.h"
+#include "sensors/barometer.h"
 #include "sensors/battery.h"
+#include "sensors/boardalignment.h"
+#include "sensors/gyro.h"
+#include "sensors/sensors.h"
 
+#include "fc/cli.h"
 #include "fc/config.h"
+#include "fc/fc_core.h"
+#include "fc/fc_rc.h"
+#include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
-#include "fc/cli.h"
-#include "fc/fc_rc.h"
 
 #include "msp/msp_serial.h"
 
 #include "io/beeper.h"
+#include "io/gps.h"
 #include "io/motors.h"
 #include "io/servos.h"
 #include "io/serial.h"
@@ -59,15 +68,16 @@
 
 #include "scheduler/scheduler.h"
 
-#include "flight/mixer.h"
-#include "flight/servos.h"
-#include "flight/pid.h"
-#include "flight/failsafe.h"
-#include "flight/altitudehold.h"
+#include "telemetry/telemetry.h"
 
-#include "config/config_profile.h"
-#include "config/config_master.h"
-#include "config/feature.h"
+#include "flight/altitudehold.h"
+#include "flight/failsafe.h"
+#include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/navigation.h"
+#include "flight/pid.h"
+#include "flight/servos.h"
+
 
 // June 2013     V2.2-dev
 
@@ -87,7 +97,6 @@ int16_t headFreeModeHold;
 
 uint8_t motorControlEnable = false;
 
-int16_t telemTemperature1;      // gyro sensor temperature
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
 bool isRXDataNew;
@@ -95,8 +104,8 @@ static bool armingCalibrationWasInitialised;
 
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
 {
-    accelerometerConfig()->accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
-    accelerometerConfig()->accelerometerTrims.values.pitch += rollAndPitchTrimsDelta->values.pitch;
+    accelerometerConfigMutable()->accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
+    accelerometerConfigMutable()->accelerometerTrims.values.pitch += rollAndPitchTrimsDelta->values.pitch;
 
     saveConfigAndNotify();
 }
@@ -183,15 +192,6 @@ void mwArm(void)
             ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
             headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 
-#ifdef BLACKBOX
-            if (feature(FEATURE_BLACKBOX)) {
-                serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP);
-                if (sharedBlackboxAndMspPort) {
-                    mspSerialReleasePortIfAllocated(sharedBlackboxAndMspPort);
-                }
-                startBlackbox();
-            }
-#endif
             disarmAt = millis() + armingConfig()->auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
 
             //beep to indicate arming
@@ -291,7 +291,7 @@ void processRx(timeUs_t currentTimeUs)
         failsafeUpdateState();
     }
 
-    throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
+    const throttleStatus_e throttleStatus = calculateThrottleStatus();
 
     if (isAirmodeActive() && ARMING_FLAG(ARMED)) {
         if (rcCommand[THROTTLE] >= rxConfig()->airModeActivateThreshold) airmodeIsActivated = true; // Prevent Iterm from being reset
@@ -357,17 +357,17 @@ void processRx(timeUs_t currentTimeUs)
         }
     }
 
-    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, armingConfig()->disarm_kill_switch);
+    processRcStickPositions(throttleStatus);
 
     if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
         updateInflightCalibrationState();
     }
 
-    updateActivatedModes(modeActivationProfile()->modeActivationConditions);
+    updateActivatedModes();
 
     if (!cliMode) {
-        updateAdjustmentStates(adjustmentProfile()->adjustmentRanges);
-        processRcAdjustments(currentControlRateProfile, rxConfig());
+        updateAdjustmentStates();
+        processRcAdjustments(currentControlRateProfile);
     }
 
     bool canUseHorizonMode = true;
@@ -473,8 +473,8 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
 
     // Read out gyro temperature if used for telemmetry
-    if (feature(FEATURE_TELEMETRY) && gyro.dev.temperature) {
-        gyro.dev.temperature(&gyro.dev, &telemTemperature1);
+    if (feature(FEATURE_TELEMETRY)) {
+        gyroReadTemperature();
     }
 
 #ifdef MAG
@@ -488,7 +488,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
     updateRcCommands();
     if (sensors(SENSOR_BARO) || sensors(SENSOR_SONAR)) {
         if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(SONAR_MODE)) {
-            applyAltHold(&masterConfig.airplaneConfig);
+            applyAltHold();
         }
     }
 #endif
@@ -500,7 +500,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
     if (isUsingSticksForArming() && rcData[THROTTLE] <= rxConfig()->mincheck
 #ifndef USE_QUAD_MIXER_ONLY
 #ifdef USE_SERVOS
-                && !((mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI) && servoMixerConfig()->tri_unarmed_servo)
+                && !((mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI) && servoConfig()->tri_unarmed_servo)
 #endif
                 && mixerConfig()->mixerMode != MIXER_AIRPLANE
                 && mixerConfig()->mixerMode != MIXER_FLYING_WING
@@ -531,6 +531,8 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
     if (!cliMode && feature(FEATURE_BLACKBOX)) {
         handleBlackbox(currentTimeUs);
     }
+#else
+    UNUSED(currentTimeUs);
 #endif
 
 #ifdef TRANSPONDER
@@ -558,8 +560,6 @@ static void subTaskMotorUpdate(void)
 #ifdef USE_SERVOS
     // motor outputs are used as sources for servo mixing, so motors must be calculated using mixTable() before servos.
     if (isMixerUsingServos()) {
-        servoTable();
-        filterServos();
         writeServos();
     }
 #endif

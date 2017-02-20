@@ -18,6 +18,7 @@
 #pragma once
 
 #define TARGET_CONFIG
+#define TARGET_VALIDATECONFIG
 #define USE_HARDWARE_REVISION_DETECTION
 #define TARGET_BUS_INIT
 
@@ -49,16 +50,10 @@
 #define USE_EXTI
 #define MAG_INT_EXTI            PC14
 #define MPU_INT_EXTI            PC13
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
-#define USE_MPU_DATA_READY_SIGNAL
-//#define DEBUG_MAG_DATA_READY_INTERRUPT
-#define USE_MAG_DATA_READY_SIGNAL
+#define MMA8451_INT_PIN         PA5
 
-// SPI2
-// PB15 28 SPI2_MOSI
-// PB14 27 SPI2_MISO
-// PB13 26 SPI2_SCK
-// PB12 25 SPI2_NSS
+#define USE_MPU_DATA_READY_SIGNAL
+#define USE_MAG_DATA_READY_SIGNAL
 
 #define USE_SPI
 #define USE_SPI_DEVICE_2
@@ -101,8 +96,7 @@
 #define ACC_MPU6500_ALIGN       CW0_DEG
 
 #define BARO
-#define USE_BARO_MS5611
-#define USE_BARO_BMP085
+#define USE_BARO_MS5611 // needed for Flip32 board
 #define USE_BARO_BMP280
 
 /*

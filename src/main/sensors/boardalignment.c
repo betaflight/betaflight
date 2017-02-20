@@ -23,6 +23,9 @@
 #include "common/maths.h"
 #include "common/axis.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/sensor.h"
 
 #include "boardalignment.h"

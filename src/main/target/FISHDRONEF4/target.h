@@ -136,7 +136,6 @@
 // *************** Others **************************
 #define DISPLAY
 #define LED_STRIP
-#define OSD
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 

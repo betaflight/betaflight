@@ -407,10 +407,8 @@ static uint16_t jetiExBusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uin
   -----------------------------------------------
 */
 
-void initJetiExBusTelemetry(telemetryConfig_t *initialTelemetryConfig)
+void initJetiExBusTelemetry(void)
 {
-    UNUSED(initialTelemetryConfig);
-
     // Init Ex Bus Frame header
     jetiExBusTelemetryFrame[EXBUS_HEADER_SYNC] = 0x3B;       // Startbytes
     jetiExBusTelemetryFrame[EXBUS_HEADER_REQ] = 0x01;
@@ -426,7 +424,6 @@ void initJetiExBusTelemetry(telemetryConfig_t *initialTelemetryConfig)
     jetiExTelemetryFrame[EXTEL_HEADER_LSN_HB] = 0x00;
     jetiExTelemetryFrame[EXTEL_HEADER_RES] = 0x00;               // reserved, by default 0x00
 }
-
 
 void createExTelemetrieTextMessage(uint8_t *exMessage, uint8_t messageID, const exBusSensor_t *sensor)
 {

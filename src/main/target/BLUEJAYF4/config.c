@@ -36,11 +36,11 @@ void targetConfiguration(master_t *config)
     if (hardwareRevision == BJF4_REV1 || hardwareRevision == BJF4_REV2) {
         config->gyroConfig.gyro_align = CW180_DEG;
         config->accelerometerConfig.acc_align  = CW180_DEG;
-        config->beeperConfig.ioTag = IO_TAG(BEEPER_OPT);
+        config->beeperDevConfig.ioTag = IO_TAG(BEEPER_OPT);
     }
 
     if (hardwareRevision == BJF4_MINI_REV3A || hardwareRevision == BJF4_REV1) {
-        intFeatureClear(FEATURE_SDCARD, &config->enabledFeatures);
+        intFeatureClear(FEATURE_SDCARD, &config->featureConfig.enabledFeatures);
     }
 
     if (hardwareRevision == BJF4_MINI_REV3A) {
@@ -52,7 +52,7 @@ void targetValidateConfiguration(master_t *config)
 {
     /* make sure the SDCARD cannot be turned on */
     if (hardwareRevision == BJF4_MINI_REV3A || hardwareRevision == BJF4_REV1) {
-        intFeatureClear(FEATURE_SDCARD, &config->enabledFeatures);
+        intFeatureClear(FEATURE_SDCARD, &config->featureConfig.enabledFeatures);
 
         if (config->blackboxConfig.device == BLACKBOX_DEVICE_SDCARD) {
             config->blackboxConfig.device = BLACKBOX_DEVICE_FLASH;

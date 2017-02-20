@@ -47,5 +47,5 @@ typedef struct adcConfig_s {
     adcChannelConfig_t external1;
 } adcConfig_t;
 
-void adcInit(adcConfig_t *config);
+void adcInit(const adcConfig_t *config);
 uint16_t adcGetChannel(uint8_t channel);
