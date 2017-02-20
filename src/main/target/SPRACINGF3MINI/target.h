@@ -115,9 +115,6 @@
 
 #define SONAR_SOFTSERIAL1_EXCLUSIVE
 
-#define SERIAL_PORT_COUNT       5
-#endif
-
 #define USE_SPI
 
 #ifdef TINYBEEF3
