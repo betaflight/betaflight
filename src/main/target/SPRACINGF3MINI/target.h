@@ -184,8 +184,11 @@
 #define BUTTON_A_PIN            PB1
 #define BUTTON_B_PIN            PB0
 
+#define SPEKTRUM_BIND
+#define BIND_PIN                UART2_RX_PIN
+
 #define HARDWARE_BIND_PLUG
-#define BINDPLUG_PIN            PB0
+#define BINDPLUG_PIN            BUTTON_B_PIN
 #endif
 
 #define TARGET_IO_PORTA         0xffff
