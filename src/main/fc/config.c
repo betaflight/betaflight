@@ -1225,14 +1225,6 @@ void validateAndFixConfig(void)
 
 void validateAndFixGyroConfig(void)
 {
-    // Prevent invalid notch cutoff
-    if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1) {
-        gyroConfig()->gyro_soft_notch_hz_1 = 0;
-    }
-    if (gyroConfig()->gyro_soft_notch_cutoff_2 >= gyroConfig()->gyro_soft_notch_hz_2) {
-        gyroConfig()->gyro_soft_notch_hz_2 = 0;
-    }
-
     float samplingTime = 0.000125f;
 
     if (gyroConfig()->gyro_lpf != GYRO_LPF_256HZ && gyroConfig()->gyro_lpf != GYRO_LPF_NONE) {
@@ -1296,6 +1288,34 @@ void validateAndFixGyroConfig(void)
 
         if(motorConfig()->motorPwmRate > maxEscRate)
             motorConfig()->motorPwmRate = maxEscRate;
+    }
+
+    uint32_t gyroFrequencyNyquist = (1.0f / (samplingTime * gyroConfig()->gyro_sync_denom)) / 2;
+
+     if (gyroConfig()->gyro_soft_lpf_hz > gyroFrequencyNyquist) {
+         gyroConfig()->gyro_soft_lpf_hz = 0;
+     }
+
+    // Prevent invalid notch cutoff
+    if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1 || gyroConfig()->gyro_soft_notch_hz_1 > gyroFrequencyNyquist) {
+        gyroConfig()->gyro_soft_notch_hz_1 = 0;
+    }
+    if (gyroConfig()->gyro_soft_notch_cutoff_2 >= gyroConfig()->gyro_soft_notch_hz_2 || gyroConfig()->gyro_soft_notch_hz_2 > gyroFrequencyNyquist) {
+        gyroConfig()->gyro_soft_notch_hz_2 = 0;
+    }
+
+    uint32_t pidFrequencyNyquist = (1.0f / (float)pidLooptime) / 2;
+
+    if (currentProfile->pidProfile.dterm_notch_cutoff >= currentProfile->pidProfile.dterm_notch_hz || currentProfile->pidProfile.dterm_notch_hz > pidFrequencyNyquist) {
+        currentProfile->pidProfile.dterm_notch_hz = 0;
+    }
+
+    if (currentProfile->pidProfile.dterm_lpf_hz > pidFrequencyNyquist) {
+        currentProfile->pidProfile.dterm_lpf_hz = 0;
+    }
+
+    if (currentProfile->pidProfile.yaw_lpf_hz > pidFrequencyNyquist) {
+        currentProfile->pidProfile.yaw_lpf_hz = 0;
     }
 }
 
