@@ -30,7 +30,6 @@ typedef enum {
     PROTOCOL_KISS = 2,
     PROTOCOL_KISSALL = 3,
     PROTOCOL_CASTLE = 4,
-    PROTOCOL_DSHOT = 5,
     PROTOCOL_COUNT
 } escProtocol_e;
 
