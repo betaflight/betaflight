@@ -230,11 +230,11 @@ static void performBaroCalibrationCycle(void)
     baroGroundPressure += baroPressure;
     baroGroundAltitude = (1.0f - powf((baroGroundPressure / 8) / 101325.0f, 0.190295f)) * 4433000.0f;
 
-    if (baroGroundPressure==savedGroundPressure)
-      calibratingB=0;
+    if (baroGroundPressure == savedGroundPressure)
+        calibratingB = 0;
     else {
-      calibratingB--;
-      savedGroundPressure=baroGroundPressure;
+        calibratingB--;
+        savedGroundPressure = baroGroundPressure;
     }
 }
 
