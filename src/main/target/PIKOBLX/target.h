@@ -18,7 +18,6 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "PIKO" // Furious FPV Piko BLX
-#define USE_CLI
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 #define TARGET_CONFIG
@@ -70,11 +69,6 @@
 
 #define USE_SPI
 #define USE_SPI_DEVICE_2
-
-#define TELEMETRY
-#define BLACKBOX
-#define SERIAL_RX
-#define USE_SERVOS
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC

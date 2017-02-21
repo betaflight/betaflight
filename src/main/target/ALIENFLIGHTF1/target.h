@@ -64,8 +64,6 @@
 
 #define LED_STRIP
 
-#undef GPS
-
 #define SPEKTRUM_BIND
 // USART2, PA3
 #define BIND_PIN                PA3

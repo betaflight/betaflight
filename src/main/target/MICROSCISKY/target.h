@@ -82,7 +82,6 @@
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define RX_CHANNELS_TAER
 
-#undef GPS
 #undef USE_SERVOS
 #define USE_QUAD_MIXER_ONLY
 

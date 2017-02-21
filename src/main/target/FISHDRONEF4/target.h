@@ -134,7 +134,6 @@
 #define SERIALRX_UART           SERIAL_PORT_USART3
 
 // *************** Others **************************
-#define DISPLAY
 #define LED_STRIP
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
