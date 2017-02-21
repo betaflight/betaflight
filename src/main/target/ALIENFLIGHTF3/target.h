@@ -127,8 +127,6 @@
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define RX_CHANNELS_TAER
 
-#define LED_STRIP
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - stm32f303cc in 48pin package

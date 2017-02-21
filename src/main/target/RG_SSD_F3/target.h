@@ -124,7 +124,6 @@
 #define VBAT_ADC_PIN             PA4
 #define CURRENT_METER_ADC_PIN    PA5
 #define VBAT_SCALE_DEFAULT       119
-#define LED_STRIP
 
 #define TRANSPONDER
 #define TRANSPONDER_GPIO                     GPIOA

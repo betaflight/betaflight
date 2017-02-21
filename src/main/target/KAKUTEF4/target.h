@@ -128,8 +128,6 @@
 #define RSSI_ADC_PIN                PC1
 #define RSSI_ADC_CHANNEL            ADC_Channel_11
 
-#define LED_STRIP
-
 #define DEFAULT_FEATURES        (FEATURE_BLACKBOX | FEATURE_OSD)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS

@@ -96,8 +96,6 @@
 //#define CURRENT_METER_ADC_PIN   PA5
 #define RSSI_ADC_PIN            PB2
 
-#define LED_STRIP
-
 #define SPEKTRUM_BIND
 // USART2, PB4
 #define BIND_PIN                PB4

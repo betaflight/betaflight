@@ -95,7 +95,6 @@
 #define CURRENT_METER_ADC_PIN       PA5
 #define RSSI_ADC_PIN                PB2
 
-#define LED_STRIP
 #define WS2811_PIN                      PA8
 #define WS2811_TIMER                    TIM1
 #define WS2811_DMA_CHANNEL              DMA1_Channel2

@@ -110,7 +110,6 @@
 //#undef USE_SERVOS
 #undef BARO
 #undef SONAR
-#undef LED_STRIP
 #undef USE_SERIAL_4WAY_BLHELI_INTERFACE
 //#undef USE_SERIALRX_SPEKTRUM   // SRXL, DSM2 and DSMX protocol
 //#undef USE_SERIALRX_SBUS       // Frsky and Futaba receivers
@@ -121,6 +120,7 @@
 #undef USE_SERIALRX_XBUS       // JR
 #endif
 
+#undef LED_STRIP
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
 // IO - from schematics

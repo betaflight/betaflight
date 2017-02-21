@@ -100,8 +100,6 @@
 #define CURRENT_METER_ADC_PIN   PA5
 #define RSSI_ADC_PIN            PA6
 
-#define LED_STRIP
-
 #define OSD
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT

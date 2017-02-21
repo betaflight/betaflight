@@ -69,8 +69,6 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2)
 
-#define LED_STRIP
-
 #define SPEKTRUM_BIND
 // USART2, PA3
 #define BIND_PIN                PA3

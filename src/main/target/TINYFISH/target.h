@@ -100,7 +100,6 @@
 #define ADC_INSTANCE                ADC3
 #define VBAT_SCALE_DEFAULT          100
 
-#define LED_STRIP
 #define WS2811_PIN                      PA8
 #define WS2811_TIMER                    TIM1
 #define WS2811_DMA_CHANNEL              DMA1_Channel2

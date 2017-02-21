@@ -103,8 +103,6 @@
 #define CURRENT_METER_ADC_PIN       PB2
 #define RSSI_ADC_PIN                PA6
 
-#define LED_STRIP // LED strip configuration using PWM motor output pin 5.
-
 #define DEFAULT_FEATURES        FEATURE_VBAT
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
