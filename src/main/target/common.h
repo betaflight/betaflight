@@ -83,6 +83,7 @@
 
 #if (FLASH_SIZE > 64)
 #define BLACKBOX
+#define LED_STRIP
 #define TELEMETRY
 #define TELEMETRY_FRSKY
 #define TELEMETRY_HOTT

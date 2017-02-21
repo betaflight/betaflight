@@ -174,8 +174,6 @@
 
 #define USE_ESC_SENSOR
 
-#define LED_STRIP
-
 #define SPEKTRUM_BIND
 #define BIND_PIN                PA3 // USART2, PA3
 

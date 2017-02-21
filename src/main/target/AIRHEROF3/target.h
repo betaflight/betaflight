@@ -83,8 +83,6 @@
 #define ADC_INSTANCE            ADC2
 #define VBAT_ADC_PIN            PA4
 
-#define LED_STRIP
-
 #define DEFAULT_FEATURES        FEATURE_VBAT
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS

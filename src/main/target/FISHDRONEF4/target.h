@@ -134,8 +134,6 @@
 #define SERIALRX_UART           SERIAL_PORT_USART3
 
 // *************** Others **************************
-#define LED_STRIP
-
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE

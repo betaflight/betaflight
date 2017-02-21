@@ -78,6 +78,8 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_3)
 
+#undef LED_STRIP
+
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PA7
 #define VBAT_ADC_PIN            PA6

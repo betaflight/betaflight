@@ -123,9 +123,6 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 
-#define LED_STRIP
-
-
 #define SPEKTRUM_BIND
 // USART3 Rx, PB11
 #define BIND_PIN                PB11

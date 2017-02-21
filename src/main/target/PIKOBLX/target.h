@@ -76,8 +76,6 @@
 #define CURRENT_METER_ADC_PIN   PB2
 #define VBAT_ADC_PIN            PA5
 
-#define LED_STRIP
-
 #define TRANSPONDER
 #define TRANSPONDER_GPIO                     GPIOA
 #define TRANSPONDER_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA

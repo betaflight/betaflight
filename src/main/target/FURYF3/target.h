@@ -147,8 +147,6 @@
 #define RSSI_ADC_PIN            PA1
 #define CURRENT_METER_ADC_PIN   PA2
 
-#define LED_STRIP
-
 #define SONAR
 #define SONAR_ECHO_PIN          PB1
 #define SONAR_TRIGGER_PIN       PB0
