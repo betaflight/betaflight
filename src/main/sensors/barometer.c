@@ -224,7 +224,7 @@ uint32_t baroUpdate(void)
 
 static void performBaroCalibrationCycle(void)
 {
-    static int32_t savedGroundPressure=0;
+    static int32_t savedGroundPressure = 0;
 
     baroGroundPressure -= baroGroundPressure / 8;
     baroGroundPressure += baroPressure;
