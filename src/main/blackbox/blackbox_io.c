@@ -614,14 +614,13 @@ bool blackboxDeviceOpen(void)
 /**
  * Erase all blackbox logs
  */
+#ifdef USE_FLASHFS
 void blackboxEraseAll(void)
 {
     switch (blackboxConfig()->device) {
-#ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
         flashfsEraseCompletely();
         break;
-#endif
     default:
         //not supported
         break;
@@ -635,11 +634,9 @@ void blackboxEraseAll(void)
 bool isBlackboxErased(void)
 {
     switch (blackboxConfig()->device) {
-#ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
         return flashfsIsReady();
         break;
-#endif
     default:
     //not supported
         return true;
@@ -647,6 +644,7 @@ bool isBlackboxErased(void)
 
     }
 }
+#endif
 
 /**
  * Close the Blackbox logging device immediately without attempting to flush any remaining data.
