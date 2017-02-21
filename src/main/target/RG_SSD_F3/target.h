@@ -138,12 +138,6 @@
 #define TRANSPONDER_IRQ                      DMA1_Channel6_IRQn
 #define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC6
 #define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
-#define BLACKBOX
-#define GPS
-#define SERIAL_RX
-#define TELEMETRY
-#define USE_SERVOS
-#define USE_CLI
 
 #define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 

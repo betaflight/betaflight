@@ -58,8 +58,6 @@
 //#define SONAR_ECHO_PIN          PB1
 //#define SONAR_TRIGGER_PIN       PB0
 
-#undef GPS
-
 #define USB_IO
 #define USB_CABLE_DETECTION
 #define USB_DETECT_PIN          PB5

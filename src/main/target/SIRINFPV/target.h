@@ -147,8 +147,6 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
-#define USE_SERVOS
-
 #define SPEKTRUM_BIND
 // USART3, PB11
 #define BIND_PIN                PB11

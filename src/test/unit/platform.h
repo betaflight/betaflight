@@ -26,7 +26,7 @@
 #define MAG
 #define BARO
 #define GPS
-#define DISPLAY
+#define USE_DASHBOARD
 #define TELEMETRY
 #define LED_STRIP
 #define USE_SERVOS
