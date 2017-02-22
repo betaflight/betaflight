@@ -90,6 +90,7 @@ uint8_t mpu6500SpiDetect(void)
         mpuDetected = MPU_65xx_SPI;
         break;
     case MPU9250_WHO_AM_I_CONST:
+    case MPU9255_WHO_AM_I_CONST:
         mpuDetected = MPU_9250_SPI;
         break;
     case ICM20608G_WHO_AM_I_CONST:
