@@ -535,7 +535,7 @@ static const clivalue_t valueTable[] = {
     { "use_unsynced_pwm",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &motorConfig()->dev.useUnsyncedPwm, .config.lookup = { TABLE_OFF_ON } },
     { "motor_pwm_protocol",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &motorConfig()->dev.motorPwmProtocol, .config.lookup = { TABLE_MOTOR_PWM_PROTOCOL } },
     { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &motorConfig()->dev.motorPwmRate, .config.minmax = { 200, 32000 } },
-    { "motor_pwm_inversion",        VAR_UINT8  | MASTER_VALUE,  &motorConfig()->dev.motorPwmInversion, .config.lookup = { TABLE_OFF_ON } },
+    { "motor_pwm_inversion",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &motorConfig()->dev.motorPwmInversion, .config.lookup = { TABLE_OFF_ON } },
 
     { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &armingConfig()->disarm_kill_switch, .config.lookup = { TABLE_OFF_ON } },
     { "gyro_cal_on_first_arm",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &armingConfig()->gyro_cal_on_first_arm, .config.lookup = { TABLE_OFF_ON } },
