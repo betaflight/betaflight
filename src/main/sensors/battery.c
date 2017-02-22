@@ -68,6 +68,31 @@ int32_t mAhDrawn = 0;               // milliampere hours drawn from the battery 
 static batteryState_e vBatState;
 static batteryState_e consumptionState;
 
+PG_REGISTER_WITH_RESET_TEMPLATE(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
+
+#ifndef CURRENT_METER_SCALE_DEFAULT
+#define CURRENT_METER_SCALE_DEFAULT 400 // for Allegro ACS758LCB-100U (40mV/A)
+#endif
+
+PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
+    .vbatscale = VBAT_SCALE_DEFAULT,
+    .vbatresdivval = VBAT_RESDIVVAL_DEFAULT,
+    .vbatresdivmultiplier = VBAT_RESDIVMULTIPLIER_DEFAULT,
+    .vbatmaxcellvoltage = 43,
+    .vbatmincellvoltage = 33,
+    .vbatwarningcellvoltage = 35,
+    .vbathysteresis = 1,
+    .batteryMeterType = BATTERY_SENSOR_ADC,
+    .currentMeterOffset = 0,
+    .currentMeterScale = CURRENT_METER_SCALE_DEFAULT,
+    .batteryCapacity = 0,
+    .currentMeterType = CURRENT_SENSOR_ADC,
+    .batterynotpresentlevel = 55, // VBAT below 5.5 V will be igonored
+    .useVBatAlerts = true,
+    .useConsumptionAlerts = false,
+    .consumptionWarningPercentage = 10
+);
+
 static uint16_t batteryAdcToVoltage(uint16_t src)
 {
     // calculate battery voltage based on ADC reading

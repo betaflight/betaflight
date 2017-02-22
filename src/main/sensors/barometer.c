@@ -44,6 +44,16 @@
 
 baro_t baro;                        // barometer access functions
 
+PG_REGISTER_WITH_RESET_TEMPLATE(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
+
+PG_RESET_TEMPLATE(barometerConfig_t, barometerConfig,
+    .baro_hardware = 1,
+    .baro_sample_count = 21,
+    .baro_noise_lpf = 0.6f,
+    .baro_cf_vel = 0.985f,
+    .baro_cf_alt = 0.965f
+);
+
 #ifdef BARO
 
 static uint16_t calibratingB = 0;      // baro calibration = get new ground pressure value
