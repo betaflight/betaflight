@@ -1,7 +1,7 @@
 /*
 *****************************************************************************
 **
-**  File        : stm32_flash_f411.ld
+**  File        : stm32_flash_f411_opbl.ld
 **
 **  Abstract    : Linker script for STM32F411 Device with
 **                512KByte FLASH, 128KByte RAM

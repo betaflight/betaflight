@@ -1,9 +1,9 @@
 /*
 *****************************************************************************
 **
-**  File        : stm32_flash_f411.ld
+**  File        : stm32_flash_f446.ld
 **
-**  Abstract    : Linker script for STM32F411 Device with
+**  Abstract    : Linker script for STM32F446 Device with
 **                512KByte FLASH, 128KByte RAM
 **
 *****************************************************************************

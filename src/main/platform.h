@@ -28,7 +28,7 @@
 
 #define STM32F7
 
-#elif defined(STM32F40_41xxx) || defined (STM32F411xE)
+#elif defined(STM32F40_41xxx) || defined (STM32F411xE) || defined (STM32F446xx)
 
 #include "stm32f4xx_conf.h"
 #include "stm32f4xx_rcc.h"
