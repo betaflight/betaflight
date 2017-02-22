@@ -15,8 +15,9 @@ ENTRY(Reset_Handler)
 /* Specify the memory areas */
 MEMORY
 {
-    FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 768K
-    FLASH_CONFIG (r)  : ORIGIN = 0x080C0000, LENGTH = 256K
+    FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 32K
+    FLASH_CONFIG (r)  : ORIGIN = 0x08008000, LENGTH = 32K
+    FLASH1 (rx)       : ORIGIN = 0x08010000, LENGTH = 960K
 
     TCM (rwx)         : ORIGIN = 0x20000000, LENGTH = 64K
     RAM (rwx)         : ORIGIN = 0x20010000, LENGTH = 256K
@@ -25,4 +26,4 @@ MEMORY
 /* note CCM could be used for stack */
 REGION_ALIAS("STACKRAM", TCM)
 
-INCLUDE "stm32_flash.ld"
+INCLUDE "stm32_flash_f7.ld"
