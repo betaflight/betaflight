@@ -43,6 +43,7 @@
 #include "drivers/accgyro_mpu3050.h"
 #include "drivers/accgyro_mpu6050.h"
 #include "drivers/accgyro_mpu6500.h"
+#include "drivers/accgyro_spi_bmi160.h"
 #include "drivers/accgyro_spi_icm20689.h"
 #include "drivers/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro_spi_mpu6500.h"
@@ -239,11 +240,21 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
 
 #ifdef USE_GYRO_SPI_ICM20689
     case GYRO_ICM20689:
-        if (icm20689SpiGyroDetect(dev))
-        {
+        if (icm20689SpiGyroDetect(dev)) {
             gyroHardware = GYRO_ICM20689;
 #ifdef GYRO_ICM20689_ALIGN
             dev->gyroAlign = GYRO_ICM20689_ALIGN;
+#endif
+            break;
+        }
+#endif
+
+#ifdef USE_ACCGYRO_BMI160
+    case GYRO_BMI160:
+        if (bmi160SpiGyroDetect(dev)) {
+            gyroHardware = GYRO_BMI160;
+#ifdef GYRO_BMI160_ALIGN
+            dev->gyroAlign = GYRO_BMI160_ALIGN;
 #endif
             break;
         }
