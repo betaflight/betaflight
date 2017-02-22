@@ -3161,7 +3161,7 @@ static void cliMap(char *cmdline)
 static char *checkCommand(char *cmdLine, const char *command)
 {
     if(!strncasecmp(cmdLine, command, strlen(command))   // command names match
-        && !isalnum((unsigned)cmdLine[strlen(command)])) {   // next characted in bufffer is not alphanumeric (command is correctly terminated)
+        && (isspace((unsigned)cmdLine[strlen(command)]) || cmdLine[strlen(command)] == 0)) {
         return cmdLine + strlen(command) + 1;
     } else {
         return 0;
