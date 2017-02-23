@@ -283,14 +283,14 @@ void SystemInit(void)
   SCB_EnableICache();
 
   /* Enable D-Cache */
-  SCB_EnableDCache();
+  //SCB_EnableDCache();
 
   /* Configure the system clock to 216 MHz */
   SystemClock_Config();
 
-  //if(SystemCoreClock != 260000000)
+  if(SystemCoreClock != 216000000)
   {
-      //while(1)
+      while(1)
       {
           // There is a mismatch between the configured clock and the expected clock in portable.h
       }

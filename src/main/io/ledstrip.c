@@ -137,13 +137,12 @@ const hsvColor_t hsv[] = {
 // macro to save typing on default colors
 #define HSV(color) (hsv[COLOR_ ## color])
 
-STATIC_UNIT_TESTED uint8_t ledGridWidth;
-STATIC_UNIT_TESTED uint8_t ledGridHeight;
+STATIC_UNIT_TESTED uint8_t ledGridRows;
 // grid offsets
-STATIC_UNIT_TESTED uint8_t highestYValueForNorth;
-STATIC_UNIT_TESTED uint8_t lowestYValueForSouth;
-STATIC_UNIT_TESTED uint8_t highestXValueForWest;
-STATIC_UNIT_TESTED uint8_t lowestXValueForEast;
+STATIC_UNIT_TESTED int8_t highestYValueForNorth;
+STATIC_UNIT_TESTED int8_t lowestYValueForSouth;
+STATIC_UNIT_TESTED int8_t highestXValueForWest;
+STATIC_UNIT_TESTED int8_t lowestXValueForEast;
 
 STATIC_UNIT_TESTED ledCounts_t ledCounts;
 
@@ -174,27 +173,41 @@ static int scaledAux;
 
 static void updateLedRingCounts(void);
 
-STATIC_UNIT_TESTED void determineLedStripDimensions(void)
+STATIC_UNIT_TESTED void updateDimensions(void)
 {
     int maxX = 0;
+    int minX = LED_XY_MASK;
     int maxY = 0;
+    int minY = LED_XY_MASK;
 
     for (int ledIndex = 0; ledIndex < ledCounts.count; ledIndex++) {
         const ledConfig_t *ledConfig = &currentLedStripConfig->ledConfigs[ledIndex];
 
-        maxX = MAX(ledGetX(ledConfig), maxX);
-        maxY = MAX(ledGetY(ledConfig), maxY);
+        int ledX = ledGetX(ledConfig);
+        maxX = MAX(ledX, maxX);
+        minX = MIN(ledX, minX);
+        int ledY = ledGetY(ledConfig);
+        maxY = MAX(ledY, maxY);
+        minY = MIN(ledY, minY);
     }
-    ledGridWidth = maxX + 1;
-    ledGridHeight = maxY + 1;
-}
 
-STATIC_UNIT_TESTED void determineOrientationLimits(void)
-{
-    highestYValueForNorth = MAX((ledGridHeight / 2) - 1, 0);
-    lowestYValueForSouth = (ledGridHeight + 1) / 2;
-    highestXValueForWest = MAX((ledGridWidth / 2) - 1, 0);
-    lowestXValueForEast = (ledGridWidth + 1) / 2;
+    ledGridRows = maxY - minY + 1;
+
+    if (minX < maxX) {
+        lowestXValueForEast = (minX + maxX) / 2 + 1;
+        highestXValueForWest = (minX + maxX - 1) / 2;
+    } else {
+        lowestXValueForEast = LED_XY_MASK / 2;
+        highestXValueForWest = lowestXValueForEast - 1;
+    }
+    if (minY < maxY) {
+        lowestYValueForSouth = (minY + maxY) / 2 + 1;
+        highestYValueForNorth = (minY + maxY - 1) / 2;
+    } else {
+        lowestYValueForSouth = LED_XY_MASK / 2;
+        highestYValueForNorth = lowestYValueForSouth - 1;
+    }
+
 }
 
 STATIC_UNIT_TESTED void updateLedCount(void)
@@ -224,8 +237,7 @@ STATIC_UNIT_TESTED void updateLedCount(void)
 void reevaluateLedConfig(void)
 {
     updateLedCount();
-    determineLedStripDimensions();
-    determineOrientationLimits();
+    updateDimensions();
     updateLedRingCounts();
 }
 
@@ -363,14 +375,6 @@ typedef enum {
     QUADRANT_SOUTH      = 1 << 1,
     QUADRANT_EAST       = 1 << 2,
     QUADRANT_WEST       = 1 << 3,
-    QUADRANT_NORTH_EAST = 1 << 4,
-    QUADRANT_SOUTH_EAST = 1 << 5,
-    QUADRANT_NORTH_WEST = 1 << 6,
-    QUADRANT_SOUTH_WEST = 1 << 7,
-    QUADRANT_NONE       = 1 << 8,
-    QUADRANT_NOTDIAG    = 1 << 9,  // not in NE/SE/NW/SW
-    // values for test
-    QUADRANT_ANY        = QUADRANT_NORTH | QUADRANT_SOUTH | QUADRANT_EAST | QUADRANT_WEST | QUADRANT_NONE,
 } quadrant_e;
 
 static quadrant_e getLedQuadrant(const int ledIndex)
@@ -390,43 +394,20 @@ static quadrant_e getLedQuadrant(const int ledIndex)
     else if (x <= highestXValueForWest)
         quad |= QUADRANT_WEST;
 
-    if ((quad & (QUADRANT_NORTH | QUADRANT_SOUTH))
-       && (quad & (QUADRANT_EAST | QUADRANT_WEST)) ) { // is led  in one of NE/SE/NW/SW?
-        quad |= 1 << (4 + ((quad & QUADRANT_SOUTH) ? 1 : 0) + ((quad & QUADRANT_WEST) ? 2 : 0));
-    } else {
-        quad |= QUADRANT_NOTDIAG;
-    }
-
-    if ((quad & (QUADRANT_NORTH | QUADRANT_SOUTH | QUADRANT_EAST | QUADRANT_WEST)) == 0)
-        quad |= QUADRANT_NONE;
-
     return quad;
 }
-
-static const struct {
-    uint8_t dir;             // ledDirectionId_e
-    uint16_t quadrantMask;   // quadrant_e
-} directionQuadrantMap[] = {
-    {LED_DIRECTION_SOUTH, QUADRANT_SOUTH},
-    {LED_DIRECTION_NORTH, QUADRANT_NORTH},
-    {LED_DIRECTION_EAST,  QUADRANT_EAST},
-    {LED_DIRECTION_WEST,  QUADRANT_WEST},
-    {LED_DIRECTION_DOWN,  QUADRANT_ANY},
-    {LED_DIRECTION_UP,    QUADRANT_ANY},
-};
 
 static hsvColor_t* getDirectionalModeColor(const int ledIndex, const modeColorIndexes_t *modeColors)
 {
     const ledConfig_t *ledConfig = &currentLedStripConfig->ledConfigs[ledIndex];
+    const int ledDirection = ledGetDirection(ledConfig);
 
-    quadrant_e quad = getLedQuadrant(ledIndex);
-    for (unsigned i = 0; i < ARRAYLEN(directionQuadrantMap); i++) {
-        ledDirectionId_e dir = directionQuadrantMap[i].dir;
-        quadrant_e quadMask = directionQuadrantMap[i].quadrantMask;
-
-        if (ledGetDirectionBit(ledConfig, dir) && (quad & quadMask))
-            return &currentLedStripConfig->colors[modeColors->color[dir]];
+    for (unsigned i = 0; i < LED_DIRECTION_COUNT; i++) {
+        if (ledDirection & (1 << i)) {
+            return &currentLedStripConfig->colors[modeColors->color[i]];
+        }
     }
+
     return NULL;
 }
 
@@ -693,14 +674,14 @@ static void applyLedIndicatorLayer(bool updateNow, timeUs_t *timer)
 
     quadrant_e quadrants = 0;
     if (rcCommand[ROLL] > INDICATOR_DEADBAND) {
-        quadrants |= QUADRANT_NORTH_EAST | QUADRANT_SOUTH_EAST;
+        quadrants |= QUADRANT_EAST;
     } else if (rcCommand[ROLL] < -INDICATOR_DEADBAND) {
-        quadrants |= QUADRANT_NORTH_WEST | QUADRANT_SOUTH_WEST;
+        quadrants |= QUADRANT_WEST;
     }
     if (rcCommand[PITCH] > INDICATOR_DEADBAND) {
-        quadrants |= QUADRANT_NORTH_EAST | QUADRANT_NORTH_WEST;
+        quadrants |= QUADRANT_NORTH;
     } else if (rcCommand[PITCH] < -INDICATOR_DEADBAND) {
-        quadrants |= QUADRANT_SOUTH_EAST | QUADRANT_SOUTH_WEST;
+        quadrants |= QUADRANT_SOUTH;
     }
 
     for (int ledIndex = 0; ledIndex < ledCounts.count; ledIndex++) {
@@ -857,7 +838,7 @@ static void applyLedBlinkLayer(bool updateNow, timeUs_t *timer)
 static void applyLedAnimationLayer(bool updateNow, timeUs_t *timer)
 {
     static uint8_t frameCounter = 0;
-    const int animationFrames = ledGridHeight;
+    const int animationFrames = ledGridRows;
     if(updateNow) {
         frameCounter = (frameCounter + 1 < animationFrames) ? frameCounter + 1 : 0;
         *timer += HZ_TO_US(20);

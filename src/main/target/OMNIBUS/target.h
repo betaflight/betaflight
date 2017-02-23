@@ -68,7 +68,10 @@
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-#define SERIAL_PORT_COUNT       4
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT       6
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
@@ -83,8 +86,6 @@
 #define USE_I2C1                // PB6/SCL, PB7/SDA
 //#define I2C1_SCL                PB6
 //#define I2C2_SDA                PB7
-
-#define I2C_DEVICE (I2CDEV_1)	// Backward compatibility for OLED driver
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1

@@ -20,6 +20,7 @@
 
 #include "platform.h"
 
+#ifdef TARGET_CONFIG
 #include "drivers/serial.h"
 
 #include "fc/rc_controls.h"
@@ -34,7 +35,6 @@
 
 #include "config/config_profile.h"
 #include "config/config_master.h"
-
 
 // alternative defaults settings for Colibri/Gemini targets
 void targetConfiguration(master_t *config)
@@ -54,3 +54,4 @@ void targetConfiguration(master_t *config)
     config->profile[0].controlRateProfile[0].tpa_breakpoint = 1700;
     config->serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
 }
+#endif

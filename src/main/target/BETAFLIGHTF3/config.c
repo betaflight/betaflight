@@ -15,22 +15,31 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdbool.h>
+#include <stdint.h>
 
-#define SOFTSERIAL_BUFFER_SIZE 256
+#include <platform.h>
 
-typedef enum {
-    SOFTSERIAL1 = 0,
-    SOFTSERIAL2
-} softSerialPortIndex_e;
+#ifdef TARGET_CONFIG
+#include "common/utils.h"
 
-serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallbackPtr rxCallback, uint32_t baud, portMode_t mode, portOptions_t options);
+#include "drivers/io.h"
 
-// serialPort API
-void softSerialWriteByte(serialPort_t *instance, uint8_t ch);
-uint32_t softSerialRxBytesWaiting(const serialPort_t *instance);
-uint32_t softSerialTxBytesFree(const serialPort_t *instance);
-uint8_t softSerialReadByte(serialPort_t *instance);
-void softSerialSetBaudRate(serialPort_t *s, uint32_t baudRate);
-bool isSoftSerialTransmitBufferEmpty(const serialPort_t *s);
+#include "fc/rc_controls.h"
 
+#include "flight/failsafe.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
+
+#include "rx/rx.h"
+
+#include "config/config_profile.h"
+#include "config/config_master.h"
+
+void targetConfiguration(master_t *config)
+{
+    UNUSED(config);
+
+    batteryConfig->currentMeterScale = 220;
+}
+#endif

@@ -81,6 +81,8 @@ typedef enum {
 
 extern const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT];
 
+#define SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(x) (((x) <= SERIAL_PORT_USART8) ? (x) : (RESOURCE_SOFT_OFFSET + ((x) - SERIAL_PORT_SOFTSERIAL1)))
+
 //
 // runtime
 //

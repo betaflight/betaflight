@@ -18,6 +18,8 @@
 #include <stdint.h>
 
 #include <platform.h>
+
+#ifdef TARGET_CONFIG
 #include "drivers/io.h"
 
 #include "drivers/timer.h"
@@ -53,4 +55,4 @@ void targetConfiguration(master_t *config)
 
     intFeatureSet(FEATURE_CURRENT_METER | FEATURE_VBAT, &config->enabledFeatures);
 }
-
+#endif

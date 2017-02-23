@@ -20,6 +20,7 @@
 
 #include <platform.h>
 
+#ifdef TARGET_CONFIG
 #include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
 
@@ -62,3 +63,4 @@ void targetConfiguration(master_t *config)
     config->customMotorMixer[6] = (motorMixer_t){ 1.0f, -1.0f,  0.414178f,  1.0f };    // MIDREAR_R
     config->customMotorMixer[7] = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L
 }
+#endif

@@ -34,6 +34,7 @@
 #include "drivers/light_led.h"
 #include "drivers/flash.h"
 #include "drivers/display.h"
+#include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/display_ug2864hsweg01.h"
@@ -72,6 +73,7 @@
 #define servoConfig(x) (&masterConfig.servoConfig)
 #define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
 #define gimbalConfig(x) (&masterConfig.gimbalConfig)
+#define channelForwardingConfig(x) (&masterConfig.channelForwardingConfig)
 #define boardAlignment(x) (&masterConfig.boardAlignment)
 #define imuConfig(x) (&masterConfig.imuConfig)
 #define gyroConfig(x) (&masterConfig.gyroConfig)
@@ -88,6 +90,7 @@
 #define mixerConfig(x) (&masterConfig.mixerConfig)
 #define airplaneConfig(x) (&masterConfig.airplaneConfig)
 #define failsafeConfig(x) (&masterConfig.failsafeConfig)
+#define serialPinConfig(x) (&masterConfig.serialPinConfig)
 #define serialConfig(x) (&masterConfig.serialConfig)
 #define telemetryConfig(x) (&masterConfig.telemetryConfig)
 #define ibusTelemetryConfig(x) (&masterConfig.telemetryConfig)
@@ -136,6 +139,8 @@ typedef struct master_s {
     servoProfile_t servoProfile;
     // gimbal-related configuration
     gimbalConfig_t gimbalConfig;
+    // Channel forwarding start channel
+    channelForwardingConfig_t channelForwardingConfig;
 #endif
 
     boardAlignment_t boardAlignment;
@@ -175,6 +180,7 @@ typedef struct master_s {
     airplaneConfig_t airplaneConfig;
 
     failsafeConfig_t failsafeConfig;
+    serialPinConfig_t serialPinConfig;
     serialConfig_t serialConfig;
     telemetryConfig_t telemetryConfig;
 

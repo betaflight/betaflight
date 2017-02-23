@@ -68,19 +68,27 @@
 
 #define VIDEO_BUFFER_CHARS_PAL    480
 
-// Character coordinate and attributes
+// Character coordinate
 
 #define OSD_POS(x,y)  (x | (y << 5))
 #define OSD_X(x)      (x & 0x001F)
 #define OSD_Y(x)      ((x >> 5) & 0x001F)
+
+// Blink control
+
+bool blinkState = true;
+
+static uint32_t blinkBits[(OSD_ITEM_COUNT + 31)/32];
+#define SET_BLINK(item) (blinkBits[(item) / 32] |= (1 << ((item) % 32)))
+#define CLR_BLINK(item) (blinkBits[(item) / 32] &= ~(1 << ((item) % 32)))
+#define IS_BLINK(item) (blinkBits[(item) / 32] & (1 << ((item) % 32)))
+#define BLINK(item) (IS_BLINK(item) && blinkState)
 
 // Things in both OSD and CMS
 
 #define IS_HI(X)  (rcData[X] > 1750)
 #define IS_LO(X)  (rcData[X] < 1250)
 #define IS_MID(X) (rcData[X] > 1250 && rcData[X] < 1750)
-
-bool blinkState = true;
 
 //extern uint8_t RSSI; // TODO: not used?
 
@@ -139,7 +147,7 @@ static int32_t osdGetAltitude(int32_t alt)
 
 static void osdDrawSingleElement(uint8_t item)
 {
-    if (!VISIBLE(osdProfile()->item_pos[item]) || BLINK(osdProfile()->item_pos[item]))
+    if (!VISIBLE(osdProfile()->item_pos[item]) || BLINK(item))
         return;
 
     uint8_t elemPosX = OSD_X(osdProfile()->item_pos[item]);
@@ -302,7 +310,7 @@ static void osdDrawSingleElement(uint8_t item)
             pitchAngle = (pitchAngle / 8) - 41; // 41 = 4 * 9 + 5
 
             for (int8_t x = -4; x <= 4; x++) {
-                int y = (rollAngle * x) / 64;
+                int y = (-rollAngle * x) / 64;
                 y -= pitchAngle;
                 // y += 41; // == 4 * 9 + 5
                 if (y >= 0 && y <= 81) {
@@ -366,6 +374,23 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
+        case OSD_PIDRATE_PROFILE:
+        {
+            uint8_t profileIndex = masterConfig.current_profile_index;
+            uint8_t rateProfileIndex = masterConfig.profile[profileIndex].activeRateProfile;
+            sprintf(buff, "%d-%d", profileIndex + 1, rateProfileIndex + 1);
+            break;
+        }
+
+        case OSD_MAIN_BATT_WARNING:
+        {
+            if (getVbat() > (batteryWarningVoltage - 1))
+              return;
+
+            sprintf(buff, "LOW VOLTAGE");
+            break;
+        }
+
         default:
             return;
     }
@@ -376,6 +401,10 @@ static void osdDrawSingleElement(uint8_t item)
 void osdDrawElements(void)
 {
     displayClearScreen(osdDisplayPort);
+
+    /* Hide OSD when OSDSW mode is active */
+    if (IS_RC_MODE_ACTIVE(BOXOSD))
+      return;
 
 #if 0
     if (currentElement)
@@ -409,6 +438,8 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_PITCH_PIDS);
     osdDrawSingleElement(OSD_YAW_PIDS);
     osdDrawSingleElement(OSD_POWER);
+    osdDrawSingleElement(OSD_PIDRATE_PROFILE);
+    osdDrawSingleElement(OSD_MAIN_BATT_WARNING);
 
 #ifdef GPS
 #ifdef CMS
@@ -444,6 +475,8 @@ void osdResetConfig(osd_profile_t *osdProfile)
     osdProfile->item_pos[OSD_PITCH_PIDS] = OSD_POS(2, 11);
     osdProfile->item_pos[OSD_YAW_PIDS] = OSD_POS(2, 12);
     osdProfile->item_pos[OSD_POWER] = OSD_POS(15, 1);
+    osdProfile->item_pos[OSD_PIDRATE_PROFILE] = OSD_POS(2, 13);
+    osdProfile->item_pos[OSD_MAIN_BATT_WARNING] = OSD_POS(8, 6);
 
     osdProfile->rssi_alarm = 20;
     osdProfile->cap_alarm = 2200;
@@ -461,6 +494,8 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
 #endif
 
     armState = ARMING_FLAG(ARMED);
+
+    memset(blinkBits, 0, sizeof(blinkBits));
 
     displayClearScreen(osdDisplayPort);
 
@@ -498,45 +533,48 @@ void osdUpdateAlarms(void)
     statRssi = rssi * 100 / 1024;
 
     if (statRssi < pOsdProfile->rssi_alarm)
-        pOsdProfile->item_pos[OSD_RSSI_VALUE] |= BLINK_FLAG;
+        SET_BLINK(OSD_RSSI_VALUE);
     else
-        pOsdProfile->item_pos[OSD_RSSI_VALUE] &= ~BLINK_FLAG;
+        CLR_BLINK(OSD_RSSI_VALUE);
 
-    if (getVbat() <= (batteryWarningVoltage - 1))
-        pOsdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] |= BLINK_FLAG;
-    else
-        pOsdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] &= ~BLINK_FLAG;
+    if (getVbat() <= (batteryWarningVoltage - 1)) {
+        SET_BLINK(OSD_MAIN_BATT_VOLTAGE);
+        SET_BLINK(OSD_MAIN_BATT_WARNING);
+    } else {
+        CLR_BLINK(OSD_MAIN_BATT_VOLTAGE);
+        CLR_BLINK(OSD_MAIN_BATT_WARNING);
+    }
 
     if (STATE(GPS_FIX) == 0)
-        pOsdProfile->item_pos[OSD_GPS_SATS] |= BLINK_FLAG;
+        SET_BLINK(OSD_GPS_SATS);
     else
-        pOsdProfile->item_pos[OSD_GPS_SATS] &= ~BLINK_FLAG;
+        CLR_BLINK(OSD_GPS_SATS);
 
     if (flyTime / 60 >= pOsdProfile->time_alarm && ARMING_FLAG(ARMED))
-        pOsdProfile->item_pos[OSD_FLYTIME] |= BLINK_FLAG;
+        SET_BLINK(OSD_FLYTIME);
     else
-        pOsdProfile->item_pos[OSD_FLYTIME] &= ~BLINK_FLAG;
+        CLR_BLINK(OSD_FLYTIME);
 
     if (mAhDrawn >= pOsdProfile->cap_alarm)
-        pOsdProfile->item_pos[OSD_MAH_DRAWN] |= BLINK_FLAG;
+        SET_BLINK(OSD_MAH_DRAWN);
     else
-        pOsdProfile->item_pos[OSD_MAH_DRAWN] &= ~BLINK_FLAG;
+        CLR_BLINK(OSD_MAH_DRAWN);
 
     if (alt >= pOsdProfile->alt_alarm)
-        pOsdProfile->item_pos[OSD_ALTITUDE] |= BLINK_FLAG;
+        SET_BLINK(OSD_ALTITUDE);
     else
-        pOsdProfile->item_pos[OSD_ALTITUDE] &= ~BLINK_FLAG;
+        CLR_BLINK(OSD_ALTITUDE);
 }
 
 void osdResetAlarms(void)
 {
-    osd_profile_t *pOsdProfile = &masterConfig.osdProfile;
-
-    pOsdProfile->item_pos[OSD_RSSI_VALUE] &= ~BLINK_FLAG;
-    pOsdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] &= ~BLINK_FLAG;
-    pOsdProfile->item_pos[OSD_GPS_SATS] &= ~BLINK_FLAG;
-    pOsdProfile->item_pos[OSD_FLYTIME] &= ~BLINK_FLAG;
-    pOsdProfile->item_pos[OSD_MAH_DRAWN] &= ~BLINK_FLAG;
+    CLR_BLINK(OSD_RSSI_VALUE);
+    CLR_BLINK(OSD_MAIN_BATT_VOLTAGE);
+    CLR_BLINK(OSD_MAIN_BATT_WARNING);
+    CLR_BLINK(OSD_GPS_SATS);
+    CLR_BLINK(OSD_FLYTIME);
+    CLR_BLINK(OSD_MAH_DRAWN);
+    CLR_BLINK(OSD_ALTITUDE);
 }
 
 static void osdResetStats(void)

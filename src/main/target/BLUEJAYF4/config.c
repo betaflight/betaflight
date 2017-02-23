@@ -20,6 +20,7 @@
 
 #include <platform.h>
 
+#ifdef TARGET_CONFIG
 #include "blackbox/blackbox_io.h"
 
 #include "config/config_master.h"
@@ -58,3 +59,4 @@ void targetValidateConfiguration(master_t *config)
         }
     }
 }
+#endif

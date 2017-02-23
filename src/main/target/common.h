@@ -31,7 +31,6 @@
 #define I2C2_OVERCLOCK true
 
 #ifdef STM32F7
-#define STM_FAST_TARGET
 #define I2C3_OVERCLOCK true
 #define I2C4_OVERCLOCK true
 #define TELEMETRY_IBUS
@@ -41,7 +40,6 @@
   STM32 F4 specific settings.
 ****************************/
 #ifdef STM32F4
-#define STM_FAST_TARGET
 #define USE_DSHOT
 #define I2C3_OVERCLOCK true
 #define TELEMETRY_IBUS
@@ -49,6 +47,8 @@
 
 #ifdef STM32F3
 #define USE_DSHOT
+#undef GPS
+#define MINIMAL_CLI
 #endif
 
 #ifdef STM32F1
@@ -56,7 +56,7 @@
 #define USE_UART1_RX_DMA
 #define USE_UART1_TX_DMA
 
-#define CLI_MINIMAL_VERBOSITY
+#define MINIMAL_CLI
 #endif
 
 #define SERIAL_RX
@@ -71,14 +71,18 @@
 #define USE_PWM
 #define USE_PPM
 
-#if defined(STM_FAST_TARGET)
-#define MAX_AUX_CHANNELS                99
+#if defined(STM32F4) || defined(STM32F7)
 #define TASK_GYROPID_DESIRED_PERIOD     125
 #define SCHEDULER_DELAY_LIMIT           10
 #else
-#define MAX_AUX_CHANNELS                6
 #define TASK_GYROPID_DESIRED_PERIOD     1000
 #define SCHEDULER_DELAY_LIMIT           100
+#endif
+
+#if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
+#define DEFAULT_AUX_CHANNEL_COUNT       MAX_AUX_CHANNEL_COUNT
+#else
+#define DEFAULT_AUX_CHANNEL_COUNT       6
 #endif
 
 #if (FLASH_SIZE > 64)
@@ -109,7 +113,5 @@
 #define VTX_SMARTAUDIO
 #define VTX_TRAMP
 #define USE_SENSOR_NAMES
-#else
-#define SKIP_CLI_COMMAND_HELP
 #endif
 

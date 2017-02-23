@@ -583,6 +583,7 @@ COMMON_SRC = \
             drivers/rx_pwm.c \
             drivers/serial.c \
             drivers/serial_uart.c \
+            drivers/serial_softserial.c \
             drivers/sound_beeper.c \
             drivers/stack_check.c \
             drivers/system.c \
@@ -592,10 +593,10 @@ COMMON_SRC = \
             fc/fc_dispatch.c \
             fc/fc_hardfaults.c \
             fc/fc_core.c \
+            fc/fc_rc.c \
             fc/fc_msp.c \
             fc/fc_tasks.c \
             fc/rc_controls.c \
-            fc/rc_curves.c \
             fc/runtime_config.c \
             fc/cli.c \
             flight/altitudehold.c \
@@ -653,7 +654,6 @@ HIGHEND_SRC = \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
             drivers/serial_escserial.c \
-            drivers/serial_softserial.c \
             drivers/sonar_hcsr04.c \
             drivers/vtx_common.c \
             flight/navigation.c \
@@ -713,7 +713,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/timer.c \
             fc/fc_core.c \
             fc/fc_tasks.c \
-            fc/mw.c \
+            fc/fc_rc.c \
             fc/rc_controls.c \
             fc/runtime_config.c \
             flight/imu.c \

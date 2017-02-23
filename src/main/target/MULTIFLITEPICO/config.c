@@ -20,6 +20,7 @@
 
 #include <platform.h>
 
+#ifdef TARGET_CONFIG
 #include "common/axis.h"
 
 #include "drivers/sensor.h"
@@ -83,5 +84,5 @@ void targetConfiguration(master_t *config)
 
     config->profile[0].controlRateProfile[0].rcRate8 = 70;
     config->profile[0].pidProfile.I8[PIDLEVEL] = 40;
-
 }
+#endif

@@ -59,7 +59,7 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
 
     motorDmaOutput_t * const motor = &dmaMotors[index];
 
-    if (!motor->timerHardware->dmaStream) {
+    if (!motor->timerHardware || !motor->timerHardware->dmaStream) {
         return;
     }
 
@@ -82,9 +82,7 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
         packet <<= 1;
     }
 
-    TIM_DMACmd(motor->timerHardware->tim, motor->timerDmaSource, DISABLE);
     DMA_SetCurrDataCounter(motor->timerHardware->dmaStream, MOTOR_DMA_BUFFER_SIZE);
-    DMA_CLEAR_FLAG(motor->dmaDescriptor, DMA_IT_TCIF);
     DMA_Cmd(motor->timerHardware->dmaStream, ENABLE);
 }
 
@@ -102,7 +100,17 @@ void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
     }
 }
 
-void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
+static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
+{
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
+        motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];
+        DMA_Cmd(descriptor->stream, DISABLE);
+        TIM_DMACmd(motor->timerHardware->tim, motor->timerDmaSource, DISABLE);
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
+    }
+}
+
+void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType)
 {
     TIM_OCInitTypeDef TIM_OCInitStructure;
     DMA_InitTypeDef DMA_InitStructure;
@@ -139,7 +147,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     if (output & TIMER_OUTPUT_N_CHANNEL) {
         TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Enable;
         TIM_OCInitStructure.TIM_OCNIdleState = TIM_OCNIdleState_Reset;
-        TIM_OCInitStructure.TIM_OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPolarity_High : TIM_OCNPolarity_Low;
+        TIM_OCInitStructure.TIM_OCNPolarity = (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPolarity_Low : TIM_OCNPolarity_High;
     } else {
         TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
         TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
@@ -168,7 +176,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     }
 
     dmaInit(timerHardware->dmaIrqHandler, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
-    motor->dmaDescriptor = getDmaDescriptor(stream);
+    dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
 
     DMA_Cmd(stream, DISABLE);
     DMA_DeInit(stream);
@@ -191,6 +199,9 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
 
     DMA_Init(stream, &DMA_InitStructure);
+
+    DMA_ITConfig(stream, DMA_IT_TC, ENABLE);
+    DMA_ClearITPendingBit(stream, dmaFlag_IT_TCIF(timerHardware->dmaStream));
 }
 
 #endif

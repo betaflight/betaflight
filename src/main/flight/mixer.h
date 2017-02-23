@@ -113,10 +113,12 @@ typedef struct airplaneConfig_s {
 extern const mixer_t mixers[];
 extern int16_t motor[MAX_SUPPORTED_MOTORS];
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
+
 struct motorConfig_s;
 struct rxConfig_s;
 
 uint8_t getMotorCount();
+float getMotorMixRange();
 
 void mixerUseConfigs(
         flight3DConfig_t *flight3DConfigToUse,

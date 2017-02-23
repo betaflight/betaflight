@@ -14,31 +14,13 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
+#pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
-
-#include "platform.h"
-#include "drivers/bus_i2c.h"
-#include "drivers/bus_spi.h"
-#include "io/serial.h"
-
-#include "config/config_master.h"
-
-void targetBusInit(void)
-{
-    #if defined(USE_SPI) && defined(USE_SPI_DEVICE_1)
-        spiInit(SPIDEV_1);
-    #endif
-
-    if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
-        serialRemovePort(SERIAL_PORT_USART3);
-<<<<<<< HEAD
-        i2cInitAll(i2cPinConfig());
-    }		
-}
-=======
-        i2cInit(I2C_DEVICE);
-    }
-}
->>>>>>> betaflight/master
+void processRcCommand(void);
+float getSetpointRate(int axis);
+float getRcDeflection(int axis);
+float getRcDeflectionAbs(int axis);
+float getThrottlePIDAttenuation(void);
+void updateRcCommands(void);
+void resetYawAxis(void);
+void generateThrottleCurve(void);

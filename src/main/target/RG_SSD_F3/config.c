@@ -19,9 +19,11 @@
 
 #include <platform.h>
 
+#ifdef TARGET_CONFIG
 #include "config/config_master.h"
 
 void targetConfiguration(master_t *config) {
     config->batteryConfig.vbatmaxcellvoltage = 45;
     config->batteryConfig.currentMeterScale = 119;
 }
+#endif

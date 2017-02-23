@@ -755,7 +755,7 @@ static int gcd(int num, int denom)
     return gcd(denom, num % denom);
 }
 
-static void validateBlackboxConfig()
+void validateBlackboxConfig()
 {
     int div;
 
@@ -1250,8 +1250,7 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("yaw_lpf_hz:%d",                       currentProfile->pidProfile.yaw_lpf_hz);
         BLACKBOX_PRINT_HEADER_LINE("dterm_notch_hz:%d",                   currentProfile->pidProfile.dterm_notch_hz);
         BLACKBOX_PRINT_HEADER_LINE("dterm_notch_cutoff:%d",               currentProfile->pidProfile.dterm_notch_cutoff);
-        BLACKBOX_PRINT_HEADER_LINE("rollPitchItermIgnoreRate:%d",         currentProfile->pidProfile.rollPitchItermIgnoreRate);
-        BLACKBOX_PRINT_HEADER_LINE("yawItermIgnoreRate:%d",               currentProfile->pidProfile.yawItermIgnoreRate);
+        BLACKBOX_PRINT_HEADER_LINE("itermWindupPointPercent:%d",          currentProfile->pidProfile.itermWindupPointPercent);
         BLACKBOX_PRINT_HEADER_LINE("yaw_p_limit:%d",                      currentProfile->pidProfile.yaw_p_limit);
         BLACKBOX_PRINT_HEADER_LINE("dterm_average_count:%d",              currentProfile->pidProfile.dterm_average_count);
         BLACKBOX_PRINT_HEADER_LINE("vbat_pid_compensation:%d",            currentProfile->pidProfile.vbatPidCompensation);

@@ -92,8 +92,14 @@
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
+
+#ifdef TINYBEEF3
+#define SERIAL_PORT_COUNT       4
+#else
 #define USE_SOFTSERIAL1
-#define SERIAL_PORT_COUNT       5
+#define USE_SOFTSERIAL2
+#define SERIAL_PORT_COUNT       6
+#endif
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
@@ -107,9 +113,11 @@
 #define UART3_TX_PIN            PB10 // PB10 (AF7)
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
-#define SOFTSERIAL_1_TIMER TIM2
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 9 // PA0 / PAD3
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 10 // PA1 / PAD4
+#ifndef TINYBEEF3
+#define SOFTSERIAL1_RX_PIN      PA0 // PA0 / PAD3
+#define SOFTSERIAL1_TX_PIN      PA1 // PA1 / PAD4
+#endif
+
 #define SONAR_SOFTSERIAL1_EXCLUSIVE
 
 #define USE_I2C

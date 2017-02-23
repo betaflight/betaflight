@@ -280,7 +280,9 @@ void gyroInitFilters(void)
     notchFilter1ApplyFn = nullFilterApply;
     notchFilter2ApplyFn = nullFilterApply;
 
-    if (gyroConfig->gyro_soft_lpf_hz) {  // Initialisation needs to happen once samplingrate is known
+    uint32_t gyroFrequencyNyquist = (1.0f / (gyro.targetLooptime * 0.000001f)) / 2; // No rounding needed
+
+    if (gyroConfig->gyro_soft_lpf_hz && gyroConfig->gyro_soft_lpf_hz <= gyroFrequencyNyquist) {  // Initialisation needs to happen once samplingrate is known
         if (gyroConfig->gyro_soft_lpf_type == FILTER_BIQUAD) {
             softLpfFilterApplyFn = (filterApplyFnPtr)biquadFilterApply;
             for (int axis = 0; axis < 3; axis++) {
@@ -303,7 +305,7 @@ void gyroInitFilters(void)
         }
     }
 
-    if (gyroConfig->gyro_soft_notch_hz_1) {
+    if (gyroConfig->gyro_soft_notch_hz_1 && gyroConfig->gyro_soft_notch_hz_1 <= gyroFrequencyNyquist) {
         notchFilter1ApplyFn = (filterApplyFnPtr)biquadFilterApply;
         const float gyroSoftNotchQ1 = filterGetNotchQ(gyroConfig->gyro_soft_notch_hz_1, gyroConfig->gyro_soft_notch_cutoff_1);
         for (int axis = 0; axis < 3; axis++) {
@@ -311,7 +313,7 @@ void gyroInitFilters(void)
             biquadFilterInit(notchFilter1[axis], gyroConfig->gyro_soft_notch_hz_1, gyro.targetLooptime, gyroSoftNotchQ1, FILTER_NOTCH);
         }
     }
-    if (gyroConfig->gyro_soft_notch_hz_2) {
+    if (gyroConfig->gyro_soft_notch_hz_2 && gyroConfig->gyro_soft_notch_hz_2 <= gyroFrequencyNyquist) {
         notchFilter2ApplyFn = (filterApplyFnPtr)biquadFilterApply;
         const float gyroSoftNotchQ2 = filterGetNotchQ(gyroConfig->gyro_soft_notch_hz_2, gyroConfig->gyro_soft_notch_cutoff_2);
         for (int axis = 0; axis < 3; axis++) {

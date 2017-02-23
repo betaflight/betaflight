@@ -15,11 +15,14 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <platform.h>
 
-struct controlRateConfig_s;
-struct motorConfig_s;
-void generateThrottleCurve(struct controlRateConfig_s *controlRateConfig, struct motorConfig_s *motorConfig);
+#ifdef TARGET_CONFIG
+#include "config/config_master.h"
 
-int16_t rcLookupThrottle(int32_t tmp);
-
+void targetConfiguration(master_t *config)
+{
+    // Temporary workaround: Disable SDCard DMA by default since it causes errors on this target
+    config->sdcardConfig.useDma = false;
+}
+#endif

@@ -21,6 +21,7 @@
 
 #include <platform.h>
 
+#ifdef TARGET_CONFIG
 #include "io/motors.h"
 
 #include "sensors/battery.h"
@@ -95,5 +96,5 @@ void targetConfiguration(master_t *config)
     config->profile[0].controlRateProfile[0].rates[FD_YAW] = 80;
 
     targetApplyDefaultLedStripConfig(config->ledStripConfig.ledConfigs);
-
 }
+#endif

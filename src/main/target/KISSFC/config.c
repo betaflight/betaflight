@@ -18,36 +18,35 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "platform.h"
-#include "drivers/bus_i2c.h"
-#include "drivers/bus_spi.h"
-#include "io/serial.h"
-#include "hardware_revision.h"
+#include <platform.h>
 
+#ifdef TARGET_CONFIG
+#include "common/utils.h"
+
+#include "drivers/io.h"
+
+#include "fc/rc_controls.h"
+
+#include "flight/failsafe.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
+
+#include "rx/rx.h"
+
+#include "config/config_profile.h"
 #include "config/config_master.h"
 
-void targetBusInit(void)
+#include "sensors/boardalignment.h"
+
+void targetConfiguration(master_t *config)
 {
-    #ifdef USE_SPI
-    #ifdef USE_SPI_DEVICE_2
-        spiInit(SPIDEV_2);
-    #endif
-    #endif
+    UNUSED(config);
 
-    if (hardwareRevision != NAZE32_SP) {
-        serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
-    } else {
-        if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
-            serialRemovePort(SERIAL_PORT_USART3);
-<<<<<<< HEAD
-=======
-            i2cInit(I2C_DEVICE);
->>>>>>> betaflight/master
-        }
-    }
-
-    // Regardless of the board revision, initialize I2C as
-    // pre-configured or according to the current resource assignment.
-
-    i2cInitAll(i2cPinConfig());
+#ifdef KISSCC
+    // alternative defaults settings for Beebrain target
+    config->boardAlignment.rollDegrees = 180;
+    config->boardAlignment.pitchDegrees = 0;
+    config->boardAlignment.yawDegrees = 0;
+#endif
 }
+#endif
