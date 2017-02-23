@@ -105,13 +105,3 @@ dmaIdentifier_e dmaGetIdentifier(const DMA_Channel_TypeDef* channel)
     }
     return 0;
 }
-
-dmaChannelDescriptor_t* getDmaDescriptor(const DMA_Channel_TypeDef* channel)
-{
-    for (int i = 0; i < DMA_MAX_DESCRIPTORS; i++) {
-        if (dmaDescriptors[i].channel == channel) {
-            return &dmaDescriptors[i];
-        }
-    }
-    return NULL;
-}

@@ -129,7 +129,7 @@ typedef enum {
 #define DMA_IT_TEIF         ((uint32_t)0x00000008)
 
 dmaIdentifier_e dmaGetIdentifier(const DMA_Channel_TypeDef* channel);
-dmaChannelDescriptor_t* getDmaDescriptor(const DMA_Channel_TypeDef* channel);
+
 #endif
 
 void dmaInit(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resourceIndex);

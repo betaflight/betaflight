@@ -52,6 +52,7 @@ uint8_t getTimerIndex(TIM_TypeDef *timer)
 
 void pwmWriteDigital(uint8_t index, uint16_t value)
 {
+
     if (!pwmMotorsEnabled) {
         return;
     }
@@ -81,9 +82,6 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
         packet <<= 1;
     }
 
-    /* may not be required */
-    HAL_DMA_IRQHandler(motor->TimHandle.hdma[motor->timerDmaSource]);
-
     if(HAL_TIM_PWM_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, MOTOR_DMA_BUFFER_SIZE) != HAL_OK)
     {
       /* Starting PWM generation Error */
@@ -94,7 +92,33 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
 void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
 {
     UNUSED(motorCount);
+
+    if (!pwmMotorsEnabled) {
+        return;
+    }
+
+    for (uint8_t i = 0; i < dmaMotorTimerCount; i++) {
+        //TIM_SetCounter(dmaMotorTimers[i].timer, 0);
+        //TIM_DMACmd(dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources, ENABLE);
+    }
 }
+
+
+static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
+{
+    motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];
+    HAL_DMA_IRQHandler(motor->TimHandle.hdma[motor->timerDmaSource]);
+}
+
+/*static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
+{
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
+        motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];
+        DMA_Cmd(descriptor->stream, DISABLE);
+        TIM_DMACmd(motor->timerHardware->tim, motor->timerDmaSource, DISABLE);
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
+    }
+}*/
 
 void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType)
 {
@@ -162,6 +186,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     __HAL_LINKDMA(&motor->TimHandle, hdma[motor->timerDmaSource], motor->hdma_tim);
 
     dmaInit(timerHardware->dmaIrqHandler, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
+    dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
 
     /* Initialize TIMx DMA handle */
     if(HAL_DMA_Init(motor->TimHandle.hdma[motor->timerDmaSource]) != HAL_OK)

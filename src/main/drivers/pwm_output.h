@@ -20,7 +20,6 @@
 #include "io/motors.h"
 #include "io/servos.h"
 #include "drivers/timer.h"
-#include "drivers/dma.h"
 
 typedef enum {
     PWM_TYPE_STANDARD = 0,
@@ -87,7 +86,6 @@ typedef struct {
 #else
     uint8_t dmaBuffer[MOTOR_DMA_BUFFER_SIZE];
 #endif
-    dmaChannelDescriptor_t* dmaDescriptor;
 #if defined(STM32F7)
     TIM_HandleTypeDef TimHandle;
     DMA_HandleTypeDef hdma_tim;
