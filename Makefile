@@ -643,6 +643,7 @@ COMMON_SRC = \
             sensors/boardalignment.c \
             sensors/compass.c \
             sensors/gyro.c \
+            sensors/gyroanalyse.c \
             sensors/initialisation.c \
             blackbox/blackbox.c \
             blackbox/blackbox_io.c \
@@ -748,6 +749,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             sensors/acceleration.c \
             sensors/boardalignment.c \
             sensors/gyro.c \
+            sensors/gyroanalyse.c \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC) \
             drivers/display_ug2864hsweg01.c \
@@ -872,6 +874,25 @@ TARGET_SRC := $(STARTUP_SRC) $(STM32F30x_COMMON_SRC) $(TARGET_SRC)
 else ifeq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
 TARGET_SRC := $(STARTUP_SRC) $(STM32F10x_COMMON_SRC) $(TARGET_SRC)
 endif
+
+ifneq ($(filter GYROFFT,$(FEATURES)),)
+DSPLIB := $(ROOT)/lib/main/DSP_Lib
+DEVICE_FLAGS += -DARM_MATH_CM4 -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE
+
+INCLUDE_DIRS += $(DSPLIB)/Include
+
+TARGET_SRC += $(DSPLIB)/Source/TransformFunctions/arm_rfft_fast_f32.c
+TARGET_SRC += $(DSPLIB)/Source/TransformFunctions/arm_cfft_f32.c
+TARGET_SRC += $(DSPLIB)/Source/TransformFunctions/arm_rfft_fast_init_f32.c
+TARGET_SRC += $(DSPLIB)/Source/TransformFunctions/arm_cfft_radix8_f32.c
+TARGET_SRC += $(DSPLIB)/Source/CommonTables/arm_common_tables.c
+
+TARGET_SRC += $(DSPLIB)/Source/ComplexMathFunctions/arm_cmplx_mag_f32.c
+TARGET_SRC += $(DSPLIB)/Source/StatisticsFunctions/arm_max_f32.c
+
+TARGET_SRC += $(wildcard $(DSPLIB)/Source/*/*.S)
+endif
+
 
 ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)
 TARGET_SRC += \

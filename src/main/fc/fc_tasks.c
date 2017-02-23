@@ -72,6 +72,7 @@
 #include "sensors/battery.h"
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
+#include "sensors/gyroanalyse.h"
 #include "sensors/sonar.h"
 #include "sensors/esc_sensor.h"
 
@@ -308,6 +309,9 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_VTXCTRL, true);
 #endif
 #endif
+#ifdef USE_GYRO_DATA_ANALYSE
+    setTaskEnabled(TASK_GYRO_DATA_ANALYSE, true);
+#endif
 }
 
 cfTask_t cfTasks[TASK_COUNT] = {
@@ -409,7 +413,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SONAR] = {
         .taskName = "SONAR",
         .taskFunc = sonarUpdate,
-        .desiredPeriod = TASK_PERIOD_MS(70),        // 70ms required so that SONAR pulses do not interfer with each other
+        .desiredPeriod = TASK_PERIOD_MS(70),        // 70ms required so that SONAR pulses do not interfere with each other
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -479,7 +483,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_ESC_SENSOR] = {
         .taskName = "ESC_SENSOR",
         .taskFunc = escSensorProcess,
-        .desiredPeriod = TASK_PERIOD_HZ(100),       // 100 Hz every 10ms
+        .desiredPeriod = TASK_PERIOD_HZ(100),       // 100 Hz, 10ms
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -506,8 +510,17 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_VTXCTRL] = {
         .taskName = "VTXCTRL",
         .taskFunc = taskVtxControl,
-        .desiredPeriod = TASK_PERIOD_HZ(5),          // 5Hz @200msec
+        .desiredPeriod = TASK_PERIOD_HZ(5),          // 5 Hz, 200ms
         .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
+
+#ifdef USE_GYRO_DATA_ANALYSE
+    [TASK_GYRO_DATA_ANALYSE] = {
+        .taskName = "GYROFFT",
+        .taskFunc = gyroDataAnalyseUpdate,
+        .desiredPeriod = TASK_PERIOD_HZ(100),        // 100 Hz, 10ms
+        .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
 };

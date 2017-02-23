@@ -41,6 +41,7 @@
 
 #include "arm_math.h"
 #include "arm_common_tables.h"
+#pragma GCC diagnostic ignored "-Woverflow"
 
 /**    
  * @ingroup groupTransforms    

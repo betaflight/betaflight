@@ -50,7 +50,9 @@ typedef struct gyroDev_s {
     sensorGyroUpdateFuncPtr update;
     extiCallbackRec_t exti;
     float scale;                                            // scalefactor
-    volatile int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+    int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+    int32_t gyroZero[XYZ_AXIS_COUNT];
+    int32_t gyroADC[XYZ_AXIS_COUNT];                        // gyro data after calibration and alignment
     uint8_t lpf;
     gyroRateKHz_e gyroRateKHz;
     uint8_t mpuDividerDrops;
