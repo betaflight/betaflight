@@ -34,6 +34,7 @@ typedef enum {
     GYRO_ICM20689,
     GYRO_ICM20608G,
     GYRO_ICM20602,
+    GYRO_BMI160,
     GYRO_FAKE
 } gyroSensor_e;
 

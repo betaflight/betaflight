@@ -31,8 +31,13 @@ uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenomin
             gyro->gyroRateKHz = GYRO_RATE_32_kHz;
             gyroSamplePeriod = 31.5f;
         } else {
+#ifdef USE_ACCGYRO_BMI160
+            gyro->gyroRateKHz = GYRO_RATE_3200_Hz;
+            gyroSamplePeriod = 312.0f;
+#else
             gyro->gyroRateKHz = GYRO_RATE_8_kHz;
             gyroSamplePeriod = 125.0f;
+#endif
         }
     } else {
         gyro->gyroRateKHz = GYRO_RATE_1_kHz;
