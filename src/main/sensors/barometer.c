@@ -22,6 +22,7 @@
 #include "platform.h"
 
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "drivers/bus_i2c.h"
 
@@ -102,6 +103,7 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse, I2CDevice i2cBus
     case BARO_BMP280:
 #if defined(USE_BARO_BMP280)
 # if defined(USE_BARO_SPI_BMP280)
+        UNUSED(i2cBus);
         if (bmp280Detect(dev))
 # else
         if (bmp280Detect(dev, i2cBus))
