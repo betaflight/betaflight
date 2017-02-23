@@ -846,7 +846,7 @@ uint16_t cmsHandleKeyWithRepeat(displayPort_t *pDisplay, uint8_t key, int repeat
     return ret;
 }
 
-static void cmsUpdate(uint32_t currentTimeUs)
+void cmsUpdate(uint32_t currentTimeUs)
 {
     static int16_t rcDelayMs = BUTTON_TIME;
     static int holdCount = 1;

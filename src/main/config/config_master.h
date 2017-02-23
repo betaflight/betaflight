@@ -289,10 +289,10 @@ typedef struct master_s {
     vcdProfile_t vcdProfile;
 #endif
 
-# ifdef USE_MSP_DISPLAYPORT
+#ifdef USE_MSP_DISPLAYPORT
     displayPortProfile_t displayPortProfileMsp;
-# endif
-# ifdef USE_MAX7456
+#endif
+#ifdef USE_MAX7456
     displayPortProfile_t displayPortProfileMax7456;
 # endif
 

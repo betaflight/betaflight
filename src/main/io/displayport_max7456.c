@@ -20,7 +20,7 @@
 
 #include "platform.h"
 
-#ifdef OSD
+#ifdef USE_MAX7456
 
 #include "common/utils.h"
 
@@ -143,4 +143,4 @@ displayPort_t *max7456DisplayPortInit(const vcdProfile_t *vcdProfile)
     resync(&max7456DisplayPort);
     return &max7456DisplayPort;
 }
-#endif // OSD
+#endif // USE_MAX7456
