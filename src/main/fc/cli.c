@@ -278,7 +278,6 @@ static void cliPrintf(const char *format, ...)
     va_end(va);
 }
 
-
 static void cliPrintLinef(const char *format, ...)
 {
     va_list va;
