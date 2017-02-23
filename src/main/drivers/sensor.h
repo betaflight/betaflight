@@ -17,6 +17,9 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+
 typedef enum {
     ALIGN_DEFAULT = 0,                                      // driver-provided alignment
     CW0_DEG = 1,

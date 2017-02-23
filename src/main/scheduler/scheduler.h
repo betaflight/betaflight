@@ -105,6 +105,9 @@ typedef enum {
 #ifdef VTX_CONTROL
     TASK_VTXCTRL,
 #endif
+#ifdef USE_GYRO_DATA_ANALYSE
+    TASK_GYRO_DATA_ANALYSE,
+#endif
 
     /* Count of real tasks */
     TASK_COUNT,
