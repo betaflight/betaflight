@@ -37,6 +37,7 @@
 #include "drivers/display.h"
 #include "drivers/serial.h"
 
+#include "fc/config.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/fc_core.h"
@@ -123,7 +124,6 @@
 #define vtxConfig(x) (&masterConfig.vtxConfig)
 #define beeperConfig(x) (&masterConfig.beeperConfig)
 
-
 #define featureConfigMutable(x) (&masterConfig.featureConfig)
 #define systemConfigMutable(x) (&masterConfig.systemConfig)
 #define motorConfigMutable(x) (&masterConfig.motorConfig)
@@ -179,12 +179,14 @@
 #define rxFailsafeChannelConfigs(x) (&masterConfig.rxConfig.failsafe_channel_configurations[x])
 #define osdConfig(x) (&masterConfig.osdProfile)
 #define modeActivationConditions(x) (&masterConfig.modeActivationProfile.modeActivationConditions[x])
+#define controlRateProfiles(x) (&masterConfig.controlRateProfile[x])
 
 #define servoParamsMutable(x) (&servoProfile()->servoConf[x])
 #define adjustmentRangesMutable(x) (&masterConfig.adjustmentProfile.adjustmentRanges[x])
 #define rxFailsafeChannelConfigsMutable(x) (&masterConfig.rxConfig.>failsafe_channel_configurations[x])
 #define osdConfigMutable(x) (&masterConfig.osdProfile)
 #define modeActivationConditionsMutable(x) (&masterConfig.modeActivationProfile.modeActivationConditions[x])
+#define controlRateProfilesMutable(x) (&masterConfig.controlRateProfile[x])
 #endif
 
 // System-wide
@@ -301,6 +303,7 @@ typedef struct master_s {
 #endif
 
     profile_t profile[MAX_PROFILE_COUNT];
+    controlRateConfig_t controlRateProfile[MAX_RATEPROFILES];
 
     modeActivationProfile_t modeActivationProfile;
     adjustmentProfile_t adjustmentProfile;

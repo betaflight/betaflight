@@ -50,8 +50,8 @@ void targetConfiguration(master_t *config)
     //config->rcControlsConfig.yaw_deadband = 10;
     config->compassConfig.mag_hardware = 1;
 
-    config->profile[0].controlRateProfile[0].dynThrPID = 45;
-    config->profile[0].controlRateProfile[0].tpa_breakpoint = 1700;
+    config->controlRateProfile[0].dynThrPID = 45;
+    config->controlRateProfile[0].tpa_breakpoint = 1700;
     config->serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
 }
 #endif

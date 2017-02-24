@@ -47,6 +47,8 @@
 
 #include "drivers/system.h"
 
+#include "fc/config.h"
+
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/flashfs.h"
 #include "io/beeper.h"

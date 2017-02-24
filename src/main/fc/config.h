@@ -71,6 +71,7 @@ typedef enum {
 
 typedef struct systemConfig_s {
     uint8_t current_profile_index;
+    uint8_t activeRateProfile;
     uint8_t debug_mode;
     uint8_t task_statistics;
     char name[MAX_NAME_LENGTH + 1];

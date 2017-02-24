@@ -83,7 +83,7 @@ void targetConfiguration(master_t *config)
     config->profile[0].pidProfile.I8[PITCH] = 62;
     config->profile[0].pidProfile.D8[PITCH] = 19;
 
-    config->profile[0].controlRateProfile[0].rcRate8 = 70;
+    config->controlRateProfile[0].rcRate8 = 70;
     config->profile[0].pidProfile.I8[PIDLEVEL] = 40;
 }
 #endif

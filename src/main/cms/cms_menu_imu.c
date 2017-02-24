@@ -67,7 +67,7 @@ static long cmsx_menuImu_onEnter(void)
     profileIndex = systemConfig()->current_profile_index;
     tmpProfileIndex = profileIndex + 1;
 
-    rateProfileIndex = masterConfig.profile[profileIndex].activeRateProfile;
+    rateProfileIndex = systemConfig()->activeRateProfile;
     tmpRateProfileIndex = rateProfileIndex + 1;
 
     return 0;
@@ -78,7 +78,7 @@ static long cmsx_menuImu_onExit(const OSD_Entry *self)
     UNUSED(self);
 
     systemConfigMutable()->current_profile_index = profileIndex;
-    masterConfig.profile[profileIndex].activeRateProfile = rateProfileIndex;
+    systemConfigMutable()->activeRateProfile = rateProfileIndex;
 
     return 0;
 }
@@ -174,7 +174,7 @@ static CMS_Menu cmsx_menuPid = {
 
 static long cmsx_RateProfileRead(void)
 {
-    memcpy(&rateProfile, &masterConfig.profile[profileIndex].controlRateProfile[rateProfileIndex], sizeof(controlRateConfig_t));
+    memcpy(&rateProfile, controlRateProfiles(rateProfileIndex), sizeof(controlRateConfig_t));
 
     return 0;
 }
@@ -183,7 +183,7 @@ static long cmsx_RateProfileWriteback(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    memcpy(&masterConfig.profile[profileIndex].controlRateProfile[rateProfileIndex], &rateProfile, sizeof(controlRateConfig_t));
+    memcpy(controlRateProfilesMutable(rateProfileIndex), &rateProfile, sizeof(controlRateConfig_t));
 
     return 0;
 }

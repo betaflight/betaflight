@@ -18,6 +18,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include "config/parameter_group.h"
 
 #define MAX_PID_PROCESS_DENOM       16
 #define PID_CONTROLLER_BETAFLIGHT   1
