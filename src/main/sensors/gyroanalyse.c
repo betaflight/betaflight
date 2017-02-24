@@ -115,12 +115,12 @@ void gyroDataAnalyse(const gyroDev_t *gyroDev, const gyro_t *gyro)
 
 void stage_rfft_f32(arm_rfft_fast_instance_f32 * S, float32_t * p, float32_t * pOut);
 typedef enum {
-    STEP_MULTIPLY,
-    //STEP_RFFT_FAST,
-    STEP_CFFT,
-    STEP_STAGE_RFFT,
-    STEP_CMPLX_MAG,
-    STEP_MAX,
+    STEP_FFT_WINDOW_MULTIPLY,
+    //STEP_ARM_RFFT_FAST_F32,
+    STEP_ARM_CFFT_F32,
+    STEP_STAGE_RFFT_F32,
+    STEP_ARM_CMPLX_MAG_F32,
+    STEP_ARM_MAX_F32,
     STEP_COUNT
 } UpdateStep_e;
 
@@ -143,30 +143,30 @@ void gyroDataAnalyseUpdate(timeUs_t currentTimeUs)
     float maxVal;
     uint32_t maxIdx;
     switch (step) {
-    case STEP_MULTIPLY:
+    case STEP_FFT_WINDOW_MULTIPLY:
         // 36us
         for (int ii = 0; ii < FFT_WINDOW_SIZE; ++ii) {
             gyroData[axis][ii] *= FFT_WINDOW[ii];
         }
         break;
-    /*case STEP_RFFT_FAST:
+    /*case STEP_ARM_RFFT_FAST_F32:
         // 217us
         arm_rfft_fast_f32(&fftInstance, gyroData[axis], fftOut, 0);
         // arm_rfft_fast_f32 is split into component parts see lib/main/DSP_lib/TransformFunctions/arm_rfft_fast_f32.c
         break;*/
-    case STEP_CFFT:
+    case STEP_ARM_CFFT_F32:
         // 153us
         arm_cfft_f32(Sint, gyroData[axis], 0, 1);
         break;
-    case STEP_STAGE_RFFT:
+    case STEP_STAGE_RFFT_F32:
         // 58us
         stage_rfft_f32(&fftInstance, gyroData[axis], fftOut);
         break;
-    case STEP_CMPLX_MAG:
+    case STEP_ARM_CMPLX_MAG_F32:
         // 37us
         arm_cmplx_mag_f32(fftOut, fftOut, FFT_SAMPLE_COUNT);
         break;
-    case STEP_MAX:
+    case STEP_ARM_MAX_F32:
         // us
         arm_max_f32(&fftOut[FFT_BIN(MAX_START_FREQ)], FFT_SAMPLE_COUNT - FFT_BIN(MAX_START_FREQ) - 1, &maxVal, &maxIdx);
         //DEBUG_SET(DEBUG_FFT, 1, maxVal);
