@@ -56,6 +56,7 @@
 #include "io/osd.h"
 #include "io/serial.h"
 #include "io/servos.h"
+#include "io/transponder_ir.h"
 #include "io/vtx.h"
 
 #include "rx/rx.h"
@@ -122,6 +123,7 @@
 #define displayPortProfileOled(x) (&masterConfig.displayPortProfileOled)
 #define vtxConfig(x) (&masterConfig.vtxConfig)
 #define beeperConfig(x) (&masterConfig.beeperConfig)
+#define transponderConfig(x) (&masterConfig.transponderConfig)
 
 
 #define featureConfigMutable(x) (&masterConfig.featureConfig)
@@ -173,6 +175,7 @@
 #define displayPortProfileOledMutable(x) (&masterConfig.displayPortProfileOled)
 #define vtxConfigMutable(x) (&masterConfig.vtxConfig)
 #define beeperConfigMutable(x) (&masterConfig.beeperConfig)
+#define transponderConfigMutable(x) (&masterConfig.transponderConfig)
 
 #define servoParams(x) (&servoProfile()->servoConf[x])
 #define adjustmentRanges(x) (&adjustmentProfile()->adjustmentRanges[x])
@@ -278,7 +281,7 @@ typedef struct master_s {
 #endif
 
 #ifdef TRANSPONDER
-    uint8_t transponderData[6];
+    transponderConfig_t transponderConfig;
 #endif
 
 #ifdef OSD
