@@ -181,7 +181,7 @@ void rssiSoftPwmUpdate(uint32_t currentTime)
     if (duty < minDuty)
         minDuty = duty;
 
-    rspValue = scaleRange(duty, pRspConfig->minFollow ? minDuty : 0, 999, RSSI_OUTPUT_MIN, RSSI_OUTPUT_MAX);
+    rspValue = scaleRange(duty, pRspConfig->minFollow ? minDuty : pRspConfig->min, 999, RSSI_OUTPUT_MIN, RSSI_OUTPUT_MAX);
 
     if (pRspConfig->monitor) {
         debug[0] = tCycle;

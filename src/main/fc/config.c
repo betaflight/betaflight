@@ -553,6 +553,7 @@ void resetRssiSoftPwmConfig(rssiSoftPwmConfig_t *rssiSoftPwmConfig)
 #endif
 
     rssiSoftPwmConfig->ioTag = IO_TAG(RSSI_SOFTPWM_PIN);
+    rssiSoftPwmConfig->min = 0;
     rssiSoftPwmConfig->minFollow = 1;
     rssiSoftPwmConfig->monitor = 0;
 }
