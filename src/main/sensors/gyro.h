@@ -66,6 +66,9 @@ typedef struct gyroConfig_s {
 PG_DECLARE(gyroConfig_t, gyroConfig);
 
 bool gyroInit(void);
+void gyroInitFilterLpf(uint8_t lpfHz);
+void gyroInitFilterNotch1(uint16_t notchHz, uint16_t notchCutoffHz);
+void gyroInitFilterNotch2(uint16_t notchHz, uint16_t notchCutoffHz);
 void gyroInitFilters(void);
 void gyroUpdate(void);
 const busDevice_t *gyroSensorBus(void);

@@ -29,32 +29,39 @@
 #include "common/time.h"
 #include "common/utils.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/system.h"
 
 #include "sensors/gyro.h"
 #include "sensors/gyroanalyse.h"
 
-#define FFT_WINDOW_SIZE 512
+#define FFT_WINDOW_SIZE         512
+#define FFT_MAX_FREQ            800
+#define MIN_FILTER_FREQ         100 // not interested filtering frequencies below 100Hz
 
 static bool gyroDataReady = false;
+
+static uint16_t samplingFrequency;
+static uint8_t fftBinCount;
+static uint8_t fftBinStartCheck; // first bin to check for filtering
 
 static arm_rfft_fast_instance_f32 fftInstance;
 static float fftOut[FFT_WINDOW_SIZE];
 
 static float gyroData[3][FFT_WINDOW_SIZE];
 
-
-#define SAMPLING_FREQ 8000
-#define FFT_BIN(freq) ((FFT_WINDOW_SIZE / 2 - 1) * freq) / (SAMPLING_FREQ / 2)
-
-#define FFT_MAX_FREQ 800
-#define FFT_SAMPLE_COUNT (FFT_BIN(FFT_MAX_FREQ) + 1)
+static int fftBin(int freq)
+{
+    return ((FFT_WINDOW_SIZE / 2 - 1) * freq) / (samplingFrequency / 2);
+}
 
 
-// Hanning window
+// Hanning window, see https://en.wikipedia.org/wiki/Window_function#Hann_.28Hanning.29_window
 // values taken from https://github.com/BrainFPV/betaflight/blob/brainre1/src/main/target/BRAINRE1/spectrograph.c
-static const float FFT_WINDOW[FFT_WINDOW_SIZE] = {
+static const float fftWindow[FFT_WINDOW_SIZE] = {
     0.00000, 0.00004, 0.00015, 0.00034, 0.00060, 0.00094, 0.00136, 0.00185, 0.00242, 0.00306, 0.00377, 0.00457, 0.00543, 0.00637, 0.00739, 0.00848,
     0.00964, 0.01088, 0.01220, 0.01358, 0.01504, 0.01658, 0.01818, 0.01986, 0.02161, 0.02344, 0.02533, 0.02730, 0.02934, 0.03145, 0.03363, 0.03589,
     0.03821, 0.04060, 0.04306, 0.04559, 0.04819, 0.05086, 0.05359, 0.05640, 0.05927, 0.06220, 0.06521, 0.06827, 0.07141, 0.07461, 0.07787, 0.08120,
@@ -90,11 +97,19 @@ static const float FFT_WINDOW[FFT_WINDOW_SIZE] = {
 };
 
 
-void gyroDataAnalyseInit(void)
+void gyroDataAnalyseInit(uint32_t targetLooptime)
 {
+    samplingFrequency = targetLooptime;
+    // Sampling frequency of 8000 and max frequency of 800 gives 51 frequency bins with resolution of 15Hz
+    fftBinCount = fftBin(FFT_MAX_FREQ) + 1;
+    fftBinStartCheck = fftBin(MIN_FILTER_FREQ); // first bin to check when looking for peak in frequency spectrum
+
     arm_rfft_fast_init_f32(&fftInstance, FFT_WINDOW_SIZE);
 }
 
+/*
+ * Collect gyro data, to be analysed in gyroDataAnalyseUpdate function
+ */
 void gyroDataAnalyse(const gyroDev_t *gyroDev, const gyro_t *gyro)
 {
     UNUSED(gyro);
@@ -102,9 +117,9 @@ void gyroDataAnalyse(const gyroDev_t *gyroDev, const gyro_t *gyro)
     static uint16_t index = 0;
 
     if (gyroDataReady == false) {
-        gyroData[0][index] = gyroDev->gyroADC[0] * gyroDev->scale;
-        gyroData[1][index] = gyroDev->gyroADC[1] * gyroDev->scale;
-        gyroData[2][index] = gyroDev->gyroADC[2] * gyroDev->scale;
+        gyroData[0][index] = gyroDev->gyroADC[0] * gyroDev->scale * fftWindow[index];
+        gyroData[1][index] = gyroDev->gyroADC[1] * gyroDev->scale * fftWindow[index];
+        gyroData[2][index] = gyroDev->gyroADC[2] * gyroDev->scale * fftWindow[index];
         ++index;
         if (index == FFT_WINDOW_SIZE) {
             gyroDataReady = true;
@@ -115,7 +130,6 @@ void gyroDataAnalyse(const gyroDev_t *gyroDev, const gyro_t *gyro)
 
 void stage_rfft_f32(arm_rfft_fast_instance_f32 * S, float32_t * p, float32_t * pOut);
 typedef enum {
-    STEP_FFT_WINDOW_MULTIPLY,
     //STEP_ARM_RFFT_FAST_F32,
     STEP_ARM_CFFT_F32,
     STEP_STAGE_RFFT_F32,
@@ -124,10 +138,17 @@ typedef enum {
     STEP_COUNT
 } UpdateStep_e;
 
+/*
+ * Analyse gyro data using FFT, called periodically by the scheduler.
+ * This will execute once FFT_WINDOW_SIZE samples have been collected.
+ * For 8kHz gyro looptime and FFT_WINDOW_SIZE of 512, that is every 64ms, ie 15Hz
+ */
 void gyroDataAnalyseUpdate(timeUs_t currentTimeUs)
 {
     static int axis = 0;
     static int step = 0;
+    static float maxVal[3];
+    static uint32_t maxIdx[3];
     UNUSED(currentTimeUs);
 
     if (gyroDataReady == false) {
@@ -139,16 +160,7 @@ void gyroDataAnalyseUpdate(timeUs_t currentTimeUs)
     arm_cfft_instance_f32 * Sint = &(fftInstance.Sint);
     Sint->fftLen = fftInstance.fftLenRFFT / 2;
 
-#define MAX_START_FREQ 50
-    float maxVal;
-    uint32_t maxIdx;
     switch (step) {
-    case STEP_FFT_WINDOW_MULTIPLY:
-        // 36us
-        for (int ii = 0; ii < FFT_WINDOW_SIZE; ++ii) {
-            gyroData[axis][ii] *= FFT_WINDOW[ii];
-        }
-        break;
     /*case STEP_ARM_RFFT_FAST_F32:
         // 217us
         arm_rfft_fast_f32(&fftInstance, gyroData[axis], fftOut, 0);
@@ -157,23 +169,25 @@ void gyroDataAnalyseUpdate(timeUs_t currentTimeUs)
     case STEP_ARM_CFFT_F32:
         // 153us
         arm_cfft_f32(Sint, gyroData[axis], 0, 1);
+        DEBUG_SET(DEBUG_FFT, 0, micros() - startTime);
         break;
     case STEP_STAGE_RFFT_F32:
         // 58us
         stage_rfft_f32(&fftInstance, gyroData[axis], fftOut);
+        DEBUG_SET(DEBUG_FFT, 1, micros() - startTime);
         break;
     case STEP_ARM_CMPLX_MAG_F32:
-        // 37us
-        arm_cmplx_mag_f32(fftOut, fftOut, FFT_SAMPLE_COUNT);
+        // 9us
+        arm_cmplx_mag_f32(fftOut, fftOut, fftBinCount);
+        DEBUG_SET(DEBUG_FFT, 2, micros() - startTime);
         break;
     case STEP_ARM_MAX_F32:
-        // us
-        arm_max_f32(&fftOut[FFT_BIN(MAX_START_FREQ)], FFT_SAMPLE_COUNT - FFT_BIN(MAX_START_FREQ) - 1, &maxVal, &maxIdx);
-        //DEBUG_SET(DEBUG_FFT, 1, maxVal);
-        //DEBUG_SET(DEBUG_FFT, 2, maxIdx);
+        // 3us
+        arm_max_f32(&fftOut[fftBinStartCheck], fftBinCount - fftBinStartCheck - 1, &maxVal[axis], &maxIdx[axis]);
+        DEBUG_SET(DEBUG_FFT, 3, micros() - startTime);
+        DEBUG_SET(DEBUG_FFT_FREQ, axis, FFT_MAX_FREQ * (fftBinStartCheck + maxIdx[axis]) / fftBinCount);
         break;
     }
-    if (step<4) DEBUG_SET(DEBUG_FFT, step, micros() - startTime);
 
     ++step;
     if (step >= STEP_COUNT) {
@@ -181,6 +195,14 @@ void gyroDataAnalyseUpdate(timeUs_t currentTimeUs)
         ++axis;
         if (axis >= 3) {
             axis = 0;
+            const uint16_t notchHz = (3 * fftBinStartCheck + maxIdx[0] + maxIdx[1] + maxIdx[2]) * FFT_MAX_FREQ / (3 * fftBinCount);
+            DEBUG_SET(DEBUG_FFT_FREQ, 3, notchHz);
+            //!!TODO - consider hysteresis for change of notch frequency, may not be required since resolution is 15Hz
+            //!!TODO - only change filter if magnitude of noise above a certain value
+            if (notchHz != gyroConfig()->gyro_soft_notch_hz_1 && notchHz > 200) {
+                const uint16_t notchCutoffHz = notchHz - 100;
+                gyroInitFilterNotch1(notchHz, notchCutoffHz);
+            }
             // finished processing data, so set data ready false
             gyroDataReady = false;
         }

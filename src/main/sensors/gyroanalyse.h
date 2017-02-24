@@ -19,7 +19,7 @@
 
 #include "common/time.h"
 
-void gyroDataAnalyseInit(void);
+void gyroDataAnalyseInit(uint32_t targetLooptime);
 struct gyroDev_s;
 struct gyro_s;
 void gyroDataAnalyse(const struct gyroDev_s *gyroDev, const struct gyro_s *gyro);

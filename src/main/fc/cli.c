@@ -176,6 +176,8 @@ static const char * const gyroNames[] = {
 
 static const char * const *sensorHardwareNames[] = {
     gyroNames, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware
+};
+#endif // USE_SENSOR_NAMES
 
 };
 #endif // USE_SENSOR_NAMES
@@ -277,6 +279,7 @@ static void cliPrintf(const char *format, ...)
     cliPrintfva(format, va);
     va_end(va);
 }
+
 
 static void cliPrintLinef(const char *format, ...)
 {
