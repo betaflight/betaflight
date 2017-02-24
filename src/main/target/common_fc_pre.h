@@ -61,6 +61,7 @@
 #if defined(STM32F4) || defined(STM32F7)
 #define TASK_GYROPID_DESIRED_PERIOD     125
 #define SCHEDULER_DELAY_LIMIT           10
+#define USE_GYRO_DATA_ANALYSE
 #else
 #define TASK_GYROPID_DESIRED_PERIOD     1000
 #define SCHEDULER_DELAY_LIMIT           100

@@ -29,11 +29,14 @@
 #include "common/time.h"
 #include "common/utils.h"
 
+#include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/system.h"
+
+#include "fc/config.h"
 
 #include "sensors/gyro.h"
 #include "sensors/gyroanalyse.h"
@@ -99,6 +102,10 @@ static const float fftWindow[FFT_WINDOW_SIZE] = {
 
 void gyroDataAnalyseInit(uint32_t targetLooptime)
 {
+    if (!feature(FEATURE_GYRO_DATA_ANALYSE)) {
+        return;
+    }
+
     samplingFrequency = targetLooptime;
     // Sampling frequency of 8000 and max frequency of 800 gives 51 frequency bins with resolution of 15Hz
     fftBinCount = fftBin(FFT_MAX_FREQ) + 1;
@@ -112,6 +119,9 @@ void gyroDataAnalyseInit(uint32_t targetLooptime)
  */
 void gyroDataAnalyse(const gyroDev_t *gyroDev, const gyro_t *gyro)
 {
+    if (!feature(FEATURE_GYRO_DATA_ANALYSE)) {
+        return;
+    }
     UNUSED(gyro);
 
     static uint16_t index = 0;
