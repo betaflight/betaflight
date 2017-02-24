@@ -12,6 +12,13 @@
 /* Entry Point */
 ENTRY(Reset_Handler)
 
+/*
+0x08000000 to 0x080FFFFF 1024K full flash,
+0x08000000 to 0x08007FFF   32K isr vector, startup code,
+0x08008000 to 0x0800FFFF   32K config,                  // FLASH_Sector_1
+0x08010000 to 0x080FFFFF  960K firmware,
+*/
+
 /* Specify the memory areas */
 MEMORY
 {
@@ -26,4 +33,4 @@ MEMORY
 /* note CCM could be used for stack */
 REGION_ALIAS("STACKRAM", TCM)
 
-INCLUDE "stm32_flash_f7.ld"
+INCLUDE "stm32_flash_split.ld"
