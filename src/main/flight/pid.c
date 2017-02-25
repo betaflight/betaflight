@@ -58,6 +58,19 @@ static float previousGyroIf[3];
 
 static float dT;
 
+PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 0);
+
+#ifdef STM32F10X
+#define PID_PROCESS_DENOM_DEFAULT       1
+#elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500)  || defined(USE_GYRO_SPI_ICM20689)
+#define PID_PROCESS_DENOM_DEFAULT       4
+#else
+#define PID_PROCESS_DENOM_DEFAULT       2
+#endif
+PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
+    .pid_process_denom = PID_PROCESS_DENOM_DEFAULT
+);
+
 void pidSetTargetLooptime(uint32_t pidLooptime)
 {
     targetPidLooptime = pidLooptime;

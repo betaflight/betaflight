@@ -104,9 +104,6 @@
 #define RX_SPI_DEFAULT_PROTOCOL 0
 #endif
 
-#define BRUSHED_MOTORS_PWM_RATE 16000
-#define BRUSHLESS_MOTORS_PWM_RATE 480
-
 PG_REGISTER_WITH_RESET_TEMPLATE(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
 
 PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
@@ -125,6 +122,7 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
 
 PG_REGISTER(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 0);
 
+PG_REGISTER_WITH_RESET_FN(statusLedConfig_t, statusLedConfig, PG_STATUS_LED_CONFIG, 0);
 
 master_t masterConfig;                 // master config struct with data independent from profiles
 profile_t *currentProfile;
@@ -294,6 +292,7 @@ void resetServoConfig(servoConfig_t *servoConfig)
 }
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 void resetMotorConfig(motorConfig_t *motorConfig)
 {
 #ifdef BRUSHED_MOTORS
@@ -328,6 +327,7 @@ void resetMotorConfig(motorConfig_t *motorConfig)
         }
     }
 }
+#endif
 
 #ifdef SONAR
 void resetSonarConfig(sonarConfig_t *sonarConfig)
@@ -676,6 +676,7 @@ void resetSerialConfig(serialConfig_t *serialConfig)
 }
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
 {
     rcControlsConfig->deadband = 0;
@@ -683,6 +684,7 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
     rcControlsConfig->alt_hold_deadband = 40;
     rcControlsConfig->alt_hold_fast_change = 1;
 }
+#endif
 
 #ifndef USE_PARAMETER_GROUPS
 void resetMixerConfig(mixerConfig_t *mixerConfig)
@@ -711,7 +713,11 @@ void resetDisplayPortProfile(displayPortProfile_t *pDisplayPortProfile)
     pDisplayPortProfile->rowAdjust = 0;
 }
 
+#ifdef USE_PARAMETER_GROUPS
+void pgResetFn_statusLedConfig(statusLedConfig_t *statusLedConfig)
+#else
 void resetStatusLedConfig(statusLedConfig_t *statusLedConfig)
+#endif
 {
     for (int i = 0; i < LED_NUMBER; i++) {
         statusLedConfig->ledTags[i] = IO_TAG_NONE;
@@ -832,8 +838,14 @@ void createDefaultConfig(master_t *config)
 #endif
 
 
+#ifndef USE_PARAMETER_GROUPS
     config->imuConfig.dcm_kp = 2500;                // 1.0 * 10000
     config->imuConfig.dcm_ki = 0;                   // 0.003 * 10000
+    config->imuConfig.small_angle = 25;
+    config->imuConfig.accDeadband.xy = 40;
+    config->imuConfig.accDeadband.z = 40;
+    config->imuConfig.acc_unarmedcal = 1;
+#endif
 #ifndef USE_PARAMETER_GROUPS
     config->gyroConfig.gyro_lpf = GYRO_LPF_256HZ;    // 256HZ default
 #ifdef STM32F10X
@@ -888,8 +900,10 @@ void createDefaultConfig(master_t *config)
     resetPwmConfig(&config->pwmConfig);
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef TELEMETRY
     resetTelemetryConfig(&config->telemetryConfig);
+#endif
 #endif
 
 #ifdef USE_ADC
@@ -955,15 +969,14 @@ void createDefaultConfig(master_t *config)
     config->armingConfig.auto_disarm_delay = 5;
 #endif
 
-    config->imuConfig.small_angle = 25;
 
     config->airplaneConfig.fixedwing_althold_dir = 1;
 
     // Motor/ESC/Servo
 #ifndef USE_PARAMETER_GROUPS
     resetMixerConfig(&config->mixerConfig);
-#endif
     resetMotorConfig(&config->motorConfig);
+#endif
 #ifdef USE_SERVOS
     resetServoConfig(&config->servoConfig);
 #endif
@@ -993,10 +1006,6 @@ void createDefaultConfig(master_t *config)
 
     config->compassConfig.mag_declination = 0;
 
-    config->imuConfig.accDeadband.xy = 40;
-    config->imuConfig.accDeadband.z = 40;
-    config->imuConfig.acc_unarmedcal = 1;
-
 #ifdef BARO
 #ifndef USE_PARAMETER_GROUPS
     resetBarometerConfig(&config->barometerConfig);
@@ -1010,12 +1019,12 @@ void createDefaultConfig(master_t *config)
     parseRcChannels("AETR1234", &config->rxConfig);
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
     resetRcControlsConfig(&config->rcControlsConfig);
 
     config->throttleCorrectionConfig.throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
     config->throttleCorrectionConfig.throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
 
-#ifndef USE_PARAMETER_GROUPS
     // Failsafe Variables
     config->failsafeConfig.failsafe_delay = 10;                            // 1sec
     config->failsafeConfig.failsafe_off_delay = 10;                        // 1sec
@@ -1095,7 +1104,9 @@ void createDefaultConfig(master_t *config)
     resetFlashConfig(&config->flashConfig);
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
     resetStatusLedConfig(&config->statusLedConfig);
+#endif
 
     /* merely to force a reset if the person inadvertently flashes the wrong target */
     strncpy(config->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER));

@@ -102,6 +102,13 @@ static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the m
 bool isRXDataNew;
 static bool armingCalibrationWasInitialised;
 
+PG_REGISTER_WITH_RESET_TEMPLATE(throttleCorrectionConfig_t, throttleCorrectionConfig, PG_THROTTLE_CORRECTION_CONFIG, 0);
+
+PG_RESET_TEMPLATE(throttleCorrectionConfig_t, throttleCorrectionConfig,
+    .throttle_correction_value = 0,      // could 10 with althold or 40 for fpv
+    .throttle_correction_angle = 800     // could be 80.0 deg with atlhold or 45.0 for fpv
+);
+
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
 {
     accelerometerConfigMutable()->accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
