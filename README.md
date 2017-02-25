@@ -1,49 +1,65 @@
-![Betaflight](https://camo.githubusercontent.com/8178215d6cb90842dc95c9d437b1bdf09b2d57a7/687474703a2f2f7374617469632e726367726f7570732e6e65742f666f72756d732f6174746163686d656e74732f362f312f302f332f372f362f61393038383930302d3232382d62665f6c6f676f2e6a7067)
+# Cleanflight
 
-Betaflight is flight controller software (firmware) used to fly multi-rotor craft and fixed wing craft.
+![Cleanflight](docs/assets/cleanflight/cleanflight-logo-light-wide-1-240px.jpg)
 
-This fork differs from Baseflight and Cleanflight in that it focuses on flight performance, leading-edge feature additions, and wide target support.
+Cleanflight is flight controller software for multi-rotor and fixed wings.  The cleanflight project, and related projects such as betaflight and iNav are
+used on the majority of flight controllers used around the world.  There is no other software used on as many flight-controllers!
 
-## Features
+* If you're looking for cutting edge performance and don't mind doing your homework, checkout the betaflight fork.
+* If you're looking for advanced navigation features then check out the iNav fork.
+* All other users should use cleanflight.
 
-Betaflight has the following features:
+Features:
 
-* Multi-color RGB LED strip support (each LED can be a different color using variable length WS2811 Addressable RGB strips - use for Orientation Indicators, Low Battery Warning, Flight Mode Status, Initialization Troubleshooting, etc)
-* DShot (150, 300, 600 and 1200), Multishot, and Oneshot (125 and 42) motor protocol support
-* Blackbox flight recorder logging (to onboard flash or external microSD card where equipped)
-* Support for targets that use the STM32 F7, F4, F3 and F1 processors
-* PWM, PPM, and Serial (SBus, SumH, SumD, Spektrum 1024/2048, XBus, etc) RX connection with failsafe detection
-* Multiple telemetry protocols (CSRF, FrSky, HoTT smart-port, MSP, etc)
-* RSSI via ADC - Uses ADC to read PWM RSSI signals, tested with FrSky D4R-II, X8R, X4R-SB, & XSR
-* OSD support & configuration without needing third-party OSD software/firmware/comm devices
-* OLED Displays - Display information on: Battery voltage/current/mAh, profile, rate profile, mode, version, sensors, etc
-* In-flight manual PID tuning and rate adjustment
-* Rate profiles and in-flight selection of them
-* Configurable serial ports for Serial RX, Telemetry, ESC telemetry, MSP, GPS, OSD, Sonar, etc - Use most devices on any port, softserial included
-* VTX support for Unify Pro and IRC Tramp
+* Support for modern STM32 based processors F1/F3/F4/F7.
+* Support for modern accelerometer/gyro/barometer/compass sensors.
+* Support for modern ESC technologies DSHOT/ONESHOT and legacy PWM.
+* Support for Multi-color RGB LED strip support.
+* Advanced on-board telemetry logging (Blackbox).
+* Wide support of receivers (SBus/iBus/SumD/SumH/PPM/PWM)
+* Wide support of telemetry protocols (FrSky/SmartPort/S.Port/HoTT/iBus/LTM).
+* Built-in OSD support & configuration without needing third-party OSD software/firmware/comm devices.
+* VTX support (Unify Pro/IRC Tramp/etc).
 * and MUCH, MUCH more.
 
 ## Installation & Documentation
 
 See: https://github.com/betaflight/betaflight/wiki 
 
+## Support
+
+* Github issue track is NOT for end-user support.
+
 ## IRC Support and Developers Channel
 
-There's a dedicated Slack chat channel here:
+There's a dedicated Cleanflight IRC channel on the Freenode IRC network. Many users and some of the developers frequent there, and it is a helpful and friendly community - but there are two important things to keep in mind: First and most importantly, please go ahead and ask if you have questions, but **make sure you wait around long enough for a reply**. Next, sometimes people are out flying, asleep or at work and can't answer immediately, even though they are present in the channel. This is how IRC works: Many people stay logged in, even though they are not actively participating in the discussion all the time. Have a seat, grab a drink and hang around if it's a quiet time of day.
+
+irc://irc.freenode.net/#cleanflight
+
+If you are using Windows and don't have an IRC client installed, take a look at [HydraIRC](http://hydrairc.com/).
+
+There's a dedicated Slack chat channel for betaflight here:
 
 http://www.betaflight.tk/
 
 Etiquette: Don't ask to ask and please wait around long enough for a reply - sometimes people are out flying, asleep or at work and can't answer immediately.
 
+## Videos
+
+There is a dedicated Cleanflight YouTube channel which has progress update videos, flight demonstrations, instructions and other related videos.
+
+https://www.youtube.com/playlist?list=PL6H1fAj_XUNVBEcp8vbMH2DrllZAGWkt8
+
+Please subscribe and '+1' the videos if you find them useful.
+
 ## Configuration Tool
 
-To configure Betaflight you should use the Betaflight-configurator GUI tool (Windows/OSX/Linux) that can be found here:
-
-https://chrome.google.com/webstore/detail/betaflight-configurator/kdaghagfopacdngbohiknlhcocjccjao
+To configure Cleanflight you should use the [Cleanflight-configurator GUI tool](https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb
+) (Windows/OSX/Linux).
 
 The source for it is here:
 
-https://github.com/betaflight/betaflight-configurator
+https://github.com/cleanflight/cleanflight-configurator
 
 ## Contributing
 
@@ -54,49 +70,49 @@ Contributions are welcome and encouraged.  You can contribute in many ways:
 * Bug reporting & fixes.
 * New feature ideas & suggestions.
 
-The best place to start is the IRC channel on gitter (see above), drop in, say hi. Next place is the github issue tracker:
-
-https://github.com/betaflight/betaflight/issues
-https://github.com/betaflight/betaflight-configurator/issues
-
-Before creating new issues please check to see if there is an existing one, search first otherwise you waste peoples time when they could be coding instead!
+See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## Developers
 
-Please refer to the development section in the `docs/development` folder.
+Please refer to the development section in the [docs/development](https://github.com/cleanflight/cleanflight/tree/master/docs/development) folder.
 
-TravisCI is used to run automatic builds
+TravisCI is used to run automatic builds: https://travis-ci.org/cleanflight/cleanflight
 
-https://travis-ci.org/betaflight/betaflight
+https://travis-ci.org/cleanflight/cleanflight
 
-[![Build Status](https://travis-ci.org/betaflight/betaflight.svg?branch=master)](https://travis-ci.org/betaflight/betaflight)
+[![Build Status](https://travis-ci.org/cleanflight/cleanflight.svg?branch=master)](https://travis-ci.org/cleanflight/cleanflight)
 
-## Betaflight Releases
+## Cleanflight Releases
+https://github.com/cleanflight/cleanflight/releases
 
-https://github.com/betaflight/betaflight/releases
+## Open Source
 
-## Open Source / Contributors
+Cleanflight is software that is **open source** and is available free of charge without warranty to all users.
 
-Betaflight is software that is **open source** and is available free of charge without warranty to all users.
+The license is GPL3.
 
-Betaflight is forked from Cleanflight, so thanks goes to all those whom have contributed to Cleanflight and its origins.
+## Project/Fork History
 
-Origins for this fork (Thanks!):
-* **Alexinparis** (for MultiWii),
-* **timecop** (for Baseflight),
-* **Dominic Clifton** (for Cleanflight), and
-* **Sambas** (for the original STM32F4 port).
+Cleanflight is forked from Baseflight, which is now dead, all primary development happens in Cleanflight, betaflight and iNav forks.
 
-The Betaflight Configurator is forked from Cleanflight Configurator and its origins. 
+Cleanflight v2.x -> betaflight -> cleanflight v1.x -> baseflight -> multiwii
 
-Origins for Betaflight Configurator:
-* **Dominic Clifton** (for Cleanflight configurator), and
-* **ctn** (for the original Configurator). 
+## Contributors
+
+Thanks goes to all those whom have contributed to Cleanflight and its origins.
+
+Primary developers:
+* Dominic Clifton (hydra) - *cleanflight founder*
+* Boris B (borisbstyle) - *betaflight founder*
+* digitalentity - *inav founder*
+* Martin Budden (martinbudden)
+* Jason Blackman (blckmn)
 
 Big thanks to current and past contributors:
-* Budden, Martin (martinbudden)
+* **Alexinparis** (for MultiWii),
+* **timecop** (for Baseflight),
+* **Sambas** (for the original STM32F4 port).
 * Bardwell, Joshua (joshuabardwell)
-* Blackman, Jason (blckmn)
 * ctzsnooze
 * Höglund, Anders (andershoglund) 
 * Ledvin, Peter (ledvinap) - **IO code awesomeness!**
@@ -110,5 +126,8 @@ Big thanks to current and past contributors:
 * sambas - **bringing us the F4**
 * savaga
 * Stålheim, Anton (KiteAnton)
+* prodrone - **failsafe work**
+* **ctn** - **for the original Configurator**
 
 And many many others who haven't been mentioned....
+
