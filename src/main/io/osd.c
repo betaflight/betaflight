@@ -607,7 +607,7 @@ void pgResetFn_osdConfig(osdConfig_t *instance)
     instance->item_pos[OSD_HORIZON_SIDEBARS] = OSD_POS(8, 6) | VISIBLE_FLAG;
     
     instance->item_pos[OSD_CRAFT_NAME] = OSD_POS(20, 2);
-    instance->item_pos[OSD_VTX_CHANNEL] = OSD_POS(8, 6) | VISIBLE_FLAG;
+    instance->item_pos[OSD_VTX_CHANNEL] = OSD_POS(8, 6);
 
     instance->item_pos[OSD_ONTIME] = OSD_POS(23, 10) | VISIBLE_FLAG;
     instance->item_pos[OSD_FLYTIME] = OSD_POS(23, 11) | VISIBLE_FLAG;
