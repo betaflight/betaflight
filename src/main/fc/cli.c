@@ -1344,7 +1344,7 @@ static uint16_t getValueOffset(const clivalue_t *value)
     switch (value->type & VALUE_SECTION_MASK) {
     case MASTER_VALUE:
     case PROFILE_VALUE:
-        return value->offset;
+        return value->offset;   // Profile offset within a PG is handled by `getCurrentAndDefaultConfigs()`
     case CONTROL_RATE_VALUE:
         return value->offset + sizeof(controlRateConfig_t) * getConfigProfile();
     }
@@ -1358,7 +1358,7 @@ static void *getValuePointer(const clivalue_t *value)
     switch (value->type & VALUE_SECTION_MASK) {
     case MASTER_VALUE:
     case PROFILE_VALUE:
-        return rec->address + value->offset;
+        return pgIsSystem(rec) ? rec->address + value->offset : rec->address + value->offset + pgSize(rec) * getConfigProfile();
     case CONTROL_RATE_VALUE:
         return rec->address + value->offset + sizeof(controlRateConfig_t) * getConfigProfile();
     }
