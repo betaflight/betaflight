@@ -70,7 +70,8 @@
 #define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_0
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_1)
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_VCP
 //#define VBUS_SENSING_PIN PA8

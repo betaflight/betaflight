@@ -323,25 +323,38 @@ void init(void)
 #ifdef TARGET_BUS_INIT
     targetBusInit();
 #else
-    #ifdef USE_SPI
-        #ifdef USE_SPI_DEVICE_1
-            spiInit(SPIDEV_1);
-        #endif
-        #ifdef USE_SPI_DEVICE_2
-            spiInit(SPIDEV_2);
-        #endif
-        #ifdef USE_SPI_DEVICE_3
-            spiInit(SPIDEV_3);
-        #endif
-        #ifdef USE_SPI_DEVICE_4
-            spiInit(SPIDEV_4);
-        #endif
-    #endif
 
-    #ifdef USE_I2C
-        i2cInit(I2C_DEVICE);
-    #endif
+#ifdef USE_SPI
+#ifdef USE_SPI_DEVICE_1
+    spiInit(SPIDEV_1);
 #endif
+#ifdef USE_SPI_DEVICE_2
+    spiInit(SPIDEV_2);
+#endif
+#ifdef USE_SPI_DEVICE_3
+    spiInit(SPIDEV_3);
+#endif
+#ifdef USE_SPI_DEVICE_4
+    spiInit(SPIDEV_4);
+#endif
+#endif /* USE_SPI */
+
+#ifdef USE_I2C
+#ifdef USE_I2C_DEVICE_1
+    i2cInit(I2CDEV_1);
+#endif
+#ifdef USE_I2C_DEVICE_2
+    i2cInit(I2CDEV_2);
+#endif
+#ifdef USE_I2C_DEVICE_3
+    i2cInit(I2CDEV_3);
+#endif  
+#ifdef USE_I2C_DEVICE_4
+    i2cInit(I2CDEV_4);
+#endif  
+#endif /* USE_I2C */
+
+#endif /* TARGET_BUS_INIT */
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
     updateHardwareRevision();
