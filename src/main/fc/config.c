@@ -1019,7 +1019,7 @@ void createDefaultConfig(master_t *config)
 #ifdef TRANSPONDER
     static const uint8_t defaultTransponderData[6] = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC }; // Note, this is NOT a valid transponder code, it's just for testing production hardware
 
-    memcpy(config->transponderData, &defaultTransponderData, sizeof(defaultTransponderData));
+    memcpy(config->transponderConfig.data, &defaultTransponderData, sizeof(defaultTransponderData));
 #endif
 
 #ifdef BLACKBOX

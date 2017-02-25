@@ -23,7 +23,10 @@
 
 #include <platform.h>
 
-#include <build/build_config.h>
+#include "build/build_config.h"
+
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/transponder_ir.h"
 #include "drivers/system.h"
@@ -73,14 +76,14 @@ void transponderUpdate(timeUs_t currentTimeUs)
     transponderIrTransmit();
 }
 
-void transponderInit(uint8_t* transponderData)
+void transponderInit(void)
 {
     transponderInitialised = transponderIrInit();
     if (!transponderInitialised) {
         return;
     }
 
-    transponderIrUpdateData(transponderData);
+    transponderIrUpdateData(transponderConfig()->data);
 }
 
 void transponderStopRepeating(void)
@@ -97,13 +100,13 @@ void transponderStartRepeating(void)
     transponderRepeat = true;
 }
 
-void transponderUpdateData(uint8_t* transponderData)
+void transponderUpdateData(void)
 {
     if (!transponderInitialised) {
         return;
     }
 
-    transponderIrUpdateData(transponderData);
+    transponderIrUpdateData(transponderConfig()->data);
 }
 
 void transponderTransmitOnce(void) {

@@ -1062,8 +1062,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     case MSP_TRANSPONDER_CONFIG:
 #ifdef TRANSPONDER
         sbufWriteU8(dst, 1); //Transponder supported
-        for (unsigned int i = 0; i < sizeof(masterConfig.transponderData); i++) {
-            sbufWriteU8(dst, masterConfig.transponderData[i]);
+        for (unsigned int i = 0; i < sizeof(transponderConfig()->data); i++) {
+            sbufWriteU8(dst, transponderConfig()->data[i]);
         }
 #else
         sbufWriteU8(dst, 0); // Transponder not supported
@@ -1601,13 +1601,13 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
 #ifdef TRANSPONDER
     case MSP_SET_TRANSPONDER_CONFIG:
-        if (dataSize != sizeof(masterConfig.transponderData)) {
+        if (dataSize != sizeof(transponderConfig()->data)) {
             return MSP_RESULT_ERROR;
         }
-        for (unsigned int i = 0; i < sizeof(masterConfig.transponderData); i++) {
-            masterConfig.transponderData[i] = sbufReadU8(src);
+        for (unsigned int i = 0; i < sizeof(transponderConfig()->data); i++) {
+            transponderConfigMutable()->data[i] = sbufReadU8(src);
         }
-        transponderUpdateData(masterConfig.transponderData);
+        transponderUpdateData();
         break;
 #endif
 
