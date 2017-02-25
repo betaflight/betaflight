@@ -18,8 +18,6 @@
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "NERO"
 
-#define CONFIG_START_FLASH_ADDRESS (0x08060000)
-
 #define USBD_PRODUCT_STRING     "NERO"
 
 #define HW_PIN                  PB2

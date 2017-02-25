@@ -23,8 +23,6 @@
 #define HW_PIN                  PC13
 #define BRUSHED_ESC_AUTODETECT
 
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
-
 #define USBD_PRODUCT_STRING "AlienFlight F4"
 
 #define LED0                    PC12
