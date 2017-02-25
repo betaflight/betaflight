@@ -205,12 +205,16 @@ void gyroDataAnalyseUpdate(timeUs_t currentTimeUs)
         ++axis;
         if (axis >= 3) {
             axis = 0;
-            const uint16_t notchHz = (3 * fftBinStartCheck + maxIdx[0] + maxIdx[1] + maxIdx[2]) * FFT_MAX_FREQ / (3 * fftBinCount);
+            uint16_t notchHz = (3 * fftBinStartCheck + maxIdx[0] + maxIdx[1] + maxIdx[2]) * FFT_MAX_FREQ / (3 * fftBinCount);
             //!!TODO - consider hysteresis for change of notch frequency, may not be required since resolution is 15Hz
             //!!TODO - only change filter if magnitude of noise above a certain value
             if (notchHz != gyroConfig()->gyro_soft_notch_hz_1 && notchHz > 200) {
+                // average notchHz with current notchHz for smoother changes
+                notchHz = (notchHz + gyroConfig()->gyro_soft_notch_hz_1) / 2;
                 const uint16_t notchCutoffHz = notchHz - 100;
                 gyroInitFilterNotch1(notchHz, notchCutoffHz);
+                gyroConfigMutable()->gyro_soft_notch_hz_1 = notchHz;
+                gyroConfigMutable()->gyro_soft_notch_cutoff_1 = notchCutoffHz;
                 DEBUG_SET(DEBUG_FFT_FREQ, 3, notchHz);
             } else {
                 DEBUG_SET(DEBUG_FFT_FREQ, 3, 0);
