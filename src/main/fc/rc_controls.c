@@ -70,6 +70,14 @@ int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+
 
 uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
 
+PG_REGISTER_WITH_RESET_TEMPLATE(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 0);
+
+PG_RESET_TEMPLATE(armingConfig_t, armingConfig,
+    .gyro_cal_on_first_arm = 0,  // TODO - Cleanup retarded arm support
+    .disarm_kill_switch = 1,
+    .auto_disarm_delay = 5
+);
+
 bool isAirmodeActive(void) {
     return (IS_RC_MODE_ACTIVE(BOXAIRMODE) || feature(FEATURE_AIRMODE));
 }
