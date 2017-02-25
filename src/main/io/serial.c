@@ -99,6 +99,34 @@ const uint32_t baudRates[] = {0, 9600, 19200, 38400, 57600, 115200, 230400, 2500
 
 #define BAUD_RATE_COUNT (sizeof(baudRates) / sizeof(baudRates[0]))
 
+PG_REGISTER_WITH_RESET_FN(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
+
+void pgResetFn_serialConfig(serialConfig_t *serialConfig)
+{
+    memset(serialConfig, 0, sizeof(serialConfig_t));
+
+    for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
+        serialConfig->portConfigs[i].identifier = serialPortIdentifiers[i];
+        serialConfig->portConfigs[i].msp_baudrateIndex = BAUD_115200;
+        serialConfig->portConfigs[i].gps_baudrateIndex = BAUD_38400;
+        serialConfig->portConfigs[i].telemetry_baudrateIndex = BAUD_AUTO;
+        serialConfig->portConfigs[i].blackbox_baudrateIndex = BAUD_115200;
+    }
+
+    serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
+
+#ifdef USE_VCP
+    if (serialConfig->portConfigs[0].identifier == SERIAL_PORT_USB_VCP) {
+        serialPortConfig_t * uart1Config = serialFindPortConfiguration(SERIAL_PORT_USART1);
+        if (uart1Config) {
+            uart1Config->functionMask = FUNCTION_MSP;
+        }
+    }
+#endif
+
+    serialConfig->reboot_character = 'R';
+}
+
 baudRate_e lookupBaudRateIndex(uint32_t baudRate)
 {
     uint8_t index;

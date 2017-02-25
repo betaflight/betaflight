@@ -54,6 +54,29 @@
 #include "telemetry/ibus.h"
 
 
+PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
+
+#if defined(STM32F3)
+#define TELEMETRY_DEFAULT_INVERSION 1
+#else
+#define TELEMETRY_DEFAULT_INVERSION 0
+#endif
+
+PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
+    .telemetry_inversion = TELEMETRY_DEFAULT_INVERSION,
+    .sportHalfDuplex = 1,
+    .telemetry_switch = 0,
+    .gpsNoFixLatitude = 0,
+    .gpsNoFixLongitude = 0,
+    .frsky_coordinate_format = FRSKY_FORMAT_DMS,
+    .frsky_unit = FRSKY_UNIT_METRICS,
+    .frsky_vfas_precision = 0,
+    .frsky_vfas_cell_voltage = 0,
+    .hottAlarmSoundInterval = 5,
+    .pidValuesAsTelemetry = 0,
+    .report_cell_voltage = false
+);
+
 void telemetryInit(void)
 {
 #ifdef TELEMETRY_FRSKY

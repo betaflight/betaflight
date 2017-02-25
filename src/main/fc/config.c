@@ -94,6 +94,9 @@
 
 #include "telemetry/telemetry.h"
 
+#ifndef DEFAULT_FEATURES
+#define DEFAULT_FEATURES 0
+#endif
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
 #endif
@@ -103,6 +106,25 @@
 
 #define BRUSHED_MOTORS_PWM_RATE 16000
 #define BRUSHLESS_MOTORS_PWM_RATE 480
+
+PG_REGISTER_WITH_RESET_TEMPLATE(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
+
+PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
+    .enabledFeatures = DEFAULT_FEATURES | DEFAULT_RX_FEATURE  | FEATURE_FAILSAFE
+);
+
+PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
+
+PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
+    .current_profile_index = 0,
+    //!!TODO.activeRateProfile = 0,
+    .debug_mode = DEBUG_MODE,
+    .task_statistics = true,
+    .name = { 0 }
+);
+
+PG_REGISTER(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 0);
+
 
 master_t masterConfig;                 // master config struct with data independent from profiles
 profile_t *currentProfile;
@@ -358,7 +380,7 @@ void resetAdcConfig(adcConfig_t *adcConfig)
 
 
 #ifdef BEEPER
-void resetBeeperConfig(beeperDevConfig_t *beeperDevConfig)
+void resetBeeperDevConfig(beeperDevConfig_t *beeperDevConfig)
 {
 #ifdef BEEPER_INVERTED
     beeperDevConfig->isOpenDrain = false;
@@ -400,6 +422,7 @@ void resetPwmConfig(pwmConfig_t *pwmConfig)
 }
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
 {
     flight3DConfig->deadband3d_low = 1406;
@@ -407,7 +430,9 @@ void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
     flight3DConfig->neutral3d = 1460;
     flight3DConfig->deadband3d_throttle = 50;
 }
+#endif
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef TELEMETRY
 void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 {
@@ -426,6 +451,7 @@ void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
     telemetryConfig->report_cell_voltage = false;
 #endif
 }
+#endif
 #endif
 
 #ifndef USE_PARAMETER_GROUPS
@@ -627,6 +653,7 @@ void resetSerialPinConfig(serialPinConfig_t *pSerialPinConfig)
 #define SECOND_PORT_INDEX 1
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 void resetSerialConfig(serialConfig_t *serialConfig)
 {
     memset(serialConfig, 0, sizeof(serialConfig_t));
@@ -647,6 +674,7 @@ void resetSerialConfig(serialConfig_t *serialConfig)
     serialConfig->portConfigs[1].functionMask = FUNCTION_MSP;
 #endif
 }
+#endif
 
 void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
 {
@@ -656,6 +684,7 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
     rcControlsConfig->alt_hold_fast_change = 1;
 }
 
+#ifndef USE_PARAMETER_GROUPS
 void resetMixerConfig(mixerConfig_t *mixerConfig)
 {
 #ifdef TARGET_DEFAULT_MIXER
@@ -665,6 +694,7 @@ void resetMixerConfig(mixerConfig_t *mixerConfig)
 #endif
     mixerConfig->yaw_motor_direction = 1;
 }
+#endif
 
 #ifdef USE_MAX7456
 void resetMax7456Config(vcdProfile_t *pVcdProfile)
@@ -795,7 +825,13 @@ void createDefaultConfig(master_t *config)
     config->version = EEPROM_CONF_VERSION;
 
     // global settings
+#ifndef USE_PARAMETER_GROUPS
     config->systemConfig.current_profile_index = 0;    // default profile
+    config->systemConfig.debug_mode = DEBUG_MODE;
+    config->systemConfig.task_statistics = true;
+#endif
+
+
     config->imuConfig.dcm_kp = 2500;                // 1.0 * 10000
     config->imuConfig.dcm_ki = 0;                   // 0.003 * 10000
 #ifndef USE_PARAMETER_GROUPS
@@ -820,11 +856,6 @@ void createDefaultConfig(master_t *config)
     config->gyroConfig.gyroMovementCalibrationThreshold = 48;
 #endif
 
-    config->systemConfig.debug_mode = DEBUG_MODE;
-    config->systemConfig.task_statistics = true;
-
-
-    
 #ifndef USE_PARAMETER_GROUPS
     resetCompassConfig(&config->compassConfig);
 #endif
@@ -836,9 +867,11 @@ void createDefaultConfig(master_t *config)
     resetRollAndPitchTrims(&config->accelerometerConfig.accelerometerTrims);
     config->accelerometerConfig.acc_lpf_hz = 10.0f;
 #endif
+#ifndef USE_PARAMETER_GROUPS
     config->boardAlignment.rollDegrees = 0;
     config->boardAlignment.pitchDegrees = 0;
     config->boardAlignment.yawDegrees = 0;
+#endif
     config->rcControlsConfig.yaw_control_direction = 1;
 
     // xxx_hardware: 0:default/autodetect, 1: disable
@@ -864,7 +897,7 @@ void createDefaultConfig(master_t *config)
 #endif
 
 #ifdef BEEPER
-    resetBeeperConfig(&config->beeperDevConfig);
+    resetBeeperDevConfig(&config->beeperDevConfig);
 #endif
 
 #ifdef SONAR
@@ -916,20 +949,27 @@ void createDefaultConfig(master_t *config)
     config->pwmConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
     config->armingConfig.gyro_cal_on_first_arm = 0;  // TODO - Cleanup retarded arm support
     config->armingConfig.disarm_kill_switch = 1;
     config->armingConfig.auto_disarm_delay = 5;
+#endif
+
     config->imuConfig.small_angle = 25;
 
     config->airplaneConfig.fixedwing_althold_dir = 1;
 
     // Motor/ESC/Servo
+#ifndef USE_PARAMETER_GROUPS
     resetMixerConfig(&config->mixerConfig);
+#endif
     resetMotorConfig(&config->motorConfig);
 #ifdef USE_SERVOS
     resetServoConfig(&config->servoConfig);
 #endif
+#ifndef USE_PARAMETER_GROUPS
     resetFlight3DConfig(&config->flight3DConfig);
+#endif
 
 #ifdef LED_STRIP
     resetLedStripConfig(&config->ledStripConfig);
@@ -945,7 +985,9 @@ void createDefaultConfig(master_t *config)
 
     resetSerialPinConfig(&config->serialPinConfig);
 
+#ifndef USE_PARAMETER_GROUPS
     resetSerialConfig(&config->serialConfig);
+#endif
 
     resetProfile(&config->profile[0]);
 
@@ -973,6 +1015,7 @@ void createDefaultConfig(master_t *config)
     config->throttleCorrectionConfig.throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
     config->throttleCorrectionConfig.throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
 
+#ifndef USE_PARAMETER_GROUPS
     // Failsafe Variables
     config->failsafeConfig.failsafe_delay = 10;                            // 1sec
     config->failsafeConfig.failsafe_off_delay = 10;                        // 1sec
@@ -980,6 +1023,7 @@ void createDefaultConfig(master_t *config)
     config->failsafeConfig.failsafe_kill_switch = 0;                       // default failsafe switch action is identical to rc link loss
     config->failsafeConfig.failsafe_throttle_low_delay = 100;              // default throttle low delay for "just disarm" on failsafe condition
     config->failsafeConfig.failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT;// default full failsafe procedure is 0: auto-landing
+#endif
 
 #ifdef USE_SERVOS
     // servos
@@ -1165,11 +1209,12 @@ void validateAndFixConfig(void)
     }
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
     serialConfig_t *serialConfig = &masterConfig.serialConfig;
-
     if (!isSerialConfigValid(serialConfig)) {
         resetSerialConfig(serialConfig);
     }
+#endif
 
     validateAndFixGyroConfig();
 
@@ -1267,7 +1312,7 @@ void readEEPROM(void)
 //    setControlRateProfile(rateProfileSelection()->defaultRateProfileIndex);
 
     if (systemConfig()->current_profile_index > MAX_PROFILE_COUNT - 1) {// sanity check
-        systemConfig()->current_profile_index = 0;
+        systemConfigMutable()->current_profile_index = 0;
     }
 
     setProfile(systemConfig()->current_profile_index);
@@ -1313,7 +1358,7 @@ void changeProfile(uint8_t profileIndex)
     if (profileIndex >= MAX_PROFILE_COUNT) {
         profileIndex = MAX_PROFILE_COUNT - 1;
     }
-    systemConfig()->current_profile_index = profileIndex;
+    systemConfigMutable()->current_profile_index = profileIndex;
     writeEEPROM();
     readEEPROM();
     beeperConfirmationBeeps(profileIndex + 1);

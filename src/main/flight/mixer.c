@@ -50,6 +50,25 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+PG_REGISTER_WITH_RESET_TEMPLATE(flight3DConfig_t, flight3DConfig, PG_MOTOR_3D_CONFIG, 0);
+
+PG_RESET_TEMPLATE(flight3DConfig_t, flight3DConfig,
+    .deadband3d_low = 1406,
+    .deadband3d_high = 1514,
+    .neutral3d = 1460,
+    .deadband3d_throttle = 50
+);
+
+PG_REGISTER_WITH_RESET_TEMPLATE(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
+
+#ifndef TARGET_DEFAULT_MIXER
+#define TARGET_DEFAULT_MIXER    MIXER_QUADX
+#endif
+PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
+    .mixerMode = TARGET_DEFAULT_MIXER,
+    .yaw_motor_direction = 1,
+);
+
 #define EXTERNAL_DSHOT_CONVERSION_FACTOR 2
 // (minimum output value(1001) - (minimum input value(48) / conversion factor(2))
 #define EXTERNAL_DSHOT_CONVERSION_OFFSET 977
