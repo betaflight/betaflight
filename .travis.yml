@@ -88,6 +88,13 @@ before_script:
 
 script: ./.travis.sh
 
+after_success:
+  - cd ${TRAVIS_BUILD_DIR}
+  - lcov --directory . -b src/test --capture --output-file coverage.info # capture coverage info
+  - lcov --remove coverage.info 'lib/test/*' 'src/test/*' '/usr/*' --output-file coverage.info # filter out system and test code
+  - lcov --list coverage.info # debug before upload
+  - coveralls-lcov coverage.info # uploads to coveralls
+
 cache: 
   directories:
   - downloads
@@ -99,10 +106,7 @@ cache:
 #  skip_join: true
 
 notifications:
-  slack: betaflightgroup:LQSj02nsBEdefcO5UQcLgB0U
-  webhooks:
-    urls:
-      - https://webhooks.gitter.im/e/0c20f7a1a7e311499a88
-    on_success: always  # options: [always|never|change] default: always
-    on_failure: always  # options: [always|never|change] default: always
-    on_start: always     # options: [always|never|change] default: always
+  irc: "chat.freenode.net#cleanflight"
+    use_notice: true
+    skip_join: true
+
