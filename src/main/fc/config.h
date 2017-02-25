@@ -101,8 +101,6 @@ void setBeeperOffMask(uint32_t mask);
 uint32_t getPreferredBeeperOffMask(void);
 void setPreferredBeeperOffMask(uint32_t mask);
 
-void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex);
-
 void initEEPROM(void);
 void resetEEPROM(void);
 void readEEPROM(void);
@@ -114,13 +112,14 @@ void validateAndFixConfig(void);
 void validateAndFixGyroConfig(void);
 void activateConfig(void);
 
-uint8_t getCurrentProfile(void);
+uint8_t getCurrentProfileIndex(void);
 void changeProfile(uint8_t profileIndex);
 struct profile_s;
 void resetProfile(struct profile_s *profile);
 
-uint8_t getCurrentControlRateProfile(void);
+uint8_t getCurrentControlRateProfileIndex(void);
 void changeControlRateProfile(uint8_t profileIndex);
+
 bool canSoftwareSerialBeUsed(void);
 
 uint16_t getCurrentMinthrottle(void);

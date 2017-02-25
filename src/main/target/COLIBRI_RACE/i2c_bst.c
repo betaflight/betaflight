@@ -598,7 +598,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
                     junk |= 1 << i;
             }
             bstWrite32(junk);
-            bstWrite8(systemConfig()->current_profile_index);
+            bstWrite8(getCurrentProfileIndex());
             break;
         case BST_RAW_IMU:
             {

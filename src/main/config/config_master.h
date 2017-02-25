@@ -174,19 +174,21 @@
 #define vtxConfigMutable(x) (&masterConfig.vtxConfig)
 #define beeperConfigMutable(x) (&masterConfig.beeperConfig)
 
-#define servoParams(x) (&servoProfile()->servoConf[x])
-#define adjustmentRanges(x) (&adjustmentProfile()->adjustmentRanges[x])
-#define rxFailsafeChannelConfigs(x) (&masterConfig.rxConfig.failsafe_channel_configurations[x])
 #define osdConfig(x) (&masterConfig.osdProfile)
-#define modeActivationConditions(x) (&masterConfig.modeActivationProfile.modeActivationConditions[x])
-#define controlRateProfiles(x) (&masterConfig.controlRateProfile[x])
+#define servoParams(i) (&servoProfile()->servoConf[i])
+#define adjustmentRanges(i) (&adjustmentProfile()->adjustmentRanges[i])
+#define rxFailsafeChannelConfigs(i) (&masterConfig.rxConfig.failsafe_channel_configurations[i])
+#define modeActivationConditions(i) (&masterConfig.modeActivationProfile.modeActivationConditions[i])
+#define controlRateProfiles(i) (&masterConfig.controlRateProfile[i])
+#define pidProfiles(i) (&masterConfig.profile[i].pidProfile)
 
-#define servoParamsMutable(x) (&servoProfile()->servoConf[x])
-#define adjustmentRangesMutable(x) (&masterConfig.adjustmentProfile.adjustmentRanges[x])
-#define rxFailsafeChannelConfigsMutable(x) (&masterConfig.rxConfig.>failsafe_channel_configurations[x])
 #define osdConfigMutable(x) (&masterConfig.osdProfile)
-#define modeActivationConditionsMutable(x) (&masterConfig.modeActivationProfile.modeActivationConditions[x])
-#define controlRateProfilesMutable(x) (&masterConfig.controlRateProfile[x])
+#define servoParamsMutable(i) (&servoProfile()->servoConf[i])
+#define adjustmentRangesMutable(i) (&masterConfig.adjustmentProfile.adjustmentRanges[i])
+#define rxFailsafeChannelConfigsMutable(i) (&masterConfig.rxConfig.>failsafe_channel_configurations[i])
+#define modeActivationConditionsMutable(i) (&masterConfig.modeActivationProfile.modeActivationConditions[i])
+#define controlRateProfilesMutable(i) (&masterConfig.controlRateProfile[i])
+#define pidProfilesMutable(i) (&masterConfig.profile[i].pidProfile)
 #endif
 
 // System-wide

@@ -107,7 +107,6 @@
 master_t masterConfig;                 // master config struct with data independent from profiles
 profile_t *currentProfile;
 
-static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
 #ifndef USE_PARAMETER_GROUPS
@@ -715,32 +714,30 @@ void resetFlashConfig(flashConfig_t *flashConfig)
 }
 #endif
 
-uint8_t getCurrentProfile(void)
+uint8_t getCurrentProfileIndex(void)
 {
     return systemConfig()->current_profile_index;
-;
 }
 
 static void setProfile(uint8_t profileIndex)
 {
-    currentProfile = &masterConfig.profile[profileIndex];
+    if (profileIndex < MAX_PROFILE_COUNT) {
+        systemConfigMutable()->current_profile_index = profileIndex;
+        currentProfile = &masterConfig.profile[profileIndex];
+    }
 }
 
-uint8_t getCurrentControlRateProfile(void)
+uint8_t getCurrentControlRateProfileIndex(void)
 {
-    return currentControlRateProfileIndex;
+    return systemConfigMutable()->activeRateProfile;
 }
 
 static void setControlRateProfile(uint8_t controlRateProfileIndex)
 {
-    systemConfigMutable()->activeRateProfile = controlRateProfileIndex;
-    currentControlRateProfileIndex = controlRateProfileIndex;
-    currentControlRateProfile = controlRateProfilesMutable(controlRateProfileIndex);
-}
-
-const controlRateConfig_t *getControlRateConfig(uint8_t controlRateProfileIndex)
-{
-    return controlRateProfiles(controlRateProfileIndex);
+    if (controlRateProfileIndex < MAX_CONTROL_RATE_PROFILE_COUNT) {
+        systemConfigMutable()->activeRateProfile = controlRateProfileIndex;
+        currentControlRateProfile = controlRateProfilesMutable(controlRateProfileIndex);
+    }
 }
 
 uint16_t getCurrentMinthrottle(void)
@@ -1256,7 +1253,7 @@ void readEEPROM(void)
         failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
     }
 
-//    pgActivateProfile(getCurrentProfile());
+//    pgActivateProfile(getCurrentProfileIndex());
 //    setControlRateProfile(rateProfileSelection()->defaultRateProfileIndex);
 
     if (systemConfig()->current_profile_index > MAX_PROFILE_COUNT - 1) {// sanity check

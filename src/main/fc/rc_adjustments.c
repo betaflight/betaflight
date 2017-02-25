@@ -362,7 +362,7 @@ static void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
 
     switch(adjustmentFunction) {
         case ADJUSTMENT_RATE_PROFILE:
-            if (getCurrentControlRateProfile() != position) {
+            if (getCurrentControlRateProfileIndex() != position) {
                 changeControlRateProfile(position);
                 blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RATE_PROFILE, position);
                 applied = true;
