@@ -61,7 +61,7 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
 
     motorDmaOutput_t * const motor = &dmaMotors[index];
 
-    if (!motor->timerHardware || !motor->timerHardware->dmaChannel) {
+    if (!motor->timerHardware || !motor->timerHardware->dmaRef) {
         return;
     }
 
@@ -84,11 +84,11 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
         packet <<= 1;
     }
 
-    DMA_Cmd(motor->timerHardware->dmaChannel, DISABLE);
+    DMA_Cmd(motor->timerHardware->dmaRef, DISABLE);
     TIM_DMACmd(motor->timerHardware->tim, motor->timerDmaSource, DISABLE);
-    DMA_SetCurrDataCounter(motor->timerHardware->dmaChannel, MOTOR_DMA_BUFFER_SIZE);
+    DMA_SetCurrDataCounter(motor->timerHardware->dmaRef, MOTOR_DMA_BUFFER_SIZE);
     DMA_CLEAR_FLAG(motor->dmaDescriptor, DMA_IT_TCIF);
-    DMA_Cmd(motor->timerHardware->dmaChannel, ENABLE);
+    DMA_Cmd(motor->timerHardware->dmaRef, ENABLE);
 }
 
 void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
@@ -163,7 +163,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
         TIM_Cmd(timer, ENABLE);
     }
 
-    DMA_Channel_TypeDef *channel = timerHardware->dmaChannel;
+    DMA_Channel_TypeDef *channel = timerHardware->dmaRef;
 
     if (channel == NULL) {
         /* trying to use a non valid channel */

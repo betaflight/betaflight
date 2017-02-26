@@ -59,7 +59,7 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
 
     motorDmaOutput_t * const motor = &dmaMotors[index];
 
-    if (!motor->timerHardware || !motor->timerHardware->dmaStream) {
+    if (!motor->timerHardware || !motor->timerHardware->dmaRef) {
         return;
     }
 
@@ -83,9 +83,9 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
     }
 
     TIM_DMACmd(motor->timerHardware->tim, motor->timerDmaSource, DISABLE);
-    DMA_SetCurrDataCounter(motor->timerHardware->dmaStream, MOTOR_DMA_BUFFER_SIZE);
+    DMA_SetCurrDataCounter(motor->timerHardware->dmaRef, MOTOR_DMA_BUFFER_SIZE);
     DMA_CLEAR_FLAG(motor->dmaDescriptor, DMA_IT_TCIF);
-    DMA_Cmd(motor->timerHardware->dmaStream, ENABLE);
+    DMA_Cmd(motor->timerHardware->dmaRef, ENABLE);
 }
 
 void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
@@ -160,7 +160,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
         TIM_Cmd(timer, ENABLE);
     }
 
-    DMA_Stream_TypeDef *stream = timerHardware->dmaStream;
+    DMA_Stream_TypeDef *stream = timerHardware->dmaRef;
 
     if (stream == NULL) {
         /* trying to use a non valid stream */
@@ -174,7 +174,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     DMA_DeInit(stream);
 
     DMA_StructInit(&DMA_InitStructure);
-    DMA_InitStructure.DMA_Channel = timerHardware->dmaChannel;
+    DMA_InitStructure.DMA_Channel = timerHardware->dmaRef;
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)timerChCCR(timerHardware);
     DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)motor->dmaBuffer;
     DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;

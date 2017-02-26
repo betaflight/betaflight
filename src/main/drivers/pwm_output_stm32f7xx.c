@@ -58,7 +58,7 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
 
     motorDmaOutput_t * const motor = &dmaMotors[index];
 
-    if (!motor->timerHardware || !motor->timerHardware->dmaStream) {
+    if (!motor->timerHardware || !motor->timerHardware->dmaRef) {
         return;
     }
 
@@ -137,7 +137,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     dmaMotorTimers[timerIndex].timerDmaSources |= motor->timerDmaSource;
 
     /* Set the parameters to be configured */
-    motor->hdma_tim.Init.Channel  = timerHardware->dmaChannel;
+    motor->hdma_tim.Init.Channel  = timerHardware->dmaRef;
     motor->hdma_tim.Init.Direction = DMA_MEMORY_TO_PERIPH;
     motor->hdma_tim.Init.PeriphInc = DMA_PINC_DISABLE;
     motor->hdma_tim.Init.MemInc = DMA_MINC_ENABLE;
@@ -151,12 +151,12 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     motor->hdma_tim.Init.PeriphBurst = DMA_PBURST_SINGLE;
 
     /* Set hdma_tim instance */
-    if(timerHardware->dmaStream == NULL)
+    if(timerHardware->dmaRef == NULL)
     {
         /* Initialization Error */
         return;
     }
-    motor->hdma_tim.Instance = timerHardware->dmaStream;
+    motor->hdma_tim.Instance = timerHardware->dmaRef;
 
     /* Link hdma_tim to hdma[x] (channelx) */
     __HAL_LINKDMA(&motor->TimHandle, hdma[motor->timerDmaSource], motor->hdma_tim);

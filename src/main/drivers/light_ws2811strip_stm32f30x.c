@@ -40,7 +40,7 @@ static void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 {
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         ws2811LedDataTransferInProgress = 0;
-        DMA_Cmd(descriptor->channel, DISABLE);
+        DMA_Cmd(descriptor->ref, DISABLE);
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
     }
 }
@@ -58,7 +58,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     const timerHardware_t *timerHardware = timerGetByTag(ioTag, TIM_USE_ANY);
     timer = timerHardware->tim;
 
-    if (timerHardware->dmaChannel == NULL) {
+    if (timerHardware->dmaRef == NULL) {
         return;
     }
 
@@ -100,7 +100,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
 
     /* configure DMA */
     /* DMA1 Channel Config */
-    dmaChannel = timerHardware->dmaChannel;
+    dmaChannel = timerHardware->dmaRef;
     DMA_DeInit(dmaChannel);
 
     DMA_StructInit(&DMA_InitStructure);

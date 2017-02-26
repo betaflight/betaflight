@@ -42,7 +42,7 @@ static void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 {
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         ws2811LedDataTransferInProgress = 0;
-        DMA_Cmd(descriptor->stream, DISABLE);
+        DMA_Cmd(descriptor->ref, DISABLE);
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
     }
 }
@@ -60,7 +60,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     const timerHardware_t *timerHardware = timerGetByTag(ioTag, TIM_USE_ANY);
     timer = timerHardware->tim;
 
-    if (timerHardware->dmaStream == NULL) {
+    if (timerHardware->dmaRef == NULL) {
         return;
     }
 
@@ -110,12 +110,12 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     dmaInit(timerHardware->dmaIrqHandler, OWNER_LED_STRIP, 0);
     dmaSetHandler(timerHardware->dmaIrqHandler, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, 0);
 
-    stream = timerHardware->dmaStream;
+    stream = timerHardware->dmaRef;
     /* configure DMA */
     DMA_Cmd(stream, DISABLE);
     DMA_DeInit(stream);
     DMA_StructInit(&DMA_InitStructure);
-    DMA_InitStructure.DMA_Channel = timerHardware->dmaChannel;
+    DMA_InitStructure.DMA_Channel = timerHardware->channel;
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)timerCCR(timer, timerHardware->channel);
     DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)ledStripDMABuffer;
     DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;

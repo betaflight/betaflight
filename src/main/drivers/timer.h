@@ -97,10 +97,10 @@ typedef struct timerHardware_s {
 #endif
 #if defined(USE_DSHOT) || defined(LED_STRIP)
 #if defined(STM32F4) || defined(STM32F7)
-    DMA_Stream_TypeDef *dmaStream;
+    DMA_Stream_TypeDef *dmaRef;
     uint32_t dmaChannel;
 #elif defined(STM32F3) || defined(STM32F1)
-    DMA_Channel_TypeDef *dmaChannel;
+    DMA_Channel_TypeDef *dmaRef;
 #endif
     uint8_t dmaIrqHandler;
 #endif
