@@ -59,7 +59,7 @@ static void TRANSPONDER_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         transponderIrDataTransferInProgress = 0;
 
-        DMA_Cmd(descriptor->dmaRef, DISABLE);
+        DMA_Cmd(descriptor->ref, DISABLE);
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
     }
 }
@@ -144,13 +144,10 @@ void transponderIrHardwareInit(ioTag_t ioTag)
 #if defined(STM32F3)
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
-
-    DMA_Init(dmaChannel, &DMA_InitStructure);
 #elif defined(STM32F4)
     DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
-
-    DMA_Init(stream, &DMA_InitStructure);
 #endif
+    DMA_Init(dmaRef, &DMA_InitStructure);
 
     TIM_DMACmd(timer, timerDmaSource(timerHardware->channel), ENABLE);
 
