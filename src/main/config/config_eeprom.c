@@ -61,7 +61,7 @@ typedef enum {
 
 // Header for the saved copy.
 typedef struct {
-    uint8_t format;
+    uint8_t eepromConfigVersion;
     char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER)];
 } PG_PACKED configHeader_t;
 
@@ -120,7 +120,7 @@ bool isEEPROMContentValid(void)
     const uint8_t *p = &__config_start;
     const configHeader_t *header = (const configHeader_t *)p;
 
-    if (header->format != EEPROM_CONF_VERSION) {
+    if (header->eepromConfigVersion != EEPROM_CONF_VERSION) {
         return false;
     }
 
@@ -232,7 +232,7 @@ static bool writeSettingsToEEPROM(void)
     uint8_t chk = 0;
 
     configHeader_t header = {
-        .format = EEPROM_CONF_VERSION,
+        .eepromConfigVersion = EEPROM_CONF_VERSION,
         .boardIdentifier = TARGET_BOARD_IDENTIFIER,
     };
 
