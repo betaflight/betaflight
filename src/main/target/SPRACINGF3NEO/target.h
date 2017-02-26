@@ -167,7 +167,6 @@
 // USART3
 #define BIND_PIN                PA3
 
-#define HARDWARE_BIND_PLUG
 #define BINDPLUG_PIN            PD2
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE

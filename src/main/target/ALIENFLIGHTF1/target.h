@@ -66,8 +66,6 @@
 // USART2, PA3
 #define BIND_PIN                PA3
 
-#define HARDWARE_BIND_PLUG
-// Hardware bind plug at PB5 (Pin 41)
 #define BINDPLUG_PIN            PB5
 
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP

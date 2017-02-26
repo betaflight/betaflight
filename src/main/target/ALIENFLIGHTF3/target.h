@@ -117,8 +117,6 @@
 // USART2, PA3
 #define BIND_PIN                PA3
 
-#define HARDWARE_BIND_PLUG
-// Hardware bind plug at PB12 (Pin 25)
 #define BINDPLUG_PIN            PB12
 
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP
