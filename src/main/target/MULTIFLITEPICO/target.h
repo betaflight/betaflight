@@ -123,11 +123,8 @@
 #define SERIALRX_UART           SERIAL_PORT_USART3
 #define RX_CHANNELS_TAER
 
-#define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN                PB11
+#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
-#define HARDWARE_BIND_PLUG
 #define BINDPLUG_PIN            PA13
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE

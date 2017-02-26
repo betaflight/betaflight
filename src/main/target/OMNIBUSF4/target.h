@@ -165,8 +165,7 @@
 
 #define AVOID_UART1_FOR_PWM_PPM
 
-#define SPEKTRUM_BIND
-#define BIND_PIN                UART1_RX_PIN
+#define SPEKTRUM_BIND_PIN       UART1_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

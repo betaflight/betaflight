@@ -163,11 +163,8 @@
 #define BUTTONS
 #define BUTTON_A_PIN            PD2
 
-#define SPEKTRUM_BIND
-// USART3
-#define BIND_PIN                PA3
+#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
-#define HARDWARE_BIND_PLUG
 #define BINDPLUG_PIN            PD2
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE

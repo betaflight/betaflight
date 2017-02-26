@@ -163,12 +163,8 @@
 // LED strip configuration.
 #define LED_STRIP
 
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
+#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
-#define HARDWARE_BIND_PLUG
-// Hardware bind plug at PB2 (Pin 28)
 #define BINDPLUG_PIN            PB2
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
