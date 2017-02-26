@@ -7,7 +7,7 @@ TARGET_SRC = \
             drivers/barometer_bmp280.c \
             drivers/compass_ak8975.c \
             drivers/compass_hmc5883l.c \
-			drivers/compass_ak8963.c \
+            drivers/compass_ak8963.c \
             drivers/flash_m25p16.c \
             drivers/transponder_ir.c \
             drivers/transponder_ir_stm32f30x.c \

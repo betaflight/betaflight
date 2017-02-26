@@ -85,7 +85,8 @@
 #endif
 
 #define USE_I2C
-#define I2C_DEVICE              (I2CDEV_1) // PB6/SCL, PB7/SDA
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_ADC
 #define VBAT_SCALE_DEFAULT      160

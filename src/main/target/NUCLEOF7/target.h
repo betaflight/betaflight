@@ -131,11 +131,10 @@
 #define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_4
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_1)
-#define I2C1_SCL PB8
-#define I2C1_SDA PB9
-
-//#define I2C_DEVICE_EXT (I2CDEV_2)
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE                  (I2CDEV_1)
+#define I2C1_SCL                    PB8
+#define I2C1_SDA                    PB9
 
 #define USE_ADC
 #define VBAT_ADC_PIN                PA3

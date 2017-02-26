@@ -129,7 +129,8 @@
 #define UART3_TX_PIN            PB10
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_2)
+#define USE_I2C_DEVICE_2
+#define I2C_DEVICE              (I2CDEV_2)
 
 // #define SOFT_I2C // enable to test software i2c
 // #define SOFT_I2C_PB1011 // If SOFT_I2C is enabled above, need to define pinout as well (I2C1 = PB67, I2C2 = PB1011)
