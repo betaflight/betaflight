@@ -70,9 +70,7 @@
 #define USE_I2C_DEVICE_2
 #define I2C_DEVICE              (I2CDEV_2)
 
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
+#define SPEKTRUM_BIND_PIN       PA3
 
 #define BRUSHED_MOTORS
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP

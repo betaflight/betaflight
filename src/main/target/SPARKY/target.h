@@ -91,9 +91,7 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
+#define SPEKTRUM_BIND_PIN         UART2_RX_PIN
 
 //#define SONAR
 //#define SONAR_ECHO_PIN          PB1

@@ -113,12 +113,8 @@
 #define VBAT_ADC_PIN            PA4
 #define VBAT_SCALE_DEFAULT      20
 
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
+#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
-#define HARDWARE_BIND_PLUG
-// Hardware bind plug at PB12 (Pin 25)
 #define BINDPLUG_PIN            PB12
 
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP

@@ -86,6 +86,8 @@
 #ifdef TINYBEEF3
 #define SERIAL_PORT_COUNT       4
 #else
+#define USB_DETECT_PIN          PB5
+
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 #define SERIAL_PORT_COUNT       6
@@ -109,8 +111,6 @@
 #define SOFTSERIAL1_RX_PIN      PA0 // PA0 / PAD3
 #define SOFTSERIAL1_TX_PIN      PA1 // PA1 / PAD4
 #endif
-
-#define USB_DETECT_PIN          PB5
 
 #define SONAR_SOFTSERIAL1_EXCLUSIVE
 
@@ -182,12 +182,10 @@
 #define BUTTON_A_PIN            PB1
 #define BUTTON_B_PIN            PB0
 
-#define HARDWARE_BIND_PLUG
 #define BINDPLUG_PIN            BUTTON_B_PIN
 #endif
 
-#define SPEKTRUM_BIND
-#define BIND_PIN                UART2_RX_PIN
+#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
