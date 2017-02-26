@@ -17,17 +17,22 @@
 
 #include "stdbool.h"
 #include "stdint.h"
-#include "stdlib.h"
 
 #include <platform.h>
 
 #include "common/utils.h"
 
+#include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
-#include "sensors/battery.h"
-#include "sensors/sensors.h"
 
+#include "fc/config.h"
+#include "fc/runtime_config.h"
+
+#include "io/beeper.h"
 #include "io/statusindicator.h"
 #include "io/vtx.h"
 
@@ -35,12 +40,27 @@
 #include "io/gps.h"
 #endif
 
-#include "fc/config.h"
-#include "fc/runtime_config.h"
+#include "sensors/battery.h"
+#include "sensors/sensors.h"
 
-#include "config/feature.h"
 
-#include "io/beeper.h"
+PG_REGISTER_WITH_RESET_TEMPLATE(beeperDevConfig_t, beeperDevConfig, PG_BEEPER_DEV_CONFIG, 0);
+
+#ifdef BEEPER_INVERTED
+#define IS_OPEN_DRAIN   false
+#define IS_INVERTED     true
+#else
+#define IS_OPEN_DRAIN   true
+#define IS_INVERTED     false
+#endif
+#ifndef BEEPER
+#define BEEPER          NONE
+#endif
+PG_RESET_TEMPLATE(beeperDevConfig_t, beeperDevConfig,
+    .isOpenDrain = IS_OPEN_DRAIN,
+    .isInverted = IS_INVERTED,
+    .ioTag = IO_TAG(BEEPER)
+);
 
 #if FLASH_SIZE > 64
 #define BEEPER_NAMES
