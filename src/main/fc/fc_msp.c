@@ -1275,7 +1275,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         } else {
             value = value & ~RATEPROFILE_MASK;
 
-            if (value >= MAX_RATEPROFILES) {
+            if (value >= CONTROL_RATE_PROFILE_COUNT) {
                 value = 0;
             }
             changeControlRateProfile(value);

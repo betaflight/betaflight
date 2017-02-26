@@ -26,6 +26,7 @@
 #include "drivers/io.h"
 
 #include "fc/rc_controls.h"
+#include "fc/controlrate_profile.h"
 
 #include "flight/failsafe.h"
 #include "flight/mixer.h"
@@ -72,7 +73,7 @@ void targetConfiguration(master_t *config)
         config->profile[profileId].pidProfile.P8[PIDLEVEL] = 30;
         config->profile[profileId].pidProfile.D8[PIDLEVEL] = 30;
 
-        for (int rateProfileId = 0; rateProfileId < MAX_RATEPROFILES; rateProfileId++) {
+        for (int rateProfileId = 0; rateProfileId < CONTROL_RATE_PROFILE_COUNT; rateProfileId++) {
             config->controlRateProfile[rateProfileId].rcRate8 = 100;
             config->controlRateProfile[rateProfileId].rcYawRate8 = 110;
             config->controlRateProfile[rateProfileId].rcExpo8 = 0;

@@ -3422,7 +3422,7 @@ static void cliRateProfile(char *cmdline)
         return;
     } else {
         const int i = atoi(cmdline);
-        if (i >= 0 && i < MAX_RATEPROFILES) {
+        if (i >= 0 && i < CONTROL_RATE_PROFILE_COUNT) {
             changeControlRateProfile(i);
             cliRateProfile("");
         }
@@ -3451,7 +3451,7 @@ static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask, const master_
 
 static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask, const master_t *defaultConfig)
 {
-    if (rateProfileIndex >= MAX_RATEPROFILES) {
+    if (rateProfileIndex >= CONTROL_RATE_PROFILE_COUNT) {
         // Faulty values
         return;
     }
@@ -4136,7 +4136,7 @@ static void printConfig(char *cmdline, bool doDiff)
             cliProfile("");
 
             const uint8_t controlRateProfileIndexSave = getCurrentControlRateProfileIndex();
-            for (uint32_t rateIndex = 0; rateIndex < MAX_RATEPROFILES; rateIndex++) {
+            for (uint32_t rateIndex = 0; rateIndex < CONTROL_RATE_PROFILE_COUNT; rateIndex++) {
                 cliDumpRateProfile(rateIndex, dumpMask, &defaultConfig);
             }
             changeControlRateProfile(controlRateProfileIndexSave);
