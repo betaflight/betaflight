@@ -9,6 +9,5 @@ TARGET_SRC = \
             drivers/compass_ak8963.c \
             drivers/serial_usb_vcp.c \
             drivers/transponder_ir.c \
-            drivers/transponder_ir_stm32f30x.c \
             io/transponder_ir.c
 
