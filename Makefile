@@ -101,9 +101,9 @@ HSE_VALUE       ?= 8000000
 # used for turning on features like VCP and SDCARD
 FEATURES        =
 
-SAMPLE_TARGETS  = ALIENFLIGHTF3 ALIENFLIGHTF4 ANYFCF7 BETAFLIGHTF3 BLUEJAYF4 CC3D FURYF4 NAZE REVO SIRINFPV SPARKY SPRACINGF3 SPRACINGF3EVO STM32F3DISCOVERY
-ALT_TARGETS     = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.mk)))))
-OPBL_TARGETS    = $(filter %_OPBL, $(ALT_TARGETS))
+OFFICIAL_TARGETS  = ALIENFLIGHTF3 ALIENFLIGHTF4 ANYFCF7 BETAFLIGHTF3 BLUEJAYF4 CC3D FURYF4 NAZE REVO SIRINFPV SPARKY SPRACINGF3 SPRACINGF3EVO STM32F3DISCOVERY
+ALT_TARGETS       = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.mk)))))
+OPBL_TARGETS      = $(filter %_OPBL, $(ALT_TARGETS))
 
 VALID_TARGETS   = $(dir $(wildcard $(ROOT)/src/main/target/*/target.mk))
 VALID_TARGETS  := $(subst /,, $(subst ./src/main/target/,, $(VALID_TARGETS)))
@@ -1093,8 +1093,8 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 	$(V1) echo "%% $(notdir $<)" "$(STDOUT)"
 	$(V1) $(CROSS_CC) -c -o $@ $(ASFLAGS) $<
 
-## sample            : Build all sample (travis) targets
-sample: $(SAMPLE_TARGETS)
+## official            : Build all official (travis) targets
+official: $(OFFICIAL_TARGETS)
 
 ## all               : Build all valid targets
 all: $(VALID_TARGETS)
