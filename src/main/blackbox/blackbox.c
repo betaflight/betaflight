@@ -1179,7 +1179,7 @@ static bool blackboxWriteSysinfo()
     }
 
     const profile_t *currentProfile = &masterConfig.profile[systemConfig()->current_profile_index];
-    const controlRateConfig_t *currentControlRateProfile = &currentProfile->controlRateProfile[masterConfig.profile[systemConfig()->current_profile_index].activeRateProfile];
+    const controlRateConfig_t *currentControlRateProfile = controlRateProfiles(systemConfig()->activeRateProfile);
     switch (xmitState.headerIndex) {
         BLACKBOX_PRINT_HEADER_LINE("Firmware type:%s",                    "Cleanflight");
         BLACKBOX_PRINT_HEADER_LINE("Firmware revision:%s %s (%s) %s", FC_FIRMWARE_NAME, FC_VERSION_STRING, shortGitRevision, targetName);

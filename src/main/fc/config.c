@@ -129,7 +129,6 @@ PG_REGISTER(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 0);
 master_t masterConfig;                 // master config struct with data independent from profiles
 profile_t *currentProfile;
 
-static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
 #ifndef USE_PARAMETER_GROUPS
@@ -153,7 +152,7 @@ static void resetCompassConfig(compassConfig_t* compassConfig)
 }
 #endif
 
-static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
+static void resetControlRateProfile(controlRateConfig_t *controlRateConfig)
 {
     controlRateConfig->rcRate8 = 100;
     controlRateConfig->rcYawRate8 = 100;
@@ -223,12 +222,6 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 void resetProfile(profile_t *profile)
 {
     resetPidProfile(&profile->pidProfile);
-
-    for (int rI = 0; rI<MAX_RATEPROFILES; rI++) {
-        resetControlRateConfig(&profile->controlRateProfile[rI]);
-    }
-
-    profile->activeRateProfile = 0;
 }
 
 #ifdef GPS
@@ -751,34 +744,30 @@ void resetFlashConfig(flashConfig_t *flashConfig)
 }
 #endif
 
-uint8_t getCurrentProfile(void)
+uint8_t getCurrentProfileIndex(void)
 {
     return systemConfig()->current_profile_index;
-;
 }
 
 static void setProfile(uint8_t profileIndex)
 {
-    currentProfile = &masterConfig.profile[profileIndex];
-    currentControlRateProfileIndex = currentProfile->activeRateProfile;
-    currentControlRateProfile = &currentProfile->controlRateProfile[currentControlRateProfileIndex];
+    if (profileIndex < MAX_PROFILE_COUNT) {
+        systemConfigMutable()->current_profile_index = profileIndex;
+        currentProfile = &masterConfig.profile[profileIndex];
+    }
 }
 
-uint8_t getCurrentControlRateProfile(void)
+uint8_t getCurrentControlRateProfileIndex(void)
 {
-    return currentControlRateProfileIndex;
+    return systemConfigMutable()->activeRateProfile;
 }
 
-static void setControlRateProfile(uint8_t profileIndex)
+static void setControlRateProfile(uint8_t controlRateProfileIndex)
 {
-    currentControlRateProfileIndex = profileIndex;
-    masterConfig.profile[getCurrentProfile()].activeRateProfile = profileIndex;
-    currentControlRateProfile = &masterConfig.profile[getCurrentProfile()].controlRateProfile[profileIndex];
-}
-
-controlRateConfig_t *getControlRateConfig(uint8_t profileIndex)
-{
-    return &masterConfig.profile[profileIndex].controlRateProfile[masterConfig.profile[profileIndex].activeRateProfile];
+    if (controlRateProfileIndex < MAX_CONTROL_RATE_PROFILE_COUNT) {
+        systemConfigMutable()->activeRateProfile = controlRateProfileIndex;
+        currentControlRateProfile = controlRateProfilesMutable(controlRateProfileIndex);
+    }
 }
 
 uint16_t getCurrentMinthrottle(void)
@@ -989,7 +978,13 @@ void createDefaultConfig(master_t *config)
     resetSerialConfig(&config->serialConfig);
 #endif
 
-    resetProfile(&config->profile[0]);
+
+    for (int ii = 0; ii < MAX_PROFILE_COUNT; ++ii) {
+        resetProfile(&config->profile[ii]);
+    }
+    for (int ii = 0; ii < MAX_CONTROL_RATE_PROFILE_COUNT; ++ii) {
+        resetControlRateProfile(&config->controlRateProfile[ii]);
+    }
 
     config->compassConfig.mag_declination = 0;
 
@@ -1103,11 +1098,6 @@ void createDefaultConfig(master_t *config)
 #if defined(TARGET_CONFIG)
     targetConfiguration(config);
 #endif
-
-    // copy first profile into remaining profile
-    for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
-        memcpy(&config->profile[i], &config->profile[0], sizeof(profile_t));
-    }
 }
 
 void resetConfigs(void)
@@ -1308,7 +1298,7 @@ void readEEPROM(void)
         failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
     }
 
-//    pgActivateProfile(getCurrentProfile());
+//    pgActivateProfile(getCurrentProfileIndex());
 //    setControlRateProfile(rateProfileSelection()->defaultRateProfileIndex);
 
     if (systemConfig()->current_profile_index > MAX_PROFILE_COUNT - 1) {// sanity check

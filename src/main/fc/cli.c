@@ -612,15 +612,15 @@ static const clivalue_t valueTable[] = {
     { "gps_auto_config",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gpsConfig()->autoConfig, .config.lookup = { TABLE_OFF_ON } },
     { "gps_auto_baud",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gpsConfig()->autoBaud, .config.lookup = { TABLE_OFF_ON } },
 
-    { "gps_pos_p",                  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PIDPOS], .config.minmax = { 0,  200 } },
-    { "gps_pos_i",                  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDPOS], .config.minmax = { 0,  200 } },
-    { "gps_pos_d",                  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDPOS], .config.minmax = { 0,  200 } },
-    { "gps_posr_p",                 VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PIDPOSR], .config.minmax = { 0,  200 } },
-    { "gps_posr_i",                 VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDPOSR], .config.minmax = { 0,  200 } },
-    { "gps_posr_d",                 VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDPOSR], .config.minmax = { 0,  200 } },
-    { "gps_nav_p",                  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PIDNAVR], .config.minmax = { 0,  200 } },
-    { "gps_nav_i",                  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDNAVR], .config.minmax = { 0,  200 } },
-    { "gps_nav_d",                  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDNAVR], .config.minmax = { 0,  200 } },
+    { "gps_pos_p",                  VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->P8[PIDPOS], .config.minmax = { 0,  200 } },
+    { "gps_pos_i",                  VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->I8[PIDPOS], .config.minmax = { 0,  200 } },
+    { "gps_pos_d",                  VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->D8[PIDPOS], .config.minmax = { 0,  200 } },
+    { "gps_posr_p",                 VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->P8[PIDPOSR], .config.minmax = { 0,  200 } },
+    { "gps_posr_i",                 VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->I8[PIDPOSR], .config.minmax = { 0,  200 } },
+    { "gps_posr_d",                 VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->D8[PIDPOSR], .config.minmax = { 0,  200 } },
+    { "gps_nav_p",                  VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->P8[PIDNAVR], .config.minmax = { 0,  200 } },
+    { "gps_nav_i",                  VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->I8[PIDNAVR], .config.minmax = { 0,  200 } },
+    { "gps_nav_d",                  VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->D8[PIDNAVR], .config.minmax = { 0,  200 } },
     { "gps_wp_radius",              VAR_UINT16 | MASTER_VALUE, &gpsProfile()->gps_wp_radius, .config.minmax = { 0,  2000 } },
     { "nav_controls_heading",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &gpsProfile()->nav_controls_heading, .config.lookup = { TABLE_OFF_ON } },
     { "nav_speed_min",              VAR_UINT16 | MASTER_VALUE, &gpsProfile()->nav_speed_min, .config.minmax = { 10,  2000 } },
@@ -714,8 +714,8 @@ static const clivalue_t valueTable[] = {
     { "yaw_control_direction",      VAR_INT8   | MASTER_VALUE,  &rcControlsConfig()->yaw_control_direction, .config.minmax = { -1,  1 } },
 
     { "yaw_motor_direction",        VAR_INT8   | MASTER_VALUE, &mixerConfig()->yaw_motor_direction, .config.minmax = { -1,  1 } },
-    { "yaw_p_limit",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_p_limit, .config.minmax = { YAW_P_LIMIT_MIN, YAW_P_LIMIT_MAX } },
-    { "pidsum_limit",               VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.pidSumLimit, .config.minmax = { 0.1, 1.0 } },
+    { "yaw_p_limit",                VAR_UINT16 | PROFILE_VALUE, &pidProfiles(0)->yaw_p_limit, .config.minmax = { YAW_P_LIMIT_MIN, YAW_P_LIMIT_MAX } },
+    { "pidsum_limit",               VAR_FLOAT  | PROFILE_VALUE, &pidProfiles(0)->pidSumLimit, .config.minmax = { 0.1, 1.0 } },
 #ifdef USE_SERVOS
     { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &servoConfig()->dev.servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &servoConfig()->tri_unarmed_servo, .config.lookup = { TABLE_OFF_ON } },
@@ -725,17 +725,17 @@ static const clivalue_t valueTable[] = {
     { "channel_forwarding_start",    VAR_UINT8  | MASTER_VALUE, &channelForwardingConfig()->startChannel, .config.minmax = { AUX1, MAX_SUPPORTED_RC_CHANNEL_COUNT } },
 #endif
 
-    { "rc_rate",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcRate8, .config.minmax = { 0,  255 } },
-    { "rc_rate_yaw",                VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcYawRate8, .config.minmax = { 0,  255 } },
-    { "rc_expo",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcExpo8, .config.minmax = { 0,  100 } },
-    { "rc_yaw_expo",                VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcYawExpo8, .config.minmax = { 0,  100 } },
-    { "thr_mid",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].thrMid8, .config.minmax = { 0,  100 } },
-    { "thr_expo",                   VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].thrExpo8, .config.minmax = { 0,  100 } },
-    { "roll_srate",                 VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rates[FD_ROLL], .config.minmax = { 0,  CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX } },
-    { "pitch_srate",                VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rates[FD_PITCH], .config.minmax = { 0,  CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX } },
-    { "yaw_srate",                  VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rates[FD_YAW], .config.minmax = { 0,  CONTROL_RATE_CONFIG_YAW_RATE_MAX } },
-    { "tpa_rate",                   VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].dynThrPID, .config.minmax = { 0,  CONTROL_RATE_CONFIG_TPA_MAX} },
-    { "tpa_breakpoint",             VAR_UINT16 | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].tpa_breakpoint, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX} },
+    { "rc_rate",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.controlRateProfile[0].rcRate8, .config.minmax = { 0,  255 } },
+    { "rc_rate_yaw",                VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.controlRateProfile[0].rcYawRate8, .config.minmax = { 0,  255 } },
+    { "rc_expo",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.controlRateProfile[0].rcExpo8, .config.minmax = { 0,  100 } },
+    { "rc_yaw_expo",                VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.controlRateProfile[0].rcYawExpo8, .config.minmax = { 0,  100 } },
+    { "thr_mid",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.controlRateProfile[0].thrMid8, .config.minmax = { 0,  100 } },
+    { "thr_expo",                   VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.controlRateProfile[0].thrExpo8, .config.minmax = { 0,  100 } },
+    { "roll_srate",                 VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.controlRateProfile[0].rates[FD_ROLL], .config.minmax = { 0,  CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX } },
+    { "pitch_srate",                VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.controlRateProfile[0].rates[FD_PITCH], .config.minmax = { 0,  CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX } },
+    { "yaw_srate",                  VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.controlRateProfile[0].rates[FD_YAW], .config.minmax = { 0,  CONTROL_RATE_CONFIG_YAW_RATE_MAX } },
+    { "tpa_rate",                   VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.controlRateProfile[0].dynThrPID, .config.minmax = { 0,  CONTROL_RATE_CONFIG_TPA_MAX} },
+    { "tpa_breakpoint",             VAR_UINT16 | PROFILE_RATE_VALUE, &masterConfig.controlRateProfile[0].tpa_breakpoint, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX} },
     { "airmode_start_throttle",     VAR_UINT16 | MASTER_VALUE, &rxConfig()->airModeActivateThreshold, .config.minmax = {1000, 2000 } },
 
     { "failsafe_delay",             VAR_UINT8  | MASTER_VALUE,  &failsafeConfig()->failsafe_delay, .config.minmax = { 0,  200 } },
@@ -768,47 +768,47 @@ static const clivalue_t valueTable[] = {
     { "mag_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &compassConfig()->mag_hardware, .config.lookup = { TABLE_MAG_HARDWARE } },
     { "mag_declination",            VAR_INT16  | MASTER_VALUE, &compassConfig()->mag_declination, .config.minmax = { -18000,  18000 } },
 #endif
-    { "d_lowpass_type",             VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.dterm_filter_type, .config.lookup = { TABLE_LOWPASS_TYPE } },
-    { "d_lowpass",                  VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_lpf_hz, .config.minmax = {0, 16000 } },
-    { "d_notch_hz",                 VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_notch_hz, .config.minmax = { 0,  16000 } },
-    { "d_notch_cut",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_notch_cutoff, .config.minmax = { 1,  16000 } },
-    { "vbat_pid_gain",              VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.vbatPidCompensation, .config.lookup = { TABLE_OFF_ON } },
-    { "pid_at_min_throttle",        VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.pidAtMinThrottle, .config.lookup = { TABLE_OFF_ON } },
-    { "anti_gravity_thresh",        VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.itermThrottleThreshold, .config.minmax = {20, 1000 } },
-    { "anti_gravity_gain",          VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.itermAcceleratorGain, .config.minmax = {1, 30 } },
-    { "setpoint_relax_ratio",       VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.setpointRelaxRatio, .config.minmax = {0, 100 } },
-    { "d_setpoint_weight",          VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dtermSetpointWeight, .config.minmax = {0, 254 } },
-    { "yaw_accel_limit",            VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yawRateAccelLimit, .config.minmax = {0.1f, 50.0f } },
-    { "accel_limit",                VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.rateAccelLimit, .config.minmax = {0.1f, 50.0f } },
+    { "d_lowpass_type",             VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &pidProfiles(0)->dterm_filter_type, .config.lookup = { TABLE_LOWPASS_TYPE } },
+    { "d_lowpass",                  VAR_INT16  | PROFILE_VALUE, &pidProfiles(0)->dterm_lpf_hz, .config.minmax = {0, 16000 } },
+    { "d_notch_hz",                 VAR_UINT16 | PROFILE_VALUE, &pidProfiles(0)->dterm_notch_hz, .config.minmax = { 0,  16000 } },
+    { "d_notch_cut",                VAR_UINT16 | PROFILE_VALUE, &pidProfiles(0)->dterm_notch_cutoff, .config.minmax = { 1,  16000 } },
+    { "vbat_pid_gain",              VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &pidProfiles(0)->vbatPidCompensation, .config.lookup = { TABLE_OFF_ON } },
+    { "pid_at_min_throttle",        VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &pidProfiles(0)->pidAtMinThrottle, .config.lookup = { TABLE_OFF_ON } },
+    { "anti_gravity_thresh",        VAR_UINT16 | PROFILE_VALUE, &pidProfiles(0)->itermThrottleThreshold, .config.minmax = {20, 1000 } },
+    { "anti_gravity_gain",          VAR_FLOAT  | PROFILE_VALUE, &pidProfiles(0)->itermAcceleratorGain, .config.minmax = {1, 30 } },
+    { "setpoint_relax_ratio",       VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->setpointRelaxRatio, .config.minmax = {0, 100 } },
+    { "d_setpoint_weight",          VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->dtermSetpointWeight, .config.minmax = {0, 254 } },
+    { "yaw_accel_limit",            VAR_FLOAT  | PROFILE_VALUE, &pidProfiles(0)->yawRateAccelLimit, .config.minmax = {0.1f, 50.0f } },
+    { "accel_limit",                VAR_FLOAT  | PROFILE_VALUE, &pidProfiles(0)->rateAccelLimit, .config.minmax = {0.1f, 50.0f } },
 
-    { "iterm_windup",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.itermWindupPointPercent, .config.minmax = {30, 100 } },
-    { "yaw_lowpass",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_lpf_hz, .config.minmax = {0, 500 } },
+    { "iterm_windup",               VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->itermWindupPointPercent, .config.minmax = {30, 100 } },
+    { "yaw_lowpass",                VAR_UINT16 | PROFILE_VALUE, &pidProfiles(0)->yaw_lpf_hz, .config.minmax = {0, 500 } },
     { "pid_process_denom",          VAR_UINT8  | MASTER_VALUE,  &pidConfig()->pid_process_denom, .config.minmax = { 1,  MAX_PID_PROCESS_DENOM } },
 
-    { "p_pitch",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PITCH], .config.minmax = { 0,  200 } },
-    { "i_pitch",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PITCH], .config.minmax = { 0,  200 } },
-    { "d_pitch",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PITCH], .config.minmax = { 0,  200 } },
-    { "p_roll",                     VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[ROLL], .config.minmax = { 0,  200 } },
-    { "i_roll",                     VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[ROLL], .config.minmax = { 0,  200 } },
-    { "d_roll",                     VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[ROLL], .config.minmax = { 0,  200 } },
-    { "p_yaw",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[YAW], .config.minmax = { 0,  200 } },
-    { "i_yaw",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[YAW], .config.minmax = { 0,  200 } },
-    { "d_yaw",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[YAW], .config.minmax = { 0,  200 } },
+    { "p_pitch",                    VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->P8[PITCH], .config.minmax = { 0,  200 } },
+    { "i_pitch",                    VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->I8[PITCH], .config.minmax = { 0,  200 } },
+    { "d_pitch",                    VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->D8[PITCH], .config.minmax = { 0,  200 } },
+    { "p_roll",                     VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->P8[ROLL], .config.minmax = { 0,  200 } },
+    { "i_roll",                     VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->I8[ROLL], .config.minmax = { 0,  200 } },
+    { "d_roll",                     VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->D8[ROLL], .config.minmax = { 0,  200 } },
+    { "p_yaw",                      VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->P8[YAW], .config.minmax = { 0,  200 } },
+    { "i_yaw",                      VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->I8[YAW], .config.minmax = { 0,  200 } },
+    { "d_yaw",                      VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->D8[YAW], .config.minmax = { 0,  200 } },
 
-    { "p_alt",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PIDALT], .config.minmax = { 0,  200 } },
-    { "i_alt",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDALT], .config.minmax = { 0,  200 } },
-    { "d_alt",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDALT], .config.minmax = { 0,  200 } },
+    { "p_alt",                      VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->P8[PIDALT], .config.minmax = { 0,  200 } },
+    { "i_alt",                      VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->I8[PIDALT], .config.minmax = { 0,  200 } },
+    { "d_alt",                      VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->D8[PIDALT], .config.minmax = { 0,  200 } },
 
-    { "p_level",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PIDLEVEL], .config.minmax = { 0,  200 } },
-    { "i_level",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDLEVEL], .config.minmax = { 0,  200 } },
-    { "d_level",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDLEVEL], .config.minmax = { 0,  200 } },
+    { "p_level",                    VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->P8[PIDLEVEL], .config.minmax = { 0,  200 } },
+    { "i_level",                    VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->I8[PIDLEVEL], .config.minmax = { 0,  200 } },
+    { "d_level",                    VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->D8[PIDLEVEL], .config.minmax = { 0,  200 } },
 
-    { "p_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PIDVEL], .config.minmax = { 0,  200 } },
-    { "i_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDVEL], .config.minmax = { 0,  200 } },
-    { "d_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDVEL], .config.minmax = { 0,  200 } },
+    { "p_vel",                      VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->P8[PIDVEL], .config.minmax = { 0,  200 } },
+    { "i_vel",                      VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->I8[PIDVEL], .config.minmax = { 0,  200 } },
+    { "d_vel",                      VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->D8[PIDVEL], .config.minmax = { 0,  200 } },
 
-    { "level_sensitivity",          VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.levelSensitivity, .config.minmax = { 10,  200 } },
-    { "level_limit",                VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.levelAngleLimit, .config.minmax = { 10,  120 } },
+    { "level_sensitivity",          VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->levelSensitivity, .config.minmax = { 10,  200 } },
+    { "level_limit",                VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->levelAngleLimit, .config.minmax = { 10,  120 } },
 
 #ifdef BLACKBOX
     { "blackbox_rate_num",          VAR_UINT8  | MASTER_VALUE,  &blackboxConfig()->rate_num, .config.minmax = { 1,  32 } },
@@ -1304,7 +1304,7 @@ static uint16_t getValueOffset(const clivalue_t *value)
     case PROFILE_VALUE:
         return value->offset;
     case PROFILE_RATE_VALUE:
-        return value->offset + sizeof(controlRateConfig_t) * getCurrentControlRateProfile();
+        return value->offset + sizeof(controlRateConfig_t) * getCurrentControlRateProfileIndex();
     }
     return 0;
 }
@@ -1318,7 +1318,7 @@ static void *getValuePointer(const clivalue_t *value)
     case PROFILE_VALUE:
         return rec->address + value->offset;
     case PROFILE_RATE_VALUE:
-        return rec->address + value->offset + sizeof(controlRateConfig_t) * getCurrentControlRateProfile();
+        return rec->address + value->offset + sizeof(controlRateConfig_t) * getCurrentControlRateProfileIndex();
     }
     return NULL;
 }
@@ -1370,7 +1370,7 @@ void *getValuePointer(const clivalue_t *value)
     }
 
     if ((value->type & VALUE_SECTION_MASK) == PROFILE_RATE_VALUE) {
-        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * systemConfig()->current_profile_index) + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile());
+        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * systemConfig()->current_profile_index) + (sizeof(controlRateConfig_t) * getCurrentControlRateProfileIndex());
     }
 
     return ptr;
@@ -3402,7 +3402,7 @@ static void cliPlaySound(char *cmdline)
 static void cliProfile(char *cmdline)
 {
     if (isEmpty(cmdline)) {
-        cliPrintf("profile %d\r\n", getCurrentProfile());
+        cliPrintf("profile %d\r\n", getCurrentProfileIndex());
         return;
     } else {
         const int i = atoi(cmdline);
@@ -3418,7 +3418,7 @@ static void cliProfile(char *cmdline)
 static void cliRateProfile(char *cmdline)
 {
     if (isEmpty(cmdline)) {
-        cliPrintf("rateprofile %d\r\n", getCurrentControlRateProfile());
+        cliPrintf("rateprofile %d\r\n", getCurrentControlRateProfileIndex());
         return;
     } else {
         const int i = atoi(cmdline);
@@ -4127,38 +4127,36 @@ static void printConfig(char *cmdline, bool doDiff)
         dumpValues(MASTER_VALUE, dumpMask, &defaultConfig);
 
         if (dumpMask & DUMP_ALL) {
-            uint8_t activeProfile = systemConfig()->current_profile_index;
-            for (uint32_t profileCount=0; profileCount<MAX_PROFILE_COUNT;profileCount++) {
-                cliDumpProfile(profileCount, dumpMask, &defaultConfig);
-
-                uint8_t currentRateIndex = currentProfile->activeRateProfile;
-                for (uint32_t rateCount = 0; rateCount<MAX_RATEPROFILES; rateCount++) {
-                    cliDumpRateProfile(rateCount, dumpMask, &defaultConfig);
-                }
-
-                changeControlRateProfile(currentRateIndex);
-                cliPrintHashLine("restore original rateprofile selection");
-                cliRateProfile("");
+            const uint8_t profileIndexSave = getCurrentProfileIndex();
+            for (uint32_t profileIndex = 0; profileIndex < MAX_PROFILE_COUNT; profileIndex++) {
+                cliDumpProfile(profileIndex, dumpMask, &defaultConfig);
             }
-
-            changeProfile(activeProfile);
+            changeProfile(profileIndexSave);
             cliPrintHashLine("restore original profile selection");
             cliProfile("");
+
+            const uint8_t controlRateProfileIndexSave = getCurrentControlRateProfileIndex();
+            for (uint32_t rateIndex = 0; rateIndex < MAX_RATEPROFILES; rateIndex++) {
+                cliDumpRateProfile(rateIndex, dumpMask, &defaultConfig);
+            }
+            changeControlRateProfile(controlRateProfileIndexSave);
+            cliPrintHashLine("restore original rateprofile selection");
+            cliRateProfile("");
 
             cliPrintHashLine("save configuration");
             cliPrint("save");
         } else {
-            cliDumpProfile(systemConfig()->current_profile_index, dumpMask, &defaultConfig);
-            cliDumpRateProfile(currentProfile->activeRateProfile, dumpMask, &defaultConfig);
+            cliDumpProfile(getCurrentProfileIndex(), dumpMask, &defaultConfig);
+            cliDumpRateProfile(getCurrentControlRateProfileIndex(), dumpMask, &defaultConfig);
         }
     }
 
     if (dumpMask & DUMP_PROFILE) {
-        cliDumpProfile(systemConfig()->current_profile_index, dumpMask, &defaultConfig);
+        cliDumpProfile(getCurrentProfileIndex(), dumpMask, &defaultConfig);
     }
 
     if (dumpMask & DUMP_RATES) {
-        cliDumpRateProfile(currentProfile->activeRateProfile, dumpMask, &defaultConfig);
+        cliDumpRateProfile(getCurrentControlRateProfileIndex(), dumpMask, &defaultConfig);
     }
 #ifdef USE_PARAMETER_GROUPS
     // restore configs from copies

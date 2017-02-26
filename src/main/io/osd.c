@@ -393,8 +393,8 @@ static void osdDrawSingleElement(uint8_t item)
 
         case OSD_PIDRATE_PROFILE:
         {
-            const uint8_t profileIndex = systemConfig()->current_profile_index;
-            const uint8_t rateProfileIndex = masterConfig.profile[profileIndex].activeRateProfile;
+            const uint8_t profileIndex = getCurrentProfileIndex();
+            const uint8_t rateProfileIndex = getCurrentControlRateProfileIndex();
             sprintf(buff, "%d-%d", profileIndex + 1, rateProfileIndex + 1);
             break;
         }

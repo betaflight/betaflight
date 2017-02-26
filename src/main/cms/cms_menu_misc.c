@@ -39,6 +39,8 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "fc/rc_controls.h"
+
 #include "flight/mixer.h"
 
 #include "rx/rx.h"
