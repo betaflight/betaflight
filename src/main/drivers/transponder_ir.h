@@ -27,9 +27,6 @@
 
 #define TRANSPONDER_DMA_BUFFER_SIZE ((TRANSPONDER_TOGGLES_PER_BIT + 1) * TRANSPONDER_BITS_PER_BYTE * TRANSPONDER_DATA_LENGTH)
 
-#define BIT_TOGGLE_1 78 // (156 / 2)
-#define BIT_TOGGLE_0 0
-
 bool transponderIrInit();
 void transponderIrDisable(void);
 

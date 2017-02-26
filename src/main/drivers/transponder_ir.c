@@ -32,8 +32,9 @@
 
 #include "transponder_ir.h"
 
-#define TRANSPONDER_TIMER_HZ        (24 * 1000000)
-#define TRANSPONDER_TIMER_PERIOD    39
+#define TRANSPONDER_TIMER_MHZ       24
+#define TRANSPONDER_CARRIER_HZ      460750
+
 /*
  * Implementation note:
  * Using around over 700 bytes for a transponder DMA buffer is a little excessive, likely an alternative implementation that uses a fast
@@ -45,6 +46,9 @@
 uint8_t transponderIrDMABuffer[TRANSPONDER_DMA_BUFFER_SIZE];
 
 volatile uint8_t transponderIrDataTransferInProgress = 0;
+
+static uint8_t bitToggleOne = 0;
+#define BIT_TOGGLE_0 0
 
 static IO_t transponderIO = IO_NONE;
 static TIM_TypeDef *timer = NULL;
@@ -92,10 +96,15 @@ void transponderIrHardwareInit(ioTag_t ioTag)
 
     RCC_ClockCmd(timerRCC(timer), ENABLE);
 
+    uint16_t prescaler = timerGetPrescalerByDesiredMhz(timer, TRANSPONDER_TIMER_MHZ);
+    uint16_t period = timerGetPeriodByPrescaler(timer, prescaler, TRANSPONDER_CARRIER_HZ);
+
+    bitToggleOne = period / 2;
+    
     /* Time base configuration */
     TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
-    TIM_TimeBaseStructure.TIM_Period = TRANSPONDER_TIMER_PERIOD;
-    TIM_TimeBaseStructure.TIM_Prescaler = (uint16_t)((SystemCoreClock / timerClockDivisor(timer) / TRANSPONDER_TIMER_HZ) - 1);
+    TIM_TimeBaseStructure.TIM_Period = period;
+    TIM_TimeBaseStructure.TIM_Prescaler = prescaler;
     TIM_TimeBaseStructure.TIM_ClockDivision = 0;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
     TIM_TimeBaseInit(timer, &TIM_TimeBaseStructure);
@@ -209,7 +218,7 @@ void updateTransponderDMABuffer(const uint8_t* transponderData)
             for (toggleIndex = 0; toggleIndex < TRANSPONDER_TOGGLES_PER_BIT; toggleIndex++)
             {
                 if (doToggles) {
-                    transponderIrDMABuffer[dmaBufferOffset] = BIT_TOGGLE_1;
+                    transponderIrDMABuffer[dmaBufferOffset] = bitToggleOne;
                 } else {
                     transponderIrDMABuffer[dmaBufferOffset] = BIT_TOGGLE_0;
                 }
