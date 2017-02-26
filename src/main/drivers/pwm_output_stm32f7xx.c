@@ -137,7 +137,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     dmaMotorTimers[timerIndex].timerDmaSources |= motor->timerDmaSource;
 
     /* Set the parameters to be configured */
-    motor->hdma_tim.Init.Channel  = timerHardware->dmaRef;
+    motor->hdma_tim.Init.Channel  = timerHardware->dmaChannel;
     motor->hdma_tim.Init.Direction = DMA_MEMORY_TO_PERIPH;
     motor->hdma_tim.Init.PeriphInc = DMA_PINC_DISABLE;
     motor->hdma_tim.Init.MemInc = DMA_MINC_ENABLE;

@@ -85,7 +85,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     __DMA1_CLK_ENABLE();
 
     /* Set the parameters to be configured */
-    hdma_tim.Init.Channel  = timerHardware->dmaRef;
+    hdma_tim.Init.Channel  = timerHardware->dmaChannel;
     hdma_tim.Init.Direction = DMA_MEMORY_TO_PERIPH;
     hdma_tim.Init.PeriphInc = DMA_PINC_DISABLE;
     hdma_tim.Init.MemInc = DMA_MINC_ENABLE;
