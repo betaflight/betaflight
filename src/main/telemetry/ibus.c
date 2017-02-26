@@ -24,35 +24,37 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "platform.h"
-#include "common/utils.h"
 
 #if defined(TELEMETRY) && defined(TELEMETRY_IBUS)
 
+#include "common/axis.h"
+
+#include "common/utils.h"
+
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
-
-#include "common/axis.h"
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/serial.h"
 
+#include "fc/rc_controls.h"
+
+#include "io/serial.h"
+
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/barometer.h"
 
-#include "io/serial.h"
-#include "fc/rc_controls.h"
 #include "scheduler/scheduler.h"
 
-#include "telemetry/telemetry.h"
 #include "telemetry/ibus.h"
+#include "telemetry/telemetry.h"
 
 /*
  * iBus Telemetry is a half-duplex serial protocol. It shares 1 line for
@@ -160,13 +162,6 @@
  *
  */
 
-/*
-PG_REGISTER_WITH_RESET_TEMPLATE(ibusTelemetryConfig_t, ibusTelemetryConfig, PG_IBUS_TELEMETRY_CONFIG, 0);
-
-PG_RESET_TEMPLATE(ibusTelemetryConfig_t, ibusTelemetryConfig,
-                  .report_cell_voltage = false,
-                 );
-*/
 
 #define IBUS_TASK_PERIOD_US (1000)
 
@@ -290,7 +285,7 @@ static void dispatchMeasurementReply(ibusAddress_t address)
     switch (sensorAddressTypeLookup[address - ibusBaseAddress]) {
     case IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE:
         value = getVbat() * 10;
-        if (ibusTelemetryConfig()->report_cell_voltage) {
+        if (telemetryConfig()->report_cell_voltage) {
             value /= batteryCellCount;
         }
         sendIbusMeasurement(address, value);

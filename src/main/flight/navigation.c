@@ -18,11 +18,11 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <ctype.h>
-#include <string.h>
 #include <math.h>
 
 #include "platform.h"
+
+#ifdef GPS
 
 #include "build/debug.h"
 
@@ -37,6 +37,7 @@
 #include "drivers/system.h"
 
 #include "fc/config.h"
+#include "fc/fc_core.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -55,9 +56,17 @@
 #include "sensors/sensors.h"
 
 
-extern int16_t magHold;
+PG_REGISTER_WITH_RESET_TEMPLATE(gpsProfile_t, gpsProfile, PG_NAVIGATION_CONFIG, 0);
 
-#ifdef GPS
+PG_RESET_TEMPLATE(gpsProfile_t, gpsProfile,
+    .gps_wp_radius = 200,
+    .gps_lpf = 20,
+    .nav_slew_rate = 30,
+    .nav_controls_heading = 1,
+    .nav_speed_min = 100,
+    .nav_speed_max = 300,
+    .ap_mode = 40
+);
 
 bool areSticksInApModePosition(uint16_t ap_mode);
 

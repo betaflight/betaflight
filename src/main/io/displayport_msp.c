@@ -26,17 +26,21 @@
 
 #include "common/utils.h"
 
-#include "config/config_master.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/display.h"
 #include "drivers/system.h"
 
 #include "fc/fc_msp.h"
 
+#include "io/displayport_msp.h"
+
 #include "msp/msp_protocol.h"
 #include "msp/msp_serial.h"
 
-#include "io/displayport_msp.h"
+// no template required since defaults are zero
+PG_REGISTER(displayPortProfile_t, displayPortProfileMsp, PG_DISPLAY_PORT_MSP_CONFIG, 0);
 
 static displayPort_t mspDisplayPort;
 
