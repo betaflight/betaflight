@@ -320,9 +320,6 @@ typedef struct master_s {
 
     beeperConfig_t beeperConfig;
 
-    char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER)];
-
-    uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
     /*
         do not add properties after the MAGIC_EF and CHK
