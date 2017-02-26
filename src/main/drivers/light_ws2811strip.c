@@ -87,7 +87,7 @@ void setStripColors(const hsvColor_t *colors)
 
 void ws2811LedStripInit(ioTag_t ioTag)
 {
-    memset(&ledStripDMABuffer, 0, WS2811_DMA_BUFFER_SIZE);
+    memset(ledStripDMABuffer, 0, sizeof(ledStripDMABuffer));
     ws2811LedStripHardwareInit(ioTag);
 
     const hsvColor_t hsv_white = {  0, 255, 255};

@@ -798,7 +798,7 @@ static void applyLarsonScannerLayer(bool updateNow, timeUs_t *timer)
     int scannerLedIndex = 0;
     for (unsigned i = 0; i < ledCounts.count; i++) {
 
-        const ledConfig_t *ledConfig = &ledConfigs[i];
+        const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
 
         if (ledGetOverlayBit(ledConfig, LED_OVERLAY_LARSON_SCANNER)) {
             hsvColor_t ledColor;
@@ -827,7 +827,7 @@ static void applyLedBlinkLayer(bool updateNow, timeUs_t *timer)
     bool ledOn = (blinkMask & 1);  // b_b_____...
     if (!ledOn) {
         for (int i = 0; i < ledCounts.count; ++i) {
-            const ledConfig_t *ledConfig = &ledConfigs[i];
+            const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
 
             if (ledGetOverlayBit(ledConfig, LED_OVERLAY_BLINK) ||
                     (ledGetOverlayBit(ledConfig, LED_OVERLAY_LANDING_FLASH) && scaledThrottle < 50)) {
