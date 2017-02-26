@@ -165,7 +165,7 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
 static void taskUpdateCompass(timeUs_t currentTimeUs)
 {
     if (sensors(SENSOR_MAG)) {
-        compassUpdate(currentTimeUs, &compassConfig()->magZero);
+        compassUpdate(currentTimeUs, &compassConfigMutable()->magZero);
     }
 }
 #endif

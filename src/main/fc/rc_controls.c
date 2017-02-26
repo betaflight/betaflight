@@ -70,6 +70,15 @@ int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+
 
 uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
 
+PG_REGISTER_WITH_RESET_TEMPLATE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
+
+PG_RESET_TEMPLATE(rcControlsConfig_t, rcControlsConfig,
+    .deadband = 0,
+    .yaw_deadband = 0,
+    .alt_hold_deadband = 40,
+    .alt_hold_fast_change = 1
+);
+
 PG_REGISTER_WITH_RESET_TEMPLATE(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 0);
 
 PG_RESET_TEMPLATE(armingConfig_t, armingConfig,
@@ -77,6 +86,8 @@ PG_RESET_TEMPLATE(armingConfig_t, armingConfig,
     .disarm_kill_switch = 1,
     .auto_disarm_delay = 5
 );
+
+PG_REGISTER_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions, PG_MODE_ACTIVATION_PROFILE, 0);
 
 bool isAirmodeActive(void) {
     return (IS_RC_MODE_ACTIVE(BOXAIRMODE) || feature(FEATURE_AIRMODE));
