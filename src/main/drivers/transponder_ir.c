@@ -32,6 +32,8 @@
 
 #include "transponder_ir.h"
 
+#define TRANSPONDER_TIMER_HZ        (24 * 1000000)
+#define TRANSPONDER_TIMER_PERIOD    39
 /*
  * Implementation note:
  * Using around over 700 bytes for a transponder DMA buffer is a little excessive, likely an alternative implementation that uses a fast
@@ -92,8 +94,8 @@ void transponderIrHardwareInit(ioTag_t ioTag)
 
     /* Time base configuration */
     TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
-    TIM_TimeBaseStructure.TIM_Period = 156;
-    TIM_TimeBaseStructure.TIM_Prescaler = 0;
+    TIM_TimeBaseStructure.TIM_Period = TRANSPONDER_TIMER_PERIOD;
+    TIM_TimeBaseStructure.TIM_Prescaler = (uint16_t)((SystemCoreClock / timerClockDivisor(timer) / TRANSPONDER_TIMER_HZ) - 1);
     TIM_TimeBaseStructure.TIM_ClockDivision = 0;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
     TIM_TimeBaseInit(timer, &TIM_TimeBaseStructure);
