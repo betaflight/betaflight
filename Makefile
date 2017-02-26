@@ -827,7 +827,7 @@ STM32F30x_COMMON_SRC = \
             drivers/dma.c \
             drivers/gpio_stm32f30x.c \
             drivers/light_ws2811strip_stm32f30x.c \
-            drivers/pwm_output_stm32f3xx.c \
+            drivers/pwm_output_dshot.c \
             drivers/serial_uart_stm32f30x.c \
             drivers/system_stm32f30x.c \
             drivers/timer_stm32f30x.c
@@ -841,7 +841,7 @@ STM32F4xx_COMMON_SRC = \
             drivers/gpio_stm32f4xx.c \
             drivers/inverter.c \
             drivers/light_ws2811strip_stm32f4xx.c \
-            drivers/pwm_output_stm32f4xx.c \
+            drivers/pwm_output_dshot.c \
             drivers/serial_uart_stm32f4xx.c \
             drivers/system_stm32f4xx.c \
             drivers/timer_stm32f4xx.c

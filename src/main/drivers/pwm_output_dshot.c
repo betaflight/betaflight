@@ -24,7 +24,9 @@
 
 #include "io.h"
 #include "timer.h"
+#ifdef STM32F4
 #include "timer_stm32f4xx.h"
+#endif
 #include "pwm_output.h"
 #include "nvic.h"
 #include "dma.h"
@@ -53,6 +55,7 @@ uint8_t getTimerIndex(TIM_TypeDef *timer)
 
 void pwmWriteDigital(uint8_t index, uint16_t value)
 {
+
     if (!pwmMotorsEnabled) {
         return;
     }
@@ -82,6 +85,7 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
         packet <<= 1;
     }
 
+    DMA_Cmd(motor->timerHardware->dmaRef, DISABLE);
     TIM_DMACmd(motor->timerHardware->tim, motor->timerDmaSource, DISABLE);
     DMA_SetCurrDataCounter(motor->timerHardware->dmaRef, MOTOR_DMA_BUFFER_SIZE);
     DMA_CLEAR_FLAG(motor->dmaDescriptor, DMA_IT_TCIF);
@@ -126,7 +130,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
         RCC_ClockCmd(timerRCC(timer), ENABLE);
         TIM_Cmd(timer, DISABLE);
 
-        TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / timerClockDivisor(timer) / getDshotHz(pwmProtocolType)) - 1;
+        TIM_TimeBaseStructure.TIM_Prescaler = (uint16_t)((SystemCoreClock / timerClockDivisor(timer) / getDshotHz(pwmProtocolType)) - 1);
         TIM_TimeBaseStructure.TIM_Period = MOTOR_BITLENGTH;
         TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
         TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;
@@ -152,7 +156,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     motor->timerDmaSource = timerDmaSource(timerHardware->channel);
     dmaMotorTimers[timerIndex].timerDmaSources |= motor->timerDmaSource;
 
-    TIM_CCxCmd(timer, motor->timerHardware->channel, TIM_CCx_Enable);
+    TIM_CCxCmd(timer, timerHardware->channel, TIM_CCx_Enable);
 
     if (configureTimer) {
         TIM_CtrlPWMOutputs(timer, ENABLE);
@@ -160,37 +164,48 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
         TIM_Cmd(timer, ENABLE);
     }
 
-    DMA_Stream_TypeDef *stream = timerHardware->dmaRef;
+#if defined(STM32F3)
+    DMA_Channel_TypeDef *dmaRef = timerHardware->dmaRef;
+#elif defined(STM32F4)
+    DMA_Stream_TypeDef *dmaRef = timerHardware->dmaRef;
+#else
+#error "No MCU specified in DSHOT"
+#endif
 
-    if (stream == NULL) {
-        /* trying to use a non valid stream */
+    if (dmaRef == NULL) {
         return;
     }
 
     dmaInit(timerHardware->dmaIrqHandler, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
-    motor->dmaDescriptor = getDmaDescriptor(stream);
+    motor->dmaDescriptor = getDmaDescriptor(dmaRef);
 
-    DMA_Cmd(stream, DISABLE);
-    DMA_DeInit(stream);
+    DMA_Cmd(dmaRef, DISABLE);
+    DMA_DeInit(dmaRef);
 
     DMA_StructInit(&DMA_InitStructure);
-    DMA_InitStructure.DMA_Channel = timerHardware->dmaRef;
-    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)timerChCCR(timerHardware);
+#if defined(STM32F3)
+    DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)motor->dmaBuffer;
+    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
+    DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
+#elif defined(STM32F4)
+    DMA_InitStructure.DMA_Channel = timerHardware->channel;
     DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)motor->dmaBuffer;
     DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
+    DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Enable;
+    DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull;
+    DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single;
+    DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+#endif
+    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)timerChCCR(timerHardware);
     DMA_InitStructure.DMA_BufferSize = MOTOR_DMA_BUFFER_SIZE;
     DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
     DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
     DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Word;
     DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Word;
     DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
-    DMA_InitStructure.DMA_Priority = DMA_Priority_VeryHigh;
-    DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Enable;
-    DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull;
-    DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single;
-    DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+    DMA_InitStructure.DMA_Priority = DMA_Priority_High;
 
-    DMA_Init(stream, &DMA_InitStructure);
+    DMA_Init(dmaRef, &DMA_InitStructure);
 }
 
 #endif
