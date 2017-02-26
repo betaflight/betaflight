@@ -118,17 +118,30 @@ static void setTxSignal(softSerial_t *softSerial, uint8_t state)
     }
 }
 
+static void serialEnableCC(softSerial_t *softSerial)
+{
+#ifdef USE_HAL_DRIVER
+    TIM_CCxChannelCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_ENABLE);
+#else
+    TIM_CCxCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_Enable);
+#endif
+}
+
 static void serialInputPortActivate(softSerial_t *softSerial)
 {
     if (softSerial->port.options & SERIAL_INVERTED) {
 #ifdef STM32F1
         IOConfigGPIO(softSerial->rxIO, IOCFG_IPD);
+#elif defined(STM32F7)
+        IOConfigGPIOAF(softSerial->rxIO, IOCFG_AF_PP_PD, softSerial->timerHardware->alternateFunction);
 #else
         IOConfigGPIO(softSerial->rxIO, IOCFG_AF_PP_PD);
 #endif
     } else {
 #ifdef STM32F1
         IOConfigGPIO(softSerial->rxIO, IOCFG_IPU);
+#elif defined(STM32F7)
+        IOConfigGPIOAF(softSerial->rxIO, IOCFG_AF_PP_UP, softSerial->timerHardware->alternateFunction);
 #else
         IOConfigGPIO(softSerial->rxIO, IOCFG_AF_PP_UP);
 #endif
@@ -140,11 +153,7 @@ static void serialInputPortActivate(softSerial_t *softSerial)
 
     // Enable input capture
 
-#ifdef USE_HAL_DRIVER
-    TIM_CCxChannelCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_ENABLE);
-#else
-    TIM_CCxCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_Enable);
-#endif
+    serialEnableCC(softSerial);
 }
 
 static void serialInputPortDeActivate(softSerial_t *softSerial)
@@ -157,18 +166,36 @@ static void serialInputPortDeActivate(softSerial_t *softSerial)
     TIM_CCxCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_Disable);
 #endif
 
+#ifdef STM32F7
+    IOConfigGPIOAF(softSerial->rxIO, IOCFG_IN_FLOATING, softSerial->timerHardware->alternateFunction);
+#else
     IOConfigGPIO(softSerial->rxIO, IOCFG_IN_FLOATING);
+#endif
     softSerial->rxActive = false;
 }
 
 static void serialOutputPortActivate(softSerial_t *softSerial)
 {
+#ifdef STM32F7
+    if (softSerial->exTimerHardware)
+        IOConfigGPIOAF(softSerial->txIO, IOCFG_OUT_PP, softSerial->exTimerHardware->alternateFunction);
+    else
+        IOConfigGPIO(softSerial->txIO, IOCFG_OUT_PP);
+#else
     IOConfigGPIO(softSerial->txIO, IOCFG_OUT_PP);
+#endif
 }
 
 static void serialOutputPortDeActivate(softSerial_t *softSerial)
 {
+#ifdef STM32F7
+    if (softSerial->exTimerHardware)
+        IOConfigGPIOAF(softSerial->txIO, IOCFG_IN_FLOATING, softSerial->exTimerHardware->alternateFunction);
+    else
+        IOConfigGPIO(softSerial->txIO, IOCFG_IN_FLOATING);
+#else
     IOConfigGPIO(softSerial->txIO, IOCFG_IN_FLOATING);
+#endif
 }
 
 static bool isTimerPeriodTooLarge(uint32_t timerPeriod)
@@ -198,22 +225,6 @@ static void serialTimerConfigureTimebase(const timerHardware_t *timerHardwarePtr
 
     timerConfigure(timerHardwarePtr, timerPeriod, mhz);
 }
-
-#if 0
-static void serialICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
-{
-    TIM_ICInitTypeDef TIM_ICInitStructure;
-
-    TIM_ICStructInit(&TIM_ICInitStructure);
-    TIM_ICInitStructure.TIM_Channel = channel;
-    TIM_ICInitStructure.TIM_ICPolarity = polarity;
-    TIM_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI;
-    TIM_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1;
-    TIM_ICInitStructure.TIM_ICFilter = 0x0;
-
-    TIM_ICInit(tim, &TIM_ICInitStructure);
-}
-#endif
 
 static void resetBuffers(softSerial_t *softSerial)
 {
@@ -414,6 +425,7 @@ void prepareForNextRxByte(softSerial_t *softSerial)
     if (softSerial->rxEdge == LEADING) {
         softSerial->rxEdge = TRAILING;
         timerChConfigIC(softSerial->timerHardware, (softSerial->port.options & SERIAL_INVERTED) ? ICPOLARITY_RISING : ICPOLARITY_FALLING, 0);
+        serialEnableCC(softSerial);
     }
 }
 
@@ -470,6 +482,7 @@ void processRxState(softSerial_t *softSerial)
 
 void onSerialTimerOverflow(timerOvrHandlerRec_t *cbRec, captureCompare_t capture)
 {
+debug[0]++;
     UNUSED(capture);
     softSerial_t *self = container_of(cbRec, softSerial_t, overCb);
 
@@ -482,6 +495,7 @@ void onSerialTimerOverflow(timerOvrHandlerRec_t *cbRec, captureCompare_t capture
 
 void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 {
+debug[1]++;
     UNUSED(capture);
 
     softSerial_t *self = container_of(cbRec, softSerial_t, edgeCb);
@@ -511,6 +525,9 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
         }
 
         timerChConfigIC(self->timerHardware, inverted ? ICPOLARITY_FALLING : ICPOLARITY_RISING, 0);
+#ifdef STM32F7
+        serialEnableCC(self);
+#endif
         self->rxEdge = LEADING;
 
         self->rxBitIndex = 0;
@@ -533,6 +550,9 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
         self->rxEdge = TRAILING;
         timerChConfigIC(self->timerHardware, inverted ? ICPOLARITY_RISING : ICPOLARITY_FALLING, 0);
     }
+#ifdef STM32F7
+    serialEnableCC(self);
+#endif
 }
 
 
