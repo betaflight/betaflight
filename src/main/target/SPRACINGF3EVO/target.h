@@ -65,8 +65,6 @@
 
 //#define SONAR
 
-#define USB_IO
-
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2

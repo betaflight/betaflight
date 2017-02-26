@@ -488,7 +488,7 @@ void init(void)
     }
 #endif
 
-#ifdef USB_CABLE_DETECTION
+#ifdef USB_DETECT_PIN
     usbCableDetectInit();
 #endif
 

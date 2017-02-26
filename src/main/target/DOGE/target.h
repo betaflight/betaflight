@@ -91,7 +91,6 @@
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 
-#define USB_IO
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2

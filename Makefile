@@ -786,13 +786,15 @@ VCP_SRC = \
             vcpf4/usbd_desc.c \
             vcpf4/usbd_usr.c \
             vcpf4/usbd_cdc_vcp.c \
-            drivers/serial_usb_vcp.c
+            drivers/serial_usb_vcp.c \
+            drivers/usb_io.c
 else ifeq ($(TARGET),$(filter $(TARGET),$(F7_TARGETS)))
 VCP_SRC = \
             vcp_hal/usbd_desc.c \
             vcp_hal/usbd_conf.c \
             vcp_hal/usbd_cdc_interface.c \
-            drivers/serial_usb_vcp.c
+            drivers/serial_usb_vcp.c \
+            drivers/usb_io.c
 else
 VCP_SRC = \
             vcp/hw_config.c \
