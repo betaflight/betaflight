@@ -27,8 +27,6 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 8
 
-#define USB_IO
-
 #define USE_EXTI
 #define MPU_INT_EXTI            PC13
 #define EXTI15_10_CALLBACK_HANDLER_COUNT 1

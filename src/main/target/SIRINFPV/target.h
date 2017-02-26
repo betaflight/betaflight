@@ -53,8 +53,6 @@
 #define MPU6500_CS_PIN          PA4
 #define MPU6500_SPI_INSTANCE    SPI1
 
-#define USB_IO
-
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2

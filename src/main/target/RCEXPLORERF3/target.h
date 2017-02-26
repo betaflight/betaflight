@@ -58,8 +58,6 @@
 #define SONAR_TRIGGER_PIN           PA6   // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
 #define SONAR_ECHO_PIN              PB1   // RC_CH8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
 
-#define USB_IO
-
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
