@@ -23,6 +23,7 @@
 
 #include <platform.h>
 
+#ifdef TRANSPONDER
 #include "build/build_config.h"
 
 #include "config/parameter_group.h"
@@ -116,3 +117,4 @@ void transponderTransmitOnce(void) {
     }
     transponderIrTransmit();
 }
+#endif
