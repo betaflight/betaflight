@@ -936,8 +936,13 @@ void createDefaultConfig(master_t *config)
 
     resetSerialConfig(&config->serialConfig);
 
-    resetProfile(&config->profile[0]);
-    resetControlRateProfile(&config->controlRateProfile[0]);
+
+    for (int ii = 0; ii < MAX_PROFILE_COUNT; ++ii) {
+        resetProfile(&config->profile[ii]);
+    }
+    for (int ii = 0; ii < MAX_CONTROL_RATE_PROFILE_COUNT; ++ii) {
+        resetControlRateProfile(&config->controlRateProfile[ii]);
+    }
 
     config->compassConfig.mag_declination = 0;
 
@@ -1049,11 +1054,6 @@ void createDefaultConfig(master_t *config)
 #if defined(TARGET_CONFIG)
     targetConfiguration(config);
 #endif
-
-    // copy first profile into remaining profile
-    for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
-        memcpy(&config->profile[i], &config->profile[0], sizeof(profile_t));
-    }
 }
 
 void resetConfigs(void)
