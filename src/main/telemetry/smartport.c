@@ -21,20 +21,30 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/system.h"
-#include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
+#include "drivers/sensor.h"
+#include "drivers/system.h"
 
 #include "fc/config.h"
+#include "fc/controlrate_profile.h"
+#include "fc/fc_msp.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
-#include "fc/fc_msp.h"
+
+#include "flight/altitudehold.h"
+#include "flight/failsafe.h"
+#include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
+#include "flight/navigation.h"
 
 #include "io/beeper.h"
 #include "io/motors.h"
 #include "io/gps.h"
 #include "io/serial.h"
+
+#include "msp/msp.h"
 
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
@@ -44,23 +54,13 @@
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
 
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/mixer.h"
-#include "flight/failsafe.h"
-#include "flight/navigation.h"
-#include "flight/altitudehold.h"
-
 #include "rx/rx.h"
 #include "rx/msp.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/smartport.h"
 
-#include "msp/msp.h"
-
 extern profile_t *currentProfile;
-extern controlRateConfig_t *currentControlRateProfile;
 
 enum
 {

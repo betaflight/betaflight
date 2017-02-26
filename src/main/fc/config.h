@@ -89,8 +89,6 @@ PG_DECLARE(serialPinConfig_t, serialPinConfig);
 
 struct profile_s;
 extern struct profile_s *currentProfile;
-struct controlRateConfig_s;
-extern struct controlRateConfig_s *currentControlRateProfile;
 
 void beeperOffSet(uint32_t mask);
 void beeperOffSetAll(uint8_t beeperCount);

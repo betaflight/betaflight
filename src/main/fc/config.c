@@ -127,8 +127,6 @@ PG_REGISTER_WITH_RESET_FN(statusLedConfig_t, statusLedConfig, PG_STATUS_LED_CONF
 master_t masterConfig;                 // master config struct with data independent from profiles
 profile_t *currentProfile;
 
-controlRateConfig_t *currentControlRateProfile;
-
 #ifndef USE_PARAMETER_GROUPS
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -148,7 +146,6 @@ static void resetCompassConfig(compassConfig_t* compassConfig)
     compassConfig->interruptTag = IO_TAG_NONE;
 #endif
 }
-#endif
 
 static void resetControlRateProfile(controlRateConfig_t *controlRateConfig)
 {
@@ -165,6 +162,7 @@ static void resetControlRateProfile(controlRateConfig_t *controlRateConfig)
         controlRateConfig->rates[axis] = 70;
     }
 }
+#endif
 
 static void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -768,14 +766,6 @@ uint8_t getCurrentControlRateProfileIndex(void)
     return systemConfigMutable()->activeRateProfile;
 }
 
-static void setControlRateProfile(uint8_t controlRateProfileIndex)
-{
-    if (controlRateProfileIndex < MAX_CONTROL_RATE_PROFILE_COUNT) {
-        systemConfigMutable()->activeRateProfile = controlRateProfileIndex;
-        currentControlRateProfile = controlRateProfilesMutable(controlRateProfileIndex);
-    }
-}
-
 uint16_t getCurrentMinthrottle(void)
 {
     return motorConfig()->minthrottle;
@@ -993,9 +983,11 @@ void createDefaultConfig(master_t *config)
     for (int ii = 0; ii < MAX_PROFILE_COUNT; ++ii) {
         resetProfile(&config->profile[ii]);
     }
-    for (int ii = 0; ii < MAX_CONTROL_RATE_PROFILE_COUNT; ++ii) {
+#ifndef USE_PARAMETER_GROUPS
+    for (int ii = 0; ii < CONTROL_RATE_PROFILE_COUNT; ++ii) {
         resetControlRateProfile(&config->controlRateProfile[ii]);
     }
+#endif
 
     config->compassConfig.mag_declination = 0;
 
@@ -1361,15 +1353,6 @@ void changeProfile(uint8_t profileIndex)
     writeEEPROM();
     readEEPROM();
     beeperConfirmationBeeps(profileIndex + 1);
-}
-
-void changeControlRateProfile(uint8_t profileIndex)
-{
-    if (profileIndex >= MAX_RATEPROFILES) {
-        profileIndex = MAX_RATEPROFILES - 1;
-    }
-    setControlRateProfile(profileIndex);
-    generateThrottleCurve();
 }
 
 void beeperOffSet(uint32_t mask)

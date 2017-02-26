@@ -596,6 +596,7 @@ COMMON_SRC = \
             drivers/system.c \
             drivers/timer.c \
             fc/config.c \
+            fc/controlrate_profile.c \
             fc/fc_init.c \
             fc/fc_dispatch.c \
             fc/fc_hardfaults.c \
