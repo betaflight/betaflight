@@ -1657,8 +1657,12 @@ void handleBlackbox(timeUs_t currentTimeUs)
 
 static bool canUseBlackboxWithCurrentConfiguration(void)
 {
+#ifdef USE_SDCARD
     return feature(FEATURE_BLACKBOX) && 
-        (blackboxConfig()->device != BLACKBOX_SDCARD || feature(FEATURE_SDCARD));
+        !(blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD && !feature(FEATURE_SDCARD));
+#else
+    return feature(FEATURE_BLACKBOX);
+#endif
 }
 
 /**
