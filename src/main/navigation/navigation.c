@@ -127,7 +127,7 @@ PG_RESET_TEMPLATE(navConfig_t, navConfig,
         .launch_motor_timer = 500,             // ms
         .launch_motor_spinup_time = 100,       // ms, time to gredually increase throttle from idle to launch
         .launch_timeout = 5000,                // ms, timeout for launch procedure
-        .launch_climb_angle = 18               // 18 degress
+        .launch_climb_angle = 18               // 18 degrees
     }
 );
 
