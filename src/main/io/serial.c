@@ -142,6 +142,20 @@ void pgResetFn_serialConfig(serialConfig_t *serialConfig)
     }
 #endif
 
+#if defined(TELEMETRY_UART) && defined(TELEMETRY_PROVIDER_DEFAULT)
+    serialPortConfig_t *serialTelemetryConfig = serialFindPortConfiguration(TELEMETRY_UART);
+    if (serialTelemetryConfig) {
+        serialTelemetryConfig->functionMask = TELEMETRY_PROVIDER_DEFAULT;
+    }
+#endif
+
+#if defined(GPS_UART)
+    serialPortConfig_t *serialGPSConfig = serialFindPortConfiguration(GPS_UART);
+    if (serialGPSConfig) {
+        serialGPSConfig->functionMask = FUNCTION_GPS;
+    }
+#endif
+
     serialConfig->reboot_character = 'R';
     serialConfig->serial_update_rate_hz = 100;
 }
