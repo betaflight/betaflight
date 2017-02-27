@@ -26,9 +26,6 @@
 #include "io.h"
 #include "rcc.h"
 #include "timer.h"
-#if defined(STM32F4)
-#include "timer_stm32f4xx.h"
-#endif
 
 #include "transponder_ir.h"
 
