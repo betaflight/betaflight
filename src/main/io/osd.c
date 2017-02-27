@@ -44,7 +44,6 @@
 #include "common/typeconversion.h"
 #include "common/utils.h"
 
-#include "config/config_master.h"
 #include "config/config_profile.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
@@ -134,6 +133,8 @@ static displayPort_t *osdDisplayPort;
 #define AH_MAX_ROLL 400  // Specify maximum AHI roll value displayed. Default 400 = 40.0 degrees
 #define AH_SIDEBAR_WIDTH_POS 7
 #define AH_SIDEBAR_HEIGHT_POS 3
+
+PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
 
 /**
  * Gets the correct altitude symbol for the current unit system
@@ -471,7 +472,11 @@ void osdDrawElements(void)
 #endif // GPS
 }
 
-void osdResetConfig(osd_profile_t *osdProfile)
+#ifdef USE_PARAMETER_GROUPS
+void pgResetFn_osdConfig(osdConfig_t *osdProfile)
+#else
+void osdResetConfig(osdConfig_t *osdProfile)
+#endif
 {
     osdProfile->item_pos[OSD_RSSI_VALUE] = OSD_POS(22, 0);
     osdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 0) | VISIBLE_FLAG;

@@ -54,7 +54,6 @@
 
 #include "config/config_eeprom.h"
 #include "config/config_profile.h"
-#include "config/config_master.h"
 #include "fc/runtime_config.h"
 
 #ifdef USE_ACCGYRO_BMI160

@@ -91,7 +91,7 @@
 #define throttleCorrectionConfig(x) (&masterConfig.throttleCorrectionConfig)
 #define batteryConfig(x) (&masterConfig.batteryConfig)
 #define rcControlsConfig(x) (&masterConfig.rcControlsConfig)
-#define gpsProfile(x) (&masterConfig.gpsProfile)
+#define navigationConfig(x) (&masterConfig.navigationConfig)
 #define gpsConfig(x) (&masterConfig.gpsConfig)
 #define rxConfig(x) (&masterConfig.rxConfig)
 #define armingConfig(x) (&masterConfig.armingConfig)
@@ -109,7 +109,7 @@
 #define sonarConfig(x) (&masterConfig.sonarConfig)
 #define ledStripConfig(x) (&masterConfig.ledStripConfig)
 #define statusLedConfig(x) (&masterConfig.statusLedConfig)
-#define osdConfig(x) (&masterConfig.osdProfile)
+#define osdConfig(x) (&masterConfig.osdConfig)
 #define vcdProfile(x) (&masterConfig.vcdProfile)
 #define sdcardConfig(x) (&masterConfig.sdcardConfig)
 #define blackboxConfig(x) (&masterConfig.blackboxConfig)
@@ -143,7 +143,7 @@
 #define throttleCorrectionConfigMutable(x) (&masterConfig.throttleCorrectionConfig)
 #define batteryConfigMutable(x) (&masterConfig.batteryConfig)
 #define rcControlsConfigMutable(x) (&masterConfig.rcControlsConfig)
-#define gpsProfileMutable(x) (&masterConfig.gpsProfile)
+#define navigationConfigMutable(x) (&masterConfig.navigationConfig)
 #define gpsConfigMutable(x) (&masterConfig.gpsConfig)
 #define rxConfigMutable(x) (&masterConfig.rxConfig)
 #define armingConfigMutable(x) (&masterConfig.armingConfig)
@@ -160,7 +160,7 @@
 #define sonarConfigMutable(x) (&masterConfig.sonarConfig)
 #define ledStripConfigMutable(x) (&masterConfig.ledStripConfig)
 #define statusLedConfigMutable(x) (&masterConfig.statusLedConfig)
-#define osdProfileMutable(x) (&masterConfig.osdProfile)
+#define osdConfigMutable(x) (&masterConfig.osdConfig)
 #define vcdProfileMutable(x) (&masterConfig.vcdProfile)
 #define sdcardConfigMutable(x) (&masterConfig.sdcardConfig)
 #define blackboxConfigMutable(x) (&masterConfig.blackboxConfig)
@@ -178,7 +178,6 @@
 #define beeperConfigMutable(x) (&masterConfig.beeperConfig)
 #define transponderConfigMutable(x) (&masterConfig.transponderConfig)
 
-#define osdConfig(x) (&masterConfig.osdProfile)
 #define servoParams(i) (&servoProfile()->servoConf[i])
 #define adjustmentRanges(i) (&adjustmentProfile()->adjustmentRanges[i])
 #define rxFailsafeChannelConfigs(i) (&masterConfig.rxConfig.failsafe_channel_configurations[i])
@@ -186,7 +185,6 @@
 #define controlRateProfiles(i) (&masterConfig.controlRateProfile[i])
 #define pidProfiles(i) (&masterConfig.profile[i].pidProfile)
 
-#define osdConfigMutable(x) (&masterConfig.osdProfile)
 #define servoParamsMutable(i) (&servoProfile()->servoConf[i])
 #define adjustmentRangesMutable(i) (&masterConfig.adjustmentProfile.adjustmentRanges[i])
 #define rxFailsafeChannelConfigsMutable(i) (&masterConfig.rxConfig.>failsafe_channel_configurations[i])
@@ -242,7 +240,7 @@ typedef struct master_s {
     rcControlsConfig_t rcControlsConfig;
 
 #ifdef GPS
-    gpsProfile_t gpsProfile;
+    navigationConfig_t navigationConfig;
     gpsConfig_t gpsConfig;
 #endif
 
@@ -290,7 +288,7 @@ typedef struct master_s {
 #endif
 
 #ifdef OSD
-    osd_profile_t osdProfile;
+    osdConfig_t osdConfig;
 #endif
 
 #ifdef USE_MAX7456
