@@ -663,6 +663,7 @@ COMMON_SRC = \
             drivers/serial_escserial.c \
             drivers/sonar_hcsr04.c \
             drivers/vtx_common.c \
+            drivers/transponder_ir.c \
             flight/navigation.c \
             io/dashboard.c \
             io/displayport_max7456.c \
@@ -671,6 +672,7 @@ COMMON_SRC = \
             io/gps.c \
             io/ledstrip.c \
             io/osd.c \
+            io/transponder_ir.c \
             sensors/sonar.c \
             sensors/barometer.c \
             telemetry/telemetry.c \

@@ -21,6 +21,8 @@
 
 #include <platform.h>
 
+#ifdef TRANSPONDER
+
 #include "dma.h"
 #include "nvic.h"
 #include "io.h"
@@ -268,3 +270,4 @@ void transponderIrTransmit(void)
     transponderIrDataTransferInProgress = 1;
     transponderIrDMAEnable();
 }
+#endif
