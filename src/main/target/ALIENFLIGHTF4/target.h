@@ -31,7 +31,7 @@
 #define BEEPER                  PC13
 #define BEEPER_INVERTED
 
-#define INVERTER_PIN_USART2     PC15
+#define INVERTER_PIN_UART2      PC15
 
 // MPU interrupt
 #define USE_EXTI
