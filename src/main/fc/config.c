@@ -475,7 +475,8 @@ void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
     telemetryConfig->hottAlarmSoundInterval = 5;
     telemetryConfig->pidValuesAsTelemetry = 0;
 #ifdef TELEMETRY_IBUS
-    telemetryConfig->report_cell_voltage = false;
+    telemetryConfig->ibus_report_cell_voltage = 0;
+    telemetryConfig->ibus_task_freq = 1000;
 #endif
 }
 #endif

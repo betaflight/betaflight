@@ -49,7 +49,10 @@ typedef struct telemetryConfig_s {
     uint8_t frsky_vfas_cell_voltage;
     uint8_t hottAlarmSoundInterval;
     uint8_t pidValuesAsTelemetry;
-    uint8_t report_cell_voltage;
+#if defined(TELEMETRY_IBUS)
+    uint8_t ibus_report_cell_voltage;
+    uint16_t ibus_task_freq;
+#endif
 } telemetryConfig_t;
 
 PG_DECLARE(telemetryConfig_t, telemetryConfig);
