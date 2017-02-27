@@ -32,6 +32,27 @@
 
 #include "transponder_ir.h"
 
+#if defined(STM32F3)
+#define TRANSPONDER_TIMER_PERIOD    156
+#define TRANSPONDER_TIMER_HZ        72000000
+#elif defined(STM32F4)
+#define TRANSPONDER_TIMER_PERIOD    184
+#define TRANSPONDER_TIMER_HZ        84000000
+#else
+#error "Transponder not supported on this MCU."
+#endif
+
+#define BIT_TOGGLE_1 (TRANSPONDER_TIMER_PERIOD / 2)
+#define BIT_TOGGLE_0 0
+
+#define TRANSPONDER_BITS_PER_BYTE 10 // start + 8 data + stop
+#define TRANSPONDER_DATA_LENGTH 6
+#define TRANSPONDER_TOGGLES_PER_BIT 11
+#define TRANSPONDER_GAP_TOGGLES 1
+#define TRANSPONDER_TOGGLES (TRANSPONDER_TOGGLES_PER_BIT + TRANSPONDER_GAP_TOGGLES)
+
+#define TRANSPONDER_DMA_BUFFER_SIZE ((TRANSPONDER_TOGGLES_PER_BIT + 1) * TRANSPONDER_BITS_PER_BYTE * TRANSPONDER_DATA_LENGTH)
+
 /*
  * Implementation note:
  * Using around over 700 bytes for a transponder DMA buffer is a little excessive, likely an alternative implementation that uses a fast
@@ -40,7 +61,13 @@
  *
  * On an STM32F303CC 720 bytes is currently fine and that is the target for which this code was designed for.
  */
+#if defined(STM32F3)
 uint8_t transponderIrDMABuffer[TRANSPONDER_DMA_BUFFER_SIZE];
+#elif defined(STM32F4)
+uint32_t transponderIrDMABuffer[TRANSPONDER_DMA_BUFFER_SIZE];
+#else
+#error "Transponder not supported on this MCU."
+#endif
 
 volatile uint8_t transponderIrDataTransferInProgress = 0;
 
@@ -99,11 +126,13 @@ void transponderIrHardwareInit(ioTag_t ioTag)
 
     RCC_ClockCmd(timerRCC(timer), ENABLE);
 
+    uint16_t prescalerValue = (uint16_t)(SystemCoreClock / timerClockDivisor(timer) / TRANSPONDER_TIMER_HZ) - 1;
+
     /* Time base configuration */
     TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
-    TIM_TimeBaseStructure.TIM_Period = 156;
-    TIM_TimeBaseStructure.TIM_Prescaler = 0;
-    TIM_TimeBaseStructure.TIM_ClockDivision = 0;
+    TIM_TimeBaseStructure.TIM_Period = TRANSPONDER_TIMER_PERIOD;
+    TIM_TimeBaseStructure.TIM_Prescaler = prescalerValue;
+    TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
     TIM_TimeBaseInit(timer, &TIM_TimeBaseStructure);
 
@@ -149,8 +178,14 @@ void transponderIrHardwareInit(ioTag_t ioTag)
     DMA_InitStructure.DMA_BufferSize = TRANSPONDER_DMA_BUFFER_SIZE;
     DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
     DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+#if defined(STM32F3)
     DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord;
     DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+#elif defined(STM32F4)
+
+    DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Word;
+    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Word;
+#endif
     DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
     DMA_InitStructure.DMA_Priority = DMA_Priority_High;
 #if defined(STM32F3)
