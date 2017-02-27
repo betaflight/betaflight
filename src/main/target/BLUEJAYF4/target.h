@@ -35,8 +35,8 @@
 #define BEEPER_OPT              PB7
 #define BEEPER_INVERTED
 
-#define INVERTER_PIN_USART6     PB15
-//#define INVERTER_PIN_USART1     PC9
+#define INVERTER_PIN_UART6      PB15
+//#define INVERTER_PIN_UART1     PC9
 
 // MPU6500 interrupt
 //#define DEBUG_MPU_DATA_READY_INTERRUPT

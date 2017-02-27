@@ -30,7 +30,7 @@
 #define BEEPER                  PB4
 
 // PC0 used as inverter select GPIO
-#define INVERTER_PIN_USART1     PC0
+#define INVERTER_PIN_UART1      PC0
 
 // MPU6000 interrupts
 #define USE_EXTI

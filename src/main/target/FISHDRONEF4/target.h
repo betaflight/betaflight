@@ -29,7 +29,7 @@
 #define BEEPER                  PC15
 
 // *************** INVERTER *****************************
-#define INVERTER_PIN_USART2     PB2
+#define INVERTER_PIN_UART2     PB2
 
 // *************** SPI *****************************
 #define USE_SPI

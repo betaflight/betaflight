@@ -27,7 +27,7 @@
 #define BEEPER                  PC9
 //#define BEEPER_INVERTED
 
-#define INVERTER_PIN_USART6     PB15
+#define INVERTER_PIN_UART6      PB15
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1 // Gyro
