@@ -94,6 +94,9 @@
 
 #include "telemetry/telemetry.h"
 
+master_t masterConfig;                 // master config struct with data independent from profiles
+profile_t *currentProfile;
+
 #ifndef DEFAULT_FEATURES
 #define DEFAULT_FEATURES 0
 #endif
@@ -122,10 +125,24 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
 
 PG_REGISTER(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 0);
 
+PG_REGISTER_WITH_RESET_FN(adcConfig_t, adcConfig, PG_ADC_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(pwmConfig_t, pwmConfig, PG_PWM_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(ppmConfig_t, ppmConfig, PG_PPM_CONFIG, 0);
 PG_REGISTER_WITH_RESET_FN(statusLedConfig_t, statusLedConfig, PG_STATUS_LED_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(serialPinConfig_t, serialPinConfig, PG_SERIAL_PIN_CONFIG, 0);
 
-master_t masterConfig;                 // master config struct with data independent from profiles
-profile_t *currentProfile;
+PG_REGISTER_WITH_RESET_TEMPLATE(flashConfig_t, flashConfig, PG_FLASH_CONFIG, 0);
+#ifdef USE_FLASHFS
+#ifdef M25P16_CS_PIN
+#define FLASH_CONFIG_CSTAG   IO_TAG(M25P16_CS_PIN)
+#else
+#define FLASH_CONFIG_CSTAG   IO_TAG_NONE
+#endif
+
+PG_RESET_TEMPLATE(flashConfig_t, flashConfig,
+    .csTag = FLASH_CONFIG_CSTAG
+);
+#endif
 
 #ifndef USE_PARAMETER_GROUPS
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
@@ -344,7 +361,11 @@ void resetsdcardConfig(sdcardConfig_t *sdcardConfig)
 #endif
 
 #ifdef USE_ADC
+#ifdef USE_PARAMETER_GROUPS
+void pgResetFn_adcConfig(adcConfig_t *adcConfig)
+#else
 void resetAdcConfig(adcConfig_t *adcConfig)
+#endif
 {
 #ifdef VBAT_ADC_PIN
     adcConfig->vbat.enabled = true;
@@ -370,6 +391,7 @@ void resetAdcConfig(adcConfig_t *adcConfig)
 #endif
 
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef BEEPER
 void resetBeeperDevConfig(beeperDevConfig_t *beeperDevConfig)
 {
@@ -383,9 +405,14 @@ void resetBeeperDevConfig(beeperDevConfig_t *beeperDevConfig)
     beeperDevConfig->ioTag = IO_TAG(BEEPER);
 }
 #endif
+#endif
 
 #if defined(USE_PWM) || defined(USE_PPM)
+#ifdef USE_PARAMETER_GROUPS
+void pgResetFn_ppmConfig(ppmConfig_t *ppmConfig)
+#else
 void resetPpmConfig(ppmConfig_t *ppmConfig)
+#endif
 {
 #ifdef PPM_PIN
     ppmConfig->ioTag = IO_TAG(PPM_PIN);
@@ -401,8 +428,13 @@ void resetPpmConfig(ppmConfig_t *ppmConfig)
 #endif
 }
 
+#ifdef USE_PARAMETER_GROUPS
+void pgResetFn_pwmConfig(pwmConfig_t *pwmConfig)
+#else
 void resetPwmConfig(pwmConfig_t *pwmConfig)
+#endif
 {
+    pwmConfig->inputFilteringMode = INPUT_FILTERING_DISABLED;
     int inputIndex = 0;
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && inputIndex < PWM_INPUT_PORT_COUNT; i++) {
         if (timerHardware[i].usageFlags & TIM_USE_PWM) {
@@ -559,73 +591,77 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
 # endif
 #endif
 
-void resetSerialPinConfig(serialPinConfig_t *pSerialPinConfig)
+#ifdef USE_PARAMETER_GROUPS
+void pgResetFn_serialPinConfig(serialPinConfig_t *serialPinConfig)
+#else
+void resetSerialPinConfig(serialPinConfig_t *serialPinConfig)
+#endif
 {
     for (int port = 0 ; port < SERIAL_PORT_MAX_INDEX ; port++) {
-        pSerialPinConfig->ioTagRx[port] = IO_TAG(NONE);
-        pSerialPinConfig->ioTagTx[port] = IO_TAG(NONE);
+        serialPinConfig->ioTagRx[port] = IO_TAG(NONE);
+        serialPinConfig->ioTagTx[port] = IO_TAG(NONE);
     }
 
     for (int index = 0 ; index < SERIAL_PORT_COUNT ; index++) {
         switch (serialPortIdentifiers[index]) {
         case SERIAL_PORT_USART1:
 #ifdef USE_UART1
-            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART1)] = IO_TAG(UART1_RX_PIN);
-            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART1)] = IO_TAG(UART1_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART1)] = IO_TAG(UART1_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART1)] = IO_TAG(UART1_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_USART2:
 #ifdef USE_UART2
-            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART2)] = IO_TAG(UART2_RX_PIN);
-            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART2)] = IO_TAG(UART2_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART2)] = IO_TAG(UART2_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART2)] = IO_TAG(UART2_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_USART3:
 #ifdef USE_UART3
-            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART3)] = IO_TAG(UART3_RX_PIN);
-            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART3)] = IO_TAG(UART3_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART3)] = IO_TAG(UART3_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART3)] = IO_TAG(UART3_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_USART4:
 #ifdef USE_UART4
-            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART4)] = IO_TAG(UART4_RX_PIN);
-            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART4)] = IO_TAG(UART4_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART4)] = IO_TAG(UART4_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART4)] = IO_TAG(UART4_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_USART5:
 #ifdef USE_UART5
-            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART5)] = IO_TAG(UART5_RX_PIN);
-            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART5)] = IO_TAG(UART5_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART5)] = IO_TAG(UART5_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART5)] = IO_TAG(UART5_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_USART6:
 #ifdef USE_UART6
-            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART6)] = IO_TAG(UART6_RX_PIN);
-            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART6)] = IO_TAG(UART6_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART6)] = IO_TAG(UART6_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART6)] = IO_TAG(UART6_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_USART7:
 #ifdef USE_UART7
-            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART7)] = IO_TAG(UART7_RX_PIN);
-            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART7)] = IO_TAG(UART7_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART7)] = IO_TAG(UART7_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART7)] = IO_TAG(UART7_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_USART8:
 #ifdef USE_UART8
-            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART8)] = IO_TAG(UART8_RX_PIN);
-            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART8)] = IO_TAG(UART8_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART8)] = IO_TAG(UART8_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART8)] = IO_TAG(UART8_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_SOFTSERIAL1:
 #ifdef USE_SOFTSERIAL1
-            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL1)] = IO_TAG(SOFTSERIAL1_RX_PIN);
-            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL1)] = IO_TAG(SOFTSERIAL1_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL1)] = IO_TAG(SOFTSERIAL1_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL1)] = IO_TAG(SOFTSERIAL1_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_SOFTSERIAL2:
 #ifdef USE_SOFTSERIAL2
-            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL2)] = IO_TAG(SOFTSERIAL2_RX_PIN);
-            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL2)] = IO_TAG(SOFTSERIAL2_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL2)] = IO_TAG(SOFTSERIAL2_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL2)] = IO_TAG(SOFTSERIAL2_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_USB_VCP:
@@ -737,6 +773,7 @@ void resetStatusLedConfig(statusLedConfig_t *statusLedConfig)
     ;
 }
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef USE_FLASHFS
 void resetFlashConfig(flashConfig_t *flashConfig)
 {
@@ -746,6 +783,7 @@ void resetFlashConfig(flashConfig_t *flashConfig)
     flashConfig->csTag = IO_TAG_NONE;
 #endif
 }
+#endif
 #endif
 
 uint8_t getCurrentProfileIndex(void)
@@ -872,25 +910,28 @@ void createDefaultConfig(master_t *config)
 
 #ifndef USE_PARAMETER_GROUPS
     resetBatteryConfig(&config->batteryConfig);
-#endif
 
 #if defined(USE_PWM) || defined(USE_PPM)
     resetPpmConfig(&config->ppmConfig);
     resetPwmConfig(&config->pwmConfig);
 #endif
+#ifdef USE_PWM
+    config->pwmConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
+#endif
 
-#ifndef USE_PARAMETER_GROUPS
 #ifdef TELEMETRY
     resetTelemetryConfig(&config->telemetryConfig);
 #endif
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef USE_ADC
     resetAdcConfig(&config->adcConfig);
 #endif
 
 #ifdef BEEPER
     resetBeeperDevConfig(&config->beeperDevConfig);
+#endif
 #endif
 
 #ifdef SONAR
@@ -938,20 +979,13 @@ void createDefaultConfig(master_t *config)
     resetAllRxChannelRangeConfigurations(config->rxConfig.channelRanges);
 #endif
 
-#ifdef USE_PWM
-    config->pwmConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
-#endif
-
 #ifndef USE_PARAMETER_GROUPS
     config->armingConfig.gyro_cal_on_first_arm = 0;  // TODO - Cleanup retarded arm support
     config->armingConfig.disarm_kill_switch = 1;
     config->armingConfig.auto_disarm_delay = 5;
-#endif
-
 
     config->airplaneConfig.fixedwing_althold_dir = 1;
 
-#ifndef USE_PARAMETER_GROUPS
     // Motor/ESC/Servo
     resetMixerConfig(&config->mixerConfig);
     resetMotorConfig(&config->motorConfig);
@@ -973,9 +1007,9 @@ void createDefaultConfig(master_t *config)
     config->gpsConfig.autoBaud = GPS_AUTOBAUD_OFF;
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
     resetSerialPinConfig(&config->serialPinConfig);
 
-#ifndef USE_PARAMETER_GROUPS
     resetSerialConfig(&config->serialConfig);
 #endif
 
@@ -1031,10 +1065,10 @@ void createDefaultConfig(master_t *config)
         config->servoProfile.servoConf[i].angleAtMax = DEFAULT_SERVO_MAX_ANGLE;
         config->servoProfile.servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
     }
-#endif
 
     // gimbal
     config->gimbalConfig.mode = GIMBAL_MODE_NORMAL;
+#endif
 
     // Channel forwarding;
     config->channelForwardingConfig.startChannel = AUX1;
@@ -1088,11 +1122,11 @@ void createDefaultConfig(master_t *config)
     }
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef USE_FLASHFS
     resetFlashConfig(&config->flashConfig);
 #endif
 
-#ifndef USE_PARAMETER_GROUPS
     resetStatusLedConfig(&config->statusLedConfig);
 #endif
 

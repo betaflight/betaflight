@@ -107,6 +107,8 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
     }
 }
 
+PG_REGISTER_ARRAY(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR_MIXER, 0);
+
 #define EXTERNAL_DSHOT_CONVERSION_FACTOR 2
 // (minimum output value(1001) - (minimum input value(48) / conversion factor(2))
 #define EXTERNAL_DSHOT_CONVERSION_OFFSET 977

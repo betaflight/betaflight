@@ -47,7 +47,7 @@
 #define PG_MOTOR_3D_CONFIG 26 // Cleanflight has motor3DConfig_t, betaflight has flight3DConfig_t with more parameters
 #define PG_LED_STRIP_CONFIG 27 // structs OK
 #define PG_COLOR_CONFIG 28 // part of led strip, structs OK
-#define PG_AIRPLANE_ALT_HOLD_CONFIG 29 // struct OK
+#define PG_AIRPLANE_CONFIG 29 // struct OK
 #define PG_GPS_CONFIG 30 // struct OK
 #define PG_TELEMETRY_CONFIG 31 // betaflight has more and different data in telemetryConfig_t
 #define PG_FRSKY_TELEMETRY_CONFIG 32 // Cleanflight has split data out of PG_TELEMETRY_CONFIG
@@ -84,9 +84,15 @@
 #define PG_MODE_ACTIVATION_OPERATOR_CONFIG 500
 #define PG_OSD_CONFIG 501
 #define PG_BEEPER_CONFIG 502
-#define PG_PID_CONFIG 503
-#define PG_STATUS_LED_CONFIG 504
-#define PG_BETAFLIGHT_END 504
+#define PG_BEEPER_DEV_CONFIG 503
+#define PG_PID_CONFIG 504
+#define PG_STATUS_LED_CONFIG 505
+#define PG_FLASH_CONFIG 506
+#define PG_PPM_CONFIG 507
+#define PG_PWM_CONFIG 508
+#define PG_SERIAL_PIN_CONFIG 509
+#define PG_ADC_CONFIG 510
+#define PG_BETAFLIGHT_END 510
 
 
 // OSD configuration (subject to change)
