@@ -97,13 +97,13 @@
 #define UART3_RX_PIN            PB11
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_2)
-
+#define USE_I2C_DEVICE_2
+#define I2C_DEVICE              (I2CDEV_2)
 #define I2C2_SCL_PIN            PA9
 #define I2C2_SDA_PIN            PA10
 
 #define USE_BST
-#define BST_DEVICE (BSTDEV_1)
+#define BST_DEVICE              (BSTDEV_1)
 /* Configure the CRC peripheral to use the polynomial x8 + x7 + x6 + x4 + x2 + 1 */
 #define BST_CRC_POLYNOM         0xD5
 

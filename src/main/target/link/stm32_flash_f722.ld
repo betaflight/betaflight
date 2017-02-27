@@ -12,11 +12,19 @@
 /* Entry Point */
 ENTRY(Reset_Handler)
 
+/*
+0x08000000 to 0x0807FFFF  512K full flash,
+0x08000000 to 0x08003FFF   16K isr vector, startup code,
+0x08004000 to 0x08007FFF   16K config,                  // FLASH_Sector_1
+0x08008000 to 0x0807FFFF  480K firmware,
+*/
+
 /* Specify the memory areas */
 MEMORY
 {
-    FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 384K
-    FLASH_CONFIG (r)  : ORIGIN = 0x08060000, LENGTH = 128K
+    FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 16K
+    FLASH_CONFIG (r)  : ORIGIN = 0x08004000, LENGTH = 16K
+    FLASH1 (rx)       : ORIGIN = 0x08008000, LENGTH = 480K
 
     TCM (rwx)         : ORIGIN = 0x20000000, LENGTH = 64K
     RAM (rwx)         : ORIGIN = 0x20010000, LENGTH = 192K
@@ -26,4 +34,4 @@ MEMORY
 /* note TCM could be used for stack */
 REGION_ALIAS("STACKRAM", TCM)
 
-INCLUDE "stm32_flash.ld"
+INCLUDE "stm32_flash_split.ld"

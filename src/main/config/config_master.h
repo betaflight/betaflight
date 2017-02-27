@@ -37,6 +37,8 @@
 #include "drivers/display.h"
 #include "drivers/serial.h"
 
+#include "fc/config.h"
+#include "fc/controlrate_profile.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/fc_core.h"
@@ -125,7 +127,6 @@
 #define beeperConfig(x) (&masterConfig.beeperConfig)
 #define transponderConfig(x) (&masterConfig.transponderConfig)
 
-
 #define featureConfigMutable(x) (&masterConfig.featureConfig)
 #define systemConfigMutable(x) (&masterConfig.systemConfig)
 #define motorConfigMutable(x) (&masterConfig.motorConfig)
@@ -177,17 +178,21 @@
 #define beeperConfigMutable(x) (&masterConfig.beeperConfig)
 #define transponderConfigMutable(x) (&masterConfig.transponderConfig)
 
-#define servoParams(x) (&servoProfile()->servoConf[x])
-#define adjustmentRanges(x) (&adjustmentProfile()->adjustmentRanges[x])
-#define rxFailsafeChannelConfigs(x) (&masterConfig.rxConfig.failsafe_channel_configurations[x])
 #define osdConfig(x) (&masterConfig.osdProfile)
-#define modeActivationConditions(x) (&masterConfig.modeActivationProfile.modeActivationConditions[x])
+#define servoParams(i) (&servoProfile()->servoConf[i])
+#define adjustmentRanges(i) (&adjustmentProfile()->adjustmentRanges[i])
+#define rxFailsafeChannelConfigs(i) (&masterConfig.rxConfig.failsafe_channel_configurations[i])
+#define modeActivationConditions(i) (&masterConfig.modeActivationProfile.modeActivationConditions[i])
+#define controlRateProfiles(i) (&masterConfig.controlRateProfile[i])
+#define pidProfiles(i) (&masterConfig.profile[i].pidProfile)
 
-#define servoParamsMutable(x) (&servoProfile()->servoConf[x])
-#define adjustmentRangesMutable(x) (&masterConfig.adjustmentProfile.adjustmentRanges[x])
-#define rxFailsafeChannelConfigsMutable(x) (&masterConfig.rxConfig.>failsafe_channel_configurations[x])
 #define osdConfigMutable(x) (&masterConfig.osdProfile)
-#define modeActivationConditionsMutable(x) (&masterConfig.modeActivationProfile.modeActivationConditions[x])
+#define servoParamsMutable(i) (&servoProfile()->servoConf[i])
+#define adjustmentRangesMutable(i) (&masterConfig.adjustmentProfile.adjustmentRanges[i])
+#define rxFailsafeChannelConfigsMutable(i) (&masterConfig.rxConfig.>failsafe_channel_configurations[i])
+#define modeActivationConditionsMutable(i) (&masterConfig.modeActivationProfile.modeActivationConditions[i])
+#define controlRateProfilesMutable(i) (&masterConfig.controlRateProfile[i])
+#define pidProfilesMutable(i) (&masterConfig.profile[i].pidProfile)
 #endif
 
 // System-wide
@@ -304,6 +309,7 @@ typedef struct master_s {
 #endif
 
     profile_t profile[MAX_PROFILE_COUNT];
+    controlRateConfig_t controlRateProfile[CONTROL_RATE_PROFILE_COUNT];
 
     modeActivationProfile_t modeActivationProfile;
     adjustmentProfile_t adjustmentProfile;
@@ -320,9 +326,6 @@ typedef struct master_s {
 
     beeperConfig_t beeperConfig;
 
-    char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER)];
-
-    uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
     /*
         do not add properties after the MAGIC_EF and CHK

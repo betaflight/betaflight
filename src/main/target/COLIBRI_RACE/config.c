@@ -95,9 +95,9 @@ void targetConfiguration(master_t *config)
     config->profile[0].pidProfile.I8[YAW] = 50;
     config->profile[0].pidProfile.D8[YAW] = 20;
 
-    config->profile[0].controlRateProfile[0].rates[FD_ROLL] = 86;
-    config->profile[0].controlRateProfile[0].rates[FD_PITCH] = 86;
-    config->profile[0].controlRateProfile[0].rates[FD_YAW] = 80;
+    config->controlRateProfile[0].rates[FD_ROLL] = 86;
+    config->controlRateProfile[0].rates[FD_PITCH] = 86;
+    config->controlRateProfile[0].rates[FD_YAW] = 80;
 
     targetApplyDefaultLedStripConfig(config->ledStripConfig.ledConfigs);
 }

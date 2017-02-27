@@ -44,6 +44,12 @@
 #include "sensors/sonar.h"
 
 
+PG_REGISTER_WITH_RESET_TEMPLATE(airplaneConfig_t, airplaneConfig, PG_AIRPLANE_CONFIG, 0);
+
+PG_RESET_TEMPLATE(airplaneConfig_t, airplaneConfig,
+    .fixedwing_althold_dir = 1
+);
+
 int32_t setVelocity = 0;
 uint8_t velocityControl = 0;
 int32_t errorVelocityI = 0;

@@ -128,7 +128,8 @@
 #define MPU6500_SPI_INSTANCE             SPI1
 #else
 #define USE_I2C
-#define I2C_DEVICE              (I2CDEV_1) // PB6/SCL, PB7/SDA
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
 
@@ -182,8 +183,11 @@
 #define BUTTON_B_PIN            PB0
 
 #define HARDWARE_BIND_PLUG
-#define BINDPLUG_PIN            PB0
+#define BINDPLUG_PIN            BUTTON_B_PIN
 #endif
+
+#define SPEKTRUM_BIND
+#define BIND_PIN                UART2_RX_PIN
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

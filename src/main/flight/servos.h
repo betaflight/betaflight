@@ -126,7 +126,7 @@ bool isMixerUsingServos(void);
 void writeServos(void);
 void servoMixerLoadMix(int index, servoMixer_t *customServoMixers);
 void loadCustomServoMixer(void);
-void servoUseConfigs(servoParam_t *servoParamsToUse, struct channelForwardingConfig_s *channelForwardingConfigToUse);
+void servoUseConfigs(struct channelForwardingConfig_s *channelForwardingConfigToUse);
 int servoDirection(int servoIndex, int fromChannel);
 void servoConfigureOutput(void);
 void servosInit(void);

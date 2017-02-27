@@ -18,8 +18,6 @@
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "REVN"
 
-#define CONFIG_START_FLASH_ADDRESS (0x08060000) //0x08060000 to 0x08080000 (FLASH_Sector_7)
-
 #define USBD_PRODUCT_STRING "Revo Nano"
 #ifdef OPBL
 #define USBD_SERIALNUMBER_STRING "0x8010000"
@@ -76,6 +74,7 @@
 #define USE_SPI_DEVICE_2
 
 #define USE_I2C
+#define USE_I2C_DEVICE_3
 #define I2C_DEVICE (I2CDEV_3)
 
 #undef LED_STRIP

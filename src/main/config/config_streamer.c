@@ -26,41 +26,12 @@
 extern uint8_t __config_start;   // configured via linker script when building binaries.
 extern uint8_t __config_end;
 
-#if !defined(FLASH_PAGE_SIZE)
-// F1
-# if defined(STM32F10X_MD)
-#  define FLASH_PAGE_SIZE                 (0x400)
-# elif defined(STM32F10X_HD)
-#  define FLASH_PAGE_SIZE                 (0x800)
-// F3
-# elif defined(STM32F303xC)
-#  define FLASH_PAGE_SIZE                 (0x800)
-// F4
-# elif defined(STM32F40_41xxx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
-# elif defined (STM32F411xE)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
-# elif defined(STM32F427_437xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000) // 128K sectors
-# elif defined (STM32F446xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
-// F7
-#elif defined(STM32F722xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
-# elif defined(STM32F745xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x40000)
-# elif defined(STM32F746xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x40000)
-# elif defined(UNIT_TEST)
-#  define FLASH_PAGE_SIZE                 (0x400)
-# else
-#  error "Flash page size not defined for target."
-# endif
-#endif
+uint32_t FlashPageSize;
 
 void config_streamer_init(config_streamer_t *c)
 {
     memset(c, 0, sizeof(*c));
+    FlashPageSize = (uint32_t)&__config_end - (uint32_t)&__config_start;
 }
 
 void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
@@ -93,7 +64,7 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
     c->err = 0;
 }
 
-#if defined(STM32F7)
+#if defined(STM32F745xx) || defined(STM32F746xx)
 /*
 Sector 0    0x08000000 - 0x08007FFF 32 Kbytes
 Sector 1    0x08008000 - 0x0800FFFF 32 Kbytes
@@ -122,6 +93,43 @@ static uint32_t getFLASHSectorForEEPROM(void)
     if ((uint32_t)&__config_start <= 0x080BFFFF)
         return FLASH_SECTOR_6;
     if ((uint32_t)&__config_start <= 0x080FFFFF)
+        return FLASH_SECTOR_7;
+
+    // Not good
+    while (1) {
+        failureMode(FAILURE_FLASH_WRITE_FAILED);
+    }
+}
+
+#elif defined(STM32F722xx)
+/*
+Sector 0    0x08000000 - 0x08003FFF 16 Kbytes
+Sector 1    0x08004000 - 0x08007FFF 16 Kbytes
+Sector 2    0x08008000 - 0x0800BFFF 16 Kbytes
+Sector 3    0x0800C000 - 0x0800FFFF 16 Kbytes
+Sector 4    0x08010000 - 0x0801FFFF 64 Kbytes
+Sector 5    0x08020000 - 0x0803FFFF 128 Kbytes
+Sector 6    0x08040000 - 0x0805FFFF 128 Kbytes
+Sector 7    0x08060000 - 0x0807FFFF 128 Kbytes
+*/
+
+static uint32_t getFLASHSectorForEEPROM(void)
+{
+    if ((uint32_t)&__config_start <= 0x08003FFF)
+        return FLASH_SECTOR_0;
+    if ((uint32_t)&__config_start <= 0x08007FFF)
+        return FLASH_SECTOR_1;
+    if ((uint32_t)&__config_start <= 0x0800BFFF)
+        return FLASH_SECTOR_2;
+    if ((uint32_t)&__config_start <= 0x0800FFFF)
+        return FLASH_SECTOR_3;
+    if ((uint32_t)&__config_start <= 0x0801FFFF)
+        return FLASH_SECTOR_4;
+    if ((uint32_t)&__config_start <= 0x0803FFFF)
+        return FLASH_SECTOR_5;
+    if ((uint32_t)&__config_start <= 0x0805FFFF)
+        return FLASH_SECTOR_6;
+    if ((uint32_t)&__config_start <= 0x0807FFFF)
         return FLASH_SECTOR_7;
 
     // Not good
@@ -186,7 +194,7 @@ static int write_word(config_streamer_t *c, uint32_t value)
         return c->err;
     }
 #if defined(STM32F7)
-    if (c->address % FLASH_PAGE_SIZE == 0) {
+    if (c->address % FlashPageSize == 0) {
         FLASH_EraseInitTypeDef EraseInitStruct = {
             .TypeErase     = FLASH_TYPEERASE_SECTORS,
             .VoltageRange  = FLASH_VOLTAGE_RANGE_3, // 2.7-3.6V
@@ -204,7 +212,7 @@ static int write_word(config_streamer_t *c, uint32_t value)
         return -2;
     }
 #else
-    if (c->address % FLASH_PAGE_SIZE == 0) {
+    if (c->address % FlashPageSize == 0) {
 #if defined(STM32F4)
         const FLASH_Status status = FLASH_EraseSector(getFLASHSectorForEEPROM(), VoltageRange_3); //0x08080000 to 0x080A0000
 #else

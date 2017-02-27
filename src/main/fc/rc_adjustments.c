@@ -50,6 +50,8 @@
 
 #include "rx/rx.h"
 
+PG_REGISTER_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges, PG_ADJUSTMENT_RANGE_CONFIG, 0);
+
 static pidProfile_t *pidProfile;
 
 static void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue)
@@ -362,7 +364,7 @@ static void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
 
     switch(adjustmentFunction) {
         case ADJUSTMENT_RATE_PROFILE:
-            if (getCurrentControlRateProfile() != position) {
+            if (getCurrentControlRateProfileIndex() != position) {
                 changeControlRateProfile(position);
                 blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RATE_PROFILE, position);
                 applied = true;

@@ -57,9 +57,13 @@ void targetPreInit(void)
 
     /* ensure the CS pin for the flash is pulled hi so any SD card initialisation does not impact the chip */
     if (hardwareRevision == BJF4_REV3) {
-        IO_t io = IOGetByTag(IO_TAG(M25P16_CS_PIN));
-        IOConfigGPIO(io, IOCFG_OUT_PP);
-        IOHi(io);
+        IO_t flashIo = IOGetByTag(IO_TAG(M25P16_CS_PIN));
+        IOConfigGPIO(flashIo, IOCFG_OUT_PP);
+        IOHi(flashIo);
+
+        IO_t sdcardIo = IOGetByTag(IO_TAG(SDCARD_SPI_CS_PIN));
+        IOConfigGPIO(sdcardIo, IOCFG_OUT_PP);
+        IOHi(sdcardIo);
     }
 }
 

@@ -19,8 +19,6 @@
 
 #define TARGET_BOARD_IDENTIFIER "COLI"
 
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
-
 #define USBD_PRODUCT_STRING "Colibri"
 #ifdef OPBL
 #define USBD_SERIALNUMBER_STRING "0x8020000"
@@ -116,6 +114,7 @@
 #define SPI2_MOSI_PIN           PC3
 
 #define USE_I2C
+#define USE_I2C_DEVICE_3
 #define I2C_DEVICE              (I2CDEV_3)
 #define I2C3_SCL                PA8
 #define I2C3_SDA                PC9

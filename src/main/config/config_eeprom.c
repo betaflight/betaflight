@@ -62,6 +62,7 @@ typedef enum {
 // Header for the saved copy.
 typedef struct {
     uint8_t format;
+    char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER)];
 } PG_PACKED configHeader_t;
 
 // Header for each stored PG.
@@ -96,7 +97,7 @@ void initEEPROM(void)
     BUILD_BUG_ON(offsetof(packingTest_t, word) != 1);
     BUILD_BUG_ON(sizeof(packingTest_t) != 5);
 
-    BUILD_BUG_ON(sizeof(configHeader_t) != 1);
+    BUILD_BUG_ON(sizeof(configHeader_t) != 1 + sizeof(TARGET_BOARD_IDENTIFIER));
     BUILD_BUG_ON(sizeof(configFooter_t) != 2);
     BUILD_BUG_ON(sizeof(configRecord_t) != 6);
 }
@@ -122,6 +123,11 @@ bool isEEPROMContentValid(void)
     if (header->format != EEPROM_CONF_VERSION) {
         return false;
     }
+
+    if (strncasecmp(header->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER))) {
+        return false;
+    }
+
     chk = updateChecksum(chk, header, sizeof(*header));
     p += sizeof(*header);
     // include the transitional masterConfig record
@@ -227,6 +233,7 @@ static bool writeSettingsToEEPROM(void)
 
     configHeader_t header = {
         .format = EEPROM_CONF_VERSION,
+        .boardIdentifier = TARGET_BOARD_IDENTIFIER,
     };
 
     config_streamer_write(&streamer, (uint8_t *)&header, sizeof(header));

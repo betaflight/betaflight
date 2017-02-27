@@ -94,6 +94,9 @@
 
 #include "telemetry/telemetry.h"
 
+master_t masterConfig;                 // master config struct with data independent from profiles
+profile_t *currentProfile;
+
 #ifndef DEFAULT_FEATURES
 #define DEFAULT_FEATURES 0
 #endif
@@ -103,9 +106,6 @@
 #ifndef RX_SPI_DEFAULT_PROTOCOL
 #define RX_SPI_DEFAULT_PROTOCOL 0
 #endif
-
-#define BRUSHED_MOTORS_PWM_RATE 16000
-#define BRUSHLESS_MOTORS_PWM_RATE 480
 
 PG_REGISTER_WITH_RESET_TEMPLATE(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
 
@@ -125,12 +125,36 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
 
 PG_REGISTER(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 0);
 
+PG_REGISTER_WITH_RESET_FN(adcConfig_t, adcConfig, PG_ADC_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(pwmConfig_t, pwmConfig, PG_PWM_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(ppmConfig_t, ppmConfig, PG_PPM_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(statusLedConfig_t, statusLedConfig, PG_STATUS_LED_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(serialPinConfig_t, serialPinConfig, PG_SERIAL_PIN_CONFIG, 0);
 
-master_t masterConfig;                 // master config struct with data independent from profiles
-profile_t *currentProfile;
+PG_REGISTER_WITH_RESET_TEMPLATE(flashConfig_t, flashConfig, PG_FLASH_CONFIG, 0);
+#ifdef USE_FLASHFS
+#ifdef M25P16_CS_PIN
+#define FLASH_CONFIG_CSTAG   IO_TAG(M25P16_CS_PIN)
+#else
+#define FLASH_CONFIG_CSTAG   IO_TAG_NONE
+#endif
 
-static uint8_t currentControlRateProfileIndex = 0;
-controlRateConfig_t *currentControlRateProfile;
+PG_RESET_TEMPLATE(flashConfig_t, flashConfig,
+    .csTag = FLASH_CONFIG_CSTAG
+);
+#endif // USE_FLASH_FS
+
+#ifdef USE_SDCARD
+PG_REGISTER_WITH_RESET_TEMPLATE(sdcardConfig_t, sdcardConfig, PG_SDCARD_CONFIG, 0);
+#if defined(SDCARD_DMA_CHANNEL_TX)
+#define SDCARD_CONFIG_USE_DMA   true
+#else
+#define SDCARD_CONFIG_USE_DMA   false
+#endif
+PG_RESET_TEMPLATE(sdcardConfig_t, sdcardConfig,
+    .useDma = SDCARD_CONFIG_USE_DMA
+);
+#endif
 
 #ifndef USE_PARAMETER_GROUPS
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
@@ -151,9 +175,8 @@ static void resetCompassConfig(compassConfig_t* compassConfig)
     compassConfig->interruptTag = IO_TAG_NONE;
 #endif
 }
-#endif
 
-static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
+static void resetControlRateProfile(controlRateConfig_t *controlRateConfig)
 {
     controlRateConfig->rcRate8 = 100;
     controlRateConfig->rcYawRate8 = 100;
@@ -168,7 +191,9 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
         controlRateConfig->rates[axis] = 70;
     }
 }
+#endif
 
+#ifndef USE_PARAMETER_GROUPS
 static void resetPidProfile(pidProfile_t *pidProfile)
 {
     pidProfile->P8[ROLL] = 44;
@@ -219,16 +244,12 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->itermThrottleThreshold = 350;
     pidProfile->itermAcceleratorGain = 1.0f;
 }
+#endif
 
+#ifndef USE_PARAMETER_GROUPS
 void resetProfile(profile_t *profile)
 {
     resetPidProfile(&profile->pidProfile);
-
-    for (int rI = 0; rI<MAX_RATEPROFILES; rI++) {
-        resetControlRateConfig(&profile->controlRateProfile[rI]);
-    }
-
-    profile->activeRateProfile = 0;
 }
 
 #ifdef GPS
@@ -245,7 +266,6 @@ void resetGpsProfile(gpsProfile_t *gpsProfile)
 #endif
 
 #ifdef BARO
-#ifndef USE_PARAMETER_GROUPS
 void resetBarometerConfig(barometerConfig_t *barometerConfig)
 {
     barometerConfig->baro_sample_count = 21;
@@ -253,7 +273,6 @@ void resetBarometerConfig(barometerConfig_t *barometerConfig)
     barometerConfig->baro_cf_vel = 0.985f;
     barometerConfig->baro_cf_alt = 0.965f;
 }
-#endif
 #endif
 
 #ifdef LED_STRIP
@@ -275,7 +294,9 @@ void resetLedStripConfig(ledStripConfig_t *ledStripConfig)
     ledStripConfig->ioTag = IO_TAG_NONE;
 }
 #endif
+#endif
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef USE_SERVOS
 void resetServoConfig(servoConfig_t *servoConfig)
 {
@@ -328,6 +349,7 @@ void resetMotorConfig(motorConfig_t *motorConfig)
         }
     }
 }
+#endif
 
 #ifdef SONAR
 void resetSonarConfig(sonarConfig_t *sonarConfig)
@@ -341,6 +363,7 @@ void resetSonarConfig(sonarConfig_t *sonarConfig)
 }
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef USE_SDCARD
 void resetsdcardConfig(sdcardConfig_t *sdcardConfig)
 {
@@ -350,10 +373,15 @@ void resetsdcardConfig(sdcardConfig_t *sdcardConfig)
     sdcardConfig->useDma = false;
 #endif
 }
-#endif
+#endif // USE_SDCARD
+#endif // USE_PARAMETER_GROUPS
 
 #ifdef USE_ADC
+#ifdef USE_PARAMETER_GROUPS
+void pgResetFn_adcConfig(adcConfig_t *adcConfig)
+#else
 void resetAdcConfig(adcConfig_t *adcConfig)
+#endif
 {
 #ifdef VBAT_ADC_PIN
     adcConfig->vbat.enabled = true;
@@ -376,9 +404,10 @@ void resetAdcConfig(adcConfig_t *adcConfig)
 #endif
 
 }
-#endif
+#endif // USE_ADC
 
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef BEEPER
 void resetBeeperDevConfig(beeperDevConfig_t *beeperDevConfig)
 {
@@ -392,9 +421,14 @@ void resetBeeperDevConfig(beeperDevConfig_t *beeperDevConfig)
     beeperDevConfig->ioTag = IO_TAG(BEEPER);
 }
 #endif
+#endif
 
 #if defined(USE_PWM) || defined(USE_PPM)
+#ifdef USE_PARAMETER_GROUPS
+void pgResetFn_ppmConfig(ppmConfig_t *ppmConfig)
+#else
 void resetPpmConfig(ppmConfig_t *ppmConfig)
+#endif
 {
 #ifdef PPM_PIN
     ppmConfig->ioTag = IO_TAG(PPM_PIN);
@@ -410,8 +444,13 @@ void resetPpmConfig(ppmConfig_t *ppmConfig)
 #endif
 }
 
+#ifdef USE_PARAMETER_GROUPS
+void pgResetFn_pwmConfig(pwmConfig_t *pwmConfig)
+#else
 void resetPwmConfig(pwmConfig_t *pwmConfig)
+#endif
 {
+    pwmConfig->inputFilteringMode = INPUT_FILTERING_DISABLED;
     int inputIndex = 0;
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && inputIndex < PWM_INPUT_PORT_COUNT; i++) {
         if (timerHardware[i].usageFlags & TIM_USE_PWM) {
@@ -568,73 +607,77 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
 # endif
 #endif
 
-void resetSerialPinConfig(serialPinConfig_t *pSerialPinConfig)
+#ifdef USE_PARAMETER_GROUPS
+void pgResetFn_serialPinConfig(serialPinConfig_t *serialPinConfig)
+#else
+void resetSerialPinConfig(serialPinConfig_t *serialPinConfig)
+#endif
 {
     for (int port = 0 ; port < SERIAL_PORT_MAX_INDEX ; port++) {
-        pSerialPinConfig->ioTagRx[port] = IO_TAG(NONE);
-        pSerialPinConfig->ioTagTx[port] = IO_TAG(NONE);
+        serialPinConfig->ioTagRx[port] = IO_TAG(NONE);
+        serialPinConfig->ioTagTx[port] = IO_TAG(NONE);
     }
 
     for (int index = 0 ; index < SERIAL_PORT_COUNT ; index++) {
         switch (serialPortIdentifiers[index]) {
         case SERIAL_PORT_USART1:
 #ifdef USE_UART1
-            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART1)] = IO_TAG(UART1_RX_PIN);
-            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART1)] = IO_TAG(UART1_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART1)] = IO_TAG(UART1_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART1)] = IO_TAG(UART1_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_USART2:
 #ifdef USE_UART2
-            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART2)] = IO_TAG(UART2_RX_PIN);
-            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART2)] = IO_TAG(UART2_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART2)] = IO_TAG(UART2_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART2)] = IO_TAG(UART2_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_USART3:
 #ifdef USE_UART3
-            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART3)] = IO_TAG(UART3_RX_PIN);
-            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART3)] = IO_TAG(UART3_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART3)] = IO_TAG(UART3_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART3)] = IO_TAG(UART3_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_USART4:
 #ifdef USE_UART4
-            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART4)] = IO_TAG(UART4_RX_PIN);
-            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART4)] = IO_TAG(UART4_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART4)] = IO_TAG(UART4_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART4)] = IO_TAG(UART4_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_USART5:
 #ifdef USE_UART5
-            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART5)] = IO_TAG(UART5_RX_PIN);
-            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART5)] = IO_TAG(UART5_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART5)] = IO_TAG(UART5_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART5)] = IO_TAG(UART5_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_USART6:
 #ifdef USE_UART6
-            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART6)] = IO_TAG(UART6_RX_PIN);
-            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART6)] = IO_TAG(UART6_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART6)] = IO_TAG(UART6_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART6)] = IO_TAG(UART6_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_USART7:
 #ifdef USE_UART7
-            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART7)] = IO_TAG(UART7_RX_PIN);
-            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART7)] = IO_TAG(UART7_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART7)] = IO_TAG(UART7_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART7)] = IO_TAG(UART7_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_USART8:
 #ifdef USE_UART8
-            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART8)] = IO_TAG(UART8_RX_PIN);
-            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART8)] = IO_TAG(UART8_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART8)] = IO_TAG(UART8_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART8)] = IO_TAG(UART8_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_SOFTSERIAL1:
 #ifdef USE_SOFTSERIAL1
-            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL1)] = IO_TAG(SOFTSERIAL1_RX_PIN);
-            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL1)] = IO_TAG(SOFTSERIAL1_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL1)] = IO_TAG(SOFTSERIAL1_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL1)] = IO_TAG(SOFTSERIAL1_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_SOFTSERIAL2:
 #ifdef USE_SOFTSERIAL2
-            pSerialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL2)] = IO_TAG(SOFTSERIAL2_RX_PIN);
-            pSerialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL2)] = IO_TAG(SOFTSERIAL2_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL2)] = IO_TAG(SOFTSERIAL2_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL2)] = IO_TAG(SOFTSERIAL2_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_USB_VCP:
@@ -676,6 +719,7 @@ void resetSerialConfig(serialConfig_t *serialConfig)
 }
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
 {
     rcControlsConfig->deadband = 0;
@@ -683,6 +727,7 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
     rcControlsConfig->alt_hold_deadband = 40;
     rcControlsConfig->alt_hold_fast_change = 1;
 }
+#endif
 
 #ifndef USE_PARAMETER_GROUPS
 void resetMixerConfig(mixerConfig_t *mixerConfig)
@@ -705,13 +750,19 @@ void resetMax7456Config(vcdProfile_t *pVcdProfile)
 }
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 void resetDisplayPortProfile(displayPortProfile_t *pDisplayPortProfile)
 {
     pDisplayPortProfile->colAdjust = 0;
     pDisplayPortProfile->rowAdjust = 0;
 }
+#endif // USE_PARAMETER_GROUPS
 
+#ifdef USE_PARAMETER_GROUPS
+void pgResetFn_statusLedConfig(statusLedConfig_t *statusLedConfig)
+#else
 void resetStatusLedConfig(statusLedConfig_t *statusLedConfig)
+#endif
 {
     for (int i = 0; i < LED_NUMBER; i++) {
         statusLedConfig->ledTags[i] = IO_TAG_NONE;
@@ -740,6 +791,7 @@ void resetStatusLedConfig(statusLedConfig_t *statusLedConfig)
     ;
 }
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef USE_FLASHFS
 void resetFlashConfig(flashConfig_t *flashConfig)
 {
@@ -750,35 +802,24 @@ void resetFlashConfig(flashConfig_t *flashConfig)
 #endif
 }
 #endif
+#endif
 
-uint8_t getCurrentProfile(void)
+uint8_t getCurrentProfileIndex(void)
 {
     return systemConfig()->current_profile_index;
-;
 }
 
 static void setProfile(uint8_t profileIndex)
 {
-    currentProfile = &masterConfig.profile[profileIndex];
-    currentControlRateProfileIndex = currentProfile->activeRateProfile;
-    currentControlRateProfile = &currentProfile->controlRateProfile[currentControlRateProfileIndex];
+    if (profileIndex < MAX_PROFILE_COUNT) {
+        systemConfigMutable()->current_profile_index = profileIndex;
+        currentProfile = &masterConfig.profile[profileIndex];
+    }
 }
 
-uint8_t getCurrentControlRateProfile(void)
+uint8_t getCurrentControlRateProfileIndex(void)
 {
-    return currentControlRateProfileIndex;
-}
-
-static void setControlRateProfile(uint8_t profileIndex)
-{
-    currentControlRateProfileIndex = profileIndex;
-    masterConfig.profile[getCurrentProfile()].activeRateProfile = profileIndex;
-    currentControlRateProfile = &masterConfig.profile[getCurrentProfile()].controlRateProfile[profileIndex];
-}
-
-controlRateConfig_t *getControlRateConfig(uint8_t profileIndex)
-{
-    return &masterConfig.profile[profileIndex].controlRateProfile[masterConfig.profile[profileIndex].activeRateProfile];
+    return systemConfigMutable()->activeRateProfile;
 }
 
 uint16_t getCurrentMinthrottle(void)
@@ -832,8 +873,14 @@ void createDefaultConfig(master_t *config)
 #endif
 
 
+#ifndef USE_PARAMETER_GROUPS
     config->imuConfig.dcm_kp = 2500;                // 1.0 * 10000
     config->imuConfig.dcm_ki = 0;                   // 0.003 * 10000
+    config->imuConfig.small_angle = 25;
+    config->imuConfig.accDeadband.xy = 40;
+    config->imuConfig.accDeadband.z = 40;
+    config->imuConfig.acc_unarmedcal = 1;
+#endif
 #ifndef USE_PARAMETER_GROUPS
     config->gyroConfig.gyro_lpf = GYRO_LPF_256HZ;    // 256HZ default
 #ifdef STM32F10X
@@ -881,17 +928,21 @@ void createDefaultConfig(master_t *config)
 
 #ifndef USE_PARAMETER_GROUPS
     resetBatteryConfig(&config->batteryConfig);
-#endif
 
 #if defined(USE_PWM) || defined(USE_PPM)
     resetPpmConfig(&config->ppmConfig);
     resetPwmConfig(&config->pwmConfig);
 #endif
+#ifdef USE_PWM
+    config->pwmConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
+#endif
 
 #ifdef TELEMETRY
     resetTelemetryConfig(&config->telemetryConfig);
 #endif
+#endif
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef USE_ADC
     resetAdcConfig(&config->adcConfig);
 #endif
@@ -899,17 +950,18 @@ void createDefaultConfig(master_t *config)
 #ifdef BEEPER
     resetBeeperDevConfig(&config->beeperDevConfig);
 #endif
+#endif
 
 #ifdef SONAR
     resetSonarConfig(&config->sonarConfig);
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef USE_SDCARD
     intFeatureSet(FEATURE_SDCARD, featuresPtr);
     resetsdcardConfig(&config->sdcardConfig);
 #endif
 
-#ifndef USE_PARAMETER_GROUPS
 #ifdef SERIALRX_PROVIDER
     config->rxConfig.serialrx_provider = SERIALRX_PROVIDER;
 #else
@@ -945,31 +997,20 @@ void createDefaultConfig(master_t *config)
     resetAllRxChannelRangeConfigurations(config->rxConfig.channelRanges);
 #endif
 
-#ifdef USE_PWM
-    config->pwmConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
-#endif
-
 #ifndef USE_PARAMETER_GROUPS
     config->armingConfig.gyro_cal_on_first_arm = 0;  // TODO - Cleanup retarded arm support
     config->armingConfig.disarm_kill_switch = 1;
     config->armingConfig.auto_disarm_delay = 5;
-#endif
-
-    config->imuConfig.small_angle = 25;
 
     config->airplaneConfig.fixedwing_althold_dir = 1;
 
     // Motor/ESC/Servo
-#ifndef USE_PARAMETER_GROUPS
     resetMixerConfig(&config->mixerConfig);
-#endif
     resetMotorConfig(&config->motorConfig);
 #ifdef USE_SERVOS
     resetServoConfig(&config->servoConfig);
 #endif
-#ifndef USE_PARAMETER_GROUPS
     resetFlight3DConfig(&config->flight3DConfig);
-#endif
 
 #ifdef LED_STRIP
     resetLedStripConfig(&config->ledStripConfig);
@@ -985,17 +1026,17 @@ void createDefaultConfig(master_t *config)
 
     resetSerialPinConfig(&config->serialPinConfig);
 
-#ifndef USE_PARAMETER_GROUPS
     resetSerialConfig(&config->serialConfig);
+
+    for (int ii = 0; ii < MAX_PROFILE_COUNT; ++ii) {
+        resetProfile(&config->profile[ii]);
+    }
+    for (int ii = 0; ii < CONTROL_RATE_PROFILE_COUNT; ++ii) {
+        resetControlRateProfile(&config->controlRateProfile[ii]);
+    }
 #endif
 
-    resetProfile(&config->profile[0]);
-
     config->compassConfig.mag_declination = 0;
-
-    config->imuConfig.accDeadband.xy = 40;
-    config->imuConfig.accDeadband.z = 40;
-    config->imuConfig.acc_unarmedcal = 1;
 
 #ifdef BARO
 #ifndef USE_PARAMETER_GROUPS
@@ -1010,12 +1051,12 @@ void createDefaultConfig(master_t *config)
     parseRcChannels("AETR1234", &config->rxConfig);
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
     resetRcControlsConfig(&config->rcControlsConfig);
 
     config->throttleCorrectionConfig.throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
     config->throttleCorrectionConfig.throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
 
-#ifndef USE_PARAMETER_GROUPS
     // Failsafe Variables
     config->failsafeConfig.failsafe_delay = 10;                            // 1sec
     config->failsafeConfig.failsafe_off_delay = 10;                        // 1sec
@@ -1026,6 +1067,7 @@ void createDefaultConfig(master_t *config)
 #endif
 
 #ifdef USE_SERVOS
+#ifndef USE_PARAMETER_GROUPS
     // servos
     for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         config->servoProfile.servoConf[i].min = DEFAULT_SERVO_MIN;
@@ -1039,13 +1081,16 @@ void createDefaultConfig(master_t *config)
 
     // gimbal
     config->gimbalConfig.mode = GIMBAL_MODE_NORMAL;
+#endif
 
     // Channel forwarding;
     config->channelForwardingConfig.startChannel = AUX1;
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef GPS
     resetGpsProfile(&config->gpsProfile);
+#endif
 #endif
 
     // custom mixer. clear by defaults.
@@ -1066,6 +1111,7 @@ void createDefaultConfig(master_t *config)
     memcpy(config->transponderConfig.data, &defaultTransponderData, sizeof(defaultTransponderData));
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef BLACKBOX
 #if defined(ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT)
     intFeatureSet(FEATURE_BLACKBOX, featuresPtr);
@@ -1076,11 +1122,11 @@ void createDefaultConfig(master_t *config)
 #else
     config->blackboxConfig.device = BLACKBOX_DEVICE_SERIAL;
 #endif
-
     config->blackboxConfig.rate_num = 1;
     config->blackboxConfig.rate_denom = 1;
     config->blackboxConfig.on_motor_test = 0; // default off
 #endif // BLACKBOX
+#endif
 
 #ifdef SERIALRX_UART
     if (featureConfigured(FEATURE_RX_SERIAL)) {
@@ -1091,23 +1137,17 @@ void createDefaultConfig(master_t *config)
     }
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef USE_FLASHFS
     resetFlashConfig(&config->flashConfig);
 #endif
 
     resetStatusLedConfig(&config->statusLedConfig);
-
-    /* merely to force a reset if the person inadvertently flashes the wrong target */
-    strncpy(config->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER));
+#endif
 
 #if defined(TARGET_CONFIG)
     targetConfiguration(config);
 #endif
-
-    // copy first profile into remaining profile
-    for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
-        memcpy(&config->profile[i], &config->profile[0], sizeof(profile_t));
-    }
 }
 
 void resetConfigs(void)
@@ -1142,7 +1182,7 @@ void activateConfig(void)
     setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
 
 #ifdef USE_SERVOS
-    servoUseConfigs(masterConfig.servoProfile.servoConf, &masterConfig.channelForwardingConfig);
+    servoUseConfigs(&masterConfig.channelForwardingConfig);
 #endif
 
     imuConfigure(throttleCorrectionConfig()->throttle_correction_angle);
@@ -1308,7 +1348,7 @@ void readEEPROM(void)
         failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
     }
 
-//    pgActivateProfile(getCurrentProfile());
+//    pgActivateProfile(getCurrentProfileIndex());
 //    setControlRateProfile(rateProfileSelection()->defaultRateProfileIndex);
 
     if (systemConfig()->current_profile_index > MAX_PROFILE_COUNT - 1) {// sanity check
@@ -1362,15 +1402,6 @@ void changeProfile(uint8_t profileIndex)
     writeEEPROM();
     readEEPROM();
     beeperConfirmationBeeps(profileIndex + 1);
-}
-
-void changeControlRateProfile(uint8_t profileIndex)
-{
-    if (profileIndex >= MAX_RATEPROFILES) {
-        profileIndex = MAX_RATEPROFILES - 1;
-    }
-    setControlRateProfile(profileIndex);
-    generateThrottleCurve();
 }
 
 void beeperOffSet(uint32_t mask)

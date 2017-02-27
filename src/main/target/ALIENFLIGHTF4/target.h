@@ -23,8 +23,6 @@
 #define HW_PIN                  PC13
 #define BRUSHED_ESC_AUTODETECT
 
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
-
 #define USBD_PRODUCT_STRING "AlienFlight F4"
 
 #define LED0                    PC12
@@ -140,8 +138,8 @@
 #define USE_SPI_DEVICE_3
 
 #define USE_I2C
+#define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
-//#define I2C_DEVICE_EXT          (I2CDEV_2)
 #define I2C1_SCL                PB6
 #define I2C1_SDA                PB7
 

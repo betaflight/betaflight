@@ -64,10 +64,10 @@ static controlRateConfig_t rateProfile;
 
 static long cmsx_menuImu_onEnter(void)
 {
-    profileIndex = systemConfig()->current_profile_index;
+    profileIndex = getCurrentProfileIndex();
     tmpProfileIndex = profileIndex + 1;
 
-    rateProfileIndex = masterConfig.profile[profileIndex].activeRateProfile;
+    rateProfileIndex = systemConfig()->activeRateProfile;
     tmpRateProfileIndex = rateProfileIndex + 1;
 
     return 0;
@@ -77,8 +77,8 @@ static long cmsx_menuImu_onExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    systemConfigMutable()->current_profile_index = profileIndex;
-    masterConfig.profile[profileIndex].activeRateProfile = rateProfileIndex;
+    changeProfile(profileIndex);
+    changeControlRateProfile(rateProfileIndex);
 
     return 0;
 }
@@ -106,7 +106,7 @@ static long cmsx_rateProfileIndexOnChange(displayPort_t *displayPort, const void
 static long cmsx_PidRead(void)
 {
 
-    const pidProfile_t *pidProfile = &masterConfig.profile[profileIndex].pidProfile;
+    const pidProfile_t *pidProfile = pidProfiles(profileIndex);
     for (uint8_t i = 0; i < 3; i++) {
         tempPid[i][0] = pidProfile->P8[i];
         tempPid[i][1] = pidProfile->I8[i];
@@ -128,7 +128,7 @@ static long cmsx_PidWriteback(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    pidProfile_t *pidProfile = &masterConfig.profile[profileIndex].pidProfile;
+    pidProfile_t *pidProfile = pidProfilesMutable(profileIndex);
     for (uint8_t i = 0; i < 3; i++) {
         pidProfile->P8[i] = tempPid[i][0];
         pidProfile->I8[i] = tempPid[i][1];
@@ -174,7 +174,7 @@ static CMS_Menu cmsx_menuPid = {
 
 static long cmsx_RateProfileRead(void)
 {
-    memcpy(&rateProfile, &masterConfig.profile[profileIndex].controlRateProfile[rateProfileIndex], sizeof(controlRateConfig_t));
+    memcpy(&rateProfile, controlRateProfiles(rateProfileIndex), sizeof(controlRateConfig_t));
 
     return 0;
 }
@@ -183,7 +183,7 @@ static long cmsx_RateProfileWriteback(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    memcpy(&masterConfig.profile[profileIndex].controlRateProfile[rateProfileIndex], &rateProfile, sizeof(controlRateConfig_t));
+    memcpy(controlRateProfilesMutable(rateProfileIndex), &rateProfile, sizeof(controlRateConfig_t));
 
     return 0;
 }
@@ -237,7 +237,7 @@ static long cmsx_profileOtherOnEnter(void)
 {
     profileIndexString[1] = '0' + tmpProfileIndex;
 
-    const pidProfile_t *pidProfile = &masterConfig.profile[profileIndex].pidProfile;
+    const pidProfile_t *pidProfile = pidProfiles(profileIndex);
     cmsx_dtermSetpointWeight = pidProfile->dtermSetpointWeight;
     cmsx_setpointRelaxRatio  = pidProfile->setpointRelaxRatio;
 
@@ -252,7 +252,7 @@ static long cmsx_profileOtherOnExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    pidProfile_t *pidProfile = &masterConfig.profile[profileIndex].pidProfile;
+    pidProfile_t *pidProfile = pidProfilesMutable(profileIndex);
     pidProfile->dtermSetpointWeight = cmsx_dtermSetpointWeight;
     pidProfile->setpointRelaxRatio = cmsx_setpointRelaxRatio;
     pidInitConfig(&currentProfile->pidProfile);
@@ -347,7 +347,7 @@ static uint16_t cmsx_yaw_p_limit;
 
 static long cmsx_FilterPerProfileRead(void)
 {
-    const pidProfile_t *pidProfile = &masterConfig.profile[profileIndex].pidProfile;
+    const pidProfile_t *pidProfile = pidProfiles(profileIndex);
     cmsx_dterm_lpf_hz =       pidProfile->dterm_lpf_hz;
     cmsx_dterm_notch_hz =     pidProfile->dterm_notch_hz;
     cmsx_dterm_notch_cutoff = pidProfile->dterm_notch_cutoff;
@@ -361,7 +361,7 @@ static long cmsx_FilterPerProfileWriteback(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    pidProfile_t *pidProfile = &masterConfig.profile[profileIndex].pidProfile;
+    pidProfile_t *pidProfile = pidProfilesMutable(profileIndex);
     pidProfile->dterm_lpf_hz =       cmsx_dterm_lpf_hz;
     pidProfile->dterm_notch_hz =     cmsx_dterm_notch_hz;
     pidProfile->dterm_notch_cutoff = cmsx_dterm_notch_cutoff;
@@ -403,7 +403,7 @@ static OSD_Entry cmsx_menuImuEntries[] =
     {"MISC PP",   OME_Submenu, cmsMenuChange,                 &cmsx_menuProfileOther,                                        0},
     {"FILT PP",   OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterPerProfile,                                    0},
 
-    {"RATE PROF", OME_UINT8,   cmsx_rateProfileIndexOnChange, &(OSD_UINT8_t){ &tmpRateProfileIndex, 1, MAX_RATEPROFILES, 1}, 0},
+    {"RATE PROF", OME_UINT8,   cmsx_rateProfileIndexOnChange, &(OSD_UINT8_t){ &tmpRateProfileIndex, 1, CONTROL_RATE_PROFILE_COUNT, 1}, 0},
     {"RATE",      OME_Submenu, cmsMenuChange,                 &cmsx_menuRateProfile,                                         0},
 
     {"FILT GLB",  OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterGlobal,                                        0},

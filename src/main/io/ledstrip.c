@@ -27,24 +27,11 @@
 
 #include "build/build_config.h"
 
+#include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
-#include "common/typeconversion.h"
-
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
-
-#include "drivers/light_ws2811strip.h"
-#include "drivers/system.h"
-#include "drivers/serial.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
-#include "drivers/rx_pwm.h"
-
 #include "common/printf.h"
-#include "common/axis.h"
+#include "common/typeconversion.h"
 #include "common/utils.h"
 
 #include "config/config_profile.h"
@@ -52,41 +39,39 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "drivers/light_ws2811strip.h"
+#include "drivers/serial.h"
+#include "drivers/system.h"
+
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "sensors/battery.h"
-#include "sensors/sensors.h"
-#include "sensors/boardalignment.h"
-#include "sensors/gyro.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-
-#include "io/ledstrip.h"
-#include "io/beeper.h"
-#include "io/motors.h"
-#include "io/servos.h"
-#include "io/gimbal.h"
-#include "io/serial.h"
-#include "io/gps.h"
-
 #include "flight/failsafe.h"
-#include "flight/mixer.h"
-#include "flight/pid.h"
 #include "flight/imu.h"
+#include "flight/mixer.h"
 #include "flight/navigation.h"
+#include "flight/pid.h"
+#include "flight/servos.h"
+
+#include "io/beeper.h"
+#include "io/gimbal.h"
+#include "io/gps.h"
+#include "io/ledstrip.h"
+#include "io/serial.h"
 
 #include "rx/rx.h"
 
+#include "sensors/acceleration.h"
+#include "sensors/barometer.h"
+#include "sensors/battery.h"
+#include "sensors/boardalignment.h"
+#include "sensors/gyro.h"
+#include "sensors/sensors.h"
+
 #include "telemetry/telemetry.h"
 
-/*
-PG_REGISTER_ARR_WITH_RESET_FN(ledConfig_t, LED_MAX_STRIP_LENGTH, ledConfigs, PG_LED_STRIP_CONFIG, 0);
-PG_REGISTER_ARR_WITH_RESET_FN(hsvColor_t, LED_CONFIGURABLE_COLOR_COUNT, colors, PG_COLOR_CONFIG, 0);
-PG_REGISTER_ARR_WITH_RESET_FN(modeColorIndexes_t, LED_MODE_COUNT, modeColors, PG_MODE_COLOR_CONFIG, 0);
-PG_REGISTER_WITH_RESET_FN(specialColorIndexes_t, specialColors, PG_SPECIAL_COLOR_CONFIG, 0);
-*/
+PG_REGISTER_WITH_RESET_FN(ledStripConfig_t, ledStripConfig, PG_LED_STRIP_CONFIG, 0);
 
 static bool ledStripInitialised = false;
 static bool ledStripEnabled = true;
@@ -171,6 +156,57 @@ static const specialColorIndexes_t defaultSpecialColors[] = {
     }}
 };
 
+#ifndef USE_PARAMETER_GROUPS
+void applyDefaultLedStripConfig(ledConfig_t *ledConfigs)
+{
+    memset(ledConfigs, 0, LED_MAX_STRIP_LENGTH * sizeof(ledConfig_t));
+}
+
+void applyDefaultColors(hsvColor_t *colors)
+{
+    // copy hsv colors as default
+    memset(colors, 0, ARRAYLEN(hsv) * sizeof(hsvColor_t));
+    for (unsigned colorIndex = 0; colorIndex < ARRAYLEN(hsv); colorIndex++) {
+        *colors++ = hsv[colorIndex];
+    }
+}
+
+void applyDefaultModeColors(modeColorIndexes_t *modeColors)
+{
+    memcpy_fn(modeColors, &defaultModeColors, sizeof(defaultModeColors));
+}
+
+void applyDefaultSpecialColors(specialColorIndexes_t *specialColors)
+{
+    memcpy_fn(specialColors, &defaultSpecialColors, sizeof(defaultSpecialColors));
+}
+
+#else
+
+void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
+{
+    memset(ledStripConfig->ledConfigs, 0, LED_MAX_STRIP_LENGTH * sizeof(ledConfig_t));
+    // copy hsv colors as default
+    memset(ledStripConfig->colors, 0, ARRAYLEN(hsv) * sizeof(hsvColor_t));
+    BUILD_BUG_ON(LED_CONFIGURABLE_COLOR_COUNT < ARRAYLEN(hsv));
+    for (unsigned colorIndex = 0; colorIndex < ARRAYLEN(hsv); colorIndex++) {
+        ledStripConfig->colors[colorIndex] = hsv[colorIndex];
+    }
+    memcpy_fn(&ledStripConfig->modeColors, &defaultModeColors, sizeof(defaultModeColors));
+    memcpy_fn(&ledStripConfig->specialColors, &defaultSpecialColors, sizeof(defaultSpecialColors));
+    ledStripConfig->ledstrip_visual_beeper = 0;
+    ledStripConfig->ledstrip_aux_channel = THROTTLE;
+
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+        if (timerHardware[i].usageFlags & TIM_USE_LED) {
+            ledStripConfig->ioTag = timerHardware[i].tag;
+            return;
+        }
+    }
+    ledStripConfig->ioTag = IO_TAG_NONE;
+}
+#endif
+
 static int scaledThrottle;
 static int scaledAux;
 
@@ -245,9 +281,9 @@ void reevaluateLedConfig(void)
 }
 
 // get specialColor by index
-static hsvColor_t* getSC(ledSpecialColorIds_e index)
+static const hsvColor_t* getSC(ledSpecialColorIds_e index)
 {
-    return &ledStripConfigMutable()->colors[ledStripConfig()->specialColors.color[index]];
+    return &ledStripConfig()->colors[ledStripConfig()->specialColors.color[index]];
 }
 
 static const char directionCodes[LED_DIRECTION_COUNT] = { 'N', 'E', 'S', 'W', 'U', 'D' };
@@ -449,7 +485,7 @@ static void applyLedFixedLayers()
             case LED_FUNCTION_FLIGHT_MODE:
                 for (unsigned i = 0; i < ARRAYLEN(flightModeToLed); i++)
                     if (!flightModeToLed[i].flightMode || FLIGHT_MODE(flightModeToLed[i].flightMode)) {
-                        hsvColor_t *directionalColor = getDirectionalModeColor(ledIndex, &ledStripConfig()->modeColors[flightModeToLed[i].ledMode]);
+                        const hsvColor_t *directionalColor = getDirectionalModeColor(ledIndex, &ledStripConfig()->modeColors[flightModeToLed[i].ledMode]);
                         if (directionalColor) {
                             color = *directionalColor;
                         }
@@ -578,7 +614,7 @@ static void applyLedBatteryLayer(bool updateNow, timeUs_t *timer)
     *timer += timerDelayUs;
 
     if (!flash) {
-       hsvColor_t *bgc = getSC(LED_SCOLOR_BACKGROUND);
+       const hsvColor_t *bgc = getSC(LED_SCOLOR_BACKGROUND);
        applyLedHsv(LED_MOV_FUNCTION(LED_FUNCTION_BATTERY), bgc);
     }
 }
@@ -607,7 +643,7 @@ static void applyLedRssiLayer(bool updateNow, timeUs_t *timer)
     *timer += timerDelay;
 
     if (!flash) {
-        hsvColor_t *bgc = getSC(LED_SCOLOR_BACKGROUND);
+        const hsvColor_t *bgc = getSC(LED_SCOLOR_BACKGROUND);
         applyLedHsv(LED_MOV_FUNCTION(LED_FUNCTION_RSSI), bgc);
     }
 }
@@ -798,7 +834,7 @@ static void applyLarsonScannerLayer(bool updateNow, timeUs_t *timer)
     int scannerLedIndex = 0;
     for (unsigned i = 0; i < ledCounts.count; i++) {
 
-        const ledConfig_t *ledConfig = &ledConfigs[i];
+        const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
 
         if (ledGetOverlayBit(ledConfig, LED_OVERLAY_LARSON_SCANNER)) {
             hsvColor_t ledColor;
@@ -827,7 +863,7 @@ static void applyLedBlinkLayer(bool updateNow, timeUs_t *timer)
     bool ledOn = (blinkMask & 1);  // b_b_____...
     if (!ledOn) {
         for (int i = 0; i < ledCounts.count; ++i) {
-            const ledConfig_t *ledConfig = &ledConfigs[i];
+            const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
 
             if (ledGetOverlayBit(ledConfig, LED_OVERLAY_BLINK) ||
                     (ledGetOverlayBit(ledConfig, LED_OVERLAY_LANDING_FLASH) && scaledThrottle < 50)) {
@@ -1030,57 +1066,6 @@ bool setModeColor(ledModeIndex_e modeIndex, int modeColorIndex, int colorIndex)
         return false;
     }
     return true;
-}
-
-/*
-void pgResetFn_ledConfigs(ledConfig_t *instance)
-{
-    memcpy_fn(instance, &defaultLedStripConfig, sizeof(defaultLedStripConfig));
-}
-
-void pgResetFn_colors(hsvColor_t *instance)
-{
-    // copy hsv colors as default
-    BUILD_BUG_ON(ARRAYLEN(*colors_arr()) < ARRAYLEN(hsv));
-
-    for (unsigned colorIndex = 0; colorIndex < ARRAYLEN(hsv); colorIndex++) {
-        *instance++ = hsv[colorIndex];
-    }
-}
-
-void pgResetFn_modeColors(modeColorIndexes_t *instance)
-{
-    memcpy_fn(instance, &defaultModeColors, sizeof(defaultModeColors));
-}
-
-void pgResetFn_specialColors(specialColorIndexes_t *instance)
-{
-    memcpy_fn(instance, &defaultSpecialColors, sizeof(defaultSpecialColors));
-}
-*/
-
-void applyDefaultLedStripConfig(ledConfig_t *ledConfigs)
-{
-    memset(ledConfigs, 0, LED_MAX_STRIP_LENGTH * sizeof(ledConfig_t));
-}
-
-void applyDefaultColors(hsvColor_t *colors)
-{
-    // copy hsv colors as default
-    memset(colors, 0, ARRAYLEN(hsv) * sizeof(hsvColor_t));
-    for (unsigned colorIndex = 0; colorIndex < ARRAYLEN(hsv); colorIndex++) {
-        *colors++ = hsv[colorIndex];
-    }
-}
-
-void applyDefaultModeColors(modeColorIndexes_t *modeColors)
-{
-    memcpy_fn(modeColors, &defaultModeColors, sizeof(defaultModeColors));
-}
-
-void applyDefaultSpecialColors(specialColorIndexes_t *specialColors)
-{
-    memcpy_fn(specialColors, &defaultSpecialColors, sizeof(defaultSpecialColors));
 }
 
 void ledStripInit()

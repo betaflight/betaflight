@@ -21,8 +21,6 @@
 #define TARGET_BOARD_IDENTIFIER "OBF4"
 #endif
 
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
-
 #define USBD_PRODUCT_STRING "OmnibusF4"
 #ifdef OPBL
 #define USBD_SERIALNUMBER_STRING "0x8020000"
@@ -154,9 +152,6 @@
 #define SPI3_SCK_PIN            PC10
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
-
-//#define USE_I2C
-//#define I2C_DEVICE (I2CDEV_1)
 
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PC1

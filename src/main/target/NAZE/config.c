@@ -26,6 +26,7 @@
 #include "drivers/io.h"
 
 #include "fc/rc_controls.h"
+#include "fc/controlrate_profile.h"
 
 #include "flight/failsafe.h"
 #include "flight/mixer.h"
@@ -72,13 +73,13 @@ void targetConfiguration(master_t *config)
         config->profile[profileId].pidProfile.P8[PIDLEVEL] = 30;
         config->profile[profileId].pidProfile.D8[PIDLEVEL] = 30;
 
-        for (int rateProfileId = 0; rateProfileId < MAX_RATEPROFILES; rateProfileId++) {
-            config->profile[profileId].controlRateProfile[rateProfileId].rcRate8 = 100;
-            config->profile[profileId].controlRateProfile[rateProfileId].rcYawRate8 = 110;
-            config->profile[profileId].controlRateProfile[rateProfileId].rcExpo8 = 0;
-            config->profile[profileId].controlRateProfile[rateProfileId].rates[ROLL] = 77;
-            config->profile[profileId].controlRateProfile[rateProfileId].rates[PITCH] = 77;
-            config->profile[profileId].controlRateProfile[rateProfileId].rates[YAW] = 80;
+        for (int rateProfileId = 0; rateProfileId < CONTROL_RATE_PROFILE_COUNT; rateProfileId++) {
+            config->controlRateProfile[rateProfileId].rcRate8 = 100;
+            config->controlRateProfile[rateProfileId].rcYawRate8 = 110;
+            config->controlRateProfile[rateProfileId].rcExpo8 = 0;
+            config->controlRateProfile[rateProfileId].rates[ROLL] = 77;
+            config->controlRateProfile[rateProfileId].rates[PITCH] = 77;
+            config->controlRateProfile[rateProfileId].rates[YAW] = 80;
 
             config->profile[profileId].pidProfile.dtermSetpointWeight = 200;
             config->profile[profileId].pidProfile.setpointRelaxRatio = 50;

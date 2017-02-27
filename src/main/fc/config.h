@@ -30,12 +30,6 @@
 #include "drivers/sound_beeper.h"
 #include "drivers/vcd.h"
 
-#if FLASH_SIZE <= 128
-#define MAX_PROFILE_COUNT 2
-#else
-#define MAX_PROFILE_COUNT 3
-#endif
-#define MAX_RATEPROFILES 3
 #define MAX_NAME_LENGTH 16
 
 typedef enum {
@@ -71,6 +65,7 @@ typedef enum {
 
 typedef struct systemConfig_s {
     uint8_t current_profile_index;
+    uint8_t activeRateProfile;
     uint8_t debug_mode;
     uint8_t task_statistics;
     char name[MAX_NAME_LENGTH + 1];
@@ -88,8 +83,6 @@ PG_DECLARE(serialPinConfig_t, serialPinConfig);
 
 struct profile_s;
 extern struct profile_s *currentProfile;
-struct controlRateConfig_s;
-extern struct controlRateConfig_s *currentControlRateProfile;
 
 void beeperOffSet(uint32_t mask);
 void beeperOffSetAll(uint8_t beeperCount);
@@ -99,8 +92,6 @@ uint32_t getBeeperOffMask(void);
 void setBeeperOffMask(uint32_t mask);
 uint32_t getPreferredBeeperOffMask(void);
 void setPreferredBeeperOffMask(uint32_t mask);
-
-void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex);
 
 void initEEPROM(void);
 void resetEEPROM(void);
@@ -113,13 +104,14 @@ void validateAndFixConfig(void);
 void validateAndFixGyroConfig(void);
 void activateConfig(void);
 
-uint8_t getCurrentProfile(void);
+uint8_t getCurrentProfileIndex(void);
 void changeProfile(uint8_t profileIndex);
 struct profile_s;
 void resetProfile(struct profile_s *profile);
 
-uint8_t getCurrentControlRateProfile(void);
+uint8_t getCurrentControlRateProfileIndex(void);
 void changeControlRateProfile(uint8_t profileIndex);
+
 bool canSoftwareSerialBeUsed(void);
 
 uint16_t getCurrentMinthrottle(void);

@@ -42,39 +42,35 @@
 #include "common/axis.h"
 #include "common/typeconversion.h"
 
-#include "sensors/battery.h"
-#include "sensors/sensors.h"
-#include "sensors/compass.h"
-#include "sensors/acceleration.h"
-#include "sensors/gyro.h"
+#include "config/feature.h"
+#include "config/config_profile.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "fc/config.h"
+#include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
-
-#include "io/displayport_oled.h"
-
-#ifdef GPS
-#include "io/gps.h"
 #include "flight/navigation.h"
-#endif
 
-#include "config/feature.h"
-#include "config/config_profile.h"
-
+#include "io/gps.h"
 #include "io/dashboard.h"
+#include "io/displayport_oled.h"
 
 #include "rx/rx.h"
 
 #include "scheduler/scheduler.h"
 
-extern profile_t *currentProfile;
+#include "sensors/acceleration.h"
+#include "sensors/battery.h"
+#include "sensors/compass.h"
+#include "sensors/gyro.h"
+#include "sensors/sensors.h"
 
-controlRateConfig_t *getControlRateConfig(uint8_t profileIndex);
 
 #define MICROSECONDS_IN_A_SECOND (1000 * 1000)
 
@@ -321,7 +317,7 @@ void showProfilePage(void)
 {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
-    tfp_sprintf(lineBuffer, "Profile: %d", getCurrentProfile());
+    tfp_sprintf(lineBuffer, "Profile: %d", getCurrentProfileIndex());
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
@@ -339,12 +335,12 @@ void showProfilePage(void)
         i2c_OLED_send_string(lineBuffer);
     }
 
-    const uint8_t currentRateProfileIndex = getCurrentControlRateProfile();
+    const uint8_t currentRateProfileIndex = getCurrentControlRateProfileIndex();
     tfp_sprintf(lineBuffer, "Rate profile: %d", currentRateProfileIndex);
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    const controlRateConfig_t *controlRateConfig = getControlRateConfig(currentRateProfileIndex);
+    const controlRateConfig_t *controlRateConfig = controlRateProfiles(currentRateProfileIndex);
     tfp_sprintf(lineBuffer, "RCE: %d, RCR: %d",
         controlRateConfig->rcExpo8,
         controlRateConfig->rcRate8

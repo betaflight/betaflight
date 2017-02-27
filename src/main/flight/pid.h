@@ -18,6 +18,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include "config/parameter_group.h"
 
 #define MAX_PID_PROCESS_DENOM       16
 #define PID_CONTROLLER_BETAFLIGHT   1
@@ -85,7 +86,12 @@ typedef struct pidProfile_s {
     float rateAccelLimit;                   // accel limiter roll/pitch deg/sec/ms
 } pidProfile_t;
 
-//PG_DECLARE_PROFILE(pidProfile_t, pidProfile);
+#if FLASH_SIZE <= 128
+#define MAX_PROFILE_COUNT 2
+#else
+#define MAX_PROFILE_COUNT 3
+#endif
+PG_DECLARE_ARRAY(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles);
 
 typedef struct pidConfig_s {
     uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate

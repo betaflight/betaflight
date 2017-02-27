@@ -612,10 +612,10 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #endif
         sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
         sbufWriteU32(dst, packFlightModeFlags());
-        sbufWriteU8(dst, getCurrentProfile());
+        sbufWriteU8(dst, getCurrentProfileIndex());
         sbufWriteU16(dst, constrain(averageSystemLoadPercent, 0, 100));
         sbufWriteU8(dst, MAX_PROFILE_COUNT);
-        sbufWriteU8(dst, getCurrentControlRateProfile());
+        sbufWriteU8(dst, getCurrentControlRateProfileIndex());
         break;
 
     case MSP_NAME:
@@ -636,7 +636,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #endif
         sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
         sbufWriteU32(dst, packFlightModeFlags());
-        sbufWriteU8(dst, systemConfig()->current_profile_index);
+        sbufWriteU8(dst, getCurrentProfileIndex());
         sbufWriteU16(dst, constrain(averageSystemLoadPercent, 0, 100));
         sbufWriteU16(dst, 0); // gyro cycle time
         break;
@@ -1275,7 +1275,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         } else {
             value = value & ~RATEPROFILE_MASK;
 
-            if (value >= MAX_RATEPROFILES) {
+            if (value >= CONTROL_RATE_PROFILE_COUNT) {
                 value = 0;
             }
             changeControlRateProfile(value);

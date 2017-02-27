@@ -101,7 +101,8 @@
 #define UART5_RX_PIN             PD2
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_2) // SDA (PA14/AF4), SCL (PA15/AF4)
+#define USE_I2C_DEVICE_2
+#define I2C_DEVICE              (I2CDEV_2)
 
 #define I2C2_SCL_GPIO            GPIOA
 #define I2C2_SCL_GPIO_AF         GPIO_AF_4
