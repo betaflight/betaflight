@@ -84,12 +84,16 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     TIM_Cmd(timer, DISABLE);
 
     /* Compute the prescaler value */
-    uint16_t prescalerValue = (uint16_t)(SystemCoreClock / timerClockDivisor(timer) / WS2811_TIMER_HZ) - 1;
+    uint16_t prescaler = timerGetPrescalerByDesiredMhz(timer, WS2811_TIMER_MHZ);
+    uint16_t period = timerGetPeriodByPrescaler(timer, prescaler, WS2811_CARRIER_HZ);
+
+    BIT_COMPARE_1 = period / 3 * 2;
+    BIT_COMPARE_0 = period / 3;
 
     /* Time base configuration */
     TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
-    TIM_TimeBaseStructure.TIM_Period = WS2811_TIMER_PERIOD; // 800kHz
-    TIM_TimeBaseStructure.TIM_Prescaler = prescalerValue;
+    TIM_TimeBaseStructure.TIM_Period = period; // 800kHz
+    TIM_TimeBaseStructure.TIM_Prescaler = prescaler;
     TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
     TIM_TimeBaseInit(timer, &TIM_TimeBaseStructure);
