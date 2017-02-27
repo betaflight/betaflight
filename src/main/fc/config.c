@@ -156,6 +156,9 @@ PG_RESET_TEMPLATE(sdcardConfig_t, sdcardConfig,
 );
 #endif
 
+// no template required since defaults are zero
+PG_REGISTER(vcdProfile_t, vcdProfile, PG_VCD_CONFIG, 0);
+
 #ifndef USE_PARAMETER_GROUPS
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -253,15 +256,15 @@ void resetProfile(profile_t *profile)
 }
 
 #ifdef GPS
-void resetGpsProfile(gpsProfile_t *gpsProfile)
+void resetNavigationConfig(navigationConfig_t *navigationConfig)
 {
-    gpsProfile->gps_wp_radius = 200;
-    gpsProfile->gps_lpf = 20;
-    gpsProfile->nav_slew_rate = 30;
-    gpsProfile->nav_controls_heading = 1;
-    gpsProfile->nav_speed_min = 100;
-    gpsProfile->nav_speed_max = 300;
-    gpsProfile->ap_mode = 40;
+    navigationConfig->gps_wp_radius = 200;
+    navigationConfig->gps_lpf = 20;
+    navigationConfig->nav_slew_rate = 30;
+    navigationConfig->nav_controls_heading = 1;
+    navigationConfig->nav_speed_min = 100;
+    navigationConfig->nav_speed_max = 300;
+    navigationConfig->ap_mode = 40;
 }
 #endif
 
@@ -741,6 +744,7 @@ void resetMixerConfig(mixerConfig_t *mixerConfig)
 }
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef USE_MAX7456
 void resetMax7456Config(vcdProfile_t *pVcdProfile)
 {
@@ -750,7 +754,6 @@ void resetMax7456Config(vcdProfile_t *pVcdProfile)
 }
 #endif
 
-#ifndef USE_PARAMETER_GROUPS
 void resetDisplayPortProfile(displayPortProfile_t *pDisplayPortProfile)
 {
     pDisplayPortProfile->colAdjust = 0;
@@ -842,6 +845,7 @@ void createDefaultConfig(master_t *config)
     intFeatureSet(DEFAULT_FEATURES, featuresPtr);
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef USE_MSP_DISPLAYPORT
     resetDisplayPortProfile(&config->displayPortProfileMsp);
 #endif
@@ -854,8 +858,9 @@ void createDefaultConfig(master_t *config)
 #endif
 
 #ifdef OSD
-    osdResetConfig(&config->osdProfile);
+    osdResetConfig(&config->osdConfig);
 #endif
+#endif // USE_PARAMETER_GROUPS
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
     // only enable the VBAT feature by default if the board has a voltage divider otherwise
@@ -1089,7 +1094,7 @@ void createDefaultConfig(master_t *config)
 
 #ifndef USE_PARAMETER_GROUPS
 #ifdef GPS
-    resetGpsProfile(&config->gpsProfile);
+    resetNavigationConfig(&config->navigationConfig);
 #endif
 #endif
 

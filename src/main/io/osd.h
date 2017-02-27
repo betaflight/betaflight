@@ -56,7 +56,7 @@ typedef enum {
     OSD_UNIT_METRIC
 } osd_unit_e;
 
-typedef struct osd_profile_s {
+typedef struct osdConfig_s {
     uint16_t item_pos[OSD_ITEM_COUNT];
 
     // Alarms
@@ -66,13 +66,14 @@ typedef struct osd_profile_s {
     uint16_t alt_alarm;
 
     osd_unit_e units;
-} osd_profile_t;
+} osdConfig_t;
 
-// !!TODO change to osdConfig_t
-PG_DECLARE(osd_profile_t, osdConfig);
+extern uint16_t refreshTimeout;
+
+PG_DECLARE(osdConfig_t, osdConfig);
 
 struct displayPort_s;
 void osdInit(struct displayPort_s *osdDisplayPort);
-void osdResetConfig(osd_profile_t *osdProfile);
+void osdResetConfig(osdConfig_t *osdProfile);
 void osdResetAlarms(void);
 void osdUpdate(timeUs_t currentTimeUs);

@@ -73,6 +73,7 @@ uint8_t cliMode = 0;
 
 #include "fc/cli.h"
 #include "fc/config.h"
+#include "fc/controlrate_profile.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -621,11 +622,11 @@ static const clivalue_t valueTable[] = {
     { "gps_nav_p",                  VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->P8[PIDNAVR], .config.minmax = { 0,  200 } },
     { "gps_nav_i",                  VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->I8[PIDNAVR], .config.minmax = { 0,  200 } },
     { "gps_nav_d",                  VAR_UINT8  | PROFILE_VALUE, &pidProfiles(0)->D8[PIDNAVR], .config.minmax = { 0,  200 } },
-    { "gps_wp_radius",              VAR_UINT16 | MASTER_VALUE, &gpsProfile()->gps_wp_radius, .config.minmax = { 0,  2000 } },
-    { "nav_controls_heading",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &gpsProfile()->nav_controls_heading, .config.lookup = { TABLE_OFF_ON } },
-    { "nav_speed_min",              VAR_UINT16 | MASTER_VALUE, &gpsProfile()->nav_speed_min, .config.minmax = { 10,  2000 } },
-    { "nav_speed_max",              VAR_UINT16 | MASTER_VALUE, &gpsProfile()->nav_speed_max, .config.minmax = { 10,  2000 } },
-    { "nav_slew_rate",              VAR_UINT8  | MASTER_VALUE, &gpsProfile()->nav_slew_rate, .config.minmax = { 0,  100 } },
+    { "gps_wp_radius",              VAR_UINT16 | MASTER_VALUE, &navigationConfig()->gps_wp_radius, .config.minmax = { 0,  2000 } },
+    { "nav_controls_heading",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &navigationConfig()->nav_controls_heading, .config.lookup = { TABLE_OFF_ON } },
+    { "nav_speed_min",              VAR_UINT16 | MASTER_VALUE, &navigationConfig()->nav_speed_min, .config.minmax = { 10,  2000 } },
+    { "nav_speed_max",              VAR_UINT16 | MASTER_VALUE, &navigationConfig()->nav_speed_max, .config.minmax = { 10,  2000 } },
+    { "nav_slew_rate",              VAR_UINT8  | MASTER_VALUE, &navigationConfig()->nav_slew_rate, .config.minmax = { 0,  100 } },
 #endif
 
 #ifdef BEEPER
@@ -927,7 +928,7 @@ static gpsConfig_t gpsConfigCopy;
 #endif
 #ifdef NAV
 static positionEstimationConfig_t positionEstimationConfigCopy;
-static navConfig_t navConfigCopy;
+static navigationConfig_t navigationConfigCopy;
 #endif
 #ifdef TELEMETRY
 static telemetryConfig_t telemetryConfigCopy;
@@ -938,7 +939,7 @@ static adjustmentRange_t adjustmentRangesCopy[MAX_ADJUSTMENT_RANGE_COUNT];
 static ledStripConfig_t ledStripConfigCopy;
 #endif
 #ifdef OSD
-static osd_profile_t osdConfigCopy;
+static osdConfig_t osdConfigCopy;
 #endif
 static systemConfig_t systemConfigCopy;
 #ifdef BEEPER
@@ -1221,8 +1222,8 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.defaultConfig = positionEstimationConfig();
         break;
     case PG_NAV_CONFIG:
-        ret.currentConfig = &navConfigCopy;
-        ret.defaultConfig = navConfig();
+        ret.currentConfig = &navigationConfigCopy;
+        ret.defaultConfig = navigationConfig();
         break;
 #endif
 #ifdef TELEMETRY
@@ -1375,7 +1376,7 @@ void *getValuePointer(const clivalue_t *value)
 
     return ptr;
 }
-#endif
+#endif // USE_PARAMETER_GROUPS
 
 static void *getDefaultPointer(void *valuePointer, const master_t *defaultConfig)
 {
@@ -3148,7 +3149,7 @@ static void cliMap(char *cmdline)
             cliShowParseError();
             return;
         }
-        parseRcChannels(cmdline, &masterConfig.rxConfig);
+        parseRcChannels(cmdline, rxConfigMutable());
     }
     cliPrint("Map: ");
     uint32_t i;
