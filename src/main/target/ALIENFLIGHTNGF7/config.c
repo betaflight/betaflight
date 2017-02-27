@@ -53,6 +53,10 @@
 #define CURRENTOFFSET 2500                      // ACS712/714-30A - 0A = 2.5V
 #define CURRENTSCALE -667                       // ACS712/714-30A - 66.666 mV/A inverted mode
 
+#ifdef BRUSHED_MOTORS_PWM_RATE
+#undef BRUSHED_MOTORS_PWM_RATE
+#endif
+
 #define BRUSHED_MOTORS_PWM_RATE 32000           // 32kHz
 
 // alternative defaults settings for AlienFlight targets
