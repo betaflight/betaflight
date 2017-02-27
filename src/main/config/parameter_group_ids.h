@@ -92,7 +92,9 @@
 #define PG_PWM_CONFIG 508
 #define PG_SERIAL_PIN_CONFIG 509
 #define PG_ADC_CONFIG 510
-#define PG_BETAFLIGHT_END 510
+#define PG_SDCARD_CONFIG 511
+#define PG_DISPLAY_PORT_MSP_CONFIG 512
+#define PG_BETAFLIGHT_END 512
 
 
 // OSD configuration (subject to change)

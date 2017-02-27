@@ -660,7 +660,7 @@ static const clivalue_t valueTable[] = {
     { "hott_alarm_int",             VAR_UINT8  | MASTER_VALUE,  &telemetryConfig()->hottAlarmSoundInterval, .config.minmax = { 0,  120 } },
     { "pid_in_tlm",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &telemetryConfig()->pidValuesAsTelemetry, .config.lookup = {TABLE_OFF_ON } },
 #if defined(TELEMETRY_IBUS)
-    { "ibus_report_cell_voltage",   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &ibusTelemetryConfig()->report_cell_voltage, .config.lookup = { TABLE_OFF_ON } },
+    { "ibus_report_cell_voltage",   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &telemetryConfig()->report_cell_voltage, .config.lookup = { TABLE_OFF_ON } },
 #endif
 #endif
 

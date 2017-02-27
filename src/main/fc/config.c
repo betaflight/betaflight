@@ -142,6 +142,18 @@ PG_REGISTER_WITH_RESET_TEMPLATE(flashConfig_t, flashConfig, PG_FLASH_CONFIG, 0);
 PG_RESET_TEMPLATE(flashConfig_t, flashConfig,
     .csTag = FLASH_CONFIG_CSTAG
 );
+#endif // USE_FLASH_FS
+
+#ifdef USE_SDCARD
+PG_REGISTER_WITH_RESET_TEMPLATE(sdcardConfig_t, sdcardConfig, PG_SDCARD_CONFIG, 0);
+#if defined(SDCARD_DMA_CHANNEL_TX)
+#define SDCARD_CONFIG_USE_DMA   true
+#else
+#define SDCARD_CONFIG_USE_DMA   false
+#endif
+PG_RESET_TEMPLATE(sdcardConfig_t, sdcardConfig,
+    .useDma = SDCARD_CONFIG_USE_DMA
+);
 #endif
 
 #ifndef USE_PARAMETER_GROUPS
@@ -239,7 +251,6 @@ void resetProfile(profile_t *profile)
 {
     resetPidProfile(&profile->pidProfile);
 }
-#endif
 
 #ifdef GPS
 void resetGpsProfile(gpsProfile_t *gpsProfile)
@@ -254,7 +265,6 @@ void resetGpsProfile(gpsProfile_t *gpsProfile)
 }
 #endif
 
-#ifndef USE_PARAMETER_GROUPS
 #ifdef BARO
 void resetBarometerConfig(barometerConfig_t *barometerConfig)
 {
@@ -353,6 +363,7 @@ void resetSonarConfig(sonarConfig_t *sonarConfig)
 }
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef USE_SDCARD
 void resetsdcardConfig(sdcardConfig_t *sdcardConfig)
 {
@@ -362,7 +373,8 @@ void resetsdcardConfig(sdcardConfig_t *sdcardConfig)
     sdcardConfig->useDma = false;
 #endif
 }
-#endif
+#endif // USE_SDCARD
+#endif // USE_PARAMETER_GROUPS
 
 #ifdef USE_ADC
 #ifdef USE_PARAMETER_GROUPS
@@ -392,7 +404,7 @@ void resetAdcConfig(adcConfig_t *adcConfig)
 #endif
 
 }
-#endif
+#endif // USE_ADC
 
 
 #ifndef USE_PARAMETER_GROUPS
@@ -738,11 +750,13 @@ void resetMax7456Config(vcdProfile_t *pVcdProfile)
 }
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 void resetDisplayPortProfile(displayPortProfile_t *pDisplayPortProfile)
 {
     pDisplayPortProfile->colAdjust = 0;
     pDisplayPortProfile->rowAdjust = 0;
 }
+#endif // USE_PARAMETER_GROUPS
 
 #ifdef USE_PARAMETER_GROUPS
 void pgResetFn_statusLedConfig(statusLedConfig_t *statusLedConfig)
@@ -942,12 +956,12 @@ void createDefaultConfig(master_t *config)
     resetSonarConfig(&config->sonarConfig);
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef USE_SDCARD
     intFeatureSet(FEATURE_SDCARD, featuresPtr);
     resetsdcardConfig(&config->sdcardConfig);
 #endif
 
-#ifndef USE_PARAMETER_GROUPS
 #ifdef SERIALRX_PROVIDER
     config->rxConfig.serialrx_provider = SERIALRX_PROVIDER;
 #else
@@ -1001,7 +1015,6 @@ void createDefaultConfig(master_t *config)
 #ifdef LED_STRIP
     resetLedStripConfig(&config->ledStripConfig);
 #endif
-#endif
 
 #ifdef GPS
     // gps/nav stuff
@@ -1011,7 +1024,6 @@ void createDefaultConfig(master_t *config)
     config->gpsConfig.autoBaud = GPS_AUTOBAUD_OFF;
 #endif
 
-#ifndef USE_PARAMETER_GROUPS
     resetSerialPinConfig(&config->serialPinConfig);
 
     resetSerialConfig(&config->serialConfig);
@@ -1075,8 +1087,10 @@ void createDefaultConfig(master_t *config)
     config->channelForwardingConfig.startChannel = AUX1;
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef GPS
     resetGpsProfile(&config->gpsProfile);
+#endif
 #endif
 
     // custom mixer. clear by defaults.
