@@ -87,6 +87,12 @@ typedef struct pidProfile_s {
 } pidProfile_t;
 
 //PG_DECLARE_PROFILE(pidProfile_t, pidProfile);
+#if FLASH_SIZE <= 128
+#define MAX_PROFILE_COUNT 2
+#else
+#define MAX_PROFILE_COUNT 3
+#endif
+PG_DECLARE_ARRAY(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles);
 
 typedef struct pidConfig_s {
     uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate

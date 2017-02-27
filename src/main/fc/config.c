@@ -181,6 +181,7 @@ static void resetControlRateProfile(controlRateConfig_t *controlRateConfig)
 }
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 static void resetPidProfile(pidProfile_t *pidProfile)
 {
     pidProfile->P8[ROLL] = 44;
@@ -231,11 +232,14 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->itermThrottleThreshold = 350;
     pidProfile->itermAcceleratorGain = 1.0f;
 }
+#endif
 
+#ifndef USE_PARAMETER_GROUPS
 void resetProfile(profile_t *profile)
 {
     resetPidProfile(&profile->pidProfile);
 }
+#endif
 
 #ifdef GPS
 void resetGpsProfile(gpsProfile_t *gpsProfile)
@@ -1011,13 +1015,10 @@ void createDefaultConfig(master_t *config)
     resetSerialPinConfig(&config->serialPinConfig);
 
     resetSerialConfig(&config->serialConfig);
-#endif
-
 
     for (int ii = 0; ii < MAX_PROFILE_COUNT; ++ii) {
         resetProfile(&config->profile[ii]);
     }
-#ifndef USE_PARAMETER_GROUPS
     for (int ii = 0; ii < CONTROL_RATE_PROFILE_COUNT; ++ii) {
         resetControlRateProfile(&config->controlRateProfile[ii]);
     }

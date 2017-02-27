@@ -309,7 +309,7 @@ typedef struct master_s {
 #endif
 
     profile_t profile[MAX_PROFILE_COUNT];
-    controlRateConfig_t controlRateProfile[MAX_RATEPROFILES];
+    controlRateConfig_t controlRateProfile[CONTROL_RATE_PROFILE_COUNT];
 
     modeActivationProfile_t modeActivationProfile;
     adjustmentProfile_t adjustmentProfile;

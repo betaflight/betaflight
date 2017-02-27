@@ -30,12 +30,6 @@
 #include "drivers/sound_beeper.h"
 #include "drivers/vcd.h"
 
-#if FLASH_SIZE <= 128
-#define MAX_PROFILE_COUNT 2
-#else
-#define MAX_PROFILE_COUNT 3
-#endif
-#define MAX_RATEPROFILES 3
 #define MAX_NAME_LENGTH 16
 
 typedef enum {
