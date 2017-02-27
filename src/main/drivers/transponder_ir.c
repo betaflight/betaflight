@@ -119,28 +119,26 @@ void transponderIrHardwareInit(ioTag_t ioTag)
 
     TIM_OCInitStructure.TIM_OCPolarity =  (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_Low : TIM_OCPolarity_High;
     TIM_OCInitStructure.TIM_Pulse = 0;
-#if defined(STM32F3)
-    TIM_OC1Init(timer, &TIM_OCInitStructure);
-    TIM_OC1PreloadConfig(timer, TIM_OCPreload_Enable);
-#elif defined(STM32F4)
+
     timerOCInit(timer, timerHardware->channel, &TIM_OCInitStructure);
     timerOCPreloadConfig(timer, timerHardware->channel, TIM_OCPreload_Enable);
-#endif
     TIM_CtrlPWMOutputs(timer, ENABLE);
 
     /* configure DMA */
     dmaRef = timerHardware->dmaRef;
-#if defined(STM32F4)
-    DMA_Cmd(stream, DISABLE);
-#endif
+    DMA_Cmd(dmaRef, DISABLE);
     DMA_DeInit(dmaRef);
 
     DMA_StructInit(&DMA_InitStructure);
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)timerCCR(timer, timerHardware->channel);
 #if defined(STM32F3)
     DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)transponderIrDMABuffer;
+    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
+    DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
 #elif defined(STM32F4)
+    DMA_InitStructure.DMA_Channel = timerHardware->dmaChannel;
     DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)transponderIrDMABuffer;
+    DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
 #endif
     DMA_InitStructure.DMA_BufferSize = TRANSPONDER_DMA_BUFFER_SIZE;
     DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
@@ -149,12 +147,7 @@ void transponderIrHardwareInit(ioTag_t ioTag)
     DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
     DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
     DMA_InitStructure.DMA_Priority = DMA_Priority_High;
-#if defined(STM32F3)
-    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
-    DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
-#elif defined(STM32F4)
-    DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
-#endif
+
     DMA_Init(dmaRef, &DMA_InitStructure);
 
     TIM_DMACmd(timer, timerDmaSource(timerHardware->channel), ENABLE);
