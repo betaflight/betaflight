@@ -944,7 +944,7 @@ static systemConfig_t systemConfigCopy;
 #ifdef BEEPER
 static beeperDevConfig_t beeperDevConfigCopy;
 #endif
-static controlRateConfig_t controlRateProfilesCopy[MAX_CONTROL_RATE_PROFILE_COUNT];
+static controlRateConfig_t controlRateProfilesCopy[CONTROL_RATE_PROFILE_COUNT];
 static pidProfile_t pidProfileCopy[MAX_PROFILE_COUNT];
 #endif // USE_PARAMETER_GROUPS
 
