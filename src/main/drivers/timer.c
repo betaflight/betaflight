@@ -847,7 +847,7 @@ uint16_t timerDmaSource(uint8_t channel)
 uint16_t timerGetPrescalerByDesiredMhz(TIM_TypeDef *tim, uint16_t mhz)
 {
     // protection here for desired MHZ > SystemCoreClock???
-    if (mhz * 1000000 > (SystemCoreClock / timerClockDivisor(tim))) {
+    if ((uint32_t)(mhz * 1000000) > (SystemCoreClock / timerClockDivisor(tim))) {
         return 0;
     }
     return (uint16_t)(round((SystemCoreClock / timerClockDivisor(tim) / (mhz * 1000000)) - 1));
