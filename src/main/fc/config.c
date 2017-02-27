@@ -638,16 +638,16 @@ void resetSerialPinConfig(serialPinConfig_t *serialPinConfig)
             serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART3)] = IO_TAG(UART3_TX_PIN);
 #endif
             break;
-        case SERIAL_PORT_USART4:
+        case SERIAL_PORT_UART4:
 #ifdef USE_UART4
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART4)] = IO_TAG(UART4_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART4)] = IO_TAG(UART4_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_UART4)] = IO_TAG(UART4_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_UART4)] = IO_TAG(UART4_TX_PIN);
 #endif
             break;
-        case SERIAL_PORT_USART5:
+        case SERIAL_PORT_UART5:
 #ifdef USE_UART5
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART5)] = IO_TAG(UART5_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART5)] = IO_TAG(UART5_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_UART5)] = IO_TAG(UART5_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_UART5)] = IO_TAG(UART5_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_USART6:
