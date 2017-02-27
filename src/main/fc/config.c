@@ -235,8 +235,8 @@ void resetGpsProfile(gpsProfile_t *gpsProfile)
 }
 #endif
 
-#ifdef BARO
 #ifndef USE_PARAMETER_GROUPS
+#ifdef BARO
 void resetBarometerConfig(barometerConfig_t *barometerConfig)
 {
     barometerConfig->baro_sample_count = 21;
@@ -244,7 +244,6 @@ void resetBarometerConfig(barometerConfig_t *barometerConfig)
     barometerConfig->baro_cf_vel = 0.985f;
     barometerConfig->baro_cf_alt = 0.965f;
 }
-#endif
 #endif
 
 #ifdef LED_STRIP
@@ -266,7 +265,9 @@ void resetLedStripConfig(ledStripConfig_t *ledStripConfig)
     ledStripConfig->ioTag = IO_TAG_NONE;
 }
 #endif
+#endif
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef USE_SERVOS
 void resetServoConfig(servoConfig_t *servoConfig)
 {
@@ -285,7 +286,6 @@ void resetServoConfig(servoConfig_t *servoConfig)
 }
 #endif
 
-#ifndef USE_PARAMETER_GROUPS
 void resetMotorConfig(motorConfig_t *motorConfig)
 {
 #ifdef BRUSHED_MOTORS
@@ -961,20 +961,18 @@ void createDefaultConfig(master_t *config)
 
     config->airplaneConfig.fixedwing_althold_dir = 1;
 
-    // Motor/ESC/Servo
 #ifndef USE_PARAMETER_GROUPS
+    // Motor/ESC/Servo
     resetMixerConfig(&config->mixerConfig);
     resetMotorConfig(&config->motorConfig);
-#endif
 #ifdef USE_SERVOS
     resetServoConfig(&config->servoConfig);
 #endif
-#ifndef USE_PARAMETER_GROUPS
     resetFlight3DConfig(&config->flight3DConfig);
-#endif
 
 #ifdef LED_STRIP
     resetLedStripConfig(&config->ledStripConfig);
+#endif
 #endif
 
 #ifdef GPS
@@ -1030,6 +1028,7 @@ void createDefaultConfig(master_t *config)
 #endif
 
 #ifdef USE_SERVOS
+#ifndef USE_PARAMETER_GROUPS
     // servos
     for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         config->servoProfile.servoConf[i].min = DEFAULT_SERVO_MIN;
@@ -1040,6 +1039,7 @@ void createDefaultConfig(master_t *config)
         config->servoProfile.servoConf[i].angleAtMax = DEFAULT_SERVO_MAX_ANGLE;
         config->servoProfile.servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
     }
+#endif
 
     // gimbal
     config->gimbalConfig.mode = GIMBAL_MODE_NORMAL;
@@ -1070,6 +1070,7 @@ void createDefaultConfig(master_t *config)
     memcpy(config->transponderConfig.data, &defaultTransponderData, sizeof(defaultTransponderData));
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef BLACKBOX
 #if defined(ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT)
     intFeatureSet(FEATURE_BLACKBOX, featuresPtr);
@@ -1080,11 +1081,11 @@ void createDefaultConfig(master_t *config)
 #else
     config->blackboxConfig.device = BLACKBOX_DEVICE_SERIAL;
 #endif
-
     config->blackboxConfig.rate_num = 1;
     config->blackboxConfig.rate_denom = 1;
     config->blackboxConfig.on_motor_test = 0; // default off
 #endif // BLACKBOX
+#endif
 
 #ifdef SERIALRX_UART
     if (featureConfigured(FEATURE_RX_SERIAL)) {
@@ -1140,7 +1141,7 @@ void activateConfig(void)
     setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
 
 #ifdef USE_SERVOS
-    servoUseConfigs(masterConfig.servoProfile.servoConf, &masterConfig.channelForwardingConfig);
+    servoUseConfigs(&masterConfig.channelForwardingConfig);
 #endif
 
     imuConfigure(throttleCorrectionConfig()->throttle_correction_angle);
