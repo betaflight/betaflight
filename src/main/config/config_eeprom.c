@@ -48,7 +48,8 @@ typedef enum {
     CR_CLASSICATION_PROFILE_LAST = CR_CLASSICATION_PROFILE3,
 } configRecordFlags_e;
 
-#define CR_CLASSIFICATION_MASK (0x3)
+#define CR_CLASSIFICATION_MASK  (0x3)
+#define CRC_START_VALUE         0xa5a5
 
 // Header for the saved copy.
 typedef struct {
@@ -107,7 +108,7 @@ bool isEEPROMContentValid(void)
         return false;
     }
 
-    uint16_t crc = crc16_ccitt_update(0, header, sizeof(*header));
+    uint16_t crc = crc16_ccitt_update(CRC_START_VALUE, header, sizeof(*header));
     p += sizeof(*header);
 #ifndef USE_PARAMETER_GROUPS
     // include the transitional masterConfig record
@@ -220,7 +221,7 @@ static bool writeSettingsToEEPROM(void)
     };
 
     config_streamer_write(&streamer, (uint8_t *)&header, sizeof(header));
-    uint16_t crc = crc16_ccitt_update(0, (uint8_t *)&header, sizeof(header));
+    uint16_t crc = crc16_ccitt_update(CRC_START_VALUE, (uint8_t *)&header, sizeof(header));
 #ifndef USE_PARAMETER_GROUPS
     // write the transitional masterConfig record
     config_streamer_write(&streamer, (uint8_t *)&masterConfig, sizeof(masterConfig));
