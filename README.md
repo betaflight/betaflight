@@ -19,7 +19,7 @@ Features:
 * Wide support of receivers (SBus/iBus/SumD/SumH/PPM/PWM)
 * Wide support of telemetry protocols (FrSky/SmartPort/S.Port/HoTT/iBus/LTM).
 * Built-in OSD support & configuration without needing third-party OSD software/firmware/comm devices.
-* VTX support (Unify Pro/IRC Tramp/etc).
+* VTX support (RTC6705/Unify Pro/IRC Tramp/etc).
 * and MUCH, MUCH more.
 
 ## Installation & Documentation
