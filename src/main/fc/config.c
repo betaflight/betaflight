@@ -1216,6 +1216,11 @@ void validateAndFixConfig(void)
         resetSerialConfig(serialConfig);
     }
 
+    // Prevent invalid notch cutoff
+    if (currentProfile->pidProfile.dterm_notch_cutoff >= currentProfile->pidProfile.dterm_notch_hz) {
+        currentProfile->pidProfile.dterm_notch_hz = 0;
+    }
+
     validateAndFixGyroConfig();
 
 #if defined(TARGET_VALIDATECONFIG)
