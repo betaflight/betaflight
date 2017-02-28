@@ -35,15 +35,6 @@
 
 #include "fc/config.h"
 
-// declare a dummy PG, since scanEEPROM assumes there is at least one PG
-// !!TODO remove once first PG has been created out of masterConfg
-typedef struct dummpConfig_s {
-    uint8_t dummy;
-} dummyConfig_t;
-PG_DECLARE(dummyConfig_t, dummyConfig);
-#define PG_DUMMY_CONFIG 1
-PG_REGISTER(dummyConfig_t, dummyConfig, PG_DUMMY_CONFIG, 0);
-
 extern uint8_t __config_start;   // configured via linker script when building binaries.
 extern uint8_t __config_end;
 
@@ -102,21 +93,9 @@ void initEEPROM(void)
     BUILD_BUG_ON(sizeof(configRecord_t) != 6);
 }
 
-static uint8_t updateChecksum(uint8_t chk, const void *data, uint32_t length)
-{
-    const uint8_t *p = (const uint8_t *)data;
-    const uint8_t *pend = p + length;
-
-    for (; p != pend; p++) {
-        chk ^= *p;
-    }
-    return chk;
-}
-
 // Scan the EEPROM config. Returns true if the config is valid.
 bool isEEPROMContentValid(void)
 {
-    uint8_t chk = 0;
     const uint8_t *p = &__config_start;
     const configHeader_t *header = (const configHeader_t *)p;
 
@@ -128,11 +107,11 @@ bool isEEPROMContentValid(void)
         return false;
     }
 
-    chk = updateChecksum(chk, header, sizeof(*header));
+    uint16_t crc = crc16_ccitt_update(0, header, sizeof(*header));
     p += sizeof(*header);
 #ifndef USE_PARAMETER_GROUPS
     // include the transitional masterConfig record
-    chk = updateChecksum(chk, p, sizeof(masterConfig));
+    crc = crc16_ccitt_update(crc, p, sizeof(masterConfig));
     p += sizeof(masterConfig);
 #endif
 
@@ -149,19 +128,18 @@ bool isEEPROMContentValid(void)
             return false;
         }
 
-        chk = updateChecksum(chk, p, record->size);
+        crc = crc16_ccitt_update(crc, p, record->size);
 
         p += record->size;
     }
 
     const configFooter_t *footer = (const configFooter_t *)p;
-    chk = updateChecksum(chk, footer, sizeof(*footer));
+    crc = crc16_ccitt_update(crc, footer, sizeof(*footer));
     p += sizeof(*footer);
-    chk = ~chk;
-    const uint8_t checkSum = *p;
+    const uint16_t checkSum = *(uint16_t *)p;
     p += sizeof(checkSum);
     eepromConfigSize = p - &__config_start;
-    return chk == checkSum;
+    return crc == checkSum;
 }
 
 uint16_t getEEPROMConfigSize(void)
@@ -235,7 +213,6 @@ static bool writeSettingsToEEPROM(void)
     config_streamer_init(&streamer);
 
     config_streamer_start(&streamer, (uintptr_t)&__config_start, &__config_end - &__config_start);
-    uint8_t chk = 0;
 
     configHeader_t header = {
         .eepromConfigVersion = EEPROM_CONF_VERSION,
@@ -243,11 +220,11 @@ static bool writeSettingsToEEPROM(void)
     };
 
     config_streamer_write(&streamer, (uint8_t *)&header, sizeof(header));
-    chk = updateChecksum(chk, (uint8_t *)&header, sizeof(header));
+    uint16_t crc = crc16_ccitt_update(0, (uint8_t *)&header, sizeof(header));
 #ifndef USE_PARAMETER_GROUPS
     // write the transitional masterConfig record
     config_streamer_write(&streamer, (uint8_t *)&masterConfig, sizeof(masterConfig));
-    chk = updateChecksum(chk, (uint8_t *)&masterConfig, sizeof(masterConfig));
+    crc = crc16_ccitt_update(crc, (uint8_t *)&masterConfig, sizeof(masterConfig));
 #endif
     PG_FOREACH(reg) {
         const uint16_t regSize = pgSize(reg);
@@ -262,9 +239,9 @@ static bool writeSettingsToEEPROM(void)
             // write the only instance
             record.flags |= CR_CLASSICATION_SYSTEM;
             config_streamer_write(&streamer, (uint8_t *)&record, sizeof(record));
-            chk = updateChecksum(chk, (uint8_t *)&record, sizeof(record));
+            crc = crc16_ccitt_update(crc, (uint8_t *)&record, sizeof(record));
             config_streamer_write(&streamer, reg->address, regSize);
-            chk = updateChecksum(chk, reg->address, regSize);
+            crc = crc16_ccitt_update(crc, reg->address, regSize);
         } else {
             // write one instance for each profile
             for (uint8_t profileIndex = 0; profileIndex < MAX_PROFILE_COUNT; profileIndex++) {
@@ -272,10 +249,10 @@ static bool writeSettingsToEEPROM(void)
 
                 record.flags |= ((profileIndex + 1) & CR_CLASSIFICATION_MASK);
                 config_streamer_write(&streamer, (uint8_t *)&record, sizeof(record));
-                chk = updateChecksum(chk, (uint8_t *)&record, sizeof(record));
+                crc = crc16_ccitt_update(crc, (uint8_t *)&record, sizeof(record));
                 const uint8_t *address = reg->address + (regSize * profileIndex);
                 config_streamer_write(&streamer, address, regSize);
-                chk = updateChecksum(chk, address, regSize);
+                crc = crc16_ccitt_update(crc, address, regSize);
             }
         }
     }
@@ -285,11 +262,10 @@ static bool writeSettingsToEEPROM(void)
     };
 
     config_streamer_write(&streamer, (uint8_t *)&footer, sizeof(footer));
-    chk = updateChecksum(chk, (uint8_t *)&footer, sizeof(footer));
+    crc = crc16_ccitt_update(crc, (uint8_t *)&footer, sizeof(footer));
 
     // append checksum now
-    chk = ~chk;
-    config_streamer_write(&streamer, &chk, sizeof(chk));
+    config_streamer_write(&streamer, (uint8_t *)&crc, sizeof(crc));
 
     config_streamer_flush(&streamer);
 
