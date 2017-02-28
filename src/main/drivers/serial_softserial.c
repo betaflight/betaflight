@@ -28,7 +28,7 @@
 #include "common/utils.h"
 
 #include "nvic.h"
-#include "system.h"
+#include "time.h"
 #include "io.h"
 #include "timer.h"
 
@@ -420,7 +420,7 @@ uint32_t softSerialRxBytesWaiting(const serialPort_t *instance)
     return (s->port.rxBufferHead - s->port.rxBufferTail) & (s->port.rxBufferSize - 1);
 }
 
-uint8_t softSerialTxBytesFree(const serialPort_t *instance)
+uint32_t softSerialTxBytesFree(const serialPort_t *instance)
 {
     if ((instance->mode & MODE_TX) == 0) {
         return 0;

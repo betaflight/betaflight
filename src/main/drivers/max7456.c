@@ -30,7 +30,7 @@
 #include "drivers/bus_spi.h"
 #include "drivers/light_led.h"
 #include "drivers/io.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/nvic.h"
 #include "drivers/dma.h"
 
@@ -279,10 +279,10 @@ void max7456Init(uint8_t video_system)
 //just fill with spaces with some tricks
 void max7456ClearScreen(void)
 {
-	uint16_t x;
-	uint32_t *p = (uint32_t*)&screenBuffer[0];
-	for (x = 0; x < VIDEO_BUFFER_CHARS_PAL/4; x++)
-		p[x] = 0x20202020;
+    uint16_t x;
+    uint32_t *p = (uint32_t*)&screenBuffer[0];
+    for (x = 0; x < VIDEO_BUFFER_CHARS_PAL/4; x++)
+        p[x] = 0x20202020;
 }
 
 uint8_t* max7456GetScreenBuffer(void) {
@@ -291,15 +291,15 @@ uint8_t* max7456GetScreenBuffer(void) {
 
 void max7456WriteChar(uint8_t x, uint8_t y, uint8_t c)
 {
-	screenBuffer[y*30+x] = c;
+    screenBuffer[y*30+x] = c;
 }
 
 void max7456Write(uint8_t x, uint8_t y, const char *buff)
 {
-	uint8_t i = 0;
-	for (i = 0; *(buff+i); i++)
-		if (x+i < 30) //do not write over screen
-			screenBuffer[y*30+x+i] = *(buff+i);
+    uint8_t i = 0;
+    for (i = 0; *(buff+i); i++)
+        if (x+i < 30) //do not write over screen
+            screenBuffer[y*30+x+i] = *(buff+i);
 }
 
 #ifdef MAX7456_DMA_CHANNEL_TX

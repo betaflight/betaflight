@@ -34,7 +34,7 @@
 #include "drivers/pwm_mapping.h"
 #include "drivers/pwm_output.h"
 #include "drivers/light_led.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 #include "flight/mixer.h"
 #include "io/beeper.h"
 #include "io/serial_4way.h"
@@ -45,6 +45,10 @@
 #endif
 #ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
 # include "io/serial_4way_stk500v2.h"
+#endif
+
+#if defined(USE_HAL_DRIVER)
+#define Bit_RESET GPIO_PIN_RESET
 #endif
 
 #define USE_TXRX_LED

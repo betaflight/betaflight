@@ -29,7 +29,7 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
-#include "system.h"
+#include "time.h"
 #include "nvic.h"
 #include "io.h"
 #include "exti.h"
@@ -66,8 +66,8 @@
  * Read Write
  * Default value: 0x0B
  * 7:4  0   Reserved.
- * 3    DREN : Data ready enable control: 
- *      0: disable 
+ * 3    DREN : Data ready enable control:
+ *      0: disable
  *      1: enable
  * 2    DRP: DRDY pin polarity control
  *      0: active low
@@ -94,7 +94,7 @@
 #define IST8310_ODR_10_HZ 0x03
 #define IST8310_ODR_20_HZ 0x05
 #define IST8310_ODR_50_HZ 0x07
-#define IST8310_ODR_100_HZ 0x06 
+#define IST8310_ODR_100_HZ 0x06
 
 // Device ID (ist8310 -> 0x10)
 #define IST8310_CHIP_ID 0x10

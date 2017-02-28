@@ -15,8 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef TELEMETRY_MAVLINK_H_
-#define TELEMETRY_MAVLINK_H_
+#pragma once
 
 void initMAVLinkTelemetry(void);
 void handleMAVLinkTelemetry(timeUs_t currentTimeUs);
@@ -24,5 +23,3 @@ void checkMAVLinkTelemetryState(void);
 
 void freeMAVLinkTelemetryPort(void);
 void configureMAVLinkTelemetryPort(void);
-
-#endif /* TELEMETRY_MSP_H_ */

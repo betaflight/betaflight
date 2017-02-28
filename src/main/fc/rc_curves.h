@@ -18,8 +18,7 @@
 #pragma once
 
 struct controlRateConfig_s;
-struct motorConfig_s;
-void generateThrottleCurve(struct controlRateConfig_s *controlRateConfig, struct motorConfig_s *motorConfig);
+void generateThrottleCurve(const struct controlRateConfig_s *controlRateConfig);
 
 int16_t rcLookup(int32_t stickDeflection, uint8_t expo);
 int16_t rcLookupThrottle(int32_t tmp);

@@ -25,6 +25,7 @@
 #include "common/maths.h"
 
 #include "system.h"
+#include "time.h"
 #include "exti.h"
 #include "gpio.h"
 #include "gyro_sync.h"
@@ -76,13 +77,14 @@ void mpu6500GyroInit(gyroDev_t *gyro)
     delay(100);
     gyro->mpuConfiguration.write(MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
     delay(15);
-    gyro->mpuConfiguration.write(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3 | FCB_DISABLED); //Fchoice_b defaults to 00 which makes fchoice 11
+    const uint8_t raGyroConfigData = gyro->gyroRateKHz > GYRO_RATE_8_kHz ? (INV_FSR_2000DPS << 3 | FCB_3600_32) : (INV_FSR_2000DPS << 3 | FCB_DISABLED);
+    gyro->mpuConfiguration.write(MPU_RA_GYRO_CONFIG, raGyroConfigData);
     delay(15);
     gyro->mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
     delay(15);
     gyro->mpuConfiguration.write(MPU_RA_CONFIG, gyro->lpf);
     delay(15);
-    gyro->mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxCalculateDivider()); // Get Divider
+    gyro->mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops(gyro)); // Get Divider
     delay(100);
 
     // Data ready interrupt configuration

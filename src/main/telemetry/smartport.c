@@ -15,32 +15,34 @@
 #include "common/color.h"
 #include "common/maths.h"
 
-#include "drivers/system.h"
+#include "config/feature.h"
+
+#include "drivers/time.h"
 #include "drivers/serial.h"
 
-#include "rx/rx.h"
-#include "rx/msp.h"
-
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/imu.h"
+
 #include "io/gps.h"
-#include "io/serial.h"
 #include "io/ledstrip.h"
+#include "io/serial.h"
+
+#include "navigation/navigation.h"
+
+#include "rx/rx.h"
+#include "rx/msp.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/barometer.h"
 #include "sensors/pitotmeter.h"
 
-#include "flight/imu.h"
-#include "flight/navigation_rewrite.h"
-
 #include "telemetry/telemetry.h"
 #include "telemetry/smartport.h"
 
-#include "config/config.h"
-#include "config/feature.h"
 
 enum
 {
@@ -128,7 +130,6 @@ const uint16_t frSkyDataIdTable[] = {
 static serialPort_t *smartPortSerialPort = NULL; // The 'SmartPort'(tm) Port.
 static serialPortConfig_t *portConfig;
 
-static telemetryConfig_t *telemetryConfig;
 static bool smartPortTelemetryEnabled =  false;
 static portSharing_e smartPortPortSharing;
 
@@ -190,9 +191,8 @@ static void smartPortSendPackage(uint16_t id, uint32_t val)
     smartPortSendByte(0xFF - (uint8_t)crc, NULL);
 }
 
-void initSmartPortTelemetry(telemetryConfig_t *initialTelemetryConfig)
+void initSmartPortTelemetry(void)
 {
-    telemetryConfig = initialTelemetryConfig;
     portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_SMARTPORT);
     smartPortPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_SMARTPORT);
 }
@@ -214,13 +214,13 @@ void configureSmartPortTelemetryPort(void)
         return;
     }
 
-    if (telemetryConfig->smartportUartUnidirectional) {
+    if (telemetryConfig()->smartportUartUnidirectional) {
         portOptions = SERIAL_UNIDIR;
     } else {
         portOptions = SERIAL_BIDIR;
     }
 
-    if (telemetryConfig->telemetry_inversion) {
+    if (telemetryConfig()->telemetry_inversion) {
         portOptions |= SERIAL_INVERTED;
     }
 
@@ -316,7 +316,7 @@ void handleSmartPortTelemetry(void)
             case FSSP_DATAID_VFAS       :
                 if (feature(FEATURE_VBAT)) {
                     uint16_t vfasVoltage;
-                    if (telemetryConfig->frsky_vfas_cell_voltage) {
+                    if (telemetryConfig()->frsky_vfas_cell_voltage) {
                         vfasVoltage = vbat / batteryCellCount;
                     } else {
                         vfasVoltage = vbat;
@@ -334,7 +334,7 @@ void handleSmartPortTelemetry(void)
             //case FSSP_DATAID_RPM        :
             case FSSP_DATAID_ALTITUDE   :
                 if (sensors(SENSOR_BARO)) {
-                    smartPortSendPackage(id, baro.BaroAlt); // unknown given unit, requested 100 = 1 meter
+                    smartPortSendPackage(id, getEstimatedActualPosition(Z)); // unknown given unit, requested 100 = 1 meter
                     smartPortHasRequest = 0;
                 }
                 break;

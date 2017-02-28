@@ -27,9 +27,7 @@
 
 #ifdef BOOTLOG
 
-#include "system.h"
-
-#define MAX_BOOTLOG_ENTRIES     64
+#include "time.h"
 
 static bootLogEntry_t   events[MAX_BOOTLOG_ENTRIES];
 static int              eventCount;

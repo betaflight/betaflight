@@ -25,7 +25,7 @@
 
 #include "common/utils.h"
 
-#include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 
@@ -70,12 +70,12 @@ static uint8_t sumdChannelCount;
 // Receive ISR callback
 static void sumdDataReceive(uint16_t c)
 {
-    uint32_t sumdTime;
-    static uint32_t sumdTimeLast;
+    timeUs_t sumdTime;
+    static timeUs_t sumdTimeLast;
     static uint8_t sumdIndex;
 
     sumdTime = micros();
-    if ((sumdTime - sumdTimeLast) > 4000)
+    if (cmpTimeUs(sumdTime, sumdTimeLast) > 4000)
         sumdIndex = 0;
     sumdTimeLast = sumdTime;
 

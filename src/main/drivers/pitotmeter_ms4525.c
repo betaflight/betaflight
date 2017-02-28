@@ -22,7 +22,7 @@
 
 #include "bus_i2c.h"
 #include "pitotmeter.h"
-#include "system.h"
+#include "time.h"
 
 #include "common/utils.h"
 
@@ -103,7 +103,7 @@ static void ms4525_calculate(float *pressure, float *temperature)
     float T  = (float)(200 * (int32_t)dT_raw - 102350) / 2047 + 273.15f;
 
     if (pressure)
-        *pressure = dP;	// Pa
+        *pressure = dP;    // Pa
     if (temperature)
         *temperature = T; // K
 }

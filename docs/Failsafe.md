@@ -25,8 +25,6 @@ __Stage 2__ is entered when your craft is __armed__ and __stage 1__ persists lon
 
 __Stage 2__ is not activated until 5 seconds after the flight controller boots up.  This is to prevent unwanted activation, as in the case of TX/RX gear with long bind procedures, before the RX sends out valid data.
 
-__Stage 2__ can also directly be activated when a transmitter switch that is configured to control the failsafe mode is switched ON (and `failsafe_kill_switch` is set to OFF).
-
 __Stage 2__ will be aborted when it was due to:
 
 * a lost RC signal and the RC signal has recovered.
@@ -109,6 +107,15 @@ Use standard RX usec values.  See Rx documentation.
 * __Drop:__ Just kill the motors and disarm (crash the craft).
 * __Land:__ Enable an auto-level mode, center the flight sticks and set the throttle to a predefined value (`failsafe_throttle`) for a predefined time (`failsafe_off_delay`). This should allow the craft to come to a safer landing.
 * __RTH:__ Attempt to return and land the drone at the point of launch. GPS and Barometer required for proper operation. If this more is selected and GPS is not available - the drone will be landed immediately.
+* __NONE:__ Do nothing. This is least safe method but it could be used to execute WP missions outside of RC radio coverage.
+
+### `failsafe_stick_threshold`
+
+This parameter defines recovery from failsafe by stick motion. When set to zero failsafe procedure will be cleared as soon as RC link is recovered. 
+
+When this is set to a non-zero value - failsafe won't clear even if RC link is recovered. You will have to deflect any of Roll/Pitch/Yaw sticks beyond this value to exit failsafe.
+
+One use-case is Failsafe-RTH. When on the edge of radio coverage you may end up entering and exiting RTH if radio link is sporadic - happens a lot with long-range pilots. Setting `failsafe_stick_threshold` to a certain value (i.e. 100) RTH will be initiated on first signal loss and will continue as long as pilots want it to continue. When RC link is solid (based on RSSI etc) pilot will move sticks and regain control.
 
 ### `rx_min_usec`
 
@@ -121,6 +128,12 @@ The highest channel value considered valid.  e.g. PWM/PPM pulse length
 The `rx_min_usec` and `rx_max_usec` settings helps detect when your RX stops sending any data, enters failsafe mode or when the RX looses signal.
 
 With a Graupner GR-24 configured for PWM output with failsafe on channels 1-4 set to OFF in the receiver settings then this setting, at its default value, will allow failsafe to be activated.
+
+### `rx_nosignal_throttle`
+
+Defines behavior of throttle channel after signal loss is detected and until `failsafe_procedure` kicks in. Possible values - `HOLD` and `DROP`.
+
+Using `HOLD` is recommended if you use `LAND`, `RTH` or `NONE` failsafe procedure - it prevents aircraft from loosing a lot of altitude before failsafe activates. `DROP` for this parameter is recommended when `DROP` failsafe procedure is used - aircraft will be disarmed by failsafe anyway and it's safer to drop throttle as soon as possible.
 
 ## Testing
 

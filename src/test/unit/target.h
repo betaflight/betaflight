@@ -34,6 +34,7 @@
 #define LED_STRIP
 #define USE_SERVOS
 #define TRANSPONDER
+#define USE_FAKE_GYRO
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2

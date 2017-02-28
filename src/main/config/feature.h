@@ -17,6 +17,14 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
+
+typedef struct featureConfig_s {
+    uint32_t enabledFeatures;
+} featureConfig_t;
+
+PG_DECLARE(featureConfig_t, featureConfig);
+
 void latchActiveFeatures(void);
 bool featureConfigured(uint32_t mask);
 bool feature(uint32_t mask);

@@ -26,26 +26,33 @@
 
 #include "common/axis.h"
 
-#include "rx/rx.h"
-#include "drivers/system.h"
+#include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
+#include "drivers/time.h"
+
 #include "io/beeper.h"
-#include "io/motors.h"
+
+#include "fc/config.h"
 #include "fc/rc_controls.h"
-
 #include "fc/runtime_config.h"
-
-#include "config/config.h"
+#include "fc/controlrate_profile.h"
 
 #include "flight/failsafe.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
 
-#include "flight/navigation_rewrite.h"
+#include "navigation/navigation.h"
+
+#include "rx/rx.h"
 
 /*
  * Usage:
  *
- * failsafeInit() and useFailsafeConfig() must be called before the other methods are used.
+ * failsafeInit() and failsafeReset() must be called before the other methods are used.
  *
- * failsafeInit() and useFailsafeConfig() can be called in any order.
+ * failsafeInit() and failsafeReset() can be called in any order.
  * failsafeInit() should only be called once.
  *
  * enable() should be called after system initialisation.
@@ -53,16 +60,82 @@
 
 static failsafeState_t failsafeState;
 
-static failsafeConfig_t *failsafeConfig;
+PG_REGISTER_WITH_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
 
-static rxConfig_t *rxConfig;
+PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
+    .failsafe_delay = 5,                // 0.5 sec
+    .failsafe_recovery_delay = 5,       // 0.5 seconds (plus 200ms explicit delay)
+    .failsafe_off_delay = 200,          // 20sec
+    .failsafe_throttle = 1000,          // default throttle off.
+    .failsafe_kill_switch = 0,          // default failsafe switch action is identical to rc link loss
+    .failsafe_throttle_low_delay = 100, // default throttle low delay for "just disarm" on failsafe condition
+    .failsafe_procedure = 0,            // default full failsafe procedure is 0: auto-landing, 1: drop, 2 : RTH
+    .failsafe_fw_roll_angle = -200,     // 20 deg left
+    .failsafe_fw_pitch_angle = 100,     // 10 deg dive (yes, positive means dive)
+    .failsafe_fw_yaw_rate = -45,        // 45 deg/s left yaw (4s for full turn)
+    .failsafe_stick_motion_threshold = 50,
+);
 
-static uint16_t deadband3dThrottle;           // default throttle deadband from MIDRC
+typedef enum {
+    FAILSAFE_CHANNEL_HOLD,      // Hold last known good value
+    FAILFAFE_CHANNEL_NEUTRAL,   // RPY = zero, THR = zero
+    FAILSAFE_CHANNEL_AUTO,      // Defined by failsafe configured values
+} failsafeChannelBehavior_e;
 
-static void failsafeReset(void)
+typedef struct {
+    bool                        forceAngleMode;
+    failsafeChannelBehavior_e   channelBehavior[4];
+} failsafeProcedureLogic_t;
+
+static const failsafeProcedureLogic_t failsafeProcedureLogic[] = {
+    [FAILSAFE_PROCEDURE_AUTO_LANDING] = {
+            .forceAngleMode = true,
+            .channelBehavior = {
+                FAILSAFE_CHANNEL_AUTO,          // ROLL
+                FAILSAFE_CHANNEL_AUTO,          // PITCH
+                FAILSAFE_CHANNEL_AUTO,          // YAW
+                FAILSAFE_CHANNEL_AUTO           // THROTTLE
+            }
+    },
+
+    [FAILSAFE_PROCEDURE_DROP_IT] = {
+            .forceAngleMode = true,
+            .channelBehavior = {
+                FAILFAFE_CHANNEL_NEUTRAL,       // ROLL
+                FAILFAFE_CHANNEL_NEUTRAL,       // PITCH
+                FAILFAFE_CHANNEL_NEUTRAL,       // YAW
+                FAILFAFE_CHANNEL_NEUTRAL        // THROTTLE
+            }
+    },
+
+    [FAILSAFE_PROCEDURE_RTH] = {
+            .forceAngleMode = true,
+            .channelBehavior = {
+                FAILFAFE_CHANNEL_NEUTRAL,       // ROLL
+                FAILFAFE_CHANNEL_NEUTRAL,       // PITCH
+                FAILFAFE_CHANNEL_NEUTRAL,       // YAW
+                FAILSAFE_CHANNEL_HOLD           // THROTTLE
+            }
+    },
+
+    [FAILSAFE_PROCEDURE_NONE] = {
+            .forceAngleMode = false,
+            .channelBehavior = {
+                FAILSAFE_CHANNEL_HOLD,          // ROLL
+                FAILSAFE_CHANNEL_HOLD,          // PITCH
+                FAILSAFE_CHANNEL_HOLD,          // YAW
+                FAILSAFE_CHANNEL_HOLD           // THROTTLE
+            }
+    }
+};
+
+/*
+ * Should called when the failsafe config needs to be changed - e.g. a different profile has been selected.
+ */
+void failsafeReset(void)
 {
-    failsafeState.rxDataFailurePeriod = PERIOD_RXDATA_FAILURE + failsafeConfig->failsafe_delay * MILLIS_PER_TENTH_SECOND;
-    failsafeState.rxDataRecoveryPeriod = PERIOD_RXDATA_RECOVERY + failsafeConfig->failsafe_recovery_delay * MILLIS_PER_TENTH_SECOND;
+    failsafeState.rxDataFailurePeriod = PERIOD_RXDATA_FAILURE + failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND;
+    failsafeState.rxDataRecoveryPeriod = PERIOD_RXDATA_RECOVERY + failsafeConfig()->failsafe_recovery_delay * MILLIS_PER_TENTH_SECOND;
     failsafeState.validRxDataReceivedAt = 0;
     failsafeState.validRxDataFailedAt = 0;
     failsafeState.throttleLowPeriod = 0;
@@ -73,25 +146,8 @@ static void failsafeReset(void)
     failsafeState.rxLinkState = FAILSAFE_RXLINK_DOWN;
 }
 
-failsafeConfig_t * getActiveFailsafeConfig(void)
+void failsafeInit(void)
 {
-    return failsafeConfig;
-}
-
-/*
- * Should called when the failsafe config needs to be changed - e.g. a different profile has been selected.
- */
-void useFailsafeConfig(failsafeConfig_t *failsafeConfigToUse)
-{
-    failsafeConfig = failsafeConfigToUse;
-    failsafeReset();
-}
-
-void failsafeInit(rxConfig_t *intialRxConfig, uint16_t deadband3d_throttle)
-{
-    rxConfig = intialRxConfig;
-
-    deadband3dThrottle = deadband3d_throttle;
     failsafeState.events = 0;
     failsafeState.monitoring = false;
 
@@ -101,7 +157,7 @@ void failsafeInit(rxConfig_t *intialRxConfig, uint16_t deadband3d_throttle)
 #ifdef NAV
 bool failsafeMayRequireNavigationMode(void)
 {
-    return failsafeConfig->failsafe_procedure == FAILSAFE_PROCEDURE_RTH;
+    return failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_RTH;
 }
 #endif
 
@@ -120,6 +176,11 @@ bool failsafeIsActive(void)
     return failsafeState.active;
 }
 
+bool failsafeRequiresAngleMode(void)
+{
+    return failsafeState.active && failsafeProcedureLogic[failsafeConfig()->failsafe_procedure].forceAngleMode;
+}
+
 void failsafeStartMonitoring(void)
 {
     failsafeState.monitoring = true;
@@ -130,22 +191,68 @@ static bool failsafeShouldHaveCausedLandingByNow(void)
     return (millis() > failsafeState.landingShouldBeFinishedAt);
 }
 
-static void failsafeActivate(void)
+static void failsafeActivate(failsafePhase_e newPhase)
 {
     failsafeState.active = true;
-    failsafeState.phase = FAILSAFE_LANDING;
+    failsafeState.phase = newPhase;
     ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
-    failsafeState.landingShouldBeFinishedAt = millis() + failsafeConfig->failsafe_off_delay * MILLIS_PER_TENTH_SECOND;
+    failsafeState.landingShouldBeFinishedAt = millis() + failsafeConfig()->failsafe_off_delay * MILLIS_PER_TENTH_SECOND;
 
     failsafeState.events++;
 }
 
-static void failsafeApplyControlInput(void)
+void failsafeUpdateRcCommandValues(void)
 {
-    for (int i = 0; i < 3; i++) {
-        rcData[i] = rxConfig->midrc;
+    if (!failsafeState.active) {
+        for (int idx = 0; idx < 4; idx++) {
+            failsafeState.lastGoodRcCommand[idx] = rcCommand[idx];
+        }
     }
-    rcData[THROTTLE] = failsafeConfig->failsafe_throttle;
+}
+
+void failsafeApplyControlInput(void)
+{
+    // Prepare FAILSAFE_CHANNEL_AUTO values for rcCommand
+    int16_t autoRcCommand[4];
+    if (STATE(FIXED_WING)) {
+        autoRcCommand[ROLL] = pidAngleToRcCommand(failsafeConfig()->failsafe_fw_roll_angle, pidProfile()->max_angle_inclination[FD_ROLL]);
+        autoRcCommand[PITCH] = pidAngleToRcCommand(failsafeConfig()->failsafe_fw_pitch_angle, pidProfile()->max_angle_inclination[FD_PITCH]);
+        autoRcCommand[YAW] = pidRateToRcCommand(failsafeConfig()->failsafe_fw_yaw_rate, currentControlRateProfile->rates[FD_YAW]);
+        autoRcCommand[THROTTLE] = failsafeConfig()->failsafe_throttle;
+    }
+    else {
+        for (int i = 0; i < 3; i++) {
+            autoRcCommand[i] = 0;
+        }
+        autoRcCommand[THROTTLE] = failsafeConfig()->failsafe_throttle;
+    }
+
+    // Apply channel values
+    for (int idx = 0; idx < 4; idx++) {
+        switch (failsafeProcedureLogic[failsafeConfig()->failsafe_procedure].channelBehavior[idx]) {
+            case FAILSAFE_CHANNEL_HOLD:
+                rcCommand[idx] = failsafeState.lastGoodRcCommand[idx];
+                break;
+
+            case FAILFAFE_CHANNEL_NEUTRAL:
+                switch (idx) {
+                    case ROLL:
+                    case PITCH:
+                    case YAW:
+                        rcCommand[idx] = 0;
+                        break;
+
+                    case THROTTLE:
+                        rcCommand[idx] = feature(FEATURE_3D) ? rxConfig()->midrc : motorConfig()->minthrottle;
+                        break;
+                }
+                break;
+
+            case FAILSAFE_CHANNEL_AUTO:
+                rcCommand[idx] = autoRcCommand[idx];
+                break;
+        }
+    }
 }
 
 bool failsafeIsReceivingRxData(void)
@@ -180,15 +287,32 @@ void failsafeOnValidDataFailed(void)
     }
 }
 
+static bool failsafeCheckStickMotion(void)
+{
+    if (failsafeConfig()->failsafe_stick_motion_threshold > 0) {
+        uint32_t totalRcDelta = 0;
+
+        totalRcDelta += ABS(rcData[ROLL] - rxConfig()->midrc);
+        totalRcDelta += ABS(rcData[PITCH] - rxConfig()->midrc);
+        totalRcDelta += ABS(rcData[YAW] - rxConfig()->midrc);
+
+        return totalRcDelta >= failsafeConfig()->failsafe_stick_motion_threshold;
+    }
+    else {
+        return true;
+    }
+}
+
 void failsafeUpdateState(void)
 {
     if (!failsafeIsMonitoring()) {
         return;
     }
 
-    bool receivingRxData = failsafeIsReceivingRxData();
-    bool armed = ARMING_FLAG(ARMED);
-    bool failsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
+    const bool receivingRxData = failsafeIsReceivingRxData();
+    const bool armed = ARMING_FLAG(ARMED);
+    const bool failsafeSwitchIsOn = IS_RC_MODE_ACTIVE(BOXFAILSAFE);
+    const bool sticksAreMoving = failsafeCheckStickMotion();
     beeperMode_e beeperMode = BEEPER_SILENCE;
 
     // Beep RX lost only if we are not seeing data and we have been armed earlier
@@ -205,22 +329,20 @@ void failsafeUpdateState(void)
             case FAILSAFE_IDLE:
                 if (armed) {
                     // Track throttle command below minimum time
-                    if (THROTTLE_HIGH == calculateThrottleStatus(rxConfig, deadband3dThrottle)) {
-                        failsafeState.throttleLowPeriod = millis() + failsafeConfig->failsafe_throttle_low_delay * MILLIS_PER_TENTH_SECOND;
+                    if (THROTTLE_HIGH == calculateThrottleStatus()) {
+                        failsafeState.throttleLowPeriod = millis() + failsafeConfig()->failsafe_throttle_low_delay * MILLIS_PER_TENTH_SECOND;
                     }
                     // Kill switch logic (must be independent of receivingRxData to skip PERIOD_RXDATA_FAILURE delay before disarming)
-                    if (failsafeSwitchIsOn && failsafeConfig->failsafe_kill_switch) {
+                    if (failsafeSwitchIsOn && failsafeConfig()->failsafe_kill_switch) {
                         // KillswitchEvent: failsafe switch is configured as KILL switch and is switched ON
-                        failsafeActivate();
-                        failsafeState.phase = FAILSAFE_LANDED;      // skip auto-landing procedure
+                        failsafeActivate(FAILSAFE_LANDED);  // skip auto-landing procedure
                         failsafeState.receivingRxDataPeriodPreset = PERIOD_OF_1_SECONDS;    // require 1 seconds of valid rxData
                         reprocessState = true;
                     } else if (!receivingRxData) {
-                        if ((failsafeConfig->failsafe_throttle_low_delay && (millis() > failsafeState.throttleLowPeriod)) || STATE(NAV_MOTOR_STOP_OR_IDLE)) {
+                        if ((failsafeConfig()->failsafe_throttle_low_delay && (millis() > failsafeState.throttleLowPeriod)) || STATE(NAV_MOTOR_STOP_OR_IDLE)) {
                             // JustDisarm: throttle was LOW for at least 'failsafe_throttle_low_delay' seconds or waiting for launch
                             // Don't disarm at all if `failsafe_throttle_low_delay` is set to zero
-                            failsafeActivate();
-                            failsafeState.phase = FAILSAFE_LANDED;      // skip auto-landing procedure
+                            failsafeActivate(FAILSAFE_LANDED);  // skip auto-landing procedure
                             failsafeState.receivingRxDataPeriodPreset = PERIOD_OF_3_SECONDS; // require 3 seconds of valid rxData
                         } else {
                             failsafeState.phase = FAILSAFE_RX_LOSS_DETECTED;
@@ -229,7 +351,7 @@ void failsafeUpdateState(void)
                     }
                 } else {
                     // When NOT armed, show rxLinkState of failsafe switch in GUI (failsafe mode)
-                    if (failsafeSwitchIsOn) {
+                    if (failsafeSwitchIsOn || !receivingRxData) {
                         ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
                     } else {
                         DISABLE_FLIGHT_MODE(FAILSAFE_MODE);
@@ -243,36 +365,46 @@ void failsafeUpdateState(void)
                 if (receivingRxData) {
                     failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                 } else {
-                    switch (failsafeConfig->failsafe_procedure) {
-                        default:
+                    switch (failsafeConfig()->failsafe_procedure) {
                         case FAILSAFE_PROCEDURE_AUTO_LANDING:
                             // Stabilize, and set Throttle to specified level
-                            failsafeActivate();
+                            failsafeActivate(FAILSAFE_LANDING);
                             break;
 
                         case FAILSAFE_PROCEDURE_DROP_IT:
                             // Drop the craft
-                            failsafeActivate();
-                            failsafeState.phase = FAILSAFE_LANDED;      // skip auto-landing procedure
+                            failsafeActivate(FAILSAFE_LANDED);      // skip auto-landing procedure
                             failsafeState.receivingRxDataPeriodPreset = PERIOD_OF_3_SECONDS; // require 3 seconds of valid rxData
                             break;
 
 #if defined(NAV)
                         case FAILSAFE_PROCEDURE_RTH:
                             // Proceed to handling & monitoring RTH navigation
-                            failsafeActivate();
+                            failsafeActivate(FAILSAFE_RETURN_TO_HOME);
                             activateForcedRTH();
-                            failsafeState.phase = FAILSAFE_RETURN_TO_HOME;
                             break;
 #endif
+                        case FAILSAFE_PROCEDURE_NONE:
+                        default:
+                            // Do nothing procedure
+                            failsafeActivate(FAILSAFE_RX_LOSS_IDLE);
+                            break;
                     }
                 }
                 reprocessState = true;
                 break;
 
+            /* A very simple do-nothing failsafe procedure. The only thing it will do is monitor the receiver state and switch out of FAILSAFE condition */
+            case FAILSAFE_RX_LOSS_IDLE:
+                if (receivingRxData && sticksAreMoving) {
+                    failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
+                    reprocessState = true;
+                }
+                break;
+
 #if defined(NAV)
             case FAILSAFE_RETURN_TO_HOME:
-                if (receivingRxData) {
+                if (receivingRxData && sticksAreMoving) {
                     abortForcedRTH();
                     failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                     reprocessState = true;
@@ -303,12 +435,11 @@ void failsafeUpdateState(void)
 #endif
 
             case FAILSAFE_LANDING:
-                if (receivingRxData) {
+                if (receivingRxData && sticksAreMoving) {
                     failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                     reprocessState = true;
                 }
                 if (armed) {
-                    failsafeApplyControlInput();
                     beeperMode = BEEPER_RX_LOST_LANDING;
                 }
                 if (failsafeShouldHaveCausedLandingByNow() || !armed) {
@@ -346,7 +477,7 @@ void failsafeUpdateState(void)
                 // Entering IDLE with the requirement that throttle first must be at min_check for failsafe_throttle_low_delay period.
                 // This is to prevent that JustDisarm is activated on the next iteration.
                 // Because that would have the effect of shutting down failsafe handling on intermittent connections.
-                failsafeState.throttleLowPeriod = millis() + failsafeConfig->failsafe_throttle_low_delay * MILLIS_PER_TENTH_SECOND;
+                failsafeState.throttleLowPeriod = millis() + failsafeConfig()->failsafe_throttle_low_delay * MILLIS_PER_TENTH_SECOND;
                 failsafeState.phase = FAILSAFE_IDLE;
                 failsafeState.active = false;
                 DISABLE_FLIGHT_MODE(FAILSAFE_MODE);

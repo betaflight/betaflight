@@ -34,7 +34,7 @@
 #include "common/utils.h"
 
 #include "drivers/serial.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "io/serial.h"
 
@@ -56,13 +56,13 @@ static uint8_t ibus[IBUS_BUFFSIZE] = { 0, };
 // Receive ISR callback
 static void ibusDataReceive(uint16_t c)
 {
-    uint32_t ibusTime;
-    static uint32_t ibusTimeLast;
+    timeUs_t ibusTime;
+    static timeUs_t ibusTimeLast;
     static uint8_t ibusFramePosition;
 
     ibusTime = micros();
 
-    if ((ibusTime - ibusTimeLast) > 3000)
+    if (cmpTimeUs(ibusTime, ibusTimeLast) > 3000)
         ibusFramePosition = 0;
 
     ibusTimeLast = ibusTime;

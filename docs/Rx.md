@@ -45,11 +45,23 @@ Lemon Rx DSMX Compatible PPM 8-Channel Receiver + Lemon DSMX Compatible Satellit
 http://www.lemon-rx.com/shop/index.php?route=product/product&product_id=118
 
 
+#### Spektrum pesudo RSSI
+
+As of iNav 1.6, a pseudo RSSI, based on satellite fade count is supported and reported as normal iNav RSSI (0-1023 range). In order to use this feature, the following is necessary:
+
+* Bind the satellite receiver using a physical RX; the bind function provided by the flight controller is not sufficient.
+* The CLI variable `rssi_channel` is set to channel 9:
+````
+set rssi_channel = 9
+````
+This pseudo-RSSI should work on all makes of Spektrum satellite RX; it is tested as working on Lemon RX satellites http://www.lemon-rx.com/index.php?route=product/product&path=72&product_id=109 and http://www.lemon-rx.com/index.php?route=product/product&path=72&product_id=135 (recommended).
+
 ### S.BUS
 
 16 channels via serial currently supported.  See below how to set up your transmitter.
 
 * You probably need an inverter between the receiver output and the flight controller. However, some flight controllers have this built in (the main port on CC3D, for example), and doesn't need one.
+* Some OpenLRS receivers produce a non-inverted SBUS signal. It is possible to switch SBUS inversion off using CLI command `set sbus_inversion = OFF` when using an F3 based flight controller.
 * Softserial ports cannot be used with SBUS because it runs at too high of a bitrate (1Mbps).  Refer to the chapter specific to your board to determine which port(s) may be used.
 * You will need to configure the channel mapping in the GUI (Receiver tab) or CLI (`map` command). Note that channels above 8 are mapped "straight", with no remapping.
 

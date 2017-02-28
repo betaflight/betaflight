@@ -37,6 +37,12 @@ typedef struct
     void* test;
 } TIM_TypeDef;
 
+typedef enum {
+  EXTI_Trigger_Rising = 0x08,
+  EXTI_Trigger_Falling = 0x0C,
+  EXTI_Trigger_Rising_Falling = 0x10
+} EXTITrigger_TypeDef;
+
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 typedef enum {TEST_IRQ = 0 } IRQn_Type;
@@ -48,6 +54,20 @@ typedef struct {
 uint8_t DMA_GetFlagStatus(uint32_t);
 void DMA_Cmd(DMA_Channel_TypeDef*, FunctionalState );
 void DMA_ClearFlag(uint32_t);
+
+typedef struct
+{
+  uint32_t CTRL;                    /*!< Offset: 0x000 (R/W)  SysTick Control and Status Register */
+  uint32_t LOAD;                    /*!< Offset: 0x004 (R/W)  SysTick Reload Value Register       */
+  uint32_t VAL;                     /*!< Offset: 0x008 (R/W)  SysTick Current Value Register      */
+  uint32_t CALIB;                   /*!< Offset: 0x00C (R/ )  SysTick Calibration Register        */
+} SysTick_Type;
+
+#define SysTick_CTRL_COUNTFLAG_Pos         16                                             /*!< SysTick CTRL: COUNTFLAG Position */
+#define SysTick_CTRL_COUNTFLAG_Msk         (1UL << SysTick_CTRL_COUNTFLAG_Pos)            /*!< SysTick CTRL: COUNTFLAG Mask */
+
+extern SysTick_Type *SysTick;
+
 
 #define WS2811_DMA_TC_FLAG 1
 #define WS2811_DMA_HANDLER_IDENTIFER 0

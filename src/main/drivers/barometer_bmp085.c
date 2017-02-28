@@ -25,7 +25,7 @@
 #include "barometer.h"
 
 #include "gpio.h"
-#include "system.h"
+#include "time.h"
 #include "bus_i2c.h"
 #include "nvic.h"
 #include "exti.h"

@@ -43,8 +43,9 @@
 #include "common/typeconversion.h"
 
 #include "drivers/system.h"
+#include "drivers/time.h"
 
-#include "config/config.h"
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -54,9 +55,9 @@
 #include "flight/mixer.h"
 #include "flight/servos.h"
 
-#include "config/config_profile.h"
-#include "config/config_master.h"
 #include "config/feature.h"
+
+#include "rx/rx.h"
 
 // For VISIBLE* (Actually, included by config_master.h)
 #include "io/osd.h"

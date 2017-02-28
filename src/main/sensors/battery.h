@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
+
 #ifndef VBAT_SCALE_DEFAULT
 #define VBAT_SCALE_DEFAULT 110
 #endif
@@ -49,6 +51,8 @@ typedef struct batteryConfig_s {
     uint16_t batteryCapacity;               // mAh
 } batteryConfig_t;
 
+PG_DECLARE(batteryConfig_t, batteryConfig);
+
 typedef enum {
     BATTERY_OK = 0,
     BATTERY_WARNING,
@@ -67,12 +71,10 @@ extern int32_t mAhDrawn;
 
 uint16_t batteryAdcToVoltage(uint16_t src);
 batteryState_e getBatteryState(void);
-const  char * getBatteryStateString(void);
-void updateBattery(uint32_t vbatTimeDelta);
-void batteryInit(batteryConfig_t *initialBatteryConfig);
+void batteryUpdate(uint32_t vbatTimeDelta);
+void batteryInit(void);
 
-struct rxConfig_s;
-void updateCurrentMeter(int32_t lastUpdateAt, struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);
+void currentMeterUpdate(int32_t lastUpdateAt);
 int32_t currentMeterToCentiamps(uint16_t src);
 
 uint8_t calculateBatteryPercentage(void);

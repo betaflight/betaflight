@@ -208,6 +208,13 @@ bool spiInit(SPIDevice device)
 #else
         break;
 #endif
+    case SPIDEV_4:
+#if defined(USE_SPI_DEVICE_4)
+        spiInitDevice(device);
+        return true;
+#else
+        break;
+#endif
     }
     return false;
 }

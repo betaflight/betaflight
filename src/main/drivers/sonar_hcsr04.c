@@ -25,7 +25,7 @@
 #include "build/build_config.h"
 
 
-#include "system.h"
+#include "time.h"
 #include "exti.h"
 #include "io.h"
 #include "gpio.h"
@@ -48,8 +48,7 @@
  *
  */
 
-STATIC_UNIT_TESTED volatile timeDelta_t hcsr04SonarPulseTravelTime = 0;
-sonarHcsr04Hardware_t sonarHcsr04Hardware;
+static volatile timeDelta_t hcsr04SonarPulseTravelTime = 0;
 
 #ifdef USE_EXTI
 static extiCallbackRec_t hcsr04_extiCallbackRec;
@@ -75,46 +74,8 @@ void hcsr04_extiHandler(extiCallbackRec_t* cb)
 }
 #endif
 
-void hcsr04_set_sonar_hardware(void)
+void hcsr04_init(void)
 {
-#if !defined(UNIT_TEST)
-
-#ifdef STM32F10X
-    // enable AFIO for EXTI support
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
-#endif
-
-#if defined(STM32F3) || defined(STM32F4)
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
-
-    /* Enable SYSCFG clock otherwise the EXTI irq handlers are not called */
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-#endif
-
-    // trigger pin
-    triggerIO = IOGetByTag(sonarHcsr04Hardware.triggerTag);
-    IOInit(triggerIO, OWNER_SONAR, RESOURCE_OUTPUT, 0);
-    IOConfigGPIO(triggerIO, IOCFG_OUT_PP);
-
-    // echo pin
-    echoIO = IOGetByTag(sonarHcsr04Hardware.echoTag);
-    IOInit(echoIO, OWNER_SONAR, RESOURCE_INPUT, 0);
-    IOConfigGPIO(echoIO, IOCFG_IN_FLOATING);
-
-#ifdef USE_EXTI
-    EXTIHandlerInit(&hcsr04_extiCallbackRec, hcsr04_extiHandler);
-    EXTIConfig(echoIO, &hcsr04_extiCallbackRec, NVIC_PRIO_SONAR_EXTI, EXTI_Trigger_Rising_Falling); // TODO - priority!
-    EXTIEnable(echoIO, true);
-#endif
-
-#endif // UNIT_TEST
-}
-
-void hcsr04_init(rangefinder_t *rangefinder)
-{
-    rangefinder->maxRangeCm = HCSR04_MAX_RANGE_CM;
-    rangefinder->detectionConeDeciDegrees = HCSR04_DETECTION_CONE_DECIDEGREES;
-    rangefinder->detectionConeExtendedDeciDegrees = HCSR04_DETECTION_CONE_EXTENDED_DECIDEGREES;
 }
 
 /*
@@ -156,4 +117,48 @@ int32_t hcsr04_get_distance(void)
     }
     return distance;
 }
+
+bool hcsr04Detect(rangefinderDev_t *dev, const rangefinderHardwarePins_t * sonarHardwarePins)
+{
+#ifdef STM32F10X
+    // enable AFIO for EXTI support
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
+#endif
+
+#if defined(STM32F3) || defined(STM32F4)
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+
+    /* Enable SYSCFG clock otherwise the EXTI irq handlers are not called */
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+#endif
+
+    // trigger pin
+    triggerIO = IOGetByTag(sonarHardwarePins->triggerTag);
+    IOInit(triggerIO, OWNER_SONAR, RESOURCE_OUTPUT, 0);
+    IOConfigGPIO(triggerIO, IOCFG_OUT_PP);
+
+    // echo pin
+    echoIO = IOGetByTag(sonarHardwarePins->echoTag);
+    IOInit(echoIO, OWNER_SONAR, RESOURCE_INPUT, 0);
+    IOConfigGPIO(echoIO, IOCFG_IN_FLOATING);
+
+#ifdef USE_EXTI
+    EXTIHandlerInit(&hcsr04_extiCallbackRec, hcsr04_extiHandler);
+    EXTIConfig(echoIO, &hcsr04_extiCallbackRec, NVIC_PRIO_SONAR_EXTI, EXTI_Trigger_Rising_Falling); // TODO - priority!
+    EXTIEnable(echoIO, true);
+#endif
+
+    dev->delayMs = 100;
+    dev->maxRangeCm = HCSR04_MAX_RANGE_CM;
+    dev->detectionConeDeciDegrees = HCSR04_DETECTION_CONE_DECIDEGREES;
+    dev->detectionConeExtendedDeciDegrees = HCSR04_DETECTION_CONE_EXTENDED_DECIDEGREES;
+
+    dev->init = &hcsr04_init;
+    dev->update = &hcsr04_start_reading;
+    dev->read = &hcsr04_get_distance;
+
+    /* FIXME: Do actual hardware detection - see if HC-SR04 is alive */
+    return true;
+}
+
 #endif

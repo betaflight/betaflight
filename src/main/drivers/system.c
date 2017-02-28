@@ -25,8 +25,10 @@
 #include "sound_beeper.h"
 #include "nvic.h"
 #include "build/atomic.h"
+#include "build/build_config.h"
 
 #include "system.h"
+#include "time.h"
 
 #ifndef EXTI_CALLBACK_HANDLER_COUNT
 #define EXTI_CALLBACK_HANDLER_COUNT 1
@@ -48,22 +50,29 @@ void registerExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn)
 }
 
 // cycles per microsecond
-static timeUs_t usTicks = 0;
+STATIC_UNIT_TESTED timeUs_t usTicks = 0;
 // current uptime for 1kHz systick timer. will rollover after 49 days. hopefully we won't care.
-static volatile timeMs_t sysTickUptime = 0;
+STATIC_UNIT_TESTED volatile timeMs_t sysTickUptime = 0;
 // cached value of RCC->CSR
 uint32_t cachedRccCsrValue;
 
+#ifndef UNIT_TEST
 void cycleCounterInit(void)
 {
+#if defined(USE_HAL_DRIVER)
+    usTicks = HAL_RCC_GetSysClockFreq() / 1000000;
+#else
     RCC_ClocksTypeDef clocks;
     RCC_GetClocksFreq(&clocks);
     usTicks = clocks.SYSCLK_Frequency / 1000000;
+
+#endif
 
     // Enable DWT for precision time measurement
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 }
+#endif // UNIT_TEST
 
 // SysTick
 
@@ -76,12 +85,20 @@ void SysTick_Handler(void)
         sysTickPending = 0;
         (void)(SysTick->CTRL);
     }
+#ifdef USE_HAL_DRIVER
+    // used by the HAL for some timekeeping and timeouts, should always be 1ms
+    HAL_IncTick();
+#endif
 }
 
 uint32_t ticks(void)
 {
+#ifdef UNIT_TEST
+    return 0;
+#else
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
     return DWT->CYCCNT;
+#endif
 }
 
 timeDelta_t ticks_diff_us(uint32_t begin, uint32_t end)
@@ -89,7 +106,7 @@ timeDelta_t ticks_diff_us(uint32_t begin, uint32_t end)
     return (end - begin) / usTicks;
 }
 
-// Return system uptime in microseconds (rollover in 70minutes)
+// Return system uptime in microseconds
 timeUs_t microsISR(void)
 {
     register uint32_t ms, pending, cycle_cnt;
@@ -114,7 +131,7 @@ timeUs_t microsISR(void)
         pending = sysTickPending;
     }
 
-    return ((ms + pending) * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
+    return ((timeUs_t)(ms + pending) * 1000LL) + (usTicks * 1000LL - (timeUs_t)cycle_cnt) / usTicks;
 }
 
 timeUs_t micros(void)
@@ -123,9 +140,11 @@ timeUs_t micros(void)
 
     // Call microsISR() in interrupt and elevated (non-zero) BASEPRI context
 
+#ifndef UNIT_TEST
     if ((SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) || (__get_BASEPRI())) {
         return microsISR();
     }
+#endif
 
     do {
         ms = sysTickUptime;
@@ -136,7 +155,7 @@ timeUs_t micros(void)
          */
         asm volatile("\tnop\n");
     } while (ms != sysTickUptime);
-    return (ms * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
+    return ((timeUs_t)ms * 1000LL) + (usTicks * 1000LL - (timeUs_t)cycle_cnt) / usTicks;
 }
 
 // Return system uptime in milliseconds (rollover in 49 days)
@@ -190,6 +209,9 @@ void delay(timeMs_t ms)
 
 void failureMode(failureMode_e mode)
 {
+#ifdef UNIT_TEST
+    (void)mode;
+#else
     int codeRepeatsRemaining = 10;
     int codeFlashesRemaining;
     int shortFlashesRemaining;
@@ -230,4 +252,5 @@ void failureMode(failureMode_e mode)
 #else
     systemResetToBootloader();
 #endif
+#endif //UNIT_TEST
 }

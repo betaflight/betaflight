@@ -23,7 +23,7 @@
 
 #include "common/utils.h"
 
-#include "system.h"
+#include "time.h"
 #include "gpio.h"
 
 #include "light_led.h"

@@ -27,7 +27,7 @@
 #include "build/version.h"
 #include "build/build_config.h"
 
-#include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/display_ug2864hsweg01.h"
 
 #include "cms/cms.h"
@@ -37,13 +37,14 @@
 #include "common/axis.h"
 #include "common/typeconversion.h"
 
+#include "fc/config.h"
+#include "fc/controlrate_profile.h"
 #include "fc/runtime_config.h"
 #include "fc/rc_controls.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
-#include "flight/navigation_rewrite.h"
 
 #include "io/dashboard.h"
 #include "io/displayport_oled.h"
@@ -52,6 +53,10 @@
 #include "io/gps.h"
 #endif
 
+#include "navigation/navigation.h"
+
+#include "rx/rx.h"
+
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
@@ -59,9 +64,6 @@
 #include "sensors/gyro.h"
 #include "sensors/barometer.h"
 
-#include "rx/rx.h"
-
-#include "config/config.h"
 #include "config/feature.h"
 
 
@@ -75,7 +77,6 @@ controlRateConfig_t *getControlRateConfig(uint8_t profileIndex);
 static timeUs_t nextDisplayUpdateAt = 0;
 static bool displayPresent = false;
 
-static const rxConfig_t *rxConfig;
 static displayPort_t *displayPort;
 
 #define PAGE_TITLE_LINE_COUNT 1
@@ -117,7 +118,7 @@ static uint8_t armedBitmapRLE [] = { 128, 32,
 #endif
 
 static const char* const pageTitles[] = {
-    FC_NAME,
+    FC_FIRMWARE_NAME,
     "ARMED",
     "STATUS"
 };
@@ -131,7 +132,7 @@ static const char* const gpsFixTypeText[] = {
 static const char* tickerCharacters = "|/-\\"; // use 2/4/8 characters so that the divide is optimal.
 #define TICKER_CHARACTER_COUNT (sizeof(tickerCharacters) / sizeof(char))
 
-static uint32_t nextPageAt;
+static timeUs_t nextPageAt;
 static bool forcePageChange;
 static pageId_e currentPageId;
 
@@ -216,6 +217,9 @@ static void updateFailsafeStatus(void)
             break;
         case FAILSAFE_RX_LOSS_DETECTED:
             failsafeIndicator = 'R';
+            break;
+        case FAILSAFE_RX_LOSS_IDLE:
+            failsafeIndicator = 'I';
             break;
 #if defined(NAV)
         case FAILSAFE_RETURN_TO_HOME:
@@ -379,10 +383,10 @@ static void showStatusPage(void)
 void dashboardUpdate(timeUs_t currentTimeUs)
 {
     static uint8_t previousArmedState = 0;
-    static bool wasGrabbed = false;
     bool pageChanging;
 
 #ifdef CMS
+    static bool wasGrabbed = false;
     if (displayIsGrabbed(displayPort)) {
         wasGrabbed = true;
         return;
@@ -476,10 +480,8 @@ void dashboardSetPage(pageId_e newPageId)
     forcePageChange = true;
 }
 
-void dashboardInit(const rxConfig_t *rxConfigToUse)
+void dashboardInit(void)
 {
-    rxConfig = rxConfigToUse;
-
     delay(200);
     resetDisplay();
     delay(200);
@@ -489,16 +491,14 @@ void dashboardInit(const rxConfig_t *rxConfigToUse)
     cmsDisplayPortRegister(displayPort);
 #endif
 
-    rxConfig = rxConfigToUse;
-
     dashboardSetPage(PAGE_WELCOME);
-    const uint32_t now = micros();
+    const timeUs_t now = micros();
     dashboardSetNextPageChangeAt(now + 5 * MICROSECONDS_IN_A_SECOND);
 
     dashboardUpdate(now);
 }
 
-void dashboardSetNextPageChangeAt(uint32_t futureMicros)
+void dashboardSetNextPageChangeAt(timeUs_t futureMicros)
 {
     nextPageAt = futureMicros;
 }

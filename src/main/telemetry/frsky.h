@@ -17,16 +17,14 @@
 
 #pragma once
 
-#include "rx/rx.h"
-
 typedef enum {
     FRSKY_VFAS_PRECISION_LOW = 0,
     FRSKY_VFAS_PRECISION_HIGH
 } frskyVFasPrecision_e;
 
-void handleFrSkyTelemetry(rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
+void handleFrSkyTelemetry(void);
 void checkFrSkyTelemetryState(void);
 
-void initFrSkyTelemetry(telemetryConfig_t *telemetryConfig);
+void initFrSkyTelemetry(void);
 void configureFrSkyTelemetryPort(void);
 void freeFrSkyTelemetryPort(void);

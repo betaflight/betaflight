@@ -17,9 +17,4 @@
 
 #pragma once
 
-struct rangefinder_s;
-bool srf10_detect();
-void srf10_init(struct rangefinder_s *rangefinder);
-void srf10_start_reading(void);
-int32_t srf10_get_distance(void);
-
+bool srf10Detect(rangefinderDev_t *dev);

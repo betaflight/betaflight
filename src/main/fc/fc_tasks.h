@@ -22,9 +22,8 @@
 #include "common/time.h"
 
 void taskMainPidLoopChecker(timeUs_t currentTimeUs);
-bool taskUpdateRxCheck(timeUs_t currentTimeUs, uint32_t currentDeltaTime);
+bool taskUpdateRxCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime);
 void taskUpdateRxMain(timeUs_t currentTimeUs);
-void taskSystem(timeUs_t currentTimeUs);
 
 void taskMainPidLoop(timeUs_t currentTimeUs);
 void taskGyro(timeUs_t currentTimeUs);

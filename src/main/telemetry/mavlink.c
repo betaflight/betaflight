@@ -30,51 +30,46 @@
 
 #include "build/build_config.h"
 
-#include "common/maths.h"
 #include "common/axis.h"
 #include "common/color.h"
+#include "common/maths.h"
 #include "common/utils.h"
 
-#include "drivers/system.h"
-#include "drivers/serial.h"
+#include "config/feature.h"
 
-#include "io/serial.h"
+#include "drivers/serial.h"
+#include "drivers/time.h"
+
+#include "fc/config.h"
+#include "fc/fc_core.h"
 #include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
+
+#include "flight/failsafe.h"
+#include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
+#include "flight/servos.h"
 
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
-#include "io/motors.h"
-#include "io/servos.h"
+#include "io/serial.h"
 
-#include "sensors/sensors.h"
-#include "sensors/acceleration.h"
-#include "sensors/gyro.h"
-#include "sensors/barometer.h"
-#include "sensors/boardalignment.h"
-#include "sensors/battery.h"
-#include "sensors/pitotmeter.h"
+#include "navigation/navigation.h"
 
 #include "rx/rx.h"
 
-#include "flight/mixer.h"
-#include "flight/servos.h"
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/failsafe.h"
-#include "flight/navigation_rewrite.h"
+#include "sensors/acceleration.h"
+#include "sensors/barometer.h"
+#include "sensors/battery.h"
+#include "sensors/boardalignment.h"
+#include "sensors/gyro.h"
+#include "sensors/pitotmeter.h"
+#include "sensors/sensors.h"
 
-#include "telemetry/telemetry.h"
 #include "telemetry/mavlink.h"
-
-#include "config/config.h"
-#include "fc/runtime_config.h"
-
-#include "config/config_profile.h"
-#include "config/config_master.h"
-#include "config/feature.h"
-
-#include "fc/mw.h"
+#include "telemetry/telemetry.h"
 
 // mavlink library uses unnames unions that's causes GCC to complain if -Wpedantic is used
 // until this is resolved in mavlink library - ignore -Wpedantic for mavlink code
@@ -301,9 +296,9 @@ void mavlinkSendPosition(timeUs_t currentTimeUs)
         // alt Altitude in 1E3 meters (millimeters) above MSL
         gpsSol.llh.alt * 10,
         // eph GPS HDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
-        65535,
+        gpsSol.eph,
         // epv GPS VDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
-        65535,
+        gpsSol.epv,
         // vel GPS ground speed (m/s * 100). If unknown, set to: 65535
         gpsSol.groundSpeed,
         // cog Course over ground (NOT heading, but direction of movement) in degrees * 100, 0.0..359.99 degrees. If unknown, set to: 65535

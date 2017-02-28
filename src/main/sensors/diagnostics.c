@@ -8,9 +8,9 @@
 #include "common/maths.h"
 #include "common/time.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
+#include "fc/config.h"
 #include "fc/runtime_config.h"
 
 #include "io/gps.h"
@@ -37,7 +37,7 @@ hardwareSensorStatus_e getHwAccelerometerStatus(void)
 {
 #if defined(ACC)
     if (detectedSensors[SENSOR_INDEX_ACC] != ACC_NONE) {
-        if (isAccelerometerHealthy()) {
+        if (accIsHealthy()) {
             return HW_SENSOR_OK;
         }
         else {
@@ -63,7 +63,7 @@ hardwareSensorStatus_e getHwCompassStatus(void)
 {
 #if defined(MAG)
     if (detectedSensors[SENSOR_INDEX_MAG] != MAG_NONE) {
-        if (isCompassHealthy()) {
+        if (compassIsHealthy()) {
             return HW_SENSOR_OK;
         }
         else {
@@ -89,7 +89,7 @@ hardwareSensorStatus_e getHwBarometerStatus(void)
 {
 #if defined(BARO)
     if (detectedSensors[SENSOR_INDEX_BARO] != BARO_NONE) {
-        if (isBarometerHealthy()) {
+        if (baroIsHealthy()) {
             return HW_SENSOR_OK;
         }
         else {
@@ -115,7 +115,7 @@ hardwareSensorStatus_e getHwRangefinderStatus(void)
 {
 #if defined(SONAR)
     if (detectedSensors[SENSOR_INDEX_RANGEFINDER] != RANGEFINDER_NONE) {
-        if (isRangefinderHealthy()) {
+        if (rangefinderIsHealthy()) {
             return HW_SENSOR_OK;
         }
         else {
@@ -141,7 +141,7 @@ hardwareSensorStatus_e getHwPitotmeterStatus(void)
 {
 #if defined(PITOT)
     if (detectedSensors[SENSOR_INDEX_PITOT] != PITOT_NONE) {
-        if (isPitotmeterHealthy()) {
+        if (pitotIsHealthy()) {
             return HW_SENSOR_OK;
         }
         else {
@@ -221,5 +221,5 @@ bool isHardwareHealthy(void)
     if (gpsStatus == HW_SENSOR_UNAVAILABLE || gpsStatus == HW_SENSOR_UNHEALTHY)
         return false;
 
-	return true;
+    return true;
 }

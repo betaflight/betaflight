@@ -18,6 +18,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "common/time.h"
 
@@ -108,6 +109,7 @@ typedef enum FlightLogEvent {
     FLIGHT_LOG_EVENT_SYNC_BEEP = 0,
     FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT = 13,
     FLIGHT_LOG_EVENT_LOGGING_RESUME = 14,
+    FLIGHT_LOG_EVENT_IMU_FAILURE = 40,
     FLIGHT_LOG_EVENT_LOG_END = 255
 } FlightLogEvent;
 

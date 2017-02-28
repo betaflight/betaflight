@@ -20,7 +20,7 @@
 
 #include "platform.h"
 
-#include "system.h"
+#include "time.h"
 #include "io.h"
 
 #include "sound_beeper.h"
@@ -49,7 +49,7 @@ void systemBeepToggle(void)
 #endif
 }
 
-void beeperInit(const beeperConfig_t *config)
+void beeperInit(const beeperDevConfig_t *config)
 {
 #ifndef BEEPER
     UNUSED(config);

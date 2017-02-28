@@ -23,6 +23,9 @@
 
 #include "common/maths.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/barometer.h"
 #include "drivers/barometer_bmp085.h"
 #include "drivers/barometer_bmp280.h"
@@ -43,14 +46,24 @@
 
 baro_t baro;                        // barometer access functions
 
+PG_REGISTER_WITH_RESET_TEMPLATE(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
+
+#ifdef BARO
+#define BARO_HARDWARE_DEFAULT    BARO_AUTODETECT
+#else
+#define BARO_HARDWARE_DEFAULT    BARO_NONE
+#endif
+PG_RESET_TEMPLATE(barometerConfig_t, barometerConfig,
+    .baro_hardware = BARO_HARDWARE_DEFAULT,
+    .use_median_filtering = 1
+);
+
 #ifdef BARO
 
 static uint16_t calibratingB = 0;      // baro calibration = get new ground pressure value
 static int32_t baroPressure = 0;
 static int32_t baroGroundAltitude = 0;
 static int32_t baroGroundPressure = 0;
-
-static barometerConfig_t *barometerConfig;
 
 bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 {
@@ -145,12 +158,15 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
     return true;
 }
 
-void useBarometerConfig(barometerConfig_t *barometerConfigToUse)
+bool baroInit(void)
 {
-    barometerConfig = barometerConfigToUse;
+    if (!baroDetect(&baro.dev, barometerConfig()->baro_hardware)) {
+        return false;
+    }
+    return true;
 }
 
-bool isBaroCalibrationComplete(void)
+bool baroIsCalibrationComplete(void)
 {
     return calibratingB == 0;
 }
@@ -191,7 +207,7 @@ typedef enum {
     BAROMETER_NEEDS_CALCULATION
 } barometerState_e;
 
-bool isBaroReady(void)
+bool baroIsReady(void)
 {
     return baroReady;
 }
@@ -213,7 +229,7 @@ uint32_t baroUpdate(void)
             baro.dev.get_up();
             baro.dev.start_ut();
             baro.dev.calculate(&baroPressure, &baro.baroTemperature);
-            if (barometerConfig->use_median_filtering) {
+            if (barometerConfig()->use_median_filtering) {
                 baroPressure = applyBarometerMedianFilter(baroPressure);
             }
             state = BAROMETER_NEEDS_SAMPLES;
@@ -233,7 +249,7 @@ static void performBaroCalibrationCycle(void)
 
 int32_t baroCalculateAltitude(void)
 {
-    if (!isBaroCalibrationComplete()) {
+    if (!baroIsCalibrationComplete()) {
         performBaroCalibrationCycle();
         baro.BaroAlt = 0;
     }
@@ -253,7 +269,12 @@ int32_t baroCalculateAltitude(void)
     return baro.BaroAlt;
 }
 
-bool isBarometerHealthy(void)
+int32_t baroGetLatestAltitude(void)
+{
+    return baro.BaroAlt;
+}
+
+bool baroIsHealthy(void)
 {
     return true;
 }

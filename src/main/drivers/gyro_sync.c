@@ -24,8 +24,6 @@
 #include "accgyro.h"
 #include "gyro_sync.h"
 
-static uint8_t mpuDividerDrops;
-
 bool gyroSyncCheckUpdate(gyroDev_t *gyro)
 {
     if (!gyro->intStatus)
@@ -33,7 +31,7 @@ bool gyroSyncCheckUpdate(gyroDev_t *gyro)
     return gyro->intStatus(gyro);
 }
 
-uint32_t gyroSetSampleRate(uint32_t looptime, uint8_t lpf, uint8_t gyroSync, uint8_t gyroSyncDenominator)
+uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint32_t looptime, uint8_t lpf, uint8_t gyroSync, uint8_t gyroSyncDenominator)
 {
     if (gyroSync) {
         int gyroSamplePeriod;
@@ -44,15 +42,15 @@ uint32_t gyroSetSampleRate(uint32_t looptime, uint8_t lpf, uint8_t gyroSync, uin
             gyroSamplePeriod = 1000;
         }
 
-        mpuDividerDrops  = gyroSyncDenominator - 1;
+        gyro->mpuDividerDrops  = gyroSyncDenominator - 1;
         looptime = gyroSyncDenominator * gyroSamplePeriod;
     } else {
-        mpuDividerDrops = 0;
+        gyro->mpuDividerDrops = 0;
     }
     return looptime;
 }
 
-uint8_t gyroMPU6xxxCalculateDivider(void)
+uint8_t gyroMPU6xxxGetDividerDrops(const gyroDev_t *gyro)
 {
-    return mpuDividerDrops;
+    return gyro->mpuDividerDrops;
 }

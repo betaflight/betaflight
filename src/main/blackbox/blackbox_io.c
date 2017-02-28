@@ -19,72 +19,68 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include "platform.h"
+
+#ifdef BLACKBOX
+
+#include "blackbox.h"
 #include "blackbox_io.h"
 
-#include "build/version.h"
 #include "build/build_config.h"
+#include "build/version.h"
 
-#include "common/maths.h"
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/encoding.h"
+#include "common/maths.h"
+#include "common/printf.h"
 #include "common/streambuf.h"
 
 #include "drivers/gpio.h"
 #include "drivers/sensor.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/serial.h"
 #include "drivers/compass.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/accgyro.h"
 #include "drivers/light_led.h"
-#include "drivers/sound_beeper.h"
 #include "drivers/gyro_sync.h"
 
-#include "sensors/sensors.h"
-#include "sensors/boardalignment.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/pitotmeter.h"
-#include "sensors/gyro.h"
-#include "sensors/battery.h"
-
-#include "io/beeper.h"
-#include "io/motors.h"
-#include "io/servos.h"
+#include "fc/config.h"
 #include "fc/rc_controls.h"
-
-#include "io/gimbal.h"
-#include "io/gps.h"
-#include "io/ledstrip.h"
-#include "io/serial.h"
-#include "io/serial_cli.h"
-#include "io/statusindicator.h"
-
-#include "msp/msp_serial.h"
-
-#include "rx/msp.h"
-#include "rx/rx.h"
-
-#include "telemetry/telemetry.h"
-#include "common/printf.h"
+#include "fc/runtime_config.h"
 
 #include "flight/mixer.h"
 #include "flight/servos.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
-#include "flight/navigation_rewrite.h"
 
-#include "fc/runtime_config.h"
-#include "config/config.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
-
-#include "io/flashfs.h"
 #include "io/asyncfatfs/asyncfatfs.h"
+#include "io/beeper.h"
+#include "io/flashfs.h"
+#include "io/gimbal.h"
+#include "io/gps.h"
+#include "io/ledstrip.h"
+#include "io/serial.h"
+#include "io/statusindicator.h"
 
-#ifdef BLACKBOX
+#include "msp/msp_serial.h"
+
+#include "navigation/navigation.h"
+
+#include "rx/msp.h"
+#include "rx/rx.h"
+
+#include "sensors/acceleration.h"
+#include "sensors/battery.h"
+#include "sensors/boardalignment.h"
+#include "sensors/barometer.h"
+#include "sensors/gyro.h"
+#include "sensors/pitotmeter.h"
+#include "sensors/sensors.h"
+
+#include "telemetry/telemetry.h"
 
 #define BLACKBOX_SERIAL_PORT_MODE MODE_TX
 

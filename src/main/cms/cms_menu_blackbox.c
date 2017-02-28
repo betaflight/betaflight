@@ -21,35 +21,24 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
-#include <ctype.h>
 
 #include "platform.h"
 
 #ifdef CMS
 
-#include "build/version.h"
-
-#include "common/utils.h"
-
-#include "drivers/system.h"
+#include "blackbox/blackbox.h"
 
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 #include "cms/cms_menu_blackbox.h"
 
-#include "common/axis.h"
-#include "io/gimbal.h"
-#include "flight/pid.h"
-#include "flight/mixer.h"
-#include "flight/servos.h"
-#include "fc/rc_controls.h"
-#include "fc/runtime_config.h"
+#include "common/utils.h"
 
-#include "config/config.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
 #include "config/feature.h"
+
+#include "drivers/time.h"
+
+#include "fc/config.h"
 
 #include "io/flashfs.h"
 
@@ -76,14 +65,15 @@ static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
 
 static bool featureRead = false;
 static uint8_t cmsx_FeatureBlackbox;
+static uint8_t blackboxConfig_rate_denom;
 
-static long cmsx_Blackbox_FeatureRead(void)
+static long cmsx_menuBlackboxOnEnter(void)
 {
     if (!featureRead) {
         cmsx_FeatureBlackbox = feature(FEATURE_BLACKBOX) ? 1 : 0;
         featureRead = true;
     }
-
+    blackboxConfig_rate_denom = blackboxConfig()->rate_denom;
     return 0;
 }
 
@@ -94,6 +84,7 @@ static long cmsx_Blackbox_FeatureWriteback(void)
     else
         featureClear(FEATURE_BLACKBOX);
 
+    blackboxConfigMutable()->rate_denom = blackboxConfig_rate_denom;
     return 0;
 }
 
@@ -101,7 +92,7 @@ static OSD_Entry cmsx_menuBlackboxEntries[] =
 {
     { "-- BLACKBOX --", OME_Label, NULL, NULL, 0},
     { "ENABLED",     OME_Bool,    NULL,            &cmsx_FeatureBlackbox,                                      0 },
-    { "RATE DENOM",  OME_UINT8,   NULL,            &(OSD_UINT8_t){ &blackboxConfig()->rate_denom,1,32,1 }, 0 },
+    { "RATE DENOM",  OME_UINT8,   NULL,            &(OSD_UINT8_t){ &blackboxConfig_rate_denom,1,32,1 }, 0 },
 
 #ifdef USE_FLASHFS
     { "ERASE FLASH", OME_Funcall, cmsx_EraseFlash, NULL,                                                       0 },
@@ -114,7 +105,7 @@ static OSD_Entry cmsx_menuBlackboxEntries[] =
 CMS_Menu cmsx_menuBlackbox = {
     .GUARD_text = "MENUBB",
     .GUARD_type = OME_MENU,
-    .onEnter = cmsx_Blackbox_FeatureRead,
+    .onEnter = cmsx_menuBlackboxOnEnter,
     .onExit = NULL,
     .onGlobalExit = cmsx_Blackbox_FeatureWriteback,
     .entries = cmsx_menuBlackboxEntries

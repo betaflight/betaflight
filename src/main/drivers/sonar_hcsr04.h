@@ -17,13 +17,6 @@
 
 #pragma once
 
-typedef struct sonarHcsr04Hardware_s {
-    ioTag_t triggerTag;
-    ioTag_t echoTag;
-} sonarHcsr04Hardware_t;
+#include "drivers/rangefinder.h"
 
-struct rangefinder_s;
-void hcsr04_set_sonar_hardware(void);
-void hcsr04_init(struct rangefinder_s *rangefinder);
-void hcsr04_start_reading(void);
-int32_t hcsr04_get_distance(void);
+bool hcsr04Detect(rangefinderDev_t *dev, const rangefinderHardwarePins_t * sonarHardwarePins);

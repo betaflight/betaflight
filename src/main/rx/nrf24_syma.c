@@ -29,7 +29,7 @@
 #include "build/build_config.h"
 
 #include "drivers/rx_nrf24l01.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
@@ -118,8 +118,8 @@ STATIC_UNIT_TESTED uint8_t symaRfChannels[SYMA_X5C_RF_BIND_CHANNEL_COUNT]  = {0x
 STATIC_UNIT_TESTED const uint8_t symaRfChannelsX5C[SYMA_X5C_RF_CHANNEL_COUNT] = {0x1d, 0x2f, 0x26, 0x3d, 0x15, 0x2b, 0x25, 0x24, 0x27, 0x2c, 0x1c, 0x3e, 0x39, 0x2d, 0x22};
 
 static uint32_t packetCount = 0;
-static uint32_t timeOfLastHop;
-static uint32_t hopTimeout = 10000; // 10ms
+static timeUs_t timeOfLastHop;
+static timeUs_t hopTimeout = 10000; // 10ms
 
 STATIC_UNIT_TESTED bool symaCheckBindPacket(const uint8_t *packet)
 {

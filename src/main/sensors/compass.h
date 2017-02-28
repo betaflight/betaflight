@@ -19,6 +19,8 @@
 
 #include "common/time.h"
 
+#include "config/parameter_group.h"
+
 #include "drivers/compass.h"
 
 #include "sensors/sensors.h"
@@ -37,6 +39,10 @@ typedef enum {
     MAG_MAX = MAG_FAKE
 } magSensor_e;
 
+#define MAG_HOLD_RATE_LIMIT_MIN 10
+#define MAG_HOLD_RATE_LIMIT_MAX 250
+#define MAG_HOLD_RATE_LIMIT_DEFAULT 90
+
 typedef struct mag_s {
     magDev_t dev;
     float magneticDeclination;
@@ -51,11 +57,14 @@ typedef struct compassConfig_s {
     sensor_align_e mag_align;               // mag alignment
     uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
     flightDynamicsTrims_t magZero;
+    uint8_t mag_hold_rate_limit;            // Maximum rotation rate MAG_HOLD mode can feed to yaw rate PID controller
+    uint8_t magCalibrationTimeLimit;        // Time for compass calibration (seconds)
 } compassConfig_t;
 
+PG_DECLARE(compassConfig_t, compassConfig);
+
 bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse);
-bool compassInit(const compassConfig_t *compassConfig);
-union flightDynamicsTrims_u;
-void compassUpdate(timeUs_t currentTimeUs, union flightDynamicsTrims_u *magZero);
-bool isCompassReady(void);
-bool isCompassHealthy(void);
+bool compassInit(void);
+void compassUpdate(timeUs_t currentTimeUs);
+bool compassIsReady(void);
+bool compassIsHealthy(void);

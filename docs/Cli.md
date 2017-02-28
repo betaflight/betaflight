@@ -115,7 +115,7 @@ Re-apply any new defaults as desired.
 |  max_check  | 1900 | These are min/max values (in us) which, when a channel is smaller (min) or larger (max) than the value will activate various RC commands, such as arming, or stick configuration. Normally, every RC channel should be set so that min = 1000us, max = 2000us. On most transmitters this usually means 125% endpoints. Default check values are 100us above/below this value. |
 |  rssi_channel  | 0 | RX channel containing the RSSI signal |
 |  rssi_scale  | 30 | When using ADC RSSI, the raw ADC value will be divided by rssi_scale in order to get the RSSI percentage. RSSI scale is therefore the ADC raw value for 100% RSSI. |
-|  rssi_ppm_invert  | OFF |  |
+|  rssi_invert  | OFF |  |
 |  rc_smoothing  | ON | Interpolation of Rc data during looptimes when there are no new updates. This gives smoother RC input to PID controller and cleaner PIDsum |
 |  input_filtering_mode  | OFF | Output frequency (in Hz) for motor pins. Default is 400Hz for motor with motor_pwm_protocol set to STANDARD. For *SHOT (e.g. ONESHOT125) values of 1000 and 2000 have been tested by the development team and are supported. It may be possible to use higher values. For BRUSHED values of 8000 and above should be used. Setting to 8000 will use brushed mode at 8kHz switching frequency. Up to 32kHz is supported for brushed. Default is 16000 for boards with brushed motors. Note, that in brushed mode, minthrottle is offset to zero. For brushed mode, set max_throttle to 2000. |
 |  min_throttle  | 1150 | These are min/max values (in us) that are sent to esc when armed. Defaults of 1150/1850 are OK for everyone, for use with AfroESC, they could be set to 1064/1864. |
@@ -137,11 +137,12 @@ Re-apply any new defaults as desired.
 |  gps_dyn_model  | AIR_1G | GPS navigation model: Pedestrian, Air_1g, Air_4g. Default is AIR_1G. Use pedestrian with caution, can cause flyaways with fast flying. |
 |  gps_auto_config  | ON | Enable automatic configuration of UBlox GPS receivers. |
 |  gps_auto_baud  | ON | Automatic configuration of GPS baudrate(The spesified baudrate in configured in ports will be used) when used with UBLOX GPS. When used with NAZA/DJI it will automatic detect GPS baudrate and change to it, ignoring the selected baudrate set in ports |
+|  gps_min_sats  | 6 | Minimum number of GPS satellites in view to acquire GPS_FIX and consider GPS position valid. Some GPS receivers appeared to be very inaccurate with low satellite count. |
 |  inav_auto_mag_decl  | ON | Automatic setting of magnetic declination based on GPS position. When used manual magnetic declination is ignored. |
 |  inav_accz_unarmedcal  | ON | Controls if inertial position estimator should compute gravity offset on accelerometer Z-axis dynamically when drone is unarmed. Mostly affects accuracy of altitude estimation and althold performace. No real reason to disable this feature. |
 |  inav_use_gps_velned  | ON | Defined if iNav should use velocity data provided by GPS module for doing position and speed estimation. If set to OFF iNav will fallback to calculating velocity from GPS coordinates. Using native velocity data may improve performance on some GPS modules. Some GPS modules introduce significant delay and using native velocity may actually result in much worse performance. |
 |  inav_gps_delay  | 200 | GPS position and velocity data usually arrive with a delay. This parameter defines this delay. Default (200) should be reasonable for most GPS receivers. |
-|  inav_gps_min_sats  | 6 | Minimum number of GPS satellites in view to consider GPS position valid. Some GPS receivers appeared to be very inaccurate with low satellite count. |
+|  inav_reset_altitude | FIRST_ARM | Defines when relative estimated altitude is reset to zero. Variants - `NEVER` (once reference is acquired it's used regardless); `FIRST_ARM` (keep altitude at zero until firstly armed), `EACH_ARM` (altitude is reset to zero on each arming) |
 |  inav_w_z_baro_p  | 0.350 | Weight of barometer measurements in estimated altitude and climb rate |
 |  inav_w_z_gps_p  | 0.200 | Weight of GPS altitude measurements in estimated altitude. Setting is used only of airplanes |
 |  inav_w_z_gps_v  | 0.500 | Weight of GPS climb rate measurements in estimated climb rate. Setting is used on both airplanes and multirotors. If GPS doesn't support native climb rate reporting (i.e. NMEA GPS) you may consider setting this to zero |
@@ -158,6 +159,7 @@ Re-apply any new defaults as desired.
 |  nav_user_control_mode  | ATTI | Defines how Pitch/Roll input from RC receiver affects flight in POSHOLD mode: ATTI - right stick controls attitude like in ANGLE mode; CRUISE - right stick controls velocity in forward and right direction. |
 |  nav_position_timeout  | 5 | If GPS fails wait for this much seconds before switching to emergency landing mode (0 - disable) |
 |  nav_wp_radius  | 100 | Waypoint radius [cm]. Waypoint would be considered reached if machine is within this radius |
+|  nav_wp_safe_distance  | 10000 | First waypoint in the mission should be closer than this value (cm) |
 |  nav_max_speed  | 300 | Maximum velocity firmware is allowed in full auto modes (POSHOLD, RTH, WP) [cm/s] [Multirotor only] |
 |  nav_max_climb_rate  | 500 | Maximum climb/descent rate that UAV is allowed to reach during navigation modes. In cm/s |
 |  nav_manual_speed  | 500 | Maximum velocity firmware is allowed when processing pilot input for POSHOLD/CRUISE control mode [cm/s] [Multirotor only] |
@@ -169,6 +171,8 @@ Re-apply any new defaults as desired.
 |  nav_min_rth_distance  | 500 | Minimum distance from homepoint when RTH can be activated [cm] |
 |  nav_rth_climb_first  | ON | If set to ON drone will climb to nav_rth_altitude first and head home afterwards. If set to OFF drone will head home instantly and climb on the way. |
 |  nav_rth_tail_first  | OFF | If set to ON drone will return tail-first. Obviously meaningless for airplanes. |
+|  nav_rth_allow_landing  | ON | If set to ON drone will land as a last phase of RTH. |
+|  nav_rth_climb_ignore_emerg  | ON | If set to ON, aircraft will execute initial climb regardless of position sensor (GPS) status. |
 |  nav_rth_alt_mode  | AT_LEAST | Configure how the aircraft will manage altitude on the way home, se Navigation modes on wiki for more details |
 |  nav_rth_altitude  | 1000 | Used in EXTRA, FIXED and AT_LEAST rth alt modes (Default 1000 means 10 meters) |
 |  nav_mc_bank_angle  | 30 | Maximum banking angle (deg) that multicopter navigation is allowed to set. Machine must be able to satisfy this angle without loosing altitude |
@@ -187,10 +191,13 @@ Re-apply any new defaults as desired.
 |  nav_fw_launch_accel  | 1863 | Forward acceleration threshold for bungee launch of throw launch (cm/s/s, 1G = 981 cm/s/s) |
 |  nav_fw_launch_detect_time  | 40 | Time for which thresholds have to breached to consider launch happened (ms) |
 |  nav_fw_launch_thr  | 1700 | Launch throttle - throttle to be set during launch sequence (pwm units) |
-|  nav_fw_launch_motor_delay  | 500 | Delay between detected launch and launch sequence start and throttling up (ms) |
+|  nav_fw_launch_idle_thr       | 1000  | Launch idle throttle - throttle to be set before launch sequence is initiated. If set below min_throttle it will force motor stop or at idle throttle (depending if the MOTOR_STOP is enabled). If set above min_throttle it will force throttle to this value (if MOTOR_STOP is enabled it will be handled according to throttle stick position)	|
+|  nav_fw_launch_motor_delay    | 500 | Delay between detected launch and launch sequence start and throttling up (ms) |
+|  nav_fw_launch_spinup_time    | 100 | Time to bring power from min_throttle to nav_fw_launch_thr - to avoid big stress on ESC and large torque from propeller |
 |  nav_fw_launch_timeout  | 5000 | Maximum time for launch sequence to be executed. After this time LAUNCH mode will be turned off and regular flight mode will take over (ms) |
-|  nav_fw_launch_climb_angle  | 10 | Climb angle for launch sequence (degrees), is also restrained by global max_angle_inclination_pit |
+|  nav_fw_launch_climb_angle  | 18 | Climb angle for launch sequence (degrees), is also restrained by global max_angle_inclination_pit |
 |  serialrx_provider  | SPEK1024 | When feature SERIALRX is enabled, this allows connection to several receivers which output data via digital interface resembling serial. See RX section. |
+|  sbus_inversion     | OFF | Standard SBUS (Futaba, FrSKY) uses an inverted signal. Some OpenLRS receivers produce a non-inverted SBUS signal. This setting is to support this type of receivers (including modified FrSKY). This only works on supported hardware (mainly F3 based flight controllers). |
 |  spektrum_sat_bind  | 0 | 0 = disabled. Used to bind the spektrum satellite to RX |
 |  telemetry_switch  | OFF | Which aux channel to use to change serial output & baud rate (MSP / Telemetry). It disables automatic switching to Telemetry when armed. |
 |  telemetry_inversion  | ON | Determines if the telemetry signal is inverted (Futaba, FrSKY). Only suitable on F3 uarts and Softserial on all targets |
@@ -202,6 +209,7 @@ Re-apply any new defaults as desired.
 |  frsky_vfas_cell_voltage  | OFF |  |
 |  hott_alarm_sound_interval  | 5 | Battery alarm delay in seconds for Hott telemetry |
 |  smartport_uart_unidir  | OFF | Turn UART into UNIDIR for smartport telemetry for usage on F1 and F4 target. See Telemertry.md for details |
+|  ibus_telemetry_type  | 0 | Type compatibility ibus telemetry for transmitters. See Telemertry.md label IBUS for details. |
 |  battery_capacity  | 0 | Battery capacity in mAH. This value is used in conjunction with the current meter to determine remaining battery capacity. |
 |  vbat_scale  | 110 | Result is Vbatt in 0.1V steps. 3.3V = ADC Vref, 4095 = 12bit adc, 110 = 11:1 voltage divider (10k:1k) x 10 for 0.1V. Adjust this slightly if reported pack voltage is different from multimeter reading. You can get current voltage by typing "status" in cli. |
 |  vbat_max_cell_voltage  | 43 | Maximum voltage per cell, used for auto-detecting battery voltage in 0.1V units, default is 43 (4.3V) |
@@ -228,8 +236,7 @@ Re-apply any new defaults as desired.
 |  yaw_motor_direction  | 1 | Use if you need to inverse yaw motor direction. |
 |  yaw_jump_prevention_limit  | 200 | Prevent yaw jumps during yaw stops and rapid YAW input. To disable set to 500. Adjust this if your aircraft 'skids out'. Higher values increases YAW authority but can cause roll/pitch instability in case of underpowered UAVs. Lower values makes yaw adjustments more gentle but can cause UAV unable to keep heading |
 |  tri_unarmed_servo  | ON | On tricopter mix only, if this is set to ON, servo will always be correcting regardless of armed state. to disable this, set it to OFF. |
-|  servo_lowpass_freq  | 400 | Selects the servo PWM output cutoff frequency. Value is in [Hz] |
-|  servo_lowpass_enable  | OFF |  |
+|  servo_lpf_hz  | 0 | Selects the servo PWM output cutoff frequency. Value is in [Hz] |
 |  servo_center_pulse  | 1500 | Servo midpoint |
 |  servo_pwm_rate  | 50 | Output frequency (in Hz) servo pins. Default is 50Hz. When using tricopters or gimbal with digital servo, this rate can be increased. Max of 498Hz (for 500Hz pwm period), and min of 50Hz. Most digital servos will support for example 330Hz. |
 |  failsafe_delay  | 5 | Time in deciseconds to wait before activating failsafe when signal is lost. See [Failsafe documentation](Failsafe.md#failsafe_delay). |
@@ -239,8 +246,10 @@ Re-apply any new defaults as desired.
 |  failsafe_kill_switch  | OFF | Set to ON to use an AUX channel as a failsafe kill switch. |
 |  failsafe_throttle_low_delay  | 100 | Activate failsafe when throttle is low and no RX data has been received since this value, in 10th of seconds |
 |  failsafe_procedure  | SET-THR | What failsafe procedure to initiate in Stage 2. See [Failsafe documentation](Failsafe.md#failsafe_throttle). |
+|  failsafe_stick_threshold  | 0 | Threshold for stick motion to consider failsafe condition resolved. If non-zero failsafe won't clear even if RC link is restored - you have to move sticks to exit failsafe. |
 |  rx_min_usec  | 885 | Defines the shortest pulse width value used when ensuring the channel value is valid. If the receiver gives a pulse value lower than this value then the channel will be marked as bad and will default to the value of mid_rc. |
 |  rx_max_usec  | 2115 | Defines the longest pulse width value used when ensuring the channel value is valid. If the receiver gives a pulse value higher than this value then the channel will be marked as bad and will default to the value of mid_rc. |
+|  rx_nosignal_throttle  | HOLD | Defines behavior of throttle channel after signal loss is detected and until `failsafe_procedure` kicks in. Possible values - `HOLD` and `DROP`. |
 |  acc_hardware  | AUTO | Selection of acc hardware. See Wiki Sensor auto detect and hardware failure detection for more info |
 |  baro_use_median_filter  | ON | 3-point median filtering for barometer readouts. Default: ON. No reason to change this setting |
 |  baro_hardware  | AUTO | Selection of baro hardware. See Wiki Sensor auto detect and hardware failure detection for more info |
@@ -248,13 +257,39 @@ Re-apply any new defaults as desired.
 |  blackbox_rate_num  | 1 | Blackbox logging rate numerator. Use num/denom settings to decide if a frame should be logged, allowing control of the portion of logged loop iterations |
 |  blackbox_rate_denom  | 1 | Blackbox logging rate denominator. See blackbox_rate_num. |
 |  blackbox_device  | SPIFLASH | Selection of where to write blackbox data |
+|  ledstrip_visual_beeper  | OFF |  |
+|  osd_video_system     | 0     |  |
+|  osd_row_shiftdown    | 0     |  |
+|  osd_units            | 0     |  |
+|  osd_rssi_alarm       | 20    |  |
+|  osd_cap_alarm        | 2200  |  |
+|  osd_time_alarm       | 10    |  |
+|  osd_alt_alarm        | 100   |  |
+|  osd_main_voltage_pos | 0     |  |
+|  osd_rssi_pos         | 0     |  |
+|  osd_flytimer_pos     | 0     |  |
+|  osd_ontime_pos       | 0     |  |
+|  osd_flymode_pos      | 0     |  |
+|  osd_throttle_pos     | 0     |  |
+|  osd_vtx_channel_pos  | 0     |  |
+|  osd_crosshairs       | 0     |  |
+|  osd_artificial_horizon  | 0  |  |
+|  osd_current_draw_pos | 0     |  |
+|  osd_mah_drawn_pos    | 0     |  |
+|  osd_craft_name_pos   | 0     |  |
+|  osd_gps_speed_pos    | 0     |  |
+|  osd_gps_sats_pos     | 0     |  |
+|  osd_altitude_pos     | 0     |  |
+|  osd_pid_roll_pos     | 0     |  |
+|  osd_pid_pitch_pos    | 0     |  |
+|  osd_pid_yaw_pos      | 0     |  |
+|  osd_power_pos        | 0     |  |
 |  magzero_x  | 0 | Magnetometer calibration X offset. If its 0 none offset has been applied and calibration is failed. |
 |  magzero_y  | 0 | Magnetometer calibration Y offset. If its 0 none offset has been applied and calibration is failed. |
 |  magzero_z  | 0 | Magnetometer calibration Z offset. If its 0 none offset has been applied and calibration is failed. |
 |  acczero_x  | 0 | Calculated value after '6 position avanced calibration'. See Wiki page. |
 |  acczero_y  | 0 | Calculated value after '6 position avanced calibration'. See Wiki page. |
 |  acczero_z  | 0 | Calculated value after '6 position avanced calibration'. See Wiki page. |
-|  ledstrip_visual_beeper  | OFF |  |
 |  accgain_x  | 4096 | Calculated value after '6 position avanced calibration'. Uncalibrated value is 4096. See Wiki page. |
 |  accgain_y  | 4096 | Calculated value after '6 position avanced calibration'. Uncalibrated value is 4096. See Wiki page. |
 |  accgain_z  | 4096 | Calculated value after '6 position avanced calibration'. Uncalibrated value is 4096. See Wiki page. |
@@ -284,24 +319,38 @@ Re-apply any new defaults as desired.
 |  default_rate_profile  | 0 | Default = profile number |
 |  mag_declination  | 0 | Current location magnetic declination in format. For example, -6deg 37min = -637 for Japan. Leading zero in ddd not required. Get your local magnetic declination here: http://magnetic-declination.com/ . Not in use if inav_auto_mag_decl  is turned on and you aquirre valid GPS fix. |
 |  mag_hold_rate_limit  | 90 | This setting limits yaw rotation rate that MAG_HOLD controller can request from PID inner loop controller. It is independent from manual yaw rate and used only when MAG_HOLD flight mode is enabled by pilot, RTH or WAYPOINT modes. |
-|  p_pitch  | 40 |  |
-|  i_pitch  | 30 |  |
-|  d_pitch  | 23 |  |
-|  p_roll  | 40 |  |
-|  i_roll  | 30 |  |
-|  d_roll  | 23 |  |
-|  p_yaw  | 85 |  |
-|  i_yaw  | 45 |  |
-|  d_yaw  | 0 |  |
-|  p_level  | 20 |  |
-|  i_level  | 15 |  |
-|  d_level  | 75 |  |
+| `mag_calibration_time` | 30 | Adjust how long time the Calibration of mag will last. |
+| `mc_p_pitch` | 40 | Multicopter rate stabilisation P-gain for PITCH               |
+| `mc_i_pitch` | 30 | Multicopter rate stabilisation I-gain for PITCH               |
+| `mc_d_pitch` | 23 | Multicopter rate stabilisation D-gain for PITCH               |
+| `mc_p_roll`  | 40 | Multicopter rate stabilisation P-gain for ROLL                |
+| `mc_i_roll`  | 30 | Multicopter rate stabilisation I-gain for ROLL                |
+| `mc_d_roll`  | 23 | Multicopter rate stabilisation D-gain for ROLL                |
+| `mc_p_yaw`   | 85 | Multicopter rate stabilisation P-gain for YAW                 |
+| `mc_i_yaw`   | 45 | Multicopter rate stabilisation I-gain for YAW                 |
+| `mc_d_yaw`   | 0  | Multicopter rate stabilisation D-gain for YAW                 |
+| `mc_p_level` | 20 | Multicopter attitude stabilisation P-gain                     |
+| `mc_i_level` | 15 | Multicopter attitude stabilisation low-pass filter cutoff     |
+| `mc_d_level` | 75 | Multicopter attitude stabilisation HORIZON transition point   |
+| `fw_p_pitch` | 20 | Fixed-wing rate stabilisation P-gain for PITCH                |
+| `fw_i_pitch` | 30 | Fixed-wing rate stabilisation I-gain for PITCH                |
+| `fw_ff_pitch`| 10 | Fixed-wing rate stabilisation FF-gain for PITCH               |
+| `fw_p_roll`  | 25 | Fixed-wing rate stabilisation P-gain for ROLL                 |
+| `fw_i_roll`  | 30 | Fixed-wing rate stabilisation I-gain for ROLL                 |
+| `fw_ff_roll` | 10 | Fixed-wing rate stabilisation FF-gain for ROLL                |
+| `fw_p_yaw`   | 50 | Fixed-wing rate stabilisation P-gain for YAW                  |
+| `fw_i_yaw`   | 45 | Fixed-wing rate stabilisation I-gain for YAW                  |
+| `fw_ff_yaw`  | 0  | Fixed-wing rate stabilisation FF-gain for YAW                 |
+| `fw_p_level` | 20 | Fixed-wing attitude stabilisation P-gain                      |
+| `fw_i_level` | 15 | Fixed-wing attitude stabilisation low-pass filter cutoff      |
+| `fw_d_level` | 75 | Fixed-wing attitude stabilisation HORIZON transition point    |
 |  max_angle_inclination_rll  | 300 | Maximum inclination in level (angle) mode (ROLL axis). 100=10° |
 |  max_angle_inclination_pit  | 300 | Maximum inclination in level (angle) mode (PITCH axis). 100=10° |
-|  gyro_soft_lpf_hz  | 60 | Software-based filter to remove mechanical vibrations from the gyro signal. Value is cutoff frequency (Hz). For larger frames with bigger props set to lower value. Default 60Hz |
-|  acc_soft_lpf_hz  | 15 | Software-based filter to remove mechanical vibrations from the accelerometer measurements. Value is cutoff frequency (Hz). For larger frames with bigger props set to lower value. Default 15Hz |
+|  gyro_lpf_hz  | 60 | Software-based filter to remove mechanical vibrations from the gyro signal. Value is cutoff frequency (Hz). For larger frames with bigger props set to lower value. Default 60Hz |
+|  acc_lpf_hz  | 15 | Software-based filter to remove mechanical vibrations from the accelerometer measurements. Value is cutoff frequency (Hz). For larger frames with bigger props set to lower value. Default 15Hz |
 |  dterm_lpf_hz  | 40 |  |
 |  yaw_lpf_hz  | 30 |  |
+|  pidsum_limit  | 500 | A limitation to overall amount of correction Flight PID can request on each axis (Roll/Pitch/Yaw). If when doing a hard maneuver on one axis machine looses orientation on other axis - reducing this parameter may help |
 |  yaw_p_limit  | 300 |  |
 |  iterm_ignore_threshold  | 200 | Used to prevent Iterm accumulation on ROLL/PITCH axis during stick movements. Iterm is allowed to change fully when sticks are centered. Iterm will not change when requested rotation speed is above iterm_ignore_threshold. Iterm acumulation is scaled lineary between 0 and iterm_ignore_threshold |
 |  yaw_iterm_ignore_threshold  | 50 | Used to prevent Iterm accumulation on YAW axis during stick movements. Iterm is allowed to change fully when sticks are centered. Iterm will not change when requested rotation speed is above yaw_iterm_ignore_threshold. Iterm acumulation is scaled lineary between 0 and yaw_iterm_ignore_threshold |

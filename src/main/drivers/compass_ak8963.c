@@ -31,7 +31,7 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
-#include "system.h"
+#include "time.h"
 #include "bus_i2c.h"
 #include "bus_spi.h"
 
@@ -88,7 +88,7 @@ static float magGain[3] = { 1.0f, 1.0f, 1.0f };
 typedef struct queuedReadState_s {
     bool waiting;
     uint8_t len;
-    uint32_t readStartedAt; // time read was queued in micros.
+    timeUs_t readStartedAt; // time read was queued in micros.
 } queuedReadState_t;
 
 typedef enum {
@@ -138,15 +138,15 @@ static bool ak8963SensorStartRead(uint8_t addr_, uint8_t reg_, uint8_t len_)
     return true;
 }
 
-static uint32_t ak8963SensorQueuedReadTimeRemaining(void)
+static timeDelta_t ak8963SensorQueuedReadTimeRemaining(void)
 {
     if (!queuedRead.waiting) {
         return 0;
     }
 
-    int32_t timeSinceStarted = micros() - queuedRead.readStartedAt;
+    timeDelta_t timeSinceStarted = micros() - queuedRead.readStartedAt;
 
-    int32_t timeRemaining = 8000 - timeSinceStarted;
+    timeDelta_t timeRemaining = 8000 - timeSinceStarted;
 
     if (timeRemaining < 0) {
         return 0;
@@ -157,7 +157,7 @@ static uint32_t ak8963SensorQueuedReadTimeRemaining(void)
 
 static bool ak8963SensorCompleteRead(uint8_t *buf)
 {
-    uint32_t timeRemaining = ak8963SensorQueuedReadTimeRemaining();
+    timeDelta_t timeRemaining = ak8963SensorQueuedReadTimeRemaining();
 
     if (timeRemaining > 0) {
         delayMicroseconds(timeRemaining);

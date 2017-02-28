@@ -17,17 +17,14 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
+
 #if defined(USE_QUAD_MIXER_ONLY)
 #define MAX_SUPPORTED_MOTORS 4
-#define MAX_SUPPORTED_SERVOS 1
-
 #elif defined(TARGET_MOTOR_COUNT)
 #define MAX_SUPPORTED_MOTORS TARGET_MOTOR_COUNT
-#define MAX_SUPPORTED_SERVOS 8
-
 #else
 #define MAX_SUPPORTED_MOTORS 12
-#define MAX_SUPPORTED_SERVOS 8
 #endif
 
 #define YAW_JUMP_PREVENTION_LIMIT_LOW 80
@@ -79,11 +76,13 @@ typedef struct motorMixer_s {
     float yaw;
 } motorMixer_t;
 
+PG_DECLARE_ARRAY(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer);
+
 // Custom mixer configuration
 typedef struct mixer_s {
+    const motorMixer_t *motor;
     uint8_t motorCount;
     uint8_t useServo;
-    const motorMixer_t *motor;
     bool enabled;
 } mixer_t;
 
@@ -93,12 +92,26 @@ typedef struct mixerConfig_s {
     uint16_t yaw_jump_prevention_limit;      // make limit configurable (original fixed value was 100)
 } mixerConfig_t;
 
+PG_DECLARE(mixerConfig_t, mixerConfig);
+
 typedef struct flight3DConfig_s {
     uint16_t deadband3d_low;                // min 3d value
     uint16_t deadband3d_high;               // max 3d value
     uint16_t neutral3d;                     // center 3d value
-    uint16_t deadband3d_throttle;           // default throttle deadband from MIDRC
 } flight3DConfig_t;
+
+PG_DECLARE(flight3DConfig_t, flight3DConfig);
+
+typedef struct motorConfig_s {
+    // PWM values, in milliseconds, common range is 1000-2000 (1ms to 2ms)
+    uint16_t minthrottle;                   // Set the minimum throttle command sent to the ESC (Electronic Speed Controller). This is the minimum value that allow motors to run at a idle speed.
+    uint16_t maxthrottle;                   // This is the maximum value for the ESCs at full power this value can be increased up to 2000
+    uint16_t mincommand;                    // This is the value for the ESCs when they are not armed. In some cases, this value must be lowered down to 900 for some specific ESCs
+    uint16_t motorPwmRate;                  // The update rate of motor outputs (50-498Hz)
+    uint8_t  motorPwmProtocol;
+} motorConfig_t;
+
+PG_DECLARE(motorConfig_t, motorConfig);
 
 #define CHANNEL_FORWARDING_DISABLED (uint8_t)0xFF
 
@@ -106,23 +119,13 @@ extern int16_t motor[MAX_SUPPORTED_MOTORS];
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 extern bool motorLimitReached;
 
-struct motorConfig_s;
-struct rxConfig_s;
-
-void mixerUseConfigs(
-        flight3DConfig_t *flight3DConfigToUse,
-        struct motorConfig_s *motorConfigToUse,
-        mixerConfig_t *mixerConfigToUse,
-        struct rxConfig_s *rxConfigToUse);
-
 void writeAllMotors(int16_t mc);
 void mixerLoadMix(int index, motorMixer_t *customMixers);
-void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers);
 void mixerUsePWMIOConfiguration(void);
+void mixerUpdateStateFlags(void);
 void mixerResetDisarmedMotors(void);
 void mixTable(void);
 void writeMotors(void);
-void servoMixer(uint16_t flaperon_throw_offset, uint8_t flaperon_throw_inverted);
 void processServoTilt(void);
 void processServoAutotrim(void);
 void stopMotors(void);

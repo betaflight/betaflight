@@ -32,3 +32,7 @@ void pwmWriteServo(uint8_t index, uint16_t value);
 
 void pwmDisableMotors(void);
 void pwmEnableMotors(void);
+struct timerHardware_s;
+void pwmMotorConfig(const struct timerHardware_s *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse, motorPwmProtocolTypes_e proto, bool enableOutput);
+void pwmServoConfig(const struct timerHardware_s *timerHardware, uint8_t servoIndex, uint16_t servoPwmRate, uint16_t servoCenterPulse, bool enableOutput);
+

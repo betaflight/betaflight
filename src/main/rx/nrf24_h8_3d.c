@@ -32,7 +32,7 @@
 
 #include "drivers/rx_nrf24l01.h"
 #include "drivers/rx_xn297.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
@@ -100,8 +100,8 @@ STATIC_UNIT_TESTED uint8_t h8_3dRfChannels[H8_3D_RF_CHANNEL_COUNT];
 
 #define DATA_HOP_TIMEOUT 5000 // 5ms
 #define BIND_HOP_TIMEOUT 1000 // 1ms, to find the bind channel as quickly as possible
-static uint32_t hopTimeout = BIND_HOP_TIMEOUT;
-static uint32_t timeOfLastHop;
+static timeUs_t hopTimeout = BIND_HOP_TIMEOUT;
+static timeUs_t timeOfLastHop;
 
 STATIC_UNIT_TESTED bool h8_3dCheckBindPacket(const uint8_t *payload)
 {
@@ -244,7 +244,7 @@ rx_spi_received_e h8_3dNrf24DataReceived(uint8_t *payload)
         }
         break;
     }
-    const uint32_t timeNowUs = micros();
+    const timeUs_t timeNowUs = micros();
     if ((ret == RX_SPI_RECEIVED_DATA) || (timeNowUs > timeOfLastHop + hopTimeout)) {
         h8_3dHopToNextChannel();
         timeOfLastHop = timeNowUs;

@@ -27,7 +27,7 @@
 #ifdef  USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #include "common/utils.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/serial.h"
 #include "drivers/buf_writer.h"
 #include "drivers/pwm_mapping.h"
@@ -74,10 +74,10 @@
 
 static int suart_getc(void)
 {
-    uint32_t btime;
-    uint32_t start_time;
+    timeUs_t btime;
+    timeUs_t start_time;
 
-    uint32_t wait_time = micros() + START_BIT_TIMEOUT;
+    timeUs_t wait_time = micros() + START_BIT_TIMEOUT;
     while (ESC_IS_HI) {
         // check for startbit begin
         if (micros() >= wait_time) {
@@ -89,7 +89,7 @@ static int suart_getc(void)
     btime = start_time + START_BIT_TIME;
     uint16_t bitmask = 0;
     for(int bit = 0; bit < 10; bit++) {
-        while (cmp32(micros(), btime) < 0);
+        while (cmpTimeUs(micros(), btime) < 0);
         if (ESC_IS_HI)
             bitmask |= (1 << bit);
         btime = btime + BIT_TIME;
@@ -105,7 +105,7 @@ static void suart_putc(uint8_t byte)
 {
     // send one idle bit first (stopbit from previous byte)
     uint16_t bitmask = (byte << 2) | (1  << 0) | (1 << 10);
-    uint32_t btime = micros();
+    timeUs_t btime = micros();
     while(1) {
         if(bitmask & 1)
             ESC_SET_HI; // 1
@@ -115,7 +115,7 @@ static void suart_putc(uint8_t byte)
         bitmask >>= 1;
         if (bitmask == 0)
             break; // stopbit shifted out - but don't wait
-        while (cmp32(micros(), btime) < 0);
+        while (cmpTimeUs(micros(), btime) < 0);
     }
 }
 

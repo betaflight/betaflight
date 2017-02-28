@@ -36,7 +36,8 @@ typedef enum I2CDevice {
     I2CDEV_1   = 0,
     I2CDEV_2,
     I2CDEV_3,
-    I2CDEV_MAX = I2CDEV_3,
+    I2CDEV_4,
+    I2CDEV_MAX = I2CDEV_4,
 } I2CDevice;
 
 #define I2CDEV_COUNT    (I2CDEV_MAX + 1)
@@ -47,6 +48,11 @@ typedef struct i2cDevice_s {
     ioTag_t sda;
     rccPeriphTag_t rcc;
     bool overClock;
+#if defined(STM32F7)
+    uint8_t ev_irq;
+    uint8_t er_irq;
+    uint8_t af;
+#endif
 } i2cDevice_t;
 
 void i2cSetOverclock(uint8_t overClock);

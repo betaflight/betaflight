@@ -25,14 +25,16 @@
 
 #include "common/utils.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/serial.h"
 
-#include "io/serial.h"
-
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "config/config.h"
+#include "io/serial.h"
 
 #include "rx/rx.h"
 
@@ -44,30 +46,46 @@
 #include "telemetry/mavlink.h"
 #include "telemetry/jetiexbus.h"
 #include "telemetry/ibus.h"
+#include "telemetry/crsf.h"
 
-static telemetryConfig_t *telemetryConfig;
+PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
 
-void telemetryUseConfig(telemetryConfig_t *telemetryConfigToUse)
-{
-    telemetryConfig = telemetryConfigToUse;
-}
+#if defined(STM32F303xC)
+#define TELEMETRY_DEFAULT_INVERSION 1
+#else
+#define TELEMETRY_DEFAULT_INVERSION 0
+#endif
+
+PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
+    .telemetry_inversion = TELEMETRY_DEFAULT_INVERSION,
+    .telemetry_switch = 0,
+    .gpsNoFixLatitude = 0,
+    .gpsNoFixLongitude = 0,
+    .frsky_coordinate_format = FRSKY_FORMAT_DMS,
+    .frsky_unit = FRSKY_UNIT_METRICS,
+    .frsky_vfas_precision = 0,
+    .frsky_vfas_cell_voltage = 0,
+    .hottAlarmSoundInterval = 5,
+    .smartportUartUnidirectional = 0,
+    .ibusTelemetryType = 0
+);
 
 void telemetryInit(void)
 {
 #if defined(TELEMETRY_FRSKY)
-    initFrSkyTelemetry(telemetryConfig);
+    initFrSkyTelemetry();
 #endif
 
 #if defined(TELEMETRY_HOTT)
-    initHoTTTelemetry(telemetryConfig);
+    initHoTTTelemetry();
 #endif
 
 #if defined(TELEMETRY_SMARTPORT)
-    initSmartPortTelemetry(telemetryConfig);
+    initSmartPortTelemetry();
 #endif
 
 #if defined(TELEMETRY_LTM)
-    initLtmTelemetry(telemetryConfig);
+    initLtmTelemetry();
 #endif
 
 #if defined(TELEMETRY_MAVLINK)
@@ -79,7 +97,11 @@ void telemetryInit(void)
 #endif
 
 #if defined(TELEMETRY_IBUS)
-    initIbusTelemetry(telemetryConfig);
+    initIbusTelemetry();
+#endif
+
+#if defined(TELEMETRY_CRSF)
+    initCrsfTelemetry();
 #endif
 
     telemetryCheckState();
@@ -90,7 +112,7 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing)
     bool enabled = portSharing == PORTSHARING_NOT_SHARED;
 
     if (portSharing == PORTSHARING_SHARED) {
-        if (telemetryConfig->telemetry_switch)
+        if (telemetryConfig()->telemetry_switch)
             enabled = IS_RC_MODE_ACTIVE(BOXTELEMETRY);
         else
             enabled = ARMING_FLAG(ARMED);
@@ -136,21 +158,21 @@ void telemetryCheckState(void)
     checkIbusTelemetryState();
 #endif
 
+#if defined(TELEMETRY_CRSF)
+    checkCrsfTelemetryState();
+#endif
 }
 
-void telemetryProcess(timeUs_t currentTimeUs, rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
+void telemetryProcess(timeUs_t currentTimeUs)
 {
-#if defined(TELEMETRY_FRSKY)
-    handleFrSkyTelemetry(rxConfig, deadband3d_throttle);
-#else
-    UNUSED(rxConfig);
-    UNUSED(deadband3d_throttle);
+    UNUSED(currentTimeUs); // since not used by all the telemetry protocols
+
+    #if defined(TELEMETRY_FRSKY)
+    handleFrSkyTelemetry();
 #endif
 
 #if defined(TELEMETRY_HOTT)
     handleHoTTTelemetry(currentTimeUs);
-#else
-    UNUSED(currentTimeUs);
 #endif
 
 #if defined(TELEMETRY_SMARTPORT)
@@ -163,8 +185,6 @@ void telemetryProcess(timeUs_t currentTimeUs, rxConfig_t *rxConfig, uint16_t dea
 
 #if defined(TELEMETRY_MAVLINK)
     handleMAVLinkTelemetry(currentTimeUs);
-#else
-    UNUSED(currentTimeUs);
 #endif
 
 #if defined(TELEMETRY_JETIEXBUS)
@@ -175,6 +195,9 @@ void telemetryProcess(timeUs_t currentTimeUs, rxConfig_t *rxConfig, uint16_t dea
     handleIbusTelemetry();
 #endif
 
+#if defined(TELEMETRY_CRSF)
+    handleCrsfTelemetry(currentTimeUs);
+#endif
 }
 
 #endif

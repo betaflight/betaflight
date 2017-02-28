@@ -60,7 +60,7 @@
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   23 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MINOR                   24 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -105,6 +105,17 @@
 #define MSP_NAME                        10   //out message          Returns user set board name - betaflight
 #define MSP_SET_NAME                    11   //in message           Sets board name - betaflight
 
+#define MSP_NAV_POSHOLD                 12
+#define MSP_SET_NAV_POSHOLD             13
+
+#define MSP_CALIBRATION_DATA            14
+#define MSP_SET_CALIBRATION_DATA        15
+
+#define MSP_POSITION_ESTIMATION_CONFIG  16
+#define MSP_SET_POSITION_ESTIMATION_CONFIG  17
+
+#define MSP_WP_MISSION_LOAD             18      // Load mission from NVRAM
+#define MSP_WP_MISSION_SAVE             19      // Save mission to NVRAM
 
 //
 // MSP commands for Cleanflight original features
@@ -181,8 +192,9 @@
 #define MSP_FAILSAFE_CONFIG             75 //out message         Returns FC Fail-Safe settings
 #define MSP_SET_FAILSAFE_CONFIG         76 //in message          Sets FC Fail-Safe settings
 
-#define MSP_RXFAIL_CONFIG               77 //out message         Returns RXFAIL settings
-#define MSP_SET_RXFAIL_CONFIG           78 //in message          Sets RXFAIL settings
+// DEPRECATED
+//#define MSP_RXFAIL_CONFIG               77 //out message         Returns RXFAIL settings
+//#define MSP_SET_RXFAIL_CONFIG           78 //in message          Sets RXFAIL settings
 
 #define MSP_SDCARD_SUMMARY              79 //out message         Get the state of the SD card
 

@@ -1,9 +1,11 @@
 #include <stdbool.h>
 #include <stdint.h>
+
 #include "drivers/io_pca9685.h"
 
-#include "config/config.h"
+#include "fc/config.h"
 #include "fc/runtime_config.h"
+
 #include "config/feature.h"
 
 #define PWM_DRIVER_IMPLEMENTATION_COUNT 1
@@ -39,8 +41,10 @@ void pwmDriverSetPulse(uint8_t servoIndex, uint16_t length) {
 void pwmDriverInitialize(void) {
     driverEnabled = (pwmDrivers[driverImplementationIndex].initFunction)();
 
-    if (!driverEnabled) {
-        featureClear(FEATURE_PWM_SERVO_DRIVER);
+    if (driverEnabled) {
+        ENABLE_STATE(PWM_DRIVER_AVAILABLE);
+    } else {
+        DISABLE_STATE(PWM_DRIVER_AVAILABLE);
     }
 
 }

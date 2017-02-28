@@ -188,7 +188,8 @@
 
 
 #ifdef USE_RX_NRF24
-#define SKIP_RX_PWM_PPM
+#undef USE_RX_PWM
+#undef USE_RX_PPM
 #undef SERIAL_RX
 #undef SPEKTRUM_BIND
 #endif

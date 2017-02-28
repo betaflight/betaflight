@@ -25,7 +25,7 @@
 #include "build/build_config.h"
 
 
-#include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/bus_i2c.h"
 
 #include "drivers/rangefinder.h"
@@ -114,22 +114,8 @@ static uint8_t i2c_srf10_read_byte(uint8_t i2cRegister)
     return byte;
 }
 
-bool srf10_detect()
+static void srf10_init(void)
 {
-    const uint8_t value = i2c_srf10_read_byte(SRF10_READ_Unused);
-    if (value == SRF10_READ_Unused_ReturnValue) {
-        return true;
-    }
-    return false;
-}
-
-void srf10_init(rangefinder_t *rangefinder)
-{
-    rangefinder->maxRangeCm = SRF10_MAX_RANGE_CM;
-    rangefinder->detectionConeDeciDegrees = SRF10_DETECTION_CONE_DECIDEGREES;
-    rangefinder->detectionConeExtendedDeciDegrees = SRF10_DETECTION_CONE_EXTENDED_DECIDEGREES;
-    // set up the SRF10 hardware for a range of 6m
-    minimumFiringIntervalMs = SRF10_MinimumFiringIntervalFor600cmRangeMs;
     i2c_srf10_send_byte(SRF10_WRITE_MaxGainRegister, SRF10_COMMAND_SetGain_Max);
     i2c_srf10_send_byte(SRF10_WRITE_RangeRegister, SRF10_RangeValue6m);
     // initiate first ranging command
@@ -141,7 +127,7 @@ void srf10_init(rangefinder_t *rangefinder)
  * Start a range reading
  * Called periodically by the scheduler
  */
-void srf10_start_reading(void)
+static void srf10_start_reading(void)
 {
     // check if there is a measurement outstanding, 0xFF is returned if no measurement
     const uint8_t revision = i2c_srf10_read_byte(SRF10_READ_SoftwareRevision);
@@ -154,7 +140,7 @@ void srf10_start_reading(void)
             srf10measurementCm = RANGEFINDER_OUT_OF_RANGE;
         }
     }
-    const uint32_t timeNowMs = millis();
+    const timeMs_t timeNowMs = millis();
     if (timeNowMs > timeOfLastMeasurementMs + minimumFiringIntervalMs) {
         // measurement repeat interval should be greater than minimumFiringIntervalMs
         // to avoid interference between connective measurements.
@@ -166,8 +152,28 @@ void srf10_start_reading(void)
 /**
  * Get the distance that was measured by the last pulse, in centimeters.
  */
-int32_t srf10_get_distance(void)
+static int32_t srf10_get_distance(void)
 {
     return srf10measurementCm;
+}
+
+bool srf10Detect(rangefinderDev_t *dev)
+{
+    const uint8_t value = i2c_srf10_read_byte(SRF10_READ_Unused);
+    if (value == SRF10_READ_Unused_ReturnValue) {
+        dev->delayMs = SRF10_MinimumFiringIntervalFor600cmRangeMs + 10; // set up the SRF10 hardware for a range of 6m + margin of 10ms
+        dev->maxRangeCm = SRF10_MAX_RANGE_CM;
+        dev->detectionConeDeciDegrees = SRF10_DETECTION_CONE_DECIDEGREES;
+        dev->detectionConeExtendedDeciDegrees = SRF10_DETECTION_CONE_EXTENDED_DECIDEGREES;
+
+        dev->init = &srf10_init;
+        dev->update = &srf10_start_reading;
+        dev->read = &srf10_get_distance;
+
+        return true;
+    }
+    else {
+        return false;
+    }
 }
 #endif

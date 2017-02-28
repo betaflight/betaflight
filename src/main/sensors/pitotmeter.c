@@ -25,12 +25,14 @@
 
 #include "common/maths.h"
 
-#include "config/config.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/logging.h"
 #include "drivers/pitotmeter.h"
 #include "drivers/pitotmeter_ms4525.h"
 
+#include "fc/config.h"
 #include "fc/runtime_config.h"
 
 #include "sensors/pitotmeter.h"
@@ -46,7 +48,19 @@ static float pitotPressure = 0;
 static float pitotTemperature = 0;
 static float CalibratedAirspeed = 0;
 
-pitotmeterConfig_t *pitotmeterConfig;
+PG_REGISTER_WITH_RESET_TEMPLATE(pitotmeterConfig_t, pitotmeterConfig, PG_PITOTMETER_CONFIG, 0);
+
+#ifdef PITOT
+#define PITOT_HARDWARE_DEFAULT    PITOT_AUTODETECT
+#else
+#define PITOT_HARDWARE_DEFAULT    PITOT_NONE
+#endif
+PG_RESET_TEMPLATE(pitotmeterConfig_t, pitotmeterConfig,
+    .pitot_hardware = PITOT_HARDWARE_DEFAULT,
+    .use_median_filtering = 1,
+    .pitot_noise_lpf = 0.6f,
+    .pitot_scale = 1.00f
+);
 
 bool pitotDetect(pitotDev_t *dev, uint8_t pitotHardwareToUse)
 {
@@ -96,12 +110,15 @@ bool pitotDetect(pitotDev_t *dev, uint8_t pitotHardwareToUse)
     return true;
 }
 
-void usePitotmeterConfig(pitotmeterConfig_t *pitotmeterConfigToUse)
+bool pitotInit(void)
 {
-    pitotmeterConfig = pitotmeterConfigToUse;
+    if (!pitotDetect(&pitot.dev, pitotmeterConfig()->pitot_hardware)) {
+        return false;
+    }
+    return true;
 }
 
-bool isPitotCalibrationComplete(void)
+bool pitotIsCalibrationComplete(void)
 {
     return calibratingP == 0;
 }
@@ -143,7 +160,7 @@ typedef enum {
 } pitotmeterState_e;
 
 
-bool isPitotReady(void) {
+bool pitotIsReady(void) {
     return pitotReady;
 }
 
@@ -162,7 +179,7 @@ uint32_t pitotUpdate(void)
         case PITOTMETER_NEEDS_CALCULATION:
             pitot.dev.get();
             pitot.dev.calculate(&pitotPressure, &pitotTemperature);
-            if (pitotmeterConfig->use_median_filtering) {
+            if (pitotmeterConfig()->use_median_filtering) {
                 pitotPressure = applyPitotmeterMedianFilter(pitotPressure);
             }
             state = PITOTMETER_NEEDS_SAMPLES;
@@ -185,14 +202,9 @@ static void performPitotCalibrationCycle(void)
 
 int32_t pitotCalculateAirSpeed(void)
 {
-    if (!isPitotCalibrationComplete()) {
-        performPitotCalibrationCycle();
-        pitot.airSpeed = 0;
-    }
-    else {
-        float CalibratedAirspeed_tmp;
-        CalibratedAirspeed_tmp = pitotmeterConfig->pitot_scale * CASFACTOR * sqrtf(powf(fabsf(pitotPressure - pitotPressureZero) / P0 + 1.0f, CCEXPONENT) - 1.0f);
-        CalibratedAirspeed = CalibratedAirspeed * pitotmeterConfig->pitot_noise_lpf + CalibratedAirspeed_tmp * (1.0f - pitotmeterConfig->pitot_noise_lpf); // additional LPF to reduce baro noise
+    if (pitotIsCalibrationComplete()) {
+        const float CalibratedAirspeed_tmp = pitotmeterConfig()->pitot_scale * CASFACTOR * sqrtf(powf(fabsf(pitotPressure - pitotPressureZero) / P0 + 1.0f, CCEXPONENT) - 1.0f);
+        CalibratedAirspeed = CalibratedAirspeed * pitotmeterConfig()->pitot_noise_lpf + CalibratedAirspeed_tmp * (1.0f - pitotmeterConfig()->pitot_noise_lpf); // additional LPF to reduce baro noise
         float TrueAirspeed = CalibratedAirspeed * TASFACTOR * sqrtf(pitotTemperature);
 
         pitot.airSpeed = TrueAirspeed*100;
@@ -200,11 +212,14 @@ int32_t pitotCalculateAirSpeed(void)
         //debug[1] = (int16_t)(TrueAirspeed*100);
         //debug[2] = (int16_t)((pitotTemperature-273.15f)*100);
         //debug[3] = AirSpeed;
+    } else {
+        performPitotCalibrationCycle();
+        pitot.airSpeed = 0;
     }
     return pitot.airSpeed;
 }
 
-bool isPitotmeterHealthy(void)
+bool pitotIsHealthy(void)
 {
     return true;
 }

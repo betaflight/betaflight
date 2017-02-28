@@ -24,13 +24,17 @@
 #include <stdlib.h>
 
 #include <platform.h>
+
 #include "common/utils.h"
+
 #include "drivers/gpio.h"
 #include "drivers/buf_writer.h"
 #include "drivers/pwm_mapping.h"
 #include "drivers/serial.h"
-#include "drivers/system.h"
-#include "config/config.h"
+#include "drivers/time.h"
+
+#include "fc/config.h"
+
 #include "io/serial.h"
 #include "io/serial_4way.h"
 #include "io/serial_4way_impl.h"
@@ -50,10 +54,10 @@ static uint8_t stkInBuf[16];
 #define STK_WAITCYLCES_START (STK_WAIT_TICKS / 2)  // 0.5ms
 #define STK_WAITCYLCES_EXT (STK_WAIT_TICKS * 5000) // 5s
 
-#define  WaitPinLo  while (ESC_IS_HI) { if (cmp32(micros(), timeout_timer) > 0) goto timeout; }
-#define  WaitPinHi  while (ESC_IS_LO) { if (cmp32(micros(), timeout_timer) > 0) goto timeout; }
+#define  WaitPinLo  while (ESC_IS_HI) { if (cmpTimeUs(micros(), timeout_timer) > 0) goto timeout; }
+#define  WaitPinHi  while (ESC_IS_LO) { if (cmpTimeUs(micros(), timeout_timer) > 0) goto timeout; }
 
-static uint32_t lastBitTime;
+static timeUs_t lastBitTime;
 static uint32_t hiLoTsh;
 
 static uint8_t SeqNumber;
@@ -137,7 +141,7 @@ static void StkSendPacketFooter(void)
 
 static int8_t ReadBit(void)
 {
-    uint32_t btimer = micros();
+    timeUs_t btimer = micros();
     uint32_t timeout_timer = btimer + STK_BIT_TIMEOUT;
     WaitPinLo;
     WaitPinHi;

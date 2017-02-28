@@ -21,7 +21,7 @@
 #include "platform.h"
 
 #include "bus_i2c.h"
-#include "system.h"
+#include "time.h"
 
 #include "display_ug2864hsweg01.h"
 

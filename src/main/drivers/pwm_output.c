@@ -29,11 +29,10 @@
 
 #include "io/pwmdriver_i2c.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
+#include "fc/config.h"
 #include "fc/runtime_config.h"
-#include "config/feature.h"
 
 #if defined(STM32F40_41xxx) // must be multiples of timer clock
 #define ONESHOT125_TIMER_MHZ  12
@@ -267,9 +266,13 @@ void pwmWriteServo(uint8_t index, uint16_t value)
 {
 #ifdef USE_PMW_SERVO_DRIVER
 
-    if (feature(FEATURE_PWM_SERVO_DRIVER)) {
+    /*
+     *  If PCA9685 is enabled and but not detected, we do not want to write servo
+     * output anywhere
+     */
+    if (feature(FEATURE_PWM_SERVO_DRIVER) && STATE(PWM_DRIVER_AVAILABLE)) {
         pwmDriverSetPulse(index, value);
-    } else if (servos[index] && index < MAX_SERVOS) {
+    } else if (!feature(FEATURE_PWM_SERVO_DRIVER) && servos[index] && index < MAX_SERVOS) {
         *servos[index]->ccr = value;
     }
 

@@ -33,12 +33,16 @@
 #include "drivers/serial.h"
 #include "drivers/stack_check.h"
 
+#include "fc/cli.h"
+#include "fc/config.h"
+#include "fc/fc_core.h"
 #include "fc/fc_msp.h"
 #include "fc/fc_tasks.h"
-#include "fc/mw.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/imu.h"
+#include "flight/mixer.h"
 #include "flight/pid.h"
 
 #include "io/beeper.h"
@@ -46,11 +50,8 @@
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/osd.h"
-#include "io/motors.h"
-#include "io/servos.h"
 #include "io/pwmdriver_i2c.h"
 #include "io/serial.h"
-#include "io/serial_cli.h"
 
 #include "msp/msp_serial.h"
 
@@ -69,10 +70,7 @@
 
 #include "telemetry/telemetry.h"
 
-#include "config/config.h"
 #include "config/feature.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
 
 #define TASK_PERIOD_HZ(hz) (1000000 / (hz))
 #define TASK_PERIOD_MS(ms) ((ms) * 1000)
@@ -96,11 +94,6 @@ void taskHandleSerial(timeUs_t currentTimeUs)
     mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA, mspFcProcessCommand);
 }
 
-void taskUpdateBeeper(timeUs_t currentTimeUs)
-{
-    beeperUpdate(currentTimeUs);          //call periodic beeper handler
-}
-
 void taskUpdateBattery(timeUs_t currentTimeUs)
 {
     static timeUs_t vbatLastServiced = 0;
@@ -110,7 +103,7 @@ void taskUpdateBattery(timeUs_t currentTimeUs)
         if (cmpTimeUs(currentTimeUs, vbatLastServiced) >= VBATINTERVAL) {
             timeUs_t vbatTimeDelta = currentTimeUs - vbatLastServiced;
             vbatLastServiced = currentTimeUs;
-            updateBattery(vbatTimeDelta);
+            batteryUpdate(vbatTimeDelta);
         }
     }
 
@@ -119,7 +112,7 @@ void taskUpdateBattery(timeUs_t currentTimeUs)
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
             ibatLastServiced = currentTimeUs;
-            updateCurrentMeter(ibatTimeSinceLastServiced, &masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
+            currentMeterUpdate(ibatTimeSinceLastServiced);
         }
     }
 }
@@ -144,7 +137,7 @@ void taskProcessGPS(timeUs_t currentTimeUs)
 void taskUpdateCompass(timeUs_t currentTimeUs)
 {
     if (sensors(SENSOR_MAG)) {
-        compassUpdate(currentTimeUs, &compassConfig()->magZero);
+        compassUpdate(currentTimeUs);
     }
 }
 #endif
@@ -204,7 +197,7 @@ void taskTelemetry(timeUs_t currentTimeUs)
     telemetryCheckState();
 
     if (!cliMode && feature(FEATURE_TELEMETRY)) {
-        telemetryProcess(currentTimeUs, &masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
+        telemetryProcess(currentTimeUs);
     }
 }
 #endif
@@ -274,7 +267,7 @@ void fcTasksInit(void)
     }
 
 #else
-    rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
+    rescheduleTask(TASK_GYROPID, getGyroUpdateRate());
     setTaskEnabled(TASK_GYROPID, true);
 #endif
 
@@ -389,12 +382,14 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_LOW,
     },
 
+#ifdef BEEPER
     [TASK_BEEPER] = {
         .taskName = "BEEPER",
-        .taskFunc = taskUpdateBeeper,
+        .taskFunc = beeperUpdate,
         .desiredPeriod = TASK_PERIOD_HZ(100),     // 100 Hz
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
+#endif
 
     [TASK_BATTERY] = {
         .taskName = "BATTERY",

@@ -24,7 +24,7 @@
 #include "common/utils.h"
 
 #include "drivers/sound_beeper.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
@@ -38,10 +38,10 @@
 #include "io/gps.h"
 #endif
 
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
 #include "io/beeper.h"
@@ -175,8 +175,8 @@ typedef struct beeperTableEntry_s {
     { BEEPER_ENTRY(BEEPER_BAT_LOW,               8, beep_lowBatteryBeep,   "BAT_LOW") },
     { BEEPER_ENTRY(BEEPER_GPS_STATUS,            9, beep_multiBeeps,       "GPS_STATUS") },
     { BEEPER_ENTRY(BEEPER_RX_SET,                10, beep_shortBeep,       "RX_SET") },
-    { BEEPER_ENTRY(BEEPER_ACC_CALIBRATION,       11, beep_2shortBeeps,     "ACC_CALIBRATION") },
-    { BEEPER_ENTRY(BEEPER_ACC_CALIBRATION_FAIL,  12, beep_2longerBeeps,    "ACC_CALIBRATION_FAIL") },
+    { BEEPER_ENTRY(BEEPER_ACTION_SUCCESS,        11, beep_2shortBeeps,     "ACTION_SUCCESS") },
+    { BEEPER_ENTRY(BEEPER_ACTION_FAIL,           12, beep_2longerBeeps,    "ACTION_FAIL") },
     { BEEPER_ENTRY(BEEPER_READY_BEEP,            13, beep_readyBeep,       "READY_BEEP") },
     { BEEPER_ENTRY(BEEPER_MULTI_BEEPS,           14, beep_multiBeeps,      "MULTI_BEEPS") }, // FIXME having this listed makes no sense since the beep array will not be initialised.
     { BEEPER_ENTRY(BEEPER_DISARM_REPEAT,         15, beep_disarmRepeatBeep, "DISARM_REPEAT") },

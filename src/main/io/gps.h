@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
+
 #define GPS_DBHZ_MIN 0
 #define GPS_DBHZ_MAX 55
 
@@ -83,7 +85,10 @@ typedef struct gpsConfig_s {
     gpsAutoConfig_e autoConfig;
     gpsAutoBaud_e autoBaud;
     gpsDynModel_e dynModel;
+    uint8_t gpsMinSats;
 } gpsConfig_t;
+
+PG_DECLARE(gpsConfig_t, gpsConfig);
 
 typedef struct gpsCoordinateDDDMMmmmm_s {
     int16_t dddmm;
@@ -134,9 +139,10 @@ extern gpsStatistics_t   gpsStats;
 
 struct magDev_s;
 bool gpsMagDetect(struct magDev_s *mag);
-void gpsPreInit(gpsConfig_t *initialGpsConfig);
-struct serialConfig_s;
-void gpsInit(struct serialConfig_s *serialConfig, gpsConfig_t *initialGpsConfig);
+void gpsPreInit(void);
+void gpsInit(void);
 void gpsThread(void);
 void updateGpsIndicator(timeUs_t currentTimeUs);
 bool isGPSHealthy(void);
+struct serialPort_s;
+void gpsEnablePassthrough(struct serialPort_s *gpsPassthroughPort);

@@ -26,8 +26,9 @@
 
 #include "drivers/rx_nrf24l01.h"
 
-#include "config/config.h"
 #include "config/feature.h"
+
+#include "fc/config.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"

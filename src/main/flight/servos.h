@@ -17,6 +17,14 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
+
+#if defined(USE_QUAD_MIXER_ONLY)
+#define MAX_SUPPORTED_SERVOS 1
+#else
+#define MAX_SUPPORTED_SERVOS 8
+#endif
+
 // These must be consecutive, see 'reversedSources'
 enum {
     INPUT_STABILIZED_ROLL = 0,
@@ -77,12 +85,6 @@ typedef enum {
 #define FLAPERON_THROW_MIN 100
 #define FLAPERON_THROW_MAX 400
 
-typedef struct servoMixerConfig_s {
-    uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
-    int16_t servo_lowpass_freq;             // lowpass servo filter frequency selection; 1/1000ths of loop freq
-    int8_t servo_lowpass_enable;            // enable/disable lowpass filter
-} servoMixerConfig_t;
-
 typedef struct servoMixer_s {
     uint8_t targetChannel;                  // servo that receives the output of the rule
     uint8_t inputSource;                    // input channel for this rule
@@ -96,15 +98,10 @@ typedef struct servoMixer_s {
 #define MAX_SERVO_SPEED UINT8_MAX
 #define MAX_SERVO_BOXES 3
 
-// Custom mixer configuration
-typedef struct mixerRules_s {
-    uint8_t servoRuleCount;
-    uint8_t minServoIndex;
-    uint8_t maxServoIndex;
-    const servoMixer_t *rule;
-} mixerRules_t;
+PG_DECLARE_ARRAY(servoMixer_t, MAX_SERVO_RULES, customServoMixers);
 
 typedef struct servoParam_s {
+    uint32_t reversedSources;               // the direction of servo movement for each input source of the servo mixer, bit set=inverted
     int16_t min;                            // servo min
     int16_t max;                            // servo max
     int16_t middle;                         // servo middle
@@ -112,18 +109,29 @@ typedef struct servoParam_s {
     uint8_t angleAtMin;                     // range [0;180] the measured angle in degrees from the middle when the servo is at the 'min' value.
     uint8_t angleAtMax;                     // range [0;180] the measured angle in degrees from the middle when the servo is at the 'max' value.
     int8_t forwardFromChannel;              // RX channel index, 0 based.  See CHANNEL_FORWARDING_DISABLED
-    uint32_t reversedSources;               // the direction of servo movement for each input source of the servo mixer, bit set=inverted
-} __attribute__ ((__packed__)) servoParam_t;
+} servoParam_t;
+
+PG_DECLARE_ARRAY(servoParam_t, MAX_SUPPORTED_SERVOS, servoParams);
+
+typedef struct servoConfig_s {
+    // PWM values, in milliseconds, common range is 1000-2000 (1ms to 2ms)
+    uint16_t servoCenterPulse;              // This is the value for servos when they should be in the middle. e.g. 1500.
+    uint16_t servoPwmRate;                  // The update rate of servo outputs (50-498Hz)
+    int16_t servo_lowpass_freq;             // lowpass servo filter frequency selection; 1/1000ths of loop freq
+    uint16_t flaperon_throw_offset;
+    uint8_t flaperon_throw_inverted;
+    uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
+} servoConfig_t;
+
+PG_DECLARE(servoConfig_t, servoConfig);
 
 extern int16_t servo[MAX_SUPPORTED_SERVOS];
 
 bool isServoOutputEnabled(void);
 bool isMixerUsingServos(void);
 void writeServos(void);
-void filterServos(void);
-void servoMixerLoadMix(int index, servoMixer_t *customServoMixers);
+void servoMixerLoadMix(int index);
 void loadCustomServoMixer(void);
 int servoDirection(int servoIndex, int fromChannel);
-struct gimbalConfig_s;
-void servosUseConfigs(servoMixerConfig_t *servoConfigToUse, servoParam_t *servoParamsToUse, struct gimbalConfig_s *gimbalConfigToUse, struct rxConfig_s *rxConfigToUse);
-void servosInit(servoMixer_t *customServoMixers);
+void servoMixer(void);
+void servosInit(void);

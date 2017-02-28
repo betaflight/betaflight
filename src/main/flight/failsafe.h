@@ -17,6 +17,7 @@
 
 #pragma once
 #include "common/time.h"
+#include "config/parameter_group.h"
 
 #define FAILSAFE_POWER_ON_DELAY_US (1000 * 1000 * 5)
 #define MILLIS_PER_TENTH_SECOND         100
@@ -29,18 +30,27 @@
 
 
 typedef struct failsafeConfig_s {
+    uint16_t failsafe_throttle;             // Throttle level used for landing - specify value between 1000..2000 (pwm pulse width for slightly below hover). center throttle = 1500.
+    uint16_t failsafe_throttle_low_delay;   // Time throttle stick must have been below 'min_check' to "JustDisarm" instead of "full failsafe procedure" (TENTH_SECOND)
     uint8_t failsafe_delay;                 // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example (10)
     uint8_t failsafe_recovery_delay;        // Time from RC link recovery to failsafe abort. 1 step = 0.1sec - 1sec in example (10)
     uint8_t failsafe_off_delay;             // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example (200)
-    uint16_t failsafe_throttle;             // Throttle level used for landing - specify value between 1000..2000 (pwm pulse width for slightly below hover). center throttle = 1500.
     uint8_t failsafe_kill_switch;           // failsafe switch action is 0: identical to rc link loss, 1: disarms instantly
-    uint16_t failsafe_throttle_low_delay;   // Time throttle stick must have been below 'min_check' to "JustDisarm" instead of "full failsafe procedure" (TENTH_SECOND)
     uint8_t failsafe_procedure;             // selected full failsafe procedure is 0: auto-landing, 1: Drop it, 2: Return To Home (RTH)
+
+    int16_t failsafe_fw_roll_angle;         // Settings to be applies during "LAND" procedure on a fixed-wing
+    int16_t failsafe_fw_pitch_angle;
+    int16_t failsafe_fw_yaw_rate;
+
+    uint16_t failsafe_stick_motion_threshold;
 } failsafeConfig_t;
+
+PG_DECLARE(failsafeConfig_t, failsafeConfig);
 
 typedef enum {
     FAILSAFE_IDLE = 0,
     FAILSAFE_RX_LOSS_DETECTED,
+    FAILSAFE_RX_LOSS_IDLE,
 #if defined(NAV)
     FAILSAFE_RETURN_TO_HOME,
 #endif
@@ -58,10 +68,10 @@ typedef enum {
 typedef enum {
     FAILSAFE_PROCEDURE_AUTO_LANDING = 0,
     FAILSAFE_PROCEDURE_DROP_IT,
-    FAILSAFE_PROCEDURE_RTH
+    FAILSAFE_PROCEDURE_RTH,
+    FAILSAFE_PROCEDURE_NONE
 } failsafeProcedure_e;
 
-// FIXME ProDrone: The next enum must be deleted from here and defined in RTH.H file, which has to be included in failsafe.c
 typedef enum {
     RTH_IDLE = 0,               // RTH is waiting
     RTH_IN_PROGRESS,            // RTH is active
@@ -82,12 +92,11 @@ typedef struct failsafeState_s {
     timeMs_t receivingRxDataPeriodPreset;   // preset for the required period of valid rxData
     failsafePhase_e phase;
     failsafeRxLinkState_e rxLinkState;
+    int16_t lastGoodRcCommand[4];
 } failsafeState_t;
 
-struct rxConfig_s;
-void failsafeInit(struct rxConfig_s *intialRxConfig, uint16_t deadband3d_throttle);
-void useFailsafeConfig(failsafeConfig_t *failsafeConfigToUse);
-failsafeConfig_t * getActiveFailsafeConfig(void);
+void failsafeInit(void);
+void failsafeReset(void);
 
 void failsafeStartMonitoring(void);
 void failsafeUpdateState(void);
@@ -99,6 +108,9 @@ bool failsafeIsReceivingRxData(void);
 void failsafeOnRxSuspend(uint32_t suspendPeriod);
 void failsafeOnRxResume(void);
 bool failsafeMayRequireNavigationMode(void);
+void failsafeApplyControlInput(void);
+bool failsafeRequiresAngleMode(void);
+void failsafeUpdateRcCommandValues(void);
 
 void failsafeOnValidDataReceived(void);
 void failsafeOnValidDataFailed(void);

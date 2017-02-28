@@ -31,7 +31,7 @@
 #include "common/utils.h"
 
 #include "drivers/rx_nrf24l01.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
@@ -97,9 +97,9 @@ static const uint8_t v2x2_freq_hopping[][V2X2_NFREQCHANNELS] = {
 STATIC_UNIT_TESTED uint8_t rf_channels[V2X2_NFREQCHANNELS];
 STATIC_UNIT_TESTED uint8_t rf_ch_num;
 STATIC_UNIT_TESTED uint8_t bind_phase;
-static uint32_t packet_timer;
+static timeUs_t packet_timer;
 STATIC_UNIT_TESTED uint8_t txid[TXIDSIZE];
-static uint32_t rx_timeout;
+static timeDelta_t rx_timeout;
 extern uint16_t rxSpiRcData[];
 
 static const unsigned char v2x2_channelindex[] = {RC_SPI_THROTTLE,RC_SPI_YAW,RC_SPI_PITCH,RC_SPI_ROLL,
@@ -197,7 +197,7 @@ void v202Nrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *packet)
 static rx_spi_received_e readrx(uint8_t *packet)
 {
     if (!(NRF24L01_ReadReg(NRF24L01_07_STATUS) & BV(NRF24L01_07_STATUS_RX_DR))) {
-        uint32_t t = micros() - packet_timer;
+        timeDelta_t t = micros() - packet_timer;
         if (t > rx_timeout) {
             switch_channel();
             packet_timer = micros();

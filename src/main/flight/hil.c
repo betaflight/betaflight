@@ -21,17 +21,18 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "build/build_config.h"
-
 #include "platform.h"
-#include "build/debug.h"
 
+#ifdef HIL
+
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
 #include "common/filter.h"
 
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
@@ -40,14 +41,13 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/hil.h"
-#include "flight/navigation_rewrite.h"
-#include "flight/navigation_rewrite_private.h"
 
+#include "fc/config.h"
 #include "fc/runtime_config.h"
 
-#include "config/config.h"
+#include "navigation/navigation.h"
+#include "navigation/navigation_private.h"
 
-#ifdef HIL
 
 bool hilActive = false;
 hilIncomingStateData_t hilToFC;

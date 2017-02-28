@@ -32,10 +32,14 @@
 #include "common/axis.h"
 #include "common/utils.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/compass.h"
 #include "drivers/light_led.h"
 #include "drivers/serial.h"
 #include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
@@ -44,11 +48,11 @@
 #include "io/gps.h"
 #include "io/gps_private.h"
 
-#include "flight/navigation_rewrite.h"
+#include "navigation/navigation.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
+#include "fc/config.h"
 #include "fc/runtime_config.h"
 
 // GPS timeout for wrong baud rate/disconnection/etc in milliseconds (default 2000 ms)
@@ -110,6 +114,17 @@ static gpsProviderDescriptor_t  gpsProviders[GPS_PROVIDER_COUNT] = {
 #endif
 };
 
+PG_REGISTER_WITH_RESET_TEMPLATE(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
+
+PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
+    .provider = GPS_UBLOX,
+    .sbasMode = SBAS_NONE,
+    .autoConfig = GPS_AUTOCONFIG_ON,
+    .autoBaud = GPS_AUTOBAUD_ON,
+    .dynModel = GPS_DYNMODEL_AIR_1G,
+    .gpsMinSats = 6
+);
+
 void gpsSetState(gpsState_e state)
 {
     gpsState.state = state;
@@ -128,7 +143,7 @@ static void gpsHandleProtocol(void)
     // Received new update for solution data
     if (newDataReceived) {
         // Set GPS fix flag only if we have 3D fix
-        if (gpsSol.fixType == GPS_FIX_3D) {
+        if (gpsSol.fixType == GPS_FIX_3D && gpsSol.numSat >= gpsConfig()->gpsMinSats) {
             ENABLE_STATE(GPS_FIX);
         }
         else {
@@ -166,16 +181,16 @@ static void gpsResetSolution(void)
     gpsSol.flags.validEPE = 0;
 }
 
-void gpsPreInit(gpsConfig_t *initialGpsConfig)
+void gpsPreInit(void)
 {
     // Make sure gpsProvider is known when gpsMagDetect is called
-    gpsState.gpsConfig = initialGpsConfig;
+    gpsState.gpsConfig = gpsConfig();
 }
 
-void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
+void gpsInit(void)
 {
-    gpsState.serialConfig = initialSerialConfig;
-    gpsState.gpsConfig = initialGpsConfig;
+    gpsState.serialConfig = serialConfig();
+    gpsState.gpsConfig = gpsConfig();
     gpsState.baudrateIndex = 0;
 
     gpsStats.errors = 0;

@@ -17,15 +17,16 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
+#include "fc/runtime_config.h"
+
 #define GYRO_SATURATION_LIMIT   1800        // 1800dps
-#define PID_MAX_OUTPUT          1000
+#define PID_SUM_LIMIT_MIN       100
+#define PID_SUM_LIMIT_MAX       1000
+#define PID_SUM_LIMIT_DEFAULT   500
 #define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
 #define YAW_P_LIMIT_MAX 500                 // Maximum value for yaw P limiter
 #define YAW_P_LIMIT_DEFAULT 300             // Default value for yaw P limiter
-
-#define MAG_HOLD_RATE_LIMIT_MIN 10
-#define MAG_HOLD_RATE_LIMIT_MAX 250
-#define MAG_HOLD_RATE_LIMIT_DEFAULT 90
 
 #define FW_ITERM_THROW_LIMIT_DEFAULT 165
 #define FW_ITERM_THROW_LIMIT_MIN 0
@@ -36,31 +37,42 @@
 #define MAG_HOLD_ERROR_LPF_FREQ 2
 
 typedef enum {
-    PIDROLL,
-    PIDPITCH,
-    PIDYAW,
-    PIDALT,
-    PIDPOS,
-    PIDPOSR,
-    PIDNAVR,
-    PIDLEVEL,
-    PIDMAG,
-    PIDVEL,
+    /* PID              MC      FW  */
+    PID_ROLL,       //   +       +
+    PID_PITCH,      //   +       +
+    PID_YAW,        //   +       +
+    PID_POS_Z,      //   +       +
+    PID_POS_XY,     //   +       +
+    PID_VEL_XY,     //   +       n/a
+    PID_SURFACE,    //   n/a     n/a
+    PID_LEVEL,      //   +       +
+    PID_HEADING,    //   +       +
+    PID_VEL_Z,      //   +       n/a
     PID_ITEM_COUNT
 } pidIndex_e;
 
+typedef struct pid8_s {
+    uint8_t P;
+    uint8_t I;
+    uint8_t D;
+} pid8_t;
+
+typedef struct pidBank_s {
+    pid8_t  pid[PID_ITEM_COUNT];
+} pidBank_t;
+
 typedef struct pidProfile_s {
-    uint8_t P8[PID_ITEM_COUNT];
-    uint8_t I8[PID_ITEM_COUNT];
-    uint8_t D8[PID_ITEM_COUNT];
+    pidBank_t bank_fw;
+    pidBank_t bank_mc;
 
+    uint16_t dterm_soft_notch_hz;           // Dterm Notch frequency
+    uint16_t dterm_soft_notch_cutoff;       // Dterm Notch Cutoff frequency
     uint8_t dterm_lpf_hz;                   // (default 17Hz, Range 1-50Hz) Used for PT1 element in PID1, PID2 and PID5
-    uint8_t yaw_pterm_lpf_hz;               // Used for filering Pterm noise on noisy frames
-    uint8_t gyro_soft_lpf_hz;               // Gyro FIR filtering
-    uint8_t acc_soft_lpf_hz;                // Set the Low Pass Filter factor for ACC. Reducing this value would reduce ACC noise (visible in GUI), but would increase ACC lag time. Zero = no filter
 
-    uint16_t yaw_p_limit;
+    uint8_t yaw_pterm_lpf_hz;               // Used for filering Pterm noise on noisy frames
+    uint8_t acc_soft_lpf_hz;                // Set the Low Pass Filter factor for ACC. Reducing this value would reduce ACC noise (visible in GUI), but would increase ACC lag time. Zero = no filter
     uint8_t yaw_lpf_hz;
+    uint16_t yaw_p_limit;
 
     uint16_t rollPitchItermIgnoreRate;      // Experimental threshold for ignoring iterm for pitch and roll on certain rates
     uint16_t yawItermIgnoreRate;            // Experimental threshold for ignoring iterm for yaw on certain rates
@@ -70,17 +82,26 @@ typedef struct pidProfile_s {
 
     int16_t max_angle_inclination[ANGLE_INDEX_COUNT];       // Max possible inclination (roll and pitch axis separately
 
-    uint8_t mag_hold_rate_limit;            //Maximum rotation rate MAG_HOLD mode can feed to yaw rate PID controller
+    float dterm_setpoint_weight;
 
-#ifdef USE_SERVOS
     uint16_t fixedWingItermThrowLimit;
-#endif
+    uint16_t pidSumLimit;
 } pidProfile_t;
+
+PG_DECLARE_PROFILE(pidProfile_t, pidProfile);
+
+static inline const pidBank_t * pidBank() { return STATE(FIXED_WING) ? &pidProfile()->bank_fw : &pidProfile()->bank_mc; }
+static inline pidBank_t * pidBankMutable() { return STATE(FIXED_WING) ? &pidProfileMutable()->bank_fw : &pidProfileMutable()->bank_mc; }
 
 extern int16_t axisPID[];
 extern int32_t axisPID_P[], axisPID_I[], axisPID_D[], axisPID_Setpoint[];
 
 void pidInit(void);
+
+#ifdef USE_DTERM_NOTCH
+bool pidInitFilters(void);
+#endif
+
 void pidResetErrorAccumulators(void);
 
 struct controlRateConfig_s;
@@ -88,8 +109,8 @@ struct motorConfig_s;
 struct rxConfig_s;
 
 void schedulePidGainsUpdate(void);
-void updatePIDCoefficients(const pidProfile_t *pidProfile, const struct controlRateConfig_s *controlRateConfig, const struct motorConfig_s *motorConfig);
-void pidController(const pidProfile_t *pidProfile, const struct controlRateConfig_s *controlRateConfig, const struct rxConfig_s *rxConfig);
+void updatePIDCoefficients(void);
+void pidController(void);
 
 float pidRateToRcCommand(float rateDPS, uint8_t rate);
 int16_t pidAngleToRcCommand(float angleDeciDegrees, int16_t maxInclination);

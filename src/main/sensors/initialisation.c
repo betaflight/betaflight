@@ -22,11 +22,11 @@
 
 #include "common/utils.h"
 
-#include "config/config.h"
 #include "config/config_eeprom.h"
 
 #include "drivers/logging.h"
 
+#include "fc/config.h"
 #include "fc/runtime_config.h"
 
 #include "sensors/sensors.h"
@@ -42,86 +42,57 @@ uint8_t requestedSensors[SENSOR_INDEX_COUNT] = { GYRO_AUTODETECT, ACC_NONE, BARO
 uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE, PITOT_NONE };
 
 
-bool sensorsAutodetect(const gyroConfig_t *gyroConfig,
-                accelerometerConfig_t *accConfig,
-                compassConfig_t *compassConfig,
-                barometerConfig_t *baroConfig,
-                pitotmeterConfig_t *pitotConfig)
+bool sensorsAutodetect(void)
 {
     bool eepromUpdatePending = false;
 
-    if (!gyroInit(gyroConfig)) {
+    if (!gyroInit()) {
         return false;
     }
 
-#ifdef ASYNC_GYRO_PROCESSING
-     // ACC will be updated at its own rate
-    accInit(accConfig, getAccUpdateRate());
-#else
-    // acc updated at same frequency in taskMainPidLoop in mw.c
-    accInit(accConfig, gyro.targetLooptime);
-#endif
+    accInit(getAccUpdateRate());
 
 #ifdef BARO
-    baroDetect(&baro.dev, baroConfig->baro_hardware);
-#else
-    UNUSED(baroConfig);
+    baroInit();
 #endif
 
 #ifdef PITOT
-    pitotDetect(&pitot.dev, pitotConfig->pitot_hardware);
-#else
-    UNUSED(pitotConfig);
+    pitotInit();
 #endif
 
     // FIXME extract to a method to reduce dependencies, maybe move to sensors_compass.c
     mag.magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
 #ifdef MAG
-    if (compassDetect(&mag.dev, compassConfig->mag_hardware)) {
-        // calculate magnetic declination
-        if (!compassInit(compassConfig)) {
-            addBootlogEvent2(BOOT_EVENT_MAG_INIT_FAILED, BOOT_EVENT_FLAGS_ERROR);
-            sensorsClear(SENSOR_MAG);
-        }
-    }
-#else
-    UNUSED(compassConfig);
+    compassInit();
 #endif
 
 #ifdef SONAR
-    const rangefinderType_e rangefinderType = rangefinderDetect();
-    rangefinderInit(rangefinderType);
+    rangefinderInit();
 #endif
-    if (gyroConfig->gyro_align != ALIGN_DEFAULT) {
-        gyro.dev.gyroAlign = gyroConfig->gyro_align;
-    }
-    if (accConfig->acc_align != ALIGN_DEFAULT) {
-        acc.dev.accAlign = accConfig->acc_align;
-    }
-    if (compassConfig->mag_align != ALIGN_DEFAULT) {
-        mag.dev.magAlign = compassConfig->mag_align;
-    }
 
-    /* Check if sensor autodetection was requested for some sensors and */
-    if (accConfig->acc_hardware == ACC_AUTODETECT) {
-        accConfig->acc_hardware = detectedSensors[SENSOR_INDEX_ACC];
+    if (accelerometerConfig()->acc_hardware == ACC_AUTODETECT) {
+        accelerometerConfigMutable()->acc_hardware = detectedSensors[SENSOR_INDEX_ACC];
         eepromUpdatePending = true;
     }
 
-    if (baroConfig->baro_hardware == BARO_AUTODETECT) {
-        baroConfig->baro_hardware = detectedSensors[SENSOR_INDEX_BARO];
+#ifdef BARO
+    if (barometerConfig()->baro_hardware == BARO_AUTODETECT) {
+        barometerConfigMutable()->baro_hardware = detectedSensors[SENSOR_INDEX_BARO];
+        eepromUpdatePending = true;
+    }
+#endif
+
+    if (compassConfig()->mag_hardware == MAG_AUTODETECT) {
+        compassConfigMutable()->mag_hardware = detectedSensors[SENSOR_INDEX_MAG];
         eepromUpdatePending = true;
     }
 
-    if (compassConfig->mag_hardware == MAG_AUTODETECT) {
-        compassConfig->mag_hardware = detectedSensors[SENSOR_INDEX_MAG];
+#ifdef PITOT
+    if (pitotmeterConfig()->pitot_hardware == PITOT_AUTODETECT) {
+        pitotmeterConfigMutable()->pitot_hardware = detectedSensors[SENSOR_INDEX_PITOT];
         eepromUpdatePending = true;
     }
-
-    if (pitotConfig->pitot_hardware == PITOT_AUTODETECT) {
-        pitotConfig->pitot_hardware = detectedSensors[SENSOR_INDEX_PITOT];
-        eepromUpdatePending = true;
-    }
+#endif
 
     if (eepromUpdatePending) {
         writeEEPROM();

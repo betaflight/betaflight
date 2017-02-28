@@ -23,6 +23,10 @@
 
 #ifdef BLACKBOX
 
+#include "blackbox.h"
+#include "blackbox_io.h"
+
+#include "build/debug.h"
 #include "build/version.h"
 
 #include "common/maths.h"
@@ -31,55 +35,69 @@
 #include "common/encoding.h"
 #include "common/utils.h"
 
-#include "drivers/sensor.h"
-#include "drivers/system.h"
-#include "drivers/serial.h"
-#include "drivers/compass.h"
-#include "drivers/pwm_rx.h"
+#include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/accgyro.h"
+#include "drivers/compass.h"
 #include "drivers/light_led.h"
+#include "drivers/pwm_rx.h"
+#include "drivers/sensor.h"
+#include "drivers/serial.h"
+#include "drivers/time.h"
 
-#include "sensors/sensors.h"
-#include "sensors/boardalignment.h"
-#include "sensors/rangefinder.h"
-#include "sensors/compass.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/pitotmeter.h"
-#include "sensors/gyro.h"
-#include "sensors/battery.h"
-
+#include "fc/config.h"
+#include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/failsafe.h"
+#include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
+#include "flight/servos.h"
+
 #include "io/beeper.h"
-#include "io/motors.h"
-#include "io/servos.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
-#include "io/serial_cli.h"
 #include "io/statusindicator.h"
+
+#include "navigation/navigation.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
 
+#include "sensors/acceleration.h"
+#include "sensors/barometer.h"
+#include "sensors/battery.h"
+#include "sensors/boardalignment.h"
+#include "sensors/compass.h"
+#include "sensors/gyro.h"
+#include "sensors/pitotmeter.h"
+#include "sensors/rangefinder.h"
+#include "sensors/sensors.h"
+
 #include "telemetry/telemetry.h"
 
-#include "flight/mixer.h"
-#include "flight/servos.h"
-#include "flight/failsafe.h"
-#include "flight/imu.h"
-#include "flight/navigation_rewrite.h"
 
-#include "config/config.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
-#include "config/feature.h"
+#ifdef ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+#define DEFAULT_BLACKBOX_DEVICE BLACKBOX_DEVICE_FLASH
+#elif defined(ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT)
+#define DEFAULT_BLACKBOX_DEVICE BLACKBOX_DEVICE_SDCARD
+#else
+#define DEFAULT_BLACKBOX_DEVICE BLACKBOX_DEVICE_SERIAL
+#endif
 
-#include "blackbox.h"
-#include "blackbox_io.h"
+PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
+
+PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
+    .device = DEFAULT_BLACKBOX_DEVICE,
+    .rate_num = 1,
+    .rate_denom = 1,
+);
 
 #ifndef BLACKBOX_PRINT_HEADER_LINE
 #define BLACKBOX_PRINT_HEADER_LINE(x, ...) case __COUNTER__: \
@@ -90,11 +108,8 @@
                                                break;
 #endif
 
-#define BLACKBOX_I_INTERVAL 32
 #define BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS 200
 #define SLOW_FRAME_INTERVAL 4096
-
-#define ARRAY_LENGTH(x) (sizeof((x))/sizeof((x)[0]))
 
 #define STATIC_ASSERT(condition, name ) \
     typedef char assert_failed_ ## name [(condition) ? 1 : -1 ]
@@ -109,8 +124,7 @@
 
 static const char blackboxHeader[] =
     "H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
-    "H Data version:2\n"
-    "H I interval:" STR(BLACKBOX_I_INTERVAL) "\n";
+    "H Data version:2\n";
 
 static const char* const blackboxFieldHeaderNames[] = {
     "name",
@@ -131,7 +145,7 @@ typedef struct blackboxFieldDefinition_s {
     uint8_t arr[1];
 } blackboxFieldDefinition_t;
 
-#define BLACKBOX_DELTA_FIELD_HEADER_COUNT       ARRAY_LENGTH(blackboxFieldHeaderNames)
+#define BLACKBOX_DELTA_FIELD_HEADER_COUNT       ARRAYLEN(blackboxFieldHeaderNames)
 #define BLACKBOX_SIMPLE_FIELD_HEADER_COUNT      (BLACKBOX_DELTA_FIELD_HEADER_COUNT - 2)
 #define BLACKBOX_CONDITIONAL_FIELD_HEADER_COUNT (BLACKBOX_DELTA_FIELD_HEADER_COUNT - 2)
 
@@ -226,6 +240,10 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"attitude",   0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"attitude",   1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"attitude",   2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"debug",    0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"debug",    1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"debug",    2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"debug",    3, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     /* Motors only rarely drops under minthrottle (when stick falls below mincommand), so predict minthrottle for it and use *unsigned* encoding (which is large for negative numbers but more compact for positive ones): */
     {"motor",      0, UNSIGNED, .Ipredict = PREDICT(MINTHROTTLE), .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(AVERAGE_2), .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_1)},
     /* Subsequent motors base their I-frame values on the first one, P-frame values on the average of last two frames: */
@@ -329,6 +347,7 @@ typedef struct blackboxMainState_s {
     int16_t gyroADC[XYZ_AXIS_COUNT];
     int16_t accADC[XYZ_AXIS_COUNT];
     int16_t attitude[XYZ_AXIS_COUNT];
+    int16_t debug[4];
     int16_t motor[MAX_SUPPORTED_MOTORS];
     int16_t servo[MAX_SUPPORTED_SERVOS];
 
@@ -407,6 +426,7 @@ static uint32_t blackboxConditionCache;
 
 STATIC_ASSERT((sizeof(blackboxConditionCache) * 8) >= FLIGHT_LOG_FIELD_CONDITION_NEVER, too_many_flight_log_conditions);
 
+static uint32_t blackboxIFrameInterval;
 static uint32_t blackboxIteration;
 static uint16_t blackboxPFrameIndex, blackboxIFrameIndex;
 static uint16_t blackboxSlowFrameIterationTimer;
@@ -440,7 +460,7 @@ bool blackboxMayEditConfig(void)
 
 static bool blackboxIsOnlyLoggingIntraframes()
 {
-    return blackboxConfig()->rate_num == 1 && blackboxConfig()->rate_denom == 32;
+    return blackboxConfig()->rate_num == 1 && blackboxConfig()->rate_denom == blackboxIFrameInterval;
 }
 
 static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
@@ -465,7 +485,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0:
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1:
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2:
-            return currentProfile->pidProfile.D8[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0] != 0;
+            return pidBank()->pid[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0].D != 0;
 
         case FLIGHT_LOG_FIELD_CONDITION_MAG:
 #ifdef MAG
@@ -496,7 +516,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
 
         case FLIGHT_LOG_FIELD_CONDITION_SONAR:
 #ifdef SONAR
-            return feature(FEATURE_SONAR);
+            return sensors(SENSOR_SONAR);
 #else
             return false;
 #endif
@@ -642,6 +662,7 @@ static void writeIntraframe(void)
     blackboxWriteSigned16VBArray(blackboxCurrent->gyroADC, XYZ_AXIS_COUNT);
     blackboxWriteSigned16VBArray(blackboxCurrent->accADC, XYZ_AXIS_COUNT);
     blackboxWriteSigned16VBArray(blackboxCurrent->attitude, XYZ_AXIS_COUNT);
+    blackboxWriteSigned16VBArray(blackboxCurrent->debug, 4);
 
     //Motors can be below minthrottle when disarmed, but that doesn't happen much
     blackboxWriteUnsignedVB(blackboxCurrent->motor[0] - motorConfig()->minthrottle);
@@ -815,6 +836,7 @@ static void writeInterframe(void)
     blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, gyroADC),   XYZ_AXIS_COUNT);
     blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, accADC), XYZ_AXIS_COUNT);
     blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, attitude), XYZ_AXIS_COUNT);
+    blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, debug), 4);
     blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, motor),     motorCount);
 
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_TRICOPTER)) {
@@ -940,20 +962,18 @@ static int gcd(int num, int denom)
 
 static void validateBlackboxConfig()
 {
-    int div;
-
     if (blackboxConfig()->rate_num == 0 || blackboxConfig()->rate_denom == 0
             || blackboxConfig()->rate_num >= blackboxConfig()->rate_denom) {
-        blackboxConfig()->rate_num = 1;
-        blackboxConfig()->rate_denom = 1;
+        blackboxConfigMutable()->rate_num = 1;
+        blackboxConfigMutable()->rate_denom = 1;
     } else {
         /* Reduce the fraction the user entered as much as possible (makes the recorded/skipped frame pattern repeat
          * itself more frequently)
          */
-        div = gcd(blackboxConfig()->rate_num, blackboxConfig()->rate_denom);
+        const int div = gcd(blackboxConfig()->rate_num, blackboxConfig()->rate_denom);
 
-        blackboxConfig()->rate_num /= div;
-        blackboxConfig()->rate_denom /= div;
+        blackboxConfigMutable()->rate_num /= div;
+        blackboxConfigMutable()->rate_denom /= div;
     }
 
     // If we've chosen an unsupported device, change the device to serial
@@ -969,7 +989,7 @@ static void validateBlackboxConfig()
         break;
 
         default:
-            blackboxConfig()->device = BLACKBOX_DEVICE_SERIAL;
+            blackboxConfigMutable()->device = BLACKBOX_DEVICE_SERIAL;
     }
 }
 
@@ -1003,7 +1023,7 @@ void startBlackbox(void)
          */
         blackboxBuildConditionCache();
 
-        blackboxModeActivationConditionPresent = isModeActivationConditionPresent(currentProfile->modeActivationConditions, BOXBLACKBOX);
+        blackboxModeActivationConditionPresent = isModeActivationConditionPresent(BOXBLACKBOX);
 
         blackboxIteration = 0;
         blackboxPFrameIndex = 0;
@@ -1114,7 +1134,7 @@ static void loadMainState(timeUs_t currentTimeUs)
     }
 
     for (i = 0; i < XYZ_AXIS_COUNT; i++) {
-        blackboxCurrent->gyroADC[i] = gyro.gyroADC[i];
+        blackboxCurrent->gyroADC[i] = lrintf(gyro.gyroADCf[i]);
     }
 
     for (i = 0; i < XYZ_AXIS_COUNT; i++) {
@@ -1124,6 +1144,10 @@ static void loadMainState(timeUs_t currentTimeUs)
     blackboxCurrent->attitude[0] = attitude.values.roll;
     blackboxCurrent->attitude[1] = attitude.values.pitch;
     blackboxCurrent->attitude[2] = attitude.values.yaw;
+
+    for (i = 0; i < 4; i++) {
+        blackboxCurrent->debug[i] = debug[i];
+    }
 
     for (i = 0; i < motorCount; i++) {
         blackboxCurrent->motor[i] = motor[i];
@@ -1313,7 +1337,7 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("rcRate:%d",                             100); //For compatibility reasons write rc_rate 100
         BLACKBOX_PRINT_HEADER_LINE("minthrottle:%d",                        motorConfig()->minthrottle);
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle:%d",                        motorConfig()->maxthrottle);
-        BLACKBOX_PRINT_HEADER_LINE("gyro.scale:0x%x",                       castFloatBytesToInt(gyro.dev.scale));
+        BLACKBOX_PRINT_HEADER_LINE("gyro_scale:0x%x",                       castFloatBytesToInt(1.0f));
         BLACKBOX_PRINT_HEADER_LINE("acc_1G:%u",                             acc.dev.acc_1G);
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
@@ -1336,56 +1360,54 @@ static bool blackboxWriteSysinfo()
             }
             );
 
-        BLACKBOX_PRINT_HEADER_LINE("looptime:%d",                           gyro.targetLooptime);
-        BLACKBOX_PRINT_HEADER_LINE("rcExpo:%d",                             masterConfig.controlRateProfiles[masterConfig.current_profile_index].rcExpo8);
-        BLACKBOX_PRINT_HEADER_LINE("rcYawExpo:%d",                          masterConfig.controlRateProfiles[masterConfig.current_profile_index].rcYawExpo8);
-        BLACKBOX_PRINT_HEADER_LINE("thrMid:%d",                             masterConfig.controlRateProfiles[masterConfig.current_profile_index].thrMid8);
-        BLACKBOX_PRINT_HEADER_LINE("thrExpo:%d",                            masterConfig.controlRateProfiles[masterConfig.current_profile_index].thrExpo8);
-        BLACKBOX_PRINT_HEADER_LINE("dynThrPID:%d",                          masterConfig.controlRateProfiles[masterConfig.current_profile_index].dynThrPID);
-        BLACKBOX_PRINT_HEADER_LINE("tpa_breakpoint:%d",                     masterConfig.controlRateProfiles[masterConfig.current_profile_index].tpa_breakpoint);
-        BLACKBOX_PRINT_HEADER_LINE("rates:%d,%d,%d",                        masterConfig.controlRateProfiles[masterConfig.current_profile_index].rates[ROLL],
-                                                                            masterConfig.controlRateProfiles[masterConfig.current_profile_index].rates[PITCH],
-                                                                            masterConfig.controlRateProfiles[masterConfig.current_profile_index].rates[YAW]);
-        BLACKBOX_PRINT_HEADER_LINE("rollPID:%d,%d,%d",                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[ROLL],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[ROLL],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[ROLL]);
-        BLACKBOX_PRINT_HEADER_LINE("pitchPID:%d,%d,%d",                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PITCH],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PITCH],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PITCH]);
-        BLACKBOX_PRINT_HEADER_LINE("yawPID:%d,%d,%d",                       masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[YAW],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[YAW],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[YAW]);
-        BLACKBOX_PRINT_HEADER_LINE("altPID:%d,%d,%d",                       masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDALT],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDALT],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDALT]);
-        BLACKBOX_PRINT_HEADER_LINE("posPID:%d,%d,%d",                       masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDPOS],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDPOS],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDPOS]);
-        BLACKBOX_PRINT_HEADER_LINE("posrPID:%d,%d,%d",                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDPOSR],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDPOSR],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDPOSR]);
-        BLACKBOX_PRINT_HEADER_LINE("navrPID:%d,%d,%d",                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDNAVR],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDNAVR],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDNAVR]);
-        BLACKBOX_PRINT_HEADER_LINE("levelPID:%d,%d,%d",                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDLEVEL],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDLEVEL],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDLEVEL]);
-        BLACKBOX_PRINT_HEADER_LINE("magPID:%d",                             masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDMAG]);
-        BLACKBOX_PRINT_HEADER_LINE("velPID:%d,%d,%d",                       masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDVEL],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDVEL],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDVEL]);
-        BLACKBOX_PRINT_HEADER_LINE("yaw_p_limit:%d",                        masterConfig.profile[masterConfig.current_profile_index].pidProfile.yaw_p_limit);
-        BLACKBOX_PRINT_HEADER_LINE("yaw_lpf_hz:%d",                         (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.yaw_lpf_hz * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("dterm_lpf_hz:%d",                       (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_lpf_hz * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("deadband:%d",                           masterConfig.profile[masterConfig.current_profile_index].rcControlsConfig.deadband);
-        BLACKBOX_PRINT_HEADER_LINE("yaw_deadband:%d",                       masterConfig.profile[masterConfig.current_profile_index].rcControlsConfig.yaw_deadband);
+        BLACKBOX_PRINT_HEADER_LINE("looptime:%d",                           getPidUpdateRate());
+        BLACKBOX_PRINT_HEADER_LINE("rcExpo:%d",                             currentControlRateProfile->rcExpo8);
+        BLACKBOX_PRINT_HEADER_LINE("rcYawExpo:%d",                          currentControlRateProfile->rcYawExpo8);
+        BLACKBOX_PRINT_HEADER_LINE("thrMid:%d",                             currentControlRateProfile->thrMid8);
+        BLACKBOX_PRINT_HEADER_LINE("thrExpo:%d",                            currentControlRateProfile->thrExpo8);
+        BLACKBOX_PRINT_HEADER_LINE("dynThrPID:%d",                          currentControlRateProfile->dynThrPID);
+        BLACKBOX_PRINT_HEADER_LINE("tpa_breakpoint:%d",                     currentControlRateProfile->tpa_breakpoint);
+        BLACKBOX_PRINT_HEADER_LINE("rates:%d,%d,%d",                        currentControlRateProfile->rates[ROLL],
+                                                                            currentControlRateProfile->rates[PITCH],
+                                                                            currentControlRateProfile->rates[YAW]);
+        BLACKBOX_PRINT_HEADER_LINE("rollPID:%d,%d,%d",                      pidBank()->pid[PID_ROLL].P,
+                                                                            pidBank()->pid[PID_ROLL].I,
+                                                                            pidBank()->pid[PID_ROLL].D);
+        BLACKBOX_PRINT_HEADER_LINE("pitchPID:%d,%d,%d",                     pidBank()->pid[PID_PITCH].P,
+                                                                            pidBank()->pid[PID_PITCH].I,
+                                                                            pidBank()->pid[PID_PITCH].D);
+        BLACKBOX_PRINT_HEADER_LINE("yawPID:%d,%d,%d",                       pidBank()->pid[PID_YAW].P,
+                                                                            pidBank()->pid[PID_YAW].I,
+                                                                            pidBank()->pid[PID_YAW].D);
+        BLACKBOX_PRINT_HEADER_LINE("altPID:%d,%d,%d",                       pidBank()->pid[PID_POS_Z].P,
+                                                                            pidBank()->pid[PID_POS_Z].I,
+                                                                            pidBank()->pid[PID_POS_Z].D);
+        BLACKBOX_PRINT_HEADER_LINE("posPID:%d,%d,%d",                       pidBank()->pid[PID_POS_XY].P,
+                                                                            pidBank()->pid[PID_POS_XY].I,
+                                                                            pidBank()->pid[PID_POS_XY].D);
+        BLACKBOX_PRINT_HEADER_LINE("posrPID:%d,%d,%d",                      pidBank()->pid[PID_VEL_XY].P,
+                                                                            pidBank()->pid[PID_VEL_XY].I,
+                                                                            pidBank()->pid[PID_VEL_XY].D);
+        BLACKBOX_PRINT_HEADER_LINE("levelPID:%d,%d,%d",                     pidBank()->pid[PID_LEVEL].P,
+                                                                            pidBank()->pid[PID_LEVEL].I,
+                                                                            pidBank()->pid[PID_LEVEL].D);
+        BLACKBOX_PRINT_HEADER_LINE("magPID:%d",                             pidBank()->pid[PID_HEADING].P);
+        BLACKBOX_PRINT_HEADER_LINE("velPID:%d,%d,%d",                       pidBank()->pid[PID_VEL_Z].P,
+                                                                            pidBank()->pid[PID_VEL_Z].I,
+                                                                            pidBank()->pid[PID_VEL_Z].D);
+        BLACKBOX_PRINT_HEADER_LINE("yaw_p_limit:%d",                        pidProfile()->yaw_p_limit);
+        BLACKBOX_PRINT_HEADER_LINE("yaw_lpf_hz:%d",                         (int)(pidProfile()->yaw_lpf_hz * 100.0f));
+        BLACKBOX_PRINT_HEADER_LINE("dterm_lpf_hz:%d",                       (int)(pidProfile()->dterm_lpf_hz * 100.0f));
+        BLACKBOX_PRINT_HEADER_LINE("deadband:%d",                           rcControlsConfig()->deadband);
+        BLACKBOX_PRINT_HEADER_LINE("yaw_deadband:%d",                       rcControlsConfig()->yaw_deadband);
         BLACKBOX_PRINT_HEADER_LINE("gyro_lpf:%d",                           gyroConfig()->gyro_lpf);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_hz:%d",                    (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.gyro_soft_lpf_hz * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz:%d",                         (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.acc_soft_lpf_hz * 100.0f));
+        BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_hz:%d",                    gyroConfig()->gyro_soft_lpf_hz);
+        BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz:%d",                         (int)(pidProfile()->acc_soft_lpf_hz * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("acc_hardware:%d",                       accelerometerConfig()->acc_hardware);
         BLACKBOX_PRINT_HEADER_LINE("baro_hardware:%d",                      barometerConfig()->baro_hardware);
         BLACKBOX_PRINT_HEADER_LINE("mag_hardware:%d",                       compassConfig()->mag_hardware);
-        BLACKBOX_PRINT_HEADER_LINE("features:%d",                           masterConfig.enabledFeatures);
+        BLACKBOX_PRINT_HEADER_LINE("debug_mode:%d",                         systemConfig()->debug_mode);
+        BLACKBOX_PRINT_HEADER_LINE("features:%d",                           featureConfig()->enabledFeatures);
 
         default:
             return true;
@@ -1426,6 +1448,9 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
         case FLIGHT_LOG_EVENT_LOGGING_RESUME:
             blackboxWriteUnsignedVB(data->loggingResume.logIteration);
             blackboxWriteUnsignedVB(data->loggingResume.currentTimeUs);
+        break;
+        case FLIGHT_LOG_EVENT_IMU_FAILURE:
+            blackboxWrite(0);
         break;
         case FLIGHT_LOG_EVENT_LOG_END:
             blackboxPrint("End of log");
@@ -1472,7 +1497,7 @@ static void blackboxAdvanceIterationTimers()
     blackboxIteration++;
     blackboxPFrameIndex++;
 
-    if (blackboxPFrameIndex == BLACKBOX_I_INTERVAL) {
+    if (blackboxPFrameIndex == blackboxIFrameInterval) {
         blackboxPFrameIndex = 0;
         blackboxIFrameIndex++;
     }
@@ -1514,7 +1539,7 @@ static void blackboxLogIteration(timeUs_t currentTimeUs)
              * still be interpreted correctly.
              */
             if (GPS_home.lat != gpsHistory.GPS_home[0] || GPS_home.lon != gpsHistory.GPS_home[1]
-                || (blackboxPFrameIndex == BLACKBOX_I_INTERVAL / 2 && blackboxIFrameIndex % 128 == 0)) {
+                || (blackboxPFrameIndex == (blackboxIFrameInterval / 2) && blackboxIFrameIndex % 128 == 0)) {
 
                 writeGPSHomeFrame(currentTimeUs);
                 writeGPSFrame(currentTimeUs);
@@ -1563,6 +1588,7 @@ void handleBlackbox(timeUs_t currentTimeUs)
                     }
 
                     if (blackboxHeader[xmitState.headerIndex] == '\0') {
+                        blackboxPrintfHeaderLine("I interval:%d", blackboxIFrameInterval);
                         blackboxSetState(BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER);
                     }
                 }
@@ -1570,7 +1596,7 @@ void handleBlackbox(timeUs_t currentTimeUs)
         break;
         case BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER:
             //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-            if (!sendFieldDefinition('I', 'P', blackboxMainFields, blackboxMainFields + 1, ARRAY_LENGTH(blackboxMainFields),
+            if (!sendFieldDefinition('I', 'P', blackboxMainFields, blackboxMainFields + 1, ARRAYLEN(blackboxMainFields),
                     &blackboxMainFields[0].condition, &blackboxMainFields[1].condition)) {
 #ifdef GPS
                 if (feature(FEATURE_GPS)) {
@@ -1583,14 +1609,14 @@ void handleBlackbox(timeUs_t currentTimeUs)
 #ifdef GPS
         case BLACKBOX_STATE_SEND_GPS_H_HEADER:
             //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-            if (!sendFieldDefinition('H', 0, blackboxGpsHFields, blackboxGpsHFields + 1, ARRAY_LENGTH(blackboxGpsHFields),
+            if (!sendFieldDefinition('H', 0, blackboxGpsHFields, blackboxGpsHFields + 1, ARRAYLEN(blackboxGpsHFields),
                     NULL, NULL)) {
                 blackboxSetState(BLACKBOX_STATE_SEND_GPS_G_HEADER);
             }
         break;
         case BLACKBOX_STATE_SEND_GPS_G_HEADER:
             //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-            if (!sendFieldDefinition('G', 0, blackboxGpsGFields, blackboxGpsGFields + 1, ARRAY_LENGTH(blackboxGpsGFields),
+            if (!sendFieldDefinition('G', 0, blackboxGpsGFields, blackboxGpsGFields + 1, ARRAYLEN(blackboxGpsGFields),
                     &blackboxGpsGFields[0].condition, &blackboxGpsGFields[1].condition)) {
                 blackboxSetState(BLACKBOX_STATE_SEND_SLOW_HEADER);
             }
@@ -1598,7 +1624,7 @@ void handleBlackbox(timeUs_t currentTimeUs)
 #endif
         case BLACKBOX_STATE_SEND_SLOW_HEADER:
             //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-            if (!sendFieldDefinition('S', 0, blackboxSlowFields, blackboxSlowFields + 1, ARRAY_LENGTH(blackboxSlowFields),
+            if (!sendFieldDefinition('S', 0, blackboxSlowFields, blackboxSlowFields + 1, ARRAYLEN(blackboxSlowFields),
                     NULL, NULL)) {
                 blackboxSetState(BLACKBOX_STATE_SEND_SYSINFO);
             }
@@ -1685,6 +1711,20 @@ void initBlackbox(void)
         blackboxSetState(BLACKBOX_STATE_STOPPED);
     } else {
         blackboxSetState(BLACKBOX_STATE_DISABLED);
+    }
+
+    /* Decide on how ofter are we going to log I-frames*/
+    if (blackboxConfig()->rate_denom <= 32) {
+        blackboxIFrameInterval = 32;
+    }
+    else if (blackboxConfig()->rate_denom <= 64) {
+        blackboxIFrameInterval = 64;
+    }
+    else if (blackboxConfig()->rate_denom <= 128) {
+        blackboxIFrameInterval = 128;
+    }
+    else {
+        blackboxIFrameInterval = 256;
     }
 }
 

@@ -30,7 +30,7 @@
 #include "common/utils.h"
 
 #include "drivers/rx_nrf24l01.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
@@ -147,8 +147,8 @@ STATIC_UNIT_TESTED uint8_t inavRfChannelIndex;
 STATIC_UNIT_TESTED uint8_t inavRfChannels[INAV_RF_CHANNEL_COUNT_MAX];
 #define INAV_RF_BIND_CHANNEL 0x4c
 
-static uint32_t timeOfLastHop;
-static const uint32_t hopTimeout = 5000; // 5ms
+static timeUs_t timeOfLastHop;
+static const timeUs_t hopTimeout = 5000; // 5ms
 
 static void whitenPayload(uint8_t *payload, uint8_t len)
 {
@@ -364,7 +364,7 @@ static void writeBindAckPayload(uint8_t *payload)
 rx_spi_received_e inavNrf24DataReceived(uint8_t *payload)
 {
     rx_spi_received_e ret = RX_SPI_RECEIVED_NONE;
-    uint32_t timeNowUs;
+    timeUs_t timeNowUs;
     switch (protocolState) {
     case STATE_BIND:
         if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize)) {

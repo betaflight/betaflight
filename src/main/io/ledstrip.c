@@ -27,22 +27,40 @@
 
 #include "build/build_config.h"
 
+#include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
+#include "common/printf.h"
 #include "common/typeconversion.h"
 #include "common/utils.h"
 
+#include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/light_ws2811strip.h"
 #include "drivers/serial.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
-#include "common/axis.h"
-#include "common/printf.h"
-#include "common/utils.h"
-
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/failsafe.h"
+#include "flight/mixer.h"
+#include "flight/servos.h"
+#include "flight/pid.h"
+#include "flight/imu.h"
+
+#include "io/ledstrip.h"
+#include "io/beeper.h"
+#include "io/gimbal.h"
+#include "io/serial.h"
+#include "io/gps.h"
+
+#include "navigation/navigation.h"
+
+#include "rx/rx.h"
 #include "sensors/acceleration.h"
 #include "sensors/diagnostics.h"
 #include "sensors/barometer.h"
@@ -52,37 +70,12 @@
 #include "sensors/sensors.h"
 #include "sensors/pitotmeter.h"
 
-#include "io/ledstrip.h"
-#include "io/beeper.h"
-#include "io/motors.h"
-#include "io/servos.h"
-#include "io/gimbal.h"
-#include "io/serial.h"
-#include "io/gps.h"
-
-#include "rx/rx.h"
-
 #include "telemetry/telemetry.h"
 
-#include "flight/failsafe.h"
-#include "flight/mixer.h"
-#include "flight/servos.h"
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/navigation_rewrite.h"
 
-#include "config/config.h"
-#include "config/config_master.h"
-#include "config/config_profile.h"
-#include "config/feature.h"
+extern uint16_t rssi; // FIXME dependency on mw.c
 
-/*
-PG_REGISTER_ARR_WITH_RESET_FN(ledConfig_t, LED_MAX_STRIP_LENGTH, ledConfigs, PG_LED_STRIP_CONFIG, 0);
-PG_REGISTER_ARR_WITH_RESET_FN(hsvColor_t, LED_CONFIGURABLE_COLOR_COUNT, colors, PG_COLOR_CONFIG, 0);
-PG_REGISTER_ARR_WITH_RESET_FN(modeColorIndexes_t, LED_MODE_COUNT, modeColors, PG_MODE_COLOR_CONFIG, 0);
-PG_REGISTER_WITH_RESET_FN(specialColorIndexes_t, specialColors, PG_SPECIAL_COLOR_CONFIG, 0);
-*/
-
+PG_REGISTER_WITH_RESET_FN(ledStripConfig_t, ledStripConfig, PG_LED_STRIP_CONFIG, 0);
 
 static bool ledStripInitialised = false;
 static bool ledStripEnabled = true;
@@ -167,6 +160,19 @@ static const specialColorIndexes_t defaultSpecialColors[] = {
     }}
 };
 
+void pgResetFn_ledStripConfig(ledStripConfig_t *instance)
+{
+    memset(instance->ledConfigs, 0, LED_MAX_STRIP_LENGTH * sizeof(ledConfig_t));
+    // copy hsv colors as default
+    memset(instance->colors, 0, ARRAYLEN(hsv) * sizeof(hsvColor_t));
+    BUILD_BUG_ON(LED_CONFIGURABLE_COLOR_COUNT < ARRAYLEN(hsv));
+    for (unsigned colorIndex = 0; colorIndex < ARRAYLEN(hsv); colorIndex++) {
+        instance->colors[colorIndex] = hsv[colorIndex];
+    }
+    memcpy_fn(&instance->modeColors, &defaultModeColors, sizeof(defaultModeColors));
+    memcpy_fn(&instance->specialColors, &defaultSpecialColors, sizeof(defaultSpecialColors));
+}
+
 static int scaledThrottle;
 
 static void updateLedRingCounts(void);
@@ -227,7 +233,7 @@ void reevaluateLedConfig(void)
 }
 
 // get specialColor by index
-static hsvColor_t* getSC(ledSpecialColorIds_e index)
+static const hsvColor_t* getSC(ledSpecialColorIds_e index)
 {
     return &ledStripConfig()->colors[ledStripConfig()->specialColors.color[index]];
 }
@@ -253,7 +259,7 @@ bool parseLedStripConfig(int ledIndex, const char *config)
     };
     static const char chunkSeparators[PARSE_STATE_COUNT] = {',', ':', ':',':', '\0'};
 
-    ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[ledIndex];
+    ledConfig_t *ledConfig = &ledStripConfigMutable()->ledConfigs[ledIndex];
     memset(ledConfig, 0, sizeof(ledConfig_t));
 
     int x = 0, y = 0, color = 0;   // initialize to prevent warnings
@@ -412,7 +418,7 @@ static const struct {
     {LED_DIRECTION_UP,    QUADRANT_ANY},
 };
 
-static hsvColor_t* getDirectionalModeColor(const int ledIndex, const modeColorIndexes_t *modeColors)
+static const hsvColor_t* getDirectionalModeColor(const int ledIndex, const modeColorIndexes_t *modeColors)
 {
     const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[ledIndex];
 
@@ -462,7 +468,7 @@ static void applyLedFixedLayers()
             case LED_FUNCTION_FLIGHT_MODE:
                 for (unsigned i = 0; i < ARRAYLEN(flightModeToLed); i++)
                     if (!flightModeToLed[i].flightMode || FLIGHT_MODE(flightModeToLed[i].flightMode)) {
-                        hsvColor_t *directionalColor = getDirectionalModeColor(ledIndex, &ledStripConfig()->modeColors[flightModeToLed[i].ledMode]);
+                        const hsvColor_t *directionalColor = getDirectionalModeColor(ledIndex, &ledStripConfig()->modeColors[flightModeToLed[i].ledMode]);
                         if (directionalColor) {
                             color = *directionalColor;
                         }
@@ -530,7 +536,7 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
             warningFlags = 0;
             if (feature(FEATURE_VBAT) && getBatteryState() != BATTERY_OK)
                 warningFlags |= 1 << WARNING_LOW_BATTERY;
-            if (feature(FEATURE_FAILSAFE) && failsafeIsActive())
+            if (failsafeIsActive())
                 warningFlags |= 1 << WARNING_FAILSAFE;
             if (!ARMING_FLAG(ARMED) && !ARMING_FLAG(OK_TO_ARM))
                 warningFlags |= 1 << WARNING_ARMING_DISABLED;
@@ -595,7 +601,7 @@ static void applyLedBatteryLayer(bool updateNow, timeUs_t *timer)
     *timer += LED_STRIP_HZ(timeOffset);
 
     if (!flash) {
-       hsvColor_t *bgc = getSC(LED_SCOLOR_BACKGROUND);
+       const hsvColor_t *bgc = getSC(LED_SCOLOR_BACKGROUND);
        applyLedHsv(LED_MOV_FUNCTION(LED_FUNCTION_BATTERY), bgc);
     }
 }
@@ -625,7 +631,7 @@ static void applyLedRssiLayer(bool updateNow, timeUs_t *timer)
     *timer += LED_STRIP_HZ(timeOffset);
 
     if (!flash) {
-       hsvColor_t *bgc = getSC(LED_SCOLOR_BACKGROUND);
+       const hsvColor_t *bgc = getSC(LED_SCOLOR_BACKGROUND);
        applyLedHsv(LED_MOV_FUNCTION(LED_FUNCTION_RSSI), bgc);
     }
 }
@@ -640,7 +646,7 @@ static void applyLedGpsLayer(bool updateNow, timeUs_t *timer)
     if (updateNow) {
         if (gpsPauseCounter > 0) {
             gpsPauseCounter--;
-        } else if (gpsFlashCounter >= gpsSol.numSat) {
+        } else if (gpsFlashCounter >= (gpsSol.numSat - 1)) {
             gpsFlashCounter = 0;
             gpsPauseCounter = blinkPauseLength;
         } else {
@@ -816,7 +822,7 @@ static void applyLarsonScannerLayer(bool updateNow, timeUs_t *timer)
     int scannerLedIndex = 0;
     for (unsigned i = 0; i < ledCounts.count; i++) {
 
-        const ledConfig_t *ledConfig = &ledConfigs[i];
+        const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
 
         if (ledGetOverlayBit(ledConfig, LED_OVERLAY_LARSON_SCANNER)) {
             hsvColor_t ledColor;
@@ -845,7 +851,7 @@ static void applyLedBlinkLayer(bool updateNow, timeUs_t *timer)
     bool ledOn = (blinkMask & 1);  // b_b_____...
     if (!ledOn) {
         for (int i = 0; i < ledCounts.count; ++i) {
-            const ledConfig_t *ledConfig = &ledConfigs[i];
+            const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
 
             if (ledGetOverlayBit(ledConfig, LED_OVERLAY_BLINK) ||
                     (ledGetOverlayBit(ledConfig, LED_OVERLAY_LANDING_FLASH) && scaledThrottle < 55 && scaledThrottle > 10)) {
@@ -979,7 +985,7 @@ bool parseColor(int index, const char *colorConfig)
 {
     const char *remainingCharacters = colorConfig;
 
-    hsvColor_t *color = &ledStripConfig()->colors[index];
+    hsvColor_t *color = &ledStripConfigMutable()->colors[index];
 
     bool result = true;
     static const uint16_t hsv_limit[HSV_COLOR_COMPONENT_COUNT] = {
@@ -1032,74 +1038,19 @@ bool setModeColor(ledModeIndex_e modeIndex, int modeColorIndex, int colorIndex)
     if (modeIndex < LED_MODE_COUNT) {  // modeIndex_e is unsigned, so one-sided test is enough
         if(modeColorIndex < 0 || modeColorIndex >= LED_DIRECTION_COUNT)
             return false;
-        ledStripConfig()->modeColors[modeIndex].color[modeColorIndex] = colorIndex;
+        ledStripConfigMutable()->modeColors[modeIndex].color[modeColorIndex] = colorIndex;
     } else if (modeIndex == LED_SPECIAL) {
         if (modeColorIndex < 0 || modeColorIndex >= LED_SPECIAL_COLOR_COUNT)
             return false;
-        ledStripConfig()->specialColors.color[modeColorIndex] = colorIndex;
+        ledStripConfigMutable()->specialColors.color[modeColorIndex] = colorIndex;
     } else {
         return false;
     }
     return true;
 }
 
-/*
-void pgResetFn_ledConfigs(ledConfig_t *instance)
+void ledStripInit(void)
 {
-    memcpy_fn(instance, &defaultLedStripConfig, sizeof(defaultLedStripConfig));
-}
-
-void pgResetFn_colors(hsvColor_t *instance)
-{
-    // copy hsv colors as default
-    BUILD_BUG_ON(ARRAYLEN(*colors_arr()) < ARRAYLEN(hsv));
-
-    for (unsigned colorIndex = 0; colorIndex < ARRAYLEN(hsv); colorIndex++) {
-        *instance++ = hsv[colorIndex];
-    }
-}
-
-void pgResetFn_modeColors(modeColorIndexes_t *instance)
-{
-    memcpy_fn(instance, &defaultModeColors, sizeof(defaultModeColors));
-}
-
-void pgResetFn_specialColors(specialColorIndexes_t *instance)
-{
-    memcpy_fn(instance, &defaultSpecialColors, sizeof(defaultSpecialColors));
-}
-*/
-
-void applyDefaultLedStripConfig(ledConfig_t *ledConfigs)
-{
-    memset(ledConfigs, 0, LED_MAX_STRIP_LENGTH * sizeof(ledConfig_t));
-}
-
-void applyDefaultColors(hsvColor_t *colors)
-{
-    // copy hsv colors as default
-    memset(colors, 0, ARRAYLEN(hsv) * sizeof(hsvColor_t));
-    for (unsigned colorIndex = 0; colorIndex < ARRAYLEN(hsv); colorIndex++) {
-        *colors++ = hsv[colorIndex];
-    }
-}
-
-void applyDefaultModeColors(modeColorIndexes_t *modeColors)
-{
-    memcpy_fn(modeColors, &defaultModeColors, sizeof(defaultModeColors));
-}
-
-void applyDefaultSpecialColors(specialColorIndexes_t *specialColors)
-{
-    memcpy_fn(specialColors, &defaultSpecialColors, sizeof(defaultSpecialColors));
-}
-
-void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, modeColorIndexes_t *modeColorsToUse, specialColorIndexes_t *specialColorsToUse)
-{
-    ledConfigs = ledConfigsToUse;
-    colors = colorsToUse;
-    modeColors = modeColorsToUse;
-    specialColors = *specialColorsToUse;
     ledStripInitialised = false;
 }
 

@@ -49,7 +49,7 @@
 
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "io/serial.h"
 
@@ -296,16 +296,16 @@ void jetiExBusFrameReset()
 // Receive ISR callback
 static void jetiExBusDataReceive(uint16_t c)
 {
-    uint32_t now;
-    static uint32_t jetiExBusTimeLast = 0;
-    static int32_t jetiExBusTimeInterval;
+    timeUs_t now;
+    static timeUs_t jetiExBusTimeLast = 0;
+    static timeDelta_t jetiExBusTimeInterval;
 
     static uint8_t *jetiExBusFrame;
 
     // Check if we shall reset frame position due to time
     now = micros();
 
-    jetiExBusTimeInterval = now - jetiExBusTimeLast;
+    jetiExBusTimeInterval = cmpTimeUs(now, jetiExBusTimeLast);
     jetiExBusTimeLast = now;
 
     if (jetiExBusTimeInterval > JETIEXBUS_MIN_FRAME_GAP) {
@@ -402,10 +402,8 @@ static uint16_t jetiExBusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uin
   -----------------------------------------------
 */
 
-void initJetiExBusTelemetry(telemetryConfig_t *initialTelemetryConfig)
+void initJetiExBusTelemetry(void)
 {
-    UNUSED(initialTelemetryConfig);
-
     // Init Ex Bus Frame header
     jetiExBusTelemetryFrame[EXBUS_HEADER_SYNC] = 0x3B;       // Startbytes
     jetiExBusTelemetryFrame[EXBUS_HEADER_REQ] = 0x01;

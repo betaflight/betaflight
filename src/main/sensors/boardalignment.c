@@ -23,6 +23,9 @@
 #include "common/maths.h"
 #include "common/axis.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/sensor.h"
 
 #include "boardalignment.h"
@@ -30,38 +33,40 @@
 static bool standardBoardAlignment = true;     // board orientation correction
 static float boardRotation[3][3];              // matrix
 
+// no template required since defaults are zero
+PG_REGISTER(boardAlignment_t, boardAlignment, PG_BOARD_ALIGNMENT, 0);
+
 static bool isBoardAlignmentStandard(const boardAlignment_t *boardAlignment)
 {
     return !boardAlignment->rollDeciDegrees && !boardAlignment->pitchDeciDegrees && !boardAlignment->yawDeciDegrees;
 }
 
-void initBoardAlignment(const boardAlignment_t *boardAlignment)
+void initBoardAlignment(void)
 {
-    if (isBoardAlignmentStandard(boardAlignment)) {
+    if (isBoardAlignmentStandard(boardAlignment())) {
         standardBoardAlignment = true;
-    }
-    else {
+    } else {
         fp_angles_t rotationAngles;
 
         standardBoardAlignment = false;
 
-        rotationAngles.angles.roll  = DECIDEGREES_TO_RADIANS(boardAlignment->rollDeciDegrees );
-        rotationAngles.angles.pitch = DECIDEGREES_TO_RADIANS(boardAlignment->pitchDeciDegrees);
-        rotationAngles.angles.yaw   = DECIDEGREES_TO_RADIANS(boardAlignment->yawDeciDegrees  );
+        rotationAngles.angles.roll  = DECIDEGREES_TO_RADIANS(boardAlignment()->rollDeciDegrees );
+        rotationAngles.angles.pitch = DECIDEGREES_TO_RADIANS(boardAlignment()->pitchDeciDegrees);
+        rotationAngles.angles.yaw   = DECIDEGREES_TO_RADIANS(boardAlignment()->yawDeciDegrees  );
 
         buildRotationMatrix(&rotationAngles, boardRotation);
     }
 }
 
-void updateBoardAlignment(boardAlignment_t *boardAlignment, int16_t roll, int16_t pitch)
+void updateBoardAlignment(int16_t roll, int16_t pitch)
 {
-    float sinAlignYaw = sin_approx(DECIDEGREES_TO_RADIANS(boardAlignment->yawDeciDegrees));
-    float cosAlignYaw = cos_approx(DECIDEGREES_TO_RADIANS(boardAlignment->yawDeciDegrees));
+    const float sinAlignYaw = sin_approx(DECIDEGREES_TO_RADIANS(boardAlignment()->yawDeciDegrees));
+    const float cosAlignYaw = cos_approx(DECIDEGREES_TO_RADIANS(boardAlignment()->yawDeciDegrees));
 
-    boardAlignment->rollDeciDegrees += -sinAlignYaw * pitch + cosAlignYaw * roll;
-    boardAlignment->pitchDeciDegrees += cosAlignYaw * pitch + sinAlignYaw * roll;
+    boardAlignmentMutable()->rollDeciDegrees += -sinAlignYaw * pitch + cosAlignYaw * roll;
+    boardAlignmentMutable()->pitchDeciDegrees += cosAlignYaw * pitch + sinAlignYaw * roll;
 
-    initBoardAlignment(boardAlignment);
+    initBoardAlignment();
 }
 
 static void alignBoard(int32_t *vec)

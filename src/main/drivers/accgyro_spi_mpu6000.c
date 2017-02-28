@@ -31,6 +31,7 @@
 #include "common/maths.h"
 
 #include "system.h"
+#include "time.h"
 #include "io.h"
 #include "exti.h"
 #include "bus_spi.h"
@@ -45,7 +46,7 @@
 
 #include "accgyro_spi_mpu6000.h"
 
-static void mpu6000AccAndGyroInit(void);
+static void mpu6000AccAndGyroInit(gyroDev_t *gyro);
 
 static bool mpuSpi6000InitDone = false;
 
@@ -107,9 +108,11 @@ static IO_t mpuSpi6000CsPin = IO_NONE;
 bool mpu6000WriteRegister(uint8_t reg, uint8_t data)
 {
     ENABLE_MPU6000;
+    delayMicroseconds(1);
     spiTransferByte(MPU6000_SPI_INSTANCE, reg);
     spiTransferByte(MPU6000_SPI_INSTANCE, data);
     DISABLE_MPU6000;
+    delayMicroseconds(1);
 
     return true;
 }
@@ -128,7 +131,7 @@ void mpu6000SpiGyroInit(gyroDev_t *gyro)
 {
     mpuGyroInit(gyro);
 
-    mpu6000AccAndGyroInit();
+    mpu6000AccAndGyroInit(gyro);
 
     spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON);
 
@@ -201,7 +204,7 @@ bool mpu6000SpiDetect(void)
     return false;
 }
 
-static void mpu6000AccAndGyroInit(void)
+static void mpu6000AccAndGyroInit(gyroDev_t *gyro)
 {
     if (mpuSpi6000InitDone) {
         return;
@@ -229,7 +232,7 @@ static void mpu6000AccAndGyroInit(void)
 
     // Accel Sample Rate 1kHz
     // Gyroscope Output Rate =  1kHz when the DLPF is enabled
-    mpu6000WriteRegister(MPU_RA_SMPLRT_DIV, gyroMPU6xxxCalculateDivider());
+    mpu6000WriteRegister(MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops(gyro));
     delayMicroseconds(15);
 
     // Gyro +/- 1000 DPS Full Scale

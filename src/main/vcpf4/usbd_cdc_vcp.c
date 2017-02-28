@@ -27,25 +27,30 @@
 #include "usbd_cdc_vcp.h"
 #include "stm32f4xx_conf.h"
 #include "stdbool.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 LINE_CODING g_lc;
 
 extern __IO uint8_t USB_Tx_State;
 __IO uint32_t bDeviceState = UNCONNECTED; /* USB device status */
 
-/* These are external variables imported from CDC core to be used for IN
- transfer management. */
-extern uint8_t APP_Rx_Buffer[]; /* Write CDC received data in this buffer.
- These data will be sent over USB IN endpoint
- in the CDC core functions. */
+/* These are external variables imported from CDC core to be used for IN transfer management. */
+
+/* This is the buffer for data received from the MCU to APP (i.e. MCU TX, APP RX) */
+extern uint8_t APP_Rx_Buffer[];
 extern uint32_t APP_Rx_ptr_out;
-extern uint32_t APP_Rx_ptr_in; /* Increment this pointer or roll it back to
+/* Increment this buffer position or roll it back to
  start address when writing received data
  in the buffer APP_Rx_Buffer. */
-__IO uint32_t receiveLength=0;
+extern uint32_t APP_Rx_ptr_in;
 
-usbStruct_t usbData;
+/*
+    APP TX is the circular buffer for data that is transmitted from the APP (host)
+    to the USB device (flight controller).
+*/
+static uint8_t APP_Tx_Buffer[APP_TX_DATA_SIZE];
+static uint32_t APP_Tx_ptr_out = 0;
+static uint32_t APP_Tx_ptr_in = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 static uint16_t VCP_Init(void);
@@ -147,55 +152,54 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
 /*******************************************************************************
  * Function Name  : Send DATA .
  * Description    : send the data received from the STM32 to the PC through USB
- * Input          : None.
+ * Input          : buffer to send, and the length of the buffer.
  * Output         : None.
  * Return         : None.
  *******************************************************************************/
-uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint8_t sendLength)
+uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
 {
-    uint32_t i = 0;
-    if(USB_Tx_State!=1)
-    {
-        i = VCP_DataTx(ptrBuffer,sendLength);
-    }
-    return i;
+    VCP_DataTx(ptrBuffer, sendLength);
+    return sendLength;
+}
+
+uint32_t CDC_Send_FreeBytes(void)
+{
+    /*
+        return the bytes free in the circular buffer
+
+        functionally equivalent to:
+        (APP_Rx_ptr_out > APP_Rx_ptr_in ? APP_Rx_ptr_out - APP_Rx_ptr_in : APP_RX_DATA_SIZE - APP_Rx_ptr_in + APP_Rx_ptr_in)
+        but without the impact of the condition check.
+    */
+    return ((APP_Rx_ptr_out - APP_Rx_ptr_in) + (-((int)(APP_Rx_ptr_out <= APP_Rx_ptr_in)) & APP_RX_DATA_SIZE)) - 1;
 }
 
 /**
  * @brief  VCP_DataTx
- *         CDC received data to be send over USB IN endpoint are managed in
- *         this function.
+ *         CDC data to be sent to the Host (app) over USB
  * @param  Buf: Buffer of data to be sent
  * @param  Len: Number of data to be sent (in bytes)
- * @retval Result of the opeartion: USBD_OK if all operations are OK else VCP_FAIL
+ * @retval Result of the operation: USBD_OK if all operations are OK else VCP_FAIL
  */
 static uint16_t VCP_DataTx(const uint8_t* Buf, uint32_t Len)
 {
-    uint16_t ptr_head = APP_Rx_ptr_in;
-    uint16_t ptr_tail = APP_Rx_ptr_out;
-    uint16_t i = 0;
+    /*
+        make sure that any paragraph end frame is not in play
+        could just check for: USB_CDC_ZLP, but better to be safe
+        and wait for any existing transmission to complete.
+    */
+    while (USB_Tx_State != 0);
 
-    for (i = 0; i < Len; i++)
-    {
-        // head reached tail
-        if(ptr_head == (ptr_tail-1))
-        {
-            break;
-        }
+    for (uint32_t i = 0; i < Len; i++) {
+        APP_Rx_Buffer[APP_Rx_ptr_in] = Buf[i];
+        APP_Rx_ptr_in = (APP_Rx_ptr_in + 1) % APP_RX_DATA_SIZE;
 
-        APP_Rx_Buffer[ptr_head++] = Buf[i];
-        if(ptr_head == (APP_RX_DATA_SIZE))
-        {
-            ptr_head = 0;
+        while (CDC_Send_FreeBytes() == 0) {
+            delay(1);
         }
     }
-    APP_Rx_ptr_in = ptr_head;
-    return i;
-}
 
-
-uint8_t usbAvailable(void) {
-    return (usbData.rxBufHead != usbData.rxBufTail);
+    return USBD_OK;
 }
 
 /*******************************************************************************
@@ -207,18 +211,21 @@ uint8_t usbAvailable(void) {
  *******************************************************************************/
 uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len)
 {
-    (void)len;
-    uint8_t ch = 0;
+    uint32_t count = 0;
 
-    if (usbAvailable()) {
-        recvBuf[0] = usbData.rxBuf[usbData.rxBufTail];
-        usbData.rxBufTail = (usbData.rxBufTail + 1) % USB_RX_BUFSIZE;
-        ch=1;
-        receiveLength--;
+    while (APP_Tx_ptr_out != APP_Tx_ptr_in && count < len) {
+        recvBuf[count] = APP_Tx_Buffer[APP_Tx_ptr_out];
+        APP_Tx_ptr_out = (APP_Tx_ptr_out + 1) % APP_TX_DATA_SIZE;
+        count++;
     }
-    return ch;
+    return count;
 }
 
+uint32_t CDC_Receive_BytesAvailable(void)
+{
+    /* return the bytes available in the receive circular buffer */
+    return APP_Tx_ptr_out > APP_Tx_ptr_in ? APP_TX_DATA_SIZE - APP_Tx_ptr_out + APP_Tx_ptr_in : APP_Tx_ptr_in - APP_Tx_ptr_out;
+}
 
 /**
  * @brief  VCP_DataRx
@@ -237,21 +244,15 @@ uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len)
  */
 static uint16_t VCP_DataRx(uint8_t* Buf, uint32_t Len)
 {
-    __disable_irq();
-
-    uint16_t ptr = usbData.rxBufHead;
-    uint32_t i;
-
-    for (i = 0; i < Len; i++)
-        usbData.rxBuf[ptr++ & (USB_RX_BUFSIZE-1)] = Buf[i];
-
-    usbData.rxBufHead = ptr % USB_RX_BUFSIZE;
-
-    receiveLength = ((usbData.rxBufHead - usbData.rxBufTail)>0?(usbData.rxBufHead - usbData.rxBufTail):(usbData.rxBufHead + USB_RX_BUFSIZE - usbData.rxBufTail)) % USB_RX_BUFSIZE;
-
-    __enable_irq();
-    if(receiveLength > (USB_RX_BUFSIZE-1))
+    if (CDC_Receive_BytesAvailable() + Len > APP_TX_DATA_SIZE) {
         return USBD_FAIL;
+    }
+
+    for (uint32_t i = 0; i < Len; i++) {
+        APP_Tx_Buffer[APP_Tx_ptr_in] = Buf[i];
+        APP_Tx_ptr_in = (APP_Tx_ptr_in + 1) % APP_TX_DATA_SIZE;
+    }
+
     return USBD_OK;
 }
 
@@ -278,7 +279,6 @@ uint8_t usbIsConnected(void)
 {
     return (bDeviceState != UNCONNECTED);
 }
-
 
 /*******************************************************************************
  * Function Name  : CDC_BaudRate.

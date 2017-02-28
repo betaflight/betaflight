@@ -24,6 +24,7 @@
 #include "common/maths.h"
 
 #include "system.h"
+#include "time.h"
 #include "exti.h"
 #include "io.h"
 #include "bus_spi.h"
@@ -34,6 +35,7 @@
 #include "accgyro_mpu6500.h"
 #include "accgyro_spi_mpu6500.h"
 
+#if defined(USE_ACC_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6500)
 #define DISABLE_MPU6500       IOHi(mpuSpi6500CsPin)
 #define ENABLE_MPU6500        IOLo(mpuSpi6500CsPin)
 
@@ -42,9 +44,11 @@ static IO_t mpuSpi6500CsPin = IO_NONE;
 bool mpu6500WriteRegister(uint8_t reg, uint8_t data)
 {
     ENABLE_MPU6500;
+    delayMicroseconds(1);
     spiTransferByte(MPU6500_SPI_INSTANCE, reg);
     spiTransferByte(MPU6500_SPI_INSTANCE, data);
     DISABLE_MPU6500;
+    delayMicroseconds(1);
 
     return true;
 }
@@ -141,3 +145,4 @@ bool mpu6500SpiGyroDetect(gyroDev_t *gyro)
 
     return true;
 }
+#endif

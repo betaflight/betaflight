@@ -31,21 +31,21 @@
 #include "build/debug.h"
 
 
-#include "common/maths.h"
 #include "common/axis.h"
+#include "common/gps_conversion.h"
+#include "common/maths.h"
 #include "common/utils.h"
 
 #include "drivers/serial.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
+
+#include "fc/config.h"
+#include "fc/runtime_config.h"
 
 #include "io/serial.h"
 #include "io/gps.h"
 #include "io/gps_private.h"
 
-#include "flight/gps_conversion.h"
-
-#include "config/config.h"
-#include "fc/runtime_config.h"
 
 //#define GPS_PROTO_UBLOX_NEO7PLUS
 #define GPS_VERSION_DETECTION_TIMEOUT_MS    300
