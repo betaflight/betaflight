@@ -1891,14 +1891,18 @@ void updateHomePosition(void)
         }
     }
     else {
+        static bool isHomeResetAllowed = false;
+
         // If pilot so desires he may reset home position to current position
-        if (IS_RC_MODE_ACTIVE(BOXHOMERESET) && !FLIGHT_MODE(NAV_RTH_MODE) && !FLIGHT_MODE(NAV_WP_MODE) && posControl.flags.hasValidPositionSensor) {
-            if (STATE(GPS_FIX_HOME)) {
-                setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
+        if (IS_RC_MODE_ACTIVE(BOXHOMERESET)) {
+            if (isHomeResetAllowed && !FLIGHT_MODE(NAV_RTH_MODE) && !FLIGHT_MODE(NAV_WP_MODE) && posControl.flags.hasValidPositionSensor) {
+                const navSetWaypointFlags_t homeUpdateFlags = STATE(GPS_FIX_HOME) ? (NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING) : (NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING);
+                setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw, homeUpdateFlags);
+                isHomeResetAllowed = false;
             }
-            else {
-                setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING);
-            }
+        }
+        else {
+            isHomeResetAllowed = true;
         }
 
         // Update distance and direction to home if armed (home is not updated when armed)
