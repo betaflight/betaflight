@@ -54,6 +54,7 @@ typedef enum {
 // Header for the saved copy.
 typedef struct {
     uint8_t eepromConfigVersion;
+    uint8_t magic_be;           // magic number, should be 0xBE
     char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER)];
 } PG_PACKED configHeader_t;
 
@@ -89,7 +90,7 @@ void initEEPROM(void)
     BUILD_BUG_ON(offsetof(packingTest_t, word) != 1);
     BUILD_BUG_ON(sizeof(packingTest_t) != 5);
 
-    BUILD_BUG_ON(sizeof(configHeader_t) != 1 + sizeof(TARGET_BOARD_IDENTIFIER));
+    BUILD_BUG_ON(sizeof(configHeader_t) != 2 + sizeof(TARGET_BOARD_IDENTIFIER));
     BUILD_BUG_ON(sizeof(configFooter_t) != 2);
     BUILD_BUG_ON(sizeof(configRecord_t) != 6);
 }
@@ -103,7 +104,9 @@ bool isEEPROMContentValid(void)
     if (header->eepromConfigVersion != EEPROM_CONF_VERSION) {
         return false;
     }
-
+    if (header->magic_be != 0xBE) {
+        return false;
+    }
     if (strncasecmp(header->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER))) {
         return false;
     }
@@ -216,8 +219,9 @@ static bool writeSettingsToEEPROM(void)
     config_streamer_start(&streamer, (uintptr_t)&__config_start, &__config_end - &__config_start);
 
     configHeader_t header = {
-        .eepromConfigVersion = EEPROM_CONF_VERSION,
-        .boardIdentifier = TARGET_BOARD_IDENTIFIER,
+        .eepromConfigVersion =  EEPROM_CONF_VERSION,
+        .magic_be =             0xBE,
+        .boardIdentifier =      TARGET_BOARD_IDENTIFIER,
     };
 
     config_streamer_write(&streamer, (uint8_t *)&header, sizeof(header));
