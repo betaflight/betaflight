@@ -49,7 +49,7 @@ typedef enum {
 } configRecordFlags_e;
 
 #define CR_CLASSIFICATION_MASK  (0x3)
-#define CRC_START_VALUE         0xa5a5
+#define CRC_START_VALUE         0xFFFF
 
 // Header for the saved copy.
 typedef struct {
@@ -263,7 +263,7 @@ static bool writeSettingsToEEPROM(void)
     }
 
     configFooter_t footer = {
-        .terminator = 0,
+        .terminator = 0xFFFF,
     };
 
     config_streamer_write(&streamer, (uint8_t *)&footer, sizeof(footer));
