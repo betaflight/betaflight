@@ -663,6 +663,7 @@ COMMON_SRC = \
             drivers/serial_escserial.c \
             drivers/sonar_hcsr04.c \
             drivers/vtx_common.c \
+            drivers/transponder_ir.c \
             flight/navigation.c \
             io/dashboard.c \
             io/displayport_max7456.c \
@@ -671,6 +672,7 @@ COMMON_SRC = \
             io/gps.c \
             io/ledstrip.c \
             io/osd.c \
+            io/transponder_ir.c \
             sensors/sonar.c \
             sensors/barometer.c \
             telemetry/telemetry.c \
@@ -815,7 +817,7 @@ STM32F10x_COMMON_SRC = \
             drivers/dma.c \
             drivers/gpio_stm32f10x.c \
             drivers/inverter.c \
-            drivers/light_ws2811strip_stm32f10x.c \
+            drivers/light_ws2811strip_stdperiph.c \
             drivers/serial_uart_stm32f10x.c \
             drivers/system_stm32f10x.c \
             drivers/timer_stm32f10x.c
@@ -826,8 +828,8 @@ STM32F30x_COMMON_SRC = \
             drivers/bus_i2c_stm32f30x.c \
             drivers/dma.c \
             drivers/gpio_stm32f30x.c \
-            drivers/light_ws2811strip_stm32f30x.c \
-            drivers/pwm_output_stm32f3xx.c \
+            drivers/light_ws2811strip_stdperiph.c \
+            drivers/pwm_output_dshot.c \
             drivers/serial_uart_stm32f30x.c \
             drivers/system_stm32f30x.c \
             drivers/timer_stm32f30x.c
@@ -840,8 +842,8 @@ STM32F4xx_COMMON_SRC = \
             drivers/dma_stm32f4xx.c \
             drivers/gpio_stm32f4xx.c \
             drivers/inverter.c \
-            drivers/light_ws2811strip_stm32f4xx.c \
-            drivers/pwm_output_stm32f4xx.c \
+            drivers/light_ws2811strip_stdperiph.c \
+            drivers/pwm_output_dshot.c \
             drivers/serial_uart_stm32f4xx.c \
             drivers/system_stm32f4xx.c \
             drivers/timer_stm32f4xx.c

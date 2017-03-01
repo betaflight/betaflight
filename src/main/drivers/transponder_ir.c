@@ -21,16 +21,18 @@
 
 #include <platform.h>
 
+#ifdef TRANSPONDER
+
 #include "dma.h"
 #include "nvic.h"
 #include "io.h"
 #include "rcc.h"
 #include "timer.h"
-#if defined(STM32F4)
-#include "timer_stm32f4xx.h"
-#endif
 
 #include "transponder_ir.h"
+
+#define TRANSPONDER_TIMER_MHZ       24
+#define TRANSPONDER_CARRIER_HZ      460750
 
 /*
  * Implementation note:
@@ -44,12 +46,15 @@ uint8_t transponderIrDMABuffer[TRANSPONDER_DMA_BUFFER_SIZE];
 
 volatile uint8_t transponderIrDataTransferInProgress = 0;
 
+static uint8_t bitToggleOne = 0;
+#define BIT_TOGGLE_0 0
+
 static IO_t transponderIO = IO_NONE;
 static TIM_TypeDef *timer = NULL;
 #if defined(STM32F3)
-static DMA_Channel_TypeDef *dmaChannel = NULL;
+static DMA_Channel_TypeDef *dmaRef = NULL;
 #elif defined(STM32F4)
-static DMA_Stream_TypeDef *stream = NULL;
+static DMA_Stream_TypeDef *dmaRef = NULL;
 #else
 #error "Transponder not supported on this MCU."
 #endif
@@ -58,11 +63,8 @@ static void TRANSPONDER_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         transponderIrDataTransferInProgress = 0;
-#if defined(STM32F3)
-        DMA_Cmd(descriptor->channel, DISABLE);
-#elif defined(STM32F4)
-        DMA_Cmd(descriptor->stream, DISABLE);
-#endif
+
+        DMA_Cmd(descriptor->ref, DISABLE);
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
     }
 }
@@ -80,15 +82,9 @@ void transponderIrHardwareInit(ioTag_t ioTag)
     const timerHardware_t *timerHardware = timerGetByTag(ioTag, TIM_USE_ANY);
     timer = timerHardware->tim;
 
-#if defined(STM32F3)
-    if (timerHardware->dmaChannel == NULL) {
+    if (timerHardware->dmaRef == NULL) {
         return;
     }
-#elif defined(STM32F4)
-    if (timerHardware->dmaStream == NULL) {
-        return;
-    }
-#endif
 
     transponderIO = IOGetByTag(ioTag);
     IOInit(transponderIO, OWNER_TRANSPONDER, 0);
@@ -99,10 +95,15 @@ void transponderIrHardwareInit(ioTag_t ioTag)
 
     RCC_ClockCmd(timerRCC(timer), ENABLE);
 
+    uint16_t prescaler = timerGetPrescalerByDesiredMhz(timer, TRANSPONDER_TIMER_MHZ);
+    uint16_t period = timerGetPeriodByPrescaler(timer, prescaler, TRANSPONDER_CARRIER_HZ);
+
+    bitToggleOne = period / 2;
+    
     /* Time base configuration */
     TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
-    TIM_TimeBaseStructure.TIM_Period = 156;
-    TIM_TimeBaseStructure.TIM_Prescaler = 0;
+    TIM_TimeBaseStructure.TIM_Period = period;
+    TIM_TimeBaseStructure.TIM_Prescaler = prescaler;
     TIM_TimeBaseStructure.TIM_ClockDivision = 0;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
     TIM_TimeBaseInit(timer, &TIM_TimeBaseStructure);
@@ -120,31 +121,26 @@ void transponderIrHardwareInit(ioTag_t ioTag)
 
     TIM_OCInitStructure.TIM_OCPolarity =  (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_Low : TIM_OCPolarity_High;
     TIM_OCInitStructure.TIM_Pulse = 0;
-#if defined(STM32F3)
-    TIM_OC1Init(timer, &TIM_OCInitStructure);
-    TIM_OC1PreloadConfig(timer, TIM_OCPreload_Enable);
-#elif defined(STM32F4)
+
     timerOCInit(timer, timerHardware->channel, &TIM_OCInitStructure);
     timerOCPreloadConfig(timer, timerHardware->channel, TIM_OCPreload_Enable);
-#endif
     TIM_CtrlPWMOutputs(timer, ENABLE);
 
     /* configure DMA */
-#if defined(STM32F3)
-    dmaChannel = timerHardware->dmaChannel;
-    DMA_DeInit(dmaChannel);
-#elif defined(STM32F4)
-    stream = timerHardware->dmaStream;
-    DMA_Cmd(stream, DISABLE);
-    DMA_DeInit(stream);
-#endif
+    dmaRef = timerHardware->dmaRef;
+    DMA_Cmd(dmaRef, DISABLE);
+    DMA_DeInit(dmaRef);
 
     DMA_StructInit(&DMA_InitStructure);
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)timerCCR(timer, timerHardware->channel);
 #if defined(STM32F3)
     DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)transponderIrDMABuffer;
+    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
+    DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
 #elif defined(STM32F4)
+    DMA_InitStructure.DMA_Channel = timerHardware->dmaChannel;
     DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)transponderIrDMABuffer;
+    DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
 #endif
     DMA_InitStructure.DMA_BufferSize = TRANSPONDER_DMA_BUFFER_SIZE;
     DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
@@ -153,24 +149,12 @@ void transponderIrHardwareInit(ioTag_t ioTag)
     DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
     DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
     DMA_InitStructure.DMA_Priority = DMA_Priority_High;
-#if defined(STM32F3)
-    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
-    DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
 
-    DMA_Init(dmaChannel, &DMA_InitStructure);
-#elif defined(STM32F4)
-    DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
-
-    DMA_Init(stream, &DMA_InitStructure);
-#endif
+    DMA_Init(dmaRef, &DMA_InitStructure);
 
     TIM_DMACmd(timer, timerDmaSource(timerHardware->channel), ENABLE);
 
-#if defined(STM32F3)
-    DMA_ITConfig(dmaChannel, DMA_IT_TC, ENABLE);
-#elif defined(STM32F4)
-    DMA_ITConfig(stream, DMA_IT_TC, ENABLE);
-#endif
+    DMA_ITConfig(dmaRef, DMA_IT_TC, ENABLE);
 }
 
 bool transponderIrInit(void)
@@ -226,7 +210,7 @@ void updateTransponderDMABuffer(const uint8_t* transponderData)
             for (toggleIndex = 0; toggleIndex < TRANSPONDER_TOGGLES_PER_BIT; toggleIndex++)
             {
                 if (doToggles) {
-                    transponderIrDMABuffer[dmaBufferOffset] = BIT_TOGGLE_1;
+                    transponderIrDMABuffer[dmaBufferOffset] = bitToggleOne;
                 } else {
                     transponderIrDMABuffer[dmaBufferOffset] = BIT_TOGGLE_0;
                 }
@@ -256,27 +240,15 @@ void transponderIrUpdateData(const uint8_t* transponderData)
 
 void transponderIrDMAEnable(void)
 {
-#if defined(STM32F3)
-    DMA_SetCurrDataCounter(dmaChannel, TRANSPONDER_DMA_BUFFER_SIZE);  // load number of bytes to be transferred
-#elif defined(STM32F4)
-    DMA_SetCurrDataCounter(stream, TRANSPONDER_DMA_BUFFER_SIZE);  // load number of bytes to be transferred
-#endif
+    DMA_SetCurrDataCounter(dmaRef, TRANSPONDER_DMA_BUFFER_SIZE);  // load number of bytes to be transferred
     TIM_SetCounter(timer, 0);
     TIM_Cmd(timer, ENABLE);
-#if defined(STM32F3)
-    DMA_Cmd(dmaChannel, ENABLE);
-#elif defined(STM32F4)
-    DMA_Cmd(stream, ENABLE);
-#endif
+    DMA_Cmd(dmaRef, ENABLE);
 }
 
 void transponderIrDisable(void)
 {
-#if defined(STM32F3)
-    DMA_Cmd(dmaChannel, DISABLE);
-#elif defined(STM32F4)
-    DMA_Cmd(stream, DISABLE);
-#endif
+    DMA_Cmd(dmaRef, DISABLE);
     TIM_Cmd(timer, DISABLE);
 
     IOInit(transponderIO, OWNER_TRANSPONDER, 0);
@@ -298,3 +270,4 @@ void transponderIrTransmit(void)
     transponderIrDataTransferInProgress = 1;
     transponderIrDMAEnable();
 }
+#endif
