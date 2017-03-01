@@ -50,6 +50,7 @@ typedef enum {
 
 #define CR_CLASSIFICATION_MASK  (0x3)
 #define CRC_START_VALUE         0xFFFF
+#define CRC_CHECK_VALUE         0x1D0F  // pre-calculated value of CRC that includes the CRC itself
 
 // Header for the saved copy.
 typedef struct {
@@ -111,7 +112,8 @@ bool isEEPROMContentValid(void)
         return false;
     }
 
-    uint16_t crc = crc16_ccitt_update(CRC_START_VALUE, header, sizeof(*header));
+    uint16_t crc = CRC_START_VALUE;
+    crc = crc16_ccitt_update(crc, header, sizeof(*header));
     p += sizeof(*header);
 #ifndef USE_PARAMETER_GROUPS
     // include the transitional masterConfig record
@@ -140,10 +142,16 @@ bool isEEPROMContentValid(void)
     const configFooter_t *footer = (const configFooter_t *)p;
     crc = crc16_ccitt_update(crc, footer, sizeof(*footer));
     p += sizeof(*footer);
-    const uint16_t checkSum = *(uint16_t *)p;
-    p += sizeof(checkSum);
+
+    // include CRC itself in the CRC
+    crc = crc16_ccitt_update(crc, (uint8_t *)&crc, sizeof(crc));
+
+    const uint16_t *storedInvertedCrc = (uint16_t *)p; // crc is stored inverted
+    const uint16_t storedCrc = ~*storedInvertedCrc;
+
     eepromConfigSize = p - &__config_start;
-    return crc == checkSum;
+
+    return crc == storedCrc;
 }
 
 uint16_t getEEPROMConfigSize(void)
@@ -225,7 +233,8 @@ static bool writeSettingsToEEPROM(void)
     };
 
     config_streamer_write(&streamer, (uint8_t *)&header, sizeof(header));
-    uint16_t crc = crc16_ccitt_update(CRC_START_VALUE, (uint8_t *)&header, sizeof(header));
+    uint16_t crc = CRC_START_VALUE;
+    crc = crc16_ccitt_update(crc, (uint8_t *)&header, sizeof(header));
 #ifndef USE_PARAMETER_GROUPS
     // write the transitional masterConfig record
     config_streamer_write(&streamer, (uint8_t *)&masterConfig, sizeof(masterConfig));
@@ -263,18 +272,21 @@ static bool writeSettingsToEEPROM(void)
     }
 
     configFooter_t footer = {
-        .terminator = 0xFFFF,
+        .terminator = 0,
     };
 
     config_streamer_write(&streamer, (uint8_t *)&footer, sizeof(footer));
     crc = crc16_ccitt_update(crc, (uint8_t *)&footer, sizeof(footer));
 
-    // append checksum now
+    // include CRC itself in the CRC
+    crc = crc16_ccitt_update(crc, (uint8_t *)&crc, sizeof(crc));
+    // and append the inverted CRC to the stream
+    crc = ~crc;
     config_streamer_write(&streamer, (uint8_t *)&crc, sizeof(crc));
 
     config_streamer_flush(&streamer);
 
-    bool success = config_streamer_finish(&streamer) == 0;
+    const bool success = config_streamer_finish(&streamer) == 0;
 
     return success;
 }
