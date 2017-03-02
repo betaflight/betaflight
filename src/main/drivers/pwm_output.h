@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include "dma.h"
 #include "io_types.h"
 #include "timer.h"
 
@@ -94,7 +93,6 @@ typedef struct {
 #else
     uint8_t dmaBuffer[MOTOR_DMA_BUFFER_SIZE];
 #endif
-    dmaChannelDescriptor_t* dmaDescriptor;
 #if defined(STM32F7)
     TIM_HandleTypeDef TimHandle;
     DMA_HandleTypeDef hdma_tim;
