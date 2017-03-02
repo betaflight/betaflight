@@ -3443,11 +3443,9 @@ static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask, const master_
 #ifdef USE_PARAMETER_GROUPS
     (void)(defaultConfig);
     dumpAllValues(PROFILE_VALUE, dumpMask);
-    dumpAllValues(PROFILE_RATE_VALUE, dumpMask);
 #else
     dumpValues(PROFILE_VALUE, dumpMask, defaultConfig);
 #endif
-    cliRateProfile("");
 }
 
 static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask, const master_t *defaultConfig)
@@ -4148,6 +4146,7 @@ static void printConfig(char *cmdline, bool doDiff)
             cliPrint("save");
         } else {
             cliDumpProfile(getCurrentProfileIndex(), dumpMask, &defaultConfig);
+
             cliDumpRateProfile(getCurrentControlRateProfileIndex(), dumpMask, &defaultConfig);
         }
     }
