@@ -230,7 +230,7 @@ static void mspFc4waySerialCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessFnPtr
     case PROTOCOL_KISS:
     case PROTOCOL_KISSALL:
     case PROTOCOL_CASTLE:
-        if (escPortIndex < USABLE_TIMER_CHANNEL_COUNT || (escMode == PROTOCOL_KISS && escPortIndex == 255)) {
+        if (escPortIndex < getMotorCount() || (escMode == PROTOCOL_KISS && escPortIndex == ALL_ESCS)) {
             sbufWriteU8(dst, 1);
 
             if (mspPostProcessFn) {

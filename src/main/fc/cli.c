@@ -3221,67 +3221,134 @@ static void cliGpsPassthrough(char *cmdline)
 }
 #endif
 
-#ifdef USE_ESCSERIAL
-static void cliEscPassthrough(char *cmdline)
-{
-    uint8_t mode = 0;
-    int index = 0;
-    int i = 0;
-    char *pch = NULL;
-    char *saveptr;
+#if defined(USE_ESCSERIAL) || defined(USE_DSHOT)
 
-    if (isEmpty(cmdline)) {
+#ifndef ALL_ESCS
+#define ALL_ESCS 255
+#endif
+
+static int parseEscNumber(char *pch, bool allowAllEscs) {
+    int escNumber = atoi(pch);
+    if ((escNumber >= 0) && (escNumber < getMotorCount())) {
+        printf("Programming on ESC %d.\r\n", escNumber);
+    } else if (allowAllEscs && escNumber == ALL_ESCS) {
+        printf("Programming on all ESCs.\r\n");
+    } else {
+        printf("Invalid ESC number, range: 0 to %d.\r\n", getMotorCount() - 1);
+
+        return -1;
+    }
+
+    return escNumber;
+}
+#endif
+
+#ifdef USE_DSHOT
+static void cliDshotProg(char *cmdline)
+{
+    if (isEmpty(cmdline) || motorConfig()->dev.motorPwmProtocol < PWM_TYPE_DSHOT150) {
         cliShowParseError();
+
         return;
     }
 
-    pch = strtok_r(cmdline, " ", &saveptr);
+    char *saveptr;
+    char *pch = strtok_r(cmdline, " ", &saveptr);
+    int pos = 0;
+    int escNumber = 0;
     while (pch != NULL) {
-        switch (i) {
+        switch (pos) {
             case 0:
-                if(strncasecmp(pch, "sk", strlen(pch)) == 0)
-                {
-                    mode = 0;
+                escNumber = parseEscNumber(pch, true);
+                if (escNumber == -1) {
+                    return;
                 }
-                else if(strncasecmp(pch, "bl", strlen(pch)) == 0)
-                {
-                    mode = 1;
+
+                break;
+            default:
+                motorControlEnable = false;
+
+                int command = atoi(pch);
+                if (command >= 0 && command < DSHOT_MIN_THROTTLE) {
+                    if (escNumber == ALL_ESCS) {
+                        for (unsigned i = 0; i < getMotorCount(); i++) {
+                            pwmWriteDshotCommand(i, command);
+                        }
+                    } else {
+                        pwmWriteDshotCommand(escNumber, command);
+                    }
+
+                    if (command <= 5) {
+                        delay(10); // wait for sound output to finish
+                    }
+
+                    printf("Command %d written.\r\n", command);
+                } else {
+                    printf("Invalid command, range 1 to %d.\r\n", DSHOT_MIN_THROTTLE - 1);
                 }
-                else if(strncasecmp(pch, "ki", strlen(pch)) == 0)
-                {
-                    mode = 2;
-                }
-                else if(strncasecmp(pch, "cc", strlen(pch)) == 0)
-                {
-                    mode = 4;
-                }
-                else
-                {
+
+                break;
+        }
+
+        pos++;
+        pch = strtok_r(NULL, " ", &saveptr);
+    }
+
+    motorControlEnable = true;
+}
+#endif
+
+#ifdef USE_ESCSERIAL
+static void cliEscPassthrough(char *cmdline)
+{
+    if (isEmpty(cmdline)) {
+        cliShowParseError();
+
+        return;
+    }
+
+    char *saveptr;
+    char *pch = strtok_r(cmdline, " ", &saveptr);
+    int pos = 0;
+    uint8_t mode = 0;
+    int escNumber = 0;
+    while (pch != NULL) {
+        switch (pos) {
+            case 0:
+                if(strncasecmp(pch, "sk", strlen(pch)) == 0) {
+                    mode = PROTOCOL_SIMONK;
+                } else if(strncasecmp(pch, "bl", strlen(pch)) == 0) {
+                    mode = PROTOCOL_BLHELI;
+                } else if(strncasecmp(pch, "ki", strlen(pch)) == 0) {
+                    mode = PROTOCOL_KISS;
+                } else if(strncasecmp(pch, "cc", strlen(pch)) == 0) {
+                    mode = PROTOCOL_KISSALL;
+                } else {
                     cliShowParseError();
+
                     return;
                 }
                 break;
             case 1:
-                index = atoi(pch);
-                if(mode == 2 && index == 255)
-                {
-                    printf("passthrough on all outputs enabled\r\n");
+                escNumber = parseEscNumber(pch, mode == PROTOCOL_KISS);
+                if (escNumber == -1) {
+                    return;
                 }
-                else{
-                    if ((index >= 0) && (index < USABLE_TIMER_CHANNEL_COUNT)) {
-                        printf("passthrough on output %d enabled\r\n", index);
-                    }
-                    else {
-                        printf("invalid output, range: 1 to %d\r\n", USABLE_TIMER_CHANNEL_COUNT);
-                        return;
-                    }
-                }
+
                 break;
+            default:
+                cliShowParseError();
+
+                return;
+
+                break;
+
         }
-        i++;
+        pos++;
         pch = strtok_r(NULL, " ", &saveptr);
     }
-    escEnablePassthrough(cliPort,index,mode);
+
+    escEnablePassthrough(cliPort, escNumber, mode);
 }
 #endif
 
@@ -3356,13 +3423,13 @@ static void cliMotor(char *cmdline)
     if (index == 2) {
         if (motor_value < PWM_RANGE_MIN || motor_value > PWM_RANGE_MAX) {
             cliShowArgumentRangeError("value", 1000, 2000);
-            return;
         } else {
             motor_disarmed[motor_index] = convertExternalToMotor(motor_value);
+
+            cliPrintf("motor %d: %d\r\n", motor_index, convertMotorToExternal(motor_disarmed[motor_index]));
         }
     }
 
-    cliPrintf("motor %d: %d\r\n", motor_index, convertMotorToExternal(motor_disarmed[motor_index]));
 }
 
 #ifndef MINIMAL_CLI
@@ -4216,6 +4283,9 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("bl", "reboot into bootloader", NULL, cliBootloader),
     CLI_COMMAND_DEF("diff", "list configuration changes from default",
         "[master|profile|rates|all] {showdefaults}", cliDiff),
+#ifdef USE_DSHOT
+    CLI_COMMAND_DEF("dshotprog", "program DShot ESC(s)", "<index> <command>+", cliDshotProg),
+#endif
     CLI_COMMAND_DEF("dump", "dump configuration",
         "[master|profile|rates|all] {showdefaults}", cliDump),
 #ifdef USE_ESCSERIAL

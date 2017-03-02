@@ -39,8 +39,8 @@
 
   3D Mode:
   0 = stop
-  48   (low) - 1047 (high) -> positive direction
-  1048 (low) - 2047 (high) -> negative direction
+  48   (low) - 1047 (high) -> negative direction
+  1048 (low) - 2047 (high) -> positive direction
 */
 
 // Digital protocol has fixed values
