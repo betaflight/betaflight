@@ -194,7 +194,8 @@ static void osdDrawSpectrograph(void)
     const gyroFftData_t *fftData = gyroFftData(axis);
     for (int col = 0; col < 30; ++col) {
         int binHeight;
-        if (debugMode != DEBUG_FFT) {
+        if (debugMode == DEBUG_NONE) {
+            // just draw a "spectrograph" with fixed data to test the spectrograph drawing
             binHeight = col * 8;
         } else {
             // use the average of two FFT bins for each bar

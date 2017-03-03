@@ -223,7 +223,9 @@ void gyroDataAnalyseUpdate(timeUs_t currentTimeUs)
         if (axis >= 3) {
             axis = 0;
             // Set the filter frequency to the average of the peak frequencies over the three axes
-            int16_t notchHz = fftBinToFreq(fftData[0].maxIdx + fftData[1].maxIdx + fftData[2].maxIdx) / 3;
+            // int16_t notchHz = fftBinToFreq(fftData[0].maxIdx + fftData[1].maxIdx + fftData[2].maxIdx) / 3;
+            // for testing just use one axis
+            int16_t notchHz = fftBinToFreq(fftData[0].maxIdx);
             int16_t notchCutoffHz = notchHz - 100; // just set the cutoff to 100Hz below the notch
             //!!TODO - consider hysteresis for change of notch frequency, may not be required since resolution is 15Hz
             //!!TODO - only change filter if magnitude of noise above a certain value
