@@ -82,8 +82,7 @@ PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
     .dcm_kp = 2500,                // 1.0 * 10000
     .dcm_ki = 0,                   // 0.003 * 10000
     .small_angle = 25,
-    .accDeadband.xy = 40,
-    .accDeadband.z = 40,
+    .accDeadband = {.xy = 40, .z= 40},
     .acc_unarmedcal = 1
 );
 
