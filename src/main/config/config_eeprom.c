@@ -22,6 +22,7 @@
 
 #include "platform.h"
 
+#include "build/debug.h"
 #include "build/build_config.h"
 
 #include "common/maths.h"
@@ -141,17 +142,19 @@ bool isEEPROMContentValid(void)
 
     const configFooter_t *footer = (const configFooter_t *)p;
     crc = crc16_ccitt_update(crc, footer, sizeof(*footer));
+    debug[2] = crc;
     p += sizeof(*footer);
 
     // include CRC itself in the CRC
-    crc = crc16_ccitt_update(crc, (uint8_t *)&crc, sizeof(crc));
-
-    const uint16_t *storedInvertedCrc = (uint16_t *)p; // crc is stored inverted
-    const uint16_t storedCrc = ~*storedInvertedCrc;
+    const uint16_t *storedCrc = (const uint16_t *)p;
+    crc = crc16_ccitt_update(crc, storedCrc, sizeof(*storedCrc));
+    p += sizeof(storedCrc);
+    debug[3] = crc;
 
     eepromConfigSize = p - &__config_start;
 
-    return crc == storedCrc;
+    return crc == CRC_CHECK_VALUE;
+    //return true;
 }
 
 uint16_t getEEPROMConfigSize(void)
@@ -278,11 +281,13 @@ static bool writeSettingsToEEPROM(void)
     config_streamer_write(&streamer, (uint8_t *)&footer, sizeof(footer));
     crc = crc16_ccitt_update(crc, (uint8_t *)&footer, sizeof(footer));
 
-    // include CRC itself in the CRC
-    crc = crc16_ccitt_update(crc, (uint8_t *)&crc, sizeof(crc));
-    // and append the inverted CRC to the stream
-    crc = ~crc;
-    config_streamer_write(&streamer, (uint8_t *)&crc, sizeof(crc));
+    // include inverted CRC in big endian format in the CRC
+    const uint16_t invertedBigEndianCrc = ~(((crc & 0xFF) << 8) | (crc >> 8));
+    debug[0] = invertedBigEndianCrc;
+    // and append the inverted big endian CRC to the stream
+    config_streamer_write(&streamer, (uint8_t *)&invertedBigEndianCrc, sizeof(crc));
+    crc = crc16_ccitt_update(crc, (uint8_t *)&invertedBigEndianCrc, sizeof(crc));
+    debug[1] = crc;
 
     config_streamer_flush(&streamer);
 
