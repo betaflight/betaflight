@@ -193,14 +193,8 @@ static void osdDrawSpectrograph(void)
     const int axis = FD_ROLL;
     const gyroFftData_t *fftData = gyroFftData(axis);
     for (int col = 0; col < 30; ++col) {
-        int binHeight;
-        if (debugMode == DEBUG_NONE) {
-            // just draw a "spectrograph" with fixed data to test the spectrograph drawing
-            binHeight = col * 8;
-        } else {
-            // use the average of two FFT bins for each bar
-            binHeight = (fftData->bins[2 * col] + fftData->bins[2 * col + 1]) / 2;
-        }
+        // use the average of two FFT bins for each bar
+        const int binHeight = (fftData->bins[2 * col] + fftData->bins[2 * col + 1]) / 2;
         // scale barHeight to screen
         osdDrawBar(col, 0, binHeight);
     }
@@ -606,9 +600,9 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_ROLL_ANGLE);
     osdDrawSingleElement(OSD_MAIN_BATT_USAGE);
 #ifdef USE_GYRO_DATA_ANALYSE
-    //if (feature(FEATURE_GYRO_DATA_ANALYSE)) {
+    if (feature(FEATURE_GYRO_DATA_ANALYSE) && (debugMode == DEBUG_FFT || debugMode == DEBUG_FFT_FREQ)) {
         osdDrawSpectrograph();
-    //}
+    }
 #endif
 
 #ifdef GPS
