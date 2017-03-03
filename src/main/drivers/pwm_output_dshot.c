@@ -24,8 +24,10 @@
 
 #include "io.h"
 #include "timer.h"
-#ifdef STM32F4
+#if defined(STM32F4)
 #include "timer_stm32f4xx.h"
+#elif defined(STM32F3)
+#include "timer_stm32f30x.h"
 #endif
 #include "pwm_output.h"
 #include "nvic.h"
