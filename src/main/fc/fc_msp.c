@@ -53,6 +53,7 @@
 #include "drivers/vcd.h"
 #include "drivers/vtx_common.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
+#include "drivers/transponder_ir.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -1145,6 +1146,13 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, 0); // Transponder not supported
 #endif
         break;
+    case MSP_TRANSPONDER_PROVIDER:
+#ifdef TRANSPONDER
+        sbufWriteU8(dst, transponderConfig()->provider);
+#else
+        sbufWriteU8(dst, 0); // Transponder not supported
+#endif
+        break;
 
     case MSP_OSD_CONFIG:
 #ifdef OSD
@@ -1684,6 +1692,10 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             transponderConfigMutable()->data[i] = sbufReadU8(src);
         }
         transponderUpdateData();
+        break;
+    case MSP_SET_TRANSPONDER_PROVIDER:
+        transponderStopRepeating();
+        transponderConfigMutable()->provider = sbufReadU8(src);
         break;
 #endif
 

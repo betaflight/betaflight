@@ -874,6 +874,31 @@ $(OBJECT_DIR)/telemetry_ibus_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $(PG_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+$(OBJECT_DIR)/drivers/transponder_ir_arcitimer.o : \
+	$(USER_DIR)/drivers/transponder_ir_arcitimer.c \
+	$(USER_DIR)/drivers/transponder_ir.h \
+    $(USER_DIR)/drivers/transponder_ir_arcitimer.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/transponder_ir_arcitimer.c -o $@
+
+$(OBJECT_DIR)/transponder_unittest.o : \
+	$(TEST_DIR)/transponder_unittest.cc \
+	$(USER_DIR)/drivers/transponder_ir.h \
+    $(USER_DIR)/drivers/transponder_ir_arcitimer.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/transponder_unittest.cc -o $@
+
+$(OBJECT_DIR)/transponder_unittest : \
+    $(OBJECT_DIR)/drivers/transponder_ir_arcitimer.o \
+	$(OBJECT_DIR)/transponder_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
 
 ## test        : Build and run the Unit Tests
 test: $(TESTS:%=test-%)

@@ -85,7 +85,7 @@ void transponderUpdate(timeUs_t currentTimeUs)
 
 void transponderInit(void)
 {
-    transponderInitialised = transponderIrInit();
+    transponderInitialised = transponderIrInit(&(transponderConfig()->provider));
     if (!transponderInitialised) {
         return;
     }

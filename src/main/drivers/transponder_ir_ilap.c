@@ -1,0 +1,76 @@
+/*
+ * This file is part of Cleanflight.
+ *
+ * Cleanflight is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Cleanflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+#include <platform.h>
+#include "drivers/transponder_ir.h"
+#include "drivers/transponder_ir_ilap.h"
+
+static uint16_t dmaBufferOffset;
+extern const struct transponderVTable ilapTansponderVTable;
+
+void transponderIrInitIlap(transponder_t* transponder){
+    // from drivers/transponder_ir.h
+    transponder->gap_toggles        = TRANSPONDER_GAP_TOGGLES;
+    transponder->dma_buffer_size    = TRANSPONDER_DMA_BUFFER_SIZE;
+    transponder->vTable             = &ilapTansponderVTable;
+    transponder->timer_hz           = TRANSPONDER_TIMER_MHZ;
+    transponder->timer_carrier_hz   = TRANSPONDER_CARRIER_HZ;
+    memset(&(transponder->transponderIrDMABuffer.ilap), 0, TRANSPONDER_DMA_BUFFER_SIZE);
+}
+
+void updateTransponderDMABufferIlap(transponder_t* transponder_instance, const uint8_t* transponderData)
+{
+    uint8_t byteIndex;
+    uint8_t bitIndex;
+    uint8_t toggleIndex;
+    for (byteIndex = 0; byteIndex < TRANSPONDER_DATA_LENGTH; byteIndex++) {
+        uint8_t byteToSend = *transponderData;
+        transponderData++;
+        for (bitIndex = 0; bitIndex < TRANSPONDER_BITS_PER_BYTE; bitIndex++)
+        {
+            bool doToggles = false;
+            if (bitIndex == 0) {
+                doToggles = true;
+            }
+            else if (bitIndex == TRANSPONDER_BITS_PER_BYTE - 1) {
+                doToggles = false;
+            }
+            else {
+                doToggles = byteToSend & (1 << (bitIndex - 1));
+            }
+            for (toggleIndex = 0; toggleIndex < TRANSPONDER_TOGGLES_PER_BIT; toggleIndex++)
+            {
+                if (doToggles) {
+                    transponder_instance->transponderIrDMABuffer.ilap[dmaBufferOffset] = transponder_instance->bitToggleOne;
+                }
+                else {
+                    transponder_instance->transponderIrDMABuffer.ilap[dmaBufferOffset] = 0;
+                }
+                dmaBufferOffset++;
+            }
+            transponder_instance->transponderIrDMABuffer.ilap[dmaBufferOffset] = 0;
+            dmaBufferOffset++;
+        }
+    }
+    dmaBufferOffset = 0;
+}
+
+const struct transponderVTable ilapTansponderVTable = {
+     updateTransponderDMABufferIlap,
+};
