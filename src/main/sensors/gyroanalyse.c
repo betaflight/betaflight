@@ -52,18 +52,18 @@ static bool gyroDataReady = false;
 // Eg [0,15), [15,30), [30, 45) etc
 static uint16_t samplingFrequency;
 static uint8_t fftBinCount;
-static uint8_t fftBinStartCheck; // first bin to check for filtering
 
 static arm_rfft_fast_instance_f32 fftInstance;
 static float fftOut[FFT_WINDOW_SIZE];
 
 static float gyroData[3][FFT_WINDOW_SIZE];
 
+static gyroFftData_t fftData[3];
+
 static int fftFreqToBin(int freq)
 {
     return ((FFT_WINDOW_SIZE / 2 - 1) * freq) / (samplingFrequency / 2);
 }
-
 
 static int fftBinToFreq(int bin)
 {
@@ -113,9 +113,13 @@ void gyroDataAnalyseInit(uint32_t targetLooptime)
     // initialise even if FEATURE_GYRO_DATA_ANALYSE not set, since it may be set later
     samplingFrequency = targetLooptime;
     fftBinCount = fftFreqToBin(FFT_MAX_FREQ) + 1;
-    fftBinStartCheck = fftFreqToBin(MIN_FILTER_FREQ); // first bin to check when looking for peak in frequency spectrum
 
     arm_rfft_fast_init_f32(&fftInstance, FFT_WINDOW_SIZE);
+}
+
+const gyroFftData_t *gyroFftData(int axis)
+{
+    return &fftData[axis];
 }
 
 /*
@@ -161,8 +165,6 @@ void gyroDataAnalyseUpdate(timeUs_t currentTimeUs)
 {
     static int axis = 0;
     static int step = 0;
-    static float maxVal[3];
-    static uint32_t maxIdx[3];
     UNUSED(currentTimeUs);
 
     if (gyroDataReady == false) {
@@ -195,13 +197,21 @@ void gyroDataAnalyseUpdate(timeUs_t currentTimeUs)
         arm_cmplx_mag_f32(fftOut, fftOut, fftBinCount);
         DEBUG_SET(DEBUG_FFT, 2, micros() - startTime);
         break;
-    case STEP_ARM_MAX_F32:
+    case STEP_ARM_MAX_F32: {
         // 3us
         // find the peak frequency, starting at bin fftBinStartCheck, ie ignoring frequencies below that
-        arm_max_f32(&fftOut[fftBinStartCheck], fftBinCount - fftBinStartCheck - 1, &maxVal[axis], &maxIdx[axis]);
-        maxIdx[axis] += fftBinStartCheck; // rebase index to start at bin 0
+        const int fftBinStartCheck = fftFreqToBin(MIN_FILTER_FREQ); // first bin to check when looking for peak in frequency spectrum
+        arm_max_f32(&fftOut[fftBinStartCheck], fftBinCount - fftBinStartCheck - 1, &fftData[axis].maxVal, &fftData[axis].maxIdx);
+        fftData[axis].maxIdx += fftBinStartCheck; // rebase index to start at bin 0
+        // copy data for display in OSD
+        const float maxVal = fftData[axis].maxVal;
+        for (int ii = 0; ii < fftBinCount; ++ii){
+            fftData[axis].bins[ii] = 255 * fftOut[ii] / maxVal;
+        }
+
         DEBUG_SET(DEBUG_FFT, 3, micros() - startTime);
-        DEBUG_SET(DEBUG_FFT_FREQ, axis, FFT_MAX_FREQ * (fftBinStartCheck + maxIdx[axis]) / fftBinCount);
+        DEBUG_SET(DEBUG_FFT_FREQ, axis, fftBinToFreq(fftData[axis].maxIdx));
+        }
         break;
     }
 
@@ -212,7 +222,7 @@ void gyroDataAnalyseUpdate(timeUs_t currentTimeUs)
         if (axis >= 3) {
             axis = 0;
             // Set the filter frequency to the average of the peak frequencies over the three axes
-            int16_t notchHz = fftBinToFreq(maxIdx[0] + maxIdx[1] + maxIdx[2]) / 3;
+            int16_t notchHz = fftBinToFreq(fftData[0].maxIdx + fftData[1].maxIdx + fftData[2].maxIdx) / 3;
             int16_t notchCutoffHz = notchHz - 100; // just set the cutoff to 100Hz below the notch
             //!!TODO - consider hysteresis for change of notch frequency, may not be required since resolution is 15Hz
             //!!TODO - only change filter if magnitude of noise above a certain value

@@ -78,6 +78,7 @@
 
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
+#include "sensors/gyroanalyse.h"
 #include "sensors/sensors.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
@@ -853,6 +854,26 @@ static void osdShowStats(void)
 #endif
 }
 
+void osdDrawBar(int x, int y, int pixelHeight)
+{
+    displayWriteChar(osdDisplayPort, x, y, 'I');
+}
+
+void osdDrawSpectrograph(void)
+{
+    // just do the roll axis for now
+    const int axis = FD_ROLL;
+    const gyroFftData_t *fftData = gyroFftData(axis);
+    for (int col = 0; col < 32; ++col) {
+        // use the average of two FFT bins for each bar
+        const int bin = (fftData->bins[2 * col] + fftData->bins[2 * col + 1]) / 2;
+        // scale barHeight to screen
+        const int barHeight =  8 * bin / 255;
+        osdDrawBar(col, 0, barHeight);
+    }
+}
+
+// called when motors armed
 static void osdShowArmed(void)
 {
     displayClearScreen(osdDisplayPort);
