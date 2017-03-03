@@ -606,9 +606,9 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_ROLL_ANGLE);
     osdDrawSingleElement(OSD_MAIN_BATT_USAGE);
 #ifdef USE_GYRO_DATA_ANALYSE
-    if (feature(FEATURE_GYRO_DATA_ANALYSE)) {
+    //if (feature(FEATURE_GYRO_DATA_ANALYSE)) {
         osdDrawSpectrograph();
-    }
+    //}
 #endif
 
 #ifdef GPS
