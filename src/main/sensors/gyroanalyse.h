@@ -19,8 +19,9 @@
 
 #include "common/time.h"
 
+#define GYRO_FFT_BIN_COUNT      128
 typedef struct gyroFftData_s {
-    uint8_t bins[128];
+    uint8_t bins[GYRO_FFT_BIN_COUNT];
     float maxVal;
     uint32_t maxIdx;
 } gyroFftData_t;

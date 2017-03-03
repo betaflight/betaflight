@@ -205,7 +205,8 @@ void gyroDataAnalyseUpdate(timeUs_t currentTimeUs)
         fftData[axis].maxIdx += fftBinStartCheck; // rebase index to start at bin 0
         // copy data for display in OSD
         const float maxVal = fftData[axis].maxVal;
-        for (int ii = 0; ii < fftBinCount; ++ii){
+        const int count = MIN(GYRO_FFT_BIN_COUNT, fftBinCount);
+        for (int ii = 0; ii < count; ++ii){
             fftData[axis].bins[ii] = 255 * fftOut[ii] / maxVal;
         }
 
