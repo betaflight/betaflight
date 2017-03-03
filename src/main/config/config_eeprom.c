@@ -22,7 +22,6 @@
 
 #include "platform.h"
 
-#include "build/debug.h"
 #include "build/build_config.h"
 
 #include "common/maths.h"
@@ -142,19 +141,17 @@ bool isEEPROMContentValid(void)
 
     const configFooter_t *footer = (const configFooter_t *)p;
     crc = crc16_ccitt_update(crc, footer, sizeof(*footer));
-    debug[2] = crc;
     p += sizeof(*footer);
 
-    // include CRC itself in the CRC
+    // include stored CRC in the CRC calculation
     const uint16_t *storedCrc = (const uint16_t *)p;
     crc = crc16_ccitt_update(crc, storedCrc, sizeof(*storedCrc));
     p += sizeof(storedCrc);
-    debug[3] = crc;
 
     eepromConfigSize = p - &__config_start;
 
+    // CRC has the property that if the CRC itself is included in the calculation the resulting CRC will have constant value
     return crc == CRC_CHECK_VALUE;
-    //return true;
 }
 
 uint16_t getEEPROMConfigSize(void)
@@ -283,11 +280,7 @@ static bool writeSettingsToEEPROM(void)
 
     // include inverted CRC in big endian format in the CRC
     const uint16_t invertedBigEndianCrc = ~(((crc & 0xFF) << 8) | (crc >> 8));
-    debug[0] = invertedBigEndianCrc;
-    // and append the inverted big endian CRC to the stream
     config_streamer_write(&streamer, (uint8_t *)&invertedBigEndianCrc, sizeof(crc));
-    crc = crc16_ccitt_update(crc, (uint8_t *)&invertedBigEndianCrc, sizeof(crc));
-    debug[1] = crc;
 
     config_streamer_flush(&streamer);
 
