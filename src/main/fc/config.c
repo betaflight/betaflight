@@ -991,7 +991,7 @@ void createDefaultConfig(master_t *config)
 
     config->rxConfig.rssi_channel = 0;
     config->rxConfig.rssi_scale = RSSI_SCALE_DEFAULT;
-    config->rxConfig.rssi_ppm_invert = 0;
+    config->rxConfig.rssi_invert = 0;
     config->rxConfig.rcInterpolation = RC_SMOOTHING_AUTO;
     config->rxConfig.rcInterpolationChannels = 0;
     config->rxConfig.rcInterpolationInterval = 19;
