@@ -1,7 +1,7 @@
 F3_TARGETS  += $(TARGET)
 FEATURES    = VCP SDCARD
 
-TARGET_SRC = \
+TARGET_SRC += \
             drivers/accgyro_l3gd20.c \
             drivers/accgyro_lsm303dlhc.c \
             drivers/compass_hmc5883l.c \

@@ -1,7 +1,7 @@
 F7X6XG_TARGETS += $(TARGET)
 FEATURES       += SDCARD VCP
 
-TARGET_SRC = \
+TARGET_SRC += \
             drivers/accgyro_fake.c \
             drivers/accgyro_mpu6050.c \
             drivers/barometer_fake.c \

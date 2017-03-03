@@ -1,7 +1,7 @@
 F3_TARGETS  += $(TARGET)
 FEATURES    = VCP SDCARD ONBOARDFLASH
 
-TARGET_SRC = \
+TARGET_SRC += \
             drivers/accgyro_mpu.c \
             drivers/barometer_ms5611.c \
             drivers/barometer_bmp280.c \
