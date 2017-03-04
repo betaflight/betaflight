@@ -307,7 +307,6 @@ static uint16_t cmsx_dterm_lpf_hz;
 static uint16_t cmsx_dterm_notch_hz;
 static uint16_t cmsx_dterm_notch_cutoff;
 static uint16_t cmsx_yaw_lpf_hz;
-static uint16_t cmsx_yaw_p_limit;
 
 static long cmsx_FilterPerProfileRead(void)
 {
@@ -341,7 +340,6 @@ static OSD_Entry cmsx_menuFilterPerProfileEntries[] =
     { "DTERM NF",   OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch_hz,       0, 500, 1 }, 0 },
     { "DTERM NFCO", OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch_cutoff,   0, 500, 1 }, 0 },
     { "YAW LPF",    OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_yaw_lpf_hz,           0, 500, 1 }, 0 },
-    { "YAW P LIM",  OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_yaw_p_limit,        100, 500, 1 }, 0 },
 
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
