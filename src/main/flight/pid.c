@@ -277,7 +277,7 @@ static float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPit
     errorAngle += GPS_angle[axis];
 #endif
     errorAngle = constrainf(errorAngle, -pidProfile->levelAngleLimit, pidProfile->levelAngleLimit);
-    errorAngle = (errorAngle - ((attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f));
+    errorAngle = errorAngle - ((attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f);
     if(FLIGHT_MODE(ANGLE_MODE)) {
         // ANGLE mode - control is angle based, so control loop is needed
         currentPidSetpoint = errorAngle * levelGain;
