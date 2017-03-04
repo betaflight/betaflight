@@ -1280,7 +1280,6 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("dterm_notch_hz:%d",                   currentPidProfile->dterm_notch_hz);
         BLACKBOX_PRINT_HEADER_LINE("dterm_notch_cutoff:%d",               currentPidProfile->dterm_notch_cutoff);
         BLACKBOX_PRINT_HEADER_LINE("itermWindupPointPercent:%d",          currentPidProfile->itermWindupPointPercent);
-        BLACKBOX_PRINT_HEADER_LINE("yaw_p_limit:%d",                      currentPidProfile->yaw_p_limit);
         BLACKBOX_PRINT_HEADER_LINE("dterm_average_count:%d",              currentPidProfile->dterm_average_count);
         BLACKBOX_PRINT_HEADER_LINE("vbat_pid_compensation:%d",            currentPidProfile->vbatPidCompensation);
         BLACKBOX_PRINT_HEADER_LINE("pidAtMinThrottle:%d",                 currentPidProfile->pidAtMinThrottle);
@@ -1292,6 +1291,8 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("dtermSetpointWeight:%d",              currentPidProfile->dtermSetpointWeight);
         BLACKBOX_PRINT_HEADER_LINE("yawRateAccelLimit:%d",                castFloatBytesToInt(currentPidProfile->yawRateAccelLimit));
         BLACKBOX_PRINT_HEADER_LINE("rateAccelLimit:%d",                   castFloatBytesToInt(currentPidProfile->rateAccelLimit));
+        BLACKBOX_PRINT_HEADER_LINE("pidSumLimit:%d",                      castFloatBytesToInt(currentPidProfile->pidSumLimit));
+        BLACKBOX_PRINT_HEADER_LINE("pidSumLimitYaw:%d",                   castFloatBytesToInt(currentPidProfile->pidSumLimitYaw));
         // End of Betaflight controller parameters
 
         BLACKBOX_PRINT_HEADER_LINE("deadband:%d",                         rcControlsConfig()->deadband);
