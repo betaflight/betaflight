@@ -162,7 +162,7 @@ static const char * const gyroNames[] = { "NONE", "AUTO", "MPU6050", "L3G4200D",
 static const char * const lookupTableAccHardware[] = { "NONE", "AUTO", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "MPU9250", "FAKE"};
 #if (FLASH_SIZE > 64)
 // sync with baroSensor_e
-static const char * const lookupTableBaroHardware[] = { "NONE", "AUTO", "BMP085", "MS5611", "BMP280", "FAKE"};
+static const char * const lookupTableBaroHardware[] = { "NONE", "AUTO", "BMP085", "MS5611", "BMP280", "MS5607", "FAKE"};
 // sync with magSensor_e
 static const char * const lookupTableMagHardware[] = { "NONE", "AUTO", "HMC5883", "AK8975", "GPSMAG", "MAG3110", "AK8963", "IST8310", "FAKE"};
 // sycn with rangefinderType_e
