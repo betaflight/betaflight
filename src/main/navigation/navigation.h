@@ -68,7 +68,7 @@ enum {
 typedef struct positionEstimationConfig_s {
     uint8_t automatic_mag_declination;
     uint8_t reset_altitude_type;
-    uint8_t accz_unarmed_cal;
+    uint8_t gravity_calibration_tolerance;    // Tolerance of gravity calibration (cm/s/s)
     uint8_t use_gps_velned;
     uint16_t gps_delay_ms;
 
@@ -261,6 +261,7 @@ bool navigationRequiresThrottleTiltCompensation(void);
 int8_t naivationGetHeadingControlState(void);
 bool naivationBlockArming(void);
 bool navigationPositionEstimateIsHealthy(void);
+bool navIsCalibrationComplete(void);
 
 /* Access to estimated position and velocity */
 float getEstimatedActualVelocity(int axis);

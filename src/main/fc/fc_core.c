@@ -114,9 +114,21 @@ bool isCalibrating(void)
     }
 #endif
 
-    // Note: compass calibration is handled completely differently, outside of the main loop, see f.CALIBRATE_MAG
+#ifdef NAV
+    if (!navIsCalibrationComplete()) {
+        return true;
+    }
+#endif
 
-    return (!accIsCalibrationComplete() && sensors(SENSOR_ACC)) || (!gyroIsCalibrationComplete());
+    if (!accIsCalibrationComplete() && sensors(SENSOR_ACC)) {
+        return true;
+    }
+
+    if (!gyroIsCalibrationComplete()) {
+        return true;
+    }
+
+    return false;
 }
 
 int16_t getAxisRcCommand(int16_t rawData, int16_t rate, int16_t deadband)

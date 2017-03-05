@@ -796,7 +796,7 @@ static const clivalue_t valueTable[] = {
 #if defined(NAV_AUTO_MAG_DECLINATION)
     { "inav_auto_mag_decl",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, automatic_mag_declination) },
 #endif
-    { "inav_accz_unarmedcal",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, accz_unarmed_cal) },
+    { "inav_gravity_cal_tolerance", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, gravity_calibration_tolerance) },
     { "inav_use_gps_velned",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, use_gps_velned) },
     { "inav_gps_delay",             VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  500 }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, gps_delay_ms) },
     { "inav_reset_altitude",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_NAV_RESET_ALTITUDE }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, reset_altitude_type) },
