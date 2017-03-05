@@ -130,9 +130,11 @@ bool isEEPROMContentValid(void)
 
     chk = updateChecksum(chk, header, sizeof(*header));
     p += sizeof(*header);
+#ifndef USE_PARAMETER_GROUPS
     // include the transitional masterConfig record
     chk = updateChecksum(chk, p, sizeof(masterConfig));
     p += sizeof(masterConfig);
+#endif
 
     for (;;) {
         const configRecord_t *record = (const configRecord_t *)p;
@@ -174,7 +176,9 @@ static const configRecord_t *findEEPROM(const pgRegistry_t *reg, configRecordFla
 {
     const uint8_t *p = &__config_start;
     p += sizeof(configHeader_t);             // skip header
+#ifndef USE_PARAMETER_GROUPS
     p += sizeof(master_t); // skip the transitional master_t record
+#endif
     while (true) {
         const configRecord_t *record = (const configRecord_t *)p;
         if (record->size == 0
@@ -195,10 +199,12 @@ static const configRecord_t *findEEPROM(const pgRegistry_t *reg, configRecordFla
 //   but each PG is loaded/initialized exactly once and in defined order.
 bool loadEEPROM(void)
 {
+#ifndef USE_PARAMETER_GROUPS
     // read in the transitional masterConfig record
     const uint8_t *p = &__config_start;
     p += sizeof(configHeader_t); // skip header
     masterConfig = *(master_t*)p;
+#endif
 
     PG_FOREACH(reg) {
         configRecordFlags_e cls_start, cls_end;
@@ -238,9 +244,11 @@ static bool writeSettingsToEEPROM(void)
 
     config_streamer_write(&streamer, (uint8_t *)&header, sizeof(header));
     chk = updateChecksum(chk, (uint8_t *)&header, sizeof(header));
+#ifndef USE_PARAMETER_GROUPS
     // write the transitional masterConfig record
     config_streamer_write(&streamer, (uint8_t *)&masterConfig, sizeof(masterConfig));
     chk = updateChecksum(chk, (uint8_t *)&masterConfig, sizeof(masterConfig));
+#endif
     PG_FOREACH(reg) {
         const uint16_t regSize = pgSize(reg);
         configRecord_t record = {

@@ -39,6 +39,16 @@
 
 #include "hardware_revision.h"
 
+#ifdef USE_PARAMETER_GROUPS
+void targetConfiguration(void)
+{
+
+}
+void targetValidateConfiguration(void)
+{
+
+}
+#else
 void targetConfiguration(master_t *config)
 {
     UNUSED(config);
@@ -108,10 +118,9 @@ void targetConfiguration(master_t *config)
 
 void targetValidateConfiguration(master_t *config)
 {
-    UNUSED(config);
-
     if (hardwareRevision < NAZE32_REV5 && config->accelerometerConfig.acc_hardware == ACC_ADXL345) {
         config->accelerometerConfig.acc_hardware = ACC_NONE;
     }  
 }
 #endif
+#endif // USE_PARAMETER_GROUPS
