@@ -63,7 +63,7 @@ PG_RESET_TEMPLATE(barometerConfig_t, barometerConfig,
 static uint16_t calibratingB = 0;      // baro calibration = get new ground pressure value
 static int32_t baroPressure = 0;
 static int32_t baroGroundAltitude = 0;
-static int32_t baroGroundPressure = 0;
+static int32_t baroGroundPressure = 8*101325;
 
 bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 {
@@ -240,11 +240,18 @@ uint32_t baroUpdate(void)
 
 static void performBaroCalibrationCycle(void)
 {
+    static int32_t savedGroundPressure = 0;
+
     baroGroundPressure -= baroGroundPressure / 8;
     baroGroundPressure += baroPressure;
     baroGroundAltitude = (1.0f - powf((baroGroundPressure / 8) / 101325.0f, 0.190295f)) * 4433000.0f;
 
-    calibratingB--;
+    if (baroGroundPressure == savedGroundPressure)
+        calibratingB = 0;
+    else {
+        calibratingB--;
+        savedGroundPressure = baroGroundPressure;
+    }
 }
 
 int32_t baroCalculateAltitude(void)
