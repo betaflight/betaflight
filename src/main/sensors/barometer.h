@@ -49,7 +49,7 @@ extern baro_t baro;
 
 bool baroInit(void);
 bool baroIsCalibrationComplete(void);
-void baroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
+void baroStartCalibration(void);
 uint32_t baroUpdate(void);
 bool baroIsReady(void);
 int32_t baroCalculateAltitude(void);

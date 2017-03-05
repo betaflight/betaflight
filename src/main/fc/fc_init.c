@@ -587,7 +587,7 @@ void init(void)
 
     gyroSetCalibrationCycles(CALIBRATING_GYRO_CYCLES);
 #ifdef BARO
-    baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
+    baroStartCalibration();
 #endif
 #ifdef PITOT
     pitotSetCalibrationCycles(CALIBRATING_PITOT_CYCLES);

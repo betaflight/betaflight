@@ -21,7 +21,10 @@
 
 #include "platform.h"
 
+#include "build/debug.h"
+
 #include "common/maths.h"
+#include "common/time.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -32,6 +35,7 @@
 #include "drivers/barometer_fake.h"
 #include "drivers/barometer_ms56xx.h"
 #include "drivers/logging.h"
+#include "drivers/time.h"
 
 #include "fc/runtime_config.h"
 
@@ -60,10 +64,11 @@ PG_RESET_TEMPLATE(barometerConfig_t, barometerConfig,
 
 #ifdef BARO
 
-static uint16_t calibratingB = 0;      // baro calibration = get new ground pressure value
+static timeMs_t baroCalibrationTimeout = 0;
+static bool baroCalibrationFinished = false;
+static float baroGroundAltitude = 0;
+static float baroGroundPressure = 101325.0f;
 static int32_t baroPressure = 0;
-static int32_t baroGroundAltitude = 0;
-static int32_t baroGroundPressure = 8*101325;
 
 bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 {
@@ -180,12 +185,13 @@ bool baroInit(void)
 
 bool baroIsCalibrationComplete(void)
 {
-    return calibratingB == 0;
+    return baroCalibrationFinished;
 }
 
-void baroSetCalibrationCycles(uint16_t calibrationCyclesRequired)
+void baroStartCalibration(void)
 {
-    calibratingB = calibrationCyclesRequired;
+    baroCalibrationTimeout = millis();
+    baroCalibrationFinished = false;
 }
 
 static bool baroReady = false;
@@ -250,19 +256,24 @@ uint32_t baroUpdate(void)
     }
 }
 
+static float pressureToAltitude(const float pressure)
+{
+    return (1.0f - powf(pressure / 101325.0f, 0.190295f)) * 4433000.0f;
+}
+
 static void performBaroCalibrationCycle(void)
 {
-    static int32_t savedGroundPressure = 0;
+    const float baroGroundPressureError = baroPressure - baroGroundPressure;
+    baroGroundPressure += baroGroundPressureError * 0.15f;
 
-    baroGroundPressure -= baroGroundPressure / 8;
-    baroGroundPressure += baroPressure;
-    baroGroundAltitude = (1.0f - powf((baroGroundPressure / 8) / 101325.0f, 0.190295f)) * 4433000.0f;
-
-    if (baroGroundPressure == savedGroundPressure)
-        calibratingB = 0;
+    if (ABS(baroGroundPressureError) < (baroGroundPressure * 0.00005f)) {    // 0.005% calibration error (should give c. 10cm calibration error)
+        if ((millis() - baroCalibrationTimeout) > 250) {
+            baroGroundAltitude = pressureToAltitude(baroGroundPressure);
+            baroCalibrationFinished = true;
+        }
+    }
     else {
-        calibratingB--;
-        savedGroundPressure = baroGroundPressure;
+        baroCalibrationTimeout = millis();
     }
 }
 
@@ -280,9 +291,7 @@ int32_t baroCalculateAltitude(void)
         }
 #endif
         // calculates height from ground via baro readings
-        // see: https://github.com/diydrones/ardupilot/blob/master/libraries/AP_Baro/AP_Baro.cpp#L140
-        baro.BaroAlt = lrintf((1.0f - powf((float)(baroPressure) / 101325.0f, 0.190295f)) * 4433000.0f); // in cm
-        baro.BaroAlt -= baroGroundAltitude;
+        baro.BaroAlt = pressureToAltitude(baroPressure) - baroGroundAltitude;
     }
 
     return baro.BaroAlt;
