@@ -77,9 +77,6 @@
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
 
-#undef USE_SOFTSERIAL1
-#undef USE_SOFTSERIAL2
-
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
 
