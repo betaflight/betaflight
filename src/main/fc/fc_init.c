@@ -405,18 +405,6 @@ void init(void)
     }
 #endif
 
-#ifdef OSD
-    if (feature(FEATURE_OSD)) {
-#if defined(USE_MAX7456)
-        // if there is a max7456 chip for the OSD then use it, otherwise use MSP
-        displayPort_t *osdDisplayPort = max7456DisplayPortInit(vcdProfile());
-#elif defined(USE_MSP_DISPLAYPORT)
-        displayPort_t *osdDisplayPort = displayPortMspInit();
-#endif
-        osdInit(osdDisplayPort);
-    }
-#endif
-
     if (!sensorsAutodetect()) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
@@ -460,6 +448,18 @@ void init(void)
     failsafeInit();
 
     rxInit();
+
+#ifdef OSD
+    if (feature(FEATURE_OSD)) {
+#if defined(USE_MAX7456)
+        // if there is a max7456 chip for the OSD then use it, otherwise use MSP
+        displayPort_t *osdDisplayPort = max7456DisplayPortInit(vcdProfile());
+#elif defined(USE_MSP_DISPLAYPORT)
+        displayPort_t *osdDisplayPort = displayPortMspInit();
+#endif
+        osdInit(osdDisplayPort);
+    }
+#endif
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
