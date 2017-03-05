@@ -133,8 +133,8 @@ PG_REGISTER_WITH_RESET_FN(ppmConfig_t, ppmConfig, PG_PPM_CONFIG, 0);
 PG_REGISTER_WITH_RESET_FN(statusLedConfig_t, statusLedConfig, PG_STATUS_LED_CONFIG, 0);
 PG_REGISTER_WITH_RESET_FN(serialPinConfig_t, serialPinConfig, PG_SERIAL_PIN_CONFIG, 0);
 
-PG_REGISTER_WITH_RESET_TEMPLATE(flashConfig_t, flashConfig, PG_FLASH_CONFIG, 0);
 #ifdef USE_FLASHFS
+PG_REGISTER_WITH_RESET_TEMPLATE(flashConfig_t, flashConfig, PG_FLASH_CONFIG, 0);
 #ifdef M25P16_CS_PIN
 #define FLASH_CONFIG_CSTAG   IO_TAG(M25P16_CS_PIN)
 #else
@@ -1106,11 +1106,13 @@ void createDefaultConfig(master_t *config)
         config->customMotorMixer[i].throttle = 0.0f;
     }
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef VTX
     config->vtxConfig.vtx_band = 4;    //Fatshark/Airwaves
     config->vtxConfig.vtx_channel = 1; //CH1
     config->vtxConfig.vtx_mode = 0;    //CH+BAND mode
     config->vtxConfig.vtx_mhz = 5740;  //F0
+#endif
 #endif
 
 #ifdef TRANSPONDER
