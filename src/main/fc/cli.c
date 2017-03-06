@@ -1759,7 +1759,7 @@ static void cliSerial(char *cmdline)
     memcpy(currentConfig, &portConfig, sizeof(portConfig));
 }
 
-#ifndef SKIP_SERIAL_PASSTHROUGH
+#ifdef USE_SERIAL_PASSTHROUGH
 static void cliSerialPassthrough(char *cmdline)
 {
     if (isEmpty(cmdline)) {
