@@ -118,7 +118,7 @@ uint8_t dmaGetResourceIndex(dmaIdentifier_e identifier)
 dmaIdentifier_e dmaGetIdentifier(const DMA_Stream_TypeDef* stream)
 {
     for (int i = 0; i < DMA_MAX_DESCRIPTORS; i++) {
-        if (dmaDescriptors[i].stream == stream) {
+        if (dmaDescriptors[i].ref == stream) {
             return i;
         }
     }
@@ -128,7 +128,7 @@ dmaIdentifier_e dmaGetIdentifier(const DMA_Stream_TypeDef* stream)
 dmaChannelDescriptor_t* getDmaDescriptor(const DMA_Stream_TypeDef* stream)
 {
     for (int i = 0; i < DMA_MAX_DESCRIPTORS; i++) {
-        if (dmaDescriptors[i].stream == stream) {
+        if (dmaDescriptors[i].ref == stream) {
             return &dmaDescriptors[i];
         }
     }

@@ -36,8 +36,8 @@
 #define BEEPER_OPT              PB7
 #define BEEPER_INVERTED
 
-#define INVERTER_PIN_USART6     PB15
-//#define INVERTER_PIN_USART1     PC9
+#define INVERTER_PIN_UART6      PB15
+//#define INVERTER_PIN_UART1     PC9
 
 #define UART1_INVERTER          PC9
 
@@ -155,8 +155,7 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define SPEKTRUM_BIND
-#define BIND_PIN                PB11
+#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define TARGET_IO_PORTA             0xffff
 #define TARGET_IO_PORTB             0xffff

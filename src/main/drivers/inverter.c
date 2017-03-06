@@ -43,28 +43,28 @@ static void initInverter(ioTag_t ioTag)
 
 void initInverters(void)
 {
-#ifdef INVERTER_PIN_USART1
-    initInverter(IO_TAG(INVERTER_PIN_USART1));
+#ifdef INVERTER_PIN_UART1
+    initInverter(IO_TAG(INVERTER_PIN_UART1));
 #endif
 
-#ifdef INVERTER_PIN_USART2
-    initInverter(IO_TAG(INVERTER_PIN_USART2));
+#ifdef INVERTER_PIN_UART2
+    initInverter(IO_TAG(INVERTER_PIN_UART2));
 #endif
 
-#ifdef INVERTER_PIN_USART3
-    initInverter(IO_TAG(INVERTER_PIN_USART3));
+#ifdef INVERTER_PIN_UART3
+    initInverter(IO_TAG(INVERTER_PIN_UART3));
 #endif
 
-#ifdef INVERTER_PIN_USART4
-    initInverter(IO_TAG(INVERTER_PIN_USART4));
+#ifdef INVERTER_PIN_UART4
+    initInverter(IO_TAG(INVERTER_PIN_UART4));
 #endif
 
-#ifdef INVERTER_PIN_USART5
-    initInverter(IO_TAG(INVERTER_PIN_USART5));
+#ifdef INVERTER_PIN_UART5
+    initInverter(IO_TAG(INVERTER_PIN_UART5));
 #endif
 
-#ifdef INVERTER_PIN_USART6
-    initInverter(IO_TAG(INVERTER_PIN_USART6));
+#ifdef INVERTER_PIN_UART6
+    initInverter(IO_TAG(INVERTER_PIN_UART6));
 #endif
 }
 
@@ -73,39 +73,39 @@ void enableInverter(USART_TypeDef *USARTx, bool on)
 #ifdef USE_INVERTER
     IO_t pin = IO_NONE;
 
-#ifdef INVERTER_PIN_USART1
+#ifdef INVERTER_PIN_UART1
     if (USARTx == USART1) {
-        pin = IOGetByTag(IO_TAG(INVERTER_PIN_USART1));
+        pin = IOGetByTag(IO_TAG(INVERTER_PIN_UART1));
     }
 #endif
 
-#ifdef INVERTER_PIN_USART2
+#ifdef INVERTER_PIN_UART2
     if (USARTx == USART2) {
-        pin = IOGetByTag(IO_TAG(INVERTER_PIN_USART2));
+        pin = IOGetByTag(IO_TAG(INVERTER_PIN_UART2));
     }
 #endif
 
-#ifdef INVERTER_PIN_USART3
+#ifdef INVERTER_PIN_UART3
     if (USARTx == USART3) {
-        pin = IOGetByTag(IO_TAG(INVERTER_PIN_USART3));
+        pin = IOGetByTag(IO_TAG(INVERTER_PIN_UART3));
     }
 #endif
 
-#ifdef INVERTER_PIN_USART4
-    if (USARTx == USART4) {
-        pin = IOGetByTag(IO_TAG(INVERTER_PIN_USART4));
+#ifdef INVERTER_PIN_UART4
+    if (USARTx == UART4) {
+        pin = IOGetByTag(IO_TAG(INVERTER_PIN_UART4));
     }
 #endif
 
-#ifdef INVERTER_PIN_USART5
-    if (USARTx == USART5) {
-        pin = IOGetByTag(IO_TAG(INVERTER_PIN_USART5));
+#ifdef INVERTER_PIN_UART5
+    if (USARTx == UART5) {
+        pin = IOGetByTag(IO_TAG(INVERTER_PIN_UART5));
     }
 #endif
 
-#ifdef INVERTER_PIN_USART6
+#ifdef INVERTER_PIN_UART6
     if (USARTx == USART6) {
-        pin = IOGetByTag(IO_TAG(INVERTER_PIN_USART6));
+        pin = IOGetByTag(IO_TAG(INVERTER_PIN_UART6));
     }
 #endif
 

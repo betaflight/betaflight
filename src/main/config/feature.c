@@ -21,7 +21,6 @@
 
 #include "platform.h"
 
-#include "config/config_master.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -78,5 +77,3 @@ uint32_t featureMask(void)
 {
     return featureConfig()->enabledFeatures;
 }
-
-

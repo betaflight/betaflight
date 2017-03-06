@@ -68,7 +68,7 @@
 #endif
 
 // PC0 used as inverter select GPIO
-#define INVERTER_PIN_USART1     PC0
+#define INVERTER_PIN_UART1      PC0
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
@@ -195,9 +195,7 @@
 #define DEFAULT_FEATURES        (FEATURE_BLACKBOX)
 #endif
 
-#define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN                PB11
+#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

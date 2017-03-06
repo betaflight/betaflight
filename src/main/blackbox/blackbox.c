@@ -35,7 +35,6 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
-#include "config/config_master.h"
 #include "config/config_profile.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
@@ -47,13 +46,18 @@
 #include "drivers/pwm_output.h"
 
 #include "fc/config.h"
+#include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
 #include "flight/failsafe.h"
+#include "flight/mixer.h"
+#include "flight/navigation.h"
 #include "flight/pid.h"
+#include "flight/servos.h"
 
 #include "io/beeper.h"
+#include "io/gps.h"
 #include "io/serial.h"
 
 #include "rx/rx.h"
@@ -371,7 +375,7 @@ static blackboxMainState_t* blackboxHistory[3];
 static bool blackboxModeActivationConditionPresent = false;
 
 /**
- * Return true if it is safe to edit the Blackbox configuration in the emasterConfig.
+ * Return true if it is safe to edit the Blackbox configuration.
  */
 bool blackboxMayEditConfig()
 {
@@ -1195,7 +1199,6 @@ static bool blackboxWriteSysinfo()
         return false;
     }
 
-    const profile_t *currentProfile = &masterConfig.profile[systemConfig()->current_profile_index];
     const controlRateConfig_t *currentControlRateProfile = controlRateProfiles(systemConfig()->activeRateProfile);
     switch (xmitState.headerIndex) {
         BLACKBOX_PRINT_HEADER_LINE("Firmware type:%s",                    "Cleanflight");

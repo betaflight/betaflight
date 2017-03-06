@@ -804,7 +804,7 @@ void vtxSASetPitmode(uint8_t onoff)
 
     saSetMode(newmode);
 
-    return true;
+    return;
 }
 
 bool vtxSAGetBandChan(uint8_t *pBand, uint8_t *pChan)
@@ -1137,9 +1137,9 @@ static CMS_Menu saCmsMenuStats = {
     .entries = saCmsMenuStatsEntries
 };
 
-static OSD_TAB_t saCmsEntBand = { &saCmsBand, 5, vtx58BandNames, NULL };
+static OSD_TAB_t saCmsEntBand = { &saCmsBand, 5, vtx58BandNames };
 
-static OSD_TAB_t saCmsEntChan = { &saCmsChan, 8, vtx58ChannelNames, NULL };
+static OSD_TAB_t saCmsEntChan = { &saCmsChan, 8, vtx58ChannelNames };
 
 static const char * const saCmsPowerNames[] = {
     "---",

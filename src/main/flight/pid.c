@@ -29,9 +29,10 @@
 #include "common/maths.h"
 #include "common/filter.h"
 
+#include "config/config_reset.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
-#include "config/config_reset.h"
+#include "config/config_profile.h"
 
 #include "fc/fc_core.h"
 #include "fc/fc_rc.h"
@@ -75,60 +76,71 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 0);
 
+void resetPidProfile(pidProfile_t *pidProfile)
+{
+    RESET_CONFIG(const pidProfile_t, pidProfile,
+        .P8[ROLL] = 44,
+        .I8[ROLL] = 40,
+        .D8[ROLL] = 20,
+        .P8[PITCH] = 58,
+        .I8[PITCH] = 50,
+        .D8[PITCH] = 22,
+        .P8[YAW] = 70,
+        .I8[YAW] = 45,
+        .D8[YAW] = 20,
+        .P8[PIDALT] = 50,
+        .I8[PIDALT] = 0,
+        .D8[PIDALT] = 0,
+        .P8[PIDPOS] = 15,   // POSHOLD_P * 100,
+        .I8[PIDPOS] = 0,    // POSHOLD_I * 100,
+        .D8[PIDPOS] = 0,
+        .P8[PIDPOSR] = 34,  // POSHOLD_RATE_P * 10,
+        .I8[PIDPOSR] = 14,  // POSHOLD_RATE_I * 100,
+        .D8[PIDPOSR] = 53,  // POSHOLD_RATE_D * 1000,
+        .P8[PIDNAVR] = 25,  // NAV_P * 10,
+        .I8[PIDNAVR] = 33,  // NAV_I * 100,
+        .D8[PIDNAVR] = 83,  // NAV_D * 1000,
+        .P8[PIDLEVEL] = 50,
+        .I8[PIDLEVEL] = 50,
+        .D8[PIDLEVEL] = 100,
+        .P8[PIDMAG] = 40,
+        .P8[PIDVEL] = 55,
+        .I8[PIDVEL] = 55,
+        .D8[PIDVEL] = 75,
+
+        .yaw_p_limit = YAW_P_LIMIT_MAX,
+        .pidSumLimit = PIDSUM_LIMIT,
+        .yaw_lpf_hz = 0,
+        .itermWindupPointPercent = 50,
+        .dterm_filter_type = FILTER_BIQUAD,
+        .dterm_lpf_hz = 100,    // filtering ON by default
+        .dterm_notch_hz = 260,
+        .dterm_notch_cutoff = 160,
+        .vbatPidCompensation = 0,
+        .pidAtMinThrottle = PID_STABILISATION_ON,
+        .levelAngleLimit = 55,
+        .levelSensitivity = 55,
+        .setpointRelaxRatio = 20,
+        .dtermSetpointWeight = 100,
+        .yawRateAccelLimit = 10.0f,
+        .rateAccelLimit = 0.0f,
+        .itermThrottleThreshold = 350,
+        .itermAcceleratorGain = 1.0f
+    );
+}
 void pgResetFn_pidProfiles(pidProfile_t *pidProfiles)
 {
     for (int i = 0; i < MAX_PROFILE_COUNT; i++) {
-        RESET_CONFIG(const pidProfile_t, &pidProfiles[i],
-            .P8[ROLL] = 44,
-            .I8[ROLL] = 40,
-            .D8[ROLL] = 20,
-            .P8[PITCH] = 58,
-            .I8[PITCH] = 50,
-            .D8[PITCH] = 22,
-            .P8[YAW] = 70,
-            .I8[YAW] = 45,
-            .D8[YAW] = 20,
-            .P8[PIDALT] = 50,
-            .I8[PIDALT] = 0,
-            .D8[PIDALT] = 0,
-            .P8[PIDPOS] = 15,   // POSHOLD_P * 100,
-            .I8[PIDPOS] = 0,    // POSHOLD_I * 100,
-            .D8[PIDPOS] = 0,
-            .P8[PIDPOSR] = 34,  // POSHOLD_RATE_P * 10,
-            .I8[PIDPOSR] = 14,  // POSHOLD_RATE_I * 100,
-            .D8[PIDPOSR] = 53,  // POSHOLD_RATE_D * 1000,
-            .P8[PIDNAVR] = 25,  // NAV_P * 10,
-            .I8[PIDNAVR] = 33,  // NAV_I * 100,
-            .D8[PIDNAVR] = 83,  // NAV_D * 1000,
-            .P8[PIDLEVEL] = 50,
-            .I8[PIDLEVEL] = 50,
-            .D8[PIDLEVEL] = 100,
-            .P8[PIDMAG] = 40,
-            .P8[PIDVEL] = 55,
-            .I8[PIDVEL] = 55,
-            .D8[PIDVEL] = 75,
-
-            .yaw_p_limit = YAW_P_LIMIT_MAX,
-            .pidSumLimit = PIDSUM_LIMIT,
-            .yaw_lpf_hz = 0,
-            .itermWindupPointPercent = 50,
-            .dterm_filter_type = FILTER_BIQUAD,
-            .dterm_lpf_hz = 100,    // filtering ON by default
-            .dterm_notch_hz = 260,
-            .dterm_notch_cutoff = 160,
-            .vbatPidCompensation = 0,
-            .pidAtMinThrottle = PID_STABILISATION_ON,
-            .levelAngleLimit = 55,
-            .levelSensitivity = 55,
-            .setpointRelaxRatio = 20,
-            .dtermSetpointWeight = 100,
-            .yawRateAccelLimit = 10.0f,
-            .rateAccelLimit = 0.0f,
-            .itermThrottleThreshold = 350,
-            .itermAcceleratorGain = 1.0f
-        );
+        resetPidProfile(&pidProfiles[i]);
     }
 }
+
+#ifdef USE_PARAMETER_GROUPS
+void resetProfile(profile_t *profile)
+{
+    resetPidProfile(&profile->pidProfile);
+}
+#endif
 
 void pidSetTargetLooptime(uint32_t pidLooptime)
 {

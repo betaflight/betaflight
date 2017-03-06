@@ -45,7 +45,7 @@
 //#define BARO_XCLR_PIN           PC13
 //#define BARO_EOC_PIN            PC14
 
-#define INVERTER_PIN_USART2       PB2 // PB2 (BOOT1) abused as inverter select GPIO
+#define INVERTER_PIN_UART2        PB2 // PB2 (BOOT1) abused as inverter select GPIO
 
 #define USE_EXTI
 #define MAG_INT_EXTI            PC14
@@ -142,9 +142,7 @@
 #define RSSI_ADC_PIN            PA1
 #define EXTERNAL1_ADC_PIN       PA5
 
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
+#define SPEKTRUM_BIND_PIN       PA3
 
 #if !defined(BRUSHED_MOTORS)
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE

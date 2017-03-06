@@ -99,9 +99,7 @@
 
 #define USE_ESC_SENSOR
 
-#define SPEKTRUM_BIND
-// USART2, PB4
-#define BIND_PIN                PB4
+#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

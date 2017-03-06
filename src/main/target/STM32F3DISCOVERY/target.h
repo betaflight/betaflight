@@ -175,8 +175,7 @@
 
 #define USE_ESC_SENSOR
 
-#define SPEKTRUM_BIND
-#define BIND_PIN                PA3 // USART2, PA3
+#define SPEKTRUM_BIND_PIN       PA3 // USART2, PA3
 
 #define SONAR
 #define SONAR_TRIGGER_PIN       PB0

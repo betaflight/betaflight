@@ -26,7 +26,7 @@
 
 #define BEEPER                  PE5
 
-#define INVERTER_PIN_USART6     PD3
+#define INVERTER_PIN_UART6      PD3
 
 
 
@@ -147,9 +147,7 @@
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
-#define SPEKTRUM_BIND
-// UART6, PC7
-#define BIND_PIN                PC7
+#define SPEKTRUM_BIND_PIN       UART6_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

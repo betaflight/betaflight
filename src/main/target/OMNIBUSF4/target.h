@@ -33,7 +33,7 @@
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 
-#define INVERTER_PIN_USART1     PC0 // PC0 used as inverter select GPIO
+#define INVERTER_PIN_UART1      PC0 // PC0 used as inverter select GPIO
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
@@ -165,8 +165,7 @@
 
 #define AVOID_UART1_FOR_PWM_PPM
 
-#define SPEKTRUM_BIND
-#define BIND_PIN                UART1_RX_PIN
+#define SPEKTRUM_BIND_PIN       UART1_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
