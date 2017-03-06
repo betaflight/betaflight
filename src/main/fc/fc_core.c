@@ -114,6 +114,12 @@ bool isCalibrating(void)
     }
 #endif
 
+#ifdef PITOT
+    if (sensors(SENSOR_PITOT) && !pitotIsCalibrationComplete()) {
+        return true;
+    }
+#endif
+
 #ifdef NAV
     if (!navIsCalibrationComplete()) {
         return true;
