@@ -56,6 +56,7 @@
 
 #include "msp/msp_serial.h"
 
+#include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/gps.h"
 #include "io/motors.h"
@@ -63,7 +64,7 @@
 #include "io/serial.h"
 #include "io/statusindicator.h"
 #include "io/transponder_ir.h"
-#include "io/asyncfatfs/asyncfatfs.h"
+#include "io/vtx.h"
 
 #include "rx/rx.h"
 

@@ -21,27 +21,21 @@
 #include <platform.h>
 
 #ifdef TARGET_CONFIG
+
 #include "common/axis.h"
 
-#include "drivers/compass.h"
-#include "drivers/io.h"
+#include "drivers/light_led.h"
 #include "drivers/pwm_esc_detect.h"
-#include "drivers/pwm_output.h"
-#include "drivers/sensor.h"
 
-#include "fc/rc_controls.h"
+#include "fc/config.h"
 
-#include "flight/failsafe.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
 
 #include "rx/rx.h"
 
-#include "sensors/sensors.h"
 #include "sensors/compass.h"
-
-#include "config/config_profile.h"
-#include "config/config_master.h"
+#include "sensors/gyro.h"
 
 #include "hardware_revision.h"
 
@@ -52,11 +46,11 @@
 #define BRUSHED_MOTORS_PWM_RATE 32000           // 32kHz
 
 // alternative defaults settings for AlienFlight targets
-void targetConfiguration(master_t *config)
+void targetConfiguration(void)
 {
     /* depending on revision ... depends on the LEDs to be utilised. */
     if (hardwareRevision == AFF3_REV_2) {
-        config->statusLedConfig.polarity = 0
+        statusLedConfigMutable()->polarity = 0
 #ifdef LED0_A_INVERTED
             | BIT(0)
 #endif
@@ -69,45 +63,45 @@ void targetConfiguration(master_t *config)
             ;
 
         for (int i = 0; i < LED_NUMBER; i++) {
-            config->statusLedConfig.ledTags[i] = IO_TAG_NONE;
+            statusLedConfigMutable()->ledTags[i] = IO_TAG_NONE;
         }
 #ifdef LED0_A
-        config->statusLedConfig.ledTags[0] = IO_TAG(LED0_A);
+        statusLedConfigMutable()->ledTags[0] = IO_TAG(LED0_A);
 #endif
 #ifdef LED1_A
-        config->statusLedConfig.ledTags[1] = IO_TAG(LED1_A);
+        statusLedConfigMutable()->ledTags[1] = IO_TAG(LED1_A);
 #endif
 #ifdef LED2_A
-        config->statusLedConfig.ledTags[2] = IO_TAG(LED2_A);
+        statusLedConfigMutable()->ledTags[2] = IO_TAG(LED2_A);
 #endif
     } else {
-        config->gyroConfig.gyro_sync_denom = 2;
-        config->pidConfig.pid_process_denom = 2;
+        gyroConfigMutable()->gyro_sync_denom = 2;
+        pidConfigMutable()->pid_process_denom = 2;
     }
 
-    config->rxConfig.spektrum_sat_bind = 5;
-    config->rxConfig.spektrum_sat_bind_autoreset = 1;
-    config->compassConfig.mag_hardware = MAG_NONE;            // disabled by default
+    rxConfigMutable()->spektrum_sat_bind = 5;
+    rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
+    compassConfigMutable()->mag_hardware = MAG_NONE;            // disabled by default
 
     if (hardwareMotorType == MOTOR_BRUSHED) {
-        config->motorConfig.dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
-        config->pidConfig.pid_process_denom = 1;
+        motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
+        pidConfigMutable()->pid_process_denom = 1;
     }
 
-    config->profile[0].pidProfile.P8[ROLL] = 90;
-    config->profile[0].pidProfile.I8[ROLL] = 44;
-    config->profile[0].pidProfile.D8[ROLL] = 60;
-    config->profile[0].pidProfile.P8[PITCH] = 90;
-    config->profile[0].pidProfile.I8[PITCH] = 44;
-    config->profile[0].pidProfile.D8[PITCH] = 60;
+    pidProfilesMutable(0)->P8[FD_ROLL] = 90;
+    pidProfilesMutable(0)->I8[FD_ROLL] = 44;
+    pidProfilesMutable(0)->D8[FD_ROLL] = 60;
+    pidProfilesMutable(0)->P8[FD_PITCH] = 90;
+    pidProfilesMutable(0)->I8[FD_PITCH] = 44;
+    pidProfilesMutable(0)->D8[FD_PITCH] = 60;
 
-    config->customMotorMixer[0] = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
-    config->customMotorMixer[1] = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
-    config->customMotorMixer[2] = (motorMixer_t){ 1.0f,  0.414178f,  1.0f,  1.0f };    // REAR_L
-    config->customMotorMixer[3] = (motorMixer_t){ 1.0f,  0.414178f, -1.0f, -1.0f };    // FRONT_L
-    config->customMotorMixer[4] = (motorMixer_t){ 1.0f, -1.0f, -0.414178f, -1.0f };    // MIDFRONT_R
-    config->customMotorMixer[5] = (motorMixer_t){ 1.0f,  1.0f, -0.414178f,  1.0f };    // MIDFRONT_L
-    config->customMotorMixer[6] = (motorMixer_t){ 1.0f, -1.0f,  0.414178f,  1.0f };    // MIDREAR_R
-    config->customMotorMixer[7] = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L
+    *customMotorMixerMutable(0) = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
+    *customMotorMixerMutable(1) = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
+    *customMotorMixerMutable(2) = (motorMixer_t){ 1.0f,  0.414178f,  1.0f,  1.0f };    // REAR_L
+    *customMotorMixerMutable(3) = (motorMixer_t){ 1.0f,  0.414178f, -1.0f, -1.0f };    // FRONT_L
+    *customMotorMixerMutable(4) = (motorMixer_t){ 1.0f, -1.0f, -0.414178f, -1.0f };    // MIDFRONT_R
+    *customMotorMixerMutable(5) = (motorMixer_t){ 1.0f,  1.0f, -0.414178f,  1.0f };    // MIDFRONT_L
+    *customMotorMixerMutable(6) = (motorMixer_t){ 1.0f, -1.0f,  0.414178f,  1.0f };    // MIDREAR_R
+    *customMotorMixerMutable(7) = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L
 }
 #endif

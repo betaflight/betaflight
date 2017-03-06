@@ -46,10 +46,11 @@
 
 #include "io/serial.h"
 
-#include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/barometer.h"
+#include "sensors/gyro.h"
+#include "sensors/sensors.h"
 
 #include "scheduler/scheduler.h"
 

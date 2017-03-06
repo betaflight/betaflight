@@ -18,11 +18,12 @@
 #include <platform.h>
 
 #ifdef TARGET_CONFIG
-#include "config/config_master.h"
 
-void targetConfiguration(master_t *config)
+#include "fc/config.h"
+
+void targetConfiguration(void)
 {
     // Temporary workaround: Disable SDCard DMA by default since it causes errors on this target
-    config->sdcardConfig.useDma = false;
+    sdcardConfigMutable()->useDma = false;
 }
 #endif

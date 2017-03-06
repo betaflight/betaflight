@@ -125,11 +125,18 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .name = { 0 }
 );
 
+#ifdef BEEPER
 PG_REGISTER(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 0);
-
+#endif
+#ifdef USE_ADC
 PG_REGISTER_WITH_RESET_FN(adcConfig_t, adcConfig, PG_ADC_CONFIG, 0);
+#endif
+#ifdef USE_PWM
 PG_REGISTER_WITH_RESET_FN(pwmConfig_t, pwmConfig, PG_PWM_CONFIG, 0);
+#endif
+#ifdef USE_PPM
 PG_REGISTER_WITH_RESET_FN(ppmConfig_t, ppmConfig, PG_PPM_CONFIG, 0);
+#endif
 PG_REGISTER_WITH_RESET_FN(statusLedConfig_t, statusLedConfig, PG_STATUS_LED_CONFIG, 0);
 PG_REGISTER_WITH_RESET_FN(serialPinConfig_t, serialPinConfig, PG_SERIAL_PIN_CONFIG, 0);
 
@@ -819,7 +826,7 @@ static void setPidProfile(uint8_t pidProfileIndex)
     if (pidProfileIndex < MAX_PROFILE_COUNT) {
         systemConfigMutable()->pidProfileIndex = pidProfileIndex;
         currentPidProfile = pidProfilesMutable(pidProfileIndex);
-        pidInit(); // re-initialise pid controller to re-initialise filters and config
+        pidInit(currentPidProfile); // re-initialise pid controller to re-initialise filters and config
     }
 }
 

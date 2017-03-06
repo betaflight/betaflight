@@ -428,7 +428,7 @@ void init(void)
     LED1_OFF;
 
     // gyro.targetLooptime set in sensorsAutodetect(), so we are ready to call pidInit()
-    pidInit();
+    pidInit(currentPidProfile);
 
     imuInit();
 

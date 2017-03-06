@@ -1232,10 +1232,6 @@ static rcControlsConfig_t rcControlsConfigCopy;
 #ifdef GPS
 static gpsConfig_t gpsConfigCopy;
 #endif
-#ifdef NAV
-static positionEstimationConfig_t positionEstimationConfigCopy;
-static navigationConfig_t navigationConfigCopy;
-#endif
 #ifdef TELEMETRY
 static telemetryConfig_t telemetryConfigCopy;
 #endif
@@ -1250,6 +1246,10 @@ static osdConfig_t osdConfigCopy;
 static systemConfig_t systemConfigCopy;
 #ifdef BEEPER
 static beeperDevConfig_t beeperDevConfigCopy;
+static beeperConfig_t beeperConfigCopy;
+#endif
+#if defined(USE_RTC6705) || defined(VTX)
+static vtxConfig_t vtxConfigCopy;
 #endif
 static controlRateConfig_t controlRateProfilesCopy[CONTROL_RATE_PROFILE_COUNT];
 static pidProfile_t pidProfileCopy[MAX_PROFILE_COUNT];
@@ -1522,16 +1522,6 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.defaultConfig = gpsConfig();
         break;
 #endif
-#ifdef NAV
-    case PG_POSITION_ESTIMATION_CONFIG:
-        ret.currentConfig = &positionEstimationConfigCopy;
-        ret.defaultConfig = positionEstimationConfig();
-        break;
-    case PG_NAV_CONFIG:
-        ret.currentConfig = &navigationConfigCopy;
-        ret.defaultConfig = navigationConfig();
-        break;
-#endif
 #ifdef TELEMETRY
     case PG_TELEMETRY_CONFIG:
         ret.currentConfig = &telemetryConfigCopy;
@@ -1558,10 +1548,10 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.currentConfig = &controlRateProfilesCopy[0];
         ret.defaultConfig = controlRateProfiles(0);
         break;
-/*!!TODO    case PG_PID_PROFILE:
-        ret.currentConfig = &pidProfileCopy[getConfigProfile()];
-        ret.defaultConfig = pidProfile();
-        break;*/
+    case PG_PID_PROFILE:
+        ret.currentConfig = &pidProfileCopy[0];
+        ret.defaultConfig = pidProfiles(0);
+        break;
     case PG_RX_FAILSAFE_CHANNEL_CONFIG:
         ret.currentConfig = &rxFailsafeChannelConfigsCopy[0];
         ret.defaultConfig = rxFailsafeChannelConfigs(0);
@@ -1592,9 +1582,14 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.currentConfig = &adjustmentRangesCopy[0];
         ret.defaultConfig = adjustmentRanges(0);
         break;
+#ifdef BEEPER
     case PG_BEEPER_CONFIG:
+       ret.currentConfig = &beeperConfigCopy;
+       ret.defaultConfig = beeperConfig();
+    case PG_BEEPER_DEV_CONFIG:
        ret.currentConfig = &beeperDevConfigCopy;
        ret.defaultConfig = beeperDevConfig();
+#endif
        break;
     default:
         ret.currentConfig = NULL;
@@ -1723,16 +1718,7 @@ static void cliPrintVarDefault(const clivalue_t *var, uint32_t full, const maste
 
     printValuePointer(var, defaultPtr, full);
 }
-#endif // USE_PARAMETER_GROUPS
 
-static void cliPrintVar(const clivalue_t *var, uint32_t full)
-{
-    const void *ptr = getValuePointer(var);
-
-    printValuePointer(var, ptr, full);
-}
-
-#ifndef USE_PARAMETER_GROUPS
 static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *defaultConfig)
 {
     const clivalue_t *value;
@@ -1754,7 +1740,14 @@ static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *
         }
     }
 }
-#endif
+#endif // USE_PARAMETER_GROUPS
+
+static void cliPrintVar(const clivalue_t *var, uint32_t full)
+{
+    const void *ptr = getValuePointer(var);
+
+    printValuePointer(var, ptr, full);
+}
 
 static void cliPrintVarRange(const clivalue_t *var)
 {
@@ -3137,7 +3130,7 @@ static void cliFlashRead(char *cmdline)
 #endif
 #endif
 
-#ifdef VTX
+#if defined(USE_RTC6705) || defined(VTX)
 static void printVtx(uint8_t dumpMask, const vtxConfig_t *vtxConfig, const vtxConfig_t *vtxConfigDefault)
 {
     // print out vtx channel settings
@@ -3183,7 +3176,7 @@ static void cliVtx(char *cmdline)
         ptr = cmdline;
         i = atoi(ptr++);
         if (i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT) {
-            vtxChannelActivationCondition_t *cac = &vtxConfig()->vtxChannelActivationConditions[i];
+            vtxChannelActivationCondition_t *cac = &vtxConfigMutable()->vtxChannelActivationConditions[i];
             uint8_t validArgumentCount = 0;
             ptr = nextArg(ptr);
             if (ptr) {
@@ -3795,7 +3788,33 @@ static void cliRateProfile(char *cmdline)
     }
 }
 
-#ifndef USE_PARAMETER_GROUPS
+#ifdef USE_PARAMETER_GROUPS
+static void cliDumpPidProfile(uint8_t pidProfileIndex, uint8_t dumpMask)
+{
+    if (pidProfileIndex >= MAX_PROFILE_COUNT) {
+        // Faulty values
+        return;
+    }
+    changePidProfile(pidProfileIndex);
+    cliPrintHashLine("profile");
+    cliProfile("");
+    cliPrint("\r\n");
+    dumpAllValues(PROFILE_VALUE, dumpMask);
+}
+
+static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask)
+{
+    if (rateProfileIndex >= CONTROL_RATE_PROFILE_COUNT) {
+        // Faulty values
+        return;
+    }
+    changeControlRateProfile(rateProfileIndex);
+    cliPrintHashLine("rateprofile");
+    cliRateProfile("");
+    cliPrint("\r\n");
+    dumpAllValues(PROFILE_RATE_VALUE, dumpMask);
+}
+#else
 static void cliDumpPidProfile(uint8_t pidProfileIndex, uint8_t dumpMask, const master_t *defaultConfig)
 {
     if (pidProfileIndex >= MAX_PROFILE_COUNT) {
@@ -4128,6 +4147,7 @@ const cliResourceValue_t resourceTable[] = {
 };
 
 #ifndef USE_PARAMETER_GROUPS
+//!! TODO for parameter groups
 static void printResource(uint8_t dumpMask, const master_t *defaultConfig)
 {
     for (unsigned int i = 0; i < ARRAYLEN(resourceTable); i++) {
@@ -4350,8 +4370,6 @@ static void backupConfigs(void)
 #endif
         }
     }
-    const pgRegistry_t* reg = pgFind(PG_PID_PROFILE);
-    memcpy(&pidProfileCopy[0], reg->address, sizeof(pidProfile_t) * MAX_PROFILE_COUNT);
 }
 
 static void restoreConfigs(void)
@@ -4371,8 +4389,6 @@ static void restoreConfigs(void)
 #endif
         }
     }
-    const pgRegistry_t* reg = pgFind(PG_PID_PROFILE);
-    memcpy(reg->address, &pidProfileCopy[0], sizeof(pidProfile_t) * MAX_PROFILE_COUNT);
 }
 #endif
 
@@ -4396,18 +4412,12 @@ static void printConfig(char *cmdline, bool doDiff)
         dumpMask = dumpMask | DO_DIFF;
     }
 
-#ifdef USE_PARAMETER_GROUPS
     backupConfigs();
     // reset all configs to defaults to do differencing
     resetConfigs();
+
 #if defined(TARGET_CONFIG)
     targetConfiguration();
-#endif
-#else
-    static master_t defaultConfig;
-    createDefaultConfig(&defaultConfig);
-#if defined(TARGET_CONFIG)
-    targetConfiguration(&defaultConfig);
 #endif
     if (checkCommand(options, "showdefaults")) {
         dumpMask = dumpMask | SHOW_DEFAULTS;   // add default values as comments for changed values
@@ -4427,80 +4437,80 @@ static void printConfig(char *cmdline, bool doDiff)
 
 #ifdef USE_RESOURCE_MGMT
         cliPrintHashLine("resources");
-        printResource(dumpMask, &defaultConfig);
+        //!!TODO printResource(dumpMask, &defaultConfig);
 #endif
 
 #ifndef USE_QUAD_MIXER_ONLY
         cliPrintHashLine("mixer");
-        const bool equalsDefault = mixerConfig()->mixerMode == defaultConfig.mixerConfig.mixerMode;
+        const bool equalsDefault = mixerConfigCopy.mixerMode == mixerConfig()->mixerMode;
         const char *formatMixer = "mixer %s\r\n";
-        cliDefaultPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[defaultConfig.mixerConfig.mixerMode - 1]);
-        cliDumpPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[mixerConfig()->mixerMode - 1]);
+        cliDefaultPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[mixerConfig()->mixerMode - 1]);
+        cliDumpPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[mixerConfigCopy.mixerMode - 1]);
 
-        cliDumpPrintf(dumpMask, masterConfig.customMotorMixer[0].throttle == 0.0f, "\r\nmmix reset\r\n\r\n");
+        cliDumpPrintf(dumpMask, customMotorMixer(0)->throttle == 0.0f, "\r\nmmix reset\r\n\r\n");
 
-        printMotorMix(dumpMask, customMotorMixer(0), defaultConfig.customMotorMixer);
+        printMotorMix(dumpMask, customMotorMixerCopy, customMotorMixer(0));
 
 #ifdef USE_SERVOS
         cliPrintHashLine("servo");
-        printServo(dumpMask, servoParams(0), defaultConfig.servoProfile.servoConf);
+        printServo(dumpMask, servoParamsCopy, servoParams(0));
 
         cliPrintHashLine("servo mix");
         // print custom servo mixer if exists
-        cliDumpPrintf(dumpMask, masterConfig.customServoMixer[0].rate == 0, "smix reset\r\n\r\n");
-        printServoMix(dumpMask, customServoMixers(0), defaultConfig.customServoMixer);
+        cliDumpPrintf(dumpMask, customServoMixers(0)->rate == 0, "smix reset\r\n\r\n");
+        printServoMix(dumpMask, customServoMixersCopy, customServoMixers(0));
 #endif
 #endif
 
         cliPrintHashLine("feature");
-        printFeature(dumpMask, featureConfig(), &defaultConfig.featureConfig);
+        printFeature(dumpMask, &featureConfigCopy, featureConfig());
 
 #ifdef BEEPER
         cliPrintHashLine("beeper");
-        printBeeper(dumpMask, beeperConfig(), &defaultConfig.beeperConfig);
+        printBeeper(dumpMask, &beeperConfigCopy, beeperConfig());
 #endif
 
         cliPrintHashLine("map");
-        printMap(dumpMask, rxConfig(), &defaultConfig.rxConfig);
+        printMap(dumpMask, &rxConfigCopy, rxConfig());
 
         cliPrintHashLine("serial");
-        printSerial(dumpMask, serialConfig(), &defaultConfig.serialConfig);
+        printSerial(dumpMask, &serialConfigCopy, serialConfig());
 
 #ifdef LED_STRIP
         cliPrintHashLine("led");
-        printLed(dumpMask, ledStripConfig()->ledConfigs, defaultConfig.ledStripConfig.ledConfigs);
+        printLed(dumpMask, ledStripConfigCopy.ledConfigs, ledStripConfig()->ledConfigs);
 
         cliPrintHashLine("color");
-        printColor(dumpMask, ledStripConfig()->colors, defaultConfig.ledStripConfig.colors);
+        printColor(dumpMask, ledStripConfigCopy.colors, ledStripConfig()->colors);
 
         cliPrintHashLine("mode_color");
-        printModeColor(dumpMask, ledStripConfig(), &defaultConfig.ledStripConfig);
+        printModeColor(dumpMask, &ledStripConfigCopy, ledStripConfig());
 #endif
 
         cliPrintHashLine("aux");
-        printAux(dumpMask, modeActivationConditions(0), defaultConfig.modeActivationProfile.modeActivationConditions);
+        printAux(dumpMask, modeActivationConditionsCopy, modeActivationConditions(0));
 
         cliPrintHashLine("adjrange");
-        printAdjustmentRange(dumpMask, adjustmentRanges(0), defaultConfig.adjustmentProfile.adjustmentRanges);
+        printAdjustmentRange(dumpMask, adjustmentRangesCopy, adjustmentRanges(0));
 
         cliPrintHashLine("rxrange");
-        printRxRange(dumpMask, rxConfig()->channelRanges, defaultConfig.rxConfig.channelRanges);
+        printRxRange(dumpMask, rxChannelRangeConfigsCopy, rxChannelRangeConfigs(0));
 
-#ifdef VTX
+#if defined(USE_RTC6705) || defined(VTX)
         cliPrintHashLine("vtx");
-        printVtx(dumpMask, vtxConfig(), &defaultConfig.vtxConfig);
+        printVtx(dumpMask, &vtxConfigCopy, vtxConfig());
 #endif
 
         cliPrintHashLine("rxfail");
-        printRxFailsafe(dumpMask, rxConfig()->failsafe_channel_configurations, defaultConfig.rxConfig.failsafe_channel_configurations);
+        printRxFailsafe(dumpMask, rxFailsafeChannelConfigsCopy, rxFailsafeChannelConfigs(0));
 
         cliPrintHashLine("master");
-        dumpValues(MASTER_VALUE, dumpMask, &defaultConfig);
+        dumpAllValues(MASTER_VALUE, dumpMask);
 
         if (dumpMask & DUMP_ALL) {
             const uint8_t pidProfileIndexSave = getCurrentPidProfileIndex();
             for (uint32_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
-                cliDumpPidProfile(pidProfileIndex, dumpMask, &defaultConfig);
+                cliDumpPidProfile(pidProfileIndex, dumpMask);
             }
             changePidProfile(pidProfileIndexSave);
             cliPrintHashLine("restore original profile selection");
@@ -4508,7 +4518,7 @@ static void printConfig(char *cmdline, bool doDiff)
 
             const uint8_t controlRateProfileIndexSave = getCurrentControlRateProfileIndex();
             for (uint32_t rateIndex = 0; rateIndex < CONTROL_RATE_PROFILE_COUNT; rateIndex++) {
-                cliDumpRateProfile(rateIndex, dumpMask, &defaultConfig);
+                cliDumpRateProfile(rateIndex, dumpMask);
             }
             changeControlRateProfile(controlRateProfileIndexSave);
             cliPrintHashLine("restore original rateprofile selection");
@@ -4517,20 +4527,19 @@ static void printConfig(char *cmdline, bool doDiff)
             cliPrintHashLine("save configuration");
             cliPrint("save");
         } else {
-            cliDumpPidProfile(getCurrentPidProfileIndex(), dumpMask, &defaultConfig);
+            cliDumpPidProfile(getCurrentPidProfileIndex(), dumpMask);
 
-            cliDumpRateProfile(getCurrentControlRateProfileIndex(), dumpMask, &defaultConfig);
+            cliDumpRateProfile(getCurrentControlRateProfileIndex(), dumpMask);
         }
     }
 
     if (dumpMask & DUMP_PROFILE) {
-        cliDumpPidProfile(getCurrentPidProfileIndex(), dumpMask, &defaultConfig);
+        cliDumpPidProfile(getCurrentPidProfileIndex(), dumpMask);
     }
 
     if (dumpMask & DUMP_RATES) {
-        cliDumpRateProfile(getCurrentControlRateProfileIndex(), dumpMask, &defaultConfig);
+        cliDumpRateProfile(getCurrentControlRateProfileIndex(), dumpMask);
     }
-#endif
 #ifdef USE_PARAMETER_GROUPS
     // restore configs from copies
     restoreConfigs();
