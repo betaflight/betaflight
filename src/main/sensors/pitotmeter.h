@@ -51,8 +51,7 @@ extern pitot_t pitot;
 
 bool pitotInit(void);
 bool pitotIsCalibrationComplete(void);
-void pitotSetCalibrationCycles(uint16_t calibrationCyclesRequired);
+void pitotStartCalibration(void);
 uint32_t pitotUpdate(void);
-bool pitotIsReady(void);
 int32_t pitotCalculateAirSpeed(void);
 bool pitotIsHealthy(void);

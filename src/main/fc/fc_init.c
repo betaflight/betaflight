@@ -590,7 +590,7 @@ void init(void)
     baroStartCalibration();
 #endif
 #ifdef PITOT
-    pitotSetCalibrationCycles(CALIBRATING_PITOT_CYCLES);
+    pitotStartCalibration();
 #endif
 
     // start all timers

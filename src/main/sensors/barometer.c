@@ -194,8 +194,6 @@ void baroStartCalibration(void)
     baroCalibrationFinished = false;
 }
 
-static bool baroReady = false;
-
 #define PRESSURE_SAMPLES_MEDIAN 3
 
 static int32_t applyBarometerMedianFilter(int32_t newPressureReading)
@@ -224,11 +222,6 @@ typedef enum {
     BAROMETER_NEEDS_SAMPLES = 0,
     BAROMETER_NEEDS_CALCULATION
 } barometerState_e;
-
-bool baroIsReady(void)
-{
-    return baroReady;
-}
 
 uint32_t baroUpdate(void)
 {
