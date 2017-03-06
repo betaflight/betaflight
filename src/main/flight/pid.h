@@ -24,7 +24,7 @@
 #define PID_MIXER_SCALING           1000.0f
 #define PID_SERVO_MIXER_SCALING     0.7f
 #define PIDSUM_LIMIT                0.5f
-#define PIDSUM_LIMIT_YAW            0.4f
+#define PIDSUM_LIMIT_YAW            0.5f
 
 // Scaling factors for Pids for better tunable range in configurator for betaflight pid controller. The scaling is based on legacy pid controller or previous float
 #define PTERM_SCALE 0.032029f

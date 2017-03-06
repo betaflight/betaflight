@@ -314,7 +314,6 @@ static long cmsx_FilterPerProfileRead(void)
     cmsx_dterm_notch_hz =     masterConfig.profile[profileIndex].pidProfile.dterm_notch_hz;
     cmsx_dterm_notch_cutoff = masterConfig.profile[profileIndex].pidProfile.dterm_notch_cutoff;
     cmsx_yaw_lpf_hz =         masterConfig.profile[profileIndex].pidProfile.yaw_lpf_hz;
-    cmsx_yaw_p_limit =        masterConfig.profile[profileIndex].pidProfile.yaw_p_limit;
 
     return 0;
 }
@@ -327,7 +326,6 @@ static long cmsx_FilterPerProfileWriteback(const OSD_Entry *self)
     masterConfig.profile[profileIndex].pidProfile.dterm_notch_hz =     cmsx_dterm_notch_hz;
     masterConfig.profile[profileIndex].pidProfile.dterm_notch_cutoff = cmsx_dterm_notch_cutoff;
     masterConfig.profile[profileIndex].pidProfile.yaw_lpf_hz =         cmsx_yaw_lpf_hz;
-    masterConfig.profile[profileIndex].pidProfile.yaw_p_limit =        cmsx_yaw_p_limit;
 
     return 0;
 }
