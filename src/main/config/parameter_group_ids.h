@@ -96,7 +96,8 @@
 #define PG_DISPLAY_PORT_MSP_CONFIG 512
 #define PG_DISPLAY_PORT_MAX7456_CONFIG 513
 #define PG_VCD_CONFIG 514
-#define PG_BETAFLIGHT_END 514
+#define PG_VTX_CONFIG 515
+#define PG_BETAFLIGHT_END 515
 
 
 // OSD configuration (subject to change)

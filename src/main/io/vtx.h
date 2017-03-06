@@ -41,6 +41,8 @@ typedef struct vtxConfig_s {
     vtxChannelActivationCondition_t vtxChannelActivationConditions[MAX_CHANNEL_ACTIVATION_CONDITION_COUNT];
 } vtxConfig_t;
 
+PG_DECLARE(vtxConfig_t, vtxConfig);
+
 void vtxInit(void);
 void vtxIncrementBand(void);
 void vtxDecrementBand(void);

@@ -21,11 +21,6 @@
 
 #ifdef VTX
 
-// Own interfaces
-#include "io/vtx.h"
-#include "io/osd.h"
-
-//External dependencies
 #include "common/maths.h"
 
 #include "config/config_eeprom.h"
@@ -37,7 +32,18 @@
 #include "fc/runtime_config.h"
 
 #include "io/beeper.h"
+#include "io/osd.h"
+#include "io/vtx.h"
 
+
+PG_REGISTER_WITH_RESET_TEMPLATE(vtxConfig_t, vtxConfig, PG_VTX_CONFIG, 0);
+
+PG_RESET_TEMPLATE(vtxConfig_t, vtxConfig,
+    .vtx_band = 4,    //Fatshark/Airwaves
+    .vtx_channel = 1, //CH1
+    .vtx_mode = 0,    //CH+BAND mode
+    .vtx_mhz = 5740  //F0
+);
 
 static uint8_t locked = 0;
 

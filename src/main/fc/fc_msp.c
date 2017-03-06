@@ -1663,7 +1663,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             uint16_t tmp = sbufReadU16(src);
 #if defined(USE_RTC6705)
             if  (tmp < 40)
-                vtxConfig()->vtx_channel = tmp;
+                vtxConfigMutable()->vtx_channel = tmp;
             if (current_vtx_channel != vtxConfig()->vtx_channel) {
                 current_vtx_channel = vtxConfig()->vtx_channel;
                 rtc6705_soft_spi_set_channel(vtx_freq[current_vtx_channel]);
