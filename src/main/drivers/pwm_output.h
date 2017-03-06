@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include "dma.h"
 #include "io_types.h"
 #include "timer.h"
 
@@ -94,7 +93,6 @@ typedef struct {
 #else
     uint8_t dmaBuffer[MOTOR_DMA_BUFFER_SIZE];
 #endif
-    dmaChannelDescriptor_t* dmaDescriptor;
 #if defined(STM32F7)
     TIM_HandleTypeDef TimHandle;
     DMA_HandleTypeDef hdma_tim;
@@ -141,6 +139,7 @@ void pwmServoConfig(const struct timerHardware_s *timerHardware, uint8_t servoIn
 
 #ifdef USE_DSHOT
 uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType);
+void pwmWriteDshotCommand(uint8_t index, uint8_t command);
 void pwmWriteDigital(uint8_t index, uint16_t value);
 void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output);
 void pwmCompleteDigitalMotorUpdate(uint8_t motorCount);

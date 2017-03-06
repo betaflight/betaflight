@@ -28,3 +28,4 @@ make/local.mk
 
 mcu.mak
 mcu.mak.old
+stm32.mak
