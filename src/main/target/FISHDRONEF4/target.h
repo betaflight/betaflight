@@ -27,7 +27,7 @@
 #define BEEPER                  PC15
 #define BEEPER_INVERTED
 
-#define INVERTER_PIN_USART6 PC8
+#define INVERTER_PIN_UART6      PC8
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PC4

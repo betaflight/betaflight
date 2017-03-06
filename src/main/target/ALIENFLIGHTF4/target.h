@@ -31,7 +31,7 @@
 #define BEEPER                  PC13
 #define BEEPER_INVERTED
 
-#define INVERTER_PIN_USART2     PC15
+#define INVERTER_PIN_UART2      PC15
 
 // MPU interrupt
 #define USE_EXTI
@@ -150,12 +150,8 @@
 #define RSSI_ADC_PIN            PC4
 #define EXTERNAL1_ADC_GPIO_PIN  PC5
 
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
+#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
-#define HARDWARE_BIND_PLUG
-// Hardware bind plug at PB2 (Pin 28)
 #define BINDPLUG_PIN            PB2
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT

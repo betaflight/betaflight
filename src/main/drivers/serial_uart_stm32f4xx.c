@@ -395,7 +395,7 @@ void USART3_IRQHandler(void)
 #endif
 
 #ifdef USE_UART4
-// USART4
+// UART4
 uartPort_t *serialUART4(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     return serialUART(UARTDEV_4, baudRate, mode, options);
@@ -409,7 +409,7 @@ void UART4_IRQHandler(void)
 #endif
 
 #ifdef USE_UART5
-// USART5
+// UART5
 uartPort_t *serialUART5(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     return serialUART(UARTDEV_5, baudRate, mode, options);

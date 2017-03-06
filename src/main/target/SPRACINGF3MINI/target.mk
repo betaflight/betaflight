@@ -8,9 +8,7 @@ TARGET_SRC = \
             drivers/compass_ak8975.c \
             drivers/compass_hmc5883l.c \
             drivers/compass_ak8963.c \
-            drivers/flash_m25p16.c \
-            drivers/transponder_ir.c \
-            io/transponder_ir.c
+            drivers/flash_m25p16.c 
 
 ifeq ($(TARGET), TINYBEEF3)
 TARGET_SRC += \

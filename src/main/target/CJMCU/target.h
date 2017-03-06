@@ -107,8 +107,7 @@
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define USE_RX_MSP
-#define SPEKTRUM_BIND
-#define BIND_PIN                PA3 // UART2, PA3
+#define SPEKTRUM_BIND_PIN       PA3 // UART2, PA3
 
 #endif //USE_RX_NRF24
 

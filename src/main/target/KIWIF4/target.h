@@ -27,7 +27,7 @@
 
 #define BEEPER                  PA8
 
-#define INVERTER_PIN_USART1 PC0 // PC0 used as inverter select GPIO
+#define INVERTER_PIN_UART1      PC0 // PC0 used as inverter select GPIO
 
 // MPU6000 interrupts
 #define USE_EXTI
@@ -123,9 +123,7 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 
-#define SPEKTRUM_BIND
-// USART3 Rx, PB11
-#define BIND_PIN                PB11
+#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

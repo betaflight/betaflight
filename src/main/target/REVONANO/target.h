@@ -28,7 +28,7 @@
 
 #define BEEPER                  PC13
 
-#define INVERTER_PIN_USART2     PC15 //Sbus on USART 2 of nano.
+#define INVERTER_PIN_UART2      PC15 //Sbus on USART 2 of nano.
 
 #define MPU6500_CS_PIN          PB12
 #define MPU6500_SPI_INSTANCE    SPI2
@@ -84,9 +84,7 @@
 #define VBAT_ADC_PIN            PA6
 #define RSSI_ADC_PIN            PA5
 
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
+#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

@@ -464,7 +464,7 @@ void init(void)
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
         gpsInit();
-        navigationInit(&currentProfile->pidProfile);
+        navigationInit();
     }
 #endif
 

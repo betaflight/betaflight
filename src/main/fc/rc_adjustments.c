@@ -36,17 +36,17 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 #include "config/feature.h"
-#include "config/config_master.h"
 
 #include "flight/pid.h"
 
 #include "io/beeper.h"
 #include "io/motors.h"
 
+#include "fc/config.h"
+#include "fc/controlrate_profile.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/fc_rc.h"
-#include "fc/config.h"
 
 #include "rx/rx.h"
 

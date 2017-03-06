@@ -25,7 +25,7 @@
 #include "drivers/timer_def.h"
 
 // DSHOT will work for motor 1-8.
-// If SDCard or USART4 DMA is used motor 6 will not work.
+// If SDCard or UART4 DMA is used motor 6 will not work.
 // If the ADC is used motor 7 will not work.
 // If UART1 DMA is used motor 8 will not work.
 

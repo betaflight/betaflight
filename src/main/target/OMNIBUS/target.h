@@ -58,9 +58,6 @@
 //#define SONAR_ECHO_PIN          PB1
 //#define SONAR_TRIGGER_PIN       PB0
 
-#define USB_IO
-#define USB_CABLE_DETECTION
-
 #define USB_DETECT_PIN          PB5
 
 #undef GPS
@@ -171,11 +168,8 @@
 
 //#define AVOID_UART3_FOR_PWM_PPM // Disable this for using UART3
 
-#define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN                PB11
+#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
-#define HARDWARE_BIND_PLUG
 #define BINDPLUG_PIN            PB0
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE

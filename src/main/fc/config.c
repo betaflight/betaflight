@@ -156,6 +156,9 @@ PG_RESET_TEMPLATE(sdcardConfig_t, sdcardConfig,
 );
 #endif
 
+// no template required since defaults are zero
+PG_REGISTER(vcdProfile_t, vcdProfile, PG_VCD_CONFIG, 0);
+
 #ifndef USE_PARAMETER_GROUPS
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -253,15 +256,15 @@ void resetProfile(profile_t *profile)
 }
 
 #ifdef GPS
-void resetGpsProfile(gpsProfile_t *gpsProfile)
+void resetNavigationConfig(navigationConfig_t *navigationConfig)
 {
-    gpsProfile->gps_wp_radius = 200;
-    gpsProfile->gps_lpf = 20;
-    gpsProfile->nav_slew_rate = 30;
-    gpsProfile->nav_controls_heading = 1;
-    gpsProfile->nav_speed_min = 100;
-    gpsProfile->nav_speed_max = 300;
-    gpsProfile->ap_mode = 40;
+    navigationConfig->gps_wp_radius = 200;
+    navigationConfig->gps_lpf = 20;
+    navigationConfig->nav_slew_rate = 30;
+    navigationConfig->nav_controls_heading = 1;
+    navigationConfig->nav_speed_min = 100;
+    navigationConfig->nav_speed_max = 300;
+    navigationConfig->ap_mode = 40;
 }
 #endif
 
@@ -638,16 +641,16 @@ void resetSerialPinConfig(serialPinConfig_t *serialPinConfig)
             serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART3)] = IO_TAG(UART3_TX_PIN);
 #endif
             break;
-        case SERIAL_PORT_USART4:
+        case SERIAL_PORT_UART4:
 #ifdef USE_UART4
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART4)] = IO_TAG(UART4_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART4)] = IO_TAG(UART4_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_UART4)] = IO_TAG(UART4_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_UART4)] = IO_TAG(UART4_TX_PIN);
 #endif
             break;
-        case SERIAL_PORT_USART5:
+        case SERIAL_PORT_UART5:
 #ifdef USE_UART5
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART5)] = IO_TAG(UART5_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART5)] = IO_TAG(UART5_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_UART5)] = IO_TAG(UART5_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_UART5)] = IO_TAG(UART5_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_USART6:
@@ -741,6 +744,7 @@ void resetMixerConfig(mixerConfig_t *mixerConfig)
 }
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef USE_MAX7456
 void resetMax7456Config(vcdProfile_t *pVcdProfile)
 {
@@ -750,7 +754,6 @@ void resetMax7456Config(vcdProfile_t *pVcdProfile)
 }
 #endif
 
-#ifndef USE_PARAMETER_GROUPS
 void resetDisplayPortProfile(displayPortProfile_t *pDisplayPortProfile)
 {
     pDisplayPortProfile->colAdjust = 0;
@@ -842,6 +845,7 @@ void createDefaultConfig(master_t *config)
     intFeatureSet(DEFAULT_FEATURES, featuresPtr);
 #endif
 
+#ifndef USE_PARAMETER_GROUPS
 #ifdef USE_MSP_DISPLAYPORT
     resetDisplayPortProfile(&config->displayPortProfileMsp);
 #endif
@@ -854,8 +858,9 @@ void createDefaultConfig(master_t *config)
 #endif
 
 #ifdef OSD
-    osdResetConfig(&config->osdProfile);
+    osdResetConfig(&config->osdConfig);
 #endif
+#endif // USE_PARAMETER_GROUPS
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
     // only enable the VBAT feature by default if the board has a voltage divider otherwise
@@ -986,7 +991,7 @@ void createDefaultConfig(master_t *config)
 
     config->rxConfig.rssi_channel = 0;
     config->rxConfig.rssi_scale = RSSI_SCALE_DEFAULT;
-    config->rxConfig.rssi_ppm_invert = 0;
+    config->rxConfig.rssi_invert = 0;
     config->rxConfig.rcInterpolation = RC_SMOOTHING_AUTO;
     config->rxConfig.rcInterpolationChannels = 0;
     config->rxConfig.rcInterpolationInterval = 19;
@@ -1089,7 +1094,7 @@ void createDefaultConfig(master_t *config)
 
 #ifndef USE_PARAMETER_GROUPS
 #ifdef GPS
-    resetGpsProfile(&config->gpsProfile);
+    resetNavigationConfig(&config->navigationConfig);
 #endif
 #endif
 
@@ -1255,6 +1260,11 @@ void validateAndFixConfig(void)
         resetSerialConfig(serialConfig);
     }
 #endif
+
+    // Prevent invalid notch cutoff
+    if (currentProfile->pidProfile.dterm_notch_cutoff >= currentProfile->pidProfile.dterm_notch_hz) {
+        currentProfile->pidProfile.dterm_notch_hz = 0;
+    }
 
     validateAndFixGyroConfig();
 

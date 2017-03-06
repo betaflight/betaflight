@@ -34,9 +34,10 @@
 #include "io/displayport_max7456.h"
 #include "io/osd.h"
 
-displayPort_t max7456DisplayPort; // Referenced from osd.c
+displayPort_t max7456DisplayPort;
 
-extern uint16_t refreshTimeout;
+// no template required since defaults are zero
+PG_REGISTER(displayPortProfile_t, displayPortProfileMax7456, PG_DISPLAY_PORT_MAX7456_CONFIG, 0);
 
 static int grab(displayPort_t *displayPort)
 {
