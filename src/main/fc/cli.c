@@ -3673,7 +3673,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),
     CLI_COMMAND_DEF("save", "save and reboot", NULL, cliSave),
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
-#ifndef SKIP_SERIAL_PASSTHROUGH
+#ifdef USE_SERIAL_PASSTHROUGH
     CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data to port", "<id> [baud] [mode] : passthrough to serial", cliSerialPassthrough),
 #endif
 #ifdef USE_SERVOS
