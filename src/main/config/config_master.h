@@ -81,7 +81,6 @@
 #define servoConfig(x) (&masterConfig.servoConfig)
 #define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
 #define gimbalConfig(x) (&masterConfig.gimbalConfig)
-#define channelForwardingConfig(x) (&masterConfig.channelForwardingConfig)
 #define boardAlignment(x) (&masterConfig.boardAlignment)
 #define imuConfig(x) (&masterConfig.imuConfig)
 #define gyroConfig(x) (&masterConfig.gyroConfig)
@@ -191,7 +190,6 @@
 #define modeActivationConditionsMutable(i) (&masterConfig.modeActivationProfile.modeActivationConditions[i])
 #define controlRateProfilesMutable(i) (&masterConfig.controlRateProfile[i])
 #define pidProfilesMutable(i) (&masterConfig.profile[i].pidProfile)
-#endif
 
 // System-wide
 typedef struct master_s {
@@ -215,8 +213,6 @@ typedef struct master_s {
     servoProfile_t servoProfile;
     // gimbal-related configuration
     gimbalConfig_t gimbalConfig;
-    // Channel forwarding start channel
-    channelForwardingConfig_t channelForwardingConfig;
 #endif
 
     boardAlignment_t boardAlignment;
@@ -334,3 +330,4 @@ typedef struct master_s {
 extern master_t masterConfig;
 
 void createDefaultConfig(master_t *config);
+#endif // USE_PARAMETER_GROUPS

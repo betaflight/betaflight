@@ -158,7 +158,7 @@ static void scaleRcCommandToFpvCamAngle(void) {
     static int16_t rcCommandThrottlePrevious[THROTTLE_BUFFER_MAX];
     const int rxRefreshRateMs = rxRefreshRate / 1000;
     const int indexMax = constrain(THROTTLE_DELTA_MS / rxRefreshRateMs, 1, THROTTLE_BUFFER_MAX);
-    const int16_t throttleVelocityThreshold = (feature(FEATURE_3D)) ? currentProfile->pidProfile.itermThrottleThreshold / 2 : currentProfile->pidProfile.itermThrottleThreshold;
+    const int16_t throttleVelocityThreshold = (feature(FEATURE_3D)) ? currentPidProfile->itermThrottleThreshold / 2 : currentPidProfile->itermThrottleThreshold;
 
     rcCommandThrottlePrevious[index++] = rcCommand[THROTTLE];
     if (index >= indexMax)
@@ -167,7 +167,7 @@ static void scaleRcCommandToFpvCamAngle(void) {
     const int16_t rcCommandSpeed = rcCommand[THROTTLE] - rcCommandThrottlePrevious[index];
 
     if(ABS(rcCommandSpeed) > throttleVelocityThreshold)
-        pidSetItermAccelerator(currentProfile->pidProfile.itermAcceleratorGain);
+        pidSetItermAccelerator(currentPidProfile->itermAcceleratorGain);
     else
         pidSetItermAccelerator(1.0f);
 }
@@ -185,7 +185,7 @@ void processRcCommand(void)
 
     if (isRXDataNew) {
         currentRxRefreshRate = constrain(getTaskDeltaTime(TASK_RX),1000,20000);
-        if (currentProfile->pidProfile.itermAcceleratorGain > 1.0f)
+        if (currentPidProfile->itermAcceleratorGain > 1.0f)
             checkForThrottleErrorResetState(currentRxRefreshRate);
     }
 

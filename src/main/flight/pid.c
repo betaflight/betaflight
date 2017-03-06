@@ -76,6 +76,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 0);
 
+#ifdef USE_PARAMETER_GROUPS
 void resetPidProfile(pidProfile_t *pidProfile)
 {
     RESET_CONFIG(const pidProfile_t, pidProfile,
@@ -128,17 +129,12 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .itermAcceleratorGain = 1.0f
     );
 }
+
 void pgResetFn_pidProfiles(pidProfile_t *pidProfiles)
 {
     for (int i = 0; i < MAX_PROFILE_COUNT; i++) {
         resetPidProfile(&pidProfiles[i]);
     }
-}
-
-#ifdef USE_PARAMETER_GROUPS
-void resetProfile(profile_t *profile)
-{
-    resetPidProfile(&profile->pidProfile);
 }
 #endif
 
@@ -258,6 +254,13 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
     maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 1000 * dT;
     ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
     ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
+}
+
+void pidInit(void)
+{
+    pidSetTargetLooptime(gyro.targetLooptime * pidConfig()->pid_process_denom); // Initialize pid looptime
+    pidInitFilters(currentPidProfile);
+    pidInitConfig(currentPidProfile);
 }
 
 static float calcHorizonLevelStrength(void) {

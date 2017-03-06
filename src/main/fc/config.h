@@ -64,7 +64,7 @@ typedef enum {
 } features_e;
 
 typedef struct systemConfig_s {
-    uint8_t current_profile_index;
+    uint8_t pidProfileIndex;
     uint8_t activeRateProfile;
     uint8_t debug_mode;
     uint8_t task_statistics;
@@ -81,8 +81,8 @@ PG_DECLARE(vcdProfile_t, vcdProfile);
 PG_DECLARE(sdcardConfig_t, sdcardConfig);
 PG_DECLARE(serialPinConfig_t, serialPinConfig);
 
-struct profile_s;
-extern struct profile_s *currentProfile;
+struct pidProfile_s;
+extern struct pidProfile_s *currentPidProfile;
 
 void beeperOffSet(uint32_t mask);
 void beeperOffSetAll(uint8_t beeperCount);
@@ -104,10 +104,10 @@ void validateAndFixConfig(void);
 void validateAndFixGyroConfig(void);
 void activateConfig(void);
 
-uint8_t getCurrentProfileIndex(void);
-void changeProfile(uint8_t profileIndex);
-struct profile_s;
-void resetProfile(struct profile_s *profile);
+uint8_t getCurrentPidProfileIndex(void);
+void changePidProfile(uint8_t pidProfileIndex);
+struct pidProfile_s;
+void resetPidProfile(struct pidProfile_s *profile);
 
 uint8_t getCurrentControlRateProfileIndex(void);
 void changeControlRateProfile(uint8_t profileIndex);
@@ -117,6 +117,11 @@ bool canSoftwareSerialBeUsed(void);
 uint16_t getCurrentMinthrottle(void);
 
 void resetConfigs(void);
+#ifdef USE_PARAMETER_GROUPS
+void targetConfiguration(void);
+void targetValidateConfiguration(void);
+#else
 struct master_s;
 void targetConfiguration(struct master_s *config);
 void targetValidateConfiguration(struct master_s *config);
+#endif

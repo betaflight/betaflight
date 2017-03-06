@@ -60,8 +60,6 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/smartport.h"
 
-extern profile_t *currentProfile;
-
 enum
 {
     SPSTATE_UNINITIALIZED,
@@ -755,19 +753,19 @@ void handleSmartPortTelemetry(void)
                 } else if (telemetryConfig()->pidValuesAsTelemetry){
                     switch (t2Cnt) {
                         case 0:
-                            tmp2 = currentProfile->pidProfile.P8[ROLL];
-                            tmp2 += (currentProfile->pidProfile.P8[PITCH]<<8);
-                            tmp2 += (currentProfile->pidProfile.P8[YAW]<<16);
+                            tmp2 = currentPidProfile->P8[ROLL];
+                            tmp2 += (currentPidProfile->P8[PITCH]<<8);
+                            tmp2 += (currentPidProfile->P8[YAW]<<16);
                         break;
                         case 1:
-                            tmp2 = currentProfile->pidProfile.I8[ROLL];
-                            tmp2 += (currentProfile->pidProfile.I8[PITCH]<<8);
-                            tmp2 += (currentProfile->pidProfile.I8[YAW]<<16);
+                            tmp2 = currentPidProfile->I8[ROLL];
+                            tmp2 += (currentPidProfile->I8[PITCH]<<8);
+                            tmp2 += (currentPidProfile->I8[YAW]<<16);
                         break;
                         case 2:
-                            tmp2 = currentProfile->pidProfile.D8[ROLL];
-                            tmp2 += (currentProfile->pidProfile.D8[PITCH]<<8);
-                            tmp2 += (currentProfile->pidProfile.D8[YAW]<<16);
+                            tmp2 = currentPidProfile->D8[ROLL];
+                            tmp2 += (currentPidProfile->D8[PITCH]<<8);
+                            tmp2 += (currentPidProfile->D8[YAW]<<16);
                         break;
                         case 3:
                             tmp2 = currentControlRateProfile->rates[FD_ROLL];

@@ -367,21 +367,21 @@ static void osdDrawSingleElement(uint8_t item)
 
         case OSD_ROLL_PIDS:
         {
-            const pidProfile_t *pidProfile = &currentProfile->pidProfile;
+            const pidProfile_t *pidProfile = currentPidProfile;
             sprintf(buff, "ROL %3d %3d %3d", pidProfile->P8[PIDROLL], pidProfile->I8[PIDROLL], pidProfile->D8[PIDROLL]);
             break;
         }
 
         case OSD_PITCH_PIDS:
         {
-            const pidProfile_t *pidProfile = &currentProfile->pidProfile;
+            const pidProfile_t *pidProfile = currentPidProfile;
             sprintf(buff, "PIT %3d %3d %3d", pidProfile->P8[PIDPITCH], pidProfile->I8[PIDPITCH], pidProfile->D8[PIDPITCH]);
             break;
         }
 
         case OSD_YAW_PIDS:
         {
-            const pidProfile_t *pidProfile = &currentProfile->pidProfile;
+            const pidProfile_t *pidProfile = currentPidProfile;
             sprintf(buff, "YAW %3d %3d %3d", pidProfile->P8[PIDYAW], pidProfile->I8[PIDYAW], pidProfile->D8[PIDYAW]);
             break;
         }
@@ -394,9 +394,9 @@ static void osdDrawSingleElement(uint8_t item)
 
         case OSD_PIDRATE_PROFILE:
         {
-            const uint8_t profileIndex = getCurrentProfileIndex();
+            const uint8_t pidProfileIndex = getCurrentPidProfileIndex();
             const uint8_t rateProfileIndex = getCurrentControlRateProfileIndex();
-            sprintf(buff, "%d-%d", profileIndex + 1, rateProfileIndex + 1);
+            sprintf(buff, "%d-%d", pidProfileIndex + 1, rateProfileIndex + 1);
             break;
         }
 

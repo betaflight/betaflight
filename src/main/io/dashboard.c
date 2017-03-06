@@ -317,12 +317,12 @@ void showProfilePage(void)
 {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
-    tfp_sprintf(lineBuffer, "Profile: %d", getCurrentProfileIndex());
+    tfp_sprintf(lineBuffer, "Profile: %d", getCurrentPidProfileIndex());
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
     static const char* const axisTitles[3] = {"ROL", "PIT", "YAW"};
-    const pidProfile_t *pidProfile = &currentProfile->pidProfile;
+    const pidProfile_t *pidProfile = currentPidProfile;
     for (int axis = 0; axis < 3; ++axis) {
         tfp_sprintf(lineBuffer, "%s P:%3d I:%3d D:%3d",
             axisTitles[axis],

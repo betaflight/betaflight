@@ -61,6 +61,7 @@ void pgResetFn_servoConfig(servoConfig_t *servoConfig)
     servoConfig->dev.servoPwmRate = 50;
     servoConfig->tri_unarmed_servo = 1;
     servoConfig->servo_lowpass_freq = 0;
+    servoConfig->channelForwardingStartChannel = AUX1;
 
     int servoIndex = 0;
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && servoIndex < MAX_SUPPORTED_SERVOS; i++) {
@@ -97,7 +98,6 @@ static uint8_t servoRuleCount = 0;
 static servoMixer_t currentServoMixer[MAX_SERVO_RULES];
 int16_t servo[MAX_SUPPORTED_SERVOS];
 static int useServo;
-static channelForwardingConfig_t *channelForwardingConfig;
 
 
 #define COUNT_SERVO_RULES(rules) (sizeof(rules) / sizeof(servoMixer_t))
@@ -187,11 +187,6 @@ const mixerRules_t servoMixers[] = {
     { 0, NULL },
 };
 
-void servoUseConfigs(struct channelForwardingConfig_s *channelForwardingConfigToUse)
-{
-    channelForwardingConfig = channelForwardingConfigToUse;
-}
-
 int16_t determineServoMiddleOrForwardFromChannel(servoIndex_e servoIndex)
 {
     const uint8_t channelToForwardFrom = servoParams(servoIndex)->forwardFromChannel;
@@ -273,27 +268,25 @@ void servoConfigureOutput(void)
 }
 
 
-void servoMixerLoadMix(int index, servoMixer_t *customServoMixers)
+void servoMixerLoadMix(int index)
 {
-    int i;
-
     // we're 1-based
     index++;
     // clear existing
-    for (i = 0; i < MAX_SERVO_RULES; i++)
-        customServoMixers[i].targetChannel = customServoMixers[i].inputSource = customServoMixers[i].rate = customServoMixers[i].box = 0;
+    for (int i = 0; i < MAX_SERVO_RULES; i++) {
+        customServoMixersMutable(i)->targetChannel = customServoMixersMutable(i)->inputSource = customServoMixersMutable(i)->rate = customServoMixersMutable(i)->box = 0;
+    }
 
-    for (i = 0; i < servoMixers[index].servoRuleCount; i++)
-        customServoMixers[i] = servoMixers[index].rule[i];
+    for (int i = 0; i < servoMixers[index].servoRuleCount; i++) {
+        *customServoMixersMutable(i) = servoMixers[index].rule[i];
+    }
 }
 
 STATIC_UNIT_TESTED void forwardAuxChannelsToServos(uint8_t firstServoIndex)
 {
     // start forwarding from this channel
-    uint8_t channelOffset = channelForwardingConfig->startChannel;
-
-    uint8_t servoOffset;
-    for (servoOffset = 0; servoOffset < MAX_AUX_CHANNEL_COUNT && channelOffset < MAX_SUPPORTED_RC_CHANNEL_COUNT; servoOffset++) {
+    uint8_t channelOffset = servoConfig()->channelForwardingStartChannel;
+    for (uint8_t servoOffset = 0; servoOffset < MAX_AUX_CHANNEL_COUNT && channelOffset < MAX_SUPPORTED_RC_CHANNEL_COUNT; servoOffset++) {
         pwmWriteServo(firstServoIndex + servoOffset, rcData[channelOffset++]);
     }
 }
