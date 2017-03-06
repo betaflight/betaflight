@@ -448,6 +448,7 @@ void init(void)
     rxInit();
 
 #ifdef OSD
+    //The OSD need to be initialised after GYRO to avoid GYRO initialisation failure on some targets
     if (feature(FEATURE_OSD)) {
 #if defined(USE_MAX7456)
         // if there is a max7456 chip for the OSD then use it, otherwise use MSP
