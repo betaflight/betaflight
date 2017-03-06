@@ -598,7 +598,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
                     junk |= 1 << i;
             }
             bstWrite32(junk);
-            bstWrite8(getCurrentProfileIndex());
+            bstWrite8(getCurrentPidProfileIndex());
             break;
         case BST_RAW_IMU:
             {
@@ -703,11 +703,11 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
         case BST_PID:
             for (i = 0; i < PID_ITEM_COUNT; i++) {
-                bstWrite8(currentProfile->pidProfile.P8[i]);
-                bstWrite8(currentProfile->pidProfile.I8[i]);
-                bstWrite8(currentProfile->pidProfile.D8[i]);
+                bstWrite8(currentPidProfile->P8[i]);
+                bstWrite8(currentPidProfile->I8[i]);
+                bstWrite8(currentPidProfile->D8[i]);
             }
-            pidInitConfig(&currentProfile->pidProfile);
+            pidInitConfig(currentPidProfile);
             break;
         case BST_PIDNAMES:
             bstWriteNames(pidnames);
@@ -1002,12 +1002,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
     switch(bstWriteCommand) {
         case BST_SELECT_SETTING:
             if (!ARMING_FLAG(ARMED)) {
-                systemConfigMutable()->current_profile_index = bstRead8();
-                if (systemConfig()->current_profile_index > 2) {
-                    systemConfigMutable()->current_profile_index = 0;
-                }
-                writeEEPROM();
-                readEEPROM();
+                changePidProfile(bstRead8());
             }
             break;
         case BST_SET_HEAD:
@@ -1044,9 +1039,9 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             break;
         case BST_SET_PID:
             for (i = 0; i < PID_ITEM_COUNT; i++) {
-                currentProfile->pidProfile.P8[i] = bstRead8();
-                currentProfile->pidProfile.I8[i] = bstRead8();
-                currentProfile->pidProfile.D8[i] = bstRead8();
+                currentPidProfile->P8[i] = bstRead8();
+                currentPidProfile->I8[i] = bstRead8();
+                currentPidProfile->D8[i] = bstRead8();
             }
             break;
         case BST_SET_MODE_RANGE:
@@ -1061,7 +1056,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                     mac->range.startStep = bstRead8();
                     mac->range.endStep = bstRead8();
 
-                    useRcControlsConfig(modeActivationProfile()->modeActivationConditions, &currentProfile->pidProfile);
+                    useRcControlsConfig(modeActivationProfile()->modeActivationConditions, currentPidProfile);
                 } else {
                     ret = BST_FAILED;
                 }

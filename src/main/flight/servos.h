@@ -108,6 +108,7 @@ typedef struct servoConfig_s {
     servoDevConfig_t dev;
     uint16_t servo_lowpass_freq;            // lowpass servo filter frequency selection; 1/1000ths of loop freq
     uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
+    uint8_t channelForwardingStartChannel;
 } servoConfig_t;
 
 PG_DECLARE(servoConfig_t, servoConfig);
@@ -116,17 +117,12 @@ typedef struct servoProfile_s {
     servoParam_t servoConf[MAX_SUPPORTED_SERVOS];
 } servoProfile_t;
 
-typedef struct channelForwardingConfig_s {
-    uint8_t startChannel;
-} channelForwardingConfig_t;
-
 extern int16_t servo[MAX_SUPPORTED_SERVOS];
 
 bool isMixerUsingServos(void);
 void writeServos(void);
-void servoMixerLoadMix(int index, servoMixer_t *customServoMixers);
+void servoMixerLoadMix(int index);
 void loadCustomServoMixer(void);
-void servoUseConfigs(struct channelForwardingConfig_s *channelForwardingConfigToUse);
 int servoDirection(int servoIndex, int fromChannel);
 void servoConfigureOutput(void);
 void servosInit(void);

@@ -88,7 +88,7 @@ navigationMode_e nav_mode = NAV_MODE_NONE;    // Navigation mode
 // When using PWM input GPS usage reduces number of available channels by 2 - see pwm_common.c/pwmInit()
 void navigationInit(void)
 {
-    gpsUsePIDs(&currentProfile->pidProfile);
+    gpsUsePIDs(currentPidProfile);
 }
 
 

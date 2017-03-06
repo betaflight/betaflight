@@ -270,7 +270,7 @@ void updateMagHold(void)
             dif -= 360;
         dif *= -rcControlsConfig()->yaw_control_direction;
         if (STATE(SMALL_ANGLE))
-            rcCommand[YAW] -= dif * currentProfile->pidProfile.P8[PIDMAG] / 30;    // 18 deg
+            rcCommand[YAW] -= dif * currentPidProfile->P8[PIDMAG] / 30;    // 18 deg
     } else
         magHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 }
@@ -311,7 +311,7 @@ void processRx(timeUs_t currentTimeUs)
      This is needed to prevent Iterm winding on the ground, but keep full stabilisation on 0 throttle while in air */
     if (throttleStatus == THROTTLE_LOW && !airmodeIsActivated) {
         pidResetErrorGyroState();
-        if (currentProfile->pidProfile.pidAtMinThrottle)
+        if (currentPidProfile->pidAtMinThrottle)
             pidStabilisationState(PID_STABILISATION_ON);
         else
             pidStabilisationState(PID_STABILISATION_OFF);
@@ -471,7 +471,7 @@ static void subTaskPidController(void)
     uint32_t startTime;
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
     // PID - note this is function pointer set by setPIDController()
-    pidController(&currentProfile->pidProfile, &accelerometerConfig()->accelerometerTrims);
+    pidController(currentPidProfile, &accelerometerConfig()->accelerometerTrims);
     DEBUG_SET(DEBUG_PIDLOOP, 1, micros() - startTime);
 }
 
@@ -563,7 +563,7 @@ static void subTaskMotorUpdate(void)
         startTime = micros();
     }
 
-    mixTable(&currentProfile->pidProfile);
+    mixTable(currentPidProfile);
 
 #ifdef USE_SERVOS
     // motor outputs are used as sources for servo mixing, so motors must be calculated using mixTable() before servos.

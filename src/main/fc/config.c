@@ -94,8 +94,10 @@
 
 #include "telemetry/telemetry.h"
 
+#ifndef USE_PARAMETER_GROUPS
 master_t masterConfig;                 // master config struct with data independent from profiles
-profile_t *currentProfile;
+#endif
+pidProfile_t *currentPidProfile;
 
 #ifndef DEFAULT_FEATURES
 #define DEFAULT_FEATURES 0
@@ -116,8 +118,8 @@ PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
 
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
-    .current_profile_index = 0,
-    //!!TODO.activeRateProfile = 0,
+    .pidProfileIndex = 0,
+    .activeRateProfile = 0,
     .debug_mode = DEBUG_MODE,
     .task_statistics = true,
     .name = { 0 }
@@ -197,7 +199,7 @@ static void resetControlRateProfile(controlRateConfig_t *controlRateConfig)
 #endif
 
 #ifndef USE_PARAMETER_GROUPS
-static void resetPidProfile(pidProfile_t *pidProfile)
+void resetPidProfile(pidProfile_t *pidProfile)
 {
     pidProfile->P8[ROLL] = 44;
     pidProfile->I8[ROLL] = 40;
@@ -807,16 +809,17 @@ void resetFlashConfig(flashConfig_t *flashConfig)
 #endif
 #endif
 
-uint8_t getCurrentProfileIndex(void)
+uint8_t getCurrentPidProfileIndex(void)
 {
-    return systemConfig()->current_profile_index;
+    return systemConfig()->pidProfileIndex;
 }
 
-static void setProfile(uint8_t profileIndex)
+static void setPidProfile(uint8_t pidProfileIndex)
 {
-    if (profileIndex < MAX_PROFILE_COUNT) {
-        systemConfigMutable()->current_profile_index = profileIndex;
-        currentProfile = &masterConfig.profile[profileIndex];
+    if (pidProfileIndex < MAX_PROFILE_COUNT) {
+        systemConfigMutable()->pidProfileIndex = pidProfileIndex;
+        currentPidProfile = pidProfilesMutable(pidProfileIndex);
+        pidInit(); // re-initialise pid controller to re-initialise filters and config
     }
 }
 
@@ -830,7 +833,7 @@ uint16_t getCurrentMinthrottle(void)
     return motorConfig()->minthrottle;
 }
 
-
+#ifndef USE_PARAMETER_GROUPS
 void createDefaultConfig(master_t *config)
 {
     // Clear all configuration
@@ -872,7 +875,7 @@ void createDefaultConfig(master_t *config)
 
     // global settings
 #ifndef USE_PARAMETER_GROUPS
-    config->systemConfig.current_profile_index = 0;    // default profile
+    config->systemConfig.pidProfileIndex = 0;    // default profile
     config->systemConfig.debug_mode = DEBUG_MODE;
     config->systemConfig.task_statistics = true;
 #endif
@@ -1089,7 +1092,7 @@ void createDefaultConfig(master_t *config)
 #endif
 
     // Channel forwarding;
-    config->channelForwardingConfig.startChannel = AUX1;
+    config->servoConfig.channelForwardingStartChannel = AUX1;
 #endif
 
 #ifndef USE_PARAMETER_GROUPS
@@ -1154,14 +1157,17 @@ void createDefaultConfig(master_t *config)
     targetConfiguration(config);
 #endif
 }
+#endif
 
 void resetConfigs(void)
 {
+#ifndef USE_PARAMETER_GROUPS
     createDefaultConfig(&masterConfig);
+#endif
     pgResetAll(MAX_PROFILE_COUNT);
     pgActivateProfile(0);
 
-    setProfile(0);
+    setPidProfile(0);
     setControlRateProfile(0);
 
 #ifdef LED_STRIP
@@ -1175,24 +1181,20 @@ void activateConfig(void)
 
     resetAdjustmentStates();
 
-    useRcControlsConfig(modeActivationConditions(0), &currentProfile->pidProfile);
-    useAdjustmentConfig(&currentProfile->pidProfile);
+    useRcControlsConfig(modeActivationConditions(0), currentPidProfile);
+    useAdjustmentConfig(currentPidProfile);
 
 #ifdef GPS
-    gpsUsePIDs(&currentProfile->pidProfile);
+    gpsUsePIDs(currentPidProfile);
 #endif
 
     failsafeReset();
     setAccelerationTrims(&accelerometerConfigMutable()->accZero);
     setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
 
-#ifdef USE_SERVOS
-    servoUseConfigs(&masterConfig.channelForwardingConfig);
-#endif
-
     imuConfigure(throttleCorrectionConfig()->throttle_correction_angle);
 
-    configureAltitudeHold(&currentProfile->pidProfile);
+    configureAltitudeHold(currentPidProfile);
 }
 
 void validateAndFixConfig(void)
@@ -1262,14 +1264,18 @@ void validateAndFixConfig(void)
 #endif
 
     // Prevent invalid notch cutoff
-    if (currentProfile->pidProfile.dterm_notch_cutoff >= currentProfile->pidProfile.dterm_notch_hz) {
-        currentProfile->pidProfile.dterm_notch_hz = 0;
+    if (currentPidProfile->dterm_notch_cutoff >= currentPidProfile->dterm_notch_hz) {
+        currentPidProfile->dterm_notch_hz = 0;
     }
 
     validateAndFixGyroConfig();
 
 #if defined(TARGET_VALIDATECONFIG)
+#ifdef USE_PARAMETER_GROUPS
+    targetValidateConfiguration();
+#else
     targetValidateConfiguration(&masterConfig);
+#endif
 #endif
 }
 
@@ -1358,14 +1364,14 @@ void readEEPROM(void)
         failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
     }
 
-//    pgActivateProfile(getCurrentProfileIndex());
+//    pgActivateProfile(getCurrentPidProfileIndex());
 //    setControlRateProfile(rateProfileSelection()->defaultRateProfileIndex);
 
-    if (systemConfig()->current_profile_index > MAX_PROFILE_COUNT - 1) {// sanity check
-        systemConfigMutable()->current_profile_index = 0;
+    if (systemConfig()->pidProfileIndex > MAX_PROFILE_COUNT - 1) {// sanity check
+        systemConfigMutable()->pidProfileIndex = 0;
     }
 
-    setProfile(systemConfig()->current_profile_index);
+    setPidProfile(systemConfig()->pidProfileIndex);
 
     validateAndFixConfig();
     activateConfig();
@@ -1403,15 +1409,16 @@ void saveConfigAndNotify(void)
     beeperConfirmationBeeps(1);
 }
 
-void changeProfile(uint8_t profileIndex)
+void changePidProfile(uint8_t pidProfileIndex)
 {
-    if (profileIndex >= MAX_PROFILE_COUNT) {
-        profileIndex = MAX_PROFILE_COUNT - 1;
+    if (pidProfileIndex >= MAX_PROFILE_COUNT) {
+        pidProfileIndex = MAX_PROFILE_COUNT - 1;
     }
-    systemConfigMutable()->current_profile_index = profileIndex;
+    systemConfigMutable()->pidProfileIndex = pidProfileIndex;
+    currentPidProfile = pidProfilesMutable(pidProfileIndex);
     writeEEPROM();
     readEEPROM();
-    beeperConfirmationBeeps(profileIndex + 1);
+    beeperConfirmationBeeps(pidProfileIndex + 1);
 }
 
 void beeperOffSet(uint32_t mask)

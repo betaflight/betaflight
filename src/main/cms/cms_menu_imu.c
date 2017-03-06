@@ -52,9 +52,9 @@
 //
 // PID
 //
-static uint8_t tmpProfileIndex;
-static uint8_t profileIndex;
-static char profileIndexString[] = " p";
+static uint8_t tmpPidProfileIndex;
+static uint8_t pidProfileIndex;
+static char pidProfileIndexString[] = " p";
 static uint8_t tempPid[3][3];
 
 static uint8_t tmpRateProfileIndex;
@@ -64,10 +64,10 @@ static controlRateConfig_t rateProfile;
 
 static long cmsx_menuImu_onEnter(void)
 {
-    profileIndex = getCurrentProfileIndex();
-    tmpProfileIndex = profileIndex + 1;
+    pidProfileIndex = getCurrentPidProfileIndex();
+    tmpPidProfileIndex = pidProfileIndex + 1;
 
-    rateProfileIndex = systemConfig()->activeRateProfile;
+    rateProfileIndex = getCurrentControlRateProfileIndex();
     tmpRateProfileIndex = rateProfileIndex + 1;
 
     return 0;
@@ -77,7 +77,7 @@ static long cmsx_menuImu_onExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    changeProfile(profileIndex);
+    changePidProfile(pidProfileIndex);
     changeControlRateProfile(rateProfileIndex);
 
     return 0;
@@ -88,7 +88,7 @@ static long cmsx_profileIndexOnChange(displayPort_t *displayPort, const void *pt
     UNUSED(displayPort);
     UNUSED(ptr);
 
-    profileIndex = tmpProfileIndex - 1;
+    pidProfileIndex = tmpPidProfileIndex - 1;
 
     return 0;
 }
@@ -106,7 +106,7 @@ static long cmsx_rateProfileIndexOnChange(displayPort_t *displayPort, const void
 static long cmsx_PidRead(void)
 {
 
-    const pidProfile_t *pidProfile = pidProfiles(profileIndex);
+    const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
     for (uint8_t i = 0; i < 3; i++) {
         tempPid[i][0] = pidProfile->P8[i];
         tempPid[i][1] = pidProfile->I8[i];
@@ -118,7 +118,7 @@ static long cmsx_PidRead(void)
 
 static long cmsx_PidOnEnter(void)
 {
-    profileIndexString[1] = '0' + tmpProfileIndex;
+    pidProfileIndexString[1] = '0' + tmpPidProfileIndex;
     cmsx_PidRead();
 
     return 0;
@@ -128,20 +128,20 @@ static long cmsx_PidWriteback(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    pidProfile_t *pidProfile = pidProfilesMutable(profileIndex);
+    pidProfile_t *pidProfile = currentPidProfile;
     for (uint8_t i = 0; i < 3; i++) {
         pidProfile->P8[i] = tempPid[i][0];
         pidProfile->I8[i] = tempPid[i][1];
         pidProfile->D8[i] = tempPid[i][2];
     }
-    pidInitConfig(&currentProfile->pidProfile);
+    pidInitConfig(currentPidProfile);
 
     return 0;
 }
 
 static OSD_Entry cmsx_menuPidEntries[] =
 {
-    { "-- PID --", OME_Label, NULL, profileIndexString, 0},
+    { "-- PID --", OME_Label, NULL, pidProfileIndexString, 0},
 
     { "ROLL  P", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDROLL][0],  0, 200, 1 }, 0 },
     { "ROLL  I", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDROLL][1],  0, 200, 1 }, 0 },
@@ -190,7 +190,7 @@ static long cmsx_RateProfileWriteback(const OSD_Entry *self)
 
 static long cmsx_RateProfileOnEnter(void)
 {
-    rateProfileIndexString[1] = '0' + tmpProfileIndex;
+    rateProfileIndexString[1] = '0' + tmpPidProfileIndex;
     rateProfileIndexString[3] = '0' + tmpRateProfileIndex;
     cmsx_RateProfileRead();
 
@@ -235,9 +235,9 @@ static uint8_t cmsx_horizonTransition;
 
 static long cmsx_profileOtherOnEnter(void)
 {
-    profileIndexString[1] = '0' + tmpProfileIndex;
+    pidProfileIndexString[1] = '0' + tmpPidProfileIndex;
 
-    const pidProfile_t *pidProfile = pidProfiles(profileIndex);
+    const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
     cmsx_dtermSetpointWeight = pidProfile->dtermSetpointWeight;
     cmsx_setpointRelaxRatio  = pidProfile->setpointRelaxRatio;
 
@@ -252,10 +252,10 @@ static long cmsx_profileOtherOnExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    pidProfile_t *pidProfile = pidProfilesMutable(profileIndex);
+    pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
     pidProfile->dtermSetpointWeight = cmsx_dtermSetpointWeight;
     pidProfile->setpointRelaxRatio = cmsx_setpointRelaxRatio;
-    pidInitConfig(&currentProfile->pidProfile);
+    pidInitConfig(currentPidProfile);
 
     pidProfile->P8[PIDLEVEL] = cmsx_angleStrength;
     pidProfile->I8[PIDLEVEL] = cmsx_horizonStrength;
@@ -265,7 +265,7 @@ static long cmsx_profileOtherOnExit(const OSD_Entry *self)
 }
 
 static OSD_Entry cmsx_menuProfileOtherEntries[] = {
-    { "-- OTHER PP --", OME_Label, NULL, profileIndexString, 0 },
+    { "-- OTHER PP --", OME_Label, NULL, pidProfileIndexString, 0 },
 
     { "D SETPT WT",  OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_dtermSetpointWeight, 0, 255, 1, 10 }, 0 },
     { "SETPT TRS",   OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_setpointRelaxRatio,  0, 100, 1, 10 }, 0 },
@@ -347,7 +347,7 @@ static uint16_t cmsx_yaw_p_limit;
 
 static long cmsx_FilterPerProfileRead(void)
 {
-    const pidProfile_t *pidProfile = pidProfiles(profileIndex);
+    const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
     cmsx_dterm_lpf_hz =       pidProfile->dterm_lpf_hz;
     cmsx_dterm_notch_hz =     pidProfile->dterm_notch_hz;
     cmsx_dterm_notch_cutoff = pidProfile->dterm_notch_cutoff;
@@ -361,7 +361,7 @@ static long cmsx_FilterPerProfileWriteback(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    pidProfile_t *pidProfile = pidProfilesMutable(profileIndex);
+    pidProfile_t *pidProfile = currentPidProfile;
     pidProfile->dterm_lpf_hz =       cmsx_dterm_lpf_hz;
     pidProfile->dterm_notch_hz =     cmsx_dterm_notch_hz;
     pidProfile->dterm_notch_cutoff = cmsx_dterm_notch_cutoff;
@@ -398,7 +398,7 @@ static OSD_Entry cmsx_menuImuEntries[] =
 {
     { "-- IMU --", OME_Label, NULL, NULL, 0},
 
-    {"PID PROF",  OME_UINT8,   cmsx_profileIndexOnChange,     &(OSD_UINT8_t){ &tmpProfileIndex, 1, MAX_PROFILE_COUNT, 1},    0},
+    {"PID PROF",  OME_UINT8,   cmsx_profileIndexOnChange,     &(OSD_UINT8_t){ &tmpPidProfileIndex, 1, MAX_PROFILE_COUNT, 1},    0},
     {"PID",       OME_Submenu, cmsMenuChange,                 &cmsx_menuPid,                                                 0},
     {"MISC PP",   OME_Submenu, cmsMenuChange,                 &cmsx_menuProfileOther,                                        0},
     {"FILT PP",   OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterPerProfile,                                    0},
