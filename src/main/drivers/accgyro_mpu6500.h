@@ -23,10 +23,17 @@
 #define ICM20602_WHO_AM_I_CONST             (0x12)
 
 #define MPU6500_BIT_RESET                   (0x80)
+
+// Register 0x37/55 - INT_PIN_CFG / Pin Bypass Enable Configuration
+#define MPU6500_BIT_RESERVED                (1 << 0)
+#define MPU6500_BIT_BYPASS_EN               (1 << 1)
 #define MPU6500_BIT_INT_ANYRD_2CLEAR        (1 << 4)
-#define MPU6500_BIT_BYPASS_EN               (1 << 0)
+
+// Register 0x38/56 INT_ENABLE
+#define MPU6500_BIT_RAW_RDY_EN              (1 << 0)
+
+// Register 0x6a/106 - USER_CTRL / User Control
 #define MPU6500_BIT_I2C_IF_DIS              (1 << 4)
-#define MPU6500_BIT_RAW_RDY_EN              (0x01)
 
 bool mpu6500AccDetect(accDev_t *acc);
 bool mpu6500GyroDetect(gyroDev_t *gyro);
