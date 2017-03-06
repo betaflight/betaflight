@@ -887,6 +887,11 @@ void createDefaultConfig(master_t *config)
     config->imuConfig.acc_unarmedcal = 1;
 #endif
 #ifndef USE_PARAMETER_GROUPS
+# if defined(MPU_CS_CONFIGURABLE)
+    config->mpuPinConfig.ioTagCS = IO_TAG(MPU6000_CS_PIN);
+# endif
+#endif
+#ifndef USE_PARAMETER_GROUPS
     config->gyroConfig.gyro_lpf = GYRO_LPF_256HZ;    // 256HZ default
 #ifdef STM32F10X
     config->gyroConfig.gyro_sync_denom = 8;

@@ -41,6 +41,8 @@
 #include "accgyro.h"
 #include "accgyro_mpu.h"
 
+#include "config/config_master.h"
+
 #if defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_SPI_MPU6000)
 
 #include "accgyro_spi_mpu6000.h"
@@ -155,9 +157,12 @@ bool mpu6000SpiDetect(void)
     uint8_t in;
     uint8_t attemptsRemaining = 5;
 
-#ifdef MPU6000_CS_PIN
+#ifdef MPU_CS_CONFIGURABLE
+    mpuSpi6000CsPin = IOGetByTag(mpuPinConfig()->ioTagCS);
+#elif defined(MPU6000_CS_PIN)
     mpuSpi6000CsPin = IOGetByTag(IO_TAG(MPU6000_CS_PIN));
 #endif
+
     IOInit(mpuSpi6000CsPin, OWNER_MPU_CS, 0);
     IOConfigGPIO(mpuSpi6000CsPin, SPI_IO_CS_CFG);
 
