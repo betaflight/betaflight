@@ -238,6 +238,7 @@ void init(void)
     }
 #endif
 
+
 #ifdef SPEKTRUM_BIND
     if (feature(FEATURE_RX_SERIAL)) {
         switch (rxConfig()->serialrx_provider) {
@@ -250,6 +251,7 @@ void init(void)
                 break;
         }
     }
+    delay(200); // Make sure the satellite times out and closes the bind window. (Delay(100) below is not enough and needed for non-sat configs)
 #endif
 
     delay(100);
