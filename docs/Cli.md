@@ -178,7 +178,7 @@ Re-apply any new defaults as desired.
 |  nav_mc_bank_angle  | 30 | Maximum banking angle (deg) that multicopter navigation is allowed to set. Machine must be able to satisfy this angle without loosing altitude |
 |  nav_mc_hover_thr  | 1500 | Multicopter hover throttle hint for altitude controller. Should be set to approximate throttle value when drone is hovering. |
 |  nav_mc_auto_disarm_delay  | 2000 |  |
-|  nav_fw_cruise_thr  | 1400 | Cruise throttle in GPS assisted modes. Should be set high enough to avoid stalling |
+|  nav_fw_cruise_thr  | 1400 | Cruise throttle in GPS assisted modes, this includes RTH. Should be set high enough to avoid stalling. This values gives INAV a base for throttle when flying straight, and it will increase or decrease throttle based on pitch of airplane and the parameters below. In addiotional it will increase throttle if GPS speed gets below 7m/s ( hardcoded )  |
 |  nav_fw_min_thr  | 1200 | Minimum throttle for flying wing in GPS assisted modes |
 |  nav_fw_max_thr  | 1700 | Maximum throttle for flying wing in GPS assisted modes |
 |  nav_fw_bank_angle  | 20 | Max roll angle when rolling / turning in GPS assisted modes, is also restrained by global max_angle_inclination_rll |
