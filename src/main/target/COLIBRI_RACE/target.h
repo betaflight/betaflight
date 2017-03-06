@@ -80,10 +80,15 @@
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-#define USE_SOFTSERIAL1
-#define USE_SOFTSERIAL2
-
-#define SERIAL_PORT_COUNT       6
+// USE_SOFTSERIALx has a conflict with USE_BST that prevents FC from being recognized from configurator
+// Drop USE_SOFTSERIALx until resolution is provided.
+#ifdef SOFTSERIAL_BST_CONFLICT_RESOLVED
+#  define USE_SOFTSERIAL1
+#  define USE_SOFTSERIAL2
+#  define SERIAL_PORT_COUNT       6
+#else
+#  define SERIAL_PORT_COUNT       4
+#endif
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
