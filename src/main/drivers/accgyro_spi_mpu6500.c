@@ -37,6 +37,8 @@
 #define DISABLE_MPU6500       IOHi(mpuSpi6500CsPin)
 #define ENABLE_MPU6500        IOLo(mpuSpi6500CsPin)
 
+#define BIT_SLEEP                   0x40
+
 static IO_t mpuSpi6500CsPin = IO_NONE;
 
 bool mpu6500WriteRegister(uint8_t reg, uint8_t data)
@@ -79,27 +81,36 @@ static void mpu6500SpiInit(void)
 static uint8_t mpuDetected = MPU_NONE;
 uint8_t mpu6500SpiDetect(void)
 {
-    uint8_t tmp;
+    uint8_t tmp, detectRetries;
 
     mpu6500SpiInit();
 
-    mpu6500ReadRegister(MPU_RA_WHO_AM_I, 1, &tmp);
+    delayMicroseconds(15);
+    do {
+        mpu6500ReadRegister(MPU_RA_PWR_MGMT_1, 1, &tmp);
+        delayMicroseconds(1);
+        detectRetries++;
+    } while (tmp != BIT_SLEEP && detectRetries < 30);
 
-    switch (tmp) {
-    case MPU6500_WHO_AM_I_CONST:
-        mpuDetected = MPU_65xx_SPI;
-        break;
-    case MPU9250_WHO_AM_I_CONST:
-        mpuDetected = MPU_9250_SPI;
-        break;
-    case ICM20608G_WHO_AM_I_CONST:
-        mpuDetected = ICM_20608_SPI;
-        break;
-    case ICM20602_WHO_AM_I_CONST:
-        mpuDetected = ICM_20602_SPI;
-        break;
-    default:
-        mpuDetected = MPU_NONE;
+    if (tmp == BIT_SLEEP) {
+        mpu6500ReadRegister(MPU_RA_WHO_AM_I, 1, &tmp);
+        delayMicroseconds(15);
+        switch (tmp) {
+        case MPU6500_WHO_AM_I_CONST:
+            mpuDetected = MPU_65xx_SPI;
+            break;
+        case MPU9250_WHO_AM_I_CONST:
+            mpuDetected = MPU_9250_SPI;
+            break;
+        case ICM20608G_WHO_AM_I_CONST:
+            mpuDetected = ICM_20608_SPI;
+            break;
+        case ICM20602_WHO_AM_I_CONST:
+            mpuDetected = ICM_20602_SPI;
+            break;
+        default:
+            mpuDetected = MPU_NONE;
+        }
     }
     return mpuDetected;
 }
