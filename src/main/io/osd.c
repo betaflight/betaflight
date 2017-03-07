@@ -512,6 +512,18 @@ void pgResetFn_osdConfig(osdConfig_t *osdProfile)
     osdProfile->alt_alarm = 100; // meters or feet depend on configuration
 }
 
+static void osdDrawLogo(int x, int y)
+{
+    // display logo and help
+    char fontOffset = 160;
+    for (int row = 0; row < 4; row++) {
+        for (int column = 0; column < 24; column++) {
+            if (fontOffset != 255) // FIXME magic number
+                displayWriteChar(osdDisplayPort, x + column, y + row, fontOffset++);
+        }
+    }
+}
+
 void osdInit(displayPort_t *osdDisplayPortToUse)
 {
     BUILD_BUG_ON(OSD_POS_MAX != OSD_POS(31,31));
@@ -527,14 +539,7 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
 
     displayClearScreen(osdDisplayPort);
 
-    // display logo and help
-    char x = 160;
-    for (int i = 1; i < 5; i++) {
-        for (int j = 3; j < 27; j++) {
-            if (x != 255)
-                displayWriteChar(osdDisplayPort, j, i, x++);
-        }
-    }
+    osdDrawLogo(3, 1);
 
     char string_buffer[30];
     sprintf(string_buffer, "V%s", FC_VERSION_STRING);
