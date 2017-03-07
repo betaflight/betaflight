@@ -81,14 +81,13 @@ static void mpu6500SpiInit(void)
 static uint8_t mpuDetected = MPU_NONE;
 uint8_t mpu6500SpiDetect(void)
 {
-    uint8_t tmp, detectRetries;
+    uint8_t tmp = 0, detectRetries = 0;
 
     mpu6500SpiInit();
 
     delayMicroseconds(15);
     do {
         mpu6500ReadRegister(MPU_RA_PWR_MGMT_1, 1, &tmp);
-        delayMicroseconds(1);
         detectRetries++;
     } while (tmp != BIT_SLEEP && detectRetries < 30);
 
