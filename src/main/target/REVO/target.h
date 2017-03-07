@@ -80,12 +80,12 @@
 
 
 #ifdef AIRBOTF4SD
-   // An variant of AIRBOTF4SD has dual gyro:
-   //    ICM-20601 (supported by MPU6500) with CS on PA4
-   //    MPU6000 with CS on PB13.
+// An variant of AIRBOTF4SD has dual gyro:
+//    ICM-20601 (supported by MPU6500) with CS on PA4
+//    MPU6000 with CS on PB13.
 # define MPU_CS_CONFIGURABLE
-   // Default to PA4 (ICM-20601).
-# define MPU6000_CS_PIN        PA4  // ICM20601 on PA4 (XXX Served through MPU6000 code?)
+// Default to PA4 (ICM-20601).
+# define MPU6000_CS_PIN        PA4  // Default to ICM20601 on PA4 (XXX Served through MPU6000 code???)
 //#  define MPU6000_CS_PIN       PB13 // MPU6000 on PB13
 # define MPU6000_SPI_INSTANCE    SPI1
 # define MPU6500_SPI_INSTANCE    SPI1 // Required for ICM-20601 support
