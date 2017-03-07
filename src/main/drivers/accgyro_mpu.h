@@ -190,6 +190,12 @@ typedef struct mpuDetectionResult_s {
     mpu6050Resolution_e resolution;
 } mpuDetectionResult_t;
 
+#if defined(MPU_CS_CONFIGURABLE)
+typedef struct mpuPinConfig_s {
+    ioTag_t ioTagCS;
+} mpuPinConfig_t;
+#endif
+
 struct gyroDev_s;
 void mpuGyroInit(struct gyroDev_s *gyro);
 struct accDev_s;

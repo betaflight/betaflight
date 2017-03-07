@@ -4059,7 +4059,7 @@ const cliResourceValue_t resourceTable[] = {
     { OWNER_SERIAL_RX,     &serialPinConfig()->ioTagRx[0], SERIAL_PORT_MAX_INDEX },
 #endif
     // AIRBOTF4DG has two gyros (MPU6000 & variant) which can be selected by CS
-#if defined(MPU_CS_SELECT)
+#if defined(MPU_CS_CONFIGURABLE)
     { OWNER_MPU_CS,        &mpuPinConfig()->ioTagCS, 0 },
 #endif
 };

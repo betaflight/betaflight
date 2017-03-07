@@ -86,6 +86,7 @@
 # define MPU6000_CS_PIN        PA4  // ICM20601 on PA4
 //#  define MPU6000_CS_PIN      PB13 // MPU6000 on PB13
 # define MPU6000_SPI_INSTANCE    SPI1
+# define MPU6500_SPI_INSTANCE    SPI1
 
 #else
 

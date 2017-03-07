@@ -17,12 +17,6 @@
 // RF = Register Flag
 #define MPU_RF_DATA_RDY_EN (1 << 0)
 
-#if defined(MPU_CS_CONFIGURABLE)
-typedef struct mpuPinConfig_s {
-    ioTag_t ioTagCS;
-} mpuPinConfig_t;
-#endif
-
 bool mpu6000SpiDetect(void);
 
 bool mpu6000SpiAccDetect(accDev_t *acc);
