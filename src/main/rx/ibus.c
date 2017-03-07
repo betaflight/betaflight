@@ -53,7 +53,7 @@
 #define IBUS_BAUDRATE 115200
 
 static uint8_t ibusModel;
-static uint8_t ibusSyncByte = 0;
+static uint8_t ibusSyncByte;
 static uint8_t ibusFrameSize;
 static uint8_t ibusChannelOffset;
 static uint16_t ibusChecksum;
@@ -92,8 +92,9 @@ static void ibusDataReceive(uint16_t c)
                 ibusFrameSize = 32;
                 ibusChannelOffset = 2;
                 ibusChecksum = 0xFFFF;
-            } else
+            } else {
                 return;
+            }
         } else if (ibusSyncByte != c) {
             return;
         }
@@ -149,6 +150,7 @@ static uint16_t ibusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t 
 bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     UNUSED(rxConfig);
+    ibusSyncByte = 0;
 
     rxRuntimeConfig->channelCount = IBUS_MAX_CHANNEL;
     rxRuntimeConfig->rxRefreshRate = 20000; // TODO - Verify speed
