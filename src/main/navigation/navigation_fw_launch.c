@@ -142,34 +142,42 @@ void applyFixedWingLaunchController(timeUs_t currentTimeUs)
     // Called at PID rate
 
     if (launchState.launchDetected) {
-        // If launch detected we are in launch procedure - control airplane
-        const float timeElapsedSinceLaunchMs = US2MS(currentTimeUs- launchState.launchStartedTime);
+        bool applyLaunchIdleLogic = true;
 
-        // If user moves the stick - finish the launch
-        if ((ABS(rcCommand[ROLL]) > rcControlsConfig()->pos_hold_deadband) || (ABS(rcCommand[PITCH]) > rcControlsConfig()->pos_hold_deadband)) {
-            launchState.launchFinished = true;
-        }
+        if (launchState.motorControlAllowed) {
+            // If launch detected we are in launch procedure - control airplane
+            const float timeElapsedSinceLaunchMs = US2MS(currentTimeUs - launchState.launchStartedTime);
 
-        // Abort launch after a pre-set time
-        if (timeElapsedSinceLaunchMs >= navConfig()->fw.launch_timeout) {
-            launchState.launchFinished = true;
-        }
-
-        // Motor control enabled
-        if (launchState.motorControlAllowed && (timeElapsedSinceLaunchMs >= navConfig()->fw.launch_motor_timer)) {
-            // Increase throttle gradually over `launch_motor_spinup_time` milliseconds
-            if (navConfig()->fw.launch_motor_spinup_time > 0) {
-                const float timeSinceMotorStartMs = constrainf(timeElapsedSinceLaunchMs - navConfig()->fw.launch_motor_timer, 0.0f, navConfig()->fw.launch_motor_spinup_time);
-                const uint16_t minIdleThrottle = MAX(motorConfig()->minthrottle, navConfig()->fw.launch_idle_throttle);
-                rcCommand[THROTTLE] = scaleRangef(timeSinceMotorStartMs,
-                                                  0.0f, navConfig()->fw.launch_motor_spinup_time,
-                                                  minIdleThrottle, navConfig()->fw.launch_throttle);
+            // If user moves the stick - finish the launch
+            if ((ABS(rcCommand[ROLL]) > rcControlsConfig()->pos_hold_deadband) || (ABS(rcCommand[PITCH]) > rcControlsConfig()->pos_hold_deadband)) {
+                launchState.launchFinished = true;
             }
-            else {
-                rcCommand[THROTTLE] = navConfig()->fw.launch_throttle;
+
+            // Abort launch after a pre-set time
+            if (timeElapsedSinceLaunchMs >= navConfig()->fw.launch_timeout) {
+                launchState.launchFinished = true;
+            }
+
+            // Motor control enabled
+            if (timeElapsedSinceLaunchMs >= navConfig()->fw.launch_motor_timer) {
+                // Don't apply idle logic anymore
+                applyLaunchIdleLogic = false;
+
+                // Increase throttle gradually over `launch_motor_spinup_time` milliseconds
+                if (navConfig()->fw.launch_motor_spinup_time > 0) {
+                    const float timeSinceMotorStartMs = constrainf(timeElapsedSinceLaunchMs - navConfig()->fw.launch_motor_timer, 0.0f, navConfig()->fw.launch_motor_spinup_time);
+                    const uint16_t minIdleThrottle = MAX(motorConfig()->minthrottle, navConfig()->fw.launch_idle_throttle);
+                    rcCommand[THROTTLE] = scaleRangef(timeSinceMotorStartMs,
+                                                      0.0f, navConfig()->fw.launch_motor_spinup_time,
+                                                      minIdleThrottle, navConfig()->fw.launch_throttle);
+                }
+                else {
+                    rcCommand[THROTTLE] = navConfig()->fw.launch_throttle;
+                }
             }
         }
-        else {
+
+        if (applyLaunchIdleLogic) {
             // Launch idle logic - low throttle and zero out PIDs
             applyFixedWingLaunchIdleLogic();
         }
