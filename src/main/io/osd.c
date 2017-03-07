@@ -537,12 +537,12 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
     }
 
     char string_buffer[30];
-    sprintf(string_buffer, "BF VERSION: %s", FC_VERSION_STRING);
-    displayWrite(osdDisplayPort, 5, 6, string_buffer);
+    sprintf(string_buffer, "V%s", FC_VERSION_STRING);
+    displayWrite(osdDisplayPort, 20, 6, string_buffer);
 #ifdef CMS
-    displayWrite(osdDisplayPort, 7, 7,  CMS_STARTUP_HELP_TEXT1);
-    displayWrite(osdDisplayPort, 11, 8, CMS_STARTUP_HELP_TEXT2);
-    displayWrite(osdDisplayPort, 11, 9, CMS_STARTUP_HELP_TEXT3);
+    displayWrite(osdDisplayPort, 7, 8,  CMS_STARTUP_HELP_TEXT1);
+    displayWrite(osdDisplayPort, 11, 9, CMS_STARTUP_HELP_TEXT2);
+    displayWrite(osdDisplayPort, 11, 10, CMS_STARTUP_HELP_TEXT3);
 #endif
 
     displayResync(osdDisplayPort);
