@@ -871,13 +871,13 @@ F7EXCLUDES = drivers/bus_spi.c \
 
 # check if target.mk supplied
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
-TARGET_SRC := $(STARTUP_SRC) $(STM32F4xx_COMMON_SRC) $(TARGET_SRC)
+SRC := $(STARTUP_SRC) $(STM32F4xx_COMMON_SRC) $(TARGET_SRC) $(VARIANT_SRC)
 else ifeq ($(TARGET),$(filter $(TARGET),$(F7_TARGETS)))
-TARGET_SRC := $(STARTUP_SRC) $(STM32F7xx_COMMON_SRC) $(TARGET_SRC)
+SRC := $(STARTUP_SRC) $(STM32F7xx_COMMON_SRC) $(TARGET_SRC) $(VARIANT_SRC)
 else ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
-TARGET_SRC := $(STARTUP_SRC) $(STM32F30x_COMMON_SRC) $(TARGET_SRC)
+SRC := $(STARTUP_SRC) $(STM32F30x_COMMON_SRC) $(TARGET_SRC) $(VARIANT_SRC)
 else ifeq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
-TARGET_SRC := $(STARTUP_SRC) $(STM32F10x_COMMON_SRC) $(TARGET_SRC)
+SRC := $(STARTUP_SRC) $(STM32F10x_COMMON_SRC) $(TARGET_SRC) $(VARIANT_SRC)
 endif
 
 ifneq ($(filter $(TARGET),$(F4_TARGETS) $(F7_TARGETS)),)
@@ -886,34 +886,34 @@ DEVICE_FLAGS += -DARM_MATH_CM4 -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__F
 
 INCLUDE_DIRS += $(DSPLIB)/Include
 
-TARGET_SRC += $(DSPLIB)/Source/TransformFunctions/arm_rfft_fast_f32.c
-TARGET_SRC += $(DSPLIB)/Source/TransformFunctions/arm_cfft_f32.c
-TARGET_SRC += $(DSPLIB)/Source/TransformFunctions/arm_rfft_fast_init_f32.c
-TARGET_SRC += $(DSPLIB)/Source/TransformFunctions/arm_cfft_radix8_f32.c
-TARGET_SRC += $(DSPLIB)/Source/CommonTables/arm_common_tables.c
+SRC += $(DSPLIB)/Source/TransformFunctions/arm_rfft_fast_f32.c
+SRC += $(DSPLIB)/Source/TransformFunctions/arm_cfft_f32.c
+SRC += $(DSPLIB)/Source/TransformFunctions/arm_rfft_fast_init_f32.c
+SRC += $(DSPLIB)/Source/TransformFunctions/arm_cfft_radix8_f32.c
+SRC += $(DSPLIB)/Source/CommonTables/arm_common_tables.c
 
-TARGET_SRC += $(DSPLIB)/Source/ComplexMathFunctions/arm_cmplx_mag_f32.c
-TARGET_SRC += $(DSPLIB)/Source/StatisticsFunctions/arm_max_f32.c
+SRC += $(DSPLIB)/Source/ComplexMathFunctions/arm_cmplx_mag_f32.c
+SRC += $(DSPLIB)/Source/StatisticsFunctions/arm_max_f32.c
 
-TARGET_SRC += $(wildcard $(DSPLIB)/Source/*/*.S)
+SRC += $(wildcard $(DSPLIB)/Source/*/*.S)
 endif
 
 
 ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)
-TARGET_SRC += \
+SRC += \
             drivers/flash_m25p16.c \
             io/flashfs.c
 endif
 
-TARGET_SRC += $(COMMON_SRC)
+SRC += $(COMMON_SRC)
 
 #excludes
 ifeq ($(TARGET),$(filter $(TARGET),$(F7_TARGETS)))
-TARGET_SRC   := $(filter-out ${F7EXCLUDES}, $(TARGET_SRC))
+SRC   := $(filter-out ${F7EXCLUDES}, $(SRC))
 endif
 
 ifneq ($(filter SDCARD,$(FEATURES)),)
-TARGET_SRC += \
+SRC += \
             drivers/sdcard.c \
             drivers/sdcard_standard.c \
             io/asyncfatfs/asyncfatfs.c \
@@ -921,7 +921,7 @@ TARGET_SRC += \
 endif
 
 ifneq ($(filter VCP,$(FEATURES)),)
-TARGET_SRC += $(VCP_SRC)
+SRC += $(VCP_SRC)
 endif
 # end target specific make file checks
 
@@ -1042,8 +1042,8 @@ CPPCHECK        = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
 TARGET_BIN      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).bin
 TARGET_HEX      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).hex
 TARGET_ELF      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).elf
-TARGET_OBJS     = $(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(TARGET_SRC))))
-TARGET_DEPS     = $(addsuffix .d,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(TARGET_SRC))))
+TARGET_OBJS     = $(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(SRC))))
+TARGET_DEPS     = $(addsuffix .d,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(SRC))))
 TARGET_MAP      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 
 
@@ -1052,7 +1052,7 @@ CLEAN_ARTIFACTS += $(TARGET_HEX)
 CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
 
 # Make sure build date and revision is updated on every incremental build
-$(OBJECT_DIR)/$(TARGET)/build/version.o : $(TARGET_SRC)
+$(OBJECT_DIR)/$(TARGET)/build/version.o : $(SRC)
 
 # List of buildable ELF files and their object dependencies.
 # It would be nice to compute these lists, but that seems to be just beyond make.

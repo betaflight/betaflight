@@ -1,7 +1,7 @@
 F405_TARGETS    += $(TARGET)
 FEATURES        += VCP ONBOARDFLASH
 
-TARGET_SRC += \
+TARGET_SRC = \
             drivers/accgyro_spi_icm20689.c \
             drivers/barometer_bmp280.c \
             drivers/barometer_ms5611.c \

@@ -3,7 +3,7 @@ F3_TARGETS   += $(TARGET)
 FEATURES     = VCP SDCARD
 TARGET_FLAGS = -DSPRACINGF3
 
-TARGET_SRC += \
+TARGET_SRC = \
             drivers/accgyro_mpu.c \
             drivers/accgyro_spi_mpu6000.c \
             drivers/compass_ak8975.c \

@@ -1,7 +1,7 @@
 F3_TARGETS  += $(TARGET)
 FEATURES    = VCP 
 
-TARGET_SRC += \
+TARGET_SRC = \
             i2c_bst.c \
             bus_bst_stm32f30x.c \
             drivers/accgyro_mpu.c \

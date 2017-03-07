@@ -1,7 +1,7 @@
 F1_TARGETS  += $(TARGET)
 FEATURES    = ONBOARDFLASH
 
-TARGET_SRC += \
+TARGET_SRC = \
             drivers/accgyro_adxl345.c \
             drivers/accgyro_bma280.c \
             drivers/accgyro_l3g4200d.c \

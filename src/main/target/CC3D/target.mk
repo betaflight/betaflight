@@ -1,7 +1,7 @@
 F1_TARGETS  += $(TARGET)
 FEATURES    = ONBOARDFLASH VCP
 
-TARGET_SRC += \
+TARGET_SRC = \
             drivers/accgyro_mpu.c \
             drivers/accgyro_spi_mpu6000.c \
             drivers/barometer_bmp085.c \
