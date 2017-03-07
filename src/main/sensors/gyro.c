@@ -96,16 +96,19 @@ static void *notchFilter2[3];
 PG_REGISTER_WITH_RESET_TEMPLATE(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
 
 PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
-    .gyro_lpf = GYRO_LPF_256HZ,
+    .gyro_align = ALIGN_DEFAULT,
+    .gyroMovementCalibrationThreshold = 48,
     .gyro_sync_denom = GYRO_SYNC_DENOM_DEFAULT,
+    .gyro_lpf = GYRO_LPF_256HZ,
     .gyro_soft_lpf_type = FILTER_PT1,
     .gyro_soft_lpf_hz = 90,
+    .gyro_isr_update = false,
+    .gyro_use_32khz = false,
+    .gyro_to_use = 0,
     .gyro_soft_notch_hz_1 = 400,
     .gyro_soft_notch_cutoff_1 = 300,
     .gyro_soft_notch_hz_2 = 200,
-    .gyro_soft_notch_cutoff_2 = 100,
-    .gyro_align = ALIGN_DEFAULT,
-    .gyroMovementCalibrationThreshold = 48
+    .gyro_soft_notch_cutoff_2 = 100
 );
 
 #if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
@@ -121,6 +124,11 @@ static const extiConfig_t *selectMPUIntExtiConfig(void)
 #endif
 }
 #endif
+
+const busDevice_t *gyroSensorBus(void)
+{
+    return &gyroDev0.bus;
+}
 
 const mpuConfiguration_t *gyroMpuConfiguration(void)
 {
@@ -283,8 +291,14 @@ bool gyroInit(void)
     memset(&gyro, 0, sizeof(gyro));
 #if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
     gyroDev0.mpuIntExtiConfig = selectMPUIntExtiConfig();
+#ifdef USE_DUAL_GYRO
+    // set cnsPin using GYRO_n_CS_PIN defined in target.h
+    gyroDev0.bus.spi.csnPin = gyroConfig()->gyro_to_use == 0 ? IOGetByTag(IO_TAG(GYRO_0_CS_PIN)) : IOGetByTag(IO_TAG(GYRO_1_CS_PIN));
+#else
+    gyroDev0.bus.spi.csnPin = IO_NONE; // set cnsPin to IO_NONE so mpuDetect will set it according to value defined in target.h
+#endif // USE_DUAL_GYRO
     mpuDetect(&gyroDev0);
-    mpuResetFn = gyroDev0.mpuConfiguration.resetFn;
+    mpuResetFn = gyroDev0.mpuConfiguration.resetFn; // must be set after mpuDetect
 #endif
     const gyroSensor_e gyroHardware = gyroDetect(&gyroDev0);
     if (gyroHardware == GYRO_NONE) {
@@ -305,7 +319,7 @@ bool gyroInit(void)
         break;
     }
 
-    // Must set gyro sample rate before initialisation
+    // Must set gyro targetLooptime before gyroDev.init and initialisation of filters
     gyro.targetLooptime = gyroSetSampleRate(&gyroDev0, gyroConfig()->gyro_lpf, gyroConfig()->gyro_sync_denom, gyroConfig()->gyro_use_32khz);
     gyroDev0.lpf = gyroConfig()->gyro_lpf;
     gyroDev0.init(&gyroDev0);
