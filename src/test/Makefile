@@ -23,6 +23,10 @@ USER_INCLUDE_DIR = $(USER_DIR)
 
 OBJECT_DIR = ../../obj/test
 
+# Use clang/clang++ by default
+CC  := clang
+CXX := clang++
+
 COMMON_FLAGS = \
 	-g \
 	-Wall \
