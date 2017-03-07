@@ -147,7 +147,7 @@ TEST_F(IbusRxInitUnitTest, Test_IbusRxEnabled)
 
 
 
-class IbusTelemetryProtocolUnitTest : public ::testing::Test
+class IbusRxProtocollUnitTest : public ::testing::Test
 {
 protected:
     rxRuntimeConfig_t rxRuntimeConfig = {};
@@ -167,7 +167,7 @@ protected:
 };
 
 
-TEST_F(IbusTelemetryProtocolUnitTest, Test_InitialFrameState)
+TEST_F(IbusRxProtocollUnitTest, Test_InitialFrameState)
 {
 
     //TODO: ibusFrameStatus should return rxFrameState_t not uint8_t
@@ -177,13 +177,13 @@ TEST_F(IbusTelemetryProtocolUnitTest, Test_InitialFrameState)
 }
 
 
-TEST_F(IbusTelemetryProtocolUnitTest, Test_OnePacketReceived)
+TEST_F(IbusRxProtocollUnitTest, Test_IA6B_OnePacketReceived)
 {
     uint8_t packet[] = {0x20, 0x00, //length and reserved (unknown) bits
                         0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00, //channel 1..5
                         0x05, 0x00, 0x06, 0x00, 0x07, 0x00, 0x08, 0x00, 0x09, 0x00, //channel 6..10
-                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  //spare channels?
-                        0xb2, 0xff}; //checksum
+                        0x0a, 0x00, 0x0b, 0x00, 0x0c, 0x00, 0x0d, 0x00,             //channel 11..14
+                        0x84, 0xff}; //checksum
 
     for (size_t i=0; i < sizeof(packet); i++) {
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
@@ -195,18 +195,18 @@ TEST_F(IbusTelemetryProtocolUnitTest, Test_OnePacketReceived)
     EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
 
     //check that channel values have been updated
-    for (int i=0; i<10; i++) {
+    for (int i=0; i<14; i++) {
         ASSERT_EQ(i, rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, i));
     }
 }
 
 
-TEST_F(IbusTelemetryProtocolUnitTest, Test_OnePacketReceivedWithBadCrc)
+TEST_F(IbusRxProtocollUnitTest, Test_IA6B_OnePacketReceivedWithBadCrc)
 {
     uint8_t packet[] = {0x20, 0x00, //length and reserved (unknown) bits
                         0x00, 0x33, 0x01, 0x33, 0x02, 0x33, 0x03, 0x33, 0x04, 0x33, //channel 1..5
                         0x05, 0x33, 0x06, 0x33, 0x07, 0x33, 0x08, 0x33, 0x09, 0x33, //channel 6..10
-                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  //spare channels?
+                        0x0a, 0x33, 0x0b, 0x33, 0x0c, 0x33, 0x0d, 0x33,             //channel 11..14
                         0x00, 0x00}; //checksum
 
     for (size_t i=0; i < sizeof(packet); i++) {
@@ -217,14 +217,14 @@ TEST_F(IbusTelemetryProtocolUnitTest, Test_OnePacketReceivedWithBadCrc)
     //no frame complete
     EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
 
-    //check that channel values have been updated
-    for (int i=0; i<10; i++) {
+    //check that channel values have not been updated
+    for (int i=0; i<14; i++) {
         ASSERT_NE(i + (0x33 << 8), rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, i));
     }
 }
 
 
-TEST_F(IbusTelemetryProtocolUnitTest, Test_HalfPacketReceived_then_interPacketGapReset)
+TEST_F(IbusRxProtocollUnitTest, Test_IA6B_HalfPacketReceived_then_interPacketGapReset)
 {
     const uint8_t packet_half[] = {0x20, 0x00, //length and reserved (unknown) bits
                                     0x00, 0xab, 0x01, 0xab, 0x02, 0xab, 0x03, 0xab, 0x04, 0xab, //channel 1..5
@@ -232,8 +232,8 @@ TEST_F(IbusTelemetryProtocolUnitTest, Test_HalfPacketReceived_then_interPacketGa
     const uint8_t packet_full[] = {0x20, 0x00, //length and reserved (unknown) bits 
                                     0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00, //channel 1..5
                                     0x05, 0x00, 0x06, 0x00, 0x07, 0x00, 0x08, 0x00, 0x09, 0x00, //channel 6..10
-                                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  //spare channels?
-                                    0xb2, 0xff}; //checksum
+                                    0x0a, 0x00, 0x0b, 0x00, 0x0c, 0x00, 0x0d, 0x00,             //channel 11..14
+                                    0x84, 0xff}; //checksum
 
     for (size_t i=0; i < sizeof(packet_half); i++) {
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
@@ -253,8 +253,54 @@ TEST_F(IbusTelemetryProtocolUnitTest, Test_HalfPacketReceived_then_interPacketGa
     EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
 
     //check that channel values have been updated
-    for (int i=0; i<10; i++) {
+    for (int i=0; i<14; i++) {
         ASSERT_EQ(i, rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, i));
     }
 }
 
+
+TEST_F(IbusRxProtocollUnitTest, Test_IA6_OnePacketReceived)
+{
+    uint8_t packet[] = {0x55, //sync character
+                        0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00, //channel 1..5
+                        0x05, 0x00, 0x06, 0x00, 0x07, 0x00, 0x08, 0x00, 0x09, 0x00, //channel 6..10
+                        0x0a, 0x00, 0x0b, 0x00, 0x0c, 0x00, 0x0d, 0x00,             //channel 11..14
+                        0x5b, 0x00}; //checksum
+
+    for (size_t i=0; i < sizeof(packet); i++) {
+        EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
+        stub_serialRxCallback(packet[i]);
+    }
+
+    //report frame complete once
+    EXPECT_EQ(RX_FRAME_COMPLETE, rxRuntimeConfig.rcFrameStatusFn());
+    EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
+
+    //check that channel values have been updated
+    for (int i=0; i<14; i++) {
+        ASSERT_EQ(i, rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, i));
+    }
+}
+
+
+TEST_F(IbusRxProtocollUnitTest, Test_IA6_OnePacketReceivedBadCrc)
+{
+    uint8_t packet[] = {0x55, //sync character
+                        0x00, 0x33, 0x01, 0x33, 0x02, 0x33, 0x03, 0x33, 0x04, 0x33, //channel 1..5
+                        0x05, 0x33, 0x06, 0x33, 0x07, 0x33, 0x08, 0x33, 0x09, 0x33, //channel 6..10
+                        0x0a, 0x33, 0x0b, 0x33, 0x0c, 0x33, 0x0d, 0x33,             //channel 11..14
+                        0x00, 0x00}; //checksum
+
+    for (size_t i=0; i < sizeof(packet); i++) {
+        EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
+        stub_serialRxCallback(packet[i]);
+    }
+
+    //no frame complete
+    EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
+
+    //check that channel values have not been updated
+    for (int i=0; i<14; i++) {
+        ASSERT_NE(i + (0x33 << 8), rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, i));
+    }
+}
