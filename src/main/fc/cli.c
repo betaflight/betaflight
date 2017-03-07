@@ -1021,8 +1021,8 @@ static const clivalue_t valueTable[] = {
     { "yaw_control_direction",      VAR_INT8   | MASTER_VALUE,  &rcControlsConfig()->yaw_control_direction, .config.minmax = { -1,  1 } },
 
     { "yaw_motor_direction",        VAR_INT8   | MASTER_VALUE, &mixerConfig()->yaw_motor_direction, .config.minmax = { -1,  1 } },
-    { "yaw_p_limit",                VAR_UINT16 | PROFILE_VALUE, &pidProfiles(0)->yaw_p_limit, .config.minmax = { YAW_P_LIMIT_MIN, YAW_P_LIMIT_MAX } },
     { "pidsum_limit",               VAR_FLOAT  | PROFILE_VALUE, &pidProfiles(0)->pidSumLimit, .config.minmax = { 0.1, 1.0 } },
+    { "pidsum_limit_yaw",           VAR_FLOAT  | PROFILE_VALUE, &pidProfiles(0)->pidSumLimitYaw, .config.minmax = { 0.1, 1.0 } },
 #ifdef USE_SERVOS
     { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &servoConfig()->dev.servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &servoConfig()->tri_unarmed_servo, .config.lookup = { TABLE_OFF_ON } },
