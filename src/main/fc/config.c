@@ -174,11 +174,6 @@ uint8_t getAsyncMode(void) {
 
 void validateAndFixConfig(void)
 {
-#if defined(SONAR)
-    // FIXME: Completely disable sonar
-    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NONE;
-#endif
-
 #ifdef USE_GYRO_NOTCH_1
     if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1) {
         gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;

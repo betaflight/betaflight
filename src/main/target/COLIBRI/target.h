@@ -125,6 +125,10 @@
 #define I2C3_SCL                PA8
 #define I2C3_SDA                PC9
 
+#define SONAR
+#define SONAR_TRIGGER_PIN       PB8
+#define SONAR_ECHO_PIN          PB9
+
 #define TARGET_CONFIG
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
