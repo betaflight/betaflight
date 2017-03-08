@@ -516,9 +516,9 @@ void mixTable(pidProfile_t *pidProfile)
 
     float scaledAxisPIDf[3];
     // Limit the PIDsum
-    for (int axis = 0; axis < 3; axis++) {
-        scaledAxisPIDf[axis] = constrainf(axisPIDf[axis] / PID_MIXER_SCALING, -pidProfile->pidSumLimit, pidProfile->pidSumLimit);
-    }
+    scaledAxisPIDf[FD_ROLL] = constrainf(axisPIDf[FD_ROLL] / PID_MIXER_SCALING, -pidProfile->pidSumLimit, pidProfile->pidSumLimit);
+    scaledAxisPIDf[FD_PITCH] = constrainf(axisPIDf[FD_PITCH] / PID_MIXER_SCALING, -pidProfile->pidSumLimit, pidProfile->pidSumLimit);
+    scaledAxisPIDf[FD_YAW] = constrainf(axisPIDf[FD_YAW] / PID_MIXER_SCALING, -pidProfile->pidSumLimit, pidProfile->pidSumLimitYaw);
 
     // Calculate voltage compensation
     const float vbatCompensationFactor = pidProfile->vbatPidCompensation  ? calculateVbatPidCompensation() : 1.0f;

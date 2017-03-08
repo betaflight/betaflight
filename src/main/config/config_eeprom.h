@@ -20,7 +20,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define EEPROM_CONF_VERSION 156
+#define EEPROM_CONF_VERSION 157
 
 bool isEEPROMContentValid(void);
 bool loadEEPROM(void);

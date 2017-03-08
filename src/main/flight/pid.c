@@ -109,8 +109,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .I8[PIDVEL] = 55,
         .D8[PIDVEL] = 75,
 
-        .yaw_p_limit = YAW_P_LIMIT_MAX,
         .pidSumLimit = PIDSUM_LIMIT,
+        .pidSumLimitYaw = PIDSUM_LIMIT_YAW,
         .yaw_lpf_hz = 0,
         .itermWindupPointPercent = 50,
         .dterm_filter_type = FILTER_BIQUAD,
@@ -280,7 +280,7 @@ static float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPit
     errorAngle += GPS_angle[axis];
 #endif
     errorAngle = constrainf(errorAngle, -pidProfile->levelAngleLimit, pidProfile->levelAngleLimit);
-    errorAngle = (errorAngle - ((attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f));
+    errorAngle = errorAngle - ((attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f);
     if(FLIGHT_MODE(ANGLE_MODE)) {
         // ANGLE mode - control is angle based, so control loop is needed
         currentPidSetpoint = errorAngle * levelGain;
