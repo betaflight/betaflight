@@ -392,7 +392,7 @@ pwmOutputPort_t *pwmGetMotors(void) {
 bool pwmAreMotorsEnabled(void) {
 	return pwmMotorsEnabled;
 }
-void pwmWriteMotor(uint8_t index, uint16_t value) {
+void pwmWriteMotor(uint8_t index, float value) {
 	motorsPwm[index] = value - idlePulse;
 }
 void pwmShutdownPulsesForAllMotors(uint8_t motorCount) {
@@ -419,7 +419,7 @@ void pwmCompleteMotorUpdate(uint8_t motorCount) {
 	udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));
 //	printf("[pwm]%u:%u,%u,%u,%u\n", idlePulse, motorsPwm[0], motorsPwm[1], motorsPwm[2], motorsPwm[3]);
 }
-void pwmWriteServo(uint8_t index, uint16_t value) {
+void pwmWriteServo(uint8_t index, float value) {
 	servosPwm[index] = value;
 }
 
