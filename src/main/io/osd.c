@@ -86,9 +86,10 @@
 
 // Character coordinate
 
-#define OSD_POS(x,y)  (x | (y << 5))
+#define OSD_POSITION_BITS 5 // 5 bits gives a range 0-31
+#define OSD_POS(x,y)  ((x & 0x001F) | ((y & 0x001F) << OSD_POSITION_BITS))
 #define OSD_X(x)      (x & 0x001F)
-#define OSD_Y(x)      ((x >> 5) & 0x001F)
+#define OSD_Y(x)      ((x >> OSD_POSITION_BITS) & 0x001F)
 
 // Blink control
 
