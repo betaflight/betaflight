@@ -220,7 +220,7 @@ static void osdDrawSingleElement(uint8_t item)
 
         case OSD_GPS_SPEED:
         {
-            sprintf(buff, "%d", GPS_speed * 36 / 1000);
+            sprintf(buff, "%d%c", GPS_speed * 36 / 1000, SYM_MS);
             break;
         }
 #endif // GPS
@@ -507,7 +507,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdProfile)
     osdProfile->item_pos[OSD_VTX_CHANNEL] = OSD_POS(25, 11) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_CURRENT_DRAW] = OSD_POS(1, 12) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_MAH_DRAWN] = OSD_POS(1, 11) | VISIBLE_FLAG;
-    osdProfile->item_pos[OSD_GPS_SPEED] = OSD_POS(27, 6) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_GPS_SPEED] = OSD_POS(26, 6) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_GPS_SATS] = OSD_POS(19, 1) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_ALTITUDE] = OSD_POS(23, 7) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_ROLL_PIDS] = OSD_POS(7, 13) | VISIBLE_FLAG;
