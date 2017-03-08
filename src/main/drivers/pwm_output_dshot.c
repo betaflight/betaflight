@@ -55,8 +55,9 @@ uint8_t getTimerIndex(TIM_TypeDef *timer)
     return dmaMotorTimerCount-1;
 }
 
-void pwmWriteDigital(uint8_t index, uint16_t value)
+void pwmWriteDigital(uint8_t index, float value)
 {
+    const uint16_t dshotValue = lrintf(value);
 
     if (!pwmMotorsEnabled) {
         return;
@@ -68,7 +69,7 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
         return;
     }
 
-    uint16_t packet = (value << 1) | (motor->requestTelemetry ? 1 : 0);
+    uint16_t packet = (dshotValue << 1) | (motor->requestTelemetry ? 1 : 0);
     motor->requestTelemetry = false;    // reset telemetry request to make sure it's triggered only once in a row
 
     // compute checksum
