@@ -150,6 +150,8 @@ bool hcsr04Detect(rangefinderDev_t *dev, const rangefinderHardwarePins_t * sonar
     // trigger pin
     IOInit(triggerIO, OWNER_SONAR, RESOURCE_OUTPUT, 0);
     IOConfigGPIO(triggerIO, IOCFG_OUT_PP);
+    IOLo(triggerIO);
+    delay(100);
 
     // echo pin
     IOInit(echoIO, OWNER_SONAR, RESOURCE_INPUT, 0);
