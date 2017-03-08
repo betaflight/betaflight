@@ -54,6 +54,7 @@ TEST(transponderTest, updateTransponderDMABufferArcitimer) {
     uint8_t* transponderData = data;
     transponder_t transponder;
     transponder.dma_buffer_size = TRANSPONDER_DMA_BUFFER_SIZE_ARCITIMER;
+    transponder.bitToggleOne = 78;
     memset(&(transponder.transponderIrDMABuffer.arcitimer), 0, TRANSPONDER_DMA_BUFFER_SIZE_ARCITIMER);
 
     updateTransponderDMABufferArcitimer(&transponder, transponderData);
