@@ -72,6 +72,8 @@ typedef struct positionEstimationConfig_s {
     uint8_t use_gps_velned;
     uint16_t gps_delay_ms;
 
+    uint16_t max_sonar_altitude;
+
     float w_z_baro_p;   // Weight (cutoff frequency) for barometer altitude measurements
 
     float w_z_sonar_p;  // Weight (cutoff frequency) for sonar altitude measurements

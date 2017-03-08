@@ -65,13 +65,12 @@ static void updateSurfaceTrackingAltitudeSetpoint(timeDelta_t deltaMicros)
     if (posControl.flags.isTerrainFollowEnabled && posControl.desiredState.surface >= 0) {
         if (posControl.actualState.surface >= 0 && posControl.flags.hasValidSurfaceSensor) {
             // We better overshoot a little bit than undershoot
-            const float targetAltitudeError = navPidApply2(&posControl.pids.surface, posControl.desiredState.surface, posControl.actualState.surface, US2S(deltaMicros), -5.0f, +35.0f, 0);
+            const float targetAltitudeError = navPidApply2(&posControl.pids.surface, posControl.desiredState.surface, posControl.actualState.surface, US2S(deltaMicros), -35.0f, +35.0f, 0);
             posControl.desiredState.pos.V.Z = posControl.actualState.pos.V.Z + targetAltitudeError;
         }
         else {
             // TODO: We are possible above valid range, we now descend down to attempt to get back within range
-            //updateAltitudeTargetFromClimbRate(-0.10f * navConfig()->emerg_descent_rate, CLIMB_RATE_KEEP_SURFACE_TARGET);
-            updateAltitudeTargetFromClimbRate(-20.0f, CLIMB_RATE_KEEP_SURFACE_TARGET);
+            updateAltitudeTargetFromClimbRate(-50.0f, CLIMB_RATE_KEEP_SURFACE_TARGET);
         }
     }
 

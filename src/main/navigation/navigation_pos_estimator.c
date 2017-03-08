@@ -80,9 +80,6 @@
 #define INAV_BARO_TIMEOUT_MS                200     // Baro timeout
 #define INAV_SONAR_TIMEOUT_MS               300     // Sonar timeout    (missed 3 readings in a row)
 
-#define INAV_SONAR_W1                       3.000f
-#define INAV_SONAR_W2                       4.700f
-
 #define INAV_HISTORY_BUF_SIZE               (INAV_POSITION_PUBLISH_RATE_HZ / 2)     // Enough to hold 0.5 sec historical data
 
 typedef struct {
@@ -168,7 +165,7 @@ typedef struct {
 
 static navigationPosEstimator_s posEstimator;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(positionEstimationConfig_t, positionEstimationConfig, PG_POSITION_ESTIMATION_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(positionEstimationConfig_t, positionEstimationConfig, PG_POSITION_ESTIMATION_CONFIG, 1);
 
 PG_RESET_TEMPLATE(positionEstimationConfig_t, positionEstimationConfig,
         // Inertial position estimator parameters
@@ -178,7 +175,12 @@ PG_RESET_TEMPLATE(positionEstimationConfig_t, positionEstimationConfig,
         .accz_unarmed_cal = 1,
         .use_gps_velned = 1,         // "Disabled" is mandatory with gps_dyn_model = Pedestrian
 
+        .max_sonar_altitude = 200,
+
         .w_z_baro_p = 0.35f,
+
+        .w_z_sonar_p = 3.000f,
+        .w_z_sonar_v = 4.700f,
 
         .w_z_gps_p = 0.2f,
         .w_z_gps_v = 0.5f,
@@ -479,7 +481,7 @@ void updatePositionEstimator_SonarTopic(timeUs_t currentTimeUs)
     newSonarAlt = rangefinderCalculateAltitude(newSonarAlt, calculateCosTiltAngle());
 
     /* Apply predictive filter to sonar readings */
-    if (newSonarAlt > 0 && newSonarAlt <= INAV_SONAR_MAX_DISTANCE) {
+    if (newSonarAlt > 0 && newSonarAlt <= positionEstimationConfig()->max_sonar_altitude) {
         float sonarDt = (currentTimeUs - posEstimator.sonar.lastUpdateTime) * 1e-6;
         posEstimator.sonar.lastUpdateTime = currentTimeUs;
 
@@ -492,14 +494,12 @@ void updatePositionEstimator_SonarTopic(timeUs_t currentTimeUs)
             posEstimator.sonar.alt = posEstimator.sonar.alt + posEstimator.sonar.vel * sonarDt;
 
             const float sonarResidual = newSonarAlt - posEstimator.sonar.alt;
+            const float bellCurveScaler = scaleRangef(bellCurve(sonarResidual, 50.0f), 0.0f, 1.0f, 0.1f, 1.0f);
 
-            posEstimator.sonar.alt += sonarResidual * INAV_SONAR_W1 * sonarDt;
-            posEstimator.sonar.vel += sonarResidual * INAV_SONAR_W2 * sonarDt;
+            posEstimator.sonar.alt += sonarResidual * positionEstimationConfig()->w_z_sonar_p * bellCurveScaler * sonarDt;
+            posEstimator.sonar.vel += sonarResidual * positionEstimationConfig()->w_z_sonar_v * sq(bellCurveScaler) * sonarDt;
         }
     }
-
-    debug[0] = posEstimator.sonar.alt;
-    debug[1] = posEstimator.sonar.vel;
 }
 #endif
 
