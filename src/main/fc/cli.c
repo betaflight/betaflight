@@ -91,6 +91,8 @@ extern uint8_t __config_end;
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/flashfs.h"
+#include "io/displayport_max7456.h"
+#include "io/displayport_msp.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
@@ -713,6 +715,9 @@ static const clivalue_t valueTable[] = {
     { "yaw_deadband",               VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 100 }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, yaw_deadband) },
     { "yaw_control_direction",      VAR_INT8   | MASTER_VALUE, .config.minmax = { -1, 1 }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, yaw_control_direction) },
 
+// PG_PID_CONFIG
+    { "pid_process_denom",          VAR_UINT8  | MASTER_VALUE,  .config.minmax = { 1, MAX_PID_PROCESS_DENOM }, PG_PID_CONFIG, offsetof(pidConfig_t, pid_process_denom) },
+
 // PG_PID_PROFILE
     { "d_lowpass_type",             VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LOWPASS_TYPE }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_filter_type) },
     { "d_lowpass",                  VAR_INT16  | PROFILE_VALUE, .config.minmax = { 0, 16000 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_lpf_hz) },
@@ -729,7 +734,6 @@ static const clivalue_t valueTable[] = {
 
     { "iterm_windup",               VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 30, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, itermWindupPointPercent) },
     { "yaw_lowpass",                VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, yaw_lpf_hz) },
-    { "pid_process_denom",          VAR_UINT8  | MASTER_VALUE,  .config.minmax = { 1, MAX_PID_PROCESS_DENOM }, PG_PID_CONFIG, offsetof(pidConfig_t, pid_process_denom) },
     { "pidsum_limit",               VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { 0.1, 1.0 }, PG_PID_CONFIG, offsetof(pidProfile_t, pidSumLimit) },
 
     { "p_pitch",                    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, P8[PITCH]) },
@@ -791,6 +795,7 @@ static const clivalue_t valueTable[] = {
     { "ledstrip_visual_beeper",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_visual_beeper) },
 #endif
 
+// PG_SDCARD_CONFIG
 #ifdef USE_SDCARD
     { "sdcard_dma",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SDCARD_CONFIG, offsetof(sdcardConfig_t, useDma) },
 #endif
@@ -832,28 +837,35 @@ static const clivalue_t valueTable[] = {
     { "task_statistics",            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, task_statistics) },
 #endif
     { "debug_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DEBUG }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, debug_mode) },
+
+// PG_VTX_CONFIG
 #ifdef VTX
     { "vtx_band",                   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 5 }, PG_VTX_CONFIG, offsetof(vtxConfig_t, vtx_band) },
     { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 8 }, PG_VTX_CONFIG, offsetof(vtxConfig_t, vtx_channel) },
     { "vtx_mode",                   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 2 }, PG_VTX_CONFIG, offsetof(vtxConfig_t, vtx_mode) },
     { "vtx_mhz",                    VAR_UINT16 | MASTER_VALUE, .config.minmax = { 5600, 5950 }, PG_VTX_CONFIG, offsetof(vtxConfig_t, vtx_mhz) },
 #endif
-    
 #if defined(USE_RTC6705)
     { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 39 }, PG_VTX_CONFIG, offsetof(vtxConfig_t, vtx_channel) },
     { "vtx_power",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 1 }, PG_VTX_CONFIG, offsetof(vtxConfig_t, vtx_power) },
 #endif
+
+// PG_VCD_CONFIG
 #ifdef USE_MAX7456
     { "vcd_video_system",           VAR_UINT8   | MASTER_VALUE, .config.minmax = { 0, 2 }, PG_VCD_CONFIG, offsetof(vcdProfile_t, video_system) },
     { "vcd_h_offset",               VAR_INT8    | MASTER_VALUE, .config.minmax = { -32, 31 }, PG_VCD_CONFIG, offsetof(vcdProfile_t, h_offset) },
     { "vcd_v_offset",               VAR_INT8    | MASTER_VALUE, .config.minmax = { -15, 16 }, PG_VCD_CONFIG, offsetof(vcdProfile_t, v_offset) },
 #endif
+
+// PG_DISPLAY_PORT_MSP_CONFIG
 #ifdef USE_MSP_DISPLAYPORT
     { "displayport_msp_col_adjust", VAR_INT8    | MASTER_VALUE, .config.minmax = { -6, 0 }, PG_DISPLAY_PORT_MSP_CONFIG, offsetof(displayPortProfile_t, colAdjust) },
     { "displayport_msp_row_adjust", VAR_INT8    | MASTER_VALUE, .config.minmax = { -3, 0 }, PG_DISPLAY_PORT_MSP_CONFIG, offsetof(displayPortProfile_t, rowAdjust) },
 #endif
+
+// PG_DISPLAY_PORT_MSP_CONFIG
 #ifdef USE_MAX7456
-    { "displayport_max7456_col_adjust", VAR_INT8| MASTER_VALUE, .config.minmax = { -6, 0 }, PG_DISPLAY_PORT_MAX7456_CONFIG, offsetof(displayPortProfile_t, colAdjust) },
+    { "displayport_max7456_col_adjust", VAR_INT8| MASTER_VALUE, .config.minmax = { -6, 0 }, PG_DISPLAY_PORT_MSP_CONFIG, offsetof(displayPortProfile_t, colAdjust) },
     { "displayport_max7456_row_adjust", VAR_INT8| MASTER_VALUE, .config.minmax = { -3, 0 }, PG_DISPLAY_PORT_MAX7456_CONFIG, offsetof(displayPortProfile_t, rowAdjust) },
 #endif
 };
@@ -1207,12 +1219,17 @@ static pitotmeterConfig_t pitotmeterConfigCopy;
 #endif
 static featureConfig_t featureConfigCopy;
 static rxConfig_t rxConfigCopy;
+// PG_PWM_CONFIG
+#ifdef USE_PWM
+static pwmConfig_t pwmConfigCopy;
+#endif
 #ifdef BLACKBOX
 static blackboxConfig_t blackboxConfigCopy;
 #endif
 static rxFailsafeChannelConfig_t rxFailsafeChannelConfigsCopy[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 static rxChannelRangeConfig_t rxChannelRangeConfigsCopy[NON_AUX_CHANNEL_COUNT];
 static motorConfig_t motorConfigCopy;
+static throttleCorrectionConfig_t throttleCorrectionConfigCopy;
 static failsafeConfig_t failsafeConfigCopy;
 static boardAlignment_t boardAlignmentCopy;
 #ifdef USE_SERVOS
@@ -1231,7 +1248,9 @@ static armingConfig_t armingConfigCopy;
 static rcControlsConfig_t rcControlsConfigCopy;
 #ifdef GPS
 static gpsConfig_t gpsConfigCopy;
+static navigationConfig_t navigationConfigCopy;
 #endif
+static airplaneConfig_t airplaneConfigCopy;
 #ifdef TELEMETRY
 static telemetryConfig_t telemetryConfigCopy;
 #endif
@@ -1251,6 +1270,16 @@ static beeperConfig_t beeperConfigCopy;
 #if defined(USE_RTC6705) || defined(VTX)
 static vtxConfig_t vtxConfigCopy;
 #endif
+#ifdef USE_MAX7456
+vcdProfile_t vcdProfileCopy;
+#endif
+#ifdef USE_MSP_DISPLAYPORT
+displayPortProfile_t displayPortProfileMspCopy;
+#endif
+#ifdef USE_MAX7456
+displayPortProfile_t displayPortProfileMax7456Copy;
+#endif
+static pidConfig_t pidConfigCopy;
 static controlRateConfig_t controlRateProfilesCopy[CONTROL_RATE_PROFILE_COUNT];
 static pidProfile_t pidProfileCopy[MAX_PROFILE_COUNT];
 #endif // USE_PARAMETER_GROUPS
@@ -1460,6 +1489,12 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.currentConfig = &rxConfigCopy;
         ret.defaultConfig = rxConfig();
         break;
+#ifdef USE_PWM
+    case PG_PWM_CONFIG:
+        ret.currentConfig = &pwmConfigCopy;
+        ret.defaultConfig = pwmConfig();
+        break;
+#endif
 #ifdef BLACKBOX
     case PG_BLACKBOX_CONFIG:
         ret.currentConfig = &blackboxConfigCopy;
@@ -1470,6 +1505,9 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.currentConfig = &motorConfigCopy;
         ret.defaultConfig = motorConfig();
         break;
+    case PG_THROTTLE_CORRECTION_CONFIG:
+        ret.currentConfig = &throttleCorrectionConfigCopy;
+        ret.defaultConfig = throttleCorrectionConfig();
     case PG_FAILSAFE_CONFIG:
         ret.currentConfig = &failsafeConfigCopy;
         ret.defaultConfig = failsafeConfig();
@@ -1521,7 +1559,15 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.currentConfig = &gpsConfigCopy;
         ret.defaultConfig = gpsConfig();
         break;
+    case PG_NAVIGATION_CONFIG:
+        ret.currentConfig = &navigationConfigCopy;
+        ret.defaultConfig = navigationConfig();
+        break;
 #endif
+    case PG_AIRPLANE_CONFIG:
+        ret.currentConfig = &airplaneConfigCopy;
+        ret.defaultConfig = airplaneConfig();
+        break;
 #ifdef TELEMETRY
     case PG_TELEMETRY_CONFIG:
         ret.currentConfig = &telemetryConfigCopy;
@@ -1586,10 +1632,33 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
     case PG_BEEPER_CONFIG:
        ret.currentConfig = &beeperConfigCopy;
        ret.defaultConfig = beeperConfig();
+       break;
     case PG_BEEPER_DEV_CONFIG:
        ret.currentConfig = &beeperDevConfigCopy;
        ret.defaultConfig = beeperDevConfig();
+       break;
 #endif
+#ifdef USE_MAX7456
+    case PG_VCD_CONFIG:
+       ret.currentConfig = &vcdProfileCopy;
+       ret.defaultConfig = vcdProfile();
+       break;
+#endif
+#ifdef USE_MSP_DISPLAYPORT
+    case PG_DISPLAY_PORT_MSP_CONFIG:
+       ret.currentConfig = &displayPortProfileMspCopy;
+       ret.defaultConfig = displayPortProfileMsp();
+       break;
+#endif
+#ifdef USE_MAX7456
+    case PG_DISPLAY_PORT_MAX7456_CONFIG:
+       ret.currentConfig = &displayPortProfileMax7456Copy;
+       ret.defaultConfig = displayPortProfileMax7456();
+       break;
+#endif
+    case PG_PID_CONFIG:
+       ret.currentConfig = &pidConfigCopy;
+       ret.defaultConfig = pidConfig();
        break;
     default:
         ret.currentConfig = NULL;
