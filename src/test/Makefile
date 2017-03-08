@@ -820,6 +820,28 @@ $(OBJECT_DIR)/parameter_groups_unittest : \
 	$(CXX) $(CXX_FLAGS) $(PG_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
 
+$(OBJECT_DIR)/rx/ibus.o : \
+	$(USER_DIR)/rx/ibus.c \
+	$(USER_DIR)/rx/ibus.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/rx/ibus.c -o $@
+
+$(OBJECT_DIR)/rx_ibus_unittest.o : \
+	$(TEST_DIR)/rx_ibus_unittest.cc \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/rx_ibus_unittest.cc -o $@
+
+$(OBJECT_DIR)/rx_ibus_unittest : \
+	$(OBJECT_DIR)/rx_ibus_unittest.o \
+	$(OBJECT_DIR)/rx/ibus.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $(PG_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
 ## test        : Build and run the Unit Tests
 test: $(TESTS:%=test-%)
 
