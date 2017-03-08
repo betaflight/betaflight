@@ -174,8 +174,13 @@ void taskUpdateSonar(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
 
-    if (sensors(SENSOR_SONAR)) {
-        rangefinderUpdate();
+    if (!sensors(SENSOR_SONAR))
+        return;
+
+    // Update and adjust task to update at required rate
+    const uint32_t newDeadline = rangefinderUpdate();
+    if (newDeadline != 0) {
+        rescheduleTask(TASK_SELF, newDeadline);
     }
 
     //updatePositionEstimator_SonarTopic(currentTimeUs);
@@ -446,7 +451,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SONAR] = {
         .taskName = "SONAR",
         .taskFunc = taskUpdateSonar,
-        .desiredPeriod = TASK_PERIOD_MS(70),                 // every 70 ms, approximately 14 Hz
+        .desiredPeriod = TASK_PERIOD_MS(50),                 // every 70 ms, approximately 20 Hz
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif

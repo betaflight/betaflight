@@ -24,6 +24,7 @@
 
 #include "build/build_config.h"
 
+#include "common/time.h"
 
 #include "time.h"
 #include "exti.h"
@@ -52,6 +53,8 @@
  */
 
 static volatile timeDelta_t hcsr04SonarPulseTravelTime = 0;
+static volatile uint32_t lastMeasurementReceivedAt;
+static timeMs_t lastMeasurementStartedAt = 0;
 
 #ifdef USE_EXTI
 static extiCallbackRec_t hcsr04_extiCallbackRec;
@@ -71,6 +74,7 @@ void hcsr04_extiHandler(extiCallbackRec_t* cb)
     } else {
         const timeUs_t timing_stop = micros();
         if (timing_stop > timing_start) {
+            lastMeasurementReceivedAt = millis();
             hcsr04SonarPulseTravelTime = timing_stop - timing_start;
         }
     }
@@ -89,17 +93,21 @@ void hcsr04_init(void)
 void hcsr04_start_reading(void)
 {
 #if !defined(UNIT_TEST)
-     static timeMs_t timeOfLastMeasurementMs = 0;
     // the firing interval of the trigger signal should be greater than 60ms
     // to avoid interference between consecutive measurements.
     #define HCSR04_MinimumFiringIntervalMs 60
     const timeMs_t timeNowMs = millis();
-    if (timeNowMs > timeOfLastMeasurementMs + HCSR04_MinimumFiringIntervalMs) {
-        timeOfLastMeasurementMs = timeNowMs;
+    if (timeNowMs > lastMeasurementStartedAt + HCSR04_MinimumFiringIntervalMs) {
+        lastMeasurementStartedAt = timeNowMs;
+#ifdef SONAR_TRIG_INVERTED
+        IOLo(triggerIO);
+        delayMicroseconds(11);
         IOHi(triggerIO);
-        //  The width of trigger signal must be greater than 10us, according to device spec
+#else
+        IOHi(triggerIO);
         delayMicroseconds(11);
         IOLo(triggerIO);
+#endif
     }
 #endif
 }
@@ -109,16 +117,34 @@ void hcsr04_start_reading(void)
  */
 int32_t hcsr04_get_distance(void)
 {
-    // The speed of sound is 340 m/s or approx. 29 microseconds per centimeter.
-    // The ping travels out and back, so to find the distance of the
-    // object we take half of the distance traveled.
-    //
-    // 340 m/s = 0.034 cm/microsecond = 29.41176471 *2 = 58.82352941 rounded to 59
-    int32_t distance = hcsr04SonarPulseTravelTime / 59;
-    if (distance > HCSR04_MAX_RANGE_CM) {
-        distance = RANGEFINDER_OUT_OF_RANGE;
+    const timeMs_t timeNowMs = millis();
+    static int32_t lastCalculatedDistance = RANGEFINDER_OUT_OF_RANGE;
+
+    /* 3 possible scenarios:
+     *   1. Response was after request - good, calculate new response
+     *   2. Request was no earlier than 60ms ago and no response since then - still good, return last valid response
+     *   3. Request was earlier than 60ms ago and no response since then - hardware failure
+     */
+
+    if ((lastMeasurementReceivedAt > lastMeasurementStartedAt)) {
+        /* 
+         * The speed of sound is 340 m/s or approx. 29 microseconds per centimeter.
+         * The ping travels out and back, so to find the distance of the
+         * object we take half of the distance traveled.
+         *
+         * 340 m/s = 0.034 cm/microsecond = 29.41176471 *2 = 58.82352941 rounded to 59 
+         */
+
+        lastCalculatedDistance = hcsr04SonarPulseTravelTime / 59;
+        if (lastCalculatedDistance > HCSR04_MAX_RANGE_CM) {
+            lastCalculatedDistance = RANGEFINDER_OUT_OF_RANGE;
+        }
     }
-    return distance;
+    else if ((timeNowMs - lastMeasurementStartedAt) > HCSR04_MinimumFiringIntervalMs) {
+        lastCalculatedDistance = RANGEFINDER_HARDWARE_FAILURE;
+    }
+
+    return lastCalculatedDistance;
 }
 
 bool hcsr04Detect(rangefinderDev_t *dev, const rangefinderHardwarePins_t * sonarHardwarePins)
