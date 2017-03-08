@@ -483,28 +483,28 @@ void osdDrawElements(void)
 
 void pgResetFn_osdConfig(osdConfig_t *osdProfile)
 {
-    osdProfile->item_pos[OSD_RSSI_VALUE] = OSD_POS(22, 0);
-    osdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 0) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_RSSI_VALUE] = OSD_POS(8, 1) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 1) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(8, 6) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_HORIZON_SIDEBARS] = OSD_POS(8, 6) | VISIBLE_FLAG;
-    osdProfile->item_pos[OSD_ONTIME] = OSD_POS(22, 11) | VISIBLE_FLAG;
-    osdProfile->item_pos[OSD_FLYTIME] = OSD_POS(22, 12) | VISIBLE_FLAG;
-    osdProfile->item_pos[OSD_FLYMODE] = OSD_POS(12, 11) | VISIBLE_FLAG;
-    osdProfile->item_pos[OSD_CRAFT_NAME] = OSD_POS(12, 12);
-    osdProfile->item_pos[OSD_THROTTLE_POS] = OSD_POS(1, 4);
-    osdProfile->item_pos[OSD_VTX_CHANNEL] = OSD_POS(8, 6);
-    osdProfile->item_pos[OSD_CURRENT_DRAW] = OSD_POS(1, 3);
-    osdProfile->item_pos[OSD_MAH_DRAWN] = OSD_POS(15, 3);
-    osdProfile->item_pos[OSD_GPS_SPEED] = OSD_POS(2, 2);
-    osdProfile->item_pos[OSD_GPS_SATS] = OSD_POS(2, 12);
-    osdProfile->item_pos[OSD_ALTITUDE] = OSD_POS(1, 5);
-    osdProfile->item_pos[OSD_ROLL_PIDS] = OSD_POS(2, 10);
-    osdProfile->item_pos[OSD_PITCH_PIDS] = OSD_POS(2, 11);
-    osdProfile->item_pos[OSD_YAW_PIDS] = OSD_POS(2, 12);
-    osdProfile->item_pos[OSD_POWER] = OSD_POS(15, 1);
-    osdProfile->item_pos[OSD_PIDRATE_PROFILE] = OSD_POS(2, 13);
-    osdProfile->item_pos[OSD_MAIN_BATT_WARNING] = OSD_POS(8, 6);
-    osdProfile->item_pos[OSD_AVG_CELL_VOLTAGE] = OSD_POS(12, 0);
+    osdProfile->item_pos[OSD_ONTIME] = OSD_POS(22, 1) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_FLYTIME] = OSD_POS(1, 1) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_FLYMODE] = OSD_POS(13, 11) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_CRAFT_NAME] = OSD_POS(9, 12) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_THROTTLE_POS] = OSD_POS(1, 7) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_VTX_CHANNEL] = OSD_POS(25, 11) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_CURRENT_DRAW] = OSD_POS(1, 12) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_MAH_DRAWN] = OSD_POS(1, 11) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_GPS_SPEED] = OSD_POS(27, 6) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_GPS_SATS] = OSD_POS(19, 1) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_ALTITUDE] = OSD_POS(23, 7) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_ROLL_PIDS] = OSD_POS(7, 13) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_PITCH_PIDS] = OSD_POS(7, 14) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_YAW_PIDS] = OSD_POS(7, 15) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_POWER] = OSD_POS(1, 10) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_PIDRATE_PROFILE] = OSD_POS(25, 10) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_MAIN_BATT_WARNING] = OSD_POS(9, 10) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_AVG_CELL_VOLTAGE] = OSD_POS(12, 2) | VISIBLE_FLAG;
 
     osdProfile->rssi_alarm = 20;
     osdProfile->cap_alarm = 2200;
