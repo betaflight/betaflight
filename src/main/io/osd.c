@@ -513,6 +513,7 @@ void osdResetConfig(osdConfig_t *osdProfile)
     osdProfile->item_pos[OSD_PIDRATE_PROFILE] = OSD_POS(25, 10) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_MAIN_BATT_WARNING] = OSD_POS(9, 10) | VISIBLE_FLAG;
 
+    osdProfile->units = OSD_UNIT_METRIC;
     osdProfile->rssi_alarm = 20;
     osdProfile->cap_alarm = 2200;
     osdProfile->time_alarm = 10; // in minutes
