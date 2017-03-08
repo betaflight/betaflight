@@ -21,41 +21,46 @@
 #include <platform.h>
 
 #ifdef TARGET_CONFIG
-#include "blackbox/blackbox_io.h"
 
-#include "config/config_master.h"
+#include "blackbox/blackbox.h"
+
 #include "config/feature.h"
 
 #include "drivers/io.h"
 
+#include "fc/config.h"
+
+#include "sensors/acceleration.h"
+#include "sensors/gyro.h"
+
 #include "hardware_revision.h"
 
 // alternative defaults settings for BlueJayF4 targets
-void targetConfiguration(master_t *config)
+void targetConfiguration(void)
 {
     if (hardwareRevision == BJF4_REV1 || hardwareRevision == BJF4_REV2) {
-        config->gyroConfig.gyro_align = CW180_DEG;
-        config->accelerometerConfig.acc_align  = CW180_DEG;
-        config->beeperDevConfig.ioTag = IO_TAG(BEEPER_OPT);
+        gyroConfigMutable()->gyro_align = CW180_DEG;
+        accelerometerConfigMutable()->acc_align  = CW180_DEG;
+        beeperDevConfigMutable()->ioTag = IO_TAG(BEEPER_OPT);
     }
 
     if (hardwareRevision == BJF4_MINI_REV3A || hardwareRevision == BJF4_REV1) {
-        intFeatureClear(FEATURE_SDCARD, &config->featureConfig.enabledFeatures);
+        featureClear(FEATURE_SDCARD);
     }
 
     if (hardwareRevision == BJF4_MINI_REV3A) {
-        config->adcConfig.vbat.ioTag = IO_TAG(PA4);
+        adcConfigMutable()->vbat.ioTag = IO_TAG(PA4);
     }
 }
 
-void targetValidateConfiguration(master_t *config)
+void targetValidateConfiguration(void)
 {
     /* make sure the SDCARD cannot be turned on */
     if (hardwareRevision == BJF4_MINI_REV3A || hardwareRevision == BJF4_REV1) {
-        intFeatureClear(FEATURE_SDCARD, &config->featureConfig.enabledFeatures);
+        featureClear(FEATURE_SDCARD);
 
-        if (config->blackboxConfig.device == BLACKBOX_DEVICE_SDCARD) {
-            config->blackboxConfig.device = BLACKBOX_DEVICE_FLASH;
+        if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
+            blackboxConfigMutable()->device = BLACKBOX_DEVICE_FLASH;
         }
     }
 }

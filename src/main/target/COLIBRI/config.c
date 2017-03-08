@@ -21,37 +21,41 @@
 #include "platform.h"
 
 #ifdef TARGET_CONFIG
+
+#include "common/axis.h"
+
 #include "drivers/serial.h"
 
+#include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
 
 #include "flight/mixer.h"
 #include "flight/pid.h"
 
-#include "io/motors.h"
 #include "io/serial.h"
 
 #include "rx/rx.h"
 
-#include "config/config_profile.h"
-#include "config/config_master.h"
+#include "sensors/boardalignment.h"
+#include "sensors/compass.h"
+
 
 // alternative defaults settings for Colibri/Gemini targets
-void targetConfiguration(master_t *config)
+void targetConfiguration(void)
 {
-    config->mixerConfig.mixerMode = MIXER_HEX6X;
-    config->rxConfig.serialrx_provider = 2;
+    mixerConfigMutable()->mixerMode = MIXER_HEX6X;
+    rxConfigMutable()->serialrx_provider = 2;
 
-    config->motorConfig.minthrottle = 1070;
-    config->motorConfig.maxthrottle = 2000;
+    motorConfigMutable()->minthrottle = 1070;
+    motorConfigMutable()->maxthrottle = 2000;
 
-    config->boardAlignment.pitchDegrees = 10;
-    //config->rcControlsConfig.deadband = 10;
-    //config->rcControlsConfig.yaw_deadband = 10;
-    config->compassConfig.mag_hardware = 1;
+    boardAlignmentMutable()->pitchDegrees = 10;
+    //rcControlsConfigMutable()->deadband = 10;
+    //rcControlsConfigMutable()->yaw_deadband = 10;
+    compassConfigMutable()->mag_hardware = 1;
 
-    config->controlRateProfile[0].dynThrPID = 45;
-    config->controlRateProfile[0].tpa_breakpoint = 1700;
-    config->serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
+    controlRateProfilesMutable(0)->dynThrPID = 45;
+    controlRateProfilesMutable(0)->tpa_breakpoint = 1700;
+    serialConfigMutable()->portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
 }
 #endif

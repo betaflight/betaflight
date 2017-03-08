@@ -16,22 +16,38 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include <platform.h>
 
 #ifdef TARGET_CONFIG
 
-#include "common/maths.h"
-#include "common/utils.h"
+#include "blackbox/blackbox.h"
 
-#include "config/config_master.h"
+#include "common/axis.h"
+#include "common/maths.h"
+
 #include "config/feature.h"
 
 #include "io/ledstrip.h"
-#include "io/motors.h"
+#include "io/serial.h"
+
+#include "fc/config.h"
+#include "fc/controlrate_profile.h"
+#include "fc/rc_controls.h"
+
+#include "flight/failsafe.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
+#include "flight/servos.h"
+
+#include "rx/rx.h"
 
 #include "sensors/battery.h"
+#include "sensors/gyro.h"
+
+#include "telemetry/telemetry.h"
 
 
 void targetApplyDefaultLedStripConfig(ledConfig_t *ledConfigs)
@@ -52,61 +68,59 @@ void targetApplyDefaultLedStripConfig(ledConfig_t *ledConfigs)
 }
 
 // alternative defaults settings for COLIBRI RACE targets
-void targetConfiguration(master_t *config)
+void targetConfiguration(void)
 {
-    config->motorConfig.minthrottle = 1025;
-    config->motorConfig.maxthrottle = 1980;
-    config->motorConfig.mincommand = 1000;
-    config->servoConfig.dev.servoCenterPulse = 1500;
+    motorConfigMutable()->minthrottle = 1025;
+    motorConfigMutable()->maxthrottle = 1980;
+    motorConfigMutable()->mincommand = 1000;
+    servoConfigMutable()->dev.servoCenterPulse = 1500;
 
-    config->batteryConfig.vbatmaxcellvoltage = 45;
-    config->batteryConfig.vbatmincellvoltage = 30;
-    config->batteryConfig.vbatwarningcellvoltage = 35;
+    batteryConfigMutable()->vbatmaxcellvoltage = 45;
+    batteryConfigMutable()->vbatmincellvoltage = 30;
+    batteryConfigMutable()->vbatwarningcellvoltage = 35;
 
-    config->flight3DConfig.deadband3d_low = 1406;
-    config->flight3DConfig.deadband3d_high = 1514;
-    config->flight3DConfig.neutral3d = 1460;
-    config->flight3DConfig.deadband3d_throttle = 0;
+    flight3DConfigMutable()->deadband3d_low = 1406;
+    flight3DConfigMutable()->deadband3d_high = 1514;
+    flight3DConfigMutable()->neutral3d = 1460;
+    flight3DConfigMutable()->deadband3d_throttle = 0;
 
-    config->failsafeConfig.failsafe_procedure = 1;
-    config->failsafeConfig.failsafe_throttle_low_delay = 10;
+    failsafeConfigMutable()->failsafe_procedure = 1;
+    failsafeConfigMutable()->failsafe_throttle_low_delay = 10;
 
-    config->gyroConfig.gyro_sync_denom = 1;
-    config->pidConfig.pid_process_denom = 3;
-    config->blackboxConfig.rate_num = 1;
-    config->blackboxConfig.rate_denom = 1;
+    gyroConfigMutable()->gyro_sync_denom = 1;
+    pidConfigMutable()->pid_process_denom = 3;
+    blackboxConfigMutable()->rate_num = 1;
+    blackboxConfigMutable()->rate_denom = 1;
 
-    config->rcControlsConfig.deadband = 5;
-    config->rcControlsConfig.yaw_deadband = 5;
+    rcControlsConfigMutable()->deadband = 5;
+    rcControlsConfigMutable()->yaw_deadband = 5;
 
-    config->failsafeConfig.failsafe_delay = 10;
+    failsafeConfigMutable()->failsafe_delay = 10;
 
-    config->telemetryConfig.telemetry_inversion = 1;
+    telemetryConfigMutable()->telemetry_inversion = 1;
 
-    config->profile[0].pidProfile.vbatPidCompensation = 1;
+    pidProfilesMutable(0)->vbatPidCompensation = 1;
 
-    config->profile[0].pidProfile.P8[ROLL] = 46;     // new PID with preliminary defaults test carefully
-    config->profile[0].pidProfile.I8[ROLL] = 48;
-    config->profile[0].pidProfile.D8[ROLL] = 23;
-    config->profile[0].pidProfile.P8[PITCH] = 89;
-    config->profile[0].pidProfile.I8[PITCH] = 59;
-    config->profile[0].pidProfile.D8[PITCH] = 25;
-    config->profile[0].pidProfile.P8[YAW] = 129;
-    config->profile[0].pidProfile.I8[YAW] = 50;
-    config->profile[0].pidProfile.D8[YAW] = 20;
+    pidProfilesMutable(0)->P8[ROLL] = 46;     // new PID with preliminary defaults test carefully
+    pidProfilesMutable(0)->I8[ROLL] = 48;
+    pidProfilesMutable(0)->D8[ROLL] = 23;
+    pidProfilesMutable(0)->P8[PITCH] = 89;
+    pidProfilesMutable(0)->I8[PITCH] = 59;
+    pidProfilesMutable(0)->D8[PITCH] = 25;
+    pidProfilesMutable(0)->P8[YAW] = 129;
+    pidProfilesMutable(0)->I8[YAW] = 50;
+    pidProfilesMutable(0)->D8[YAW] = 20;
 
-    config->controlRateProfile[0].rates[FD_ROLL] = 86;
-    config->controlRateProfile[0].rates[FD_PITCH] = 86;
-    config->controlRateProfile[0].rates[FD_YAW] = 80;
+    controlRateProfilesMutable(0)->rates[FD_ROLL] = 86;
+    controlRateProfilesMutable(0)->rates[FD_PITCH] = 86;
+    controlRateProfilesMutable(0)->rates[FD_YAW] = 80;
 
-    targetApplyDefaultLedStripConfig(config->ledStripConfig.ledConfigs);
+    targetApplyDefaultLedStripConfig(ledStripConfigMutable()->ledConfigs);
 }
 
-void targetValidateConfiguration(master_t *config)
+void targetValidateConfiguration()
 {
-    UNUSED(config);
-
-    serialConfig()->portConfigs[0].functionMask = FUNCTION_MSP;
+    serialConfigMutable()->portConfigs[0].functionMask = FUNCTION_MSP;
     if (featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_MSP)) {
         featureClear(FEATURE_RX_PARALLEL_PWM);
         featureClear(FEATURE_RX_MSP);

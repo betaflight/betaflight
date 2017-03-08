@@ -256,11 +256,11 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
     ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
 }
 
-void pidInit(void)
+void pidInit(const pidProfile_t *pidProfile)
 {
     pidSetTargetLooptime(gyro.targetLooptime * pidConfig()->pid_process_denom); // Initialize pid looptime
-    pidInitFilters(currentPidProfile);
-    pidInitConfig(currentPidProfile);
+    pidInitFilters(pidProfile);
+    pidInitConfig(pidProfile);
 }
 
 static float calcHorizonLevelStrength(void) {
