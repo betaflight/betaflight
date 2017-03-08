@@ -220,7 +220,8 @@ static void osdDrawSingleElement(uint8_t item)
 
         case OSD_GPS_SPEED:
         {
-            sprintf(buff, "%d%c", GPS_speed * 36 / 1000, SYM_MS);
+            // FIXME ideally we want to use SYM_KMH symbol but it's not in the font any more, so we use K.
+            sprintf(buff, "%dK", CM_S_TO_KM_H(GPS_speed) * 10);
             break;
         }
 #endif // GPS
@@ -628,7 +629,7 @@ static void osdUpdateStats(void)
 {
     int16_t value = 0;
 #ifdef GPS
-    value = GPS_speed * 36 / 1000;
+    value = CM_S_TO_KM_H(GPS_speed);
 #endif
     if (stats.max_speed < value)
         stats.max_speed = value;
