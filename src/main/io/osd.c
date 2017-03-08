@@ -54,6 +54,9 @@
 #include "drivers/system.h"
 #ifdef USE_RTC6705
 #include "drivers/vtx_soft_spi_rtc6705.h"
+#include "drivers/vtx_soft_spi_rtc6705.h"
+#elif defined(VTX)
+#include "drivers/vtx_rtc6705.h"
 #endif
 
 #include "cms/cms.h"
@@ -65,6 +68,7 @@
 #include "io/gps.h"
 #include "io/osd.h"
 #include "io/vtx.h"
+#include "io/vtx_string.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -284,10 +288,17 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
-#ifdef USE_RTC6705
+#if defined(VTX) || defined(USE_RTC6705)
         case OSD_VTX_CHANNEL:
         {
+            // FIXME cleanup this when the VTX API is aligned for software vs hardware support of the RTC6705 - See SPRACINGF3NEO/SINGULARITY/SIRINFPV targets.
+#if defined(VTX)
+            const char vtxBandLetter = vtx58BandLetter[vtxConfig()->vtx_band + 1];
+            const char *vtxChannelName = vtx58ChannelNames[vtxConfig()->vtx_channel + 1];
+            sprintf(buff, "%c:%s", vtxBandLetter, vtxChannelName);
+#elif defined(USE_RTC6705)
             sprintf(buff, "CH:%d", current_vtx_channel % CHANNELS_PER_BAND + 1);
+#endif
             break;
         }
 #endif // VTX
