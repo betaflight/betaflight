@@ -53,7 +53,8 @@
  */
 
 static volatile timeDelta_t hcsr04SonarPulseTravelTime = 0;
-static volatile uint32_t lastMeasurementReceivedAt;
+static volatile timeMs_t lastMeasurementReceivedAt;
+static volatile int32_t lastCalculatedDistance = RANGEFINDER_OUT_OF_RANGE;
 static timeMs_t lastMeasurementStartedAt = 0;
 
 #ifdef USE_EXTI
@@ -85,6 +86,8 @@ void hcsr04_init(void)
 {
 }
 
+#define HCSR04_MinimumFiringIntervalMs 60
+
 /*
  * Start a range reading
  * Called periodically by the scheduler
@@ -93,23 +96,50 @@ void hcsr04_init(void)
 void hcsr04_start_reading(void)
 {
 #if !defined(UNIT_TEST)
-    // the firing interval of the trigger signal should be greater than 60ms
-    // to avoid interference between consecutive measurements.
-    #define HCSR04_MinimumFiringIntervalMs 60
-    const timeMs_t timeNowMs = millis();
-    if (timeNowMs > lastMeasurementStartedAt + HCSR04_MinimumFiringIntervalMs) {
-        lastMeasurementStartedAt = timeNowMs;
 #ifdef SONAR_TRIG_INVERTED
-        IOLo(triggerIO);
-        delayMicroseconds(11);
-        IOHi(triggerIO);
+    IOLo(triggerIO);
+    delayMicroseconds(11);
+    IOHi(triggerIO);
 #else
-        IOHi(triggerIO);
-        delayMicroseconds(11);
-        IOLo(triggerIO);
+    IOHi(triggerIO);
+    delayMicroseconds(11);
+    IOLo(triggerIO);
 #endif
+#endif
+}
+
+void hcsr04_update(void)
+{
+    const timeMs_t timeNowMs = millis();
+
+    /* the firing interval of the trigger signal should be greater than 60ms
+     * to avoid interference between consecutive measurements */
+    if (timeNowMs > lastMeasurementStartedAt + HCSR04_MinimumFiringIntervalMs) {
+        /* We should have a valid measurement within 60ms of trigger */
+        if ((lastMeasurementReceivedAt - lastMeasurementStartedAt) <= HCSR04_MinimumFiringIntervalMs) {
+            /* 
+             * The speed of sound is 340 m/s or approx. 29 microseconds per centimeter.
+             * The ping travels out and back, so to find the distance of the
+             * object we take half of the distance traveled.
+             *
+             * 340 m/s = 0.034 cm/microsecond = 29.41176471 *2 = 58.82352941 rounded to 59 
+             */
+
+            lastCalculatedDistance = hcsr04SonarPulseTravelTime / 59;
+            if (lastCalculatedDistance > HCSR04_MAX_RANGE_CM) {
+                lastCalculatedDistance = RANGEFINDER_OUT_OF_RANGE;
+            }
+        }
+        else {
+            /* No measurement within reasonable time - indicate failure */
+            lastCalculatedDistance = RANGEFINDER_HARDWARE_FAILURE;
+        }
+        
+        /* Trigger a new measurement */
+        lastMeasurementStartedAt = timeNowMs;
+        hcsr04_start_reading();
     }
-#endif
+
 }
 
 /**
@@ -117,33 +147,6 @@ void hcsr04_start_reading(void)
  */
 int32_t hcsr04_get_distance(void)
 {
-    const timeMs_t timeNowMs = millis();
-    static int32_t lastCalculatedDistance = RANGEFINDER_OUT_OF_RANGE;
-
-    /* 3 possible scenarios:
-     *   1. Response was after request - good, calculate new response
-     *   2. Request was no earlier than 60ms ago and no response since then - still good, return last valid response
-     *   3. Request was earlier than 60ms ago and no response since then - hardware failure
-     */
-
-    if ((lastMeasurementReceivedAt > lastMeasurementStartedAt)) {
-        /* 
-         * The speed of sound is 340 m/s or approx. 29 microseconds per centimeter.
-         * The ping travels out and back, so to find the distance of the
-         * object we take half of the distance traveled.
-         *
-         * 340 m/s = 0.034 cm/microsecond = 29.41176471 *2 = 58.82352941 rounded to 59 
-         */
-
-        lastCalculatedDistance = hcsr04SonarPulseTravelTime / 59;
-        if (lastCalculatedDistance > HCSR04_MAX_RANGE_CM) {
-            lastCalculatedDistance = RANGEFINDER_OUT_OF_RANGE;
-        }
-    }
-    else if ((timeNowMs - lastMeasurementStartedAt) > HCSR04_MinimumFiringIntervalMs) {
-        lastCalculatedDistance = RANGEFINDER_HARDWARE_FAILURE;
-    }
-
     return lastCalculatedDistance;
 }
 
@@ -212,7 +215,7 @@ bool hcsr04Detect(rangefinderDev_t *dev, const rangefinderHardwarePins_t * sonar
         dev->detectionConeExtendedDeciDegrees = HCSR04_DETECTION_CONE_EXTENDED_DECIDEGREES;
 
         dev->init = &hcsr04_init;
-        dev->update = &hcsr04_start_reading;
+        dev->update = &hcsr04_update;
         dev->read = &hcsr04_get_distance;
 
         return true;
