@@ -26,6 +26,7 @@
 
 #include "common/maths.h"
 #include "common/utils.h"
+#include "common/time.h"
 
 #include "config/feature.h"
 #include "config/parameter_group.h"
@@ -33,6 +34,7 @@
 
 #include "drivers/io.h"
 #include "drivers/logging.h"
+#include "drivers/time.h"
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/sonar_srf10.h"
 #include "drivers/rangefinder.h"

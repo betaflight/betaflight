@@ -45,6 +45,8 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 
+#include "navigation/navigation.h"
+
 #include "io/beeper.h"
 #include "io/dashboard.h"
 #include "io/gps.h"
@@ -154,7 +156,7 @@ void taskUpdateBaro(timeUs_t currentTimeUs)
         }
     }
 
-    //updatePositionEstimator_BaroTopic(currentTimeUs);
+    updatePositionEstimator_BaroTopic(currentTimeUs);
 }
 #endif
 
@@ -183,7 +185,7 @@ void taskUpdateSonar(timeUs_t currentTimeUs)
         rescheduleTask(TASK_SELF, newDeadline);
     }
 
-    //updatePositionEstimator_SonarTopic(currentTimeUs);
+    updatePositionEstimator_SonarTopic(currentTimeUs);
 }
 #endif
 

@@ -78,10 +78,10 @@
 
 #define INAV_GPS_TIMEOUT_MS                 1500    // GPS timeout
 #define INAV_BARO_TIMEOUT_MS                200     // Baro timeout
-#define INAV_SONAR_TIMEOUT_MS               200     // Sonar timeout    (missed 3 readings in a row)
+#define INAV_SONAR_TIMEOUT_MS               300     // Sonar timeout    (missed 3 readings in a row)
 
-#define INAV_SONAR_W1                       0.8461f // Sonar predictive filter gain for altitude
-#define INAV_SONAR_W2                       6.2034f // Sonar predictive filter gain for velocity
+#define INAV_SONAR_W1                       3.000f
+#define INAV_SONAR_W2                       4.700f
 
 #define INAV_HISTORY_BUF_SIZE               (INAV_POSITION_PUBLISH_RATE_HZ / 2)     // Enough to hold 0.5 sec historical data
 
@@ -421,30 +421,26 @@ void onNewGPSData(void)
 #if defined(BARO)
 /**
  * Read BARO and update alt/vel topic
- *  Function is called at main loop rate, updates happen at reduced rate
+ *  Function is called from TASK_BARO
  */
-static void updateBaroTopic(timeUs_t currentTimeUs)
+void updatePositionEstimator_BaroTopic(timeUs_t currentTimeUs)
 {
-    static navigationTimer_t baroUpdateTimer;
+    static float initialBaroAltitudeOffset = 0.0f;
+    float newBaroAlt = baroCalculateAltitude();
 
-    if (updateTimer(&baroUpdateTimer, HZ2US(INAV_BARO_UPDATE_RATE), currentTimeUs)) {
-        static float initialBaroAltitudeOffset = 0.0f;
-        float newBaroAlt = baroCalculateAltitude();
+    /* If we are required - keep altitude at zero */
+    if (shouldResetReferenceAltitude()) {
+        initialBaroAltitudeOffset = newBaroAlt;
+    }
 
-        /* If we are required - keep altitude at zero */
-        if (shouldResetReferenceAltitude()) {
-            initialBaroAltitudeOffset = newBaroAlt;
-        }
-
-        if (sensors(SENSOR_BARO) && baroIsCalibrationComplete()) {
-            posEstimator.baro.alt = newBaroAlt - initialBaroAltitudeOffset;
-            posEstimator.baro.epv = positionEstimationConfig()->baro_epv;
-            posEstimator.baro.lastUpdateTime = currentTimeUs;
-        }
-        else {
-            posEstimator.baro.alt = 0;
-            posEstimator.baro.lastUpdateTime = 0;
-        }
+    if (sensors(SENSOR_BARO) && baroIsCalibrationComplete()) {
+        posEstimator.baro.alt = newBaroAlt - initialBaroAltitudeOffset;
+        posEstimator.baro.epv = positionEstimationConfig()->baro_epv;
+        posEstimator.baro.lastUpdateTime = currentTimeUs;
+    }
+    else {
+        posEstimator.baro.alt = 0;
+        posEstimator.baro.lastUpdateTime = 0;
     }
 }
 #endif
@@ -474,38 +470,36 @@ static void updatePitotTopic(timeUs_t currentTimeUs)
 #if defined(SONAR)
 /**
  * Read sonar and update alt/vel topic
- *  Function is called at main loop rate, updates happen at reduced rate
+ *  Function is called from TASK_SONAR at arbitrary rate - as soon as new measurements are available
  */
-static void updateSonarTopic(timeUs_t currentTimeUs)
+void updatePositionEstimator_SonarTopic(timeUs_t currentTimeUs)
 {
-    static navigationTimer_t sonarUpdateTimer;
+    /* Read sonar */
+    float newSonarAlt = rangefinderRead();
+    newSonarAlt = rangefinderCalculateAltitude(newSonarAlt, calculateCosTiltAngle());
 
-    if (updateTimer(&sonarUpdateTimer, HZ2US(INAV_SONAR_UPDATE_RATE), currentTimeUs)) {
-        if (sensors(SENSOR_SONAR)) {
-            /* Read sonar */
-            float newSonarAlt = rangefinderRead();
-            newSonarAlt = rangefinderCalculateAltitude(newSonarAlt, calculateCosTiltAngle());
+    /* Apply predictive filter to sonar readings */
+    if (newSonarAlt > 0 && newSonarAlt <= INAV_SONAR_MAX_DISTANCE) {
+        float sonarDt = (currentTimeUs - posEstimator.sonar.lastUpdateTime) * 1e-6;
+        posEstimator.sonar.lastUpdateTime = currentTimeUs;
 
-            /* Apply predictive filter to sonar readings (inspired by PX4Flow) */
-            if (newSonarAlt > 0 && newSonarAlt <= INAV_SONAR_MAX_DISTANCE) {
-                float sonarPredVel, sonarPredAlt;
-                float sonarDt = (currentTimeUs - posEstimator.sonar.lastUpdateTime) * 1e-6;
-                posEstimator.sonar.lastUpdateTime = currentTimeUs;
-
-                sonarPredVel = (sonarDt < 0.25f) ? posEstimator.sonar.vel : 0.0f;
-                sonarPredAlt = posEstimator.sonar.alt + sonarPredVel * sonarDt;
-
-                posEstimator.sonar.alt = sonarPredAlt + INAV_SONAR_W1 * (newSonarAlt - sonarPredAlt);
-                posEstimator.sonar.vel = sonarPredVel + INAV_SONAR_W2 * (newSonarAlt - sonarPredAlt);
-            }
+        if (sonarDt > 0.25f) {
+            posEstimator.sonar.vel = 0.0f;
+            posEstimator.sonar.alt = newSonarAlt;
         }
         else {
-            /* No sonar */
-            posEstimator.sonar.alt = 0;
-            posEstimator.sonar.vel = 0;
-            posEstimator.sonar.lastUpdateTime = 0;
+            /* Predictive stage */
+            posEstimator.sonar.alt = posEstimator.sonar.alt + posEstimator.sonar.vel * sonarDt;
+
+            const float sonarResidual = newSonarAlt - posEstimator.sonar.alt;
+
+            posEstimator.sonar.alt += sonarResidual * INAV_SONAR_W1 * sonarDt;
+            posEstimator.sonar.vel += sonarResidual * INAV_SONAR_W2 * sonarDt;
         }
     }
+
+    debug[0] = posEstimator.sonar.alt;
+    debug[1] = posEstimator.sonar.vel;
 }
 #endif
 
@@ -935,16 +929,8 @@ void updatePositionEstimator(void)
     const timeUs_t currentTimeUs = micros();
 
     /* Periodic sensor updates */
-#if defined(BARO)
-    updateBaroTopic(currentTimeUs);
-#endif
-
 #if defined(PITOT)
     updatePitotTopic(currentTimeUs);
-#endif
-
-#if defined(SONAR)
-    updateSonarTopic(currentTimeUs);
 #endif
 
     /* Read updates from IMU, preprocess */
