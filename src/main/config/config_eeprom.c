@@ -26,14 +26,18 @@
 
 #include "common/maths.h"
 
+#include "drivers/light_led.h"
+
 #include "config/config_eeprom.h"
 #include "config/config_streamer.h"
-#include "config/config_master.h"
 #include "config/parameter_group.h"
 
 #include "drivers/system.h"
 
 #include "fc/config.h"
+#include "fc/rc_adjustments.h"
+
+#include "flight/pid.h"
 
 extern uint8_t __config_start;   // configured via linker script when building binaries.
 extern uint8_t __config_end;
@@ -115,11 +119,6 @@ bool isEEPROMContentValid(void)
     uint16_t crc = CRC_START_VALUE;
     crc = crc16_ccitt_update(crc, header, sizeof(*header));
     p += sizeof(*header);
-#ifndef USE_PARAMETER_GROUPS
-    // include the transitional masterConfig record
-    crc = crc16_ccitt_update(crc, p, sizeof(masterConfig));
-    p += sizeof(masterConfig);
-#endif
 
     for (;;) {
         const configRecord_t *record = (const configRecord_t *)p;
@@ -166,9 +165,6 @@ static const configRecord_t *findEEPROM(const pgRegistry_t *reg, configRecordFla
 {
     const uint8_t *p = &__config_start;
     p += sizeof(configHeader_t);             // skip header
-#ifndef USE_PARAMETER_GROUPS
-    p += sizeof(master_t); // skip the transitional master_t record
-#endif
     while (true) {
         const configRecord_t *record = (const configRecord_t *)p;
         if (record->size == 0
@@ -189,13 +185,6 @@ static const configRecord_t *findEEPROM(const pgRegistry_t *reg, configRecordFla
 //   but each PG is loaded/initialized exactly once and in defined order.
 bool loadEEPROM(void)
 {
-#ifndef USE_PARAMETER_GROUPS
-    // read in the transitional masterConfig record
-    const uint8_t *p = &__config_start;
-    p += sizeof(configHeader_t); // skip header
-    masterConfig = *(master_t*)p;
-#endif
-
     PG_FOREACH(reg) {
         configRecordFlags_e cls_start, cls_end;
         if (pgIsSystem(reg)) {

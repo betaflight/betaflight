@@ -35,7 +35,6 @@
 #include "common/maths.h"
 
 #include "config/config_eeprom.h"
-#include "config/config_master.h"
 #include "config/config_profile.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
@@ -44,6 +43,7 @@
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
 #include "drivers/io.h"
+#include "drivers/light_led.h"
 #include "drivers/light_ws2811strip.h"
 #include "drivers/max7456.h"
 #include "drivers/pwm_esc_detect.h"
@@ -53,14 +53,18 @@
 #include "drivers/sdcard.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
+#include "drivers/sonar_hcsr04.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "drivers/timer.h"
 #include "drivers/vcd.h"
 
 #include "fc/config.h"
-#include "fc/rc_controls.h"
+#include "fc/controlrate_profile.h"
+#include "fc/fc_core.h"
 #include "fc/fc_rc.h"
+#include "fc/rc_adjustments.h"
+#include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
 #include "flight/altitudehold.h"
@@ -94,9 +98,6 @@
 
 #include "telemetry/telemetry.h"
 
-#ifndef USE_PARAMETER_GROUPS
-master_t masterConfig;                 // master config struct with data independent from profiles
-#endif
 pidProfile_t *currentPidProfile;
 
 #ifndef DEFAULT_FEATURES
@@ -1272,7 +1273,7 @@ void validateAndFixConfig(void)
     }
 #else
     if (!isSerialConfigValid(serialConfig())) {
-        pgResetFn_serialPinConfig(serialConfigMutable());
+        pgResetFn_serialConfig(serialConfigMutable());
     }
 #endif
 
