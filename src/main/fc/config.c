@@ -1270,6 +1270,10 @@ void validateAndFixConfig(void)
     if (!isSerialConfigValid(serialConfig)) {
         resetSerialConfig(serialConfig);
     }
+#else
+    if (!isSerialConfigValid(serialConfig())) {
+        pgResetFn_serialPinConfig(serialConfigMutable());
+    }
 #endif
 
     // Prevent invalid notch cutoff
@@ -1373,13 +1377,14 @@ void readEEPROM(void)
         failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
     }
 
-//    pgActivateProfile(getCurrentPidProfileIndex());
-//    setControlRateProfile(rateProfileSelection()->defaultRateProfileIndex);
+    if (systemConfig()->activeRateProfile >= CONTROL_RATE_PROFILE_COUNT) {// sanity check
+        systemConfigMutable()->activeRateProfile = 0;
+    }
+    setControlRateProfile(systemConfig()->activeRateProfile);
 
-    if (systemConfig()->pidProfileIndex > MAX_PROFILE_COUNT - 1) {// sanity check
+    if (systemConfig()->pidProfileIndex >= MAX_PROFILE_COUNT) {// sanity check
         systemConfigMutable()->pidProfileIndex = 0;
     }
-
     setPidProfile(systemConfig()->pidProfileIndex);
 
     validateAndFixConfig();
