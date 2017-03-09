@@ -35,14 +35,27 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_MOTOR, 1, 0),  // S2_OUT D1_ST2
     DEF_TIM(TIM2,  CH4, PA3,  TIM_USE_MOTOR, 1, 1),  // S3_OUT D1_ST6
     DEF_TIM(TIM2,  CH3, PA2,  TIM_USE_MOTOR, 1, 0),  // S4_OUT D1_ST1
+
+    // S5_OUT variations
 #ifdef REVOLT
     DEF_TIM(TIM4,  CH1, PB6,  TIM_USE_LED,   0, 0),  // LED for REVOLT D1_ST0
+#elif defined(AIRBOTF4) || defined(AIRBOTF4SD)
+    // Newer revisios of AIRBOTF4, and AIRBOTF4SD has dedicated LED strip pin.
+    // Older revisions of AIRBOTF4 must specify A1 for LED strip to work on S5_OUT.
+    DEF_TIM(TIM5,  CH2, PA1,  TIM_USE_MOTOR, 1, 0),  // S5_OUT
 #else
     DEF_TIM(TIM5,  CH2, PA1,  TIM_USE_MOTOR | TIM_USE_LED, 1, 0),  // S5_OUT / LED for REVO D1_ST4
-#ifdef AIRBOTF4
+#endif
+
+    // S6_OUT variations
+#if defined(AIRBOTF4) || defined(AIRBOTF4SD)
     DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_MOTOR, 1, 0),  // S6_OUT
 #else
     DEF_TIM(TIM5,  CH1, PA0,  TIM_USE_MOTOR, 1, 0),  // S6_OUT D1_ST2
-#endif /* AIRBOTF4 */
-#endif /* REVOLT */
+#endif
+
+    // Newer revisions of AIRBOTF4, and AIRBOTF4SD has extra pin/timer for LED
+#if defined(AIRBOTF4) || defined(AIRBOTF4SD)
+    DEF_TIM(TIM4,  CH1, PB6,  TIM_USE_LED,   0, 0),  // LED for AIRBOTF4SD
+#endif
 };

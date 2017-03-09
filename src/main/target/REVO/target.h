@@ -21,6 +21,10 @@
 #define TARGET_BOARD_IDENTIFIER "AIR4"
 #define USBD_PRODUCT_STRING     "AirbotF4"
 
+#elif defined(AIRBOTF4SD)
+#define TARGET_BOARD_IDENTIFIER "A4SD"
+#define USBD_PRODUCT_STRING     "AirbotF4SD"
+
 #elif defined(REVOLT)
 #define TARGET_BOARD_IDENTIFIER "RVLT"
 #define USBD_PRODUCT_STRING     "Revolt"
@@ -52,8 +56,8 @@
 #define LED2                    PB6
 #endif
 
-// Disable LED1, conflicts with AirbotF4/Flip32F4/Revolt beeper
-#if defined(AIRBOTF4)
+// Disable LED1, conflicts with AirbotF4/AirbotF4SD/Flip32F4/Revolt beeper
+#if defined(AIRBOTF4) || defined(AIRBOTF4SD)
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 #elif defined(REVOLT)
@@ -67,14 +71,33 @@
 #define BEEPER                  NONE
 #endif
 
-// PC0 used as inverter select GPIO
-#define INVERTER_PIN_UART1      PC0
+// UART inverters
+#ifdef AIRBOTF4SD
+#  define INVERTER_PIN_UART6      PD2
+#else
+#  define INVERTER_PIN_UART1      PC0
+#endif
 
-#define MPU6000_CS_PIN          PA4
-#define MPU6000_SPI_INSTANCE    SPI1
 
-#define MPU6500_CS_PIN          PA4
-#define MPU6500_SPI_INSTANCE    SPI1
+#ifdef AIRBOTF4SD
+// An variant of AIRBOTF4SD has dual gyro:
+//    ICM-20601 (supported by MPU6500) with CS on PA4
+//    MPU6000 with CS on PB13.
+# define MPU_CS_CONFIGURABLE
+// Default to PA4 (ICM-20601).
+# define MPU6000_CS_PIN        PA4  // Default to ICM20601 on PA4 (XXX Served through MPU6000 code???)
+//#  define MPU6000_CS_PIN       PB13 // MPU6000 on PB13
+# define MPU6000_SPI_INSTANCE    SPI1
+# define MPU6500_SPI_INSTANCE    SPI1 // Required for ICM-20601 support
+
+#else
+
+# define MPU6000_CS_PIN          PA4
+# define MPU6000_SPI_INSTANCE    SPI1
+
+# define MPU6500_CS_PIN          PA4
+# define MPU6500_SPI_INSTANCE    SPI1
+#endif
 
 #if defined(SOULF4)
 #define ACC
@@ -125,15 +148,48 @@
 #define MAG_HMC5883_ALIGN       CW90_DEG
 
 #define BARO
-#define USE_BARO_MS5611
+#ifdef AIRBOTF4SD
+#  define USE_BARO_BMP280
+#  define USE_BARO_SPI_BMP280
+#  define BMP280_SPI_INSTANCE   SPI1
+#  define BMP280_CS_PIN         PC13
+#else
+#  define USE_BARO_MS5611
+#endif
 
 #endif
+
+// SDCARD support for AIRBOTF4SD
+#if defined(AIRBOTF4SD)
+
+#  define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
+#  define USE_SDCARD
+#  define USE_SDCARD_SPI3
+
+#  define SDCARD_DETECT_INVERTED
+#  define SDCARD_DETECT_PIN               PC0
+#  define SDCARD_SPI_INSTANCE             SPI3
+#  define SDCARD_SPI_CS_PIN               SPI3_NSS_PIN
+
+// SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
+#  define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
+// Divide to under 25MHz for normal operation:
+#  define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 4 // 21MHz
+
+#  define SDCARD_DMA_CHANNEL_TX               DMA1_Stream5
+#  define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF5
+#  define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
+#  define SDCARD_DMA_CHANNEL                  DMA_Channel_0
+
+#else
 
 #define M25P16_CS_PIN           PB3
 #define M25P16_SPI_INSTANCE     SPI3
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
+
+#endif
 
 #define USE_VCP
 #if defined(PODIUMF4)
@@ -186,6 +242,10 @@
 #define VBAT_ADC_CHANNEL        ADC_Channel_13
 #endif
 
+#if defined(AIRBOTF4SD)
+#  define RSSI_ADC_PIN          PA0
+#endif
+
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #if defined(PODIUMF4)
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
@@ -207,12 +267,14 @@
 #ifdef REVOLT
 #define USABLE_TIMER_CHANNEL_COUNT 11
 #define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(12) )
+
+#elif defined(AIRBOTF4) || defined(AIRBOTF4SD)
+#define USABLE_TIMER_CHANNEL_COUNT 13
+#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(12) )
+
 #else
 #define USABLE_TIMER_CHANNEL_COUNT 12
-#ifdef AIRBOTF4
-#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(12) )
-#else
 #define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(12) )
-#endif // AIRBOTF4
+
 #endif // REVOLT
 

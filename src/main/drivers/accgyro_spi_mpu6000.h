@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include "drivers/accgyro.h"
+
 #define MPU6000_CONFIG              0x1A
 
 #define BITS_DLPF_CFG_256HZ         0x00
@@ -22,3 +24,4 @@ bool mpu6000SpiGyroDetect(gyroDev_t *gyro);
 
 bool mpu6000WriteRegister(uint8_t reg, uint8_t data);
 bool mpu6000ReadRegister(uint8_t reg, uint8_t length, uint8_t *data);
+

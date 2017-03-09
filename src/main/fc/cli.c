@@ -56,6 +56,7 @@ extern uint8_t __config_end;
 #include "config/parameter_group_ids.h"
 
 #include "drivers/accgyro.h"
+#include "drivers/accgyro_spi_mpu6000.h"
 #include "drivers/buf_writer.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/compass.h"
@@ -4218,6 +4219,10 @@ const cliResourceValue_t resourceTable[] = {
 #endif
     { OWNER_SERIAL_TX,     &serialPinConfig()->ioTagTx[0], SERIAL_PORT_MAX_INDEX },
     { OWNER_SERIAL_RX,     &serialPinConfig()->ioTagRx[0], SERIAL_PORT_MAX_INDEX },
+#endif
+    // AIRBOTF4DG has two gyros (MPU6000 & variant) which can be selected by CS
+#if defined(MPU_CS_CONFIGURABLE)
+    { OWNER_MPU_CS,        &mpuPinConfig()->ioTagCS, 0 },
 #endif
 };
 

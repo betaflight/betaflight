@@ -34,6 +34,8 @@
 #include "accgyro_mpu6500.h"
 #include "accgyro_spi_mpu6500.h"
 
+#include "config/config_master.h"
+
 #define DISABLE_MPU6500       IOHi(mpuSpi6500CsPin)
 #define ENABLE_MPU6500        IOLo(mpuSpi6500CsPin)
 
@@ -67,7 +69,11 @@ static void mpu6500SpiInit(void)
         return;
     }
 
+#ifdef MPU_CS_CONFIGURABLE
+    mpuSpi6500CsPin = IOGetByTag(mpuPinConfig()->ioTagCS);
+#else
     mpuSpi6500CsPin = IOGetByTag(IO_TAG(MPU6500_CS_PIN));
+#endif
     IOInit(mpuSpi6500CsPin, OWNER_MPU_CS, 0);
     IOConfigGPIO(mpuSpi6500CsPin, SPI_IO_CS_CFG);
 

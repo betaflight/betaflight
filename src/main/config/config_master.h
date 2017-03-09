@@ -26,6 +26,7 @@
 
 #include "cms/cms.h"
 
+#include "drivers/accgyro_spi_mpu6000.h"
 #include "drivers/adc.h"
 #include "drivers/rx_pwm.h"
 #include "drivers/sound_beeper.h"
@@ -83,6 +84,9 @@
 #define gimbalConfig(x) (&masterConfig.gimbalConfig)
 #define boardAlignment(x) (&masterConfig.boardAlignment)
 #define imuConfig(x) (&masterConfig.imuConfig)
+# ifdef MPU_CS_CONFIGURABLE
+#  define mpuPinConfig(x) (&masterConfig.mpuPinConfig)
+# endif
 #define gyroConfig(x) (&masterConfig.gyroConfig)
 #define compassConfig(x) (&masterConfig.compassConfig)
 #define accelerometerConfig(x) (&masterConfig.accelerometerConfig)
@@ -221,6 +225,9 @@ typedef struct master_s {
 
     pidConfig_t pidConfig;
 
+#ifdef MPU_CS_CONFIGURABLE
+    mpuPinConfig_t mpuPinConfig;
+#endif
     gyroConfig_t gyroConfig;
     compassConfig_t compassConfig;
 
