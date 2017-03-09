@@ -48,7 +48,6 @@ extern uint8_t __config_end;
 #include "common/typeconversion.h"
 #include "common/utils.h"
 
-#include "config/config_master.h"
 #include "config/config_eeprom.h"
 #include "config/config_profile.h"
 #include "config/feature.h"
@@ -77,10 +76,12 @@ extern uint8_t __config_end;
 #include "fc/cli.h"
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
+#include "fc/fc_core.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/altitudehold.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"

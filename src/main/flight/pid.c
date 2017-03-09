@@ -76,7 +76,6 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
 
 PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 0);
 
-#ifdef USE_PARAMETER_GROUPS
 void resetPidProfile(pidProfile_t *pidProfile)
 {
     RESET_CONFIG(const pidProfile_t, pidProfile,
@@ -136,7 +135,6 @@ void pgResetFn_pidProfiles(pidProfile_t *pidProfiles)
         resetPidProfile(&pidProfiles[i]);
     }
 }
-#endif
 
 void pidSetTargetLooptime(uint32_t pidLooptime)
 {
