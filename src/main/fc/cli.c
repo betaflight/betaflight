@@ -3236,6 +3236,7 @@ static void printVtx(uint8_t dumpMask, const vtxConfig_t *vtxConfig, const vtxCo
     }
 }
 
+#ifdef VTX
 static void cliVtx(char *cmdline)
 {
     int i, val = 0;
@@ -3283,6 +3284,7 @@ static void cliVtx(char *cmdline)
         }
     }
 }
+#endif // VTX
 #endif
 
 static void printName(uint8_t dumpMask)
