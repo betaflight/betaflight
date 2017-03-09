@@ -178,7 +178,7 @@ Re-apply any new defaults as desired.
 |  nav_mc_bank_angle  | 30 | Maximum banking angle (deg) that multicopter navigation is allowed to set. Machine must be able to satisfy this angle without loosing altitude |
 |  nav_mc_hover_thr  | 1500 | Multicopter hover throttle hint for altitude controller. Should be set to approximate throttle value when drone is hovering. |
 |  nav_mc_auto_disarm_delay  | 2000 |  |
-|  nav_fw_cruise_thr  | 1400 | Cruise throttle in GPS assisted modes. Should be set high enough to avoid stalling |
+|  nav_fw_cruise_thr  | 1400 | Cruise throttle in GPS assisted modes, this includes RTH. Should be set high enough to avoid stalling. This values gives INAV a base for throttle when flying straight, and it will increase or decrease throttle based on pitch of airplane and the parameters below. In addiotional it will increase throttle if GPS speed gets below 7m/s ( hardcoded )  |
 |  nav_fw_min_thr  | 1200 | Minimum throttle for flying wing in GPS assisted modes |
 |  nav_fw_max_thr  | 1700 | Maximum throttle for flying wing in GPS assisted modes |
 |  nav_fw_bank_angle  | 20 | Max roll angle when rolling / turning in GPS assisted modes, is also restrained by global max_angle_inclination_rll |
@@ -225,7 +225,7 @@ Re-apply any new defaults as desired.
 |  align_board_roll  | 0 | Arbitrary board rotation in degrees, to allow mounting it sideways / upside down / rotated etc |
 |  align_board_pitch  | 0 | Arbitrary board rotation in degrees, to allow mounting it sideways / upside down / rotated etc |
 |  align_board_yaw  | 0 | Arbitrary board rotation in degrees, to allow mounting it sideways / upside down / rotated etc |
-|  gyro_lpf  | 42HZ | Hardware lowpass filter for gyro. Allowed values depend on the driver - For example MPU6050 allows 10HZ,20HZ,42HZ,98HZ,188HZ,256Hz (8khz mode). If you have to set gyro lpf below 42Hz generally means the frame is vibrating too much, and that should be fixed first. |
+|  gyro_hardware_lpf  | 42HZ | Hardware lowpass filter for gyro. Allowed values depend on the driver - For example MPU6050 allows 10HZ,20HZ,42HZ,98HZ,188HZ,256Hz (8khz mode). If you have to set gyro lpf below 42Hz generally means the frame is vibrating too much, and that should be fixed first. |
 |  moron_threshold  | 32 | When powering up, gyro bias is calculated. If the model is shaking/moving during this initial calibration, offsets are calculated incorrectly, and could lead to poor flying performance. This threshold (default of 32) means how much average gyro reading could differ before re-calibration is triggered. |
 |  imu_dcm_kp  | 2500 | Inertial Measurement Unit KP Gain for accelerometer measurements |
 |  imu_dcm_ki  | 50 | Inertial Measurement Unit KI Gain for accelerometer measurements |
@@ -293,21 +293,24 @@ Re-apply any new defaults as desired.
 |  accgain_x  | 4096 | Calculated value after '6 position avanced calibration'. Uncalibrated value is 4096. See Wiki page. |
 |  accgain_y  | 4096 | Calculated value after '6 position avanced calibration'. Uncalibrated value is 4096. See Wiki page. |
 |  accgain_z  | 4096 | Calculated value after '6 position avanced calibration'. Uncalibrated value is 4096. See Wiki page. |
-|  nav_alt_p  | 50 | P gain of altitude PID controller |
-|  nav_alt_i  | 0 | I gain of altitude PID controller |
-|  nav_alt_d  | 0 | D gain of altitude PID controller |
-|  nav_vel_p  | 100 | P gain of velocity PID controller |
-|  nav_vel_i  | 50 | I gain of velocity PID controller |
-|  nav_vel_d  | 10 | D gain of velocity PID controller |
-|  nav_pos_p  | 65 | Controls how fast the drone will fly towards the target position. This is a multiplier to convert displacement to target velocity |
-|  nav_pos_i  | 120 | Controls deceleration time. Measured in 1/100 sec. Expected hold position is placed at a distance calculated as decelerationTime * currentVelocity |
-|  nav_pos_d  | 10 |  |
-|  nav_posr_p  | 180 | P gain of Position-Rate (Velocity to Acceleration) PID controller. Higher P means stronger response when position error occurs. Too much P might cause "nervous" behavior and oscillations |
-|  nav_posr_i  | 15 | I gain of Position-Rate (Velocity to Acceleration) PID controller. Used for drift compensation (caused by wind for example). Higher I means stronger response to drift. Too much I gain might cause target overshot |
-|  nav_posr_d  | 100 | D gain of Position-Rate (Velocity to Acceleration) PID controller. It can damp P and I. Increasing D might help when drone overshoots target. |
-|  nav_navr_p  | 10 | P gain of 2D trajectory PID controller. Play with this to get a straigh line between waypoints or a straight RTH |
-|  nav_navr_i  | 5 | I gain of 2D trajectory PID controller. Too high and there will be overshoot in trajectory. Better start tunning with zero |
-|  nav_navr_d  | 8 | D gain of 2D trajectory PID controller. Too high and there will be overshoot in trajectory. Better start tunning with zero |
+|  nav_mc_pos_z_p  | 50 | P gain of altitude PID controller (Multirotor) |
+|  nav_fw_pos_z_p  | 50 | P gain of altitude PID controller (Fixdwing) |
+|  nav_mc_pos_z_i  | 0 | I gain of altitude PID controller (Multirotor) |
+|  nav_fw_pos_z_i  | 0 | I gain of altitude PID controller (Fixdwing) |
+|  nav_mc_pos_z_d  | 0 | D gain of altitude PID controller (Multirotor) |
+|  nav_fw_pos_z_d  | 0 | D gain of altitude PID controller (Fixdwing) |
+|  nav_mc_vel_z_p  | 100 | P gain of velocity PID controller |
+|  nav_mc_vel_z_i  | 50 | I gain of velocity PID controller |
+|  nav_mc_vel_z_d  | 10 | D gain of velocity PID controller |
+|  nav_mc_pos_xy_p  | 65 | Controls how fast the drone will fly towards the target position. This is a multiplier to convert displacement to target velocity |
+|  nav_mc_pos_xy_i  | 120 | Controls deceleration time. Measured in 1/100 sec. Expected hold position is placed at a distance calculated as decelerationTime * currentVelocity |
+|  nav_mc_pos_xy_d  | 10 |  |
+|  nav_mc_vel_xy_p  | 180 | P gain of Position-Rate (Velocity to Acceleration) PID controller. Higher P means stronger response when position error occurs. Too much P might cause "nervous" behavior and oscillations |
+|  nav_mc_vel_xy_i  | 15 | I gain of Position-Rate (Velocity to Acceleration) PID controller. Used for drift compensation (caused by wind for example). Higher I means stronger response to drift. Too much I gain might cause target overshot |
+|  nav_mc_vel_xy_d  | 100 | D gain of Position-Rate (Velocity to Acceleration) PID controller. It can damp P and I. Increasing D might help when drone overshoots target. |
+|  nav_fw_pos_xy_p  | 10 | P gain of 2D trajectory PID controller. Play with this to get a straigh line between waypoints or a straight RTH |
+|  nav_fw_pos_xy_i  | 5 | I gain of 2D trajectory PID controller. Too high and there will be overshoot in trajectory. Better start tunning with zero |
+|  nav_fw_pos_xy_d  | 8 | D gain of 2D trajectory PID controller. Too high and there will be overshoot in trajectory. Better start tunning with zero |
 |  deadband  | 5 | These are values (in us) by how much RC input can be different before it's considered valid. For transmitters with jitter on outputs, this value can be increased. Defaults are zero, but can be increased up to 10 or so if rc inputs twitch while idle. |
 |  yaw_deadband  | 5 | These are values (in us) by how much RC input can be different before it's considered valid. For transmitters with jitter on outputs, this value can be increased. Defaults are zero, but can be increased up to 10 or so if rc inputs twitch while idle. |
 |  throttle_tilt_comp_str  | 0 | Can be used in ANGLE and HORIZON mode and will automatically boost throttle when banking. Setting is in percentage, 0=disabled. |
