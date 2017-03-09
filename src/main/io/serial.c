@@ -28,6 +28,8 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "config/config_master.h"
+
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
@@ -435,18 +437,23 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
                 serialPortCount--;
             }
         }
-        if (!softserialEnabled) {
-            if (0
+
+        if (serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL1
 #ifdef USE_SOFTSERIAL1
-                || serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL1
+            && !(softserialEnabled && serialPinConfig()->ioTagRx[RESOURCE_SOFT_OFFSET + SOFTSERIAL1] && serialPinConfig()->ioTagTx[RESOURCE_SOFT_OFFSET + SOFTSERIAL1])
 #endif
+        ) {
+            serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
+            serialPortCount--;
+        }
+
+        if (serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL2
 #ifdef USE_SOFTSERIAL2
-                || serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL2
+            && !(softserialEnabled && serialPinConfig()->ioTagRx[RESOURCE_SOFT_OFFSET + SOFTSERIAL1] && serialPinConfig()->ioTagTx[RESOURCE_SOFT_OFFSET + SOFTSERIAL1])
 #endif
-            ) {
-                serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
-                serialPortCount--;
-            }
+        ) {
+            serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
+            serialPortCount--;
         }
     }
 }
