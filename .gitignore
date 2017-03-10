@@ -29,3 +29,7 @@ make/local.mk
 mcu.mak
 mcu.mak.old
 stm32.mak
+
+# eclipse launch configurations
+/support/eclipse
+
