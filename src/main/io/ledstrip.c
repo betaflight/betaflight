@@ -156,33 +156,6 @@ static const specialColorIndexes_t defaultSpecialColors[] = {
     }}
 };
 
-#ifndef USE_PARAMETER_GROUPS
-void applyDefaultLedStripConfig(ledConfig_t *ledConfigs)
-{
-    memset(ledConfigs, 0, LED_MAX_STRIP_LENGTH * sizeof(ledConfig_t));
-}
-
-void applyDefaultColors(hsvColor_t *colors)
-{
-    // copy hsv colors as default
-    memset(colors, 0, ARRAYLEN(hsv) * sizeof(hsvColor_t));
-    for (unsigned colorIndex = 0; colorIndex < ARRAYLEN(hsv); colorIndex++) {
-        *colors++ = hsv[colorIndex];
-    }
-}
-
-void applyDefaultModeColors(modeColorIndexes_t *modeColors)
-{
-    memcpy_fn(modeColors, &defaultModeColors, sizeof(defaultModeColors));
-}
-
-void applyDefaultSpecialColors(specialColorIndexes_t *specialColors)
-{
-    memcpy_fn(specialColors, &defaultSpecialColors, sizeof(defaultSpecialColors));
-}
-
-#else
-
 void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
 {
     memset(ledStripConfig->ledConfigs, 0, LED_MAX_STRIP_LENGTH * sizeof(ledConfig_t));
@@ -205,7 +178,6 @@ void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
     }
     ledStripConfig->ioTag = IO_TAG_NONE;
 }
-#endif
 
 static int scaledThrottle;
 static int scaledAux;
