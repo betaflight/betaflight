@@ -224,11 +224,6 @@ static bool writeSettingsToEEPROM(void)
     config_streamer_write(&streamer, (uint8_t *)&header, sizeof(header));
     uint16_t crc = CRC_START_VALUE;
     crc = crc16_ccitt_update(crc, (uint8_t *)&header, sizeof(header));
-#ifndef USE_PARAMETER_GROUPS
-    // write the transitional masterConfig record
-    config_streamer_write(&streamer, (uint8_t *)&masterConfig, sizeof(masterConfig));
-    crc = crc16_ccitt_update(crc, (uint8_t *)&masterConfig, sizeof(masterConfig));
-#endif
     PG_FOREACH(reg) {
         const uint16_t regSize = pgSize(reg);
         configRecord_t record = {
