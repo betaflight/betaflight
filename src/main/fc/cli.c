@@ -1263,6 +1263,9 @@ static adjustmentRange_t adjustmentRangesCopy[MAX_ADJUSTMENT_RANGE_COUNT];
 #ifdef LED_STRIP
 static ledStripConfig_t ledStripConfigCopy;
 #endif
+#ifdef USE_SDCARD
+static sdcardConfig_t sdcardConfigCopy;
+#endif
 #ifdef OSD
 static osdConfig_t osdConfigCopy;
 #endif
@@ -1585,6 +1588,12 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.defaultConfig = ledStripConfig();
         break;
 #endif
+#ifdef USE_SDCARD
+    case PG_SDCARD_CONFIG:
+       ret.currentConfig = &sdcardConfigCopy;
+       ret.defaultConfig = sdcardConfig();
+       break;
+#endif
 #ifdef OSD
     case PG_OSD_CONFIG:
        ret.currentConfig = &osdConfigCopy;
@@ -1641,6 +1650,12 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
     case PG_BEEPER_DEV_CONFIG:
        ret.currentConfig = &beeperDevConfigCopy;
        ret.defaultConfig = beeperDevConfig();
+       break;
+#endif
+#ifdef VTX
+    case PG_VTX_CONFIG:
+       ret.currentConfig = &vtxConfigCopy;
+       ret.defaultConfig = vtxConfig();
        break;
 #endif
 #ifdef USE_MAX7456
