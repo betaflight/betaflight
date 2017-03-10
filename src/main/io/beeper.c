@@ -53,13 +53,15 @@ PG_REGISTER_WITH_RESET_TEMPLATE(beeperDevConfig_t, beeperDevConfig, PG_BEEPER_DE
 #define IS_OPEN_DRAIN   true
 #define IS_INVERTED     false
 #endif
-#ifndef BEEPER
-#define BEEPER          NONE
+#ifdef BEEPER
+#define BEEPER_PIN      BEEPER
+#else
+#define BEEPER_PIN      NONE
 #endif
 PG_RESET_TEMPLATE(beeperDevConfig_t, beeperDevConfig,
     .isOpenDrain = IS_OPEN_DRAIN,
     .isInverted = IS_INVERTED,
-    .ioTag = IO_TAG(BEEPER)
+    .ioTag = IO_TAG(BEEPER_PIN)
 );
 
 #if FLASH_SIZE > 64

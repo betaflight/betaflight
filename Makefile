@@ -688,6 +688,7 @@ COMMON_SRC = \
             io/vtx_string.c \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c \
+            io/vtx.c \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC)
 

@@ -32,6 +32,8 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "drivers/io.h"
+
 #include "fc/runtime_config.h"
 
 #include "sensors/sensors.h"
@@ -48,6 +50,13 @@ STATIC_UNIT_TESTED int16_t sonarMaxTiltDeciDegrees;
 float sonarMaxTiltCos;
 
 static int32_t calculatedAltitude;
+
+PG_REGISTER_WITH_RESET_TEMPLATE(sonarConfig_t, sonarConfig, PG_SONAR_CONFIG, 0);
+
+PG_RESET_TEMPLATE(sonarConfig_t, sonarConfig,
+    .triggerTag = IO_TAG(SONAR_TRIGGER_PIN),
+    .echoTag = IO_TAG(SONAR_ECHO_PIN)
+);
 
 void sonarInit(const sonarConfig_t *sonarConfig)
 {

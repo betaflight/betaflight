@@ -472,11 +472,7 @@ void osdDrawElements(void)
 #endif // GPS
 }
 
-#ifdef USE_PARAMETER_GROUPS
 void pgResetFn_osdConfig(osdConfig_t *osdProfile)
-#else
-void osdResetConfig(osdConfig_t *osdProfile)
-#endif
 {
     osdProfile->item_pos[OSD_RSSI_VALUE] = OSD_POS(22, 0);
     osdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 0) | VISIBLE_FLAG;

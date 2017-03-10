@@ -15,10 +15,6 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef USE_PARAMETER_GROUPS
-#include "config/config_master.h"
-#endif
-
 // FC configuration
 #define PG_FAILSAFE_CONFIG 1 // struct OK
 #define PG_BOARD_ALIGNMENT 2 // struct OK
@@ -97,7 +93,8 @@
 #define PG_DISPLAY_PORT_MAX7456_CONFIG 513
 #define PG_VCD_CONFIG 514
 #define PG_VTX_CONFIG 515
-#define PG_BETAFLIGHT_END 515
+#define PG_SONAR_CONFIG 516
+#define PG_BETAFLIGHT_END 516
 
 
 // OSD configuration (subject to change)

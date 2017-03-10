@@ -117,11 +117,5 @@ bool canSoftwareSerialBeUsed(void);
 uint16_t getCurrentMinthrottle(void);
 
 void resetConfigs(void);
-#ifdef USE_PARAMETER_GROUPS
 void targetConfiguration(void);
 void targetValidateConfiguration(void);
-#else
-struct master_s;
-void targetConfiguration(struct master_s *config);
-void targetValidateConfiguration(struct master_s *config);
-#endif

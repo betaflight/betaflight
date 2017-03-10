@@ -20,9 +20,13 @@
 #include <platform.h>
 
 #ifdef TARGET_CONFIG
-#include "config/config_master.h"
 
-void targetConfiguration(master_t *config) {
-    config->batteryConfig.currentMeterScale = 125;
+#include "fc/config.h"
+
+#include "sensors/battery.h"
+
+void targetConfiguration(void)
+{
+    batteryConfigMutable()->currentMeterScale = 125;
 }
 #endif

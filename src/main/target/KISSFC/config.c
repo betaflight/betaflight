@@ -21,32 +21,18 @@
 #include <platform.h>
 
 #ifdef TARGET_CONFIG
-#include "common/utils.h"
 
-#include "drivers/io.h"
-
-#include "fc/rc_controls.h"
-
-#include "flight/failsafe.h"
-#include "flight/mixer.h"
-#include "flight/pid.h"
-
-#include "rx/rx.h"
-
-#include "config/config_profile.h"
-#include "config/config_master.h"
+#include "fc/config.h"
 
 #include "sensors/boardalignment.h"
 
-void targetConfiguration(master_t *config)
+void targetConfiguration(void)
 {
-    UNUSED(config);
-
 #ifdef KISSCC
     // alternative defaults settings for Beebrain target
-    config->boardAlignment.rollDegrees = 180;
-    config->boardAlignment.pitchDegrees = 0;
-    config->boardAlignment.yawDegrees = 0;
+    boardAlignmentMutable()->rollDegrees = 180;
+    boardAlignmentMutable()->pitchDegrees = 0;
+    boardAlignmentMutable()->yawDegrees = 0;
 #endif
 }
 #endif

@@ -21,19 +21,17 @@
 #include <platform.h>
 
 #ifdef TARGET_CONFIG
+
+#include "common/axis.h"
+
 #include "drivers/pwm_esc_detect.h"
-#include "drivers/pwm_output.h"
 
-#include "fc/rc_controls.h"
+#include "fc/config.h"
 
-#include "flight/failsafe.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
 
 #include "rx/rx.h"
-
-#include "config/config_profile.h"
-#include "config/config_master.h"
 
 #ifdef BRUSHED_MOTORS_PWM_RATE
 #undef BRUSHED_MOTORS_PWM_RATE
@@ -42,29 +40,29 @@
 #define BRUSHED_MOTORS_PWM_RATE 32000           // 32kHz
 
 // alternative defaults settings for AlienFlight targets
-void targetConfiguration(master_t *config)
+void targetConfiguration(void)
 {
-    config->rxConfig.spektrum_sat_bind = 5;
-    config->rxConfig.spektrum_sat_bind_autoreset = 1;
+    rxConfigMutable()->spektrum_sat_bind = 5;
+    rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
 
     if (hardwareMotorType == MOTOR_BRUSHED) {
-        config->motorConfig.dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
+        motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
     }
 
-    config->profile[0].pidProfile.P8[ROLL] = 90;
-    config->profile[0].pidProfile.I8[ROLL] = 44;
-    config->profile[0].pidProfile.D8[ROLL] = 60;
-    config->profile[0].pidProfile.P8[PITCH] = 90;
-    config->profile[0].pidProfile.I8[PITCH] = 44;
-    config->profile[0].pidProfile.D8[PITCH] = 60;
+    pidProfilesMutable(0)->P8[FD_ROLL] = 90;
+    pidProfilesMutable(0)->I8[FD_ROLL] = 44;
+    pidProfilesMutable(0)->D8[FD_ROLL] = 60;
+    pidProfilesMutable(0)->P8[FD_PITCH] = 90;
+    pidProfilesMutable(0)->I8[FD_PITCH] = 44;
+    pidProfilesMutable(0)->D8[FD_PITCH] = 60;
 
-    config->customMotorMixer[0] = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
-    config->customMotorMixer[1] = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
-    config->customMotorMixer[2] = (motorMixer_t){ 1.0f,  0.414178f,  1.0f,  1.0f };    // REAR_L
-    config->customMotorMixer[3] = (motorMixer_t){ 1.0f,  0.414178f, -1.0f, -1.0f };    // FRONT_L
-    config->customMotorMixer[4] = (motorMixer_t){ 1.0f, -1.0f, -0.414178f, -1.0f };    // MIDFRONT_R
-    config->customMotorMixer[5] = (motorMixer_t){ 1.0f,  1.0f, -0.414178f,  1.0f };    // MIDFRONT_L
-    config->customMotorMixer[6] = (motorMixer_t){ 1.0f, -1.0f,  0.414178f,  1.0f };    // MIDREAR_R
-    config->customMotorMixer[7] = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L
+    *customMotorMixerMutable(0) = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
+    *customMotorMixerMutable(1) = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
+    *customMotorMixerMutable(2) = (motorMixer_t){ 1.0f,  0.414178f,  1.0f,  1.0f };    // REAR_L
+    *customMotorMixerMutable(3) = (motorMixer_t){ 1.0f,  0.414178f, -1.0f, -1.0f };    // FRONT_L
+    *customMotorMixerMutable(4) = (motorMixer_t){ 1.0f, -1.0f, -0.414178f, -1.0f };    // MIDFRONT_R
+    *customMotorMixerMutable(5) = (motorMixer_t){ 1.0f,  1.0f, -0.414178f,  1.0f };    // MIDFRONT_L
+    *customMotorMixerMutable(6) = (motorMixer_t){ 1.0f, -1.0f,  0.414178f,  1.0f };    // MIDREAR_R
+    *customMotorMixerMutable(7) = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L
 }
 #endif

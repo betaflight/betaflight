@@ -33,7 +33,6 @@
 #include "common/maths.h"
 #include "common/streambuf.h"
 
-#include "config/config_master.h"
 #include "config/config_eeprom.h"
 #include "config/config_profile.h"
 #include "config/feature.h"
@@ -56,6 +55,7 @@
 #include "drivers/vtx_soft_spi_rtc6705.h"
 
 #include "fc/config.h"
+#include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
 #include "fc/fc_msp.h"
 #include "fc/fc_rc.h"
@@ -83,6 +83,7 @@
 #include "io/serial_4way.h"
 #include "io/servos.h"
 #include "io/transponder_ir.h"
+#include "io/vtx.h"
 
 #include "msp/msp.h"
 #include "msp/msp_protocol.h"

@@ -35,7 +35,6 @@
 #include "common/maths.h"
 
 #include "config/config_eeprom.h"
-#include "config/config_master.h"
 #include "config/config_profile.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
@@ -44,6 +43,7 @@
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
 #include "drivers/io.h"
+#include "drivers/light_led.h"
 #include "drivers/light_ws2811strip.h"
 #include "drivers/max7456.h"
 #include "drivers/pwm_esc_detect.h"
@@ -53,14 +53,18 @@
 #include "drivers/sdcard.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
+#include "drivers/sonar_hcsr04.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "drivers/timer.h"
 #include "drivers/vcd.h"
 
 #include "fc/config.h"
-#include "fc/rc_controls.h"
+#include "fc/controlrate_profile.h"
+#include "fc/fc_core.h"
 #include "fc/fc_rc.h"
+#include "fc/rc_adjustments.h"
+#include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
 #include "flight/altitudehold.h"
@@ -94,9 +98,6 @@
 
 #include "telemetry/telemetry.h"
 
-#ifndef USE_PARAMETER_GROUPS
-master_t masterConfig;                 // master config struct with data independent from profiles
-#endif
 pidProfile_t *currentPidProfile;
 
 #ifndef DEFAULT_FEATURES
@@ -125,11 +126,18 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .name = { 0 }
 );
 
+#ifdef BEEPER
 PG_REGISTER(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 0);
-
+#endif
+#ifdef USE_ADC
 PG_REGISTER_WITH_RESET_FN(adcConfig_t, adcConfig, PG_ADC_CONFIG, 0);
+#endif
+#ifdef USE_PWM
 PG_REGISTER_WITH_RESET_FN(pwmConfig_t, pwmConfig, PG_PWM_CONFIG, 0);
+#endif
+#ifdef USE_PPM
 PG_REGISTER_WITH_RESET_FN(ppmConfig_t, ppmConfig, PG_PPM_CONFIG, 0);
+#endif
 PG_REGISTER_WITH_RESET_FN(statusLedConfig_t, statusLedConfig, PG_STATUS_LED_CONFIG, 0);
 PG_REGISTER_WITH_RESET_FN(serialPinConfig_t, serialPinConfig, PG_SERIAL_PIN_CONFIG, 0);
 
@@ -161,201 +169,6 @@ PG_RESET_TEMPLATE(sdcardConfig_t, sdcardConfig,
 // no template required since defaults are zero
 PG_REGISTER(vcdProfile_t, vcdProfile, PG_VCD_CONFIG, 0);
 
-#ifndef USE_PARAMETER_GROUPS
-static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
-{
-    accelerometerTrims->values.pitch = 0;
-    accelerometerTrims->values.roll = 0;
-    accelerometerTrims->values.yaw = 0;
-}
-#endif
-
-#ifndef USE_PARAMETER_GROUPS
-static void resetCompassConfig(compassConfig_t* compassConfig)
-{
-    compassConfig->mag_align = ALIGN_DEFAULT;
-#ifdef MAG_INT_EXTI
-    compassConfig->interruptTag = IO_TAG(MAG_INT_EXTI);
-#else
-    compassConfig->interruptTag = IO_TAG_NONE;
-#endif
-}
-
-static void resetControlRateProfile(controlRateConfig_t *controlRateConfig)
-{
-    controlRateConfig->rcRate8 = 100;
-    controlRateConfig->rcYawRate8 = 100;
-    controlRateConfig->rcExpo8 = 0;
-    controlRateConfig->thrMid8 = 50;
-    controlRateConfig->thrExpo8 = 0;
-    controlRateConfig->dynThrPID = 10;
-    controlRateConfig->rcYawExpo8 = 0;
-    controlRateConfig->tpa_breakpoint = 1650;
-
-    for (uint8_t axis = 0; axis < FLIGHT_DYNAMICS_INDEX_COUNT; axis++) {
-        controlRateConfig->rates[axis] = 70;
-    }
-}
-#endif
-
-#ifndef USE_PARAMETER_GROUPS
-void resetPidProfile(pidProfile_t *pidProfile)
-{
-    pidProfile->P8[ROLL] = 44;
-    pidProfile->I8[ROLL] = 40;
-    pidProfile->D8[ROLL] = 20;
-    pidProfile->P8[PITCH] = 58;
-    pidProfile->I8[PITCH] = 50;
-    pidProfile->D8[PITCH] = 22;
-    pidProfile->P8[YAW] = 70;
-    pidProfile->I8[YAW] = 45;
-    pidProfile->D8[YAW] = 20;
-    pidProfile->P8[PIDALT] = 50;
-    pidProfile->I8[PIDALT] = 0;
-    pidProfile->D8[PIDALT] = 0;
-    pidProfile->P8[PIDPOS] = 15;   // POSHOLD_P * 100;
-    pidProfile->I8[PIDPOS] = 0;    // POSHOLD_I * 100;
-    pidProfile->D8[PIDPOS] = 0;
-    pidProfile->P8[PIDPOSR] = 34;  // POSHOLD_RATE_P * 10;
-    pidProfile->I8[PIDPOSR] = 14;  // POSHOLD_RATE_I * 100;
-    pidProfile->D8[PIDPOSR] = 53;  // POSHOLD_RATE_D * 1000;
-    pidProfile->P8[PIDNAVR] = 25;  // NAV_P * 10;
-    pidProfile->I8[PIDNAVR] = 33;  // NAV_I * 100;
-    pidProfile->D8[PIDNAVR] = 83;  // NAV_D * 1000;
-    pidProfile->P8[PIDLEVEL] = 50;
-    pidProfile->I8[PIDLEVEL] = 50;
-    pidProfile->D8[PIDLEVEL] = 100;
-    pidProfile->P8[PIDMAG] = 40;
-    pidProfile->P8[PIDVEL] = 55;
-    pidProfile->I8[PIDVEL] = 55;
-    pidProfile->D8[PIDVEL] = 75;
-
-    pidProfile->pidSumLimit = PIDSUM_LIMIT;
-    pidProfile->pidSumLimitYaw = PIDSUM_LIMIT_YAW;
-    pidProfile->yaw_lpf_hz = 0;
-    pidProfile->itermWindupPointPercent = 50;
-    pidProfile->dterm_filter_type = FILTER_BIQUAD;
-    pidProfile->dterm_lpf_hz = 100;    // filtering ON by default
-    pidProfile->dterm_notch_hz = 260;
-    pidProfile->dterm_notch_cutoff = 160;
-    pidProfile->vbatPidCompensation = 0;
-    pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
-    pidProfile->levelAngleLimit = 55;
-    pidProfile->levelSensitivity = 55;
-    pidProfile->setpointRelaxRatio = 20;
-    pidProfile->dtermSetpointWeight = 100;
-    pidProfile->yawRateAccelLimit = 10.0f;
-    pidProfile->rateAccelLimit = 0.0f;
-    pidProfile->itermThrottleThreshold = 350;
-    pidProfile->itermAcceleratorGain = 1.0f;
-}
-#endif
-
-#ifndef USE_PARAMETER_GROUPS
-void resetProfile(profile_t *profile)
-{
-    resetPidProfile(&profile->pidProfile);
-}
-
-#ifdef GPS
-void resetNavigationConfig(navigationConfig_t *navigationConfig)
-{
-    navigationConfig->gps_wp_radius = 200;
-    navigationConfig->gps_lpf = 20;
-    navigationConfig->nav_slew_rate = 30;
-    navigationConfig->nav_controls_heading = 1;
-    navigationConfig->nav_speed_min = 100;
-    navigationConfig->nav_speed_max = 300;
-    navigationConfig->ap_mode = 40;
-}
-#endif
-
-#ifdef BARO
-void resetBarometerConfig(barometerConfig_t *barometerConfig)
-{
-    barometerConfig->baro_sample_count = 21;
-    barometerConfig->baro_noise_lpf = 0.6f;
-    barometerConfig->baro_cf_vel = 0.985f;
-    barometerConfig->baro_cf_alt = 0.965f;
-}
-#endif
-
-#ifdef LED_STRIP
-void resetLedStripConfig(ledStripConfig_t *ledStripConfig)
-{
-    applyDefaultColors(ledStripConfig->colors);
-    applyDefaultLedStripConfig(ledStripConfig->ledConfigs);
-    applyDefaultModeColors(ledStripConfig->modeColors);
-    applyDefaultSpecialColors(&(ledStripConfig->specialColors));
-    ledStripConfig->ledstrip_visual_beeper = 0;
-    ledStripConfig->ledstrip_aux_channel = THROTTLE;
-
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
-        if (timerHardware[i].usageFlags & TIM_USE_LED) {
-            ledStripConfig->ioTag = timerHardware[i].tag;
-            return;
-        }
-    }
-    ledStripConfig->ioTag = IO_TAG_NONE;
-}
-#endif
-#endif
-
-#ifndef USE_PARAMETER_GROUPS
-#ifdef USE_SERVOS
-void resetServoConfig(servoConfig_t *servoConfig)
-{
-    servoConfig->dev.servoCenterPulse = 1500;
-    servoConfig->dev.servoPwmRate = 50;
-    servoConfig->tri_unarmed_servo = 1;
-    servoConfig->servo_lowpass_freq = 0;
-
-    int servoIndex = 0;
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && servoIndex < MAX_SUPPORTED_SERVOS; i++) {
-        if (timerHardware[i].usageFlags & TIM_USE_SERVO) {
-            servoConfig->dev.ioTags[servoIndex] = timerHardware[i].tag;
-            servoIndex++;
-        }
-    }
-}
-#endif
-
-void resetMotorConfig(motorConfig_t *motorConfig)
-{
-#ifdef BRUSHED_MOTORS
-    motorConfig->minthrottle = 1000;
-    motorConfig->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
-    motorConfig->dev.motorPwmProtocol = PWM_TYPE_BRUSHED;
-    motorConfig->dev.useUnsyncedPwm = true;
-#else
-#ifdef BRUSHED_ESC_AUTODETECT
-    if (hardwareMotorType == MOTOR_BRUSHED) {
-        motorConfig->minthrottle = 1000;
-        motorConfig->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
-        motorConfig->dev.motorPwmProtocol = PWM_TYPE_BRUSHED;
-        motorConfig->dev.useUnsyncedPwm = true;
-    } else
-#endif
-    {
-        motorConfig->minthrottle = 1070;
-        motorConfig->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
-        motorConfig->dev.motorPwmProtocol = PWM_TYPE_ONESHOT125;
-    }
-#endif
-    motorConfig->maxthrottle = 2000;
-    motorConfig->mincommand = 1000;
-    motorConfig->digitalIdleOffsetPercent = 4.5f;
-
-    int motorIndex = 0;
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && motorIndex < MAX_SUPPORTED_MOTORS; i++) {
-        if (timerHardware[i].usageFlags & TIM_USE_MOTOR) {
-            motorConfig->dev.ioTags[motorIndex] = timerHardware[i].tag;
-            motorIndex++;
-        }
-    }
-}
-#endif
-
 #ifdef SONAR
 void resetSonarConfig(sonarConfig_t *sonarConfig)
 {
@@ -368,25 +181,8 @@ void resetSonarConfig(sonarConfig_t *sonarConfig)
 }
 #endif
 
-#ifndef USE_PARAMETER_GROUPS
-#ifdef USE_SDCARD
-void resetsdcardConfig(sdcardConfig_t *sdcardConfig)
-{
-#if defined(SDCARD_DMA_CHANNEL_TX)
-    sdcardConfig->useDma = true;
-#else
-    sdcardConfig->useDma = false;
-#endif
-}
-#endif // USE_SDCARD
-#endif // USE_PARAMETER_GROUPS
-
 #ifdef USE_ADC
-#ifdef USE_PARAMETER_GROUPS
 void pgResetFn_adcConfig(adcConfig_t *adcConfig)
-#else
-void resetAdcConfig(adcConfig_t *adcConfig)
-#endif
 {
 #ifdef VBAT_ADC_PIN
     adcConfig->vbat.enabled = true;
@@ -412,28 +208,8 @@ void resetAdcConfig(adcConfig_t *adcConfig)
 #endif // USE_ADC
 
 
-#ifndef USE_PARAMETER_GROUPS
-#ifdef BEEPER
-void resetBeeperDevConfig(beeperDevConfig_t *beeperDevConfig)
-{
-#ifdef BEEPER_INVERTED
-    beeperDevConfig->isOpenDrain = false;
-    beeperDevConfig->isInverted = true;
-#else
-    beeperDevConfig->isOpenDrain = true;
-    beeperDevConfig->isInverted = false;
-#endif
-    beeperDevConfig->ioTag = IO_TAG(BEEPER);
-}
-#endif
-#endif
-
 #if defined(USE_PWM) || defined(USE_PPM)
-#ifdef USE_PARAMETER_GROUPS
 void pgResetFn_ppmConfig(ppmConfig_t *ppmConfig)
-#else
-void resetPpmConfig(ppmConfig_t *ppmConfig)
-#endif
 {
 #ifdef PPM_PIN
     ppmConfig->ioTag = IO_TAG(PPM_PIN);
@@ -449,11 +225,7 @@ void resetPpmConfig(ppmConfig_t *ppmConfig)
 #endif
 }
 
-#ifdef USE_PARAMETER_GROUPS
 void pgResetFn_pwmConfig(pwmConfig_t *pwmConfig)
-#else
-void resetPwmConfig(pwmConfig_t *pwmConfig)
-#endif
 {
     pwmConfig->inputFilteringMode = INPUT_FILTERING_DISABLED;
     int inputIndex = 0;
@@ -466,59 +238,8 @@ void resetPwmConfig(pwmConfig_t *pwmConfig)
 }
 #endif
 
-#ifndef USE_PARAMETER_GROUPS
-void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
-{
-    flight3DConfig->deadband3d_low = 1406;
-    flight3DConfig->deadband3d_high = 1514;
-    flight3DConfig->neutral3d = 1460;
-    flight3DConfig->deadband3d_throttle = 50;
-}
-#endif
 
-#ifndef USE_PARAMETER_GROUPS
-#ifdef TELEMETRY
-void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
-{
-    telemetryConfig->telemetry_inversion = 1;
-    telemetryConfig->sportHalfDuplex = 1;
-    telemetryConfig->telemetry_switch = 0;
-    telemetryConfig->gpsNoFixLatitude = 0;
-    telemetryConfig->gpsNoFixLongitude = 0;
-    telemetryConfig->frsky_coordinate_format = FRSKY_FORMAT_DMS;
-    telemetryConfig->frsky_unit = FRSKY_UNIT_METRICS;
-    telemetryConfig->frsky_vfas_precision = 0;
-    telemetryConfig->frsky_vfas_cell_voltage = 0;
-    telemetryConfig->hottAlarmSoundInterval = 5;
-    telemetryConfig->pidValuesAsTelemetry = 0;
-#ifdef TELEMETRY_IBUS
-    telemetryConfig->report_cell_voltage = false;
-#endif
-}
-#endif
-#endif
 
-#ifndef USE_PARAMETER_GROUPS
-void resetBatteryConfig(batteryConfig_t *batteryConfig)
-{
-    batteryConfig->vbatscale = VBAT_SCALE_DEFAULT;
-    batteryConfig->vbatresdivval = VBAT_RESDIVVAL_DEFAULT;
-    batteryConfig->vbatresdivmultiplier = VBAT_RESDIVMULTIPLIER_DEFAULT;
-    batteryConfig->vbatmaxcellvoltage = 43;
-    batteryConfig->vbatmincellvoltage = 33;
-    batteryConfig->vbatwarningcellvoltage = 35;
-    batteryConfig->vbathysteresis = 1;
-    batteryConfig->batteryMeterType = BATTERY_SENSOR_ADC;
-    batteryConfig->currentMeterOffset = 0;
-    batteryConfig->currentMeterScale = 400; // for Allegro ACS758LCB-100U (40mV/A)
-    batteryConfig->batteryCapacity = 0;
-    batteryConfig->currentMeterType = CURRENT_SENSOR_ADC;
-    batteryConfig->batterynotpresentlevel = 55; // VBAT below 5.5 V will be igonored
-    batteryConfig->useVBatAlerts = true;
-    batteryConfig->useConsumptionAlerts = false;
-    batteryConfig->consumptionWarningPercentage = 10;
-}
-#endif
 
 // Default pin (NONE).
 // XXX Does this mess belong here???
@@ -612,11 +333,7 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
 # endif
 #endif
 
-#ifdef USE_PARAMETER_GROUPS
 void pgResetFn_serialPinConfig(serialPinConfig_t *serialPinConfig)
-#else
-void resetSerialPinConfig(serialPinConfig_t *serialPinConfig)
-#endif
 {
     for (int port = 0 ; port < SERIAL_PORT_MAX_INDEX ; port++) {
         serialPinConfig->ioTagRx[port] = IO_TAG(NONE);
@@ -701,73 +418,7 @@ void resetSerialPinConfig(serialPinConfig_t *serialPinConfig)
 #define SECOND_PORT_INDEX 1
 #endif
 
-#ifndef USE_PARAMETER_GROUPS
-void resetSerialConfig(serialConfig_t *serialConfig)
-{
-    memset(serialConfig, 0, sizeof(serialConfig_t));
-    serialConfig->serial_update_rate_hz =  100;
-    serialConfig->reboot_character = 'R';
-
-    for (int index = 0; index < SERIAL_PORT_COUNT; index++) {
-        serialConfig->portConfigs[index].identifier = serialPortIdentifiers[index];
-        serialConfig->portConfigs[index].msp_baudrateIndex = BAUD_115200;
-        serialConfig->portConfigs[index].gps_baudrateIndex = BAUD_57600;
-        serialConfig->portConfigs[index].telemetry_baudrateIndex = BAUD_AUTO;
-        serialConfig->portConfigs[index].blackbox_baudrateIndex = BAUD_115200;
-    }
-
-    serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
-#if defined(USE_VCP) && defined(USE_MSP_UART)
-    // This allows MSP connection via USART & VCP so the board can be reconfigured.
-    serialConfig->portConfigs[1].functionMask = FUNCTION_MSP;
-#endif
-}
-#endif
-
-#ifndef USE_PARAMETER_GROUPS
-void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
-{
-    rcControlsConfig->deadband = 0;
-    rcControlsConfig->yaw_deadband = 0;
-    rcControlsConfig->alt_hold_deadband = 40;
-    rcControlsConfig->alt_hold_fast_change = 1;
-}
-#endif
-
-#ifndef USE_PARAMETER_GROUPS
-void resetMixerConfig(mixerConfig_t *mixerConfig)
-{
-#ifdef TARGET_DEFAULT_MIXER
-    mixerConfig->mixerMode = TARGET_DEFAULT_MIXER;
-#else
-    mixerConfig->mixerMode = MIXER_QUADX;
-#endif
-    mixerConfig->yaw_motor_direction = 1;
-}
-#endif
-
-#ifndef USE_PARAMETER_GROUPS
-#ifdef USE_MAX7456
-void resetMax7456Config(vcdProfile_t *pVcdProfile)
-{
-    pVcdProfile->video_system = VIDEO_SYSTEM_AUTO;
-    pVcdProfile->h_offset = 0;
-    pVcdProfile->v_offset = 0;
-}
-#endif
-
-void resetDisplayPortProfile(displayPortProfile_t *pDisplayPortProfile)
-{
-    pDisplayPortProfile->colAdjust = 0;
-    pDisplayPortProfile->rowAdjust = 0;
-}
-#endif // USE_PARAMETER_GROUPS
-
-#ifdef USE_PARAMETER_GROUPS
 void pgResetFn_statusLedConfig(statusLedConfig_t *statusLedConfig)
-#else
-void resetStatusLedConfig(statusLedConfig_t *statusLedConfig)
-#endif
 {
     for (int i = 0; i < LED_NUMBER; i++) {
         statusLedConfig->ledTags[i] = IO_TAG_NONE;
@@ -796,19 +447,6 @@ void resetStatusLedConfig(statusLedConfig_t *statusLedConfig)
     ;
 }
 
-#ifndef USE_PARAMETER_GROUPS
-#ifdef USE_FLASHFS
-void resetFlashConfig(flashConfig_t *flashConfig)
-{
-#ifdef M25P16_CS_PIN
-    flashConfig->csTag = IO_TAG(M25P16_CS_PIN);
-#else
-    flashConfig->csTag = IO_TAG_NONE;
-#endif
-}
-#endif
-#endif
-
 uint8_t getCurrentPidProfileIndex(void)
 {
     return systemConfig()->pidProfileIndex;
@@ -819,7 +457,7 @@ static void setPidProfile(uint8_t pidProfileIndex)
     if (pidProfileIndex < MAX_PROFILE_COUNT) {
         systemConfigMutable()->pidProfileIndex = pidProfileIndex;
         currentPidProfile = pidProfilesMutable(pidProfileIndex);
-        pidInit(); // re-initialise pid controller to re-initialise filters and config
+        pidInit(currentPidProfile); // re-initialise pid controller to re-initialise filters and config
     }
 }
 
@@ -1263,6 +901,10 @@ void validateAndFixConfig(void)
     if (!isSerialConfigValid(serialConfig)) {
         resetSerialConfig(serialConfig);
     }
+#else
+    if (!isSerialConfigValid(serialConfig())) {
+        pgResetFn_serialConfig(serialConfigMutable());
+    }
 #endif
 
     // Prevent invalid notch cutoff
@@ -1273,11 +915,7 @@ void validateAndFixConfig(void)
     validateAndFixGyroConfig();
 
 #if defined(TARGET_VALIDATECONFIG)
-#ifdef USE_PARAMETER_GROUPS
     targetValidateConfiguration();
-#else
-    targetValidateConfiguration(&masterConfig);
-#endif
 #endif
 }
 
@@ -1366,13 +1004,14 @@ void readEEPROM(void)
         failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
     }
 
-//    pgActivateProfile(getCurrentPidProfileIndex());
-//    setControlRateProfile(rateProfileSelection()->defaultRateProfileIndex);
+    if (systemConfig()->activeRateProfile >= CONTROL_RATE_PROFILE_COUNT) {// sanity check
+        systemConfigMutable()->activeRateProfile = 0;
+    }
+    setControlRateProfile(systemConfig()->activeRateProfile);
 
-    if (systemConfig()->pidProfileIndex > MAX_PROFILE_COUNT - 1) {// sanity check
+    if (systemConfig()->pidProfileIndex >= MAX_PROFILE_COUNT) {// sanity check
         systemConfigMutable()->pidProfileIndex = 0;
     }
-
     setPidProfile(systemConfig()->pidProfileIndex);
 
     validateAndFixConfig();

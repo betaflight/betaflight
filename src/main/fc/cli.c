@@ -48,7 +48,6 @@ extern uint8_t __config_end;
 #include "common/typeconversion.h"
 #include "common/utils.h"
 
-#include "config/config_master.h"
 #include "config/config_eeprom.h"
 #include "config/config_profile.h"
 #include "config/feature.h"
@@ -77,10 +76,12 @@ extern uint8_t __config_end;
 #include "fc/cli.h"
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
+#include "fc/fc_core.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/altitudehold.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -91,6 +92,8 @@ extern uint8_t __config_end;
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/flashfs.h"
+#include "io/displayport_max7456.h"
+#include "io/displayport_msp.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
@@ -202,7 +205,7 @@ static const char * const sensorTypeNames[] = {
 
 #define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
 
-static const char * const sensorHardwareNames[4][15] = {
+static const char * const sensorHardwareNames[4][16] = {
     { "", "None", "MPU6050", "L3G4200D", "MPU3050", "L3GD20", "MPU6000", "MPU6500", "MPU9250", "ICM20689", "ICM20608G", "ICM20602", "BMI160", "FAKE", NULL },
     { "", "None", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "ICM20689", "MPU9250", "ICM20608G", "ICM20602", "BMI160", "FAKE", NULL },
     { "", "None", "BMP085", "MS5611", "BMP280", NULL },
@@ -715,6 +718,9 @@ static const clivalue_t valueTable[] = {
     { "yaw_deadband",               VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 100 }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, yaw_deadband) },
     { "yaw_control_direction",      VAR_INT8   | MASTER_VALUE, .config.minmax = { -1, 1 }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, yaw_control_direction) },
 
+// PG_PID_CONFIG
+    { "pid_process_denom",          VAR_UINT8  | MASTER_VALUE,  .config.minmax = { 1, MAX_PID_PROCESS_DENOM }, PG_PID_CONFIG, offsetof(pidConfig_t, pid_process_denom) },
+
 // PG_PID_PROFILE
     { "d_lowpass_type",             VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LOWPASS_TYPE }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_filter_type) },
     { "d_lowpass",                  VAR_INT16  | PROFILE_VALUE, .config.minmax = { 0, 16000 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_lpf_hz) },
@@ -731,8 +737,8 @@ static const clivalue_t valueTable[] = {
 
     { "iterm_windup",               VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 30, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, itermWindupPointPercent) },
     { "yaw_lowpass",                VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, yaw_lpf_hz) },
-    { "pid_process_denom",          VAR_UINT8  | MASTER_VALUE,  .config.minmax = { 1, MAX_PID_PROCESS_DENOM }, PG_PID_CONFIG, offsetof(pidConfig_t, pid_process_denom) },
-    { "pidsum_limit",               VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { 0.1, 1.0 }, PG_PID_CONFIG, offsetof(pidProfile_t, pidSumLimit) },
+    { "pidsum_limit",               VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { 0.1, 1.0 }, PG_PID_PROFILE, offsetof(pidProfile_t, pidSumLimit) },
+    { "pidsum_limit_yaw",           VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { 0.1, 1.0 }, PG_PID_PROFILE, offsetof(pidProfile_t, pidSumLimitYaw) },
 
     { "p_pitch",                    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, P8[PITCH]) },
     { "i_pitch",                    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, I8[PITCH]) },
@@ -793,6 +799,7 @@ static const clivalue_t valueTable[] = {
     { "ledstrip_visual_beeper",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_visual_beeper) },
 #endif
 
+// PG_SDCARD_CONFIG
 #ifdef USE_SDCARD
     { "sdcard_dma",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SDCARD_CONFIG, offsetof(sdcardConfig_t, useDma) },
 #endif
@@ -834,28 +841,35 @@ static const clivalue_t valueTable[] = {
     { "task_statistics",            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, task_statistics) },
 #endif
     { "debug_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DEBUG }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, debug_mode) },
+
+// PG_VTX_CONFIG
 #ifdef VTX
     { "vtx_band",                   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 5 }, PG_VTX_CONFIG, offsetof(vtxConfig_t, vtx_band) },
     { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 8 }, PG_VTX_CONFIG, offsetof(vtxConfig_t, vtx_channel) },
     { "vtx_mode",                   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 2 }, PG_VTX_CONFIG, offsetof(vtxConfig_t, vtx_mode) },
     { "vtx_mhz",                    VAR_UINT16 | MASTER_VALUE, .config.minmax = { 5600, 5950 }, PG_VTX_CONFIG, offsetof(vtxConfig_t, vtx_mhz) },
 #endif
-    
 #if defined(USE_RTC6705)
     { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 39 }, PG_VTX_CONFIG, offsetof(vtxConfig_t, vtx_channel) },
     { "vtx_power",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 1 }, PG_VTX_CONFIG, offsetof(vtxConfig_t, vtx_power) },
 #endif
+
+// PG_VCD_CONFIG
 #ifdef USE_MAX7456
     { "vcd_video_system",           VAR_UINT8   | MASTER_VALUE, .config.minmax = { 0, 2 }, PG_VCD_CONFIG, offsetof(vcdProfile_t, video_system) },
     { "vcd_h_offset",               VAR_INT8    | MASTER_VALUE, .config.minmax = { -32, 31 }, PG_VCD_CONFIG, offsetof(vcdProfile_t, h_offset) },
     { "vcd_v_offset",               VAR_INT8    | MASTER_VALUE, .config.minmax = { -15, 16 }, PG_VCD_CONFIG, offsetof(vcdProfile_t, v_offset) },
 #endif
+
+// PG_DISPLAY_PORT_MSP_CONFIG
 #ifdef USE_MSP_DISPLAYPORT
     { "displayport_msp_col_adjust", VAR_INT8    | MASTER_VALUE, .config.minmax = { -6, 0 }, PG_DISPLAY_PORT_MSP_CONFIG, offsetof(displayPortProfile_t, colAdjust) },
     { "displayport_msp_row_adjust", VAR_INT8    | MASTER_VALUE, .config.minmax = { -3, 0 }, PG_DISPLAY_PORT_MSP_CONFIG, offsetof(displayPortProfile_t, rowAdjust) },
 #endif
+
+// PG_DISPLAY_PORT_MSP_CONFIG
 #ifdef USE_MAX7456
-    { "displayport_max7456_col_adjust", VAR_INT8| MASTER_VALUE, .config.minmax = { -6, 0 }, PG_DISPLAY_PORT_MAX7456_CONFIG, offsetof(displayPortProfile_t, colAdjust) },
+    { "displayport_max7456_col_adjust", VAR_INT8| MASTER_VALUE, .config.minmax = { -6, 0 }, PG_DISPLAY_PORT_MSP_CONFIG, offsetof(displayPortProfile_t, colAdjust) },
     { "displayport_max7456_row_adjust", VAR_INT8| MASTER_VALUE, .config.minmax = { -3, 0 }, PG_DISPLAY_PORT_MAX7456_CONFIG, offsetof(displayPortProfile_t, rowAdjust) },
 #endif
 };
@@ -1209,12 +1223,17 @@ static pitotmeterConfig_t pitotmeterConfigCopy;
 #endif
 static featureConfig_t featureConfigCopy;
 static rxConfig_t rxConfigCopy;
+// PG_PWM_CONFIG
+#ifdef USE_PWM
+static pwmConfig_t pwmConfigCopy;
+#endif
 #ifdef BLACKBOX
 static blackboxConfig_t blackboxConfigCopy;
 #endif
 static rxFailsafeChannelConfig_t rxFailsafeChannelConfigsCopy[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 static rxChannelRangeConfig_t rxChannelRangeConfigsCopy[NON_AUX_CHANNEL_COUNT];
 static motorConfig_t motorConfigCopy;
+static throttleCorrectionConfig_t throttleCorrectionConfigCopy;
 static failsafeConfig_t failsafeConfigCopy;
 static boardAlignment_t boardAlignmentCopy;
 #ifdef USE_SERVOS
@@ -1233,11 +1252,9 @@ static armingConfig_t armingConfigCopy;
 static rcControlsConfig_t rcControlsConfigCopy;
 #ifdef GPS
 static gpsConfig_t gpsConfigCopy;
-#endif
-#ifdef NAV
-static positionEstimationConfig_t positionEstimationConfigCopy;
 static navigationConfig_t navigationConfigCopy;
 #endif
+static airplaneConfig_t airplaneConfigCopy;
 #ifdef TELEMETRY
 static telemetryConfig_t telemetryConfigCopy;
 #endif
@@ -1246,13 +1263,30 @@ static adjustmentRange_t adjustmentRangesCopy[MAX_ADJUSTMENT_RANGE_COUNT];
 #ifdef LED_STRIP
 static ledStripConfig_t ledStripConfigCopy;
 #endif
+#ifdef USE_SDCARD
+static sdcardConfig_t sdcardConfigCopy;
+#endif
 #ifdef OSD
 static osdConfig_t osdConfigCopy;
 #endif
 static systemConfig_t systemConfigCopy;
 #ifdef BEEPER
 static beeperDevConfig_t beeperDevConfigCopy;
+static beeperConfig_t beeperConfigCopy;
 #endif
+#if defined(USE_RTC6705) || defined(VTX)
+static vtxConfig_t vtxConfigCopy;
+#endif
+#ifdef USE_MAX7456
+vcdProfile_t vcdProfileCopy;
+#endif
+#ifdef USE_MSP_DISPLAYPORT
+displayPortProfile_t displayPortProfileMspCopy;
+#endif
+#ifdef USE_MAX7456
+displayPortProfile_t displayPortProfileMax7456Copy;
+#endif
+static pidConfig_t pidConfigCopy;
 static controlRateConfig_t controlRateProfilesCopy[CONTROL_RATE_PROFILE_COUNT];
 static pidProfile_t pidProfileCopy[MAX_PROFILE_COUNT];
 #endif // USE_PARAMETER_GROUPS
@@ -1462,6 +1496,12 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.currentConfig = &rxConfigCopy;
         ret.defaultConfig = rxConfig();
         break;
+#ifdef USE_PWM
+    case PG_PWM_CONFIG:
+        ret.currentConfig = &pwmConfigCopy;
+        ret.defaultConfig = pwmConfig();
+        break;
+#endif
 #ifdef BLACKBOX
     case PG_BLACKBOX_CONFIG:
         ret.currentConfig = &blackboxConfigCopy;
@@ -1471,6 +1511,10 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
     case PG_MOTOR_CONFIG:
         ret.currentConfig = &motorConfigCopy;
         ret.defaultConfig = motorConfig();
+        break;
+    case PG_THROTTLE_CORRECTION_CONFIG:
+        ret.currentConfig = &throttleCorrectionConfigCopy;
+        ret.defaultConfig = throttleCorrectionConfig();
         break;
     case PG_FAILSAFE_CONFIG:
         ret.currentConfig = &failsafeConfigCopy;
@@ -1523,17 +1567,15 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.currentConfig = &gpsConfigCopy;
         ret.defaultConfig = gpsConfig();
         break;
-#endif
-#ifdef NAV
-    case PG_POSITION_ESTIMATION_CONFIG:
-        ret.currentConfig = &positionEstimationConfigCopy;
-        ret.defaultConfig = positionEstimationConfig();
-        break;
-    case PG_NAV_CONFIG:
+    case PG_NAVIGATION_CONFIG:
         ret.currentConfig = &navigationConfigCopy;
         ret.defaultConfig = navigationConfig();
         break;
 #endif
+    case PG_AIRPLANE_CONFIG:
+        ret.currentConfig = &airplaneConfigCopy;
+        ret.defaultConfig = airplaneConfig();
+        break;
 #ifdef TELEMETRY
     case PG_TELEMETRY_CONFIG:
         ret.currentConfig = &telemetryConfigCopy;
@@ -1545,6 +1587,12 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.currentConfig = &ledStripConfigCopy;
         ret.defaultConfig = ledStripConfig();
         break;
+#endif
+#ifdef USE_SDCARD
+    case PG_SDCARD_CONFIG:
+       ret.currentConfig = &sdcardConfigCopy;
+       ret.defaultConfig = sdcardConfig();
+       break;
 #endif
 #ifdef OSD
     case PG_OSD_CONFIG:
@@ -1560,10 +1608,10 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.currentConfig = &controlRateProfilesCopy[0];
         ret.defaultConfig = controlRateProfiles(0);
         break;
-/*!!TODO    case PG_PID_PROFILE:
-        ret.currentConfig = &pidProfileCopy[getConfigProfile()];
-        ret.defaultConfig = pidProfile();
-        break;*/
+    case PG_PID_PROFILE:
+        ret.currentConfig = &pidProfileCopy[0];
+        ret.defaultConfig = pidProfiles(0);
+        break;
     case PG_RX_FAILSAFE_CHANNEL_CONFIG:
         ret.currentConfig = &rxFailsafeChannelConfigsCopy[0];
         ret.defaultConfig = rxFailsafeChannelConfigs(0);
@@ -1594,9 +1642,43 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.currentConfig = &adjustmentRangesCopy[0];
         ret.defaultConfig = adjustmentRanges(0);
         break;
+#ifdef BEEPER
     case PG_BEEPER_CONFIG:
+       ret.currentConfig = &beeperConfigCopy;
+       ret.defaultConfig = beeperConfig();
+       break;
+    case PG_BEEPER_DEV_CONFIG:
        ret.currentConfig = &beeperDevConfigCopy;
        ret.defaultConfig = beeperDevConfig();
+       break;
+#endif
+#ifdef VTX
+    case PG_VTX_CONFIG:
+       ret.currentConfig = &vtxConfigCopy;
+       ret.defaultConfig = vtxConfig();
+       break;
+#endif
+#ifdef USE_MAX7456
+    case PG_VCD_CONFIG:
+       ret.currentConfig = &vcdProfileCopy;
+       ret.defaultConfig = vcdProfile();
+       break;
+#endif
+#ifdef USE_MSP_DISPLAYPORT
+    case PG_DISPLAY_PORT_MSP_CONFIG:
+       ret.currentConfig = &displayPortProfileMspCopy;
+       ret.defaultConfig = displayPortProfileMsp();
+       break;
+#endif
+#ifdef USE_MAX7456
+    case PG_DISPLAY_PORT_MAX7456_CONFIG:
+       ret.currentConfig = &displayPortProfileMax7456Copy;
+       ret.defaultConfig = displayPortProfileMax7456();
+       break;
+#endif
+    case PG_PID_CONFIG:
+       ret.currentConfig = &pidConfigCopy;
+       ret.defaultConfig = pidConfig();
        break;
     default:
         ret.currentConfig = NULL;
@@ -1725,16 +1807,7 @@ static void cliPrintVarDefault(const clivalue_t *var, uint32_t full, const maste
 
     printValuePointer(var, defaultPtr, full);
 }
-#endif // USE_PARAMETER_GROUPS
 
-static void cliPrintVar(const clivalue_t *var, uint32_t full)
-{
-    const void *ptr = getValuePointer(var);
-
-    printValuePointer(var, ptr, full);
-}
-
-#ifndef USE_PARAMETER_GROUPS
 static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *defaultConfig)
 {
     const clivalue_t *value;
@@ -1756,7 +1829,14 @@ static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *
         }
     }
 }
-#endif
+#endif // USE_PARAMETER_GROUPS
+
+static void cliPrintVar(const clivalue_t *var, uint32_t full)
+{
+    const void *ptr = getValuePointer(var);
+
+    printValuePointer(var, ptr, full);
+}
 
 static void cliPrintVarRange(const clivalue_t *var)
 {
@@ -3139,7 +3219,7 @@ static void cliFlashRead(char *cmdline)
 #endif
 #endif
 
-#ifdef VTX
+#if defined(USE_RTC6705) || defined(VTX)
 static void printVtx(uint8_t dumpMask, const vtxConfig_t *vtxConfig, const vtxConfig_t *vtxConfigDefault)
 {
     // print out vtx channel settings
@@ -3174,6 +3254,7 @@ static void printVtx(uint8_t dumpMask, const vtxConfig_t *vtxConfig, const vtxCo
     }
 }
 
+#ifdef VTX
 static void cliVtx(char *cmdline)
 {
     int i, val = 0;
@@ -3185,7 +3266,7 @@ static void cliVtx(char *cmdline)
         ptr = cmdline;
         i = atoi(ptr++);
         if (i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT) {
-            vtxChannelActivationCondition_t *cac = &vtxConfig()->vtxChannelActivationConditions[i];
+            vtxChannelActivationCondition_t *cac = &vtxConfigMutable()->vtxChannelActivationConditions[i];
             uint8_t validArgumentCount = 0;
             ptr = nextArg(ptr);
             if (ptr) {
@@ -3221,6 +3302,7 @@ static void cliVtx(char *cmdline)
         }
     }
 }
+#endif // VTX
 #endif
 
 static void printName(uint8_t dumpMask)
@@ -3797,7 +3879,33 @@ static void cliRateProfile(char *cmdline)
     }
 }
 
-#ifndef USE_PARAMETER_GROUPS
+#ifdef USE_PARAMETER_GROUPS
+static void cliDumpPidProfile(uint8_t pidProfileIndex, uint8_t dumpMask)
+{
+    if (pidProfileIndex >= MAX_PROFILE_COUNT) {
+        // Faulty values
+        return;
+    }
+    changePidProfile(pidProfileIndex);
+    cliPrintHashLine("profile");
+    cliProfile("");
+    cliPrint("\r\n");
+    dumpAllValues(PROFILE_VALUE, dumpMask);
+}
+
+static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask)
+{
+    if (rateProfileIndex >= CONTROL_RATE_PROFILE_COUNT) {
+        // Faulty values
+        return;
+    }
+    changeControlRateProfile(rateProfileIndex);
+    cliPrintHashLine("rateprofile");
+    cliRateProfile("");
+    cliPrint("\r\n");
+    dumpAllValues(PROFILE_RATE_VALUE, dumpMask);
+}
+#else
 static void cliDumpPidProfile(uint8_t pidProfileIndex, uint8_t dumpMask, const master_t *defaultConfig)
 {
     if (pidProfileIndex >= MAX_PROFILE_COUNT) {
@@ -4130,6 +4238,7 @@ const cliResourceValue_t resourceTable[] = {
 };
 
 #ifndef USE_PARAMETER_GROUPS
+//!! TODO for parameter groups
 static void printResource(uint8_t dumpMask, const master_t *defaultConfig)
 {
     for (unsigned int i = 0; i < ARRAYLEN(resourceTable); i++) {
@@ -4352,8 +4461,6 @@ static void backupConfigs(void)
 #endif
         }
     }
-    const pgRegistry_t* reg = pgFind(PG_PID_PROFILE);
-    memcpy(&pidProfileCopy[0], reg->address, sizeof(pidProfile_t) * MAX_PROFILE_COUNT);
 }
 
 static void restoreConfigs(void)
@@ -4373,8 +4480,6 @@ static void restoreConfigs(void)
 #endif
         }
     }
-    const pgRegistry_t* reg = pgFind(PG_PID_PROFILE);
-    memcpy(reg->address, &pidProfileCopy[0], sizeof(pidProfile_t) * MAX_PROFILE_COUNT);
 }
 #endif
 
@@ -4398,18 +4503,12 @@ static void printConfig(char *cmdline, bool doDiff)
         dumpMask = dumpMask | DO_DIFF;
     }
 
-#ifdef USE_PARAMETER_GROUPS
     backupConfigs();
     // reset all configs to defaults to do differencing
     resetConfigs();
+
 #if defined(TARGET_CONFIG)
     targetConfiguration();
-#endif
-#else
-    static master_t defaultConfig;
-    createDefaultConfig(&defaultConfig);
-#if defined(TARGET_CONFIG)
-    targetConfiguration(&defaultConfig);
 #endif
     if (checkCommand(options, "showdefaults")) {
         dumpMask = dumpMask | SHOW_DEFAULTS;   // add default values as comments for changed values
@@ -4429,80 +4528,80 @@ static void printConfig(char *cmdline, bool doDiff)
 
 #ifdef USE_RESOURCE_MGMT
         cliPrintHashLine("resources");
-        printResource(dumpMask, &defaultConfig);
+        //!!TODO printResource(dumpMask, &defaultConfig);
 #endif
 
 #ifndef USE_QUAD_MIXER_ONLY
         cliPrintHashLine("mixer");
-        const bool equalsDefault = mixerConfig()->mixerMode == defaultConfig.mixerConfig.mixerMode;
+        const bool equalsDefault = mixerConfigCopy.mixerMode == mixerConfig()->mixerMode;
         const char *formatMixer = "mixer %s\r\n";
-        cliDefaultPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[defaultConfig.mixerConfig.mixerMode - 1]);
-        cliDumpPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[mixerConfig()->mixerMode - 1]);
+        cliDefaultPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[mixerConfig()->mixerMode - 1]);
+        cliDumpPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[mixerConfigCopy.mixerMode - 1]);
 
-        cliDumpPrintf(dumpMask, masterConfig.customMotorMixer[0].throttle == 0.0f, "\r\nmmix reset\r\n\r\n");
+        cliDumpPrintf(dumpMask, customMotorMixer(0)->throttle == 0.0f, "\r\nmmix reset\r\n\r\n");
 
-        printMotorMix(dumpMask, customMotorMixer(0), defaultConfig.customMotorMixer);
+        printMotorMix(dumpMask, customMotorMixerCopy, customMotorMixer(0));
 
 #ifdef USE_SERVOS
         cliPrintHashLine("servo");
-        printServo(dumpMask, servoParams(0), defaultConfig.servoProfile.servoConf);
+        printServo(dumpMask, servoParamsCopy, servoParams(0));
 
         cliPrintHashLine("servo mix");
         // print custom servo mixer if exists
-        cliDumpPrintf(dumpMask, masterConfig.customServoMixer[0].rate == 0, "smix reset\r\n\r\n");
-        printServoMix(dumpMask, customServoMixers(0), defaultConfig.customServoMixer);
+        cliDumpPrintf(dumpMask, customServoMixers(0)->rate == 0, "smix reset\r\n\r\n");
+        printServoMix(dumpMask, customServoMixersCopy, customServoMixers(0));
 #endif
 #endif
 
         cliPrintHashLine("feature");
-        printFeature(dumpMask, featureConfig(), &defaultConfig.featureConfig);
+        printFeature(dumpMask, &featureConfigCopy, featureConfig());
 
 #ifdef BEEPER
         cliPrintHashLine("beeper");
-        printBeeper(dumpMask, beeperConfig(), &defaultConfig.beeperConfig);
+        printBeeper(dumpMask, &beeperConfigCopy, beeperConfig());
 #endif
 
         cliPrintHashLine("map");
-        printMap(dumpMask, rxConfig(), &defaultConfig.rxConfig);
+        printMap(dumpMask, &rxConfigCopy, rxConfig());
 
         cliPrintHashLine("serial");
-        printSerial(dumpMask, serialConfig(), &defaultConfig.serialConfig);
+        printSerial(dumpMask, &serialConfigCopy, serialConfig());
 
 #ifdef LED_STRIP
         cliPrintHashLine("led");
-        printLed(dumpMask, ledStripConfig()->ledConfigs, defaultConfig.ledStripConfig.ledConfigs);
+        printLed(dumpMask, ledStripConfigCopy.ledConfigs, ledStripConfig()->ledConfigs);
 
         cliPrintHashLine("color");
-        printColor(dumpMask, ledStripConfig()->colors, defaultConfig.ledStripConfig.colors);
+        printColor(dumpMask, ledStripConfigCopy.colors, ledStripConfig()->colors);
 
         cliPrintHashLine("mode_color");
-        printModeColor(dumpMask, ledStripConfig(), &defaultConfig.ledStripConfig);
+        printModeColor(dumpMask, &ledStripConfigCopy, ledStripConfig());
 #endif
 
         cliPrintHashLine("aux");
-        printAux(dumpMask, modeActivationConditions(0), defaultConfig.modeActivationProfile.modeActivationConditions);
+        printAux(dumpMask, modeActivationConditionsCopy, modeActivationConditions(0));
 
         cliPrintHashLine("adjrange");
-        printAdjustmentRange(dumpMask, adjustmentRanges(0), defaultConfig.adjustmentProfile.adjustmentRanges);
+        printAdjustmentRange(dumpMask, adjustmentRangesCopy, adjustmentRanges(0));
 
         cliPrintHashLine("rxrange");
-        printRxRange(dumpMask, rxConfig()->channelRanges, defaultConfig.rxConfig.channelRanges);
+        printRxRange(dumpMask, rxChannelRangeConfigsCopy, rxChannelRangeConfigs(0));
 
-#ifdef VTX
+#if defined(USE_RTC6705) || defined(VTX)
         cliPrintHashLine("vtx");
-        printVtx(dumpMask, vtxConfig(), &defaultConfig.vtxConfig);
+        printVtx(dumpMask, &vtxConfigCopy, vtxConfig());
 #endif
 
         cliPrintHashLine("rxfail");
-        printRxFailsafe(dumpMask, rxConfig()->failsafe_channel_configurations, defaultConfig.rxConfig.failsafe_channel_configurations);
+        printRxFailsafe(dumpMask, rxFailsafeChannelConfigsCopy, rxFailsafeChannelConfigs(0));
 
         cliPrintHashLine("master");
-        dumpValues(MASTER_VALUE, dumpMask, &defaultConfig);
+        dumpAllValues(MASTER_VALUE, dumpMask);
 
         if (dumpMask & DUMP_ALL) {
             const uint8_t pidProfileIndexSave = getCurrentPidProfileIndex();
             for (uint32_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
-                cliDumpPidProfile(pidProfileIndex, dumpMask, &defaultConfig);
+                cliDumpPidProfile(pidProfileIndex, dumpMask);
             }
             changePidProfile(pidProfileIndexSave);
             cliPrintHashLine("restore original profile selection");
@@ -4510,7 +4609,7 @@ static void printConfig(char *cmdline, bool doDiff)
 
             const uint8_t controlRateProfileIndexSave = getCurrentControlRateProfileIndex();
             for (uint32_t rateIndex = 0; rateIndex < CONTROL_RATE_PROFILE_COUNT; rateIndex++) {
-                cliDumpRateProfile(rateIndex, dumpMask, &defaultConfig);
+                cliDumpRateProfile(rateIndex, dumpMask);
             }
             changeControlRateProfile(controlRateProfileIndexSave);
             cliPrintHashLine("restore original rateprofile selection");
@@ -4519,20 +4618,19 @@ static void printConfig(char *cmdline, bool doDiff)
             cliPrintHashLine("save configuration");
             cliPrint("save");
         } else {
-            cliDumpPidProfile(getCurrentPidProfileIndex(), dumpMask, &defaultConfig);
+            cliDumpPidProfile(getCurrentPidProfileIndex(), dumpMask);
 
-            cliDumpRateProfile(getCurrentControlRateProfileIndex(), dumpMask, &defaultConfig);
+            cliDumpRateProfile(getCurrentControlRateProfileIndex(), dumpMask);
         }
     }
 
     if (dumpMask & DUMP_PROFILE) {
-        cliDumpPidProfile(getCurrentPidProfileIndex(), dumpMask, &defaultConfig);
+        cliDumpPidProfile(getCurrentPidProfileIndex(), dumpMask);
     }
 
     if (dumpMask & DUMP_RATES) {
-        cliDumpRateProfile(getCurrentControlRateProfileIndex(), dumpMask, &defaultConfig);
+        cliDumpRateProfile(getCurrentControlRateProfileIndex(), dumpMask);
     }
-#endif
 #ifdef USE_PARAMETER_GROUPS
     // restore configs from copies
     restoreConfigs();
