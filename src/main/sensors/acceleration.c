@@ -71,6 +71,7 @@ static uint16_t calibratingA = 0;      // the calibration is done is the main lo
 static biquadFilter_t accFilter[XYZ_AXIS_COUNT];
 
 #ifdef USE_ACC_NOTCH
+static filterApplyFnPtr accNotchFilterApplyFn;
 static void *accNotchFilter[XYZ_AXIS_COUNT];
 #endif
 
@@ -465,7 +466,7 @@ void accUpdate(void)
 #ifdef USE_ACC_NOTCH
     if (accelerometerConfig()->acc_notch_hz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            acc.accADC[axis] = lrintf(biquadFilterApply(accNotchFilter[axis], (float)acc.accADC[axis]));
+            acc.accADC[axis] = lrintf(accNotchFilterApplyFn(accNotchFilter[axis], (float)acc.accADC[axis]));
         }
     }
 #endif
@@ -500,8 +501,10 @@ void accInitFilters(void)
 
 #ifdef USE_ACC_NOTCH
     static biquadFilter_t accFilterNotch[XYZ_AXIS_COUNT];
+    accNotchFilterApplyFn = nullFilterApply;
 
     if (acc.accTargetLooptime && accelerometerConfig()->acc_notch_hz) {
+        accNotchFilterApplyFn = (filterApplyFnPtr)biquadFilterApply;
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             accNotchFilter[axis] = &accFilterNotch[axis];
             biquadFilterInitNotch(accNotchFilter[axis], acc.accTargetLooptime, accelerometerConfig()->acc_notch_hz, accelerometerConfig()->acc_notch_cutoff);
