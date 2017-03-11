@@ -124,6 +124,7 @@ struct rxConfig_s;
 
 uint8_t getMotorCount();
 float getMotorMixRange();
+bool mixerIsOutputSaturated(int axis, float errorRate);
 
 void mixerLoadMix(int index, motorMixer_t *customMixers);
 void mixerInit(mixerMode_e mixerMode);
