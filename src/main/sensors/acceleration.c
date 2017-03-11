@@ -83,7 +83,7 @@ void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
         .acc_hardware = ACC_AUTODETECT,
         .acc_lpf_hz = 15,
         .acc_notch_hz = 0,
-        .acc_notch_cutoff = 0
+        .acc_notch_cutoff = 1
     );
     RESET_CONFIG_2(flightDynamicsTrims_t, &instance->accZero,
         .raw[X] = 0,
