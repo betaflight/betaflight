@@ -63,9 +63,6 @@
         uint32_t arcitimer[TRANSPONDER_DMA_BUFFER_SIZE_ARCITIMER]; // 620
         uint32_t ilap[TRANSPONDER_DMA_BUFFER_SIZE]; // 720
     } transponderIrDMABuffer_t;
-
-#else
-    #error "Transponder not supported on this MCU."
 #endif
 
 typedef struct transponder_s {
@@ -74,7 +71,11 @@ typedef struct transponder_s {
     uint32_t timer_carrier_hz;
     uint16_t bitToggleOne;
     uint32_t dma_buffer_size;
-    transponderIrDMABuffer_t transponderIrDMABuffer;
+
+    #if defined(STM32F3) || defined(STM32F4)|| defined(UNIT_TEST)
+        transponderIrDMABuffer_t transponderIrDMABuffer;
+    #endif
+
     const struct transponderVTable *vTable;
 } transponder_t;
 

@@ -58,6 +58,7 @@
 #include "drivers/system.h"
 #include "drivers/timer.h"
 #include "drivers/vcd.h"
+#include "drivers/transponder_ir.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -750,7 +751,7 @@ void createDefaultConfig(master_t *config)
 #ifdef TRANSPONDER
     static const uint8_t defaultTransponderData[9] = {0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0x0, 0x0, 0x0 }; // Note, this is NOT a valid transponder code, it's just for testing production hardware
     memcpy(config->transponderConfig.data, &defaultTransponderData, sizeof(defaultTransponderData));
-    config->transponderConfig.provider = 0x01;
+    config->transponderConfig.provider = ILAP;
 #endif
 
 #ifndef USE_PARAMETER_GROUPS

@@ -21,6 +21,8 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/transponder_ir_ilap.h"
 
+#if defined(STM32F3) || defined(STM32F4) || defined(UNIT_TEST)
+
 static uint16_t dmaBufferOffset;
 extern const struct transponderVTable ilapTansponderVTable;
 
@@ -32,45 +34,48 @@ void transponderIrInitIlap(transponder_t* transponder){
     transponder->timer_hz           = TRANSPONDER_TIMER_MHZ;
     transponder->timer_carrier_hz   = TRANSPONDER_CARRIER_HZ;
     memset(&(transponder->transponderIrDMABuffer.ilap), 0, TRANSPONDER_DMA_BUFFER_SIZE);
+
 }
 
 void updateTransponderDMABufferIlap(transponder_t* transponder_instance, const uint8_t* transponderData)
 {
-    uint8_t byteIndex;
-    uint8_t bitIndex;
-    uint8_t toggleIndex;
-    for (byteIndex = 0; byteIndex < TRANSPONDER_DATA_LENGTH; byteIndex++) {
-        uint8_t byteToSend = *transponderData;
-        transponderData++;
-        for (bitIndex = 0; bitIndex < TRANSPONDER_BITS_PER_BYTE; bitIndex++)
-        {
-            bool doToggles = false;
-            if (bitIndex == 0) {
-                doToggles = true;
-            }
-            else if (bitIndex == TRANSPONDER_BITS_PER_BYTE - 1) {
-                doToggles = false;
-            }
-            else {
-                doToggles = byteToSend & (1 << (bitIndex - 1));
-            }
-            for (toggleIndex = 0; toggleIndex < TRANSPONDER_TOGGLES_PER_BIT; toggleIndex++)
+        uint8_t byteIndex;
+        uint8_t bitIndex;
+        uint8_t toggleIndex;
+        for (byteIndex = 0; byteIndex < TRANSPONDER_DATA_LENGTH; byteIndex++) {
+            uint8_t byteToSend = *transponderData;
+            transponderData++;
+            for (bitIndex = 0; bitIndex < TRANSPONDER_BITS_PER_BYTE; bitIndex++)
             {
-                if (doToggles) {
-                    transponder_instance->transponderIrDMABuffer.ilap[dmaBufferOffset] = transponder_instance->bitToggleOne;
+                bool doToggles = false;
+                if (bitIndex == 0) {
+                    doToggles = true;
+                }
+                else if (bitIndex == TRANSPONDER_BITS_PER_BYTE - 1) {
+                    doToggles = false;
                 }
                 else {
-                    transponder_instance->transponderIrDMABuffer.ilap[dmaBufferOffset] = 0;
+                    doToggles = byteToSend & (1 << (bitIndex - 1));
                 }
+                for (toggleIndex = 0; toggleIndex < TRANSPONDER_TOGGLES_PER_BIT; toggleIndex++)
+                {
+                    if (doToggles) {
+                        transponder_instance->transponderIrDMABuffer.ilap[dmaBufferOffset] = transponder_instance->bitToggleOne;
+                    }
+                    else {
+                        transponder_instance->transponderIrDMABuffer.ilap[dmaBufferOffset] = 0;
+                    }
+                    dmaBufferOffset++;
+                }
+                transponder_instance->transponderIrDMABuffer.ilap[dmaBufferOffset] = 0;
                 dmaBufferOffset++;
             }
-            transponder_instance->transponderIrDMABuffer.ilap[dmaBufferOffset] = 0;
-            dmaBufferOffset++;
         }
-    }
-    dmaBufferOffset = 0;
+        dmaBufferOffset = 0;
 }
 
 const struct transponderVTable ilapTansponderVTable = {
      updateTransponderDMABufferIlap,
 };
+
+#endif
