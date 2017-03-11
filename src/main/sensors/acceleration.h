@@ -52,6 +52,8 @@ typedef struct accelerometerConfig_s {
     uint16_t acc_lpf_hz;                    // cutoff frequency for the low pass filter used on the acc z-axis for althold in Hz
     flightDynamicsTrims_t accZero;          // Accelerometer offset
     flightDynamicsTrims_t accGain;          // Accelerometer gain to read exactly 1G
+    uint8_t acc_notch_hz;                   // Accelerometer notch filter frequency
+    uint8_t acc_notch_cutoff;               // Accelerometer notch filter cutoff frequency
 } accelerometerConfig_t;
 
 PG_DECLARE(accelerometerConfig_t, accelerometerConfig);

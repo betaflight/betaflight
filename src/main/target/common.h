@@ -59,6 +59,7 @@
 #define USE_GYRO_NOTCH_1
 #define USE_GYRO_NOTCH_2
 #define USE_DTERM_NOTCH
+#define USE_ACC_NOTCH
 #define CMS
 #define USE_DASHBOARD
 #define USE_MSP_DISPLAYPORT

@@ -70,7 +70,9 @@ static uint16_t calibratingA = 0;      // the calibration is done is the main lo
 
 static biquadFilter_t accFilter[XYZ_AXIS_COUNT];
 
+#ifdef USE_ACC_NOTCH
 static void *accNotchFilter[XYZ_AXIS_COUNT];
+#endif
 
 PG_REGISTER_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
 
@@ -79,7 +81,9 @@ void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
     RESET_CONFIG_2(accelerometerConfig_t, instance,
         .acc_align = ALIGN_DEFAULT,
         .acc_hardware = ACC_AUTODETECT,
-        .acc_lpf_hz = 15
+        .acc_lpf_hz = 15,
+        .acc_notch_hz = 0,
+        .acc_notch_cutoff = 0
     );
     RESET_CONFIG_2(flightDynamicsTrims_t, &instance->accZero,
         .raw[X] = 0,
@@ -444,7 +448,6 @@ static void applyAccelerationZero(const flightDynamicsTrims_t * accZero, const f
 
 void accUpdate(void)
 {
-    float temp;
     if (!acc.dev.read(&acc.dev)) {
         return;
     }
@@ -455,10 +458,17 @@ void accUpdate(void)
 
     if (accelerometerConfig()->acc_lpf_hz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            temp = biquadFilterApply(&accFilter[axis], (float)acc.accADC[axis]);
-            acc.accADC[axis] = lrintf(biquadFilterApply(accNotchFilter[axis], temp));
+            acc.accADC[axis] = lrintf(biquadFilterApply(&accFilter[axis], (float)acc.accADC[axis]));
         }
     }
+
+#ifdef USE_ACC_NOTCH
+    if (accelerometerConfig()->acc_notch_hz) {
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            acc.accADC[axis] = lrintf(biquadFilterApply(accNotchFilter[axis], (float)acc.accADC[axis]));
+        }
+    }
+#endif
 
     if (!accIsCalibrationComplete()) {
         performAcclerationCalibration();
@@ -482,16 +492,23 @@ void accSetCalibrationValues(void)
 
 void accInitFilters(void)
 {
-    static biquadFilter_t accFilterNotch[XYZ_AXIS_COUNT];
-
     if (acc.accTargetLooptime && accelerometerConfig()->acc_lpf_hz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             biquadFilterInitLPF(&accFilter[axis], accelerometerConfig()->acc_lpf_hz, acc.accTargetLooptime);
-
-            accNotchFilter[axis] = &accFilterNotch[axis];
-            biquadFilterInitNotch(accNotchFilter[axis], acc.accTargetLooptime, 75, 30);
         }    
     }
+
+#ifdef USE_ACC_NOTCH
+    static biquadFilter_t accFilterNotch[XYZ_AXIS_COUNT];
+
+    if (acc.accTargetLooptime && accelerometerConfig()->acc_notch_hz) {
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            accNotchFilter[axis] = &accFilterNotch[axis];
+            biquadFilterInitNotch(accNotchFilter[axis], acc.accTargetLooptime, accelerometerConfig()->acc_notch_hz, accelerometerConfig()->acc_notch_cutoff);
+        }
+    }
+#endif
+
 }
 
 bool accIsHealthy(void)
