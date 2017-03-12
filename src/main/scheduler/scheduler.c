@@ -205,7 +205,7 @@ void scheduler(void)
     const timeUs_t currentTimeUs = micros();
 
     // Check for realtime tasks
-	bool outsideRealtimeGuardInterval = 1;
+	bool outsideRealtimeGuardInterval = true;
 	
 	//task
 	cfTask_t *task;
@@ -218,7 +218,7 @@ void scheduler(void)
 			break;
 		}
 		if ((timeDelta_t)(currentTimeUs - task->lastExecutedAt) >= task->desiredPeriod) {
-			outsideRealtimeGuardInterval = 0;
+			outsideRealtimeGuardInterval = false;
 			break;
 		}
 	}
