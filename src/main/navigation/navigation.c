@@ -1169,7 +1169,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
 
         if (navConfig()->general.flags.rth_allow_landing) {
             // A safeguard - if sonar is available and it is reading < 50cm altitude - drop to low descend speed
-            if (posControl.flags.hasValidSurfaceSensor && posControl.actualState.surface >= 0 && posControl.actualState.surface < 50.0f) {
+            if (posControl.flags.hasValidSurfaceSensor && posControl.actualState.surface < 50.0f) {
                 // land_descent_rate == 200 : descend speed = 30 cm/s, gentle touchdown
                 // Do not allow descent velocity slower than -30cm/s so the landing detector works.
                 float descentVelLimited = MIN(-0.15f * navConfig()->general.land_descent_rate, -30.0f);
@@ -1679,27 +1679,30 @@ void updateActualSurfaceDistance(bool hasValidSensor, float surfaceDistance, flo
     posControl.actualState.surface = surfaceDistance;
     posControl.actualState.surfaceVel = surfaceVelocity;
 
+    // Update validity
+    // Update validity
+    if (hasValidSensor) {
+        posControl.flags.hasValidSurfaceSensor = true;
+        posControl.flags.surfaceDistanceDataNew = 1;
+    }
+    else {
+        posControl.flags.hasValidSurfaceSensor = false;
+        posControl.flags.surfaceDistanceDataNew = 0;
+    }
+
+    // Update minimum surface distance (landing detection threshold)
     if (ARMING_FLAG(ARMED)) {
-        if (surfaceDistance > 0) {
+        if (hasValidSensor && posControl.actualState.surface > 0) {
             if (posControl.actualState.surfaceMin > 0) {
-                posControl.actualState.surfaceMin = MIN(posControl.actualState.surfaceMin, surfaceDistance);
+                posControl.actualState.surfaceMin = MIN(posControl.actualState.surfaceMin, posControl.actualState.surface);
             }
             else {
-                posControl.actualState.surfaceMin = surfaceDistance;
+                posControl.actualState.surfaceMin = posControl.actualState.surface;
             }
         }
     }
     else {
         posControl.actualState.surfaceMin = -1;
-    }
-
-    posControl.flags.hasValidSurfaceSensor = hasValidSensor;
-
-    if (hasValidSensor) {
-        posControl.flags.surfaceDistanceDataNew = 1;
-    }
-    else {
-        posControl.flags.surfaceDistanceDataNew = 0;
     }
 
 #if defined(NAV_BLACKBOX)
@@ -2049,7 +2052,7 @@ void updateAltitudeTargetFromClimbRate(float climbRate, navUpdateAltitudeFromRat
     }
     else {
         if (posControl.flags.isTerrainFollowEnabled) {
-            if (posControl.actualState.surface >= 0.0f && posControl.flags.hasValidSurfaceSensor && (mode == CLIMB_RATE_UPDATE_SURFACE_TARGET)) {
+            if (posControl.flags.hasValidSurfaceSensor && (mode == CLIMB_RATE_UPDATE_SURFACE_TARGET)) {
                 posControl.desiredState.surface = constrainf(posControl.actualState.surface + (climbRate / (posControl.pids.pos[Z].param.kP * posControl.pids.surface.param.kP)), 1.0f, INAV_SURFACE_MAX_DISTANCE);
             }
         }
@@ -2728,7 +2731,7 @@ void navigationUsePIDs(void)
 
     // Initialize surface tracking PID
     navPidInit(&posControl.pids.surface, 2.0f,
-                                         1.0f,
+                                         0.0f,
                                          0.0f);
 
     /** Airplane PIDs */

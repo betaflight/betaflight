@@ -48,6 +48,7 @@ typedef enum {
     BOOT_EVENT_TIMER_CH_SKIPPED         = 18,   // 1 - MAX_MOTORS exceeded, 2 - MAX_SERVOS exceeded, 3 - feature clash
     BOOT_EVENT_TIMER_CH_MAPPED          = 19,   // 0 - PPM, 1 - PWM, 2 - MOTOR, 3 - SERVO
     BOOT_EVENT_PITOT_DETECTION          = 20,
+    BOOT_EVENT_HARDWARE_IO_CONFLICT     = 21,   // Hardware IO resource conflict, parameters: #1 - current owner, #2 - requested owner
 
     BOOT_EVENT_CODE_COUNT
 } bootLogEventCode_e;

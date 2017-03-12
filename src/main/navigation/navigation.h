@@ -72,6 +72,8 @@ typedef struct positionEstimationConfig_s {
     uint8_t use_gps_velned;
     uint16_t gps_delay_ms;
 
+    uint16_t max_sonar_altitude;
+
     float w_z_baro_p;   // Weight (cutoff frequency) for barometer altitude measurements
 
     float w_z_sonar_p;  // Weight (cutoff frequency) for sonar altitude measurements
@@ -244,10 +246,12 @@ typedef struct {
 void navigationUsePIDs(void);
 void navigationInit(void);
 
-/* Navigation system updates */
-void updateWaypointsAndNavigationMode(void);
+/* Position estimator update functions */
 void updatePositionEstimator_BaroTopic(timeUs_t currentTimeUs);
 void updatePositionEstimator_SonarTopic(timeUs_t currentTimeUs);
+
+/* Navigation system updates */
+void updateWaypointsAndNavigationMode(void);
 void updatePositionEstimator(void);
 void applyWaypointNavigationAndAltitudeHold(void);
 
