@@ -41,6 +41,7 @@ enum {
     INPUT_RC_AUX4,
     INPUT_GIMBAL_PITCH,
     INPUT_GIMBAL_ROLL,
+    INPUT_FEATURE_FLAPS,
 
     INPUT_SOURCE_COUNT
 } inputSource_e;
@@ -79,7 +80,7 @@ typedef enum {
 #define SERVO_FLAPPERONS_MIN SERVO_FLAPPERON_1
 #define SERVO_FLAPPERONS_MAX SERVO_FLAPPERON_2
 
-#define FLAPERON_THROW_DEFAULT 250
+#define FLAPERON_THROW_DEFAULT 200
 #define FLAPERON_THROW_MIN 100
 #define FLAPERON_THROW_MAX 400
 
@@ -117,7 +118,7 @@ typedef struct servoConfig_s {
     uint16_t servoPwmRate;                  // The update rate of servo outputs (50-498Hz)
     int16_t servo_lowpass_freq;             // lowpass servo filter frequency selection; 1/1000ths of loop freq
     uint16_t flaperon_throw_offset;
-    uint8_t flaperon_throw_inverted;
+    uint8_t __reserved;
     uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
 } servoConfig_t;
 
