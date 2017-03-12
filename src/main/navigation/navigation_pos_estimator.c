@@ -113,17 +113,19 @@ typedef struct {
 typedef struct {
     timeUs_t    lastUpdateTime; // Last update time (us)
     float       alt;            // Raw altitude measurement (cm)
-    float       vel;
 } navPositionEstimatorSONAR_t;
 
 typedef struct {
     timeUs_t    lastUpdateTime; // Last update time (us)
+    /* 3D position, velocity and confidence */
     t_fp_vector pos;
     t_fp_vector vel;
-    float       surface;
-    float       surfaceVel;
     float       eph;
     float       epv;
+    /* Surface offset */
+    float       surface;
+    float       surfaceVel;
+    bool        surfaceValid;
 } navPositionEstimatorESTIMATE_t;
 
 typedef struct {
@@ -179,8 +181,8 @@ PG_RESET_TEMPLATE(positionEstimationConfig_t, positionEstimationConfig,
 
         .w_z_baro_p = 0.35f,
 
-        .w_z_sonar_p = 3.000f,
-        .w_z_sonar_v = 4.700f,
+        .w_z_sonar_p = 3.500f,
+        .w_z_sonar_v = 6.100f,
 
         .w_z_gps_p = 0.2f,
         .w_z_gps_v = 0.5f,
@@ -482,23 +484,8 @@ void updatePositionEstimator_SonarTopic(timeUs_t currentTimeUs)
 
     /* Apply predictive filter to sonar readings */
     if (newSonarAlt > 0 && newSonarAlt <= positionEstimationConfig()->max_sonar_altitude) {
-        float sonarDt = (currentTimeUs - posEstimator.sonar.lastUpdateTime) * 1e-6;
+        posEstimator.sonar.alt = newSonarAlt;
         posEstimator.sonar.lastUpdateTime = currentTimeUs;
-
-        if (sonarDt > 0.25f) {
-            posEstimator.sonar.vel = 0.0f;
-            posEstimator.sonar.alt = newSonarAlt;
-        }
-        else {
-            /* Predictive stage */
-            posEstimator.sonar.alt = posEstimator.sonar.alt + posEstimator.sonar.vel * sonarDt;
-
-            const float sonarResidual = newSonarAlt - posEstimator.sonar.alt;
-            const float bellCurveScaler = scaleRangef(bellCurve(sonarResidual, 50.0f), 0.0f, 1.0f, 0.1f, 1.0f);
-
-            posEstimator.sonar.alt += sonarResidual * positionEstimationConfig()->w_z_sonar_p * bellCurveScaler * sonarDt;
-            posEstimator.sonar.vel += sonarResidual * positionEstimationConfig()->w_z_sonar_v * sq(bellCurveScaler) * sonarDt;
-        }
     }
 }
 #endif
@@ -806,17 +793,26 @@ static void updateEstimatedTopic(timeUs_t currentTimeUs)
 
     /* Surface offset */
 #if defined(SONAR)
+    posEstimator.est.surface = posEstimator.est.surface + posEstimator.est.surfaceVel * dt;
+
     if (isSonarValid) {
-        posEstimator.est.surface = posEstimator.sonar.alt;
-        posEstimator.est.surfaceVel = posEstimator.sonar.vel;
+        const float sonarResidual = posEstimator.sonar.alt - posEstimator.est.surface;
+        const float bellCurveScaler = scaleRangef(bellCurve(sonarResidual, 50.0f), 0.0f, 1.0f, 0.1f, 1.0f);
+
+        posEstimator.est.surface += sonarResidual * positionEstimationConfig()->w_z_sonar_p * bellCurveScaler * dt;
+        posEstimator.est.surfaceVel += sonarResidual * positionEstimationConfig()->w_z_sonar_v * sq(bellCurveScaler) * dt;
     }
     else {
-        posEstimator.est.surface = -1;
-        posEstimator.est.surfaceVel = 0;
+        posEstimator.est.surfaceVel = 0; // Zero out velocity to prevent estimate to drift away
+        posEstimator.est.surfaceValid = true;
     }
+
+    debug[0] = posEstimator.est.surface;
+    debug[1] = posEstimator.est.surfaceVel;
 #else
     posEstimator.est.surface = -1;
     posEstimator.est.surfaceVel = 0;
+    posEstimator.est.surfaceValid = false;
 #endif
 
     /* Update uncertainty */
@@ -854,12 +850,7 @@ static void publishEstimatedTopic(timeUs_t currentTimeUs)
         }
 
         /* Publish surface distance */
-        if (posEstimator.est.surface > 0) {
-            updateActualSurfaceDistance(true, posEstimator.est.surface, posEstimator.est.surfaceVel);
-        }
-        else {
-            updateActualSurfaceDistance(false, -1, 0);
-        }
+        updateActualSurfaceDistance(posEstimator.est.surfaceValid, posEstimator.est.surface, posEstimator.est.surfaceVel);
 
         /* Store history data */
         posEstimator.history.pos[posEstimator.history.index] = posEstimator.est.pos;
