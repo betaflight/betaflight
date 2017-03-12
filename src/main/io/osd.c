@@ -192,12 +192,13 @@ static void osdDrawSingleElement(uint8_t item)
         case OSD_MAIN_BATT_VOLTAGE:
         {
             buff[0] = SYM_BATT_5;
-            sprintf(buff + 1, "%d.%1dV", getVbat() / 10, getVbat() % 10);
+            sprintf(buff + 1, "%d.%1dV", getBatteryVoltage() / 10, getBatteryVoltage() % 10);
             break;
         }
 
         case OSD_CURRENT_DRAW:
         {
+            int32_t amperage = getAmperage();
             buff[0] = SYM_AMP;
             sprintf(buff + 1, "%d.%02d", abs(amperage) / 100, abs(amperage) % 100);
             break;
@@ -206,7 +207,7 @@ static void osdDrawSingleElement(uint8_t item)
         case OSD_MAH_DRAWN:
         {
             buff[0] = SYM_MAH;
-            sprintf(buff + 1, "%d", mAhDrawn);
+            sprintf(buff + 1, "%d", getMAhDrawn());
             break;
         }
 
@@ -401,7 +402,7 @@ static void osdDrawSingleElement(uint8_t item)
 
         case OSD_POWER:
         {
-            sprintf(buff, "%dW", amperage * getVbat() / 1000);
+            sprintf(buff, "%dW", getAmperage() * getBatteryVoltage() / 1000);
             break;
         }
 
@@ -415,16 +416,24 @@ static void osdDrawSingleElement(uint8_t item)
 
         case OSD_MAIN_BATT_WARNING:
         {
-            if (getVbat() > (batteryWarningVoltage - 1))
-              return;
+            switch(getBatteryState()) {
+                case BATTERY_WARNING:
+                    sprintf(buff, "LOW BATTERY");
+                    break;
 
-            sprintf(buff, "LOW VOLTAGE");
+                case BATTERY_CRITICAL:
+                    sprintf(buff, " LAND NOW");
+                    break;
+
+                default:
+                    break;
+            }
             break;
         }
 
 	case OSD_AVG_CELL_VOLTAGE:
         {
-            uint16_t cellV = getVbat() * 10 / batteryCellCount;
+            uint16_t cellV = getBatteryVoltage() * 10 / getBatteryCellCount();
             buff[0] = SYM_BATT_5;
             sprintf(buff + 1, "%d.%dV", cellV / 100, cellV % 100);
             break;
@@ -582,7 +591,7 @@ void osdUpdateAlarms(void)
     else
         CLR_BLINK(OSD_RSSI_VALUE);
 
-    if (getVbat() <= (batteryWarningVoltage - 1)) {
+    if (getBatteryState() != BATTERY_OK) {
         SET_BLINK(OSD_MAIN_BATT_VOLTAGE);
         SET_BLINK(OSD_MAIN_BATT_WARNING);
         SET_BLINK(OSD_AVG_CELL_VOLTAGE);
@@ -602,7 +611,7 @@ void osdUpdateAlarms(void)
     else
         CLR_BLINK(OSD_FLYTIME);
 
-    if (mAhDrawn >= osdConfig()->cap_alarm)
+    if (getMAhDrawn() >= osdConfig()->cap_alarm)
         SET_BLINK(OSD_MAH_DRAWN);
     else
         CLR_BLINK(OSD_MAH_DRAWN);
@@ -644,10 +653,10 @@ static void osdUpdateStats(void)
     if (stats.max_speed < value)
         stats.max_speed = value;
 
-    if (stats.min_voltage > getVbat())
-        stats.min_voltage = getVbat();
+    if (stats.min_voltage > getBatteryVoltage())
+        stats.min_voltage = getBatteryVoltage();
 
-    value = amperage / 100;
+    value = getAmperage() / 100;
     if (stats.max_current < value)
         stats.max_current = value;
 
@@ -722,14 +731,14 @@ static void osdShowStats(void)
     strcat(buff, "%");
     displayWrite(osdDisplayPort, 22, top++, buff);
 
-    if (feature(FEATURE_CURRENT_METER)) {
+    if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
         displayWrite(osdDisplayPort, 2, top, "MAX CURRENT      :");
         itoa(stats.max_current, buff, 10);
         strcat(buff, "A");
         displayWrite(osdDisplayPort, 22, top++, buff);
 
         displayWrite(osdDisplayPort, 2, top, "USED MAH         :");
-        itoa(mAhDrawn, buff, 10);
+        itoa(getMAhDrawn(), buff, 10);
         strcat(buff, "\x07");
         displayWrite(osdDisplayPort, 22, top++, buff);
     }

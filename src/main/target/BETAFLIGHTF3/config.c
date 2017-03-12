@@ -25,8 +25,9 @@
 #include "fc/config.h"
 #include "sensors/battery.h"
 
+#define CURRENTSCALE 220
 void targetConfiguration(void)
 {
-    batteryConfigMutable()->currentMeterScale = 220;
+    currentMeterADCOrVirtualConfigMutable(CURRENT_SENSOR_ADC)->scale = CURRENTSCALE;
 }
 #endif

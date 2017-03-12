@@ -55,8 +55,8 @@
 // alternative defaults settings for AlienFlight targets
 void targetConfiguration(void)
 {
-    batteryConfigMutable()->currentMeterOffset = CURRENTOFFSET;
-    batteryConfigMutable()->currentMeterScale = CURRENTSCALE;
+    currentMeterADCOrVirtualConfigMutable(CURRENT_SENSOR_ADC)->offset = CURRENTOFFSET;
+    currentMeterADCOrVirtualConfigMutable(CURRENT_SENSOR_ADC)->scale = CURRENTSCALE;
     compassConfigMutable()->mag_hardware = MAG_NONE;            // disabled by default
 
     if (hardwareMotorType == MOTOR_BRUSHED) {
@@ -73,7 +73,9 @@ void targetConfiguration(void)
         rxConfigMutable()->sbus_inversion = 0;
         serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(TELEMETRY_UART)].functionMask = FUNCTION_TELEMETRY_FRSKY;
         telemetryConfigMutable()->telemetry_inversion = 0;
-        featureSet(FEATURE_CURRENT_METER | FEATURE_VBAT | FEATURE_TELEMETRY);
+        batteryConfigMutable()->voltageMeterSource = VOLTAGE_METER_ADC;
+        batteryConfigMutable()->currentMeterSource = CURRENT_METER_ADC;
+        featureSet(FEATURE_TELEMETRY);
     }
 
     pidProfilesMutable(0)->P8[FD_ROLL] = 53;
