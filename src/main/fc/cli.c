@@ -2725,6 +2725,7 @@ static void cliBeeper(char *cmdline)
     uint8_t beeperCount = beeperTableEntryCount();
     uint32_t mask = getBeeperOffMask();
 
+    cliPrintf("offmask: %d", mask);
     if (len == 0) {
         cliPrintf("Disabled:");
         for (int32_t i = 0; ; i++) {

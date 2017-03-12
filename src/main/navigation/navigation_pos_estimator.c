@@ -805,8 +805,6 @@ static void updateEstimatedTopic(timeUs_t currentTimeUs)
         posEstimator.est.surfaceValid = true;
     }
 
-    debug[0] = posEstimator.est.surface;
-    debug[1] = posEstimator.est.surfaceVel;
 #else
     posEstimator.est.surface = -1;
     posEstimator.est.surfaceVel = 0;
