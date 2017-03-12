@@ -24,6 +24,7 @@ typedef enum {
     BEEPER_SILENCE = 0,             // Silence, see beeperSilence()
 
     BEEPER_GYRO_CALIBRATED,
+    BEEPER_HARDWARE_FAILURE,        // HW failure
     BEEPER_RX_LOST,                 // Beeps when TX is turned off or signal lost (repeat until TX is okay)
     BEEPER_RX_LOST_LANDING,         // Beeps SOS when armed and TX is turned off or signal lost (autolanding/autodisarm)
     BEEPER_DISARMING,               // Beep when disarming the board
@@ -33,16 +34,15 @@ typedef enum {
     BEEPER_BAT_LOW,                 // Warning beeps when battery is getting low (repeats)
     BEEPER_GPS_STATUS,              // FIXME **** Disable beeper when connected to USB ****
     BEEPER_RX_SET,                  // Beeps when aux channel is set for beep or beep sequence how many satellites has found if GPS enabled
-    BEEPER_DISARM_REPEAT,           // Beeps sounded while stick held in disarm position
     BEEPER_ACTION_SUCCESS,          // Action success (various actions)
     BEEPER_ACTION_FAIL,             // Action fail (varions actions)
     BEEPER_READY_BEEP,              // Ring a tone when GPS is locked and ready
     BEEPER_MULTI_BEEPS,             // Internal value used by 'beeperConfirmationBeeps()'.
+    BEEPER_DISARM_REPEAT,           // Beeps sounded while stick held in disarm position
     BEEPER_ARMED,                   // Warning beeps when board is armed (repeats until board is disarmed or throttle is increased)
     BEEPER_SYSTEM_INIT,             // Initialisation beeps when board is powered on
     BEEPER_USB,                     // Some boards have beeper powered USB connected
     BEEPER_LAUNCH_MODE_ENABLED,     // Fixed-wing launch mode enabled
-    BEEPER_HARDWARE_FAILURE,        // HW failure
 
     BEEPER_ALL,                     // Turn ON or OFF all beeper conditions
     BEEPER_PREFERENCE,              // Save preferred beeper configuration
