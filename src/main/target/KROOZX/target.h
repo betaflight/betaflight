@@ -86,6 +86,7 @@
 #define OSD_CH_SWITCH           PC5
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
+#define BOARD_HAS_CURRENT_SENSOR
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
 #define VBAT_ADC_PIN            PC3
@@ -144,7 +145,7 @@
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define RX_CHANNELS_TAER
-#define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_CURRENT_METER | FEATURE_OSD)
+#define DEFAULT_FEATURES        (FEATURE_OSD)
 
 #define LED_STRIP
 

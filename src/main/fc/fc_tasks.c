@@ -26,6 +26,7 @@
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/utils.h"
+#include "common/filter.h"
 
 #include "config/feature.h"
 #include "config/config_profile.h"
@@ -114,27 +115,42 @@ static void taskHandleSerial(timeUs_t currentTimeUs)
     mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA, mspFcProcessCommand);
 }
 
-static void taskUpdateBattery(timeUs_t currentTimeUs)
+
+void taskBatterySensors(timeUs_t currentTimeUs)
 {
-#if defined(USE_ADC) || defined(USE_ESC_SENSOR)
-    if (feature(FEATURE_VBAT) || feature(FEATURE_ESC_SENSOR)) {
-        static uint32_t vbatLastServiced = 0;
+    static uint32_t vbatLastServiced = 0;
+
+    if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE) {
         if (cmp32(currentTimeUs, vbatLastServiced) >= VBATINTERVAL) {
             vbatLastServiced = currentTimeUs;
-            updateBattery();
+
+            batteryUpdateVoltage();
         }
     }
-#endif
 
-    if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_SENSOR)) {
+    if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
+
         static uint32_t ibatLastServiced = 0;
         const int32_t ibatTimeSinceLastServiced = cmp32(currentTimeUs, ibatLastServiced);
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
             ibatLastServiced = currentTimeUs;
-            updateCurrentMeter(ibatTimeSinceLastServiced);
+            batteryUpdateCurrentMeter(ibatTimeSinceLastServiced, ARMING_FLAG(ARMED));
         }
     }
+}
+
+void taskBatteryAlerts(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+    if (!ARMING_FLAG(ARMED)) {
+        // the battery *might* fall out in flight, but if that happens the FC will likely be off too unless the user has battery backup.
+        batteryUpdatePresence();
+    }
+    batteryUpdateStates();
+
+    batteryUpdateAlarms();
 }
 
 static void taskUpdateRxMain(timeUs_t currentTimeUs)
@@ -237,7 +253,13 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_ATTITUDE, sensors(SENSOR_ACC));
     setTaskEnabled(TASK_SERIAL, true);
     rescheduleTask(TASK_SERIAL, TASK_PERIOD_HZ(serialConfig()->serial_update_rate_hz));
-    setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER));
+
+    bool useBatterySensors = batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE || batteryConfig()->currentMeterSource != CURRENT_METER_NONE;
+    setTaskEnabled(TASK_BATTERY_SENSORS, useBatterySensors);
+
+    bool useBatteryAlerts = batteryConfig()->useVBatAlerts || batteryConfig()->useConsumptionAlerts || feature(FEATURE_OSD);
+    setTaskEnabled(TASK_BATTERY_ALERTS, useBatterySensors && useBatteryAlerts);
+
     setTaskEnabled(TASK_RX, true);
 
     setTaskEnabled(TASK_DISPATCH, dispatchIsEnabled());
@@ -366,13 +388,19 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_HIGH,
     },
 
-    [TASK_BATTERY] = {
-        .taskName = "BATTERY",
-        .taskFunc = taskUpdateBattery,
-        .desiredPeriod = TASK_PERIOD_HZ(50),        // 50 Hz
+    [TASK_BATTERY_ALERTS] = {
+        .taskName = "BATTERY_ALERTS",
+        .taskFunc = taskBatteryAlerts,
+        .desiredPeriod = TASK_PERIOD_HZ(5),        // 5 Hz
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
+    [TASK_BATTERY_SENSORS] = {
+        .taskName = "BATTERY_SENSORS",
+        .taskFunc = taskBatterySensors,
+        .desiredPeriod = TASK_PERIOD_HZ(50),        // 50 Hz
+        .staticPriority = TASK_PRIORITY_MEDIUM,
+    },
 #ifdef BEEPER
     [TASK_BEEPER] = {
         .taskName = "BEEPER",

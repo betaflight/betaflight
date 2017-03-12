@@ -78,7 +78,7 @@
 #define BST_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   12 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MINOR                   13 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -120,6 +120,9 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 //
 // MSP commands for Cleanflight original features
 //
+#define BST_BATTERY_CONFIG              32
+#define BST_SET_BATTERY_CONFIG          33
+
 #define BST_MODE_RANGES                 34    //out message         Returns all mode ranges
 #define BST_SET_MODE_RANGE              35    //in message          Sets a single mode range
 
@@ -674,13 +677,14 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 #endif
             break;
         case BST_ANALOG:
-            bstWrite8((uint8_t)constrain(getVbat(), 0, 255));
-            bstWrite16((uint16_t)constrain(mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
+            bstWrite8((uint8_t)constrain(getBatteryVoltage(), 0, 255));
+            bstWrite16((uint16_t)constrain(getMAhDrawn(), 0, 0xFFFF)); // milliamp hours drawn from battery
             bstWrite16(rssi);
+            // FIXME - what does the TBS OSD actually need? the 'multiwiiCurrentMeterOutput' setting pre-dates the TBS i2c_bst code so likely we can just output exactly what we need.
             if(batteryConfig()->multiwiiCurrentMeterOutput) {
-                bstWrite16((uint16_t)constrain(amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
+                bstWrite16((uint16_t)constrain(getAmperage() * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
             } else
-                bstWrite16((int16_t)constrain(amperage, -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
+                bstWrite16((int16_t)constrain(getAmperage(), -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
             break;
         case BST_ARMING_CONFIG:
             bstWrite8(armingConfig()->auto_disarm_delay);
@@ -773,7 +777,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 
             bstWrite16(compassConfig()->mag_declination / 10);
 
-            bstWrite8(batteryConfig()->vbatscale);
+            bstWrite8(voltageSensorADCConfig(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale);
             bstWrite8(batteryConfig()->vbatmincellvoltage);
             bstWrite8(batteryConfig()->vbatmaxcellvoltage);
             bstWrite8(batteryConfig()->vbatwarningcellvoltage);
@@ -855,18 +859,40 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite16(boardAlignment()->yawDegrees);
             break;
 
+
         case BST_VOLTAGE_METER_CONFIG:
-            bstWrite8(batteryConfig()->vbatscale);
-            bstWrite8(batteryConfig()->vbatmincellvoltage);
-            bstWrite8(batteryConfig()->vbatmaxcellvoltage);
-            bstWrite8(batteryConfig()->vbatwarningcellvoltage);
+            BUILD_BUG_ON(VOLTAGE_SENSOR_ADC_VBAT != 0);
+            for (int i = VOLTAGE_SENSOR_ADC_VBAT; i < MAX_VOLTAGE_SENSOR_ADC; i++) {
+                // note, by indicating a sensor type and a sub-frame length it's possible to configure any type of voltage meter, i.e. all sensors not built directly into the FC such as ESC/RX/SPort/SBus
+                bstWrite8(VOLTAGE_METER_ADC); // indicate the type of sensor that the next part of the payload is for
+                bstWrite8(3); // ADC sensor sub-frame length
+                bstWrite8(voltageSensorADCConfig(i)->vbatscale);
+                bstWrite8(voltageSensorADCConfig(i)->vbatresdivval);
+                bstWrite8(voltageSensorADCConfig(i)->vbatresdivmultiplier);
+            }
+            // if we had any other voltage sensors, this is where we would output any needed configuration
             break;
 
         case BST_CURRENT_METER_CONFIG:
-            bstWrite16(batteryConfig()->currentMeterScale);
-            bstWrite16(batteryConfig()->currentMeterOffset);
-            bstWrite8(batteryConfig()->currentMeterType);
+            BUILD_BUG_ON(CURRENT_SENSOR_VIRTUAL != 0);
+            BUILD_BUG_ON(CURRENT_SENSOR_ADC != 1);
+
+            for (int i = CURRENT_SENSOR_VIRTUAL; i < MAX_ADC_OR_VIRTUAL_CURRENT_METERS; i++) {
+                bstWrite8(i); // indicate the type of sensor that the next part of the payload is for
+                bstWrite8(4); // ADC or Virtual sensor sub-frame length
+                bstWrite16(currentMeterADCOrVirtualConfig(i)->scale);
+                bstWrite16(currentMeterADCOrVirtualConfig(i)->offset);
+            }
+            // if we had any other voltage sensors, this is where we would output any needed configuration
+            break;
+
+        case BST_BATTERY_CONFIG:
+            bstWrite8(batteryConfig()->vbatmincellvoltage);
+            bstWrite8(batteryConfig()->vbatmaxcellvoltage);
+            bstWrite8(batteryConfig()->vbatwarningcellvoltage);
             bstWrite16(batteryConfig()->batteryCapacity);
+            bstWrite8(batteryConfig()->voltageMeterSource);
+            bstWrite8(batteryConfig()->currentMeterSource);
             break;
 
         case BST_MIXER:
@@ -916,8 +942,8 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite16(boardAlignment()->pitchDegrees);
             bstWrite16(boardAlignment()->yawDegrees);
 
-            bstWrite16(batteryConfig()->currentMeterScale);
-            bstWrite16(batteryConfig()->currentMeterOffset);
+            bstWrite16(0); // was batteryConfig()->currentMeterScale);
+            bstWrite16(0); // was batteryConfig()->currentMeterOffset);
             break;
 
         case BST_CF_SERIAL_CONFIG:
@@ -1134,7 +1160,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 
             compassConfigMutable()->mag_declination = bstRead16() * 10;
 
-            batteryConfigMutable()->vbatscale = bstRead8();           // actual vbatscale as intended
+            bstRead8(); // was batteryConfigMutable()->vbatscale       // actual vbatscale as intended
             batteryConfigMutable()->vbatmincellvoltage = bstRead8();  // vbatlevel_warn1 in MWC2.3 GUI
             batteryConfigMutable()->vbatmaxcellvoltage = bstRead8();  // vbatlevel_warn2 in MWC2.3 GUI
             batteryConfigMutable()->vbatwarningcellvoltage = bstRead8();  // vbatlevel when buzzer starts to alert
@@ -1265,17 +1291,48 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             boardAlignmentMutable()->pitchDegrees = bstRead16();
             boardAlignmentMutable()->yawDegrees = bstRead16();
             break;
-        case BST_SET_VOLTAGE_METER_CONFIG:
-            batteryConfigMutable()->vbatscale = bstRead8();           // actual vbatscale as intended
-            batteryConfigMutable()->vbatmincellvoltage = bstRead8();  // vbatlevel_warn1 in MWC2.3 GUI
-            batteryConfigMutable()->vbatmaxcellvoltage = bstRead8();  // vbatlevel_warn2 in MWC2.3 GUI
-            batteryConfigMutable()->vbatwarningcellvoltage = bstRead8();  // vbatlevel when buzzer starts to alert
+
+        case BST_SET_VOLTAGE_METER_CONFIG: {
+            int sensor = bstRead8();
+            if (sensor != VOLTAGE_METER_ADC) {
+                return -1;
+            }
+
+            int index = bstRead8();
+            if (index >= MAX_VOLTAGE_SENSOR_ADC) {
+                return -1;
+            }
+
+
+            voltageSensorADCConfigMutable(index)->vbatscale = bstRead8();
+            voltageSensorADCConfigMutable(index)->vbatresdivval = bstRead8();
+            voltageSensorADCConfigMutable(index)->vbatresdivmultiplier = bstRead8();
             break;
-        case BST_SET_CURRENT_METER_CONFIG:
-            batteryConfigMutable()->currentMeterScale = bstRead16();
-            batteryConfigMutable()->currentMeterOffset = bstRead16();
-            batteryConfigMutable()->currentMeterType = bstRead8();
+        }
+
+        case BST_SET_CURRENT_METER_CONFIG: {
+            int sensor = bstRead8();
+            if (sensor != CURRENT_SENSOR_VIRTUAL || sensor != CURRENT_SENSOR_ADC) {
+                return -1;
+            }
+
+            int index = bstRead8();
+
+            if (index >= MAX_ADC_OR_VIRTUAL_CURRENT_METERS) {
+                return -1;
+            }
+
+            currentMeterADCOrVirtualConfigMutable(index)->scale = bstRead16();
+            currentMeterADCOrVirtualConfigMutable(index)->offset = bstRead16();
+            break;
+        }
+
+        case BST_SET_BATTERY_CONFIG:
+            batteryConfigMutable()->vbatmincellvoltage = bstRead8();      // vbatlevel_warn1 in MWC2.3 GUI
+            batteryConfigMutable()->vbatmaxcellvoltage = bstRead8();      // vbatlevel_warn2 in MWC2.3 GUI
+            batteryConfigMutable()->vbatwarningcellvoltage = bstRead8();  // vbatlevel when buzzer starts to alert
             batteryConfigMutable()->batteryCapacity = bstRead16();
+            batteryConfigMutable()->currentMeterSource = bstRead8();
             break;
 
 #ifndef USE_QUAD_MIXER_ONLY
@@ -1338,8 +1395,8 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
            boardAlignmentMutable()->pitchDegrees = bstRead16(); // board_align_pitch
            boardAlignmentMutable()->yawDegrees = bstRead16(); // board_align_yaw
 
-           batteryConfigMutable()->currentMeterScale = bstRead16();
-           batteryConfigMutable()->currentMeterOffset = bstRead16();
+           bstRead16(); // was batteryConfigMutable()->currentMeterScale
+           bstRead16(); // was batteryConfigMutable()->currentMeterOffset
            break;
         case BST_SET_CF_SERIAL_CONFIG:
            {

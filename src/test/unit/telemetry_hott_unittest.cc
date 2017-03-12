@@ -51,6 +51,11 @@ extern "C" {
     #include "telemetry/hott.h"
 
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
+
+    uint16_t testBatteryVoltage = 0;
+    int32_t testAmperage = 0;
+    int32_t testMAhDrawn = 0;
+
 }
 
 #include "unittest_macros.h"
@@ -172,10 +177,7 @@ uint16_t GPS_speed;                 // speed in 0.1m/s
 uint16_t GPS_distanceToHome;        // distance to home point in meters
 uint16_t GPS_altitude;              // altitude in 0.1m
 int16_t GPS_directionToHome;        // direction to home or hol point in degrees
-uint16_t vbat;
 
-int32_t amperage;
-int32_t mAhDrawn;
 
 uint32_t fixedMillis = 0;
 
@@ -264,8 +266,17 @@ batteryState_e getBatteryState(void)
 	return BATTERY_OK;
 }
 
-uint16_t getVbat(void)
+uint16_t getBatteryVoltage(void)
 {
-    return vbat;
+    return testBatteryVoltage;
 }
+
+int32_t getAmperage(void) {
+    return testAmperage;
+}
+
+int32_t getMAhDrawn(void) {
+    return testMAhDrawn;
+}
+
 }
