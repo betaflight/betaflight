@@ -2725,7 +2725,6 @@ static void cliBeeper(char *cmdline)
     uint8_t beeperCount = beeperTableEntryCount();
     uint32_t mask = getBeeperOffMask();
 
-    cliPrintf("offmask: %d", mask);
     if (len == 0) {
         cliPrintf("Disabled:");
         for (int32_t i = 0; ; i++) {
@@ -2734,7 +2733,7 @@ static void cliBeeper(char *cmdline)
                     cliPrint("  none");
                 break;
             }
-            if (mask & (1 << i))
+            if (mask & (1 << (beeperModeForTableIndex(i) - 1)))
                 cliPrintf("  %s", beeperNameForTableIndex(i));
         }
         cliPrint("\r\n");
@@ -2765,7 +2764,7 @@ static void cliBeeper(char *cmdline)
                         if (i == BEEPER_PREFERENCE-1)
                             setBeeperOffMask(getPreferredBeeperOffMask());
                         else {
-                            mask = 1 << i;
+                            mask = 1 << (beeperModeForTableIndex(i) - 1);
                             beeperOffSet(mask);
                         }
                     cliPrint("Disabled");
@@ -2777,7 +2776,7 @@ static void cliBeeper(char *cmdline)
                         if (i == BEEPER_PREFERENCE-1)
                             setPreferredBeeperOffMask(getBeeperOffMask());
                         else {
-                            mask = 1 << i;
+                            mask = 1 << (beeperModeForTableIndex(i) - 1);
                             beeperOffClear(mask);
                         }
                     cliPrint("Enabled");
