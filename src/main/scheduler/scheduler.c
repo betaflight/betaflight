@@ -217,7 +217,7 @@ void scheduler(void)
 		{
 			break;
 		}
-		if (currentTimeUs > task->lastExecutedAt + task->desiredPeriod) {
+		if ((timeDelta_t)(currentTimeUs - task->lastExecutedAt) >= task->desiredPeriod) {
 			outsideRealtimeGuardInterval = 0;
 			break;
 		}
