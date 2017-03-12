@@ -1413,7 +1413,7 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, u
         }
         break;
     case MODE_LOOKUP:
-        cliPrintf(lookupTables[var->config.lookup.tableIndex].values[value]);
+        cliPrint(lookupTables[var->config.lookup.tableIndex].values[value]);
         break;
     }
 }
@@ -1704,7 +1704,7 @@ static uint16_t getValueOffset(const clivalue_t *value)
 static void *getValuePointer(const clivalue_t *value)
 {
     const pgRegistry_t* rec = pgFind(value->pgn);
-    return CONST_CAST(void *, rec + getValueOffset(value));
+    return CONST_CAST(void *, rec->address + getValueOffset(value));
 }
 
 static void dumpPgValue(const clivalue_t *value, uint8_t dumpMask)
