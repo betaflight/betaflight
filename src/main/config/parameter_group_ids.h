@@ -67,9 +67,12 @@
 #define PG_SPECIAL_COLOR_CONFIG 46  // part of led strip, structs OK
 #define PG_PILOT_CONFIG 47 // does not exist in betaflight
 #define PG_MSP_SERVER_CONFIG 48 // does not exist in betaflight
-#define PG_VOLTAGE_METER_CONFIG 49 // Cleanflight has voltageMeterConfig_t, betaflight has batteryConfig_t
-#define PG_AMPERAGE_METER_CONFIG 50 // Cleanflight has amperageMeterConfig_t, betaflight has batteryConfig_t
+#define PG_VOLTAGE_SENSOR_ADC_CONFIG 49 // renamed from PG_VOLTAGE_METER_CONFIG
+#define PG_CURRENT_SENSOR_ADC_OR_VIRTUAL_CONFIG 50 // renamed from PG_AMPERAGE_METER_CONFIG
+#define PG_DEBUG_CONFIG 51 // does not exist in betaflight
 #define PG_SERVO_CONFIG 52
+#define PG_IBUS_TELEMETRY_CONFIG 53 // CF 1.x
+//#define PG_VTX_CONFIG 54 // CF 1.x
 
 // Driver configuration
 #define PG_DRIVER_PWM_RX_CONFIG 100 // does not exist in betaflight

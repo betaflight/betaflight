@@ -56,7 +56,8 @@ typedef enum {
     TASK_RX,
     TASK_SERIAL,
     TASK_DISPATCH,
-    TASK_BATTERY,
+    TASK_BATTERY_SENSORS,
+    TASK_BATTERY_ALERTS,
 #ifdef BEEPER
     TASK_BEEPER,
 #endif
