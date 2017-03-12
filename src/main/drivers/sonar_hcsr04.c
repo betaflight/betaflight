@@ -112,18 +112,15 @@ void hcsr04_update(void)
 {
     const timeMs_t timeNowMs = millis();
 
-    /* the firing interval of the trigger signal should be greater than 60ms
-     * to avoid interference between consecutive measurements */
+    // the firing interval of the trigger signal should be greater than 60ms
+    // to avoid interference between consecutive measurements
     if (timeNowMs > lastMeasurementStartedAt + HCSR04_MinimumFiringIntervalMs) {
-        /* We should have a valid measurement within 60ms of trigger */
+        // We should have a valid measurement within 60ms of trigger
         if ((lastMeasurementReceivedAt - lastMeasurementStartedAt) <= HCSR04_MinimumFiringIntervalMs) {
-            /* 
-             * The speed of sound is 340 m/s or approx. 29 microseconds per centimeter.
-             * The ping travels out and back, so to find the distance of the
-             * object we take half of the distance traveled.
-             *
-             * 340 m/s = 0.034 cm/microsecond = 29.41176471 *2 = 58.82352941 rounded to 59 
-             */
+            // The speed of sound is 340 m/s or approx. 29 microseconds per centimeter.
+            // The ping travels out and back, so to find the distance of the
+            // object we take half of the distance traveled.
+            // 340 m/s = 0.034 cm/microsecond = 29.41176471 *2 = 58.82352941 rounded to 59 
 
             lastCalculatedDistance = hcsr04SonarPulseTravelTime / 59;
             if (lastCalculatedDistance > HCSR04_MAX_RANGE_CM) {
@@ -131,11 +128,11 @@ void hcsr04_update(void)
             }
         }
         else {
-            /* No measurement within reasonable time - indicate failure */
+            // No measurement within reasonable time - indicate failure
             lastCalculatedDistance = RANGEFINDER_HARDWARE_FAILURE;
         }
         
-        /* Trigger a new measurement */
+        // Trigger a new measurement
         lastMeasurementStartedAt = timeNowMs;
         hcsr04_start_reading();
     }
@@ -186,7 +183,7 @@ bool hcsr04Detect(rangefinderDev_t *dev, const rangefinderHardwarePins_t * sonar
     IOInit(echoIO, OWNER_SONAR, RESOURCE_INPUT, 0);
     IOConfigGPIO(echoIO, IOCFG_IN_FLOATING);
 
-    /* HC-SR04 echo line should be low by default and should return a response pulse when triggered */
+    // HC-SR04 echo line should be low by default and should return a response pulse when triggered
     if (IORead(echoIO) == false) {
         for (int i = 0; i < 5 && !detected; i++) {
             timeMs_t requestTime = millis();
@@ -202,7 +199,7 @@ bool hcsr04Detect(rangefinderDev_t *dev, const rangefinderHardwarePins_t * sonar
     }
 
     if (detected) {
-        /* Hardware detected - configure the driver*/
+        // Hardware detected - configure the driver
 #ifdef USE_EXTI
         EXTIHandlerInit(&hcsr04_extiCallbackRec, hcsr04_extiHandler);
         EXTIConfig(echoIO, &hcsr04_extiCallbackRec, NVIC_PRIO_SONAR_EXTI, EXTI_Trigger_Rising_Falling); // TODO - priority!
@@ -221,7 +218,7 @@ bool hcsr04Detect(rangefinderDev_t *dev, const rangefinderHardwarePins_t * sonar
         return true;
     }
     else {
-        /* Not detected - free resources */
+        // Not detected - free resources 
         IORelease(triggerIO);
         IORelease(echoIO);
         return false;

@@ -117,12 +117,12 @@ typedef struct {
 
 typedef struct {
     timeUs_t    lastUpdateTime; // Last update time (us)
-    /* 3D position, velocity and confidence */
+    // 3D position, velocity and confidence
     t_fp_vector pos;
     t_fp_vector vel;
     float       eph;
     float       epv;
-    /* Surface offset */
+    // Surface offset
     float       surface;
     float       surfaceVel;
     bool        surfaceValid;
@@ -478,11 +478,9 @@ static void updatePitotTopic(timeUs_t currentTimeUs)
  */
 void updatePositionEstimator_SonarTopic(timeUs_t currentTimeUs)
 {
-    /* Read sonar */
     float newSonarAlt = rangefinderRead();
     newSonarAlt = rangefinderCalculateAltitude(newSonarAlt, calculateCosTiltAngle());
 
-    /* Apply predictive filter to sonar readings */
     if (newSonarAlt > 0 && newSonarAlt <= positionEstimationConfig()->max_sonar_altitude) {
         posEstimator.sonar.alt = newSonarAlt;
         posEstimator.sonar.lastUpdateTime = currentTimeUs;
