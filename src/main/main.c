@@ -25,18 +25,12 @@
 #include "scheduler/scheduler.h"
 
 
-void main_step(void)
-{
-    scheduler();
-    processLoopback();
-}
-
-#ifndef NOMAIN
 int main(void)
 {
     init();
     while (true) {
-        main_step();
+        scheduler();
+        processLoopback();
     }
+    return 0;
 }
-#endif
