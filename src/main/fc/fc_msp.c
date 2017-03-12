@@ -1629,7 +1629,11 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
         sbufReadU8(src);
 #endif
+#ifdef SONAR
+        rangefinderConfigMutable()->rangefinder_hardware = sbufReadU8(src);
+#else
         sbufReadU8(src);        // rangefinder hardware
+#endif
         sbufReadU8(src);        // optical flow hardware
         break;
 
