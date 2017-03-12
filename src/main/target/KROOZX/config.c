@@ -20,7 +20,13 @@
 
 #include <platform.h>
 
-#include "config/config_master.h"
+#include "common/axis.h"
+
+#include "sensors/battery.h"
+#include "sensors/barometer.h"
+#include "sensors/compass.h"
+
+#include "io/osd.h"
 
 #define VBAT_SCALE       113
 #define CURRENT_SCALE    1000
@@ -29,13 +35,13 @@
 #define OSD_POS(x,y)  (x | (y << 5))
 
 #ifdef TARGET_CONFIG
-void targetConfiguration(master_t *config)
+void targetConfiguration(void)
 {
-    config->batteryConfig.vbatscale = VBAT_SCALE;
-    config->batteryConfig.currentMeterScale = CURRENT_SCALE;
-    config->batteryConfig.currentMeterOffset = CURRENT_OFFSET;
-    config->barometerConfig.baro_hardware = 0;
-    config->compassConfig.mag_hardware = 0;
-    config->osdConfig.item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 1) | VISIBLE_FLAG;
+    batteryConfigMutable()->vbatscale = VBAT_SCALE;
+    batteryConfigMutable()->currentMeterScale = CURRENT_SCALE;
+    batteryConfigMutable()->currentMeterOffset = CURRENT_OFFSET;
+    barometerConfigMutable()->baro_hardware = 0;
+    compassConfigMutable()->mag_hardware = 0;
+    osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 1) | VISIBLE_FLAG;
 }
 #endif
