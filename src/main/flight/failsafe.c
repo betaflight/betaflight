@@ -43,9 +43,9 @@
 /*
  * Usage:
  *
- * failsafeInit() and resetFailsafe() must be called before the other methods are used.
+ * failsafeInit() and failsafeReset() must be called before the other methods are used.
  *
- * failsafeInit() and resetFailsafe() can be called in any order.
+ * failsafeInit() and failsafeReset() can be called in any order.
  * failsafeInit() should only be called once.
  *
  * enable() should be called after system initialisation.
