@@ -219,43 +219,44 @@ bool ms56xxDetect(baroDev_t *baro, baroSensor_e baroType)
 #if defined(USE_BARO_SPI_MS5611) || defined(USE_BARO_SPI_MS5607)
         ms56xxSpiInit();
         ms56xxSpiReadCommand(CMD_PROM_RD, 1, &sig);
-        if (sig == 0xFF)
-            return false;
+        if (sig != 0xFF) {
 #else
         bool ack = i2cRead(BARO_I2C_INSTANCE, MS56XX_ADDR, CMD_PROM_RD, 1, &sig);
-        if (!ack)
-            return false;
+        if (ack) {
 #endif
 
-        ms56xx_reset();
-        // read all coefficients
-        for (i = 0; i < PROM_NB; i++)
-            ms56xx_c[i] = ms56xx_prom(i);
-        // check crc, bail out if wrong - we are probably talking to BMP085 w/o XCLR line!
-        if (ms56xx_crc(ms56xx_c) != 0)
-            return false;
+            ms56xx_reset();
+            // read all coefficients
+            for (i = 0; i < PROM_NB; i++)
+                ms56xx_c[i] = ms56xx_prom(i);
+            // check crc, bail out if wrong - we are probably talking to BMP085 w/o XCLR line!
+            if (ms56xx_crc(ms56xx_c) != 0)
+                return false;
 
-        // TODO prom + CRC
-        baro->ut_delay = 10000;
-        baro->up_delay = 10000;
-        baro->start_ut = ms56xx_start_ut;
-        baro->get_ut = ms56xx_get_ut;
-        baro->start_up = ms56xx_start_up;
-        baro->get_up = ms56xx_get_up;
+            // TODO prom + CRC
+            baro->ut_delay = 10000;
+            baro->up_delay = 10000;
+            baro->start_ut = ms56xx_start_ut;
+            baro->get_ut = ms56xx_get_ut;
+            baro->start_up = ms56xx_start_up;
+            baro->get_up = ms56xx_get_up;
 
-#if defined(USE_BARO_MS5607) && defined(USE_BARO_MS5611)
-        if (baroType == BARO_MS5607) {
+    #if defined(USE_BARO_MS5607) && defined(USE_BARO_MS5611)
+            if (baroType == BARO_MS5607) {
+                baro->calculate = ms5607_calculate;
+            } else { // default to MS5611
+                baro->calculate = ms5611_calculate;
+            }
+    #elif defined(USE_BARO_MS5607)
             baro->calculate = ms5607_calculate;
-        } else { // default to MS5611
-            baro->calculate = ms5611_calculate;
-        }
-#elif defined(USE_BARO_MS5607)
-        baro->calculate = ms5607_calculate;
 #else
-        baro->calculate = ms5611_calculate;
+            baro->calculate = ms5611_calculate;
 #endif
 
-        return true;
+            return true;
+        }
+
+        delay(10);
     }
 
     return false;
