@@ -60,20 +60,25 @@
 
 #ifdef TELEMETRY
 
-#include "build_config.h"
-#include "debug.h"
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
+#include "common/time.h"
+#include "common/utils.h"
+
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/system.h"
 
-#include "drivers/serial.h"
 #include "io/serial.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
 
 #include "sensors/sensors.h"
 #include "sensors/battery.h"
+#include "sensors/barometer.h"
 
 #include "flight/pid.h"
 #include "flight/navigation.h"
@@ -107,7 +112,6 @@ static uint8_t hottMsgCrc;
 static serialPort_t *hottPort = NULL;
 static serialPortConfig_t *portConfig;
 
-static telemetryConfig_t *telemetryConfig;
 static bool hottTelemetryEnabled =  false;
 static portSharing_e hottPortSharing;
 
@@ -128,7 +132,7 @@ typedef enum {
     GPS_FIX_CHAR_NONE = '-',
     GPS_FIX_CHAR_2D = '2',
     GPS_FIX_CHAR_3D = '3',
-    GPS_FIX_CHAR_DGPS = 'D',
+    GPS_FIX_CHAR_DGPS = 'D'
 } gpsFixChar_e;
 
 static void initialiseGPSMessage(HOTT_GPS_MSG_t *msg, size_t size)
@@ -202,7 +206,12 @@ void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage)
     hottGPSMessage->home_distance_L = GPS_distanceToHome & 0x00FF;
     hottGPSMessage->home_distance_H = GPS_distanceToHome >> 8;
 
-    const uint16_t hottGpsAltitude = (GPS_altitude) + HOTT_GPS_ALTITUDE_OFFSET; // GPS_altitude in m ; offset = 500 -> O m
+    uint16_t altitude = GPS_altitude;
+    if (!STATE(GPS_FIX)) {
+        altitude = baro.BaroAlt / 100;
+    }
+
+    const uint16_t hottGpsAltitude = (altitude) + HOTT_GPS_ALTITUDE_OFFSET; // GPS_altitude in m ; offset = 500 -> O m
 
     hottGPSMessage->altitude_L = hottGpsAltitude & 0x00FF;
     hottGPSMessage->altitude_H = hottGpsAltitude >> 8;
@@ -213,7 +222,7 @@ void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage)
 
 static bool shouldTriggerBatteryAlarmNow(void)
 {
-    return ((millis() - lastHottAlarmSoundTime) >= (telemetryConfig->hottAlarmSoundInterval * MILLISECONDS_IN_A_SECOND));
+    return ((millis() - lastHottAlarmSoundTime) >= (telemetryConfig()->hottAlarmSoundInterval * MILLISECONDS_IN_A_SECOND));
 }
 
 static inline void updateAlarmBatteryStatus(HOTT_EAM_MSG_t *hottEAMMessage)
@@ -236,10 +245,10 @@ static inline void updateAlarmBatteryStatus(HOTT_EAM_MSG_t *hottEAMMessage)
 
 static inline void hottEAMUpdateBattery(HOTT_EAM_MSG_t *hottEAMMessage)
 {
-    hottEAMMessage->main_voltage_L = vbat & 0xFF;
-    hottEAMMessage->main_voltage_H = vbat >> 8;
-    hottEAMMessage->batt1_voltage_L = vbat & 0xFF;
-    hottEAMMessage->batt1_voltage_H = vbat >> 8;
+    hottEAMMessage->main_voltage_L = getVbat() & 0xFF;
+    hottEAMMessage->main_voltage_H = getVbat() >> 8;
+    hottEAMMessage->batt1_voltage_L = getVbat() & 0xFF;
+    hottEAMMessage->batt1_voltage_H = getVbat() >> 8;
 
     updateAlarmBatteryStatus(hottEAMMessage);
 }
@@ -283,9 +292,8 @@ void freeHoTTTelemetryPort(void)
     hottTelemetryEnabled = false;
 }
 
-void initHoTTTelemetry(telemetryConfig_t *initialTelemetryConfig)
+void initHoTTTelemetry(void)
 {
-    telemetryConfig = initialTelemetryConfig;
     portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_HOTT);
     hottPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_HOTT);
 
@@ -490,35 +498,33 @@ void checkHoTTTelemetryState(void)
         freeHoTTTelemetryPort();
 }
 
-void handleHoTTTelemetry(void)
+void handleHoTTTelemetry(timeUs_t currentTimeUs)
 {
-    static uint32_t serialTimer;
+    static timeUs_t serialTimer;
 
     if (!hottTelemetryEnabled) {
         return;
     }
 
-    uint32_t now = micros();
-
-    if (shouldPrepareHoTTMessages(now)) {
+    if (shouldPrepareHoTTMessages(currentTimeUs)) {
         hottPrepareMessages();
-        lastMessagesPreparedAt = now;
+        lastMessagesPreparedAt = currentTimeUs;
     }
 
     if (shouldCheckForHoTTRequest()) {
-        hottCheckSerialData(now);
+        hottCheckSerialData(currentTimeUs);
     }
 
     if (!hottMsg)
         return;
 
     if (hottIsSending) {
-        if(now - serialTimer < HOTT_TX_DELAY_US) {
+        if(currentTimeUs - serialTimer < HOTT_TX_DELAY_US) {
             return;
         }
     }
     hottSendTelemetryData();
-    serialTimer = now;
+    serialTimer = currentTimeUs;
 }
 
 #endif

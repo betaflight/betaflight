@@ -17,8 +17,8 @@
 
 #pragma once
 
+#include "flight/pid.h"
+
 typedef struct profile_s {
     pidProfile_t pidProfile;
-    uint8_t activeRateProfile;
-    controlRateConfig_t controlRateProfile[MAX_RATEPROFILES];
 } profile_t;

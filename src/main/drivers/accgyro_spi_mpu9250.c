@@ -27,7 +27,8 @@
 #include <stdint.h>
 
 #include "platform.h"
-#include "light_led.h"
+
+#include "build/debug.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -38,14 +39,14 @@
 #include "exti.h"
 #include "bus_spi.h"
 #include "gyro_sync.h"
-#include "debug.h"
+#include "light_led.h"
 
 #include "sensor.h"
 #include "accgyro.h"
 #include "accgyro_mpu.h"
 #include "accgyro_spi_mpu9250.h"
 
-static void mpu9250AccAndGyroInit(uint8_t lpf);
+static void mpu9250AccAndGyroInit(gyroDev_t *gyro);
 
 static bool mpuSpi9250InitDone = false;
 
@@ -95,31 +96,26 @@ bool mpu9250SlowReadRegister(uint8_t reg, uint8_t length, uint8_t *data)
     return true;
 }
 
-void mpu9250SpiGyroInit(uint8_t lpf)
+void mpu9250SpiGyroInit(gyroDev_t *gyro)
 {
-    (void)(lpf);
+    mpuGyroInit(gyro);
 
-    mpuIntExtiInit();
-
-    mpu9250AccAndGyroInit(lpf);
+    mpu9250AccAndGyroInit(gyro);
 
     spiResetErrorCounter(MPU9250_SPI_INSTANCE);
 
     spiSetDivisor(MPU9250_SPI_INSTANCE, SPI_CLOCK_FAST); //high speed now that we don't need to write to the slow registers
 
-    int16_t data[3];
-    mpuGyroRead(data);
+    mpuGyroRead(gyro);
 
-    if ((((int8_t)data[1]) == -1 && ((int8_t)data[0]) == -1) || spiGetErrorCounter(MPU9250_SPI_INSTANCE) != 0) {
+    if ((((int8_t)gyro->gyroADCRaw[1]) == -1 && ((int8_t)gyro->gyroADCRaw[0]) == -1) || spiGetErrorCounter(MPU9250_SPI_INSTANCE) != 0) {
         spiResetErrorCounter(MPU9250_SPI_INSTANCE);
         failureMode(FAILURE_GYRO_INIT_FAILED);
     }
 }
 
-void mpu9250SpiAccInit(acc_t *acc)
+void mpu9250SpiAccInit(accDev_t *acc)
 {
-    mpuIntExtiInit();
-
     acc->acc_1G = 512 * 8;
 }
 
@@ -144,7 +140,7 @@ bool verifympu9250WriteRegister(uint8_t reg, uint8_t data)
     return false;
 }
 
-static void mpu9250AccAndGyroInit(uint8_t lpf) {
+static void mpu9250AccAndGyroInit(gyroDev_t *gyro) {
 
     if (mpuSpi9250InitDone) {
         return;
@@ -157,17 +153,19 @@ static void mpu9250AccAndGyroInit(uint8_t lpf) {
 
     verifympu9250WriteRegister(MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
 
-    verifympu9250WriteRegister(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3 | FCB_DISABLED); //Fchoice_b defaults to 00 which makes fchoice 11
+    //Fchoice_b defaults to 00 which makes fchoice 11
+    const uint8_t raGyroConfigData = gyro->gyroRateKHz > GYRO_RATE_8_kHz ? (INV_FSR_2000DPS << 3 | FCB_3600_32) : (INV_FSR_2000DPS << 3 | FCB_DISABLED);
+    verifympu9250WriteRegister(MPU_RA_GYRO_CONFIG, raGyroConfigData);
 
-    if (lpf == 4) {
+    if (gyro->lpf == 4) {
         verifympu9250WriteRegister(MPU_RA_CONFIG, 1); //1KHz, 184DLPF
-    } else if (lpf < 4) {
+    } else if (gyro->lpf < 4) {
         verifympu9250WriteRegister(MPU_RA_CONFIG, 7); //8KHz, 3600DLPF
-    } else if (lpf > 4) {
+    } else if (gyro->lpf > 4) {
         verifympu9250WriteRegister(MPU_RA_CONFIG, 0); //8KHz, 250DLPF
     }
 
-    verifympu9250WriteRegister(MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops()); // Get Divider Drops
+    verifympu9250WriteRegister(MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops(gyro));
 
     verifympu9250WriteRegister(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
     verifympu9250WriteRegister(MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
@@ -190,7 +188,7 @@ bool mpu9250SpiDetect(void)
 #ifdef MPU9250_CS_PIN
     mpuSpi9250CsPin = IOGetByTag(IO_TAG(MPU9250_CS_PIN));
 #endif
-    IOInit(mpuSpi9250CsPin, OWNER_MPU, RESOURCE_SPI_CS, 0);
+    IOInit(mpuSpi9250CsPin, OWNER_MPU_CS, 0);
     IOConfigGPIO(mpuSpi9250CsPin, SPI_IO_CS_CFG);
 
     spiSetDivisor(MPU9250_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON); //low speed
@@ -200,7 +198,7 @@ bool mpu9250SpiDetect(void)
         delay(150);
 
         mpu9250ReadRegister(MPU_RA_WHO_AM_I, 1, &in);
-        if (in == MPU9250_WHO_AM_I_CONST) {
+        if (in == MPU9250_WHO_AM_I_CONST || in == MPU9255_WHO_AM_I_CONST) {
             break;
         }
         if (!attemptsRemaining) {
@@ -213,9 +211,9 @@ bool mpu9250SpiDetect(void)
     return true;
 }
 
-bool mpu9250SpiAccDetect(acc_t *acc)
+bool mpu9250SpiAccDetect(accDev_t *acc)
 {
-    if (mpuDetectionResult.sensor != MPU_9250_SPI) {
+    if (acc->mpuDetectionResult.sensor != MPU_9250_SPI) {
         return false;
     }
 
@@ -225,15 +223,15 @@ bool mpu9250SpiAccDetect(acc_t *acc)
     return true;
 }
 
-bool mpu9250SpiGyroDetect(gyro_t *gyro)
+bool mpu9250SpiGyroDetect(gyroDev_t *gyro)
 {
-    if (mpuDetectionResult.sensor != MPU_9250_SPI) {
+    if (gyro->mpuDetectionResult.sensor != MPU_9250_SPI) {
         return false;
     }
 
     gyro->init = mpu9250SpiGyroInit;
     gyro->read = mpuGyroRead;
-    gyro->intStatus = checkMPUDataReady;
+    gyro->intStatus = mpuCheckDataReady;
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;

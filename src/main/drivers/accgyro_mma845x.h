@@ -17,4 +17,4 @@
 
 #pragma once
 
-bool mma8452Detect(acc_t *acc);
+bool mma8452Detect(accDev_t *acc);

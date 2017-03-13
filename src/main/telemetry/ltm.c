@@ -35,19 +35,20 @@
 
 #ifdef TELEMETRY
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
 #include "common/color.h"
+#include "common/utils.h"
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
-#include "drivers/serial.h"
-#include "drivers/pwm_rx.h"
+
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
@@ -57,13 +58,10 @@
 #include "sensors/battery.h"
 
 #include "io/serial.h"
-#include "io/rc_controls.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/beeper.h"
-#include "io/osd.h"
-#include "io/vtx.h"
 
 #include "rx/rx.h"
 
@@ -77,16 +75,12 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/ltm.h"
 
-#include "config/config.h"
-#include "config/runtime_config.h"
 
 #define TELEMETRY_LTM_INITIAL_PORT_MODE MODE_TX
 #define LTM_CYCLETIME   100
 
-extern uint16_t rssi;           // FIXME dependency on mw.c
 static serialPort_t *ltmPort;
 static serialPortConfig_t *portConfig;
-static telemetryConfig_t *telemetryConfig;
 static bool ltmEnabled;
 static portSharing_e ltmPortSharing;
 static uint8_t ltm_crc;
@@ -196,7 +190,7 @@ static void ltm_sframe(void)
     if (failsafeIsActive())
         lt_statemode |= 2;
     ltm_initialise_packet('S');
-    ltm_serialise_16(vbat * 100);    //vbat converted to mv
+    ltm_serialise_16(getVbat() * 100);    //vbat converted to mv
     ltm_serialise_16(0);             //  current, not implemented
     ltm_serialise_8((uint8_t)((rssi * 254) / 1023));        // scaled RSSI (uchar)
     ltm_serialise_8(0);              // no airspeed
@@ -274,9 +268,8 @@ void freeLtmTelemetryPort(void)
     ltmEnabled = false;
 }
 
-void initLtmTelemetry(telemetryConfig_t *initialTelemetryConfig)
+void initLtmTelemetry(void)
 {
-    telemetryConfig = initialTelemetryConfig;
     portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_LTM);
     ltmPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_LTM);
 }

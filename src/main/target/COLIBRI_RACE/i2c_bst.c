@@ -6,8 +6,9 @@
 #include <string.h>
 #include <math.h>
 
-#include "build_config.h"
-#include "debug.h"
+#include "build/build_config.h"
+#include "build/debug.h"
+#include "build/version.h"
 
 #include "platform.h"
 
@@ -25,13 +26,17 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
+#include "drivers/rx_pwm.h"
 
-#include "rx/rx.h"
-#include "rx/msp.h"
+#include "fc/config.h"
+#include "fc/controlrate_profile.h"
+#include "fc/fc_core.h"
+#include "fc/rc_adjustments.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 
-#include "io/escservo.h"
-#include "io/rc_controls.h"
+#include "io/motors.h"
+#include "io/servos.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "io/serial.h"
@@ -39,7 +44,10 @@
 #include "io/flashfs.h"
 #include "io/beeper.h"
 
-#include "telemetry/telemetry.h"
+#include "rx/rx.h"
+#include "rx/msp.h"
+
+#include "scheduler/scheduler.h"
 
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
@@ -50,29 +58,22 @@
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
 
-#include "flight/mixer.h"
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/failsafe.h"
-#include "flight/navigation.h"
+#include "telemetry/telemetry.h"
+
 #include "flight/altitudehold.h"
+#include "flight/failsafe.h"
+#include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/navigation.h"
+#include "flight/pid.h"
+#include "flight/servos.h"
 
-#include "mw.h"
-
-#include "config/runtime_config.h"
-#include "config/config.h"
+#include "config/config_eeprom.h"
 #include "config/config_profile.h"
-#include "config/config_master.h"
-
-#include "version.h"
-#ifdef NAZE
-#include "hardware_revision.h"
-#endif
+#include "config/feature.h"
 
 #include "bus_bst.h"
 #include "i2c_bst.h"
-
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
 #define BST_PROTOCOL_VERSION                0
 
@@ -266,8 +267,6 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 extern volatile uint8_t CRC8;
 extern volatile bool coreProReady;
-extern uint16_t cycleTime; // FIXME dependency on mw.c
-extern uint16_t rssi; // FIXME dependency on mw.c
 
 // this is calculated at startup based on enabled features.
 static uint8_t activeBoxIds[CHECKBOX_ITEM_COUNT];
@@ -554,13 +553,13 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             // DEPRECATED - Use MSP_API_VERSION
         case BST_IDENT:
             bstWrite8(MW_VERSION);
-            bstWrite8(masterConfig.mixerMode);
+            bstWrite8(mixerConfig()->mixerMode);
             bstWrite8(BST_PROTOCOL_VERSION);
             bstWrite32(CAP_DYNBALANCE); // "capability"
             break;
 
         case BST_STATUS:
-            bstWrite16(cycleTime);
+            bstWrite16(getTaskDeltaTime(TASK_GYROPID));
 #ifdef USE_I2C
             bstWrite16(i2cGetErrorCounter());
 #else
@@ -601,19 +600,22 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
                     junk |= 1 << i;
             }
             bstWrite32(junk);
-            bstWrite8(masterConfig.current_profile_index);
+            bstWrite8(getCurrentPidProfileIndex());
             break;
         case BST_RAW_IMU:
             {
                 // Hack scale due to choice of units for sensor data in multiwii
-                uint8_t scale = (acc.acc_1G > 1024) ? 8 : 1;
+                uint8_t scale = (acc.dev.acc_1G > 1024) ? 8 : 1;
 
-                for (i = 0; i < 3; i++)
-                    bstWrite16(accSmooth[i] / scale);
-                for (i = 0; i < 3; i++)
-                    bstWrite16(gyroADC[i]);
-                for (i = 0; i < 3; i++)
-                    bstWrite16(magADC[i]);
+                for (i = 0; i < 3; i++) {
+                    bstWrite16(acc.accSmooth[i] / scale);
+                }
+                for (i = 0; i < 3; i++) {
+                    bstWrite16(gyroRateDps(i));
+                }
+                for (i = 0; i < 3; i++) {
+                    bstWrite16(mag.magADC[i]);
+                }
             }
             break;
 #ifdef USE_SERVOS
@@ -622,25 +624,25 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
         case BST_SERVO_CONFIGURATIONS:
             for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-                bstWrite16(masterConfig.servoConf[i].min);
-                bstWrite16(masterConfig.servoConf[i].max);
-                bstWrite16(masterConfig.servoConf[i].middle);
-                bstWrite8(masterConfig.servoConf[i].rate);
-                bstWrite8(masterConfig.servoConf[i].angleAtMin);
-                bstWrite8(masterConfig.servoConf[i].angleAtMax);
-                bstWrite8(masterConfig.servoConf[i].forwardFromChannel);
-                bstWrite32(masterConfig.servoConf[i].reversedSources);
+                bstWrite16(servoParams(i)->min);
+                bstWrite16(servoParams(i)->max);
+                bstWrite16(servoParams(i)->middle);
+                bstWrite8(servoParams(i)->rate);
+                bstWrite8(servoParams(i)->angleAtMin);
+                bstWrite8(servoParams(i)->angleAtMax);
+                bstWrite8(servoParams(i)->forwardFromChannel);
+                bstWrite32(servoParams(i)->reversedSources);
             }
             break;
         case BST_SERVO_MIX_RULES:
             for (i = 0; i < MAX_SERVO_RULES; i++) {
-                bstWrite8(masterConfig.customServoMixer[i].targetChannel);
-                bstWrite8(masterConfig.customServoMixer[i].inputSource);
-                bstWrite8(masterConfig.customServoMixer[i].rate);
-                bstWrite8(masterConfig.customServoMixer[i].speed);
-                bstWrite8(masterConfig.customServoMixer[i].min);
-                bstWrite8(masterConfig.customServoMixer[i].max);
-                bstWrite8(masterConfig.customServoMixer[i].box);
+                bstWrite8(customServoMixers(i)->targetChannel);
+                bstWrite8(customServoMixers(i)->inputSource);
+                bstWrite8(customServoMixers(i)->rate);
+                bstWrite8(customServoMixers(i)->speed);
+                bstWrite8(customServoMixers(i)->min);
+                bstWrite8(customServoMixers(i)->max);
+                bstWrite8(customServoMixers(i)->box);
             }
             break;
 #endif
@@ -672,21 +674,21 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 #endif
             break;
         case BST_ANALOG:
-            bstWrite8((uint8_t)constrain(vbat, 0, 255));
+            bstWrite8((uint8_t)constrain(getVbat(), 0, 255));
             bstWrite16((uint16_t)constrain(mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
             bstWrite16(rssi);
-            if(masterConfig.batteryConfig.multiwiiCurrentMeterOutput) {
+            if(batteryConfig()->multiwiiCurrentMeterOutput) {
                 bstWrite16((uint16_t)constrain(amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
             } else
                 bstWrite16((int16_t)constrain(amperage, -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
             break;
         case BST_ARMING_CONFIG:
-            bstWrite8(masterConfig.auto_disarm_delay);
-            bstWrite8(masterConfig.disarm_kill_switch);
+            bstWrite8(armingConfig()->auto_disarm_delay);
+            bstWrite8(armingConfig()->disarm_kill_switch);
             break;
         case BST_LOOP_TIME:
             //bstWrite16(masterConfig.looptime);
-            bstWrite16(cycleTime);
+            bstWrite16(getTaskDeltaTime(TASK_GYROPID));
             break;
         case BST_RC_TUNING:
             bstWrite8(currentControlRateProfile->rcRate8);
@@ -699,23 +701,24 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8(currentControlRateProfile->thrExpo8);
             bstWrite16(currentControlRateProfile->tpa_breakpoint);
             bstWrite8(currentControlRateProfile->rcYawExpo8);
+            bstWrite8(currentControlRateProfile->rcYawRate8);
             break;
         case BST_PID:
             for (i = 0; i < PID_ITEM_COUNT; i++) {
-                bstWrite8(currentProfile->pidProfile.P8[i]);
-                bstWrite8(currentProfile->pidProfile.I8[i]);
-                bstWrite8(currentProfile->pidProfile.D8[i]);
+                bstWrite8(currentPidProfile->P8[i]);
+                bstWrite8(currentPidProfile->I8[i]);
+                bstWrite8(currentPidProfile->D8[i]);
             }
+            pidInitConfig(currentPidProfile);
             break;
         case BST_PIDNAMES:
             bstWriteNames(pidnames);
             break;
         case BST_PID_CONTROLLER:
-            bstWrite8(currentProfile->pidProfile.pidController);
             break;
         case BST_MODE_RANGES:
             for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-                modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
+                const modeActivationCondition_t *mac = modeActivationConditions(i);
                 const box_t *box = &boxes[mac->modeId];
                 bstWrite8(box->permanentId);
                 bstWrite8(mac->auxChannelIndex);
@@ -725,7 +728,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
         case BST_ADJUSTMENT_RANGES:
             for (i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
-                adjustmentRange_t *adjRange = &masterConfig.adjustmentRanges[i];
+                const adjustmentRange_t *adjRange = adjustmentRanges(i);
                 bstWrite8(adjRange->adjustmentIndex);
                 bstWrite8(adjRange->auxChannelIndex);
                 bstWrite8(adjRange->range.startStep);
@@ -747,33 +750,33 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             }
             break;
         case BST_MISC:
-            bstWrite16(masterConfig.rxConfig.midrc);
+            bstWrite16(rxConfig()->midrc);
 
-            bstWrite16(masterConfig.escAndServoConfig.minthrottle);
-            bstWrite16(masterConfig.escAndServoConfig.maxthrottle);
-            bstWrite16(masterConfig.escAndServoConfig.mincommand);
+            bstWrite16(motorConfig()->minthrottle);
+            bstWrite16(motorConfig()->maxthrottle);
+            bstWrite16(motorConfig()->mincommand);
 
-            bstWrite16(masterConfig.failsafeConfig.failsafe_throttle);
+            bstWrite16(failsafeConfig()->failsafe_throttle);
 
 #ifdef GPS
-            bstWrite8(masterConfig.gpsConfig.provider); // gps_type
+            bstWrite8(gpsConfig()->provider); // gps_type
             bstWrite8(0); // TODO gps_baudrate (an index, cleanflight uses a uint32_t
-            bstWrite8(masterConfig.gpsConfig.sbasMode); // gps_ubx_sbas
+            bstWrite8(gpsConfig()->sbasMode); // gps_ubx_sbas
 #else
             bstWrite8(0); // gps_type
             bstWrite8(0); // TODO gps_baudrate (an index, cleanflight uses a uint32_t
             bstWrite8(0); // gps_ubx_sbas
 #endif
-            bstWrite8(masterConfig.batteryConfig.multiwiiCurrentMeterOutput);
-            bstWrite8(masterConfig.rxConfig.rssi_channel);
+            bstWrite8(batteryConfig()->multiwiiCurrentMeterOutput);
+            bstWrite8(rxConfig()->rssi_channel);
             bstWrite8(0);
 
-            bstWrite16(masterConfig.mag_declination / 10);
+            bstWrite16(compassConfig()->mag_declination / 10);
 
-            bstWrite8(masterConfig.batteryConfig.vbatscale);
-            bstWrite8(masterConfig.batteryConfig.vbatmincellvoltage);
-            bstWrite8(masterConfig.batteryConfig.vbatmaxcellvoltage);
-            bstWrite8(masterConfig.batteryConfig.vbatwarningcellvoltage);
+            bstWrite8(batteryConfig()->vbatscale);
+            bstWrite8(batteryConfig()->vbatmincellvoltage);
+            bstWrite8(batteryConfig()->vbatmaxcellvoltage);
+            bstWrite8(batteryConfig()->vbatwarningcellvoltage);
             break;
         case BST_MOTOR_PINS:
              // FIXME This is hardcoded and should not be.
@@ -832,8 +835,8 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 
         // Additional commands that are not compatible with MultiWii
         case BST_ACC_TRIM:
-            bstWrite16(masterConfig.accelerometerTrims.values.pitch);
-            bstWrite16(masterConfig.accelerometerTrims.values.roll);
+            bstWrite16(accelerometerConfig()->accelerometerTrims.values.pitch);
+            bstWrite16(accelerometerConfig()->accelerometerTrims.values.roll);
             break;
 
         case BST_UID:
@@ -847,94 +850,94 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
 
         case BST_BOARD_ALIGNMENT:
-            bstWrite16(masterConfig.boardAlignment.rollDegrees);
-            bstWrite16(masterConfig.boardAlignment.pitchDegrees);
-            bstWrite16(masterConfig.boardAlignment.yawDegrees);
+            bstWrite16(boardAlignment()->rollDegrees);
+            bstWrite16(boardAlignment()->pitchDegrees);
+            bstWrite16(boardAlignment()->yawDegrees);
             break;
 
         case BST_VOLTAGE_METER_CONFIG:
-            bstWrite8(masterConfig.batteryConfig.vbatscale);
-            bstWrite8(masterConfig.batteryConfig.vbatmincellvoltage);
-            bstWrite8(masterConfig.batteryConfig.vbatmaxcellvoltage);
-            bstWrite8(masterConfig.batteryConfig.vbatwarningcellvoltage);
+            bstWrite8(batteryConfig()->vbatscale);
+            bstWrite8(batteryConfig()->vbatmincellvoltage);
+            bstWrite8(batteryConfig()->vbatmaxcellvoltage);
+            bstWrite8(batteryConfig()->vbatwarningcellvoltage);
             break;
 
         case BST_CURRENT_METER_CONFIG:
-            bstWrite16(masterConfig.batteryConfig.currentMeterScale);
-            bstWrite16(masterConfig.batteryConfig.currentMeterOffset);
-            bstWrite8(masterConfig.batteryConfig.currentMeterType);
-            bstWrite16(masterConfig.batteryConfig.batteryCapacity);
+            bstWrite16(batteryConfig()->currentMeterScale);
+            bstWrite16(batteryConfig()->currentMeterOffset);
+            bstWrite8(batteryConfig()->currentMeterType);
+            bstWrite16(batteryConfig()->batteryCapacity);
             break;
 
         case BST_MIXER:
-            bstWrite8(masterConfig.mixerMode);
+            bstWrite8(mixerConfig()->mixerMode);
             break;
 
         case BST_RX_CONFIG:
-            bstWrite8(masterConfig.rxConfig.serialrx_provider);
-            bstWrite16(masterConfig.rxConfig.maxcheck);
-            bstWrite16(masterConfig.rxConfig.midrc);
-            bstWrite16(masterConfig.rxConfig.mincheck);
-            bstWrite8(masterConfig.rxConfig.spektrum_sat_bind);
-            bstWrite16(masterConfig.rxConfig.rx_min_usec);
-            bstWrite16(masterConfig.rxConfig.rx_max_usec);
+            bstWrite8(rxConfig()->serialrx_provider);
+            bstWrite16(rxConfig()->maxcheck);
+            bstWrite16(rxConfig()->midrc);
+            bstWrite16(rxConfig()->mincheck);
+            bstWrite8(rxConfig()->spektrum_sat_bind);
+            bstWrite16(rxConfig()->rx_min_usec);
+            bstWrite16(rxConfig()->rx_max_usec);
             break;
 
         case BST_FAILSAFE_CONFIG:
-            bstWrite8(masterConfig.failsafeConfig.failsafe_delay);
-            bstWrite8(masterConfig.failsafeConfig.failsafe_off_delay);
-            bstWrite16(masterConfig.failsafeConfig.failsafe_throttle);
+            bstWrite8(failsafeConfig()->failsafe_delay);
+            bstWrite8(failsafeConfig()->failsafe_off_delay);
+            bstWrite16(failsafeConfig()->failsafe_throttle);
             break;
 
         case BST_RXFAIL_CONFIG:
             for (i = NON_AUX_CHANNEL_COUNT; i < rxRuntimeConfig.channelCount; i++) {
-                bstWrite8(masterConfig.rxConfig.failsafe_channel_configurations[i].mode);
-                bstWrite16(RXFAIL_STEP_TO_CHANNEL_VALUE(masterConfig.rxConfig.failsafe_channel_configurations[i].step));
+                bstWrite8(rxConfig()->failsafe_channel_configurations[i].mode);
+                bstWrite16(RXFAIL_STEP_TO_CHANNEL_VALUE(rxConfig()->failsafe_channel_configurations[i].step));
             }
             break;
 
         case BST_RSSI_CONFIG:
-            bstWrite8(masterConfig.rxConfig.rssi_channel);
+            bstWrite8(rxConfig()->rssi_channel);
             break;
 
         case BST_RX_MAP:
             for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++)
-                bstWrite8(masterConfig.rxConfig.rcmap[i]);
+                bstWrite8(rxConfig()->rcmap[i]);
             break;
 
         case BST_BF_CONFIG:
-            bstWrite8(masterConfig.mixerMode);
+            bstWrite8(mixerConfig()->mixerMode);
 
             bstWrite32(featureMask());
 
-            bstWrite8(masterConfig.rxConfig.serialrx_provider);
+            bstWrite8(rxConfig()->serialrx_provider);
 
-            bstWrite16(masterConfig.boardAlignment.rollDegrees);
-            bstWrite16(masterConfig.boardAlignment.pitchDegrees);
-            bstWrite16(masterConfig.boardAlignment.yawDegrees);
+            bstWrite16(boardAlignment()->rollDegrees);
+            bstWrite16(boardAlignment()->pitchDegrees);
+            bstWrite16(boardAlignment()->yawDegrees);
 
-            bstWrite16(masterConfig.batteryConfig.currentMeterScale);
-            bstWrite16(masterConfig.batteryConfig.currentMeterOffset);
+            bstWrite16(batteryConfig()->currentMeterScale);
+            bstWrite16(batteryConfig()->currentMeterOffset);
             break;
 
         case BST_CF_SERIAL_CONFIG:
             for (i = 0; i < SERIAL_PORT_COUNT; i++) {
-                if (!serialIsPortAvailable(masterConfig.serialConfig.portConfigs[i].identifier)) {
+                if (!serialIsPortAvailable(serialConfig()->portConfigs[i].identifier)) {
                     continue;
                 };
-                bstWrite8(masterConfig.serialConfig.portConfigs[i].identifier);
-                bstWrite16(masterConfig.serialConfig.portConfigs[i].functionMask);
-                bstWrite8(masterConfig.serialConfig.portConfigs[i].msp_baudrateIndex);
-                bstWrite8(masterConfig.serialConfig.portConfigs[i].gps_baudrateIndex);
-                bstWrite8(masterConfig.serialConfig.portConfigs[i].telemetry_baudrateIndex);
-                bstWrite8(masterConfig.serialConfig.portConfigs[i].blackbox_baudrateIndex);
+                bstWrite8(serialConfig()->portConfigs[i].identifier);
+                bstWrite16(serialConfig()->portConfigs[i].functionMask);
+                bstWrite8(serialConfig()->portConfigs[i].msp_baudrateIndex);
+                bstWrite8(serialConfig()->portConfigs[i].gps_baudrateIndex);
+                bstWrite8(serialConfig()->portConfigs[i].telemetry_baudrateIndex);
+                bstWrite8(serialConfig()->portConfigs[i].blackbox_baudrateIndex);
             }
             break;
 
 #ifdef LED_STRIP
         case BST_LED_COLORS:
             for (i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-                hsvColor_t *color = &masterConfig.colors[i];
+                hsvColor_t *color = &ledStripConfigMutable()->colors[i];
                 bstWrite16(color->h);
                 bstWrite8(color->s);
                 bstWrite8(color->v);
@@ -943,7 +946,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 
         case BST_LED_STRIP_CONFIG:
             for (i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
-                ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
+                const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
                 bstWrite32(*ledConfig);
             }
             break;
@@ -970,13 +973,13 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite32(0); // future exp
             break;
         case BST_DEADBAND:
-            bstWrite8(masterConfig.rcControlsConfig.alt_hold_deadband);
-            bstWrite8(masterConfig.rcControlsConfig.alt_hold_fast_change);
-            bstWrite8(masterConfig.rcControlsConfig.deadband);
-            bstWrite8(masterConfig.rcControlsConfig.yaw_deadband);
+            bstWrite8(rcControlsConfig()->alt_hold_deadband);
+            bstWrite8(rcControlsConfig()->alt_hold_fast_change);
+            bstWrite8(rcControlsConfig()->deadband);
+            bstWrite8(rcControlsConfig()->yaw_deadband);
             break;
         case BST_FC_FILTERS:
-            bstWrite16(constrain(masterConfig.gyro_lpf, 0, 1)); // Extra safety to prevent OSD setting corrupt values
+            bstWrite16(constrain(gyroConfig()->gyro_lpf, 0, 1)); // Extra safety to prevent OSD setting corrupt values
             break;
         default:
             // we do not know how to handle the (valid) message, indicate error BST
@@ -1001,12 +1004,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
     switch(bstWriteCommand) {
         case BST_SELECT_SETTING:
             if (!ARMING_FLAG(ARMED)) {
-                masterConfig.current_profile_index = bstRead8();
-                if (masterConfig.current_profile_index > 2) {
-                    masterConfig.current_profile_index = 0;
-                }
-                writeEEPROM();
-                readEEPROM();
+                changePidProfile(bstRead8());
             }
             break;
         case BST_SET_HEAD:
@@ -1028,32 +1026,30 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                 }
             }
         case BST_SET_ACC_TRIM:
-            masterConfig.accelerometerTrims.values.pitch = bstRead16();
-            masterConfig.accelerometerTrims.values.roll  = bstRead16();
+            accelerometerConfigMutable()->accelerometerTrims.values.pitch = bstRead16();
+            accelerometerConfigMutable()->accelerometerTrims.values.roll  = bstRead16();
             break;
         case BST_SET_ARMING_CONFIG:
-            masterConfig.auto_disarm_delay = bstRead8();
-            masterConfig.disarm_kill_switch = bstRead8();
+            armingConfigMutable()->auto_disarm_delay = bstRead8();
+            armingConfigMutable()->disarm_kill_switch = bstRead8();
             break;
         case BST_SET_LOOP_TIME:
             //masterConfig.looptime = bstRead16();
-            cycleTime = bstRead16();
+            bstRead16();
             break;
         case BST_SET_PID_CONTROLLER:
-            currentProfile->pidProfile.pidController = bstRead8();
-            pidSetController(currentProfile->pidProfile.pidController);
             break;
         case BST_SET_PID:
             for (i = 0; i < PID_ITEM_COUNT; i++) {
-                currentProfile->pidProfile.P8[i] = bstRead8();
-                currentProfile->pidProfile.I8[i] = bstRead8();
-                currentProfile->pidProfile.D8[i] = bstRead8();
+                currentPidProfile->P8[i] = bstRead8();
+                currentPidProfile->I8[i] = bstRead8();
+                currentPidProfile->D8[i] = bstRead8();
             }
             break;
         case BST_SET_MODE_RANGE:
             i = bstRead8();
             if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
-                modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
+                modeActivationCondition_t *mac = modeActivationConditionsMutable(i);
                 i = bstRead8();
                 const box_t *box = findBoxByPermenantId(i);
                 if (box) {
@@ -1062,7 +1058,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                     mac->range.startStep = bstRead8();
                     mac->range.endStep = bstRead8();
 
-                    useRcControlsConfig(masterConfig.modeActivationConditions, &masterConfig.escAndServoConfig, &currentProfile->pidProfile);
+                    useRcControlsConfig(modeActivationConditions(0), currentPidProfile);
                 } else {
                     ret = BST_FAILED;
                 }
@@ -1073,7 +1069,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
         case BST_SET_ADJUSTMENT_RANGE:
             i = bstRead8();
             if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
-                adjustmentRange_t *adjRange = &masterConfig.adjustmentRanges[i];
+                adjustmentRange_t *adjRange = adjustmentRangesMutable(i);
                 i = bstRead8();
                 if (i < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT) {
                     adjRange->adjustmentIndex = i;
@@ -1105,6 +1101,9 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                 if (bstReadDataSize() >= 11) {
                     currentControlRateProfile->rcYawExpo8 = bstRead8();
                 }
+                if (bstReadDataSize() >= 12) {
+                    currentControlRateProfile->rcYawRate8 = bstRead8();
+                }
             } else {
                 ret = BST_FAILED;
             }
@@ -1112,37 +1111,37 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
         case BST_SET_MISC:
             tmp = bstRead16();
             if (tmp < 1600 && tmp > 1400)
-                masterConfig.rxConfig.midrc = tmp;
+                rxConfigMutable()->midrc = tmp;
 
-            masterConfig.escAndServoConfig.minthrottle = bstRead16();
-            masterConfig.escAndServoConfig.maxthrottle = bstRead16();
-            masterConfig.escAndServoConfig.mincommand = bstRead16();
+            motorConfigMutable()->minthrottle = bstRead16();
+            motorConfigMutable()->maxthrottle = bstRead16();
+            motorConfigMutable()->mincommand = bstRead16();
 
-            masterConfig.failsafeConfig.failsafe_throttle = bstRead16();
+            failsafeConfigMutable()->failsafe_throttle = bstRead16();
 
     #ifdef GPS
-            masterConfig.gpsConfig.provider = bstRead8(); // gps_type
+            gpsConfigMutable()->provider = bstRead8(); // gps_type
             bstRead8(); // gps_baudrate
-            masterConfig.gpsConfig.sbasMode = bstRead8(); // gps_ubx_sbas
+            gpsConfigMutable()->sbasMode = bstRead8(); // gps_ubx_sbas
     #else
             bstRead8(); // gps_type
             bstRead8(); // gps_baudrate
             bstRead8(); // gps_ubx_sbas
     #endif
-            masterConfig.batteryConfig.multiwiiCurrentMeterOutput = bstRead8();
-            masterConfig.rxConfig.rssi_channel = bstRead8();
+            batteryConfigMutable()->multiwiiCurrentMeterOutput = bstRead8();
+            rxConfigMutable()->rssi_channel = bstRead8();
             bstRead8();
 
-            masterConfig.mag_declination = bstRead16() * 10;
+            compassConfigMutable()->mag_declination = bstRead16() * 10;
 
-            masterConfig.batteryConfig.vbatscale = bstRead8();           // actual vbatscale as intended
-            masterConfig.batteryConfig.vbatmincellvoltage = bstRead8();  // vbatlevel_warn1 in MWC2.3 GUI
-            masterConfig.batteryConfig.vbatmaxcellvoltage = bstRead8();  // vbatlevel_warn2 in MWC2.3 GUI
-            masterConfig.batteryConfig.vbatwarningcellvoltage = bstRead8();  // vbatlevel when buzzer starts to alert
+            batteryConfigMutable()->vbatscale = bstRead8();           // actual vbatscale as intended
+            batteryConfigMutable()->vbatmincellvoltage = bstRead8();  // vbatlevel_warn1 in MWC2.3 GUI
+            batteryConfigMutable()->vbatmaxcellvoltage = bstRead8();  // vbatlevel_warn2 in MWC2.3 GUI
+            batteryConfigMutable()->vbatwarningcellvoltage = bstRead8();  // vbatlevel when buzzer starts to alert
             break;
         case BST_SET_MOTOR:
             for (i = 0; i < 8; i++) // FIXME should this use MAX_MOTORS or MAX_SUPPORTED_MOTORS instead of 8
-                motor_disarmed[i] = bstRead16();
+                motor_disarmed[i] = convertExternalToMotor(bstRead16());
             break;
         case BST_SET_SERVO_CONFIGURATION:
 #ifdef USE_SERVOS
@@ -1154,14 +1153,14 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
            if (i >= MAX_SUPPORTED_SERVOS) {
                ret = BST_FAILED;
            } else {
-               masterConfig.servoConf[i].min = bstRead16();
-               masterConfig.servoConf[i].max = bstRead16();
-               masterConfig.servoConf[i].middle = bstRead16();
-               masterConfig.servoConf[i].rate = bstRead8();
-               masterConfig.servoConf[i].angleAtMin = bstRead8();
-               masterConfig.servoConf[i].angleAtMax = bstRead8();
-               masterConfig.servoConf[i].forwardFromChannel = bstRead8();
-               masterConfig.servoConf[i].reversedSources = bstRead32();
+               servoParamsMutable(i)->min = bstRead16();
+               servoParamsMutable(i)->max = bstRead16();
+               servoParamsMutable(i)->middle = bstRead16();
+               servoParamsMutable(i)->rate = bstRead8();
+               servoParamsMutable(i)->angleAtMin = bstRead8();
+               servoParamsMutable(i)->angleAtMax = bstRead8();
+               servoParamsMutable(i)->forwardFromChannel = bstRead8();
+               servoParamsMutable(i)->reversedSources = bstRead32();
            }
 #endif
            break;
@@ -1171,13 +1170,13 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
            if (i >= MAX_SERVO_RULES) {
                ret = BST_FAILED;
            } else {
-               masterConfig.customServoMixer[i].targetChannel = bstRead8();
-               masterConfig.customServoMixer[i].inputSource = bstRead8();
-               masterConfig.customServoMixer[i].rate = bstRead8();
-               masterConfig.customServoMixer[i].speed = bstRead8();
-               masterConfig.customServoMixer[i].min = bstRead8();
-               masterConfig.customServoMixer[i].max = bstRead8();
-               masterConfig.customServoMixer[i].box = bstRead8();
+               customServoMixersMutable(i)->targetChannel = bstRead8();
+               customServoMixersMutable(i)->inputSource = bstRead8();
+               customServoMixersMutable(i)->rate = bstRead8();
+               customServoMixersMutable(i)->speed = bstRead8();
+               customServoMixersMutable(i)->min = bstRead8();
+               customServoMixersMutable(i)->max = bstRead8();
+               customServoMixersMutable(i)->box = bstRead8();
                loadCustomServoMixer();
            }
 #endif
@@ -1253,46 +1252,53 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
         case BST_SET_FEATURE:
             featureClearAll();
             featureSet(bstRead32()); // features bitmap
+#ifdef SERIALRX_UART
+            if (featureConfigured(FEATURE_RX_SERIAL)) {
+                serialConfigMutable()->portConfigs[SERIALRX_UART].functionMask = FUNCTION_RX_SERIAL;
+            } else {
+                serialConfigMutable()->portConfigs[SERIALRX_UART].functionMask = FUNCTION_NONE;
+            }
+#endif
             break;
         case BST_SET_BOARD_ALIGNMENT:
-            masterConfig.boardAlignment.rollDegrees = bstRead16();
-            masterConfig.boardAlignment.pitchDegrees = bstRead16();
-            masterConfig.boardAlignment.yawDegrees = bstRead16();
+            boardAlignmentMutable()->rollDegrees = bstRead16();
+            boardAlignmentMutable()->pitchDegrees = bstRead16();
+            boardAlignmentMutable()->yawDegrees = bstRead16();
             break;
         case BST_SET_VOLTAGE_METER_CONFIG:
-            masterConfig.batteryConfig.vbatscale = bstRead8();           // actual vbatscale as intended
-            masterConfig.batteryConfig.vbatmincellvoltage = bstRead8();  // vbatlevel_warn1 in MWC2.3 GUI
-            masterConfig.batteryConfig.vbatmaxcellvoltage = bstRead8();  // vbatlevel_warn2 in MWC2.3 GUI
-            masterConfig.batteryConfig.vbatwarningcellvoltage = bstRead8();  // vbatlevel when buzzer starts to alert
+            batteryConfigMutable()->vbatscale = bstRead8();           // actual vbatscale as intended
+            batteryConfigMutable()->vbatmincellvoltage = bstRead8();  // vbatlevel_warn1 in MWC2.3 GUI
+            batteryConfigMutable()->vbatmaxcellvoltage = bstRead8();  // vbatlevel_warn2 in MWC2.3 GUI
+            batteryConfigMutable()->vbatwarningcellvoltage = bstRead8();  // vbatlevel when buzzer starts to alert
             break;
         case BST_SET_CURRENT_METER_CONFIG:
-            masterConfig.batteryConfig.currentMeterScale = bstRead16();
-            masterConfig.batteryConfig.currentMeterOffset = bstRead16();
-            masterConfig.batteryConfig.currentMeterType = bstRead8();
-            masterConfig.batteryConfig.batteryCapacity = bstRead16();
+            batteryConfigMutable()->currentMeterScale = bstRead16();
+            batteryConfigMutable()->currentMeterOffset = bstRead16();
+            batteryConfigMutable()->currentMeterType = bstRead8();
+            batteryConfigMutable()->batteryCapacity = bstRead16();
             break;
 
 #ifndef USE_QUAD_MIXER_ONLY
         case BST_SET_MIXER:
-            masterConfig.mixerMode = bstRead8();
+            mixerConfigMutable()->mixerMode = bstRead8();
             break;
 #endif
 
         case BST_SET_RX_CONFIG:
-           masterConfig.rxConfig.serialrx_provider = bstRead8();
-           masterConfig.rxConfig.maxcheck = bstRead16();
-           masterConfig.rxConfig.midrc = bstRead16();
-           masterConfig.rxConfig.mincheck = bstRead16();
-           masterConfig.rxConfig.spektrum_sat_bind = bstRead8();
+           rxConfigMutable()->serialrx_provider = bstRead8();
+           rxConfigMutable()->maxcheck = bstRead16();
+           rxConfigMutable()->midrc = bstRead16();
+           rxConfigMutable()->mincheck = bstRead16();
+           rxConfigMutable()->spektrum_sat_bind = bstRead8();
            if (bstReadDataSize() > 8) {
-               masterConfig.rxConfig.rx_min_usec = bstRead16();
-               masterConfig.rxConfig.rx_max_usec = bstRead16();
+               rxConfigMutable()->rx_min_usec = bstRead16();
+               rxConfigMutable()->rx_max_usec = bstRead16();
            }
            break;
         case BST_SET_FAILSAFE_CONFIG:
-           masterConfig.failsafeConfig.failsafe_delay = bstRead8();
-           masterConfig.failsafeConfig.failsafe_off_delay = bstRead8();
-           masterConfig.failsafeConfig.failsafe_throttle = bstRead16();
+           failsafeConfigMutable()->failsafe_delay = bstRead8();
+           failsafeConfigMutable()->failsafe_off_delay = bstRead8();
+           failsafeConfigMutable()->failsafe_throttle = bstRead16();
            break;
         case BST_SET_RXFAIL_CONFIG:
            {
@@ -1301,18 +1307,18 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                    ret = BST_FAILED;
                } else {
                    for (i = NON_AUX_CHANNEL_COUNT; i < channelCount; i++) {
-                       masterConfig.rxConfig.failsafe_channel_configurations[i].mode = bstRead8();
-                       masterConfig.rxConfig.failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(bstRead16());
+                       rxConfigMutable()->failsafe_channel_configurations[i].mode = bstRead8();
+                       rxConfigMutable()->failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(bstRead16());
                    }
                }
            }
            break;
         case BST_SET_RSSI_CONFIG:
-           masterConfig.rxConfig.rssi_channel = bstRead8();
+           rxConfigMutable()->rssi_channel = bstRead8();
            break;
         case BST_SET_RX_MAP:
             for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
-                masterConfig.rxConfig.rcmap[i] = bstRead8();
+                rxConfigMutable()->rcmap[i] = bstRead8();
             }
             break;
         case BST_SET_BF_CONFIG:
@@ -1320,20 +1326,20 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 #ifdef USE_QUAD_MIXER_ONLY
            bstRead8(); // mixerMode ignored
 #else
-           masterConfig.mixerMode = bstRead8(); // mixerMode
+           mixerConfigMutable()->mixerMode = bstRead8(); // mixerMode
 #endif
 
            featureClearAll();
            featureSet(bstRead32()); // features bitmap
 
-           masterConfig.rxConfig.serialrx_provider = bstRead8(); // serialrx_type
+           rxConfigMutable()->serialrx_provider = bstRead8(); // serialrx_type
 
-           masterConfig.boardAlignment.rollDegrees = bstRead16(); // board_align_roll
-           masterConfig.boardAlignment.pitchDegrees = bstRead16(); // board_align_pitch
-           masterConfig.boardAlignment.yawDegrees = bstRead16(); // board_align_yaw
+           boardAlignmentMutable()->rollDegrees = bstRead16(); // board_align_roll
+           boardAlignmentMutable()->pitchDegrees = bstRead16(); // board_align_pitch
+           boardAlignmentMutable()->yawDegrees = bstRead16(); // board_align_yaw
 
-           masterConfig.batteryConfig.currentMeterScale = bstRead16();
-           masterConfig.batteryConfig.currentMeterOffset = bstRead16();
+           batteryConfigMutable()->currentMeterScale = bstRead16();
+           batteryConfigMutable()->currentMeterOffset = bstRead16();
            break;
         case BST_SET_CF_SERIAL_CONFIG:
            {
@@ -1368,7 +1374,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
            //for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
            {
                i = bstRead8();
-               hsvColor_t *color = &masterConfig.colors[i];
+               hsvColor_t *color = &ledStripConfigMutable()->colors[i];
                color->h = bstRead16();
                color->s = bstRead8();
                color->v = bstRead8();
@@ -1381,7 +1387,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                    ret = BST_FAILED;
                    break;
                }
-               ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
+               ledConfig_t *ledConfig = &ledStripConfigMutable()->ledConfigs[i];
                *ledConfig = bstRead32();
                reevaluateLedConfig();
            }
@@ -1399,13 +1405,13 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                 DISABLE_ARMING_FLAG(PREVENT_ARMING);
             break;
         case BST_SET_DEADBAND:
-            masterConfig.rcControlsConfig.alt_hold_deadband = bstRead8();
-            masterConfig.rcControlsConfig.alt_hold_fast_change = bstRead8();
-            masterConfig.rcControlsConfig.deadband = bstRead8();
-            masterConfig.rcControlsConfig.yaw_deadband = bstRead8();
+            rcControlsConfigMutable()->alt_hold_deadband = bstRead8();
+            rcControlsConfigMutable()->alt_hold_fast_change = bstRead8();
+            rcControlsConfigMutable()->deadband = bstRead8();
+            rcControlsConfigMutable()->yaw_deadband = bstRead8();
             break;
         case BST_SET_FC_FILTERS:
-            masterConfig.gyro_lpf = bstRead16();
+            gyroConfigMutable()->gyro_lpf = bstRead16();
             break;
 
         default:
@@ -1479,11 +1485,10 @@ void bstProcessInCommand(void)
     }
 }
 
-void resetBstChecker(void)
+static void resetBstChecker(timeUs_t currentTimeUs)
 {
     if(needResetCheck) {
-        uint32_t currentTimer = micros();
-        if(currentTimer >= (resetBstTimer + BST_RESET_TIME))
+        if(currentTimeUs >= (resetBstTimer + BST_RESET_TIME))
         {
             bstTimeoutUserCallback();
             needResetCheck = false;
@@ -1500,15 +1505,14 @@ static uint32_t next20hzUpdateAt_1 = 0;
 
 static uint8_t sendCounter = 0;
 
-void taskBstMasterProcess(void)
+void taskBstMasterProcess(timeUs_t currentTimeUs)
 {
     if(coreProReady) {
-        uint32_t now = micros();
-        if(now >= next02hzUpdateAt_1 && !bstWriteBusy()) {
+        if(currentTimeUs >= next02hzUpdateAt_1 && !bstWriteBusy()) {
             writeFCModeToBST();
-            next02hzUpdateAt_1 = now + UPDATE_AT_02HZ;
+            next02hzUpdateAt_1 = currentTimeUs + UPDATE_AT_02HZ;
         }
-        if(now >= next20hzUpdateAt_1 && !bstWriteBusy()) {
+        if(currentTimeUs >= next20hzUpdateAt_1 && !bstWriteBusy()) {
             if(sendCounter == 0)
                 writeRCChannelToBST();
             else if(sendCounter == 1)
@@ -1516,18 +1520,19 @@ void taskBstMasterProcess(void)
             sendCounter++;
             if(sendCounter > 1)
                 sendCounter = 0;
-            next20hzUpdateAt_1 = now + UPDATE_AT_20HZ;
+            next20hzUpdateAt_1 = currentTimeUs + UPDATE_AT_20HZ;
         }
 
         if(sensors(SENSOR_GPS) && !bstWriteBusy())
             writeGpsPositionPrameToBST();
+
     }
     bstMasterWriteLoop();
     if (isRebootScheduled) {
         stopMotors();
         systemReset();
     }
-    resetBstChecker();
+    resetBstChecker(currentTimeUs);
 }
 
 /*************************************************************************************************/
@@ -1552,22 +1557,25 @@ static void bstMasterWrite16(uint16_t data)
     bstMasterWrite8((uint8_t)(data >> 0));
 }
 
+/*************************************************************************************************/
+#define PUBLIC_ADDRESS            0x00
+
+#ifdef GPS
 static void bstMasterWrite32(uint32_t data)
 {
     bstMasterWrite16((uint8_t)(data >> 16));
     bstMasterWrite16((uint8_t)(data >> 0));
 }
 
-/*************************************************************************************************/
-#define PUBLIC_ADDRESS            0x00
-
 static int32_t lat = 0;
 static int32_t lon = 0;
 static uint16_t alt = 0;
 static uint8_t numOfSat = 0;
+#endif
 
 bool writeGpsPositionPrameToBST(void)
 {
+#ifdef GPS
     if((lat != GPS_coord[LAT]) || (lon != GPS_coord[LON]) || (alt != GPS_altitude) || (numOfSat != GPS_numSat)) {
         lat = GPS_coord[LAT];
         lon = GPS_coord[LON];
@@ -1592,6 +1600,9 @@ bool writeGpsPositionPrameToBST(void)
         return bstMasterWrite(masterWriteData);
     } else
         return false;
+#else
+    return true;
+#endif
 }
 
 bool writeRollPitchYawToBST(void)

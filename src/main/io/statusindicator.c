@@ -21,9 +21,7 @@
 #include "platform.h"
 
 #include "drivers/system.h"
-#include "drivers/gpio.h"
 #include "drivers/light_led.h"
-#include "drivers/sound_beeper.h"
 
 #include "statusindicator.h"
 

@@ -17,6 +17,7 @@
 #define GYRO_SCALE_FACTOR  0.00053292f  // (4/131) * pi/180   (32.75 LSB = 1 DPS)
 
 #define MPU9250_WHO_AM_I_CONST              (0x71)
+#define MPU9255_WHO_AM_I_CONST              (0x73)
 
 #define MPU9250_BIT_RESET                   (0x80)
 
@@ -27,8 +28,8 @@ void mpu9250ResetGyro(void);
 
 bool mpu9250SpiDetect(void);
 
-bool mpu9250SpiAccDetect(acc_t *acc);
-bool mpu9250SpiGyroDetect(gyro_t *gyro);
+bool mpu9250SpiAccDetect(accDev_t *acc);
+bool mpu9250SpiGyroDetect(gyroDev_t *gyro);
 
 bool mpu9250WriteRegister(uint8_t reg, uint8_t data);
 bool verifympu9250WriteRegister(uint8_t reg, uint8_t data);

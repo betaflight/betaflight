@@ -17,21 +17,23 @@
  * have a look at https://github.com/sim-/tgy/blob/master/boot.inc
  * for info about the stk500v2 implementation
  */
+
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
-#include <stdlib.h>
 
 #include "platform.h"
+
 #ifdef  USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+#include "drivers/io.h"
 #include "drivers/serial.h"
-#include "config/config.h"
+#include "drivers/system.h"
+
 #include "io/serial.h"
-#include "io/serial_msp.h"
 #include "io/serial_4way.h"
 #include "io/serial_4way_impl.h"
 #include "io/serial_4way_stk500v2.h"
-#include "drivers/system.h"
+
 #ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
 
 #define BIT_LO_US (32) //32uS

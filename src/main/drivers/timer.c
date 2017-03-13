@@ -18,14 +18,17 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 
 #include "platform.h"
+
+#include "build/atomic.h"
+
 #include "common/utils.h"
-#include "common/atomic.h"
 
 #include "nvic.h"
 
-#include "gpio.h"
+#include "io.h"
 #include "rcc.h"
 #include "system.h"
 
@@ -197,7 +200,7 @@ static inline uint8_t lookupChannelIndex(const uint16_t channel)
 
 rccPeriphTag_t timerRCC(TIM_TypeDef *tim)
 {
-    for (uint8_t i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
+    for (int i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
         if (timerDefinitions[i].TIMx == tim) {
             return timerDefinitions[i].rcc;
         }
@@ -205,17 +208,15 @@ rccPeriphTag_t timerRCC(TIM_TypeDef *tim)
     return 0;
 }
 
-#if defined(STM32F3) || defined(STM32F4)
-uint8_t timerGPIOAF(TIM_TypeDef *tim)
+uint8_t timerInputIrq(TIM_TypeDef *tim)
 {
-    for (uint8_t i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
+    for (int i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
         if (timerDefinitions[i].TIMx == tim) {
-            return timerDefinitions[i].alternateFunction;
+            return timerDefinitions[i].inputIrq;
         }
     }
     return 0;
 }
-#endif
 
 void timerNVICConfigure(uint8_t irq)
 {
@@ -237,23 +238,7 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz)
 
     // "The counter clock frequency (CK_CNT) is equal to f CK_PSC / (PSC[15:0] + 1)." - STM32F10x Reference Manual 14.4.11
     // Thus for 1Mhz: 72000000 / 1000000 = 72, 72 - 1 = 71 = TIM_Prescaler
-#if defined (STM32F40_41xxx)
-    if (tim == TIM1 || tim == TIM8 || tim == TIM9 || tim == TIM10 || tim == TIM11) {
-        TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / ((uint32_t)mhz * 1000000)) - 1;
-    }
-    else {
-        TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / 2 / ((uint32_t)mhz * 1000000)) - 1;
-    }
-#elif defined (STM32F411xE)
-    if (tim == TIM1 || tim == TIM9 || tim == TIM10 || tim == TIM11) {
-        TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / ((uint32_t)mhz * 1000000)) - 1;
-    }
-    else {
-        TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / 2 / ((uint32_t)mhz * 1000000)) - 1;
-    }
-#else
-    TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / ((uint32_t)mhz * 1000000)) - 1;
-#endif
+    TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / timerClockDivisor(tim) / ((uint32_t)mhz * 1000000)) - 1;
 
     TIM_TimeBaseStructure.TIM_ClockDivision = 0;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
@@ -265,9 +250,11 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
 {
     configTimeBase(timerHardwarePtr->tim, period, mhz);
     TIM_Cmd(timerHardwarePtr->tim, ENABLE);
-    timerNVICConfigure(timerHardwarePtr->irq);
+
+    uint8_t irq = timerInputIrq(timerHardwarePtr->tim);
+    timerNVICConfigure(irq);
     // HACK - enable second IRQ on timers that need it
-    switch(timerHardwarePtr->irq) {
+    switch(irq) {
 #if defined(STM32F10X)
     case TIM1_CC_IRQn:
         timerNVICConfigure(TIM1_UP_IRQn);
@@ -297,7 +284,7 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
 }
 
 // allocate and configure timer channel. Timer priority is set to highest priority of its channels
-void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriority)
+void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriority, uint8_t irq)
 {
     unsigned channel = timHw - timerHardware;
     if(channel >= USABLE_TIMER_CHANNEL_COUNT)
@@ -314,7 +301,7 @@ void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriori
 
         NVIC_InitTypeDef NVIC_InitStructure;
 
-        NVIC_InitStructure.NVIC_IRQChannel = timHw->irq;
+        NVIC_InitStructure.NVIC_IRQChannel = irq;
         NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(irqPriority);
         NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(irqPriority);
         NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
@@ -428,7 +415,7 @@ void timerChClearCCFlag(const timerHardware_t *timHw)
 // configure timer channel GPIO mode
 void timerChConfigGPIO(const timerHardware_t* timHw, ioConfig_t mode)
 {
-    IOInit(IOGetByTag(timHw->tag), OWNER_TIMER, RESOURCE_TIMER, 0);
+    IOInit(IOGetByTag(timHw->tag), OWNER_TIMER, 0);
     IOConfigGPIO(IOGetByTag(timHw->tag), mode);
 }
 
@@ -506,8 +493,6 @@ volatile timCCR_t* timerChCCRLo(const timerHardware_t *timHw)
 {
     return (volatile timCCR_t*)((volatile char*)&timHw->tim->CCR1 + (timHw->channel & ~TIM_Channel_2));
 }
-
-
 
 volatile timCCR_t* timerChCCR(const timerHardware_t *timHw)
 {
@@ -714,14 +699,14 @@ void timerInit(void)
 #endif
 
     /* enable the timer peripherals */
-    for (uint8_t i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
         RCC_ClockCmd(timerRCC(timerHardware[i].tim), ENABLE);
     }
 
 #if defined(STM32F3) || defined(STM32F4)
-    for (uint8_t timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
+    for (int timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
         const timerHardware_t *timerHardwarePtr = &timerHardware[timerIndex];
-        IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->tag), timerHardwarePtr->ioMode, timerHardwarePtr->alternateFunction);
+        IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->tag), IOCFG_AF_PP, timerHardwarePtr->alternateFunction);
     }
 #endif
 
@@ -781,4 +766,94 @@ void timerForceOverflow(TIM_TypeDef *tim)
         // Force an overflow by setting the UG bit
         tim->EGR |= TIM_EGR_UG;
     }
+}
+
+const timerHardware_t *timerGetByTag(ioTag_t tag, timerUsageFlag_e flag)
+{
+    if (!tag) {
+        return NULL;
+    }
+
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+        if (timerHardware[i].tag == tag) {
+            if (timerHardware[i].usageFlags & flag || flag == 0) {
+                return &timerHardware[i];
+            }
+        }
+    }
+    return NULL;
+}
+
+#if !defined(USE_HAL_DRIVER)
+void timerOCInit(TIM_TypeDef *tim, uint8_t channel, TIM_OCInitTypeDef *init)
+{
+    switch (channel) {
+    case TIM_Channel_1:
+        TIM_OC1Init(tim, init);
+        break;
+    case TIM_Channel_2:
+        TIM_OC2Init(tim, init);
+        break;
+    case TIM_Channel_3:
+        TIM_OC3Init(tim, init);
+        break;
+    case TIM_Channel_4:
+        TIM_OC4Init(tim, init);
+        break;
+    }
+}
+
+void timerOCPreloadConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t preload)
+{
+    switch (channel) {
+    case TIM_Channel_1:
+        TIM_OC1PreloadConfig(tim, preload);
+        break;
+    case TIM_Channel_2:
+        TIM_OC2PreloadConfig(tim, preload);
+        break;
+    case TIM_Channel_3:
+        TIM_OC3PreloadConfig(tim, preload);
+        break;
+    case TIM_Channel_4:
+        TIM_OC4PreloadConfig(tim, preload);
+        break;
+    }
+}
+#endif
+
+volatile timCCR_t* timerCCR(TIM_TypeDef *tim, uint8_t channel)
+{
+    return (volatile timCCR_t*)((volatile char*)&tim->CCR1 + channel);
+}
+
+#ifndef USE_HAL_DRIVER
+uint16_t timerDmaSource(uint8_t channel)
+{
+    switch (channel) {
+    case TIM_Channel_1:
+        return TIM_DMA_CC1;
+    case TIM_Channel_2:
+        return TIM_DMA_CC2;
+    case TIM_Channel_3:
+        return TIM_DMA_CC3;
+    case TIM_Channel_4:
+        return TIM_DMA_CC4;
+    }
+    return 0;
+}
+#endif
+
+uint16_t timerGetPrescalerByDesiredMhz(TIM_TypeDef *tim, uint16_t mhz)
+{
+    // protection here for desired MHZ > SystemCoreClock???
+    if ((uint32_t)(mhz * 1000000) > (SystemCoreClock / timerClockDivisor(tim))) {
+        return 0;
+    }
+    return (uint16_t)(round((SystemCoreClock / timerClockDivisor(tim) / (mhz * 1000000)) - 1));
+}
+
+uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_t hertz)
+{
+    return ((uint16_t)((SystemCoreClock / timerClockDivisor(tim) / (prescaler + 1)) / hertz));
 }

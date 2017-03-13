@@ -13,9 +13,19 @@
 obj/
 patches/
 startup_stm32f10x_md_gcc.s
+.idea
 
 # script-generated files
 docs/Manual.pdf
 README.pdf
-tools
-downloads
+
+# artifacts of top-level Makefile
+/downloads
+/tools
+/build
+# local changes only
+make/local.mk
+
+mcu.mak
+mcu.mak.old
+stm32.mak

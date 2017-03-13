@@ -17,9 +17,17 @@
 
 #pragma once
 
+#ifdef AIORACERF3
+#define TARGET_BOARD_IDENTIFIER "ARF3"
+#else
 #define TARGET_BOARD_IDENTIFIER "SPEV"
 
+#define TARGET_CONFIG
+#endif
+
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
+
+#define BRUSHED_ESC_AUTODETECT
 
 #define LED0                    PB8
 
@@ -35,6 +43,7 @@
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 
+#define USE_ESC_SENSOR
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6500
@@ -56,13 +65,23 @@
 
 //#define SONAR
 
-#define USB_IO
-
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-#define SERIAL_PORT_COUNT       4
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SOFTSERIAL1_RX_PIN      PA6 // PWM 5
+#define SOFTSERIAL1_TX_PIN      PA7 // PWM 6
+
+#define SOFTSERIAL2_RX_PIN      PB0 // PWM 7
+#define SOFTSERIAL2_TX_PIN      PB1 // PWM 8
+
+#define SERIAL_PORT_COUNT       6
+
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
@@ -74,7 +93,8 @@
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
 #define USE_I2C
-#define I2C_DEVICE              (I2CDEV_1) // PB6/SCL, PB7/SDA
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1 // PB9,3,4,5 on AF5 SPI1 (MPU)
@@ -114,40 +134,23 @@
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
 #define ADC_INSTANCE            ADC2
+#define RSSI_ADC_PIN            PB2
+#ifdef AIORACERF3
+#define VBAT_ADC_PIN            PA5
+#define CURRENT_METER_ADC_PIN   PA4
+#else
 #define VBAT_ADC_PIN            PA4
 #define CURRENT_METER_ADC_PIN   PA5
-#define RSSI_ADC_PIN            PB2
-
-#define LED_STRIP
-#define USE_LED_STRIP_ON_DMA1_CHANNEL2
-#define WS2811_PIN                      PA8
-#define WS2811_TIMER                    TIM1
-#define WS2811_DMA_CHANNEL              DMA1_Channel2
-#define WS2811_IRQ                      DMA1_Channel2_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
+#endif
 
 #define TRANSPONDER
-#define TRANSPONDER_GPIO                     GPIOA
-#define TRANSPONDER_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-#define TRANSPONDER_GPIO_AF                  GPIO_AF_6
-#define TRANSPONDER_PIN                      GPIO_Pin_8
-#define TRANSPONDER_PIN_SOURCE               GPIO_PinSource8
-#define TRANSPONDER_TIMER                    TIM1
-#define TRANSPONDER_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
-#define TRANSPONDER_DMA_CHANNEL              DMA1_Channel2
-#define TRANSPONDER_IRQ                      DMA1_Channel2_IRQn
-#define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC2
-#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define DEFAULT_FEATURES        (FEATURE_TRANSPONDER | FEATURE_BLACKBOX | FEATURE_RSSI_ADC | FEATURE_CURRENT_METER | FEATURE_TELEMETRY)
 
-#define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN                PB11
+#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -158,5 +161,8 @@
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
 #define USABLE_TIMER_CHANNEL_COUNT 12 // PPM, 8 PWM, UART3 RX/TX, LED Strip
-#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(15))
-
+#ifdef AIORACERF3
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(15) | TIM_N(17))
+#else
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(15) | TIM_N(16))
+#endif

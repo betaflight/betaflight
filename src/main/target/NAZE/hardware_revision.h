@@ -16,8 +16,6 @@
  */
 #pragma once
 
-#include "drivers/exti.h"
-
 typedef enum nazeHardwareRevision_t {
     UNKNOWN = 0,
     NAZE32, // Naze32 and compatible with 8MHz HSE
@@ -32,4 +30,5 @@ void detectHardwareRevision(void);
 
 void spiBusInit(void);
 
-const extiConfig_t *selectMPUIntExtiConfigByHardwareRevision(void);
+struct extiConfig_s;
+const struct extiConfig_s *selectMPUIntExtiConfigByHardwareRevision(void);

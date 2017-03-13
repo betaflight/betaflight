@@ -61,6 +61,9 @@
 #define USE_SOFTSERIAL2
 #define SERIAL_PORT_COUNT       5
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
 
@@ -70,15 +73,15 @@
 #define UART3_TX_PIN            PB10 // PB10 (AF7)
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
-#define SOFTSERIAL_1_TIMER      TIM3
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
-#define SOFTSERIAL_2_TIMER TIM3
-#define SOFTSERIAL_2_TIMER_RX_HARDWARE 6 // PWM 7
-#define SOFTSERIAL_2_TIMER_TX_HARDWARE 7 // PWM 8
+#define SOFTSERIAL1_RX_PIN      PB4  // PWM 5
+#define SOFTSERIAL1_TX_PIN      PB5  // PWM 6
+
+#define SOFTSERIAL2_RX_PIN      PB0  // PWM 7
+#define SOFTSERIAL2_TX_PIN      PB1  // PWM 8
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_1) // PB6/SCL, PB7/SDA
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_SPI
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
@@ -93,20 +96,18 @@
 #define CURRENT_METER_ADC_PIN       PA5
 #define RSSI_ADC_PIN                PB2
 
-#define LED_STRIP
 #define WS2811_PIN                      PA8
 #define WS2811_TIMER                    TIM1
 #define WS2811_DMA_CHANNEL              DMA1_Channel2
 #define WS2811_IRQ                      DMA1_Channel2_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
+#define WS2811_TIMER_GPIO_AF            GPIO_AF_6
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define DEFAULT_FEATURES        FEATURE_BLACKBOX
 
-#define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN   PB11
+#define SPEKTRUM_BIND_PIN   UART3_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

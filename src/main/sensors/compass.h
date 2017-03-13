@@ -17,21 +17,40 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
+
+#include "drivers/io.h"
+#include "drivers/sensor.h"
+#include "sensors/sensors.h"
+
 // Type of magnetometer used/detected
 typedef enum {
     MAG_DEFAULT = 0,
     MAG_NONE = 1,
     MAG_HMC5883 = 2,
     MAG_AK8975 = 3,
-    MAG_AK8963 = 4,
-    MAG_MAX = MAG_AK8963
+    MAG_AK8963 = 4
 } magSensor_e;
 
-void compassInit(void);
-union flightDynamicsTrims_u;
-void updateCompass(union flightDynamicsTrims_u *magZero);
+typedef struct mag_s {
+    int32_t magADC[XYZ_AXIS_COUNT];
+    float magneticDeclination;
+} mag_t;
 
-extern int32_t magADC[XYZ_AXIS_COUNT];
-
-extern sensor_align_e magAlign;
 extern mag_t mag;
+
+typedef struct compassConfig_s {
+    int16_t mag_declination;                // Get your magnetic decliniation from here : http://magnetic-declination.com/
+                                            // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
+    sensor_align_e mag_align;               // mag alignment
+    uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
+    ioTag_t interruptTag;
+    flightDynamicsTrims_t magZero;
+} compassConfig_t;
+
+PG_DECLARE(compassConfig_t, compassConfig);
+
+bool compassInit(void);
+union flightDynamicsTrims_u;
+void compassUpdate(uint32_t currentTime, union flightDynamicsTrims_u *magZero);
+

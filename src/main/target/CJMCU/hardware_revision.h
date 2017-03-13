@@ -16,9 +16,7 @@
  */
 #pragma once
 
- #include "drivers/exti.h"
-
-typedef enum cjmcuHardwareRevision_t {
+ typedef enum cjmcuHardwareRevision_t {
     UNKNOWN = 0,
     REV_1, // Blue LED3
     REV_2  // Green LED3
@@ -31,4 +29,5 @@ void detectHardwareRevision(void);
 
 void spiBusInit(void);
 
-const extiConfig_t *selectMPUIntExtiConfigByHardwareRevision(void);
+struct extiConfig_s;
+const struct extiConfig_s *selectMPUIntExtiConfigByHardwareRevision(void);

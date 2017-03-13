@@ -21,6 +21,7 @@
 #define BST_DEVICE_NAME         "COLIBRI RACE"
 #define BST_DEVICE_NAME_LENGTH  12
 #define TARGET_CONFIG
+#define TARGET_VALIDATECONFIG
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
@@ -34,11 +35,8 @@
 // MPU6500 interrupt
 #define USE_EXTI
 #define MPU_INT_EXTI            PA5
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
-
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -77,13 +75,20 @@
 #define USE_MAG_AK8963
 #define USE_MAG_AK8975
 
-#define USB_IO
-
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
+/* USE_SOFTSERIALx has a conflict with USE_BST that prevents FC from being recognized from configurator
+ Drop USE_SOFTSERIALx until resolution is provided.
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+#define SERIAL_PORT_COUNT       6
+*/
 #define SERIAL_PORT_COUNT       4
+
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
 
 #define UART1_TX_PIN            PC4
 #define UART1_RX_PIN            PC5
@@ -95,13 +100,13 @@
 #define UART3_RX_PIN            PB11
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_2)
-
+#define USE_I2C_DEVICE_2
+#define I2C_DEVICE              (I2CDEV_2)
 #define I2C2_SCL_PIN            PA9
 #define I2C2_SDA_PIN            PA10
 
 #define USE_BST
-#define BST_DEVICE (BSTDEV_1)
+#define BST_DEVICE              (BSTDEV_1)
 /* Configure the CRC peripheral to use the polynomial x8 + x7 + x6 + x4 + x2 + 1 */
 #define BST_CRC_POLYNOM         0xD5
 
@@ -112,19 +117,10 @@
 #define RSSI_ADC_PIN            PC2
 #define EXTERNAL1_ADC_PIN       PC3
 
-#define LED_STRIP
-
-#define WS2811_PIN                      PA6 // TIM16_CH1
-#define WS2811_TIMER                    TIM16
-#define WS2811_DMA_CHANNEL              DMA1_Channel3
-#define WS2811_IRQ                      DMA1_Channel3_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
-
-#define DEFAULT_FEATURES        FEATURE_VBAT
+#define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_FAILSAFE | FEATURE_AIRMODE | FEATURE_LED_STRIP)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
-#define SERIALRX_UART           SERIAL_PORT_USART3
+#define SERIALRX_UART           SERIAL_PORT_USART2
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -135,6 +131,6 @@
 #define TARGET_IO_PORTD         (BIT(2))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
-#define USABLE_TIMER_CHANNEL_COUNT 11
+#define USABLE_TIMER_CHANNEL_COUNT 12
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15))
 

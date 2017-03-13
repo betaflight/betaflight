@@ -45,7 +45,7 @@
 * Output         : None.
 * Return         : None	.
 *******************************************************************************/
-void UserToPMABufferCopy(uint8_t *pbUsrBuf, uint16_t wPMABufAddr, uint16_t wNBytes)
+void UserToPMABufferCopy(const uint8_t *pbUsrBuf, uint16_t wPMABufAddr, uint16_t wNBytes)
 {
   uint32_t n = (wNBytes + 1) >> 1;   /* n = (wNBytes + 1) / 2 */
   uint32_t i, temp1, temp2;

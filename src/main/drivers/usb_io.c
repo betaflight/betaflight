@@ -20,13 +20,12 @@
 
 #include "platform.h"
 
-#ifdef USB_IO
+#ifdef USE_VCP
 
 #include "io.h"
 #include "system.h"
 #include "usb_io.h"
 #include "sdcard.h"
-
 
 
 #ifdef USB_DETECT_PIN
@@ -36,7 +35,7 @@ static IO_t usbDetectPin = IO_NONE;
 void usbCableDetectDeinit(void)
 {
 #ifdef USB_DETECT_PIN
-    IOInit(usbDetectPin, OWNER_FREE, RESOURCE_NONE, 0);
+    IOInit(usbDetectPin, OWNER_FREE, 0);
     IOConfigGPIO(usbDetectPin, IOCFG_IN_FLOATING);
     usbDetectPin = IO_NONE;
 #endif
@@ -47,7 +46,7 @@ void usbCableDetectInit(void)
 #ifdef USB_DETECT_PIN
     usbDetectPin = IOGetByTag(IO_TAG(USB_DETECT_PIN));
 
-    IOInit(usbDetectPin, OWNER_USB, RESOURCE_INPUT, 0);
+    IOInit(usbDetectPin, OWNER_USB_DETECT, 0);
     IOConfigGPIO(usbDetectPin, IOCFG_OUT_PP);
 #endif
 }
@@ -69,11 +68,10 @@ void usbGenerateDisconnectPulse(void)
     IO_t usbPin = IOGetByTag(IO_TAG(PA12));
     IOConfigGPIO(usbPin, IOCFG_OUT_OD);
 
-    IOHi(usbPin);
+    IOLo(usbPin);
 
     delay(200);
 
-    IOLo(usbPin);
+    IOHi(usbPin);
 }
-
 #endif

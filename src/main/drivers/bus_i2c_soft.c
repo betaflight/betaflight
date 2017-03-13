@@ -20,9 +20,10 @@
 
 #include <platform.h>
 
-#include "build_config.h"
+#include "build/build_config.h"
+
 #include "bus_i2c.h"
-#include "drivers/io.h"
+#include "io.h"
 
 // Software I2C driver, using same pins as hardware I2C, with hw i2c module disabled.
 // Can be configured for I2C2 pinout (SCL: PB10, SDA: PB11) or I2C1 pinout (SCL: PB6, SDA: PB7)

@@ -20,7 +20,7 @@
 typedef void (*baroOpFuncPtr)(void);                       // baro start operation
 typedef void (*baroCalculateFuncPtr)(int32_t *pressure, int32_t *temperature); // baro calculation (filled params are pressure and temperature)
 
-typedef struct baro_s {
+typedef struct baroDev_s {
     uint16_t ut_delay;
     uint16_t up_delay;
     baroOpFuncPtr start_ut;
@@ -28,7 +28,7 @@ typedef struct baro_s {
     baroOpFuncPtr start_up;
     baroOpFuncPtr get_up;
     baroCalculateFuncPtr calculate;
-} baro_t;
+} baroDev_t;
 
 #ifndef BARO_I2C_INSTANCE
 #define BARO_I2C_INSTANCE I2C_DEVICE

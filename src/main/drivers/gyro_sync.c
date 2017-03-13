@@ -10,46 +10,48 @@
 
 #include "platform.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/gyro_sync.h"
+#include "sensor.h"
+#include "accgyro.h"
+#include "gyro_sync.h"
 
-static uint8_t mpuDividerDrops;
 
-bool gyroSyncCheckUpdate(const gyro_t *gyro)
+bool gyroSyncCheckUpdate(gyroDev_t *gyro)
 {
     if (!gyro->intStatus)
         return false;
-    return gyro->intStatus();
+    return gyro->intStatus(gyro);
 }
 
-#define GYRO_LPF_256HZ      0
-#define GYRO_LPF_188HZ      1
-#define GYRO_LPF_98HZ       2
-#define GYRO_LPF_42HZ       3
-#define GYRO_LPF_20HZ       4
-#define GYRO_LPF_10HZ       5
-#define GYRO_LPF_5HZ        6
-#define GYRO_LPF_NONE       7
-
-uint32_t gyroSetSampleRate(uint8_t lpf, uint8_t gyroSyncDenominator)
+uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenominator, bool gyro_use_32khz)
 {
-    int gyroSamplePeriod;
+    float gyroSamplePeriod;
 
     if (lpf == GYRO_LPF_256HZ || lpf == GYRO_LPF_NONE) {
-        gyroSamplePeriod = 125;
+        if (gyro_use_32khz) {
+            gyro->gyroRateKHz = GYRO_RATE_32_kHz;
+            gyroSamplePeriod = 31.5f;
+        } else {
+#ifdef USE_ACCGYRO_BMI160
+            gyro->gyroRateKHz = GYRO_RATE_3200_Hz;
+            gyroSamplePeriod = 312.0f;
+#else
+            gyro->gyroRateKHz = GYRO_RATE_8_kHz;
+            gyroSamplePeriod = 125.0f;
+#endif
+        }
     } else {
-        gyroSamplePeriod = 1000;
+        gyro->gyroRateKHz = GYRO_RATE_1_kHz;
+        gyroSamplePeriod = 1000.0f;
         gyroSyncDenominator = 1; // Always full Sampling 1khz
     }
 
     // calculate gyro divider and targetLooptime (expected cycleTime)
-    mpuDividerDrops  = gyroSyncDenominator - 1;
-    const uint32_t targetLooptime = gyroSyncDenominator * gyroSamplePeriod;
+    gyro->mpuDividerDrops  = gyroSyncDenominator - 1;
+    const uint32_t targetLooptime = (uint32_t)(gyroSyncDenominator * gyroSamplePeriod);
     return targetLooptime;
 }
 
-uint8_t gyroMPU6xxxGetDividerDrops(void)
+uint8_t gyroMPU6xxxGetDividerDrops(const gyroDev_t *gyro)
 {
-    return mpuDividerDrops;
+    return gyro->mpuDividerDrops;
 }

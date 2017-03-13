@@ -49,7 +49,7 @@ void systemBeepToggle(void)
 #endif
 }
 
-void beeperInit(const beeperConfig_t *config)
+void beeperInit(const beeperDevConfig_t *config)
 {
 #ifndef BEEPER
     UNUSED(config);
@@ -58,8 +58,8 @@ void beeperInit(const beeperConfig_t *config)
     beeperInverted = config->isInverted;
 
     if (beeperIO) {
-        IOInit(beeperIO, OWNER_BEEPER, RESOURCE_OUTPUT, 0);
-        IOConfigGPIO(beeperIO, config->isOD ? IOCFG_OUT_OD : IOCFG_OUT_PP);
+        IOInit(beeperIO, OWNER_BEEPER, 0);
+        IOConfigGPIO(beeperIO, config->isOpenDrain ? IOCFG_OUT_OD : IOCFG_OUT_PP);
     }
     systemBeep(false);
 #endif

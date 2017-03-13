@@ -17,9 +17,13 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
+#include "drivers/accgyro.h"
+#include "sensors/sensors.h"
+
 // Type of accelerometer used/detected
 typedef enum {
-    ACC_DEFAULT = 0,
+    ACC_DEFAULT,
     ACC_NONE,
     ACC_ADXL345,
     ACC_MPU6050,
@@ -28,16 +32,22 @@ typedef enum {
     ACC_LSM303DLHC,
     ACC_MPU6000,
     ACC_MPU6500,
+    ACC_ICM20689,
     ACC_MPU9250,
-    ACC_FAKE,
-    ACC_MAX = ACC_FAKE
+    ACC_ICM20608G,
+    ACC_ICM20602,
+    ACC_BMI160,
+    ACC_FAKE
 } accelerationSensor_e;
 
-extern sensor_align_e accAlign;
-extern acc_t acc;
-extern uint32_t accTargetLooptime;
+typedef struct acc_s {
+    accDev_t dev;
+    uint32_t accSamplingInterval;
+    int32_t accSmooth[XYZ_AXIS_COUNT];
+    bool isAccelUpdatedAtLeastOnce;
+} acc_t;
 
-extern int32_t accSmooth[XYZ_AXIS_COUNT];
+extern acc_t acc;
 
 typedef struct rollAndPitchTrims_s {
     int16_t roll;
@@ -49,9 +59,23 @@ typedef union rollAndPitchTrims_u {
     rollAndPitchTrims_t_def values;
 } rollAndPitchTrims_t;
 
+
+typedef struct accelerometerConfig_s {
+    uint16_t acc_lpf_hz;                    // cutoff frequency for the low pass filter used on the acc z-axis for althold in Hz
+    sensor_align_e acc_align;               // acc alignment
+    uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
+    flightDynamicsTrims_t accZero;
+    rollAndPitchTrims_t accelerometerTrims;
+} accelerometerConfig_t;
+
+PG_DECLARE(accelerometerConfig_t, accelerometerConfig);
+
+bool accInit(uint32_t gyroTargetLooptime);
 bool isAccelerationCalibrationComplete(void);
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims);
-void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims);
-void setAccelerationTrims(flightDynamicsTrims_t *accelerationTrimsToUse);
-void setAccelerationFilter(float initialAccLpfCutHz);
+void accUpdate(rollAndPitchTrims_t *rollAndPitchTrims);
+union flightDynamicsTrims_u;
+void setAccelerationTrims(union flightDynamicsTrims_u *accelerationTrimsToUse);
+void setAccelerationFilter(uint16_t initialAccLpfCutHz);
+

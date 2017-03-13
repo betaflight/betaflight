@@ -56,5 +56,5 @@
 #define T_SETUP_PRESSURE_MAX             (10)
 // 10/16 = 0.625 ms
 
-bool bmp280Detect(baro_t *baro);
+bool bmp280Detect(baroDev_t *baro);
 

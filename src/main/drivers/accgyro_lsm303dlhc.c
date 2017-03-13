@@ -22,7 +22,7 @@
 
 #ifdef USE_ACC_LSM303DLHC
 
-#include "debug.h"
+#include "build/debug.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -115,7 +115,7 @@ int32_t accelSummedSamples100Hz[3];
 
 int32_t accelSummedSamples500Hz[3];
 
-void lsm303dlhcAccInit(acc_t *acc)
+void lsm303dlhcAccInit(accDev_t *acc)
 {
     i2cWrite(MPU_I2C_INSTANCE, LSM303DLHC_ACCEL_ADDRESS, CTRL_REG5_A, BOOT);
 
@@ -133,7 +133,7 @@ void lsm303dlhcAccInit(acc_t *acc)
 }
 
 // Read 3 gyro values into user-provided buffer. No overrun checking is done.
-static bool lsm303dlhcAccRead(int16_t *gyroADC)
+static bool lsm303dlhcAccRead(accDev_t *acc)
 {
     uint8_t buf[6];
 
@@ -144,9 +144,9 @@ static bool lsm303dlhcAccRead(int16_t *gyroADC)
     }
 
     // the values range from -8192 to +8191
-    gyroADC[X] = (int16_t)((buf[1] << 8) | buf[0]) / 2;
-    gyroADC[Y] = (int16_t)((buf[3] << 8) | buf[2]) / 2;
-    gyroADC[Z] = (int16_t)((buf[5] << 8) | buf[4]) / 2;
+    acc->ADCRaw[X] = (int16_t)((buf[1] << 8) | buf[0]) / 2;
+    acc->ADCRaw[Y] = (int16_t)((buf[3] << 8) | buf[2]) / 2;
+    acc->ADCRaw[Z] = (int16_t)((buf[5] << 8) | buf[4]) / 2;
 
 #if 0
     debug[0] = (int16_t)((buf[1] << 8) | buf[0]);
@@ -157,7 +157,7 @@ static bool lsm303dlhcAccRead(int16_t *gyroADC)
     return true;
 }
 
-bool lsm303dlhcAccDetect(acc_t *acc)
+bool lsm303dlhcAccDetect(accDev_t *acc)
 {
     bool ack;
     uint8_t status;

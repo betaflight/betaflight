@@ -4,7 +4,7 @@
   * @author  MCD Application Team
   * @version V1.1.1
   * @date    28-March-2014
-  * @brief   CMSIS Cortex-M4 Device System Source File for STM32F30x devices. 
+  * @brief   CMSIS Cortex-M4 Device System Source File for STM32F30x devices.
   ******************************************************************************
   * @attention
   *
@@ -31,8 +31,8 @@
 
 /** @addtogroup stm32f30x_system
   * @{
-  */ 
- 
+  */
+
 /**
   * @brief Define to prevent recursive inclusion
   */
@@ -52,7 +52,7 @@ extern uint32_t SystemCoreClock;          /*!< System Clock Frequency (Core Cloc
 /** @addtogroup STM32F30x_System_Exported_Functions
   * @{
   */
- 
+
 extern void SystemInit(void);
 extern void SystemCoreClockUpdate(void);
 
@@ -69,8 +69,8 @@ extern void SystemCoreClockUpdate(void);
 /**
   * @}
   */
- 
+
 /**
   * @}
-  */ 
+  */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

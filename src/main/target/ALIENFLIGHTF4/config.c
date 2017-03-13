@@ -15,89 +15,84 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <platform.h>
 
-#include "build_config.h"
+#ifdef TARGET_CONFIG
 
-#include "blackbox/blackbox_io.h"
-
-#include "common/color.h"
 #include "common/axis.h"
-#include "common/filter.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
-#include "drivers/system.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
-#include "drivers/serial.h"
-#include "drivers/pwm_output.h"
-#include "drivers/max7456.h"
-#include "drivers/io.h"
-#include "drivers/pwm_mapping.h"
+#include "config/feature.h"
 
-#include "sensors/sensors.h"
-#include "sensors/gyro.h"
-#include "sensors/compass.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/boardalignment.h"
-#include "sensors/battery.h"
+#include "drivers/pwm_esc_detect.h"
 
-#include "io/beeper.h"
-#include "io/serial.h"
-#include "io/gimbal.h"
-#include "io/escservo.h"
-#include "io/rc_controls.h"
-#include "io/rc_curves.h"
-#include "io/ledstrip.h"
-#include "io/gps.h"
-#include "io/osd.h"
-#include "io/vtx.h"
-
-#include "rx/rx.h"
-
-#include "telemetry/telemetry.h"
+#include "fc/config.h"
 
 #include "flight/mixer.h"
 #include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/failsafe.h"
-#include "flight/altitudehold.h"
-#include "flight/navigation.h"
 
-#include "config/runtime_config.h"
-#include "config/config.h"
+#include "rx/rx.h"
 
-#include "config/config_profile.h"
-#include "config/config_master.h"
+#include "io/serial.h"
+
+#include "telemetry/telemetry.h"
+
+#include "sensors/battery.h"
+#include "sensors/compass.h"
+
+#include "hardware_revision.h"
+
+#define CURRENTOFFSET 2500                      // ACS712/714-30A - 0A = 2.5V
+#define CURRENTSCALE -667                       // ACS712/714-30A - 66.666 mV/A inverted mode
+
+#ifdef BRUSHED_MOTORS_PWM_RATE
+#undef BRUSHED_MOTORS_PWM_RATE
+#endif
+
+#define BRUSHED_MOTORS_PWM_RATE 32000           // 32kHz
 
 // alternative defaults settings for AlienFlight targets
-void targetConfiguration(master_t *config) {
-    config->mag_hardware = MAG_NONE;            // disabled by default
-    config->rxConfig.spektrum_sat_bind = 5;
-    config->rxConfig.spektrum_sat_bind_autoreset = 1;
-    config->motor_pwm_rate = 32000;
-    config->failsafeConfig.failsafe_delay = 2;
-    config->failsafeConfig.failsafe_off_delay = 0;
-    config->gyro_sync_denom = 1;
-    config->pid_process_denom = 1;
-    config->profile[0].pidProfile.P8[ROLL] = 90;
-    config->profile[0].pidProfile.I8[ROLL] = 44;
-    config->profile[0].pidProfile.D8[ROLL] = 60;
-    config->profile[0].pidProfile.P8[PITCH] = 90;
-    config->profile[0].pidProfile.I8[PITCH] = 44;
-    config->profile[0].pidProfile.D8[PITCH] = 60;
+void targetConfiguration(void)
+{
+    batteryConfigMutable()->currentMeterOffset = CURRENTOFFSET;
+    batteryConfigMutable()->currentMeterScale = CURRENTSCALE;
+    compassConfigMutable()->mag_hardware = MAG_NONE;            // disabled by default
 
-    config->customMotorMixer[0] = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
-    config->customMotorMixer[1] = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
-    config->customMotorMixer[2] = (motorMixer_t){ 1.0f,  0.414178f,  1.0f,  1.0f };    // REAR_L
-    config->customMotorMixer[3] = (motorMixer_t){ 1.0f,  0.414178f, -1.0f, -1.0f };    // FRONT_L
-    config->customMotorMixer[4] = (motorMixer_t){ 1.0f, -1.0f, -0.414178f, -1.0f };    // MIDFRONT_R
-    config->customMotorMixer[5] = (motorMixer_t){ 1.0f,  1.0f, -0.414178f,  1.0f };    // MIDFRONT_L
-    config->customMotorMixer[6] = (motorMixer_t){ 1.0f, -1.0f,  0.414178f,  1.0f };    // MIDREAR_R
-    config->customMotorMixer[7] = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L#endif
+    if (hardwareMotorType == MOTOR_BRUSHED) {
+        motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
+        pidConfigMutable()->pid_process_denom = 1;
+    }
+
+    if (hardwareRevision == AFF4_REV_1) {
+        rxConfigMutable()->serialrx_provider = SERIALRX_SPEKTRUM2048;
+        rxConfigMutable()->spektrum_sat_bind = 5;
+        rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
+    } else {
+        rxConfigMutable()->serialrx_provider = SERIALRX_SBUS;
+        rxConfigMutable()->sbus_inversion = 0;
+        serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(TELEMETRY_UART)].functionMask = FUNCTION_TELEMETRY_FRSKY;
+        telemetryConfigMutable()->telemetry_inversion = 0;
+        featureSet(FEATURE_CURRENT_METER | FEATURE_VBAT | FEATURE_TELEMETRY);
+    }
+
+    pidProfilesMutable(0)->P8[FD_ROLL] = 53;
+    pidProfilesMutable(0)->I8[FD_ROLL] = 45;
+    pidProfilesMutable(0)->D8[FD_ROLL] = 52;
+    pidProfilesMutable(0)->P8[FD_PITCH] = 53;
+    pidProfilesMutable(0)->I8[FD_PITCH] = 45;
+    pidProfilesMutable(0)->D8[FD_PITCH] = 52;
+    pidProfilesMutable(0)->P8[FD_YAW] = 64;
+    pidProfilesMutable(0)->D8[FD_YAW] = 18;
+
+    *customMotorMixerMutable(0) = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
+    *customMotorMixerMutable(1) = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
+    *customMotorMixerMutable(2) = (motorMixer_t){ 1.0f,  0.414178f,  1.0f,  1.0f };    // REAR_L
+    *customMotorMixerMutable(3) = (motorMixer_t){ 1.0f,  0.414178f, -1.0f, -1.0f };    // FRONT_L
+    *customMotorMixerMutable(4) = (motorMixer_t){ 1.0f, -1.0f, -0.414178f, -1.0f };    // MIDFRONT_R
+    *customMotorMixerMutable(5) = (motorMixer_t){ 1.0f,  1.0f, -0.414178f,  1.0f };    // MIDFRONT_L
+    *customMotorMixerMutable(6) = (motorMixer_t){ 1.0f, -1.0f,  0.414178f,  1.0f };    // MIDREAR_R
+    *customMotorMixerMutable(7) = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L
 }
+#endif

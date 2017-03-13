@@ -15,72 +15,49 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <string.h>
 
+// Get target build configuration
 #include "platform.h"
 
-#ifdef VTX
-
-#include "common/color.h"
-#include "common/axis.h"
 #include "common/maths.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
-#include "drivers/system.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
-#include "drivers/serial.h"
+#include "config/config_eeprom.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/vtx_rtc6705.h"
 
-
-#include "sensors/sensors.h"
-#include "sensors/gyro.h"
-#include "sensors/compass.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/boardalignment.h"
-#include "sensors/battery.h"
+#include "fc/config.h"
+#include "fc/runtime_config.h"
 
 #include "io/beeper.h"
-#include "io/serial.h"
-#include "io/gimbal.h"
-#include "io/escservo.h"
-#include "io/rc_controls.h"
-#include "io/rc_curves.h"
-#include "io/ledstrip.h"
-#include "io/gps.h"
+#include "io/osd.h"
 #include "io/vtx.h"
 
-#include "rx/rx.h"
+#if defined(USE_RTC6705) || defined(VTX)
 
-#include "telemetry/telemetry.h"
+PG_REGISTER_WITH_RESET_TEMPLATE(vtxConfig_t, vtxConfig, PG_VTX_CONFIG, 0);
 
-#include "flight/mixer.h"
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/failsafe.h"
-#include "flight/altitudehold.h"
-#include "flight/navigation.h"
+PG_RESET_TEMPLATE(vtxConfig_t, vtxConfig,
+    .vtx_band = 4,    //Fatshark/Airwaves
+    .vtx_channel = 1, //CH1
+    .vtx_mode = 0,    //CH+BAND mode
+    .vtx_mhz = 5740  //F0
+);
 
-#include "config/config.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
-#include "config/runtime_config.h"
+#endif
+
+#ifdef VTX
 
 static uint8_t locked = 0;
 
 void vtxInit(void)
 {
     rtc6705Init();
-    if (masterConfig.vtx_mode == 0) {
-        rtc6705SetChannel(masterConfig.vtx_band, masterConfig.vtx_channel);
-    } else if (masterConfig.vtx_mode == 1) {
-        rtc6705SetFreq(masterConfig.vtx_mhz);
+    if (vtxConfig()->vtx_mode == 0) {
+        rtc6705SetChannel(vtxConfig()->vtx_band, vtxConfig()->vtx_channel);
+    } else if (vtxConfig()->vtx_mode == 1) {
+        rtc6705SetFreq(vtxConfig()->vtx_mhz);
     }
 }
 
@@ -90,12 +67,12 @@ static void setChannelSaveAndNotify(uint8_t *bandOrChannel, uint8_t step, int32_
         locked = 1;
     }
 
-    if (masterConfig.vtx_mode == 0 && !locked) {
+    if (vtxConfig()->vtx_mode == 0 && !locked) {
         uint8_t temp = (*bandOrChannel) + step;
         temp = constrain(temp, min, max);
         *bandOrChannel = temp;
 
-        rtc6705SetChannel(masterConfig.vtx_band, masterConfig.vtx_channel);
+        rtc6705SetChannel(vtxConfig()->vtx_band, vtxConfig()->vtx_channel);
         writeEEPROM();
         readEEPROM();
         beeperConfirmationBeeps(temp);
@@ -104,22 +81,22 @@ static void setChannelSaveAndNotify(uint8_t *bandOrChannel, uint8_t step, int32_
 
 void vtxIncrementBand(void)
 {
-    setChannelSaveAndNotify(&(masterConfig.vtx_band), 1, RTC6705_BAND_MIN, RTC6705_BAND_MAX);
+    setChannelSaveAndNotify(&(vtxConfigMutable()->vtx_band), 1, RTC6705_BAND_MIN, RTC6705_BAND_MAX);
 }
 
 void vtxDecrementBand(void)
 {
-    setChannelSaveAndNotify(&(masterConfig.vtx_band), -1, RTC6705_BAND_MIN, RTC6705_BAND_MAX);
+    setChannelSaveAndNotify(&(vtxConfigMutable()->vtx_band), -1, RTC6705_BAND_MIN, RTC6705_BAND_MAX);
 }
 
 void vtxIncrementChannel(void)
 {
-    setChannelSaveAndNotify(&(masterConfig.vtx_channel), 1, RTC6705_CHANNEL_MIN, RTC6705_CHANNEL_MAX);
+    setChannelSaveAndNotify(&(vtxConfigMutable()->vtx_channel), 1, RTC6705_CHANNEL_MIN, RTC6705_CHANNEL_MAX);
 }
 
 void vtxDecrementChannel(void)
 {
-    setChannelSaveAndNotify(&(masterConfig.vtx_channel), -1, RTC6705_CHANNEL_MIN, RTC6705_CHANNEL_MAX);
+    setChannelSaveAndNotify(&(vtxConfigMutable()->vtx_channel), -1, RTC6705_CHANNEL_MIN, RTC6705_CHANNEL_MAX);
 }
 
 void vtxUpdateActivatedChannel(void)
@@ -128,12 +105,11 @@ void vtxUpdateActivatedChannel(void)
         locked = 1;
     }
 
-    if (masterConfig.vtx_mode == 2 && !locked) {
+    if (vtxConfig()->vtx_mode == 2 && !locked) {
         static uint8_t lastIndex = -1;
-        uint8_t index;
 
-        for (index = 0; index < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT; index++) {
-            vtxChannelActivationCondition_t *vtxChannelActivationCondition = &masterConfig.vtxChannelActivationConditions[index];
+        for (uint8_t index = 0; index < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT; index++) {
+            const vtxChannelActivationCondition_t *vtxChannelActivationCondition = &vtxConfig()->vtxChannelActivationConditions[index];
 
             if (isRangeActive(vtxChannelActivationCondition->auxChannelIndex, &vtxChannelActivationCondition->range)
                 && index != lastIndex) {

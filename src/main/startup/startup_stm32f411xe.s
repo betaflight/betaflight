@@ -70,7 +70,16 @@ defined in linker script */
   .section  .text.Reset_Handler
   .weak  Reset_Handler
   .type  Reset_Handler, %function
-Reset_Handler:  
+Reset_Handler: 
+  // Enable CCM
+  // RCC->AHB1ENR |= RCC_AHB1ENR_CCMDATARAMEN;
+  ldr     r0, =0x40023800       // RCC_BASE
+  ldr     r1, [r0, #0x30]       // AHB1ENR
+  orr     r1, r1, 0x00100000    // RCC_AHB1ENR_CCMDATARAMEN
+  str     r1, [r0, #0x30]
+  dsb
+
+  // Check for bootloader reboot
   ldr r0, =0x2001FFFC         // mj666
   ldr r1, =0xDEADBEEF         // mj666
   ldr r2, [r0, #0]            // mj666
@@ -105,6 +114,19 @@ LoopFillZerobss:
   ldr  r3, = _ebss
   cmp  r2, r3
   bcc  FillZerobss
+
+/* Mark the heap and stack */
+    ldr	r2, =_heap_stack_begin
+    b	LoopMarkHeapStack
+
+MarkHeapStack:
+	movs	r3, 0xa5a5a5a5
+	str	r3, [r2], #4
+
+LoopMarkHeapStack:
+	ldr	r3, = _heap_stack_end
+	cmp	r2, r3
+	bcc	MarkHeapStack
 
 /*FPU settings*/
  ldr     r0, =0xE000ED88           /* Enable CP10,CP11 */

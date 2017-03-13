@@ -16,72 +16,52 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include <platform.h>
 
-#include "build_config.h"
+#ifdef TARGET_CONFIG
 
-#include "blackbox/blackbox_io.h"
+#include "blackbox/blackbox.h"
 
-#include "common/color.h"
-#include "common/axis.h"
-#include "common/filter.h"
+#include "config/feature.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
-#include "drivers/system.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
-#include "drivers/serial.h"
-#include "drivers/pwm_output.h"
-#include "drivers/max7456.h"
 #include "drivers/io.h"
-#include "drivers/pwm_mapping.h"
 
-#include "sensors/sensors.h"
-#include "sensors/gyro.h"
-#include "sensors/compass.h"
+#include "fc/config.h"
+
 #include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/boardalignment.h"
-#include "sensors/battery.h"
-
-#include "io/beeper.h"
-#include "io/serial.h"
-#include "io/gimbal.h"
-#include "io/escservo.h"
-#include "io/rc_controls.h"
-#include "io/rc_curves.h"
-#include "io/ledstrip.h"
-#include "io/gps.h"
-#include "io/osd.h"
-#include "io/vtx.h"
-
-#include "rx/rx.h"
-
-#include "telemetry/telemetry.h"
-
-#include "flight/mixer.h"
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/failsafe.h"
-#include "flight/altitudehold.h"
-#include "flight/navigation.h"
-
-#include "config/runtime_config.h"
-#include "config/config.h"
-
-#include "config/config_profile.h"
-#include "config/config_master.h"
+#include "sensors/gyro.h"
 
 #include "hardware_revision.h"
 
 // alternative defaults settings for BlueJayF4 targets
-void targetConfiguration(master_t *config)
+void targetConfiguration(void)
 {
     if (hardwareRevision == BJF4_REV1 || hardwareRevision == BJF4_REV2) {
-        config->sensorAlignmentConfig.gyro_align = CW180_DEG;
-        config->sensorAlignmentConfig.acc_align  = CW180_DEG;
+        gyroConfigMutable()->gyro_align = CW180_DEG;
+        accelerometerConfigMutable()->acc_align  = CW180_DEG;
+        beeperDevConfigMutable()->ioTag = IO_TAG(BEEPER_OPT);
+    }
+
+    if (hardwareRevision == BJF4_MINI_REV3A || hardwareRevision == BJF4_REV1) {
+        featureClear(FEATURE_SDCARD);
+    }
+
+    if (hardwareRevision == BJF4_MINI_REV3A) {
+        adcConfigMutable()->vbat.ioTag = IO_TAG(PA4);
     }
 }
+
+void targetValidateConfiguration(void)
+{
+    /* make sure the SDCARD cannot be turned on */
+    if (hardwareRevision == BJF4_MINI_REV3A || hardwareRevision == BJF4_REV1) {
+        featureClear(FEATURE_SDCARD);
+
+        if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
+            blackboxConfigMutable()->device = BLACKBOX_DEVICE_FLASH;
+        }
+    }
+}
+#endif

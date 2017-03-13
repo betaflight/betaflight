@@ -22,9 +22,11 @@
 
 #ifdef USE_FLASH_M25P16
 
-#include "drivers/flash_m25p16.h"
-#include "drivers/bus_spi.h"
-#include "drivers/system.h"
+#include "flash.h"
+#include "flash_m25p16.h"
+#include "io.h"
+#include "bus_spi.h"
+#include "system.h"
 
 #define M25P16_INSTRUCTION_RDID             0x9F
 #define M25P16_INSTRUCTION_READ_BYTES       0x03
@@ -47,9 +49,10 @@
 #define JEDEC_ID_MACRONIX_MX25L6406E   0xC22017
 #define JEDEC_ID_MICRON_N25Q128        0x20ba18
 #define JEDEC_ID_WINBOND_W25Q128       0xEF4018
+#define JEDEC_ID_MACRONIX_MX25L25635E  0xC22019
 
-#define DISABLE_M25P16       IOHi(m25p16CsPin)
-#define ENABLE_M25P16        IOLo(m25p16CsPin)
+#define DISABLE_M25P16       IOHi(m25p16CsPin); __NOP()
+#define ENABLE_M25P16        __NOP(); IOLo(m25p16CsPin)
 
 // The timeout we expect between being able to issue page program instructions
 #define DEFAULT_TIMEOUT_MILLIS       6
@@ -177,6 +180,10 @@ static bool m25p16_readIdentification()
             geometry.sectors = 256;
             geometry.pagesPerSector = 256;
         break;
+        case JEDEC_ID_MACRONIX_MX25L25635E:
+            geometry.sectors = 512;
+            geometry.pagesPerSector = 256;
+        break;
         default:
             // Unsupported chip or not an SPI NOR flash
             geometry.sectors = 0;
@@ -201,28 +208,22 @@ static bool m25p16_readIdentification()
  * Attempts to detect a connected m25p16. If found, true is returned and device capacity can be fetched with
  * m25p16_getGeometry().
  */
-bool m25p16_init(ioTag_t csTag)
+bool m25p16_init(const flashConfig_t *flashConfig)
 {
-    /* 
-        if we have already detected a flash device we can simply exit 
-        
-        TODO: change the init param in favour of flash CFG when ParamGroups work is done
-        then cs pin can be specified in hardware_revision.c or config.c (dependent on revision).
+    /*
+        if we have already detected a flash device we can simply exit
     */
     if (geometry.sectors) {
         return true;
     }
-    
-    if (csTag) {
-        m25p16CsPin = IOGetByTag(csTag);
+
+    if (flashConfig->csTag) {
+        m25p16CsPin = IOGetByTag(flashConfig->csTag);
     } else {
-#ifdef M25P16_CS_PIN
-        m25p16CsPin = IOGetByTag(IO_TAG(M25P16_CS_PIN));
-#else
         return false;
-#endif
     }
-    IOInit(m25p16CsPin, OWNER_FLASH, RESOURCE_SPI_CS, 0);
+
+    IOInit(m25p16CsPin, OWNER_FLASH_CS, 0);
     IOConfigGPIO(m25p16CsPin, SPI_IO_CS_CFG);
 
     DISABLE_M25P16;

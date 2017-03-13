@@ -21,20 +21,22 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <stdlib.h>
+
 #include "platform.h"
 
 #ifdef  USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+#include "drivers/io.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
-#include "drivers/pwm_mapping.h"
+#include "drivers/timer.h"
+
 #include "io/serial.h"
-#include "io/serial_msp.h"
 #include "io/serial_4way.h"
 #include "io/serial_4way_impl.h"
 #include "io/serial_4way_avrootloader.h"
-#if defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) && !defined(USE_FAKE_ESC)
 
+#if defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) && !defined(USE_FAKE_ESC)
 
 // Bootloader commands
 // RunCmd
@@ -67,10 +69,11 @@
 
 #define START_BIT_TIMEOUT_MS 2
 
-#define BIT_TIME (52)  //52uS
-#define BIT_TIME_HALVE (BIT_TIME >> 1) //26uS
-#define START_BIT_TIME (BIT_TIME_HALVE + 1)
-//#define STOP_BIT_TIME ((BIT_TIME * 9) + BIT_TIME_HALVE)
+#define BIT_TIME (52)       // 52uS
+#define BIT_TIME_HALVE      (BIT_TIME >> 1) // 26uS
+#define BIT_TIME_3_4        (BIT_TIME_HALVE + (BIT_TIME_HALVE >> 1))   // 39uS
+#define START_BIT_TIME      (BIT_TIME_3_4)
+//#define STOP_BIT_TIME     ((BIT_TIME * 9) + BIT_TIME_HALVE)
 
 static uint8_t suart_getc_(uint8_t *bt)
 {
@@ -183,7 +186,7 @@ static void BL_SendBuf(uint8_t *pstring, uint8_t len)
         pstring++;
         len--;
     } while (len > 0);
-    
+
     if (isMcuConnected()) {
         suart_putc_(&CRC_16.bytes[0]);
         suart_putc_(&CRC_16.bytes[1]);
@@ -235,7 +238,7 @@ static uint8_t BL_GetACK(uint32_t Timeout)
     return (LastACK);
 }
 
-uint8_t BL_SendCMDKeepAlive(void) 
+uint8_t BL_SendCMDKeepAlive(void)
 {
     uint8_t sCMD[] = {CMD_KEEP_ALIVE, 0};
     BL_SendBuf(sCMD, 2);
@@ -303,8 +306,8 @@ uint8_t BL_ReadFlash(uint8_t interface_mode, ioMem_t *pMem)
     } else {
         return BL_ReadA(CMD_READ_FLASH_SIL, pMem);
     }
-} 
- 
+}
+
 uint8_t BL_ReadEEprom(ioMem_t *pMem)
 {
     return BL_ReadA(CMD_READ_EEPROM, pMem);
@@ -826,7 +829,7 @@ uint8_t BL_ConnectEx(uint8_32_u *pDeviceInfo)
     return true;
 }
 
-uint8_t BL_SendCMDKeepAlive(void) 
+uint8_t BL_SendCMDKeepAlive(void)
 {
     return true;
 }
@@ -841,7 +844,7 @@ static uint8_t BL_ReadA(uint8_t cmd, ioMem_t *pMem)
 {
     UNUSED(cmd);
     uint16_t address = pMem->D_FLASH_ADDR_H << 8 | pMem->D_FLASH_ADDR_L;
-    
+
     uint16_t bytes = pMem->D_NUM_BYTES;
     if (bytes == 0) bytes = 256;
 
@@ -854,7 +857,7 @@ static uint8_t BL_WriteA(uint8_t cmd, ioMem_t *pMem, uint32_t timeout)
     UNUSED(cmd);
     UNUSED(timeout);
     uint16_t address = pMem->D_FLASH_ADDR_H << 8 | pMem->D_FLASH_ADDR_L;
-    
+
     uint16_t bytes = pMem->D_NUM_BYTES;
     if (bytes == 0) bytes = 256;
     memcpy(&fakeFlash[address], pMem->D_PTR_I, bytes);
@@ -866,7 +869,7 @@ uint8_t BL_ReadFlash(uint8_t interface_mode, ioMem_t *pMem)
     UNUSED(interface_mode);
     return BL_ReadA(0, pMem);
 }
- 
+
 uint8_t BL_ReadEEprom(ioMem_t *pMem)
 {
     return BL_ReadA(0, pMem);

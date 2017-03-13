@@ -2,106 +2,28 @@
 #include <stdbool.h>
 #include <platform.h>
 #include "drivers/io.h"
-#include "drivers/pwm_mapping.h"
 
-const uint16_t multiPPM[] = {
-    PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
-    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM10  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM11  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM12 | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM13 | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM14 | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM15  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM16  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM8  | (MAP_TO_SERVO_OUTPUT << 8),      // Swap to servo if needed
-    PWM7  | (MAP_TO_SERVO_OUTPUT << 8),      // Swap to servo if needed
-    PWM6  | (MAP_TO_SERVO_OUTPUT << 8),      // Swap to servo if needed
-    PWM5  | (MAP_TO_SERVO_OUTPUT << 8),      // Swap to servo if needed
-    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
-    0xFFFF
-};
-
-const uint16_t multiPWM[] = {
-    PWM1  | (MAP_TO_PWM_INPUT << 8),          // input #1
-    PWM2  | (MAP_TO_PWM_INPUT << 8),
-    PWM3  | (MAP_TO_PWM_INPUT << 8),
-    PWM4  | (MAP_TO_PWM_INPUT << 8),
-    PWM5  | (MAP_TO_PWM_INPUT << 8),
-    PWM6  | (MAP_TO_PWM_INPUT << 8),    
-    PWM7  | (MAP_TO_SERVO_OUTPUT << 8),     
-    PWM8  | (MAP_TO_SERVO_OUTPUT << 8),         // input #8
-    PWM9  | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #1
-    PWM10 | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #2
-    PWM11 | (MAP_TO_MOTOR_OUTPUT  << 8),
-    PWM12 | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #4 or #6
-    PWM13 | (MAP_TO_MOTOR_OUTPUT  << 8),
-    PWM14 | (MAP_TO_MOTOR_OUTPUT  << 8),
-    PWM15 | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #4 or #6
-    PWM16 | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #4 or #6
-    0xFFFF
-};
-
-const uint16_t airPPM[] = {
-    PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
-    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM10  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM11  | (MAP_TO_SERVO_OUTPUT << 8),
-    PWM12 | (MAP_TO_SERVO_OUTPUT << 8),
-    PWM13 | (MAP_TO_SERVO_OUTPUT << 8),
-    PWM14 | (MAP_TO_SERVO_OUTPUT << 8),
-    PWM15  | (MAP_TO_SERVO_OUTPUT << 8),      // Swap to servo if needed
-    PWM16  | (MAP_TO_SERVO_OUTPUT << 8),      // Swap to servo if needed
-    PWM7  | (MAP_TO_SERVO_OUTPUT << 8),      // Swap to servo if needed
-    PWM6  | (MAP_TO_SERVO_OUTPUT << 8),      // Swap to servo if needed
-    PWM5  | (MAP_TO_SERVO_OUTPUT << 8),      // Swap to servo if needed
-    PWM4  | (MAP_TO_SERVO_OUTPUT << 8),
-    PWM3  | (MAP_TO_SERVO_OUTPUT << 8),
-    PWM2  | (MAP_TO_SERVO_OUTPUT << 8),
-    0xFFFF
-};
-
-const uint16_t airPWM[] = {
-    PWM1  | (MAP_TO_PWM_INPUT << 8),          // input #1
-    PWM2  | (MAP_TO_PWM_INPUT << 8),
-    PWM3  | (MAP_TO_PWM_INPUT << 8),
-    PWM4  | (MAP_TO_PWM_INPUT << 8),
-    PWM5  | (MAP_TO_PWM_INPUT << 8),
-    PWM6  | (MAP_TO_PWM_INPUT << 8),    
-    PWM7  | (MAP_TO_PWM_INPUT << 8),     
-    PWM8  | (MAP_TO_PWM_INPUT << 8),         // input #8
-    PWM9  | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #1
-    PWM10 | (MAP_TO_MOTOR_OUTPUT  << 8),     // motor #2
-    PWM11 | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #1
-    PWM12 | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #2
-    PWM13 | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #3
-    PWM14 | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #4
-    PWM15 | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #5
-    PWM15 | (MAP_TO_SERVO_OUTPUT  << 8),     // servo #6
-    0xFFFF
-};
+#include "drivers/dma.h"
+#include "drivers/timer.h"
+#include "drivers/timer_def.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM3, IO_TAG(PC9), TIM_Channel_4, TIM3_IRQn, 0, IOCFG_AF_PP,  GPIO_AF_TIM3},       // S1_IN
-    { TIM3, IO_TAG(PC8), TIM_Channel_3, TIM3_IRQn, 0, IOCFG_AF_PP,  GPIO_AF_TIM3},      // S2_IN
-    { TIM3, IO_TAG(PC6), TIM_Channel_1, TIM3_IRQn, 0, IOCFG_AF_PP,  GPIO_AF_TIM3},      // S3_IN
-    { TIM3, IO_TAG(PC7), TIM_Channel_2, TIM3_IRQn, 0, IOCFG_AF_PP,  GPIO_AF_TIM3},      // S4_IN
-    { TIM4, IO_TAG(PD15), TIM_Channel_4, TIM4_IRQn, 0, IOCFG_AF_PP, GPIO_AF_TIM4}, // S5_IN
-    { TIM4, IO_TAG(PD14), TIM_Channel_3, TIM4_IRQn, 0, IOCFG_AF_PP, GPIO_AF_TIM4}, // S6_IN
-    { TIM4, IO_TAG(PD13), TIM_Channel_2, TIM4_IRQn, 0, IOCFG_AF_PP, GPIO_AF_TIM4}, // S7_IN
-    { TIM4, IO_TAG(PD12), TIM_Channel_1, TIM4_IRQn, 0, IOCFG_AF_PP, GPIO_AF_TIM4}, // S8_IN
-
-    { TIM2, IO_TAG(PA0), TIM_Channel_1, TIM2_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM2},    // S1_OUT
-    { TIM2, IO_TAG(PA1), TIM_Channel_2, TIM2_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM2},    // S2_OUT
-    { TIM5, IO_TAG(PA2), TIM_Channel_3, TIM5_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM5},    // S3_OUT
-    { TIM5, IO_TAG(PA3), TIM_Channel_4, TIM5_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM5},    // S4_OUT
-    { TIM1, IO_TAG(PE9), TIM_Channel_1, TIM1_CC_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM1},    // S5_OUT
-    { TIM1, IO_TAG(PE11), TIM_Channel_2, TIM1_CC_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM1},    // S6_OUT
-    { TIM1, IO_TAG(PE13), TIM_Channel_3, TIM1_CC_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM1},    // S7_OUT
-    { TIM1, IO_TAG(PE14), TIM_Channel_4, TIM1_CC_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM1},    // S8_OUT
-   
-    { TIM9, IO_TAG(PE6), TIM_Channel_2, TIM1_BRK_TIM9_IRQn, 0, IOCFG_AF_PP, GPIO_AF_TIM9 },          // sonar echo if needed
+    DEF_TIM(TIM3, CH4, PC9,  TIM_USE_PWM,    0, 0), // S1_IN
+    DEF_TIM(TIM3, CH3, PC8,  TIM_USE_PWM,    0, 0), // S2_IN
+    DEF_TIM(TIM3, CH1, PC6,  TIM_USE_PWM,    0, 0), // S3_IN
+    DEF_TIM(TIM3, CH2, PC7,  TIM_USE_PWM,    0, 0), // S4_IN
+    DEF_TIM(TIM4, CH4, PD15, TIM_USE_PWM,    0, 0), // S5_IN
+    DEF_TIM(TIM4, CH3, PD14, TIM_USE_PWM,    0, 0), // S6_IN
+    DEF_TIM(TIM4, CH2, PD13, TIM_USE_PWM,    0, 0), // S7_IN
+    DEF_TIM(TIM4, CH1, PD12, TIM_USE_PWM,    0, 0), // S8_IN
+    DEF_TIM(TIM2, CH1, PA0,  TIM_USE_MOTOR,  1, 0), // S1_OUT
+    DEF_TIM(TIM2, CH2, PA1,  TIM_USE_MOTOR,  1, 0), // S2_OUT
+    DEF_TIM(TIM5, CH3, PA2,  TIM_USE_MOTOR,  1, 0), // S3_OUT
+    DEF_TIM(TIM5, CH4, PA3,  TIM_USE_MOTOR,  1, 0), // S4_OUT
+    DEF_TIM(TIM1, CH1, PE9,  TIM_USE_MOTOR,  1, 0), // S5_OUT
+    DEF_TIM(TIM1, CH2, PE11, TIM_USE_MOTOR,  1, 0), // S6_OUT
+    DEF_TIM(TIM1, CH3, PE13, TIM_USE_MOTOR,  1, 0), // S7_OUT
+    DEF_TIM(TIM1, CH4, PE14, TIM_USE_MOTOR,  1, 0), // S8_OUT
+    DEF_TIM(TIM9, CH2, PE6,  TIM_USE_MOTOR,  0, 0), // sonar echo if needed
 };
 

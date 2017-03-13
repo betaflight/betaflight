@@ -21,7 +21,7 @@
 
 #include "platform.h"
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "drivers/system.h"
 #include "drivers/bus_spi.h"
@@ -31,12 +31,6 @@
 #include "drivers/exti.h"
 
 #include "hardware_revision.h"
-
-static const char * const hardwareRevisionNames[] = {
-        "Unknown",
-        "R1",
-        "R2"
-};
 
 uint8_t hardwareRevision = UNKNOWN;
 

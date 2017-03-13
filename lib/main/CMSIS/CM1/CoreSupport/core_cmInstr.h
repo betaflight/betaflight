@@ -440,7 +440,7 @@ __attribute__( ( always_inline ) ) __STATIC_INLINE uint32_t __REV16(uint32_t val
 __attribute__( ( always_inline ) ) __STATIC_INLINE int32_t __REVSH(int32_t value)
 {
 #if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
-  return (short)__builtin_bswap16(value);
+  return (short)__builtin_bswap16((uint16_t)value);
 #else
   uint32_t result;
 
@@ -512,7 +512,7 @@ __attribute__( ( always_inline ) ) __STATIC_INLINE uint8_t __LDREXB(volatile uin
     */
    __ASM volatile ("ldrexb %0, [%1]" : "=r" (result) : "r" (addr) : "memory" );
 #endif
-   return(result);
+   return((uint8_t)result);
 }
 
 
@@ -535,7 +535,7 @@ __attribute__( ( always_inline ) ) __STATIC_INLINE uint16_t __LDREXH(volatile ui
     */
    __ASM volatile ("ldrexh %0, [%1]" : "=r" (result) : "r" (addr) : "memory" );
 #endif
-   return(result);
+   return((uint16_t)result);
 }
 
 
@@ -664,7 +664,7 @@ __attribute__( ( always_inline ) ) __STATIC_INLINE uint8_t __CLZ(uint32_t value)
    uint32_t result;
 
   __ASM volatile ("clz %0, %1" : "=r" (result) : "r" (value) );
-  return(result);
+  return((uint8_t)result);
 }
 
 #endif /* (__CORTEX_M >= 0x03) */

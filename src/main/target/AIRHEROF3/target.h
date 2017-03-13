@@ -30,7 +30,6 @@
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PC13
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU INT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
@@ -61,12 +60,14 @@
 #define USE_SOFTSERIAL2
 #define SERIAL_PORT_COUNT       5
 
-#define SOFTSERIAL_1_TIMER TIM3
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
-#define SOFTSERIAL_2_TIMER TIM3
-#define SOFTSERIAL_2_TIMER_RX_HARDWARE 6 // PWM 7
-#define SOFTSERIAL_2_TIMER_TX_HARDWARE 7 // PWM 8
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
+#define SOFTSERIAL1_RX_PIN      PA6  // PWM 5
+#define SOFTSERIAL1_TX_PIN      PA7  // PWM 6
+
+#define SOFTSERIAL2_RX_PIN      PB6  // PWM 7
+#define SOFTSERIAL2_TX_PIN      PB1  // PWM 8
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
@@ -79,18 +80,8 @@
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
-#define CURRENT_METER_ADC_PIN   PB1
+#define ADC_INSTANCE            ADC2
 #define VBAT_ADC_PIN            PA4
-#define RSSI_ADC_PIN            PA1
-
-#define LED_STRIP
-#define WS2811_TIMER                    TIM3
-#define WS2811_PIN                      PA6
-#define WS2811_DMA_CHANNEL              DMA1_Channel6
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
-
-#define GPS
 
 #define DEFAULT_FEATURES        FEATURE_VBAT
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
@@ -98,9 +89,7 @@
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define RX_CHANNELS_TAER
 
-#define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN                PB11
+#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

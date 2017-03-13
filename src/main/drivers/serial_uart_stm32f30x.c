@@ -99,27 +99,29 @@ static uartPort_t uartPort4;
 static uartPort_t uartPort5;
 #endif
 
+#if defined(USE_UART1_TX_DMA) || defined(USE_UART2_TX_DMA) || defined(USE_UART3_TX_DMA)
 static void handleUsartTxDma(dmaChannelDescriptor_t* descriptor)
 {
     uartPort_t *s = (uartPort_t*)(descriptor->userParam);
     DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
-    DMA_Cmd(descriptor->channel, DISABLE);
+    DMA_Cmd(descriptor->ref, DISABLE);
 
     if (s->port.txBufferHead != s->port.txBufferTail)
         uartStartTxDMA(s);
     else
         s->txDMAEmpty = true;
 }
+#endif
 
 void serialUARTInit(IO_t tx, IO_t rx, portMode_t mode, portOptions_t options, uint8_t af, uint8_t index)
 {
     if (options & SERIAL_BIDIR) {
         ioConfig_t ioCfg = IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz,
-            (options & SERIAL_INVERTED) ? GPIO_OType_PP : GPIO_OType_OD,
-            (options & SERIAL_INVERTED) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP
+            ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP)) ? GPIO_OType_PP : GPIO_OType_OD,
+            ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP)) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP
         );
 
-        IOInit(tx, OWNER_SERIAL, RESOURCE_UART_TXRX, index);
+        IOInit(tx, OWNER_SERIAL_TX, index);
         IOConfigGPIOAF(tx, ioCfg, af);
 
         if (!(options & SERIAL_INVERTED))
@@ -127,12 +129,12 @@ void serialUARTInit(IO_t tx, IO_t rx, portMode_t mode, portOptions_t options, ui
     } else {
         ioConfig_t ioCfg = IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, (options & SERIAL_INVERTED) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP);
         if (mode & MODE_TX) {
-            IOInit(tx, OWNER_SERIAL, RESOURCE_UART_TX, index);
+            IOInit(tx, OWNER_SERIAL_TX, index);
             IOConfigGPIOAF(tx, ioCfg, af);
         }
 
         if (mode & MODE_RX) {
-            IOInit(rx, OWNER_SERIAL, RESOURCE_UART_RX, index);
+            IOInit(rx, OWNER_SERIAL_RX, index);
             IOConfigGPIOAF(rx, ioCfg, af);
         }
     }
@@ -150,27 +152,35 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
 
     s->port.baudRate = baudRate;
 
-    s->port.rxBuffer = rx1Buffer;
-    s->port.txBuffer = tx1Buffer;
     s->port.rxBufferSize = UART1_RX_BUFFER_SIZE;
     s->port.txBufferSize = UART1_TX_BUFFER_SIZE;
-
-#ifdef USE_UART1_RX_DMA
-    s->rxDMAChannel = DMA1_Channel5;
-#endif
-    s->txDMAChannel = DMA1_Channel4;
+    s->port.rxBuffer = rx1Buffer;
+    s->port.txBuffer = tx1Buffer;
 
     s->USARTx = USART1;
 
+#ifdef USE_UART1_RX_DMA
+    dmaInit(DMA1_CH5_HANDLER, OWNER_SERIAL, 1);
+    s->rxDMAChannel = DMA1_Channel5;
     s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->RDR;
+#endif
+#ifdef USE_UART1_TX_DMA
+    s->txDMAChannel = DMA1_Channel4;
     s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->TDR;
+#endif
 
     RCC_ClockCmd(RCC_APB2(USART1), ENABLE);
+
+#if defined(USE_UART1_TX_DMA) || defined(USE_UART1_RX_DMA)
     RCC_ClockCmd(RCC_AHB(DMA1), ENABLE);
+#endif
 
     serialUARTInit(IOGetByTag(IO_TAG(UART1_TX_PIN)), IOGetByTag(IO_TAG(UART1_RX_PIN)), mode, options, GPIO_AF_7, 1);
 
+#ifdef USE_UART1_TX_DMA
+    dmaInit(DMA1_CH4_HANDLER, OWNER_SERIAL, 1);
     dmaSetHandler(DMA1_CH4_HANDLER, handleUsartTxDma, NVIC_PRIO_SERIALUART1_TXDMA, (uint32_t)&uartPort1);
+#endif
 
 #ifndef USE_UART1_RX_DMA
     NVIC_InitTypeDef NVIC_InitStructure;
@@ -206,10 +216,12 @@ uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t option
     s->USARTx = USART2;
 
 #ifdef USE_UART2_RX_DMA
+    dmaInit(DMA1_CH6_HANDLER, OWNER_SERIAL, 2);
     s->rxDMAChannel = DMA1_Channel6;
     s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->RDR;
 #endif
 #ifdef USE_UART2_TX_DMA
+    dmaInit(DMA1_CH7_HANDLER, OWNER_SERIAL, 2);
     s->txDMAChannel = DMA1_Channel7;
     s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->TDR;
 #endif
@@ -261,10 +273,12 @@ uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t option
     s->USARTx = USART3;
 
 #ifdef USE_UART3_RX_DMA
+    dmaInit(DMA1_CH3_HANDLER, OWNER_SERIAL, 3);
     s->rxDMAChannel = DMA1_Channel3;
     s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->RDR;
 #endif
 #ifdef USE_UART3_TX_DMA
+    dmaInit(DMA1_CH2_HANDLER, OWNER_SERIAL, 3);
     s->txDMAChannel = DMA1_Channel2;
     s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->TDR;
 #endif
@@ -369,8 +383,8 @@ void usartIrqHandler(uartPort_t *s)
     uint32_t ISR = s->USARTx->ISR;
 
     if (!s->rxDMAChannel && (ISR & USART_FLAG_RXNE)) {
-        if (s->port.callback) {
-            s->port.callback(s->USARTx->RDR);
+        if (s->port.rxCallback) {
+            s->port.rxCallback(s->USARTx->RDR);
         } else {
             s->port.rxBuffer[s->port.rxBufferHead++] = s->USARTx->RDR;
             if (s->port.rxBufferHead >= s->port.rxBufferSize) {

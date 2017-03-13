@@ -93,8 +93,8 @@
 
 /** @addtogroup stm32f30x_system
   * @{
-  */ 
- 
+  */
+
 /** @addtogroup STM32F30x_System_Private_Includes
   * @{
   */
@@ -116,7 +116,7 @@ uint32_t hse_value = HSE_VALUE;
      Internal SRAM. */
 /* #define VECT_TAB_SRAM */
 #define VECT_TAB_OFFSET  0x0 /*!< Vector Table base offset field.
-                                  This value must be a multiple of 0x200. */ 
+                                  This value must be a multiple of 0x200. */
 /**
   * @}
   */
@@ -184,19 +184,19 @@ void SystemInit(void)
 
   /* Reset USARTSW[1:0], I2CSW and TIMs bits */
   RCC->CFGR3 &= (uint32_t)0xFF00FCCC;
- 
+
   /* Disable all interrupts */
   RCC->CIR = 0x00000000;
 
   /* Configure the System clock source, PLL Multiplier and Divider factors,
      AHB/APBx prescalers and Flash settings ----------------------------------*/
   //SetSysClock(); // called from main()
- 
+
 #ifdef VECT_TAB_SRAM
   SCB->VTOR = SRAM_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal SRAM. */
 #else
   SCB->VTOR = FLASH_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal FLASH. */
-#endif 
+#endif
 }
 
 /**
@@ -204,7 +204,7 @@ void SystemInit(void)
   *         The SystemCoreClock variable contains the core clock (HCLK), it can
   *         be used by the user application to setup the SysTick timer or configure
   *         other parameters.
-  *  
+  *
   * @note   Each time the core clock (HCLK) changes, this function must be called
   *         to update SystemCoreClock variable value. Otherwise, any configuration
   *         based on this variable will be incorrect.
@@ -222,7 +222,7 @@ void SystemInit(void)
   *
   *         (*) HSI_VALUE is a constant defined in stm32f30x.h file (default value
   *             8 MHz) but the real value may vary depending on the variations
-  *             in voltage and temperature.  
+  *             in voltage and temperature.
   *
   *         (**) HSE_VALUE is a constant defined in stm32f30x.h file (default value
   *              8 MHz), user has to ensure that HSE_VALUE is same as the real
@@ -241,7 +241,7 @@ void SystemCoreClockUpdate (void)
 
   /* Get SYSCLK source -------------------------------------------------------*/
   tmp = RCC->CFGR & RCC_CFGR_SWS;
- 
+
   switch (tmp)
   {
     case 0x00:  /* HSI used as system clock */
@@ -255,7 +255,7 @@ void SystemCoreClockUpdate (void)
       pllmull = RCC->CFGR & RCC_CFGR_PLLMULL;
       pllsource = RCC->CFGR & RCC_CFGR_PLLSRC;
       pllmull = ( pllmull >> 18) + 2;
- 
+
       if (pllsource == 0x00)
       {
         /* HSI oscillator clock divided by 2 selected as PLL clock entry */
@@ -266,7 +266,7 @@ void SystemCoreClockUpdate (void)
         prediv1factor = (RCC->CFGR2 & RCC_CFGR2_PREDIV1) + 1;
         /* HSE oscillator clock selected as PREDIV1 clock entry */
         SystemCoreClock = (HSE_VALUE / prediv1factor) * pllmull;
-      } 
+      }
       break;
     default: /* HSI used as system clock */
       SystemCoreClock = HSI_VALUE;
@@ -276,7 +276,7 @@ void SystemCoreClockUpdate (void)
   /* Get HCLK prescaler */
   tmp = AHBPrescTable[((RCC->CFGR & RCC_CFGR_HPRE) >> 4)];
   /* HCLK clock frequency */
-  SystemCoreClock >>= tmp; 
+  SystemCoreClock >>= tmp;
 }
 
 /**
@@ -322,7 +322,7 @@ void SetSysClock(void)
 
      /* HCLK = SYSCLK / 1 */
      RCC->CFGR |= (uint32_t)RCC_CFGR_HPRE_DIV1;
-  
+
      /* PCLK2 = HCLK / 1 */
      RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE2_DIV1;
 

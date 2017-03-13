@@ -19,7 +19,7 @@
 
 #pragma once
 
-void initLtmTelemetry(telemetryConfig_t *initialTelemetryConfig);
+void initLtmTelemetry(void);
 void handleLtmTelemetry(void);
 void checkLtmTelemetryState(void);
 

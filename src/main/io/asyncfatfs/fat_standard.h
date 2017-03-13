@@ -54,7 +54,7 @@ typedef enum {
     FAT_FILESYSTEM_TYPE_INVALID,
     FAT_FILESYSTEM_TYPE_FAT12,
     FAT_FILESYSTEM_TYPE_FAT16,
-    FAT_FILESYSTEM_TYPE_FAT32,
+    FAT_FILESYSTEM_TYPE_FAT32
 } fatFilesystemType_e;
 
 typedef struct mbrPartitionEntry_t {

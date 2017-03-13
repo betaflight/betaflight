@@ -30,6 +30,7 @@
 #include "adc_impl.h"
 #include "io.h"
 #include "rcc.h"
+#include "dma.h"
 
 #include "common/utils.h"
 
@@ -38,8 +39,13 @@
 #endif
 
 const adcDevice_t adcHardware[] = {
-    { .ADCx = ADC1, .rccADC = RCC_AHB(ADC12), .rccDMA = RCC_AHB(DMA1), .DMAy_Channelx = DMA1_Channel1 }, 
-    { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .rccDMA = RCC_AHB(DMA2), .DMAy_Channelx = DMA2_Channel1 } 
+    { .ADCx = ADC1, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA1_Channel1 },
+#ifdef ADC24_DMA_REMAP
+    { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA2_Channel3 },
+#else
+    { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA2_Channel1 },
+#endif
+    { .ADCx = ADC3, .rccADC = RCC_AHB(ADC34), .DMAy_Channelx = DMA2_Channel5 }
 };
 
 const adcTagMap_t adcTagMap[] = {
@@ -92,64 +98,75 @@ ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
     if (instance == ADC2)
         return ADCDEV_2;
 
+    if (instance == ADC3)
+        return ADCDEV_3;
+
     return ADCINVALID;
 }
 
-void adcInit(drv_adc_config_t *init)
+void adcInit(const adcConfig_t *config)
 {
-    UNUSED(init);
     ADC_InitTypeDef ADC_InitStructure;
     DMA_InitTypeDef DMA_InitStructure;
 
     uint8_t adcChannelCount = 0;
 
-    memset(&adcConfig, 0, sizeof(adcConfig));
+    memset(&adcOperatingConfig, 0, sizeof(adcOperatingConfig));
 
-#ifdef VBAT_ADC_PIN
-    if (init->enableVBat) {
-        adcConfig[ADC_BATTERY].tag = IO_TAG(VBAT_ADC_PIN);
+    if (config->vbat.enabled) {
+        adcOperatingConfig[ADC_BATTERY].tag = config->vbat.ioTag;
     }
-#endif
 
-#ifdef RSSI_ADC_PIN
-    if (init->enableRSSI) {
-        adcConfig[ADC_RSSI].tag = IO_TAG(RSSI_ADC_PIN);
+    if (config->rssi.enabled) {
+        adcOperatingConfig[ADC_RSSI].tag = config->rssi.ioTag;  //RSSI_ADC_CHANNEL;
     }
-#endif
 
-#ifdef CURRENT_METER_ADC_PIN
-    if (init->enableCurrentMeter) {
-        adcConfig[ADC_CURRENT].tag = IO_TAG(CURRENT_METER_ADC_PIN);
+    if (config->external1.enabled) {
+        adcOperatingConfig[ADC_EXTERNAL1].tag = config->external1.ioTag; //EXTERNAL1_ADC_CHANNEL;
     }
-#endif
 
-#ifdef EXTERNAL1_ADC_PIN
-    if (init->enableExternal1) {
-        adcConfig[ADC_EXTERNAL1].tag = IO_TAG(EXTERNAL1_ADC_PIN);
+    if (config->currentMeter.enabled) {
+        adcOperatingConfig[ADC_CURRENT].tag = config->currentMeter.ioTag;  //CURRENT_METER_ADC_CHANNEL;
     }
-#endif
 
     ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
     if (device == ADCINVALID)
         return;
 
+#ifdef ADC24_DMA_REMAP
+    SYSCFG_DMAChannelRemapConfig(SYSCFG_DMARemap_ADC2ADC4, ENABLE);
+#endif
     adcDevice_t adc = adcHardware[device];
 
+    bool adcActive = false;
     for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
-        if (!adcConfig[i].tag)
+        if (!adcOperatingConfig[i].tag)
             continue;
 
-        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC, RESOURCE_ADC_BATTERY+i,0);
-        IOConfigGPIO(IOGetByTag(adcConfig[i].tag), IO_CONFIG(GPIO_Mode_AN, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL));
-        adcConfig[i].adcChannel = adcChannelByTag(adcConfig[i].tag);
-        adcConfig[i].dmaIndex = adcChannelCount++;
-        adcConfig[i].sampleTime = ADC_SampleTime_601Cycles5;
-        adcConfig[i].enabled = true;
+        adcActive = true;
+        IOInit(IOGetByTag(adcOperatingConfig[i].tag), OWNER_ADC_BATT + i, 0);
+        IOConfigGPIO(IOGetByTag(adcOperatingConfig[i].tag), IO_CONFIG(GPIO_Mode_AN, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL));
+        adcOperatingConfig[i].adcChannel = adcChannelByTag(adcOperatingConfig[i].tag);
+        adcOperatingConfig[i].dmaIndex = adcChannelCount++;
+        adcOperatingConfig[i].sampleTime = ADC_SampleTime_601Cycles5;
+        adcOperatingConfig[i].enabled = true;
     }
 
-    RCC_ADCCLKConfig(RCC_ADC12PLLCLK_Div256);  // 72 MHz divided by 256 = 281.25 kHz
+    if (!adcActive) {
+        return;
+    }
+
+    if ((device == ADCDEV_1) || (device == ADCDEV_2)) {
+        // enable clock for ADC1+2
+        RCC_ADCCLKConfig(RCC_ADC12PLLCLK_Div256);  // 72 MHz divided by 256 = 281.25 kHz
+    } else {
+        // enable clock for ADC3+4
+        RCC_ADCCLKConfig(RCC_ADC34PLLCLK_Div256);  // 72 MHz divided by 256 = 281.25 kHz
+    }
+
     RCC_ClockCmd(adc.rccADC, ENABLE);
-    RCC_ClockCmd(adc.rccDMA, ENABLE);
+
+    dmaInit(dmaGetIdentifier(adc.DMAy_Channelx), OWNER_ADC, 0);
 
     DMA_DeInit(adc.DMAy_Channelx);
 
@@ -204,10 +221,10 @@ void adcInit(drv_adc_config_t *init)
 
     uint8_t rank = 1;
     for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
-        if (!adcConfig[i].enabled) {
+        if (!adcOperatingConfig[i].enabled) {
             continue;
         }
-        ADC_RegularChannelConfig(adc.ADCx, adcConfig[i].adcChannel, rank++, adcConfig[i].sampleTime);
+        ADC_RegularChannelConfig(adc.ADCx, adcOperatingConfig[i].adcChannel, rank++, adcOperatingConfig[i].sampleTime);
     }
 
     ADC_Cmd(adc.ADCx, ENABLE);

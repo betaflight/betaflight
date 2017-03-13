@@ -19,72 +19,20 @@
 
 #include <platform.h>
 #include "drivers/io.h"
-#include "drivers/pwm_mapping.h"
 
-const uint16_t multiPPM[] = {
-    PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
-    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),
-    0xFFFF
-};
-
-const uint16_t multiPWM[] = {
-    // prevent crashing, but do nothing
-    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),
-    0xFFFF
-};
-
-const uint16_t airPPM[] = {
-    PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
-    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),
-    0xFFFF
-};
-
-const uint16_t airPWM[] = {
-    // prevent crashing, but do nothing
-    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),
-    0xFFFF
-};
+#include "drivers/timer.h"
+#include "drivers/dma.h"
+#include "drivers/timer_def.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn, 0, IOCFG_AF_PP_PD,   GPIO_AF_6 }, // PWM1 - PA8
-
-    { TIM4,  IO_TAG(PB8),  TIM_Channel_3, TIM4_IRQn,    1, IOCFG_AF_PP,      GPIO_AF_2 }, // PWM2 - PB8
-    { TIM4,  IO_TAG(PB9),  TIM_Channel_4, TIM4_IRQn,    1, IOCFG_AF_PP,      GPIO_AF_2 }, // PWM3 - PB9
-
-    { TIM2,  IO_TAG(PA10), TIM_Channel_4, TIM2_IRQn,    1, IOCFG_AF_PP,      GPIO_AF_10 }, // PMW4 - PA10
-    { TIM2,  IO_TAG(PA9),  TIM_Channel_3, TIM2_IRQn,    1, IOCFG_AF_PP,      GPIO_AF_10 }, // PWM5 - PA9
-    { TIM2,  IO_TAG(PA0),  TIM_Channel_1, TIM2_IRQn,    1, IOCFG_AF_PP,      GPIO_AF_1 },  // PWM6 - PA0
-    { TIM2,  IO_TAG(PA1),  TIM_Channel_2, TIM2_IRQn,    1, IOCFG_AF_PP,      GPIO_AF_1 },  // PWM7 - PA1
-
-    { TIM3,  IO_TAG(PB0),  TIM_Channel_3, TIM3_IRQn,    1, IOCFG_AF_PP_PD,   GPIO_AF_2 },  // PWM8 - PB1
-    { TIM3,  IO_TAG(PB1),  TIM_Channel_4, TIM3_IRQn,    1, IOCFG_AF_PP_PD,   GPIO_AF_2 },  // PWM9 - PB0
+    DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_PPM,   0), // PWM1 - PA8
+    DEF_TIM(TIM8,  CH2, PB8,  TIM_USE_MOTOR, 1), // PWM2 - PB8,  DMA2ch5
+    DEF_TIM(TIM8,  CH3, PB9,  TIM_USE_MOTOR, 1), // PWM3 - PB9,  DMA2ch1
+    DEF_TIM(TIM2,  CH4, PA10, TIM_USE_MOTOR, 1), // PMW4 - PA10, DMA1ch7
+    DEF_TIM(TIM2,  CH3, PA9,  TIM_USE_MOTOR, 1), // PWM5 - PA9,  DMA1ch1
+    DEF_TIM(TIM2,  CH1, PA0,  TIM_USE_MOTOR, 1), // PWM6 - PA0
+    DEF_TIM(TIM2,  CH2, PA1,  TIM_USE_MOTOR, 1), // PWM7 - PA1
+    DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_MOTOR, 1), // PWM8 - PB1
+    DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_MOTOR, 1), // PWM9 - PB0
+    DEF_TIM(TIM16, CH1, PA6,  TIM_USE_LED,   1), // PWM9 - PB0
 };
-

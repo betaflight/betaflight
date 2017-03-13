@@ -32,24 +32,7 @@
 #define BMA280_PMU_BW      0x10
 #define BMA280_PMU_RANGE   0x0F
 
-static void bma280Init(acc_t *acc);
-static bool bma280Read(int16_t *accelData);
-
-bool bma280Detect(acc_t *acc)
-{
-    bool ack = false;
-    uint8_t sig = 0;
-
-    ack = i2cRead(MPU_I2C_INSTANCE, BMA280_ADDRESS, 0x00, 1, &sig);
-    if (!ack || sig != 0xFB)
-        return false;
-
-    acc->init = bma280Init;
-    acc->read = bma280Read;
-    return true;
-}
-
-static void bma280Init(acc_t *acc)
+static void bma280Init(accDev_t *acc)
 {
     i2cWrite(MPU_I2C_INSTANCE, BMA280_ADDRESS, BMA280_PMU_RANGE, 0x08); // +-8g range
     i2cWrite(MPU_I2C_INSTANCE, BMA280_ADDRESS, BMA280_PMU_BW, 0x0E); // 500Hz BW
@@ -57,7 +40,7 @@ static void bma280Init(acc_t *acc)
     acc->acc_1G = 512 * 8;
 }
 
-static bool bma280Read(int16_t *accelData)
+static bool bma280Read(accDev_t *acc)
 {
     uint8_t buf[6];
 
@@ -66,9 +49,22 @@ static bool bma280Read(int16_t *accelData)
     }
 
     // Data format is lsb<5:0><crap><new_data_bit> | msb<13:6>
-    accelData[0] = (int16_t)((buf[0] >> 2) + (buf[1] << 8));
-    accelData[1] = (int16_t)((buf[2] >> 2) + (buf[3] << 8));
-    accelData[2] = (int16_t)((buf[4] >> 2) + (buf[5] << 8));
+    acc->ADCRaw[0] = (int16_t)((buf[0] >> 2) + (buf[1] << 8));
+    acc->ADCRaw[1] = (int16_t)((buf[2] >> 2) + (buf[3] << 8));
+    acc->ADCRaw[2] = (int16_t)((buf[4] >> 2) + (buf[5] << 8));
 
+    return true;
+}
+
+bool bma280Detect(accDev_t *acc)
+{
+    uint8_t sig = 0;
+    bool ack = i2cRead(MPU_I2C_INSTANCE, BMA280_ADDRESS, 0x00, 1, &sig);
+
+    if (!ack || sig != 0xFB)
+        return false;
+
+    acc->init = bma280Init;
+    acc->read = bma280Read;
     return true;
 }

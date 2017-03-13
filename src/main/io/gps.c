@@ -26,32 +26,35 @@
 
 #ifdef GPS
 
-#include "build_config.h"
-#include "debug.h"
+#include "build/build_config.h"
+#include "build/debug.h"
 
-#include "common/maths.h"
 #include "common/axis.h"
+#include "common/gps_conversion.h"
+#include "common/maths.h"
 #include "common/utils.h"
 
+#include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/system.h"
-#include "drivers/serial.h"
-#include "drivers/serial_uart.h"
-#include "drivers/gpio.h"
 #include "drivers/light_led.h"
 
-#include "sensors/sensors.h"
+#include "drivers/light_led.h"
+#include "drivers/system.h"
 
-#include "io/serial.h"
-#include "io/display.h"
+#include "io/dashboard.h"
 #include "io/gps.h"
+#include "io/serial.h"
 
-#include "flight/gps_conversion.h"
-#include "flight/pid.h"
+#include "fc/config.h"
+#include "fc/runtime_config.h"
+
 #include "flight/navigation.h"
+#include "flight/pid.h"
 
-#include "config/config.h"
-#include "config/runtime_config.h"
-
+#include "sensors/sensors.h"
 
 #define LOG_ERROR        '?'
 #define LOG_IGNORED      '!'
@@ -89,15 +92,12 @@ uint8_t GPS_svinfo_svid[GPS_SV_MAXSATS];    // Satellite ID
 uint8_t GPS_svinfo_quality[GPS_SV_MAXSATS]; // Bitfield Qualtity
 uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS];     // Carrier to Noise Ratio (Signal Strength)
 
-static gpsConfig_t *gpsConfig;
-
 // GPS timeout for wrong baud rate/disconnection/etc in milliseconds (default 2.5second)
 #define GPS_TIMEOUT (2500)
 // How many entries in gpsInitData array below
 #define GPS_INIT_ENTRIES (GPS_BAUDRATE_MAX + 1)
 #define GPS_BAUDRATE_CHANGE_DELAY (200)
 
-static serialConfig_t *serialConfig;
 static serialPort_t *gpsPort;
 
 typedef struct gpsInitData_s {
@@ -177,11 +177,20 @@ typedef enum {
     GPS_CHANGE_BAUD,
     GPS_CONFIGURE,
     GPS_RECEIVING_DATA,
-    GPS_LOST_COMMUNICATION,
+    GPS_LOST_COMMUNICATION
 } gpsState_e;
 
 gpsData_t gpsData;
 
+
+PG_REGISTER_WITH_RESET_TEMPLATE(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
+
+PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
+    .provider = GPS_NMEA,
+    .sbasMode = SBAS_AUTO,
+    .autoConfig = GPS_AUTOCONFIG_ON,
+    .autoBaud = GPS_AUTOBAUD_OFF
+);
 
 static void shiftPacketLog(void)
 {
@@ -204,18 +213,13 @@ static void gpsSetState(gpsState_e state)
     gpsData.messageState = GPS_MESSAGE_STATE_IDLE;
 }
 
-void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
+void gpsInit(void)
 {
-    serialConfig = initialSerialConfig;
-
-
     gpsData.baudrateIndex = 0;
     gpsData.errors = 0;
     gpsData.timeouts = 0;
 
     memset(gpsPacketLog, 0x00, sizeof(gpsPacketLog));
-
-    gpsConfig = initialGpsConfig;
 
     // init gpsData structure. if we're not actually enabled, don't bother doing anything else
     gpsSetState(GPS_UNKNOWN);
@@ -239,11 +243,11 @@ void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
     portMode_t mode = MODE_RXTX;
     // only RX is needed for NMEA-style GPS
 #if !defined(COLIBRI_RACE) || !defined(LUX_RACE)
-    if (gpsConfig->provider == GPS_NMEA)
+    if (gpsConfig()->provider == GPS_NMEA)
         mode &= ~MODE_TX;
 #endif
 
-    // no callback - buffer will be consumed in gpsThread()
+    // no callback - buffer will be consumed in gpsUpdate()
     gpsPort = openSerialPort(gpsPortConfig->identifier, FUNCTION_GPS, NULL, gpsInitData[gpsData.baudrateIndex].baudrateIndex, mode, SERIAL_NOT_INVERTED);
     if (!gpsPort) {
         featureClear(FEATURE_GPS);
@@ -347,7 +351,7 @@ void gpsInitUblox(void)
         case GPS_CONFIGURE:
 
             // Either use specific config file for GPS or let dynamically upload config
-            if( gpsConfig->autoConfig == GPS_AUTOCONFIG_OFF ) {
+            if( gpsConfig()->autoConfig == GPS_AUTOCONFIG_OFF ) {
                 gpsSetState(GPS_RECEIVING_DATA);
                 break;
             }
@@ -369,7 +373,7 @@ void gpsInitUblox(void)
 
             if (gpsData.messageState == GPS_MESSAGE_STATE_SBAS) {
                 if (gpsData.state_position < UBLOX_SBAS_MESSAGE_LENGTH) {
-                    serialWrite(gpsPort, ubloxSbas[gpsConfig->sbasMode].message[gpsData.state_position]);
+                    serialWrite(gpsPort, ubloxSbas[gpsConfig()->sbasMode].message[gpsData.state_position]);
                     gpsData.state_position++;
                 } else {
                     gpsData.messageState++;
@@ -386,7 +390,7 @@ void gpsInitUblox(void)
 
 void gpsInitHardware(void)
 {
-    switch (gpsConfig->provider) {
+    switch (gpsConfig()->provider) {
         case GPS_NMEA:
             gpsInitNmea();
             break;
@@ -397,7 +401,16 @@ void gpsInitHardware(void)
     }
 }
 
-void gpsThread(void)
+static void updateGpsIndicator(timeUs_t currentTimeUs)
+{
+    static uint32_t GPSLEDTime;
+    if ((int32_t)(currentTimeUs - GPSLEDTime) >= 0 && (GPS_numSat >= 5)) {
+        GPSLEDTime = currentTimeUs + 150000;
+        LED1_TOGGLE;
+    }
+}
+
+void gpsUpdate(timeUs_t currentTimeUs)
 {
     // read out available GPS bytes
     if (gpsPort) {
@@ -417,12 +430,12 @@ void gpsThread(void)
 
         case GPS_LOST_COMMUNICATION:
             gpsData.timeouts++;
-            if (gpsConfig->autoBaud) {
+            if (gpsConfig()->autoBaud) {
                 // try another rate
                 gpsData.baudrateIndex++;
                 gpsData.baudrateIndex %= GPS_INIT_ENTRIES;
             }
-            gpsData.lastMessage = millis();
+            gpsData.lastMessage = currentTimeUs / 1000;
             // TODO - move some / all of these into gpsData
             GPS_numSat = 0;
             DISABLE_STATE(GPS_FIX);
@@ -431,12 +444,15 @@ void gpsThread(void)
 
         case GPS_RECEIVING_DATA:
             // check for no data/gps timeout/cable disconnection etc
-            if (millis() - gpsData.lastMessage > GPS_TIMEOUT) {
+            if (currentTimeUs / 1000 - gpsData.lastMessage > GPS_TIMEOUT) {
                 // remove GPS from capability
                 sensorsClear(SENSOR_GPS);
                 gpsSetState(GPS_LOST_COMMUNICATION);
             }
             break;
+    }
+    if (sensors(SENSOR_GPS)) {
+        updateGpsIndicator(currentTimeUs);
     }
 }
 
@@ -465,7 +481,7 @@ static void gpsNewData(uint16_t c)
 
 bool gpsNewFrame(uint8_t c)
 {
-    switch (gpsConfig->provider) {
+    switch (gpsConfig()->provider) {
         case GPS_NMEA:          // NMEA
             return gpsNewFrameNMEA(c);
         case GPS_UBLOX:         // UBX binary
@@ -1062,14 +1078,13 @@ static bool gpsNewFrameUBLOX(uint8_t data)
 static void gpsHandlePassthrough(uint8_t data)
  {
      gpsNewData(data);
- #ifdef DISPLAY
-     if (feature(FEATURE_DISPLAY)) {
-         updateDisplay();
+ #ifdef USE_DASHBOARD
+     if (feature(FEATURE_DASHBOARD)) {
+         dashboardUpdate(micros());
      }
  #endif
 
  }
-
 
 void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
 {
@@ -1079,21 +1094,12 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
     if(!(gpsPort->mode & MODE_TX))
         serialSetMode(gpsPort, gpsPort->mode | MODE_TX);
 
-#ifdef DISPLAY
-    if (feature(FEATURE_DISPLAY)) {
-        displayShowFixedPage(PAGE_GPS);
+#ifdef USE_DASHBOARD
+    if (feature(FEATURE_DASHBOARD)) {
+        dashboardShowFixedPage(PAGE_GPS);
     }
 #endif
 
     serialPassthrough(gpsPort, gpsPassthroughPort, &gpsHandlePassthrough, NULL);
-}
-
-void updateGpsIndicator(uint32_t currentTime)
-{
-    static uint32_t GPSLEDTime;
-    if ((int32_t)(currentTime - GPSLEDTime) >= 0 && (GPS_numSat >= 5)) {
-        GPSLEDTime = currentTime + 150000;
-        LED1_TOGGLE;
-    }
 }
 #endif

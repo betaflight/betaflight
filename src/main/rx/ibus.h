@@ -17,5 +17,4 @@
 
 #pragma once
 
-uint8_t ibusFrameStatus(void);
-bool ibusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
+bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);

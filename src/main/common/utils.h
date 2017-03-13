@@ -21,6 +21,9 @@
 #include <stdint.h>
 
 #define ARRAYLEN(x) (sizeof(x) / sizeof((x)[0]))
+#define ARRAYEND(x) (&(x)[ARRAYLEN(x)])
+
+#define CONST_CAST(type, value) ((type)(value))
 
 #define CONCAT_HELPER(x,y) x ## y
 #define CONCAT(x,y) CONCAT_HELPER(x, y)
@@ -31,7 +34,9 @@
 #define EXPAND_I(x) x
 #define EXPAND(x) EXPAND_I(x)
 
+#if !defined(UNUSED)
 #define UNUSED(x) (void)(x)
+#endif
 #define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
 
 #define BIT(x) (1 << (x))
@@ -42,7 +47,6 @@ http://resnet.uoregon.edu/~gurney_j/jmpc/bitwise.html
 #define BITCOUNT(x) (((BX_(x)+(BX_(x)>>4)) & 0x0F0F0F0F) % 255)
 #define BX_(x) ((x) - (((x)>>1)&0x77777777) - (((x)>>2)&0x33333333) - (((x)>>3)&0x11111111))
 
-#define UNUSED(x) (void)(x)
 
 /*
  * https://groups.google.com/forum/?hl=en#!msg/comp.lang.c/attFnqwhvGk/sGBKXvIkY3AJ
@@ -68,8 +72,8 @@ http://resnet.uoregon.edu/~gurney_j/jmpc/bitwise.html
         const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
         (type *)( (char *)__mptr - offsetof(type,member) );}))
 
-static inline int16_t cmp16(uint16_t a, uint16_t b) { return a-b; }
-static inline int32_t cmp32(uint32_t a, uint32_t b) { return a-b; }
+static inline int16_t cmp16(uint16_t a, uint16_t b) { return (int16_t)(a-b); }
+static inline int32_t cmp32(uint32_t a, uint32_t b) { return (int32_t)(a-b); }
 
 // using memcpy_fn will force memcpy function call, instead of inlining it. In most cases function call takes fewer instructions
 //  than inlined version (inlining is cheaper for very small moves < 8 bytes / 2 store instructions)

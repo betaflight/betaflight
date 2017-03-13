@@ -20,7 +20,7 @@
 
 #include <platform.h>
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "barometer.h"
 
@@ -65,7 +65,7 @@ static void bmp280_get_up(void);
 #endif
 STATIC_UNIT_TESTED void bmp280_calculate(int32_t *pressure, int32_t *temperature);
 
-bool bmp280Detect(baro_t *baro)
+bool bmp280Detect(baroDev_t *baro)
 {
     if (bmp280InitDone)
         return true;

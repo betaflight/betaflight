@@ -17,22 +17,12 @@
 
 #pragma once
 
+#include "io_types.h"
 
-#define TRANSPONDER_BITS_PER_BYTE 10 // start + 8 data + stop
-#define TRANSPONDER_DATA_LENGTH 6
-#define TRANSPONDER_TOGGLES_PER_BIT 11
-#define TRANSPONDER_GAP_TOGGLES 1
-#define TRANSPONDER_TOGGLES (TRANSPONDER_TOGGLES_PER_BIT + TRANSPONDER_GAP_TOGGLES)
-
-#define TRANSPONDER_DMA_BUFFER_SIZE ((TRANSPONDER_TOGGLES_PER_BIT + 1) * TRANSPONDER_BITS_PER_BYTE * TRANSPONDER_DATA_LENGTH)
-
-#define BIT_TOGGLE_1 78 // (156 / 2)
-#define BIT_TOGGLE_0 0
-
-void transponderIrInit(void);
+bool transponderIrInit();
 void transponderIrDisable(void);
 
-void transponderIrHardwareInit(void);
+void transponderIrHardwareInit(ioTag_t ioTag);
 void transponderIrDMAEnable(void);
 
 void transponderIrWaitForTransmitComplete(void);
@@ -42,5 +32,4 @@ void transponderIrTransmit(void);
 
 bool isTransponderIrReady(void);
 
-extern uint8_t transponderIrDMABuffer[TRANSPONDER_DMA_BUFFER_SIZE];
 extern volatile uint8_t transponderIrDataTransferInProgress;

@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include "common/time.h"
+
 #define HOTTV4_RXTX 4
 
 #define HOTTV4_TEXT_MODE_REQUEST_ID       0x7f
@@ -53,7 +55,7 @@ typedef enum {
     HOTT_EAM_ALARM1_FLAG_TEMPERATURE_2 = (1 << 4),
     HOTT_EAM_ALARM1_FLAG_ALTITUDE = (1 << 5),
     HOTT_EAM_ALARM1_FLAG_CURRENT = (1 << 6),
-    HOTT_EAM_ALARM1_FLAG_MAIN_VOLTAGE = (1 << 7),
+    HOTT_EAM_ALARM1_FLAG_MAIN_VOLTAGE = (1 << 7)
 } hottEamAlarm1Flag_e;
 
 typedef enum {
@@ -65,7 +67,7 @@ typedef enum {
     HOTT_EAM_ALARM2_FLAG_M3S_DUPLICATE = (1 << 4),
     HOTT_EAM_ALARM2_FLAG_UNKNOWN_1 = (1 << 5),
     HOTT_EAM_ALARM2_FLAG_UNKNOWN_2 = (1 << 6),
-    HOTT_EAM_ALARM2_FLAG_ON_SIGN_OR_TEXT_ACTIVE = (1 << 7),
+    HOTT_EAM_ALARM2_FLAG_ON_SIGN_OR_TEXT_ACTIVE = (1 << 7)
 } hottEamAlarm2Flag_e;
 
 
@@ -485,10 +487,10 @@ typedef struct HOTT_AIRESC_MSG_s {
     uint8_t stop_byte;      //#44 constant value 0x7d
 } HOTT_AIRESC_MSG_t;
 
-void handleHoTTTelemetry(void);
+void handleHoTTTelemetry(timeUs_t currentTimeUs);
 void checkHoTTTelemetryState(void);
 
-void initHoTTTelemetry(telemetryConfig_t *telemetryConfig);
+void initHoTTTelemetry(void);
 void configureHoTTTelemetryPort(void);
 void freeHoTTTelemetryPort(void);
 

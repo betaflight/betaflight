@@ -23,26 +23,36 @@
 
 #include <platform.h>
 
-#include <build_config.h>
+#ifdef TRANSPONDER
+#include "build/build_config.h"
+
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/transponder_ir.h"
 #include "drivers/system.h"
-
 #include "drivers/usb_io.h"
 
+#include "fc/config.h"
+
 #include "io/transponder_ir.h"
-#include "config/config.h"
+
+PG_REGISTER_WITH_RESET_TEMPLATE(transponderConfig_t, transponderConfig, PG_TRANSPONDER_CONFIG, 0);
+
+PG_RESET_TEMPLATE(transponderConfig_t, transponderConfig,
+    .data = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC } // Note, this is NOT a valid transponder code, it's just for testing production hardware
+);
 
 static bool transponderInitialised = false;
 static bool transponderRepeat = false;
 
 // timers
-static uint32_t nextUpdateAt = 0;
+static timeUs_t nextUpdateAtUs = 0;
 
 #define JITTER_DURATION_COUNT (sizeof(jitterDurations) / sizeof(uint8_t))
 static uint8_t jitterDurations[] = {0,9,4,8,3,9,6,7,1,6,9,7,8,2,6};
 
-void updateTransponder(void)
+void transponderUpdate(timeUs_t currentTimeUs)
 {
     static uint32_t jitterIndex = 0;
 
@@ -50,9 +60,7 @@ void updateTransponder(void)
         return;
     }
 
-    uint32_t now = micros();
-
-    bool updateNow = (int32_t)(now - nextUpdateAt) >= 0L;
+    const bool updateNow = (timeDelta_t)(currentTimeUs - nextUpdateAtUs) >= 0L;
     if (!updateNow) {
         return;
     }
@@ -63,33 +71,26 @@ void updateTransponder(void)
         jitterIndex = 0;
     }
 
-    nextUpdateAt = now + 4500 + jitter;
+    nextUpdateAtUs = currentTimeUs + 4500 + jitter;
 
 #ifdef REDUCE_TRANSPONDER_CURRENT_DRAW_WHEN_USB_CABLE_PRESENT
     // reduce current draw when USB cable is plugged in by decreasing the transponder transmit rate.
     if (usbCableIsInserted()) {
-        nextUpdateAt = now + (1000 * 1000) / 10; // 10 hz.
+        nextUpdateAtUs = currentTimeUs + (1000 * 1000) / 10; // 10 hz.
     }
 #endif
 
     transponderIrTransmit();
 }
 
-void transponderInit(uint8_t* transponderData)
+void transponderInit(void)
 {
-    transponderInitialised = false;
-    transponderIrInit();
-    transponderIrUpdateData(transponderData);
-}
+    transponderInitialised = transponderIrInit();
+    if (!transponderInitialised) {
+        return;
+    }
 
-void transponderEnable(void)
-{
-    transponderInitialised = true;
-}
-
-void transponderDisable(void)
-{
-    transponderInitialised = false;
+    transponderIrUpdateData(transponderConfig()->data);
 }
 
 void transponderStopRepeating(void)
@@ -99,12 +100,20 @@ void transponderStopRepeating(void)
 
 void transponderStartRepeating(void)
 {
+    if (!transponderInitialised) {
+        return;
+    }
+
     transponderRepeat = true;
 }
 
-void transponderUpdateData(uint8_t* transponderData)
+void transponderUpdateData(void)
 {
-    transponderIrUpdateData(transponderData);
+    if (!transponderInitialised) {
+        return;
+    }
+
+    transponderIrUpdateData(transponderConfig()->data);
 }
 
 void transponderTransmitOnce(void) {
@@ -114,3 +123,4 @@ void transponderTransmitOnce(void) {
     }
     transponderIrTransmit();
 }
+#endif

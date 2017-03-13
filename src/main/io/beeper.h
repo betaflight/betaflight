@@ -17,6 +17,9 @@
 
 #pragma once
 
+#include "common/time.h"
+#include "config/parameter_group.h"
+
 typedef enum {
     // IMPORTANT: these are in priority order, 0 = Highest
     BEEPER_SILENCE = 0,             // Silence, see beeperSilence()
@@ -39,15 +42,23 @@ typedef enum {
     BEEPER_ARMED,                   // Warning beeps when board is armed (repeats until board is disarmed or throttle is increased)
     BEEPER_SYSTEM_INIT,             // Initialisation beeps when board is powered on
     BEEPER_USB,                     // Some boards have beeper powered USB connected
-
+    BEEPER_BLACKBOX_ERASE,          // Beep when blackbox erase completes
     BEEPER_ALL,                     // Turn ON or OFF all beeper conditions
-    BEEPER_PREFERENCE,              // Save preferred beeper configuration
+    BEEPER_PREFERENCE               // Save preferred beeper configuration
     // BEEPER_ALL and BEEPER_PREFERENCE must remain at the bottom of this enum
 } beeperMode_e;
 
+typedef struct beeperConfig_s {
+    uint32_t beeper_off_flags;
+    uint32_t preferred_beeper_off_flags;
+} beeperConfig_t;
+
+PG_DECLARE(beeperConfig_t, beeperConfig);
+
+
 void beeper(beeperMode_e mode);
 void beeperSilence(void);
-void beeperUpdate(void);
+void beeperUpdate(timeUs_t currentTimeUs);
 void beeperConfirmationBeeps(uint8_t beepCount);
 uint32_t getArmingBeepTimeMicros(void);
 beeperMode_e beeperModeForTableIndex(int idx);

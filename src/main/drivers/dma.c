@@ -21,8 +21,8 @@
 
 #include <platform.h>
 
-#include "drivers/nvic.h"
-#include "drivers/dma.h"
+#include "nvic.h"
+#include "dma.h"
 
 /*
  * DMA descriptors.
@@ -63,16 +63,18 @@ DEFINE_DMA_IRQ_HANDLER(2, 4, DMA2_CH4_HANDLER)
 DEFINE_DMA_IRQ_HANDLER(2, 5, DMA2_CH5_HANDLER)
 #endif
 
-
-void dmaInit(void)
+void dmaInit(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resourceIndex)
 {
-    // TODO: Do we need this?
+    RCC_AHBPeriphClockCmd(dmaDescriptors[identifier].rcc, ENABLE);
+    dmaDescriptors[identifier].owner = owner;
+    dmaDescriptors[identifier].resourceIndex = resourceIndex;
 }
 
-void dmaSetHandler(dmaHandlerIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam)
+void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam)
 {
     NVIC_InitTypeDef NVIC_InitStructure;
 
+    /* TODO: remove this - enforce the init */
     RCC_AHBPeriphClockCmd(dmaDescriptors[identifier].rcc, ENABLE);
     dmaDescriptors[identifier].irqHandlerCallback = callback;
     dmaDescriptors[identifier].userParam = userParam;
@@ -84,3 +86,22 @@ void dmaSetHandler(dmaHandlerIdentifier_e identifier, dmaCallbackHandlerFuncPtr 
     NVIC_Init(&NVIC_InitStructure);
 }
 
+resourceOwner_e dmaGetOwner(dmaIdentifier_e identifier)
+{
+    return dmaDescriptors[identifier].owner;
+}
+
+uint8_t dmaGetResourceIndex(dmaIdentifier_e identifier)
+{
+    return dmaDescriptors[identifier].resourceIndex;
+}
+
+dmaIdentifier_e dmaGetIdentifier(const DMA_Channel_TypeDef* channel)
+{
+    for (int i = 0; i < DMA_MAX_DESCRIPTORS; i++) {
+        if (dmaDescriptors[i].ref == channel) {
+            return i;
+        }
+    }
+    return 0;
+}

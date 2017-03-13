@@ -34,9 +34,14 @@
 #include "accgyro_mpu.h"
 #include "accgyro_mpu6500.h"
 
-bool mpu6500AccDetect(acc_t *acc)
+void mpu6500AccInit(accDev_t *acc)
 {
-    if (mpuDetectionResult.sensor != MPU_65xx_I2C) {
+    acc->acc_1G = 512 * 4;
+}
+
+bool mpu6500AccDetect(accDev_t *acc)
+{
+    if (acc->mpuDetectionResult.sensor != MPU_65xx_I2C) {
         return false;
     }
 
@@ -46,75 +51,54 @@ bool mpu6500AccDetect(acc_t *acc)
     return true;
 }
 
-bool mpu6500GyroDetect(gyro_t *gyro)
+void mpu6500GyroInit(gyroDev_t *gyro)
 {
-    if (mpuDetectionResult.sensor != MPU_65xx_I2C) {
+    mpuGyroInit(gyro);
+
+    gyro->mpuConfiguration.writeFn(MPU_RA_PWR_MGMT_1, MPU6500_BIT_RESET);
+    delay(100);
+    gyro->mpuConfiguration.writeFn(MPU_RA_SIGNAL_PATH_RESET, 0x07);
+    delay(100);
+    gyro->mpuConfiguration.writeFn(MPU_RA_PWR_MGMT_1, 0);
+    delay(100);
+    gyro->mpuConfiguration.writeFn(MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
+    delay(15);
+    const uint8_t raGyroConfigData = gyro->gyroRateKHz > GYRO_RATE_8_kHz ? (INV_FSR_2000DPS << 3 | FCB_3600_32) : (INV_FSR_2000DPS << 3 | FCB_DISABLED);
+    gyro->mpuConfiguration.writeFn(MPU_RA_GYRO_CONFIG, raGyroConfigData);
+    delay(15);
+    gyro->mpuConfiguration.writeFn(MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
+    delay(15);
+    gyro->mpuConfiguration.writeFn(MPU_RA_CONFIG, gyro->lpf);
+    delay(15);
+    gyro->mpuConfiguration.writeFn(MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops(gyro)); // Get Divider Drops
+    delay(100);
+
+    // Data ready interrupt configuration
+#ifdef USE_MPU9250_MAG
+    gyro->mpuConfiguration.writeFn(MPU_RA_INT_PIN_CFG, MPU6500_BIT_INT_ANYRD_2CLEAR | MPU6500_BIT_BYPASS_EN);  // INT_ANYRD_2CLEAR, BYPASS_EN
+#else
+    gyro->mpuConfiguration.writeFn(MPU_RA_INT_PIN_CFG, MPU6500_BIT_INT_ANYRD_2CLEAR);  // INT_ANYRD_2CLEAR
+#endif
+    delay(15);
+
+#ifdef USE_MPU_DATA_READY_SIGNAL
+    gyro->mpuConfiguration.writeFn(MPU_RA_INT_ENABLE, MPU6500_BIT_RAW_RDY_EN); // RAW_RDY_EN interrupt enable
+#endif
+    delay(15);
+}
+
+bool mpu6500GyroDetect(gyroDev_t *gyro)
+{
+    if (gyro->mpuDetectionResult.sensor != MPU_65xx_I2C) {
         return false;
     }
 
     gyro->init = mpu6500GyroInit;
     gyro->read = mpuGyroRead;
-    gyro->intStatus = checkMPUDataReady;
+    gyro->intStatus = mpuCheckDataReady;
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
 
     return true;
-}
-
-void mpu6500AccInit(acc_t *acc)
-{
-    mpuIntExtiInit();
-
-    acc->acc_1G = 512 * 4;
-}
-
-void mpu6500GyroInit(uint8_t lpf)
-{
-    mpuIntExtiInit();
-
-#ifdef NAZE
-    // FIXME target specific code in driver code.
-
-    gpio_config_t gpio;
-    // MPU_INT output on rev5 hardware (PC13). rev4 was on PB13, conflicts with SPI devices
-    if (hse_value == 12000000) {
-        gpio.pin = Pin_13;
-        gpio.speed = Speed_2MHz;
-        gpio.mode = Mode_IN_FLOATING;
-        gpioInit(GPIOC, &gpio);
-    }
-#endif
-
-    mpuIntExtiInit();
-
-    mpuConfiguration.write(MPU_RA_PWR_MGMT_1, MPU6500_BIT_RESET);
-    delay(100);
-    mpuConfiguration.write(MPU_RA_SIGNAL_PATH_RESET, 0x07);
-    delay(100);
-    mpuConfiguration.write(MPU_RA_PWR_MGMT_1, 0);
-    delay(100);
-    mpuConfiguration.write(MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
-    delay(15);
-    mpuConfiguration.write(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
-    delay(15);
-    mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
-    delay(15);
-    mpuConfiguration.write(MPU_RA_CONFIG, lpf);
-    delay(15);
-    mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops()); // Get Divider Drops
-    delay(100);
-
-    // Data ready interrupt configuration
-#ifdef USE_MPU9250_MAG
-    mpuConfiguration.write(MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
-#else
-    mpuConfiguration.write(MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 0 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
-#endif
-
-    delay(15);
-    
-#ifdef USE_MPU_DATA_READY_SIGNAL
-    mpuConfiguration.write(MPU_RA_INT_ENABLE, 0x01); // RAW_RDY_EN interrupt enable
-#endif
 }

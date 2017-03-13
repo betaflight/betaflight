@@ -18,8 +18,6 @@
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "F4BY"
 
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
-
 #define USBD_PRODUCT_STRING     "Swift-Flyer F4BY"
 
 #define LED0                    PE3 // Blue LED
@@ -28,16 +26,14 @@
 
 #define BEEPER                  PE5
 
-#define INVERTER                PD3
-#define INVERTER_USART          USART6
+#define INVERTER_PIN_UART6      PD3
 
 
 
 // MPU6000 interrupts
-#define USE_MPU_DATA_READY_SIGNAL
-#define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU data ready (mag disabled)
-#define MPU_INT_EXTI            PB0
 #define USE_EXTI
+#define MPU_INT_EXTI            PB0
+#define USE_MPU_DATA_READY_SIGNAL
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
@@ -74,8 +70,6 @@
 #define SDCARD_DMA_CHANNEL                  DMA_Channel_0
 
 
-#define USABLE_TIMER_CHANNEL_COUNT 17
-
 #define USE_VCP
 #define VBUS_SENSING_PIN        PA9
 
@@ -104,7 +98,13 @@
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
-#define SERIAL_PORT_COUNT       6 //VCP, UART1, UART2, UART3, UART4, UART5, UART6
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT       8 //VCP, UART1, UART2, UART3, UART4, UART6, SOFTSERIAL x 2
+
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 8 // PWM 9
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -127,6 +127,7 @@
 
 
 #define USE_I2C
+#define USE_I2C_DEVICE_2
 #define I2C_DEVICE              (I2CDEV_2)
 #define USE_I2C_PULLUP
 #define I2C2_SCL                PB10
@@ -138,15 +139,15 @@
 #define CURRENT_METER_ADC_PIN   PC2
 #define RSSI_ADC_PIN            PC1
 
+#undef LED_STRIP
+
 #define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_BLACKBOX)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
-#define SPEKTRUM_BIND
-// UART6, PC7
-#define BIND_PIN                PC7
+#define SPEKTRUM_BIND_PIN       UART6_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -156,5 +157,6 @@
 #define TARGET_IO_PORTD         0xffff
 #define TARGET_IO_PORTE         0xffff
 
+#define USABLE_TIMER_CHANNEL_COUNT 17
 #define USED_TIMERS             ( TIM_N(1) |TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(8) | TIM_N(9))
 

@@ -28,13 +28,13 @@ typedef enum {
     AFATFS_FILESYSTEM_STATE_UNKNOWN,
     AFATFS_FILESYSTEM_STATE_FATAL,
     AFATFS_FILESYSTEM_STATE_INITIALIZATION,
-    AFATFS_FILESYSTEM_STATE_READY,
+    AFATFS_FILESYSTEM_STATE_READY
 } afatfsFilesystemState_e;
 
 typedef enum {
     AFATFS_OPERATION_IN_PROGRESS,
     AFATFS_OPERATION_SUCCESS,
-    AFATFS_OPERATION_FAILURE,
+    AFATFS_OPERATION_FAILURE
 } afatfsOperationStatus_e;
 
 typedef enum {
@@ -54,7 +54,7 @@ typedef afatfsDirEntryPointer_t afatfsFinder_t;
 typedef enum {
     AFATFS_SEEK_SET,
     AFATFS_SEEK_CUR,
-    AFATFS_SEEK_END,
+    AFATFS_SEEK_END
 } afatfsSeek_e;
 
 typedef void (*afatfsFileCallback_t)(afatfsFilePtr_t file);

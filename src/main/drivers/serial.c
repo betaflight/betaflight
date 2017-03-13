@@ -41,12 +41,12 @@ void serialWrite(serialPort_t *instance, uint8_t ch)
 }
 
 
-void serialWriteBuf(serialPort_t *instance, uint8_t *data, int count)
+void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count)
 {
     if (instance->vTable->writeBuf) {
         instance->vTable->writeBuf(instance, data, count);
     } else {
-        for (uint8_t *p = data; count > 0; count--, p++) {
+        for (const uint8_t *p = data; count > 0; count--, p++) {
 
             while (!serialTxBytesFree(instance)) {
             };
@@ -56,12 +56,12 @@ void serialWriteBuf(serialPort_t *instance, uint8_t *data, int count)
     }
 }
 
-uint32_t serialRxBytesWaiting(serialPort_t *instance)
+uint32_t serialRxBytesWaiting(const serialPort_t *instance)
 {
     return instance->vTable->serialTotalRxWaiting(instance);
 }
 
-uint8_t serialTxBytesFree(serialPort_t *instance)
+uint32_t serialTxBytesFree(const serialPort_t *instance)
 {
     return instance->vTable->serialTotalTxFree(instance);
 }
@@ -76,7 +76,7 @@ void serialSetBaudRate(serialPort_t *instance, uint32_t baudRate)
     instance->vTable->serialSetBaudRate(instance, baudRate);
 }
 
-bool isSerialTransmitBufferEmpty(serialPort_t *instance)
+bool isSerialTransmitBufferEmpty(const serialPort_t *instance)
 {
     return instance->vTable->isSerialTransmitBufferEmpty(instance);
 }
@@ -86,7 +86,7 @@ void serialSetMode(serialPort_t *instance, portMode_t mode)
     instance->vTable->setMode(instance, mode);
 }
 
-void serialWriteBufShim(void *instance, uint8_t *data, int count)
+void serialWriteBufShim(void *instance, const uint8_t *data, int count)
 {
     serialWriteBuf((serialPort_t *)instance, data, count);
 }

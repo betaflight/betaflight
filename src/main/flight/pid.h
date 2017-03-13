@@ -14,18 +14,18 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "rx/rx.h"
 
 #pragma once
 
-#define GYRO_I_MAX 256                      // Gyro I limiter
-#define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
-#define YAW_P_LIMIT_MAX 500                 // Maximum value for yaw P limiter
-#define YAW_JUMP_PREVENTION_LIMIT_LOW 80
-#define YAW_JUMP_PREVENTION_LIMIT_HIGH 400
+#include <stdbool.h>
+#include "config/parameter_group.h"
 
-#define DYNAMIC_PTERM_STICK_THRESHOLD 400
-
+#define MAX_PID_PROCESS_DENOM       16
+#define PID_CONTROLLER_BETAFLIGHT   1
+#define PID_MIXER_SCALING           1000.0f
+#define PID_SERVO_MIXER_SCALING     0.7f
+#define PIDSUM_LIMIT                0.5f
+#define PIDSUM_LIMIT_YAW            0.4f
 
 // Scaling factors for Pids for better tunable range in configurator for betaflight pid controller. The scaling is based on legacy pid controller or previous float
 #define PTERM_SCALE 0.032029f
@@ -47,17 +47,6 @@ typedef enum {
 } pidIndex_e;
 
 typedef enum {
-    PID_CONTROLLER_LEGACY = 0,           // Legacy PID controller. Old INT / Rewrite with 2.9 status. Fastest performance....least math. Will stay same in the future
-    PID_CONTROLLER_BETAFLIGHT,           // Betaflight PID controller. Old luxfloat -> float evolution. More math added and maintained in the future
-    PID_COUNT
-} pidControllerType_e;
-
-typedef enum {
-    DELTA_FROM_ERROR = 0,
-    DELTA_FROM_MEASUREMENT
-} pidDeltaType_e;
-
-typedef enum {
     SUPEREXPO_YAW_OFF = 0,
     SUPEREXPO_YAW_ON,
     SUPEREXPO_YAW_ALWAYS
@@ -69,8 +58,6 @@ typedef enum {
 } pidStabilisationState_e;
 
 typedef struct pidProfile_s {
-    uint8_t pidController;                  // 1 = rewrite betaflight evolved from http://www.multiwii.com/forum/viewtopic.php?f=8&t=3671, 2 = Betaflight PIDc (Evolved Luxfloat)
-
     uint8_t P8[PID_ITEM_COUNT];
     uint8_t I8[PID_ITEM_COUNT];
     uint8_t D8[PID_ITEM_COUNT];
@@ -80,43 +67,53 @@ typedef struct pidProfile_s {
     uint16_t yaw_lpf_hz;                    // Additional yaw filter when yaw axis too noisy
     uint16_t dterm_notch_hz;                // Biquad dterm notch hz
     uint16_t dterm_notch_cutoff;            // Biquad dterm notch low cutoff
-    uint8_t deltaMethod;                    // Alternative delta Calculation
-    uint16_t rollPitchItermIgnoreRate;      // Experimental threshold for resetting iterm for pitch and roll on certain rates
-    uint16_t yawItermIgnoreRate;            // Experimental threshold for resetting iterm for yaw on certain rates
-    uint16_t yaw_p_limit;
+    uint8_t itermWindupPointPercent;        // Experimental ITerm windup threshold, percent motor saturation
+    float pidSumLimit;
+    float pidSumLimitYaw;
     uint8_t dterm_average_count;            // Configurable delta count for dterm
     uint8_t vbatPidCompensation;            // Scale PIDsum to battery voltage
     uint8_t pidAtMinThrottle;               // Disable/Enable pids on zero throttle. Normally even without airmode P and D would be active.
+    uint8_t levelAngleLimit;                // Max angle in degrees in level mode
+    uint8_t levelSensitivity;               // Angle mode sensitivity reflected in degrees assuming user using full stick
 
     // Betaflight PID controller parameters
-    uint8_t itermThrottleGain;              // Throttle coupling to iterm. Quick throttle changes will bump iterm
-    uint8_t ptermSRateWeight;               // Setpoint super expo ratio for Pterm (lower means that pretty much only P has super expo rates)
+    uint16_t itermThrottleThreshold;        // max allowed throttle delta before iterm accelerated in ms
+    float itermAcceleratorGain;             // Iterm Accelerator Gain when itermThrottlethreshold is hit
+    uint8_t setpointRelaxRatio;             // Setpoint weight relaxation effect
     uint8_t dtermSetpointWeight;            // Setpoint weight for Dterm (0= measurement, 1= full error, 1 > agressive derivative)
-    uint16_t yawRateAccelLimit;             // yaw accel limiter for deg/sec/ms
-    uint16_t rateAccelLimit;                // accel limiter roll/pitch deg/sec/ms
-
-#ifdef GTUNE
-    uint8_t  gtune_lolimP[3];               // [0..200] Lower limit of P during G tune
-    uint8_t  gtune_hilimP[3];               // [0..200] Higher limit of P during G tune. 0 Disables tuning for that axis.
-    uint8_t  gtune_pwr;                     // [0..10] Strength of adjustment
-    uint16_t gtune_settle_time;             // [200..1000] Settle time in ms
-    uint8_t  gtune_average_cycles;          // [8..128] Number of looptime cycles used for gyro average calculation
-#endif
+    float yawRateAccelLimit;                // yaw accel limiter for deg/sec/ms
+    float rateAccelLimit;                   // accel limiter roll/pitch deg/sec/ms
 } pidProfile_t;
 
-struct controlRateConfig_s;
-union rollAndPitchTrims_u;
-struct rxConfig_s;
-typedef void (*pidControllerFuncPtr)(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
-        const union rollAndPitchTrims_u *angleTrim, const struct rxConfig_s *rxConfig);            // pid controller function prototype
+#if FLASH_SIZE <= 128
+#define MAX_PROFILE_COUNT 2
+#else
+#define MAX_PROFILE_COUNT 3
+#endif
+PG_DECLARE_ARRAY(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles);
 
-extern int16_t axisPID[XYZ_AXIS_COUNT];
+typedef struct pidConfig_s {
+    uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate
+} pidConfig_t;
+
+PG_DECLARE(pidConfig_t, pidConfig);
+
+union rollAndPitchTrims_u;
+void pidController(const pidProfile_t *pidProfile, const union rollAndPitchTrims_u *angleTrim);
+
+extern float axisPIDf[3];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 bool airmodeWasActivated;
 extern uint32_t targetPidLooptime;
 
-void pidSetController(pidControllerType_e type);
+// PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
+extern uint8_t PIDweight[3];
+
 void pidResetErrorGyroState(void);
 void pidStabilisationState(pidStabilisationState_e pidControllerState);
-void setTargetPidLooptime(uint32_t pidLooptime);
+void pidSetTargetLooptime(uint32_t pidLooptime);
+void pidSetItermAccelerator(float newItermAccelerator);
+void pidInitFilters(const pidProfile_t *pidProfile);
+void pidInitConfig(const pidProfile_t *pidProfile);
+void pidInit(const pidProfile_t *pidProfile);
 

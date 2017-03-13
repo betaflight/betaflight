@@ -1,79 +1,39 @@
-# Betaflight
-
 ![Betaflight](https://camo.githubusercontent.com/8178215d6cb90842dc95c9d437b1bdf09b2d57a7/687474703a2f2f7374617469632e726367726f7570732e6e65742f666f72756d732f6174746163686d656e74732f362f312f302f332f372f362f61393038383930302d3232382d62665f6c6f676f2e6a7067)
 
-Clean-code version of baseflight flight-controller - flight controllers are used to fly multi-rotor craft and fixed wing craft.
+Betaflight is flight controller software (firmware) used to fly multi-rotor craft and fixed wing craft.
 
-This fork differs from baseflight in that it attempts to use modern software development practices which result in:
+This fork differs from Baseflight and Cleanflight in that it focuses on flight performance, leading-edge feature additions, and wide target support.
 
-1. greater reliability through code robustness and automated testing. 
-2. easier maintenance through code cleanliness.
-3. easier to develop new features. 
-4. easier to re-use code though code de-coupling and modularisation.
+## Features
 
-The MultiWii software, from which baseflight originated, violates many good software development best-practices. Hopefully this fork will go some way to address them. If you see any bad code in this fork please immediately raise an issue so it can be fixed, or better yet submit a pull request.
+Betaflight has the following features:
 
-## Additional Features
+* Multi-color RGB LED strip support (each LED can be a different color using variable length WS2811 Addressable RGB strips - use for Orientation Indicators, Low Battery Warning, Flight Mode Status, Initialization Troubleshooting, etc)
+* DShot (150, 300, 600 and 1200), Multishot, and Oneshot (125 and 42) motor protocol support
+* Blackbox flight recorder logging (to onboard flash or external microSD card where equipped)
+* Support for targets that use the STM32 F7, F4, F3 and F1 processors
+* PWM, PPM, and Serial (SBus, SumH, SumD, Spektrum 1024/2048, XBus, etc) RX connection with failsafe detection
+* Multiple telemetry protocols (CSRF, FrSky, HoTT smart-port, MSP, etc)
+* RSSI via ADC - Uses ADC to read PWM RSSI signals, tested with FrSky D4R-II, X8R, X4R-SB, & XSR
+* OSD support & configuration without needing third-party OSD software/firmware/comm devices
+* OLED Displays - Display information on: Battery voltage/current/mAh, profile, rate profile, mode, version, sensors, etc
+* In-flight manual PID tuning and rate adjustment
+* Rate profiles and in-flight selection of them
+* Configurable serial ports for Serial RX, Telemetry, ESC telemetry, MSP, GPS, OSD, Sonar, etc - Use most devices on any port, softserial included
+* VTX support for Unify Pro and IRC Tramp
+* and MUCH, MUCH more.
 
-Cleanflight also has additional features not found in baseflight.
+## Installation & Documentation
 
-* Multi-color RGB LED Strip support (each LED can be a different color using variable length WS2811 Addressable RGB strips - use for Orientation Indicators, Low Battery Warning, Flight Mode Status, etc)
-* Oneshot ESC support.
-* Blackbox flight recorder logging (to onboard flash or external SD card).
-* Support for additional targets that use the STM32F3 processors (baseflight only supports STM32F1).
-* Support for the Seriously Pro Racing F3 board (STM32F303, I2C sensors, large flash, excellent I/O.)
-* Support for the TauLabs Sparky board (STM32F303, I2C sensors, based board with acc/gyro/compass and baro, ~$35)
-* Support for the OpenPilot CC3D board. (STM32F103, board, SPI acc/gyro, ~$20)
-* Support for the CJMCU nano quadcopter board.
-* Support for developer breakout boards: (Port103R, EUSTM32F103RC, Olimexino, STM32F3Discovery).
-* Support for more than 8 RC channels - (e.g. 16 Channels via FrSky X4RSB SBus).
-* Support for N-Position switches via flexible channel ranges - not just 3 like baseflight or 3/6 in MultiWii
-* Lux's new PID (uses float values internally, resistant to looptime variation).
-* Simultaneous Bluetooth configuration and OSD.
-* Better PWM and PPM input and failsafe detection than baseflight.
-* Better FrSky Telemetry than baseflight.
-* MSP Telemetry.
-* Smartport Telemetry.
-* RSSI via ADC - Uses ADC to read PWM RSSI signals, tested with FrSky D4R-II and X8R.
-* OLED Displays - Display information on: Battery voltage, profile, rate profile, version, sensors, RC, etc.
-* In-flight manual PID tuning and rate adjustment.
-* Rate profiles and in-flight selection of them.
-* Graupner PPM failsafe.
-* Graupner HoTT telemetry.
-* Multiple simultaneous telemetry providers.
-* Configurable serial ports for Serial RX, Telemetry, MSP, GPS - Use most devices on any port, softserial too.
-* Optional lost buzzer on port 6 for CC3D (set enable_buzzer_p6 = ON)
-* And many more minor bug fixes.
-
-For a list of features, changes and some discussion please review the thread on MultiWii forums and consult the documentation.
-
-http://www.multiwii.com/forum/viewtopic.php?f=23&t=5149
-
-## Installation
-
-See: https://github.com/cleanflight/cleanflight/blob/master/docs/Installation.md 
-
-## Documentation
-
-There is lots of documentation here: https://github.com/cleanflight/cleanflight/tree/master/docs 
-
-If what you need is not covered then refer to the baseflight documentation. If you still can't find what you need then visit the #cleanflight on the Freenode IRC network
+See: https://github.com/betaflight/betaflight/wiki 
 
 ## IRC Support and Developers Channel
 
-There's a dedicated IRCgitter chat channel here:
+There's a dedicated Slack chat channel here:
 
-https://gitter.im/betaflight/betaflight
+http://www.betaflight.tk/
 
 Etiquette: Don't ask to ask and please wait around long enough for a reply - sometimes people are out flying, asleep or at work and can't answer immediately.
-
-## Videos
-
-There is a dedicated Cleanflight youtube channel which has progress update videos, flight demonstrations, instructions and other related videos.
-
-https://www.youtube.com/playlist?list=PL6H1fAj_XUNVBEcp8vbMH2DrllZAGWkt8
-
-Please subscribe and '+1' the videos if you find them useful.
 
 ## Configuration Tool
 
@@ -90,10 +50,9 @@ https://github.com/betaflight/betaflight-configurator
 Contributions are welcome and encouraged.  You can contribute in many ways:
 
 * Documentation updates and corrections.
-* How-To guides - received help?  help others!
-* Bug fixes.
-* New features.
-* Telling us your ideas and suggestions.
+* How-To guides - received help? Help others!
+* Bug reporting & fixes.
+* New feature ideas & suggestions.
 
 The best place to start is the IRC channel on gitter (see above), drop in, say hi. Next place is the github issue tracker:
 
@@ -113,8 +72,8 @@ https://travis-ci.org/betaflight/betaflight
 [![Build Status](https://travis-ci.org/betaflight/betaflight.svg?branch=master)](https://travis-ci.org/betaflight/betaflight)
 
 ## Betaflight Releases
-https://github.com/betaflight/betaflight/releases
 
+https://github.com/betaflight/betaflight/releases
 
 ## Open Source / Contributors
 

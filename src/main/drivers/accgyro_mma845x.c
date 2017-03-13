@@ -21,7 +21,7 @@
 #include "platform.h"
 
 #include "system.h"
-#include "gpio.h"
+#include "io.h"
 #include "bus_i2c.h"
 
 #include "sensor.h"
@@ -81,32 +81,12 @@
 
 static uint8_t device_id;
 
-static void mma8452Init(acc_t *acc);
-static bool mma8452Read(int16_t *accelData);
-
-bool mma8452Detect(acc_t *acc)
-{
-    bool ack = false;
-    uint8_t sig = 0;
-
-    ack = i2cRead(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_WHO_AM_I, 1, &sig);
-    if (!ack || (sig != MMA8452_DEVICE_SIGNATURE && sig != MMA8451_DEVICE_SIGNATURE))
-        return false;
-
-    acc->init = mma8452Init;
-    acc->read = mma8452Read;
-    device_id = sig;
-    return true;
-}
-
 static inline void mma8451ConfigureInterrupt(void)
 {
-#ifdef NAZE
-    // PA5 - ACC_INT2 output on NAZE rev3/4 hardware
-    // NAZE rev.5 hardware has PA5 (ADC1_IN5) on breakout pad on bottom of board
-    // OLIMEXINO - The PA5 pin is wired up to LED1, if you need to use an mma8452 on an Olimexino use a different pin and provide support in code.
-    IOInit(IOGetByTag(IO_TAG(PA5)), OWNER_MPU, RESOURCE_EXTI, 0);
-    IOConfigGPIO(IOGetByTag(IO_TAG(PA5)), IOCFG_IN_FLOATING);   // TODO - maybe pullup / pulldown ?
+#ifdef MMA8451_INT_PIN
+    IOInit(IOGetByTag(IO_TAG(MMA8451_INT_PIN)), OWNER_MPU_EXTI, 0);
+    // TODO - maybe pullup / pulldown ?
+    IOConfigGPIO(IOGetByTag(IO_TAG(MMA8451_INT_PIN)), IOCFG_IN_FLOATING);   
 #endif
 
     i2cWrite(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_CTRL_REG3, MMA8452_CTRL_REG3_IPOL); // Interrupt polarity (active HIGH)
@@ -114,7 +94,7 @@ static inline void mma8451ConfigureInterrupt(void)
     i2cWrite(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_CTRL_REG5, 0); // DRDY routed to INT2
 }
 
-static void mma8452Init(acc_t *acc)
+static void mma8452Init(accDev_t *acc)
 {
 
     i2cWrite(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_CTRL_REG1, 0); // Put device in standby to configure stuff
@@ -129,7 +109,7 @@ static void mma8452Init(acc_t *acc)
     acc->acc_1G = 256;
 }
 
-static bool mma8452Read(int16_t *accelData)
+static bool mma8452Read(accDev_t *acc)
 {
     uint8_t buf[6];
 
@@ -137,9 +117,23 @@ static bool mma8452Read(int16_t *accelData)
         return false;
     }
 
-    accelData[0] = ((int16_t)((buf[0] << 8) | buf[1]) >> 2) / 4;
-    accelData[1] = ((int16_t)((buf[2] << 8) | buf[3]) >> 2) / 4;
-    accelData[2] = ((int16_t)((buf[4] << 8) | buf[5]) >> 2) / 4;
+    acc->ADCRaw[0] = ((int16_t)((buf[0] << 8) | buf[1]) >> 2) / 4;
+    acc->ADCRaw[1] = ((int16_t)((buf[2] << 8) | buf[3]) >> 2) / 4;
+    acc->ADCRaw[2] = ((int16_t)((buf[4] << 8) | buf[5]) >> 2) / 4;
 
+    return true;
+}
+
+bool mma8452Detect(accDev_t *acc)
+{
+    uint8_t sig = 0;
+    bool ack = i2cRead(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_WHO_AM_I, 1, &sig);
+
+    if (!ack || (sig != MMA8452_DEVICE_SIGNATURE && sig != MMA8451_DEVICE_SIGNATURE))
+        return false;
+
+    acc->init = mma8452Init;
+    acc->read = mma8452Read;
+    device_id = sig;
     return true;
 }

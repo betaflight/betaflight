@@ -17,16 +17,13 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 
 #include "platform.h"
 
 #include "accgyro_mpu.h"
-#include "gpio.h"
+#include "exti.h"
 #include "nvic.h"
 #include "system.h"
-
-#include "exti.h"
 
 
 #define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
@@ -34,8 +31,9 @@ void SetSysClock(void);
 
 void systemReset(void)
 {
-    if (mpuConfiguration.reset)
-        mpuConfiguration.reset();
+    if (mpuResetFn) {
+        mpuResetFn();
+    }
 
     __disable_irq();
     NVIC_SystemReset();
@@ -43,8 +41,9 @@ void systemReset(void)
 
 void systemResetToBootloader(void)
 {
-    if (mpuConfiguration.reset)
-        mpuConfiguration.reset();
+    if (mpuResetFn) {
+        mpuResetFn();
+    }
 
     *((uint32_t *)0x2001FFFC) = 0xDEADBEEF; // 128KB SRAM STM32F4XX
 
@@ -183,7 +182,6 @@ void systemInit(void)
     // Init cycle counter
     cycleCounterInit();
 
-    memset(extiHandlerConfigs, 0x00, sizeof(extiHandlerConfigs));
     // SysTick
     SysTick_Config(SystemCoreClock / 1000);
 }

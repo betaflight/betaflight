@@ -17,22 +17,59 @@
 
 #pragma once
 
+#include "common/axis.h"
+#include "drivers/exti.h"
+#include "drivers/sensor.h"
+#include "drivers/accgyro_mpu.h"
+
 #ifndef MPU_I2C_INSTANCE
 #define MPU_I2C_INSTANCE I2C_DEVICE
 #endif
 
-typedef struct gyro_s {
-    sensorGyroInitFuncPtr init;                             // initialize function
-    sensorReadFuncPtr read;                                 // read 3 axis data function
-    sensorReadFuncPtr temperature;                          // read temperature if available
-    sensorInterruptFuncPtr intStatus;
-    float scale;                                            // scalefactor
-    uint32_t targetLooptime;
-} gyro_t;
+#define GYRO_LPF_256HZ      0
+#define GYRO_LPF_188HZ      1
+#define GYRO_LPF_98HZ       2
+#define GYRO_LPF_42HZ       3
+#define GYRO_LPF_20HZ       4
+#define GYRO_LPF_10HZ       5
+#define GYRO_LPF_5HZ        6
+#define GYRO_LPF_NONE       7
 
-typedef struct acc_s {
-    sensorAccInitFuncPtr init;                                 // initialize function
-    sensorReadFuncPtr read;                                 // read 3 axis data function
+typedef enum {
+    GYRO_RATE_1_kHz,
+    GYRO_RATE_3200_Hz,
+    GYRO_RATE_8_kHz,
+    GYRO_RATE_32_kHz,
+} gyroRateKHz_e;
+
+typedef struct gyroDev_s {
+    sensorGyroInitFuncPtr init;                             // initialize function
+    sensorGyroReadFuncPtr read;                             // read 3 axis data function
+    sensorGyroReadDataFuncPtr temperature;                  // read temperature if available
+    sensorGyroInterruptStatusFuncPtr intStatus;
+    sensorGyroUpdateFuncPtr update;
+    extiCallbackRec_t exti;
+    float scale;                                            // scalefactor
+    int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+    int32_t gyroZero[XYZ_AXIS_COUNT];
+    int32_t gyroADC[XYZ_AXIS_COUNT];                        // gyro data after calibration and alignment
+    uint8_t lpf;
+    gyroRateKHz_e gyroRateKHz;
+    uint8_t mpuDividerDrops;
+    volatile bool dataReady;
+    sensor_align_e gyroAlign;
+    mpuDetectionResult_t mpuDetectionResult;
+    const extiConfig_t *mpuIntExtiConfig;
+    mpuConfiguration_t mpuConfiguration;
+} gyroDev_t;
+
+typedef struct accDev_s {
+    sensorAccInitFuncPtr init;                              // initialize function
+    sensorAccReadFuncPtr read;                              // read 3 axis data function
     uint16_t acc_1G;
+    int16_t ADCRaw[XYZ_AXIS_COUNT];
     char revisionCode;                                      // a revision code for the sensor, if known
-} acc_t;
+    sensor_align_e accAlign;
+    mpuDetectionResult_t mpuDetectionResult;
+    mpuConfiguration_t mpuConfiguration;
+} accDev_t;

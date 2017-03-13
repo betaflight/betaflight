@@ -23,6 +23,10 @@ USER_INCLUDE_DIR = $(USER_DIR)
 
 OBJECT_DIR = ../../obj/test
 
+# Use clang/clang++ by default
+CC  := clang
+CXX := clang++
+
 COMMON_FLAGS = \
 	-g \
 	-Wall \
@@ -42,6 +46,20 @@ C_FLAGS = $(COMMON_FLAGS) \
 CXX_FLAGS = $(COMMON_FLAGS) \
 	-std=gnu++11
 
+# Compiler flags for coverage instrumentation
+COVERAGE_FLAGS := --coverage
+
+C_FLAGS   += $(COVERAGE_FLAGS)
+CXX_FLAGS += $(COVERAGE_FLAGS)
+
+# Determine the OS and set up the parameter group linker flags accordingly
+UNAME := $(shell uname -s)
+ifeq ($(UNAME), Darwin)
+PG_FLAGS = -Wl,-map,$(OBJECT_DIR)/$@.map
+else
+PG_FLAGS = -Wl,-T,$(TEST_DIR)/parameter_group.ld -Wl,-Map,$(OBJECT_DIR)/$@.map
+endif
+
 # Gather up all of the tests.
 TEST_SRC = $(sort $(wildcard $(TEST_DIR)/*.cc))
 TESTS = $(TEST_SRC:$(TEST_DIR)/%.cc=%)
@@ -53,10 +71,13 @@ GTEST_HEADERS = $(GTEST_DIR)/inc/gtest/*.h
 
 # House-keeping build targets.
 
+## all         : Build all Unit Tests (Default goal)
 all : $(TEST_BINARIES)
 
+## clean       : Cleanup the UnitTest binaries.
 clean :
 	rm -rf $(OBJECT_DIR)
+
 
 # Builds gtest.a and gtest_main.a.
 
@@ -104,26 +125,41 @@ $(OBJECT_DIR)/common/maths.o : \
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/maths.c -o $@
 
-
-$(OBJECT_DIR)/sensors/battery.o : $(USER_DIR)/sensors/battery.c $(USER_DIR)/sensors/battery.h $(GTEST_HEADERS)
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/sensors/battery.c -o $@
-
-$(OBJECT_DIR)/battery_unittest.o : \
-	$(TEST_DIR)/battery_unittest.cc \
-	$(USER_DIR)/sensors/battery.h \
+$(OBJECT_DIR)/maths_unittest.o : \
+	$(TEST_DIR)/maths_unittest.cc \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $< -o $@
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/maths_unittest.cc -o $@
 
-$(OBJECT_DIR)/battery_unittest : \
-	$(OBJECT_DIR)/sensors/battery.o \
+$(OBJECT_DIR)/maths_unittest : \
+	$(OBJECT_DIR)/maths_unittest.o \
 	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/battery_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
-	$(CXX) $(CXX_FLAGS) $^ -o $@
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+$(OBJECT_DIR)/common/filter.o : \
+	$(USER_DIR)/common/filter.c \
+	$(USER_DIR)/common/filter.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/filter.c -o $@
+
+$(OBJECT_DIR)/common_filter_unittest.o : \
+	$(TEST_DIR)/common_filter_unittest.cc \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/common_filter_unittest.cc -o $@
+
+$(OBJECT_DIR)/common_filter_unittest : \
+	$(OBJECT_DIR)/common_filter_unittest.o \
+	$(OBJECT_DIR)/common/filter.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
 $(OBJECT_DIR)/common/encoding.o : $(USER_DIR)/common/encoding.c $(USER_DIR)/common/encoding.h $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
@@ -143,6 +179,37 @@ $(OBJECT_DIR)/encoding_unittest : \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+$(OBJECT_DIR)/common/typeconversion.o : \
+	$(USER_DIR)/common/typeconversion.c \
+	$(USER_DIR)/common/typeconversion.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/typeconversion.c -o $@
+
+$(OBJECT_DIR)/type_conversion_unittest.o : \
+	$(TEST_DIR)/type_conversion_unittest.cc \
+	$(USER_DIR)/common/typeconversion.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/type_conversion_unittest.cc -o $@
+
+$(OBJECT_DIR)/type_conversion_unittest : \
+	$(OBJECT_DIR)/common/typeconversion.o \
+	$(OBJECT_DIR)/type_conversion_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+$(OBJECT_DIR)/fc/runtime_config.o : \
+	$(USER_DIR)/fc/runtime_config.c \
+	$(USER_DIR)/fc/runtime_config.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'FLASH_SIZE = 128' -DSTM32F10X_MD -c $(USER_DIR)/fc/runtime_config.c -o $@
 
 $(OBJECT_DIR)/flight/imu.o : \
 	$(USER_DIR)/flight/imu.c \
@@ -164,20 +231,6 @@ $(OBJECT_DIR)/flight_imu_unittest : \
 	$(OBJECT_DIR)/flight/imu.o \
 	$(OBJECT_DIR)/flight/altitudehold.o \
 	$(OBJECT_DIR)/flight_imu_unittest.o \
-	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
-$(OBJECT_DIR)/maths_unittest.o : \
-	$(TEST_DIR)/maths_unittest.cc \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/maths_unittest.cc -o $@
-
-$(OBJECT_DIR)/maths_unittest : \
-	$(OBJECT_DIR)/maths_unittest.o \
 	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/gtest_main.a
 
@@ -207,25 +260,84 @@ $(OBJECT_DIR)/altitude_hold_unittest : \
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
 
-$(OBJECT_DIR)/flight/gps_conversion.o : \
-	$(USER_DIR)/flight/gps_conversion.c \
-	$(USER_DIR)/flight/gps_conversion.h \
+$(OBJECT_DIR)/common/gps_conversion.o : \
+	$(USER_DIR)/common/gps_conversion.c \
+	$(USER_DIR)/common/gps_conversion.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/gps_conversion.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/gps_conversion.c -o $@
 
 $(OBJECT_DIR)/gps_conversion_unittest.o : \
 	$(TEST_DIR)/gps_conversion_unittest.cc \
-	$(USER_DIR)/flight/gps_conversion.h \
+	$(USER_DIR)/common/gps_conversion.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/gps_conversion_unittest.cc -o $@
 
 $(OBJECT_DIR)/gps_conversion_unittest : \
-	$(OBJECT_DIR)/flight/gps_conversion.o \
+	$(OBJECT_DIR)/common/gps_conversion.o \
 	$(OBJECT_DIR)/gps_conversion_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+
+
+$(OBJECT_DIR)/flight/mixer.o : \
+	$(USER_DIR)/flight/mixer.c \
+	$(USER_DIR)/flight/mixer.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/mixer.c -o $@
+
+$(OBJECT_DIR)/flight/servos.o : \
+	$(USER_DIR)/flight/servos.c \
+	$(USER_DIR)/flight/servos.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/servos.c -o $@
+
+$(OBJECT_DIR)/flight_mixer_unittest.o : \
+	$(TEST_DIR)/flight_mixer_unittest.cc \
+	$(USER_DIR)/flight/mixer.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/flight_mixer_unittest.cc -o $@
+
+$(OBJECT_DIR)/flight_mixer_unittest : \
+	$(OBJECT_DIR)/flight/mixer.o \
+	$(OBJECT_DIR)/flight/servos.o \
+	$(OBJECT_DIR)/flight_mixer_unittest.o \
+	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+$(OBJECT_DIR)/flight/failsafe.o : \
+	$(USER_DIR)/flight/failsafe.c \
+	$(USER_DIR)/flight/failsafe.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/failsafe.c -o $@
+
+$(OBJECT_DIR)/flight_failsafe_unittest.o : \
+	$(TEST_DIR)/flight_failsafe_unittest.cc \
+	$(USER_DIR)/flight/failsafe.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/flight_failsafe_unittest.cc -o $@
+
+$(OBJECT_DIR)/flight_failsafe_unittest : \
+	$(OBJECT_DIR)/flight/failsafe.o \
+	$(OBJECT_DIR)/flight_failsafe_unittest.o \
+	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
@@ -251,24 +363,23 @@ $(OBJECT_DIR)/telemetry_hott_unittest.o : \
 $(OBJECT_DIR)/telemetry_hott_unittest : \
 	$(OBJECT_DIR)/telemetry/hott.o \
 	$(OBJECT_DIR)/telemetry_hott_unittest.o \
-	$(OBJECT_DIR)/flight/gps_conversion.o \
+	$(OBJECT_DIR)/common/gps_conversion.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
 
-
-$(OBJECT_DIR)/io/rc_controls.o : \
-	$(USER_DIR)/io/rc_controls.c \
-	$(USER_DIR)/io/rc_controls.h \
+$(OBJECT_DIR)/fc/rc_controls.o : \
+	$(USER_DIR)/fc/rc_controls.c \
+	$(USER_DIR)/fc/rc_controls.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/rc_controls.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/fc/rc_controls.c -o $@
 
 $(OBJECT_DIR)/rc_controls_unittest.o : \
 	$(TEST_DIR)/rc_controls_unittest.cc \
-	$(USER_DIR)/io/rc_controls.h \
+	$(USER_DIR)/fc/rc_controls.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
@@ -276,7 +387,7 @@ $(OBJECT_DIR)/rc_controls_unittest.o : \
 
 $(OBJECT_DIR)/rc_controls_unittest : \
 	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/io/rc_controls.o \
+	$(OBJECT_DIR)/fc/rc_controls.o \
 	$(OBJECT_DIR)/rc_controls_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
@@ -332,54 +443,6 @@ $(OBJECT_DIR)/ws2811_unittest : \
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
 
-$(OBJECT_DIR)/flight/mixer.o : \
-	$(USER_DIR)/flight/mixer.c \
-	$(USER_DIR)/flight/mixer.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/mixer.c -o $@
-
-$(OBJECT_DIR)/flight_mixer_unittest.o : \
-	$(TEST_DIR)/flight_mixer_unittest.cc \
-	$(USER_DIR)/flight/mixer.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/flight_mixer_unittest.cc -o $@
-
-$(OBJECT_DIR)/flight_mixer_unittest : \
-	$(OBJECT_DIR)/flight/mixer.o \
-	$(OBJECT_DIR)/flight_mixer_unittest.o \
-	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
-$(OBJECT_DIR)/flight/failsafe.o : \
-	$(USER_DIR)/flight/failsafe.c \
-	$(USER_DIR)/flight/failsafe.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/flight/failsafe.c -o $@
-
-$(OBJECT_DIR)/flight_failsafe_unittest.o : \
-	$(TEST_DIR)/flight_failsafe_unittest.cc \
-	$(USER_DIR)/flight/failsafe.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/flight_failsafe_unittest.cc -o $@
-
-$(OBJECT_DIR)/flight_failsafe_unittest : \
-	$(OBJECT_DIR)/flight/failsafe.o \
-	$(OBJECT_DIR)/flight_failsafe_unittest.o \
-	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
 $(OBJECT_DIR)/io/serial.o : \
 	$(USER_DIR)/io/serial.c \
 	$(USER_DIR)/io/serial.h \
@@ -427,6 +490,63 @@ $(OBJECT_DIR)/rx_rx_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+$(OBJECT_DIR)/rx/crsf.o : \
+	$(USER_DIR)/rx/crsf.c \
+	$(USER_DIR)/rx/crsf.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/rx/crsf.c -o $@
+
+$(OBJECT_DIR)/rx_crsf_unittest.o : \
+	$(TEST_DIR)/rx_crsf_unittest.cc \
+	$(USER_DIR)/rx/crsf.h \
+	$(USER_DIR)/rx/crsf.c \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/rx_crsf_unittest.cc -o $@
+
+$(OBJECT_DIR)/rx_crsf_unittest : \
+	$(OBJECT_DIR)/rx/crsf.o \
+	$(OBJECT_DIR)/rx_crsf_unittest.o \
+	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+$(OBJECT_DIR)/telemetry/crsf.o : \
+	$(USER_DIR)/telemetry/crsf.c \
+	$(USER_DIR)/telemetry/crsf.h \
+	$(USER_DIR)/rx/crsf.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/telemetry/crsf.c -o $@
+
+$(OBJECT_DIR)/telemetry_crsf_unittest.o : \
+	$(TEST_DIR)/telemetry_crsf_unittest.cc \
+	$(USER_DIR)/telemetry/crsf.h \
+	$(USER_DIR)/telemetry/crsf.c \
+	$(USER_DIR)/rx/crsf.c \
+	$(USER_DIR)/rx/crsf.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/telemetry_crsf_unittest.cc -o $@
+
+$(OBJECT_DIR)/telemetry_crsf_unittest : \
+	$(OBJECT_DIR)/rx/crsf.o \
+	$(OBJECT_DIR)/telemetry/crsf.o \
+	$(OBJECT_DIR)/telemetry_crsf_unittest.o \
+	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/common/streambuf.o \
+	$(OBJECT_DIR)/common/gps_conversion.o \
+	$(OBJECT_DIR)/fc/runtime_config.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
 $(OBJECT_DIR)/rx_ranges_unittest.o : \
 	$(TEST_DIR)/rx_ranges_unittest.cc \
 	$(USER_DIR)/rx/rx.h \
@@ -442,6 +562,27 @@ $(OBJECT_DIR)/rx_ranges_unittest : \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+
+$(OBJECT_DIR)/sensors/battery.o : $(USER_DIR)/sensors/battery.c $(USER_DIR)/sensors/battery.h $(GTEST_HEADERS)
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/sensors/battery.c -o $@
+
+$(OBJECT_DIR)/battery_unittest.o : \
+	$(TEST_DIR)/battery_unittest.cc \
+	$(USER_DIR)/sensors/battery.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $< -o $@
+
+$(OBJECT_DIR)/battery_unittest : \
+	$(OBJECT_DIR)/sensors/battery.o \
+	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/battery_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $@
 
 $(OBJECT_DIR)/drivers/barometer_ms5611.o : \
     $(USER_DIR)/drivers/barometer_ms5611.c \
@@ -484,6 +625,7 @@ $(OBJECT_DIR)/baro_bmp085_unittest.o : \
 
 $(OBJECT_DIR)/baro_bmp085_unittest : \
 	$(OBJECT_DIR)/drivers/barometer_bmp085.o \
+	$(OBJECT_DIR)/drivers/io.o \
 	$(OBJECT_DIR)/baro_bmp085_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
@@ -536,9 +678,219 @@ $(OBJECT_DIR)/alignsensor_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+
+$(OBJECT_DIR)/build/debug.o : \
+    $(USER_DIR)/build/debug.c \
+    $(USER_DIR)/build/debug.h \
+    $(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/build/debug.c -o $@
+
+$(OBJECT_DIR)/drivers/gyro_sync.o : \
+    $(USER_DIR)/drivers/gyro_sync.c \
+    $(USER_DIR)/drivers/gyro_sync.h \
+    $(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/gyro_sync.c -o $@
+
+$(OBJECT_DIR)/drivers/accgyro_fake.o : \
+    $(USER_DIR)/drivers/accgyro_fake.c \
+    $(USER_DIR)/drivers/accgyro_fake.h \
+    $(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/accgyro_fake.c -o $@
+
+$(OBJECT_DIR)/sensors/gyro.o : \
+	$(USER_DIR)/sensors/gyro.c \
+	$(USER_DIR)/sensors/gyro.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/sensors/gyro.c -o $@
+
+$(OBJECT_DIR)/sensor_gyro_unittest.o : \
+	$(TEST_DIR)/sensor_gyro_unittest.cc \
+	$(USER_DIR)/sensors/gyro.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/sensor_gyro_unittest.cc -o $@
+
+$(OBJECT_DIR)/sensor_gyro_unittest : \
+	$(OBJECT_DIR)/build/debug.o \
+	$(OBJECT_DIR)/common/filter.o \
+	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/drivers/accgyro_fake.o \
+	$(OBJECT_DIR)/drivers/gyro_sync.o \
+	$(OBJECT_DIR)/sensors/boardalignment.o \
+	$(OBJECT_DIR)/sensors/gyro.o \
+	$(OBJECT_DIR)/sensor_gyro_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+
+$(OBJECT_DIR)/build/version.o : \
+	$(USER_DIR)/build/version.c \
+	$(USER_DIR)/build/version.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'__TARGET__="TEST"' -D'__REVISION__="revision"' -c $(USER_DIR)/build/version.c -o $@
+
+$(OBJECT_DIR)/drivers/buf_writer.o : \
+	$(USER_DIR)/drivers/buf_writer.c \
+	$(USER_DIR)/drivers/buf_writer.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'__TARGET__="TEST"' -D'__REVISION__="revision"' -c $(USER_DIR)/drivers/buf_writer.c -o $@
+
+$(OBJECT_DIR)/common/streambuf.o : \
+	$(USER_DIR)/common/streambuf.c \
+	$(USER_DIR)/common/streambuf.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'__TARGET__="TEST"' -D'__REVISION__="revision"' -c $(USER_DIR)/common/streambuf.c -o $@
+
+$(OBJECT_DIR)/drivers/display.o : \
+	$(USER_DIR)/drivers/display.c \
+	$(USER_DIR)/drivers/display.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/display.c -o $@
+
+$(OBJECT_DIR)/cms/cms.o : \
+	$(USER_DIR)/cms/cms.c \
+	$(USER_DIR)/cms/cms.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/cms/cms.c -o $@
+
+$(OBJECT_DIR)/cms_unittest.o : \
+	$(TEST_DIR)/cms_unittest.cc \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/cms_unittest.cc -o $@
+
+$(OBJECT_DIR)/cms_unittest : \
+	$(OBJECT_DIR)/cms_unittest.o \
+	$(OBJECT_DIR)/common/typeconversion.o \
+	$(OBJECT_DIR)/drivers/display.o \
+	$(OBJECT_DIR)/cms/cms.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+$(OBJECT_DIR)/drivers/io.o : \
+	$(USER_DIR)/drivers/io.c \
+	$(USER_DIR)/drivers/io.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/io.c -o $@
+
+$(OBJECT_DIR)/config/parameter_group.o : \
+	$(USER_DIR)/config/parameter_group.c \
+	$(USER_DIR)/config/parameter_group.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/config/parameter_group.c -o $@
+
+$(OBJECT_DIR)/parameter_groups_unittest.o : \
+	$(TEST_DIR)/parameter_groups_unittest.cc \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/parameter_groups_unittest.cc -o $@
+
+$(OBJECT_DIR)/parameter_groups_unittest : \
+	$(OBJECT_DIR)/parameter_groups_unittest.o \
+	$(OBJECT_DIR)/config/parameter_group.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $(PG_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+
+$(OBJECT_DIR)/rx/ibus.o : \
+	$(USER_DIR)/rx/ibus.c \
+	$(USER_DIR)/rx/ibus.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/rx/ibus.c -o $@
+
+$(OBJECT_DIR)/rx_ibus_unittest.o : \
+	$(TEST_DIR)/rx_ibus_unittest.cc \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/rx_ibus_unittest.cc -o $@
+
+$(OBJECT_DIR)/rx_ibus_unittest : \
+	$(OBJECT_DIR)/rx_ibus_unittest.o \
+	$(OBJECT_DIR)/rx/ibus.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $(PG_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+
+$(OBJECT_DIR)/telemetry/ibus.o : \
+	$(USER_DIR)/telemetry/ibus.c \
+	$(USER_DIR)/telemetry/ibus.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/telemetry/ibus.c -o $@
+
+$(OBJECT_DIR)/telemetry_ibus_unittest.o : \
+	$(TEST_DIR)/telemetry_ibus_unittest.cc \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/telemetry_ibus_unittest.cc -o $@
+
+$(OBJECT_DIR)/telemetry_ibus_unittest : \
+	$(OBJECT_DIR)/telemetry_ibus_unittest.o \
+	$(OBJECT_DIR)/telemetry/ibus.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $(PG_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+
+## test        : Build and run the Unit Tests
 test: $(TESTS:%=test-%)
 
+## junittest   : Build and run the Unit Tests, producing Junit XML result files."
+junittest: EXEC_OPTS = "--gtest_output=xml:$<_results.xml" 
+junittest: $(TESTS:%=test-%)
+
 test-%: $(OBJECT_DIR)/%
-	$<
+	$< $(EXEC_OPTS)
+
+## help        : print this help message and exit
+## what        : print this help message and exit
+## usage       : print this help message and exit
+help what usage: Makefile
+	@echo ""
+	@echo "Makefile for Unit Tests"
+	@echo ""
+	@echo "Usage:"
+	@echo "        make [goal] "
+	@echo ""
+	@echo "Valid goals are:"
+	@echo ""
+	@sed -n 's/^## //p' $<
+	@echo ""
+	@echo "Any of the Unit Test programs can be used as goals:"
+	@$(foreach prg, $(TEST_BINARIES), echo "    $(prg)";)
 
 -include $(DEPS)

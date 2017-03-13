@@ -23,13 +23,8 @@
 
 #define LED0                    PB3
 
-#define USABLE_TIMER_CHANNEL_COUNT 17
-
 #define USE_EXTI
-#define MPU_INT_EXTI PC13
-
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready, no MAG
-
+#define MPU_INT_EXTI            PC13
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
@@ -50,7 +45,13 @@
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-#define SERIAL_PORT_COUNT 3
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT 5
+
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
@@ -62,7 +63,8 @@
 #define UART3_RX_PIN            PB11
 
 #define USE_I2C
-#define I2C_DEVICE              (I2CDEV_1) // PB6/SCL, PB7/SDA
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_SPI
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
@@ -77,11 +79,12 @@
 #define CURRENT_METER_ADC_PIN   PA5
 #define RSSI_ADC_PIN            PB2
 
-#define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN                PB11
+#undef LED_STRIP
+
+#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
 /*
 #define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #define USE_SERIAL_4WAY_SK_BOOTLOADER
@@ -108,5 +111,6 @@
 #define TARGET_IO_PORTC     (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF     (BIT(0)|BIT(1)|BIT(4))
 
+#define USABLE_TIMER_CHANNEL_COUNT 17
 #define USED_TIMERS         (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15) | TIM_N(16) |TIM_N(17))
 

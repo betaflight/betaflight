@@ -18,7 +18,6 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "VRRA"
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
 #define USBD_PRODUCT_STRING "VRRACE"
 
@@ -27,8 +26,7 @@
 #define BEEPER PA0
 #define BEEPER_INVERTED
 
-#define INVERTER PD7
-#define INVERTER_USART USART6
+#define INVERTER_PIN_UART6 PD7
 
 #define MPU6500_CS_PIN        PE10
 #define MPU6500_SPI_INSTANCE  SPI2
@@ -42,10 +40,9 @@
 #define GYRO_MPU6500_ALIGN CW270_DEG
 
 // MPU6500 interrupts
-#define USE_MPU_DATA_READY_SIGNAL
-#define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU data ready (mag disabled)
-#define MPU_INT_EXTI PD10
 #define USE_EXTI
+#define MPU_INT_EXTI PD10
+#define USE_MPU_DATA_READY_SIGNAL
 
 /*
 #define BARO
@@ -118,12 +115,15 @@
 
 #define USE_SOFTSERIAL1
 
-#define SOFTSERIAL_1_TIMER TIM1
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 2 // PWM 3
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 1 // PWM 2
+#define SOFTSERIAL1_RX_PIN      PE13 // PWM 3
+#define SOFTSERIAL1_TX_PIN      PE11 // PWM 2
 
+#define USE_SOFTSERIAL2
 
-#define SERIAL_PORT_COUNT 6 //VCP, USART1, USART2, USART3, USART6, SOFTSERIAL1
+#define SERIAL_PORT_COUNT 8 //VCP, USART1, USART2, USART3, USART6, SOFTSERIAL x 2
+
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
 
 
 #define USE_SPI
@@ -144,17 +144,20 @@
 #define SPI3_MOSI_PIN           PC12
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_1)  // PB8-SCL, PB8-SDA
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
 #define USE_I2C_PULLUP
-#define I2C1_SCL             PB8
-#define I2C1_SDA             PB9
+#define I2C1_SCL                PB8
+#define I2C1_SDA                PB9
 */
 
 #define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define VBAT_ADC_PIN                PC0
-#define RSSI_ADC_GPIO_PIN           PB1
+#define RSSI_ADC_PIN                PB1
 #define CURRENT_METER_ADC_PIN       PA5
+
+#undef LED_STRIP
 
 #define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_SOFTSERIAL | FEATURE_TELEMETRY)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
@@ -163,9 +166,7 @@
 //#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 /*
-#define SPEKTRUM_BIND
-// USART3 Rx, PB11
-#define BIND_PIN             PB11
+#define SPEKTRUM_BIND_PIN             PB11
 */
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE

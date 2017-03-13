@@ -19,75 +19,34 @@
 
 #include <platform.h>
 #include "drivers/io.h"
-#include "drivers/pwm_mapping.h"
 
-const uint16_t multiPPM[] = {
-    PWM6  | (MAP_TO_PPM_INPUT << 8),     // PPM input
-    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
-    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
-    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM11 | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM12 | (MAP_TO_MOTOR_OUTPUT << 8),
-    0xFFFF
-};
-
-const uint16_t multiPWM[] = {
-    PWM1  | (MAP_TO_PWM_INPUT << 8),     // input #1
-    PWM2  | (MAP_TO_PWM_INPUT << 8),
-    PWM3  | (MAP_TO_PWM_INPUT << 8),
-    PWM4  | (MAP_TO_PWM_INPUT << 8),
-    PWM5  | (MAP_TO_PWM_INPUT << 8),
-    PWM6  | (MAP_TO_PWM_INPUT << 8),     // input #6
-    PWM7  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #1 or servo #1 (swap to servo if needed)
-    PWM8  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #2 or servo #2 (swap to servo if needed)
-    PWM9  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #1 or #3
-    PWM10 | (MAP_TO_MOTOR_OUTPUT  << 8),
-    PWM11 | (MAP_TO_MOTOR_OUTPUT  << 8),
-    PWM12 | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #4 or #6
-    0xFFFF
-};
-
-const uint16_t airPPM[] = {
-    PWM6  | (MAP_TO_PPM_INPUT << 8),     // PPM input
-    PWM7  | (MAP_TO_MOTOR_OUTPUT  << 8),
-    PWM8  | (MAP_TO_MOTOR_OUTPUT  << 8),
-    PWM9  | (MAP_TO_SERVO_OUTPUT  << 8),
-    PWM10 | (MAP_TO_SERVO_OUTPUT  << 8),
-    PWM11 | (MAP_TO_SERVO_OUTPUT  << 8),
-    PWM12 | (MAP_TO_SERVO_OUTPUT  << 8),
-    0xFFFF
-};
-
-const uint16_t airPWM[] = {
-    PWM1  | (MAP_TO_PWM_INPUT << 8),     // input #1
-    PWM2  | (MAP_TO_PWM_INPUT << 8),
-    PWM3  | (MAP_TO_PWM_INPUT << 8),
-    PWM4  | (MAP_TO_PWM_INPUT << 8),
-    PWM5  | (MAP_TO_PWM_INPUT << 8),
-    PWM6  | (MAP_TO_PWM_INPUT << 8),     // input #6
-    PWM7  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #1
-    PWM8  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #2
-    PWM9  | (MAP_TO_SERVO_OUTPUT  << 8), // servo #1
-    PWM10 | (MAP_TO_SERVO_OUTPUT  << 8), // servo #2
-    PWM11 | (MAP_TO_SERVO_OUTPUT  << 8), // servo #3
-    PWM12 | (MAP_TO_SERVO_OUTPUT  << 8), // servo #4
-    0xFFFF
-};
-
+#include "drivers/dma.h"
+#include "drivers/timer.h"
+#include "drivers/timer_def.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM12, IO_TAG(PB14), TIM_Channel_1, TIM8_BRK_TIM12_IRQn, 0, IOCFG_IPD, GPIO_AF_TIM12 },// PPM (5th pin on FlexiIO port)
-    { TIM12, IO_TAG(PB15), TIM_Channel_2, TIM8_BRK_TIM12_IRQn, 0, IOCFG_IPD, GPIO_AF_TIM12 },// S2_IN - GPIO_PartialRemap_TIM3
-    { TIM8,  IO_TAG(PC6),  TIM_Channel_1, TIM8_CC_IRQn,        0, IOCFG_IPD, GPIO_AF_TIM8 }, // S3_IN
-    { TIM8,  IO_TAG(PC7),  TIM_Channel_2, TIM8_CC_IRQn,        0, IOCFG_IPD, GPIO_AF_TIM8 }, // S4_IN
-    { TIM8,  IO_TAG(PC8),  TIM_Channel_3, TIM8_CC_IRQn,        0, IOCFG_IPD, GPIO_AF_TIM8 }, // S5_IN
-    { TIM8,  IO_TAG(PC9),  TIM_Channel_4, TIM8_CC_IRQn,        0, IOCFG_IPD, GPIO_AF_TIM8 }, // S6_IN
+#ifdef OMNIBUSF4SD
+    DEF_TIM(TIM4,  CH3, PB8,  TIM_USE_PWM | TIM_USE_PPM,   TIMER_OUTPUT_NONE,     0), // PPM
+    DEF_TIM(TIM4,  CH4, PB9,  TIM_USE_PWM,                 TIMER_OUTPUT_NONE,     0), // S2_IN
+#else
+    DEF_TIM(TIM12, CH1, PB14, TIM_USE_PWM | TIM_USE_PPM,   TIMER_OUTPUT_NONE,     0), // PPM
+    DEF_TIM(TIM12, CH2, PB15, TIM_USE_PWM,                 TIMER_OUTPUT_NONE,     0), // S2_IN
+#endif
+    DEF_TIM(TIM8,  CH1, PC6,  TIM_USE_PWM,                 TIMER_OUTPUT_NONE,     0), // S3_IN
+    DEF_TIM(TIM8,  CH2, PC7,  TIM_USE_PWM,                 TIMER_OUTPUT_NONE,     0), // S4_IN
+    DEF_TIM(TIM8,  CH3, PC8,  TIM_USE_PWM,                 TIMER_OUTPUT_NONE,     0), // S5_IN
+    DEF_TIM(TIM8,  CH4, PC9,  TIM_USE_PWM,                 TIMER_OUTPUT_NONE,     0), // S6_IN
 
-    { TIM3,  IO_TAG(PB0),  TIM_Channel_3, TIM3_IRQn,           1, IOCFG_AF_PP_PD, GPIO_AF_TIM3 }, // S1_OUT
-    { TIM3,  IO_TAG(PB1),  TIM_Channel_4, TIM3_IRQn,           1, IOCFG_AF_PP_PD, GPIO_AF_TIM3 }, // S2_OUT
-    { TIM9,  IO_TAG(PA3),  TIM_Channel_2, TIM1_BRK_TIM9_IRQn,  1, IOCFG_AF_PP_PD, GPIO_AF_TIM9 }, // S4_OUT
-    { TIM2,  IO_TAG(PA2),  TIM_Channel_3, TIM2_IRQn,           1, IOCFG_AF_PP_PD, GPIO_AF_TIM2 }, // S4_OUT
-    { TIM5,  IO_TAG(PA1),  TIM_Channel_2, TIM5_IRQn,           1, IOCFG_AF_PP_PD, GPIO_AF_TIM5 }, // S5_OUT - GPIO_PartialRemap_TIM3
-    { TIM5,  IO_TAG(PA0),  TIM_Channel_1, TIM5_IRQn,           1, IOCFG_AF_PP_PD, GPIO_AF_TIM5 }, // S6_OUT
+    DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0), // S1_OUT D1_ST7
+    DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0), // S2_OUT D1_ST2
+    DEF_TIM(TIM2,  CH4, PA3,  TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 1), // S3_OUT D1_ST6
+    DEF_TIM(TIM2,  CH3, PA2,  TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0), // S4_OUT D1_ST1
+
+#ifdef OMNIBUSF4SD
+    DEF_TIM(TIM5,  CH2, PA1,  TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0), // S5_OUT
+    DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_MOTOR | TIM_USE_LED, TIMER_OUTPUT_STANDARD, 0), // S6_OUT
+#else
+    DEF_TIM(TIM5,  CH2, PA1,  TIM_USE_MOTOR | TIM_USE_LED, TIMER_OUTPUT_STANDARD, 0), // S5_OUT
+    DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0), // S6_OUT
+#endif
 };

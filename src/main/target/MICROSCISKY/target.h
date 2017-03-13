@@ -27,12 +27,10 @@
 #define BARO_XCLR_PIN           PC13
 #define BARO_EOC_PIN            PC14
 
-#define INVERTER                PB2 // PB2 (BOOT1) abused as inverter select GPIO
-#define INVERTER_USART          USART2
+#define INVERTER_PIN_UART2      PB2 // PB2 (BOOT1) abused as inverter select GPIO
 
 #define USE_EXTI
 #define MAG_INT_EXTI            PC14
-#define EXTI_CALLBACK_HANDLER_COUNT 3 // MPU data ready, MAG data ready, BMP085 EOC
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 //#define DEBUG_MAG_DATA_READY_INTERRUPT
@@ -69,17 +67,10 @@
 #define SERIAL_PORT_COUNT       2
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_2)
+#define USE_I2C_DEVICE_2
+#define I2C_DEVICE              (I2CDEV_2)
 
-#define LED_STRIP
-#define WS2811_TIMER                    TIM3
-#define WS2811_PIN                      PA6
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
-
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
+#define SPEKTRUM_BIND_PIN       PA3
 
 #define BRUSHED_MOTORS
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP
@@ -88,10 +79,8 @@
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define RX_CHANNELS_TAER
 
-#undef GPS
 #undef USE_SERVOS
 #define USE_QUAD_MIXER_ONLY
-#define DISPLAY
 
 
 // IO - assuming all IOs on 48pin package
@@ -99,4 +88,5 @@
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         ( BIT(13) | BIT(14) | BIT(15) )
 
+#define USABLE_TIMER_CHANNEL_COUNT 14
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) )
