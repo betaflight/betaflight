@@ -787,8 +787,8 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_INITIALIZE(navigati
 {
     navigationFSMStateFlags_t prevFlags = navGetStateFlags(previousState);
 
-    if (!posControl.flags.hasValidHeadingSensor || !STATE(GPS_FIX_HOME)) {
-        // Heading sensor and HOME fix are mandatory for RTH. If not satisfied - switch to emergency landing
+    if (!posControl.flags.hasValidHeadingSensor || !posControl.flags.hasValidAltitudeSensor || !STATE(GPS_FIX_HOME)) {
+        // Heading sensor, altitude sensor and HOME fix are mandatory for RTH. If not satisfied - switch to emergency landing
         return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
     }
 
@@ -2345,7 +2345,7 @@ static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
         }
 
         // RTH/Failsafe_RTH can override PASSTHRU
-        if (posControl.flags.forcedRTHActivated || (IS_RC_MODE_ACTIVE(BOXNAVRTH) && canActivatePosHold && STATE(GPS_FIX_HOME))) {
+        if (posControl.flags.forcedRTHActivated || (IS_RC_MODE_ACTIVE(BOXNAVRTH) && canActivatePosHold && canActivateAltHold && STATE(GPS_FIX_HOME))) {
             // If we request forced RTH - attempt to activate it no matter what
             // This might switch to emergency landing controller if GPS is unavailable
             canActivateWaypoint = false;    // Block WP mode if we switched to RTH for whatever reason
