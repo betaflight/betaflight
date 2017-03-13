@@ -27,21 +27,21 @@
 
 // These must be consecutive, see 'reversedSources'
 enum {
-    INPUT_STABILIZED_ROLL = 0,
-    INPUT_STABILIZED_PITCH,
-    INPUT_STABILIZED_YAW,
-    INPUT_STABILIZED_THROTTLE,
-    INPUT_RC_ROLL,
-    INPUT_RC_PITCH,
-    INPUT_RC_YAW,
-    INPUT_RC_THROTTLE,
-    INPUT_RC_AUX1,
-    INPUT_RC_AUX2,
-    INPUT_RC_AUX3,
-    INPUT_RC_AUX4,
-    INPUT_GIMBAL_PITCH,
-    INPUT_GIMBAL_ROLL,
-    INPUT_FEATURE_FLAPS,
+    INPUT_STABILIZED_ROLL       = 0,
+    INPUT_STABILIZED_PITCH      = 1,
+    INPUT_STABILIZED_YAW        = 2,
+    INPUT_STABILIZED_THROTTLE   = 3,
+    INPUT_RC_ROLL               = 4,
+    INPUT_RC_PITCH              = 5,
+    INPUT_RC_YAW                = 6,
+    INPUT_RC_THROTTLE           = 7,
+    INPUT_RC_AUX1               = 8,
+    INPUT_RC_AUX2               = 9,
+    INPUT_RC_AUX3               = 10,
+    INPUT_RC_AUX4               = 11,
+    INPUT_GIMBAL_PITCH          = 12,
+    INPUT_GIMBAL_ROLL           = 13,
+    INPUT_FEATURE_FLAPS         = 14,
 
     INPUT_SOURCE_COUNT
 } inputSource_e;

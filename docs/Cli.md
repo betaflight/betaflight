@@ -315,8 +315,7 @@ Re-apply any new defaults as desired.
 |  deadband  | 5 | These are values (in us) by how much RC input can be different before it's considered valid. For transmitters with jitter on outputs, this value can be increased. Defaults are zero, but can be increased up to 10 or so if rc inputs twitch while idle. |
 |  yaw_deadband  | 5 | These are values (in us) by how much RC input can be different before it's considered valid. For transmitters with jitter on outputs, this value can be increased. Defaults are zero, but can be increased up to 10 or so if rc inputs twitch while idle. |
 |  throttle_tilt_comp_str  | 0 | Can be used in ANGLE and HORIZON mode and will automatically boost throttle when banking. Setting is in percentage, 0=disabled. |
-|  flaperon_throw_offset  | 250 | Defines throw range in us for both ailerons that will be applied (before scaling) when FLAPERON mode is activated. |
-|  flaperon_throw_inverted  | OFF | Inverts throw offset on both ailerons. Can be used to create SPOILERON or just to change throw direction |
+|  flaperon_throw_offset  | 250 | Defines throw range in us for both ailerons that will be passed to servo mixer via input source 14 (`FEATURE FLAPS`) when FLAPERON mode is activated. |
 |  gimbal_mode  | NORMAL | When feature SERVO_TILT is enabled, this can be either NORMAL or MIXTILT |
 |  fw_iterm_throw_limit  | 165 | Limits max/min I-term value in stabilization PID controller in case of Fixed Wing. It solves the problem of servo saturation before take-off/throwing the airplane into the air. By default, error accumulated in I-term can not exceed 1/3 of servo throw (around 165us). Set 0 to disable completely. |
 |  mode_range_logic_operator  | OR | Control how Mode selection works in flight modes. If you example have Angle mode configured on two different Aux channels, this controls if you need both activated ( AND ) or if you only need one activated ( OR ) to active angle mode. |
