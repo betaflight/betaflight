@@ -186,14 +186,10 @@ serialPort_t *usbVcpOpen(void)
     vcpPort_t *s;
 
 #if defined(STM32F4)
-    usbGenerateDisconnectPulse();
-
     IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
     IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
     USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
 #elif defined(STM32F7)
-    usbGenerateDisconnectPulse();
-
     IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0);
     IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0);
     /* Init Device Library */
