@@ -97,6 +97,7 @@
 #define GPS
 #define CMS
 #define TELEMETRY_CRSF
+#define TELEMETRY_IBUS
 #define TELEMETRY_JETIEXBUS
 #define TELEMETRY_MAVLINK
 #define TELEMETRY_SRXL

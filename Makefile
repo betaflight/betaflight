@@ -684,6 +684,7 @@ COMMON_SRC = \
             telemetry/ltm.c \
             telemetry/mavlink.c \
             telemetry/ibus.c \
+            telemetry/ibus_shared.c \
             sensors/esc_sensor.c \
             io/vtx_string.c \
             io/vtx_smartaudio.c \
