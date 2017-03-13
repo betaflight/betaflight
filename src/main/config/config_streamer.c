@@ -26,12 +26,41 @@
 extern uint8_t __config_start;   // configured via linker script when building binaries.
 extern uint8_t __config_end;
 
-uint32_t FlashPageSize;
+#if !defined(FLASH_PAGE_SIZE)
+// F1
+# if defined(STM32F10X_MD)
+#  define FLASH_PAGE_SIZE                 (0x400)
+# elif defined(STM32F10X_HD)
+#  define FLASH_PAGE_SIZE                 (0x800)
+// F3
+# elif defined(STM32F303xC)
+#  define FLASH_PAGE_SIZE                 (0x800)
+// F4
+# elif defined(STM32F40_41xxx)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
+# elif defined (STM32F411xE)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
+# elif defined(STM32F427_437xx)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000) // 128K sectors
+# elif defined (STM32F446xx)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
+// F7
+#elif defined(STM32F722xx)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
+# elif defined(STM32F745xx)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x40000)
+# elif defined(STM32F746xx)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x40000)
+# elif defined(UNIT_TEST)
+#  define FLASH_PAGE_SIZE                 (0x400)
+# else
+#  error "Flash page size not defined for target."
+# endif
+#endif
 
 void config_streamer_init(config_streamer_t *c)
 {
     memset(c, 0, sizeof(*c));
-    FlashPageSize = (uint32_t)&__config_end - (uint32_t)&__config_start;
 }
 
 void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
@@ -194,7 +223,7 @@ static int write_word(config_streamer_t *c, uint32_t value)
         return c->err;
     }
 #if defined(STM32F7)
-    if (c->address % FlashPageSize == 0) {
+    if (c->address % FLASH_PAGE_SIZE == 0) {
         FLASH_EraseInitTypeDef EraseInitStruct = {
             .TypeErase     = FLASH_TYPEERASE_SECTORS,
             .VoltageRange  = FLASH_VOLTAGE_RANGE_3, // 2.7-3.6V
@@ -212,7 +241,7 @@ static int write_word(config_streamer_t *c, uint32_t value)
         return -2;
     }
 #else
-    if (c->address % FlashPageSize == 0) {
+    if (c->address % FLASH_PAGE_SIZE == 0) {
 #if defined(STM32F4)
         const FLASH_Status status = FLASH_EraseSector(getFLASHSectorForEEPROM(), VoltageRange_3); //0x08080000 to 0x080A0000
 #else
