@@ -20,6 +20,7 @@
 #include "drivers/accgyro.h"
 #include "common/axis.h"
 #include "config/parameter_group.h"
+#include "drivers/sensor.h"
 
 typedef enum {
     GYRO_NONE = 0,
@@ -61,5 +62,6 @@ PG_DECLARE(gyroConfig_t, gyroConfig);
 bool gyroInit(void);
 void gyroInitFilters(void);
 void gyroUpdate(void);
+const busDevice_t *gyroSensorBus(void);
 void gyroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 bool gyroIsCalibrationComplete(void);

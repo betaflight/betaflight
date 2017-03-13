@@ -46,8 +46,9 @@
 #include "io/gps.h"
 
 #include "sensors/boardalignment.h"
-#include "sensors/sensors.h"
 #include "sensors/compass.h"
+#include "sensors/gyro.h"
+#include "sensors/sensors.h"
 
 #ifdef NAZE
 #include "hardware_revision.h"
@@ -233,7 +234,9 @@ bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse)
 
 bool compassInit(void)
 {
-    if (!compassDetect(&mag.dev, compassConfig()->mag_hardware)) {
+    // copy over SPI bus settings for AK8963 compass
+     mag.dev.bus = *gyroSensorBus();
+      if (!compassDetect(&mag.dev, compassConfig()->mag_hardware)) {
         return false;
     }
     // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)

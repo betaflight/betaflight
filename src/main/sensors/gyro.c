@@ -128,6 +128,11 @@ static const extiConfig_t *selectMPUIntExtiConfig(void)
 #endif
 }
 
+const busDevice_t *gyroSensorBus(void)
+{
+    return &gyro.dev.bus;
+}
+
 STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev, gyroSensor_e gyroHardware)
 {
     dev->gyroAlign = ALIGN_DEFAULT;

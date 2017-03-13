@@ -46,6 +46,7 @@
 
 #ifdef PIXRACER_ICM20608
     // Variant that uses ICM20608 gyro/acc
+    #define ICM20608_CS_PIN         PC15
     #define MPU6500_CS_PIN          PC15
     #define MPU6500_SPI_INSTANCE    SPI1
 
