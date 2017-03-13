@@ -1163,8 +1163,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #ifdef NAV
     case MSP_NAV_POSHOLD:
         sbufWriteU8(dst, navConfig()->general.flags.user_control_mode);
-        sbufWriteU16(dst, navConfig()->general.max_speed);
-        sbufWriteU16(dst, navConfig()->general.max_climb_rate);
+        sbufWriteU16(dst, navConfig()->general.max_auto_speed);
+        sbufWriteU16(dst, navConfig()->general.max_auto_climb_rate);
         sbufWriteU16(dst, navConfig()->general.max_manual_speed);
         sbufWriteU16(dst, navConfig()->general.max_manual_climb_rate);
         sbufWriteU8(dst, navConfig()->mc.max_bank_angle);
@@ -1640,8 +1640,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef NAV
     case MSP_SET_NAV_POSHOLD:
         navConfigMutable()->general.flags.user_control_mode = sbufReadU8(src);
-        navConfigMutable()->general.max_speed = sbufReadU16(src);
-        navConfigMutable()->general.max_climb_rate = sbufReadU16(src);
+        navConfigMutable()->general.max_auto_speed = sbufReadU16(src);
+        navConfigMutable()->general.max_auto_climb_rate = sbufReadU16(src);
         navConfigMutable()->general.max_manual_speed = sbufReadU16(src);
         navConfigMutable()->general.max_manual_climb_rate = sbufReadU16(src);
         navConfigMutable()->mc.max_bank_angle = sbufReadU8(src);
