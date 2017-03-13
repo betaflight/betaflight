@@ -37,20 +37,20 @@ extern uint8_t __config_end;
 #  define FLASH_PAGE_SIZE                 (0x800)
 // F4
 # elif defined(STM32F40_41xxx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000) // 16K sectors
 # elif defined (STM32F411xE)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000)
 # elif defined(STM32F427_437xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000) // 128K sectors
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000)
 # elif defined (STM32F446xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000)
 // F7
 #elif defined(STM32F722xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x4000) // 16K sectors
 # elif defined(STM32F745xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x40000)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x8000) // 32K sectors
 # elif defined(STM32F746xx)
-#  define FLASH_PAGE_SIZE                 ((uint32_t)0x40000)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x8000)
 # elif defined(UNIT_TEST)
 #  define FLASH_PAGE_SIZE                 (0x400)
 # else
