@@ -187,6 +187,9 @@ typedef struct mpuDetectionResult_s {
     mpu6050Resolution_e resolution;
 } mpuDetectionResult_t;
 
+bool mpuReadRegisterI2C(uint8_t reg, uint8_t length, uint8_t* data);
+bool mpuWriteRegisterI2C(uint8_t reg, uint8_t data);
+
 struct gyroDev_s;
 void mpuGyroInit(struct gyroDev_s *gyro);
 struct accDev_s;

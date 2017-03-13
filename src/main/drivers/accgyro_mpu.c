@@ -158,13 +158,13 @@ static void mpuIntExtiInit(gyroDev_t *gyro)
 #endif
 }
 
-static bool mpuReadRegisterI2C(uint8_t reg, uint8_t length, uint8_t* data)
+bool mpuReadRegisterI2C(uint8_t reg, uint8_t length, uint8_t* data)
 {
     bool ack = i2cRead(MPU_I2C_INSTANCE, MPU_ADDRESS, reg, length, data);
     return ack;
 }
 
-static bool mpuWriteRegisterI2C(uint8_t reg, uint8_t data)
+bool mpuWriteRegisterI2C(uint8_t reg, uint8_t data)
 {
     bool ack = i2cWrite(MPU_I2C_INSTANCE, MPU_ADDRESS, reg, data);
     return ack;
@@ -228,8 +228,8 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     if (mpu6000SpiDetect()) {
         gyro->mpuDetectionResult.sensor = MPU_60x0_SPI;
         gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
-        gyro->mpuConfiguration.readFn = mpu6000ReadRegister;
-        gyro->mpuConfiguration.writeFn = mpu6000WriteRegister;
+        gyro->mpuConfiguration.readFn = mpu6000SpiReadRegister;
+        gyro->mpuConfiguration.writeFn = mpu6000SpiWriteRegister;
         return true;
     }
 #endif
@@ -238,8 +238,8 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     if (mpu6500SpiDetect()) {
         gyro->mpuDetectionResult.sensor = MPU_65xx_SPI;
         gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
-        gyro->mpuConfiguration.readFn = mpu6500ReadRegister;
-        gyro->mpuConfiguration.writeFn = mpu6500WriteRegister;
+        gyro->mpuConfiguration.readFn = mpu6500SpiReadRegister;
+        gyro->mpuConfiguration.writeFn = mpu6500SpiWriteRegister;
         return true;
     }
 #endif
@@ -248,11 +248,11 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     if (mpu9250SpiDetect()) {
         gyro->mpuDetectionResult.sensor = MPU_9250_SPI;
         gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
-        gyro->mpuConfiguration.readFn = mpu9250ReadRegister;
-        gyro->mpuConfiguration.slowreadFn = mpu9250SlowReadRegister;
-        gyro->mpuConfiguration.verifywriteFn = verifympu9250WriteRegister;
-        gyro->mpuConfiguration.writeFn = mpu9250WriteRegister;
-        gyro->mpuConfiguration.resetFn = mpu9250ResetGyro;
+        gyro->mpuConfiguration.readFn = mpu9250SpiReadRegister;
+        gyro->mpuConfiguration.slowreadFn = mpu9250SpiSlowReadRegister;
+        gyro->mpuConfiguration.verifywriteFn = verifympu9250SpiWriteRegister;
+        gyro->mpuConfiguration.writeFn = mpu9250SpiWriteRegister;
+        gyro->mpuConfiguration.resetFn = mpu9250SpiResetGyro;
         return true;
     }
 #endif
@@ -261,8 +261,8 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     if (icm20608SpiDetect()) {
         mpuDetectionResult.sensor = ICM_20608_SPI;
         mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
-        mpuConfiguration.readFn = icm20608ReadRegister;
-        mpuConfiguration.writeFn = icm20608WriteRegister;
+        mpuConfiguration.readFn = icm20608SpiReadRegister;
+        mpuConfiguration.writeFn = icm20608SpiWriteRegister;
         return true;
     }
 #endif
@@ -271,8 +271,8 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     if (icm20689SpiDetect()) {
         gyro->mpuDetectionResult.sensor = ICM_20689_SPI;
         gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
-        gyro->mpuConfiguration.readFn = icm20689ReadRegister;
-        gyro->mpuConfiguration.writeFn = icm20689WriteRegister;
+        gyro->mpuConfiguration.readFn = icm20689SpiReadRegister;
+        gyro->mpuConfiguration.writeFn = icm20689SpiWriteRegister;
         return true;
     }
 #endif

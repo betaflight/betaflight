@@ -20,5 +20,5 @@ bool mpu6000SpiDetect(void);
 bool mpu6000SpiAccDetect(accDev_t *acc);
 bool mpu6000SpiGyroDetect(gyroDev_t *gyro);
 
-bool mpu6000WriteRegister(uint8_t reg, uint8_t data);
-bool mpu6000ReadRegister(uint8_t reg, uint8_t length, uint8_t *data);
+bool mpu6000SpiWriteRegister(uint8_t reg, uint8_t data);
+bool mpu6000SpiReadRegister(uint8_t reg, uint8_t length, uint8_t *data);
