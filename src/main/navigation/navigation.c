@@ -797,18 +797,18 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_INITIALIZE(navigati
         return NAV_FSM_EVENT_SWITCH_TO_IDLE;
     }
 
-    // Reset altitude and position controllers if necessary
-    if ((prevFlags & NAV_CTL_POS) == 0) {
-        resetPositionController();
-    }
-
-    if ((prevFlags & NAV_CTL_ALT) == 0) {
-        resetAltitudeController();
-        setupAltitudeController();
-    }
-
     // If we have valid position sensor or configured to ignore it's loss at initial stage - continue
     if (posControl.flags.hasValidPositionSensor || navConfig()->general.flags.rth_climb_ignore_emerg) {
+        // Reset altitude and position controllers if necessary
+        if ((prevFlags & NAV_CTL_POS) == 0) {
+            resetPositionController();
+        }
+
+        if ((prevFlags & NAV_CTL_ALT) == 0) {
+            resetAltitudeController();
+            setupAltitudeController();
+        }
+
         // If close to home - reset home position and land
         if (posControl.homeDistance < navConfig()->general.min_rth_distance) {
             setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
@@ -853,7 +853,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_CLIMB_TO_SAFE_ALT(n
     if (!posControl.flags.hasValidHeadingSensor) {
         return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
     }
-    
+
     // If we have valid pos sensor OR we are configured to ignore GPS loss
     if (posControl.flags.hasValidPositionSensor || !checkForPositionSensorTimeout() || navConfig()->general.flags.rth_climb_ignore_emerg) {
         if (((posControl.actualState.pos.V.Z - posControl.homeWaypointAbove.pos.V.Z) > -50.0f) || (!navConfig()->general.flags.rth_climb_first)) {
