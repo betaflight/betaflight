@@ -113,7 +113,6 @@ static const servoMixer_t servoMixerAirplane[] = {
     { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL,  100, 0, 0, 100 },
     { SERVO_RUDDER, INPUT_STABILIZED_YAW,   100, 0, 0, 100 },
     { SERVO_ELEVATOR, INPUT_STABILIZED_PITCH, 100, 0, 0, 100 },
-    { SERVO_THROTTLE, INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100 },
 };
 
 static const servoMixer_t servoMixerFlyingWing[] = {
@@ -121,7 +120,6 @@ static const servoMixer_t servoMixerFlyingWing[] = {
     { SERVO_FLAPPERON_1, INPUT_STABILIZED_PITCH, 100, 0, 0, 100 },
     { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL,  -100, 0, 0, 100 },
     { SERVO_FLAPPERON_2, INPUT_STABILIZED_PITCH, 100, 0, 0, 100 },
-    { SERVO_THROTTLE, INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100 },
 };
 
 static const servoMixer_t servoMixerTri[] = {
