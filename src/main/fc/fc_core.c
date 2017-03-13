@@ -220,11 +220,6 @@ void annexCode(void)
 
         warningLedUpdate();
     }
-
-    // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
-    if (gyro.dev.temperature) {
-        gyro.dev.temperature(&gyro.dev, &telemTemperature1);
-    }
 }
 
 void mwDisarm(void)
@@ -563,7 +558,7 @@ void taskGyro(timeUs_t currentTimeUs) {
 
     if (gyroConfig()->gyroSync) {
         while (true) {
-            if (gyroSyncCheckUpdate(&gyro.dev) || ((currentDeltaTime + cmpTimeUs(micros(), currentTimeUs)) >= (getGyroUpdateRate() + GYRO_WATCHDOG_DELAY))) {
+            if (gyroSyncCheckUpdate() || ((currentDeltaTime + cmpTimeUs(micros(), currentTimeUs)) >= (getGyroUpdateRate() + GYRO_WATCHDOG_DELAY))) {
                 break;
             }
         }

@@ -24,7 +24,7 @@
 #include "accgyro.h"
 #include "gyro_sync.h"
 
-bool gyroSyncCheckUpdate(gyroDev_t *gyro)
+bool gyroSyncCheckIntStatus(gyroDev_t *gyro)
 {
     if (!gyro->intStatus)
         return false;

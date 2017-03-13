@@ -36,7 +36,6 @@ typedef enum {
 } gyroSensor_e;
 
 typedef struct gyro_s {
-    gyroDev_t dev;
     uint32_t targetLooptime;
     float gyroADCf[XYZ_AXIS_COUNT];
 } gyro_t;
@@ -51,6 +50,7 @@ typedef struct gyroConfig_s {
     uint16_t looptime;                      // imu loop time in us
     uint8_t  gyro_lpf;                      // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
     uint8_t  gyro_soft_lpf_hz;
+    uint8_t  gyro_to_use;
     uint16_t gyro_soft_notch_hz_1;
     uint16_t gyro_soft_notch_cutoff_1;
     uint16_t gyro_soft_notch_hz_2;
@@ -63,5 +63,13 @@ bool gyroInit(void);
 void gyroInitFilters(void);
 void gyroUpdate(void);
 const busDevice_t *gyroSensorBus(void);
+struct mpuConfiguration_s;
+const struct mpuConfiguration_s *gyroMpuConfiguration(void);
+struct mpuDetectionResult_s;
+const struct mpuDetectionResult_s *gyroMpuDetectionResult(void);
 void gyroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 bool gyroIsCalibrationComplete(void);
+void gyroReadTemperature(void);
+int16_t gyroGetTemperature(void);
+int16_t gyroRateDps(int axis);
+bool gyroSyncCheckUpdate(void);
