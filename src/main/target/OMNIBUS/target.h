@@ -159,6 +159,8 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_CURRENT_METER | FEATURE_BLACKBOX | FEATURE_OSD)
 
+#undef USE_DASHBOARD // for ROM size reduction
+
 #define BUTTONS
 #define BUTTON_A_PIN            PB1
 #define BUTTON_B_PIN            PB0
