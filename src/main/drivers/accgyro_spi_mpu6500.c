@@ -84,21 +84,28 @@ uint8_t mpu6500SpiDetect(const busDevice_t *bus)
 {
     mpu6500SpiInit(bus);
 
-    uint8_t tmp;
-    mpu6500SpiReadRegister(bus, MPU_RA_WHO_AM_I, 1, &tmp);
+    mpu6500SpiWriteRegister(bus, MPU_RA_PWR_MGMT_1, MPU6500_BIT_RESET);
 
-    mpu6500SpiInit(bus);
+    for (int attempts = 0; attempts < 5; attempts++) {
+        uint8_t tmp;
 
-    mpu6500SpiReadRegister(bus, MPU_RA_WHO_AM_I, 1, &tmp);
+        delay(150);
 
-    if (tmp == MPU6500_WHO_AM_I_CONST ||
-        tmp == MPU9250_WHO_AM_I_CONST ||
-        tmp == ICM20608G_WHO_AM_I_CONST ||
-        tmp == ICM20602_WHO_AM_I_CONST) {
-        return true;
+        mpu6500SpiReadRegister(bus, MPU_RA_WHO_AM_I, 1, &tmp);
+
+        switch (tmp) {
+        case MPU6500_WHO_AM_I_CONST:
+            return MPU_65xx_SPI;
+        case MPU9250_WHO_AM_I_CONST:
+            return MPU_9250_SPI;
+        case ICM20608G_WHO_AM_I_CONST:
+            return ICM_20608_SPI;
+        case ICM20602_WHO_AM_I_CONST:
+            return ICM_20602_SPI;
+        }
     }
 
-    return false;
+    return MPU_NONE;
 }
 
 void mpu6500SpiAccInit(accDev_t *acc)
@@ -108,7 +115,10 @@ void mpu6500SpiAccInit(accDev_t *acc)
 
 bool mpu6500SpiAccDetect(accDev_t *acc)
 {
-    if (acc->mpuDetectionResult.sensor != MPU_65xx_SPI) {
+    if (acc->mpuDetectionResult.sensor != MPU_65xx_SPI &&
+        acc->mpuDetectionResult.sensor != MPU_9250_SPI &&
+        acc->mpuDetectionResult.sensor != ICM_20608_SPI &&
+        acc->mpuDetectionResult.sensor != ICM_20602_SPI) {
         return false;
     }
 
@@ -123,7 +133,7 @@ void mpu6500SpiGyroInit(gyroDev_t *gyro)
     spiSetDivisor(MPU6500_SPI_INSTANCE, SPI_CLOCK_SLOW);
     delayMicroseconds(1);
 
-    mpu6500SpiGyroInit(gyro);
+    mpu6500GyroInit(gyro);
 
     // Disable Primary I2C Interface
     mpu6500SpiWriteRegister(&gyro->bus, MPU_RA_USER_CTRL, MPU6500_BIT_I2C_IF_DIS);
@@ -135,7 +145,10 @@ void mpu6500SpiGyroInit(gyroDev_t *gyro)
 
 bool mpu6500SpiGyroDetect(gyroDev_t *gyro)
 {
-    if (gyro->mpuDetectionResult.sensor != MPU_65xx_SPI) {
+    if (gyro->mpuDetectionResult.sensor != MPU_65xx_SPI &&
+        gyro->mpuDetectionResult.sensor != MPU_9250_SPI &&
+        gyro->mpuDetectionResult.sensor != ICM_20608_SPI &&
+        gyro->mpuDetectionResult.sensor != ICM_20602_SPI) {
         return false;
     }
 
