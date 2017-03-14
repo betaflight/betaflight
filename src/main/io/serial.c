@@ -125,6 +125,7 @@ void pgResetFn_serialConfig(serialConfig_t *serialConfig)
 #endif
 
     serialConfig->reboot_character = 'R';
+    serialConfig->serial_update_rate_hz = 100;
 }
 
 baudRate_e lookupBaudRateIndex(uint32_t baudRate)
