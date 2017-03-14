@@ -24,36 +24,36 @@
 #include "bus_spi.h"
 
 #include "barometer.h"
-#include "barometer_ms5611.h"
+#include "barometer_ms56xx.h"
 
-#ifdef USE_BARO_SPI_MS5611
+#if defined(USE_BARO_SPI_MS5611) || defined(USE_BARO_SPI_MS5607)
 
-#define DISABLE_MS5611      IOHi(ms5611CsPin)
-#define ENABLE_MS5611       IOLo(ms5611CsPin)
+#define DISABLE_MS56XX(spiCsnPin)   IOHi(spiCsnPin)
+#define ENABLE_MS56XX(spiCsnPin)    IOLo(spiCsnPin)
 
-static IO_t ms5611CsPin = IO_NONE;
+static IO_t spiCsnPin = IO_NONE;
 
-bool ms5611SpiWriteCommand(uint8_t reg, uint8_t data)
+bool ms56xxSpiWriteCommand(uint8_t reg, uint8_t data)
 {
-    ENABLE_MS5611;
-    spiTransferByte(MS5611_SPI_INSTANCE, reg);
-    spiTransferByte(MS5611_SPI_INSTANCE, data);
-    DISABLE_MS5611;
+    ENABLE_MS56XX(spiCsnPin);
+    spiTransferByte(MS56XX_SPI_INSTANCE, reg);
+    spiTransferByte(MS56XX_SPI_INSTANCE, data);
+    DISABLE_MS56XX(spiCsnPin);
 
     return true;
 }
 
-bool ms5611SpiReadCommand(uint8_t reg, uint8_t length, uint8_t *data)
+bool ms56xxSpiReadCommand(uint8_t reg, uint8_t length, uint8_t *data)
 {
-    ENABLE_MS5611;
-    spiTransferByte(MS5611_SPI_INSTANCE, reg);
-    spiTransfer(MS5611_SPI_INSTANCE, data, NULL, length);
-    DISABLE_MS5611;
+    ENABLE_MS56XX(spiCsnPin);
+    spiTransferByte(MS56XX_SPI_INSTANCE, reg);
+    spiTransfer(MS56XX_SPI_INSTANCE, data, NULL, length);
+    DISABLE_MS56XX(spiCsnPin);
 
     return true;
 }
 
-void ms5611SpiInit(void)
+void ms56xxSpiInit(void)
 {
     static bool hardwareInitialised = false;
 
@@ -61,13 +61,13 @@ void ms5611SpiInit(void)
         return;
     }
 
-    ms5611CsPin = IOGetByTag(IO_TAG(MS5611_CS_PIN));
-    IOInit(ms5611CsPin, OWNER_BARO, RESOURCE_SPI_CS, 0);
-    IOConfigGPIO(ms5611CsPin, IOCFG_OUT_PP);
+    spiCsnPin = IOGetByTag(IO_TAG(MS56XX_CS_PIN));
+    IOInit(spiCsnPin, OWNER_BARO, RESOURCE_SPI_CS, 0);
+    IOConfigGPIO(spiCsnPin, IOCFG_OUT_PP);
 
-    DISABLE_MS5611;
+    DISABLE_MS56XX(spiCsnPin);
 
-    spiSetDivisor(MS5611_SPI_INSTANCE, SPI_CLOCK_STANDARD);
+    spiSetDivisor(MS56XX_SPI_INSTANCE, SPI_CLOCK_STANDARD);
 
     hardwareInitialised = true;
 }

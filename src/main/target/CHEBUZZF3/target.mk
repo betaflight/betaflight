@@ -11,7 +11,7 @@ TARGET_SRC = \
             drivers/accgyro_l3g4200d.c \
             drivers/accgyro_l3gd20.c \
             drivers/accgyro_lsm303dlhc.c \
-            drivers/barometer_ms5611.c \
+            drivers/barometer_ms56xx.c \
             drivers/barometer_bmp280.c \
             drivers/compass_ak8975.c \
             drivers/compass_hmc5883l.c \
