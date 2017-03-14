@@ -70,7 +70,7 @@
 
 gyro_t gyro; // gyro sensor object
 
-static gyroDev_t gyroDev0;
+STATIC_UNIT_TESTED gyroDev_t gyroDev0;
 static int16_t gyroTemperature0;
 
 typedef struct gyroCalibration_s {
