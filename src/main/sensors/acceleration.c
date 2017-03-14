@@ -274,8 +274,9 @@ bool accInit(uint32_t targetLooptime)
 {
     memset(&acc, 0, sizeof(acc));
     // copy over the common gyro mpu settings
-    acc.dev.mpuConfiguration = gyro.dev.mpuConfiguration;
-    acc.dev.mpuDetectionResult = gyro.dev.mpuDetectionResult;
+    acc.dev.bus = *gyroSensorBus();
+    acc.dev.mpuConfiguration = *gyroMpuConfiguration();
+    acc.dev.mpuDetectionResult = *gyroMpuDetectionResult();
     if (!accDetect(&acc.dev, accelerometerConfig()->acc_hardware)) {
         return false;
     }

@@ -20,6 +20,12 @@
 #include "exti.h"
 #include "sensor.h"
 
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
+
+#if defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) ||  defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
+#define GYRO_USES_SPI
+#endif
+
 // MPU6050
 #define MPU_RA_WHO_AM_I         0x75
 #define MPU_RA_WHO_AM_I_LEGACY  0x00
@@ -118,8 +124,8 @@
 // RF = Register Flag
 #define MPU_RF_DATA_RDY_EN (1 << 0)
 
-typedef bool (*mpuReadRegisterFnPtr)(uint8_t reg, uint8_t length, uint8_t* data);
-typedef bool (*mpuWriteRegisterFnPtr)(uint8_t reg, uint8_t data);
+typedef bool (*mpuReadRegisterFnPtr)(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t* data);
+typedef bool (*mpuWriteRegisterFnPtr)(const busDevice_t *bus, uint8_t reg, uint8_t data);
 typedef void(*mpuResetFnPtr)(void);
 
 extern mpuResetFnPtr mpuResetFn;
@@ -187,8 +193,8 @@ typedef struct mpuDetectionResult_s {
     mpu6050Resolution_e resolution;
 } mpuDetectionResult_t;
 
-bool mpuReadRegisterI2C(uint8_t reg, uint8_t length, uint8_t* data);
-bool mpuWriteRegisterI2C(uint8_t reg, uint8_t data);
+bool mpuReadRegisterI2C(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t* data);
+bool mpuWriteRegisterI2C(const busDevice_t *bus, uint8_t reg, uint8_t data);
 
 struct gyroDev_s;
 void mpuGyroInit(struct gyroDev_s *gyro);

@@ -17,6 +17,6 @@
 
 #include "drivers/accgyro.h"
 
-bool gyroSyncCheckUpdate(gyroDev_t *gyro);
+bool gyroSyncCheckIntStatus(gyroDev_t *gyro);
 uint8_t gyroMPU6xxxGetDividerDrops(const gyroDev_t *gyro);
 uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint32_t looptime, uint8_t lpf, uint8_t gyroSync, uint8_t gyroSyncDenominator);
