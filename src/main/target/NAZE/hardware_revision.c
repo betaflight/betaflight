@@ -36,13 +36,6 @@
 
 #include "hardware_revision.h"
 
-static const char * const hardwareRevisionNames[] = {
-        "Unknown",
-        "Naze 32",
-        "Naze32 rev.5",
-        "Naze32 SP"
-};
-
 uint8_t hardwareRevision = UNKNOWN;
 
 void detectHardwareRevision(void)
