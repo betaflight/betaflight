@@ -94,7 +94,7 @@ static filterApplyFnPtr notchFilter2ApplyFn;
 static void *notchFilter2[XYZ_AXIS_COUNT];
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 1);
 
 PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .gyro_lpf = GYRO_LPF_42HZ, // INV_FILTER_42HZ, In case of ST gyro, will default to 32Hz instead
