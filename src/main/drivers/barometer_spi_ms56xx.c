@@ -26,29 +26,29 @@
 #include "barometer.h"
 #include "barometer_ms56xx.h"
 
-#ifdef USE_BARO_SPI_MS56XX
+#if defined(USE_BARO_SPI_MS5611) || defined(USE_BARO_SPI_MS5607)
 
-#define DISABLE_MS56XX      IOHi(ms56xxCsPin)
-#define ENABLE_MS56XX       IOLo(ms56xxCsPin)
+#define DISABLE_MS56XX(spiCsnPin)   IOHi(spiCsnPin)
+#define ENABLE_MS56XX(spiCsnPin)    IOLo(spiCsnPin)
 
-static IO_t ms56xxCsPin = IO_NONE;
+static IO_t spiCsnPin = IO_NONE;
 
 bool ms56xxSpiWriteCommand(uint8_t reg, uint8_t data)
 {
-    ENABLE_MS56XX;
+    ENABLE_MS56XX(spiCsnPin);
     spiTransferByte(MS56XX_SPI_INSTANCE, reg);
     spiTransferByte(MS56XX_SPI_INSTANCE, data);
-    DISABLE_MS56XX;
+    DISABLE_MS56XX(spiCsnPin);
 
     return true;
 }
 
 bool ms56xxSpiReadCommand(uint8_t reg, uint8_t length, uint8_t *data)
 {
-    ENABLE_MS56XX;
+    ENABLE_MS56XX(spiCsnPin);
     spiTransferByte(MS56XX_SPI_INSTANCE, reg);
     spiTransfer(MS56XX_SPI_INSTANCE, data, NULL, length);
-    DISABLE_MS56XX;
+    DISABLE_MS56XX(spiCsnPin);
 
     return true;
 }
@@ -61,11 +61,11 @@ void ms56xxSpiInit(void)
         return;
     }
 
-    ms56xxCsPin = IOGetByTag(IO_TAG(MS56XX_CS_PIN));
-    IOInit(ms56xxCsPin, OWNER_BARO, RESOURCE_SPI_CS, 0);
-    IOConfigGPIO(ms56xxCsPin, IOCFG_OUT_PP);
+    spiCsnPin = IOGetByTag(IO_TAG(MS56XX_CS_PIN));
+    IOInit(spiCsnPin, OWNER_BARO, RESOURCE_SPI_CS, 0);
+    IOConfigGPIO(spiCsnPin, IOCFG_OUT_PP);
 
-    DISABLE_MS56XX;
+    DISABLE_MS56XX(spiCsnPin);
 
     spiSetDivisor(MS56XX_SPI_INSTANCE, SPI_CLOCK_STANDARD);
 

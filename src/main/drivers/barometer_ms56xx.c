@@ -46,6 +46,8 @@
 #define CMD_PROM_RD             0xA0 // Prom read command
 #define PROM_NB                 8
 
+#if defined(USE_BARO_MS5607) || defined(USE_BARO_MS5611)
+
 STATIC_UNIT_TESTED uint32_t ms56xx_ut;  // static result of temperature measurement
 STATIC_UNIT_TESTED uint32_t ms56xx_up;  // static result of pressure measurement
 STATIC_UNIT_TESTED uint16_t ms56xx_c[PROM_NB];  // on-chip ROM
@@ -241,15 +243,15 @@ bool ms56xxDetect(baroDev_t *baro, baroSensor_e baroType)
             baro->start_up = ms56xx_start_up;
             baro->get_up = ms56xx_get_up;
 
-    #if defined(USE_BARO_MS5607) && defined(USE_BARO_MS5611)
+#if defined(USE_BARO_MS5607) && defined(USE_BARO_MS5611)
             if (baroType == BARO_MS5607) {
                 baro->calculate = ms5607_calculate;
             } else { // default to MS5611
                 baro->calculate = ms5611_calculate;
             }
-    #elif defined(USE_BARO_MS5607)
+#elif defined(USE_BARO_MS5607)
             baro->calculate = ms5607_calculate;
-#else
+#else 
             baro->calculate = ms5611_calculate;
 #endif
 
@@ -261,3 +263,5 @@ bool ms56xxDetect(baroDev_t *baro, baroSensor_e baroType)
 
     return false;
 }
+
+#endif

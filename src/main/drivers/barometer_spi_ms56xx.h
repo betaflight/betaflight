@@ -17,6 +17,6 @@
 
 #pragma once
 
-void ms5611SpiInit(void);
-bool ms5611SpiReadCommand(uint8_t reg, uint8_t length, uint8_t *data);
-bool ms5611SpiWriteCommand(uint8_t reg, uint8_t data);
+void ms56xxSpiInit(void);
+bool ms56xxSpiReadCommand(uint8_t reg, uint8_t length, uint8_t *data);
+bool ms56xxSpiWriteCommand(uint8_t reg, uint8_t data);
