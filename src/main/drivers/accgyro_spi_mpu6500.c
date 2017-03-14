@@ -41,7 +41,7 @@
 
 static IO_t mpuSpi6500CsPin = IO_NONE;
 
-bool mpu6500WriteRegister(uint8_t reg, uint8_t data)
+bool mpu6500SpiWriteRegister(uint8_t reg, uint8_t data)
 {
     ENABLE_MPU6500;
     delayMicroseconds(1);
@@ -53,7 +53,7 @@ bool mpu6500WriteRegister(uint8_t reg, uint8_t data)
     return true;
 }
 
-bool mpu6500ReadRegister(uint8_t reg, uint8_t length, uint8_t *data)
+bool mpu6500SpiReadRegister(uint8_t reg, uint8_t length, uint8_t *data)
 {
     ENABLE_MPU6500;
     spiTransferByte(MPU6500_SPI_INSTANCE, reg | 0x80); // read transaction
@@ -86,7 +86,7 @@ bool mpu6500SpiDetect(void)
 
     mpu6500SpiInit();
 
-    mpu6500ReadRegister(MPU_RA_WHO_AM_I, 1, &tmp);
+    mpu6500SpiReadRegister(MPU_RA_WHO_AM_I, 1, &tmp);
 
     if (tmp == MPU6500_WHO_AM_I_CONST ||
         tmp == MPU9250_WHO_AM_I_CONST ||
@@ -120,10 +120,10 @@ void mpu6500SpiGyroInit(gyroDev_t *gyro)
     spiSetDivisor(MPU6500_SPI_INSTANCE, SPI_CLOCK_SLOW);
     delayMicroseconds(1);
 
-    mpu6500GyroInit(gyro);
+    mpu6500SpiGyroInit(gyro);
 
     // Disable Primary I2C Interface
-    mpu6500WriteRegister(MPU_RA_USER_CTRL, MPU6500_BIT_I2C_IF_DIS);
+    mpu6500SpiWriteRegister(MPU_RA_USER_CTRL, MPU6500_BIT_I2C_IF_DIS);
     delay(100);
 
     spiSetDivisor(MPU6500_SPI_INSTANCE, SPI_CLOCK_FAST);
