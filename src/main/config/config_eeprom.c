@@ -18,7 +18,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <stddef.h>
 
 #include "platform.h"
 
@@ -26,18 +25,11 @@
 
 #include "common/maths.h"
 
-#include "drivers/light_led.h"
-
 #include "config/config_eeprom.h"
 #include "config/config_streamer.h"
 #include "config/parameter_group.h"
 
 #include "drivers/system.h"
-
-#include "fc/config.h"
-#include "fc/rc_adjustments.h"
-
-#include "flight/pid.h"
 
 extern uint8_t __config_start;   // configured via linker script when building binaries.
 extern uint8_t __config_end;
@@ -242,9 +234,8 @@ static bool writeSettingsToEEPROM(void)
             crc = crc16_ccitt_update(crc, reg->address, regSize);
         } else {
             // write one instance for each profile
-            for (uint8_t profileIndex = 0; profileIndex < MAX_PROFILE_COUNT; profileIndex++) {
+            for (uint8_t profileIndex = 0; profileIndex < PG_PROFILE_COUNT; profileIndex++) {
                 record.flags = 0;
-
                 record.flags |= ((profileIndex + 1) & CR_CLASSIFICATION_MASK);
                 config_streamer_write(&streamer, (uint8_t *)&record, sizeof(record));
                 crc = crc16_ccitt_update(crc, (uint8_t *)&record, sizeof(record));
