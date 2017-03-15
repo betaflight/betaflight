@@ -41,9 +41,6 @@ The stick positions are combined to activate different functions:
 
 ![Stick Positions](assets/images/StickPositions.png)
 
-Download a graphic [cheat sheet](https://multiwii.googlecode.com/svn/branches/Hamburger/MultiWii-StickConfiguration-23_v0-5772156649.pdf) with Tx stick commands (the latest version can always be found
-[here](https://code.google.com/p/multiwii/source/browse/#svn%2Fbranches%2FHamburger)).
-
 ## Yaw control
 
 While arming/disarming with sticks, your yaw stick will be moving to extreme values. In order to prevent your craft

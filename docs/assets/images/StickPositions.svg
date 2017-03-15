@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+﻿<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
@@ -702,7 +702,7 @@
          id="tspan5911"
          y="961.14417"
          x="5613.811"
-         sodipodi:role="line">Disable LCD Page Cycling</tspan></text>
+         sodipodi:role="line">Save waypoint mission</tspan></text>
     <rect
        ry="0"
        y="1132.0717"
@@ -744,7 +744,7 @@
          id="tspan5963"
          y="1381.5524"
          x="5613.811"
-         sodipodi:role="line">Enable LCD Page Cycling</tspan></text>
+         sodipodi:role="line">Load waypoint mission</tspan></text>
     <rect
        style="display:inline;opacity:1;fill:none;fill-opacity:1;stroke:#808080;stroke-width:11.05660725;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        id="rect5971"
