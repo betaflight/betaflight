@@ -216,9 +216,6 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
 
     DMA_Init(dmaRef, &DMA_InitStructure);
     DMA_ITConfig(dmaRef, DMA_IT_TC, ENABLE);
-#ifdef STM32F4
-    DMA_ClearITPendingBit(dmaRef, dmaFlag_IT_TCIF(dmaRef));
-#endif
 }
 
 #endif
