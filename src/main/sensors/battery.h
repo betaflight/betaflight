@@ -23,11 +23,6 @@
 #include "sensors/current.h"
 #include "sensors/voltage.h"
 
-#define VBAT_RESDIVVAL_DEFAULT 10
-#define VBAT_RESDIVMULTIPLIER_DEFAULT 1
-#define VBAT_SCALE_MIN 0
-#define VBAT_SCALE_MAX 255
-
 typedef struct batteryConfig_s {
     // voltage
     uint8_t vbatmaxcellvoltage;             // maximum voltage per cell, used for auto-detecting battery voltage in 0.1V units, default is 43 (4.3V)
