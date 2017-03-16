@@ -94,8 +94,6 @@ uint32_t rcInvalidPulsPeriod[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 rxRuntimeConfig_t rxRuntimeConfig;
 static uint8_t rcSampleIndex = 0;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
-
 #ifndef RX_SPI_DEFAULT_PROTOCOL
 #define RX_SPI_DEFAULT_PROTOCOL 0
 #endif
@@ -103,28 +101,36 @@ PG_REGISTER_WITH_RESET_TEMPLATE(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
 #define SERIALRX_PROVIDER 0
 #endif
 
-PG_RESET_TEMPLATE(rxConfig_t, rxConfig,
-    .halfDuplex = 0,
-    .serialrx_provider = SERIALRX_PROVIDER,
-    .rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL,
-    .sbus_inversion = 1,
-    .spektrum_sat_bind = 0,
-    .spektrum_sat_bind_autoreset = 1,
-    .midrc = 1500,
-    .mincheck = 1100,
-    .maxcheck = 1900,
-    .rx_min_usec = 885,          // any of first 4 channels below this value will trigger rx loss detection
-    .rx_max_usec = 2115,         // any of first 4 channels above this value will trigger rx loss detection
-    .rssi_channel = 0,
-    .rssi_scale = RSSI_SCALE_DEFAULT,
-    .rssi_invert = 0,
-    .rcInterpolation = RC_SMOOTHING_AUTO,
-    .rcInterpolationChannels = 0,
-    .rcInterpolationInterval = 19,
-    .fpvCamAngleDegrees = 0,
-    .max_aux_channel = DEFAULT_AUX_CHANNEL_COUNT,
-    .airModeActivateThreshold = 1350
-);
+PG_REGISTER_WITH_RESET_FN(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
+void pgResetFn_rxConfig(rxConfig_t *rxConfig)
+{
+    rxConfig->halfDuplex = 0;
+    rxConfig->serialrx_provider = SERIALRX_PROVIDER;
+    rxConfig->rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL;
+    rxConfig->sbus_inversion = 1;
+    rxConfig->spektrum_sat_bind = 0;
+    rxConfig->spektrum_sat_bind_autoreset = 1;
+    rxConfig->midrc = 1500;
+    rxConfig->mincheck = 1100;
+    rxConfig->maxcheck = 1900;
+    rxConfig->rx_min_usec = 885;          // any of first 4 channels below this value will trigger rx loss detection
+    rxConfig->rx_max_usec = 2115;         // any of first 4 channels above this value will trigger rx loss detection
+    rxConfig->rssi_channel = 0;
+    rxConfig->rssi_scale = RSSI_SCALE_DEFAULT;
+    rxConfig->rssi_invert = 0;
+    rxConfig->rcInterpolation = RC_SMOOTHING_AUTO;
+    rxConfig->rcInterpolationChannels = 0;
+    rxConfig->rcInterpolationInterval = 19;
+    rxConfig->fpvCamAngleDegrees = 0;
+    rxConfig->max_aux_channel = DEFAULT_AUX_CHANNEL_COUNT;
+    rxConfig->airModeActivateThreshold = 1350;
+
+#ifdef RX_CHANNELS_TAER
+    parseRcChannels("TAER1234", rxConfig);
+#else
+    parseRcChannels("AETR1234", rxConfig);
+#endif
+}
 
 PG_REGISTER_ARRAY_WITH_RESET_FN(rxChannelRangeConfig_t, NON_AUX_CHANNEL_COUNT, rxChannelRangeConfigs, PG_RX_CHANNEL_RANGE_CONFIG, 0);
 void pgResetFn_rxChannelRangeConfigs(rxChannelRangeConfig_t *rxChannelRangeConfigs)
