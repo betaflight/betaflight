@@ -1,1 +1,1 @@
-FEATURES       += VCP SDCARD
+
