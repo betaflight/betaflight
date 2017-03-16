@@ -378,7 +378,7 @@ void init(void)
 
 #ifdef USE_ADC
     adcConfigMutable()->vbat.enabled = (batteryConfig()->voltageMeterSource == VOLTAGE_METER_ADC);
-    adcConfigMutable()->currentMeter.enabled = (batteryConfig()->currentMeterSource == CURRENT_METER_ADC);
+    adcConfigMutable()->current.enabled = (batteryConfig()->currentMeterSource == CURRENT_METER_ADC);
 
     adcConfigMutable()->rssi.enabled = feature(FEATURE_RSSI_ADC);
     adcInit(adcConfig());
