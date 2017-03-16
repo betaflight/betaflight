@@ -46,10 +46,6 @@ typedef struct batteryConfig_s {
     bool useConsumptionAlerts;              // Issue alerts based on total power consumption
     uint8_t consumptionWarningPercentage;   // Percentage of remaining capacity that should trigger a battery warning
     uint8_t vbathysteresis;                 // hysteresis for alarm, default 1 = 0.1V
-
-    // FIXME this doesn't belong in here since it's a concern of MSP, not of the battery code.
-    uint8_t multiwiiCurrentMeterOutput;     // if set to 1 output the amperage in milliamp steps instead of 0.01A steps via msp
-
 } batteryConfig_t;
 
 PG_DECLARE(batteryConfig_t, batteryConfig);

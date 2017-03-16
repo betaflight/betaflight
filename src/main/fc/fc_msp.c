@@ -731,11 +731,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, (uint8_t)constrain(getBatteryVoltage(), 0, 255));
         sbufWriteU16(dst, (uint16_t)constrain(getMAhDrawn(), 0, 0xFFFF)); // milliamp hours drawn from battery
         sbufWriteU16(dst, rssi);
-
-        if(batteryConfig()->multiwiiCurrentMeterOutput) {
-            sbufWriteU16(dst, (uint16_t)constrain(getAmperage() * 10, 0, 0xFFFF)); // send current in 0.001 A steps. Negative range is truncated to zero
-        } else
-            sbufWriteU16(dst, (int16_t)constrain(getAmperage(), -0x8000, 0x7FFF)); // send current in 0.01 A steps, range is -320A to 320A
+        sbufWriteU16(dst, (int16_t)constrain(getAmperage(), -0x8000, 0x7FFF)); // send current in 0.01 A steps, range is -320A to 320A
 
         break;
     }
@@ -835,13 +831,13 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, 0); // TODO gps_baudrate (an index, cleanflight uses a uint32_t
         sbufWriteU8(dst, 0); // gps_ubx_sbas
 #endif
-        sbufWriteU8(dst, batteryConfig()->multiwiiCurrentMeterOutput);
+        sbufWriteU8(dst, 0); // was multiwiiCurrentMeterOutput
         sbufWriteU8(dst, rxConfig()->rssi_channel);
         sbufWriteU8(dst, 0);
 
         sbufWriteU16(dst, compassConfig()->mag_declination / 10);
 
-        sbufWriteU8(dst, 0); // batteryConfig()->vbatscale
+        sbufWriteU8(dst, 0); // was vbatscale
         sbufWriteU8(dst, batteryConfig()->vbatmincellvoltage);
         sbufWriteU8(dst, batteryConfig()->vbatmaxcellvoltage);
         sbufWriteU8(dst, batteryConfig()->vbatwarningcellvoltage);
@@ -1435,13 +1431,13 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         sbufReadU8(src); // gps_baudrate
         sbufReadU8(src); // gps_ubx_sbas
 #endif
-        batteryConfigMutable()->multiwiiCurrentMeterOutput = sbufReadU8(src);
+        sbufReadU8(src); // legacy - was multiwiiCurrentMeterOutput
         rxConfigMutable()->rssi_channel = sbufReadU8(src);
         sbufReadU8(src);
 
         compassConfigMutable()->mag_declination = sbufReadU16(src) * 10;
 
-        sbufReadU8(src);  // actual vbatscale as intended // was batteryConfigMutable()->vbatscale
+        sbufReadU8(src);  // legacy - was vbatscale
         batteryConfigMutable()->vbatmincellvoltage = sbufReadU8(src);  // vbatlevel_warn1 in MWC2.3 GUI
         batteryConfigMutable()->vbatmaxcellvoltage = sbufReadU8(src);  // vbatlevel_warn2 in MWC2.3 GUI
         batteryConfigMutable()->vbatwarningcellvoltage = sbufReadU8(src);  // vbatlevel when buzzer starts to alert

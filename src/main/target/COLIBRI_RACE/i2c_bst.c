@@ -680,11 +680,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8((uint8_t)constrain(getBatteryVoltage(), 0, 255));
             bstWrite16((uint16_t)constrain(getMAhDrawn(), 0, 0xFFFF)); // milliamp hours drawn from battery
             bstWrite16(rssi);
-            // FIXME - what does the TBS OSD actually need? the 'multiwiiCurrentMeterOutput' setting pre-dates the TBS i2c_bst code so likely we can just output exactly what we need.
-            if(batteryConfig()->multiwiiCurrentMeterOutput) {
-                bstWrite16((uint16_t)constrain(getAmperage() * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
-            } else
-                bstWrite16((int16_t)constrain(getAmperage(), -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
+            bstWrite16((int16_t)constrain(getAmperage(), -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
             break;
         case BST_ARMING_CONFIG:
             bstWrite8(armingConfig()->auto_disarm_delay);
@@ -771,7 +767,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8(0); // TODO gps_baudrate (an index, cleanflight uses a uint32_t
             bstWrite8(0); // gps_ubx_sbas
 #endif
-            bstWrite8(batteryConfig()->multiwiiCurrentMeterOutput);
+            bstWrite8(0); // legacy - was multiwiiCurrentMeterOutput);
             bstWrite8(rxConfig()->rssi_channel);
             bstWrite8(0);
 
@@ -1154,7 +1150,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             bstRead8(); // gps_baudrate
             bstRead8(); // gps_ubx_sbas
     #endif
-            batteryConfigMutable()->multiwiiCurrentMeterOutput = bstRead8();
+            bstRead8(); // legacy - was multiwiiCurrentMeterOutput
             rxConfigMutable()->rssi_channel = bstRead8();
             bstRead8();
 
