@@ -29,8 +29,6 @@
 #include "io/osd.h"
 
 #define VBAT_SCALE       113
-#define CURRENTSCALE    1000
-#define CURRENTOFFSET   0
 
 #define OSD_POS(x,y)  (x | (y << 5))
 
@@ -38,8 +36,6 @@
 void targetConfiguration(void)
 {
 	voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale = VBAT_SCALE;
-    currentMeterADCOrVirtualConfigMutable(CURRENT_SENSOR_ADC)->offset = CURRENTOFFSET;
-    currentMeterADCOrVirtualConfigMutable(CURRENT_SENSOR_ADC)->scale = CURRENTSCALE;
     barometerConfigMutable()->baro_hardware = 0;
     compassConfigMutable()->mag_hardware = 0;
     osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 1) | VISIBLE_FLAG;

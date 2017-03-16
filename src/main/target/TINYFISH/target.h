@@ -100,6 +100,15 @@
 #define ADC_INSTANCE                ADC3
 #define VBAT_SCALE_DEFAULT          100
 
+#define CURRENT_TARGET_CPU_VOLTAGE 3.0
+
+// board uses an ina139, RL=0.005, Rs=30000
+// V/A = (0.005 * 0.001 * 30000) * I
+// rescale to 1/10th mV / A -> * 1000 * 10
+// use 3.0V as cpu and adc voltage -> rescale by 3.0/3.3
+#define CURRENT_METER_SCALE_DEFAULT    (0.005 * 0.001 * 30000) * 1000 * 10 * (CURRENT_TARGET_CPU_VOLTAGE / 3.3)
+#define CURRENT_METER_OFFSET_DEFAULT   0
+
 #define WS2811_PIN                      PA8
 #define WS2811_TIMER                    TIM1
 #define WS2811_DMA_CHANNEL              DMA1_Channel2

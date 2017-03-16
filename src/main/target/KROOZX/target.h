@@ -93,6 +93,9 @@
 #define CURRENT_METER_ADC_PIN   PC2
 #define RSSI_ADC_PIN            PC0
 
+#define CURRENT_METER_SCALE_DEFAULT    1000
+#define CURRENT_METER_OFFSET_DEFAULT   0
+
 #define USE_VCP
 //#define VBUS_SENSING_PIN        PA9
 
