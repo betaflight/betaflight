@@ -175,6 +175,7 @@ Re-apply any new defaults as desired.
 |  nav_rth_climb_ignore_emerg  | ON | If set to ON, aircraft will execute initial climb regardless of position sensor (GPS) status. |
 |  nav_rth_alt_mode  | AT_LEAST | Configure how the aircraft will manage altitude on the way home, se Navigation modes on wiki for more details |
 |  nav_rth_altitude  | 1000 | Used in EXTRA, FIXED and AT_LEAST rth alt modes (Default 1000 means 10 meters) |
+|  nav_rth_abort_threshold  | 50000 | RTH sanity checking feature will notice if distance to home is increasing during RTH and once amount of increase exceeds the threshold defined by this parameter, instead of continuing RTH machine will enter emergency landing, self-level and go down safely. Default is 500m which is safe enough for both multirotor machines and airplanes. |
 |  nav_mc_bank_angle  | 30 | Maximum banking angle (deg) that multicopter navigation is allowed to set. Machine must be able to satisfy this angle without loosing altitude |
 |  nav_mc_hover_thr  | 1500 | Multicopter hover throttle hint for altitude controller. Should be set to approximate throttle value when drone is hovering. |
 |  nav_mc_auto_disarm_delay  | 2000 |  |

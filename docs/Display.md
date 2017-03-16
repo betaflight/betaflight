@@ -1,10 +1,12 @@
 # Display
 
-INAV supports displays to provide information to you about your aircraft and cleanflight state.
+INAV supports displays to provide information to you about your aircraft and iNav state.
 
-When the aircraft is armed the display does not update so flight is not affected.  When disarmed the display cycles between various pages.
+When the aircraft is armed, an "Armed" message is displayed. When it is disarmed, a summary page is displayed. Page cycling has been removed and no other information is currently available
+<img src="https://cloud.githubusercontent.com/assets/11059099/13985203/1a4c7f40-f147-11e5-83f0-608d9771fdda.jpg"/>
+<img src="https://camo.githubusercontent.com/41c25ff52e6d1e08d09bc4f85c28be022bfac7f0/68747470733a2f2f717561646d6575702e736874722e65752f77702d636f6e74656e742f75706c6f6164732f323031362f30332f6f6c65645f646973706c61792e6a7067"/>
 
-There is currently no way to change the information on the pages, the list of pages or the time between pages - Code submissions via pull-requests are welcomed!
+There is currently no way to change the information on the display
 
 ## Supported Hardware
 
