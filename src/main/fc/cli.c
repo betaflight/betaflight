@@ -3764,6 +3764,8 @@ void cliEnter(serialPort_t *serialPort)
 
 #ifndef CLI_MINIMAL_VERBOSITY
     cliPrint("\r\nEntering CLI Mode, type 'exit' to return, or 'help'\r\n");
+#else
+    cliPrint("\r\nCLI\r\n");
 #endif
     cliPrompt();
     ENABLE_ARMING_FLAG(PREVENT_ARMING);
