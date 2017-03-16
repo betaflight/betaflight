@@ -188,13 +188,16 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     dmaInit(timerHardware->dmaIrqHandler, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
     dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
 
+    DMA_Cmd(dmaRef, DISABLE);
+    DMA_DeInit(dmaRef);
+    
     DMA_StructInit(&DMA_InitStructure);
 #if defined(STM32F3)
     DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)motor->dmaBuffer;
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
 #elif defined(STM32F4)
-    DMA_InitStructure.DMA_Channel = timerHardware->channel;
+    DMA_InitStructure.DMA_Channel = timerHardware->dmaChannel;
     DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)motor->dmaBuffer;
     DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
     DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Enable;
