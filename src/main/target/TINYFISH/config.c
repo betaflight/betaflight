@@ -36,21 +36,9 @@
 
 #include "telemetry/telemetry.h"
 
-#define TARGET_CPU_VOLTAGE 3.0
-
-#define CURRENTOFFSET 0
-// board uses an ina139, RL=0.005, Rs=30000
-// V/A = (0.005 * 0.001 * 30000) * I
-// rescale to 1/10th mV / A -> * 1000 * 10
-// use 3.0V as cpu and adc voltage -> rescale by 3.0/3.3
-#define CURRENTSCALE (0.005 * 0.001 * 30000) * 1000 * 10 * (TARGET_CPU_VOLTAGE / 3.3)
-
 // set default settings to match our target
 void targetConfiguration(void)
 {
-    currentMeterADCOrVirtualConfigMutable(CURRENT_SENSOR_ADC)->offset = CURRENTOFFSET;
-    currentMeterADCOrVirtualConfigMutable(CURRENT_SENSOR_ADC)->scale = CURRENTSCALE;
-
     // use the same uart for frsky telemetry and SBUS, both non inverted
     const int index = findSerialPortIndexByIdentifier(SBUS_TELEMETRY_UART);
     serialConfigMutable()->portConfigs[index].functionMask = FUNCTION_TELEMETRY_FRSKY | FUNCTION_RX_SERIAL;

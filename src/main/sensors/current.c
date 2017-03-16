@@ -45,6 +45,10 @@ static biquadFilter_t adciBatFilter;
 #define CURRENT_METER_SCALE_DEFAULT 400 // for Allegro ACS758LCB-100U (40mV/A)
 #endif
 
+#ifndef CURRENT_METER_OFFSET_DEFAULT
+#define CURRENT_METER_OFFSET_DEFAULT 0
+#endif
+
 PG_REGISTER_ARRAY_WITH_RESET_FN(currentMeterADCOrVirtualConfig_t, MAX_ADC_OR_VIRTUAL_CURRENT_METERS, currentMeterADCOrVirtualConfig, PG_CURRENT_SENSOR_ADC_OR_VIRTUAL_CONFIG, 0);
 
 void pgResetFn_currentMeterADCOrVirtualConfig(currentMeterADCOrVirtualConfig_t *instance)
@@ -53,6 +57,7 @@ void pgResetFn_currentMeterADCOrVirtualConfig(currentMeterADCOrVirtualConfig_t *
         if (i == CURRENT_METER_ADC) {
             RESET_CONFIG(currentMeterADCOrVirtualConfig_t, &instance[i],
                 .scale = CURRENT_METER_SCALE_DEFAULT,
+                .offset = CURRENT_METER_OFFSET_DEFAULT,
             );
         }
     }
