@@ -68,6 +68,7 @@ extern uint8_t __config_end;
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
 #include "drivers/serial_escserial.h"
+#include "drivers/sonar_hcsr04.h"
 #include "drivers/stack_check.h"
 #include "drivers/system.h"
 #include "drivers/timer.h"
@@ -4256,8 +4257,8 @@ static void printResource(uint8_t dumpMask)
         }
 
         for (int index = 0; index < MAX_RESOURCE_INDEX(resourceTable[i].maxIndex); index++) {
-            const ioTag_t ioTag = *((ioTag_t *)currentConfig + resourceTable[i].offset + index);
-            const ioTag_t ioTagDefault = *((ioTag_t *)defaultConfig + resourceTable[i].offset + index);
+            const ioTag_t ioTag = *((const ioTag_t *)currentConfig + resourceTable[i].offset + index);
+            const ioTag_t ioTagDefault = *((const ioTag_t *)defaultConfig + resourceTable[i].offset + index);
 
             bool equalsDefault = ioTag == ioTagDefault;
             const char *format = "resource %s %d %c%02d\r\n";
