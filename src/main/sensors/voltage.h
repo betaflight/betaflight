@@ -33,6 +33,56 @@ typedef struct voltageMeter_s {
 } voltageMeter_t;
 
 //
+// fixed ids, voltage can be measured at many different places, these identifiers are the ones we support or would consider supporting.
+//
+
+typedef enum {
+    VOLTAGE_METER_ID_NONE = 0,
+
+    VOLTAGE_METER_ID_VBAT_1 = 10,       // 10-19 for battery meters
+    VOLTAGE_METER_ID_VBAT_2,
+    //..
+    VOLTAGE_METER_ID_VBAT_10 = 19,
+
+    VOLTAGE_METER_ID_5V_1 = 20,         // 20-29 for 5V meters
+    VOLTAGE_METER_ID_5V_2,
+    //..
+    VOLTAGE_METER_ID_5V_10 = 29,
+
+    VOLTAGE_METER_ID_9V_1 = 30,         // 30-39 for 9V meters
+    VOLTAGE_METER_ID_9V_2,
+    //..
+    VOLTAGE_METER_ID_9V_10 = 39,
+
+    VOLTAGE_METER_ID_12V_1 = 40,        // 40-49 for 12V meters
+    VOLTAGE_METER_ID_12V_2,
+    //..
+    VOLTAGE_METER_ID_12V_10 = 49,
+
+    VOLTAGE_METER_ID_ESC_COMBINED_1 = 50, // 50-59 for ESC combined (it's doubtful an FC would ever expose 51-59 however)
+    // ...
+    VOLTAGE_METER_ID_ESC_COMBINED_10 = 59,
+
+    VOLTAGE_METER_ID_ESC_MOTOR_1 = 60,  // 60-79 for ESC motors (20 motors)
+    VOLTAGE_METER_ID_ESC_MOTOR_2,
+    VOLTAGE_METER_ID_ESC_MOTOR_3,
+    VOLTAGE_METER_ID_ESC_MOTOR_4,
+    VOLTAGE_METER_ID_ESC_MOTOR_5,
+    VOLTAGE_METER_ID_ESC_MOTOR_6,
+    VOLTAGE_METER_ID_ESC_MOTOR_7,
+    VOLTAGE_METER_ID_ESC_MOTOR_8,
+    //...
+    VOLTAGE_METER_ID_ESC_MOTOR_20 = 79,
+
+    VOLTAGE_METER_ID_CELL_1 = 80,       // 80-119 for cell meters (40 cells)
+    VOLTAGE_METER_ID_CELL_2,
+    //...
+    VOLTAGE_METER_ID_CELL_40 = 119,
+
+} voltageMeterId_e;
+
+
+//
 // sensors
 //
 
@@ -56,10 +106,8 @@ typedef enum {
     VOLTAGE_SENSOR_ADC_12V = 2
 } voltageSensorADC_e;
 
-// WARNING - do not mix usage of VOLTAGE_METER_* and VOLTAGE_METER_*, they are separate concerns.
+// WARNING - do not mix usage of VOLTAGE_METER_* and VOLTAGE_SENSOR_*, they are separate concerns.
 
-#define VBAT_RESDIVVAL_DEFAULT 10
-#define VBAT_RESDIVMULTIPLIER_DEFAULT 1
 #define VBAT_SCALE_MIN 0
 #define VBAT_SCALE_MAX 255
 
@@ -73,19 +121,15 @@ typedef struct voltageSensorADCConfig_s {
 
 PG_DECLARE_ARRAY(voltageSensorADCConfig_t, MAX_VOLTAGE_SENSOR_ADC, voltageSensorADCConfig);
 
-typedef struct voltageMeterADCState_s {
-    uint16_t voltageFiltered;                // battery voltage in 0.1V steps (filtered)
-    uint16_t voltageUnfiltered;       // battery voltage in 0.1V steps (unfiltered)
-    biquadFilter_t vbatFilterState;
-} voltageMeterADCState_t; // TODO rename to voltageMeter_t
-
-extern voltageMeterADCState_t voltageMeterADCStates[MAX_VOLTAGE_SENSOR_ADC];
-
 void voltageMeterADCInit(void);
-void voltageMeterESCInit(void);
-
 void voltageMeterADCRefresh(void);
+void voltageMeterADCRead(voltageSensorADC_e adcChannel, voltageMeter_t *voltageMeter);
+
+void voltageMeterESCInit(void);
+void voltageMeterESCRefresh(void);
+void voltageMeterESCReadCombined(voltageMeter_t *voltageMeter);
+void voltageMeterESCReadMotor(uint8_t motor, voltageMeter_t *voltageMeter);
 
 void voltageMeterReset(voltageMeter_t *voltageMeter);
-void voltageMeterADCUpdate(voltageMeter_t *voltageMeter, voltageSensorADC_e adcChannel);
-void voltageMeterESCUpdate(voltageMeter_t *voltageMeter);
+
+void voltageReadMeter(voltageMeterId_e id, voltageMeter_t *voltageMeter);
