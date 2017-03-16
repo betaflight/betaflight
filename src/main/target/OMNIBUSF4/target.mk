@@ -1,6 +1,10 @@
 F405_TARGETS   += $(TARGET)
 FEATURES       += VCP ONBOARDFLASH
 
+ifeq ($(TARGET), CL_RACINGF4)
+FEATURES       += SDCARD
+endif
+
 TARGET_SRC = \
             drivers/accgyro_spi_mpu6000.c \
             drivers/barometer_ms5611.c \
