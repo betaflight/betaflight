@@ -88,6 +88,7 @@ enum
     FSSP_DATAID_ACCZ       = 0x0720 ,
     FSSP_DATAID_T1         = 0x0400 ,
     FSSP_DATAID_T2         = 0x0410 ,
+    FSSP_DATAID_HOME_DIST  = 0x0420 ,
     FSSP_DATAID_GPS_ALT    = 0x0820 ,
     FSSP_DATAID_ASPD       = 0x0A00 ,
     FSSP_DATAID_A3         = 0x0900 ,
@@ -118,6 +119,7 @@ const uint16_t frSkyDataIdTable[] = {
     FSSP_DATAID_GPS_ALT   ,
     FSSP_DATAID_ASPD      ,
     FSSP_DATAID_A4        ,
+    FSSP_DATAID_HOME_DIST ,
     0
 };
 
@@ -309,6 +311,13 @@ void handleSmartPortTelemetry(void)
                     //Speed should be sent in knots/1000 (GPS speed is in cm/s)
                     uint32_t tmpui = gpsSol.groundSpeed * 1944 / 100;
                     smartPortSendPackage(id, tmpui);
+                    smartPortHasRequest = 0;
+                }
+                break;
+
+            case FSSP_DATAID_HOME_DIST  :
+                if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
+                    smartPortSendPackage(id, GPS_distanceToHome);
                     smartPortHasRequest = 0;
                 }
                 break;
