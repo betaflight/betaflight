@@ -41,9 +41,32 @@
 #define VBAT_SCALE_DEFAULT 110
 #endif
 
-#ifdef USE_ESC_SENSOR
-static biquadFilter_t escvBatFilter;
+#ifndef VBAT_RESDIVVAL_DEFAULT
+#define VBAT_RESDIVVAL_DEFAULT 10
 #endif
+
+#ifndef VBAT_RESDIVMULTIPLIER_DEFAULT
+#define VBAT_RESDIVMULTIPLIER_DEFAULT 1
+#endif
+
+#ifdef USE_ESC_SENSOR
+typedef struct voltageMeterESCState_s {
+    uint16_t voltageFiltered;         // battery voltage in 0.1V steps (filtered)
+    uint16_t voltageUnfiltered;       // battery voltage in 0.1V steps (unfiltered)
+    biquadFilter_t filter;
+} voltageMeterESCState_t;
+
+static voltageMeterESCState_t voltageMeterESCState;
+#endif
+
+typedef struct voltageMeterADCState_s {
+    uint16_t voltageFiltered;         // battery voltage in 0.1V steps (filtered)
+    uint16_t voltageUnfiltered;       // battery voltage in 0.1V steps (unfiltered)
+    biquadFilter_t filter;
+} voltageMeterADCState_t;
+
+extern voltageMeterADCState_t voltageMeterADCStates[MAX_VOLTAGE_SENSOR_ADC];
+
 
 voltageMeterADCState_t voltageMeterADCStates[MAX_VOLTAGE_SENSOR_ADC];
 
@@ -71,6 +94,9 @@ static const uint8_t voltageMeterAdcChannelMap[] = {
 #ifdef ADC_POWER_12V
     ADC_POWER_12V,
 #endif
+#ifdef ADC_POWER_9V
+    ADC_POWER_9V,
+#endif
 #ifdef ADC_POWER_5V
     ADC_POWER_5V,
 #endif
@@ -85,8 +111,6 @@ STATIC_UNIT_TESTED uint16_t voltageAdcToVoltage(const uint16_t src, const voltag
 
 void voltageMeterADCRefresh(void)
 {
-
-
     for (uint8_t i = 0; i < MAX_VOLTAGE_SENSOR_ADC && i < ARRAYLEN(voltageMeterAdcChannelMap); i++) {
         // store the battery voltage with some other recent battery voltage readings
 
@@ -96,7 +120,7 @@ void voltageMeterADCRefresh(void)
         uint8_t channel = voltageMeterAdcChannelMap[i];
         uint16_t rawSample = adcGetChannel(channel);
 
-        uint16_t filteredSample = biquadFilterApply(&state->vbatFilterState, rawSample);
+        uint16_t filteredSample = biquadFilterApply(&state->filter, rawSample);
 
         // always calculate the latest voltage, see getLatestVoltage() which does the calculation on demand.
         state->voltageFiltered = voltageAdcToVoltage(filteredSample, config);
@@ -104,7 +128,7 @@ void voltageMeterADCRefresh(void)
     }
 }
 
-void voltageMeterADCUpdate(voltageMeter_t *voltageMeter, voltageSensorADC_e adcChannel)
+void voltageMeterADCRead(voltageSensorADC_e adcChannel, voltageMeter_t *voltageMeter)
 {
     voltageMeterADCState_t *state = &voltageMeterADCStates[adcChannel];
 
@@ -120,7 +144,7 @@ void voltageMeterADCInit(void)
         voltageMeterADCState_t *state = &voltageMeterADCStates[i];
         memset(state, 0, sizeof(voltageMeterADCState_t));
 
-        biquadFilterInitLPF(&state->vbatFilterState, VBATT_LPF_FREQ, 50000);
+        biquadFilterInitLPF(&state->filter, VBATT_LPF_FREQ, 50000);
     }
 }
 
@@ -135,17 +159,73 @@ void voltageMeterReset(voltageMeter_t *meter)
 void voltageMeterESCInit(void)
 {
 #ifdef USE_ESC_SENSOR
-    biquadFilterInitLPF(&escvBatFilter, VBAT_LPF_FREQ, 50000); //50HZ Update
-#endif
-}
-void voltageMeterESCUpdate(voltageMeter_t *voltageMeter)
-{
-#ifndef USE_ESC_SENSOR
-    UNUSED(voltageMeter);
-#else
-    escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
-    voltageMeter->unfiltered = escData->dataAge <= ESC_BATTERY_AGE_MAX ? escData->voltage / 10 : 0;
-    voltageMeter->filtered = biquadFilterApply(&escvBatFilter, voltageMeter->unfiltered);
+    memset(&voltageMeterESCState, 0, sizeof(voltageMeterESCState_t));
+    biquadFilterInitLPF(&voltageMeterESCState.filter, VBAT_LPF_FREQ, 50000); //50HZ Update
 #endif
 }
 
+void voltageMeterESCRefresh(void)
+{
+#ifdef USE_ESC_SENSOR
+    escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
+    voltageMeterESCState.voltageUnfiltered = escData->dataAge <= ESC_BATTERY_AGE_MAX ? escData->voltage / 10 : 0;
+    voltageMeterESCState.voltageFiltered = biquadFilterApply(&voltageMeterESCState.filter, voltageMeterESCState.voltageUnfiltered);
+#endif
+}
+
+void voltageMeterESCReadMotor(uint8_t motorNumber, voltageMeter_t *voltageMeter)
+{
+#ifndef USE_ESC_SENSOR
+    UNUSED(motorNumber);
+    voltageMeterReset(voltageMeter);
+#else
+    escSensorData_t *escData = getEscSensorData(motorNumber);
+
+    voltageMeter->unfiltered = escData->dataAge <= ESC_BATTERY_AGE_MAX ? escData->voltage / 10 : 0;
+    voltageMeter->filtered = voltageMeter->unfiltered; // no filtering for ESC motors currently.
+#endif
+}
+
+void voltageMeterESCReadCombined(voltageMeter_t *voltageMeter)
+{
+#ifndef USE_ESC_SENSOR
+    voltageMeterReset(voltageMeter);
+#else
+    voltageMeter->filtered = voltageMeterESCState.voltageFiltered;
+    voltageMeter->unfiltered = voltageMeterESCState.voltageUnfiltered;
+#endif
+}
+
+void voltageReadMeter(voltageMeterId_e id, voltageMeter_t *voltageMeter)
+{
+    if (id == VOLTAGE_METER_ID_VBAT_1) {
+        voltageMeterADCRead(VOLTAGE_SENSOR_ADC_VBAT, voltageMeter);
+    } else
+#ifdef ADC_POWER_12V
+    if (id == VOLTAGE_METER_ID_12V_1) {
+        voltageMeterADCRead(VOLTAGE_SENSOR_ADC_12V, voltageMeter);
+    } else
+#endif
+#ifdef ADC_POWER_9V
+    if (id == VOLTAGE_METER_ID_9V_1) {
+        voltageMeterADCRead(VOLTAGE_SENSOR_ADC_9V, voltageMeter);
+    } else
+#endif
+#ifdef ADC_POWER_5V
+    if (id == VOLTAGE_METER_ID_5V_1) {
+        voltageMeterADCRead(VOLTAGE_SENSOR_ADC_5V, voltageMeter);
+    } else
+#endif
+#ifdef USE_ESC_SENSOR
+    if (id == VOLTAGE_METER_ID_ESC_COMBINED_1) {
+        voltageMeterESCReadCombined(voltageMeter);
+    } else
+    if (id >= VOLTAGE_METER_ID_ESC_MOTOR_1 && id <= VOLTAGE_METER_ID_ESC_MOTOR_20 ) {
+        int motor = id - VOLTAGE_METER_ID_ESC_MOTOR_1;
+        voltageMeterESCReadMotor(motor, voltageMeter);
+    } else
+#endif
+    {
+        voltageMeterReset(voltageMeter);
+    }
+}

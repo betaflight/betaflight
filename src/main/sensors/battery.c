@@ -107,13 +107,14 @@ void batteryUpdateVoltage(void)
 #ifdef USE_ESC_SENSOR
         case VOLTAGE_METER_ESC:
             if (feature(FEATURE_ESC_SENSOR)) {
-                voltageMeterESCUpdate(&voltageMeter);
+                voltageMeterESCRefresh();
+                voltageMeterESCReadCombined(&voltageMeter);
             }
             break;
 #endif
         case VOLTAGE_METER_ADC:
             voltageMeterADCRefresh();
-            voltageMeterADCUpdate(&voltageMeter, ADC_BATTERY);
+            voltageMeterADCRead(ADC_BATTERY, &voltageMeter);
             break;
 
         default:
@@ -262,9 +263,7 @@ void batteryInit(void)
     switch(batteryConfig()->voltageMeterSource) {
         case VOLTAGE_METER_ESC:
 #ifdef USE_ESC_SENSOR
-            if (feature(FEATURE_ESC_SENSOR)) {
-                voltageMeterESCInit();
-            }
+            voltageMeterESCInit();
 #endif
             break;
 

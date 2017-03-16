@@ -909,6 +909,36 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, boardAlignment()->yawDegrees);
         break;
 
+    case MSP_BATTERY_STATE: {
+        sbufWriteU8(dst, (uint8_t)constrain(getBatteryCellCount(), 0, 255)); // 0 indicates battery not detected.
+        sbufWriteU8(dst, (uint8_t)constrain(getBatteryVoltage(), 0, 255)); // in 0.1V steps
+        sbufWriteU16(dst, (uint16_t)constrain(getMAhDrawn(), 0, 0xFFFF)); // milliamp hours drawn from battery
+        // should we add batteryAmperage?
+        // should we add batteryPercentageRemaining?
+        // should we add batteryState (which is really a combined voltage AND consumption alert state)?
+        // should we add batteryVoltageState and batteryConsumptionState?
+        break;
+    }
+/*
+    case MSP_VOLTAGE_METERS:
+        // TODO write out voltage, once for each meter id we support
+        for (int i = 0; i < MAX_VOLTAGE_METERS; i++) {
+
+            uint16_t voltage = getVoltageMeter(i)->vbat;
+            sbufWriteU8(dst, (uint8_t)constrain(voltage, 0, 255));
+        }
+        break;
+
+    case MSP_CURRENT_METERS:
+        // TODO write out amperage meter for each meter id we support
+        for (int i = 0; i < MAX_AMPERAGE_METERS; i++) {
+            amperageMeter_t *meter = getAmperageMeter(i);
+            // write out amperage, once for each current meter.
+            sbufWriteU16(dst, (uint16_t)constrain(meter->amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
+            sbufWriteU32(dst, meter->mAhDrawn);
+        }
+        break;
+    */
     case MSP_VOLTAGE_METER_CONFIG:
         // by using a sensor type and a sub-frame length it's possible to configure any type of voltage meter,
         // e.g. an i2c/spi/can sensor or any sensor not built directly into the FC such as ESC/RX/SPort/SBus that has
