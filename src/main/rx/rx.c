@@ -109,7 +109,7 @@ static uint8_t rcSampleIndex = 0;
 PG_REGISTER_WITH_RESET_FN(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
 void pgResetFn_rxConfig(rxConfig_t *rxConfig)
 {
-    RESET_CONFIG(const rxConfig_t, rxConfig,
+    RESET_CONFIG_2(rxConfig_t, rxConfig,
         .halfDuplex = 0,
         .serialrx_provider = SERIALRX_PROVIDER,
         .rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL,
