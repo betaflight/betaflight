@@ -2002,7 +2002,7 @@ static void cliRxFailsafe(char *cmdline)
         channel = atoi(ptr++);
         if ((channel < MAX_SUPPORTED_RC_CHANNEL_COUNT)) {
 
-            rxFailsafeChannelConfig_t *channelFailsafeConfig = &rxConfigMutable()->failsafe_channel_configurations[channel];
+            rxFailsafeChannelConfig_t *channelFailsafeConfig = rxFailsafeChannelConfigsMutable(channel);
 
             const rxFailsafeChannelType_e type = (channel < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_TYPE_FLIGHT : RX_FAILSAFE_TYPE_AUX;
             rxFailsafeChannelMode_e mode = channelFailsafeConfig->mode;
@@ -2565,9 +2565,9 @@ static void cliRxRange(char *cmdline)
     const char *ptr;
 
     if (isEmpty(cmdline)) {
-        printRxRange(DUMP_MASTER, rxConfig()->channelRanges, NULL);
+        printRxRange(DUMP_MASTER, rxChannelRangeConfigs(0), NULL);
     } else if (strcasecmp(cmdline, "reset") == 0) {
-        resetAllRxChannelRangeConfigurations(rxConfigMutable()->channelRanges);
+        resetAllRxChannelRangeConfigurations(rxChannelRangeConfigsMutable(0));
     } else {
         ptr = cmdline;
         i = atoi(ptr);
@@ -2591,7 +2591,7 @@ static void cliRxRange(char *cmdline)
             } else if (rangeMin < PWM_PULSE_MIN || rangeMin > PWM_PULSE_MAX || rangeMax < PWM_PULSE_MIN || rangeMax > PWM_PULSE_MAX) {
                 cliShowParseError();
             } else {
-                rxChannelRangeConfig_t *channelRangeConfig = &rxConfigMutable()->channelRanges[i];
+                rxChannelRangeConfig_t *channelRangeConfig = rxChannelRangeConfigsMutable(i);
                 channelRangeConfig->min = rangeMin;
                 channelRangeConfig->max = rangeMax;
             }
@@ -3858,8 +3858,6 @@ static void cliProfile(char *cmdline)
         const int i = atoi(cmdline);
         if (i >= 0 && i < MAX_PROFILE_COUNT) {
             systemConfigMutable()->pidProfileIndex = i;
-            writeEEPROM();
-            readEEPROM();
             cliProfile("");
         }
     }
