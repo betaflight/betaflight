@@ -426,7 +426,7 @@ static void osdDrawSingleElement(uint8_t item)
                     break;
 
                 default:
-                    break;
+                    return;
             }
             break;
         }
