@@ -68,6 +68,7 @@ extern uint8_t __config_end;
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
 #include "drivers/serial_escserial.h"
+#include "drivers/sonar_hcsr04.h"
 #include "drivers/stack_check.h"
 #include "drivers/system.h"
 #include "drivers/timer.h"
@@ -4204,48 +4205,58 @@ static void cliVersion(char *cmdline)
 
 typedef struct {
     const uint8_t owner;
-    ioTag_t *ptr;
+    pgn_t pgn;
+    uint16_t offset;
     const uint8_t maxIndex;
 } cliResourceValue_t;
 
 const cliResourceValue_t resourceTable[] = {
-#ifdef USE_PARAMETER_GROUPS
-    { OWNER_MOTOR,         NULL, MAX_SUPPORTED_MOTORS },
-#else
 #ifdef BEEPER
-    { OWNER_BEEPER,        &beeperDevConfig()->ioTag, 0 },
+    { OWNER_BEEPER,        PG_BEEPER_DEV_CONFIG, offsetof(beeperDevConfig_t, ioTag), 0 },
 #endif
-    { OWNER_MOTOR,         &motorConfig()->dev.ioTags[0], MAX_SUPPORTED_MOTORS },
+    { OWNER_MOTOR,         PG_MOTOR_CONFIG, offsetof(motorConfig_t, dev.ioTags[0]), MAX_SUPPORTED_MOTORS },
 #ifdef USE_SERVOS
-    { OWNER_SERVO,         &servoConfig()->dev.ioTags[0], MAX_SUPPORTED_SERVOS },
+    { OWNER_SERVO,         PG_SERVO_CONFIG, offsetof(servoConfig_t, dev.ioTags[0]), MAX_SUPPORTED_SERVOS },
 #endif
 #if defined(USE_PWM) || defined(USE_PPM)
-    { OWNER_PPMINPUT,      &ppmConfig()->ioTag, 0 },
-    { OWNER_PWMINPUT,      &pwmConfig()->ioTags[0], PWM_INPUT_PORT_COUNT },
+    { OWNER_PPMINPUT,      PG_PPM_CONFIG, offsetof(ppmConfig_t, ioTag), 0 },
+    { OWNER_PWMINPUT,      PG_PWM_CONFIG, offsetof(pwmConfig_t, ioTags[0]), PWM_INPUT_PORT_COUNT },
 #endif
 #ifdef SONAR
-    { OWNER_SONAR_TRIGGER, &sonarConfig()->triggerTag, 0 },
-    { OWNER_SONAR_ECHO,    &sonarConfig()->echoTag,    0 },
+    { OWNER_SONAR_TRIGGER, PG_SONAR_CONFIG, offsetof(sonarConfig_t, triggerTag), 0 },
+    { OWNER_SONAR_ECHO,    PG_SERIAL_CONFIG, offsetof(sonarConfig_t, echoTag),    0 },
 #endif
 #ifdef LED_STRIP
-    { OWNER_LED_STRIP,     &ledStripConfig()->ioTag,   0 },
+    { OWNER_LED_STRIP,     PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ioTag),   0 },
 #endif
-    { OWNER_SERIAL_TX,     &serialPinConfig()->ioTagTx[0], SERIAL_PORT_MAX_INDEX },
-    { OWNER_SERIAL_RX,     &serialPinConfig()->ioTagRx[0], SERIAL_PORT_MAX_INDEX },
-#endif
+    { OWNER_SERIAL_TX,     PG_SERIAL_CONFIG, offsetof(serialPinConfig_t, ioTagTx[0]), SERIAL_PORT_MAX_INDEX },
+    { OWNER_SERIAL_RX,     PG_SERIAL_CONFIG, offsetof(serialPinConfig_t, ioTagRx[0]), SERIAL_PORT_MAX_INDEX },
 };
 
-#ifndef USE_PARAMETER_GROUPS
-//!! TODO for parameter groups
-static void printResource(uint8_t dumpMask, const master_t *defaultConfig)
+static ioTag_t *getIoTag(const cliResourceValue_t value, uint8_t index)
+{
+    const pgRegistry_t* rec = pgFind(value.pgn);
+    return CONST_CAST(ioTag_t *, rec->address + value.offset + index);
+}
+
+static void printResource(uint8_t dumpMask)
 {
     for (unsigned int i = 0; i < ARRAYLEN(resourceTable); i++) {
-        const char* owner;
-        owner = ownerNames[resourceTable[i].owner];
+        const char* owner = ownerNames[resourceTable[i].owner];
+        const void *currentConfig;
+        const void *defaultConfig;
+        if (dumpMask & DO_DIFF || dumpMask & SHOW_DEFAULTS) {
+            const cliCurrentAndDefaultConfig_t *config = getCurrentAndDefaultConfigs(resourceTable[i].pgn);
+            currentConfig = config->currentConfig;
+            defaultConfig = config->defaultConfig;
+        } else { // Not guaranteed to have initialised default configs in this case
+            currentConfig = pgFind(resourceTable[i].pgn)->address;
+            defaultConfig = currentConfig;
+        }
 
         for (int index = 0; index < MAX_RESOURCE_INDEX(resourceTable[i].maxIndex); index++) {
-            ioTag_t ioTag = *(resourceTable[i].ptr + index);
-            ioTag_t ioTagDefault = *(resourceTable[i].ptr + index - (uint32_t)&masterConfig + (uint32_t)defaultConfig);
+            const ioTag_t ioTag = *((const ioTag_t *)currentConfig + resourceTable[i].offset + index);
+            const ioTag_t ioTagDefault = *((const ioTag_t *)defaultConfig + resourceTable[i].offset + index);
 
             bool equalsDefault = ioTag == ioTagDefault;
             const char *format = "resource %s %d %c%02d\r\n";
@@ -4265,7 +4276,6 @@ static void printResource(uint8_t dumpMask, const master_t *defaultConfig)
         }
     }
 }
-#endif
 
 static void printResourceOwner(uint8_t owner, uint8_t index)
 {
@@ -4276,26 +4286,27 @@ static void printResourceOwner(uint8_t owner, uint8_t index)
     }
 }
 
-static void resourceCheck(uint8_t resourceIndex, uint8_t index, ioTag_t tag)
+static void resourceCheck(uint8_t resourceIndex, uint8_t index, ioTag_t newTag)
 {
-    if (!tag) {
+    if (!newTag) {
         return;
     }
 
     const char * format = "\r\nNOTE: %c%02d already assigned to ";
     for (int r = 0; r < (int)ARRAYLEN(resourceTable); r++) {
         for (int i = 0; i < MAX_RESOURCE_INDEX(resourceTable[r].maxIndex); i++) {
-            if (*(resourceTable[r].ptr + i) == tag) {
+            ioTag_t *tag = getIoTag(resourceTable[r], i);
+            if (*tag == newTag) {
                 bool cleared = false;
                 if (r == resourceIndex) {
                     if (i == index) {
                         continue;
                     }
-                    *(resourceTable[r].ptr + i) = IO_TAG_NONE;
+                    *tag = IO_TAG_NONE;
                     cleared = true;
                 }
 
-                cliPrintf(format, DEFIO_TAG_GPIOID(tag) + 'A', DEFIO_TAG_PIN(tag));
+                cliPrintf(format, DEFIO_TAG_GPIOID(newTag) + 'A', DEFIO_TAG_PIN(newTag));
 
                 printResourceOwner(r, i);
 
@@ -4316,9 +4327,7 @@ static void cliResource(char *cmdline)
     int len = strlen(cmdline);
 
     if (len == 0) {
-#ifndef USE_PARAMETER_GROUPS
-        printResource(DUMP_MASTER | HIDE_UNUSED, NULL);
-#endif
+        printResource(DUMP_MASTER | HIDE_UNUSED);
 
         return;
     } else if (strncasecmp(cmdline, "list", len) == 0) {
@@ -4396,7 +4405,7 @@ static void cliResource(char *cmdline)
         pch = strtok_r(NULL, " ", &saveptr);
     }
 
-    ioTag_t *tag = (ioTag_t*)(resourceTable[resourceIndex].ptr + index);
+    ioTag_t *tag = getIoTag(resourceTable[resourceIndex], index);
 
     uint8_t pin = 0;
     if (strlen(pch) > 0) {
@@ -4526,7 +4535,7 @@ static void printConfig(char *cmdline, bool doDiff)
 
 #ifdef USE_RESOURCE_MGMT
         cliPrintHashLine("resources");
-        //!!TODO printResource(dumpMask, &defaultConfig);
+        printResource(dumpMask);
 #endif
 
 #ifndef USE_QUAD_MIXER_ONLY
