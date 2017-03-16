@@ -136,12 +136,13 @@
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
-#if !defined(CL_RACINGF4)
+#ifdef CL_RACINGF
+	#define SERIAL_PORT_COUNT       5 //VCP, USART1, USART3,USART4, USART6,
+#else
 	#define USE_SOFTSERIAL1
 	#define USE_SOFTSERIAL2
 	#define SERIAL_PORT_COUNT       6 //VCP, USART1, USART3, USART6, SOFTSERIAL x 2
-#else
-	#define SERIAL_PORT_COUNT       5 //VCP, USART1, USART3,USART4, USART6,
+
 #endif
 
 
