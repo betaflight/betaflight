@@ -4597,7 +4597,7 @@ static void printConfig(char *cmdline, bool doDiff)
         dumpAllValues(MASTER_VALUE, dumpMask);
 
         if (dumpMask & DUMP_ALL) {
-            const uint8_t pidProfileIndexSave = getCurrentPidProfileIndex();
+            const uint8_t pidProfileIndexSave = systemConfigCopy.pidProfileIndex;
             for (uint32_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
                 cliDumpPidProfile(pidProfileIndex, dumpMask);
             }
@@ -4605,7 +4605,7 @@ static void printConfig(char *cmdline, bool doDiff)
             cliPrintHashLine("restore original profile selection");
             cliProfile("");
 
-            const uint8_t controlRateProfileIndexSave = getCurrentControlRateProfileIndex();
+            const uint8_t controlRateProfileIndexSave = systemConfigCopy.activeRateProfile;
             for (uint32_t rateIndex = 0; rateIndex < CONTROL_RATE_PROFILE_COUNT; rateIndex++) {
                 cliDumpRateProfile(rateIndex, dumpMask);
             }
@@ -4616,18 +4616,18 @@ static void printConfig(char *cmdline, bool doDiff)
             cliPrintHashLine("save configuration");
             cliPrint("save");
         } else {
-            cliDumpPidProfile(getCurrentPidProfileIndex(), dumpMask);
+            cliDumpPidProfile(systemConfigCopy.pidProfileIndex, dumpMask);
 
-            cliDumpRateProfile(getCurrentControlRateProfileIndex(), dumpMask);
+            cliDumpRateProfile(systemConfigCopy.activeRateProfile, dumpMask);
         }
     }
 
     if (dumpMask & DUMP_PROFILE) {
-        cliDumpPidProfile(getCurrentPidProfileIndex(), dumpMask);
+        cliDumpPidProfile(systemConfigCopy.pidProfileIndex, dumpMask);
     }
 
     if (dumpMask & DUMP_RATES) {
-        cliDumpRateProfile(getCurrentControlRateProfileIndex(), dumpMask);
+        cliDumpRateProfile(systemConfigCopy.activeRateProfile, dumpMask);
     }
 #ifdef USE_PARAMETER_GROUPS
     // restore configs from copies
