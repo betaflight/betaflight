@@ -910,10 +910,12 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_VOLTAGE_METER_CONFIG:
-        BUILD_BUG_ON(VOLTAGE_SENSOR_ADC_VBAT != 0);
+        // by using a sensor type and a sub-frame length it's possible to configure any type of voltage meter,
+        // e.g. an i2c/spi/can sensor or any sensor not built directly into the FC such as ESC/RX/SPort/SBus that has
+        // different configuration requirements.
+        BUILD_BUG_ON(VOLTAGE_SENSOR_ADC_VBAT != 0); // VOLTAGE_SENSOR_ADC_VBAT should be the first index,
         sbufWriteU8(dst, MAX_VOLTAGE_SENSOR_ADC); // voltage meters in payload
         for (int i = VOLTAGE_SENSOR_ADC_VBAT; i < MAX_VOLTAGE_SENSOR_ADC; i++) {
-            // note, by indicating a sensor type and a sub-frame length it's possible to configure any type of voltage meter, i.e. all sensors not built directly into the FC such as ESC/RX/SPort/SBus
             sbufWriteU8(dst, VOLTAGE_SENSOR_TYPE_ADC_RESISTOR_DIVIDER); // indicate the type of sensor that the next part of the payload is for
             sbufWriteU8(dst, 3); // ADC sensor sub-frame length
             sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatscale);
@@ -924,6 +926,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_CURRENT_METER_CONFIG:
+        // the ADC and VIRTUAL sensors have the same configuration requirements, however this API reflects
+        // that this situation may change and allows us to support configuration of any current sensor with
+        // specialist configuration requirements.
         BUILD_BUG_ON(CURRENT_SENSOR_VIRTUAL != 0);
         BUILD_BUG_ON(CURRENT_SENSOR_ADC != 1);
 
