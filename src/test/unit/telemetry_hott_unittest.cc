@@ -181,6 +181,8 @@ uint32_t fixedMillis = 0;
 
 baro_t baro;
 
+int32_t vario = 0;
+
 uint32_t millis(void) {
     return fixedMillis;
 }
@@ -267,4 +269,3 @@ uint16_t getVbat(void)
     return vbat;
 }
 }
-
