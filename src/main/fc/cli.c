@@ -523,7 +523,7 @@ static const clivalue_t valueTable[] = {
 // PG_ACCELEROMETER_CONFIG
     { "align_acc",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ALIGNMENT }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, acc_align) },
     { "acc_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ACC_HARDWARE }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, acc_hardware) },
-    { "acc_lpf_hz",                 VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 400 }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, acc_align) },
+    { "acc_lpf_hz",                 VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 400 }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, acc_lpf_hz) },
     { "acc_trim_pitch",             VAR_INT16  | MASTER_VALUE, .config.minmax = { -300, 300 }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, accelerometerTrims.values.pitch) },
     { "acc_trim_roll",              VAR_INT16  | MASTER_VALUE, .config.minmax = { -300, 300 }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, accelerometerTrims.values.roll) },
 
@@ -3306,10 +3306,10 @@ static void cliVtx(char *cmdline)
 #endif // VTX
 #endif
 
-static void printName(uint8_t dumpMask)
+static void printName(uint8_t dumpMask, const systemConfig_t *systemConfig)
 {
-    const bool equalsDefault = strlen(systemConfig()->name) == 0;
-    cliDumpPrintf(dumpMask, equalsDefault, "name %s\r\n", equalsDefault ? emptyName : systemConfig()->name);
+    const bool equalsDefault = strlen(systemConfig->name) == 0;
+    cliDumpPrintf(dumpMask, equalsDefault, "name %s\r\n", equalsDefault ? emptyName : systemConfig->name);
 }
 
 static void cliName(char *cmdline)
@@ -3321,7 +3321,7 @@ static void cliName(char *cmdline)
             strncpy(systemConfigMutable()->name, cmdline, MIN(len, MAX_NAME_LENGTH));
         }
     }
-    printName(DUMP_MASTER);
+    printName(DUMP_MASTER, systemConfig());
 }
 
 static void printFeature(uint8_t dumpMask, const featureConfig_t *featureConfig, const featureConfig_t *featureConfigDefault)
@@ -4531,7 +4531,7 @@ static void printConfig(char *cmdline, bool doDiff)
         }
 
         cliPrintHashLine("name");
-        printName(dumpMask);
+        printName(dumpMask, &systemConfigCopy);
 
 #ifdef USE_RESOURCE_MGMT
         cliPrintHashLine("resources");
