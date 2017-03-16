@@ -195,8 +195,8 @@ void pgResetFn_adcConfig(adcConfig_t *adcConfig)
 #endif
 
 #ifdef CURRENT_METER_ADC_PIN
-    adcConfig->currentMeter.enabled = true;
-    adcConfig->currentMeter.ioTag = IO_TAG(CURRENT_METER_ADC_PIN);
+    adcConfig->current.enabled = true;
+    adcConfig->current.ioTag = IO_TAG(CURRENT_METER_ADC_PIN);
 #endif
 
 #ifdef RSSI_ADC_PIN
