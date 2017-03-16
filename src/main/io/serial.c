@@ -28,6 +28,8 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "fc/config.h"
+
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
@@ -125,6 +127,7 @@ void pgResetFn_serialConfig(serialConfig_t *serialConfig)
 #endif
 
     serialConfig->reboot_character = 'R';
+    serialConfig->serial_update_rate_hz = 100;
 }
 
 baudRate_e lookupBaudRateIndex(uint32_t baudRate)
@@ -435,18 +438,18 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
                 serialPortCount--;
             }
         }
-        if (!softserialEnabled) {
-            if (0
+
+        if ((serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL1
 #ifdef USE_SOFTSERIAL1
-                || serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL1
+            && !(softserialEnabled && serialPinConfig()->ioTagTx[RESOURCE_SOFT_OFFSET + SOFTSERIAL1])
 #endif
+           ) || (serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL2
 #ifdef USE_SOFTSERIAL2
-                || serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL2
+            && !(softserialEnabled && serialPinConfig()->ioTagTx[RESOURCE_SOFT_OFFSET + SOFTSERIAL2])
 #endif
-            ) {
-                serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
-                serialPortCount--;
-            }
+            )) {
+            serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
+            serialPortCount--;
         }
     }
 }

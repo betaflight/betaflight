@@ -25,12 +25,24 @@ extern "C" {
 #include "io/serial.h"
 #include "rx/rx.h"
 #include "rx/ibus.h"
+#include "telemetry/ibus_shared.h"
 #include "telemetry/telemetry.h"
+#include "fc/rc_controls.h"
+#include "sensors/barometer.h"
+#include "sensors/battery.h"
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
+
+extern "C" {
+    uint8_t batteryCellCount = 3;
+    int16_t rcCommand[4] = {0, 0, 0, 0};
+    int16_t telemTemperature1 = 0;
+    baro_t baro = { .baroTemperature = 50 };
+    telemetryConfig_t telemetryConfig_System;
+}
 
 
 bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig)
@@ -42,6 +54,11 @@ bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig)
 
 serialPort_t * telemetrySharedPort = NULL;
 
+static uint16_t vbat = 100;
+uint16_t getVbat(void)
+{
+    return vbat;
+}
 
 uint32_t microseconds_stub_value = 0;
 uint32_t micros(void)
@@ -49,8 +66,15 @@ uint32_t micros(void)
     return microseconds_stub_value;
 }
 
-
+#define SERIAL_BUFFER_SIZE 256
 #define SERIAL_PORT_DUMMY_IDENTIFIER  (serialPortIdentifier_e)0x1234
+
+typedef struct serialPortStub_s {
+    uint8_t buffer[SERIAL_BUFFER_SIZE];
+    int pos = 0;
+    int end = 0;
+} serialPortStub_t;
+
 static serialPort_t serialTestInstance;
 static serialPortConfig_t serialTestInstanceConfig = {
     .identifier = SERIAL_PORT_DUMMY_IDENTIFIER,
@@ -60,7 +84,18 @@ static serialPortConfig_t serialTestInstanceConfig = {
 static serialReceiveCallbackPtr stub_serialRxCallback;
 static serialPortConfig_t *findSerialPortConfig_stub_retval;
 static bool openSerial_called = false;
+static serialPortStub_t serialWriteStub;
+static bool portIsShared = false;
 
+bool isSerialPortShared(const serialPortConfig_t *portConfig,
+                        uint16_t functionMask,
+                        serialPortFunction_e sharedWithFunction)
+{
+    EXPECT_EQ(portConfig, findSerialPortConfig_stub_retval);
+    EXPECT_EQ(functionMask, FUNCTION_RX_SERIAL);
+    EXPECT_EQ(sharedWithFunction, FUNCTION_TELEMETRY_IBUS);
+    return portIsShared;
+}
 
 serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
 {
@@ -68,6 +103,8 @@ serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
     return findSerialPortConfig_stub_retval;
 }
 
+static portMode_t serialExpectedMode = MODE_RX;
+static portOptions_t serialExpectedOptions = SERIAL_UNIDIR;
 
 serialPort_t *openSerialPort(
     serialPortIdentifier_e identifier,
@@ -81,12 +118,21 @@ serialPort_t *openSerialPort(
     openSerial_called = true;
     EXPECT_FALSE(NULL == callback);
     EXPECT_EQ(identifier, SERIAL_PORT_DUMMY_IDENTIFIER);
-    EXPECT_EQ(options, SERIAL_UNIDIR);
+    EXPECT_EQ(options, serialExpectedOptions);
     EXPECT_EQ(function, FUNCTION_RX_SERIAL);
     EXPECT_EQ(baudrate, 115200);
-    EXPECT_EQ(mode, MODE_RX);
+    EXPECT_EQ(mode, serialExpectedMode);
     stub_serialRxCallback = callback;
     return &serialTestInstance;
+}
+
+void serialWrite(serialPort_t *instance, uint8_t ch)
+{
+    EXPECT_EQ(instance, &serialTestInstance);
+    EXPECT_LT(serialWriteStub.pos, sizeof(serialWriteStub.buffer));
+    serialWriteStub.buffer[serialWriteStub.pos++] = ch;
+    //TODO serialReadStub.buffer[serialReadStub.end++] = ch; //characters echoes back on the shared wire
+    //printf("w: %02d 0x%02x\n", serialWriteStub.pos, ch);
 }
 
 
@@ -94,8 +140,48 @@ void serialTestResetPort()
 {
     openSerial_called = false;
     stub_serialRxCallback = NULL;
+    portIsShared = false;
+    serialExpectedMode = MODE_RX;
+    serialExpectedOptions = SERIAL_UNIDIR;
 }
 
+
+static bool isChecksumOkReturnValue = true;
+bool isChecksumOkIa6b(const uint8_t *ibusPacket, const uint8_t length)
+{
+    (void) ibusPacket;
+    (void) length;
+    return isChecksumOkReturnValue;
+}
+
+
+static bool initSharedIbusTelemetryCalled = false;
+void initSharedIbusTelemetry(serialPort_t * port)
+{
+    EXPECT_EQ(port, &serialTestInstance);
+    initSharedIbusTelemetryCalled = true;
+}
+
+static bool    stubTelemetryCalled = false;
+static uint8_t stubTelemetryPacket[100];
+static uint8_t stubTelemetryIgnoreRxChars = 0;
+
+uint8_t respondToIbusRequest(uint8_t const * const ibusPacket) {
+    uint8_t len = ibusPacket[0];
+    EXPECT_LT(len, sizeof(stubTelemetryPacket));
+    memcpy(stubTelemetryPacket, ibusPacket, len);
+    stubTelemetryCalled = true;
+    return stubTelemetryIgnoreRxChars;
+}
+
+void resetStubTelemetry(void)
+{
+    memset(stubTelemetryPacket, 0, sizeof(stubTelemetryPacket));
+    stubTelemetryCalled = false;
+    stubTelemetryIgnoreRxChars = 0;
+    initSharedIbusTelemetryCalled = false;
+    isChecksumOkReturnValue = true;
+}
 
 
 class IbusRxInitUnitTest : public ::testing::Test
@@ -154,23 +240,36 @@ protected:
     virtual void SetUp()
     {
         serialTestResetPort();
+        resetStubTelemetry();
+        portIsShared = true;
+        serialExpectedOptions = SERIAL_BIDIR;
+        serialExpectedMode = MODE_RXTX;
 
         const rxConfig_t initialRxConfig = {};
         findSerialPortConfig_stub_retval = &serialTestInstanceConfig;
 
         EXPECT_TRUE(ibusInit(&initialRxConfig, &rxRuntimeConfig));
+    
+        EXPECT_TRUE(initSharedIbusTelemetryCalled);
 
         //handle that internal ibus position is not set to zero at init
         microseconds_stub_value += 5000;
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
+    }
+
+    virtual void receivePacket(uint8_t const * const packet, const size_t length)
+    {
+        EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
+        for (size_t i=0; i < length; i++) {
+            EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
+            stub_serialRxCallback(packet[i]);
+        }
     }
 };
 
 
 TEST_F(IbusRxProtocollUnitTest, Test_InitialFrameState)
 {
-
-    //TODO: ibusFrameStatus should return rxFrameState_t not uint8_t
     EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
 
     //TODO: is it ok to have undefined channel values after init?
@@ -209,6 +308,7 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6B_OnePacketReceivedWithBadCrc)
                         0x0a, 0x33, 0x0b, 0x33, 0x0c, 0x33, 0x0d, 0x33,             //channel 11..14
                         0x00, 0x00}; //checksum
 
+    isChecksumOkReturnValue = false;
     for (size_t i=0; i < sizeof(packet); i++) {
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
         stub_serialRxCallback(packet[i]);
@@ -304,3 +404,110 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6_OnePacketReceivedBadCrc)
         ASSERT_NE(i + (0x33 << 8), rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, i));
     }
 }
+
+
+TEST_F(IbusRxProtocollUnitTest, Test_IA6B_OnePacketReceived_not_shared_port)
+{
+    uint8_t packet[] = {0x20, 0x00, //length and reserved (unknown) bits
+                        0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00, //channel 1..5
+                        0x05, 0x00, 0x06, 0x00, 0x07, 0x00, 0x08, 0x00, 0x09, 0x00, //channel 6..10
+                        0x0a, 0x00, 0x0b, 0x00, 0x0c, 0x00, 0x0d, 0x00,             //channel 11..14
+                        0x84, 0xff}; //checksum
+
+    {
+
+        serialTestResetPort();
+        resetStubTelemetry();
+        portIsShared = false;
+        serialExpectedOptions = SERIAL_NOT_INVERTED;
+        serialExpectedMode = MODE_RX;
+
+        const rxConfig_t initialRxConfig = {};
+        findSerialPortConfig_stub_retval = &serialTestInstanceConfig;
+
+        EXPECT_TRUE(ibusInit(&initialRxConfig, &rxRuntimeConfig));
+        EXPECT_FALSE(initSharedIbusTelemetryCalled);
+
+        //handle that internal ibus position is not set to zero at init
+        microseconds_stub_value += 5000;
+        EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
+    }
+
+    for (size_t i=0; i < sizeof(packet); i++) {
+        EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
+        stub_serialRxCallback(packet[i]);
+    }
+
+    //report frame complete once
+    EXPECT_EQ(RX_FRAME_COMPLETE, rxRuntimeConfig.rcFrameStatusFn());
+    EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
+
+    //check that channel values have been updated
+    for (int i=0; i<14; i++) {
+        ASSERT_EQ(i, rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, i));
+    }
+}
+
+
+TEST_F(IbusRxProtocollUnitTest, Test_OneTelemetryPacketReceived)
+{
+    uint8_t packet[] = {0x04, 0x81, 0x7a, 0xff}; //ibus sensor discovery 
+    resetStubTelemetry();
+    
+    receivePacket(packet, sizeof(packet));
+
+    //no frame complete signal to rx system, but telemetry system is called
+    EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
+    EXPECT_TRUE(stubTelemetryCalled);
+    EXPECT_TRUE( 0 == memcmp( stubTelemetryPacket, packet, sizeof(packet)));
+}
+
+
+TEST_F(IbusRxProtocollUnitTest, Test_OneTelemetryIgnoreTxEchoToRx)
+{
+    uint8_t packet[] = {0x04, 0x81, 0x7a, 0xff}; //ibus sensor discovery 
+    resetStubTelemetry();
+    stubTelemetryIgnoreRxChars = 4;
+
+    //given one packet received, that will respond with four characters to be ignored
+    receivePacket(packet, sizeof(packet));
+    rxRuntimeConfig.rcFrameStatusFn();
+    EXPECT_TRUE(stubTelemetryCalled);
+
+    //when those four bytes are sent and looped back 
+    resetStubTelemetry();
+    rxRuntimeConfig.rcFrameStatusFn();
+    receivePacket(packet, sizeof(packet));
+
+    //then they are ignored
+    EXPECT_FALSE(stubTelemetryCalled);
+
+    //and then next packet can be received    
+    receivePacket(packet, sizeof(packet));
+    rxRuntimeConfig.rcFrameStatusFn();
+    EXPECT_TRUE(stubTelemetryCalled);
+}
+
+
+TEST_F(IbusRxProtocollUnitTest, Test_OneTelemetryShouldNotIgnoreTxEchoAfterInterFrameGap)
+{
+    uint8_t packet[] = {0x04, 0x81, 0x7a, 0xff}; //ibus sensor discovery 
+    resetStubTelemetry();
+    stubTelemetryIgnoreRxChars = 4;
+
+    //given one packet received, that will respond with four characters to be ignored
+    receivePacket(packet, sizeof(packet));
+    rxRuntimeConfig.rcFrameStatusFn();
+    EXPECT_TRUE(stubTelemetryCalled);
+
+    //when there is an interPacketGap
+    microseconds_stub_value += 5000;
+    resetStubTelemetry();
+    rxRuntimeConfig.rcFrameStatusFn();
+
+    //then next packet can be received    
+    receivePacket(packet, sizeof(packet));
+    rxRuntimeConfig.rcFrameStatusFn();
+    EXPECT_TRUE(stubTelemetryCalled);
+}
+

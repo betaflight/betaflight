@@ -153,11 +153,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
 
     DMA_Init(dmaRef, &DMA_InitStructure);
     TIM_DMACmd(timer, timerDmaSource(timerHardware->channel), ENABLE);
-
     DMA_ITConfig(dmaRef, DMA_IT_TC, ENABLE);
-#ifdef STM32F4
-    DMA_ClearITPendingBit(dmaRef, dmaFlag_IT_TCIF(dmaRef));
-#endif
     ws2811Initialised = true;
 }
 
