@@ -910,13 +910,17 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_BATTERY_STATE: {
+        // battery characteristics
         sbufWriteU8(dst, (uint8_t)constrain(getBatteryCellCount(), 0, 255)); // 0 indicates battery not detected.
+        sbufWriteU16(dst, batteryConfig()->batteryCapacity); // in mAh
+
+        // battery state
         sbufWriteU8(dst, (uint8_t)constrain(getBatteryVoltage(), 0, 255)); // in 0.1V steps
         sbufWriteU16(dst, (uint16_t)constrain(getMAhDrawn(), 0, 0xFFFF)); // milliamp hours drawn from battery
-        // should we add batteryAmperage?
-        // should we add batteryPercentageRemaining?
-        // should we add batteryState (which is really a combined voltage AND consumption alert state)?
-        // should we add batteryVoltageState and batteryConsumptionState?
+        sbufWriteU16(dst, (int16_t)constrain(getAmperage(), -0x8000, 0x7FFF)); // send current in 0.01 A steps, range is -320A to 320A
+
+        // battery alerts
+        sbufWriteU8(dst, (uint8_t)getBatteryState());
         break;
     }
 /*
