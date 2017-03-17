@@ -1057,8 +1057,6 @@ void changePidProfile(uint8_t pidProfileIndex)
     }
     systemConfigMutable()->pidProfileIndex = pidProfileIndex;
     currentPidProfile = pidProfilesMutable(pidProfileIndex);
-    writeEEPROM();
-    readEEPROM();
     beeperConfirmationBeeps(pidProfileIndex + 1);
 }
 

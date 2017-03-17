@@ -57,8 +57,8 @@ void targetConfiguration(void)
     gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
 
     /*for (int channel = 0; channel < NON_AUX_CHANNEL_COUNT; channel++) {
-        rxConfigMutable()->channelRanges[channel].min = 1180;
-        rxConfigMutable()->channelRanges[channel].max = 1860;
+        rxChannelRangeConfigsMutable(channel)->min = 1180;
+        rxChannelRangeConfigsMutable(channel)->max = 1860;
     }*/
 
     for (int profileId = 0; profileId < 2; profileId++) {

@@ -140,9 +140,6 @@ typedef struct rxConfig_s {
 
     uint16_t rx_min_usec;
     uint16_t rx_max_usec;
-    rxFailsafeChannelConfig_t failsafe_channel_configurations[MAX_SUPPORTED_RC_CHANNEL_COUNT];
-
-    rxChannelRangeConfig_t channelRanges[NON_AUX_CHANNEL_COUNT];
 } rxConfig_t;
 
 PG_DECLARE(rxConfig_t, rxConfig);
