@@ -279,10 +279,18 @@ void batteryInit(void)
     // current
     //
     consumptionState = BATTERY_OK;
-    resetCurrentMeterState(&currentMeter);
+    currentMeterReset(&currentMeter);
     switch(batteryConfig()->currentMeterSource) {
         case CURRENT_METER_ADC:
             currentMeterADCInit();
+            break;
+
+        case CURRENT_METER_VIRTUAL:
+            currentMeterVirtualInit();
+            break;
+
+        case CURRENT_METER_ESC:
+            currentMeterESCInit();
             break;
 
         default:
@@ -309,13 +317,14 @@ static void batteryUpdateConsumptionState(void)
 void batteryUpdateCurrentMeter(int32_t lastUpdateAt, bool armed)
 {
     if (batteryCellCount == 0) {
-        resetCurrentMeterState(&currentMeter);
+        currentMeterReset(&currentMeter);
         return;
     }
 
     switch(batteryConfig()->currentMeterSource) {
         case CURRENT_METER_ADC:
-            currentUpdateADCMeter(&currentMeter, lastUpdateAt);
+            currentMeterADCRefresh(lastUpdateAt);
+            currentMeterADCRead(&currentMeter);
             break;
 
         case CURRENT_METER_VIRTUAL: {
@@ -323,21 +332,23 @@ void batteryUpdateCurrentMeter(int32_t lastUpdateAt, bool armed)
             bool throttleLowAndMotorStop = (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP));
             int32_t throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
 
-            currentUpdateVirtualMeter(&currentMeter, lastUpdateAt, armed, throttleLowAndMotorStop, throttleOffset);
+            currentMeterVirtualRefresh(lastUpdateAt, armed, throttleLowAndMotorStop, throttleOffset);
+            currentMeterVirtualRead(&currentMeter);
             break;
         }
 
         case CURRENT_METER_ESC:
 #ifdef USE_ESC_SENSOR
             if (feature(FEATURE_ESC_SENSOR)) {
-                currentUpdateESCMeter(&currentMeter, lastUpdateAt);
+                currentMeterESCRefresh(lastUpdateAt);
+                currentMeterESCReadCombined(&currentMeter);
             }
 #endif
             break;
 
         default:
-//        case CURRENT_METER_NONE:
-//            resetCurrentMeterState(&currentMeter);
+        case CURRENT_METER_NONE:
+            currentMeterReset(&currentMeter);
             break;
     }
 }

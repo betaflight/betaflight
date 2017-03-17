@@ -36,6 +36,43 @@
 #include "sensors/current.h"
 #include "sensors/esc_sensor.h"
 
+const uint8_t currentMeterIds[] = {
+    CURRENT_METER_ID_VBAT_1,
+    CURRENT_METER_ID_VIRTUAL_1,
+#ifdef USE_ESC_SENSOR
+    CURRENT_METER_ID_ESC_COMBINED_1,
+    CURRENT_METER_ID_ESC_MOTOR_1,
+    CURRENT_METER_ID_ESC_MOTOR_2,
+    CURRENT_METER_ID_ESC_MOTOR_3,
+    CURRENT_METER_ID_ESC_MOTOR_4,
+    CURRENT_METER_ID_ESC_MOTOR_5,
+    CURRENT_METER_ID_ESC_MOTOR_6,
+    CURRENT_METER_ID_ESC_MOTOR_7,
+    CURRENT_METER_ID_ESC_MOTOR_8,
+    CURRENT_METER_ID_ESC_MOTOR_9,
+    CURRENT_METER_ID_ESC_MOTOR_10,
+    CURRENT_METER_ID_ESC_MOTOR_11,
+    CURRENT_METER_ID_ESC_MOTOR_12,
+#endif
+};
+
+const uint8_t supportedCurrentMeterCount = ARRAYLEN(currentMeterIds);
+
+//
+// ADC/Virtual/ESC shared
+//
+
+void currentMeterReset(currentMeter_t *meter)
+{
+    meter->amperage = 0;
+    meter->amperageLatest = 0;
+    meter->mAhDrawn = 0;
+}
+
+//
+// ADC/Virtual shared
+//
+
 #define ADCVREF 3300   // in mV
 
 #define IBAT_LPF_FREQ  0.4f
@@ -75,60 +112,150 @@ static int32_t currentMeterADCToCentiamps(const uint16_t src)
     return (millivolts * 1000) / (int32_t)config->scale; // current in 0.01A steps
 }
 
-void updateCurrentDrawn(currentMeter_t *state, int32_t lastUpdateAt)
+static void updateCurrentmAhDrawnState(currentMeterMAhDrawnState_t *state, int32_t amperageLatest, int32_t lastUpdateAt)
 {
-    state->mAhDrawnF = state->mAhDrawnF + (state->amperageLatest * lastUpdateAt / (100.0f * 1000 * 3600));
+    state->mAhDrawnF = state->mAhDrawnF + (amperageLatest * lastUpdateAt / (100.0f * 1000 * 3600));
     state->mAhDrawn = state->mAhDrawnF;
 }
 
-void currentUpdateADCMeter(currentMeter_t *state, int32_t lastUpdateAt)
-{
-    uint16_t iBatSample = adcGetChannel(ADC_CURRENT);
-    state->amperageLatest = currentMeterADCToCentiamps(iBatSample);
-    state->amperage = currentMeterADCToCentiamps(biquadFilterApply(&adciBatFilter, iBatSample));
+//
+// ADC
+//
 
-    updateCurrentDrawn(state, lastUpdateAt);
+currentMeterADCState_t currentMeterADCState;
+
+void currentMeterADCInit(void)
+{
+    memset(&currentMeterADCState, 0, sizeof(currentMeterADCState_t));
+    biquadFilterInitLPF(&adciBatFilter, IBAT_LPF_FREQ, 50000); //50HZ Update
 }
 
-void currentUpdateVirtualMeter(currentMeter_t *state, int32_t lastUpdateAt, bool armed, bool throttleLowAndMotorStop, int32_t throttleOffset)
+void currentMeterADCRefresh(int32_t lastUpdateAt)
 {
-    state->amperage = (int32_t)currentMeterADCOrVirtualConfig(CURRENT_SENSOR_VIRTUAL)->offset;
+    uint16_t iBatSample = adcGetChannel(ADC_CURRENT);
+    currentMeterADCState.amperageLatest = currentMeterADCToCentiamps(iBatSample);
+    currentMeterADCState.amperage = currentMeterADCToCentiamps(biquadFilterApply(&adciBatFilter, iBatSample));
+
+    updateCurrentmAhDrawnState(&currentMeterADCState.mahDrawnState, currentMeterADCState.amperageLatest, lastUpdateAt);
+}
+
+void currentMeterADCRead(currentMeter_t *meter)
+{
+    meter->amperageLatest = currentMeterADCState.amperageLatest;
+    meter->amperage = currentMeterADCState.amperage;
+    meter->mAhDrawn = currentMeterADCState.mahDrawnState.mAhDrawn;
+}
+
+//
+// VIRTUAL
+//
+
+currentMeterVirtualState_t currentMeterVirtualState;
+
+void currentMeterVirtualInit(void)
+{
+    memset(&currentMeterVirtualState, 0, sizeof(currentMeterVirtualState_t));
+}
+
+void currentMeterVirtualRefresh(int32_t lastUpdateAt, bool armed, bool throttleLowAndMotorStop, int32_t throttleOffset)
+{
+    currentMeterVirtualState.amperage = (int32_t)currentMeterADCOrVirtualConfig(CURRENT_SENSOR_VIRTUAL)->offset;
     if (armed) {
         if (throttleLowAndMotorStop) {
             throttleOffset = 0;
         }
 
         int throttleFactor = throttleOffset + (throttleOffset * throttleOffset / 50); // FIXME magic number 50,  50hz?
-        state->amperageLatest = state->amperage += throttleFactor * (int32_t)currentMeterADCOrVirtualConfig(CURRENT_SENSOR_VIRTUAL)->scale / 1000;
+        currentMeterVirtualState.amperage += throttleFactor * (int32_t)currentMeterADCOrVirtualConfig(CURRENT_SENSOR_VIRTUAL)->scale / 1000;
     }
-    updateCurrentDrawn(state, lastUpdateAt);
+    updateCurrentmAhDrawnState(&currentMeterVirtualState.mahDrawnState, currentMeterVirtualState.amperage, lastUpdateAt);
 }
 
-void currentUpdateESCMeter(currentMeter_t *state, int32_t lastUpdateAt)
+void currentMeterVirtualRead(currentMeter_t *meter)
 {
-    UNUSED(lastUpdateAt);
-#ifndef USE_ESC_SENSOR
-    UNUSED(state);
-#else
-    escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
-    if (escData->dataAge <= ESC_BATTERY_AGE_MAX) {
-        state->amperageLatest = escData->current;
-        state->mAhDrawn = escData->consumption;
-    } else {
-        state->amperageLatest = 0;
-        state->mAhDrawn = 0;
-    }
-    state->amperage = state->amperageLatest;
+    meter->amperageLatest = currentMeterVirtualState.amperage;
+    meter->amperage = currentMeterVirtualState.amperage;
+    meter->mAhDrawn = currentMeterVirtualState.mahDrawnState.mAhDrawn;
+}
+
+//
+// ESC
+//
+
+#ifdef USE_ESC_SENSOR
+currentMeterESCState_t currentMeterESCState;
+#endif
+
+void currentMeterESCInit(void)
+{
+#ifdef USE_ESC_SENSOR
+    memset(&currentMeterESCState, 0, sizeof(currentMeterESCState_t));
 #endif
 }
 
-void resetCurrentMeterState(currentMeter_t *state)
+void currentMeterESCRefresh(int32_t lastUpdateAt)
 {
-    state->amperage = 0;
-    state->amperageLatest = 0;
+    UNUSED(lastUpdateAt);
+#ifdef USE_ESC_SENSOR
+    escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
+    if (escData->dataAge <= ESC_BATTERY_AGE_MAX) {
+        currentMeterESCState.amperage = escData->current;
+        currentMeterESCState.mAhDrawn = escData->consumption;
+    } else {
+        currentMeterESCState.amperage = 0;
+        currentMeterESCState.mAhDrawn = 0;
+    }
+#endif
 }
 
-void currentMeterADCInit(void)
+void currentMeterESCReadCombined(currentMeter_t *meter)
 {
-    biquadFilterInitLPF(&adciBatFilter, IBAT_LPF_FREQ, 50000); //50HZ Update
+#ifdef USE_ESC_SENSOR
+    meter->amperageLatest = currentMeterESCState.amperage;
+    meter->amperage = currentMeterESCState.amperage;
+    meter->mAhDrawn = currentMeterESCState.mAhDrawn;
+#else
+    currentMeterReset(meter);
+#endif
+}
+
+void currentMeterESCReadMotor(uint8_t motorNumber, currentMeter_t *meter)
+{
+#ifndef USE_ESC_SENSOR
+    UNUSED(motorNumber);
+    currentMeterReset(meter);
+#else
+    escSensorData_t *escData = getEscSensorData(motorNumber);
+    if (escData->dataAge <= ESC_BATTERY_AGE_MAX) {
+        meter->amperage = escData->current;
+        meter->amperageLatest = escData->current;
+        meter->mAhDrawn = escData->consumption;
+        return;
+    }
+#endif
+}
+
+//
+// API for current meters using IDs
+//
+
+void currentMeterRead(currentMeterId_e id, currentMeter_t *meter)
+{
+    if (id == CURRENT_METER_ID_VBAT_1) {
+        currentMeterADCRead(meter);
+    } else if (id == CURRENT_METER_ID_VIRTUAL_1) {
+        currentMeterVirtualRead(meter);
+    }
+#ifdef USE_ESC_SENSOR
+    if (id == CURRENT_METER_ID_ESC_COMBINED_1) {
+        currentMeterESCReadCombined(meter);
+    } else
+    if (id >= CURRENT_METER_ID_ESC_MOTOR_1 && id <= CURRENT_METER_ID_ESC_MOTOR_20 ) {
+        int motor = id - CURRENT_METER_ID_ESC_MOTOR_1;
+        currentMeterESCReadMotor(motor, meter);
+    } else
+#endif
+    {
+        currentMeterReset(meter);
+    }
 }
