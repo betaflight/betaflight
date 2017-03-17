@@ -93,7 +93,7 @@
   #define USE_SDCARD
   #define USE_SDCARD_SPI2
   #ifdef OMNIBUSF4SD
-  #define SDCARD_DETECT_INVERTED
+	#define SDCARD_DETECT_INVERTED
   #endif
   #define SDCARD_DETECT_PIN               PB7
   #define SDCARD_SPI_INSTANCE             SPI2
