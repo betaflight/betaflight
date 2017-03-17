@@ -923,26 +923,33 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, (uint8_t)getBatteryState());
         break;
     }
-/*
     case MSP_VOLTAGE_METERS:
-        // TODO write out voltage, once for each meter id we support
-        for (int i = 0; i < MAX_VOLTAGE_METERS; i++) {
+        // write out id and voltage meter values, once for each meter we support
+        for (int i = 0; i < supportedVoltageMeterCount; i++) {
 
-            uint16_t voltage = getVoltageMeter(i)->vbat;
-            sbufWriteU8(dst, (uint8_t)constrain(voltage, 0, 255));
+            voltageMeter_t meter;
+            uint8_t id = (uint8_t)voltageMeterIds[i];
+            voltageMeterRead(id, &meter);
+
+            sbufWriteU8(dst, id);
+            sbufWriteU8(dst, (uint8_t)constrain(meter.filtered, 0, 255));
         }
         break;
 
     case MSP_CURRENT_METERS:
-        // TODO write out amperage meter for each meter id we support
-        for (int i = 0; i < MAX_AMPERAGE_METERS; i++) {
-            amperageMeter_t *meter = getAmperageMeter(i);
-            // write out amperage, once for each current meter.
-            sbufWriteU16(dst, (uint16_t)constrain(meter->amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
-            sbufWriteU32(dst, meter->mAhDrawn);
+        // write out id and current meter values, once for each meter we support
+        for (int i = 0; i < supportedCurrentMeterCount; i++) {
+
+            currentMeter_t meter;
+            uint8_t id = (uint8_t)currentMeterIds[i];
+            currentMeterRead(id, &meter);
+
+            sbufWriteU8(dst, id);
+            sbufWriteU16(dst, (uint16_t)constrain(meter.mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
+            sbufWriteU16(dst, (uint16_t)constrain(meter.amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps (mA). Negative range is truncated to zero
         }
         break;
-    */
+
     case MSP_VOLTAGE_METER_CONFIG:
         // by using a sensor type and a sub-frame length it's possible to configure any type of voltage meter,
         // e.g. an i2c/spi/can sensor or any sensor not built directly into the FC such as ESC/RX/SPort/SBus that has
