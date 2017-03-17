@@ -37,6 +37,49 @@
 #include "sensors/voltage.h"
 #include "sensors/esc_sensor.h"
 
+const uint8_t voltageMeterIds[] = {
+    VOLTAGE_METER_ID_VBAT_1,
+#ifdef ADC_POWER_12V
+    VOLTAGE_METER_ID_12V_1,
+#endif
+#ifdef ADC_POWER_9V
+    VOLTAGE_METER_ID_9V_1,
+#endif
+#ifdef ADC_POWER_5V
+    VOLTAGE_METER_ID_5V_1,
+#endif
+#ifdef USE_ESC_SENSOR
+    VOLTAGE_METER_ID_ESC_COMBINED_1,
+    VOLTAGE_METER_ID_ESC_MOTOR_1,
+    VOLTAGE_METER_ID_ESC_MOTOR_2,
+    VOLTAGE_METER_ID_ESC_MOTOR_3,
+    VOLTAGE_METER_ID_ESC_MOTOR_4,
+    VOLTAGE_METER_ID_ESC_MOTOR_5,
+    VOLTAGE_METER_ID_ESC_MOTOR_6,
+    VOLTAGE_METER_ID_ESC_MOTOR_7,
+    VOLTAGE_METER_ID_ESC_MOTOR_8,
+    VOLTAGE_METER_ID_ESC_MOTOR_9,
+    VOLTAGE_METER_ID_ESC_MOTOR_10,
+    VOLTAGE_METER_ID_ESC_MOTOR_11,
+    VOLTAGE_METER_ID_ESC_MOTOR_12,
+#endif
+};
+
+const uint8_t supportedVoltageMeterCount = ARRAYLEN(voltageMeterIds);
+
+//
+// ADC/ESC shared
+//
+
+void voltageMeterReset(voltageMeter_t *meter)
+{
+    meter->filtered = 0;
+    meter->unfiltered = 0;
+}
+//
+// ADC
+//
+
 #ifndef VBAT_SCALE_DEFAULT
 #define VBAT_SCALE_DEFAULT 110
 #endif
@@ -49,16 +92,6 @@
 #define VBAT_RESDIVMULTIPLIER_DEFAULT 1
 #endif
 
-#ifdef USE_ESC_SENSOR
-typedef struct voltageMeterESCState_s {
-    uint16_t voltageFiltered;         // battery voltage in 0.1V steps (filtered)
-    uint16_t voltageUnfiltered;       // battery voltage in 0.1V steps (unfiltered)
-    biquadFilter_t filter;
-} voltageMeterESCState_t;
-
-static voltageMeterESCState_t voltageMeterESCState;
-#endif
-
 typedef struct voltageMeterADCState_s {
     uint16_t voltageFiltered;         // battery voltage in 0.1V steps (filtered)
     uint16_t voltageUnfiltered;       // battery voltage in 0.1V steps (unfiltered)
@@ -66,7 +99,6 @@ typedef struct voltageMeterADCState_s {
 } voltageMeterADCState_t;
 
 extern voltageMeterADCState_t voltageMeterADCStates[MAX_VOLTAGE_SENSOR_ADC];
-
 
 voltageMeterADCState_t voltageMeterADCStates[MAX_VOLTAGE_SENSOR_ADC];
 
@@ -148,11 +180,19 @@ void voltageMeterADCInit(void)
     }
 }
 
-void voltageMeterReset(voltageMeter_t *meter)
-{
-    meter->filtered = 0;
-    meter->unfiltered = 0;
-}
+//
+// ESC
+//
+
+#ifdef USE_ESC_SENSOR
+typedef struct voltageMeterESCState_s {
+    uint16_t voltageFiltered;         // battery voltage in 0.1V steps (filtered)
+    uint16_t voltageUnfiltered;       // battery voltage in 0.1V steps (unfiltered)
+    biquadFilter_t filter;
+} voltageMeterESCState_t;
+
+static voltageMeterESCState_t voltageMeterESCState;
+#endif
 
 #define VBAT_LPF_FREQ  0.4f
 
@@ -196,36 +236,40 @@ void voltageMeterESCReadCombined(voltageMeter_t *voltageMeter)
 #endif
 }
 
-void voltageReadMeter(voltageMeterId_e id, voltageMeter_t *voltageMeter)
+//
+// API for voltage meters using IDs
+//
+
+void voltageMeterRead(voltageMeterId_e id, voltageMeter_t *meter)
 {
     if (id == VOLTAGE_METER_ID_VBAT_1) {
-        voltageMeterADCRead(VOLTAGE_SENSOR_ADC_VBAT, voltageMeter);
+        voltageMeterADCRead(VOLTAGE_SENSOR_ADC_VBAT, meter);
     } else
 #ifdef ADC_POWER_12V
     if (id == VOLTAGE_METER_ID_12V_1) {
-        voltageMeterADCRead(VOLTAGE_SENSOR_ADC_12V, voltageMeter);
+        voltageMeterADCRead(VOLTAGE_SENSOR_ADC_12V, meter);
     } else
 #endif
 #ifdef ADC_POWER_9V
     if (id == VOLTAGE_METER_ID_9V_1) {
-        voltageMeterADCRead(VOLTAGE_SENSOR_ADC_9V, voltageMeter);
+        voltageMeterADCRead(VOLTAGE_SENSOR_ADC_9V, meter);
     } else
 #endif
 #ifdef ADC_POWER_5V
     if (id == VOLTAGE_METER_ID_5V_1) {
-        voltageMeterADCRead(VOLTAGE_SENSOR_ADC_5V, voltageMeter);
+        voltageMeterADCRead(VOLTAGE_SENSOR_ADC_5V, meter);
     } else
 #endif
 #ifdef USE_ESC_SENSOR
     if (id == VOLTAGE_METER_ID_ESC_COMBINED_1) {
-        voltageMeterESCReadCombined(voltageMeter);
+        voltageMeterESCReadCombined(meter);
     } else
     if (id >= VOLTAGE_METER_ID_ESC_MOTOR_1 && id <= VOLTAGE_METER_ID_ESC_MOTOR_20 ) {
         int motor = id - VOLTAGE_METER_ID_ESC_MOTOR_1;
-        voltageMeterESCReadMotor(motor, voltageMeter);
+        voltageMeterESCReadMotor(motor, meter);
     } else
 #endif
     {
-        voltageMeterReset(voltageMeter);
+        voltageMeterReset(meter);
     }
 }
