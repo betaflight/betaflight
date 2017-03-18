@@ -123,6 +123,7 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .activeRateProfile = 0,
     .debug_mode = DEBUG_MODE,
     .task_statistics = true,
+    .cpu_overclock = false,
     .name = { 0 }
 );
 
