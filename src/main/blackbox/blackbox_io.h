@@ -41,7 +41,7 @@ void blackboxOpen(void);
 void blackboxWrite(uint8_t value);
 
 int blackboxPrintf(const char *fmt, ...);
-void blackboxPrintfHeaderLine(const char *fmt, ...);
+void blackboxPrintfHeaderLine(const char *name, const char *fmt, ...);
 int blackboxPrint(const char *s);
 
 void blackboxWriteUnsignedVB(uint32_t value);
