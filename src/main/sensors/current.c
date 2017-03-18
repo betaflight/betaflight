@@ -97,11 +97,10 @@ PG_REGISTER(currentMeterVirtualConfig_t, currentMeterVirtualConfig, PG_CURRENT_S
 
 static int32_t currentMeterADCToCentiamps(const uint16_t src)
 {
-    int32_t millivolts;
 
     const currentSensorADCConfig_t *config = currentSensorADCConfig();
 
-    millivolts = ((uint32_t)src * ADCVREF) / 4096;
+    int32_t millivolts = ((uint32_t)src * ADCVREF) / 4096;
     millivolts -= config->offset;
 
     return (millivolts * 1000) / (int32_t)config->scale; // current in 0.01A steps
