@@ -93,7 +93,7 @@ PG_RESET_TEMPLATE(currentSensorADCConfig_t, currentSensorADCConfig,
     .offset = CURRENT_METER_OFFSET_DEFAULT,
 );
 
-PG_REGISTER(currentMeterVirtualConfig_t, currentMeterVirtualConfig, PG_CURRENT_SENSOR_VIRTUAL_CONFIG, 0);
+PG_REGISTER(currentSensorVirtualConfig_t, currentSensorVirtualConfig, PG_CURRENT_SENSOR_VIRTUAL_CONFIG, 0);
 
 static int32_t currentMeterADCToCentiamps(const uint16_t src)
 {
@@ -144,23 +144,23 @@ void currentMeterADCRead(currentMeter_t *meter)
 // VIRTUAL
 //
 
-currentMeterVirtualState_t currentMeterVirtualState;
+currentSensorVirtualState_t currentMeterVirtualState;
 
 void currentMeterVirtualInit(void)
 {
-    memset(&currentMeterVirtualState, 0, sizeof(currentMeterVirtualState_t));
+    memset(&currentMeterVirtualState, 0, sizeof(currentSensorVirtualState_t));
 }
 
 void currentMeterVirtualRefresh(int32_t lastUpdateAt, bool armed, bool throttleLowAndMotorStop, int32_t throttleOffset)
 {
-    currentMeterVirtualState.amperage = (int32_t)currentMeterVirtualConfig()->offset;
+    currentMeterVirtualState.amperage = (int32_t)currentSensorVirtualConfig()->offset;
     if (armed) {
         if (throttleLowAndMotorStop) {
             throttleOffset = 0;
         }
 
         int throttleFactor = throttleOffset + (throttleOffset * throttleOffset / 50); // FIXME magic number 50,  50hz?
-        currentMeterVirtualState.amperage += throttleFactor * (int32_t)currentMeterVirtualConfig()->scale / 1000;
+        currentMeterVirtualState.amperage += throttleFactor * (int32_t)currentSensorVirtualConfig()->scale / 1000;
     }
     updateCurrentmAhDrawnState(&currentMeterVirtualState.mahDrawnState, currentMeterVirtualState.amperage, lastUpdateAt);
 }

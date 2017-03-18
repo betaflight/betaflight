@@ -986,8 +986,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, virtualSensorSubframeLength);
         sbufWriteU8(dst, CURRENT_METER_ID_VIRTUAL_1); // the id of the sensor
         sbufWriteU8(dst, CURRENT_SENSOR_VIRTUAL); // indicate the type of sensor that the next part of the payload is for
-        sbufWriteU16(dst, currentMeterVirtualConfig()->scale);
-        sbufWriteU16(dst, currentMeterVirtualConfig()->offset);
+        sbufWriteU16(dst, currentSensorVirtualConfig()->scale);
+        sbufWriteU16(dst, currentSensorVirtualConfig()->offset);
 
         // if we had any other current sensors, this is where we would output any needed configuration
         break;
@@ -1864,8 +1864,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 currentSensorADCConfigMutable()->offset = sbufReadU16(src);
                 break;
             case CURRENT_METER_ID_VIRTUAL_1:
-                currentMeterVirtualConfigMutable()->scale = sbufReadU16(src);
-                currentMeterVirtualConfigMutable()->offset = sbufReadU16(src);
+                currentSensorVirtualConfigMutable()->scale = sbufReadU16(src);
+                currentSensorVirtualConfigMutable()->offset = sbufReadU16(src);
                 break;
 
             default:
