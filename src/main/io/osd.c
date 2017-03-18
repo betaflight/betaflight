@@ -504,7 +504,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdProfile)
     osdProfile->item_pos[OSD_POWER] = OSD_POS(15, 1);
     osdProfile->item_pos[OSD_PIDRATE_PROFILE] = OSD_POS(2, 13);
     osdProfile->item_pos[OSD_MAIN_BATT_WARNING] = OSD_POS(8, 6);
-    osdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 0);
+    osdProfile->item_pos[OSD_AVG_CELL_VOLTAGE] = OSD_POS(12, 0);
 
     osdProfile->rssi_alarm = 20;
     osdProfile->cap_alarm = 2200;
