@@ -799,10 +799,11 @@ static void updateEstimatedTopic(timeUs_t currentTimeUs)
 
         posEstimator.est.surface += sonarResidual * positionEstimationConfig()->w_z_sonar_p * bellCurveScaler * dt;
         posEstimator.est.surfaceVel += sonarResidual * positionEstimationConfig()->w_z_sonar_v * sq(bellCurveScaler) * dt;
+        posEstimator.est.surfaceValid = true;
     }
     else {
         posEstimator.est.surfaceVel = 0; // Zero out velocity to prevent estimate to drift away
-        posEstimator.est.surfaceValid = true;
+        posEstimator.est.surfaceValid = false;
     }
 
 #else
