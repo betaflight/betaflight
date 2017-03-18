@@ -958,7 +958,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         for (int i = VOLTAGE_SENSOR_ADC_VBAT; i < MAX_VOLTAGE_SENSOR_ADC; i++) {
             sbufWriteU8(dst, voltageMeterADCtoIDMap[i]); // id of the sensor
             sbufWriteU8(dst, VOLTAGE_SENSOR_TYPE_ADC_RESISTOR_DIVIDER); // indicate the type of sensor that the next part of the payload is for
-            sbufWriteU8(dst, 3); // ADC sensor sub-frame length
+
+            const uint8_t adcSensorSubframeLength = 1 + 1 + 1; // length of vbatscale, vbatresdivval, vbatresdivmultipler, in bytes
+            sbufWriteU8(dst, adcSensorSubframeLength); // ADC sensor sub-frame length
             sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatscale);
             sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatresdivval);
             sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatresdivmultiplier);
@@ -966,25 +968,30 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         // if we had any other voltage sensors, this is where we would output any needed configuration
         break;
 
-    case MSP_CURRENT_METER_CONFIG:
+    case MSP_CURRENT_METER_CONFIG: {
         // the ADC and VIRTUAL sensors have the same configuration requirements, however this API reflects
         // that this situation may change and allows us to support configuration of any current sensor with
         // specialist configuration requirements.
 
-        sbufWriteU8(dst, 2); // current meters in payload
-        sbufWriteU8(dst, 6); // ADC sensor sub-frame length
+        sbufWriteU8(dst, 2); // current meters in payload (adc + virtual)
+
+        const uint8_t adcSensorSubframeLength = 1 + 1 + 2 + 2; // length of id, type, scale, offset, in bytes
+        sbufWriteU8(dst, adcSensorSubframeLength);
         sbufWriteU8(dst, CURRENT_METER_ID_BATTERY_1); // the id of the sensor
         sbufWriteU8(dst, CURRENT_SENSOR_ADC); // indicate the type of sensor that the next part of the payload is for
         sbufWriteU16(dst, currentSensorADCConfig()->scale);
         sbufWriteU16(dst, currentSensorADCConfig()->offset);
-        sbufWriteU8(dst, 6); // Virtual sensor sub-frame length
+
+        const int8_t virtualSensorSubframeLength = 1 + 1 + 2 + 2; // length of id, type, scale, offset, in bytes
+        sbufWriteU8(dst, virtualSensorSubframeLength);
         sbufWriteU8(dst, CURRENT_METER_ID_VIRTUAL_1); // the id of the sensor
         sbufWriteU8(dst, CURRENT_SENSOR_VIRTUAL); // indicate the type of sensor that the next part of the payload is for
         sbufWriteU16(dst, currentMeterVirtualConfig()->scale);
         sbufWriteU16(dst, currentMeterVirtualConfig()->offset);
+
         // if we had any other current sensors, this is where we would output any needed configuration
         break;
-
+    }
     case MSP_BATTERY_CONFIG:
         sbufWriteU8(dst, batteryConfig()->vbatmincellvoltage);
         sbufWriteU8(dst, batteryConfig()->vbatmaxcellvoltage);
