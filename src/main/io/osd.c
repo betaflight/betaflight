@@ -175,6 +175,9 @@ static void osdDrawSingleElement(uint8_t item)
 
     uint8_t elemPosX = OSD_X(osdConfig()->item_pos[item]);
     uint8_t elemPosY = OSD_Y(osdConfig()->item_pos[item]);
+
+    uint8_t elemOffsetX = 0;
+
     char buff[32];
 
     switch(item) {
@@ -422,7 +425,8 @@ static void osdDrawSingleElement(uint8_t item)
                     break;
 
                 case BATTERY_CRITICAL:
-                    sprintf(buff, " LAND NOW");
+                    sprintf(buff, "LAND NOW");
+                    elemOffsetX += 1;
                     break;
 
                 default:
@@ -443,7 +447,7 @@ static void osdDrawSingleElement(uint8_t item)
             return;
     }
 
-    displayWrite(osdDisplayPort, elemPosX, elemPosY, buff);
+    displayWrite(osdDisplayPort, elemPosX + elemOffsetX, elemPosY, buff);
 }
 
 void osdDrawElements(void)
