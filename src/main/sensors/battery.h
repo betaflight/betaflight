@@ -20,6 +20,7 @@
 #include "config/parameter_group.h"
 
 #include "common/filter.h"
+#include "common/time.h"
 #include "sensors/current.h"
 #include "sensors/voltage.h"
 
@@ -53,7 +54,7 @@ typedef enum {
 } batteryState_e;
 
 void batteryInit(void);
-void batteryUpdateVoltage(void);
+void batteryUpdateVoltage(timeUs_t currentTimeUs);
 void batteryUpdatePresence(void);
 
 batteryState_e getBatteryState(void);
@@ -74,4 +75,4 @@ int32_t getAmperage(void);
 int32_t getAmperageLatest(void);
 int32_t getMAhDrawn(void);
 
-void batteryUpdateCurrentMeter(int32_t lastUpdateAt, bool armed);
+void batteryUpdateCurrentMeter(timeUs_t currentTimeUs);
