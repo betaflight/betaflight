@@ -1,5 +1,10 @@
 F405_TARGETS   += $(TARGET)
-FEATURES       += VCP ONBOARDFLASH
+
+ifeq ($(TARGET), CL_RACINGF4)
+  FEATURES       += VCP SDCARD
+else
+ FEATURES       += VCP ONBOARDFLASH
+endif
 
 TARGET_SRC = \
             drivers/accgyro_spi_mpu6000.c \
