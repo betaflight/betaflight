@@ -422,6 +422,14 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
+	case OSD_AVG_CELL_VOLTAGE:
+        {
+            uint16_t cellV = getVbat() * 10 / batteryCellCount;
+            buff[0] = SYM_BATT_5;
+            sprintf(buff + 1, "%d.%dV", cellV / 100, cellV % 100);
+            break;
+        }
+
         default:
             return;
     }
@@ -471,6 +479,7 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_POWER);
     osdDrawSingleElement(OSD_PIDRATE_PROFILE);
     osdDrawSingleElement(OSD_MAIN_BATT_WARNING);
+    osdDrawSingleElement(OSD_AVG_CELL_VOLTAGE);
 
 #ifdef GPS
 #ifdef CMS
@@ -488,7 +497,6 @@ void osdDrawElements(void)
 void pgResetFn_osdConfig(osdConfig_t *osdProfile)
 {
     osdProfile->item_pos[OSD_RSSI_VALUE] = OSD_POS(8, 1) | VISIBLE_FLAG;
-    osdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 1) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(8, 6) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_HORIZON_SIDEBARS] = OSD_POS(8, 6) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_ONTIME] = OSD_POS(22, 1) | VISIBLE_FLAG;
@@ -508,6 +516,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdProfile)
     osdProfile->item_pos[OSD_POWER] = OSD_POS(1, 10) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_PIDRATE_PROFILE] = OSD_POS(25, 10) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_MAIN_BATT_WARNING] = OSD_POS(9, 10) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 1) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_AVG_CELL_VOLTAGE] = OSD_POS(12, 2) | VISIBLE_FLAG;
 
     osdProfile->units = OSD_UNIT_METRIC;
     osdProfile->rssi_alarm = 20;
@@ -575,9 +585,11 @@ void osdUpdateAlarms(void)
     if (getVbat() <= (batteryWarningVoltage - 1)) {
         SET_BLINK(OSD_MAIN_BATT_VOLTAGE);
         SET_BLINK(OSD_MAIN_BATT_WARNING);
+        SET_BLINK(OSD_AVG_CELL_VOLTAGE);
     } else {
         CLR_BLINK(OSD_MAIN_BATT_VOLTAGE);
         CLR_BLINK(OSD_MAIN_BATT_WARNING);
+        CLR_BLINK(OSD_AVG_CELL_VOLTAGE);
     }
 
     if (STATE(GPS_FIX) == 0)
@@ -610,6 +622,7 @@ void osdResetAlarms(void)
     CLR_BLINK(OSD_FLYTIME);
     CLR_BLINK(OSD_MAH_DRAWN);
     CLR_BLINK(OSD_ALTITUDE);
+    CLR_BLINK(OSD_AVG_CELL_VOLTAGE);
 }
 
 static void osdResetStats(void)

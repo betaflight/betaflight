@@ -48,6 +48,7 @@ typedef enum {
     OSD_POWER,
     OSD_PIDRATE_PROFILE,
     OSD_MAIN_BATT_WARNING,
+    OSD_AVG_CELL_VOLTAGE,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
