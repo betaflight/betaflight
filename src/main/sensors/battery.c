@@ -26,8 +26,6 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
-#include "scheduler/scheduler.h"
-
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -328,7 +326,9 @@ void batteryUpdateCurrentMeter(timeUs_t currentTimeUs)
         return;
     }
 
-    int32_t lastUpdateAt = getTaskDeltaTime(TASK_SELF);
+    static uint32_t ibatLastServiced = 0;
+    const int32_t lastUpdateAt = cmp32(currentTimeUs, ibatLastServiced);
+    ibatLastServiced = currentTimeUs;
 
     switch(batteryConfig()->currentMeterSource) {
         case CURRENT_METER_ADC:
