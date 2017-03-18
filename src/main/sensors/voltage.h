@@ -29,10 +29,13 @@ typedef enum {
     VOLTAGE_METER_ESC
 } voltageMeterSource_e;
 
+// WARNING - do not mix usage of VOLTAGE_METER_* and VOLTAGE_SENSOR_*, they are separate concerns.
+
 typedef struct voltageMeter_s {
     uint16_t filtered;                      // voltage in 0.1V steps
     uint16_t unfiltered;                    // voltage in 0.1V steps
 } voltageMeter_t;
+
 
 //
 // sensors
@@ -48,22 +51,22 @@ typedef enum {
 // adc sensors
 //
 
-#ifndef MAX_VOLTAGE_SENSOR_ADC
-#define MAX_VOLTAGE_SENSOR_ADC 1 // VBAT - some boards have external, 12V and 5V meters.
-#endif
-
-typedef enum {
-    VOLTAGE_SENSOR_ADC_VBAT = 0,
-    VOLTAGE_SENSOR_ADC_5V = 1,
-    VOLTAGE_SENSOR_ADC_12V = 2
-} voltageSensorADC_e;
-
-// WARNING - do not mix usage of VOLTAGE_METER_* and VOLTAGE_SENSOR_*, they are separate concerns.
-
 #define VBAT_SCALE_MIN 0
 #define VBAT_SCALE_MAX 255
 
 #define VBATT_LPF_FREQ  1.0f
+
+#ifndef MAX_VOLTAGE_SENSOR_ADC
+#define MAX_VOLTAGE_SENSOR_ADC 1 // VBAT - some boards have external, 12V, 9V and 5V meters.
+#endif
+
+typedef enum {
+    VOLTAGE_SENSOR_ADC_VBAT = 0,
+    VOLTAGE_SENSOR_ADC_12V = 1,
+    VOLTAGE_SENSOR_ADC_9V = 2,
+    VOLTAGE_SENSOR_ADC_5V = 3
+} voltageSensorADC_e; // see also voltageMeterADCtoIDMap
+
 
 typedef struct voltageSensorADCConfig_s {
     uint8_t vbatscale;                      // adjust this to match battery voltage to reported value
@@ -89,8 +92,10 @@ void voltageMeterESCReadMotor(uint8_t motor, voltageMeter_t *voltageMeter);
 
 
 //
-// API for reading current meters by id.
+// API for reading/configuring current meters by id.
 //
+extern const uint8_t voltageMeterADCtoIDMap[MAX_VOLTAGE_SENSOR_ADC];
+
 extern const uint8_t supportedVoltageMeterCount;
 extern const uint8_t voltageMeterIds[];
 void voltageMeterRead(voltageMeterId_e id, voltageMeter_t *voltageMeter);

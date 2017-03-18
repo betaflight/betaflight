@@ -37,7 +37,7 @@
 #include "sensors/esc_sensor.h"
 
 const uint8_t currentMeterIds[] = {
-    CURRENT_METER_ID_VBAT_1,
+    CURRENT_METER_ID_BATTERY_1,
     CURRENT_METER_ID_VIRTUAL_1,
 #ifdef USE_ESC_SENSOR
     CURRENT_METER_ID_ESC_COMBINED_1,
@@ -86,25 +86,20 @@ static biquadFilter_t adciBatFilter;
 #define CURRENT_METER_OFFSET_DEFAULT 0
 #endif
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(currentMeterADCOrVirtualConfig_t, MAX_ADC_OR_VIRTUAL_CURRENT_METERS, currentMeterADCOrVirtualConfig, PG_CURRENT_SENSOR_ADC_OR_VIRTUAL_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(currentSensorADCConfig_t, currentSensorADCConfig, PG_CURRENT_SENSOR_ADC_CONFIG, 0);
 
-void pgResetFn_currentMeterADCOrVirtualConfig(currentMeterADCOrVirtualConfig_t *instance)
-{
-    for (int i = 0; i < MAX_ADC_OR_VIRTUAL_CURRENT_METERS; i++) {
-        if (i == CURRENT_METER_ADC) {
-            RESET_CONFIG(currentMeterADCOrVirtualConfig_t, &instance[i],
-                .scale = CURRENT_METER_SCALE_DEFAULT,
-                .offset = CURRENT_METER_OFFSET_DEFAULT,
-            );
-        }
-    }
-}
+PG_RESET_TEMPLATE(currentSensorADCConfig_t, currentSensorADCConfig,
+    .scale = CURRENT_METER_SCALE_DEFAULT,
+    .offset = CURRENT_METER_OFFSET_DEFAULT,
+);
+
+PG_REGISTER(currentMeterVirtualConfig_t, currentMeterVirtualConfig, PG_CURRENT_SENSOR_VIRTUAL_CONFIG, 0);
 
 static int32_t currentMeterADCToCentiamps(const uint16_t src)
 {
     int32_t millivolts;
 
-    const currentMeterADCOrVirtualConfig_t *config = currentMeterADCOrVirtualConfig(CURRENT_SENSOR_ADC);
+    const currentSensorADCConfig_t *config = currentSensorADCConfig();
 
     millivolts = ((uint32_t)src * ADCVREF) / 4096;
     millivolts -= config->offset;
@@ -159,14 +154,14 @@ void currentMeterVirtualInit(void)
 
 void currentMeterVirtualRefresh(int32_t lastUpdateAt, bool armed, bool throttleLowAndMotorStop, int32_t throttleOffset)
 {
-    currentMeterVirtualState.amperage = (int32_t)currentMeterADCOrVirtualConfig(CURRENT_SENSOR_VIRTUAL)->offset;
+    currentMeterVirtualState.amperage = (int32_t)currentMeterVirtualConfig()->offset;
     if (armed) {
         if (throttleLowAndMotorStop) {
             throttleOffset = 0;
         }
 
         int throttleFactor = throttleOffset + (throttleOffset * throttleOffset / 50); // FIXME magic number 50,  50hz?
-        currentMeterVirtualState.amperage += throttleFactor * (int32_t)currentMeterADCOrVirtualConfig(CURRENT_SENSOR_VIRTUAL)->scale / 1000;
+        currentMeterVirtualState.amperage += throttleFactor * (int32_t)currentMeterVirtualConfig()->scale / 1000;
     }
     updateCurrentmAhDrawnState(&currentMeterVirtualState.mahDrawnState, currentMeterVirtualState.amperage, lastUpdateAt);
 }
@@ -238,10 +233,12 @@ void currentMeterESCReadMotor(uint8_t motorNumber, currentMeter_t *meter)
 //
 // API for current meters using IDs
 //
+// This API is used by MSP, for configuration/status.
+//
 
 void currentMeterRead(currentMeterId_e id, currentMeter_t *meter)
 {
-    if (id == CURRENT_METER_ID_VBAT_1) {
+    if (id == CURRENT_METER_ID_BATTERY_1) {
         currentMeterADCRead(meter);
     } else if (id == CURRENT_METER_ID_VIRTUAL_1) {
         currentMeterVirtualRead(meter);

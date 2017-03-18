@@ -38,7 +38,7 @@
 #include "sensors/esc_sensor.h"
 
 const uint8_t voltageMeterIds[] = {
-    VOLTAGE_METER_ID_VBAT_1,
+    VOLTAGE_METER_ID_BATTERY_1,
 #ifdef ADC_POWER_12V
     VOLTAGE_METER_ID_12V_1,
 #endif
@@ -66,6 +66,7 @@ const uint8_t voltageMeterIds[] = {
 };
 
 const uint8_t supportedVoltageMeterCount = ARRAYLEN(voltageMeterIds);
+
 
 //
 // ADC/ESC shared
@@ -237,12 +238,29 @@ void voltageMeterESCReadCombined(voltageMeter_t *voltageMeter)
 }
 
 //
-// API for voltage meters using IDs
+// API for using voltage meters using IDs
 //
+// This API is used by MSP, for configuration/status.
+//
+
+
+// the order of these much match the indexes in voltageSensorADC_e
+const uint8_t voltageMeterADCtoIDMap[MAX_VOLTAGE_SENSOR_ADC] = {
+    VOLTAGE_METER_ID_BATTERY_1,
+#ifdef ADC_POWER_12V
+    VOLTAGE_METER_ID_12V_1,
+#endif
+#ifdef ADC_POWER_9V
+    VOLTAGE_METER_ID_9V_1,
+#endif
+#ifdef ADC_POWER_5V
+    VOLTAGE_METER_ID_5V_1,
+#endif
+};
 
 void voltageMeterRead(voltageMeterId_e id, voltageMeter_t *meter)
 {
-    if (id == VOLTAGE_METER_ID_VBAT_1) {
+    if (id == VOLTAGE_METER_ID_BATTERY_1) {
         voltageMeterADCRead(VOLTAGE_SENSOR_ADC_VBAT, meter);
     } else
 #ifdef ADC_POWER_12V
