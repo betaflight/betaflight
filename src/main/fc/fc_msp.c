@@ -957,6 +957,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         BUILD_BUG_ON(VOLTAGE_SENSOR_ADC_VBAT != 0); // VOLTAGE_SENSOR_ADC_VBAT should be the first index,
         sbufWriteU8(dst, MAX_VOLTAGE_SENSOR_ADC); // voltage meters in payload
         for (int i = VOLTAGE_SENSOR_ADC_VBAT; i < MAX_VOLTAGE_SENSOR_ADC; i++) {
+            sbufWriteU8(dst, voltageMeterADCtoIDMap[i]); // id of the sensor
             sbufWriteU8(dst, VOLTAGE_SENSOR_TYPE_ADC_RESISTOR_DIVIDER); // indicate the type of sensor that the next part of the payload is for
             sbufWriteU8(dst, 3); // ADC sensor sub-frame length
             sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatscale);
@@ -970,16 +971,18 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         // the ADC and VIRTUAL sensors have the same configuration requirements, however this API reflects
         // that this situation may change and allows us to support configuration of any current sensor with
         // specialist configuration requirements.
-        BUILD_BUG_ON(CURRENT_SENSOR_VIRTUAL != 0);
-        BUILD_BUG_ON(CURRENT_SENSOR_ADC != 1);
 
-        sbufWriteU8(dst, MAX_ADC_OR_VIRTUAL_CURRENT_METERS); // current meters in payload
-        for (int i = CURRENT_SENSOR_VIRTUAL; i < MAX_ADC_OR_VIRTUAL_CURRENT_METERS; i++) {
-            sbufWriteU8(dst, i); // indicate the type of sensor that the next part of the payload is for
-            sbufWriteU8(dst, 4); // ADC or Virtual sensor sub-frame length
-            sbufWriteU16(dst, currentMeterADCOrVirtualConfig(i)->scale);
-            sbufWriteU16(dst, currentMeterADCOrVirtualConfig(i)->offset);
-        }
+        sbufWriteU8(dst, 2); // current meters in payload
+        sbufWriteU8(dst, 6); // ADC sensor sub-frame length
+        sbufWriteU8(dst, CURRENT_METER_ID_BATTERY_1); // the id of the sensor
+        sbufWriteU8(dst, CURRENT_SENSOR_ADC); // indicate the type of sensor that the next part of the payload is for
+        sbufWriteU16(dst, currentSensorADCConfig()->scale);
+        sbufWriteU16(dst, currentSensorADCConfig()->offset);
+        sbufWriteU8(dst, 6); // Virtual sensor sub-frame length
+        sbufWriteU8(dst, CURRENT_METER_ID_VIRTUAL_1); // the id of the sensor
+        sbufWriteU8(dst, CURRENT_SENSOR_VIRTUAL); // indicate the type of sensor that the next part of the payload is for
+        sbufWriteU16(dst, currentMeterVirtualConfig()->scale);
+        sbufWriteU16(dst, currentMeterVirtualConfig()->offset);
         // if we had any other current sensors, this is where we would output any needed configuration
         break;
 
@@ -1823,37 +1826,46 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_VOLTAGE_METER_CONFIG: {
-        int sensor = sbufReadU8(src);
-        if (sensor != VOLTAGE_METER_ADC) {
-            return -1;
+        int id = sbufReadU8(src);
+
+        //
+        // find and configure an ADC voltage sensor
+        //
+        int voltageSensorADCIndex;
+        for (voltageSensorADCIndex = 0; voltageSensorADCIndex < MAX_VOLTAGE_SENSOR_ADC; voltageSensorADCIndex++) {
+            if (id == voltageMeterADCtoIDMap[voltageSensorADCIndex]) {
+                break;
+            }
         }
 
-        int index = sbufReadU8(src);
-        if (index >= MAX_VOLTAGE_SENSOR_ADC) {
+        if (voltageSensorADCIndex < MAX_VOLTAGE_SENSOR_ADC) {
+            voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatscale = sbufReadU8(src);
+            voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatresdivval = sbufReadU8(src);
+            voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatresdivmultiplier = sbufReadU8(src);
+        } else {
+            // if we had any other types of voltage sensor to configure, this is where we'd do it.
             return -1;
         }
-
-
-        voltageSensorADCConfigMutable(index)->vbatscale = sbufReadU8(src);
-        voltageSensorADCConfigMutable(index)->vbatresdivval = sbufReadU8(src);
-        voltageSensorADCConfigMutable(index)->vbatresdivmultiplier = sbufReadU8(src);
         break;
     }
 
     case MSP_SET_CURRENT_METER_CONFIG: {
-        int sensor = sbufReadU8(src);
-        if (sensor != CURRENT_SENSOR_VIRTUAL || sensor != CURRENT_SENSOR_ADC) {
-            return -1;
+        int id = sbufReadU8(src);
+
+        switch (id) {
+            case CURRENT_METER_ID_BATTERY_1:
+                currentSensorADCConfigMutable()->scale = sbufReadU16(src);
+                currentSensorADCConfigMutable()->offset = sbufReadU16(src);
+                break;
+            case CURRENT_METER_ID_VIRTUAL_1:
+                currentMeterVirtualConfigMutable()->scale = sbufReadU16(src);
+                currentMeterVirtualConfigMutable()->offset = sbufReadU16(src);
+                break;
+
+            default:
+                return -1;
         }
 
-        int index = sbufReadU8(src);
-
-        if (index >= MAX_ADC_OR_VIRTUAL_CURRENT_METERS) {
-            return -1;
-        }
-
-        currentMeterADCOrVirtualConfigMutable(index)->scale = sbufReadU16(src);
-        currentMeterADCOrVirtualConfigMutable(index)->offset = sbufReadU16(src);
         break;
     }
 

@@ -24,10 +24,10 @@
 typedef enum {
     CURRENT_METER_ID_NONE = 0,
 
-    CURRENT_METER_ID_VBAT_1 = 10,       // 10-19 for battery meters
-    CURRENT_METER_ID_VBAT_2,
+    CURRENT_METER_ID_BATTERY_1 = 10,       // 10-19 for battery meters
+    CURRENT_METER_ID_BATTERY_2,
     //..
-    CURRENT_METER_ID_VBAT_10 = 19,
+    CURRENT_METER_ID_BATTERY_10 = 19,
 
     CURRENT_METER_ID_5V_1 = 20,         // 20-29 for 5V meters
     CURRENT_METER_ID_5V_2,

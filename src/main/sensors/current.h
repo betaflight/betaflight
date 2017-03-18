@@ -33,14 +33,6 @@ typedef struct currentMeter_s {
     int32_t mAhDrawn;           // milliampere hours drawn from the battery since start
 } currentMeter_t;
 
-// NOTE: currentMeterConfig is only used by physical and virtual current meters, not ESC based current meters.
-#define MAX_ADC_OR_VIRTUAL_CURRENT_METERS 2 // 1x ADC, 1x Virtual
-
-typedef enum {
-    CURRENT_SENSOR_VIRTUAL = 0, // virtual is FIRST because it should be possible to build without ADC current sensors.
-    CURRENT_SENSOR_ADC,
-} currentSensor_e;
-
 // WARNING - do not mix usage of CURRENT_SENSOR_* and CURRENT_METER_*, they are separate concerns.
 
 typedef struct currentMeterMAhDrawnState_s {
@@ -48,32 +40,58 @@ typedef struct currentMeterMAhDrawnState_s {
     float mAhDrawnF;
 } currentMeterMAhDrawnState_t;
 
+//
+// Sensors
+//
+
+typedef enum {
+    CURRENT_SENSOR_VIRTUAL = 0,
+    CURRENT_SENSOR_ADC,
+    CURRENT_SENSOR_ESC,
+} currentSensor_e;
+
+
+//
+// ADC
+//
+
 typedef struct currentMeterADCState_s {
     currentMeterMAhDrawnState_t mahDrawnState;
     int32_t amperage;           // current read by current sensor in centiampere (1/100th A)
     int32_t amperageLatest;     // current read by current sensor in centiampere (1/100th A) (unfiltered)
 } currentMeterADCState_t;
 
+typedef struct currentSensorADCConfig_s {
+    int16_t scale;              // scale the current sensor output voltage to milliamps. Value in 1/10th mV/A
+    uint16_t offset;            // offset of the current sensor in millivolt steps
+} currentSensorADCConfig_t;
+
+PG_DECLARE(currentSensorADCConfig_t, currentSensorADCConfig);
+
+//
+// Virtual
+//
+
 typedef struct currentMeterVirtualState_s {
     currentMeterMAhDrawnState_t mahDrawnState;
     int32_t amperage;           // current read by current sensor in centiampere (1/100th A)
 } currentMeterVirtualState_t;
 
+typedef struct currentMeterVirtualConfig_s {
+    int16_t scale;              // scale the current sensor output voltage to milliamps. Value in 1/10th mV/A
+    uint16_t offset;            // offset of the current sensor in millivolt steps
+} currentMeterVirtualConfig_t;
+
+PG_DECLARE(currentMeterVirtualConfig_t, currentMeterVirtualConfig);
+
+//
+// ESC
+//
+
 typedef struct currentMeterESCState_s {
     int32_t mAhDrawn;           // milliampere hours drawn from the battery since start
     int32_t amperage;           // current read by current sensor in centiampere (1/100th A)
 } currentMeterESCState_t;
-
-typedef struct currentMeterADCOrVirtualConfig_s {
-    int16_t scale;              // scale the current sensor output voltage to milliamps. Value in 1/10th mV/A
-    uint16_t offset;            // offset of the current sensor in millivolt steps
-} currentMeterADCOrVirtualConfig_t;
-
-PG_DECLARE_ARRAY(currentMeterADCOrVirtualConfig_t, MAX_ADC_OR_VIRTUAL_CURRENT_METERS, currentMeterADCOrVirtualConfig);
-
-//
-// Main API
-//
 
 void currentMeterReset(currentMeter_t *meter);
 

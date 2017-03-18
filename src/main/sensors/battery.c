@@ -46,9 +46,10 @@
  * sensors are used to collect data.
  * - e.g. voltage at an MCU ADC input pin, value from an ESC sensor.
  *   sensors require very specific configuration, such as resistor values.
- * meters are used to process and expose data collected from sensors to the rest of the system
+ * meters are used to process and expose data collected from sensors to the rest of the system.
  * - e.g. a meter exposes normalized, and often filtered, values from a sensor.
  *   meters require different or little configuration.
+ *   meters also have different precision concerns, and may use different units to the sensors.
  *
  */
 
