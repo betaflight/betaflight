@@ -109,19 +109,6 @@ static void taskHandleSerial(timeUs_t currentTimeUs)
     mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA, mspFcProcessCommand);
 }
 
-
-void taskBatteryVoltage(timeUs_t currentTimeUs)
-{
-    UNUSED(currentTimeUs);
-    batteryUpdateVoltage();
-}
-
-void taskBatteryCurrent(timeUs_t currentTimeUs)
-{
-    UNUSED(currentTimeUs);
-    batteryUpdateCurrentMeter(getTaskDeltaTime(TASK_SELF), ARMING_FLAG(ARMED));
-}
-
 void taskBatteryAlerts(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
@@ -381,13 +368,13 @@ cfTask_t cfTasks[TASK_COUNT] = {
 
     [TASK_BATTERY_VOLTAGE] = {
         .taskName = "BATTERY_VOLTAGE",
-        .taskFunc = taskBatteryVoltage,
+        .taskFunc = batteryUpdateVoltage,
         .desiredPeriod = TASK_PERIOD_HZ(50),
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
     [TASK_BATTERY_CURRENT] = {
         .taskName = "BATTERY_CURRENT",
-        .taskFunc = taskBatteryCurrent,
+        .taskFunc = batteryUpdateCurrentMeter,
         .desiredPeriod = TASK_PERIOD_HZ(50),
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },

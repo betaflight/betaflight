@@ -26,6 +26,8 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
+#include "scheduler/scheduler.h"
+
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -33,6 +35,7 @@
 #include "drivers/adc.h"
 #include "drivers/system.h"
 
+#include "fc/runtime_config.h"
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 
@@ -102,8 +105,10 @@ PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
     .vbathysteresis = 1
 );
 
-void batteryUpdateVoltage(void)
+void batteryUpdateVoltage(timeUs_t currentTimeUs)
 {
+    UNUSED(currentTimeUs);
+
     switch(batteryConfig()->voltageMeterSource) {
 #ifdef USE_ESC_SENSOR
         case VOLTAGE_METER_ESC:
@@ -315,12 +320,15 @@ static void batteryUpdateConsumptionState(void)
     }
 }
 
-void batteryUpdateCurrentMeter(int32_t lastUpdateAt, bool armed)
+void batteryUpdateCurrentMeter(timeUs_t currentTimeUs)
 {
+    UNUSED(currentTimeUs);
     if (batteryCellCount == 0) {
         currentMeterReset(&currentMeter);
         return;
     }
+
+    int32_t lastUpdateAt = getTaskDeltaTime(TASK_SELF);
 
     switch(batteryConfig()->currentMeterSource) {
         case CURRENT_METER_ADC:
@@ -333,7 +341,7 @@ void batteryUpdateCurrentMeter(int32_t lastUpdateAt, bool armed)
             bool throttleLowAndMotorStop = (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP));
             int32_t throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
 
-            currentMeterVirtualRefresh(lastUpdateAt, armed, throttleLowAndMotorStop, throttleOffset);
+            currentMeterVirtualRefresh(lastUpdateAt, ARMING_FLAG(ARMED), throttleLowAndMotorStop, throttleOffset);
             currentMeterVirtualRead(&currentMeter);
             break;
         }
