@@ -33,8 +33,8 @@ typedef struct batteryConfig_s {
     voltageMeterSource_e voltageMeterSource; // source of battery voltage meter used, either ADC or ESC
 
     // current
-    uint16_t batteryCapacity;               // mAh
     currentMeterSource_e currentMeterSource; // source of battery current meter used, either ADC, Virtual or ESC
+    uint16_t batteryCapacity;               // mAh
 
     // warnings / alerts
     bool useVBatAlerts;                     // Issue alerts based on VBat readings
