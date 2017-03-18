@@ -92,6 +92,6 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     {TIM3,  IO_TAG(PB0),  TIM_Channel_3,  TIM3_IRQn,            1, IOCFG_AF_PP_PD,  GPIO_AF_TIM3 }, // PWM6
     {TIM4,  IO_TAG(PB8),  TIM_Channel_3,  TIM4_IRQn,            1, IOCFG_AF_PP_PD,  GPIO_AF_TIM4 }, // PWM7
     {TIM4,  IO_TAG(PB9),  TIM_Channel_4,  TIM4_IRQn,            1, IOCFG_AF_PP_PD,  GPIO_AF_TIM4 }, // PWM8
-    {TIM3,  IO_TAG(PC6),  TIM_Channel_1,  TIM3_IRQn,            1, IOCFG_AF_PP_PD,  GPIO_AF_TIM3 }, // PWM9
+    //{TIM3,  IO_TAG(PC6),  TIM_Channel_1,  TIM3_IRQn,            1, IOCFG_AF_PP_PD,  GPIO_AF_TIM3 }, // PWM9
     {TIM12, IO_TAG(PB15), TIM_Channel_2,  TIM8_BRK_TIM12_IRQn,  1, IOCFG_AF_PP_PD,  GPIO_AF_TIM12}, // PWM10
 };

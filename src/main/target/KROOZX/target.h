@@ -127,7 +127,7 @@
 #define SPI1_SCK_PIN            PA5
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
-/**/
+
 #define USE_SPI_DEVICE_3
 #define SPI3_SCK_PIN            PB3
 #define SPI3_MISO_PIN           PB4
@@ -141,7 +141,17 @@
 #define RX_CHANNELS_TAER
 #define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_CURRENT_METER | FEATURE_OSD)
 
-//#define LED_STRIP
+#define LED_STRIP
+#define WS2811_GPIO_AF                  GPIO_AF_TIM3
+#define WS2811_PIN                      PC6
+#define WS2811_TIMER                    TIM3
+#define WS2811_TIMER_CHANNEL            TIM_Channel_1
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST4_HANDLER
+#define WS2811_DMA_STREAM               DMA1_Stream4
+#define WS2811_DMA_CHANNEL              DMA_Channel_5
+#define WS2811_DMA_IRQ                  DMA1_Stream4_IRQn
+#define WS2811_DMA_FLAG                 DMA_FLAG_TCIF4
+#define WS2811_DMA_IT                   DMA_IT_TCIF4
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -150,6 +160,6 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
-#define MAX_PWM_OUTPUT_PORTS    10
-#define USABLE_TIMER_CHANNEL_COUNT 11
+#define MAX_PWM_OUTPUT_PORTS    9
+#define USABLE_TIMER_CHANNEL_COUNT 10
 #define USED_TIMERS             (TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(8) | TIM_N(12))
