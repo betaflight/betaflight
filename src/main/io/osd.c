@@ -591,14 +591,14 @@ void osdUpdateAlarms(void)
     else
         CLR_BLINK(OSD_RSSI_VALUE);
 
-    if (getBatteryState() != BATTERY_OK) {
-        SET_BLINK(OSD_MAIN_BATT_VOLTAGE);
-        SET_BLINK(OSD_MAIN_BATT_WARNING);
-        SET_BLINK(OSD_AVG_CELL_VOLTAGE);
-    } else {
+    if (getBatteryState() == BATTERY_OK) {
         CLR_BLINK(OSD_MAIN_BATT_VOLTAGE);
         CLR_BLINK(OSD_MAIN_BATT_WARNING);
         CLR_BLINK(OSD_AVG_CELL_VOLTAGE);
+    } else {
+        SET_BLINK(OSD_MAIN_BATT_VOLTAGE);
+        SET_BLINK(OSD_MAIN_BATT_WARNING);
+        SET_BLINK(OSD_AVG_CELL_VOLTAGE);
     }
 
     if (STATE(GPS_FIX) == 0)
