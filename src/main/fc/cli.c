@@ -636,10 +636,12 @@ static const clivalue_t valueTable[] = {
 //  PG_VOLTAGE_SENSOR_ADC_CONFIG
     { "vbat_scale",                 VAR_UINT8  | MASTER_VALUE, .config.minmax = { VBAT_SCALE_MIN, VBAT_SCALE_MAX }, PG_VOLTAGE_SENSOR_ADC_CONFIG, offsetof(voltageSensorADCConfig_t, vbatscale) },
 
-// PG_CURRENT_SENSOR_ADC_OR_VIRTUAL_CONFIG
-    // FIXME this will only allow configuration of the FIRST current meter.  there are currently two
-    { "ibat_scale",                 VAR_INT16  | MASTER_VALUE, .config.minmax = { -16000, 16000 }, PG_CURRENT_SENSOR_ADC_OR_VIRTUAL_CONFIG, offsetof(currentMeterADCOrVirtualConfig_t, scale) },
-    { "ibat_offset",                VAR_INT16  | MASTER_VALUE, .config.minmax = { -16000, 16000 }, PG_CURRENT_SENSOR_ADC_OR_VIRTUAL_CONFIG, offsetof(currentMeterADCOrVirtualConfig_t, offset) },
+// PG_CURRENT_SENSOR_ADC_CONFIG
+    { "ibata_scale",                VAR_INT16  | MASTER_VALUE, .config.minmax = { -16000, 16000 }, PG_CURRENT_SENSOR_ADC_CONFIG, offsetof(currentSensorADCConfig_t, scale) },
+    { "ibata_offset",               VAR_INT16  | MASTER_VALUE, .config.minmax = { -16000, 16000 }, PG_CURRENT_SENSOR_ADC_CONFIG, offsetof(currentSensorADCConfig_t, offset) },
+// PG_CURRENT_SENSOR_ADC_CONFIG
+    { "ibatv_scale",                VAR_INT16  | MASTER_VALUE, .config.minmax = { -16000, 16000 }, PG_CURRENT_SENSOR_VIRTUAL_CONFIG, offsetof(currentMeterVirtualConfig_t, scale) },
+    { "ibatv_offset",               VAR_INT16  | MASTER_VALUE, .config.minmax = { -16000, 16000 }, PG_CURRENT_SENSOR_VIRTUAL_CONFIG, offsetof(currentMeterVirtualConfig_t, offset) },
 
 // PG_BEEPER_DEV_CONFIG
 #ifdef BEEPER

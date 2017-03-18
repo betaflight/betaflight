@@ -1227,7 +1227,7 @@ static bool blackboxWriteSysinfo()
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
             if (batteryConfig()->currentMeterSource == CURRENT_METER_ADC) {
-                blackboxPrintfHeaderLine("currentSensor:%d,%d",currentMeterADCOrVirtualConfig(CURRENT_SENSOR_ADC)->offset, currentMeterADCOrVirtualConfig(CURRENT_SENSOR_ADC)->scale);
+                blackboxPrintfHeaderLine("currentSensor:%d,%d",currentSensorADCConfig()->offset, currentSensorADCConfig()->scale);
             }
             );
 
