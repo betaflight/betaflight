@@ -89,12 +89,6 @@ void taskBstMasterProcess(timeUs_t currentTimeUs);
 #define TASK_PERIOD_MS(ms) ((ms) * 1000)
 #define TASK_PERIOD_US(us) (us)
 
-/* VBAT monitoring interval (in microseconds) - 1s*/
-#define VBATINTERVAL (6 * 3500)
-/* IBat monitoring interval (in microseconds) - 6 default looptimes */
-#define IBATINTERVAL (6 * 3500)
-
-
 static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
@@ -116,28 +110,16 @@ static void taskHandleSerial(timeUs_t currentTimeUs)
 }
 
 
-void taskBatterySensors(timeUs_t currentTimeUs)
+void taskBatteryVoltage(timeUs_t currentTimeUs)
 {
-    static uint32_t vbatLastServiced = 0;
+    UNUSED(currentTimeUs);
+    batteryUpdateVoltage();
+}
 
-    if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE) {
-        if (cmp32(currentTimeUs, vbatLastServiced) >= VBATINTERVAL) {
-            vbatLastServiced = currentTimeUs;
-
-            batteryUpdateVoltage();
-        }
-    }
-
-    if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
-
-        static uint32_t ibatLastServiced = 0;
-        const int32_t ibatTimeSinceLastServiced = cmp32(currentTimeUs, ibatLastServiced);
-
-        if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
-            ibatLastServiced = currentTimeUs;
-            batteryUpdateCurrentMeter(ibatTimeSinceLastServiced, ARMING_FLAG(ARMED));
-        }
-    }
+void taskBatteryCurrent(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+    batteryUpdateCurrentMeter(getTaskDeltaTime(TASK_SELF), ARMING_FLAG(ARMED));
 }
 
 void taskBatteryAlerts(timeUs_t currentTimeUs)
@@ -254,11 +236,13 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_SERIAL, true);
     rescheduleTask(TASK_SERIAL, TASK_PERIOD_HZ(serialConfig()->serial_update_rate_hz));
 
-    bool useBatterySensors = batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE || batteryConfig()->currentMeterSource != CURRENT_METER_NONE;
-    setTaskEnabled(TASK_BATTERY_SENSORS, useBatterySensors);
+    bool useBatteryVoltage = batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE;
+    setTaskEnabled(TASK_BATTERY_VOLTAGE, useBatteryVoltage);
+    bool useBatteryCurrent = batteryConfig()->currentMeterSource != CURRENT_METER_NONE;
+    setTaskEnabled(TASK_BATTERY_CURRENT, useBatteryCurrent);
 
     bool useBatteryAlerts = batteryConfig()->useVBatAlerts || batteryConfig()->useConsumptionAlerts || feature(FEATURE_OSD);
-    setTaskEnabled(TASK_BATTERY_ALERTS, useBatterySensors && useBatteryAlerts);
+    setTaskEnabled(TASK_BATTERY_ALERTS, (useBatteryVoltage || useBatteryCurrent) && useBatteryAlerts);
 
     setTaskEnabled(TASK_RX, true);
 
@@ -395,10 +379,16 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
-    [TASK_BATTERY_SENSORS] = {
-        .taskName = "BATTERY_SENSORS",
-        .taskFunc = taskBatterySensors,
-        .desiredPeriod = TASK_PERIOD_HZ(50),        // 50 Hz
+    [TASK_BATTERY_VOLTAGE] = {
+        .taskName = "BATTERY_VOLTAGE",
+        .taskFunc = taskBatteryVoltage,
+        .desiredPeriod = TASK_PERIOD_HZ(50),
+        .staticPriority = TASK_PRIORITY_MEDIUM,
+    },
+    [TASK_BATTERY_CURRENT] = {
+        .taskName = "BATTERY_CURRENT",
+        .taskFunc = taskBatteryCurrent,
+        .desiredPeriod = TASK_PERIOD_HZ(50),
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #ifdef BEEPER
