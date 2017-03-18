@@ -29,6 +29,7 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
+#include "config/config_reset.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -94,8 +95,6 @@ uint32_t rcInvalidPulsPeriod[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 rxRuntimeConfig_t rxRuntimeConfig;
 static uint8_t rcSampleIndex = 0;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
-
 #ifndef RX_SPI_DEFAULT_PROTOCOL
 #define RX_SPI_DEFAULT_PROTOCOL 0
 #endif
@@ -103,28 +102,42 @@ PG_REGISTER_WITH_RESET_TEMPLATE(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
 #define SERIALRX_PROVIDER 0
 #endif
 
-PG_RESET_TEMPLATE(rxConfig_t, rxConfig,
-    .halfDuplex = 0,
-    .serialrx_provider = SERIALRX_PROVIDER,
-    .rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL,
-    .sbus_inversion = 1,
-    .spektrum_sat_bind = 0,
-    .spektrum_sat_bind_autoreset = 1,
-    .midrc = 1500,
-    .mincheck = 1100,
-    .maxcheck = 1900,
-    .rx_min_usec = 885,          // any of first 4 channels below this value will trigger rx loss detection
-    .rx_max_usec = 2115,         // any of first 4 channels above this value will trigger rx loss detection
-    .rssi_channel = 0,
-    .rssi_scale = RSSI_SCALE_DEFAULT,
-    .rssi_invert = 0,
-    .rcInterpolation = RC_SMOOTHING_AUTO,
-    .rcInterpolationChannels = 0,
-    .rcInterpolationInterval = 19,
-    .fpvCamAngleDegrees = 0,
-    .max_aux_channel = DEFAULT_AUX_CHANNEL_COUNT,
-    .airModeActivateThreshold = 1350
-);
+#define RX_MIN_USEC 885
+#define RX_MAX_USEC 2115
+#define RX_MID_USEC 1500
+
+PG_REGISTER_WITH_RESET_FN(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
+void pgResetFn_rxConfig(rxConfig_t *rxConfig)
+{
+    RESET_CONFIG_2(rxConfig_t, rxConfig,
+        .halfDuplex = 0,
+        .serialrx_provider = SERIALRX_PROVIDER,
+        .rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL,
+        .sbus_inversion = 1,
+        .spektrum_sat_bind = 0,
+        .spektrum_sat_bind_autoreset = 1,
+        .midrc = RX_MID_USEC,
+        .mincheck = 1100,
+        .maxcheck = 1900,
+        .rx_min_usec = RX_MIN_USEC,          // any of first 4 channels below this value will trigger rx loss detection
+        .rx_max_usec = RX_MAX_USEC,         // any of first 4 channels above this value will trigger rx loss detection
+        .rssi_channel = 0,
+        .rssi_scale = RSSI_SCALE_DEFAULT,
+        .rssi_invert = 0,
+        .rcInterpolation = RC_SMOOTHING_AUTO,
+        .rcInterpolationChannels = 0,
+        .rcInterpolationInterval = 19,
+        .fpvCamAngleDegrees = 0,
+        .max_aux_channel = DEFAULT_AUX_CHANNEL_COUNT,
+        .airModeActivateThreshold = 1350
+    );
+
+#ifdef RX_CHANNELS_TAER
+    parseRcChannels("TAER1234", rxConfig);
+#else
+    parseRcChannels("AETR1234", rxConfig);
+#endif
+}
 
 PG_REGISTER_ARRAY_WITH_RESET_FN(rxChannelRangeConfig_t, NON_AUX_CHANNEL_COUNT, rxChannelRangeConfigs, PG_RX_CHANNEL_RANGE_CONFIG, 0);
 void pgResetFn_rxChannelRangeConfigs(rxChannelRangeConfig_t *rxChannelRangeConfigs)
@@ -142,8 +155,8 @@ void pgResetFn_rxFailsafeChannelConfigs(rxFailsafeChannelConfig_t *rxFailsafeCha
     for (int i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
         rxFailsafeChannelConfigs[i].mode = (i < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_MODE_AUTO : RX_FAILSAFE_MODE_HOLD;
         rxFailsafeChannelConfigs[i].step = (i == THROTTLE)
-            ? CHANNEL_VALUE_TO_RXFAIL_STEP(rxConfig()->rx_min_usec)
-            : CHANNEL_VALUE_TO_RXFAIL_STEP(rxConfig()->midrc);
+            ? CHANNEL_VALUE_TO_RXFAIL_STEP(RX_MIN_USEC)
+            : CHANNEL_VALUE_TO_RXFAIL_STEP(RX_MID_USEC);
     }
 }
 
@@ -424,7 +437,7 @@ static uint16_t calculateNonDataDrivenChannel(uint8_t chan, uint16_t sample)
 
 static uint16_t getRxfailValue(uint8_t channel)
 {
-    const rxFailsafeChannelConfig_t *channelFailsafeConfig = &rxConfig()->failsafe_channel_configurations[channel];
+    const rxFailsafeChannelConfig_t *channelFailsafeConfig = rxFailsafeChannelConfigs(channel);
 
     switch(channelFailsafeConfig->mode) {
     case RX_FAILSAFE_MODE_AUTO:
@@ -492,7 +505,7 @@ static void readRxChannelsApplyRanges(void)
 
         // apply the rx calibration
         if (channel < NON_AUX_CHANNEL_COUNT) {
-            sample = applyRxChannelRangeConfiguraton(sample, &rxConfig()->channelRanges[channel]);
+            sample = applyRxChannelRangeConfiguraton(sample, rxChannelRangeConfigs(channel));
         }
 
         rcRaw[channel] = sample;

@@ -1816,8 +1816,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_RXFAIL_CONFIG:
         i = sbufReadU8(src);
         if (i < MAX_SUPPORTED_RC_CHANNEL_COUNT) {
-            rxConfigMutable()->failsafe_channel_configurations[i].mode = sbufReadU8(src);
-            rxConfigMutable()->failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(sbufReadU16(src));
+            rxFailsafeChannelConfigsMutable(i)->mode = sbufReadU8(src);
+            rxFailsafeChannelConfigsMutable(i)->step = CHANNEL_VALUE_TO_RXFAIL_STEP(sbufReadU16(src));
         } else {
             return MSP_RESULT_ERROR;
         }
