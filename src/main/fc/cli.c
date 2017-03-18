@@ -916,6 +916,9 @@ static servoMixer_t customServoMixersCopy[MAX_SERVO_RULES];
 static servoParam_t servoParamsCopy[MAX_SUPPORTED_SERVOS];
 #endif
 static batteryConfig_t batteryConfigCopy;
+static voltageSensorADCConfig_t voltageSensorADCConfigCopy[MAX_VOLTAGE_SENSOR_ADC];
+static currentSensorADCConfig_t currentSensorADCConfigCopy;
+static currentSensorVirtualConfig_t currentSensorVirtualConfigCopy;
 static motorMixer_t customMotorMixerCopy[MAX_SUPPORTED_MOTORS];
 static mixerConfig_t mixerConfigCopy;
 static flight3DConfig_t flight3DConfigCopy;
@@ -1218,6 +1221,18 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
     case PG_BATTERY_CONFIG:
         ret.currentConfig = &batteryConfigCopy;
         ret.defaultConfig = batteryConfig();
+        break;
+    case PG_VOLTAGE_SENSOR_ADC_CONFIG:
+        ret.currentConfig = &voltageSensorADCConfigCopy[0];
+        ret.defaultConfig = voltageSensorADCConfig(0);
+        break;
+    case PG_CURRENT_SENSOR_ADC_CONFIG:
+        ret.currentConfig = &currentSensorADCConfigCopy;
+        ret.defaultConfig = currentSensorADCConfig();
+        break;
+    case PG_CURRENT_SENSOR_VIRTUAL_CONFIG:
+        ret.currentConfig = &currentSensorVirtualConfigCopy;
+        ret.defaultConfig = currentSensorVirtualConfig();
         break;
     case PG_SERIAL_CONFIG:
         ret.currentConfig = &serialConfigCopy;
