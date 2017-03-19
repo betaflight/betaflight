@@ -492,6 +492,9 @@ static void imuCalculateEstimatedAttitude(float dT)
                 // Re-initialize quaternion from known Roll, Pitch and GPS heading
                 imuComputeQuaternionFromRPY(attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
                 gpsHeadingInitialized = true;
+
+                // Force reset of heading hold target
+                resetHeadingHoldTarget(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
             }
 
             // If we can't use COG and there's MAG available - fallback

@@ -300,7 +300,7 @@ static void updatePositionHeadingController_FW(timeUs_t currentTimeUs, timeDelta
 
     // Update magHold heading lock in case pilot is using MAG mode (prevent MAGHOLD to fight navigation)
     posControl.desiredState.yaw = wrap_36000(posControl.actualState.yaw + headingError);
-    updateMagHoldHeading(CENTIDEGREES_TO_DEGREES(posControl.desiredState.yaw));
+    updateHeadingHoldTarget(CENTIDEGREES_TO_DEGREES(posControl.desiredState.yaw));
 
     // Add pitch compensation
     //posControl.rcAdjustment[PITCH] = -CENTIDEGREES_TO_DECIDEGREES(ABS(rollAdjustment)) * 0.50f;
@@ -498,7 +498,7 @@ void calculateFixedWingInitialHoldPosition(t_fp_vector * pos)
 
 void resetFixedWingHeadingController(void)
 {
-    updateMagHoldHeading(CENTIDEGREES_TO_DEGREES(posControl.actualState.yaw));
+    updateHeadingHoldTarget(CENTIDEGREES_TO_DEGREES(posControl.actualState.yaw));
 }
 
 void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags, timeUs_t currentTimeUs)

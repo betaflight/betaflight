@@ -28,13 +28,17 @@
 #define YAW_P_LIMIT_MAX 500                 // Maximum value for yaw P limiter
 #define YAW_P_LIMIT_DEFAULT 300             // Default value for yaw P limiter
 
+#define HEADING_HOLD_RATE_LIMIT_MIN 10
+#define HEADING_HOLD_RATE_LIMIT_MAX 250
+#define HEADING_HOLD_RATE_LIMIT_DEFAULT 90
+
 #define FW_ITERM_THROW_LIMIT_DEFAULT 165
 #define FW_ITERM_THROW_LIMIT_MIN 0
 #define FW_ITERM_THROW_LIMIT_MAX 500
 
-#define AXIS_ACCEL_MIN_LIMIT    50
+#define AXIS_ACCEL_MIN_LIMIT        50
 
-#define MAG_HOLD_ERROR_LPF_FREQ 2
+#define HEADING_HOLD_ERROR_LPF_FREQ 2
 
 typedef enum {
     /* PID              MC      FW  */
@@ -73,6 +77,8 @@ typedef struct pidProfile_s {
     uint8_t acc_soft_lpf_hz;                // Set the Low Pass Filter factor for ACC. Reducing this value would reduce ACC noise (visible in GUI), but would increase ACC lag time. Zero = no filter
     uint8_t yaw_lpf_hz;
     uint16_t yaw_p_limit;
+
+    uint8_t heading_hold_rate_limit;        // Maximum rotation rate HEADING_HOLD mode can feed to yaw rate PID controller
 
     uint16_t rollPitchItermIgnoreRate;      // Experimental threshold for ignoring iterm for pitch and roll on certain rates
     uint16_t yawItermIgnoreRate;            // Experimental threshold for ignoring iterm for yaw on certain rates
@@ -116,11 +122,11 @@ float pidRateToRcCommand(float rateDPS, uint8_t rate);
 int16_t pidAngleToRcCommand(float angleDeciDegrees, int16_t maxInclination);
 
 enum {
-    MAG_HOLD_DISABLED = 0,
-    MAG_HOLD_UPDATE_HEADING,
-    MAG_HOLD_ENABLED
+    HEADING_HOLD_DISABLED = 0,
+    HEADING_HOLD_UPDATE_HEADING,
+    HEADING_HOLD_ENABLED
 };
 
-void updateMagHoldHeading(int16_t heading);
-void resetMagHoldHeading(int16_t heading);
-int16_t getMagHoldHeading();
+void updateHeadingHoldTarget(int16_t heading);
+void resetHeadingHoldTarget(int16_t heading);
+int16_t getHeadingHoldTarget();

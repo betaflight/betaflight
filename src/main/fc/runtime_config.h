@@ -45,7 +45,7 @@ extern uint16_t armingFlags;
 typedef enum {
     ANGLE_MODE      = (1 << 0),
     HORIZON_MODE    = (1 << 1),
-    MAG_MODE        = (1 << 2),
+    HEADING_MODE    = (1 << 2),
     NAV_ALTHOLD_MODE= (1 << 3), // old BARO
     NAV_RTH_MODE    = (1 << 4), // old GPS_HOME
     NAV_POSHOLD_MODE= (1 << 5), // old GPS_HOLD

@@ -115,7 +115,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXANGLE, "ANGLE;", 1 },
     { BOXHORIZON, "HORIZON;", 2 },
     { BOXNAVALTHOLD, "NAV ALTHOLD;", 3 },   // old BARO
-    { BOXMAG, "MAG;", 5 },
+    { BOXHEADINGHOLD, "HEADING HOLD;", 5 },
     { BOXHEADFREE, "HEADFREE;", 6 },
     { BOXHEADADJ, "HEADADJ;", 7 },
     { BOXCAMSTAB, "CAMSTAB;", 8 },
@@ -261,8 +261,9 @@ static void initActiveBoxIds(void)
 
     activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
 
+    activeBoxIds[activeBoxIdCount++] = BOXHEADINGHOLD;
+
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
-        activeBoxIds[activeBoxIdCount++] = BOXMAG;
         activeBoxIds[activeBoxIdCount++] = BOXHEADFREE;
         activeBoxIds[activeBoxIdCount++] = BOXHEADADJ;
     }
@@ -333,7 +334,7 @@ static uint32_t packFlightModeFlags(void)
     // It would be preferable to setting the enabled bits based on BOXINDEX.
     const uint32_t tmp = IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << BOXANGLE |
         IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)) << BOXHORIZON |
-        IS_ENABLED(FLIGHT_MODE(MAG_MODE)) << BOXMAG |
+        IS_ENABLED(FLIGHT_MODE(HEADING_MODE)) << BOXHEADINGHOLD |
         IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE)) << BOXHEADFREE |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHEADADJ)) << BOXHEADADJ |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMSTAB)) << BOXCAMSTAB |
@@ -806,7 +807,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, NAV_Status.activeWpNumber);
         sbufWriteU8(dst, NAV_Status.error);
         //sbufWriteU16(dst,  (int16_t)(target_bearing/100));
-        sbufWriteU16(dst, getMagHoldHeading());
+        sbufWriteU16(dst, getHeadingHoldTarget());
         break;
 #endif
 
@@ -1116,13 +1117,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, 0);
         sbufWriteU16(dst, 0);
     #endif
-    #ifdef MAG
-        sbufWriteU8(dst, compassConfig()->mag_hold_rate_limit);
-        sbufWriteU8(dst, MAG_HOLD_ERROR_LPF_FREQ);
-    #else
-        sbufWriteU8(dst, 0);
-        sbufWriteU8(dst, 0);
-    #endif
+        sbufWriteU8(dst, pidProfile()->heading_hold_rate_limit);
+        sbufWriteU8(dst, HEADING_HOLD_ERROR_LPF_FREQ);
         sbufWriteU16(dst, mixerConfig()->yaw_jump_prevention_limit);
         sbufWriteU8(dst, gyroConfig()->gyro_lpf);
         sbufWriteU8(dst, pidProfile()->acc_soft_lpf_hz);
@@ -1304,7 +1300,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_HEAD:
-        updateMagHoldHeading(sbufReadU16(src));
+        updateHeadingHoldTarget(sbufReadU16(src));
         break;
 
     case MSP_SET_RAW_RC:
@@ -1593,13 +1589,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             sbufReadU16(src);
             sbufReadU16(src);
         #endif
-        #ifdef MAG
-            compassConfigMutable()->mag_hold_rate_limit = sbufReadU8(src);
-            sbufReadU8(src); //MAG_HOLD_ERROR_LPF_FREQ
-        #else
-            sbufReadU8(src);
-            sbufReadU8(src);
-        #endif
+            pidProfileMutable()->heading_hold_rate_limit = sbufReadU8(src);
+            sbufReadU8(src); //HEADING_HOLD_ERROR_LPF_FREQ
             mixerConfigMutable()->yaw_jump_prevention_limit = sbufReadU16(src);
             gyroConfigMutable()->gyro_lpf = sbufReadU8(src);
             pidProfileMutable()->acc_soft_lpf_hz = sbufReadU8(src);

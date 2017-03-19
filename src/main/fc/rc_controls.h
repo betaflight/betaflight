@@ -24,7 +24,7 @@ typedef enum {
     BOXANGLE,
     BOXHORIZON,
     BOXNAVALTHOLD,  // old BOXBARO
-    BOXMAG,
+    BOXHEADINGHOLD, // old MAG
     BOXHEADFREE,
     BOXHEADADJ,
     BOXCAMSTAB,

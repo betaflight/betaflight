@@ -56,7 +56,7 @@
 
 mag_t mag;                   // mag access functions
 
-PG_REGISTER_WITH_RESET_TEMPLATE(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 1);
 
 #ifdef MAG
 #define MAG_HARDWARE_DEFAULT    MAG_AUTODETECT
@@ -67,7 +67,6 @@ PG_RESET_TEMPLATE(compassConfig_t, compassConfig,
     .mag_align = ALIGN_DEFAULT,
     .mag_hardware = MAG_HARDWARE_DEFAULT,
     .mag_declination = 0,
-    .mag_hold_rate_limit = MAG_HOLD_RATE_LIMIT_DEFAULT,
     .magCalibrationTimeLimit = 30
 );
 
