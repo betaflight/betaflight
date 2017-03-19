@@ -437,7 +437,7 @@ static void osdDrawSingleElement(uint8_t item)
 
 	case OSD_AVG_CELL_VOLTAGE:
         {
-            uint16_t cellV = getVbat() * 10 / batteryCellCount;
+            uint16_t cellV = getBatteryVoltage() * 10 / getBatteryCellCount();
             buff[0] = SYM_BATT_5;
             sprintf(buff + 1, "%d.%dV", cellV / 100, cellV % 100);
             break;
