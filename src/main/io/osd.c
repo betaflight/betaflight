@@ -510,7 +510,7 @@ void osdDrawElements(void)
 void pgResetFn_osdConfig(osdConfig_t *osdProfile)
 {
     osdProfile->item_pos[OSD_RSSI_VALUE] = OSD_POS(8, 1) | VISIBLE_FLAG;
-    osdProfile->item_pos[OSD_MAIN_BATT_WARNING] = OSD_POS(9, 10) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 1) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(8, 6) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_HORIZON_SIDEBARS] = OSD_POS(8, 6) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_ONTIME] = OSD_POS(22, 1) | VISIBLE_FLAG;
@@ -529,7 +529,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdProfile)
     osdProfile->item_pos[OSD_YAW_PIDS] = OSD_POS(7, 15) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_POWER] = OSD_POS(1, 10) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_PIDRATE_PROFILE] = OSD_POS(25, 10) | VISIBLE_FLAG;
-    osdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 1) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_MAIN_BATT_WARNING] = OSD_POS(9, 10) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_AVG_CELL_VOLTAGE] = OSD_POS(12, 2) | VISIBLE_FLAG;
 
     osdProfile->units = OSD_UNIT_METRIC;
