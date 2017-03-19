@@ -208,7 +208,12 @@ static const beeperTableEntry_t *currentBeeperEntry = NULL;
  */
 void beeper(beeperMode_e mode)
 {
-    if (mode == BEEPER_SILENCE || ((getBeeperOffMask() & (1 << (BEEPER_USB-1))) && (feature(FEATURE_VBAT) && (batteryCellCount == 0)))) {
+    if (
+        mode == BEEPER_SILENCE || (
+            (getBeeperOffMask() & (1 << (BEEPER_USB - 1)))
+            && (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && (getBatteryCellCount() == 0))
+        )
+    ) {
         beeperSilence();
         return;
     }

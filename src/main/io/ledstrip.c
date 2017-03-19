@@ -472,7 +472,7 @@ static void applyLedFixedLayers()
 
             case LED_FUNCTION_BATTERY:
                 color = HSV(RED);
-                hOffset += scaleRange(calculateBatteryPercentage(), 0, 100, -30, 120);
+                hOffset += scaleRange(calculateBatteryPercentageRemaining(), 0, 100, -30, 120);
                 break;
 
             case LED_FUNCTION_RSSI:
@@ -522,7 +522,7 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
 
         if (warningFlashCounter == 0) {      // update when old flags was processed
             warningFlags = 0;
-            if (feature(FEATURE_VBAT) && getBatteryState() != BATTERY_OK)
+            if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && getBatteryState() != BATTERY_OK)
                 warningFlags |= 1 << WARNING_LOW_BATTERY;
             if (feature(FEATURE_FAILSAFE) && failsafeIsActive())
                 warningFlags |= 1 << WARNING_FAILSAFE;

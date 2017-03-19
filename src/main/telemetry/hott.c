@@ -247,24 +247,24 @@ static inline void updateAlarmBatteryStatus(HOTT_EAM_MSG_t *hottEAMMessage)
 
 static inline void hottEAMUpdateBattery(HOTT_EAM_MSG_t *hottEAMMessage)
 {
-    hottEAMMessage->main_voltage_L = getVbat() & 0xFF;
-    hottEAMMessage->main_voltage_H = getVbat() >> 8;
-    hottEAMMessage->batt1_voltage_L = getVbat() & 0xFF;
-    hottEAMMessage->batt1_voltage_H = getVbat() >> 8;
+    hottEAMMessage->main_voltage_L = getBatteryVoltage() & 0xFF;
+    hottEAMMessage->main_voltage_H = getBatteryVoltage() >> 8;
+    hottEAMMessage->batt1_voltage_L = getBatteryVoltage() & 0xFF;
+    hottEAMMessage->batt1_voltage_H = getBatteryVoltage() >> 8;
 
     updateAlarmBatteryStatus(hottEAMMessage);
 }
 
 static inline void hottEAMUpdateCurrentMeter(HOTT_EAM_MSG_t *hottEAMMessage)
 {
-    int32_t amp = amperage / 10;
+    int32_t amp = getAmperage() / 10;
     hottEAMMessage->current_L = amp & 0xFF;
     hottEAMMessage->current_H = amp >> 8;
 }
 
 static inline void hottEAMUpdateBatteryDrawnCapacity(HOTT_EAM_MSG_t *hottEAMMessage)
 {
-    int32_t mAh = mAhDrawn / 10;
+    int32_t mAh = getMAhDrawn() / 10;
     hottEAMMessage->batt_cap_L = mAh & 0xFF;
     hottEAMMessage->batt_cap_H = mAh >> 8;
 }

@@ -59,7 +59,7 @@
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   32 // increment after a release, to set the version for all changes to go into the following release (if no changes to MSP are made between the releases, this can be reverted before the release)
+#define API_VERSION_MINOR                   33 // increment after a release, to set the version for all changes to go into the following release (if no changes to MSP are made between the releases, this can be reverted before the release)
 
 #define API_VERSION_LENGTH                  2
 
@@ -105,6 +105,9 @@
 //
 // MSP commands for Cleanflight original features
 //
+#define MSP_BATTERY_CONFIG              32
+#define MSP_SET_BATTERY_CONFIG          33
+
 #define MSP_MODE_RANGES                 34    //out message         Returns all mode ranges
 #define MSP_SET_MODE_RANGE              35    //in message          Sets a single mode range
 
@@ -253,6 +256,9 @@
 #define MSP_RC_DEADBAND          125    //out message         deadbands for yaw alt pitch roll
 #define MSP_SENSOR_ALIGNMENT     126    //out message         orientation of acc,gyro,mag
 #define MSP_LED_STRIP_MODECOLOR  127    //out message         Get LED strip mode_color settings
+#define MSP_VOLTAGE_METERS       128    //out message         Voltage (per meter)
+#define MSP_CURRENT_METERS       129    //out message         Amperage (per meter)
+#define MSP_BATTERY_STATE        130    //out message         Connected/Disconnected, Voltage, Current Used
 
 #define MSP_SET_RAW_RC           200    //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed

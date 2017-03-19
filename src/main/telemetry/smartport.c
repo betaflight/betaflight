@@ -618,20 +618,20 @@ void handleSmartPortTelemetry(void)
                 break;
 #endif
             case FSSP_DATAID_VFAS       :
-                if (feature(FEATURE_VBAT) && batteryCellCount > 0) {
+                if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && getBatteryCellCount() > 0) {
                     uint16_t vfasVoltage;
                     if (telemetryConfig()->frsky_vfas_cell_voltage) {
-                        vfasVoltage = getVbat() / batteryCellCount;
+                        vfasVoltage = getBatteryVoltage() / getBatteryCellCount();
                     } else {
-                        vfasVoltage = getVbat();
+                        vfasVoltage = getBatteryVoltage();
                     }
                     smartPortSendPackage(id, vfasVoltage * 10); // given in 0.1V, convert to volts
                     smartPortHasRequest = 0;
                 }
                 break;
             case FSSP_DATAID_CURRENT    :
-                if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_SENSOR)) {
-                    smartPortSendPackage(id, amperage / 10); // given in 10mA steps, unknown requested unit
+                if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
+                    smartPortSendPackage(id, getAmperage() / 10); // given in 10mA steps, unknown requested unit
                     smartPortHasRequest = 0;
                 }
                 break;
@@ -643,8 +643,8 @@ void handleSmartPortTelemetry(void)
                 }
                 break;
             case FSSP_DATAID_FUEL       :
-                if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_SENSOR)) {
-                    smartPortSendPackage(id, mAhDrawn); // given in mAh, unknown requested unit
+                if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
+                    smartPortSendPackage(id, getMAhDrawn()); // given in mAh, unknown requested unit
                     smartPortHasRequest = 0;
                 }
                 break;
@@ -791,8 +791,8 @@ void handleSmartPortTelemetry(void)
                 break;
 #endif
             case FSSP_DATAID_A4         :
-                if (feature(FEATURE_VBAT) && batteryCellCount > 0) {
-                    smartPortSendPackage(id, getVbat() * 10 / batteryCellCount ); // given in 0.1V, convert to volts
+                if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && getBatteryCellCount() > 0) {
+                    smartPortSendPackage(id, getBatteryVoltage() * 10 / getBatteryCellCount()); // given in 0.1V, convert to volts
                     smartPortHasRequest = 0;
                 }
                 break;

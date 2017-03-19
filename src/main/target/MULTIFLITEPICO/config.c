@@ -39,15 +39,16 @@
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
 
+#define VBAT_SCALE 100
 
 // alternative defaults settings for MULTIFLITEPICO targets
 void targetConfiguration(void)
 {
     compassConfigMutable()->mag_hardware = MAG_NONE;            // disabled by default
 
-    batteryConfigMutable()->vbatscale = 100;
-    batteryConfigMutable()->vbatresdivval = 15;
-    batteryConfigMutable()->vbatresdivmultiplier = 4;
+    voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale = VBAT_SCALE;
+    voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatresdivval = 15;
+    voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatresdivmultiplier = 4;
     batteryConfigMutable()->vbatmaxcellvoltage = 44;
     batteryConfigMutable()->vbatmincellvoltage = 32;
     batteryConfigMutable()->vbatwarningcellvoltage = 33;

@@ -113,7 +113,7 @@ pidProfile_t *currentPidProfile;
 PG_REGISTER_WITH_RESET_TEMPLATE(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
 
 PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
-    .enabledFeatures = DEFAULT_FEATURES | DEFAULT_RX_FEATURE  | FEATURE_FAILSAFE
+    .enabledFeatures = DEFAULT_FEATURES | DEFAULT_RX_FEATURE | FEATURE_FAILSAFE
 );
 
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
@@ -195,8 +195,8 @@ void pgResetFn_adcConfig(adcConfig_t *adcConfig)
 #endif
 
 #ifdef CURRENT_METER_ADC_PIN
-    adcConfig->currentMeter.enabled = true;
-    adcConfig->currentMeter.ioTag = IO_TAG(CURRENT_METER_ADC_PIN);
+    adcConfig->current.enabled = true;
+    adcConfig->current.ioTag = IO_TAG(CURRENT_METER_ADC_PIN);
 #endif
 
 #ifdef RSSI_ADC_PIN
@@ -502,12 +502,6 @@ void createDefaultConfig(master_t *config)
     osdResetConfig(&config->osdConfig);
 #endif
 #endif // USE_PARAMETER_GROUPS
-
-#ifdef BOARD_HAS_VOLTAGE_DIVIDER
-    // only enable the VBAT feature by default if the board has a voltage divider otherwise
-    // the user may see incorrect readings and unexpected issues with pin mappings may occur.
-    intFeatureSet(FEATURE_VBAT, featuresPtr);
-#endif
 
     config->version = EEPROM_CONF_VERSION;
 
@@ -873,8 +867,8 @@ void validateAndFixConfig(void)
         // rssi adc needs the same ports
         featureClear(FEATURE_RSSI_ADC);
         // current meter needs the same ports
-        if (batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC) {
-            featureClear(FEATURE_CURRENT_METER);
+        if (batteryConfig()->currentMeterSource == CURRENT_METER_ADC) {
+            batteryConfigMutable()->currentMeterSource = CURRENT_METER_NONE;
         }
 #endif
         // software serial needs free PWM ports
@@ -883,14 +877,15 @@ void validateAndFixConfig(void)
 
 #ifdef USE_SOFTSPI
     if (featureConfigured(FEATURE_SOFTSPI)) {
-        featureClear(FEATURE_RX_PPM | FEATURE_RX_PARALLEL_PWM | FEATURE_SOFTSERIAL | FEATURE_VBAT);
+        featureClear(FEATURE_RX_PPM | FEATURE_RX_PARALLEL_PWM | FEATURE_SOFTSERIAL);
+        batteryConfigMutable()->voltageMeterSource = VOLTAGE_METER_NONE;
 #if defined(STM32F10X)
         featureClear(FEATURE_LED_STRIP);
         // rssi adc needs the same ports
         featureClear(FEATURE_RSSI_ADC);
         // current meter needs the same ports
-        if (batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC) {
-            featureClear(FEATURE_CURRENT_METER);
+        if (batteryConfig()->currentMeterSource == CURRENT_METER_ADC) {
+            batteryConfigMutable()->currentMeterSource = CURRENT_METER_NONE;
         }
 #endif
     }

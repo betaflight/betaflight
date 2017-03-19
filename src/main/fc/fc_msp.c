@@ -728,13 +728,10 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_ANALOG:
-        sbufWriteU8(dst, (uint8_t)constrain(getVbat(), 0, 255));
-        sbufWriteU16(dst, (uint16_t)constrain(mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
+        sbufWriteU8(dst, (uint8_t)constrain(getBatteryVoltage(), 0, 255));
+        sbufWriteU16(dst, (uint16_t)constrain(getMAhDrawn(), 0, 0xFFFF)); // milliamp hours drawn from battery
         sbufWriteU16(dst, rssi);
-        if(batteryConfig()->multiwiiCurrentMeterOutput) {
-            sbufWriteU16(dst, (uint16_t)constrain(amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
-        } else
-            sbufWriteU16(dst, (int16_t)constrain(amperage, -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
+        sbufWriteU16(dst, (int16_t)constrain(getAmperage(), -0x8000, 0x7FFF)); // send current in 0.01 A steps, range is -320A to 320A
         break;
 
     case MSP_ARMING_CONFIG:
@@ -833,13 +830,13 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, 0); // TODO gps_baudrate (an index, cleanflight uses a uint32_t
         sbufWriteU8(dst, 0); // gps_ubx_sbas
 #endif
-        sbufWriteU8(dst, batteryConfig()->multiwiiCurrentMeterOutput);
+        sbufWriteU8(dst, 0); // was multiwiiCurrentMeterOutput
         sbufWriteU8(dst, rxConfig()->rssi_channel);
         sbufWriteU8(dst, 0);
 
         sbufWriteU16(dst, compassConfig()->mag_declination / 10);
 
-        sbufWriteU8(dst, batteryConfig()->vbatscale);
+        sbufWriteU8(dst, 0); // was vbatscale
         sbufWriteU8(dst, batteryConfig()->vbatmincellvoltage);
         sbufWriteU8(dst, batteryConfig()->vbatmaxcellvoltage);
         sbufWriteU8(dst, batteryConfig()->vbatwarningcellvoltage);
@@ -911,19 +908,97 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, boardAlignment()->yawDegrees);
         break;
 
+    case MSP_BATTERY_STATE: {
+        // battery characteristics
+        sbufWriteU8(dst, (uint8_t)constrain(getBatteryCellCount(), 0, 255)); // 0 indicates battery not detected.
+        sbufWriteU16(dst, batteryConfig()->batteryCapacity); // in mAh
+
+        // battery state
+        sbufWriteU8(dst, (uint8_t)constrain(getBatteryVoltage(), 0, 255)); // in 0.1V steps
+        sbufWriteU16(dst, (uint16_t)constrain(getMAhDrawn(), 0, 0xFFFF)); // milliamp hours drawn from battery
+        sbufWriteU16(dst, (int16_t)constrain(getAmperage(), -0x8000, 0x7FFF)); // send current in 0.01 A steps, range is -320A to 320A
+
+        // battery alerts
+        sbufWriteU8(dst, (uint8_t)getBatteryState());
+        break;
+    }
+    case MSP_VOLTAGE_METERS:
+        // write out id and voltage meter values, once for each meter we support
+        for (int i = 0; i < supportedVoltageMeterCount; i++) {
+
+            voltageMeter_t meter;
+            uint8_t id = (uint8_t)voltageMeterIds[i];
+            voltageMeterRead(id, &meter);
+
+            sbufWriteU8(dst, id);
+            sbufWriteU8(dst, (uint8_t)constrain(meter.filtered, 0, 255));
+        }
+        break;
+
+    case MSP_CURRENT_METERS:
+        // write out id and current meter values, once for each meter we support
+        for (int i = 0; i < supportedCurrentMeterCount; i++) {
+
+            currentMeter_t meter;
+            uint8_t id = (uint8_t)currentMeterIds[i];
+            currentMeterRead(id, &meter);
+
+            sbufWriteU8(dst, id);
+            sbufWriteU16(dst, (uint16_t)constrain(meter.mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
+            sbufWriteU16(dst, (uint16_t)constrain(meter.amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps (mA). Negative range is truncated to zero
+        }
+        break;
+
     case MSP_VOLTAGE_METER_CONFIG:
-        sbufWriteU8(dst, batteryConfig()->vbatscale);
+        // by using a sensor type and a sub-frame length it's possible to configure any type of voltage meter,
+        // e.g. an i2c/spi/can sensor or any sensor not built directly into the FC such as ESC/RX/SPort/SBus that has
+        // different configuration requirements.
+        BUILD_BUG_ON(VOLTAGE_SENSOR_ADC_VBAT != 0); // VOLTAGE_SENSOR_ADC_VBAT should be the first index,
+        sbufWriteU8(dst, MAX_VOLTAGE_SENSOR_ADC); // voltage meters in payload
+        for (int i = VOLTAGE_SENSOR_ADC_VBAT; i < MAX_VOLTAGE_SENSOR_ADC; i++) {
+            sbufWriteU8(dst, voltageMeterADCtoIDMap[i]); // id of the sensor
+            sbufWriteU8(dst, VOLTAGE_SENSOR_TYPE_ADC_RESISTOR_DIVIDER); // indicate the type of sensor that the next part of the payload is for
+
+            const uint8_t adcSensorSubframeLength = 1 + 1 + 1; // length of vbatscale, vbatresdivval, vbatresdivmultipler, in bytes
+            sbufWriteU8(dst, adcSensorSubframeLength); // ADC sensor sub-frame length
+            sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatscale);
+            sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatresdivval);
+            sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatresdivmultiplier);
+        }
+        // if we had any other voltage sensors, this is where we would output any needed configuration
+        break;
+
+    case MSP_CURRENT_METER_CONFIG: {
+        // the ADC and VIRTUAL sensors have the same configuration requirements, however this API reflects
+        // that this situation may change and allows us to support configuration of any current sensor with
+        // specialist configuration requirements.
+
+        sbufWriteU8(dst, 2); // current meters in payload (adc + virtual)
+
+        const uint8_t adcSensorSubframeLength = 1 + 1 + 2 + 2; // length of id, type, scale, offset, in bytes
+        sbufWriteU8(dst, adcSensorSubframeLength);
+        sbufWriteU8(dst, CURRENT_METER_ID_BATTERY_1); // the id of the sensor
+        sbufWriteU8(dst, CURRENT_SENSOR_ADC); // indicate the type of sensor that the next part of the payload is for
+        sbufWriteU16(dst, currentSensorADCConfig()->scale);
+        sbufWriteU16(dst, currentSensorADCConfig()->offset);
+
+        const int8_t virtualSensorSubframeLength = 1 + 1 + 2 + 2; // length of id, type, scale, offset, in bytes
+        sbufWriteU8(dst, virtualSensorSubframeLength);
+        sbufWriteU8(dst, CURRENT_METER_ID_VIRTUAL_1); // the id of the sensor
+        sbufWriteU8(dst, CURRENT_SENSOR_VIRTUAL); // indicate the type of sensor that the next part of the payload is for
+        sbufWriteU16(dst, currentSensorVirtualConfig()->scale);
+        sbufWriteU16(dst, currentSensorVirtualConfig()->offset);
+
+        // if we had any other current sensors, this is where we would output any needed configuration
+        break;
+    }
+    case MSP_BATTERY_CONFIG:
         sbufWriteU8(dst, batteryConfig()->vbatmincellvoltage);
         sbufWriteU8(dst, batteryConfig()->vbatmaxcellvoltage);
         sbufWriteU8(dst, batteryConfig()->vbatwarningcellvoltage);
-        sbufWriteU8(dst, batteryConfig()->batteryMeterType);
-        break;
-
-    case MSP_CURRENT_METER_CONFIG:
-        sbufWriteU16(dst, batteryConfig()->currentMeterScale);
-        sbufWriteU16(dst, batteryConfig()->currentMeterOffset);
-        sbufWriteU8(dst, batteryConfig()->currentMeterType);
         sbufWriteU16(dst, batteryConfig()->batteryCapacity);
+        sbufWriteU8(dst, batteryConfig()->voltageMeterSource);
+        sbufWriteU8(dst, batteryConfig()->currentMeterSource);
         break;
 
     case MSP_MIXER:
@@ -982,8 +1057,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, boardAlignment()->pitchDegrees);
         sbufWriteU16(dst, boardAlignment()->yawDegrees);
 
-        sbufWriteU16(dst, batteryConfig()->currentMeterScale);
-        sbufWriteU16(dst, batteryConfig()->currentMeterOffset);
+        sbufWriteU16(dst, 0); // was currentMeterScale, see MSP_CURRENT_METER_CONFIG
+        sbufWriteU16(dst, 0); //was currentMeterOffset, see MSP_CURRENT_METER_CONFIG
         break;
 
     case MSP_CF_SERIAL_CONFIG:
@@ -1411,13 +1486,13 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         sbufReadU8(src); // gps_baudrate
         sbufReadU8(src); // gps_ubx_sbas
 #endif
-        batteryConfigMutable()->multiwiiCurrentMeterOutput = sbufReadU8(src);
+        sbufReadU8(src); // legacy - was multiwiiCurrentMeterOutput
         rxConfigMutable()->rssi_channel = sbufReadU8(src);
         sbufReadU8(src);
 
         compassConfigMutable()->mag_declination = sbufReadU16(src) * 10;
 
-        batteryConfigMutable()->vbatscale = sbufReadU8(src);           // actual vbatscale as intended
+        sbufReadU8(src);  // legacy - was vbatscale
         batteryConfigMutable()->vbatmincellvoltage = sbufReadU8(src);  // vbatlevel_warn1 in MWC2.3 GUI
         batteryConfigMutable()->vbatmaxcellvoltage = sbufReadU8(src);  // vbatlevel_warn2 in MWC2.3 GUI
         batteryConfigMutable()->vbatwarningcellvoltage = sbufReadU8(src);  // vbatlevel when buzzer starts to alert
@@ -1756,21 +1831,57 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         boardAlignmentMutable()->yawDegrees = sbufReadU16(src);
         break;
 
-    case MSP_SET_VOLTAGE_METER_CONFIG:
-        batteryConfigMutable()->vbatscale = sbufReadU8(src);           // actual vbatscale as intended
-        batteryConfigMutable()->vbatmincellvoltage = sbufReadU8(src);  // vbatlevel_warn1 in MWC2.3 GUI
-        batteryConfigMutable()->vbatmaxcellvoltage = sbufReadU8(src);  // vbatlevel_warn2 in MWC2.3 GUI
-        batteryConfigMutable()->vbatwarningcellvoltage = sbufReadU8(src);  // vbatlevel when buzzer starts to alert
-        if (dataSize > 4) {
-            batteryConfigMutable()->batteryMeterType = sbufReadU8(src);
+    case MSP_SET_VOLTAGE_METER_CONFIG: {
+        int id = sbufReadU8(src);
+
+        //
+        // find and configure an ADC voltage sensor
+        //
+        int voltageSensorADCIndex;
+        for (voltageSensorADCIndex = 0; voltageSensorADCIndex < MAX_VOLTAGE_SENSOR_ADC; voltageSensorADCIndex++) {
+            if (id == voltageMeterADCtoIDMap[voltageSensorADCIndex]) {
+                break;
+            }
+        }
+
+        if (voltageSensorADCIndex < MAX_VOLTAGE_SENSOR_ADC) {
+            voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatscale = sbufReadU8(src);
+            voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatresdivval = sbufReadU8(src);
+            voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatresdivmultiplier = sbufReadU8(src);
+        } else {
+            // if we had any other types of voltage sensor to configure, this is where we'd do it.
+            return -1;
         }
         break;
+    }
 
-    case MSP_SET_CURRENT_METER_CONFIG:
-        batteryConfigMutable()->currentMeterScale = sbufReadU16(src);
-        batteryConfigMutable()->currentMeterOffset = sbufReadU16(src);
-        batteryConfigMutable()->currentMeterType = sbufReadU8(src);
+    case MSP_SET_CURRENT_METER_CONFIG: {
+        int id = sbufReadU8(src);
+
+        switch (id) {
+            case CURRENT_METER_ID_BATTERY_1:
+                currentSensorADCConfigMutable()->scale = sbufReadU16(src);
+                currentSensorADCConfigMutable()->offset = sbufReadU16(src);
+                break;
+            case CURRENT_METER_ID_VIRTUAL_1:
+                currentSensorVirtualConfigMutable()->scale = sbufReadU16(src);
+                currentSensorVirtualConfigMutable()->offset = sbufReadU16(src);
+                break;
+
+            default:
+                return -1;
+        }
+
+        break;
+    }
+
+    case MSP_SET_BATTERY_CONFIG:
+        batteryConfigMutable()->vbatmincellvoltage = sbufReadU8(src);      // vbatlevel_warn1 in MWC2.3 GUI
+        batteryConfigMutable()->vbatmaxcellvoltage = sbufReadU8(src);      // vbatlevel_warn2 in MWC2.3 GUI
+        batteryConfigMutable()->vbatwarningcellvoltage = sbufReadU8(src);  // vbatlevel when buzzer starts to alert
         batteryConfigMutable()->batteryCapacity = sbufReadU16(src);
+        batteryConfigMutable()->voltageMeterSource = sbufReadU8(src);
+        batteryConfigMutable()->currentMeterSource = sbufReadU8(src);
         break;
 
 #ifndef USE_QUAD_MIXER_ONLY
@@ -1849,8 +1960,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         boardAlignmentMutable()->pitchDegrees = sbufReadU16(src); // board_align_pitch
         boardAlignmentMutable()->yawDegrees = sbufReadU16(src); // board_align_yaw
 
-        batteryConfigMutable()->currentMeterScale = sbufReadU16(src);
-        batteryConfigMutable()->currentMeterOffset = sbufReadU16(src);
+        sbufReadU16(src); // was currentMeterScale, see MSP_SET_CURRENT_METER_CONFIG
+        sbufReadU16(src); // was currentMeterOffset see MSP_SET_CURRENT_METER_CONFIG
         break;
 
     case MSP_SET_CF_SERIAL_CONFIG:
