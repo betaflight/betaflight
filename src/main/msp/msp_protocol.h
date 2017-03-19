@@ -111,8 +111,8 @@
 #define MSP_MODE_RANGES                 34    //out message         Returns all mode ranges
 #define MSP_SET_MODE_RANGE              35    //in message          Sets a single mode range
 
-#define MSP_FEATURE                     36
-#define MSP_SET_FEATURE                 37
+#define MSP_FEATURE_CONFIG              36
+#define MSP_SET_FEATURE_CONFIG          37
 
 #define MSP_BOARD_ALIGNMENT             38
 #define MSP_SET_BOARD_ALIGNMENT         39
@@ -120,8 +120,8 @@
 #define MSP_CURRENT_METER_CONFIG        40
 #define MSP_SET_CURRENT_METER_CONFIG    41
 
-#define MSP_MIXER                       42
-#define MSP_SET_MIXER                   43
+#define MSP_MIXER_CONFIG                42
+#define MSP_SET_MIXER_CONFIG            43
 
 #define MSP_RX_CONFIG                   44
 #define MSP_SET_RX_CONFIG               45
@@ -159,23 +159,22 @@
 #define MSP_RX_MAP                      64 //out message get channel map (also returns number of channels total)
 #define MSP_SET_RX_MAP                  65 //in message set rx map, numchannels to set comes from MSP_RX_MAP
 
-// FIXME - Provided for backwards compatibility with configurator code until configurator is updated.
-// DEPRECATED - DO NOT USE "MSP_BF_CONFIG" and MSP_SET_BF_CONFIG.  In Cleanflight, isolated commands already exist and should be used instead.
-#define MSP_BF_CONFIG                   66 //out message baseflight-specific settings that aren't covered elsewhere
-#define MSP_SET_BF_CONFIG               67 //in message baseflight-specific settings save
+// Use more specific commands, e.g. MSP_FEATURE_CONFIG, MSP_BATTERY_CONFIG, etc.
+// DEPRECATED -#define MSP_BF_CONFIG                   66 //out message baseflight-specific settings that aren't covered elsewhere
+// DEPRECATED -#define MSP_SET_BF_CONFIG               67 //in message baseflight-specific settings save
 
 #define MSP_REBOOT                      68 //in message reboot settings
 
-// DEPRECATED - Use MSP_BUILD_INFO instead
-#define MSP_BF_BUILD_INFO               69 //out message build date as well as some space for future expansion
-
+// Use MSP_BUILD_INFO instead
+// DEPRECATED - #define MSP_BF_BUILD_INFO               69 //out message build date as well as some space for future expansion
 
 #define MSP_DATAFLASH_SUMMARY           70 //out message - get description of dataflash chip
 #define MSP_DATAFLASH_READ              71 //out message - get content of dataflash chip
 #define MSP_DATAFLASH_ERASE             72 //in message - erase dataflash chip
 
-#define MSP_LOOP_TIME                   73 //out message         Returns FC cycle time i.e looptime parameter
-#define MSP_SET_LOOP_TIME               74 //in message          Sets FC cycle time i.e looptime parameter
+// No-longer needed
+// DEPRECATED - #define MSP_LOOP_TIME                   73 //out message         Returns FC cycle time i.e looptime parameter // DEPRECATED
+// DEPRECATED - #define MSP_SET_LOOP_TIME               74 //in message          Sets FC cycle time i.e looptime parameter    // DEPRECATED
 
 #define MSP_FAILSAFE_CONFIG             75 //out message         Returns FC Fail-Safe settings
 #define MSP_SET_FAILSAFE_CONFIG         76 //in message          Sets FC Fail-Safe settings
@@ -226,8 +225,8 @@
 // Multwii original MSP commands
 //
 
-// DEPRECATED - See MSP_API_VERSION and MSP_MIXER
-#define MSP_IDENT                100    //out message         mixerMode + multiwii version + protocol version + capability variable
+// See MSP_API_VERSION and MSP_MIXER_CONFIG
+//DEPRECATED - #define MSP_IDENT                100    //out message         mixerMode + multiwii version + protocol version + capability variable
 
 
 #define MSP_STATUS               101    //out message         cycletime & errors_count & sensor present & box activation & current setting number
@@ -242,9 +241,12 @@
 #define MSP_ANALOG               110    //out message         vbat, powermetersum, rssi if available on RX
 #define MSP_RC_TUNING            111    //out message         rc rate, rc expo, rollpitch rate, yaw rate, dyn throttle PID
 #define MSP_PID                  112    //out message         P I D coeff (9 are used currently)
-#define MSP_BOX                  113    //out message         BOX setup (number is dependant of your setup)
-#define MSP_MISC                 114    //out message         powermeter trig
-#define MSP_MOTOR_PINS           115    //out message         which pins are in use for motors & servos, for GUI
+// Legacy Multiicommand that was never used.
+//DEPRECATED - #define MSP_BOX                  113    //out message         BOX setup (number is dependant of your setup)
+// Legacy command that was under constant change due to the naming vagueness, avoid at all costs - use more specific commands instead.
+//DEPRECATED - #define MSP_MISC                 114    //out message         powermeter trig
+// Legacy Multiicommand that was never used and always wrong
+//DEPRECATED - #define MSP_MOTOR_PINS           115    //out message         which pins are in use for motors & servos, for GUI
 #define MSP_BOXNAMES             116    //out message         the aux switch names
 #define MSP_PIDNAMES             117    //out message         the PID names
 #define MSP_WP                   118    //out message         get a WP, WP# is in the payload, returns (WP#, lat, lon, alt, flags) WP#0-home, WP#16-poshold
@@ -259,19 +261,24 @@
 #define MSP_VOLTAGE_METERS       128    //out message         Voltage (per meter)
 #define MSP_CURRENT_METERS       129    //out message         Amperage (per meter)
 #define MSP_BATTERY_STATE        130    //out message         Connected/Disconnected, Voltage, Current Used
+#define MSP_MOTOR_CONFIG         131    //out message         Motor configuration (min/max throttle, etc)
+#define MSP_GPS_CONFIG           132    //out message         GPS configuration
+#define MSP_COMPASS_CONFIG       133    //out message         Compass configuration
 
 #define MSP_SET_RAW_RC           200    //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed
 #define MSP_SET_PID              202    //in message          P I D coeff (9 are used currently)
-#define MSP_SET_BOX              203    //in message          BOX setup (number is dependant of your setup)
+// Legacy multiiwii command that was never used.
+//DEPRECATED - #define MSP_SET_BOX              203    //in message          BOX setup (number is dependant of your setup)
 #define MSP_SET_RC_TUNING        204    //in message          rc rate, rc expo, rollpitch rate, yaw rate, dyn throttle PID, yaw expo
 #define MSP_ACC_CALIBRATION      205    //in message          no param
 #define MSP_MAG_CALIBRATION      206    //in message          no param
-#define MSP_SET_MISC             207    //in message          powermeter trig + 8 free for future use
+// Legacy command that was under constant change due to the naming vagueness, avoid at all costs - use more specific commands instead.
+//DEPRECATED - #define MSP_SET_MISC             207    //in message          powermeter trig + 8 free for future use
 #define MSP_RESET_CONF           208    //in message          no param
 #define MSP_SET_WP               209    //in message          sets a given WP (WP#,lat, lon, alt, flags)
 #define MSP_SELECT_SETTING       210    //in message          Select Setting Number (0-2)
-#define MSP_SET_HEAD             211    //in message          define a new heading hold direction
+#define MSP_SET_HEADING          211    //in message          define a new heading hold direction
 #define MSP_SET_SERVO_CONFIGURATION 212    //in message          Servo settings
 #define MSP_SET_MOTOR            214    //in message          PropBalance function
 #define MSP_SET_NAV_CONFIG       215    //in message          Sets nav config parameters - write to the eeprom
@@ -280,6 +287,9 @@
 #define MSP_SET_RESET_CURR_PID   219    //in message          resetting the current pid profile to defaults
 #define MSP_SET_SENSOR_ALIGNMENT 220    //in message          set the orientation of the acc,gyro,mag
 #define MSP_SET_LED_STRIP_MODECOLOR 221 //in  message         Set LED strip mode_color settings
+#define MSP_SET_MOTOR_CONFIG     222    //out message         Motor configuration (min/max throttle, etc)
+#define MSP_SET_GPS_CONFIG       223    //out message         GPS configuration
+#define MSP_SET_COMPASS_CONFIG   224    //out message         Compass configuration
 
 // #define MSP_BIND                 240    //in message          no param
 // #define MSP_ALARMS               242
