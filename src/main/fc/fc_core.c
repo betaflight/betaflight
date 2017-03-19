@@ -94,7 +94,10 @@ enum {
 
 #define AIRMODE_THOTTLE_THRESHOLD 1350 // Make configurable in the future. ~35% throttle should be fine
 
+#if defined(GPS) || defined(MAG)
 int16_t magHold;
+#endif
+
 int16_t headFreeModeHold;
 
 uint8_t motorControlEnable = false;
@@ -261,6 +264,7 @@ static void updateInflightCalibrationState(void)
     }
 }
 
+#if defined(GPS) || defined(MAG)
 void updateMagHold(void)
 {
     if (ABS(rcCommand[YAW]) < 15 && FLIGHT_MODE(MAG_MODE)) {
@@ -275,6 +279,8 @@ void updateMagHold(void)
     } else
         magHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 }
+#endif
+
 
 void processRx(timeUs_t currentTimeUs)
 {
@@ -411,6 +417,7 @@ void processRx(timeUs_t currentTimeUs)
 
 #if defined(ACC) || defined(MAG)
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
+#if defined(GPS) || defined(MAG)
         if (IS_RC_MODE_ACTIVE(BOXMAG)) {
             if (!FLIGHT_MODE(MAG_MODE)) {
                 ENABLE_FLIGHT_MODE(MAG_MODE);
@@ -419,6 +426,7 @@ void processRx(timeUs_t currentTimeUs)
         } else {
             DISABLE_FLIGHT_MODE(MAG_MODE);
         }
+#endif
         if (IS_RC_MODE_ACTIVE(BOXHEADFREE)) {
             if (!FLIGHT_MODE(HEADFREE_MODE)) {
                 ENABLE_FLIGHT_MODE(HEADFREE_MODE);

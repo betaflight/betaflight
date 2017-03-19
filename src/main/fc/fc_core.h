@@ -20,7 +20,10 @@
 #include "common/time.h"
 #include "config/parameter_group.h"
 
+#if defined(GPS) || defined(MAG)
 extern int16_t magHold;
+#endif
+
 extern bool isRXDataNew;
 extern int16_t headFreeModeHold;
 
