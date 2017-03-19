@@ -2823,6 +2823,7 @@ static void cliEscPassthrough(char *cmdline)
     int i = 0;
     char *pch = NULL;
     char *saveptr;
+    uint8_t indexForProg = 0;
 
     if (isEmpty(cmdline)) {
         cliShowParseError();
@@ -2857,13 +2858,15 @@ static void cliEscPassthrough(char *cmdline)
                 break;
             case 1:
                 index = atoi(pch);
+                indexForProg = index;
                 if(mode == 2 && index == 255)
                 {
                     printf("passthrough on all outputs enabled\r\n");
                 }
                 else{
-                    if ((index >= 0) && (index < USABLE_TIMER_CHANNEL_COUNT)) {
-                        printf("passthrough on output %d enabled\r\n", index);
+                    indexForProg = index + 1; // Wonky timer mapping requires this to match the actual motor numberings
+                    if ((index >= 1) && (index < USABLE_TIMER_CHANNEL_COUNT)) {
+                        printf("passthrough on esc %d enabled\r\n", index);
                     }
                     else {
                         printf("invalid output, range: 1 to %d\r\n", USABLE_TIMER_CHANNEL_COUNT);
@@ -2875,7 +2878,7 @@ static void cliEscPassthrough(char *cmdline)
         i++;
         pch = strtok_r(NULL, " ", &saveptr);
     }
-    escEnablePassthrough(cliPort,index,mode);
+    escEnablePassthrough(cliPort,indexForProg,mode);
 }
 #endif
 

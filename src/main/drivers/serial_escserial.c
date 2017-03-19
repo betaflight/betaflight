@@ -111,15 +111,14 @@ static void escSerialICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polari
 
 void setTxSignalEsc(escSerial_t *escSerial, uint8_t state)
 {
+#ifdef  USE_ESCSERIAL_INVERSION
+    state ^= ENABLE;
+#endif
+
     if(escSerial->mode == PROTOCOL_KISSALL)
     {
         for (volatile uint8_t i = 0; i < escSerial->outputCount; i++) {
-            uint8_t state_temp = state;
-            if(escOutputs[i].inverted) {
-                state_temp ^= ENABLE;
-            }
-
-            if (state_temp) {
+            if (state) {
                 IOHi(escOutputs[i].io);
             } else {
                 IOLo(escOutputs[i].io);
@@ -128,10 +127,6 @@ void setTxSignalEsc(escSerial_t *escSerial, uint8_t state)
     }
     else
     {
-        if(escSerial->rxTimerHardware->output & TIMER_OUTPUT_INVERTED) {
-            state ^= ENABLE;
-        }
-
         if (state) {
             IOHi(escSerial->txIO);
         } else {

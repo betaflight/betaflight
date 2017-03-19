@@ -26,7 +26,10 @@
 #define USE_ESC_SENSOR
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 6
+#ifdef KISSFC
+#define USE_ESCSERIAL_INVERSION
+#endif
+#define ESCSERIAL_TIMER_TX_HARDWARE 0
 #define REMAP_TIM17_DMA
 
 #define LED0                    PB1
