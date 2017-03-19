@@ -15,7 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// FC configuration
+// FC configuration (defined by cleanflight v1)
 #define PG_FAILSAFE_CONFIG 1 // struct OK
 #define PG_BOARD_ALIGNMENT 2 // struct OK
 #define PG_GIMBAL_CONFIG 3 // struct OK
@@ -67,13 +67,23 @@
 #define PG_SPECIAL_COLOR_CONFIG 46  // part of led strip, structs OK
 #define PG_PILOT_CONFIG 47 // does not exist in betaflight
 #define PG_MSP_SERVER_CONFIG 48 // does not exist in betaflight
-#define PG_VOLTAGE_METER_CONFIG 49 // Cleanflight has voltageMeterConfig_t, betaflight has batteryConfig_t
-#define PG_AMPERAGE_METER_CONFIG 50 // Cleanflight has amperageMeterConfig_t, betaflight has batteryConfig_t
+#define PG_VOLTAGE_METER_CONFIG 49 // renamed from PG_VOLTAGE_METER_CONFIG    // deprecated
+#define PG_AMPERAGE_METER_CONFIG 50 // renamed from PG_AMPERAGE_METER_CONFIG  // deprecated
+#define PG_DEBUG_CONFIG 51 // does not exist in betaflight
 #define PG_SERVO_CONFIG 52
+#define PG_IBUS_TELEMETRY_CONFIG 53 // CF 1.x
+//#define PG_VTX_CONFIG 54 // CF 1.x
 
 // Driver configuration
 #define PG_DRIVER_PWM_RX_CONFIG 100 // does not exist in betaflight
 #define PG_DRIVER_FLASHCHIP_CONFIG 101 // does not exist in betaflight
+
+
+// cleanflight v2 specific parameter group ids start at 256
+#define PG_CURRENT_SENSOR_ADC_CONFIG 256
+#define PG_CURRENT_SENSOR_VIRTUAL_CONFIG 257
+#define PG_VOLTAGE_SENSOR_ADC_CONFIG 258
+
 
 // betaflight specific parameter group ids start at 500
 #define PG_BETAFLIGHT_START 500

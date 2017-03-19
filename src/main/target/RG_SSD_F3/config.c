@@ -28,6 +28,5 @@
 void targetConfiguration(void)
 {
     batteryConfigMutable()->vbatmaxcellvoltage = 45;
-    batteryConfigMutable()->vbatscale          = VBAT_SCALE_DEFAULT;
 }
 #endif

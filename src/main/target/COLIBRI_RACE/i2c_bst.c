@@ -78,7 +78,7 @@
 #define BST_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   12 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MINOR                   13 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -120,6 +120,9 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 //
 // MSP commands for Cleanflight original features
 //
+#define BST_BATTERY_CONFIG              32
+#define BST_SET_BATTERY_CONFIG          33
+
 #define BST_MODE_RANGES                 34    //out message         Returns all mode ranges
 #define BST_SET_MODE_RANGE              35    //in message          Sets a single mode range
 
@@ -674,13 +677,10 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 #endif
             break;
         case BST_ANALOG:
-            bstWrite8((uint8_t)constrain(getVbat(), 0, 255));
-            bstWrite16((uint16_t)constrain(mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
+            bstWrite8((uint8_t)constrain(getBatteryVoltage(), 0, 255));
+            bstWrite16((uint16_t)constrain(getMAhDrawn(), 0, 0xFFFF)); // milliamp hours drawn from battery
             bstWrite16(rssi);
-            if(batteryConfig()->multiwiiCurrentMeterOutput) {
-                bstWrite16((uint16_t)constrain(amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
-            } else
-                bstWrite16((int16_t)constrain(amperage, -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
+            bstWrite16((int16_t)constrain(getAmperage(), -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
             break;
         case BST_ARMING_CONFIG:
             bstWrite8(armingConfig()->auto_disarm_delay);
@@ -767,13 +767,13 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8(0); // TODO gps_baudrate (an index, cleanflight uses a uint32_t
             bstWrite8(0); // gps_ubx_sbas
 #endif
-            bstWrite8(batteryConfig()->multiwiiCurrentMeterOutput);
+            bstWrite8(0); // legacy - was multiwiiCurrentMeterOutput);
             bstWrite8(rxConfig()->rssi_channel);
             bstWrite8(0);
 
             bstWrite16(compassConfig()->mag_declination / 10);
 
-            bstWrite8(batteryConfig()->vbatscale);
+            bstWrite8(voltageSensorADCConfig(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale);
             bstWrite8(batteryConfig()->vbatmincellvoltage);
             bstWrite8(batteryConfig()->vbatmaxcellvoltage);
             bstWrite8(batteryConfig()->vbatwarningcellvoltage);
@@ -855,17 +855,18 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite16(boardAlignment()->yawDegrees);
             break;
 
+
         case BST_VOLTAGE_METER_CONFIG:
-            bstWrite8(batteryConfig()->vbatscale);
+            bstWrite8(voltageSensorADCConfig(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale);
             bstWrite8(batteryConfig()->vbatmincellvoltage);
             bstWrite8(batteryConfig()->vbatmaxcellvoltage);
             bstWrite8(batteryConfig()->vbatwarningcellvoltage);
             break;
 
         case BST_CURRENT_METER_CONFIG:
-            bstWrite16(batteryConfig()->currentMeterScale);
-            bstWrite16(batteryConfig()->currentMeterOffset);
-            bstWrite8(batteryConfig()->currentMeterType);
+            bstWrite16(currentSensorADCConfig()->scale);
+            bstWrite16(currentSensorADCConfig()->offset);
+            bstWrite8(batteryConfig()->currentMeterSource);
             bstWrite16(batteryConfig()->batteryCapacity);
             break;
 
@@ -916,8 +917,8 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite16(boardAlignment()->pitchDegrees);
             bstWrite16(boardAlignment()->yawDegrees);
 
-            bstWrite16(batteryConfig()->currentMeterScale);
-            bstWrite16(batteryConfig()->currentMeterOffset);
+            bstWrite16(currentSensorADCConfig()->scale);
+            bstWrite16(currentSensorADCConfig()->offset);
             break;
 
         case BST_CF_SERIAL_CONFIG:
@@ -1128,13 +1129,13 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             bstRead8(); // gps_baudrate
             bstRead8(); // gps_ubx_sbas
     #endif
-            batteryConfigMutable()->multiwiiCurrentMeterOutput = bstRead8();
+            bstRead8(); // legacy - was multiwiiCurrentMeterOutput
             rxConfigMutable()->rssi_channel = bstRead8();
             bstRead8();
 
             compassConfigMutable()->mag_declination = bstRead16() * 10;
 
-            batteryConfigMutable()->vbatscale = bstRead8();           // actual vbatscale as intended
+            voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale = bstRead8();  // actual vbatscale as intended
             batteryConfigMutable()->vbatmincellvoltage = bstRead8();  // vbatlevel_warn1 in MWC2.3 GUI
             batteryConfigMutable()->vbatmaxcellvoltage = bstRead8();  // vbatlevel_warn2 in MWC2.3 GUI
             batteryConfigMutable()->vbatwarningcellvoltage = bstRead8();  // vbatlevel when buzzer starts to alert
@@ -1266,15 +1267,15 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             boardAlignmentMutable()->yawDegrees = bstRead16();
             break;
         case BST_SET_VOLTAGE_METER_CONFIG:
-            batteryConfigMutable()->vbatscale = bstRead8();           // actual vbatscale as intended
+            voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale = bstRead8();  // actual vbatscale as intended
             batteryConfigMutable()->vbatmincellvoltage = bstRead8();  // vbatlevel_warn1 in MWC2.3 GUI
             batteryConfigMutable()->vbatmaxcellvoltage = bstRead8();  // vbatlevel_warn2 in MWC2.3 GUI
             batteryConfigMutable()->vbatwarningcellvoltage = bstRead8();  // vbatlevel when buzzer starts to alert
             break;
         case BST_SET_CURRENT_METER_CONFIG:
-            batteryConfigMutable()->currentMeterScale = bstRead16();
-            batteryConfigMutable()->currentMeterOffset = bstRead16();
-            batteryConfigMutable()->currentMeterType = bstRead8();
+            currentSensorADCConfigMutable()->scale = bstRead16();
+            currentSensorADCConfigMutable()->offset = bstRead16();
+            batteryConfigMutable()->currentMeterSource = bstRead8();
             batteryConfigMutable()->batteryCapacity = bstRead16();
             break;
 
@@ -1338,8 +1339,8 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
            boardAlignmentMutable()->pitchDegrees = bstRead16(); // board_align_pitch
            boardAlignmentMutable()->yawDegrees = bstRead16(); // board_align_yaw
 
-           batteryConfigMutable()->currentMeterScale = bstRead16();
-           batteryConfigMutable()->currentMeterOffset = bstRead16();
+           currentSensorADCConfigMutable()->scale = bstRead16();
+           currentSensorADCConfigMutable()->offset = bstRead16();
            break;
         case BST_SET_CF_SERIAL_CONFIG:
            {

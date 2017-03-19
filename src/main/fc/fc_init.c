@@ -377,9 +377,9 @@ void init(void)
 #endif
 
 #ifdef USE_ADC
-    /* these can be removed from features! */
-    adcConfigMutable()->vbat.enabled = feature(FEATURE_VBAT);
-    adcConfigMutable()->currentMeter.enabled = feature(FEATURE_CURRENT_METER);
+    adcConfigMutable()->vbat.enabled = (batteryConfig()->voltageMeterSource == VOLTAGE_METER_ADC);
+    adcConfigMutable()->current.enabled = (batteryConfig()->currentMeterSource == CURRENT_METER_ADC);
+
     adcConfigMutable()->rssi.enabled = feature(FEATURE_RSSI_ADC);
     adcInit(adcConfig());
 #endif
@@ -556,10 +556,7 @@ void init(void)
     serialPrint(loopbackPort, "LOOPBACK\r\n");
 #endif
 
-    // Now that everything has powered up the voltage and cell count be determined.
-
-    if (feature(FEATURE_VBAT | FEATURE_CURRENT_METER))
-        batteryInit();
+    batteryInit(); // always needs doing, regardless of features.
 
 #ifdef USE_DASHBOARD
     if (feature(FEATURE_DASHBOARD)) {

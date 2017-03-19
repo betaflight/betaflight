@@ -37,7 +37,7 @@ extern "C" {
 
 
 extern "C" {
-    uint8_t batteryCellCount = 3;
+    uint8_t testBatteryCellCount =3;
     int16_t rcCommand[4] = {0, 0, 0, 0};
     telemetryConfig_t telemetryConfig_System;
 }
@@ -61,6 +61,16 @@ typedef struct serialPortStub_s {
     int end = 0;
 } serialPortStub_t;
 
+
+static uint16_t testBatteryVoltage = 100;
+uint16_t getBatteryVoltage(void)
+{
+    return testBatteryVoltage;
+}
+
+uint8_t getBatteryCellCount(void) {
+    return testBatteryCellCount;
+}
 
 static serialPortStub_t serialWriteStub;
 static serialPortStub_t serialReadStub;
@@ -367,7 +377,7 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementVbattZero)
 {
     //Given ibus command: Sensor at address 1, please send your measurement
     //then we respond with: I'm reading 0 volts
-    vbat = 0;
+    testBatteryVoltage = 0;
     checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x00\x00\x58\xFF", 6);
 }
 
@@ -377,14 +387,14 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementVbattCellV
 
     //Given ibus command: Sensor at address 1, please send your measurement
     //then we respond with: I'm reading 0.1 volts
-    batteryCellCount = 3;
-    vbat = 30;
+    testBatteryCellCount =3;
+    testBatteryVoltage = 30;
     checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x64\x00\xf4\xFe", 6);
 
     //Given ibus command: Sensor at address 1, please send your measurement
     //then we respond with: I'm reading 0.1 volts
-    batteryCellCount = 1;
-    vbat = 10;
+    testBatteryCellCount =1;
+    testBatteryVoltage = 10;
     checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x64\x00\xf4\xFe", 6);
 }
 
@@ -394,14 +404,14 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementVbattPackV
 
     //Given ibus command: Sensor at address 1, please send your measurement
     //then we respond with: I'm reading 0.1 volts
-    batteryCellCount = 3;
-    vbat = 10;
+    testBatteryCellCount =3;
+    testBatteryVoltage = 10;
     checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x64\x00\xf4\xFe", 6);
 
     //Given ibus command: Sensor at address 1, please send your measurement
     //then we respond with: I'm reading 0.1 volts
-    batteryCellCount = 1;
-    vbat = 10;
+    testBatteryCellCount =1;
+    testBatteryVoltage = 10;
     checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x64\x00\xf4\xFe", 6);
 }
 
@@ -488,8 +498,8 @@ TEST_F(IbusTelemteryProtocolUnitTestDaisyChained, Test_IbusRespondToGetMeasureme
 {
     //Given ibus command: Sensor at address 3, please send your measurement
     //then we respond with: I'm reading 0.1 volts
-    batteryCellCount = 1;
-    vbat = 10;
+    testBatteryCellCount = 1;
+    testBatteryVoltage = 10;
     checkResponseToCommand("\x04\xA3\x58\xff", 4, "\x06\xA3\x64\x00\xf2\xfe", 6);
 
     //Given ibus command: Sensor at address 4, please send your measurement

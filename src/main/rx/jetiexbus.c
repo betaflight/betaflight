@@ -523,10 +523,10 @@ void handleJetiExBusTelemetry(void)
         }
 
         if((jetiExBusRequestFrame[EXBUS_HEADER_DATA_ID] == EXBUS_EX_REQUEST) && (calcCRC16(jetiExBusRequestFrame, jetiExBusRequestFrame[EXBUS_HEADER_MSG_LEN]) == 0)) {
-            jetiExSensors[EX_VOLTAGE].value = getVbat();
-            jetiExSensors[EX_CURRENT].value = amperage;
+            jetiExSensors[EX_VOLTAGE].value = getBatteryVoltage();
+            jetiExSensors[EX_CURRENT].value = getAmperage();
             jetiExSensors[EX_ALTITUDE].value = baro.BaroAlt;
-            jetiExSensors[EX_CAPACITY].value = mAhDrawn;
+            jetiExSensors[EX_CAPACITY].value = getMAhDrawn();
             jetiExSensors[EX_FRAMES_LOST].value = framesLost;
             jetiExSensors[EX_TIME_DIFF].value = timeDiff;
 

@@ -249,7 +249,7 @@ static const char * const lookupTableCurrentSensor[] = {
 };
 
 static const char * const lookupTableBatterySensor[] = {
-    "ADC", "ESC"
+    "NONE", "ADC", "ESC"
 };
 
 #ifdef USE_SERVOS
@@ -339,7 +339,7 @@ static const char * const lookupTableSuperExpoYaw[] = {
 static const char * const lookupTablePwmProtocol[] = {
     "OFF", "ONESHOT125", "ONESHOT42", "MULTISHOT", "BRUSHED",
 #ifdef USE_DSHOT
-    "DSHOT150", "DSHOT300", "DSHOT600", "DSHOT1200",
+    "DSHOT150", "DSHOT300", "DSHOT600", "DSHOT1200"
 #endif
 };
 
@@ -375,8 +375,8 @@ typedef enum {
 #ifdef BLACKBOX
     TABLE_BLACKBOX_DEVICE,
 #endif
-    TABLE_CURRENT_SENSOR,
-    TABLE_BATTERY_SENSOR,
+    TABLE_CURRENT_METER,
+    TABLE_VOLTAGE_METER,
 #ifdef USE_SERVOS
     TABLE_GIMBAL_MODE,
 #endif
@@ -622,20 +622,26 @@ static const clivalue_t valueTable[] = {
 
 // PG_BATTERY_CONFIG
     { "bat_capacity",               VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 20000 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, batteryCapacity) },
-    { "vbat_scale",                 VAR_UINT8  | MASTER_VALUE, .config.minmax = { VBAT_SCALE_MIN, VBAT_SCALE_MAX }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatscale) },
     { "vbat_max_cell_voltage",      VAR_UINT8  | MASTER_VALUE, .config.minmax = { 10, 50 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatmaxcellvoltage) },
     { "vbat_min_cell_voltage",      VAR_UINT8  | MASTER_VALUE, .config.minmax = { 10, 50 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatmincellvoltage) },
     { "vbat_warning_cell_voltage",  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 10, 50 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatwarningcellvoltage) },
     { "vbat_hysteresis",            VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 250 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbathysteresis) },
-    { "ibat_scale",                 VAR_INT16  | MASTER_VALUE, .config.minmax = { -16000, 16000 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, currentMeterScale) },
-    { "ibat_offset",                VAR_INT16 | MASTER_VALUE, .config.minmax = { -16000, 16000 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, currentMeterOffset) },
-    { "mwii_ibat_output",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, multiwiiCurrentMeterOutput) },
-    { "current_meter_type",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_CURRENT_SENSOR }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, currentMeterType) },
-    { "battery_meter_type",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BATTERY_SENSOR }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, batteryMeterType) },
-    { "bat_detect_thresh",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 200 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, batterynotpresentlevel) },
+    { "current_meter",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_CURRENT_METER }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, currentMeterSource) },
+    { "battery_meter",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_VOLTAGE_METER }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, voltageMeterSource) },
+    { "bat_detect_thresh",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 200 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, batteryNotPresentLevel) },
     { "use_vbat_alerts",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, useVBatAlerts) },
     { "use_cbat_alerts",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, useConsumptionAlerts) },
     { "cbat_alert_percent",         VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 100 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, consumptionWarningPercentage) },
+
+//  PG_VOLTAGE_SENSOR_ADC_CONFIG
+    { "vbat_scale",                 VAR_UINT8  | MASTER_VALUE, .config.minmax = { VBAT_SCALE_MIN, VBAT_SCALE_MAX }, PG_VOLTAGE_SENSOR_ADC_CONFIG, offsetof(voltageSensorADCConfig_t, vbatscale) },
+
+// PG_CURRENT_SENSOR_ADC_CONFIG
+    { "ibata_scale",                VAR_INT16  | MASTER_VALUE, .config.minmax = { -16000, 16000 }, PG_CURRENT_SENSOR_ADC_CONFIG, offsetof(currentSensorADCConfig_t, scale) },
+    { "ibata_offset",               VAR_INT16  | MASTER_VALUE, .config.minmax = { -16000, 16000 }, PG_CURRENT_SENSOR_ADC_CONFIG, offsetof(currentSensorADCConfig_t, offset) },
+// PG_CURRENT_SENSOR_ADC_CONFIG
+    { "ibatv_scale",                VAR_INT16  | MASTER_VALUE, .config.minmax = { -16000, 16000 }, PG_CURRENT_SENSOR_VIRTUAL_CONFIG, offsetof(currentSensorVirtualConfig_t, scale) },
+    { "ibatv_offset",               VAR_INT16  | MASTER_VALUE, .config.minmax = { -16000, 16000 }, PG_CURRENT_SENSOR_VIRTUAL_CONFIG, offsetof(currentSensorVirtualConfig_t, offset) },
 
 // PG_BEEPER_DEV_CONFIG
 #ifdef BEEPER
@@ -910,6 +916,9 @@ static servoMixer_t customServoMixersCopy[MAX_SERVO_RULES];
 static servoParam_t servoParamsCopy[MAX_SUPPORTED_SERVOS];
 #endif
 static batteryConfig_t batteryConfigCopy;
+static voltageSensorADCConfig_t voltageSensorADCConfigCopy[MAX_VOLTAGE_SENSOR_ADC];
+static currentSensorADCConfig_t currentSensorADCConfigCopy;
+static currentSensorVirtualConfig_t currentSensorVirtualConfigCopy;
 static motorMixer_t customMotorMixerCopy[MAX_SUPPORTED_MOTORS];
 static mixerConfig_t mixerConfigCopy;
 static flight3DConfig_t flight3DConfigCopy;
@@ -1212,6 +1221,18 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
     case PG_BATTERY_CONFIG:
         ret.currentConfig = &batteryConfigCopy;
         ret.defaultConfig = batteryConfig();
+        break;
+    case PG_VOLTAGE_SENSOR_ADC_CONFIG:
+        ret.currentConfig = &voltageSensorADCConfigCopy[0];
+        ret.defaultConfig = voltageSensorADCConfig(0);
+        break;
+    case PG_CURRENT_SENSOR_ADC_CONFIG:
+        ret.currentConfig = &currentSensorADCConfigCopy;
+        ret.defaultConfig = currentSensorADCConfig();
+        break;
+    case PG_CURRENT_SENSOR_VIRTUAL_CONFIG:
+        ret.currentConfig = &currentSensorVirtualConfigCopy;
+        ret.defaultConfig = currentSensorVirtualConfig();
         break;
     case PG_SERIAL_CONFIG:
         ret.currentConfig = &serialConfigCopy;
@@ -3739,7 +3760,7 @@ static void cliStatus(char *cmdline)
     UNUSED(cmdline);
 
     cliPrintf("System Uptime: %d seconds\r\n", millis() / 1000);
-    cliPrintf("Voltage: %d * 0.1V (%dS battery - %s)\r\n", getVbat(), batteryCellCount, getBatteryStateString());
+    cliPrintf("Voltage: %d * 0.1V (%dS battery - %s)\r\n", getBatteryVoltage(), getBatteryCellCount(), getBatteryStateString());
 
     cliPrintf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
 
@@ -3800,7 +3821,7 @@ static void cliTasks(char *cmdline)
 
 #ifndef MINIMAL_CLI
     if (systemConfig()->task_statistics) {
-        cliPrintf("Task list           rate/hz  max/us  avg/us maxload avgload     total/ms\r\n");
+        cliPrintf("Task list             rate/hz  max/us  avg/us maxload avgload     total/ms\r\n");
     } else {
         cliPrintf("Task list\r\n");
     }
@@ -3815,14 +3836,14 @@ static void cliTasks(char *cmdline)
                 subTaskFrequency = taskInfo.latestDeltaTime == 0 ? 0 : (int)(1000000.0f / ((float)taskInfo.latestDeltaTime));
                 taskFrequency = subTaskFrequency / pidConfig()->pid_process_denom;
                 if (pidConfig()->pid_process_denom > 1) {
-                    cliPrintf("%02d - (%13s) ", taskId, taskInfo.taskName);
+                    cliPrintf("%02d - (%15s) ", taskId, taskInfo.taskName);
                 } else {
                     taskFrequency = subTaskFrequency;
-                    cliPrintf("%02d - (%9s/%3s) ", taskId, taskInfo.subTaskName, taskInfo.taskName);
+                    cliPrintf("%02d - (%11s/%3s) ", taskId, taskInfo.subTaskName, taskInfo.taskName);
                 }
             } else {
                 taskFrequency = taskInfo.latestDeltaTime == 0 ? 0 : (int)(1000000.0f / ((float)taskInfo.latestDeltaTime));
-                cliPrintf("%02d - (%13s) ", taskId, taskInfo.taskName);
+                cliPrintf("%02d - (%15s) ", taskId, taskInfo.taskName);
             }
             const int maxLoad = taskInfo.maxExecutionTime == 0 ? 0 :(taskInfo.maxExecutionTime * taskFrequency + 5000) / 1000;
             const int averageLoad = taskInfo.averageExecutionTime == 0 ? 0 : (taskInfo.averageExecutionTime * taskFrequency + 5000) / 1000;
@@ -3838,7 +3859,7 @@ static void cliTasks(char *cmdline)
                 cliPrintf("%6d\r\n", taskFrequency);
             }
             if (taskId == TASK_GYROPID && pidConfig()->pid_process_denom > 1) {
-                cliPrintf("   - (%13s) %6d\r\n", taskInfo.subTaskName, subTaskFrequency);
+                cliPrintf("   - (%15s) %6d\r\n", taskInfo.subTaskName, subTaskFrequency);
             }
         }
     }
