@@ -426,6 +426,10 @@ void closeSerialPort(serialPort_t *serialPort)
 
 void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisable)
 {
+#if !defined(USE_SOFTSERIAL1) && !defined(USE_SOFTSERIAL2)
+    UNUSED(softserialEnabled);
+#endif
+
     serialPortCount = SERIAL_PORT_COUNT;
     memset(&serialPortUsageList, 0, sizeof(serialPortUsageList));
 
