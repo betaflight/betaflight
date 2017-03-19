@@ -248,10 +248,10 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 #define BST_RESET_CONF           208    //in message          no param
 #define BST_SET_WP               209    //in message          sets a given WP (WP#,lat, lon, alt, flags)
 #define BST_SELECT_SETTING       210    //in message          Select Setting Number (0-2)
-#define BST_SET_HEAD             211    //in message          define a new heading hold direction
+//#define BST_SET_HEAD             211    //in message          define a new heading hold direction // unused
 #define BST_SET_SERVO_CONFIGURATION 212    //in message          Servo settings
 #define BST_SET_MOTOR            214    //in message          PropBalance function
-#define BST_SET_NAV_CONFIG       215    //in message          Sets nav config parameters - write to the eeprom
+//#define BST_SET_NAV_CONFIG       215    //in message          Sets nav config parameters - write to the eeprom // unused
 
 // #define BST_BIND                 240    //in message          no param
 
@@ -1007,9 +1007,6 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             if (!ARMING_FLAG(ARMED)) {
                 changePidProfile(bstRead8());
             }
-            break;
-        case BST_SET_HEAD:
-            magHold = bstRead16();
             break;
         case BST_SET_RAW_RC:
             {
