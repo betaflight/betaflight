@@ -17,14 +17,27 @@
 
 #pragma once
 
+#ifdef PLUMF4
+#define TARGET_BOARD_IDENTIFIER "PLUM"
+#define USBD_PRODUCT_STRING     "PLUMF4"
+
+#else
+	
 #define TARGET_BOARD_IDENTIFIER "KIWI"
+#define USBD_PRODUCT_STRING     "KIWIF4"
+
+#endif
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
-#define USBD_PRODUCT_STRING     "KIWIF4"
+#ifdef PLUMF4
+#define LED0                    PB4
+
+#else
 
 #define LED0                    PB5
 #define LED1                    PB4
 
+#endif
 
 #define BEEPER                  PA8
 
@@ -48,6 +61,7 @@
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW180_DEG
 
+#ifdef KIWIF4
 #define OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE                SPI2
@@ -55,7 +69,7 @@
 //#define MAX7456_DMA_CHANNEL_TX              DMA1_Stream5
 //#define MAX7456_DMA_CHANNEL_RX              DMA1_Stream0
 //#define MAX7456_DMA_IRQ_HANDLER_ID          DMA1_ST0_HANDLER
-
+#endif
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
@@ -93,11 +107,13 @@
 
 #define USE_SPI_DEVICE_1
 
+#ifdef KIWIF4
 #define USE_SPI_DEVICE_2
 #define SPI2_NSS_PIN            PB12
 #define SPI2_SCK_PIN            PB13
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
+#endif
 
 #define USE_SPI_DEVICE_3
 #define SPI3_NSS_PIN            PA15
