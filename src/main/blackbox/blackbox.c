@@ -323,7 +323,7 @@ typedef struct blackboxSlowState_s {
 } __attribute__((__packed__)) blackboxSlowState_t; // We pack this struct so that padding doesn't interfere with memcmp()
 
 //From mixer.c:
-extern uint16_t motorOutputHigh, motorOutputLow;
+extern float motorOutputHigh, motorOutputLow;
 
 //From rc_controls.c
 extern uint32_t rcModeActivationMask;
@@ -1194,6 +1194,9 @@ static bool sendFieldDefinition(char mainFrameChar, char deltaFrameChar, const v
  */
 static bool blackboxWriteSysinfo()
 {
+    const uint16_t motorOutputLowInt = lrintf(motorOutputLow);
+    const uint16_t motorOutputHighInt = lrintf(motorOutputHigh);
+
     // Make sure we have enough room in the buffer for our longest line (as of this writing, the "Firmware date" line)
     if (blackboxDeviceReserveBufferSpace(64) != BLACKBOX_RESERVE_SUCCESS) {
         return false;
@@ -1209,7 +1212,7 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("minthrottle:%d",                      motorConfig()->minthrottle);
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle:%d",                      motorConfig()->maxthrottle);
         BLACKBOX_PRINT_HEADER_LINE("gyro_scale:0x%x",                     castFloatBytesToInt(1.0f));
-        BLACKBOX_PRINT_HEADER_LINE("motorOutput:%d,%d",                   motorOutputLow,motorOutputHigh);
+        BLACKBOX_PRINT_HEADER_LINE("motorOutput:%d,%d",                   motorOutputLowInt,motorOutputHighInt);
         BLACKBOX_PRINT_HEADER_LINE("acc_1G:%u",                           acc.dev.acc_1G);
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(

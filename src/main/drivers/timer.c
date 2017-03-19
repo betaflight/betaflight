@@ -844,16 +844,16 @@ uint16_t timerDmaSource(uint8_t channel)
 }
 #endif
 
-uint16_t timerGetPrescalerByDesiredMhz(TIM_TypeDef *tim, uint16_t mhz)
+uint16_t timerGetPrescalerByDesiredHz(TIM_TypeDef *tim, uint32_t hz)
 {
     // protection here for desired MHZ > SystemCoreClock???
-    if ((uint32_t)(mhz * 1000000) > (SystemCoreClock / timerClockDivisor(tim))) {
+    if (hz > (SystemCoreClock / timerClockDivisor(tim))) {
         return 0;
     }
-    return (uint16_t)(round((SystemCoreClock / timerClockDivisor(tim) / (mhz * 1000000)) - 1));
+    return (uint16_t)(round((SystemCoreClock / timerClockDivisor(tim) / hz) - 1));
 }
 
-uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_t hertz)
+uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_t hz)
 {
-    return ((uint16_t)((SystemCoreClock / timerClockDivisor(tim) / (prescaler + 1)) / hertz));
+    return ((uint16_t)((SystemCoreClock / timerClockDivisor(tim) / (prescaler + 1)) / hz));
 }

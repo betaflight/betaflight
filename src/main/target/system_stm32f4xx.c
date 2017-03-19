@@ -405,6 +405,23 @@ uint32_t hse_value = HSE_VALUE;
 #define PLL_Q      8
 #endif /* STM32F410xx || STM32F411xE */
 
+uint32_t SystemCoreClock;
+uint32_t pll_p = PLL_P, pll_n = PLL_N, pll_q = PLL_Q;
+
+void initOcSettings(uint8_t oc) {
+#if defined (STM32F40_41xxx)  // TODO - Add other MCU's later as well
+    if(oc) {
+        pll_n = 480;
+        pll_p = 2;
+        pll_q = 10;
+    }
+#else
+    (void)(oc);
+#endif
+  /* core clock is simply a mhz of PLL_N / PLL_P */
+  SystemCoreClock = (pll_n / pll_p) * 1000000;
+}
+
 /******************************************************************************/
 
 /**
@@ -422,8 +439,6 @@ uint32_t hse_value = HSE_VALUE;
 /** @addtogroup STM32F4xx_System_Private_Variables
   * @{
   */
-/* core clock is simply a mhz of PLL_N / PLL_P */
-uint32_t SystemCoreClock = (PLL_N / PLL_P) * 1000000;
 
 __I uint8_t AHBPrescTable[16] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 6, 7, 8, 9};
 
@@ -673,12 +688,12 @@ void SetSysClock(void)
 
 #if defined(STM32F446xx)
     /* Configure the main PLL */
-    RCC->PLLCFGR = PLL_M | (PLL_N << 6) | (((PLL_P >> 1) -1) << 16) |
-                   (RCC_PLLCFGR_PLLSRC_HSE) | (PLL_Q << 24) | (PLL_R << 28);
+    RCC->PLLCFGR = PLL_M | (pll_n << 6) | (((pll_p >> 1) -1) << 16) |
+                   (RCC_PLLCFGR_PLLSRC_HSE) | (pll_q << 24) | (PLL_R << 28);
 #else
     /* Configure the main PLL */
-    RCC->PLLCFGR = PLL_M | (PLL_N << 6) | (((PLL_P >> 1) -1) << 16) |
-                   (RCC_PLLCFGR_PLLSRC_HSE) | (PLL_Q << 24);
+    RCC->PLLCFGR = PLL_M | (pll_n << 6) | (((pll_p >> 1) -1) << 16) |
+                   (RCC_PLLCFGR_PLLSRC_HSE) | (pll_q << 24);
 #endif /* STM32F446xx */
 
     /* Enable the main PLL */

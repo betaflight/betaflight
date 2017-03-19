@@ -83,7 +83,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     TIM_Cmd(timer, DISABLE);
 
     /* Compute the prescaler value */
-    uint16_t prescaler = timerGetPrescalerByDesiredMhz(timer, WS2811_TIMER_MHZ);
+    uint16_t prescaler = timerGetPrescalerByDesiredHz(timer, WS2811_TIMER_MHZ * 1000000);
     uint16_t period = timerGetPeriodByPrescaler(timer, prescaler, WS2811_CARRIER_HZ);
 
     BIT_COMPARE_1 = period / 3 * 2;

@@ -112,38 +112,38 @@ static void pwmOutConfig(pwmOutputPort_t *port, const timerHardware_t *timerHard
     *port->ccr = 0;
 }
 
-static void pwmWriteUnused(uint8_t index, uint16_t value)
+static void pwmWriteUnused(uint8_t index, float value)
 {
     UNUSED(index);
     UNUSED(value);
 }
 
-static void pwmWriteBrushed(uint8_t index, uint16_t value)
+static void pwmWriteBrushed(uint8_t index, float value)
 {
-    *motors[index].ccr = (value - 1000) * motors[index].period / 1000;
+    *motors[index].ccr = lrintf((value - 1000) * motors[index].period / 1000);
 }
 
-static void pwmWriteStandard(uint8_t index, uint16_t value)
+static void pwmWriteStandard(uint8_t index, float value)
 {
-    *motors[index].ccr = value;
+    *motors[index].ccr = lrintf(value);
 }
 
-static void pwmWriteOneShot125(uint8_t index, uint16_t value)
+static void pwmWriteOneShot125(uint8_t index, float value)
 {
-    *motors[index].ccr = lrintf((float)(value * ONESHOT125_TIMER_MHZ/8.0f));
+    *motors[index].ccr = lrintf(value * ONESHOT125_TIMER_MHZ/8.0f);
 }
 
-static void pwmWriteOneShot42(uint8_t index, uint16_t value)
+static void pwmWriteOneShot42(uint8_t index, float value)
 {
-    *motors[index].ccr = lrintf((float)(value * ONESHOT42_TIMER_MHZ/24.0f));
+    *motors[index].ccr = lrintf(value * ONESHOT42_TIMER_MHZ/24.0f);
 }
 
-static void pwmWriteMultiShot(uint8_t index, uint16_t value)
+static void pwmWriteMultiShot(uint8_t index, float value)
 {
-    *motors[index].ccr = lrintf(((float)(value-1000) * MULTISHOT_20US_MULT) + MULTISHOT_5US_PW);
+    *motors[index].ccr = lrintf(((value-1000) * MULTISHOT_20US_MULT) + MULTISHOT_5US_PW);
 }
 
-void pwmWriteMotor(uint8_t index, uint16_t value)
+void pwmWriteMotor(uint8_t index, float value)
 {
     pwmWritePtr(index, value);
 }
@@ -342,10 +342,10 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t command)
 #endif
 
 #ifdef USE_SERVOS
-void pwmWriteServo(uint8_t index, uint16_t value)
+void pwmWriteServo(uint8_t index, float value)
 {
     if (index < MAX_SUPPORTED_SERVOS && servos[index].ccr) {
-        *servos[index].ccr = value;
+        *servos[index].ccr = lrintf(value);
     }
 }
 

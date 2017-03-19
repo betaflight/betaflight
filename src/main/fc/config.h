@@ -68,6 +68,7 @@ typedef struct systemConfig_s {
     uint8_t activeRateProfile;
     uint8_t debug_mode;
     uint8_t task_statistics;
+    uint8_t cpu_overclock;
     char name[MAX_NAME_LENGTH + 1];
 } systemConfig_t;
 
