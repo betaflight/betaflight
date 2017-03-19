@@ -254,7 +254,7 @@
 #define MSP_SERVO_CONFIGURATIONS 120    //out message         All servo configurations.
 #define MSP_NAV_STATUS           121    //out message         Returns navigation status
 #define MSP_NAV_CONFIG           122    //out message         Returns navigation parameters
-#define MSP_3D                   124    //out message         Settings needed for reversible ESCs
+#define MSP_MOTOR_3D_CONFIG      124    //out message         Settings needed for reversible ESCs
 #define MSP_RC_DEADBAND          125    //out message         deadbands for yaw alt pitch roll
 #define MSP_SENSOR_ALIGNMENT     126    //out message         orientation of acc,gyro,mag
 #define MSP_LED_STRIP_MODECOLOR  127    //out message         Get LED strip mode_color settings
@@ -282,7 +282,7 @@
 #define MSP_SET_SERVO_CONFIGURATION 212    //in message          Servo settings
 #define MSP_SET_MOTOR            214    //in message          PropBalance function
 #define MSP_SET_NAV_CONFIG       215    //in message          Sets nav config parameters - write to the eeprom
-#define MSP_SET_3D               217    //in message          Settings needed for reversible ESCs
+#define MSP_SET_MOTOR_3D_CONFIG  217    //in message          Settings needed for reversible ESCs
 #define MSP_SET_RC_DEADBAND      218    //in message          deadbands for yaw alt pitch roll
 #define MSP_SET_RESET_CURR_PID   219    //in message          resetting the current pid profile to defaults
 #define MSP_SET_SENSOR_ALIGNMENT 220    //in message          set the orientation of the acc,gyro,mag

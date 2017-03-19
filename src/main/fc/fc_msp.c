@@ -1121,7 +1121,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #endif
         break;
 
-    case MSP_3D:
+    case MSP_MOTOR_3D_CONFIG:
         sbufWriteU16(dst, flight3DConfig()->deadband3d_low);
         sbufWriteU16(dst, flight3DConfig()->deadband3d_high);
         sbufWriteU16(dst, flight3DConfig()->neutral3d);
@@ -1478,7 +1478,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
         break;
 
-    case MSP_SET_3D:
+    case MSP_SET_MOTOR_3D_CONFIG:
         flight3DConfigMutable()->deadband3d_low = sbufReadU16(src);
         flight3DConfigMutable()->deadband3d_high = sbufReadU16(src);
         flight3DConfigMutable()->neutral3d = sbufReadU16(src);
