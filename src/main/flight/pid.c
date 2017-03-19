@@ -71,9 +71,6 @@ typedef struct {
     float errorGyroIf;
     float errorGyroIfLimit;
 
-    // Axis lock accumulator
-    float axisLockAccum;
-
     // Used for ANGLE filtering
     pt1Filter_t angleFilterState;
 
@@ -225,9 +222,6 @@ void pidResetErrorAccumulators(void)
         pidState[axis].errorGyroIf = 0.0f;
         pidState[axis].errorGyroIfLimit = 0.0f;
     }
-
-    // Reset yaw heading lock accumulator
-    pidState[FD_YAW].axisLockAccum = 0;
 }
 
 static float pidRcCommandToAngle(int16_t stick, int16_t maxInclination)
@@ -364,24 +358,6 @@ void updatePIDCoefficients(void)
 
     pidGainsUpdateRequired = false;
 }
-
-#ifdef USE_FLM_HEADLOCK
-static void pidApplyHeadingLock(pidState_t *pidState)
-{
-    // Heading lock mode is different from Heading hold using compass.
-    // Heading lock attempts to keep heading at current value even if there is an external disturbance.
-    // If there is some external force that rotates the aircraft and Rate PIDs are unable to compensate,
-    // heading lock will bring heading back if disturbance is not too big
-    // Heading error is not integrated when stick input is significant or machine is disarmed.
-    if (ABS(pidState->rateTarget) > 2 || !ARMING_FLAG(ARMED)) {
-        pidState->axisLockAccum = 0;
-    } else {
-        pidState->axisLockAccum += (pidState->rateTarget - pidState->gyroRate) * dT;
-        pidState->axisLockAccum = constrainf(pidState->axisLockAccum, -45, 45);
-        pidState->rateTarget = pidState->axisLockAccum * (pidBank()->pid[PID_HEADING].P / FP_PID_YAWHOLD_P_MULTIPLIER);
-    }
-}
-#endif
 
 static float calcHorizonRateMagnitude(void)
 {
@@ -705,12 +681,6 @@ void pidController(void)
         pidLevel(&pidState[FD_ROLL], FD_ROLL, horizonRateMagnitude);
         pidLevel(&pidState[FD_PITCH], FD_PITCH, horizonRateMagnitude);
     }
-
-#ifdef USE_FLM_HEADLOCK
-    if (FLIGHT_MODE(HEADING_LOCK) && magHoldState != MAG_HOLD_ENABLED) {
-        pidApplyHeadingLock(&pidState[FD_YAW]);
-    }
-#endif
 
 #ifdef USE_FLM_TURN_ASSIST
     if (FLIGHT_MODE(TURN_ASSISTANT)) {

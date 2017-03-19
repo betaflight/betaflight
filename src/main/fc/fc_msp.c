@@ -134,7 +134,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXAIRMODE, "AIR MODE;", 29 },
     { BOXHOMERESET, "HOME RESET;", 30 },
     { BOXGCSNAV, "GCS NAV;", 31 },
-    { BOXHEADINGLOCK, "HEADING LOCK;", 32 },
+    //{ BOXHEADINGLOCK, "HEADING LOCK;", 32 },
     { BOXSURFACE, "SURFACE;", 33 },
     { BOXFLAPERON, "FLAPERON;", 34 },
     { BOXTURNASSIST, "TURN ASSIST;", 35 },
@@ -261,10 +261,6 @@ static void initActiveBoxIds(void)
 
     activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
 
-#ifdef USE_FLM_HEADLOCK
-    activeBoxIds[activeBoxIdCount++] = BOXHEADINGLOCK;
-#endif
-
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
         activeBoxIds[activeBoxIdCount++] = BOXMAG;
         activeBoxIds[activeBoxIdCount++] = BOXHEADFREE;
@@ -356,9 +352,6 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(FLIGHT_MODE(NAV_WP_MODE)) << BOXNAVWP |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGCSNAV)) << BOXGCSNAV |
-#ifdef USE_FLM_HEADLOCK
-        IS_ENABLED(FLIGHT_MODE(HEADING_LOCK)) << BOXHEADINGLOCK |
-#endif
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXSURFACE)) << BOXSURFACE |
 #ifdef USE_FLM_FLAPERON
         IS_ENABLED(FLIGHT_MODE(FLAPERON)) << BOXFLAPERON |

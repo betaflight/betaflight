@@ -399,17 +399,6 @@ void processRx(timeUs_t currentTimeUs)
         LED1_OFF;
     }
 
-#ifdef USE_FLM_HEADLOCK
-    /* Heading lock mode */
-    if (IS_RC_MODE_ACTIVE(BOXHEADINGLOCK)) {
-        if (!FLIGHT_MODE(HEADING_LOCK)) {
-            ENABLE_FLIGHT_MODE(HEADING_LOCK);
-        }
-    } else {
-        DISABLE_FLIGHT_MODE(HEADING_LOCK);
-    }
-#endif
-
 #ifdef USE_SERVOS
     /* Flaperon mode */
     if (IS_RC_MODE_ACTIVE(BOXFLAPERON) && STATE(FLAPERON_AVAILABLE)) {
