@@ -956,11 +956,12 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         BUILD_BUG_ON(VOLTAGE_SENSOR_ADC_VBAT != 0); // VOLTAGE_SENSOR_ADC_VBAT should be the first index,
         sbufWriteU8(dst, MAX_VOLTAGE_SENSOR_ADC); // voltage meters in payload
         for (int i = VOLTAGE_SENSOR_ADC_VBAT; i < MAX_VOLTAGE_SENSOR_ADC; i++) {
+            const uint8_t adcSensorSubframeLength = 1 + 1 + 1 + 1 + 1; // length of id, type, vbatscale, vbatresdivval, vbatresdivmultipler, in bytes
+            sbufWriteU8(dst, adcSensorSubframeLength); // ADC sensor sub-frame length
+
             sbufWriteU8(dst, voltageMeterADCtoIDMap[i]); // id of the sensor
             sbufWriteU8(dst, VOLTAGE_SENSOR_TYPE_ADC_RESISTOR_DIVIDER); // indicate the type of sensor that the next part of the payload is for
 
-            const uint8_t adcSensorSubframeLength = 1 + 1 + 1; // length of vbatscale, vbatresdivval, vbatresdivmultipler, in bytes
-            sbufWriteU8(dst, adcSensorSubframeLength); // ADC sensor sub-frame length
             sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatscale);
             sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatresdivval);
             sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatresdivmultiplier);
