@@ -869,7 +869,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU32(dst, featureMask());
         break;
 
-    case MSP_BOARD_ALIGNMENT:
+    case MSP_BOARD_ALIGNMENT_CONFIG:
         sbufWriteU16(dst, boardAlignment()->rollDegrees);
         sbufWriteU16(dst, boardAlignment()->pitchDegrees);
         sbufWriteU16(dst, boardAlignment()->yawDegrees);
@@ -1760,7 +1760,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         featureSet(sbufReadU32(src)); // features bitmap
         break;
 
-    case MSP_SET_BOARD_ALIGNMENT:
+    case MSP_SET_BOARD_ALIGNMENT_CONFIG:
         boardAlignmentMutable()->rollDegrees = sbufReadU16(src);
         boardAlignmentMutable()->pitchDegrees = sbufReadU16(src);
         boardAlignmentMutable()->yawDegrees = sbufReadU16(src);
