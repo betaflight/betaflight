@@ -1008,21 +1008,6 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                 changePidProfile(bstRead8());
             }
             break;
-        case BST_SET_RAW_RC:
-            {
-                uint8_t channelCount = bstReadDataSize() / sizeof(uint16_t);
-                if (channelCount > MAX_SUPPORTED_RC_CHANNEL_COUNT) {
-                    ret = BST_FAILED;
-                } else {
-                    uint16_t frame[MAX_SUPPORTED_RC_CHANNEL_COUNT];
-
-                    for (i = 0; i < channelCount; i++) {
-                        frame[i] = bstRead16();
-                    }
-
-                    rxMspFrameReceive(frame, channelCount);
-                }
-            }
         case BST_SET_ACC_TRIM:
             accelerometerConfigMutable()->accelerometerTrims.values.pitch = bstRead16();
             accelerometerConfigMutable()->accelerometerTrims.values.roll  = bstRead16();
