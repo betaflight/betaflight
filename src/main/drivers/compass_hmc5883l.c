@@ -40,6 +40,7 @@
 #include "compass.h"
 
 #include "compass_hmc5883l.h"
+#include "compass_spi_hmc5883l.h"
 
 //#define DEBUG_MAG_DATA_READY_INTERRUPT
 
@@ -119,11 +120,9 @@
 
 static float magGain[3] = { 1.0f, 1.0f, 1.0f };
 
-static const hmc5883Config_t *hmc5883Config = NULL;
-
 #ifdef USE_MAG_DATA_READY_SIGNAL
 
-static IO_t intIO;
+static IO_t hmc5883InterruptIO;
 static extiCallbackRec_t hmc5883_extiCallbackRec;
 
 static void hmc5883_extiHandler(extiCallbackRec_t* cb)
@@ -150,33 +149,36 @@ static void hmc5883lConfigureDataReadyInterruptHandling(void)
 {
 #ifdef USE_MAG_DATA_READY_SIGNAL
 
-    if (!(hmc5883Config->intTag)) {
+    if (!(hmc5883InterruptIO)) {
         return;
     }
-    intIO = IOGetByTag(hmc5883Config->intTag);
 #ifdef ENSURE_MAG_DATA_READY_IS_HIGH
-    uint8_t status = IORead(intIO);
+    uint8_t status = IORead(hmc5883InterruptIO);
     if (!status) {
         return;
     }
 #endif
 
     EXTIHandlerInit(&hmc5883_extiCallbackRec, hmc5883_extiHandler);
-    EXTIConfig(intIO, &hmc5883_extiCallbackRec, NVIC_PRIO_MAG_INT_EXTI, EXTI_Trigger_Rising);
-    EXTIEnable(intIO, true);
+    EXTIConfig(hmc5883InterruptIO, &hmc5883_extiCallbackRec, NVIC_PRIO_MAG_INT_EXTI, EXTI_Trigger_Rising);
+    EXTIEnable(hmc5883InterruptIO, true);
 #endif
 }
 
 static bool hmc5883lRead(int16_t *magData)
 {
     uint8_t buf[6];
-
+#ifdef USE_MAG_SPI_HMC5883
+	bool ack = hmc5883SpiReadCommand(MAG_DATA_REGISTER, 6, buf);
+#else
     bool ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, MAG_DATA_REGISTER, 6, buf);
+#endif
     if (!ack) {
         return false;
     }
     // During calibration, magGain is 1.0, so the read returns normal non-calibrated values.
     // After calibration is done, magGain is set to calculated gain values.
+
     magData[X] = (int16_t)(buf[0] << 8 | buf[1]) * magGain[X];
     magData[Z] = (int16_t)(buf[2] << 8 | buf[3]) * magGain[Z];
     magData[Y] = (int16_t)(buf[4] << 8 | buf[5]) * magGain[Y];
@@ -192,15 +194,27 @@ static bool hmc5883lInit(void)
     bool bret = true;           // Error indicator
 
     delay(50);
+#ifdef USE_MAG_SPI_HMC5883
+    hmc5883SpiWriteCommand(HMC58X3_R_CONFA, 0x010 + HMC_POS_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to pos bias
+#else
     i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_POS_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to pos bias
+#endif
     // Note that the  very first measurement after a gain change maintains the same gain as the previous setting.
     // The new gain setting is effective from the second measurement and on.
+#ifdef USE_MAG_SPI_HMC5883
+	hmc5883SpiWriteCommand(HMC58X3_R_CONFB, 0x60); // Set the Gain to 2.5Ga (7:5->011)
+#else
     i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFB, 0x60); // Set the Gain to 2.5Ga (7:5->011)
+#endif
     delay(100);
     hmc5883lRead(magADC);
 
     for (i = 0; i < 10; i++) {  // Collect 10 samples
+#ifdef USE_MAG_SPI_HMC5883
+		hmc5883SpiWriteCommand(HMC58X3_R_MODE, 1);
+#else
         i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_MODE, 1);
+#endif
         delay(50);
         hmc5883lRead(magADC);       // Get the raw values in case the scales have already been changed.
 
@@ -218,9 +232,17 @@ static bool hmc5883lInit(void)
     }
 
     // Apply the negative bias. (Same gain)
+#ifdef USE_MAG_SPI_HMC5883
+	hmc5883SpiWriteCommand(HMC58X3_R_CONFA, 0x010 + HMC_NEG_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to negative bias.
+#else
     i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_NEG_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to negative bias.
+#endif
     for (i = 0; i < 10; i++) {
+#ifdef USE_MAG_SPI_HMC5883
+        hmc5883SpiWriteCommand(HMC58X3_R_MODE, 1);
+#else
         i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_MODE, 1);
+#endif
         delay(50);
         hmc5883lRead(magADC);               // Get the raw values in case the scales have already been changed.
 
@@ -242,9 +264,15 @@ static bool hmc5883lInit(void)
     magGain[Z] = fabsf(660.0f * HMC58X3_Z_SELF_TEST_GAUSS * 2.0f * 10.0f / xyz_total[Z]);
 
     // leave test mode
+#ifdef USE_MAG_SPI_HMC5883
+    hmc5883SpiWriteCommand(HMC58X3_R_CONFA, 0x70);   // Configuration Register A  -- 0 11 100 00  num samples: 8 ; output rate: 15Hz ; normal measurement mode
+    hmc5883SpiWriteCommand(HMC58X3_R_CONFB, 0x20);   // Configuration Register B  -- 001 00000    configuration gain 1.3Ga
+    hmc5883SpiWriteCommand(HMC58X3_R_MODE, 0x00);    // Mode register             -- 000000 00    continuous Conversion Mode
+#else
     i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFA, 0x70);   // Configuration Register A  -- 0 11 100 00  num samples: 8 ; output rate: 15Hz ; normal measurement mode
     i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFB, 0x20);   // Configuration Register B  -- 001 00000    configuration gain 1.3Ga
     i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_MODE, 0x00);    // Mode register             -- 000000 00    continuous Conversion Mode
+#endif
     delay(100);
 
     if (!bret) {                // Something went wrong so get a best guess
@@ -257,12 +285,21 @@ static bool hmc5883lInit(void)
     return true;
 }
 
-bool hmc5883lDetect(magDev_t* mag, const hmc5883Config_t *hmc5883ConfigToUse)
+bool hmc5883lDetect(magDev_t* mag, ioTag_t interruptTag)
 {
-    hmc5883Config = hmc5883ConfigToUse;
+#ifdef USE_MAG_DATA_READY_SIGNAL
+    hmc5883InterruptIO = IOGetByTag(interruptTag);
+#else
+    UNUSED(interruptTag);
+#endif
 
     uint8_t sig = 0;
+#ifdef USE_MAG_SPI_HMC5883
+    hmc5883SpiInit();
+    bool ack = hmc5883SpiReadCommand(0x0A, 1, &sig);
+#else
     bool ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, 0x0A, 1, &sig);
+#endif
 
     if (!ack || sig != 'H')
         return false;

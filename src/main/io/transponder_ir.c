@@ -23,7 +23,11 @@
 
 #include <platform.h>
 
-#include <build/build_config.h>
+#ifdef TRANSPONDER
+#include "build/build_config.h"
+
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/transponder_ir.h"
 #include "drivers/system.h"
@@ -32,6 +36,12 @@
 #include "fc/config.h"
 
 #include "io/transponder_ir.h"
+
+PG_REGISTER_WITH_RESET_TEMPLATE(transponderConfig_t, transponderConfig, PG_TRANSPONDER_CONFIG, 0);
+
+PG_RESET_TEMPLATE(transponderConfig_t, transponderConfig,
+    .data = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC } // Note, this is NOT a valid transponder code, it's just for testing production hardware
+);
 
 static bool transponderInitialised = false;
 static bool transponderRepeat = false;
@@ -73,14 +83,14 @@ void transponderUpdate(timeUs_t currentTimeUs)
     transponderIrTransmit();
 }
 
-void transponderInit(uint8_t* transponderData)
+void transponderInit(void)
 {
     transponderInitialised = transponderIrInit();
     if (!transponderInitialised) {
         return;
     }
 
-    transponderIrUpdateData(transponderData);
+    transponderIrUpdateData(transponderConfig()->data);
 }
 
 void transponderStopRepeating(void)
@@ -97,13 +107,13 @@ void transponderStartRepeating(void)
     transponderRepeat = true;
 }
 
-void transponderUpdateData(uint8_t* transponderData)
+void transponderUpdateData(void)
 {
     if (!transponderInitialised) {
         return;
     }
 
-    transponderIrUpdateData(transponderData);
+    transponderIrUpdateData(transponderConfig()->data);
 }
 
 void transponderTransmitOnce(void) {
@@ -113,3 +123,4 @@ void transponderTransmitOnce(void) {
     }
     transponderIrTransmit();
 }
+#endif

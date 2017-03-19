@@ -151,20 +151,6 @@ typedef struct modeActivationProfile_s {
 
 #define IS_RANGE_USABLE(range) ((range)->startStep < (range)->endStep)
 
-typedef struct controlRateConfig_s {
-    uint8_t rcRate8;
-    uint8_t rcYawRate8;
-    uint8_t rcExpo8;
-    uint8_t thrMid8;
-    uint8_t thrExpo8;
-    uint8_t rates[3];
-    uint8_t dynThrPID;
-    uint8_t rcYawExpo8;
-    uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
-} controlRateConfig_t;
-
-//!!TODO PG_DECLARE_ARRAY(controlRateConfig_t, MAX_CONTROL_RATE_PROFILE_COUNT, controlRateProfiles);
-
 extern int16_t rcCommand[4];
 
 typedef struct rcControlsConfig_s {

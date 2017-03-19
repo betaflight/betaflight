@@ -70,7 +70,11 @@
 #define USE_UART1 // Not connected - TX (PB6) RX PB7 (AF7)
 #define USE_UART2 // Receiver - RX (PA3)
 #define USE_UART3 // Not connected - 10/RX (PB11) 11/TX (PB10)
-#define SERIAL_PORT_COUNT       4
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT       6
+
 #define AVOID_UART2_FOR_PWM_PPM
 
 #define USE_ESCSERIAL
@@ -86,8 +90,8 @@
 #define UART3_RX_PIN            PB11
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_2) // SDA (PA10/AF4), SCL (PA9/AF4)
-
+#define USE_I2C_DEVICE_2
+#define I2C_DEVICE              (I2CDEV_2)
 #define I2C2_SCL                PA9
 #define I2C2_SDA                PA10
 
@@ -109,12 +113,8 @@
 #define VBAT_ADC_PIN            PA4
 #define VBAT_SCALE_DEFAULT      20
 
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
+#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
-#define HARDWARE_BIND_PLUG
-// Hardware bind plug at PB12 (Pin 25)
 #define BINDPLUG_PIN            PB12
 
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP
@@ -122,8 +122,6 @@
 #define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM2048
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define RX_CHANNELS_TAER
-
-#define LED_STRIP
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

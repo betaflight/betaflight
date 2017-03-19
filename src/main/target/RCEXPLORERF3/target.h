@@ -58,13 +58,14 @@
 #define SONAR_TRIGGER_PIN           PA6   // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
 #define SONAR_ECHO_PIN              PB1   // RC_CH8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
 
-#define USB_IO
-
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-#define SERIAL_PORT_COUNT 4
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT 6
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
@@ -79,7 +80,8 @@
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_2) // SDA (PA10/AF4), SCL (PA9/AF4)
+#define USE_I2C_DEVICE_2
+#define I2C_DEVICE              (I2CDEV_2)
 
 #define I2C2_SCL                PA9
 #define I2C2_SDA                PA10
@@ -100,9 +102,6 @@
 #define CURRENT_METER_ADC_PIN       PB2
 #define RSSI_ADC_PIN                PA6
 
-#define LED_STRIP // LED strip configuration using PWM motor output pin 5.
-
-#define DEFAULT_FEATURES        FEATURE_VBAT
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART1
@@ -111,17 +110,8 @@
 #define NAV_AUTO_MAG_DECLINATION
 #define NAV_GPS_GLITCH_DETECTION
 #define NAV_MAX_WAYPOINTS               60
-#define GPS
-#define BLACKBOX
-#define TELEMETRY
-#define SERIAL_RX
-#define AUTOTUNE
-#define USE_SERVOS
-#define USE_CLI
 
-#define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN   PA3
+#define SPEKTRUM_BIND_PIN   UART2_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

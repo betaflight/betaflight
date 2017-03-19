@@ -29,6 +29,7 @@
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
+#include "config/config_reset.h"
 
 #include "drivers/accgyro.h"
 #include "drivers/accgyro_adxl345.h"
@@ -42,6 +43,7 @@
 #include "drivers/accgyro_mpu3050.h"
 #include "drivers/accgyro_mpu6050.h"
 #include "drivers/accgyro_mpu6500.h"
+#include "drivers/accgyro_spi_bmi160.h"
 #include "drivers/accgyro_spi_icm20689.h"
 #include "drivers/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro_spi_mpu6500.h"
@@ -80,6 +82,44 @@ static flightDynamicsTrims_t *accelerationTrims;
 static uint16_t accLpfCutHz = 0;
 static biquadFilter_t accFilter[XYZ_AXIS_COUNT];
 
+PG_REGISTER_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
+
+void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
+{
+    RESET_CONFIG_2(rollAndPitchTrims_t, rollAndPitchTrims,
+        .values.roll = 0,
+        .values.pitch = 0,
+    );
+}
+
+void accResetRollAndPitchTrims(void)
+{
+    resetRollAndPitchTrims(&accelerometerConfigMutable()->accelerometerTrims);
+}
+
+static void resetFlightDynamicsTrims(flightDynamicsTrims_t *accZero)
+{
+    accZero->values.roll = 0;
+    accZero->values.pitch = 0;
+    accZero->values.yaw = 0;
+}
+
+void accResetFlightDynamicsTrims(void)
+{
+    resetFlightDynamicsTrims(&accelerometerConfigMutable()->accZero);
+}
+
+void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
+{
+    RESET_CONFIG_2(accelerometerConfig_t, instance,
+        .acc_lpf_hz = 10,
+        .acc_align = ALIGN_DEFAULT,
+        .acc_hardware = ACC_DEFAULT
+    );
+    resetRollAndPitchTrims(&instance->accelerometerTrims);
+    resetFlightDynamicsTrims(&instance->accZero);
+}
+
 bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse)
 {
     accelerationSensor_e accHardware;
@@ -98,11 +138,7 @@ retry:
 #ifdef USE_ACC_ADXL345
         acc_params.useFifo = false;
         acc_params.dataRate = 800; // unused currently
-#ifdef NAZE
-        if (hardwareRevision < NAZE32_REV5 && adxl345Detect(&acc_params, dev)) {
-#else
         if (adxl345Detect(&acc_params, dev)) {
-#endif
 #ifdef ACC_ADXL345_ALIGN
             dev->accAlign = ACC_ADXL345_ALIGN;
 #endif
@@ -135,12 +171,7 @@ retry:
         ; // fallthrough
     case ACC_MMA8452: // MMA8452
 #ifdef USE_ACC_MMA8452
-#ifdef NAZE
-        // Not supported with this frequency
-        if (hardwareRevision < NAZE32_REV5 && mma8452Detect(dev)) {
-#else
         if (mma8452Detect(dev)) {
-#endif
 #ifdef ACC_MMA8452_ALIGN
             dev->accAlign = ACC_MMA8452_ALIGN;
 #endif
@@ -171,10 +202,20 @@ retry:
         }
 #endif
         ; // fallthrough
+    case ACC_MPU9250:
+#ifdef USE_ACC_SPI_MPU9250
+        if (mpu9250SpiAccDetect(dev)) {
+#ifdef ACC_MPU9250_ALIGN
+            dev->accAlign = ACC_MPU9250_ALIGN;
+#endif
+            accHardware = ACC_MPU9250;
+            break;
+        }
+#endif
+        ; // fallthrough
     case ACC_MPU6500:
     case ACC_ICM20608G:
     case ACC_ICM20602:
-    case ACC_MPU9250:
 #if defined(USE_ACC_MPU6500) || defined(USE_ACC_SPI_MPU6500)
 #ifdef USE_ACC_SPI_MPU6500
         if (mpu6500AccDetect(dev) || mpu6500SpiAccDetect(dev))
@@ -204,13 +245,22 @@ retry:
         ; // fallthrough
     case ACC_ICM20689:
 #ifdef USE_ACC_SPI_ICM20689
-
-        if (icm20689SpiAccDetect(dev))
-        {
+        if (icm20689SpiAccDetect(dev)) {
+            accHardware = ACC_ICM20689;
 #ifdef ACC_ICM20689_ALIGN
             dev->accAlign = ACC_ICM20689_ALIGN;
 #endif
-            accHardware = ACC_ICM20689;
+            break;
+        }
+#endif
+        ; // fallthrough
+    case ACC_BMI160:
+#ifdef USE_ACCGYRO_BMI160
+        if (bmi160SpiAccDetect(dev)) {
+            accHardware = ACC_BMI160;
+#ifdef ACC_BMI160_ALIGN
+            dev->accAlign = ACC_BMI160_ALIGN;
+#endif
             break;
         }
 #endif
@@ -302,12 +352,6 @@ static bool isOnFinalAccelerationCalibrationCycle(void)
 static bool isOnFirstAccelerationCalibrationCycle(void)
 {
     return calibratingA == CALIBRATING_ACC_CYCLES;
-}
-
-void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
-{
-    rollAndPitchTrims->values.roll = 0;
-    rollAndPitchTrims->values.pitch = 0;
 }
 
 static void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)

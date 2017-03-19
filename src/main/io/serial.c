@@ -28,6 +28,8 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "fc/config.h"
+
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
@@ -70,10 +72,10 @@ const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
     SERIAL_PORT_USART3,
 #endif
 #ifdef USE_UART4
-    SERIAL_PORT_USART4,
+    SERIAL_PORT_UART4,
 #endif
 #ifdef USE_UART5
-    SERIAL_PORT_USART5,
+    SERIAL_PORT_UART5,
 #endif
 #ifdef USE_UART6
     SERIAL_PORT_USART6,
@@ -98,6 +100,35 @@ const uint32_t baudRates[] = {0, 9600, 19200, 38400, 57600, 115200, 230400, 2500
         400000, 460800, 500000, 921600, 1000000, 1500000, 2000000, 2470000}; // see baudRate_e
 
 #define BAUD_RATE_COUNT (sizeof(baudRates) / sizeof(baudRates[0]))
+
+PG_REGISTER_WITH_RESET_FN(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
+
+void pgResetFn_serialConfig(serialConfig_t *serialConfig)
+{
+    memset(serialConfig, 0, sizeof(serialConfig_t));
+
+    for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
+        serialConfig->portConfigs[i].identifier = serialPortIdentifiers[i];
+        serialConfig->portConfigs[i].msp_baudrateIndex = BAUD_115200;
+        serialConfig->portConfigs[i].gps_baudrateIndex = BAUD_57600;
+        serialConfig->portConfigs[i].telemetry_baudrateIndex = BAUD_AUTO;
+        serialConfig->portConfigs[i].blackbox_baudrateIndex = BAUD_115200;
+    }
+
+    serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
+
+#if defined(USE_VCP) && defined(USE_MSP_UART)
+    if (serialConfig->portConfigs[0].identifier == SERIAL_PORT_USB_VCP) {
+        serialPortConfig_t * uart1Config = serialFindPortConfiguration(SERIAL_PORT_USART1);
+        if (uart1Config) {
+            uart1Config->functionMask = FUNCTION_MSP;
+        }
+    }
+#endif
+
+    serialConfig->reboot_character = 'R';
+    serialConfig->serial_update_rate_hz = 100;
+}
 
 baudRate_e lookupBaudRateIndex(uint32_t baudRate)
 {
@@ -327,12 +358,12 @@ serialPort_t *openSerialPort(
             break;
 #endif
 #ifdef USE_UART4
-        case SERIAL_PORT_USART4:
+        case SERIAL_PORT_UART4:
             serialPort = uartOpen(UART4, rxCallback, baudRate, mode, options);
             break;
 #endif
 #ifdef USE_UART5
-        case SERIAL_PORT_USART5:
+        case SERIAL_PORT_UART5:
             serialPort = uartOpen(UART5, rxCallback, baudRate, mode, options);
             break;
 #endif
@@ -353,14 +384,12 @@ serialPort_t *openSerialPort(
 #endif
 #ifdef USE_SOFTSERIAL1
         case SERIAL_PORT_SOFTSERIAL1:
-            serialPort = openSoftSerial(SOFTSERIAL1, rxCallback, baudRate, options);
-            serialSetMode(serialPort, mode);
+            serialPort = openSoftSerial(SOFTSERIAL1, rxCallback, baudRate, mode, options);
             break;
 #endif
 #ifdef USE_SOFTSERIAL2
         case SERIAL_PORT_SOFTSERIAL2:
-            serialPort = openSoftSerial(SOFTSERIAL2, rxCallback, baudRate, options);
-            serialSetMode(serialPort, mode);
+            serialPort = openSoftSerial(SOFTSERIAL2, rxCallback, baudRate, mode, options);
             break;
 #endif
         default:
@@ -397,6 +426,10 @@ void closeSerialPort(serialPort_t *serialPort)
 
 void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisable)
 {
+#if !defined(USE_SOFTSERIAL1) && !defined(USE_SOFTSERIAL2)
+    UNUSED(softserialEnabled);
+#endif
+
     serialPortCount = SERIAL_PORT_COUNT;
     memset(&serialPortUsageList, 0, sizeof(serialPortUsageList));
 
@@ -409,18 +442,18 @@ void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisab
                 serialPortCount--;
             }
         }
-        if (!softserialEnabled) {
-            if (0
+
+        if ((serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL1
 #ifdef USE_SOFTSERIAL1
-                || serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL1
+            && !(softserialEnabled && serialPinConfig()->ioTagTx[RESOURCE_SOFT_OFFSET + SOFTSERIAL1])
 #endif
+           ) || (serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL2
 #ifdef USE_SOFTSERIAL2
-                || serialPortUsageList[index].identifier == SERIAL_PORT_SOFTSERIAL2
+            && !(softserialEnabled && serialPinConfig()->ioTagTx[RESOURCE_SOFT_OFFSET + SOFTSERIAL2])
 #endif
-            ) {
-                serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
-                serialPortCount--;
-            }
+            )) {
+            serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
+            serialPortCount--;
         }
     }
 }

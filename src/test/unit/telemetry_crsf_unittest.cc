@@ -54,7 +54,10 @@ extern "C" {
     #include "telemetry/telemetry.h"
 
     bool airMode;
-    uint16_t vbat;
+
+    uint16_t testBatteryVoltage = 0;
+    int32_t testAmperage = 0;
+
     serialPort_t *telemetrySharedPort;
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
@@ -138,7 +141,7 @@ TEST(TelemetryCrsfTest, TestBattery)
 {
     uint8_t frame[CRSF_FRAME_SIZE_MAX];
 
-    vbat = 0; // 0.1V units
+    testBatteryVoltage = 0; // 0.1V units
     int frameLen = getCrsfFrame(frame, CRSF_FRAME_BATTERY_SENSOR);
     EXPECT_EQ(CRSF_FRAME_BATTERY_SENSOR_PAYLOAD_SIZE + FRAME_HEADER_FOOTER_LEN, frameLen);
     EXPECT_EQ(CRSF_ADDRESS_BROADCAST, frame[0]); // address
@@ -154,8 +157,8 @@ TEST(TelemetryCrsfTest, TestBattery)
     EXPECT_EQ(67, remaining);
     EXPECT_EQ(crfsCrc(frame, frameLen), frame[11]);
 
-    vbat = 33; // 3.3V = 3300 mv
-    amperage = 2960; // = 29.60A = 29600mA - amperage is in 0.01A steps
+    testBatteryVoltage = 33; // 3.3V = 3300 mv
+    testAmperage = 2960; // = 29.60A = 29600mA - amperage is in 0.01A steps
     batteryConfigMutable()->batteryCapacity = 1234;
     frameLen = getCrsfFrame(frame, CRSF_FRAME_BATTERY_SENSOR);
     voltage = frame[3] << 8 | frame[4]; // mV * 100
@@ -283,9 +286,6 @@ uint16_t GPS_altitude;              // altitude in m
 uint16_t GPS_speed;                 // speed in 0.1m/s
 uint16_t GPS_ground_course = 0;     // degrees * 10
 
-int32_t amperage;
-int32_t mAhDrawn;
-
 void beeperConfirmationBeeps(uint8_t beepCount) {UNUSED(beepCount);}
 
 uint32_t micros(void) {return 0;}
@@ -308,11 +308,23 @@ bool telemetryCheckRxPortShared(const serialPortConfig_t *) {return true;}
 
 portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunction_e) {return PORTSHARING_NOT_SHARED;}
 
-uint8_t batteryCapacityRemainingPercentage(void) {return 67;}
-uint8_t calculateBatteryCapacityRemainingPercentage(void) {return 67;}
-uint8_t calculateBatteryPercentage(void) {return 67;}
-batteryState_e getBatteryState(void) {return BATTERY_OK;}
 bool isAirmodeActive(void) {return airMode;}
-uint16_t getVbat(void) { return vbat; }
+
+int32_t getAmperage(void) {
+    return testAmperage;
+}
+
+uint16_t getBatteryVoltage(void) {
+    return testBatteryVoltage;
+}
+
+batteryState_e getBatteryState(void) {
+    return BATTERY_OK;
+}
+
+uint8_t calculateBatteryPercentageRemaining(void) {
+    return 67;
+}
+
 }
 

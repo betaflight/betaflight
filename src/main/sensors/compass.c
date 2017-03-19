@@ -47,6 +47,22 @@
 magDev_t magDev;
 mag_t mag;                   // mag access functions
 
+#ifdef MAG_INT_EXTI
+#define COMPASS_INTERRUPT_TAG   IO_TAG(MAG_INT_EXTI)
+#else
+#define COMPASS_INTERRUPT_TAG   IO_TAG_NONE
+#endif
+
+PG_REGISTER_WITH_RESET_TEMPLATE(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 0);
+
+PG_RESET_TEMPLATE(compassConfig_t, compassConfig,
+    .mag_align = ALIGN_DEFAULT,
+    // xxx_hardware: 0:default/autodetect, 1: disable
+    .mag_hardware = 1,
+    .mag_declination = 0,
+    .interruptTag = COMPASS_INTERRUPT_TAG
+);
+
 #ifdef MAG
 
 static int16_t magADCRaw[XYZ_AXIS_COUNT];
@@ -55,33 +71,6 @@ static uint8_t magInit = 0;
 bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse)
 {
     magSensor_e magHardware;
-
-#ifdef USE_MAG_HMC5883
-    const hmc5883Config_t *hmc5883Config = 0;
-
-#ifdef NAZE // TODO remove this target specific define
-    static const hmc5883Config_t nazeHmc5883Config_v1_v4 = {
-            .intTag = IO_TAG(PB12) /* perhaps disabled? */
-    };
-    static const hmc5883Config_t nazeHmc5883Config_v5 = {
-            .intTag = IO_TAG(MAG_INT_EXTI)
-    };
-    if (hardwareRevision < NAZE32_REV5) {
-        hmc5883Config = &nazeHmc5883Config_v1_v4;
-    } else {
-        hmc5883Config = &nazeHmc5883Config_v5;
-    }
-#endif
-
-#ifdef MAG_INT_EXTI
-    static const hmc5883Config_t extiHmc5883Config = {
-        .intTag = IO_TAG(MAG_INT_EXTI)
-    };
-
-    hmc5883Config = &extiHmc5883Config;
-#endif
-
-#endif
 
 retry:
 
@@ -93,7 +82,7 @@ retry:
 
     case MAG_HMC5883:
 #ifdef USE_MAG_HMC5883
-        if (hmc5883lDetect(dev, hmc5883Config)) {
+        if (hmc5883lDetect(dev, compassConfig()->interruptTag)) {
 #ifdef MAG_HMC5883_ALIGN
             dev->magAlign = MAG_HMC5883_ALIGN;
 #endif

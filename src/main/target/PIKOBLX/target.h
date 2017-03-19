@@ -18,10 +18,8 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "PIKO" // Furious FPV Piko BLX
-#define USE_CLI
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
-#define TARGET_CONFIG
 
 #define LED0                    PB9
 #define LED1                    PB5
@@ -51,7 +49,10 @@
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-#define SERIAL_PORT_COUNT       4
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT       6
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
@@ -68,18 +69,13 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_2
 
-#define TELEMETRY
-#define BLACKBOX
-#define SERIAL_RX
-#define USE_SERVOS
-
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
 #define ADC_INSTANCE            ADC2
 #define CURRENT_METER_ADC_PIN   PB2
 #define VBAT_ADC_PIN            PA5
 
-#define LED_STRIP
+#define CURRENT_METER_SCALE_DEFAULT 125
 
 #define TRANSPONDER
 #define TRANSPONDER_GPIO                     GPIOA
@@ -94,9 +90,7 @@
 #define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC2
 #define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 
-#define SPEKTRUM_BIND
-// USART3, PB11
-#define BIND_PIN                PB11
+#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

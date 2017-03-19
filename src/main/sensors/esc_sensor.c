@@ -43,8 +43,6 @@
 
 #include "flight/mixer.h"
 
-#include "sensors/battery.h"
-
 #include "io/serial.h"
 
 /*

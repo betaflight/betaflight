@@ -23,6 +23,17 @@
 
 #include "config/parameter_group.h"
 
+typedef enum BlackboxDevice {
+    BLACKBOX_DEVICE_SERIAL = 0,
+#ifdef USE_FLASHFS
+    BLACKBOX_DEVICE_FLASH = 1,
+#endif
+#ifdef USE_SDCARD
+    BLACKBOX_DEVICE_SDCARD = 2,
+#endif
+
+} BlackboxDevice_e;
+
 typedef struct blackboxConfig_s {
     uint8_t rate_num;
     uint8_t rate_denom;

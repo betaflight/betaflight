@@ -329,12 +329,12 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
             IOConfigGPIOAF(tx, IOCFG_AF_OD, uart->af);
     }
     else {
-        if (mode & MODE_TX) {
+        if ((mode & MODE_TX) && tx) {
             IOInit(tx, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
             IOConfigGPIOAF(tx, IOCFG_AF_PP_UP, uart->af);
         }
 
-        if (mode & MODE_RX) {
+        if ((mode & MODE_RX) && rx) {
             IOInit(rx, OWNER_SERIAL_RX, RESOURCE_INDEX(device));
             IOConfigGPIOAF(rx, IOCFG_AF_PP_UP, uart->af);
         }
@@ -395,7 +395,7 @@ void USART3_IRQHandler(void)
 #endif
 
 #ifdef USE_UART4
-// USART4
+// UART4
 uartPort_t *serialUART4(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     return serialUART(UARTDEV_4, baudRate, mode, options);
@@ -409,7 +409,7 @@ void UART4_IRQHandler(void)
 #endif
 
 #ifdef USE_UART5
-// USART5
+// UART5
 uartPort_t *serialUART5(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     return serialUART(UARTDEV_5, baudRate, mode, options);

@@ -44,6 +44,7 @@
 #define SERIAL_PORT_COUNT       2
 
 #define USE_I2C
+#define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
 
 // #define SOFT_I2C // enable to test software i2c
@@ -106,8 +107,7 @@
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define USE_RX_MSP
-#define SPEKTRUM_BIND
-#define BIND_PIN                PA3 // UART2, PA3
+#define SPEKTRUM_BIND_PIN       PA3 // UART2, PA3
 
 #endif //USE_RX_NRF24
 

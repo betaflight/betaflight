@@ -83,12 +83,10 @@ static uint8_t device_id;
 
 static inline void mma8451ConfigureInterrupt(void)
 {
-#ifdef NAZE
-    // PA5 - ACC_INT2 output on NAZE rev3/4 hardware
-    // NAZE rev.5 hardware has PA5 (ADC1_IN5) on breakout pad on bottom of board
-    // OLIMEXINO - The PA5 pin is wired up to LED1, if you need to use an mma8452 on an Olimexino use a different pin and provide support in code.
-    IOInit(IOGetByTag(IO_TAG(PA5)), OWNER_MPU_EXTI, 0);
-    IOConfigGPIO(IOGetByTag(IO_TAG(PA5)), IOCFG_IN_FLOATING);   // TODO - maybe pullup / pulldown ?
+#ifdef MMA8451_INT_PIN
+    IOInit(IOGetByTag(IO_TAG(MMA8451_INT_PIN)), OWNER_MPU_EXTI, 0);
+    // TODO - maybe pullup / pulldown ?
+    IOConfigGPIO(IOGetByTag(IO_TAG(MMA8451_INT_PIN)), IOCFG_IN_FLOATING);   
 #endif
 
     i2cWrite(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_CTRL_REG3, MMA8452_CTRL_REG3_IPOL); // Interrupt polarity (active HIGH)

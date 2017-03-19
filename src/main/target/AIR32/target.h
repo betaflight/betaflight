@@ -18,7 +18,6 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "AR32" // AiR32
-#define USE_CLI
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
@@ -60,7 +59,9 @@
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-#define SERIAL_PORT_COUNT       4
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+#define SERIAL_PORT_COUNT       6
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
@@ -75,7 +76,8 @@
 #define UART3_RX_PIN            PB11 //(AF7)
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_2) // SDA (PA10/AF4), SCL (PA9/AF4)
+#define USE_I2C_DEVICE_2
+#define I2C_DEVICE              (I2CDEV_2)
 #define I2C2_SCL                PA9
 #define I2C2_SDA                PA10
 
@@ -85,7 +87,6 @@
 #define M25P16_CS_PIN           PB12
 #define M25P16_SPI_INSTANCE     SPI2
 
-#undef GPS
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
@@ -96,11 +97,7 @@
 //#define CURRENT_METER_ADC_PIN   PA5
 #define RSSI_ADC_PIN            PB2
 
-#define LED_STRIP
-
-#define SPEKTRUM_BIND
-// USART2, PB4
-#define BIND_PIN                PB4
+#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

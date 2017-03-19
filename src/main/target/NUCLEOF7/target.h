@@ -19,8 +19,6 @@
 
 #define TARGET_BOARD_IDENTIFIER "NUC7"
 
-#define CONFIG_START_FLASH_ADDRESS (0x080C0000)
-
 #define USBD_PRODUCT_STRING "NucleoF7"
 
 //#define USE_DSHOT
@@ -93,7 +91,10 @@
 #define UART8_RX_PIN PE0
 #define UART8_TX_PIN PE1
 
-#define SERIAL_PORT_COUNT 8 //VCP, USART2, USART3, UART4, UART5, USART6, USART7, USART8
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT 10 //VCP, USART2, USART3, UART4, UART5, USART6, USART7, USART8, SOFTSERIAL x 2
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -130,18 +131,15 @@
 #define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_4
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_1)
-#define I2C1_SCL PB8
-#define I2C1_SDA PB9
-
-//#define I2C_DEVICE_EXT (I2CDEV_2)
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE                  (I2CDEV_1)
+#define I2C1_SCL                    PB8
+#define I2C1_SDA                    PB9
 
 #define USE_ADC
 #define VBAT_ADC_PIN                PA3
 #define CURRENT_METER_ADC_PIN       PC0
 #define RSSI_ADC_GPIO_PIN           PC3
-
-#define LED_STRIP
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 

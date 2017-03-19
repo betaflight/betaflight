@@ -78,15 +78,16 @@
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC3
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
-#define USB_IO
-
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
 #define USE_UART4
 #define USE_UART5
-#define SERIAL_PORT_COUNT 6
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT 8
 
 #define UART1_TX_PIN             PC4
 #define UART1_RX_PIN             PC5
@@ -100,7 +101,8 @@
 #define UART5_RX_PIN             PD2
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_2) // SDA (PA14/AF4), SCL (PA15/AF4)
+#define USE_I2C_DEVICE_2
+#define I2C_DEVICE              (I2CDEV_2)
 
 #define I2C2_SCL_GPIO            GPIOA
 #define I2C2_SCL_GPIO_AF         GPIO_AF_4
@@ -121,7 +123,6 @@
 #define VBAT_ADC_PIN             PA4
 #define CURRENT_METER_ADC_PIN    PA5
 #define VBAT_SCALE_DEFAULT       119
-#define LED_STRIP
 
 #define TRANSPONDER
 #define TRANSPONDER_GPIO                     GPIOA
@@ -135,12 +136,6 @@
 #define TRANSPONDER_IRQ                      DMA1_Channel6_IRQn
 #define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC6
 #define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
-#define BLACKBOX
-#define GPS
-#define SERIAL_RX
-#define TELEMETRY
-#define USE_SERVOS
-#define USE_CLI
 
 #define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 
@@ -152,9 +147,7 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define SPEKTRUM_BIND
-
-#define BIND_PIN PB11
+#define SPEKTRUM_BIND_PIN UART3_RX_PIN
 
 // IO - stm32f303rc in 64pin package
 #define TARGET_IO_PORTA 0xffff

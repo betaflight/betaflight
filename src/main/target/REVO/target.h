@@ -17,8 +17,6 @@
 
 #pragma once
 
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
-
 #if defined(AIRBOTF4)
 #define TARGET_BOARD_IDENTIFIER "AIR4"
 #define USBD_PRODUCT_STRING     "AirbotF4"
@@ -70,7 +68,7 @@
 #endif
 
 // PC0 used as inverter select GPIO
-#define INVERTER_PIN_USART1     PC0
+#define INVERTER_PIN_UART1      PC0
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
@@ -157,7 +155,10 @@
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
-#define SERIAL_PORT_COUNT       4 //VCP, USART1, USART3, USART6
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT       6 //VCP, USART1, USART3, USART6, SOFTSERIAL x 2
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
@@ -173,6 +174,7 @@
 #define SPI3_MOSI_PIN           PC12
 
 #define USE_I2C
+#define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_ADC
@@ -184,8 +186,6 @@
 #define VBAT_ADC_CHANNEL        ADC_Channel_13
 #endif
 
-#define LED_STRIP
-
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #if defined(PODIUMF4)
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
@@ -195,9 +195,7 @@
 #define DEFAULT_FEATURES        (FEATURE_BLACKBOX)
 #endif
 
-#define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN                PB11
+#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -208,8 +206,13 @@
 
 #ifdef REVOLT
 #define USABLE_TIMER_CHANNEL_COUNT 11
+#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(12) )
 #else
 #define USABLE_TIMER_CHANNEL_COUNT 12
-#endif
+#ifdef AIRBOTF4
+#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(12) )
+#else
+#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(12) )
+#endif // AIRBOTF4
+#endif // REVOLT
 
-#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9) )

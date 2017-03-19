@@ -23,7 +23,7 @@
 #define MAG
 #define BARO
 #define GPS
-#define DISPLAY
+#define USE_DASHBOARD
 #define SERIAL_RX
 #define USE_RX_MSP
 #define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol

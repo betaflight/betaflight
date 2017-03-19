@@ -62,7 +62,7 @@ static void i2cUnstick(IO_t scl, IO_t sda);
 #define I2C3_SDA PB4
 #endif
 
-#if defined(USE_I2C4)
+#if defined(USE_I2C_DEVICE_4)
 #ifndef I2C4_SCL
 #define I2C4_SCL PD12
 #endif
@@ -75,11 +75,10 @@ static i2cDevice_t i2cHardwareMap[] = {
     { .dev = I2C1, .scl = IO_TAG(I2C1_SCL), .sda = IO_TAG(I2C1_SDA), .rcc = RCC_APB1(I2C1), .overClock = I2C1_OVERCLOCK, .ev_irq = I2C1_EV_IRQn, .er_irq = I2C1_ER_IRQn, .af = GPIO_AF4_I2C1 },
     { .dev = I2C2, .scl = IO_TAG(I2C2_SCL), .sda = IO_TAG(I2C2_SDA), .rcc = RCC_APB1(I2C2), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C2_EV_IRQn, .er_irq = I2C2_ER_IRQn, .af = GPIO_AF4_I2C2 },
     { .dev = I2C3, .scl = IO_TAG(I2C3_SCL), .sda = IO_TAG(I2C3_SDA), .rcc = RCC_APB1(I2C3), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C3_EV_IRQn, .er_irq = I2C3_ER_IRQn, .af = GPIO_AF4_I2C3 },
-#if defined(USE_I2C4)
+#if defined(USE_I2C_DEVICE_4)
     { .dev = I2C4, .scl = IO_TAG(I2C4_SCL), .sda = IO_TAG(I2C4_SDA), .rcc = RCC_APB1(I2C4), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C4_EV_IRQn, .er_irq = I2C4_ER_IRQn, .af = GPIO_AF4_I2C4 }
 #endif
 };
-
 
 typedef struct{
     I2C_HandleTypeDef Handle;
@@ -116,7 +115,7 @@ void I2C3_EV_IRQHandler(void)
     HAL_I2C_EV_IRQHandler(&i2cHandle[I2CDEV_3].Handle);
 }
 
-#ifdef USE_I2C4
+#ifdef USE_I2C_DEVICE_4
 void I2C4_ER_IRQHandler(void)
 {
     HAL_I2C_ER_IRQHandler(&i2cHandle[I2CDEV_4].Handle);
@@ -198,7 +197,7 @@ void i2cInit(I2CDevice device)
     case I2CDEV_3:
         __HAL_RCC_I2C3_CLK_ENABLE();
         break;
-#ifdef USE_I2C4
+#ifdef USE_I2C_DEVICE_4
     case I2CDEV_4:
         __HAL_RCC_I2C4_CLK_ENABLE();
         break;

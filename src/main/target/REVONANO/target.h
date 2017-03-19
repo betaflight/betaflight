@@ -18,8 +18,6 @@
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "REVN"
 
-#define CONFIG_START_FLASH_ADDRESS (0x08060000) //0x08060000 to 0x08080000 (FLASH_Sector_7)
-
 #define USBD_PRODUCT_STRING "Revo Nano"
 #ifdef OPBL
 #define USBD_SERIALNUMBER_STRING "0x8010000"
@@ -30,7 +28,7 @@
 
 #define BEEPER                  PC13
 
-#define INVERTER_PIN_USART2     PC15 //Sbus on USART 2 of nano.
+#define INVERTER_PIN_UART2      PC15 //Sbus on USART 2 of nano.
 
 #define MPU6500_CS_PIN          PB12
 #define MPU6500_SPI_INSTANCE    SPI2
@@ -64,7 +62,10 @@
 #define UART2_RX_PIN            PA3
 #define UART2_TX_PIN            PA2
 
-#define SERIAL_PORT_COUNT       3 
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT       5
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 
@@ -73,23 +74,17 @@
 #define USE_SPI_DEVICE_2
 
 #define USE_I2C
+#define USE_I2C_DEVICE_3
 #define I2C_DEVICE (I2CDEV_3)
+
+#undef LED_STRIP
 
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PA7
 #define VBAT_ADC_PIN            PA6
 #define RSSI_ADC_PIN            PA5
 
-#define GPS
-#define BLACKBOX
-#define TELEMETRY
-#define SERIAL_RX
-#define USE_SERVOS
-#define USE_CLI
-
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
+#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

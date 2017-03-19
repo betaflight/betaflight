@@ -53,15 +53,15 @@
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883
 
-#define USB_IO
-
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
 #define USE_UART4
 #define USE_UART5
-#define SERIAL_PORT_COUNT       6
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+#define SERIAL_PORT_COUNT       8
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
@@ -76,7 +76,8 @@
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
 
 #define USE_I2C
-#define I2C_DEVICE              (I2CDEV_1) // PB6/SCL, PB7/SDA
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1 // MPU
@@ -135,13 +136,14 @@
 #define MPU6500_SPI_INSTANCE             SPI1
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
+#define BOARD_HAS_CURRENT_SENSOR
+
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
 #define VBAT_ADC_PIN            PC1
 #define CURRENT_METER_ADC_PIN   PC2
 #define RSSI_ADC_PIN            PC0
 
-#define LED_STRIP
 #define USE_LED_STRIP_ON_DMA1_CHANNEL2
 #define WS2811_PIN                      PA8
 #define WS2811_TIMER                    TIM1
@@ -157,19 +159,14 @@
 
 #define OSD
 
-#undef GPS
-
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
-#define DEFAULT_FEATURES        (FEATURE_TRANSPONDER | FEATURE_BLACKBOX | FEATURE_RSSI_ADC | FEATURE_CURRENT_METER | FEATURE_TELEMETRY | FEATURE_OSD)
+#define DEFAULT_FEATURES        (FEATURE_TRANSPONDER | FEATURE_BLACKBOX | FEATURE_RSSI_ADC | FEATURE_TELEMETRY)
 
 #define BUTTONS
 #define BUTTON_A_PIN            PD2
 
-#define SPEKTRUM_BIND
-// USART3
-#define BIND_PIN                PA3
+#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
-#define HARDWARE_BIND_PLUG
 #define BINDPLUG_PIN            PD2
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE

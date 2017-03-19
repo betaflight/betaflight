@@ -390,7 +390,7 @@ DMA_HandleTypeDef* spiSetDMATransmit(DMA_Stream_TypeDef *Stream, uint32_t Channe
     // DMA TX Interrupt
     dmaSetHandler(spiHardwareMap[device].dmaIrqHandler, dmaSPIIRQHandler, NVIC_BUILD_PRIORITY(3, 0), (uint32_t)device);
 
-    HAL_CLEANCACHE(pData,Size);
+    //HAL_CLEANCACHE(pData,Size);
     // And Transmit
     HAL_SPI_Transmit_DMA(&spiHardwareMap[device].hspi, pData, Size);
 

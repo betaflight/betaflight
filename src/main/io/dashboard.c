@@ -42,39 +42,35 @@
 #include "common/axis.h"
 #include "common/typeconversion.h"
 
-#include "sensors/battery.h"
-#include "sensors/sensors.h"
-#include "sensors/compass.h"
-#include "sensors/acceleration.h"
-#include "sensors/gyro.h"
+#include "config/feature.h"
+#include "config/config_profile.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "fc/config.h"
+#include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
-
-#include "io/displayport_oled.h"
-
-#ifdef GPS
-#include "io/gps.h"
 #include "flight/navigation.h"
-#endif
 
-#include "config/feature.h"
-#include "config/config_profile.h"
-
+#include "io/gps.h"
 #include "io/dashboard.h"
+#include "io/displayport_oled.h"
 
 #include "rx/rx.h"
 
 #include "scheduler/scheduler.h"
 
-extern profile_t *currentProfile;
+#include "sensors/acceleration.h"
+#include "sensors/battery.h"
+#include "sensors/compass.h"
+#include "sensors/gyro.h"
+#include "sensors/sensors.h"
 
-controlRateConfig_t *getControlRateConfig(uint8_t profileIndex);
 
 #define MICROSECONDS_IN_A_SECOND (1000 * 1000)
 
@@ -84,7 +80,6 @@ controlRateConfig_t *getControlRateConfig(uint8_t profileIndex);
 static uint32_t nextDisplayUpdateAt = 0;
 static bool dashboardPresent = false;
 
-static rxConfig_t *rxConfig;
 static displayPort_t *displayPort;
 
 #define PAGE_TITLE_LINE_COUNT 1
@@ -322,12 +317,12 @@ void showProfilePage(void)
 {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
-    tfp_sprintf(lineBuffer, "Profile: %d", getCurrentProfile());
+    tfp_sprintf(lineBuffer, "Profile: %d", getCurrentPidProfileIndex());
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
     static const char* const axisTitles[3] = {"ROL", "PIT", "YAW"};
-    const pidProfile_t *pidProfile = &currentProfile->pidProfile;
+    const pidProfile_t *pidProfile = currentPidProfile;
     for (int axis = 0; axis < 3; ++axis) {
         tfp_sprintf(lineBuffer, "%s P:%3d I:%3d D:%3d",
             axisTitles[axis],
@@ -340,12 +335,12 @@ void showProfilePage(void)
         i2c_OLED_send_string(lineBuffer);
     }
 
-    const uint8_t currentRateProfileIndex = getCurrentControlRateProfile();
+    const uint8_t currentRateProfileIndex = getCurrentControlRateProfileIndex();
     tfp_sprintf(lineBuffer, "Rate profile: %d", currentRateProfileIndex);
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    const controlRateConfig_t *controlRateConfig = getControlRateConfig(currentRateProfileIndex);
+    const controlRateConfig_t *controlRateConfig = controlRateProfiles(currentRateProfileIndex);
     tfp_sprintf(lineBuffer, "RCE: %d, RCR: %d",
         controlRateConfig->rcExpo8,
         controlRateConfig->rcRate8
@@ -457,24 +452,26 @@ void showBatteryPage(void)
 {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
-    if (feature(FEATURE_VBAT)) {
-        tfp_sprintf(lineBuffer, "Volts: %d.%1d Cells: %d", getVbat() / 10, getVbat() % 10, batteryCellCount);
+    if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE) {
+        tfp_sprintf(lineBuffer, "Volts: %d.%1d Cells: %d", getBatteryVoltage() / 10, getBatteryVoltage() % 10, getBatteryCellCount());
         padLineBuffer();
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);
 
-        uint8_t batteryPercentage = calculateBatteryPercentage();
+        uint8_t batteryPercentage = calculateBatteryPercentageRemaining();
         i2c_OLED_set_line(rowIndex++);
         drawHorizonalPercentageBar(SCREEN_CHARACTER_COLUMN_COUNT, batteryPercentage);
     }
 
-    if (feature(FEATURE_CURRENT_METER)) {
-        tfp_sprintf(lineBuffer, "Amps: %d.%2d mAh: %d", amperage / 100, amperage % 100, mAhDrawn);
+    if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
+
+        int32_t amperage = getAmperage();
+        tfp_sprintf(lineBuffer, "Amps: %d.%2d mAh: %d", amperage / 100, amperage % 100, getMAhDrawn());
         padLineBuffer();
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);
 
-        uint8_t capacityPercentage = calculateBatteryPercentage();
+        uint8_t capacityPercentage = calculateBatteryPercentageRemaining();
         i2c_OLED_set_line(rowIndex++);
         drawHorizonalPercentageBar(SCREEN_CHARACTER_COLUMN_COUNT, capacityPercentage);
     }
@@ -701,7 +698,7 @@ void dashboardSetPage(pageId_e pageId)
     pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
 }
 
-void dashboardInit(rxConfig_t *rxConfigToUse)
+void dashboardInit(void)
 {
     delay(200);
     resetDisplay();
@@ -713,8 +710,6 @@ void dashboardInit(rxConfig_t *rxConfigToUse)
         cmsDisplayPortRegister(displayPort);
     }
 #endif
-
-    rxConfig = rxConfigToUse;
 
     memset(&pageState, 0, sizeof(pageState));
     dashboardSetPage(PAGE_WELCOME);

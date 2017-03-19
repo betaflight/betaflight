@@ -4903,8 +4903,11 @@ void arm_rfft_fast_f32(
     /* acc += y[n-1] */
     acc += (q31_t) S->state[2] << 15;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
     /* saturate the output */
     out = (q15_t) (__SSAT((acc >> 15), 16));
+#pragma GCC diagnostic pop
 
     /* Update state */
     S->state[1] = S->state[0];

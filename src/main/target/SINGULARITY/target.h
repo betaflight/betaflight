@@ -45,7 +45,9 @@
 #define USE_UART2          // Input - TX (NC) RX (PA15)
 #define USE_UART3          // Solder Pads - TX (PB10) RX (PB11)
 #define USE_SOFTSERIAL1     // Telemetry
-#define SERIAL_PORT_COUNT 5
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT 6
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
@@ -59,13 +61,12 @@
 #define UART3_TX_PIN            PB10
 #define UART3_RX_PIN            PB11
 
-
-#define SOFTSERIAL_1_TIMER      TIM15
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 7 //Not connected
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 8
+#define SOFTSERIAL1_RX_PIN      PA2 //Not connected
+#define SOFTSERIAL1_TX_PIN      PA3
 
 #define USE_I2C
-#define I2C_DEVICE              (I2CDEV_1) // PB6/SCL, PB7/SDA
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1 // PA4, 5, 6, 7
@@ -86,17 +87,13 @@
 #define VBAT_ADC_PIN            PB2
 #define VBAT_SCALE_DEFAULT      77
 
-#define LED_STRIP
-
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
-#define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_BLACKBOX)
+#define DEFAULT_FEATURES        (FEATURE_BLACKBOX)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_UART           SERIAL_PORT_USART2
 
-#define SPEKTRUM_BIND
-// USART2, PA15
-#define BIND_PIN                PA15
+#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

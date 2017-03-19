@@ -91,12 +91,14 @@
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 
-#define USB_IO
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-#define SERIAL_PORT_COUNT 4
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT 6
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
@@ -124,14 +126,11 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define LED_STRIP
 #define USE_ESC_SENSOR
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
-#define SPEKTRUM_BIND
-// Use UART3 for speksat
-#define BIND_PIN                PB11
+#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

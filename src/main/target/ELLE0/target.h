@@ -18,7 +18,6 @@
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "ELL0"
 
-#define CONFIG_START_FLASH_ADDRESS 0x08080000 //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 #define TARGET_XTAL_MHZ         25
 
 #define USBD_PRODUCT_STRING "Elle0"
@@ -76,7 +75,10 @@
 //#define UART5_RX_PIN            PD2
 //#define UART5_TX_PIN            PC12
 
-#define SERIAL_PORT_COUNT 3
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT 5
 
 #define USE_SPI
 
@@ -90,7 +92,8 @@
 #define VBAT_ADC_PIN            PC4
 #define CURRENT_METER_ADC_PIN   PC5
 
-#define DEFAULT_FEATURES        (FEATURE_VBAT)
+#undef LED_STRIP
+
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER    SERIALRX_SPEKTRUM2048
 #define SERIALRX_UART           SERIAL_PORT_USART2

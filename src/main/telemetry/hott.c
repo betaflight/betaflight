@@ -84,6 +84,8 @@
 #include "flight/navigation.h"
 #include "io/gps.h"
 
+#include "flight/altitudehold.h"
+
 #include "telemetry/telemetry.h"
 #include "telemetry/hott.h"
 
@@ -245,26 +247,41 @@ static inline void updateAlarmBatteryStatus(HOTT_EAM_MSG_t *hottEAMMessage)
 
 static inline void hottEAMUpdateBattery(HOTT_EAM_MSG_t *hottEAMMessage)
 {
-    hottEAMMessage->main_voltage_L = getVbat() & 0xFF;
-    hottEAMMessage->main_voltage_H = getVbat() >> 8;
-    hottEAMMessage->batt1_voltage_L = getVbat() & 0xFF;
-    hottEAMMessage->batt1_voltage_H = getVbat() >> 8;
+    hottEAMMessage->main_voltage_L = getBatteryVoltage() & 0xFF;
+    hottEAMMessage->main_voltage_H = getBatteryVoltage() >> 8;
+    hottEAMMessage->batt1_voltage_L = getBatteryVoltage() & 0xFF;
+    hottEAMMessage->batt1_voltage_H = getBatteryVoltage() >> 8;
 
     updateAlarmBatteryStatus(hottEAMMessage);
 }
 
 static inline void hottEAMUpdateCurrentMeter(HOTT_EAM_MSG_t *hottEAMMessage)
 {
-    int32_t amp = amperage / 10;
+    int32_t amp = getAmperage() / 10;
     hottEAMMessage->current_L = amp & 0xFF;
     hottEAMMessage->current_H = amp >> 8;
 }
 
 static inline void hottEAMUpdateBatteryDrawnCapacity(HOTT_EAM_MSG_t *hottEAMMessage)
 {
-    int32_t mAh = mAhDrawn / 10;
+    int32_t mAh = getMAhDrawn() / 10;
     hottEAMMessage->batt_cap_L = mAh & 0xFF;
     hottEAMMessage->batt_cap_H = mAh >> 8;
+}
+
+static inline void hottEAMUpdateAltitude(HOTT_EAM_MSG_t *hottEAMMessage)
+{
+    const uint16_t hottEamAltitude = (baro.BaroAlt / 100) + HOTT_EAM_OFFSET_HEIGHT;
+
+    hottEAMMessage->altitude_L = hottEamAltitude & 0x00FF;
+    hottEAMMessage->altitude_H = hottEamAltitude >> 8;
+}
+
+static inline void hottEAMUpdateClimbrate(HOTT_EAM_MSG_t *hottEAMMessage)
+{
+    hottEAMMessage->climbrate_L = (30000 + vario) & 0x00FF;
+    hottEAMMessage->climbrate_H = (30000 + vario) >> 8;
+    hottEAMMessage->climbrate3s = 120 + (vario / 100);  
 }
 
 void hottPrepareEAMResponse(HOTT_EAM_MSG_t *hottEAMMessage)
@@ -276,6 +293,8 @@ void hottPrepareEAMResponse(HOTT_EAM_MSG_t *hottEAMMessage)
     hottEAMUpdateBattery(hottEAMMessage);
     hottEAMUpdateCurrentMeter(hottEAMMessage);
     hottEAMUpdateBatteryDrawnCapacity(hottEAMMessage);
+    hottEAMUpdateAltitude(hottEAMMessage);
+    hottEAMUpdateClimbrate(hottEAMMessage);
 }
 
 static void hottSerialWrite(uint8_t c)

@@ -26,6 +26,7 @@
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/utils.h"
+#include "common/filter.h"
 
 #include "config/feature.h"
 #include "config/config_profile.h"
@@ -72,6 +73,7 @@
 #include "sensors/battery.h"
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
+#include "sensors/gyroanalyse.h"
 #include "sensors/sonar.h"
 #include "sensors/esc_sensor.h"
 
@@ -86,12 +88,6 @@ void taskBstMasterProcess(timeUs_t currentTimeUs);
 #define TASK_PERIOD_HZ(hz) (1000000 / (hz))
 #define TASK_PERIOD_MS(ms) ((ms) * 1000)
 #define TASK_PERIOD_US(us) (us)
-
-/* VBAT monitoring interval (in microseconds) - 1s*/
-#define VBATINTERVAL (6 * 3500)
-/* IBat monitoring interval (in microseconds) - 6 default looptimes */
-#define IBATINTERVAL (6 * 3500)
-
 
 static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
 {
@@ -113,27 +109,17 @@ static void taskHandleSerial(timeUs_t currentTimeUs)
     mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA, mspFcProcessCommand);
 }
 
-static void taskUpdateBattery(timeUs_t currentTimeUs)
+void taskBatteryAlerts(timeUs_t currentTimeUs)
 {
-#if defined(USE_ADC) || defined(USE_ESC_SENSOR)
-    if (feature(FEATURE_VBAT) || feature(FEATURE_ESC_SENSOR)) {
-        static uint32_t vbatLastServiced = 0;
-        if (cmp32(currentTimeUs, vbatLastServiced) >= VBATINTERVAL) {
-            vbatLastServiced = currentTimeUs;
-            updateBattery();
-        }
-    }
-#endif
+    UNUSED(currentTimeUs);
 
-    if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_SENSOR)) {
-        static uint32_t ibatLastServiced = 0;
-        const int32_t ibatTimeSinceLastServiced = cmp32(currentTimeUs, ibatLastServiced);
-
-        if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
-            ibatLastServiced = currentTimeUs;
-            updateCurrentMeter(ibatTimeSinceLastServiced);
-        }
+    if (!ARMING_FLAG(ARMED)) {
+        // the battery *might* fall out in flight, but if that happens the FC will likely be off too unless the user has battery backup.
+        batteryUpdatePresence();
     }
+    batteryUpdateStates();
+
+    batteryUpdateAlarms();
 }
 
 static void taskUpdateRxMain(timeUs_t currentTimeUs)
@@ -164,7 +150,7 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
 static void taskUpdateCompass(timeUs_t currentTimeUs)
 {
     if (sensors(SENSOR_MAG)) {
-        compassUpdate(currentTimeUs, &compassConfig()->magZero);
+        compassUpdate(currentTimeUs, &compassConfigMutable()->magZero);
     }
 }
 #endif
@@ -236,7 +222,15 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_ATTITUDE, sensors(SENSOR_ACC));
     setTaskEnabled(TASK_SERIAL, true);
     rescheduleTask(TASK_SERIAL, TASK_PERIOD_HZ(serialConfig()->serial_update_rate_hz));
-    setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER));
+
+    bool useBatteryVoltage = batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE;
+    setTaskEnabled(TASK_BATTERY_VOLTAGE, useBatteryVoltage);
+    bool useBatteryCurrent = batteryConfig()->currentMeterSource != CURRENT_METER_NONE;
+    setTaskEnabled(TASK_BATTERY_CURRENT, useBatteryCurrent);
+
+    bool useBatteryAlerts = batteryConfig()->useVBatAlerts || batteryConfig()->useConsumptionAlerts || feature(FEATURE_OSD);
+    setTaskEnabled(TASK_BATTERY_ALERTS, (useBatteryVoltage || useBatteryCurrent) && useBatteryAlerts);
+
     setTaskEnabled(TASK_RX, true);
 
     setTaskEnabled(TASK_DISPATCH, dispatchIsEnabled());
@@ -308,6 +302,9 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_VTXCTRL, true);
 #endif
 #endif
+#ifdef USE_GYRO_DATA_ANALYSE
+    setTaskEnabled(TASK_GYRO_DATA_ANALYSE, true);
+#endif
 }
 
 cfTask_t cfTasks[TASK_COUNT] = {
@@ -362,13 +359,25 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_HIGH,
     },
 
-    [TASK_BATTERY] = {
-        .taskName = "BATTERY",
-        .taskFunc = taskUpdateBattery,
-        .desiredPeriod = TASK_PERIOD_HZ(50),        // 50 Hz
+    [TASK_BATTERY_ALERTS] = {
+        .taskName = "BATTERY_ALERTS",
+        .taskFunc = taskBatteryAlerts,
+        .desiredPeriod = TASK_PERIOD_HZ(5),        // 5 Hz
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
+    [TASK_BATTERY_VOLTAGE] = {
+        .taskName = "BATTERY_VOLTAGE",
+        .taskFunc = batteryUpdateVoltage,
+        .desiredPeriod = TASK_PERIOD_HZ(50),
+        .staticPriority = TASK_PRIORITY_MEDIUM,
+    },
+    [TASK_BATTERY_CURRENT] = {
+        .taskName = "BATTERY_CURRENT",
+        .taskFunc = batteryUpdateCurrentMeter,
+        .desiredPeriod = TASK_PERIOD_HZ(50),
+        .staticPriority = TASK_PRIORITY_MEDIUM,
+    },
 #ifdef BEEPER
     [TASK_BEEPER] = {
         .taskName = "BEEPER",
@@ -409,7 +418,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SONAR] = {
         .taskName = "SONAR",
         .taskFunc = sonarUpdate,
-        .desiredPeriod = TASK_PERIOD_MS(70),        // 70ms required so that SONAR pulses do not interfer with each other
+        .desiredPeriod = TASK_PERIOD_MS(70),        // 70ms required so that SONAR pulses do not interfere with each other
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -479,7 +488,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_ESC_SENSOR] = {
         .taskName = "ESC_SENSOR",
         .taskFunc = escSensorProcess,
-        .desiredPeriod = TASK_PERIOD_HZ(100),       // 100 Hz every 10ms
+        .desiredPeriod = TASK_PERIOD_HZ(100),       // 100 Hz, 10ms
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -506,8 +515,17 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_VTXCTRL] = {
         .taskName = "VTXCTRL",
         .taskFunc = taskVtxControl,
-        .desiredPeriod = TASK_PERIOD_HZ(5),          // 5Hz @200msec
+        .desiredPeriod = TASK_PERIOD_HZ(5),          // 5 Hz, 200ms
         .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
+
+#ifdef USE_GYRO_DATA_ANALYSE
+    [TASK_GYRO_DATA_ANALYSE] = {
+        .taskName = "GYROFFT",
+        .taskFunc = gyroDataAnalyseUpdate,
+        .desiredPeriod = TASK_PERIOD_HZ(100),        // 100 Hz, 10ms
+        .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
 };

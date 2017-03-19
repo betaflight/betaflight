@@ -26,7 +26,7 @@
 #define MAG
 #define BARO
 #define GPS
-#define DISPLAY
+#define USE_DASHBOARD
 #define TELEMETRY
 #define LED_STRIP
 #define USE_SERVOS
@@ -56,6 +56,15 @@ typedef struct
 {
     void* test;
 } TIM_TypeDef;
+
+typedef struct
+{
+    void* test;
+} TIM_OCInitTypeDef;
+
+typedef struct {
+    void* test;
+} DMA_TypeDef;
 
 typedef struct {
     void* test;

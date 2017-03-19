@@ -19,9 +19,14 @@
 
 #include <platform.h>
 
-#include "config/config_master.h"
+#ifdef TARGET_CONFIG
 
-void targetConfiguration(master_t *config) {
-    config->batteryConfig.vbatmaxcellvoltage = 45;
-    config->batteryConfig.vbatscale          = VBAT_SCALE_DEFAULT;
+#include "fc/config.h"
+
+#include "sensors/battery.h"
+
+void targetConfiguration(void)
+{
+    batteryConfigMutable()->vbatmaxcellvoltage = 45;
 }
+#endif

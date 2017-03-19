@@ -38,8 +38,19 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "fc/config.h"
+
+#include "io/vtx.h"
+
 static bool featureRead = false;
-static uint8_t cmsx_featureVtx = 0, cmsx_vtxBand, cmsx_vtxChannel;
+static uint8_t cmsx_featureVtx = 0;
+static uint8_t cmsx_vtxBand;
+static uint8_t cmsx_vtxChannel;
+#ifdef VTX
+static uint8_t cmsx_vtxMode;
+static uint16_t cmsx_vtxMhz;
+#endif
+static bool cmsx_vtxPower;
 
 static long cmsx_Vtx_FeatureRead(void)
 {
@@ -73,29 +84,39 @@ static const char * const vtxBandNames[] = {
 
 static OSD_TAB_t entryVtxBand = {&cmsx_vtxBand,4,&vtxBandNames[0]};
 static OSD_UINT8_t entryVtxChannel =  {&cmsx_vtxChannel, 1, 8, 1};
+#ifdef VTX
+static OSD_UINT8_t entryVtxMode =  {&cmsx_vtxMode, 0, 2, 1};
+static OSD_UINT16_t entryVtxMhz =  {&cmsx_vtxMhz, 5600, 5950, 1};
+#endif // VTX
 
 static void cmsx_Vtx_ConfigRead(void)
 {
 #ifdef VTX
-    cmsx_vtxBand = masterConfig.vtx_band;
-    cmsx_vtxChannel = masterConfig.vtx_channel + 1;
+    cmsx_vtxBand = vtxConfig()->vtx_band;
+    cmsx_vtxChannel = vtxConfig()->vtx_channel + 1;
+    cmsx_vtxMode = vtxConfig()->vtx_mode;
+    cmsx_vtxMhz = vtxConfig()->vtx_mhz;
 #endif // VTX
+    cmsx_vtxPower = vtxConfig()->vtx_power;
 
 #ifdef USE_RTC6705
-    cmsx_vtxBand = masterConfig.vtx_channel / 8;
-    cmsx_vtxChannel = masterConfig.vtx_channel % 8 + 1;
+    cmsx_vtxBand = vtxConfig()->vtx_channel / 8;
+    cmsx_vtxChannel = vtxConfig()->vtx_channel % 8 + 1;
 #endif // USE_RTC6705
 }
 
 static void cmsx_Vtx_ConfigWriteback(void)
 {
 #ifdef VTX
-    masterConfig.vtx_band = cmsx_vtxBand;
-    masterConfig.vtx_channel = cmsx_vtxChannel - 1;
+    vtxConfigMutable()->vtx_band = cmsx_vtxBand;
+    vtxConfigMutable()->vtx_channel = cmsx_vtxChannel - 1;
+    vtxConfigMutable()->vtx_mode = cmsx_vtxMode;
+    vtxConfigMutable()->vtx_mhz = cmsx_vtxMhz;
 #endif // VTX
+    vtxConfigMutable()->vtx_power = cmsx_vtxPower;
 
 #ifdef USE_RTC6705
-    masterConfig.vtx_channel = cmsx_vtxBand * 8 + cmsx_vtxChannel - 1;
+    vtxConfigMutable()->vtx_channel = cmsx_vtxBand * 8 + cmsx_vtxChannel - 1;
 #endif // USE_RTC6705
 }
 
@@ -116,10 +137,6 @@ static long cmsx_Vtx_onExit(const OSD_Entry *self)
     return 0;
 }
 
-#ifdef VTX
-static OSD_UINT8_t entryVtxMode =  {&masterConfig.vtx_mode, 0, 2, 1};
-static OSD_UINT16_t entryVtxMhz =  {&masterConfig.vtx_mhz, 5600, 5950, 1};
-#endif // VTX
 
 static OSD_Entry cmsx_menuVtxEntries[] =
 {
@@ -132,7 +149,7 @@ static OSD_Entry cmsx_menuVtxEntries[] =
     {"BAND", OME_TAB, NULL, &entryVtxBand, 0},
     {"CHANNEL", OME_UINT8, NULL, &entryVtxChannel, 0},
 #ifdef USE_RTC6705
-    {"LOW POWER", OME_Bool, NULL, &masterConfig.vtx_power, 0},
+    {"LOW POWER", OME_Bool, NULL, &cmsx_vtxPower, 0},
 #endif // USE_RTC6705
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}

@@ -198,7 +198,7 @@ bool mpu9250SpiDetect(void)
         delay(150);
 
         mpu9250ReadRegister(MPU_RA_WHO_AM_I, 1, &in);
-        if (in == MPU9250_WHO_AM_I_CONST) {
+        if (in == MPU9250_WHO_AM_I_CONST || in == MPU9255_WHO_AM_I_CONST) {
             break;
         }
         if (!attemptsRemaining) {

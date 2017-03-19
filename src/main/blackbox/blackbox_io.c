@@ -125,12 +125,14 @@ int blackboxPrintf(const char *fmt, ...)
  * printf a Blackbox header line with a leading "H " and trailing "\n" added automatically. blackboxHeaderBudget is
  * decreased to account for the number of bytes written.
  */
-void blackboxPrintfHeaderLine(const char *fmt, ...)
+void blackboxPrintfHeaderLine(const char *name, const char *fmt, ...)
 {
     va_list va;
 
     blackboxWrite('H');
     blackboxWrite(' ');
+    blackboxPrint(name);
+    blackboxWrite(':');
 
     va_start(va, fmt);
 
@@ -614,14 +616,13 @@ bool blackboxDeviceOpen(void)
 /**
  * Erase all blackbox logs
  */
+#ifdef USE_FLASHFS
 void blackboxEraseAll(void)
 {
     switch (blackboxConfig()->device) {
-#ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
         flashfsEraseCompletely();
         break;
-#endif
     default:
         //not supported
         break;
@@ -635,11 +636,9 @@ void blackboxEraseAll(void)
 bool isBlackboxErased(void)
 {
     switch (blackboxConfig()->device) {
-#ifdef USE_FLASHFS
     case BLACKBOX_DEVICE_FLASH:
         return flashfsIsReady();
         break;
-#endif
     default:
     //not supported
         return true;
@@ -647,6 +646,7 @@ bool isBlackboxErased(void)
 
     }
 }
+#endif
 
 /**
  * Close the Blackbox logging device immediately without attempting to flush any remaining data.

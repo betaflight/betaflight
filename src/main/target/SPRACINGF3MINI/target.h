@@ -78,12 +78,20 @@
 
 #define BRUSHED_ESC_AUTODETECT
 
-#define USB_IO
-
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
+
+#ifdef TINYBEEF3
+#define SERIAL_PORT_COUNT       4
+#else
+#define USB_DETECT_PIN          PB5
+
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+#define SERIAL_PORT_COUNT       6
+#endif
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
@@ -99,24 +107,12 @@
 #define UART3_TX_PIN            PB10 // PB10 (AF7)
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
-#define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN                PB11
-
-#ifdef TINYBEEF3
-#define SERIAL_PORT_COUNT       4
-#else
-#define USB_CABLE_DETECTION
-#define USB_DETECT_PIN          PB5
-
-#define USE_SOFTSERIAL1
-#define SOFTSERIAL_1_TIMER TIM2
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 9 // PA0 / PAD3
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 10 // PA1 / PAD4
-#define SONAR_SOFTSERIAL1_EXCLUSIVE
-
-#define SERIAL_PORT_COUNT       5
+#ifndef TINYBEEF3
+#define SOFTSERIAL1_RX_PIN      PA0 // PA0 / PAD3
+#define SOFTSERIAL1_TX_PIN      PA1 // PA1 / PAD4
 #endif
+
+#define SONAR_SOFTSERIAL1_EXCLUSIVE
 
 #define USE_SPI
 
@@ -132,7 +128,8 @@
 #define MPU6500_SPI_INSTANCE             SPI1
 #else
 #define USE_I2C
-#define I2C_DEVICE              (I2CDEV_1) // PB6/SCL, PB7/SDA
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
 
@@ -172,8 +169,6 @@
 #define CURRENT_METER_ADC_PIN       PA5
 #define RSSI_ADC_PIN                PB2
 
-#define LED_STRIP
-
 #define TRANSPONDER
 
 #define REDUCE_TRANSPONDER_CURRENT_DRAW_WHEN_USB_CABLE_PRESENT
@@ -187,9 +182,10 @@
 #define BUTTON_A_PIN            PB1
 #define BUTTON_B_PIN            PB0
 
-#define HARDWARE_BIND_PLUG
-#define BINDPLUG_PIN            PB0
+#define BINDPLUG_PIN            BUTTON_B_PIN
 #endif
+
+#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

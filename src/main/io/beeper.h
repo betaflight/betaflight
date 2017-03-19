@@ -18,6 +18,7 @@
 #pragma once
 
 #include "common/time.h"
+#include "config/parameter_group.h"
 
 typedef enum {
     // IMPORTANT: these are in priority order, 0 = Highest
@@ -46,6 +47,14 @@ typedef enum {
     BEEPER_PREFERENCE               // Save preferred beeper configuration
     // BEEPER_ALL and BEEPER_PREFERENCE must remain at the bottom of this enum
 } beeperMode_e;
+
+typedef struct beeperConfig_s {
+    uint32_t beeper_off_flags;
+    uint32_t preferred_beeper_off_flags;
+} beeperConfig_t;
+
+PG_DECLARE(beeperConfig_t, beeperConfig);
+
 
 void beeper(beeperMode_e mode);
 void beeperSilence(void);

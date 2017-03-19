@@ -47,6 +47,7 @@
 
 #include "fc/cli.h"
 #include "fc/config.h"
+#include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
 #include "fc/fc_rc.h"
 #include "fc/rc_adjustments.h"
@@ -55,13 +56,15 @@
 
 #include "msp/msp_serial.h"
 
+#include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
+#include "io/gps.h"
 #include "io/motors.h"
 #include "io/servos.h"
 #include "io/serial.h"
 #include "io/statusindicator.h"
 #include "io/transponder_ir.h"
-#include "io/asyncfatfs/asyncfatfs.h"
+#include "io/vtx.h"
 
 #include "rx/rx.h"
 
@@ -69,12 +72,13 @@
 
 #include "telemetry/telemetry.h"
 
-#include "flight/mixer.h"
-#include "flight/servos.h"
-#include "flight/pid.h"
-#include "flight/failsafe.h"
 #include "flight/altitudehold.h"
+#include "flight/failsafe.h"
 #include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/navigation.h"
+#include "flight/pid.h"
+#include "flight/servos.h"
 
 
 // June 2013     V2.2-dev
@@ -99,6 +103,13 @@ static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the m
 
 bool isRXDataNew;
 static bool armingCalibrationWasInitialised;
+
+PG_REGISTER_WITH_RESET_TEMPLATE(throttleCorrectionConfig_t, throttleCorrectionConfig, PG_THROTTLE_CORRECTION_CONFIG, 0);
+
+PG_RESET_TEMPLATE(throttleCorrectionConfig_t, throttleCorrectionConfig,
+    .throttle_correction_value = 0,      // could 10 with althold or 40 for fpv
+    .throttle_correction_angle = 800     // could be 80.0 deg with atlhold or 45.0 for fpv
+);
 
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
 {
@@ -260,7 +271,7 @@ void updateMagHold(void)
             dif -= 360;
         dif *= -rcControlsConfig()->yaw_control_direction;
         if (STATE(SMALL_ANGLE))
-            rcCommand[YAW] -= dif * currentProfile->pidProfile.P8[PIDMAG] / 30;    // 18 deg
+            rcCommand[YAW] -= dif * currentPidProfile->P8[PIDMAG] / 30;    // 18 deg
     } else
         magHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 }
@@ -301,7 +312,7 @@ void processRx(timeUs_t currentTimeUs)
      This is needed to prevent Iterm winding on the ground, but keep full stabilisation on 0 throttle while in air */
     if (throttleStatus == THROTTLE_LOW && !airmodeIsActivated) {
         pidResetErrorGyroState();
-        if (currentProfile->pidProfile.pidAtMinThrottle)
+        if (currentPidProfile->pidAtMinThrottle)
             pidStabilisationState(PID_STABILISATION_ON);
         else
             pidStabilisationState(PID_STABILISATION_OFF);
@@ -398,7 +409,7 @@ void processRx(timeUs_t currentTimeUs)
         LED1_OFF;
     }
 
-#ifdef  MAG
+#if defined(ACC) || defined(MAG)
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
         if (IS_RC_MODE_ACTIVE(BOXMAG)) {
             if (!FLIGHT_MODE(MAG_MODE)) {
@@ -461,7 +472,7 @@ static void subTaskPidController(void)
     uint32_t startTime;
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
     // PID - note this is function pointer set by setPIDController()
-    pidController(&currentProfile->pidProfile, &accelerometerConfig()->accelerometerTrims);
+    pidController(currentPidProfile, &accelerometerConfig()->accelerometerTrims);
     DEBUG_SET(DEBUG_PIDLOOP, 1, micros() - startTime);
 }
 
@@ -498,7 +509,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
     if (isUsingSticksForArming() && rcData[THROTTLE] <= rxConfig()->mincheck
 #ifndef USE_QUAD_MIXER_ONLY
 #ifdef USE_SERVOS
-                && !((mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI) && servoMixerConfig()->tri_unarmed_servo)
+                && !((mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI) && servoConfig()->tri_unarmed_servo)
 #endif
                 && mixerConfig()->mixerMode != MIXER_AIRPLANE
                 && mixerConfig()->mixerMode != MIXER_FLYING_WING
@@ -553,13 +564,11 @@ static void subTaskMotorUpdate(void)
         startTime = micros();
     }
 
-    mixTable(&currentProfile->pidProfile);
+    mixTable(currentPidProfile);
 
 #ifdef USE_SERVOS
     // motor outputs are used as sources for servo mixing, so motors must be calculated using mixTable() before servos.
     if (isMixerUsingServos()) {
-        servoTable();
-        filterServos();
         writeServos();
     }
 #endif

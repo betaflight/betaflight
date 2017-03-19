@@ -18,8 +18,6 @@
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "NERO"
 
-#define CONFIG_START_FLASH_ADDRESS (0x08060000)
-
 #define USBD_PRODUCT_STRING     "NERO"
 
 #define HW_PIN                  PB2
@@ -70,7 +68,8 @@
 #define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_0
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_1)
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_VCP
 //#define VBUS_SENSING_PIN PA8
@@ -88,7 +87,10 @@
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
-#define SERIAL_PORT_COUNT       4
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT       6
 
 //#define USE_ESCSERIAL //TODO: make ESC serial F7 compatible
 //#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
@@ -117,8 +119,6 @@
 #define VBAT_ADC_PIN            PC3
 
 //#define USE_ESC_SENSOR
-#define LED_STRIP
-
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #define DEFAULT_FEATURES        FEATURE_BLACKBOX
@@ -128,8 +128,7 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define SPEKTRUM_BIND
-#define BIND_PIN                PB11
+#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

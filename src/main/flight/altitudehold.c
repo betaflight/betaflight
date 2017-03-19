@@ -34,6 +34,7 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/altitudehold.h"
 #include "flight/imu.h"
 #include "flight/pid.h"
 
@@ -42,6 +43,12 @@
 #include "sensors/barometer.h"
 #include "sensors/sonar.h"
 
+
+PG_REGISTER_WITH_RESET_TEMPLATE(airplaneConfig_t, airplaneConfig, PG_AIRPLANE_CONFIG, 0);
+
+PG_RESET_TEMPLATE(airplaneConfig_t, airplaneConfig,
+    .fixedwing_althold_dir = 1
+);
 
 int32_t setVelocity = 0;
 uint8_t velocityControl = 0;

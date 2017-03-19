@@ -32,6 +32,17 @@ typedef struct vtxChannelActivationCondition_s {
     channelRange_t range;
 } vtxChannelActivationCondition_t;
 
+typedef struct vtxConfig_s {
+    uint8_t vtx_power;
+    uint8_t vtx_channel; //1-8
+    uint8_t vtx_band; //1=A, 2=B, 3=E, 4=F(Airwaves/Fatshark), 5=Raceband
+    uint8_t vtx_mode; //0=ch+band 1=mhz
+    uint16_t vtx_mhz; //5740
+    vtxChannelActivationCondition_t vtxChannelActivationConditions[MAX_CHANNEL_ACTIVATION_CONDITION_COUNT];
+} vtxConfig_t;
+
+PG_DECLARE(vtxConfig_t, vtxConfig);
+
 void vtxInit(void);
 void vtxIncrementBand(void);
 void vtxDecrementBand(void);

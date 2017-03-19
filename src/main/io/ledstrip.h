@@ -150,9 +150,8 @@ typedef struct ledStripConfig_s {
 
 PG_DECLARE(ledStripConfig_t, ledStripConfig);
 
-ledConfig_t *ledConfigs;
 hsvColor_t *colors;
-modeColorIndexes_t *modeColors;
+const modeColorIndexes_t *modeColors;
 specialColorIndexes_t specialColors;
 
 #define LF(name) LED_FUNCTION_ ## name

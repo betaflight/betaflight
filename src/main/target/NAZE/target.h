@@ -17,7 +17,10 @@
 
 #pragma once
 
+#define TELEMETRY_IBUS
+
 #define TARGET_CONFIG
+#define TARGET_VALIDATECONFIG
 #define USE_HARDWARE_REVISION_DETECTION
 #define TARGET_BUS_INIT
 
@@ -44,21 +47,15 @@
 //#define BARO_XCLR_PIN           PC13
 //#define BARO_EOC_PIN            PC14
 
-#define INVERTER_PIN_USART2       PB2 // PB2 (BOOT1) abused as inverter select GPIO
+#define INVERTER_PIN_UART2        PB2 // PB2 (BOOT1) abused as inverter select GPIO
 
 #define USE_EXTI
 #define MAG_INT_EXTI            PC14
 #define MPU_INT_EXTI            PC13
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
-#define USE_MPU_DATA_READY_SIGNAL
-//#define DEBUG_MAG_DATA_READY_INTERRUPT
-#define USE_MAG_DATA_READY_SIGNAL
+#define MMA8451_INT_PIN         PA5
 
-// SPI2
-// PB15 28 SPI2_MOSI
-// PB14 27 SPI2_MISO
-// PB13 26 SPI2_SCK
-// PB12 25 SPI2_NSS
+#define USE_MPU_DATA_READY_SIGNAL
+#define USE_MAG_DATA_READY_SIGNAL
 
 #define USE_SPI
 #define USE_SPI_DEVICE_2
@@ -124,18 +121,18 @@
 #define USE_SOFTSERIAL2
 #define SERIAL_PORT_COUNT       4
 
-#define SOFTSERIAL_1_TIMER TIM3
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
-#define SOFTSERIAL_2_TIMER TIM3
-#define SOFTSERIAL_2_TIMER_RX_HARDWARE 6 // PWM 7
-#define SOFTSERIAL_2_TIMER_TX_HARDWARE 7 // PWM 8
+#define SOFTSERIAL1_RX_PIN      PA6 // PWM 5
+#define SOFTSERIAL1_TX_PIN      PA7 // PWM 6
+
+#define SOFTSERIAL2_RX_PIN      PB0 // PWM 7
+#define SOFTSERIAL2_TX_PIN      PB1 // PWM 8
 
 #define UART3_RX_PIN            PB11
 #define UART3_TX_PIN            PB10
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_2)
+#define USE_I2C_DEVICE_2
+#define I2C_DEVICE              (I2CDEV_2)
 
 // #define SOFT_I2C // enable to test software i2c
 // #define SOFT_I2C_PB1011 // If SOFT_I2C is enabled above, need to define pinout as well (I2C1 = PB67, I2C2 = PB1011)
@@ -147,13 +144,7 @@
 #define RSSI_ADC_PIN            PA1
 #define EXTERNAL1_ADC_PIN       PA5
 
-#define LED_STRIP
-
-#undef GPS
-
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
+#define SPEKTRUM_BIND_PIN       PA3
 
 #if !defined(BRUSHED_MOTORS)
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
