@@ -38,8 +38,6 @@
 
 void targetConfiguration(master_t *config)
 {
-    UNUSED(config);
-
-    batteryConfig->currentMeterScale = 220;
+    config->batteryConfig.currentMeterScale = 220;
 }
 #endif
