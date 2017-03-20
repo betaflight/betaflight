@@ -194,6 +194,8 @@
 #undef SPEKTRUM_BIND
 #endif
 
+#define AUTOTUNE_FIXED_WING
+
 // Number of available PWM outputs
 #define MAX_PWM_OUTPUT_PORTS    11
 

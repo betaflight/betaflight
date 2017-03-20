@@ -198,7 +198,7 @@ void autotuneFixedWingUpdate(const flight_dynamics_index_t axis, float desiredRa
             tuneCurrent[axis].gainI = constrainf(tuneCurrent[axis].gainI, 1.0f, 50.0f);
             autotuneUpdateGains(tuneCurrent);
         }
-        
+
         // Change state and reset saturation flag
         tuneCurrent[axis].state = newState;
         tuneCurrent[axis].stateEnterTime = currentTimeMs;
