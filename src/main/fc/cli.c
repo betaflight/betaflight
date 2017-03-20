@@ -859,7 +859,7 @@ static const clivalue_t valueTable[] = {
 #endif
 #if defined(USE_RTC6705)
     { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 39 }, PG_VTX_CONFIG, offsetof(vtxConfig_t, vtx_channel) },
-    { "vtx_power",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 1 }, PG_VTX_CONFIG, offsetof(vtxConfig_t, vtx_power) },
+    { "vtx_power",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 3 }, PG_VTX_CONFIG, offsetof(vtxConfig_t, vtx_power) },
 #endif
 
 // PG_VCD_CONFIG
