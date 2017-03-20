@@ -145,12 +145,12 @@ PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
 
         .bank_fw = {
             .pid = {
-                [PID_ROLL] =    { 25, 35, 10 },
-                [PID_PITCH] =   { 20, 35, 10 },
-                [PID_YAW] =     { 50, 45, 0 },
+                [PID_ROLL] =    { 5, 7, 50 },
+                [PID_PITCH] =   { 5, 7, 50 },
+                [PID_YAW] =     { 6, 10, 60 },
                 [PID_LEVEL] = {
                     .P = 20,    // Self-level strength
-                    .I = 15,    // Self-leveing low-pass frequency (0 - disabled)
+                    .I = 5,     // Self-leveing low-pass frequency (0 - disabled)
                     .D = 75,    // 75% horizon strength
                 },
                 [PID_HEADING] = { 60, 0, 0 },
