@@ -75,99 +75,48 @@
 #include "bus_bst.h"
 #include "i2c_bst.h"
 
-#define BST_PROTOCOL_VERSION                0
-
-#define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   13 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
-
-#define API_VERSION_LENGTH                  2
-
-#define MULTIWII_IDENTIFIER "MWII";
-#define CLEANFLIGHT_IDENTIFIER "CLFL"
-#define BASEFLIGHT_IDENTIFIER "BAFL";
-
-#define FLIGHT_CONTROLLER_IDENTIFIER_LENGTH 4
-static const char * const flightControllerIdentifier = CLEANFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
-
-#define FLIGHT_CONTROLLER_VERSION_LENGTH    3
-#define FLIGHT_CONTROLLER_VERSION_MASK      0xFFF
-
-static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
-#define BOARD_IDENTIFIER_LENGTH             4 // 4 UPPER CASE alpha numeric characters that identify the board being used.
-#define BOARD_HARDWARE_REVISION_LENGTH      2
-
-// These are baseflight specific flags but they are useless now since MW 2.3 uses the upper 4 bits for the navigation version.
-#define CAP_PLATFORM_32BIT          ((uint32_t)1 << 31)
-#define CAP_BASEFLIGHT_CONFIG       ((uint32_t)1 << 30)
-
-// MW 2.3 stores NAVI_VERSION in the top 4 bits of the capability mask.
-#define CAP_NAVI_VERSION_BIT_4_MSB  ((uint32_t)1 << 31)
-#define CAP_NAVI_VERSION_BIT_3      ((uint32_t)1 << 30)
-#define CAP_NAVI_VERSION_BIT_2      ((uint32_t)1 << 29)
-#define CAP_NAVI_VERSION_BIT_1_LSB  ((uint32_t)1 << 28)
-
-#define CAP_DYNBALANCE              ((uint32_t)1 << 2)
-#define CAP_FLAPS                   ((uint32_t)1 << 3)
-#define CAP_NAVCAP                  ((uint32_t)1 << 4)
-#define CAP_EXTAUX                  ((uint32_t)1 << 5)
-
-#define BST_API_VERSION                 1    //out message
-#define BST_FC_VARIANT                  2    //out message
-#define BST_FC_VERSION                  3    //out message
-#define BST_BOARD_INFO                  4    //out message
-#define BST_BUILD_INFO                  5    //out message
+#define GPS_POSITION_FRAME_ID               0x02
+#define GPS_TIME_FRAME_ID                   0x03
+#define FC_ATTITUDE_FRAME_ID                0x1E
+#define RC_CHANNEL_FRAME_ID                 0x15
+#define CROSSFIRE_RSSI_FRAME_ID             0x14
+#define CLEANFLIGHT_MODE_FRAME_ID           0x20
 
 //
 // MSP commands for Cleanflight original features
 //
 
-#define BST_MODE_RANGES                 34    //out message         Returns all mode ranges
-#define BST_SET_MODE_RANGE              35    //in message          Sets a single mode range
-
+#define BST_MODE_RANGES                 34  //out message         Returns all mode ranges
+#define BST_SET_MODE_RANGE              35  //in message          Sets a single mode range
 #define BST_FEATURE                     36
 #define BST_SET_FEATURE                 37
-
 #define BST_RX_CONFIG                   44
 #define BST_SET_RX_CONFIG               45
-
 #define BST_LED_COLORS                  46
 #define BST_SET_LED_COLORS              47
-
 #define BST_LED_STRIP_CONFIG            48
 #define BST_SET_LED_STRIP_CONFIG        49
-
-#define BST_LOOP_TIME                   83 //out message         Returns FC cycle time i.e looptime parameter
-#define BST_SET_LOOP_TIME               84 //in message          Sets FC cycle time i.e looptime parameter
-
-//
-// Baseflight MSP commands (if enabled they exist in Cleanflight)
-//
-#define BST_RX_MAP                      64 //out message get channel map (also returns number of channels total)
-#define BST_SET_RX_MAP                  65 //in message set rx map, numchannels to set comes from BST_RX_MAP
-
-#define BST_REBOOT                      68 //in message reboot settings
-
-
-#define BST_DISARM                    70 //in message to disarm
-#define BST_ENABLE_ARM                71 //in message to enable arm
-
-#define BST_DEADBAND                72 //out message
-#define BST_SET_DEADBAND                73 //in message
-
-#define BST_FC_FILTERS                74 //out message
-#define BST_SET_FC_FILTERS            75 //in message
-
-
-#define BST_STATUS               101    //out message         cycletime & errors_count & sensor present & box activation & current setting number
-#define BST_RC_TUNING            111    //out message         rc rate, rc expo, rollpitch rate, yaw rate, dyn throttle PID
-#define BST_PID                  112    //out message         P I D coeff (9 are used currently)
-#define BST_MISC                 114    //out message         powermeter trig
-#define BST_SET_PID              202    //in message          P I D coeff (9 are used currently)
-#define BST_ACC_CALIBRATION      205    //in message          no param
-#define BST_MAG_CALIBRATION      206    //in message          no param
-#define BST_SET_MISC             207    //in message          powermeter trig + 8 free for future use
-#define BST_SELECT_SETTING       210    //in message          Select Setting Number (0-2)
-#define BST_EEPROM_WRITE         250    //in message          no param
+#define BST_LOOP_TIME                   83  //out message         Returns FC cycle time i.e looptime parameter
+#define BST_SET_LOOP_TIME               84  //in message          Sets FC cycle time i.e looptime parameter
+#define BST_RX_MAP                      64  //out message         Get channel map (also returns number of channels total)
+#define BST_SET_RX_MAP                  65  //in message          Set rx map, numchannels to set comes from BST_RX_MAP
+#define BST_REBOOT                      68  //in message          Reboot
+#define BST_DISARM                      70  //in message          Disarm
+#define BST_ENABLE_ARM                  71  //in message          Enable arm
+#define BST_DEADBAND                    72  //out message
+#define BST_SET_DEADBAND                73  //in message
+#define BST_FC_FILTERS                  74  //out message
+#define BST_SET_FC_FILTERS              75  //in message
+#define BST_STATUS                      101 //out message         cycletime & errors_count & sensor present & box activation & current setting number
+#define BST_RC_TUNING                   111 //out message         rc rate, rc expo, rollpitch rate, yaw rate, dyn throttle PID
+#define BST_PID                         112 //out message         P I D coeff (9 are used currently)
+#define BST_MISC                        114 //out message         powermeter trig
+#define BST_SET_PID                     202 //in message          P I D coeff (9 are used currently)
+#define BST_ACC_CALIBRATION             205 //in message          no param
+#define BST_MAG_CALIBRATION             206 //in message          no param
+#define BST_SET_MISC                    207 //in message          powermeter trig + 8 free for future use
+#define BST_SELECT_SETTING              210 //in message          Select Setting Number (0-2)
+#define BST_EEPROM_WRITE                250 //in message          no param
 
 extern volatile uint8_t CRC8;
 extern volatile bool coreProReady;
@@ -181,8 +130,6 @@ extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 
 // cause reboot after BST processing complete
 static bool isRebootScheduled = false;
-
-#define BOARD_IDENTIFIER_LENGTH                4
 
 typedef struct box_e {
     const uint8_t boxId;                        // see boxId_e
@@ -223,8 +170,8 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
-extern uint8_t readData[DATA_BUFFER_SIZE];
-extern uint8_t writeData[DATA_BUFFER_SIZE];
+extern uint8_t readData[BST_BUFFER_SIZE];
+extern uint8_t writeData[BST_BUFFER_SIZE];
 
 /*************************************************************************************************/
 uint8_t writeBufferPointer = 1;
@@ -310,39 +257,6 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
     uint32_t i, tmp, junk;
 
     switch(bstRequest) {
-        case BST_API_VERSION:
-            bstWrite8(BST_PROTOCOL_VERSION);
-
-            bstWrite8(API_VERSION_MAJOR);
-            bstWrite8(API_VERSION_MINOR);
-            break;
-        case BST_FC_VARIANT:
-            for (i = 0; i < FLIGHT_CONTROLLER_IDENTIFIER_LENGTH; i++) {
-                bstWrite8(flightControllerIdentifier[i]);
-            }
-            break;
-        case BST_FC_VERSION:
-            bstWrite8(FC_VERSION_MAJOR);
-            bstWrite8(FC_VERSION_MINOR);
-            bstWrite8(FC_VERSION_PATCH_LEVEL);
-            break;
-        case BST_BOARD_INFO:
-            for (i = 0; i < BOARD_IDENTIFIER_LENGTH; i++) {
-                bstWrite8(boardIdentifier[i]);
-            }
-            break;
-        case BST_BUILD_INFO:
-            for (i = 0; i < BUILD_DATE_LENGTH; i++) {
-                bstWrite8(buildDate[i]);
-            }
-            for (i = 0; i < BUILD_TIME_LENGTH; i++) {
-                bstWrite8(buildTime[i]);
-            }
-
-            for (i = 0; i < GIT_SHORT_REVISION_LENGTH; i++) {
-                bstWrite8(shortGitRevision[i]);
-            }
-            break;
         case BST_STATUS:
             bstWrite16(getTaskDeltaTime(TASK_GYROPID));
 #ifdef USE_I2C
@@ -388,7 +302,6 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8(getCurrentPidProfileIndex());
             break;
         case BST_LOOP_TIME:
-            //bstWrite16(masterConfig.looptime);
             bstWrite16(getTaskDeltaTime(TASK_GYROPID));
             break;
         case BST_RC_TUNING:
@@ -502,7 +415,6 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             // we do not know how to handle the (valid) message, indicate error BST
             return false;
     }
-    //bstSlaveWrite(writeData);
     return true;
 }
 
@@ -519,7 +431,6 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             }
             break;
         case BST_SET_LOOP_TIME:
-            //masterConfig.looptime = bstRead16();
             bstRead16();
             break;
         case BST_SET_PID:
@@ -560,15 +471,15 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 
             failsafeConfigMutable()->failsafe_throttle = bstRead16();
 
-    #ifdef GPS
+#ifdef GPS
             gpsConfigMutable()->provider = bstRead8(); // gps_type
             bstRead8(); // gps_baudrate
             gpsConfigMutable()->sbasMode = bstRead8(); // gps_ubx_sbas
-    #else
+#else
             bstRead8(); // gps_type
             bstRead8(); // gps_baudrate
             bstRead8(); // gps_ubx_sbas
-    #endif
+#endif
             bstRead8(); // legacy - was multiwiiCurrentMeterOutput
             rxConfigMutable()->rssi_channel = bstRead8();
             bstRead8();
@@ -593,7 +504,6 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             if (ARMING_FLAG(ARMED)) {
                 ret = BST_FAILED;
                 bstWrite8(ret);
-                //bstSlaveWrite(writeData);
                 return ret;
             }
             writeEEPROM();
@@ -677,9 +587,10 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             ret = BST_FAILED;
     }
     bstWrite8(ret);
-    //bstSlaveWrite(writeData);
+
     if(ret == BST_FAILED)
         return false;
+
     return true;
 }
 
@@ -694,25 +605,26 @@ static bool bstSlaveUSBCommandFeedback(/*uint8_t bstFeedback*/)
     bstWrite8(FC_VERSION_MINOR);                                //Firmware ID
     bstWrite8(0x00);
     bstWrite8(0x00);
-    //bstSlaveWrite(writeData);
     return true;
 }
 
 /*************************************************************************************************/
 #define BST_RESET_TIME            1.2*1000*1000 //micro-seconds
+
 uint32_t resetBstTimer = 0;
 bool needResetCheck = true;
+
 extern bool cleanflight_data_ready;
 
 void bstProcessInCommand(void)
 {
     readBufferPointer = 2;
-    if(bstCurrentAddress() == CLEANFLIGHT_FC) {
+    if(bstCurrentAddress() == I2C_ADDR_CLEANFLIGHT_FC) {
         if(bstReadCRC() == CRC8 && bstRead8()==BST_USB_COMMANDS) {
             uint8_t i;
             writeBufferPointer = 1;
             cleanflight_data_ready = false;
-            for(i = 0; i < DATA_BUFFER_SIZE; i++) {
+            for(i = 0; i < BST_BUFFER_SIZE; i++) {
                 writeData[i] = 0;
             }
             switch (bstRead8()) {
@@ -780,9 +692,10 @@ void taskBstMasterProcess(timeUs_t currentTimeUs)
                 sendCounter = 0;
             next20hzUpdateAt_1 = currentTimeUs + UPDATE_AT_20HZ;
         }
-
+#ifdef GPS
         if(sensors(SENSOR_GPS) && !bstWriteBusy())
             writeGpsPositionPrameToBST();
+#endif
 
     }
     bstMasterWriteLoop();
@@ -795,7 +708,7 @@ void taskBstMasterProcess(timeUs_t currentTimeUs)
 
 /*************************************************************************************************/
 static uint8_t masterWriteBufferPointer;
-static uint8_t masterWriteData[DATA_BUFFER_SIZE];
+static uint8_t masterWriteData[BST_BUFFER_SIZE];
 
 static void bstMasterStartBuffer(uint8_t address)
 {
@@ -831,9 +744,9 @@ static uint16_t alt = 0;
 static uint8_t numOfSat = 0;
 #endif
 
+#ifdef GPS
 bool writeGpsPositionPrameToBST(void)
 {
-#ifdef GPS
     if((lat != GPS_coord[LAT]) || (lon != GPS_coord[LON]) || (alt != GPS_altitude) || (numOfSat != GPS_numSat)) {
         lat = GPS_coord[LAT];
         lon = GPS_coord[LON];
@@ -858,10 +771,8 @@ bool writeGpsPositionPrameToBST(void)
         return bstMasterWrite(masterWriteData);
     } else
         return false;
-#else
-    return true;
-#endif
 }
+#endif
 
 bool writeRollPitchYawToBST(void)
 {
@@ -892,37 +803,6 @@ bool writeRCChannelToBST(void)
 
 bool writeFCModeToBST(void)
 {
-#ifdef CLEANFLIGHT_FULL_STATUS_SET
-    uint32_t tmp = 0;
-     tmp = IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << BOXANGLE |
-            IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)) << BOXHORIZON |
-            IS_ENABLED(FLIGHT_MODE(BARO_MODE)) << BOXBARO |
-            IS_ENABLED(FLIGHT_MODE(MAG_MODE)) << BOXMAG |
-            IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE)) << BOXHEADFREE |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHEADADJ)) << BOXHEADADJ |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMSTAB)) << BOXCAMSTAB |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMTRIG)) << BOXCAMTRIG |
-            IS_ENABLED(FLIGHT_MODE(GPS_HOME_MODE)) << BOXGPSHOME |
-            IS_ENABLED(FLIGHT_MODE(GPS_HOLD_MODE)) << BOXGPSHOLD |
-            IS_ENABLED(FLIGHT_MODE(PASSTHRU_MODE)) << BOXPASSTHRU |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBEEPERON)) << BOXBEEPERON |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDMAX)) << BOXLEDMAX |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDLOW)) << BOXLEDLOW |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLLIGHTS)) << BOXLLIGHTS |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCALIB)) << BOXCALIB |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGOV)) << BOXGOV |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXOSD)) << BOXOSD |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXTELEMETRY)) << BOXTELEMETRY |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGTUNE)) << BOXGTUNE |
-            IS_ENABLED(FLIGHT_MODE(SONAR_MODE)) << BOXSONAR |
-            IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM |
-            IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |
-            IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE;
-    bstMasterStartBuffer(PUBLIC_ADDRESS);
-    bstMasterWrite8(CLEANFLIGHT_MODE_FRAME_ID);
-    bstMasterWrite32(tmp);
-    bstMasterWrite16(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
-#else
     uint8_t tmp = 0;
     tmp = IS_ENABLED(ARMING_FLAG(ARMED)) |
            IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << 1 |
@@ -937,7 +817,6 @@ bool writeFCModeToBST(void)
     bstMasterWrite8(CLEANFLIGHT_MODE_FRAME_ID);
     bstMasterWrite8(tmp);
     bstMasterWrite8(sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
-#endif
 
     return bstMasterWrite(masterWriteData);
 }

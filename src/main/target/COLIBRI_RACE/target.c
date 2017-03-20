@@ -23,6 +23,11 @@
 #include "drivers/dma.h"
 #include "drivers/timer.h"
 
+#ifdef USE_BST
+#include "bus_bst.h"
+#endif
+
+
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM_USE_PPM,   0, GPIO_AF_6, NULL, 0 }, // PWM1 - PA8
     { TIM3,  IO_TAG(PC6),  TIM_Channel_1, TIM_USE_MOTOR, 1, GPIO_AF_2, DMA1_Channel6, DMA1_CH6_HANDLER }, // PWM2 - PC6
@@ -37,3 +42,12 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM15, IO_TAG(PB15), TIM_Channel_2, TIM_USE_MOTOR, 1, GPIO_AF_1, NULL, 0 }, // PWM11 - PB15
     { TIM16, IO_TAG(PA6),  TIM_Channel_1, TIM_USE_LED,   1, GPIO_AF_1, DMA1_Channel3, DMA1_CH3_HANDLER }, // PWM11 - PB15
 };
+
+
+#ifdef USE_BST
+void targetBusInit(void)
+{
+    bstInit(BST_DEVICE);
+}
+#endif
+
