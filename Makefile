@@ -110,6 +110,85 @@ VALID_TARGETS  := $(subst /,, $(subst ./src/main/target/,, $(VALID_TARGETS)))
 VALID_TARGETS  := $(VALID_TARGETS) $(ALT_TARGETS)
 VALID_TARGETS  := $(sort $(VALID_TARGETS))
 
+GROUP_1_TARGETS := \
+	AFROMINI \
+	AIORACERF3 \
+	AIR32  \
+	AIRBOTF4  \
+	AIRHEROF3  \
+	ALIENFLIGHTF1  \
+	ALIENFLIGHTF3 \
+	ALIENFLIGHTF4 \
+	ALIENFLIGHTNGF7 \
+	ANYFCF7  \
+	BEEBRAIN  \
+	BEEROTORF4 \
+	BETAFLIGHTF3 \
+	CC3D \
+	CC3D_OPBL  \
+	CHEBUZZF3 \
+	CJMCU \
+	CL_RACINGF4 \
+	COLIBRI \
+
+GROUP_2_TARGETS := \
+	COLIBRI_OPBL \
+	COLIBRI_RACE \
+	DOGE \
+	ELLE0 \
+	F4BY \
+	FISHDRONEF4  \
+	FLIP32F3OSD \
+	FURYF3 \
+	FURYF4 \
+	FURYF7 \
+	IMPULSERCF3 \
+	IRCFUSIONF3 \
+	ISHAPEDF3 \
+	BLUEJAYF4 \
+	KAKUTEF4 \
+	KISSCC \
+
+GROUP_3_TARGETS := \
+	KIWIF4 \
+	LUX_RACE \
+	LUXV2_RACE \
+	MICROSCISKY \
+	MOTOLAB  \
+	MULTIFLITEPICO \
+	NAZE \
+	NERO \
+	OMNIBUS \
+	OMNIBUSF4SD \
+	PIKOBLX \
+	PLUMF4 \
+	PODIUMF4 \
+	RACEBASE  \
+	RCEXPLORERF3 \
+	REVO \
+	REVO_OPBL \
+	REVOLT \
+	REVONANO \
+
+GROUP_4_TARGETS := \
+	RMDO \
+	SINGULARITY \
+	SIRINFPV   \
+	SOULF4 \
+	SPARKY \
+	SPARKY2 \
+	SPRACINGF3 \
+	SPRACINGF3EVO \
+	SPRACINGF3MINI \
+	SPRACINGF3NEO \
+	KROOZX \
+	NUCLEOF7 \
+	OMNIBUSF4 \
+	STM32F3DISCOVERY \
+
+GROUP_OTHER_TARGETS := $(filter-out $(GROUP_1_TARGETS) $(GROUP_2_TARGETS) $(GROUP_3_TARGETS) $(GROUP_4_TARGETS), $(VALID_TARGETS))
+
+
 ifeq ($(filter $(TARGET),$(ALT_TARGETS)), $(TARGET))
 BASE_TARGET    := $(firstword $(subst /,, $(subst ./src/main/target/,, $(dir $(wildcard $(ROOT)/src/main/target/*/$(TARGET).mk)))))
 -include $(ROOT)/src/main/target/$(BASE_TARGET)/$(TARGET).mk
@@ -1102,16 +1181,33 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 	$(V1) echo "%% $(notdir $<)" "$(STDOUT)"
 	$(V1) $(CROSS_CC) -c -o $@ $(ASFLAGS) $<
 
-## official            : Build all official (travis) targets
-official: $(OFFICIAL_TARGETS)
 
 ## all               : Build all valid targets
 all: $(VALID_TARGETS)
 
+## official          : Build all official (travis) targets
+official: $(OFFICIAL_TARGETS)
+
+## targets-group-1   : build some targets
+targets-group-1: $(GROUP_1_TARGETS)
+
+## targets-group-2   : build some targets
+targets-group-2: $(GROUP_2_TARGETS)
+
+## targets-group-3   : build some targets
+targets-group-3: $(GROUP_3_TARGETS)
+
+## targets-group-3   : build some targets
+targets-group-4: $(GROUP_4_TARGETS)
+
+## targets-group-rest: build the rest of the targets (not listed in group 1, 2 or 3)
+targets-group-rest: $(GROUP_OTHER_TARGETS)
+
+
 $(VALID_TARGETS):
 		$(V0) echo "" && \
 		echo "Building $@" && \
-		$(MAKE) binary hex TARGET=$@ && \
+		time $(MAKE) binary hex TARGET=$@ && \
 		echo "Building $@ succeeded."
 
 
@@ -1205,9 +1301,14 @@ help: Makefile make/tools.mk
 
 ## targets           : print a list of all valid target platforms (for consumption by scripts)
 targets:
-	$(V0) @echo "Valid targets: $(VALID_TARGETS)"
-	$(V0) @echo "Target:        $(TARGET)"
-	$(V0) @echo "Base target:   $(BASE_TARGET)"
+	$(V0) @echo "Valid targets:      $(VALID_TARGETS)"
+	$(V0) @echo "Target:             $(TARGET)"
+	$(V0) @echo "Base target:        $(BASE_TARGET)"
+	$(V0) @echo "targets-group-1:    $(GROUP_1_TARGETS)"
+	$(V0) @echo "targets-group-2:    $(GROUP_2_TARGETS)"
+	$(V0) @echo "targets-group-3:    $(GROUP_3_TARGETS)"
+	$(V0) @echo "targets-group-4:    $(GROUP_4_TARGETS)"
+	$(V0) @echo "targets-group-rest: $(GROUP_OTHER_TARGETS)"
 
 ## test              : run the cleanflight test suite
 ## junittest         : run the cleanflight test suite, producing Junit XML result files.
