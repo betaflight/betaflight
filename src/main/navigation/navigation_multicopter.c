@@ -613,12 +613,12 @@ void calculateMulticopterInitialHoldPosition(t_fp_vector * pos)
 
 void resetMulticopterHeadingController(void)
 {
-    updateMagHoldHeading(CENTIDEGREES_TO_DEGREES(posControl.actualState.yaw));
+    updateHeadingHoldTarget(CENTIDEGREES_TO_DEGREES(posControl.actualState.yaw));
 }
 
 static void applyMulticopterHeadingController(void)
 {
-    updateMagHoldHeading(CENTIDEGREES_TO_DEGREES(posControl.desiredState.yaw));
+    updateHeadingHoldTarget(CENTIDEGREES_TO_DEGREES(posControl.desiredState.yaw));
 }
 
 void applyMulticopterNavigationController(navigationFSMStateFlags_t navStateFlags, timeUs_t currentTimeUs)

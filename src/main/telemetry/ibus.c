@@ -291,8 +291,8 @@ static void dispatchMeasurementRequest(ibusAddress_t address) {
         if (ARMING_FLAG(ARMED)) status = 1; //Rate
         if (FLIGHT_MODE(HORIZON_MODE)) status = 2;
         if (FLIGHT_MODE(ANGLE_MODE)) status = 3;
-        if (FLIGHT_MODE(HEADFREE_MODE) || FLIGHT_MODE(MAG_MODE)) status = 4; 
-	if (FLIGHT_MODE(NAV_ALTHOLD_MODE)) status = 5; 
+        if (FLIGHT_MODE(HEADFREE_MODE) || FLIGHT_MODE(HEADING_MODE)) status = 4; 
+        if (FLIGHT_MODE(NAV_ALTHOLD_MODE)) status = 5; 
         if (FLIGHT_MODE(NAV_POSHOLD_MODE)) status = 6;
         if (FLIGHT_MODE(NAV_RTH_MODE)) status = 7;
         if (failsafeIsActive()) {

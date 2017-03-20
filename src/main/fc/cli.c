@@ -544,7 +544,6 @@ static const clivalue_t valueTable[] = {
     { "magzero_x",                  VAR_INT16  | MASTER_VALUE, .config.minmax = { INT16_MIN,  INT16_MAX }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, magZero.raw[X]) },
     { "magzero_y",                  VAR_INT16  | MASTER_VALUE, .config.minmax = { INT16_MIN,  INT16_MAX }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, magZero.raw[Y]) },
     { "magzero_z",                  VAR_INT16  | MASTER_VALUE, .config.minmax = { INT16_MIN,  INT16_MAX }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, magZero.raw[Z]) },
-    { "mag_hold_rate_limit",        VAR_UINT8  | MASTER_VALUE, .config.minmax = { MAG_HOLD_RATE_LIMIT_MIN,  MAG_HOLD_RATE_LIMIT_MAX }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_hold_rate_limit) },
     { "mag_calibration_time",       VAR_UINT8  | MASTER_VALUE, .config.minmax = { 30,  120 }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, magCalibrationTimeLimit) },
 #endif
 
@@ -753,6 +752,9 @@ static const clivalue_t valueTable[] = {
 
     { "rate_accel_limit_roll_pitch",VAR_UINT32 | PROFILE_VALUE | MODE_MAX, .config.max = { 500000 }, PG_PID_PROFILE, offsetof(pidProfile_t, axisAccelerationLimitRollPitch) },
     { "rate_accel_limit_yaw",       VAR_UINT32 | PROFILE_VALUE | MODE_MAX, .config.max = { 500000 }, PG_PID_PROFILE, offsetof(pidProfile_t, axisAccelerationLimitYaw) },
+
+    { "heading_hold_rate_limit",    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { HEADING_HOLD_RATE_LIMIT_MIN,  HEADING_HOLD_RATE_LIMIT_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, heading_hold_rate_limit) },
+
 #ifdef NAV
     { "nav_mc_pos_z_p",             VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0,  255 }, PG_PID_PROFILE, offsetof(pidProfile_t, bank_mc.pid[PID_POS_Z].P) },
     { "nav_mc_pos_z_i",             VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0,  255 }, PG_PID_PROFILE, offsetof(pidProfile_t, bank_mc.pid[PID_POS_Z].I) },

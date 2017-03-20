@@ -38,7 +38,6 @@
 #define NAV
 #define TELEMETRY
 #define TELEMETRY_LTM
-#define USE_FLM_HEADLOCK
 #define USE_FLM_TURN_ASSIST
 #define TELEMETRY_FRSKY
 #endif

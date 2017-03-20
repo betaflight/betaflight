@@ -423,7 +423,7 @@ void handleSmartPortTelemetry(void)
                 if (FLIGHT_MODE(PASSTHRU_MODE))
                     tmpi += 40;
 
-                if (FLIGHT_MODE(MAG_MODE))
+                if (FLIGHT_MODE(HEADING_MODE))
                     tmpi += 100;
                 if (FLIGHT_MODE(NAV_ALTHOLD_MODE))
                     tmpi += 200;
