@@ -128,6 +128,15 @@
 #define SPI3_MOSI_PIN           PC12
 
 
+// OSD
+#define OSD
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE    SPI1
+#define MAX7456_SPI_CS_PIN      PA14
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
+#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
+
+
 #define USE_I2C
 #define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
@@ -145,6 +154,7 @@
 #define DEFAULT_FEATURES        FEATURE_BLACKBOX
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
+#define SERIALRX_UART           SERIAL_PORT_USART6
 
 // Target IO and timers
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
