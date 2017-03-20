@@ -1,10 +1,15 @@
 #!/bin/bash
 
+FC_VER_MAJOR=$(grep " FC_VERSION_MAJOR" src/main/build/version.h | awk '{print $3}' )
+FC_VER_MINOR=$(grep " FC_VERSION_MINOR" src/main/build/version.h | awk '{print $3}' )
+FC_VER_PATCH=$(grep " FC_VERSION_PATCH" src/main/build/version.h | awk '{print $3}' )
+FC_VER="${FC_VER_MAJOR}.${FC_VER_MINOR}.${FC_VER_PATCH}"
+
 REVISION=$(git rev-parse --short HEAD)
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 REVISION=$(git rev-parse --short HEAD)
 LAST_COMMIT_DATE=$(git log -1 --date=short --format="%cd")
-TARGET_FILE=obj/betaflight_${TARGET}
+TARGET_FILE=obj/betaflight_${FC_VER}_${TARGET}
 TRAVIS_REPO_SLUG=${TRAVIS_REPO_SLUG:=$USER/undefined}
 BUILDNAME=${BUILDNAME:=travis}
 TRAVIS_BUILD_NUMBER=${TRAVIS_BUILD_NUMBER:=undefined}
@@ -47,21 +52,24 @@ elif [ $PUBLISHMETA ] ; then
 
 elif [ $TARGET ] ; then
     make $TARGET
-	if [ $PUBLISH_URL ] ; then
-		if   [ -f ${TARGET_FILE}.bin ] ; then
-			TARGET_FILE=${TARGET_FILE}.bin
-		elif [ -f ${TARGET_FILE}.hex ] ; then
-			TARGET_FILE=${TARGET_FILE}.hex
-		else
-			echo "build artifact (hex or bin) for ${TARGET_FILE} not found, aborting";
-			exit 1
-		fi
 
+	if   [ -f ${TARGET_FILE}.bin ] ; then
+		TARGET_FILE=${TARGET_FILE}.bin
+	elif [ -f ${TARGET_FILE}.hex ] ; then
+		TARGET_FILE=${TARGET_FILE}.hex
+	else
+		echo "build artifact (hex or bin) for ${TARGET_FILE} not found, aborting";
+		exit 1
+	fi
+
+	if [ $PUBLISH_URL ] ; then
 		curl -k "${CURL_BASEOPTS[@]}" "${CURL_PUB_BASEOPTS[@]}" --form "file=@${TARGET_FILE}" ${PUBLISH_URL} || true
 		exit 0;
 	fi
+
 elif [ $GOAL ] ; then
     make V=0 $GOAL
+
 else 
     make V=0 all
 fi
