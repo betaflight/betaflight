@@ -1285,6 +1285,10 @@ $(TOOLS_DIR):
 $(BUILD_DIR):
 	mkdir -p $@
 
+## version           : print firmware version
+version:
+	@echo $(FC_VER)
+
 ## help              : print this help message and exit
 help: Makefile make/tools.mk
 	$(V0) @echo ""
