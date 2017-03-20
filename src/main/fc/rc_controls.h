@@ -20,34 +20,35 @@
 #include "config/parameter_group.h"
 
 typedef enum {
-    BOXARM = 0,
-    BOXANGLE,
-    BOXHORIZON,
-    BOXNAVALTHOLD,  // old BOXBARO
-    BOXHEADINGHOLD, // old MAG
-    BOXHEADFREE,
-    BOXHEADADJ,
-    BOXCAMSTAB,
-    BOXNAVRTH,      // old GPSHOME
-    BOXNAVPOSHOLD,  // old GPSHOLD
-    BOXPASSTHRU,
-    BOXBEEPERON,
-    BOXLEDLOW,
-    BOXLLIGHTS,
-    BOXNAVLAUNCH,
-    BOXOSD,
-    BOXTELEMETRY,
-    BOXBLACKBOX,
-    BOXFAILSAFE,
-    BOXNAVWP,
-    BOXAIRMODE,
-    BOXHOMERESET,
-    BOXGCSNAV,
-    BOXUNUSED,      // old HEADING LOCK
-    BOXSURFACE,
-    BOXFLAPERON,
-    BOXTURNASSIST,
-    BOXAUTOTRIM,
+    BOXARM          = 0,
+    BOXANGLE        = 1,
+    BOXHORIZON      = 2,
+    BOXNAVALTHOLD   = 3,    // old BOXBARO
+    BOXHEADINGHOLD  = 4,    // old MAG
+    BOXHEADFREE     = 5,
+    BOXHEADADJ      = 6,
+    BOXCAMSTAB      = 7,
+    BOXNAVRTH       = 8,    // old GPSHOME
+    BOXNAVPOSHOLD   = 9,    // old GPSHOLD
+    BOXPASSTHRU     = 10,
+    BOXBEEPERON     = 11,
+    BOXLEDLOW       = 12,
+    BOXLLIGHTS      = 13,
+    BOXNAVLAUNCH    = 14,
+    BOXOSD          = 15,
+    BOXTELEMETRY    = 16,
+    BOXBLACKBOX     = 17,
+    BOXFAILSAFE     = 18,
+    BOXNAVWP        = 19,
+    BOXAIRMODE      = 20,
+    BOXHOMERESET    = 21,
+    BOXGCSNAV       = 22,
+    BOXUNUSED       = 23,   // old HEADING LOCK
+    BOXSURFACE      = 24,
+    BOXFLAPERON     = 25,
+    BOXTURNASSIST   = 26,
+    BOXAUTOTRIM     = 27,
+    BOXAUTOTUNE     = 28,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 

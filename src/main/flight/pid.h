@@ -40,6 +40,16 @@
 
 #define HEADING_HOLD_ERROR_LPF_FREQ 2
 
+/*
+FP-PID has been rescaled to match LuxFloat (and MWRewrite) from Cleanflight 1.13
+*/
+#define FP_PID_RATE_FF_MULTIPLIER   31.0f
+#define FP_PID_RATE_P_MULTIPLIER    31.0f
+#define FP_PID_RATE_I_MULTIPLIER    4.0f
+#define FP_PID_RATE_D_MULTIPLIER    1905.0f
+#define FP_PID_LEVEL_P_MULTIPLIER   6.56f       // Level P gain units is [1/sec] and angle error is [deg] => [deg/s]
+#define FP_PID_YAWHOLD_P_MULTIPLIER 80.0f
+
 typedef enum {
     /* PID              MC      FW  */
     PID_ROLL,       //   +       +
@@ -130,3 +140,6 @@ enum {
 void updateHeadingHoldTarget(int16_t heading);
 void resetHeadingHoldTarget(int16_t heading);
 int16_t getHeadingHoldTarget();
+
+void autotuneUpdateState(void);
+void autotuneFixedWingUpdate(const flight_dynamics_index_t axis, float desiredRateDps, float reachedRateDps, float pidOutput);

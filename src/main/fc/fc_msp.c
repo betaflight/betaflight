@@ -127,7 +127,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXLLIGHTS, "LLIGHTS;", 16 },
     { BOXOSD, "OSD SW;", 19 },
     { BOXTELEMETRY, "TELEMETRY;", 20 },
-    //{ BOXGTUNE, "GTUNE;", 21 },
+    { BOXAUTOTUNE, "AUTO TUNE;", 21 },
     { BOXBLACKBOX, "BLACKBOX;", 26 },
     { BOXFAILSAFE, "FAILSAFE;", 27 },
     { BOXNAVWP, "NAV WP;", 28 },
@@ -289,6 +289,9 @@ static void initActiveBoxIds(void)
         activeBoxIds[activeBoxIdCount++] = BOXPASSTHRU;
         activeBoxIds[activeBoxIdCount++] = BOXNAVLAUNCH;
         activeBoxIds[activeBoxIdCount++] = BOXAUTOTRIM;
+#if defined(AUTOTUNE_FIXED_WING)
+        activeBoxIds[activeBoxIdCount++] = BOXAUTOTUNE;
+#endif
     }
 
 #ifdef USE_SERVOS
@@ -361,6 +364,7 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(FLIGHT_MODE(TURN_ASSISTANT)) << BOXTURNASSIST |
 #endif
         IS_ENABLED(FLIGHT_MODE(NAV_LAUNCH_MODE)) << BOXNAVLAUNCH |
+        IS_ENABLED(FLIGHT_MODE(AUTO_TUNE)) << BOXAUTOTUNE |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAUTOTRIM)) << BOXAUTOTRIM |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHOMERESET)) << BOXHOMERESET;
 

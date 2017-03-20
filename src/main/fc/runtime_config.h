@@ -53,7 +53,7 @@ typedef enum {
     NAV_LAUNCH_MODE = (1 << 7),
     PASSTHRU_MODE   = (1 << 8),
     FAILSAFE_MODE   = (1 << 10),
-    UNUSED_MODE     = (1 << 11), // old G-Tune
+    AUTO_TUNE       = (1 << 11), // old G-Tune
     NAV_WP_MODE     = (1 << 12),
     UNUSED_MODE2    = (1 << 13),
     FLAPERON        = (1 << 14),
