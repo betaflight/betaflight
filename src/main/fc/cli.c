@@ -3911,7 +3911,7 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 #ifdef SONAR
     { OWNER_SONAR_TRIGGER, PG_SONAR_CONFIG, offsetof(sonarConfig_t, triggerTag), 0 },
-    { OWNER_SONAR_ECHO,    PG_SERIAL_CONFIG, offsetof(sonarConfig_t, echoTag),    0 },
+    { OWNER_SONAR_ECHO,    PG_SONAR_CONFIG, offsetof(sonarConfig_t, echoTag),    0 },
 #endif
 #ifdef LED_STRIP
     { OWNER_LED_STRIP,     PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ioTag),   0 },
