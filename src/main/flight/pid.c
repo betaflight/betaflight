@@ -629,14 +629,37 @@ float pidHeadingHold(void)
 static void pidTurnAssistant(pidState_t *pidState)
 {
     t_fp_vector targetRates;
-
     targetRates.V.X = 0.0f;
     targetRates.V.Y = 0.0f;
-    targetRates.V.Z = pidState[YAW].rateTarget;
 
+    if (STATE(FIXED_WING)) {
+        if (calculateCosTiltAngle() >= 0.173648f) {
+            // Ideal banked turn follow the equations:
+            //      forward_vel^2 / radius = Gravity * tan(roll_angle)
+            //      yaw_rate = forward_vel / radius
+            // If we solve for roll angle we get:
+            //      tan(roll_angle) = forward_vel * yaw_rate / Gravity
+            // If we solve for yaw rate we get:
+            //      yaw_rate = tan(roll_angle) * Gravity / forward_vel
+            float airspeedForCoordinatedTurn = 1200.0f; // FIXME, default to 43km/h at the moment
+            float bankAngle = DECIDEGREES_TO_RADIANS(attitude.values.roll);
+            float coordinatedTurnRateOffset = GRAVITY_CMSS * tan_approx(-bankAngle) / airspeedForCoordinatedTurn;
+
+            targetRates.V.Z = pidState[YAW].rateTarget + RADIANS_TO_DEGREES(coordinatedTurnRateOffset);
+        }
+        else {
+            // Don't allow coordinated turn calculation if airplane is in hard bank or steep climb/dive
+            return;
+        }
+    }
+    else {
+        targetRates.V.Z = pidState[YAW].rateTarget;
+    }
+
+    // Transform calculated rate offsets into body frame and apply
     imuTransformVectorEarthToBody(&targetRates);
 
-    // Add in roll and pitch, replace yaw completery
+    // Add in roll and pitch, replace yaw completely
     pidState[ROLL].rateTarget += targetRates.V.X;
     pidState[PITCH].rateTarget += targetRates.V.Y;
     pidState[YAW].rateTarget = targetRates.V.Z;
