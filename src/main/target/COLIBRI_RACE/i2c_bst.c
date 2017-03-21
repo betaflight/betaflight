@@ -82,9 +82,22 @@
 #define CROSSFIRE_RSSI_FRAME_ID             0x14
 #define CLEANFLIGHT_MODE_FRAME_ID           0x20
 
+#define BST_PROTOCOL_VERSION                0
+
+#define API_VERSION_MAJOR                   1 // increment when major changes are made
+#define API_VERSION_MINOR                   13 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+
+#define API_VERSION_LENGTH                  2
+
 //
 // MSP commands for Cleanflight original features
 //
+
+#define BST_API_VERSION                 1    //out message
+#define BST_FC_VARIANT                  2    //out message
+#define BST_FC_VERSION                  3    //out message
+#define BST_BOARD_INFO                  4    //out message
+#define BST_BUILD_INFO                  5    //out message
 
 #define BST_MODE_RANGES                 34  //out message         Returns all mode ranges
 #define BST_SET_MODE_RANGE              35  //in message          Sets a single mode range
@@ -257,6 +270,24 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
     uint32_t i, tmp, junk;
 
     switch(bstRequest) {
+        case BST_API_VERSION:
+            bstWrite8(BST_PROTOCOL_VERSION);
+
+            bstWrite8(API_VERSION_MAJOR);
+            bstWrite8(API_VERSION_MINOR);
+            break;
+        case BST_BUILD_INFO:
+            for (i = 0; i < BUILD_DATE_LENGTH; i++) {
+                bstWrite8(buildDate[i]);
+            }
+            for (i = 0; i < BUILD_TIME_LENGTH; i++) {
+                bstWrite8(buildTime[i]);
+            }
+
+            for (i = 0; i < GIT_SHORT_REVISION_LENGTH; i++) {
+                bstWrite8(shortGitRevision[i]);
+            }
+            break;
         case BST_STATUS:
             bstWrite16(getTaskDeltaTime(TASK_GYROPID));
 #ifdef USE_I2C
