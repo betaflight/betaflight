@@ -65,10 +65,6 @@
 #include "drivers/exti.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
 
-#ifdef USE_BST
-#include "bus_bst.h"
-#endif
-
 #include "fc/config.h"
 #include "fc/fc_init.h"
 #include "fc/fc_msp.h"
@@ -314,10 +310,6 @@ void init(void)
 /* temp until PGs are implemented. */
 #ifdef USE_INVERTER
     initInverters();
-#endif
-
-#ifdef USE_BST
-    bstInit(BST_DEVICE);
 #endif
 
 #ifdef TARGET_BUS_INIT
