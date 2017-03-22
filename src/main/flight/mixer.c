@@ -513,11 +513,15 @@ void mixTable(pidProfile_t *pidProfile)
         for (int i = 0; i < motorCount; i++) {
             motorMix[i] /= motorMixRange;
         }
-        // Get the maximum correction by setting offset to center
-        throttle = 0.5f;
+        // Get the maximum correction by setting offset to center when airmode enabled
+        if (isAirmodeActive()) {
+            throttle = 0.5f;
+        }
     } else {
-        float throttleLimitOffset = motorMixRange / 2.0f;
-        throttle = constrainf(throttle, 0.0f + throttleLimitOffset, 1.0f - throttleLimitOffset);
+        if (isAirmodeActive()) {  // Only automatically adjust throttle during airmode scenario
+            float throttleLimitOffset = motorMixRange / 2.0f;
+            throttle = constrainf(throttle, 0.0f + throttleLimitOffset, 1.0f - throttleLimitOffset);
+        }
     }
 
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
