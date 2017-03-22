@@ -95,7 +95,7 @@ void targetConfiguration(master_t *config)
     config->profile[0].controlRateProfile[0].rates[FD_PITCH] = 86;
     config->profile[0].controlRateProfile[0].rates[FD_YAW] = 80;
 
-    config->motorConfig.motorPwmProtocol = PWM_TYPE_MULTISHOT;
+    //config->motorConfig.motorPwmProtocol = PWM_TYPE_MULTISHOT;
 
     targetApplyDefaultLedStripConfig(config->ledStripConfig.ledConfigs);
 }
