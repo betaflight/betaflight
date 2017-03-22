@@ -923,6 +923,7 @@ static motorMixer_t customMotorMixerCopy[MAX_SUPPORTED_MOTORS];
 static mixerConfig_t mixerConfigCopy;
 static flight3DConfig_t flight3DConfigCopy;
 static serialConfig_t serialConfigCopy;
+static serialPinConfig_t serialPinConfigCopy;
 static imuConfig_t imuConfigCopy;
 static armingConfig_t armingConfigCopy;
 static rcControlsConfig_t rcControlsConfigCopy;
@@ -1237,6 +1238,10 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
     case PG_SERIAL_CONFIG:
         ret.currentConfig = &serialConfigCopy;
         ret.defaultConfig = serialConfig();
+        break;
+    case PG_SERIAL_PIN_CONFIG:
+        ret.currentConfig = &serialPinConfigCopy;
+        ret.defaultConfig = serialPinConfig();
         break;
     case PG_IMU_CONFIG:
         ret.currentConfig = &imuConfigCopy;
@@ -3916,8 +3921,8 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef LED_STRIP
     { OWNER_LED_STRIP,     PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ioTag),   0 },
 #endif
-    { OWNER_SERIAL_TX,     PG_SERIAL_CONFIG, offsetof(serialPinConfig_t, ioTagTx[0]), SERIAL_PORT_MAX_INDEX },
-    { OWNER_SERIAL_RX,     PG_SERIAL_CONFIG, offsetof(serialPinConfig_t, ioTagRx[0]), SERIAL_PORT_MAX_INDEX },
+    { OWNER_SERIAL_TX,     PG_SERIAL_PIN_CONFIG, offsetof(serialPinConfig_t, ioTagTx[0]), SERIAL_PORT_MAX_INDEX },
+    { OWNER_SERIAL_RX,     PG_SERIAL_PIN_CONFIG, offsetof(serialPinConfig_t, ioTagRx[0]), SERIAL_PORT_MAX_INDEX },
 };
 
 static ioTag_t *getIoTag(const cliResourceValue_t value, uint8_t index)
