@@ -36,6 +36,7 @@ void targetConfiguration(master_t *config)
     config->batteryConfig.currentMeterOffset = CURRENT_OFFSET;
     config->barometerConfig.baro_hardware = 0;
     config->compassConfig.mag_hardware = 0;
-    config->osdConfig.item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 1) | VISIBLE_FLAG;
+// Disabled to make it build for 3.1.7
+//    config->osdConfig.item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 1) | VISIBLE_FLAG;
 }
 #endif
