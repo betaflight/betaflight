@@ -175,7 +175,7 @@ void mwDisarm(void)
             finishBlackbox();
         }
 #endif
-
+        BEEP_OFF;
         beeper(BEEPER_DISARMING);      // emit disarm tone
     }
 }
@@ -475,12 +475,12 @@ void processRx(timeUs_t currentTimeUs)
 #endif
 }
 
-static void subTaskPidController(void)
+static void subTaskPidController(timeUs_t currentTimeUs)
 {
     uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
     // PID - note this is function pointer set by setPIDController()
-    pidController(currentPidProfile, &accelerometerConfig()->accelerometerTrims);
+    pidController(currentPidProfile, &accelerometerConfig()->accelerometerTrims, currentTimeUs);
     DEBUG_SET(DEBUG_PIDLOOP, 1, micros() - startTime);
 }
 
@@ -630,7 +630,7 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
         pidUpdateCountdown--;
     } else {
         pidUpdateCountdown = setPidUpdateCountDown();
-        subTaskPidController();
+        subTaskPidController(currentTimeUs);
         subTaskMotorUpdate();
         runTaskMainSubprocesses = true;
     }
