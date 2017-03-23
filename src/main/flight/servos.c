@@ -84,8 +84,6 @@ void pgResetFn_servoParams(servoParam_t *instance)
             .max = DEFAULT_SERVO_MAX,
             .middle = DEFAULT_SERVO_MIDDLE,
             .rate = 100,
-            .angleAtMin = DEFAULT_SERVO_MIN_ANGLE,
-            .angleAtMax = DEFAULT_SERVO_MAX_ANGLE,
             .forwardFromChannel = CHANNEL_FORWARDING_DISABLED
         );
     }
