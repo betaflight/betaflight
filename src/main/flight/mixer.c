@@ -434,7 +434,7 @@ void mixTable(pidProfile_t *pidProfile)
 {
     // Scale roll/pitch/yaw uniformly to fit within throttle range
     // Initial mixer concept by bdoiron74 reused and optimized for Air Mode
-    float throttle = 0, currentThrottleInputRange = 0;
+    float throttle, currentThrottleInputRange = 0;
     uint16_t motorOutputMin, motorOutputMax;
     static uint16_t throttlePrevious = 0;   // Store the last throttle direction for deadband transitions
     bool mixerInversion = false;
@@ -480,9 +480,9 @@ void mixTable(pidProfile_t *pidProfile)
 
     float scaledAxisPIDf[3];
     // Limit the PIDsum
-    scaledAxisPIDf[FD_ROLL] = constrainf(axisPIDf[FD_ROLL] / PID_MIXER_SCALING, -pidProfile->pidSumLimit, pidProfile->pidSumLimit);
-    scaledAxisPIDf[FD_PITCH] = constrainf(axisPIDf[FD_PITCH] / PID_MIXER_SCALING, -pidProfile->pidSumLimit, pidProfile->pidSumLimit);
-    scaledAxisPIDf[FD_YAW] = constrainf(axisPIDf[FD_YAW] / PID_MIXER_SCALING, -pidProfile->pidSumLimit, pidProfile->pidSumLimitYaw);
+    scaledAxisPIDf[FD_ROLL] = constrainf((axisPID_P[FD_ROLL] + axisPID_I[FD_ROLL] * throttle + axisPID_D[FD_ROLL]) / PID_MIXER_SCALING, -pidProfile->pidSumLimit, pidProfile->pidSumLimit);
+    scaledAxisPIDf[FD_PITCH] = constrainf((axisPID_P[FD_PITCH] + axisPID_I[FD_PITCH] * throttle + axisPID_D[FD_PITCH]) / PID_MIXER_SCALING, -pidProfile->pidSumLimit, pidProfile->pidSumLimit);
+    scaledAxisPIDf[FD_YAW] = constrainf((axisPID_P[FD_YAW] + axisPID_I[FD_YAW] * throttle) / PID_MIXER_SCALING, -pidProfile->pidSumLimit, pidProfile->pidSumLimitYaw);
 
     // Calculate voltage compensation
     const float vbatCompensationFactor = (batteryConfig && pidProfile->vbatPidCompensation)  ? calculateVbatPidCompensation() : 1.0f;
