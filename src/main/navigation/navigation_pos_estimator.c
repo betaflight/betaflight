@@ -523,7 +523,6 @@ static void updateIMUTopic(void)
         posEstimator.imu.accelNEU.V.Z = accelBF.V.Z;
 
         /* When unarmed, assume that accelerometer should measure 1G. Use that to correct accelerometer gain */
-        //if (!ARMING_FLAG(ARMED) && imuRuntimeConfig->acc_unarmedcal) {
         if (!ARMING_FLAG(ARMED) && positionEstimationConfig()->accz_unarmed_cal) {
             // Slowly converge on calibrated gravity while level
             calibratedGravityCMSS += (posEstimator.imu.accelNEU.V.Z - calibratedGravityCMSS) * 0.0025f;
