@@ -2179,7 +2179,7 @@ static void cliModeColor(char *cmdline)
 static void printServo(uint8_t dumpMask, const servoParam_t *servoParam, const servoParam_t *defaultServoParam)
 {
     // print out servo settings
-    const char *format = "servo %u %d %d %d %d %dr\n";
+    const char *format = "servo %u %d %d %d %d %d \r\n";
     for (uint32_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         const servoParam_t *servoConf = &servoParam[i];
         bool equalsDefault = false;
