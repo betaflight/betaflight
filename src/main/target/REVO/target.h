@@ -76,41 +76,41 @@
 #define MPU6500_CS_PIN          PA4
 #define MPU6500_SPI_INSTANCE    SPI1
 
-#if defined(SOULF4)
+#define GYRO
 #define ACC
-#define USE_ACC_SPI_MPU6000
+
+#if defined(SOULF4)
+#define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW180_DEG
 
-#define GYRO
-#define USE_GYRO_SPI_MPU6000
+#define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW180_DEG
 
 #elif defined(REVOLT) || defined(PODIUMF4)
-
-#define USE_ACC_MPU6500
-#define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW0_DEG
 
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW0_DEG
 
-#else
-#define ACC
-#define USE_ACC_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW270_DEG
-
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW270_DEG
+#define ACC_MPU6500_ALIGN       CW0_DEG
 
-#define GYRO
+#else
+
 #define USE_GYRO_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW270_DEG
+#define GYRO_MPU6000_ALIGN      CW270_DEG
 
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW270_DEG
+
+#define USE_ACC_SPI_MPU6000
+#define ACC_MPU6000_ALIGN       CW270_DEG
+
+#define USE_ACC_MPU6500
+#define USE_ACC_SPI_MPU6500
+#define ACC_MPU6500_ALIGN       CW270_DEG
 
 #endif
 
