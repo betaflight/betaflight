@@ -171,7 +171,7 @@ void mwDisarm(void)
         DISABLE_ARMING_FLAG(ARMED);
 
 #ifdef BLACKBOX
-        if (feature(FEATURE_BLACKBOX)) {
+        if (blackboxConfig()->device) {
             finishBlackbox();
         }
 #endif
@@ -545,7 +545,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 #endif
 
 #ifdef BLACKBOX
-    if (!cliMode && feature(FEATURE_BLACKBOX)) {
+    if (!cliMode && blackboxConfig()->device) {
         handleBlackbox(currentTimeUs);
     }
 #else

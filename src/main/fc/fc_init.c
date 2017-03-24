@@ -501,7 +501,7 @@ void init(void)
 #endif
 
 #ifdef USE_SDCARD
-    if (feature(FEATURE_SDCARD) && blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
+    if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
         sdcardInsertionDetectInit();
         sdcard_init(sdcardConfig()->useDma);
         afatfs_init();

@@ -371,12 +371,10 @@ void initActiveBoxIds(void)
 #endif
 
 #ifdef BLACKBOX
-    if (feature(FEATURE_BLACKBOX)) {
-        activeBoxIds[activeBoxIdCount++] = BOXBLACKBOX;
+    activeBoxIds[activeBoxIdCount++] = BOXBLACKBOX;
 #ifdef USE_FLASHFS
-        activeBoxIds[activeBoxIdCount++] = BOXBLACKBOXERASE;
+    activeBoxIds[activeBoxIdCount++] = BOXBLACKBOXERASE;
 #endif
-    }
 #endif
 
     activeBoxIds[activeBoxIdCount++] = BOXFPVANGLEMIX;
