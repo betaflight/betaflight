@@ -787,9 +787,6 @@ void createDefaultConfig(master_t *config)
     resetStatusLedConfig(&config->statusLedConfig);
 #endif
 
-#if defined(TARGET_CONFIG)
-    targetConfiguration(config);
-#endif
 }
 #endif
 
@@ -799,6 +796,11 @@ void resetConfigs(void)
     createDefaultConfig(&masterConfig);
 #endif
     pgResetAll(MAX_PROFILE_COUNT);
+
+#if defined(TARGET_CONFIG)
+    targetConfiguration();
+#endif
+
     pgActivateProfile(0);
 
     setPidProfile(0);
