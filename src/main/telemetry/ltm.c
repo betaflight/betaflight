@@ -279,7 +279,7 @@ void ltm_nframe(sbuf_t *dst)
 #define LTM_BIT_NFRAME  (1 << 4)
 #define LTM_BIT_XFRAME  (1 << 5)
 
-static uint8_t ltm_schedule[10] = {
+static uint8_t ltm_normal_schedule[10] = {
     LTM_BIT_AFRAME | LTM_BIT_GFRAME,
     LTM_BIT_AFRAME | LTM_BIT_SFRAME | LTM_BIT_OFRAME,
     LTM_BIT_AFRAME | LTM_BIT_GFRAME,
@@ -291,6 +291,35 @@ static uint8_t ltm_schedule[10] = {
     LTM_BIT_AFRAME | LTM_BIT_GFRAME,
     LTM_BIT_AFRAME | LTM_BIT_SFRAME | LTM_BIT_NFRAME
 };
+
+static uint8_t ltm_medium_schedule[] = {
+    LTM_BIT_AFRAME,
+    LTM_BIT_GFRAME,
+    LTM_BIT_AFRAME | LTM_BIT_SFRAME,
+    LTM_BIT_OFRAME,
+    LTM_BIT_AFRAME | LTM_BIT_XFRAME,
+    LTM_BIT_OFRAME,
+    LTM_BIT_AFRAME | LTM_BIT_SFRAME,
+    LTM_BIT_GFRAME,
+    LTM_BIT_AFRAME,
+    LTM_BIT_NFRAME
+};
+
+static uint8_t ltm_slow_schedule[] = {
+    LTM_BIT_GFRAME,
+    LTM_BIT_SFRAME,
+    LTM_BIT_OFRAME,
+    0,
+    LTM_BIT_AFRAME,
+    LTM_BIT_XFRAME,
+    LTM_BIT_GFRAME,
+    0,
+    LTM_BIT_AFRAME,
+    LTM_BIT_NFRAME,
+};
+
+/* This is the default scheduler, needs c. 4800 baud or faster */
+static uint8_t *ltm_schedule = ltm_normal_schedule;
 
 static void process_ltm(void)
 {
@@ -380,6 +409,14 @@ void configureLtmTelemetryPort(void)
     if (baudRateIndex == BAUD_AUTO) {
         baudRateIndex = BAUD_19200;
     }
+
+    if(telemetryConfig()->ltmUpdateRate == LTM_RATE_MEDIUM)
+        ltm_schedule = ltm_medium_schedule;
+    else if (telemetryConfig()->ltmUpdateRate == LTM_RATE_SLOW)
+        ltm_schedule = ltm_slow_schedule;
+    else
+        ltm_schedule = ltm_normal_schedule;
+
     ltmPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_LTM, NULL, baudRates[baudRateIndex], TELEMETRY_LTM_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
     if (!ltmPort)
         return;
