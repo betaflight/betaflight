@@ -104,6 +104,9 @@ static bool mpuSpi6000InitDone = false;
 
 static IO_t mpuSpi6000CsPin = IO_NONE;
 
+#define SPI_CLOCK_MPU6000_INITIALIZATION SPI_CLOCK_INITIALIZATON
+#define SPI_CLOCK_MPU6000_FAST           SPI_CLOCK_FAST
+
 bool mpu6000WriteRegister(uint8_t reg, uint8_t data)
 {
     ENABLE_MPU6000;
@@ -130,13 +133,13 @@ void mpu6000SpiGyroInit(gyroDev_t *gyro)
 
     mpu6000AccAndGyroInit(gyro);
 
-    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON);
+    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_MPU6000_INITIALIZATION);  // 1 MHz or less SPI Clock
 
     // Accel and Gyro DLPF Setting
     mpu6000WriteRegister(MPU6000_CONFIG, gyro->lpf);
     delayMicroseconds(1);
 
-    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_FAST);  // 18 MHz SPI clock
+    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_MPU6000_FAST);  // 18 MHz SPI clock
 
     mpuGyroRead(gyro);
 
@@ -152,8 +155,7 @@ void mpu6000SpiAccInit(accDev_t *acc)
 
 bool mpu6000SpiDetect(void)
 {
-    uint8_t in;
-    uint8_t attemptsRemaining = 5;
+    uint8_t count, in;
 
 #ifdef MPU6000_CS_PIN
     mpuSpi6000CsPin = IOGetByTag(IO_TAG(MPU6000_CS_PIN));
@@ -161,43 +163,44 @@ bool mpu6000SpiDetect(void)
     IOInit(mpuSpi6000CsPin, OWNER_MPU_CS, 0);
     IOConfigGPIO(mpuSpi6000CsPin, SPI_IO_CS_CFG);
 
-    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON);
+    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_MPU6000_INITIALIZATION);
 
+    // Device reset
     mpu6000WriteRegister(MPU_RA_PWR_MGMT_1, BIT_H_RESET);
-
+    delayMicroseconds(15);
     do {
-        delay(150);
+        mpu6000ReadRegister(MPU_RA_PWR_MGMT_1, 1, &in);
+        delayMicroseconds(1);
+        count++;
+    } while (in != BIT_SLEEP && count < 30);
 
+    if (in == BIT_SLEEP) {
         mpu6000ReadRegister(MPU_RA_WHO_AM_I, 1, &in);
+        delayMicroseconds(15);
         if (in == MPU6000_WHO_AM_I_CONST) {
-            break;
+            mpu6000ReadRegister(MPU_RA_PRODUCT_ID, 1, &in);
+            delayMicroseconds(15);
+
+            /* look for a product ID we recognise */
+
+            // verify product revision
+            switch (in) {
+                case MPU6000ES_REV_C4:
+                case MPU6000ES_REV_C5:
+                case MPU6000_REV_C4:
+                case MPU6000_REV_C5:
+                case MPU6000ES_REV_D6:
+                case MPU6000ES_REV_D7:
+                case MPU6000ES_REV_D8:
+                case MPU6000_REV_D6:
+                case MPU6000_REV_D7:
+                case MPU6000_REV_D8:
+                case MPU6000_REV_D9:
+                case MPU6000_REV_D10:
+                    return true;
+            }
         }
-        if (!attemptsRemaining) {
-            return false;
-        }
-    } while (attemptsRemaining--);
-
-    mpu6000ReadRegister(MPU_RA_PRODUCT_ID, 1, &in);
-
-    /* look for a product ID we recognise */
-
-    // verify product revision
-    switch (in) {
-        case MPU6000ES_REV_C4:
-        case MPU6000ES_REV_C5:
-        case MPU6000_REV_C4:
-        case MPU6000_REV_C5:
-        case MPU6000ES_REV_D6:
-        case MPU6000ES_REV_D7:
-        case MPU6000ES_REV_D8:
-        case MPU6000_REV_D6:
-        case MPU6000_REV_D7:
-        case MPU6000_REV_D8:
-        case MPU6000_REV_D9:
-        case MPU6000_REV_D10:
-            return true;
     }
-
     return false;
 }
 
@@ -207,14 +210,10 @@ static void mpu6000AccAndGyroInit(gyroDev_t *gyro)
         return;
     }
 
-    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON);
-
-    // Device Reset
-    mpu6000WriteRegister(MPU_RA_PWR_MGMT_1, BIT_H_RESET);
-    delay(150);
+    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_MPU6000_INITIALIZATION);
 
     mpu6000WriteRegister(MPU_RA_SIGNAL_PATH_RESET, BIT_GYRO | BIT_ACC | BIT_TEMP);
-    delay(150);
+    delayMicroseconds(15);
 
     // Clock Source PPL with Z axis gyro reference
     mpu6000WriteRegister(MPU_RA_PWR_MGMT_1, MPU_CLK_SEL_PLLGYROZ);
@@ -248,8 +247,7 @@ static void mpu6000AccAndGyroInit(gyroDev_t *gyro)
     delayMicroseconds(15);
 #endif
 
-    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_FAST);
-    delayMicroseconds(1);
+    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_MPU6000_FAST);
 
     mpuSpi6000InitDone = true;
 }
