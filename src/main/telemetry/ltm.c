@@ -308,9 +308,9 @@ static uint8_t ltm_medium_schedule[] = {
 static uint8_t ltm_slow_schedule[] = {
     LTM_BIT_GFRAME,
     LTM_BIT_SFRAME,
-    LTM_BIT_OFRAME,
-    0,
     LTM_BIT_AFRAME,
+    0,
+    LTM_BIT_OFRAME,
     LTM_BIT_XFRAME,
     LTM_BIT_GFRAME,
     0,
