@@ -559,7 +559,7 @@ void createDefaultConfig(master_t *config)
     config->boardAlignment.pitchDegrees = 0;
     config->boardAlignment.yawDegrees = 0;
 #endif
-    config->rcControlsConfig.yaw_control_direction = 1;
+    config->rcControlsConfig.yaw_control_reversed = false;
 
     // xxx_hardware: 0:default/autodetect, 1: disable
     config->compassConfig.mag_hardware = 1;
