@@ -60,7 +60,7 @@ typedef struct gyroDev_s {
     volatile bool dataReady;
     sensor_align_e gyroAlign;
     mpuDetectionResult_t mpuDetectionResult;
-    const extiConfig_t *mpuIntExtiConfig;
+    extiConfig_t mpuIntExtiConfig;
     mpuConfiguration_t mpuConfiguration;
 } gyroDev_t;
 

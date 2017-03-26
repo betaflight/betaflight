@@ -111,19 +111,6 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .gyro_soft_notch_cutoff_2 = 100
 );
 
-#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20689)
-static const extiConfig_t *selectMPUIntExtiConfig(void)
-{
-#if defined(MPU_INT_EXTI)
-    static const extiConfig_t mpuIntExtiConfig = { .tag = IO_TAG(MPU_INT_EXTI) };
-    return &mpuIntExtiConfig;
-#elif defined(USE_HARDWARE_REVISION_DETECTION)
-    return selectMPUIntExtiConfigByHardwareRevision();
-#else
-    return NULL;
-#endif
-}
-#endif
 
 const busDevice_t *gyroSensorBus(void)
 {
@@ -134,6 +121,7 @@ const mpuConfiguration_t *gyroMpuConfiguration(void)
 {
     return &gyroDev0.mpuConfiguration;
 }
+
 const mpuDetectionResult_t *gyroMpuDetectionResult(void)
 {
     return &gyroDev0.mpuDetectionResult;
@@ -294,7 +282,15 @@ bool gyroInit(void)
 {
     memset(&gyro, 0, sizeof(gyro));
 #if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20689)
-    gyroDev0.mpuIntExtiConfig = selectMPUIntExtiConfig();
+
+#if defined(MPU_INT_EXTI)
+    gyroDev0.mpuIntExtiConfig.tag =  IO_TAG(MPU_INT_EXTI);
+#elif defined(USE_HARDWARE_REVISION_DETECTION)
+    gyroDev0.mpuIntExtiConfig.tag =  selectMPUIntExtiConfigByHardwareRevision();
+#else
+    gyroDev0.mpuIntExtiConfig.tag =  IO_TAG_NONE;
+#endif
+
 #ifdef USE_DUAL_GYRO
     // set cnsPin using GYRO_n_CS_PIN defined in target.h
     gyroDev0.bus.spi.csnPin = gyroConfig()->gyro_to_use == 0 ? IOGetByTag(IO_TAG(GYRO_0_CS_PIN)) : IOGetByTag(IO_TAG(GYRO_1_CS_PIN));
