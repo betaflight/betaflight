@@ -108,7 +108,7 @@ LTM is transmit only, and can work at any supported baud rate. It is
 designed to operate over 2400 baud (9600 in INAV) and does not
 benefit from higher rates. It is thus usable on soft serial.
 
-A CLI variable `ltm-update-rate` may be used to configure the update
+A CLI variable `ltm_update_rate` may be used to configure the update
 rate and hence band-width used by LTM, with the following enumerations:
 
 * NORMAL: Legacy rate, currently 303 bytes/second (requires 4800 bps)
