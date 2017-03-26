@@ -596,14 +596,14 @@ static bool handleIncoming_MISSION_ITEM(void)
             return true;
         }
 
-        if (msg.frame != MAV_FRAME_GLOBAL_RELATIVE_ALT) {
-            mavlink_msg_mission_ack_pack(mavSystemId, mavComponentId, &mavSendMsg, mavRecvMsg.sysid, mavRecvMsg.compid, MAV_MISSION_UNSUPPORTED_FRAME);
+        if ((msg.autocontinue == 0) || (msg.command != MAV_CMD_NAV_WAYPOINT && msg.command != MAV_CMD_NAV_RETURN_TO_LAUNCH)) {
+            mavlink_msg_mission_ack_pack(mavSystemId, mavComponentId, &mavSendMsg, mavRecvMsg.sysid, mavRecvMsg.compid, MAV_MISSION_UNSUPPORTED);
             mavlinkSendMessage();
             return true;
         }
 
-        if ((msg.autocontinue == 0) || (msg.command != MAV_CMD_NAV_WAYPOINT && msg.command != MAV_CMD_NAV_RETURN_TO_LAUNCH)) {
-            mavlink_msg_mission_ack_pack(mavSystemId, mavComponentId, &mavSendMsg, mavRecvMsg.sysid, mavRecvMsg.compid, MAV_MISSION_UNSUPPORTED);
+        if ((msg.frame != MAV_FRAME_GLOBAL_RELATIVE_ALT) && !(msg.frame == MAV_FRAME_MISSION && msg.command == MAV_CMD_NAV_RETURN_TO_LAUNCH)) {
+            mavlink_msg_mission_ack_pack(mavSystemId, mavComponentId, &mavSendMsg, mavRecvMsg.sysid, mavRecvMsg.compid, MAV_MISSION_UNSUPPORTED_FRAME);
             mavlinkSendMessage();
             return true;
         }
@@ -615,7 +615,7 @@ static bool handleIncoming_MISSION_ITEM(void)
             wp.action = (msg.command == MAV_CMD_NAV_RETURN_TO_LAUNCH) ? NAV_WP_ACTION_RTH : NAV_WP_ACTION_WAYPOINT;
             wp.lat = (int32_t)(msg.x * 1e7f);
             wp.lon = (int32_t)(msg.y * 1e7f);
-            wp.alt = msg.z * 100;
+            wp.alt = msg.z * 100.0f;
             wp.p1 = 0;
             wp.p2 = 0;
             wp.p3 = 0;
@@ -650,6 +650,57 @@ static bool handleIncoming_MISSION_ITEM(void)
     return false;
 }
 
+static bool handleIncoming_MISSION_REQUEST_LIST(void)
+{
+    mavlink_mission_request_list_t msg;
+    mavlink_msg_mission_request_list_decode(&mavRecvMsg, &msg);
+
+    // Check if this message is for us
+    if (msg.target_system == mavSystemId) {
+        mavlink_msg_mission_count_pack(mavSystemId, mavComponentId, &mavSendMsg, mavRecvMsg.sysid, mavRecvMsg.compid, getWaypointCount());
+        mavlinkSendMessage();
+        return true;
+    }
+
+    return false;
+}
+
+static bool handleIncoming_MISSION_REQUEST(void)
+{
+    mavlink_mission_request_t msg;
+    mavlink_msg_mission_request_decode(&mavRecvMsg, &msg);
+
+    // Check if this message is for us
+    if (msg.target_system == mavSystemId) {
+        int wpCount = getWaypointCount();
+
+        if (msg.seq < wpCount) {
+            navWaypoint_t wp;
+            getWaypoint(msg.seq + 1, &wp);
+
+            mavlink_msg_mission_item_pack(mavSystemId, mavComponentId, &mavSendMsg, mavRecvMsg.sysid, mavRecvMsg.compid,
+                        msg.seq,
+                        wp.action == NAV_WP_ACTION_RTH ? MAV_FRAME_MISSION : MAV_FRAME_GLOBAL_RELATIVE_ALT,
+                        wp.action == NAV_WP_ACTION_RTH ? MAV_CMD_NAV_RETURN_TO_LAUNCH : MAV_CMD_NAV_WAYPOINT,
+                        0,
+                        1,
+                        0, 0, 0, 0,
+                        wp.lat / 1e7f,
+                        wp.lon / 1e7f,
+                        wp.alt / 100.0f);
+            mavlinkSendMessage();
+        }
+        else {
+            mavlink_msg_mission_ack_pack(mavSystemId, mavComponentId, &mavSendMsg, mavRecvMsg.sysid, mavRecvMsg.compid, MAV_MISSION_INVALID_SEQUENCE);
+            mavlinkSendMessage();
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
 static bool processMAVLinkIncomingTelemetry(void)
 {
     while (serialRxBytesWaiting(mavlinkPort) > 0) {
@@ -658,7 +709,7 @@ static bool processMAVLinkIncomingTelemetry(void)
         uint8_t result = mavlink_parse_char(0, c, &mavRecvMsg, &mavRecvStatus);
         if (result == MAVLINK_FRAMING_OK) {
             switch (mavRecvMsg.msgid) {
-                case MAVLINK_MSG_ID_HEARTBEAT:      // MAV ID: 0
+                case MAVLINK_MSG_ID_HEARTBEAT:
                     break;
                 case MAVLINK_MSG_ID_MISSION_CLEAR_ALL:
                     return handleIncoming_MISSION_CLEAR_ALL();
@@ -666,6 +717,10 @@ static bool processMAVLinkIncomingTelemetry(void)
                     return handleIncoming_MISSION_COUNT();
                 case MAVLINK_MSG_ID_MISSION_ITEM:
                     return handleIncoming_MISSION_ITEM();
+                case MAVLINK_MSG_ID_MISSION_REQUEST_LIST:
+                    return handleIncoming_MISSION_REQUEST_LIST();
+                case MAVLINK_MSG_ID_MISSION_REQUEST:
+                    return handleIncoming_MISSION_REQUEST();
                 default:
                     return false;
             }
