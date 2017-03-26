@@ -211,6 +211,12 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .adjustmentFunction = ADJUSTMENT_D_SETPOINT_TRANSITION,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
+	},
+	{
+        .adjustmentFunction = ADJUSTMENT_HORIZON_STRENGTH,
+        .mode = ADJUSTMENT_MODE_SELECT,
+        .data = { .selectConfig = { .switchPositions = 255 }}
+
     }
 };
 
@@ -360,21 +366,31 @@ static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t 
 
 static void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
 {
-    bool applied = false;
+    uint8_t beeps = 0;
+    uint8_t newValue = 0;
 
     switch(adjustmentFunction) {
         case ADJUSTMENT_RATE_PROFILE:
             if (getCurrentControlRateProfileIndex() != position) {
                 changeControlRateProfile(position);
                 blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RATE_PROFILE, position);
-                applied = true;
+                beeps = position + 1;
+            }
+            break;
+        case ADJUSTMENT_HORIZON_STRENGTH:
+            newValue = constrain(position, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+            if(pidProfile->D8[PIDLEVEL] != newValue) {
+                beeps = ((newValue - pidProfile->D8[PIDLEVEL]) / 8) + 1;
+                pidProfile->D8[PIDLEVEL] = newValue;
+                blackboxLogInflightAdjustmentEvent(ADJUSTMENT_HORIZON_STRENGTH, position);
             }
             break;
     }
 
-    if (applied) {
-        beeperConfirmationBeeps(position + 1);
+    if(beeps) {
+        beeperConfirmationBeeps(beeps);
     }
+
 }
 
 #define RESET_FREQUENCY_2HZ (1000 / 2)
