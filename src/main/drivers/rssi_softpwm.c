@@ -30,14 +30,27 @@
 #include "gpio.h"
 #include "nvic.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/rssi_softpwm.h"
 
-#include "config/config_profile.h"
-#include "config/config_master.h"
-//#include "config/feature.h"
-
 // Basic resources
-rssiSoftPwmConfig_t *pRspConfig;
+
+PG_REGISTER_WITH_RESET_TEMPLATE(rssiSoftPwmConfig_t, rssiSoftPwmConfig, PG_RSSI_SOFTPWM_CONFIG, 0);
+
+#ifndef RSSI_SOFTPWM_PIN
+#define RSSI_SOFTPWM_PIN NONE
+#endif
+
+PG_RESET_TEMPLATE(rssiSoftPwmConfig_t, rssiSoftPwmConfig,
+    .ioTag = IO_TAG(RSSI_SOFTPWM_PIN),
+    .min = 0,
+    .minFollow = 0,
+    .monitor = 0,
+);
+
+static const rssiSoftPwmConfig_t *pRspConfig;
 static IO_t rspIO = 0;
 static extiCallbackRec_t rsp_extiCallbackRec;
 
@@ -94,14 +107,14 @@ static void rspExtiHandler(extiCallbackRec_t* cb)
     }
 }
 
-bool rssiSoftPwmInit(rssiSoftPwmConfig_t *pRspConfigToUse)
+void rssiSoftPwmInit(const rssiSoftPwmConfig_t *configToUse)
 {
-    pRspConfig = pRspConfigToUse;
+    pRspConfig = configToUse;
 
     rspIO = IOGetByTag(pRspConfig->ioTag);
 
     if (!rspIO)
-        return false;
+        return;
 
     IOInit(rspIO, OWNER_RSSIPWM, 0);
     IOConfigGPIO(rspIO, IOCFG_IPD);
@@ -117,8 +130,6 @@ bool rssiSoftPwmInit(rssiSoftPwmConfig_t *pRspConfigToUse)
 
     rspInProgress = true;
     EXTIConfig(rspIO, &rsp_extiCallbackRec, NVIC_PRIO_SOFTPWM_EXTI, EXTI_Trigger_Rising);
-
-    return true;
 }
 
 //

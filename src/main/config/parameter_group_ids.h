@@ -104,7 +104,8 @@
 #define PG_VCD_CONFIG 514
 #define PG_VTX_CONFIG 515
 #define PG_SONAR_CONFIG 516
-#define PG_BETAFLIGHT_END 516
+#define PG_RSSI_SOFTPWM_CONFIG 517
+#define PG_BETAFLIGHT_END 517
 
 
 // OSD configuration (subject to change)

@@ -9,7 +9,9 @@ typedef struct rssiSoftPwmConfig_s {
     uint8_t monitor;        // Fire debug: 0 = off, 1 = on
 } rssiSoftPwmConfig_t;
 
-bool rssiSoftPwmInit(rssiSoftPwmConfig_t *pConfigToUse);
+PG_DECLARE(rssiSoftPwmConfig_t, rssiSoftPwmConfig);
+
+void rssiSoftPwmInit(const rssiSoftPwmConfig_t *configToUse);
 void rssiSoftPwmUpdate(uint32_t currentTime);
 bool rssiSoftPwmActive(void);
 uint16_t rssiSoftPwmRead(void);

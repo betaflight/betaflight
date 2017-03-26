@@ -452,20 +452,6 @@ uint8_t getCurrentPidProfileIndex(void)
     return systemConfig()->pidProfileIndex;
 }
 
-#ifdef USE_RSSI_SOFTPWM
-void resetRssiSoftPwmConfig(rssiSoftPwmConfig_t *rssiSoftPwmConfig)
-{
-#ifndef RSSI_SOFTPWM_PIN
-# define RSSI_SOFTPWM_PIN NONE
-#endif
-
-    rssiSoftPwmConfig->ioTag = IO_TAG(RSSI_SOFTPWM_PIN);
-    rssiSoftPwmConfig->min = 0;
-    rssiSoftPwmConfig->minFollow = 1;
-    rssiSoftPwmConfig->monitor = 0;
-}
-#endif
-
 static void setPidProfile(uint8_t pidProfileIndex)
 {
     if (pidProfileIndex < MAX_PROFILE_COUNT) {

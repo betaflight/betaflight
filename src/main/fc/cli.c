@@ -63,6 +63,7 @@ extern uint8_t __config_end;
 #include "drivers/flash.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
+#include "drivers/rssi_softpwm.h"
 #include "drivers/rx_pwm.h"
 #include "drivers/sdcard.h"
 #include "drivers/sensor.h"
@@ -886,9 +887,9 @@ static const clivalue_t valueTable[] = {
     { "displayport_max7456_row_adjust", VAR_INT8| MASTER_VALUE, .config.minmax = { -3, 0 }, PG_DISPLAY_PORT_MAX7456_CONFIG, offsetof(displayPortProfile_t, rowAdjust) },
 #endif
 #ifdef USE_RSSI_SOFTPWM
-    { "rssi_softpwm_min",           VAR_UINT16  | MASTER_VALUE, &rssiSoftPwmConfig()->minFollow, .config.minmax = { 0, 1023 } },
-    { "rssi_softpwm_minFollow",     VAR_UINT16  | MASTER_VALUE, &rssiSoftPwmConfig()->minFollow, .config.minmax = { 0, 1 } },
-    { "rssi_softpwm_monitor",       VAR_UINT8   | MASTER_VALUE, &rssiSoftPwmConfig()->monitor, .config.minmax = { 0, 1 } },
+    { "rssi_softpwm_min",           VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, 1023 }, PG_RSSI_SOFTPWM_CONFIG, offsetof(rssiSoftPwmConfig_t, min) },
+    { "rssi_softpwm_minFollow",     VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, 1 }, PG_RSSI_SOFTPWM_CONFIG, offsetof(rssiSoftPwmConfig_t, minFollow) },
+    { "rssi_softpwm_monitor",       VAR_UINT8   | MASTER_VALUE, .config.minmax = { 0, 1 }, PG_RSSI_SOFTPWM_CONFIG, offsetof(rssiSoftPwmConfig_t, monitor) },
 #endif
 };
 
@@ -3934,7 +3935,7 @@ const cliResourceValue_t resourceTable[] = {
     { OWNER_SERIAL_TX,     PG_SERIAL_PIN_CONFIG, offsetof(serialPinConfig_t, ioTagTx[0]), SERIAL_PORT_MAX_INDEX },
     { OWNER_SERIAL_RX,     PG_SERIAL_PIN_CONFIG, offsetof(serialPinConfig_t, ioTagRx[0]), SERIAL_PORT_MAX_INDEX },
 #ifdef USE_RSSI_SOFTPWM
-    { OWNER_RSSIPWM,       &masterConfig.rssiSoftPwmConfig.ioTag,   0 },
+    { OWNER_RSSIPWM,       PG_RSSI_SOFTPWM_CONFIG, offsetof(rssiSoftPwmConfig_t, ioTag), 0 },
 #endif
 };
 
