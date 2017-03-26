@@ -87,7 +87,7 @@ static void *notchFilter2[3];
 
 #ifdef STM32F10X
 #define GYRO_SYNC_DENOM_DEFAULT 8
-#elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500)  || defined(USE_GYRO_SPI_ICM20689)
+#elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_ICM20601)  || defined(USE_GYRO_SPI_ICM20689)
 #define GYRO_SYNC_DENOM_DEFAULT 1
 #else
 #define GYRO_SYNC_DENOM_DEFAULT 4
@@ -111,7 +111,7 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .gyro_soft_notch_cutoff_2 = 100
 );
 
-#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
+#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20689)
 static const extiConfig_t *selectMPUIntExtiConfig(void)
 {
 #if defined(MPU_INT_EXTI)
@@ -204,8 +204,9 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
 
 #if defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500)
     case GYRO_MPU6500:
-    case GYRO_ICM20608G:
+    case GYRO_ICM20601:
     case GYRO_ICM20602:
+    case GYRO_ICM20608G:
 #ifdef USE_GYRO_SPI_MPU6500
         if (mpu6500GyroDetect(dev) || mpu6500SpiGyroDetect(dev)) {
 #else
@@ -215,11 +216,14 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
             case MPU_9250_SPI:
                 gyroHardware = GYRO_MPU9250;
                 break;
-            case ICM_20608_SPI:
-                gyroHardware = GYRO_ICM20608G;
+            case ICM_20601_SPI:
+                gyroHardware = GYRO_ICM20601;
                 break;
             case ICM_20602_SPI:
                 gyroHardware = GYRO_ICM20602;
+                break;
+            case ICM_20608_SPI:
+                gyroHardware = GYRO_ICM20608G;
                 break;
             default:
                 gyroHardware = GYRO_MPU6500;
@@ -289,7 +293,7 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
 bool gyroInit(void)
 {
     memset(&gyro, 0, sizeof(gyro));
-#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
+#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20689)
     gyroDev0.mpuIntExtiConfig = selectMPUIntExtiConfig();
 #ifdef USE_DUAL_GYRO
     // set cnsPin using GYRO_n_CS_PIN defined in target.h
@@ -308,9 +312,10 @@ bool gyroInit(void)
     switch (gyroHardware) {
     case GYRO_MPU6500:
     case GYRO_MPU9250:
-    case GYRO_ICM20689:
-    case GYRO_ICM20608G:
+    case GYRO_ICM20601:
     case GYRO_ICM20602:
+    case GYRO_ICM20608G:
+    case GYRO_ICM20689:
         // do nothing, as gyro supports 32kHz
         break;
     default:
