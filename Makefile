@@ -101,14 +101,93 @@ HSE_VALUE       ?= 8000000
 # used for turning on features like VCP and SDCARD
 FEATURES        =
 
-SAMPLE_TARGETS  = ALIENFLIGHTF3 ALIENFLIGHTF4 ANYFCF7 BETAFLIGHTF3 BLUEJAYF4 CC3D FURYF4 NAZE REVO SIRINFPV SPARKY SPRACINGF3 SPRACINGF3EVO STM32F3DISCOVERY
-ALT_TARGETS     = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.mk)))))
-OPBL_TARGETS    = $(filter %_OPBL, $(ALT_TARGETS))
+OFFICIAL_TARGETS  = ALIENFLIGHTF3 ALIENFLIGHTF4 ANYFCF7 BETAFLIGHTF3 BLUEJAYF4 CC3D FURYF4 NAZE REVO SIRINFPV SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3NEO STM32F3DISCOVERY
+ALT_TARGETS       = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.mk)))))
+OPBL_TARGETS      = $(filter %_OPBL, $(ALT_TARGETS))
 
 VALID_TARGETS   = $(dir $(wildcard $(ROOT)/src/main/target/*/target.mk))
 VALID_TARGETS  := $(subst /,, $(subst ./src/main/target/,, $(VALID_TARGETS)))
 VALID_TARGETS  := $(VALID_TARGETS) $(ALT_TARGETS)
 VALID_TARGETS  := $(sort $(VALID_TARGETS))
+
+GROUP_1_TARGETS := \
+	AFROMINI \
+	AIORACERF3 \
+	AIR32 \
+	AIRBOTF4 \
+	AIRBOTF4SD \
+	AIRHEROF3 \
+	ALIENFLIGHTF1 \
+	ALIENFLIGHTF3 \
+	ALIENFLIGHTF4 \
+	ALIENFLIGHTNGF7 \
+	ANYFCF7 \
+	BEEBRAIN \
+	BEEROTORF4 \
+	BETAFLIGHTF3 \
+	BLUEJAYF4 \
+	CC3D \
+	CC3D_OPBL \
+
+GROUP_2_TARGETS := \
+	CHEBUZZF3 \
+	CJMCU \
+	CL_RACINGF4 \
+	COLIBRI \
+	COLIBRI_OPBL \
+	COLIBRI_RACE \
+	DOGE \
+	ELLE0 \
+	F4BY \
+	FISHDRONEF4 \
+	FLIP32F3OSD \
+	FURYF3 \
+	FURYF4 \
+	FURYF7 \
+	IMPULSERCF3 \
+	IRCFUSIONF3 \
+	ISHAPEDF3 \
+
+GROUP_3_TARGETS := \
+	KAKUTEF4 \
+	KISSCC \
+	KIWIF4 \
+	LUX_RACE \
+	LUXV2_RACE \
+	MICROSCISKY \
+	MOTOLAB \
+	MULTIFLITEPICO \
+	NAZE \
+	NERO \
+	NUCLEOF7 \
+	OMNIBUS \
+	OMNIBUSF4 \
+	OMNIBUSF4SD \
+	PIKOBLX \
+	PLUMF4 \
+	PODIUMF4 \
+
+GROUP_4_TARGETS := \
+	RCEXPLORERF3 \
+	REVO \
+	REVO_OPBL \
+	REVOLT \
+	REVONANO \
+	RMDO \
+	SINGULARITY \
+	SIRINFPV \
+	SOULF4 \
+	SPARKY \
+	SPARKY2 \
+	SPRACINGF3 \
+	SPRACINGF3EVO \
+	SPRACINGF3MINI \
+	SPRACINGF3NEO \
+	STM32F3DISCOVERY \
+	TINYBEEF3 \
+
+GROUP_OTHER_TARGETS := $(filter-out $(GROUP_1_TARGETS) $(GROUP_2_TARGETS) $(GROUP_3_TARGETS) $(GROUP_4_TARGETS), $(VALID_TARGETS))
+
 
 ifeq ($(filter $(TARGET),$(ALT_TARGETS)), $(TARGET))
 BASE_TARGET    := $(firstword $(subst /,, $(subst ./src/main/target/,, $(dir $(wildcard $(ROOT)/src/main/target/*/$(TARGET).mk)))))
@@ -124,7 +203,7 @@ endif
 # silently ignore if the file is not present. Allows for target specific.
 -include $(ROOT)/src/main/target/$(BASE_TARGET)/target.mk
 
-F4_TARGETS      = $(F405_TARGETS) $(F411_TARGETS)
+F4_TARGETS      = $(F405_TARGETS) $(F411_TARGETS) $(F446_TARGETS)
 F7_TARGETS      = $(F7X2RE_TARGETS) $(F7X5XE_TARGETS) $(F7X5XG_TARGETS) $(F7X5XI_TARGETS) $(F7X6XG_TARGETS)
 
 ifeq ($(filter $(TARGET),$(VALID_TARGETS)),)
@@ -137,7 +216,7 @@ endif
 
 128K_TARGETS  = $(F1_TARGETS)
 256K_TARGETS  = $(F3_TARGETS)
-512K_TARGETS  = $(F411_TARGETS) $(F7X2RE_TARGETS) $(F7X5XE_TARGETS)
+512K_TARGETS  = $(F411_TARGETS) $(F446_TARGETS) $(F7X2RE_TARGETS) $(F7X5XE_TARGETS)
 1024K_TARGETS = $(F405_TARGETS) $(F7X5XG_TARGETS) $(F7X6XG_TARGETS)
 2048K_TARGETS = $(F7X5XI_TARGETS)
 
@@ -263,6 +342,10 @@ ifeq ($(TARGET),$(filter $(TARGET), $(F411_TARGETS)))
 EXCLUDES        += stm32f4xx_fsmc.c
 endif
 
+ifeq ($(TARGET),$(filter $(TARGET), $(F446_TARGETS)))
+EXCLUDES        += stm32f4xx_fsmc.c
+endif
+
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 
 #USB
@@ -319,6 +402,10 @@ else ifeq ($(TARGET),$(filter $(TARGET),$(F405_TARGETS)))
 DEVICE_FLAGS    = -DSTM32F40_41xxx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f405.ld
 STARTUP_SRC     = startup_stm32f40xx.s
+else ifeq ($(TARGET),$(filter $(TARGET),$(F446_TARGETS)))
+DEVICE_FLAGS    = -DSTM32F446xx
+LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f446.ld
+STARTUP_SRC     = startup_stm32f446xx.s
 else
 $(error Unknown MCU for F4 target)
 endif
@@ -582,11 +669,13 @@ COMMON_SRC = \
             drivers/rx_pwm.c \
             drivers/serial.c \
             drivers/serial_uart.c \
+            drivers/serial_softserial.c \
             drivers/sound_beeper.c \
             drivers/stack_check.c \
             drivers/system.c \
             drivers/timer.c \
             fc/config.c \
+            fc/controlrate_profile.c \
             fc/fc_init.c \
             fc/fc_dispatch.c \
             fc/fc_hardfaults.c \
@@ -594,6 +683,7 @@ COMMON_SRC = \
             fc/fc_rc.c \
             fc/fc_msp.c \
             fc/fc_tasks.c \
+            fc/rc_adjustments.c \
             fc/rc_controls.c \
             fc/runtime_config.c \
             fc/cli.c \
@@ -630,14 +720,13 @@ COMMON_SRC = \
             scheduler/scheduler.c \
             sensors/acceleration.c \
             sensors/battery.c \
+            sensors/current.c \
+            sensors/voltage.c \
             sensors/boardalignment.c \
             sensors/compass.c \
             sensors/gyro.c \
+            sensors/gyroanalyse.c \
             sensors/initialisation.c \
-            $(CMSIS_SRC) \
-            $(DEVICE_STDPERIPH_SRC)
-
-HIGHEND_SRC = \
             blackbox/blackbox.c \
             blackbox/blackbox_io.c \
             cms/cms.c \
@@ -654,9 +743,9 @@ HIGHEND_SRC = \
             drivers/light_ws2811strip.c \
             drivers/rssi_softpwm.c \
             drivers/serial_escserial.c \
-            drivers/serial_softserial.c \
             drivers/sonar_hcsr04.c \
             drivers/vtx_common.c \
+            drivers/transponder_ir.c \
             flight/navigation.c \
             io/dashboard.c \
             io/displayport_max7456.c \
@@ -665,6 +754,7 @@ HIGHEND_SRC = \
             io/gps.c \
             io/ledstrip.c \
             io/osd.c \
+            io/transponder_ir.c \
             sensors/sonar.c \
             sensors/barometer.c \
             telemetry/telemetry.c \
@@ -676,10 +766,15 @@ HIGHEND_SRC = \
             telemetry/ltm.c \
             telemetry/mavlink.c \
             telemetry/ibus.c \
+            telemetry/ibus_shared.c \
             sensors/esc_sensor.c \
             io/vtx_string.c \
             io/vtx_smartaudio.c \
-            io/vtx_tramp.c
+            io/vtx_tramp.c \
+            io/vtx.c \
+            $(CMSIS_SRC) \
+            $(DEVICE_STDPERIPH_SRC)
+
 
 SPEED_OPTIMISED_SRC := ""
 SIZE_OPTIMISED_SRC  := ""
@@ -742,6 +837,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             sensors/acceleration.c \
             sensors/boardalignment.c \
             sensors/gyro.c \
+            sensors/gyroanalyse.c \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC) \
             drivers/display_ug2864hsweg01.c \
@@ -778,13 +874,15 @@ VCP_SRC = \
             vcpf4/usbd_desc.c \
             vcpf4/usbd_usr.c \
             vcpf4/usbd_cdc_vcp.c \
-            drivers/serial_usb_vcp.c
+            drivers/serial_usb_vcp.c \
+            drivers/usb_io.c
 else ifeq ($(TARGET),$(filter $(TARGET),$(F7_TARGETS)))
 VCP_SRC = \
             vcp_hal/usbd_desc.c \
             vcp_hal/usbd_conf.c \
             vcp_hal/usbd_cdc_interface.c \
-            drivers/serial_usb_vcp.c
+            drivers/serial_usb_vcp.c \
+            drivers/usb_io.c
 else
 VCP_SRC = \
             vcp/hw_config.c \
@@ -804,7 +902,7 @@ STM32F10x_COMMON_SRC = \
             drivers/dma.c \
             drivers/gpio_stm32f10x.c \
             drivers/inverter.c \
-            drivers/light_ws2811strip_stm32f10x.c \
+            drivers/light_ws2811strip_stdperiph.c \
             drivers/serial_uart_stm32f10x.c \
             drivers/system_stm32f10x.c \
             drivers/timer_stm32f10x.c
@@ -815,8 +913,8 @@ STM32F30x_COMMON_SRC = \
             drivers/bus_i2c_stm32f30x.c \
             drivers/dma.c \
             drivers/gpio_stm32f30x.c \
-            drivers/light_ws2811strip_stm32f30x.c \
-            drivers/pwm_output_stm32f3xx.c \
+            drivers/light_ws2811strip_stdperiph.c \
+            drivers/pwm_output_dshot.c \
             drivers/serial_uart_stm32f30x.c \
             drivers/system_stm32f30x.c \
             drivers/timer_stm32f30x.c
@@ -829,8 +927,8 @@ STM32F4xx_COMMON_SRC = \
             drivers/dma_stm32f4xx.c \
             drivers/gpio_stm32f4xx.c \
             drivers/inverter.c \
-            drivers/light_ws2811strip_stm32f4xx.c \
-            drivers/pwm_output_stm32f4xx.c \
+            drivers/light_ws2811strip_stdperiph.c \
+            drivers/pwm_output_dshot.c \
             drivers/serial_uart_stm32f4xx.c \
             drivers/system_stm32f4xx.c \
             drivers/timer_stm32f4xx.c
@@ -858,35 +956,49 @@ F7EXCLUDES = drivers/bus_spi.c \
 
 # check if target.mk supplied
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
-TARGET_SRC := $(STARTUP_SRC) $(STM32F4xx_COMMON_SRC) $(TARGET_SRC)
+SRC := $(STARTUP_SRC) $(STM32F4xx_COMMON_SRC) $(TARGET_SRC) $(VARIANT_SRC)
 else ifeq ($(TARGET),$(filter $(TARGET),$(F7_TARGETS)))
-TARGET_SRC := $(STARTUP_SRC) $(STM32F7xx_COMMON_SRC) $(TARGET_SRC)
+SRC := $(STARTUP_SRC) $(STM32F7xx_COMMON_SRC) $(TARGET_SRC) $(VARIANT_SRC)
 else ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
-TARGET_SRC := $(STARTUP_SRC) $(STM32F30x_COMMON_SRC) $(TARGET_SRC)
+SRC := $(STARTUP_SRC) $(STM32F30x_COMMON_SRC) $(TARGET_SRC) $(VARIANT_SRC)
 else ifeq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
-TARGET_SRC := $(STARTUP_SRC) $(STM32F10x_COMMON_SRC) $(TARGET_SRC)
+SRC := $(STARTUP_SRC) $(STM32F10x_COMMON_SRC) $(TARGET_SRC) $(VARIANT_SRC)
 endif
 
+ifneq ($(filter $(TARGET),$(F4_TARGETS) $(F7_TARGETS)),)
+DSPLIB := $(ROOT)/lib/main/DSP_Lib
+DEVICE_FLAGS += -DARM_MATH_CM4 -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE
+
+INCLUDE_DIRS += $(DSPLIB)/Include
+
+SRC += $(DSPLIB)/Source/TransformFunctions/arm_rfft_fast_f32.c
+SRC += $(DSPLIB)/Source/TransformFunctions/arm_cfft_f32.c
+SRC += $(DSPLIB)/Source/TransformFunctions/arm_rfft_fast_init_f32.c
+SRC += $(DSPLIB)/Source/TransformFunctions/arm_cfft_radix8_f32.c
+SRC += $(DSPLIB)/Source/CommonTables/arm_common_tables.c
+
+SRC += $(DSPLIB)/Source/ComplexMathFunctions/arm_cmplx_mag_f32.c
+SRC += $(DSPLIB)/Source/StatisticsFunctions/arm_max_f32.c
+
+SRC += $(wildcard $(DSPLIB)/Source/*/*.S)
+endif
+
+
 ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)
-TARGET_SRC += \
+SRC += \
             drivers/flash_m25p16.c \
             io/flashfs.c
 endif
 
-ifeq ($(TARGET),$(filter $(TARGET),$(F7_TARGETS) $(F4_TARGETS) $(F3_TARGETS)))
-TARGET_SRC += $(HIGHEND_SRC)
-else ifneq ($(filter HIGHEND,$(FEATURES)),)
-TARGET_SRC += $(HIGHEND_SRC)
-endif
+SRC += $(COMMON_SRC)
 
-TARGET_SRC += $(COMMON_SRC)
 #excludes
 ifeq ($(TARGET),$(filter $(TARGET),$(F7_TARGETS)))
-TARGET_SRC   := $(filter-out ${F7EXCLUDES}, $(TARGET_SRC))
+SRC   := $(filter-out ${F7EXCLUDES}, $(SRC))
 endif
 
 ifneq ($(filter SDCARD,$(FEATURES)),)
-TARGET_SRC += \
+SRC += \
             drivers/sdcard.c \
             drivers/sdcard_standard.c \
             io/asyncfatfs/asyncfatfs.c \
@@ -894,7 +1006,7 @@ TARGET_SRC += \
 endif
 
 ifneq ($(filter VCP,$(FEATURES)),)
-TARGET_SRC += $(VCP_SRC)
+SRC += $(VCP_SRC)
 endif
 # end target specific make file checks
 
@@ -1015,8 +1127,8 @@ CPPCHECK        = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
 TARGET_BIN      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).bin
 TARGET_HEX      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).hex
 TARGET_ELF      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).elf
-TARGET_OBJS     = $(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(TARGET_SRC))))
-TARGET_DEPS     = $(addsuffix .d,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(TARGET_SRC))))
+TARGET_OBJS     = $(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(SRC))))
+TARGET_DEPS     = $(addsuffix .d,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(SRC))))
 TARGET_MAP      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 
 
@@ -1025,7 +1137,7 @@ CLEAN_ARTIFACTS += $(TARGET_HEX)
 CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
 
 # Make sure build date and revision is updated on every incremental build
-$(OBJECT_DIR)/$(TARGET)/build/version.o : $(TARGET_SRC)
+$(OBJECT_DIR)/$(TARGET)/build/version.o : $(SRC)
 
 # List of buildable ELF files and their object dependencies.
 # It would be nice to compute these lists, but that seems to be just beyond make.
@@ -1071,16 +1183,33 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 	$(V1) echo "%% $(notdir $<)" "$(STDOUT)"
 	$(V1) $(CROSS_CC) -c -o $@ $(ASFLAGS) $<
 
-## sample            : Build all sample (travis) targets
-sample: $(SAMPLE_TARGETS)
 
 ## all               : Build all valid targets
 all: $(VALID_TARGETS)
 
+## official          : Build all official (travis) targets
+official: $(OFFICIAL_TARGETS)
+
+## targets-group-1   : build some targets
+targets-group-1: $(GROUP_1_TARGETS)
+
+## targets-group-2   : build some targets
+targets-group-2: $(GROUP_2_TARGETS)
+
+## targets-group-3   : build some targets
+targets-group-3: $(GROUP_3_TARGETS)
+
+## targets-group-3   : build some targets
+targets-group-4: $(GROUP_4_TARGETS)
+
+## targets-group-rest: build the rest of the targets (not listed in group 1, 2 or 3)
+targets-group-rest: $(GROUP_OTHER_TARGETS)
+
+
 $(VALID_TARGETS):
 		$(V0) echo "" && \
 		echo "Building $@" && \
-		$(MAKE) binary hex TARGET=$@ && \
+		time $(MAKE) binary hex TARGET=$@ && \
 		echo "Building $@ succeeded."
 
 
@@ -1158,6 +1287,10 @@ $(TOOLS_DIR):
 $(BUILD_DIR):
 	mkdir -p $@
 
+## version           : print firmware version
+version:
+	@echo $(FC_VER)
+
 ## help              : print this help message and exit
 help: Makefile make/tools.mk
 	$(V0) @echo ""
@@ -1174,9 +1307,14 @@ help: Makefile make/tools.mk
 
 ## targets           : print a list of all valid target platforms (for consumption by scripts)
 targets:
-	$(V0) @echo "Valid targets: $(VALID_TARGETS)"
-	$(V0) @echo "Target:        $(TARGET)"
-	$(V0) @echo "Base target:   $(BASE_TARGET)"
+	$(V0) @echo "Valid targets:      $(VALID_TARGETS)"
+	$(V0) @echo "Target:             $(TARGET)"
+	$(V0) @echo "Base target:        $(BASE_TARGET)"
+	$(V0) @echo "targets-group-1:    $(GROUP_1_TARGETS)"
+	$(V0) @echo "targets-group-2:    $(GROUP_2_TARGETS)"
+	$(V0) @echo "targets-group-3:    $(GROUP_3_TARGETS)"
+	$(V0) @echo "targets-group-4:    $(GROUP_4_TARGETS)"
+	$(V0) @echo "targets-group-rest: $(GROUP_OTHER_TARGETS)"
 
 ## test              : run the cleanflight test suite
 ## junittest         : run the cleanflight test suite, producing Junit XML result files.

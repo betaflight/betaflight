@@ -50,47 +50,48 @@ static void mpu9250AccAndGyroInit(gyroDev_t *gyro);
 
 static bool mpuSpi9250InitDone = false;
 
-static IO_t mpuSpi9250CsPin = IO_NONE;
+#define DISABLE_MPU9250(spiCsnPin)       IOHi(spiCsnPin)
+#define ENABLE_MPU9250(spiCsnPin)        IOLo(spiCsnPin)
 
-#define DISABLE_MPU9250       IOHi(mpuSpi9250CsPin)
-#define ENABLE_MPU9250        IOLo(mpuSpi9250CsPin)
-
-void mpu9250ResetGyro(void)
+void mpu9250SpiResetGyro(void)
 {
     // Device Reset
-    mpu9250WriteRegister(MPU_RA_PWR_MGMT_1, MPU9250_BIT_RESET);
+#ifdef MPU9250_CS_PIN
+    busDevice_t bus = { .spi = { .csnPin = IOGetByTag(IO_TAG(MPU9250_CS_PIN)) } };
+    mpu9250SpiWriteRegister(&bus, MPU_RA_PWR_MGMT_1, MPU9250_BIT_RESET);
     delay(150);
+#endif
 }
 
-bool mpu9250WriteRegister(uint8_t reg, uint8_t data)
+bool mpu9250SpiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
 {
-    ENABLE_MPU9250;
+    ENABLE_MPU9250(bus->spi.csnPin);
     delayMicroseconds(1);
     spiTransferByte(MPU9250_SPI_INSTANCE, reg);
     spiTransferByte(MPU9250_SPI_INSTANCE, data);
-    DISABLE_MPU9250;
+    DISABLE_MPU9250(bus->spi.csnPin);
     delayMicroseconds(1);
 
     return true;
 }
 
-bool mpu9250ReadRegister(uint8_t reg, uint8_t length, uint8_t *data)
+bool mpu9250SpiReadRegister(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data)
 {
-    ENABLE_MPU9250;
+    ENABLE_MPU9250(bus->spi.csnPin);
     spiTransferByte(MPU9250_SPI_INSTANCE, reg | 0x80); // read transaction
     spiTransfer(MPU9250_SPI_INSTANCE, data, NULL, length);
-    DISABLE_MPU9250;
+    DISABLE_MPU9250(bus->spi.csnPin);
 
     return true;
 }
 
-bool mpu9250SlowReadRegister(uint8_t reg, uint8_t length, uint8_t *data)
+bool mpu9250SpiSlowReadRegister(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data)
 {
-    ENABLE_MPU9250;
+    ENABLE_MPU9250(bus->spi.csnPin);
     delayMicroseconds(1);
     spiTransferByte(MPU9250_SPI_INSTANCE, reg | 0x80); // read transaction
     spiTransfer(MPU9250_SPI_INSTANCE, data, NULL, length);
-    DISABLE_MPU9250;
+    DISABLE_MPU9250(bus->spi.csnPin);
     delayMicroseconds(1);
 
     return true;
@@ -119,21 +120,21 @@ void mpu9250SpiAccInit(accDev_t *acc)
     acc->acc_1G = 512 * 8;
 }
 
-bool verifympu9250WriteRegister(uint8_t reg, uint8_t data)
+bool verifympu9250SpiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
 {
     uint8_t in;
     uint8_t attemptsRemaining = 20;
 
-    mpu9250WriteRegister(reg, data);
+    mpu9250SpiWriteRegister(bus, reg, data);
     delayMicroseconds(100);
 
     do {
-        mpu9250SlowReadRegister(reg, 1, &in);
+        mpu9250SpiSlowReadRegister(bus, reg, 1, &in);
         if (in == data) {
             return true;
         } else {
             debug[3]++;
-            mpu9250WriteRegister(reg, data);
+            mpu9250SpiWriteRegister(bus, reg, data);
             delayMicroseconds(100);
         }
     } while (attemptsRemaining--);
@@ -148,30 +149,30 @@ static void mpu9250AccAndGyroInit(gyroDev_t *gyro) {
 
     spiSetDivisor(MPU9250_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON); //low speed for writing to slow registers
 
-    mpu9250WriteRegister(MPU_RA_PWR_MGMT_1, MPU9250_BIT_RESET);
+    mpu9250SpiWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, MPU9250_BIT_RESET);
     delay(50);
 
-    verifympu9250WriteRegister(MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
+    verifympu9250SpiWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
 
     //Fchoice_b defaults to 00 which makes fchoice 11
     const uint8_t raGyroConfigData = gyro->gyroRateKHz > GYRO_RATE_8_kHz ? (INV_FSR_2000DPS << 3 | FCB_3600_32) : (INV_FSR_2000DPS << 3 | FCB_DISABLED);
-    verifympu9250WriteRegister(MPU_RA_GYRO_CONFIG, raGyroConfigData);
+    verifympu9250SpiWriteRegister(&gyro->bus, MPU_RA_GYRO_CONFIG, raGyroConfigData);
 
     if (gyro->lpf == 4) {
-        verifympu9250WriteRegister(MPU_RA_CONFIG, 1); //1KHz, 184DLPF
+        verifympu9250SpiWriteRegister(&gyro->bus, MPU_RA_CONFIG, 1); //1KHz, 184DLPF
     } else if (gyro->lpf < 4) {
-        verifympu9250WriteRegister(MPU_RA_CONFIG, 7); //8KHz, 3600DLPF
+        verifympu9250SpiWriteRegister(&gyro->bus, MPU_RA_CONFIG, 7); //8KHz, 3600DLPF
     } else if (gyro->lpf > 4) {
-        verifympu9250WriteRegister(MPU_RA_CONFIG, 0); //8KHz, 250DLPF
+        verifympu9250SpiWriteRegister(&gyro->bus, MPU_RA_CONFIG, 0); //8KHz, 250DLPF
     }
 
-    verifympu9250WriteRegister(MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops(gyro));
+    verifympu9250SpiWriteRegister(&gyro->bus, MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops(gyro));
 
-    verifympu9250WriteRegister(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
-    verifympu9250WriteRegister(MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
+    verifympu9250SpiWriteRegister(&gyro->bus, MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
+    verifympu9250SpiWriteRegister(&gyro->bus, MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
 
 #if defined(USE_MPU_DATA_READY_SIGNAL)
-    verifympu9250WriteRegister(MPU_RA_INT_ENABLE, 0x01); //this resets register MPU_RA_PWR_MGMT_1 and won't read back correctly.
+    verifympu9250SpiWriteRegister(&gyro->bus, MPU_RA_INT_ENABLE, 0x01); //this resets register MPU_RA_PWR_MGMT_1 and won't read back correctly.
 #endif
 
     spiSetDivisor(MPU9250_SPI_INSTANCE, SPI_CLOCK_FAST);
@@ -179,26 +180,22 @@ static void mpu9250AccAndGyroInit(gyroDev_t *gyro) {
     mpuSpi9250InitDone = true; //init done
 }
 
-bool mpu9250SpiDetect(void)
+bool mpu9250SpiDetect(const busDevice_t *bus)
 {
     uint8_t in;
     uint8_t attemptsRemaining = 20;
 
-    /* not the best place for this - should really have an init method */
-#ifdef MPU9250_CS_PIN
-    mpuSpi9250CsPin = IOGetByTag(IO_TAG(MPU9250_CS_PIN));
-#endif
-    IOInit(mpuSpi9250CsPin, OWNER_MPU_CS, 0);
-    IOConfigGPIO(mpuSpi9250CsPin, SPI_IO_CS_CFG);
+    IOInit(bus->spi.csnPin, OWNER_MPU_CS, 0);
+    IOConfigGPIO(bus->spi.csnPin, SPI_IO_CS_CFG);
 
     spiSetDivisor(MPU9250_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON); //low speed
-    mpu9250WriteRegister(MPU_RA_PWR_MGMT_1, MPU9250_BIT_RESET);
+    mpu9250SpiWriteRegister(bus, MPU_RA_PWR_MGMT_1, MPU9250_BIT_RESET);
 
     do {
         delay(150);
 
-        mpu9250ReadRegister(MPU_RA_WHO_AM_I, 1, &in);
-        if (in == MPU9250_WHO_AM_I_CONST) {
+        mpu9250SpiReadRegister(bus, MPU_RA_WHO_AM_I, 1, &in);
+        if (in == MPU9250_WHO_AM_I_CONST || in == MPU9255_WHO_AM_I_CONST) {
             break;
         }
         if (!attemptsRemaining) {

@@ -19,10 +19,11 @@
 
 #include "config/parameter_group.h"
 #include "drivers/io_types.h"
-
-#define MAX_SUPPORTED_MOTORS 12
+#include "drivers/pwm_output.h"
 
 #define QUAD_MOTOR_COUNT 4
+#define BRUSHED_MOTORS_PWM_RATE 16000
+#define BRUSHLESS_MOTORS_PWM_RATE 480
 
 /*
   DshotSettingRequest (KISS24). Spin direction, 3d and save Settings reqire 10 requests.. and the TLM Byte must always be high if 1-47 are used to send settings
@@ -38,8 +39,8 @@
 
   3D Mode:
   0 = stop
-  48   (low) - 1047 (high) -> positive direction
-  1048 (low) - 2047 (high) -> negative direction
+  48   (low) - 1047 (high) -> negative direction
+  1048 (low) - 2047 (high) -> positive direction
 */
 
 // Digital protocol has fixed values
@@ -104,32 +105,15 @@ typedef struct mixerConfig_s {
 
 PG_DECLARE(mixerConfig_t, mixerConfig);
 
-typedef struct flight3DConfig_s {
-    uint16_t deadband3d_low;                // min 3d value
-    uint16_t deadband3d_high;               // max 3d value
-    uint16_t neutral3d;                     // center 3d value
-    uint16_t deadband3d_throttle;           // default throttle deadband from MIDRC
-} flight3DConfig_t;
-
-PG_DECLARE(flight3DConfig_t, flight3DConfig);
-
 typedef struct motorConfig_s {
+    motorDevConfig_t dev;
+    float    digitalIdleOffsetPercent;
     uint16_t minthrottle;                   // Set the minimum throttle command sent to the ESC (Electronic Speed Controller). This is the minimum value that allow motors to run at a idle speed.
     uint16_t maxthrottle;                   // This is the maximum value for the ESCs at full power this value can be increased up to 2000
     uint16_t mincommand;                    // This is the value for the ESCs when they are not armed. In some cases, this value must be lowered down to 900 for some specific ESCs
-    uint16_t motorPwmRate;                  // The update rate of motor outputs (50-498Hz)
-    uint8_t  motorPwmProtocol;              // Pwm Protocol
-    uint8_t  motorPwmInversion;             // Active-High vs Active-Low. Useful for brushed FCs converted for brushless operation
-    uint8_t  useUnsyncedPwm;
-    float    digitalIdleOffsetPercent;
-    ioTag_t  ioTags[MAX_SUPPORTED_MOTORS];
 } motorConfig_t;
 
 PG_DECLARE(motorConfig_t, motorConfig);
-
-typedef struct airplaneConfig_s {
-    int8_t fixedwing_althold_dir;           // +1 or -1 for pitch/althold gain. later check if need more than just sign
-} airplaneConfig_t;
 
 #define CHANNEL_FORWARDING_DISABLED (uint8_t)0xFF
 
@@ -141,15 +125,8 @@ struct rxConfig_s;
 uint8_t getMotorCount();
 float getMotorMixRange();
 
-void mixerUseConfigs(
-        flight3DConfig_t *flight3DConfigToUse,
-        motorConfig_t *motorConfigToUse,
-        mixerConfig_t *mixerConfigToUse,
-        airplaneConfig_t *airplaneConfigToUse,
-        struct rxConfig_s *rxConfigToUse);
-
 void mixerLoadMix(int index, motorMixer_t *customMixers);
-void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers);
+void mixerInit(mixerMode_e mixerMode);
 
 void mixerConfigureOutput(void);
 

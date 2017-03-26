@@ -21,8 +21,12 @@
 #define BST_DEVICE_NAME         "COLIBRI RACE"
 #define BST_DEVICE_NAME_LENGTH  12
 #define TARGET_CONFIG
+#define TARGET_VALIDATECONFIG
+#define TARGET_BUS_INIT
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
+
+#undef USE_RX_MSP // never used.
 
 #define LED0                    PC15
 #define LED1                    PC14
@@ -74,12 +78,16 @@
 #define USE_MAG_AK8963
 #define USE_MAG_AK8975
 
-#define USB_IO
-
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
+/* USE_SOFTSERIALx has a conflict with USE_BST that prevents FC from being recognized from configurator
+ Drop USE_SOFTSERIALx until resolution is provided.
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+#define SERIAL_PORT_COUNT       6
+*/
 #define SERIAL_PORT_COUNT       4
 
 #define USE_ESCSERIAL
@@ -95,13 +103,13 @@
 #define UART3_RX_PIN            PB11
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_2)
-
+#define USE_I2C_DEVICE_2
+#define I2C_DEVICE              (I2CDEV_2)
 #define I2C2_SCL_PIN            PA9
 #define I2C2_SDA_PIN            PA10
 
 #define USE_BST
-#define BST_DEVICE (BSTDEV_1)
+#define BST_DEVICE              (BSTDEV_1)
 /* Configure the CRC peripheral to use the polynomial x8 + x7 + x6 + x4 + x2 + 1 */
 #define BST_CRC_POLYNOM         0xD5
 
@@ -112,9 +120,7 @@
 #define RSSI_ADC_PIN            PC2
 #define EXTERNAL1_ADC_PIN       PC3
 
-#define LED_STRIP
-
-#define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_FAILSAFE | FEATURE_AIRMODE | FEATURE_LED_STRIP)
+#define DEFAULT_FEATURES        (FEATURE_FAILSAFE | FEATURE_AIRMODE | FEATURE_LED_STRIP)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART2

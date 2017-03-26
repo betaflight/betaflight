@@ -18,8 +18,6 @@
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "YPF4"
 
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
-
 #define USBD_PRODUCT_STRING     "YupiF4"
 
 #define LED0                    PB6
@@ -29,8 +27,7 @@
 #define BEEPER                  PC9
 //#define BEEPER_INVERTED
 
-#define INVERTER_PIN_USART6     PB15
-
+#define INVERTER_PIN_UART6      PB15
 
 // Gyro interrupt
 #define USE_EXTI
@@ -81,7 +78,10 @@
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
-#define SERIAL_PORT_COUNT       4 // VCP, UART1, UART3, UART6
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT       6 // VCP, UART1, UART3, UART6, SOFTSERIAL x 2
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
@@ -127,9 +127,18 @@
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
 
+// OSD
+#define OSD
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE    SPI1
+#define MAX7456_SPI_CS_PIN      PA14
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
+#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
+
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_1) // SCL PB8 - SDA PB9
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
 
 // ADC inputs
 #define BOARD_HAS_VOLTAGE_DIVIDER
@@ -138,13 +147,13 @@
 #define RSSI_ADC_GPIO_PIN       PC0
 
 #define USE_ESC_TELEMETRY
-#define LED_STRIP
 
 // Default configuration
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define DEFAULT_FEATURES        FEATURE_BLACKBOX
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
+#define SERIALRX_UART           SERIAL_PORT_USART6
 
 // Target IO and timers
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE

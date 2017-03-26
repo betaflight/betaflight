@@ -38,6 +38,10 @@ typedef enum {
     PGR_SIZE_PROFILE_FLAG = 0x8000  // start using flags from the top bit down
 } pgRegistryInternal_e;
 
+enum {
+    PG_PROFILE_COUNT = 3
+};
+
 // function that resets a single parameter group instance
 typedef void (pgResetFunc)(void * /* base */, int /* size */);
 
@@ -53,7 +57,7 @@ typedef struct pgRegistry_s {
 } pgRegistry_t;
 
 static inline uint16_t pgN(const pgRegistry_t* reg) {return reg->pgn & PGR_PGN_MASK;}
-static inline uint8_t pgVersion(const pgRegistry_t* reg) {return reg->pgn >> 12;}
+static inline uint8_t pgVersion(const pgRegistry_t* reg) {return (uint8_t)(reg->pgn >> 12);}
 static inline uint16_t pgSize(const pgRegistry_t* reg) {return reg->size & PGR_SIZE_MASK;}
 static inline uint16_t pgIsSystem(const pgRegistry_t* reg) {return (reg->size & PGR_SIZE_PROFILE_FLAG) == 0;}
 static inline uint16_t pgIsProfile(const pgRegistry_t* reg) {return (reg->size & PGR_SIZE_PROFILE_FLAG) == PGR_SIZE_PROFILE_FLAG;}
@@ -100,7 +104,6 @@ extern const uint8_t __pg_resetdata_end[];
     } while(0)                                                          \
     /**/
 
-#ifdef USE_PARAMETER_GROUPS
 // Declare system config
 #define PG_DECLARE(_type, _name)                                        \
     extern _type _name ## _System;                                      \
@@ -126,19 +129,6 @@ extern const uint8_t __pg_resetdata_end[];
     struct _dummy                                                       \
     /**/
 
-#else
-
-#define PG_DECLARE(_type, _name)                                        \
-    extern _type _name ## _System
-
-#define PG_DECLARE_ARRAY(_type, _size, _name)                           \
-    extern _type _name ## _SystemArray[_size]
-
-// Declare profile config
-#define PG_DECLARE_PROFILE(_type, _name)                                \
-    extern _type *_name ## _ProfileCurrent
-
-#endif // USE_PARAMETER_GROUPS
 
 // Register system config
 #define PG_REGISTER_I(_type, _name, _pgn, _version, _reset)             \
@@ -208,7 +198,7 @@ extern const uint8_t __pg_resetdata_end[];
 
 // register profile config
 #define PG_REGISTER_PROFILE_I(_type, _name, _pgn, _version, _reset)     \
-    STATIC_UNIT_TESTED _type _name ## _Storage[MAX_PROFILE_COUNT];      \
+    STATIC_UNIT_TESTED _type _name ## _Storage[PG_PROFILE_COUNT];       \
     _PG_PROFILE_CURRENT_DECL(_type, _name)                              \
     extern const pgRegistry_t _name ## _Registry;                       \
     const pgRegistry_t _name ## _Registry PG_REGISTER_ATTRIBUTES = {    \

@@ -28,21 +28,25 @@
 #include "common/utils.h"
 #include "common/filter.h"
 
+#include "config/config_profile.h"
+#include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "fc/config.h"
+#include "fc/controlrate_profile.h"
+#include "fc/fc_core.h"
+#include "fc/fc_rc.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
-#include "fc/fc_rc.h"
-#include "fc/fc_core.h"
 
 #include "rx/rx.h"
 
 #include "scheduler/scheduler.h"
 
+#include "flight/failsafe.h"
+#include "flight/imu.h"
 #include "flight/pid.h"
-
-#include "config/config_profile.h"
-#include "config/config_master.h"
-#include "config/feature.h"
 
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
@@ -63,13 +67,39 @@ float getThrottlePIDAttenuation(void) {
     return throttlePIDAttenuation;
 }
 
+#define THROTTLE_LOOKUP_LENGTH 12
+static int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];    // lookup table for expo & mid THROTTLE
+
+void generateThrottleCurve(void)
+{
+    uint8_t i;
+
+    for (i = 0; i < THROTTLE_LOOKUP_LENGTH; i++) {
+        int16_t tmp = 10 * i - currentControlRateProfile->thrMid8;
+        uint8_t y = 1;
+        if (tmp > 0)
+            y = 100 - currentControlRateProfile->thrMid8;
+        if (tmp < 0)
+            y = currentControlRateProfile->thrMid8;
+        lookupThrottleRC[i] = 10 * currentControlRateProfile->thrMid8 + tmp * (100 - currentControlRateProfile->thrExpo8 + (int32_t) currentControlRateProfile->thrExpo8 * (tmp * tmp) / (y * y)) / 10;
+        lookupThrottleRC[i] = PWM_RANGE_MIN + (PWM_RANGE_MAX - PWM_RANGE_MIN) * lookupThrottleRC[i] / 1000; // [MINTHROTTLE;MAXTHROTTLE]
+    }
+}
+
+int16_t rcLookupThrottle(int32_t tmp)
+{
+    const int32_t tmp2 = tmp / 100;
+    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
+    return lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;
+}
+
 #define SETPOINT_RATE_LIMIT 1998.0f
 #define RC_RATE_INCREMENTAL 14.54f
 
-void calculateSetpointRate(int axis, int16_t rc) {
-    float angleRate, rcRate, rcSuperfactor, rcCommandf;
+static void calculateSetpointRate(int axis)
+{
     uint8_t rcExpo;
-
+    float rcRate;
     if (axis != YAW) {
         rcExpo = currentControlRateProfile->rcExpo8;
         rcRate = currentControlRateProfile->rcRate8 / 100.0f;
@@ -77,21 +107,23 @@ void calculateSetpointRate(int axis, int16_t rc) {
         rcExpo = currentControlRateProfile->rcYawExpo8;
         rcRate = currentControlRateProfile->rcYawRate8 / 100.0f;
     }
-
-    if (rcRate > 2.0f) rcRate = rcRate + (RC_RATE_INCREMENTAL * (rcRate - 2.0f));
-    rcCommandf = rc / 500.0f;
-    rcDeflection[axis] = rcCommandf;
-    rcDeflectionAbs[axis] = ABS(rcCommandf);
-
-    if (rcExpo) {
-        float expof = rcExpo / 100.0f;
-        rcCommandf = rcCommandf * power3(rcDeflectionAbs[axis]) * expof + rcCommandf * (1-expof);
+    if (rcRate > 2.0f) {
+        rcRate += RC_RATE_INCREMENTAL * (rcRate - 2.0f);
     }
 
-    angleRate = 200.0f * rcRate * rcCommandf;
+    float rcCommandf = rcCommand[axis] / 500.0f;
+    rcDeflection[axis] = rcCommandf;
+    const float rcCommandfAbs = ABS(rcCommandf);
+    rcDeflectionAbs[axis] = rcCommandfAbs;
 
+    if (rcExpo) {
+        const float expof = rcExpo / 100.0f;
+        rcCommandf = rcCommandf * power3(rcCommandfAbs) * expof + rcCommandf * (1-expof);
+    }
+
+    float angleRate = 200.0f * rcRate * rcCommandf;
     if (currentControlRateProfile->rates[axis]) {
-        rcSuperfactor = 1.0f / (constrainf(1.0f - (ABS(rcCommandf) * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
+        const float rcSuperfactor = 1.0f / (constrainf(1.0f - (rcCommandfAbs * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
         angleRate *= rcSuperfactor;
     }
 
@@ -100,7 +132,7 @@ void calculateSetpointRate(int axis, int16_t rc) {
     setpointRate[axis] = constrainf(angleRate, -SETPOINT_RATE_LIMIT, SETPOINT_RATE_LIMIT); // Rate limit protection (deg/sec)
 }
 
-void scaleRcCommandToFpvCamAngle(void) {
+static void scaleRcCommandToFpvCamAngle(void) {
     //recalculate sin/cos only when rxConfig()->fpvCamAngleDegrees changed
     static uint8_t lastFpvCamAngleDegrees = 0;
     static float cosFactor = 1.0;
@@ -121,12 +153,12 @@ void scaleRcCommandToFpvCamAngle(void) {
 #define THROTTLE_BUFFER_MAX 20
 #define THROTTLE_DELTA_MS 100
 
- void checkForThrottleErrorResetState(uint16_t rxRefreshRate) {
+ static void checkForThrottleErrorResetState(uint16_t rxRefreshRate) {
     static int index;
     static int16_t rcCommandThrottlePrevious[THROTTLE_BUFFER_MAX];
     const int rxRefreshRateMs = rxRefreshRate / 1000;
     const int indexMax = constrain(THROTTLE_DELTA_MS / rxRefreshRateMs, 1, THROTTLE_BUFFER_MAX);
-    const int16_t throttleVelocityThreshold = (feature(FEATURE_3D)) ? currentProfile->pidProfile.itermThrottleThreshold / 2 : currentProfile->pidProfile.itermThrottleThreshold;
+    const int16_t throttleVelocityThreshold = (feature(FEATURE_3D)) ? currentPidProfile->itermThrottleThreshold / 2 : currentPidProfile->itermThrottleThreshold;
 
     rcCommandThrottlePrevious[index++] = rcCommand[THROTTLE];
     if (index >= indexMax)
@@ -135,7 +167,7 @@ void scaleRcCommandToFpvCamAngle(void) {
     const int16_t rcCommandSpeed = rcCommand[THROTTLE] - rcCommandThrottlePrevious[index];
 
     if(ABS(rcCommandSpeed) > throttleVelocityThreshold)
-        pidSetItermAccelerator(currentProfile->pidProfile.itermAcceleratorGain);
+        pidSetItermAccelerator(currentPidProfile->itermAcceleratorGain);
     else
         pidSetItermAccelerator(1.0f);
 }
@@ -153,7 +185,8 @@ void processRcCommand(void)
 
     if (isRXDataNew) {
         currentRxRefreshRate = constrain(getTaskDeltaTime(TASK_RX),1000,20000);
-        checkForThrottleErrorResetState(currentRxRefreshRate);
+        if (currentPidProfile->itermAcceleratorGain > 1.0f)
+            checkForThrottleErrorResetState(currentRxRefreshRate);
     }
 
     if (rxConfig()->rcInterpolation || flightModeFlags) {
@@ -208,7 +241,7 @@ void processRcCommand(void)
             readyToCalculateRateAxisCnt = FD_YAW;
 
         for (int axis = 0; axis <= readyToCalculateRateAxisCnt; axis++)
-            calculateSetpointRate(axis, rcCommand[axis]);
+            calculateSetpointRate(axis);
 
         // Scaling of AngleRate to camera angle (Mixing Roll and Yaw)
         if (rxConfig()->fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE))
@@ -251,7 +284,7 @@ void updateRcCommands(void)
             } else {
                 tmp = 0;
             }
-            rcCommand[axis] = tmp * -rcControlsConfig()->yaw_control_direction;
+            rcCommand[axis] = tmp * -GET_YAW_DIRECTION(rcControlsConfig()->yaw_control_reversed);
         }
         if (rcData[axis] < rxConfig()->midrc) {
             rcCommand[axis] = -rcCommand[axis];
@@ -267,13 +300,7 @@ void updateRcCommands(void)
         tmp = (uint32_t)(tmp - rxConfig()->mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - rxConfig()->mincheck);
     }
 
-    if (currentControlRateProfile->thrExpo8) {
-        float expof = currentControlRateProfile->thrExpo8 / 100.0f;
-        float tmpf = (tmp  / (PWM_RANGE_MAX - PWM_RANGE_MIN));
-        tmp = lrintf(tmp * sq(tmpf) * expof + tmp * (1-expof));
-    }
-
-    rcCommand[THROTTLE] = tmp + (PWM_RANGE_MAX - PWM_RANGE_MIN);
+    rcCommand[THROTTLE] = rcLookupThrottle(tmp);
 
     if (feature(FEATURE_3D) && IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH) && !failsafeIsActive()) {
         fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);

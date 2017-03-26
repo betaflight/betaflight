@@ -22,9 +22,9 @@
 
 #include "platform.h"
 
-#include "build/version.h"
-
 #ifdef CMS
+
+#include "build/version.h"
 
 #include "drivers/system.h"
 
@@ -32,10 +32,20 @@
 #include "cms/cms_types.h"
 #include "cms/cms_menu_ledstrip.h"
 
+#include "common/utils.h"
+
 #include "config/config_profile.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
+
+#include "fc/rc_controls.h"
+
+#include "flight/mixer.h"
+
+#include "rx/rx.h"
+
+#include "sensors/battery.h"
 
 //
 // Misc
@@ -79,15 +89,40 @@ CMS_Menu cmsx_menuRcPreview = {
     .entries = cmsx_menuRcEntries
 };
 
+static uint16_t motorConfig_minthrottle;
+static uint8_t motorConfig_digitalIdleOffsetPercent;
+static uint8_t voltageSensorADCConfig_vbatscale;
+static uint8_t batteryConfig_vbatmaxcellvoltage;
+
+static long cmsx_menuMiscOnEnter(void)
+{
+    motorConfig_minthrottle = motorConfig()->minthrottle;
+    motorConfig_digitalIdleOffsetPercent = 10 * motorConfig()->digitalIdleOffsetPercent;
+    voltageSensorADCConfig_vbatscale = voltageSensorADCConfig(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale;
+    batteryConfig_vbatmaxcellvoltage = batteryConfig()->vbatmaxcellvoltage;
+    return 0;
+}
+
+static long cmsx_menuMiscOnExit(const OSD_Entry *self)
+{
+    UNUSED(self);
+
+    motorConfigMutable()->minthrottle = motorConfig_minthrottle;
+    motorConfigMutable()->digitalIdleOffsetPercent = motorConfig_digitalIdleOffsetPercent / 10.0f;
+    voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale = voltageSensorADCConfig_vbatscale;
+    batteryConfigMutable()->vbatmaxcellvoltage = batteryConfig_vbatmaxcellvoltage;
+    return 0;
+}
 
 static OSD_Entry menuMiscEntries[]=
 {
     { "-- MISC --", OME_Label, NULL, NULL, 0 },
 
-    { "MIN THR",    OME_UINT16,  NULL,          &(OSD_UINT16_t){ &motorConfig()->minthrottle,         1000, 2000, 1 }, 0 },
-    { "VBAT SCALE", OME_UINT8,   NULL,          &(OSD_UINT8_t) { &batteryConfig()->vbatscale,             1, 250, 1 }, 0 },
-    { "VBAT CLMAX", OME_UINT8,   NULL,          &(OSD_UINT8_t) { &batteryConfig()->vbatmaxcellvoltage,   10,  50, 1 }, 0 },
-    { "RC PREV",    OME_Submenu, cmsMenuChange, &cmsx_menuRcPreview, 0},
+    { "MIN THR",      OME_UINT16,  NULL,          &(OSD_UINT16_t){ &motorConfig_minthrottle,              1000, 2000, 1 },      0 },
+    { "DIGITAL IDLE", OME_FLOAT,   NULL,          &(OSD_FLOAT_t) { &motorConfig_digitalIdleOffsetPercent,    0,  200, 1, 100 }, 0 },
+    { "VBAT SCALE",   OME_UINT8,   NULL,          &(OSD_UINT8_t) { &voltageSensorADCConfig_vbatscale,        1,  250, 1 },      0 },
+    { "VBAT CLMAX",   OME_UINT8,   NULL,          &(OSD_UINT8_t) { &batteryConfig_vbatmaxcellvoltage,       10,   50, 1 },      0 },
+    { "RC PREV",      OME_Submenu, cmsMenuChange, &cmsx_menuRcPreview, 0},
 
     { "BACK", OME_Back, NULL, NULL, 0},
     { NULL, OME_END, NULL, NULL, 0}
@@ -96,8 +131,8 @@ static OSD_Entry menuMiscEntries[]=
 CMS_Menu cmsx_menuMisc = {
     .GUARD_text = "XMISC",
     .GUARD_type = OME_MENU,
-    .onEnter = NULL,
-    .onExit = NULL,
+    .onEnter = cmsx_menuMiscOnEnter,
+    .onExit = cmsx_menuMiscOnExit,
     .onGlobalExit = NULL,
     .entries = menuMiscEntries
 };

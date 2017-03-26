@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <stdbool.h>
+
 #include "io_types.h"
 
 // old EXTI interface, to be replaced

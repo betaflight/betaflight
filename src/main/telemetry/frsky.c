@@ -74,9 +74,6 @@ static serialPortConfig_t *portConfig;
 #define FRSKY_BAUDRATE 9600
 #define FRSKY_INITIAL_PORT_MODE MODE_TX
 
-#ifndef USE_PARAMETER_GROUPS
-static const telemetryConfig_t *telemetryConfig;
-#endif
 static bool frskyTelemetryEnabled =  false;
 static portSharing_e frskyPortSharing;
 
@@ -198,18 +195,15 @@ static void sendGpsAltitude(void)
 }
 #endif
 
-static void sendThrottleOrBatterySizeAsRpm(const rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
+static void sendThrottleOrBatterySizeAsRpm(void)
 {
     sendDataHead(ID_RPM);
 #ifdef USE_ESC_SENSOR
-    UNUSED(rxConfig);
-    UNUSED(deadband3d_throttle);
-
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
     serialize16(escData->dataAge < ESC_DATA_INVALID ? escData->rpm : 0);
 #else
     if (ARMING_FLAG(ARMED)) {
-        throttleStatus_e throttleStatus = calculateThrottleStatus(rxConfig, deadband3d_throttle);
+        const throttleStatus_e throttleStatus = calculateThrottleStatus();
         uint16_t throttleForRPM = rcCommand[THROTTLE] / BLADE_NUMBER_DIVIDER;
         if (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP))
                     throttleForRPM = 0;
@@ -229,7 +223,7 @@ static void sendTemperature1(void)
 #elif defined(BARO)
     serialize16((baro.baroTemperature + 50)/ 100); //Airmamaf
 #else
-    serialize16(telemTemperature1 / 10);
+    serialize16(gyroGetTemperature() / 10);
 #endif
 }
 
@@ -377,6 +371,7 @@ static void sendVoltage(void)
     uint32_t cellVoltage;
     uint16_t payload;
 
+    uint8_t cellCount = getBatteryCellCount();
     /*
      * Format for Voltage Data for single cells is like this:
      *
@@ -388,7 +383,7 @@ static void sendVoltage(void)
      * The actual value sent for cell voltage has resolution of 0.002 volts
      * Since vbat has resolution of 0.1 volts it has to be multiplied by 50
      */
-    cellVoltage = ((uint32_t)getVbat() * 100 + batteryCellCount) / (batteryCellCount * 2);
+    cellVoltage = ((uint32_t)getBatteryVoltage() * 100 + cellCount) / (cellCount * 2);
 
     // Cell number is at bit 9-12
     payload = (currentCell << 4);
@@ -403,7 +398,7 @@ static void sendVoltage(void)
     serialize16(payload);
 
     currentCell++;
-    currentCell %= batteryCellCount;
+    currentCell %= cellCount;
 }
 
 /*
@@ -411,17 +406,18 @@ static void sendVoltage(void)
  */
 static void sendVoltageAmp(void)
 {
+    uint16_t batteryVoltage = getBatteryVoltage();
     if (telemetryConfig()->frsky_vfas_precision == FRSKY_VFAS_PRECISION_HIGH) {
         /*
          * Use new ID 0x39 to send voltage directly in 0.1 volts resolution
          */
         sendDataHead(ID_VOLTAGE_AMP);
-        serialize16(getVbat());
+        serialize16(batteryVoltage);
     } else {
-        uint16_t voltage = (getVbat() * 110) / 21;
+        uint16_t voltage = (batteryVoltage * 110) / 21;
         uint16_t vfasVoltage;
         if (telemetryConfig()->frsky_vfas_cell_voltage) {
-            vfasVoltage = voltage / batteryCellCount;
+            vfasVoltage = voltage / getBatteryCellCount();
         } else {
             vfasVoltage = voltage;
         }
@@ -435,7 +431,7 @@ static void sendVoltageAmp(void)
 static void sendAmperage(void)
 {
     sendDataHead(ID_CURRENT);
-    serialize16((uint16_t)(amperage / 10));
+    serialize16((uint16_t)(getAmperage() / 10));
 }
 
 static void sendFuelLevel(void)
@@ -443,9 +439,9 @@ static void sendFuelLevel(void)
     sendDataHead(ID_FUEL_LEVEL);
 
     if (batteryConfig()->batteryCapacity > 0) {
-        serialize16((uint16_t)calculateBatteryPercentage());
+        serialize16((uint16_t)calculateBatteryPercentageRemaining());
     } else {
-        serialize16((uint16_t)constrain(mAhDrawn, 0, 0xFFFF));
+        serialize16((uint16_t)constrain(getMAhDrawn(), 0, 0xFFFF));
     }
 }
 
@@ -457,13 +453,8 @@ static void sendHeading(void)
     serialize16(0);
 }
 
-void initFrSkyTelemetry(const telemetryConfig_t *initialTelemetryConfig)
+void initFrSkyTelemetry(void)
 {
-#ifdef USE_PARAMETER_GROUPS
-    UNUSED(initialTelemetryConfig);
-#else
-    telemetryConfig = initialTelemetryConfig;
-#endif
     portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_FRSKY);
     frskyPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_FRSKY);
 }
@@ -515,7 +506,7 @@ void checkFrSkyTelemetryState(void)
     }
 }
 
-void handleFrSkyTelemetry(const rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
+void handleFrSkyTelemetry(void)
 {
     if (!frskyTelemetryEnabled) {
         return;
@@ -546,9 +537,9 @@ void handleFrSkyTelemetry(const rxConfig_t *rxConfig, uint16_t deadband3d_thrott
 
     if ((cycleNum % 8) == 0) {      // Sent every 1s
         sendTemperature1();
-        sendThrottleOrBatterySizeAsRpm(rxConfig, deadband3d_throttle);
+        sendThrottleOrBatterySizeAsRpm();
 
-        if ((feature(FEATURE_VBAT) || feature(FEATURE_ESC_SENSOR)) && batteryCellCount > 0) {
+        if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && getBatteryCellCount() > 0) {
             sendVoltage();
             sendVoltageAmp();
             sendAmperage();

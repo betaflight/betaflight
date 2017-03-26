@@ -15,6 +15,7 @@
 #include "build/build_config.h"
 
 #include "common/encoding.h"
+#include "common/maths.h"
 #include "common/printf.h"
 
 #include "config/config_profile.h"
@@ -66,6 +67,14 @@ static struct {
 
 #endif
 
+void blackboxOpen()
+{
+    serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP);
+    if (sharedBlackboxAndMspPort) {
+        mspSerialReleasePortIfAllocated(sharedBlackboxAndMspPort);
+    }
+}
+
 void blackboxWrite(uint8_t value)
 {
     switch (blackboxConfig()->device) {
@@ -116,12 +125,14 @@ int blackboxPrintf(const char *fmt, ...)
  * printf a Blackbox header line with a leading "H " and trailing "\n" added automatically. blackboxHeaderBudget is
  * decreased to account for the number of bytes written.
  */
-void blackboxPrintfHeaderLine(const char *fmt, ...)
+void blackboxPrintfHeaderLine(const char *name, const char *fmt, ...)
 {
     va_list va;
 
     blackboxWrite('H');
     blackboxWrite(' ');
+    blackboxPrint(name);
+    blackboxWrite(':');
 
     va_start(va, fmt);
 
@@ -601,6 +612,41 @@ bool blackboxDeviceOpen(void)
             return false;
     }
 }
+
+/**
+ * Erase all blackbox logs
+ */
+#ifdef USE_FLASHFS
+void blackboxEraseAll(void)
+{
+    switch (blackboxConfig()->device) {
+    case BLACKBOX_DEVICE_FLASH:
+        flashfsEraseCompletely();
+        break;
+    default:
+        //not supported
+        break;
+
+    }
+}
+
+/**
+ * Check to see if erasing is done
+ */
+bool isBlackboxErased(void)
+{
+    switch (blackboxConfig()->device) {
+    case BLACKBOX_DEVICE_FLASH:
+        return flashfsIsReady();
+        break;
+    default:
+    //not supported
+        return true;
+        break;
+
+    }
+}
+#endif
 
 /**
  * Close the Blackbox logging device immediately without attempting to flush any remaining data.

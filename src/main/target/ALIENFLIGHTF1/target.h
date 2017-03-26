@@ -45,13 +45,16 @@
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-#define SERIAL_PORT_COUNT       3
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+#define SERIAL_PORT_COUNT       5
 
 #define UART3_RX_PIN            PB11
 #define UART3_TX_PIN            PB10
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_2)
+#define USE_I2C_DEVICE_2
+#define I2C_DEVICE              (I2CDEV_2)
 
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PB1
@@ -59,17 +62,8 @@
 #define RSSI_ADC_PIN            PA1
 #define EXTERNAL1_ADC_PIN       PA5
 
+#define SPEKTRUM_BIND_PIN       PA3
 
-#define LED_STRIP
-
-#undef GPS
-
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
-
-#define HARDWARE_BIND_PLUG
-// Hardware bind plug at PB5 (Pin 41)
 #define BINDPLUG_PIN            PB5
 
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP

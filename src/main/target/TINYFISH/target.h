@@ -46,16 +46,17 @@
 
 #if USB_VCP_ENABLED
   #define USE_VCP
-  #define USB_IO
   #define USBD_PRODUCT_STRING "tinyFISH"
-  #define SERIAL_PORT_COUNT 4
+  #define SERIAL_PORT_COUNT 6
 #else
-  #define SERIAL_PORT_COUNT 3
+  #define SERIAL_PORT_COUNT 5
 #endif
 
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
 
 #define UART1_TX_PIN            PB6
 #define UART1_RX_PIN            PB7
@@ -93,12 +94,21 @@
 
 #define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER
+#define BOARD_HAS_CURRENT_SENSOR
 #define VBAT_ADC_PIN                PB1
 #define CURRENT_METER_ADC_PIN       PB0
 #define ADC_INSTANCE                ADC3
 #define VBAT_SCALE_DEFAULT          100
 
-#define LED_STRIP
+#define CURRENT_TARGET_CPU_VOLTAGE 3.0
+
+// board uses an ina139, RL=0.005, Rs=30000
+// V/A = (0.005 * 0.001 * 30000) * I
+// rescale to 1/10th mV / A -> * 1000 * 10
+// use 3.0V as cpu and adc voltage -> rescale by 3.0/3.3
+#define CURRENT_METER_SCALE_DEFAULT    (0.005 * 0.001 * 30000) * 1000 * 10 * (CURRENT_TARGET_CPU_VOLTAGE / 3.3)
+#define CURRENT_METER_OFFSET_DEFAULT   0
+
 #define WS2811_PIN                      PA8
 #define WS2811_TIMER                    TIM1
 #define WS2811_DMA_CHANNEL              DMA1_Channel2
@@ -107,7 +117,7 @@
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
-#define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_CURRENT_METER | FEATURE_BLACKBOX | FEATURE_TELEMETRY)
+#define DEFAULT_FEATURES        (FEATURE_BLACKBOX | FEATURE_TELEMETRY)
 #define TARGET_CONFIG
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE

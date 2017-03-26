@@ -17,11 +17,13 @@
 
 #pragma once
 
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
-
 #if defined(AIRBOTF4)
 #define TARGET_BOARD_IDENTIFIER "AIR4"
 #define USBD_PRODUCT_STRING     "AirbotF4"
+
+#elif defined(AIRBOTF4SD)
+#define TARGET_BOARD_IDENTIFIER "A4SD"
+#define USBD_PRODUCT_STRING     "AirbotF4SD"
 
 #elif defined(REVOLT)
 #define TARGET_BOARD_IDENTIFIER "RVLT"
@@ -55,7 +57,7 @@
 #endif
 
 // Disable LED1, conflicts with AirbotF4/Flip32F4/Revolt beeper
-#if defined(AIRBOTF4)
+#if defined(AIRBOTF4) || defined(AIRBOTF4SD)
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 #elif defined(REVOLT)
@@ -70,7 +72,11 @@
 #endif
 
 // PC0 used as inverter select GPIO
-#define INVERTER_PIN_USART1     PC0
+#ifdef AIRBOTF4SD
+#define INVERTER_PIN_UART6      PD2
+#else
+#define INVERTER_PIN_UART1      PC0
+#endif
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
@@ -78,41 +84,52 @@
 #define MPU6500_CS_PIN          PA4
 #define MPU6500_SPI_INSTANCE    SPI1
 
-#if defined(SOULF4)
+#define GYRO
 #define ACC
-#define USE_ACC_SPI_MPU6000
+
+#ifdef AIRBOTF4SD
+#undef MPU6000_CS_PIN
+#define MPU6000_CS_PIN          PB13
+#define USE_GYRO_SPI_ICM20601
+#define ICM20601_CS_PIN         PA4 // served through MPU6500 code
+#define ICM20601_SPI_INSTANCE   SPI1
+#define USE_DUAL_GYRO
+#define GYRO_0_CS_PIN           MPU6000_CS_PIN
+#define GYRO_1_CS_PIN           ICM20601_CS_PIN
+#endif
+
+#if defined(SOULF4)
+#define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW180_DEG
 
-#define GYRO
-#define USE_GYRO_SPI_MPU6000
+#define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW180_DEG
 
 #elif defined(REVOLT) || defined(PODIUMF4)
-
-#define USE_ACC_MPU6500
-#define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW0_DEG
 
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW0_DEG
 
-#else
-#define ACC
-#define USE_ACC_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW270_DEG
-
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW270_DEG
+#define ACC_MPU6500_ALIGN       CW0_DEG
 
-#define GYRO
+#else
+
 #define USE_GYRO_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW270_DEG
+#define GYRO_MPU6000_ALIGN      CW270_DEG
 
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW270_DEG
+
+#define USE_ACC_SPI_MPU6000
+#define ACC_MPU6000_ALIGN       CW270_DEG
+
+#define USE_ACC_MPU6500
+#define USE_ACC_SPI_MPU6500
+#define ACC_MPU6500_ALIGN       CW270_DEG
 
 #endif
 
@@ -128,14 +145,38 @@
 
 #define BARO
 #define USE_BARO_MS5611
-
 #endif
+
+#if defined(AIRBOTF4SD)
+// SDCARD support for AIRBOTF4SD
+#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
+#define USE_SDCARD
+#define USE_SDCARD_SPI3
+
+#define SDCARD_DETECT_INVERTED
+#define SDCARD_DETECT_PIN       PC0
+#define SDCARD_SPI_INSTANCE     SPI3
+#define SDCARD_SPI_CS_PIN       SPI3_NSS_PIN
+
+// SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
+#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
+// Divide to under 25MHz for normal operation:
+#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 4 // 21MHz
+
+#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream5
+#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF5
+#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
+#define SDCARD_DMA_CHANNEL                  DMA_Channel_0
+
+#else
 
 #define M25P16_CS_PIN           PB3
 #define M25P16_SPI_INSTANCE     SPI3
-
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
+
+#endif // AIRBOTF4SD
+
 
 #define USE_VCP
 #if defined(PODIUMF4)
@@ -157,7 +198,10 @@
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
-#define SERIAL_PORT_COUNT       4 //VCP, USART1, USART3, USART6
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT       6 //VCP, USART1, USART3, USART6, SOFTSERIAL x 2
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
@@ -173,6 +217,7 @@
 #define SPI3_MOSI_PIN           PC12
 
 #define USE_I2C
+#define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_ADC
@@ -184,9 +229,9 @@
 #define VBAT_ADC_CHANNEL        ADC_Channel_13
 #endif
 
-#define LED_STRIP
-
-#define SENSORS_SET             (SENSOR_ACC)
+#if defined(AIRBOTF4SD)
+#define RSSI_ADC_PIN            PA0
+#endif
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #if defined(PODIUMF4)
@@ -197,9 +242,7 @@
 #define DEFAULT_FEATURES        (FEATURE_BLACKBOX)
 #endif
 
-#define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN                PB11
+#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -210,8 +253,12 @@
 
 #ifdef REVOLT
 #define USABLE_TIMER_CHANNEL_COUNT 11
+#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(12) )
+#elif defined(AIRBOTF4) || defined(AIRBOTF4SD)
+#define USABLE_TIMER_CHANNEL_COUNT 13
+#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(12) )
 #else
 #define USABLE_TIMER_CHANNEL_COUNT 12
+#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(12) )
 #endif
 
-#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9) )

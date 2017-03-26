@@ -76,11 +76,11 @@ static volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
 static rxRuntimeConfig_t *rxRuntimeConfigPtr;
 static serialPort_t *serialPort;
 
-#ifdef SPEKTRUM_BIND
+#ifdef SPEKTRUM_BIND_PIN
 static IO_t BindPin = DEFIO_IO(NONE);
-#endif
-#ifdef HARDWARE_BIND_PLUG
+#ifdef BINDPLUG_PIN
 static IO_t BindPlug = DEFIO_IO(NONE);
+#endif
 #endif
 
 static uint8_t telemetryBuf[SRXL_FRAME_SIZE_MAX];
@@ -179,11 +179,11 @@ static uint16_t spektrumReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint
     return data;
 }
 
-#ifdef SPEKTRUM_BIND
+#ifdef SPEKTRUM_BIND_PIN
 
 bool spekShouldBind(uint8_t spektrum_sat_bind)
 {
-#ifdef HARDWARE_BIND_PLUG
+#ifdef BINDPLUG_PIN
     BindPlug = IOGetByTag(IO_TAG(BINDPLUG_PIN));
     IOInit(BindPlug, OWNER_RX_BIND, 0);
     IOConfigGPIO(BindPlug, IOCFG_IPU);
@@ -216,7 +216,7 @@ void spektrumBind(rxConfig_t *rxConfig)
 
     LED1_ON;
 
-    BindPin = IOGetByTag(IO_TAG(BIND_PIN));
+    BindPin = IOGetByTag(IO_TAG(SPEKTRUM_BIND_PIN));
     IOInit(BindPin, OWNER_RX_BIND, 0);
     IOConfigGPIO(BindPin, IOCFG_OUT_PP);
 
@@ -243,7 +243,7 @@ void spektrumBind(rxConfig_t *rxConfig)
 
     }
 
-#ifndef HARDWARE_BIND_PLUG
+#ifndef BINDPLUG_PIN
     // If we came here as a result of hard  reset (power up, with spektrum_sat_bind set), then reset it back to zero and write config
     // Don't reset if hardware bind plug is present
     // Reset only when autoreset is enabled
@@ -254,7 +254,7 @@ void spektrumBind(rxConfig_t *rxConfig)
 #endif
 
 }
-#endif // SPEKTRUM_BIND
+#endif // SPEKTRUM_BIND_PIN
 
 bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
@@ -303,7 +303,8 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
         spektrumDataReceive,
         SPEKTRUM_BAUDRATE,
         portShared || srxlEnabled ? MODE_RXTX : MODE_RX,
-        SERIAL_NOT_INVERTED | (srxlEnabled ? SERIAL_BIDIR : 0));
+        SERIAL_NOT_INVERTED | ((srxlEnabled || rxConfig->halfDuplex) ? SERIAL_BIDIR : 0)
+        );
 
 #ifdef TELEMETRY
     if (portShared) {

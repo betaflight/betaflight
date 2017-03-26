@@ -13,17 +13,19 @@
 ENTRY(Reset_Handler)
 
 /*
-0x08000000 to 0x08100000 1024K full flash,
-0x08000000 to 0x08004000   16K OPBL,
-0x08004000 to 0x080DFFFF  880K firmware,
-0x080E0000 to 0x08100000  128K config,       // FLASH_Sector_11
+0x08000000 to 0x080FFFFF 1024K full flash,
+0x08000000 to 0x08003FFF   16K OPBL,
+0x08004000 to 0x08007FFF   16K isr vector, startup code,
+0x08008000 to 0x0800BFFF   16K config,                  // FLASH_Sector_2
+0x0800C000 to 0x080FFFFF  976K firmware,
 */
 
 /* Specify the memory areas */
 MEMORY
 {
-    FLASH (rx)      : ORIGIN = 0x08004000, LENGTH = 880K
-    FLASH_CONFIG (r): ORIGIN = 0x080E0000, LENGTH = 128K
+    FLASH (rx)      : ORIGIN = 0x08004000, LENGTH = 16K
+    FLASH_CONFIG (r): ORIGIN = 0x08008000, LENGTH = 16K
+    FLASH1 (rx)     : ORIGIN = 0x0800C000, LENGTH = 976K
 
     RAM (rwx)       : ORIGIN = 0x20000000, LENGTH = 128K
     CCM (rwx)       : ORIGIN = 0x10000000, LENGTH = 64K
@@ -32,4 +34,4 @@ MEMORY
 
 REGION_ALIAS("STACKRAM", CCM)
 
-INCLUDE "stm32_flash.ld"
+INCLUDE "stm32_flash_split.ld"

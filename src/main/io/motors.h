@@ -16,8 +16,3 @@
  */
 
 #pragma once
-
-#include "drivers/io_types.h"
-#include "flight/mixer.h"
-
-

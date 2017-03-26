@@ -19,10 +19,11 @@
 
 #define CMS
 #define CMS_MAX_DEVICE 4
+#define USE_FAKE_GYRO
 #define MAG
 #define BARO
 #define GPS
-#define DISPLAY
+#define USE_DASHBOARD
 #define SERIAL_RX
 #define USE_RX_MSP
 #define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol

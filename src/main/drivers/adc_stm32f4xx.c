@@ -87,7 +87,7 @@ ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
     return ADCINVALID;
 }
 
-void adcInit(adcConfig_t *config)
+void adcInit(const adcConfig_t *config)
 {
     ADC_InitTypeDef ADC_InitStructure;
     DMA_InitTypeDef DMA_InitStructure;
@@ -109,8 +109,8 @@ void adcInit(adcConfig_t *config)
         adcOperatingConfig[ADC_EXTERNAL1].tag = config->external1.ioTag; //EXTERNAL1_ADC_CHANNEL;
     }
 
-    if (config->currentMeter.enabled) {
-        adcOperatingConfig[ADC_CURRENT].tag = config->currentMeter.ioTag;  //CURRENT_METER_ADC_CHANNEL;
+    if (config->current.enabled) {
+        adcOperatingConfig[ADC_CURRENT].tag = config->current.ioTag;  //CURRENT_METER_ADC_CHANNEL;
     }
 
     ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);

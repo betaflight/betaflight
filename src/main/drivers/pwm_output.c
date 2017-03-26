@@ -21,13 +21,16 @@
 #include <math.h>
 
 #include "platform.h"
+#include "system.h"
 
 #include "io.h"
-#include "timer.h"
 #include "pwm_output.h"
+#include "timer.h"
 
 #define MULTISHOT_5US_PW    (MULTISHOT_TIMER_MHZ * 5)
 #define MULTISHOT_20US_MULT (MULTISHOT_TIMER_MHZ * 20 / 1000.0f)
+
+#define DSHOT_MAX_COMMAND 47
 
 static pwmWriteFuncPtr pwmWritePtr;
 static pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
@@ -194,7 +197,7 @@ void pwmCompleteMotorUpdate(uint8_t motorCount)
     pwmCompleteWritePtr(motorCount);
 }
 
-void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount)
+void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount)
 {
     memset(motors, 0, sizeof(motors));
     
@@ -315,6 +318,27 @@ uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType)
             return MOTOR_DSHOT150_MHZ * 1000000;
     }
 }
+
+void pwmWriteDshotCommand(uint8_t index, uint8_t command)
+{
+    if (command <= DSHOT_MAX_COMMAND) {
+        motorDmaOutput_t *const motor = getMotorDmaOutput(index);
+
+        unsigned repeats;
+        if ((command >= 7 && command <= 10) || command == 12) {
+            repeats = 10;
+        } else {
+            repeats = 1;
+        }
+        for (; repeats; repeats--) {
+            motor->requestTelemetry = true;
+            pwmWritePtr(index, command);
+            pwmCompleteMotorUpdate(0);
+
+            delay(1);
+        }
+    }
+}
 #endif
 
 #ifdef USE_SERVOS
@@ -325,7 +349,7 @@ void pwmWriteServo(uint8_t index, uint16_t value)
     }
 }
 
-void servoInit(const servoConfig_t *servoConfig)
+void servoDevInit(const servoDevConfig_t *servoConfig)
 {
     for (uint8_t servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
         const ioTag_t tag = servoConfig->ioTags[servoIndex];

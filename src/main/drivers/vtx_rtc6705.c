@@ -87,7 +87,7 @@
 #define DISABLE_RTC6705 GPIO_SetBits(RTC6705_CS_GPIO,   RTC6705_CS_PIN)
 #define ENABLE_RTC6705  GPIO_ResetBits(RTC6705_CS_GPIO, RTC6705_CS_PIN)
 
-#if defined(SPRACINGF3NEO)
+#ifdef RTC6705_POWER_PIN
 static IO_t vtxPowerPin        = IO_NONE;
 #endif
 

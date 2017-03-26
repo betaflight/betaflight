@@ -45,12 +45,12 @@ void intFeatureClearAll(uint32_t *features)
 
 void latchActiveFeatures()
 {
-    activeFeaturesLatch = masterConfig.enabledFeatures;
+    activeFeaturesLatch = featureConfig()->enabledFeatures;
 }
 
 bool featureConfigured(uint32_t mask)
 {
-    return masterConfig.enabledFeatures & mask;
+    return featureConfig()->enabledFeatures & mask;
 }
 
 bool feature(uint32_t mask)
@@ -60,22 +60,20 @@ bool feature(uint32_t mask)
 
 void featureSet(uint32_t mask)
 {
-    intFeatureSet(mask, &masterConfig.enabledFeatures);
+    intFeatureSet(mask, &featureConfigMutable()->enabledFeatures);
 }
 
 void featureClear(uint32_t mask)
 {
-    intFeatureClear(mask, &masterConfig.enabledFeatures);
+    intFeatureClear(mask, &featureConfigMutable()->enabledFeatures);
 }
 
 void featureClearAll()
 {
-    intFeatureClearAll(&masterConfig.enabledFeatures);
+    intFeatureClearAll(&featureConfigMutable()->enabledFeatures);
 }
 
 uint32_t featureMask(void)
 {
-    return masterConfig.enabledFeatures;
+    return featureConfig()->enabledFeatures;
 }
-
-

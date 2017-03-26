@@ -151,6 +151,9 @@
 #define USE_UART3
 #define USE_UART4
 #define USE_UART5
+//#define USE_SOFTSERIAL1
+//#define USE_SOFTSERIAL2
+
 #define SERIAL_PORT_COUNT       6
 
 #define USE_ESCSERIAL
@@ -160,6 +163,7 @@
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
 #define USE_I2C
+#define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_ADC
@@ -171,10 +175,7 @@
 
 #define USE_ESC_SENSOR
 
-#define LED_STRIP
-
-#define SPEKTRUM_BIND
-#define BIND_PIN                PA3 // USART2, PA3
+#define SPEKTRUM_BIND_PIN       PA3 // USART2, PA3
 
 #define SONAR
 #define SONAR_TRIGGER_PIN       PB0

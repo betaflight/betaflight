@@ -27,7 +27,7 @@
 #define BARO_XCLR_PIN           PC13
 #define BARO_EOC_PIN            PC14
 
-#define INVERTER_PIN_USART2                PB2 // PB2 (BOOT1) abused as inverter select GPIO
+#define INVERTER_PIN_UART2      PB2 // PB2 (BOOT1) abused as inverter select GPIO
 
 #define USE_EXTI
 #define MAG_INT_EXTI            PC14
@@ -67,13 +67,10 @@
 #define SERIAL_PORT_COUNT       2
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_2)
+#define USE_I2C_DEVICE_2
+#define I2C_DEVICE              (I2CDEV_2)
 
-#define LED_STRIP
-
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
+#define SPEKTRUM_BIND_PIN       PA3
 
 #define BRUSHED_MOTORS
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP
@@ -82,7 +79,6 @@
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define RX_CHANNELS_TAER
 
-#undef GPS
 #undef USE_SERVOS
 #define USE_QUAD_MIXER_ONLY
 

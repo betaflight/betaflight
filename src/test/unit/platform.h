@@ -26,7 +26,7 @@
 #define MAG
 #define BARO
 #define GPS
-#define DISPLAY
+#define USE_DASHBOARD
 #define TELEMETRY
 #define LED_STRIP
 #define USE_SERVOS
@@ -57,6 +57,15 @@ typedef struct
     void* test;
 } TIM_TypeDef;
 
+typedef struct
+{
+    void* test;
+} TIM_OCInitTypeDef;
+
+typedef struct {
+    void* test;
+} DMA_TypeDef;
+
 typedef struct {
     void* test;
 } DMA_Channel_TypeDef;
@@ -64,6 +73,11 @@ typedef struct {
 uint8_t DMA_GetFlagStatus(void *);
 void DMA_Cmd(DMA_Channel_TypeDef*, FunctionalState );
 void DMA_ClearFlag(uint32_t);
+
+typedef struct
+{
+    void* test;
+} SPI_TypeDef;
 
 typedef struct
 {

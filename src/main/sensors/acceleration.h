@@ -32,10 +32,12 @@ typedef enum {
     ACC_LSM303DLHC,
     ACC_MPU6000,
     ACC_MPU6500,
-    ACC_ICM20689,
     ACC_MPU9250,
-    ACC_ICM20608G,
+    ACC_ICM20601,
     ACC_ICM20602,
+    ACC_ICM20608G,
+    ACC_ICM20689,
+    ACC_BMI160,
     ACC_FAKE
 } accelerationSensor_e;
 
@@ -69,7 +71,7 @@ typedef struct accelerometerConfig_s {
 
 PG_DECLARE(accelerometerConfig_t, accelerometerConfig);
 
-bool accInit(const accelerometerConfig_t *accelerometerConfig, uint32_t gyroTargetLooptime);
+bool accInit(uint32_t gyroTargetLooptime);
 bool isAccelerationCalibrationComplete(void);
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims);

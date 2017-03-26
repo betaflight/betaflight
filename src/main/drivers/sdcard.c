@@ -24,6 +24,7 @@
 
 #include "nvic.h"
 #include "io.h"
+#include "dma.h"
 
 #include "bus_spi.h"
 #include "system.h"
@@ -551,6 +552,9 @@ void sdcard_init(bool useDMA)
 {
 #ifdef SDCARD_DMA_CHANNEL_TX
     useDMAForTx = useDMA;
+    if (useDMAForTx) {
+    	dmaInit(dmaGetIdentifier(SDCARD_DMA_CHANNEL_TX), OWNER_SDCARD, 0);
+    }
 #else
     // DMA is not available
     (void) useDMA;

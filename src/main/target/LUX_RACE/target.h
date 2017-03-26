@@ -113,18 +113,18 @@
 #define ACC_MPU6500_ALIGN CW270_DEG
 #endif
 
-#define USB_IO
-
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
 #ifdef LUXV2_RACE
-#define USE_UART4
-#define USE_UART5
-#define SERIAL_PORT_COUNT       6
+#  define USE_UART4
+#  define USE_UART5
+#  define SERIAL_PORT_COUNT       8
 #else
-#define SERIAL_PORT_COUNT       4
+#  define SERIAL_PORT_COUNT       6
 #endif
 
 #define UART1_TX_PIN            PC4
@@ -145,8 +145,6 @@
 #define RSSI_ADC_PIN            PC2
 #define EXTERNAL1_ADC_PIN       PC3
 
-#define LED_STRIP
-
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART2
@@ -159,9 +157,7 @@
 #define DEFAULT_FEATURES        FEATURE_TELEMETRY
 #endif
 
-#define SPEKTRUM_BIND
-// USART1, PC5
-#define BIND_PIN                PC5
+#define SPEKTRUM_BIND_PIN       UART1_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

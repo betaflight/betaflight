@@ -104,7 +104,7 @@ static void handleUsartTxDma(dmaChannelDescriptor_t* descriptor)
 {
     uartPort_t *s = (uartPort_t*)(descriptor->userParam);
     DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
-    DMA_Cmd(descriptor->channel, DISABLE);
+    DMA_Cmd(descriptor->ref, DISABLE);
 
     if (s->port.txBufferHead != s->port.txBufferTail)
         uartStartTxDMA(s);
@@ -115,7 +115,7 @@ static void handleUsartTxDma(dmaChannelDescriptor_t* descriptor)
 
 void serialUARTInit(IO_t tx, IO_t rx, portMode_t mode, portOptions_t options, uint8_t af, uint8_t index)
 {
-    if (options & SERIAL_BIDIR) {
+    if ((options & SERIAL_BIDIR) && tx) {
         ioConfig_t ioCfg = IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz,
             ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP)) ? GPIO_OType_PP : GPIO_OType_OD,
             ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP)) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP
@@ -128,12 +128,12 @@ void serialUARTInit(IO_t tx, IO_t rx, portMode_t mode, portOptions_t options, ui
             IOLo(tx);   // OpenDrain output should be inactive
     } else {
         ioConfig_t ioCfg = IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, (options & SERIAL_INVERTED) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP);
-        if (mode & MODE_TX) {
+        if ((mode & MODE_TX) && tx) {
             IOInit(tx, OWNER_SERIAL_TX, index);
             IOConfigGPIOAF(tx, ioCfg, af);
         }
 
-        if (mode & MODE_RX) {
+        if ((mode & MODE_RX) && rx) {
             IOInit(rx, OWNER_SERIAL_RX, index);
             IOConfigGPIOAF(rx, ioCfg, af);
         }
