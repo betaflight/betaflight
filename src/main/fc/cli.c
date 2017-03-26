@@ -888,7 +888,7 @@ static const clivalue_t valueTable[] = {
 #endif
 #ifdef USE_RSSI_SOFTPWM
     { "rssi_softpwm_min",           VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, 1023 }, PG_RSSI_SOFTPWM_CONFIG, offsetof(rssiSoftPwmConfig_t, min) },
-    { "rssi_softpwm_minFollow",     VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, 1 }, PG_RSSI_SOFTPWM_CONFIG, offsetof(rssiSoftPwmConfig_t, minFollow) },
+    { "rssi_softpwm_minfollow",     VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, 1 }, PG_RSSI_SOFTPWM_CONFIG, offsetof(rssiSoftPwmConfig_t, minFollow) },
     { "rssi_softpwm_monitor",       VAR_UINT8   | MASTER_VALUE, .config.minmax = { 0, 1 }, PG_RSSI_SOFTPWM_CONFIG, offsetof(rssiSoftPwmConfig_t, monitor) },
 #endif
 };
@@ -3935,7 +3935,7 @@ const cliResourceValue_t resourceTable[] = {
     { OWNER_SERIAL_TX,     PG_SERIAL_PIN_CONFIG, offsetof(serialPinConfig_t, ioTagTx[0]), SERIAL_PORT_MAX_INDEX },
     { OWNER_SERIAL_RX,     PG_SERIAL_PIN_CONFIG, offsetof(serialPinConfig_t, ioTagRx[0]), SERIAL_PORT_MAX_INDEX },
 #ifdef USE_RSSI_SOFTPWM
-    { OWNER_RSSIPWM,       PG_RSSI_SOFTPWM_CONFIG, offsetof(rssiSoftPwmConfig_t, ioTag), 0 },
+    { OWNER_RSSI_SOFTPWM,  PG_RSSI_SOFTPWM_CONFIG, offsetof(rssiSoftPwmConfig_t, ioTag), 0 },
 #endif
 };
 

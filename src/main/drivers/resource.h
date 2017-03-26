@@ -62,7 +62,7 @@ typedef enum {
     OWNER_TRANSPONDER,
     OWNER_VTX,
     OWNER_COMPASS_CS,
-    OWNER_RSSIPWM,
+    OWNER_RSSI_SOFTPWM,
     OWNER_TOTAL_COUNT
 } resourceOwner_e;
 

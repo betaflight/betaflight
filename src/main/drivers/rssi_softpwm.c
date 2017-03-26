@@ -116,7 +116,7 @@ void rssiSoftPwmInit(const rssiSoftPwmConfig_t *configToUse)
     if (!rspIO)
         return;
 
-    IOInit(rspIO, OWNER_RSSIPWM, 0);
+    IOInit(rspIO, OWNER_RSSI_SOFTPWM, 0);
     IOConfigGPIO(rspIO, IOCFG_IPD);
 
     EXTIHandlerInit(&rsp_extiCallbackRec, rspExtiHandler);
