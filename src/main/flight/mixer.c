@@ -525,12 +525,10 @@ void mixTable(void)
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
     if (ARMING_FLAG(ARMED)) {
-        bool isFailsafeActive = failsafeIsActive();
-
         for (i = 0; i < motorCount; i++) {
             motor[i] = rpyMix[i] + constrain(throttleCommand * currentMixer[i].throttle, throttleMin, throttleMax);
 
-            if (isFailsafeActive) {
+            if (failsafeIsActive()) {
                 motor[i] = constrain(motor[i], motorConfig()->mincommand, motorConfig()->maxthrottle);
             } else if (feature(FEATURE_3D)) {
                 if (throttlePrevious <= (rxConfig()->midrc - rcControlsConfig()->deadband3d_throttle)) {
@@ -543,9 +541,17 @@ void mixTable(void)
             }
 
             // Motor stop handling
-            if (feature(FEATURE_MOTOR_STOP) && ARMING_FLAG(ARMED) && !feature(FEATURE_3D) && !isFailsafeActive) {
-                if (((rcData[THROTTLE]) < rxConfig()->mincheck) || STATE(NAV_MOTOR_STOP_OR_IDLE)) {
-                    motor[i] = motorConfig()->mincommand;
+            if (feature(FEATURE_MOTOR_STOP) && ARMING_FLAG(ARMED)) {
+                bool failsafeMotorStop = failsafeRequiresMotorStop();
+                bool navMotorStop = !failsafeIsActive() && STATE(NAV_MOTOR_STOP_OR_IDLE);
+                bool userMotorStop = !failsafeIsActive() && (rcData[THROTTLE] < rxConfig()->mincheck);
+                if (failsafeMotorStop || navMotorStop || userMotorStop) {
+                    if (feature(FEATURE_3D)) {
+                        motor[i] = rxConfig()->midrc;
+                    }
+                    else {
+                        motor[i] = motorConfig()->mincommand;
+                    }
                 }
             }
         }

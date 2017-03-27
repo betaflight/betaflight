@@ -86,7 +86,7 @@ Guard time for failsafe de-activation after signal is recovered.  This is the am
 
 ### `failsafe_off_delay`
 
-Delay after failsafe activates before motors finally turn off.  This is the amount of time 'failsafe_throttle' is active.  If you fly at higher altitudes you may need more time to descend safely.
+Delay after failsafe activates before motors finally turn off.  This is the amount of time 'failsafe_throttle' is active.  If you fly at higher altitudes you may need more time to descend safely. Set to zero to keep `failsafe_throttle` active indefinitely. Has no effect when `failsafe_procedure = RTH`
 
 ### `failsafe_throttle`
 
@@ -98,14 +98,14 @@ Configure the rc switched failsafe action: the same action as when the rc link i
 
 ### `failsafe_throttle_low_delay`
 
-Time throttle level must have been below 'min_throttle' to _only disarm_ instead of _full failsafe procedure_.
+Time throttle level must have been below 'min_throttle' to _only disarm_ instead of _full failsafe procedure_. Set to zero to disable.
 
 Use standard RX usec values.  See Rx documentation.
 
 ### `failsafe_procedure`
 
-* __Drop:__ Just kill the motors and disarm (crash the craft).
-* __Land:__ Enable an auto-level mode, center the flight sticks and set the throttle to a predefined value (`failsafe_throttle`) for a predefined time (`failsafe_off_delay`). This should allow the craft to come to a safer landing.
+* __DROP:__ Just kill the motors and disarm (crash the craft).
+* __SET-THR:__ Enable an auto-level mode (for multirotor) or enter preconfigured roll/pitch/yaw spiral down (for airplanes) and set the throttle to a predefined value (`failsafe_throttle`) for a predefined time (`failsafe_off_delay`). This should allow the craft to come to a safer landing.
 * __RTH:__ Attempt to return and land the drone at the point of launch. GPS and Barometer required for proper operation. If this more is selected and GPS is not available - the drone will be landed immediately.
 * __NONE:__ Do nothing. This is least safe method but it could be used to execute WP missions outside of RC radio coverage.
 
@@ -116,6 +116,20 @@ This parameter defines recovery from failsafe by stick motion. When set to zero 
 When this is set to a non-zero value - failsafe won't clear even if RC link is recovered. You will have to deflect any of Roll/Pitch/Yaw sticks beyond this value to exit failsafe.
 
 One use-case is Failsafe-RTH. When on the edge of radio coverage you may end up entering and exiting RTH if radio link is sporadic - happens a lot with long-range pilots. Setting `failsafe_stick_threshold` to a certain value (i.e. 100) RTH will be initiated on first signal loss and will continue as long as pilots want it to continue. When RC link is solid (based on RSSI etc) pilot will move sticks and regain control.
+
+### `failsafe_fw_roll_angle`
+
+When `SET-THR` failsafe is executed on a fixed-wing craft it's not safe to keep it level - airplane can glide for long distances. 
+
+This parameter defines amount of roll angle (in 1/10 deg units) to execute on failsafe. Negative = LEFT
+
+### `failsafe_fw_pitch_angle`
+
+This parameter defines amount of pitch angle (in 1/10 deg units) to execute on `SET-THR` failsafe for an airplane. Negative = CLIMB
+
+### `failsafe_fw_yaw_rate`
+
+This parameter defines amount of yaw rate (in deg per second units) to execute on `SET-THR` failsafe for an airplane. Negative = LEFT
 
 ### `rx_min_usec`
 
