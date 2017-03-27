@@ -72,7 +72,7 @@ PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
     .failsafe_procedure = 0,            // default full failsafe procedure is 0: auto-landing, 1: drop, 2 : RTH
     .failsafe_fw_roll_angle = -200,     // 20 deg left
     .failsafe_fw_pitch_angle = 100,     // 10 deg dive (yes, positive means dive)
-    .failsafe_fw_yaw_rate = 45,         // 45 deg/s left yaw (left is positive, 4s for full turn)
+    .failsafe_fw_yaw_rate = -45,        // 45 deg/s left yaw (left is negative, 4s for full turn)
     .failsafe_stick_motion_threshold = 50,
 );
 
@@ -230,7 +230,7 @@ void failsafeApplyControlInput(void)
     if (STATE(FIXED_WING)) {
         autoRcCommand[ROLL] = pidAngleToRcCommand(failsafeConfig()->failsafe_fw_roll_angle, pidProfile()->max_angle_inclination[FD_ROLL]);
         autoRcCommand[PITCH] = pidAngleToRcCommand(failsafeConfig()->failsafe_fw_pitch_angle, pidProfile()->max_angle_inclination[FD_PITCH]);
-        autoRcCommand[YAW] = pidRateToRcCommand(failsafeConfig()->failsafe_fw_yaw_rate, currentControlRateProfile->rates[FD_YAW]);
+        autoRcCommand[YAW] = -pidRateToRcCommand(failsafeConfig()->failsafe_fw_yaw_rate, currentControlRateProfile->rates[FD_YAW]);
         autoRcCommand[THROTTLE] = failsafeConfig()->failsafe_throttle;
     }
     else {
