@@ -26,6 +26,7 @@
 
 #define BEEPER                  PC9
 #define BEEPER_INVERTED
+#define INVERTER_PIN_USART3     PB15
 
 // ICM20689 interrupt
 #define USE_EXTI
@@ -75,6 +76,7 @@
 
 #define USE_VCP
 #define VBUS_SENSING_PIN        PA8
+#define VBUS_SENSING_ENABLED
 
 #define USE_UART1
 #define UART1_RX_PIN            PA10
