@@ -268,6 +268,8 @@ float getEstimatedActualPosition(int axis);
 int32_t getTotalTravelDistance(void);
 
 /* Waypoint list access functions */
+int getWaypointCount(void);
+bool isWaypointListValid(void);
 void getWaypoint(uint8_t wpNumber, navWaypoint_t * wpData);
 void setWaypoint(uint8_t wpNumber, const navWaypoint_t * wpData);
 void resetWaypointList(void);

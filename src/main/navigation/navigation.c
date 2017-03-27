@@ -2256,6 +2256,16 @@ void resetWaypointList(void)
     }
 }
 
+bool isWaypointListValid(void)
+{
+    return posControl.waypointListValid;
+}
+
+int getWaypointCount(void)
+{
+    return posControl.waypointCount;
+}
+
 #ifdef NAV_NON_VOLATILE_WAYPOINT_STORAGE
 bool loadNonVolatileWaypointList(void)
 {

@@ -76,3 +76,32 @@ uint32_t sensorsMask(void)
 {
     return enabledSensors;
 }
+
+flightModeForTelemetry_e getFlightModeForTelemetry(void)
+{
+    if (FLIGHT_MODE(PASSTHRU_MODE))
+        return FLM_MANUAL;
+
+    if (FLIGHT_MODE(FAILSAFE_MODE))
+        return FLM_FAILSAFE;
+
+    if (FLIGHT_MODE(NAV_RTH_MODE))
+        return FLM_RTH;
+
+    if (FLIGHT_MODE(NAV_POSHOLD_MODE))
+        return FLM_POSITION_HOLD;
+
+    if (FLIGHT_MODE(NAV_WP_MODE))
+        return FLM_MISSION;
+
+    if (FLIGHT_MODE(NAV_ALTHOLD_MODE))
+        return FLM_ALTITUDE_HOLD;
+
+    if (FLIGHT_MODE(ANGLE_MODE))
+        return FLM_ANGLE;
+
+    if (FLIGHT_MODE(HORIZON_MODE))
+        return FLM_HORIZON;
+
+    return FLM_ACRO;
+}
