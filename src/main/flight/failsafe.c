@@ -72,7 +72,7 @@ PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
     .failsafe_procedure = 0,            // default full failsafe procedure is 0: auto-landing, 1: drop, 2 : RTH
     .failsafe_fw_roll_angle = -200,     // 20 deg left
     .failsafe_fw_pitch_angle = 100,     // 10 deg dive (yes, positive means dive)
-    .failsafe_fw_yaw_rate = -45,        // 45 deg/s left yaw (4s for full turn)
+    .failsafe_fw_yaw_rate = 45,         // 45 deg/s left yaw (left is positive, 4s for full turn)
     .failsafe_stick_motion_threshold = 50,
 );
 
@@ -176,9 +176,21 @@ bool failsafeIsActive(void)
     return failsafeState.active;
 }
 
+bool failsafeShouldApplyControlInput(void)
+{
+    return failsafeState.controlling;
+}
+
 bool failsafeRequiresAngleMode(void)
 {
     return failsafeState.active && failsafeProcedureLogic[failsafeConfig()->failsafe_procedure].forceAngleMode;
+}
+
+bool failsafeRequiresMotorStop(void)
+{
+    return failsafeState.active &&
+           failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_AUTO_LANDING &&
+           failsafeConfig()->failsafe_throttle < motorConfig()->minthrottle;
 }
 
 void failsafeStartMonitoring(void)
@@ -188,12 +200,13 @@ void failsafeStartMonitoring(void)
 
 static bool failsafeShouldHaveCausedLandingByNow(void)
 {
-    return (millis() > failsafeState.landingShouldBeFinishedAt);
+    return failsafeConfig()->failsafe_off_delay && (millis() > failsafeState.landingShouldBeFinishedAt);
 }
 
 static void failsafeActivate(failsafePhase_e newPhase)
 {
     failsafeState.active = true;
+    failsafeState.controlling = true;
     failsafeState.phase = newPhase;
     ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
     failsafeState.landingShouldBeFinishedAt = millis() + failsafeConfig()->failsafe_off_delay * MILLIS_PER_TENTH_SECOND;
@@ -454,6 +467,7 @@ void failsafeUpdateState(void)
                 mwDisarm();
                 failsafeState.receivingRxDataPeriod = millis() + failsafeState.receivingRxDataPeriodPreset; // set required period of valid rxData
                 failsafeState.phase = FAILSAFE_RX_LOSS_MONITORING;
+                failsafeState.controlling = false;  // Failsafe no longer in control of the machine - release control to pilot
                 reprocessState = true;
                 break;
 
@@ -480,6 +494,7 @@ void failsafeUpdateState(void)
                 failsafeState.throttleLowPeriod = millis() + failsafeConfig()->failsafe_throttle_low_delay * MILLIS_PER_TENTH_SECOND;
                 failsafeState.phase = FAILSAFE_IDLE;
                 failsafeState.active = false;
+                failsafeState.controlling = false;
                 DISABLE_FLIGHT_MODE(FAILSAFE_MODE);
                 reprocessState = true;
                 break;

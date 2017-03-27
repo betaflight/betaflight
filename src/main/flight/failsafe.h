@@ -82,6 +82,7 @@ typedef struct failsafeState_s {
     int16_t events;
     bool monitoring;
     bool active;
+    bool controlling;
     timeMs_t rxDataFailurePeriod;
     timeMs_t rxDataRecoveryPeriod;
     timeMs_t validRxDataReceivedAt;
@@ -110,6 +111,8 @@ void failsafeOnRxResume(void);
 bool failsafeMayRequireNavigationMode(void);
 void failsafeApplyControlInput(void);
 bool failsafeRequiresAngleMode(void);
+bool failsafeRequiresMotorStop(void);
+bool failsafeShouldApplyControlInput(void);
 void failsafeUpdateRcCommandValues(void);
 
 void failsafeOnValidDataReceived(void);

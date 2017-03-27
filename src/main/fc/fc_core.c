@@ -175,7 +175,7 @@ void annexCode(void)
 {
     int32_t throttleValue;
 
-    if (failsafeIsActive()) {
+    if (failsafeShouldApplyControlInput()) {
         // Failsafe will apply rcCommand for us
         failsafeApplyControlInput();
     }
