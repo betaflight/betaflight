@@ -3083,7 +3083,9 @@ static void cliDefaults(char *cmdline)
 
     cliPrint("Resetting to defaults");
     resetEEPROM();
-    cliReboot();
+
+    if (!checkCommand(cmdline, "noreboot"))
+        cliReboot();
 }
 
 static void cliGet(char *cmdline)
@@ -3426,11 +3428,13 @@ static void printConfig(const char *cmdline, bool doDiff)
         cliPrintHashLine("version");
         cliVersion(NULL);
 
-#ifndef CLI_MINIMAL_VERBOSITY
         if ((dumpMask & (DUMP_ALL | DO_DIFF)) == (DUMP_ALL | DO_DIFF)) {
-            cliPrintHashLine("reset configuration to default settings\r\ndefaults");
-        }
+#ifndef CLI_MINIMAL_VERBOSITY
+            cliPrintHashLine("reset configuration to default settings\r\ndefaults noreboot");
+#else
+            cliPrintf("defaults noreboot\r\n");
 #endif
+        }
 
         cliPrintHashLine("resources");
         //printResource(dumpMask, &defaultConfig);
