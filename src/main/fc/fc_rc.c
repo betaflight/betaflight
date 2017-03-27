@@ -284,7 +284,7 @@ void updateRcCommands(void)
             } else {
                 tmp = 0;
             }
-            rcCommand[axis] = tmp * -rcControlsConfig()->yaw_control_direction;
+            rcCommand[axis] = tmp * -GET_YAW_DIRECTION(rcControlsConfig()->yaw_control_reversed);
         }
         if (rcData[axis] < rxConfig()->midrc) {
             rcCommand[axis] = -rcCommand[axis];

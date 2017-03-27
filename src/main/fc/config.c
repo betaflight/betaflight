@@ -559,7 +559,7 @@ void createDefaultConfig(master_t *config)
     config->boardAlignment.pitchDegrees = 0;
     config->boardAlignment.yawDegrees = 0;
 #endif
-    config->rcControlsConfig.yaw_control_direction = 1;
+    config->rcControlsConfig.yaw_control_reversed = false;
 
     // xxx_hardware: 0:default/autodetect, 1: disable
     config->compassConfig.mag_hardware = 1;
@@ -787,9 +787,6 @@ void createDefaultConfig(master_t *config)
     resetStatusLedConfig(&config->statusLedConfig);
 #endif
 
-#if defined(TARGET_CONFIG)
-    targetConfiguration(config);
-#endif
 }
 #endif
 
@@ -799,6 +796,11 @@ void resetConfigs(void)
     createDefaultConfig(&masterConfig);
 #endif
     pgResetAll(MAX_PROFILE_COUNT);
+
+#if defined(TARGET_CONFIG)
+    targetConfiguration();
+#endif
+
     pgActivateProfile(0);
 
     setPidProfile(0);
