@@ -437,6 +437,12 @@ void configureLtmTelemetryPort(void)
     else
         ltm_schedule = ltm_normal_schedule;
 
+    /* Sanity check that we can support the scheduler */
+    if(baudRateIndex == BAUD_2400 && telemetryConfig()->ltmUpdateRate == LTM_RATE_NORMAL)
+         ltm_schedule = ltm_medium_schedule;
+    if(baudRateIndex == BAUD_1200)
+         ltm_schedule = ltm_slow_schedule;
+
     ltmPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_LTM, NULL, baudRates[baudRateIndex], TELEMETRY_LTM_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
     if (!ltmPort)
         return;
