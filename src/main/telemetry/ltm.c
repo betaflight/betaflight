@@ -240,6 +240,7 @@ void ltm_oframe(sbuf_t *dst)
     ltm_serialise_8(dst, 1);                 // OSD always ON
     ltm_serialise_8(dst, STATE(GPS_FIX_HOME) ? 1 : 0);
 }
+#endif
 
 /*
  * Extended information data frame, 1 Hz rate
@@ -251,14 +252,17 @@ void ltm_xframe(sbuf_t *dst)
         (isHardwareHealthy() ? 0 : 1) << 0;     // bit 0 - hardware failure indication (1 - something is wrong with the hardware sensors)
 
     sbufWriteU8(dst, 'X');
+#if defined(GPS)
     ltm_serialise_16(dst, gpsSol.hdop);
+#else
+    ltm_serialise_16(dst, 9999);
+#endif
     ltm_serialise_8(dst, sensorStatus);
     ltm_serialise_8(dst, ltm_x_counter);
     ltm_serialise_8(dst, 0);
     ltm_serialise_8(dst, 0);
     ltm_x_counter++; // overflow is OK
 }
-#endif
 
 #if defined(NAV)
 /** OSD additional data frame, ~4 Hz rate, navigation system status
@@ -473,10 +477,10 @@ int getLtmFrame(uint8_t *frame, ltm_frame_e ltmFrameType)
     case LTM_OFRAME:
         ltm_oframe(sbuf);
         break;
+#endif
     case LTM_XFRAME:
         ltm_xframe(sbuf);
         break;
-#endif
 #if defined(NAV)
     case LTM_NFRAME:
         ltm_nframe(sbuf);
