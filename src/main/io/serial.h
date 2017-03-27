@@ -47,6 +47,7 @@ typedef enum {
     BAUD_AUTO = 0,
     BAUD_1200,
     BAUD_2400,
+    BAUD_4800,
     BAUD_9600,
     BAUD_19200,
     BAUD_38400,
