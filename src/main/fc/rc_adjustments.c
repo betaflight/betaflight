@@ -211,8 +211,8 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .adjustmentFunction = ADJUSTMENT_D_SETPOINT_TRANSITION,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
-	},
-	{
+    },
+    {
         .adjustmentFunction = ADJUSTMENT_HORIZON_STRENGTH,
         .mode = ADJUSTMENT_MODE_SELECT,
         .data = { .selectConfig = { .switchPositions = 255 }}
@@ -253,18 +253,18 @@ static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t 
             newValue = constrain((int)controlRateConfig->rcRate8 + delta, 0, 250); // FIXME magic numbers repeated in cli.c
             controlRateConfig->rcRate8 = newValue;
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_RATE, newValue);
-        break;
+            break;
         case ADJUSTMENT_RC_EXPO:
             newValue = constrain((int)controlRateConfig->rcExpo8 + delta, 0, 100); // FIXME magic numbers repeated in cli.c
             controlRateConfig->rcExpo8 = newValue;
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_EXPO, newValue);
-        break;
+            break;
         case ADJUSTMENT_THROTTLE_EXPO:
             newValue = constrain((int)controlRateConfig->thrExpo8 + delta, 0, 100); // FIXME magic numbers repeated in cli.c
             controlRateConfig->thrExpo8 = newValue;
             generateThrottleCurve();
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_THROTTLE_EXPO, newValue);
-        break;
+            break;
         case ADJUSTMENT_PITCH_ROLL_RATE:
         case ADJUSTMENT_PITCH_RATE:
             newValue = constrain((int)controlRateConfig->rates[FD_PITCH] + delta, 0, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX);
@@ -367,27 +367,30 @@ static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t 
 static void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
 {
     uint8_t beeps = 0;
-    uint8_t newValue = 0;
 
     switch(adjustmentFunction) {
-        case ADJUSTMENT_RATE_PROFILE:
-            if (getCurrentControlRateProfileIndex() != position) {
-                changeControlRateProfile(position);
-                blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RATE_PROFILE, position);
-                beeps = position + 1;
+        case ADJUSTMENT_RATE_PROFILE: 
+            {
+                if (getCurrentControlRateProfileIndex() != position) {
+                    changeControlRateProfile(position);
+                    blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RATE_PROFILE, position);
+                    beeps = position + 1;
+                }
+                break;
             }
-            break;
-        case ADJUSTMENT_HORIZON_STRENGTH:
-            newValue = constrain(position, 0, 200); // FIXME magic numbers repeated in serial_cli.c
-            if(pidProfile->D8[PIDLEVEL] != newValue) {
-                beeps = ((newValue - pidProfile->D8[PIDLEVEL]) / 8) + 1;
-                pidProfile->D8[PIDLEVEL] = newValue;
-                blackboxLogInflightAdjustmentEvent(ADJUSTMENT_HORIZON_STRENGTH, position);
+        case ADJUSTMENT_HORIZON_STRENGTH: 
+            {
+                uint8_t newValue = constrain(position, 0, 200); // FIXME magic numbers repeated in serial_cli.c
+                if(pidProfile->D8[PIDLEVEL] != newValue) {
+                    beeps = ((newValue - pidProfile->D8[PIDLEVEL]) / 8) + 1;
+                    pidProfile->D8[PIDLEVEL] = newValue;
+                    blackboxLogInflightAdjustmentEvent(ADJUSTMENT_HORIZON_STRENGTH, position);
+                }
+                break;
             }
-            break;
     }
 
-    if(beeps) {
+    if (beeps) {
         beeperConfirmationBeeps(beeps);
     }
 
