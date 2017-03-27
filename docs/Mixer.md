@@ -129,6 +129,7 @@ Custom servo mixing rules can be applied to each servo.  Rules are applied in th
 | 11 | RC AUX 4 |
 | 12 | GIMBAL PITCH |
 | 13 | GIMBAL ROLL |
+| 13 | FEATURE FLAPS |
 
 Note: the `smix` command may show a servo mix that is not active, custom servo mixes are only active for models that use custom mixers.
 

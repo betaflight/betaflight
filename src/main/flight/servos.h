@@ -27,20 +27,21 @@
 
 // These must be consecutive, see 'reversedSources'
 enum {
-    INPUT_STABILIZED_ROLL = 0,
-    INPUT_STABILIZED_PITCH,
-    INPUT_STABILIZED_YAW,
-    INPUT_STABILIZED_THROTTLE,
-    INPUT_RC_ROLL,
-    INPUT_RC_PITCH,
-    INPUT_RC_YAW,
-    INPUT_RC_THROTTLE,
-    INPUT_RC_AUX1,
-    INPUT_RC_AUX2,
-    INPUT_RC_AUX3,
-    INPUT_RC_AUX4,
-    INPUT_GIMBAL_PITCH,
-    INPUT_GIMBAL_ROLL,
+    INPUT_STABILIZED_ROLL       = 0,
+    INPUT_STABILIZED_PITCH      = 1,
+    INPUT_STABILIZED_YAW        = 2,
+    INPUT_STABILIZED_THROTTLE   = 3,
+    INPUT_RC_ROLL               = 4,
+    INPUT_RC_PITCH              = 5,
+    INPUT_RC_YAW                = 6,
+    INPUT_RC_THROTTLE           = 7,
+    INPUT_RC_AUX1               = 8,
+    INPUT_RC_AUX2               = 9,
+    INPUT_RC_AUX3               = 10,
+    INPUT_RC_AUX4               = 11,
+    INPUT_GIMBAL_PITCH          = 12,
+    INPUT_GIMBAL_ROLL           = 13,
+    INPUT_FEATURE_FLAPS         = 14,
 
     INPUT_SOURCE_COUNT
 } inputSource_e;
@@ -79,7 +80,7 @@ typedef enum {
 #define SERVO_FLAPPERONS_MIN SERVO_FLAPPERON_1
 #define SERVO_FLAPPERONS_MAX SERVO_FLAPPERON_2
 
-#define FLAPERON_THROW_DEFAULT 250
+#define FLAPERON_THROW_DEFAULT 200
 #define FLAPERON_THROW_MIN 100
 #define FLAPERON_THROW_MAX 400
 
@@ -117,7 +118,7 @@ typedef struct servoConfig_s {
     uint16_t servoPwmRate;                  // The update rate of servo outputs (50-498Hz)
     int16_t servo_lowpass_freq;             // lowpass servo filter frequency selection; 1/1000ths of loop freq
     uint16_t flaperon_throw_offset;
-    uint8_t flaperon_throw_inverted;
+    uint8_t __reserved;
     uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
 } servoConfig_t;
 
