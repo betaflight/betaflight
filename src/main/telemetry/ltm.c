@@ -80,6 +80,7 @@
 
 #define TELEMETRY_LTM_INITIAL_PORT_MODE MODE_TX
 #define LTM_CYCLETIME   100
+#define LTM_SCHEDULE_SIZE (1000/LTM_CYCLETIME)
 
 extern uint16_t rssi;           // FIXME dependency on mw.c
 static serialPort_t *ltmPort;
@@ -88,6 +89,7 @@ static bool ltmEnabled;
 static portSharing_e ltmPortSharing;
 static uint8_t ltm_crc;
 static uint8_t ltmPayload[LTM_MAX_MESSAGE_SIZE];
+static uint8_t ltm_x_counter;
 
 static void ltm_initialise_packet(sbuf_t *dst)
 {
@@ -238,6 +240,7 @@ void ltm_oframe(sbuf_t *dst)
     ltm_serialise_8(dst, 1);                 // OSD always ON
     ltm_serialise_8(dst, STATE(GPS_FIX_HOME) ? 1 : 0);
 }
+#endif
 
 /*
  * Extended information data frame, 1 Hz rate
@@ -249,13 +252,17 @@ void ltm_xframe(sbuf_t *dst)
         (isHardwareHealthy() ? 0 : 1) << 0;     // bit 0 - hardware failure indication (1 - something is wrong with the hardware sensors)
 
     sbufWriteU8(dst, 'X');
+#if defined(GPS)
     ltm_serialise_16(dst, gpsSol.hdop);
-    ltm_serialise_8(dst, sensorStatus);
-    ltm_serialise_8(dst, 0);
-    ltm_serialise_8(dst, 0);
-    ltm_serialise_8(dst, 0);
-}
+#else
+    ltm_serialise_16(dst, 9999);
 #endif
+    ltm_serialise_8(dst, sensorStatus);
+    ltm_serialise_8(dst, ltm_x_counter);
+    ltm_serialise_8(dst, 0);
+    ltm_serialise_8(dst, 0);
+    ltm_x_counter++; // overflow is OK
+}
 
 #if defined(NAV)
 /** OSD additional data frame, ~4 Hz rate, navigation system status
@@ -279,7 +286,11 @@ void ltm_nframe(sbuf_t *dst)
 #define LTM_BIT_NFRAME  (1 << 4)
 #define LTM_BIT_XFRAME  (1 << 5)
 
-static uint8_t ltm_schedule[10] = {
+/*
+ * This is the normal (default) scheduler, needs c. 4800 baud or faster
+ * Equates to c. 303 bytes / second
+ */
+static uint8_t ltm_normal_schedule[LTM_SCHEDULE_SIZE] = {
     LTM_BIT_AFRAME | LTM_BIT_GFRAME,
     LTM_BIT_AFRAME | LTM_BIT_SFRAME | LTM_BIT_OFRAME,
     LTM_BIT_AFRAME | LTM_BIT_GFRAME,
@@ -291,6 +302,43 @@ static uint8_t ltm_schedule[10] = {
     LTM_BIT_AFRAME | LTM_BIT_GFRAME,
     LTM_BIT_AFRAME | LTM_BIT_SFRAME | LTM_BIT_NFRAME
 };
+
+/*
+ * This is the medium scheduler, needs c. 2400 baud or faster
+ * Equates to c. 164 bytes / second
+ */
+static uint8_t ltm_medium_schedule[LTM_SCHEDULE_SIZE] = {
+    LTM_BIT_AFRAME,
+    LTM_BIT_GFRAME,
+    LTM_BIT_AFRAME | LTM_BIT_SFRAME,
+    LTM_BIT_OFRAME,
+    LTM_BIT_AFRAME | LTM_BIT_XFRAME,
+    LTM_BIT_OFRAME,
+    LTM_BIT_AFRAME | LTM_BIT_SFRAME,
+    LTM_BIT_GFRAME,
+    LTM_BIT_AFRAME,
+    LTM_BIT_NFRAME
+};
+
+/*
+ * This is the slow scheduler, needs c. 1200 baud or faster
+ * Equates to c. 105 bytes / second (91 b/s if the second GFRAME is zeroed)
+ */
+static uint8_t ltm_slow_schedule[LTM_SCHEDULE_SIZE] = {
+    LTM_BIT_GFRAME,
+    LTM_BIT_SFRAME,
+    LTM_BIT_AFRAME,
+    0,
+    LTM_BIT_OFRAME,
+    LTM_BIT_XFRAME,
+    LTM_BIT_GFRAME, // consider zeroing this for even lower bytes/sec
+    0,
+    LTM_BIT_AFRAME,
+    LTM_BIT_NFRAME,
+};
+
+/* Set by initialisation */
+static uint8_t *ltm_schedule;
 
 static void process_ltm(void)
 {
@@ -380,9 +428,19 @@ void configureLtmTelemetryPort(void)
     if (baudRateIndex == BAUD_AUTO) {
         baudRateIndex = BAUD_19200;
     }
+
+    /* setup scheduler, default to 'normal' */
+    if(telemetryConfig()->ltmUpdateRate == LTM_RATE_MEDIUM)
+        ltm_schedule = ltm_medium_schedule;
+    else if (telemetryConfig()->ltmUpdateRate == LTM_RATE_SLOW)
+        ltm_schedule = ltm_slow_schedule;
+    else
+        ltm_schedule = ltm_normal_schedule;
+
     ltmPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_LTM, NULL, baudRates[baudRateIndex], TELEMETRY_LTM_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
     if (!ltmPort)
         return;
+    ltm_x_counter = 0;
     ltmEnabled = true;
 }
 
@@ -419,10 +477,10 @@ int getLtmFrame(uint8_t *frame, ltm_frame_e ltmFrameType)
     case LTM_OFRAME:
         ltm_oframe(sbuf);
         break;
+#endif
     case LTM_XFRAME:
         ltm_xframe(sbuf);
         break;
-#endif
 #if defined(NAV)
     case LTM_NFRAME:
         ltm_nframe(sbuf);

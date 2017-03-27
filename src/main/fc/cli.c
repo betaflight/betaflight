@@ -330,6 +330,12 @@ static const char * const lookupTableNoSignalThrottle[] = {
     "HOLD", "DROP"
 };
 
+#ifdef TELEMETRY_LTM
+static const char * const lookupTableLTMRates[] = {
+    "NORMAL", "MEDIUM", "SLOW"
+};
+#endif
+
 typedef struct lookupTableEntry_s {
     const char * const *values;
     const uint8_t valueCount;
@@ -387,6 +393,9 @@ typedef enum {
 #endif
     TABLE_DEBUG,
     TABLE_RX_NOSIGNAL_THROTTLE,
+#ifdef TELEMETRY_LTM
+    TABLE_LTM_UPDATE_RATE,
+#endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
@@ -442,6 +451,9 @@ static const lookupTableEntry_t lookupTables[] = {
 #endif
     { lookupTableDebug, sizeof(lookupTableDebug) / sizeof(char *) },
     { lookupTableNoSignalThrottle, sizeof(lookupTableNoSignalThrottle) / sizeof(char *) },
+#ifdef TELEMETRY_LTM
+    {lookupTableLTMRates, sizeof(lookupTableLTMRates) / sizeof(char *) },
+#endif
 };
 
 #define VALUE_TYPE_OFFSET 0
@@ -869,6 +881,9 @@ static const clivalue_t valueTable[] = {
     { "smartport_uart_unidir",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, smartportUartUnidirectional) },
 #endif
     { "ibus_telemetry_type",       VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  255 }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, ibusTelemetryType ) },
+#ifdef TELEMETRY_LTM
+    {"ltm_update_rate",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LTM_UPDATE_RATE }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, ltmUpdateRate) },
+#endif
 #endif
 #ifdef LED_STRIP
     { "ledstrip_visual_beeper",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_visual_beeper) },
