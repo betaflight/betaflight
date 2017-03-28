@@ -35,8 +35,8 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM12, CH1, PB14, TIM_USE_PWM | TIM_USE_PPM,   TIMER_OUTPUT_NONE,     0), // PPM
     DEF_TIM(TIM12, CH2, PB15, TIM_USE_PWM,                 TIMER_OUTPUT_NONE,     0), // S2_IN
 #endif
-    DEF_TIM(TIM8,  CH1, PC6,  TIM_USE_PWM,                 TIMER_OUTPUT_NONE,     0), // S3_IN
-    DEF_TIM(TIM8,  CH2, PC7,  TIM_USE_PWM,                 TIMER_OUTPUT_NONE,     0), // S4_IN
+    DEF_TIM(TIM8,  CH1, PC6,  TIM_USE_PWM,                 TIMER_OUTPUT_NONE,     0), // S3_IN, UART6_TX
+    DEF_TIM(TIM8,  CH2, PC7,  TIM_USE_PWM,                 TIMER_OUTPUT_NONE,     0), // S4_IN, UART6_RX
     DEF_TIM(TIM8,  CH3, PC8,  TIM_USE_PWM,                 TIMER_OUTPUT_NONE,     0), // S5_IN
     DEF_TIM(TIM8,  CH4, PC9,  TIM_USE_PWM,                 TIMER_OUTPUT_NONE,     0), // S6_IN
 #endif // CL_RACINGF4
@@ -48,7 +48,8 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM4,  CH4, PB9,  TIM_USE_MOTOR | TIM_USE_LED, TIMER_OUTPUT_STANDARD, 0), // S5_OUT
 #elif defined(OMNIBUSF4SD)
     DEF_TIM(TIM5,  CH2, PA1,  TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0), // S5_OUT
-    DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_MOTOR | TIM_USE_LED, TIMER_OUTPUT_STANDARD, 0), // S6_OUT
+    DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0), // S6_OUT
+    DEF_TIM(TIM4,  CH1, PB6,  TIM_USE_LED,                 TIMER_OUTPUT_STANDARD, 0), // LED strip for F4 V2 / F4-Pro-0X and later (RCD_CS for F4)
 #else
     DEF_TIM(TIM5,  CH2, PA1,  TIM_USE_MOTOR | TIM_USE_LED, TIMER_OUTPUT_STANDARD, 0), // S5_OUT
     DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0), // S6_OUT
