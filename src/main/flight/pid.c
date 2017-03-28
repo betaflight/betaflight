@@ -442,7 +442,7 @@ static void pidApplyFixedWingRateController(pidState_t *pidState, flight_dynamic
     }
 
 #ifdef AUTOTUNE_FIXED_WING
-    if (FLIGHT_MODE(AUTO_TUNE)) {
+    if (FLIGHT_MODE(AUTO_TUNE) && !FLIGHT_MODE(PASSTHRU_MODE)) {
         autotuneFixedWingUpdate(axis, pidState->rateTarget, pidState->gyroRate, newPTerm + newFFTerm);
     }
 #endif
