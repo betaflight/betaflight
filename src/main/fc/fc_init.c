@@ -492,12 +492,10 @@ void init(void)
 #endif
 
 #ifdef USE_FLASHFS
-    if (blackboxConfig()->device == BLACKBOX_DEVICE_FLASH) {
 #if defined(USE_FLASH_M25P16)
-        m25p16_init(flashConfig());
+    m25p16_init(flashConfig());
 #endif
-        flashfsInit();
-    }
+    flashfsInit();
 #endif
 
 #ifdef USE_SDCARD
