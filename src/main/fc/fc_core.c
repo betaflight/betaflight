@@ -448,7 +448,7 @@ void processRx(timeUs_t currentTimeUs)
 #endif
 
     // Navigation may override PASSTHRU_MODE
-    if (IS_RC_MODE_ACTIVE(BOXPASSTHRU) && !naivationRequiresAngleMode()) {
+    if (IS_RC_MODE_ACTIVE(BOXPASSTHRU) && !naivationRequiresAngleMode() && !failsafeRequiresAngleMode()) {
         ENABLE_FLIGHT_MODE(PASSTHRU_MODE);
     } else {
         DISABLE_FLIGHT_MODE(PASSTHRU_MODE);

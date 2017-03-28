@@ -183,7 +183,7 @@ bool failsafeShouldApplyControlInput(void)
 
 bool failsafeRequiresAngleMode(void)
 {
-    return failsafeState.active && failsafeProcedureLogic[failsafeConfig()->failsafe_procedure].forceAngleMode;
+    return failsafeState.active && failsafeState.controlling && failsafeProcedureLogic[failsafeConfig()->failsafe_procedure].forceAngleMode;
 }
 
 bool failsafeRequiresMotorStop(void)
