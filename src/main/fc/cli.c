@@ -323,7 +323,9 @@ static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "ANGLERATE",
     "ESC_SENSOR",
     "SCHEDULER",
-    "STACK"
+    "STACK",
+    "ESC_SENSOR_RPM",
+    "ESC_SENSOR_TMP"
 };
 
 #ifdef OSD
@@ -4041,7 +4043,7 @@ static void cliResource(char *cmdline)
             cliPrintf("%c%02d: %s ", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
             if (ioRecs[i].index > 0) {
                 cliPrintf("%d", ioRecs[i].index);
-            } 
+            }
             cliPrintf("\r\n");
         }
 
