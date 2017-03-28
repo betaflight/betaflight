@@ -210,6 +210,7 @@
 
 // #undef TELEMETRY_FRSKY
 // #define TELEMETRY_MAVLINK
+#define USE_SERIALRX_SUMD
 
 // IO - from schematics
 #define TARGET_IO_PORTA         0xffff
