@@ -598,7 +598,6 @@ void createDefaultConfig(master_t *config)
 
 #ifndef USE_PARAMETER_GROUPS
 #ifdef USE_SDCARD
-    intFeatureSet(FEATURE_SDCARD, featuresPtr);
     resetsdcardConfig(&config->sdcardConfig);
 #endif
 
@@ -642,7 +641,7 @@ void createDefaultConfig(master_t *config)
     config->armingConfig.disarm_kill_switch = 1;
     config->armingConfig.auto_disarm_delay = 5;
 
-    config->airplaneConfig.fixedwing_althold_dir = 1;
+    config->airplaneConfig.fixedwing_althold_reversed = false;
 
     // Motor/ESC/Servo
     resetMixerConfig(&config->mixerConfig);
@@ -756,10 +755,8 @@ void createDefaultConfig(master_t *config)
 #ifndef USE_PARAMETER_GROUPS
 #ifdef BLACKBOX
 #if defined(ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT)
-    intFeatureSet(FEATURE_BLACKBOX, featuresPtr);
     config->blackboxConfig.device = BLACKBOX_DEVICE_FLASH;
 #elif defined(ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT)
-    intFeatureSet(FEATURE_BLACKBOX, featuresPtr);
     config->blackboxConfig.device = BLACKBOX_DEVICE_SDCARD;
 #else
     config->blackboxConfig.device = BLACKBOX_DEVICE_SERIAL;

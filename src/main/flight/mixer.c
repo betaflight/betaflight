@@ -67,7 +67,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
 #endif
 PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
     .mixerMode = TARGET_DEFAULT_MIXER,
-    .yaw_motor_direction = 1,
+    .yaw_motors_reversed = false,
 );
 
 PG_REGISTER_WITH_RESET_FN(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 0);
@@ -530,7 +530,7 @@ void mixTable(pidProfile_t *pidProfile)
         motorMix[i] =
             scaledAxisPIDf[PITCH] * currentMixer[i].pitch +
             scaledAxisPIDf[ROLL]  * currentMixer[i].roll +
-            scaledAxisPIDf[YAW]   * currentMixer[i].yaw * (-mixerConfig()->yaw_motor_direction);
+            scaledAxisPIDf[YAW]   * currentMixer[i].yaw * -GET_DIRECTION(mixerConfig()->yaw_motors_reversed);
 
         if (vbatCompensationFactor > 1.0f) {
             motorMix[i] *= vbatCompensationFactor;  // Add voltage compensation
