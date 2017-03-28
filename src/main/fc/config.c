@@ -642,7 +642,7 @@ void createDefaultConfig(master_t *config)
     config->armingConfig.disarm_kill_switch = 1;
     config->armingConfig.auto_disarm_delay = 5;
 
-    config->airplaneConfig.fixedwing_althold_dir = 1;
+    config->airplaneConfig.fixedwing_althold_reversed = false;
 
     // Motor/ESC/Servo
     resetMixerConfig(&config->mixerConfig);
