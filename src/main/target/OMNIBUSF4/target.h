@@ -19,6 +19,8 @@
 #define TARGET_BOARD_IDENTIFIER "CLR4"
 #elif defined(OMNIBUSF4SD)
 #define TARGET_BOARD_IDENTIFIER "OBSD"
+#elif defined(VGOODDHF4)
+#define TARGET_BOARD_IDENTIFIER "DHF4"
 #else
 #define TARGET_BOARD_IDENTIFIER "OBF4"
 #endif
@@ -27,6 +29,8 @@
 
 #if defined(CL_RACINGF4)
 #define USBD_PRODUCT_STRING "CL_RACINGF4"
+#elif defined(VGOODDHF4)
+#define USBD_PRODUCT_STRING "VgooddhF4"
 #else
 #define USBD_PRODUCT_STRING "OmnibusF4"
 #endif
@@ -109,6 +113,12 @@
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF4
 #define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
 #define SDCARD_DMA_CHANNEL                  DMA_Channel_0
+#elif defined(VGOODDHF4)
+#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+#define M25P16_CS_PIN           PB12
+#define M25P16_SPI_INSTANCE     SPI2
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
 #else
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 #define M25P16_CS_PIN           SPI3_NSS_PIN
@@ -152,7 +162,7 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 
-#if defined(OMNIBUSF4SD) || defined(CL_RACINGF4)
+#if defined(OMNIBUSF4SD) || defined(CL_RACINGF4) || defined(VGOODDHF4)
 #define USE_SPI_DEVICE_2
 #define SPI2_NSS_PIN            PB12
 #define SPI2_SCK_PIN            PB13
