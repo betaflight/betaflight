@@ -36,15 +36,19 @@
 #endif
 
 #ifdef OPBL
-#define USBD_SERIALNUMBER_STRING "0x8020000"
+#define USBD_SERIALNUMBER_STRING "0x8020000" // Remove this at the next major release (?)
 #endif
 
 #define LED0                    PB5
-//#define LED1                    PB4
+//#define LED1                    PB4 // Remove this at the next major release
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 
-#define INVERTER_PIN_USART1     PC0 // PC0 used as inverter select GPIO
+#ifdef OMNIBUSF4SD
+#define INVERTER_PIN_UART6      PC8 // Omnibus F4 V3 and later
+#else
+#define INVERTER_PIN_UART1      PC0 // PC0 used as inverter select GPIO XXX this is not used --- remove it at the next major release
+#endif
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
@@ -75,8 +79,8 @@
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW90_DEG
 
-//#define USE_MAG_NAZA
-//#define MAG_NAZA_ALIGN CW180_DEG_FLIP
+//#define USE_MAG_NAZA                   // Delete this on next major release
+//#define MAG_NAZA_ALIGN CW180_DEG_FLIP  // Ditto
 
 #define BARO
 #define USE_BARO_MS5611
@@ -217,5 +221,14 @@
 #define TARGET_IO_PORTC 0xffff
 #define TARGET_IO_PORTD 0xffff
 
+#ifdef CL_RACINGF4
+#define USABLE_TIMER_CHANNEL_COUNT 6
+#define USED_TIMERS  ( TIM_N(4) | TIM_N(8) )
+#else
+#ifdef OMNIBUSF4SD
+#define USABLE_TIMER_CHANNEL_COUNT 13
+#else
 #define USABLE_TIMER_CHANNEL_COUNT 12
+#endif
 #define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9))
+#endif
