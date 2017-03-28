@@ -83,7 +83,7 @@ extern uint8_t __config_end;
 #include "fc/runtime_config.h"
 #include "fc/fc_msp.h"
 
-#include "flight/altitudehold.h"
+#include "flight/altitude.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -326,7 +326,8 @@ static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "SCHEDULER",
     "STACK",
     "ESC_SENSOR_RPM",
-    "ESC_SENSOR_TMP"
+    "ESC_SENSOR_TMP",
+    "ALTITUDE"
 };
 
 #ifdef OSD

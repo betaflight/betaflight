@@ -49,7 +49,7 @@
 #include "fc/cli.h"
 #include "fc/fc_dispatch.h"
 
-#include "flight/altitudehold.h"
+#include "flight/altitude.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"

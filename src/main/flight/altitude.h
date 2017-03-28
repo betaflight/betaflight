@@ -20,7 +20,6 @@
 #include "common/time.h"
 
 extern int32_t AltHold;
-extern int32_t vario;
 
 typedef struct airplaneConfig_s {
     bool fixedwing_althold_reversed;           // false for negative pitch/althold gain. later check if need more than just sign
@@ -29,6 +28,8 @@ typedef struct airplaneConfig_s {
 PG_DECLARE(airplaneConfig_t, airplaneConfig);
 
 void calculateEstimatedAltitude(timeUs_t currentTimeUs);
+int32_t getEstimatedAltitude(void);
+int32_t getEstimatedVario(void);
 
 struct pidProfile_s;
 void configureAltitudeHold(struct pidProfile_s *initialPidProfile);
@@ -36,5 +37,3 @@ void configureAltitudeHold(struct pidProfile_s *initialPidProfile);
 void applyAltHold(void);
 void updateAltHoldState(void);
 void updateSonarAltHoldState(void);
-
-int32_t altitudeHoldGetEstimatedAltitude(void);
