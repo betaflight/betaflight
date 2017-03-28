@@ -22,12 +22,12 @@
 
 #include <platform.h>
 
-#include "build/build_config.h"
-#include "build/debug.h"
+#include "blackbox/blackbox.h"
+#include "blackbox/blackbox_fielddefs.h"
 
 #include "common/axis.h"
-#include "common/filter.h"
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "drivers/time.h"
 
@@ -37,6 +37,7 @@
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_adjustments.h"
 #include "fc/runtime_config.h"
 
 #include "flight/pid.h"
@@ -122,16 +123,31 @@ void autotuneUpdateState(void)
         DISABLE_FLIGHT_MODE(AUTO_TUNE);
     }
 }
+
+static void blackboxLogAutotuneEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue)
+{
+#ifndef BLACKBOX
+    UNUSED(adjustmentFunction);
+    UNUSED(newValue);
+#else
+    if (feature(FEATURE_BLACKBOX)) {
+        flightLogEvent_inflightAdjustment_t eventData;
+        eventData.adjustmentFunction = adjustmentFunction;
+        eventData.newValue = newValue;
+        eventData.floatFlag = false;
+        blackboxLogEvent(FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT, (flightLogEventData_t*)&eventData);
+    }
 #endif
+}
 
 #if defined(AUTOTUNE_FIXED_WING)
 #define AUTOTUNE_FIXED_WING_OVERSHOOT_TIME      100
 #define AUTOTUNE_FIXED_WING_UNDERSHOOT_TIME     200
-#define AUTOTUNE_FIXED_WING_DECREASE_STEP       8       // 8%
-#define AUTOTUNE_FIXED_WING_INCREASE_STEP       5       // 5%
+#define AUTOTUNE_FIXED_WING_DECREASE_STEP       8           // 8%
+#define AUTOTUNE_FIXED_WING_INCREASE_STEP       5           // 5%
 #define AUTOTUNE_FIXED_WING_MIN_FF              10
 #define AUTOTUNE_FIXED_WING_MAX_FF              200
-   
+
 void autotuneFixedWingUpdate(const flight_dynamics_index_t axis, float desiredRateDps, float reachedRateDps, float pidOutput)
 {
     const timeMs_t currentTimeMs = millis();
@@ -151,8 +167,8 @@ void autotuneFixedWingUpdate(const flight_dynamics_index_t axis, float desiredRa
         tuneCurrent[axis].pidSaturated = true;
     }
 
-    if (absDesiredRateDps < 0.75f * maxDesiredRate) {
-        // We can make decisions only when we are demanding at least 75% of max configured rate
+    if (absDesiredRateDps < 0.50f * maxDesiredRate) {
+        // We can make decisions only when we are demanding at least 50% of max configured rate
         newState = DEMAND_TOO_LOW;
     }
     else if (fabsf(reachedRateDps) > absDesiredRateDps) {
@@ -193,10 +209,24 @@ void autotuneFixedWingUpdate(const flight_dynamics_index_t axis, float desiredRa
             // Set P-gain to 10% of FF gain (quite agressive - FIXME)
             tuneCurrent[axis].gainP = tuneCurrent[axis].gainD * 0.1f;                       // TODO: Figure out optimal ratio between P and FF
 
-            // Set integrator gain to reach the same response as FF gain in 1 second
-            tuneCurrent[axis].gainI = (tuneCurrent[axis].gainD / FP_PID_RATE_FF_MULTIPLIER) * 1.0f * FP_PID_RATE_I_MULTIPLIER;
-            tuneCurrent[axis].gainI = constrainf(tuneCurrent[axis].gainI, 1.0f, 50.0f);
+            // Set integrator gain to reach the same response as FF gain in 0.667 second
+            tuneCurrent[axis].gainI = (tuneCurrent[axis].gainD / FP_PID_RATE_FF_MULTIPLIER) * 1.5f * FP_PID_RATE_I_MULTIPLIER;
+            tuneCurrent[axis].gainI = constrainf(tuneCurrent[axis].gainI, 2.0f, 50.0f);
             autotuneUpdateGains(tuneCurrent);
+
+            switch (axis) {
+            case FD_ROLL:
+                blackboxLogAutotuneEvent(ADJUSTMENT_ROLL_D, tuneCurrent[axis].gainD);
+                break;
+
+            case FD_PITCH:
+                blackboxLogAutotuneEvent(ADJUSTMENT_PITCH_D, tuneCurrent[axis].gainD);
+                break;
+
+            case FD_YAW:
+                blackboxLogAutotuneEvent(ADJUSTMENT_YAW_D, tuneCurrent[axis].gainD);
+                break;
+            }
         }
 
         // Change state and reset saturation flag
@@ -205,4 +235,6 @@ void autotuneFixedWingUpdate(const flight_dynamics_index_t axis, float desiredRa
         tuneCurrent[axis].pidSaturated = false;
     }
 }
+#endif
+
 #endif
