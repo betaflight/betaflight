@@ -26,3 +26,5 @@ void dashboardUpdate(timeUs_t currentTimeUs);
 
 void dashboardSetPage(pageId_e newPageId);
 void dashboardSetNextPageChangeAt(timeUs_t futureMicros);
+
+void formatTrimDegrees ( char formattedTrim[7], int16_t trimValue );

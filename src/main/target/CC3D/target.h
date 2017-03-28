@@ -213,6 +213,9 @@
 // CC3D is widely used for airplanes - enable fw_autotune
 #define AUTOTUNE_FIXED_WING
 
+// #undef TELEMETRY_FRSKY
+// #define TELEMETRY_MAVLINK
+
 // IO - from schematics
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

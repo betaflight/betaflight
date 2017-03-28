@@ -98,17 +98,30 @@ The INAV implementation of LTM implements the following frames:
   suffixed '+' not implemented in INAV.
 * O-FRAME: Origin (home position, lat, long, altitude, fix)
 
-In addition, in the inav (navigation-rewrite) fork:
+In addition, in  iNav:
+
 * N-FRAME: Navigation information (GPS mode, Nav mode, Nav action,
   Waypoint number, Nav Error, Nav Flags).
+* X-FRAME: Extra information. Currently HDOP is reported.
 
 LTM is transmit only, and can work at any supported baud rate. It is
 designed to operate over 2400 baud (9600 in INAV) and does not
 benefit from higher rates. It is thus usable on soft serial.
 
+A CLI variable `ltm_update_rate` may be used to configure the update
+rate and hence band-width used by LTM, with the following enumerations:
+
+* NORMAL: Legacy rate, currently 303 bytes/second (requires 4800 bps)
+* MEDIUM: 164 bytes/second (requires 2400 bps)
+* SLOW: 105 bytes/second (requires 1200 bps)
+
+For many telemetry devices, there is direction correlation between the
+air-speed of the radio link and range; thus a lower value may
+facilitate longer range links.
+
 More information about the fields, encoding and enumerations may be
-found at
-https://github.com/stronnag/mwptools/blob/master/docs/ltm-definition.txt
+found at https://github.com/iNavFlight/inav/wiki/Lightweight-Telemetry-(LTM).
+
 
 ## MAVLink telemetry
 
@@ -237,7 +250,7 @@ HDOP: 0 is 0-9m, 8 is 80-90m, 9 is >90m
 
 Mode: 1-Armed(rate), 2-Horizon, 3-Angle, 4-HeadFree or Mag, 5-AltHold, 6-PosHold, 7-Rth, 8-Fail and Rth, 9-Fail
 
-Example: 12803 is 12 satelites, Fix3D, FixHome, 0-9m HDOP, Angle Mode 
+Example: 12803 is 12 satelites, Fix3D, FixHome, 0-9m HDOP, Angle Mode
 
 ### CLI command
 
@@ -257,6 +270,3 @@ These receivers are reported to work with i-bus telemetry:
 - FlySky/Turnigy FS-iA10B 10-Channel Receiver (http://www.flysky-cn.com/products_detail/productId=52.html)
 
 Note that the FlySky/Turnigy FS-iA4B 4-Channel Receiver (http://www.flysky-cn.com/products_detail/productId=46.html) seems to work but has a bug that might lose the binding, DO NOT FLY the FS-iA4B!
-
-
-
