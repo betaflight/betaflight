@@ -1674,22 +1674,12 @@ void handleBlackbox(timeUs_t currentTimeUs)
     }
 }
 
-static bool canUseBlackboxWithCurrentConfiguration(void)
-{
-#ifdef USE_SDCARD
-    return feature(FEATURE_BLACKBOX) && 
-        !(blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD && !feature(FEATURE_SDCARD));
-#else
-    return feature(FEATURE_BLACKBOX);
-#endif
-}
-
 /**
  * Call during system startup to initialize the blackbox.
  */
 void initBlackbox(void)
 {
-    if (canUseBlackboxWithCurrentConfiguration()) {
+    if (blackboxConfig()->device) {
         blackboxSetState(BLACKBOX_STATE_STOPPED);
     } else {
         blackboxSetState(BLACKBOX_STATE_DISABLED);

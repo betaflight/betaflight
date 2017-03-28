@@ -60,7 +60,7 @@ static void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFu
     UNUSED(adjustmentFunction);
     UNUSED(newValue);
 #else
-    if (feature(FEATURE_BLACKBOX)) {
+    if (blackboxConfig()->device) {
         flightLogEvent_inflightAdjustment_t eventData;
         eventData.adjustmentFunction = adjustmentFunction;
         eventData.newValue = newValue;
@@ -77,7 +77,7 @@ static void blackboxLogInflightAdjustmentEventFloat(adjustmentFunction_e adjustm
     UNUSED(adjustmentFunction);
     UNUSED(newFloatValue);
 #else
-    if (feature(FEATURE_BLACKBOX)) {
+    if (blackboxConfig()->device) {
         flightLogEvent_inflightAdjustment_t eventData;
         eventData.adjustmentFunction = adjustmentFunction;
         eventData.newFloatValue = newFloatValue;

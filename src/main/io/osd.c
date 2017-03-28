@@ -752,7 +752,7 @@ static void osdShowStats(void)
     sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
     displayWrite(osdDisplayPort, 22, top++, buff);
 
-    if (feature(FEATURE_BLACKBOX) && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
+    if (blackboxConfig()->device && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
         displayWrite(osdDisplayPort, 2, top, "BLACKBOX         :");
         osdGetBlackboxStatusString(buff, 10);
         displayWrite(osdDisplayPort, 22, top++, buff);
