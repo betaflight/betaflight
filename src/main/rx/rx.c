@@ -121,7 +121,6 @@ PG_RESET_TEMPLATE(rxConfig_t, rxConfig,
     .rssi_scale = RSSI_SCALE_DEFAULT,
     .rssiInvert = 0,
     .rcSmoothing = 1,
-    .rxNoSignalThrottleBehavior = RX_NOSIGNAL_THROTTLE_HOLD,
 );
 
 void resetAllRxChannelRangeConfigurations(void)
@@ -409,27 +408,6 @@ static uint16_t calculateNonDataDrivenChannel(uint8_t chan, uint16_t sample)
     return rcDataMean[chan] / PPM_AND_PWM_SAMPLE_COUNT;
 }
 
-static uint16_t getRxNosignalValue(uint8_t channel)
-{
-    switch (channel) {
-        case ROLL:
-        case PITCH:
-        case YAW:
-            return rxConfig()->midrc;
-
-        case THROTTLE:
-            if (rxConfig()->rxNoSignalThrottleBehavior == RX_NOSIGNAL_THROTTLE_DROP) {
-                return feature(FEATURE_3D) ? rxConfig()->midrc : rxConfig()->rx_min_usec;
-            }
-            else {
-                return rcData[channel];
-            }
-
-        default:
-            return rcData[channel];
-    }
-}
-
 STATIC_UNIT_TESTED uint16_t applyRxChannelRangeConfiguraton(int sample, const rxChannelRangeConfig_t *range)
 {
     // Avoid corruption of channel with a value of PPM_RCVR_TIMEOUT
@@ -461,19 +439,14 @@ static void readRxChannelsApplyRanges(void)
     }
 }
 
-static void detectAndApplySignalLossBehaviour(void)
+static void detectSignalLoss(void)
 {
-    bool useValueFromRx = true;
     const bool rxIsDataDriven = isRxDataDriven();
     const timeMs_t currentMilliTime = millis();
 
     if (!rxIsDataDriven) {
         rxSignalReceived = rxSignalReceivedNotDataDriven;
         rxIsInFailsafeMode = rxIsInFailsafeModeNotDataDriven;
-    }
-
-    if (!rxSignalReceived || rxIsInFailsafeMode) {
-        useValueFromRx = false;
     }
 
 #ifdef DEBUG_RX_SIGNAL_LOSS
@@ -485,16 +458,12 @@ static void detectAndApplySignalLossBehaviour(void)
     rxResetFlightChannelStatus();
 
     for (int channel = 0; channel < rxRuntimeConfig.channelCount; channel++) {
-
-        uint16_t sample = (useValueFromRx) ? rcRaw[channel] : PPM_RCVR_TIMEOUT;
-
+        uint16_t sample = rcRaw[channel];
         bool validPulse = isPulseValid(sample);
 
         if (!validPulse) {
-            if (currentMilliTime < rcInvalidPulsPeriod[channel]) {
-                sample = rcData[channel];           // hold channel for MAX_INVALID_PULS_TIME
-            } else {
-                sample = getRxNosignalValue(channel);   // after that apply rxfail value
+            sample = rcData[channel];   // hold channel
+            if (currentMilliTime > rcInvalidPulsPeriod[channel]) {
                 rxUpdateFlightChannelStatus(channel, validPulse);
             }
         } else {
@@ -510,20 +479,12 @@ static void detectAndApplySignalLossBehaviour(void)
 
     rxFlightChannelsValid = rxHaveValidFlightChannels();
 
-    if (rxFlightChannelsValid && !IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
+    if (rxFlightChannelsValid && !IS_RC_MODE_ACTIVE(BOXFAILSAFE) && rxSignalReceived && !rxIsInFailsafeMode) {
         failsafeOnValidDataReceived();
     } else {
         rxIsInFailsafeMode = rxIsInFailsafeModeNotDataDriven = true;
         failsafeOnValidDataFailed();
-
-        for (int channel = 0; channel < rxRuntimeConfig.channelCount; channel++) {
-            rcData[channel] = getRxNosignalValue(channel);
-        }
     }
-
-#ifdef DEBUG_RX_SIGNAL_LOSS
-    debug[3] = rcData[THROTTLE];
-#endif
 }
 
 void calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
@@ -539,7 +500,7 @@ void calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
     }
 
     readRxChannelsApplyRanges();
-    detectAndApplySignalLossBehaviour();
+    detectSignalLoss();
 
     rcSampleIndex++;
 }

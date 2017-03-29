@@ -326,10 +326,6 @@ static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "NOTCH"
 };
 
-static const char * const lookupTableNoSignalThrottle[] = {
-    "HOLD", "DROP"
-};
-
 #ifdef TELEMETRY_LTM
 static const char * const lookupTableLTMRates[] = {
     "NORMAL", "MEDIUM", "SLOW"
@@ -392,7 +388,6 @@ typedef enum {
     TABLE_OSD,
 #endif
     TABLE_DEBUG,
-    TABLE_RX_NOSIGNAL_THROTTLE,
 #ifdef TELEMETRY_LTM
     TABLE_LTM_UPDATE_RATE,
 #endif
@@ -450,7 +445,6 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
 #endif
     { lookupTableDebug, sizeof(lookupTableDebug) / sizeof(char *) },
-    { lookupTableNoSignalThrottle, sizeof(lookupTableNoSignalThrottle) / sizeof(char *) },
 #ifdef TELEMETRY_LTM
     {lookupTableLTMRates, sizeof(lookupTableLTMRates) / sizeof(char *) },
 #endif
@@ -595,7 +589,6 @@ static const clivalue_t valueTable[] = {
 #endif
     { "rx_min_usec",                VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rx_min_usec) },
     { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rx_max_usec) },
-    { "rx_nosignal_throttle",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RX_NOSIGNAL_THROTTLE }, PG_RX_CONFIG, offsetof(rxConfig_t, rxNoSignalThrottleBehavior) },
 
 // PG_BLACKBOX_CONFIG
 #ifdef BLACKBOX
