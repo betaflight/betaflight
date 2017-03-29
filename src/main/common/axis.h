@@ -41,4 +41,4 @@ typedef enum {
 
 #define ANGLE_INDEX_COUNT 2
 
-#define GET_DIRECTION(isInverted) (2 * (isInverted) - 1)
+#define GET_DIRECTION(isReversed) ((isReversed) ? -1 : 1)
