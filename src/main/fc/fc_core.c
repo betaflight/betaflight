@@ -253,7 +253,7 @@ void mwArm(void)
         if (ARMING_FLAG(ARMED)) {
             return;
         }
-        if (IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
+        if (IS_RC_MODE_ACTIVE(BOXFAILSAFE) || IS_RC_MODE_ACTIVE(BOXKILLSWITCH)) {
             return;
         }
         if (!ARMING_FLAG(PREVENT_ARMING)) {
