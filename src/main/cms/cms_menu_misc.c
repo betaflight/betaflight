@@ -90,14 +90,14 @@ CMS_Menu cmsx_menuRcPreview = {
 };
 
 static uint16_t motorConfig_minthrottle;
-static uint8_t motorConfig_digitalIdleOffsetPercent;
+static uint8_t motorConfig_digitalIdleOffsetValue;
 static uint8_t voltageSensorADCConfig_vbatscale;
 static uint8_t batteryConfig_vbatmaxcellvoltage;
 
 static long cmsx_menuMiscOnEnter(void)
 {
     motorConfig_minthrottle = motorConfig()->minthrottle;
-    motorConfig_digitalIdleOffsetPercent = 10 * motorConfig()->digitalIdleOffsetPercent;
+    motorConfig_digitalIdleOffsetValue = motorConfig()->digitalIdleOffsetValue / 10;
     voltageSensorADCConfig_vbatscale = voltageSensorADCConfig(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale;
     batteryConfig_vbatmaxcellvoltage = batteryConfig()->vbatmaxcellvoltage;
     return 0;
@@ -108,7 +108,7 @@ static long cmsx_menuMiscOnExit(const OSD_Entry *self)
     UNUSED(self);
 
     motorConfigMutable()->minthrottle = motorConfig_minthrottle;
-    motorConfigMutable()->digitalIdleOffsetPercent = motorConfig_digitalIdleOffsetPercent / 10.0f;
+    motorConfigMutable()->digitalIdleOffsetValue = 10 * motorConfig_digitalIdleOffsetValue;
     voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale = voltageSensorADCConfig_vbatscale;
     batteryConfigMutable()->vbatmaxcellvoltage = batteryConfig_vbatmaxcellvoltage;
     return 0;
@@ -119,7 +119,7 @@ static OSD_Entry menuMiscEntries[]=
     { "-- MISC --", OME_Label, NULL, NULL, 0 },
 
     { "MIN THR",      OME_UINT16,  NULL,          &(OSD_UINT16_t){ &motorConfig_minthrottle,              1000, 2000, 1 },      0 },
-    { "DIGITAL IDLE", OME_FLOAT,   NULL,          &(OSD_FLOAT_t) { &motorConfig_digitalIdleOffsetPercent,    0,  200, 1, 100 }, 0 },
+    { "DIGITAL IDLE", OME_UINT16,  NULL,          &(OSD_UINT16_t) { &motorConfig_digitalIdleOffsetValue,     0, 2000, 1 },      0 },
     { "VBAT SCALE",   OME_UINT8,   NULL,          &(OSD_UINT8_t) { &voltageSensorADCConfig_vbatscale,        1,  250, 1 },      0 },
     { "VBAT CLMAX",   OME_UINT8,   NULL,          &(OSD_UINT8_t) { &batteryConfig_vbatmaxcellvoltage,       10,   50, 1 },      0 },
     { "RC PREV",      OME_Submenu, cmsMenuChange, &cmsx_menuRcPreview, 0},
