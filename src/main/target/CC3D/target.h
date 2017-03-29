@@ -208,9 +208,10 @@
 //#define USE_FAKE_BARO
 //#define USE_FAKE_GPS
 
-// #undef TELEMETRY_FRSKY
-// #define TELEMETRY_MAVLINK
-#define USE_SERIALRX_SUMD
+//#undef TELEMETRY_FRSKY
+//#define TELEMETRY_MAVLINK
+//#define USE_SERIALRX_SUMD
+//#define TELEMETRY_HOTT
 
 // IO - from schematics
 #define TARGET_IO_PORTA         0xffff
