@@ -284,11 +284,11 @@ bool gyroInit(void)
 #if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20689)
 
 #if defined(MPU_INT_EXTI)
-    gyroDev0.mpuIntExtiConfig.tag =  IO_TAG(MPU_INT_EXTI);
+    gyroDev0.mpuIntExtiTag =  IO_TAG(MPU_INT_EXTI);
 #elif defined(USE_HARDWARE_REVISION_DETECTION)
-    gyroDev0.mpuIntExtiConfig.tag =  selectMPUIntExtiConfigByHardwareRevision();
+    gyroDev0.mpuIntExtiTag =  selectMPUIntExtiConfigByHardwareRevision();
 #else
-    gyroDev0.mpuIntExtiConfig.tag =  IO_TAG_NONE;
+    gyroDev0.mpuIntExtiTag =  IO_TAG_NONE;
 #endif
 
 #ifdef USE_DUAL_GYRO
