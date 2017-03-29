@@ -43,6 +43,24 @@
 
 #include "flight/pid.h"
 
+#define AUTOTUNE_FIXED_WING_OVERSHOOT_TIME      100
+#define AUTOTUNE_FIXED_WING_UNDERSHOOT_TIME     200
+#define AUTOTUNE_FIXED_WING_INTEGRATOR_TC       600
+#define AUTOTUNE_FIXED_WING_DECREASE_STEP       8           // 8%
+#define AUTOTUNE_FIXED_WING_INCREASE_STEP       5           // 5%
+#define AUTOTUNE_FIXED_WING_MIN_FF              10
+#define AUTOTUNE_FIXED_WING_MAX_FF              200
+
+PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(pidAutotuneConfig_t, pidAutotuneConfig, PG_PID_AUTOTUNE_CONFIG, 0);
+
+PG_RESET_TEMPLATE(pidAutotuneConfig_t, pidAutotuneConfig,
+    .fw_overshoot_time = AUTOTUNE_FIXED_WING_OVERSHOOT_TIME,
+    .fw_undershoot_time = AUTOTUNE_FIXED_WING_UNDERSHOOT_TIME,
+    .fw_max_rate_threshold = 50,
+    .fw_ff_to_p_gain = 10,
+    .fw_ff_to_i_time_constant = AUTOTUNE_FIXED_WING_INTEGRATOR_TC,
+);
+
 typedef enum {
     DEMAND_TOO_LOW,
     DEMAND_UNDERSHOOT,
@@ -142,12 +160,6 @@ static void blackboxLogAutotuneEvent(adjustmentFunction_e adjustmentFunction, in
 }
 
 #if defined(AUTOTUNE_FIXED_WING)
-#define AUTOTUNE_FIXED_WING_OVERSHOOT_TIME      100
-#define AUTOTUNE_FIXED_WING_UNDERSHOOT_TIME     200
-#define AUTOTUNE_FIXED_WING_DECREASE_STEP       8           // 8%
-#define AUTOTUNE_FIXED_WING_INCREASE_STEP       5           // 5%
-#define AUTOTUNE_FIXED_WING_MIN_FF              10
-#define AUTOTUNE_FIXED_WING_MAX_FF              200
 
 void autotuneFixedWingUpdate(const flight_dynamics_index_t axis, float desiredRateDps, float reachedRateDps, float pidOutput)
 {
@@ -168,7 +180,7 @@ void autotuneFixedWingUpdate(const flight_dynamics_index_t axis, float desiredRa
         tuneCurrent[axis].pidSaturated = true;
     }
 
-    if (absDesiredRateDps < 0.50f * maxDesiredRate) {
+    if (absDesiredRateDps < (pidAutotuneConfig()->fw_max_rate_threshold / 100.0f) * maxDesiredRate) {
         // We can make decisions only when we are demanding at least 50% of max configured rate
         newState = DEMAND_TOO_LOW;
     }
@@ -187,7 +199,7 @@ void autotuneFixedWingUpdate(const flight_dynamics_index_t axis, float desiredRa
             case DEMAND_TOO_LOW:
                 break;
             case DEMAND_OVERSHOOT:
-                if (stateTimeMs >= AUTOTUNE_FIXED_WING_OVERSHOOT_TIME) {
+                if (stateTimeMs >= pidAutotuneConfig()->fw_overshoot_time) {
                     tuneCurrent[axis].gainD = tuneCurrent[axis].gainD * (100 - AUTOTUNE_FIXED_WING_DECREASE_STEP) / 100.0f;
                     if (tuneCurrent[axis].gainD < AUTOTUNE_FIXED_WING_MIN_FF) {
                         tuneCurrent[axis].gainD = AUTOTUNE_FIXED_WING_MIN_FF;
@@ -196,7 +208,7 @@ void autotuneFixedWingUpdate(const flight_dynamics_index_t axis, float desiredRa
                 }
                 break;
             case DEMAND_UNDERSHOOT:
-                if (stateTimeMs >= AUTOTUNE_FIXED_WING_UNDERSHOOT_TIME && !tuneCurrent[axis].pidSaturated) {
+                if (stateTimeMs >= pidAutotuneConfig()->fw_undershoot_time && !tuneCurrent[axis].pidSaturated) {
                     tuneCurrent[axis].gainD = tuneCurrent[axis].gainD * (100 + AUTOTUNE_FIXED_WING_INCREASE_STEP) / 100.0f;
                     if (tuneCurrent[axis].gainD > AUTOTUNE_FIXED_WING_MAX_FF) {
                         tuneCurrent[axis].gainD = AUTOTUNE_FIXED_WING_MAX_FF;
@@ -208,10 +220,10 @@ void autotuneFixedWingUpdate(const flight_dynamics_index_t axis, float desiredRa
 
         if (gainsUpdated) {
             // Set P-gain to 10% of FF gain (quite agressive - FIXME)
-            tuneCurrent[axis].gainP = tuneCurrent[axis].gainD * 0.1f;                       // TODO: Figure out optimal ratio between P and FF
+            tuneCurrent[axis].gainP = tuneCurrent[axis].gainD * (pidAutotuneConfig()->fw_ff_to_p_gain / 100.0f);
 
             // Set integrator gain to reach the same response as FF gain in 0.667 second
-            tuneCurrent[axis].gainI = (tuneCurrent[axis].gainD / FP_PID_RATE_FF_MULTIPLIER) * 1.5f * FP_PID_RATE_I_MULTIPLIER;
+            tuneCurrent[axis].gainI = (tuneCurrent[axis].gainD / FP_PID_RATE_FF_MULTIPLIER) * (1000.0f / pidAutotuneConfig()->fw_ff_to_i_time_constant) * FP_PID_RATE_I_MULTIPLIER;
             tuneCurrent[axis].gainI = constrainf(tuneCurrent[axis].gainI, 2.0f, 50.0f);
             autotuneUpdateGains(tuneCurrent);
 

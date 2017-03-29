@@ -372,6 +372,11 @@ Re-apply any new defaults as desired.
 |  yaw_rate  | 20 | Defines rotation rate on YAW axis that UAV will try to archive on max. stick deflection. Rates are defined in tenths of degrees per second [dps/10]. That means, rate 20 represents 200dps rotation speed. Default 20 (200dps) is more less equivalent of old Cleanflight/Baseflight rate 0. Max. 180 (1800dps) is what gyro can measure. |
 |  tpa_rate  | 0 | Throttle PID attenuation reduces influence of P on ROLL and PITCH as throttle increases. For every 1% throttle after the TPA breakpoint, P is reduced by the TPA rate. |
 |  tpa_breakpoint  | 1500 | See tpa_rate. |
+|  fw_autotune_overshoot_time  | 100 | Time [ms] to detect sustained overshoot |
+|  fw_autotune_undershoot_time | 200 | Time [ms] to detect sustained undershoot |
+|  fw_autotune_threshold       | 50  | Threshold [%] of max rate to consider overshoot/undershoot detection |
+|  fw_autotune_ff_to_p_gain    | 10  | FF to P gain (strength relationship) [%] |
+|  fw_autotune_ff_to_i_tc      | 600 | FF to I time (defines time for I to reach the same level of response as FF) [ms]  |
 
 This Markdown table is made by MarkdwonTableMaker addon for google spreadsheet.
 Original Spreadsheet used to make this table can be found here https://docs.google.com/spreadsheets/d/1ubjYdMGmZ2aAMUNYkdfe3hhIF7wRfIjcuPOi_ysmp00/edit?usp=sharing
