@@ -126,12 +126,22 @@ SUMH is a legacy Graupner protocol.  Graupner have issued a firmware updates for
 
 10 channels via serial currently supported.
 
-IBUS is the FlySky digital serial protocol and is available with the FS-IA6B and
-FS-IA10 receivers. The Turnigy TGY-IA6B and TGY-IA10 are the same
-devices with a different label, therefore they also work.
+IBUS is the FlySky digital serial protocol and is available with the FS-IA6B and FS-IA10 receivers. 
+The Turnigy TGY-IA6B and TGY-IA10 are the same devices with a different label, therefore they also work.
 
 If you are using a 6ch tx such as the FS-I6 or TGY-I6 then you must flash a 10ch
 firmware on the tx to make use of these extra channels.
+The flash is avaliable here: https://github.com/benb0jangles/FlySky-i6-Mod-
+```
+     _______
+    /       \                                              /------------\
+    | STM32 |-->UART TX-->[Bi-directional @ 115200 baud]-->| Flysky RX  |
+    |  uC   |-  UART RX--x[not connected]                  | IBUS-Servo |
+    \_______/                                              \------------/
+```
+After flash "10ch Timer Mod i6 Updater", it is passible to get RSSI signal on selected Aux channel from FS-i6 Err sensor.
+
+It is possible to use ibus RX and ibus telemetry on only one port of the hardware UART. More information in Telemetry.md.
 
 ## MultiWii serial protocol (MSP)
 
@@ -236,6 +246,9 @@ For Serial RX enable `RX_SERIAL` and set the `serialrx_provider` CLI setting as 
 | SUMH               | 4     |
 | XBUS_MODE_B        | 5     |
 | XBUS_MODE_B_RJ01   | 6     |
+| SERIALRX_IBUS      | 7     |
+| SERIALRX_JETIEXBUS | 8     |
+| SERIALRX_CRSF      | 9     |
 
 ### PPM/PWM input filtering.
 
