@@ -19,6 +19,7 @@
  * telemetry_hott.c
  *
  * Authors:
+ * Konstantin Sharlaimov - HoTT code cleanup, proper state machine implementation, bi-directional serial port operation cleanup
  * Dominic Clifton - Hydra - Software Serial, Electronics, Hardware Integration and debugging, HoTT Code cleanup and fixes, general telemetry improvements.
  * Carsten Giesen - cGiesen - Baseflight port
  * Oliver Bayer - oBayer - MultiWii-HoTT, HoTT reverse engineering
@@ -88,25 +89,28 @@
 
 //#define HOTT_DEBUG
 
+typedef enum {
+    HOTT_WAITING_FOR_REQUEST,
+    HOTT_RECEIVING_REQUEST,
+    HOTT_WAITING_FOR_TX_WINDOW,
+    HOTT_TRANSMITTING
+} hottState_e;
+
 #define HOTT_MESSAGE_PREPARATION_FREQUENCY_5_HZ ((1000 * 1000) / 5)
 #define HOTT_RX_SCHEDULE 4000
-#define HOTT_TX_DELAY_US 3000
+#define HOTT_TX_SCHEDULE 5000
+#define HOTT_TX_DELAY_US 2000
 #define MILLISECONDS_IN_A_SECOND 1000
 
-static uint32_t lastHoTTRequestCheckAt = 0;
-static uint32_t lastMessagesPreparedAt = 0;
-static uint32_t lastHottAlarmSoundTime = 0;
+static hottState_e  hottState = HOTT_WAITING_FOR_REQUEST;
+static timeUs_t     hottStateChangeUs = 0;
 
-static bool hottIsSending = false;
-
-static uint8_t *hottMsg = NULL;
-static uint8_t hottMsgRemainingBytesToSendCount;
-static uint8_t hottMsgCrc;
-
-#define HOTT_CRC_SIZE (sizeof(hottMsgCrc))
+static uint8_t *hottTxMsg = NULL;
+static uint8_t hottTxMsgSize;
+static uint8_t hottTxMsgCrc;
 
 #define HOTT_BAUDRATE 19200
-#define HOTT_INITIAL_PORT_MODE MODE_RX
+#define HOTT_INITIAL_PORT_MODE MODE_RXTX
 
 static serialPort_t *hottPort = NULL;
 static serialPortConfig_t *portConfig;
@@ -116,6 +120,14 @@ static portSharing_e hottPortSharing;
 
 static HOTT_GPS_MSG_t hottGPSMessage;
 static HOTT_EAM_MSG_t hottEAMMessage;
+
+static void hottSwitchState(hottState_e newState, timeUs_t currentTimeUs)
+{
+    if (hottState != newState) {
+        hottState = newState;
+        hottStateChangeUs = currentTimeUs;
+    }
+}
 
 static void initialiseEAMMessage(HOTT_EAM_MSG_t *msg, size_t size)
 {
@@ -222,18 +234,13 @@ void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage)
 }
 #endif
 
-static bool shouldTriggerBatteryAlarmNow(void)
-{
-    return ((millis() - lastHottAlarmSoundTime) >= (telemetryConfig()->hottAlarmSoundInterval * MILLISECONDS_IN_A_SECOND));
-}
-
 static inline void updateAlarmBatteryStatus(HOTT_EAM_MSG_t *hottEAMMessage)
 {
-    batteryState_e batteryState;
+    static uint32_t lastHottAlarmSoundTime = 0;
 
-    if (shouldTriggerBatteryAlarmNow()){
+    if (((millis() - lastHottAlarmSoundTime) >= (telemetryConfig()->hottAlarmSoundInterval * MILLISECONDS_IN_A_SECOND))){
         lastHottAlarmSoundTime = millis();
-        batteryState = getBatteryState();
+        batteryState_e batteryState = getBatteryState();
         if (batteryState == BATTERY_WARNING  || batteryState == BATTERY_CRITICAL){
             hottEAMMessage->warning_beeps = 0x10;
             hottEAMMessage->alarm_invers1 = HOTT_EAM_ALARM1_FLAG_BATTERY_1;
@@ -332,70 +339,31 @@ void configureHoTTTelemetryPort(void)
     hottTelemetryEnabled = true;
 }
 
-static void hottSendResponse(uint8_t *buffer, int length)
+static void hottQueueSendResponse(uint8_t *buffer, int length)
 {
-    if(hottIsSending) {
-        return;
-    }
-
-    hottMsg = buffer;
-    hottMsgRemainingBytesToSendCount = length + HOTT_CRC_SIZE;
+    hottTxMsg = buffer;
+    hottTxMsgSize = length;
 }
 
-static inline void hottSendGPSResponse(void)
+static bool processBinaryModeRequest(uint8_t address)
 {
-    hottSendResponse((uint8_t *)&hottGPSMessage, sizeof(hottGPSMessage));
-}
-
-static inline void hottSendEAMResponse(void)
-{
-    hottSendResponse((uint8_t *)&hottEAMMessage, sizeof(hottEAMMessage));
-}
-
-static void hottPrepareMessages(void) {
-    hottPrepareEAMResponse(&hottEAMMessage);
-#ifdef GPS
-    hottPrepareGPSResponse(&hottGPSMessage);
-#endif
-}
-
-static void processBinaryModeRequest(uint8_t address) {
-
-#ifdef HOTT_DEBUG
-    static uint8_t hottBinaryRequests = 0;
-    static uint8_t hottGPSRequests = 0;
-    static uint8_t hottEAMRequests = 0;
-#endif
-
     switch (address) {
 #ifdef GPS
         case 0x8A:
-#ifdef HOTT_DEBUG
-            hottGPSRequests++;
-#endif
             if (sensors(SENSOR_GPS)) {
-                hottSendGPSResponse();
+                hottPrepareGPSResponse(&hottGPSMessage);
+                hottQueueSendResponse((uint8_t *)&hottGPSMessage, sizeof(hottGPSMessage));
+                return true;
             }
             break;
 #endif
         case 0x8E:
-#ifdef HOTT_DEBUG
-            hottEAMRequests++;
-#endif
-            hottSendEAMResponse();
-            break;
+            hottPrepareEAMResponse(&hottEAMMessage);
+            hottQueueSendResponse((uint8_t *)&hottEAMMessage, sizeof(hottEAMMessage));
+            return true;
     }
 
-
-#ifdef HOTT_DEBUG
-    hottBinaryRequests++;
-    debug[0] = hottBinaryRequests;
-#ifdef GPS
-    debug[1] = hottGPSRequests;
-#endif
-    debug[2] = hottEAMRequests;
-#endif
-
+    return false;
 }
 
 static void flushHottRxBuffer(void)
@@ -405,101 +373,28 @@ static void flushHottRxBuffer(void)
     }
 }
 
-static void hottCheckSerialData(uint32_t currentMicros)
+static bool hottSendTelemetryDataByte(timeUs_t currentTimeUs)
 {
-    static bool lookingForRequest = true;
+    static timeUs_t byteSentTimeUs = 0;
 
-    uint8_t bytesWaiting = serialRxBytesWaiting(hottPort);
-
-    if (bytesWaiting <= 1) {
-        return;
-    }
-
-    if (bytesWaiting != 2) {
-        flushHottRxBuffer();
-        lookingForRequest = true;
-        return;
-    }
-
-    if (lookingForRequest) {
-        lastHoTTRequestCheckAt = currentMicros;
-        lookingForRequest = false;
-        return;
-    } else {
-        bool enoughTimePassed = currentMicros - lastHoTTRequestCheckAt >= HOTT_RX_SCHEDULE;
-
-        if (!enoughTimePassed) {
-            return;
-        }
-        lookingForRequest = true;
-    }
-
-    uint8_t requestId = serialRead(hottPort);
-    uint8_t address = serialRead(hottPort);
-
-    if ((requestId == 0) || (requestId == HOTT_BINARY_MODE_REQUEST_ID) || (address == HOTT_TELEMETRY_NO_SENSOR_ID)) {
-    /*
-     * FIXME the first byte of the HoTT request frame is ONLY either 0x80 (binary mode) or 0x7F (text mode).
-     * The binary mode is read as 0x00 (error reading the upper bit) while the text mode is correctly decoded.
-     * The (requestId == 0) test is a workaround for detecting the binary mode with no ambiguity as there is only
-     * one other valid value (0x7F) for text mode.
-     * The error reading for the upper bit should nevertheless be fixed
-     */
-        processBinaryModeRequest(address);
-    }
-}
-
-static void workAroundForHottTelemetryOnUsart(serialPort_t *instance, portMode_t mode)
-{
-    if ((portConfig->identifier == SERIAL_PORT_USART1) || (portConfig->identifier == SERIAL_PORT_USART2) || (portConfig->identifier == SERIAL_PORT_USART3) ||
-        (portConfig->identifier == SERIAL_PORT_USART4) || (portConfig->identifier == SERIAL_PORT_USART5) || (portConfig->identifier == SERIAL_PORT_USART6) ||
-        (portConfig->identifier == SERIAL_PORT_USART7) || (portConfig->identifier == SERIAL_PORT_USART8)) {
-        closeSerialPort(hottPort);
-        hottPort = openSerialPort(instance->identifier, FUNCTION_TELEMETRY_HOTT, NULL, HOTT_BAUDRATE, mode, SERIAL_NOT_INVERTED);
-    }
-    else {
-        serialSetMode(hottPort, mode);
-    }
-}
-
-
-static void hottSendTelemetryData(void) {
-    if (!hottIsSending) {
-        hottIsSending = true;
-        workAroundForHottTelemetryOnUsart(hottPort, MODE_TX);
-        hottMsgCrc = 0;
-        return;
-    }
-
-    if (hottMsgRemainingBytesToSendCount == 0) {
-        hottMsg = NULL;
-        hottIsSending = false;
-        workAroundForHottTelemetryOnUsart(hottPort, MODE_RX);
-        flushHottRxBuffer();
-        return;
-    }
-
-    --hottMsgRemainingBytesToSendCount;
-    if(hottMsgRemainingBytesToSendCount == 0) {
-        hottSerialWrite(hottMsgCrc++);
-        return;
-    }
-
-    hottMsgCrc += *hottMsg;
-    hottSerialWrite(*hottMsg++);
-}
-
-static inline bool shouldPrepareHoTTMessages(uint32_t currentMicros)
-{
-    return currentMicros - lastMessagesPreparedAt >= HOTT_MESSAGE_PREPARATION_FREQUENCY_5_HZ;
-}
-
-static inline bool shouldCheckForHoTTRequest()
-{
-    if (hottIsSending) {
+    // Guard intra-byte interval
+    if (currentTimeUs - byteSentTimeUs < HOTT_TX_DELAY_US) {
         return false;
     }
-    return true;
+
+    if (hottTxMsgSize == 0) {
+        // Send CRC byte
+        hottSerialWrite(hottTxMsgCrc);
+        return true;
+    }
+    else {
+        // Send data byte
+        hottTxMsgCrc += *hottTxMsg;
+        hottSerialWrite(*hottTxMsg);
+        hottTxMsg++;
+        hottTxMsgSize--;
+        return false;
+    }
 }
 
 void checkHoTTTelemetryState(void)
@@ -518,31 +413,73 @@ void checkHoTTTelemetryState(void)
 
 void handleHoTTTelemetry(timeUs_t currentTimeUs)
 {
-    static timeUs_t serialTimer;
+    static uint8_t hottRequestBuffer[2];
+    static int hottRequestBufferPtr = 0;
 
-    if (!hottTelemetryEnabled) {
-        return;
-    }
+    bool reprocessState;
+    do {
+        reprocessState = false;
 
-    if (shouldPrepareHoTTMessages(currentTimeUs)) {
-        hottPrepareMessages();
-        lastMessagesPreparedAt = currentTimeUs;
-    }
+        switch (hottState) {
+            case HOTT_WAITING_FOR_REQUEST:
+                if (serialRxBytesWaiting(hottPort)) {
+                    hottRequestBufferPtr = 0;
+                    hottSwitchState(HOTT_RECEIVING_REQUEST, currentTimeUs);
+                    reprocessState = true;
+                }
+                break;
 
-    if (shouldCheckForHoTTRequest()) {
-        hottCheckSerialData(currentTimeUs);
-    }
+            case HOTT_RECEIVING_REQUEST:
+                if ((currentTimeUs - hottStateChangeUs) >= HOTT_RX_SCHEDULE) {
+                    // Waiting for too long - resync
+                    flushHottRxBuffer();
+                    hottSwitchState(HOTT_WAITING_FOR_REQUEST, currentTimeUs);
+                }
+                else {
+                    while (serialRxBytesWaiting(hottPort) && hottRequestBufferPtr < 2) {
+                        hottRequestBuffer[hottRequestBufferPtr++] = serialRead(hottPort);
+                    }
 
-    if (!hottMsg)
-        return;
+                    if (hottRequestBufferPtr >= 2) {
+                        if ((hottRequestBuffer[0] == 0) || (hottRequestBuffer[0] == HOTT_BINARY_MODE_REQUEST_ID)) {
+                            /*
+                             * FIXME the first byte of the HoTT request frame is ONLY either 0x80 (binary mode) or 0x7F (text mode).
+                             * The binary mode is read as 0x00 (error reading the upper bit) while the text mode is correctly decoded.
+                             * The (requestId == 0) test is a workaround for detecting the binary mode with no ambiguity as there is only
+                             * one other valid value (0x7F) for text mode.
+                             * The error reading for the upper bit should nevertheless be fixed
+                             */
+                            if (processBinaryModeRequest(hottRequestBuffer[1])) {
+                                hottSwitchState(HOTT_WAITING_FOR_TX_WINDOW, currentTimeUs);
+                            }
+                            else {
+                                hottSwitchState(HOTT_WAITING_FOR_REQUEST, currentTimeUs);
+                            }
+                        }
+                        else if (hottRequestBuffer[0] == HOTT_TEXT_MODE_REQUEST_ID) {
+                            // FIXME Text mode
+                            hottSwitchState(HOTT_WAITING_FOR_REQUEST, currentTimeUs);
+                        }
+                        reprocessState = true;
+                    }
+                }
+                break;
 
-    if (hottIsSending) {
-        if(currentTimeUs - serialTimer < HOTT_TX_DELAY_US) {
-            return;
-        }
-    }
-    hottSendTelemetryData();
-    serialTimer = currentTimeUs;
+            case HOTT_WAITING_FOR_TX_WINDOW:
+                if ((currentTimeUs - hottStateChangeUs) >= HOTT_TX_SCHEDULE) {
+                    hottTxMsgCrc = 0;
+                    hottSwitchState(HOTT_TRANSMITTING, currentTimeUs);
+                }
+                break;
+
+            case HOTT_TRANSMITTING:
+                if (hottSendTelemetryDataByte(currentTimeUs)) {
+                    flushHottRxBuffer();
+                    hottSwitchState(HOTT_WAITING_FOR_REQUEST, currentTimeUs);
+                }
+                break;
+        };
+    } while (reprocessState);
 }
 
 #endif
