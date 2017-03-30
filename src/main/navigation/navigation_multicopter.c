@@ -86,7 +86,12 @@ static void updateAltitudeVelocityController_MC(timeDelta_t deltaMicros)
     float targetVel = altitudeError * posControl.pids.pos[Z].param.kP;
 
     // hard limit desired target velocity to max_climb_rate
-    targetVel = constrainf(targetVel, -navConfig()->general.max_climb_rate, navConfig()->general.max_climb_rate);
+    if (posControl.flags.isAdjustingAltitude) {
+        targetVel = constrainf(targetVel, -navConfig()->general.max_manual_climb_rate, navConfig()->general.max_manual_climb_rate);
+    }
+    else {
+        targetVel = constrainf(targetVel, -navConfig()->general.max_auto_climb_rate, navConfig()->general.max_auto_climb_rate);
+    }
 
     // limit max vertical acceleration to 1/5G (~200 cm/s/s) if we are increasing velocity.
     // if we are decelerating - don't limit (allow better recovery from falling)

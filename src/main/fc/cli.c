@@ -326,10 +326,6 @@ static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "NOTCH"
 };
 
-static const char * const lookupTableNoSignalThrottle[] = {
-    "HOLD", "DROP"
-};
-
 #ifdef TELEMETRY_LTM
 static const char * const lookupTableLTMRates[] = {
     "NORMAL", "MEDIUM", "SLOW"
@@ -392,7 +388,6 @@ typedef enum {
     TABLE_OSD,
 #endif
     TABLE_DEBUG,
-    TABLE_RX_NOSIGNAL_THROTTLE,
 #ifdef TELEMETRY_LTM
     TABLE_LTM_UPDATE_RATE,
 #endif
@@ -450,7 +445,6 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
 #endif
     { lookupTableDebug, sizeof(lookupTableDebug) / sizeof(char *) },
-    { lookupTableNoSignalThrottle, sizeof(lookupTableNoSignalThrottle) / sizeof(char *) },
 #ifdef TELEMETRY_LTM
     {lookupTableLTMRates, sizeof(lookupTableLTMRates) / sizeof(char *) },
 #endif
@@ -595,7 +589,6 @@ static const clivalue_t valueTable[] = {
 #endif
     { "rx_min_usec",                VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rx_min_usec) },
     { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rx_max_usec) },
-    { "rx_nosignal_throttle",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RX_NOSIGNAL_THROTTLE }, PG_RX_CONFIG, offsetof(rxConfig_t, rxNoSignalThrottleBehavior) },
 
 // PG_BLACKBOX_CONFIG
 #ifdef BLACKBOX
@@ -615,7 +608,6 @@ static const clivalue_t valueTable[] = {
     { "failsafe_delay",             VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  200 }, PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_delay) },
     { "failsafe_recovery_delay",    VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  200 }, PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_recovery_delay) },
     { "failsafe_off_delay",         VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  200 }, PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_off_delay) },
-    { "failsafe_kill_switch",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_kill_switch) },
     { "failsafe_throttle",          VAR_UINT16 | MASTER_VALUE, .config.minmax = { 1000, 2000 }, PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_throttle) },
     { "failsafe_throttle_low_delay",VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  300 }, PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_throttle_low_delay) },
     { "failsafe_procedure",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_FAILSAFE_PROCEDURE }, PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_procedure) },
@@ -830,8 +822,8 @@ static const clivalue_t valueTable[] = {
     { "nav_position_timeout",       VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  10 }, PG_NAV_CONFIG, offsetof(navConfig_t, general.pos_failure_timeout) },
     { "nav_wp_radius",              VAR_UINT16 | MASTER_VALUE, .config.minmax = { 10,  10000 }, PG_NAV_CONFIG, offsetof(navConfig_t, general.waypoint_radius) },
     { "nav_wp_safe_distance",       VAR_UINT16 | MASTER_VALUE | MODE_MAX, .config.max = { 65000 }, PG_NAV_CONFIG, offsetof(navConfig_t, general.waypoint_safe_distance) },
-    { "nav_max_speed",              VAR_UINT16 | MASTER_VALUE, .config.minmax = { 10,  2000 }, PG_NAV_CONFIG, offsetof(navConfig_t, general.max_speed) },
-    { "nav_max_climb_rate",         VAR_UINT16 | MASTER_VALUE, .config.minmax = { 10,  2000 }, PG_NAV_CONFIG, offsetof(navConfig_t, general.max_climb_rate) },
+    { "nav_auto_speed",             VAR_UINT16 | MASTER_VALUE, .config.minmax = { 10,  2000 }, PG_NAV_CONFIG, offsetof(navConfig_t, general.max_auto_speed) },
+    { "nav_auto_climb_rate",        VAR_UINT16 | MASTER_VALUE, .config.minmax = { 10,  2000 }, PG_NAV_CONFIG, offsetof(navConfig_t, general.max_auto_climb_rate) },
     { "nav_manual_speed",           VAR_UINT16 | MASTER_VALUE, .config.minmax = { 10,  2000 }, PG_NAV_CONFIG, offsetof(navConfig_t, general.max_manual_speed) },
     { "nav_manual_climb_rate",      VAR_UINT16 | MASTER_VALUE, .config.minmax = { 10,  2000 }, PG_NAV_CONFIG, offsetof(navConfig_t, general.max_manual_climb_rate ) },
     { "nav_landing_speed",          VAR_UINT16 | MASTER_VALUE, .config.minmax = { 100,  2000 }, PG_NAV_CONFIG, offsetof(navConfig_t, general.land_descent_rate) },
