@@ -111,6 +111,12 @@ void adcInit(drv_adc_config_t *init)
     }
 #endif
 
+#ifdef AIRSPEED_ADC_PIN
+    if (init->enableAirSpeed) {
+        adcConfig[ADC_AIRSPEED].tag = IO_TAG(AIRSPEED_ADC_PIN);
+    }
+#endif
+
     ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
     if (device == ADCINVALID)
         return;

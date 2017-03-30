@@ -120,6 +120,12 @@ void adcInit(drv_adc_config_t *init)
     }
 #endif
 
+#ifdef AIRSPEED_ADC_PIN
+    if (init->enableAirSpeed) {
+        adcConfig[ADC_AIRSPEED].tag = IO_TAG(AIRSPEED_ADC_PIN);
+    }
+#endif
+
     //RCC_ADCCLKConfig(RCC_ADC12PLLCLK_Div256);  // 72 MHz divided by 256 = 281.25 kHz
 
     ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
