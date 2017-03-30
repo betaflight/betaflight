@@ -176,19 +176,19 @@ It shares 1 line for both TX and RX, the rx pin cannot be used for other serial 
 It runs at a fixed baud rate of 115200, so it need hardware uart (softserial is limit to 19200).
 ```
      _______
-    /       \                                              /---------\
-    | STM32 |-->UART TX-->[Bi-directional @ 115200 baud]-->| IBUS RX |
-    |  uC   |-  UART RX--x[not connected]                  \---------/
-    \_______/
+    /       \                                              /-------------\
+    | STM32 |-->UART TX-->[Bi-directional @ 115200 baud]-->| Flysky RX   |
+    |  uC   |-  UART RX--x[not connected]                  | IBUS-Sensor |
+    \_______/                                              \-------------/
 ```
 It is possible to daisy chain multiple sensors with ibus, but telemetry sensor will be overwrite by value sensor.
 In this case sensor should be connected to RX and FC to sensor.
 ```
      _______
-    /       \                                              /---------\   /-------------\   /---------\
-    | STM32 |-->UART TX-->[Bi-directional @ 115200 baud]-->| CVT-01  |-->|others sensor|-->| IBUS RX |
-    |  uC   |-  UART RX--x[not connected]                  \---------/   \-------------/   \---------/
-    \_______/
+    /       \                                              /---------\   /-------------\   /-------------\
+    | STM32 |-->UART TX-->[Bi-directional @ 115200 baud]-->| CVT-01  |-->|others sensor|-->| Flysky RX   |
+    |  uC   |-  UART RX--x[not connected]                  \---------/   \-------------/   | IBUS-Sensor |
+    \_______/                                                                              \-------------/
 ```
 
 ### Configuration
@@ -248,7 +248,7 @@ FIX: 1 is No, 2 is 2D, 3 is 3D, 6 is No+FixHome, 7 is 2D+FixHome, 8 is 3D+FixHom
 
 HDOP: 0 is 0-9m, 8 is 80-90m, 9 is >90m
 
-Mode: 1-Armed(rate), 2-Horizon, 3-Angle, 4-HeadFree or Mag, 5-AltHold, 6-PosHold, 7-Rth, 8-Fail and Rth, 9-Fail
+Mode: 0 - Passthrough, 1-Armed(rate), 2-Horizon, 3-Angle, 4-Waypoint, 5-AltHold, 6-PosHold, 7-Rth, 8-Launch, 9-Failsafe
 
 Example: 12803 is 12 satelites, Fix3D, FixHome, 0-9m HDOP, Angle Mode
 
@@ -270,3 +270,30 @@ These receivers are reported to work with i-bus telemetry:
 - FlySky/Turnigy FS-iA10B 10-Channel Receiver (http://www.flysky-cn.com/products_detail/productId=52.html)
 
 Note that the FlySky/Turnigy FS-iA4B 4-Channel Receiver (http://www.flysky-cn.com/products_detail/productId=46.html) seems to work but has a bug that might lose the binding, DO NOT FLY the FS-iA4B!
+
+### Use ibus RX and ibus telemetry on only one port.
+
+Case:
+
+A. For use only IBUS RX connect directly Flysky IBUS-SERVO to FC-UART-TX.
+In configurator set RX on selected port, set receiver mode to RX_SERIAL and Receiver provider to IBUS.
+
+B. For use only IBUS telemetry connect directly Flysky IBUS-SENS to FC-UART-TX.
+In configurator set IBUS telemetry on selected port and enable telemetry feature.
+
+C. For use RX IBUS and telemetry IBUS together connect Flysky IBUS-SERVO and IBUS-SENS to FC-UART-TX using schematic:
+```
++---------+
+| FS-iA6B |
+|         |
+| Servo   |---|<---\       +------------+
+|         |        |       | FC         |
+| Sensor  |---[R]--*-------| Serial TX  |
++---------+                +------------+
+```
+R = 10Kohm, Diode 1N4148 (connect cathode to IBUS-Servo of Flysky receiver).
+
+In configurator set IBUS telemetry and RX on this same port, enable telemetry feature, set receiver mode to RX_SERIAL and Receiver provider to IBUS.
+
+Warning:
+Schematic above work also for connect telemetry only, but not work for connect rx only - will stop FC.

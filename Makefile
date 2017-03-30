@@ -599,6 +599,7 @@ HIGHEND_SRC = \
             telemetry/crsf.c \
             telemetry/frsky.c \
             telemetry/hott.c \
+	    telemetry/ibus_shared.c \
             telemetry/ibus.c \
             telemetry/ltm.c \
             telemetry/mavlink.c \
