@@ -660,9 +660,13 @@ static void pidTurnAssistant(pidState_t *pidState)
     imuTransformVectorEarthToBody(&targetRates);
 
     // Add in roll and pitch, replace yaw completely
-    pidState[ROLL].rateTarget += targetRates.V.X;
-    pidState[PITCH].rateTarget += targetRates.V.Y;
-    pidState[YAW].rateTarget = targetRates.V.Z;
+    pidState[ROLL].rateTarget = constrainf(pidState[ROLL].rateTarget + targetRates.V.X, -currentControlRateProfile->rates[ROLL] * 10.0f, currentControlRateProfile->rates[ROLL] * 10.0f);
+    pidState[PITCH].rateTarget = constrainf(pidState[PITCH].rateTarget + targetRates.V.Y, -currentControlRateProfile->rates[PITCH] * 10.0f, currentControlRateProfile->rates[PITCH] * 10.0f);
+    pidState[YAW].rateTarget = constrainf(targetRates.V.Z, -currentControlRateProfile->rates[YAW] * 10.0f, currentControlRateProfile->rates[YAW] * 10.0f);
+
+    debug[0] = pidState[ROLL].rateTarget;
+    debug[1] = pidState[PITCH].rateTarget;
+    debug[2] = pidState[YAW].rateTarget;
 }
 #endif
 
