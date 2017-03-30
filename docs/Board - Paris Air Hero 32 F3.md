@@ -32,8 +32,8 @@ From right to left when looking at the socket from the edge of the board.
 | 4   | unused         |                                  | 
 | 5   | USART2 TX      |                                  | 
 | 6   | USART2 RX      |                                  | 
-| 7   | LED_STRIP      | Enable `feature LED_STRIP`       |
-| 8   | unused         |                                  |
+| 7   | SS1 RX         | Enable `feature SOFT_SERIAL`     |
+| 8   | SS1 TX         |                                  |
 
 
 ## Serial Ports
