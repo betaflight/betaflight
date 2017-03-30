@@ -523,6 +523,7 @@ COMMON_SRC = \
             flight/imu.c \
             flight/mixer.c \
             flight/pid.c \
+            flight/pid_autotune.c \
             flight/servos.c \
             io/beeper.c \
             io/pwmdriver_i2c.c \

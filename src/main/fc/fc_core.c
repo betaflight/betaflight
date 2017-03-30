@@ -488,6 +488,10 @@ void processRx(timeUs_t currentTimeUs)
         DISABLE_FLIGHT_MODE(HEADFREE_MODE);
     }
 
+#if defined(AUTOTUNE_FIXED_WING) || defined(AUTOTUNE_MULTIROTOR)
+    autotuneUpdateState();
+#endif
+
 #ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY)) {
         if ((!telemetryConfig()->telemetry_switch && ARMING_FLAG(ARMED)) ||

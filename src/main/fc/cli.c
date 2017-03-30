@@ -782,6 +782,13 @@ static const clivalue_t valueTable[] = {
     { "nav_fw_pos_xy_i",            VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0,  255 }, PG_PID_PROFILE, offsetof(pidProfile_t, bank_fw.pid[PID_POS_XY].I) },
     { "nav_fw_pos_xy_d",            VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0,  255 }, PG_PID_PROFILE, offsetof(pidProfile_t, bank_fw.pid[PID_POS_XY].D) },
 
+// PG_PID_AUTOTUNE_CONFIG
+    { "fw_autotune_overshoot_time", VAR_UINT16 | MASTER_VALUE, .config.minmax = { 50,  500 }, PG_PID_AUTOTUNE_CONFIG, offsetof(pidAutotuneConfig_t, fw_overshoot_time) },
+    { "fw_autotune_undershoot_time",VAR_UINT16 | MASTER_VALUE, .config.minmax = { 50,  500 }, PG_PID_AUTOTUNE_CONFIG, offsetof(pidAutotuneConfig_t, fw_undershoot_time) },
+    { "fw_autotune_threshold",      VAR_UINT8 | MASTER_VALUE, .config.minmax = { 0,  100 }, PG_PID_AUTOTUNE_CONFIG, offsetof(pidAutotuneConfig_t, fw_max_rate_threshold) },
+    { "fw_autotune_ff_to_p_gain",   VAR_UINT8 | MASTER_VALUE, .config.minmax = { 0,  100 }, PG_PID_AUTOTUNE_CONFIG, offsetof(pidAutotuneConfig_t, fw_ff_to_p_gain) },
+    { "fw_autotune_ff_to_i_tc",     VAR_UINT16 | MASTER_VALUE, .config.minmax = { 100,  5000 }, PG_PID_AUTOTUNE_CONFIG, offsetof(pidAutotuneConfig_t, fw_ff_to_i_time_constant) },
+
 // PG_POSITION_ESTIMATION_CONFIG
 #if defined(NAV_AUTO_MAG_DECLINATION)
     { "inav_auto_mag_decl",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, automatic_mag_declination) },

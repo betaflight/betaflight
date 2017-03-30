@@ -48,6 +48,7 @@ typedef enum {
     BOXFLAPERON     = 25,
     BOXTURNASSIST   = 26,
     BOXAUTOTRIM     = 27,
+    BOXAUTOTUNE     = 28,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 

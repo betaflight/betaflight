@@ -67,6 +67,7 @@
     #define MPU6500_CS_PIN                  NAZE_SPI_CS_PIN
     #define MPU6500_SPI_INSTANCE            NAZE_SPI_INSTANCE
 #else
+    // Afroflight NAZE
     #define USE_HARDWARE_REVISION_DETECTION
     #define USE_SOFTSERIAL2
 

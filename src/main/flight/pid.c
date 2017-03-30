@@ -145,12 +145,12 @@ PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
 
         .bank_fw = {
             .pid = {
-                [PID_ROLL] =    { 25, 35, 10 },
-                [PID_PITCH] =   { 20, 35, 10 },
-                [PID_YAW] =     { 50, 45, 0 },
+                [PID_ROLL] =    { 5, 7, 50 },
+                [PID_PITCH] =   { 5, 7, 50 },
+                [PID_YAW] =     { 6, 10, 60 },
                 [PID_LEVEL] = {
                     .P = 20,    // Self-level strength
-                    .I = 15,    // Self-leveing low-pass frequency (0 - disabled)
+                    .I = 5,     // Self-leveing low-pass frequency (0 - disabled)
                     .D = 75,    // 75% horizon strength
                 },
                 [PID_HEADING] = { 60, 0, 0 },
@@ -254,16 +254,6 @@ float pidRcCommandToRate(int16_t stick, uint8_t rate)
     const float maxRateDPS = rate * 10.0f;
     return scaleRangef((float) stick, -500.0f, 500.0f, -maxRateDPS, maxRateDPS);
 }
-
-/*
-FP-PID has been rescaled to match LuxFloat (and MWRewrite) from Cleanflight 1.13
-*/
-#define FP_PID_RATE_FF_MULTIPLIER   31.0f
-#define FP_PID_RATE_P_MULTIPLIER    31.0f
-#define FP_PID_RATE_I_MULTIPLIER    4.0f
-#define FP_PID_RATE_D_MULTIPLIER    1905.0f
-#define FP_PID_LEVEL_P_MULTIPLIER   65.6f
-#define FP_PID_YAWHOLD_P_MULTIPLIER 80.0f
 
 static float calculateFixedWingTPAFactor(void)
 {
@@ -386,9 +376,9 @@ static void pidLevel(pidState_t *pidState, flight_dynamics_index_t axis, float h
 {
     // This is ROLL/PITCH, run ANGLE/HORIZON controllers
     const float angleTarget = pidRcCommandToAngle(rcCommand[axis], pidProfile()->max_angle_inclination[axis]);
-    const float angleError = angleTarget - attitude.raw[axis];
+    const float angleErrorDeg = DECIDEGREES_TO_DEGREES(angleTarget - attitude.raw[axis]);
 
-    float angleRateTarget = constrainf(angleError * (pidBank()->pid[PID_LEVEL].P / FP_PID_LEVEL_P_MULTIPLIER), -currentControlRateProfile->rates[axis] * 10.0f, currentControlRateProfile->rates[axis] * 10.0f);
+    float angleRateTarget = constrainf(angleErrorDeg * (pidBank()->pid[PID_LEVEL].P / FP_PID_LEVEL_P_MULTIPLIER), -currentControlRateProfile->rates[axis] * 10.0f, currentControlRateProfile->rates[axis] * 10.0f);
 
     // Apply simple LPF to angleRateTarget to make response less jerky
     // Ideas behind this:
@@ -447,9 +437,15 @@ static void pidApplyFixedWingRateController(pidState_t *pidState, flight_dynamic
         pidState->errorGyroIfLimit = ABS(pidState->errorGyroIf);
     }
 
-    if (STATE(FIXED_WING) && pidProfile()->fixedWingItermThrowLimit != 0) {
+    if (pidProfile()->fixedWingItermThrowLimit != 0) {
         pidState->errorGyroIf = constrainf(pidState->errorGyroIf, -pidProfile()->fixedWingItermThrowLimit, pidProfile()->fixedWingItermThrowLimit);
     }
+
+#ifdef AUTOTUNE_FIXED_WING
+    if (FLIGHT_MODE(AUTO_TUNE) && !FLIGHT_MODE(PASSTHRU_MODE)) {
+        autotuneFixedWingUpdate(axis, pidState->rateTarget, pidState->gyroRate, newPTerm + newFFTerm);
+    }
+#endif
 
     axisPID[axis] = constrainf(newPTerm + newFFTerm + pidState->errorGyroIf, -pidProfile()->pidSumLimit, +pidProfile()->pidSumLimit);
 

@@ -40,6 +40,16 @@
 
 #define HEADING_HOLD_ERROR_LPF_FREQ 2
 
+/*
+FP-PID has been rescaled to match LuxFloat (and MWRewrite) from Cleanflight 1.13
+*/
+#define FP_PID_RATE_FF_MULTIPLIER   31.0f
+#define FP_PID_RATE_P_MULTIPLIER    31.0f
+#define FP_PID_RATE_I_MULTIPLIER    4.0f
+#define FP_PID_RATE_D_MULTIPLIER    1905.0f
+#define FP_PID_LEVEL_P_MULTIPLIER   6.56f       // Level P gain units is [1/sec] and angle error is [deg] => [deg/s]
+#define FP_PID_YAWHOLD_P_MULTIPLIER 80.0f
+
 typedef enum {
     /* PID              MC      FW  */
     PID_ROLL,       //   +       +
@@ -94,7 +104,16 @@ typedef struct pidProfile_s {
     uint16_t pidSumLimit;
 } pidProfile_t;
 
+typedef struct pidAutotuneConfig_s {
+    uint16_t    fw_overshoot_time;          // Time [ms] to detect sustained overshoot
+    uint16_t    fw_undershoot_time;         // Time [ms] to detect sustained undershoot
+    uint8_t     fw_max_rate_threshold;      // Threshold [%] of max rate to consider autotune detection
+    uint8_t     fw_ff_to_p_gain;            // FF to P gain (strength relationship) [%]
+    uint16_t    fw_ff_to_i_time_constant;   // FF to I time (defines time for I to reach the same level of response as FF) [ms] 
+} pidAutotuneConfig_t;
+
 PG_DECLARE_PROFILE(pidProfile_t, pidProfile);
+PG_DECLARE_PROFILE(pidAutotuneConfig_t, pidAutotuneConfig);
 
 static inline const pidBank_t * pidBank() { return STATE(FIXED_WING) ? &pidProfile()->bank_fw : &pidProfile()->bank_mc; }
 static inline pidBank_t * pidBankMutable() { return STATE(FIXED_WING) ? &pidProfileMutable()->bank_fw : &pidProfileMutable()->bank_mc; }
@@ -130,3 +149,6 @@ enum {
 void updateHeadingHoldTarget(int16_t heading);
 void resetHeadingHoldTarget(int16_t heading);
 int16_t getHeadingHoldTarget();
+
+void autotuneUpdateState(void);
+void autotuneFixedWingUpdate(const flight_dynamics_index_t axis, float desiredRateDps, float reachedRateDps, float pidOutput);
