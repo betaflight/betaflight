@@ -28,12 +28,9 @@ __Stage 2__ is not activated until 5 seconds after the flight controller boots u
 __Stage 2__ will be aborted when it was due to:
 
 * a lost RC signal and the RC signal has recovered.
-* a transmitter failsafe switch was set to ON position and the switch is set to OFF position (and `failsafe_kill_switch` is set to OFF).
 
 Note that:
 * At the end of the stage 2 procedure, the flight controller will be disarmed and re-arming will be locked until the signal from the receiver is restored for 30 seconds AND the arming switch is in the OFF position (when an arm switch is in use).
-
-* When `failsafe_kill_switch` is set to ON and the rc switch configured for failsafe is set to ON, the craft is instantly disarmed. Re-arming is possible when the signal from the receiver has restored for at least 3 seconds AND the arming switch is in the OFF position (when one is in use). Similar effect can be achieved by setting 'failsafe_throttle' to 1000 and 'failsafe_off_delay' to 0. This is not the prefered method, since the reaction is slower and re-arming will be locked.
 
 * Prior to starting a stage 2 intervention it is checked if the throttle position was below `min_throttle` level for the last `failsafe_throttle_low_delay` seconds. If it was, the craft is assumed to be on the ground and is only disarmed. It may be re-armed without a power cycle. This feature can be disabled completely by 
 setting `failsafe_throttle_low_delay` to zero. This is useful for gliders that may fly long with zero throttle.
@@ -91,10 +88,6 @@ Delay after failsafe activates before motors finally turn off.  This is the amou
 ### `failsafe_throttle`
 
 Throttle level used for landing.  Specify a value that causes the aircraft to descend at about 1M/sec. Default is set to 1000 which should correspond to throttle off.
-
-### `failsafe_kill_switch`
-
-Configure the rc switched failsafe action: the same action as when the rc link is lost (set to OFF) or disarms instantly (set to ON). Also see above.
 
 ### `failsafe_throttle_low_delay`
 
