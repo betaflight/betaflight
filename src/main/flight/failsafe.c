@@ -418,19 +418,24 @@ void failsafeUpdateState(void)
                     if (armed) {
                         beeperMode = BEEPER_RX_LOST_LANDING;
                     }
-                    bool rthIdleOrLanded;
+                    bool rthLanded = false;
                     switch (getStateOfForcedRTH()) {
                         case RTH_IN_PROGRESS:
-                            rthIdleOrLanded = false;
                             break;
 
-                        default:
-                        case RTH_IDLE:
                         case RTH_HAS_LANDED:
-                            rthIdleOrLanded = true;
+                            rthLanded = true;
+                            break;
+
+                        case RTH_IDLE:
+                        default:
+                            // This shouldn't happen. If RTH was somehow aborted during failsafe - fallback to FAILSAFE_LANDING procedure
+                            abortForcedRTH();
+                            failsafeActivate(FAILSAFE_LANDING);
+                            reprocessState = true;
                             break;
                     }
-                    if (rthIdleOrLanded || !armed) {
+                    if (rthLanded || !armed) {
                         failsafeState.receivingRxDataPeriodPreset = PERIOD_OF_30_SECONDS; // require 30 seconds of valid rxData
                         failsafeState.phase = FAILSAFE_LANDED;
                         reprocessState = true;
