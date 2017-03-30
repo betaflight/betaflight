@@ -2192,7 +2192,7 @@ static void cliModeColor(char *cmdline)
 static void printServo(uint8_t dumpMask, const servoParam_t *servoParam, const servoParam_t *defaultServoParam)
 {
     // print out servo settings
-    const char *format = "servo %u %d %d %d %d %d %d %d\r\n";
+    const char *format = "servo %u %d %d %d %d %d \r\n";
     for (uint32_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         const servoParam_t *servoConf = &servoParam[i];
         bool equalsDefault = false;
@@ -2201,7 +2201,6 @@ static void printServo(uint8_t dumpMask, const servoParam_t *servoParam, const s
             equalsDefault = servoConf->min == servoConfDefault->min
                 && servoConf->max == servoConfDefault->max
                 && servoConf->middle == servoConfDefault->middle
-                && servoConf->angleAtMin == servoConfDefault->angleAtMax
                 && servoConf->rate == servoConfDefault->rate
                 && servoConf->forwardFromChannel == servoConfDefault->forwardFromChannel;
             cliDefaultPrintf(dumpMask, equalsDefault, format,
@@ -2209,8 +2208,6 @@ static void printServo(uint8_t dumpMask, const servoParam_t *servoParam, const s
                 servoConfDefault->min,
                 servoConfDefault->max,
                 servoConfDefault->middle,
-                servoConfDefault->angleAtMin,
-                servoConfDefault->angleAtMax,
                 servoConfDefault->rate,
                 servoConfDefault->forwardFromChannel
             );
@@ -2220,8 +2217,6 @@ static void printServo(uint8_t dumpMask, const servoParam_t *servoParam, const s
             servoConf->min,
             servoConf->max,
             servoConf->middle,
-            servoConf->angleAtMin,
-            servoConf->angleAtMax,
             servoConf->rate,
             servoConf->forwardFromChannel
         );
@@ -2249,7 +2244,7 @@ static void printServo(uint8_t dumpMask, const servoParam_t *servoParam, const s
 
 static void cliServo(char *cmdline)
 {
-    enum { SERVO_ARGUMENT_COUNT = 8 };
+    enum { SERVO_ARGUMENT_COUNT = 6 };
     int16_t arguments[SERVO_ARGUMENT_COUNT];
 
     servoParam_t *servo;
@@ -2287,7 +2282,7 @@ static void cliServo(char *cmdline)
             }
         }
 
-        enum {INDEX = 0, MIN, MAX, MIDDLE, ANGLE_AT_MIN, ANGLE_AT_MAX, RATE, FORWARD};
+        enum {INDEX = 0, MIN, MAX, MIDDLE, RATE, FORWARD};
 
         i = arguments[INDEX];
 
@@ -2305,9 +2300,7 @@ static void cliServo(char *cmdline)
             arguments[MIDDLE] < arguments[MIN] || arguments[MIDDLE] > arguments[MAX] ||
             arguments[MIN] > arguments[MAX] || arguments[MAX] < arguments[MIN] ||
             arguments[RATE] < -100 || arguments[RATE] > 100 ||
-            arguments[FORWARD] >= MAX_SUPPORTED_RC_CHANNEL_COUNT ||
-            arguments[ANGLE_AT_MIN] < 0 || arguments[ANGLE_AT_MIN] > 180 ||
-            arguments[ANGLE_AT_MAX] < 0 || arguments[ANGLE_AT_MAX] > 180
+            arguments[FORWARD] >= MAX_SUPPORTED_RC_CHANNEL_COUNT
         ) {
             cliShowParseError();
             return;
@@ -2316,9 +2309,7 @@ static void cliServo(char *cmdline)
         servo->min = arguments[1];
         servo->max = arguments[2];
         servo->middle = arguments[3];
-        servo->angleAtMin = arguments[4];
-        servo->angleAtMax = arguments[5];
-        servo->rate = arguments[6];
+        servo->rate = arguments[5];
         servo->forwardFromChannel = arguments[7];
     }
 }
