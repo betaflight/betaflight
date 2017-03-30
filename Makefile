@@ -197,7 +197,7 @@ ifeq ($(filter $(TARGET),$(VALID_TARGETS)),)
 $(error Target '$(TARGET)' is not valid, must be one of $(VALID_TARGETS). Have you prepared a valid target.mk?)
 endif
 
-ifeq ($(filter $(TARGET),$(F1_TARGETS) $(F3_TARGETS) $(F4_TARGETS) $(F7_TARGETS)),)
+ifeq ($(filter $(TARGET),$(F1_TARGETS) $(F3_TARGETS) $(F4_TARGETS) $(F7_TARGETS) $(SITL_TARGETS)),)
 $(error Target '$(TARGET)' has not specified a valid STM group, must be one of F1, F3, F405, F411 or F7x5. Have you prepared a valid target.mk?)
 endif
 
@@ -205,7 +205,7 @@ endif
 256K_TARGETS  = $(F3_TARGETS)
 512K_TARGETS  = $(F411_TARGETS) $(F446_TARGETS) $(F7X2RE_TARGETS) $(F7X5XE_TARGETS)
 1024K_TARGETS = $(F405_TARGETS) $(F7X5XG_TARGETS) $(F7X6XG_TARGETS)
-2048K_TARGETS = $(F7X5XI_TARGETS)
+2048K_TARGETS = $(F7X5XI_TARGETS) $(SITL_TARGETS)
 
 # Configure default flash sizes for the targets (largest size specified gets hit first) if flash not specified already.
 ifeq ($(FLASH_SIZE),)
@@ -533,6 +533,26 @@ DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE)
 TARGET_FLAGS    = -D$(TARGET)
 
 # End F7 targets
+#
+# Start SITL targets
+else ifeq ($(TARGET),$(filter $(TARGET), $(SITL_TARGETS)))
+
+INCLUDE_DIRS    := $(INCLUDE_DIRS) \
+                   $(ROOT)/lib/main/dyad
+
+SITL_SRC        := $(ROOT)/lib/main/dyad/dyad.c
+
+#Flags
+ARCH_FLAGS      =
+DEVICE_FLAGS    =
+LD_SCRIPT       = src/main/target/SITL/parameter_group.ld
+STARTUP_SRC     =
+
+TARGET_FLAGS    = -D$(TARGET)
+
+ARM_SDK_PREFIX  =
+
+# End SITL targets
 #
 # Start F1 targets
 else
@@ -939,6 +959,19 @@ F7EXCLUDES = drivers/bus_spi.c \
             drivers/timer.c \
             drivers/serial_uart.c
 
+SITLEXCLUDES = \
+            drivers/adc.c \
+            drivers/bus_spi.c \
+            drivers/bus_i2c.c \
+            drivers/dma.c \
+            drivers/pwm_output.c \
+            drivers/timer.c \
+            drivers/light_led.c \
+            drivers/system.c \
+            drivers/rcc.c \
+            drivers/serial_uart.c \
+
+
 # check if target.mk supplied
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
 SRC := $(STARTUP_SRC) $(STM32F4xx_COMMON_SRC) $(TARGET_SRC) $(VARIANT_SRC)
@@ -948,6 +981,8 @@ else ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
 SRC := $(STARTUP_SRC) $(STM32F30x_COMMON_SRC) $(TARGET_SRC) $(VARIANT_SRC)
 else ifeq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
 SRC := $(STARTUP_SRC) $(STM32F10x_COMMON_SRC) $(TARGET_SRC) $(VARIANT_SRC)
+else ifeq ($(TARGET),$(filter $(TARGET),$(SITL_TARGETS)))
+SRC := $(TARGET_SRC) $(SITL_SRC) $(VARIANT_SRC)
 endif
 
 ifneq ($(filter $(TARGET),$(F4_TARGETS) $(F7_TARGETS)),)
@@ -980,6 +1015,11 @@ SRC += $(COMMON_SRC)
 #excludes
 ifeq ($(TARGET),$(filter $(TARGET),$(F7_TARGETS)))
 SRC   := $(filter-out ${F7EXCLUDES}, $(SRC))
+endif
+
+#SITL excludes
+ifeq ($(TARGET),$(filter $(TARGET),$(SITL_TARGETS)))
+SRC   := $(filter-out ${SITLEXCLUDES}, $(SRC))
 endif
 
 ifneq ($(filter SDCARD,$(FEATURES)),)
@@ -1032,6 +1072,13 @@ LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_DEFAULT)
 
 else ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
 OPTIMISE_DEFAULT    := -O2
+OPTIMISE_SPEED      := -Ofast
+OPTIMISE_SIZE       := -Os
+
+LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
+
+else ifeq ($(TARGET),$(filter $(TARGET),$(SITL_TARGETS)))
+OPTIMISE_DEFAULT    := -Ofast
 OPTIMISE_SPEED      := -Ofast
 OPTIMISE_SIZE       := -Os
 
@@ -1096,6 +1143,24 @@ LDFLAGS     = -lm \
               -Wl,--cref \
               -Wl,--no-wchar-size-warning \
               -T$(LD_SCRIPT)
+
+#SITL compile
+ifeq ($(TARGET),$(filter $(TARGET),$(SITL_TARGETS)))
+LDFLAGS     = \
+              -lm \
+              -lpthread \
+              -lc \
+              -lrt \
+              $(ARCH_FLAGS) \
+              $(LTO_FLAGS) \
+              $(DEBUG_FLAGS) \
+              -static \
+              -static-libgcc \
+              -Wl,-gc-sections,-Map,$(TARGET_MAP) \
+              -Wl,-L$(LINKER_DIR) \
+              -Wl,--cref \
+              -T$(LD_SCRIPT)
+endif
 
 ###############################################################################
 # No user-serviceable parts below
