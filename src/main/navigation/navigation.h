@@ -258,6 +258,7 @@ void applyWaypointNavigationAndAltitudeHold(void);
 /* Functions to signal navigation requirements to main loop */
 bool naivationRequiresAngleMode(void);
 bool navigationRequiresThrottleTiltCompensation(void);
+bool naivationRequiresTurnAssistance(void);
 int8_t naivationGetHeadingControlState(void);
 bool naivationBlockArming(void);
 bool navigationPositionEstimateIsHealthy(void);

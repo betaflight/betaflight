@@ -699,7 +699,7 @@ void pidController(void)
     }
 
 #ifdef USE_FLM_TURN_ASSIST
-    if (FLIGHT_MODE(TURN_ASSISTANT)) {
+    if (FLIGHT_MODE(TURN_ASSISTANT) || naivationRequiresTurnAssistance()) {
         pidTurnAssistant(pidState);
     }
 #endif

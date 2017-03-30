@@ -2420,13 +2420,33 @@ bool naivationRequiresAngleMode(void)
     return (currentState & NAV_REQUIRE_ANGLE) || ((currentState & NAV_REQUIRE_ANGLE_FW) && STATE(FIXED_WING));
 }
 
+/*-----------------------------------------------------------
+ * An indicator that TURN ASSISTANCE is required for navigation
+ *-----------------------------------------------------------*/
+bool naivationRequiresTurnAssistance(void)
+{
+    const navigationFSMStateFlags_t currentState = navGetStateFlags(posControl.navState);
+    if (STATE(FIXED_WING)) {
+        // For airplanes turn assistant is always required when controlling position
+        return (currentState & NAV_CTL_POS);
+    }
+    else {
+        return false;
+    }
+}
+
 /**
  * An indicator that NAV is in charge of heading control (a signal to disable other heading controllers)
  */
 int8_t naivationGetHeadingControlState(void)
 {
-    // No explicit MAG_HOLD mode for airplanes
-    if ((navGetStateFlags(posControl.navState) & NAV_REQUIRE_MAGHOLD) && !STATE(FIXED_WING)) {
+    // For airplanes report as manual heading control
+    if (STATE(FIXED_WING)) {
+        return NAV_HEADING_CONTROL_MANUAL;
+    }
+
+    // For multirotors it depends on navigation system mode
+    if (navGetStateFlags(posControl.navState) & NAV_REQUIRE_MAGHOLD) {
         if (posControl.flags.isAdjustingHeading) {
             return NAV_HEADING_CONTROL_MANUAL;
         }
