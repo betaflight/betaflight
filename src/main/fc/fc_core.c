@@ -253,7 +253,7 @@ void mwArm(void)
         if (ARMING_FLAG(ARMED)) {
             return;
         }
-        if (IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
+        if (IS_RC_MODE_ACTIVE(BOXFAILSAFE) || IS_RC_MODE_ACTIVE(BOXKILLSWITCH)) {
             return;
         }
         if (!ARMING_FLAG(PREVENT_ARMING)) {
@@ -487,6 +487,10 @@ void processRx(timeUs_t currentTimeUs)
     if (mixerConfig()->mixerMode == MIXER_FLYING_WING || mixerConfig()->mixerMode == MIXER_AIRPLANE || mixerConfig()->mixerMode == MIXER_CUSTOM_AIRPLANE) {
         DISABLE_FLIGHT_MODE(HEADFREE_MODE);
     }
+
+#if defined(AUTOTUNE_FIXED_WING) || defined(AUTOTUNE_MULTIROTOR)
+    autotuneUpdateState();
+#endif
 
 #ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY)) {

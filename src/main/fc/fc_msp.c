@@ -127,7 +127,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXLLIGHTS, "LLIGHTS;", 16 },
     { BOXOSD, "OSD SW;", 19 },
     { BOXTELEMETRY, "TELEMETRY;", 20 },
-    //{ BOXGTUNE, "GTUNE;", 21 },
+    { BOXAUTOTUNE, "AUTO TUNE;", 21 },
     { BOXBLACKBOX, "BLACKBOX;", 26 },
     { BOXFAILSAFE, "FAILSAFE;", 27 },
     { BOXNAVWP, "NAV WP;", 28 },
@@ -140,6 +140,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXTURNASSIST, "TURN ASSIST;", 35 },
     { BOXNAVLAUNCH, "NAV LAUNCH;", 36 },
     { BOXAUTOTRIM, "SERVO AUTOTRIM;", 37 },
+    { BOXKILLSWITCH, "KILLSWITCH;", 38 },
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -289,6 +290,9 @@ static void initActiveBoxIds(void)
         activeBoxIds[activeBoxIdCount++] = BOXPASSTHRU;
         activeBoxIds[activeBoxIdCount++] = BOXNAVLAUNCH;
         activeBoxIds[activeBoxIdCount++] = BOXAUTOTRIM;
+#if defined(AUTOTUNE_FIXED_WING)
+        activeBoxIds[activeBoxIdCount++] = BOXAUTOTUNE;
+#endif
     }
 
 #ifdef USE_SERVOS
@@ -322,6 +326,7 @@ static void initActiveBoxIds(void)
     }
 #endif
 
+    activeBoxIds[activeBoxIdCount++] = BOXKILLSWITCH;
     activeBoxIds[activeBoxIdCount++] = BOXFAILSAFE;
 }
 
@@ -361,7 +366,9 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(FLIGHT_MODE(TURN_ASSISTANT)) << BOXTURNASSIST |
 #endif
         IS_ENABLED(FLIGHT_MODE(NAV_LAUNCH_MODE)) << BOXNAVLAUNCH |
+        IS_ENABLED(FLIGHT_MODE(AUTO_TUNE)) << BOXAUTOTUNE |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAUTOTRIM)) << BOXAUTOTRIM |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXKILLSWITCH)) << BOXKILLSWITCH |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHOMERESET)) << BOXHOMERESET;
 
     uint32_t ret = 0;
@@ -895,7 +902,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, failsafeConfig()->failsafe_delay);
         sbufWriteU8(dst, failsafeConfig()->failsafe_off_delay);
         sbufWriteU16(dst, failsafeConfig()->failsafe_throttle);
-        sbufWriteU8(dst, failsafeConfig()->failsafe_kill_switch);
+        sbufWriteU8(dst, 0);    // was failsafe_kill_switch
         sbufWriteU16(dst, failsafeConfig()->failsafe_throttle_low_delay);
         sbufWriteU8(dst, failsafeConfig()->failsafe_procedure);
         sbufWriteU8(dst, failsafeConfig()->failsafe_recovery_delay);
@@ -1156,8 +1163,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #ifdef NAV
     case MSP_NAV_POSHOLD:
         sbufWriteU8(dst, navConfig()->general.flags.user_control_mode);
-        sbufWriteU16(dst, navConfig()->general.max_speed);
-        sbufWriteU16(dst, navConfig()->general.max_climb_rate);
+        sbufWriteU16(dst, navConfig()->general.max_auto_speed);
+        sbufWriteU16(dst, navConfig()->general.max_auto_climb_rate);
         sbufWriteU16(dst, navConfig()->general.max_manual_speed);
         sbufWriteU16(dst, navConfig()->general.max_manual_climb_rate);
         sbufWriteU8(dst, navConfig()->mc.max_bank_angle);
@@ -1628,8 +1635,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef NAV
     case MSP_SET_NAV_POSHOLD:
         navConfigMutable()->general.flags.user_control_mode = sbufReadU8(src);
-        navConfigMutable()->general.max_speed = sbufReadU16(src);
-        navConfigMutable()->general.max_climb_rate = sbufReadU16(src);
+        navConfigMutable()->general.max_auto_speed = sbufReadU16(src);
+        navConfigMutable()->general.max_auto_climb_rate = sbufReadU16(src);
         navConfigMutable()->general.max_manual_speed = sbufReadU16(src);
         navConfigMutable()->general.max_manual_climb_rate = sbufReadU16(src);
         navConfigMutable()->mc.max_bank_angle = sbufReadU8(src);
@@ -1871,7 +1878,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         failsafeConfigMutable()->failsafe_delay = sbufReadU8(src);
         failsafeConfigMutable()->failsafe_off_delay = sbufReadU8(src);
         failsafeConfigMutable()->failsafe_throttle = sbufReadU16(src);
-        failsafeConfigMutable()->failsafe_kill_switch = sbufReadU8(src);
+        sbufReadU8(src);    // was failsafe_kill_switch
         failsafeConfigMutable()->failsafe_throttle_low_delay = sbufReadU16(src);
         failsafeConfigMutable()->failsafe_procedure = sbufReadU8(src);
         if (dataSize > 8) {

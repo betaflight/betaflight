@@ -183,6 +183,11 @@ void processRcStickPositions(throttleStatus_e throttleStatus, bool disarm_kill_s
         }
     }
 
+    // KILLSWITCH disarms instantly
+    if (IS_RC_MODE_ACTIVE(BOXKILLSWITCH)) {
+        mwDisarm();
+    }
+
     if (rcDelayCommand != 20) {
         return;
     }

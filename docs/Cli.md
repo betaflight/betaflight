@@ -160,8 +160,8 @@ Re-apply any new defaults as desired.
 |  nav_position_timeout  | 5 | If GPS fails wait for this much seconds before switching to emergency landing mode (0 - disable) |
 |  nav_wp_radius  | 100 | Waypoint radius [cm]. Waypoint would be considered reached if machine is within this radius |
 |  nav_wp_safe_distance  | 10000 | First waypoint in the mission should be closer than this value (cm) |
-|  nav_max_speed  | 300 | Maximum velocity firmware is allowed in full auto modes (POSHOLD, RTH, WP) [cm/s] [Multirotor only] |
-|  nav_max_climb_rate  | 500 | Maximum climb/descent rate that UAV is allowed to reach during navigation modes. In cm/s |
+|  nav_auto_speed  | 300 | Maximum velocity firmware is allowed in full auto modes (POSHOLD, RTH, WP) [cm/s] [Multirotor only] |
+|  nav_auto_climb_rate  | 500 | Maximum climb/descent rate that UAV is allowed to reach during navigation modes. In cm/s |
 |  nav_manual_speed  | 500 | Maximum velocity firmware is allowed when processing pilot input for POSHOLD/CRUISE control mode [cm/s] [Multirotor only] |
 |  nav_manual_climb_rate  | 200 | Maximum climb/descent rate firmware is allowed when processing pilot input for ALTHOLD control mode [cm/s] |
 |  nav_landing_speed  | 200 | Vertical descent velocity during the RTH landing phase. [cm/s] |
@@ -245,7 +245,6 @@ Re-apply any new defaults as desired.
 |  failsafe_recovery_delay  | 5 | Time in deciseconds to wait before aborting failsafe when signal is recovered. See [Failsafe documentation](Failsafe.md#failsafe_recovery_delay). |
 |  failsafe_off_delay  | 200 | Time in deciseconds to wait before turning off motors when failsafe is activated. 0 = No timeout. See [Failsafe documentation](Failsafe.md#failsafe_off_delay). |
 |  failsafe_throttle  | 1000 | Throttle level used for landing when failsafe is enabled. See [Failsafe documentation](Failsafe.md#failsafe_throttle). |
-|  failsafe_kill_switch  | OFF | Set to ON to use an AUX channel as a failsafe kill switch. |
 |  failsafe_throttle_low_delay  | 100 | If failsafe activated when throttle is low for this much time - bypass failsafe and disarm, in 10th of seconds. 0 = No timeout |
 |  failsafe_procedure  | SET-THR | What failsafe procedure to initiate in Stage 2. See [Failsafe documentation](Failsafe.md#failsafe_throttle). |
 |  failsafe_stick_threshold  | 0 | Threshold for stick motion to consider failsafe condition resolved. If non-zero failsafe won't clear even if RC link is restored - you have to move sticks to exit failsafe. |
@@ -372,6 +371,11 @@ Re-apply any new defaults as desired.
 |  yaw_rate  | 20 | Defines rotation rate on YAW axis that UAV will try to archive on max. stick deflection. Rates are defined in tenths of degrees per second [dps/10]. That means, rate 20 represents 200dps rotation speed. Default 20 (200dps) is more less equivalent of old Cleanflight/Baseflight rate 0. Max. 180 (1800dps) is what gyro can measure. |
 |  tpa_rate  | 0 | Throttle PID attenuation reduces influence of P on ROLL and PITCH as throttle increases. For every 1% throttle after the TPA breakpoint, P is reduced by the TPA rate. |
 |  tpa_breakpoint  | 1500 | See tpa_rate. |
+|  fw_autotune_overshoot_time  | 100 | Time [ms] to detect sustained overshoot |
+|  fw_autotune_undershoot_time | 200 | Time [ms] to detect sustained undershoot |
+|  fw_autotune_threshold       | 50  | Threshold [%] of max rate to consider overshoot/undershoot detection |
+|  fw_autotune_ff_to_p_gain    | 10  | FF to P gain (strength relationship) [%] |
+|  fw_autotune_ff_to_i_tc      | 600 | FF to I time (defines time for I to reach the same level of response as FF) [ms]  |
 
 This Markdown table is made by MarkdwonTableMaker addon for google spreadsheet.
 Original Spreadsheet used to make this table can be found here https://docs.google.com/spreadsheets/d/1ubjYdMGmZ2aAMUNYkdfe3hhIF7wRfIjcuPOi_ysmp00/edit?usp=sharing

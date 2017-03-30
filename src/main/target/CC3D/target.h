@@ -194,6 +194,8 @@
 #undef SPEKTRUM_BIND
 #endif
 
+#define AUTOTUNE_FIXED_WING
+
 // Number of available PWM outputs
 #define MAX_PWM_OUTPUT_PORTS    11
 
@@ -212,6 +214,9 @@
 //#define TELEMETRY_MAVLINK
 //#define USE_SERIALRX_SUMD
 //#define TELEMETRY_HOTT
+
+// CC3D is widely used for airplanes - enable fw_autotune
+#define AUTOTUNE_FIXED_WING
 
 // IO - from schematics
 #define TARGET_IO_PORTA         0xffff
