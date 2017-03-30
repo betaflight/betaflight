@@ -27,7 +27,6 @@ Disconnect main power, connect to cli via USB/FTDI.
 dump using cli
 
 ```
-rateprofile 0
 profile 0
 dump
 ```
@@ -41,14 +40,6 @@ profile 2
 dump profile
 ```
 
-dump rate profiles using cli if you use them
-
-```
-rateprofile 1
-dump rates
-rateprofile 2
-dump rates
-```
 copy screen output to a file and save it.
 
 ## Restore via CLI.
@@ -92,7 +83,6 @@ Re-apply any new defaults as desired.
 | `motor`          | get/set motor output value                     |
 | `play_sound`     | index, or none for next                        |
 | `profile`        | index (0 to 2)                                 |
-| `rateprofile`    | index (0 to 2)                                 |
 | `rxrange`        | configure rx channel ranges (end-points) |
 | `save`           | save and reboot                                |
 | `set`            | name=value or blank or * for list              |
