@@ -26,7 +26,7 @@ typedef enum {
     BOXANGLE,
     BOXHORIZON,
     BOXBARO,
-    // BOXVARIO,
+    BOXANTIGRAVITY,
     BOXMAG,
     BOXHEADFREE,
     BOXHEADADJ,
@@ -190,6 +190,7 @@ bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range);
 void updateActivatedModes(void);
 
 bool isAirmodeActive(void);
+bool isAntiGravityModeActive(void);
 
 bool isUsingSticksForArming(void);
 

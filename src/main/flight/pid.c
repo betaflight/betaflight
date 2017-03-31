@@ -51,13 +51,7 @@
 uint32_t targetPidLooptime;
 static bool pidStabilisationEnabled;
 
-float axisPIDf[3];
-
-#ifdef BLACKBOX
-int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
-#endif
-
-static float previousGyroIf[3];
+float axisPID_P[3], axisPID_I[3], axisPID_D[3];
 
 static float dT;
 
@@ -145,7 +139,7 @@ void pidSetTargetLooptime(uint32_t pidLooptime)
 void pidResetErrorGyroState(void)
 {
     for (int axis = 0; axis < 3; axis++) {
-        previousGyroIf[axis] = 0.0f;
+        axisPID_I[axis] = 0.0f;
     }
 }
 
@@ -335,56 +329,40 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         const float errorRate = currentPidSetpoint - gyroRate;       // r - y
 
         // -----calculate P component and add Dynamic Part based on stick input
-        float PTerm = Kp[axis] * errorRate * tpaFactor;
+        axisPID_P[axis] = Kp[axis] * errorRate * tpaFactor;
         if (axis == FD_YAW) {
-            PTerm = ptermYawFilterApplyFn(ptermYawFilter, PTerm);
+            axisPID_P[axis] = ptermYawFilterApplyFn(ptermYawFilter, axisPID_P[axis]);
         }
 
         // -----calculate I component
-        float ITerm = previousGyroIf[axis];
         if (motorMixRange < 1.0f) {
             // Only increase ITerm if motor output is not saturated
-            ITerm += Ki[axis] * errorRate * dT * dynKi * itermAccelerator;
-            previousGyroIf[axis] = ITerm;
+            axisPID_I[axis] += Ki[axis] * errorRate * dT * dynKi * itermAccelerator;
         }
 
         // -----calculate D component
-        if (axis == FD_YAW) {
-            // no DTerm for yaw axis
-            // -----calculate total PID output
-            axisPIDf[FD_YAW] = PTerm + ITerm;
-#ifdef BLACKBOX
-            axisPID_P[FD_YAW] = PTerm;
-            axisPID_I[FD_YAW] = ITerm;
-            axisPID_D[FD_YAW] = 0;
-#endif
-        } else {
+        if (axis != FD_YAW) {
             float dynC = dtermSetpointWeight;
             if (pidProfile->setpointRelaxRatio < 100) {
                 dynC *= MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f);
             }
             const float rD = dynC * currentPidSetpoint - gyroRate;    // cr - y
             // Divide rate change by dT to get differential (ie dr/dt)
-            const float delta = (rD - previousRateError[axis]) / dT;
+            float delta = (rD - previousRateError[axis]) / dT;
             previousRateError[axis] = rD;
 
-            float DTerm = Kd[axis] * delta * tpaFactor;
-            DEBUG_SET(DEBUG_DTERM_FILTER, axis, DTerm);
-
             // apply filters
-            DTerm = dtermNotchFilterApplyFn(dtermFilterNotch[axis], DTerm);
-            DTerm = dtermLpfApplyFn(dtermFilterLpf[axis], DTerm);
+            delta = dtermNotchFilterApplyFn(dtermFilterNotch[axis], delta);
+            delta = dtermLpfApplyFn(dtermFilterLpf[axis], delta);
 
-            // -----calculate total PID output
-            axisPIDf[axis] = PTerm + ITerm + DTerm;
-#ifdef BLACKBOX
-            axisPID_P[axis] = PTerm;
-            axisPID_I[axis] = ITerm;
-            axisPID_D[axis] = DTerm;
-#endif
+            axisPID_D[axis] = Kd[axis] * delta * tpaFactor;
         }
 
         // Disable PID control at zero throttle
-        if (!pidStabilisationEnabled) axisPIDf[axis] = 0;
+        if (!pidStabilisationEnabled) {
+            axisPID_P[axis] = 0;
+            axisPID_I[axis] = 0;
+            axisPID_D[axis] = 0;
+        }
     }
 }
