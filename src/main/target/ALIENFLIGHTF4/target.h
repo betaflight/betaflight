@@ -23,8 +23,6 @@
 #define HW_PIN                  PC13
 #define BRUSHED_ESC_AUTODETECT
 
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
-
 #define USBD_PRODUCT_STRING "AlienFlight F4"
 
 #define LED0                    PC12
@@ -33,7 +31,7 @@
 #define BEEPER                  PC13
 #define BEEPER_INVERTED
 
-#define INVERTER_PIN_USART2     PC15
+#define INVERTER_PIN_UART2      PC15
 
 // MPU interrupt
 #define USE_EXTI
@@ -140,24 +138,24 @@
 #define USE_SPI_DEVICE_3
 
 #define USE_I2C
+#define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
-//#define I2C_DEVICE_EXT          (I2CDEV_2)
 #define I2C1_SCL                PB6
 #define I2C1_SDA                PB7
 
 #define USE_ADC
 //#define BOARD_HAS_VOLTAGE_DIVIDER
+//#define BOARD_HAS_CURRENT_SENSOR
 #define VBAT_ADC_PIN            PC0
 #define CURRENT_METER_ADC_PIN   PC1
 #define RSSI_ADC_PIN            PC4
 #define EXTERNAL1_ADC_GPIO_PIN  PC5
 
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
+#define CURRENT_METER_OFFSET_DEFAULT 2500                      // ACS712/714-30A - 0A = 2.5V
+#define CURRENT_METER_SCALE_DEFAULT -667                       // ACS712/714-30A - 66.666 mV/A inverted mode
 
-#define HARDWARE_BIND_PLUG
-// Hardware bind plug at PB2 (Pin 28)
+#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
+
 #define BINDPLUG_PIN            PB2
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT

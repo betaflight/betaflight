@@ -18,8 +18,6 @@
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "REVN"
 
-#define CONFIG_START_FLASH_ADDRESS (0x08060000) //0x08060000 to 0x08080000 (FLASH_Sector_7)
-
 #define USBD_PRODUCT_STRING "Revo Nano"
 #ifdef OPBL
 #define USBD_SERIALNUMBER_STRING "0x8010000"
@@ -30,7 +28,7 @@
 
 #define BEEPER                  PC13
 
-#define INVERTER_PIN_USART2     PC15 //Sbus on USART 2 of nano.
+#define INVERTER_PIN_UART2      PC15 //Sbus on USART 2 of nano.
 
 #define MPU6500_CS_PIN          PB12
 #define MPU6500_SPI_INSTANCE    SPI2
@@ -76,6 +74,7 @@
 #define USE_SPI_DEVICE_2
 
 #define USE_I2C
+#define USE_I2C_DEVICE_3
 #define I2C_DEVICE (I2CDEV_3)
 
 #undef LED_STRIP
@@ -85,9 +84,7 @@
 #define VBAT_ADC_PIN            PA6
 #define RSSI_ADC_PIN            PA5
 
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
+#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

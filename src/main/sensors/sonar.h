@@ -28,6 +28,8 @@ extern int16_t sonarMaxRangeCm;
 extern int16_t sonarCfAltCm;
 extern int16_t sonarMaxAltWithTiltCm;
 
+PG_DECLARE(sonarConfig_t, sonarConfig);
+
 void sonarInit(const sonarConfig_t *sonarConfig);
 void sonarUpdate(timeUs_t currentTimeUs);
 int32_t sonarRead(void);

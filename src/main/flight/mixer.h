@@ -22,6 +22,8 @@
 #include "drivers/pwm_output.h"
 
 #define QUAD_MOTOR_COUNT 4
+#define BRUSHED_MOTORS_PWM_RATE 16000
+#define BRUSHLESS_MOTORS_PWM_RATE 480
 
 /*
   DshotSettingRequest (KISS24). Spin direction, 3d and save Settings reqire 10 requests.. and the TLM Byte must always be high if 1-47 are used to send settings
@@ -37,8 +39,8 @@
 
   3D Mode:
   0 = stop
-  48   (low) - 1047 (high) -> positive direction
-  1048 (low) - 2047 (high) -> negative direction
+  48   (low) - 1047 (high) -> negative direction
+  1048 (low) - 2047 (high) -> positive direction
 */
 
 // Digital protocol has fixed values

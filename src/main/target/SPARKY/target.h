@@ -77,8 +77,8 @@
 // Note: PA5 and PA0 are N/C on the sparky - potentially use for ADC or LED STRIP?
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_2) // SDA (PA10/AF4), SCL (PA9/AF4)
-
+#define USE_I2C_DEVICE_2
+#define I2C_DEVICE              (I2CDEV_2)
 #define I2C2_SCL                PA9
 #define I2C2_SDA                PA10
 
@@ -91,9 +91,7 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
+#define SPEKTRUM_BIND_PIN         UART2_RX_PIN
 
 //#define SONAR
 //#define SONAR_ECHO_PIN          PB1

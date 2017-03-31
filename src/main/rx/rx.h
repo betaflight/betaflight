@@ -37,8 +37,6 @@
 #define DEFAULT_SERVO_MIN 1000
 #define DEFAULT_SERVO_MIDDLE 1500
 #define DEFAULT_SERVO_MAX 2000
-#define DEFAULT_SERVO_MIN_ANGLE 90
-#define DEFAULT_SERVO_MAX_ANGLE 90
 
 typedef enum {
     RX_FRAME_PENDING = 0,
@@ -127,7 +125,7 @@ typedef struct rxConfig_s {
     uint8_t spektrum_sat_bind_autoreset;    // whenever we will reset (exit) binding mode after hard reboot
     uint8_t rssi_channel;
     uint8_t rssi_scale;
-    uint8_t rssi_ppm_invert;
+    uint8_t rssi_invert;
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
@@ -140,9 +138,6 @@ typedef struct rxConfig_s {
 
     uint16_t rx_min_usec;
     uint16_t rx_max_usec;
-    rxFailsafeChannelConfig_t failsafe_channel_configurations[MAX_SUPPORTED_RC_CHANNEL_COUNT];
-
-    rxChannelRangeConfig_t channelRanges[NON_AUX_CHANNEL_COUNT];
 } rxConfig_t;
 
 PG_DECLARE(rxConfig_t, rxConfig);

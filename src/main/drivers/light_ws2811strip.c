@@ -47,6 +47,9 @@ uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 #endif
 volatile uint8_t ws2811LedDataTransferInProgress = 0;
 
+uint16_t BIT_COMPARE_1 = 0;
+uint16_t BIT_COMPARE_0 = 0;
+
 static hsvColor_t ledColorBuffer[WS2811_LED_STRIP_LENGTH];
 
 void setLedHsv(uint16_t index, const hsvColor_t *color)
@@ -87,10 +90,10 @@ void setStripColors(const hsvColor_t *colors)
 
 void ws2811LedStripInit(ioTag_t ioTag)
 {
-    memset(&ledStripDMABuffer, 0, WS2811_DMA_BUFFER_SIZE);
+    memset(ledStripDMABuffer, 0, sizeof(ledStripDMABuffer));
     ws2811LedStripHardwareInit(ioTag);
 
-    const hsvColor_t hsv_white = {  0, 255, 255};
+    const hsvColor_t hsv_white = { 0, 255, 255 };
     setStripColor(&hsv_white);
     ws2811UpdateStrip();
 }

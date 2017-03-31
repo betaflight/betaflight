@@ -108,8 +108,6 @@
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
 
-#define USB_IO
-
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
@@ -135,10 +133,10 @@
 #define SOFTSERIAL1_TX_PIN      PB1
 
 #define USE_I2C
-#define I2C_DEVICE              (I2CDEV_1) // SDA (PB9/AF4), SCL (PB8/AF4)
-
-#define I2C1_SCL            PB8
-#define I2C1_SDA            PB9
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
+#define I2C1_SCL                PB8
+#define I2C1_SDA                PB9
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
@@ -154,9 +152,7 @@
 #define DEFAULT_FEATURES        FEATURE_BLACKBOX
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
-#define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN                PB11
+#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

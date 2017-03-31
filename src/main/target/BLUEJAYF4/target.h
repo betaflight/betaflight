@@ -21,8 +21,6 @@
 #define TARGET_VALIDATECONFIG
 #define TARGET_PREINIT
 
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
-
 #define USBD_PRODUCT_STRING     "BlueJayF4"
 
 #define USE_HARDWARE_REVISION_DETECTION
@@ -38,8 +36,8 @@
 #define BEEPER_OPT              PB7
 #define BEEPER_INVERTED
 
-#define INVERTER_PIN_USART6     PB15
-//#define INVERTER_PIN_USART1     PC9
+#define INVERTER_PIN_UART6      PB15
+//#define INVERTER_PIN_UART1     PC9
 
 #define UART1_INVERTER          PC9
 
@@ -138,6 +136,7 @@
 #define SPI3_MOSI_PIN           PC12
 
 #define USE_I2C
+#define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
 #define USE_I2C_PULLUP
 
@@ -156,8 +155,7 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define SPEKTRUM_BIND
-#define BIND_PIN                PB11
+#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define TARGET_IO_PORTA             0xffff
 #define TARGET_IO_PORTB             0xffff

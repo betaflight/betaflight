@@ -65,10 +65,6 @@
 #include "drivers/exti.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
 
-#ifdef USE_BST
-#include "bus_bst.h"
-#endif
-
 #include "fc/config.h"
 #include "fc/fc_init.h"
 #include "fc/fc_msp.h"
@@ -316,32 +312,41 @@ void init(void)
     initInverters();
 #endif
 
-#ifdef USE_BST
-    bstInit(BST_DEVICE);
-#endif
-
 #ifdef TARGET_BUS_INIT
     targetBusInit();
 #else
-    #ifdef USE_SPI
-        #ifdef USE_SPI_DEVICE_1
-            spiInit(SPIDEV_1);
-        #endif
-        #ifdef USE_SPI_DEVICE_2
-            spiInit(SPIDEV_2);
-        #endif
-        #ifdef USE_SPI_DEVICE_3
-            spiInit(SPIDEV_3);
-        #endif
-        #ifdef USE_SPI_DEVICE_4
-            spiInit(SPIDEV_4);
-        #endif
-    #endif
 
-    #ifdef USE_I2C
-        i2cInit(I2C_DEVICE);
-    #endif
+#ifdef USE_SPI
+#ifdef USE_SPI_DEVICE_1
+    spiInit(SPIDEV_1);
 #endif
+#ifdef USE_SPI_DEVICE_2
+    spiInit(SPIDEV_2);
+#endif
+#ifdef USE_SPI_DEVICE_3
+    spiInit(SPIDEV_3);
+#endif
+#ifdef USE_SPI_DEVICE_4
+    spiInit(SPIDEV_4);
+#endif
+#endif /* USE_SPI */
+
+#ifdef USE_I2C
+#ifdef USE_I2C_DEVICE_1
+    i2cInit(I2CDEV_1);
+#endif
+#ifdef USE_I2C_DEVICE_2
+    i2cInit(I2CDEV_2);
+#endif
+#ifdef USE_I2C_DEVICE_3
+    i2cInit(I2CDEV_3);
+#endif  
+#ifdef USE_I2C_DEVICE_4
+    i2cInit(I2CDEV_4);
+#endif  
+#endif /* USE_I2C */
+
+#endif /* TARGET_BUS_INIT */
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
     updateHardwareRevision();
@@ -364,9 +369,9 @@ void init(void)
 #endif
 
 #ifdef USE_ADC
-    /* these can be removed from features! */
-    adcConfigMutable()->vbat.enabled = feature(FEATURE_VBAT);
-    adcConfigMutable()->currentMeter.enabled = feature(FEATURE_CURRENT_METER);
+    adcConfigMutable()->vbat.enabled = (batteryConfig()->voltageMeterSource == VOLTAGE_METER_ADC);
+    adcConfigMutable()->current.enabled = (batteryConfig()->currentMeterSource == CURRENT_METER_ADC);
+
     adcConfigMutable()->rssi.enabled = feature(FEATURE_RSSI_ADC);
     adcInit(adcConfig());
 #endif
@@ -392,18 +397,6 @@ void init(void)
     }
 #endif
 
-#ifdef OSD
-    if (feature(FEATURE_OSD)) {
-#if defined(USE_MAX7456)
-        // if there is a max7456 chip for the OSD then use it, otherwise use MSP
-        displayPort_t *osdDisplayPort = max7456DisplayPortInit(vcdProfile());
-#elif defined(USE_MSP_DISPLAYPORT)
-        displayPort_t *osdDisplayPort = displayPortMspInit();
-#endif
-        osdInit(osdDisplayPort);
-    }
-#endif
-
     if (!sensorsAutodetect()) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
@@ -426,10 +419,8 @@ void init(void)
     LED0_OFF;
     LED1_OFF;
 
-    // gyro.targetLooptime set in sensorsAutodetect(), so we are ready to call pidSetTargetLooptime()
-    pidSetTargetLooptime(gyro.targetLooptime * pidConfig()->pid_process_denom); // Initialize pid looptime
-    pidInitFilters(&currentProfile->pidProfile);
-    pidInitConfig(&currentProfile->pidProfile);
+    // gyro.targetLooptime set in sensorsAutodetect(), so we are ready to call pidInit()
+    pidInit(currentPidProfile);
 
     imuInit();
 
@@ -448,10 +439,23 @@ void init(void)
 
     rxInit();
 
+#ifdef OSD
+    //The OSD need to be initialised after GYRO to avoid GYRO initialisation failure on some targets
+    if (feature(FEATURE_OSD)) {
+#if defined(USE_MAX7456)
+        // if there is a max7456 chip for the OSD then use it, otherwise use MSP
+        displayPort_t *osdDisplayPort = max7456DisplayPortInit(vcdProfile());
+#elif defined(USE_MSP_DISPLAYPORT)
+        displayPort_t *osdDisplayPort = displayPortMspInit();
+#endif
+        osdInit(osdDisplayPort);
+    }
+#endif
+
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
         gpsInit();
-        navigationInit(&currentProfile->pidProfile);
+        navigationInit();
     }
 #endif
 
@@ -475,7 +479,7 @@ void init(void)
     }
 #endif
 
-#ifdef USB_CABLE_DETECTION
+#ifdef USB_DETECT_PIN
     usbCableDetectInit();
 #endif
 
@@ -488,15 +492,16 @@ void init(void)
 #endif
 
 #ifdef USE_FLASHFS
+    if (blackboxConfig()->device == BLACKBOX_DEVICE_FLASH) {
 #if defined(USE_FLASH_M25P16)
-    m25p16_init(flashConfig());
+        m25p16_init(flashConfig());
 #endif
-
-    flashfsInit();
+        flashfsInit();
+    }
 #endif
 
 #ifdef USE_SDCARD
-    if (feature(FEATURE_SDCARD)) {
+    if (feature(FEATURE_SDCARD) && blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
         sdcardInsertionDetectInit();
         sdcard_init(sdcardConfig()->useDma);
         afatfs_init();
@@ -543,10 +548,7 @@ void init(void)
     serialPrint(loopbackPort, "LOOPBACK\r\n");
 #endif
 
-    // Now that everything has powered up the voltage and cell count be determined.
-
-    if (feature(FEATURE_VBAT | FEATURE_CURRENT_METER))
-        batteryInit();
+    batteryInit(); // always needs doing, regardless of features.
 
 #ifdef USE_DASHBOARD
     if (feature(FEATURE_DASHBOARD)) {

@@ -18,7 +18,6 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "FDF4"
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
 #define USBD_PRODUCT_STRING  "FishDroneF4"
 
@@ -28,7 +27,7 @@
 #define BEEPER                  PC15
 #define BEEPER_INVERTED
 
-#define INVERTER_PIN_USART6 PC8
+#define INVERTER_PIN_UART6      PC8
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PC4
@@ -128,7 +127,7 @@
 #define RSSI_ADC_PIN            PC1
 
 // *************** FEATURES ************************
-#define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_OSD | FEATURE_BLACKBOX | FEATURE_VTX)
+#define DEFAULT_FEATURES        (FEATURE_OSD | FEATURE_BLACKBOX | FEATURE_VTX)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART3

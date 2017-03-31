@@ -19,8 +19,6 @@
 
 #define TARGET_BOARD_IDENTIFIER "FYF7"
 
-#define CONFIG_START_FLASH_ADDRESS (0x080C0000)
-
 #define USBD_PRODUCT_STRING "FuryF7"
 
 #define USE_DSHOT
@@ -124,7 +122,8 @@
 #define SERIAL_PORT_COUNT       6 //VCP, USART1, USART3, USART6, SOFTSERIAL x 2
 
 #define USE_I2C
-#define I2C_DEVICE              (I2CDEV_1)  // PB6-SCL, PB7-SDA
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
 #define USE_I2C_PULLUP
 #define I2C1_SCL                PB6
 #define I2C1_SDA                PB7
@@ -143,9 +142,7 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 
-#define SPEKTRUM_BIND
-// USART3 Rx, PB11
-#define BIND_PIN                PB11
+#define SPEKTRUM_BIND_PIN       PB11
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

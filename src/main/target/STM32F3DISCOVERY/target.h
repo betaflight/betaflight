@@ -163,6 +163,7 @@
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
 #define USE_I2C
+#define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_ADC
@@ -174,8 +175,7 @@
 
 #define USE_ESC_SENSOR
 
-#define SPEKTRUM_BIND
-#define BIND_PIN                PA3 // USART2, PA3
+#define SPEKTRUM_BIND_PIN       PA3 // USART2, PA3
 
 #define SONAR
 #define SONAR_TRIGGER_PIN       PB0

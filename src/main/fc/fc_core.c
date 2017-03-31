@@ -47,6 +47,7 @@
 
 #include "fc/cli.h"
 #include "fc/config.h"
+#include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
 #include "fc/fc_rc.h"
 #include "fc/rc_adjustments.h"
@@ -55,6 +56,7 @@
 
 #include "msp/msp_serial.h"
 
+#include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/gps.h"
 #include "io/motors.h"
@@ -62,7 +64,7 @@
 #include "io/serial.h"
 #include "io/statusindicator.h"
 #include "io/transponder_ir.h"
-#include "io/asyncfatfs/asyncfatfs.h"
+#include "io/vtx.h"
 
 #include "rx/rx.h"
 
@@ -92,7 +94,10 @@ enum {
 
 #define AIRMODE_THOTTLE_THRESHOLD 1350 // Make configurable in the future. ~35% throttle should be fine
 
+#if defined(GPS) || defined(MAG)
 int16_t magHold;
+#endif
+
 int16_t headFreeModeHold;
 
 uint8_t motorControlEnable = false;
@@ -101,6 +106,13 @@ static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the m
 
 bool isRXDataNew;
 static bool armingCalibrationWasInitialised;
+
+PG_REGISTER_WITH_RESET_TEMPLATE(throttleCorrectionConfig_t, throttleCorrectionConfig, PG_THROTTLE_CORRECTION_CONFIG, 0);
+
+PG_RESET_TEMPLATE(throttleCorrectionConfig_t, throttleCorrectionConfig,
+    .throttle_correction_value = 0,      // could 10 with althold or 40 for fpv
+    .throttle_correction_angle = 800     // could be 80.0 deg with atlhold or 45.0 for fpv
+);
 
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
 {
@@ -252,6 +264,7 @@ static void updateInflightCalibrationState(void)
     }
 }
 
+#if defined(GPS) || defined(MAG)
 void updateMagHold(void)
 {
     if (ABS(rcCommand[YAW]) < 15 && FLIGHT_MODE(MAG_MODE)) {
@@ -262,10 +275,12 @@ void updateMagHold(void)
             dif -= 360;
         dif *= -rcControlsConfig()->yaw_control_direction;
         if (STATE(SMALL_ANGLE))
-            rcCommand[YAW] -= dif * currentProfile->pidProfile.P8[PIDMAG] / 30;    // 18 deg
+            rcCommand[YAW] -= dif * currentPidProfile->P8[PIDMAG] / 30;    // 18 deg
     } else
         magHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 }
+#endif
+
 
 void processRx(timeUs_t currentTimeUs)
 {
@@ -303,7 +318,7 @@ void processRx(timeUs_t currentTimeUs)
      This is needed to prevent Iterm winding on the ground, but keep full stabilisation on 0 throttle while in air */
     if (throttleStatus == THROTTLE_LOW && !airmodeIsActivated) {
         pidResetErrorGyroState();
-        if (currentProfile->pidProfile.pidAtMinThrottle)
+        if (currentPidProfile->pidAtMinThrottle)
             pidStabilisationState(PID_STABILISATION_ON);
         else
             pidStabilisationState(PID_STABILISATION_OFF);
@@ -402,6 +417,7 @@ void processRx(timeUs_t currentTimeUs)
 
 #if defined(ACC) || defined(MAG)
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
+#if defined(GPS) || defined(MAG)
         if (IS_RC_MODE_ACTIVE(BOXMAG)) {
             if (!FLIGHT_MODE(MAG_MODE)) {
                 ENABLE_FLIGHT_MODE(MAG_MODE);
@@ -410,6 +426,7 @@ void processRx(timeUs_t currentTimeUs)
         } else {
             DISABLE_FLIGHT_MODE(MAG_MODE);
         }
+#endif
         if (IS_RC_MODE_ACTIVE(BOXHEADFREE)) {
             if (!FLIGHT_MODE(HEADFREE_MODE)) {
                 ENABLE_FLIGHT_MODE(HEADFREE_MODE);
@@ -463,7 +480,7 @@ static void subTaskPidController(void)
     uint32_t startTime;
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
     // PID - note this is function pointer set by setPIDController()
-    pidController(&currentProfile->pidProfile, &accelerometerConfig()->accelerometerTrims);
+    pidController(currentPidProfile, &accelerometerConfig()->accelerometerTrims);
     DEBUG_SET(DEBUG_PIDLOOP, 1, micros() - startTime);
 }
 
@@ -555,7 +572,7 @@ static void subTaskMotorUpdate(void)
         startTime = micros();
     }
 
-    mixTable(&currentProfile->pidProfile);
+    mixTable(currentPidProfile);
 
 #ifdef USE_SERVOS
     // motor outputs are used as sources for servo mixing, so motors must be calculated using mixTable() before servos.

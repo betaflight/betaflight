@@ -86,15 +86,10 @@ PG_REGISTER_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELER
 
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
 {
-#ifdef USE_PARAMETER_GROUPS
     RESET_CONFIG_2(rollAndPitchTrims_t, rollAndPitchTrims,
         .values.roll = 0,
         .values.pitch = 0,
     );
-#else
-    rollAndPitchTrims->values.roll = 0;
-    rollAndPitchTrims->values.pitch = 0;
-#endif
 }
 
 void accResetRollAndPitchTrims(void)
@@ -114,18 +109,16 @@ void accResetFlightDynamicsTrims(void)
     resetFlightDynamicsTrims(&accelerometerConfigMutable()->accZero);
 }
 
-#ifdef USE_PARAMETER_GROUPS
 void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
 {
     RESET_CONFIG_2(accelerometerConfig_t, instance,
-        .acc_lpf_hz = 15,
+        .acc_lpf_hz = 10,
         .acc_align = ALIGN_DEFAULT,
         .acc_hardware = ACC_DEFAULT
     );
     resetRollAndPitchTrims(&instance->accelerometerTrims);
     resetFlightDynamicsTrims(&instance->accZero);
 }
-#endif
 
 bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse)
 {

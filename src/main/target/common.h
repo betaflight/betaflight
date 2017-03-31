@@ -17,7 +17,7 @@
 
 #pragma once
 
-//#define USE_PARAMETER_GROUPS
+#define USE_PARAMETER_GROUPS
 // type conversion warnings.
 // -Wconversion can be turned on to enable the process of eliminating these warnings
 //#pragma GCC diagnostic warning "-Wconversion"
@@ -97,6 +97,7 @@
 #define GPS
 #define CMS
 #define TELEMETRY_CRSF
+#define TELEMETRY_IBUS
 #define TELEMETRY_JETIEXBUS
 #define TELEMETRY_MAVLINK
 #define TELEMETRY_SRXL

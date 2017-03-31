@@ -43,7 +43,7 @@ typedef struct adcChannelConfig_t {
 typedef struct adcConfig_s {
     adcChannelConfig_t vbat;
     adcChannelConfig_t rssi;
-    adcChannelConfig_t currentMeter;
+    adcChannelConfig_t current;
     adcChannelConfig_t external1;
 } adcConfig_t;
 

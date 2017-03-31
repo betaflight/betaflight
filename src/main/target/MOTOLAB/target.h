@@ -76,6 +76,7 @@
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
 #define USE_I2C
+#define USE_I2C_DEVICE_2
 #define I2C_DEVICE              (I2CDEV_2)
 #define I2C2_SCL                PA9
 #define I2C2_SDA                PA10
@@ -98,9 +99,7 @@
 
 #define USE_ESC_SENSOR
 
-#define SPEKTRUM_BIND
-// USART2, PB4
-#define BIND_PIN                PB4
+#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

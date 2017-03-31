@@ -18,8 +18,6 @@
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "NERO"
 
-#define CONFIG_START_FLASH_ADDRESS (0x08060000)
-
 #define USBD_PRODUCT_STRING     "NERO"
 
 #define HW_PIN                  PB2
@@ -70,7 +68,8 @@
 #define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_0
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_1)
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_VCP
 //#define VBUS_SENSING_PIN PA8
@@ -129,8 +128,7 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define SPEKTRUM_BIND
-#define BIND_PIN                PB11
+#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

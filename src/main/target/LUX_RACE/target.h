@@ -113,8 +113,6 @@
 #define ACC_MPU6500_ALIGN CW270_DEG
 #endif
 
-#define USB_IO
-
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
@@ -159,9 +157,7 @@
 #define DEFAULT_FEATURES        FEATURE_TELEMETRY
 #endif
 
-#define SPEKTRUM_BIND
-// USART1, PC5
-#define BIND_PIN                PC5
+#define SPEKTRUM_BIND_PIN       UART1_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

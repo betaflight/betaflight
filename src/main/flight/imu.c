@@ -76,6 +76,16 @@ static float rMat[3][3];
 
 attitudeEulerAngles_t attitude = { { 0, 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 
+PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
+
+PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
+    .dcm_kp = 2500,                // 1.0 * 10000
+    .dcm_ki = 0,                   // 0.003 * 10000
+    .small_angle = 25,
+    .accDeadband = {.xy = 40, .z= 40},
+    .acc_unarmedcal = 1
+);
+
 STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
 {
     float q1q1 = sq(q1);

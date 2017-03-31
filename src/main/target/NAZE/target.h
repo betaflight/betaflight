@@ -17,6 +17,8 @@
 
 #pragma once
 
+#define TELEMETRY_IBUS
+
 #define TARGET_CONFIG
 #define TARGET_VALIDATECONFIG
 #define USE_HARDWARE_REVISION_DETECTION
@@ -45,7 +47,7 @@
 //#define BARO_XCLR_PIN           PC13
 //#define BARO_EOC_PIN            PC14
 
-#define INVERTER_PIN_USART2       PB2 // PB2 (BOOT1) abused as inverter select GPIO
+#define INVERTER_PIN_UART2        PB2 // PB2 (BOOT1) abused as inverter select GPIO
 
 #define USE_EXTI
 #define MAG_INT_EXTI            PC14
@@ -129,7 +131,8 @@
 #define UART3_TX_PIN            PB10
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_2)
+#define USE_I2C_DEVICE_2
+#define I2C_DEVICE              (I2CDEV_2)
 
 // #define SOFT_I2C // enable to test software i2c
 // #define SOFT_I2C_PB1011 // If SOFT_I2C is enabled above, need to define pinout as well (I2C1 = PB67, I2C2 = PB1011)
@@ -141,9 +144,7 @@
 #define RSSI_ADC_PIN            PA1
 #define EXTERNAL1_ADC_PIN       PA5
 
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
+#define SPEKTRUM_BIND_PIN       PA3
 
 #if !defined(BRUSHED_MOTORS)
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE

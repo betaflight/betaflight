@@ -18,8 +18,6 @@
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "YPF4"
 
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
-
 #define USBD_PRODUCT_STRING     "YupiF4"
 
 #define LED0                    PB6
@@ -29,8 +27,7 @@
 #define BEEPER                  PC9
 //#define BEEPER_INVERTED
 
-#define INVERTER_PIN_USART6     PB15
-
+#define INVERTER_PIN_UART6      PB15
 
 // Gyro interrupt
 #define USE_EXTI
@@ -132,7 +129,8 @@
 
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_1) // SCL PB8 - SDA PB9
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
 
 // ADC inputs
 #define BOARD_HAS_VOLTAGE_DIVIDER

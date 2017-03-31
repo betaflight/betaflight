@@ -27,7 +27,7 @@
 
 #include "platform.h"
 
-#ifdef CMS
+#if defined(CMS) && defined(BLACKBOX)
 
 #include "build/version.h"
 
@@ -46,6 +46,8 @@
 #include "config/parameter_group_ids.h"
 
 #include "drivers/system.h"
+
+#include "fc/config.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/flashfs.h"

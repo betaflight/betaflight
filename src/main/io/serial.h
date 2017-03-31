@@ -73,8 +73,8 @@ typedef enum {
     SERIAL_PORT_USART1 = 0,
     SERIAL_PORT_USART2,
     SERIAL_PORT_USART3,
-    SERIAL_PORT_USART4,
-    SERIAL_PORT_USART5,
+    SERIAL_PORT_UART4,
+    SERIAL_PORT_UART5,
     SERIAL_PORT_USART6,
     SERIAL_PORT_USART7,
     SERIAL_PORT_USART8,
@@ -137,6 +137,7 @@ serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function);
 portSharing_e determinePortSharing(const serialPortConfig_t *portConfig, serialPortFunction_e function);
 bool isSerialPortShared(const serialPortConfig_t *portConfig, uint16_t functionMask, serialPortFunction_e sharedWithFunction);
 
+void pgResetFn_serialConfig(serialConfig_t *serialConfig); //!!TODO remove need for this
 serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identifier);
 int findSerialPortIndexByIdentifier(serialPortIdentifier_e identifier);
 //

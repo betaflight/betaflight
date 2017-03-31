@@ -34,8 +34,6 @@
 
 #include "common/utils.h"
 
-#include "config/config_master.h"
-
 #include "nvic.h"
 #include "system.h"
 #include "io.h"
@@ -43,6 +41,8 @@
 
 #include "serial.h"
 #include "serial_softserial.h"
+
+#include "fc/config.h" //!!TODO remove this dependency
 
 #define RX_TOTAL_BITS 10
 #define TX_TOTAL_BITS 10

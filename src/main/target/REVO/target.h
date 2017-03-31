@@ -17,8 +17,6 @@
 
 #pragma once
 
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
-
 #if defined(AIRBOTF4)
 #define TARGET_BOARD_IDENTIFIER "AIR4"
 #define USBD_PRODUCT_STRING     "AirbotF4"
@@ -70,7 +68,7 @@
 #endif
 
 // PC0 used as inverter select GPIO
-#define INVERTER_PIN_USART1     PC0
+#define INVERTER_PIN_UART1      PC0
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
@@ -176,6 +174,7 @@
 #define SPI3_MOSI_PIN           PC12
 
 #define USE_I2C
+#define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_ADC
@@ -196,9 +195,7 @@
 #define DEFAULT_FEATURES        (FEATURE_BLACKBOX)
 #endif
 
-#define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN                PB11
+#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

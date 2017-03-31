@@ -18,8 +18,6 @@
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "F4BY"
 
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
-
 #define USBD_PRODUCT_STRING     "Swift-Flyer F4BY"
 
 #define LED0                    PE3 // Blue LED
@@ -28,7 +26,7 @@
 
 #define BEEPER                  PE5
 
-#define INVERTER_PIN_USART6     PD3
+#define INVERTER_PIN_UART6      PD3
 
 
 
@@ -129,6 +127,7 @@
 
 
 #define USE_I2C
+#define USE_I2C_DEVICE_2
 #define I2C_DEVICE              (I2CDEV_2)
 #define USE_I2C_PULLUP
 #define I2C2_SCL                PB10
@@ -142,15 +141,13 @@
 
 #undef LED_STRIP
 
-#define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_BLACKBOX)
+#define DEFAULT_FEATURES        (FEATURE_BLACKBOX)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
-#define SPEKTRUM_BIND
-// UART6, PC7
-#define BIND_PIN                PC7
+#define SPEKTRUM_BIND_PIN       UART6_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
