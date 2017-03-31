@@ -27,6 +27,9 @@
 
 #define CONCAT_HELPER(x,y) x ## y
 #define CONCAT(x,y) CONCAT_HELPER(x, y)
+#define CONCAT2(_1,_2) CONCAT(_1, _2)
+#define CONCAT3(_1,_2,_3)  CONCAT(CONCAT(_1, _2), _3)
+#define CONCAT4(_1,_2,_3,_4)  CONCAT(CONCAT3(_1, _2, _3), _4)
 
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
