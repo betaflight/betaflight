@@ -493,7 +493,6 @@ typedef union {
     cliMinMaxConfig_t minmax;
 } cliValueConfig_t;
 
-#ifdef USE_PARAMETER_GROUPS
 typedef struct {
     const char *name;
     const uint8_t type; // see cliValueFlag_e
@@ -975,7 +974,6 @@ displayPortProfile_t displayPortProfileMax7456Copy;
 static pidConfig_t pidConfigCopy;
 static controlRateConfig_t controlRateProfilesCopy[CONTROL_RATE_PROFILE_COUNT];
 static pidProfile_t pidProfileCopy[MAX_PROFILE_COUNT];
-#endif // USE_PARAMETER_GROUPS
 
 static void cliPrint(const char *str)
 {
