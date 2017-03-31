@@ -1,0 +1,106 @@
+[1mdiff --git a/src/main/fc/config.h b/src/main/fc/config.h[m
+[1mindex 0fe4f9e..9850d2b 100644[m
+[1m--- a/src/main/fc/config.h[m
+[1m+++ b/src/main/fc/config.h[m
+[36m@@ -56,6 +56,7 @@[m [mtypedef enum {[m
+     FEATURE_RX_SPI = 1 << 25,[m
+     FEATURE_SOFTSPI = 1 << 26,[m
+     FEATURE_ESC_SENSOR = 1 << 27,[m
+[32m+[m[32m    FEATURE_TEST = 1 << 28,[m
+ } features_e;[m
+ [m
+ void beeperOffSet(uint32_t mask);[m
+[1mdiff --git a/src/main/fc/fc_msp.c b/src/main/fc/fc_msp.c[m
+[1mindex 80da417..4f3dfe7 100755[m
+[1m--- a/src/main/fc/fc_msp.c[m
+[1m+++ b/src/main/fc/fc_msp.c[m
+[36m@@ -123,7 +123,7 @@[m [mstatic const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {[m
+     { BOXANGLE, "ANGLE;", 1 },[m
+     { BOXHORIZON, "HORIZON;", 2 },[m
+     { BOXBARO, "BARO;", 3 },[m
+[31m-    //{ BOXVARIO, "VARIO;", 4 },[m
+[32m+[m[32m    { BOXTEST, "TEST;", 4 },[m
+     { BOXMAG, "MAG;", 5 },[m
+     { BOXHEADFREE, "HEADFREE;", 6 },[m
+     { BOXHEADADJ, "HEADADJ;", 7 },[m
+[36m@@ -327,6 +327,10 @@[m [mvoid initActiveBoxIds(void)[m
+         activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;[m
+     }[m
+ [m
+[32m+[m[32m    if (!feature(FEATURE_TEST)) {[m
+[32m+[m[32m        activeBoxIds[activeBoxIdCount++] = BOXTEST;[m
+[32m+[m[32m    }[m
+[32m+[m
+     if (sensors(SENSOR_ACC)) {[m
+         activeBoxIds[activeBoxIdCount++] = BOXANGLE;[m
+         activeBoxIds[activeBoxIdCount++] = BOXHORIZON;[m
+[36m@@ -444,6 +448,7 @@[m [mstatic uint32_t packFlightModeFlags(void)[m
+         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |[m
+         IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE |[m
+         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE |[m
+[32m+[m[32m        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXTEST)) << BOXTEST |[m
+         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX)) << BOXFPVANGLEMIX;[m
+ [m
+     uint32_t ret = 0;[m
+[1mdiff --git a/src/main/fc/rc_controls.c b/src/main/fc/rc_controls.c[m
+[1mindex 0f8a79b..4c9baba 100644[m
+[1m--- a/src/main/fc/rc_controls.c[m
+[1m+++ b/src/main/fc/rc_controls.c[m
+[36m@@ -73,6 +73,10 @@[m [mbool isAirmodeActive(void) {[m
+     return (IS_RC_MODE_ACTIVE(BOXAIRMODE) || feature(FEATURE_AIRMODE));[m
+ }[m
+ [m
+[32m+[m[32mbool isTestmodeActive(void) {[m
+[32m+[m[32m    return (IS_RC_MODE_ACTIVE(BOXTEST) || feature(FEATURE_TEST));[m
+[32m+[m[32m}[m
+[32m+[m
+ void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue) {[m
+ #ifndef BLACKBOX[m
+ #define UNUSED(x) (void)(x)[m
+[1mdiff --git a/src/main/fc/rc_controls.h b/src/main/fc/rc_controls.h[m
+[1mindex e9c88f8..dd76247 100644[m
+[1m--- a/src/main/fc/rc_controls.h[m
+[1m+++ b/src/main/fc/rc_controls.h[m
+[36m@@ -24,7 +24,7 @@[m [mtypedef enum {[m
+     BOXANGLE,[m
+     BOXHORIZON,[m
+     BOXBARO,[m
+[31m-    // BOXVARIO,[m
+[32m+[m[32m    BOXTEST,[m
+     BOXMAG,[m
+     BOXHEADFREE,[m
+     BOXHEADADJ,[m
+[36m@@ -271,6 +271,7 @@[m [mtypedef struct adjustmentProfile_s {[m
+ } adjustmentProfile_t;[m
+ [m
+ bool isAirmodeActive(void);[m
+[32m+[m[32mbool isTestmodeActive(void);[m
+ void resetAdjustmentStates(void);[m
+ void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);[m
+ void processRcAdjustments(controlRateConfig_t *controlRateConfig, struct rxConfig_s *rxConfig);[m
+[1mdiff --git a/src/main/flight/mixer.c b/src/main/flight/mixer.c[m
+[1mindex 85df4ad..b282ccf 100755[m
+[1m--- a/src/main/flight/mixer.c[m
+[1m+++ b/src/main/flight/mixer.c[m
+[36m@@ -479,10 +479,17 @@[m [mvoid mixTable(pidProfile_t *pidProfile)[m
+     const float motorOutputRange = motorOutputMax - motorOutputMin;[m
+ [m
+     float scaledAxisPIDf[3];[m
+[31m-    // Limit the PIDsum[m
+[31m-    scaledAxisPIDf[FD_ROLL] = constrainf((axisPID_P[FD_ROLL] + axisPID_I[FD_ROLL] * throttle + axisPID_D[FD_ROLL]) / PID_MIXER_SCALING, -pidProfile->pidSumLimit, pidProfile->pidSumLimit);[m
+[31m-    scaledAxisPIDf[FD_PITCH] = constrainf((axisPID_P[FD_PITCH] + axisPID_I[FD_PITCH] * throttle + axisPID_D[FD_PITCH]) / PID_MIXER_SCALING, -pidProfile->pidSumLimit, pidProfile->pidSumLimit);[m
+[31m-    scaledAxisPIDf[FD_YAW] = constrainf((axisPID_P[FD_YAW] + axisPID_I[FD_YAW] * throttle) / PID_MIXER_SCALING, -pidProfile->pidSumLimit, pidProfile->pidSumLimitYaw);[m
+[32m+[m[32m    float itermDampener = (isTestmodeActive()) ? constrainf(throttle * 1.8f, 0.1f, throttle) : 1.0f;[m
+[32m+[m[32m    // Calculate and Limit the PIDsum[m
+[32m+[m[32m    scaledAxisPIDf[FD_ROLL] =[m
+[32m+[m[32m        constrainf((axisPID_P[FD_ROLL] + axisPID_I[FD_ROLL] * itermDampener + axisPID_D[FD_ROLL]) / PID_MIXER_SCALING,[m
+[32m+[m[32m        -pidProfile->pidSumLimit, pidProfile->pidSumLimit);[m
+[32m+[m[32m    scaledAxisPIDf[FD_PITCH] =[m
+[32m+[m[32m        constrainf((axisPID_P[FD_PITCH] + axisPID_I[FD_PITCH] * itermDampener + axisPID_D[FD_PITCH]) / PID_MIXER_SCALING,[m
+[32m+[m[32m        -pidProfile->pidSumLimit, pidProfile->pidSumLimit);[m
+[32m+[m[32m    scaledAxisPIDf[FD_YAW] =[m
+[32m+[m[32m        constrainf((axisPID_P[FD_YAW] + axisPID_I[FD_YAW] * itermDampener) / PID_MIXER_SCALING,[m
+[32m+[m[32m        -pidProfile->pidSumLimit, pidProfile->pidSumLimitYaw);[m
+ [m
+     // Calculate voltage compensation[m
+     const float vbatCompensationFactor = (batteryConfig && pidProfile->vbatPidCompensation)  ? calculateVbatPidCompensation() : 1.0f;[m

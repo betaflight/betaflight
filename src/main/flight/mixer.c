@@ -479,10 +479,16 @@ void mixTable(pidProfile_t *pidProfile)
     const float motorOutputRange = motorOutputMax - motorOutputMin;
 
     float scaledAxisPIDf[3];
-    // Limit the PIDsum
-    scaledAxisPIDf[FD_ROLL] = constrainf((axisPID_P[FD_ROLL] + axisPID_I[FD_ROLL] * throttle + axisPID_D[FD_ROLL]) / PID_MIXER_SCALING, -pidProfile->pidSumLimit, pidProfile->pidSumLimit);
-    scaledAxisPIDf[FD_PITCH] = constrainf((axisPID_P[FD_PITCH] + axisPID_I[FD_PITCH] * throttle + axisPID_D[FD_PITCH]) / PID_MIXER_SCALING, -pidProfile->pidSumLimit, pidProfile->pidSumLimit);
-    scaledAxisPIDf[FD_YAW] = constrainf((axisPID_P[FD_YAW] + axisPID_I[FD_YAW] * throttle) / PID_MIXER_SCALING, -pidProfile->pidSumLimit, pidProfile->pidSumLimitYaw);
+    // Calculate and Limit the PIDsum
+    scaledAxisPIDf[FD_ROLL] =
+        constrainf((axisPID_P[FD_ROLL] + axisPID_I[FD_ROLL] + axisPID_D[FD_ROLL]) / PID_MIXER_SCALING,
+        -pidProfile->pidSumLimit, pidProfile->pidSumLimit);
+    scaledAxisPIDf[FD_PITCH] =
+        constrainf((axisPID_P[FD_PITCH] + axisPID_I[FD_PITCH] + axisPID_D[FD_PITCH]) / PID_MIXER_SCALING,
+        -pidProfile->pidSumLimit, pidProfile->pidSumLimit);
+    scaledAxisPIDf[FD_YAW] =
+        constrainf((axisPID_P[FD_YAW] + axisPID_I[FD_YAW]) / PID_MIXER_SCALING,
+        -pidProfile->pidSumLimit, pidProfile->pidSumLimitYaw);
 
     // Calculate voltage compensation
     const float vbatCompensationFactor = (batteryConfig && pidProfile->vbatPidCompensation)  ? calculateVbatPidCompensation() : 1.0f;

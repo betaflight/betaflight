@@ -179,7 +179,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->yawRateAccelLimit = 10.0f;
     pidProfile->rateAccelLimit = 0.0f;
     pidProfile->itermThrottleThreshold = 350;
-    pidProfile->itermAcceleratorGain = 1.0f;
+    pidProfile->itermAcceleratorGain = 3.0f;
 }
 
 void resetProfile(profile_t *profile)

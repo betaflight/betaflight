@@ -24,7 +24,7 @@ typedef enum {
     BOXANGLE,
     BOXHORIZON,
     BOXBARO,
-    // BOXVARIO,
+    BOXANTIGRAVITY,
     BOXMAG,
     BOXHEADFREE,
     BOXHEADADJ,
@@ -271,6 +271,7 @@ typedef struct adjustmentProfile_s {
 } adjustmentProfile_t;
 
 bool isAirmodeActive(void);
+bool isAntiGravityModeActive(void);
 void resetAdjustmentStates(void);
 void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
 void processRcAdjustments(controlRateConfig_t *controlRateConfig, struct rxConfig_s *rxConfig);
