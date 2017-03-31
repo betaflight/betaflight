@@ -134,10 +134,10 @@ firmware on the tx to make use of these extra channels.
 The flash is avaliable here: https://github.com/benb0jangles/FlySky-i6-Mod-
 ```
      _______
-    /       \                                              /------------\
-    | STM32 |-->UART TX-->[Bi-directional @ 115200 baud]-->| Flysky RX  |
-    |  uC   |-  UART RX--x[not connected]                  | IBUS-Servo |
-    \_______/                                              \------------/
+    /       \                               /------------\
+    | STM32 |-->UART RX-->[115200 baud]---->| Flysky RX  |
+    |  uC   |-  UART TX--x[not connected]   | IBUS-Servo |
+    \_______/                               \------------/
 ```
 After flash "10ch Timer Mod i6 Updater", it is passible to get RSSI signal on selected Aux channel from FS-i6 Err sensor.
 
