@@ -341,7 +341,7 @@ void mixerUsePWMIOConfiguration(void)
             motorCount++;
         }
     } else {
-        motorCount = mixers[currentMixerMode].motorCount;
+        motorCount = MIN(mixers[currentMixerMode].motorCount, pwmGetOutputConfiguration()->motorCount);
         // copy motor-based mixers
         if (mixers[currentMixerMode].motor) {
             for (i = 0; i < motorCount; i++)
