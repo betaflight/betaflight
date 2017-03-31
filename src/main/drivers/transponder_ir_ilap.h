@@ -16,5 +16,5 @@
  */
 #pragma once
 
-void transponderIrInitIlap(transponder_t* transponder);
-void updateTransponderDMABufferIlap(transponder_t* transponder_instance, const uint8_t* transponderData);
+void transponderIrInitIlap(transponder_t *transponder);
+void updateTransponderDMABufferIlap(transponder_t *transponder, const uint8_t* transponderData);

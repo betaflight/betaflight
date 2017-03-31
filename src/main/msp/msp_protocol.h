@@ -191,9 +191,6 @@
 #define MSP_TRANSPONDER_CONFIG          82 //out message         Get transponder settings
 #define MSP_SET_TRANSPONDER_CONFIG      83 //in message          Set transponder settings
 
-#define MSP_TRANSPONDER_CONFIG          82 //out message         Get transponder settings
-#define MSP_SET_TRANSPONDER_CONFIG      83 //in message          Set transponder settings
-
 #define MSP_OSD_CONFIG                  84 //out message         Get osd settings - betaflight
 #define MSP_SET_OSD_CONFIG              85 //in message          Set osd settings - betaflight
 
@@ -215,9 +212,6 @@
 
 #define MSP_SENSOR_CONFIG               96
 #define MSP_SET_SENSOR_CONFIG           97
-
-#define MSP_TRANSPONDER_PROVIDER        98
-#define MSP_SET_TRANSPONDER_PROVIDER    99
 
 //
 // OSD specific

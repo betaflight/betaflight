@@ -30,5 +30,5 @@
 
 
 
-void transponderIrInitArcitimer(transponder_t* transponder);
-void updateTransponderDMABufferArcitimer(transponder_t* transponder_instance, const uint8_t* transponderData);
+void transponderIrInitArcitimer(transponder_t *transponder);
+void updateTransponderDMABufferArcitimer(transponder_t *transponder, const uint8_t* transponderData);

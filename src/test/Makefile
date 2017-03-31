@@ -883,10 +883,20 @@ $(OBJECT_DIR)/drivers/transponder_ir_arcitimer.o : \
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/transponder_ir_arcitimer.c -o $@
 
+$(OBJECT_DIR)/drivers/transponder_ir_ilap.o : \
+	$(USER_DIR)/drivers/transponder_ir_ilap.c \
+	$(USER_DIR)/drivers/transponder_ir.h \
+    $(USER_DIR)/drivers/transponder_ir_ilap.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/transponder_ir_ilap.c -o $@
+
 $(OBJECT_DIR)/transponder_unittest.o : \
 	$(TEST_DIR)/transponder_unittest.cc \
 	$(USER_DIR)/drivers/transponder_ir.h \
     $(USER_DIR)/drivers/transponder_ir_arcitimer.h \
+    $(USER_DIR)/drivers/transponder_ir_ilap.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
@@ -894,6 +904,7 @@ $(OBJECT_DIR)/transponder_unittest.o : \
 
 $(OBJECT_DIR)/transponder_unittest : \
     $(OBJECT_DIR)/drivers/transponder_ir_arcitimer.o \
+    $(OBJECT_DIR)/drivers/transponder_ir_ilap.o \
 	$(OBJECT_DIR)/transponder_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 

@@ -32,14 +32,14 @@
 
 
 /*** ILAP ***/
-#define TRANSPONDER_BITS_PER_BYTE 10 // start + 8 data + stop
-#define TRANSPONDER_DATA_LENGTH 6
-#define TRANSPONDER_TOGGLES_PER_BIT 11
-#define TRANSPONDER_GAP_TOGGLES 1
-#define TRANSPONDER_TOGGLES (TRANSPONDER_TOGGLES_PER_BIT + TRANSPONDER_GAP_TOGGLES)
-#define TRANSPONDER_DMA_BUFFER_SIZE ((TRANSPONDER_TOGGLES_PER_BIT + 1) * TRANSPONDER_BITS_PER_BYTE * TRANSPONDER_DATA_LENGTH) //720
-#define TRANSPONDER_TIMER_MHZ       24
-#define TRANSPONDER_CARRIER_HZ      460750
+#define TRANSPONDER_BITS_PER_BYTE_ILAP 10 // start + 8 data + stop
+#define TRANSPONDER_DATA_LENGTH_ILAP 6
+#define TRANSPONDER_TOGGLES_PER_BIT_ILAP 11
+#define TRANSPONDER_GAP_TOGGLES_ILAP 1
+#define TRANSPONDER_TOGGLES (TRANSPONDER_TOGGLES_PER_BIT_ILAP + TRANSPONDER_GAP_TOGGLES_ILAP)
+#define TRANSPONDER_DMA_BUFFER_SIZE_ILAP ((TRANSPONDER_TOGGLES_PER_BIT_ILAP + 1) * TRANSPONDER_BITS_PER_BYTE_ILAP * TRANSPONDER_DATA_LENGTH_ILAP) //720
+#define TRANSPONDER_TIMER_MHZ_ILAP       24
+#define TRANSPONDER_CARRIER_HZ_ILAP      460750
 /*** ******** ***/
 
 /*
@@ -54,14 +54,14 @@
 
     typedef union transponderIrDMABuffer_s {
         uint8_t arcitimer[TRANSPONDER_DMA_BUFFER_SIZE_ARCITIMER]; // 620
-        uint8_t ilap[TRANSPONDER_DMA_BUFFER_SIZE]; // 720
+        uint8_t ilap[TRANSPONDER_DMA_BUFFER_SIZE_ILAP]; // 720
     } transponderIrDMABuffer_t;
 
 #elif defined(STM32F4)
 
     typedef union transponderIrDMABuffer_s {
         uint32_t arcitimer[TRANSPONDER_DMA_BUFFER_SIZE_ARCITIMER]; // 620
-        uint32_t ilap[TRANSPONDER_DMA_BUFFER_SIZE]; // 720
+        uint32_t ilap[TRANSPONDER_DMA_BUFFER_SIZE_ILAP]; // 720
     } transponderIrDMABuffer_t;
 #endif
 
@@ -85,14 +85,14 @@ typedef enum TransponderProvider{
 } TransponderProvider;
 
 struct transponderVTable {
-    void (*updateTransponderDMABuffer)(transponder_t* transponder, const uint8_t* transponderData);
+    void (*updateTransponderDMABuffer)(transponder_t *transponder, const uint8_t* transponderData);
 };
 
 bool transponderIrInit(const TransponderProvider* transponderProvider);
 void transponderIrDisable(void);
 
-void transponderIrHardwareInit(ioTag_t ioTag, transponder_t* transponder_instance);
-void transponderIrDMAEnable(transponder_t* transponder_instance);
+void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder);
+void transponderIrDMAEnable(transponder_t *transponder);
 
 void transponderIrWaitForTransmitComplete(void);
 
