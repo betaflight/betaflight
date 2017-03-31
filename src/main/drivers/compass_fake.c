@@ -32,7 +32,7 @@
 
 static int16_t fakeMagData[XYZ_AXIS_COUNT];
 
-static bool fakeMagInit(void)
+static bool fakeMagInit(magDev_t *magDev)
 {
     // initially point north
     fakeMagData[X] = 4096;
@@ -48,11 +48,11 @@ void fakeMagSet(int16_t x, int16_t y, int16_t z)
     fakeMagData[Z] = z;
 }
 
-static bool fakeMagRead(int16_t *magData)
+static bool fakeMagRead(magDev_t *magDev)
 {
-    magData[X] = fakeMagData[X];
-    magData[Y] = fakeMagData[Y];
-    magData[Z] = fakeMagData[Z];
+    magDev->magADCRaw[X] = fakeMagData[X];
+    magDev->magADCRaw[Y] = fakeMagData[Y];
+    magDev->magADCRaw[Z] = fakeMagData[Z];
     return true;
 }
 

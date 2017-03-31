@@ -169,30 +169,29 @@ static void hmc5883lConfigureDataReadyInterruptHandling(void)
 #endif
 }
 
-static bool hmc5883lRead(int16_t *magData)
+static bool hmc5883lRead(magDev_t* magDev)
 {
     uint8_t buf[6];
 
     bool ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, MAG_DATA_REGISTER, 6, buf);
     if (!ack) {
-        magData[X] = 0;
-        magData[Y] = 0;
-        magData[Z] = 0;
+        magDev->magADCRaw[X] = 0;
+        magDev->magADCRaw[Y] = 0;
+        magDev->magADCRaw[Z] = 0;
         return false;
     }
     // During calibration, magGain is 1.0, so the read returns normal non-calibrated values.
     // After calibration is done, magGain is set to calculated gain values.
-    magData[X] = (int16_t)(buf[0] << 8 | buf[1]) * magGain[X];
-    magData[Z] = (int16_t)(buf[2] << 8 | buf[3]) * magGain[Z];
-    magData[Y] = (int16_t)(buf[4] << 8 | buf[5]) * magGain[Y];
+    magDev->magADCRaw[X] = (int16_t)(buf[0] << 8 | buf[1]) * magGain[X];
+    magDev->magADCRaw[Z] = (int16_t)(buf[2] << 8 | buf[3]) * magGain[Z];
+    magDev->magADCRaw[Y] = (int16_t)(buf[4] << 8 | buf[5]) * magGain[Y];
 
     return true;
 }
 
 #define INITIALISATION_MAX_READ_FAILURES 5
-static bool hmc5883lInit(void)
+static bool hmc5883lInit(magDev_t* magDev)
 {
-    int16_t magADC[3];
     int32_t xyz_total[3] = { 0, 0, 0 }; // 32 bit totals so they won't overflow.
     bool bret = true;           // Error indicator
 
@@ -202,7 +201,7 @@ static bool hmc5883lInit(void)
     // The new gain setting is effective from the second measurement and on.
     i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFB, 0x80); // Set the Gain to 4Ga (7:5->100)
     delay(100);
-    hmc5883lRead(magADC);
+    hmc5883lRead(magDev);
 
     int validSamples1 = 0;
     int failedSamples1 = 0;
@@ -210,17 +209,17 @@ static bool hmc5883lInit(void)
     while (validSamples1 < 10 && failedSamples1 < INITIALISATION_MAX_READ_FAILURES) { // Collect 10 samples
         i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_MODE, 1);
         delay(70);
-        if (hmc5883lRead(magADC)) { // Get the raw values in case the scales have already been changed.
+        if (hmc5883lRead(magDev)) { // Get the raw values in case the scales have already been changed.
             // Detect saturation.
-            if (-4096 >= MIN(magADC[X], MIN(magADC[Y], magADC[Z]))) {
+            if (-4096 >= MIN(magDev->magADCRaw[X], MIN(magDev->magADCRaw[Y], magDev->magADCRaw[Z]))) {
                 ++saturatedSamples1;
                 ++failedSamples1;
             } else {
                 ++validSamples1;
                 // Since the measurements are noisy, they should be averaged rather than taking the max.
-                xyz_total[X] += magADC[X];
-                xyz_total[Y] += magADC[Y];
-                xyz_total[Z] += magADC[Z];
+                xyz_total[X] += magDev->magADCRaw[X];
+                xyz_total[Y] += magDev->magADCRaw[Y];
+                xyz_total[Z] += magDev->magADCRaw[Z];
 
             }
         } else {
@@ -237,17 +236,17 @@ static bool hmc5883lInit(void)
     while (validSamples2 < 10 && failedSamples2 < INITIALISATION_MAX_READ_FAILURES) { // Collect 10 samples
         i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_MODE, 1);
         delay(70);
-        if (hmc5883lRead(magADC)) { // Get the raw values in case the scales have already been changed.
+        if (hmc5883lRead(magDev)) { // Get the raw values in case the scales have already been changed.
             // Detect saturation.
-            if (-4096 >= MIN(magADC[X], MIN(magADC[Y], magADC[Z]))) {
+            if (-4096 >= MIN(magDev->magADCRaw[X], MIN(magDev->magADCRaw[Y], magDev->magADCRaw[Z]))) {
                 ++saturatedSamples2;
                 ++failedSamples2;
             } else {
                 ++validSamples2;
                 // Since the measurements are noisy, they should be averaged.
-                xyz_total[X] -= magADC[X];
-                xyz_total[Y] -= magADC[Y];
-                xyz_total[Z] -= magADC[Z];
+                xyz_total[X] -= magDev->magADCRaw[X];
+                xyz_total[Y] -= magDev->magADCRaw[Y];
+                xyz_total[Z] -= magDev->magADCRaw[Z];
             }
         } else {
             ++failedSamples2;
@@ -287,7 +286,7 @@ static bool hmc5883lInit(void)
 }
 
 #define DETECTION_MAX_RETRY_COUNT   5
-bool hmc5883lDetect(magDev_t* mag, const hmc5883Config_t *hmc5883ConfigToUse)
+bool hmc5883lDetect(magDev_t* magDev, const hmc5883Config_t *hmc5883ConfigToUse)
 {
     hmc5883Config = hmc5883ConfigToUse;
 
@@ -295,8 +294,8 @@ bool hmc5883lDetect(magDev_t* mag, const hmc5883Config_t *hmc5883ConfigToUse)
         uint8_t sig = 0;
         bool ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, 0x0A, 1, &sig);
         if (ack && sig == 'H') {
-            mag->init = hmc5883lInit;
-            mag->read = hmc5883lRead;
+            magDev->init = hmc5883lInit;
+            magDev->read = hmc5883lRead;
 
             return true;
         }

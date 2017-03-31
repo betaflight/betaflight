@@ -55,3 +55,6 @@ typedef bool (*sensorGyroReadFuncPtr)(struct gyroDev_s *gyro);
 typedef bool (*sensorGyroUpdateFuncPtr)(struct gyroDev_s *gyro);
 typedef bool (*sensorGyroReadDataFuncPtr)(struct gyroDev_s *gyro, int16_t *data);
 typedef bool (*sensorGyroInterruptStatusFuncPtr)(struct gyroDev_s *gyro);
+struct magDev_s;
+typedef bool (*sensorMagInitFuncPtr)(struct magDev_s *mag);
+typedef bool (*sensorMagReadFuncPtr)(struct magDev_s *mag);
