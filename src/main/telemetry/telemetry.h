@@ -59,6 +59,7 @@ typedef struct telemetryConfig_s {
 
 PG_DECLARE(telemetryConfig_t, telemetryConfig);
 
+#define TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_IBUS)
 extern serialPort_t *telemetrySharedPort;
 
 void telemetryInit(void);
@@ -69,4 +70,3 @@ void telemetryProcess(timeUs_t currentTimeUs);
 
 bool telemetryDetermineEnabledState(portSharing_e portSharing);
 
-#define TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_IBUS)

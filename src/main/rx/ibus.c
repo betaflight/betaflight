@@ -39,9 +39,7 @@
 #include "drivers/serial_uart.h"
 #include "io/serial.h"
 
-#ifdef TELEMETRY
 #include "telemetry/telemetry.h"
-#endif
 
 #include "rx/rx.h"
 #include "rx/ibus.h"
@@ -232,8 +230,7 @@ bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         ibusDataReceive, 
         IBUS_BAUDRATE, 
         portShared ? MODE_RXTX : MODE_RX, 
-        //SERIAL_NOT_INVERTED | (rxConfig->halfDuplex || portShared ? SERIAL_BIDIR : 0)
-        SERIAL_NOT_INVERTED | (portShared ? SERIAL_BIDIR : 0)
+        SERIAL_NOT_INVERTED | (rxConfig->halfDuplex || portShared ? SERIAL_BIDIR : 0)
         );
 
 #if defined(TELEMETRY) && defined(TELEMETRY_IBUS)
