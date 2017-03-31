@@ -416,6 +416,9 @@ void handleHoTTTelemetry(timeUs_t currentTimeUs)
     static uint8_t hottRequestBuffer[2];
     static int hottRequestBufferPtr = 0;
 
+    if (!hottTelemetryEnabled)
+        return;
+
     bool reprocessState;
     do {
         reprocessState = false;
