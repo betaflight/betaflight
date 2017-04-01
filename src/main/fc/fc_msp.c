@@ -1085,30 +1085,28 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         serializeSDCardSummaryReply(dst);
         break;
 
-    case MSP_TRANSPONDER_CONFIG:
-    {
+
+    case MSP_TRANSPONDER_CONFIG: {
+
+#define TRANSPONDER_SUPPORTED_MASK 0x01 // 00000001
+#define TRANSPONDER_PROVIDER_MASK  0x0E // 00001110
+#define TRANSPONDER_DATA_SIZE_MASK 0xF0 // 11110000
+#define TRANSPONDER_PROVIDER_OFFSET   1
+#define TRANSPONDER_DATA_SIZE_OFFSET  4
+
 #ifdef TRANSPONDER
-        uint8_t header = 1; //transponder supported
+        uint8_t header = 0;
 
-        switch(transponderConfig()->provider){
-            case ILAP:
-               header |= 0x02;
-               break;
-            case ARCITIMER:
-                 header |= 0x04;
-                 break;
-            default:
-                break;
-        }
-
-        header |= (sizeof(transponderConfig()->data) << 4);
+        header |= 1 & TRANSPONDER_SUPPORTED_MASK;
+        header |= (transponderConfig()->provider << TRANSPONDER_PROVIDER_OFFSET) & TRANSPONDER_PROVIDER_MASK;
+        header |= ((sizeof(transponderConfig()->data) << TRANSPONDER_DATA_SIZE_OFFSET) & TRANSPONDER_DATA_SIZE_MASK);
 
         sbufWriteU8(dst, header);
         for (unsigned int i = 0; i < sizeof(transponderConfig()->data); i++) {
             sbufWriteU8(dst, transponderConfig()->data[i]);
         }
 #else
-        sbufWriteU8(dst, 0); // Transponder not supported
+        sbufWriteU8(dst, 0 & TRANSPONDER_SUPPORTED_MASK);
 #endif
         break;
     }
@@ -1625,27 +1623,24 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_TRANSPONDER_CONFIG:
     {
         uint8_t tmp = sbufReadU8(src);
+        uint8_t bytesRemaining = dataSize - 1;
 
-        uint8_t type;
-        switch(tmp){
-            case 0x02:
-                type = ILAP;
-                break;
-            case 0x04:
-                type = ARCITIMER;
-                break;
-        }
+        uint8_t provider = (tmp & TRANSPONDER_PROVIDER_MASK) >> TRANSPONDER_PROVIDER_OFFSET;
+        uint8_t transponderDataSize = (tmp & TRANSPONDER_DATA_SIZE_MASK) >> TRANSPONDER_DATA_SIZE_OFFSET;
 
-        if(type != transponderConfig()->provider){
+        if(provider != transponderConfig()->provider) {
             transponderStopRepeating();
         }
 
-        transponderConfigMutable()->provider = type;
+        transponderConfigMutable()->provider = provider;
 
-        if (dataSize != sizeof(transponderConfig()->data) + 1) {
+        if (bytesRemaining != transponderDataSize || transponderDataSize > sizeof(transponderConfig()->data)) {
             return MSP_RESULT_ERROR;
         }
-        for (unsigned int i = 0; i < sizeof(transponderConfig()->data); i++) {
+
+        memset(transponderConfigMutable()->data, 0, sizeof(transponderConfig()->data));
+
+        for (unsigned int i = 0; i < transponderDataSize; i++) {
             transponderConfigMutable()->data[i] = sbufReadU8(src);
         }
         transponderUpdateData();

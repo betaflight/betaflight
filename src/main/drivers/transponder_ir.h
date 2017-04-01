@@ -79,16 +79,17 @@ typedef struct transponder_s {
     const struct transponderVTable *vTable;
 } transponder_t;
 
-typedef enum TransponderProvider{
+typedef enum {
+    NONE,
     ARCITIMER,
     ILAP
-} TransponderProvider;
+} transponderProvider_e;
 
 struct transponderVTable {
     void (*updateTransponderDMABuffer)(transponder_t *transponder, const uint8_t* transponderData);
 };
 
-bool transponderIrInit(const TransponderProvider* transponderProvider);
+bool transponderIrInit(const transponderProvider_e provider);
 void transponderIrDisable(void);
 
 void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder);
