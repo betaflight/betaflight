@@ -31,6 +31,7 @@
 #include "drivers/logging.h"
 #include "drivers/pitotmeter.h"
 #include "drivers/pitotmeter_ms4525.h"
+#include "drivers/pitotmeter_adc.h"
 
 #include "fc/config.h"
 #include "fc/runtime_config.h"
@@ -81,9 +82,35 @@ bool pitotDetect(pitotDev_t *dev, uint8_t pitotHardwareToUse)
                 break;
             }
 
+        case PITOT_ADC:
+#if defined(USE_PITOT_ADC) && defined(AIRSPEED_ADC_PIN)
+            if (adcPitotDetect(dev)) {
+                pitotHardware = PITOT_ADC;
+                break;
+            }
+#endif
+            /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+            if (pitotHardwareToUse != PITOT_AUTODETECT) {
+                break;
+            }
+
+        case PITOT_VIRTUAL:
+#if defined(USE_PITOT_VIRTUAL)
+            /*
+            if (adcPitotDetect(&pitot)) {
+                pitotHardware = PITOT_ADC;
+                break;
+            }
+            */
+#endif
+            /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+            if (pitotHardwareToUse != PITOT_AUTODETECT) {
+                break;
+            }
+
         case PITOT_FAKE:
 #ifdef USE_PITOT_FAKE
-            if (fakePitotDetect(&pitot)) {
+            if (fakePitotDetect(dev)) {
                 pitotHardware = PITOT_FAKE;
                 break;
             }
