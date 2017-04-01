@@ -582,6 +582,9 @@ static void osdDrawLogo(int x, int y)
 
 void osdInit(displayPort_t *osdDisplayPortToUse)
 {
+    if (!osdDisplayPortToUse)
+        return;
+
     BUILD_BUG_ON(OSD_POS_MAX != OSD_POS(31,31));
 
     osdDisplayPort = osdDisplayPortToUse;
