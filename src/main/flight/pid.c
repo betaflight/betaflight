@@ -273,13 +273,13 @@ static float calcHorizonLevelStrength(void) {
 
 static float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint) {
     // calculate error angle and limit the angle to the max inclination
-    float errorAngle = pidProfile->levelSensitivity * getRcDeflection(axis);
+    float angle = pidProfile->levelSensitivity * getRcDeflection(axis);
 #ifdef GPS
-    errorAngle += GPS_angle[axis];
+    angle += GPS_angle[axis];
 #endif
-    errorAngle = constrainf(errorAngle, -pidProfile->levelAngleLimit, pidProfile->levelAngleLimit);
-    errorAngle = errorAngle - ((attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f);
-    if(FLIGHT_MODE(ANGLE_MODE)) {
+    angle = constrainf(angle, -pidProfile->levelAngleLimit, pidProfile->levelAngleLimit);
+    const float errorAngle = angle - ((attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f);
+    if (FLIGHT_MODE(ANGLE_MODE)) {
         // ANGLE mode - control is angle based, so control loop is needed
         currentPidSetpoint = errorAngle * levelGain;
     } else {

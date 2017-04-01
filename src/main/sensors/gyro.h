@@ -19,6 +19,7 @@
 
 #include "config/parameter_group.h"
 #include "common/axis.h"
+#include "drivers/io_types.h"
 #include "drivers/sensor.h"
 
 typedef enum {
@@ -31,9 +32,10 @@ typedef enum {
     GYRO_MPU6000,
     GYRO_MPU6500,
     GYRO_MPU9250,
-    GYRO_ICM20689,
-    GYRO_ICM20608G,
+    GYRO_ICM20601,
     GYRO_ICM20602,
+    GYRO_ICM20608G,
+    GYRO_ICM20689,
     GYRO_BMI160,
     GYRO_FAKE
 } gyroSensor_e;
@@ -54,6 +56,7 @@ typedef struct gyroConfig_s {
     uint8_t  gyro_soft_lpf_hz;
     bool     gyro_isr_update;
     bool     gyro_use_32khz;
+    uint8_t  gyro_to_use;
     uint16_t gyro_soft_notch_hz_1;
     uint16_t gyro_soft_notch_cutoff_1;
     uint16_t gyro_soft_notch_hz_2;
@@ -65,6 +68,7 @@ PG_DECLARE(gyroConfig_t, gyroConfig);
 bool gyroInit(void);
 void gyroInitFilters(void);
 void gyroUpdate(void);
+const busDevice_t *gyroSensorBus(void);
 struct mpuConfiguration_s;
 const struct mpuConfiguration_s *gyroMpuConfiguration(void);
 struct mpuDetectionResult_s;

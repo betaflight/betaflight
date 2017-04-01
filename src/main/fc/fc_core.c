@@ -171,7 +171,7 @@ void mwDisarm(void)
         DISABLE_ARMING_FLAG(ARMED);
 
 #ifdef BLACKBOX
-        if (feature(FEATURE_BLACKBOX)) {
+        if (blackboxConfig()->device) {
             finishBlackbox();
         }
 #endif
@@ -273,7 +273,7 @@ void updateMagHold(void)
             dif += 360;
         if (dif >= +180)
             dif -= 360;
-        dif *= -rcControlsConfig()->yaw_control_direction;
+        dif *= -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
         if (STATE(SMALL_ANGLE))
             rcCommand[YAW] -= dif * currentPidProfile->P8[PIDMAG] / 30;    // 18 deg
     } else
@@ -545,7 +545,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 #endif
 
 #ifdef BLACKBOX
-    if (!cliMode && feature(FEATURE_BLACKBOX)) {
+    if (!cliMode && blackboxConfig()->device) {
         handleBlackbox(currentTimeUs);
     }
 #else

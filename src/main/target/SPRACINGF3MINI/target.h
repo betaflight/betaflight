@@ -176,7 +176,6 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
 #ifndef TINYBEEF3
-#define DEFAULT_FEATURES        FEATURE_BLACKBOX
 
 #define BUTTONS
 #define BUTTON_A_PIN            PB1
