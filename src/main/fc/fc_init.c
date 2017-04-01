@@ -427,10 +427,6 @@ void init(void)
     mspFcInit();
     mspSerialInit();
 
-#if defined(USE_MSP_DISPLAYPORT) && defined(CMS)
-    cmsDisplayPortRegister(displayPortMspInit());
-#endif
-
 #ifdef USE_CLI
     cliInit(serialConfig());
 #endif
@@ -439,17 +435,28 @@ void init(void)
 
     rxInit();
 
+    displayPort_t *osdDisplayPort = NULL;
+
 #ifdef OSD
     //The OSD need to be initialised after GYRO to avoid GYRO initialisation failure on some targets
+
     if (feature(FEATURE_OSD)) {
 #if defined(USE_MAX7456)
         // if there is a max7456 chip for the OSD then use it, otherwise use MSP
-        displayPort_t *osdDisplayPort = max7456DisplayPortInit(vcdProfile());
+        osdDisplayPort = max7456DisplayPortInit(vcdProfile());
 #elif defined(USE_MSP_DISPLAYPORT)
-        displayPort_t *osdDisplayPort = displayPortMspInit();
+        osdDisplayPort = displayPortMspInit();
 #endif
         osdInit(osdDisplayPort);
     }
+#endif
+
+#if defined(USE_MSP_DISPLAYPORT) && defined(CMS)
+    // If BFOSD is active, then register it as CMS device, else register MSP.
+    if (osdDisplayPort)
+        cmsDisplayPortRegister(osdDisplayPort);
+    else
+        cmsDisplayPortRegister(displayPortMspInit());
 #endif
 
 #ifdef GPS
