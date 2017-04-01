@@ -1085,30 +1085,28 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         serializeSDCardSummaryReply(dst);
         break;
 
-    case MSP_TRANSPONDER_CONFIG:
-    {
-#ifdef TRANSPONDER
-        uint8_t header = 1; //transponder supported
 
-        switch(transponderConfig()->provider){
-            case ILAP:
-               header |= 0x02;
-               break;
-            case ARCITIMER:
-                 header |= 0x04;
-                 break;
-            default:
-                break;
+    case MSP_TRANSPONDER_CONFIG: {
+#ifdef TRANSPONDER
+        sbufWriteU8(dst, TRANSPONDER_PROVIDER_COUNT);
+        for (unsigned int i = 0; i < TRANSPONDER_PROVIDER_COUNT; i++) {
+            sbufWriteU8(dst, transponderRequirements[i].provider);
+            sbufWriteU8(dst, transponderRequirements[i].dataLength);
         }
 
-        header |= (sizeof(transponderConfig()->data) << 4);
+        uint8_t provider = transponderConfig()->provider;
+        sbufWriteU8(dst, provider);
 
-        sbufWriteU8(dst, header);
-        for (unsigned int i = 0; i < sizeof(transponderConfig()->data); i++) {
-            sbufWriteU8(dst, transponderConfig()->data[i]);
+        if (provider) {
+            uint8_t requirementIndex = provider - 1;
+            uint8_t providerDataLength = transponderRequirements[requirementIndex].dataLength;
+
+            for (unsigned int i = 0; i < providerDataLength; i++) {
+                sbufWriteU8(dst, transponderConfig()->data[i]);
+            }
         }
 #else
-        sbufWriteU8(dst, 0); // Transponder not supported
+        sbufWriteU8(dst, 0); // no providers
 #endif
         break;
     }
@@ -1624,28 +1622,33 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef TRANSPONDER
     case MSP_SET_TRANSPONDER_CONFIG:
     {
-        uint8_t tmp = sbufReadU8(src);
+        uint8_t provider = sbufReadU8(src);
+        uint8_t bytesRemaining = dataSize - 1;
 
-        uint8_t type;
-        switch(tmp){
-            case 0x02:
-                type = ILAP;
-                break;
-            case 0x04:
-                type = ARCITIMER;
-                break;
+        if (provider > TRANSPONDER_PROVIDER_COUNT) {
+            return MSP_RESULT_ERROR;
         }
 
-        if(type != transponderConfig()->provider){
+        const uint8_t requirementIndex = provider - 1;
+        const uint8_t transponderDataSize = transponderRequirements[requirementIndex].dataLength;
+
+        transponderConfigMutable()->provider = provider;
+
+        if (provider == TRANSPONDER_NONE) {
+            break;
+        }
+
+        if (bytesRemaining != transponderDataSize) {
+            return MSP_RESULT_ERROR;
+        }
+
+        if (provider != transponderConfig()->provider) {
             transponderStopRepeating();
         }
 
-        transponderConfigMutable()->provider = type;
+        memset(transponderConfigMutable()->data, 0, sizeof(transponderConfig()->data));
 
-        if (dataSize != sizeof(transponderConfig()->data) + 1) {
-            return MSP_RESULT_ERROR;
-        }
-        for (unsigned int i = 0; i < sizeof(transponderConfig()->data); i++) {
+        for (unsigned int i = 0; i < transponderDataSize; i++) {
             transponderConfigMutable()->data[i] = sbufReadU8(src);
         }
         transponderUpdateData();

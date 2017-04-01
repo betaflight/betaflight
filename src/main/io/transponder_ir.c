@@ -40,8 +40,9 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(transponderConfig_t, transponderConfig, PG_TRANSPONDER_CONFIG, 0);
 
 PG_RESET_TEMPLATE(transponderConfig_t, transponderConfig,
+    .provider = TRANSPONDER_ILAP,
+    .reserved = 0,
     .data = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0x0, 0x0, 0x0 }, // Note, this is NOT a valid transponder code, it's just for testing production hardware
-    .provider = ILAP
 );
 
 static bool transponderInitialised = false;
@@ -52,6 +53,11 @@ static timeUs_t nextUpdateAtUs = 0;
 
 #define JITTER_DURATION_COUNT (sizeof(jitterDurations) / sizeof(uint8_t))
 static uint8_t jitterDurations[] = {0,9,4,8,3,9,6,7,1,6,9,7,8,2,6};
+
+const transponderRequirement_t transponderRequirements[TRANSPONDER_PROVIDER_COUNT] = {
+    {TRANSPONDER_ILAP, TRANSPONDER_DATA_LENGTH_ILAP},
+    {TRANSPONDER_ARCITIMER, TRANSPONDER_DATA_LENGTH_ARCITIMER}
+};
 
 void transponderUpdate(timeUs_t currentTimeUs)
 {
@@ -86,7 +92,7 @@ void transponderUpdate(timeUs_t currentTimeUs)
 
 void transponderInit(void)
 {
-    transponderInitialised = transponderIrInit(&(transponderConfig()->provider));
+    transponderInitialised = transponderIrInit(transponderConfig()->provider);
     if (!transponderInitialised) {
         return;
     }

@@ -21,9 +21,17 @@
 #include "config/parameter_group.h"
 
 typedef struct transponderConfig_s {
-    TransponderProvider provider;
+    transponderProvider_e provider;
+    uint8_t reserved;
     uint8_t data[9];
 } transponderConfig_t;
+
+typedef struct transponderRequirement_s {
+    uint8_t provider; // See transponderProvider_e
+    uint8_t dataLength;
+} transponderRequirement_t;
+
+extern const transponderRequirement_t transponderRequirements[TRANSPONDER_PROVIDER_COUNT];
 
 PG_DECLARE(transponderConfig_t, transponderConfig);
 

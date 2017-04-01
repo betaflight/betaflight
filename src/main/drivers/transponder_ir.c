@@ -151,7 +151,7 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     DMA_ITConfig(dmaRef, DMA_IT_TC, ENABLE);
 }
 
-bool transponderIrInit(const TransponderProvider* transponderProvider)
+bool transponderIrInit(const transponderProvider_e provider)
 {
     ioTag_t ioTag = IO_TAG_NONE;
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
@@ -165,14 +165,15 @@ bool transponderIrInit(const TransponderProvider* transponderProvider)
         return false;
     }
 
-    uint8_t transponderProviderLocal = *transponderProvider;
-    switch(transponderProviderLocal){
-        case ARCITIMER:
+    switch (provider) {
+        case TRANSPONDER_ARCITIMER:
             transponderIrInitArcitimer(&transponder);
             break;
-        case ILAP:
+        case TRANSPONDER_ILAP:
             transponderIrInitIlap(&transponder);
             break;
+        default:
+            return false;
     }
 
     transponderIrHardwareInit(ioTag, &transponder);
