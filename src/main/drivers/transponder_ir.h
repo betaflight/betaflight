@@ -80,10 +80,12 @@ typedef struct transponder_s {
 } transponder_t;
 
 typedef enum {
-    NONE,
-    ARCITIMER,
-    ILAP
+    TRANSPONDER_NONE = 0,
+    TRANSPONDER_ILAP,
+    TRANSPONDER_ARCITIMER
 } transponderProvider_e;
+
+#define TRANSPONDER_PROVIDER_COUNT 2
 
 struct transponderVTable {
     void (*updateTransponderDMABuffer)(transponder_t *transponder, const uint8_t* transponderData);

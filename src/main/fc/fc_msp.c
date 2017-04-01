@@ -1087,26 +1087,26 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
 
     case MSP_TRANSPONDER_CONFIG: {
-
-#define TRANSPONDER_SUPPORTED_MASK 0x01 // 00000001
-#define TRANSPONDER_PROVIDER_MASK  0x0E // 00001110
-#define TRANSPONDER_DATA_SIZE_MASK 0xF0 // 11110000
-#define TRANSPONDER_PROVIDER_OFFSET   1
-#define TRANSPONDER_DATA_SIZE_OFFSET  4
-
 #ifdef TRANSPONDER
-        uint8_t header = 0;
+        sbufWriteU8(dst, TRANSPONDER_PROVIDER_COUNT);
+        for (unsigned int i = 0; i < TRANSPONDER_PROVIDER_COUNT; i++) {
+            sbufWriteU8(dst, transponderRequirements[i].provider);
+            sbufWriteU8(dst, transponderRequirements[i].dataLength);
+        }
 
-        header |= 1 & TRANSPONDER_SUPPORTED_MASK;
-        header |= (transponderConfig()->provider << TRANSPONDER_PROVIDER_OFFSET) & TRANSPONDER_PROVIDER_MASK;
-        header |= ((sizeof(transponderConfig()->data) << TRANSPONDER_DATA_SIZE_OFFSET) & TRANSPONDER_DATA_SIZE_MASK);
+        uint8_t provider = transponderConfig()->provider;
+        sbufWriteU8(dst, provider);
 
-        sbufWriteU8(dst, header);
-        for (unsigned int i = 0; i < sizeof(transponderConfig()->data); i++) {
-            sbufWriteU8(dst, transponderConfig()->data[i]);
+        if (provider) {
+            uint8_t requirementIndex = provider - 1;
+            uint8_t providerDataLength = transponderRequirements[requirementIndex].dataLength;
+
+            for (unsigned int i = 0; i < providerDataLength; i++) {
+                sbufWriteU8(dst, transponderConfig()->data[i]);
+            }
         }
 #else
-        sbufWriteU8(dst, 0 & TRANSPONDER_SUPPORTED_MASK);
+        sbufWriteU8(dst, 0); // no providers
 #endif
         break;
     }
@@ -1622,20 +1622,28 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef TRANSPONDER
     case MSP_SET_TRANSPONDER_CONFIG:
     {
-        uint8_t tmp = sbufReadU8(src);
+        uint8_t provider = sbufReadU8(src);
         uint8_t bytesRemaining = dataSize - 1;
 
-        uint8_t provider = (tmp & TRANSPONDER_PROVIDER_MASK) >> TRANSPONDER_PROVIDER_OFFSET;
-        uint8_t transponderDataSize = (tmp & TRANSPONDER_DATA_SIZE_MASK) >> TRANSPONDER_DATA_SIZE_OFFSET;
-
-        if(provider != transponderConfig()->provider) {
-            transponderStopRepeating();
+        if (provider > TRANSPONDER_PROVIDER_COUNT) {
+            return MSP_RESULT_ERROR;
         }
+
+        const uint8_t requirementIndex = provider - 1;
+        const uint8_t transponderDataSize = transponderRequirements[requirementIndex].dataLength;
 
         transponderConfigMutable()->provider = provider;
 
-        if (bytesRemaining != transponderDataSize || transponderDataSize > sizeof(transponderConfig()->data)) {
+        if (provider == TRANSPONDER_NONE) {
+            break;
+        }
+
+        if (bytesRemaining != transponderDataSize) {
             return MSP_RESULT_ERROR;
+        }
+
+        if (provider != transponderConfig()->provider) {
+            transponderStopRepeating();
         }
 
         memset(transponderConfigMutable()->data, 0, sizeof(transponderConfig()->data));
