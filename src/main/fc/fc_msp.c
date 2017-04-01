@@ -53,6 +53,7 @@
 #include "drivers/vcd.h"
 #include "drivers/vtx_common.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
+#include "drivers/transponder_ir.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -1085,8 +1086,24 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_TRANSPONDER_CONFIG:
+    {
 #ifdef TRANSPONDER
-        sbufWriteU8(dst, 1); //Transponder supported
+        uint8_t header = 1; //transponder supported
+
+        switch(transponderConfig()->provider){
+            case ILAP:
+               header |= 0x02;
+               break;
+            case ARCITIMER:
+                 header |= 0x04;
+                 break;
+            default:
+                break;
+        }
+
+        header |= (sizeof(transponderConfig()->data) << 4);
+
+        sbufWriteU8(dst, header);
         for (unsigned int i = 0; i < sizeof(transponderConfig()->data); i++) {
             sbufWriteU8(dst, transponderConfig()->data[i]);
         }
@@ -1094,7 +1111,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, 0); // Transponder not supported
 #endif
         break;
-
+    }
     case MSP_OSD_CONFIG:
 #ifdef OSD
         sbufWriteU8(dst, 1); // OSD supported
@@ -1606,7 +1623,26 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
 #ifdef TRANSPONDER
     case MSP_SET_TRANSPONDER_CONFIG:
-        if (dataSize != sizeof(transponderConfig()->data)) {
+    {
+        uint8_t tmp = sbufReadU8(src);
+
+        uint8_t type;
+        switch(tmp){
+            case 0x02:
+                type = ILAP;
+                break;
+            case 0x04:
+                type = ARCITIMER;
+                break;
+        }
+
+        if(type != transponderConfig()->provider){
+            transponderStopRepeating();
+        }
+
+        transponderConfigMutable()->provider = type;
+
+        if (dataSize != sizeof(transponderConfig()->data) + 1) {
             return MSP_RESULT_ERROR;
         }
         for (unsigned int i = 0; i < sizeof(transponderConfig()->data); i++) {
@@ -1614,6 +1650,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         transponderUpdateData();
         break;
+}
 #endif
 
 #ifdef OSD
