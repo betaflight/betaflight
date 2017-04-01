@@ -784,6 +784,8 @@ FC_SRC = \
             drivers/sonar_hcsr04.c \
             drivers/vtx_common.c \
             drivers/transponder_ir.c \
+            drivers/transponder_ir_arcitimer.c \
+            drivers/transponder_ir_ilap.c \
             flight/navigation.c \
             io/dashboard.c \
             io/displayport_max7456.c \

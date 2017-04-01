@@ -40,6 +40,7 @@
 #include "drivers/serial.h"
 #include "drivers/stack_check.h"
 #include "drivers/vtx_common.h"
+#include "drivers/transponder_ir.h"
 
 #include "fc/config.h"
 #include "fc/fc_msp.h"

@@ -14,23 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #pragma once
 
-#include "common/time.h"
-#include "config/parameter_group.h"
-
-typedef struct transponderConfig_s {
-    TransponderProvider provider;
-    uint8_t data[9];
-} transponderConfig_t;
-
-PG_DECLARE(transponderConfig_t, transponderConfig);
-
-void transponderInit(void);
-
-void transponderUpdate(timeUs_t currentTimeUs);
-void transponderUpdateData(void);
-void transponderTransmitOnce(void);
-void transponderStartRepeating(void);
-void transponderStopRepeating(void);
+void transponderIrInitIlap(transponder_t *transponder);
+void updateTransponderDMABufferIlap(transponder_t *transponder, const uint8_t* transponderData);
