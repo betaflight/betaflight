@@ -448,16 +448,17 @@ void updateGpsIndicator(timeUs_t currentTimeUs)
 }
 
 /* Support for built-in magnetometer accessible via the native GPS protocol (i.e. NAZA) */
-bool gpsMagInit(void)
+bool gpsMagInit(magDev_t *magDev)
 {
+    UNUSED(magDev);
     return true;
 }
 
-bool gpsMagRead(int16_t *magData)
+bool gpsMagRead(magDev_t *magDev)
 {
-    magData[X] = gpsSol.magData[0];
-    magData[Y] = gpsSol.magData[1];
-    magData[Z] = gpsSol.magData[2];
+    magDev->magADCRaw[X] = gpsSol.magData[0];
+    magDev->magADCRaw[Y] = gpsSol.magData[1];
+    magDev->magADCRaw[Z] = gpsSol.magData[2];
     return gpsSol.flags.validMag;
 }
 
