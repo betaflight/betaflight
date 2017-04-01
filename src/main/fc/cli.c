@@ -146,7 +146,7 @@ static const char * const featureNames[] = {
     "SERVO_TILT", "SOFTSERIAL", "GPS", "FAILSAFE",
     "SONAR", "TELEMETRY", "CURRENT_METER", "3D", "RX_PARALLEL_PWM",
     "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "OSD",
-    "BLACKBOX", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE",
+    "UNUSED", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE",
     "SDCARD", "VTX", "RX_SPI", "SOFTSPI", "ESC_SENSOR", NULL
 };
 
@@ -170,9 +170,11 @@ static const char * const lookupTableAccHardware[] = {
     "MPU6000",
     "MPU6500",
     "MPU9250",
-    "ICM20689",
+    "ICM20601",
     "ICM20602",
-	"BMI160",
+    "ICM20608",
+    "ICM20689",
+    "BMI160",
     "FAKE"
 };
 
@@ -207,8 +209,8 @@ static const char * const sensorTypeNames[] = {
 #define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
 
 static const char * const sensorHardwareNames[4][16] = {
-    { "", "None", "MPU6050", "L3G4200D", "MPU3050", "L3GD20", "MPU6000", "MPU6500", "MPU9250", "ICM20689", "ICM20608G", "ICM20602", "BMI160", "FAKE", NULL },
-    { "", "None", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "ICM20689", "MPU9250", "ICM20608G", "ICM20602", "BMI160", "FAKE", NULL },
+    { "", "None", "MPU6050", "L3G4200D", "MPU3050", "L3GD20",              "MPU6000", "MPU6500", "MPU9250", "ICM20601", "ICM20602", "ICM20608G", "ICM20689", "BMI160", "FAKE", NULL },
+    { "", "None", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "MPU9250", "ICM20601", "ICM20602", "ICM20608G", "ICM20689", "BMI160", "FAKE", NULL },
     { "", "None", "BMP085", "MS5611", "BMP280", NULL },
     { "", "None", "HMC5883", "AK8975", "AK8963", NULL }
 };
@@ -321,7 +323,9 @@ static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "ANGLERATE",
     "ESC_SENSOR",
     "SCHEDULER",
-    "STACK"
+    "STACK",
+    "ESC_SENSOR_RPM",
+    "ESC_SENSOR_TMP"
 };
 
 #ifdef OSD
@@ -489,7 +493,6 @@ typedef union {
     cliMinMaxConfig_t minmax;
 } cliValueConfig_t;
 
-#ifdef USE_PARAMETER_GROUPS
 typedef struct {
     const char *name;
     const uint8_t type; // see cliValueFlag_e
@@ -518,6 +521,9 @@ static const clivalue_t valueTable[] = {
 #if defined(USE_MPU_DATA_READY_SIGNAL)
     { "gyro_isr_update",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_isr_update) },
 #endif
+#endif
+#ifdef USE_DUAL_GYRO
+    { "gyro_to_use",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 1 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_to_use) },
 #endif
 
 // PG_ACCELEROMETER_CONFIG
@@ -650,7 +656,7 @@ static const clivalue_t valueTable[] = {
 #endif
 
 // PG_MIXER_CONFIG
-    { "yaw_motor_direction",        VAR_INT8   | MASTER_VALUE, .config.minmax = { -1, 1 }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, yaw_motor_direction) },
+    { "yaw_motors_reversed",        VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_MIXER_CONFIG, offsetof(mixerConfig_t, yaw_motors_reversed) },
 
 // PG_MOTOR_3D_CONFIG
     { "3d_deadband_low",            VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_RANGE_ZERO, PWM_RANGE_MAX }, PG_MOTOR_3D_CONFIG, offsetof(flight3DConfig_t, deadband3d_low) }, // FIXME upper limit should match code in the mixer, 1500 currently
@@ -716,14 +722,14 @@ static const clivalue_t valueTable[] = {
 #endif
 
 // PG_AIRPLANE_CONFIG
-    { "fixedwing_althold_dir",      VAR_INT8   | MASTER_VALUE, .config.minmax = { -1, 1 }, PG_AIRPLANE_CONFIG, offsetof(airplaneConfig_t, fixedwing_althold_dir) },
+    { "fixedwing_althold_reversed", VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_AIRPLANE_CONFIG, offsetof(airplaneConfig_t, fixedwing_althold_reversed) },
 
 // PG_RC_CONTROLS_CONFIG
     { "alt_hold_deadband",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 250 }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, alt_hold_deadband) },
     { "alt_hold_fast_change",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, alt_hold_fast_change) },
     { "deadband",                   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 32 }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, deadband) },
     { "yaw_deadband",               VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 100 }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, yaw_deadband) },
-    { "yaw_control_direction",      VAR_INT8   | MASTER_VALUE, .config.minmax = { -1, 1 }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, yaw_control_direction) },
+    { "yaw_control_reversed",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, yaw_control_reversed) },
 
 // PG_PID_CONFIG
     { "pid_process_denom",          VAR_UINT8  | MASTER_VALUE,  .config.minmax = { 1, MAX_PID_PROCESS_DENOM }, PG_PID_CONFIG, offsetof(pidConfig_t, pid_process_denom) },
@@ -833,6 +839,8 @@ static const clivalue_t valueTable[] = {
     { "osd_mah_drawn_pos",          VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_MAH_DRAWN]) },
     { "osd_craft_name_pos",         VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_CRAFT_NAME]) },
     { "osd_gps_speed_pos",          VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_GPS_SPEED]) },
+    { "osd_gps_lon",                VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_GPS_LON]) },
+    { "osd_gps_lat",                VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_GPS_LAT]) },
     { "osd_gps_sats_pos",           VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_GPS_SATS]) },
     { "osd_altitude_pos",           VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_ALTITUDE]) },
     { "osd_pid_roll_pos",           VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_ROLL_PIDS]) },
@@ -923,6 +931,7 @@ static motorMixer_t customMotorMixerCopy[MAX_SUPPORTED_MOTORS];
 static mixerConfig_t mixerConfigCopy;
 static flight3DConfig_t flight3DConfigCopy;
 static serialConfig_t serialConfigCopy;
+static serialPinConfig_t serialPinConfigCopy;
 static imuConfig_t imuConfigCopy;
 static armingConfig_t armingConfigCopy;
 static rcControlsConfig_t rcControlsConfigCopy;
@@ -965,7 +974,6 @@ displayPortProfile_t displayPortProfileMax7456Copy;
 static pidConfig_t pidConfigCopy;
 static controlRateConfig_t controlRateProfilesCopy[CONTROL_RATE_PROFILE_COUNT];
 static pidProfile_t pidProfileCopy[MAX_PROFILE_COUNT];
-#endif // USE_PARAMETER_GROUPS
 
 static void cliPrint(const char *str)
 {
@@ -1237,6 +1245,10 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
     case PG_SERIAL_CONFIG:
         ret.currentConfig = &serialConfigCopy;
         ret.defaultConfig = serialConfig();
+        break;
+    case PG_SERIAL_PIN_CONFIG:
+        ret.currentConfig = &serialPinConfigCopy;
+        ret.defaultConfig = serialPinConfig();
         break;
     case PG_IMU_CONFIG:
         ret.currentConfig = &imuConfigCopy;
@@ -3902,13 +3914,13 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 #ifdef SONAR
     { OWNER_SONAR_TRIGGER, PG_SONAR_CONFIG, offsetof(sonarConfig_t, triggerTag), 0 },
-    { OWNER_SONAR_ECHO,    PG_SERIAL_CONFIG, offsetof(sonarConfig_t, echoTag),    0 },
+    { OWNER_SONAR_ECHO,    PG_SONAR_CONFIG, offsetof(sonarConfig_t, echoTag),    0 },
 #endif
 #ifdef LED_STRIP
     { OWNER_LED_STRIP,     PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ioTag),   0 },
 #endif
-    { OWNER_SERIAL_TX,     PG_SERIAL_CONFIG, offsetof(serialPinConfig_t, ioTagTx[0]), SERIAL_PORT_MAX_INDEX },
-    { OWNER_SERIAL_RX,     PG_SERIAL_CONFIG, offsetof(serialPinConfig_t, ioTagRx[0]), SERIAL_PORT_MAX_INDEX },
+    { OWNER_SERIAL_TX,     PG_SERIAL_PIN_CONFIG, offsetof(serialPinConfig_t, ioTagTx[0]), SERIAL_PORT_MAX_INDEX },
+    { OWNER_SERIAL_RX,     PG_SERIAL_PIN_CONFIG, offsetof(serialPinConfig_t, ioTagRx[0]), SERIAL_PORT_MAX_INDEX },
 };
 
 static ioTag_t *getIoTag(const cliResourceValue_t value, uint8_t index)
@@ -4022,7 +4034,7 @@ static void cliResource(char *cmdline)
             cliPrintf("%c%02d: %s ", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
             if (ioRecs[i].index > 0) {
                 cliPrintf("%d", ioRecs[i].index);
-            } 
+            }
             cliPrintf("\r\n");
         }
 

@@ -47,7 +47,7 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(airplaneConfig_t, airplaneConfig, PG_AIRPLANE_CONFIG, 0);
 
 PG_RESET_TEMPLATE(airplaneConfig_t, airplaneConfig,
-    .fixedwing_althold_dir = 1
+    .fixedwing_althold_reversed = false
 );
 
 int32_t setVelocity = 0;
@@ -114,7 +114,7 @@ static void applyFixedWingAltHold(void)
     // most likely need to check changes on pitch channel and 'reset' althold similar to
     // how throttle does it on multirotor
 
-    rcCommand[PITCH] += altHoldThrottleAdjustment * airplaneConfig()->fixedwing_althold_dir;
+    rcCommand[PITCH] += altHoldThrottleAdjustment * GET_DIRECTION(airplaneConfig()->fixedwing_althold_reversed);
 }
 
 void applyAltHold(void)
