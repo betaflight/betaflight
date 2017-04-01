@@ -21,7 +21,8 @@
 #include "config/parameter_group.h"
 
 typedef struct transponderConfig_s {
-    TransponderProvider provider;
+    transponderProvider_e provider;
+    uint8_t reserved;
     uint8_t data[9];
 } transponderConfig_t;
 

@@ -39,8 +39,9 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(transponderConfig_t, transponderConfig, PG_TRANSPONDER_CONFIG, 0);
 
 PG_RESET_TEMPLATE(transponderConfig_t, transponderConfig,
+    .provider = ILAP,
+    .reserved = 0,
     .data = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0x0, 0x0, 0x0 }, // Note, this is NOT a valid transponder code, it's just for testing production hardware
-    .provider = ILAP
 );
 
 static bool transponderInitialised = false;
@@ -85,7 +86,7 @@ void transponderUpdate(timeUs_t currentTimeUs)
 
 void transponderInit(void)
 {
-    transponderInitialised = transponderIrInit(&(transponderConfig()->provider));
+    transponderInitialised = transponderIrInit(transponderConfig()->provider);
     if (!transponderInitialised) {
         return;
     }
