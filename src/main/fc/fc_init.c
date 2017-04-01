@@ -294,11 +294,15 @@ void init(void)
     }
 #endif
 
-#if defined(USE_PWM) || defined(USE_PPM)
-    if (feature(FEATURE_RX_PPM)) {
-        ppmRxInit(ppmConfig(), motorConfig()->dev.motorPwmProtocol);
-    } else if (feature(FEATURE_RX_PARALLEL_PWM)) {
-        pwmRxInit(pwmConfig());
+    if (0) {}
+#if defined(USE_PPM)
+    else if (feature(FEATURE_RX_PPM)) {
+          ppmRxInit(ppmConfig(), motorConfig()->dev.motorPwmProtocol);
+    }
+#endif
+#if defined(USE_PWM)
+    else if (feature(FEATURE_RX_PARALLEL_PWM)) {
+          pwmRxInit(pwmConfig());
     }
 #endif
 
