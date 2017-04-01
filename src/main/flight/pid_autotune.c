@@ -51,7 +51,7 @@
 #define AUTOTUNE_FIXED_WING_MIN_FF              10
 #define AUTOTUNE_FIXED_WING_MAX_FF              200
 
-PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(pidAutotuneConfig_t, pidAutotuneConfig, PG_PID_AUTOTUNE_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(pidAutotuneConfig_t, pidAutotuneConfig, PG_PID_AUTOTUNE_CONFIG, 0);
 
 PG_RESET_TEMPLATE(pidAutotuneConfig_t, pidAutotuneConfig,
     .fw_overshoot_time = AUTOTUNE_FIXED_WING_OVERSHOOT_TIME,

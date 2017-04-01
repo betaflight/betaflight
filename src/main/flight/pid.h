@@ -113,7 +113,7 @@ typedef struct pidAutotuneConfig_s {
 } pidAutotuneConfig_t;
 
 PG_DECLARE_PROFILE(pidProfile_t, pidProfile);
-PG_DECLARE_PROFILE(pidAutotuneConfig_t, pidAutotuneConfig);
+PG_DECLARE(pidAutotuneConfig_t, pidAutotuneConfig);
 
 static inline const pidBank_t * pidBank() { return STATE(FIXED_WING) ? &pidProfile()->bank_fw : &pidProfile()->bank_mc; }
 static inline pidBank_t * pidBankMutable() { return STATE(FIXED_WING) ? &pidProfileMutable()->bank_fw : &pidProfileMutable()->bank_mc; }
