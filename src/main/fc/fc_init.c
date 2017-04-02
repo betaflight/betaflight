@@ -378,25 +378,6 @@ void init(void)
 
     initBoardAlignment(boardAlignment());
 
-#ifdef CMS
-    cmsInit();
-#endif
-
-#ifdef USE_DASHBOARD
-    if (feature(FEATURE_DASHBOARD)) {
-        dashboardInit();
-    }
-#endif
-
-#ifdef USE_RTC6705
-    if (feature(FEATURE_VTX)) {
-        rtc6705_soft_spi_init();
-        current_vtx_channel = vtxConfig()->vtx_channel;
-        rtc6705_soft_spi_set_channel(vtx_freq[current_vtx_channel]);
-        rtc6705_soft_spi_set_rf_power(vtxConfig()->vtx_power);
-    }
-#endif
-
     if (!sensorsAutodetect()) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
@@ -435,6 +416,26 @@ void init(void)
 
     rxInit();
 
+/*
+ * VTX
+ */
+
+#ifdef USE_RTC6705
+    if (feature(FEATURE_VTX)) {
+        rtc6705_soft_spi_init();
+        current_vtx_channel = vtxConfig()->vtx_channel;
+        rtc6705_soft_spi_set_channel(vtx_freq[current_vtx_channel]);
+        rtc6705_soft_spi_set_rf_power(vtxConfig()->vtx_power);
+    }
+#endif
+
+/*
+ * CMS, display devices and OSD
+ */
+#ifdef CMS
+    cmsInit();
+#endif
+
     displayPort_t *osdDisplayPort = NULL;
 
 #ifdef OSD
@@ -447,6 +448,7 @@ void init(void)
 #elif defined(USE_OSD_OVER_MSP_DISPLAYPORT) // OSD over MSP; not supported (yet)
         osdDisplayPort = displayPortMspInit();
 #endif
+        // osdInit  will register with CMS by itself.
         osdInit(osdDisplayPort);
     }
 #endif
@@ -456,6 +458,14 @@ void init(void)
     if (!osdDisplayPort)
         cmsDisplayPortRegister(displayPortMspInit());
 #endif
+
+#ifdef USE_DASHBOARD
+    // Dashbord will register with CMS by itself.
+    if (feature(FEATURE_DASHBOARD)) {
+        dashboardInit();
+    }
+#endif
+
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
