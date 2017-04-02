@@ -220,11 +220,12 @@ void currentMeterESCReadMotor(uint8_t motorNumber, currentMeter_t *meter)
     currentMeterReset(meter);
 #else
     escSensorData_t *escData = getEscSensorData(motorNumber);
-    if (escData->dataAge <= ESC_BATTERY_AGE_MAX) {
+    if (escData && escData->dataAge <= ESC_BATTERY_AGE_MAX) {
         meter->amperage = escData->current;
         meter->amperageLatest = escData->current;
         meter->mAhDrawn = escData->consumption;
-        return;
+    } else {
+        currentMeterReset(meter);
     }
 #endif
 }
