@@ -10,7 +10,6 @@ TARGET_SRC = \
 			drivers/compass_ak8963.c \
             drivers/flash_m25p16.c \
             drivers/transponder_ir.c \
-            drivers/transponder_ir_stm32f30x.c \
             io/transponder_ir.c
 
 ifeq ($(TARGET), TINYBEEF3)
