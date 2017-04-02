@@ -442,7 +442,7 @@ void init(void)
 
     if (feature(FEATURE_OSD)) {
 #if defined(USE_MAX7456)
-        // if there is a max7456 chip for the OSD then use it, otherwise use MSP
+        // If there is a max7456 chip for the OSD then use it
         osdDisplayPort = max7456DisplayPortInit(vcdProfile());
 #elif defined(USE_OSD_OVER_MSP_DISPLAYPORT) // OSD over MSP; not supported (yet)
         osdDisplayPort = displayPortMspInit();
@@ -452,7 +452,7 @@ void init(void)
 #endif
 
 #if defined(CMS) && defined(USE_MSP_DISPLAYPORT)
-    // If BFOSD is not active, then register as register MSP_DISPLAYPORT.
+    // If BFOSD is not active, then register MSP_DISPLAYPORT as a CMS device.
     if (!osdDisplayPort)
         cmsDisplayPortRegister(displayPortMspInit());
 #endif
