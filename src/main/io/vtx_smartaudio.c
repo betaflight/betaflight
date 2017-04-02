@@ -697,7 +697,7 @@ bool smartAudioInit()
 
 void vtxSAProcess(uint32_t now)
 {
-    static bool initialSent = false;
+    static char initPhase = 0;
 
     if (smartAudioSerialPort == NULL)
         return;
@@ -710,12 +710,20 @@ void vtxSAProcess(uint32_t now)
     // Re-evaluate baudrate after each frame reception
     saAutobaud();
 
-    if (!initialSent) {
+    switch (initPhase) {
+    case 0:
         saGetSettings();
-        saSetFreq(SA_FREQ_GETPIT);
         saSendQueue();
-        initialSent = true;
+        ++initPhase;
         return;
+
+    case 1:
+        // Don't send SA_FREQ_GETPIT to V1 device; it act as plain SA_CMD_SET_FREQ,
+        // and put the device into user frequency mode with uninitialized freq.
+        if (saDevice.version == 2)
+            saSetFreq(SA_FREQ_GETPIT);
+        ++initPhase;
+        break;
     }
 
     if ((sa_outstanding != SA_CMD_NONE)
@@ -878,7 +886,7 @@ uint16_t saCmsDeviceFreq = 0;
 
 uint8_t  saCmsDeviceStatus = 0;
 uint8_t  saCmsPower;
-uint8_t  saCmsPitFMode;         // In-Range or Out-Range
+uint8_t  saCmsPitFMode;          // Undef(0), In-Range(1) or Out-Range(2)
 uint8_t  saCmsFselMode;          // Channel(0) or User defined(1)
 
 uint16_t saCmsORFreq = 0;       // POR frequency
@@ -944,10 +952,12 @@ if (saCmsORFreq == 0 && saDevice.orfreq != 0)
 if (saCmsUserFreq == 0 && saDevice.freq != 0)
     saCmsUserFreq = saDevice.freq;
 
-if (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE)
-    saCmsPitFMode = 1;
-else
-    saCmsPitFMode = 0;
+if (saDevice.version == 2) {
+    if (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE)
+        saCmsPitFMode = 1;
+    else
+        saCmsPitFMode = 0;
+}
 
     saCmsStatusString[0] = "-FR"[saCmsOpmodel];
 
@@ -1062,9 +1072,21 @@ static long saCmsConfigPitFModeByGvar(displayPort_t *pDisp, const void *self)
     UNUSED(pDisp);
     UNUSED(self);
 
+    if (saDevice.version == 1) {
+        // V1 device doesn't support PIT mode; bounce back.
+        saCmsPitFMode = 0;
+        return 0;
+    }
+
     dprintf(("saCmsConfigPitFmodeByGbar: saCmsPitFMode %d\r\n", saCmsPitFMode));
 
     if (saCmsPitFMode == 0) {
+        // Bounce back
+        saCmsPitFMode = 1;
+        return 0;
+    }
+
+    if (saCmsPitFMode == 1) {
         saSetMode(SA_MODE_SET_IN_RANGE_PITMODE);
     } else {
         saSetMode(SA_MODE_SET_OUT_RANGE_PITMODE);
@@ -1079,6 +1101,12 @@ static long saCmsConfigOpmodelByGvar(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
+
+    if (saDevice.version == 1) {
+        if (saCmsOpmodel != SACMS_OPMODEL_FREE)
+            saCmsOpmodel = SACMS_OPMODEL_FREE;
+        return 0;
+    }
 
     uint8_t opmodel = saCmsOpmodel;
 
@@ -1165,6 +1193,7 @@ static const char * const saCmsFselModeNames[] = {
 };
 
 static const char * const saCmsPitFModeNames[] = {
+    "---",
     "PIR",
     "POR"
 };
@@ -1229,6 +1258,9 @@ static long saCmsCommence(displayPort_t *pDisp, const void *self)
 
 static long saCmsSetPORFreqOnEnter(void)
 {
+    if (saDevice.version == 1)
+        return MENU_CHAIN_BACK;
+
     saCmsORFreqNew = saCmsORFreq;
 
     return 0;

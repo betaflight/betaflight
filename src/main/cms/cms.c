@@ -459,49 +459,6 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
     }
 }
 
-long cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
-{
-    CMS_Menu *pMenu = (CMS_Menu *)ptr;
-
-    if (pMenu) {
-#ifdef CMS_MENU_DEBUG
-        if (pMenu->GUARD_type != OME_MENU) {
-            // ptr isn't pointing to a CMS_Menu.
-            if (pMenu->GUARD_type <= OME_MAX) {
-                strncpy(menuErrLabel, pMenu->GUARD_text, sizeof(menuErrLabel) - 1);
-            } else {
-                strncpy(menuErrLabel, "LABEL UNKNOWN", sizeof(menuErrLabel) - 1);
-            }
-            pMenu = &menuErr;
-        }
-#endif
-
-        // Stack the current menu and move to a new menu.
-        // The (pMenu == curretMenu) case occurs when reopening for display sw
-
-        if (pMenu != currentMenu) {
-            menuStack[menuStackIdx] = currentMenu;
-            cursorRow += pageTop - currentMenu->entries; // Convert cursorRow to absolute value
-            menuStackHistory[menuStackIdx] = cursorRow;
-            menuStackIdx++;
-
-            currentMenu = pMenu;
-            cursorRow = 0;
-
-            if (pMenu->onEnter)
-                pMenu->onEnter();
-        }
-
-        pageTop = currentMenu->entries;
-        pageTopAlt = NULL;
-
-        displayClearScreen(pDisplay);
-        cmsUpdateMaxRow(pDisplay);
-    }
-
-    return 0;
-}
-
 STATIC_UNIT_TESTED long cmsMenuBack(displayPort_t *pDisplay)
 {
     // Let onExit function decide whether to allow exit or not.
@@ -527,6 +484,55 @@ STATIC_UNIT_TESTED long cmsMenuBack(displayPort_t *pDisplay)
             pageTop = pageTopAlt + maxRow + 1;
             cursorRow -= (maxRow + 1);
             cmsUpdateMaxRow(pDisplay); // Update maxRow for the second page
+        }
+    }
+
+    return 0;
+}
+
+long cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
+{
+    CMS_Menu *pMenu = (CMS_Menu *)ptr;
+
+    if (pMenu) {
+#ifdef CMS_MENU_DEBUG
+        if (pMenu->GUARD_type != OME_MENU) {
+            // ptr isn't pointing to a CMS_Menu.
+            if (pMenu->GUARD_type <= OME_MAX) {
+                strncpy(menuErrLabel, pMenu->GUARD_text, sizeof(menuErrLabel) - 1);
+            } else {
+                strncpy(menuErrLabel, "LABEL UNKNOWN", sizeof(menuErrLabel) - 1);
+            }
+            pMenu = &menuErr;
+        }
+#endif
+
+        // Stack the current menu and move to a new menu.
+        // The (pMenu == curretMenu) case occurs when reopening for display sw
+
+        bool enterRejected = false;
+
+        if (pMenu != currentMenu) {
+            menuStack[menuStackIdx] = currentMenu;
+            cursorRow += pageTop - currentMenu->entries; // Convert cursorRow to absolute value
+            menuStackHistory[menuStackIdx] = cursorRow;
+            menuStackIdx++;
+
+            currentMenu = pMenu;
+            cursorRow = 0;
+
+            if (pMenu->onEnter && (pMenu->onEnter() == MENU_CHAIN_BACK))
+                enterRejected = true;
+        }
+
+        pageTop = currentMenu->entries;
+        pageTopAlt = NULL;
+
+        if (enterRejected) {
+            return cmsMenuBack(pDisplay);
+        } else {
+            displayClearScreen(pDisplay);
+            cmsUpdateMaxRow(pDisplay);
         }
     }
 
