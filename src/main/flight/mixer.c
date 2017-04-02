@@ -487,7 +487,7 @@ void mixTable(pidProfile_t *pidProfile)
         constrainf((axisPID_P[FD_PITCH] + axisPID_I[FD_PITCH] + axisPID_D[FD_PITCH]) / PID_MIXER_SCALING,
         -pidProfile->pidSumLimit, pidProfile->pidSumLimit);
     scaledAxisPIDf[FD_YAW] =
-        constrainf((axisPID_P[FD_YAW] + axisPID_I[FD_YAW] + axisPID_D[FD_YAW]) / PID_MIXER_SCALING,
+        constrainf((axisPID_P[FD_YAW] + axisPID_I[FD_YAW]) / PID_MIXER_SCALING,
         -pidProfile->pidSumLimit, pidProfile->pidSumLimitYaw);
 
     // Calculate voltage compensation
