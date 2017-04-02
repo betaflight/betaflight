@@ -811,8 +811,10 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
 #ifdef GPS
     case MSP_GPS_CONFIG:
-        sbufWriteU8(dst, gpsConfig()->provider); // gps_type
-        sbufWriteU8(dst, gpsConfig()->sbasMode); // gps_ubx_sbas
+        sbufWriteU8(dst, gpsConfig()->provider);
+        sbufWriteU8(dst, gpsConfig()->sbasMode);
+        sbufWriteU8(dst, gpsConfig()->autoConfig);
+        sbufWriteU8(dst, gpsConfig()->autoBaud);
         break;
 
     case MSP_RAW_GPS:
@@ -1433,8 +1435,10 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
 #ifdef GPS
     case MSP_SET_GPS_CONFIG:
-        gpsConfigMutable()->provider = sbufReadU8(src); // gps_type
-        gpsConfigMutable()->sbasMode = sbufReadU8(src); // gps_ubx_sbas
+        gpsConfigMutable()->provider = sbufReadU8(src);
+        gpsConfigMutable()->sbasMode = sbufReadU8(src);
+        gpsConfigMutable()->autoConfig = sbufReadU8(src);
+        gpsConfigMutable()->autoBaud = sbufReadU8(src);
         break;
 #endif
 
