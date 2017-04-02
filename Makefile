@@ -101,7 +101,7 @@ HSE_VALUE       ?= 8000000
 # used for turning on features like VCP and SDCARD
 FEATURES        =
 
-OFFICIAL_TARGETS  = ALIENFLIGHTF3 ALIENFLIGHTF4 ANYFCF7 BETAFLIGHTF3 BLUEJAYF4 CC3D FURYF4 NAZE REVO SIRINFPV SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3NEO SPRACINGF3MINI STM32F3DISCOVERY
+OFFICIAL_TARGETS  = ALIENFLIGHTF3 ALIENFLIGHTF4 ANYFCF7 BETAFLIGHTF3 BLUEJAYF4 CC3D FURYF4 NAZE REVO SIRINFPV SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3NEO SPRACINGF3MINI STM32F3DISCOVERY SPRACINGF4EVO
 ALT_TARGETS       = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.mk)))))
 OPBL_TARGETS      = $(filter %_OPBL, $(ALT_TARGETS))
 
@@ -1310,6 +1310,7 @@ targets:
 	$(V0) @echo "Valid targets:      $(VALID_TARGETS)"
 	$(V0) @echo "Target:             $(TARGET)"
 	$(V0) @echo "Base target:        $(BASE_TARGET)"
+	$(V0) @echo "Official targets:   $(OFFICIAL_TARGETS)"
 	$(V0) @echo "targets-group-1:    $(GROUP_1_TARGETS)"
 	$(V0) @echo "targets-group-2:    $(GROUP_2_TARGETS)"
 	$(V0) @echo "targets-group-3:    $(GROUP_3_TARGETS)"
