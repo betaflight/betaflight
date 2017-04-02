@@ -258,12 +258,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         }
 
         // -----calculate D component
-        if (axis == FD_YAW) {
-            // no DTerm for yaw axis
-            axisPID_P[FD_YAW] = PTerm;
-            axisPID_I[FD_YAW] = ITerm;
-            axisPID_D[FD_YAW] = 0;
-        } else {
+        if (axis != FD_YAW) {
             float dynC = dtermSetpointWeight;
             if (pidProfile->setpointRelaxRatio < 100) {
                 dynC *= MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f);
@@ -281,11 +276,11 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             DTerm = dtermLpfApplyFn(dtermFilterLpf[axis], DTerm);
         }
 
-        // Disable PID control at zero throttle
-        if (!pidStabilisationEnabled) {
-            axisPID_P[axis] = 0;
-            axisPID_I[axis] = 0;
-            axisPID_D[axis] = 0;
+        // Enable PID control only when stabilisation on
+        if (pidStabilisationEnabled) {
+            axisPID_P[axis] = PTerm;
+            axisPID_I[axis] = ITerm;
+            axisPID_D[axis] = DTerm;
         }
     }
 }
