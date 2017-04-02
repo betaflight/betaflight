@@ -114,9 +114,9 @@ static bool ak8963SensorRead(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t 
     mpuWriteRegisterI2C(NULL, MPU_RA_I2C_SLV0_CTRL, len_ | 0x80);         // read number of bytes
     delay(10);
     __disable_irq();
-    mpuReadRegisterI2C(NULL, MPU_RA_EXT_SENS_DATA_00, len_, buf);         // read I2C
+    bool ack = mpuReadRegisterI2C(NULL, MPU_RA_EXT_SENS_DATA_00, len_, buf);         // read I2C
     __enable_irq();
-    return true;
+    return ack;
 }
 
 static bool ak8963SensorWrite(uint8_t addr_, uint8_t reg_, uint8_t data)
@@ -316,7 +316,7 @@ bool ak8963Detect(magDev_t *mag)
 #if defined(USE_SPI) && defined(MPU9250_SPI_INSTANCE)
     // initialze I2C master via SPI bus (MPU9250)
 
-    verifympu9250SpiWriteRegister(&mag->bus, MPU_RA_INT_PIN_CFG, 0x10);               // INT_ANYRD_2CLEAR
+    verifympu9250SpiWriteRegister(&mag->bus, MPU_RA_INT_PIN_CFG, MPU6500_BIT_INT_ANYRD_2CLEAR);
     delay(10);
 
     verifympu9250SpiWriteRegister(&mag->bus, MPU_RA_I2C_MST_CTRL, 0x0D);              // I2C multi-master / 400kHz
