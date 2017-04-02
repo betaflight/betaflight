@@ -436,7 +436,9 @@ void init(void)
     cmsInit();
 #endif
 
+#if ( defined(OSD) || (defined(USE_MSP_DISPLAYPORT) && defined(CMS)) )
     displayPort_t *osdDisplayPort = NULL;
+#endif
 
 #ifdef OSD
     //The OSD need to be initialised after GYRO to avoid GYRO initialisation failure on some targets
