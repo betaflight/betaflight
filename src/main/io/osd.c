@@ -234,10 +234,10 @@ static void osdDrawSingleElement(uint8_t item)
         {
             int32_t val;
             if (item == OSD_GPS_LAT) {
-                buff[0] = 0xA6;
+                buff[0] = 0x64; // right arrow
                 val = GPS_coord[LAT];
             } else {
-                buff[0] = 0xA7;
+                buff[0] = 0x60; // down arrow
                 val = GPS_coord[LON];
             }
             if (val >= 0) {
