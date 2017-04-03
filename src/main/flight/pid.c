@@ -338,6 +338,10 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         float PTerm = Kp[axis] * errorRate * tpaFactor;
         if (axis == FD_YAW) {
             PTerm = ptermYawFilterApplyFn(ptermYawFilter, PTerm);
+            // Constrain YAW to avoid motor saturation if not a tricopter (where yaw is servo driven)
+            if (pidProfile->yaw_p_limit && getMotorCount() >= 4) {
+                PTerm = constrainf(PTerm, -pidProfile->yaw_p_limit, pidProfile->yaw_p_limit);
+            }
         }
 
         // -----calculate I component
