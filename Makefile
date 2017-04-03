@@ -37,10 +37,6 @@ SERIAL_DEVICE   ?= $(firstword $(wildcard /dev/ttyUSB*) no-port-found)
 # Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
 FLASH_SIZE ?=
 
-## V                 : Set verbosity level based on the V= parameter
-##                     V=0 Low
-##                     V=1 High
-include build_verbosity.mk
 
 ###############################################################################
 # Things that need to be maintained as the source changes
@@ -57,6 +53,11 @@ CMSIS_DIR       = $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS    = $(SRC_DIR) \
                   $(ROOT)/src/main/target
 LINKER_DIR      = $(ROOT)/src/main/target/link
+
+## V                 : Set verbosity level based on the V= parameter
+##                     V=0 Low
+##                     V=1 High
+include $(ROOT)/make/build_verbosity.mk
 
 # Build tools, so we all share the same versions
 # import macros common to all supported build systems
