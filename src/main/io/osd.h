@@ -49,6 +49,8 @@ typedef enum {
     OSD_PIDRATE_PROFILE,
     OSD_MAIN_BATT_WARNING,
     OSD_AVG_CELL_VOLTAGE,
+    OSD_GPS_LON,
+    OSD_GPS_LAT,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 

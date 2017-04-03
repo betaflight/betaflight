@@ -371,12 +371,10 @@ void initActiveBoxIds(void)
 #endif
 
 #ifdef BLACKBOX
-    if (feature(FEATURE_BLACKBOX)) {
-        activeBoxIds[activeBoxIdCount++] = BOXBLACKBOX;
+    activeBoxIds[activeBoxIdCount++] = BOXBLACKBOX;
 #ifdef USE_FLASHFS
-        activeBoxIds[activeBoxIdCount++] = BOXBLACKBOXERASE;
+    activeBoxIds[activeBoxIdCount++] = BOXBLACKBOXERASE;
 #endif
-    }
 #endif
 
     activeBoxIds[activeBoxIdCount++] = BOXFPVANGLEMIX;
@@ -596,14 +594,6 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteData(dst, shortGitRevision, GIT_SHORT_REVISION_LENGTH);
         break;
 
-    // DEPRECATED - Use MSP_API_VERSION
-    case MSP_IDENT:
-        sbufWriteU8(dst, MW_VERSION);
-        sbufWriteU8(dst, mixerConfig()->mixerMode);
-        sbufWriteU8(dst, MSP_PROTOCOL_VERSION);
-        sbufWriteU32(dst, CAP_DYNBALANCE); // "capability"
-        break;
-
     case MSP_STATUS_EX:
         sbufWriteU16(dst, getTaskDeltaTime(TASK_GYROPID));
 #ifdef USE_I2C
@@ -739,10 +729,6 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, armingConfig()->disarm_kill_switch);
         break;
 
-    case MSP_LOOP_TIME:
-        sbufWriteU16(dst, (uint16_t)gyro.targetLooptime);
-        break;
-
     case MSP_RC_TUNING:
         sbufWriteU8(dst, currentControlRateProfile->rcRate8);
         sbufWriteU8(dst, currentControlRateProfile->rcExpo8);
@@ -812,44 +798,26 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         }
         break;
 
-    case MSP_MISC:
-        sbufWriteU16(dst, rxConfig()->midrc);
-
+    case MSP_MOTOR_CONFIG:
         sbufWriteU16(dst, motorConfig()->minthrottle);
         sbufWriteU16(dst, motorConfig()->maxthrottle);
         sbufWriteU16(dst, motorConfig()->mincommand);
+        break;
 
-        sbufWriteU16(dst, failsafeConfig()->failsafe_throttle);
-
-#ifdef GPS
-        sbufWriteU8(dst, gpsConfig()->provider); // gps_type
-        sbufWriteU8(dst, 0); // TODO gps_baudrate (an index, cleanflight uses a uint32_t
-        sbufWriteU8(dst, gpsConfig()->sbasMode); // gps_ubx_sbas
-#else
-        sbufWriteU8(dst, 0); // gps_type
-        sbufWriteU8(dst, 0); // TODO gps_baudrate (an index, cleanflight uses a uint32_t
-        sbufWriteU8(dst, 0); // gps_ubx_sbas
-#endif
-        sbufWriteU8(dst, 0); // was multiwiiCurrentMeterOutput
-        sbufWriteU8(dst, rxConfig()->rssi_channel);
-        sbufWriteU8(dst, 0);
-
+#ifdef MAG
+    case MSP_COMPASS_CONFIG:
         sbufWriteU16(dst, compassConfig()->mag_declination / 10);
-
-        sbufWriteU8(dst, 0); // was vbatscale
-        sbufWriteU8(dst, batteryConfig()->vbatmincellvoltage);
-        sbufWriteU8(dst, batteryConfig()->vbatmaxcellvoltage);
-        sbufWriteU8(dst, batteryConfig()->vbatwarningcellvoltage);
         break;
-
-    case MSP_MOTOR_PINS:
-        // FIXME This is hardcoded and should not be.
-        for (int i = 0; i < 8; i++) {
-            sbufWriteU8(dst, i + 1);
-        }
-        break;
+#endif
 
 #ifdef GPS
+    case MSP_GPS_CONFIG:
+        sbufWriteU8(dst, gpsConfig()->provider);
+        sbufWriteU8(dst, gpsConfig()->sbasMode);
+        sbufWriteU8(dst, gpsConfig()->autoConfig);
+        sbufWriteU8(dst, gpsConfig()->autoBaud);
+        break;
+
     case MSP_RAW_GPS:
         sbufWriteU8(dst, STATE(GPS_FIX));
         sbufWriteU8(dst, GPS_numSat);
@@ -886,7 +854,6 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         }
         break;
 
-    // Additional commands that are not compatible with MultiWii
     case MSP_ACC_TRIM:
         sbufWriteU16(dst, accelerometerConfig()->accelerometerTrims.values.pitch);
         sbufWriteU16(dst, accelerometerConfig()->accelerometerTrims.values.roll);
@@ -898,11 +865,11 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU32(dst, U_ID_2);
         break;
 
-    case MSP_FEATURE:
+    case MSP_FEATURE_CONFIG:
         sbufWriteU32(dst, featureMask());
         break;
 
-    case MSP_BOARD_ALIGNMENT:
+    case MSP_BOARD_ALIGNMENT_CONFIG:
         sbufWriteU16(dst, boardAlignment()->rollDegrees);
         sbufWriteU16(dst, boardAlignment()->pitchDegrees);
         sbufWriteU16(dst, boardAlignment()->yawDegrees);
@@ -956,11 +923,12 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         BUILD_BUG_ON(VOLTAGE_SENSOR_ADC_VBAT != 0); // VOLTAGE_SENSOR_ADC_VBAT should be the first index,
         sbufWriteU8(dst, MAX_VOLTAGE_SENSOR_ADC); // voltage meters in payload
         for (int i = VOLTAGE_SENSOR_ADC_VBAT; i < MAX_VOLTAGE_SENSOR_ADC; i++) {
+            const uint8_t adcSensorSubframeLength = 1 + 1 + 1 + 1 + 1; // length of id, type, vbatscale, vbatresdivval, vbatresdivmultipler, in bytes
+            sbufWriteU8(dst, adcSensorSubframeLength); // ADC sensor sub-frame length
+
             sbufWriteU8(dst, voltageMeterADCtoIDMap[i]); // id of the sensor
             sbufWriteU8(dst, VOLTAGE_SENSOR_TYPE_ADC_RESISTOR_DIVIDER); // indicate the type of sensor that the next part of the payload is for
 
-            const uint8_t adcSensorSubframeLength = 1 + 1 + 1; // length of vbatscale, vbatresdivval, vbatresdivmultipler, in bytes
-            sbufWriteU8(dst, adcSensorSubframeLength); // ADC sensor sub-frame length
             sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatscale);
             sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatresdivval);
             sbufWriteU8(dst, voltageSensorADCConfig(i)->vbatresdivmultiplier);
@@ -1001,7 +969,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, batteryConfig()->currentMeterSource);
         break;
 
-    case MSP_MIXER:
+    case MSP_MIXER_CONFIG:
         sbufWriteU8(dst, mixerConfig()->mixerMode);
         break;
 
@@ -1168,13 +1136,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #endif
         break;
 
-    case MSP_BF_BUILD_INFO:
-        sbufWriteData(dst, buildDate, 11); // MMM DD YYYY as ascii, MMM = Jan/Feb... etc
-        sbufWriteU32(dst, 0); // future exp
-        sbufWriteU32(dst, 0); // future exp
-        break;
-
-    case MSP_3D:
+    case MSP_MOTOR_3D_CONFIG:
         sbufWriteU16(dst, flight3DConfig()->deadband3d_low);
         sbufWriteU16(dst, flight3DConfig()->deadband3d_high);
         sbufWriteU16(dst, flight3DConfig()->neutral3d);
@@ -1358,9 +1320,11 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         break;
 
-    case MSP_SET_HEAD:
+#if defined(GPS) || defined(MAG)
+    case MSP_SET_HEADING:
         magHold = sbufReadU16(src);
         break;
+#endif
 
     case MSP_SET_RAW_RC:
 #ifdef USE_RX_MSP
@@ -1385,10 +1349,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_ARMING_CONFIG:
         armingConfigMutable()->auto_disarm_delay = sbufReadU8(src);
         armingConfigMutable()->disarm_kill_switch = sbufReadU8(src);
-        break;
-
-    case MSP_SET_LOOP_TIME:
-        sbufReadU16(src);
         break;
 
     case MSP_SET_PID_CONTROLLER:
@@ -1469,37 +1429,29 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         break;
 
-    case MSP_SET_MISC:
-        rxConfigMutable()->midrc = sbufReadU16(src);
+    case MSP_SET_MOTOR_CONFIG:
         motorConfigMutable()->minthrottle = sbufReadU16(src);
         motorConfigMutable()->maxthrottle = sbufReadU16(src);
         motorConfigMutable()->mincommand = sbufReadU16(src);
-
-        failsafeConfigMutable()->failsafe_throttle = sbufReadU16(src);
-
-#ifdef GPS
-        gpsConfigMutable()->provider = sbufReadU8(src); // gps_type
-        sbufReadU8(src); // gps_baudrate
-        gpsConfigMutable()->sbasMode = sbufReadU8(src); // gps_ubx_sbas
-#else
-        sbufReadU8(src); // gps_type
-        sbufReadU8(src); // gps_baudrate
-        sbufReadU8(src); // gps_ubx_sbas
-#endif
-        sbufReadU8(src); // legacy - was multiwiiCurrentMeterOutput
-        rxConfigMutable()->rssi_channel = sbufReadU8(src);
-        sbufReadU8(src);
-
-        compassConfigMutable()->mag_declination = sbufReadU16(src) * 10;
-
-        sbufReadU8(src);  // legacy - was vbatscale
-        batteryConfigMutable()->vbatmincellvoltage = sbufReadU8(src);  // vbatlevel_warn1 in MWC2.3 GUI
-        batteryConfigMutable()->vbatmaxcellvoltage = sbufReadU8(src);  // vbatlevel_warn2 in MWC2.3 GUI
-        batteryConfigMutable()->vbatwarningcellvoltage = sbufReadU8(src);  // vbatlevel when buzzer starts to alert
         break;
 
+#ifdef GPS
+    case MSP_SET_GPS_CONFIG:
+        gpsConfigMutable()->provider = sbufReadU8(src);
+        gpsConfigMutable()->sbasMode = sbufReadU8(src);
+        gpsConfigMutable()->autoConfig = sbufReadU8(src);
+        gpsConfigMutable()->autoBaud = sbufReadU8(src);
+        break;
+#endif
+
+#ifdef MAG
+    case MSP_SET_COMPASS_CONFIG:
+        compassConfigMutable()->mag_declination = sbufReadU16(src) * 10;
+        break;
+#endif
+
     case MSP_SET_MOTOR:
-        for (int i = 0; i < 8; i++) { // FIXME should this use MAX_MOTORS or MAX_SUPPORTED_MOTORS instead of 8
+        for (int i = 0; i < getMotorCount(); i++) {
             motor_disarmed[i] = convertExternalToMotor(sbufReadU16(src));
         }
         break;
@@ -1543,7 +1495,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
         break;
 
-    case MSP_SET_3D:
+    case MSP_SET_MOTOR_3D_CONFIG:
         flight3DConfigMutable()->deadband3d_low = sbufReadU16(src);
         flight3DConfigMutable()->deadband3d_high = sbufReadU16(src);
         flight3DConfigMutable()->neutral3d = sbufReadU16(src);
@@ -1820,12 +1772,12 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         break;
 #endif
-    case MSP_SET_FEATURE:
+    case MSP_SET_FEATURE_CONFIG:
         featureClearAll();
         featureSet(sbufReadU32(src)); // features bitmap
         break;
 
-    case MSP_SET_BOARD_ALIGNMENT:
+    case MSP_SET_BOARD_ALIGNMENT_CONFIG:
         boardAlignmentMutable()->rollDegrees = sbufReadU16(src);
         boardAlignmentMutable()->pitchDegrees = sbufReadU16(src);
         boardAlignmentMutable()->yawDegrees = sbufReadU16(src);
@@ -1884,11 +1836,13 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         batteryConfigMutable()->currentMeterSource = sbufReadU8(src);
         break;
 
+    case MSP_SET_MIXER_CONFIG:
 #ifndef USE_QUAD_MIXER_ONLY
-    case MSP_SET_MIXER:
         mixerConfigMutable()->mixerMode = sbufReadU8(src);
-        break;
+#else
+        sbufReadU8(src);
 #endif
+        break;
 
     case MSP_SET_RX_CONFIG:
         rxConfigMutable()->serialrx_provider = sbufReadU8(src);
@@ -1958,8 +1912,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
         boardAlignmentMutable()->rollDegrees = sbufReadU16(src); // board_align_roll
         boardAlignmentMutable()->pitchDegrees = sbufReadU16(src); // board_align_pitch
-        boardAlignmentMutable()->yawDegrees = sbufReadU16(src); // board_align_yaw
-
+        boardAlignmentMutable()->yawDegrees = sbufReadU16(src); // board_align_
         sbufReadU16(src); // was currentMeterScale, see MSP_SET_CURRENT_METER_CONFIG
         sbufReadU16(src); // was currentMeterOffset see MSP_SET_CURRENT_METER_CONFIG
         break;

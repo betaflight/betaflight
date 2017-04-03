@@ -214,8 +214,9 @@ retry:
 #endif
         ; // fallthrough
     case ACC_MPU6500:
-    case ACC_ICM20608G:
+    case ACC_ICM20601:
     case ACC_ICM20602:
+    case ACC_ICM20608G:
 #if defined(USE_ACC_MPU6500) || defined(USE_ACC_SPI_MPU6500)
 #ifdef USE_ACC_SPI_MPU6500
         if (mpu6500AccDetect(dev) || mpu6500SpiAccDetect(dev))
@@ -230,11 +231,14 @@ retry:
             case MPU_9250_SPI:
                 accHardware = ACC_MPU9250;
                 break;
-            case ICM_20608_SPI:
-                accHardware = ACC_ICM20608G;
+            case ICM_20601_SPI:
+                accHardware = ACC_ICM20601;
                 break;
             case ICM_20602_SPI:
                 accHardware = ACC_ICM20602;
+                break;
+            case ICM_20608_SPI:
+                accHardware = ACC_ICM20608G;
                 break;
             default:
                 accHardware = ACC_MPU6500;
@@ -300,6 +304,7 @@ bool accInit(uint32_t gyroSamplingInverval)
 {
     memset(&acc, 0, sizeof(acc));
     // copy over the common gyro mpu settings
+    acc.dev.bus = *gyroSensorBus();
     acc.dev.mpuConfiguration = *gyroMpuConfiguration();
     acc.dev.mpuDetectionResult = *gyroMpuDetectionResult();
     if (!accDetect(&acc.dev, accelerometerConfig()->acc_hardware)) {

@@ -94,7 +94,10 @@ enum {
 
 #define AIRMODE_THOTTLE_THRESHOLD 1350 // Make configurable in the future. ~35% throttle should be fine
 
+#if defined(GPS) || defined(MAG)
 int16_t magHold;
+#endif
+
 int16_t headFreeModeHold;
 
 uint8_t motorControlEnable = false;
@@ -168,7 +171,7 @@ void mwDisarm(void)
         DISABLE_ARMING_FLAG(ARMED);
 
 #ifdef BLACKBOX
-        if (feature(FEATURE_BLACKBOX)) {
+        if (blackboxConfig()->device) {
             finishBlackbox();
         }
 #endif
@@ -261,6 +264,7 @@ static void updateInflightCalibrationState(void)
     }
 }
 
+#if defined(GPS) || defined(MAG)
 void updateMagHold(void)
 {
     if (ABS(rcCommand[YAW]) < 15 && FLIGHT_MODE(MAG_MODE)) {
@@ -269,12 +273,14 @@ void updateMagHold(void)
             dif += 360;
         if (dif >= +180)
             dif -= 360;
-        dif *= -rcControlsConfig()->yaw_control_direction;
+        dif *= -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
         if (STATE(SMALL_ANGLE))
             rcCommand[YAW] -= dif * currentPidProfile->P8[PIDMAG] / 30;    // 18 deg
     } else
         magHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 }
+#endif
+
 
 void processRx(timeUs_t currentTimeUs)
 {
@@ -411,6 +417,7 @@ void processRx(timeUs_t currentTimeUs)
 
 #if defined(ACC) || defined(MAG)
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
+#if defined(GPS) || defined(MAG)
         if (IS_RC_MODE_ACTIVE(BOXMAG)) {
             if (!FLIGHT_MODE(MAG_MODE)) {
                 ENABLE_FLIGHT_MODE(MAG_MODE);
@@ -419,6 +426,7 @@ void processRx(timeUs_t currentTimeUs)
         } else {
             DISABLE_FLIGHT_MODE(MAG_MODE);
         }
+#endif
         if (IS_RC_MODE_ACTIVE(BOXHEADFREE)) {
             if (!FLIGHT_MODE(HEADFREE_MODE)) {
                 ENABLE_FLIGHT_MODE(HEADFREE_MODE);
@@ -537,7 +545,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 #endif
 
 #ifdef BLACKBOX
-    if (!cliMode && feature(FEATURE_BLACKBOX)) {
+    if (!cliMode && blackboxConfig()->device) {
         handleBlackbox(currentTimeUs);
     }
 #else

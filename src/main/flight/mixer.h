@@ -100,7 +100,7 @@ typedef struct mixer_s {
 
 typedef struct mixerConfig_s {
     uint8_t mixerMode;
-    int8_t yaw_motor_direction;
+    bool yaw_motors_reversed;
 } mixerConfig_t;
 
 PG_DECLARE(mixerConfig_t, mixerConfig);

@@ -39,8 +39,12 @@
 #include "build/debug.h"
 #include "build/version.h"
 
-#include "common/printf.h"
+#include "cms/cms.h"
+#include "cms/cms_types.h"
+#include "cms/cms_menu_osd.h"
+
 #include "common/maths.h"
+#include "common/printf.h"
 #include "common/typeconversion.h"
 #include "common/utils.h"
 
@@ -58,10 +62,6 @@
 #elif defined(VTX)
 #include "drivers/vtx_rtc6705.h"
 #endif
-
-#include "cms/cms.h"
-#include "cms/cms_types.h"
-#include "cms/cms_menu_osd.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/flashfs.h"
@@ -228,6 +228,30 @@ static void osdDrawSingleElement(uint8_t item)
             sprintf(buff, "%dK", CM_S_TO_KM_H(GPS_speed) * 10);
             break;
         }
+
+        case OSD_GPS_LAT:
+        case OSD_GPS_LON:
+        {
+            int32_t val;
+            if (item == OSD_GPS_LAT) {
+                buff[0] = 0x64; // right arrow
+                val = GPS_coord[LAT];
+            } else {
+                buff[0] = 0x60; // down arrow
+                val = GPS_coord[LON];
+            }
+            if (val >= 0) {
+                val += 1000000000;
+            } else {
+                val -= 1000000000;
+            }
+            itoa(val, &buff[1], 10);
+            buff[1] = buff[2];
+            buff[2] = buff[3];
+            buff[3] = '.';
+            break;
+        }
+
 #endif // GPS
 
         case OSD_ALTITUDE:
@@ -503,6 +527,8 @@ void osdDrawElements(void)
     {
         osdDrawSingleElement(OSD_GPS_SATS);
         osdDrawSingleElement(OSD_GPS_SPEED);
+        osdDrawSingleElement(OSD_GPS_LAT);
+        osdDrawSingleElement(OSD_GPS_LON);
     }
 #endif // GPS
 }
@@ -531,6 +557,9 @@ void pgResetFn_osdConfig(osdConfig_t *osdProfile)
     osdProfile->item_pos[OSD_PIDRATE_PROFILE] = OSD_POS(25, 10) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_MAIN_BATT_WARNING] = OSD_POS(9, 10) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_AVG_CELL_VOLTAGE] = OSD_POS(12, 2) | VISIBLE_FLAG;
+
+    osdProfile->item_pos[OSD_GPS_LAT] = OSD_POS(18, 14) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_GPS_LON] = OSD_POS(18, 15) | VISIBLE_FLAG;
 
     osdProfile->units = OSD_UNIT_METRIC;
     osdProfile->rssi_alarm = 20;
@@ -752,7 +781,7 @@ static void osdShowStats(void)
     sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
     displayWrite(osdDisplayPort, 22, top++, buff);
 
-    if (feature(FEATURE_BLACKBOX) && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
+    if (blackboxConfig()->device && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
         displayWrite(osdDisplayPort, 2, top, "BLACKBOX         :");
         osdGetBlackboxStatusString(buff, 10);
         displayWrite(osdDisplayPort, 22, top++, buff);

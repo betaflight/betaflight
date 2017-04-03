@@ -1214,7 +1214,7 @@ static bool blackboxWriteSysinfo()
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
             if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
-                blackboxPrintfHeaderLine("vbatscale", "%u", voltageSensorADCConfig(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale);
+                blackboxPrintfHeaderLine("vbat_scale", "%u", voltageSensorADCConfig(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale);
             } else {
                 xmitState.headerIndex += 2; // Skip the next two vbat fields too
             }
@@ -1234,13 +1234,13 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("looptime", "%d",                         gyro.targetLooptime);
         BLACKBOX_PRINT_HEADER_LINE("gyro_sync_denom", "%d",                  gyroConfig()->gyro_sync_denom);
         BLACKBOX_PRINT_HEADER_LINE("pid_process_denom", "%d",                pidConfig()->pid_process_denom);
-        BLACKBOX_PRINT_HEADER_LINE("rcRate", "%d",                           currentControlRateProfile->rcRate8);
-        BLACKBOX_PRINT_HEADER_LINE("rcExpo", "%d",                           currentControlRateProfile->rcExpo8);
-        BLACKBOX_PRINT_HEADER_LINE("rcYawRate", "%d",                        currentControlRateProfile->rcYawRate8);
-        BLACKBOX_PRINT_HEADER_LINE("rcYawExpo", "%d",                        currentControlRateProfile->rcYawExpo8);
-        BLACKBOX_PRINT_HEADER_LINE("thrMid", "%d",                           currentControlRateProfile->thrMid8);
-        BLACKBOX_PRINT_HEADER_LINE("thrExpo", "%d",                          currentControlRateProfile->thrExpo8);
-        BLACKBOX_PRINT_HEADER_LINE("dynThrPID", "%d",                        currentControlRateProfile->dynThrPID);
+        BLACKBOX_PRINT_HEADER_LINE("rc_rate", "%d",                          currentControlRateProfile->rcRate8);
+        BLACKBOX_PRINT_HEADER_LINE("rc_expo", "%d",                          currentControlRateProfile->rcExpo8);
+        BLACKBOX_PRINT_HEADER_LINE("rc_rate_yaw", "%d",                      currentControlRateProfile->rcYawRate8);
+        BLACKBOX_PRINT_HEADER_LINE("rc_yaw_expo", "%d",                      currentControlRateProfile->rcYawExpo8);
+        BLACKBOX_PRINT_HEADER_LINE("thr_mid", "%d",                          currentControlRateProfile->thrMid8);
+        BLACKBOX_PRINT_HEADER_LINE("thr_expo", "%d",                         currentControlRateProfile->thrExpo8);
+        BLACKBOX_PRINT_HEADER_LINE("tpa_rate", "%d",                         currentControlRateProfile->dynThrPID);
         BLACKBOX_PRINT_HEADER_LINE("tpa_breakpoint", "%d",                   currentControlRateProfile->tpa_breakpoint);
         BLACKBOX_PRINT_HEADER_LINE("rates", "%d,%d,%d",                      currentControlRateProfile->rates[ROLL],
                                                                           currentControlRateProfile->rates[PITCH],
@@ -1277,45 +1277,44 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("dterm_lpf_hz", "%d",                     currentPidProfile->dterm_lpf_hz);
         BLACKBOX_PRINT_HEADER_LINE("yaw_lpf_hz", "%d",                       currentPidProfile->yaw_lpf_hz);
         BLACKBOX_PRINT_HEADER_LINE("dterm_notch_hz", "%d",                   currentPidProfile->dterm_notch_hz);
-        BLACKBOX_PRINT_HEADER_LINE("dterm_notch_cutoff", "%d",               currentPidProfile->dterm_notch_cutoff);
-        BLACKBOX_PRINT_HEADER_LINE("itermWindupPointPercent", "%d",          currentPidProfile->itermWindupPointPercent);
-        BLACKBOX_PRINT_HEADER_LINE("dterm_average_count", "%d",              currentPidProfile->dterm_average_count);
-        BLACKBOX_PRINT_HEADER_LINE("vbat_pid_compensation", "%d",            currentPidProfile->vbatPidCompensation);
+        BLACKBOX_PRINT_HEADER_LINE("d_notch_cut", "%d",                      currentPidProfile->dterm_notch_cutoff);
+        BLACKBOX_PRINT_HEADER_LINE("iterm_windup", "%d",                     currentPidProfile->itermWindupPointPercent);
+        BLACKBOX_PRINT_HEADER_LINE("vbat_pid_gain", "%d",                    currentPidProfile->vbatPidCompensation);
         BLACKBOX_PRINT_HEADER_LINE("pidAtMinThrottle", "%d",                 currentPidProfile->pidAtMinThrottle);
 
         // Betaflight PID controller parameters
-        BLACKBOX_PRINT_HEADER_LINE("anti_gravity_threshold", "%d",           currentPidProfile->itermThrottleThreshold);
+        BLACKBOX_PRINT_HEADER_LINE("anti_gravity_thresh", "%d",              currentPidProfile->itermThrottleThreshold);
         BLACKBOX_PRINT_HEADER_LINE("anti_gravity_gain", "%d",                castFloatBytesToInt(currentPidProfile->itermAcceleratorGain));
-        BLACKBOX_PRINT_HEADER_LINE("setpointRelaxRatio", "%d",               currentPidProfile->setpointRelaxRatio);
-        BLACKBOX_PRINT_HEADER_LINE("dtermSetpointWeight", "%d",              currentPidProfile->dtermSetpointWeight);
-        BLACKBOX_PRINT_HEADER_LINE("yawRateAccelLimit", "%d",                castFloatBytesToInt(currentPidProfile->yawRateAccelLimit));
-        BLACKBOX_PRINT_HEADER_LINE("rateAccelLimit", "%d",                   castFloatBytesToInt(currentPidProfile->rateAccelLimit));
-        BLACKBOX_PRINT_HEADER_LINE("pidSumLimit", "%d",                      castFloatBytesToInt(currentPidProfile->pidSumLimit));
-        BLACKBOX_PRINT_HEADER_LINE("pidSumLimitYaw", "%d",                   castFloatBytesToInt(currentPidProfile->pidSumLimitYaw));
+        BLACKBOX_PRINT_HEADER_LINE("setpoint_relax_ratio", "%d",             currentPidProfile->setpointRelaxRatio);
+        BLACKBOX_PRINT_HEADER_LINE("d_setpoint_weight", "%d",                currentPidProfile->dtermSetpointWeight);
+        BLACKBOX_PRINT_HEADER_LINE("yaw_accel_limit", "%d",                  castFloatBytesToInt(currentPidProfile->yawRateAccelLimit));
+        BLACKBOX_PRINT_HEADER_LINE("accel_limit", "%d",                      castFloatBytesToInt(currentPidProfile->rateAccelLimit));
+        BLACKBOX_PRINT_HEADER_LINE("pidsum_limit", "%d",                     castFloatBytesToInt(currentPidProfile->pidSumLimit));
+        BLACKBOX_PRINT_HEADER_LINE("pidsum_limit_yaw", "%d",                 castFloatBytesToInt(currentPidProfile->pidSumLimitYaw));
         // End of Betaflight controller parameters
 
         BLACKBOX_PRINT_HEADER_LINE("deadband", "%d",                         rcControlsConfig()->deadband);
         BLACKBOX_PRINT_HEADER_LINE("yaw_deadband", "%d",                     rcControlsConfig()->yaw_deadband);
         BLACKBOX_PRINT_HEADER_LINE("gyro_lpf", "%d",                         gyroConfig()->gyro_lpf);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_soft_type", "%d",                   gyroConfig()->gyro_soft_lpf_type);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_hz", "%d",                  gyroConfig()->gyro_soft_lpf_hz);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_type", "%d",                gyroConfig()->gyro_soft_lpf_type);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass", "%d",                  gyroConfig()->gyro_soft_lpf_hz);
         BLACKBOX_PRINT_HEADER_LINE("gyro_notch_hz", "%d,%d",                 gyroConfig()->gyro_soft_notch_hz_1,
                                                                           gyroConfig()->gyro_soft_notch_hz_2);
         BLACKBOX_PRINT_HEADER_LINE("gyro_notch_cutoff", "%d,%d",             gyroConfig()->gyro_soft_notch_cutoff_1,
                                                                           gyroConfig()->gyro_soft_notch_cutoff_2);
-        BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz", "%d",                 (int)(accelerometerConfig()->acc_lpf_hz * 100.0f));
+        BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz", "%d",                  (int)(accelerometerConfig()->acc_lpf_hz * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("acc_hardware", "%d",                     accelerometerConfig()->acc_hardware);
         BLACKBOX_PRINT_HEADER_LINE("baro_hardware", "%d",                    barometerConfig()->baro_hardware);
         BLACKBOX_PRINT_HEADER_LINE("mag_hardware", "%d",                     compassConfig()->mag_hardware);
         BLACKBOX_PRINT_HEADER_LINE("gyro_cal_on_first_arm", "%d",            armingConfig()->gyro_cal_on_first_arm);
-        BLACKBOX_PRINT_HEADER_LINE("rc_interpolation", "%d",                 rxConfig()->rcInterpolation);
-        BLACKBOX_PRINT_HEADER_LINE("rc_interpolation_interval", "%d",        rxConfig()->rcInterpolationInterval);
+        BLACKBOX_PRINT_HEADER_LINE("rc_interp", "%d",                        rxConfig()->rcInterpolation);
+        BLACKBOX_PRINT_HEADER_LINE("rc_interp_int", "%d",                    rxConfig()->rcInterpolationInterval);
         BLACKBOX_PRINT_HEADER_LINE("airmode_activate_throttle", "%d",        rxConfig()->airModeActivateThreshold);
         BLACKBOX_PRINT_HEADER_LINE("serialrx_provider", "%d",                rxConfig()->serialrx_provider);
-        BLACKBOX_PRINT_HEADER_LINE("unsynced_fast_pwm", "%d",                motorConfig()->dev.useUnsyncedPwm);
-        BLACKBOX_PRINT_HEADER_LINE("fast_pwm_protocol", "%d",                motorConfig()->dev.motorPwmProtocol);
+        BLACKBOX_PRINT_HEADER_LINE("use_unsynced_pwm", "%d",                 motorConfig()->dev.useUnsyncedPwm);
+        BLACKBOX_PRINT_HEADER_LINE("motor_pwm_protocol", "%d",               motorConfig()->dev.motorPwmProtocol);
         BLACKBOX_PRINT_HEADER_LINE("motor_pwm_rate", "%d",                   motorConfig()->dev.motorPwmRate);
-        BLACKBOX_PRINT_HEADER_LINE("digitalIdleOffset", "%d",          (int)(motorConfig()->digitalIdleOffsetPercent * 100.0f));
+        BLACKBOX_PRINT_HEADER_LINE("digital_idle_percent", "%d",        (int)(motorConfig()->digitalIdleOffsetPercent * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("debug_mode", "%d",                       systemConfig()->debug_mode);
         BLACKBOX_PRINT_HEADER_LINE("features", "%d",                         featureConfig()->enabledFeatures);
 
@@ -1675,22 +1674,12 @@ void handleBlackbox(timeUs_t currentTimeUs)
     }
 }
 
-static bool canUseBlackboxWithCurrentConfiguration(void)
-{
-#ifdef USE_SDCARD
-    return feature(FEATURE_BLACKBOX) && 
-        !(blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD && !feature(FEATURE_SDCARD));
-#else
-    return feature(FEATURE_BLACKBOX);
-#endif
-}
-
 /**
  * Call during system startup to initialize the blackbox.
  */
 void initBlackbox(void)
 {
-    if (canUseBlackboxWithCurrentConfiguration()) {
+    if (blackboxConfig()->device) {
         blackboxSetState(BLACKBOX_STATE_STOPPED);
     } else {
         blackboxSetState(BLACKBOX_STATE_DISABLED);
