@@ -91,6 +91,8 @@
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
 
+#undef GPS
+
 #define OSD
 // include the max7456 driver
 #define USE_MAX7456
