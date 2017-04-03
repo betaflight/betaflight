@@ -21,20 +21,20 @@
 #define TARGET_BOARD_IDENTIFIER "PLUM"
 #define USBD_PRODUCT_STRING     "PLUMF4"
 
-#elif defined(KIWIF4)
-#define TARGET_BOARD_IDENTIFIER "KIWI"
-#define USBD_PRODUCT_STRING     "KIWIF4"
-
 #elif defined(KIWIF4V2)	
 #define TARGET_BOARD_IDENTIFIER "KIW2"
 #define USBD_PRODUCT_STRING     "KIWIF4V2"
+
+#else
+#define TARGET_BOARD_IDENTIFIER "KIWI"
+#define USBD_PRODUCT_STRING     "KIWIF4"
 
 #endif
 
 #if defined(PLUMF4) || defined(KIWIF4V2)
 #define LED0                    PB4
 
-#elif defined(KIWIF4)
+#else
 #define LED0                    PB5
 #define LED1                    PB4				
 #endif
@@ -170,15 +170,11 @@
 #define RSSI_ADC_PIN            PC2
 #define CURRENT_METER_ADC_PIN   PC3
 
-<<<<<<< HEAD
 #define CURRENT_METER_SCALE_DEFAULT 444
 #define VBAT_SCALE_DEFAULT          57
 
-#define DEFAULT_FEATURES        (FEATURE_BLACKBOX | FEATURE_OSD)
-=======
-#define DEFAULT_FEATURES        (FEATURE_BLACKBOX | FEATURE_OSD | FEATURE_CURRENT_METER)
+#define DEFAULT_FEATURES        (FEATURE_OSD)
 
->>>>>>> 260e786ec87874f61bd56bc53812752bca946d3a
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART1
