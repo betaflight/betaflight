@@ -271,11 +271,11 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             axisPID_D[axis] = dtermLpfApplyFn(dtermFilterLpf[axis], axisPID_D[axis]);
         }
 
-        // Disable PID control at zero throttle
-        if (!pidStabilisationEnabled) {
-            axisPID_P[axis] = 0;
-            axisPID_I[axis] = 0;
-            axisPID_D[axis] = 0;
+        // Enable PID control only when stabilisation on
+        if (pidStabilisationEnabled) {
+            axisPID_P[axis] = PTerm;
+            axisPID_I[axis] = ITerm;
+            axisPID_D[axis] = DTerm;
         }
     }
 }
