@@ -105,9 +105,9 @@ $(OBJECT_DIR)/gtest.a : $(OBJECT_DIR)/gtest-all.o
 $(OBJECT_DIR)/gtest_main.a : $(OBJECT_DIR)/gtest-all.o $(OBJECT_DIR)/gtest_main.o
 	$(AR) $(ARFLAGS) $@ $^
 
-# Builds a sample test.  A test should link with either gtest.a or
-# gtest_main.a, depending on whether it defines its own main()
-# function.
+-include $(OBJECT_DIR)/gtest-all.d \
+         $(OBJECT_DIR)/gtest_main.d
+
 
 # includes in test dir must override includes in user dir
 TEST_INCLUDE_DIRS := $(TEST_DIR) \
@@ -116,6 +116,8 @@ TEST_INCLUDE_DIRS := $(TEST_DIR) \
 TEST_CFLAGS	 = $(addprefix -I,$(TEST_INCLUDE_DIRS))
 
 DEPS = $(TEST_BINARIES:%=%.d)
+
+
 
 $(OBJECT_DIR)/common/maths.o : \
 	$(USER_DIR)/common/maths.c \
@@ -139,6 +141,10 @@ $(OBJECT_DIR)/maths_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+-include $(OBJECT_DIR)/maths_unittest.d \
+         $(OBJECT_DIR)/common/maths.d
+
+
 $(OBJECT_DIR)/common/filter.o : \
 	$(USER_DIR)/common/filter.c \
 	$(USER_DIR)/common/filter.h \
@@ -161,6 +167,10 @@ $(OBJECT_DIR)/common_filter_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+-include $(OBJECT_DIR)/common_filter_unittest.d \
+         $(OBJECT_DIR)/common/filter.d
+
+
 $(OBJECT_DIR)/common/encoding.o : $(USER_DIR)/common/encoding.c $(USER_DIR)/common/encoding.h $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/encoding.c -o $@
@@ -179,6 +189,10 @@ $(OBJECT_DIR)/encoding_unittest : \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+-include $(OBJECT_DIR)/common/encoding.d \
+         $(OBJECT_DIR)/encoding_unittest.d
+
 
 $(OBJECT_DIR)/common/typeconversion.o : \
 	$(USER_DIR)/common/typeconversion.c \
@@ -202,6 +216,10 @@ $(OBJECT_DIR)/type_conversion_unittest : \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+-include $(OBJECT_DIR)/common/typeconversion.d \
+         $(OBJECT_DIR)/type_conversion_unittest.d
+
 
 $(OBJECT_DIR)/fc/runtime_config.o : \
 	$(USER_DIR)/fc/runtime_config.c \
@@ -236,6 +254,12 @@ $(OBJECT_DIR)/flight_imu_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+-include $(OBJECT_DIR)/flight/imu.d \
+         $(OBJECT_DIR)/flight/altitudehold.d \
+         $(OBJECT_DIR)/flight_imu_unittest.d \
+         $(OBJECT_DIR)/common/maths.d
+
+
 $(OBJECT_DIR)/flight/altitudehold.o : \
 	$(USER_DIR)/flight/altitudehold.c \
 	$(USER_DIR)/flight/altitudehold.h \
@@ -258,6 +282,9 @@ $(OBJECT_DIR)/altitude_hold_unittest : \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+-include $(OBJECT_DIR)/flight/altitudehold.d \
+         $(OBJECT_DIR)/altitude_hold_unittest.d
 
 
 $(OBJECT_DIR)/common/gps_conversion.o : \
@@ -283,6 +310,8 @@ $(OBJECT_DIR)/gps_conversion_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+-include $(OBJECT_DIR)/common/gps_conversion.d \
+         $(OBJECT_DIR)/gps_conversion_unittest.d
 
 
 $(OBJECT_DIR)/flight/mixer.o : \
@@ -318,6 +347,12 @@ $(OBJECT_DIR)/flight_mixer_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+-include $(OBJECT_DIR)/flight/mixer.d \
+         $(OBJECT_DIR)/flight/servos.d \
+         $(OBJECT_DIR)/flight_mixer_unittest.d \
+         $(OBJECT_DIR)/common/maths.d
+
+
 $(OBJECT_DIR)/flight/failsafe.o : \
 	$(USER_DIR)/flight/failsafe.c \
 	$(USER_DIR)/flight/failsafe.h \
@@ -342,6 +377,9 @@ $(OBJECT_DIR)/flight_failsafe_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+-include $(OBJECT_DIR)/flight/failsafe.d \
+         $(OBJECT_DIR)/flight_failsafe_unittest.d \
+         $(OBJECT_DIR)/common/maths.d
 
 
 $(OBJECT_DIR)/telemetry/hott.o : \
@@ -368,6 +406,10 @@ $(OBJECT_DIR)/telemetry_hott_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+-include $(OBJECT_DIR)/telemetry/hott.d \
+         $(OBJECT_DIR)/telemetry_hott_unittest.d \
+         $(OBJECT_DIR)/common/gps_conversion.d
+
 
 $(OBJECT_DIR)/fc/rc_controls.o : \
 	$(USER_DIR)/fc/rc_controls.c \
@@ -393,6 +435,10 @@ $(OBJECT_DIR)/rc_controls_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+-include $(OBJECT_DIR)/common/maths.d \
+         $(OBJECT_DIR)/fc/rc_controls.d \
+         $(OBJECT_DIR)/rc_controls_unittest.d
+
 
 $(OBJECT_DIR)/io/ledstrip.o : \
 	$(USER_DIR)/io/ledstrip.c \
@@ -417,6 +463,8 @@ $(OBJECT_DIR)/ledstrip_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+-include $(OBJECT_DIR)/io/ledstrip.d \
+         $(OBJECT_DIR)/ledstrip_unittest.d
 
 
 $(OBJECT_DIR)/drivers/light_ws2811strip.o : \
@@ -442,6 +490,9 @@ $(OBJECT_DIR)/ws2811_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+-include $(OBJECT_DIR)/drivers/light_ws2811strip.d \
+         $(OBJECT_DIR)/ws2811_unittest.d
+
 
 $(OBJECT_DIR)/io/serial.o : \
 	$(USER_DIR)/io/serial.c \
@@ -465,6 +516,10 @@ $(OBJECT_DIR)/io_serial_unittest : \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+-include $(OBJECT_DIR)/io/serial.d \
+         $(OBJECT_DIR)/io_serial_unittest.d
+
 
 $(OBJECT_DIR)/rx/rx.o : \
 	$(USER_DIR)/rx/rx.c \
@@ -490,6 +545,11 @@ $(OBJECT_DIR)/rx_rx_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+-include $(OBJECT_DIR)/rx/rx.d \
+         $(OBJECT_DIR)/rx_rx_unittest.d \
+         $(OBJECT_DIR)/common/maths.d
+
+
 $(OBJECT_DIR)/rx/crsf.o : \
 	$(USER_DIR)/rx/crsf.c \
 	$(USER_DIR)/rx/crsf.h \
@@ -514,6 +574,11 @@ $(OBJECT_DIR)/rx_crsf_unittest : \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+-include $(OBJECT_DIR)/rx/crsf.d \
+         $(OBJECT_DIR)/rx_crsf_unittest.d \
+         $(OBJECT_DIR)/common/maths.d
+
 
 $(OBJECT_DIR)/telemetry/crsf.o : \
 	$(USER_DIR)/telemetry/crsf.c \
@@ -547,6 +612,15 @@ $(OBJECT_DIR)/telemetry_crsf_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+-include $(OBJECT_DIR)/rx/crsf.d \
+         $(OBJECT_DIR)/telemetry/crsf.d \
+         $(OBJECT_DIR)/telemetry_crsf_unittest.d \
+         $(OBJECT_DIR)/common/maths.d \
+         $(OBJECT_DIR)/common/streambuf.d \
+         $(OBJECT_DIR)/common/gps_conversion.d \
+         $(OBJECT_DIR)/fc/runtime_config.d
+
+
 $(OBJECT_DIR)/rx_ranges_unittest.o : \
 	$(TEST_DIR)/rx_ranges_unittest.cc \
 	$(USER_DIR)/rx/rx.h \
@@ -562,6 +636,10 @@ $(OBJECT_DIR)/rx_ranges_unittest : \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+-include $(OBJECT_DIR)/rx/rx.d \
+         $(OBJECT_DIR)/rx_ranges_unittest.d \
+         $(OBJECT_DIR)/common/maths.d
 
 
 $(OBJECT_DIR)/sensors/battery.o : $(USER_DIR)/sensors/battery.c $(USER_DIR)/sensors/battery.h $(GTEST_HEADERS)
@@ -583,6 +661,11 @@ $(OBJECT_DIR)/battery_unittest : \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $@
+
+-include $(OBJECT_DIR)/sensors/battery.d \
+         $(OBJECT_DIR)/common/maths.d \
+         $(OBJECT_DIR)/battery_unittest.d
+
 
 $(OBJECT_DIR)/drivers/barometer_ms5611.o : \
     $(USER_DIR)/drivers/barometer_ms5611.c \
@@ -606,6 +689,10 @@ $(OBJECT_DIR)/baro_ms5611_unittest : \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+-include $(OBJECT_DIR)/drivers/barometer_ms5611.d \
+         $(OBJECT_DIR)/baro_ms5611_unittest.d
+
 
 $(OBJECT_DIR)/drivers/barometer_bmp085.o : \
     $(USER_DIR)/drivers/barometer_bmp085.c \
@@ -631,6 +718,11 @@ $(OBJECT_DIR)/baro_bmp085_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+-include $(OBJECT_DIR)/drivers/barometer_bmp085.d \
+         $(OBJECT_DIR)/drivers/io.d \
+         $(OBJECT_DIR)/baro_bmp085_unittest.d
+
+
 $(OBJECT_DIR)/drivers/barometer_bmp280.o : \
     $(USER_DIR)/drivers/barometer_bmp280.c \
     $(USER_DIR)/drivers/barometer_bmp280.h \
@@ -653,6 +745,10 @@ $(OBJECT_DIR)/baro_bmp280_unittest : \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+-include $(OBJECT_DIR)/drivers/barometer_bmp280.d \
+         $(OBJECT_DIR)/baro_bmp280_unittest.d
+
 
 $(OBJECT_DIR)/sensors/boardalignment.o : \
 	$(USER_DIR)/sensors/boardalignment.c \
@@ -677,6 +773,10 @@ $(OBJECT_DIR)/alignsensor_unittest : \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+-include $(OBJECT_DIR)/common/maths.d \
+         $(OBJECT_DIR)/sensors/boardalignment.d \
+         $(OBJECT_DIR)/alignsensor_unittest.d
 
 
 $(OBJECT_DIR)/build/debug.o : \
@@ -731,6 +831,15 @@ $(OBJECT_DIR)/sensor_gyro_unittest : \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+-include $(OBJECT_DIR)/build/debug.d \
+         $(OBJECT_DIR)/common/filter.d \
+         $(OBJECT_DIR)/common/maths.d \
+         $(OBJECT_DIR)/drivers/accgyro_fake.d \
+         $(OBJECT_DIR)/drivers/gyro_sync.d \
+         $(OBJECT_DIR)/sensors/boardalignment.d \
+         $(OBJECT_DIR)/sensors/gyro.d \
+         $(OBJECT_DIR)/sensor_gyro_unittest.d
 
 
 $(OBJECT_DIR)/build/version.o : \
@@ -789,6 +898,12 @@ $(OBJECT_DIR)/cms_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+-include $(OBJECT_DIR)/cms_unittest.d \
+         $(OBJECT_DIR)/common/typeconversion.d \
+         $(OBJECT_DIR)/drivers/display.d \
+         $(OBJECT_DIR)/cms/cms.d
+
+
 $(OBJECT_DIR)/drivers/io.o : \
 	$(USER_DIR)/drivers/io.c \
 	$(USER_DIR)/drivers/io.h \
@@ -819,6 +934,9 @@ $(OBJECT_DIR)/parameter_groups_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $(PG_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+-include $(OBJECT_DIR)/parameter_groups_unittest.d \
+         $(OBJECT_DIR)/config/parameter_group.d
+
 
 $(OBJECT_DIR)/rx/ibus.o : \
 	$(USER_DIR)/rx/ibus.c \
@@ -841,6 +959,9 @@ $(OBJECT_DIR)/rx_ibus_unittest : \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $(PG_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+-include $(OBJECT_DIR)/rx_ibus_unittest.d \
+         $(OBJECT_DIR)/rx/ibus.d
 
 
 $(OBJECT_DIR)/telemetry/ibus.o : \
@@ -873,6 +994,11 @@ $(OBJECT_DIR)/telemetry_ibus_unittest : \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $(PG_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+-include $(OBJECT_DIR)/telemetry_ibus_unittest.d \
+         $(OBJECT_DIR)/telemetry/ibus_shared.d \
+         $(OBJECT_DIR)/telemetry/ibus.d
+
 
 
 ## test        : Build and run the Unit Tests
