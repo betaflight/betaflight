@@ -22,8 +22,11 @@
 #define BST_DEVICE_NAME_LENGTH  12
 #define TARGET_CONFIG
 #define TARGET_VALIDATECONFIG
+#define TARGET_BUS_INIT
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
+
+#undef USE_RX_MSP // never used.
 
 #define LED0                    PC15
 #define LED1                    PC14
