@@ -114,3 +114,6 @@
 #define USE_SENSOR_NAMES
 #endif
 
+#if (FLASH_SIZE > 256)
+#define USE_UNCOMMON_MIXERS
+#endif
