@@ -474,12 +474,6 @@ void init(void)
     }
 #endif
 
-#ifdef OSD
-    if (feature(FEATURE_OSD)) {
-        osdInit();
-    }
-#endif
-
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
         gpsPreInit();
@@ -516,6 +510,12 @@ void init(void)
     failsafeInit();
 
     rxInit();
+
+#ifdef OSD
+    if (feature(FEATURE_OSD)) {
+        osdInit();
+    }
+#endif
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
