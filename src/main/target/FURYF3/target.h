@@ -86,8 +86,6 @@
 
 #define SDCARD_DETECT_INVERTED
 
-#undef GPS
-
 #define SDCARD_DETECT_PIN                   PB2
 #define SDCARD_DETECT_EXTI_LINE             EXTI_Line2
 #define SDCARD_DETECT_EXTI_PIN_SOURCE       EXTI_PinSource2
