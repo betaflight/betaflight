@@ -37,25 +37,6 @@ SERIAL_DEVICE   ?= $(firstword $(wildcard /dev/ttyUSB*) no-port-found)
 # Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
 FLASH_SIZE ?=
 
-## V                 : Set verbosity level based on the V= parameter
-##                     V=0 Low
-##                     V=1 High
-export AT := @
-
-ifndef V
-export V0    :=
-export V1    := $(AT)
-export STDOUT   :=
-else ifeq ($(V), 0)
-export V0    := $(AT)
-export V1    := $(AT)
-export STDOUT:= "> /dev/null"
-export MAKE  := $(MAKE) --no-print-directory
-else ifeq ($(V), 1)
-export V0    :=
-export V1    :=
-export STDOUT   :=
-endif
 
 ###############################################################################
 # Things that need to be maintained as the source changes
@@ -72,6 +53,11 @@ CMSIS_DIR       = $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS    = $(SRC_DIR) \
                   $(ROOT)/src/main/target
 LINKER_DIR      = $(ROOT)/src/main/target/link
+
+## V                 : Set verbosity level based on the V= parameter
+##                     V=0 Low
+##                     V=1 High
+include $(ROOT)/make/build_verbosity.mk
 
 # Build tools, so we all share the same versions
 # import macros common to all supported build systems
@@ -101,7 +87,7 @@ HSE_VALUE       ?= 8000000
 # used for turning on features like VCP and SDCARD
 FEATURES        =
 
-OFFICIAL_TARGETS  = ALIENFLIGHTF3 ALIENFLIGHTF4 ANYFCF7 BETAFLIGHTF3 BLUEJAYF4 CC3D FURYF4 NAZE REVO SIRINFPV SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3NEO STM32F3DISCOVERY
+OFFICIAL_TARGETS  = ALIENFLIGHTF3 ALIENFLIGHTF4 ANYFCF7 BETAFLIGHTF3 BLUEJAYF4 CC3D FURYF4 NAZE REVO SIRINFPV SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3NEO SPRACINGF4EVO STM32F3DISCOVERY
 ALT_TARGETS       = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.mk)))))
 OPBL_TARGETS      = $(filter %_OPBL, $(ALT_TARGETS))
 
@@ -183,6 +169,7 @@ GROUP_4_TARGETS := \
 	SPRACINGF3EVO \
 	SPRACINGF3MINI \
 	SPRACINGF3NEO \
+	SPRACINGF4EVO \
 	STM32F3DISCOVERY \
 	TINYBEEF3 \
 
