@@ -81,6 +81,7 @@ extern uint8_t __config_end;
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+#include "fc/fc_msp.h"
 
 #include "flight/altitudehold.h"
 #include "flight/failsafe.h"
@@ -1692,21 +1693,27 @@ static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActi
                 && mac->auxChannelIndex == macDefault->auxChannelIndex
                 && mac->range.startStep == macDefault->range.startStep
                 && mac->range.endStep == macDefault->range.endStep;
-            cliDefaultPrintf(dumpMask, equalsDefault, format,
+            const box_t *box = findBoxByBoxId(macDefault->modeId);
+            if (box) {
+                cliDefaultPrintf(dumpMask, equalsDefault, format,
+                    i,
+                    box->permanentId,
+                    macDefault->auxChannelIndex,
+                    MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.startStep),
+                    MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.endStep)
+                );
+            }
+        }
+        const box_t *box = findBoxByBoxId(mac->modeId);
+        if (box) {
+            cliDumpPrintf(dumpMask, equalsDefault, format,
                 i,
-                macDefault->modeId,
-                macDefault->auxChannelIndex,
-                MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.startStep),
-                MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.endStep)
+                box->permanentId,
+                mac->auxChannelIndex,
+                MODE_STEP_TO_CHANNEL_VALUE(mac->range.startStep),
+                MODE_STEP_TO_CHANNEL_VALUE(mac->range.endStep)
             );
         }
-        cliDumpPrintf(dumpMask, equalsDefault, format,
-            i,
-            mac->modeId,
-            mac->auxChannelIndex,
-            MODE_STEP_TO_CHANNEL_VALUE(mac->range.startStep),
-            MODE_STEP_TO_CHANNEL_VALUE(mac->range.endStep)
-        );
     }
 }
 
@@ -1726,8 +1733,9 @@ static void cliAux(char *cmdline)
             ptr = nextArg(ptr);
             if (ptr) {
                 val = atoi(ptr);
-                if (val >= 0 && val < CHECKBOX_ITEM_COUNT) {
-                    mac->modeId = val;
+                const box_t *box = findBoxByPermanentId(val);
+                if (box) {
+                    mac->modeId = box->boxId;
                     validArgumentCount++;
                 }
             }
