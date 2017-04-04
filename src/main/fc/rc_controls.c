@@ -59,6 +59,7 @@
 #include "sensors/acceleration.h"
 
 #define AIRMODE_DEADBAND 25
+#define MIN_RC_TICK_INTERVAL_MS     20
 
 // true if arming is done via the sticks (as opposed to a switch)
 static bool isUsingSticksToArm = true;
@@ -131,11 +132,14 @@ rollPitchStatus_e calculateRollPitchCenterStatus(void)
 
 void processRcStickPositions(throttleStatus_e throttleStatus, bool disarm_kill_switch, bool fixed_wing_auto_arm)
 {
+    static timeMs_t lastTickTimeMs = 0;
     static uint8_t rcDelayCommand;      // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
     static uint8_t rcSticks;            // this hold sticks position for command combos
     static uint8_t rcDisarmTicks;       // this is an extra guard for disarming through switch to prevent that one frame can disarm it
     uint8_t stTmp = 0;
     int i;
+
+    const timeMs_t currentTimeMs = millis();
 
     // ------------------ STICKS COMMAND HANDLER --------------------
     // checking sticks positions
@@ -147,8 +151,12 @@ void processRcStickPositions(throttleStatus_e throttleStatus, bool disarm_kill_s
             stTmp |= 0x40;  // check for MAX
     }
     if (stTmp == rcSticks) {
-        if (rcDelayCommand < 250)
-            rcDelayCommand++;
+        if (rcDelayCommand < 250) {
+            if ((currentTimeMs - lastTickTimeMs) >= MIN_RC_TICK_INTERVAL_MS) {
+                lastTickTimeMs = currentTimeMs;
+                rcDelayCommand++;
+            }
+        }
     } else
         rcDelayCommand = 0;
     rcSticks = stTmp;
