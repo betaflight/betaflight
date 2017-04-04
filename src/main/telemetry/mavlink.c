@@ -229,7 +229,7 @@ void mavlinkSendSystemStatus(void)
         // voltage_battery Battery voltage, in millivolts (1 = 1 millivolt)
         feature(FEATURE_VBAT) ? vbat * 100 : 0,
         // current_battery Battery current, in 10*milliamperes (1 = 10 milliampere), -1: autopilot does not measure the current
-        feature(FEATURE_VBAT) ? amperage : -1,
+        feature(FEATURE_CURRENT_METER) ? amperage : -1,
         // battery_remaining Remaining battery energy: (0%: 0, 100%: 100), -1: autopilot estimate the remaining battery
         feature(FEATURE_VBAT) ? calculateBatteryPercentage() : 100,
         // drop_rate_comm Communication drops in percent, (0%: 0, 100%: 10'000), (UART, I2C, SPI, CAN), dropped packets on all links (packets that were corrupted on reception on the MAV)
