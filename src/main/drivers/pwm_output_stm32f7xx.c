@@ -134,6 +134,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP), timerHardware->alternateFunction);
 
     __DMA1_CLK_ENABLE();
+    __DMA2_CLK_ENABLE();
 
     if (configureTimer) {
         RCC_ClockCmd(timerRCC(timer), ENABLE);
