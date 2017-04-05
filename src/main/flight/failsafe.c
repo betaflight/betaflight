@@ -34,6 +34,7 @@
 
 #include "io/beeper.h"
 
+#include "fc/fc_core.h"
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -143,6 +144,11 @@ void failsafeReset(void)
     failsafeState.receivingRxDataPeriodPreset = 0;
     failsafeState.phase = FAILSAFE_IDLE;
     failsafeState.rxLinkState = FAILSAFE_RXLINK_DOWN;
+
+    failsafeState.lastGoodRcCommand[ROLL] = 0;
+    failsafeState.lastGoodRcCommand[PITCH] = 0;
+    failsafeState.lastGoodRcCommand[YAW] = 0;
+    failsafeState.lastGoodRcCommand[THROTTLE] = 1000;
 }
 
 void failsafeInit(void)
@@ -461,7 +467,7 @@ void failsafeUpdateState(void)
 
             case FAILSAFE_LANDED:
                 ENABLE_ARMING_FLAG(PREVENT_ARMING); // To prevent accidently rearming by an intermittent rx link
-                mwDisarm();
+                mwDisarm(DISARM_FAILSAFE);
                 failsafeState.receivingRxDataPeriod = millis() + failsafeState.receivingRxDataPeriodPreset; // set required period of valid rxData
                 failsafeState.phase = FAILSAFE_RX_LOSS_MONITORING;
                 failsafeState.controlling = false;  // Failsafe no longer in control of the machine - release control to pilot

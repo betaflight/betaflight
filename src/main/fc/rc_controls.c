@@ -179,9 +179,9 @@ void processRcStickPositions(throttleStatus_e throttleStatus, bool disarm_kill_s
                 rcDisarmTicks++;
                 if (rcDisarmTicks > 3) {    // Wait for at least 3 RX ticks (60ms @ 50Hz RX)
                     if (disarm_kill_switch) {
-                        mwDisarm();
+                        mwDisarm(DISARM_SWITCH);
                     } else if (throttleStatus == THROTTLE_LOW) {
-                        mwDisarm();
+                        mwDisarm(DISARM_SWITCH);
                     }
                 }
             }
@@ -193,7 +193,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus, bool disarm_kill_s
 
     // KILLSWITCH disarms instantly
     if (IS_RC_MODE_ACTIVE(BOXKILLSWITCH)) {
-        mwDisarm();
+        mwDisarm(DISARM_KILLSWITCH);
     }
 
     if (rcDelayCommand != 20) {
@@ -208,7 +208,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus, bool disarm_kill_s
                 return;
             }
             else if (ARMING_FLAG(ARMED)) {
-                mwDisarm();
+                mwDisarm(DISARM_STICKS);
             }
             else {
                 beeper(BEEPER_DISARM_REPEAT);    // sound tone while stick held
