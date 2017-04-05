@@ -203,7 +203,7 @@ void handleIbusTelemetry(void) {
             continue;
         }
         pushOntoTail(ibusReceiveBuffer, IBUS_RX_BUF_LEN, c);
-        if (isChecksumOk(ibusReceiveBuffer, IBUS_RX_BUF_LEN)) {
+        if (ibusIsChecksumOkIa6b(ibusReceiveBuffer, IBUS_RX_BUF_LEN)) {
             outboundBytesToIgnoreOnRxCount += respondToIbusRequest(ibusReceiveBuffer);
         }
     }

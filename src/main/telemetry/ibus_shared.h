@@ -52,4 +52,5 @@ void changeTypeIbusTelemetry(uint8_t id, uint8_t type);
 
 #endif //defined(TELEMETRY) && defined(TELEMETRY_IBUS)
 
-bool isChecksumOk(uint8_t ibusPacket[static IBUS_CHECKSUM_SIZE], size_t packetLength);
+bool ibusIsChecksumOkIa6b(const uint8_t *ibusPacket, const uint8_t length);
+uint16_t ibusCalculateChecksum(const uint8_t *ibusPacket, size_t packetLength);
