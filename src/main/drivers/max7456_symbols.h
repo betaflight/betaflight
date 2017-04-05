@@ -35,19 +35,19 @@
 #define SYM_DEGREES 0xBD
 
 // Direction arrows
-#define SYM_ARROW_SOUTH 0x60
+#define SYM_ARROW_UP    0x60
 #define SYM_ARROW_2     0x61
 #define SYM_ARROW_3     0x62
 #define SYM_ARROW_4     0x63
-#define SYM_ARROW_EAST  0x64
+#define SYM_ARROW_RIGHT 0x64
 #define SYM_ARROW_6     0x65
 #define SYM_ARROW_7     0x66
 #define SYM_ARROW_8     0x67
-#define SYM_ARROW_NORTH 0x68
+#define SYM_ARROW_DOWN  0x68
 #define SYM_ARROW_10    0x69
 #define SYM_ARROW_11    0x6A
 #define SYM_ARROW_12    0x6B
-#define SYM_ARROW_WEST  0x6C
+#define SYM_ARROW_LEFT  0x6C
 #define SYM_ARROW_14    0x6D
 #define SYM_ARROW_15    0x6E
 #define SYM_ARROW_16    0x6F

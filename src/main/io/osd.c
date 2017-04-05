@@ -255,7 +255,7 @@ static void osdDrawSingleElement(uint8_t item)
 
             h = h*2/45;
 
-            buff[0] = 0x60+h;
+            buff[0] = SYM_ARROW_UP + h;
             buff[1] = 0;
             break;
         }
