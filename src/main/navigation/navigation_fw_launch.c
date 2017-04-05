@@ -76,12 +76,12 @@ static FixedWingLaunchState_t   launchState;
 #define SWING_LAUNCH_MIN_ROTATION_RATE      DEGREES_TO_RADIANS(100)     // expect minimum 100dps rotation rate
 static void updateFixedWingLaunchDetector(timeUs_t currentTimeUs)
 {
-    const float swingVelocity = (ABS(imuMeasuredRotationBF.A[Z]) > SWING_LAUNCH_MIN_ROTATION_RATE) ? (imuAccelInBodyFrame.A[Y] / imuMeasuredRotationBF.A[Z]) : 0;
-    const bool isForwardAccelerationHigh = (imuAccelInBodyFrame.A[X] > navConfig()->fw.launch_accel_thresh);
+    const float swingVelocity = (ABS(imuMeasuredRotationBF.A[Z]) > SWING_LAUNCH_MIN_ROTATION_RATE) ? (imuMeasuredAccelBF.A[Y] / imuMeasuredRotationBF.A[Z]) : 0;
+    const bool isForwardAccelerationHigh = (imuMeasuredAccelBF.A[X] > navConfig()->fw.launch_accel_thresh);
     const bool isAircraftAlmostLevel = (calculateCosTiltAngle() >= COS_MAX_LAUNCH_ANGLE);
 
     const bool isBungeeLaunched = isForwardAccelerationHigh && isAircraftAlmostLevel;
-    const bool isSwingLaunched = (swingVelocity > navConfig()->fw.launch_velocity_thresh) && (imuAccelInBodyFrame.A[X] > 0);
+    const bool isSwingLaunched = (swingVelocity > navConfig()->fw.launch_velocity_thresh) && (imuMeasuredAccelBF.A[X] > 0);
 
     if (isBungeeLaunched || isSwingLaunched) {
         launchState.launchDetectionTimeAccum += (currentTimeUs - launchState.launchDetectorPreviosUpdate);

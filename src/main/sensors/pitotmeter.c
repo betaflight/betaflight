@@ -24,6 +24,7 @@
 #include "build/debug.h"
 
 #include "common/maths.h"
+#include "common/time.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -32,6 +33,7 @@
 #include "drivers/pitotmeter.h"
 #include "drivers/pitotmeter_ms4525.h"
 #include "drivers/pitotmeter_adc.h"
+#include "drivers/time.h"
 
 #include "fc/config.h"
 #include "fc/runtime_config.h"
@@ -43,8 +45,9 @@ pitot_t pitot;
 
 #ifdef PITOT
 
+static timeMs_t pitotCalibrationTimeout = 0;
+static bool pitotCalibrationFinished = false;
 static float pitotPressureZero = 0;
-static uint16_t calibratingP = 0;      // pitot calibration = get new zero pressure value
 static float pitotPressure = 0;
 static float pitotTemperature = 0;
 static float CalibratedAirspeed = 0;
@@ -147,21 +150,20 @@ bool pitotInit(void)
 
 bool pitotIsCalibrationComplete(void)
 {
-    return calibratingP == 0;
+    return pitotCalibrationFinished;
 }
 
-void pitotSetCalibrationCycles(uint16_t calibrationCyclesRequired)
+void pitotStartCalibration(void)
 {
-    calibratingP = calibrationCyclesRequired;
+    pitotCalibrationTimeout = millis();
+    pitotCalibrationFinished = false;
 }
-
-static bool pitotReady = false;
 
 #define PRESSURE_SAMPLES_MEDIAN 3
 
 static int32_t applyPitotmeterMedianFilter(int32_t newPressureReading)
 {
-    static int32_t barometerFilterSamples[PRESSURE_SAMPLES_MEDIAN];
+    static int32_t pitotFilterSamples[PRESSURE_SAMPLES_MEDIAN];
     static int currentFilterSampleIndex = 0;
     static bool medianFilterReady = false;
     int nextSampleIndex;
@@ -172,11 +174,11 @@ static int32_t applyPitotmeterMedianFilter(int32_t newPressureReading)
         medianFilterReady = true;
     }
 
-    barometerFilterSamples[currentFilterSampleIndex] = newPressureReading;
+    pitotFilterSamples[currentFilterSampleIndex] = newPressureReading;
     currentFilterSampleIndex = nextSampleIndex;
 
     if (medianFilterReady)
-        return quickMedianFilter3(barometerFilterSamples);
+        return quickMedianFilter3(pitotFilterSamples);
     else
         return newPressureReading;
 }
@@ -185,11 +187,6 @@ typedef enum {
     PITOTMETER_NEEDS_SAMPLES = 0,
     PITOTMETER_NEEDS_CALCULATION,
 } pitotmeterState_e;
-
-
-bool pitotIsReady(void) {
-    return pitotReady;
-}
 
 uint32_t pitotUpdate(void)
 {
@@ -222,9 +219,17 @@ uint32_t pitotUpdate(void)
 
 static void performPitotCalibrationCycle(void)
 {
-    pitotPressureZero -= pitotPressureZero / 8;
-    pitotPressureZero += pitotPressure / 8;
-    calibratingP--;
+    const float pitotPressureZeroError = pitotPressure - pitotPressureZero;
+    pitotPressureZero += pitotPressureZeroError * 0.15f;
+
+    if (ABS(pitotPressureZeroError) < (pitotPressureZero * 0.00005f)) {    // 0.005% calibration error
+        if ((millis() - pitotCalibrationTimeout) > 250) {
+            pitotCalibrationFinished = true;
+        }
+    }
+    else {
+        pitotCalibrationTimeout = millis();
+    }
 }
 
 int32_t pitotCalculateAirSpeed(void)

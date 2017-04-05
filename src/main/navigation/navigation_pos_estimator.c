@@ -143,6 +143,7 @@ typedef struct {
 typedef struct {
     t_fp_vector     accelNEU;
     t_fp_vector     accelBias;
+    bool            gravityCalibrationComplete;
 } navPosisitonEstimatorIMU_t;
 
 typedef struct {
@@ -174,7 +175,7 @@ PG_RESET_TEMPLATE(positionEstimationConfig_t, positionEstimationConfig,
         .automatic_mag_declination = 1,
         .reset_altitude_type = NAV_RESET_ALTITUDE_ON_FIRST_ARM,
         .gps_delay_ms = 200,
-        .accz_unarmed_cal = 1,
+        .gravity_calibration_tolerance = 5,     // 5 cm/s/s calibration error accepted (0.5% of gravity)
         .use_gps_velned = 1,         // "Disabled" is mandatory with gps_dyn_model = Pedestrian
 
         .max_sonar_altitude = 200,
@@ -495,19 +496,23 @@ void updatePositionEstimator_SonarTopic(timeUs_t currentTimeUs)
 static void updateIMUTopic(void)
 {
     static float calibratedGravityCMSS = GRAVITY_CMSS;
+    static timeMs_t gravityCalibrationTimeout = 0;
 
     if (!isImuReady()) {
         posEstimator.imu.accelNEU.V.X = 0;
         posEstimator.imu.accelNEU.V.Y = 0;
         posEstimator.imu.accelNEU.V.Z = 0;
+
+        gravityCalibrationTimeout = millis();
+        posEstimator.imu.gravityCalibrationComplete = false;
     }
     else {
         t_fp_vector accelBF;
 
         /* Read acceleration data in body frame */
-        accelBF.V.X = imuAccelInBodyFrame.V.X;
-        accelBF.V.Y = imuAccelInBodyFrame.V.Y;
-        accelBF.V.Z = imuAccelInBodyFrame.V.Z;
+        accelBF.V.X = imuMeasuredAccelBF.V.X;
+        accelBF.V.Y = imuMeasuredAccelBF.V.Y;
+        accelBF.V.Z = imuMeasuredAccelBF.V.Z;
 
         /* Correct accelerometer bias */
         accelBF.V.X -= posEstimator.imu.accelBias.V.X;
@@ -523,12 +528,30 @@ static void updateIMUTopic(void)
         posEstimator.imu.accelNEU.V.Z = accelBF.V.Z;
 
         /* When unarmed, assume that accelerometer should measure 1G. Use that to correct accelerometer gain */
-        if (!ARMING_FLAG(ARMED) && positionEstimationConfig()->accz_unarmed_cal) {
+        if (!ARMING_FLAG(ARMED) && !posEstimator.imu.gravityCalibrationComplete) {
             // Slowly converge on calibrated gravity while level
-            calibratedGravityCMSS += (posEstimator.imu.accelNEU.V.Z - calibratedGravityCMSS) * 0.0025f;
+            const float gravityOffsetError = posEstimator.imu.accelNEU.V.Z - calibratedGravityCMSS;
+            calibratedGravityCMSS += gravityOffsetError * 0.0025f;
+
+            if (ABS(gravityOffsetError) < positionEstimationConfig()->gravity_calibration_tolerance) {  // Error should be within 0.5% of calibrated gravity
+                if ((millis() - gravityCalibrationTimeout) > 250) {
+                    posEstimator.imu.gravityCalibrationComplete = true;
+                }
+            }
+            else {
+                gravityCalibrationTimeout = millis();
+            }
         }
 
-        posEstimator.imu.accelNEU.V.Z -= calibratedGravityCMSS;
+        /* If calibration is incomplete - report zero acceleration */
+        if (posEstimator.imu.gravityCalibrationComplete) {
+            posEstimator.imu.accelNEU.V.Z -= calibratedGravityCMSS;
+        }
+        else {
+            posEstimator.imu.accelNEU.V.X = 0;
+            posEstimator.imu.accelNEU.V.Y = 0;
+            posEstimator.imu.accelNEU.V.Z = 0;
+        }
 
 #if defined(NAV_BLACKBOX)
         /* Update blackbox values */
@@ -890,6 +913,8 @@ void initializePositionEstimator(void)
 
     posEstimator.history.index = 0;
 
+    posEstimator.imu.gravityCalibrationComplete = false;
+
     for (axis = 0; axis < 3; axis++) {
         posEstimator.imu.accelBias.A[axis] = 0;
         posEstimator.est.pos.A[axis] = 0;
@@ -928,6 +953,11 @@ void updatePositionEstimator(void)
 
     /* Publish estimate */
     publishEstimatedTopic(currentTimeUs);
+}
+
+bool navIsCalibrationComplete(void)
+{
+    return posEstimator.imu.gravityCalibrationComplete;
 }
 
 #endif
