@@ -351,7 +351,7 @@ $(OBJECT_DIR)/$1/$1 : $$($$1_OBJS) \
 
 
 test-$1: $(OBJECT_DIR)/$1/$1
-	$(V1) $$< $(EXEC_OPTS) "$(STDOUT)" && echo "running $$@: PASS" 
+	$(V1) $$< $$(EXEC_OPTS) "$(STDOUT)" && echo "running $$@: PASS"
 
 endef
 
