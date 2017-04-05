@@ -48,6 +48,7 @@
 #include "drivers/time.h"
 
 #include "fc/config.h"
+#include "fc/fc_core.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -1453,7 +1454,7 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
             blackboxWrite(0);
         break;
         case FLIGHT_LOG_EVENT_LOG_END:
-            blackboxPrint("End of log");
+            blackboxPrintf("End of log (disarm reason:%d)", getDisarmReason());
             blackboxWrite(0);
         break;
     }

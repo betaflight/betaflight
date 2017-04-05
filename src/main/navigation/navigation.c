@@ -34,6 +34,7 @@
 
 #include "drivers/time.h"
 
+#include "fc/fc_core.h"
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -1015,7 +1016,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_FINISHING(navigatio
     UNUSED(previousState);
 
     if (navConfig()->general.flags.disarm_on_landing) {
-        mwDisarm();
+        mwDisarm(DISARM_NAVIGATION);
     }
 
     return NAV_FSM_EVENT_SUCCESS;

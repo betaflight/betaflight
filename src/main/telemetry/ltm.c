@@ -50,6 +50,7 @@
 #include "io/serial.h"
 
 #include "fc/config.h"
+#include "fc/fc_core.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -259,7 +260,7 @@ void ltm_xframe(sbuf_t *dst)
 #endif
     ltm_serialise_8(dst, sensorStatus);
     ltm_serialise_8(dst, ltm_x_counter);
-    ltm_serialise_8(dst, 0);
+    ltm_serialise_8(dst, getDisarmReason());
     ltm_serialise_8(dst, 0);
     ltm_x_counter++; // overflow is OK
 }
