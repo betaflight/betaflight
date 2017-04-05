@@ -20,17 +20,30 @@
 // SITL (software in the loop) simulator
 #define TARGET_BOARD_IDENTIFIER "SITL"
 
+#define SIMULATOR_BUILD
+#define SIMULATOR_MULTITHREAD
+
 // use simulatior's attitude directly
+// disable this if wants to test AHRS algorithm
 #define SKIP_IMU_CALC
+
+//#define SIMULATOR_ACC_SYNC
+//#define SIMULATOR_GYRO_SYNC
+//#define SIMULATOR_IMU_SYNC
+//#define SIMULATOR_GYROPID_SYNC
 
 // file name to save config
 #define EEPROM_FILENAME "eeprom.bin"
 
-#define SIMULATOR_BUILD
-
 #define U_ID_0 0
 #define U_ID_1 1
 #define U_ID_2 2
+
+#undef TASK_GYROPID_DESIRED_PERIOD
+#define TASK_GYROPID_DESIRED_PERIOD     100
+
+#undef SCHEDULER_DELAY_LIMIT
+#define SCHEDULER_DELAY_LIMIT           1
 
 #define ACC
 #define USE_FAKE_ACC
@@ -213,14 +226,14 @@ typedef enum
 
 typedef struct {
 	double timestamp;	// in seconds
-	double imu_angular_velocity_rpy[3];	// range: +/- 8192; +/- 2000 deg/se
-	double imu_linear_acceleration_xyz[3];	// sim 1G = 9.81 -> FC 1G = 256
-	double imu_orientation_quat[4];
-	double velocity_xyz[3];
-	double position_xyz[3];
+	double imu_angular_velocity_rpy[3];	// rad/s -> range: +/- 8192; +/- 2000 deg/se
+	double imu_linear_acceleration_xyz[3];	// m/s/s NED, body frame -> sim 1G = 9.80665, FC 1G = 256
+	double imu_orientation_quat[4];	//w, x, y, z
+	double velocity_xyz[3];	// m/s, earth frame
+	double position_xyz[3];	// meters, NED from origin
 } fdm_packet;
 typedef struct {
-	float motor_speed[4];	// [0.0, 1.0]
+	float motor_speed[4];	// normal: [0.0, 1.0], 3D: [-1.0, 1.0]
 } servo_packet;
 
 void FLASH_Unlock(void);
@@ -228,7 +241,12 @@ void FLASH_Lock(void);
 FLASH_Status FLASH_ErasePage(uint32_t Page_Address);
 FLASH_Status FLASH_ProgramWord(uint32_t addr, uint32_t Data);
 
+uint64_t nanos64_real();
 uint64_t micros64_real();
 uint64_t millis64_real();
 void delayMicroseconds_real(uint32_t us);
+uint64_t micros64();
+uint64_t millis64();
+
+int lockMainPID(void);
 

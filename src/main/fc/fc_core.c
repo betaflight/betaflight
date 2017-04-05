@@ -602,6 +602,10 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     static bool runTaskMainSubprocesses;
     static uint8_t pidUpdateCountdown;
 
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_GYROPID_SYNC)
+	if(lockMainPID() != 0) return;
+#endif
+
     if (debugMode == DEBUG_CYCLETIME) {
         debug[0] = getTaskDeltaTime(TASK_SELF);
         debug[1] = averageSystemLoadPercent;
