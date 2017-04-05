@@ -5,8 +5,8 @@
 Cleanflight is flight controller software for multi-rotor and fixed wings.  The cleanflight project, and related projects such as betaflight and iNav are
 used on the majority of flight controllers used around the world.  There is no other software used on as many flight-controllers!
 
-* If you're looking for cutting edge performance and don't mind doing your homework, checkout the betaflight fork.
-* If you're looking for advanced navigation features then check out the iNav fork.
+* If you're looking for cutting edge performance and don't mind doing your homework, checkout the [betaflight fork](https://github.com/betaflight/betaflight).
+* If you're looking for advanced navigation features then check out the [iNav fork](https://github.com/iNavFlight/inav).
 * All other users should use cleanflight.
 
 Features:
