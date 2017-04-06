@@ -26,6 +26,7 @@
 #include "io.h"
 #include "pwm_output.h"
 #include "timer.h"
+#include "drivers/pwm_output.h"
 
 #define MULTISHOT_5US_PW    (MULTISHOT_TIMER_MHZ * 5)
 #define MULTISHOT_20US_MULT (MULTISHOT_TIMER_MHZ * 20 / 1000.0f)
@@ -38,6 +39,11 @@ static pwmCompleteWriteFuncPtr pwmCompleteWritePtr = NULL;
 
 #ifdef USE_SERVOS
 static pwmOutputPort_t servos[MAX_SUPPORTED_SERVOS];
+#endif
+
+#ifdef BEEPER
+static pwmOutputPort_t beeperPwm;
+static uint16_t freqBeep=0;
 #endif
 
 bool pwmMotorsEnabled = false;
@@ -379,4 +385,43 @@ void servoDevInit(const servoDevConfig_t *servoConfig)
     }
 }
 
+#endif
+
+#ifdef BEEPER
+void pwmWriteBeeper(bool onoffBeep)
+{
+        if(!beeperPwm.io)
+            return;
+        if(onoffBeep == true) {
+            *beeperPwm.ccr = (1000000/freqBeep)/2;
+            beeperPwm.enabled = true;
+        } else {
+            *beeperPwm.ccr = 0;
+            beeperPwm.enabled = false;
+        }
+}
+
+void pwmToggleBeeper(void)
+{
+        pwmWriteBeeper(!beeperPwm.enabled);
+}
+
+void beeperPwmInit(IO_t io, uint16_t frequency)
+{
+        const ioTag_t tag=IO_TAG(BEEPER);
+        beeperPwm.io = io;
+        const timerHardware_t *timer = timerGetByTag(tag, TIM_USE_BEEPER);
+        if (beeperPwm.io && timer) {
+            IOInit(beeperPwm.io, OWNER_BEEPER, RESOURCE_INDEX(0));
+#if defined(USE_HAL_DRIVER)
+            IOConfigGPIOAF(beeperPwm.io, IOCFG_AF_PP, timer->alternateFunction);
+#else
+            IOConfigGPIO(beeperPwm.io, IOCFG_AF_PP);
+#endif
+            freqBeep = frequency;
+            pwmOutConfig(&beeperPwm, timer, PWM_TIMER_MHZ, 1000000/freqBeep, (1000000/freqBeep)/2,0);
+        }
+        *beeperPwm.ccr = 0;
+        beeperPwm.enabled = false;
+}
 #endif

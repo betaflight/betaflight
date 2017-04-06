@@ -395,6 +395,13 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     }
 #endif
 
+#if defined(SIMULATOR_BUILD) && defined(SKIP_IMU_CALC)
+	UNUSED(imuMahonyAHRSupdate);
+	UNUSED(useAcc);
+	UNUSED(useMag);
+	UNUSED(useYaw);
+	UNUSED(rawYawError);
+#else
     imuMahonyAHRSupdate(deltaT * 1e-6f,
                         DEGREES_TO_RADIANS(gyro.gyroADCf[X]), DEGREES_TO_RADIANS(gyro.gyroADCf[Y]), DEGREES_TO_RADIANS(gyro.gyroADCf[Z]),
                         useAcc, acc.accSmooth[X], acc.accSmooth[Y], acc.accSmooth[Z],
@@ -402,7 +409,7 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
                         useYaw, rawYawError);
 
     imuUpdateEulerAngles();
-
+#endif
     imuCalculateAcceleration(deltaT); // rotate acc vector into earth frame
 }
 
@@ -437,3 +444,23 @@ int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value)
         angle = 900;
     return lrintf(throttle_correction_value * sin_approx(angle / (900.0f * M_PIf / 2.0f)));
 }
+
+#ifdef SIMULATOR_BUILD
+void imuSetAttitudeRPY(float roll, float pitch, float yaw)
+{
+    attitude.values.roll = roll * 10;
+    attitude.values.pitch = pitch * 10;
+    attitude.values.yaw = yaw * 10;
+}
+void imuSetAttitudeQuat(float w, float x, float y, float z)
+{
+    q0 = w;
+    q1 = x;
+    q2 = y;
+    q3 = z;
+
+    imuComputeRotationMatrix();
+    imuUpdateEulerAngles();
+}
+#endif
+

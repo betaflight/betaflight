@@ -101,8 +101,7 @@ PG_DECLARE(pidConfig_t, pidConfig);
 union rollAndPitchTrims_u;
 void pidController(const pidProfile_t *pidProfile, const union rollAndPitchTrims_u *angleTrim);
 
-extern float axisPIDf[3];
-extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
+extern float axisPID_P[3], axisPID_I[3], axisPID_D[3];
 bool airmodeWasActivated;
 extern uint32_t targetPidLooptime;
 

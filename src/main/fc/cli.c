@@ -81,6 +81,7 @@ extern uint8_t __config_end;
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+#include "fc/fc_msp.h"
 
 #include "flight/altitudehold.h"
 #include "flight/failsafe.h"
@@ -147,7 +148,7 @@ static const char * const featureNames[] = {
     "SONAR", "TELEMETRY", "CURRENT_METER", "3D", "RX_PARALLEL_PWM",
     "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "OSD",
     "UNUSED", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE",
-    "SDCARD", "VTX", "RX_SPI", "SOFTSPI", "ESC_SENSOR", NULL
+    "SDCARD", "VTX", "RX_SPI", "SOFTSPI", "ESC_SENSOR", "ANTI_GRAVITY", NULL
 };
 
 // sync this with rxFailsafeChannelMode_e
@@ -653,6 +654,7 @@ static const clivalue_t valueTable[] = {
 #ifdef BEEPER
     { "beeper_inversion",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BEEPER_DEV_CONFIG, offsetof(beeperDevConfig_t, isInverted) },
     { "beeper_od",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BEEPER_DEV_CONFIG, offsetof(beeperDevConfig_t, isOpenDrain) },
+    { "beeper_frequency",           VAR_INT16  | MASTER_VALUE, .config.minmax = { 0, 16000 }, PG_BEEPER_DEV_CONFIG, offsetof(beeperDevConfig_t, frequency) },
 #endif
 
 // PG_MIXER_CONFIG
@@ -1102,8 +1104,6 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, u
     }
 }
 
-#ifdef USE_PARAMETER_GROUPS
-
 static bool valuePtrEqualsDefault(uint8_t type, const void *ptr, const void *ptrDefault)
 {
     bool result = false;
@@ -1443,94 +1443,6 @@ static void dumpAllValues(uint16_t valueSection, uint8_t dumpMask)
     }
 }
 
-#else
-
-void *getValuePointer(const clivalue_t *value)
-{
-    uint8_t *ptr = value->ptr;
-
-    if ((value->type & VALUE_SECTION_MASK) == PROFILE_VALUE) {
-        ptr += sizeof(pidProfile_t) * getCurrentPidProfileIndex();
-    } else if ((value->type & VALUE_SECTION_MASK) == PROFILE_RATE_VALUE) {
-        ptr += sizeof(controlRateConfig_t) * getCurrentControlRateProfileIndex();
-    }
-
-    return ptr;
-}
-
-static void *getDefaultPointer(void *valuePointer, const master_t *defaultConfig)
-{
-    return ((uint8_t *)valuePointer) - (uint32_t)&masterConfig + (uint32_t)defaultConfig;
-}
-
-static bool valueEqualsDefault(const clivalue_t *value, const master_t *defaultConfig)
-{
-    void *ptr = getValuePointer(value);
-
-    void *ptrDefault = getDefaultPointer(ptr, defaultConfig);
-
-    bool result = false;
-    switch (value->type & VALUE_TYPE_MASK) {
-    case VAR_UINT8:
-        result = *(uint8_t *)ptr == *(uint8_t *)ptrDefault;
-        break;
-
-    case VAR_INT8:
-        result = *(int8_t *)ptr == *(int8_t *)ptrDefault;
-        break;
-
-    case VAR_UINT16:
-        result = *(uint16_t *)ptr == *(uint16_t *)ptrDefault;
-        break;
-
-    case VAR_INT16:
-        result = *(int16_t *)ptr == *(int16_t *)ptrDefault;
-        break;
-
-/* not currently used
-    case VAR_UINT32:
-        result = *(uint32_t *)ptr == *(uint32_t *)ptrDefault;
-        break; */
-
-    case VAR_FLOAT:
-        result = *(float *)ptr == *(float *)ptrDefault;
-        break;
-    }
-    return result;
-}
-
-static void cliPrintVarDefault(const clivalue_t *var, uint32_t full, const master_t *defaultConfig)
-{
-    void *ptr = getValuePointer(var);
-
-    void *defaultPtr = getDefaultPointer(ptr, defaultConfig);
-
-    printValuePointer(var, defaultPtr, full);
-}
-
-static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *defaultConfig)
-{
-    const clivalue_t *value;
-    for (uint32_t i = 0; i < ARRAYLEN(valueTable); i++) {
-        value = &valueTable[i];
-
-        if ((value->type & VALUE_SECTION_MASK) != valueSection) {
-            continue;
-        }
-
-        const char *format = "set %s = ";
-        if (cliDefaultPrintf(dumpMask, valueEqualsDefault(value, defaultConfig), format, valueTable[i].name)) {
-            cliPrintVarDefault(value, 0, defaultConfig);
-            cliPrint("\r\n");
-        }
-        if (cliDumpPrintf(dumpMask, valueEqualsDefault(value, defaultConfig), format, valueTable[i].name)) {
-            cliPrintVar(value, 0);
-            cliPrint("\r\n");
-        }
-    }
-}
-#endif // USE_PARAMETER_GROUPS
-
 static void cliPrintVar(const clivalue_t *var, uint32_t full)
 {
     const void *ptr = getValuePointer(var);
@@ -1782,21 +1694,27 @@ static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActi
                 && mac->auxChannelIndex == macDefault->auxChannelIndex
                 && mac->range.startStep == macDefault->range.startStep
                 && mac->range.endStep == macDefault->range.endStep;
-            cliDefaultPrintf(dumpMask, equalsDefault, format,
+            const box_t *box = findBoxByBoxId(macDefault->modeId);
+            if (box) {
+                cliDefaultPrintf(dumpMask, equalsDefault, format,
+                    i,
+                    box->permanentId,
+                    macDefault->auxChannelIndex,
+                    MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.startStep),
+                    MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.endStep)
+                );
+            }
+        }
+        const box_t *box = findBoxByBoxId(mac->modeId);
+        if (box) {
+            cliDumpPrintf(dumpMask, equalsDefault, format,
                 i,
-                macDefault->modeId,
-                macDefault->auxChannelIndex,
-                MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.startStep),
-                MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.endStep)
+                box->permanentId,
+                mac->auxChannelIndex,
+                MODE_STEP_TO_CHANNEL_VALUE(mac->range.startStep),
+                MODE_STEP_TO_CHANNEL_VALUE(mac->range.endStep)
             );
         }
-        cliDumpPrintf(dumpMask, equalsDefault, format,
-            i,
-            mac->modeId,
-            mac->auxChannelIndex,
-            MODE_STEP_TO_CHANNEL_VALUE(mac->range.startStep),
-            MODE_STEP_TO_CHANNEL_VALUE(mac->range.endStep)
-        );
     }
 }
 
@@ -1816,8 +1734,9 @@ static void cliAux(char *cmdline)
             ptr = nextArg(ptr);
             if (ptr) {
                 val = atoi(ptr);
-                if (val >= 0 && val < CHECKBOX_ITEM_COUNT) {
-                    mac->modeId = val;
+                const box_t *box = findBoxByPermanentId(val);
+                if (box) {
+                    mac->modeId = box->boxId;
                     validArgumentCount++;
                 }
             }
@@ -2635,11 +2554,7 @@ static void cliServoMix(char *cmdline)
         printServoMix(DUMP_MASTER, customServoMixers(0), NULL);
     } else if (strncasecmp(cmdline, "reset", 5) == 0) {
         // erase custom mixer
-#ifdef USE_PARAMETER_GROUPS
         memset(customServoMixers_array(), 0, sizeof(*customServoMixers_array()));
-#else
-        memset(masterConfig.customServoMixer, 0, sizeof(masterConfig.customServoMixer));
-#endif
         for (uint32_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             servoParamsMutable(i)->reversedSources = 0;
         }
@@ -3568,7 +3483,6 @@ static void cliRateProfile(char *cmdline)
     }
 }
 
-#ifdef USE_PARAMETER_GROUPS
 static void cliDumpPidProfile(uint8_t pidProfileIndex, uint8_t dumpMask)
 {
     if (pidProfileIndex >= MAX_PROFILE_COUNT) {
@@ -3594,33 +3508,6 @@ static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask)
     cliPrint("\r\n");
     dumpAllValues(PROFILE_RATE_VALUE, dumpMask);
 }
-#else
-static void cliDumpPidProfile(uint8_t pidProfileIndex, uint8_t dumpMask, const master_t *defaultConfig)
-{
-    if (pidProfileIndex >= MAX_PROFILE_COUNT) {
-        // Faulty values
-        return;
-    }
-    changePidProfile(pidProfileIndex);
-    cliPrintHashLine("profile");
-    cliProfile("");
-    cliPrint("\r\n");
-    dumpValues(PROFILE_VALUE, dumpMask, defaultConfig);
-}
-
-static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask, const master_t *defaultConfig)
-{
-    if (rateProfileIndex >= CONTROL_RATE_PROFILE_COUNT) {
-        // Faulty values
-        return;
-    }
-    changeControlRateProfile(rateProfileIndex);
-    cliPrintHashLine("rateprofile");
-    cliRateProfile("");
-    cliPrint("\r\n");
-    dumpValues(PROFILE_RATE_VALUE, dumpMask, defaultConfig);
-}
-#endif
 
 static void cliSave(char *cmdline)
 {
@@ -3801,11 +3688,7 @@ static void cliStatus(char *cmdline)
 #endif
     cliPrintf("Stack size: %d, Stack address: 0x%x\r\n", stackTotalSize(), stackHighMem());
 
-#ifdef USE_PARAMETER_GROUPS
     cliPrintf("I2C Errors: %d, config size: %d, max available config: %d\r\n", i2cErrorCounter, getEEPROMConfigSize(), &__config_end - &__config_start);
-#else
-    cliPrintf("I2C Errors: %d, config size: %d\r\n", i2cErrorCounter, sizeof(master_t));
-#endif
 
     const int gyroRate = getTaskDeltaTime(TASK_GYROPID) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_GYROPID)));
     const int rxRate = getTaskDeltaTime(TASK_RX) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_RX)));
@@ -4139,7 +4022,6 @@ static void cliResource(char *cmdline)
 }
 #endif /* USE_RESOURCE_MGMT */
 
-#ifdef USE_PARAMETER_GROUPS
 static void backupConfigs(void)
 {
     // make copies of configs to do differencing
@@ -4178,7 +4060,6 @@ static void restoreConfigs(void)
         }
     }
 }
-#endif
 
 static void printConfig(char *cmdline, bool doDiff)
 {
@@ -4328,10 +4209,8 @@ static void printConfig(char *cmdline, bool doDiff)
     if (dumpMask & DUMP_RATES) {
         cliDumpRateProfile(systemConfigCopy.activeRateProfile, dumpMask);
     }
-#ifdef USE_PARAMETER_GROUPS
     // restore configs from copies
     restoreConfigs();
-#endif
 }
 
 static void cliDump(char *cmdline)

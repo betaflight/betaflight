@@ -145,6 +145,8 @@ uint32_t IO_EXTI_Line(IO_t io)
     return 1 << IO_GPIOPinIdx(io);
 #elif defined(STM32F7)
     return 1 << IO_GPIOPinIdx(io);
+#elif defined(SIMULATOR_BUILD)
+    return 1;
 #else
 # error "Unknown target type"
 #endif
