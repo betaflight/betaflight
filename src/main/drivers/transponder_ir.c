@@ -24,8 +24,8 @@
 #ifdef TRANSPONDER
 
 #include "dma.h"
-#include "nvic.h"
-#include "io.h"
+#include "drivers/nvic.h"
+#include "drivers/io.h"
 #include "rcc.h"
 #include "timer.h"
 

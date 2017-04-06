@@ -28,12 +28,12 @@
 
 #include "build/build_config.h"
 
-#include "bus_spi.h"
-#include "io.h"
+#include "drivers/bus_spi.h"
+#include "drivers/io.h"
 #include "io_impl.h"
 #include "rx_spi.h"
 #include "rx_nrf24l01.h"
-#include "system.h"
+#include "drivers/system.h"
 
 #define NRF24_CE_HI()   {IOHi(DEFIO_IO(RX_CE_PIN));}
 #define NRF24_CE_LO()   {IOLo(DEFIO_IO(RX_CE_PIN));}

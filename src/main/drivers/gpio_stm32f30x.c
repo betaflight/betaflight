@@ -20,7 +20,7 @@
 
 #include "platform.h"
 
-#include "gpio.h"
+#include "drivers/gpio.h"
 
 #define MODE_OFFSET 0
 #define PUPD_OFFSET 2

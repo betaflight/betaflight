@@ -23,12 +23,7 @@
 
 #include "build/build_config.h"
 
-#include "drivers/accgyro.h"
-#include "drivers/accgyro_spi_mpu6500.h"
-#include "drivers/bus_spi.h"
-#include "drivers/io.h"
-#include "drivers/sensor.h"
-#include "drivers/system.h"
+#include "drivers/io_types.h"
 
 #include "hardware_revision.h"
 

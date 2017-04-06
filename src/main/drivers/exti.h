@@ -20,7 +20,7 @@
 
 #include <stdbool.h>
 
-#include "io_types.h"
+#include "drivers/io_types.h"
 
 typedef struct extiCallbackRec_s extiCallbackRec_t;
 typedef void extiHandlerCallback(extiCallbackRec_t *self);

@@ -20,7 +20,7 @@
 // TODO - GPIO_TypeDef include
 #include "platform.h"
 
-#include "io.h"
+#include "drivers/io.h"
 
 typedef struct ioDef_s {
     ioTag_t tag;

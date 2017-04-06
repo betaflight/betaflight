@@ -18,7 +18,7 @@
 #pragma once
 
 #include "config/parameter_group.h"
-#include "drivers/barometer.h"
+#include "drivers/barometer/barometer.h"
 
 typedef enum {
     BARO_DEFAULT = 0,

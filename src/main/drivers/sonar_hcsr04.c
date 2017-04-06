@@ -22,10 +22,10 @@
 
 #include "build/build_config.h"
 
-#include "system.h"
-#include "nvic.h"
-#include "io.h"
-#include "exti.h"
+#include "drivers/system.h"
+#include "drivers/nvic.h"
+#include "drivers/io.h"
+#include "drivers/exti.h"
 #include "sonar_hcsr04.h"
 
 /* HC-SR04 consists of ultrasonic transmitter, receiver, and control circuits.

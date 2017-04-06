@@ -20,7 +20,7 @@
 
 #include "platform.h"
 
-#include "gpio.h"
+#include "drivers/gpio.h"
 
 void gpioInit(GPIO_TypeDef *gpio, gpio_config_t *config)
 {

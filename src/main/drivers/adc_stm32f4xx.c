@@ -20,15 +20,16 @@
 #include <string.h>
 
 #include "platform.h"
-#include "system.h"
 
-#include "io.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/system.h"
+
+#include "drivers/io.h"
 #include "io_impl.h"
 #include "rcc.h"
 #include "dma.h"
 
-#include "sensor.h"
-#include "accgyro.h"
+#include "drivers/sensor.h"
 
 #include "adc.h"
 #include "adc_impl.h"

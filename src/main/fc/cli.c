@@ -53,10 +53,10 @@ extern uint8_t __config_end;
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/accgyro.h"
+#include "drivers/accgyro/accgyro.h"
 #include "drivers/buf_writer.h"
 #include "drivers/bus_i2c.h"
-#include "drivers/compass.h"
+#include "drivers/compass/compass.h"
 #include "drivers/display.h"
 #include "drivers/dma.h"
 #include "drivers/flash.h"
@@ -164,14 +164,18 @@ static const char * const lookupTableAccHardware[] = {
     "AUTO", "NONE", "ADXL345", "MPU6050", "MMA8452", "BMA280", "LSM303DLHC",
     "MPU6000", "MPU6500", "MPU9250", "ICM20601", "ICM20602", "ICM20608", "ICM20689", "BMI160", "FAKE"
 };
+#if defined(USE_SENSOR_NAMES) || defined(BARO)
 // sync with baroSensor_e
 static const char * const lookupTableBaroHardware[] = {
     "AUTO", "NONE", "BMP085", "MS5611", "BMP280"
 };
+#endif
+#if defined(USE_SENSOR_NAMES) || defined(MAG)
 // sync with magSensor_e
 static const char * const lookupTableMagHardware[] = {
     "AUTO", "NONE", "HMC5883", "AK8975", "AK8963"
 };
+#endif
 
 #if defined(USE_SENSOR_NAMES)
 // sync this with sensors_e
