@@ -87,7 +87,6 @@
 #define TELEMETRY
 #define TELEMETRY_FRSKY
 #define TELEMETRY_HOTT
-#define TELEMETRY_LTM
 #define TELEMETRY_SMARTPORT
 #define USE_RESOURCE_MGMT
 #define USE_SERVOS
@@ -96,6 +95,7 @@
 #if (FLASH_SIZE > 128)
 #define GPS
 #define CMS
+#define TELEMETRY_LTM
 #define TELEMETRY_CRSF
 #define TELEMETRY_IBUS
 #define TELEMETRY_JETIEXBUS
