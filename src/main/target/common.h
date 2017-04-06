@@ -112,3 +112,6 @@
 #define VTX_TRAMP
 #endif
 
+#if (FLASH_SIZE > 256)
+#define USE_UNCOMMON_MIXERS
+#endif

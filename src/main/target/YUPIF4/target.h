@@ -25,7 +25,7 @@
 #define LED2                    PB5
 
 #define BEEPER                  PC9
-//#define BEEPER_INVERTED
+#define BEEPER_PWM_HZ           2200 // Beeper PWM frequency in Hz
 
 #define INVERTER_PIN_UART6      PB15
 
@@ -162,5 +162,5 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
-#define USABLE_TIMER_CHANNEL_COUNT 7
+#define USABLE_TIMER_CHANNEL_COUNT 8
 #define USED_TIMERS             (TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8))

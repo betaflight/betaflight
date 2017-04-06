@@ -61,7 +61,6 @@
 #include "fc/fc_msp.h"
 #include "fc/fc_rc.h"
 #include "fc/rc_adjustments.h"
-#include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
 #include "flight/altitudehold.h"
@@ -115,19 +114,13 @@ extern uint16_t cycleTime; // FIXME dependency on mw.c
 static const char * const flightControllerIdentifier = CLEANFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
-typedef struct box_e {
-    const uint8_t boxId;            // see boxId_e
-    const char *boxName;            // GUI-readable box name
-    const uint8_t permanentId;      //
-} box_t;
-
 // FIXME remove ;'s
 static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXARM, "ARM;", 0 },
     { BOXANGLE, "ANGLE;", 1 },
     { BOXHORIZON, "HORIZON;", 2 },
     { BOXBARO, "BARO;", 3 },
-    //{ BOXVARIO, "VARIO;", 4 },
+    { BOXANTIGRAVITY, "ANTI GRAVITY;", 4 },
     { BOXMAG, "MAG;", 5 },
     { BOXHEADFREE, "HEADFREE;", 6 },
     { BOXHEADADJ, "HEADADJ;", 7 },
@@ -259,18 +252,18 @@ static void mspRebootFn(serialPort_t *serialPort)
     while (true) ;
 }
 
-static const box_t *findBoxByActiveBoxId(uint8_t activeBoxId)
+const box_t *findBoxByBoxId(uint8_t boxId)
 {
     for (uint8_t boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
         const box_t *candidate = &boxes[boxIndex];
-        if (candidate->boxId == activeBoxId) {
+        if (candidate->boxId == boxId) {
             return candidate;
         }
     }
     return NULL;
 }
 
-static const box_t *findBoxByPermenantId(uint8_t permenantId)
+const box_t *findBoxByPermanentId(uint8_t permenantId)
 {
     for (uint8_t boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
         const box_t *candidate = &boxes[boxIndex];
@@ -290,7 +283,7 @@ reset:
     // then come back and actually send it
     for (int i = 0; i < activeBoxIdCount; i++) {
         const int activeBoxId = activeBoxIds[i];
-        const box_t *box = findBoxByActiveBoxId(activeBoxId);
+        const box_t *box = findBoxByBoxId(activeBoxId);
         if (!box) {
             continue;
         }
@@ -321,6 +314,10 @@ void initActiveBoxIds(void)
 
     if (!feature(FEATURE_AIRMODE)) {
         activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
+    }
+
+    if (!feature(FEATURE_ANTI_GRAVITY)) {
+        activeBoxIds[activeBoxIdCount++] = BOXANTIGRAVITY;
     }
 
     if (sensors(SENSOR_ACC)) {
@@ -442,6 +439,7 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE)) << BOXBLACKBOXERASE |
         IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXANTIGRAVITY)) << BOXANTIGRAVITY |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX)) << BOXFPVANGLEMIX;
 
     uint32_t ret = 0;
@@ -763,7 +761,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     case MSP_MODE_RANGES:
         for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
             const modeActivationCondition_t *mac = modeActivationConditions(i);
-            const box_t *box = &boxes[mac->modeId];
+            const box_t *box = findBoxByBoxId(mac->modeId);
             sbufWriteU8(dst, box->permanentId);
             sbufWriteU8(dst, mac->auxChannelIndex);
             sbufWriteU8(dst, mac->range.startStep);
@@ -789,7 +787,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_BOXIDS:
         for (int i = 0; i < activeBoxIdCount; i++) {
-            const box_t *box = findBoxByActiveBoxId(activeBoxIds[i]);
+            const box_t *box = findBoxByBoxId(activeBoxIds[i]);
             if (!box) {
                 continue;
             }
@@ -1366,7 +1364,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
             modeActivationCondition_t *mac = modeActivationConditionsMutable(i);
             i = sbufReadU8(src);
-            const box_t *box = findBoxByPermenantId(i);
+            const box_t *box = findBoxByPermanentId(i);
             if (box) {
                 mac->modeId = box->boxId;
                 mac->auxChannelIndex = sbufReadU8(src);

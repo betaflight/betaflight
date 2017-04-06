@@ -24,43 +24,56 @@
 #include "io.h"
 
 #include "sound_beeper.h"
+#include "pwm_output.h"
 
 
 #ifdef BEEPER
-
 static IO_t beeperIO = DEFIO_IO(NONE);
 static bool beeperInverted = false;
-
+static uint16_t beeperFrequency = 0;
 #endif
 
 void systemBeep(bool onoff)
 {
-#ifndef BEEPER
-    UNUSED(onoff);
+#ifdef BEEPER
+    if(beeperFrequency == 0) {
+        IOWrite(beeperIO, beeperInverted ? onoff : !onoff);
+    } else {
+        pwmWriteBeeper(onoff);
+    }
 #else
-    IOWrite(beeperIO, beeperInverted ? onoff : !onoff);
+    UNUSED(onoff);
 #endif
 }
 
 void systemBeepToggle(void)
 {
 #ifdef BEEPER
-    IOToggle(beeperIO);
+    if(beeperFrequency == 0) {
+        IOToggle(beeperIO);
+    } else {
+        pwmToggleBeeper();
+    }
 #endif
 }
 
 void beeperInit(const beeperDevConfig_t *config)
 {
-#ifndef BEEPER
-    UNUSED(config);
-#else
-    beeperIO = IOGetByTag(config->ioTag);
-    beeperInverted = config->isInverted;
-
-    if (beeperIO) {
-        IOInit(beeperIO, OWNER_BEEPER, 0);
-        IOConfigGPIO(beeperIO, config->isOpenDrain ? IOCFG_OUT_OD : IOCFG_OUT_PP);
+#ifdef BEEPER
+    beeperFrequency = config->frequency;
+    if(beeperFrequency == 0) {
+        beeperIO = IOGetByTag(config->ioTag);
+        beeperInverted = config->isInverted;
+        if (beeperIO) {
+            IOInit(beeperIO, OWNER_BEEPER, 0);
+            IOConfigGPIO(beeperIO, config->isOpenDrain ? IOCFG_OUT_OD : IOCFG_OUT_PP);
+        }
+        systemBeep(false);
+    } else {
+        beeperIO = IOGetByTag(config->ioTag);
+        beeperPwmInit(beeperIO, beeperFrequency);
     }
-    systemBeep(false);
+#else
+    UNUSED(config);
 #endif
 }

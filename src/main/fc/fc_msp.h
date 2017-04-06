@@ -18,6 +18,16 @@
 #pragma once
 
 #include "msp/msp.h"
+#include "rc_controls.h"
+
+typedef struct box_e {
+    const uint8_t boxId;            // see boxId_e
+    const char *boxName;            // GUI-readable box name
+    const uint8_t permanentId;      //
+} box_t;
+
+const box_t *findBoxByBoxId(uint8_t boxId);
+const box_t *findBoxByPermanentId(uint8_t permenantId);
 
 void mspFcInit(void);
 mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn);

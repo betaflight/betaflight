@@ -50,6 +50,11 @@ typedef uint32_t timCCR_t;
 typedef uint32_t timCCER_t;
 typedef uint32_t timSR_t;
 typedef uint32_t timCNT_t;
+#elif defined(SIMULATOR_BUILD)
+typedef uint32_t timCCR_t;
+typedef uint32_t timCCER_t;
+typedef uint32_t timSR_t;
+typedef uint32_t timCNT_t;
 #else
 #error "Unknown CPU defined"
 #endif
@@ -62,7 +67,8 @@ typedef enum {
     TIM_USE_MOTOR         = 0x4,
     TIM_USE_SERVO         = 0x8,
     TIM_USE_LED           = 0x10,
-    TIM_USE_TRANSPONDER   = 0x20
+    TIM_USE_TRANSPONDER   = 0x20,
+    TIM_USE_BEEPER        = 0x40
 } timerUsageFlag_e;
 
 // use different types from capture and overflow - multiple overflow handlers are implemented as linked list
