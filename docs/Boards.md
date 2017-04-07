@@ -4,11 +4,11 @@ The current focus is geared towards flight controller hardware that use the STM3
 
 ### Boards based on F1 CPUs
 
-These boards are not recommended for new setups. They are very limited in memory and don't support many features of the INAV. In general F1 boards are limited to only UBLOX GPS protocol, don't have BLHeli Passthrough, don't have LEDSTRIP, only support a few felemetries (LTM and maybe FrSky) etc.
+These boards are not recommended for new setups. They are very limited in memory and don't support many features of the INAV. In general F1 boards are limited to only UBLOX GPS protocol, don't have BLHeli Passthrough, don't have LEDSTRIP, only support a few telemetries (LTM and maybe FrSky) etc.
 
 ### Boards based on F3/F4/F7 CPUs
 
-These boards are powerfull and in general support everything INAV is capable of. Limitations are qute rate and are usually caused by hardware design issues.
+These boards are powerfull and in general support everything INAV is capable of. Limitations are quite rare and are usually caused by hardware design issues.
 
 ### Recommended boards
 
