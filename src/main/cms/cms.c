@@ -500,8 +500,9 @@ long cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
 {
     CMS_Menu *pMenu = (CMS_Menu *)ptr;
 
-    if (!pMenu)
+    if (!pMenu) {
         return 0;
+    }
 
 #ifdef CMS_MENU_DEBUG
     if (pMenu->GUARD_type != OME_MENU) {
@@ -547,11 +548,13 @@ STATIC_UNIT_TESTED long cmsMenuBack(displayPort_t *pDisplay)
 {
     // Let onExit function decide whether to allow exit or not.
 
-    if (currentCtx.menu->onExit && currentCtx.menu->onExit(pageTop + currentCtx.cursorRow) < 0)
+    if (currentCtx.menu->onExit && currentCtx.menu->onExit(pageTop + currentCtx.cursorRow) < 0) {
         return -1;
+    }
 
-    if (!menuStackIdx)
+    if (!menuStackIdx) {
         return 0;
+    }
 
     currentCtx = menuStack[--menuStackIdx];
 
@@ -609,39 +612,39 @@ long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
     switch (exitType) {
     case CMS_EXIT_SAVE:
     case CMS_EXIT_SAVEREBOOT:
-        
+
         cmsTraverseGlobalExit(&menuMain);
-        
+
         if (currentCtx.menu->onExit)
             currentCtx.menu->onExit((OSD_Entry *)NULL); // Forced exit
-        
+
         saveConfigAndNotify();
         break;
-    
+
     case CMS_EXIT:
         break;
     }
-    
+
     cmsInMenu = false;
-    
+
     displayRelease(pDisplay);
     currentCtx.menu = NULL;
-    
+
     if (exitType == CMS_EXIT_SAVEREBOOT) {
         displayClearScreen(pDisplay);
         displayWrite(pDisplay, 5, 3, "REBOOTING...");
-        
+
         displayResync(pDisplay); // Was max7456RefreshAll(); why at this timing?
-        
+
         stopMotors();
         stopPwmAllMotors();
         delay(200);
-        
+
         systemReset();
     }
-    
+
     ENABLE_ARMING_FLAG(OK_TO_ARM);
-    
+
     return 0;
 }
 
