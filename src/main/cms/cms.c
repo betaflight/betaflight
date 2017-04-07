@@ -556,7 +556,6 @@ STATIC_UNIT_TESTED long cmsMenuBack(displayPort_t *pDisplay)
     currentCtx = menuStack[--menuStackIdx];
 
     cmsMenuCountPage(pDisplay);
-
     cmsPageSelect(pDisplay, currentCtx.page);
 
     cmsPageDebug();
@@ -911,19 +910,19 @@ void cmsUpdate(uint32_t currentTimeUs)
         if (IS_MID(THROTTLE) && IS_LO(YAW) && IS_HI(PITCH) && !ARMING_FLAG(ARMED)) {
             key = KEY_MENU;
         }
-        else if (IS_HI(PITCH)) {
+        else if (IS_MID(THROTTLE) && IS_MID(YAW) && IS_MID(ROLL) && IS_HI(PITCH)) {
             key = KEY_UP;
         }
-        else if (IS_LO(PITCH)) {
+        else if (IS_MID(THROTTLE) && IS_MID(YAW) && IS_MID(ROLL) && IS_LO(PITCH)) {
             key = KEY_DOWN;
         }
-        else if (IS_LO(ROLL)) {
+        else if (IS_MID(THROTTLE) && IS_MID(YAW) && IS_LO(ROLL) && IS_MID(PITCH)) {
             key = KEY_LEFT;
         }
-        else if (IS_HI(ROLL)) {
+        else if (IS_MID(THROTTLE) && IS_MID(YAW) && IS_HI(ROLL) && IS_MID(PITCH)) {
             key = KEY_RIGHT;
         }
-        else if (IS_HI(YAW) || IS_LO(YAW))
+        else if ((IS_HI(YAW) || IS_LO(YAW)) && IS_MID(THROTTLE) && IS_MID(ROLL) && IS_MID(PITCH))
         {
             key = KEY_ESC;
         }
