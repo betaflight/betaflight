@@ -70,7 +70,7 @@ TEST(MathsUnittest, TestScaleRangeNegatives)
     EXPECT_EQ(scaleRange(-50, -100, 0, -10, 0), -5);
 }
 
-TEST(MathsUnittest, TestScaleRangeReverse)
+TEST(MathsUnittest, TestScaleRangeNegativePositive)
 {
     // Within bounds
     EXPECT_EQ(scaleRange(0, -10, 0, 0, 100), 100);
@@ -87,6 +87,25 @@ TEST(MathsUnittest, TestScaleRangeReverse)
     EXPECT_EQ(scaleRange(-10, -100, 0, 0, 10), 9);
     EXPECT_EQ(scaleRange(-20, -100, 0, 0, 10), 8);
     EXPECT_EQ(scaleRange(-50, -100, 0, 0, 10), 5);
+}
+
+TEST(MathsUnittest, TestScaleRangeReverse)
+{
+    // Within bounds
+    EXPECT_EQ(scaleRange(0, 0, 10, 100, 0), 100);
+    EXPECT_EQ(scaleRange(10, 0, 10, 100, 0), 0);
+    EXPECT_EQ(scaleRange(0, 0, 100, 10, 0), 10);
+    EXPECT_EQ(scaleRange(100, 0, 100, 10, 0), 0);
+
+    // Scale up
+    EXPECT_EQ(scaleRange(1, 0, 10, 100, 0), 90);
+    EXPECT_EQ(scaleRange(2, 0, 10, 100, 0), 80);
+    EXPECT_EQ(scaleRange(5, 0, 10, 100, 0), 50);
+
+    // Scale down
+    EXPECT_EQ(scaleRange(10, 0, 100, 10, 0), 9);
+    EXPECT_EQ(scaleRange(20, 0, 100, 10, 0), 8);
+    EXPECT_EQ(scaleRange(50, 0, 100, 10, 0), 5);
 }
 
 TEST(MathsUnittest, TestConstrain)

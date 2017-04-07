@@ -85,7 +85,7 @@ float devVariance(stdev_t *dev);
 float devStandardDeviation(stdev_t *dev);
 float degreesToRadians(int16_t degrees);
 
-int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax);
+int scaleRange(int x, int srcFrom, int srcTo, int destFrom, int destTo);
 
 void normalizeV(struct fp_vector *src, struct fp_vector *dest);
 
