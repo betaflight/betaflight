@@ -586,6 +586,15 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #else
         sbufWriteU16(dst, 0); // No other build targets currently have hardware revision detection.
 #endif
+#ifdef USE_OSD_SLAVE
+        sbufWriteU8(dst, 1);  // 1 == OSD
+#else
+#if defined(OSD) && defined(USE_MAX7456)
+        sbufWriteU8(dst, 2);  // 2 == FC with OSD
+#else
+        sbufWriteU8(dst, 0);  // 0 == FC
+#endif
+#endif
         break;
 
     case MSP_BUILD_INFO:
