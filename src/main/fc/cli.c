@@ -1908,11 +1908,12 @@ static void cliSerialPassthrough(char *cmdline)
         tok = strtok_r(NULL, " ", &saveptr);
     }
 
+    printf("Port %d ", id);
     serialPort_t *passThroughPort;
     serialPortUsage_t *passThroughPortUsage = findSerialPortUsageByIdentifier(id);
     if (!passThroughPortUsage || passThroughPortUsage->serialPort == NULL) {
         if (!baud) {
-            printf("Port %d is closed, must specify baud.\r\n", id);
+            printf("closed, specify baud.\r\n");
             return;
         }
         if (!mode)
@@ -1922,29 +1923,28 @@ static void cliSerialPassthrough(char *cmdline)
                                          baud, mode,
                                          SERIAL_NOT_INVERTED);
         if (!passThroughPort) {
-            printf("Port %d could not be opened.\r\n", id);
+            printf("could not be opened.\r\n");
             return;
         }
-        printf("Port %d opened, baud = %d.\r\n", id, baud);
+        printf("opened, baud = %d.\r\n", baud);
     } else {
         passThroughPort = passThroughPortUsage->serialPort;
         // If the user supplied a mode, override the port's mode, otherwise
         // leave the mode unchanged. serialPassthrough() handles one-way ports.
-        printf("Port %d already open.\r\n", id);
+        printf("already open.\r\n");
         if (mode && passThroughPort->mode != mode) {
-            printf("Adjusting mode from %d to %d.\r\n",
+            printf("mode changed from %d to %d.\r\n",
                    passThroughPort->mode, mode);
             serialSetMode(passThroughPort, mode);
         }
         // If this port has a rx callback associated we need to remove it now.
         // Otherwise no data will be pushed in the serial port buffer!
         if (passThroughPort->rxCallback) {
-            printf("Removing rxCallback\r\n");
             passThroughPort->rxCallback = 0;
         }
     }
 
-    printf("Forwarding data to %d, power cycle to exit.\r\n", id);
+    printf("forwarding, power cycle to exit.\r\n");
 
     serialPassthrough(cliPort, passThroughPort, NULL, NULL);
 }
