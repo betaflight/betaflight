@@ -1111,15 +1111,36 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #endif
         break;
     }
-    case MSP_OSD_CONFIG:
-#ifdef OSD
-        sbufWriteU8(dst, 1); // OSD supported
-        // send video system (AUTO/PAL/NTSC)
+    case MSP_OSD_CONFIG: {
+
+#define OSD_FLAGS_OSD_FEATURE           (1 << 0)
+#define OSD_FLAGS_OSD_SLAVE             (1 << 1)
+#define OSD_FLAGS_RESERVED_1            (1 << 2)
+#define OSD_FLAGS_RESERVED_2            (1 << 3)
+#define OSD_FLAGS_OSD_HARDWARE_MAX_7456 (1 << 4)
+
+        uint8_t osdFlags = 0;
+#if defined(OSD)
+        osdFlags |= OSD_FLAGS_OSD_FEATURE;
+#endif
+#if defined(USE_OSD_SLAVE)
+        osdFlags |= OSD_FLAGS_OSD_SLAVE;
+#endif
 #ifdef USE_MAX7456
+        osdFlags |= OSD_FLAGS_OSD_HARDWARE_MAX_7456;
+#endif
+
+        sbufWriteU8(dst, osdFlags);
+
+#ifdef USE_MAX7456
+        // send video system (AUTO/PAL/NTSC)
         sbufWriteU8(dst, vcdProfile()->video_system);
 #else
         sbufWriteU8(dst, 0);
 #endif
+
+#ifdef OSD
+        // OSD specific, not applicable to OSD slaves.
         sbufWriteU8(dst, osdConfig()->units);
         sbufWriteU8(dst, osdConfig()->rssi_alarm);
         sbufWriteU16(dst, osdConfig()->cap_alarm);
@@ -1128,11 +1149,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         for (int i = 0; i < OSD_ITEM_COUNT; i++) {
             sbufWriteU16(dst, osdConfig()->item_pos[i]);
         }
-#else
-        sbufWriteU8(dst, 0); // OSD not supported
 #endif
         break;
-
+    }
     case MSP_MOTOR_3D_CONFIG:
         sbufWriteU16(dst, flight3DConfig()->deadband3d_low);
         sbufWriteU16(dst, flight3DConfig()->deadband3d_high);
@@ -1659,7 +1678,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 }
 #endif
 
-#ifdef OSD
+#if defined(OSD) || defined (USE_OSD_SLAVE)
     case MSP_SET_OSD_CONFIG:
         {
             const uint8_t addr = sbufReadU8(src);
@@ -1670,20 +1689,27 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
                 sbufReadU8(src); // Skip video system
 #endif
+#if defined(OSD)
                 osdConfigMutable()->units = sbufReadU8(src);
                 osdConfigMutable()->rssi_alarm = sbufReadU8(src);
                 osdConfigMutable()->cap_alarm = sbufReadU16(src);
                 osdConfigMutable()->time_alarm = sbufReadU16(src);
                 osdConfigMutable()->alt_alarm = sbufReadU16(src);
+#endif
             } else {
+#if defined(OSD)
                 // set a position setting
                 const uint16_t pos  = sbufReadU16(src);
                 if (addr < OSD_ITEM_COUNT) {
                     osdConfigMutable()->item_pos[addr] = pos;
                 }
+#else
+                return MSP_RESULT_ERROR;
+#endif
             }
         }
         break;
+
     case MSP_OSD_CHAR_WRITE:
 #ifdef USE_MAX7456
         {
@@ -1696,14 +1722,18 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             max7456WriteNvm(addr, font_data);
         }
 #else
+        return MSP_RESULT_ERROR;
+/*
         // just discard the data
         sbufReadU8(src);
         for (int i = 0; i < 54; i++) {
             sbufReadU8(src);
         }
+*/
 #endif
         break;
-#endif
+#endif // OSD || USE_OSD_SLAVE
+
 
 #if defined(USE_RTC6705) || defined(VTX_COMMON)
     case MSP_SET_VTX_CONFIG:
