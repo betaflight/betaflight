@@ -59,6 +59,7 @@
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/osd.h"
+#include "io/osd_slave.h"
 #include "io/serial.h"
 #include "io/transponder_ir.h"
 #include "io/vtx_tramp.h" // Will be gone
@@ -96,6 +97,13 @@ static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
     accUpdate(&accelerometerConfigMutable()->accelerometerTrims);
 }
 
+bool taskSerialCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs) {
+    UNUSED(currentTimeUs);
+    UNUSED(currentDeltaTimeUs);
+
+    return mspSerialWaiting();
+}
+
 static void taskHandleSerial(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
@@ -106,7 +114,11 @@ static void taskHandleSerial(timeUs_t currentTimeUs)
         return;
     }
 #endif
-    mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA, mspFcProcessCommand);
+#ifdef USE_OSD_SLAVE
+    mspSerialProcess(MSP_SKIP_NON_MSP_DATA, mspFcProcessCommand, mspFcProcessReply);
+#else
+    mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA, mspFcProcessCommand, mspFcProcessReply);
+#endif
 }
 
 void taskBatteryAlerts(timeUs_t currentTimeUs)
@@ -208,6 +220,32 @@ void taskVtxControl(uint32_t currentTime)
 }
 #endif
 
+#ifdef USE_OSD_SLAVE
+void osdSlaveTasksInit(void)
+{
+    schedulerInit();
+    setTaskEnabled(TASK_SERIAL, true);
+
+    bool useBatteryVoltage = batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE;
+    setTaskEnabled(TASK_BATTERY_VOLTAGE, useBatteryVoltage);
+    bool useBatteryCurrent = batteryConfig()->currentMeterSource != CURRENT_METER_NONE;
+    setTaskEnabled(TASK_BATTERY_CURRENT, useBatteryCurrent);
+
+    bool useBatteryAlerts = (batteryConfig()->useVBatAlerts || batteryConfig()->useConsumptionAlerts);
+    setTaskEnabled(TASK_BATTERY_ALERTS, (useBatteryVoltage || useBatteryCurrent) && useBatteryAlerts);
+
+#ifdef TRANSPONDER
+    setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
+#endif
+
+    setTaskEnabled(TASK_OSD_SLAVE, true);
+
+#ifdef STACK_CHECK
+    setTaskEnabled(TASK_STACK_CHECK, true);
+#endif
+}
+#endif
+
 void fcTasksInit(void)
 {
     schedulerInit();
@@ -281,6 +319,9 @@ void fcTasksInit(void)
 #ifdef OSD
     setTaskEnabled(TASK_OSD, feature(FEATURE_OSD));
 #endif
+#ifdef USE_OSD_SLAVE
+    setTaskEnabled(TASK_OSD_SLAVE, true);
+#endif
 #ifdef USE_BST
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
 #endif
@@ -348,8 +389,14 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SERIAL] = {
         .taskName = "SERIAL",
         .taskFunc = taskHandleSerial,
+#ifdef USE_OSD_SLAVE
+        .checkFunc = taskSerialCheck,
+        .desiredPeriod = TASK_PERIOD_HZ(100),
+        .staticPriority = TASK_PRIORITY_REALTIME,
+#else
         .desiredPeriod = TASK_PERIOD_HZ(100),       // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
         .staticPriority = TASK_PRIORITY_LOW,
+#endif
     },
 
     [TASK_DISPATCH] = {
@@ -455,6 +502,15 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskFunc = osdUpdate,
         .desiredPeriod = TASK_PERIOD_HZ(60),        // 60 Hz
         .staticPriority = TASK_PRIORITY_LOW,
+    },
+#endif
+#ifdef USE_OSD_SLAVE
+    [TASK_OSD_SLAVE] = {
+        .taskName = "OSD_SLAVE",
+        .checkFunc = osdSlaveCheck,
+        .taskFunc = osdSlaveUpdate,
+        .desiredPeriod = TASK_PERIOD_HZ(60),        // 60 Hz
+        .staticPriority = TASK_PRIORITY_HIGH,
     },
 #endif
 #ifdef TELEMETRY

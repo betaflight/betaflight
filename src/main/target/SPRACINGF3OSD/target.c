@@ -15,9 +15,22 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdint.h>
 
-#define LOOPTIME_SUSPEND_TIME 3  // Prevent too long busy wait times
+#include <platform.h>
+#include "drivers/io.h"
 
-void fcTasksInit(void);
-void osdSlaveTasksInit(void);
+#include "drivers/timer.h"
+#include "drivers/timer_def.h"
+#include "drivers/dma.h"
+
+const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
+
+    DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_MOTOR, 1 ), // DMA1_Channel2
+    DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_MOTOR, 1 ), // DMA1_Channel4
+    DEF_TIM(TIM16, CH1, PB4,  TIM_USE_MOTOR, 1 ), // DMA1_Channel3 or DMA1_Channel6 with Remap (need remap to free SPI1_TX for Flash)
+    DEF_TIM(TIM17, CH1, PB5,  TIM_USE_MOTOR, 1 ), // DMA1_Channel1 or DMA1_Channel7 with Remap (need remap, ADC1 is on DMA1_Channel1)
+
+    DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_TRANSPONDER, 0 ),
+};
+

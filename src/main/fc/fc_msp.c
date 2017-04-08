@@ -78,6 +78,7 @@
 #include "io/ledstrip.h"
 #include "io/motors.h"
 #include "io/osd.h"
+#include "io/osd_slave.h"
 #include "io/serial.h"
 #include "io/serial_4way.h"
 #include "io/servos.h"
@@ -2008,6 +2009,57 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
     }
     reply->result = ret;
     return ret;
+}
+
+void mspFcProcessReply(mspPacket_t *reply)
+{
+    sbuf_t *src = &reply->buf;
+    UNUSED(src); // potentially unused depending on compile options.
+
+    switch (reply->cmd) {
+        case MSP_DISPLAYPORT: {
+#ifdef USE_OSD_SLAVE
+            int subCmd = sbufReadU8(src);
+
+            switch (subCmd) {
+                case 0: // HEARTBEAT
+                    //debug[0]++;
+                    osdSlaveHeartbeat();
+                    break;
+                case 1: // RELEASE
+                    //debug[1]++;
+                    break;
+                case 2: // CLEAR
+                    //debug[2]++;
+                    osdSlaveClearScreen();
+                    break;
+                case 3: {
+                    //debug[3]++;
+
+#define MSP_OSD_MAX_STRING_LENGTH 30 // FIXME move this
+                    const uint8_t y = sbufReadU8(src); // row
+                    const uint8_t x = sbufReadU8(src); // column
+                    const uint8_t reserved = sbufReadU8(src);
+                    UNUSED(reserved);
+
+                    char buf[MSP_OSD_MAX_STRING_LENGTH + 1];
+                    const int len = MIN(sbufBytesRemaining(src), MSP_OSD_MAX_STRING_LENGTH);
+                    sbufReadData(src, &buf, len);
+
+                    buf[len] = 0;
+
+                    osdSlaveWrite(x, y, buf);
+
+                    break;
+                }
+                case 4: {
+                    osdSlaveDrawScreen();
+                }
+            }
+#endif
+            break;
+        }
+    }
 }
 
 /*

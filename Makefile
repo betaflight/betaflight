@@ -760,6 +760,7 @@ COMMON_SRC = \
             io/gps.c \
             io/ledstrip.c \
             io/osd.c \
+            io/osd_slave.c \
             io/transponder_ir.c \
             sensors/sonar.c \
             sensors/barometer.c \
@@ -851,6 +852,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             io/dashboard.c \
             io/displayport_max7456.c \
             io/osd.c \
+            io/osd_slave.c
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/serial_escserial.c \
