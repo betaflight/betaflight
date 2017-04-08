@@ -102,6 +102,8 @@ uint8_t mpu6500SpiDetect(const busDevice_t *bus)
             return ICM_20608_SPI;
         case ICM20602_WHO_AM_I_CONST:
             return ICM_20602_SPI;
+	case ICM20689_WHO_AM_I_CONST:
+	    return ICM_20689_SPI;
         }
     }
 
@@ -118,7 +120,8 @@ bool mpu6500SpiAccDetect(accDev_t *acc)
     if (acc->mpuDetectionResult.sensor != MPU_65xx_SPI &&
         acc->mpuDetectionResult.sensor != MPU_9250_SPI &&
         acc->mpuDetectionResult.sensor != ICM_20608_SPI &&
-        acc->mpuDetectionResult.sensor != ICM_20602_SPI) {
+        acc->mpuDetectionResult.sensor != ICM_20602_SPI &&
+        acc->mpuDetectionResult.sensor != ICM_20689_SPI) {
         return false;
     }
 
@@ -148,7 +151,8 @@ bool mpu6500SpiGyroDetect(gyroDev_t *gyro)
     if (gyro->mpuDetectionResult.sensor != MPU_65xx_SPI &&
         gyro->mpuDetectionResult.sensor != MPU_9250_SPI &&
         gyro->mpuDetectionResult.sensor != ICM_20608_SPI &&
-        gyro->mpuDetectionResult.sensor != ICM_20602_SPI) {
+        gyro->mpuDetectionResult.sensor != ICM_20602_SPI &&
+        gyro->mpuDetectionResult.sensor != ICM_20689_SPI) {
         return false;
     }
 
