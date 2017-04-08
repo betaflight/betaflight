@@ -262,16 +262,9 @@ void mspSerialInit(void)
     mspSerialAllocatePorts();
 }
 
-int mspSerialPush(uint8_t cmd, const uint8_t *data, int datalen)
+int mspSerialPush(uint8_t cmd, uint8_t *data, int datalen)
 {
-    static uint8_t pushBuf[34];
     int ret = 0;
-
-    mspPacket_t push = {
-        .buf = { .ptr = pushBuf, .end = ARRAYEND(pushBuf), },
-        .cmd = cmd,
-        .result = 0,
-    };
 
     for (int portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
         mspPort_t * const mspPort = &mspPorts[portIndex];
@@ -284,9 +277,11 @@ int mspSerialPush(uint8_t cmd, const uint8_t *data, int datalen)
             continue;
         }
 
-        sbufWriteData(&push.buf, data, datalen);
-
-        sbufSwitchToReader(&push.buf, pushBuf);
+        mspPacket_t push = {
+            .buf = { .ptr = data, .end = data + datalen, },
+            .cmd = cmd,
+            .result = 0,
+        };
 
         ret = mspSerialEncode(mspPort, &push);
     }
