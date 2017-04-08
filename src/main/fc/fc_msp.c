@@ -115,40 +115,39 @@ extern uint16_t cycleTime; // FIXME dependency on mw.c
 static const char * const flightControllerIdentifier = CLEANFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
-// FIXME remove ;'s
 static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
-    { BOXARM, "ARM;", 0 },
-    { BOXANGLE, "ANGLE;", 1 },
-    { BOXHORIZON, "HORIZON;", 2 },
-    { BOXBARO, "BARO;", 3 },
-    { BOXANTIGRAVITY, "ANTI GRAVITY;", 4 },
-    { BOXMAG, "MAG;", 5 },
-    { BOXHEADFREE, "HEADFREE;", 6 },
-    { BOXHEADADJ, "HEADADJ;", 7 },
-    { BOXCAMSTAB, "CAMSTAB;", 8 },
-    { BOXCAMTRIG, "CAMTRIG;", 9 },
-    { BOXGPSHOME, "GPS HOME;", 10 },
-    { BOXGPSHOLD, "GPS HOLD;", 11 },
-    { BOXPASSTHRU, "PASSTHRU;", 12 },
-    { BOXBEEPERON, "BEEPER;", 13 },
-    { BOXLEDMAX, "LEDMAX;", 14 },
-    { BOXLEDLOW, "LEDLOW;", 15 },
-    { BOXLLIGHTS, "LLIGHTS;", 16 },
-    { BOXCALIB, "CALIB;", 17 },
-    { BOXGOV, "GOVERNOR;", 18 },
-    { BOXOSD, "OSD SW;", 19 },
-    { BOXTELEMETRY, "TELEMETRY;", 20 },
-    { BOXGTUNE, "GTUNE;", 21 },
-    { BOXSONAR, "SONAR;", 22 },
-    { BOXSERVO1, "SERVO1;", 23 },
-    { BOXSERVO2, "SERVO2;", 24 },
-    { BOXSERVO3, "SERVO3;", 25 },
-    { BOXBLACKBOX, "BLACKBOX;", 26 },
-    { BOXFAILSAFE, "FAILSAFE;", 27 },
-    { BOXAIRMODE, "AIR MODE;", 28 },
-    { BOX3DDISABLESWITCH, "DISABLE 3D SWITCH;", 29},
-    { BOXFPVANGLEMIX, "FPV ANGLE MIX;", 30},
-    { BOXBLACKBOXERASE, "BLACKBOX ERASE (>30s);", 31 },
+    { BOXARM, "ARM", 0 },
+    { BOXANGLE, "ANGLE", 1 },
+    { BOXHORIZON, "HORIZON", 2 },
+    { BOXBARO, "BARO", 3 },
+    { BOXANTIGRAVITY, "ANTI GRAVITY", 4 },
+    { BOXMAG, "MAG", 5 },
+    { BOXHEADFREE, "HEADFREE", 6 },
+    { BOXHEADADJ, "HEADADJ", 7 },
+    { BOXCAMSTAB, "CAMSTAB", 8 },
+    { BOXCAMTRIG, "CAMTRIG", 9 },
+    { BOXGPSHOME, "GPS HOME", 10 },
+    { BOXGPSHOLD, "GPS HOLD", 11 },
+    { BOXPASSTHRU, "PASSTHRU", 12 },
+    { BOXBEEPERON, "BEEPER", 13 },
+    { BOXLEDMAX, "LEDMAX", 14 },
+    { BOXLEDLOW, "LEDLOW", 15 },
+    { BOXLLIGHTS, "LLIGHTS", 16 },
+    { BOXCALIB, "CALIB", 17 },
+    { BOXGOV, "GOVERNOR", 18 },
+    { BOXOSD, "OSD SW", 19 },
+    { BOXTELEMETRY, "TELEMETRY", 20 },
+    { BOXGTUNE, "GTUNE", 21 },
+    { BOXSONAR, "SONAR", 22 },
+    { BOXSERVO1, "SERVO1", 23 },
+    { BOXSERVO2, "SERVO2", 24 },
+    { BOXSERVO3, "SERVO3", 25 },
+    { BOXBLACKBOX, "BLACKBOX", 26 },
+    { BOXFAILSAFE, "FAILSAFE", 27 },
+    { BOXAIRMODE, "AIR MODE", 28 },
+    { BOX3DDISABLESWITCH, "DISABLE 3D SWITCH", 29},
+    { BOXFPVANGLEMIX, "FPV ANGLE MIX", 30},
+    { BOXBLACKBOXERASE, "BLACKBOX ERASE (>30s)", 31 },
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -277,11 +276,6 @@ const box_t *findBoxByPermanentId(uint8_t permenantId)
 
 static void serializeBoxNamesReply(sbuf_t *dst)
 {
-    int flag = 1, count = 0;
-
-reset:
-    // in first run of the loop, we grab total size of junk to be sent
-    // then come back and actually send it
     for (int i = 0; i < activeBoxIdCount; i++) {
         const int activeBoxId = activeBoxIds[i];
         const box_t *box = findBoxByBoxId(activeBoxId);
@@ -289,19 +283,8 @@ reset:
             continue;
         }
 
-        const int len = strlen(box->boxName);
-        if (flag) {
-            count += len;
-        } else {
-            for (int j = 0; j < len; j++) {
-                sbufWriteU8(dst, box->boxName[j]);
-            }
-        }
-    }
-
-    if (flag) {
-        flag = 0;
-        goto reset;
+        sbufWriteData(dst, box->boxName, strlen(box->boxName));
+        sbufWriteU8(dst, ';');
     }
 }
 
