@@ -2964,11 +2964,11 @@ static void cliFeature(char *cmdline)
         }
         cliPrint("\r\n");
     } else if (strncasecmp(cmdline, "list", len) == 0) {
-        cliPrint("Available: ");
+        cliPrint("Available:");
         for (uint32_t i = 0; ; i++) {
             if (featureNames[i] == NULL)
                 break;
-            cliPrintf("%s ", featureNames[i]);
+            cliPrintf(" %s", featureNames[i]);
         }
         cliPrint("\r\n");
         return;
@@ -3051,7 +3051,7 @@ static void cliBeeper(char *cmdline)
     } else if (strncasecmp(cmdline, "list", len) == 0) {
         cliPrint("Available:");
         for (uint32_t i = 0; i < beeperCount; i++)
-            cliPrintf("  %s", beeperNameForTableIndex(i));
+            cliPrintf(" %s", beeperNameForTableIndex(i));
         cliPrint("\r\n");
         return;
     } else {
@@ -3351,11 +3351,11 @@ static void cliMixer(char *cmdline)
         cliPrintf("Mixer: %s\r\n", mixerNames[mixerConfig()->mixerMode - 1]);
         return;
     } else if (strncasecmp(cmdline, "list", len) == 0) {
-        cliPrint("Available mixers: ");
+        cliPrint("Available:");
         for (uint32_t i = 0; ; i++) {
             if (mixerNames[i] == NULL)
                 break;
-            cliPrintf("%s ", mixerNames[i]);
+            cliPrintf(" %s", mixerNames[i]);
         }
         cliPrint("\r\n");
         return;
