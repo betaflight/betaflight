@@ -127,7 +127,7 @@ typedef struct statistic_s {
 static statistic_t stats;
 
 uint16_t refreshTimeout = 0;
-#define REFRESH_1S    12
+#define REFRESH_1S    12  // FIXME dependant on how frequently the task is scheduled
 
 static uint8_t armState;
 
@@ -703,6 +703,7 @@ static void osdUpdateStats(void)
         stats.max_altitude = baro.BaroAlt;
 }
 
+#ifdef BLACKBOX
 static void osdGetBlackboxStatusString(char * buff, uint8_t len)
 {
     bool storageDeviceIsWorking = false;
@@ -743,6 +744,7 @@ static void osdGetBlackboxStatusString(char * buff, uint8_t len)
         snprintf(buff, len, "FAULT");
     }
 }
+#endif
 
 static void osdShowStats(void)
 {
@@ -784,11 +786,13 @@ static void osdShowStats(void)
     sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
     displayWrite(osdDisplayPort, 22, top++, buff);
 
+#ifdef BLACKBOX
     if (blackboxConfig()->device && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
         displayWrite(osdDisplayPort, 2, top, "BLACKBOX         :");
         osdGetBlackboxStatusString(buff, 10);
         displayWrite(osdDisplayPort, 22, top++, buff);
     }
+#endif
 
     refreshTimeout = 60 * REFRESH_1S;
 }
