@@ -114,11 +114,7 @@ static void taskHandleSerial(timeUs_t currentTimeUs)
         return;
     }
 #endif
-#ifdef USE_OSD_SLAVE
-    mspSerialProcess(MSP_SKIP_NON_MSP_DATA, mspFcProcessCommand, mspFcProcessReply);
-#else
     mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA, mspFcProcessCommand, mspFcProcessReply);
-#endif
 }
 
 void taskBatteryAlerts(timeUs_t currentTimeUs)
