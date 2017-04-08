@@ -44,7 +44,7 @@ PG_REGISTER(displayPortProfile_t, displayPortProfileMsp, PG_DISPLAY_PORT_MSP_CON
 
 static displayPort_t mspDisplayPort;
 
-static int output(displayPort_t *displayPort, uint8_t cmd, const uint8_t *buf, int len)
+static int output(displayPort_t *displayPort, uint8_t cmd, uint8_t *buf, int len)
 {
     UNUSED(displayPort);
     return mspSerialPush(cmd, buf, len);
@@ -52,7 +52,7 @@ static int output(displayPort_t *displayPort, uint8_t cmd, const uint8_t *buf, i
 
 static int heartbeat(displayPort_t *displayPort)
 {
-    const uint8_t subcmd[] = { 0 };
+    uint8_t subcmd[] = { 0 };
 
     // ensure display is not released by MW OSD software
     return output(displayPort, MSP_DISPLAYPORT, subcmd, sizeof(subcmd));
@@ -65,21 +65,21 @@ static int grab(displayPort_t *displayPort)
 
 static int release(displayPort_t *displayPort)
 {
-    const uint8_t subcmd[] = { 1 };
+    uint8_t subcmd[] = { 1 };
 
     return output(displayPort, MSP_DISPLAYPORT, subcmd, sizeof(subcmd));
 }
 
 static int clearScreen(displayPort_t *displayPort)
 {
-    const uint8_t subcmd[] = { 2 };
+    uint8_t subcmd[] = { 2 };
 
     return output(displayPort, MSP_DISPLAYPORT, subcmd, sizeof(subcmd));
 }
 
 static int drawScreen(displayPort_t *displayPort)
 {
-    const uint8_t subcmd[] = { 4 };
+    uint8_t subcmd[] = { 4 };
     return output(displayPort, MSP_DISPLAYPORT, subcmd, sizeof(subcmd));
 }
 
