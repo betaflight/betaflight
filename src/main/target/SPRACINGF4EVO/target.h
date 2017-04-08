@@ -31,7 +31,7 @@
 #define BEEPER                  PC15
 #define BEEPER_INVERTED
 
-#define INVERTER_PIN_UART2     PB2
+#define INVERTER_PIN_UART2      PB2
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PC13
@@ -154,6 +154,8 @@
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 
+#define OSD
+#define USE_OSD_OVER_MSP_DISPLAYPORT
 
 #define LED_STRIP
 #define TRANSPONDER

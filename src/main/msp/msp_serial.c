@@ -23,6 +23,7 @@
 
 #include "common/streambuf.h"
 #include "common/utils.h"
+#include "build/debug.h"
 
 #include "io/serial.h"
 
@@ -82,7 +83,19 @@ static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
     } else if (mspPort->c_state == MSP_HEADER_START) {
         mspPort->c_state = (c == 'M') ? MSP_HEADER_M : MSP_IDLE;
     } else if (mspPort->c_state == MSP_HEADER_M) {
-        mspPort->c_state = (c == '<') ? MSP_HEADER_ARROW : MSP_IDLE;
+        mspPort->c_state = MSP_IDLE;
+        switch(c) {
+            case '<': // COMMAND
+                mspPort->packetType = MSP_PACKET_COMMAND;
+                mspPort->c_state = MSP_HEADER_ARROW;
+                break;
+            case '>': // REPLY
+                mspPort->packetType = MSP_PACKET_REPLY;
+                mspPort->c_state = MSP_HEADER_ARROW;
+                break;
+            default:
+                break;
+        }
     } else if (mspPort->c_state == MSP_HEADER_ARROW) {
         if (c > MSP_PORT_INBUF_SIZE) {
             mspPort->c_state = MSP_IDLE;
@@ -173,12 +186,29 @@ static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp, mspPr
     return mspPostProcessFn;
 }
 
+
+static void mspSerialProcessReceivedReply(mspPort_t *msp, mspProcessReplyFnPtr mspProcessReplyFn)
+{
+    mspPacket_t reply = {
+        .buf = {
+            .ptr = msp->inBuf,
+            .end = msp->inBuf + msp->dataSize,
+        },
+        .cmd = msp->cmdMSP,
+        .result = 0,
+    };
+
+    mspProcessReplyFn(&reply);
+
+    msp->c_state = MSP_IDLE;
+}
+
 /*
  * Process MSP commands from serial ports configured as MSP ports.
  *
  * Called periodically by the scheduler.
  */
-void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessCommandFnPtr mspProcessCommandFn)
+void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessCommandFnPtr mspProcessCommandFn, mspProcessReplyFnPtr mspProcessReplyFn)
 {
     for (uint8_t portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
         mspPort_t * const mspPort = &mspPorts[portIndex];
@@ -196,7 +226,11 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
             }
 
             if (mspPort->c_state == MSP_COMMAND_RECEIVED) {
-                mspPostProcessFn = mspSerialProcessReceivedCommand(mspPort, mspProcessCommandFn);
+                if (mspPort->packetType == MSP_PACKET_COMMAND) {
+                    mspPostProcessFn = mspSerialProcessReceivedCommand(mspPort, mspProcessCommandFn);
+                } else if (mspPort->packetType == MSP_PACKET_REPLY) {
+                    mspSerialProcessReceivedReply(mspPort, mspProcessReplyFn);
+                }
                 break; // process one command at a time so as not to block.
             }
         }
@@ -207,6 +241,21 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessComm
     }
 }
 
+bool mspSerialWaiting(void)
+{
+    for (uint8_t portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
+        mspPort_t * const mspPort = &mspPorts[portIndex];
+        if (!mspPort->port) {
+            continue;
+        }
+
+        if (serialRxBytesWaiting(mspPort->port)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void mspSerialInit(void)
 {
     memset(mspPorts, 0, sizeof(mspPorts));
@@ -215,7 +264,7 @@ void mspSerialInit(void)
 
 int mspSerialPush(uint8_t cmd, const uint8_t *data, int datalen)
 {
-    static uint8_t pushBuf[30];
+    static uint8_t pushBuf[34];
     int ret = 0;
 
     mspPacket_t push = {

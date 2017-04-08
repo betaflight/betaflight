@@ -79,8 +79,8 @@ static int clearScreen(displayPort_t *displayPort)
 
 static int drawScreen(displayPort_t *displayPort)
 {
-    UNUSED(displayPort);
-    return 0;
+    const uint8_t subcmd[] = { 4 };
+    return output(displayPort, MSP_DISPLAYPORT, subcmd, sizeof(subcmd));
 }
 
 static int screenSize(const displayPort_t *displayPort)
@@ -90,7 +90,7 @@ static int screenSize(const displayPort_t *displayPort)
 
 static int write(displayPort_t *displayPort, uint8_t col, uint8_t row, const char *string)
 {
-#define MSP_OSD_MAX_STRING_LENGTH 30
+#define MSP_OSD_MAX_STRING_LENGTH 30 // FIXME move this
     uint8_t buf[MSP_OSD_MAX_STRING_LENGTH + 4];
 
     int len = strlen(string);
