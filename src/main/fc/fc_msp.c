@@ -1963,9 +1963,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
 static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 {
-//    uint32_t i;
-//    uint8_t value;
     const unsigned int dataSize = sbufBytesRemaining(src);
+    UNUSED(dataSize); // maybe unused due to compiler options
 
     switch (cmdMSP) {
 #ifdef TRANSPONDER
