@@ -43,14 +43,14 @@
 #define USE_ACC_MPU6050
 #define USE_ACC_SPI_MPU6500
 //#define ACC_ICM20689_ALIGN       CW270_DEG
-#define ACC_MPU6500_ALIGN       CW270_DEG
+#define ACC_MPU6050_ALIGN       CW270_DEG
 
 #define GYRO
 //#define USE_GYRO_SPI_ICM20689
 #define USE_GYRO_MPU6050
 #define USE_GYRO_SPI_MPU6500
 //#define GYRO_ICM20689_ALIGN      CW270_DEG
-#define GYRO_MPU6500_ALIGN      CW270_DEG
+#define GYRO_MPU6050_ALIGN      CW270_DEG
 
 #define BARO
 #define USE_BARO_BMP280
@@ -160,7 +160,7 @@
 #define WS2811_TIMER_CHANNEL            TIM_Channel_3
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST7_HANDLER
 #define WS2811_DMA_STREAM               DMA1_Stream7
-#define WS2811_DMA_CHANNEL              DMA_Channel_6
+#define WS2811_DMA_CHANNEL              DMA_Channel_2
 #define WS2811_DMA_IRQ                  DMA1_Stream7_IRQn
 #define WS2811_DMA_FLAG                 DMA_FLAG_TCIF7
 #define WS2811_DMA_IT                   DMA_IT_TCIF7
@@ -193,4 +193,4 @@
 #define TARGET_IO_PORTD (BIT(2))
 
 #define USABLE_TIMER_CHANNEL_COUNT 10
-#define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4)  |  TIM_N(5) | TIM_N(8) | TIM_N(9))
+#define USED_TIMERS  ( TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(11) )
