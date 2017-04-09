@@ -60,9 +60,11 @@
 #define USE_UART3
 #define USE_UART4
 #define USE_UART5
-#define USE_SOFTSERIAL1
-#define USE_SOFTSERIAL2
-#define SERIAL_PORT_COUNT       8
+// Disable Soft Serial, no room for it in flash.
+//#define USE_SOFTSERIAL1
+//#define USE_SOFTSERIAL2
+//#define SERIAL_PORT_COUNT       8
+#define SERIAL_PORT_COUNT       6
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10

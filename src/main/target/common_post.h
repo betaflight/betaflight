@@ -25,3 +25,11 @@
 # undef VTX_SMARTAUDIO
 # undef VTX_TRAMP
 #endif
+
+#if defined(SPEKTRUM_BIND_PIN) && !defined(SPEKTRUM_BIND)
+#define SPEKTRUM_BIND
+#endif
+
+#if !defined(SPEKTRUM_BIND_PIN) && defined(SPEKTRUM_BIND)
+# warning SPEKTRUM_BIND_PIN undefined
+#endif
