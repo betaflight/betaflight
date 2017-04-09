@@ -892,7 +892,6 @@ static const clivalue_t valueTable[] = {
 #endif
 };
 
-static featureConfig_t featureConfigCopy;
 static gyroConfig_t gyroConfigCopy;
 static accelerometerConfig_t accelerometerConfigCopy;
 #ifdef MAG
