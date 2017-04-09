@@ -1956,17 +1956,21 @@ static void resetPositionController(void)
 
 static bool adjustPositionFromRCInput(void)
 {
+    bool retValue;
+
     if (STATE(FIXED_WING)) {
-        return adjustFixedWingPositionFromRCInput();
+        retValue = adjustFixedWingPositionFromRCInput();
     }
     else {
-        return adjustMulticopterPositionFromRCInput();
+        retValue = adjustMulticopterPositionFromRCInput();
     }
 
 #if defined(NAV_BLACKBOX)
     navTargetPosition[X] = constrain(lrintf(posControl.desiredState.pos.V.X), -32678, 32767);
     navTargetPosition[Y] = constrain(lrintf(posControl.desiredState.pos.V.Y), -32678, 32767);
 #endif
+
+    return retValue;
 }
 
 /*-----------------------------------------------------------
