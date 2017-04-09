@@ -91,12 +91,14 @@ void taskBstMasterProcess(timeUs_t currentTimeUs);
 #define TASK_PERIOD_MS(ms) ((ms) * 1000)
 #define TASK_PERIOD_US(us) (us)
 
+#ifdef USE_FC
 static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
 
     accUpdate(&accelerometerConfigMutable()->accelerometerTrims);
 }
+#endif
 
 bool taskSerialCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs) {
     UNUSED(currentTimeUs);

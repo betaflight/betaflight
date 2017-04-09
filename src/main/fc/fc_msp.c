@@ -61,6 +61,7 @@
 #include "fc/rc_adjustments.h"
 #include "fc/runtime_config.h"
 
+#ifdef USE_FC
 #include "flight/altitude.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
@@ -68,6 +69,7 @@
 #include "flight/navigation.h"
 #include "flight/pid.h"
 #include "flight/servos.h"
+#endif
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
@@ -88,14 +90,18 @@
 #include "msp/msp_protocol.h"
 #include "msp/msp_serial.h"
 
+#ifdef USE_FC
 #include "rx/msp.h"
 #include "rx/rx.h"
+#endif
 
 #include "scheduler/scheduler.h"
 
+#include "sensors/battery.h"
+
+#ifdef USE_FC
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
-#include "sensors/battery.h"
 #include "sensors/boardalignment.h"
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
@@ -103,6 +109,7 @@
 #include "sensors/sonar.h"
 
 #include "telemetry/telemetry.h"
+#endif
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
