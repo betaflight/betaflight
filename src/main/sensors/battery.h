@@ -27,6 +27,10 @@
 #define VBAT_SCALE_MIN 0
 #define VBAT_SCALE_MAX 255
 
+#ifndef CURRENT_METER_SCALE
+#define CURRENT_METER_SCALE 400 // for Allegro ACS758LCB-100U (40mV/A)
+#endif
+
 typedef enum {
     CURRENT_SENSOR_NONE = 0,
     CURRENT_SENSOR_ADC,
