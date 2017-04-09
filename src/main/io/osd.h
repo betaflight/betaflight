@@ -17,6 +17,7 @@
 
 #pragma once
 
+#ifdef OSD
 #include "common/time.h"
 #include "config/parameter_group.h"
 
@@ -80,3 +81,5 @@ void osdInit(struct displayPort_s *osdDisplayPort);
 void osdResetConfig(osdConfig_t *osdProfile);
 void osdResetAlarms(void);
 void osdUpdate(timeUs_t currentTimeUs);
+
+#endif

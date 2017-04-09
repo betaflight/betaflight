@@ -15,9 +15,22 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdbool.h>
+#include <stdint.h>
 
-#define LOOPTIME_SUSPEND_TIME 3  // Prevent too long busy wait times
+#include <platform.h>
 
-void fcTasksInit(void);
-void osdSlaveTasksInit(void);
+#include "drivers/serial.h"
+
+#include "io/serial.h"
+
+#include "config/feature.h"
+
+#include "fc/config.h"
+
+#ifdef TARGET_CONFIG
+void targetConfiguration(void)
+{
+    serialConfigMutable()->portConfigs[1].functionMask = FUNCTION_MSP; // To connect to FC.
+}
+#endif
