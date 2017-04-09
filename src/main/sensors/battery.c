@@ -337,12 +337,14 @@ void batteryUpdateCurrentMeter(timeUs_t currentTimeUs)
             break;
 
         case CURRENT_METER_VIRTUAL: {
+#ifdef USE_FC
             throttleStatus_e throttleStatus = calculateThrottleStatus();
             bool throttleLowAndMotorStop = (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP));
             int32_t throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
 
             currentMeterVirtualRefresh(lastUpdateAt, ARMING_FLAG(ARMED), throttleLowAndMotorStop, throttleOffset);
             currentMeterVirtualRead(&currentMeter);
+#endif
             break;
         }
 
