@@ -38,7 +38,9 @@
 
 const uint8_t currentMeterIds[] = {
     CURRENT_METER_ID_BATTERY_1,
+#ifdef USE_FC
     CURRENT_METER_ID_VIRTUAL_1,
+#endif
 #ifdef USE_ESC_SENSOR
     CURRENT_METER_ID_ESC_COMBINED_1,
     CURRENT_METER_ID_ESC_MOTOR_1,
@@ -144,6 +146,7 @@ void currentMeterADCRead(currentMeter_t *meter)
 // VIRTUAL
 //
 
+#ifdef USE_FC
 currentSensorVirtualState_t currentMeterVirtualState;
 
 void currentMeterVirtualInit(void)
@@ -171,6 +174,7 @@ void currentMeterVirtualRead(currentMeter_t *meter)
     meter->amperage = currentMeterVirtualState.amperage;
     meter->mAhDrawn = currentMeterVirtualState.mahDrawnState.mAhDrawn;
 }
+#endif
 
 //
 // ESC
@@ -178,19 +182,16 @@ void currentMeterVirtualRead(currentMeter_t *meter)
 
 #ifdef USE_ESC_SENSOR
 currentMeterESCState_t currentMeterESCState;
-#endif
 
 void currentMeterESCInit(void)
 {
-#ifdef USE_ESC_SENSOR
     memset(&currentMeterESCState, 0, sizeof(currentMeterESCState_t));
-#endif
 }
 
 void currentMeterESCRefresh(int32_t lastUpdateAt)
 {
     UNUSED(lastUpdateAt);
-#ifdef USE_ESC_SENSOR
+
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
     if (escData->dataAge <= ESC_BATTERY_AGE_MAX) {
         currentMeterESCState.amperage = escData->current;
@@ -199,26 +200,18 @@ void currentMeterESCRefresh(int32_t lastUpdateAt)
         currentMeterESCState.amperage = 0;
         currentMeterESCState.mAhDrawn = 0;
     }
-#endif
 }
 
 void currentMeterESCReadCombined(currentMeter_t *meter)
 {
-#ifdef USE_ESC_SENSOR
     meter->amperageLatest = currentMeterESCState.amperage;
     meter->amperage = currentMeterESCState.amperage;
     meter->mAhDrawn = currentMeterESCState.mAhDrawn;
-#else
     currentMeterReset(meter);
-#endif
 }
 
 void currentMeterESCReadMotor(uint8_t motorNumber, currentMeter_t *meter)
 {
-#ifndef USE_ESC_SENSOR
-    UNUSED(motorNumber);
-    currentMeterReset(meter);
-#else
     escSensorData_t *escData = getEscSensorData(motorNumber);
     if (escData && escData->dataAge <= ESC_BATTERY_AGE_MAX) {
         meter->amperage = escData->current;
@@ -227,8 +220,8 @@ void currentMeterESCReadMotor(uint8_t motorNumber, currentMeter_t *meter)
     } else {
         currentMeterReset(meter);
     }
-#endif
 }
+#endif
 
 //
 // API for current meters using IDs
@@ -240,19 +233,22 @@ void currentMeterRead(currentMeterId_e id, currentMeter_t *meter)
 {
     if (id == CURRENT_METER_ID_BATTERY_1) {
         currentMeterADCRead(meter);
-    } else if (id == CURRENT_METER_ID_VIRTUAL_1) {
+    }
+#ifdef USE_FC
+    else if (id == CURRENT_METER_ID_VIRTUAL_1) {
         currentMeterVirtualRead(meter);
     }
+#endif
 #ifdef USE_ESC_SENSOR
-    if (id == CURRENT_METER_ID_ESC_COMBINED_1) {
+    else if (id == CURRENT_METER_ID_ESC_COMBINED_1) {
         currentMeterESCReadCombined(meter);
-    } else
-    if (id >= CURRENT_METER_ID_ESC_MOTOR_1 && id <= CURRENT_METER_ID_ESC_MOTOR_20 ) {
+    }
+    else if (id >= CURRENT_METER_ID_ESC_MOTOR_1 && id <= CURRENT_METER_ID_ESC_MOTOR_20 ) {
         int motor = id - CURRENT_METER_ID_ESC_MOTOR_1;
         currentMeterESCReadMotor(motor, meter);
-    } else
+    }
 #endif
-    {
+    else {
         currentMeterReset(meter);
     }
 }
