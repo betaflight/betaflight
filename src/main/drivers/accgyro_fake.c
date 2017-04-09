@@ -23,23 +23,6 @@
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
 #include <stdio.h>
 #include <pthread.h>
-#define printf printf
-#define sprintf sprintf
-
-#define ACC_LOCK pthread_mutex_unlock(&accUpdateLock)
-#define ACC_UNLOCK pthread_mutex_unlock(&accUpdateLock)
-
-#define GYRO_LOCK pthread_mutex_unlock(&gyroUpdateLock)
-#define GYRO_UNLOCK pthread_mutex_unlock(&gyroUpdateLock)
-
-#else
-
-#define ACC_LOCK
-#define ACC_UNLOCK
-
-#define GYRO_LOCK
-#define GYRO_UNLOCK
-
 #endif
 
 #ifdef USE_FAKE_GYRO
@@ -51,54 +34,65 @@
 #include "accgyro_fake.h"
 
 static int16_t fakeGyroADC[XYZ_AXIS_COUNT];
+gyroDev_t *fakeGyroDev;
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-static pthread_mutex_t gyroUpdateLock;
-#endif
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_GYRO_SYNC)
-static bool gyroUpdated = false;
+static pthread_mutex_t gyroLock;
 #endif
 
 static void fakeGyroInit(gyroDev_t *gyro)
 {
-    UNUSED(gyro);
+    fakeGyroDev = gyro;
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-    if (pthread_mutex_init(&gyroUpdateLock, NULL) != 0) {
-        printf("Create gyroUpdateLock error!\n");
+    if (pthread_mutex_init(&gyroLock, NULL) != 0) {
+        printf("Create gyroLock error!\n");
     }
 #endif
 }
 
-void fakeGyroSet(int16_t x, int16_t y, int16_t z)
+static void fakeGyroLock(gyroDev_t *gyro)
 {
-    GYRO_LOCK;
+    UNUSED(gyro);
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+    pthread_mutex_lock(&gyroLock);
+#endif
+}
+
+static void fakeGyroUnLock(gyroDev_t *gyro)
+{
+    UNUSED(gyro);
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+    pthread_mutex_unlock(&gyroLock);
+#endif
+}
+
+void fakeGyroSet(gyroDev_t *gyro, int16_t x, int16_t y, int16_t z)
+{
+    fakeGyroLock(gyro);
 
     fakeGyroADC[X] = x;
     fakeGyroADC[Y] = y;
     fakeGyroADC[Z] = z;
 
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_GYRO_SYNC)
-    gyroUpdated = true;
-#endif
-    GYRO_UNLOCK;
+    gyro->dataReady = true;
+
+    fakeGyroUnLock(gyro);
 }
 
 static bool fakeGyroRead(gyroDev_t *gyro)
 {
-    GYRO_LOCK;
-#if defined(SIMULATOR_GYRO_SYNC)
-    if(gyroUpdated == false) {
-        GYRO_UNLOCK;
+    fakeGyroLock(gyro);
+    if (gyro->dataReady == false) {
+        fakeGyroUnLock(gyro);
         return false;
     }
-    gyroUpdated = false;
-#endif
+    gyro->dataReady = false;
 
     gyro->gyroADCRaw[X] = fakeGyroADC[X];
     gyro->gyroADCRaw[Y] = fakeGyroADC[Y];
     gyro->gyroADCRaw[Z] = fakeGyroADC[Z];
 
-    GYRO_UNLOCK;
+    fakeGyroUnLock(gyro);
     return true;
 }
 
@@ -134,54 +128,65 @@ bool fakeGyroDetect(gyroDev_t *gyro)
 #ifdef USE_FAKE_ACC
 
 static int16_t fakeAccData[XYZ_AXIS_COUNT];
+accDev_t *fakeAccDev;
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-static pthread_mutex_t accUpdateLock;
-#endif
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_ACC_SYNC)
-static bool accUpdated = false;
+static pthread_mutex_t accLock;
 #endif
 
 static void fakeAccInit(accDev_t *acc)
 {
-    UNUSED(acc);
+    fakeAccDev = acc;
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-    if (pthread_mutex_init(&accUpdateLock, NULL) != 0) {
-        printf("Create accUpdateLock error!\n");
+    if (pthread_mutex_init(&accLock, NULL) != 0) {
+        printf("Create accLock error!\n");
     }
 #endif
 }
 
-void fakeAccSet(int16_t x, int16_t y, int16_t z)
+static void fakeAccLock(accDev_t *acc)
 {
-    ACC_LOCK;
+    UNUSED(acc);
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+    pthread_mutex_lock(&accLock);
+#endif
+}
+
+static void fakeAccUnLock(accDev_t *acc)
+{
+    UNUSED(acc);
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+    pthread_mutex_unlock(&accLock);
+#endif
+}
+
+void fakeAccSet(accDev_t *acc, int16_t x, int16_t y, int16_t z)
+{
+    fakeAccLock(acc);
 
     fakeAccData[X] = x;
     fakeAccData[Y] = y;
     fakeAccData[Z] = z;
 
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_ACC_SYNC)
-    accUpdated = true;
-#endif
-    ACC_LOCK;
+    acc->dataReady = true;
+
+    fakeAccUnLock(acc);
 }
 
 static bool fakeAccRead(accDev_t *acc)
 {
-    ACC_LOCK;
-#if defined(SIMULATOR_ACC_SYNC)
-    if(accUpdated == false) {
-        ACC_UNLOCK;
+    fakeAccLock(acc);
+    if (acc->dataReady == false) {
+        fakeAccUnLock(acc);
         return false;
     }
-    accUpdated = false;
-#endif
+    acc->dataReady = false;
 
     acc->ADCRaw[X] = fakeAccData[X];
     acc->ADCRaw[Y] = fakeAccData[Y];
     acc->ADCRaw[Z] = fakeAccData[Z];
 
-    ACC_UNLOCK;
+    fakeAccUnLock(acc);
     return true;
 }
 

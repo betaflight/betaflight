@@ -57,7 +57,7 @@ typedef struct gyroDev_s {
     uint8_t lpf;
     gyroRateKHz_e gyroRateKHz;
     uint8_t mpuDividerDrops;
-    volatile bool dataReady;
+    bool dataReady;
     sensor_align_e gyroAlign;
     mpuDetectionResult_t mpuDetectionResult;
     const extiConfig_t *mpuIntExtiConfig;
@@ -71,6 +71,7 @@ typedef struct accDev_s {
     uint16_t acc_1G;
     int16_t ADCRaw[XYZ_AXIS_COUNT];
     char revisionCode;                                      // a revision code for the sensor, if known
+    bool dataReady;
     sensor_align_e accAlign;
     mpuDetectionResult_t mpuDetectionResult;
     mpuConfiguration_t mpuConfiguration;
