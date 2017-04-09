@@ -82,6 +82,12 @@
 #define USE_SERIALRX_XBUS       // JR
 
 #if (FLASH_SIZE > 64)
+#define MAX_PROFILE_COUNT 3
+#else
+#define MAX_PROFILE_COUNT 2
+#endif
+
+#if (FLASH_SIZE > 64)
 #define BLACKBOX
 #define LED_STRIP
 #define TELEMETRY

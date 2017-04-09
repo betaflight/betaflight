@@ -85,11 +85,6 @@ typedef struct pidProfile_s {
     float rateAccelLimit;                   // accel limiter roll/pitch deg/sec/ms
 } pidProfile_t;
 
-#if FLASH_SIZE <= 128
-#define MAX_PROFILE_COUNT 2
-#else
-#define MAX_PROFILE_COUNT 3
-#endif
 PG_DECLARE_ARRAY(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles);
 
 typedef struct pidConfig_s {

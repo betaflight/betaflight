@@ -76,6 +76,11 @@
 #error "Invalid chipset specified. Update platform.h"
 #endif
 
-#include "target/common.h"
+#ifdef USE_OSD_SLAVE
+#include "target/common_osd_slave.h"
 #include "target.h"
-#include "target/common_post.h"
+#else
+#include "target/common_fc_pre.h"
+#include "target.h"
+#include "target/common_fc_post.h"
+#endif

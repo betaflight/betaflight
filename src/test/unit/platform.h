@@ -23,6 +23,7 @@
 #define U_ID_1 1
 #define U_ID_2 2
 
+#define MAX_PROFILE_COUNT 3
 #define MAG
 #define BARO
 #define GPS

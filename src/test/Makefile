@@ -192,7 +192,7 @@ COMMON_FLAGS = \
 	-ggdb3 \
 	-pthread \
 	-O0 \
-	-DUNIT_TEST \
+	-DUNIT_TEST -DUSE_FC\
 	-isystem $(GTEST_DIR)/inc \
 	-MMD -MP
 
