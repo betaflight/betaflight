@@ -290,11 +290,15 @@ void batteryInit(void)
             break;
 
         case CURRENT_METER_VIRTUAL:
+#ifdef USE_FC
             currentMeterVirtualInit();
+#endif
             break;
 
         case CURRENT_METER_ESC:
+#ifdef ESC_SENSOR
             currentMeterESCInit();
+#endif
             break;
 
         default:
