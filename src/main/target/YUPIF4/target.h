@@ -30,24 +30,37 @@
 #define INVERTER                PB15
 #define INVERTER_USART          USART6
 
+#define USE_SPI
+#define USE_SPI_DEVICE_1 // Gyro
+#define SPI1_NSS_PIN            PA4
+#define SPI1_SCK_PIN            PA5
+#define SPI1_MISO_PIN           PA6
+#define SPI1_MOSI_PIN           PA7
 
-// MPU6500 interrupt
+
+/////// ICM20689 ////////
 #define USE_EXTI
-#define USE_MPU_DATA_READY_SIGNAL
 #define MPU_INT_EXTI            PC4
-// MPU6500
-#define MPU6500_CS_PIN          PA4
+#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
+#define USE_MPU_DATA_READY_SIGNAL
+#define ENSURE_MPU_DATA_READY_IS_LOW
+
+// ICM20689
+#define MPU6500_CS_PIN          SPI1_NSS_PIN
 #define MPU6500_SPI_INSTANCE    SPI1
 
 #define ACC
-#define USE_ACC_MPU6500
+//#define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW90_DEG
 
 #define GYRO
-#define USE_GYRO_MPU6500
+//#define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
+//#define USE_GYRO_SPI_ICM20689
 #define GYRO_MPU6500_ALIGN      CW90_DEG
+
+////////////////////////
 
 #define USE_I2C
 #define I2C_DEVICE              (I2CDEV_1)
@@ -99,13 +112,6 @@
 
 
 // SPI ports definition
-#define USE_SPI
-
-#define USE_SPI_DEVICE_1 // Gyro
-#define SPI1_NSS_PIN            PA4
-#define SPI1_SCK_PIN            PA5
-#define SPI1_MISO_PIN           PA6
-#define SPI1_MOSI_PIN           PA7
 
 #define USE_SPI_DEVICE_3 // SD Card
 #define SPI3_NSS_PIN            PB3
