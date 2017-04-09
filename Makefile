@@ -690,7 +690,6 @@ COMMON_SRC = \
             fc/fc_hardfaults.c \
             fc/fc_msp.c \
             fc/fc_tasks.c \
-            fc/rc_controls.c \
             fc/runtime_config.c \
             io/beeper.c \
             io/serial.c \
@@ -719,8 +718,9 @@ FC_SRC = \
             drivers/rx_pwm.c \
             drivers/serial_softserial.c \
             fc/fc_core.c \
-            fc/rc_adjustments.c \
             fc/fc_rc.c \
+            fc/rc_adjustments.c \
+            fc/rc_controls.c \
             fc/cli.c \
             flight/altitude.c \
             flight/failsafe.c \
