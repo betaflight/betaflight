@@ -236,12 +236,11 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 
 #ifdef SONAR
     if (sensors(SENSOR_SONAR)) {
-        int32_t sonarAlt = sonarRead();
-        sonarAlt = sonarCalculateAltitude(sonarAlt, getCosTiltAngle());
+        int32_t sonarAlt = sonarCalculateAltitude(sonarRead(), getCosTiltAngle());
         if (sonarAlt > 0 && sonarAlt >= sonarCfAltCm && sonarAlt <= sonarMaxAltWithTiltCm) {
             // SONAR in range, so use complementary filter
             float sonarTransition = (float)(sonarMaxAltWithTiltCm - sonarAlt) / (sonarMaxAltWithTiltCm - sonarCfAltCm);
-            sonarAlt = sonarAlt * sonarTransition + baroAlt * (1.0f - sonarTransition);
+            sonarAlt = (float)sonarAlt * sonarTransition + baroAlt * (1.0f - sonarTransition);
             estimatedAltitude = sonarAlt;
         }
     }
@@ -254,7 +253,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 
         // Integrator - velocity, cm/sec
         if (accSumCount) {
-            accZ_tmp = (float)accSum[2] / (float)accSumCount;
+            accZ_tmp = (float)accSum[2] / accSumCount;
         }
         const float vel_acc = accZ_tmp * accVelScale * (float)accTimeSum;
 
@@ -290,7 +289,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 
     // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity).
     // By using CF it's possible to correct the drift of integrated accZ (velocity) without loosing the phase, i.e without delay
-    vel = vel * barometerConfig()->baro_cf_vel + baroVel * (1.0f - barometerConfig()->baro_cf_vel);
+    vel = vel * barometerConfig()->baro_cf_vel + (float)baroVel * (1.0f - barometerConfig()->baro_cf_vel);
     int32_t vel_tmp = lrintf(vel);
 
     // set vario
