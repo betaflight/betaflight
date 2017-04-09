@@ -41,20 +41,20 @@ typedef struct {
 	bool connected;
 	uint16_t clientCount;
 	uint8_t id;
-} uartPort_t;
+} tcpPort_t;
 
 serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr rxCallback, uint32_t baudRate, portMode_t mode, portOptions_t options);
 
-// serialPort API
+// tcpPort API
 void tcpWrite(serialPort_t *instance, uint8_t ch);
-void tcpDataIn(uartPort_t *instance, uint8_t* ch, int size);
+void tcpDataIn(tcpPort_t *instance, uint8_t* ch, int size);
 uint32_t tcpTotalRxBytesWaiting(const serialPort_t *instance);
 uint32_t tcpTotalTxBytesFree(const serialPort_t *instance);
 uint8_t tcpRead(serialPort_t *instance);
-void tcpDataOut(uartPort_t *instance);
+void tcpDataOut(tcpPort_t *instance);
 bool isTcpTransmitBufferEmpty(const serialPort_t *s);
 
 bool tcpIsStart(void);
 bool* tcpGetUsed(void);
-uartPort_t* tcpGetPool(void);
+tcpPort_t* tcpGetPool(void);
 

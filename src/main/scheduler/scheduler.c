@@ -126,6 +126,9 @@ void taskSystem(timeUs_t currentTimeUs)
         totalWaitingTasksSamples = 0;
         totalWaitingTasks = 0;
     }
+#if defined(SIMULATOR_BUILD)
+    averageSystemLoadPercent = 0;
+#endif
 }
 
 #ifndef SKIP_TASK_STATISTICS

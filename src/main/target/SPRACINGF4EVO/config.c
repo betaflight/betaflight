@@ -52,7 +52,6 @@ void targetConfiguration(void)
     barometerConfigMutable()->baro_hardware = BARO_DEFAULT;
     rxConfigMutable()->sbus_inversion = 1;
     serialConfigMutable()->portConfigs[1].functionMask = FUNCTION_MSP; // So SPRacingF3OSD users don't have to change anything.
-    serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIALRX_UART)].functionMask = FUNCTION_RX_SERIAL;
     serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(TELEMETRY_UART)].functionMask = FUNCTION_TELEMETRY_SMARTPORT;
     telemetryConfigMutable()->telemetry_inversion = 0;
     telemetryConfigMutable()->sportHalfDuplex = 0;

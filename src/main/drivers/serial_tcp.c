@@ -38,18 +38,18 @@
 #define BASE_PORT 5760
 
 const struct serialPortVTable uartVTable[]; // Forward
-static uartPort_t tcpSerialPorts[SERIAL_PORT_COUNT];
+static tcpPort_t tcpSerialPorts[SERIAL_PORT_COUNT];
 static bool portInited[SERIAL_PORT_COUNT];
 static bool tcpStart = false;
 bool tcpIsStart(void) {
 	return tcpStart;
 }
 static void onData(dyad_Event *e) {
-	uartPort_t* s = (uartPort_t*)(e->udata);
+	tcpPort_t* s = (tcpPort_t*)(e->udata);
 	tcpDataIn(s, (uint8_t*)e->data, e->size);
 }
 static void onClose(dyad_Event *e) {
-	uartPort_t* s = (uartPort_t*)(e->udata);
+	tcpPort_t* s = (tcpPort_t*)(e->udata);
 	s->clientCount--;
 	s->conn = NULL;
 	fprintf(stderr, "[CLS]UART%u: %d,%d\n", s->id + 1, s->connected, s->clientCount);
@@ -58,7 +58,7 @@ static void onClose(dyad_Event *e) {
 	}
 }
 static void onAccept(dyad_Event *e) {
-	uartPort_t* s = (uartPort_t*)(e->udata);
+	tcpPort_t* s = (tcpPort_t*)(e->udata);
 	fprintf(stderr, "New connection on UART%u, %d\n", s->id + 1, s->clientCount);
 
 	s->connected = true;
@@ -74,7 +74,7 @@ static void onAccept(dyad_Event *e) {
 	dyad_addListener(e->remote, DYAD_EVENT_DATA, onData, e->udata);
 	dyad_addListener(e->remote, DYAD_EVENT_CLOSE, onClose, e->udata);
 }
-static uartPort_t* tcpReconfigure(uartPort_t *s, int id)
+static tcpPort_t* tcpReconfigure(tcpPort_t *s, int id)
 {
 	if(portInited[id]) {
 		fprintf(stderr, "port had initialed!!\n");
@@ -113,7 +113,7 @@ static uartPort_t* tcpReconfigure(uartPort_t *s, int id)
 
 serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr rxCallback, uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
-    uartPort_t *s = NULL;
+    tcpPort_t *s = NULL;
 
 #if defined(USE_UART1) || defined(USE_UART2) || defined(USE_UART3) || defined(USE_UART4) || defined(USE_UART5) || defined(USE_UART6) || defined(USE_UART7) || defined(USE_UART8)
 	uintptr_t id = ((uintptr_t)USARTx - 1);
@@ -143,7 +143,7 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr rxCallbac
 
 uint32_t tcpTotalRxBytesWaiting(const serialPort_t *instance)
 {
-    uartPort_t *s = (uartPort_t*)instance;
+    tcpPort_t *s = (tcpPort_t*)instance;
     uint32_t count;
     pthread_mutex_lock(&s->rxLock);
     if (s->port.rxBufferHead >= s->port.rxBufferTail) {
@@ -158,7 +158,7 @@ uint32_t tcpTotalRxBytesWaiting(const serialPort_t *instance)
 
 uint32_t tcpTotalTxBytesFree(const serialPort_t *instance)
 {
-    uartPort_t *s = (uartPort_t*)instance;
+    tcpPort_t *s = (tcpPort_t*)instance;
     uint32_t bytesUsed;
 
     pthread_mutex_lock(&s->txLock);
@@ -175,7 +175,7 @@ uint32_t tcpTotalTxBytesFree(const serialPort_t *instance)
 
 bool isTcpTransmitBufferEmpty(const serialPort_t *instance)
 {
-    uartPort_t *s = (uartPort_t *)instance;
+    tcpPort_t *s = (tcpPort_t *)instance;
     pthread_mutex_lock(&s->txLock);
     bool isEmpty = s->port.txBufferTail == s->port.txBufferHead;
     pthread_mutex_unlock(&s->txLock);
@@ -185,7 +185,7 @@ bool isTcpTransmitBufferEmpty(const serialPort_t *instance)
 uint8_t tcpRead(serialPort_t *instance)
 {
     uint8_t ch;
-    uartPort_t *s = (uartPort_t *)instance;
+    tcpPort_t *s = (tcpPort_t *)instance;
     pthread_mutex_lock(&s->rxLock);
 
     ch = s->port.rxBuffer[s->port.rxBufferTail];
@@ -201,7 +201,7 @@ uint8_t tcpRead(serialPort_t *instance)
 
 void tcpWrite(serialPort_t *instance, uint8_t ch)
 {
-    uartPort_t *s = (uartPort_t *)instance;
+    tcpPort_t *s = (tcpPort_t *)instance;
     pthread_mutex_lock(&s->txLock);
 
     s->port.txBuffer[s->port.txBufferHead] = ch;
@@ -215,10 +215,10 @@ void tcpWrite(serialPort_t *instance, uint8_t ch)
     tcpDataOut(s);
 }
 
-void tcpDataOut(uartPort_t *instance)
+void tcpDataOut(tcpPort_t *instance)
 {
     uint32_t bytesUsed;
-    uartPort_t *s = (uartPort_t *)instance;
+    tcpPort_t *s = (tcpPort_t *)instance;
     if(s->conn == NULL) return;
     pthread_mutex_lock(&s->txLock);
 
@@ -234,9 +234,9 @@ void tcpDataOut(uartPort_t *instance)
     pthread_mutex_unlock(&s->txLock);
 }
 
-void tcpDataIn(uartPort_t *instance, uint8_t* ch, int size)
+void tcpDataIn(tcpPort_t *instance, uint8_t* ch, int size)
 {
-    uartPort_t *s = (uartPort_t *)instance;
+    tcpPort_t *s = (tcpPort_t *)instance;
 	pthread_mutex_lock(&s->rxLock);
 
 	while(size--) {
