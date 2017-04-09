@@ -69,7 +69,6 @@
 #include "flight/servos.h"
 
 #include "config/config_eeprom.h"
-#include "config/config_profile.h"
 #include "config/feature.h"
 
 #include "bus_bst.h"

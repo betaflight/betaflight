@@ -30,8 +30,6 @@
 #include "drivers/sound_beeper.h"
 #include "drivers/vcd.h"
 
-#define MAX_NAME_LENGTH 16
-
 typedef enum {
     FEATURE_RX_PPM = 1 << 0,
     //FEATURE_VBAT = 1 << 1,
@@ -64,13 +62,24 @@ typedef enum {
     FEATURE_ANTI_GRAVITY = 1 << 28,
 } features_e;
 
+#define MAX_NAME_LENGTH 16
+
+#ifdef USE_FC
 typedef struct systemConfig_s {
     uint8_t pidProfileIndex;
     uint8_t activeRateProfile;
     uint8_t debug_mode;
     uint8_t task_statistics;
-    char name[MAX_NAME_LENGTH + 1];
+    char name[MAX_NAME_LENGTH + 1]; // FIXME misplaced, see PG_PILOT_CONFIG in CF v1.x
 } systemConfig_t;
+#endif
+
+#ifdef USE_OSD_SLAVE
+typedef struct systemConfig_s {
+    uint8_t debug_mode;
+    uint8_t task_statistics;
+} systemConfig_t;
+#endif
 
 PG_DECLARE(systemConfig_t, systemConfig);
 PG_DECLARE(adcConfig_t, adcConfig);
