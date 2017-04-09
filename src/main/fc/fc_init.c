@@ -91,6 +91,7 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
 #include "io/osd.h"
+#include "io/osd_slave.h"
 #include "io/displayport_msp.h"
 #include "io/vtx.h"
 #include "io/vtx_smartaudio.h"
@@ -154,6 +155,21 @@ void processLoopback(void)
     }
 #endif
 }
+
+
+#ifdef BUS_SWITCH_PIN
+void busSwitchInit(void)
+{
+static IO_t busSwitchResetPin        = IO_NONE;
+
+    busSwitchResetPin = IOGetByTag(IO_TAG(BUS_SWITCH_PIN));
+    IOInit(busSwitchResetPin, OWNER_SYSTEM, 0);
+    IOConfigGPIO(busSwitchResetPin, IOCFG_OUT_PP);
+
+    // ENABLE
+    IOLo(busSwitchResetPin);
+}
+#endif
 
 void init(void)
 {
@@ -254,6 +270,10 @@ void init(void)
     delay(100);
 
     timerInit();  // timer must be initialized before any channel is allocated
+
+#ifdef BUS_SWITCH_PIN
+    busSwitchInit();
+#endif
 
 #if defined(AVOID_UART1_FOR_PWM_PPM)
     serialInit(feature(FEATURE_SOFTSERIAL),
@@ -440,11 +460,11 @@ void init(void)
     cmsInit();
 #endif
 
-#if ( defined(OSD) || (defined(USE_MSP_DISPLAYPORT) && defined(CMS)) )
+#if (defined(OSD) || (defined(USE_MSP_DISPLAYPORT) && defined(CMS)) || defined(USE_OSD_SLAVE))
     displayPort_t *osdDisplayPort = NULL;
 #endif
 
-#ifdef OSD
+#if defined(OSD) && !defined(USE_OSD_SLAVE)
     //The OSD need to be initialised after GYRO to avoid GYRO initialisation failure on some targets
 
     if (feature(FEATURE_OSD)) {
@@ -457,6 +477,15 @@ void init(void)
         // osdInit  will register with CMS by itself.
         osdInit(osdDisplayPort);
     }
+#endif
+
+#if defined(USE_OSD_SLAVE) && !defined(OSD)
+#if defined(USE_MAX7456)
+    // If there is a max7456 chip for the OSD then use it
+    osdDisplayPort = max7456DisplayPortInit(vcdProfile());
+    // osdInit  will register with CMS by itself.
+    osdSlaveInit(osdDisplayPort);
+#endif
 #endif
 
 #if defined(CMS) && defined(USE_MSP_DISPLAYPORT)
@@ -588,6 +617,10 @@ void init(void)
     latchActiveFeatures();
     motorControlEnable = true;
 
+#ifdef USE_OSD_SLAVE
+    osdSlaveTasksInit();
+#else
     fcTasksInit();
+#endif
     systemState |= SYSTEM_STATE_READY;
 }

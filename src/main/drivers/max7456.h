@@ -35,6 +35,7 @@
 extern uint16_t maxScreenSize;
 
 struct vcdProfile_s;
+void    max7456HardwareReset(void);
 void    max7456Init(const struct vcdProfile_s *vcdProfile);
 void    max7456DrawScreen(void);
 void    max7456WriteNvm(uint8_t char_address, const uint8_t *font_data);

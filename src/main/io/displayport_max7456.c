@@ -33,6 +33,7 @@
 
 #include "io/displayport_max7456.h"
 #include "io/osd.h"
+#include "io/osd_slave.h"
 
 displayPort_t max7456DisplayPort;
 
@@ -41,9 +42,12 @@ PG_REGISTER(displayPortProfile_t, displayPortProfileMax7456, PG_DISPLAY_PORT_MAX
 
 static int grab(displayPort_t *displayPort)
 {
+    // FIXME this should probably not have a dependency on the OSD or OSD slave code
     UNUSED(displayPort);
+#ifdef OSD
     osdResetAlarms();
     refreshTimeout = 0;
+#endif
 
     return 0;
 }

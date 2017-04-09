@@ -17,7 +17,24 @@
 
 #pragma once
 
-#define LOOPTIME_SUSPEND_TIME 3  // Prevent too long busy wait times
+#ifdef USE_OSD_SLAVE
+#include "common/time.h"
 
-void fcTasksInit(void);
-void osdSlaveTasksInit(void);
+struct displayPort_s;
+
+// init
+void osdSlaveInit(struct displayPort_s *osdDisplayPort);
+
+// task api
+bool osdSlaveCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
+void osdSlaveUpdate(timeUs_t currentTimeUs);
+
+// msp api
+void osdSlaveHeartbeat(void);
+void osdSlaveClearScreen(void);
+void osdSlaveWriteChar(const uint8_t x, const uint8_t y, const uint8_t c);
+void osdSlaveWrite(const uint8_t x, const uint8_t y, const char *s);
+
+void osdSlaveDrawScreen(void);
+
+#endif

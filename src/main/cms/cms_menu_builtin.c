@@ -93,7 +93,10 @@ static CMS_Menu menuInfo = {
 static OSD_Entry menuFeaturesEntries[] =
 {
     {"--- FEATURES ---", OME_Label, NULL, NULL, 0},
+
+#if defined(BLACKBOX)
     {"BLACKBOX", OME_Submenu, cmsMenuChange, &cmsx_menuBlackbox, 0},
+#endif
 #if defined(VTX) || defined(USE_RTC6705)
     {"VTX", OME_Submenu, cmsMenuChange, &cmsx_menuVtx, 0},
 #endif // VTX || USE_RTC6705
