@@ -25,6 +25,7 @@
 #include "build/build_config.h"
 
 #include "common/axis.h"
+#include "common/utils.h"
 
 #include "compass.h"
 #include "compass_fake.h"
@@ -34,6 +35,7 @@ static int16_t fakeMagData[XYZ_AXIS_COUNT];
 
 static bool fakeMagInit(magDev_t *magDev)
 {
+    UNUSED(magDev);
     // initially point north
     fakeMagData[X] = 4096;
     fakeMagData[Y] = 0;
@@ -50,6 +52,7 @@ void fakeMagSet(int16_t x, int16_t y, int16_t z)
 
 static bool fakeMagRead(magDev_t *magDev)
 {
+    UNUSED(magDev);
     magDev->magADCRaw[X] = fakeMagData[X];
     magDev->magADCRaw[Y] = fakeMagData[Y];
     magDev->magADCRaw[Z] = fakeMagData[Z];

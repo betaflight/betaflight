@@ -208,11 +208,13 @@ static bool ak8963SensorCompleteRead(magDev_t *magDev, uint8_t *buf)
 #else
 static bool ak8963SensorRead(magDev_t *magDev, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
+    UNUSED(magDev);
     return i2cRead(MAG_I2C_INSTANCE, addr_, reg_, len, buf);
 }
 
 static bool ak8963SensorWrite(magDev_t *magDev, uint8_t addr_, uint8_t reg_, uint8_t data)
 {
+    UNUSED(magDev);
     return i2cWrite(MAG_I2C_INSTANCE, addr_, reg_, data);
 }
 #endif

@@ -550,7 +550,6 @@ void dashboardSetNextPageChangeAt(timeUs_t futureMicros)
 {
     nextPageAt = futureMicros;
 }
-#endif
 
 void formatTrimDegrees ( char *formattedTrim, int16_t trimValue ) {
 	char trim[6];
@@ -563,3 +562,5 @@ void formatTrimDegrees ( char *formattedTrim, int16_t trimValue ) {
 	}
 	strcat(formattedTrim,trim+x);
 }
+
+#endif
