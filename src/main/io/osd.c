@@ -75,6 +75,7 @@
 #include "fc/runtime_config.h"
 
 #include "flight/imu.h"
+#include "flight/altitude.h"
 
 #include "rx/rx.h"
 

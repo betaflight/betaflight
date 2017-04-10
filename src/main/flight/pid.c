@@ -116,10 +116,10 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .levelSensitivity = 55,
         .setpointRelaxRatio = 100,
         .dtermSetpointWeight = 60,
-        .yawRateAccelLimit = 10.0f,
-        .rateAccelLimit = 0.0f,
+        .yawRateAccelLimit = 100,
+        .rateAccelLimit = 0,
         .itermThrottleThreshold = 350,
-        .itermAcceleratorGain = 1.0f
+        .itermAcceleratorGain = 1000
     );
 }
 
@@ -242,8 +242,8 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
     levelGain = pidProfile->P8[PIDLEVEL] / 10.0f;
     horizonGain = pidProfile->I8[PIDLEVEL] / 10.0f;
     horizonTransition = 100.0f / pidProfile->D8[PIDLEVEL];
-    maxVelocity[FD_ROLL] = maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 1000 * dT;
-    maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 1000 * dT;
+    maxVelocity[FD_ROLL] = maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 100 * dT;
+    maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 100 * dT;
     ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
     ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
 }
