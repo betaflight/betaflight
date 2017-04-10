@@ -19,8 +19,7 @@
 
 #define LED0                    PB3
 
-#define INVERTER                PB2 // PB2 (BOOT1) used as inverter select GPIO
-#define INVERTER_USART          USART1
+#define INVERTER_PIN_UART1      PB2 // PB2 (BOOT1) used as inverter select GPIO
 
 #define BEEPER                  PA15
 #define BEEPER_OPT              PB2

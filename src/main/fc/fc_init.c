@@ -359,8 +359,8 @@ void init(void)
     beeperInit(&beeperDevConfig);
 #endif
 
-#ifdef INVERTER
-    initInverter();
+#ifdef USE_INVERTER
+    initInverters();
 #endif
 
 

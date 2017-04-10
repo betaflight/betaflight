@@ -27,8 +27,7 @@
 #define BEEPER                  PB2
 #define BEEPER_INVERTED
 
-#define INVERTER                PC3 // PC3 used as inverter select GPIO
-#define INVERTER_USART          USART1
+#define INVERTER_PIN_UART1      PC3
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1

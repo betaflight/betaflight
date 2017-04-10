@@ -27,8 +27,7 @@
 #define BEEPER                  PE5
 #define BEEPER_INVERTED
 
-#define INVERTER                PD3
-#define INVERTER_USART          USART6
+#define INVERTER_PIN_UART6      PD3
 
 
 

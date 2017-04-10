@@ -28,9 +28,6 @@
 #define BEEPER                  PC1
 #define BEEPER_INVERTED
 
-#define INVERTER                PB12
-#define INVERTER_USART          USART6
-
 #define INVERTER_PIN_UART1      PB13
 #define INVERTER_PIN_UART6      PB12
 
