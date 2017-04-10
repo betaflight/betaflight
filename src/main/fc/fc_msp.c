@@ -62,7 +62,7 @@
 #include "fc/rc_adjustments.h"
 #include "fc/runtime_config.h"
 
-#include "flight/altitudehold.h"
+#include "flight/altitude.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -693,11 +693,11 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_ALTITUDE:
 #if defined(BARO) || defined(SONAR)
-        sbufWriteU32(dst, altitudeHoldGetEstimatedAltitude());
+        sbufWriteU32(dst, getEstimatedAltitude());
 #else
         sbufWriteU32(dst, 0);
 #endif
-        sbufWriteU16(dst, vario);
+        sbufWriteU16(dst, getEstimatedVario());
         break;
 
     case MSP_SONAR_ALTITUDE:

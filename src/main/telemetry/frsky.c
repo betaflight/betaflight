@@ -57,7 +57,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
-#include "flight/altitudehold.h"
+#include "flight/altitude.h"
 
 #include "rx/rx.h"
 
@@ -175,9 +175,9 @@ static void sendAccel(void)
 static void sendBaro(void)
 {
     sendDataHead(ID_ALTITUDE_BP);
-    serialize16(baro.BaroAlt / 100);
+    serialize16(getEstimatedAltitude() / 100);
     sendDataHead(ID_ALTITUDE_AP);
-    serialize16(ABS(baro.BaroAlt % 100));
+    serialize16(ABS(getEstimatedAltitude() % 100));
 }
 
 #ifdef GPS
@@ -356,7 +356,7 @@ static void sendGPSLatLong(void)
 static void sendVario(void)
 {
     sendDataHead(ID_VERT_SPEED);
-    serialize16(vario);
+    serialize16(getEstimatedVario());
 }
 
 /*

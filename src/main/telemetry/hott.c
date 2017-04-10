@@ -84,7 +84,7 @@
 #include "flight/navigation.h"
 #include "io/gps.h"
 
-#include "flight/altitudehold.h"
+#include "flight/altitude.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/hott.h"
@@ -210,7 +210,7 @@ void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage)
 
     uint16_t altitude = GPS_altitude;
     if (!STATE(GPS_FIX)) {
-        altitude = baro.BaroAlt / 100;
+        altitude = getEstimatedAltitude() / 100;
     }
 
     const uint16_t hottGpsAltitude = (altitude) + HOTT_GPS_ALTITUDE_OFFSET; // GPS_altitude in m ; offset = 500 -> O m
@@ -271,7 +271,7 @@ static inline void hottEAMUpdateBatteryDrawnCapacity(HOTT_EAM_MSG_t *hottEAMMess
 
 static inline void hottEAMUpdateAltitude(HOTT_EAM_MSG_t *hottEAMMessage)
 {
-    const uint16_t hottEamAltitude = (baro.BaroAlt / 100) + HOTT_EAM_OFFSET_HEIGHT;
+    const uint16_t hottEamAltitude = (getEstimatedAltitude() / 100) + HOTT_EAM_OFFSET_HEIGHT;
 
     hottEAMMessage->altitude_L = hottEamAltitude & 0x00FF;
     hottEAMMessage->altitude_H = hottEamAltitude >> 8;
@@ -279,6 +279,7 @@ static inline void hottEAMUpdateAltitude(HOTT_EAM_MSG_t *hottEAMMessage)
 
 static inline void hottEAMUpdateClimbrate(HOTT_EAM_MSG_t *hottEAMMessage)
 {
+    int32_t vario = getEstimatedVario();
     hottEAMMessage->climbrate_L = (30000 + vario) & 0x00FF;
     hottEAMMessage->climbrate_H = (30000 + vario) >> 8;
     hottEAMMessage->climbrate3s = 120 + (vario / 100);  

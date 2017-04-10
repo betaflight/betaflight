@@ -64,5 +64,6 @@ typedef enum {
     DEBUG_STACK,
     DEBUG_ESC_SENSOR_RPM,
     DEBUG_ESC_SENSOR_TMP,
+    DEBUG_ALTITUDE,
     DEBUG_COUNT
 } debugType_e;
