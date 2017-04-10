@@ -36,39 +36,19 @@
 static int16_t fakeGyroADC[XYZ_AXIS_COUNT];
 gyroDev_t *fakeGyroDev;
 
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-static pthread_mutex_t gyroLock;
-#endif
-
 static void fakeGyroInit(gyroDev_t *gyro)
 {
     fakeGyroDev = gyro;
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-    if (pthread_mutex_init(&gyroLock, NULL) != 0) {
-        printf("Create gyroLock error!\n");
+    if (pthread_mutex_init(&gyro->lock, NULL) != 0) {
+        printf("Create gyro lock error!\n");
     }
-#endif
-}
-
-static void fakeGyroLock(gyroDev_t *gyro)
-{
-    UNUSED(gyro);
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-    pthread_mutex_lock(&gyroLock);
-#endif
-}
-
-static void fakeGyroUnLock(gyroDev_t *gyro)
-{
-    UNUSED(gyro);
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-    pthread_mutex_unlock(&gyroLock);
 #endif
 }
 
 void fakeGyroSet(gyroDev_t *gyro, int16_t x, int16_t y, int16_t z)
 {
-    fakeGyroLock(gyro);
+    gyroDevLock(gyro);
 
     fakeGyroADC[X] = x;
     fakeGyroADC[Y] = y;
@@ -76,14 +56,14 @@ void fakeGyroSet(gyroDev_t *gyro, int16_t x, int16_t y, int16_t z)
 
     gyro->dataReady = true;
 
-    fakeGyroUnLock(gyro);
+    gyroDevUnLock(gyro);
 }
 
 static bool fakeGyroRead(gyroDev_t *gyro)
 {
-    fakeGyroLock(gyro);
+    gyroDevLock(gyro);
     if (gyro->dataReady == false) {
-        fakeGyroUnLock(gyro);
+        gyroDevUnLock(gyro);
         return false;
     }
     gyro->dataReady = false;
@@ -92,7 +72,7 @@ static bool fakeGyroRead(gyroDev_t *gyro)
     gyro->gyroADCRaw[Y] = fakeGyroADC[Y];
     gyro->gyroADCRaw[Z] = fakeGyroADC[Z];
 
-    fakeGyroUnLock(gyro);
+    gyroDevUnLock(gyro);
     return true;
 }
 
@@ -130,39 +110,19 @@ bool fakeGyroDetect(gyroDev_t *gyro)
 static int16_t fakeAccData[XYZ_AXIS_COUNT];
 accDev_t *fakeAccDev;
 
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-static pthread_mutex_t accLock;
-#endif
-
 static void fakeAccInit(accDev_t *acc)
 {
     fakeAccDev = acc;
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-    if (pthread_mutex_init(&accLock, NULL) != 0) {
-        printf("Create accLock error!\n");
+    if (pthread_mutex_init(&acc->lock, NULL) != 0) {
+        printf("Create acc lock error!\n");
     }
-#endif
-}
-
-static void fakeAccLock(accDev_t *acc)
-{
-    UNUSED(acc);
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-    pthread_mutex_lock(&accLock);
-#endif
-}
-
-static void fakeAccUnLock(accDev_t *acc)
-{
-    UNUSED(acc);
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-    pthread_mutex_unlock(&accLock);
 #endif
 }
 
 void fakeAccSet(accDev_t *acc, int16_t x, int16_t y, int16_t z)
 {
-    fakeAccLock(acc);
+    accDevLock(acc);
 
     fakeAccData[X] = x;
     fakeAccData[Y] = y;
@@ -170,14 +130,14 @@ void fakeAccSet(accDev_t *acc, int16_t x, int16_t y, int16_t z)
 
     acc->dataReady = true;
 
-    fakeAccUnLock(acc);
+    accDevUnLock(acc);
 }
 
 static bool fakeAccRead(accDev_t *acc)
 {
-    fakeAccLock(acc);
+    accDevLock(acc);
     if (acc->dataReady == false) {
-        fakeAccUnLock(acc);
+        accDevUnLock(acc);
         return false;
     }
     acc->dataReady = false;
@@ -186,7 +146,7 @@ static bool fakeAccRead(accDev_t *acc)
     acc->ADCRaw[Y] = fakeAccData[Y];
     acc->ADCRaw[Z] = fakeAccData[Z];
 
-    fakeAccUnLock(acc);
+    accDevUnLock(acc);
     return true;
 }
 

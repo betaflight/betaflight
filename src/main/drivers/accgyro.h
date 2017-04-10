@@ -17,10 +17,14 @@
 
 #pragma once
 
+#include "platform.h"
 #include "common/axis.h"
 #include "drivers/exti.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro_mpu.h"
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+#include <pthread.h>
+#endif
 
 #ifndef MPU_I2C_INSTANCE
 #define MPU_I2C_INSTANCE I2C_DEVICE
@@ -58,6 +62,9 @@ typedef struct gyroDev_s {
     gyroRateKHz_e gyroRateKHz;
     uint8_t mpuDividerDrops;
     bool dataReady;
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+    pthread_mutex_t lock;
+#endif
     sensor_align_e gyroAlign;
     mpuDetectionResult_t mpuDetectionResult;
     const extiConfig_t *mpuIntExtiConfig;
@@ -72,7 +79,46 @@ typedef struct accDev_s {
     int16_t ADCRaw[XYZ_AXIS_COUNT];
     char revisionCode;                                      // a revision code for the sensor, if known
     bool dataReady;
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+    pthread_mutex_t lock;
+#endif
     sensor_align_e accAlign;
     mpuDetectionResult_t mpuDetectionResult;
     mpuConfiguration_t mpuConfiguration;
 } accDev_t;
+
+static inline void accDevLock(accDev_t *acc)
+{
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+    pthread_mutex_lock(&acc->lock);
+#else
+    (void)acc;
+#endif
+}
+
+static inline void accDevUnLock(accDev_t *acc)
+{
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+    pthread_mutex_unlock(&acc->lock);
+#else
+    (void)acc;
+#endif
+}
+
+static inline void gyroDevLock(gyroDev_t *gyro)
+{
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+    pthread_mutex_lock(&gyro->lock);
+#else
+    (void)gyro;
+#endif
+}
+
+static inline void gyroDevUnLock(gyroDev_t *gyro)
+{
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+    pthread_mutex_unlock(&gyro->lock);
+#else
+    (void)gyro;
+#endif
+}

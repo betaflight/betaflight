@@ -52,8 +52,6 @@
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
 #include <stdio.h>
 #include <pthread.h>
-#define printf printf
-#define sprintf sprintf
 
 static pthread_mutex_t imuUpdateLock;
 

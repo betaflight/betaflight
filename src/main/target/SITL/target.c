@@ -19,8 +19,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#define printf printf
-#define sprintf sprintf
 
 #include <errno.h>
 #include <time.h>

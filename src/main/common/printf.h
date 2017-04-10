@@ -113,9 +113,6 @@ int tfp_sprintf(char *s, const char *fmt, ...);
 
 int tfp_format(void *putp, void (*putf) (void *, char), const char *fmt, va_list va);
 
-#define printf tfp_printf
-#define sprintf tfp_sprintf
-
 struct serialPort_s;
 void setPrintfSerialPort(struct serialPort_s *serialPort);
 void printfSupportInit(void);
