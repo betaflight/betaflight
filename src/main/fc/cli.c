@@ -479,6 +479,13 @@ typedef enum {
 #define VALUE_SECTION_MASK (0x30)
 #define VALUE_MODE_MASK (0xC0)
 
+typedef union {
+    int8_t int8;
+    uint8_t uint8;
+    int16_t int16;
+    uint16_t uint16;
+} cliVar_t;
+
 typedef struct cliMinMaxConfig_s {
     const int16_t min;
     const int16_t max;
@@ -1053,25 +1060,25 @@ static void cliPrintf(const char *format, ...)
     bufWriterFlush(cliWriter);
 }
 
-static void printValuePointer(const clivalue_t *var, const void *valuePointer, uint32_t full)
+static void printValuePointer(const clivalue_t *var, const void *valuePointer, bool full)
 {
-    int32_t value = 0;
+    cliVar_t value = { .uint16 = 0 };
 
     switch (var->type & VALUE_TYPE_MASK) {
     case VAR_UINT8:
-        value = *(uint8_t *)valuePointer;
+        value.uint8 = *(uint8_t *)valuePointer;
         break;
 
     case VAR_INT8:
-        value = *(int8_t *)valuePointer;
+        value.int8 = *(int8_t *)valuePointer;
         break;
 
     case VAR_UINT16:
-        value = *(uint16_t *)valuePointer;
+        value.uint16 = *(uint16_t *)valuePointer;
         break;
 
     case VAR_INT16:
-        value = *(int16_t *)valuePointer;
+        value.int16 = *(int16_t *)valuePointer;
         break;
     }
 
@@ -1083,7 +1090,7 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, u
         }
         break;
     case MODE_LOOKUP:
-        cliPrint(lookupTables[var->config.lookup.tableIndex].values[value]);
+        cliPrint(lookupTables[var->config.lookup.tableIndex].values[value.uint16]);
         break;
     }
 }
@@ -1419,7 +1426,7 @@ static void dumpAllValues(uint16_t valueSection, uint8_t dumpMask)
     }
 }
 
-static void cliPrintVar(const clivalue_t *var, uint32_t full)
+static void cliPrintVar(const clivalue_t *var, bool full)
 {
     const void *ptr = getValuePointer(var);
 
@@ -1447,19 +1454,25 @@ static void cliPrintVarRange(const clivalue_t *var)
     }
 }
 
-static void cliSetVar(const clivalue_t *var, const int32_t value)
+static void cliSetVar(const clivalue_t *var, const cliVar_t value)
 {
     void *ptr = getValuePointer(var);
 
     switch (var->type & VALUE_TYPE_MASK) {
     case VAR_UINT8:
+        *(uint8_t *)ptr = value.uint8;
+        break;
+
     case VAR_INT8:
-        *(int8_t *)ptr = value;
+        *(int8_t *)ptr = value.int8;
         break;
 
     case VAR_UINT16:
+        *(uint16_t *)ptr = value.uint16;
+        break;
+
     case VAR_INT16:
-        *(int16_t *)ptr = value;
+        *(int16_t *)ptr = value.int16;
         break;
     }
 }
@@ -3561,12 +3574,12 @@ static void cliSet(char *cmdline)
             if (strncasecmp(cmdline, valueTable[i].name, strlen(valueTable[i].name)) == 0 && variableNameLength == strlen(valueTable[i].name)) {
 
                 bool changeValue = false;
-                int32_t value = 0;
+                cliVar_t value  = { .uint16 = 0 };
                 switch (valueTable[i].type & VALUE_MODE_MASK) {
                     case MODE_DIRECT: {
-                            value = atoi(eqptr);
+                            value.uint16 = atoi(eqptr);
 
-                            if (value >= valueTable[i].config.minmax.min && value <= valueTable[i].config.minmax.max) {
+                            if (value.uint16 >= valueTable[i].config.minmax.min && value.uint16 <= valueTable[i].config.minmax.max) {
                                 changeValue = true;
                             }
                         }
@@ -3578,7 +3591,7 @@ static void cliSet(char *cmdline)
                                 matched = strcasecmp(tableEntry->values[tableValueIndex], eqptr) == 0;
 
                                 if (matched) {
-                                    value = tableValueIndex;
+                                    value.uint16 = tableValueIndex;
                                     changeValue = true;
                                 }
                             }
