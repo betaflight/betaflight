@@ -97,27 +97,18 @@ static void updateAltitudeVelocityAndPitchController_FW(timeDelta_t deltaMicros)
     static pt1Filter_t velzFilterState;
 
     // On a fixed wing we might not have a reliable climb rate source (if no BARO available), so we can't apply PID controller to
-    // velocity error. We use PID controller on altitude error and calculate desired pitch angle from desired climb rate and forward velocity
+    // velocity error. We use PID controller on altitude error and calculate desired pitch angle
 
-    // FIXME: Use airspeed here
-    float forwardVelocity = MAX(posControl.actualState.velXY, 300.0f);   // Limit min velocity for PID controller at about 10 km/h
+    // Here we use negative values for dive for better clarity
+    int maxClimbDeciDeg = DEGREES_TO_DECIDEGREES(navConfig()->fw.max_climb_angle);
+    int minDiveDeciDeg = -DEGREES_TO_DECIDEGREES(navConfig()->fw.max_dive_angle);
 
-    // Calculate max climb rate from current forward velocity and maximum pitch angle (climb angle is fairly small, approximate tan=sin)
-    float maxVelocityClimb = forwardVelocity * sin_approx(DEGREES_TO_RADIANS(navConfig()->fw.max_climb_angle));
-    float maxVelocityDive = -forwardVelocity * sin_approx(DEGREES_TO_RADIANS(navConfig()->fw.max_dive_angle));
-
-    posControl.desiredState.vel.V.Z = navPidApply2(&posControl.pids.fw_alt, posControl.desiredState.pos.V.Z, posControl.actualState.pos.V.Z, US2S(deltaMicros), maxVelocityDive, maxVelocityClimb, 0);
-    posControl.desiredState.vel.V.Z = pt1FilterApply4(&velzFilterState, posControl.desiredState.vel.V.Z, NAV_FW_VEL_CUTOFF_FREQENCY_HZ, US2S(deltaMicros));
+    float targetPitchAngle = navPidApply2(&posControl.pids.fw_alt, posControl.desiredState.pos.V.Z, posControl.actualState.pos.V.Z, US2S(deltaMicros), minDiveDeciDeg, maxClimbDeciDeg, 0);
+    targetPitchAngle = pt1FilterApply4(&velzFilterState, targetPitchAngle, NAV_FW_PITCH_CUTOFF_FREQENCY_HZ, US2S(deltaMicros));
 
     // Calculate climb angle ( >0 - climb, <0 - dive)
-    int16_t climbAngleDeciDeg = RADIANS_TO_DECIDEGREES(atan2_approx(posControl.desiredState.vel.V.Z, forwardVelocity));
-    climbAngleDeciDeg = constrain(climbAngleDeciDeg, -navConfig()->fw.max_dive_angle * 10, navConfig()->fw.max_climb_angle * 10);
-    posControl.rcAdjustment[PITCH] = climbAngleDeciDeg;
-
-#if defined(NAV_BLACKBOX)
-    navDesiredVelocity[Z] = constrain(posControl.desiredState.vel.V.Z, -32678, 32767);
-    navTargetPosition[Z] = constrain(posControl.desiredState.pos.V.Z, -32678, 32767);
-#endif
+    targetPitchAngle = constrainf(targetPitchAngle, minDiveDeciDeg, maxClimbDeciDeg);
+    posControl.rcAdjustment[PITCH] = targetPitchAngle;
 }
 
 void applyFixedWingAltitudeController(timeUs_t currentTimeUs)
@@ -424,6 +415,7 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
 
     // Limit and apply
     if (isPitchAdjustmentValid && (navStateFlags & NAV_CTL_ALT)) {
+        // PITCH correction is measured according to altitude: <0 - dive/lose altitude, >0 - climb/gain altitude
         // PITCH angle is measured in opposite direction ( >0 - dive, <0 - climb)
         pitchCorrection = constrain(pitchCorrection, -DEGREES_TO_DECIDEGREES(navConfig()->fw.max_dive_angle), DEGREES_TO_DECIDEGREES(navConfig()->fw.max_climb_angle));
         rcCommand[PITCH] = -pidAngleToRcCommand(pitchCorrection, pidProfile()->max_angle_inclination[FD_PITCH]);
