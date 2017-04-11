@@ -165,6 +165,35 @@ static void osdFormatDistanceStr(char* buff, int32_t dist)
     }
 }
 
+/**
+ * Converts velocity based on the current unit system (kmh or mph).
+ * @param alt Raw velocity (i.e. as taken from gpsSol.groundSpeed in centimeters/second)
+ */
+static int32_t osdConvertVelocityToUnit(int32_t vel)
+{
+    switch (osdConfig()->units) {
+        case OSD_UNIT_IMPERIAL:
+            return (vel * 224) / 10000; // Convert to mph
+        default:
+            return (vel * 36) / 1000;   // Convert to kmh
+    }
+}
+
+/**
+ * Converts velocity into a string based on the current unit system.
+ * @param alt Raw velocity (i.e. as taken from gpsSol.groundSpeed in centimeters/seconds)
+ */
+static void osdFormatVelocityStr(char* buff, int32_t vel)
+{
+    switch (osdConfig()->units) {
+        case OSD_UNIT_IMPERIAL:
+            sprintf(buff, "%d%c", osdConvertVelocityToUnit(vel), SYM_MPH);
+            break;
+        default: // Metric
+            sprintf(buff, "%d%c", osdConvertVelocityToUnit(vel), SYM_KMH);
+    }
+}
+
 static void osdDrawSingleElement(uint8_t item)
 {
     if (!VISIBLE(osdConfig()->item_pos[item]) || BLINK(osdConfig()->item_pos[item]))
@@ -218,7 +247,7 @@ static void osdDrawSingleElement(uint8_t item)
 
         case OSD_GPS_SPEED:
         {
-            sprintf(buff, "%d%c", gpsSol.groundSpeed * 36 / 1000, 0xA1);
+            osdFormatVelocityStr(buff, gpsSol.groundSpeed);
             break;
         }
 
@@ -783,7 +812,7 @@ static void osdShowStats(void)
 
     if (STATE(GPS_FIX)) {
         max7456Write(2, top, "MAX SPEED        :");
-        itoa(stats.max_speed, buff, 10);
+        osdFormatVelocityStr(buff, stats.max_speed);
         max7456Write(22, top++, buff);
         
         max7456Write(2, top, "MAX DISTANCE     :");
