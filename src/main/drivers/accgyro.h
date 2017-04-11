@@ -67,7 +67,7 @@ typedef struct gyroDev_s {
 #endif
     sensor_align_e gyroAlign;
     mpuDetectionResult_t mpuDetectionResult;
-    const extiConfig_t *mpuIntExtiConfig;
+    ioTag_t mpuIntExtiTag;
     mpuConfiguration_t mpuConfiguration;
 } gyroDev_t;
 

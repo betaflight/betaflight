@@ -129,11 +129,11 @@ static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 static void mpuIntExtiInit(gyroDev_t *gyro)
 {
 #if defined(MPU_INT_EXTI)
-    if (!gyro->mpuIntExtiConfig) {
+    if (gyro->mpuIntExtiTag == IO_TAG_NONE) {
         return;
     }
 
-    IO_t mpuIntIO = IOGetByTag(gyro->mpuIntExtiConfig->tag);
+    const IO_t mpuIntIO = IOGetByTag(gyro->mpuIntExtiTag);
 
 #ifdef ENSURE_MPU_DATA_READY_IS_LOW
     uint8_t status = IORead(mpuIntIO);
@@ -164,14 +164,14 @@ static void mpuIntExtiInit(gyroDev_t *gyro)
 bool mpuReadRegisterI2C(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t* data)
 {
     UNUSED(bus);
-    bool ack = i2cRead(MPU_I2C_INSTANCE, MPU_ADDRESS, reg, length, data);
+    const bool ack = i2cRead(MPU_I2C_INSTANCE, MPU_ADDRESS, reg, length, data);
     return ack;
 }
 
 bool mpuWriteRegisterI2C(const busDevice_t *bus, uint8_t reg, uint8_t data)
 {
     UNUSED(bus);
-    bool ack = i2cWrite(MPU_I2C_INSTANCE, MPU_ADDRESS, reg, data);
+    const bool ack = i2cWrite(MPU_I2C_INSTANCE, MPU_ADDRESS, reg, data);
     return ack;
 }
 
@@ -179,7 +179,7 @@ bool mpuAccRead(accDev_t *acc)
 {
     uint8_t data[6];
 
-    bool ack = acc->mpuConfiguration.readFn(&acc->bus, MPU_RA_ACCEL_XOUT_H, 6, data);
+    const bool ack = acc->mpuConfiguration.readFn(&acc->bus, MPU_RA_ACCEL_XOUT_H, 6, data);
     if (!ack) {
         return false;
     }
