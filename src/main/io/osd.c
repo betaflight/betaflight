@@ -147,11 +147,10 @@ static int32_t osdConvertDistanceToUnit(int32_t dist)
  */
 static void osdFormatDistanceStr(char* buff, int32_t dist)
 {
-	int32_t dist_abs = abs(dist);
+	int32_t dist_abs = abs(osdConvertDistanceToUnit(dist));
 
     switch (osdConfig()->units) {
         case OSD_UNIT_IMPERIAL:
-            dist_abs = (dist_abs * 328) / 100; // Convert to feet
 	        if (dist < 0)
 	            sprintf(buff, "-%d%c", dist_abs / 100, SYM_FT);
 	        else
