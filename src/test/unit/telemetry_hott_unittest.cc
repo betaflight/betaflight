@@ -183,7 +183,8 @@ uint32_t fixedMillis = 0;
 
 baro_t baro;
 
-int32_t vario = 0;
+uint32_t getEstimatedAltitude() { return 0; }
+uint32_t getEstimatedVario() { return 0; }
 
 uint32_t millis(void) {
     return fixedMillis;

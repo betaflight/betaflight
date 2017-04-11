@@ -25,7 +25,7 @@ alignsensor_unittest_SRC := \
 
 
 altitude_hold_unittest_SRC :=  \
-		$(USER_DIR)/flight/altitudehold.c
+		$(USER_DIR)/flight/altitude.c
 
 
 baro_bmp085_unittest_SRC := \
@@ -66,7 +66,7 @@ flight_failsafe_unittest_SRC := \
 
 flight_imu_unittest_SRC := \
 		$(USER_DIR)/flight/imu.c \
-		$(USER_DIR)/flight/altitudehold.c \
+		$(USER_DIR)/flight/altitude.c \
 		$(USER_DIR)/common/maths.c
 
 

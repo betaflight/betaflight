@@ -49,7 +49,7 @@
 #include "flight/imu.h"
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
-#include "flight/altitudehold.h"
+#include "flight/altitude.h"
 
 #include "io/serial.h"
 #include "io/gimbal.h"
@@ -330,7 +330,7 @@ void mavlinkSendPosition(void)
         GPS_altitude * 1000,
         // relative_alt Altitude above ground in meters, expressed as * 1000 (millimeters)
 #if defined(BARO) || defined(SONAR)
-        (sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) ? altitudeHoldGetEstimatedAltitude() * 10 : GPS_altitude * 1000,
+        (sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) ? getEstimatedAltitude() * 10 : GPS_altitude * 1000,
 #else
         GPS_altitude * 1000,
 #endif
@@ -399,7 +399,7 @@ void mavlinkSendHUDAndHeartbeat(void)
 #if defined(BARO) || defined(SONAR)
     if (sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) {
         // Baro or sonar generally is a better estimate of altitude than GPS MSL altitude
-        mavAltitude = altitudeHoldGetEstimatedAltitude() / 100.0;
+        mavAltitude = getEstimatedAltitude() / 100.0;
     }
 #if defined(GPS)
     else if (sensors(SENSOR_GPS)) {

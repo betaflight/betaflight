@@ -25,8 +25,8 @@
 #define PID_CONTROLLER_BETAFLIGHT   1
 #define PID_MIXER_SCALING           1000.0f
 #define PID_SERVO_MIXER_SCALING     0.7f
-#define PIDSUM_LIMIT                0.5f
-#define PIDSUM_LIMIT_YAW            0.4f
+#define PIDSUM_LIMIT                500
+#define PIDSUM_LIMIT_YAW            400
 
 // Scaling factors for Pids for better tunable range in configurator for betaflight pid controller. The scaling is based on legacy pid controller or previous float
 #define PTERM_SCALE 0.032029f
@@ -69,8 +69,8 @@ typedef struct pidProfile_s {
     uint16_t dterm_notch_hz;                // Biquad dterm notch hz
     uint16_t dterm_notch_cutoff;            // Biquad dterm notch low cutoff
     uint8_t itermWindupPointPercent;        // Experimental ITerm windup threshold, percent motor saturation
-    float pidSumLimit;
-    float pidSumLimitYaw;
+    uint16_t pidSumLimit;
+    uint16_t pidSumLimitYaw;
     uint8_t dterm_average_count;            // Configurable delta count for dterm
     uint8_t vbatPidCompensation;            // Scale PIDsum to battery voltage
     uint8_t pidAtMinThrottle;               // Disable/Enable pids on zero throttle. Normally even without airmode P and D would be active.
@@ -79,11 +79,11 @@ typedef struct pidProfile_s {
 
     // Betaflight PID controller parameters
     uint16_t itermThrottleThreshold;        // max allowed throttle delta before iterm accelerated in ms
-    float itermAcceleratorGain;             // Iterm Accelerator Gain when itermThrottlethreshold is hit
+    uint16_t itermAcceleratorGain;          // Iterm Accelerator Gain when itermThrottlethreshold is hit
     uint8_t setpointRelaxRatio;             // Setpoint weight relaxation effect
     uint8_t dtermSetpointWeight;            // Setpoint weight for Dterm (0= measurement, 1= full error, 1 > agressive derivative)
-    float yawRateAccelLimit;                // yaw accel limiter for deg/sec/ms
-    float rateAccelLimit;                   // accel limiter roll/pitch deg/sec/ms
+    uint16_t yawRateAccelLimit;             // yaw accel limiter for deg/sec/ms
+    uint16_t rateAccelLimit;                // accel limiter roll/pitch deg/sec/ms
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles);

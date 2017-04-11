@@ -724,7 +724,7 @@ FC_SRC = \
             fc/rc_adjustments.c \
             fc/rc_controls.c \
             fc/cli.c \
-            flight/altitudehold.c \
+            flight/altitude.c \
             flight/failsafe.c \
             flight/imu.c \
             flight/mixer.c \
