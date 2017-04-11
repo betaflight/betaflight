@@ -64,7 +64,7 @@ typedef enum {
 
 #define MAX_NAME_LENGTH 16
 
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
 typedef struct systemConfig_s {
     uint8_t pidProfileIndex;
     uint8_t activeRateProfile;

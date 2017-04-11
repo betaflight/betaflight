@@ -38,7 +38,7 @@
 
 const uint8_t currentMeterIds[] = {
     CURRENT_METER_ID_BATTERY_1,
-#ifdef USE_FC
+#ifdef USE_VIRTUAL_CURRENT_METER
     CURRENT_METER_ID_VIRTUAL_1,
 #endif
 #ifdef USE_ESC_SENSOR
@@ -95,7 +95,9 @@ PG_RESET_TEMPLATE(currentSensorADCConfig_t, currentSensorADCConfig,
     .offset = CURRENT_METER_OFFSET_DEFAULT,
 );
 
+#ifdef USE_VIRTUAL_CURRENT_METER
 PG_REGISTER(currentSensorVirtualConfig_t, currentSensorVirtualConfig, PG_CURRENT_SENSOR_VIRTUAL_CONFIG, 0);
+#endif
 
 static int32_t currentMeterADCToCentiamps(const uint16_t src)
 {
@@ -146,7 +148,7 @@ void currentMeterADCRead(currentMeter_t *meter)
 // VIRTUAL
 //
 
-#ifdef USE_FC
+#ifdef USE_VIRTUAL_CURRENT_METER
 currentSensorVirtualState_t currentMeterVirtualState;
 
 void currentMeterVirtualInit(void)
@@ -234,7 +236,7 @@ void currentMeterRead(currentMeterId_e id, currentMeter_t *meter)
     if (id == CURRENT_METER_ID_BATTERY_1) {
         currentMeterADCRead(meter);
     }
-#ifdef USE_FC
+#ifdef USE_VIRTUAL_CURRENT_METER
     else if (id == CURRENT_METER_ID_VIRTUAL_1) {
         currentMeterVirtualRead(meter);
     }

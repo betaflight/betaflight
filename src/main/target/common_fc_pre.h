@@ -72,6 +72,7 @@
 #define USE_CLI
 #define USE_PPM
 #define USE_PWM
+#define USE_VIRTUAL_CURRENT_METER
 #define SERIAL_RX
 #define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
 #define USE_SERIALRX_IBUS       // FlySky and Turnigy receivers

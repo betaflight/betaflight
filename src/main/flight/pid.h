@@ -17,6 +17,7 @@
 
 #pragma once
 
+#ifndef USE_OSD_SLAVE
 #include <stdbool.h>
 #include "config/parameter_group.h"
 
@@ -111,3 +112,4 @@ void pidInitFilters(const pidProfile_t *pidProfile);
 void pidInitConfig(const pidProfile_t *pidProfile);
 void pidInit(const pidProfile_t *pidProfile);
 
+#endif

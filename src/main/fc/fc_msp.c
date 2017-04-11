@@ -61,7 +61,6 @@
 #include "fc/rc_adjustments.h"
 #include "fc/runtime_config.h"
 
-#ifdef USE_FC
 #include "flight/altitude.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
@@ -69,7 +68,6 @@
 #include "flight/navigation.h"
 #include "flight/pid.h"
 #include "flight/servos.h"
-#endif
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
@@ -90,16 +88,13 @@
 #include "msp/msp_protocol.h"
 #include "msp/msp_serial.h"
 
-#ifdef USE_FC
 #include "rx/msp.h"
 #include "rx/rx.h"
-#endif
 
 #include "scheduler/scheduler.h"
 
 #include "sensors/battery.h"
 
-#ifdef USE_FC
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/boardalignment.h"
@@ -109,7 +104,6 @@
 #include "sensors/sonar.h"
 
 #include "telemetry/telemetry.h"
-#endif
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -118,7 +112,7 @@
 static const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
 static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXARM, "ARM", 0 },
     { BOXANGLE, "ANGLE", 1 },
@@ -222,8 +216,8 @@ static void mspFc4waySerialCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessFnPtr
         if (mspPostProcessFn) {
             *mspPostProcessFn = esc4wayProcess;
         }
-
         break;
+
 #ifdef USE_ESCSERIAL
     case PROTOCOL_SIMONK:
     case PROTOCOL_BLHELI:
@@ -250,7 +244,7 @@ static void mspRebootFn(serialPort_t *serialPort)
 {
     UNUSED(serialPort);
 
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
     stopPwmAllMotors();
 #endif
     systemReset();
@@ -259,7 +253,7 @@ static void mspRebootFn(serialPort_t *serialPort)
     while (true) ;
 }
 
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
 const box_t *findBoxByBoxId(uint8_t boxId)
 {
     for (uint8_t boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
@@ -461,21 +455,20 @@ static void serializeSDCardSummaryReply(sbuf_t *dst)
         switch (afatfs_getFilesystemState()) {
         case AFATFS_FILESYSTEM_STATE_READY:
             state = MSP_SDCARD_STATE_READY;
-
             break;
+
         case AFATFS_FILESYSTEM_STATE_INITIALIZATION:
             if (sdcard_isInitialized()) {
                 state = MSP_SDCARD_STATE_FS_INIT;
             } else {
                 state = MSP_SDCARD_STATE_CARD_INIT;
             }
-
             break;
+
         case AFATFS_FILESYSTEM_STATE_FATAL:
         case AFATFS_FILESYSTEM_STATE_UNKNOWN:
         default:
             state = MSP_SDCARD_STATE_FATAL;
-
             break;
         }
     }
@@ -641,6 +634,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, (uint8_t)getBatteryState());
         break;
     }
+
     case MSP_VOLTAGE_METERS:
         // write out id and voltage meter values, once for each meter we support
         for (int i = 0; i < supportedVoltageMeterCount; i++) {
@@ -693,25 +687,33 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         // that this situation may change and allows us to support configuration of any current sensor with
         // specialist configuration requirements.
 
-        sbufWriteU8(dst, 2); // current meters in payload (adc + virtual)
+        int currentMeterCount = 1;
+
+#ifdef USE_VIRTUAL_CURRENT_METER
+        currentMeterCount++;
+#endif
+        sbufWriteU8(dst, currentMeterCount);
 
         const uint8_t adcSensorSubframeLength = 1 + 1 + 2 + 2; // length of id, type, scale, offset, in bytes
         sbufWriteU8(dst, adcSensorSubframeLength);
-        sbufWriteU8(dst, CURRENT_METER_ID_BATTERY_1); // the id of the sensor
+        sbufWriteU8(dst, CURRENT_METER_ID_BATTERY_1); // the id of the meter
         sbufWriteU8(dst, CURRENT_SENSOR_ADC); // indicate the type of sensor that the next part of the payload is for
         sbufWriteU16(dst, currentSensorADCConfig()->scale);
         sbufWriteU16(dst, currentSensorADCConfig()->offset);
 
+#ifdef USE_VIRTUAL_CURRENT_METER
         const int8_t virtualSensorSubframeLength = 1 + 1 + 2 + 2; // length of id, type, scale, offset, in bytes
         sbufWriteU8(dst, virtualSensorSubframeLength);
-        sbufWriteU8(dst, CURRENT_METER_ID_VIRTUAL_1); // the id of the sensor
+        sbufWriteU8(dst, CURRENT_METER_ID_VIRTUAL_1); // the id of the meter
         sbufWriteU8(dst, CURRENT_SENSOR_VIRTUAL); // indicate the type of sensor that the next part of the payload is for
         sbufWriteU16(dst, currentSensorVirtualConfig()->scale);
         sbufWriteU16(dst, currentSensorVirtualConfig()->offset);
+#endif
 
         // if we had any other current sensors, this is where we would output any needed configuration
         break;
     }
+
     case MSP_BATTERY_CONFIG:
         sbufWriteU8(dst, batteryConfig()->vbatmincellvoltage);
         sbufWriteU8(dst, batteryConfig()->vbatmaxcellvoltage);
@@ -720,7 +722,6 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, batteryConfig()->voltageMeterSource);
         sbufWriteU8(dst, batteryConfig()->currentMeterSource);
         break;
-
 
     case MSP_TRANSPONDER_CONFIG:
 #ifdef TRANSPONDER
@@ -734,7 +735,6 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         break;
 
     case MSP_OSD_CONFIG: {
-
 #define OSD_FLAGS_OSD_FEATURE           (1 << 0)
 #define OSD_FLAGS_OSD_SLAVE             (1 << 1)
 #define OSD_FLAGS_RESERVED_1            (1 << 2)
@@ -823,7 +823,7 @@ static bool mspOsdSlaveProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostPro
 }
 #endif
 
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
 static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
 {
     UNUSED(mspPostProcessFn);
@@ -897,6 +897,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
             sbufWriteU32(dst, servoParams(i)->reversedSources);
         }
         break;
+
     case MSP_SERVO_MIX_RULES:
         for (int i = 0; i < MAX_SERVO_RULES; i++) {
             sbufWriteU8(dst, customServoMixers(i)->targetChannel);
@@ -1375,7 +1376,7 @@ static mspResult_e mspOsdSlaveProcessInCommand(uint8_t cmdMSP, sbuf_t *src) {
 }
 #endif
 
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
 static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 {
     uint32_t i;
@@ -1774,6 +1775,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         GPS_speed = sbufReadU16(src);
         GPS_update |= 2;        // New data signalisation to GPS functions // FIXME Magic Numbers
         break;
+
     case MSP_SET_WP:
         wp_no = sbufReadU8(src);    //get the wp number
         lat = sbufReadU32(src);
@@ -1799,6 +1801,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         break;
 #endif
+
     case MSP_SET_FEATURE_CONFIG:
         featureClearAll();
         featureSet(sbufReadU32(src)); // features bitmap
@@ -2018,10 +2021,12 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 currentSensorADCConfigMutable()->scale = sbufReadU16(src);
                 currentSensorADCConfigMutable()->offset = sbufReadU16(src);
                 break;
+#ifdef USE_VIRTUAL_CURRENT_METER
             case CURRENT_METER_ID_VIRTUAL_1:
                 currentSensorVirtualConfigMutable()->scale = sbufReadU16(src);
                 currentSensorVirtualConfigMutable()->offset = sbufReadU16(src);
                 break;
+#endif
 
             default:
                 return -1;
@@ -2082,17 +2087,10 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             // !!TODO - replace this with a device independent implementation
             max7456WriteNvm(addr, font_data);
         }
+        break;
 #else
         return MSP_RESULT_ERROR;
-/*
-        // just discard the data
-        sbufReadU8(src);
-        for (int i = 0; i < 54; i++) {
-            sbufReadU8(src);
-        }
-*/
 #endif
-        break;
 #endif // OSD || USE_OSD_SLAVE
 
     default:
@@ -2119,7 +2117,7 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
 
     if (mspCommonProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
     } else if (mspFcProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
 #endif
@@ -2203,7 +2201,7 @@ void mspFcProcessReply(mspPacket_t *reply)
 /*
  * Return a pointer to the process command function
  */
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
 void mspFcInit(void)
 {
     initActiveBoxIds();

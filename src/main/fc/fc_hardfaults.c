@@ -93,7 +93,7 @@ void HardFault_Handler(void)
 {
     LED2_ON;
 
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
     // fall out of the sky
     uint8_t requiredStateForMotors = SYSTEM_STATE_CONFIG_LOADED | SYSTEM_STATE_MOTORS_READY;
     if ((systemState & requiredStateForMotors) == requiredStateForMotors) {

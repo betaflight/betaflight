@@ -48,12 +48,10 @@
 #include "fc/cli.h"
 #include "fc/fc_dispatch.h"
 
-#ifdef USE_FC
 #include "flight/altitude.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
-#endif
 
 #include "io/beeper.h"
 #include "io/dashboard.h"
@@ -91,7 +89,7 @@ void taskBstMasterProcess(timeUs_t currentTimeUs);
 #define TASK_PERIOD_MS(ms) ((ms) * 1000)
 #define TASK_PERIOD_US(us) (us)
 
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
 static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
@@ -133,7 +131,7 @@ void taskBatteryAlerts(timeUs_t currentTimeUs)
     batteryUpdateAlarms();
 }
 
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
 static void taskUpdateRxMain(timeUs_t currentTimeUs)
 {
     processRx(currentTimeUs);
@@ -247,7 +245,7 @@ void osdSlaveTasksInit(void)
 }
 #endif
 
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
 void fcTasksInit(void)
 {
     schedulerInit();
@@ -359,7 +357,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_MEDIUM_HIGH,
     },
 
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
     [TASK_GYROPID] = {
         .taskName = "PID",
         .subTaskName = "GYRO",
@@ -404,7 +402,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #endif
     },
 
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
     [TASK_DISPATCH] = {
         .taskName = "DISPATCH",
         .taskFunc = dispatchProcess,
@@ -432,7 +430,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .desiredPeriod = TASK_PERIOD_HZ(50),
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
 
 #ifdef BEEPER
     [TASK_BEEPER] = {
@@ -498,7 +496,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
 #ifdef USE_DASHBOARD
     [TASK_DASHBOARD] = {
         .taskName = "DASHBOARD",
@@ -527,7 +525,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
 #ifdef TELEMETRY
     [TASK_TELEMETRY] = {
         .taskName = "TELEMETRY",
