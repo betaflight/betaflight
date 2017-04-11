@@ -152,8 +152,8 @@
 #define CURRENT_METER_ADC_PIN       PA1
 #define ADC_INSTANCE                ADC1
 
-//#define RSSI_ADC_PIN                PB1
-//#define ADC_INSTANCE                ADC3
+// Use FrSky-style PWM encoded RSSI input
+#define RSSI_SOFTPWM_PIN            PB1
 
 #define TRANSPONDER
 #define REDUCE_TRANSPONDER_CURRENT_DRAW_WHEN_USB_CABLE_PRESENT
