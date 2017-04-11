@@ -63,9 +63,21 @@ static uint16_t rspValue;
 static volatile bool rspInProgress = false;
 
 // Basic measurement by EXTI
+// Take three consequtive durations between interrupts.
+// timerState counts the number of interrupts,
+// tstamp array stores us time stamp of each interrupts,
+// and tbits record the state of the pin at each interrupt.
+
 static volatile uint8_t timerState = 0;
 static volatile uint16_t tstamp[3];
 static volatile uint8_t tbits;
+
+// tbits normally ends up in '101' bit pattern, but if high or low period
+// is too short to capture, then it will be other patterns.
+
+#define TBITS_IS_NORMAL(bits)              ((bits) == 5)           // '101' Normal
+#define TBITS_MISSED_FALLING_EDGE(bits)    (!((bits) & 0x4))       // '0xx' Short high period
+#define TBITS_MISSED_2ND_RISING_EDGE(bits) (((bits) & 0x6) == 0x6) // '11x' Short low period
 
 // Smoothing
 #define MEDIAN_TAPCOUNT 5
@@ -86,20 +98,20 @@ static void rspExtiHandler(extiCallbackRec_t* cb)
     switch (timerState) {
     case 0:
         tbits = IORead(rspIO);
-        tstamp[0] = micros();
+        tstamp[0] = microsISR();
         EXTISetTrigger(rspIO, EXTI_Trigger_Rising_Falling);
         ++timerState;
         break;
 
     case 1:
         tbits = (tbits << 1) | IORead(rspIO);
-        tstamp[1] = micros();
+        tstamp[1] = microsISR();
         ++timerState;
         break;
 
     case 2:
         tbits = (tbits << 1) | IORead(rspIO);
-        tstamp[2] = micros();
+        tstamp[2] = microsISR();
         ++timerState;
         EXTIEnable(rspIO, false);
         rspInProgress = false;
@@ -159,7 +171,7 @@ void rssiSoftPwmUpdate(uint32_t currentTime)
 
     if (timerState != 3) {  // Did not finish, assume no signal
         duty = 0;
-    } else if (tbits == 5) {  // '101': Normal pattern
+    } else if (TBITS_IS_NORMAL(tbits)) {
         tCycle = tstamp[2] - tstamp[0];
         tHigh = tstamp[1] - tstamp[0];
 
@@ -171,10 +183,10 @@ void rssiSoftPwmUpdate(uint32_t currentTime)
         }
 
         duty = (tHigh * 100 * 10) / tCycle;
-    } else if (!(tbits & 0x4)) {  // '0xx': Missed falling edge
+    } else if (TBITS_MISSED_FALLING_EDGE(tbits)) {
         // Assume very short pulse
         duty = 1;
-    } else if ((tbits & 0x6) == 0x6) {  // '11x': Missed 2nd rising edge
+    } else if (TBITS_MISSED_2ND_RISING_EDGE(tbits)) {
         // Assume very long pulse
         duty = 999;
     } else {
