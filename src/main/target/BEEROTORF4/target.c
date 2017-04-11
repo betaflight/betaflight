@@ -94,14 +94,16 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 //    DEF_TIM(TIM4, CH4,  PB9, TIM_USE_MOTOR,                     TIMER_OUTPUT_STANDARD, 0), // M8 (no DMA, doesn't work for DShot)
 
 //    DEF_TIM(TIM4, CH3,  PB8, TIM_USE_LED | TIM_USE_TRANSPONDER, TIMER_OUTPUT_STANDARD, 0), // LED_STRIP / TRANSPONDER - DMA1_ST7 (can be used for DShot, conflicts with OSD TX)
-    { TIM2,  IO_TAG(PA3), TIM_Channel_4, TIM2_IRQn,               0, IOCFG_AF_PP, GPIO_AF_TIM2  }, // PPM IN
+    { TIM9,  IO_TAG(PA3), TIM_Channel_2, TIM1_BRK_TIM9_IRQn,      0, IOCFG_AF_PP, GPIO_AF_TIM9  }, // PPM IN
 
     { TIM3,  IO_TAG(PB0), TIM_Channel_3, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_AF_TIM3  }, // M1
     { TIM3,  IO_TAG(PB1), TIM_Channel_4, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_AF_TIM3  }, // M2
-    { TIM5,  IO_TAG(PA1), TIM_Channel_2, TIM5_IRQn,               0, IOCFG_AF_PP, GPIO_AF_TIM5  }, // M3
+    { TIM2,  IO_TAG(PA1), TIM_Channel_2, TIM2_IRQn,               0, IOCFG_AF_PP, GPIO_AF_TIM2  }, // M3
     { TIM5,  IO_TAG(PA0), TIM_Channel_1, TIM5_IRQn,               0, IOCFG_AF_PP, GPIO_AF_TIM5  }, // M4
     { TIM3,  IO_TAG(PC6), TIM_Channel_1, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_AF_TIM3  }, // M5
     { TIM3,  IO_TAG(PC7), TIM_Channel_2, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_AF_TIM3  }, // M6
     { TIM3,  IO_TAG(PB5), TIM_Channel_2, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_AF_TIM3  }, // M7
     { TIM11, IO_TAG(PB9), TIM_Channel_1, TIM1_TRG_COM_TIM11_IRQn, 0, IOCFG_AF_PP, GPIO_AF_TIM11 }, // M8
+
+    { TIM4,  IO_TAG(PB8), TIM_Channel_3, TIM4_IRQn,               0, IOCFG_AF_PP, GPIO_AF_TIM4  }, // LED_STRIP / TRANSPONDER
 };
