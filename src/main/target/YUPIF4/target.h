@@ -62,8 +62,6 @@
 
 
 #define USE_VCP
-//#define VBUS_SENSING_PIN        PA8
-//#define VBUS_SENSING_ENABLED
 
 // UART Ports
 #define USE_UART1
@@ -114,13 +112,6 @@
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
 
-/*
-#define USE_SPI_DEVICE_2 //Free
-#define SPI2_NSS_PIN            PB12
-#define SPI2_SCK_PIN            PB13
-#define SPI2_MISO_PIN           PC2
-*/
-
 #define USE_SPI_DEVICE_3 //dataslash - SD Card
 #define SPI3_NSS_PIN            PB3
 #define SPI3_SCK_PIN            PC10
@@ -135,10 +126,6 @@
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
-
-#define USE_I2C
-#define USE_I2C_DEVICE_1
-#define I2C_DEVICE              (I2CDEV_1)
 
 // ADC inputs
 #define BOARD_HAS_VOLTAGE_DIVIDER
