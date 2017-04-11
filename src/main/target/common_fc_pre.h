@@ -72,7 +72,6 @@
 #define USE_CLI
 #define USE_PPM
 #define USE_PWM
-#define USE_VIRTUAL_CURRENT_METER
 #define SERIAL_RX
 #define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
 #define USE_SERIALRX_IBUS       // FlySky and Turnigy receivers
@@ -113,6 +112,7 @@
 #define USE_RX_MSP
 #define USE_SERIALRX_JETIEXBUS
 #define USE_SENSOR_NAMES
+#define USE_VIRTUAL_CURRENT_METER
 #define VTX_COMMON
 #define VTX_CONTROL
 #define VTX_SMARTAUDIO
