@@ -162,7 +162,7 @@ typedef struct
   uint32_t BRR;
 } GPIO_TypeDef;
 
-#define GPIOA_BASE (0x0000)
+#define GPIOA_BASE (0x0001)
 
 typedef struct
 {

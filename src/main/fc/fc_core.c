@@ -477,7 +477,7 @@ void processRx(timeUs_t currentTimeUs)
 
 static void subTaskPidController(void)
 {
-    uint32_t startTime;
+    uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
     // PID - note this is function pointer set by setPIDController()
     pidController(currentPidProfile, &accelerometerConfig()->accelerometerTrims);
@@ -486,7 +486,7 @@ static void subTaskPidController(void)
 
 static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 {
-    uint32_t startTime;
+    uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
 
     // Read out gyro temperature if used for telemmetry
@@ -560,7 +560,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 
 static void subTaskMotorUpdate(void)
 {
-    uint32_t startTime;
+    uint32_t startTime = 0;
     if (debugMode == DEBUG_CYCLETIME) {
         startTime = micros();
         static uint32_t previousMotorUpdateTime;
@@ -621,7 +621,7 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     // 1 - pidController()
     // 2 - subTaskMainSubprocesses()
     // 3 - subTaskMotorUpdate()
-    uint32_t startTime;
+    uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
     gyroUpdate();
     DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - startTime);

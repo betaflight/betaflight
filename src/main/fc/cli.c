@@ -1883,12 +1883,12 @@ static void cliSerialPassthrough(char *cmdline)
         tok = strtok_r(NULL, " ", &saveptr);
     }
 
-    printf("Port %d ", id);
+    tfp_printf("Port %d ", id);
     serialPort_t *passThroughPort;
     serialPortUsage_t *passThroughPortUsage = findSerialPortUsageByIdentifier(id);
     if (!passThroughPortUsage || passThroughPortUsage->serialPort == NULL) {
         if (!baud) {
-            printf("closed, specify baud.\r\n");
+            tfp_printf("closed, specify baud.\r\n");
             return;
         }
         if (!mode)
@@ -1898,17 +1898,17 @@ static void cliSerialPassthrough(char *cmdline)
                                          baud, mode,
                                          SERIAL_NOT_INVERTED);
         if (!passThroughPort) {
-            printf("could not be opened.\r\n");
+            tfp_printf("could not be opened.\r\n");
             return;
         }
-        printf("opened, baud = %d.\r\n", baud);
+        tfp_printf("opened, baud = %d.\r\n", baud);
     } else {
         passThroughPort = passThroughPortUsage->serialPort;
         // If the user supplied a mode, override the port's mode, otherwise
         // leave the mode unchanged. serialPassthrough() handles one-way ports.
-        printf("already open.\r\n");
+        tfp_printf("already open.\r\n");
         if (mode && passThroughPort->mode != mode) {
-            printf("mode changed from %d to %d.\r\n",
+            tfp_printf("mode changed from %d to %d.\r\n",
                    passThroughPort->mode, mode);
             serialSetMode(passThroughPort, mode);
         }
@@ -1919,7 +1919,7 @@ static void cliSerialPassthrough(char *cmdline)
         }
     }
 
-    printf("forwarding, power cycle to exit.\r\n");
+    tfp_printf("forwarding, power cycle to exit.\r\n");
 
     serialPassthrough(cliPort, passThroughPort, NULL, NULL);
 }
@@ -3202,11 +3202,11 @@ static void cliGpsPassthrough(char *cmdline)
 static int parseEscNumber(char *pch, bool allowAllEscs) {
     int escNumber = atoi(pch);
     if ((escNumber >= 0) && (escNumber < getMotorCount())) {
-        printf("Programming on ESC %d.\r\n", escNumber);
+        tfp_printf("Programming on ESC %d.\r\n", escNumber);
     } else if (allowAllEscs && escNumber == ALL_ESCS) {
-        printf("Programming on all ESCs.\r\n");
+        tfp_printf("Programming on all ESCs.\r\n");
     } else {
-        printf("Invalid ESC number, range: 0 to %d.\r\n", getMotorCount() - 1);
+        tfp_printf("Invalid ESC number, range: 0 to %d.\r\n", getMotorCount() - 1);
 
         return -1;
     }
@@ -3254,9 +3254,9 @@ static void cliDshotProg(char *cmdline)
                         delay(10); // wait for sound output to finish
                     }
 
-                    printf("Command %d written.\r\n", command);
+                    tfp_printf("Command %d written.\r\n", command);
                 } else {
-                    printf("Invalid command, range 1 to %d.\r\n", DSHOT_MIN_THROTTLE - 1);
+                    tfp_printf("Invalid command, range 1 to %d.\r\n", DSHOT_MIN_THROTTLE - 1);
                 }
 
                 break;
@@ -3691,7 +3691,7 @@ static void cliTasks(char *cmdline)
         getTaskInfo(taskId, &taskInfo);
         if (taskInfo.isEnabled) {
             int taskFrequency;
-            int subTaskFrequency;
+            int subTaskFrequency = 0;
             if (taskId == TASK_GYROPID) {
                 subTaskFrequency = taskInfo.latestDeltaTime == 0 ? 0 : (int)(1000000.0f / ((float)taskInfo.latestDeltaTime));
                 taskFrequency = subTaskFrequency / pidConfig()->pid_process_denom;

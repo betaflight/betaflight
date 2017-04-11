@@ -21,6 +21,7 @@
 #include <stdint.h>
 
 #include <platform.h>
+
 #include "resource.h"
 
 #include "io_types.h"
