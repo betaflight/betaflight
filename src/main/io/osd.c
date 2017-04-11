@@ -48,7 +48,6 @@
 #include "common/typeconversion.h"
 #include "common/utils.h"
 
-#include "config/config_profile.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -74,6 +73,7 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/pid.h"
 #include "flight/imu.h"
 
 #include "rx/rx.h"

@@ -72,6 +72,7 @@
 #define USE_CLI
 #define USE_PPM
 #define USE_PWM
+#define USE_VIRTUAL_CURRENT_METER
 #define SERIAL_RX
 #define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
 #define USE_SERIALRX_IBUS       // FlySky and Turnigy receivers
@@ -80,6 +81,12 @@
 #define USE_SERIALRX_SUMD       // Graupner Hott protocol
 #define USE_SERIALRX_SUMH       // Graupner legacy protocol
 #define USE_SERIALRX_XBUS       // JR
+
+#if (FLASH_SIZE > 64)
+#define MAX_PROFILE_COUNT 3
+#else
+#define MAX_PROFILE_COUNT 2
+#endif
 
 #if (FLASH_SIZE > 64)
 #define BLACKBOX
