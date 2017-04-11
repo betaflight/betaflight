@@ -15,26 +15,22 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdbool.h>
+#include <stdint.h>
 
-#include "common/time.h"
+#include <platform.h>
 
-extern int32_t AltHold;
-extern int32_t vario;
+#include "drivers/serial.h"
 
-typedef struct airplaneConfig_s {
-    int8_t fixedwing_althold_dir;           // +1 or -1 for pitch/althold gain. later check if need more than just sign
-} airplaneConfig_t;
+#include "io/serial.h"
 
-PG_DECLARE(airplaneConfig_t, airplaneConfig);
+#include "config/feature.h"
 
-void calculateEstimatedAltitude(timeUs_t currentTimeUs);
+#include "fc/config.h"
 
-struct pidProfile_s;
-void configureAltitudeHold(struct pidProfile_s *initialPidProfile);
-
-void applyAltHold(void);
-void updateAltHoldState(void);
-void updateSonarAltHoldState(void);
-
-int32_t altitudeHoldGetEstimatedAltitude(void);
+#ifdef TARGET_CONFIG
+void targetConfiguration(void)
+{
+    serialConfigMutable()->portConfigs[1].functionMask = FUNCTION_MSP; // To connect to FC.
+}
+#endif

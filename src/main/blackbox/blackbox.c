@@ -1221,7 +1221,7 @@ static bool blackboxWriteSysinfo()
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
             if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
-                blackboxPrintfHeaderLine("vbatscale", "%u", voltageSensorADCConfig(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale);
+                blackboxPrintfHeaderLine("vbat_scale", "%u", voltageSensorADCConfig(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale);
             } else {
                 xmitState.headerIndex += 2; // Skip the next two vbat fields too
             }
@@ -1291,13 +1291,13 @@ static bool blackboxWriteSysinfo()
 
         // Betaflight PID controller parameters
         BLACKBOX_PRINT_HEADER_LINE("anti_gravity_thresh", "%d",              currentPidProfile->itermThrottleThreshold);
-        BLACKBOX_PRINT_HEADER_LINE("anti_gravity_gain", "%d",                castFloatBytesToInt(currentPidProfile->itermAcceleratorGain));
+        BLACKBOX_PRINT_HEADER_LINE("anti_gravity_gain", "%d",                currentPidProfile->itermAcceleratorGain);
         BLACKBOX_PRINT_HEADER_LINE("setpoint_relax_ratio", "%d",             currentPidProfile->setpointRelaxRatio);
         BLACKBOX_PRINT_HEADER_LINE("d_setpoint_weight", "%d",                currentPidProfile->dtermSetpointWeight);
-        BLACKBOX_PRINT_HEADER_LINE("yaw_accel_limit", "%d",                  castFloatBytesToInt(currentPidProfile->yawRateAccelLimit));
-        BLACKBOX_PRINT_HEADER_LINE("accel_limit", "%d",                      castFloatBytesToInt(currentPidProfile->rateAccelLimit));
-        BLACKBOX_PRINT_HEADER_LINE("pidsum_limit", "%d",                     castFloatBytesToInt(currentPidProfile->pidSumLimit));
-        BLACKBOX_PRINT_HEADER_LINE("pidsum_limit_yaw", "%d",                 castFloatBytesToInt(currentPidProfile->pidSumLimitYaw));
+        BLACKBOX_PRINT_HEADER_LINE("yaw_accel_limit", "%d",                  currentPidProfile->yawRateAccelLimit);
+        BLACKBOX_PRINT_HEADER_LINE("accel_limit", "%d",                      currentPidProfile->rateAccelLimit);
+        BLACKBOX_PRINT_HEADER_LINE("pidsum_limit", "%d",                     currentPidProfile->pidSumLimit);
+        BLACKBOX_PRINT_HEADER_LINE("pidsum_limit_yaw", "%d",                 currentPidProfile->pidSumLimitYaw);
         // End of Betaflight controller parameters
 
         BLACKBOX_PRINT_HEADER_LINE("deadband", "%d",                         rcControlsConfig()->deadband);
@@ -1321,7 +1321,7 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("use_unsynced_pwm", "%d",                 motorConfig()->dev.useUnsyncedPwm);
         BLACKBOX_PRINT_HEADER_LINE("motor_pwm_protocol", "%d",               motorConfig()->dev.motorPwmProtocol);
         BLACKBOX_PRINT_HEADER_LINE("motor_pwm_rate", "%d",                   motorConfig()->dev.motorPwmRate);
-        BLACKBOX_PRINT_HEADER_LINE("digital_idle_percent", "%d",        (int)(motorConfig()->digitalIdleOffsetPercent * 100.0f));
+        BLACKBOX_PRINT_HEADER_LINE("digital_idle_value", "%d",               motorConfig()->digitalIdleOffsetValue);
         BLACKBOX_PRINT_HEADER_LINE("debug_mode", "%d",                       systemConfig()->debug_mode);
         BLACKBOX_PRINT_HEADER_LINE("features", "%d",                         featureConfig()->enabledFeatures);
 
@@ -1681,22 +1681,12 @@ void handleBlackbox(timeUs_t currentTimeUs)
     }
 }
 
-static bool canUseBlackboxWithCurrentConfiguration(void)
-{
-#ifdef USE_SDCARD
-    return feature(FEATURE_BLACKBOX) && 
-        !(blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD && !feature(FEATURE_SDCARD));
-#else
-    return feature(FEATURE_BLACKBOX);
-#endif
-}
-
 /**
  * Call during system startup to initialize the blackbox.
  */
 void initBlackbox(void)
 {
-    if (canUseBlackboxWithCurrentConfiguration()) {
+    if (blackboxConfig()->device) {
         blackboxSetState(BLACKBOX_STATE_STOPPED);
     } else {
         blackboxSetState(BLACKBOX_STATE_DISABLED);

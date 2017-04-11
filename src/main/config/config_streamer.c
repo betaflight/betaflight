@@ -53,6 +53,8 @@ extern uint8_t __config_end;
 #  define FLASH_PAGE_SIZE                 ((uint32_t)0x8000)
 # elif defined(UNIT_TEST)
 #  define FLASH_PAGE_SIZE                 (0x400)
+# elif defined(SIMULATOR_BUILD)
+#  define FLASH_PAGE_SIZE                 (0x400)
 # else
 #  error "Flash page size not defined for target."
 # endif
@@ -86,6 +88,8 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
 #elif defined(STM32F7)
     // NOP
 #elif defined(UNIT_TEST)
+    // NOP
+#elif defined(SIMULATOR_BUILD)
     // NOP
 #else
 # error "Unsupported CPU"

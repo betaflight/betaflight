@@ -21,6 +21,7 @@
 #include <stdint.h>
 
 #include <platform.h>
+
 #include "resource.h"
 
 #include "io_types.h"
@@ -79,6 +80,16 @@
 #define IOCFG_IPU_25         IO_CONFIG(GPIO_Mode_IN,  GPIO_Speed_25MHz, 0, GPIO_PuPd_UP)
 
 #elif defined(UNIT_TEST)
+
+# define IOCFG_OUT_PP         0
+# define IOCFG_OUT_OD         0
+# define IOCFG_AF_PP          0
+# define IOCFG_AF_OD          0
+# define IOCFG_IPD            0
+# define IOCFG_IPU            0
+# define IOCFG_IN_FLOATING    0
+
+#elif defined(SIMULATOR_BUILD)
 
 # define IOCFG_OUT_PP         0
 # define IOCFG_OUT_OD         0

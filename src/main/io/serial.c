@@ -126,6 +126,13 @@ void pgResetFn_serialConfig(serialConfig_t *serialConfig)
     }
 #endif
 
+#ifdef SERIALRX_UART
+    serialPortConfig_t *serialRxUartConfig = serialFindPortConfiguration(SERIALRX_UART);
+    if (serialRxUartConfig) {
+        serialRxUartConfig->functionMask = FUNCTION_RX_SERIAL;
+    }
+#endif
+
     serialConfig->reboot_character = 'R';
     serialConfig->serial_update_rate_hz = 100;
 }

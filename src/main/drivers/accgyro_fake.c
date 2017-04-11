@@ -20,6 +20,11 @@
 
 #include "platform.h"
 
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+#include <stdio.h>
+#include <pthread.h>
+#endif
+
 #ifdef USE_FAKE_GYRO
 
 #include "common/axis.h"
@@ -28,26 +33,46 @@
 #include "accgyro.h"
 #include "accgyro_fake.h"
 
-
 static int16_t fakeGyroADC[XYZ_AXIS_COUNT];
+gyroDev_t *fakeGyroDev;
 
 static void fakeGyroInit(gyroDev_t *gyro)
 {
-    UNUSED(gyro);
+    fakeGyroDev = gyro;
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+    if (pthread_mutex_init(&gyro->lock, NULL) != 0) {
+        printf("Create gyro lock error!\n");
+    }
+#endif
 }
 
-void fakeGyroSet(int16_t x, int16_t y, int16_t z)
+void fakeGyroSet(gyroDev_t *gyro, int16_t x, int16_t y, int16_t z)
 {
+    gyroDevLock(gyro);
+
     fakeGyroADC[X] = x;
     fakeGyroADC[Y] = y;
     fakeGyroADC[Z] = z;
+
+    gyro->dataReady = true;
+
+    gyroDevUnLock(gyro);
 }
 
 static bool fakeGyroRead(gyroDev_t *gyro)
 {
+    gyroDevLock(gyro);
+    if (gyro->dataReady == false) {
+        gyroDevUnLock(gyro);
+        return false;
+    }
+    gyro->dataReady = false;
+
     gyro->gyroADCRaw[X] = fakeGyroADC[X];
     gyro->gyroADCRaw[Y] = fakeGyroADC[Y];
     gyro->gyroADCRaw[Z] = fakeGyroADC[Z];
+
+    gyroDevUnLock(gyro);
     return true;
 }
 
@@ -70,7 +95,11 @@ bool fakeGyroDetect(gyroDev_t *gyro)
     gyro->intStatus = fakeGyroInitStatus;
     gyro->read = fakeGyroRead;
     gyro->temperature = fakeGyroReadTemperature;
+#if defined(SIMULATOR_BUILD)
+    gyro->scale = 1.0f / 16.4f;
+#else
     gyro->scale = 1.0f;
+#endif
     return true;
 }
 #endif // USE_FAKE_GYRO
@@ -79,24 +108,45 @@ bool fakeGyroDetect(gyroDev_t *gyro)
 #ifdef USE_FAKE_ACC
 
 static int16_t fakeAccData[XYZ_AXIS_COUNT];
+accDev_t *fakeAccDev;
 
 static void fakeAccInit(accDev_t *acc)
 {
-    UNUSED(acc);
+    fakeAccDev = acc;
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+    if (pthread_mutex_init(&acc->lock, NULL) != 0) {
+        printf("Create acc lock error!\n");
+    }
+#endif
 }
 
-void fakeAccSet(int16_t x, int16_t y, int16_t z)
+void fakeAccSet(accDev_t *acc, int16_t x, int16_t y, int16_t z)
 {
+    accDevLock(acc);
+
     fakeAccData[X] = x;
     fakeAccData[Y] = y;
     fakeAccData[Z] = z;
+
+    acc->dataReady = true;
+
+    accDevUnLock(acc);
 }
 
 static bool fakeAccRead(accDev_t *acc)
 {
+    accDevLock(acc);
+    if (acc->dataReady == false) {
+        accDevUnLock(acc);
+        return false;
+    }
+    acc->dataReady = false;
+
     acc->ADCRaw[X] = fakeAccData[X];
     acc->ADCRaw[Y] = fakeAccData[Y];
     acc->ADCRaw[Z] = fakeAccData[Z];
+
+    accDevUnLock(acc);
     return true;
 }
 

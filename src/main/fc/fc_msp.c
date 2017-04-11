@@ -60,10 +60,9 @@
 #include "fc/fc_msp.h"
 #include "fc/fc_rc.h"
 #include "fc/rc_adjustments.h"
-#include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "flight/altitudehold.h"
+#include "flight/altitude.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -79,6 +78,7 @@
 #include "io/ledstrip.h"
 #include "io/motors.h"
 #include "io/osd.h"
+#include "io/osd_slave.h"
 #include "io/serial.h"
 #include "io/serial_4way.h"
 #include "io/servos.h"
@@ -114,46 +114,39 @@ extern uint16_t cycleTime; // FIXME dependency on mw.c
 static const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
-typedef struct box_e {
-    const uint8_t boxId;            // see boxId_e
-    const char *boxName;            // GUI-readable box name
-    const uint8_t permanentId;      //
-} box_t;
-
-// FIXME remove ;'s
 static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
-    { BOXARM, "ARM;", 0 },
-    { BOXANGLE, "ANGLE;", 1 },
-    { BOXHORIZON, "HORIZON;", 2 },
-    { BOXBARO, "BARO;", 3 },
-    //{ BOXVARIO, "VARIO;", 4 },
-    { BOXMAG, "MAG;", 5 },
-    { BOXHEADFREE, "HEADFREE;", 6 },
-    { BOXHEADADJ, "HEADADJ;", 7 },
-    { BOXCAMSTAB, "CAMSTAB;", 8 },
-    { BOXCAMTRIG, "CAMTRIG;", 9 },
-    { BOXGPSHOME, "GPS HOME;", 10 },
-    { BOXGPSHOLD, "GPS HOLD;", 11 },
-    { BOXPASSTHRU, "PASSTHRU;", 12 },
-    { BOXBEEPERON, "BEEPER;", 13 },
-    { BOXLEDMAX, "LEDMAX;", 14 },
-    { BOXLEDLOW, "LEDLOW;", 15 },
-    { BOXLLIGHTS, "LLIGHTS;", 16 },
-    { BOXCALIB, "CALIB;", 17 },
-    { BOXGOV, "GOVERNOR;", 18 },
-    { BOXOSD, "OSD SW;", 19 },
-    { BOXTELEMETRY, "TELEMETRY;", 20 },
-    { BOXGTUNE, "GTUNE;", 21 },
-    { BOXSONAR, "SONAR;", 22 },
-    { BOXSERVO1, "SERVO1;", 23 },
-    { BOXSERVO2, "SERVO2;", 24 },
-    { BOXSERVO3, "SERVO3;", 25 },
-    { BOXBLACKBOX, "BLACKBOX;", 26 },
-    { BOXFAILSAFE, "FAILSAFE;", 27 },
-    { BOXAIRMODE, "AIR MODE;", 28 },
-    { BOX3DDISABLESWITCH, "DISABLE 3D SWITCH;", 29},
-    { BOXFPVANGLEMIX, "FPV ANGLE MIX;", 30},
-    { BOXBLACKBOXERASE, "BLACKBOX ERASE (>30s);", 31 },
+    { BOXARM, "ARM", 0 },
+    { BOXANGLE, "ANGLE", 1 },
+    { BOXHORIZON, "HORIZON", 2 },
+    { BOXBARO, "BARO", 3 },
+    { BOXANTIGRAVITY, "ANTI GRAVITY", 4 },
+    { BOXMAG, "MAG", 5 },
+    { BOXHEADFREE, "HEADFREE", 6 },
+    { BOXHEADADJ, "HEADADJ", 7 },
+    { BOXCAMSTAB, "CAMSTAB", 8 },
+    { BOXCAMTRIG, "CAMTRIG", 9 },
+    { BOXGPSHOME, "GPS HOME", 10 },
+    { BOXGPSHOLD, "GPS HOLD", 11 },
+    { BOXPASSTHRU, "PASSTHRU", 12 },
+    { BOXBEEPERON, "BEEPER", 13 },
+    { BOXLEDMAX, "LEDMAX", 14 },
+    { BOXLEDLOW, "LEDLOW", 15 },
+    { BOXLLIGHTS, "LLIGHTS", 16 },
+    { BOXCALIB, "CALIB", 17 },
+    { BOXGOV, "GOVERNOR", 18 },
+    { BOXOSD, "OSD SW", 19 },
+    { BOXTELEMETRY, "TELEMETRY", 20 },
+    { BOXGTUNE, "GTUNE", 21 },
+    { BOXSONAR, "SONAR", 22 },
+    { BOXSERVO1, "SERVO1", 23 },
+    { BOXSERVO2, "SERVO2", 24 },
+    { BOXSERVO3, "SERVO3", 25 },
+    { BOXBLACKBOX, "BLACKBOX", 26 },
+    { BOXFAILSAFE, "FAILSAFE", 27 },
+    { BOXAIRMODE, "AIR MODE", 28 },
+    { BOX3DDISABLESWITCH, "DISABLE 3D SWITCH", 29},
+    { BOXFPVANGLEMIX, "FPV ANGLE MIX", 30},
+    { BOXBLACKBOXERASE, "BLACKBOX ERASE (>30s)", 31 },
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -258,18 +251,18 @@ static void mspRebootFn(serialPort_t *serialPort)
     while (true) ;
 }
 
-static const box_t *findBoxByActiveBoxId(uint8_t activeBoxId)
+const box_t *findBoxByBoxId(uint8_t boxId)
 {
     for (uint8_t boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
         const box_t *candidate = &boxes[boxIndex];
-        if (candidate->boxId == activeBoxId) {
+        if (candidate->boxId == boxId) {
             return candidate;
         }
     }
     return NULL;
 }
 
-static const box_t *findBoxByPermenantId(uint8_t permenantId)
+const box_t *findBoxByPermanentId(uint8_t permenantId)
 {
     for (uint8_t boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
         const box_t *candidate = &boxes[boxIndex];
@@ -282,31 +275,15 @@ static const box_t *findBoxByPermenantId(uint8_t permenantId)
 
 static void serializeBoxNamesReply(sbuf_t *dst)
 {
-    int flag = 1, count = 0;
-
-reset:
-    // in first run of the loop, we grab total size of junk to be sent
-    // then come back and actually send it
     for (int i = 0; i < activeBoxIdCount; i++) {
         const int activeBoxId = activeBoxIds[i];
-        const box_t *box = findBoxByActiveBoxId(activeBoxId);
+        const box_t *box = findBoxByBoxId(activeBoxId);
         if (!box) {
             continue;
         }
 
-        const int len = strlen(box->boxName);
-        if (flag) {
-            count += len;
-        } else {
-            for (int j = 0; j < len; j++) {
-                sbufWriteU8(dst, box->boxName[j]);
-            }
-        }
-    }
-
-    if (flag) {
-        flag = 0;
-        goto reset;
+        sbufWriteData(dst, box->boxName, strlen(box->boxName));
+        sbufWriteU8(dst, ';');
     }
 }
 
@@ -320,6 +297,10 @@ void initActiveBoxIds(void)
 
     if (!feature(FEATURE_AIRMODE)) {
         activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
+    }
+
+    if (!feature(FEATURE_ANTI_GRAVITY)) {
+        activeBoxIds[activeBoxIdCount++] = BOXANTIGRAVITY;
     }
 
     if (sensors(SENSOR_ACC)) {
@@ -371,12 +352,10 @@ void initActiveBoxIds(void)
 #endif
 
 #ifdef BLACKBOX
-    if (feature(FEATURE_BLACKBOX)) {
-        activeBoxIds[activeBoxIdCount++] = BOXBLACKBOX;
+    activeBoxIds[activeBoxIdCount++] = BOXBLACKBOX;
 #ifdef USE_FLASHFS
-        activeBoxIds[activeBoxIdCount++] = BOXBLACKBOXERASE;
+    activeBoxIds[activeBoxIdCount++] = BOXBLACKBOXERASE;
 #endif
-    }
 #endif
 
     activeBoxIds[activeBoxIdCount++] = BOXFPVANGLEMIX;
@@ -443,6 +422,7 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE)) << BOXBLACKBOXERASE |
         IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXANTIGRAVITY)) << BOXANTIGRAVITY |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX)) << BOXFPVANGLEMIX;
 
     uint32_t ret = 0;
@@ -588,6 +568,15 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #else
         sbufWriteU16(dst, 0); // No other build targets currently have hardware revision detection.
 #endif
+#ifdef USE_OSD_SLAVE
+        sbufWriteU8(dst, 1);  // 1 == OSD
+#else
+#if defined(OSD) && defined(USE_MAX7456)
+        sbufWriteU8(dst, 2);  // 2 == FC with OSD
+#else
+        sbufWriteU8(dst, 0);  // 0 == FC
+#endif
+#endif
         break;
 
     case MSP_BUILD_INFO:
@@ -704,11 +693,11 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_ALTITUDE:
 #if defined(BARO) || defined(SONAR)
-        sbufWriteU32(dst, altitudeHoldGetEstimatedAltitude());
+        sbufWriteU32(dst, getEstimatedAltitude());
 #else
         sbufWriteU32(dst, 0);
 #endif
-        sbufWriteU16(dst, vario);
+        sbufWriteU16(dst, getEstimatedVario());
         break;
 
     case MSP_SONAR_ALTITUDE:
@@ -766,7 +755,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     case MSP_MODE_RANGES:
         for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
             const modeActivationCondition_t *mac = modeActivationConditions(i);
-            const box_t *box = &boxes[mac->modeId];
+            const box_t *box = findBoxByBoxId(mac->modeId);
             sbufWriteU8(dst, box->permanentId);
             sbufWriteU8(dst, mac->auxChannelIndex);
             sbufWriteU8(dst, mac->range.startStep);
@@ -792,7 +781,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_BOXIDS:
         for (int i = 0; i < activeBoxIdCount; i++) {
-            const box_t *box = findBoxByActiveBoxId(activeBoxIds[i]);
+            const box_t *box = findBoxByBoxId(activeBoxIds[i]);
             if (!box) {
                 continue;
             }
@@ -814,8 +803,10 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
 #ifdef GPS
     case MSP_GPS_CONFIG:
-        sbufWriteU8(dst, gpsConfig()->provider); // gps_type
-        sbufWriteU8(dst, gpsConfig()->sbasMode); // gps_ubx_sbas
+        sbufWriteU8(dst, gpsConfig()->provider);
+        sbufWriteU8(dst, gpsConfig()->sbasMode);
+        sbufWriteU8(dst, gpsConfig()->autoConfig);
+        sbufWriteU8(dst, gpsConfig()->autoBaud);
         break;
 
     case MSP_RAW_GPS:
@@ -1114,15 +1105,36 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #endif
         break;
 
-    case MSP_OSD_CONFIG:
-#ifdef OSD
-        sbufWriteU8(dst, 1); // OSD supported
-        // send video system (AUTO/PAL/NTSC)
+    case MSP_OSD_CONFIG: {
+
+#define OSD_FLAGS_OSD_FEATURE           (1 << 0)
+#define OSD_FLAGS_OSD_SLAVE             (1 << 1)
+#define OSD_FLAGS_RESERVED_1            (1 << 2)
+#define OSD_FLAGS_RESERVED_2            (1 << 3)
+#define OSD_FLAGS_OSD_HARDWARE_MAX_7456 (1 << 4)
+
+        uint8_t osdFlags = 0;
+#if defined(OSD)
+        osdFlags |= OSD_FLAGS_OSD_FEATURE;
+#endif
+#if defined(USE_OSD_SLAVE)
+        osdFlags |= OSD_FLAGS_OSD_SLAVE;
+#endif
 #ifdef USE_MAX7456
+        osdFlags |= OSD_FLAGS_OSD_HARDWARE_MAX_7456;
+#endif
+
+        sbufWriteU8(dst, osdFlags);
+
+#ifdef USE_MAX7456
+        // send video system (AUTO/PAL/NTSC)
         sbufWriteU8(dst, vcdProfile()->video_system);
 #else
         sbufWriteU8(dst, 0);
 #endif
+
+#ifdef OSD
+        // OSD specific, not applicable to OSD slaves.
         sbufWriteU8(dst, osdConfig()->units);
         sbufWriteU8(dst, osdConfig()->rssi_alarm);
         sbufWriteU16(dst, osdConfig()->cap_alarm);
@@ -1131,11 +1143,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         for (int i = 0; i < OSD_ITEM_COUNT; i++) {
             sbufWriteU16(dst, osdConfig()->item_pos[i]);
         }
-#else
-        sbufWriteU8(dst, 0); // OSD not supported
 #endif
         break;
-
+    }
     case MSP_MOTOR_3D_CONFIG:
         sbufWriteU16(dst, flight3DConfig()->deadband3d_low);
         sbufWriteU16(dst, flight3DConfig()->deadband3d_high);
@@ -1166,7 +1176,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, motorConfig()->dev.useUnsyncedPwm);
         sbufWriteU8(dst, motorConfig()->dev.motorPwmProtocol);
         sbufWriteU16(dst, motorConfig()->dev.motorPwmRate);
-        sbufWriteU16(dst, (uint16_t)lrintf(motorConfig()->digitalIdleOffsetPercent * 100));
+        sbufWriteU16(dst, motorConfig()->digitalIdleOffsetValue);
         sbufWriteU8(dst, gyroConfig()->gyro_use_32khz);
         //!!TODO gyro_isr_update to be added pending decision
         //sbufWriteU8(dst, gyroConfig()->gyro_isr_update);
@@ -1196,8 +1206,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, 0); // reserved
-        sbufWriteU16(dst, (uint16_t)lrintf(currentPidProfile->rateAccelLimit * 10));
-        sbufWriteU16(dst, (uint16_t)lrintf(currentPidProfile->yawRateAccelLimit * 10));
+        sbufWriteU16(dst, currentPidProfile->rateAccelLimit);
+        sbufWriteU16(dst, currentPidProfile->yawRateAccelLimit);
         sbufWriteU8(dst, currentPidProfile->levelAngleLimit);
         sbufWriteU8(dst, currentPidProfile->levelSensitivity);
         break;
@@ -1368,7 +1378,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
             modeActivationCondition_t *mac = modeActivationConditionsMutable(i);
             i = sbufReadU8(src);
-            const box_t *box = findBoxByPermenantId(i);
+            const box_t *box = findBoxByPermanentId(i);
             if (box) {
                 mac->modeId = box->boxId;
                 mac->auxChannelIndex = sbufReadU8(src);
@@ -1437,8 +1447,10 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
 #ifdef GPS
     case MSP_SET_GPS_CONFIG:
-        gpsConfigMutable()->provider = sbufReadU8(src); // gps_type
-        gpsConfigMutable()->sbasMode = sbufReadU8(src); // gps_ubx_sbas
+        gpsConfigMutable()->provider = sbufReadU8(src);
+        gpsConfigMutable()->sbasMode = sbufReadU8(src);
+        gpsConfigMutable()->autoConfig = sbufReadU8(src);
+        gpsConfigMutable()->autoBaud = sbufReadU8(src);
         break;
 #endif
 
@@ -1526,7 +1538,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
         motorConfigMutable()->dev.motorPwmRate = sbufReadU16(src);
         if (sbufBytesRemaining(src) >= 2) {
-            motorConfigMutable()->digitalIdleOffsetPercent = sbufReadU16(src) / 100.0f;
+            motorConfigMutable()->digitalIdleOffsetValue = sbufReadU16(src);
         }
         if (sbufBytesRemaining(src)) {
             gyroConfigMutable()->gyro_use_32khz = sbufReadU8(src);
@@ -1574,8 +1586,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         sbufReadU8(src); // reserved
         sbufReadU8(src); // reserved
         sbufReadU8(src); // reserved
-        currentPidProfile->rateAccelLimit = sbufReadU16(src) / 10.0f;
-        currentPidProfile->yawRateAccelLimit = sbufReadU16(src) / 10.0f;
+        currentPidProfile->rateAccelLimit = sbufReadU16(src);
+        currentPidProfile->yawRateAccelLimit = sbufReadU16(src);
         if (dataSize > 17) {
             currentPidProfile->levelAngleLimit = sbufReadU8(src);
             currentPidProfile->levelSensitivity = sbufReadU8(src);
@@ -1637,7 +1649,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 #endif
 
-#ifdef OSD
+#if defined(OSD) || defined (USE_OSD_SLAVE)
     case MSP_SET_OSD_CONFIG:
         {
             const uint8_t addr = sbufReadU8(src);
@@ -1648,20 +1660,27 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
                 sbufReadU8(src); // Skip video system
 #endif
+#if defined(OSD)
                 osdConfigMutable()->units = sbufReadU8(src);
                 osdConfigMutable()->rssi_alarm = sbufReadU8(src);
                 osdConfigMutable()->cap_alarm = sbufReadU16(src);
                 osdConfigMutable()->time_alarm = sbufReadU16(src);
                 osdConfigMutable()->alt_alarm = sbufReadU16(src);
+#endif
             } else {
+#if defined(OSD)
                 // set a position setting
                 const uint16_t pos  = sbufReadU16(src);
                 if (addr < OSD_ITEM_COUNT) {
                     osdConfigMutable()->item_pos[addr] = pos;
                 }
+#else
+                return MSP_RESULT_ERROR;
+#endif
             }
         }
         break;
+
     case MSP_OSD_CHAR_WRITE:
 #ifdef USE_MAX7456
         {
@@ -1674,14 +1693,18 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             max7456WriteNvm(addr, font_data);
         }
 #else
+        return MSP_RESULT_ERROR;
+/*
         // just discard the data
         sbufReadU8(src);
         for (int i = 0; i < 54; i++) {
             sbufReadU8(src);
         }
+*/
 #endif
         break;
-#endif
+#endif // OSD || USE_OSD_SLAVE
+
 
 #if defined(USE_RTC6705) || defined(VTX_COMMON)
     case MSP_SET_VTX_CONFIG:
@@ -2025,6 +2048,57 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
     }
     reply->result = ret;
     return ret;
+}
+
+void mspFcProcessReply(mspPacket_t *reply)
+{
+    sbuf_t *src = &reply->buf;
+    UNUSED(src); // potentially unused depending on compile options.
+
+    switch (reply->cmd) {
+        case MSP_DISPLAYPORT: {
+#ifdef USE_OSD_SLAVE
+            int subCmd = sbufReadU8(src);
+
+            switch (subCmd) {
+                case 0: // HEARTBEAT
+                    //debug[0]++;
+                    osdSlaveHeartbeat();
+                    break;
+                case 1: // RELEASE
+                    //debug[1]++;
+                    break;
+                case 2: // CLEAR
+                    //debug[2]++;
+                    osdSlaveClearScreen();
+                    break;
+                case 3: {
+                    //debug[3]++;
+
+#define MSP_OSD_MAX_STRING_LENGTH 30 // FIXME move this
+                    const uint8_t y = sbufReadU8(src); // row
+                    const uint8_t x = sbufReadU8(src); // column
+                    const uint8_t reserved = sbufReadU8(src);
+                    UNUSED(reserved);
+
+                    char buf[MSP_OSD_MAX_STRING_LENGTH + 1];
+                    const int len = MIN(sbufBytesRemaining(src), MSP_OSD_MAX_STRING_LENGTH);
+                    sbufReadData(src, &buf, len);
+
+                    buf[len] = 0;
+
+                    osdSlaveWrite(x, y, buf);
+
+                    break;
+                }
+                case 4: {
+                    osdSlaveDrawScreen();
+                }
+            }
+#endif
+            break;
+        }
+    }
 }
 
 /*

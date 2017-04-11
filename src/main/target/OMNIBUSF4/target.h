@@ -21,26 +21,34 @@
 #define TARGET_BOARD_IDENTIFIER "CLR4"
 #elif defined(OMNIBUSF4SD)
 #define TARGET_BOARD_IDENTIFIER "OBSD"
+#elif defined(VGOODDHF4)
+#define TARGET_BOARD_IDENTIFIER "DHF4"
 #else
 #define TARGET_BOARD_IDENTIFIER "OBF4"
 #endif
 
 #if defined(CL_RACINGF4)
 #define USBD_PRODUCT_STRING "CL_RACINGF4"
+#elif defined(VGOODDHF4)
+#define USBD_PRODUCT_STRING "VgooddhF4"
 #else
 #define USBD_PRODUCT_STRING "OmnibusF4"
 #endif
 
 #ifdef OPBL
-#define USBD_SERIALNUMBER_STRING "0x8020000"
+#define USBD_SERIALNUMBER_STRING "0x8020000" // Remove this at the next major release (?)
 #endif
 
 #define LED0                    PB5
-//#define LED1                    PB4
+//#define LED1                    PB4 // Remove this at the next major release
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 
-#define INVERTER_PIN_UART1      PC0 // PC0 used as inverter select GPIO
+#ifdef OMNIBUSF4SD
+#define INVERTER_PIN_UART6      PC8 // Omnibus F4 V3 and later
+#else
+#define INVERTER_PIN_UART1      PC0 // PC0 used as inverter select GPIO XXX this is not used --- remove it at the next major release
+#endif
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
@@ -71,8 +79,8 @@
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW90_DEG
 
-//#define USE_MAG_NAZA
-//#define MAG_NAZA_ALIGN CW180_DEG_FLIP
+//#define USE_MAG_NAZA                   // Delete this on next major release
+//#define MAG_NAZA_ALIGN CW180_DEG_FLIP  // Ditto
 
 #define BARO
 #define USE_BARO_MS5611
@@ -109,6 +117,12 @@
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF4
 #define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
 #define SDCARD_DMA_CHANNEL                  DMA_Channel_0
+#elif defined(VGOODDHF4)
+#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+#define M25P16_CS_PIN           PB12
+#define M25P16_SPI_INSTANCE     SPI2
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
 #else
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 #define M25P16_CS_PIN           SPI3_NSS_PIN
@@ -152,7 +166,7 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 
-#if defined(OMNIBUSF4SD) || defined(CL_RACINGF4)
+#if defined(OMNIBUSF4SD) || defined(CL_RACINGF4) || defined(VGOODDHF4)
 #define USE_SPI_DEVICE_2
 #define SPI2_NSS_PIN            PB12
 #define SPI2_SCK_PIN            PB13
@@ -183,9 +197,9 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define AVOID_UART1_FOR_PWM_PPM
 #if defined(CL_RACINGF4)
-#define DEFAULT_FEATURES         (FEATURE_BLACKBOX | FEATURE_TELEMETRY | FEATURE_OSD )
+#define DEFAULT_FEATURES        (FEATURE_TELEMETRY | FEATURE_OSD )
 #else
-#define DEFAULT_FEATURES        (FEATURE_BLACKBOX | FEATURE_OSD)
+#define DEFAULT_FEATURES        (FEATURE_OSD)
 #endif
 
 #define SPEKTRUM_BIND_PIN       UART1_RX_PIN
@@ -196,5 +210,14 @@
 #define TARGET_IO_PORTC (0xffff & ~(BIT(15)|BIT(14)|BIT(13)))
 #define TARGET_IO_PORTD BIT(2)
 
+#ifdef CL_RACINGF4
+#define USABLE_TIMER_CHANNEL_COUNT 6
+#define USED_TIMERS  ( TIM_N(4) | TIM_N(8) )
+#else
+#ifdef OMNIBUSF4SD
+#define USABLE_TIMER_CHANNEL_COUNT 13
+#else
 #define USABLE_TIMER_CHANNEL_COUNT 12
+#endif
 #define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9))
+#endif

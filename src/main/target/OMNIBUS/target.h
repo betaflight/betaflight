@@ -153,7 +153,7 @@
 #define ADC_INSTANCE                ADC1
 
 // Use FrSky-style PWM encoded RSSI input
-#define RSSI_SOFTPWM_PIN            PB1
+#define RSSI_SOFTPWM_PIN            PB2
 
 #define TRANSPONDER
 #define REDUCE_TRANSPONDER_CURRENT_DRAW_WHEN_USB_CABLE_PRESENT
@@ -161,7 +161,7 @@
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
-#define DEFAULT_FEATURES        (FEATURE_BLACKBOX | FEATURE_OSD)
+#define DEFAULT_FEATURES        (FEATURE_OSD)
 
 #define BUTTONS
 #define BUTTON_A_PIN            PB1

@@ -72,7 +72,7 @@
 
 #include "telemetry/telemetry.h"
 
-#include "flight/altitudehold.h"
+#include "flight/altitude.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -171,7 +171,7 @@ void mwDisarm(void)
         DISABLE_ARMING_FLAG(ARMED);
 
 #ifdef BLACKBOX
-        if (feature(FEATURE_BLACKBOX)) {
+        if (blackboxConfig()->device) {
             finishBlackbox();
         }
 #endif
@@ -273,7 +273,7 @@ void updateMagHold(void)
             dif += 360;
         if (dif >= +180)
             dif -= 360;
-        dif *= -GET_YAW_DIRECTION(rcControlsConfig()->yaw_control_reversed);
+        dif *= -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
         if (STATE(SMALL_ANGLE))
             rcCommand[YAW] -= dif * currentPidProfile->P8[PIDMAG] / 30;    // 18 deg
     } else
@@ -477,7 +477,7 @@ void processRx(timeUs_t currentTimeUs)
 
 static void subTaskPidController(void)
 {
-    uint32_t startTime;
+    uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
     // PID - note this is function pointer set by setPIDController()
     pidController(currentPidProfile, &accelerometerConfig()->accelerometerTrims);
@@ -486,7 +486,7 @@ static void subTaskPidController(void)
 
 static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 {
-    uint32_t startTime;
+    uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
 
     // Read out gyro temperature if used for telemmetry
@@ -545,7 +545,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 #endif
 
 #ifdef BLACKBOX
-    if (!cliMode && feature(FEATURE_BLACKBOX)) {
+    if (!cliMode && blackboxConfig()->device) {
         handleBlackbox(currentTimeUs);
     }
 #else
@@ -560,7 +560,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 
 static void subTaskMotorUpdate(void)
 {
-    uint32_t startTime;
+    uint32_t startTime = 0;
     if (debugMode == DEBUG_CYCLETIME) {
         startTime = micros();
         static uint32_t previousMotorUpdateTime;
@@ -602,6 +602,10 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     static bool runTaskMainSubprocesses;
     static uint8_t pidUpdateCountdown;
 
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_GYROPID_SYNC)
+	if(lockMainPID() != 0) return;
+#endif
+
     if (debugMode == DEBUG_CYCLETIME) {
         debug[0] = getTaskDeltaTime(TASK_SELF);
         debug[1] = averageSystemLoadPercent;
@@ -617,7 +621,7 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     // 1 - pidController()
     // 2 - subTaskMainSubprocesses()
     // 3 - subTaskMotorUpdate()
-    uint32_t startTime;
+    uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
     gyroUpdate();
     DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - startTime);

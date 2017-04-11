@@ -27,7 +27,7 @@
 
 #include "platform.h"
 
-#ifdef CMS
+#if defined(CMS) && defined(BLACKBOX)
 
 #include "build/version.h"
 
@@ -77,14 +77,12 @@ static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
 #endif // USE_FLASHFS
 
 static const char * const cmsx_BlackboxDeviceNames[] = {
-    "SERIAL",
+    "NONE",
     "FLASH ",
-    "SDCARD"
+    "SDCARD",
+    "SERIAL"
 };
 
-static bool featureRead = false;
-
-static uint8_t cmsx_FeatureBlackbox;
 static uint8_t blackboxConfig_rate_denom;
 
 static uint8_t cmsx_BlackboxDevice;
@@ -171,10 +169,6 @@ static long cmsx_Blackbox_onEnter(void)
     cmsx_Blackbox_GetDeviceStatus();
     cmsx_BlackboxDevice = blackboxConfig()->device;
 
-    if (!featureRead) {
-        cmsx_FeatureBlackbox = feature(FEATURE_BLACKBOX) ? 1 : 0;
-        featureRead = true;
-    }
     blackboxConfig_rate_denom = blackboxConfig()->rate_denom;
     return 0;
 }
@@ -193,20 +187,12 @@ static long cmsx_Blackbox_onExit(const OSD_Entry *self)
 
 static long cmsx_Blackbox_FeatureWriteback(void)
 {
-    if (featureRead) {
-        if (cmsx_FeatureBlackbox)
-            featureSet(FEATURE_BLACKBOX);
-        else
-            featureClear(FEATURE_BLACKBOX);
-    }
-
     return 0;
 }
 
 static OSD_Entry cmsx_menuBlackboxEntries[] =
 {
     { "-- BLACKBOX --", OME_Label, NULL, NULL, 0},
-    { "ENABLED",     OME_Bool,    NULL,            &cmsx_FeatureBlackbox,                                     0 },
     { "DEVICE",      OME_TAB,     NULL,            &cmsx_BlackboxDeviceTable,                                 0 },
     { "(STATUS)",    OME_String,  NULL,            &cmsx_BlackboxStatus,                                      0 },
     { "(USED)",      OME_String,  NULL,            &cmsx_BlackboxDeviceStorageUsed,                           0 },

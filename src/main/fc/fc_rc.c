@@ -167,7 +167,7 @@ static void scaleRcCommandToFpvCamAngle(void) {
     const int16_t rcCommandSpeed = rcCommand[THROTTLE] - rcCommandThrottlePrevious[index];
 
     if(ABS(rcCommandSpeed) > throttleVelocityThreshold)
-        pidSetItermAccelerator(currentPidProfile->itermAcceleratorGain);
+        pidSetItermAccelerator(0.0001f * currentPidProfile->itermAcceleratorGain);
     else
         pidSetItermAccelerator(1.0f);
 }
@@ -185,8 +185,9 @@ void processRcCommand(void)
 
     if (isRXDataNew) {
         currentRxRefreshRate = constrain(getTaskDeltaTime(TASK_RX),1000,20000);
-        if (currentPidProfile->itermAcceleratorGain > 1.0f)
+        if (isAntiGravityModeActive()) {
             checkForThrottleErrorResetState(currentRxRefreshRate);
+        }
     }
 
     if (rxConfig()->rcInterpolation || flightModeFlags) {
@@ -284,7 +285,7 @@ void updateRcCommands(void)
             } else {
                 tmp = 0;
             }
-            rcCommand[axis] = tmp * -GET_YAW_DIRECTION(rcControlsConfig()->yaw_control_reversed);
+            rcCommand[axis] = tmp * -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
         }
         if (rcData[axis] < rxConfig()->midrc) {
             rcCommand[axis] = -rcCommand[axis];
