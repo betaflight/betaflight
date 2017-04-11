@@ -64,11 +64,11 @@ static volatile bool rspInProgress = false;
 
 // Basic measurement by EXTI
 // Take three consequtive durations between interrupts.
-// timerState counts the number of interrupts,
+// timerCount counts the number of interrupts,
 // tstamp array stores us time stamp of each interrupts,
 // and tbits record the state of the pin at each interrupt.
 
-static volatile uint8_t timerState = 0;
+static volatile uint8_t timerCount = 0;
 static volatile uint16_t tstamp[3];
 static volatile uint8_t tbits;
 
@@ -95,24 +95,24 @@ static void rspExtiHandler(extiCallbackRec_t* cb)
     if (!rspInProgress)
         return;
 
-    switch (timerState) {
+    switch (timerCount) {
     case 0:
         tbits = IORead(rspIO);
         tstamp[0] = microsISR();
         EXTISetTrigger(rspIO, EXTI_Trigger_Rising_Falling);
-        ++timerState;
+        ++timerCount;
         break;
 
     case 1:
         tbits = (tbits << 1) | IORead(rspIO);
         tstamp[1] = microsISR();
-        ++timerState;
+        ++timerCount;
         break;
 
     case 2:
         tbits = (tbits << 1) | IORead(rspIO);
         tstamp[2] = microsISR();
-        ++timerState;
+        ++timerCount;
         EXTIEnable(rspIO, false);
         rspInProgress = false;
         break;
@@ -169,7 +169,7 @@ void rssiSoftPwmUpdate(uint32_t currentTime)
         }
     }
 
-    if (timerState != 3) {  // Did not finish, assume no signal
+    if (timerCount != 3) {  // Did not finish, assume no signal
         duty = 0;
     } else if (TBITS_IS_NORMAL(tbits)) {
         tCycle = tstamp[2] - tstamp[0];
@@ -218,7 +218,7 @@ restart:
 
     EXTISetTrigger(rspIO, EXTI_Trigger_Rising);
     rspInProgress = true;
-    timerState = 0;
+    timerCount = 0;
     EXTIEnable(rspIO, true);
 }
 
