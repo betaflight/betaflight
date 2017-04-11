@@ -67,7 +67,6 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#ifdef USE_FC
 #include "flight/altitudehold.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
@@ -75,7 +74,6 @@
 #include "flight/navigation.h"
 #include "flight/pid.h"
 #include "flight/servos.h"
-#endif
 
 #include "io/beeper.h"
 #include "io/gimbal.h"
@@ -100,7 +98,7 @@
 
 #include "telemetry/telemetry.h"
 
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
 pidProfile_t *currentPidProfile;
 #endif
 
@@ -122,7 +120,7 @@ PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
 
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
 
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .pidProfileIndex = 0,
     .activeRateProfile = 0,
@@ -460,7 +458,7 @@ void pgResetFn_statusLedConfig(statusLedConfig_t *statusLedConfig)
     ;
 }
 
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
 uint8_t getCurrentPidProfileIndex(void)
 {
     return systemConfig()->pidProfileIndex;
@@ -496,7 +494,7 @@ void resetConfigs(void)
 
     pgActivateProfile(0);
 
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
     setPidProfile(0);
     setControlRateProfile(0);
 #endif
@@ -508,7 +506,7 @@ void resetConfigs(void)
 
 void activateConfig(void)
 {
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
     generateThrottleCurve();
 
     resetAdjustmentStates();
@@ -532,7 +530,7 @@ void activateConfig(void)
 
 void validateAndFixConfig(void)
 {
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
     if((motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)){
         motorConfigMutable()->mincommand = 1000;
     }
@@ -608,7 +606,7 @@ void validateAndFixConfig(void)
 #endif
 }
 
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
 void validateAndFixGyroConfig(void)
 {
     // Prevent invalid notch cutoff
@@ -688,7 +686,7 @@ void validateAndFixGyroConfig(void)
 
 void readEEPROM(void)
 {
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
     suspendRxSignal();
 #endif
 
@@ -696,7 +694,7 @@ void readEEPROM(void)
     if (!loadEEPROM()) {
         failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
     }
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
     if (systemConfig()->activeRateProfile >= CONTROL_RATE_PROFILE_COUNT) {// sanity check
         systemConfigMutable()->activeRateProfile = 0;
     }
@@ -711,20 +709,20 @@ void readEEPROM(void)
     validateAndFixConfig();
     activateConfig();
 
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
     resumeRxSignal();
 #endif
 }
 
 void writeEEPROM(void)
 {
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
     suspendRxSignal();
 #endif
 
     writeConfigToEEPROM();
 
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
     resumeRxSignal();
 #endif
 }
@@ -750,7 +748,7 @@ void saveConfigAndNotify(void)
     beeperConfirmationBeeps(1);
 }
 
-#ifdef USE_FC
+#ifndef USE_OSD_SLAVE
 void changePidProfile(uint8_t pidProfileIndex)
 {
     if (pidProfileIndex >= MAX_PROFILE_COUNT) {
