@@ -335,9 +335,12 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         }
 
         // -----calculate I component
-        if (motorMixRange < 1.0f) {
-            // Only increase ITerm if motor output is not saturated
-            axisPID_I[axis] += Ki[axis] * errorRate * dT * dynKi * itermAccelerator;
+        const float ITerm = axisPID_I[axis];
+        const float ITermNew = ITerm + Ki[axis] * errorRate * dT * dynKi * itermAccelerator;
+        const bool outputSaturated = mixerIsOutputSaturated(axis, errorRate);
+        if (outputSaturated == false || ABS(ITermNew) < ABS(ITerm)) {
+            // Only increase ITerm if output is not saturated
+            axisPID_I[axis] = ITermNew;
         }
 
         // -----calculate D component
