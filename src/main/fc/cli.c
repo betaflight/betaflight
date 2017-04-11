@@ -159,47 +159,20 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
     { RX_FAILSAFE_MODE_INVALID, RX_FAILSAFE_MODE_HOLD, RX_FAILSAFE_MODE_SET }
 };
 
-// sync this with accelerationSensor_e
+// Sensor names (used in lookup tables for *_hardware settings and in status command output)
+// sync with accelerationSensor_e
 static const char * const lookupTableAccHardware[] = {
-    "AUTO",
-    "NONE",
-    "ADXL345",
-    "MPU6050",
-    "MMA8452",
-    "BMA280",
-    "LSM303DLHC",
-    "MPU6000",
-    "MPU6500",
-    "MPU9250",
-    "ICM20601",
-    "ICM20602",
-    "ICM20608",
-    "ICM20689",
-    "BMI160",
-    "FAKE"
+    "AUTO", "NONE", "ADXL345", "MPU6050", "MMA8452", "BMA280", "LSM303DLHC",
+    "MPU6000", "MPU6500", "MPU9250", "ICM20601", "ICM20602", "ICM20608", "ICM20689", "BMI160", "FAKE"
 };
-
-#ifdef BARO
-// sync this with baroSensor_e
+// sync with baroSensor_e
 static const char * const lookupTableBaroHardware[] = {
-    "AUTO",
-    "NONE",
-    "BMP085",
-    "MS5611",
-    "BMP280"
+    "AUTO", "NONE", "BMP085", "MS5611", "BMP280"
 };
-#endif
-
-#ifdef MAG
-// sync this with magSensor_e
+// sync with magSensor_e
 static const char * const lookupTableMagHardware[] = {
-    "AUTO",
-    "NONE",
-    "HMC5883",
-    "AK8975",
-    "AK8963"
+    "AUTO", "NONE", "HMC5883", "AK8975", "AK8963"
 };
-#endif
 
 #if defined(USE_SENSOR_NAMES)
 // sync this with sensors_e
@@ -209,13 +182,16 @@ static const char * const sensorTypeNames[] = {
 
 #define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
 
-static const char * const sensorHardwareNames[4][16] = {
-    { "", "None", "MPU6050", "L3G4200D", "MPU3050", "L3GD20",              "MPU6000", "MPU6500", "MPU9250", "ICM20601", "ICM20602", "ICM20608G", "ICM20689", "BMI160", "FAKE", NULL },
-    { "", "None", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "MPU9250", "ICM20601", "ICM20602", "ICM20608G", "ICM20689", "BMI160", "FAKE", NULL },
-    { "", "None", "BMP085", "MS5611", "BMP280", NULL },
-    { "", "None", "HMC5883", "AK8975", "AK8963", NULL }
+// sync with gyroSensor_e
+static const char * const gyroNames[] = {
+    "AUTO", "NONE", "MPU6050", "L3G4200D", "MPU3050", "L3GD20",
+    "MPU6000", "MPU6500", "MPU9250", "ICM20601", "ICM20602", "ICM20608G", "ICM20689", "BMI160", "FAKE"
 };
-#endif /* USE_SENSOR_NAMES */
+
+static const char * const *sensorHardwareNames[] = {
+    gyroNames, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware
+};
+#endif // USE_SENSOR_NAMES
 
 static const char * const lookupTableOffOn[] = {
     "OFF", "ON"
