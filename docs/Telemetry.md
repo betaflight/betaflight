@@ -254,7 +254,7 @@ Example: 12803 is 12 satelites, Fix3D, FixHome, 0-9m HDOP, Angle Mode
 
 ### CLI command
 
-inav_telemetry_type
+ibus_telemetry_type
 
 0.Standard sensor type are used (Temp,Rpm,ExtV). Each transmitter should support this. (FS-i6, FS-i6S)
 
