@@ -50,6 +50,7 @@
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
 #include "sensors/compass.h"
+#include "sensors/pitotmeter.h"
 
 
 typedef struct {
@@ -106,7 +107,7 @@ int32_t axisPID_P[FLIGHT_DYNAMICS_INDEX_COUNT], axisPID_I[FLIGHT_DYNAMICS_INDEX_
 
 static pidState_t pidState[FLIGHT_DYNAMICS_INDEX_COUNT];
 
-PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(pidProfile_t, pidProfile, PG_PID_PROFILE, 1);
+PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(pidProfile_t, pidProfile, PG_PID_PROFILE, 2);
 
 PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
         .bank_mc = {
@@ -182,12 +183,14 @@ PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
 
         .yaw_p_limit = YAW_P_LIMIT_DEFAULT,
 
+        .heading_hold_rate_limit = HEADING_HOLD_RATE_LIMIT_DEFAULT,
+
         .max_angle_inclination[FD_ROLL] = 300,    // 30 degrees
         .max_angle_inclination[FD_PITCH] = 300,    // 30 degrees
-        .fixedWingItermThrowLimit = FW_ITERM_THROW_LIMIT_DEFAULT,
         .pidSumLimit = PID_SUM_LIMIT_DEFAULT,
 
-        .heading_hold_rate_limit = HEADING_HOLD_RATE_LIMIT_DEFAULT,
+        .fixedWingItermThrowLimit = FW_ITERM_THROW_LIMIT_DEFAULT,
+        .fixedWingReferenceAirspeed = 1000,
 );
 
 void pidInit(void)
@@ -641,7 +644,18 @@ static void pidTurnAssistant(pidState_t *pidState)
             //      tan(roll_angle) = forward_vel * yaw_rate / Gravity
             // If we solve for yaw rate we get:
             //      yaw_rate = tan(roll_angle) * Gravity / forward_vel
-            float airspeedForCoordinatedTurn = 1200.0f; // FIXME, default to 43km/h at the moment
+
+#if defined(PITOT)
+            float airspeedForCoordinatedTurn = sensors(SENSOR_PITOT) ?
+                    pitot.airSpeed :
+                    pidProfile()->fixedWingReferenceAirspeed;
+#else
+            float airspeedForCoordinatedTurn = pidProfile()->fixedWingReferenceAirspeed;
+#endif
+
+            // Constrain to somewhat sane limits - 10km/h - 216km/h
+            airspeedForCoordinatedTurn = constrainf(airspeedForCoordinatedTurn, 300, 6000);
+
             float bankAngle = DECIDEGREES_TO_RADIANS(attitude.values.roll);
             float coordinatedTurnRateOffset = GRAVITY_CMSS * tan_approx(-bankAngle) / airspeedForCoordinatedTurn;
 

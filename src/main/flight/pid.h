@@ -99,9 +99,11 @@ typedef struct pidProfile_s {
     int16_t max_angle_inclination[ANGLE_INDEX_COUNT];       // Max possible inclination (roll and pitch axis separately
 
     float dterm_setpoint_weight;
-
-    uint16_t fixedWingItermThrowLimit;
     uint16_t pidSumLimit;
+
+    // Airplane-specific parameters
+    uint16_t    fixedWingItermThrowLimit;
+    float       fixedWingReferenceAirspeed;                 // Reference tuning airspeed for the airplane - the speed for which PID gains are tuned
 } pidProfile_t;
 
 typedef struct pidAutotuneConfig_s {
