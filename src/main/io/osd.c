@@ -177,7 +177,9 @@ static void osdDrawSingleElement(uint8_t item)
 
         case OSD_MAIN_BATT_VOLTAGE:
         {
-            buff[0] = SYM_BATT_5;
+            uint8_t p = calculateBatteryPercentage();
+            p = (100-p)/16.6;
+            buff[0] = SYM_BATT_FULL + p;
             sprintf(buff + 1, "%d.%1dV", vbat / 10, vbat % 10);
             break;
         }
