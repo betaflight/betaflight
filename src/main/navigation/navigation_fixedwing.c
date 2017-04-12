@@ -407,7 +407,6 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
 
     // Mix Pitch/Roll/Throttle
     if (isRollAdjustmentValid && (navStateFlags & NAV_CTL_POS)) {
-        pitchCorrection += ABS(posControl.rcAdjustment[ROLL]) * (navConfig()->fw.roll_to_pitch / 100.0f);
         rollCorrection += posControl.rcAdjustment[ROLL];
     }
 

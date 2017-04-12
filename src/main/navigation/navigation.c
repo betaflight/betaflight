@@ -116,7 +116,6 @@ PG_RESET_TEMPLATE(navConfig_t, navConfig,
         .max_throttle = 1700,
         .min_throttle = 1200,
         .pitch_to_throttle = 10,   // pwm units per degree of pitch (10pwm units ~ 1% throttle)
-        .roll_to_pitch = 75,       // percent of coupling
         .loiter_radius = 5000,     // 50m
 
         // Fixed wing launch
