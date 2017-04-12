@@ -27,9 +27,9 @@
 
 #include <platform.h>
 
-#include "system.h"
-#include "io.h"
-#include "nvic.h"
+#include "drivers/system.h"
+#include "drivers/io.h"
+#include "drivers/nvic.h"
 #include "dma.h"
 #include "rcc.h"
 

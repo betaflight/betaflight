@@ -23,7 +23,7 @@
 #include "common/axis.h"
 
 #include "drivers/sensor.h"
-#include "drivers/compass.h"
+#include "drivers/compass/compass.h"
 #include "drivers/serial.h"
 
 #include "fc/rc_controls.h"

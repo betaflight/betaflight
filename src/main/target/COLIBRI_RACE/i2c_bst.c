@@ -19,8 +19,8 @@
 #include "drivers/system.h"
 
 #include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/compass/compass.h"
 
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"

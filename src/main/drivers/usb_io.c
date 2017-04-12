@@ -22,8 +22,8 @@
 
 #ifdef USE_VCP
 
-#include "io.h"
-#include "system.h"
+#include "drivers/io.h"
+#include "drivers/system.h"
 #include "usb_io.h"
 #include "sdcard.h"
 

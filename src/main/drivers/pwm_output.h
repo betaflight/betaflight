@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "io_types.h"
+#include "drivers/io_types.h"
 #include "timer.h"
 
 #define MAX_SUPPORTED_MOTORS 12

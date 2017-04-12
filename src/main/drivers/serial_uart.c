@@ -28,7 +28,7 @@
 #include "build/build_config.h"
 
 #include "common/utils.h"
-#include "gpio.h"
+#include "drivers/gpio.h"
 #include "inverter.h"
 
 #include "serial.h"

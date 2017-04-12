@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "io_types.h"
+#include "drivers/io_types.h"
 
 typedef struct sonarConfig_s {
     ioTag_t triggerTag;

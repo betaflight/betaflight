@@ -5,7 +5,7 @@
  *      Author: borisb
  */
 
-#include "drivers/accgyro.h"
+#include "drivers/accgyro/accgyro.h"
 
 bool gyroSyncCheckUpdate(gyroDev_t *gyro);
 uint8_t gyroMPU6xxxGetDividerDrops(const gyroDev_t *gyro);

@@ -19,8 +19,8 @@
 
 #include "platform.h"
 
-#include "io_types.h"
-#include "rcc_types.h"
+#include "drivers/io_types.h"
+#include "drivers/rcc_types.h"
 
 #define I2C_SHORT_TIMEOUT            ((uint32_t)0x1000)
 #define I2C_LONG_TIMEOUT             ((uint32_t)(10 * I2C_SHORT_TIMEOUT))

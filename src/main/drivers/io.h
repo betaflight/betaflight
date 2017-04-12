@@ -24,7 +24,7 @@
 
 #include "resource.h"
 
-#include "io_types.h"
+#include "drivers/io_types.h"
 
 // preprocessor is used to convert pinid to requested C data value
 // compile-time error is generated if requested pin is not available (not set in TARGET_IO_PORTx)
