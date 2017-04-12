@@ -49,7 +49,6 @@ extern uint8_t __config_end;
 #include "common/utils.h"
 
 #include "config/config_eeprom.h"
-#include "config/config_profile.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -629,8 +628,10 @@ static const clivalue_t valueTable[] = {
     { "ibata_scale",                VAR_INT16  | MASTER_VALUE, .config.minmax = { -16000, 16000 }, PG_CURRENT_SENSOR_ADC_CONFIG, offsetof(currentSensorADCConfig_t, scale) },
     { "ibata_offset",               VAR_INT16  | MASTER_VALUE, .config.minmax = { -16000, 16000 }, PG_CURRENT_SENSOR_ADC_CONFIG, offsetof(currentSensorADCConfig_t, offset) },
 // PG_CURRENT_SENSOR_ADC_CONFIG
+#ifdef USE_VIRTUAL_CURRENT_METER
     { "ibatv_scale",                VAR_INT16  | MASTER_VALUE, .config.minmax = { -16000, 16000 }, PG_CURRENT_SENSOR_VIRTUAL_CONFIG, offsetof(currentSensorVirtualConfig_t, scale) },
     { "ibatv_offset",               VAR_INT16  | MASTER_VALUE, .config.minmax = { -16000, 16000 }, PG_CURRENT_SENSOR_VIRTUAL_CONFIG, offsetof(currentSensorVirtualConfig_t, offset) },
+#endif
 
 // PG_BEEPER_DEV_CONFIG
 #ifdef BEEPER
@@ -909,7 +910,9 @@ static servoParam_t servoParamsCopy[MAX_SUPPORTED_SERVOS];
 static batteryConfig_t batteryConfigCopy;
 static voltageSensorADCConfig_t voltageSensorADCConfigCopy[MAX_VOLTAGE_SENSOR_ADC];
 static currentSensorADCConfig_t currentSensorADCConfigCopy;
+#ifdef USE_VIRTUAL_CURRENT_METER
 static currentSensorVirtualConfig_t currentSensorVirtualConfigCopy;
+#endif
 static motorMixer_t customMotorMixerCopy[MAX_SUPPORTED_MOTORS];
 static mixerConfig_t mixerConfigCopy;
 static flight3DConfig_t flight3DConfigCopy;
@@ -1197,10 +1200,12 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.currentConfig = &currentSensorADCConfigCopy;
         ret.defaultConfig = currentSensorADCConfig();
         break;
+#ifdef USE_VIRTUAL_CURRENT_METER
     case PG_CURRENT_SENSOR_VIRTUAL_CONFIG:
         ret.currentConfig = &currentSensorVirtualConfigCopy;
         ret.defaultConfig = currentSensorVirtualConfig();
         break;
+#endif
     case PG_SERIAL_CONFIG:
         ret.currentConfig = &serialConfigCopy;
         ret.defaultConfig = serialConfig();

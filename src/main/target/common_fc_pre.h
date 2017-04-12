@@ -82,6 +82,12 @@
 #define USE_SERIALRX_XBUS       // JR
 
 #if (FLASH_SIZE > 64)
+#define MAX_PROFILE_COUNT 3
+#else
+#define MAX_PROFILE_COUNT 2
+#endif
+
+#if (FLASH_SIZE > 64)
 #define BLACKBOX
 #define LED_STRIP
 #define TELEMETRY
@@ -106,6 +112,7 @@
 #define USE_RX_MSP
 #define USE_SERIALRX_JETIEXBUS
 #define USE_SENSOR_NAMES
+#define USE_VIRTUAL_CURRENT_METER
 #define VTX_COMMON
 #define VTX_CONTROL
 #define VTX_SMARTAUDIO

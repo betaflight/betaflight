@@ -20,7 +20,7 @@
 #include <platform.h>
 #include "common/utils.h"
 
-#if defined(USE_DSHOT) || defined(LED_STRIP)
+#if defined(USE_DSHOT) || defined(LED_STRIP) || defined(TRANSPONDER)
 # define DEF_TIM_DMA_COND(...) __VA_ARGS__
 #else
 # define DEF_TIM_DMA_COND(...)

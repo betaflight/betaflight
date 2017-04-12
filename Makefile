@@ -90,6 +90,7 @@ FEATURES        =
 OFFICIAL_TARGETS  = ALIENFLIGHTF3 ALIENFLIGHTF4 ANYFCF7 BETAFLIGHTF3 BLUEJAYF4 CC3D FURYF4 NAZE REVO SIRINFPV SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3NEO SPRACINGF4EVO STM32F3DISCOVERY
 ALT_TARGETS       = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.mk)))))
 OPBL_TARGETS      = $(filter %_OPBL, $(ALT_TARGETS))
+OSD_SLAVE_TARGETS = SPRACINGF3OSD
 
 VALID_TARGETS   = $(dir $(wildcard $(ROOT)/src/main/target/*/target.mk))
 VALID_TARGETS  := $(subst /,, $(subst ./src/main/target/,, $(VALID_TARGETS)))
@@ -187,6 +188,15 @@ endif
 ifeq ($(filter $(TARGET),$(OPBL_TARGETS)), $(TARGET))
 OPBL            = yes
 endif
+
+ifeq ($(filter $(TARGET),$(OSD_SLAVE_TARGETS)), $(TARGET))
+# build an OSD SLAVE
+OSD_SLAVE       = yes
+else
+# build an FC
+FC              = yes
+endif
+
 
 # silently ignore if the file is not present. Allows for target specific.
 -include $(ROOT)/src/main/target/$(BASE_TARGET)/target.mk
@@ -664,36 +674,53 @@ COMMON_SRC = \
             drivers/bus_spi_soft.c \
             drivers/display.c \
             drivers/exti.c \
-            drivers/gyro_sync.c \
             drivers/io.c \
             drivers/light_led.c \
             drivers/resource.c \
+            drivers/rcc.c \
+            drivers/serial.c \
+            drivers/serial_uart.c \
+            drivers/sound_beeper.c \
+            drivers/stack_check.c \
+            drivers/system.c \
+            drivers/timer.c \
+            drivers/transponder_ir.c \
+            fc/config.c \
+            fc/fc_dispatch.c \
+            fc/fc_hardfaults.c \
+            fc/fc_msp.c \
+            fc/fc_tasks.c \
+            fc/runtime_config.c \
+            io/beeper.c \
+            io/serial.c \
+            io/statusindicator.c \
+            io/transponder_ir.c \
+            msp/msp_serial.c \
+            scheduler/scheduler.c \
+            sensors/battery.c \
+            sensors/current.c \
+            sensors/voltage.c \
+
+OSD_SLAVE_SRC = \
+            io/displayport_max7456.c \
+            osd_slave/osd_slave_init.c \
+            io/osd_slave.c
+
+FC_SRC = \
+            fc/fc_init.c \
+            fc/controlrate_profile.c \
+            drivers/gyro_sync.c \
             drivers/rx_nrf24l01.c \
             drivers/rx_spi.c \
             drivers/rx_xn297.c \
             drivers/pwm_esc_detect.c \
             drivers/pwm_output.c \
-            drivers/rcc.c \
             drivers/rx_pwm.c \
-            drivers/serial.c \
-            drivers/serial_uart.c \
             drivers/serial_softserial.c \
-            drivers/sound_beeper.c \
-            drivers/stack_check.c \
-            drivers/system.c \
-            drivers/timer.c \
-            fc/config.c \
-            fc/controlrate_profile.c \
-            fc/fc_init.c \
-            fc/fc_dispatch.c \
-            fc/fc_hardfaults.c \
             fc/fc_core.c \
             fc/fc_rc.c \
-            fc/fc_msp.c \
-            fc/fc_tasks.c \
             fc/rc_adjustments.c \
             fc/rc_controls.c \
-            fc/runtime_config.c \
             fc/cli.c \
             flight/altitude.c \
             flight/failsafe.c \
@@ -701,13 +728,9 @@ COMMON_SRC = \
             flight/mixer.c \
             flight/pid.c \
             flight/servos.c \
-            io/beeper.c \
-            io/serial.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
-            io/statusindicator.c \
-            msp/msp_serial.c \
             rx/ibus.c \
             rx/jetiexbus.c \
             rx/msp.c \
@@ -725,11 +748,7 @@ COMMON_SRC = \
             rx/sumd.c \
             rx/sumh.c \
             rx/xbus.c \
-            scheduler/scheduler.c \
             sensors/acceleration.c \
-            sensors/battery.c \
-            sensors/current.c \
-            sensors/voltage.c \
             sensors/boardalignment.c \
             sensors/compass.c \
             sensors/gyro.c \
@@ -761,8 +780,6 @@ COMMON_SRC = \
             io/gps.c \
             io/ledstrip.c \
             io/osd.c \
-            io/osd_slave.c \
-            io/transponder_ir.c \
             sensors/sonar.c \
             sensors/barometer.c \
             telemetry/telemetry.c \
@@ -779,9 +796,18 @@ COMMON_SRC = \
             io/vtx_string.c \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c \
-            io/vtx.c \
+            io/vtx.c
+            
+COMMON_DEVICE_SRC = \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC)
+
+ifeq ($(OSD_SLAVE),yes)
+TARGET_FLAGS := -DUSE_OSD_SLAVE $(TARGET_FLAGS)
+COMMON_SRC := $(COMMON_SRC) $(OSD_SLAVE_SRC) $(COMMON_DEVICE_SRC)
+else
+COMMON_SRC := $(COMMON_SRC) $(FC_SRC) $(COMMON_DEVICE_SRC)
+endif
 
 
 SPEED_OPTIMISED_SRC := ""
