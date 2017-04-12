@@ -22,12 +22,12 @@
 
 #ifdef USE_DSHOT
 
-#include "io.h"
+#include "drivers/io.h"
 #include "timer.h"
 #include "pwm_output.h"
-#include "nvic.h"
+#include "drivers/nvic.h"
 #include "dma.h"
-#include "system.h"
+#include "drivers/system.h"
 #include "rcc.h"
 
 static uint8_t dmaMotorTimerCount = 0;

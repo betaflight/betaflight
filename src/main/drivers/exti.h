@@ -20,12 +20,7 @@
 
 #include <stdbool.h>
 
-#include "io_types.h"
-
-// old EXTI interface, to be replaced
-typedef struct extiConfig_s {
-    ioTag_t tag;
-} extiConfig_t;
+#include "drivers/io_types.h"
 
 typedef struct extiCallbackRec_s extiCallbackRec_t;
 typedef void extiHandlerCallback(extiCallbackRec_t *self);

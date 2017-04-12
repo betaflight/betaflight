@@ -20,8 +20,8 @@
 
 #include "platform.h"
 
-#include "system.h"
-#include "io.h"
+#include "drivers/system.h"
+#include "drivers/io.h"
 
 #include "sound_beeper.h"
 #include "pwm_output.h"

@@ -88,20 +88,6 @@
 
 #define TRANSPONDER
 
-#define USE_OSD_SLAVE
-
-#undef OSD
-#undef GPS
-#undef BLACKBOX
-#undef TELEMETRY
-#undef USE_SERVOS
-#undef VTX_COMMON
-#undef VTX_CONTROL
-#undef VTX_SMARTAUDIO
-#undef VTX_TRAMP
-#undef USE_MSP_DISPLAYPORT
-
-
 #define DEFAULT_FEATURES        (FEATURE_TRANSPONDER)
 
 // IO - assuming 303 in 64pin package, TODO

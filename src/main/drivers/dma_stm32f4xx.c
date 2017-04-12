@@ -21,7 +21,7 @@
 
 #include <platform.h>
 
-#include "nvic.h"
+#include "drivers/nvic.h"
 #include "dma.h"
 #include "resource.h"
 

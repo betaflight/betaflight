@@ -22,13 +22,13 @@
 
 #ifdef LED_STRIP
 
-#include "io.h"
-#include "nvic.h"
+#include "drivers/io.h"
+#include "drivers/nvic.h"
 
 #include "common/color.h"
 #include "light_ws2811strip.h"
 #include "dma.h"
-#include "system.h"
+#include "drivers/system.h"
 #include "rcc.h"
 #include "timer.h"
 

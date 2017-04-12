@@ -4,9 +4,9 @@
 
 #include "platform.h"
 
-#include "nvic.h"
+#include "drivers/nvic.h"
 #include "io_impl.h"
-#include "exti.h"
+#include "drivers/exti.h"
 
 #ifdef USE_EXTI
 

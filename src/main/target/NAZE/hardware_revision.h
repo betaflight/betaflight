@@ -30,5 +30,4 @@ void detectHardwareRevision(void);
 
 void spiBusInit(void);
 
-struct extiConfig_s;
-const struct extiConfig_s *selectMPUIntExtiConfigByHardwareRevision(void);
+ioTag_t selectMPUIntExtiConfigByHardwareRevision(void);

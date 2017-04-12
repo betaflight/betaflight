@@ -29,13 +29,12 @@
 #include "common/filter.h"
 
 #include "config/feature.h"
-#include "config/config_profile.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
 #include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/compass/compass.h"
 #include "drivers/serial.h"
 #include "drivers/stack_check.h"
 #include "drivers/vtx_common.h"
@@ -91,12 +90,14 @@ void taskBstMasterProcess(timeUs_t currentTimeUs);
 #define TASK_PERIOD_MS(ms) ((ms) * 1000)
 #define TASK_PERIOD_US(us) (us)
 
+#ifndef USE_OSD_SLAVE
 static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
 
     accUpdate(&accelerometerConfigMutable()->accelerometerTrims);
 }
+#endif
 
 bool taskSerialCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs) {
     UNUSED(currentTimeUs);
@@ -131,6 +132,7 @@ void taskBatteryAlerts(timeUs_t currentTimeUs)
     batteryUpdateAlarms();
 }
 
+#ifndef USE_OSD_SLAVE
 static void taskUpdateRxMain(timeUs_t currentTimeUs)
 {
     processRx(currentTimeUs);
@@ -154,6 +156,7 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
     }
 #endif
 }
+#endif
 
 #ifdef MAG
 static void taskUpdateCompass(timeUs_t currentTimeUs)
@@ -217,14 +220,6 @@ void taskVtxControl(uint32_t currentTime)
 }
 #endif
 
-#ifdef USE_RSSI_SOFTPWM
-static void taskRssiSoftPwm(uint32_t currentTimeUs)
-{
-    // Feature switch here?
-    rssiSoftPwmUpdate(currentTimeUs);
-}
-#endif
-
 #ifdef USE_OSD_SLAVE
 void osdSlaveTasksInit(void)
 {
@@ -251,6 +246,7 @@ void osdSlaveTasksInit(void)
 }
 #endif
 
+#ifndef USE_OSD_SLAVE
 void fcTasksInit(void)
 {
     schedulerInit();
@@ -355,6 +351,7 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_RSSI_SOFTPWM, true); // XXX Feature switch?
 #endif
 }
+#endif
 
 cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SYSTEM] = {
@@ -364,6 +361,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_MEDIUM_HIGH,
     },
 
+#ifndef USE_OSD_SLAVE
     [TASK_GYROPID] = {
         .taskName = "PID",
         .subTaskName = "GYRO",
@@ -393,6 +391,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .desiredPeriod = TASK_PERIOD_HZ(50),        // If event-based scheduling doesn't work, fallback to periodic scheduling
         .staticPriority = TASK_PRIORITY_HIGH,
     },
+#endif
 
     [TASK_SERIAL] = {
         .taskName = "SERIAL",
@@ -407,12 +406,14 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #endif
     },
 
+#ifndef USE_OSD_SLAVE
     [TASK_DISPATCH] = {
         .taskName = "DISPATCH",
         .taskFunc = dispatchProcess,
         .desiredPeriod = TASK_PERIOD_HZ(1000),
         .staticPriority = TASK_PRIORITY_HIGH,
     },
+#endif
 
     [TASK_BATTERY_ALERTS] = {
         .taskName = "BATTERY_ALERTS",
@@ -433,6 +434,8 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .desiredPeriod = TASK_PERIOD_HZ(50),
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
+#ifndef USE_OSD_SLAVE
+
 #ifdef BEEPER
     [TASK_BEEPER] = {
         .taskName = "BEEPER",
@@ -486,6 +489,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
+#endif
 
 #ifdef TRANSPONDER
     [TASK_TRANSPONDER] = {
@@ -496,6 +500,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
+#ifndef USE_OSD_SLAVE
 #ifdef USE_DASHBOARD
     [TASK_DASHBOARD] = {
         .taskName = "DASHBOARD",
@@ -512,6 +517,8 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
+#endif
+
 #ifdef USE_OSD_SLAVE
     [TASK_OSD_SLAVE] = {
         .taskName = "OSD_SLAVE",
@@ -521,6 +528,8 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_HIGH,
     },
 #endif
+
+#ifndef USE_OSD_SLAVE
 #ifdef TELEMETRY
     [TASK_TELEMETRY] = {
         .taskName = "TELEMETRY",

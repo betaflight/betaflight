@@ -30,5 +30,6 @@ const box_t *findBoxByBoxId(uint8_t boxId);
 const box_t *findBoxByPermanentId(uint8_t permenantId);
 
 void mspFcInit(void);
+void mspOsdSlaveInit(void);
 mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn);
 void mspFcProcessReply(mspPacket_t *reply);

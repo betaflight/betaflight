@@ -49,15 +49,14 @@ extern uint8_t __config_end;
 #include "common/utils.h"
 
 #include "config/config_eeprom.h"
-#include "config/config_profile.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/accgyro.h"
+#include "drivers/accgyro/accgyro.h"
 #include "drivers/buf_writer.h"
 #include "drivers/bus_i2c.h"
-#include "drivers/compass.h"
+#include "drivers/compass/compass.h"
 #include "drivers/display.h"
 #include "drivers/dma.h"
 #include "drivers/flash.h"
@@ -160,45 +159,22 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
     { RX_FAILSAFE_MODE_INVALID, RX_FAILSAFE_MODE_HOLD, RX_FAILSAFE_MODE_SET }
 };
 
-// sync this with accelerationSensor_e
+// Sensor names (used in lookup tables for *_hardware settings and in status command output)
+// sync with accelerationSensor_e
 static const char * const lookupTableAccHardware[] = {
-    "AUTO",
-    "NONE",
-    "ADXL345",
-    "MPU6050",
-    "MMA8452",
-    "BMA280",
-    "LSM303DLHC",
-    "MPU6000",
-    "MPU6500",
-    "MPU9250",
-    "ICM20601",
-    "ICM20602",
-    "ICM20608",
-    "ICM20689",
-    "BMI160",
-    "FAKE"
+    "AUTO", "NONE", "ADXL345", "MPU6050", "MMA8452", "BMA280", "LSM303DLHC",
+    "MPU6000", "MPU6500", "MPU9250", "ICM20601", "ICM20602", "ICM20608", "ICM20689", "BMI160", "FAKE"
 };
-
-#ifdef BARO
-// sync this with baroSensor_e
+#if defined(USE_SENSOR_NAMES) || defined(BARO)
+// sync with baroSensor_e
 static const char * const lookupTableBaroHardware[] = {
-    "AUTO",
-    "NONE",
-    "BMP085",
-    "MS5611",
-    "BMP280"
+    "AUTO", "NONE", "BMP085", "MS5611", "BMP280"
 };
 #endif
-
-#ifdef MAG
-// sync this with magSensor_e
+#if defined(USE_SENSOR_NAMES) || defined(MAG)
+// sync with magSensor_e
 static const char * const lookupTableMagHardware[] = {
-    "AUTO",
-    "NONE",
-    "HMC5883",
-    "AK8975",
-    "AK8963"
+    "AUTO", "NONE", "HMC5883", "AK8975", "AK8963"
 };
 #endif
 
@@ -210,16 +186,23 @@ static const char * const sensorTypeNames[] = {
 
 #define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
 
-static const char * const sensorHardwareNames[4][16] = {
-    { "", "None", "MPU6050", "L3G4200D", "MPU3050", "L3GD20",              "MPU6000", "MPU6500", "MPU9250", "ICM20601", "ICM20602", "ICM20608G", "ICM20689", "BMI160", "FAKE", NULL },
-    { "", "None", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "MPU9250", "ICM20601", "ICM20602", "ICM20608G", "ICM20689", "BMI160", "FAKE", NULL },
-    { "", "None", "BMP085", "MS5611", "BMP280", NULL },
-    { "", "None", "HMC5883", "AK8975", "AK8963", NULL }
+// sync with gyroSensor_e
+static const char * const gyroNames[] = {
+    "AUTO", "NONE", "MPU6050", "L3G4200D", "MPU3050", "L3GD20",
+    "MPU6000", "MPU6500", "MPU9250", "ICM20601", "ICM20602", "ICM20608G", "ICM20689", "BMI160", "FAKE"
 };
-#endif /* USE_SENSOR_NAMES */
+
+static const char * const *sensorHardwareNames[] = {
+    gyroNames, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware
+};
+#endif // USE_SENSOR_NAMES
 
 static const char * const lookupTableOffOn[] = {
     "OFF", "ON"
+};
+
+static const char * const lookupTableCrashRecovery[] = {
+    "OFF", "ON" ,"BEEP"
 };
 
 static const char * const lookupTableUnit[] = {
@@ -408,6 +391,7 @@ typedef enum {
     TABLE_RC_INTERPOLATION_CHANNELS,
     TABLE_LOWPASS_TYPE,
     TABLE_FAILSAFE,
+    TABLE_CRASH_RECOVERY,
 #ifdef OSD
     TABLE_OSD,
 #endif
@@ -451,6 +435,7 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableRcInterpolationChannels, sizeof(lookupTableRcInterpolationChannels) / sizeof(char *) },
     { lookupTableLowpassType, sizeof(lookupTableLowpassType) / sizeof(char *) },
     { lookupTableFailsafe, sizeof(lookupTableFailsafe) / sizeof(char *) },
+    { lookupTableCrashRecovery, sizeof(lookupTableCrashRecovery) / sizeof(char *) },
 #ifdef OSD
     { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
 #endif
@@ -654,8 +639,10 @@ static const clivalue_t valueTable[] = {
     { "ibata_scale",                VAR_INT16  | MASTER_VALUE, .config.minmax = { -16000, 16000 }, PG_CURRENT_SENSOR_ADC_CONFIG, offsetof(currentSensorADCConfig_t, scale) },
     { "ibata_offset",               VAR_INT16  | MASTER_VALUE, .config.minmax = { -16000, 16000 }, PG_CURRENT_SENSOR_ADC_CONFIG, offsetof(currentSensorADCConfig_t, offset) },
 // PG_CURRENT_SENSOR_ADC_CONFIG
+#ifdef USE_VIRTUAL_CURRENT_METER
     { "ibatv_scale",                VAR_INT16  | MASTER_VALUE, .config.minmax = { -16000, 16000 }, PG_CURRENT_SENSOR_VIRTUAL_CONFIG, offsetof(currentSensorVirtualConfig_t, scale) },
     { "ibatv_offset",               VAR_INT16  | MASTER_VALUE, .config.minmax = { -16000, 16000 }, PG_CURRENT_SENSOR_VIRTUAL_CONFIG, offsetof(currentSensorVirtualConfig_t, offset) },
+#endif
 
 // PG_BEEPER_DEV_CONFIG
 #ifdef BEEPER
@@ -751,16 +738,22 @@ static const clivalue_t valueTable[] = {
     { "vbat_pid_gain",              VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, vbatPidCompensation) },
     { "pid_at_min_throttle",        VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, pidAtMinThrottle) },
     { "anti_gravity_thresh",        VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 20, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, itermThrottleThreshold) },
-    { "anti_gravity_gain",          VAR_UINT16  | PROFILE_VALUE, .config.minmax = { 1, 30000 }, PG_PID_PROFILE, offsetof(pidProfile_t, itermAcceleratorGain) },
+    { "anti_gravity_gain",          VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 1, 30000 }, PG_PID_PROFILE, offsetof(pidProfile_t, itermAcceleratorGain) },
     { "setpoint_relax_ratio",       VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, setpointRelaxRatio) },
     { "d_setpoint_weight",          VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 254 }, PG_PID_PROFILE, offsetof(pidProfile_t, dtermSetpointWeight) },
-    { "yaw_accel_limit",            VAR_UINT16  | PROFILE_VALUE, .config.minmax = { 1, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, yawRateAccelLimit) },
-    { "accel_limit",                VAR_UINT16  | PROFILE_VALUE, .config.minmax = { 1, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, rateAccelLimit) },
+    { "yaw_accel_limit",            VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 1, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, yawRateAccelLimit) },
+    { "accel_limit",                VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 1, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, rateAccelLimit) },
+    { "crash_dthreshold",           VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 2000 }, PG_PID_PROFILE, offsetof(pidProfile_t, crash_dthreshold) },
+    { "crash_gthreshold",           VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 2000 }, PG_PID_PROFILE, offsetof(pidProfile_t, crash_gthreshold) },
+    { "crash_time",                 VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 5000 }, PG_PID_PROFILE, offsetof(pidProfile_t, crash_time) },
+    { "crash_recovery_angle",       VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 30 }, PG_PID_PROFILE, offsetof(pidProfile_t, crash_recovery_angle) },
+    { "crash_recovery_rate",        VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 255 }, PG_PID_PROFILE, offsetof(pidProfile_t, crash_recovery_rate) },
+    { "crash_recovery",             VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_CRASH_RECOVERY }, PG_PID_PROFILE, offsetof(pidProfile_t, crash_recovery) },
 
     { "iterm_windup",               VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 30, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, itermWindupPointPercent) },
     { "yaw_lowpass",                VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 0, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, yaw_lpf_hz) },
-    { "pidsum_limit",               VAR_UINT16  | PROFILE_VALUE, .config.minmax = { 100, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, pidSumLimit) },
-    { "pidsum_limit_yaw",           VAR_UINT16  | PROFILE_VALUE, .config.minmax = { 100, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, pidSumLimitYaw) },
+    { "pidsum_limit",               VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 100, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, pidSumLimit) },
+    { "pidsum_limit_yaw",           VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 100, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, pidSumLimitYaw) },
 
     { "p_pitch",                    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, P8[PITCH]) },
     { "i_pitch",                    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, I8[PITCH]) },
@@ -855,6 +848,7 @@ static const clivalue_t valueTable[] = {
     { "osd_pid_roll_pos",           VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_ROLL_PIDS]) },
     { "osd_pid_pitch_pos",          VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_PITCH_PIDS]) },
     { "osd_pid_yaw_pos",            VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_YAW_PIDS]) },
+    { "osd_debug_pos",              VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_DEBUG]) },
     { "osd_power_pos",              VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_POWER]) },
     { "osd_pidrate_profile_pos",    VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_PIDRATE_PROFILE]) },
     { "osd_battery_warning_pos",    VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_MAIN_BATT_WARNING]) },
@@ -939,7 +933,9 @@ static servoParam_t servoParamsCopy[MAX_SUPPORTED_SERVOS];
 static batteryConfig_t batteryConfigCopy;
 static voltageSensorADCConfig_t voltageSensorADCConfigCopy[MAX_VOLTAGE_SENSOR_ADC];
 static currentSensorADCConfig_t currentSensorADCConfigCopy;
+#ifdef USE_VIRTUAL_CURRENT_METER
 static currentSensorVirtualConfig_t currentSensorVirtualConfigCopy;
+#endif
 static motorMixer_t customMotorMixerCopy[MAX_SUPPORTED_MOTORS];
 static mixerConfig_t mixerConfigCopy;
 static flight3DConfig_t flight3DConfigCopy;
@@ -1227,10 +1223,12 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.currentConfig = &currentSensorADCConfigCopy;
         ret.defaultConfig = currentSensorADCConfig();
         break;
+#ifdef USE_VIRTUAL_CURRENT_METER
     case PG_CURRENT_SENSOR_VIRTUAL_CONFIG:
         ret.currentConfig = &currentSensorVirtualConfigCopy;
         ret.defaultConfig = currentSensorVirtualConfig();
         break;
+#endif
     case PG_SERIAL_CONFIG:
         ret.currentConfig = &serialConfigCopy;
         ret.defaultConfig = serialConfig();

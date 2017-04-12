@@ -35,13 +35,12 @@
 #include "common/maths.h"
 
 #include "config/config_eeprom.h"
-#include "config/config_profile.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/compass/compass.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/light_ws2811strip.h"
@@ -98,7 +97,9 @@
 
 #include "telemetry/telemetry.h"
 
+#ifndef USE_OSD_SLAVE
 pidProfile_t *currentPidProfile;
+#endif
 
 #ifndef DEFAULT_FEATURES
 #define DEFAULT_FEATURES 0
@@ -118,13 +119,22 @@ PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
 
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
 
+#ifndef USE_OSD_SLAVE
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .pidProfileIndex = 0,
     .activeRateProfile = 0,
     .debug_mode = DEBUG_MODE,
     .task_statistics = true,
-    .name = { 0 }
+    .name = { 0 } // FIXME misplaced, see PG_PILOT_CONFIG in CF v1.x
 );
+#endif
+
+#ifdef USE_OSD_SLAVE
+PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
+    .debug_mode = DEBUG_MODE,
+    .task_statistics = true
+);
+#endif
 
 #ifdef BEEPER
 PG_REGISTER(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 0);
@@ -447,6 +457,7 @@ void pgResetFn_statusLedConfig(statusLedConfig_t *statusLedConfig)
     ;
 }
 
+#ifndef USE_OSD_SLAVE
 uint8_t getCurrentPidProfileIndex(void)
 {
     return systemConfig()->pidProfileIndex;
@@ -470,332 +481,11 @@ uint16_t getCurrentMinthrottle(void)
 {
     return motorConfig()->minthrottle;
 }
-
 <<<<<<< HEAD
-#ifndef USE_PARAMETER_GROUPS
-void createDefaultConfig(master_t *config)
-{
-    // Clear all configuration
-    memset(config, 0, sizeof(master_t));
-
-    uint32_t *featuresPtr = &config->featureConfig.enabledFeatures;
-
-    intFeatureClearAll(featuresPtr);
-    intFeatureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE , featuresPtr);
-
-#ifdef DEFAULT_FEATURES
-    intFeatureSet(DEFAULT_FEATURES, featuresPtr);
-#endif
-
-#ifndef USE_PARAMETER_GROUPS
-#ifdef USE_MSP_DISPLAYPORT
-    resetDisplayPortProfile(&config->displayPortProfileMsp);
-#endif
-#ifdef USE_MAX7456
-    resetDisplayPortProfile(&config->displayPortProfileMax7456);
-#endif
-
-#ifdef USE_MAX7456
-    resetMax7456Config(&config->vcdProfile);
-#endif
-
-#ifdef OSD
-    osdResetConfig(&config->osdConfig);
-#endif
-#endif // USE_PARAMETER_GROUPS
-
-    config->version = EEPROM_CONF_VERSION;
-
-    // global settings
-#ifndef USE_PARAMETER_GROUPS
-    config->systemConfig.pidProfileIndex = 0;    // default profile
-    config->systemConfig.debug_mode = DEBUG_MODE;
-    config->systemConfig.task_statistics = true;
-#endif
-
-
-#ifndef USE_PARAMETER_GROUPS
-    config->imuConfig.dcm_kp = 2500;                // 1.0 * 10000
-    config->imuConfig.dcm_ki = 0;                   // 0.003 * 10000
-    config->imuConfig.small_angle = 25;
-    config->imuConfig.accDeadband.xy = 40;
-    config->imuConfig.accDeadband.z = 40;
-    config->imuConfig.acc_unarmedcal = 1;
-#endif
-#ifndef USE_PARAMETER_GROUPS
-    config->gyroConfig.gyro_lpf = GYRO_LPF_256HZ;    // 256HZ default
-#ifdef STM32F10X
-    config->gyroConfig.gyro_sync_denom = 8;
-    config->pidConfig.pid_process_denom = 1;
-#elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500)  || defined(USE_GYRO_SPI_ICM20689)
-    config->gyroConfig.gyro_sync_denom = 1;
-    config->pidConfig.pid_process_denom = 4;
-#else
-    config->gyroConfig.gyro_sync_denom = 4;
-    config->pidConfig.pid_process_denom = 2;
-#endif
-    config->gyroConfig.gyro_soft_lpf_type = FILTER_PT1;
-    config->gyroConfig.gyro_soft_lpf_hz = 90;
-    config->gyroConfig.gyro_soft_notch_hz_1 = 400;
-    config->gyroConfig.gyro_soft_notch_cutoff_1 = 300;
-    config->gyroConfig.gyro_soft_notch_hz_2 = 200;
-    config->gyroConfig.gyro_soft_notch_cutoff_2 = 100;
-    config->gyroConfig.gyro_align = ALIGN_DEFAULT;
-    config->gyroConfig.gyroMovementCalibrationThreshold = 48;
-#endif
-
-#ifndef USE_PARAMETER_GROUPS
-    resetCompassConfig(&config->compassConfig);
-#endif
-
-#ifndef USE_PARAMETER_GROUPS
-    resetAccelerometerTrims(&config->accelerometerConfig.accZero);
-    config->accelerometerConfig.acc_align = ALIGN_DEFAULT;
-    config->accelerometerConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
-    resetRollAndPitchTrims(&config->accelerometerConfig.accelerometerTrims);
-    config->accelerometerConfig.acc_lpf_hz = 10.0f;
-#endif
-#ifndef USE_PARAMETER_GROUPS
-    config->boardAlignment.rollDegrees = 0;
-    config->boardAlignment.pitchDegrees = 0;
-    config->boardAlignment.yawDegrees = 0;
-#endif
-    config->rcControlsConfig.yaw_control_reversed = false;
-
-    // xxx_hardware: 0:default/autodetect, 1: disable
-    config->compassConfig.mag_hardware = 1;
-
-    config->barometerConfig.baro_hardware = 1;
-
-#ifndef USE_PARAMETER_GROUPS
-    resetBatteryConfig(&config->batteryConfig);
-
-#if defined(USE_PWM) || defined(USE_PPM)
-    resetPpmConfig(&config->ppmConfig);
-    resetPwmConfig(&config->pwmConfig);
-#endif
-#ifdef USE_PWM
-    config->pwmConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
-#endif
-
-#ifdef TELEMETRY
-    resetTelemetryConfig(&config->telemetryConfig);
-#endif
-#endif
-
-#ifndef USE_PARAMETER_GROUPS
-#ifdef USE_ADC
-    resetAdcConfig(&config->adcConfig);
-#endif
-
-#ifdef BEEPER
-    resetBeeperDevConfig(&config->beeperDevConfig);
-#endif
-#endif
-
-#ifdef SONAR
-    resetSonarConfig(&config->sonarConfig);
-#endif
-
-#ifndef USE_PARAMETER_GROUPS
-#ifdef USE_SDCARD
-    intFeatureSet(FEATURE_SDCARD, featuresPtr);
-    resetsdcardConfig(&config->sdcardConfig);
-#endif
-
-#ifdef SERIALRX_PROVIDER
-    config->rxConfig.serialrx_provider = SERIALRX_PROVIDER;
-#else
-    config->rxConfig.serialrx_provider = 0;
-#endif
-    config->rxConfig.halfDuplex = 0;
-    config->rxConfig.rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL;
-    config->rxConfig.sbus_inversion = 1;
-    config->rxConfig.spektrum_sat_bind = 0;
-    config->rxConfig.spektrum_sat_bind_autoreset = 1;
-    config->rxConfig.midrc = 1500;
-    config->rxConfig.mincheck = 1100;
-    config->rxConfig.maxcheck = 1900;
-    config->rxConfig.rx_min_usec = 885;          // any of first 4 channels below this value will trigger rx loss detection
-    config->rxConfig.rx_max_usec = 2115;         // any of first 4 channels above this value will trigger rx loss detection
-
-    for (int i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
-        rxFailsafeChannelConfig_t *channelFailsafeConfig = &config->rxConfig.failsafe_channel_configurations[i];
-        channelFailsafeConfig->mode = (i < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_MODE_AUTO : RX_FAILSAFE_MODE_HOLD;
-        channelFailsafeConfig->step = (i == THROTTLE) ? CHANNEL_VALUE_TO_RXFAIL_STEP(config->rxConfig.rx_min_usec) : CHANNEL_VALUE_TO_RXFAIL_STEP(config->rxConfig.midrc);
-    }
-
-    config->rxConfig.rssi_channel = 0;
-    config->rxConfig.rssi_scale = RSSI_SCALE_DEFAULT;
-    config->rxConfig.rssi_invert = 0;
-    config->rxConfig.rcInterpolation = RC_SMOOTHING_AUTO;
-    config->rxConfig.rcInterpolationChannels = 0;
-    config->rxConfig.rcInterpolationInterval = 19;
-    config->rxConfig.fpvCamAngleDegrees = 0;
-    config->rxConfig.max_aux_channel = DEFAULT_AUX_CHANNEL_COUNT;
-    config->rxConfig.airModeActivateThreshold = 1350;
-
-    resetAllRxChannelRangeConfigurations(config->rxConfig.channelRanges);
-#endif
-
-#ifndef USE_PARAMETER_GROUPS
-    config->armingConfig.gyro_cal_on_first_arm = 0;  // TODO - Cleanup retarded arm support
-    config->armingConfig.disarm_kill_switch = 1;
-    config->armingConfig.auto_disarm_delay = 5;
-
-    config->airplaneConfig.fixedwing_althold_dir = 1;
-
-    // Motor/ESC/Servo
-    resetMixerConfig(&config->mixerConfig);
-    resetMotorConfig(&config->motorConfig);
-#ifdef USE_SERVOS
-    resetServoConfig(&config->servoConfig);
-#endif
-    resetFlight3DConfig(&config->flight3DConfig);
-
-#ifdef LED_STRIP
-    resetLedStripConfig(&config->ledStripConfig);
-#endif
-
-#ifdef GPS
-    // gps/nav stuff
-    config->gpsConfig.provider = GPS_NMEA;
-    config->gpsConfig.sbasMode = SBAS_AUTO;
-    config->gpsConfig.autoConfig = GPS_AUTOCONFIG_ON;
-    config->gpsConfig.autoBaud = GPS_AUTOBAUD_OFF;
-#endif
-
-    resetSerialPinConfig(&config->serialPinConfig);
-
-    resetSerialConfig(&config->serialConfig);
-
-    for (int ii = 0; ii < MAX_PROFILE_COUNT; ++ii) {
-        resetProfile(&config->profile[ii]);
-    }
-    for (int ii = 0; ii < CONTROL_RATE_PROFILE_COUNT; ++ii) {
-        resetControlRateProfile(&config->controlRateProfile[ii]);
-    }
-#endif
-
-    config->compassConfig.mag_declination = 0;
-
-#ifdef BARO
-#ifndef USE_PARAMETER_GROUPS
-    resetBarometerConfig(&config->barometerConfig);
-#endif
-#endif
-
-    // Radio
-#ifdef RX_CHANNELS_TAER
-    parseRcChannels("TAER1234", &config->rxConfig);
-#else
-    parseRcChannels("AETR1234", &config->rxConfig);
-#endif
-
-#ifndef USE_PARAMETER_GROUPS
-    resetRcControlsConfig(&config->rcControlsConfig);
-
-    config->throttleCorrectionConfig.throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
-    config->throttleCorrectionConfig.throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
-
-    // Failsafe Variables
-    config->failsafeConfig.failsafe_delay = 10;                            // 1sec
-    config->failsafeConfig.failsafe_off_delay = 10;                        // 1sec
-    config->failsafeConfig.failsafe_throttle = 1000;                       // default throttle off.
-    config->failsafeConfig.failsafe_kill_switch = 0;                       // default failsafe switch action is identical to rc link loss
-    config->failsafeConfig.failsafe_throttle_low_delay = 100;              // default throttle low delay for "just disarm" on failsafe condition
-    config->failsafeConfig.failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT;// default full failsafe procedure is 0: auto-landing
-#endif
-
-#ifdef USE_SERVOS
-#ifndef USE_PARAMETER_GROUPS
-    // servos
-    for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        config->servoProfile.servoConf[i].min = DEFAULT_SERVO_MIN;
-        config->servoProfile.servoConf[i].max = DEFAULT_SERVO_MAX;
-        config->servoProfile.servoConf[i].middle = DEFAULT_SERVO_MIDDLE;
-        config->servoProfile.servoConf[i].rate = 100;
-        config->servoProfile.servoConf[i].angleAtMin = DEFAULT_SERVO_MIN_ANGLE;
-        config->servoProfile.servoConf[i].angleAtMax = DEFAULT_SERVO_MAX_ANGLE;
-        config->servoProfile.servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
-    }
-
-    // gimbal
-    config->gimbalConfig.mode = GIMBAL_MODE_NORMAL;
-#endif
-
-    // Channel forwarding;
-    config->servoConfig.channelForwardingStartChannel = AUX1;
-#endif
-
-#ifndef USE_PARAMETER_GROUPS
-#ifdef GPS
-    resetNavigationConfig(&config->navigationConfig);
-#endif
-#endif
-
-    // custom mixer. clear by defaults.
-    for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
-        config->customMotorMixer[i].throttle = 0.0f;
-    }
-
-#ifndef USE_PARAMETER_GROUPS
-#ifdef VTX
-    config->vtxConfig.vtx_band = 4;    //Fatshark/Airwaves
-    config->vtxConfig.vtx_channel = 1; //CH1
-    config->vtxConfig.vtx_mode = 0;    //CH+BAND mode
-    config->vtxConfig.vtx_mhz = 5740;  //F0
-#endif
-#endif
-
-#ifdef TRANSPONDER
-    static const uint8_t defaultTransponderData[6] = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC }; // Note, this is NOT a valid transponder code, it's just for testing production hardware
-
-    memcpy(config->transponderConfig.data, &defaultTransponderData, sizeof(defaultTransponderData));
-#endif
-
-#ifndef USE_PARAMETER_GROUPS
-#ifdef BLACKBOX
-#if defined(ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT)
-    intFeatureSet(FEATURE_BLACKBOX, featuresPtr);
-    config->blackboxConfig.device = BLACKBOX_DEVICE_FLASH;
-#elif defined(ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT)
-    intFeatureSet(FEATURE_BLACKBOX, featuresPtr);
-    config->blackboxConfig.device = BLACKBOX_DEVICE_SDCARD;
-#else
-    config->blackboxConfig.device = BLACKBOX_DEVICE_SERIAL;
-#endif
-    config->blackboxConfig.rate_num = 1;
-    config->blackboxConfig.rate_denom = 1;
-    config->blackboxConfig.on_motor_test = 0; // default off
-#endif // BLACKBOX
-#endif
-
-#ifdef SERIALRX_UART
-    if (featureConfigured(FEATURE_RX_SERIAL)) {
-        int serialIndex = findSerialPortIndexByIdentifier(SERIALRX_UART);
-        if (serialIndex >= 0) {
-            config->serialConfig.portConfigs[serialIndex].functionMask = FUNCTION_RX_SERIAL;
-        }
-    }
-#endif
-
-#ifndef USE_PARAMETER_GROUPS
-#ifdef USE_FLASHFS
-    resetFlashConfig(&config->flashConfig);
-#endif
-
-    resetStatusLedConfig(&config->statusLedConfig);
-
-#ifdef USE_RSSI_SOFTPWM
-    resetRssiSoftPwmConfig(&config->rssiSoftPwmConfig);
-#endif
-#endif
-}
-#endif
-
 =======
+#endif
 >>>>>>> betaflight/master
+
 void resetConfigs(void)
 {
     pgResetAll(MAX_PROFILE_COUNT);
@@ -806,8 +496,10 @@ void resetConfigs(void)
 
     pgActivateProfile(0);
 
+#ifndef USE_OSD_SLAVE
     setPidProfile(0);
     setControlRateProfile(0);
+#endif
 
 #ifdef LED_STRIP
     reevaluateLedConfig();
@@ -816,6 +508,7 @@ void resetConfigs(void)
 
 void activateConfig(void)
 {
+#ifndef USE_OSD_SLAVE
     generateThrottleCurve();
 
     resetAdjustmentStates();
@@ -834,10 +527,12 @@ void activateConfig(void)
     imuConfigure(throttleCorrectionConfig()->throttle_correction_angle);
 
     configureAltitudeHold(currentPidProfile);
+#endif
 }
 
 void validateAndFixConfig(void)
 {
+#ifndef USE_OSD_SLAVE
     if((motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)){
         motorConfigMutable()->mincommand = 1000;
     }
@@ -896,22 +591,31 @@ void validateAndFixConfig(void)
     }
 #endif
 
+<<<<<<< HEAD
     if (!isSerialConfigValid(serialConfig())) {
         pgResetFn_serialConfig(serialConfigMutable());
     }
 
+=======
+>>>>>>> betaflight/master
     // Prevent invalid notch cutoff
     if (currentPidProfile->dterm_notch_cutoff >= currentPidProfile->dterm_notch_hz) {
         currentPidProfile->dterm_notch_hz = 0;
     }
 
     validateAndFixGyroConfig();
+#endif
+
+    if (!isSerialConfigValid(serialConfig())) {
+        pgResetFn_serialConfig(serialConfigMutable());
+    }
 
 #if defined(TARGET_VALIDATECONFIG)
     targetValidateConfiguration();
 #endif
 }
 
+#ifndef USE_OSD_SLAVE
 void validateAndFixGyroConfig(void)
 {
     // Prevent invalid notch cutoff
@@ -987,16 +691,19 @@ void validateAndFixGyroConfig(void)
             motorConfigMutable()->dev.motorPwmRate = maxEscRate;
     }
 }
+#endif
 
 void readEEPROM(void)
 {
+#ifndef USE_OSD_SLAVE
     suspendRxSignal();
+#endif
 
     // Sanity check, read flash
     if (!loadEEPROM()) {
         failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
     }
-
+#ifndef USE_OSD_SLAVE
     if (systemConfig()->activeRateProfile >= CONTROL_RATE_PROFILE_COUNT) {// sanity check
         systemConfigMutable()->activeRateProfile = 0;
     }
@@ -1006,20 +713,27 @@ void readEEPROM(void)
         systemConfigMutable()->pidProfileIndex = 0;
     }
     setPidProfile(systemConfig()->pidProfileIndex);
+#endif
 
     validateAndFixConfig();
     activateConfig();
 
+#ifndef USE_OSD_SLAVE
     resumeRxSignal();
+#endif
 }
 
 void writeEEPROM(void)
 {
+#ifndef USE_OSD_SLAVE
     suspendRxSignal();
+#endif
 
     writeConfigToEEPROM();
 
+#ifndef USE_OSD_SLAVE
     resumeRxSignal();
+#endif
 }
 
 void resetEEPROM(void)
@@ -1043,6 +757,7 @@ void saveConfigAndNotify(void)
     beeperConfirmationBeeps(1);
 }
 
+#ifndef USE_OSD_SLAVE
 void changePidProfile(uint8_t pidProfileIndex)
 {
     if (pidProfileIndex >= MAX_PROFILE_COUNT) {
@@ -1052,6 +767,7 @@ void changePidProfile(uint8_t pidProfileIndex)
     currentPidProfile = pidProfilesMutable(pidProfileIndex);
     beeperConfirmationBeeps(pidProfileIndex + 1);
 }
+#endif
 
 void beeperOffSet(uint32_t mask)
 {

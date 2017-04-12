@@ -26,11 +26,11 @@
 
 #include "common/utils.h"
 
-#include "nvic.h"
+#include "drivers/nvic.h"
 
-#include "io.h"
+#include "drivers/io.h"
 #include "rcc.h"
-#include "system.h"
+#include "drivers/system.h"
 
 #include "timer.h"
 #include "timer_impl.h"

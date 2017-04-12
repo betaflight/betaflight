@@ -29,9 +29,9 @@
 #include "drivers/io.h"
 #include "drivers/gpio.h"
 #include "drivers/exti.h"
-#include "drivers/accgyro.h"
-#include "drivers/accgyro_mpu.h"
-#include "drivers/accgyro_mpu6500.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/accgyro/accgyro_mpu.h"
+#include "drivers/accgyro/accgyro_mpu6500.h"
 
 #include "hardware_revision.h"
 

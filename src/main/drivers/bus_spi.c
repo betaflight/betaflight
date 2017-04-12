@@ -20,9 +20,9 @@
 
 #include <platform.h>
 
-#include "bus_spi.h"
-#include "exti.h"
-#include "io.h"
+#include "drivers/bus_spi.h"
+#include "drivers/exti.h"
+#include "drivers/io.h"
 #include "io_impl.h"
 #include "rcc.h"
 

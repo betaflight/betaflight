@@ -23,7 +23,7 @@
 #include "build/build_config.h"
 
 #include "common/utils.h"
-#include "io.h"
+#include "drivers/io.h"
 
 #if defined(STM32F4)
 #include "usb_core.h"
@@ -39,7 +39,7 @@ USBD_HandleTypeDef USBD_Device;
 #include "hw_config.h"
 #endif
 
-#include "system.h"
+#include "drivers/system.h"
 
 #include "serial.h"
 #include "serial_usb_vcp.h"

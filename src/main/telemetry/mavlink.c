@@ -32,14 +32,13 @@
 #include "common/axis.h"
 #include "common/color.h"
 
-#include "config/config_profile.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
-#include "drivers/accgyro.h"
+#include "drivers/accgyro/accgyro.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"

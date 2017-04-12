@@ -17,9 +17,9 @@
 
 #include "platform.h"
 
-#include "io.h"
-#include "io_impl.h"
-#include "rcc.h"
+#include "drivers/io.h"
+#include "drivers/io_impl.h"
+#include "drivers/rcc.h"
 
 #include "common/utils.h"
 

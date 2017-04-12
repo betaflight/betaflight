@@ -1,0 +1,10 @@
+F3_TARGETS  += $(TARGET)
+FEATURES    = VCP SDCARD
+
+TARGET_SRC = \
+<<<<<<< HEAD
+            drivers/accgyro_fake.c \
+=======
+            drivers/accgyro/accgyro_fake.c \
+>>>>>>> betaflight/master
+            drivers/max7456.c

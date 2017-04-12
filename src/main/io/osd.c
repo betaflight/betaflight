@@ -48,7 +48,6 @@
 #include "common/typeconversion.h"
 #include "common/utils.h"
 
-#include "config/config_profile.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -75,8 +74,8 @@
 #include "fc/runtime_config.h"
 
 #include "flight/altitude.h"
+#include "flight/pid.h"
 #include "flight/imu.h"
-#include "flight/altitude.h"
 
 #include "rx/rx.h"
 
@@ -461,7 +460,7 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
-	case OSD_AVG_CELL_VOLTAGE:
+    case OSD_AVG_CELL_VOLTAGE:
         {
             uint16_t cellV = getBatteryVoltage() * 10 / getBatteryCellCount();
             buff[0] = SYM_BATT_5;
@@ -469,8 +468,14 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
-        default:
-            return;
+    case OSD_DEBUG:
+    {
+        sprintf(buff, "DBG %5d %5d %5d %5d", debug[0], debug[1], debug[2], debug[3]);
+        break;
+    }
+
+    default:
+        return;
     }
 
     displayWrite(osdDisplayPort, elemPosX + elemOffsetX, elemPosY, buff);
@@ -519,6 +524,7 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_PIDRATE_PROFILE);
     osdDrawSingleElement(OSD_MAIN_BATT_WARNING);
     osdDrawSingleElement(OSD_AVG_CELL_VOLTAGE);
+    osdDrawSingleElement(OSD_DEBUG);
 
 #ifdef GPS
 #ifdef CMS
@@ -560,6 +566,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdProfile)
     osdProfile->item_pos[OSD_PIDRATE_PROFILE] = OSD_POS(25, 10) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_MAIN_BATT_WARNING] = OSD_POS(9, 10) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_AVG_CELL_VOLTAGE] = OSD_POS(12, 2) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_DEBUG] = OSD_POS(7, 12) | VISIBLE_FLAG;
 
     osdProfile->item_pos[OSD_GPS_LAT] = OSD_POS(18, 14) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_GPS_LON] = OSD_POS(18, 15) | VISIBLE_FLAG;

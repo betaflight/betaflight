@@ -16,13 +16,12 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
-#include "config/config_profile.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/compass/compass.h"
 #include "drivers/sensor.h"
 #include "drivers/system.h"
 

@@ -29,7 +29,6 @@
 #include "common/printf.h"
 
 #include "config/config_eeprom.h"
-#include "config/config_profile.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -48,8 +47,8 @@
 #include "drivers/serial.h"
 #include "drivers/serial_softserial.h"
 #include "drivers/serial_uart.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/compass/compass.h"
 #include "drivers/pwm_esc_detect.h"
 #include "drivers/rssi_softpwm.h"
 #include "drivers/rx_pwm.h"
