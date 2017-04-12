@@ -178,6 +178,7 @@
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
 
+#undef USE_SERIALRX_SPEKTRUM
 //#define SPEKTRUM_BIND
 //#define BIND_PIN                PA3
 
