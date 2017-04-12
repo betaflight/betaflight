@@ -229,7 +229,7 @@ restart:
         debug[0] = tCycle;
         debug[1] = tHigh;
         debug[2] = duty;
-        debug[3] = badtimer * 1000 + minduty; // minduty in low 3 digits
+        debug[3] = badtimer * 1000 + minDuty; // minDuty in low 3 digits
     }
 
     // Start a new measurement
