@@ -33,6 +33,8 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "drivers/sound_beeper.h"
+
 #include "fc/fc_core.h"
 #include "fc/fc_rc.h"
 
@@ -118,7 +120,13 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .yawRateAccelLimit = 100,
         .rateAccelLimit = 0,
         .itermThrottleThreshold = 350,
-        .itermAcceleratorGain = 1000
+        .itermAcceleratorGain = 1000,
+        .crash_time = 500,          // 500ms
+        .crash_recovery_angle = 10, //  10 degrees
+        .crash_recovery_rate = 100, // 100 degrees/second
+        .crash_dthreshold = 50,     //  50 degrees/second/second
+        .crash_gthreshold = 200,    // 200 degrees/second
+        .crash_recovery = PID_CRASH_RECOVERY_OFF // off by default
     );
 }
 
@@ -229,6 +237,11 @@ static float Kp[3], Ki[3], Kd[3], maxVelocity[3];
 static float relaxFactor;
 static float dtermSetpointWeight;
 static float levelGain, horizonGain, horizonTransition, ITermWindupPoint, ITermWindupPointInv;
+static timeDelta_t crashTimeLimitUs;
+static int32_t crashRecoveryAngleDeciDegrees;
+static float crashRecoveryRate;
+static float crashDtermThreshold;
+static float crashGyroThreshold;
 
 void pidInitConfig(const pidProfile_t *pidProfile) {
     for(int axis = FD_ROLL; axis <= FD_YAW; axis++) {
@@ -245,6 +258,11 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
     maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 100 * dT;
     ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
     ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
+    crashTimeLimitUs = pidProfile->crash_time * 1000;
+    crashRecoveryAngleDeciDegrees = pidProfile->crash_recovery_angle * 10;
+    crashRecoveryRate = pidProfile->crash_recovery_rate;
+    crashGyroThreshold = pidProfile->crash_gthreshold;
+    crashDtermThreshold = pidProfile->crash_dthreshold;
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -297,11 +315,13 @@ static float accelerationLimit(int axis, float currentPidSetpoint) {
 
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
 // Based on 2DOF reference design (matlab)
-void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim)
+void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, timeUs_t currentTimeUs)
 {
     static float previousRateError[2];
     const float tpaFactor = getThrottlePIDAttenuation();
     const float motorMixRange = getMotorMixRange();
+    static bool inCrashRecoveryMode = false;
+    static timeUs_t crashDetectedAtUs;
 
     // Dynamic ki component to gradually scale back integration when above windup point
     const float dynKi = MIN((1.0f - motorMixRange) * ITermWindupPointInv, 1.0f);
@@ -318,6 +338,21 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim, currentPidSetpoint);
         }
 
+        if (inCrashRecoveryMode && axis != FD_YAW) {
+            // self-level - errorAngle is deviation from horizontal
+            const float errorAngle =  -(attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f;
+            currentPidSetpoint = errorAngle * levelGain;
+            if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeLimitUs
+                || (motorMixRange < 1.0f
+                       && ABS(attitude.raw[FD_ROLL] - angleTrim->raw[FD_ROLL]) < crashRecoveryAngleDeciDegrees
+                       && ABS(attitude.raw[FD_PITCH] - angleTrim->raw[FD_PITCH]) < crashRecoveryAngleDeciDegrees
+                       && ABS(gyro.gyroADCf[FD_ROLL]) < crashRecoveryRate
+                       && ABS(gyro.gyroADCf[FD_PITCH]) < crashRecoveryRate)
+                       ) {
+                inCrashRecoveryMode = false;
+                BEEP_OFF;
+            }
+        }
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
 
         // --------low-level gyro-based PID based on 2DOF PID controller. ----------
@@ -352,6 +387,17 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             // Divide rate change by dT to get differential (ie dr/dt)
             float delta = (rD - previousRateError[axis]) / dT;
             previousRateError[axis] = rD;
+
+            // if crash recovery is on check for a crash
+            if (pidProfile->crash_recovery) {
+                if (motorMixRange >= 1.0f && ABS(delta) > crashDtermThreshold && ABS(errorRate) > crashGyroThreshold) {
+                    inCrashRecoveryMode = true;
+                    crashDetectedAtUs = currentTimeUs;
+                    if (pidProfile->crash_recovery == PID_CRASH_RECOVERY_BEEP) {
+                        BEEP_ON;
+                    }
+                }
+            }
 
             // apply filters
             delta = dtermNotchFilterApplyFn(dtermFilterNotch[axis], delta);
