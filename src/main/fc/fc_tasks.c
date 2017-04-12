@@ -220,6 +220,14 @@ void taskVtxControl(uint32_t currentTime)
 }
 #endif
 
+#ifdef USE_RSSI_SOFTPWM
+static void taskRssiSoftPwm(uint32_t currentTimeUs)
+{
+    // Feature switch here?
+    rssiSoftPwmUpdate(currentTimeUs);
+}
+#endif
+
 #ifdef USE_OSD_SLAVE
 void osdSlaveTasksInit(void)
 {
@@ -610,4 +618,5 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
+#endif // !USE_OSD_SLAVE
 };
