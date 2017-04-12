@@ -177,7 +177,7 @@ void rssiSoftPwmUpdate(uint32_t currentTime)
     uint32_t tHigh;
     uint32_t duty;
 
-    uint16_t minDuty = 100;
+    static uint16_t minDuty = 100;
 
     ATOMIC_BLOCK(NVIC_PRIO_SOFTPWM_EXTI) {
         if (rspInProgress) {
