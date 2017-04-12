@@ -52,6 +52,7 @@ typedef enum {
     OSD_AVG_CELL_VOLTAGE,
     OSD_GPS_LON,
     OSD_GPS_LAT,
+    OSD_DEBUG,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
