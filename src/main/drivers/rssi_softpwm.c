@@ -86,24 +86,22 @@ static volatile bool rspInProgress = false;
 // and tbits record the state of the pin at each interrupt.
 
 static volatile uint8_t timerCount = 0;
-static volatile uint16_t tstamp[3];
+static volatile uint32_t tstamp[3];
 static volatile uint8_t tbits;
 
 // tbits normally ends up in '101' bit pattern, but if high or low period
 // is too short to capture, then it will be other patterns.
 
-#define TBITS_IS_NORMAL(bits)              ((bits) == 5)           // '101' Normal
-#define TBITS_MISSED_FALLING_EDGE(bits)    (!((bits) & 0x4))       // '0xx' Short high period
-#define TBITS_MISSED_2ND_RISING_EDGE(bits) (((bits) & 0x6) == 0x6) // '11x' Short low period
+#define TBITS_IS_NORMAL(bits)         ((bits) == 5)           // '101' Normal
+#define TBITS_MISSED_1ST_RISING(bits) (((bits) & 0x4) == 0)   // '0xx' Short high period
+#define TBITS_MISSED_FALLING(bits)    (((bits) & 0x2) == 1)   // 'x1x' Short low
+#define TBITS_MISSED_2ND_RISING(bits) (((bits) & 0x1) == 0)   // 'xx0' Short high period
 
 // Smoothing
 #define MEDIAN_TAPCOUNT 5
 #define QUICKMEDIANFILTER quickMedianFilter5
 static int32_t dutyFilterArray[MEDIAN_TAPCOUNT];
 static int dutyFilterPos;
-
-// Exception monitoring
-static uint16_t exceptions;
 
 static void rspExtiHandler(extiCallbackRec_t* cb)
 {
@@ -167,14 +165,17 @@ void rssiSoftPwmInit(const rssiSoftPwmConfig_t *configToUse)
 
 void rssiSoftPwmUpdate(uint32_t currentTime)
 {
+    // Exception monitoring
+    static uint16_t badtimer = 0;
+
     UNUSED(currentTime);
 
     if (!rspIO)
         return;
 
-    int32_t tCycle;
-    int32_t tHigh;
-    int32_t duty;
+    uint32_t tCycle;
+    uint32_t tHigh;
+    uint32_t duty;
 
     uint16_t minDuty = 100;
 
@@ -186,30 +187,30 @@ void rssiSoftPwmUpdate(uint32_t currentTime)
         }
     }
 
+    // For monitoring
+    tCycle = 0;
+    tHigh = 0;
+
     if (timerCount != 3) {  // Did not finish, assume no signal
         duty = 0;
     } else if (TBITS_IS_NORMAL(tbits)) {
         tCycle = tstamp[2] - tstamp[0];
         tHigh = tstamp[1] - tstamp[0];
 
-        // Reject bad measurement
-        // XXX Should find out why this happens (especially the negative case)
-        if (tCycle > 2000 || tCycle < 0) {
-            exceptions = (exceptions & 0xff00) | ((exceptions & 0xff) + 1);
+        // Reject bad measurement (should not happen)
+
+        if (tCycle > 2000) {
+            ++badtimer;
             goto restart;
         }
 
         duty = (tHigh * 100 * 10) / tCycle;
-    } else if (TBITS_MISSED_FALLING_EDGE(tbits)) {
+    } else if (TBITS_MISSED_1ST_RISING(tbits) || TBITS_MISSED_2ND_RISING(tbits)) {
         // Assume very short pulse
         duty = 1;
-    } else if (TBITS_MISSED_2ND_RISING_EDGE(tbits)) {
+    } else { // including TBITS_MISSED_FALLING(tbits) case
         // Assume very long pulse
         duty = 999;
-    } else {
-        // Can't happen!?
-        exceptions = ((exceptions & 0xff00) + 1) | (exceptions & 0xff);
-        goto restart;
     }
 
     // Apply median filter to smooth out rapid changes
@@ -223,14 +224,14 @@ void rssiSoftPwmUpdate(uint32_t currentTime)
 
     rspValue = scaleRange(duty, pRspConfig->minFollow ? minDuty : pRspConfig->min, 999, RSSI_OUTPUT_MIN, RSSI_OUTPUT_MAX);
 
+restart:
     if (pRspConfig->monitor) {
         debug[0] = tCycle;
         debug[1] = tHigh;
         debug[2] = duty;
-        debug[3] = exceptions;
+        debug[3] = badtimer * 1000 + minduty; // minduty in low 3 digits
     }
 
-restart:
     // Start a new measurement
 
     EXTISetTrigger(rspIO, EXTI_Trigger_Rising);
