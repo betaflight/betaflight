@@ -211,26 +211,30 @@ static int32_t applyBarometerMedianFilter(int32_t newPressureReading)
     static int32_t barometerFilterSamples[PRESSURE_SAMPLES_MEDIAN];
     static int currentFilterSampleIndex = 0;
     static bool medianFilterReady = false;
-    int nextSampleIndex;
 
-    const int32_t previousPressureReading = barometerFilterSamples[currentFilterSampleIndex];
-    nextSampleIndex = (currentFilterSampleIndex + 1);
+    int nextSampleIndex = currentFilterSampleIndex + 1;
     if (nextSampleIndex == PRESSURE_SAMPLES_MEDIAN) {
         nextSampleIndex = 0;
         medianFilterReady = true;
     }
-
-    barometerFilterSamples[currentFilterSampleIndex] = newPressureReading;
-    currentFilterSampleIndex = nextSampleIndex;
+    int previousSampleIndex = currentFilterSampleIndex - 1;
+    if (previousSampleIndex < 0) {
+        previousSampleIndex = PRESSURE_SAMPLES_MEDIAN - 1;
+    }
+    const int previousPressureReading = barometerFilterSamples[previousSampleIndex];
 
     if (medianFilterReady) {
         if (ABS(previousPressureReading - newPressureReading) < PRESSURE_DELTA_GLITCH_THRESHOLD) {
+            barometerFilterSamples[currentFilterSampleIndex] = newPressureReading;
+            currentFilterSampleIndex = nextSampleIndex;
             return quickMedianFilter3(barometerFilterSamples);
         } else {
-            // glitch threshold exceeded, so just return previous reading
-            return previousPressureReading;
+            // glitch threshold exceeded, so just return previous reading and don't add the glitched reading to the filter array
+            return barometerFilterSamples[previousSampleIndex];
         }
     } else {
+        barometerFilterSamples[currentFilterSampleIndex] = newPressureReading;
+        currentFilterSampleIndex = nextSampleIndex;
         return newPressureReading;
     }
 }
