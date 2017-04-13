@@ -1001,6 +1001,7 @@ SITLEXCLUDES = \
             drivers/system.c \
             drivers/rcc.c \
             drivers/serial_uart.c \
+            drivers/rssi_softpwm.c \
 
 
 # check if target.mk supplied
