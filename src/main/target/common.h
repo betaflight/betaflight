@@ -36,9 +36,9 @@
 #define GPS
 #define GPS_PROTO_UBLOX
 #define NAV
+#define USE_FLM_TURN_ASSIST     // This is mandatory for fixed-wing navigation
 #define TELEMETRY
 #define TELEMETRY_LTM
-#define USE_FLM_TURN_ASSIST
 #define TELEMETRY_FRSKY
 #endif
 

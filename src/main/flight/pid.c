@@ -50,6 +50,7 @@
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
 #include "sensors/compass.h"
+#include "sensors/pitotmeter.h"
 
 
 typedef struct {
@@ -106,7 +107,7 @@ int32_t axisPID_P[FLIGHT_DYNAMICS_INDEX_COUNT], axisPID_I[FLIGHT_DYNAMICS_INDEX_
 
 static pidState_t pidState[FLIGHT_DYNAMICS_INDEX_COUNT];
 
-PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(pidProfile_t, pidProfile, PG_PID_PROFILE, 1);
+PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(pidProfile_t, pidProfile, PG_PID_PROFILE, 2);
 
 PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
         .bank_mc = {
@@ -182,12 +183,14 @@ PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
 
         .yaw_p_limit = YAW_P_LIMIT_DEFAULT,
 
+        .heading_hold_rate_limit = HEADING_HOLD_RATE_LIMIT_DEFAULT,
+
         .max_angle_inclination[FD_ROLL] = 300,    // 30 degrees
         .max_angle_inclination[FD_PITCH] = 300,    // 30 degrees
-        .fixedWingItermThrowLimit = FW_ITERM_THROW_LIMIT_DEFAULT,
         .pidSumLimit = PID_SUM_LIMIT_DEFAULT,
 
-        .heading_hold_rate_limit = HEADING_HOLD_RATE_LIMIT_DEFAULT,
+        .fixedWingItermThrowLimit = FW_ITERM_THROW_LIMIT_DEFAULT,
+        .fixedWingReferenceAirspeed = 1000,
 );
 
 void pidInit(void)
@@ -629,17 +632,55 @@ float pidHeadingHold(void)
 static void pidTurnAssistant(pidState_t *pidState)
 {
     t_fp_vector targetRates;
-
     targetRates.V.X = 0.0f;
     targetRates.V.Y = 0.0f;
-    targetRates.V.Z = pidState[YAW].rateTarget;
 
+    if (STATE(FIXED_WING)) {
+        if (calculateCosTiltAngle() >= 0.173648f) {
+            // Ideal banked turn follow the equations:
+            //      forward_vel^2 / radius = Gravity * tan(roll_angle)
+            //      yaw_rate = forward_vel / radius
+            // If we solve for roll angle we get:
+            //      tan(roll_angle) = forward_vel * yaw_rate / Gravity
+            // If we solve for yaw rate we get:
+            //      yaw_rate = tan(roll_angle) * Gravity / forward_vel
+
+#if defined(PITOT)
+            float airspeedForCoordinatedTurn = sensors(SENSOR_PITOT) ?
+                    pitot.airSpeed :
+                    pidProfile()->fixedWingReferenceAirspeed;
+#else
+            float airspeedForCoordinatedTurn = pidProfile()->fixedWingReferenceAirspeed;
+#endif
+
+            // Constrain to somewhat sane limits - 10km/h - 216km/h
+            airspeedForCoordinatedTurn = constrainf(airspeedForCoordinatedTurn, 300, 6000);
+
+            float bankAngle = DECIDEGREES_TO_RADIANS(attitude.values.roll);
+            float coordinatedTurnRateOffset = GRAVITY_CMSS * tan_approx(-bankAngle) / airspeedForCoordinatedTurn;
+
+            targetRates.V.Z = pidState[YAW].rateTarget + RADIANS_TO_DEGREES(coordinatedTurnRateOffset);
+        }
+        else {
+            // Don't allow coordinated turn calculation if airplane is in hard bank or steep climb/dive
+            return;
+        }
+    }
+    else {
+        targetRates.V.Z = pidState[YAW].rateTarget;
+    }
+
+    // Transform calculated rate offsets into body frame and apply
     imuTransformVectorEarthToBody(&targetRates);
 
-    // Add in roll and pitch, replace yaw completery
-    pidState[ROLL].rateTarget += targetRates.V.X;
-    pidState[PITCH].rateTarget += targetRates.V.Y;
-    pidState[YAW].rateTarget = targetRates.V.Z;
+    // Add in roll and pitch, replace yaw completely
+    pidState[ROLL].rateTarget = constrainf(pidState[ROLL].rateTarget + targetRates.V.X, -currentControlRateProfile->rates[ROLL] * 10.0f, currentControlRateProfile->rates[ROLL] * 10.0f);
+    pidState[PITCH].rateTarget = constrainf(pidState[PITCH].rateTarget + targetRates.V.Y, -currentControlRateProfile->rates[PITCH] * 10.0f, currentControlRateProfile->rates[PITCH] * 10.0f);
+    pidState[YAW].rateTarget = constrainf(targetRates.V.Z, -currentControlRateProfile->rates[YAW] * 10.0f, currentControlRateProfile->rates[YAW] * 10.0f);
+
+    debug[0] = pidState[ROLL].rateTarget;
+    debug[1] = pidState[PITCH].rateTarget;
+    debug[2] = pidState[YAW].rateTarget;
 }
 #endif
 
@@ -676,7 +717,7 @@ void pidController(void)
     }
 
 #ifdef USE_FLM_TURN_ASSIST
-    if (FLIGHT_MODE(TURN_ASSISTANT)) {
+    if (FLIGHT_MODE(TURN_ASSISTANT) || naivationRequiresTurnAssistance()) {
         pidTurnAssistant(pidState);
     }
 #endif

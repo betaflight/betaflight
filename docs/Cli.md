@@ -176,7 +176,6 @@ Re-apply any new defaults as desired.
 |  nav_fw_climb_angle  | 20 | Max pitch angle when climbing in GPS assisted modes, is also restrained by global max_angle_inclination_pit |
 |  nav_fw_dive_angle  | 15 | Max negative pitch angle when diving in GPS assisted modes, is also restrained by global max_angle_inclination_pit |
 |  nav_fw_pitch2thr  | 10 | Amount of throttle applied related to pitch attitude in GPS assisted modes |
-|  nav_fw_roll2pitch  | 75 | Amount of positive pitch (nose up) when the plane turns by ailerons in GPS assisted modes. With high wind is better lowering this |
 |  nav_fw_loiter_radius  | 5000 | PosHold radius in cm. 3000 to 7500 is a good value (30-75m) |
 |  nav_fw_launch_velocity  | 300 | Forward velocity threshold for swing-launch detection (cm/s) |
 |  nav_fw_launch_accel  | 1863 | Forward acceleration threshold for bungee launch of throw launch (cm/s/s, 1G = 981 cm/s/s) |
@@ -312,6 +311,7 @@ Re-apply any new defaults as desired.
 |  flaperon_throw_offset  | 250 | Defines throw range in us for both ailerons that will be passed to servo mixer via input source 14 (`FEATURE FLAPS`) when FLAPERON mode is activated. |
 |  gimbal_mode  | NORMAL | When feature SERVO_TILT is enabled, this can be either NORMAL or MIXTILT |
 |  fw_iterm_throw_limit  | 165 | Limits max/min I-term value in stabilization PID controller in case of Fixed Wing. It solves the problem of servo saturation before take-off/throwing the airplane into the air. By default, error accumulated in I-term can not exceed 1/3 of servo throw (around 165us). Set 0 to disable completely. |
+|  fw_reference_airspeed  | 1000 | Reference airspeed. Set this to airspeed at which PIDs were tuned. Usually should be set to cruise airspeed. Also used for coordinated turn calculation if airspeed sensor is not present. |
 |  mode_range_logic_operator  | OR | Control how Mode selection works in flight modes. If you example have Angle mode configured on two different Aux channels, this controls if you need both activated ( AND ) or if you only need one activated ( OR ) to active angle mode. |
 |  default_rate_profile  | 0 | Default = profile number |
 |  mag_declination  | 0 | Current location magnetic declination in format. For example, -6deg 37min = -637 for Japan. Leading zero in ddd not required. Get your local magnetic declination here: http://magnetic-declination.com/ . Not in use if inav_auto_mag_decl  is turned on and you aquirre valid GPS fix. |

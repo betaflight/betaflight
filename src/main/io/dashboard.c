@@ -553,7 +553,7 @@ void dashboardSetNextPageChangeAt(timeUs_t futureMicros)
 
 void formatTrimDegrees ( char *formattedTrim, int16_t trimValue ) {
 	char trim[6];
-	sprintf(trim, "%d", trimValue);
+	tfp_sprintf(trim, "%d", trimValue);
 	int x = strlen(trim)-1;
 	strncpy(formattedTrim,trim,x);
 	formattedTrim[x] = '\0';

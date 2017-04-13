@@ -297,13 +297,6 @@ static void updatePositionHeadingController_FW(timeUs_t currentTimeUs, timeDelta
 
     // Convert rollAdjustment to decidegrees (rcAdjustment holds decidegrees)
     posControl.rcAdjustment[ROLL] = CENTIDEGREES_TO_DECIDEGREES(rollAdjustment);
-
-    // Update magHold heading lock in case pilot is using MAG mode (prevent MAGHOLD to fight navigation)
-    posControl.desiredState.yaw = wrap_36000(posControl.actualState.yaw + headingError);
-    updateHeadingHoldTarget(CENTIDEGREES_TO_DEGREES(posControl.desiredState.yaw));
-
-    // Add pitch compensation
-    //posControl.rcAdjustment[PITCH] = -CENTIDEGREES_TO_DECIDEGREES(ABS(rollAdjustment)) * 0.50f;
 }
 
 void applyFixedWingPositionController(timeUs_t currentTimeUs)
@@ -414,7 +407,6 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
 
     // Mix Pitch/Roll/Throttle
     if (isRollAdjustmentValid && (navStateFlags & NAV_CTL_POS)) {
-        pitchCorrection += ABS(posControl.rcAdjustment[ROLL]) * (navConfig()->fw.roll_to_pitch / 100.0f);
         rollCorrection += posControl.rcAdjustment[ROLL];
     }
 
@@ -440,15 +432,6 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
     if (isRollAdjustmentValid && (navStateFlags & NAV_CTL_POS)) {
         rollCorrection = constrain(rollCorrection, -DEGREES_TO_DECIDEGREES(navConfig()->fw.max_bank_angle), DEGREES_TO_DECIDEGREES(navConfig()->fw.max_bank_angle));
         rcCommand[ROLL] = pidAngleToRcCommand(rollCorrection, pidProfile()->max_angle_inclination[FD_ROLL]);
-
-        // Calculate coordinated turn rate based on velocity and banking angle
-        if (posControl.actualState.velXY >= 300.0f) {
-            float targetYawRateDPS = RADIANS_TO_DEGREES(tan_approx(DECIDEGREES_TO_RADIANS(-rollCorrection)) * GRAVITY_CMSS / posControl.actualState.velXY);
-            rcCommand[YAW] = pidRateToRcCommand(targetYawRateDPS, currentControlRateProfile->rates[FD_YAW]);
-        }
-        else {
-            rcCommand[YAW] = 0;
-        }
     }
 
     if ((navStateFlags & NAV_CTL_ALT) || (navStateFlags & NAV_CTL_POS)) {
