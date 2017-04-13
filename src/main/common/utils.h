@@ -34,6 +34,18 @@
 #define EXPAND_I(x) x
 #define EXPAND(x) EXPAND_I(x)
 
+// expand to t if bit is 1, f when bit is 0. Other bit values are not supported
+#define PP_IIF(bit, t, f) PP_IIF_I(bit, t, f)
+#define PP_IIF_I(bit, t, f) PP_IIF_ ## bit(t, f)
+#define PP_IIF_0(t, f) f
+#define PP_IIF_1(t, f) t
+
+// Expand all argumens and call macro with them. When expansion of some argument contains ',', it will be passed as multiple arguments
+// #define TAKE3(_1,_2,_3) CONCAT3(_1,_2,_3)
+// #define MULTI2 A,B
+// PP_CALL(TAKE3, MULTI2, C) expands to ABC
+#define PP_CALL(macro, ...) macro(__VA_ARGS__)
+
 #if !defined(UNUSED)
 #define UNUSED(x) (void)(x)
 #endif
