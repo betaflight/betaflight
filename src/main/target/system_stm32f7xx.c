@@ -65,7 +65,9 @@
 
 #include "stm32f7xx.h"
 
-#if !defined  (HSE_VALUE)
+#if !defined  (HSE_VALUE) && defined(STM32F767xx)
+  #define HSE_VALUE    ((uint32_t)25000000) /*!< Default value of the External oscillator in Hz */
+#elif !defined  (HSE_VALUE)
   #define HSE_VALUE    ((uint32_t)8000000) /*!< Default value of the External oscillator in Hz */
 #endif /* HSE_VALUE */
 
@@ -73,7 +75,11 @@
   #define HSI_VALUE    ((uint32_t)16000000) /*!< Value of the Internal oscillator in Hz*/
 #endif /* HSI_VALUE */
 
+#if defined(STM32F767xx)
+#define PLL_M     25
+#else
 #define PLL_M     8
+#endif
 #define PLL_N     432
 #define PLL_P     RCC_PLLP_DIV2 /* 2 */
 #define PLL_Q     9
@@ -158,7 +164,11 @@
 
       /* Enable HSE Oscillator and activate PLL with HSE as source */
       RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+#if defined(STM32F767xx)
+      RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
+#else
       RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+#endif
       RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
       RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
       RCC_OscInitStruct.PLL.PLLM = PLL_M;

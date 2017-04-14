@@ -82,7 +82,12 @@ include $(ROOT)/make/$(OSFAMILY).mk
 include $(ROOT)/make/tools.mk
 
 # default xtal value for F4 targets
+
+ifeq ($(TARGET),$(filter $(TARGET), RIPF7))
+HSE_VALUE       ?= 25000000
+else
 HSE_VALUE       ?= 8000000
+endif
 
 # used for turning on features like VCP and SDCARD
 FEATURES        =
@@ -202,7 +207,7 @@ endif
 -include $(ROOT)/src/main/target/$(BASE_TARGET)/target.mk
 
 F4_TARGETS      = $(F405_TARGETS) $(F411_TARGETS) $(F446_TARGETS)
-F7_TARGETS      = $(F7X2RE_TARGETS) $(F7X5XE_TARGETS) $(F7X5XG_TARGETS) $(F7X5XI_TARGETS) $(F7X6XG_TARGETS)
+F7_TARGETS      = $(F7X2RE_TARGETS) $(F7X5XE_TARGETS) $(F7X5XG_TARGETS) $(F7X5XI_TARGETS) $(F7X6XG_TARGETS) $(F767VI_TARGETS)
 
 ifeq ($(filter $(TARGET),$(VALID_TARGETS)),)
 $(error Target '$(TARGET)' is not valid, must be one of $(VALID_TARGETS). Have you prepared a valid target.mk?)
@@ -216,7 +221,7 @@ endif
 256K_TARGETS  = $(F3_TARGETS)
 512K_TARGETS  = $(F411_TARGETS) $(F446_TARGETS) $(F7X2RE_TARGETS) $(F7X5XE_TARGETS)
 1024K_TARGETS = $(F405_TARGETS) $(F7X5XG_TARGETS) $(F7X6XG_TARGETS)
-2048K_TARGETS = $(F7X5XI_TARGETS) $(SITL_TARGETS)
+2048K_TARGETS = $(F7X5XI_TARGETS) $(F767VI_TARGETS) $(SITL_TARGETS)
 
 # Configure default flash sizes for the targets (largest size specified gets hit first) if flash not specified already.
 ifeq ($(FLASH_SIZE),)
@@ -536,6 +541,10 @@ else ifeq ($(TARGET),$(filter $(TARGET),$(F7X2RE_TARGETS)))
 DEVICE_FLAGS    = -DSTM32F722xx -DUSE_HAL_DRIVER -D__FPU_PRESENT
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f722.ld
 STARTUP_SRC     = startup_stm32f722xx.s
+else ifeq ($(TARGET),$(filter $(TARGET),$(F767VI_TARGETS)))
+DEVICE_FLAGS    = -DSTM32F767xx -DUSE_HAL_DRIVER -D__FPU_PRESENT
+LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f767vi.ld
+STARTUP_SRC     = startup_stm32f767xx.s
 else
 $(error Unknown MCU for F7 target)
 endif
@@ -1159,7 +1168,6 @@ ASFLAGS     = $(ARCH_FLAGS) \
               -MMD -MP
 
 LDFLAGS     = -lm \
-              -nostartfiles \
               --specs=nano.specs \
               -lc \
               -lnosys \

@@ -51,6 +51,8 @@ extern uint8_t __config_end;
 #  define FLASH_PAGE_SIZE                 ((uint32_t)0x8000) // 32K sectors
 # elif defined(STM32F746xx)
 #  define FLASH_PAGE_SIZE                 ((uint32_t)0x8000)
+# elif defined(STM32F767xx)
+#  define FLASH_PAGE_SIZE                 ((uint32_t)0x8000)
 # elif defined(UNIT_TEST)
 #  define FLASH_PAGE_SIZE                 (0x400)
 // SIMULATOR
@@ -163,6 +165,54 @@ static uint32_t getFLASHSectorForEEPROM(void)
         return FLASH_SECTOR_6;
     if ((uint32_t)&__config_start <= 0x0807FFFF)
         return FLASH_SECTOR_7;
+
+    // Not good
+    while (1) {
+        failureMode(FAILURE_FLASH_WRITE_FAILED);
+    }
+}
+#elif defined(STM32F767xx)
+/*
+Sector 0    0x08000000 - 0x08007FFF 32 Kbytes
+Sector 1    0x08008000 - 0x0800FFFF 32 Kbytes
+Sector 2    0x08010000 - 0x08017FFF 32 Kbytes
+Sector 3    0x08018000 - 0x0801FFFF 32 Kbytes
+Sector 4    0x08020000 - 0x0803FFFF 128 Kbytes
+Sector 5    0x08040000 - 0x0807FFFF 256 Kbytes
+Sector 6    0x08080000 - 0x080BFFFF 256 Kbytes
+Sector 7    0x080C0000 - 0x080FFFFF 256 Kbytes
+Sector 8    0x08100000 - 0x0813FFFF 256 Kbytes
+Sector 9    0x08140000 - 0x0817FFFF 256 Kbytes
+Sector 10   0x08180000 - 0x081BFFFF 256 Kbytes
+Sector 11   0x081C0000 - 0x081FFFFF 256 Kbytes
+*/
+
+static uint32_t getFLASHSectorForEEPROM(void)
+{
+    if ((uint32_t)&__config_start <= 0x08007FFF)
+        return FLASH_SECTOR_0;
+    if ((uint32_t)&__config_start <= 0x0800FFFF)
+        return FLASH_SECTOR_1;
+    if ((uint32_t)&__config_start <= 0x08017FFF)
+        return FLASH_SECTOR_2;
+    if ((uint32_t)&__config_start <= 0x0801FFFF)
+        return FLASH_SECTOR_3;
+    if ((uint32_t)&__config_start <= 0x0803FFFF)
+        return FLASH_SECTOR_4;
+    if ((uint32_t)&__config_start <= 0x0807FFFF)
+        return FLASH_SECTOR_5;
+    if ((uint32_t)&__config_start <= 0x080BFFFF)
+        return FLASH_SECTOR_6;
+    if ((uint32_t)&__config_start <= 0x080FFFFF)
+        return FLASH_SECTOR_7;
+    if ((uint32_t)&__config_start <= 0x0813FFFF)
+        return FLASH_SECTOR_8;
+    if ((uint32_t)&__config_start <= 0x0817FFFF)
+        return FLASH_SECTOR_9;
+    if ((uint32_t)&__config_start <= 0x081BFFFF)
+        return FLASH_SECTOR_10;
+    if ((uint32_t)&__config_start <= 0x081FFFFF)
+        return FLASH_SECTOR_11;
 
     // Not good
     while (1) {
