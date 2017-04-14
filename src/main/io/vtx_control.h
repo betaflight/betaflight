@@ -19,10 +19,6 @@
 
 #include "fc/rc_controls.h"
 
-#define VTX_BAND_MIN                            1
-#define VTX_BAND_MAX                            5
-#define VTX_CHANNEL_MIN                         1
-#define VTX_CHANNEL_MAX                         8
 #define MAX_CHANNEL_ACTIVATION_CONDITION_COUNT  10
 
 typedef struct vtxChannelActivationCondition_s {
@@ -33,21 +29,17 @@ typedef struct vtxChannelActivationCondition_s {
 } vtxChannelActivationCondition_t;
 
 typedef struct vtxConfig_s {
-    uint8_t vtx_power;
-    uint8_t vtx_channel; //1-8
-    uint8_t vtx_band; //1=A, 2=B, 3=E, 4=F(Airwaves/Fatshark), 5=Raceband
-    uint8_t vtx_mode; //0=ch+band 1=mhz
-    uint16_t vtx_mhz; //5740
     vtxChannelActivationCondition_t vtxChannelActivationConditions[MAX_CHANNEL_ACTIVATION_CONDITION_COUNT];
 } vtxConfig_t;
 
 PG_DECLARE(vtxConfig_t, vtxConfig);
 
-void vtxInit(void);
-bool canUpdateVTX(void);
+void vtxControlInit(void);
+
 void vtxIncrementBand(void);
 void vtxDecrementBand(void);
 void vtxIncrementChannel(void);
 void vtxDecrementChannel(void);
+
 void vtxUpdateActivatedChannel(void);
 

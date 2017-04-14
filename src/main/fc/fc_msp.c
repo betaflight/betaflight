@@ -51,7 +51,6 @@
 #include "drivers/system.h"
 #include "drivers/vcd.h"
 #include "drivers/vtx_common.h"
-#include "drivers/vtx_soft_spi_rtc6705.h"
 #include "drivers/transponder_ir.h"
 
 #include "fc/config.h"
@@ -83,7 +82,7 @@
 #include "io/serial_4way.h"
 #include "io/servos.h"
 #include "io/transponder_ir.h"
-#include "io/vtx.h"
+#include "io/vtx_control.h"
 
 #include "msp/msp.h"
 #include "msp/msp_protocol.h"
@@ -1712,23 +1711,14 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 #endif
 
-#if defined(USE_RTC6705) || defined(VTX_COMMON)
+#ifdef VTX_COMMON
     case MSP_SET_VTX_CONFIG:
         {
             uint16_t tmp = sbufReadU16(src);
-#if defined(USE_RTC6705)
-            if  (tmp < 40)
-                vtxConfigMutable()->vtx_channel = tmp;
-            if (current_vtx_channel != vtxConfig()->vtx_channel) {
-                current_vtx_channel = vtxConfig()->vtx_channel;
-                rtc6705_soft_spi_set_channel(vtx_freq[current_vtx_channel]);
-            }
-#else
+            uint8_t band    = (tmp / 8) + 1;
+            uint8_t channel = (tmp % 8) + 1;
+
             if (vtxCommonGetDeviceType() != VTXDEV_UNKNOWN) {
-
-                uint8_t band    = (tmp / 8) + 1;
-                uint8_t channel = (tmp % 8) + 1;
-
                 uint8_t current_band=0, current_channel=0;
                 vtxCommonGetBandChan(&current_band,&current_channel);
                 if ((current_band != band) || (current_channel != channel))
@@ -1749,7 +1739,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 if (current_pitmode != pitmode)
                     vtxCommonSetPitmode(pitmode);
             }
-#endif
         }
         break;
 #endif

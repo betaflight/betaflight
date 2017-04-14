@@ -20,7 +20,7 @@
 
 #include "platform.h"
 
-#ifdef USE_RTC6705
+#ifdef VTX_RTC6705SOFTSPI
 
 #include "bus_spi.h"
 #include "io.h"
@@ -46,8 +46,6 @@ const uint16_t vtx_freq[] =
     5740, 5760, 5780, 5800, 5820, 5840, 5860, 5880, // FatShark
     5658, 5695, 5732, 5769, 5806, 5843, 5880, 5917, // RaceBand
 };
-
-uint16_t current_vtx_channel;
 
 static IO_t rtc6705DataPin = IO_NONE;
 static IO_t rtc6705LePin = IO_NONE;
@@ -107,8 +105,7 @@ static void rtc6705_write_register(uint8_t addr, uint32_t data)
     RTC6705_SPILE_ON;
 }
 
-
-void rtc6705_soft_spi_set_channel(uint16_t channel_freq)
+void rtc6705_soft_spi_set_freq(uint16_t channel_freq)
 {
 
     uint32_t freq = (uint32_t)channel_freq * 1000;
@@ -119,6 +116,20 @@ void rtc6705_soft_spi_set_channel(uint16_t channel_freq)
     A = freq % 64;
     rtc6705_write_register(0, 400);
     rtc6705_write_register(1, (N << 7) | A);
+}
+
+void rtc6705_soft_spi_set_band_and_channel(const uint8_t band, const uint8_t channel)
+{
+    // band and channel are 1-based, not 0-based
+
+    // example for raceband/ch8:
+    // (5 - 1) * 8 + (8 - 1)
+    //    4    * 8 +    7
+    //     32 + 7 = 39
+    uint8_t freqIndex = ((band - 1) * CHANNELS_PER_BAND) + (channel - 1);
+
+    uint16_t freq = vtx_freq[freqIndex];
+    rtc6705_soft_spi_set_freq(freq);
 }
 
 void rtc6705_soft_spi_set_rf_power(uint8_t reduce_power)

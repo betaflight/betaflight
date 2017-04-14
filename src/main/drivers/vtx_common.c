@@ -65,7 +65,7 @@ void vtxCommonSetBandChan(uint8_t band, uint8_t chan)
     if (!vtxDevice)
         return;
 
-    if ((band > vtxDevice->numBand)|| (chan > vtxDevice->numChan))
+    if ((band > vtxDevice->numBand) || (chan > vtxDevice->numChan))
         return;
     
     if (vtxDevice->vTable->setBandChan)

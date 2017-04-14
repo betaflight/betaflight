@@ -23,7 +23,7 @@
 
 #ifdef CMS
 
-#if defined(VTX) || defined(USE_RTC6705)
+#if defined(VTX_RTC6705)
 
 #include "build/version.h"
 
@@ -39,39 +39,11 @@
 
 #include "fc/config.h"
 
-#include "io/vtx.h"
+#include "io/vtx_rtc6705.h"
 
-static bool featureRead = false;
-static uint8_t cmsx_featureVtx = 0;
 static uint8_t cmsx_vtxBand;
 static uint8_t cmsx_vtxChannel;
-#ifdef VTX
-static uint8_t cmsx_vtxMode;
-static uint16_t cmsx_vtxMhz;
-#endif
-static bool cmsx_vtxPower;
-
-static long cmsx_Vtx_FeatureRead(void)
-{
-    if (!featureRead) {
-        cmsx_featureVtx = feature(FEATURE_VTX) ? 1 : 0;
-        featureRead = true;
-    }
-
-    return 0;
-}
-
-static long cmsx_Vtx_FeatureWriteback(void)
-{
-    if (featureRead) {
-        if (cmsx_featureVtx)
-            featureSet(FEATURE_VTX);
-        else
-            featureClear(FEATURE_VTX);
-    }
-
-    return 0;
-}
+static uint8_t cmsx_vtxPower;
 
 static const char * const vtxBandNames[] = {
     "BOSCAM A",
@@ -81,47 +53,26 @@ static const char * const vtxBandNames[] = {
     "RACEBAND",
 };
 
-static OSD_TAB_t entryVtxBand = {&cmsx_vtxBand,4,&vtxBandNames[0]};
+static OSD_TAB_t entryVtxBand = {&cmsx_vtxBand, 4, &vtxBandNames[0]};
 static OSD_UINT8_t entryVtxChannel =  {&cmsx_vtxChannel, 1, 8, 1};
-#ifdef VTX
-static OSD_UINT8_t entryVtxMode =  {&cmsx_vtxMode, 0, 2, 1};
-static OSD_UINT16_t entryVtxMhz =  {&cmsx_vtxMhz, 5600, 5950, 1};
-#endif // VTX
+static OSD_UINT8_t entryVtxPower =  {&cmsx_vtxPower, 0, RTC6705_POWER_COUNT, 1};
 
 static void cmsx_Vtx_ConfigRead(void)
 {
-#ifdef VTX
-    cmsx_vtxBand = vtxConfig()->vtx_band;
-    cmsx_vtxChannel = vtxConfig()->vtx_channel + 1;
-    cmsx_vtxMode = vtxConfig()->vtx_mode;
-    cmsx_vtxMhz = vtxConfig()->vtx_mhz;
-#endif // VTX
-    cmsx_vtxPower = vtxConfig()->vtx_power;
-
-#ifdef USE_RTC6705
-    cmsx_vtxBand = vtxConfig()->vtx_channel / 8;
-    cmsx_vtxChannel = vtxConfig()->vtx_channel % 8 + 1;
-#endif // USE_RTC6705
+    cmsx_vtxBand = vtxRTC6705Config()->band - 1;
+    cmsx_vtxChannel = vtxRTC6705Config()->channel;
+    cmsx_vtxPower = vtxRTC6705Config()->power;
 }
 
 static void cmsx_Vtx_ConfigWriteback(void)
 {
-#ifdef VTX
-    vtxConfigMutable()->vtx_band = cmsx_vtxBand;
-    vtxConfigMutable()->vtx_channel = cmsx_vtxChannel - 1;
-    vtxConfigMutable()->vtx_mode = cmsx_vtxMode;
-    vtxConfigMutable()->vtx_mhz = cmsx_vtxMhz;
-#endif // VTX
-    vtxConfigMutable()->vtx_power = cmsx_vtxPower;
-
-#ifdef USE_RTC6705
-    vtxConfigMutable()->vtx_channel = cmsx_vtxBand * 8 + cmsx_vtxChannel - 1;
-#endif // USE_RTC6705
+    vtxRTC6705ConfigMutable()->band = cmsx_vtxBand + 1;
+    vtxRTC6705ConfigMutable()->channel = cmsx_vtxChannel;
+    vtxRTC6705ConfigMutable()->power = cmsx_vtxPower;
 }
 
 static long cmsx_Vtx_onEnter(void)
 {
-    cmsx_Vtx_FeatureRead();
     cmsx_Vtx_ConfigRead();
 
     return 0;
@@ -140,16 +91,9 @@ static long cmsx_Vtx_onExit(const OSD_Entry *self)
 static OSD_Entry cmsx_menuVtxEntries[] =
 {
     {"--- VTX ---", OME_Label, NULL, NULL, 0},
-    {"ENABLED", OME_Bool, NULL, &cmsx_featureVtx, 0},
-#ifdef VTX
-    {"VTX MODE", OME_UINT8, NULL, &entryVtxMode, 0},
-    {"VTX MHZ", OME_UINT16, NULL, &entryVtxMhz, 0},
-#endif // VTX
     {"BAND", OME_TAB, NULL, &entryVtxBand, 0},
     {"CHANNEL", OME_UINT8, NULL, &entryVtxChannel, 0},
-#ifdef USE_RTC6705
-    {"LOW POWER", OME_Bool, NULL, &cmsx_vtxPower, 0},
-#endif // USE_RTC6705
+    {"POWER", OME_UINT8, NULL, &entryVtxPower, 0},
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
 };
@@ -159,9 +103,9 @@ CMS_Menu cmsx_menuVtx = {
     .GUARD_type = OME_MENU,
     .onEnter = cmsx_Vtx_onEnter,
     .onExit= cmsx_Vtx_onExit,
-    .onGlobalExit = cmsx_Vtx_FeatureWriteback,
+    .onGlobalExit = NULL,
     .entries = cmsx_menuVtxEntries
 };
 
-#endif // VTX || USE_RTC6705
+#endif // VTX || VTX_RTC6705SOFTSPI
 #endif // CMS

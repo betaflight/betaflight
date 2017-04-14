@@ -64,8 +64,7 @@
 #include "io/serial.h"
 #include "io/statusindicator.h"
 #include "io/transponder_ir.h"
-#include "io/vtx.h"
-
+#include "io/vtx_control.h"
 #include "rx/rx.h"
 
 #include "scheduler/scheduler.h"
@@ -470,7 +469,7 @@ void processRx(timeUs_t currentTimeUs)
     }
 #endif
 
-#ifdef VTX
+#ifdef VTX_CONTROL
     vtxUpdateActivatedChannel();
 #endif
 }

@@ -45,7 +45,7 @@
 #include "io/gps.h"
 #include "io/beeper.h"
 #include "io/motors.h"
-#include "io/vtx.h"
+#include "io/vtx_control.h"
 #include "io/dashboard.h"
 
 #include "sensors/barometer.h"
@@ -59,10 +59,6 @@
 #include "flight/pid.h"
 #include "flight/navigation.h"
 #include "flight/failsafe.h"
-
-#ifdef VTX
-bool canUpdateVTX(void);
-#endif
 
 static pidProfile_t *pidProfile;
 
@@ -297,20 +293,18 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
     }
 #endif
 
-#ifdef VTX
-    if (canUpdateVTX()) {
-        if (rcSticks ==  THR_HI + YAW_LO + PIT_CE + ROL_HI) {
-            vtxIncrementBand();
-        }
-        if (rcSticks ==  THR_HI + YAW_LO + PIT_CE + ROL_LO) {
-            vtxDecrementBand();
-        }
-        if (rcSticks ==  THR_HI + YAW_HI + PIT_CE + ROL_HI) {
-            vtxIncrementChannel();
-        }
-        if (rcSticks ==  THR_HI + YAW_HI + PIT_CE + ROL_LO) {
-            vtxDecrementChannel();
-        }
+#ifdef VTX_CONTROL
+    if (rcSticks ==  THR_HI + YAW_LO + PIT_CE + ROL_HI) {
+        vtxIncrementBand();
+    }
+    if (rcSticks ==  THR_HI + YAW_LO + PIT_CE + ROL_LO) {
+        vtxDecrementBand();
+    }
+    if (rcSticks ==  THR_HI + YAW_HI + PIT_CE + ROL_HI) {
+        vtxIncrementChannel();
+    }
+    if (rcSticks ==  THR_HI + YAW_HI + PIT_CE + ROL_LO) {
+        vtxDecrementChannel();
     }
 #endif
 

@@ -55,18 +55,14 @@
 #include "drivers/max7456_symbols.h"
 #include "drivers/display.h"
 #include "drivers/system.h"
-#ifdef USE_RTC6705
-#include "drivers/vtx_soft_spi_rtc6705.h"
-#include "drivers/vtx_soft_spi_rtc6705.h"
-#elif defined(VTX)
-#include "drivers/vtx_rtc6705.h"
-#endif
+#include "drivers/vtx_common.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
 #include "io/osd.h"
-#include "io/vtx.h"
+#include "io/vtx_rtc6705.h"
+#include "io/vtx_control.h"
 #include "io/vtx_string.h"
 
 #include "fc/config.h"
@@ -318,20 +314,21 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
-#if defined(VTX) || defined(USE_RTC6705)
+#if defined(VTX_COMMON)
         case OSD_VTX_CHANNEL:
         {
-            // FIXME cleanup this when the VTX API is aligned for software vs hardware support of the RTC6705 - See SPRACINGF3NEO/SINGULARITY/SIRINFPV targets.
-#if defined(VTX)
-            const char vtxBandLetter = vtx58BandLetter[vtxConfig()->vtx_band + 1];
-            const char *vtxChannelName = vtx58ChannelNames[vtxConfig()->vtx_channel + 1];
-            sprintf(buff, "%c:%s", vtxBandLetter, vtxChannelName);
-#elif defined(USE_RTC6705)
-            sprintf(buff, "CH:%d", current_vtx_channel % CHANNELS_PER_BAND + 1);
-#endif
+            uint8_t band=0, channel=0;
+            vtxCommonGetBandChan(&band,&channel);
+
+            uint8_t power = 0;
+            vtxCommonGetPowerIndex(&power);
+
+            const char vtxBandLetter = vtx58BandLetter[band];
+            const char *vtxChannelName = vtx58ChannelNames[channel];
+            sprintf(buff, "%c:%s:%d", vtxBandLetter, vtxChannelName, power);
             break;
         }
-#endif // VTX
+#endif
 
         case OSD_CROSSHAIRS:
             elemPosX = 14 - 1; // Offset for 1 char to the left

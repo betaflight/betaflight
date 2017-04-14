@@ -795,9 +795,10 @@ FC_SRC = \
             telemetry/ibus_shared.c \
             sensors/esc_sensor.c \
             io/vtx_string.c \
+            io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c \
-            io/vtx.c
+            io/vtx_control.c
             
 COMMON_DEVICE_SRC = \
             $(CMSIS_SRC) \

@@ -19,7 +19,7 @@
 
 typedef enum {
     VTXDEV_UNSUPPORTED = 0, // reserved for MSP
-    // 1 reserved
+    VTXDEV_RTC6705    = 1,
     // 2 reserved
     VTXDEV_SMARTAUDIO = 3,
     VTXDEV_TRAMP      = 4,

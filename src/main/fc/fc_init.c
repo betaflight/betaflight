@@ -1,5 +1,5 @@
 /*
- * This file is part of Cleanflight.
+5 * This file is part of Cleanflight.
  *
  * Cleanflight is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,6 +64,8 @@
 #include "drivers/exti.h"
 #include "drivers/max7456.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
+#include "drivers/vtx_rtc6705.h"
+#include "drivers/vtx_common.h"
 
 #include "fc/config.h"
 #include "fc/fc_init.h"
@@ -93,7 +95,8 @@
 #include "io/osd.h"
 #include "io/osd_slave.h"
 #include "io/displayport_msp.h"
-#include "io/vtx.h"
+#include "io/vtx_rtc6705.h"
+#include "io/vtx_control.h"
 #include "io/vtx_smartaudio.h"
 #include "io/vtx_tramp.h"
 
@@ -157,7 +160,7 @@ void processLoopback(void)
 }
 
 
-#ifdef VTX
+#ifdef VTX_RTC6705
 bool canUpdateVTX(void)
 {
 #if defined(MAX7456_SPI_INSTANCE) && defined(RTC6705_SPI_INSTANCE) && defined(SPI_SHARED_MAX7456_AND_RTC6705)
@@ -388,9 +391,8 @@ void init(void)
     updateHardwareRevision();
 #endif
 
-#ifdef VTX
-    while (!canUpdateVTX()) {};
-    vtxInit();
+#ifdef VTX_RTC6705
+    rtc6705IOInit();
 #endif
 
 #if defined(SONAR_SOFTSERIAL2_EXCLUSIVE) && defined(SONAR) && defined(USE_SOFTSERIAL2)
@@ -457,13 +459,10 @@ void init(void)
  * VTX
  */
 
-#ifdef USE_RTC6705
-    if (feature(FEATURE_VTX)) {
-        rtc6705_soft_spi_init();
-        current_vtx_channel = vtxConfig()->vtx_channel;
-        rtc6705_soft_spi_set_channel(vtx_freq[current_vtx_channel]);
-        rtc6705_soft_spi_set_rf_power(vtxConfig()->vtx_power);
-    }
+#ifdef VTX_RTC6705SOFTSPI
+    rtc6705_soft_spi_init();
+    rtc6705_soft_spi_set_band_and_channel(vtxRTC6705Config()->band, vtxRTC6705Config()->channel);
+    rtc6705_soft_spi_set_rf_power(vtxRTC6705Config()->power);
 #endif
 
 /*
@@ -582,13 +581,20 @@ void init(void)
 #endif
 
 #ifdef VTX_CONTROL
+    vtxControlInit();
+
+    vtxCommonInit();
+
+#ifdef VTX_RTC6705
+    vtxRTC6705Init();
+#endif
 
 #ifdef VTX_SMARTAUDIO
-    smartAudioInit();
+    vtxSmartAudioInit();
 #endif
 
 #ifdef VTX_TRAMP
-    trampInit();
+    vtxTrampInit();
 #endif
 
 #endif // VTX_CONTROL

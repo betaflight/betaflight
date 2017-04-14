@@ -17,20 +17,21 @@
 
 #pragma once
 
-#define DP_5G_MASK          0x7000
-#define PA5G_BS_MASK        0x0E00
-#define PA5G_PW_MASK        0x0180
-#define PD_Q5G_MASK         0x0040
-#define QI_5G_MASK          0x0038
-#define PA_BS_MASK          0x0007
+typedef struct vtxRTC6705Config_s {
+    uint8_t band; //1=A, 2=B, 3=E, 4=F(Airwaves/Fatshark), 5=Raceband
+    uint8_t channel; //1-8
+    uint8_t power;
+} vtxRTC6705Config_t;
 
-#define PA_CONTROL_DEFAULT  0x4FBD
+PG_DECLARE(vtxRTC6705Config_t, vtxRTC6705Config);
 
-#define CHANNELS_PER_BAND   8
-#define BANDS_NUMBER        5
+#ifdef RTC6705_POWER_PIN
+#define RTC6705_POWER_COUNT 3
+#define VTX_RTC6705_DEFAULT_POWER 1
+#else
+#define RTC6705_POWER_COUNT 2
+#define VTX_RTC6705_DEFAULT_POWER 0
+#endif
 
-void rtc6705_soft_spi_init(void);
-void rtc6705_soft_spi_set_freq(uint16_t channel_freq);
-void rtc6705_soft_spi_set_band_and_channel(const uint8_t band, const uint8_t channel);
-void rtc6705_soft_spi_set_rf_power(uint8_t reduce_power);
+bool vtxRTC6705Init();
 

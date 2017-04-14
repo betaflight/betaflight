@@ -97,10 +97,10 @@ static OSD_Entry menuFeaturesEntries[] =
 #if defined(BLACKBOX)
     {"BLACKBOX", OME_Submenu, cmsMenuChange, &cmsx_menuBlackbox, 0},
 #endif
-#if defined(VTX) || defined(USE_RTC6705)
-    {"VTX", OME_Submenu, cmsMenuChange, &cmsx_menuVtx, 0},
-#endif // VTX || USE_RTC6705
 #if defined(VTX_CONTROL)
+#if defined(VTX_RTC6705)
+    {"VTX", OME_Submenu, cmsMenuChange, &cmsx_menuVtx, 0},
+#endif // VTX_RTC6705
 #if defined(VTX_SMARTAUDIO)
     {"VTX SA", OME_Submenu, cmsMenuChange, &cmsx_menuVtxSmartAudio, 0},
 #endif

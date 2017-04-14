@@ -55,7 +55,7 @@ typedef enum {
     FEATURE_TRANSPONDER = 1 << 21,
     FEATURE_AIRMODE = 1 << 22,
     FEATURE_SDCARD_UNUSED = 1 << 23,
-    FEATURE_VTX = 1 << 24,
+    //FEATURE_VTX = 1 << 24,
     FEATURE_RX_SPI = 1 << 25,
     FEATURE_SOFTSPI = 1 << 26,
     FEATURE_ESC_SENSOR = 1 << 27,

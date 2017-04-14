@@ -710,7 +710,7 @@ static vtxVTable_t trampVTable = {
 
 #endif
 
-bool trampInit()
+bool vtxTrampInit(void)
 {
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_TRAMP);
 

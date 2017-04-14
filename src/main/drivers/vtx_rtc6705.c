@@ -27,7 +27,7 @@
 
 #include "platform.h"
 
-#ifdef VTX
+#ifdef VTX_RTC6705
 
 #include "common/maths.h"
 
@@ -84,7 +84,9 @@
 #define RTC6705_SET_WRITE 0x11 //10001b to write to register
 #define RTC6705_SET_DIVMULT 1000000 //Division value (to fit into a uint32_t) (Hz to MHz)
 
+#ifdef RTC6705_POWER_PIN
 static IO_t vtxPowerPin     = IO_NONE;
+#endif
 static IO_t vtxCSPin        = IO_NONE;
 
 #define DISABLE_RTC6705 IOHi(vtxCSPin)
@@ -138,14 +140,15 @@ static uint32_t reverse32(uint32_t in)
  * Start chip if available
  */
 
-void rtc6705Init(void)
+void rtc6705IOInit(void)
 {
 #ifdef RTC6705_POWER_PIN
+
     vtxPowerPin = IOGetByTag(IO_TAG(RTC6705_POWER_PIN));
     IOInit(vtxPowerPin, OWNER_VTX, 0);
-    IOConfigGPIO(vtxPowerPin, IOCFG_OUT_PP);
 
-    ENABLE_VTX_POWER;
+    DISABLE_VTX_POWER;
+    IOConfigGPIO(vtxPowerPin, IOCFG_OUT_PP);
 #endif
 
     vtxCSPin = IOGetByTag(IO_TAG(RTC6705_CS_PIN));
@@ -155,8 +158,6 @@ void rtc6705Init(void)
     // GPIO bit is enabled so here so the output is not pulled low when the GPIO is set in output mode.
     // Note: It's critical to ensure that incorrect signals are not sent to the VTX.
     IOConfigGPIO(vtxCSPin, IOCFG_OUT_PP);
-
-    delay(RTC6705_BOOT_DELAY);
 }
 
 /**
@@ -222,6 +223,8 @@ void rtc6705SetFreq(uint16_t freq)
 
 void rtc6705SetRFPower(uint8_t rf_power)
 {
+    rf_power = constrain(rf_power, 0, RTC6705_RF_POWER_COUNT - 1);
+
     spiSetDivisor(RTC6705_SPI_INSTANCE, SPI_CLOCK_SLOW);
 
     uint32_t val_hex = 0x10; // write

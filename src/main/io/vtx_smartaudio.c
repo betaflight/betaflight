@@ -25,7 +25,6 @@
 #include "platform.h"
 
 #if defined(VTX_SMARTAUDIO) && defined(VTX_CONTROL)
-
 #include "build/build_config.h"
 
 #include "cms/cms.h"
@@ -668,7 +667,7 @@ void saSetPowerByIndex(uint8_t index)
     saQueueCmd(buf, 6);
 }
 
-bool smartAudioInit()
+bool vtxSmartAudioInit()
 {
 #ifdef SMARTAUDIO_DPRINTF
     // Setup debugSerialPort

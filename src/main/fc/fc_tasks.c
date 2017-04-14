@@ -340,7 +340,7 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_STACK_CHECK, true);
 #endif
 #ifdef VTX_CONTROL
-#if defined(VTX_SMARTAUDIO) || defined(VTX_TRAMP)
+#if defined(VTX_RTC6705) || defined(VTX_SMARTAUDIO) || defined(VTX_TRAMP)
     setTaskEnabled(TASK_VTXCTRL, true);
 #endif
 #endif
