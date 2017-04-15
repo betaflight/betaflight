@@ -167,6 +167,13 @@ bool trampCommitChanges()
         return false;
 
     trampStatus = TRAMP_STATUS_SET_FREQ_PW;
+
+    if(trampConfFreq != trampCurFreq)
+        trampFreqRetries = TRAMP_MAX_RETRIES;
+
+    if(trampConfPower != trampCurPower)
+        trampPowerRetries = TRAMP_MAX_RETRIES;
+
     return true;
 }
 
