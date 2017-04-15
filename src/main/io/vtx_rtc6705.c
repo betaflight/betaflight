@@ -266,9 +266,9 @@ static const char * const rtc6705BandNames[] = {
     "RACEBAND",
 };
 
-static OSD_TAB_t entryVtxBand =         {&cmsx_vtxBand, 4, &rtc6705BandNames[0]};
+static OSD_TAB_t entryVtxBand =         {&cmsx_vtxBand, ARRAYLEN(rtc6705BandNames) - 1, &rtc6705BandNames[0]};
 static OSD_UINT8_t entryVtxChannel =    {&cmsx_vtxChannel, 1, 8, 1};
-static OSD_TAB_t entryVtxPower =        {&cmsx_vtxPower, RTC6705_POWER_COUNT, &rtc6705PowerNames[0]};
+static OSD_TAB_t entryVtxPower =        {&cmsx_vtxPower, RTC6705_POWER_COUNT - 1, &rtc6705PowerNames[0]};
 
 static void cmsx_Vtx_ConfigRead(void)
 {
@@ -306,7 +306,7 @@ static OSD_Entry cmsx_menuVtxEntries[] =
     {"--- VTX ---", OME_Label, NULL, NULL, 0},
     {"BAND", OME_TAB, NULL, &entryVtxBand, 0},
     {"CHANNEL", OME_UINT8, NULL, &entryVtxChannel, 0},
-    {"POWER", OME_UINT8, NULL, &entryVtxPower, 0},
+    {"POWER", OME_TAB, NULL, &entryVtxPower, 0},
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
 };
