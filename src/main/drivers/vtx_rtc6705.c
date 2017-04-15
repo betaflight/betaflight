@@ -90,9 +90,11 @@ static IO_t vtxPowerPin     = IO_NONE;
 static IO_t vtxCSPin        = IO_NONE;
 
 #define DISABLE_RTC6705 IOHi(vtxCSPin)
+
 #ifdef USE_RTC6705_CLK_HACK
+static IO_t vtxCLKPin       = IO_NONE;
 // HACK for missing pull up on CLK line - drive the CLK high *before* enabling the CS pin.
-#define ENABLE_RTC6705  {GPIO_SetBits(RTC6705_CLK_GPIO, RTC6705_CLK_PIN); delayMicroseconds(5); IOLo(vtxCSPin); }
+#define ENABLE_RTC6705  {IOHi(vtxCLKPin); delayMicroseconds(5); IOLo(vtxCSPin); }
 #else
 #define ENABLE_RTC6705  IOLo(vtxCSPin)
 #endif
@@ -149,6 +151,11 @@ void rtc6705IOInit(void)
 
     DISABLE_VTX_POWER;
     IOConfigGPIO(vtxPowerPin, IOCFG_OUT_PP);
+#endif
+
+#ifdef USE_RTC6705_CLK_HACK
+    vtxCLKPin = IOGetByTag(IO_TAG(RTC6705_CLK_PIN));
+    // we assume the CLK pin will have been initialised by the SPI code.
 #endif
 
     vtxCSPin = IOGetByTag(IO_TAG(RTC6705_CS_PIN));
