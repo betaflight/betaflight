@@ -55,6 +55,7 @@
 #include "drivers/adc.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
+#include "drivers/buttons.h"
 #include "drivers/inverter.h"
 #include "drivers/flash_m25p16.h"
 #include "drivers/sonar_hcsr04.h"
@@ -232,17 +233,8 @@ void init(void)
 #endif
 
 #if defined(BUTTONS)
-#ifdef BUTTON_A_PIN
-    IO_t buttonAPin = IOGetByTag(IO_TAG(BUTTON_A_PIN));
-    IOInit(buttonAPin, OWNER_SYSTEM, 0);
-    IOConfigGPIO(buttonAPin, IOCFG_IPU);
-#endif
 
-#ifdef BUTTON_B_PIN
-    IO_t buttonBPin = IOGetByTag(IO_TAG(BUTTON_B_PIN));
-    IOInit(buttonBPin, OWNER_SYSTEM, 0);
-    IOConfigGPIO(buttonBPin, IOCFG_IPU);
-#endif
+    buttonsInit();
 
     // Check status of bind plug and exit if not active
     delayMicroseconds(10);  // allow configuration to settle
@@ -253,7 +245,7 @@ void init(void)
         uint8_t secondsRemaining = 5;
         bool bothButtonsHeld;
         do {
-            bothButtonsHeld = !IORead(buttonAPin) && !IORead(buttonBPin);
+            bothButtonsHeld = buttonAPressed() && buttonBPressed();
             if (bothButtonsHeld) {
                 if (--secondsRemaining == 0) {
                     resetEEPROM();

@@ -76,9 +76,9 @@ static const char * const rtc6705PowerNames[RTC6705_POWER_COUNT] = {
 static vtxVTable_t rtc6705VTable;    // Forward
 static vtxDevice_t vtxRTC6705 = {
     .vTable = &rtc6705VTable,
-    .numBand = 5,
-    .numChan = 8,
-    .numPower = RTC6705_POWER_COUNT,
+    .capability.bandCount = 5,
+    .capability.channelCount = 8,
+    .capability.powerCount = RTC6705_POWER_COUNT,
     .bandNames = (char **)vtx58BandNames,
     .chanNames = (char **)vtx58ChannelNames,
     .powerNames = (char **)rtc6705PowerNames,
@@ -171,12 +171,17 @@ void vtxRTC6705SetBandChan(uint8_t band, uint8_t channel)
 
         rtc6705Dev.band = band;
         rtc6705Dev.channel = channel;
+
+        vtxRTC6705ConfigMutable()->band = band;
+        vtxRTC6705ConfigMutable()->channel = channel;
     }
 }
 
 void vtxRTC6705SetPowerByIndex(uint8_t index)
 {
     WAIT_FOR_VTX;
+
+    vtxRTC6705ConfigMutable()->power = index;
 
 #ifdef RTC6705_POWER_PIN
     if (index == 0) {

@@ -53,9 +53,9 @@ static const char * const trampPowerNames[] = {
 #if defined(VTX_COMMON)
 static vtxDevice_t vtxTramp = {
     .vTable = NULL,
-    .numBand = 5,
-    .numChan = 8,
-    .numPower = sizeof(trampPowerTable),
+    .capability.bandCount = 5,
+    .capability.channelCount = 8,
+    .capability.powerCount = sizeof(trampPowerTable),
     .bandNames = (char **)vtx58BandNames,
     .chanNames = (char **)vtx58ChannelNames,
     .powerNames = (char **)trampPowerNames,

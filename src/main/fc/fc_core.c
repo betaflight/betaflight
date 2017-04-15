@@ -82,6 +82,13 @@
 
 // June 2013     V2.2-dev
 
+#ifdef VTX_RTC6705
+bool canUpdateVTX(void);
+#define VTX_IF_READY if (canUpdateVTX())
+#else
+#define VTX_IF_READY
+#endif
+
 enum {
     ALIGN_GYRO = 0,
     ALIGN_ACCEL = 1,
@@ -471,6 +478,10 @@ void processRx(timeUs_t currentTimeUs)
 
 #ifdef VTX_CONTROL
     vtxUpdateActivatedChannel();
+
+    VTX_IF_READY {
+        handleVTXControlButton();
+    }
 #endif
 }
 

@@ -84,9 +84,9 @@ static const char * const saPowerNames[] = {
 static vtxVTable_t saVTable;    // Forward
 static vtxDevice_t vtxSmartAudio = {
     .vTable = &saVTable,
-    .numBand = 5,
-    .numChan = 8,
-    .numPower = 4,
+    .capability.bandCount = 5,
+    .capability.channelCount = 8,
+    .capability.powerCount = 4,
     .bandNames = (char **)vtx58BandNames,
     .chanNames = (char **)vtx58ChannelNames,
     .powerNames = (char **)saPowerNames,

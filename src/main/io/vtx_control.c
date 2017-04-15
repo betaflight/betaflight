@@ -26,6 +26,9 @@
 #include "config/parameter_group_ids.h"
 
 #include "drivers/vtx_common.h"
+#include "drivers/buttons.h"
+#include "drivers/light_led.h"
+#include "drivers/system.h"
 
 #include "fc/config.h"
 #include "fc/runtime_config.h"
@@ -35,7 +38,7 @@
 #include "io/vtx_control.h"
 
 
-#ifdef VTX_CONTROL
+#if defined(VTX_CONTROL) && defined(VTX_COMMON)
 
 PG_REGISTER(vtxConfig_t, vtxConfig, PG_VTX_CONFIG, 1);
 
@@ -102,8 +105,53 @@ void vtxUpdateActivatedChannel(void)
     }
 }
 
+void vtxCycleBandOrChannel(const uint8_t bandStep, const uint8_t channelStep)
+{
+    uint8_t band = 0, channel = 0;
+    vtxDeviceCapability_t capability;
 
-#if 0
+    bool haveAllNeededInfo = vtxCommonGetBandChan(&band, &channel) && vtxCommonGetDeviceCapability(&capability);
+    if (!haveAllNeededInfo) {
+        return;
+    }
+
+    int newChannel = channel + channelStep;
+    if (newChannel > capability.channelCount) {
+        newChannel = 1;
+    } else if (newChannel < 1) {
+        newChannel = capability.channelCount;
+    }
+
+    int newBand = band + bandStep;
+    if (newBand > capability.bandCount) {
+        newBand = 1;
+    } else if (newBand < 1) {
+        newBand = capability.bandCount;
+    }
+
+    vtxCommonSetBandChan(newBand, newChannel);
+}
+
+void vtxCyclePower(const uint8_t powerStep)
+{
+    uint8_t power = 0;
+    vtxDeviceCapability_t capability;
+
+    bool haveAllNeededInfo = vtxCommonGetPowerIndex(&power) && vtxCommonGetDeviceCapability(&capability);
+    if (!haveAllNeededInfo) {
+        return;
+    }
+
+    int newPower = power + powerStep;
+    if (newPower >= capability.powerCount) {
+        newPower = 0;
+    } else if (newPower < 0) {
+        newPower = capability.powerCount;
+    }
+
+    vtxCommonSetPowerByIndex(newPower);
+}
+
 /**
  * Allow VTX channel/band/rf power/on-off and save via a single button.
  *
@@ -122,7 +170,7 @@ void vtxUpdateActivatedChannel(void)
  */
 void handleVTXControlButton(void)
 {
-#if defined(VTX) && defined(BUTTON_A_PIN)
+#if defined(VTX_RTC6705) && defined(BUTTON_A_PIN)
     bool buttonHeld;
     bool buttonWasPressed = false;
     uint32_t start = millis();
@@ -131,19 +179,17 @@ void handleVTXControlButton(void)
     uint8_t flashesDone = 0;
 
     uint8_t actionCounter = 0;
-    while ((buttonHeld = !digitalIn(BUTTON_A_PORT, BUTTON_A_PIN))) {
+    while ((buttonHeld = buttonAPressed())) {
         uint32_t end = millis();
 
         int32_t diff = cmp32(end, start);
         if (diff > 25 && diff <= 1000) {
-            actionCounter = 5;
-        } else if (diff > 1000 && diff <= 3000) {
             actionCounter = 4;
-        } else if (diff > 3000 && diff <= 5000) {
+        } else if (diff > 1000 && diff <= 3000) {
             actionCounter = 3;
-        } else if (diff > 5000 && diff <= 10000) {
+        } else if (diff > 3000 && diff <= 5000) {
             actionCounter = 2;
-        } else if (diff > 10000) {
+        } else if (diff > 5000) {
             actionCounter = 1;
         }
 
@@ -181,25 +227,21 @@ void handleVTXControlButton(void)
     LED1_OFF;
 
     switch(actionCounter) {
-        case 5:
-            vtxCycleChannel();
-            break;
         case 4:
-            vtxCycleBand();
+            vtxCycleBandOrChannel(0, +1);
             break;
         case 3:
-            vtxCycleRFPower();
+            vtxCycleBandOrChannel(+1, 0);
             break;
         case 2:
-            vtxTogglePower();
+            vtxCyclePower(+1);
             break;
         case 1:
-            vtxSaveState();
+            saveConfigAndNotify();
             break;
     }
 #endif
 }
-#endif
 
 #endif
 

@@ -65,7 +65,7 @@ void vtxCommonSetBandChan(uint8_t band, uint8_t chan)
     if (!vtxDevice)
         return;
 
-    if ((band > vtxDevice->numBand) || (chan > vtxDevice->numChan))
+    if ((band > vtxDevice->capability.bandCount) || (chan > vtxDevice->capability.channelCount))
         return;
     
     if (vtxDevice->vTable->setBandChan)
@@ -78,7 +78,7 @@ void vtxCommonSetPowerByIndex(uint8_t index)
     if (!vtxDevice)
         return;
 
-    if (index > vtxDevice->numPower)
+    if (index > vtxDevice->capability.powerCount)
         return;
     
     if (vtxDevice->vTable->setPowerByIndex)
@@ -126,5 +126,14 @@ bool vtxCommonGetPitmode(uint8_t *pOnoff)
         return vtxDevice->vTable->getPitmode(pOnoff);
     else
         return false;
+}
+
+bool vtxCommonGetDeviceCapability(vtxDeviceCapability_t *pVtxDeviceCapability)
+{
+    if (!vtxDevice)
+        return false;
+
+    memcpy(pVtxDeviceCapability, &vtxDevice->capability, sizeof(vtxDeviceCapability_t));
+    return true;
 }
 #endif
