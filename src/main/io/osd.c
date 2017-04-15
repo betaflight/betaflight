@@ -127,8 +127,8 @@ typedef struct statistic_s {
 
 static statistic_t stats;
 
-uint16_t refreshTimeout = 0;
-#define REFRESH_1S    12  // FIXME dependant on how frequently the task is scheduled
+uint32_t resumeRefreshAt = 0;
+#define REFRESH_1S    1000 * 1000
 
 static uint8_t armState;
 
@@ -613,7 +613,7 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
 
     displayResync(osdDisplayPort);
 
-    refreshTimeout = 4 * REFRESH_1S;
+    resumeRefreshAt = micros() + (4 * REFRESH_1S);
 }
 
 void osdUpdateAlarms(void)
@@ -795,17 +795,12 @@ static void osdShowStats(void)
         displayWrite(osdDisplayPort, 22, top++, buff);
     }
 #endif
-
-    refreshTimeout = 60 * REFRESH_1S;
 }
 
-// called when motors armed
-static void osdArmMotors(void)
+static void osdShowArmed(void)
 {
     displayClearScreen(osdDisplayPort);
     displayWrite(osdDisplayPort, 12, 7, "ARMED");
-    refreshTimeout = REFRESH_1S / 2;
-    osdResetStats();
 }
 
 static void osdRefresh(timeUs_t currentTimeUs)
@@ -815,10 +810,14 @@ static void osdRefresh(timeUs_t currentTimeUs)
 
     // detect arm/disarm
     if (armState != ARMING_FLAG(ARMED)) {
-        if (ARMING_FLAG(ARMED))
-            osdArmMotors(); // reset statistic etc
-        else
-            osdShowStats(); // show statistic
+        if (ARMING_FLAG(ARMED)) {
+            osdResetStats();
+            osdShowArmed();
+            resumeRefreshAt = currentTimeUs + (REFRESH_1S / 2);
+        } else {
+            osdShowStats();
+            resumeRefreshAt = currentTimeUs + (60 * REFRESH_1S);
+        }
 
         armState = ARMING_FLAG(ARMED);
     }
@@ -832,13 +831,18 @@ static void osdRefresh(timeUs_t currentTimeUs)
         lastSec = sec;
     }
 
-    if (refreshTimeout) {
-        if (IS_HI(THROTTLE) || IS_HI(PITCH)) // hide statistics
-            refreshTimeout = 1;
-        refreshTimeout--;
-        if (!refreshTimeout)
+    if (resumeRefreshAt) {
+        if (cmp32(currentTimeUs, resumeRefreshAt) < 0) {
+            // in timeout period, check sticks for activity to resume display.
+            if (IS_HI(THROTTLE) || IS_HI(PITCH)) {
+                resumeRefreshAt = 0;
+            }
+
+            return;
+        } else {
             displayClearScreen(osdDisplayPort);
-        return;
+            resumeRefreshAt = 0;
+        }
     }
 
     blinkState = (currentTimeUs / 200000) % 2;
@@ -873,8 +877,18 @@ void osdUpdate(timeUs_t currentTimeUs)
 #ifdef USE_MAX7456
 #define DRAW_FREQ_DENOM 5
 #else
-#define DRAW_FREQ_DENOM 10 // MWOSD @ 115200 baud
+#define DRAW_FREQ_DENOM 10 // MWOSD @ 115200 baud (
 #endif
+
+#ifdef USE_SLOW_MSP_DISPLAYPORT_RATE_WHEN_UNARMED
+    static uint32_t idlecounter = 0;
+    if (!ARMING_FLAG(ARMED)) {
+        if (idlecounter++ % 4 != 0) {
+            return;
+        }
+    }
+#endif
+
     if (counter++ % DRAW_FREQ_DENOM == 0) {
         osdRefresh(currentTimeUs);
     } else { // rest of time redraw screen 10 chars per idle so it doesn't lock the main idle
