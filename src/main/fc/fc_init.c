@@ -63,7 +63,6 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/exti.h"
 #include "drivers/max7456.h"
-#include "drivers/vtx_soft_spi_rtc6705.h"
 #include "drivers/vtx_rtc6705.h"
 #include "drivers/vtx_common.h"
 
@@ -454,16 +453,6 @@ void init(void)
     failsafeInit();
 
     rxInit();
-
-/*
- * VTX
- */
-
-#ifdef VTX_RTC6705SOFTSPI
-    rtc6705_soft_spi_init();
-    rtc6705_soft_spi_set_band_and_channel(vtxRTC6705Config()->band, vtxRTC6705Config()->channel);
-    rtc6705_soft_spi_set_rf_power(vtxRTC6705Config()->power);
-#endif
 
 /*
  * CMS, display devices and OSD

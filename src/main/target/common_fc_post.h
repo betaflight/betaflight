@@ -20,7 +20,7 @@
 #pragma once
 
 // Targets with built-in vtx do not need external vtx
-#if defined(VTX_RTC6705) || defined(VTX_RTC6705SOFTSPI)
+#if defined(VTX_RTC6705)
 # undef VTX_SMARTAUDIO
 # undef VTX_TRAMP
 #endif

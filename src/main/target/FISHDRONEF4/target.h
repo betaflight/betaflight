@@ -116,6 +116,7 @@
 #define SDCARD_DMA_CHANNEL                  DMA_Channel_0
 
 // *************** RTC6705 *************************
+#define VTX_RTC6705
 #define VTX_RTC6705SOFTSPI
 #define RTC6705_SPILE_PIN       PB3
 #define RTC6705_SPICLK_PIN      PB4

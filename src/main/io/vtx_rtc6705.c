@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#if (defined(VTX_RTC6705) && defined(VTX_CONTROL)) || defined(VTX_RTC6705SOFTSPI)
+#if defined(VTX_RTC6705) && defined(VTX_CONTROL)
 #include "build/build_config.h"
 
 #include "cms/cms.h"
@@ -48,11 +48,8 @@
 
 #include "build/debug.h"
 
-#ifdef VTX_RTC6705
 bool canUpdateVTX(void);
-#endif
 
-#if defined(VTX_RTC6705SOFTSPI) || defined(VTX_RTC6705)
 PG_REGISTER_WITH_RESET_TEMPLATE(vtxRTC6705Config_t, vtxRTC6705Config, PG_VTX_RTC6705_CONFIG, 0);
 
 PG_RESET_TEMPLATE(vtxRTC6705Config_t, vtxRTC6705Config,
@@ -60,14 +57,8 @@ PG_RESET_TEMPLATE(vtxRTC6705Config_t, vtxRTC6705Config,
     .channel = 1, //CH1
     .power = VTX_RTC6705_DEFAULT_POWER
 );
-#endif
 
-#ifndef VTX_RTC6705SOFTSPI
 #define WAIT_FOR_VTX while (!canUpdateVTX()) {}
-#else
-#define WAIT_FOR_VTX {}
-#endif
-
 
 #if defined(CMS) || defined(VTX_COMMON)
 #ifdef RTC6705_POWER_PIN

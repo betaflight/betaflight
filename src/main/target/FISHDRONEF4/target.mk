@@ -5,4 +5,4 @@ TARGET_SRC = \
             drivers/accgyro_spi_mpu6500.c \
             drivers/accgyro_mpu6500.c \
             drivers/max7456.c \
-            drivers/vtx_soft_spi_rtc6705.c
+            drivers/vtx_rtc6705_soft_spi.c

@@ -26,18 +26,18 @@
 
 #include <stdint.h>
 
-#define RTC6705_BAND_COUNT    5
-#define RTC6705_CHANNEL_COUNT 8
-#define RTC6705_RF_POWER_COUNT 2
+#define RTC6705_BAND_COUNT          5
+#define RTC6705_CHANNEL_COUNT       8
+#define RTC6705_RF_POWER_COUNT      2
 
-#define RTC6705_FREQ_MIN    5600
-#define RTC6705_FREQ_MAX    5950
+#define RTC6705_FREQ_MIN            5600
+#define RTC6705_FREQ_MAX            5950
 
 #define RTC6705_BOOT_DELAY 350 // milliseconds
 
 void rtc6705IOInit(void);
-void rtc6705SetChannel(uint8_t band, uint8_t channel);
-void rtc6705SetFreq(uint16_t freq);
-void rtc6705SetRFPower(uint8_t rf_power);
+void rtc6705SetChannel(const uint8_t band, const uint8_t channel);
+void rtc6705SetFreq(const uint16_t freq);
+void rtc6705SetRFPower(const uint8_t rf_power);
 void rtc6705Disable(void);
 void rtc6705Enable(void);

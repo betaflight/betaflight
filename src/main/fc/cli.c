@@ -869,7 +869,7 @@ static const clivalue_t valueTable[] = {
     { "debug_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DEBUG }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, debug_mode) },
 
 // PG_VTX_CONFIG
-#if defined(VTX_RTC6705) || defined(VTX_RTC6705SOFTSPI)
+#ifdef VTX_RTC6705
     { "vtx_band",                   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 5 }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, band) },
     { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 8 }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, channel) },
     { "vtx_power",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, RTC6705_POWER_COUNT }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, power) },
