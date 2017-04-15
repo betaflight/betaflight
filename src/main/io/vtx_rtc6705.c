@@ -68,6 +68,7 @@ PG_RESET_TEMPLATE(vtxRTC6705Config_t, vtxRTC6705Config,
 #define WAIT_FOR_VTX {}
 #endif
 
+
 #if defined(CMS) || defined(VTX_COMMON)
 #ifdef RTC6705_POWER_PIN
 static const char * const rtc6705PowerNames[RTC6705_POWER_COUNT] = {
@@ -79,7 +80,6 @@ static const char * const rtc6705PowerNames[RTC6705_POWER_COUNT] = {
 };
 #endif
 #endif
-
 
 #ifdef VTX_COMMON
 static vtxVTable_t rtc6705VTable;    // Forward
@@ -255,5 +255,75 @@ static vtxVTable_t rtc6705VTable = {
     .getPitmode = vtxRTC6705GetPitmode,
 };
 #endif // VTX_COMMON
+
+#ifdef CMS
+
+static uint8_t cmsx_vtxBand;
+static uint8_t cmsx_vtxChannel;
+static uint8_t cmsx_vtxPower;
+
+static const char * const rtc6705BandNames[] = {
+    "BOSCAM A",
+    "BOSCAM B",
+    "BOSCAM E",
+    "FATSHARK",
+    "RACEBAND",
+};
+
+static OSD_TAB_t entryVtxBand =         {&cmsx_vtxBand, 4, &rtc6705BandNames[0]};
+static OSD_UINT8_t entryVtxChannel =    {&cmsx_vtxChannel, 1, 8, 1};
+static OSD_TAB_t entryVtxPower =        {&cmsx_vtxPower, RTC6705_POWER_COUNT, &rtc6705PowerNames[0]};
+
+static void cmsx_Vtx_ConfigRead(void)
+{
+    cmsx_vtxBand = vtxRTC6705Config()->band - 1;
+    cmsx_vtxChannel = vtxRTC6705Config()->channel;
+    cmsx_vtxPower = vtxRTC6705Config()->power;
+}
+
+static void cmsx_Vtx_ConfigWriteback(void)
+{
+    vtxRTC6705ConfigMutable()->band = cmsx_vtxBand + 1;
+    vtxRTC6705ConfigMutable()->channel = cmsx_vtxChannel;
+    vtxRTC6705ConfigMutable()->power = cmsx_vtxPower;
+}
+
+static long cmsx_Vtx_onEnter(void)
+{
+    cmsx_Vtx_ConfigRead();
+
+    return 0;
+}
+
+static long cmsx_Vtx_onExit(const OSD_Entry *self)
+{
+    UNUSED(self);
+
+    cmsx_Vtx_ConfigWriteback();
+
+    return 0;
+}
+
+
+static OSD_Entry cmsx_menuVtxEntries[] =
+{
+    {"--- VTX ---", OME_Label, NULL, NULL, 0},
+    {"BAND", OME_TAB, NULL, &entryVtxBand, 0},
+    {"CHANNEL", OME_UINT8, NULL, &entryVtxChannel, 0},
+    {"POWER", OME_UINT8, NULL, &entryVtxPower, 0},
+    {"BACK", OME_Back, NULL, NULL, 0},
+    {NULL, OME_END, NULL, NULL, 0}
+};
+
+CMS_Menu cmsx_menuVtxRTC6705 = {
+    .GUARD_text = "MENUVTX",
+    .GUARD_type = OME_MENU,
+    .onEnter = cmsx_Vtx_onEnter,
+    .onExit= cmsx_Vtx_onExit,
+    .onGlobalExit = NULL,
+    .entries = cmsx_menuVtxEntries
+};
+
+#endif // CMS
 
 #endif // VTX_RTC6705
