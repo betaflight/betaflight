@@ -171,6 +171,9 @@
 #define CURRENT_METER_ADC_PIN   PA5
 #define RSSI_ADC_PIN            PB2
 
+#define OSD
+#define USE_OSD_OVER_MSP_DISPLAYPORT
+
 #define USE_ESC_SENSOR
 #define REMAP_TIM17_DMA
 
