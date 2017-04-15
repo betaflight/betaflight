@@ -566,16 +566,21 @@ void init(void)
 
     vtxCommonInit();
 
-#ifdef VTX_RTC6705
-    vtxRTC6705Init();
-#endif
-
 #ifdef VTX_SMARTAUDIO
     vtxSmartAudioInit();
 #endif
 
 #ifdef VTX_TRAMP
     vtxTrampInit();
+#endif
+
+#ifdef VTX_RTC6705
+#ifdef VTX_RTC6705OPTIONAL
+    if (!vtxCommonDeviceRegistered()) // external VTX takes precedence when configured.
+#endif
+    {
+        vtxRTC6705Init();
+    }
 #endif
 
 #endif // VTX_CONTROL

@@ -118,7 +118,8 @@
 #define SPI3_MISO_PIN           PB4  // NC
 #define SPI3_MOSI_PIN           PB5  // NC
 
-#define VTX_RTC6705             // It's possible to use SPI3 on an F4 EVO for RTC6705 VTX control.
+#define VTX_RTC6705
+#define VTX_RTC6705_OPTIONAL    // SPI3 on an F4 EVO may be used for RTC6705 VTX control.
 
 #define RTC6705_CS_PIN          SPI3_NSS_PIN
 #define RTC6705_SPI_INSTANCE    SPI3
