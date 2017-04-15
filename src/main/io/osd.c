@@ -838,6 +838,7 @@ static void osdRefresh(timeUs_t currentTimeUs)
                 resumeRefreshAt = 0;
             }
 
+            displayHeartbeat(osdDisplayPort);
             return;
         } else {
             displayClearScreen(osdDisplayPort);
@@ -851,7 +852,7 @@ static void osdRefresh(timeUs_t currentTimeUs)
     if (!displayIsGrabbed(osdDisplayPort)) {
         osdUpdateAlarms();
         osdDrawElements();
-        displayHeartbeat(osdDisplayPort); // heartbeat to stop Minim OSD going back into native mode
+        displayHeartbeat(osdDisplayPort);
 #ifdef OSD_CALLS_CMS
     } else {
         cmsUpdate(currentTimeUs);
