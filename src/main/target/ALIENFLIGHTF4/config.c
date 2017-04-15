@@ -22,51 +22,68 @@
 
 #include "common/axis.h"
 
+#include "config/config_master.h"
+#include "config/feature.h"
+
+#include "drivers/sensor.h"
 #include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
+#include "drivers/serial.h"
 
-#include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
 
 #include "flight/failsafe.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
 
-#include "io/serial.h"
+#include "hardware_revision.h"
 
 #include "rx/rx.h"
 
-#include "sensors/battery.h"
+#include "io/serial.h"
 
-#ifdef BRUSHED_MOTORS_PWM_RATE
-#undef BRUSHED_MOTORS_PWM_RATE
-#endif
+#include "sensors/battery.h"
+#include "sensors/sensors.h"
+
+#include "telemetry/telemetry.h"
+
+#define CURRENTOFFSET 2500                      // ACS712/714-30A - 0A = 2.5V
+#define CURRENTSCALE -667                       // ACS712/714-30A - 66.666 mV/A inverted mode
 
 #define BRUSHED_MOTORS_PWM_RATE 32000           // 32kHz
 
-// alternative defaults settings for BlueJayF4 targets
+// alternative defaults settings for AlienFlight targets
 void targetConfiguration(void)
 {
-    // alternative defaults settings for ALIENFLIGHTF1 and ALIENFLIGHTF3 targets
     serialConfigMutable()->portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
-    batteryConfigMutable()->vbatscale = 20;
-    rxConfigMutable()->spektrum_sat_bind = 5;
-    rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
+    batteryConfigMutable()->currentMeterOffset = CURRENTOFFSET;
+    batteryConfigMutable()->currentMeterScale = CURRENTSCALE;
 
     if (hardwareMotorType == MOTOR_BRUSHED) {
         motorConfigMutable()->motorPwmProtocol = PWM_TYPE_BRUSHED;
         motorConfigMutable()->motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
         motorConfigMutable()->minthrottle = 1000;
     }
+    if (hardwareRevision == AFF4_REV_1) {
+        rxConfigMutable()->serialrx_provider = SERIALRX_SPEKTRUM2048;
+        rxConfigMutable()->spektrum_sat_bind = 5;
+        rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
+    } else {
+        rxConfigMutable()->serialrx_provider = SERIALRX_SBUS;
+        rxConfigMutable()->sbus_inversion = 0;
+        serialConfigMutable()->portConfigs[3].functionMask = FUNCTION_TELEMETRY_FRSKY;
+        telemetryConfigMutable()->telemetry_inversion = 0;
+        featureConfigMutable()->enabledFeatures |= (FEATURE_CURRENT_METER | FEATURE_VBAT | FEATURE_TELEMETRY);
+    }
 
-    pidProfileMutable()->bank_mc.pid[ROLL].P = 36;
-    pidProfileMutable()->bank_mc.pid[PITCH].P = 36;
-    failsafeConfigMutable()->failsafe_delay = 2;
-    failsafeConfigMutable()->failsafe_off_delay = 0;
-    controlRateProfilesMutable(0)->rates[FD_PITCH] = CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_DEFAULT;
-    controlRateProfilesMutable(0)->rates[FD_ROLL] = CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_DEFAULT;
-    controlRateProfilesMutable(0)->rates[FD_YAW] = CONTROL_RATE_CONFIG_YAW_RATE_DEFAULT;
-    parseRcChannels("TAER1234");
+    pidProfileMutable()->bank_mc.pid[ROLL].P = 53;
+    pidProfileMutable()->bank_mc.pid[ROLL].I = 45;
+    pidProfileMutable()->bank_mc.pid[ROLL].D = 52;
+    pidProfileMutable()->bank_mc.pid[PITCH].P = 53;
+    pidProfileMutable()->bank_mc.pid[PITCH].I = 45;
+    pidProfileMutable()->bank_mc.pid[PITCH].D = 52;
+    pidProfileMutable()->bank_mc.pid[YAW].P = 64;
+    pidProfileMutable()->bank_mc.pid[YAW].D = 18;
 
     *customMotorMixerMutable(0) = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
     *customMotorMixerMutable(1) = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R

@@ -52,6 +52,7 @@
 #include "drivers/system.h"
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/compass/compass.h"
+#include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_mapping.h"
 #include "drivers/pwm_output.h"
 #include "drivers/pwm_rx.h"
@@ -168,30 +169,34 @@ void init(void)
 
     printfSupportInit();
 
+    systemInit();
+
+    // initialize IO (needed for all IO operations)
+    IOInitGlobal();
+
+#ifdef USE_HARDWARE_REVISION_DETECTION
+    detectHardwareRevision();
+#endif
+
+#ifdef BRUSHED_ESC_AUTODETECT
+    detectBrushedESC();
+#endif
+
     initEEPROM();
 
     ensureEEPROMContainsValidData();
     readEEPROM();
 
-    addBootlogEvent2(BOOT_EVENT_CONFIG_LOADED, BOOT_EVENT_FLAGS_NONE);
-    systemState |= SYSTEM_STATE_CONFIG_LOADED;
-
-    debugMode = systemConfig()->debug_mode;
-
-    systemInit();
-
     i2cSetOverclock(systemConfig()->i2c_overclock);
-
-    // initialize IO (needed for all IO operations)
-    IOInitGlobal();
 
 #ifdef USE_HARDWARE_PREBOOT_SETUP
     initialisePreBootHardware();
 #endif
 
-#ifdef USE_HARDWARE_REVISION_DETECTION
-    detectHardwareRevision();
-#endif
+    addBootlogEvent2(BOOT_EVENT_CONFIG_LOADED, BOOT_EVENT_FLAGS_NONE);
+    systemState |= SYSTEM_STATE_CONFIG_LOADED;
+
+    debugMode = systemConfig()->debug_mode;
 
     // Latch active features to be used for feature() in the remainder of init().
     latchActiveFeatures();
