@@ -82,18 +82,23 @@ typedef enum {
     CENTERED
 } rollPitchStatus_e;
 
-#define ROL_LO (1 << (2 * ROLL))
-#define ROL_CE (3 << (2 * ROLL))
-#define ROL_HI (2 << (2 * ROLL))
-#define PIT_LO (1 << (2 * PITCH))
-#define PIT_CE (3 << (2 * PITCH))
-#define PIT_HI (2 << (2 * PITCH))
-#define YAW_LO (1 << (2 * YAW))
-#define YAW_CE (3 << (2 * YAW))
-#define YAW_HI (2 << (2 * YAW))
-#define THR_LO (1 << (2 * THROTTLE))
-#define THR_CE (3 << (2 * THROTTLE))
-#define THR_HI (2 << (2 * THROTTLE))
+typedef enum {
+    ROL_LO = (1 << (2 * ROLL)),
+    ROL_CE = (3 << (2 * ROLL)),
+    ROL_HI = (2 << (2 * ROLL)),
+
+    PIT_LO = (1 << (2 * PITCH)),
+    PIT_CE = (3 << (2 * PITCH)),
+    PIT_HI = (2 << (2 * PITCH)),
+
+    YAW_LO = (1 << (2 * YAW)),
+    YAW_CE = (3 << (2 * YAW)),
+    YAW_HI = (2 << (2 * YAW)),
+
+    THR_LO = (1 << (2 * THROTTLE)),
+    THR_CE = (3 << (2 * THROTTLE)),
+    THR_HI = (2 << (2 * THROTTLE))
+} stickPositions_e;
 
 #define MAX_MODE_ACTIVATION_CONDITION_COUNT 20
 
@@ -156,6 +161,9 @@ typedef struct armingConfig_s {
 } armingConfig_t;
 
 PG_DECLARE(armingConfig_t, armingConfig);
+
+stickPositions_e getRcStickPositions(void);
+bool checkStickPosition(stickPositions_e stickPos);
 
 bool areUsingSticksToArm(void);
 

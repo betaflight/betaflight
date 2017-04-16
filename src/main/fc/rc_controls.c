@@ -69,6 +69,8 @@ static bool isUsingSticksToArm = true;
 static bool isUsingNAVModes = false;
 #endif
 
+stickPositions_e rcStickPositions;
+
 int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
 
 uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
@@ -130,26 +132,54 @@ rollPitchStatus_e calculateRollPitchCenterStatus(void)
     return NOT_CENTERED;
 }
 
+stickPositions_e getRcStickPositions(void)
+{
+    return rcStickPositions;
+}
+
+bool checkStickPosition(stickPositions_e stickPos)
+{
+    for (int i = 0; i < 4; i++) {
+        const uint32_t mask = (0x03 << i);
+        const stickPositions_e checkPos = stickPos & mask;
+        if ((checkPos != 0) && (checkPos != (rcStickPositions & mask))) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static void updateRcStickPositions(void)
+{
+    stickPositions_e tmp = 0;
+
+    tmp |= ((rcData[ROLL] > rxConfig()->mincheck) ? 0x02 : 0x00) << (ROLL * 2);
+    tmp |= ((rcData[ROLL] < rxConfig()->maxcheck) ? 0x01 : 0x00) << (ROLL * 2);
+
+    tmp |= ((rcData[PITCH] > rxConfig()->mincheck) ? 0x02 : 0x00) << (PITCH * 2);
+    tmp |= ((rcData[PITCH] < rxConfig()->maxcheck) ? 0x01 : 0x00) << (PITCH * 2);
+
+    tmp |= ((rcData[YAW] > rxConfig()->mincheck) ? 0x02 : 0x00) << (YAW * 2);
+    tmp |= ((rcData[YAW] < rxConfig()->maxcheck) ? 0x01 : 0x00) << (YAW * 2);
+
+    tmp |= ((rcData[THROTTLE] > rxConfig()->mincheck) ? 0x02 : 0x00) << (THROTTLE * 2);
+    tmp |= ((rcData[THROTTLE] < rxConfig()->maxcheck) ? 0x01 : 0x00) << (THROTTLE * 2);
+
+    rcStickPositions = tmp;
+}
+
 void processRcStickPositions(throttleStatus_e throttleStatus, bool disarm_kill_switch, bool fixed_wing_auto_arm)
 {
     static timeMs_t lastTickTimeMs = 0;
     static uint8_t rcDelayCommand;      // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
-    static uint8_t rcSticks;            // this hold sticks position for command combos
+    static uint32_t rcSticks;           // this hold sticks position for command combos
     static uint8_t rcDisarmTicks;       // this is an extra guard for disarming through switch to prevent that one frame can disarm it
-    uint8_t stTmp = 0;
-    int i;
-
     const timeMs_t currentTimeMs = millis();
 
-    // ------------------ STICKS COMMAND HANDLER --------------------
-    // checking sticks positions
-    for (i = 0; i < 4; i++) {
-        stTmp >>= 2;
-        if (rcData[i] > rxConfig()->mincheck)
-            stTmp |= 0x80;  // check for MIN
-        if (rcData[i] < rxConfig()->maxcheck)
-            stTmp |= 0x40;  // check for MAX
-    }
+    updateRcStickPositions();
+
+    uint32_t stTmp = getRcStickPositions();
     if (stTmp == rcSticks) {
         if (rcDelayCommand < 250) {
             if ((currentTimeMs - lastTickTimeMs) >= MIN_RC_TICK_INTERVAL_MS) {
@@ -159,6 +189,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus, bool disarm_kill_s
         }
     } else
         rcDelayCommand = 0;
+
     rcSticks = stTmp;
 
     // perform actions
@@ -223,7 +254,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus, bool disarm_kill_s
     }
 
     // actions during not armed
-    i = 0;
+    int i = 0;
 
     // GYRO calibration
     if (rcSticks == THR_LO + YAW_LO + PIT_LO + ROL_CE) {
