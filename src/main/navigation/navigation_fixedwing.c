@@ -127,8 +127,7 @@ void applyFixedWingAltitudeController(timeUs_t currentTimeUs)
         return;
     }
 
-    if (posControl.flags.hasValidPositionSensor) {
-        // If we have an update on vertical position data - update velocity and accel targets
+    if (posControl.flags.hasValidAltitudeSensor) {
         if (posControl.flags.verticalPositionDataNew) {
             const timeDelta_t deltaMicrosPositionUpdate = currentTimeUs - previousTimePositionUpdate;
             previousTimePositionUpdate = currentTimeUs;
