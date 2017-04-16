@@ -2462,11 +2462,11 @@ static void cliServo(char *cmdline)
             return;
         }
 
-        servo->min = arguments[1];
-        servo->max = arguments[2];
-        servo->middle = arguments[3];
-        servo->rate = arguments[5];
-        servo->forwardFromChannel = arguments[7];
+        servo->min = arguments[MIN];
+        servo->max = arguments[MAX];
+        servo->middle = arguments[MIDDLE];
+        servo->rate = arguments[RATE];
+        servo->forwardFromChannel = arguments[FORWARD];
     }
 }
 #endif
