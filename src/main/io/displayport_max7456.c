@@ -46,7 +46,7 @@ static int grab(displayPort_t *displayPort)
     UNUSED(displayPort);
 #ifdef OSD
     osdResetAlarms();
-    refreshTimeout = 0;
+    resumeRefreshAt = 0;
 #endif
 
     return 0;

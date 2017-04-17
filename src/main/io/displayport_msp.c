@@ -54,7 +54,9 @@ static int heartbeat(displayPort_t *displayPort)
 {
     uint8_t subcmd[] = { 0 };
 
-    // ensure display is not released by MW OSD software
+    // heartbeat is used to:
+    // a) ensure display is not released by MW OSD software
+    // b) prevent OSD Slave boards from displaying a 'disconnected' status.
     return output(displayPort, MSP_DISPLAYPORT, subcmd, sizeof(subcmd));
 }
 
