@@ -1714,9 +1714,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef VTX_COMMON
     case MSP_SET_VTX_CONFIG:
         {
-            uint16_t tmp = sbufReadU16(src);
-            uint8_t band    = (tmp / 8) + 1;
-            uint8_t channel = (tmp % 8) + 1;
+            const uint16_t tmp = sbufReadU16(src);
+            const uint8_t band    = (tmp / 8) + 1;
+            const uint8_t channel = (tmp % 8) + 1;
 
             if (vtxCommonGetDeviceType() != VTXDEV_UNKNOWN) {
                 uint8_t current_band=0, current_channel=0;
