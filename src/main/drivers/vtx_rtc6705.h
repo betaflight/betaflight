@@ -36,7 +36,7 @@
 #define RTC6705_BOOT_DELAY 350 // milliseconds
 
 void rtc6705IOInit(void);
-void rtc6705SetChannel(const uint8_t band, const uint8_t channel);
+void rtc6705SetBandAndChannel(const uint8_t band, const uint8_t channel);
 void rtc6705SetFreq(const uint16_t freq);
 void rtc6705SetRFPower(const uint8_t rf_power);
 void rtc6705Disable(void);

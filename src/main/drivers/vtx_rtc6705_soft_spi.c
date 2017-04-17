@@ -126,7 +126,7 @@ void rtc6705SetFreq(uint16_t channel_freq)
     rtc6705_write_register(1, (N << 7) | A);
 }
 
-void rtc6705SetChannel(const uint8_t band, const uint8_t channel)
+void rtc6705SetBandAndChannel(const uint8_t band, const uint8_t channel)
 {
     // band and channel are 1-based, not 0-based
 

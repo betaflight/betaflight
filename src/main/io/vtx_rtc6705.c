@@ -107,7 +107,7 @@ bool vtxRTC6705Init(void)
 static void vtxRTC6705Configure(void)
 {
     rtc6705SetRFPower(rtc6705Dev.power - 1);
-    rtc6705SetChannel(rtc6705Dev.band - 1, rtc6705Dev.channel - 1);
+    rtc6705SetBandAndChannel(rtc6705Dev.band - 1, rtc6705Dev.channel - 1);
 }
 
 #ifdef RTC6705_POWER_PIN
@@ -166,7 +166,7 @@ void vtxRTC6705SetBandAndChannel(uint8_t band, uint8_t channel)
 
     if (band && channel) {
         if (rtc6705Dev.power > 0) {
-            rtc6705SetChannel(band - 1, channel - 1);
+            rtc6705SetBandAndChannel(band - 1, channel - 1);
         }
 
         rtc6705Dev.band = band;

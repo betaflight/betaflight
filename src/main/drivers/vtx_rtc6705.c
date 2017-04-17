@@ -196,7 +196,7 @@ static void rtc6705Transfer(uint32_t command)
 /**
  * Set a band and channel
  */
-void rtc6705SetChannel(uint8_t band, uint8_t channel)
+void rtc6705SetBandAndChannel(uint8_t band, uint8_t channel)
 {
     band = constrain(band, 0, RTC6705_BAND_COUNT - 1);
     channel = constrain(channel, 0, RTC6705_CHANNEL_COUNT - 1);
