@@ -11,6 +11,9 @@
 
 # Where to find user code.
 USER_DIR = ../main
+ROOT = ../..
+
+include $(ROOT)/make/system-id.mk
 
 
 # specify which files that are included in the test in addition to the unittest file.
@@ -204,15 +207,25 @@ C_FLAGS = $(COMMON_FLAGS) \
 CXX_FLAGS = $(COMMON_FLAGS) \
 	-std=gnu++11
 
+ifdef CYGWIN
+# Avoid "__float128 is not supported on this target" error
+CXX_FLAGS += -D__STRICT_ANSI__
+endif
+
+
 # Compiler flags for coverage instrumentation
+ifndef CYGWIN
 COVERAGE_FLAGS := --coverage
+else
+# Avoid "undefined reference to `llvm_gcov_init'" error (disable coverage)
+COVERAGE_FLAGS :=
+endif
 
 C_FLAGS   += $(COVERAGE_FLAGS)
 CXX_FLAGS += $(COVERAGE_FLAGS)
 
 # Determine the OS and set up the parameter group linker flags accordingly
-UNAME := $(shell uname -s)
-ifeq ($(UNAME), Darwin)
+ifdef MACOSX
 PG_FLAGS = -Wl,-map,$(OBJECT_DIR)/$@.map
 else
 PG_FLAGS = -Wl,-T,$(TEST_DIR)/parameter_group.ld -Wl,-Map,$(OBJECT_DIR)/$@.map

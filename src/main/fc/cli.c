@@ -100,7 +100,8 @@ extern uint8_t __config_end;
 #include "io/ledstrip.h"
 #include "io/osd.h"
 #include "io/serial.h"
-#include "io/vtx.h"
+#include "io/vtx_rtc6705.h"
+#include "io/vtx_control.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -868,15 +869,10 @@ static const clivalue_t valueTable[] = {
     { "debug_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DEBUG }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, debug_mode) },
 
 // PG_VTX_CONFIG
-#ifdef VTX
-    { "vtx_band",                   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 5 }, PG_VTX_CONFIG, offsetof(vtxConfig_t, vtx_band) },
-    { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 8 }, PG_VTX_CONFIG, offsetof(vtxConfig_t, vtx_channel) },
-    { "vtx_mode",                   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 2 }, PG_VTX_CONFIG, offsetof(vtxConfig_t, vtx_mode) },
-    { "vtx_mhz",                    VAR_UINT16 | MASTER_VALUE, .config.minmax = { 5600, 5950 }, PG_VTX_CONFIG, offsetof(vtxConfig_t, vtx_mhz) },
-#endif
-#if defined(USE_RTC6705)
-    { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 39 }, PG_VTX_CONFIG, offsetof(vtxConfig_t, vtx_channel) },
-    { "vtx_power",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 1 }, PG_VTX_CONFIG, offsetof(vtxConfig_t, vtx_power) },
+#ifdef VTX_RTC6705
+    { "vtx_band",                   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 5 }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, band) },
+    { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 8 }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, channel) },
+    { "vtx_power",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, RTC6705_POWER_COUNT }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, power) },
 #endif
 
 // PG_VCD_CONFIG
@@ -969,7 +965,10 @@ static systemConfig_t systemConfigCopy;
 static beeperDevConfig_t beeperDevConfigCopy;
 static beeperConfig_t beeperConfigCopy;
 #endif
-#if defined(USE_RTC6705) || defined(VTX)
+#ifdef VTX_RTC6705
+static vtxRTC6705Config_t vtxRTC6705ConfigCopy;
+#endif
+#ifdef VTX_CONTROL
 static vtxConfig_t vtxConfigCopy;
 #endif
 #ifdef USE_MAX7456
@@ -1340,7 +1339,13 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
        ret.defaultConfig = beeperDevConfig();
        break;
 #endif
-#ifdef VTX
+#ifdef VTX_RTC6705
+    case PG_VTX_RTC6705_CONFIG:
+       ret.currentConfig = &vtxRTC6705ConfigCopy;
+       ret.defaultConfig = vtxRTC6705Config();
+       break;
+#endif
+#ifdef VTX_CONTROL
     case PG_VTX_CONFIG:
        ret.currentConfig = &vtxConfigCopy;
        ret.defaultConfig = vtxConfig();
@@ -2805,7 +2810,7 @@ static void cliFlashRead(char *cmdline)
 #endif
 #endif
 
-#if defined(USE_RTC6705) || defined(VTX)
+#ifdef VTX_CONTROL
 static void printVtx(uint8_t dumpMask, const vtxConfig_t *vtxConfig, const vtxConfig_t *vtxConfigDefault)
 {
     // print out vtx channel settings
@@ -2840,7 +2845,12 @@ static void printVtx(uint8_t dumpMask, const vtxConfig_t *vtxConfig, const vtxCo
     }
 }
 
-#ifdef VTX
+// FIXME remove these and use the VTX API
+#define VTX_BAND_MIN                            1
+#define VTX_BAND_MAX                            5
+#define VTX_CHANNEL_MIN                         1
+#define VTX_CHANNEL_MAX                         8
+
 static void cliVtx(char *cmdline)
 {
     int i, val = 0;
@@ -2865,6 +2875,7 @@ static void cliVtx(char *cmdline)
             ptr = nextArg(ptr);
             if (ptr) {
                 val = atoi(ptr);
+                // FIXME Use VTX API to get min/max
                 if (val >= VTX_BAND_MIN && val <= VTX_BAND_MAX) {
                     cac->band = val;
                     validArgumentCount++;
@@ -2873,6 +2884,7 @@ static void cliVtx(char *cmdline)
             ptr = nextArg(ptr);
             if (ptr) {
                 val = atoi(ptr);
+                // FIXME Use VTX API to get min/max
                 if (val >= VTX_CHANNEL_MIN && val <= VTX_CHANNEL_MAX) {
                     cac->channel = val;
                     validArgumentCount++;
@@ -2888,8 +2900,8 @@ static void cliVtx(char *cmdline)
         }
     }
 }
-#endif // VTX
-#endif
+
+#endif // VTX_CONTROL
 
 static void printName(uint8_t dumpMask, const systemConfig_t *systemConfig)
 {
@@ -4135,7 +4147,7 @@ static void printConfig(char *cmdline, bool doDiff)
         cliPrintHashLine("rxrange");
         printRxRange(dumpMask, rxChannelRangeConfigsCopy, rxChannelRangeConfigs(0));
 
-#if defined(USE_RTC6705) || defined(VTX)
+#ifdef VTX_CONTROL
         cliPrintHashLine("vtx");
         printVtx(dumpMask, &vtxConfigCopy, vtxConfig());
 #endif
@@ -4306,7 +4318,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("tasks", "show task stats", NULL, cliTasks),
 #endif
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
-#ifdef VTX
+#ifdef VTX_CONTROL
     CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
 #endif
 };

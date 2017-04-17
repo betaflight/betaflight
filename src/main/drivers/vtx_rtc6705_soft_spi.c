@@ -20,14 +20,23 @@
 
 #include "platform.h"
 
-#ifdef USE_RTC6705
+#if defined(VTX_RTC6705) && defined(VTX_RTC6705SOFTSPI)
 
 #include "bus_spi.h"
 #include "io.h"
 #include "system.h"
 #include "light_led.h"
 
-#include "vtx_soft_spi_rtc6705.h"
+#include "vtx_rtc6705.h"
+
+#define DP_5G_MASK                  0x7000
+#define PA5G_BS_MASK                0x0E00
+#define PA5G_PW_MASK                0x0180
+#define PD_Q5G_MASK                 0x0040
+#define QI_5G_MASK                  0x0038
+#define PA_BS_MASK                  0x0007
+
+#define PA_CONTROL_DEFAULT          0x4FBD
 
 #define RTC6705_SPICLK_ON     IOHi(rtc6705ClkPin)
 #define RTC6705_SPICLK_OFF    IOLo(rtc6705ClkPin)
@@ -47,13 +56,11 @@ const uint16_t vtx_freq[] =
     5658, 5695, 5732, 5769, 5806, 5843, 5880, 5917, // RaceBand
 };
 
-uint16_t current_vtx_channel;
-
 static IO_t rtc6705DataPin = IO_NONE;
 static IO_t rtc6705LePin = IO_NONE;
 static IO_t rtc6705ClkPin = IO_NONE;
 
-void rtc6705_soft_spi_init(void)
+void rtc6705IOInit(void)
 {
     rtc6705DataPin = IOGetByTag(IO_TAG(RTC6705_SPIDATA_PIN));
     rtc6705LePin   = IOGetByTag(IO_TAG(RTC6705_SPILE_PIN));
@@ -107,10 +114,8 @@ static void rtc6705_write_register(uint8_t addr, uint32_t data)
     RTC6705_SPILE_ON;
 }
 
-
-void rtc6705_soft_spi_set_channel(uint16_t channel_freq)
+void rtc6705SetFreq(uint16_t channel_freq)
 {
-
     uint32_t freq = (uint32_t)channel_freq * 1000;
     uint32_t N, A;
 
@@ -121,9 +126,31 @@ void rtc6705_soft_spi_set_channel(uint16_t channel_freq)
     rtc6705_write_register(1, (N << 7) | A);
 }
 
-void rtc6705_soft_spi_set_rf_power(uint8_t reduce_power)
+void rtc6705SetBandAndChannel(const uint8_t band, const uint8_t channel)
 {
-    rtc6705_write_register(7, (reduce_power ? (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK)) : PA_CONTROL_DEFAULT));
+    // band and channel are 1-based, not 0-based
+
+    // example for raceband/ch8:
+    // (5 - 1) * 8 + (8 - 1)
+    //    4    * 8 +    7
+    //     32 + 7 = 39
+    uint8_t freqIndex = ((band - 1) * RTC6705_BAND_COUNT) + (channel - 1);
+
+    uint16_t freq = vtx_freq[freqIndex];
+    rtc6705SetFreq(freq);
+}
+
+void rtc6705SetRFPower(const uint8_t rf_power)
+{
+    rtc6705_write_register(7, (rf_power ? PA_CONTROL_DEFAULT : (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK))));
+}
+
+void rtc6705Disable(void)
+{
+}
+
+void rtc6705Enable(void)
+{
 }
 
 #endif

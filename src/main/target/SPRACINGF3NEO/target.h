@@ -101,12 +101,18 @@
 #define SPI3_MISO_PIN           PB4
 #define SPI3_MOSI_PIN           PB5
 
-#define VTX
-#define RTC6705_CS_GPIO         GPIOF
-#define RTC6705_CS_PIN          GPIO_Pin_4
-#define RTC6705_SPI_INSTANCE    SPI3
+#define VTX_RTC6705
+#define VTX_RTC6705_OPTIONAL    // VTX/OSD board is OPTIONAL
 
+#undef VTX_SMARTAUDIO           // Disabled due to flash size
+#undef VTX_TRAMP                // Disabled due to flash size
+
+#define RTC6705_CS_PIN          PF4
+#define RTC6705_SPI_INSTANCE    SPI3
 #define RTC6705_POWER_PIN       PC3
+
+#define USE_RTC6705_CLK_HACK
+#define RTC6705_CLK_PIN         SPI3_SCK_PIN
 
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
@@ -115,6 +121,8 @@
 #define MAX7456_DMA_CHANNEL_TX              DMA2_Channel2
 #define MAX7456_DMA_CHANNEL_RX              DMA2_Channel1
 #define MAX7456_DMA_IRQ_HANDLER_ID          DMA2_CH1_HANDLER
+
+#define SPI_SHARED_MAX7456_AND_RTC6705
 
 #define USE_SDCARD
 #define USE_SDCARD_SPI2

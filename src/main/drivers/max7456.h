@@ -45,7 +45,4 @@ void    max7456WriteChar(uint8_t x, uint8_t y, uint8_t c);
 void    max7456ClearScreen(void);
 void    max7456RefreshAll(void);
 uint8_t* max7456GetScreenBuffer(void);
-
-#ifdef MAX7456_DMA_CHANNEL_TX
-bool max7456DmaInProgres(void);
-#endif // MAX7456_DMA_CHANNEL_TX
+bool    max7456DmaInProgress(void);

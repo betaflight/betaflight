@@ -83,7 +83,7 @@
 #include "io/osd.h"
 #include "io/serial.h"
 #include "io/servos.h"
-#include "io/vtx.h"
+#include "io/vtx_control.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"

@@ -15,12 +15,6 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Touch up configuration
-
 #pragma once
 
-// Targets with built-in vtx do not need external vtx
-#if defined(VTX_RTC6705) && !defined(VTX_RTC6705_OPTIONAL)
-# undef VTX_SMARTAUDIO
-# undef VTX_TRAMP
-#endif
+extern CMS_Menu cmsx_menuVtxRTC6705;
