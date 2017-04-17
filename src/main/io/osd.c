@@ -318,7 +318,7 @@ static void osdDrawSingleElement(uint8_t item)
         case OSD_VTX_CHANNEL:
         {
             uint8_t band=0, channel=0;
-            vtxCommonGetBandChan(&band,&channel);
+            vtxCommonGetBandAndChannel(&band,&channel);
 
             uint8_t power = 0;
             vtxCommonGetPowerIndex(&power);

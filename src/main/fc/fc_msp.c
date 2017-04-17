@@ -1296,13 +1296,13 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
             if (deviceType != VTXDEV_UNKNOWN) {
 
                 uint8_t band=0, channel=0;
-                vtxCommonGetBandChan(&band,&channel);
+                vtxCommonGetBandAndChannel(&band,&channel);
                 
                 uint8_t powerIdx=0; // debug
                 vtxCommonGetPowerIndex(&powerIdx);
                 
                 uint8_t pitmode=0;
-                vtxCommonGetPitmode(&pitmode);
+                vtxCommonGetPitMode(&pitmode);
                 
                 sbufWriteU8(dst, deviceType);
                 sbufWriteU8(dst, band);
@@ -1720,9 +1720,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
             if (vtxCommonGetDeviceType() != VTXDEV_UNKNOWN) {
                 uint8_t current_band=0, current_channel=0;
-                vtxCommonGetBandChan(&current_band,&current_channel);
+                vtxCommonGetBandAndChannel(&current_band,&current_channel);
                 if ((current_band != band) || (current_channel != channel))
-                    vtxCommonSetBandChan(band,channel);
+                    vtxCommonSetBandAndChannel(band,channel);
 
                 if (sbufBytesRemaining(src) < 2)
                     break;
@@ -1735,9 +1735,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             
                 uint8_t pitmode = sbufReadU8(src);
                 uint8_t current_pitmode = 0;
-                vtxCommonGetPitmode(&current_pitmode);
+                vtxCommonGetPitMode(&current_pitmode);
                 if (current_pitmode != pitmode)
-                    vtxCommonSetPitmode(pitmode);
+                    vtxCommonSetPitMode(pitmode);
             }
         }
         break;

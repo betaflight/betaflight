@@ -80,7 +80,7 @@ static vtxDevice_t vtxRTC6705 = {
     .capability.channelCount = 8,
     .capability.powerCount = RTC6705_POWER_COUNT,
     .bandNames = (char **)vtx58BandNames,
-    .chanNames = (char **)vtx58ChannelNames,
+    .channelNames = (char **)vtx58ChannelNames,
     .powerNames = (char **)rtc6705PowerNames,
 };
 #endif
@@ -160,7 +160,7 @@ bool vtxRTC6705IsReady(void)
     return true;
 }
 
-void vtxRTC6705SetBandChan(uint8_t band, uint8_t channel)
+void vtxRTC6705SetBandAndChannel(uint8_t band, uint8_t channel)
 {
     WAIT_FOR_VTX;
 
@@ -214,16 +214,16 @@ void vtxRTC6705SetPowerByIndex(uint8_t index)
 #endif
 }
 
-void vtxRTC6705SetPitmode(uint8_t onoff)
+void vtxRTC6705SetPitMode(uint8_t onoff)
 {
     UNUSED(onoff);
     return;
 }
 
-bool vtxRTC6705GetBandChan(uint8_t *pBand, uint8_t *pChan)
+bool vtxRTC6705GetBandAndChannel(uint8_t *pBand, uint8_t *pChannel)
 {
     *pBand = rtc6705Dev.band;
-    *pChan = rtc6705Dev.channel;
+    *pChannel = rtc6705Dev.channel;
     return true;
 }
 
@@ -233,7 +233,7 @@ bool vtxRTC6705GetPowerIndex(uint8_t *pIndex)
     return true;
 }
 
-bool vtxRTC6705GetPitmode(uint8_t *pOnOff)
+bool vtxRTC6705GetPitMode(uint8_t *pOnOff)
 {
     UNUSED(pOnOff);
     return false;
@@ -243,12 +243,12 @@ static vtxVTable_t rtc6705VTable = {
     .process = vtxRTC6705Process,
     .getDeviceType = vtxRTC6705GetDeviceType,
     .isReady = vtxRTC6705IsReady,
-    .setBandChan = vtxRTC6705SetBandChan,
+    .setBandAndChannel = vtxRTC6705SetBandAndChannel,
     .setPowerByIndex = vtxRTC6705SetPowerByIndex,
-    .setPitmode = vtxRTC6705SetPitmode,
-    .getBandChan = vtxRTC6705GetBandChan,
+    .setPitMode = vtxRTC6705SetPitMode,
+    .getBandAndChannel = vtxRTC6705GetBandAndChannel,
     .getPowerIndex = vtxRTC6705GetPowerIndex,
-    .getPitmode = vtxRTC6705GetPitmode,
+    .getPitMode = vtxRTC6705GetPitMode,
 };
 #endif // VTX_COMMON
 

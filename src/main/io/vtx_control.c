@@ -57,8 +57,8 @@ static void vtxUpdateBandAndChannel(uint8_t bandStep, uint8_t channelStep)
 
     if (!locked) {
         uint8_t band = 0, channel = 0;
-        vtxCommonGetBandChan(&band, &channel);
-        vtxCommonSetBandChan(band + bandStep, channel + channelStep);
+        vtxCommonGetBandAndChannel(&band, &channel);
+        vtxCommonSetBandAndChannel(band + bandStep, channel + channelStep);
     }
 }
 
@@ -98,7 +98,7 @@ void vtxUpdateActivatedChannel(void)
                 && index != lastIndex) {
                 lastIndex = index;
 
-                vtxCommonSetBandChan(vtxChannelActivationCondition->band, vtxChannelActivationCondition->channel);
+                vtxCommonSetBandAndChannel(vtxChannelActivationCondition->band, vtxChannelActivationCondition->channel);
                 break;
             }
         }
@@ -110,7 +110,7 @@ void vtxCycleBandOrChannel(const uint8_t bandStep, const uint8_t channelStep)
     uint8_t band = 0, channel = 0;
     vtxDeviceCapability_t capability;
 
-    bool haveAllNeededInfo = vtxCommonGetBandChan(&band, &channel) && vtxCommonGetDeviceCapability(&capability);
+    bool haveAllNeededInfo = vtxCommonGetBandAndChannel(&band, &channel) && vtxCommonGetDeviceCapability(&capability);
     if (!haveAllNeededInfo) {
         return;
     }
@@ -129,7 +129,7 @@ void vtxCycleBandOrChannel(const uint8_t bandStep, const uint8_t channelStep)
         newBand = capability.bandCount;
     }
 
-    vtxCommonSetBandChan(newBand, newChannel);
+    vtxCommonSetBandAndChannel(newBand, newChannel);
 }
 
 void vtxCyclePower(const uint8_t powerStep)
