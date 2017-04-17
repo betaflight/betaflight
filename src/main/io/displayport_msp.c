@@ -44,9 +44,20 @@ PG_REGISTER(displayPortProfile_t, displayPortProfileMsp, PG_DISPLAY_PORT_MSP_CON
 
 static displayPort_t mspDisplayPort;
 
+#ifdef USE_CLI
+extern uint8_t cliMode;
+#endif
+
 static int output(displayPort_t *displayPort, uint8_t cmd, uint8_t *buf, int len)
 {
     UNUSED(displayPort);
+
+#ifdef USE_CLI
+    // FIXME There should be no dependency on the CLI but mspSerialPush doesn't check for cli mode, and can't because it also shouldn't have a dependency on the CLI.
+    if (cliMode) {
+        return 0;
+    }
+#endif
     return mspSerialPush(cmd, buf, len);
 }
 
