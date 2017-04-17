@@ -91,7 +91,7 @@ typedef struct rtc6705Dev_s {
     uint8_t power; // 0-(RTC6705_POWER_COUNT-1)
 } rtc6705Dev_t;
 
-rtc6705Dev_t rtc6705Dev;
+static rtc6705Dev_t rtc6705Dev;
 
 
 bool vtxRTC6705Init(void)
