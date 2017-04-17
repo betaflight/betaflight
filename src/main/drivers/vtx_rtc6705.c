@@ -111,8 +111,8 @@ static IO_t vtxCLKPin       = IO_NONE;
 #define RTC6705_RW_CONTROL_BIT      (1 << 4)
 #define RTC6705_ADDRESS             (0x07)
 
-#define ENABLE_VTX_POWER       IOLo(vtxPowerPin)
-#define DISABLE_VTX_POWER      IOHi(vtxPowerPin)
+#define ENABLE_VTX_POWER()          IOLo(vtxPowerPin)
+#define DISABLE_VTX_POWER()         IOHi(vtxPowerPin)
 
 
 // Define variables
@@ -248,14 +248,14 @@ void rtc6705SetRFPower(uint8_t rf_power)
 void rtc6705Disable(void)
 {
 #ifdef RTC6705_POWER_PIN
-    DISABLE_VTX_POWER;
+    DISABLE_VTX_POWER();
 #endif
 }
 
 void rtc6705Enable(void)
 {
 #ifdef RTC6705_POWER_PIN
-    ENABLE_VTX_POWER;
+    ENABLE_VTX_POWER();
 #endif
 }
 
