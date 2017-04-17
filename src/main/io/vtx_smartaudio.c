@@ -81,7 +81,7 @@ static const char * const saPowerNames[] = {
 #endif
 
 #ifdef VTX_COMMON
-static vtxVTable_t saVTable;    // Forward
+static const vtxVTable_t saVTable;    // Forward
 static vtxDevice_t vtxSmartAudio = {
     .vTable = &saVTable,
     .capability.bandCount = 5,
@@ -688,7 +688,6 @@ bool vtxSmartAudioInit()
         return false;
     }
 
-    vtxSmartAudio.vTable = &saVTable;
     vtxCommonRegisterDevice(&vtxSmartAudio);
 
     return true;
@@ -834,7 +833,7 @@ bool vtxSAGetPitMode(uint8_t *pOnOff)
     return true;
 }
 
-static vtxVTable_t saVTable = {
+static const vtxVTable_t saVTable = {
     .process = vtxSAProcess,
     .getDeviceType = vtxSAGetDeviceType,
     .isReady = vtxSAIsReady,

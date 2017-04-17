@@ -89,14 +89,14 @@ static IO_t vtxPowerPin     = IO_NONE;
 #endif
 static IO_t vtxCSPin        = IO_NONE;
 
-#define DISABLE_RTC6705 IOHi(vtxCSPin)
+#define DISABLE_RTC6705()   IOHi(vtxCSPin)
 
 #ifdef USE_RTC6705_CLK_HACK
 static IO_t vtxCLKPin       = IO_NONE;
 // HACK for missing pull up on CLK line - drive the CLK high *before* enabling the CS pin.
-#define ENABLE_RTC6705  {IOHi(vtxCLKPin); delayMicroseconds(5); IOLo(vtxCSPin); }
+#define ENABLE_RTC6705()    {IOHi(vtxCLKPin); delayMicroseconds(5); IOLo(vtxCSPin); }
 #else
-#define ENABLE_RTC6705  IOLo(vtxCSPin)
+#define ENABLE_RTC6705()    IOLo(vtxCSPin)
 #endif
 
 #define DP_5G_MASK          0x7000 // b111000000000000
@@ -152,7 +152,7 @@ void rtc6705IOInit(void)
     vtxPowerPin = IOGetByTag(IO_TAG(RTC6705_POWER_PIN));
     IOInit(vtxPowerPin, OWNER_VTX, 0);
 
-    DISABLE_VTX_POWER;
+    DISABLE_VTX_POWER();
     IOConfigGPIO(vtxPowerPin, IOCFG_OUT_PP);
 #endif
 
@@ -164,7 +164,7 @@ void rtc6705IOInit(void)
     vtxCSPin = IOGetByTag(IO_TAG(RTC6705_CS_PIN));
     IOInit(vtxCSPin, OWNER_VTX, 0);
 
-    DISABLE_RTC6705;
+    DISABLE_RTC6705();
     // GPIO bit is enabled so here so the output is not pulled low when the GPIO is set in output mode.
     // Note: It's critical to ensure that incorrect signals are not sent to the VTX.
     IOConfigGPIO(vtxCSPin, IOCFG_OUT_PP);
@@ -179,7 +179,7 @@ static void rtc6705Transfer(uint32_t command)
 {
     command = reverse32(command);
 
-    ENABLE_RTC6705;
+    ENABLE_RTC6705();
 
     spiTransferByte(RTC6705_SPI_INSTANCE, (command >> 24) & 0xFF);
     spiTransferByte(RTC6705_SPI_INSTANCE, (command >> 16) & 0xFF);
@@ -188,7 +188,7 @@ static void rtc6705Transfer(uint32_t command)
 
     delayMicroseconds(2);
 
-    DISABLE_RTC6705;
+    DISABLE_RTC6705();
 
     delayMicroseconds(2);
 }

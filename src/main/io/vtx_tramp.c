@@ -51,8 +51,9 @@ static const char * const trampPowerNames[] = {
 #endif
 
 #if defined(VTX_COMMON)
+static const vtxVTable_t trampVTable; // forward
 static vtxDevice_t vtxTramp = {
-    .vTable = NULL,
+    .vTable = &trampVTable,
     .capability.bandCount = 5,
     .capability.channelCount = 8,
     .capability.powerCount = sizeof(trampPowerTable),
@@ -696,7 +697,7 @@ bool vtxTrampGetPitMode(uint8_t *pOnOff)
     return true;
 }
 
-static vtxVTable_t trampVTable = {
+static const vtxVTable_t trampVTable = {
     .process = vtxTrampProcess,
     .getDeviceType = vtxTrampGetDeviceType,
     .isReady = vtxTrampIsReady,
@@ -723,7 +724,6 @@ bool vtxTrampInit(void)
     }
 
 #if defined(VTX_COMMON)
-    vtxTramp.vTable = &trampVTable;
     vtxCommonRegisterDevice(&vtxTramp);
 #endif
     
