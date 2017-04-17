@@ -108,6 +108,9 @@ static IO_t vtxCLKPin       = IO_NONE;
 
 #define PA_CONTROL_DEFAULT  0x4FBD
 
+#define RTC6705_RW_CONTROL_BIT      (1 << 4)
+#define RTC6705_ADDRESS             (0x07)
+
 #define ENABLE_VTX_POWER       IOLo(vtxPowerPin)
 #define DISABLE_VTX_POWER      IOHi(vtxPowerPin)
 
@@ -234,8 +237,8 @@ void rtc6705SetRFPower(uint8_t rf_power)
 
     spiSetDivisor(RTC6705_SPI_INSTANCE, SPI_CLOCK_SLOW);
 
-    uint32_t val_hex = 0x10; // write
-    val_hex |= 7; // address
+    uint32_t val_hex = RTC6705_RW_CONTROL_BIT; // write
+    val_hex |= RTC6705_ADDRESS; // address
     uint32_t data = rf_power == 0 ? (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK)) : PA_CONTROL_DEFAULT;
     val_hex |= data << 5; // 4 address bits and 1 rw bit.
 
