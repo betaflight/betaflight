@@ -44,10 +44,10 @@ typedef struct vtxDevice_s {
     char **chanNames;    // char *chanNames[channelCount]
     char **powerNames;   // char *powerNames[powerCount]
 
-    uint8_t curBand; // Band = 1, 1-based
-    uint8_t curChan; // CH1 = 1, 1-based
-    uint8_t curPowerIndex; // Lowest/Off = 0
-    uint8_t curPitState; // 0 = non-PIT, 1 = PIT
+    uint8_t band; // Band = 1, 1-based
+    uint8_t channel; // CH1 = 1, 1-based
+    uint8_t powerIndex; // Lowest/Off = 0
+    uint8_t pitMode; // 0 = non-PIT, 1 = PIT
 
 } vtxDevice_t;
 

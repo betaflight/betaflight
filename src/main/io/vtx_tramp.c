@@ -82,12 +82,12 @@ uint32_t trampRFFreqMax;
 uint32_t trampRFPowerMax;
 
 uint32_t trampCurFreq = 0;
-uint8_t trampCurBand = 0;
-uint8_t trampCurChan = 0;
-uint16_t trampCurPower = 0;       // Actual transmitting power
-uint16_t trampCurConfigPower = 0; // Configured transmitting power
-int16_t trampCurTemp = 0;
-uint8_t trampCurPitmode = 0;
+uint8_t trampBand = 0;
+uint8_t trampChannel = 0;
+uint16_t trampPower = 0;       // Actual transmitting power
+uint16_t trampConfiguredPower = 0; // Configured transmitting power
+int16_t trampTemperature = 0;
+uint8_t trampPitMode = 0;
 
 // Maximum number of requests sent to try a config change
 #define TRAMP_MAX_RETRIES 2
@@ -151,7 +151,7 @@ void trampSetBandChan(uint8_t band, uint8_t chan)
 void trampSetRFPower(uint16_t level)
 {
     trampConfPower = level;
-    if(trampConfPower != trampCurPower)
+    if(trampConfPower != trampPower)
         trampPowerRetries = TRAMP_MAX_RETRIES;
 }
 
@@ -200,13 +200,13 @@ char trampHandleResponse(void)
             uint16_t freq = trampRespBuffer[2]|(trampRespBuffer[3] << 8);
             if(freq != 0) {
                 trampCurFreq = freq;
-                trampCurConfigPower = trampRespBuffer[4]|(trampRespBuffer[5] << 8);
-                trampCurPitmode = trampRespBuffer[7];
-                trampCurPower = trampRespBuffer[8]|(trampRespBuffer[9] << 8);
-                vtx58_Freq2Bandchan(trampCurFreq, &trampCurBand, &trampCurChan);
+                trampConfiguredPower = trampRespBuffer[4]|(trampRespBuffer[5] << 8);
+                trampPitMode = trampRespBuffer[7];
+                trampPower = trampRespBuffer[8]|(trampRespBuffer[9] << 8);
+                vtx58_Freq2Bandchan(trampCurFreq, &trampBand, &trampChannel);
 
                 if(trampConfFreq == 0)  trampConfFreq  = trampCurFreq;
-                if(trampConfPower == 0) trampConfPower = trampCurPower;
+                if(trampConfPower == 0) trampConfPower = trampPower;
                 return 'v';
             }
 
@@ -218,7 +218,7 @@ char trampHandleResponse(void)
         {
             uint16_t temp = (int16_t)(trampRespBuffer[6]|(trampRespBuffer[7] << 8));
             if(temp != 0) {
-                trampCurTemp = temp;
+                trampTemperature = temp;
                 return 's';
             }
         }
@@ -382,7 +382,7 @@ void vtxTrampProcess(uint32_t currentTimeUs)
 #endif
                 done = false;
             }
-            else if (trampConfPower && trampPowerRetries && (trampConfPower != trampCurConfigPower)) {
+            else if (trampConfPower && trampPowerRetries && (trampConfPower != trampConfiguredPower)) {
                 trampSendRFPower(trampConfPower);
                 trampPowerRetries--;
 #ifdef TRAMP_DEBUG
@@ -402,7 +402,7 @@ void vtxTrampProcess(uint32_t currentTimeUs)
                 trampStatus = TRAMP_STATUS_ONLINE;
                 // reset configuration value in case it failed (no more retries)
                 trampConfFreq  = trampCurFreq;
-                trampConfPower = trampCurPower;
+                trampConfPower = trampPower;
                 trampFreqRetries = trampPowerRetries = 0;
             }
         }
@@ -443,8 +443,8 @@ static void trampCmsUpdateStatusString(void)
 {
     trampCmsStatusString[0] = '*';
     trampCmsStatusString[1] = ' ';
-    trampCmsStatusString[2] = vtx58BandLetter[trampCurBand];
-    trampCmsStatusString[3] = vtx58ChannelNames[trampCurChan][0];
+    trampCmsStatusString[2] = vtx58BandLetter[trampBand];
+    trampCmsStatusString[3] = vtx58ChannelNames[trampChannel][0];
     trampCmsStatusString[4] = ' ';
 
     if (trampCurFreq)
@@ -452,8 +452,8 @@ static void trampCmsUpdateStatusString(void)
     else
         tfp_sprintf(&trampCmsStatusString[5], "----");
 
-    if (trampCurPower) {
-        tfp_sprintf(&trampCmsStatusString[9], " %c%3d", (trampCurPower == trampCurConfigPower) ? ' ' : '*', trampCurPower);
+    if (trampPower) {
+        tfp_sprintf(&trampCmsStatusString[9], " %c%3d", (trampPower == trampConfiguredPower) ? ' ' : '*', trampPower);
     }
     else
         tfp_sprintf(&trampCmsStatusString[9], " ----");
@@ -520,7 +520,7 @@ static long trampCmsConfigPower(displayPort_t *pDisp, const void *self)
     return 0;
 }
 
-static OSD_INT16_t trampCmsEntTemp = { &trampCurTemp, -100, 300, 0 };
+static OSD_INT16_t trampCmsEntTemp = { &trampTemperature, -100, 300, 0 };
 
 static const char * const trampCmsPitmodeNames[] = {
     "---", "OFF", "ON "
@@ -560,15 +560,15 @@ static long trampCmsCommence(displayPort_t *pDisp, const void *self)
 
 static void trampCmsInitSettings()
 {
-    if(trampCurBand > 0) trampCmsBand = trampCurBand;
-    if(trampCurChan > 0) trampCmsChan = trampCurChan;
+    if(trampBand > 0) trampCmsBand = trampBand;
+    if(trampChannel > 0) trampCmsChan = trampChannel;
 
     trampCmsUpdateFreqRef();
-    trampCmsPitmode = trampCurPitmode + 1;
+    trampCmsPitmode = trampPitMode + 1;
 
-    if (trampCurConfigPower > 0) {
+    if (trampConfiguredPower > 0) {
         for (uint8_t i = 0; i < sizeof(trampPowerTable); i++) {
-            if (trampCurConfigPower <= trampPowerTable[i]) {
+            if (trampConfiguredPower <= trampPowerTable[i]) {
                 trampCmsPower = i + 1;
                 break;
             }
@@ -665,8 +665,8 @@ bool vtxTrampGetBandChan(uint8_t *pBand, uint8_t *pChan)
     if (!vtxTrampIsReady())
         return false;
 
-    *pBand = trampCurBand;
-    *pChan = trampCurChan;
+    *pBand = trampBand;
+    *pChan = trampChannel;
     return true;
 }
 
@@ -675,9 +675,9 @@ bool vtxTrampGetPowerIndex(uint8_t *pIndex)
     if (!vtxTrampIsReady())
         return false;
 
-    if (trampCurConfigPower > 0) {
+    if (trampConfiguredPower > 0) {
         for (uint8_t i = 0; i < sizeof(trampPowerTable); i++) {
-            if (trampCurConfigPower <= trampPowerTable[i]) {
+            if (trampConfiguredPower <= trampPowerTable[i]) {
                 *pIndex = i + 1;
                 break;
             }
@@ -692,7 +692,7 @@ bool vtxTrampGetPitmode(uint8_t *pOnoff)
     if (!vtxTrampIsReady())
         return false;
 
-    *pOnoff = trampCurPitmode;
+    *pOnoff = trampPitMode;
     return true;
 }
 
