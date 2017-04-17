@@ -193,29 +193,29 @@ static void rtc6705Transfer(uint32_t command)
 /**
  * Set a band and channel
  */
-void rtc6705SetChannel(const uint8_t band, const uint8_t channel)
+void rtc6705SetChannel(uint8_t band, uint8_t channel)
 {
-    uint8_t constrainedBand = constrain(band, 0, RTC6705_BAND_COUNT - 1);
-    uint8_t constrainedChannel = constrain(channel, 0, RTC6705_CHANNEL_COUNT - 1);
+    band = constrain(band, 0, RTC6705_BAND_COUNT - 1);
+    channel = constrain(channel, 0, RTC6705_CHANNEL_COUNT - 1);
 
     spiSetDivisor(RTC6705_SPI_INSTANCE, SPI_CLOCK_SLOW);
 
     rtc6705Transfer(RTC6705_SET_HEAD);
-    rtc6705Transfer(channelArray[constrainedBand][constrainedChannel]);
+    rtc6705Transfer(channelArray[band][channel]);
 }
 
  /**
  * Set a freq in mhz
  * Formula derived from datasheet
  */
-void rtc6705SetFreq(const uint16_t freq)
+void rtc6705SetFreq(uint16_t frequency)
 {
-    uint16_t constrainedFreq = constrain(freq, RTC6705_FREQ_MIN, RTC6705_FREQ_MAX);
+    frequency = constrain(frequency, RTC6705_FREQ_MIN, RTC6705_FREQ_MAX);
 
     uint32_t val_hex = 0;
 
-    uint32_t val_a = ((((uint64_t)constrainedFreq*(uint64_t)RTC6705_SET_DIVMULT*(uint64_t)RTC6705_SET_R)/(uint64_t)RTC6705_SET_DIVMULT) % RTC6705_SET_FDIV) / RTC6705_SET_NDIV; //Casts required to make sure correct math (large numbers)
-    uint32_t val_n = (((uint64_t)constrainedFreq*(uint64_t)RTC6705_SET_DIVMULT*(uint64_t)RTC6705_SET_R)/(uint64_t)RTC6705_SET_DIVMULT) / RTC6705_SET_FDIV; //Casts required to make sure correct math (large numbers)
+    uint32_t val_a = ((((uint64_t)frequency*(uint64_t)RTC6705_SET_DIVMULT*(uint64_t)RTC6705_SET_R)/(uint64_t)RTC6705_SET_DIVMULT) % RTC6705_SET_FDIV) / RTC6705_SET_NDIV; //Casts required to make sure correct math (large numbers)
+    uint32_t val_n = (((uint64_t)frequency*(uint64_t)RTC6705_SET_DIVMULT*(uint64_t)RTC6705_SET_R)/(uint64_t)RTC6705_SET_DIVMULT) / RTC6705_SET_FDIV; //Casts required to make sure correct math (large numbers)
 
     val_hex |= RTC6705_SET_WRITE;
     val_hex |= (val_a << 5);
@@ -228,15 +228,15 @@ void rtc6705SetFreq(const uint16_t freq)
     rtc6705Transfer(val_hex);
 }
 
-void rtc6705SetRFPower(const uint8_t rf_power)
+void rtc6705SetRFPower(uint8_t rf_power)
 {
-    uint8_t constrainedRfPower = constrain(rf_power, 0, RTC6705_RF_POWER_COUNT - 1);
+    rf_power = constrain(rf_power, 0, RTC6705_RF_POWER_COUNT - 1);
 
     spiSetDivisor(RTC6705_SPI_INSTANCE, SPI_CLOCK_SLOW);
 
     uint32_t val_hex = 0x10; // write
     val_hex |= 7; // address
-    uint32_t data = constrainedRfPower == 0 ? (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK)) : PA_CONTROL_DEFAULT;
+    uint32_t data = rf_power == 0 ? (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK)) : PA_CONTROL_DEFAULT;
     val_hex |= data << 5; // 4 address bits and 1 rw bit.
 
     rtc6705Transfer(val_hex);
