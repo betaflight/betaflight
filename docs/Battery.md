@@ -158,7 +158,7 @@ The general method is:
 
 Given (a) the reported mAh draw and the (b) mAh charging data, calculate a new `amperage_meter_scale` value as follows:
 ```
-amperage_meter_scale = (charging_data_mAh / reported_draw_mAh) * old_amperage_meter_scale
+amperage_meter_scale = old_amperage_meter_scale / (charging_data_mAh / reported_draw_mAh)
 ```
 For example, assuming:
 + A Cleanflight reported current draw of 1260 mAh
@@ -167,9 +167,9 @@ For example, assuming:
 
 Then the updated `amperage_meter_scale` is:
 ```
-amperage_meter_scale = (charging_data_mAh / reported_draw_mAh) * old_amperage_meter_scale
-                    = (1158 / 1260) * 400
-                    = 368
+amperage_meter_scale = old_amperage_meter_scale / (charging_data_mAh / reported_draw_mAh)
+                    = 400 / (1158 / 1260)
+                    = 435
 ```
 
 
