@@ -22,6 +22,8 @@
 
 #ifdef TARGET_CONFIG
 
+#include "blackbox/blackbox.h"
+
 #include "common/axis.h"
 #include "common/utils.h"
 
@@ -103,6 +105,11 @@ void targetConfiguration(void)
     if (hardwareRevision < NAZE32_REV5) {
         compassConfigMutable()->interruptTag = IO_TAG(PB12);
     }
+#endif
+
+#ifdef BLACKBOX
+    if (hardwareRevision >= NAZE32_REV5)
+        blackboxConfigMutable()->device = BLACKBOX_DEVICE_FLASH;
 #endif
 }
 
