@@ -26,11 +26,11 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/barometer.h"
-#include "drivers/barometer_bmp085.h"
-#include "drivers/barometer_bmp280.h"
-#include "drivers/barometer_fake.h"
-#include "drivers/barometer_ms5611.h"
+#include "drivers/barometer/barometer.h"
+#include "drivers/barometer/barometer_bmp085.h"
+#include "drivers/barometer/barometer_bmp280.h"
+#include "drivers/barometer/barometer_fake.h"
+#include "drivers/barometer/barometer_ms5611.h"
 #include "drivers/system.h"
 
 #include "fc/runtime_config.h"

@@ -20,9 +20,9 @@
 
 #include "platform.h"
 
-#include "gpio.h"
-#include "nvic.h"
-#include "system.h"
+#include "drivers/gpio.h"
+#include "drivers/nvic.h"
+#include "drivers/system.h"
 
 #define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
 void SetSysClock();

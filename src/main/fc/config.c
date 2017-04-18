@@ -39,8 +39,8 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/compass/compass.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/light_ws2811strip.h"
@@ -762,40 +762,70 @@ void changePidProfile(uint8_t pidProfileIndex)
 
 void beeperOffSet(uint32_t mask)
 {
+#ifdef BEEPER
     beeperConfigMutable()->beeper_off_flags |= mask;
+#else
+    UNUSED(mask);
+#endif
 }
 
 void beeperOffSetAll(uint8_t beeperCount)
 {
+#ifdef BEEPER
     beeperConfigMutable()->beeper_off_flags = (1 << beeperCount) -1;
+#else
+    UNUSED(beeperCount);
+#endif
 }
 
 void beeperOffClear(uint32_t mask)
 {
+#ifdef BEEPER
     beeperConfigMutable()->beeper_off_flags &= ~(mask);
+#else
+    UNUSED(mask);
+#endif
 }
 
 void beeperOffClearAll(void)
 {
+#ifdef BEEPER
     beeperConfigMutable()->beeper_off_flags = 0;
+#endif
 }
 
 uint32_t getBeeperOffMask(void)
 {
+#ifdef BEEPER
     return beeperConfig()->beeper_off_flags;
+#else
+    return 0;
+#endif
 }
 
 void setBeeperOffMask(uint32_t mask)
 {
+#ifdef BEEPER
     beeperConfigMutable()->beeper_off_flags = mask;
+#else
+    UNUSED(mask);
+#endif
 }
 
 uint32_t getPreferredBeeperOffMask(void)
 {
+#ifdef BEEPER
     return beeperConfig()->preferred_beeper_off_flags;
+#else
+    return 0;
+#endif
 }
 
 void setPreferredBeeperOffMask(uint32_t mask)
 {
+#ifdef BEEPER
     beeperConfigMutable()->preferred_beeper_off_flags = mask;
+#else
+    UNUSED(mask);
+#endif
 }

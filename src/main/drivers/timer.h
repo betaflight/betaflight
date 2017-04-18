@@ -20,7 +20,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "io_types.h"
+#include "drivers/io_types.h"
 #include "rcc_types.h"
 
 typedef uint16_t captureCompare_t;        // 16 bit on both 103 and 303, just register access must be 32bit sometimes (use timCCR_t)
@@ -45,12 +45,7 @@ typedef uint16_t timCCR_t;
 typedef uint16_t timCCER_t;
 typedef uint16_t timSR_t;
 typedef uint16_t timCNT_t;
-#elif defined(UNIT_TEST)
-typedef uint32_t timCCR_t;
-typedef uint32_t timCCER_t;
-typedef uint32_t timSR_t;
-typedef uint32_t timCNT_t;
-#elif defined(SIMULATOR_BUILD)
+#elif defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
 typedef uint32_t timCCR_t;
 typedef uint32_t timCCER_t;
 typedef uint32_t timSR_t;

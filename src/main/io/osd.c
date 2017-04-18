@@ -69,9 +69,9 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/altitude.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
-#include "flight/altitude.h"
 
 #include "rx/rx.h"
 
@@ -185,14 +185,14 @@ static void osdDrawSingleElement(uint8_t item)
                 osdRssi = 99;
 
             buff[0] = SYM_RSSI;
-            sprintf(buff + 1, "%d", osdRssi);
+            tfp_sprintf(buff + 1, "%d", osdRssi);
             break;
         }
 
         case OSD_MAIN_BATT_VOLTAGE:
         {
             buff[0] = SYM_BATT_5;
-            sprintf(buff + 1, "%d.%1dV", getBatteryVoltage() / 10, getBatteryVoltage() % 10);
+            tfp_sprintf(buff + 1, "%d.%1dV", getBatteryVoltage() / 10, getBatteryVoltage() % 10);
             break;
         }
 
@@ -200,14 +200,14 @@ static void osdDrawSingleElement(uint8_t item)
         {
             int32_t amperage = getAmperage();
             buff[0] = SYM_AMP;
-            sprintf(buff + 1, "%d.%02d", abs(amperage) / 100, abs(amperage) % 100);
+            tfp_sprintf(buff + 1, "%d.%02d", abs(amperage) / 100, abs(amperage) % 100);
             break;
         }
 
         case OSD_MAH_DRAWN:
         {
             buff[0] = SYM_MAH;
-            sprintf(buff + 1, "%d", getMAhDrawn());
+            tfp_sprintf(buff + 1, "%d", getMAhDrawn());
             break;
         }
 
@@ -215,14 +215,14 @@ static void osdDrawSingleElement(uint8_t item)
         case OSD_GPS_SATS:
         {
             buff[0] = 0x1f;
-            sprintf(buff + 1, "%d", GPS_numSat);
+            tfp_sprintf(buff + 1, "%d", GPS_numSat);
             break;
         }
 
         case OSD_GPS_SPEED:
         {
             // FIXME ideally we want to use SYM_KMH symbol but it's not in the font any more, so we use K.
-            sprintf(buff, "%dK", CM_S_TO_KM_H(GPS_speed) * 10);
+            tfp_sprintf(buff, "%dK", CM_S_TO_KM_H(GPS_speed) * 10);
             break;
         }
 
@@ -254,7 +254,7 @@ static void osdDrawSingleElement(uint8_t item)
         case OSD_ALTITUDE:
         {
             int32_t alt = osdGetAltitude(getEstimatedAltitude());
-            sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
+            tfp_sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
             break;
         }
 
@@ -262,14 +262,14 @@ static void osdDrawSingleElement(uint8_t item)
         {
             uint32_t seconds = micros() / 1000000;
             buff[0] = SYM_ON_M;
-            sprintf(buff + 1, "%02d:%02d", seconds / 60, seconds % 60);
+            tfp_sprintf(buff + 1, "%02d:%02d", seconds / 60, seconds % 60);
             break;
         }
 
         case OSD_FLYTIME:
         {
             buff[0] = SYM_FLY_M;
-            sprintf(buff + 1, "%02d:%02d", flyTime / 60, flyTime % 60);
+            tfp_sprintf(buff + 1, "%02d:%02d", flyTime / 60, flyTime % 60);
             break;
         }
 
@@ -310,7 +310,7 @@ static void osdDrawSingleElement(uint8_t item)
         {
             buff[0] = SYM_THR;
             buff[1] = SYM_THR1;
-            sprintf(buff + 2, "%d", (constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN));
+            tfp_sprintf(buff + 2, "%d", (constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN));
             break;
         }
 
@@ -407,27 +407,27 @@ static void osdDrawSingleElement(uint8_t item)
         case OSD_ROLL_PIDS:
         {
             const pidProfile_t *pidProfile = currentPidProfile;
-            sprintf(buff, "ROL %3d %3d %3d", pidProfile->P8[PIDROLL], pidProfile->I8[PIDROLL], pidProfile->D8[PIDROLL]);
+            tfp_sprintf(buff, "ROL %3d %3d %3d", pidProfile->P8[PIDROLL], pidProfile->I8[PIDROLL], pidProfile->D8[PIDROLL]);
             break;
         }
 
         case OSD_PITCH_PIDS:
         {
             const pidProfile_t *pidProfile = currentPidProfile;
-            sprintf(buff, "PIT %3d %3d %3d", pidProfile->P8[PIDPITCH], pidProfile->I8[PIDPITCH], pidProfile->D8[PIDPITCH]);
+            tfp_sprintf(buff, "PIT %3d %3d %3d", pidProfile->P8[PIDPITCH], pidProfile->I8[PIDPITCH], pidProfile->D8[PIDPITCH]);
             break;
         }
 
         case OSD_YAW_PIDS:
         {
             const pidProfile_t *pidProfile = currentPidProfile;
-            sprintf(buff, "YAW %3d %3d %3d", pidProfile->P8[PIDYAW], pidProfile->I8[PIDYAW], pidProfile->D8[PIDYAW]);
+            tfp_sprintf(buff, "YAW %3d %3d %3d", pidProfile->P8[PIDYAW], pidProfile->I8[PIDYAW], pidProfile->D8[PIDYAW]);
             break;
         }
 
         case OSD_POWER:
         {
-            sprintf(buff, "%dW", getAmperage() * getBatteryVoltage() / 1000);
+            tfp_sprintf(buff, "%dW", getAmperage() * getBatteryVoltage() / 1000);
             break;
         }
 
@@ -435,7 +435,7 @@ static void osdDrawSingleElement(uint8_t item)
         {
             const uint8_t pidProfileIndex = getCurrentPidProfileIndex();
             const uint8_t rateProfileIndex = getCurrentControlRateProfileIndex();
-            sprintf(buff, "%d-%d", pidProfileIndex + 1, rateProfileIndex + 1);
+            tfp_sprintf(buff, "%d-%d", pidProfileIndex + 1, rateProfileIndex + 1);
             break;
         }
 
@@ -443,11 +443,11 @@ static void osdDrawSingleElement(uint8_t item)
         {
             switch(getBatteryState()) {
                 case BATTERY_WARNING:
-                    sprintf(buff, "LOW BATTERY");
+                    tfp_sprintf(buff, "LOW BATTERY");
                     break;
 
                 case BATTERY_CRITICAL:
-                    sprintf(buff, "LAND NOW");
+                    tfp_sprintf(buff, "LAND NOW");
                     elemOffsetX += 1;
                     break;
 
@@ -457,16 +457,22 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
-	case OSD_AVG_CELL_VOLTAGE:
+    case OSD_AVG_CELL_VOLTAGE:
         {
             uint16_t cellV = getBatteryVoltage() * 10 / getBatteryCellCount();
             buff[0] = SYM_BATT_5;
-            sprintf(buff + 1, "%d.%dV", cellV / 100, cellV % 100);
+            tfp_sprintf(buff + 1, "%d.%dV", cellV / 100, cellV % 100);
             break;
         }
 
-        default:
-            return;
+    case OSD_DEBUG:
+    {
+        sprintf(buff, "DBG %5d %5d %5d %5d", debug[0], debug[1], debug[2], debug[3]);
+        break;
+    }
+
+    default:
+        return;
     }
 
     displayWrite(osdDisplayPort, elemPosX + elemOffsetX, elemPosY, buff);
@@ -515,6 +521,7 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_PIDRATE_PROFILE);
     osdDrawSingleElement(OSD_MAIN_BATT_WARNING);
     osdDrawSingleElement(OSD_AVG_CELL_VOLTAGE);
+    osdDrawSingleElement(OSD_DEBUG);
 
 #ifdef GPS
 #ifdef CMS
@@ -556,6 +563,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdProfile)
     osdProfile->item_pos[OSD_PIDRATE_PROFILE] = OSD_POS(25, 10) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_MAIN_BATT_WARNING] = OSD_POS(9, 10) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_AVG_CELL_VOLTAGE] = OSD_POS(12, 2) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_DEBUG] = OSD_POS(7, 12) | VISIBLE_FLAG;
 
     osdProfile->item_pos[OSD_GPS_LAT] = OSD_POS(18, 14) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_GPS_LON] = OSD_POS(18, 15) | VISIBLE_FLAG;
@@ -600,7 +608,7 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
     osdDrawLogo(3, 1);
 
     char string_buffer[30];
-    sprintf(string_buffer, "V%s", FC_VERSION_STRING);
+    tfp_sprintf(string_buffer, "V%s", FC_VERSION_STRING);
     displayWrite(osdDisplayPort, 20, 6, string_buffer);
 #ifdef CMS
     displayWrite(osdDisplayPort, 7, 8,  CMS_STARTUP_HELP_TEXT1);
@@ -760,7 +768,7 @@ static void osdShowStats(void)
     }
 
     displayWrite(osdDisplayPort, 2, top, "MIN BATTERY      :");
-    sprintf(buff, "%d.%1dV", stats.min_voltage / 10, stats.min_voltage % 10);
+    tfp_sprintf(buff, "%d.%1dV", stats.min_voltage / 10, stats.min_voltage % 10);
     displayWrite(osdDisplayPort, 22, top++, buff);
 
     displayWrite(osdDisplayPort, 2, top, "MIN RSSI         :");
@@ -782,7 +790,7 @@ static void osdShowStats(void)
 
     displayWrite(osdDisplayPort, 2, top, "MAX ALTITUDE     :");
     int32_t alt = osdGetAltitude(stats.max_altitude);
-    sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
+    tfp_sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
     displayWrite(osdDisplayPort, 22, top++, buff);
 
 #ifdef BLACKBOX

@@ -24,8 +24,8 @@
 
 #include "build/build_config.h"
 
-#include "system.h"
-#include "io.h"
+#include "drivers/system.h"
+#include "drivers/io.h"
 #include "pwm_esc_detect.h"
 #include "timer.h"
 

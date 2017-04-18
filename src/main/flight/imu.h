@@ -76,9 +76,9 @@ void imuInit(void);
 #ifdef SIMULATOR_BUILD
 void imuSetAttitudeRPY(float roll, float pitch, float yaw);  // in deg
 void imuSetAttitudeQuat(float w, float x, float y, float z);
-#endif
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_IMU_SYNC)
+#if defined(SIMULATOR_IMU_SYNC)
 void imuSetHasNewData(uint32_t dt);
+#endif
 #endif
 
 

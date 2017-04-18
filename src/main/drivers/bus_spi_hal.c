@@ -20,11 +20,11 @@
 
 #include <platform.h>
 
-#include "bus_spi.h"
+#include "drivers/bus_spi.h"
 #include "dma.h"
-#include "io.h"
+#include "drivers/io.h"
 #include "io_impl.h"
-#include "nvic.h"
+#include "drivers/nvic.h"
 #include "rcc.h"
 
 #ifndef SPI1_SCK_PIN

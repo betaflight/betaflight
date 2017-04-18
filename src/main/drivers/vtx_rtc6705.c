@@ -32,9 +32,9 @@
 #include "common/maths.h"
 
 #include "vtx_rtc6705.h"
-#include "io.h"
-#include "bus_spi.h"
-#include "system.h"
+#include "drivers/io.h"
+#include "drivers/bus_spi.h"
+#include "drivers/system.h"
 
 #define RTC6705_SET_HEAD 0x3210 //fosc=8mhz r=400
 #define RTC6705_SET_A1 0x8F3031 //5865

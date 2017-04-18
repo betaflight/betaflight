@@ -22,12 +22,12 @@
 
 #ifdef USE_DSHOT
 
-#include "io.h"
+#include "drivers/io.h"
 #include "timer.h"
 #include "pwm_output.h"
-#include "nvic.h"
+#include "drivers/nvic.h"
 #include "dma.h"
-#include "system.h"
+#include "drivers/system.h"
 #include "rcc.h"
 
 static uint8_t dmaMotorTimerCount = 0;
@@ -81,10 +81,21 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
         packet <<= 1;
     }
 
-    if(HAL_TIM_PWM_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, MOTOR_DMA_BUFFER_SIZE) != HAL_OK)
+    if(motor->timerHardware->output & TIMER_OUTPUT_N_CHANNEL)
     {
-      /* Starting PWM generation Error */
-        return;
+        if(HAL_TIMEx_PWMN_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, MOTOR_DMA_BUFFER_SIZE) != HAL_OK)
+        {
+            /* Starting PWM generation Error */
+            return;
+        }
+    }
+    else
+    {
+        if(HAL_TIM_PWM_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, MOTOR_DMA_BUFFER_SIZE) != HAL_OK)
+        {
+            /* Starting PWM generation Error */
+            return;
+        }
     }
 }
 
@@ -198,7 +209,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     /* PWM1 Mode configuration: Channel1 */
     TIM_OCInitStructure.OCMode = TIM_OCMODE_PWM1;
     if (output & TIMER_OUTPUT_N_CHANNEL) {
-        TIM_OCInitStructure.OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPOLARITY_HIGH : TIM_OCNPOLARITY_LOW;
+        TIM_OCInitStructure.OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPOLARITY_LOW : TIM_OCPOLARITY_HIGH;
         TIM_OCInitStructure.OCNIdleState = TIM_OCNIDLESTATE_RESET;
     } else {
         TIM_OCInitStructure.OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPOLARITY_LOW : TIM_OCPOLARITY_HIGH;
