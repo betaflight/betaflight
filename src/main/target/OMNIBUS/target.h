@@ -30,7 +30,7 @@
 #define BEEPER_INVERTED
 
 #define USE_EXTI
-#define MPU_INT_EXTI PC13
+#define MPU_INT_EXTI            PC13
 #define USE_MPU_DATA_READY_SIGNAL
 #define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
 
@@ -53,8 +53,6 @@
 #define USE_BARO_SPI_BMP280
 
 #define MAG // External
-#define USE_MAG_AK8963
-#define USE_MAG_AK8975
 #define USE_MAG_HMC5883
 
 //#define SONAR
