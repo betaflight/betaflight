@@ -73,7 +73,7 @@ typedef struct osdConfig_s {
     osd_unit_e units;
 } osdConfig_t;
 
-extern uint16_t refreshTimeout;
+extern uint32_t resumeRefreshAt;
 
 PG_DECLARE(osdConfig_t, osdConfig);
 
