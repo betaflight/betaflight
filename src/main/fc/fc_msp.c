@@ -1231,6 +1231,19 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         }
         break;
 
+    case MSP_WP_GETINFO:
+#ifdef NAV
+        sbufWriteU8(dst, 0);                        // Reserved for waypoint capabilities
+        sbufWriteU8(dst, NAV_MAX_WAYPOINTS);        // Maximum number of waypoints supported
+        sbufWriteU8(dst, isWaypointListValid());    // Is current mission valid
+        sbufWriteU8(dst, getWaypointCount());       // Number of waypoints in current mission
+#else
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+#endif
+        break;
 
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
     case MSP_SET_4WAY_IF:
