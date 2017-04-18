@@ -25,11 +25,11 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/compass.h"
-#include "drivers/compass_ak8975.h"
-#include "drivers/compass_ak8963.h"
-#include "drivers/compass_fake.h"
-#include "drivers/compass_hmc5883l.h"
+#include "drivers/compass/compass.h"
+#include "drivers/compass/compass_ak8975.h"
+#include "drivers/compass/compass_ak8963.h"
+#include "drivers/compass/compass_fake.h"
+#include "drivers/compass/compass_hmc5883l.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 

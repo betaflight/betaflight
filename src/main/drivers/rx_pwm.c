@@ -27,10 +27,10 @@
 
 #include "common/utils.h"
 
-#include "system.h"
+#include "drivers/system.h"
 
-#include "nvic.h"
-#include "io.h"
+#include "drivers/nvic.h"
+#include "drivers/io.h"
 #include "timer.h"
 
 #include "pwm_output.h"

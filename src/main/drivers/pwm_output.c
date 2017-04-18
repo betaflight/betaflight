@@ -21,9 +21,9 @@
 #include <math.h>
 
 #include "platform.h"
-#include "system.h"
+#include "drivers/system.h"
 
-#include "io.h"
+#include "drivers/io.h"
 #include "pwm_output.h"
 #include "timer.h"
 #include "drivers/pwm_output.h"
@@ -104,7 +104,10 @@ static void pwmOutConfig(pwmOutputPort_t *port, const timerHardware_t *timerHard
         inversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output);
 
 #if defined(USE_HAL_DRIVER)
-    HAL_TIM_PWM_Start(Handle, timerHardware->channel);
+    if(timerHardware->output & TIMER_OUTPUT_N_CHANNEL)
+        HAL_TIMEx_PWMN_Start(Handle, timerHardware->channel);
+    else
+        HAL_TIM_PWM_Start(Handle, timerHardware->channel);
     HAL_TIM_Base_Start(Handle);
 #else
     TIM_CtrlPWMOutputs(timerHardware->tim, ENABLE);

@@ -53,8 +53,6 @@
 #define USE_BARO_SPI_BMP280
 
 #define MAG // External
-#define USE_MAG_AK8963
-#define USE_MAG_AK8975
 #define USE_MAG_HMC5883
 
 //#define SONAR

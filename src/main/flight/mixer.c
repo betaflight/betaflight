@@ -116,6 +116,9 @@ PG_REGISTER_ARRAY(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR
 #define EXTERNAL_CONVERSION_MAX_VALUE 2000
 #define EXTERNAL_CONVERSION_3D_MID_VALUE 1500
 
+#define TRICOPTER_ERROR_RATE_YAW_SATURATED 75 // rate at which tricopter yaw axis becomes saturated, determined experimentally by TriFlight
+
+
 static uint8_t motorCount;
 static float motorMixRange;
 
@@ -326,6 +329,16 @@ uint8_t getMotorCount()
 float getMotorMixRange()
 {
     return motorMixRange;
+}
+
+bool mixerIsOutputSaturated(int axis, float errorRate)
+{
+    if (axis == FD_YAW && (currentMixerMode == MIXER_TRI || currentMixerMode == MIXER_CUSTOM_TRI)) {
+        return errorRate > TRICOPTER_ERROR_RATE_YAW_SATURATED;
+    } else {
+        return motorMixRange >= 1.0f;
+    }
+    return false;
 }
 
 bool isMotorProtocolDshot(void) {
@@ -631,13 +644,15 @@ uint16_t convertExternalToMotor(uint16_t externalValue)
     uint16_t motorValue = externalValue;
 #ifdef USE_DSHOT
     if (isMotorProtocolDshot()) {
-        motorValue = externalValue <= EXTERNAL_CONVERSION_MIN_VALUE ? DSHOT_DISARM_COMMAND : constrain((externalValue - EXTERNAL_DSHOT_CONVERSION_OFFSET) * EXTERNAL_DSHOT_CONVERSION_FACTOR, DSHOT_MIN_THROTTLE, DSHOT_MAX_THROTTLE);
+        // Add 1 to the value, otherwise throttle tops out at 2046
+        motorValue = externalValue <= EXTERNAL_CONVERSION_MIN_VALUE ? DSHOT_DISARM_COMMAND : constrain((externalValue - EXTERNAL_DSHOT_CONVERSION_OFFSET) * EXTERNAL_DSHOT_CONVERSION_FACTOR + 1, DSHOT_MIN_THROTTLE, DSHOT_MAX_THROTTLE);
 
         if (feature(FEATURE_3D)) {
             if (externalValue == EXTERNAL_CONVERSION_3D_MID_VALUE) {
                 motorValue = DSHOT_DISARM_COMMAND;
             } else if (motorValue >= DSHOT_MIN_THROTTLE && motorValue <= DSHOT_3D_DEADBAND_LOW) {
-                motorValue = DSHOT_MIN_THROTTLE + (DSHOT_3D_DEADBAND_LOW - motorValue);
+                // Add 1 to the value, otherwise throttle tops out at 2046
+                motorValue = DSHOT_MIN_THROTTLE + (DSHOT_3D_DEADBAND_LOW - motorValue) + 1;
             }
         }
     }

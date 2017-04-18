@@ -38,9 +38,9 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/accgyro.h"
+#include "drivers/accgyro/accgyro.h"
 #include "drivers/bus_i2c.h"
-#include "drivers/compass.h"
+#include "drivers/compass/compass.h"
 #include "drivers/flash.h"
 #include "drivers/io.h"
 #include "drivers/max7456.h"
@@ -600,7 +600,6 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU16(dst, 0); // rssi
         sbufWriteU16(dst, (int16_t)constrain(getAmperage(), -0x8000, 0x7FFF)); // send current in 0.01 A steps, range is -320A to 320A
         break;
-
 
     case MSP_DEBUG:
         // output some useful QA statistics

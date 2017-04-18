@@ -19,8 +19,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#define printf printf
-#define sprintf sprintf
 
 #include <errno.h>
 #include <time.h>
@@ -38,7 +36,7 @@
 #include "drivers/timer_def.h"
 const timerHardware_t timerHardware[1]; // unused
 
-#include "drivers/accgyro_fake.h"
+#include "drivers/accgyro/accgyro_fake.h"
 #include "flight/imu.h"
 
 #include "config/feature.h"
@@ -96,13 +94,13 @@ void updateState(const fdm_packet* pkt) {
 	x = -pkt->imu_linear_acceleration_xyz[0] * ACC_SCALE;
 	y = -pkt->imu_linear_acceleration_xyz[1] * ACC_SCALE;
 	z = -pkt->imu_linear_acceleration_xyz[2] * ACC_SCALE;
-	fakeAccSet(x, y, z);
+	fakeAccSet(fakeAccDev, x, y, z);
 //	printf("[acc]%lf,%lf,%lf\n", pkt->imu_linear_acceleration_xyz[0], pkt->imu_linear_acceleration_xyz[1], pkt->imu_linear_acceleration_xyz[2]);
 
 	x = pkt->imu_angular_velocity_rpy[0] * GYRO_SCALE * RAD2DEG;
 	y = -pkt->imu_angular_velocity_rpy[1] * GYRO_SCALE * RAD2DEG;
 	z = -pkt->imu_angular_velocity_rpy[2] * GYRO_SCALE * RAD2DEG;
-	fakeGyroSet(x, y, z);
+	fakeGyroSet(fakeGyroDev, x, y, z);
 //	printf("[gyr]%lf,%lf,%lf\n", pkt->imu_angular_velocity_rpy[0], pkt->imu_angular_velocity_rpy[1], pkt->imu_angular_velocity_rpy[2]);
 
 #if defined(SKIP_IMU_CALC)

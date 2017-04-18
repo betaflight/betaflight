@@ -98,7 +98,7 @@ void osdSlaveInit(displayPort_t *osdDisplayPortToUse)
     osdDrawLogo(3, 1);
 
     char string_buffer[30];
-    sprintf(string_buffer, "V%s", FC_VERSION_STRING);
+    tfp_sprintf(string_buffer, "V%s", FC_VERSION_STRING);
     displayWrite(osdDisplayPort, 20, 6, string_buffer);
     displayWrite(osdDisplayPort, 13, 6, "OSD");
 
@@ -139,7 +139,7 @@ void osdSlaveUpdate(timeUs_t currentTimeUs)
 #ifdef OSD_SLAVE_DEBUG
     char buff[32];
     for (int i = 0; i < 4; i ++) {
-        sprintf(buff, "%5d", debug[i]);
+        tfp_sprintf(buff, "%5d", debug[i]);
         displayWrite(osdDisplayPort, i * 8, 0, buff);
     }
 #endif

@@ -19,6 +19,7 @@
 
 #ifndef USE_OSD_SLAVE
 #include <stdbool.h>
+#include "common/time.h"
 #include "config/parameter_group.h"
 
 #define MAX_PID_PROCESS_DENOM       16
@@ -58,6 +59,12 @@ typedef enum {
     PID_STABILISATION_ON
 } pidStabilisationState_e;
 
+typedef enum {
+    PID_CRASH_RECOVERY_OFF = 0,
+    PID_CRASH_RECOVERY_ON,
+    PID_CRASH_RECOVERY_BEEP
+} pidCrashRecovery_e;
+
 typedef struct pidProfile_s {
     uint8_t P8[PID_ITEM_COUNT];
     uint8_t I8[PID_ITEM_COUNT];
@@ -77,6 +84,9 @@ typedef struct pidProfile_s {
     uint8_t levelAngleLimit;                // Max angle in degrees in level mode
     uint8_t levelSensitivity;               // Angle mode sensitivity reflected in degrees assuming user using full stick
 
+    uint8_t horizon_tilt_effect;            // inclination factor for Horizon mode
+    uint8_t horizon_tilt_expert_mode;       // OFF or ON
+
     // Betaflight PID controller parameters
     uint16_t itermThrottleThreshold;        // max allowed throttle delta before iterm accelerated in ms
     uint16_t itermAcceleratorGain;          // Iterm Accelerator Gain when itermThrottlethreshold is hit
@@ -84,6 +94,12 @@ typedef struct pidProfile_s {
     uint8_t dtermSetpointWeight;            // Setpoint weight for Dterm (0= measurement, 1= full error, 1 > agressive derivative)
     uint16_t yawRateAccelLimit;             // yaw accel limiter for deg/sec/ms
     uint16_t rateAccelLimit;                // accel limiter roll/pitch deg/sec/ms
+    uint16_t crash_dthreshold;              // dterm crash value
+    uint16_t crash_gthreshold;              // gyro crash value
+    uint16_t crash_time;                    // ms
+    uint8_t crash_recovery_angle;           // degrees
+    uint8_t crash_recovery_rate;            // degree/second
+    pidCrashRecovery_e crash_recovery;      // off, on, on and beeps when it is in crash recovery mode
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles);
@@ -95,7 +111,7 @@ typedef struct pidConfig_s {
 PG_DECLARE(pidConfig_t, pidConfig);
 
 union rollAndPitchTrims_u;
-void pidController(const pidProfile_t *pidProfile, const union rollAndPitchTrims_u *angleTrim);
+void pidController(const pidProfile_t *pidProfile, const union rollAndPitchTrims_u *angleTrim, timeUs_t currentTimeUs);
 
 extern float axisPID_P[3], axisPID_I[3], axisPID_D[3];
 bool airmodeWasActivated;

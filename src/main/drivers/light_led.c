@@ -17,7 +17,7 @@
 
 #include "platform.h"
 
-#include "io.h"
+#include "drivers/io.h"
 #include "io_impl.h"
 
 #include "light_led.h"
