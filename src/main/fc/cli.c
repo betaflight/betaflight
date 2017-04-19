@@ -179,95 +179,6 @@ static const char * const *sensorHardwareNames[] = {
 };
 #endif // USE_SENSOR_NAMES
 
-static gyroConfig_t gyroConfigCopy;
-static accelerometerConfig_t accelerometerConfigCopy;
-#ifdef MAG
-static compassConfig_t compassConfigCopy;
-#endif
-#ifdef BARO
-static barometerConfig_t barometerConfigCopy;
-#endif
-#ifdef PITOT
-static pitotmeterConfig_t pitotmeterConfigCopy;
-#endif
-static featureConfig_t featureConfigCopy;
-static rxConfig_t rxConfigCopy;
-// PG_PWM_CONFIG
-#ifdef USE_PWM
-static pwmConfig_t pwmConfigCopy;
-#endif
-#ifdef BLACKBOX
-static blackboxConfig_t blackboxConfigCopy;
-#endif
-static rxFailsafeChannelConfig_t rxFailsafeChannelConfigsCopy[MAX_SUPPORTED_RC_CHANNEL_COUNT];
-static rxChannelRangeConfig_t rxChannelRangeConfigsCopy[NON_AUX_CHANNEL_COUNT];
-static motorConfig_t motorConfigCopy;
-static throttleCorrectionConfig_t throttleCorrectionConfigCopy;
-static failsafeConfig_t failsafeConfigCopy;
-static boardAlignment_t boardAlignmentCopy;
-#ifdef USE_SERVOS
-static servoConfig_t servoConfigCopy;
-static gimbalConfig_t gimbalConfigCopy;
-static servoMixer_t customServoMixersCopy[MAX_SERVO_RULES];
-static servoParam_t servoParamsCopy[MAX_SUPPORTED_SERVOS];
-#endif
-static batteryConfig_t batteryConfigCopy;
-static voltageSensorADCConfig_t voltageSensorADCConfigCopy[MAX_VOLTAGE_SENSOR_ADC];
-static currentSensorADCConfig_t currentSensorADCConfigCopy;
-#ifdef USE_VIRTUAL_CURRENT_METER
-static currentSensorVirtualConfig_t currentSensorVirtualConfigCopy;
-#endif
-static motorMixer_t customMotorMixerCopy[MAX_SUPPORTED_MOTORS];
-static mixerConfig_t mixerConfigCopy;
-static flight3DConfig_t flight3DConfigCopy;
-static serialConfig_t serialConfigCopy;
-static serialPinConfig_t serialPinConfigCopy;
-static imuConfig_t imuConfigCopy;
-static armingConfig_t armingConfigCopy;
-static rcControlsConfig_t rcControlsConfigCopy;
-#ifdef GPS
-static gpsConfig_t gpsConfigCopy;
-static navigationConfig_t navigationConfigCopy;
-#endif
-static airplaneConfig_t airplaneConfigCopy;
-#ifdef TELEMETRY
-static telemetryConfig_t telemetryConfigCopy;
-#endif
-static modeActivationCondition_t modeActivationConditionsCopy[MAX_MODE_ACTIVATION_CONDITION_COUNT];
-static adjustmentRange_t adjustmentRangesCopy[MAX_ADJUSTMENT_RANGE_COUNT];
-#ifdef LED_STRIP
-static ledStripConfig_t ledStripConfigCopy;
-#endif
-#ifdef USE_SDCARD
-static sdcardConfig_t sdcardConfigCopy;
-#endif
-#ifdef OSD
-static osdConfig_t osdConfigCopy;
-#endif
-static systemConfig_t systemConfigCopy;
-#ifdef BEEPER
-static beeperDevConfig_t beeperDevConfigCopy;
-static beeperConfig_t beeperConfigCopy;
-#endif
-#ifdef VTX_RTC6705
-static vtxRTC6705Config_t vtxRTC6705ConfigCopy;
-#endif
-#ifdef VTX_CONTROL
-static vtxConfig_t vtxConfigCopy;
-#endif
-#ifdef USE_MAX7456
-vcdProfile_t vcdProfileCopy;
-#endif
-#ifdef USE_MSP_DISPLAYPORT
-displayPortProfile_t displayPortProfileMspCopy;
-#endif
-#ifdef USE_MAX7456
-displayPortProfile_t displayPortProfileMax7456Copy;
-#endif
-static pidConfig_t pidConfigCopy;
-static controlRateConfig_t controlRateProfilesCopy[CONTROL_RATE_PROFILE_COUNT];
-static pidProfile_t pidProfileCopy[MAX_PROFILE_COUNT];
-
 static void cliPrint(const char *str)
 {
     while (*str) {
@@ -414,253 +325,13 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
 {
     static cliCurrentAndDefaultConfig_t ret;
 
-    switch (pgn) {
-    case PG_GYRO_CONFIG:
-        ret.currentConfig = &gyroConfigCopy;
-        ret.defaultConfig = gyroConfig();
-        break;
-    case PG_ACCELEROMETER_CONFIG:
-        ret.currentConfig = &accelerometerConfigCopy;
-        ret.defaultConfig = accelerometerConfig();
-        break;
-#ifdef MAG
-    case PG_COMPASS_CONFIG:
-        ret.currentConfig = &compassConfigCopy;
-        ret.defaultConfig = compassConfig();
-        break;
-#endif
-#ifdef BARO
-    case PG_BAROMETER_CONFIG:
-        ret.currentConfig = &barometerConfigCopy;
-        ret.defaultConfig = barometerConfig();
-        break;
-#endif
-#ifdef PITOT
-    case PG_PITOTMETER_CONFIG:
-        ret.currentConfig = &pitotmeterConfigCopy;
-        ret.defaultConfig = pitotmeterConfig();
-        break;
-#endif
-    case PG_FEATURE_CONFIG:
-        ret.currentConfig = &featureConfigCopy;
-        ret.defaultConfig = featureConfig();
-        break;
-    case PG_RX_CONFIG:
-        ret.currentConfig = &rxConfigCopy;
-        ret.defaultConfig = rxConfig();
-        break;
-#ifdef USE_PWM
-    case PG_PWM_CONFIG:
-        ret.currentConfig = &pwmConfigCopy;
-        ret.defaultConfig = pwmConfig();
-        break;
-#endif
-#ifdef BLACKBOX
-    case PG_BLACKBOX_CONFIG:
-        ret.currentConfig = &blackboxConfigCopy;
-        ret.defaultConfig = blackboxConfig();
-        break;
-#endif
-    case PG_MOTOR_CONFIG:
-        ret.currentConfig = &motorConfigCopy;
-        ret.defaultConfig = motorConfig();
-        break;
-    case PG_THROTTLE_CORRECTION_CONFIG:
-        ret.currentConfig = &throttleCorrectionConfigCopy;
-        ret.defaultConfig = throttleCorrectionConfig();
-        break;
-    case PG_FAILSAFE_CONFIG:
-        ret.currentConfig = &failsafeConfigCopy;
-        ret.defaultConfig = failsafeConfig();
-        break;
-    case PG_BOARD_ALIGNMENT:
-        ret.currentConfig = &boardAlignmentCopy;
-        ret.defaultConfig = boardAlignment();
-        break;
-    case PG_MIXER_CONFIG:
-        ret.currentConfig = &mixerConfigCopy;
-        ret.defaultConfig = mixerConfig();
-        break;
-    case PG_MOTOR_3D_CONFIG:
-        ret.currentConfig = &flight3DConfigCopy;
-        ret.defaultConfig = flight3DConfig();
-        break;
-#ifdef USE_SERVOS
-    case PG_SERVO_CONFIG:
-        ret.currentConfig = &servoConfigCopy;
-        ret.defaultConfig = servoConfig();
-        break;
-    case PG_GIMBAL_CONFIG:
-        ret.currentConfig = &gimbalConfigCopy;
-        ret.defaultConfig = gimbalConfig();
-        break;
-#endif
-    case PG_BATTERY_CONFIG:
-        ret.currentConfig = &batteryConfigCopy;
-        ret.defaultConfig = batteryConfig();
-        break;
-    case PG_VOLTAGE_SENSOR_ADC_CONFIG:
-        ret.currentConfig = &voltageSensorADCConfigCopy[0];
-        ret.defaultConfig = voltageSensorADCConfig(0);
-        break;
-    case PG_CURRENT_SENSOR_ADC_CONFIG:
-        ret.currentConfig = &currentSensorADCConfigCopy;
-        ret.defaultConfig = currentSensorADCConfig();
-        break;
-#ifdef USE_VIRTUAL_CURRENT_METER
-    case PG_CURRENT_SENSOR_VIRTUAL_CONFIG:
-        ret.currentConfig = &currentSensorVirtualConfigCopy;
-        ret.defaultConfig = currentSensorVirtualConfig();
-        break;
-#endif
-    case PG_SERIAL_CONFIG:
-        ret.currentConfig = &serialConfigCopy;
-        ret.defaultConfig = serialConfig();
-        break;
-    case PG_SERIAL_PIN_CONFIG:
-        ret.currentConfig = &serialPinConfigCopy;
-        ret.defaultConfig = serialPinConfig();
-        break;
-    case PG_IMU_CONFIG:
-        ret.currentConfig = &imuConfigCopy;
-        ret.defaultConfig = imuConfig();
-        break;
-    case PG_RC_CONTROLS_CONFIG:
-        ret.currentConfig = &rcControlsConfigCopy;
-        ret.defaultConfig = rcControlsConfig();
-        break;
-    case PG_ARMING_CONFIG:
-        ret.currentConfig = &armingConfigCopy;
-        ret.defaultConfig = armingConfig();
-        break;
-#ifdef GPS
-    case PG_GPS_CONFIG:
-        ret.currentConfig = &gpsConfigCopy;
-        ret.defaultConfig = gpsConfig();
-        break;
-    case PG_NAVIGATION_CONFIG:
-        ret.currentConfig = &navigationConfigCopy;
-        ret.defaultConfig = navigationConfig();
-        break;
-#endif
-    case PG_AIRPLANE_CONFIG:
-        ret.currentConfig = &airplaneConfigCopy;
-        ret.defaultConfig = airplaneConfig();
-        break;
-#ifdef TELEMETRY
-    case PG_TELEMETRY_CONFIG:
-        ret.currentConfig = &telemetryConfigCopy;
-        ret.defaultConfig = telemetryConfig();
-        break;
-#endif
-#ifdef LED_STRIP
-    case PG_LED_STRIP_CONFIG:
-        ret.currentConfig = &ledStripConfigCopy;
-        ret.defaultConfig = ledStripConfig();
-        break;
-#endif
-#ifdef USE_SDCARD
-    case PG_SDCARD_CONFIG:
-       ret.currentConfig = &sdcardConfigCopy;
-       ret.defaultConfig = sdcardConfig();
-       break;
-#endif
-#ifdef OSD
-    case PG_OSD_CONFIG:
-       ret.currentConfig = &osdConfigCopy;
-       ret.defaultConfig = osdConfig();
-       break;
-#endif
-    case PG_SYSTEM_CONFIG:
-        ret.currentConfig = &systemConfigCopy;
-        ret.defaultConfig = systemConfig();
-        break;
-    case PG_CONTROL_RATE_PROFILES:
-        ret.currentConfig = &controlRateProfilesCopy[0];
-        ret.defaultConfig = controlRateProfiles(0);
-        break;
-    case PG_PID_PROFILE:
-        ret.currentConfig = &pidProfileCopy[0];
-        ret.defaultConfig = pidProfiles(0);
-        break;
-    case PG_RX_FAILSAFE_CHANNEL_CONFIG:
-        ret.currentConfig = &rxFailsafeChannelConfigsCopy[0];
-        ret.defaultConfig = rxFailsafeChannelConfigs(0);
-        break;
-    case PG_RX_CHANNEL_RANGE_CONFIG:
-        ret.currentConfig = &rxChannelRangeConfigsCopy[0];
-        ret.defaultConfig = rxChannelRangeConfigs(0);
-        break;
-#ifdef USE_SERVOS
-    case PG_SERVO_MIXER:
-        ret.currentConfig = &customServoMixersCopy[0];
-        ret.defaultConfig = customServoMixers(0);
-        break;
-    case PG_SERVO_PARAMS:
-        ret.currentConfig = &servoParamsCopy[0];
-        ret.defaultConfig = servoParams(0);
-        break;
-#endif
-    case PG_MOTOR_MIXER:
-        ret.currentConfig = &customMotorMixerCopy[0];
-        ret.defaultConfig = customMotorMixer(0);
-        break;
-    case PG_MODE_ACTIVATION_PROFILE:
-        ret.currentConfig = &modeActivationConditionsCopy[0];
-        ret.defaultConfig = modeActivationConditions(0);
-        break;
-    case PG_ADJUSTMENT_RANGE_CONFIG:
-        ret.currentConfig = &adjustmentRangesCopy[0];
-        ret.defaultConfig = adjustmentRanges(0);
-        break;
-#ifdef BEEPER
-    case PG_BEEPER_CONFIG:
-       ret.currentConfig = &beeperConfigCopy;
-       ret.defaultConfig = beeperConfig();
-       break;
-    case PG_BEEPER_DEV_CONFIG:
-       ret.currentConfig = &beeperDevConfigCopy;
-       ret.defaultConfig = beeperDevConfig();
-       break;
-#endif
-#ifdef VTX_RTC6705
-    case PG_VTX_RTC6705_CONFIG:
-       ret.currentConfig = &vtxRTC6705ConfigCopy;
-       ret.defaultConfig = vtxRTC6705Config();
-       break;
-#endif
-#ifdef VTX_CONTROL
-    case PG_VTX_CONFIG:
-       ret.currentConfig = &vtxConfigCopy;
-       ret.defaultConfig = vtxConfig();
-       break;
-#endif
-#ifdef USE_MAX7456
-    case PG_VCD_CONFIG:
-       ret.currentConfig = &vcdProfileCopy;
-       ret.defaultConfig = vcdProfile();
-       break;
-#endif
-#ifdef USE_MSP_DISPLAYPORT
-    case PG_DISPLAY_PORT_MSP_CONFIG:
-       ret.currentConfig = &displayPortProfileMspCopy;
-       ret.defaultConfig = displayPortProfileMsp();
-       break;
-#endif
-#ifdef USE_MAX7456
-    case PG_DISPLAY_PORT_MAX7456_CONFIG:
-       ret.currentConfig = &displayPortProfileMax7456Copy;
-       ret.defaultConfig = displayPortProfileMax7456();
-       break;
-#endif
-    case PG_PID_CONFIG:
-       ret.currentConfig = &pidConfigCopy;
-       ret.defaultConfig = pidConfig();
-       break;
-    default:
+    const pgRegistry_t* found = pgFind(pgn);
+    if (found) {
+        ret.currentConfig = found->copy;
+        ret.defaultConfig = found->address;
+    } else {
         ret.currentConfig = NULL;
         ret.defaultConfig = NULL;
-        break;
     }
     return &ret;
 }
@@ -3368,7 +3039,7 @@ static void printConfig(char *cmdline, bool doDiff)
         }
 
         cliPrintHashLine("name");
-        printName(dumpMask, &systemConfigCopy);
+        printName(dumpMask, &systemConfig_Copy);
 
 #ifdef USE_RESOURCE_MGMT
         cliPrintHashLine("resources");
@@ -3377,73 +3048,73 @@ static void printConfig(char *cmdline, bool doDiff)
 
 #ifndef USE_QUAD_MIXER_ONLY
         cliPrintHashLine("mixer");
-        const bool equalsDefault = mixerConfigCopy.mixerMode == mixerConfig()->mixerMode;
+        const bool equalsDefault = mixerConfig_Copy.mixerMode == mixerConfig()->mixerMode;
         const char *formatMixer = "mixer %s\r\n";
         cliDefaultPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[mixerConfig()->mixerMode - 1]);
-        cliDumpPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[mixerConfigCopy.mixerMode - 1]);
+        cliDumpPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[mixerConfig_Copy.mixerMode - 1]);
 
         cliDumpPrintf(dumpMask, customMotorMixer(0)->throttle == 0.0f, "\r\nmmix reset\r\n\r\n");
 
-        printMotorMix(dumpMask, customMotorMixerCopy, customMotorMixer(0));
+        printMotorMix(dumpMask, customMotorMixer_CopyArray, customMotorMixer(0));
 
 #ifdef USE_SERVOS
         cliPrintHashLine("servo");
-        printServo(dumpMask, servoParamsCopy, servoParams(0));
+        printServo(dumpMask, servoParams_CopyArray, servoParams(0));
 
         cliPrintHashLine("servo mix");
         // print custom servo mixer if exists
         cliDumpPrintf(dumpMask, customServoMixers(0)->rate == 0, "smix reset\r\n\r\n");
-        printServoMix(dumpMask, customServoMixersCopy, customServoMixers(0));
+        printServoMix(dumpMask, customServoMixers_CopyArray, customServoMixers(0));
 #endif
 #endif
 
         cliPrintHashLine("feature");
-        printFeature(dumpMask, &featureConfigCopy, featureConfig());
+        printFeature(dumpMask, &featureConfig_Copy, featureConfig());
 
 #ifdef BEEPER
         cliPrintHashLine("beeper");
-        printBeeper(dumpMask, &beeperConfigCopy, beeperConfig());
+        printBeeper(dumpMask, &beeperConfig_Copy, beeperConfig());
 #endif
 
         cliPrintHashLine("map");
-        printMap(dumpMask, &rxConfigCopy, rxConfig());
+        printMap(dumpMask, &rxConfig_Copy, rxConfig());
 
         cliPrintHashLine("serial");
-        printSerial(dumpMask, &serialConfigCopy, serialConfig());
+        printSerial(dumpMask, &serialConfig_Copy, serialConfig());
 
 #ifdef LED_STRIP
         cliPrintHashLine("led");
-        printLed(dumpMask, ledStripConfigCopy.ledConfigs, ledStripConfig()->ledConfigs);
+        printLed(dumpMask, ledStripConfig_Copy.ledConfigs, ledStripConfig()->ledConfigs);
 
         cliPrintHashLine("color");
-        printColor(dumpMask, ledStripConfigCopy.colors, ledStripConfig()->colors);
+        printColor(dumpMask, ledStripConfig_Copy.colors, ledStripConfig()->colors);
 
         cliPrintHashLine("mode_color");
-        printModeColor(dumpMask, &ledStripConfigCopy, ledStripConfig());
+        printModeColor(dumpMask, &ledStripConfig_Copy, ledStripConfig());
 #endif
 
         cliPrintHashLine("aux");
-        printAux(dumpMask, modeActivationConditionsCopy, modeActivationConditions(0));
+        printAux(dumpMask, modeActivationConditions_CopyArray, modeActivationConditions(0));
 
         cliPrintHashLine("adjrange");
-        printAdjustmentRange(dumpMask, adjustmentRangesCopy, adjustmentRanges(0));
+        printAdjustmentRange(dumpMask, adjustmentRanges_CopyArray, adjustmentRanges(0));
 
         cliPrintHashLine("rxrange");
-        printRxRange(dumpMask, rxChannelRangeConfigsCopy, rxChannelRangeConfigs(0));
+        printRxRange(dumpMask, rxChannelRangeConfigs_CopyArray, rxChannelRangeConfigs(0));
 
 #ifdef VTX_CONTROL
         cliPrintHashLine("vtx");
-        printVtx(dumpMask, &vtxConfigCopy, vtxConfig());
+        printVtx(dumpMask, &vtxConfig_Copy, vtxConfig());
 #endif
 
         cliPrintHashLine("rxfail");
-        printRxFailsafe(dumpMask, rxFailsafeChannelConfigsCopy, rxFailsafeChannelConfigs(0));
+        printRxFailsafe(dumpMask, rxFailsafeChannelConfigs_CopyArray, rxFailsafeChannelConfigs(0));
 
         cliPrintHashLine("master");
         dumpAllValues(MASTER_VALUE, dumpMask);
 
         if (dumpMask & DUMP_ALL) {
-            const uint8_t pidProfileIndexSave = systemConfigCopy.pidProfileIndex;
+            const uint8_t pidProfileIndexSave = systemConfig_Copy.pidProfileIndex;
             for (uint32_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
                 cliDumpPidProfile(pidProfileIndex, dumpMask);
             }
@@ -3451,7 +3122,7 @@ static void printConfig(char *cmdline, bool doDiff)
             cliPrintHashLine("restore original profile selection");
             cliProfile("");
 
-            const uint8_t controlRateProfileIndexSave = systemConfigCopy.activeRateProfile;
+            const uint8_t controlRateProfileIndexSave = systemConfig_Copy.activeRateProfile;
             for (uint32_t rateIndex = 0; rateIndex < CONTROL_RATE_PROFILE_COUNT; rateIndex++) {
                 cliDumpRateProfile(rateIndex, dumpMask);
             }
@@ -3462,18 +3133,18 @@ static void printConfig(char *cmdline, bool doDiff)
             cliPrintHashLine("save configuration");
             cliPrint("save");
         } else {
-            cliDumpPidProfile(systemConfigCopy.pidProfileIndex, dumpMask);
+            cliDumpPidProfile(systemConfig_Copy.pidProfileIndex, dumpMask);
 
-            cliDumpRateProfile(systemConfigCopy.activeRateProfile, dumpMask);
+            cliDumpRateProfile(systemConfig_Copy.activeRateProfile, dumpMask);
         }
     }
 
     if (dumpMask & DUMP_PROFILE) {
-        cliDumpPidProfile(systemConfigCopy.pidProfileIndex, dumpMask);
+        cliDumpPidProfile(systemConfig_Copy.pidProfileIndex, dumpMask);
     }
 
     if (dumpMask & DUMP_RATES) {
-        cliDumpRateProfile(systemConfigCopy.activeRateProfile, dumpMask);
+        cliDumpRateProfile(systemConfig_Copy.activeRateProfile, dumpMask);
     }
     // restore configs from copies
     restoreConfigs();
