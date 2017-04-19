@@ -187,15 +187,15 @@ static void cliPrint(const char *str)
     bufWriterFlush(cliWriter);
 }
 
+static void cliPrintBlankLine()
+{
+    cliPrint("\r\n");
+}
+
 static void cliPrintLine(const char *str)
 {
     cliPrint(str);
-    cliPrint("\n\r");
-}
-
-static void cliPrintBlankLine()
-{
-    cliPrint("\n\r");
+    cliPrintBlankLine();
 }
 
 #ifdef MINIMAL_CLI
