@@ -97,11 +97,11 @@ Go to the field, turn Tx on, place aircraft on the ground, connect flight batter
 Some advanced configurations and features are documented in the following pages, but have not been touched-upon earlier:
 
 * [Profiles](Profiles.md)
-* [PID tuning](PID tuning.md)
-* [In-flight Adjustments](Inflight Adjustments.md)
+* [PID tuning](PID%20tuning.md)
+* [In-flight Adjustments](Inflight%20Adjustments.md)
 * [Blackbox logging](Blackbox.md)
 * [Using a Sonar](Sonar.md)
-* [Spektrum Bind](Spektrum bind.md)
+* [Spektrum Bind](Spektrum%20bind.md)
 * [Telemetry](Telemetry.md)
 * [Using a Display](Display.md)
 * [Using a LED strip](LedStrip.md)
