@@ -2990,7 +2990,7 @@ static void printConfig(char *cmdline, bool doDiff)
 #if defined(TARGET_CONFIG)
     targetConfiguration();
 #endif
-    if (checkCommand(options, "showdefaults")) {
+    if (checkCommand(options, "defaults")) {
         dumpMask = dumpMask | SHOW_DEFAULTS;   // add default values as comments for changed values
     }
 
