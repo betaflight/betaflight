@@ -43,11 +43,7 @@
 #define BEEPER_PWM_HZ           3800 // Beeper PWM frequency in Hz
 #endif
 #define BEEPER                  PB4
-
 #define BEEPER_INVERTED
-#if defined(CL_RACINGF4)
-#define BEEPER_PWM_HZ           3800 // Beeper PWM frequency in Hz
-#endif
 
 #ifdef OMNIBUSF4SD
 #define INVERTER_PIN_UART6      PC8 // Omnibus F4 V3 and later
