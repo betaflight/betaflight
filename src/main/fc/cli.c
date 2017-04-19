@@ -316,26 +316,6 @@ static bool valuePtrEqualsDefault(uint8_t type, const void *ptr, const void *ptr
     return result;
 }
 
-typedef struct cliCurrentAndDefaultConfig_s {
-    const void *currentConfig; // the copy
-    const void *defaultConfig; // the PG value as set by default
-} cliCurrentAndDefaultConfig_t;
-
-static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn)
-{
-    static cliCurrentAndDefaultConfig_t ret;
-
-    const pgRegistry_t* found = pgFind(pgn);
-    if (found) {
-        ret.currentConfig = found->copy;
-        ret.defaultConfig = found->address;
-    } else {
-        ret.currentConfig = NULL;
-        ret.defaultConfig = NULL;
-    }
-    return &ret;
-}
-
 static uint16_t getValueOffset(const clivalue_t *value)
 {
     switch (value->type & VALUE_SECTION_MASK) {
@@ -2757,9 +2737,9 @@ static void printResource(uint8_t dumpMask)
         const void *currentConfig;
         const void *defaultConfig;
         if (dumpMask & DO_DIFF || dumpMask & SHOW_DEFAULTS) {
-            const cliCurrentAndDefaultConfig_t *config = getCurrentAndDefaultConfigs(resourceTable[i].pgn);
-            currentConfig = config->currentConfig;
-            defaultConfig = config->defaultConfig;
+            const pgRegistry_t* pg = pgFind(resourceTable[i].pgn);
+            currentConfig = pg->copy;
+            defaultConfig = pg->address;
         } else { // Not guaranteed to have initialised default configs in this case
             currentConfig = pgFind(resourceTable[i].pgn)->address;
             defaultConfig = currentConfig;
@@ -2964,18 +2944,10 @@ static void backupConfigs(void)
 {
     // make copies of configs to do differencing
     PG_FOREACH(reg) {
-        // currentConfig is the copy
-        const cliCurrentAndDefaultConfig_t *cliCurrentAndDefaultConfig = getCurrentAndDefaultConfigs(pgN(reg));
-        if (cliCurrentAndDefaultConfig->currentConfig) {
-            if (pgIsProfile(reg)) {
-                //memcpy((uint8_t *)cliCurrentAndDefaultConfig->currentConfig, reg->address, reg->size * MAX_PROFILE_COUNT);
-            } else {
-                memcpy((uint8_t *)cliCurrentAndDefaultConfig->currentConfig, reg->address, reg->size);
-            }
-#ifdef SERIAL_CLI_DEBUG
+        if (pgIsProfile(reg)) {
+            //memcpy((uint8_t *)reg->copy, reg->address, reg->size * MAX_PROFILE_COUNT);
         } else {
-            cliPrintf("BACKUP %d SET UP INCORRECTLY\r\n", pgN(reg));
-#endif
+            memcpy((uint8_t *)reg->copy, reg->address, reg->size);
         }
     }
 }
@@ -2983,18 +2955,10 @@ static void backupConfigs(void)
 static void restoreConfigs(void)
 {
     PG_FOREACH(reg) {
-        // currentConfig is the copy
-        const cliCurrentAndDefaultConfig_t *cliCurrentAndDefaultConfig = getCurrentAndDefaultConfigs(pgN(reg));
-        if (cliCurrentAndDefaultConfig->currentConfig) {
-            if (pgIsProfile(reg)) {
-                //memcpy(reg->address, (uint8_t *)cliCurrentAndDefaultConfig->currentConfig, reg->size * MAX_PROFILE_COUNT);
-            } else {
-                memcpy(reg->address, (uint8_t *)cliCurrentAndDefaultConfig->currentConfig, reg->size);
-            }
-#ifdef SERIAL_CLI_DEBUG
+        if (pgIsProfile(reg)) {
+            //memcpy(reg->address, (uint8_t *)reg->copy, reg->size * MAX_PROFILE_COUNT);
         } else {
-            cliPrintf("RESTORE %d SET UP INCORRECTLY\r\n", pgN(reg));
-#endif
+            memcpy(reg->address, (uint8_t *)reg->copy, reg->size);
         }
     }
 }
