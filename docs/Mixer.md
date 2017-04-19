@@ -211,7 +211,7 @@ smix reverse 5 2 r
 Here is an example of a custom twin engine plane with [Differential Thrust](http://rcvehicles.about.com/od/rcairplanes/ss/RCAirplaneBasic.htm#step8)
 Motors take the first 2 pins, the servos take pins as indicated in the [Servo slot] chart above.
 Settings bellow have motor yaw influence at "0.3", you can change this nuber to have more or less differential thrust over the two motors.
-Note: You can look at the Motors tab in [INAV Cofigurator](https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb?hl=en) to see motor and servo outputs.
+Note: You can look at the Motors tab in [INAV Cofigurator](https://chrome.google.com/webstore/detail/inav-configurator/fmaidjmgkdkpafmbnmigkpdnpdhopgel) to see motor and servo outputs.
 
 | Pins | Outputs          |
 |------|------------------|

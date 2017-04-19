@@ -76,24 +76,24 @@ The main flow for a contributing is as follows:
 
 1. Login to github, go to the INAV repository and press `fork`.
 2. Then using the command line/terminal on your computer: `git clone <url to YOUR fork>`
-3. `cd cleanflight`
+3. `cd inav`
 4. `git checkout master`
 5. `git checkout -b my-new-code`
 6. Make changes
 7. `git add <files that have changed>`
 8. `git commit`
 9. `git push origin my-new-code`
-10. Create pull request using github UI to merge your changes from your new branch into `cleanflight/master`
+10. Create pull request using github UI to merge your changes from your new branch into `inav/master`
 11. Repeat from step 4 for new other changes.
 
 The primary thing to remember is that separate pull requests should be created for separate branches.  Never create a pull request from your `master` branch.
 
-Later, you can get the changes from the cleanflight repo into your `master` branch by adding cleanflight as a git remote and merging from it as follows:
+Later, you can get the changes from the INAV repo into your `master` branch by adding INAV as a git remote and merging from it as follows:
 
-1. `git remote add cleanflight https://github.com/cleanflight/cleanflight.git`
+1. `git remote add upstream https://github.com/iNavFlight/inav.git`
 2. `git checkout master`
-3. `git fetch cleanflight`
-4. `git merge cleanflight/master`
+3. `git fetch upstream`
+4. `git merge upstream/master`
 5. `git push origin master` is an optional step that will update your fork on github
 
 

@@ -1,6 +1,6 @@
 # Configuration
 
-The configuration in cleanflight is stored at the end of the flash ram, currently it uses 2KB of flash.
+The configuration in INAV is stored at the end of the flash ram, currently it uses 2KB of flash.
 
 Sometimes it's necesaary to erase this during development.
 

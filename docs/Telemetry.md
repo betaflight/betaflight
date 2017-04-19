@@ -19,7 +19,7 @@ All telemetry systems use serial ports, configure serial ports to use the teleme
 
 FrSky telemetry is transmit only and just requires a single connection from the TX pin of a serial port to the RX pin on an FrSky telemetry receiver.
 
-FrSky telemetry signals are inverted.  To connect a cleanflight capable board to an FrSKy receiver you have some options.
+FrSky telemetry signals are inverted.  To connect a INAV capable board to an FrSKy receiver you have some options.
 
 1. A hardware inverter - Built in to some flight controllers.
 2. Use software serial and enable frsky_inversion.
@@ -126,10 +126,10 @@ found at https://github.com/iNavFlight/inav/wiki/Lightweight-Telemetry-(LTM).
 ## MAVLink telemetry
 
 MAVLink is a very lightweight, header-only message marshalling library for micro air vehicles.
-Cleanflight supports MAVLink for compatibility with ground stations, OSDs and antenna trackers built
+INAV supports MAVLink for compatibility with ground stations, OSDs and antenna trackers built
 for PX4, PIXHAWK, APM and Parrot AR.Drone platforms.
 
-MAVLink implementation in Cleanflight is transmit-only and usable on low baud rates and can be used over soft serial.
+MAVLink implementation in INAV is transmit-only and usable on low baud rates and can be used over soft serial.
 
 ## SmartPort (S.Port)
 

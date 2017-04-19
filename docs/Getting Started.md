@@ -32,7 +32,7 @@ For an overview of the hardware INAV (hereby CF) can run on, see [Boards.md](Boa
 
 ## Software setup
 
-Now that your board has pins on it, you are ready to connect it to your PC and flash it with CF. Install the Chromium browser or Google Chrome to your PC, if you don't have it already, add the [INAV Configurator](https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb) to it, and start it.
+Now that your board has pins on it, you are ready to connect it to your PC and flash it with CF. Install the Chromium browser or Google Chrome to your PC, if you don't have it already, add the [INAV Configurator](https://chrome.google.com/webstore/detail/inav-configurator/fmaidjmgkdkpafmbnmigkpdnpdhopgel) to it, and start it.
 
 Then follow these instructions for [Installation](Installation.md) of the firmware to the FC.
 
