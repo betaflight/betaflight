@@ -187,14 +187,24 @@ static void cliPrint(const char *str)
     bufWriterFlush(cliWriter);
 }
 
+static void cliPrintLine(const char *str)
+{
+    cliPrint(str);
+    cliPrint("\n\r");
+}
+
+static void cliPrintBlankLine()
+{
+    cliPrint("\n\r");
+}
+
 #ifdef MINIMAL_CLI
 #define cliPrintHashLine(str)
 #else
 static void cliPrintHashLine(const char *str)
 {
     cliPrint("\r\n# ");
-    cliPrint(str);
-    cliPrint("\r\n");
+    cliPrintLine(str);
 }
 #endif
 
@@ -353,11 +363,11 @@ static void dumpPgValue(const clivalue_t *value, uint8_t dumpMask)
         if (dumpMask & SHOW_DEFAULTS && !equalsDefault) {
             cliPrintf(defaultFormat, value->name);
             printValuePointer(value, (uint8_t*)pg->address + valueOffset, 0);
-            cliPrint("\r\n");
+            cliPrintBlankLine();
         }
         cliPrintf(format, value->name);
         printValuePointer(value, (uint8_t*)pg->copy + valueOffset, 0);
-        cliPrint("\r\n");
+        cliPrintBlankLine();
     }
 }
 
@@ -394,7 +404,7 @@ static void cliPrintVarRange(const clivalue_t *var)
                 cliPrint(",");
             cliPrintf(" %s", tableEntry->values[i]);
         }
-        cliPrint("\r\n");
+        cliPrintBlankLine();
     }
     break;
     }
@@ -429,7 +439,7 @@ static void cliRepeat(char ch, uint8_t len)
     for (int i = 0; i < len; i++) {
         bufWriterAppend(cliWriter, ch);
     }
-    cliPrint("\r\n");
+    cliPrintBlankLine();
 }
 #endif
 
@@ -440,7 +450,7 @@ static void cliPrompt(void)
 
 static void cliShowParseError(void)
 {
-    cliPrint("Parse error\r\n");
+    cliPrintLine("Parse error");
 }
 
 static void cliShowArgumentRangeError(char *name, int min, int max)
@@ -566,7 +576,7 @@ static void cliRxFailsafe(char *cmdline)
                     uint16_t value = atoi(ptr);
                     value = CHANNEL_VALUE_TO_RXFAIL_STEP(value);
                     if (value > MAX_RXFAIL_RANGE_STEP) {
-                        cliPrint("Value out of range\r\n");
+                        cliPrintLine("Value out of range");
                         return;
                     }
 
@@ -1030,7 +1040,7 @@ static void cliMotorMix(char *cmdline)
             len = strlen(ptr);
             for (uint32_t i = 0; ; i++) {
                 if (mixerNames[i] == NULL) {
-                    cliPrint("Invalid name\r\n");
+                    cliPrintLine("Invalid name");
                     break;
                 }
                 if (strncasecmp(ptr, mixerNames[i], len) == 0) {
@@ -1463,7 +1473,7 @@ static void printServoMix(uint8_t dumpMask, const servoMixer_t *customServoMixer
         );
     }
 
-    cliPrint("\r\n");
+    cliPrintBlankLine();
 }
 
 static void cliServoMix(char *cmdline)
@@ -1485,7 +1495,7 @@ static void cliServoMix(char *cmdline)
             len = strlen(ptr);
             for (uint32_t i = 0; ; i++) {
                 if (mixerNames[i] == NULL) {
-                    cliPrintf("Invalid name\r\n");
+                    cliPrintLine("Invalid name");
                     break;
                 }
                 if (strncasecmp(ptr, mixerNames[i], len) == 0) {
@@ -1505,13 +1515,13 @@ static void cliServoMix(char *cmdline)
             cliPrintf("s");
             for (uint32_t inputSource = 0; inputSource < INPUT_SOURCE_COUNT; inputSource++)
                 cliPrintf("\ti%d", inputSource);
-            cliPrintf("\r\n");
+            cliPrintBlankLine();
 
             for (uint32_t servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
                 cliPrintf("%d", servoIndex);
                 for (uint32_t inputSource = 0; inputSource < INPUT_SOURCE_COUNT; inputSource++)
                     cliPrintf("\t%s  ", (servoParams(servoIndex)->reversedSources & (1 << inputSource)) ? "r" : "n");
-                cliPrintf("\r\n");
+                cliPrintBlankLine();
             }
             return;
         }
@@ -1595,12 +1605,12 @@ static void cliSdInfo(char *cmdline)
     cliPrint("SD card: ");
 
     if (!sdcard_isInserted()) {
-        cliPrint("None inserted\r\n");
+        cliPrintLine("None inserted");
         return;
     }
 
     if (!sdcard_isInitialized()) {
-        cliPrint("Startup failed\r\n");
+        cliPrintLine("Startup failed");
         return;
     }
 
@@ -1644,7 +1654,7 @@ static void cliSdInfo(char *cmdline)
             }
         break;
     }
-    cliPrint("\r\n");
+    cliPrintBlankLine();
 }
 
 #endif
@@ -1668,9 +1678,9 @@ static void cliFlashErase(char *cmdline)
 
 #ifndef MINIMAL_CLI
     uint32_t i = 0;
-    cliPrintf("Erasing, please wait ... \r\n");
+    cliPrintLine("Erasing, please wait ... ");
 #else
-    cliPrintf("Erasing,\r\n");
+    cliPrintLine("Erasing,");
 #endif
 
     bufWriterFlush(cliWriter);
@@ -1681,7 +1691,7 @@ static void cliFlashErase(char *cmdline)
         cliPrintf(".");
         if (i++ > 120) {
             i=0;
-            cliPrintf("\r\n");
+            cliPrintBlankLine();
         }
 
         bufWriterFlush(cliWriter);
@@ -1689,7 +1699,8 @@ static void cliFlashErase(char *cmdline)
         delay(100);
     }
     beeper(BEEPER_BLACKBOX_ERASE);
-    cliPrintf("\r\nDone.\r\n");
+    cliPrintBlankLine();
+    cliPrintLine("Done.");
 }
 
 #ifdef USE_FLASH_TOOLS
@@ -1739,7 +1750,7 @@ static void cliFlashRead(char *cmdline)
                 break;
             }
         }
-        cliPrintf("\r\n");
+        cliPrintBlankLine();
     }
 }
 
@@ -1890,7 +1901,7 @@ static void cliFeature(char *cmdline)
             if (mask & (1 << i))
                 cliPrintf("%s ", featureNames[i]);
         }
-        cliPrint("\r\n");
+        cliPrintBlankLine();
     } else if (strncasecmp(cmdline, "list", len) == 0) {
         cliPrint("Available:");
         for (uint32_t i = 0; ; i++) {
@@ -1898,7 +1909,7 @@ static void cliFeature(char *cmdline)
                 break;
             cliPrintf(" %s", featureNames[i]);
         }
-        cliPrint("\r\n");
+        cliPrintBlankLine();
         return;
     } else {
         bool remove = false;
@@ -1911,7 +1922,7 @@ static void cliFeature(char *cmdline)
 
         for (uint32_t i = 0; ; i++) {
             if (featureNames[i] == NULL) {
-                cliPrint("Invalid name\r\n");
+                cliPrintLine("Invalid name");
                 break;
             }
 
@@ -1920,13 +1931,13 @@ static void cliFeature(char *cmdline)
                 mask = 1 << i;
 #ifndef GPS
                 if (mask & FEATURE_GPS) {
-                    cliPrint("unavailable\r\n");
+                    cliPrintLine("unavailable");
                     break;
                 }
 #endif
 #ifndef SONAR
                 if (mask & FEATURE_SONAR) {
-                    cliPrint("unavailable\r\n");
+                    cliPrintLine("unavailable");
                     break;
                 }
 #endif
@@ -1975,12 +1986,12 @@ static void cliBeeper(char *cmdline)
             if (mask & (1 << i))
                 cliPrintf("  %s", beeperNameForTableIndex(i));
         }
-        cliPrint("\r\n");
+        cliPrintBlankLine();
     } else if (strncasecmp(cmdline, "list", len) == 0) {
         cliPrint("Available:");
         for (uint32_t i = 0; i < beeperCount; i++)
             cliPrintf(" %s", beeperNameForTableIndex(i));
-        cliPrint("\r\n");
+        cliPrintBlankLine();
         return;
     } else {
         bool remove = false;
@@ -1992,7 +2003,7 @@ static void cliBeeper(char *cmdline)
 
         for (uint32_t i = 0; ; i++) {
             if (i == beeperCount) {
-                cliPrint("Invalid name\r\n");
+                cliPrintLine("Invalid name");
                 break;
             }
             if (strncasecmp(cmdline, beeperNameForTableIndex(i), len) == 0) {
@@ -2285,13 +2296,13 @@ static void cliMixer(char *cmdline)
                 break;
             cliPrintf(" %s", mixerNames[i]);
         }
-        cliPrint("\r\n");
+        cliPrintBlankLine();
         return;
     }
 
     for (uint32_t i = 0; ; i++) {
         if (mixerNames[i] == NULL) {
-            cliPrint("Invalid name\r\n");
+            cliPrintLine("Invalid name");
             return;
         }
         if (strncasecmp(cmdline, mixerNames[i], len) == 0) {
@@ -2364,7 +2375,7 @@ static void cliPlaySound(char *cmdline)
                 if ((name=beeperNameForTableIndex(i)) != NULL)
                     break;   //if name OK then play sound below
                 if (i == lastSoundIdx + 1) {     //prevent infinite loop
-                    cliPrintf("Error playing sound\r\n");
+                    cliPrintLine("Error playing sound");
                     return;
                 }
             }
@@ -2420,7 +2431,7 @@ static void cliDumpPidProfile(uint8_t pidProfileIndex, uint8_t dumpMask)
     changePidProfile(pidProfileIndex);
     cliPrintHashLine("profile");
     cliProfile("");
-    cliPrint("\r\n");
+    cliPrintBlankLine();
     dumpAllValues(PROFILE_VALUE, dumpMask);
 }
 
@@ -2433,7 +2444,7 @@ static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask)
     changeControlRateProfile(rateProfileIndex);
     cliPrintHashLine("rateprofile");
     cliRateProfile("");
-    cliPrint("\r\n");
+    cliPrintBlankLine();
     dumpAllValues(PROFILE_RATE_VALUE, dumpMask);
 }
 
@@ -2465,9 +2476,9 @@ static void cliGet(char *cmdline)
             val = &valueTable[i];
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, 0);
-            cliPrint("\r\n");
+            cliPrintBlankLine();
             cliPrintVarRange(val);
-            cliPrint("\r\n");
+            cliPrintBlankLine();
 
             matchedCommands++;
         }
@@ -2478,7 +2489,7 @@ static void cliGet(char *cmdline)
         return;
     }
 
-    cliPrint("Invalid name\r\n");
+    cliPrintLine("Invalid name");
 }
 
 static void cliSet(char *cmdline)
@@ -2490,12 +2501,12 @@ static void cliSet(char *cmdline)
     len = strlen(cmdline);
 
     if (len == 0 || (len == 1 && cmdline[0] == '*')) {
-        cliPrint("Current settings: \r\n");
+        cliPrintLine("Current settings: ");
         for (uint32_t i = 0; i < valueTableEntryCount; i++) {
             val = &valueTable[i];
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, len); // when len is 1 (when * is passed as argument), it will print min/max values as well, for gui
-            cliPrint("\r\n");
+            cliPrintBlankLine();
         }
     } else if ((eqptr = strstr(cmdline, "=")) != NULL) {
         // has equals
@@ -2549,14 +2560,14 @@ static void cliSet(char *cmdline)
                     cliPrintf("%s set to ", valueTable[i].name);
                     cliPrintVar(val, 0);
                 } else {
-                    cliPrint("Invalid value\r\n");
+                    cliPrintLine("Invalid value");
                     cliPrintVarRange(val);
                 }
 
                 return;
             }
         }
-        cliPrint("Invalid name\r\n");
+        cliPrintLine("Invalid name");
     } else {
         // no equals, check for matching variables.
         cliGet(cmdline);
@@ -2589,7 +2600,7 @@ static void cliStatus(char *cmdline)
         }
     }
 #endif /* USE_SENSOR_NAMES */
-    cliPrint("\r\n");
+    cliPrintBlankLine();
 
 #ifdef USE_SDCARD
     cliSdInfo(NULL);
@@ -2625,9 +2636,9 @@ static void cliTasks(char *cmdline)
 
 #ifndef MINIMAL_CLI
     if (systemConfig()->task_statistics) {
-        cliPrintf("Task list             rate/hz  max/us  avg/us maxload avgload     total/ms\r\n");
+        cliPrintLine("Task list             rate/hz  max/us  avg/us maxload avgload     total/ms");
     } else {
-        cliPrintf("Task list\r\n");
+        cliPrintLine("Task list");
     }
 #endif
     for (cfTaskId_e taskId = 0; taskId < TASK_COUNT; taskId++) {
@@ -2807,7 +2818,7 @@ static void resourceCheck(uint8_t resourceIndex, uint8_t index, ioTag_t newTag)
                     cliPrintf(" disabled");
                 }
 
-                cliPrint(".\r\n");
+                cliPrintLine(".");
             }
         }
     }
@@ -2823,9 +2834,9 @@ static void cliResource(char *cmdline)
         return;
     } else if (strncasecmp(cmdline, "list", len) == 0) {
 #ifdef MINIMAL_CLI
-        cliPrintf("IO\r\n");
+        cliPrintLine("IO");
 #else
-        cliPrintf("Currently active IO resource assignments:\r\n(reboot to update)\r\n");
+        cliPrintLine("Currently active IO resource assignments:\r\n(reboot to update)");
         cliRepeat('-', 20);
 #endif
         for (int i = 0; i < DEFIO_IO_USED_COUNT; i++) {
@@ -2836,14 +2847,15 @@ static void cliResource(char *cmdline)
             if (ioRecs[i].index > 0) {
                 cliPrintf("%d", ioRecs[i].index);
             }
-            cliPrintf("\r\n");
+            cliPrintLine("\r\n");
         }
 
-        cliPrintf("\r\n\r\n");
+        cliPrintLine("\r\n");
+        cliPrintLine("\r\n");
 #ifdef MINIMAL_CLI
-        cliPrintf("DMA:\r\n");
+        cliPrintLine("DMA:");
 #else
-        cliPrintf("Currently active DMA:\r\n");
+        cliPrintLine("Currently active DMA:");
         cliRepeat('-', 20);
 #endif
         for (int i = 0; i < DMA_MAX_DESCRIPTORS; i++) {
@@ -2860,7 +2872,7 @@ static void cliResource(char *cmdline)
         }
 
 #ifndef MINIMAL_CLI
-        cliPrintf("\r\nUse: 'resource' to see how to change resources.\r\n");
+        cliPrintLine("\r\nUse: 'resource' to see how to change resources.");
 #endif
 
         return;
@@ -2874,7 +2886,7 @@ static void cliResource(char *cmdline)
     pch = strtok_r(cmdline, " ", &saveptr);
     for (resourceIndex = 0; ; resourceIndex++) {
         if (resourceIndex >= ARRAYLEN(resourceTable)) {
-            cliPrint("Invalid\r\n");
+            cliPrintLine("Invalid");
             return;
         }
 
@@ -2903,9 +2915,9 @@ static void cliResource(char *cmdline)
         if (strcasecmp(pch, "NONE") == 0) {
             *tag = IO_TAG_NONE;
 #ifdef MINIMAL_CLI
-            cliPrintf("Freed\r\n");
+            cliPrintLine("Freed");
 #else
-            cliPrintf("Resource is freed\r\n");
+            cliPrintLine("Resource is freed");
 #endif
             return;
         } else {
@@ -3001,7 +3013,7 @@ static void printConfig(char *cmdline, bool doDiff)
         if ((dumpMask & (DUMP_ALL | DO_DIFF)) == (DUMP_ALL | DO_DIFF)) {
             cliPrintHashLine("reset configuration to default settings");
             cliPrint("defaults");
-            cliPrint("\r\n");
+            cliPrintBlankLine();
         }
 
         cliPrintHashLine("name");
@@ -3257,7 +3269,7 @@ static void cliHelp(char *cmdline)
             cliPrintf("\r\n\t%s", cmdTable[i].args);
         }
 #endif
-        cliPrint("\r\n");
+        cliPrintBlankLine();
     }
 }
 
@@ -3317,7 +3329,7 @@ void cliProcess(void)
             cliPrompt();
         } else if (bufferIndex && (c == '\n' || c == '\r')) {
             // enter pressed
-            cliPrint("\r\n");
+            cliPrintBlankLine();
 
             // Strip comment starting with # from line
             char *p = cliBuffer;
@@ -3381,9 +3393,9 @@ void cliEnter(serialPort_t *serialPort)
     schedulerSetCalulateTaskStatistics(systemConfig()->task_statistics);
 
 #ifndef MINIMAL_CLI
-    cliPrint("\r\nEntering CLI Mode, type 'exit' to return, or 'help'\r\n");
+    cliPrintLine("\r\nEntering CLI Mode, type 'exit' to return, or 'help'");
 #else
-    cliPrint("\r\nCLI\r\n");
+    cliPrintLine("\r\nCLI");
 #endif
     cliPrompt();
 
