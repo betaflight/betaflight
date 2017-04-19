@@ -214,8 +214,7 @@
 //#ifdef CL_RACINGF4
 //#define USABLE_TIMER_CHANNEL_COUNT 6
 //#define USED_TIMERS  ( TIM_N(4) | TIM_N(8)|TIM_N(3) )
-//#else
-#ifdef OMNIBUSF4SD
+#if defined(OMNIBUSF4SD) || defined(CL_RACINGF4)
 #define USABLE_TIMER_CHANNEL_COUNT 13
 #else
 #define USABLE_TIMER_CHANNEL_COUNT 12
