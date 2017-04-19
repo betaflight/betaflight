@@ -357,25 +357,26 @@ static void *getValuePointer(const clivalue_t *value)
 
 static void dumpPgValue(const clivalue_t *value, uint8_t dumpMask)
 {
-    const cliCurrentAndDefaultConfig_t *config = getCurrentAndDefaultConfigs(value->pgn);
-    if (config->currentConfig == NULL || config->defaultConfig == NULL) {
-        // has not been set up properly
+    const pgRegistry_t *pg = pgFind(value->pgn);
+#ifdef DEBUG
+    if (!pg) {
         cliPrintf("VALUE %s ERROR\r\n", value->name);
-        return;
+        return; // if it's not found, the pgn shouldn't be in the value table!
     }
+#endif
 
     const char *format = "set %s = ";
     const char *defaultFormat = "#set %s = ";
     const int valueOffset = getValueOffset(value);
-    const bool equalsDefault = valuePtrEqualsDefault(value->type, (uint8_t*)config->currentConfig + valueOffset, (uint8_t*)config->defaultConfig + valueOffset);
+    const bool equalsDefault = valuePtrEqualsDefault(value->type, (uint8_t*)pg->copy + valueOffset, (uint8_t*)pg->address + valueOffset);
     if (((dumpMask & DO_DIFF) == 0) || !equalsDefault) {
         if (dumpMask & SHOW_DEFAULTS && !equalsDefault) {
             cliPrintf(defaultFormat, value->name);
-            printValuePointer(value, (uint8_t*)config->defaultConfig + valueOffset, 0);
+            printValuePointer(value, (uint8_t*)pg->address + valueOffset, 0);
             cliPrint("\r\n");
         }
         cliPrintf(format, value->name);
-        printValuePointer(value, (uint8_t*)config->currentConfig + valueOffset, 0);
+        printValuePointer(value, (uint8_t*)pg->copy + valueOffset, 0);
         cliPrint("\r\n");
     }
 }
