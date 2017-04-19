@@ -887,7 +887,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/serial_escserial.c \
             drivers/vtx_common.c \
-            io/cli.c \
+            fc/cli.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
