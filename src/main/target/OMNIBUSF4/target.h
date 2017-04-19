@@ -41,6 +41,9 @@
 //#define LED1                    PB4 // Remove this at the next major release
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
+#if defined(CL_RACINGF4)
+#define BEEPER_PWM_HZ           3800 // Beeper PWM frequency in Hz
+#endif
 
 #ifdef OMNIBUSF4SD
 #define INVERTER_PIN_UART6      PC8 // Omnibus F4 V3 and later
@@ -208,14 +211,14 @@
 #define TARGET_IO_PORTC (0xffff & ~(BIT(15)|BIT(14)|BIT(13)))
 #define TARGET_IO_PORTD BIT(2)
 
-#ifdef CL_RACINGF4
-#define USABLE_TIMER_CHANNEL_COUNT 6
-#define USED_TIMERS  ( TIM_N(4) | TIM_N(8) )
-#else
+//#ifdef CL_RACINGF4
+//#define USABLE_TIMER_CHANNEL_COUNT 6
+//#define USED_TIMERS  ( TIM_N(4) | TIM_N(8)|TIM_N(3) )
+//#else
 #ifdef OMNIBUSF4SD
 #define USABLE_TIMER_CHANNEL_COUNT 13
 #else
 #define USABLE_TIMER_CHANNEL_COUNT 12
 #endif
 #define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9))
-#endif
+//#endif
