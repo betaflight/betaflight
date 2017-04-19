@@ -39,7 +39,11 @@
 
 #define LED0                    PB5
 //#define LED1                    PB4 // Remove this at the next major release
+#if defined(CL_RACINGF4)
+#define BEEPER_PWM_HZ           2200 // Beeper PWM frequency in Hz
+#endif
 #define BEEPER                  PB4
+
 #define BEEPER_INVERTED
 
 #ifdef OMNIBUSF4SD
