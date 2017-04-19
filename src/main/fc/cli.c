@@ -3000,7 +3000,8 @@ static void printConfig(char *cmdline, bool doDiff)
 
         if ((dumpMask & (DUMP_ALL | DO_DIFF)) == (DUMP_ALL | DO_DIFF)) {
             cliPrintHashLine("reset configuration to default settings");
-            cliPrint("defaults\r\n");
+            cliPrint("defaults");
+            cliPrint("\r\n");
         }
 
         cliPrintHashLine("name");
