@@ -74,11 +74,7 @@ void mpu6500GyroInit(gyroDev_t *gyro)
     delay(100);
 
     // Data ready interrupt configuration
-#ifdef USE_MPU9250_MAG
-    gyro->mpuConfiguration.writeFn(&gyro->bus, MPU_RA_INT_PIN_CFG, MPU6500_BIT_INT_ANYRD_2CLEAR | MPU6500_BIT_BYPASS_EN);  // INT_ANYRD_2CLEAR, BYPASS_EN
-#else
     gyro->mpuConfiguration.writeFn(&gyro->bus, MPU_RA_INT_PIN_CFG, MPU6500_BIT_INT_ANYRD_2CLEAR);  // INT_ANYRD_2CLEAR
-#endif
     delay(15);
 
 #ifdef USE_MPU_DATA_READY_SIGNAL

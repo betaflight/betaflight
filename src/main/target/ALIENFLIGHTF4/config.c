@@ -40,7 +40,6 @@
 #include "telemetry/telemetry.h"
 
 #include "sensors/battery.h"
-#include "sensors/compass.h"
 
 #include "hardware_revision.h"
 
@@ -53,8 +52,6 @@
 // alternative defaults settings for AlienFlight targets
 void targetConfiguration(void)
 {
-    compassConfigMutable()->mag_hardware = MAG_NONE;            // disabled by default
-
     if (hardwareMotorType == MOTOR_BRUSHED) {
         motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
         pidConfigMutable()->pid_process_denom = 1;

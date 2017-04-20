@@ -25,6 +25,7 @@ bool mpu6500SpiAccDetect(accDev_t *acc);
 bool mpu6500SpiGyroDetect(gyroDev_t *gyro);
 
 bool mpu6500SpiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data);
+bool mpu6500SpiWriteRegisterDelayed(const busDevice_t *bus, uint8_t reg, uint8_t data);
 bool mpu6500SpiReadRegister(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data);
 
 void mpu6500SpiGyroInit(gyroDev_t *gyro);
