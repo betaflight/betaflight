@@ -49,7 +49,7 @@ static uint8_t cmsx_vtxChannel;
 static uint8_t cmsx_vtxMode;
 static uint16_t cmsx_vtxMhz;
 #endif
-static bool cmsx_vtxPower;
+static uint8_t cmsx_vtxPower;
 
 static long cmsx_Vtx_FeatureRead(void)
 {
@@ -80,9 +80,16 @@ static const char * const vtxBandNames[] = {
     "FATSHARK",
     "RACEBAND",
 };
+static const char * const vtxPowerNames[] = {
+    "PIT MODE", //1dBm
+    "25mW",
+    "200mW",
+    "400mW"
+};
 
 static OSD_TAB_t entryVtxBand = {&cmsx_vtxBand,4,&vtxBandNames[0]};
 static OSD_UINT8_t entryVtxChannel =  {&cmsx_vtxChannel, 1, 8, 1};
+static OSD_TAB_t entryVtxPower =  {&cmsx_vtxPower, 3, &vtxPowerNames[0]};
 #ifdef VTX
 static OSD_UINT8_t entryVtxMode =  {&cmsx_vtxMode, 0, 2, 1};
 static OSD_UINT16_t entryVtxMhz =  {&cmsx_vtxMhz, 5600, 5950, 1};
@@ -148,7 +155,8 @@ static OSD_Entry cmsx_menuVtxEntries[] =
     {"BAND", OME_TAB, NULL, &entryVtxBand, 0},
     {"CHANNEL", OME_UINT8, NULL, &entryVtxChannel, 0},
 #ifdef USE_RTC6705
-    {"LOW POWER", OME_Bool, NULL, &cmsx_vtxPower, 0},
+    {"POWER", OME_TAB, NULL, &entryVtxPower, 0},
+    //{"LOW POWER", OME_Bool, NULL, &cmsx_vtxPower, 0},
 #endif // USE_RTC6705
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
