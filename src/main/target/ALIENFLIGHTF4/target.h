@@ -19,6 +19,8 @@
 #define TARGET_BOARD_IDENTIFIER "AFF4"
 #define TARGET_CONFIG
 
+#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
+
 #define USE_HARDWARE_REVISION_DETECTION
 #define HW_PIN                  PC13
 #define BRUSHED_ESC_AUTODETECT
@@ -40,23 +42,32 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define MPU6500_CS_PIN          PA4
-#define MPU6500_SPI_INSTANCE    SPI1
-
 #define ACC
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW270_DEG
+#define USE_ACC_MPU9250
+#define USE_ACC_SPI_MPU9250
+#define ACC_MPU9250_ALIGN       CW270_DEG
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6500
+#define MPU6500_CS_PIN          SPI1_NSS_PIN
+#define MPU6500_SPI_INSTANCE    SPI1
 #define GYRO_MPU6500_ALIGN      CW270_DEG
+#define USE_GYRO_SPI_MPU9250
+#define MPU9250_CS_PIN          SPI1_NSS_PIN
+#define MPU9250_SPI_INSTANCE    SPI1
+#define GYRO_MPU9250_ALIGN      CW270_DEG
 
 #define MAG
-#define USE_MAG_HMC5883
-#define USE_MAG_AK8963
-
+#define USE_MAG_HMC5883         // external
 #define MAG_HMC5883_ALIGN       CW180_DEG
+#define USE_MAG_AK8963		// AK8963 3-Axis magnetometer from Asahi Kasei Microdevices Corp.
 #define MAG_AK8963_ALIGN        CW270_DEG
+#define USE_MPU9250_MAG         // AK8963 3-Axis magnetometer from Asahi Kasei Microdevices Corp.
+#define MAG_MPU9250_ALIGN       CW270_DEG
+#define USE_MAG_DATA_READY_SIGNAL
+#define ENSURE_MAG_DATA_READY_IS_HIGH
 
 #define BARO
 #define USE_BARO_MS5611
@@ -130,12 +141,19 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
+#define USE_SPI_DEVICE_3
+
+// MPU
+#define SPI1_NSS_PIN            PA4
+#define SPI1_SCK_PIN            PA5
+#define SPI1_MISO_PIN           PA6
+#define SPI1_MOSI_PIN           PA7
+
+// SDCARD
 #define SPI2_NSS_PIN            PB12
 #define SPI2_SCK_PIN            PB13
 #define SPI2_MISO_PIN           PC2
 #define SPI2_MOSI_PIN           PC3
-
-#define USE_SPI_DEVICE_3
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1

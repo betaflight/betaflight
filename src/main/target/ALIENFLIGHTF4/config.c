@@ -27,6 +27,7 @@
 #include "config/feature.h"
 
 #include "drivers/pwm_esc_detect.h"
+#include "drivers/compass/compass.h"
 
 #include "fc/config.h"
 
