@@ -62,9 +62,6 @@
 
 #define USB_DETECT_PIN          PB5
 
-#undef GPS
-
-
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
