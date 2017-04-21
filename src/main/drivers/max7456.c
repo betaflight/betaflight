@@ -441,12 +441,14 @@ void max7456Write(uint8_t x, uint8_t y, const char *buff)
             screenBuffer[y*CHARS_PER_LINE+x+i] = *(buff+i);
 }
 
-#ifdef MAX7456_DMA_CHANNEL_TX
-bool max7456DmaInProgres(void)
+bool max7456DmaInProgress(void)
 {
+#ifdef MAX7456_DMA_CHANNEL_TX
     return dmaTransactionInProgress;
-}
+#else
+    return false;
 #endif
+}
 
 #include "build/debug.h"
 

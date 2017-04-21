@@ -55,6 +55,7 @@
 #include "drivers/adc.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
+#include "drivers/buttons.h"
 #include "drivers/inverter.h"
 #include "drivers/flash_m25p16.h"
 #include "drivers/sonar_hcsr04.h"
@@ -62,7 +63,9 @@
 #include "drivers/usb_io.h"
 #include "drivers/transponder_ir.h"
 #include "drivers/exti.h"
-#include "drivers/vtx_soft_spi_rtc6705.h"
+#include "drivers/max7456.h"
+#include "drivers/vtx_rtc6705.h"
+#include "drivers/vtx_common.h"
 
 #include "fc/config.h"
 #include "fc/fc_init.h"
@@ -92,7 +95,8 @@
 #include "io/osd.h"
 #include "io/osd_slave.h"
 #include "io/displayport_msp.h"
-#include "io/vtx.h"
+#include "io/vtx_rtc6705.h"
+#include "io/vtx_control.h"
 #include "io/vtx_smartaudio.h"
 #include "io/vtx_tramp.h"
 
@@ -156,6 +160,18 @@ void processLoopback(void)
 }
 
 
+#ifdef VTX_RTC6705
+bool canUpdateVTX(void)
+{
+#if defined(MAX7456_SPI_INSTANCE) && defined(RTC6705_SPI_INSTANCE) && defined(SPI_SHARED_MAX7456_AND_RTC6705)
+    if (feature(FEATURE_OSD)) {
+        return !max7456DmaInProgress();
+    }
+#endif
+    return true;
+}
+#endif
+
 #ifdef BUS_SWITCH_PIN
 void busSwitchInit(void)
 {
@@ -217,17 +233,8 @@ void init(void)
 #endif
 
 #if defined(BUTTONS)
-#ifdef BUTTON_A_PIN
-    IO_t buttonAPin = IOGetByTag(IO_TAG(BUTTON_A_PIN));
-    IOInit(buttonAPin, OWNER_SYSTEM, 0);
-    IOConfigGPIO(buttonAPin, IOCFG_IPU);
-#endif
 
-#ifdef BUTTON_B_PIN
-    IO_t buttonBPin = IOGetByTag(IO_TAG(BUTTON_B_PIN));
-    IOInit(buttonBPin, OWNER_SYSTEM, 0);
-    IOConfigGPIO(buttonBPin, IOCFG_IPU);
-#endif
+    buttonsInit();
 
     // Check status of bind plug and exit if not active
     delayMicroseconds(10);  // allow configuration to settle
@@ -238,7 +245,7 @@ void init(void)
         uint8_t secondsRemaining = 5;
         bool bothButtonsHeld;
         do {
-            bothButtonsHeld = !IORead(buttonAPin) && !IORead(buttonBPin);
+            bothButtonsHeld = buttonAPressed() && buttonBPressed();
             if (bothButtonsHeld) {
                 if (--secondsRemaining == 0) {
                     resetEEPROM();
@@ -375,8 +382,8 @@ void init(void)
     updateHardwareRevision();
 #endif
 
-#ifdef VTX
-    vtxInit();
+#ifdef VTX_RTC6705
+    rtc6705IOInit();
 #endif
 
 #if defined(SONAR_SOFTSERIAL2_EXCLUSIVE) && defined(SONAR) && defined(USE_SOFTSERIAL2)
@@ -438,19 +445,6 @@ void init(void)
     failsafeInit();
 
     rxInit();
-
-/*
- * VTX
- */
-
-#ifdef USE_RTC6705
-    if (feature(FEATURE_VTX)) {
-        rtc6705_soft_spi_init();
-        current_vtx_channel = vtxConfig()->vtx_channel;
-        rtc6705_soft_spi_set_channel(vtx_freq[current_vtx_channel]);
-        rtc6705_soft_spi_set_rf_power(vtxConfig()->vtx_power);
-    }
-#endif
 
 /*
  * CMS, display devices and OSD
@@ -568,13 +562,25 @@ void init(void)
 #endif
 
 #ifdef VTX_CONTROL
+    vtxControlInit();
+
+    vtxCommonInit();
 
 #ifdef VTX_SMARTAUDIO
-    smartAudioInit();
+    vtxSmartAudioInit();
 #endif
 
 #ifdef VTX_TRAMP
-    trampInit();
+    vtxTrampInit();
+#endif
+
+#ifdef VTX_RTC6705
+#ifdef VTX_RTC6705OPTIONAL
+    if (!vtxCommonDeviceRegistered()) // external VTX takes precedence when configured.
+#endif
+    {
+        vtxRTC6705Init();
+    }
 #endif
 
 #endif // VTX_CONTROL
