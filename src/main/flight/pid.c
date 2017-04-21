@@ -277,6 +277,7 @@ void pidInit(const pidProfile_t *pidProfile)
     pidSetTargetLooptime(gyro.targetLooptime * pidConfig()->pid_process_denom); // Initialize pid looptime
     pidInitFilters(pidProfile);
     pidInitConfig(pidProfile);
+    pidInitMixer(pidProfile);
 }
 
 // calculates strength of horizon leveling; 0 = none, 1.0 = most leveling

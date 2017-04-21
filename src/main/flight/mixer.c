@@ -128,6 +128,9 @@ int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 mixerMode_e currentMixerMode;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 
+float pidSumLimit;
+float pidSumLimitYaw;
+
 
 static const motorMixer_t mixerQuadX[] = {
     { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
@@ -391,6 +394,12 @@ void mixerInit(mixerMode_e mixerMode)
     initEscEndpoints();
 }
 
+void pidInitMixer(struct pidProfile_s *pidProfile)
+{
+    pidSumLimit = CONVERT_PARAMETER_TO_FLOAT(pidProfile->pidSumLimit);
+    pidSumLimitYaw = CONVERT_PARAMETER_TO_FLOAT(pidProfile->pidSumLimitYaw);
+}
+
 #ifndef USE_QUAD_MIXER_ONLY
 
 void mixerConfigureOutput(void)
@@ -555,13 +564,13 @@ void mixTable(pidProfile_t *pidProfile)
     // Calculate and Limit the PIDsum
     scaledAxisPIDf[FD_ROLL] =
         constrainf((axisPID_P[FD_ROLL] + axisPID_I[FD_ROLL] + axisPID_D[FD_ROLL]) / PID_MIXER_SCALING,
-        -CONVERT_PARAMETER_TO_FLOAT(pidProfile->pidSumLimit), CONVERT_PARAMETER_TO_FLOAT(pidProfile->pidSumLimit));
+        -pidSumLimit, pidSumLimit);
     scaledAxisPIDf[FD_PITCH] =
         constrainf((axisPID_P[FD_PITCH] + axisPID_I[FD_PITCH] + axisPID_D[FD_PITCH]) / PID_MIXER_SCALING,
-        -CONVERT_PARAMETER_TO_FLOAT(pidProfile->pidSumLimit), CONVERT_PARAMETER_TO_FLOAT(pidProfile->pidSumLimit));
+        -pidSumLimit, pidSumLimit);
     scaledAxisPIDf[FD_YAW] =
         constrainf((axisPID_P[FD_YAW] + axisPID_I[FD_YAW]) / PID_MIXER_SCALING,
-        -CONVERT_PARAMETER_TO_FLOAT(pidProfile->pidSumLimit), CONVERT_PARAMETER_TO_FLOAT(pidProfile->pidSumLimitYaw));
+        -pidSumLimitYaw, pidSumLimitYaw);
 
     // Calculate voltage compensation
     const float vbatCompensationFactor = (pidProfile->vbatPidCompensation)  ? calculateVbatPidCompensation() : 1.0f;
