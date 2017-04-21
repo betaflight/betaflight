@@ -50,6 +50,7 @@
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/compass/compass.h"
 #include "drivers/pwm_esc_detect.h"
+#include "drivers/rssi_softpwm.h"
 #include "drivers/rx_pwm.h"
 #include "drivers/pwm_output.h"
 #include "drivers/adc.h"
@@ -404,6 +405,10 @@ void init(void)
 
     adcConfigMutable()->rssi.enabled = feature(FEATURE_RSSI_ADC);
     adcInit(adcConfig());
+#endif
+
+#ifdef USE_RSSI_SOFTPWM
+    rssiSoftPwmInit(rssiSoftPwmConfig());
 #endif
 
     initBoardAlignment(boardAlignment());

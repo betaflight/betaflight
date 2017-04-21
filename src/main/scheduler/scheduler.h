@@ -113,6 +113,9 @@ typedef enum {
 #ifdef USE_GYRO_DATA_ANALYSE
     TASK_GYRO_DATA_ANALYSE,
 #endif
+#ifdef USE_RSSI_SOFTPWM
+    TASK_RSSI_SOFTPWM,
+#endif
 
     /* Count of real tasks */
     TASK_COUNT,

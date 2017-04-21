@@ -89,6 +89,16 @@
 # define IOCFG_IPU            0
 # define IOCFG_IN_FLOATING    0
 
+#elif defined(SIMULATOR_BUILD)
+
+# define IOCFG_OUT_PP         0
+# define IOCFG_OUT_OD         0
+# define IOCFG_AF_PP          0
+# define IOCFG_AF_OD          0
+# define IOCFG_IPD            0
+# define IOCFG_IPU            0
+# define IOCFG_IN_FLOATING    0
+
 #else
 # warning "Unknown TARGET"
 #endif

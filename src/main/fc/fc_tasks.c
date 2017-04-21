@@ -38,6 +38,7 @@
 #include "drivers/serial.h"
 #include "drivers/stack_check.h"
 #include "drivers/vtx_common.h"
+#include "drivers/rssi_softpwm.h"
 
 #include "fc/config.h"
 #include "fc/fc_msp.h"
@@ -219,6 +220,14 @@ void taskVtxControl(uint32_t currentTime)
 }
 #endif
 
+#ifdef USE_RSSI_SOFTPWM
+static void taskRssiSoftPwm(uint32_t currentTimeUs)
+{
+    // Feature switch here?
+    rssiSoftPwmUpdate(currentTimeUs);
+}
+#endif
+
 #ifdef USE_OSD_SLAVE
 void osdSlaveTasksInit(void)
 {
@@ -345,6 +354,9 @@ void fcTasksInit(void)
 #endif
 #ifdef USE_GYRO_DATA_ANALYSE
     setTaskEnabled(TASK_GYRO_DATA_ANALYSE, true);
+#endif
+#ifdef USE_RSSI_SOFTPWM
+    setTaskEnabled(TASK_RSSI_SOFTPWM, true); // XXX Feature switch?
 #endif
 }
 #endif
@@ -597,5 +609,14 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
+
+#ifdef USE_RSSI_SOFTPWM
+    [TASK_RSSI_SOFTPWM] = {
+        .taskName = "RSSIPWM",
+        .taskFunc = taskRssiSoftPwm,
+        .desiredPeriod = TASK_PERIOD_HZ(10),        // 10 Hz
+        .staticPriority = TASK_PRIORITY_LOW,
+    },
 #endif
+#endif // !USE_OSD_SLAVE
 };

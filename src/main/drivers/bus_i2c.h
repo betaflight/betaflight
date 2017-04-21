@@ -43,7 +43,9 @@ typedef enum I2CDevice {
 } I2CDevice;
 
 typedef struct i2cDevice_s {
+#if !defined(SIMULATOR_BUILD)
     I2C_TypeDef *dev;
+#endif
     ioTag_t scl;
     ioTag_t sda;
     rccPeriphTag_t rcc;

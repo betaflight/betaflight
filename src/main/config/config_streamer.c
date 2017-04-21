@@ -90,6 +90,8 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
     // NOP
 #elif defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
     // NOP
+#elif defined(SIMULATOR_BUILD)
+    // NOP
 #else
 # error "Unsupported CPU"
 #endif

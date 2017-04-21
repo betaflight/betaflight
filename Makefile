@@ -768,6 +768,7 @@ FC_SRC = \
             common/gps_conversion.c \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
+            drivers/rssi_softpwm.c \
             drivers/serial_escserial.c \
             drivers/sonar_hcsr04.c \
             drivers/vtx_common.c \
@@ -836,6 +837,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/pwm_output.c \
             drivers/rcc.c \
             drivers/rx_pwm.c \
+            drivers/rssi_softpwm.c \
             drivers/serial.c \
             drivers/serial_uart.c \
             drivers/sound_beeper.c \
@@ -1000,6 +1002,7 @@ SITLEXCLUDES = \
             drivers/system.c \
             drivers/rcc.c \
             drivers/serial_uart.c \
+            drivers/rssi_softpwm.c \
 
 
 # check if target.mk supplied

@@ -15,6 +15,8 @@
 
 #pragma once
 
+#define RSSI_SOFTPWM_PIN PA8
+
 #if defined(CL_RACINGF4)
 #define TARGET_BOARD_IDENTIFIER "CLR4"
 #elif defined(OMNIBUSF4SD)

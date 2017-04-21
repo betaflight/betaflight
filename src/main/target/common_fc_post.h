@@ -24,3 +24,8 @@
 # undef VTX_SMARTAUDIO
 # undef VTX_TRAMP
 #endif
+
+// Targets WITHOUT USE_EXTI can't drive RSSI_SOFTPWM
+#ifndef USE_EXTI
+#undef USE_RSSI_SOFTPWM
+#endif
