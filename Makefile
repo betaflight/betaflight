@@ -723,6 +723,7 @@ FC_SRC = \
             fc/rc_adjustments.c \
             fc/rc_controls.c \
             fc/cli.c \
+            fc/settings.c \
             flight/altitude.c \
             flight/failsafe.c \
             flight/imu.c \
@@ -885,7 +886,13 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/serial_escserial.c \
             drivers/vtx_common.c \
-            io/cli.c \
+            fc/fc_init.c \
+            fc/cli.c \
+            fc/settings.c \
+            config/config_eeprom.c \
+            config/feature.c \
+            config/parameter_group.c \
+            config/config_streamer.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
