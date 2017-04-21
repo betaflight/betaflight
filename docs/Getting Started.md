@@ -32,7 +32,7 @@ For an overview of the hardware INAV (hereby CF) can run on, see [Boards.md](Boa
 
 ## Software setup
 
-Now that your board has pins on it, you are ready to connect it to your PC and flash it with CF. Install the Chromium browser or Google Chrome to your PC, if you don't have it already, add the [INAV Configurator](https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb) to it, and start it.
+Now that your board has pins on it, you are ready to connect it to your PC and flash it with CF. Install the Chromium browser or Google Chrome to your PC, if you don't have it already, add the [INAV Configurator](https://chrome.google.com/webstore/detail/inav-configurator/fmaidjmgkdkpafmbnmigkpdnpdhopgel) to it, and start it.
 
 Then follow these instructions for [Installation](Installation.md) of the firmware to the FC.
 
@@ -97,11 +97,11 @@ Go to the field, turn Tx on, place aircraft on the ground, connect flight batter
 Some advanced configurations and features are documented in the following pages, but have not been touched-upon earlier:
 
 * [Profiles](Profiles.md)
-* [PID tuning](PID tuning.md)
-* [In-flight Adjustments](Inflight Adjustments.md)
+* [PID tuning](PID%20tuning.md)
+* [In-flight Adjustments](Inflight%20Adjustments.md)
 * [Blackbox logging](Blackbox.md)
 * [Using a Sonar](Sonar.md)
-* [Spektrum Bind](Spektrum bind.md)
+* [Spektrum Bind](Spektrum%20bind.md)
 * [Telemetry](Telemetry.md)
 * [Using a Display](Display.md)
 * [Using a LED strip](LedStrip.md)

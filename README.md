@@ -69,9 +69,9 @@ irc://irc.freenode.net/#inavflight
 
 ## Configuration Tool
 
-To configure INAV you should use the INAV-configurator GUI tool (Windows/OSX/Linux).
-[//]: # (Can be found here: https://chrome.google.com/webstore/detail/inav-configurator/)
-Currently you have to download the sourcecode and load into Chrome manually from the github page 
+To configure INAV you should use the [INAV-configurator GUI tool](https://chrome.google.com/webstore/detail/inav-configurator/fmaidjmgkdkpafmbnmigkpdnpdhopgel) (Windows/OSX/Linux).
+
+The source for it is here:
 
 https://github.com/iNavFlight/inav-configurator
 

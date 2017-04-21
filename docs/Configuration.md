@@ -20,11 +20,11 @@ __Due to ongoing development, the fact that the GUI cannot yet backup all your s
 The GUI tool is the preferred way of configuration.  The GUI tool also includes a terminal which
 can be used to interact with the CLI.
 
-[INAV Configurator on Chrome store](https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb)
+[INAV Configurator on Chrome store](https://chrome.google.com/webstore/detail/inav-configurator/fmaidjmgkdkpafmbnmigkpdnpdhopgel)
 
 If you cannot use the latest version of the GUI to access the FC due to firmware compatibility issues you can still access the FC via the CLI to backup your settings, or you can install an old version of the configurator.
 
-Old versions of the configurator can be downloaded from the configurator releases page: https://github.com/cleanflight/cleanflight-configurator/releases
+Old versions of the configurator can be downloaded from the configurator releases page: https://github.com/iNavFlight/inav-configurator/releases
 See the README file that comes with the configurator for installation instructions.
 
 

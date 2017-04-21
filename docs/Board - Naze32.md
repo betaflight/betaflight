@@ -2,7 +2,7 @@
 
 The Naze32 target supports all Naze hardware revisions.  Revision 4 and 5 are used and
 frequently flown by the primary maintainer.  Previous Naze hardware revisions may have issues,
-if found please report via the [github issue tracker](https://github.com/cleanflight/cleanflight/issues).
+if found please report via the [github issue tracker](https://github.com/iNavFlight/inav/issues).
 
 ## Serial Ports
 
