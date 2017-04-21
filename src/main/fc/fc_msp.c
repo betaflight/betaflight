@@ -1548,7 +1548,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
     case MSP_SET_SERVO_CONFIGURATION:
 #ifdef USE_SERVOS
-        if (dataSize != 1 + sizeof(servoParam_t)) {
+        if (dataSize != 1 + 14) {
             return MSP_RESULT_ERROR;
         }
         i = sbufReadU8(src);
@@ -1559,8 +1559,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             servoParamsMutable(i)->max = sbufReadU16(src);
             servoParamsMutable(i)->middle = sbufReadU16(src);
             servoParamsMutable(i)->rate = sbufReadU8(src);
-            servoParamsMutable(i)->angleAtMin = sbufReadU8(src);
-            servoParamsMutable(i)->angleAtMax = sbufReadU8(src);
             servoParamsMutable(i)->forwardFromChannel = sbufReadU8(src);
             servoParamsMutable(i)->reversedSources = sbufReadU32(src);
         }
