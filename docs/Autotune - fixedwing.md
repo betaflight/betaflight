@@ -54,4 +54,4 @@ The more you fly the better it will get. Let autotune analyze how your airplane 
 
 Once you have tuned reasonable PIFF parameters with AUTOTUNE you should complete the tune by switching out of AUTOTUNE to ANGLE or PASTHROUGH and landing the airplane.
 
-Note that AUTOTUNE mode doesn't automatically save parameters to EEPROM. You need to disarm and issue a stick command to save configuration parameters.
+Note that AUTOTUNE mode doesn't automatically save parameters to EEPROM. You need to disarm and issue a [stick command](Controls.md) to save configuration parameters.
