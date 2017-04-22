@@ -54,6 +54,6 @@ void targetConfiguration(void)
     serialConfigMutable()->portConfigs[1].functionMask = FUNCTION_MSP; // So SPRacingF3OSD users don't have to change anything.
     serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(TELEMETRY_UART)].functionMask = FUNCTION_TELEMETRY_SMARTPORT;
     telemetryConfigMutable()->telemetry_inversion = 0;
-    telemetryConfigMutable()->sportHalfDuplex = 0;
+    telemetryConfigMutable()->halfDuplex = 0;
 }
 #endif
