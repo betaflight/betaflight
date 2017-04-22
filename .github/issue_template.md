@@ -1,12 +1,14 @@
-# 1. ARE YOU REQUESTING SUPPORT OR REPORTING A BUG?
+# 1. ARE YOU REQUESTING SUPPORT A BUG?
 
-YES/NO
+-- YES/NO --
 
 # 2. If you answered YES to the above question go here instead:
 
 https://www.rcgroups.com/forums/showthread.php?2249574-Cleanflight-firmware-for-STM32F3-based-FCBs-Check-First-Post-Please%21%21
 
-# 3. If you answered NO to the first question.  Delete everything above this line and continue.
+Alternatively use other forums, slack or IRC for support.
+
+# 3. If you answered NO to the first question.  Delete everything above this line, read the guidelines (see link above this form) and continue.
 
 # A - Description
 
@@ -24,10 +26,20 @@ https://www.rcgroups.com/forums/showthread.php?2249574-Cleanflight-firmware-for-
 
 -- provide links to forum posts if you have discussed this with others --
 
+# E - Version Information
+
+Cleanflight: vX.X.X or commit SHA
+Configurator: vX.X.X or commit SHA
+
 # E - Other information
 
 -- provide additional information such as.
+-- flight controller make/model
 -- config dump + diff
+-- esc make/model/config
+-- receiver make/model/config
+-- transmitter make/model/config
 -- schematics
 -- diagrams
+-- operating system
 -- etc.
