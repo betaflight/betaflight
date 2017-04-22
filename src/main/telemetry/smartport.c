@@ -323,7 +323,7 @@ void configureSmartPortTelemetryPort(void)
 
     portOptions_t portOptions = 0;
 
-    if (telemetryConfig()->sportHalfDuplex) {
+    if (telemetryConfig()->halfDuplex) {
         portOptions |= SERIAL_BIDIR;
     }
 
