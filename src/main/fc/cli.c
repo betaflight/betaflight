@@ -2869,8 +2869,8 @@ static void cliResource(char *cmdline)
             cliPrintBlankLine();
         }
 
-        cliPrintBlankLine();
-        cliPrintBlankLine();
+        cliPrintf("\r\n");
+
 #ifdef MINIMAL_CLI
         cliPrintLine("DMA:");
 #else
