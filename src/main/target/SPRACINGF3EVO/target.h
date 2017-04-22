@@ -19,14 +19,26 @@
 
 #ifdef AIORACERF3
 #define TARGET_BOARD_IDENTIFIER "ARF3"
+#elif SPRACINGF3MQ
+#define TARGET_BOARD_IDENTIFIER "SPMQ"
 #else
 #define TARGET_BOARD_IDENTIFIER "SPEV"
+#endif
 
 #define TARGET_CONFIG
+
+#ifdef AIORACERF3
+#undef TARGET_CONFIG
 #endif
 
 #ifdef SPRACINGF3MQ
 #define BRUSHED_MOTORS
+
+#ifndef SPRACINGF3MQ_REV
+#define SPRACINGF3MQ_REV 2
+#endif
+
+#undef USE_UNCOMMON_MIXERS
 #endif
 
 
