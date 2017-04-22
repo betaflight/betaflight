@@ -1,6 +1,6 @@
-# 1. ARE YOU REQUESTING SUPPORT A BUG?
+# 1. ARE YOU REQUESTING SUPPORT?
 
--- YES/NO --
+-- YES / NO --
 
 # 2. If you answered YES to the above question go here instead:
 
