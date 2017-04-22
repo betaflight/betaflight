@@ -138,7 +138,12 @@ void spiInitDevice(SPIDevice device)
         spi->leadingEdge = true;
     }
 #endif
-
+#ifdef MPU6500_SPI_INSTANCE
+    if (spi->dev == MPU6500_SPI_INSTANCE) {
+        spi->leadingEdge = true;
+    }
+#endif
+    
     // Enable SPI clock
     RCC_ClockCmd(spi->rcc, ENABLE);
     RCC_ResetCmd(spi->rcc, ENABLE);
