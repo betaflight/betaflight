@@ -2780,7 +2780,7 @@ static void printResource(uint8_t dumpMask)
             const ioTag_t ioTagDefault = *((const ioTag_t *)defaultConfig + resourceTable[i].offset + index);
 
             bool equalsDefault = ioTag == ioTagDefault;
-            const char *format = "resource %s %d %c%02dn";
+            const char *format = "resource %s %d %c%02d\n";
             const char *formatUnassigned = "resource %s %d NONE";
             if (!ioTagDefault) {
                 cliDefaultPrintLinef(dumpMask, equalsDefault, formatUnassigned, owner, RESOURCE_INDEX(index));
@@ -2862,15 +2862,15 @@ static void cliResource(char *cmdline)
             const char* owner;
             owner = ownerNames[ioRecs[i].owner];
 
-            cliPrintf("%c%02d: %s ", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
+            cliPrintf("%c%02d: %s", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
             if (ioRecs[i].index > 0) {
-                cliPrintf("%d", ioRecs[i].index);
+                cliPrintf(" %d", ioRecs[i].index);
             }
-            cliPrintLine("\r\n");
+            cliPrintLine("");
         }
 
-        cliPrintLine("\r\n");
-        cliPrintLine("\r\n");
+        cliPrintLine("");
+        cliPrintLine("");
 #ifdef MINIMAL_CLI
         cliPrintLine("DMA:");
 #else
