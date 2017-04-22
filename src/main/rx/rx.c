@@ -58,6 +58,7 @@
 #include "rx/jetiexbus.h"
 #include "rx/crsf.h"
 #include "rx/rx_spi.h"
+#include "rx/targetcustomserial.h"
 
 
 //#define DEBUG_RX_SIGNAL_LOSS
@@ -256,6 +257,11 @@ bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 #ifdef USE_SERIALRX_CRSF
     case SERIALRX_CRSF:
         enabled = crsfRxInit(rxConfig, rxRuntimeConfig);
+        break;
+#endif
+#ifdef USE_SERIALRX_TARGET_CUSTOM
+    case SERIALRX_TARGET_CUSTOM:
+        enabled = targetCustomSerialRxInit(rxConfig, rxRuntimeConfig);
         break;
 #endif
     default:
