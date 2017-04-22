@@ -2,33 +2,38 @@
 
 ![Cleanflight](docs/assets/cleanflight/cleanflight-logo-light-wide-1-240px.jpg)
 
-Cleanflight is flight controller software for multi-rotor and fixed wings.  The cleanflight project, and related projects such as betaflight and iNav are
+Cleanflight is flight controller software for multi-rotor and fixed wings.  The Cleanflight project, and related projects such as Betaflight and iNav are
 used on the majority of flight controllers used around the world.  There is no other software used on as many flight-controllers!
 
-* If you're looking for cutting edge performance and don't mind doing your homework, checkout the [betaflight fork](https://github.com/betaflight/betaflight).
+* If you're looking for experimental new features and don't mind doing your homework, checkout the [betaflight fork](https://github.com/betaflight/betaflight).
 * If you're looking for advanced navigation features then check out the [iNav fork](https://github.com/iNavFlight/inav).
-* All other users should use cleanflight.
+* All other users should use Cleanflight.
 
 Features:
 
+* Awesome flight performance as trusted by the majority of Acrobatic and Racing Drone pilots.
 * Support for modern STM32 based processors F1/F3/F4/F7.
 * Support for modern accelerometer/gyro/barometer/compass sensors.
 * Support for modern ESC technologies DSHOT/ONESHOT and legacy PWM.
 * Support for Multi-color RGB LED strip support.
 * Advanced on-board telemetry logging (Blackbox).
-* Wide support of receivers (SBus/iBus/SumD/SumH/PPM/PWM)
-* Wide support of telemetry protocols (FrSky/SmartPort/S.Port/HoTT/iBus/LTM).
+* Wide support of receivers (SBus/iBus/SumD/SumH/PPM/PWM/CRSF/JetiExBus)
+* Wide support of telemetry protocols (FrSky/SmartPort/S.Port/HoTT/iBus/LTM/MavLink/CRSF/SRXL).
 * Built-in OSD support & configuration without needing third-party OSD software/firmware/comm devices.
-* VTX support (RTC6705/Unify Pro/IRC Tramp/etc).
+* Support for external OSD slave systems.
+* VTX support (RTC6705/Unify Pro(SmartAudio)/IRC Tramp/etc).
 * and MUCH, MUCH more.
 
 ## Installation & Documentation
 
-See: https://github.com/betaflight/betaflight/wiki 
+* Cleanflight documentation - https://github.com/cleanflight/cleanflight/tree/master/docs
+* Betaflight Wiki -  https://github.com/betaflight/betaflight/wiki 
 
 ## Support
 
-* Github issue track is NOT for end-user support.
+Your first place for support are the [Cleanflight forums on RCGroups](https://www.rcgroups.com/forums/showthread.php?2249574-Cleanflight-firmware-for-STM32F3-based-FCBs-Check-First-Post-Please!!)
+
+The Github issue tracker is NOT for end-user support.
 
 ## IRC Support and Developers Channel
 
@@ -54,12 +59,16 @@ Please subscribe and '+1' the videos if you find them useful.
 
 ## Configuration Tool
 
-To configure Cleanflight you should use the [Cleanflight-configurator GUI tool](https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb
-) (Windows/OSX/Linux).
+To configure Cleanflight you should use the [Cleanflight-configurator GUI tool](https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb) (Windows/OSX/Linux).
 
 The source for it is here:
 
 https://github.com/cleanflight/cleanflight-configurator
+
+Note: the configurator auto-updates itself if installed using Chrome, if you need an old version to use old firmware then you can get them here:
+
+https://github.com/cleanflight/cleanflight-configurator/releases
+
 
 ## Contributing
 
