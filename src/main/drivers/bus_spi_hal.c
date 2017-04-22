@@ -148,13 +148,16 @@ void spiInitDevice(SPIDevice device)
     IOInit(IOGetByTag(spi->mosi), OWNER_SPI_MOSI, RESOURCE_INDEX(device));
 
 #if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
-    IOConfigGPIOAF(IOGetByTag(spi->sck),  SPI_IO_AF_CFG, spi->af);
-    IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_CFG, spi->af);
+    if(spi->leadingEdge == true)
+        IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG_LOW, spi->af);
+    else
+        IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG_HIGH, spi->af);
+    IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_MISO_CFG, spi->af);
     IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_CFG, spi->af);
 
     if (spi->nss) {
         IOInit(IOGetByTag(spi->nss), OWNER_SPI_CS, RESOURCE_INDEX(device));
-        IOConfigGPIOAF(IOGetByTag(spi->nss), SPI_IO_CS_CFG, spi->af);
+        IOConfigGPIO(IOGetByTag(spi->nss), SPI_IO_CS_CFG);
     }
 #endif
 #if defined(STM32F10X)
