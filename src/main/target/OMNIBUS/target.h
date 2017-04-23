@@ -31,7 +31,7 @@
 #define BEEPER_INVERTED
 
 #define USE_EXTI
-#define MPU_INT_EXTI PC13
+#define MPU_INT_EXTI            PC13
 #define USE_MPU_DATA_READY_SIGNAL
 #define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
 
