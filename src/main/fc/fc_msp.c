@@ -806,7 +806,7 @@ static bool mspOsdSlaveProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostPro
 
     switch (cmdMSP) {
     case MSP_STATUS_EX:
-        sbufWriteU16(dst, 0); // task delta
+        sbufWriteU16(dst, getTaskDeltaTime(TASK_SERIAL));
 #ifdef USE_I2C
         sbufWriteU16(dst, i2cGetErrorCounter());
 #else
@@ -821,7 +821,7 @@ static bool mspOsdSlaveProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostPro
         break;
 
     case MSP_STATUS:
-        sbufWriteU16(dst, 0); // task delta
+        sbufWriteU16(dst, getTaskDeltaTime(TASK_SERIAL));
 #ifdef USE_I2C
         sbufWriteU16(dst, i2cGetErrorCounter());
 #else
@@ -1374,7 +1374,6 @@ static void mspFcDataFlashReadCommand(sbuf_t *dst, sbuf_t *src)
 static mspResult_e mspOsdSlaveProcessInCommand(uint8_t cmdMSP, sbuf_t *src) {
     UNUSED(cmdMSP);
     UNUSED(src);
-    // Nothing OSD SLAVE specific yet.
     return MSP_RESULT_ERROR;
 }
 #endif
@@ -2149,8 +2148,31 @@ void mspFcProcessReply(mspPacket_t *reply)
     UNUSED(src); // potentially unused depending on compile options.
 
     switch (reply->cmd) {
-        case MSP_DISPLAYPORT: {
+#ifndef OSD_SLAVE
+    case MSP_ANALOG:
+        {
+            uint8_t batteryVoltage = sbufReadU8(src);
+            uint16_t mAhDrawn = sbufReadU16(src);
+            uint16_t rssi = sbufReadU16(src);
+            uint16_t amperage = sbufReadU16(src);
+
+            UNUSED(rssi);
+            UNUSED(batteryVoltage);
+            UNUSED(amperage);
+            UNUSED(mAhDrawn);
+
+#ifdef USE_MSP_CURRENT_METER
+            currentMeterMSPSet(amperage, mAhDrawn);
+#endif
+            break;
+        }
+#endif
+
 #ifdef USE_OSD_SLAVE
+    case MSP_DISPLAYPORT:
+        {
+            osdSlaveIsLocked = true; // lock it as soon as a MSP_DISPLAYPORT message is received to prevent accidental CLI/DFU mode.
+
             int subCmd = sbufReadU8(src);
 
             switch (subCmd) {
@@ -2188,9 +2210,9 @@ void mspFcProcessReply(mspPacket_t *reply)
                     osdSlaveDrawScreen();
                 }
             }
-#endif
             break;
         }
+#endif
     }
 }
 
