@@ -22,7 +22,6 @@
 #define USE_HARDWARE_REVISION_DETECTION
 #define HW_PIN                  PC13
 #define BRUSHED_ESC_AUTODETECT
-#define USE_DSHOT
 
 #define USBD_PRODUCT_STRING "AlienFlightNG F7"
 

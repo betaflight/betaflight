@@ -133,8 +133,6 @@
 #define VBAT_ADC_PIN            PC1
 #define RSSI_ADC_GPIO_PIN       PC0
 
-#define USE_ESC_TELEMETRY
-
 // Default configuration
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
