@@ -26,6 +26,10 @@
 #else
 #define TARGET_BOARD_IDENTIFIER "SRFM"
 
+#ifndef SPRACINGF3MINI_REV
+#define SPRACINGF3MINI_REV 2
+#endif
+
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
 #define LED0                    PB3
