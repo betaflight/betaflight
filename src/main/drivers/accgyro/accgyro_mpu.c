@@ -55,7 +55,9 @@ mpuResetFnPtr mpuResetFn;
 #define MPU_I2C_INSTANCE I2C_DEVICE
 #endif
 
+#ifndef MPU_ADDRESS
 #define MPU_ADDRESS             0x68
+#endif
 
 // WHO_AM_I register contents for MPU3050, 6050 and 6500
 #define MPU6500_WHO_AM_I_CONST              (0x70)

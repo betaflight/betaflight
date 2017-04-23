@@ -56,6 +56,7 @@ typedef enum {
     SERIALRX_JETIEXBUS = 8,
     SERIALRX_CRSF = 9,
     SERIALRX_SRXL = 10,
+    SERIALRX_TARGET_CUSTOM = 11,
 } SerialRXType;
 
 #define MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT          12

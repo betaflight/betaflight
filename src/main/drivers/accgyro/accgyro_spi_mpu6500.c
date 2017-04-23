@@ -49,6 +49,14 @@ bool mpu6500SpiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
     return true;
 }
 
+bool mpu6500SpiWriteRegisterDelayed(const busDevice_t *bus, uint8_t reg, uint8_t data)
+{
+    mpu6500SpiWriteRegister(bus, reg, data);
+    delayMicroseconds(10);
+
+    return true;
+}
+
 bool mpu6500SpiReadRegister(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data)
 {
     ENABLE_MPU6500(bus->spi.csnPin);
