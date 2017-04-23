@@ -101,7 +101,6 @@
 #define MSP_NAME                        10   //out message          Returns user set board name - betaflight
 #define MSP_SET_NAME                    11   //in message           Sets board name - betaflight
 
-
 //
 // MSP commands for Cleanflight original features
 //
@@ -312,3 +311,4 @@
 #define MSP_SERVO_MIX_RULES      241    //out message         Returns servo mixer configuration
 #define MSP_SET_SERVO_MIX_RULE   242    //in message          Sets servo mixer configuration
 #define MSP_SET_4WAY_IF          245    //in message          Sets 4way interface
+

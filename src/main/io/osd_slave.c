@@ -40,6 +40,9 @@
 
 //#define OSD_SLAVE_DEBUG
 
+// when locked the system ignores requests to enter cli or bootloader mode via serial connection.
+bool osdSlaveIsLocked = false;
+
 static displayPort_t *osdDisplayPort;
 
 static void osdDrawLogo(int x, int y)
