@@ -128,6 +128,9 @@ int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 mixerMode_e currentMixerMode;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 
+float pidSumLimit;
+float pidSumLimitYaw;
+
 
 static const motorMixer_t mixerQuadX[] = {
     { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
@@ -391,6 +394,12 @@ void mixerInit(mixerMode_e mixerMode)
     initEscEndpoints();
 }
 
+void pidInitMixer(const struct pidProfile_s *pidProfile)
+{
+    pidSumLimit = CONVERT_PARAMETER_TO_FLOAT(pidProfile->pidSumLimit);
+    pidSumLimitYaw = CONVERT_PARAMETER_TO_FLOAT(pidProfile->pidSumLimitYaw);
+}
+
 #ifndef USE_QUAD_MIXER_ONLY
 
 void mixerConfigureOutput(void)
@@ -551,17 +560,13 @@ void mixTable(pidProfile_t *pidProfile)
     throttle = constrainf(throttle / currentThrottleInputRange, 0.0f, 1.0f);
     const float motorOutputRange = motorOutputMax - motorOutputMin;
 
-    float scaledAxisPIDf[3];
     // Calculate and Limit the PIDsum
-    scaledAxisPIDf[FD_ROLL] =
-        constrainf((axisPID_P[FD_ROLL] + axisPID_I[FD_ROLL] + axisPID_D[FD_ROLL]) / PID_MIXER_SCALING,
-        -CONVERT_PARAMETER_TO_FLOAT(pidProfile->pidSumLimit), CONVERT_PARAMETER_TO_FLOAT(pidProfile->pidSumLimit));
-    scaledAxisPIDf[FD_PITCH] =
-        constrainf((axisPID_P[FD_PITCH] + axisPID_I[FD_PITCH] + axisPID_D[FD_PITCH]) / PID_MIXER_SCALING,
-        -CONVERT_PARAMETER_TO_FLOAT(pidProfile->pidSumLimit), CONVERT_PARAMETER_TO_FLOAT(pidProfile->pidSumLimit));
-    scaledAxisPIDf[FD_YAW] =
-        constrainf((axisPID_P[FD_YAW] + axisPID_I[FD_YAW]) / PID_MIXER_SCALING,
-        -CONVERT_PARAMETER_TO_FLOAT(pidProfile->pidSumLimit), CONVERT_PARAMETER_TO_FLOAT(pidProfile->pidSumLimitYaw));
+    const float scaledAxisPidRoll =
+        constrainf((axisPID_P[FD_ROLL] + axisPID_I[FD_ROLL] + axisPID_D[FD_ROLL]) / PID_MIXER_SCALING, -pidSumLimit, pidSumLimit);
+    const float scaledAxisPidPitch =
+        constrainf((axisPID_P[FD_PITCH] + axisPID_I[FD_PITCH] + axisPID_D[FD_PITCH]) / PID_MIXER_SCALING, -pidSumLimit, pidSumLimit);
+    const float scaledAxisPidYaw =
+        constrainf((axisPID_P[FD_YAW] + axisPID_I[FD_YAW]) / PID_MIXER_SCALING, -pidSumLimitYaw, pidSumLimitYaw);
 
     // Calculate voltage compensation
     const float vbatCompensationFactor = (pidProfile->vbatPidCompensation)  ? calculateVbatPidCompensation() : 1.0f;
@@ -569,21 +574,23 @@ void mixTable(pidProfile_t *pidProfile)
     // Find roll/pitch/yaw desired output
     float motorMix[MAX_SUPPORTED_MOTORS];
     float motorMixMax = 0, motorMixMin = 0;
+    const int yawDirection = GET_DIRECTION(mixerConfig()->yaw_motors_reversed);
     for (int i = 0; i < motorCount; i++) {
-        motorMix[i] =
-            scaledAxisPIDf[PITCH] * currentMixer[i].pitch +
-            scaledAxisPIDf[ROLL]  * currentMixer[i].roll +
-            scaledAxisPIDf[YAW]   * currentMixer[i].yaw * -GET_DIRECTION(mixerConfig()->yaw_motors_reversed);
+        float mix =
+            scaledAxisPidRoll  * currentMixer[i].roll +
+            scaledAxisPidPitch * currentMixer[i].pitch +
+            scaledAxisPidYaw   * currentMixer[i].yaw * (-yawDirection);
 
         if (vbatCompensationFactor > 1.0f) {
-            motorMix[i] *= vbatCompensationFactor;  // Add voltage compensation
+            mix *= vbatCompensationFactor;  // Add voltage compensation
         }
 
-        if (motorMix[i] > motorMixMax) {
-            motorMixMax = motorMix[i];
-        } else if (motorMix[i] < motorMixMin) {
-            motorMixMin = motorMix[i];
+        if (mix > motorMixMax) {
+            motorMixMax = mix;
+        } else if (mix < motorMixMin) {
+            motorMixMin = mix;
         }
+        motorMix[i] = mix;
     }
 
     motorMixRange = motorMixMax - motorMixMin;
@@ -598,42 +605,43 @@ void mixTable(pidProfile_t *pidProfile)
         }
     } else {
         if (isAirmodeActive()) {  // Only automatically adjust throttle during airmode scenario
-            float throttleLimitOffset = motorMixRange / 2.0f;
+            const float throttleLimitOffset = motorMixRange / 2.0f;
             throttle = constrainf(throttle, 0.0f + throttleLimitOffset, 1.0f - throttleLimitOffset);
         }
     }
 
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
-    uint32_t i = 0;
-    for (i = 0; i < motorCount; i++) {
-        motor[i] = motorOutputMin + lrintf(motorOutputRange * (motorMix[i] + (throttle * currentMixer[i].throttle)));
+    for (uint32_t i = 0; i < motorCount; i++) {
+        float motorOutput = motorOutputMin + lrintf(motorOutputRange * (motorMix[i] + (throttle * currentMixer[i].throttle)));
 
         // Dshot works exactly opposite in lower 3D section.
         if (mixerInversion) {
-            motor[i] = motorOutputMin + (motorOutputMax - motor[i]);
+            motorOutput = motorOutputMin + (motorOutputMax - motorOutput);
         }
 
         if (failsafeIsActive()) {
-            if (isMotorProtocolDshot())
-                motor[i] = (motor[i] < motorOutputMin) ? disarmMotorOutput : motor[i]; // Prevent getting into special reserved range
+            if (isMotorProtocolDshot()) {
+                motorOutput = (motorOutput < motorOutputMin) ? disarmMotorOutput : motorOutput; // Prevent getting into special reserved range
+            }
 
-            motor[i] = constrain(motor[i], disarmMotorOutput, motorOutputMax);
+            motorOutput = constrain(motorOutput, disarmMotorOutput, motorOutputMax);
         } else {
-            motor[i] = constrain(motor[i], motorOutputMin, motorOutputMax);
+            motorOutput = constrain(motorOutput, motorOutputMin, motorOutputMax);
         }
 
         // Motor stop handling
         if (feature(FEATURE_MOTOR_STOP) && ARMING_FLAG(ARMED) && !feature(FEATURE_3D) && !isAirmodeActive()) {
             if (((rcData[THROTTLE]) < rxConfig()->mincheck)) {
-                motor[i] = disarmMotorOutput;
+                motorOutput = disarmMotorOutput;
             }
         }
+        motor[i] = motorOutput;
     }
 
     // Disarmed mode
     if (!ARMING_FLAG(ARMED)) {
-        for (i = 0; i < motorCount; i++) {
+        for (int i = 0; i < motorCount; i++) {
             motor[i] = motor_disarmed[i];
         }
     }
