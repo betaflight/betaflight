@@ -2780,7 +2780,7 @@ static void printResource(uint8_t dumpMask)
             const ioTag_t ioTagDefault = *((const ioTag_t *)defaultConfig + resourceTable[i].offset + index);
 
             bool equalsDefault = ioTag == ioTagDefault;
-            const char *format = "resource %s %d %c%02dn";
+            const char *format = "resource %s %d %c%02d";
             const char *formatUnassigned = "resource %s %d NONE";
             if (!ioTagDefault) {
                 cliDefaultPrintLinef(dumpMask, equalsDefault, formatUnassigned, owner, RESOURCE_INDEX(index));
