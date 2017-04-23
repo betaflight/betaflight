@@ -14,15 +14,17 @@ In general pilot needs to activate AUTOTUNE mode while in the air and then fly t
 
 Before taking off you need to set up a few parameters for your airplane:
 
-  roll_rate                 - Maximum roll rate limit for your ariplane. Must not exceed physical limit of your plane
-  pitch_rate                - Maximum pitch rate limit for your ariplane. Must not exceed physical limit of your plane
-  yaw_rate                  - Maximum yaw rate limit for your ariplane. Must not exceed physical limit of your plane
-  fw_p_level                - Self-leveling strength. Bigger value means sharper response
-  fw_i_level                - Self-leveling filtering. Usual value for airplanes is 1-5 Hz
-  max_angle_inclination_rll - Maximum roll angle in [0.1 deg] units
-  max_angle_inclination_pit - Maximum pitch angle in [0.1 deg] units
-  tpa_breakpoint            - Cruise throttle (expected throttle that you would be flying most of the time)
-  tpa_rate                  - Amount of TPS curve to apply (usually should be in range 50-80 for most airplanes)
+parameter | explanation
+--------- | -----------
+roll_rate | Maximum roll rate limit for your ariplane. Must not exceed physical limit of your plane
+pitch_rate | Maximum pitch rate limit for your ariplane. Must not exceed physical limit of your plane
+yaw_rate | Maximum yaw rate limit for your ariplane. Must not exceed physical limit of your plane
+fw_p_level | Self-leveling strength. Bigger value means sharper response
+fw_i_level | Self-leveling filtering. Usual value for airplanes is 1-5 Hz
+max_angle_inclination_rll | Maximum roll angle in [0.1 deg] units
+max_angle_inclination_pit | Maximum pitch angle in [0.1 deg] units
+tpa_breakpoint | Cruise throttle (expected throttle that you would be flying most of the time)
+tpa_rate | Amount of TPS curve to apply (usually should be in range 50-80 for most airplanes)
 
 For most hobby-sized airplanes roll/pitch rate limits should be in range 70-120 deg/s (7-12 for `roll_rate` and `pitch_rate` values). Small and agile flying wings can reach 180-200 deg/s.
 
