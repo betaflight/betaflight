@@ -88,7 +88,7 @@ static busDevice_t *bus = NULL; // HACK
 // Is an separate MPU9250 driver really needed? The GYRO/ACC part between MPU6500 and MPU9250 is exactly the same.
 #if defined(MPU6500_SPI_INSTANCE) && !defined(MPU9250_SPI_INSTANCE)
 #define MPU9250_SPI_INSTANCE
-#define verifympu9250SpiWriteRegister mpu6500SpiWriteRegister
+#define verifympu9250SpiWriteRegister mpu6500SpiWriteRegisterDelayed
 #define mpu9250SpiWriteRegister mpu6500SpiWriteRegister
 #define mpu9250SpiReadRegister mpu6500SpiReadRegister
 #endif
@@ -116,7 +116,7 @@ static bool ak8963SensorRead(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t 
     verifympu9250SpiWriteRegister(bus, MPU_RA_I2C_SLV0_CTRL, len_ | 0x80);         // read number of bytes
     delay(10);
     __disable_irq();
-    bool ack = mpu9250SpiReadRegister(bus, MPU_RA_EXT_SENS_DATA_00, len_, buf);         // read I2C
+    bool ack = mpu9250SpiReadRegister(bus, MPU_RA_EXT_SENS_DATA_00, len_, buf);    // read I2C
     __enable_irq();
     return ack;
 }
