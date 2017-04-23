@@ -461,7 +461,7 @@ static void osdDrawSingleElement(uint8_t item)
         {
             uint16_t cellV = getBatteryVoltage() * 10 / getBatteryCellCount();
             buff[0] = SYM_BATT_5;
-            tfp_sprintf(buff + 1, "%d.%dV", cellV / 100, cellV % 100);
+            tfp_sprintf(buff + 1, "%d.%02dV", cellV / 100, cellV % 100);
             break;
         }
 
