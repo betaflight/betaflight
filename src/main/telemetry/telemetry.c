@@ -64,7 +64,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY
 
 PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
     .telemetry_inversion = TELEMETRY_DEFAULT_INVERSION,
-    .sportHalfDuplex = 1,
+    .halfDuplex = 1,
     .telemetry_switch = 0,
     .gpsNoFixLatitude = 0,
     .gpsNoFixLongitude = 0,

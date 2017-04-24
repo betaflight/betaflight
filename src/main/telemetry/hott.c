@@ -109,7 +109,7 @@ static uint8_t hottMsgCrc;
 #define HOTT_CRC_SIZE (sizeof(hottMsgCrc))
 
 #define HOTT_BAUDRATE 19200
-#define HOTT_INITIAL_PORT_MODE MODE_RX
+#define HOTT_PORT_MODE MODE_RXTX // must be opened in RXTX so that TX and RX pins are allocated.
 
 static serialPort_t *hottPort = NULL;
 static serialPortConfig_t *portConfig;
@@ -320,17 +320,81 @@ void initHoTTTelemetry(void)
     initialiseMessages();
 }
 
+static void flushHottRxBuffer(void)
+{
+    while (serialRxBytesWaiting(hottPort) > 0) {
+        serialRead(hottPort);
+    }
+}
+
+static void workAroundForHottTelemetryOnUsart(serialPort_t *instance, portMode_t mode) {
+    closeSerialPort(hottPort);
+
+    portOptions_t portOptions = SERIAL_NOT_INVERTED;
+
+    if (telemetryConfig()->halfDuplex) {
+        portOptions |= SERIAL_BIDIR;
+    }
+
+    hottPort = openSerialPort(instance->identifier, FUNCTION_TELEMETRY_HOTT, NULL, HOTT_BAUDRATE, mode, portOptions);
+}
+
+static bool hottIsUsingHardwareUART(void) {
+    return !(portConfig->identifier == SERIAL_PORT_SOFTSERIAL1 || portConfig->identifier == SERIAL_PORT_SOFTSERIAL2);
+}
+
+static void hottConfigurePortForTX(void) {
+    // FIXME temorary workaround for HoTT not working on Hardware serial ports due to hardware/softserial serial port initialisation differences
+    if (hottIsUsingHardwareUART())
+        workAroundForHottTelemetryOnUsart(hottPort, MODE_TX);
+    else
+        serialSetMode(hottPort, MODE_TX);
+}
+
+static void hottConfigurePortForRX(void) {
+    // FIXME temorary workaround for HoTT not working on Hardware serial ports due to hardware/softserial serial port initialisation differences
+    if (hottIsUsingHardwareUART())
+        workAroundForHottTelemetryOnUsart(hottPort, MODE_RX);
+    else
+        serialSetMode(hottPort, MODE_RX);
+    flushHottRxBuffer();
+}
+
+static void hottReconfigurePort(void) {
+    if (!hottIsSending) {
+        hottIsSending = true;
+        hottMsgCrc = 0;
+        hottConfigurePortForTX();
+        return;
+    }
+
+    if (hottMsgRemainingBytesToSendCount == 0) {
+        hottMsg = NULL;
+        hottIsSending = false;
+        hottConfigurePortForRX();
+        return;
+    }
+}
+
 void configureHoTTTelemetryPort(void)
 {
     if (!portConfig) {
         return;
     }
 
-    hottPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_HOTT, NULL, HOTT_BAUDRATE, HOTT_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
+    portOptions_t portOptions = SERIAL_NOT_INVERTED;
+
+    if (telemetryConfig()->halfDuplex) {
+        portOptions |= SERIAL_BIDIR;
+    }
+
+    hottPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_HOTT, NULL, HOTT_BAUDRATE, HOTT_PORT_MODE, portOptions);
 
     if (!hottPort) {
         return;
     }
+
+    hottConfigurePortForRX();
 
     hottTelemetryEnabled = true;
 }
@@ -401,13 +465,6 @@ static void processBinaryModeRequest(uint8_t address) {
 
 }
 
-static void flushHottRxBuffer(void)
-{
-    while (serialRxBytesWaiting(hottPort) > 0) {
-        serialRead(hottPort);
-    }
-}
-
 static void hottCheckSerialData(uint32_t currentMicros)
 {
     static bool lookingForRequest = true;
@@ -452,34 +509,9 @@ static void hottCheckSerialData(uint32_t currentMicros)
     }
 }
 
-static void workAroundForHottTelemetryOnUsart(serialPort_t *instance, portMode_t mode) {
-    closeSerialPort(hottPort);
-    hottPort = openSerialPort(instance->identifier, FUNCTION_TELEMETRY_HOTT, NULL, HOTT_BAUDRATE, mode, SERIAL_NOT_INVERTED);
-}
-
 static void hottSendTelemetryData(void) {
-    if (!hottIsSending) {
-        hottIsSending = true;
-        // FIXME temorary workaround for HoTT not working on Hardware serial ports due to hardware/softserial serial port initialisation differences
-        if ((portConfig->identifier == SERIAL_PORT_USART1) || (portConfig->identifier == SERIAL_PORT_USART2) || (portConfig->identifier == SERIAL_PORT_USART3))
-            workAroundForHottTelemetryOnUsart(hottPort, MODE_TX);
-        else
-            serialSetMode(hottPort, MODE_TX);
-        hottMsgCrc = 0;
-        return;
-    }
 
-    if (hottMsgRemainingBytesToSendCount == 0) {
-        hottMsg = NULL;
-        hottIsSending = false;
-        // FIXME temorary workaround for HoTT not working on Hardware serial ports due to hardware/softserial serial port initialisation differences
-        if ((portConfig->identifier == SERIAL_PORT_USART1) || (portConfig->identifier == SERIAL_PORT_USART2) || (portConfig->identifier == SERIAL_PORT_USART3))
-            workAroundForHottTelemetryOnUsart(hottPort, MODE_RX);
-        else
-            serialSetMode(hottPort, MODE_RX);
-        flushHottRxBuffer();
-        return;
-    }
+    hottReconfigurePort();
 
     --hottMsgRemainingBytesToSendCount;
     if(hottMsgRemainingBytesToSendCount == 0) {
@@ -512,10 +544,11 @@ void checkHoTTTelemetryState(void)
         return;
     }
 
-    if (newTelemetryEnabledValue)
+    if (newTelemetryEnabledValue) {
         configureHoTTTelemetryPort();
-    else
+    } else {
         freeHoTTTelemetryPort();
+    }
 }
 
 void handleHoTTTelemetry(timeUs_t currentTimeUs)
