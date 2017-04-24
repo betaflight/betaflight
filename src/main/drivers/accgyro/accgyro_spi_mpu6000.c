@@ -145,7 +145,7 @@ void mpu6000SpiGyroInit(gyroDev_t *gyro)
 
 void mpu6000SpiAccInit(accDev_t *acc)
 {
-    acc->acc_1G = 512 * 4;
+    acc->acc_1G = 512 * 8;
 }
 
 bool mpu6000SpiDetect(const busDevice_t *bus)
