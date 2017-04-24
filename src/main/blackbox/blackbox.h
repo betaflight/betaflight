@@ -37,6 +37,7 @@ typedef struct blackboxConfig_s {
     uint8_t rate_denom;
     uint8_t device;
     uint8_t on_motor_test;
+    uint8_t record_acc;
 } blackboxConfig_t;
 
 PG_DECLARE(blackboxConfig_t, blackboxConfig);
