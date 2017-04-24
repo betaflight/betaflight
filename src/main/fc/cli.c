@@ -2862,14 +2862,14 @@ static void cliResource(char *cmdline)
             const char* owner;
             owner = ownerNames[ioRecs[i].owner];
 
-            cliPrintf("%c%02d: %s ", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
+            cliPrintf("%c%02d: %s", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
             if (ioRecs[i].index > 0) {
-                cliPrintf("%d", ioRecs[i].index);
+                cliPrintf(" %d", ioRecs[i].index);
             }
-            cliPrintBlankLine();
+            cliPrint("\r\n");
         }
 
-        cliPrintBlankLine(); // cliPrintLine("\r\n");
+        cliPrintBlankLine();
 
 #ifdef MINIMAL_CLI
         cliPrintLine("DMA:");
