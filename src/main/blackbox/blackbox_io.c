@@ -40,8 +40,10 @@ static uint8_t blackboxMaxHeaderBytesPerIteration;
 // How many bytes can we write *this* iteration without overflowing transmit buffers or overstressing the OpenLog?
 int32_t blackboxHeaderBudget;
 
-static serialPort_t *blackboxPort = NULL;
+STATIC_UNIT_TESTED serialPort_t *blackboxPort = NULL;
+#ifndef UNIT_TEST
 static portSharing_e blackboxPortSharing;
+#endif
 
 #ifdef USE_SDCARD
 
@@ -66,6 +68,7 @@ static struct {
 
 #endif
 
+#ifndef UNIT_TEST
 void blackboxOpen()
 {
     serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP);
@@ -73,6 +76,7 @@ void blackboxOpen()
         mspSerialReleasePortIfAllocated(sharedBlackboxAndMspPort);
     }
 }
+#endif
 
 void blackboxWrite(uint8_t value)
 {
@@ -541,6 +545,7 @@ bool blackboxDeviceFlushForce(void)
 /**
  * Attempt to open the logging device. Returns true if successful.
  */
+#ifndef UNIT_TEST
 bool blackboxDeviceOpen(void)
 {
     switch (blackboxConfig()->device) {
@@ -611,6 +616,7 @@ bool blackboxDeviceOpen(void)
         return false;
     }
 }
+#endif
 
 /**
  * Erase all blackbox logs
@@ -650,6 +656,7 @@ bool isBlackboxErased(void)
 /**
  * Close the Blackbox logging device immediately without attempting to flush any remaining data.
  */
+#ifndef UNIT_TEST
 void blackboxDeviceClose(void)
 {
     switch (blackboxConfig()->device) {
@@ -670,6 +677,7 @@ void blackboxDeviceClose(void)
         ;
     }
 }
+#endif
 
 #ifdef USE_SDCARD
 
