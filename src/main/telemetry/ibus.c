@@ -39,7 +39,7 @@
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
-#include "drivers/accgyro.h"
+#include "drivers/accgyro/accgyro.h"
 #include "drivers/serial.h"
 
 #include "fc/rc_controls.h"

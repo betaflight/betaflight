@@ -15,13 +15,13 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "io.h"
-#include "io_impl.h"
-#include "rcc.h"
+#include "platform.h"
+
+#include "drivers/io.h"
+#include "drivers/io_impl.h"
+#include "drivers/rcc.h"
 
 #include "common/utils.h"
-
-#include "target.h"
 
 // io ports defs are stored in array by index now
 struct ioPortDef_s {
@@ -145,6 +145,8 @@ uint32_t IO_EXTI_Line(IO_t io)
     return 1 << IO_GPIOPinIdx(io);
 #elif defined(STM32F7)
     return 1 << IO_GPIOPinIdx(io);
+#elif defined(SIMULATOR_BUILD)
+    return 1;
 #else
 # error "Unknown target type"
 #endif

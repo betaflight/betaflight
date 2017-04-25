@@ -35,13 +35,12 @@
 #include "common/maths.h"
 
 #include "config/config_eeprom.h"
-#include "config/config_profile.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/compass/compass.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/light_ws2811strip.h"
@@ -67,7 +66,7 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "flight/altitudehold.h"
+#include "flight/altitude.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -83,7 +82,7 @@
 #include "io/osd.h"
 #include "io/serial.h"
 #include "io/servos.h"
-#include "io/vtx.h"
+#include "io/vtx_control.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
@@ -98,7 +97,9 @@
 
 #include "telemetry/telemetry.h"
 
+#ifndef USE_OSD_SLAVE
 pidProfile_t *currentPidProfile;
+#endif
 
 #ifndef DEFAULT_FEATURES
 #define DEFAULT_FEATURES 0
@@ -118,13 +119,22 @@ PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
 
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
 
+#ifndef USE_OSD_SLAVE
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .pidProfileIndex = 0,
     .activeRateProfile = 0,
     .debug_mode = DEBUG_MODE,
     .task_statistics = true,
-    .name = { 0 }
+    .name = { 0 } // FIXME misplaced, see PG_PILOT_CONFIG in CF v1.x
 );
+#endif
+
+#ifdef USE_OSD_SLAVE
+PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
+    .debug_mode = DEBUG_MODE,
+    .task_statistics = true
+);
+#endif
 
 #ifdef BEEPER
 PG_REGISTER(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 0);
@@ -447,6 +457,7 @@ void pgResetFn_statusLedConfig(statusLedConfig_t *statusLedConfig)
     ;
 }
 
+#ifndef USE_OSD_SLAVE
 uint8_t getCurrentPidProfileIndex(void)
 {
     return systemConfig()->pidProfileIndex;
@@ -470,6 +481,7 @@ uint16_t getCurrentMinthrottle(void)
 {
     return motorConfig()->minthrottle;
 }
+#endif
 
 void resetConfigs(void)
 {
@@ -481,8 +493,10 @@ void resetConfigs(void)
 
     pgActivateProfile(0);
 
+#ifndef USE_OSD_SLAVE
     setPidProfile(0);
     setControlRateProfile(0);
+#endif
 
 #ifdef LED_STRIP
     reevaluateLedConfig();
@@ -491,6 +505,7 @@ void resetConfigs(void)
 
 void activateConfig(void)
 {
+#ifndef USE_OSD_SLAVE
     generateThrottleCurve();
 
     resetAdjustmentStates();
@@ -509,10 +524,12 @@ void activateConfig(void)
     imuConfigure(throttleCorrectionConfig()->throttle_correction_angle);
 
     configureAltitudeHold(currentPidProfile);
+#endif
 }
 
 void validateAndFixConfig(void)
 {
+#ifndef USE_OSD_SLAVE
     if((motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)){
         motorConfigMutable()->mincommand = 1000;
     }
@@ -571,22 +588,24 @@ void validateAndFixConfig(void)
     }
 #endif
 
-    if (!isSerialConfigValid(serialConfig())) {
-        pgResetFn_serialConfig(serialConfigMutable());
-    }
-
     // Prevent invalid notch cutoff
     if (currentPidProfile->dterm_notch_cutoff >= currentPidProfile->dterm_notch_hz) {
         currentPidProfile->dterm_notch_hz = 0;
     }
 
     validateAndFixGyroConfig();
+#endif
+
+    if (!isSerialConfigValid(serialConfig())) {
+        pgResetFn_serialConfig(serialConfigMutable());
+    }
 
 #if defined(TARGET_VALIDATECONFIG)
     targetValidateConfiguration();
 #endif
 }
 
+#ifndef USE_OSD_SLAVE
 void validateAndFixGyroConfig(void)
 {
     // Prevent invalid notch cutoff
@@ -662,16 +681,19 @@ void validateAndFixGyroConfig(void)
             motorConfigMutable()->dev.motorPwmRate = maxEscRate;
     }
 }
+#endif
 
 void readEEPROM(void)
 {
+#ifndef USE_OSD_SLAVE
     suspendRxSignal();
+#endif
 
     // Sanity check, read flash
     if (!loadEEPROM()) {
         failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
     }
-
+#ifndef USE_OSD_SLAVE
     if (systemConfig()->activeRateProfile >= CONTROL_RATE_PROFILE_COUNT) {// sanity check
         systemConfigMutable()->activeRateProfile = 0;
     }
@@ -681,20 +703,27 @@ void readEEPROM(void)
         systemConfigMutable()->pidProfileIndex = 0;
     }
     setPidProfile(systemConfig()->pidProfileIndex);
+#endif
 
     validateAndFixConfig();
     activateConfig();
 
+#ifndef USE_OSD_SLAVE
     resumeRxSignal();
+#endif
 }
 
 void writeEEPROM(void)
 {
+#ifndef USE_OSD_SLAVE
     suspendRxSignal();
+#endif
 
     writeConfigToEEPROM();
 
+#ifndef USE_OSD_SLAVE
     resumeRxSignal();
+#endif
 }
 
 void resetEEPROM(void)
@@ -718,6 +747,7 @@ void saveConfigAndNotify(void)
     beeperConfirmationBeeps(1);
 }
 
+#ifndef USE_OSD_SLAVE
 void changePidProfile(uint8_t pidProfileIndex)
 {
     if (pidProfileIndex >= MAX_PROFILE_COUNT) {
@@ -727,43 +757,74 @@ void changePidProfile(uint8_t pidProfileIndex)
     currentPidProfile = pidProfilesMutable(pidProfileIndex);
     beeperConfirmationBeeps(pidProfileIndex + 1);
 }
+#endif
 
 void beeperOffSet(uint32_t mask)
 {
+#ifdef BEEPER
     beeperConfigMutable()->beeper_off_flags |= mask;
+#else
+    UNUSED(mask);
+#endif
 }
 
 void beeperOffSetAll(uint8_t beeperCount)
 {
+#ifdef BEEPER
     beeperConfigMutable()->beeper_off_flags = (1 << beeperCount) -1;
+#else
+    UNUSED(beeperCount);
+#endif
 }
 
 void beeperOffClear(uint32_t mask)
 {
+#ifdef BEEPER
     beeperConfigMutable()->beeper_off_flags &= ~(mask);
+#else
+    UNUSED(mask);
+#endif
 }
 
 void beeperOffClearAll(void)
 {
+#ifdef BEEPER
     beeperConfigMutable()->beeper_off_flags = 0;
+#endif
 }
 
 uint32_t getBeeperOffMask(void)
 {
+#ifdef BEEPER
     return beeperConfig()->beeper_off_flags;
+#else
+    return 0;
+#endif
 }
 
 void setBeeperOffMask(uint32_t mask)
 {
+#ifdef BEEPER
     beeperConfigMutable()->beeper_off_flags = mask;
+#else
+    UNUSED(mask);
+#endif
 }
 
 uint32_t getPreferredBeeperOffMask(void)
 {
+#ifdef BEEPER
     return beeperConfig()->preferred_beeper_off_flags;
+#else
+    return 0;
+#endif
 }
 
 void setPreferredBeeperOffMask(uint32_t mask)
 {
+#ifdef BEEPER
     beeperConfigMutable()->preferred_beeper_off_flags = mask;
+#else
+    UNUSED(mask);
+#endif
 }

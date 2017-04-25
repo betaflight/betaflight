@@ -59,17 +59,17 @@ vtxDevType_e vtxCommonGetDeviceType(void)
     return vtxDevice->vTable->getDeviceType();
 }
 
-// band and chan are 1 origin
-void vtxCommonSetBandChan(uint8_t band, uint8_t chan)
+// band and channel are 1 origin
+void vtxCommonSetBandAndChannel(uint8_t band, uint8_t channel)
 {
     if (!vtxDevice)
         return;
 
-    if ((band > vtxDevice->numBand)|| (chan > vtxDevice->numChan))
+    if ((band > vtxDevice->capability.bandCount) || (channel > vtxDevice->capability.channelCount))
         return;
     
-    if (vtxDevice->vTable->setBandChan)
-        vtxDevice->vTable->setBandChan(band, chan);
+    if (vtxDevice->vTable->setBandAndChannel)
+        vtxDevice->vTable->setBandAndChannel(band, channel);
 }
 
 // index is zero origin, zero = power off completely
@@ -78,7 +78,7 @@ void vtxCommonSetPowerByIndex(uint8_t index)
     if (!vtxDevice)
         return;
 
-    if (index > vtxDevice->numPower)
+    if (index > vtxDevice->capability.powerCount)
         return;
     
     if (vtxDevice->vTable->setPowerByIndex)
@@ -86,22 +86,22 @@ void vtxCommonSetPowerByIndex(uint8_t index)
 }
 
 // on = 1, off = 0
-void vtxCommonSetPitmode(uint8_t onoff)
+void vtxCommonSetPitMode(uint8_t onoff)
 {
     if (!vtxDevice)
         return;
 
-    if (vtxDevice->vTable->setPitmode)
-        vtxDevice->vTable->setPitmode(onoff);
+    if (vtxDevice->vTable->setPitMode)
+        vtxDevice->vTable->setPitMode(onoff);
 }
 
-bool vtxCommonGetBandChan(uint8_t *pBand, uint8_t *pChan)
+bool vtxCommonGetBandAndChannel(uint8_t *pBand, uint8_t *pChannel)
 {
     if (!vtxDevice)
         return false;
 
-    if (vtxDevice->vTable->getBandChan)
-        return vtxDevice->vTable->getBandChan(pBand, pChan);
+    if (vtxDevice->vTable->getBandAndChannel)
+        return vtxDevice->vTable->getBandAndChannel(pBand, pChannel);
     else
         return false;
 }
@@ -117,14 +117,23 @@ bool vtxCommonGetPowerIndex(uint8_t *pIndex)
         return false;
 }
 
-bool vtxCommonGetPitmode(uint8_t *pOnoff)
+bool vtxCommonGetPitMode(uint8_t *pOnOff)
 {
     if (!vtxDevice)
         return false;
 
-    if (vtxDevice->vTable->getPitmode)
-        return vtxDevice->vTable->getPitmode(pOnoff);
+    if (vtxDevice->vTable->getPitMode)
+        return vtxDevice->vTable->getPitMode(pOnOff);
     else
         return false;
+}
+
+bool vtxCommonGetDeviceCapability(vtxDeviceCapability_t *pDeviceCapability)
+{
+    if (!vtxDevice)
+        return false;
+
+    memcpy(pDeviceCapability, &vtxDevice->capability, sizeof(vtxDeviceCapability_t));
+    return true;
 }
 #endif

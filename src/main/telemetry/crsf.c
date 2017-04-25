@@ -26,12 +26,6 @@
 #include "config/feature.h"
 #include "build/version.h"
 
-#if (FC_VERSION_MAJOR == 3) // not a very good way of finding out if this is betaflight or Cleanflight
-#define BETAFLIGHT
-#else
-#define CLEANFLIGHT
-#endif
-
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
@@ -57,12 +51,7 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/crsf.h"
 
-#ifdef CLEANFLIGHT
-#include "fc/fc_serial.h"
-#include "sensors/amperage.h"
-#else
 #include "fc/config.h"
-#endif
 
 #define CRSF_CYCLETIME_US                   100000 // 100ms, 10 Hz
 

@@ -19,6 +19,7 @@
 
 #undef TELEMETRY_IBUS   //no space left
 #undef TELEMETRY_HOTT   //no space left
+#undef TELEMETRY_JETIEXBUS
 
 #define TARGET_BOARD_IDENTIFIER "OMNI" // https://en.wikipedia.org/wiki/Omnibus
 
@@ -53,8 +54,6 @@
 #define USE_BARO_SPI_BMP280
 
 #define MAG // External
-#define USE_MAG_AK8963
-#define USE_MAG_AK8975
 #define USE_MAG_HMC5883
 
 //#define SONAR

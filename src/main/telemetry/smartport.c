@@ -16,13 +16,12 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
-#include "config/config_profile.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/compass/compass.h"
 #include "drivers/sensor.h"
 #include "drivers/system.h"
 
@@ -32,7 +31,7 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "flight/altitudehold.h"
+#include "flight/altitude.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -324,7 +323,7 @@ void configureSmartPortTelemetryPort(void)
 
     portOptions_t portOptions = 0;
 
-    if (telemetryConfig()->sportHalfDuplex) {
+    if (telemetryConfig()->halfDuplex) {
         portOptions |= SERIAL_BIDIR;
     }
 
@@ -638,7 +637,7 @@ void handleSmartPortTelemetry(void)
             //case FSSP_DATAID_RPM        :
             case FSSP_DATAID_ALTITUDE   :
                 if (sensors(SENSOR_BARO)) {
-                    smartPortSendPackage(id, baro.BaroAlt); // unknown given unit, requested 100 = 1 meter
+                    smartPortSendPackage(id, getEstimatedAltitude()); // unknown given unit, requested 100 = 1 meter
                     smartPortHasRequest = 0;
                 }
                 break;
@@ -675,7 +674,7 @@ void handleSmartPortTelemetry(void)
             //case FSSP_DATAID_CAP_USED   :
             case FSSP_DATAID_VARIO      :
                 if (sensors(SENSOR_BARO)) {
-                    smartPortSendPackage(id, vario); // unknown given unit but requested in 100 = 1m/s
+                    smartPortSendPackage(id, getEstimatedVario()); // unknown given unit but requested in 100 = 1m/s
                     smartPortHasRequest = 0;
                 }
                 break;

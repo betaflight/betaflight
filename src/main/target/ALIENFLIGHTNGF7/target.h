@@ -22,7 +22,6 @@
 #define USE_HARDWARE_REVISION_DETECTION
 #define HW_PIN                  PC13
 #define BRUSHED_ESC_AUTODETECT
-#define USE_DSHOT
 
 #define USBD_PRODUCT_STRING "AlienFlightNG F7"
 
@@ -149,6 +148,7 @@
 #define SPI3_MOSI_PIN           PB5
 
 #define USE_I2C
+#define USE_I2C_PULLUP
 #define I2C_DEVICE              (I2CDEV_1)
 //#define I2C_DEVICE_EXT          (I2CDEV_2)
 #define I2C1_SCL                PB6

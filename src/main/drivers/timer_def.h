@@ -20,7 +20,7 @@
 #include <platform.h>
 #include "common/utils.h"
 
-#if defined(USE_DSHOT) || defined(LED_STRIP)
+#if defined(USE_DSHOT) || defined(LED_STRIP) || defined(TRANSPONDER)
 # define DEF_TIM_DMA_COND(...) __VA_ARGS__
 #else
 # define DEF_TIM_DMA_COND(...)
@@ -633,8 +633,8 @@
 
 #define GPIO_AF__PA0_TIM5_CH1     GPIO_AF2_TIM5
 #define GPIO_AF__PA1_TIM5_CH2     GPIO_AF2_TIM5
-#define GPIO_AF__PA3_TIM5_CH3     GPIO_AF2_TIM5
-#define GPIO_AF__PA4_TIM5_CH4     GPIO_AF2_TIM5
+#define GPIO_AF__PA2_TIM5_CH3     GPIO_AF2_TIM5
+#define GPIO_AF__PA3_TIM5_CH4     GPIO_AF2_TIM5
 #define GPIO_AF__PA6_TIM3_CH1     GPIO_AF2_TIM3
 #define GPIO_AF__PA7_TIM3_CH2     GPIO_AF2_TIM3
 
@@ -648,7 +648,7 @@
 
 //PORTB
 #define GPIO_AF__PB0_TIM1_CH2N    GPIO_AF1_TIM1
-#define GPIO_AF__PB1_TIM1_CH2N    GPIO_AF1_TIM1
+#define GPIO_AF__PB1_TIM1_CH3N    GPIO_AF1_TIM1
 #define GPIO_AF__PB3_TIM2_CH2     GPIO_AF1_TIM2
 #define GPIO_AF__PB10_TIM2_CH3    GPIO_AF1_TIM2
 #define GPIO_AF__PB11_TIM2_CH4    GPIO_AF1_TIM2

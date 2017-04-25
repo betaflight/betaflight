@@ -22,12 +22,12 @@
 
 #ifdef USE_SDCARD
 
-#include "nvic.h"
-#include "io.h"
+#include "drivers/nvic.h"
+#include "drivers/io.h"
 #include "dma.h"
 
-#include "bus_spi.h"
-#include "system.h"
+#include "drivers/bus_spi.h"
+#include "drivers/system.h"
 
 #include "sdcard.h"
 #include "sdcard_standard.h"

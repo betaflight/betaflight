@@ -22,7 +22,7 @@
 
 #include "build/build_config.h"
 
-#include "gpio.h"
+#include "drivers/gpio.h"
 
 #define MODE_OFFSET 0
 #define PUPD_OFFSET 2

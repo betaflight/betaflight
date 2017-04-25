@@ -44,7 +44,7 @@
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
-#include "drivers/accgyro.h"
+#include "drivers/accgyro/accgyro.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -69,7 +69,7 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
-#include "flight/altitudehold.h"
+#include "flight/altitude.h"
 #include "flight/navigation.h"
 
 #include "telemetry/telemetry.h"
@@ -144,7 +144,7 @@ static void ltm_gframe(void)
     ltm_serialise_8((uint8_t)(GPS_speed / 100));
 
 #if defined(BARO) || defined(SONAR)
-    ltm_alt = (sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) ? altitudeHoldGetEstimatedAltitude() : GPS_altitude * 100;
+    ltm_alt = (sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) ? getEstimatedAltitude() : GPS_altitude * 100;
 #else
     ltm_alt = GPS_altitude * 100;
 #endif

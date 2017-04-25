@@ -20,12 +20,12 @@
 
 #include <platform.h>
 
-#include "system.h"
-#include "io.h"
+#include "drivers/system.h"
+#include "drivers/io.h"
 #include "io_impl.h"
 #include "rcc.h"
 
-#include "bus_i2c.h"
+#include "drivers/bus_i2c.h"
 
 #ifndef SOFT_I2C
 

@@ -84,8 +84,6 @@ void pgResetFn_servoParams(servoParam_t *instance)
             .max = DEFAULT_SERVO_MAX,
             .middle = DEFAULT_SERVO_MIDDLE,
             .rate = 100,
-            .angleAtMin = DEFAULT_SERVO_MIN_ANGLE,
-            .angleAtMax = DEFAULT_SERVO_MAX_ANGLE,
             .forwardFromChannel = CHANNEL_FORWARDING_DISABLED
         );
     }
@@ -379,9 +377,9 @@ STATIC_UNIT_TESTED void servoMixer(void)
         input[INPUT_STABILIZED_YAW] = rcCommand[YAW];
     } else {
         // Assisted modes (gyro only or gyro+acc according to AUX configuration in Gui
-        input[INPUT_STABILIZED_ROLL] = axisPIDf[ROLL] * PID_SERVO_MIXER_SCALING;
-        input[INPUT_STABILIZED_PITCH] = axisPIDf[PITCH] * PID_SERVO_MIXER_SCALING;
-        input[INPUT_STABILIZED_YAW] = axisPIDf[YAW] * PID_SERVO_MIXER_SCALING;
+        input[INPUT_STABILIZED_ROLL] = (axisPID_P[FD_ROLL] + axisPID_I[FD_ROLL] + axisPID_D[FD_ROLL]) * PID_SERVO_MIXER_SCALING;
+        input[INPUT_STABILIZED_PITCH] = (axisPID_P[FD_PITCH] + axisPID_I[FD_PITCH] + axisPID_D[FD_PITCH]) * PID_SERVO_MIXER_SCALING;
+        input[INPUT_STABILIZED_YAW] = (axisPID_P[FD_YAW] + axisPID_I[FD_YAW]) * PID_SERVO_MIXER_SCALING;
 
         // Reverse yaw servo when inverted in 3D mode
         if (feature(FEATURE_3D) && (rcData[THROTTLE] < rxConfig()->midrc)) {

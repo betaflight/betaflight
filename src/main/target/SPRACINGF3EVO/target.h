@@ -19,11 +19,28 @@
 
 #ifdef AIORACERF3
 #define TARGET_BOARD_IDENTIFIER "ARF3"
+#elif SPRACINGF3MQ
+#define TARGET_BOARD_IDENTIFIER "SPMQ"
 #else
 #define TARGET_BOARD_IDENTIFIER "SPEV"
+#endif
 
 #define TARGET_CONFIG
+
+#ifdef AIORACERF3
+#undef TARGET_CONFIG
 #endif
+
+#ifdef SPRACINGF3MQ
+#define BRUSHED_MOTORS
+
+#ifndef SPRACINGF3MQ_REV
+#define SPRACINGF3MQ_REV 2
+#endif
+
+#undef USE_UNCOMMON_MIXERS
+#endif
+
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
@@ -58,7 +75,6 @@
 #define USE_BARO_BMP280
 
 #define MAG
-#define USE_MPU9250_MAG // Enables bypass configuration
 #define USE_MAG_AK8963
 //#define USE_MAG_HMC5883 // External
 
@@ -144,6 +160,10 @@
 #define VBAT_ADC_PIN            PA4
 #define CURRENT_METER_ADC_PIN   PA5
 #endif
+
+#define OSD
+#define USE_OSD_OVER_MSP_DISPLAYPORT
+#undef USE_DASHBOARD
 
 #define TRANSPONDER
 

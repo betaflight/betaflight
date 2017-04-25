@@ -94,7 +94,7 @@
 #define ACC_MPU6050_ALIGN       CW270_DEG
 #endif
 
-#if defined(FLIP32F3OSD)
+#if defined(SPRACINGF3) || defined(FLIP32F3OSD)
 #define SONAR
 #define SONAR_TRIGGER_PIN       PB0
 #define SONAR_ECHO_PIN          PB1
@@ -107,6 +107,11 @@
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 
 #else //SPRACINGF3
+
+#define SONAR
+#define SONAR_TRIGGER_PIN       PB0
+#define SONAR_ECHO_PIN          PB1
+
 #define USE_BARO_MS5611
 #define USE_BARO_BMP085
 
@@ -170,6 +175,10 @@
 #define VBAT_ADC_PIN            PA4
 #define CURRENT_METER_ADC_PIN   PA5
 #define RSSI_ADC_PIN            PB2
+
+#define OSD
+#define USE_OSD_OVER_MSP_DISPLAYPORT
+#define USE_SLOW_MSP_DISPLAYPORT_RATE_WHEN_UNARMED
 
 #define USE_ESC_SENSOR
 #define REMAP_TIM17_DMA

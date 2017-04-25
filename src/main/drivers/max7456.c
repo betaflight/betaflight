@@ -389,6 +389,8 @@ void max7456ReInit(void)
 
 void max7456Init(const vcdProfile_t *pVcdProfile)
 {
+    max7456HardwareReset();
+
 #ifdef MAX7456_SPI_CS_PIN
     max7456CsPin = IOGetByTag(IO_TAG(MAX7456_SPI_CS_PIN));
 #endif
@@ -439,12 +441,14 @@ void max7456Write(uint8_t x, uint8_t y, const char *buff)
             screenBuffer[y*CHARS_PER_LINE+x+i] = *(buff+i);
 }
 
-#ifdef MAX7456_DMA_CHANNEL_TX
-bool max7456DmaInProgres(void)
+bool max7456DmaInProgress(void)
 {
+#ifdef MAX7456_DMA_CHANNEL_TX
     return dmaTransactionInProgress;
-}
+#else
+    return false;
 #endif
+}
 
 #include "build/debug.h"
 
@@ -610,6 +614,27 @@ void max7456WriteNvm(uint8_t char_address, const uint8_t *font_data)
     DISABLE_MAX7456;
 
     max7456Lock = false;
+}
+
+#ifdef MAX7456_NRST_PIN
+static IO_t max7456ResetPin        = IO_NONE;
+#endif
+
+void max7456HardwareReset(void)
+{
+#ifdef MAX7456_NRST_PIN
+#define IO_RESET_CFG      IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_2MHz, GPIO_OType_PP, GPIO_PuPd_DOWN)
+
+    max7456ResetPin = IOGetByTag(IO_TAG(MAX7456_NRST_PIN));
+    IOInit(max7456ResetPin, OWNER_OSD, 0);
+    IOConfigGPIO(max7456ResetPin, IO_RESET_CFG);
+
+
+    // RESET
+    IOLo(max7456ResetPin);
+    delay(100);
+    IOHi(max7456ResetPin);
+#endif
 }
 
 #endif

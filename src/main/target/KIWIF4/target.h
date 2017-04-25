@@ -135,8 +135,6 @@
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
 
-#define USE_DSHOT
-
 #define USE_SPI
 
 #define USE_SPI_DEVICE_1
@@ -163,6 +161,8 @@
 #define I2C1_SCL                PB6
 #define I2C1_SDA                PB7 
 */
+
+#define LED_STRIP
 
 #define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER

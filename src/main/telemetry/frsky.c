@@ -38,7 +38,7 @@
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
-#include "drivers/accgyro.h"
+#include "drivers/accgyro/accgyro.h"
 #include "drivers/serial.h"
 
 #include "fc/config.h"
@@ -57,7 +57,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
-#include "flight/altitudehold.h"
+#include "flight/altitude.h"
 
 #include "rx/rx.h"
 
@@ -175,9 +175,9 @@ static void sendAccel(void)
 static void sendBaro(void)
 {
     sendDataHead(ID_ALTITUDE_BP);
-    serialize16(baro.BaroAlt / 100);
+    serialize16(getEstimatedAltitude() / 100);
     sendDataHead(ID_ALTITUDE_AP);
-    serialize16(ABS(baro.BaroAlt % 100));
+    serialize16(ABS(getEstimatedAltitude() % 100));
 }
 
 #ifdef GPS
@@ -328,8 +328,8 @@ static void sendFakeLatLong(void)
     // Heading is only displayed on OpenTX if non-zero lat/long is also sent
     int32_t coord[2] = {0,0};
 
-    coord[LAT] = (telemetryConfig()->gpsNoFixLatitude * GPS_DEGREES_DIVIDER);
-    coord[LON] = (telemetryConfig()->gpsNoFixLongitude * GPS_DEGREES_DIVIDER);
+    coord[LAT] = ((0.01f * telemetryConfig()->gpsNoFixLatitude) * GPS_DEGREES_DIVIDER);
+    coord[LON] = ((0.01f * telemetryConfig()->gpsNoFixLongitude) * GPS_DEGREES_DIVIDER);
 
     sendLatLong(coord);
 }
@@ -356,7 +356,7 @@ static void sendGPSLatLong(void)
 static void sendVario(void)
 {
     sendDataHead(ID_VERT_SPEED);
-    serialize16(vario);
+    serialize16(getEstimatedVario());
 }
 
 /*

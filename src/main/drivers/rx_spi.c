@@ -28,14 +28,14 @@
 
 #include "build/build_config.h"
 
-#include "bus_spi.h"
+#include "drivers/bus_spi.h"
 #include "bus_spi_soft.h"
-#include "gpio.h"
-#include "io.h"
+#include "drivers/gpio.h"
+#include "drivers/io.h"
 #include "io_impl.h"
 #include "rcc.h"
 #include "rx_spi.h"
-#include "system.h"
+#include "drivers/system.h"
 
 #define DISABLE_RX()    {IOHi(DEFIO_IO(RX_NSS_PIN));}
 #define ENABLE_RX()     {IOLo(DEFIO_IO(RX_NSS_PIN));}

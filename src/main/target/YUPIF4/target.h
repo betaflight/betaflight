@@ -25,7 +25,7 @@
 #define LED2                    PB5
 
 #define BEEPER                  PC9
-//#define BEEPER_INVERTED
+#define BEEPER_PWM_HZ           2200 // Beeper PWM frequency in Hz
 
 #define INVERTER_PIN_UART6      PB15
 
@@ -62,8 +62,6 @@
 
 
 #define USE_VCP
-//#define VBUS_SENSING_PIN        PA8
-//#define VBUS_SENSING_ENABLED
 
 // UART Ports
 #define USE_UART1
@@ -114,13 +112,6 @@
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
 
-/*
-#define USE_SPI_DEVICE_2 //Free
-#define SPI2_NSS_PIN            PB12
-#define SPI2_SCK_PIN            PB13
-#define SPI2_MISO_PIN           PC2
-*/
-
 #define USE_SPI_DEVICE_3 //dataslash - SD Card
 #define SPI3_NSS_PIN            PB3
 #define SPI3_SCK_PIN            PC10
@@ -136,17 +127,11 @@
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 
-#define USE_I2C
-#define USE_I2C_DEVICE_1
-#define I2C_DEVICE              (I2CDEV_1)
-
 // ADC inputs
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
 #define VBAT_ADC_PIN            PC1
 #define RSSI_ADC_GPIO_PIN       PC0
-
-#define USE_ESC_TELEMETRY
 
 // Default configuration
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
@@ -162,5 +147,5 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
-#define USABLE_TIMER_CHANNEL_COUNT 7
+#define USABLE_TIMER_CHANNEL_COUNT 8
 #define USED_TIMERS             (TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8))

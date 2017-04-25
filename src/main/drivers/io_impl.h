@@ -18,8 +18,9 @@
  #pragma once
 
 // TODO - GPIO_TypeDef include
-#include "io.h"
 #include "platform.h"
+
+#include "drivers/io.h"
 
 typedef struct ioDef_s {
     ioTag_t tag;

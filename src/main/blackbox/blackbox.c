@@ -35,13 +35,12 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
-#include "config/config_profile.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
 #include "drivers/sensor.h"
-#include "drivers/compass.h"
+#include "drivers/compass/compass.h"
 #include "drivers/system.h"
 #include "drivers/pwm_output.h"
 
@@ -389,64 +388,64 @@ static bool blackboxIsOnlyLoggingIntraframes() {
 static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
 {
     switch (condition) {
-        case FLIGHT_LOG_FIELD_CONDITION_ALWAYS:
-            return true;
+    case FLIGHT_LOG_FIELD_CONDITION_ALWAYS:
+        return true;
 
-        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1:
-        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_2:
-        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_3:
-        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_4:
-        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_5:
-        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_6:
-        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_7:
-        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_8:
-            return getMotorCount() >= condition - FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1 + 1;
+    case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1:
+    case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_2:
+    case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_3:
+    case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_4:
+    case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_5:
+    case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_6:
+    case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_7:
+    case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_8:
+        return getMotorCount() >= condition - FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1 + 1;
 
-        case FLIGHT_LOG_FIELD_CONDITION_TRICOPTER:
-            return mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI;
+    case FLIGHT_LOG_FIELD_CONDITION_TRICOPTER:
+        return mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI;
 
-        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0:
-        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1:
-        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2:
-            return currentPidProfile->D8[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0] != 0;
+    case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0:
+    case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1:
+    case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2:
+        return currentPidProfile->D8[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0] != 0;
 
-        case FLIGHT_LOG_FIELD_CONDITION_MAG:
+    case FLIGHT_LOG_FIELD_CONDITION_MAG:
 #ifdef MAG
-            return sensors(SENSOR_MAG);
+        return sensors(SENSOR_MAG);
 #else
-            return false;
+        return false;
 #endif
 
-        case FLIGHT_LOG_FIELD_CONDITION_BARO:
+    case FLIGHT_LOG_FIELD_CONDITION_BARO:
 #ifdef BARO
-            return sensors(SENSOR_BARO);
+        return sensors(SENSOR_BARO);
 #else
-            return false;
+        return false;
 #endif
 
-        case FLIGHT_LOG_FIELD_CONDITION_VBAT:
-            return batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE;
+    case FLIGHT_LOG_FIELD_CONDITION_VBAT:
+        return batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE;
 
-        case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC:
-            return batteryConfig()->currentMeterSource == CURRENT_METER_ADC;
+    case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC:
+        return batteryConfig()->currentMeterSource == CURRENT_METER_ADC;
 
-        case FLIGHT_LOG_FIELD_CONDITION_SONAR:
+    case FLIGHT_LOG_FIELD_CONDITION_SONAR:
 #ifdef SONAR
-            return feature(FEATURE_SONAR);
+        return feature(FEATURE_SONAR);
 #else
-            return false;
+        return false;
 #endif
 
-        case FLIGHT_LOG_FIELD_CONDITION_RSSI:
-            return rxConfig()->rssi_channel > 0 || feature(FEATURE_RSSI_ADC);
+    case FLIGHT_LOG_FIELD_CONDITION_RSSI:
+        return rxConfig()->rssi_channel > 0 || feature(FEATURE_RSSI_ADC);
 
-        case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
-            return blackboxConfig()->rate_num < blackboxConfig()->rate_denom;
+    case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
+        return blackboxConfig()->rate_num < blackboxConfig()->rate_denom;
 
-        case FLIGHT_LOG_FIELD_CONDITION_NEVER:
-            return false;
-        default:
-            return false;
+    case FLIGHT_LOG_FIELD_CONDITION_NEVER:
+        return false;
+    default:
+        return false;
     }
 }
 
@@ -472,32 +471,32 @@ static void blackboxSetState(BlackboxState newState)
 {
     //Perform initial setup required for the new state
     switch (newState) {
-        case BLACKBOX_STATE_PREPARE_LOG_FILE:
-            blackboxLoggedAnyFrames = false;
+    case BLACKBOX_STATE_PREPARE_LOG_FILE:
+        blackboxLoggedAnyFrames = false;
         break;
-        case BLACKBOX_STATE_SEND_HEADER:
-            blackboxHeaderBudget = 0;
-            xmitState.headerIndex = 0;
-            xmitState.u.startTime = millis();
+    case BLACKBOX_STATE_SEND_HEADER:
+        blackboxHeaderBudget = 0;
+        xmitState.headerIndex = 0;
+        xmitState.u.startTime = millis();
         break;
-        case BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER:
-        case BLACKBOX_STATE_SEND_GPS_G_HEADER:
-        case BLACKBOX_STATE_SEND_GPS_H_HEADER:
-        case BLACKBOX_STATE_SEND_SLOW_HEADER:
-            xmitState.headerIndex = 0;
-            xmitState.u.fieldIndex = -1;
+    case BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER:
+    case BLACKBOX_STATE_SEND_GPS_G_HEADER:
+    case BLACKBOX_STATE_SEND_GPS_H_HEADER:
+    case BLACKBOX_STATE_SEND_SLOW_HEADER:
+        xmitState.headerIndex = 0;
+        xmitState.u.fieldIndex = -1;
         break;
-        case BLACKBOX_STATE_SEND_SYSINFO:
-            xmitState.headerIndex = 0;
+    case BLACKBOX_STATE_SEND_SYSINFO:
+        xmitState.headerIndex = 0;
         break;
-        case BLACKBOX_STATE_RUNNING:
-            blackboxSlowFrameIterationTimer = SLOW_FRAME_INTERVAL; //Force a slow frame to be written on the first iteration
+    case BLACKBOX_STATE_RUNNING:
+        blackboxSlowFrameIterationTimer = SLOW_FRAME_INTERVAL; //Force a slow frame to be written on the first iteration
         break;
-        case BLACKBOX_STATE_SHUTTING_DOWN:
-            xmitState.u.startTime = millis();
+    case BLACKBOX_STATE_SHUTTING_DOWN:
+        xmitState.u.startTime = millis();
         break;
-        default:
-            ;
+    default:
+        ;
     }
     blackboxState = newState;
 }
@@ -809,16 +808,16 @@ void validateBlackboxConfig()
     // If we've chosen an unsupported device, change the device to serial
     switch (blackboxConfig()->device) {
 #ifdef USE_FLASHFS
-        case BLACKBOX_DEVICE_FLASH:
+    case BLACKBOX_DEVICE_FLASH:
 #endif
 #ifdef USE_SDCARD
-        case BLACKBOX_DEVICE_SDCARD:
+    case BLACKBOX_DEVICE_SDCARD:
 #endif
-        case BLACKBOX_DEVICE_SERIAL:
+    case BLACKBOX_DEVICE_SERIAL:
             // Device supported, leave the setting alone
         break;
 
-        default:
+    default:
             blackboxConfigMutable()->device = BLACKBOX_DEVICE_SERIAL;
     }
 }
@@ -874,19 +873,19 @@ void startBlackbox(void)
 void finishBlackbox(void)
 {
     switch (blackboxState) {
-        case BLACKBOX_STATE_DISABLED:
-        case BLACKBOX_STATE_STOPPED:
-        case BLACKBOX_STATE_SHUTTING_DOWN:
-            // We're already stopped/shutting down
+    case BLACKBOX_STATE_DISABLED:
+    case BLACKBOX_STATE_STOPPED:
+    case BLACKBOX_STATE_SHUTTING_DOWN:
+        // We're already stopped/shutting down
         break;
 
-        case BLACKBOX_STATE_RUNNING:
-        case BLACKBOX_STATE_PAUSED:
-            blackboxLogEvent(FLIGHT_LOG_EVENT_LOG_END, NULL);
+    case BLACKBOX_STATE_RUNNING:
+    case BLACKBOX_STATE_PAUSED:
+        blackboxLogEvent(FLIGHT_LOG_EVENT_LOG_END, NULL);
 
-            // Fall through
-        default:
-            blackboxSetState(BLACKBOX_STATE_SHUTTING_DOWN);
+        // Fall through
+    default:
+        blackboxSetState(BLACKBOX_STATE_SHUTTING_DOWN);
     }
 }
 
@@ -1284,13 +1283,13 @@ static bool blackboxWriteSysinfo()
 
         // Betaflight PID controller parameters
         BLACKBOX_PRINT_HEADER_LINE("anti_gravity_thresh", "%d",              currentPidProfile->itermThrottleThreshold);
-        BLACKBOX_PRINT_HEADER_LINE("anti_gravity_gain", "%d",                castFloatBytesToInt(currentPidProfile->itermAcceleratorGain));
+        BLACKBOX_PRINT_HEADER_LINE("anti_gravity_gain", "%d",                currentPidProfile->itermAcceleratorGain);
         BLACKBOX_PRINT_HEADER_LINE("setpoint_relax_ratio", "%d",             currentPidProfile->setpointRelaxRatio);
         BLACKBOX_PRINT_HEADER_LINE("d_setpoint_weight", "%d",                currentPidProfile->dtermSetpointWeight);
-        BLACKBOX_PRINT_HEADER_LINE("yaw_accel_limit", "%d",                  castFloatBytesToInt(currentPidProfile->yawRateAccelLimit));
-        BLACKBOX_PRINT_HEADER_LINE("accel_limit", "%d",                      castFloatBytesToInt(currentPidProfile->rateAccelLimit));
-        BLACKBOX_PRINT_HEADER_LINE("pidsum_limit", "%d",                     castFloatBytesToInt(currentPidProfile->pidSumLimit));
-        BLACKBOX_PRINT_HEADER_LINE("pidsum_limit_yaw", "%d",                 castFloatBytesToInt(currentPidProfile->pidSumLimitYaw));
+        BLACKBOX_PRINT_HEADER_LINE("yaw_accel_limit", "%d",                  currentPidProfile->yawRateAccelLimit);
+        BLACKBOX_PRINT_HEADER_LINE("accel_limit", "%d",                      currentPidProfile->rateAccelLimit);
+        BLACKBOX_PRINT_HEADER_LINE("pidsum_limit", "%d",                     currentPidProfile->pidSumLimit);
+        BLACKBOX_PRINT_HEADER_LINE("pidsum_limit_yaw", "%d",                 currentPidProfile->pidSumLimitYaw);
         // End of Betaflight controller parameters
 
         BLACKBOX_PRINT_HEADER_LINE("deadband", "%d",                         rcControlsConfig()->deadband);
@@ -1314,7 +1313,7 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("use_unsynced_pwm", "%d",                 motorConfig()->dev.useUnsyncedPwm);
         BLACKBOX_PRINT_HEADER_LINE("motor_pwm_protocol", "%d",               motorConfig()->dev.motorPwmProtocol);
         BLACKBOX_PRINT_HEADER_LINE("motor_pwm_rate", "%d",                   motorConfig()->dev.motorPwmRate);
-        BLACKBOX_PRINT_HEADER_LINE("digital_idle_percent", "%d",        (int)(motorConfig()->digitalIdleOffsetPercent * 100.0f));
+        BLACKBOX_PRINT_HEADER_LINE("digital_idle_value", "%d",               motorConfig()->digitalIdleOffsetValue);
         BLACKBOX_PRINT_HEADER_LINE("debug_mode", "%d",                       systemConfig()->debug_mode);
         BLACKBOX_PRINT_HEADER_LINE("features", "%d",                         featureConfig()->enabledFeatures);
 
@@ -1342,29 +1341,29 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
 
     //Now serialize the data for this specific frame type
     switch (event) {
-        case FLIGHT_LOG_EVENT_SYNC_BEEP:
-            blackboxWriteUnsignedVB(data->syncBeep.time);
+    case FLIGHT_LOG_EVENT_SYNC_BEEP:
+        blackboxWriteUnsignedVB(data->syncBeep.time);
         break;
-        case FLIGHT_LOG_EVENT_FLIGHTMODE: // New flightmode flags write
-            blackboxWriteUnsignedVB(data->flightMode.flags);
-            blackboxWriteUnsignedVB(data->flightMode.lastFlags);
+    case FLIGHT_LOG_EVENT_FLIGHTMODE: // New flightmode flags write
+        blackboxWriteUnsignedVB(data->flightMode.flags);
+        blackboxWriteUnsignedVB(data->flightMode.lastFlags);
         break;
-        case FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT:
-            if (data->inflightAdjustment.floatFlag) {
-                blackboxWrite(data->inflightAdjustment.adjustmentFunction + FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT_FUNCTION_FLOAT_VALUE_FLAG);
-                blackboxWriteFloat(data->inflightAdjustment.newFloatValue);
-            } else {
-                blackboxWrite(data->inflightAdjustment.adjustmentFunction);
-                blackboxWriteSignedVB(data->inflightAdjustment.newValue);
-            }
+    case FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT:
+        if (data->inflightAdjustment.floatFlag) {
+            blackboxWrite(data->inflightAdjustment.adjustmentFunction + FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT_FUNCTION_FLOAT_VALUE_FLAG);
+            blackboxWriteFloat(data->inflightAdjustment.newFloatValue);
+        } else {
+            blackboxWrite(data->inflightAdjustment.adjustmentFunction);
+            blackboxWriteSignedVB(data->inflightAdjustment.newValue);
+        }
         break;
-        case FLIGHT_LOG_EVENT_LOGGING_RESUME:
-            blackboxWriteUnsignedVB(data->loggingResume.logIteration);
-            blackboxWriteUnsignedVB(data->loggingResume.currentTime);
+    case FLIGHT_LOG_EVENT_LOGGING_RESUME:
+        blackboxWriteUnsignedVB(data->loggingResume.logIteration);
+        blackboxWriteUnsignedVB(data->loggingResume.currentTime);
         break;
-        case FLIGHT_LOG_EVENT_LOG_END:
-            blackboxPrint("End of log");
-            blackboxWrite(0);
+    case FLIGHT_LOG_EVENT_LOG_END:
+        blackboxPrint("End of log");
+        blackboxWrite(0);
         break;
     }
 }
@@ -1490,160 +1489,160 @@ void handleBlackbox(timeUs_t currentTimeUs)
     int i;
   
     switch (blackboxState) {
-        case BLACKBOX_STATE_STOPPED:
-            if (ARMING_FLAG(ARMED)) {
-                blackboxOpen();  
-                startBlackbox();
-            }
+    case BLACKBOX_STATE_STOPPED:
+        if (ARMING_FLAG(ARMED)) {
+            blackboxOpen();
+            startBlackbox();
+        }
 #ifdef USE_FLASHFS
-            if (IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE)) {
-                blackboxSetState(BLACKBOX_STATE_START_ERASE);
-            }
+        if (IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE)) {
+            blackboxSetState(BLACKBOX_STATE_START_ERASE);
+        }
 #endif
         break;
-        case BLACKBOX_STATE_PREPARE_LOG_FILE:
-            if (blackboxDeviceBeginLog()) {
-                blackboxSetState(BLACKBOX_STATE_SEND_HEADER);
-            }
+    case BLACKBOX_STATE_PREPARE_LOG_FILE:
+        if (blackboxDeviceBeginLog()) {
+            blackboxSetState(BLACKBOX_STATE_SEND_HEADER);
+        }
         break;
-        case BLACKBOX_STATE_SEND_HEADER:
-            blackboxReplenishHeaderBudget();
-            //On entry of this state, xmitState.headerIndex is 0 and startTime is intialised
+    case BLACKBOX_STATE_SEND_HEADER:
+        blackboxReplenishHeaderBudget();
+        //On entry of this state, xmitState.headerIndex is 0 and startTime is intialised
 
-            /*
-             * Once the UART has had time to init, transmit the header in chunks so we don't overflow its transmit
-             * buffer, overflow the OpenLog's buffer, or keep the main loop busy for too long.
-             */
-            if (millis() > xmitState.u.startTime + 100) {
-                if (blackboxDeviceReserveBufferSpace(BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION) == BLACKBOX_RESERVE_SUCCESS) {
-                    for (i = 0; i < BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION && blackboxHeader[xmitState.headerIndex] != '\0'; i++, xmitState.headerIndex++) {
-                        blackboxWrite(blackboxHeader[xmitState.headerIndex]);
-                        blackboxHeaderBudget--;
-                    }
+        /*
+         * Once the UART has had time to init, transmit the header in chunks so we don't overflow its transmit
+         * buffer, overflow the OpenLog's buffer, or keep the main loop busy for too long.
+         */
+        if (millis() > xmitState.u.startTime + 100) {
+            if (blackboxDeviceReserveBufferSpace(BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION) == BLACKBOX_RESERVE_SUCCESS) {
+                for (i = 0; i < BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION && blackboxHeader[xmitState.headerIndex] != '\0'; i++, xmitState.headerIndex++) {
+                    blackboxWrite(blackboxHeader[xmitState.headerIndex]);
+                    blackboxHeaderBudget--;
+                }
 
-                    if (blackboxHeader[xmitState.headerIndex] == '\0') {
-                        blackboxSetState(BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER);
-                    }
+                if (blackboxHeader[xmitState.headerIndex] == '\0') {
+                    blackboxSetState(BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER);
                 }
             }
+        }
         break;
-        case BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER:
-            blackboxReplenishHeaderBudget();
-            //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-            if (!sendFieldDefinition('I', 'P', blackboxMainFields, blackboxMainFields + 1, ARRAY_LENGTH(blackboxMainFields),
-                    &blackboxMainFields[0].condition, &blackboxMainFields[1].condition)) {
+    case BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER:
+        blackboxReplenishHeaderBudget();
+        //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
+        if (!sendFieldDefinition('I', 'P', blackboxMainFields, blackboxMainFields + 1, ARRAY_LENGTH(blackboxMainFields),
+                &blackboxMainFields[0].condition, &blackboxMainFields[1].condition)) {
 #ifdef GPS
-                if (feature(FEATURE_GPS)) {
-                    blackboxSetState(BLACKBOX_STATE_SEND_GPS_H_HEADER);
-                } else
+            if (feature(FEATURE_GPS)) {
+                blackboxSetState(BLACKBOX_STATE_SEND_GPS_H_HEADER);
+            } else
 #endif
-                    blackboxSetState(BLACKBOX_STATE_SEND_SLOW_HEADER);
-            }
-        break;
-#ifdef GPS
-        case BLACKBOX_STATE_SEND_GPS_H_HEADER:
-            blackboxReplenishHeaderBudget();
-            //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-            if (!sendFieldDefinition('H', 0, blackboxGpsHFields, blackboxGpsHFields + 1, ARRAY_LENGTH(blackboxGpsHFields),
-                    NULL, NULL)) {
-                blackboxSetState(BLACKBOX_STATE_SEND_GPS_G_HEADER);
-            }
-        break;
-        case BLACKBOX_STATE_SEND_GPS_G_HEADER:
-            blackboxReplenishHeaderBudget();
-            //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-            if (!sendFieldDefinition('G', 0, blackboxGpsGFields, blackboxGpsGFields + 1, ARRAY_LENGTH(blackboxGpsGFields),
-                    &blackboxGpsGFields[0].condition, &blackboxGpsGFields[1].condition)) {
                 blackboxSetState(BLACKBOX_STATE_SEND_SLOW_HEADER);
-            }
+        }
+        break;
+#ifdef GPS
+    case BLACKBOX_STATE_SEND_GPS_H_HEADER:
+        blackboxReplenishHeaderBudget();
+        //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
+        if (!sendFieldDefinition('H', 0, blackboxGpsHFields, blackboxGpsHFields + 1, ARRAY_LENGTH(blackboxGpsHFields),
+                NULL, NULL)) {
+            blackboxSetState(BLACKBOX_STATE_SEND_GPS_G_HEADER);
+        }
+        break;
+    case BLACKBOX_STATE_SEND_GPS_G_HEADER:
+        blackboxReplenishHeaderBudget();
+        //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
+        if (!sendFieldDefinition('G', 0, blackboxGpsGFields, blackboxGpsGFields + 1, ARRAY_LENGTH(blackboxGpsGFields),
+                &blackboxGpsGFields[0].condition, &blackboxGpsGFields[1].condition)) {
+            blackboxSetState(BLACKBOX_STATE_SEND_SLOW_HEADER);
+        }
         break;
 #endif
-        case BLACKBOX_STATE_SEND_SLOW_HEADER:
-            blackboxReplenishHeaderBudget();
-            //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-            if (!sendFieldDefinition('S', 0, blackboxSlowFields, blackboxSlowFields + 1, ARRAY_LENGTH(blackboxSlowFields),
-                    NULL, NULL)) {
-                blackboxSetState(BLACKBOX_STATE_SEND_SYSINFO);
-            }
+    case BLACKBOX_STATE_SEND_SLOW_HEADER:
+        blackboxReplenishHeaderBudget();
+        //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
+        if (!sendFieldDefinition('S', 0, blackboxSlowFields, blackboxSlowFields + 1, ARRAY_LENGTH(blackboxSlowFields),
+                NULL, NULL)) {
+            blackboxSetState(BLACKBOX_STATE_SEND_SYSINFO);
+        }
         break;
-        case BLACKBOX_STATE_SEND_SYSINFO:
-            blackboxReplenishHeaderBudget();
-            //On entry of this state, xmitState.headerIndex is 0
+    case BLACKBOX_STATE_SEND_SYSINFO:
+        blackboxReplenishHeaderBudget();
+        //On entry of this state, xmitState.headerIndex is 0
 
-            //Keep writing chunks of the system info headers until it returns true to signal completion
-            if (blackboxWriteSysinfo()) {
-
-                /*
-                 * Wait for header buffers to drain completely before data logging begins to ensure reliable header delivery
-                 * (overflowing circular buffers causes all data to be discarded, so the first few logged iterations
-                 * could wipe out the end of the header if we weren't careful)
-                 */
-                if (blackboxDeviceFlushForce()) {
-                    blackboxSetState(BLACKBOX_STATE_RUNNING);
-                }
-            }
-        break;
-        case BLACKBOX_STATE_PAUSED:
-            // Only allow resume to occur during an I-frame iteration, so that we have an "I" base to work from
-            if (IS_RC_MODE_ACTIVE(BOXBLACKBOX) && blackboxShouldLogIFrame()) {
-                // Write a log entry so the decoder is aware that our large time/iteration skip is intended
-                flightLogEvent_loggingResume_t resume;
-
-                resume.logIteration = blackboxIteration;
-                resume.currentTime = currentTimeUs;
-
-                blackboxLogEvent(FLIGHT_LOG_EVENT_LOGGING_RESUME, (flightLogEventData_t *) &resume);
-                blackboxSetState(BLACKBOX_STATE_RUNNING);
-
-                blackboxLogIteration(currentTimeUs);
-            }
-            // Keep the logging timers ticking so our log iteration continues to advance
-            blackboxAdvanceIterationTimers();
-        break;
-        case BLACKBOX_STATE_RUNNING:
-            // On entry to this state, blackboxIteration, blackboxPFrameIndex and blackboxIFrameIndex are reset to 0
-            // Prevent the Pausing of the log on the mode switch if in Motor Test Mode
-            if (blackboxModeActivationConditionPresent && !IS_RC_MODE_ACTIVE(BOXBLACKBOX) && !startedLoggingInTestMode) {
-                blackboxSetState(BLACKBOX_STATE_PAUSED);
-            } else {
-                blackboxLogIteration(currentTimeUs);
-            }
-            blackboxAdvanceIterationTimers();
-        break;
-        case BLACKBOX_STATE_SHUTTING_DOWN:
-            //On entry of this state, startTime is set
+        //Keep writing chunks of the system info headers until it returns true to signal completion
+        if (blackboxWriteSysinfo()) {
 
             /*
-             * Wait for the log we've transmitted to make its way to the logger before we release the serial port,
-             * since releasing the port clears the Tx buffer.
-             *
-             * Don't wait longer than it could possibly take if something funky happens.
+             * Wait for header buffers to drain completely before data logging begins to ensure reliable header delivery
+             * (overflowing circular buffers causes all data to be discarded, so the first few logged iterations
+             * could wipe out the end of the header if we weren't careful)
              */
-            if (blackboxDeviceEndLog(blackboxLoggedAnyFrames) && (millis() > xmitState.u.startTime + BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS || blackboxDeviceFlushForce())) {
-                blackboxDeviceClose();
-                blackboxSetState(BLACKBOX_STATE_STOPPED);
+            if (blackboxDeviceFlushForce()) {
+                blackboxSetState(BLACKBOX_STATE_RUNNING);
             }
+        }
+        break;
+    case BLACKBOX_STATE_PAUSED:
+        // Only allow resume to occur during an I-frame iteration, so that we have an "I" base to work from
+        if (IS_RC_MODE_ACTIVE(BOXBLACKBOX) && blackboxShouldLogIFrame()) {
+            // Write a log entry so the decoder is aware that our large time/iteration skip is intended
+            flightLogEvent_loggingResume_t resume;
+
+            resume.logIteration = blackboxIteration;
+            resume.currentTime = currentTimeUs;
+
+            blackboxLogEvent(FLIGHT_LOG_EVENT_LOGGING_RESUME, (flightLogEventData_t *) &resume);
+            blackboxSetState(BLACKBOX_STATE_RUNNING);
+
+            blackboxLogIteration(currentTimeUs);
+        }
+        // Keep the logging timers ticking so our log iteration continues to advance
+        blackboxAdvanceIterationTimers();
+        break;
+    case BLACKBOX_STATE_RUNNING:
+        // On entry to this state, blackboxIteration, blackboxPFrameIndex and blackboxIFrameIndex are reset to 0
+        // Prevent the Pausing of the log on the mode switch if in Motor Test Mode
+        if (blackboxModeActivationConditionPresent && !IS_RC_MODE_ACTIVE(BOXBLACKBOX) && !startedLoggingInTestMode) {
+            blackboxSetState(BLACKBOX_STATE_PAUSED);
+        } else {
+            blackboxLogIteration(currentTimeUs);
+        }
+        blackboxAdvanceIterationTimers();
+        break;
+    case BLACKBOX_STATE_SHUTTING_DOWN:
+        //On entry of this state, startTime is set
+
+        /*
+         * Wait for the log we've transmitted to make its way to the logger before we release the serial port,
+         * since releasing the port clears the Tx buffer.
+         *
+         * Don't wait longer than it could possibly take if something funky happens.
+         */
+        if (blackboxDeviceEndLog(blackboxLoggedAnyFrames) && (millis() > xmitState.u.startTime + BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS || blackboxDeviceFlushForce())) {
+            blackboxDeviceClose();
+            blackboxSetState(BLACKBOX_STATE_STOPPED);
+        }
         break;
 #ifdef USE_FLASHFS
-        case BLACKBOX_STATE_START_ERASE:
-	        blackboxEraseAll();
-	        blackboxSetState(BLACKBOX_STATE_ERASING);
+    case BLACKBOX_STATE_START_ERASE:
+        blackboxEraseAll();
+        blackboxSetState(BLACKBOX_STATE_ERASING);
+        beeper(BEEPER_BLACKBOX_ERASE);
+        break;
+    case BLACKBOX_STATE_ERASING:
+        if (isBlackboxErased()) {
+            //Done erasing
+            blackboxSetState(BLACKBOX_STATE_ERASED);
             beeper(BEEPER_BLACKBOX_ERASE);
-        break;
-        case BLACKBOX_STATE_ERASING:
-	        if (isBlackboxErased()) {
-                //Done erasing
-                blackboxSetState(BLACKBOX_STATE_ERASED);
-                beeper(BEEPER_BLACKBOX_ERASE);
-            }
+        }
         break;  
-        case BLACKBOX_STATE_ERASED:
-	        if (!IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE)) {
-                blackboxSetState(BLACKBOX_STATE_STOPPED);
-            }
-        break;
+    case BLACKBOX_STATE_ERASED:
+        if (!IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE)) {
+            blackboxSetState(BLACKBOX_STATE_STOPPED);
+        }
+    break;
 #endif
-        default:
+    default:
         break;
     }
 
