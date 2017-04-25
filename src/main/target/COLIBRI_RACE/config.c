@@ -23,6 +23,9 @@
 
 #ifdef TARGET_CONFIG
 
+#include "config/config_master.h"
+#include "io/ledstrip.h"
+
 void targetApplyDefaultLedStripConfig(ledConfig_t *ledConfigs)
 {
 	UNUSED(ledConfigs);
