@@ -88,7 +88,7 @@ static void m25p16_performOneByteCommand(uint8_t command)
  * The flash requires this write enable command to be sent before commands that would cause
  * a write like program and erase.
  */
-static void m25p16_writeEnable()
+static void m25p16_writeEnable(void)
 {
     m25p16_performOneByteCommand(M25P16_INSTRUCTION_WRITE_ENABLE);
 
@@ -96,7 +96,7 @@ static void m25p16_writeEnable()
     couldBeBusy = true;
 }
 
-static uint8_t m25p16_readStatus()
+static uint8_t m25p16_readStatus(void)
 {
     uint8_t command[2] = { M25P16_INSTRUCTION_READ_STATUS_REG, 0 };
     uint8_t in[2];
@@ -110,7 +110,7 @@ static uint8_t m25p16_readStatus()
     return in[1];
 }
 
-bool m25p16_isReady()
+bool m25p16_isReady(void)
 {
     // If couldBeBusy is false, don't bother to poll the flash chip for its status
     couldBeBusy = couldBeBusy && ((m25p16_readStatus() & M25P16_STATUS_FLAG_WRITE_IN_PROGRESS) != 0);
@@ -135,7 +135,7 @@ bool m25p16_waitForReady(uint32_t timeoutMillis)
  *
  * Returns true if we get valid ident, false if something bad happened like there is no M25P16.
  */
-static bool m25p16_readIdentification()
+static bool m25p16_readIdentification(void)
 {
     uint8_t out[] = { M25P16_INSTRUCTION_RDID, 0, 0, 0 };
     uint8_t in[4];
@@ -161,37 +161,37 @@ static bool m25p16_readIdentification()
     // All supported chips use the same pagesize of 256 bytes
 
     switch (chipID) {
-        case JEDEC_ID_MICRON_M25P16:
-            geometry.sectors = 32;
-            geometry.pagesPerSector = 256;
+    case JEDEC_ID_MICRON_M25P16:
+        geometry.sectors = 32;
+        geometry.pagesPerSector = 256;
         break;
-        case JEDEC_ID_MACRONIX_MX25L3206E:
-            geometry.sectors = 64;
-            geometry.pagesPerSector = 256;
+    case JEDEC_ID_MACRONIX_MX25L3206E:
+        geometry.sectors = 64;
+        geometry.pagesPerSector = 256;
         break;
-        case JEDEC_ID_MICRON_N25Q064:
-        case JEDEC_ID_WINBOND_W25Q64:
-        case JEDEC_ID_MACRONIX_MX25L6406E:
-            geometry.sectors = 128;
-            geometry.pagesPerSector = 256;
+    case JEDEC_ID_MICRON_N25Q064:
+    case JEDEC_ID_WINBOND_W25Q64:
+    case JEDEC_ID_MACRONIX_MX25L6406E:
+        geometry.sectors = 128;
+        geometry.pagesPerSector = 256;
         break;
-        case JEDEC_ID_MICRON_N25Q128:
-        case JEDEC_ID_WINBOND_W25Q128:
-            geometry.sectors = 256;
-            geometry.pagesPerSector = 256;
+    case JEDEC_ID_MICRON_N25Q128:
+    case JEDEC_ID_WINBOND_W25Q128:
+        geometry.sectors = 256;
+        geometry.pagesPerSector = 256;
         break;
-        case JEDEC_ID_MACRONIX_MX25L25635E:
-            geometry.sectors = 512;
-            geometry.pagesPerSector = 256;
+    case JEDEC_ID_MACRONIX_MX25L25635E:
+        geometry.sectors = 512;
+        geometry.pagesPerSector = 256;
         break;
-        default:
-            // Unsupported chip or not an SPI NOR flash
-            geometry.sectors = 0;
-            geometry.pagesPerSector = 0;
+    default:
+        // Unsupported chip or not an SPI NOR flash
+        geometry.sectors = 0;
+        geometry.pagesPerSector = 0;
 
-            geometry.sectorSize = 0;
-            geometry.totalSize = 0;
-            return false;
+        geometry.sectorSize = 0;
+        geometry.totalSize = 0;
+        return false;
     }
 
     geometry.sectorSize = geometry.pagesPerSector * geometry.pageSize;
@@ -254,7 +254,7 @@ void m25p16_eraseSector(uint32_t address)
     DISABLE_M25P16;
 }
 
-void m25p16_eraseCompletely()
+void m25p16_eraseCompletely(void)
 {
     m25p16_waitForReady(BULK_ERASE_TIMEOUT_MILLIS);
 
@@ -281,7 +281,7 @@ void m25p16_pageProgramContinue(const uint8_t *data, int length)
     spiTransfer(M25P16_SPI_INSTANCE, NULL, data, length);
 }
 
-void m25p16_pageProgramFinish()
+void m25p16_pageProgramFinish(void)
 {
     DISABLE_M25P16;
 }
@@ -341,7 +341,7 @@ int m25p16_readBytes(uint32_t address, uint8_t *buffer, int length)
  *
  * Can be called before calling m25p16_init() (the result would have totalSize = 0).
  */
-const flashGeometry_t* m25p16_getGeometry()
+const flashGeometry_t* m25p16_getGeometry(void)
 {
     return &geometry;
 }
