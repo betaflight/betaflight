@@ -34,7 +34,7 @@
 
 #include "drivers/time.h"
 #include "drivers/sensor.h"
-#include "drivers/accgyro.h"
+#include "drivers/accgyro/accgyro.h"
 
 #include "sensors/sensors.h"
 #include "sensors/rangefinder.h"

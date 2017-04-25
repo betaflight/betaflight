@@ -19,7 +19,7 @@
 
 #include "config/parameter_group.h"
 
-#include "drivers/barometer.h"
+#include "drivers/barometer/barometer.h"
 
 typedef enum {
     BARO_NONE = 0,

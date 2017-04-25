@@ -33,9 +33,9 @@
 #include "common/streambuf.h"
 #include "common/utils.h"
 
-#include "drivers/accgyro.h"
+#include "drivers/accgyro/accgyro.h"
 #include "drivers/bus_i2c.h"
-#include "drivers/compass.h"
+#include "drivers/compass/compass.h"
 #include "drivers/max7456.h"
 #include "drivers/pwm_mapping.h"
 #include "drivers/sdcard.h"

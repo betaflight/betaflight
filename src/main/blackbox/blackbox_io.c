@@ -40,10 +40,10 @@
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 #include "drivers/serial.h"
-#include "drivers/compass.h"
+#include "drivers/compass/compass.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
-#include "drivers/accgyro.h"
+#include "drivers/accgyro/accgyro.h"
 #include "drivers/light_led.h"
 #include "drivers/gyro_sync.h"
 

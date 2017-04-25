@@ -21,7 +21,7 @@
 
 #include "config/parameter_group.h"
 
-#include "drivers/compass.h"
+#include "drivers/compass/compass.h"
 
 #include "sensors/sensors.h"
 

@@ -28,9 +28,9 @@
 
 #include <platform.h>
 
-#include "time.h"
-#include "io.h"
-#include "nvic.h"
+#include "drivers/time.h"
+#include "drivers/io.h"
+#include "drivers/nvic.h"
 #include "dma.h"
 #include "rcc.h"
 

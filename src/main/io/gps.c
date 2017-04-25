@@ -35,7 +35,7 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/compass.h"
+#include "drivers/compass/compass.h"
 #include "drivers/light_led.h"
 #include "drivers/serial.h"
 #include "drivers/system.h"

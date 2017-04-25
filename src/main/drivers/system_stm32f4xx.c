@@ -21,12 +21,12 @@
 
 #include "platform.h"
 
-#include "accgyro_mpu.h"
-#include "exti.h"
-#include "nvic.h"
-#include "system.h"
+#include "drivers/accgyro/accgyro_mpu.h"
+#include "drivers/exti.h"
+#include "drivers/nvic.h"
+#include "drivers/system.h"
 
-#include "exti.h"
+#include "drivers/exti.h"
 
 
 #define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)

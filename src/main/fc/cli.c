@@ -50,10 +50,10 @@ extern uint8_t __config_end;
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/accgyro.h"
+#include "drivers/accgyro/accgyro.h"
 #include "drivers/buf_writer.h"
 #include "drivers/bus_i2c.h"
-#include "drivers/compass.h"
+#include "drivers/compass/compass.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/logging.h"

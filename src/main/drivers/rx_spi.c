@@ -28,14 +28,14 @@
 
 #include "build/build_config.h"
 
-#include "time.h"
-#include "gpio.h"
-#include "io.h"
+#include "drivers/time.h"
+#include "drivers/gpio.h"
+#include "drivers/io.h"
 #include "io_impl.h"
 #include "rcc.h"
 #include "rx_spi.h"
 
-#include "bus_spi.h"
+#include "drivers/bus_spi.h"
 #include "bus_spi_soft.h"
 
 #define DISABLE_RX()    {IOHi(IOGetByTag(IO_TAG(RX_NSS_PIN)));}

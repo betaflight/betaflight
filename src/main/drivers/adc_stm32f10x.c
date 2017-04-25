@@ -25,12 +25,12 @@
 
 #include "build/build_config.h"
 
-#include "time.h"
-#include "sensor.h"
-#include "accgyro.h"
+#include "drivers/time.h"
+#include "drivers/sensor.h"
+#include "drivers/accgyro/accgyro.h"
 #include "adc.h"
 #include "adc_impl.h"
-#include "io.h"
+#include "drivers/io.h"
 #include "rcc.h"
 
 #ifndef ADC_INSTANCE
