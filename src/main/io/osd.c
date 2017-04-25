@@ -471,6 +471,14 @@ static void osdDrawSingleElement(uint8_t item)
         break;
     }
 
+    case OSD_PITCH_ANGLE:
+    case OSD_ROLL_ANGLE:
+    {
+        const int angle = (item == OSD_PITCH_ANGLE) ? attitude.values.pitch : attitude.values.roll;
+        tfp_sprintf(buff, "%c%02d.%01d", angle < 0 ? '-' : ' ', abs(angle / 10), abs(angle % 10));
+        break;
+    }
+
     default:
         return;
     }
@@ -522,6 +530,8 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_MAIN_BATT_WARNING);
     osdDrawSingleElement(OSD_AVG_CELL_VOLTAGE);
     osdDrawSingleElement(OSD_DEBUG);
+    osdDrawSingleElement(OSD_PITCH_ANGLE);
+    osdDrawSingleElement(OSD_ROLL_ANGLE);
 
 #ifdef GPS
 #ifdef CMS
@@ -564,6 +574,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdProfile)
     osdProfile->item_pos[OSD_MAIN_BATT_WARNING] = OSD_POS(9, 10) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_AVG_CELL_VOLTAGE] = OSD_POS(12, 2) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_DEBUG] = OSD_POS(7, 12) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_PITCH_ANGLE] = OSD_POS(1, 8) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_ROLL_ANGLE] = OSD_POS(1, 9) | VISIBLE_FLAG;
 
     osdProfile->item_pos[OSD_GPS_LAT] = OSD_POS(18, 14) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_GPS_LON] = OSD_POS(18, 15) | VISIBLE_FLAG;
