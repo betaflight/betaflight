@@ -141,17 +141,17 @@ Re-apply any new defaults as desired.
 |  inav_w_z_res_v  | 0.500 | Decay coefficient for estimated climb rate when baro/GPS reference for altitude is lost |
 |  inav_w_xy_res_v  | 0.500 | Decay coefficient for estimated velocity when GPS reference for position is lost |
 |  inav_w_acc_bias  | 0.010 | Weight for accelerometer drift estimation |
-|  inav_max_eph_epv  | 1000.000 | Maximum uncertainty value (cm) until estimated position is considered valid and is used for navigation |
-|  inav_baro_epv  | 100.000 | Uncertainty value (cm) for barometric sensor |
+|  inav_max_eph_epv  | 1000.000 | Maximum uncertainty value until estimated position is considered valid and is used for navigation [cm] |
+|  inav_baro_epv  | 100.000 | Uncertainty value for barometric sensor [cm] |
 |  nav_disarm_on_landing  | OFF | If set to ON, iNav disarms the FC after landing |
 |  nav_use_midthr_for_althold  | OFF | If set to OFF, the FC remembers your throttle stick position when enabling ALTHOLD and treats it as a netraul midpoint for holding altitude |
 |  nav_extra_arming_safety  | ON | If set to ON drone won't arm if no GPS fix and any navigation mode like RTH or POSHOLD is configured |
 |  nav_user_control_mode  | ATTI | Defines how Pitch/Roll input from RC receiver affects flight in POSHOLD mode: ATTI - right stick controls attitude like in ANGLE mode; CRUISE - right stick controls velocity in forward and right direction. |
 |  nav_position_timeout  | 5 | If GPS fails wait for this much seconds before switching to emergency landing mode (0 - disable) |
 |  nav_wp_radius  | 100 | Waypoint radius [cm]. Waypoint would be considered reached if machine is within this radius |
-|  nav_wp_safe_distance  | 10000 | First waypoint in the mission should be closer than this value (cm) |
+|  nav_wp_safe_distance  | 10000 | First waypoint in the mission should be closer than this value [cm] |
 |  nav_auto_speed  | 300 | Maximum velocity firmware is allowed in full auto modes (POSHOLD, RTH, WP) [cm/s] [Multirotor only] |
-|  nav_auto_climb_rate  | 500 | Maximum climb/descent rate that UAV is allowed to reach during navigation modes. In cm/s |
+|  nav_auto_climb_rate  | 500 | Maximum climb/descent rate that UAV is allowed to reach during navigation modes. [cm/s] |
 |  nav_manual_speed  | 500 | Maximum velocity firmware is allowed when processing pilot input for POSHOLD/CRUISE control mode [cm/s] [Multirotor only] |
 |  nav_manual_climb_rate  | 200 | Maximum climb/descent rate firmware is allowed when processing pilot input for ALTHOLD control mode [cm/s] |
 |  nav_landing_speed  | 200 | Vertical descent velocity during the RTH landing phase. [cm/s] |
@@ -176,10 +176,10 @@ Re-apply any new defaults as desired.
 |  nav_fw_climb_angle  | 20 | Max pitch angle when climbing in GPS assisted modes, is also restrained by global max_angle_inclination_pit |
 |  nav_fw_dive_angle  | 15 | Max negative pitch angle when diving in GPS assisted modes, is also restrained by global max_angle_inclination_pit |
 |  nav_fw_pitch2thr  | 10 | Amount of throttle applied related to pitch attitude in GPS assisted modes |
-|  nav_fw_loiter_radius  | 5000 | PosHold radius in cm. 3000 to 7500 is a good value (30-75m) |
-|  nav_fw_launch_velocity  | 300 | Forward velocity threshold for swing-launch detection (cm/s) |
-|  nav_fw_launch_accel  | 1863 | Forward acceleration threshold for bungee launch of throw launch (cm/s/s, 1G = 981 cm/s/s) |
-|  nav_fw_launch_detect_time  | 40 | Time for which thresholds have to breached to consider launch happened (ms) |
+|  nav_fw_loiter_radius  | 5000 | PosHold radius. 3000 to 7500 is a good value (30-75m) [cm] |
+|  nav_fw_launch_velocity  | 300 | Forward velocity threshold for swing-launch detection [cm/s] |
+|  nav_fw_launch_accel  | 1863 | Forward acceleration threshold for bungee launch of throw launch [cm/s/s], 1G = 981 cm/s/s |
+|  nav_fw_launch_detect_time  | 40 | Time for which thresholds have to breached to consider launch happened [ms] |
 |  nav_fw_launch_thr  | 1700 | Launch throttle - throttle to be set during launch sequence (pwm units) |
 |  nav_fw_launch_idle_thr       | 1000  | Launch idle throttle - throttle to be set before launch sequence is initiated. If set below min_throttle it will force motor stop or at idle throttle (depending if the MOTOR_STOP is enabled). If set above min_throttle it will force throttle to this value (if MOTOR_STOP is enabled it will be handled according to throttle stick position)	|
 |  nav_fw_launch_motor_delay    | 500 | Delay between detected launch and launch sequence start and throttling up (ms) |
