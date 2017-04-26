@@ -195,7 +195,7 @@ Re-apply any new defaults as desired.
 |  frsky_default_lattitude  | 0.000 | OpenTX needs a valid set of coordinates to show compass value. A fake value defined in this setting is sent while no fix is acquired. |
 |  frsky_default_longitude  | 0.000 | OpenTX needs a valid set of coordinates to show compass value. A fake value defined in this setting is sent while no fix is acquired. |
 |  frsky_coordinates_format  | 0 | FRSKY_FORMAT_DMS (default), FRSKY_FORMAT_NMEA |
-|  frsky_unit  | IMPERIAL | IMPERIAL (default), METRIC |
+|  frsky_unit  | IMPERIAL | IMPERIAL , METRIC |
 |  frsky_vfas_precision  | 0 | Set to 1 to send raw VBat value in 0.1V resolution for receivers that can handle it, or 0 (default) to use the standard method |
 |  frsky_vfas_cell_voltage  | OFF |  |
 |  hott_alarm_sound_interval  | 5 | Battery alarm delay in seconds for Hott telemetry |
@@ -210,7 +210,7 @@ Re-apply any new defaults as desired.
 |  current_meter_scale  | 400 | This sets the output voltage to current scaling for the current sensor in 0.1 mV/A steps. 400 is 40mV/A such as the ACS756 sensor outputs. 183 is the setting for the uberdistro with a 0.25mOhm shunt. |
 |  current_meter_offset  | 0 | This sets the output offset voltage of the current sensor in millivolts. |
 |  multiwii_current_meter_output  | OFF | Default current output via MSP is in 0.01A steps. Setting this to 1 causes output in default multiwii scaling (1mA steps) |
-|  current_meter_type  | ADC | ADC (default), VIRTUAL, NONE. The virtual current sensor, once calibrated, estimates the current value from throttle position. |
+|  current_meter_type  | ADC | ADC , VIRTUAL, NONE. The virtual current sensor, once calibrated, estimates the current value from throttle position. |
 |  align_gyro  | DEFAULT | When running on non-default hardware or adding support for new sensors/sensor boards, these values are used for sensor orientation. When carefully understood, these values can also be used to rotate (in 90deg steps) or flip the board. Possible values are: DEFAULT, CW0_DEG, CW90_DEG, CW180_DEG, CW270_DEG, CW0_DEG_FLIP, CW90_DEG_FLIP, CW180_DEG_FLIP, CW270_DEG_FLIP. |
 |  align_acc  | DEFAULT | When running on non-default hardware or adding support for new sensors/sensor boards, these values are used for sensor orientation. When carefully understood, these values can also be used to rotate (in 90deg steps) or flip the board. Possible values are: DEFAULT, CW0_DEG, CW90_DEG, CW180_DEG, CW270_DEG, CW0_DEG_FLIP, CW90_DEG_FLIP, CW180_DEG_FLIP, CW270_DEG_FLIP. |
 |  align_mag  | DEFAULT | When running on non-default hardware or adding support for new sensors/sensor boards, these values are used for sensor orientation. When carefully understood, these values can also be used to rotate (in 90deg steps) or flip the board. Possible values are: DEFAULT, CW0_DEG, CW90_DEG, CW180_DEG, CW270_DEG, CW0_DEG_FLIP, CW90_DEG_FLIP, CW180_DEG_FLIP, CW270_DEG_FLIP. |
@@ -218,7 +218,7 @@ Re-apply any new defaults as desired.
 |  align_board_pitch  | 0 | Arbitrary board rotation in degrees, to allow mounting it sideways / upside down / rotated etc |
 |  align_board_yaw  | 0 | Arbitrary board rotation in degrees, to allow mounting it sideways / upside down / rotated etc |
 |  gyro_hardware_lpf  | 42HZ | Hardware lowpass filter for gyro. Allowed values depend on the driver - For example MPU6050 allows 10HZ,20HZ,42HZ,98HZ,188HZ,256Hz (8khz mode). If you have to set gyro lpf below 42Hz generally means the frame is vibrating too much, and that should be fixed first. |
-|  moron_threshold  | 32 | When powering up, gyro bias is calculated. If the model is shaking/moving during this initial calibration, offsets are calculated incorrectly, and could lead to poor flying performance. This threshold (default of 32) means how much average gyro reading could differ before re-calibration is triggered. |
+|  moron_threshold  | 32 | When powering up, gyro bias is calculated. If the model is shaking/moving during this initial calibration, offsets are calculated incorrectly, and could lead to poor flying performance. This threshold means how much average gyro reading could differ before re-calibration is triggered. |
 |  imu_dcm_kp  | 2500 | Inertial Measurement Unit KP Gain for accelerometer measurements |
 |  imu_dcm_ki  | 50 | Inertial Measurement Unit KI Gain for accelerometer measurements |
 |  imu_dcm_kp_mag  | 10000 | Inertial Measurement Unit KP Gain for compass measurements |
@@ -230,7 +230,7 @@ Re-apply any new defaults as desired.
 |  tri_unarmed_servo  | ON | On tricopter mix only, if this is set to ON, servo will always be correcting regardless of armed state. to disable this, set it to OFF. |
 |  servo_lpf_hz  | 0 | Selects the servo PWM output cutoff frequency. Value is in [Hz] |
 |  servo_center_pulse  | 1500 | Servo midpoint |
-|  servo_pwm_rate  | 50 | Output frequency (in Hz) servo pins. Default is 50Hz. When using tricopters or gimbal with digital servo, this rate can be increased. Max of 498Hz (for 500Hz pwm period), and min of 50Hz. Most digital servos will support for example 330Hz. |
+|  servo_pwm_rate  | 50 | Output frequency (in Hz) servo pins. When using tricopters or gimbal with digital servo, this rate can be increased. Max of 498Hz (for 500Hz pwm period), and min of 50Hz. Most digital servos will support for example 330Hz. |
 |  failsafe_delay  | 5 | Time in deciseconds to wait before activating failsafe when signal is lost. See [Failsafe documentation](Failsafe.md#failsafe_delay). |
 |  failsafe_recovery_delay  | 5 | Time in deciseconds to wait before aborting failsafe when signal is recovered. See [Failsafe documentation](Failsafe.md#failsafe_recovery_delay). |
 |  failsafe_off_delay  | 200 | Time in deciseconds to wait before turning off motors when failsafe is activated. 0 = No timeout. See [Failsafe documentation](Failsafe.md#failsafe_off_delay). |
@@ -245,7 +245,7 @@ Re-apply any new defaults as desired.
 |  rx_max_usec  | 2115 | Defines the longest pulse width value used when ensuring the channel value is valid. If the receiver gives a pulse value higher than this value then the channel will be marked as bad and will default to the value of mid_rc. |
 |  rx_nosignal_throttle  | HOLD | Defines behavior of throttle channel after signal loss is detected and until `failsafe_procedure` kicks in. Possible values - `HOLD` and `DROP`. |
 |  acc_hardware  | AUTO | Selection of acc hardware. See Wiki Sensor auto detect and hardware failure detection for more info |
-|  baro_use_median_filter  | ON | 3-point median filtering for barometer readouts. Default: ON. No reason to change this setting |
+|  baro_use_median_filter  | ON | 3-point median filtering for barometer readouts. No reason to change this setting |
 |  baro_hardware  | AUTO | Selection of baro hardware. See Wiki Sensor auto detect and hardware failure detection for more info |
 |  mag_hardware  | AUTO | Selection of mag hardware. See Wiki Sensor auto detect and hardware failure detection for more info |
 |  blackbox_rate_num  | 1 | Blackbox logging rate numerator. Use num/denom settings to decide if a frame should be logged, allowing control of the portion of logged loop iterations |
@@ -343,8 +343,8 @@ Re-apply any new defaults as desired.
 | `fw_d_level` | 75 | Fixed-wing attitude stabilisation HORIZON transition point    |
 |  max_angle_inclination_rll  | 300 | Maximum inclination in level (angle) mode (ROLL axis). 100=10° |
 |  max_angle_inclination_pit  | 300 | Maximum inclination in level (angle) mode (PITCH axis). 100=10° |
-|  gyro_lpf_hz  | 60 | Software-based filter to remove mechanical vibrations from the gyro signal. Value is cutoff frequency (Hz). For larger frames with bigger props set to lower value. Default 60Hz |
-|  acc_lpf_hz  | 15 | Software-based filter to remove mechanical vibrations from the accelerometer measurements. Value is cutoff frequency (Hz). For larger frames with bigger props set to lower value. Default 15Hz |
+|  gyro_lpf_hz  | 60 | Software-based filter to remove mechanical vibrations from the gyro signal. Value is cutoff frequency (Hz). For larger frames with bigger props set to lower value. |
+|  acc_lpf_hz  | 15 | Software-based filter to remove mechanical vibrations from the accelerometer measurements. Value is cutoff frequency (Hz). For larger frames with bigger props set to lower value. |
 |  dterm_lpf_hz  | 40 |  |
 |  yaw_lpf_hz  | 30 |  |
 |  pidsum_limit  | 500 | A limitation to overall amount of correction Flight PID can request on each axis (Roll/Pitch/Yaw). If when doing a hard maneuver on one axis machine looses orientation on other axis - reducing this parameter may help |
@@ -352,7 +352,7 @@ Re-apply any new defaults as desired.
 |  iterm_ignore_threshold  | 200 | Used to prevent Iterm accumulation on ROLL/PITCH axis during stick movements. Iterm is allowed to change fully when sticks are centered. Iterm will not change when requested rotation speed is above iterm_ignore_threshold. Iterm acumulation is scaled lineary between 0 and iterm_ignore_threshold |
 |  yaw_iterm_ignore_threshold  | 50 | Used to prevent Iterm accumulation on YAW axis during stick movements. Iterm is allowed to change fully when sticks are centered. Iterm will not change when requested rotation speed is above yaw_iterm_ignore_threshold. Iterm acumulation is scaled lineary between 0 and yaw_iterm_ignore_threshold |
 |  rate_accel_limit_roll_pitch  | 0 | Limits acceleration of ROLL/PITCH rotation speed that can be requested by stick input. In degrees-per-second-squared. Small and powerful UAV flies great with high acceleration limit ( > 5000 dps^2 and even > 10000 dps^2). Big and heavy multirotors will benefit from low acceleration limit (~ 360 dps^2). When set correctly, it greatly improves stopping performance. Value of 0 disables limiting.  |
-|  rate_accel_limit_yaw  | 10000 | Limits acceleration of YAW rotation speed that can be requested by stick input. In degrees-per-second-squared. Small and powerful UAV flies great with high acceleration limit ( > 10000 dps^2). Big and heavy multirotors will benefit from low acceleration limit (~ 180 dps^2). When set correctly, it greatly improves stopping performance and general stability durig yaw turns. Value of 0 disables limiting. Enabled by default. |
+|  rate_accel_limit_yaw  | 10000 | Limits acceleration of YAW rotation speed that can be requested by stick input. In degrees-per-second-squared. Small and powerful UAV flies great with high acceleration limit ( > 10000 dps^2). Big and heavy multirotors will benefit from low acceleration limit (~ 180 dps^2). When set correctly, it greatly improves stopping performance and general stability durig yaw turns. Value of 0 disables limiting. |
 |  rc_expo  | 70 | Exposition value for all RC directions |
 |  rc_yaw_expo  | 20 | Yaw exposition value |
 |  thr_mid  | 50 | Throttle value when the stick is set to mid-position. Used in the throttle curve calculation. |
