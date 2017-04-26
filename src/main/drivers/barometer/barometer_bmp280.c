@@ -84,6 +84,8 @@ bool bmp280Detect(baroDev_t *baro)
         bmp280ReadRegister(BMP280_TEMPERATURE_CALIB_DIG_T1_LSB_REG, 24, (uint8_t *)&bmp280_cal);
         // set oversampling + power mode (forced), and start sampling
         bmp280WriteRegister(BMP280_CTRL_MEAS_REG, BMP280_MODE);
+        //set filter setting
+        bmp280WriteRegister(BMP280_CONFIG_REG, BMP280_FILTER);
 #else
         bool ack = i2cRead(BARO_I2C_INSTANCE, BMP280_I2C_ADDR, BMP280_CHIP_ID_REG, 1, &bmp280_chip_id);  /* read Chip Id */
         if (!ack || bmp280_chip_id != BMP280_DEFAULT_CHIP_ID)
@@ -93,6 +95,8 @@ bool bmp280Detect(baroDev_t *baro)
         i2cRead(BARO_I2C_INSTANCE, BMP280_I2C_ADDR, BMP280_TEMPERATURE_CALIB_DIG_T1_LSB_REG, 24, (uint8_t *)&bmp280_cal);
         // set oversampling + power mode (forced), and start sampling
         i2cWrite(BARO_I2C_INSTANCE, BMP280_I2C_ADDR, BMP280_CTRL_MEAS_REG, BMP280_MODE);
+        //set filter setting
+        i2cWrite(BARO_I2C_INSTANCE, BMP280_I2C_ADDR, BMP280_CONFIG_REG, BMP280_FILTER);
 #endif
 
         bmp280InitDone = true;
