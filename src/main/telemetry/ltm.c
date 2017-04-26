@@ -192,10 +192,10 @@ void ltm_sframe(sbuf_t *dst)
         lt_flightmode = 13;
     else if (FLIGHT_MODE(NAV_POSHOLD_MODE))
         lt_flightmode = 9;
-    else if (FLIGHT_MODE(HEADFREE_MODE) || FLIGHT_MODE(HEADING_MODE))
-        lt_flightmode = 11;
     else if (FLIGHT_MODE(NAV_ALTHOLD_MODE))
         lt_flightmode = 8;
+    else if (FLIGHT_MODE(HEADFREE_MODE) || FLIGHT_MODE(HEADING_MODE))
+        lt_flightmode = 11;
     else if (FLIGHT_MODE(ANGLE_MODE))
         lt_flightmode = 2;
     else if (FLIGHT_MODE(HORIZON_MODE))
