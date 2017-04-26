@@ -339,7 +339,7 @@ void init(void)
 #endif
 /* temp until PGs are implemented. */
 #ifdef USE_INVERTER
-    initInverters();
+    initInverters(inverterConfig());
 #endif
 
 #ifdef TARGET_BUS_INIT

@@ -21,6 +21,16 @@
 #define USE_INVERTER
 #endif
 
-void initInverters(void);
+#include "config/parameter_group.h"
+#include "drivers/io.h"
+#include "drivers/serial.h"
+
+typedef struct inverterConfig_s {
+    ioTag_t ioTag[SERIAL_PORT_MAX_INDEX]; // XXX Should be hard uart count
+} inverterConfig_t;
+
+PG_DECLARE(inverterConfig_t, inverterConfig);
+
+void initInverters(const inverterConfig_t *inverterConfigToUse);
 
 void enableInverter(USART_TypeDef *USARTx, bool on);
