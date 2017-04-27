@@ -17,21 +17,17 @@
 
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "CLR7"
-#define TARGET_CONFIG
 
 #define USBD_PRODUCT_STRING "CL_RACING F7"
 
 #define LED0                    PB0
-
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
-
 #define ACC
 #define USE_ACC_SPI_MPU6000
-
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
 
@@ -39,12 +35,8 @@
 #define USE_EXTI
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
-
-
 #define GYRO_MPU6000_ALIGN      CW0_DEG
 #define ACC_MPU6000_ALIGN       CW0_DEG
-
-
 
 #define OSD
 #define USE_MAX7456
@@ -53,24 +45,26 @@
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
-#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define USE_SDCARD
-#define USE_SDCARD_SPI2
-#define SDCARD_DETECT_PIN               PB7
-#define SDCARD_SPI_INSTANCE             SPI2
-#define SDCARD_SPI_CS_PIN               SPI2_NSS_PIN
-// SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 4 // 21MHz
+#define SDCARD_DETECT_PIN                   PB7
+#define SDCARD_DETECT_EXTI_LINE             EXTI_Line3
+#define SDCARD_DETECT_EXTI_PIN_SOURCE       EXTI_PinSource3
+#define SDCARD_DETECT_EXTI_PORT_SOURCE      EXTI_PortSourceGPIOD
+#define SDCARD_DETECT_EXTI_IRQn             EXTI3_IRQn
 
-#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF4
-#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
-#define SDCARD_DMA_CHANNEL                  DMA_Channel_0
+#define SDCARD_SPI_INSTANCE                 SPI2
+#define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
+
+#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 422kHz
+// Divide to under 25MHz for normal operation:
+#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 8 // 27MHz
+
+#define SDCARD_DMA_CHANNEL_TX               DMA2_Stream1
+#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF1_5
+#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA2
+#define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_4
 
 #define USE_VCP
-
 #define USE_UART1
 #define UART1_RX_PIN            PA10
 #define UART1_TX_PIN            PA9
@@ -88,6 +82,9 @@
 #define UART6_TX_PIN            PC6
 
 #define SERIAL_PORT_COUNT       5
+
+
+#define USE_I2C
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -122,7 +119,6 @@
 // LED strip configuration.
 #define LED_STRIP
 #define SPEKTRUM_BIND_PIN       UART6_RX_PIN
-
 #define BINDPLUG_PIN            PB2
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
@@ -140,6 +136,6 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
-#define USABLE_TIMER_CHANNEL_COUNT      13
-#define USED_TIMERS             ( TIM_N(1) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(8) )
+#define USABLE_TIMER_CHANNEL_COUNT      9
+#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) )
 
