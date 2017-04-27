@@ -21,16 +21,18 @@
 #define TARGET_BOARD_IDENTIFIER "OBSD"
 #elif defined(VGOODDHF4)
 #define TARGET_BOARD_IDENTIFIER "DHF4"
+#elif defined(FLYTOWERF4)
+#define TARGET_BOARD_IDENTIFIER "FTF4"
 #else
 #define TARGET_BOARD_IDENTIFIER "OBF4"
 #endif
-
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
 #if defined(CL_RACINGF4)
 #define USBD_PRODUCT_STRING "CL_RACINGF4"
 #elif defined(VGOODDHF4)
 #define USBD_PRODUCT_STRING "VgooddhF4"
+#elif defined(FLYTOWERF4)
+#define USBD_PRODUCT_STRING "FlyTowerF4"
 #else
 #define USBD_PRODUCT_STRING "OmnibusF4"
 #endif
@@ -47,7 +49,7 @@
 #ifdef OMNIBUSF4SD
 #define INVERTER_PIN_UART6      PC8 // Omnibus F4 V3 and later
 #else
-#define INVERTER_PIN_UART1      PC0 // PC0 used as inverter select GPIO XXX this is not used --- remove it at the next major release
+#define INVERTER_PIN_UART1      PC0 // PC0 used as inverter on FlyTowerF4 and CL_RACINGF4
 #endif
 
 #define MPU6000_CS_PIN          PA4
@@ -62,7 +64,7 @@
 #if defined(CL_RACINGF4)
 #define GYRO_MPU6000_ALIGN      CW0_DEG
 #define ACC_MPU6000_ALIGN       CW0_DEG
-#elif defined(OMNIBUSF4SD)
+#elif defined(OMNIBUSF4SD) || defined(FLYTOWERF4)
 #define GYRO_MPU6000_ALIGN      CW270_DEG
 #define ACC_MPU6000_ALIGN       CW270_DEG
 #else
@@ -98,11 +100,11 @@
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
-#if defined(OMNIBUSF4SD) || defined(CL_RACINGF4)
+#if defined(OMNIBUSF4SD) || defined(CL_RACINGF4) || defined(FLYTOWERF4)
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define USE_SDCARD
 #define USE_SDCARD_SPI2
-#if defined(OMNIBUSF4SD)
+#if defined(OMNIBUSF4SD) || defined(FLYTOWERF4)
 #define SDCARD_DETECT_INVERTED
 #endif
 #define SDCARD_DETECT_PIN               PB7
@@ -166,7 +168,7 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 
-#if defined(OMNIBUSF4SD) || defined(CL_RACINGF4) || defined(VGOODDHF4)
+#if defined(OMNIBUSF4SD) || defined(CL_RACINGF4) || defined(VGOODDHF4) || defined(FLYTOWERF4)
 #define USE_SPI_DEVICE_2
 #define SPI2_NSS_PIN            PB12
 #define SPI2_SCK_PIN            PB13
@@ -175,7 +177,7 @@
 #endif
 
 #define USE_SPI_DEVICE_3
-#if defined(OMNIBUSF4SD) || defined(CL_RACINGF4)
+#if defined(OMNIBUSF4SD) || defined(CL_RACINGF4) || defined(FLYTOWERF4)
   #define SPI3_NSS_PIN            PA15
 #else
   #define SPI3_NSS_PIN            PB3
@@ -183,9 +185,6 @@
 #define SPI3_SCK_PIN            PC10
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
-
-//#define USE_I2C
-//#define I2C_DEVICE (I2CDEV_1)
 
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PC1
@@ -197,38 +196,37 @@
 #endif
 
 #define USE_ESC_SENSOR
-
-#define LED_STRIP
-
-#define SENSORS_SET (SENSOR_ACC)
-
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
-
 #define AVOID_UART1_FOR_PWM_PPM
 #if defined(CL_RACINGF4)
-#define DEFAULT_FEATURES         (FEATURE_BLACKBOX |FEATURE_CURRENT_METER | FEATURE_TELEMETRY| FEATURE_VBAT | FEATURE_OSD )
+#define DEFAULT_FEATURES        (FEATURE_TELEMETRY | FEATURE_OSD )
 #else
-#define DEFAULT_FEATURES        (FEATURE_BLACKBOX | FEATURE_VBAT | FEATURE_OSD)
+#define DEFAULT_FEATURES        (FEATURE_OSD)
 #endif
 
-#define SPEKTRUM_BIND
-#define BIND_PIN                UART1_RX_PIN
+#if defined(FLYTOWERF4)
+#define SERIALRX_PROVIDER       SERIALRX_SBUS
+#define SERIALRX_UART           SERIAL_PORT_USART1
+#endif
 
+#define SPEKTRUM_BIND_PIN       UART1_RX_PIN
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC 0xffff
-#define TARGET_IO_PORTD 0xffff
+#define TARGET_IO_PORTA (0xffff & ~(BIT(14)|BIT(13)))
+#define TARGET_IO_PORTB (0xffff & ~(BIT(2)))
+#define TARGET_IO_PORTC (0xffff & ~(BIT(15)|BIT(14)|BIT(13)))
+#define TARGET_IO_PORTD BIT(2)
 
-#ifdef CL_RACINGF4
+#if defined(CL_RACINGF4)
 #define USABLE_TIMER_CHANNEL_COUNT 6
 #define USED_TIMERS  ( TIM_N(4) | TIM_N(8) )
-#else
-#ifdef OMNIBUSF4SD
+#elif defined(FLYTOWERF4)
+#define USABLE_TIMER_CHANNEL_COUNT 6
+#define USED_TIMERS  ( TIM_N(1) | TIM_N(4) | TIM_N(8) )
+#elif defined(OMNIBUSF4SD)
 #define USABLE_TIMER_CHANNEL_COUNT 13
+#define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9))
 #else
 #define USABLE_TIMER_CHANNEL_COUNT 12
-#endif
 #define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9))
-#endif
+#endif //cl_racing
