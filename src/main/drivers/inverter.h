@@ -26,7 +26,7 @@
 #include "drivers/serial.h"
 
 typedef struct inverterConfig_s {
-    ioTag_t ioTag[SERIAL_PORT_MAX_INDEX]; // XXX Should be hard uart count
+    ioTag_t ioTag[SERIAL_PORT_MAX_INDEX]; // XXX Many waisted bytes here; should be hard uart count
 } inverterConfig_t;
 
 PG_DECLARE(inverterConfig_t, inverterConfig);
