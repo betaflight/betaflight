@@ -98,6 +98,7 @@ static void initInverter(ioTag_t ioTag)
 
 void initInverters(const inverterConfig_t *inverterConfigToUse)
 {
+#ifdef USE_INVERTER
     pInverterConfig = inverterConfigToUse;
 
 #ifdef INVERTER_PIN_UART1
@@ -122,6 +123,9 @@ void initInverters(const inverterConfig_t *inverterConfigToUse)
 
 #ifdef INVERTER_PIN_UART6
     initInverter(pInverterConfig->ioTag[5]);
+#endif
+#else
+    UNUSED(inverterConfigToUse);
 #endif
 }
 
