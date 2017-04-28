@@ -787,7 +787,7 @@ static int gcd(int num, int denom)
     return gcd(denom, num % denom);
 }
 
-void validateBlackboxConfig()
+void blackboxValidateConfig()
 {
     int div;
 
@@ -825,9 +825,9 @@ void validateBlackboxConfig()
 /**
  * Start Blackbox logging if it is not already running. Intended to be called upon arming.
  */
-void startBlackbox(void)
+static void blackboxStart(void)
 {
-    validateBlackboxConfig();
+    blackboxValidateConfig();
 
     if (!blackboxDeviceOpen()) {
         blackboxSetState(BLACKBOX_STATE_DISABLED);
@@ -870,7 +870,7 @@ void startBlackbox(void)
 /**
  * Begin Blackbox shutdown.
  */
-void finishBlackbox(void)
+void blackboxFinish(void)
 {
     switch (blackboxState) {
     case BLACKBOX_STATE_DISABLED:
@@ -903,14 +903,14 @@ void startInTestMode(void)
                 return; // When in test mode, we cannot share the MSP and serial logger port!
             }
         }
-        startBlackbox();
+        blackboxStart();
         startedLoggingInTestMode = true;
     }
 }
 void stopInTestMode(void)
 {
     if(startedLoggingInTestMode) {
-        finishBlackbox();
+        blackboxFinish();
         startedLoggingInTestMode = false;
     }
 }
@@ -1484,7 +1484,7 @@ static void blackboxLogIteration(timeUs_t currentTimeUs)
 /**
  * Call each flight loop iteration to perform blackbox logging.
  */
-void handleBlackbox(timeUs_t currentTimeUs)
+void blackboxUpdate(timeUs_t currentTimeUs)
 {
     int i;
   
@@ -1492,7 +1492,7 @@ void handleBlackbox(timeUs_t currentTimeUs)
     case BLACKBOX_STATE_STOPPED:
         if (ARMING_FLAG(ARMED)) {
             blackboxOpen();
-            startBlackbox();
+            blackboxStart();
         }
 #ifdef USE_FLASHFS
         if (IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE)) {
@@ -1676,7 +1676,7 @@ void handleBlackbox(timeUs_t currentTimeUs)
 /**
  * Call during system startup to initialize the blackbox.
  */
-void initBlackbox(void)
+void blackboxInit(void)
 {
     if (blackboxConfig()->device) {
         blackboxSetState(BLACKBOX_STATE_STOPPED);
