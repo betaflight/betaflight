@@ -62,7 +62,7 @@ static struct {
 } blackboxSDCard;
 
 #define LOGFILE_PREFIX "LOG"
-#define LOGFILE_SUFFIX "BFL"
+#define LOGFILE_SUFFIX "CFL"
 
 #endif
 
