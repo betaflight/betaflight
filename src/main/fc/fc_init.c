@@ -550,7 +550,7 @@ void init(void)
 #endif
 
 #ifdef BLACKBOX
-    initBlackbox();
+    blackboxInit();
 #endif
 
     if (mixerConfig()->mixerMode == MIXER_GIMBAL) {
