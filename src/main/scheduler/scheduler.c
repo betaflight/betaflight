@@ -226,19 +226,6 @@ void scheduler(void)
     // Cache currentTime
     const timeUs_t currentTimeUs = micros();
 
-    // Check for realtime tasks
-    timeUs_t timeToNextRealtimeTask = TIMEUS_MAX;
-    for (const cfTask_t *task = queueFirst(); task != NULL && task->staticPriority >= TASK_PRIORITY_REALTIME; task = queueNext()) {
-        const timeUs_t nextExecuteAt = task->lastExecutedAt + task->desiredPeriod;
-        if ((int32_t)(currentTimeUs - nextExecuteAt) >= 0) {
-            timeToNextRealtimeTask = 0;
-        } else {
-            const timeUs_t newTimeInterval = nextExecuteAt - currentTimeUs;
-            timeToNextRealtimeTask = MIN(timeToNextRealtimeTask, newTimeInterval);
-        }
-    }
-    const bool outsideRealtimeGuardInterval = (timeToNextRealtimeTask > 0);
-
     // The task to be invoked
     cfTask_t *selectedTask = NULL;
     uint16_t selectedTaskDynamicPriority = 0;
@@ -289,7 +276,6 @@ void scheduler(void)
 
         if (task->dynamicPriority > selectedTaskDynamicPriority) {
             const bool taskCanBeChosenForScheduling =
-                (outsideRealtimeGuardInterval) ||
                 (task->taskAgeCycles > 1) ||
                 (task->staticPriority == TASK_PRIORITY_REALTIME);
             if (taskCanBeChosenForScheduling) {
