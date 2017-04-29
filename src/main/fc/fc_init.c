@@ -499,10 +499,6 @@ void init(void)
     mspFcInit();
     mspSerialInit();
 
-#if defined(USE_MSP_DISPLAYPORT) && defined(CMS)
-    cmsDisplayPortRegister(displayPortMspInit());
-#endif
-
 #ifdef USE_CLI
     cliInit(serialConfig());
 #endif
@@ -515,6 +511,10 @@ void init(void)
     if (feature(FEATURE_OSD)) {
         osdInit();
     }
+#endif
+
+#if defined(USE_MSP_DISPLAYPORT) && defined(CMS)
+    cmsDisplayPortRegister(displayPortMspInit());
 #endif
 
 #ifdef GPS
