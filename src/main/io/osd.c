@@ -550,7 +550,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdProfile)
     osdProfile->item_pos[OSD_FLYMODE] = OSD_POS(13, 11) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_CRAFT_NAME] = OSD_POS(10, 12) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_THROTTLE_POS] = OSD_POS(1, 7) | VISIBLE_FLAG;
-    osdProfile->item_pos[OSD_VTX_CHANNEL] = OSD_POS(25, 11) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_VTX_CHANNEL] = OSD_POS(24, 11) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_CURRENT_DRAW] = OSD_POS(1, 12) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_MAH_DRAWN] = OSD_POS(1, 11) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_GPS_SPEED] = OSD_POS(26, 6) | VISIBLE_FLAG;
