@@ -11,18 +11,12 @@
 #include "blackbox.h"
 #include "blackbox_io.h"
 
-#include "build/version.h"
-#include "build/build_config.h"
-
 #include "common/encoding.h"
 #include "common/maths.h"
 #include "common/printf.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
-
-#include "fc/config.h"
-#include "fc/rc_controls.h"
 
 #include "flight/pid.h"
 
@@ -43,7 +37,7 @@ int32_t blackboxHeaderBudget;
 STATIC_UNIT_TESTED serialPort_t *blackboxPort = NULL;
 #ifndef UNIT_TEST
 static portSharing_e blackboxPortSharing;
-#endif
+#endif // UNIT_TEST
 
 #ifdef USE_SDCARD
 
@@ -76,7 +70,7 @@ void blackboxOpen()
         mspSerialReleasePortIfAllocated(sharedBlackboxAndMspPort);
     }
 }
-#endif
+#endif // UNIT_TEST
 
 void blackboxWrite(uint8_t value)
 {
@@ -230,7 +224,8 @@ void blackboxWriteS16(int16_t value)
 /**
  * Write a 2 bit tag followed by 3 signed fields of 2, 4, 6 or 32 bits
  */
-void blackboxWriteTag2_3S32(int32_t *values) {
+void blackboxWriteTag2_3S32(int32_t *values)
+{
     static const int NUM_FIELDS = 3;
 
     //Need to be enums rather than const ints if we want to switch on them (due to being C)
@@ -248,7 +243,6 @@ void blackboxWriteTag2_3S32(int32_t *values) {
         BYTES_4  = 3
     };
 
-    int x;
     int selector = BITS_2, selector2;
 
     /*
@@ -262,7 +256,7 @@ void blackboxWriteTag2_3S32(int32_t *values) {
      * 6 bits per field  ss11 1111 0022 2222 0033 3333
      * 32 bits per field sstt tttt followed by fields of various byte counts
      */
-    for (x = 0; x < NUM_FIELDS; x++) {
+    for (int x = 0; x < NUM_FIELDS; x++) {
         //Require more than 6 bits?
         if (values[x] >= 32 || values[x] < -32) {
             selector = BITS_32;
@@ -307,7 +301,7 @@ void blackboxWriteTag2_3S32(int32_t *values) {
         selector2 = 0;
 
         //Encode in reverse order so the first field is in the low bits:
-        for (x = NUM_FIELDS - 1; x >= 0; x--) {
+        for (int x = NUM_FIELDS - 1; x >= 0; x--) {
             selector2 <<= 2;
 
             if (values[x] < 128 && values[x] >= -128) {
@@ -325,7 +319,7 @@ void blackboxWriteTag2_3S32(int32_t *values) {
         blackboxWrite((selector << 6) | selector2);
 
         //And now the values according to the selectors we picked for them
-        for (x = 0; x < NUM_FIELDS; x++, selector2 >>= 2) {
+        for (int x = 0; x < NUM_FIELDS; x++, selector2 >>= 2) {
             switch (selector2 & 0x03) {
             case BYTES_1:
                 blackboxWrite(values[x]);
@@ -347,14 +341,15 @@ void blackboxWriteTag2_3S32(int32_t *values) {
                 break;
             }
         }
-    break;
+        break;
     }
 }
 
 /**
  * Write an 8-bit selector followed by four signed fields of size 0, 4, 8 or 16 bits.
  */
-void blackboxWriteTag8_4S16(int32_t *values) {
+void blackboxWriteTag8_4S16(int32_t *values)
+{
 
     //Need to be enums rather than const ints if we want to switch on them (due to being C)
     enum {
@@ -364,13 +359,9 @@ void blackboxWriteTag8_4S16(int32_t *values) {
         FIELD_16BIT = 3
     };
 
-    uint8_t selector, buffer;
-    int nibbleIndex;
-    int x;
-
-    selector = 0;
+    uint8_t selector = 0;
     //Encode in reverse order so the first field is in the low bits:
-    for (x = 3; x >= 0; x--) {
+    for (int x = 3; x >= 0; x--) {
         selector <<= 2;
 
         if (values[x] == 0) {
@@ -386,9 +377,9 @@ void blackboxWriteTag8_4S16(int32_t *values) {
 
     blackboxWrite(selector);
 
-    nibbleIndex = 0;
-    buffer = 0;
-    for (x = 0; x < 4; x++, selector >>= 2) {
+    int nibbleIndex = 0;
+    uint8_t buffer = 0;
+    for (int x = 0; x < 4; x++, selector >>= 2) {
         switch (selector & 0x03) {
         case FIELD_ZERO:
             //No-op
@@ -444,7 +435,6 @@ void blackboxWriteTag8_4S16(int32_t *values) {
 void blackboxWriteTag8_8SVB(int32_t *values, int valueCount)
 {
     uint8_t header;
-    int i;
 
     if (valueCount > 0) {
         //If we're only writing one field then we can skip the header
@@ -455,7 +445,7 @@ void blackboxWriteTag8_8SVB(int32_t *values, int valueCount)
             header = 0;
 
             // First field should be in low bits of header
-            for (i = valueCount - 1; i >= 0; i--) {
+            for (int i = valueCount - 1; i >= 0; i--) {
                 header <<= 1;
 
                 if (values[i] != 0) {
@@ -465,7 +455,7 @@ void blackboxWriteTag8_8SVB(int32_t *values, int valueCount)
 
             blackboxWrite(header);
 
-            for (i = 0; i < valueCount; i++) {
+            for (int i = 0; i < valueCount; i++) {
                 if (values[i] != 0) {
                     blackboxWriteSignedVB(values[i]);
                 }
@@ -616,7 +606,7 @@ bool blackboxDeviceOpen(void)
         return false;
     }
 }
-#endif
+#endif // UNIT_TEST
 
 /**
  * Erase all blackbox logs
@@ -677,7 +667,7 @@ void blackboxDeviceClose(void)
         ;
     }
 }
-#endif
+#endif // UNIT_TEST
 
 #ifdef USE_SDCARD
 
