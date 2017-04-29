@@ -31,8 +31,8 @@ PG_DECLARE(blackboxConfig_t, blackboxConfig);
 
 void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data);
 
-void initBlackbox(void);
-void handleBlackbox(timeUs_t currentTimeUs);
-void startBlackbox(void);
-void finishBlackbox(void);
+void blackboxInit(void);
+void blackboxUpdate(timeUs_t currentTimeUs);
+void blackboxStart(void);
+void blackboxFinish(void);
 bool blackboxMayEditConfig(void);
