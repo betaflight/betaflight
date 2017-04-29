@@ -48,7 +48,6 @@ static bool calculateTaskStatistics;
 uint16_t averageSystemLoadPercent = 0;
 
 
-static int taskQueuePos = 0;
 static int taskQueueSize = 0;
 // No need for a linked list for the queue, since items are only inserted at startup
 
@@ -57,7 +56,6 @@ static cfTask_t* taskQueueArray[TASK_COUNT + 1]; // extra item for NULL pointer 
 void queueClear(void)
 {
     memset(taskQueueArray, 0, sizeof(taskQueueArray));
-    taskQueuePos = 0;
     taskQueueSize = 0;
 }
 
@@ -97,23 +95,6 @@ bool queueRemove(cfTask_t *task)
         }
     }
     return false;
-}
-
-/*
- * Returns first item queue or NULL if queue empty
- */
-cfTask_t *queueFirst(void)
-{
-    taskQueuePos = 0;
-    return taskQueueArray[0]; // guaranteed to be NULL if queue is empty
-}
-
-/*
- * Returns next item in queue or NULL if at end of queue
- */
-cfTask_t *queueNext(void)
-{
-    return taskQueueArray[++taskQueuePos]; // guaranteed to be NULL at end of queue
 }
 
 void taskSystem(timeUs_t currentTimeUs)
@@ -227,17 +208,23 @@ void scheduler(void)
     const timeUs_t currentTimeUs = micros();
 
     // Check for realtime tasks
-    timeUs_t timeToNextRealtimeTask = TIMEUS_MAX;
-    for (const cfTask_t *task = queueFirst(); task != NULL && task->staticPriority >= TASK_PRIORITY_REALTIME; task = queueNext()) {
-        const timeUs_t nextExecuteAt = task->lastExecutedAt + task->desiredPeriod;
-        if ((int32_t)(currentTimeUs - nextExecuteAt) >= 0) {
-            timeToNextRealtimeTask = 0;
-        } else {
-            const timeUs_t newTimeInterval = nextExecuteAt - currentTimeUs;
-            timeToNextRealtimeTask = MIN(timeToNextRealtimeTask, newTimeInterval);
-        }
-    }
-    const bool outsideRealtimeGuardInterval = (timeToNextRealtimeTask > 0);
+	bool outsideRealtimeGuardInterval = true;
+	
+	//task
+	cfTask_t *task;
+	
+	for (int taskQueuePos = 0; taskQueuePos < taskQueueSize; taskQueuePos++)
+	{
+		task = taskQueueArray[taskQueuePos];
+		if (task->staticPriority < TASK_PRIORITY_REALTIME)
+		{
+			break;
+		}
+		if ((timeDelta_t)(currentTimeUs - task->lastExecutedAt) >= task->desiredPeriod) {
+			outsideRealtimeGuardInterval = false;
+			break;
+		}
+	}
 
     // The task to be invoked
     cfTask_t *selectedTask = NULL;
@@ -245,7 +232,8 @@ void scheduler(void)
 
     // Update task dynamic priorities
     uint16_t waitingTasks = 0;
-    for (cfTask_t *task = queueFirst(); task != NULL; task = queueNext()) {
+	for (int taskQueuePos = 0; taskQueuePos < taskQueueSize; taskQueuePos++) {
+		task = taskQueueArray[taskQueuePos];
         // Task has checkFunc - event driven
         if (task->checkFunc) {
 #if defined(SCHEDULER_DEBUG)
