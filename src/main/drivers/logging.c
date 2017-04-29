@@ -23,11 +23,11 @@
 
 #include "common/utils.h"
 
-#include "logging.h"
+#include "drivers/logging.h"
 
 #ifdef BOOTLOG
 
-#include "time.h"
+#include "drivers/time.h"
 
 static bootLogEntry_t   events[MAX_BOOTLOG_ENTRIES];
 static int              eventCount;

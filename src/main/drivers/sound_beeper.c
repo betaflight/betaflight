@@ -20,8 +20,8 @@
 
 #include "platform.h"
 
-#include "time.h"
-#include "io.h"
+#include "drivers/time.h"
+#include "drivers/io.h"
 
 #include "sound_beeper.h"
 

@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "io_types.h"
+#include "drivers/io_types.h"
 
 typedef enum {
     ADC_BATTERY = 0,

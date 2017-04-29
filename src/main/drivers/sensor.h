@@ -20,7 +20,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "io_types.h"
+#include "drivers/io_types.h"
 
 typedef enum {
     ALIGN_DEFAULT = 0,                                      // driver-provided alignment

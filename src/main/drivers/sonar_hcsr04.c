@@ -26,14 +26,14 @@
 
 #include "common/time.h"
 
-#include "time.h"
-#include "exti.h"
-#include "io.h"
-#include "gpio.h"
-#include "nvic.h"
+#include "drivers/time.h"
+#include "drivers/exti.h"
+#include "drivers/io.h"
+#include "drivers/gpio.h"
+#include "drivers/nvic.h"
 #include "rcc.h"
 
-#include "logging.h"
+#include "drivers/logging.h"
 
 #include "drivers/rangefinder.h"
 #include "drivers/sonar_hcsr04.h"

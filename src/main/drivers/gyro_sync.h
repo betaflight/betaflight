@@ -15,7 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "drivers/accgyro.h"
+#include "drivers/accgyro/accgyro.h"
 
 bool gyroSyncCheckIntStatus(gyroDev_t *gyro);
 uint8_t gyroMPU6xxxGetDividerDrops(const gyroDev_t *gyro);

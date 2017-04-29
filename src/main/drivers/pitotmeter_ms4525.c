@@ -20,9 +20,9 @@
 
 #include <platform.h>
 
-#include "bus_i2c.h"
+#include "drivers/bus_i2c.h"
 #include "pitotmeter.h"
-#include "time.h"
+#include "drivers/time.h"
 
 #include "common/utils.h"
 

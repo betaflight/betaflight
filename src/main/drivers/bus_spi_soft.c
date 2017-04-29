@@ -25,9 +25,9 @@
 #include "build/build_config.h"
 
 
-#include "io.h"
+#include "drivers/io.h"
 #include "io_impl.h"
-#include "bus_spi.h"
+#include "drivers/bus_spi.h"
 #include "bus_spi_soft.h"
 
 

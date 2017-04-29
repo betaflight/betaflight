@@ -21,12 +21,12 @@
 
 #include "platform.h"
 
-#include "gpio.h"
-#include "io.h"
+#include "drivers/gpio.h"
+#include "drivers/io.h"
 #include "io_impl.h"
 #include "timer.h"
 
-#include "logging.h"
+#include "drivers/logging.h"
 
 #include "pwm_output.h"
 #include "pwm_rx.h"

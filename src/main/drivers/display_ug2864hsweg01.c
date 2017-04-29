@@ -20,8 +20,8 @@
 
 #include "platform.h"
 
-#include "bus_i2c.h"
-#include "time.h"
+#include "drivers/bus_i2c.h"
+#include "drivers/time.h"
 
 #include "display_ug2864hsweg01.h"
 

@@ -23,14 +23,14 @@
 
 #include "build/atomic.h"
 
-#include "io.h"
-#include "time.h"
+#include "drivers/io.h"
+#include "drivers/time.h"
 
-#include "bus_i2c.h"
-#include "nvic.h"
+#include "drivers/bus_i2c.h"
+#include "drivers/nvic.h"
 #include "io_impl.h"
 #include "rcc.h"
-#include "light_led.h"
+#include "drivers/light_led.h"
 
 #ifndef SOFT_I2C
 

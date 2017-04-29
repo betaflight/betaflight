@@ -23,7 +23,7 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 
-#include "time.h"
+#include "drivers/time.h"
 
 #include "adc.h"
 #include "adc_impl.h"

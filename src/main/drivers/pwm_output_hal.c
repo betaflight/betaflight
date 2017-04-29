@@ -21,7 +21,7 @@
 
 #include "platform.h"
 
-#include "io.h"
+#include "drivers/io.h"
 #include "timer.h"
 #include "pwm_mapping.h"
 #include "pwm_output.h"
