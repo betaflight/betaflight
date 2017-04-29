@@ -250,7 +250,7 @@ void mwDisarm(disarmReason_t disarmReason)
 
 #ifdef BLACKBOX
         if (feature(FEATURE_BLACKBOX)) {
-            finishBlackbox();
+            blackboxFinish();
         }
 #endif
 
@@ -295,7 +295,7 @@ void mwArm(void)
                 if (sharedBlackboxAndMspPort) {
                     mspSerialReleasePortIfAllocated(sharedBlackboxAndMspPort);
                 }
-                startBlackbox();
+                blackboxStart();
             }
 #endif
             disarmAt = millis() + armingConfig()->auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
@@ -724,7 +724,7 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
 
 #ifdef BLACKBOX
     if (!cliMode && feature(FEATURE_BLACKBOX)) {
-        handleBlackbox(micros());
+        blackboxUpdate(micros());
     }
 #endif
 }

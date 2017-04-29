@@ -29,10 +29,9 @@
 #include "build/debug.h"
 #include "build/version.h"
 
-#include "common/maths.h"
 #include "common/axis.h"
-#include "common/color.h"
 #include "common/encoding.h"
+#include "common/maths.h"
 #include "common/utils.h"
 
 #include "config/feature.h"
@@ -41,15 +40,12 @@
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/compass/compass.h"
-#include "drivers/light_led.h"
-#include "drivers/pwm_rx.h"
 #include "drivers/sensor.h"
-#include "drivers/serial.h"
 #include "drivers/time.h"
 
 #include "fc/config.h"
-#include "fc/fc_core.h"
 #include "fc/controlrate_profile.h"
+#include "fc/fc_core.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -60,31 +56,23 @@
 #include "flight/servos.h"
 
 #include "io/beeper.h"
-#include "io/gimbal.h"
 #include "io/gps.h"
-#include "io/ledstrip.h"
-#include "io/serial.h"
-#include "io/statusindicator.h"
 
 #include "navigation/navigation.h"
 
 #include "rx/rx.h"
-#include "rx/msp.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
-#include "sensors/boardalignment.h"
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
 #include "sensors/pitotmeter.h"
 #include "sensors/rangefinder.h"
 #include "sensors/sensors.h"
 
-#include "telemetry/telemetry.h"
 
-
-#ifdef ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+#if defined(ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT)
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_FLASH
 #elif defined(ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT)
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SDCARD
@@ -348,7 +336,7 @@ typedef struct blackboxMainState_s {
     int16_t gyroADC[XYZ_AXIS_COUNT];
     int16_t accADC[XYZ_AXIS_COUNT];
     int16_t attitude[XYZ_AXIS_COUNT];
-    int16_t debug[4];
+    int16_t debug[DEBUG16_VALUE_COUNT];
     int16_t motor[MAX_SUPPORTED_MOTORS];
     int16_t servo[MAX_SUPPORTED_SERVOS];
 
@@ -403,9 +391,6 @@ typedef struct blackboxSlowState_s {
 //From mixer.c:
 extern uint8_t motorCount;
 
-//From rx.c:
-extern uint16_t rssi;
-
 static BlackboxState blackboxState = BLACKBOX_STATE_DISABLED;
 
 static uint32_t blackboxLastArmingBeep = 0;
@@ -459,7 +444,7 @@ bool blackboxMayEditConfig(void)
     return blackboxState <= BLACKBOX_STATE_STOPPED;
 }
 
-static bool blackboxIsOnlyLoggingIntraframes()
+static bool blackboxIsOnlyLoggingIntraframes(void)
 {
     return blackboxConfig()->rate_num == 1 && blackboxConfig()->rate_denom == blackboxIFrameInterval;
 }
@@ -590,8 +575,6 @@ static void blackboxSetState(BlackboxState newState)
 static void writeIntraframe(void)
 {
     blackboxMainState_t *blackboxCurrent = blackboxHistory[0];
-    int x;
-
     blackboxWrite('I');
 
     blackboxWriteUnsignedVB(blackboxIteration);
@@ -602,7 +585,7 @@ static void writeIntraframe(void)
     blackboxWriteSignedVBArray(blackboxCurrent->axisPID_I, XYZ_AXIS_COUNT);
 
     // Don't bother writing the current D term if the corresponding PID setting is zero
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0 + x)) {
             blackboxWriteSignedVB(blackboxCurrent->axisPID_D[x]);
         }
@@ -663,13 +646,13 @@ static void writeIntraframe(void)
     blackboxWriteSigned16VBArray(blackboxCurrent->gyroADC, XYZ_AXIS_COUNT);
     blackboxWriteSigned16VBArray(blackboxCurrent->accADC, XYZ_AXIS_COUNT);
     blackboxWriteSigned16VBArray(blackboxCurrent->attitude, XYZ_AXIS_COUNT);
-    blackboxWriteSigned16VBArray(blackboxCurrent->debug, 4);
+    blackboxWriteSigned16VBArray(blackboxCurrent->debug, DEBUG16_VALUE_COUNT);
 
     //Motors can be below minthrottle when disarmed, but that doesn't happen much
     blackboxWriteUnsignedVB(blackboxCurrent->motor[0] - motorConfig()->minthrottle);
 
     //Motors tend to be similar to each other so use the first motor's value as a predictor of the others
-    for (x = 1; x < motorCount; x++) {
+    for (int x = 1; x < motorCount; x++) {
         blackboxWriteSignedVB(blackboxCurrent->motor[x] - blackboxCurrent->motor[0]);
     }
 
@@ -685,30 +668,30 @@ static void writeIntraframe(void)
     blackboxWriteSignedVB(blackboxCurrent->navEPH);
     blackboxWriteSignedVB(blackboxCurrent->navEPV);
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxCurrent->navPos[x]);
     }
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxCurrent->navRealVel[x]);
     }
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxCurrent->navAccNEU[x]);
     }
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxCurrent->navTargetVel[x]);
     }
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxCurrent->navTargetPos[x]);
     }
 
     blackboxWriteSignedVB(blackboxCurrent->navSurface);
     blackboxWriteSignedVB(blackboxCurrent->navTargetSurface);
 
-    for (x = 0; x < 4; x++) {
+    for (int x = 0; x < 4; x++) {
         blackboxWriteSignedVB(blackboxCurrent->navDebug[x]);
     }
 #endif
@@ -741,7 +724,6 @@ static void blackboxWriteMainStateArrayUsingAveragePredictor(int arrOffsetInHist
 
 static void writeInterframe(void)
 {
-    int x;
     int32_t deltas[8];
 
     blackboxMainState_t *blackboxCurrent = blackboxHistory[0];
@@ -774,7 +756,7 @@ static void writeInterframe(void)
      * The PID D term is frequently set to zero for yaw, which makes the result from the calculation
      * always zero. So don't bother recording D results when PID D terms are zero.
      */
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0 + x)) {
             blackboxWriteSignedVB(blackboxCurrent->axisPID_D[x] - blackboxLast->axisPID_D[x]);
         }
@@ -784,7 +766,7 @@ static void writeInterframe(void)
      * RC tends to stay the same or fairly small for many frames at a time, so use an encoding that
      * can pack multiple values per byte:
      */
-    for (x = 0; x < 4; x++) {
+    for (int x = 0; x < 4; x++) {
         deltas[x] = blackboxCurrent->rcCommand[x] - blackboxLast->rcCommand[x];
     }
 
@@ -803,7 +785,7 @@ static void writeInterframe(void)
 
 #ifdef MAG
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_MAG)) {
-        for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+        for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
             deltas[optionalFieldCount++] = blackboxCurrent->magADC[x] - blackboxLast->magADC[x];
         }
     }
@@ -837,7 +819,7 @@ static void writeInterframe(void)
     blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, gyroADC),   XYZ_AXIS_COUNT);
     blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, accADC), XYZ_AXIS_COUNT);
     blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, attitude), XYZ_AXIS_COUNT);
-    blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, debug), 4);
+    blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, debug), DEBUG16_VALUE_COUNT);
     blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, motor),     motorCount);
 
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_TRICOPTER)) {
@@ -851,30 +833,30 @@ static void writeInterframe(void)
     blackboxWriteSignedVB(blackboxCurrent->navEPH - blackboxLast->navEPH);
     blackboxWriteSignedVB(blackboxCurrent->navEPV - blackboxLast->navEPV);
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxCurrent->navPos[x] - blackboxLast->navPos[x]);
     }
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxHistory[0]->navRealVel[x] - (blackboxHistory[1]->navRealVel[x] + blackboxHistory[2]->navRealVel[x]) / 2);
     }
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxHistory[0]->navAccNEU[x] - (blackboxHistory[1]->navAccNEU[x] + blackboxHistory[2]->navAccNEU[x]) / 2);
     }
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxHistory[0]->navTargetVel[x] - (blackboxHistory[1]->navTargetVel[x] + blackboxHistory[2]->navTargetVel[x]) / 2);
     }
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxHistory[0]->navTargetPos[x] - (blackboxHistory[1]->navTargetPos[x] + blackboxHistory[2]->navTargetPos[x]) / 2);
     }
 
     blackboxWriteSignedVB(blackboxCurrent->navSurface - blackboxLast->navSurface);
     blackboxWriteSignedVB(blackboxCurrent->navTargetSurface - blackboxLast->navTargetSurface);
 
-    for (x = 0; x < 4; x++) {
+    for (int x = 0; x < 4; x++) {
         blackboxWriteSignedVB(blackboxCurrent->navDebug[x] - blackboxLast->navDebug[x]);
     }
 #endif
@@ -961,7 +943,7 @@ static int gcd(int num, int denom)
     return gcd(denom, num % denom);
 }
 
-static void validateBlackboxConfig()
+static void blackboxValidateConfig(void)
 {
     if (blackboxConfig()->rate_num == 0 || blackboxConfig()->rate_denom == 0
             || blackboxConfig()->rate_num >= blackboxConfig()->rate_denom) {
@@ -997,10 +979,10 @@ static void validateBlackboxConfig()
 /**
  * Start Blackbox logging if it is not already running. Intended to be called upon arming.
  */
-void startBlackbox(void)
+void blackboxStart(void)
 {
     if (blackboxState == BLACKBOX_STATE_STOPPED) {
-        validateBlackboxConfig();
+        blackboxValidateConfig();
 
         if (!blackboxDeviceOpen()) {
             blackboxSetState(BLACKBOX_STATE_DISABLED);
@@ -1043,7 +1025,7 @@ void startBlackbox(void)
 /**
  * Begin Blackbox shutdown.
  */
-void finishBlackbox(void)
+void blackboxFinish(void)
 {
     switch (blackboxState) {
     case BLACKBOX_STATE_DISABLED:
@@ -1063,7 +1045,7 @@ void finishBlackbox(void)
 }
 
 #ifdef GPS
-static void writeGPSHomeFrame()
+static void writeGPSHomeFrame(void)
 {
     blackboxWrite('H');
 
@@ -1338,7 +1320,7 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("rcRate", ":%d",                         100); //For compatibility reasons write rc_rate 100
         BLACKBOX_PRINT_HEADER_LINE("min_throttle", ":%d",                   motorConfig()->minthrottle);
         BLACKBOX_PRINT_HEADER_LINE("max_throttle", ":%d",                   motorConfig()->maxthrottle);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_scale", ":0x%x",                    castFloatBytesToInt(1.0f));
+        BLACKBOX_PRINT_HEADER_LINE("gyro_scale", ":0x%x",                   castFloatBytesToInt(1.0f));
         BLACKBOX_PRINT_HEADER_LINE("acc_1G", ":%u",                         acc.dev.acc_1G);
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
@@ -1487,12 +1469,13 @@ static bool blackboxShouldLogPFrame(uint32_t pFrameIndex)
     return (pFrameIndex + blackboxConfig()->rate_num - 1) % blackboxConfig()->rate_denom < blackboxConfig()->rate_num;
 }
 
-static bool blackboxShouldLogIFrame() {
+static bool blackboxShouldLogIFrame(void)
+{
     return blackboxPFrameIndex == 0;
 }
 
 // Called once every FC loop in order to keep track of how many FC loop iterations have passed
-static void blackboxAdvanceIterationTimers()
+static void blackboxAdvanceIterationTimers(void)
 {
     blackboxSlowFrameIterationTimer++;
     blackboxIteration++;
@@ -1542,7 +1525,7 @@ static void blackboxLogIteration(timeUs_t currentTimeUs)
             if (GPS_home.lat != gpsHistory.GPS_home[0] || GPS_home.lon != gpsHistory.GPS_home[1]
                 || (blackboxPFrameIndex == (blackboxIFrameInterval / 2) && blackboxIFrameIndex % 128 == 0)) {
 
-                writeGPSHomeFrame(currentTimeUs);
+                writeGPSHomeFrame();
                 writeGPSFrame(currentTimeUs);
             } else if (gpsSol.numSat != gpsHistory.GPS_numSat || gpsSol.llh.lat != gpsHistory.GPS_coord[0]
                     || gpsSol.llh.lon != gpsHistory.GPS_coord[1]) {
@@ -1560,7 +1543,7 @@ static void blackboxLogIteration(timeUs_t currentTimeUs)
 /**
  * Call each flight loop iteration to perform blackbox logging.
  */
-void handleBlackbox(timeUs_t currentTimeUs)
+void blackboxUpdate(timeUs_t currentTimeUs)
 {
     int i;
 
@@ -1706,7 +1689,7 @@ static bool canUseBlackboxWithCurrentConfiguration(void)
 /**
  * Call during system startup to initialize the blackbox.
  */
-void initBlackbox(void)
+void blackboxInit(void)
 {
     if (canUseBlackboxWithCurrentConfiguration()) {
         blackboxSetState(BLACKBOX_STATE_STOPPED);
