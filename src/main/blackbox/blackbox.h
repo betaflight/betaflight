@@ -18,9 +18,7 @@
 #pragma once
 
 #include "blackbox/blackbox_fielddefs.h"
-
 #include "common/time.h"
-
 #include "config/parameter_group.h"
 
 typedef enum BlackboxDevice {
@@ -49,5 +47,4 @@ void blackboxInit(void);
 void blackboxUpdate(timeUs_t currentTimeUs);
 void blackboxValidateConfig();
 void blackboxFinish(void);
-
 bool blackboxMayEditConfig(void);
