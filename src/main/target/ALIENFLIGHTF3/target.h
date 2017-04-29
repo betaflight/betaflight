@@ -96,16 +96,15 @@
 #define I2C2_SCL                PA9
 #define I2C2_SDA                PA10
 
-// SPI3
-// PA15 38 SPI3_NSS
-// PB3  39 SPI3_SCK
-// PB4  40 SPI3_MISO
-// PB5  41 SPI3_MOSI
-
 #define USE_SPI
 #define USE_SPI_DEVICE_3
 
-#define MPU6500_CS_PIN          PA15
+#define SPI3_NSS_PIN            PA15
+#define SPI3_SCK_PIN            PB3
+#define SPI3_MISO_PIN           PB4
+#define SPI3_MOSI_PIN           PB5
+
+#define MPU6500_CS_PIN          SPI3_NSS_PIN
 #define MPU6500_SPI_INSTANCE    SPI3
 
 #define USE_ADC
@@ -113,6 +112,9 @@
 #define ADC_INSTANCE            ADC2
 #define VBAT_ADC_PIN            PA4
 #define VBAT_SCALE_DEFAULT      20
+
+// LED strip configuration.
+#define LED_STRIP
 
 #define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 

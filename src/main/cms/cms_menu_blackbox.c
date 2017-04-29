@@ -178,7 +178,7 @@ static long cmsx_Blackbox_onExit(const OSD_Entry *self)
 
     if (blackboxMayEditConfig()) {
         blackboxConfigMutable()->device = cmsx_BlackboxDevice;
-        validateBlackboxConfig();
+        blackboxValidateConfig();
     }
     blackboxConfigMutable()->rate_denom = blackboxConfig_rate_denom;
     return 0;
