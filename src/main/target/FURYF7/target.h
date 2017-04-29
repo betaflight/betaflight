@@ -21,7 +21,6 @@
 
 #define USBD_PRODUCT_STRING "FuryF7"
 
-#define USE_DSHOT
 #define USE_ESC_SENSOR
 
 #define LED0                    PB5

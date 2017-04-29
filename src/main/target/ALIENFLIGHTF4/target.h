@@ -40,7 +40,7 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define MPU6500_CS_PIN          PA4
+#define MPU6500_CS_PIN          SPI1_NSS_PIN
 #define MPU6500_SPI_INSTANCE    SPI1
 
 #define ACC
@@ -80,12 +80,10 @@
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 4 // 21MHz
 
-//#ifndef USE_DSHOT
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF4
 #define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
 #define SDCARD_DMA_CHANNEL                  DMA_Channel_0
-//#endif
 
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
@@ -101,7 +99,6 @@
 #define USE_UART1
 #define UART1_RX_PIN            PA10
 #define UART1_TX_PIN            PA9
-#define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
 #define USE_UART2
 #define UART2_RX_PIN            PA3
@@ -115,10 +112,6 @@
 #define UART4_RX_PIN            PC10
 #define UART4_TX_PIN            PC11
 
-//#define USE_UART5
-//#define UART5_RX_PIN            PD2
-//#define UART5_TX_PIN            PC12
-
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 
@@ -130,12 +123,22 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
+#define USE_SPI_DEVICE_3
+
+#define SPI1_NSS_PIN            PA4
+#define SPI1_SCK_PIN            PA5
+#define SPI1_MISO_PIN           PA6
+#define SPI1_MOSI_PIN           PA7
+
 #define SPI2_NSS_PIN            PB12
 #define SPI2_SCK_PIN            PB13
 #define SPI2_MISO_PIN           PC2
 #define SPI2_MOSI_PIN           PC3
 
-#define USE_SPI_DEVICE_3
+#define SPI3_NSS_PIN            PA15
+#define SPI3_SCK_PIN            PB3
+#define SPI3_MISO_PIN           PB4
+#define SPI3_MOSI_PIN           PB5
 
 #define USE_I2C
 #define USE_I2C_PULLUP
@@ -154,6 +157,9 @@
 
 #define CURRENT_METER_OFFSET_DEFAULT 2500                      // ACS712/714-30A - 0A = 2.5V
 #define CURRENT_METER_SCALE_DEFAULT -667                       // ACS712/714-30A - 66.666 mV/A inverted mode
+
+// LED strip configuration.
+#define LED_STRIP
 
 #define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 

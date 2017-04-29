@@ -138,8 +138,6 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define USE_ESC_TELEMETRY
-
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff

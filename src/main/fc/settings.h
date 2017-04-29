@@ -96,7 +96,6 @@ typedef union {
     int8_t int8;
     uint8_t uint8;
     int16_t int16;
-    uint16_t uint16;
 } cliVar_t;
 
 typedef struct cliMinMaxConfig_s {

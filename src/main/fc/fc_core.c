@@ -178,7 +178,7 @@ void mwDisarm(void)
 
 #ifdef BLACKBOX
         if (blackboxConfig()->device) {
-            finishBlackbox();
+            blackboxFinish();
         }
 #endif
         BEEP_OFF;
@@ -556,7 +556,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 
 #ifdef BLACKBOX
     if (!cliMode && blackboxConfig()->device) {
-        handleBlackbox(currentTimeUs);
+        blackboxUpdate(currentTimeUs);
     }
 #else
     UNUSED(currentTimeUs);
