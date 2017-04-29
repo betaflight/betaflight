@@ -105,8 +105,11 @@
 #elif defined(ZCOREF3)
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
+#else
+#define SONAR
+#define SONAR_TRIGGER_PIN       PB0
+#define SONAR_ECHO_PIN          PB1
 
-#else //SPRACINGF3
 #define USE_BARO_MS5611
 #define USE_BARO_BMP085
 
