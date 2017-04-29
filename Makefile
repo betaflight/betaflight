@@ -88,13 +88,13 @@ HSE_VALUE       ?= 8000000
 FEATURES        =
 
 OFFICIAL_TARGETS  = ALIENFLIGHTF3 ALIENFLIGHTF4 ANYFCF7 BETAFLIGHTF3 BLUEJAYF4 CC3D FURYF4 NAZE REVO SIRINFPV SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3NEO SPRACINGF3MINI STM32F3DISCOVERY SPRACINGF4EVO
-ALT_TARGETS       = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.mk)))))
-OPBL_TARGETS      = $(filter %_OPBL, $(ALT_TARGETS))
+VARIANT_TARGETS   = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.mk)))))
+OPBL_TARGETS      = $(filter %_OPBL, $(VARIANT_TARGETS))
 OSD_SLAVE_TARGETS = SPRACINGF3OSD
 
 VALID_TARGETS   = $(dir $(wildcard $(ROOT)/src/main/target/*/target.mk))
 VALID_TARGETS  := $(subst /,, $(subst ./src/main/target/,, $(VALID_TARGETS)))
-VALID_TARGETS  := $(VALID_TARGETS) $(ALT_TARGETS)
+VALID_TARGETS  := $(VALID_TARGETS) $(VARIANT_TARGETS)
 VALID_TARGETS  := $(sort $(VALID_TARGETS))
 
 GROUP_1_TARGETS := \
@@ -178,9 +178,10 @@ GROUP_4_TARGETS := \
 GROUP_OTHER_TARGETS := $(filter-out $(GROUP_1_TARGETS) $(GROUP_2_TARGETS) $(GROUP_3_TARGETS) $(GROUP_4_TARGETS), $(VALID_TARGETS))
 
 
-ifeq ($(filter $(TARGET),$(ALT_TARGETS)), $(TARGET))
+ifeq ($(filter $(TARGET),$(VARIANT_TARGETS)), $(TARGET))
 BASE_TARGET    := $(firstword $(subst /,, $(subst ./src/main/target/,, $(dir $(wildcard $(ROOT)/src/main/target/*/$(TARGET).mk)))))
 -include $(ROOT)/src/main/target/$(BASE_TARGET)/$(TARGET).mk
+CFLAGS         += -DVARIANT
 else
 BASE_TARGET    := $(TARGET)
 endif
@@ -1396,6 +1397,7 @@ help: Makefile make/tools.mk
 ## targets           : print a list of all valid target platforms (for consumption by scripts)
 targets:
 	$(V0) @echo "Valid targets:      $(VALID_TARGETS)"
+	$(V0) @echo "Variant targets:    $(VARIANT_TARGETS)"
 	$(V0) @echo "Target:             $(TARGET)"
 	$(V0) @echo "Base target:        $(BASE_TARGET)"
 	$(V0) @echo "Official targets:   $(OFFICIAL_TARGETS)"
