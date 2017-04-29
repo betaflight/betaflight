@@ -176,8 +176,6 @@ static const char * const gyroNames[] = {
 
 static const char * const *sensorHardwareNames[] = {
     gyroNames, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware
-};
-#endif // USE_SENSOR_NAMES
 
 };
 #endif // USE_SENSOR_NAMES
