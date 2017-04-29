@@ -2062,8 +2062,8 @@ static void cliBeeper(char *cmdline)
 static void printMap(uint8_t dumpMask, const rxConfig_t *rxConfig, const rxConfig_t *defaultRxConfig)
 {
     bool equalsDefault = true;
-    char buf[16];
-    char bufDefault[16];
+    char buf[MAX_MAPPABLE_RX_INPUTS + 1];
+    char bufDefault[MAX_MAPPABLE_RX_INPUTS + 1];
     uint32_t i;
     for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
         buf[rxConfig->rcmap[i]] = rcChannelLetters[i];
@@ -2081,29 +2081,38 @@ static void printMap(uint8_t dumpMask, const rxConfig_t *rxConfig, const rxConfi
 
 static void cliMap(char *cmdline)
 {
-    uint32_t len;
-    char out[9];
+    uint32_t i;
+    char buf[MAX_MAPPABLE_RX_INPUTS + 1];
 
-    len = strlen(cmdline);
+    uint32_t len = strlen(cmdline);
+    if (len == MAX_MAPPABLE_RX_INPUTS) {
 
-    if (len == 8) {
-        // uppercase it
-        for (uint32_t i = 0; i < 8; i++)
-            cmdline[i] = toupper((unsigned char)cmdline[i]);
-        for (uint32_t i = 0; i < 8; i++) {
-            if (strchr(rcChannelLetters, cmdline[i]) && !strchr(cmdline + i + 1, cmdline[i]))
+        for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
+            buf[i] = toupper((unsigned char)cmdline[i]);
+        }
+        buf[i] = '\0';
+
+        for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
+            buf[i] = toupper((unsigned char)cmdline[i]);
+
+            if (strchr(rcChannelLetters, buf[i]) && !strchr(buf + i + 1, buf[i]))
                 continue;
+
             cliShowParseError();
             return;
         }
-        parseRcChannels(cmdline, rxConfigMutable());
+        parseRcChannels(buf, rxConfigMutable());
+    } else if (len > 0) {
+        cliShowParseError();
+        return;
     }
-    cliPrint("Map: ");
-    uint32_t i;
-    for (i = 0; i < 8; i++)
-        out[rxConfig()->rcmap[i]] = rcChannelLetters[i];
-    out[i] = '\0';
-    cliPrintLine(out);
+
+    for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
+        buf[rxConfig()->rcmap[i]] = rcChannelLetters[i];
+    }
+
+    buf[i] = '\0';
+    cliPrintLinef("map %s", buf);
 }
 
 static char *checkCommand(char *cmdLine, const char *command)
