@@ -26,61 +26,21 @@
 #include "blackbox.h"
 #include "blackbox_io.h"
 
-#include "build/build_config.h"
-#include "build/version.h"
-
 #include "common/axis.h"
-#include "common/color.h"
 #include "common/encoding.h"
 #include "common/maths.h"
 #include "common/printf.h"
-#include "common/streambuf.h"
 
-#include "drivers/gpio.h"
-#include "drivers/sensor.h"
-#include "drivers/time.h"
-#include "drivers/serial.h"
-#include "drivers/compass/compass.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
-#include "drivers/accgyro/accgyro.h"
-#include "drivers/light_led.h"
-#include "drivers/gyro_sync.h"
-
-#include "fc/config.h"
-#include "fc/rc_controls.h"
-#include "fc/runtime_config.h"
-
-#include "flight/mixer.h"
-#include "flight/servos.h"
-#include "flight/failsafe.h"
-#include "flight/imu.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
-#include "io/beeper.h"
 #include "io/flashfs.h"
-#include "io/gimbal.h"
-#include "io/gps.h"
-#include "io/ledstrip.h"
 #include "io/serial.h"
-#include "io/statusindicator.h"
 
 #include "msp/msp_serial.h"
 
-#include "navigation/navigation.h"
-
-#include "rx/msp.h"
-#include "rx/rx.h"
-
-#include "sensors/acceleration.h"
-#include "sensors/battery.h"
-#include "sensors/boardalignment.h"
-#include "sensors/barometer.h"
 #include "sensors/gyro.h"
-#include "sensors/pitotmeter.h"
-#include "sensors/sensors.h"
-
-#include "telemetry/telemetry.h"
 
 #define BLACKBOX_SERIAL_PORT_MODE MODE_TX
 
@@ -90,8 +50,10 @@ static uint8_t blackboxMaxHeaderBytesPerIteration;
 // How many bytes can we write *this* iteration without overflowing transmit buffers or overstressing the OpenLog?
 int32_t blackboxHeaderBudget;
 
-static serialPort_t *blackboxPort = NULL;
+STATIC_UNIT_TESTED serialPort_t *blackboxPort = NULL;
+#ifndef UNIT_TEST
 static portSharing_e blackboxPortSharing;
+#endif // UNIT_TEST
 
 #ifdef USE_SDCARD
 
@@ -112,6 +74,16 @@ static struct {
 } blackboxSDCard;
 
 #endif
+
+#ifndef UNIT_TEST
+void blackboxOpen()
+{
+    serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP);
+    if (sharedBlackboxAndMspPort) {
+        mspSerialReleasePortIfAllocated(sharedBlackboxAndMspPort);
+    }
+}
+#endif // UNIT_TEST
 
 void blackboxWrite(uint8_t value)
 {
@@ -283,7 +255,6 @@ void blackboxWriteTag2_3S32(int32_t *values)
         BYTES_4  = 3
     };
 
-    int x;
     int selector = BITS_2, selector2;
 
     /*
@@ -297,7 +268,7 @@ void blackboxWriteTag2_3S32(int32_t *values)
      * 6 bits per field  ss11 1111 0022 2222 0033 3333
      * 32 bits per field sstt tttt followed by fields of various byte counts
      */
-    for (x = 0; x < NUM_FIELDS; x++) {
+    for (int x = 0; x < NUM_FIELDS; x++) {
         //Require more than 6 bits?
         if (values[x] >= 32 || values[x] < -32) {
             selector = BITS_32;
@@ -342,7 +313,7 @@ void blackboxWriteTag2_3S32(int32_t *values)
         selector2 = 0;
 
         //Encode in reverse order so the first field is in the low bits:
-        for (x = NUM_FIELDS - 1; x >= 0; x--) {
+        for (int x = NUM_FIELDS - 1; x >= 0; x--) {
             selector2 <<= 2;
 
             if (values[x] < 128 && values[x] >= -128) {
@@ -360,7 +331,7 @@ void blackboxWriteTag2_3S32(int32_t *values)
         blackboxWrite((selector << 6) | selector2);
 
         //And now the values according to the selectors we picked for them
-        for (x = 0; x < NUM_FIELDS; x++, selector2 >>= 2) {
+        for (int x = 0; x < NUM_FIELDS; x++, selector2 >>= 2) {
             switch (selector2 & 0x03) {
             case BYTES_1:
                 blackboxWrite(values[x]);
@@ -400,13 +371,9 @@ void blackboxWriteTag8_4S16(int32_t *values)
         FIELD_16BIT = 3
     };
 
-    uint8_t selector, buffer;
-    int nibbleIndex;
-    int x;
-
-    selector = 0;
+    uint8_t selector = 0;
     //Encode in reverse order so the first field is in the low bits:
-    for (x = 3; x >= 0; x--) {
+    for (int x = 3; x >= 0; x--) {
         selector <<= 2;
 
         if (values[x] == 0) {
@@ -422,9 +389,9 @@ void blackboxWriteTag8_4S16(int32_t *values)
 
     blackboxWrite(selector);
 
-    nibbleIndex = 0;
-    buffer = 0;
-    for (x = 0; x < 4; x++, selector >>= 2) {
+    int nibbleIndex = 0;
+    uint8_t buffer = 0;
+    for (int x = 0; x < 4; x++, selector >>= 2) {
         switch (selector & 0x03) {
         case FIELD_ZERO:
             //No-op
@@ -480,7 +447,6 @@ void blackboxWriteTag8_4S16(int32_t *values)
 void blackboxWriteTag8_8SVB(int32_t *values, int valueCount)
 {
     uint8_t header;
-    int i;
 
     if (valueCount > 0) {
         //If we're only writing one field then we can skip the header
@@ -491,7 +457,7 @@ void blackboxWriteTag8_8SVB(int32_t *values, int valueCount)
             header = 0;
 
             // First field should be in low bits of header
-            for (i = valueCount - 1; i >= 0; i--) {
+            for (int i = valueCount - 1; i >= 0; i--) {
                 header <<= 1;
 
                 if (values[i] != 0) {
@@ -501,7 +467,7 @@ void blackboxWriteTag8_8SVB(int32_t *values, int valueCount)
 
             blackboxWrite(header);
 
-            for (i = 0; i < valueCount; i++) {
+            for (int i = 0; i < valueCount; i++) {
                 if (values[i] != 0) {
                     blackboxWriteSignedVB(values[i]);
                 }
@@ -534,13 +500,13 @@ void blackboxDeviceFlush(void)
 {
     switch (blackboxConfig()->device) {
 #ifdef USE_FLASHFS
-    /*
-     * This is our only output device which requires us to call flush() in order for it to write anything. The other
-     * devices will progressively write in the background without Blackbox calling anything.
-     */
+        /*
+         * This is our only output device which requires us to call flush() in order for it to write anything. The other
+         * devices will progressively write in the background without Blackbox calling anything.
+         */
     case BLACKBOX_DEVICE_FLASH:
         flashfsFlushAsync();
-    break;
+        break;
 #endif
 
     default:
@@ -581,6 +547,7 @@ bool blackboxDeviceFlushForce(void)
 /**
  * Attempt to open the logging device. Returns true if successful.
  */
+#ifndef UNIT_TEST
 bool blackboxDeviceOpen(void)
 {
     switch (blackboxConfig()->device) {
@@ -651,10 +618,12 @@ bool blackboxDeviceOpen(void)
         return false;
     }
 }
+#endif // UNIT_TEST
 
 /**
  * Close the Blackbox logging device immediately without attempting to flush any remaining data.
  */
+#ifndef UNIT_TEST
 void blackboxDeviceClose(void)
 {
     switch (blackboxConfig()->device) {
@@ -675,6 +644,7 @@ void blackboxDeviceClose(void)
         ;
     }
 }
+#endif // UNIT_TEST
 
 #ifdef USE_SDCARD
 
