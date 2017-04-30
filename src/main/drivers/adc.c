@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -25,16 +26,36 @@
 
 #include "drivers/time.h"
 
-#include "adc.h"
-#include "adc_impl.h"
+#include "drivers/io.h"
+#include "drivers/adc.h"
+#include "drivers/adc_impl.h"
 
 #include "common/utils.h"
 
-//#define DEBUG_ADC_CHANNELS
+#ifndef ADC_INSTANCE
+#define ADC_INSTANCE                ADC1
+#endif
+
+#ifndef VBAT_ADC_INSTANCE
+#define VBAT_ADC_INSTANCE           ADC_INSTANCE
+#endif
+#ifndef RSSI_ADC_INSTANCE
+#define RSSI_ADC_INSTANCE           ADC_INSTANCE
+#endif
+#ifndef CURRENT_METER_ADC_INSTANCE
+#define CURRENT_METER_ADC_INSTANCE  ADC_INSTANCE
+#endif
+#ifndef EXTERNAL1_ADC_INSTANCE
+#define EXTERNAL1_ADC_INSTANCE      ADC_INSTANCE
+#endif
+#ifndef AIRSPEED_ADC_INSTANCE
+#define AIRSPEED_ADC_INSTANCE       ADC_INSTANCE
+#endif
 
 #ifdef USE_ADC
+
 adc_config_t adcConfig[ADC_CHANNEL_COUNT];
-volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
+volatile uint16_t adcValues[ADCDEV_COUNT][ADC_CHANNEL_COUNT];
 
 uint8_t adcChannelByTag(ioTag_t ioTag)
 {
@@ -47,30 +68,71 @@ uint8_t adcChannelByTag(ioTag_t ioTag)
 
 uint16_t adcGetChannel(uint8_t channel)
 {
-#ifdef DEBUG_ADC_CHANNELS
-    if (adcConfig[0].enabled) {
-        debug[0] = adcValues[adcConfig[0].dmaIndex];
+    if (adcConfig[channel].adcDevice != ADCINVALID) {
+        return adcValues[adcConfig[channel].adcDevice][adcConfig[channel].dmaIndex];
+    } else {
+        return 0;
     }
-    if (adcConfig[1].enabled) {
-        debug[1] = adcValues[adcConfig[1].dmaIndex];
-    }
-    if (adcConfig[2].enabled) {
-        debug[2] = adcValues[adcConfig[2].dmaIndex];
-    }
-    if (adcConfig[3].enabled) {
-        debug[3] = adcValues[adcConfig[3].dmaIndex];
-    }
-    if (adcConfig[4].enabled) {
-        debug[4] = adcValues[adcConfig[4].dmaIndex];
+}
+
+void adcInit(drv_adc_config_t *init)
+{
+    memset(&adcConfig, 0, sizeof(adcConfig));
+
+#ifdef VBAT_ADC_PIN
+    if (init->enableVBat) {
+        adcConfig[ADC_BATTERY].adcDevice = adcDeviceByInstance(ADC_INSTANCE);
+        if (adcConfig[ADC_BATTERY].adcDevice != ADCINVALID) {
+            adcConfig[ADC_BATTERY].tag = IO_TAG(VBAT_ADC_PIN);
+        }
     }
 #endif
-    return adcValues[adcConfig[channel].dmaIndex];
+
+#ifdef RSSI_ADC_PIN
+    if (init->enableRSSI) {
+        adcConfig[ADC_RSSI].adcDevice = adcDeviceByInstance(ADC_INSTANCE);
+        if (adcConfig[ADC_RSSI].adcDevice != ADCINVALID) {
+            adcConfig[ADC_RSSI].tag = IO_TAG(RSSI_ADC_PIN);
+        }
+    }
+#endif
+
+#ifdef CURRENT_METER_ADC_PIN
+    if (init->enableCurrentMeter) {
+        adcConfig[ADC_CURRENT].adcDevice = adcDeviceByInstance(ADC_INSTANCE);
+        if (adcConfig[ADC_CURRENT].adcDevice != ADCINVALID) {
+            adcConfig[ADC_CURRENT].tag = IO_TAG(CURRENT_METER_ADC_PIN);
+        }
+    }
+#endif
+
+#ifdef EXTERNAL1_ADC_PIN
+    if (init->enableExternal1) {
+        adcConfig[ADC_EXTERNAL1].adcDevice = adcDeviceByInstance(ADC_INSTANCE);
+        if (adcConfig[ADC_EXTERNAL1].adcDevice != ADCINVALID) {
+            adcConfig[ADC_EXTERNAL1].tag = IO_TAG(EXTERNAL1_ADC_PIN);
+        }
+    }
+#endif
+
+#ifdef AIRSPEED_ADC_PIN
+    if (init->enableAirSpeed) {
+        adcConfig[ADC_AIRSPEED].adcDevice = adcDeviceByInstance(ADC_INSTANCE);
+        if (adcConfig[ADC_AIRSPEED].adcDevice != ADCINVALID) {
+            adcConfig[ADC_AIRSPEED].tag = IO_TAG(AIRSPEED_ADC_PIN);
+        }
+    }
+#endif
+
+    adcHardwareInit(init);
 }
 
 #else
+
 uint16_t adcGetChannel(uint8_t channel)
 {
     UNUSED(channel);
     return 0;
 }
+
 #endif

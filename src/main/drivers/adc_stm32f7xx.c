@@ -33,13 +33,9 @@
 #include "adc.h"
 #include "adc_impl.h"
 
-#ifndef ADC_INSTANCE
-#define ADC_INSTANCE                ADC1
-#endif
-
-const adcDevice_t adcHardware[] = {
-    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream4, .channel = DMA_CHANNEL_0 },
-    //{ .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream1, .channel = DMA_Channel_0 }
+static adcDevice_t adcHardware[ADCDEV_COUNT] = {
+    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream4, .channel = DMA_CHANNEL_0, .enabled = false, .usedChannelCount = 0 },
+    //{ .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream1, .channel = DMA_Channel_0, .enabled = false, .usedChannelCount = 0 }
 };
 
 /* note these could be packed up for saving space */
@@ -83,117 +79,63 @@ ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
     return ADCINVALID;
 }
 
-void adcInit(drv_adc_config_t *init)
+static void adcInstanceInit(ADCDevice adcDevice)
 {
-    uint8_t i;
-    uint8_t configuredAdcChannels = 0;
+    adcDevice_t * adc = &adcHardware[adcDevice];
 
-    memset(&adcConfig, 0, sizeof(adcConfig));
+    RCC_ClockCmd(adc->rccDMA, ENABLE);
+    RCC_ClockCmd(adc->rccADC, ENABLE);
 
-#if !defined(VBAT_ADC_PIN) && !defined(EXTERNAL1_ADC_PIN) && !defined(RSSI_ADC_PIN) && !defined(CURRENT_METER_ADC_PIN)
-    UNUSED(init);
-#endif
-
-#ifdef VBAT_ADC_PIN
-    if (init->enableVBat) {
-        adcConfig[ADC_BATTERY].tag = IO_TAG(VBAT_ADC_PIN); //VBAT_ADC_CHANNEL;
-    }
-#endif
-
-#ifdef RSSI_ADC_PIN
-    if (init->enableRSSI) {
-        adcConfig[ADC_RSSI].tag = IO_TAG(RSSI_ADC_PIN);  //RSSI_ADC_CHANNEL;
-    }
-#endif
-
-#ifdef EXTERNAL1_ADC_PIN
-    if (init->enableExternal1) {
-        adcConfig[ADC_EXTERNAL1].tag = IO_TAG(EXTERNAL1_ADC_PIN); //EXTERNAL1_ADC_CHANNEL;
-    }
-#endif
-
-#ifdef CURRENT_METER_ADC_PIN
-    if (init->enableCurrentMeter) {
-        adcConfig[ADC_CURRENT].tag = IO_TAG(CURRENT_METER_ADC_PIN);  //CURRENT_METER_ADC_CHANNEL;
-    }
-#endif
-
-#ifdef AIRSPEED_ADC_PIN
-    if (init->enableAirSpeed) {
-        adcConfig[ADC_AIRSPEED].tag = IO_TAG(AIRSPEED_ADC_PIN);
-    }
-#endif
-
-    ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
-    if (device == ADCINVALID)
-        return;
-
-    adcDevice_t adc = adcHardware[device];
-
-    for (uint8_t i = 0; i < ADC_CHANNEL_COUNT; i++) {
-        if (!adcConfig[i].tag)
-            continue;
-
-        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC, RESOURCE_ADC_BATTERY + i, 0);
-        IOConfigGPIO(IOGetByTag(adcConfig[i].tag), IO_CONFIG(GPIO_MODE_ANALOG, 0, GPIO_NOPULL));
-        adcConfig[i].adcChannel = adcChannelByTag(adcConfig[i].tag);
-        adcConfig[i].dmaIndex = configuredAdcChannels++;
-        adcConfig[i].sampleTime = ADC_SAMPLETIME_480CYCLES;
-        adcConfig[i].enabled = true;
-    }
-    if(configuredAdcChannels == 0)
-        return;
-
-    RCC_ClockCmd(adc.rccDMA, ENABLE);
-    RCC_ClockCmd(adc.rccADC, ENABLE);
-
-    adc.ADCHandle.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV8;
-    adc.ADCHandle.Init.ContinuousConvMode    = ENABLE;
-    adc.ADCHandle.Init.Resolution            = ADC_RESOLUTION_12B;
-    adc.ADCHandle.Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T1_CC1;
-    adc.ADCHandle.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;
-    adc.ADCHandle.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
-    adc.ADCHandle.Init.NbrOfConversion       = configuredAdcChannels;
-    adc.ADCHandle.Init.ScanConvMode          = configuredAdcChannels > 1 ? ENABLE : DISABLE; // 1=scan more that one channel in group
-    adc.ADCHandle.Init.DiscontinuousConvMode = DISABLE;
-    adc.ADCHandle.Init.NbrOfDiscConversion   = 0;
-    adc.ADCHandle.Init.DMAContinuousRequests = ENABLE;
-    adc.ADCHandle.Init.EOCSelection          = DISABLE;
-    adc.ADCHandle.Instance = adc.ADCx;
+    adc->ADCHandle.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV8;
+    adc->ADCHandle.Init.ContinuousConvMode    = ENABLE;
+    adc->ADCHandle.Init.Resolution            = ADC_RESOLUTION_12B;
+    adc->ADCHandle.Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T1_CC1;
+    adc->ADCHandle.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;
+    adc->ADCHandle.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
+    adc->ADCHandle.Init.NbrOfConversion       = adc->usedChannelCount;
+    adc->ADCHandle.Init.ScanConvMode          = adc->usedChannelCount > 1 ? ENABLE : DISABLE; // 1=scan more that one channel in group
+    adc->ADCHandle.Init.DiscontinuousConvMode = DISABLE;
+    adc->ADCHandle.Init.NbrOfDiscConversion   = 0;
+    adc->ADCHandle.Init.DMAContinuousRequests = ENABLE;
+    adc->ADCHandle.Init.EOCSelection          = DISABLE;
+    adc->ADCHandle.Instance = adc->ADCx;
 
     /*##-1- Configure the ADC peripheral #######################################*/
-    if (HAL_ADC_Init(&adc.ADCHandle) != HAL_OK)
-    {
-      /* Initialization Error */
-    }
-
-    adc.DmaHandle.Init.Channel = adc.channel;
-    adc.DmaHandle.Init.Direction = DMA_PERIPH_TO_MEMORY;
-    adc.DmaHandle.Init.PeriphInc = DMA_PINC_DISABLE;
-    adc.DmaHandle.Init.MemInc = configuredAdcChannels > 1 ? DMA_MINC_ENABLE : DMA_MINC_DISABLE;
-    adc.DmaHandle.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
-    adc.DmaHandle.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
-    adc.DmaHandle.Init.Mode = DMA_CIRCULAR;
-    adc.DmaHandle.Init.Priority = DMA_PRIORITY_HIGH;
-    adc.DmaHandle.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
-    adc.DmaHandle.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
-    adc.DmaHandle.Init.MemBurst = DMA_MBURST_SINGLE;
-    adc.DmaHandle.Init.PeriphBurst = DMA_PBURST_SINGLE;
-    adc.DmaHandle.Instance = adc.DMAy_Streamx;
-
-    /*##-2- Initialize the DMA stream ##########################################*/
-    if (HAL_DMA_Init(&adc.DmaHandle) != HAL_OK)
+    if (HAL_ADC_Init(&adc->ADCHandle) != HAL_OK)
     {
         /* Initialization Error */
+        return;
     }
 
-    __HAL_LINKDMA(&adc.ADCHandle, DMA_Handle, adc.DmaHandle);
+    adc->DmaHandle.Init.Channel = adc->channel;
+    adc->DmaHandle.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    adc->DmaHandle.Init.PeriphInc = DMA_PINC_DISABLE;
+    adc->DmaHandle.Init.MemInc = adc->usedChannelCount > 1 ? DMA_MINC_ENABLE : DMA_MINC_DISABLE;
+    adc->DmaHandle.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+    adc->DmaHandle.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
+    adc->DmaHandle.Init.Mode = DMA_CIRCULAR;
+    adc->DmaHandle.Init.Priority = DMA_PRIORITY_HIGH;
+    adc->DmaHandle.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+    adc->DmaHandle.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+    adc->DmaHandle.Init.MemBurst = DMA_MBURST_SINGLE;
+    adc->DmaHandle.Init.PeriphBurst = DMA_PBURST_SINGLE;
+    adc->DmaHandle.Instance = adc->DMAy_Streamx;
+
+    /*##-2- Initialize the DMA stream ##########################################*/
+    if (HAL_DMA_Init(&adc->DmaHandle) != HAL_OK)
+    {
+        /* Initialization Error */
+        return;
+    }
+
+    __HAL_LINKDMA(&adc->ADCHandle, DMA_Handle, adc->DmaHandle);
 
     uint8_t rank = 1;
-    for (i = 0; i < ADC_CHANNEL_COUNT; i++) {
-        if (!adcConfig[i].enabled) {
+    for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
+        if (!adcConfig[i].enabled || adcConfig[i].adcDevice != adcDevice) {
             continue;
         }
+
         ADC_ChannelConfTypeDef sConfig;
         sConfig.Channel      = adcConfig[i].adcChannel;
         sConfig.Rank         = rank++;
@@ -201,16 +143,50 @@ void adcInit(drv_adc_config_t *init)
         sConfig.Offset       = 0;
 
         /*##-3- Configure ADC regular channel ######################################*/
-        if (HAL_ADC_ConfigChannel(&adc.ADCHandle, &sConfig) != HAL_OK)
+        if (HAL_ADC_ConfigChannel(&adc->ADCHandle, &sConfig) != HAL_OK)
         {
-          /* Channel Configuration Error */
+            /* Channel Configuration Error */
+            return;
         }
     }
 
-    //HAL_CLEANINVALIDATECACHE((uint32_t*)&adcValues, configuredAdcChannels);
+    //HAL_CLEANINVALIDATECACHE((uint32_t*)&adcValues[adcDevice], configuredAdcChannels);
     /*##-4- Start the conversion process #######################################*/
-    if(HAL_ADC_Start_DMA(&adc.ADCHandle, (uint32_t*)&adcValues, configuredAdcChannels) != HAL_OK)
+    if(HAL_ADC_Start_DMA(&adc->ADCHandle, (uint32_t*)&adcValues[adcDevice], adc->usedChannelCount) != HAL_OK)
     {
         /* Start Conversation Error */
+    }
+}
+
+void adcHardwareInit(drv_adc_config_t *init)
+{
+    UNUSED(init);
+    int configuredAdcChannels = 0;
+
+    for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
+        if (!adcConfig[i].tag)
+            continue;
+            
+        adcDevice_t * adc = &adcHardware[adcConfig[i].adcDevice];
+
+        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC, RESOURCE_ADC_BATTERY + i, 0);
+        IOConfigGPIO(IOGetByTag(adcConfig[i].tag), IO_CONFIG(GPIO_MODE_ANALOG, 0, GPIO_NOPULL));
+
+        adcConfig[i].adcChannel = adcChannelByTag(adcConfig[i].tag);
+        adcConfig[i].dmaIndex = adc->usedChannelCount++;
+        adcConfig[i].sampleTime = ADC_SAMPLETIME_480CYCLES;
+        adcConfig[i].enabled = true;
+
+        adc->enabled = true;
+        configuredAdcChannels++;
+    }
+
+    if (configuredAdcChannels == 0)
+        return;
+
+    for (int i = 0; i < ADCDEV_COUNT; i++) {
+        if (adcHardware[i].enabled) {
+            adcInstanceInit(i);
+        }
     }
 }
