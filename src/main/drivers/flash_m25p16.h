@@ -25,18 +25,18 @@
 bool m25p16_init(const flashConfig_t *flashConfig);
 
 void m25p16_eraseSector(uint32_t address);
-void m25p16_eraseCompletely();
+void m25p16_eraseCompletely(void);
 
 void m25p16_pageProgram(uint32_t address, const uint8_t *data, int length);
 
 void m25p16_pageProgramBegin(uint32_t address);
 void m25p16_pageProgramContinue(const uint8_t *data, int length);
-void m25p16_pageProgramFinish();
+void m25p16_pageProgramFinish(void);
 
 int m25p16_readBytes(uint32_t address, uint8_t *buffer, int length);
 
-bool m25p16_isReady();
+bool m25p16_isReady(void);
 bool m25p16_waitForReady(uint32_t timeoutMillis);
 
 struct flashGeometry_s;
-const struct flashGeometry_s* m25p16_getGeometry();
+const struct flashGeometry_s* m25p16_getGeometry(void);

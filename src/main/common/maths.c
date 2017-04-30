@@ -152,10 +152,10 @@ float degreesToRadians(int16_t degrees)
     return degrees * RAD;
 }
 
-int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax) {
-    long int a = ((long int) destMax - (long int) destMin) * ((long int) x - (long int) srcMin);
-    long int b = (long int) srcMax - (long int) srcMin;
-    return ((a / b) - (destMax - destMin)) + destMax;
+int scaleRange(int x, int srcFrom, int srcTo, int destFrom, int destTo) {
+    long int a = ((long int) destTo - (long int) destFrom) * ((long int) x - (long int) srcFrom);
+    long int b = (long int) srcTo - (long int) srcFrom;
+    return (a / b) + destFrom;
 }
 
 // Normalize a vector

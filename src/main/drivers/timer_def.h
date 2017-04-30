@@ -20,6 +20,12 @@
 #include <platform.h>
 #include "common/utils.h"
 
+#if defined(USE_DSHOT) || defined(LED_STRIP) || defined(TRANSPONDER)
+# define DEF_TIM_DMA_COND(...) __VA_ARGS__
+#else
+# define DEF_TIM_DMA_COND(...)
+#endif
+
 #if defined(STM32F1)
 
 #define DEF_TIM(tim, chan, pin, flags, out) {\
@@ -28,8 +34,10 @@
     EXPAND(DEF_CHAN_ ## chan),\
     flags,\
     (DEF_CHAN_ ## chan ## _OUTPUT | out),\
-    CONCAT(EXPAND(DEF_TIM_DMA__ ## tim ## _ ## chan), _CHANNEL),\
-    CONCAT(EXPAND(DEF_TIM_DMA__ ## tim ## _ ## chan), _HANDLER)\
+    DEF_TIM_DMA_COND( \
+        CONCAT(EXPAND(DEF_TIM_DMA__ ## tim ## _ ## chan), _CHANNEL),\
+        CONCAT(EXPAND(DEF_TIM_DMA__ ## tim ## _ ## chan), _HANDLER)\
+    )\
     }
 
 #define DEF_DMA_CHANNEL(tim, chan) CONCAT(EXPAND(DEF_TIM_DMA__ ## tim ## _ ## chan), _CHANNEL)
@@ -65,8 +73,10 @@
     flags,\
     (DEF_CHAN_ ## chan ## _OUTPUT | out),\
     EXPAND(GPIO_AF__ ## pin ## _ ## tim ## _ ## chan),\
-    CONCAT(EXPAND(DEF_TIM_DMA__ ## tim ## _ ## chan), _CHANNEL),\
-    CONCAT(EXPAND(DEF_TIM_DMA__ ## tim ## _ ## chan), _HANDLER)\
+    DEF_TIM_DMA_COND( \
+        CONCAT(EXPAND(DEF_TIM_DMA__ ## tim ## _ ## chan), _CHANNEL),\
+        CONCAT(EXPAND(DEF_TIM_DMA__ ## tim ## _ ## chan), _HANDLER)\
+    )\
     }
 
 #define DEF_DMA_CHANNEL(tim, chan) CONCAT(EXPAND(DEF_TIM_DMA__ ## tim ## _ ## chan), _CHANNEL)
@@ -266,9 +276,11 @@
     flags,\
     (DEF_CHAN_ ## chan ## _OUTPUT | out),\
     EXPAND(GPIO_AF_## tim),\
-    CONCAT(EXPAND(DEF_TIM_DMA_STR_ ## dmaopt ## __ ## tim ## _ ## chan), _STREAM),\
-    EXPAND(DEF_TIM_DMA_CHN_ ## dmaopt ## __ ## tim ## _ ## chan),\
-    CONCAT(EXPAND(DEF_TIM_DMA_STR_ ## dmaopt ## __ ## tim ## _ ## chan), _HANDLER)\
+    DEF_TIM_DMA_COND(\
+        CONCAT(EXPAND(DEF_TIM_DMA_STR_ ## dmaopt ## __ ## tim ## _ ## chan), _STREAM),\
+        EXPAND(DEF_TIM_DMA_CHN_ ## dmaopt ## __ ## tim ## _ ## chan),\
+        CONCAT(EXPAND(DEF_TIM_DMA_STR_ ## dmaopt ## __ ## tim ## _ ## chan), _HANDLER)\
+    )\
     }
 
 #define DEF_DMA_CHANNEL(tim, chan, dmaopt) EXPAND(DEF_TIM_DMA_CHN_ ## dmaopt ## __ ## tim ## _ ## chan)
@@ -318,8 +330,8 @@
 #define DEF_TIM_DMA_STR_1__TIM8_CH1    DMA2_ST2
 #define DEF_TIM_DMA_STR_0__TIM8_CH1N   DMA2_ST2
 #define DEF_TIM_DMA_STR_1__TIM8_CH1N   DMA2_ST2
-#define DEF_TIM_DMA_STR_0__TIM8_CH2    DMA2_ST3
-#define DEF_TIM_DMA_STR_1__TIM8_CH2    DMA2_ST2
+#define DEF_TIM_DMA_STR_0__TIM8_CH2    DMA2_ST2
+#define DEF_TIM_DMA_STR_1__TIM8_CH2    DMA2_ST3
 #define DEF_TIM_DMA_STR_0__TIM8_CH2N   DMA2_ST3
 #define DEF_TIM_DMA_STR_1__TIM8_CH2N   DMA2_ST2
 #define DEF_TIM_DMA_STR_0__TIM8_CH3    DMA2_ST2
@@ -438,9 +450,11 @@
     flags,\
     (DEF_CHAN_ ## chan ## _OUTPUT | out),\
     EXPAND(GPIO_AF__ ## pin ## _ ## tim ## _ ## chan),\
-    CONCAT(EXPAND(DEF_TIM_DMA_STR_ ## dmaopt ## __ ## tim ## _ ## chan), _STREAM),\
-    EXPAND(DEF_TIM_DMA_CHN_ ## dmaopt ## __ ## tim ## _ ## chan),\
-    CONCAT(EXPAND(DEF_TIM_DMA_STR_ ## dmaopt ## __ ## tim ## _ ## chan), _HANDLER)\
+    DEF_TIM_DMA_COND(\
+        CONCAT(EXPAND(DEF_TIM_DMA_STR_ ## dmaopt ## __ ## tim ## _ ## chan), _STREAM),\
+        EXPAND(DEF_TIM_DMA_CHN_ ## dmaopt ## __ ## tim ## _ ## chan),\
+        CONCAT(EXPAND(DEF_TIM_DMA_STR_ ## dmaopt ## __ ## tim ## _ ## chan), _HANDLER)\
+    )\
     }
 
 #define DEF_DMA_CHANNEL(tim, chan, dmaopt) EXPAND(DEF_TIM_DMA_CHN_ ## dmaopt ## __ ## tim ## _ ## chan)
@@ -619,8 +633,8 @@
 
 #define GPIO_AF__PA0_TIM5_CH1     GPIO_AF2_TIM5
 #define GPIO_AF__PA1_TIM5_CH2     GPIO_AF2_TIM5
-#define GPIO_AF__PA3_TIM5_CH3     GPIO_AF2_TIM5
-#define GPIO_AF__PA4_TIM5_CH4     GPIO_AF2_TIM5
+#define GPIO_AF__PA2_TIM5_CH3     GPIO_AF2_TIM5
+#define GPIO_AF__PA3_TIM5_CH4     GPIO_AF2_TIM5
 #define GPIO_AF__PA6_TIM3_CH1     GPIO_AF2_TIM3
 #define GPIO_AF__PA7_TIM3_CH2     GPIO_AF2_TIM3
 
@@ -634,7 +648,7 @@
 
 //PORTB
 #define GPIO_AF__PB0_TIM1_CH2N    GPIO_AF1_TIM1
-#define GPIO_AF__PB1_TIM1_CH2N    GPIO_AF1_TIM1
+#define GPIO_AF__PB1_TIM1_CH3N    GPIO_AF1_TIM1
 #define GPIO_AF__PB3_TIM2_CH2     GPIO_AF1_TIM2
 #define GPIO_AF__PB10_TIM2_CH3    GPIO_AF1_TIM2
 #define GPIO_AF__PB11_TIM2_CH4    GPIO_AF1_TIM2

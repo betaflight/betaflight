@@ -45,7 +45,7 @@ void targetConfiguration(void)
     }
 
     if (hardwareRevision == BJF4_MINI_REV3A || hardwareRevision == BJF4_REV1) {
-        featureClear(FEATURE_SDCARD);
+        blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
     }
 
     if (hardwareRevision == BJF4_MINI_REV3A) {
@@ -57,10 +57,8 @@ void targetValidateConfiguration(void)
 {
     /* make sure the SDCARD cannot be turned on */
     if (hardwareRevision == BJF4_MINI_REV3A || hardwareRevision == BJF4_REV1) {
-        featureClear(FEATURE_SDCARD);
-
         if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
-            blackboxConfigMutable()->device = BLACKBOX_DEVICE_FLASH;
+            blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
         }
     }
 }

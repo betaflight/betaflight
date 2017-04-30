@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "io_types.h"
+#include "drivers/io_types.h"
 #include "timer.h"
 
 #define MAX_SUPPORTED_MOTORS 12
@@ -143,6 +143,12 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t command);
 void pwmWriteDigital(uint8_t index, uint16_t value);
 void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output);
 void pwmCompleteDigitalMotorUpdate(uint8_t motorCount);
+#endif
+
+#ifdef BEEPER
+void pwmWriteBeeper(bool onoffBeep);
+void pwmToggleBeeper(void);
+void beeperPwmInit(IO_t io, uint16_t frequency);
 #endif
 
 void pwmWriteMotor(uint8_t index, uint16_t value);

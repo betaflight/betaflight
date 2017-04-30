@@ -32,7 +32,6 @@
 
 #include "common/utils.h"
 
-#include "config/config_profile.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -105,6 +104,8 @@ OSD_Entry menuOsdActiveElemsEntries[] =
     {"--- ACTIV ELEM ---", OME_Label, NULL, NULL, 0},
     {"RSSI", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_RSSI_VALUE], 0},
     {"MAIN BATTERY", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_VOLTAGE], 0},
+    {"AVG CELL VOLTAGE", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_AVG_CELL_VOLTAGE], 0},
+    {"CROSSHAIRS", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CROSSHAIRS], 0},
     {"HORIZON", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ARTIFICIAL_HORIZON], 0},
     {"HORIZON SIDEBARS", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HORIZON_SIDEBARS], 0},
     {"UPTIME", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ONTIME], 0},
@@ -112,7 +113,7 @@ OSD_Entry menuOsdActiveElemsEntries[] =
     {"FLY MODE", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_FLYMODE], 0},
     {"NAME", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CRAFT_NAME], 0},
     {"THROTTLE", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_THROTTLE_POS], 0},
-#ifdef VTX
+#ifdef VTX_CONTROL
     {"VTX CHAN", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_VTX_CHANNEL], 0},
 #endif // VTX
     {"CURRENT (A)", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CURRENT_DRAW], 0},
@@ -126,6 +127,7 @@ OSD_Entry menuOsdActiveElemsEntries[] =
     {"ROLL PID", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ROLL_PIDS], 0},
     {"PITCH PID", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PITCH_PIDS], 0},
     {"YAW PID", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_YAW_PIDS], 0},
+    {"DEBUG", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_DEBUG], 0},
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
 };

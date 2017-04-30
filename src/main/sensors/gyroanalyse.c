@@ -12,7 +12,7 @@
 #include "common/time.h"
 #include "common/utils.h"
 
-#include "drivers/accgyro.h"
+#include "drivers/accgyro/accgyro.h"
 
 #include "sensors/gyro.h"
 #include "sensors/gyroanalyse.h"

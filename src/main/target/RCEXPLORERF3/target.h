@@ -48,7 +48,6 @@
 #define USE_BARO_MS5611
 
 #define MAG
-#define USE_MPU9250_MAG // Enables bypass configuration
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883 // External
 
@@ -102,7 +101,6 @@
 #define CURRENT_METER_ADC_PIN       PB2
 #define RSSI_ADC_PIN                PA6
 
-#define DEFAULT_FEATURES        FEATURE_VBAT
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART1

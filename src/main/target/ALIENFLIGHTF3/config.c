@@ -34,7 +34,6 @@
 
 #include "rx/rx.h"
 
-#include "sensors/compass.h"
 #include "sensors/gyro.h"
 
 #include "hardware_revision.h"
@@ -81,7 +80,6 @@ void targetConfiguration(void)
 
     rxConfigMutable()->spektrum_sat_bind = 5;
     rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
-    compassConfigMutable()->mag_hardware = MAG_NONE;            // disabled by default
 
     if (hardwareMotorType == MOTOR_BRUSHED) {
         motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;

@@ -26,12 +26,6 @@
 #include "config/feature.h"
 #include "build/version.h"
 
-#if (FC_VERSION_MAJOR == 3) // not a very good way of finding out if this is betaflight or Cleanflight
-#define BETAFLIGHT
-#else
-#define CLEANFLIGHT
-#endif
-
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
@@ -57,60 +51,34 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/crsf.h"
 
-#ifdef CLEANFLIGHT
-#include "fc/fc_serial.h"
-#include "sensors/amperage.h"
-#else
 #include "fc/config.h"
-#endif
 
 #define CRSF_CYCLETIME_US                   100000 // 100ms, 10 Hz
 
 static bool crsfTelemetryEnabled;
-static uint8_t crsfCrc;
 static uint8_t crsfFrame[CRSF_FRAME_SIZE_MAX];
 
 static void crsfInitializeFrame(sbuf_t *dst)
 {
-    crsfCrc = 0;
     dst->ptr = crsfFrame;
     dst->end = ARRAYEND(crsfFrame);
 
     sbufWriteU8(dst, CRSF_ADDRESS_BROADCAST);
 }
 
-static void crsfSerialize8(sbuf_t *dst, uint8_t v)
+static void crsfWriteCrc(sbuf_t *dst, uint8_t *start)
 {
-    sbufWriteU8(dst, v);
-    crsfCrc = crc8_dvb_s2(crsfCrc, v);
-}
-
-static void crsfSerialize16(sbuf_t *dst, uint16_t v)
-{
-    // Use BigEndian format
-    crsfSerialize8(dst,  (v >> 8));
-    crsfSerialize8(dst, (uint8_t)v);
-}
-
-static void crsfSerialize32(sbuf_t *dst, uint32_t v)
-{
-    // Use BigEndian format
-    crsfSerialize8(dst, (v >> 24));
-    crsfSerialize8(dst, (v >> 16));
-    crsfSerialize8(dst, (v >> 8));
-    crsfSerialize8(dst, (uint8_t)v);
-}
-
-static void crsfSerializeData(sbuf_t *dst, const uint8_t *data, int len)
-{
-    for (int ii = 0; ii< len; ++ii) {
-        crsfSerialize8(dst, data[ii]);
+    uint8_t crc = 0;
+    uint8_t *end = sbufPtr(dst);
+    for (uint8_t *ptr = start; ptr < end; ++ptr) {
+        crc = crc8_dvb_s2(crc, *ptr);
     }
+    sbufWriteU8(dst, crc);
 }
 
 static void crsfFinalize(sbuf_t *dst)
 {
-    sbufWriteU8(dst, crsfCrc);
+    crsfWriteCrc(dst, &crsfFrame[2]); // start at byte 2, since CRC does not include device address and frame length
     sbufSwitchToReader(dst, crsfFrame);
     // write the telemetry frame to the receiver.
     crsfRxWriteTelemetryData(sbufPtr(dst), sbufBytesRemaining(dst));
@@ -118,7 +86,7 @@ static void crsfFinalize(sbuf_t *dst)
 
 static int crsfFinalizeBuf(sbuf_t *dst, uint8_t *frame)
 {
-    sbufWriteU8(dst, crsfCrc);
+    crsfWriteCrc(dst, &crsfFrame[2]); // start at byte 2, since CRC does not include device address and frame length
     sbufSwitchToReader(dst, crsfFrame);
     const int frameSize = sbufBytesRemaining(dst);
     for (int ii = 0; sbufBytesRemaining(dst); ++ii) {
@@ -133,7 +101,7 @@ CRSF frame has the structure:
 Device address: (uint8_t)
 Frame length:   length in  bytes including Type (uint8_t)
 Type:           (uint8_t)
-CRC:            (uint8_t)
+CRC:            (uint8_t), crc of <Type> and <Payload>
 */
 
 /*
@@ -150,15 +118,15 @@ void crsfFrameGps(sbuf_t *dst)
 {
     // use sbufWrite since CRC does not include frame length
     sbufWriteU8(dst, CRSF_FRAME_GPS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
-    crsfSerialize8(dst, CRSF_FRAMETYPE_GPS);
-    crsfSerialize32(dst, GPS_coord[LAT]); // CRSF and betaflight use same units for degrees
-    crsfSerialize32(dst, GPS_coord[LON]);
-    crsfSerialize16(dst, (GPS_speed * 36 + 5) / 10); // GPS_speed is in 0.1m/s
-    crsfSerialize16(dst, GPS_ground_course * 10); // GPS_ground_course is degrees * 10
+    sbufWriteU8(dst, CRSF_FRAMETYPE_GPS);
+    sbufWriteU32BigEndian(dst, GPS_coord[LAT]); // CRSF and betaflight use same units for degrees
+    sbufWriteU32BigEndian(dst, GPS_coord[LON]);
+    sbufWriteU16BigEndian(dst, (GPS_speed * 36 + 5) / 10); // GPS_speed is in 0.1m/s
+    sbufWriteU16BigEndian(dst, GPS_ground_course * 10); // GPS_ground_course is degrees * 10
     //Send real GPS altitude only if it's reliable (there's a GPS fix)
     const uint16_t altitude = (STATE(GPS_FIX) ? GPS_altitude : 0) + 1000;
-    crsfSerialize16(dst, altitude);
-    crsfSerialize8(dst, GPS_numSat);
+    sbufWriteU16BigEndian(dst, altitude);
+    sbufWriteU8(dst, GPS_numSat);
 }
 
 /*
@@ -173,24 +141,24 @@ void crsfFrameBatterySensor(sbuf_t *dst)
 {
     // use sbufWrite since CRC does not include frame length
     sbufWriteU8(dst, CRSF_FRAME_BATTERY_SENSOR_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
-    crsfSerialize8(dst, CRSF_FRAMETYPE_BATTERY_SENSOR);
-    crsfSerialize16(dst, getVbat()); // vbat is in units of 0.1V
+    sbufWriteU8(dst, CRSF_FRAMETYPE_BATTERY_SENSOR);
+    sbufWriteU16BigEndian(dst, getBatteryVoltage()); // vbat is in units of 0.1V
 #ifdef CLEANFLIGHT
     const amperageMeter_t *amperageMeter = getAmperageMeter(batteryConfig()->amperageMeterSource);
     const int16_t amperage = constrain(amperageMeter->amperage, -0x8000, 0x7FFF) / 10; // send amperage in 0.01 A steps, range is -320A to 320A
-    crsfSerialize16(dst, amperage); // amperage is in units of 0.1A
+    sbufWriteU16BigEndian(dst, amperage); // amperage is in units of 0.1A
     const uint32_t batteryCapacity = batteryConfig()->batteryCapacity;
     const uint8_t batteryRemainingPercentage = batteryCapacityRemainingPercentage();
 #else
-    crsfSerialize16(dst, amperage / 10);
+    sbufWriteU16BigEndian(dst, getAmperage() / 10);
     const uint32_t batteryCapacity = batteryConfig()->batteryCapacity;
-    const uint8_t batteryRemainingPercentage = calculateBatteryPercentage();
+    const uint8_t batteryRemainingPercentage = calculateBatteryPercentageRemaining();
 #endif
-    crsfSerialize8(dst, (batteryCapacity >> 16));
-    crsfSerialize8(dst, (batteryCapacity >> 8));
-    crsfSerialize8(dst, (uint8_t)batteryCapacity);
+    sbufWriteU8(dst, (batteryCapacity >> 16));
+    sbufWriteU8(dst, (batteryCapacity >> 8));
+    sbufWriteU8(dst, (uint8_t)batteryCapacity);
 
-    crsfSerialize8(dst, batteryRemainingPercentage);
+    sbufWriteU8(dst, batteryRemainingPercentage);
 }
 
 typedef enum {
@@ -227,10 +195,10 @@ int16_t     Yaw angle ( rad / 10000 )
 void crsfFrameAttitude(sbuf_t *dst)
 {
      sbufWriteU8(dst, CRSF_FRAME_ATTITUDE_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
-     crsfSerialize8(dst, CRSF_FRAMETYPE_ATTITUDE);
-     crsfSerialize16(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.pitch));
-     crsfSerialize16(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.roll));
-     crsfSerialize16(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.yaw));
+     sbufWriteU8(dst, CRSF_FRAMETYPE_ATTITUDE);
+     sbufWriteU16BigEndian(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.pitch));
+     sbufWriteU16BigEndian(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.roll));
+     sbufWriteU16BigEndian(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.yaw));
 }
 
 /*
@@ -240,11 +208,10 @@ char[]      Flight mode ( Null­terminated string )
 */
 void crsfFrameFlightMode(sbuf_t *dst)
 {
-    // just do Angle for the moment as a placeholder
     // write zero for frame length, since we don't know it yet
     uint8_t *lengthPtr = sbufPtr(dst);
     sbufWriteU8(dst, 0);
-    crsfSerialize8(dst, CRSF_FRAMETYPE_FLIGHT_MODE);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_FLIGHT_MODE);
 
     // use same logic as OSD, so telemetry displays same flight text as OSD
     const char *flightMode = "ACRO";
@@ -258,9 +225,8 @@ void crsfFrameFlightMode(sbuf_t *dst)
     } else if (FLIGHT_MODE(HORIZON_MODE)) {
         flightMode = "HOR";
     }
-    crsfSerializeData(dst, (const uint8_t*)flightMode, strlen(flightMode));
-    crsfSerialize8(dst, 0); // zero terminator for string
-    // write in the length
+    sbufWriteString(dst, flightMode);
+    // write in the frame length
     *lengthPtr = sbufPtr(dst) - lengthPtr;
 }
 

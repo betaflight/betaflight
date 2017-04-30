@@ -30,11 +30,9 @@
 #include "drivers/sound_beeper.h"
 #include "drivers/vcd.h"
 
-#define MAX_NAME_LENGTH 16
-
 typedef enum {
     FEATURE_RX_PPM = 1 << 0,
-    FEATURE_VBAT = 1 << 1,
+    //FEATURE_VBAT = 1 << 1,
     FEATURE_INFLIGHT_ACC_CAL = 1 << 2,
     FEATURE_RX_SERIAL = 1 << 3,
     FEATURE_MOTOR_STOP = 1 << 4,
@@ -44,7 +42,7 @@ typedef enum {
     FEATURE_FAILSAFE = 1 << 8,
     FEATURE_SONAR = 1 << 9,
     FEATURE_TELEMETRY = 1 << 10,
-    FEATURE_CURRENT_METER = 1 << 11,
+    //FEATURE_CURRENT_METER = 1 << 11,
     FEATURE_3D = 1 << 12,
     FEATURE_RX_PARALLEL_PWM = 1 << 13,
     FEATURE_RX_MSP = 1 << 14,
@@ -52,24 +50,36 @@ typedef enum {
     FEATURE_LED_STRIP = 1 << 16,
     FEATURE_DASHBOARD = 1 << 17,
     FEATURE_OSD = 1 << 18,
-    FEATURE_BLACKBOX = 1 << 19,
+    FEATURE_BLACKBOX_UNUSED = 1 << 19,
     FEATURE_CHANNEL_FORWARDING = 1 << 20,
     FEATURE_TRANSPONDER = 1 << 21,
     FEATURE_AIRMODE = 1 << 22,
-    FEATURE_SDCARD = 1 << 23,
-    FEATURE_VTX = 1 << 24,
+    FEATURE_SDCARD_UNUSED = 1 << 23,
+    //FEATURE_VTX = 1 << 24,
     FEATURE_RX_SPI = 1 << 25,
     FEATURE_SOFTSPI = 1 << 26,
     FEATURE_ESC_SENSOR = 1 << 27,
+    FEATURE_ANTI_GRAVITY = 1 << 28,
 } features_e;
 
+#define MAX_NAME_LENGTH 16
+
+#ifndef USE_OSD_SLAVE
 typedef struct systemConfig_s {
     uint8_t pidProfileIndex;
     uint8_t activeRateProfile;
     uint8_t debug_mode;
     uint8_t task_statistics;
-    char name[MAX_NAME_LENGTH + 1];
+    char name[MAX_NAME_LENGTH + 1]; // FIXME misplaced, see PG_PILOT_CONFIG in CF v1.x
 } systemConfig_t;
+#endif
+
+#ifdef USE_OSD_SLAVE
+typedef struct systemConfig_s {
+    uint8_t debug_mode;
+    uint8_t task_statistics;
+} systemConfig_t;
+#endif
 
 PG_DECLARE(systemConfig_t, systemConfig);
 PG_DECLARE(adcConfig_t, adcConfig);

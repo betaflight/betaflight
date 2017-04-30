@@ -45,7 +45,6 @@
 #include "drivers/system.h"
 
 // For rcData, stopAllMotors, stopPwmAllMotors
-#include "config/config_profile.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -628,6 +627,11 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
 
     if (!currentMenu)
         return res;
+
+    if (key == KEY_MENU) {
+        cmsMenuOpen();
+        return BUTTON_PAUSE;
+    }
 
     if (key == KEY_ESC) {
         cmsMenuBack(pDisplay);

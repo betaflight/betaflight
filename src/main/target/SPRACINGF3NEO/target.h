@@ -18,6 +18,7 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "SP3N"
+#define TARGET_CONFIG
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
@@ -59,9 +60,10 @@
 #define USE_UART3
 #define USE_UART4
 #define USE_UART5
-#define USE_SOFTSERIAL1
-#define USE_SOFTSERIAL2
-#define SERIAL_PORT_COUNT       8
+//#define USE_SOFTSERIAL1
+//#define USE_SOFTSERIAL2
+//#define SERIAL_PORT_COUNT       8
+#define SERIAL_PORT_COUNT       6
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
@@ -99,12 +101,18 @@
 #define SPI3_MISO_PIN           PB4
 #define SPI3_MOSI_PIN           PB5
 
-#define VTX
-#define RTC6705_CS_GPIO         GPIOF
-#define RTC6705_CS_PIN          GPIO_Pin_4
-#define RTC6705_SPI_INSTANCE    SPI3
+#define VTX_RTC6705
+#define VTX_RTC6705_OPTIONAL    // VTX/OSD board is OPTIONAL
 
+#undef VTX_SMARTAUDIO           // Disabled due to flash size
+#undef VTX_TRAMP                // Disabled due to flash size
+
+#define RTC6705_CS_PIN          PF4
+#define RTC6705_SPI_INSTANCE    SPI3
 #define RTC6705_POWER_PIN       PC3
+
+#define USE_RTC6705_CLK_HACK
+#define RTC6705_CLK_PIN         SPI3_SCK_PIN
 
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
@@ -113,6 +121,8 @@
 #define MAX7456_DMA_CHANNEL_TX              DMA2_Channel2
 #define MAX7456_DMA_CHANNEL_RX              DMA2_Channel1
 #define MAX7456_DMA_IRQ_HANDLER_ID          DMA2_CH1_HANDLER
+
+#define SPI_SHARED_MAX7456_AND_RTC6705
 
 #define USE_SDCARD
 #define USE_SDCARD_SPI2
@@ -136,6 +146,8 @@
 #define MPU6500_SPI_INSTANCE             SPI1
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
+#define BOARD_HAS_CURRENT_SENSOR
+
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
 #define VBAT_ADC_PIN            PC1
@@ -157,8 +169,12 @@
 
 #define OSD
 
-#define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
-#define DEFAULT_FEATURES        (FEATURE_TRANSPONDER | FEATURE_BLACKBOX | FEATURE_RSSI_ADC | FEATURE_CURRENT_METER | FEATURE_TELEMETRY | FEATURE_OSD)
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#define DEFAULT_FEATURES        (FEATURE_TRANSPONDER | FEATURE_RSSI_ADC | FEATURE_TELEMETRY | FEATURE_OSD | FEATURE_LED_STRIP)
+#define SERIALRX_UART           SERIAL_PORT_USART2
+#define GPS_UART                SERIAL_PORT_USART3
+#define TELEMETRY_UART          SERIAL_PORT_UART5
+#define SERIALRX_PROVIDER       SERIALRX_SBUS
 
 #define BUTTONS
 #define BUTTON_A_PIN            PD2

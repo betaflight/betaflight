@@ -17,6 +17,7 @@
 
 #pragma once
 
+#ifdef OSD
 #include "common/time.h"
 #include "config/parameter_group.h"
 
@@ -48,6 +49,10 @@ typedef enum {
     OSD_POWER,
     OSD_PIDRATE_PROFILE,
     OSD_MAIN_BATT_WARNING,
+    OSD_AVG_CELL_VOLTAGE,
+    OSD_GPS_LON,
+    OSD_GPS_LAT,
+    OSD_DEBUG,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -68,7 +73,7 @@ typedef struct osdConfig_s {
     osd_unit_e units;
 } osdConfig_t;
 
-extern uint16_t refreshTimeout;
+extern uint32_t resumeRefreshAt;
 
 PG_DECLARE(osdConfig_t, osdConfig);
 
@@ -77,3 +82,5 @@ void osdInit(struct displayPort_s *osdDisplayPort);
 void osdResetConfig(osdConfig_t *osdProfile);
 void osdResetAlarms(void);
 void osdUpdate(timeUs_t currentTimeUs);
+
+#endif

@@ -31,6 +31,9 @@ int main(void)
     while (true) {
         scheduler();
         processLoopback();
+#ifdef SIMULATOR_BUILD
+        delayMicroseconds_real(50); // max rate 20kHz
+#endif
     }
     return 0;
 }

@@ -21,9 +21,10 @@
 #include <stdint.h>
 
 #include <platform.h>
+
 #include "resource.h"
 
-#include "io_types.h"
+#include "drivers/io_types.h"
 
 // preprocessor is used to convert pinid to requested C data value
 // compile-time error is generated if requested pin is not available (not set in TARGET_IO_PORTx)
@@ -78,7 +79,7 @@
 #define IOCFG_IN_FLOATING    IO_CONFIG(GPIO_Mode_IN,  0, 0,             GPIO_PuPd_NOPULL)
 #define IOCFG_IPU_25         IO_CONFIG(GPIO_Mode_IN,  GPIO_Speed_25MHz, 0, GPIO_PuPd_UP)
 
-#elif defined(UNIT_TEST)
+#elif defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
 
 # define IOCFG_OUT_PP         0
 # define IOCFG_OUT_OD         0

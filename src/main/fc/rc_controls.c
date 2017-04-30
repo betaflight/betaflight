@@ -45,7 +45,7 @@
 #include "io/gps.h"
 #include "io/beeper.h"
 #include "io/motors.h"
-#include "io/vtx.h"
+#include "io/vtx_control.h"
 #include "io/dashboard.h"
 
 #include "sensors/barometer.h"
@@ -59,7 +59,6 @@
 #include "flight/pid.h"
 #include "flight/navigation.h"
 #include "flight/failsafe.h"
-
 
 static pidProfile_t *pidProfile;
 
@@ -76,7 +75,8 @@ PG_RESET_TEMPLATE(rcControlsConfig_t, rcControlsConfig,
     .deadband = 0,
     .yaw_deadband = 0,
     .alt_hold_deadband = 40,
-    .alt_hold_fast_change = 1
+    .alt_hold_fast_change = 1,
+    .yaw_control_reversed = false,
 );
 
 PG_REGISTER_WITH_RESET_TEMPLATE(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 0);
@@ -91,6 +91,10 @@ PG_REGISTER_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT
 
 bool isAirmodeActive(void) {
     return (IS_RC_MODE_ACTIVE(BOXAIRMODE) || feature(FEATURE_AIRMODE));
+}
+
+bool isAntiGravityModeActive(void) {
+    return (IS_RC_MODE_ACTIVE(BOXANTIGRAVITY) || feature(FEATURE_ANTI_GRAVITY));
 }
 
 bool isUsingSticksForArming(void)
@@ -289,7 +293,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
     }
 #endif
 
-#ifdef VTX
+#ifdef VTX_CONTROL
     if (rcSticks ==  THR_HI + YAW_LO + PIT_CE + ROL_HI) {
         vtxIncrementBand();
     }

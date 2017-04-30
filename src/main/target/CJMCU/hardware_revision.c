@@ -23,12 +23,7 @@
 
 #include "build/build_config.h"
 
-#include "drivers/system.h"
-#include "drivers/bus_spi.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/accgyro_spi_mpu6500.h"
-#include "drivers/exti.h"
+#include "drivers/io_types.h"
 
 #include "hardware_revision.h"
 
@@ -47,7 +42,7 @@ void updateHardwareRevision(void)
 {
 }
 
-const extiConfig_t *selectMPUIntExtiConfigByHardwareRevision(void)
+ioTag_t selectMPUIntExtiConfigByHardwareRevision(void)
 {
-    return NULL;
+    return IO_TAG_NONE;
 }

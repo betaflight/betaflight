@@ -17,6 +17,10 @@
 
 #pragma once
 
+#undef TELEMETRY_IBUS   //no space left
+#undef TELEMETRY_HOTT   //no space left
+#undef TELEMETRY_JETIEXBUS
+
 #define TARGET_BOARD_IDENTIFIER "OMNI" // https://en.wikipedia.org/wiki/Omnibus
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
@@ -50,8 +54,6 @@
 #define USE_BARO_SPI_BMP280
 
 #define MAG // External
-#define USE_MAG_AK8963
-#define USE_MAG_AK8975
 #define USE_MAG_HMC5883
 
 //#define SONAR
@@ -143,7 +145,8 @@
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
 
 #define USE_ADC
-//#define BOARD_HAS_VOLTAGE_DIVIDER
+#define BOARD_HAS_VOLTAGE_DIVIDER
+#define BOARD_HAS_CURRENT_SENSOR
 #define VBAT_ADC_PIN                PA0
 #define CURRENT_METER_ADC_PIN       PA1
 #define ADC_INSTANCE                ADC1
@@ -157,7 +160,7 @@
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
-#define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_CURRENT_METER | FEATURE_BLACKBOX | FEATURE_OSD)
+#define DEFAULT_FEATURES        (FEATURE_OSD)
 
 #define BUTTONS
 #define BUTTON_A_PIN            PB1

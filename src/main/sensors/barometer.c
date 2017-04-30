@@ -26,11 +26,11 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/barometer.h"
-#include "drivers/barometer_bmp085.h"
-#include "drivers/barometer_bmp280.h"
-#include "drivers/barometer_fake.h"
-#include "drivers/barometer_ms5611.h"
+#include "drivers/barometer/barometer.h"
+#include "drivers/barometer/barometer_bmp085.h"
+#include "drivers/barometer/barometer_bmp280.h"
+#include "drivers/barometer/barometer_fake.h"
+#include "drivers/barometer/barometer_ms5611.h"
 #include "drivers/system.h"
 
 #include "fc/runtime_config.h"
@@ -49,9 +49,9 @@ PG_REGISTER_WITH_RESET_TEMPLATE(barometerConfig_t, barometerConfig, PG_BAROMETER
 PG_RESET_TEMPLATE(barometerConfig_t, barometerConfig,
     .baro_hardware = 1,
     .baro_sample_count = 21,
-    .baro_noise_lpf = 0.6f,
-    .baro_cf_vel = 0.985f,
-    .baro_cf_alt = 0.965f
+    .baro_noise_lpf = 600,
+    .baro_cf_vel = 985,
+    .baro_cf_alt = 965
 );
 
 #ifdef BARO
@@ -229,7 +229,7 @@ int32_t baroCalculateAltitude(void)
     if (isBaroCalibrationComplete()) {
         BaroAlt_tmp = lrintf((1.0f - powf((float)(baroPressureSum / PRESSURE_SAMPLE_COUNT) / 101325.0f, 0.190295f)) * 4433000.0f); // in cm
         BaroAlt_tmp -= baroGroundAltitude;
-        baro.BaroAlt = lrintf((float)baro.BaroAlt * barometerConfig()->baro_noise_lpf + (float)BaroAlt_tmp * (1.0f - barometerConfig()->baro_noise_lpf)); // additional LPF to reduce baro noise
+        baro.BaroAlt = lrintf((float)baro.BaroAlt * CONVERT_PARAMETER_TO_FLOAT(barometerConfig()->baro_noise_lpf) + (float)BaroAlt_tmp * (1.0f - CONVERT_PARAMETER_TO_FLOAT(barometerConfig()->baro_noise_lpf))); // additional LPF to reduce baro noise
     }
     else {
         baro.BaroAlt = 0;

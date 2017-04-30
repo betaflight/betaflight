@@ -21,7 +21,6 @@
 
 #define USBD_PRODUCT_STRING "FuryF7"
 
-#define USE_DSHOT
 #define USE_ESC_SENSOR
 
 #define LED0                    PB5
@@ -138,7 +137,6 @@
 
 #undef LED_STRIP
 
-#define DEFAULT_FEATURES        (FEATURE_BLACKBOX)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 

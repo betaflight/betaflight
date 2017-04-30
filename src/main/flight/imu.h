@@ -67,9 +67,18 @@ typedef struct imuRuntimeConfig_s {
 void imuConfigure(uint16_t throttle_correction_angle);
 
 float getCosTiltAngle(void);
-void calculateEstimatedAltitude(timeUs_t currentTimeUs);
 void imuUpdateAttitude(timeUs_t currentTimeUs);
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value);
 
 void imuResetAccelerationSum(void);
 void imuInit(void);
+
+#ifdef SIMULATOR_BUILD
+void imuSetAttitudeRPY(float roll, float pitch, float yaw);  // in deg
+void imuSetAttitudeQuat(float w, float x, float y, float z);
+#if defined(SIMULATOR_IMU_SYNC)
+void imuSetHasNewData(uint32_t dt);
+#endif
+#endif
+
+

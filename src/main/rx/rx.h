@@ -37,8 +37,6 @@
 #define DEFAULT_SERVO_MIN 1000
 #define DEFAULT_SERVO_MIDDLE 1500
 #define DEFAULT_SERVO_MAX 2000
-#define DEFAULT_SERVO_MIN_ANGLE 90
-#define DEFAULT_SERVO_MAX_ANGLE 90
 
 typedef enum {
     RX_FRAME_PENDING = 0,
@@ -58,6 +56,7 @@ typedef enum {
     SERIALRX_JETIEXBUS = 8,
     SERIALRX_CRSF = 9,
     SERIALRX_SRXL = 10,
+    SERIALRX_TARGET_CUSTOM = 11,
 } SerialRXType;
 
 #define MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT          12
@@ -140,9 +139,6 @@ typedef struct rxConfig_s {
 
     uint16_t rx_min_usec;
     uint16_t rx_max_usec;
-    rxFailsafeChannelConfig_t failsafe_channel_configurations[MAX_SUPPORTED_RC_CHANNEL_COUNT];
-
-    rxChannelRangeConfig_t channelRanges[NON_AUX_CHANNEL_COUNT];
 } rxConfig_t;
 
 PG_DECLARE(rxConfig_t, rxConfig);

@@ -26,7 +26,7 @@ extern "C" {
 #include "fc/rc_controls.h"
 #include "telemetry/telemetry.h"
 #include "telemetry/ibus.h"
-#include "sensors/barometer.h"
+#include "sensors/gyro.h"
 #include "sensors/battery.h"
 #include "scheduler/scheduler.h"
 #include "fc/fc_tasks.h"
@@ -37,13 +37,21 @@ extern "C" {
 
 
 extern "C" {
-    uint8_t batteryCellCount = 3;
+    uint8_t testBatteryCellCount =3;
     int16_t rcCommand[4] = {0, 0, 0, 0};
-    int16_t telemTemperature1 = 0;
-    baro_t baro = { .baroTemperature = 50 };
     telemetryConfig_t telemetryConfig_System;
 }
 
+static int16_t gyroTemperature;
+int16_t gyroGetTemperature(void) {
+    return gyroTemperature;
+}
+
+static uint16_t vbat = 100;
+uint16_t getVbat(void)
+{
+    return vbat;
+}
 
 #define SERIAL_BUFFER_SIZE 256
 
@@ -54,10 +62,14 @@ typedef struct serialPortStub_s {
 } serialPortStub_t;
 
 
-static uint16_t vbat = 100;
-uint16_t getVbat(void)
+static uint16_t testBatteryVoltage = 100;
+uint16_t getBatteryVoltage(void)
 {
-    return vbat;
+    return testBatteryVoltage;
+}
+
+uint8_t getBatteryCellCount(void) {
+    return testBatteryCellCount;
 }
 
 static serialPortStub_t serialWriteStub;
@@ -72,6 +84,7 @@ serialPortConfig_t serialTestInstanceConfig = {
 
 static serialPortConfig_t *findSerialPortConfig_stub_retval;
 static portSharing_e determinePortSharing_stub_retval;
+static bool portIsShared = false;
 static bool openSerial_called = false;
 static bool telemetryDetermineEnabledState_stub_retval;
 
@@ -102,6 +115,17 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing)
 {
     (void) portSharing;
     return telemetryDetermineEnabledState_stub_retval;
+}
+
+
+bool isSerialPortShared(const serialPortConfig_t *portConfig,
+                        uint16_t functionMask,
+                        serialPortFunction_e sharedWithFunction)
+{
+    EXPECT_EQ(portConfig, findSerialPortConfig_stub_retval);
+    EXPECT_EQ(functionMask, FUNCTION_RX_SERIAL);
+    EXPECT_EQ(sharedWithFunction, FUNCTION_TELEMETRY_IBUS);
+    return portIsShared;
 }
 
 
@@ -179,6 +203,7 @@ void serialTestResetBuffers()
 
 void serialTestResetPort()
 {
+    portIsShared = false;
     openSerial_called = false;
     determinePortSharing_stub_retval = PORTSHARING_UNUSED;
     telemetryDetermineEnabledState_stub_retval = true;
@@ -235,11 +260,31 @@ TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitEnabled)
 }
 
 
+TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitSerialRxAndTelemetryEnabled)
+{
+    findSerialPortConfig_stub_retval = &serialTestInstanceConfig;
+
+    //given stuff in serial read
+    serialReadStub.end++;
+    //and serial rx enabled too
+    portIsShared = true;
+
+    //when initializing and polling ibus
+    initIbusTelemetry();
+    checkIbusTelemetryState();
+    handleIbusTelemetry();
+
+    //then all is read from serial port
+    EXPECT_NE(serialReadStub.pos, serialReadStub.end);
+    EXPECT_FALSE(openSerial_called);
+}
+
 class IbusTelemetryProtocolUnitTestBase : public ::testing::Test
 {
 protected:
     virtual void SetUp()
     {
+        serialTestResetPort();
         telemetryConfigMutable()->report_cell_voltage = false;
         serialTestResetBuffers();
         initIbusTelemetry();
@@ -332,7 +377,7 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementVbattZero)
 {
     //Given ibus command: Sensor at address 1, please send your measurement
     //then we respond with: I'm reading 0 volts
-    vbat = 0;
+    testBatteryVoltage = 0;
     checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x00\x00\x58\xFF", 6);
 }
 
@@ -342,14 +387,14 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementVbattCellV
 
     //Given ibus command: Sensor at address 1, please send your measurement
     //then we respond with: I'm reading 0.1 volts
-    batteryCellCount = 3;
-    vbat = 30;
+    testBatteryCellCount =3;
+    testBatteryVoltage = 30;
     checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x64\x00\xf4\xFe", 6);
 
     //Given ibus command: Sensor at address 1, please send your measurement
     //then we respond with: I'm reading 0.1 volts
-    batteryCellCount = 1;
-    vbat = 10;
+    testBatteryCellCount =1;
+    testBatteryVoltage = 10;
     checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x64\x00\xf4\xFe", 6);
 }
 
@@ -359,47 +404,34 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementVbattPackV
 
     //Given ibus command: Sensor at address 1, please send your measurement
     //then we respond with: I'm reading 0.1 volts
-    batteryCellCount = 3;
-    vbat = 10;
+    testBatteryCellCount =3;
+    testBatteryVoltage = 10;
     checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x64\x00\xf4\xFe", 6);
 
     //Given ibus command: Sensor at address 1, please send your measurement
     //then we respond with: I'm reading 0.1 volts
-    batteryCellCount = 1;
-    vbat = 10;
+    testBatteryCellCount =1;
+    testBatteryVoltage = 10;
     checkResponseToCommand("\x04\xA1\x5a\xff", 4, "\x06\xA1\x64\x00\xf4\xFe", 6);
 }
 
 
 TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementTemperature)
 {
-#ifdef BARO
     //Given ibus command: Sensor at address 2, please send your measurement
     //then we respond
-    baro.baroTemperature = 50;
-    checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\x95\x01\xc1\xFE", 6);
+    gyroTemperature = 50;
+    checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\x84\x03\xd0\xfe", 6);
 
     //Given ibus command: Sensor at address 2, please send your measurement
     //then we respond
-    baro.baroTemperature = 59;  //test integer rounding
-    checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\x96\x01\xc0\xFE", 6);
+    gyroTemperature = 59;  //test integer rounding
+    checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\xde\x03\x76\xfe", 6);
 
     //Given ibus command: Sensor at address 2, please send your measurement
     //then we respond
-    baro.baroTemperature = 150;
-    checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\x9f\x01\xb7\xFE", 6);
-#else
-    #error not tested, may be obsolete
-    // //Given ibus command: Sensor at address 2, please send your measurement
-    // //then we respond with: I'm reading 0 degrees + constant offset 0x190
-    // telemTemperature1 = 0;
-    // checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\x90\x01\xC6\xFE", 6);
-
-    // //Given ibus command: Sensor at address 2, please send your measurement
-    // //then we respond with: I'm reading 100 degrees + constant offset 0x190
-    // telemTemperature1 = 100;
-    // checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\xF4\x01\x62\xFE", 6);
-#endif
+    gyroTemperature = 150;
+    checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\x6c\x07\xe4\xfe", 6);
 }
 
 
@@ -466,21 +498,14 @@ TEST_F(IbusTelemteryProtocolUnitTestDaisyChained, Test_IbusRespondToGetMeasureme
 {
     //Given ibus command: Sensor at address 3, please send your measurement
     //then we respond with: I'm reading 0.1 volts
-    batteryCellCount = 1;
-    vbat = 10;
-    checkResponseToCommand("\x04\xA3\x58\xff", 4, "\x06\xA3\x64\x00\xf2\xFe", 6);
+    testBatteryCellCount = 1;
+    testBatteryVoltage = 10;
+    checkResponseToCommand("\x04\xA3\x58\xff", 4, "\x06\xA3\x64\x00\xf2\xfe", 6);
 
-#ifdef BARO
     //Given ibus command: Sensor at address 4, please send your measurement
     //then we respond
-    baro.baroTemperature = 150;
-    checkResponseToCommand("\x04\xA4\x57\xff", 4, "\x06\xA4\x9f\x01\xb5\xFE", 6);
-#else
-    //Given ibus command: Sensor at address 4, please send your measurement
-    //then we respond with: I'm reading 100 degrees + constant offset 0x190
-    telemTemperature1 = 100;
-    checkResponseToCommand("\x04\xA4\x57\xff", 4, "\x06\xA4\xF4\x01\x60\xFE", 6);
-#endif
+    gyroTemperature = 150;
+    checkResponseToCommand("\x04\xA4\x57\xff", 4, "\x06\xA4\x6c\x07\xe2\xfe", 6);
 
     //Given ibus command: Sensor at address 5, please send your measurement
     //then we respond with: I'm reading 100 rpm

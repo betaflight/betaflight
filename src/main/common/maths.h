@@ -35,6 +35,8 @@
 #define DECIDEGREES_TO_RADIANS(angle) ((angle / 10.0f) * 0.0174532925f)
 #define DEGREES_TO_RADIANS(angle) ((angle) * 0.0174532925f)
 
+#define CM_S_TO_KM_H(centimetersPerSecond) (centimetersPerSecond * 36 / 1000)
+
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define ABS(x) ((x) > 0 ? (x) : -(x))
@@ -83,7 +85,7 @@ float devVariance(stdev_t *dev);
 float devStandardDeviation(stdev_t *dev);
 float degreesToRadians(int16_t degrees);
 
-int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax);
+int scaleRange(int x, int srcFrom, int srcTo, int destFrom, int destTo);
 
 void normalizeV(struct fp_vector *src, struct fp_vector *dest);
 

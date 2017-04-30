@@ -64,7 +64,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY
 
 PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
     .telemetry_inversion = TELEMETRY_DEFAULT_INVERSION,
-    .sportHalfDuplex = 1,
+    .halfDuplex = 1,
     .telemetry_switch = 0,
     .gpsNoFixLatitude = 0,
     .gpsNoFixLongitude = 0,
@@ -126,7 +126,18 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing)
 
 bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig)
 {
-    return portConfig->functionMask & FUNCTION_RX_SERIAL && portConfig->functionMask & TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK;
+    if (portConfig->functionMask & FUNCTION_RX_SERIAL && portConfig->functionMask & TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK) {
+        return true;
+    }
+#ifdef TELEMETRY_IBUS
+    if (   portConfig->functionMask & FUNCTION_TELEMETRY_IBUS
+        && portConfig->functionMask & FUNCTION_RX_SERIAL
+        && rxConfig()->serialrx_provider == SERIALRX_IBUS) {
+        // IBUS serial RX & telemetry
+        return true;
+    }
+#endif
+    return false;
 }
 
 serialPort_t *telemetrySharedPort = NULL;

@@ -19,48 +19,29 @@
 
 #include "config/parameter_group.h"
 
-#ifndef VBAT_SCALE_DEFAULT
-#define VBAT_SCALE_DEFAULT 110
-#endif
-#define VBAT_RESDIVVAL_DEFAULT 10
-#define VBAT_RESDIVMULTIPLIER_DEFAULT 1
-#define VBAT_SCALE_MIN 0
-#define VBAT_SCALE_MAX 255
-
-typedef enum {
-    CURRENT_SENSOR_NONE = 0,
-    CURRENT_SENSOR_ADC,
-    CURRENT_SENSOR_VIRTUAL,
-    CURRENT_SENSOR_ESC,
-    CURRENT_SENSOR_MAX = CURRENT_SENSOR_ESC
-} currentSensor_e;
-
-typedef enum {
-    BATTERY_SENSOR_ADC = 0,
-    BATTERY_SENSOR_ESC
-} batterySensor_e;
+#include "common/filter.h"
+#include "common/time.h"
+#include "sensors/current.h"
+#include "sensors/voltage.h"
 
 typedef struct batteryConfig_s {
-    uint8_t vbatscale;                      // adjust this to match battery voltage to reported value
-    uint8_t vbatresdivval;                  // resistor divider R2 (default NAZE 10(K))
-    uint8_t vbatresdivmultiplier;           // multiplier for scale (e.g. 2.5:1 ratio with multiplier of 4 can use '100' instead of '25' in ratio) to get better precision
+    // voltage
     uint8_t vbatmaxcellvoltage;             // maximum voltage per cell, used for auto-detecting battery voltage in 0.1V units, default is 43 (4.3V)
     uint8_t vbatmincellvoltage;             // minimum voltage per cell, this triggers battery critical alarm, in 0.1V units, default is 33 (3.3V)
     uint8_t vbatwarningcellvoltage;         // warning voltage per cell, this triggers battery warning alarm, in 0.1V units, default is 35 (3.5V)
-    uint8_t vbathysteresis;                 // hysteresis for alarm, default 1 = 0.1V
-    batterySensor_e batteryMeterType;       // type of battery meter uses, either ADC or ESC
+    uint8_t batteryNotPresentLevel;         // Below this level battery is considered as not present
 
-    int16_t currentMeterScale;             // scale the current sensor output voltage to milliamps. Value in 1/10th mV/A
-    int16_t currentMeterOffset;            // offset of the current sensor in millivolt steps
-    currentSensor_e  currentMeterType;      // type of current meter used, either ADC, Virtual or ESC
+    voltageMeterSource_e voltageMeterSource; // source of battery voltage meter used, either ADC or ESC
 
-    // FIXME this doesn't belong in here since it's a concern of MSP, not of the battery code.
-    uint8_t multiwiiCurrentMeterOutput;     // if set to 1 output the amperage in milliamp steps instead of 0.01A steps via msp
+    // current
+    currentMeterSource_e currentMeterSource; // source of battery current meter used, either ADC, Virtual or ESC
     uint16_t batteryCapacity;               // mAh
-    uint8_t batterynotpresentlevel;         // Below this level battery is considered as not present
+
+    // warnings / alerts
     bool useVBatAlerts;                     // Issue alerts based on VBat readings
     bool useConsumptionAlerts;              // Issue alerts based on total power consumption
     uint8_t consumptionWarningPercentage;   // Percentage of remaining capacity that should trigger a battery warning
+    uint8_t vbathysteresis;                 // hysteresis for alarm, default 1 = 0.1V
 } batteryConfig_t;
 
 PG_DECLARE(batteryConfig_t, batteryConfig);
@@ -72,23 +53,26 @@ typedef enum {
     BATTERY_NOT_PRESENT
 } batteryState_e;
 
-extern uint16_t vbatRaw;
-extern uint16_t vbatLatest;
-extern uint8_t batteryCellCount;
-extern uint16_t batteryWarningVoltage;
-extern int32_t amperageLatest;
-extern int32_t amperage;
-extern int32_t mAhDrawn;
+void batteryInit(void);
+void batteryUpdateVoltage(timeUs_t currentTimeUs);
+void batteryUpdatePresence(void);
 
 batteryState_e getBatteryState(void);
 const  char * getBatteryStateString(void);
-void updateBattery(void);
-void batteryInit(void);
+
+void batteryUpdateStates(void);
+void batteryUpdateAlarms(void);
 
 struct rxConfig_s;
-void updateCurrentMeter(int32_t lastUpdateAt);
-int32_t currentMeterToCentiamps(uint16_t src);
 
 float calculateVbatPidCompensation(void);
-uint8_t calculateBatteryPercentage(void);
-uint16_t getVbat(void);
+uint8_t calculateBatteryPercentageRemaining(void);
+uint16_t getBatteryVoltage(void);
+uint16_t getBatteryVoltageLatest(void);
+uint8_t getBatteryCellCount(void);
+
+int32_t getAmperage(void);
+int32_t getAmperageLatest(void);
+int32_t getMAhDrawn(void);
+
+void batteryUpdateCurrentMeter(timeUs_t currentTimeUs);

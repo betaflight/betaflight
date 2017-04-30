@@ -43,8 +43,6 @@
 
 #include "flight/mixer.h"
 
-#include "sensors/battery.h"
-
 #include "io/serial.h"
 
 /*
@@ -70,7 +68,7 @@ Byte 9: 8-bit CRC
 DEBUG INFORMATION
 -----------------
 
-set debug_mode = DEBUG_ESC_TELEMETRY in cli
+set debug_mode = DEBUG_ESC_SENSOR in cli
 
 */
 
@@ -237,6 +235,9 @@ static uint8_t decodeEscFrame(void)
         combinedDataNeedsUpdate = true;
 
         frameStatus = ESC_SENSOR_FRAME_COMPLETE;
+
+        DEBUG_SET(DEBUG_ESC_SENSOR_RPM, escSensorMotor, escSensorData[escSensorMotor].rpm);
+        DEBUG_SET(DEBUG_ESC_SENSOR_TMP, escSensorMotor, escSensorData[escSensorMotor].temperature);
     } else {
         frameStatus = ESC_SENSOR_FRAME_FAILED;
     }

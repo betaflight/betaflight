@@ -20,15 +20,16 @@
 #include <string.h>
 
 #include "platform.h"
-#include "system.h"
-#include "gpio.h"
 
-#include "sensor.h"
-#include "accgyro.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/system.h"
+#include "drivers/gpio.h"
+
+#include "drivers/sensor.h"
 
 #include "adc.h"
 #include "adc_impl.h"
-#include "io.h"
+#include "drivers/io.h"
 #include "rcc.h"
 #include "dma.h"
 
@@ -125,8 +126,8 @@ void adcInit(const adcConfig_t *config)
         adcOperatingConfig[ADC_EXTERNAL1].tag = config->external1.ioTag; //EXTERNAL1_ADC_CHANNEL;
     }
 
-    if (config->currentMeter.enabled) {
-        adcOperatingConfig[ADC_CURRENT].tag = config->currentMeter.ioTag;  //CURRENT_METER_ADC_CHANNEL;
+    if (config->current.enabled) {
+        adcOperatingConfig[ADC_CURRENT].tag = config->current.ioTag;  //CURRENT_METER_ADC_CHANNEL;
     }
 
     ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
