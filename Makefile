@@ -757,6 +757,7 @@ FC_SRC = \
             sensors/gyroanalyse.c \
             sensors/initialisation.c \
             blackbox/blackbox.c \
+            blackbox/blackbox_encoding.c \
             blackbox/blackbox_io.c \
             cms/cms.c \
             cms/cms_menu_blackbox.c \

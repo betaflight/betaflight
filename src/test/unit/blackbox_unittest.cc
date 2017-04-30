@@ -21,14 +21,14 @@ extern "C" {
     #include "platform.h"
 
     #include "blackbox/blackbox.h"
-    #include "blackbox/blackbox_io.h"
+    #include "blackbox/blackbox_encoding.h"
     #include "common/utils.h"
 
     #include "config/parameter_group.h"
     #include "config/parameter_group_ids.h"
 
     #include "drivers/serial.h"
-    extern serialPort_t *blackboxPort;
+    #include "io/serial.h"
 
     PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
 
@@ -44,6 +44,7 @@ extern "C" {
 #include "gtest/gtest.h"
 
 
+static serialPort_t *blackboxPort;
 static int serialWritePos = 0;
 static int serialReadPos = 0;
 static int serialReadEnd = 0;
@@ -126,5 +127,18 @@ TEST(BlackboxTest, Test1)
 
 // STUBS
 extern "C" {
+int32_t blackboxHeaderBudget;
 void mspSerialAllocatePorts(void) {}
+void blackboxWrite(uint8_t value) {serialWrite(blackboxPort, value);}
+int blackboxPrint(const char *s)
+{
+    const uint8_t *pos = (uint8_t*)s;
+    while (*pos) {
+        serialWrite(blackboxPort, *pos);
+        pos++;
+    }
+    const int length = pos - (uint8_t*)s;
+    return length;
+}
+
 }
