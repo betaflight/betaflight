@@ -78,11 +78,12 @@
 #define BOARD_HAS_VOLTAGE_DIVIDER
 
 #define USE_ADC
-#define ADC_INSTANCE            ADC2
 
 #define VBAT_ADC_PIN            PA4
-#define CURRENT_METER_ADC_PIN   PA1
-#define CURRENT_METER_ADC_INSTANCE ADC1
+#define VBAT_ADC_INSTANCE       ADC2
+
+#define AIRSPEED_ADC_PIN        PA1
+#define AIRSPEED_ADC_INSTANCE   ADC1
 
 /*
 #define LED_STRIP

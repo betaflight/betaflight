@@ -68,7 +68,7 @@ uint8_t adcChannelByTag(ioTag_t ioTag)
 
 uint16_t adcGetChannel(uint8_t channel)
 {
-    if (adcConfig[channel].adcDevice != ADCINVALID) {
+    if (adcConfig[channel].adcDevice != ADCINVALID && adcConfig[channel].enabled) {
         return adcValues[adcConfig[channel].adcDevice][adcConfig[channel].dmaIndex];
     } else {
         return 0;
@@ -81,7 +81,7 @@ void adcInit(drv_adc_config_t *init)
 
 #ifdef VBAT_ADC_PIN
     if (init->enableVBat) {
-        adcConfig[ADC_BATTERY].adcDevice = adcDeviceByInstance(ADC_INSTANCE);
+        adcConfig[ADC_BATTERY].adcDevice = adcDeviceByInstance(VBAT_ADC_INSTANCE);
         if (adcConfig[ADC_BATTERY].adcDevice != ADCINVALID) {
             adcConfig[ADC_BATTERY].tag = IO_TAG(VBAT_ADC_PIN);
         }
@@ -90,7 +90,7 @@ void adcInit(drv_adc_config_t *init)
 
 #ifdef RSSI_ADC_PIN
     if (init->enableRSSI) {
-        adcConfig[ADC_RSSI].adcDevice = adcDeviceByInstance(ADC_INSTANCE);
+        adcConfig[ADC_RSSI].adcDevice = adcDeviceByInstance(RSSI_ADC_INSTANCE);
         if (adcConfig[ADC_RSSI].adcDevice != ADCINVALID) {
             adcConfig[ADC_RSSI].tag = IO_TAG(RSSI_ADC_PIN);
         }
@@ -99,7 +99,7 @@ void adcInit(drv_adc_config_t *init)
 
 #ifdef CURRENT_METER_ADC_PIN
     if (init->enableCurrentMeter) {
-        adcConfig[ADC_CURRENT].adcDevice = adcDeviceByInstance(ADC_INSTANCE);
+        adcConfig[ADC_CURRENT].adcDevice = adcDeviceByInstance(CURRENT_METER_ADC_INSTANCE);
         if (adcConfig[ADC_CURRENT].adcDevice != ADCINVALID) {
             adcConfig[ADC_CURRENT].tag = IO_TAG(CURRENT_METER_ADC_PIN);
         }
@@ -108,7 +108,7 @@ void adcInit(drv_adc_config_t *init)
 
 #ifdef EXTERNAL1_ADC_PIN
     if (init->enableExternal1) {
-        adcConfig[ADC_EXTERNAL1].adcDevice = adcDeviceByInstance(ADC_INSTANCE);
+        adcConfig[ADC_EXTERNAL1].adcDevice = adcDeviceByInstance(EXTERNAL1_ADC_INSTANCE);
         if (adcConfig[ADC_EXTERNAL1].adcDevice != ADCINVALID) {
             adcConfig[ADC_EXTERNAL1].tag = IO_TAG(EXTERNAL1_ADC_PIN);
         }
@@ -117,7 +117,7 @@ void adcInit(drv_adc_config_t *init)
 
 #ifdef AIRSPEED_ADC_PIN
     if (init->enableAirSpeed) {
-        adcConfig[ADC_AIRSPEED].adcDevice = adcDeviceByInstance(ADC_INSTANCE);
+        adcConfig[ADC_AIRSPEED].adcDevice = adcDeviceByInstance(AIRSPEED_ADC_INSTANCE);
         if (adcConfig[ADC_AIRSPEED].adcDevice != ADCINVALID) {
             adcConfig[ADC_AIRSPEED].tag = IO_TAG(AIRSPEED_ADC_PIN);
         }
