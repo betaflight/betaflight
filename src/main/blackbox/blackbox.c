@@ -1245,7 +1245,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("rc_rate", "%d",                          currentControlRateProfile->rcRate8);
         BLACKBOX_PRINT_HEADER_LINE("rc_expo", "%d",                          currentControlRateProfile->rcExpo8);
         BLACKBOX_PRINT_HEADER_LINE("rc_rate_yaw", "%d",                      currentControlRateProfile->rcYawRate8);
-        BLACKBOX_PRINT_HEADER_LINE("rc_yaw_expo", "%d",                      currentControlRateProfile->rcYawExpo8);
+        BLACKBOX_PRINT_HEADER_LINE("rc_expo_yaw", "%d",                      currentControlRateProfile->rcYawExpo8);
         BLACKBOX_PRINT_HEADER_LINE("thr_mid", "%d",                          currentControlRateProfile->thrMid8);
         BLACKBOX_PRINT_HEADER_LINE("thr_expo", "%d",                         currentControlRateProfile->thrExpo8);
         BLACKBOX_PRINT_HEADER_LINE("tpa_rate", "%d",                         currentControlRateProfile->dynThrPID);
@@ -1295,8 +1295,8 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("anti_gravity_gain", "%d",                currentPidProfile->itermAcceleratorGain);
         BLACKBOX_PRINT_HEADER_LINE("setpoint_relaxation_ratio", "%d",        currentPidProfile->setpointRelaxRatio);
         BLACKBOX_PRINT_HEADER_LINE("dterm_setpoint_weight", "%d",            currentPidProfile->dtermSetpointWeight);
-        BLACKBOX_PRINT_HEADER_LINE("yaw_accel_limit", "%d",                  currentPidProfile->yawRateAccelLimit);
-        BLACKBOX_PRINT_HEADER_LINE("accel_limit", "%d",                      currentPidProfile->rateAccelLimit);
+        BLACKBOX_PRINT_HEADER_LINE("acc_limit_yaw", "%d",                    currentPidProfile->yawRateAccelLimit);
+        BLACKBOX_PRINT_HEADER_LINE("acc_limit", "%d",                        currentPidProfile->rateAccelLimit);
         BLACKBOX_PRINT_HEADER_LINE("pidsum_limit", "%d",                     currentPidProfile->pidSumLimit);
         BLACKBOX_PRINT_HEADER_LINE("pidsum_limit_yaw", "%d",                 currentPidProfile->pidSumLimitYaw);
         // End of Betaflight controller parameters
@@ -1322,7 +1322,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("use_unsynced_pwm", "%d",                 motorConfig()->dev.useUnsyncedPwm);
         BLACKBOX_PRINT_HEADER_LINE("motor_pwm_protocol", "%d",               motorConfig()->dev.motorPwmProtocol);
         BLACKBOX_PRINT_HEADER_LINE("motor_pwm_rate", "%d",                   motorConfig()->dev.motorPwmRate);
-        BLACKBOX_PRINT_HEADER_LINE("digital_idle_value", "%d",               motorConfig()->digitalIdleOffsetValue);
+        BLACKBOX_PRINT_HEADER_LINE("dshot_idle_value", "%d",                 motorConfig()->digitalIdleOffsetValue);
         BLACKBOX_PRINT_HEADER_LINE("debug_mode", "%d",                       systemConfig()->debug_mode);
         BLACKBOX_PRINT_HEADER_LINE("features", "%d",                         featureConfig()->enabledFeatures);
 
