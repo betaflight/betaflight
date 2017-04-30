@@ -993,7 +993,7 @@ static void cliAdjustmentRange(char *cmdline)
 static void printMotorMix(uint8_t dumpMask, const motorMixer_t *customMotorMixer, const motorMixer_t *defaultCustomMotorMixer)
 {
     const char *format = "mmix %d %s %s %s %s";
-    char buf0[8];
+    char buf0[FTOA_BUFFER_LENGTH];
     char buf1[FTOA_BUFFER_LENGTH];
     char buf2[FTOA_BUFFER_LENGTH];
     char buf3[FTOA_BUFFER_LENGTH];
