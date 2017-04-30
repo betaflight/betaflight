@@ -982,7 +982,6 @@ STM32F7xx_COMMON_SRC = \
             drivers/bus_i2c_hal.c \
             drivers/dma_stm32f7xx.c \
             drivers/gpio_stm32f7xx.c \
-            drivers/inverter.c \
             drivers/light_ws2811strip_hal.c \
             drivers/bus_spi_hal.c \
             drivers/pwm_output_stm32f7xx.c \
