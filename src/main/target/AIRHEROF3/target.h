@@ -56,6 +56,10 @@
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883
 
+#define PITOT
+#define USE_PITOT_MS4525
+#define USE_PITOT_ADC
+
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
