@@ -37,25 +37,6 @@ SERIAL_DEVICE   ?= $(firstword $(wildcard /dev/ttyUSB*) no-port-found)
 # Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
 FLASH_SIZE ?=
 
-## V                 : Set verbosity level based on the V= parameter
-##                     V=0 Low
-##                     V=1 High
-export AT := @
-
-ifndef V
-export V0    :=
-export V1    := $(AT)
-export STDOUT   :=
-else ifeq ($(V), 0)
-export V0    := $(AT)
-export V1    := $(AT)
-export STDOUT:= "> /dev/null"
-export MAKE  := $(MAKE) --no-print-directory
-else ifeq ($(V), 1)
-export V0    :=
-export V1    :=
-export STDOUT   :=
-endif
 
 ###############################################################################
 # Things that need to be maintained as the source changes
@@ -72,6 +53,11 @@ CMSIS_DIR       = $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS    = $(SRC_DIR) \
                   $(ROOT)/src/main/target
 LINKER_DIR      = $(ROOT)/src/main/target/link
+
+## V                 : Set verbosity level based on the V= parameter
+##                     V=0 Low
+##                     V=1 High
+include $(ROOT)/make/build_verbosity.mk
 
 # Build tools, so we all share the same versions
 # import macros common to all supported build systems
@@ -101,14 +87,96 @@ HSE_VALUE       ?= 8000000
 # used for turning on features like VCP and SDCARD
 FEATURES        =
 
-OFFICIAL_TARGETS  = ALIENFLIGHTF3 ALIENFLIGHTF4 ANYFCF7 BETAFLIGHTF3 BLUEJAYF4 CC3D FURYF4 NAZE REVO SIRINFPV SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3NEO SPRACINGF3MINI STM32F3DISCOVERY
+OFFICIAL_TARGETS  = ALIENFLIGHTF3 ALIENFLIGHTF4 ANYFCF7 BETAFLIGHTF3 BLUEJAYF4 CC3D FURYF4 NAZE REVO SIRINFPV SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3NEO SPRACINGF3MINI STM32F3DISCOVERY SPRACINGF4EVO
 ALT_TARGETS       = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.mk)))))
 OPBL_TARGETS      = $(filter %_OPBL, $(ALT_TARGETS))
+OSD_SLAVE_TARGETS = SPRACINGF3OSD
 
 VALID_TARGETS   = $(dir $(wildcard $(ROOT)/src/main/target/*/target.mk))
 VALID_TARGETS  := $(subst /,, $(subst ./src/main/target/,, $(VALID_TARGETS)))
 VALID_TARGETS  := $(VALID_TARGETS) $(ALT_TARGETS)
 VALID_TARGETS  := $(sort $(VALID_TARGETS))
+
+GROUP_1_TARGETS := \
+	AFROMINI \
+	AIORACERF3 \
+	AIR32 \
+	AIRBOTF4 \
+	AIRBOTF4SD \
+	AIRHEROF3 \
+	ALIENFLIGHTF1 \
+	ALIENFLIGHTF3 \
+	ALIENFLIGHTF4 \
+	ALIENFLIGHTNGF7 \
+	ANYFCF7 \
+	BEEBRAIN \
+	BEEROTORF4 \
+	BETAFLIGHTF3 \
+	BLUEJAYF4 \
+	CC3D \
+	CC3D_OPBL \
+	CHEBUZZF3 \
+	CJMCU \
+	CL_RACINGF4 \
+
+GROUP_2_TARGETS := \
+	COLIBRI \
+	COLIBRI_OPBL \
+	COLIBRI_RACE \
+	DOGE \
+	ELLE0 \
+	F4BY \
+	FISHDRONEF4 \
+	FLIP32F3OSD \
+	FURYF3 \
+	FURYF4 \
+	FURYF7 \
+	IMPULSERCF3 \
+	IRCFUSIONF3 \
+	ISHAPEDF3 \
+	KAKUTEF4 \
+	KISSCC \
+	KIWIF4 \
+
+GROUP_3_TARGETS := \
+	LUX_RACE \
+	LUXV2_RACE \
+	MICROSCISKY \
+	MOTOLAB \
+	MULTIFLITEPICO \
+	NAZE \
+	NERO \
+	NUCLEOF7 \
+	OMNIBUS \
+	OMNIBUSF4 \
+	OMNIBUSF4SD \
+	PIKOBLX \
+	PLUMF4 \
+	PODIUMF4 \
+	RCEXPLORERF3 \
+	REVO \
+	REVO_OPBL \
+
+GROUP_4_TARGETS := \
+	REVOLT \
+	REVONANO \
+	RMDO \
+	SINGULARITY \
+	SIRINFPV \
+	SOULF4 \
+	SPARKY \
+	SPARKY2 \
+	SPRACINGF3 \
+	SPRACINGF3EVO \
+	SPRACINGF3MINI \
+	SPRACINGF3NEO \
+	SPRACINGF3OSD \
+	SPRACINGF4EVO \
+	STM32F3DISCOVERY \
+	TINYBEEF3 \
+
+GROUP_OTHER_TARGETS := $(filter-out $(GROUP_1_TARGETS) $(GROUP_2_TARGETS) $(GROUP_3_TARGETS) $(GROUP_4_TARGETS), $(VALID_TARGETS))
+
 
 ifeq ($(filter $(TARGET),$(ALT_TARGETS)), $(TARGET))
 BASE_TARGET    := $(firstword $(subst /,, $(subst ./src/main/target/,, $(dir $(wildcard $(ROOT)/src/main/target/*/$(TARGET).mk)))))
@@ -121,6 +189,15 @@ ifeq ($(filter $(TARGET),$(OPBL_TARGETS)), $(TARGET))
 OPBL            = yes
 endif
 
+ifeq ($(filter $(TARGET),$(OSD_SLAVE_TARGETS)), $(TARGET))
+# build an OSD SLAVE
+OSD_SLAVE       = yes
+else
+# build an FC
+FC              = yes
+endif
+
+
 # silently ignore if the file is not present. Allows for target specific.
 -include $(ROOT)/src/main/target/$(BASE_TARGET)/target.mk
 
@@ -131,7 +208,7 @@ ifeq ($(filter $(TARGET),$(VALID_TARGETS)),)
 $(error Target '$(TARGET)' is not valid, must be one of $(VALID_TARGETS). Have you prepared a valid target.mk?)
 endif
 
-ifeq ($(filter $(TARGET),$(F1_TARGETS) $(F3_TARGETS) $(F4_TARGETS) $(F7_TARGETS)),)
+ifeq ($(filter $(TARGET),$(F1_TARGETS) $(F3_TARGETS) $(F4_TARGETS) $(F7_TARGETS) $(SITL_TARGETS)),)
 $(error Target '$(TARGET)' has not specified a valid STM group, must be one of F1, F3, F405, F411 or F7x5. Have you prepared a valid target.mk?)
 endif
 
@@ -139,7 +216,7 @@ endif
 256K_TARGETS  = $(F3_TARGETS)
 512K_TARGETS  = $(F411_TARGETS) $(F446_TARGETS) $(F7X2RE_TARGETS) $(F7X5XE_TARGETS)
 1024K_TARGETS = $(F405_TARGETS) $(F7X5XG_TARGETS) $(F7X6XG_TARGETS)
-2048K_TARGETS = $(F7X5XI_TARGETS)
+2048K_TARGETS = $(F7X5XI_TARGETS) $(SITL_TARGETS)
 
 # Configure default flash sizes for the targets (largest size specified gets hit first) if flash not specified already.
 ifeq ($(FLASH_SIZE),)
@@ -468,6 +545,26 @@ TARGET_FLAGS    = -D$(TARGET)
 
 # End F7 targets
 #
+# Start SITL targets
+else ifeq ($(TARGET),$(filter $(TARGET), $(SITL_TARGETS)))
+
+INCLUDE_DIRS    := $(INCLUDE_DIRS) \
+                   $(ROOT)/lib/main/dyad
+
+SITL_SRC        := $(ROOT)/lib/main/dyad/dyad.c
+
+#Flags
+ARCH_FLAGS      =
+DEVICE_FLAGS    =
+LD_SCRIPT       = src/main/target/SITL/parameter_group.ld
+STARTUP_SRC     =
+
+TARGET_FLAGS    = -D$(TARGET)
+
+ARM_SDK_PREFIX  =
+
+# End SITL targets
+#
 # Start F1 targets
 else
 
@@ -575,52 +672,69 @@ COMMON_SRC = \
             drivers/bus_i2c_soft.c \
             drivers/bus_spi.c \
             drivers/bus_spi_soft.c \
+            drivers/buttons.c \
             drivers/display.c \
             drivers/exti.c \
-            drivers/gyro_sync.c \
             drivers/io.c \
             drivers/light_led.c \
             drivers/resource.c \
+            drivers/rcc.c \
+            drivers/serial.c \
+            drivers/serial_uart.c \
+            drivers/sound_beeper.c \
+            drivers/stack_check.c \
+            drivers/system.c \
+            drivers/timer.c \
+            drivers/transponder_ir.c \
+            drivers/transponder_ir_arcitimer.c \
+            drivers/transponder_ir_ilap.c \
+            fc/config.c \
+            fc/fc_dispatch.c \
+            fc/fc_hardfaults.c \
+            fc/fc_msp.c \
+            fc/fc_tasks.c \
+            fc/runtime_config.c \
+            io/beeper.c \
+            io/serial.c \
+            io/statusindicator.c \
+            io/transponder_ir.c \
+            msp/msp_serial.c \
+            scheduler/scheduler.c \
+            sensors/battery.c \
+            sensors/current.c \
+            sensors/voltage.c \
+
+OSD_SLAVE_SRC = \
+            io/displayport_max7456.c \
+            osd_slave/osd_slave_init.c \
+            io/osd_slave.c
+
+FC_SRC = \
+            fc/fc_init.c \
+            fc/controlrate_profile.c \
+            drivers/gyro_sync.c \
             drivers/rx_nrf24l01.c \
             drivers/rx_spi.c \
             drivers/rx_xn297.c \
             drivers/pwm_esc_detect.c \
             drivers/pwm_output.c \
-            drivers/rcc.c \
             drivers/rx_pwm.c \
-            drivers/serial.c \
-            drivers/serial_uart.c \
             drivers/serial_softserial.c \
-            drivers/sound_beeper.c \
-            drivers/stack_check.c \
-            drivers/system.c \
-            drivers/timer.c \
-            fc/config.c \
-            fc/controlrate_profile.c \
-            fc/fc_init.c \
-            fc/fc_dispatch.c \
-            fc/fc_hardfaults.c \
             fc/fc_core.c \
             fc/fc_rc.c \
-            fc/fc_msp.c \
-            fc/fc_tasks.c \
             fc/rc_adjustments.c \
             fc/rc_controls.c \
-            fc/runtime_config.c \
             fc/cli.c \
-            flight/altitudehold.c \
+            fc/settings.c \
+            flight/altitude.c \
             flight/failsafe.c \
             flight/imu.c \
             flight/mixer.c \
             flight/pid.c \
             flight/servos.c \
-            io/beeper.c \
-            io/serial.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
-            io/statusindicator.c \
-            msp/msp_serial.c \
             rx/ibus.c \
             rx/jetiexbus.c \
             rx/msp.c \
@@ -638,11 +752,7 @@ COMMON_SRC = \
             rx/sumd.c \
             rx/sumh.c \
             rx/xbus.c \
-            scheduler/scheduler.c \
             sensors/acceleration.c \
-            sensors/battery.c \
-            sensors/current.c \
-            sensors/voltage.c \
             sensors/boardalignment.c \
             sensors/compass.c \
             sensors/gyro.c \
@@ -657,7 +767,6 @@ COMMON_SRC = \
             cms/cms_menu_ledstrip.c \
             cms/cms_menu_misc.c \
             cms/cms_menu_osd.c \
-            cms/cms_menu_vtx.c \
             common/colorconversion.c \
             common/gps_conversion.c \
             drivers/display_ug2864hsweg01.c \
@@ -665,7 +774,6 @@ COMMON_SRC = \
             drivers/serial_escserial.c \
             drivers/sonar_hcsr04.c \
             drivers/vtx_common.c \
-            drivers/transponder_ir.c \
             flight/navigation.c \
             io/dashboard.c \
             io/displayport_max7456.c \
@@ -674,7 +782,6 @@ COMMON_SRC = \
             io/gps.c \
             io/ledstrip.c \
             io/osd.c \
-            io/transponder_ir.c \
             sensors/sonar.c \
             sensors/barometer.c \
             telemetry/telemetry.c \
@@ -689,11 +796,21 @@ COMMON_SRC = \
             telemetry/ibus_shared.c \
             sensors/esc_sensor.c \
             io/vtx_string.c \
+            io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c \
-            io/vtx.c \
+            io/vtx_control.c
+            
+COMMON_DEVICE_SRC = \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC)
+
+ifeq ($(OSD_SLAVE),yes)
+TARGET_FLAGS := -DUSE_OSD_SLAVE $(TARGET_FLAGS)
+COMMON_SRC := $(COMMON_SRC) $(OSD_SLAVE_SRC) $(COMMON_DEVICE_SRC)
+else
+COMMON_SRC := $(COMMON_SRC) $(FC_SRC) $(COMMON_DEVICE_SRC)
+endif
 
 
 SPEED_OPTIMISED_SRC := ""
@@ -765,11 +882,18 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             io/dashboard.c \
             io/displayport_max7456.c \
             io/osd.c \
+            io/osd_slave.c
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/serial_escserial.c \
             drivers/vtx_common.c \
-            io/cli.c \
+            fc/fc_init.c \
+            fc/cli.c \
+            fc/settings.c \
+            config/config_eeprom.c \
+            config/feature.c \
+            config/parameter_group.c \
+            config/config_streamer.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
@@ -781,7 +905,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             cms/cms_menu_ledstrip.c \
             cms/cms_menu_misc.c \
             cms/cms_menu_osd.c \
-            cms/cms_menu_vtx.c \
+            io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c
 endif #F3
@@ -840,7 +964,7 @@ STM32F30x_COMMON_SRC = \
 
 STM32F4xx_COMMON_SRC = \
             target/system_stm32f4xx.c \
-            drivers/accgyro_mpu.c \
+            drivers/accgyro/accgyro_mpu.c \
             drivers/adc_stm32f4xx.c \
             drivers/bus_i2c_stm32f10x.c \
             drivers/dma_stm32f4xx.c \
@@ -854,12 +978,13 @@ STM32F4xx_COMMON_SRC = \
 
 STM32F7xx_COMMON_SRC = \
             target/system_stm32f7xx.c \
-            drivers/accgyro_mpu.c \
+            drivers/accgyro/accgyro_mpu.c \
             drivers/adc_stm32f7xx.c \
             drivers/bus_i2c_hal.c \
             drivers/dma_stm32f7xx.c \
             drivers/gpio_stm32f7xx.c \
             drivers/inverter.c \
+            drivers/light_ws2811strip_hal.c \
             drivers/bus_spi_hal.c \
             drivers/pwm_output_stm32f7xx.c \
             drivers/timer_hal.c \
@@ -873,6 +998,19 @@ F7EXCLUDES = drivers/bus_spi.c \
             drivers/timer.c \
             drivers/serial_uart.c
 
+SITLEXCLUDES = \
+            drivers/adc.c \
+            drivers/bus_spi.c \
+            drivers/bus_i2c.c \
+            drivers/dma.c \
+            drivers/pwm_output.c \
+            drivers/timer.c \
+            drivers/light_led.c \
+            drivers/system.c \
+            drivers/rcc.c \
+            drivers/serial_uart.c \
+
+
 # check if target.mk supplied
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
 SRC := $(STARTUP_SRC) $(STM32F4xx_COMMON_SRC) $(TARGET_SRC) $(VARIANT_SRC)
@@ -882,6 +1020,8 @@ else ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
 SRC := $(STARTUP_SRC) $(STM32F30x_COMMON_SRC) $(TARGET_SRC) $(VARIANT_SRC)
 else ifeq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
 SRC := $(STARTUP_SRC) $(STM32F10x_COMMON_SRC) $(TARGET_SRC) $(VARIANT_SRC)
+else ifeq ($(TARGET),$(filter $(TARGET),$(SITL_TARGETS)))
+SRC := $(TARGET_SRC) $(SITL_SRC) $(VARIANT_SRC)
 endif
 
 ifneq ($(filter $(TARGET),$(F4_TARGETS) $(F7_TARGETS)),)
@@ -914,6 +1054,11 @@ SRC += $(COMMON_SRC)
 #excludes
 ifeq ($(TARGET),$(filter $(TARGET),$(F7_TARGETS)))
 SRC   := $(filter-out ${F7EXCLUDES}, $(SRC))
+endif
+
+#SITL excludes
+ifeq ($(TARGET),$(filter $(TARGET),$(SITL_TARGETS)))
+SRC   := $(filter-out ${SITLEXCLUDES}, $(SRC))
 endif
 
 ifneq ($(filter SDCARD,$(FEATURES)),)
@@ -966,6 +1111,13 @@ LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_DEFAULT)
 
 else ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
 OPTIMISE_DEFAULT    := -O2
+OPTIMISE_SPEED      := -Ofast
+OPTIMISE_SIZE       := -Os
+
+LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
+
+else ifeq ($(TARGET),$(filter $(TARGET),$(SITL_TARGETS)))
+OPTIMISE_DEFAULT    := -Ofast
 OPTIMISE_SPEED      := -Ofast
 OPTIMISE_SIZE       := -Os
 
@@ -1030,6 +1182,24 @@ LDFLAGS     = -lm \
               -Wl,--cref \
               -Wl,--no-wchar-size-warning \
               -T$(LD_SCRIPT)
+
+#SITL compile
+ifeq ($(TARGET),$(filter $(TARGET),$(SITL_TARGETS)))
+LDFLAGS     = \
+              -lm \
+              -lpthread \
+              -lc \
+              -lrt \
+              $(ARCH_FLAGS) \
+              $(LTO_FLAGS) \
+              $(DEBUG_FLAGS) \
+              -static \
+              -static-libgcc \
+              -Wl,-gc-sections,-Map,$(TARGET_MAP) \
+              -Wl,-L$(LINKER_DIR) \
+              -Wl,--cref \
+              -T$(LD_SCRIPT)
+endif
 
 ###############################################################################
 # No user-serviceable parts below
@@ -1102,16 +1272,33 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 	$(V1) echo "%% $(notdir $<)" "$(STDOUT)"
 	$(V1) $(CROSS_CC) -c -o $@ $(ASFLAGS) $<
 
-## official            : Build all official (travis) targets
-official: $(OFFICIAL_TARGETS)
 
 ## all               : Build all valid targets
 all: $(VALID_TARGETS)
 
+## official          : Build all official (travis) targets
+official: $(OFFICIAL_TARGETS)
+
+## targets-group-1   : build some targets
+targets-group-1: $(GROUP_1_TARGETS)
+
+## targets-group-2   : build some targets
+targets-group-2: $(GROUP_2_TARGETS)
+
+## targets-group-3   : build some targets
+targets-group-3: $(GROUP_3_TARGETS)
+
+## targets-group-3   : build some targets
+targets-group-4: $(GROUP_4_TARGETS)
+
+## targets-group-rest: build the rest of the targets (not listed in group 1, 2 or 3)
+targets-group-rest: $(GROUP_OTHER_TARGETS)
+
+
 $(VALID_TARGETS):
 		$(V0) echo "" && \
 		echo "Building $@" && \
-		$(MAKE) binary hex TARGET=$@ && \
+		time $(MAKE) binary hex TARGET=$@ && \
 		echo "Building $@ succeeded."
 
 
@@ -1189,6 +1376,10 @@ $(TOOLS_DIR):
 $(BUILD_DIR):
 	mkdir -p $@
 
+## version           : print firmware version
+version:
+	@echo $(FC_VER)
+
 ## help              : print this help message and exit
 help: Makefile make/tools.mk
 	$(V0) @echo ""
@@ -1205,9 +1396,15 @@ help: Makefile make/tools.mk
 
 ## targets           : print a list of all valid target platforms (for consumption by scripts)
 targets:
-	$(V0) @echo "Valid targets: $(VALID_TARGETS)"
-	$(V0) @echo "Target:        $(TARGET)"
-	$(V0) @echo "Base target:   $(BASE_TARGET)"
+	$(V0) @echo "Valid targets:      $(VALID_TARGETS)"
+	$(V0) @echo "Target:             $(TARGET)"
+	$(V0) @echo "Base target:        $(BASE_TARGET)"
+	$(V0) @echo "Official targets:   $(OFFICIAL_TARGETS)"
+	$(V0) @echo "targets-group-1:    $(GROUP_1_TARGETS)"
+	$(V0) @echo "targets-group-2:    $(GROUP_2_TARGETS)"
+	$(V0) @echo "targets-group-3:    $(GROUP_3_TARGETS)"
+	$(V0) @echo "targets-group-4:    $(GROUP_4_TARGETS)"
+	$(V0) @echo "targets-group-rest: $(GROUP_OTHER_TARGETS)"
 
 ## test              : run the cleanflight test suite
 ## junittest         : run the cleanflight test suite, producing Junit XML result files.

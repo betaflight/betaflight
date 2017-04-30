@@ -34,9 +34,9 @@ typedef enum {
 
 #include "common/utils.h"
 
-#include "nvic.h"
-#include "system.h"
-#include "io.h"
+#include "drivers/nvic.h"
+#include "drivers/system.h"
+#include "drivers/io.h"
 #include "timer.h"
 
 #include "serial.h"

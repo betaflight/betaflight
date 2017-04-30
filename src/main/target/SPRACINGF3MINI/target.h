@@ -26,6 +26,10 @@
 #else
 #define TARGET_BOARD_IDENTIFIER "SRFM"
 
+#ifndef SPRACINGF3MINI_REV
+#define SPRACINGF3MINI_REV 2
+#endif
+
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
 #define LED0                    PB3
@@ -176,7 +180,6 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
 #ifndef TINYBEEF3
-#define DEFAULT_FEATURES        FEATURE_BLACKBOX
 
 #define BUTTONS
 #define BUTTON_A_PIN            PB1

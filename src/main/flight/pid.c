@@ -32,7 +32,8 @@
 #include "config/config_reset.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
-#include "config/config_profile.h"
+
+#include "drivers/sound_beeper.h"
 
 #include "fc/fc_core.h"
 #include "fc/fc_rc.h"
@@ -51,13 +52,7 @@
 uint32_t targetPidLooptime;
 static bool pidStabilisationEnabled;
 
-float axisPIDf[3];
-
-#ifdef BLACKBOX
-int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
-#endif
-
-static float previousGyroIf[3];
+float axisPID_P[3], axisPID_I[3], axisPID_D[3];
 
 static float dT;
 
@@ -81,10 +76,10 @@ void resetPidProfile(pidProfile_t *pidProfile)
     RESET_CONFIG(const pidProfile_t, pidProfile,
         .P8[ROLL] = 44,
         .I8[ROLL] = 40,
-        .D8[ROLL] = 20,
+        .D8[ROLL] = 30,
         .P8[PITCH] = 58,
         .I8[PITCH] = 50,
-        .D8[PITCH] = 22,
+        .D8[PITCH] = 35,
         .P8[YAW] = 70,
         .I8[YAW] = 45,
         .D8[YAW] = 20,
@@ -102,7 +97,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .D8[PIDNAVR] = 83,  // NAV_D * 1000,
         .P8[PIDLEVEL] = 50,
         .I8[PIDLEVEL] = 50,
-        .D8[PIDLEVEL] = 100,
+        .D8[PIDLEVEL] = 75,
         .P8[PIDMAG] = 40,
         .P8[PIDVEL] = 55,
         .I8[PIDVEL] = 55,
@@ -120,12 +115,20 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .pidAtMinThrottle = PID_STABILISATION_ON,
         .levelAngleLimit = 55,
         .levelSensitivity = 55,
-        .setpointRelaxRatio = 20,
-        .dtermSetpointWeight = 100,
-        .yawRateAccelLimit = 10.0f,
-        .rateAccelLimit = 0.0f,
+        .setpointRelaxRatio = 100,
+        .dtermSetpointWeight = 60,
+        .yawRateAccelLimit = 100,
+        .rateAccelLimit = 0,
         .itermThrottleThreshold = 350,
-        .itermAcceleratorGain = 1.0f
+        .itermAcceleratorGain = 1000,
+        .crash_time = 500,          // 500ms
+        .crash_recovery_angle = 10, //  10 degrees
+        .crash_recovery_rate = 100, // 100 degrees/second
+        .crash_dthreshold = 50,     //  50 degrees/second/second
+        .crash_gthreshold = 200,    // 200 degrees/second
+        .crash_recovery = PID_CRASH_RECOVERY_OFF, // off by default
+        .horizon_tilt_effect = 75,
+        .horizon_tilt_expert_mode = false
     );
 }
 
@@ -145,7 +148,7 @@ void pidSetTargetLooptime(uint32_t pidLooptime)
 void pidResetErrorGyroState(void)
 {
     for (int axis = 0; axis < 3; axis++) {
-        previousGyroIf[axis] = 0.0f;
+        axisPID_I[axis] = 0.0f;
     }
 }
 
@@ -235,7 +238,14 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 static float Kp[3], Ki[3], Kd[3], maxVelocity[3];
 static float relaxFactor;
 static float dtermSetpointWeight;
-static float levelGain, horizonGain, horizonTransition, ITermWindupPoint, ITermWindupPointInv;
+static float levelGain, horizonGain, horizonTransition, horizonCutoffDegrees,
+             horizonFactorRatio, ITermWindupPoint, ITermWindupPointInv;
+static uint8_t horizonTiltExpertMode;
+static timeDelta_t crashTimeLimitUs;
+static int32_t crashRecoveryAngleDeciDegrees;
+static float crashRecoveryRate;
+static float crashDtermThreshold;
+static float crashGyroThreshold;
 
 void pidInitConfig(const pidProfile_t *pidProfile) {
     for(int axis = FD_ROLL; axis <= FD_YAW; axis++) {
@@ -247,11 +257,19 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
     relaxFactor = 1.0f / (pidProfile->setpointRelaxRatio / 100.0f);
     levelGain = pidProfile->P8[PIDLEVEL] / 10.0f;
     horizonGain = pidProfile->I8[PIDLEVEL] / 10.0f;
-    horizonTransition = 100.0f / pidProfile->D8[PIDLEVEL];
-    maxVelocity[FD_ROLL] = maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 1000 * dT;
-    maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 1000 * dT;
+    horizonTransition = (float)pidProfile->D8[PIDLEVEL];
+    horizonTiltExpertMode = pidProfile->horizon_tilt_expert_mode;
+    horizonCutoffDegrees = (175 - pidProfile->horizon_tilt_effect) * 1.8f;
+    horizonFactorRatio = (100 - pidProfile->horizon_tilt_effect) * 0.01f;
+    maxVelocity[FD_ROLL] = maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 100 * dT;
+    maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 100 * dT;
     ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
     ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
+    crashTimeLimitUs = pidProfile->crash_time * 1000;
+    crashRecoveryAngleDeciDegrees = pidProfile->crash_recovery_angle * 10;
+    crashRecoveryRate = pidProfile->crash_recovery_rate;
+    crashGyroThreshold = pidProfile->crash_gthreshold;
+    crashDtermThreshold = pidProfile->crash_dthreshold;
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -259,27 +277,78 @@ void pidInit(const pidProfile_t *pidProfile)
     pidSetTargetLooptime(gyro.targetLooptime * pidConfig()->pid_process_denom); // Initialize pid looptime
     pidInitFilters(pidProfile);
     pidInitConfig(pidProfile);
+    pidInitMixer(pidProfile);
 }
 
-static float calcHorizonLevelStrength(void) {
-    float horizonLevelStrength = 0.0f;
-    if (horizonTransition > 0.0f) {
-        const float mostDeflectedPos = MAX(getRcDeflectionAbs(FD_ROLL), getRcDeflectionAbs(FD_PITCH));
-        // Progressively turn off the horizon self level strength as the stick is banged over
-        horizonLevelStrength = constrainf(1 - mostDeflectedPos * horizonTransition, 0, 1);
+// calculates strength of horizon leveling; 0 = none, 1.0 = most leveling
+static float calcHorizonLevelStrength() {
+    // start with 1.0 at center stick, 0.0 at max stick deflection:
+    float horizonLevelStrength = 1.0f -
+             MAX(getRcDeflectionAbs(FD_ROLL), getRcDeflectionAbs(FD_PITCH));
+
+    // 0 at level, 90 at vertical, 180 at inverted (degrees):
+    const float currentInclination = MAX(ABS(attitude.values.roll),
+                                        ABS(attitude.values.pitch)) / 10.0f;
+
+    // horizonTiltExpertMode:  0 = leveling always active when sticks centered,
+    //                         1 = leveling can be totally off when inverted
+    if (horizonTiltExpertMode) {
+        if (horizonTransition > 0 && horizonCutoffDegrees > 0) {
+                    // if d_level > 0 and horizonTiltEffect < 175
+            // horizonCutoffDegrees: 0 to 125 => 270 to 90 (represents where leveling goes to zero)
+            // inclinationLevelRatio (0.0 to 1.0) is smaller (less leveling)
+            //  for larger inclinations; 0.0 at horizonCutoffDegrees value:
+            const float inclinationLevelRatio = constrainf(
+                    (horizonCutoffDegrees-currentInclination) / horizonCutoffDegrees, 0, 1);
+            // apply configured horizon sensitivity:
+                // when stick is near center (horizonLevelStrength ~= 1.0)
+                //  H_sensitivity value has little effect,
+                // when stick is deflected (horizonLevelStrength near 0.0)
+                //  H_sensitivity value has more effect:
+            horizonLevelStrength = (horizonLevelStrength - 1) *
+                    100 / horizonTransition + 1;
+            // apply inclination ratio, which may lower leveling
+            //  to zero regardless of stick position:
+            horizonLevelStrength *= inclinationLevelRatio;
+        }
+        else  // d_level=0 or horizon_tilt_effect>=175 means no leveling
+          horizonLevelStrength = 0;
+    } else {  // horizon_tilt_expert_mode = 0 (leveling always active when sticks centered)
+        float sensitFact;
+        if (horizonFactorRatio < 1.01f) {   // if horizonTiltEffect > 0
+            // horizonFactorRatio: 1.0 to 0.0 (larger means more leveling)
+            // inclinationLevelRatio (0.0 to 1.0) is smaller (less leveling)
+            //  for larger inclinations, goes to 1.0 at inclination==level:
+            const float inclinationLevelRatio = (180-currentInclination)/180 *
+                               (1.0f-horizonFactorRatio) + horizonFactorRatio;
+            // apply ratio to configured horizon sensitivity:
+            sensitFact = horizonTransition * inclinationLevelRatio;
+        }
+        else   // horizonTiltEffect=0 for "old" functionality
+            sensitFact = horizonTransition;
+
+        if (sensitFact <= 0) {           // zero means no leveling
+            horizonLevelStrength = 0;
+        } else {
+            // when stick is near center (horizonLevelStrength ~= 1.0)
+            //  sensitFact value has little effect,
+            // when stick is deflected (horizonLevelStrength near 0.0)
+            //  sensitFact value has more effect:
+            horizonLevelStrength = ((horizonLevelStrength - 1) * (100 / sensitFact)) + 1;
+        }
     }
-    return horizonLevelStrength;
+    return constrainf(horizonLevelStrength, 0, 1);
 }
 
 static float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint) {
     // calculate error angle and limit the angle to the max inclination
-    float errorAngle = pidProfile->levelSensitivity * getRcDeflection(axis);
+    float angle = pidProfile->levelSensitivity * getRcDeflection(axis);
 #ifdef GPS
-    errorAngle += GPS_angle[axis];
+    angle += GPS_angle[axis];
 #endif
-    errorAngle = constrainf(errorAngle, -pidProfile->levelAngleLimit, pidProfile->levelAngleLimit);
-    errorAngle = errorAngle - ((attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f);
-    if(FLIGHT_MODE(ANGLE_MODE)) {
+    angle = constrainf(angle, -pidProfile->levelAngleLimit, pidProfile->levelAngleLimit);
+    const float errorAngle = angle - ((attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f);
+    if (FLIGHT_MODE(ANGLE_MODE)) {
         // ANGLE mode - control is angle based, so control loop is needed
         currentPidSetpoint = errorAngle * levelGain;
     } else {
@@ -304,11 +373,13 @@ static float accelerationLimit(int axis, float currentPidSetpoint) {
 
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
 // Based on 2DOF reference design (matlab)
-void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim)
+void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, timeUs_t currentTimeUs)
 {
     static float previousRateError[2];
     const float tpaFactor = getThrottlePIDAttenuation();
     const float motorMixRange = getMotorMixRange();
+    static bool inCrashRecoveryMode = false;
+    static timeUs_t crashDetectedAtUs;
 
     // Dynamic ki component to gradually scale back integration when above windup point
     const float dynKi = MIN((1.0f - motorMixRange) * ITermWindupPointInv, 1.0f);
@@ -325,6 +396,21 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim, currentPidSetpoint);
         }
 
+        if (inCrashRecoveryMode && axis != FD_YAW) {
+            // self-level - errorAngle is deviation from horizontal
+            const float errorAngle =  -(attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f;
+            currentPidSetpoint = errorAngle * levelGain;
+            if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeLimitUs
+                || (motorMixRange < 1.0f
+                       && ABS(attitude.raw[FD_ROLL] - angleTrim->raw[FD_ROLL]) < crashRecoveryAngleDeciDegrees
+                       && ABS(attitude.raw[FD_PITCH] - angleTrim->raw[FD_PITCH]) < crashRecoveryAngleDeciDegrees
+                       && ABS(gyro.gyroADCf[FD_ROLL]) < crashRecoveryRate
+                       && ABS(gyro.gyroADCf[FD_PITCH]) < crashRecoveryRate)
+                       ) {
+                inCrashRecoveryMode = false;
+                BEEP_OFF;
+            }
+        }
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
 
         // --------low-level gyro-based PID based on 2DOF PID controller. ----------
@@ -335,56 +421,54 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         const float errorRate = currentPidSetpoint - gyroRate;       // r - y
 
         // -----calculate P component and add Dynamic Part based on stick input
-        float PTerm = Kp[axis] * errorRate * tpaFactor;
+        axisPID_P[axis] = Kp[axis] * errorRate * tpaFactor;
         if (axis == FD_YAW) {
-            PTerm = ptermYawFilterApplyFn(ptermYawFilter, PTerm);
+            axisPID_P[axis] = ptermYawFilterApplyFn(ptermYawFilter, axisPID_P[axis]);
         }
 
         // -----calculate I component
-        float ITerm = previousGyroIf[axis];
-        if (motorMixRange < 1.0f) {
-            // Only increase ITerm if motor output is not saturated
-            ITerm += Ki[axis] * errorRate * dT * dynKi * itermAccelerator;
-            previousGyroIf[axis] = ITerm;
+        const float ITerm = axisPID_I[axis];
+        const float ITermNew = ITerm + Ki[axis] * errorRate * dT * dynKi * itermAccelerator;
+        const bool outputSaturated = mixerIsOutputSaturated(axis, errorRate);
+        if (outputSaturated == false || ABS(ITermNew) < ABS(ITerm)) {
+            // Only increase ITerm if output is not saturated
+            axisPID_I[axis] = ITermNew;
         }
 
         // -----calculate D component
-        if (axis == FD_YAW) {
-            // no DTerm for yaw axis
-            // -----calculate total PID output
-            axisPIDf[FD_YAW] = PTerm + ITerm;
-#ifdef BLACKBOX
-            axisPID_P[FD_YAW] = PTerm;
-            axisPID_I[FD_YAW] = ITerm;
-            axisPID_D[FD_YAW] = 0;
-#endif
-        } else {
+        if (axis != FD_YAW) {
             float dynC = dtermSetpointWeight;
             if (pidProfile->setpointRelaxRatio < 100) {
                 dynC *= MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f);
             }
             const float rD = dynC * currentPidSetpoint - gyroRate;    // cr - y
             // Divide rate change by dT to get differential (ie dr/dt)
-            const float delta = (rD - previousRateError[axis]) / dT;
+            float delta = (rD - previousRateError[axis]) / dT;
             previousRateError[axis] = rD;
 
-            float DTerm = Kd[axis] * delta * tpaFactor;
-            DEBUG_SET(DEBUG_DTERM_FILTER, axis, DTerm);
+            // if crash recovery is on check for a crash
+            if (pidProfile->crash_recovery) {
+                if (motorMixRange >= 1.0f && ABS(delta) > crashDtermThreshold && ABS(errorRate) > crashGyroThreshold) {
+                    inCrashRecoveryMode = true;
+                    crashDetectedAtUs = currentTimeUs;
+                    if (pidProfile->crash_recovery == PID_CRASH_RECOVERY_BEEP) {
+                        BEEP_ON;
+                    }
+                }
+            }
 
             // apply filters
-            DTerm = dtermNotchFilterApplyFn(dtermFilterNotch[axis], DTerm);
-            DTerm = dtermLpfApplyFn(dtermFilterLpf[axis], DTerm);
+            delta = dtermNotchFilterApplyFn(dtermFilterNotch[axis], delta);
+            delta = dtermLpfApplyFn(dtermFilterLpf[axis], delta);
 
-            // -----calculate total PID output
-            axisPIDf[axis] = PTerm + ITerm + DTerm;
-#ifdef BLACKBOX
-            axisPID_P[axis] = PTerm;
-            axisPID_I[axis] = ITerm;
-            axisPID_D[axis] = DTerm;
-#endif
+            axisPID_D[axis] = Kd[axis] * delta * tpaFactor;
         }
 
         // Disable PID control at zero throttle
-        if (!pidStabilisationEnabled) axisPIDf[axis] = 0;
+        if (!pidStabilisationEnabled) {
+            axisPID_P[axis] = 0;
+            axisPID_I[axis] = 0;
+            axisPID_D[axis] = 0;
+        }
     }
 }

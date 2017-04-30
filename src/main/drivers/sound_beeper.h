@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "io_types.h"
+#include "drivers/io_types.h"
 
 #ifdef BEEPER
 #define BEEP_TOGGLE              systemBeepToggle()
@@ -33,6 +33,7 @@ typedef struct beeperDevConfig_s {
     ioTag_t ioTag;
     uint8_t isInverted;
     uint8_t isOpenDrain;
+    uint16_t frequency;
 } beeperDevConfig_t;
 
 void systemBeep(bool on);

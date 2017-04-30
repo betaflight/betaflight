@@ -29,7 +29,6 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
-#include "config/config_profile.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -37,6 +36,7 @@
 #include "drivers/light_led.h"
 #include "drivers/system.h"
 #include "drivers/gyro_sync.h"
+#include "drivers/transponder_ir.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
@@ -64,15 +64,14 @@
 #include "io/serial.h"
 #include "io/statusindicator.h"
 #include "io/transponder_ir.h"
-#include "io/vtx.h"
-
+#include "io/vtx_control.h"
 #include "rx/rx.h"
 
 #include "scheduler/scheduler.h"
 
 #include "telemetry/telemetry.h"
 
-#include "flight/altitudehold.h"
+#include "flight/altitude.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -82,6 +81,13 @@
 
 
 // June 2013     V2.2-dev
+
+#ifdef VTX_RTC6705
+bool canUpdateVTX(void);
+#define VTX_IF_READY if (canUpdateVTX())
+#else
+#define VTX_IF_READY
+#endif
 
 enum {
     ALIGN_GYRO = 0,
@@ -171,11 +177,11 @@ void mwDisarm(void)
         DISABLE_ARMING_FLAG(ARMED);
 
 #ifdef BLACKBOX
-        if (feature(FEATURE_BLACKBOX)) {
-            finishBlackbox();
+        if (blackboxConfig()->device) {
+            blackboxFinish();
         }
 #endif
-
+        BEEP_OFF;
         beeper(BEEPER_DISARMING);      // emit disarm tone
     }
 }
@@ -273,7 +279,7 @@ void updateMagHold(void)
             dif += 360;
         if (dif >= +180)
             dif -= 360;
-        dif *= -rcControlsConfig()->yaw_control_direction;
+        dif *= -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
         if (STATE(SMALL_ANGLE))
             rcCommand[YAW] -= dif * currentPidProfile->P8[PIDMAG] / 30;    // 18 deg
     } else
@@ -470,23 +476,27 @@ void processRx(timeUs_t currentTimeUs)
     }
 #endif
 
-#ifdef VTX
+#ifdef VTX_CONTROL
     vtxUpdateActivatedChannel();
+
+    VTX_IF_READY {
+        handleVTXControlButton();
+    }
 #endif
 }
 
-static void subTaskPidController(void)
+static void subTaskPidController(timeUs_t currentTimeUs)
 {
-    uint32_t startTime;
+    uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
     // PID - note this is function pointer set by setPIDController()
-    pidController(currentPidProfile, &accelerometerConfig()->accelerometerTrims);
+    pidController(currentPidProfile, &accelerometerConfig()->accelerometerTrims, currentTimeUs);
     DEBUG_SET(DEBUG_PIDLOOP, 1, micros() - startTime);
 }
 
 static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 {
-    uint32_t startTime;
+    uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
 
     // Read out gyro temperature if used for telemmetry
@@ -545,8 +555,8 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 #endif
 
 #ifdef BLACKBOX
-    if (!cliMode && feature(FEATURE_BLACKBOX)) {
-        handleBlackbox(currentTimeUs);
+    if (!cliMode && blackboxConfig()->device) {
+        blackboxUpdate(currentTimeUs);
     }
 #else
     UNUSED(currentTimeUs);
@@ -560,7 +570,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 
 static void subTaskMotorUpdate(void)
 {
-    uint32_t startTime;
+    uint32_t startTime = 0;
     if (debugMode == DEBUG_CYCLETIME) {
         startTime = micros();
         static uint32_t previousMotorUpdateTime;
@@ -602,6 +612,10 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     static bool runTaskMainSubprocesses;
     static uint8_t pidUpdateCountdown;
 
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_GYROPID_SYNC)
+    if(lockMainPID() != 0) return;
+#endif
+
     if (debugMode == DEBUG_CYCLETIME) {
         debug[0] = getTaskDeltaTime(TASK_SELF);
         debug[1] = averageSystemLoadPercent;
@@ -617,7 +631,7 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     // 1 - pidController()
     // 2 - subTaskMainSubprocesses()
     // 3 - subTaskMotorUpdate()
-    uint32_t startTime;
+    uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
     gyroUpdate();
     DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - startTime);
@@ -626,7 +640,7 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
         pidUpdateCountdown--;
     } else {
         pidUpdateCountdown = setPidUpdateCountDown();
-        subTaskPidController();
+        subTaskPidController(currentTimeUs);
         subTaskMotorUpdate();
         runTaskMainSubprocesses = true;
     }

@@ -23,14 +23,12 @@
 
 #include "build/build_config.h"
 
-#include "drivers/system.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/accgyro/accgyro_mpu.h"
+#include "drivers/accgyro/accgyro_mpu6500.h"
 #include "drivers/bus_spi.h"
-#include "drivers/sensor.h"
 #include "drivers/io.h"
-#include "drivers/exti.h"
-#include "drivers/accgyro.h"
-#include "drivers/accgyro_mpu.h"
-#include "drivers/accgyro_mpu6500.h"
+#include "drivers/system.h"
 
 #include "hardware_revision.h"
 
@@ -104,26 +102,18 @@ void updateHardwareRevision(void)
 #endif
 }
 
-const extiConfig_t *selectMPUIntExtiConfigByHardwareRevision(void)
+ioTag_t selectMPUIntExtiConfigByHardwareRevision(void)
 {
-    // MPU_INT output on rev5 hardware PC13
-    static const extiConfig_t nazeRev5MPUIntExtiConfig = {
-        .tag = IO_TAG(PC13)
-    };
 
 #ifdef AFROMINI
-    return &nazeRev5MPUIntExtiConfig;
+    return IO_TAG(PC13);
 #else
-    // MPU_INT output on rev4 PB13
-    static const extiConfig_t nazeRev4MPUIntExtiConfig = {
-        .tag = IO_TAG(PB13)
-    };
-
     if (hardwareRevision < NAZE32_REV5) {
-        return &nazeRev4MPUIntExtiConfig;
-    }
-    else {
-        return &nazeRev5MPUIntExtiConfig;
+        // MPU_INT output on rev4 PB13
+        return IO_TAG(PB13);
+    } else {
+        // MPU_INT output on rev5 PC13
+        return IO_TAG(PC13);
     }
 #endif
 }

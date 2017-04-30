@@ -1,6 +1,6 @@
 # AlienFlight (ALIENFLIGHTF1, ALIENFLIGHTF3, ALIENFLIGHTF4 and ALIENFLIGHTNGF7 target)
 
-AlienWii is now AlienFlight. This designs are released for public and some for noncommercial use at:
+AlienWii is now AlienFlight. This designs are released partially for public (CC BY-SA 4.0) and some for noncommercial use (CC BY-NC-SA 4.0) at:
 
 http://www.alienflight.com
 
@@ -8,7 +8,7 @@ AlienFlight F3 Eagle files are available at:
 
 https://github.com/MJ666/Flight-Controllers
 
-AlienFlightNG (Next Generation) designs are released for noncommercial use can be found here:
+AlienFlightNG (Next Generation) designs are released for noncommercial use (CC BY-NC-SA 4.0) can be found here:
 
 http://www.alienflightng.com
 
@@ -50,10 +50,10 @@ Here are the general hardware specifications for this boards:
 
 (*) Spektrum Compatible DSM2 satellites are supported out of the box. DSMX sat will work with DSM2 protocol with default settings (DSM2, 11bit, 11ms is preset). This is chosen for maximum compatibility. For optimal connection it is recommended to adjust settings to match the capabilities of your transmitter and satellite receiver. If possible it is recommended to use the DSMX protocol since it is known as more reliable. Also to make use of additional channels you should adjust the following two parameters with the Cleanflight Configurator.
 
-(**) This receiver is based on the uSky and OpenSky projects. http://www.fishpepper.de 
-
     set serialrx_provider = 1   (0 for 1024bit, 1 for 2048bit) 
     set spektrum_sat_bind = 5
+
+(**) This receiver is based on the uSky and OpenSky projects. http://www.fishpepper.de 
     
 For more detail of the different bind modes please refer the CleanFlight Spektrum Bind document.
 

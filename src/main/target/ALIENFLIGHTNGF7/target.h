@@ -22,7 +22,6 @@
 #define USE_HARDWARE_REVISION_DETECTION
 #define HW_PIN                  PC13
 #define BRUSHED_ESC_AUTODETECT
-#define USE_DSHOT
 
 #define USBD_PRODUCT_STRING "AlienFlightNG F7"
 
@@ -63,8 +62,12 @@
 
 #define BARO
 #define USE_BARO_MS5611
+#define USE_BARO_SPI_MS5611
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
+
+#define MS5611_CS_PIN           SPI3_NSS_PIN
+#define MS5611_SPI_INSTANCE     SPI3
 
 #define BMP280_CS_PIN           SPI3_NSS_PIN
 #define BMP280_SPI_INSTANCE     SPI3
@@ -119,11 +122,10 @@
 #define UART4_RX_PIN            PC10
 #define UART4_TX_PIN            PC11
 
-//#define USE_UART5
-//#define UART5_RX_PIN            PD2
-//#define UART5_TX_PIN            PC12
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
 
-#define SERIAL_PORT_COUNT       4
+#define SERIAL_PORT_COUNT       6
 
 //#define USE_ESCSERIAL
 //#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
@@ -149,14 +151,15 @@
 #define SPI3_MOSI_PIN           PB5
 
 #define USE_I2C
+#define USE_I2C_PULLUP
+#define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
-//#define I2C_DEVICE_EXT          (I2CDEV_2)
 #define I2C1_SCL                PB6
 #define I2C1_SDA                PB7
 
 #define USE_ADC
-#define BOARD_HAS_VOLTAGE_DIVIDER
-#define BOARD_HAS_CURRENT_SENSOR
+//#define BOARD_HAS_VOLTAGE_DIVIDER
+//#define BOARD_HAS_CURRENT_SENSOR
 #define VBAT_ADC_PIN            PC0
 #define CURRENT_METER_ADC_PIN   PC1
 #define RSSI_ADC_PIN            PC4
@@ -173,7 +176,7 @@
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
-#define DEFAULT_FEATURES        (FEATURE_MOTOR_STOP | FEATURE_BLACKBOX)
+#define DEFAULT_FEATURES        (FEATURE_MOTOR_STOP)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define RX_CHANNELS_TAER

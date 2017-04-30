@@ -21,14 +21,11 @@
 
 #define USBD_PRODUCT_STRING "NucleoF7"
 
-//#define USE_DSHOT
-//#define USE_ESC_TELEMETRY
-
 #define LED0   PB7
 #define LED1   PB14
 
-//#define BEEPER   PB2
-//#define BEEPER_INVERTED
+#define BEEPER   PA0
+#define BEEPER_INVERTED
 
 #define ACC
 #define USE_FAKE_ACC
@@ -143,7 +140,6 @@
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
-#define DEFAULT_FEATURES        (FEATURE_BLACKBOX)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 

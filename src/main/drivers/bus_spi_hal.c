@@ -20,11 +20,11 @@
 
 #include <platform.h>
 
-#include "bus_spi.h"
+#include "drivers/bus_spi.h"
 #include "dma.h"
-#include "io.h"
+#include "drivers/io.h"
 #include "io_impl.h"
-#include "nvic.h"
+#include "drivers/nvic.h"
 #include "rcc.h"
 
 #ifndef SPI1_SCK_PIN
@@ -138,7 +138,12 @@ void spiInitDevice(SPIDevice device)
         spi->leadingEdge = true;
     }
 #endif
-
+#ifdef MPU6500_SPI_INSTANCE
+    if (spi->dev == MPU6500_SPI_INSTANCE) {
+        spi->leadingEdge = true;
+    }
+#endif
+    
     // Enable SPI clock
     RCC_ClockCmd(spi->rcc, ENABLE);
     RCC_ResetCmd(spi->rcc, ENABLE);
@@ -148,13 +153,16 @@ void spiInitDevice(SPIDevice device)
     IOInit(IOGetByTag(spi->mosi), OWNER_SPI_MOSI, RESOURCE_INDEX(device));
 
 #if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
-    IOConfigGPIOAF(IOGetByTag(spi->sck),  SPI_IO_AF_CFG, spi->af);
-    IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_CFG, spi->af);
+    if(spi->leadingEdge == true)
+        IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG_LOW, spi->af);
+    else
+        IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG_HIGH, spi->af);
+    IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_MISO_CFG, spi->af);
     IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_CFG, spi->af);
 
     if (spi->nss) {
         IOInit(IOGetByTag(spi->nss), OWNER_SPI_CS, RESOURCE_INDEX(device));
-        IOConfigGPIOAF(IOGetByTag(spi->nss), SPI_IO_CS_CFG, spi->af);
+        IOConfigGPIO(IOGetByTag(spi->nss), SPI_IO_CS_CFG);
     }
 #endif
 #if defined(STM32F10X)

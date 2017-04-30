@@ -19,6 +19,7 @@
 
 #undef TELEMETRY_IBUS   //no space left
 #undef TELEMETRY_HOTT   //no space left
+#undef TELEMETRY_JETIEXBUS
 
 #define TARGET_BOARD_IDENTIFIER "OMNI" // https://en.wikipedia.org/wiki/Omnibus
 
@@ -53,8 +54,6 @@
 #define USE_BARO_SPI_BMP280
 
 #define MAG // External
-#define USE_MAG_AK8963
-#define USE_MAG_AK8975
 #define USE_MAG_HMC5883
 
 //#define SONAR
@@ -62,9 +61,6 @@
 //#define SONAR_TRIGGER_PIN       PB0
 
 #define USB_DETECT_PIN          PB5
-
-#undef GPS
-
 
 #define USE_VCP
 #define USE_UART1
@@ -164,7 +160,7 @@
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
-#define DEFAULT_FEATURES        (FEATURE_BLACKBOX | FEATURE_OSD)
+#define DEFAULT_FEATURES        (FEATURE_OSD)
 
 #define BUTTONS
 #define BUTTON_A_PIN            PB1

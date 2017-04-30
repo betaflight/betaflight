@@ -221,9 +221,13 @@ void voltageMeterESCReadMotor(uint8_t motorNumber, voltageMeter_t *voltageMeter)
     voltageMeterReset(voltageMeter);
 #else
     escSensorData_t *escData = getEscSensorData(motorNumber);
+    if (escData) {
+        voltageMeter->unfiltered = escData->dataAge <= ESC_BATTERY_AGE_MAX ? escData->voltage / 10 : 0;
+        voltageMeter->filtered = voltageMeter->unfiltered; // no filtering for ESC motors currently.
+    } else {
+        voltageMeterReset(voltageMeter);
+    }
 
-    voltageMeter->unfiltered = escData->dataAge <= ESC_BATTERY_AGE_MAX ? escData->voltage / 10 : 0;
-    voltageMeter->filtered = voltageMeter->unfiltered; // no filtering for ESC motors currently.
 #endif
 }
 

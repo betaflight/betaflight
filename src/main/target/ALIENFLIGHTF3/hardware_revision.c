@@ -23,9 +23,9 @@
 
 #include "build/build_config.h"
 
-#include "drivers/system.h"
 #include "drivers/io.h"
-#include "drivers/exti.h"
+#include "drivers/system.h"
+
 #include "hardware_revision.h"
 
 uint8_t hardwareRevision = AFF3_UNKNOWN;
@@ -52,21 +52,13 @@ void updateHardwareRevision(void)
 {
 }
 
-const extiConfig_t *selectMPUIntExtiConfigByHardwareRevision(void)
+ioTag_t selectMPUIntExtiConfigByHardwareRevision(void)
 {
-    // MPU_INT output on V1 PA15
-    static const extiConfig_t alienFlightF3V1MPUIntExtiConfig = {
-        .tag = IO_TAG(PA15)
-    };
-    // MPU_INT output on V2 PB13
-    static const extiConfig_t alienFlightF3V2MPUIntExtiConfig = {
-        .tag = IO_TAG(PB13)
-    };
-
     if (hardwareRevision == AFF3_REV_1) {
-        return &alienFlightF3V1MPUIntExtiConfig;
-    }
-    else {
-        return &alienFlightF3V2MPUIntExtiConfig;
+        // MPU_INT output on V1 PA15
+        return IO_TAG(PA15);
+    } else {
+        // MPU_INT output on V2 PB13
+        return IO_TAG(PB13);
     }
 }

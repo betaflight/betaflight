@@ -31,23 +31,23 @@
 #include "config/parameter_group_ids.h"
 #include "config/config_reset.h"
 
-#include "drivers/accgyro.h"
-#include "drivers/accgyro_adxl345.h"
-#include "drivers/accgyro_bma280.h"
-#include "drivers/accgyro_fake.h"
-#include "drivers/accgyro_l3g4200d.h"
-#include "drivers/accgyro_l3gd20.h"
-#include "drivers/accgyro_lsm303dlhc.h"
-#include "drivers/accgyro_mma845x.h"
-#include "drivers/accgyro_mpu.h"
-#include "drivers/accgyro_mpu3050.h"
-#include "drivers/accgyro_mpu6050.h"
-#include "drivers/accgyro_mpu6500.h"
-#include "drivers/accgyro_spi_bmi160.h"
-#include "drivers/accgyro_spi_icm20689.h"
-#include "drivers/accgyro_spi_mpu6000.h"
-#include "drivers/accgyro_spi_mpu6500.h"
-#include "drivers/accgyro_spi_mpu9250.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/accgyro/accgyro_adxl345.h"
+#include "drivers/accgyro/accgyro_bma280.h"
+#include "drivers/accgyro/accgyro_fake.h"
+#include "drivers/accgyro/accgyro_l3g4200d.h"
+#include "drivers/accgyro/accgyro_l3gd20.h"
+#include "drivers/accgyro/accgyro_lsm303dlhc.h"
+#include "drivers/accgyro/accgyro_mma845x.h"
+#include "drivers/accgyro/accgyro_mpu.h"
+#include "drivers/accgyro/accgyro_mpu3050.h"
+#include "drivers/accgyro/accgyro_mpu6050.h"
+#include "drivers/accgyro/accgyro_mpu6500.h"
+#include "drivers/accgyro/accgyro_spi_bmi160.h"
+#include "drivers/accgyro/accgyro_spi_icm20689.h"
+#include "drivers/accgyro/accgyro_spi_mpu6000.h"
+#include "drivers/accgyro/accgyro_spi_mpu6500.h"
+#include "drivers/accgyro/accgyro_spi_mpu9250.h"
 #include "drivers/bus_spi.h"
 #include "drivers/system.h"
 
@@ -214,8 +214,9 @@ retry:
 #endif
         ; // fallthrough
     case ACC_MPU6500:
-    case ACC_ICM20608G:
+    case ACC_ICM20601:
     case ACC_ICM20602:
+    case ACC_ICM20608G:
 #if defined(USE_ACC_MPU6500) || defined(USE_ACC_SPI_MPU6500)
 #ifdef USE_ACC_SPI_MPU6500
         if (mpu6500AccDetect(dev) || mpu6500SpiAccDetect(dev))
@@ -230,11 +231,14 @@ retry:
             case MPU_9250_SPI:
                 accHardware = ACC_MPU9250;
                 break;
-            case ICM_20608_SPI:
-                accHardware = ACC_ICM20608G;
+            case ICM_20601_SPI:
+                accHardware = ACC_ICM20601;
                 break;
             case ICM_20602_SPI:
                 accHardware = ACC_ICM20602;
+                break;
+            case ICM_20608_SPI:
+                accHardware = ACC_ICM20608G;
                 break;
             default:
                 accHardware = ACC_MPU6500;
@@ -300,6 +304,7 @@ bool accInit(uint32_t gyroSamplingInverval)
 {
     memset(&acc, 0, sizeof(acc));
     // copy over the common gyro mpu settings
+    acc.dev.bus = *gyroSensorBus();
     acc.dev.mpuConfiguration = *gyroMpuConfiguration();
     acc.dev.mpuDetectionResult = *gyroMpuDetectionResult();
     if (!accDetect(&acc.dev, accelerometerConfig()->acc_hardware)) {

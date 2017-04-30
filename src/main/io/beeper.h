@@ -53,8 +53,9 @@ typedef struct beeperConfig_s {
     uint32_t preferred_beeper_off_flags;
 } beeperConfig_t;
 
+#ifdef BEEPER
 PG_DECLARE(beeperConfig_t, beeperConfig);
-
+#endif
 
 void beeper(beeperMode_e mode);
 void beeperSilence(void);

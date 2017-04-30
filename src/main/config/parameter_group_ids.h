@@ -83,6 +83,7 @@
 #define PG_CURRENT_SENSOR_ADC_CONFIG 256
 #define PG_CURRENT_SENSOR_VIRTUAL_CONFIG 257
 #define PG_VOLTAGE_SENSOR_ADC_CONFIG 258
+#define PG_VTX_RTC6705_CONFIG 259
 
 
 // betaflight specific parameter group ids start at 500
@@ -111,6 +112,7 @@
 #define PG_OSD_FONT_CONFIG 2047
 #define PG_OSD_VIDEO_CONFIG 2046
 #define PG_OSD_ELEMENT_CONFIG 2045
+
 
 // 4095 is currently the highest number that can be used for a PGN due to the top 4 bits of the 16 bit value being reserved for the version when the PG is stored in an EEPROM.
 #define PG_RESERVED_FOR_TESTING_1 4095

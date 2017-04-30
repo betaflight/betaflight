@@ -25,12 +25,12 @@
 
 #include "build/build_config.h"
 
-#include "system.h"
-#include "sensor.h"
-#include "accgyro.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/system.h"
+#include "drivers/sensor.h"
 #include "adc.h"
 #include "adc_impl.h"
-#include "io.h"
+#include "drivers/io.h"
 #include "rcc.h"
 #include "dma.h"
 

@@ -97,16 +97,16 @@ It acts as a stick sensitivity multiplier, as explained above.
 
 ### Horizon Mode Commands
 
-The CLI commands `horizon_tilt_effect` and `horizon_tilt_mode` control the effect the current inclination has on self-leveling in the Horizon flight mode. (The current inclination is the number of degrees of pitch or roll that the vehicle is away from level, whichever is greater).
+The CLI commands `horizon_tilt_effect` and `horizon_tilt_expert_mode` control the effect the current inclination has on self-leveling in the Horizon flight mode. (The current inclination is the number of degrees of pitch or roll that the vehicle is away from level, whichever is greater).
 
 `horizon_tilt_effect`: Controls the effect the current inclination (tilt) has on self-leveling in the Horizon flight mode. Larger values result in less self-leveling (more "acro") as the tilt of the vehicle increases. The default value of 75 provides good performance when doing large loops and fast-forward flight. With a value of 0 the strength of the self-leveling would be solely dependent on the stick position.
 
-`horizon_tilt_mode` SAFE|EXPERT: Sets the performance mode for 'horizon_tilt_effect'
+`horizon_tilt_expert_mode` OFF|ON: Sets the performance mode for 'horizon_tilt_effect'
 
-SAFE = leveling always active when sticks centered:
-This is the "safer" range because the self-leveling is always active when the sticks are centered. So, when the vehicle is upside down (180 degrees) and the sticks are then centered, the vehicle will immediately be self-leveled to upright and flat. (Note that after this kind of very-fast 180-degree self-leveling, the heading of the vehicle can be unpredictable.)
+OFF = leveling always active when sticks centered:  
+This is the "safer" mode because the self-leveling is always active when the sticks are centered. So, when the vehicle is upside down (180 degrees) and the sticks are then centered, the vehicle will immediately be self-leveled to upright and flat. (Note that after this kind of very-fast 180-degree self-leveling, the heading of the vehicle can be unpredictable.)
 
-EXPERT = leveling can be totally off when inverted:
-In this range, the inclination (tilt) of the vehicle can fully "override" the self-leveling. In this mode, when the 'horizon_tilt_effect' parameter is set to around 75, and the vehicle is upside down (180 degrees) and the sticks are then centered, the vehicle is not self-leveled. This can be desirable for performing more-acrobatic maneuvers and potentially for 3D-mode flying.
+ON = leveling can be totally off when inverted:  
+In this mode, the inclination (tilt) of the vehicle can fully "override" the self-leveling. In this mode, when the 'horizon_tilt_effect' parameter is set to around 75, and the vehicle is upside down (180 degrees) and the sticks are then centered, the vehicle is not self-leveled. This can be desirable for performing more-acrobatic maneuvers and potentially for 3D-mode flying.
 
-The 'horizon_tilt_effect' and 'horizon_tilt_mode' values are separate for each profile.
+The 'horizon_tilt_effect' and 'horizon_tilt_expert_mode' values are separate for each profile.

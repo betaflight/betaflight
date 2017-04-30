@@ -73,7 +73,15 @@ static batteryState_e consumptionState;
 #ifdef BOARD_HAS_CURRENT_SENSOR
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #else
+#ifdef USE_VIRTUAL_CURRENT_METER
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_VIRTUAL
+#else
+#ifdef USE_MSP_CURRENT_METER
+#define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_MSP
+#else
+#define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_NONE
+#endif
+#endif
 #endif
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
@@ -290,11 +298,20 @@ void batteryInit(void)
             break;
 
         case CURRENT_METER_VIRTUAL:
+#ifdef USE_VIRTUAL_CURRENT_METER
             currentMeterVirtualInit();
+#endif
             break;
 
         case CURRENT_METER_ESC:
+#ifdef ESC_SENSOR
             currentMeterESCInit();
+#endif
+            break;
+        case CURRENT_METER_MSP:
+#ifdef USE_MSP_CURRENT_METER
+            currentMeterMSPInit();
+#endif
             break;
 
         default:
@@ -337,12 +354,14 @@ void batteryUpdateCurrentMeter(timeUs_t currentTimeUs)
             break;
 
         case CURRENT_METER_VIRTUAL: {
+#ifdef USE_VIRTUAL_CURRENT_METER
             throttleStatus_e throttleStatus = calculateThrottleStatus();
             bool throttleLowAndMotorStop = (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP));
             int32_t throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
 
             currentMeterVirtualRefresh(lastUpdateAt, ARMING_FLAG(ARMED), throttleLowAndMotorStop, throttleOffset);
             currentMeterVirtualRead(&currentMeter);
+#endif
             break;
         }
 
@@ -352,6 +371,12 @@ void batteryUpdateCurrentMeter(timeUs_t currentTimeUs)
                 currentMeterESCRefresh(lastUpdateAt);
                 currentMeterESCReadCombined(&currentMeter);
             }
+#endif
+            break;
+        case CURRENT_METER_MSP:
+#ifdef USE_MSP_CURRENT_METER
+            currentMeterMSPRefresh(currentTimeUs);
+            currentMeterMSPRead(&currentMeter);
 #endif
             break;
 
