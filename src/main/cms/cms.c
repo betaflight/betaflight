@@ -21,6 +21,7 @@
  CMS-displayPort separation by jflyper and martinbudden
  */
 
+//#define CMS_PAGE_DEBUG // For multi-page/menu debugging
 //#define CMS_MENU_DEBUG // For external menu content creators
 
 #include <stdbool.h>
@@ -165,8 +166,6 @@ static CMS_Menu menuErr = {
     menuErrEntries,
 };
 #endif
-
-#define CMS_PAGE_DEBUG
 
 #ifdef CMS_PAGE_DEBUG
 #define cmsPageDebug() { \
