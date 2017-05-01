@@ -779,30 +779,30 @@ static void cliSerial(char *cmdline)
         }
 
         switch(i) {
-            case 0:
-                if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_1000000) {
-                    continue;
-                }
-                portConfig.msp_baudrateIndex = baudRateIndex;
-                break;
-            case 1:
-                if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_115200) {
-                    continue;
-                }
-                portConfig.gps_baudrateIndex = baudRateIndex;
-                break;
-            case 2:
-                if (baudRateIndex != BAUD_AUTO && baudRateIndex > BAUD_115200) {
-                    continue;
-                }
-                portConfig.telemetry_baudrateIndex = baudRateIndex;
-                break;
-            case 3:
-                if (baudRateIndex < BAUD_19200 || baudRateIndex > BAUD_250000) {
-                    continue;
-                }
-                portConfig.blackbox_baudrateIndex = baudRateIndex;
-                break;
+        case 0:
+            if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_1000000) {
+                continue;
+            }
+            portConfig.msp_baudrateIndex = baudRateIndex;
+            break;
+        case 1:
+            if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_115200) {
+                continue;
+            }
+            portConfig.gps_baudrateIndex = baudRateIndex;
+            break;
+        case 2:
+            if (baudRateIndex != BAUD_AUTO && baudRateIndex > BAUD_115200) {
+                continue;
+            }
+            portConfig.telemetry_baudrateIndex = baudRateIndex;
+            break;
+        case 3:
+            if (baudRateIndex < BAUD_19200 || baudRateIndex > BAUD_2470000) {
+                continue;
+            }
+            portConfig.blackbox_baudrateIndex = baudRateIndex;
+            break;
         }
 
         validArgumentCount++;
