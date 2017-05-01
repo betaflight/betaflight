@@ -458,36 +458,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
     }
 }
 
-STATIC_UNIT_TESTED long cmsMenuBack(displayPort_t *pDisplay)
-{
-    // Let onExit function decide whether to allow exit or not.
-
-    if (currentMenu->onExit && currentMenu->onExit(pageTop + cursorRow) < 0)
-        return -1;
-
-    if (menuStackIdx) {
-        displayClearScreen(pDisplay);
-        menuStackIdx--;
-        currentMenu = menuStack[menuStackIdx];
-        cursorRow = menuStackHistory[menuStackIdx];
-
-        // cursorRow is absolute offset of a focused entry when stacked.
-        // Convert it back to page and relative offset.
-
-        pageTop = currentMenu->entries; // Temporary for cmsUpdateMaxRow()
-        cmsUpdateMaxRow(pDisplay);
-
-        if (cursorRow > maxRow) {
-            // Cursor was in the second page.
-            pageTopAlt = currentMenu->entries;
-            pageTop = pageTopAlt + maxRow + 1;
-            cursorRow -= (maxRow + 1);
-            cmsUpdateMaxRow(pDisplay); // Update maxRow for the second page
-        }
-    }
-
-    return 0;
-}
+STATIC_UNIT_TESTED long cmsMenuBack(displayPort_t *pDisplay); // Forward
 
 long cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
 {
@@ -532,6 +503,37 @@ long cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
         } else {
             displayClearScreen(pDisplay);
             cmsUpdateMaxRow(pDisplay);
+        }
+    }
+
+    return 0;
+}
+
+STATIC_UNIT_TESTED long cmsMenuBack(displayPort_t *pDisplay)
+{
+    // Let onExit function decide whether to allow exit or not.
+
+    if (currentMenu->onExit && currentMenu->onExit(pageTop + cursorRow) < 0)
+        return -1;
+
+    if (menuStackIdx) {
+        displayClearScreen(pDisplay);
+        menuStackIdx--;
+        currentMenu = menuStack[menuStackIdx];
+        cursorRow = menuStackHistory[menuStackIdx];
+
+        // cursorRow is absolute offset of a focused entry when stacked.
+        // Convert it back to page and relative offset.
+
+        pageTop = currentMenu->entries; // Temporary for cmsUpdateMaxRow()
+        cmsUpdateMaxRow(pDisplay);
+
+        if (cursorRow > maxRow) {
+            // Cursor was in the second page.
+            pageTopAlt = currentMenu->entries;
+            pageTop = pageTopAlt + maxRow + 1;
+            cursorRow -= (maxRow + 1);
+            cmsUpdateMaxRow(pDisplay); // Update maxRow for the second page
         }
     }
 
