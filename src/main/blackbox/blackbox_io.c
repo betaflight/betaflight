@@ -206,16 +206,33 @@ bool blackboxDeviceOpen(void)
                 BLACKBOX_SERIAL_PORT_MODE, portOptions);
 
             /*
-             * The slowest MicroSD cards have a write latency approaching 150ms. The OpenLog's buffer is about 900
+             * The slowest MicroSD cards have a write latency approaching 400ms. The OpenLog's buffer is about 900
              * bytes. In order for its buffer to be able to absorb this latency we must write slower than 6000 B/s.
              *
-             * So:
+             * The OpenLager has a 125KB buffer for when the the MicroSD card is busy, so when the user configures
+             * high baud rates, assume the OpenLager is in use and so there is no need to constrain the writes.
+             *
+             * In all other cases, constrain the writes as follows:
+             *
              *     Bytes per loop iteration = floor((looptime_ns / 1000000.0) * 6000)
              *                              = floor((looptime_ns * 6000) / 1000000.0)
              *                              = floor((looptime_ns * 3) / 500.0)
              *                              = (looptime_ns * 3) / 500
              */
-            blackboxMaxHeaderBytesPerIteration = constrain((targetPidLooptime * 3) / 500, 1, BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION);
+
+
+            switch(baudRateIndex) {
+            case BAUD_1000000:
+            case BAUD_1500000:
+            case BAUD_2000000:
+            case BAUD_2470000:
+                // assume OpenLager in use, so do not constrain writes
+                blackboxMaxHeaderBytesPerIteration = BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION;
+                break;
+            default:
+                blackboxMaxHeaderBytesPerIteration = constrain((targetPidLooptime * 3) / 500, 1, BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION);
+                break;
+            };
 
             return blackboxPort != NULL;
         }
