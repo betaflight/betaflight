@@ -46,6 +46,6 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data);
 
 void blackboxInit(void);
 void blackboxUpdate(timeUs_t currentTimeUs);
-void blackboxValidateConfig();
+void blackboxValidateConfig(void);
 void blackboxFinish(void);
 bool blackboxMayEditConfig(void);
