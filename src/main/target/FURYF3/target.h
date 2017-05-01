@@ -17,7 +17,13 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "FYF3"
+#ifdef FURYF3OSD
+    #define TARGET_BOARD_IDENTIFIER "FY3O"
+//    #define USBD_PRODUCT_STRING     "FuryF3OSD"
+#else
+    #define TARGET_BOARD_IDENTIFIER "FYF3"
+//    #define USBD_PRODUCT_STRING     "FuryF3"
+#endif
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 #define CONFIG_PREFER_ACC_ON
@@ -63,10 +69,6 @@
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW90_DEG
 
-#define BARO
-#define USE_BARO_MS5611
-#define USE_BARO_BMP280
-
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
@@ -76,37 +78,58 @@
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
 
-//#define USE_FLASHFS
-//#define USE_FLASH_M25P16
-//#define M25P16_CS_PIN           PB12
-//#define M25P16_SPI_INSTANCE     SPI2
+#ifdef FURYF3OSD
+    #define OSD
+    // include the max7456 driver
+    #define USE_MAX7456
+    #define MAX7456_SPI_INSTANCE    SPI1
+    #define MAX7456_SPI_CS_PIN      PC13
+    #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
+    #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
-#define USE_SDCARD
-#define USE_SDCARD_SPI2
+    #define USE_FLASHFS
+    #define USE_FLASH_M25P16
+    #define M25P16_CS_PIN           PB12
+    #define M25P16_SPI_INSTANCE     SPI2
+    
+    #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+	
+    #define DEFAULT_FEATURES        (FEATURE_OSD)
+    #define BOARD_HAS_CURRENT_SENSOR
+#else
 
-#define SDCARD_DETECT_INVERTED
+    #define USE_SDCARD
+    #define USE_SDCARD_SPI2
 
-#define SDCARD_DETECT_PIN                   PB2
-#define SDCARD_DETECT_EXTI_LINE             EXTI_Line2
-#define SDCARD_DETECT_EXTI_PIN_SOURCE       EXTI_PinSource2
-#define SDCARD_DETECT_EXTI_PORT_SOURCE      EXTI_PortSourceGPIOB
-#define SDCARD_DETECT_EXTI_IRQn             EXTI15_10_IRQn
+    #define SDCARD_DETECT_INVERTED
+	
+    #define SDCARD_DETECT_PIN                   PB2
+    #define SDCARD_SPI_INSTANCE                 SPI2
+    #define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
+	
+    // SPI2 is on the APB1 bus whose clock runs at 36MHz. Divide to under 400kHz for init:
+    #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128
+    // Divide to under 25MHz for normal operation:
+    #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
 
-#define SDCARD_SPI_INSTANCE                 SPI2
-#define SDCARD_SPI_CS_GPIO                  SPI2_GPIO
-#define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
+    // Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
+    #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
+    #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
 
-// SPI2 is on the APB1 bus whose clock runs at 36MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
+    // Performance logging for SD card operations:
+    // #define AFATFS_USE_INTROSPECTIVE_LOGGING
+    
+    #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
+    
+    #define BARO
+    #define USE_BARO_MS5611
 
-// Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
-#define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
+#endif
 
-// Performance logging for SD card operations:
-// #define AFATFS_USE_INTROSPECTIVE_LOGGING
+#define USE_I2C
+#define I2C_DEVICE              (I2CDEV_1) // SDA (PB9/AF4), SCL (PB8/AF4)
+#define I2C1_SCL            PB8
+#define I2C1_SDA            PB9
 
 #define USE_VCP
 #define USE_UART1
@@ -116,6 +139,13 @@
 #define USE_SOFTSERIAL2
 
 #define SERIAL_PORT_COUNT 6
+
+#define SOFTSERIAL1_RX_PIN      PB0
+#define SOFTSERIAL1_TX_PIN      PB1
+    
+    #define SONAR
+    #define SONAR_ECHO_PIN          PB1
+    #define SONAR_TRIGGER_PIN       PB0
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
@@ -129,25 +159,12 @@
 #define UART3_TX_PIN            PB10 // PB10 (AF7)
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
-#define SOFTSERIAL1_RX_PIN      PB0
-#define SOFTSERIAL1_TX_PIN      PB1
-
-#define USE_I2C
-#define USE_I2C_DEVICE_1
-#define I2C_DEVICE              (I2CDEV_1)
-#define I2C1_SCL                PB8
-#define I2C1_SDA                PB9
-
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
 #define VBAT_ADC_PIN            PA0
 #define RSSI_ADC_PIN            PA1
 #define CURRENT_METER_ADC_PIN   PA2
-
-#define SONAR
-#define SONAR_ECHO_PIN          PB1
-#define SONAR_TRIGGER_PIN       PB0
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
