@@ -493,7 +493,7 @@ static void cmsMenuCountPage(displayPort_t *pDisplay)
 {
     OSD_Entry *p;
     for (p = currentCtx.menu->entries; p->type != OME_END; p++);
-    pageCount = (p - currentCtx.menu->entries) / MAX_MENU_ITEMS(pDisplay) + 1;
+    pageCount = (p - currentCtx.menu->entries - 1) / MAX_MENU_ITEMS(pDisplay) + 1;
 }
 
 long cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
