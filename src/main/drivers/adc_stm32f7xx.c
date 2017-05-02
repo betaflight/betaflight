@@ -141,6 +141,8 @@ void adcInit(drv_adc_config_t *init)
         adcConfig[i].sampleTime = ADC_SAMPLETIME_480CYCLES;
         adcConfig[i].enabled = true;
     }
+    if(configuredAdcChannels == 0)
+        return;
 
     RCC_ClockCmd(adc.rccDMA, ENABLE);
     RCC_ClockCmd(adc.rccADC, ENABLE);
