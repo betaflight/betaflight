@@ -29,15 +29,6 @@ extern "C" {
 
     #include "drivers/serial.h"
     #include "io/serial.h"
-
-    PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
-
-    PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
-        .device = DEFAULT_BLACKBOX_DEVICE,
-        .rate_num = 1,
-        .rate_denom = 1,
-        .on_motor_test = 0 // default off
-    );
 }
 
 #include "unittest_macros.h"
@@ -115,7 +106,7 @@ void serialTestResetBuffers()
     serialWritePos = 0;
 }
 
-TEST(BlackboxTest, Test1)
+TEST(BlackboxEncodingTest, TestWriteUnsignedVB)
 {
     blackboxPort = &serialTestInstance;
     blackboxWriteUnsignedVB(0);
@@ -127,6 +118,7 @@ TEST(BlackboxTest, Test1)
 
 // STUBS
 extern "C" {
+PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
 int32_t blackboxHeaderBudget;
 void mspSerialAllocatePorts(void) {}
 void blackboxWrite(uint8_t value) {serialWrite(blackboxPort, value);}
@@ -140,5 +132,4 @@ int blackboxPrint(const char *s)
     const int length = pos - (uint8_t*)s;
     return length;
 }
-
 }

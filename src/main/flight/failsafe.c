@@ -88,7 +88,7 @@ void failsafeInit(void)
     return;
 }
 
-failsafePhase_e failsafePhase()
+failsafePhase_e failsafePhase(void)
 {
     return failsafeState.phase;
 }

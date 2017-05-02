@@ -99,6 +99,15 @@ float acos_approx(float x)
 }
 #endif
 
+int gcd(int num, int denom)
+{
+    if (denom == 0) {
+        return num;
+    }
+
+    return gcd(denom, num % denom);
+}
+
 float powerf(float base, int exp) {
     float result = base;
     for (int count = 1; count < exp; count++) result *= base;

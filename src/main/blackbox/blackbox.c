@@ -449,6 +449,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
 
     case FLIGHT_LOG_FIELD_CONDITION_NEVER:
         return false;
+
     default:
         return false;
     }
@@ -456,11 +457,8 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
 
 static void blackboxBuildConditionCache(void)
 {
-    FlightLogFieldCondition cond;
-
     blackboxConditionCache = 0;
-
-    for (cond = FLIGHT_LOG_FIELD_CONDITION_FIRST; cond <= FLIGHT_LOG_FIELD_CONDITION_LAST; cond++) {
+    for (FlightLogFieldCondition cond = FLIGHT_LOG_FIELD_CONDITION_FIRST; cond <= FLIGHT_LOG_FIELD_CONDITION_LAST; cond++) {
         if (testBlackboxConditionUncached(cond)) {
             blackboxConditionCache |= 1 << cond;
         }
@@ -765,10 +763,10 @@ static void loadSlowState(blackboxSlowState_t *slow)
  * If allowPeriodicWrite is true, the frame is also logged if it has been more than SLOW_FRAME_INTERVAL logging iterations
  * since the field was last logged.
  */
-static void writeSlowFrameIfNeeded(bool allowPeriodicWrite)
+static void writeSlowFrameIfNeeded(void)
 {
     // Write the slow frame peridocially so it can be recovered if we ever lose sync
-    bool shouldWrite = allowPeriodicWrite && blackboxSlowFrameIterationTimer >= SLOW_FRAME_INTERVAL;
+    bool shouldWrite = blackboxSlowFrameIterationTimer >= SLOW_FRAME_INTERVAL;
 
     if (shouldWrite) {
         loadSlowState(&slowHistory);
@@ -788,15 +786,6 @@ static void writeSlowFrameIfNeeded(bool allowPeriodicWrite)
     if (shouldWrite) {
         writeSlowFrame();
     }
-}
-
-static int gcd(int num, int denom)
-{
-    if (denom == 0) {
-        return num;
-    }
-
-    return gcd(denom, num % denom);
 }
 
 void blackboxValidateConfig(void)
@@ -1011,49 +1000,35 @@ static void writeGPSFrame(timeUs_t currentTimeUs)
 static void loadMainState(timeUs_t currentTimeUs)
 {
     blackboxMainState_t *blackboxCurrent = blackboxHistory[0];
-    int i;
 
     blackboxCurrent->time = currentTimeUs;
 
-    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
+    for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->axisPID_P[i] = axisPID_P[i];
-    }
-    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->axisPID_I[i] = axisPID_I[i];
-    }
-    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->axisPID_D[i] = axisPID_D[i];
+        blackboxCurrent->gyroADC[i] = lrintf(gyro.gyroADCf[i]);
+        blackboxCurrent->accSmooth[i] = acc.accSmooth[i];
+#ifdef MAG
+        blackboxCurrent->magADC[i] = mag.magADC[i];
+#endif
     }
 
-    for (i = 0; i < 4; i++) {
+    for (int i = 0; i < 4; i++) {
         blackboxCurrent->rcCommand[i] = rcCommand[i];
     }
 
-    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
-        blackboxCurrent->gyroADC[i] = lrintf(gyro.gyroADCf[i]);
-    }
-
-    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
-        blackboxCurrent->accSmooth[i] = acc.accSmooth[i];
-    }
-
-    for (i = 0; i < 4; i++) {
+    for (int i = 0; i < DEBUG16_VALUE_COUNT; i++) {
         blackboxCurrent->debug[i] = debug[i];
     }
 
     const int motorCount = getMotorCount();
-    for (i = 0; i < motorCount; i++) {
+    for (int i = 0; i < motorCount; i++) {
         blackboxCurrent->motor[i] = motor[i];
     }
 
     blackboxCurrent->vbatLatest = getBatteryVoltageLatest();
     blackboxCurrent->amperageLatest = getAmperageLatest();
-
-#ifdef MAG
-    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
-        blackboxCurrent->magADC[i] = mag.magADC[i];
-    }
-#endif
 
 #ifdef BARO
     blackboxCurrent->BaroAlt = baro.BaroAlt;
@@ -1425,6 +1400,22 @@ static bool blackboxShouldLogIFrame(void)
     return blackboxPFrameIndex == 0;
 }
 
+/*
+ * If the GPS home point has been updated, or every 128 I-frames (~10 seconds), write the
+ * GPS home position.
+ *
+ * We write it periodically so that if one Home Frame goes missing, the GPS coordinates can
+ * still be interpreted correctly.
+ */
+STATIC_UNIT_TESTED bool blackboxShouldLogGpsHomeFrame(void)
+{
+    if (GPS_home[0] != gpsHistory.GPS_home[0] || GPS_home[1] != gpsHistory.GPS_home[1]
+        || (blackboxPFrameIndex == BLACKBOX_I_INTERVAL / 2 && blackboxIFrameIndex % 128 == 0)) {
+        return true;
+    }
+    return false;
+}
+
 // Called once every FC loop in order to keep track of how many FC loop iterations have passed
 static void blackboxAdvanceIterationTimers(void)
 {
@@ -1447,7 +1438,9 @@ static void blackboxLogIteration(timeUs_t currentTimeUs)
          * Don't log a slow frame if the slow data didn't change ("I" frames are already large enough without adding
          * an additional item to write at the same time). Unless we're *only* logging "I" frames, then we have no choice.
          */
-        writeSlowFrameIfNeeded(blackboxIsOnlyLoggingIntraframes());
+        if (blackboxIsOnlyLoggingIntraframes()) {
+            writeSlowFrameIfNeeded();
+        }
 
         loadMainState(currentTimeUs);
         writeIntraframe();
@@ -1460,23 +1453,14 @@ static void blackboxLogIteration(timeUs_t currentTimeUs)
              * We assume that slow frames are only interesting in that they aid the interpretation of the main data stream.
              * So only log slow frames during loop iterations where we log a main frame.
              */
-            writeSlowFrameIfNeeded(true);
+            writeSlowFrameIfNeeded();
 
             loadMainState(currentTimeUs);
             writeInterframe();
         }
 #ifdef GPS
         if (feature(FEATURE_GPS)) {
-            /*
-             * If the GPS home point has been updated, or every 128 intraframes (~10 seconds), write the
-             * GPS home position.
-             *
-             * We write it periodically so that if one Home Frame goes missing, the GPS coordinates can
-             * still be interpreted correctly.
-             */
-            if (GPS_home[0] != gpsHistory.GPS_home[0] || GPS_home[1] != gpsHistory.GPS_home[1]
-                || (blackboxPFrameIndex == BLACKBOX_I_INTERVAL / 2 && blackboxIFrameIndex % 128 == 0)) {
-
+            if (blackboxShouldLogGpsHomeFrame()) {
                 writeGPSHomeFrame();
                 writeGPSFrame(currentTimeUs);
             } else if (GPS_numSat != gpsHistory.GPS_numSat || GPS_coord[0] != gpsHistory.GPS_coord[0]
@@ -1497,8 +1481,6 @@ static void blackboxLogIteration(timeUs_t currentTimeUs)
  */
 void blackboxUpdate(timeUs_t currentTimeUs)
 {
-    int i;
-  
     switch (blackboxState) {
     case BLACKBOX_STATE_STOPPED:
         if (ARMING_FLAG(ARMED)) {
@@ -1526,7 +1508,7 @@ void blackboxUpdate(timeUs_t currentTimeUs)
          */
         if (millis() > xmitState.u.startTime + 100) {
             if (blackboxDeviceReserveBufferSpace(BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION) == BLACKBOX_RESERVE_SUCCESS) {
-                for (i = 0; i < BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION && blackboxHeader[xmitState.headerIndex] != '\0'; i++, xmitState.headerIndex++) {
+                for (int i = 0; i < BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION && blackboxHeader[xmitState.headerIndex] != '\0'; i++, xmitState.headerIndex++) {
                     blackboxWrite(blackboxHeader[xmitState.headerIndex]);
                     blackboxHeaderBudget--;
                 }
