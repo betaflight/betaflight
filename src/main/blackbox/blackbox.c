@@ -763,7 +763,7 @@ static void loadSlowState(blackboxSlowState_t *slow)
  * If allowPeriodicWrite is true, the frame is also logged if it has been more than SLOW_FRAME_INTERVAL logging iterations
  * since the field was last logged.
  */
-static void writeSlowFrameIfNeeded(void)
+static bool writeSlowFrameIfNeeded(void)
 {
     // Write the slow frame peridocially so it can be recovered if we ever lose sync
     bool shouldWrite = blackboxSlowFrameIterationTimer >= SLOW_FRAME_INTERVAL;
@@ -786,6 +786,7 @@ static void writeSlowFrameIfNeeded(void)
     if (shouldWrite) {
         writeSlowFrame();
     }
+    return shouldWrite;
 }
 
 void blackboxValidateConfig(void)
@@ -821,6 +822,13 @@ void blackboxValidateConfig(void)
     }
 }
 
+static void blackboxResetIterationTimers(void)
+{
+    blackboxIteration = 0;
+    blackboxPFrameIndex = 0;
+    blackboxIFrameIndex = 0;
+}
+
 /**
  * Start Blackbox logging if it is not already running. Intended to be called upon arming.
  */
@@ -850,11 +858,9 @@ static void blackboxStart(void)
      */
     blackboxBuildConditionCache();
 
-	blackboxModeActivationConditionPresent = isModeActivationConditionPresent(modeActivationConditions(0), BOXBLACKBOX);
+    blackboxModeActivationConditionPresent = isModeActivationConditionPresent(modeActivationConditions(0), BOXBLACKBOX);
 
-    blackboxIteration = 0;
-    blackboxPFrameIndex = 0;
-    blackboxIFrameIndex = 0;
+    blackboxResetIterationTimers();
 
     /*
      * Record the beeper's current idea of the last arming beep time, so that we can detect it changing when
