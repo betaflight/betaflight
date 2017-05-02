@@ -232,6 +232,129 @@ void blackboxWriteTag2_3S32(int32_t *values)
 }
 
 /**
+ * Write a 2 bit tag followed by 3 signed fields of 2, 554, 877 or 32 bits
+ */
+int blackboxWriteTag2_3SVariable(int32_t *values)
+{
+    static const int FIELD_COUNT = 3;
+    enum {
+        BITS_2  = 0,
+        BITS_554  = 1,
+        BITS_877  = 2,
+        BITS_32 = 3
+    };
+
+    enum {
+        BYTES_1  = 0,
+        BYTES_2  = 1,
+        BYTES_3  = 2,
+        BYTES_4  = 3
+    };
+
+
+    /*
+     * Find out how many bits the largest value requires to encode, and use it to choose one of the packing schemes
+     * below:
+     *
+     * Selector possibilities
+     *
+     * 2 bits per field  ss11 2233,
+     * 554 bits per field  ss11 1112 2222 3333
+     * 877 bits per field  ss11 1111 1122 2222 2333 3333
+     * 32 bits per field sstt tttt followed by fields of various byte counts
+     */
+    int selector = BITS_2;
+    int selector2 = 0;
+    // Require more than 877 bits?
+    if (values[0] >= 256 || values[0] < -256
+            || values[1] >= 128 || values[1] < -128
+            || values[2] >= 128 || values[2] < -128) {
+        selector = BITS_32;
+   // Require more than 554 bits?
+    } else if (values[0] >= 16 || values[0] < -16
+            || values[1] >= 16 || values[1] < -16
+            || values[2] >= 8 || values[2] < -8) {
+        selector = BITS_877;
+        // Require more than 2 bits?
+    } else if (values[0] >= 2 || values[0] < -2
+            || values[1] >= 2 || values[1] < -2
+            || values[2] >= 2 || values[2] < -2) {
+        selector = BITS_554;
+    }
+
+    switch (selector) {
+    case BITS_2:
+        blackboxWrite((selector << 6) | ((values[0] & 0x03) << 4) | ((values[1] & 0x03) << 2) | (values[2] & 0x03));
+        break;
+    case BITS_554:
+        // 554 bits per field  ss11 1112 2222 3333
+        blackboxWrite((selector << 6) | ((values[0] & 0x1F) << 1) | ((values[1] & 0x1F) >> 4));
+        blackboxWrite(((values[1] & 0x0F) << 4) | (values[2] & 0x0F));
+        break;
+    case BITS_877:
+        // 877 bits per field  ss11 1111 1122 2222 2333 3333
+        blackboxWrite((selector << 6) | ((values[0] & 0xFF) >> 2));
+        blackboxWrite(((values[0] & 0x03) << 6) | ((values[1] & 0x7F) >> 1));
+        blackboxWrite(((values[1] & 0x01) << 7) | (values[2] & 0x7F));
+        break;
+    case BITS_32:
+        /*
+         * Do another round to compute a selector for each field, assuming that they are at least 8 bits each
+         *
+         * Selector2 field possibilities
+         * 0 - 8 bits
+         * 1 - 16 bits
+         * 2 - 24 bits
+         * 3 - 32 bits
+         */
+        selector2 = 0;
+        //Encode in reverse order so the first field is in the low bits:
+        for (int x = FIELD_COUNT - 1; x >= 0; x--) {
+            selector2 <<= 2;
+
+            if (values[x] < 128 && values[x] >= -128) {
+                selector2 |= BYTES_1;
+            } else if (values[x] < 32768 && values[x] >= -32768) {
+                selector2 |= BYTES_2;
+            } else if (values[x] < 8388608 && values[x] >= -8388608) {
+                selector2 |= BYTES_3;
+            } else {
+                selector2 |= BYTES_4;
+            }
+        }
+
+        //Write the selectors
+        blackboxWrite((selector << 6) | selector2);
+
+        //And now the values according to the selectors we picked for them
+        for (int x = 0; x < FIELD_COUNT; x++, selector2 >>= 2) {
+            switch (selector2 & 0x03) {
+            case BYTES_1:
+                blackboxWrite(values[x]);
+                break;
+            case BYTES_2:
+                blackboxWrite(values[x]);
+                blackboxWrite(values[x] >> 8);
+                break;
+            case BYTES_3:
+                blackboxWrite(values[x]);
+                blackboxWrite(values[x] >> 8);
+                blackboxWrite(values[x] >> 16);
+                break;
+            case BYTES_4:
+                blackboxWrite(values[x]);
+                blackboxWrite(values[x] >> 8);
+                blackboxWrite(values[x] >> 16);
+                blackboxWrite(values[x] >> 24);
+                break;
+            }
+        }
+    break;
+    }
+    return selector;
+}
+
+/**
  * Write an 8-bit selector followed by four signed fields of size 0, 4, 8 or 16 bits.
  */
 void blackboxWriteTag8_4S16(int32_t *values)
