@@ -22,6 +22,8 @@
 
 struct displayPort_s;
 
+extern bool osdSlaveIsLocked;
+
 // init
 void osdSlaveInit(struct displayPort_s *osdDisplayPort);
 

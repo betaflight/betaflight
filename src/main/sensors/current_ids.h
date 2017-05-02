@@ -66,4 +66,7 @@ typedef enum {
     CURRENT_METER_ID_VIRTUAL_1 = 80,       // 80-89 for virtual meters
     CURRENT_METER_ID_VIRTUAL_2,
 
+    CURRENT_METER_ID_MSP_1 = 90,       // 90-99 for MSP meters
+    CURRENT_METER_ID_MSP_2,
+
 } currentMeterId_e;
