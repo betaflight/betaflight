@@ -55,6 +55,7 @@ typedef enum {
     OSD_DEBUG,
     OSD_PITCH_ANGLE,
     OSD_ROLL_ANGLE,
+    OSD_MAIN_BATT_USAGE,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 

@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 
 #include "platform.h"
 
@@ -479,6 +480,42 @@ static void osdDrawSingleElement(uint8_t item)
         break;
     }
 
+    case OSD_MAIN_BATT_USAGE:
+    {
+        //Set length of indicator bar
+        uint8_t progressSteps = 10;
+
+        //Calculate constrained value
+        float value = constrain(osdConfig()->cap_alarm - getMAhDrawn(), 0, osdConfig()->cap_alarm);
+
+        //Calculate mAh used progress
+        uint8_t mAhUsedProgress = ceil((value / (osdConfig()->cap_alarm / progressSteps)));
+
+        //Create empty battery indicator bar
+        buff[0] = SYM_PB_START;
+        for(uint8_t i = 1; i <= progressSteps; i++)
+        {
+            buff[i] = SYM_PB_EMPTY;
+        }
+        buff[progressSteps+1] = SYM_PB_CLOSE;
+
+        //Fill indicator bar progress
+        for(uint8_t i = 1; i <= mAhUsedProgress; i++)
+        {
+            buff[i] = SYM_PB_FULL;
+        }
+
+        if (mAhUsedProgress > 0 && mAhUsedProgress < progressSteps)
+        {
+            buff[1+mAhUsedProgress] = SYM_PB_END;
+        }
+
+        buff[progressSteps+2] = 0;
+
+        break;
+    }
+
+
     default:
         return;
     }
@@ -532,6 +569,7 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_DEBUG);
     osdDrawSingleElement(OSD_PITCH_ANGLE);
     osdDrawSingleElement(OSD_ROLL_ANGLE);
+    osdDrawSingleElement(OSD_MAIN_BATT_USAGE);
 
 #ifdef GPS
 #ifdef CMS
@@ -579,6 +617,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdProfile)
 
     osdProfile->item_pos[OSD_GPS_LAT] = OSD_POS(18, 14) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_GPS_LON] = OSD_POS(18, 15) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_MAIN_BATT_USAGE] = OSD_POS(15, 10) | VISIBLE_FLAG;
+
 
     osdProfile->units = OSD_UNIT_METRIC;
     osdProfile->rssi_alarm = 20;
@@ -667,9 +707,15 @@ void osdUpdateAlarms(void)
         CLR_BLINK(OSD_FLYTIME);
 
     if (getMAhDrawn() >= osdConfig()->cap_alarm)
+    {
         SET_BLINK(OSD_MAH_DRAWN);
+        SET_BLINK(OSD_MAIN_BATT_USAGE);
+    }
     else
+    {
         CLR_BLINK(OSD_MAH_DRAWN);
+        CLR_BLINK(OSD_MAIN_BATT_USAGE);
+    }
 
     if (alt >= osdConfig()->alt_alarm)
         SET_BLINK(OSD_ALTITUDE);
@@ -687,6 +733,7 @@ void osdResetAlarms(void)
     CLR_BLINK(OSD_MAH_DRAWN);
     CLR_BLINK(OSD_ALTITUDE);
     CLR_BLINK(OSD_AVG_CELL_VOLTAGE);
+    CLR_BLINK(OSD_MAIN_BATT_USAGE);
 }
 
 static void osdResetStats(void)

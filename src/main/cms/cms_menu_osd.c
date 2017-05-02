@@ -103,7 +103,8 @@ OSD_Entry menuOsdActiveElemsEntries[] =
 {
     {"--- ACTIV ELEM ---", OME_Label, NULL, NULL, 0},
     {"RSSI", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_RSSI_VALUE], 0},
-    {"MAIN BATTERY", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_VOLTAGE], 0},
+    {"BATTERY VOLTAGE", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_VOLTAGE], 0},
+    {"BATTERY USAGE", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_USAGE], 0},
     {"AVG CELL VOLTAGE", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_AVG_CELL_VOLTAGE], 0},
     {"CROSSHAIRS", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CROSSHAIRS], 0},
     {"HORIZON", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ARTIFICIAL_HORIZON], 0},

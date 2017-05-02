@@ -217,3 +217,11 @@
 //sport
 #define SYM_MIN 0xB3
 #define SYM_AVG 0xB4
+
+// Progress bar
+#define SYM_PB_START 0x8A
+#define SYM_PB_FULL  0x8B
+#define SYM_PB_HALF  0x8C
+#define SYM_PB_EMPTY 0x8D
+#define SYM_PB_END   0x8E
+#define SYM_PB_CLOSE 0x8F
