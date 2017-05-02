@@ -17,26 +17,17 @@
 
 #pragma once
 
-#include <stdint.h>
-#include "flash.h"
+int blackboxPrintf(const char *fmt, ...);
+void blackboxPrintfHeaderLine(const char *name, const char *fmt, ...);
+int blackboxPrint(const char *s);
 
-#define M25P16_PAGESIZE 256
-
-bool m25p16_init(const flashConfig_t *flashConfig);
-
-void m25p16_eraseSector(uint32_t address);
-void m25p16_eraseCompletely(void);
-
-void m25p16_pageProgram(uint32_t address, const uint8_t *data, int length);
-
-void m25p16_pageProgramBegin(uint32_t address);
-void m25p16_pageProgramContinue(const uint8_t *data, int length);
-void m25p16_pageProgramFinish(void);
-
-int m25p16_readBytes(uint32_t address, uint8_t *buffer, int length);
-
-bool m25p16_isReady(void);
-bool m25p16_waitForReady(uint32_t timeoutMillis);
-
-struct flashGeometry_s;
-const struct flashGeometry_s* m25p16_getGeometry(void);
+void blackboxWriteUnsignedVB(uint32_t value);
+void blackboxWriteSignedVB(int32_t value);
+void blackboxWriteSignedVBArray(int32_t *array, int count);
+void blackboxWriteSigned16VBArray(int16_t *array, int count);
+void blackboxWriteS16(int16_t value);
+void blackboxWriteTag2_3S32(int32_t *values);
+void blackboxWriteTag8_4S16(int32_t *values);
+void blackboxWriteTag8_8SVB(int32_t *values, int valueCount);
+void blackboxWriteU32(int32_t value);
+void blackboxWriteFloat(float value);

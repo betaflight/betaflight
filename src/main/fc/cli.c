@@ -779,30 +779,30 @@ static void cliSerial(char *cmdline)
         }
 
         switch(i) {
-            case 0:
-                if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_1000000) {
-                    continue;
-                }
-                portConfig.msp_baudrateIndex = baudRateIndex;
-                break;
-            case 1:
-                if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_115200) {
-                    continue;
-                }
-                portConfig.gps_baudrateIndex = baudRateIndex;
-                break;
-            case 2:
-                if (baudRateIndex != BAUD_AUTO && baudRateIndex > BAUD_115200) {
-                    continue;
-                }
-                portConfig.telemetry_baudrateIndex = baudRateIndex;
-                break;
-            case 3:
-                if (baudRateIndex < BAUD_19200 || baudRateIndex > BAUD_250000) {
-                    continue;
-                }
-                portConfig.blackbox_baudrateIndex = baudRateIndex;
-                break;
+        case 0:
+            if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_1000000) {
+                continue;
+            }
+            portConfig.msp_baudrateIndex = baudRateIndex;
+            break;
+        case 1:
+            if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_115200) {
+                continue;
+            }
+            portConfig.gps_baudrateIndex = baudRateIndex;
+            break;
+        case 2:
+            if (baudRateIndex != BAUD_AUTO && baudRateIndex > BAUD_115200) {
+                continue;
+            }
+            portConfig.telemetry_baudrateIndex = baudRateIndex;
+            break;
+        case 3:
+            if (baudRateIndex < BAUD_19200 || baudRateIndex > BAUD_2470000) {
+                continue;
+            }
+            portConfig.blackbox_baudrateIndex = baudRateIndex;
+            break;
         }
 
         validArgumentCount++;
@@ -993,7 +993,7 @@ static void cliAdjustmentRange(char *cmdline)
 static void printMotorMix(uint8_t dumpMask, const motorMixer_t *customMotorMixer, const motorMixer_t *defaultCustomMotorMixer)
 {
     const char *format = "mmix %d %s %s %s %s";
-    char buf0[8];
+    char buf0[FTOA_BUFFER_LENGTH];
     char buf1[FTOA_BUFFER_LENGTH];
     char buf2[FTOA_BUFFER_LENGTH];
     char buf3[FTOA_BUFFER_LENGTH];

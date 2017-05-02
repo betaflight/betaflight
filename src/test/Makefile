@@ -46,6 +46,12 @@ battery_unittest_SRC := \
 		$(USER_DIR)/common/maths.c
 
 
+blackbox_encoding_unittest_SRC :=  \
+		$(USER_DIR)/blackbox/blackbox_encoding.c \
+		$(USER_DIR)/common/encoding.c \
+		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/common/typeconversion.c
+
 cms_unittest_SRC := \
 		$(USER_DIR)/cms/cms.c \
 		$(USER_DIR)/common/typeconversion.c \
@@ -117,7 +123,8 @@ rx_ranges_unittest_SRC := \
 
 rx_rx_unittest_SRC := \
 		$(USER_DIR)/rx/rx.c \
-		$(USER_DIR)/common/maths.c
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/config/feature.c
 
 
 sensor_gyro_unittest_SRC := \
@@ -232,11 +239,11 @@ include ../../make/build_verbosity.mk
 # House-keeping build targets.
 
 ## test        : Build and run the Unit Tests (default goal)
-test: $(TESTS:%=test-%)
+test: $(TESTS:%=test_%)
 
 ## junittest   : Build and run the Unit Tests, producing Junit XML result files."
 junittest: EXEC_OPTS = "--gtest_output=xml:$<_results.xml" 
-junittest: $(TESTS:%=test-%)
+junittest: $(TESTS:%=test_%)
 
 
 
@@ -258,7 +265,7 @@ help what usage: Makefile
 	@$(foreach test, $(TESTS), echo "    $(OBJECT_DIR)/$(test)/$(test)";)
 	@echo ""
 	@echo "Any of the Unit Test programs can be used as goals to build and run:"
-	@$(foreach test, $(TESTS), echo "    test-$(test)";)
+	@$(foreach test, $(TESTS), echo "    test_$(test)";)
 
 ## clean       : Cleanup the UnitTest binaries.
 clean :
@@ -350,7 +357,7 @@ $(OBJECT_DIR)/$1/$1 : $$($$1_OBJS) \
 	$(V1) $(CXX) $(CXX_FLAGS) $(PG_FLAGS) $$^ -o $$@
 
 
-test-$1: $(OBJECT_DIR)/$1/$1
+test_$1: $(OBJECT_DIR)/$1/$1
 	$(V1) $$< $$(EXEC_OPTS) "$(STDOUT)" && echo "running $$@: PASS"
 
 endef
