@@ -18,3 +18,9 @@ void cmsUpdate(uint32_t currentTimeUs);
 #define CMS_STARTUP_HELP_TEXT1 "MENU: THR MID"
 #define CMS_STARTUP_HELP_TEXT2     "+ YAW LEFT"
 #define CMS_STARTUP_HELP_TEXT3     "+ PITCH UP"
+
+// cmsMenuExit special ptr values
+#define CMS_EXIT             (0)
+#define CMS_EXIT_SAVE        (1)
+#define CMS_EXIT_SAVEREBOOT  (2)
+

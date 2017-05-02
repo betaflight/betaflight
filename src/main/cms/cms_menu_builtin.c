@@ -138,8 +138,9 @@ static OSD_Entry menuMainEntries[] =
 #endif
     {"FC&FW INFO",  OME_Submenu,  cmsMenuChange, &menuInfo, 0},
     {"MISC",        OME_Submenu,  cmsMenuChange, &cmsx_menuMisc, 0},
-    {"SAVE&REBOOT", OME_OSD_Exit, cmsMenuExit,   (void*)1, 0},
-    {"EXIT",        OME_OSD_Exit, cmsMenuExit,   (void*)0, 0},
+    {"EXIT",        OME_OSD_Exit, cmsMenuExit,   (void *)CMS_EXIT, 0},
+    {"SAVE&EXIT",   OME_OSD_Exit, cmsMenuExit,   (void *)CMS_EXIT_SAVE, 0},
+    {"SAVE&REBOOT", OME_OSD_Exit, cmsMenuExit,   (void *)CMS_EXIT_SAVEREBOOT, 0},
 #ifdef CMS_MENU_DEBUG
     {"ERR SAMPLE",  OME_Submenu,  cmsMenuChange, &menuInfoEntries[0], 0},
 #endif
