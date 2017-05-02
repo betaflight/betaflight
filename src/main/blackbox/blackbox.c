@@ -103,8 +103,7 @@ PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
 
 static const char blackboxHeader[] =
     "H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
-    "H Data version:2\n"
-    "H I interval:";
+    "H Data version:2\n";
 
 static const char* const blackboxFieldHeaderNames[] = {
     "name",
@@ -1201,6 +1200,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("Firmware revision", "%s %s (%s) %s",    FC_FIRMWARE_NAME, FC_VERSION_STRING, shortGitRevision, targetName);
         BLACKBOX_PRINT_HEADER_LINE("Firmware date", "%s %s",                buildDate, buildTime);
         BLACKBOX_PRINT_HEADER_LINE("Craft name", "%s",                      systemConfig()->name);
+        BLACKBOX_PRINT_HEADER_LINE("I interval", "%d",                      blackboxIInterval);
         BLACKBOX_PRINT_HEADER_LINE("P denom", "%d",                         blackboxConfig()->p_denom);
         BLACKBOX_PRINT_HEADER_LINE("minthrottle", "%d",                     motorConfig()->minthrottle);
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle", "%d",                     motorConfig()->maxthrottle);
@@ -1417,7 +1417,7 @@ STATIC_UNIT_TESTED bool blackboxShouldLogGpsHomeFrame(void)
     }
     return false;
 }
-#endif
+#endif // GPS
 
 // Called once every FC loop in order to keep track of how many FC loop iterations have passed
 STATIC_UNIT_TESTED void blackboxAdvanceIterationTimers(void)
@@ -1518,9 +1518,7 @@ void blackboxUpdate(timeUs_t currentTimeUs)
                     blackboxWrite(blackboxHeader[xmitState.headerIndex]);
                     blackboxHeaderBudget--;
                 }
-
                 if (blackboxHeader[xmitState.headerIndex] == '\0') {
-                    blackboxPrintf("%d\n", blackboxIInterval);
                     blackboxSetState(BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER);
                 }
             }
@@ -1689,7 +1687,13 @@ void blackboxInit(void)
     }
     // by default p_denom is 32 and a P-frame is written every 1ms
     // if p_denom is zero then no P-frames are logged
-    blackboxPInterval = blackboxConfig()->p_denom == 0 ? 0 : blackboxIInterval /  blackboxConfig()->p_denom;
+    if (blackboxConfig()->p_denom == 0) {
+        blackboxPInterval = 0;
+    } else if (blackboxConfig()->p_denom > blackboxIInterval && blackboxIInterval >= 32) {
+        blackboxPInterval = 1;
+    } else {
+        blackboxPInterval = blackboxIInterval /  blackboxConfig()->p_denom;
+    }
     if (blackboxConfig()->device) {
         blackboxSetState(BLACKBOX_STATE_STOPPED);
     } else {
