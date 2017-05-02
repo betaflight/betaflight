@@ -234,7 +234,6 @@ void i2cInit(I2CDevice device)
         IOConfigGPIO(sda, IOCFG_AF_OD);
     #endif
     // Init I2C peripheral
-    HAL_I2C_DeInit(&i2cHandle[device].Handle);
 
     i2cHandle[device].Handle.Instance             = i2cHardwareMap[device].dev;
     /// TODO: HAL check if I2C timing is correct

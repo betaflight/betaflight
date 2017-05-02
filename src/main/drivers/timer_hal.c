@@ -267,6 +267,7 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz)
     if(tim == TIM1 || tim == TIM2 || tim == TIM3 || tim == TIM4 || tim == TIM5 || tim == TIM8 || tim == TIM9)
     {
         TIM_ClockConfigTypeDef sClockSourceConfig;
+        memset(&sClockSourceConfig, 0, sizeof(sClockSourceConfig));
         sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
         if (HAL_TIM_ConfigClockSource(&timerHandle[timerIndex].Handle, &sClockSourceConfig) != HAL_OK)
         {
@@ -276,7 +277,7 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz)
     if(tim == TIM1 || tim == TIM2 || tim == TIM3 || tim == TIM4 || tim == TIM5 || tim == TIM8 )
     {
         TIM_MasterConfigTypeDef sMasterConfig;
-        sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+        memset(&sMasterConfig, 0, sizeof(sMasterConfig));
         sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
         if (HAL_TIMEx_MasterConfigSynchronization(&timerHandle[timerIndex].Handle, &sMasterConfig) != HAL_OK)
         {
