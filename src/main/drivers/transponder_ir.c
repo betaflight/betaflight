@@ -32,6 +32,7 @@
 #include "transponder_ir.h"
 #include "drivers/transponder_ir_arcitimer.h"
 #include "drivers/transponder_ir_ilap.h"
+#include "drivers/transponder_ir_erlt.h"
 
 volatile uint8_t transponderIrDataTransferInProgress = 0;
 
@@ -171,6 +172,9 @@ bool transponderIrInit(const transponderProvider_e provider)
             break;
         case TRANSPONDER_ILAP:
             transponderIrInitIlap(&transponder);
+            break;
+        case TRANSPONDER_ERLT:
+            transponderIrInitERLT(&transponder);
             break;
         default:
             return false;
