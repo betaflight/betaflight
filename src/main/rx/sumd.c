@@ -34,6 +34,8 @@
 #include "rx/rx.h"
 #include "rx/sumd.h"
 
+#include "telemetry/telemetry.h"
+
 // driver for SUMD receiver using UART2
 
 // FIXME test support for more than 8 channels, should probably work up to 12 channels
@@ -171,7 +173,25 @@ bool sumdInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         return false;
     }
 
-    serialPort_t *sumdPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, sumdDataReceive, SUMD_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
+#ifdef TELEMETRY
+    bool portShared = telemetryCheckRxPortShared(portConfig);
+#else
+    bool portShared = false;
+#endif
+
+    serialPort_t *sumdPort = openSerialPort(portConfig->identifier, 
+        FUNCTION_RX_SERIAL, 
+        sumdDataReceive, 
+        SUMD_BAUDRATE, 
+        portShared ? MODE_RXTX : MODE_RX, 
+        SERIAL_NOT_INVERTED | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
+        );
+
+#ifdef TELEMETRY
+    if (portShared) {
+        telemetrySharedPort = sumdPort;
+    }
+#endif
 
     return sumdPort != NULL;
 }

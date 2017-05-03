@@ -29,8 +29,8 @@
 
 #define BEEPER                  PB4
 
-#define INVERTER                PC0 // PC0 used as inverter select GPIO
-#define INVERTER_USART          USART1
+// PC0 used as inverter select GPIO
+#define INVERTER_PIN_UART1      PC0
 
 // MPU6000 interrupts
 #define USE_EXTI
@@ -136,7 +136,7 @@
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // Number of available PWM outputs
-#define MAX_PWM_OUTPUT_PORTS    11
+#define MAX_PWM_OUTPUT_PORTS    10
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

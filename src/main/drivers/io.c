@@ -2,7 +2,7 @@
 
 #include "common/utils.h"
 
-#include "io.h"
+#include "drivers/io.h"
 #include "io_impl.h"
 #include "rcc.h"
 

@@ -90,10 +90,6 @@
 
 // Things in both OSD and CMS
 
-#define IS_HI(X)  (rcData[X] > 1750)
-#define IS_LO(X)  (rcData[X] < 1250)
-#define IS_MID(X) (rcData[X] > 1250 && rcData[X] < 1750)
-
 bool blinkState = true;
 
 //extern uint8_t RSSI; // TODO: not used?
@@ -128,29 +124,68 @@ static displayPort_t *osd7456DisplayPort;
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
 
 /**
- * Gets the correct altitude symbol for the current unit system
+ * Converts altitude/distance based on the current unit system (cm or 1/100th of ft).
+ * @param alt Raw altitude/distance (i.e. as taken from baro.BaroAlt)
  */
-static char osdGetAltitudeSymbol()
+static int32_t osdConvertDistanceToUnit(int32_t dist)
 {
     switch (osdConfig()->units) {
         case OSD_UNIT_IMPERIAL:
-            return 0xF;
+            return (dist * 328) / 100; // Convert to feet / 100
         default:
-            return 0xC;
+            return dist;               // Already in meter / 100
     }
 }
 
 /**
- * Converts altitude based on the current unit system.
- * @param alt Raw altitude (i.e. as taken from baro.BaroAlt)
+ * Converts altitude/distance into a string based on the current unit system.
+ * @param alt Raw altitude/distance (i.e. as taken from baro.BaroAlt in centimeters)
  */
-static int32_t osdGetAltitude(int32_t alt)
+static void osdFormatDistanceStr(char* buff, int32_t dist)
+{
+	int32_t dist_abs = abs(osdConvertDistanceToUnit(dist));
+
+    switch (osdConfig()->units) {
+        case OSD_UNIT_IMPERIAL:
+	        if (dist < 0)
+	            sprintf(buff, "-%d%c", dist_abs / 100, SYM_FT);
+	        else
+	            sprintf(buff, "%d%c", dist_abs / 100, SYM_FT);
+	        break;
+        default: // Metric
+            if (dist < 0)
+                sprintf(buff, "-%d.%01d%c", dist_abs / 100, (dist_abs % 100) / 10, SYM_M);
+            else
+                sprintf(buff, "%d.%01d%c", dist_abs / 100, (dist_abs % 100) / 10, SYM_M);
+    }
+}
+
+/**
+ * Converts velocity based on the current unit system (kmh or mph).
+ * @param alt Raw velocity (i.e. as taken from gpsSol.groundSpeed in centimeters/second)
+ */
+static int32_t osdConvertVelocityToUnit(int32_t vel)
 {
     switch (osdConfig()->units) {
         case OSD_UNIT_IMPERIAL:
-            return (alt * 328) / 100; // Convert to feet / 100
+            return (vel * 224) / 10000; // Convert to mph
         default:
-            return alt;               // Already in metre / 100
+            return (vel * 36) / 1000;   // Convert to kmh
+    }
+}
+
+/**
+ * Converts velocity into a string based on the current unit system.
+ * @param alt Raw velocity (i.e. as taken from gpsSol.groundSpeed in centimeters/seconds)
+ */
+static void osdFormatVelocityStr(char* buff, int32_t vel)
+{
+    switch (osdConfig()->units) {
+        case OSD_UNIT_IMPERIAL:
+            sprintf(buff, "%d%c", osdConvertVelocityToUnit(vel), SYM_MPH);
+            break;
+        default: // Metric
+            sprintf(buff, "%d%c", osdConvertVelocityToUnit(vel), SYM_KMH);
     }
 }
 
@@ -177,7 +212,9 @@ static void osdDrawSingleElement(uint8_t item)
 
         case OSD_MAIN_BATT_VOLTAGE:
         {
-            buff[0] = SYM_BATT_5;
+            uint8_t p = calculateBatteryPercentage();
+            p = (100 - p) / 16.6;
+            buff[0] = SYM_BATT_FULL + p;
             sprintf(buff + 1, "%d.%1dV", vbat / 10, vbat % 10);
             break;
         }
@@ -207,7 +244,7 @@ static void osdDrawSingleElement(uint8_t item)
 
         case OSD_GPS_SPEED:
         {
-            sprintf(buff, "%d%c", gpsSol.groundSpeed * 36 / 1000, 0xA1);
+            osdFormatVelocityStr(buff, gpsSol.groundSpeed);
             break;
         }
 
@@ -255,16 +292,15 @@ static void osdDrawSingleElement(uint8_t item)
 
             h = h*2/45;
 
-            buff[0] = 0x60+h;
+            buff[0] = SYM_ARROW_UP + h;
             buff[1] = 0;
             break;
         }
 
         case OSD_HOME_DIST:
         {
-            int32_t dist = osdGetAltitude(GPS_distanceToHome * 100);
             buff[0] = 0xA0;
-            sprintf(&buff[1], "%d%c", dist / 100 , osdGetAltitudeSymbol());
+            osdFormatDistanceStr(&buff[1], GPS_distanceToHome * 100);
             break;
         }
 
@@ -274,24 +310,19 @@ static void osdDrawSingleElement(uint8_t item)
             if (h < 0) h+=360;
 
             buff[0] = 0xA9;
-
-
-            sprintf(buff, "%c%d%c", 0xA9, h , 0xA8 );
+            sprintf(&buff[1], "%d%c", h , 0xA8 );
             break;
         }
 #endif // GPS
 
         case OSD_ALTITUDE:
         {
+            buff[0] = SYM_ALT;
 #ifdef NAV
-            int32_t alt = osdGetAltitude(getEstimatedActualPosition(Z));
+            osdFormatDistanceStr(&buff[1], getEstimatedActualPosition(Z));
 #else
-            int32_t alt = osdGetAltitude(baro.BaroAlt);
+            osdFormatDistanceStr(&buff[1], baro.BaroAlt));
 #endif
-            if (alt < 0)
-                sprintf(buff, "%c-%d.%01d%c", 0xAA, abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
-            else
-                sprintf(buff, "%c%d.%01d%c", 0xAA, abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
             break;
         }
 
@@ -679,9 +710,9 @@ void osdUpdateAlarms(void)
     // uint16_t *itemPos = osdConfig()->item_pos;
 
 #ifdef NAV
-    int32_t alt = osdGetAltitude(getEstimatedActualPosition(Z)) / 100;
+    int32_t alt = osdConvertDistanceToUnit(getEstimatedActualPosition(Z)) / 100;
 #else
-    int32_t alt = osdGetAltitude(baro.BaroAlt) / 100;
+    int32_t alt = osdConvertDistanceToUnit(baro.BaroAlt) / 100;
 #endif
     statRssi = rssi * 100 / 1024;
 
@@ -777,19 +808,16 @@ static void osdShowStats(void)
     max7456Write(2, top++, "  --- STATS ---");
 
     if (STATE(GPS_FIX)) {
-        int32_t dist;
         max7456Write(2, top, "MAX SPEED        :");
-        itoa(stats.max_speed, buff, 10);
+        osdFormatVelocityStr(buff, stats.max_speed);
         max7456Write(22, top++, buff);
         
         max7456Write(2, top, "MAX DISTANCE     :");
-        dist = osdGetAltitude(stats.max_distance*100); //convert to feet or meters
-        sprintf(buff, "%d%c", dist / 100 , osdGetAltitudeSymbol());
+        osdFormatDistanceStr(buff, stats.max_distance*100);
         max7456Write(22, top++, buff);
 
         max7456Write(2, top, "TRAVELED DISTANCE:");
-        dist = osdGetAltitude(getTotalTravelDistance()); //convert to feet or meters
-        sprintf(buff, "%d%c", dist / 100 , osdGetAltitudeSymbol());
+        osdFormatDistanceStr(buff, getTotalTravelDistance());
         max7456Write(22, top++, buff);
     }
 
@@ -815,8 +843,7 @@ static void osdShowStats(void)
     }
 
     max7456Write(2, top, "MAX ALTITUDE     :");
-    int32_t alt = osdGetAltitude(stats.max_altitude);
-    sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
+    osdFormatDistanceStr(buff, stats.max_altitude);
     max7456Write(22, top++, buff);
 
     refreshTimeout = 60 * REFRESH_1S;
@@ -856,7 +883,7 @@ static void osdRefresh(timeUs_t currentTimeUs)
     }
 
     if (refreshTimeout) {
-        if (IS_HI(THROTTLE) || IS_HI(PITCH)) // hide statistics
+        if (checkStickPosition(THR_HI) || checkStickPosition(PIT_HI)) // hide statistics
             refreshTimeout = 1;
         refreshTimeout--;
         if (!refreshTimeout)

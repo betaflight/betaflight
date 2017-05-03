@@ -19,7 +19,7 @@ All telemetry systems use serial ports, configure serial ports to use the teleme
 
 FrSky telemetry is transmit only and just requires a single connection from the TX pin of a serial port to the RX pin on an FrSky telemetry receiver.
 
-FrSky telemetry signals are inverted.  To connect a cleanflight capable board to an FrSKy receiver you have some options.
+FrSky telemetry signals are inverted.  To connect a INAV capable board to an FrSKy receiver you have some options.
 
 1. A hardware inverter - Built in to some flight controllers.
 2. Use software serial and enable frsky_inversion.
@@ -98,25 +98,38 @@ The INAV implementation of LTM implements the following frames:
   suffixed '+' not implemented in INAV.
 * O-FRAME: Origin (home position, lat, long, altitude, fix)
 
-In addition, in the inav (navigation-rewrite) fork:
+In addition, in  iNav:
+
 * N-FRAME: Navigation information (GPS mode, Nav mode, Nav action,
   Waypoint number, Nav Error, Nav Flags).
+* X-FRAME: Extra information. Currently HDOP is reported.
 
 LTM is transmit only, and can work at any supported baud rate. It is
 designed to operate over 2400 baud (9600 in INAV) and does not
 benefit from higher rates. It is thus usable on soft serial.
 
+A CLI variable `ltm_update_rate` may be used to configure the update
+rate and hence band-width used by LTM, with the following enumerations:
+
+* NORMAL: Legacy rate, currently 303 bytes/second (requires 4800 bps)
+* MEDIUM: 164 bytes/second (requires 2400 bps)
+* SLOW: 105 bytes/second (requires 1200 bps)
+
+For many telemetry devices, there is direction correlation between the
+air-speed of the radio link and range; thus a lower value may
+facilitate longer range links.
+
 More information about the fields, encoding and enumerations may be
-found at
-https://github.com/stronnag/mwptools/blob/master/docs/ltm-definition.txt
+found at https://github.com/iNavFlight/inav/wiki/Lightweight-Telemetry-(LTM).
+
 
 ## MAVLink telemetry
 
 MAVLink is a very lightweight, header-only message marshalling library for micro air vehicles.
-Cleanflight supports MAVLink for compatibility with ground stations, OSDs and antenna trackers built
+INAV supports MAVLink for compatibility with ground stations, OSDs and antenna trackers built
 for PX4, PIXHAWK, APM and Parrot AR.Drone platforms.
 
-MAVLink implementation in Cleanflight is transmit-only and usable on low baud rates and can be used over soft serial.
+MAVLink implementation in INAV is transmit-only and usable on low baud rates and can be used over soft serial.
 
 ## SmartPort (S.Port)
 
@@ -163,19 +176,19 @@ It shares 1 line for both TX and RX, the rx pin cannot be used for other serial 
 It runs at a fixed baud rate of 115200, so it need hardware uart (softserial is limit to 19200).
 ```
      _______
-    /       \                                              /---------\
-    | STM32 |-->UART TX-->[Bi-directional @ 115200 baud]-->| IBUS RX |
-    |  uC   |-  UART RX--x[not connected]                  \---------/
-    \_______/
+    /       \                                              /-------------\
+    | STM32 |-->UART TX-->[Bi-directional @ 115200 baud]-->| Flysky RX   |
+    |  uC   |-  UART RX--x[not connected]                  | IBUS-Sensor |
+    \_______/                                              \-------------/
 ```
 It is possible to daisy chain multiple sensors with ibus, but telemetry sensor will be overwrite by value sensor.
 In this case sensor should be connected to RX and FC to sensor.
 ```
      _______
-    /       \                                              /---------\   /-------------\   /---------\
-    | STM32 |-->UART TX-->[Bi-directional @ 115200 baud]-->| CVT-01  |-->|others sensor|-->| IBUS RX |
-    |  uC   |-  UART RX--x[not connected]                  \---------/   \-------------/   \---------/
-    \_______/
+    /       \                                              /---------\   /-------------\   /-------------\
+    | STM32 |-->UART TX-->[Bi-directional @ 115200 baud]-->| CVT-01  |-->|others sensor|-->| Flysky RX   |
+    |  uC   |-  UART RX--x[not connected]                  \---------/   \-------------/   | IBUS-Sensor |
+    \_______/                                                                              \-------------/
 ```
 
 ### Configuration
@@ -235,9 +248,9 @@ FIX: 1 is No, 2 is 2D, 3 is 3D, 6 is No+FixHome, 7 is 2D+FixHome, 8 is 3D+FixHom
 
 HDOP: 0 is 0-9m, 8 is 80-90m, 9 is >90m
 
-Mode: 1-Armed(rate), 2-Horizon, 3-Angle, 4-HeadFree or Mag, 5-AltHold, 6-PosHold, 7-Rth, 8-Fail and Rth, 9-Fail
+Mode: 0 - Passthrough, 1-Armed(rate), 2-Horizon, 3-Angle, 4-Waypoint, 5-AltHold, 6-PosHold, 7-Rth, 8-Launch, 9-Failsafe
 
-Example: 12803 is 12 satelites, Fix3D, FixHome, 0-9m HDOP, Angle Mode 
+Example: 12803 is 12 satelites, Fix3D, FixHome, 0-9m HDOP, Angle Mode
 
 ### CLI command
 
@@ -258,5 +271,29 @@ These receivers are reported to work with i-bus telemetry:
 
 Note that the FlySky/Turnigy FS-iA4B 4-Channel Receiver (http://www.flysky-cn.com/products_detail/productId=46.html) seems to work but has a bug that might lose the binding, DO NOT FLY the FS-iA4B!
 
+### Use ibus RX and ibus telemetry on only one port.
 
+Case:
 
+A. For use only IBUS RX connect directly Flysky IBUS-SERVO to FC-UART-TX.
+In configurator set RX on selected port, set receiver mode to RX_SERIAL and Receiver provider to IBUS.
+
+B. For use only IBUS telemetry connect directly Flysky IBUS-SENS to FC-UART-TX.
+In configurator set IBUS telemetry on selected port and enable telemetry feature.
+
+C. For use RX IBUS and telemetry IBUS together connect Flysky IBUS-SERVO and IBUS-SENS to FC-UART-TX using schematic:
+```
++---------+
+| FS-iA6B |
+|         |
+| Servo   |---|<---\       +------------+
+|         |        |       | FC         |
+| Sensor  |---[R]--*-------| Serial TX  |
++---------+                +------------+
+```
+R = 10Kohm, Diode 1N4148 (connect cathode to IBUS-Servo of Flysky receiver).
+
+In configurator set IBUS telemetry and RX on this same port, enable telemetry feature, set receiver mode to RX_SERIAL and Receiver provider to IBUS.
+
+Warning:
+Schematic above work also for connect telemetry only, but not work for connect rx only - will stop FC.

@@ -100,7 +100,7 @@
 
 #define BRUSHED_MOTORS
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP
-#define SKIP_SERIAL_PASSTHROUGH
+#undef USE_SERIAL_PASSTHROUGH
 
 // Since the CJMCU PCB has holes for 4 motors in each corner we can save same flash space by disabling support for other mixers.
 #define USE_QUAD_MIXER_ONLY

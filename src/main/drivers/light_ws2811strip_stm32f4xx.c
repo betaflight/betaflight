@@ -24,10 +24,10 @@
 
 #include "common/color.h"
 #include "light_ws2811strip.h"
-#include "nvic.h"
+#include "drivers/nvic.h"
 #include "dma.h"
-#include "io.h"
-#include "time.h"
+#include "drivers/io.h"
+#include "drivers/time.h"
 #include "rcc.h"
 #include "timer.h"
 

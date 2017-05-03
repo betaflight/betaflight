@@ -24,7 +24,7 @@
 #include "build/build_config.h"
 
 
-#include "gpio.h"
+#include "drivers/gpio.h"
 
 #include "sound_beeper.h"
 

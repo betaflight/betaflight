@@ -191,8 +191,8 @@ These chips are also supported:
 On the Configurator's CLI tab, you must enter `set blackbox_device=SPIFLASH` to switch to logging to an onboard dataflash chip,
 then save.
 
-[your serial ports]: https://github.com/cleanflight/cleanflight/blob/master/docs/Serial.md
-[INAV Configurator]: https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb?hl=en
+[your serial ports]: https://github.com/iNavFlight/inav/blob/master/docs/Serial.md
+[INAV Configurator]: https://chrome.google.com/webstore/detail/inav-configurator/fmaidjmgkdkpafmbnmigkpdnpdhopgel
 
 ## Configuring the Blackbox
 

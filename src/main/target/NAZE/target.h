@@ -24,8 +24,7 @@
 
 #define BEEPER                  PA12
 
-#define INVERTER                PB2 // PB2 (BOOT1) abused as inverter select GPIO
-#define INVERTER_USART          USART2
+#define INVERTER_PIN_UART2      PB2 // PB2 (BOOT1) abused as inverter select GPIO
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PC13
@@ -67,6 +66,7 @@
     #define MPU6500_CS_PIN                  NAZE_SPI_CS_PIN
     #define MPU6500_SPI_INSTANCE            NAZE_SPI_INSTANCE
 #else
+    // Afroflight NAZE
     #define USE_HARDWARE_REVISION_DETECTION
     #define USE_SOFTSERIAL2
 
@@ -177,9 +177,9 @@
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
 
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
+#undef USE_SERIALRX_SPEKTRUM
+//#define SPEKTRUM_BIND
+//#define BIND_PIN                PA3
 
 //#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

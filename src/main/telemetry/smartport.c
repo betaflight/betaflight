@@ -88,6 +88,7 @@ enum
     FSSP_DATAID_ACCZ       = 0x0720 ,
     FSSP_DATAID_T1         = 0x0400 ,
     FSSP_DATAID_T2         = 0x0410 ,
+    FSSP_DATAID_HOME_DIST  = 0x0420 ,
     FSSP_DATAID_GPS_ALT    = 0x0820 ,
     FSSP_DATAID_ASPD       = 0x0A00 ,
     FSSP_DATAID_A3         = 0x0900 ,
@@ -118,6 +119,7 @@ const uint16_t frSkyDataIdTable[] = {
     FSSP_DATAID_GPS_ALT   ,
     FSSP_DATAID_ASPD      ,
     FSSP_DATAID_A4        ,
+    FSSP_DATAID_HOME_DIST ,
     0
 };
 
@@ -312,6 +314,13 @@ void handleSmartPortTelemetry(void)
                     smartPortHasRequest = 0;
                 }
                 break;
+
+            case FSSP_DATAID_HOME_DIST  :
+                if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
+                    smartPortSendPackage(id, GPS_distanceToHome);
+                    smartPortHasRequest = 0;
+                }
+                break;
 #endif
             case FSSP_DATAID_VFAS       :
                 if (feature(FEATURE_VBAT)) {
@@ -409,12 +418,12 @@ void handleSmartPortTelemetry(void)
                     tmpi += 10;
                 if (FLIGHT_MODE(HORIZON_MODE))
                     tmpi += 20;
-                if (FLIGHT_MODE(UNUSED_MODE))
+                if (FLIGHT_MODE(AUTO_TUNE))
                     tmpi += 40;
                 if (FLIGHT_MODE(PASSTHRU_MODE))
                     tmpi += 40;
 
-                if (FLIGHT_MODE(MAG_MODE))
+                if (FLIGHT_MODE(HEADING_MODE))
                     tmpi += 100;
                 if (FLIGHT_MODE(NAV_ALTHOLD_MODE))
                     tmpi += 200;

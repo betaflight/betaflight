@@ -27,8 +27,8 @@
 #include "common/color.h"
 #include "common/utils.h"
 
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/compass/compass.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
 #include "drivers/stack_check.h"
@@ -44,6 +44,8 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+
+#include "navigation/navigation.h"
 
 #include "io/beeper.h"
 #include "io/dashboard.h"
@@ -154,7 +156,7 @@ void taskUpdateBaro(timeUs_t currentTimeUs)
         }
     }
 
-    //updatePositionEstimator_BaroTopic(currentTimeUs);
+    updatePositionEstimator_BaroTopic(currentTimeUs);
 }
 #endif
 
@@ -174,11 +176,16 @@ void taskUpdateSonar(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
 
-    if (sensors(SENSOR_SONAR)) {
-        rangefinderUpdate();
+    if (!sensors(SENSOR_SONAR))
+        return;
+
+    // Update and adjust task to update at required rate
+    const uint32_t newDeadline = rangefinderUpdate();
+    if (newDeadline != 0) {
+        rescheduleTask(TASK_SELF, newDeadline);
     }
 
-    //updatePositionEstimator_SonarTopic(currentTimeUs);
+    updatePositionEstimator_SonarTopic(currentTimeUs);
 }
 #endif
 
@@ -446,7 +453,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SONAR] = {
         .taskName = "SONAR",
         .taskFunc = taskUpdateSonar,
-        .desiredPeriod = TASK_PERIOD_MS(70),                 // every 70 ms, approximately 14 Hz
+        .desiredPeriod = TASK_PERIOD_MS(50),                 // every 70 ms, approximately 20 Hz
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
@@ -464,7 +471,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_TELEMETRY] = {
         .taskName = "TELEMETRY",
         .taskFunc = taskTelemetry,
-        .desiredPeriod = TASK_PERIOD_HZ(250),         // 250 Hz
+        .desiredPeriod = TASK_PERIOD_HZ(500),         // 500 Hz
         .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif

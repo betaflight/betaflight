@@ -23,9 +23,9 @@
 #ifdef USE_FLASH_M25P16
 
 #include "flash_m25p16.h"
-#include "io.h"
-#include "bus_spi.h"
-#include "time.h"
+#include "drivers/io.h"
+#include "drivers/bus_spi.h"
+#include "drivers/time.h"
 
 #define M25P16_INSTRUCTION_RDID             0x9F
 #define M25P16_INSTRUCTION_READ_BYTES       0x03
@@ -48,6 +48,7 @@
 #define JEDEC_ID_MACRONIX_MX25L6406E   0xC22017
 #define JEDEC_ID_MICRON_N25Q128        0x20ba18
 #define JEDEC_ID_WINBOND_W25Q128       0xEF4018
+#define JEDEC_ID_SPANSION_S25FL116     0x014015
 
 #define DISABLE_M25P16       IOHi(m25p16CsPin)
 #define ENABLE_M25P16        IOLo(m25p16CsPin)
@@ -160,6 +161,7 @@ static bool m25p16_readIdentification()
 
     switch (chipID) {
         case JEDEC_ID_MICRON_M25P16:
+        case JEDEC_ID_SPANSION_S25FL116:
             geometry.sectors = 32;
             geometry.pagesPerSector = 256;
         break;

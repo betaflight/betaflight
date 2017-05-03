@@ -23,7 +23,7 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 
-#include "time.h"
+#include "drivers/time.h"
 
 #include "adc.h"
 #include "adc_impl.h"
@@ -59,6 +59,9 @@ uint16_t adcGetChannel(uint8_t channel)
     }
     if (adcConfig[3].enabled) {
         debug[3] = adcValues[adcConfig[3].dmaIndex];
+    }
+    if (adcConfig[4].enabled) {
+        debug[4] = adcValues[adcConfig[4].dmaIndex];
     }
 #endif
     return adcValues[adcConfig[channel].dmaIndex];

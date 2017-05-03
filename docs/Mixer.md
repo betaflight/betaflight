@@ -129,6 +129,7 @@ Custom servo mixing rules can be applied to each servo.  Rules are applied in th
 | 11 | RC AUX 4 |
 | 12 | GIMBAL PITCH |
 | 13 | GIMBAL ROLL |
+| 13 | FEATURE FLAPS |
 
 Note: the `smix` command may show a servo mix that is not active, custom servo mixes are only active for models that use custom mixers.
 
@@ -210,7 +211,7 @@ smix reverse 5 2 r
 Here is an example of a custom twin engine plane with [Differential Thrust](http://rcvehicles.about.com/od/rcairplanes/ss/RCAirplaneBasic.htm#step8)
 Motors take the first 2 pins, the servos take pins as indicated in the [Servo slot] chart above.
 Settings bellow have motor yaw influence at "0.3", you can change this nuber to have more or less differential thrust over the two motors.
-Note: You can look at the Motors tab in [INAV Cofigurator](https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb?hl=en) to see motor and servo outputs.
+Note: You can look at the Motors tab in [INAV Cofigurator](https://chrome.google.com/webstore/detail/inav-configurator/fmaidjmgkdkpafmbnmigkpdnpdhopgel) to see motor and servo outputs.
 
 | Pins | Outputs          |
 |------|------------------|

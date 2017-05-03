@@ -30,21 +30,21 @@
 #include "config/parameter_group_ids.h"
 #include "config/config_reset.h"
 
-#include "drivers/accgyro.h"
-#include "drivers/accgyro_adxl345.h"
-#include "drivers/accgyro_bma280.h"
-#include "drivers/accgyro_fake.h"
-#include "drivers/accgyro_l3g4200d.h"
-#include "drivers/accgyro_mma845x.h"
-#include "drivers/accgyro_mpu.h"
-#include "drivers/accgyro_mpu3050.h"
-#include "drivers/accgyro_mpu6050.h"
-#include "drivers/accgyro_mpu6500.h"
-#include "drivers/accgyro_l3gd20.h"
-#include "drivers/accgyro_lsm303dlhc.h"
-#include "drivers/accgyro_spi_mpu6000.h"
-#include "drivers/accgyro_spi_mpu6500.h"
-#include "drivers/accgyro_spi_mpu9250.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/accgyro/accgyro_adxl345.h"
+#include "drivers/accgyro/accgyro_bma280.h"
+#include "drivers/accgyro/accgyro_fake.h"
+#include "drivers/accgyro/accgyro_l3g4200d.h"
+#include "drivers/accgyro/accgyro_mma845x.h"
+#include "drivers/accgyro/accgyro_mpu.h"
+#include "drivers/accgyro/accgyro_mpu3050.h"
+#include "drivers/accgyro/accgyro_mpu6050.h"
+#include "drivers/accgyro/accgyro_mpu6500.h"
+#include "drivers/accgyro/accgyro_l3gd20.h"
+#include "drivers/accgyro/accgyro_lsm303dlhc.h"
+#include "drivers/accgyro/accgyro_spi_mpu6000.h"
+#include "drivers/accgyro/accgyro_spi_mpu6500.h"
+#include "drivers/accgyro/accgyro_spi_mpu9250.h"
 #include "drivers/logging.h"
 #include "drivers/sensor.h"
 
@@ -274,8 +274,9 @@ bool accInit(uint32_t targetLooptime)
 {
     memset(&acc, 0, sizeof(acc));
     // copy over the common gyro mpu settings
-    acc.dev.mpuConfiguration = gyro.dev.mpuConfiguration;
-    acc.dev.mpuDetectionResult = gyro.dev.mpuDetectionResult;
+    acc.dev.bus = *gyroSensorBus();
+    acc.dev.mpuConfiguration = *gyroMpuConfiguration();
+    acc.dev.mpuDetectionResult = *gyroMpuDetectionResult();
     if (!accDetect(&acc.dev, accelerometerConfig()->acc_hardware)) {
         return false;
     }

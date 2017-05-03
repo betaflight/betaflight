@@ -25,12 +25,12 @@
 
 #include "build/build_config.h"
 
-#include "time.h"
-#include "sensor.h"
-#include "accgyro.h"
+#include "drivers/time.h"
+#include "drivers/sensor.h"
+#include "drivers/accgyro/accgyro.h"
 #include "adc.h"
 #include "adc_impl.h"
-#include "io.h"
+#include "drivers/io.h"
 #include "rcc.h"
 
 #ifndef ADC_INSTANCE
@@ -108,6 +108,12 @@ void adcInit(drv_adc_config_t *init)
 #ifdef CURRENT_METER_ADC_PIN
     if (init->enableCurrentMeter) {
         adcConfig[ADC_CURRENT].tag = IO_TAG(CURRENT_METER_ADC_PIN);
+    }
+#endif
+
+#ifdef AIRSPEED_ADC_PIN
+    if (init->enableAirSpeed) {
+        adcConfig[ADC_AIRSPEED].tag = IO_TAG(AIRSPEED_ADC_PIN);
     }
 #endif
 

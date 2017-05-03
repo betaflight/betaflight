@@ -244,8 +244,11 @@ portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunctio
 }
 
 batteryState_e getBatteryState(void) {
-	return BATTERY_OK;
+    return BATTERY_OK;
+}
+
+float getEstimatedActualPosition(int axis) {
+    return 0.0f;
 }
 
 }
-

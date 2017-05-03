@@ -2,7 +2,7 @@
 
 ![INAV](http://static.rcgroups.net/forums/attachments/6/1/0/3/7/6/a9088858-102-inav.png)
 
-Welcome to CleanFlight!
+Welcome to INAV!
 
 INAV is an community project which attempts to deliver flight controller firmware and related tools.
 
@@ -28,8 +28,8 @@ We welcome all feedback.  If you love it we want to hear from you, if you have p
 
 If you want to contribute please see the notes here:
 
-https://github.com/cleanflight/cleanflight#contributing
+https://github.com/iNavFlight/inav#contributing
 
 Developers should read this:
 
-https://github.com/cleanflight/cleanflight/blob/master/CONTRIBUTING.md
+https://github.com/iNavFlight/inav/blob/master/CONTRIBUTING.md

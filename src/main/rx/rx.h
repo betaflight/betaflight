@@ -40,8 +40,6 @@
 #define DEFAULT_SERVO_MIN 1000
 #define DEFAULT_SERVO_MIDDLE 1500
 #define DEFAULT_SERVO_MAX 2000
-#define DEFAULT_SERVO_MIN_ANGLE 90
-#define DEFAULT_SERVO_MAX_ANGLE 90
 
 typedef enum {
     RX_FRAME_PENDING = 0,
@@ -91,13 +89,11 @@ typedef struct rxChannelRangeConfig_s {
 } rxChannelRangeConfig_t;
 PG_DECLARE_ARRAY(rxChannelRangeConfig_t, NON_AUX_CHANNEL_COUNT, rxChannelRangeConfigs);
 
-#define RX_NOSIGNAL_THROTTLE_HOLD   0
-#define RX_NOSIGNAL_THROTTLE_DROP   1
-
 typedef struct rxConfig_s {
     uint8_t rcmap[MAX_MAPPABLE_RX_INPUTS];  // mapping of radio channels to internal RPYTA+ order
     uint8_t serialrx_provider;              // type of UART-based receiver (0 = spek 10, 1 = spek 11, 2 = sbus). Must be enabled by FEATURE_RX_SERIAL first.
     uint8_t sbus_inversion;                 // default sbus (Futaba, FrSKY) is inverted. Support for uninverted OpenLRS (and modified FrSKY) receivers.
+    uint8_t halfDuplex;                     // allow rx to operate in half duplex mode on F4, ignored for F1 and F3.
     uint8_t rx_spi_protocol;               // type of nrf24 protocol (0 = v202 250kbps). Must be enabled by FEATURE_RX_NRF24 first.
     uint32_t rx_spi_id;
     uint8_t rx_spi_rf_channel_count;
@@ -112,7 +108,6 @@ typedef struct rxConfig_s {
     uint16_t rx_min_usec;
     uint16_t rx_max_usec;
     uint8_t rcSmoothing;                    // Enable/Disable RC filtering
-    uint8_t rxNoSignalThrottleBehavior;
 } rxConfig_t;
 
 PG_DECLARE(rxConfig_t, rxConfig);

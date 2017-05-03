@@ -28,8 +28,8 @@
 #define NAV_THROTTLE_CUTOFF_FREQENCY_HZ     4       // low-pass filter on throttle output
 #define NAV_ACCEL_CUTOFF_FREQUENCY_HZ       2       // low-pass filter on XY-acceleration target
 #define NAV_FW_CONTROL_MONITORING_RATE      2
-#define NAV_FW_VEL_CUTOFF_FREQENCY_HZ       2       // low-pass filter on Z-velocity for fixed wing
-#define NAV_FW_ROLL_CUTOFF_FREQUENCY_HZ     20      // low-pass filter on roll correction for fixed wing
+#define NAV_FW_PITCH_CUTOFF_FREQENCY_HZ     2       // low-pass filter on Z (pitch angle) for fixed wing
+#define NAV_FW_ROLL_CUTOFF_FREQUENCY_HZ     10      // low-pass filter on roll correction for fixed wing
 #define NAV_DTERM_CUT_HZ                    10
 #define NAV_ACCELERATION_XY_MAX             980.0f  // cm/s/s       // approx 45 deg lean angle
 
@@ -154,15 +154,13 @@ typedef enum {
     NAV_FSM_EVENT_SWITCH_TO_POSHOLD_2D,
     NAV_FSM_EVENT_SWITCH_TO_POSHOLD_3D,
     NAV_FSM_EVENT_SWITCH_TO_RTH,
-    NAV_FSM_EVENT_SWITCH_TO_RTH_2D,
-    NAV_FSM_EVENT_SWITCH_TO_RTH_3D,
     NAV_FSM_EVENT_SWITCH_TO_WAYPOINT,
     NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING,
     NAV_FSM_EVENT_SWITCH_TO_LAUNCH,
 
     NAV_FSM_EVENT_STATE_SPECIFIC_1,             // State-specific event
     NAV_FSM_EVENT_STATE_SPECIFIC_2,             // State-specific event
-    NAV_FSM_EVENT_SWITCH_TO_RTH_3D_LANDING = NAV_FSM_EVENT_STATE_SPECIFIC_1,
+    NAV_FSM_EVENT_SWITCH_TO_RTH_LANDING = NAV_FSM_EVENT_STATE_SPECIFIC_1,
     NAV_FSM_EVENT_SWITCH_TO_WAYPOINT_RTH_LAND = NAV_FSM_EVENT_STATE_SPECIFIC_1,
     NAV_FSM_EVENT_SWITCH_TO_WAYPOINT_FINISHED = NAV_FSM_EVENT_STATE_SPECIFIC_2,
 
@@ -183,37 +181,30 @@ typedef enum {
     NAV_STATE_POSHOLD_3D_INITIALIZE,            // 6
     NAV_STATE_POSHOLD_3D_IN_PROGRESS,           // 7
 
-    NAV_STATE_RTH_INITIALIZE,                   // 8
+    NAV_STATE_RTH_INITIALIZE,                // 8
+    NAV_STATE_RTH_CLIMB_TO_SAFE_ALT,         // 9
+    NAV_STATE_RTH_HEAD_HOME,                 // 10
+    NAV_STATE_RTH_HOVER_PRIOR_TO_LANDING,    // 11
+    NAV_STATE_RTH_LANDING,                   // 12
+    NAV_STATE_RTH_FINISHING,                 // 13
+    NAV_STATE_RTH_FINISHED,                  // 14
 
-    NAV_STATE_RTH_2D_INITIALIZE,                // 9
-    NAV_STATE_RTH_2D_HEAD_HOME,                 // 10
-    NAV_STATE_RTH_2D_FINISHING,                 // 11
-    NAV_STATE_RTH_2D_FINISHED,                  // 12
+    NAV_STATE_WAYPOINT_INITIALIZE,              // 15
+    NAV_STATE_WAYPOINT_PRE_ACTION,              // 16
+    NAV_STATE_WAYPOINT_IN_PROGRESS,             // 17
+    NAV_STATE_WAYPOINT_REACHED,                 // 18
+    NAV_STATE_WAYPOINT_NEXT,                    // 19
+    NAV_STATE_WAYPOINT_FINISHED,                // 20
+    NAV_STATE_WAYPOINT_RTH_LAND,                // 21
 
-    NAV_STATE_RTH_3D_INITIALIZE,                // 13
-    NAV_STATE_RTH_3D_CLIMB_TO_SAFE_ALT,         // 14
-    NAV_STATE_RTH_3D_HEAD_HOME,                 // 15
-    NAV_STATE_RTH_3D_HOVER_PRIOR_TO_LANDING,    // 16
-    NAV_STATE_RTH_3D_LANDING,                   // 17
-    NAV_STATE_RTH_3D_FINISHING,                 // 18
-    NAV_STATE_RTH_3D_FINISHED,                  // 19
+    NAV_STATE_EMERGENCY_LANDING_INITIALIZE,     // 22
+    NAV_STATE_EMERGENCY_LANDING_IN_PROGRESS,    // 23
+    NAV_STATE_EMERGENCY_LANDING_FINISHED,       // 24
 
-    NAV_STATE_WAYPOINT_INITIALIZE,              // 20
-    NAV_STATE_WAYPOINT_PRE_ACTION,              // 21
-    NAV_STATE_WAYPOINT_IN_PROGRESS,             // 22
-    NAV_STATE_WAYPOINT_REACHED,                 // 23
-    NAV_STATE_WAYPOINT_NEXT,                    // 24
-    NAV_STATE_WAYPOINT_FINISHED,                // 25
-    NAV_STATE_WAYPOINT_RTH_LAND,                // 26
-
-    NAV_STATE_EMERGENCY_LANDING_INITIALIZE,     // 27
-    NAV_STATE_EMERGENCY_LANDING_IN_PROGRESS,    // 28
-    NAV_STATE_EMERGENCY_LANDING_FINISHED,       // 29
-
-    NAV_STATE_LAUNCH_INITIALIZE,                // 30
-    NAV_STATE_LAUNCH_WAIT,                      // 31
-    NAV_STATE_LAUNCH_MOTOR_DELAY,               // 32
-    NAV_STATE_LAUNCH_IN_PROGRESS,               // 33
+    NAV_STATE_LAUNCH_INITIALIZE,                // 25
+    NAV_STATE_LAUNCH_WAIT,                      // 26
+    NAV_STATE_LAUNCH_MOTOR_DELAY,               // 27
+    NAV_STATE_LAUNCH_IN_PROGRESS,               // 28
 
     NAV_STATE_COUNT,
 } navigationFSMState_t;

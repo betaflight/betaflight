@@ -63,15 +63,14 @@ static void updateSurfaceTrackingAltitudeSetpoint(timeDelta_t deltaMicros)
 {
     /* If we have a surface offset target and a valid surface offset reading - recalculate altitude target */
     if (posControl.flags.isTerrainFollowEnabled && posControl.desiredState.surface >= 0) {
-        if (posControl.actualState.surface >= 0 && posControl.flags.hasValidSurfaceSensor) {
+        if (posControl.flags.hasValidSurfaceSensor) {
             // We better overshoot a little bit than undershoot
-            const float targetAltitudeError = navPidApply2(&posControl.pids.surface, posControl.desiredState.surface, posControl.actualState.surface, US2S(deltaMicros), -5.0f, +35.0f, 0);
+            const float targetAltitudeError = navPidApply2(&posControl.pids.surface, posControl.desiredState.surface, posControl.actualState.surface, US2S(deltaMicros), -35.0f, +35.0f, 0);
             posControl.desiredState.pos.V.Z = posControl.actualState.pos.V.Z + targetAltitudeError;
         }
         else {
             // TODO: We are possible above valid range, we now descend down to attempt to get back within range
-            //updateAltitudeTargetFromClimbRate(-0.10f * navConfig()->emerg_descent_rate, CLIMB_RATE_KEEP_SURFACE_TARGET);
-            updateAltitudeTargetFromClimbRate(-20.0f, CLIMB_RATE_KEEP_SURFACE_TARGET);
+            updateAltitudeTargetFromClimbRate(-50.0f, CLIMB_RATE_KEEP_SURFACE_TARGET);
         }
     }
 
@@ -87,7 +86,12 @@ static void updateAltitudeVelocityController_MC(timeDelta_t deltaMicros)
     float targetVel = altitudeError * posControl.pids.pos[Z].param.kP;
 
     // hard limit desired target velocity to max_climb_rate
-    targetVel = constrainf(targetVel, -navConfig()->general.max_climb_rate, navConfig()->general.max_climb_rate);
+    if (posControl.flags.isAdjustingAltitude) {
+        targetVel = constrainf(targetVel, -navConfig()->general.max_manual_climb_rate, navConfig()->general.max_manual_climb_rate);
+    }
+    else {
+        targetVel = constrainf(targetVel, -navConfig()->general.max_auto_climb_rate, navConfig()->general.max_auto_climb_rate);
+    }
 
     // limit max vertical acceleration to 1/5G (~200 cm/s/s) if we are increasing velocity.
     // if we are decelerating - don't limit (allow better recovery from falling)
@@ -525,7 +529,7 @@ bool isMulticopterLandingDetected(void)
     navDebug[2] = (currentTimeUs - landingTimer) / 1000;
 
     // If we have surface sensor (for example sonar) - use it to detect touchdown
-    if (posControl.flags.hasValidSurfaceSensor && posControl.actualState.surface >= 0 && posControl.actualState.surfaceMin >= 0) {
+    if (posControl.flags.hasValidSurfaceSensor && posControl.actualState.surfaceMin >= 0) {
         // TODO: Come up with a clever way to let sonar increase detection performance, not just add extra safety.
         // TODO: Out of range sonar may give reading that looks like we landed, find a way to check if sonar is healthy.
         // surfaceMin is our ground reference. If we are less than 5cm above the ground - we are likely landed
@@ -614,12 +618,12 @@ void calculateMulticopterInitialHoldPosition(t_fp_vector * pos)
 
 void resetMulticopterHeadingController(void)
 {
-    updateMagHoldHeading(CENTIDEGREES_TO_DEGREES(posControl.actualState.yaw));
+    updateHeadingHoldTarget(CENTIDEGREES_TO_DEGREES(posControl.actualState.yaw));
 }
 
 static void applyMulticopterHeadingController(void)
 {
-    updateMagHoldHeading(CENTIDEGREES_TO_DEGREES(posControl.desiredState.yaw));
+    updateHeadingHoldTarget(CENTIDEGREES_TO_DEGREES(posControl.desiredState.yaw));
 }
 
 void applyMulticopterNavigationController(navigationFSMStateFlags_t navStateFlags, timeUs_t currentTimeUs)

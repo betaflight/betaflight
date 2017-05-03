@@ -92,50 +92,61 @@ float filterGetNotchQ(uint16_t centerFreq, uint16_t cutoff)
     return sqrtf(powf(2, octaves)) / (powf(2, octaves) - 1);
 }
 
-void biquadFilterInitNotch(biquadFilter_t *filter, uint32_t refreshRate, uint16_t filterFreq, uint16_t cutoffHz)
+void biquadFilterInitNotch(biquadFilter_t *filter, uint32_t samplingIntervalUs, uint16_t filterFreq, uint16_t cutoffHz)
 {
     float Q = filterGetNotchQ(filterFreq, cutoffHz);
-    biquadFilterInit(filter, filterFreq, refreshRate, Q, FILTER_NOTCH);
+    biquadFilterInit(filter, filterFreq, samplingIntervalUs, Q, FILTER_NOTCH);
 }
 
 // sets up a biquad Filter
-void biquadFilterInitLPF(biquadFilter_t *filter, uint16_t filterFreq, uint32_t refreshRate)
+void biquadFilterInitLPF(biquadFilter_t *filter, uint16_t filterFreq, uint32_t samplingIntervalUs)
 {
-    biquadFilterInit(filter, filterFreq, refreshRate, BIQUAD_Q, FILTER_LPF);
+    biquadFilterInit(filter, filterFreq, samplingIntervalUs, BIQUAD_Q, FILTER_LPF);
 }
 
-void biquadFilterInit(biquadFilter_t *filter, uint16_t filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType)
+void biquadFilterInit(biquadFilter_t *filter, uint16_t filterFreq, uint32_t samplingIntervalUs, float Q, biquadFilterType_e filterType)
 {
-    // setup variables
-    const float sampleRate = 1.0f / ((float)refreshRate * 0.000001f);
-    const float omega = 2.0f * M_PIf * ((float)filterFreq) / sampleRate;
-    const float sn = sin_approx(omega);
-    const float cs = cos_approx(omega);
-    const float alpha = sn / (2 * Q);
+    // Check for Nyquist frequency and if it's not possible to initialize filter as requested - set to no filtering at all
+    if (filterFreq < (1000000 / samplingIntervalUs / 2)) {
+        // setup variables
+        const float sampleRate = 1.0f / ((float)samplingIntervalUs * 0.000001f);
+        const float omega = 2.0f * M_PIf * ((float)filterFreq) / sampleRate;
+        const float sn = sin_approx(omega);
+        const float cs = cos_approx(omega);
+        const float alpha = sn / (2 * Q);
 
-    float b0, b1, b2;
-    switch (filterType) {
-    case FILTER_LPF:
-        b0 = (1 - cs) / 2;
-        b1 = 1 - cs;
-        b2 = (1 - cs) / 2;
-        break;
-    case FILTER_NOTCH:
-        b0 =  1;
-        b1 = -2 * cs;
-        b2 =  1;
-        break;
+        float b0, b1, b2;
+        switch (filterType) {
+        case FILTER_LPF:
+            b0 = (1 - cs) / 2;
+            b1 = 1 - cs;
+            b2 = (1 - cs) / 2;
+            break;
+        case FILTER_NOTCH:
+            b0 =  1;
+            b1 = -2 * cs;
+            b2 =  1;
+            break;
+        }
+        const float a0 =  1 + alpha;
+        const float a1 = -2 * cs;
+        const float a2 =  1 - alpha;
+
+        // precompute the coefficients
+        filter->b0 = b0 / a0;
+        filter->b1 = b1 / a0;
+        filter->b2 = b2 / a0;
+        filter->a1 = a1 / a0;
+        filter->a2 = a2 / a0;
     }
-    const float a0 =  1 + alpha;
-    const float a1 = -2 * cs;
-    const float a2 =  1 - alpha;
-
-    // precompute the coefficients
-    filter->b0 = b0 / a0;
-    filter->b1 = b1 / a0;
-    filter->b2 = b2 / a0;
-    filter->a1 = a1 / a0;
-    filter->a2 = a2 / a0;
+    else {
+        // Not possible to filter frequencies above Nyquist frequency - passthrough
+        filter->b0 = 1.0f;
+        filter->b1 = 0.0f;
+        filter->b2 = 0.0f;
+        filter->a1 = 0.0f;
+        filter->a2 = 0.0f;
+    }
 
     // zero initial samples
     filter->d1 = filter->d2 = 0;

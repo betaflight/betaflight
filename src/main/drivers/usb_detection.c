@@ -19,8 +19,8 @@
 #include <stdint.h>
 
 #include "platform.h"
-#include "io.h"
-#include "time.h"
+#include "drivers/io.h"
+#include "drivers/time.h"
 
 static IO_t usbDetectPin = IO_NONE;
 

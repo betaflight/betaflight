@@ -26,6 +26,7 @@
 
 #include "common/maths.h"
 #include "common/utils.h"
+#include "common/time.h"
 
 #include "config/feature.h"
 #include "config/parameter_group.h"
@@ -33,6 +34,7 @@
 
 #include "drivers/io.h"
 #include "drivers/logging.h"
+#include "drivers/time.h"
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/sonar_srf10.h"
 #include "drivers/rangefinder.h"
@@ -45,6 +47,8 @@
 #include "sensors/battery.h"
 
 rangefinder_t rangefinder;
+
+#define RANGEFINDER_HARDWARE_TIMEOUT_MS         500     // Accept 500ms of non-responsive sensor, report HW failure otherwise
 
 #ifdef SONAR
 PG_REGISTER_WITH_RESET_TEMPLATE(rangefinderConfig_t, rangefinderConfig, PG_RANGEFINDER_CONFIG, 0);
@@ -130,6 +134,7 @@ bool rangefinderInit(void)
     rangefinder.rawAltitude = RANGEFINDER_OUT_OF_RANGE;
     rangefinder.calculatedAltitude = RANGEFINDER_OUT_OF_RANGE;
     rangefinder.maxTiltCos = cos_approx(DECIDEGREES_TO_RADIANS(rangefinder.dev.detectionConeExtendedDeciDegrees / 2.0f));
+    rangefinder.lastValidResponseTimeMs = millis();
 
     return true;
 }
@@ -155,11 +160,13 @@ static int32_t applyMedianFilter(int32_t newReading)
 /*
  * This is called periodically by the scheduler
  */
-void rangefinderUpdate(void)
+timeDelta_t rangefinderUpdate(void)
 {
     if (rangefinder.dev.update) {
         rangefinder.dev.update();
     }
+
+    return rangefinder.dev.delayMs * 1000;  // to microseconds
 }
 
 /**
@@ -170,13 +177,20 @@ int32_t rangefinderRead(void)
     if (rangefinder.dev.read) {
         const int32_t distance = rangefinder.dev.read();
         if (distance >= 0) {
+            rangefinder.lastValidResponseTimeMs = millis();
             rangefinder.rawAltitude = applyMedianFilter(distance);
         }
-        else {
+        else if (distance == RANGEFINDER_OUT_OF_RANGE) {
+            rangefinder.lastValidResponseTimeMs = millis();
             rangefinder.rawAltitude = RANGEFINDER_OUT_OF_RANGE;
+        }
+        else {
+            // Invalid response / hardware failure
+            rangefinder.rawAltitude = RANGEFINDER_HARDWARE_FAILURE;
         }
     }
     else {
+        // Bad configuration
         rangefinder.rawAltitude = RANGEFINDER_OUT_OF_RANGE;
     }
 
@@ -211,7 +225,7 @@ int32_t rangefinderGetLatestAltitude(void)
 
 bool rangefinderIsHealthy(void)
 {
-    return true;
+    return (millis() - rangefinder.lastValidResponseTimeMs) < RANGEFINDER_HARDWARE_TIMEOUT_MS;
 }
 #endif
 

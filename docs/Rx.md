@@ -99,7 +99,7 @@ These receivers are reported working:
 XG14 14ch DMSS System w/RG731BX XBus Receiver
 http://www.jramericas.com/233794/JRP00631/
 
-There exist a remote receiver made for small BNF-models like the Align T-Rex 150 helicopter. The code also supports using the Align DMSS RJ01 receiver directly with the cleanflight software.
+There exist a remote receiver made for small BNF-models like the Align T-Rex 150 helicopter. The code also supports using the Align DMSS RJ01 receiver directly with the INAV software.
 To use this receiver you must power it with 3V from the hardware, and then connect the serial line as other serial RX receivers.
 In order for this receiver to work, you need to specify the XBUS_MODE_B_RJ01 for serialrx_provider. Note that you need to set your radio mode for XBUS "MODE B" also for this receiver to work.
 Receiver name: Align DMSS RJ01 (HER15001)
@@ -126,12 +126,26 @@ SUMH is a legacy Graupner protocol.  Graupner have issued a firmware updates for
 
 10 channels via serial currently supported.
 
-IBUS is the FlySky digital serial protocol and is available with the FS-IA6B and
-FS-IA10 receivers. The Turnigy TGY-IA6B and TGY-IA10 are the same
-devices with a different label, therefore they also work.
+IBUS is the FlySky digital serial protocol and is available with the FS-IA6B, FS-X6B and FS-IA10 receivers. 
+The Turnigy TGY-IA6B and TGY-IA10 are the same devices with a different label, therefore they also work.
 
-If you are using a 6ch tx such as the FS-I6 or TGY-I6 then you must flash a 10ch
-firmware on the tx to make use of these extra channels.
+IBUS can provide up to 120Hz refresh rate, more than double compared to standard 50Hz of PPM.
+
+FlySky FS-I6X TX natively supports 10ch.
+
+If you are using a 6ch TX such as the FS-I6 or TGY-I6 then you must flash a 10ch
+firmware on the TX to make use of these extra channels.
+The flash is avaliable here: https://github.com/benb0jangles/FlySky-i6-Mod-
+```
+     _______
+    /       \                               /------------\
+    | STM32 |-->UART RX-->[115200 baud]---->| Flysky RX  |
+    |  uC   |-  UART TX--x[not connected]   | IBUS-Servo |
+    \_______/                               \------------/
+```
+After flash "10ch Timer Mod i6 Updater", it is passible to get RSSI signal on selected Aux channel from FS-i6 Err sensor.
+
+It is possible to use IBUS RX and IBUS telemetry on only one port of the hardware UART. More information in Telemetry.md.
 
 ## MultiWii serial protocol (MSP)
 
@@ -236,6 +250,9 @@ For Serial RX enable `RX_SERIAL` and set the `serialrx_provider` CLI setting as 
 | SUMH               | 4     |
 | XBUS_MODE_B        | 5     |
 | XBUS_MODE_B_RJ01   | 6     |
+| SERIALRX_IBUS      | 7     |
+| SERIALRX_JETIEXBUS | 8     |
+| SERIALRX_CRSF      | 9     |
 
 ### PPM/PWM input filtering.
 

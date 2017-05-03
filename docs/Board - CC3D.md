@@ -5,7 +5,7 @@ auto-piloting.  It only has one sensor, the MPU6000 SPI based Accelerometer/Gyro
 It also features a 16Mbit SPI based EEPROM chip.  It has 6 ports labeled as inputs (one pin each)
 and 6 ports labeled as motor/servo outputs (3 pins each).
 
-If issues are found with this board please report via the [github issue tracker](https://github.com/cleanflight/cleanflight/issues).
+If issues are found with this board please report via the [github issue tracker](https://github.com/iNavFlight/inav/issues).
 
 The board has a USB port directly connected to the processor.  Other boards like the Naze and Flip32
 have an on-board USB to uart adapter which connect to the processor's serial port instead.

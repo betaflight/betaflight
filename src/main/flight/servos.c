@@ -70,7 +70,6 @@ PG_RESET_TEMPLATE(servoConfig_t, servoConfig,
     .servoPwmRate = 50,             // Default for analog servos
     .servo_lowpass_freq = 20,       // Default servo update rate is 50Hz, everything above Nyquist frequency (25Hz) is going to fold and cause distortions
     .flaperon_throw_offset = FLAPERON_THROW_DEFAULT,
-    .flaperon_throw_inverted = 0,
     .tri_unarmed_servo = 1
 );
 
@@ -86,8 +85,6 @@ void pgResetFn_servoParams(servoParam_t *instance)
             .max = DEFAULT_SERVO_MAX,
             .middle = DEFAULT_SERVO_MIDDLE,
             .rate = 100,
-            .angleAtMin = DEFAULT_SERVO_MIN_ANGLE,
-            .angleAtMax = DEFAULT_SERVO_MAX_ANGLE,
             .forwardFromChannel = CHANNEL_FORWARDING_DISABLED
         );
     }
@@ -111,17 +108,17 @@ static bool servoFilterIsSet;
 static const servoMixer_t servoMixerAirplane[] = {
     { SERVO_FLAPPERON_1, INPUT_STABILIZED_ROLL,  100, 0, 0, 100 },
     { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL,  100, 0, 0, 100 },
-    { SERVO_RUDDER, INPUT_STABILIZED_YAW,   100, 0, 0, 100 },
-    { SERVO_ELEVATOR, INPUT_STABILIZED_PITCH, 100, 0, 0, 100 },
-    { SERVO_THROTTLE, INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100 },
+    { SERVO_FLAPPERON_1, INPUT_FEATURE_FLAPS,    100, 0, 0, 100 },
+    { SERVO_FLAPPERON_2, INPUT_FEATURE_FLAPS,   -100, 0, 0, 100 },
+    { SERVO_RUDDER,      INPUT_STABILIZED_YAW,   100, 0, 0, 100 },
+    { SERVO_ELEVATOR,    INPUT_STABILIZED_PITCH, 100, 0, 0, 100 },
 };
 
 static const servoMixer_t servoMixerFlyingWing[] = {
     { SERVO_FLAPPERON_1, INPUT_STABILIZED_ROLL,  100, 0, 0, 100 },
     { SERVO_FLAPPERON_1, INPUT_STABILIZED_PITCH, 100, 0, 0, 100 },
-    { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL,  -100, 0, 0, 100 },
+    { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL, -100, 0, 0, 100 },
     { SERVO_FLAPPERON_2, INPUT_STABILIZED_PITCH, 100, 0, 0, 100 },
-    { SERVO_THROTTLE, INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100 },
 };
 
 static const servoMixer_t servoMixerTri[] = {
@@ -380,6 +377,8 @@ void servoMixer(void)
         }
     }
 
+    input[INPUT_FEATURE_FLAPS] = FLIGHT_MODE(FLAPERON) ? servoConfig()->flaperon_throw_offset : 0;
+
     input[INPUT_GIMBAL_PITCH] = scaleRange(attitude.values.pitch, -1800, 1800, -500, +500);
     input[INPUT_GIMBAL_ROLL] = scaleRange(attitude.values.roll, -1800, 1800, -500, +500);
 
@@ -420,18 +419,6 @@ void servoMixer(void)
             } else if (currentOutput[i] > input[from]) {
                 currentOutput[i] = constrain(currentOutput[i] - currentServoMixer[i].speed, input[from], currentOutput[i]);
             }
-        }
-
-        /*
-        Flaperon fligh mode
-        */
-        if (FLIGHT_MODE(FLAPERON) && (target == SERVO_FLAPPERON_1 || target == SERVO_FLAPPERON_2)) {
-            int8_t multiplier = 1;
-
-            if (servoConfig()->flaperon_throw_inverted == 1) {
-                multiplier = -1;
-            }
-            currentOutput[i] += servoConfig()->flaperon_throw_offset * getFlaperonDirection(target) * multiplier;
         }
 
         servo[target] += servoDirection(target, from) * constrain(((int32_t)currentOutput[i] * currentServoMixer[i].rate) / 100, min, max);

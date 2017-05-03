@@ -21,7 +21,7 @@
 
 #include "config/parameter_group.h"
 
-#include "drivers/compass.h"
+#include "drivers/compass/compass.h"
 
 #include "sensors/sensors.h"
 
@@ -39,10 +39,6 @@ typedef enum {
     MAG_MAX = MAG_FAKE
 } magSensor_e;
 
-#define MAG_HOLD_RATE_LIMIT_MIN 10
-#define MAG_HOLD_RATE_LIMIT_MAX 250
-#define MAG_HOLD_RATE_LIMIT_DEFAULT 90
-
 typedef struct mag_s {
     magDev_t dev;
     float magneticDeclination;
@@ -57,7 +53,7 @@ typedef struct compassConfig_s {
     sensor_align_e mag_align;               // mag alignment
     uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
     flightDynamicsTrims_t magZero;
-    uint8_t mag_hold_rate_limit;            // Maximum rotation rate MAG_HOLD mode can feed to yaw rate PID controller
+    uint8_t __dummy_1;                      // Maximum rotation rate MAG_HOLD mode can feed to yaw rate PID controller
     uint8_t magCalibrationTimeLimit;        // Time for compass calibration (seconds)
 } compassConfig_t;
 

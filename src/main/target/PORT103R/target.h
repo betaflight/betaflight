@@ -25,8 +25,7 @@
 
 #define BEEPER                  PA12 // PA12 (Beeper)
 
-#define INVERTER                PB2 // PB2 (BOOT1) abused as inverter select GPIO
-#define INVERTER_USART          USART2
+#define INVERTER_PIN_UART2      PB2 // PB2 (BOOT1) abused as inverter select GPIO
 
 #define BARO_XCLR_PIN           PC13
 #define BARO_EOC_PIN            PC14

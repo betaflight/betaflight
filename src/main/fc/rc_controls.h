@@ -20,34 +20,35 @@
 #include "config/parameter_group.h"
 
 typedef enum {
-    BOXARM = 0,
-    BOXANGLE,
-    BOXHORIZON,
-    BOXNAVALTHOLD,  // old BOXBARO
-    BOXMAG,
-    BOXHEADFREE,
-    BOXHEADADJ,
-    BOXCAMSTAB,
-    BOXNAVRTH,      // old GPSHOME
-    BOXNAVPOSHOLD,  // old GPSHOLD
-    BOXPASSTHRU,
-    BOXBEEPERON,
-    BOXLEDLOW,
-    BOXLLIGHTS,
-    BOXNAVLAUNCH,
-    BOXOSD,
-    BOXTELEMETRY,
-    BOXBLACKBOX,
-    BOXFAILSAFE,
-    BOXNAVWP,
-    BOXAIRMODE,
-    BOXHOMERESET,
-    BOXGCSNAV,
-    BOXHEADINGLOCK,
-    BOXSURFACE,
-    BOXFLAPERON,
-    BOXTURNASSIST,
-    BOXAUTOTRIM,
+    BOXARM          = 0,
+    BOXANGLE        = 1,
+    BOXHORIZON      = 2,
+    BOXNAVALTHOLD   = 3,    // old BOXBARO
+    BOXHEADINGHOLD  = 4,    // old MAG
+    BOXHEADFREE     = 5,
+    BOXHEADADJ      = 6,
+    BOXCAMSTAB      = 7,
+    BOXNAVRTH       = 8,    // old GPSHOME
+    BOXNAVPOSHOLD   = 9,    // old GPSHOLD
+    BOXPASSTHRU     = 10,
+    BOXBEEPERON     = 11,
+    BOXLEDLOW       = 12,
+    BOXLLIGHTS      = 13,
+    BOXNAVLAUNCH    = 14,
+    BOXOSD          = 15,
+    BOXTELEMETRY    = 16,
+    BOXBLACKBOX     = 17,
+    BOXFAILSAFE     = 18,
+    BOXNAVWP        = 19,
+    BOXAIRMODE      = 20,
+    BOXHOMERESET    = 21,
+    BOXGCSNAV       = 22,
+    BOXKILLSWITCH   = 23,   // old HEADING LOCK
+    BOXSURFACE      = 24,
+    BOXFLAPERON     = 25,
+    BOXTURNASSIST   = 26,
+    BOXAUTOTRIM     = 27,
+    BOXAUTOTUNE     = 28,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 
@@ -81,18 +82,23 @@ typedef enum {
     CENTERED
 } rollPitchStatus_e;
 
-#define ROL_LO (1 << (2 * ROLL))
-#define ROL_CE (3 << (2 * ROLL))
-#define ROL_HI (2 << (2 * ROLL))
-#define PIT_LO (1 << (2 * PITCH))
-#define PIT_CE (3 << (2 * PITCH))
-#define PIT_HI (2 << (2 * PITCH))
-#define YAW_LO (1 << (2 * YAW))
-#define YAW_CE (3 << (2 * YAW))
-#define YAW_HI (2 << (2 * YAW))
-#define THR_LO (1 << (2 * THROTTLE))
-#define THR_CE (3 << (2 * THROTTLE))
-#define THR_HI (2 << (2 * THROTTLE))
+typedef enum {
+    ROL_LO = (1 << (2 * ROLL)),
+    ROL_CE = (3 << (2 * ROLL)),
+    ROL_HI = (2 << (2 * ROLL)),
+
+    PIT_LO = (1 << (2 * PITCH)),
+    PIT_CE = (3 << (2 * PITCH)),
+    PIT_HI = (2 << (2 * PITCH)),
+
+    YAW_LO = (1 << (2 * YAW)),
+    YAW_CE = (3 << (2 * YAW)),
+    YAW_HI = (2 << (2 * YAW)),
+
+    THR_LO = (1 << (2 * THROTTLE)),
+    THR_CE = (3 << (2 * THROTTLE)),
+    THR_HI = (2 << (2 * THROTTLE))
+} stickPositions_e;
 
 #define MAX_MODE_ACTIVATION_CONDITION_COUNT 20
 
@@ -155,6 +161,9 @@ typedef struct armingConfig_s {
 } armingConfig_t;
 
 PG_DECLARE(armingConfig_t, armingConfig);
+
+stickPositions_e getRcStickPositions(void);
+bool checkStickPosition(stickPositions_e stickPos);
 
 bool areUsingSticksToArm(void);
 

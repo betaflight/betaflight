@@ -28,13 +28,13 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/compass.h"
-#include "drivers/compass_ak8963.h"
-#include "drivers/compass_ak8975.h"
-#include "drivers/compass_fake.h"
-#include "drivers/compass_hmc5883l.h"
-#include "drivers/compass_mag3110.h"
-#include "drivers/compass_ist8310.h"
+#include "drivers/compass/compass.h"
+#include "drivers/compass/compass_ak8963.h"
+#include "drivers/compass/compass_ak8975.h"
+#include "drivers/compass/compass_fake.h"
+#include "drivers/compass/compass_hmc5883l.h"
+#include "drivers/compass/compass_mag3110.h"
+#include "drivers/compass/compass_ist8310.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/logging.h"
@@ -46,8 +46,9 @@
 #include "io/gps.h"
 
 #include "sensors/boardalignment.h"
-#include "sensors/sensors.h"
 #include "sensors/compass.h"
+#include "sensors/gyro.h"
+#include "sensors/sensors.h"
 
 #ifdef NAZE
 #include "hardware_revision.h"
@@ -55,7 +56,7 @@
 
 mag_t mag;                   // mag access functions
 
-PG_REGISTER_WITH_RESET_TEMPLATE(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 1);
 
 #ifdef MAG
 #define MAG_HARDWARE_DEFAULT    MAG_AUTODETECT
@@ -66,13 +67,11 @@ PG_RESET_TEMPLATE(compassConfig_t, compassConfig,
     .mag_align = ALIGN_DEFAULT,
     .mag_hardware = MAG_HARDWARE_DEFAULT,
     .mag_declination = 0,
-    .mag_hold_rate_limit = MAG_HOLD_RATE_LIMIT_DEFAULT,
     .magCalibrationTimeLimit = 30
 );
 
 #ifdef MAG
 
-static int16_t magADCRaw[XYZ_AXIS_COUNT];
 static uint8_t magInit = 0;
 static uint8_t magUpdatedAtLeastOnce = 0;
 
@@ -233,12 +232,14 @@ bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse)
 
 bool compassInit(void)
 {
+    // copy over SPI bus settings for AK8963 compass
+    mag.dev.bus = *gyroSensorBus();
     if (!compassDetect(&mag.dev, compassConfig()->mag_hardware)) {
         return false;
     }
     // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)
     LED1_ON;
-    const bool ret = mag.dev.init();
+    const bool ret = mag.dev.init(&mag.dev);
     LED1_OFF;
     if (ret) {
         const int deg = compassConfig()->mag_declination / 100;
@@ -280,7 +281,7 @@ void compassUpdate(timeUs_t currentTimeUs)
         ENABLE_STATE(COMPASS_CALIBRATED);
     }
 
-    if (!mag.dev.read(magADCRaw)) {
+    if (!mag.dev.read(&mag.dev)) {
         mag.magADC[X] = 0;
         mag.magADC[Y] = 0;
         mag.magADC[Z] = 0;
@@ -288,7 +289,7 @@ void compassUpdate(timeUs_t currentTimeUs)
     }
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        mag.magADC[axis] = magADCRaw[axis];  // int32_t copy to work with
+        mag.magADC[axis] = mag.dev.magADCRaw[axis];  // int32_t copy to work with
     }
 
     if (STATE(CALIBRATE_MAG)) {

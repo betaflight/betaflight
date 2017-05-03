@@ -50,8 +50,8 @@
 #include "drivers/serial_softserial.h"
 #include "drivers/serial_uart.h"
 #include "drivers/system.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/compass/compass.h"
 #include "drivers/pwm_mapping.h"
 #include "drivers/pwm_output.h"
 #include "drivers/pwm_rx.h"
@@ -359,8 +359,8 @@ void init(void)
     beeperInit(&beeperDevConfig);
 #endif
 
-#ifdef INVERTER
-    initInverter();
+#ifdef USE_INVERTER
+    initInverters();
 #endif
 
 
@@ -474,12 +474,6 @@ void init(void)
     }
 #endif
 
-#ifdef OSD
-    if (feature(FEATURE_OSD)) {
-        osdInit();
-    }
-#endif
-
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
         gpsPreInit();
@@ -505,10 +499,6 @@ void init(void)
     mspFcInit();
     mspSerialInit();
 
-#if defined(USE_MSP_DISPLAYPORT) && defined(CMS)
-    cmsDisplayPortRegister(displayPortMspInit());
-#endif
-
 #ifdef USE_CLI
     cliInit(serialConfig());
 #endif
@@ -516,6 +506,16 @@ void init(void)
     failsafeInit();
 
     rxInit();
+
+#ifdef OSD
+    if (feature(FEATURE_OSD)) {
+        osdInit();
+    }
+#endif
+
+#if defined(USE_MSP_DISPLAYPORT) && defined(CMS)
+    cmsDisplayPortRegister(displayPortMspInit());
+#endif
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
@@ -582,15 +582,15 @@ void init(void)
 #endif
 
 #ifdef BLACKBOX
-    initBlackbox();
+    blackboxInit();
 #endif
 
     gyroSetCalibrationCycles(CALIBRATING_GYRO_CYCLES);
 #ifdef BARO
-    baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
+    baroStartCalibration();
 #endif
 #ifdef PITOT
-    pitotSetCalibrationCycles(CALIBRATING_PITOT_CYCLES);
+    pitotStartCalibration();
 #endif
 
     // start all timers

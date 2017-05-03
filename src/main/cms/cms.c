@@ -582,10 +582,6 @@ long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
 
 // Stick/key detection and key codes
 
-#define IS_HI(X)  (rcData[X] > 1750)
-#define IS_LO(X)  (rcData[X] < 1250)
-#define IS_MID(X) (rcData[X] > 1250 && rcData[X] < 1750)
-
 #define KEY_NONE    0
 #define KEY_UP      1
 #define KEY_DOWN    2
@@ -810,7 +806,7 @@ static void cmsUpdate(timeUs_t currentTimeUs)
 
     if (!cmsInMenu) {
         // Detect menu invocation
-        if (IS_MID(THROTTLE) && IS_LO(YAW) && IS_HI(PITCH) && !ARMING_FLAG(ARMED)) {
+        if (checkStickPosition(THR_CE + YAW_LO + PIT_HI) && !ARMING_FLAG(ARMED)) {
             cmsMenuOpen();
             rcDelayMs = BUTTON_PAUSE;    // Tends to overshoot if BUTTON_TIME
         }
@@ -821,22 +817,22 @@ static void cmsUpdate(timeUs_t currentTimeUs)
 
         uint8_t key = KEY_NONE;
 
-        if (IS_MID(THROTTLE) && IS_LO(YAW) && IS_HI(PITCH) && !ARMING_FLAG(ARMED)) {
+        if (checkStickPosition(THR_CE + YAW_LO + PIT_HI) && !ARMING_FLAG(ARMED)) {
             key = KEY_MENU;
         }
-        else if (IS_HI(PITCH)) {
+        else if (checkStickPosition(PIT_HI)) {
             key = KEY_UP;
         }
-        else if (IS_LO(PITCH)) {
+        else if (checkStickPosition(PIT_LO)) {
             key = KEY_DOWN;
         }
-        else if (IS_LO(ROLL)) {
+        else if (checkStickPosition(ROL_LO)) {
             key = KEY_LEFT;
         }
-        else if (IS_HI(ROLL)) {
+        else if (checkStickPosition(ROL_HI)) {
             key = KEY_RIGHT;
         }
-        else if (IS_HI(YAW) || IS_LO(YAW))
+        else if (checkStickPosition(YAW_HI) || checkStickPosition(YAW_LO))
         {
             key = KEY_ESC;
         }

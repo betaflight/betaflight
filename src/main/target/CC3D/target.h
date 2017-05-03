@@ -19,8 +19,7 @@
 
 #define LED0                    PB3
 
-#define INVERTER                PB2 // PB2 (BOOT1) used as inverter select GPIO
-#define INVERTER_USART          USART1
+#define INVERTER_PIN_UART1      PB2 // PB2 (BOOT1) used as inverter select GPIO
 
 #define BEEPER                  PA15
 #define BEEPER_OPT              PB2
@@ -194,6 +193,8 @@
 #undef SPEKTRUM_BIND
 #endif
 
+#define AUTOTUNE_FIXED_WING
+
 // Number of available PWM outputs
 #define MAX_PWM_OUTPUT_PORTS    11
 
@@ -207,6 +208,14 @@
 //#define USE_FAKE_MAG
 //#define USE_FAKE_BARO
 //#define USE_FAKE_GPS
+
+//#undef TELEMETRY_FRSKY
+//#define TELEMETRY_MAVLINK
+//#define USE_SERIALRX_SUMD
+//#define TELEMETRY_HOTT
+
+// CC3D is widely used for airplanes - enable fw_autotune
+#define AUTOTUNE_FIXED_WING
 
 // IO - from schematics
 #define TARGET_IO_PORTA         0xffff

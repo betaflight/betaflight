@@ -61,6 +61,7 @@
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
+#include "sensors/boardalignment.h"
 #include "sensors/gyro.h"
 #include "sensors/barometer.h"
 
@@ -87,33 +88,75 @@ static char lineBuffer[SCREEN_CHARACTER_COLUMN_COUNT + 1];
 #define IS_SCREEN_CHARACTER_COLUMN_COUNT_ODD (SCREEN_CHARACTER_COLUMN_COUNT & 1)
 
 #if defined(DASHBOARD_ARMED_BITMAP)
-static uint8_t armedBitmapRLE [] = { 128, 32,
-    '\x00','\x00','\x87','\xc0','\xe0','\xf8','\xfc','\xfc', // 0x0008
-    '\x02','\x7e','\x3e','\x1f','\x0f','\x0f','\x06','\xcf', // 0x0010
-    '\xff','\xff','\x04','\x7f','\x1f','\x8e','\xe0','\xf0', // 0x0018
-    '\xfc','\xfe','\x7f','\x3f','\x0f','\x0f','\x06','\x8f', // 0x0020
-    '\xcf','\xff','\xff','\x04','\x7f','\x1f','\x8e','\xe0', // 0x0028
-    '\xf0','\xfc','\xfe','\x7f','\x3f','\x0f','\x0f','\x06', // 0x0030
-    '\xcf','\xef','\xff','\xff','\x03','\x7f','\x1f','\x0f', // 0x0038
-    '\x0f','\x06','\xcf','\xff','\xff','\x04','\x7f','\x1f', // 0x0040
-    '\x8e','\xe0','\xf0','\xfc','\xfe','\xff','\xbf','\x8f', // 0x0048
-    '\x8f','\x05','\x0f','\x0f','\x08','\x07','\x07','\x02', // 0x0050
-    '\x83','\xe3','\xf1','\xfd','\xfe','\x7f','\x3f','\x0f', // 0x0058
-    '\x0f','\x07','\xcf','\xff','\xff','\x04','\x7f','\x1f', // 0x0060
-    '\x0e','\x00','\x00','\x03','\x80','\xc0','\xf0','\xf8', // 0x0068
-    '\xfe','\x7f','\x3f','\x1f','\x0f','\x0f','\x06','\x8f', // 0x0070
-    '\xef','\xff','\xff','\x03','\x7f','\x3f','\x8f','\xc7', // 0x0078
-    '\xf3','\xf8','\xfe','\xff','\x3f','\x1f','\x0f','\x0f', // 0x0080
-    '\x06','\x8f','\xcf','\xff','\xff','\x04','\x3f','\x9f', // 0x0088
-    '\xc3','\xf1','\xf8','\xfc','\xff','\x3f','\x1f','\x07', // 0x0090
-    '\x03','\x00','\x00','\x03','\x80','\xc0','\xf0','\xf8', // 0x0098
-    '\xfe','\xff','\x3f','\x1f','\x07','\x03','\x00','\x00', // 0x00a0
-    '\x03','\x80','\xc0','\xf0','\xf8','\xfe','\xff','\x3f', // 0x00a8
-    '\x9f','\xc7','\xf3','\xf8','\xfc','\xff','\xff','\x03', // 0x00b0
-    '\xf7','\xf3','\xf3','\x04','\xf1','\xf1','\x03','\xf0', // 0x00b8
-    '\xf0','\x09','\xf8','\xfe','\xff','\xff','\x03','\xf7', // 0x00c0
-    '\xf3','\xf0','\xf0','\x06','\xf8','\x7c','\x7e','\x3f', // 0x00c8
-    '\x3f','\x02','\x1f','\x07','\x03','\x00','\x00','\x86', // 0x00d0
+static uint8_t armedBitmapRLE [] = { 128, 64,
+	    '\x00','\x00','\x04','\x80','\x80','\x03','\xc0','\xc0', // 0x0008
+	    '\x02','\x80','\x80','\x03','\x00','\x00','\x0b','\x80', // 0x0010
+	    '\x80','\x02','\xc0','\xc0','\x02','\x80','\x80','\x03', // 0x0018
+	    '\x00','\x00','\x63','\xfc','\xfe','\xdf','\x03','\x01', // 0x0020
+	    '\x71','\x79','\xf9','\xf1','\xc1','\x83','\x8f','\xfe', // 0x0028
+	    '\xfc','\x00','\x00','\x04','\xf8','\xfe','\xff','\x07', // 0x0030
+	    '\x83','\xf1','\xf1','\x02','\x79','\x71','\x21','\x03', // 0x0038
+	    '\x87','\xfe','\xfc','\x70','\x00','\x00','\x07','\xff', // 0x0040
+	    '\xff','\x03','\x00','\x00','\x05','\xff','\xff','\x03', // 0x0048
+	    '\x3f','\x7c','\xf8','\xf0','\xc0','\x80','\x00','\x00', // 0x0050
+	    '\x0b','\xfe','\xff','\xff','\x03','\x00','\x00','\x0c', // 0x0058
+	    '\xc0','\xf0','\xfe','\x7f','\x0f','\x7f','\xfe','\xf8', // 0x0060
+	    '\xc0','\x00','\x00','\x06','\x07','\x1f','\xff','\xfc', // 0x0068
+	    '\xf0','\x80','\x00','\x00','\x0e','\xe0','\xf8','\xfe', // 0x0070
+	    '\x3f','\x0f','\x01','\x00','\x00','\x03','\x01','\x03', // 0x0078
+	    '\x07','\x0e','\x0e','\x02','\x0c','\x0c','\x03','\x0d', // 0x0080
+	    '\x0b','\x03','\xff','\xfe','\xfe','\x02','\x86','\x07', // 0x0088
+	    '\x07','\x02','\x87','\xce','\xfe','\xff','\x23','\x03', // 0x0090
+	    '\x0d','\x0c','\x0c','\x04','\x0e','\x07','\x03','\x01', // 0x0098
+	    '\x00','\x00','\x08','\xff','\xff','\x03','\x00','\x00', // 0x00a0
+	    '\x05','\xff','\xff','\x03','\xfe','\x00','\x00','\x02', // 0x00a8
+	    '\x03','\x07','\x1f','\x3e','\x7c','\xf8','\xe0','\xc0', // 0x00b0
+	    '\x00','\x00','\x06','\xff','\xff','\x04','\x00','\x00', // 0x00b8
+	    '\x09','\xe0','\xf8','\xff','\x3f','\x07','\x01','\x00', // 0x00c0
+	    '\x00','\x03','\x01','\x07','\x3f','\xff','\xf8','\xe0', // 0x00c8
+	    '\x80','\x00','\x00','\x05','\x03','\x1f','\x7f','\xfe', // 0x00d0
+	    '\xf0','\xc0','\x00','\x00','\x08','\xe0','\xfc','\xff', // 0x00d8
+	    '\x3f','\x07','\x01','\x00','\x00','\x06','\xe0','\xf8', // 0x00e0
+	    '\x7c','\x1c','\x0e','\xc6','\xc6','\x03','\xe6','\x74', // 0x00e8
+	    '\x38','\x78','\xe3','\xe7','\x1f','\x3f','\x3f','\x02', // 0x00f0
+	    '\x1f','\xef','\xe7','\xf9','\x38','\x78','\xf6','\xe6', // 0x00f8
+	    '\xc6','\xc6','\x02','\x8e','\x0c','\x3c','\xf8','\xf0', // 0x0100
+	    '\xc0','\x00','\x00','\x07','\xff','\xff','\x03','\x00', // 0x0108
+	    '\x00','\x05','\xff','\xff','\x04','\x00','\x00','\x07', // 0x0110
+	    '\x01','\x03','\x07','\x1f','\x3e','\xfc','\xf0','\xe0', // 0x0118
+	    '\x80','\x0f','\xff','\xff','\x03','\x00','\x00','\x05', // 0x0120
+	    '\x80','\xe0','\xfc','\xff','\x3f','\x0f','\x0c','\x0c', // 0x0128
+	    '\x0b','\x0f','\x1f','\xff','\xfc','\xf0','\x80','\x00', // 0x0130
+	    '\x00','\x05','\x03','\x0f','\x7f','\xfe','\xf8','\xc0', // 0x0138
+	    '\x00','\x80','\xf0','\xfc','\xff','\x3f','\x07','\x00', // 0x0140
+	    '\x00','\x0a','\x07','\x1f','\x1e','\x38','\x30','\x71', // 0x0148
+	    '\x63','\x63','\x02','\x71','\x30','\x38','\x1e','\x0f', // 0x0150
+	    '\x07','\x00','\x00','\x04','\x03','\x0f','\x1f','\x38', // 0x0158
+	    '\x30','\x71','\x63','\x63','\x02','\x73','\x31','\x38', // 0x0160
+	    '\x3c','\x1f','\x0f','\x03','\x00','\x00','\x07','\x1f', // 0x0168
+	    '\x3f','\x3f','\x02','\x00','\x00','\x05','\x1f','\x3f', // 0x0170
+	    '\x3f','\x02','\x0f','\x00','\x00','\x0d','\x01','\x03', // 0x0178
+	    '\x0f','\x1f','\x3f','\x3f','\x02','\x1f','\x00','\x00', // 0x0180
+	    '\x03','\x10','\x3c','\x3f','\x1f','\x03','\x00','\x00', // 0x0188
+	    '\x11','\x03','\x1f','\x3f','\x3e','\x18','\x00','\x00', // 0x0190
+	    '\x06','\x01','\x0f','\x1f','\x3f','\x3f','\x02','\x1f', // 0x0198
+	    '\x03','\x00','\x00','\xaf','\xc0','\xf0','\xf8','\x38', // 0x01a0
+	    '\xf8','\xf8','\x02','\xe0','\x00','\x00','\x04','\xf8', // 0x01a8
+	    '\xf8','\x03','\x18','\x18','\x03','\xf8','\xf8','\x02', // 0x01b0
+	    '\xf0','\x00','\x00','\x02','\xf8','\xf8','\x03','\x38', // 0x01b8
+	    '\xf8','\xe0','\x00','\xe0','\xf8','\x38','\xf8','\xf8', // 0x01c0
+	    '\x03','\x00','\x00','\x02','\xf8','\xf8','\x03','\x98', // 0x01c8
+	    '\x98','\x05','\x18','\x00','\x00','\x02','\xf8','\xf8', // 0x01d0
+	    '\x03','\x18','\x18','\x04','\x38','\xf8','\xf0','\xe0', // 0x01d8
+	    '\x00','\x00','\x42','\x20','\x38','\x3e','\x3f','\x0f', // 0x01e0
+	    '\x07','\x06','\x06','\x02','\x0f','\x3f','\x3f','\x02', // 0x01e8
+	    '\x3c','\x20','\x00','\x3f','\x3f','\x03','\x00','\x03', // 0x01f0
+	    '\x1f','\x3f','\x39','\x20','\x00','\x00','\x02','\x3f', // 0x01f8
+	    '\x3f','\x03','\x00','\x0f','\x3f','\x3c','\x0f','\x01', // 0x0200
+	    '\x00','\x3f','\x3f','\x03','\x00','\x00','\x02','\x3f', // 0x0208
+	    '\x3f','\x03','\x31','\x31','\x05','\x30','\x00','\x00', // 0x0210
+	    '\x02','\x3f','\x3f','\x03','\x30','\x30','\x04','\x3c', // 0x0218
+	    '\x1f','\x0f','\x07','\x00','\x00','\x22',
 };
 #endif
 
@@ -332,8 +375,6 @@ static void showStatusPage(void)
         drawHorizonalPercentageBar(10, capacityPercentage);
     }
 
-    rowIndex++;
-
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
         tfp_sprintf(lineBuffer, "Sats: %d", gpsSol.numSat);
@@ -378,6 +419,13 @@ static void showStatusPage(void)
     }
 #endif
 
+    rowIndex++;
+    char rollTrim[7], pitchTrim[7];
+    formatTrimDegrees(rollTrim, boardAlignment()->rollDeciDegrees);
+    formatTrimDegrees(pitchTrim, boardAlignment()->pitchDeciDegrees);
+    tfp_sprintf(lineBuffer, "Acc: %sR, %sP", rollTrim, pitchTrim );
+    i2c_OLED_set_line(rowIndex++);
+    i2c_OLED_send_string(lineBuffer);
 }
 
 void dashboardUpdate(timeUs_t currentTimeUs)
@@ -502,4 +550,17 @@ void dashboardSetNextPageChangeAt(timeUs_t futureMicros)
 {
     nextPageAt = futureMicros;
 }
+
+void formatTrimDegrees ( char *formattedTrim, int16_t trimValue ) {
+	char trim[6];
+	tfp_sprintf(trim, "%d", trimValue);
+	int x = strlen(trim)-1;
+	strncpy(formattedTrim,trim,x);
+	formattedTrim[x] = '\0';
+	if (trimValue !=0) {
+		strcat(formattedTrim,".");
+	}
+	strcat(formattedTrim,trim+x);
+}
+
 #endif
