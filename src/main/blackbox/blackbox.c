@@ -1413,6 +1413,7 @@ static bool blackboxShouldLogIFrame(void)
  * We write it periodically so that if one Home Frame goes missing, the GPS coordinates can
  * still be interpreted correctly.
  */
+#ifdef GPS
 STATIC_UNIT_TESTED bool blackboxShouldLogGpsHomeFrame(void)
 {
     if (GPS_home[0] != gpsHistory.GPS_home[0] || GPS_home[1] != gpsHistory.GPS_home[1]
@@ -1421,6 +1422,7 @@ STATIC_UNIT_TESTED bool blackboxShouldLogGpsHomeFrame(void)
     }
     return false;
 }
+#endif
 
 // Called once every FC loop in order to keep track of how many FC loop iterations have passed
 static void blackboxAdvanceIterationTimers(void)
