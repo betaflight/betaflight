@@ -76,14 +76,14 @@ void targetConfiguration(void)
     gyroConfigMutable()->gyro_sync_denom = 4;
     pidConfigMutable()->pid_process_denom = 1;
 
-    pidProfilesMutable(0)->P8[ROLL] = 70;
-    pidProfilesMutable(0)->I8[ROLL] = 62;
-    pidProfilesMutable(0)->D8[ROLL] = 19;
-    pidProfilesMutable(0)->P8[PITCH] = 70;
-    pidProfilesMutable(0)->I8[PITCH] = 62;
-    pidProfilesMutable(0)->D8[PITCH] = 19;
+    pidProfilesMutable(0)->pid[PID_ROLL].P = 70;
+    pidProfilesMutable(0)->pid[PID_ROLL].I = 62;
+    pidProfilesMutable(0)->pid[PID_ROLL].D = 19;
+    pidProfilesMutable(0)->pid[PID_PITCH].P = 70;
+    pidProfilesMutable(0)->pid[PID_PITCH].I = 62;
+    pidProfilesMutable(0)->pid[PID_PITCH].D = 19;
 
     controlRateProfilesMutable(0)->rcRate8 = 70;
-    pidProfilesMutable(0)->I8[PIDLEVEL] = 40;
+    pidProfilesMutable(0)->pid[PID_LEVEL].I = 40;
 }
 #endif

@@ -71,14 +71,14 @@ void targetConfiguration(void)
         featureSet(FEATURE_TELEMETRY);
     }
 
-    pidProfilesMutable(0)->P8[FD_ROLL] = 53;
-    pidProfilesMutable(0)->I8[FD_ROLL] = 45;
-    pidProfilesMutable(0)->D8[FD_ROLL] = 52;
-    pidProfilesMutable(0)->P8[FD_PITCH] = 53;
-    pidProfilesMutable(0)->I8[FD_PITCH] = 45;
-    pidProfilesMutable(0)->D8[FD_PITCH] = 52;
-    pidProfilesMutable(0)->P8[FD_YAW] = 64;
-    pidProfilesMutable(0)->D8[FD_YAW] = 18;
+    pidProfilesMutable(0)->pid[PID_ROLL].P = 53;
+    pidProfilesMutable(0)->pid[PID_ROLL].I = 45;
+    pidProfilesMutable(0)->pid[PID_ROLL].D = 52;
+    pidProfilesMutable(0)->pid[PID_PITCH].P = 53;
+    pidProfilesMutable(0)->pid[PID_PITCH].I = 45;
+    pidProfilesMutable(0)->pid[PID_PITCH].D = 52;
+    pidProfilesMutable(0)->pid[PID_YAW].P = 64;
+    pidProfilesMutable(0)->pid[PID_YAW].D = 18;
 
     *customMotorMixerMutable(0) = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
     *customMotorMixerMutable(1) = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
