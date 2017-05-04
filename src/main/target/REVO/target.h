@@ -48,8 +48,6 @@
 
 #endif
 
-#define USE_ESC_SENSOR
-
 #define LED0                    PB5
 #if defined(PODIUMF4)
 #define LED1                    PB4

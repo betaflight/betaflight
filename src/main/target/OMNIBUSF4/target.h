@@ -191,7 +191,7 @@
 #else
 //#define RSSI_ADC_PIN            PA0
 #endif
-#define USE_ESC_SENSOR
+
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #if defined(CL_RACINGF4)
 #define DEFAULT_FEATURES        (FEATURE_TELEMETRY | FEATURE_OSD )
