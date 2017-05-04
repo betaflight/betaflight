@@ -1201,6 +1201,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("Firmware date", "%s %s",                buildDate, buildTime);
         BLACKBOX_PRINT_HEADER_LINE("Craft name", "%s",                      systemConfig()->name);
         BLACKBOX_PRINT_HEADER_LINE("I interval", "%d",                      blackboxIInterval);
+        BLACKBOX_PRINT_HEADER_LINE("P interval", "%d/%d",                   blackboxGetRateNum(), blackboxGetRateDenom());
         BLACKBOX_PRINT_HEADER_LINE("P denom", "%d",                         blackboxConfig()->p_denom);
         BLACKBOX_PRINT_HEADER_LINE("minthrottle", "%d",                     motorConfig()->minthrottle);
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle", "%d",                     motorConfig()->maxthrottle);
