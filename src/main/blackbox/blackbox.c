@@ -1669,6 +1669,21 @@ void blackboxUpdate(timeUs_t currentTimeUs)
     }
 }
 
+int blackboxCalculatePDenom(int rateNum, int rateDenom)
+{
+    return blackboxIInterval * rateNum / rateDenom;
+}
+
+uint8_t blackboxGetRateNum(void)
+{
+    return blackboxGetRateDenom() * blackboxConfig()->p_denom / blackboxIInterval;
+}
+
+uint8_t blackboxGetRateDenom(void)
+{
+    return gcd(blackboxIInterval, blackboxPInterval);
+}
+
 /**
  * Call during system startup to initialize the blackbox.
  */

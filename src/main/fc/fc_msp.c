@@ -1263,8 +1263,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #ifdef BLACKBOX
         sbufWriteU8(dst, 1); //Blackbox supported
         sbufWriteU8(dst, blackboxConfig()->device);
-        sbufWriteU8(dst, 0); // was rate_num
-        sbufWriteU8(dst, 0); // was rate_denom
+        sbufWriteU8(dst, blackboxGetRateNum());
+        sbufWriteU8(dst, blackboxGetRateDenom());
         sbufWriteU8(dst, blackboxConfig()->p_denom);
 #else
         sbufWriteU8(dst, 0); // Blackbox not supported
@@ -1789,9 +1789,15 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         // Don't allow config to be updated while Blackbox is logging
         if (blackboxMayEditConfig()) {
             blackboxConfigMutable()->device = sbufReadU8(src);
-            sbufReadU8(src); // was rate_nuk
-            sbufReadU8(src); // was rate_denom
-            blackboxConfigMutable()->p_denom = sbufReadU8(src);
+            const int rateNum = sbufReadU8(src); // was rate_num
+            const int rateDenom = sbufReadU8(src); // was rate_denom
+            if (sbufBytesRemaining(src) >= 1) {
+                // p_denom specified, so use it directly
+                blackboxConfigMutable()->p_denom = sbufReadU8(src);
+            } else {
+                // p_denom not specified in MSP, so calculate it from old rateNum and rateDenom
+                blackboxConfigMutable()->p_denom = blackboxCalculatePDenom(rateNum, rateDenom);
+            }
         }
         break;
 #endif

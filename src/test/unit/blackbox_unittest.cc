@@ -199,7 +199,7 @@ TEST(BlackboxTest, Test_2kHz)
 TEST(BlackboxTest, Test_8kHz)
 {
     blackboxConfigMutable()->p_denom = 32;
-    // 1kHz PIDloop
+    // 8kHz PIDloop
     gyro.targetLooptime = 125;
     blackboxInit();
     EXPECT_EQ(true, blackboxShouldLogIFrame());
@@ -224,7 +224,7 @@ TEST(BlackboxTest, Test_8kHz)
 TEST(BlackboxTest, Test_zero_p_denom)
 {
     blackboxConfigMutable()->p_denom = 0;
-    // 2kHz PIDloop
+    // 1kHz PIDloop
     gyro.targetLooptime = 1000;
     blackboxInit();
     EXPECT_EQ(32, blackboxIInterval);
@@ -241,6 +241,106 @@ TEST(BlackboxTest, Test_zero_p_denom)
     EXPECT_EQ(true, blackboxShouldLogIFrame());
     EXPECT_EQ(false, blackboxShouldLogPFrame());
 }
+
+TEST(BlackboxTest, Test_CalculatePDenom)
+{
+    blackboxConfigMutable()->p_denom = 0;
+    // note I-frame is logged every 32ms regardless of PIDloop rate
+    // so p_denom is 32 when blackbox logging rate is 1kHz
+
+    // 1kHz PIDloop
+    gyro.targetLooptime = 1000;
+    blackboxInit();
+    EXPECT_EQ(32, blackboxIInterval);
+    EXPECT_EQ(32, blackboxCalculatePDenom(1, 1)); // 1kHz logging
+    EXPECT_EQ(16, blackboxCalculatePDenom(1, 2));
+    EXPECT_EQ(8, blackboxCalculatePDenom(1, 4));
+
+    // 2kHz PIDloop
+    gyro.targetLooptime = 500;
+    blackboxInit();
+    EXPECT_EQ(64, blackboxIInterval);
+    EXPECT_EQ(64, blackboxCalculatePDenom(1, 1));
+    EXPECT_EQ(32, blackboxCalculatePDenom(1, 2)); // 1kHz logging
+    EXPECT_EQ(16, blackboxCalculatePDenom(1, 4));
+
+    // 4kHz PIDloop
+    gyro.targetLooptime = 250;
+    blackboxInit();
+    EXPECT_EQ(128, blackboxIInterval);
+    EXPECT_EQ(128, blackboxCalculatePDenom(1, 1));
+    EXPECT_EQ(64, blackboxCalculatePDenom(1, 2));
+    EXPECT_EQ(32, blackboxCalculatePDenom(1, 4)); // 1kHz logging
+    EXPECT_EQ(16, blackboxCalculatePDenom(1, 8));
+
+    // 8kHz PIDloop
+    gyro.targetLooptime = 125;
+    blackboxInit();
+    EXPECT_EQ(256, blackboxIInterval);
+    EXPECT_EQ(256, blackboxCalculatePDenom(1, 1));
+    EXPECT_EQ(128, blackboxCalculatePDenom(1, 2));
+    EXPECT_EQ(64, blackboxCalculatePDenom(1, 4));
+    EXPECT_EQ(32, blackboxCalculatePDenom(1, 8)); // 1kHz logging
+    EXPECT_EQ(16, blackboxCalculatePDenom(1, 16));
+}
+
+TEST(BlackboxTest, Test_CalculateRates)
+{
+    // 1kHz PIDloop
+    gyro.targetLooptime = 1000;
+    blackboxConfigMutable()->p_denom = 32;
+    blackboxInit();
+    EXPECT_EQ(32, blackboxIInterval);
+    EXPECT_EQ(1, blackboxPInterval);
+    EXPECT_EQ(1, blackboxGetRateNum());
+    EXPECT_EQ(1, blackboxGetRateDenom());
+
+    blackboxConfigMutable()->p_denom = 16;
+    blackboxInit();
+    EXPECT_EQ(32, blackboxIInterval);
+    EXPECT_EQ(2, blackboxPInterval);
+    EXPECT_EQ(1, blackboxGetRateNum());
+    EXPECT_EQ(2, blackboxGetRateDenom());
+
+    blackboxConfigMutable()->p_denom = 8;
+    blackboxInit();
+    EXPECT_EQ(32, blackboxIInterval);
+    EXPECT_EQ(4, blackboxPInterval);
+    EXPECT_EQ(1, blackboxGetRateNum());
+    EXPECT_EQ(4, blackboxGetRateDenom());
+
+
+    // 8kHz PIDloop
+    gyro.targetLooptime = 125;
+    blackboxConfigMutable()->p_denom = 32; // 1kHz logging
+    blackboxInit();
+    EXPECT_EQ(256, blackboxIInterval);
+    EXPECT_EQ(8, blackboxPInterval);
+    EXPECT_EQ(1, blackboxGetRateNum());
+    EXPECT_EQ(8, blackboxGetRateDenom());
+
+    blackboxConfigMutable()->p_denom = 64; // 2kHz logging
+    blackboxInit();
+    EXPECT_EQ(256, blackboxIInterval);
+    EXPECT_EQ(4, blackboxPInterval);
+    EXPECT_EQ(1, blackboxGetRateNum());
+    EXPECT_EQ(4, blackboxGetRateDenom());
+
+    blackboxConfigMutable()->p_denom = 128; // 4kHz logging
+    blackboxInit();
+    EXPECT_EQ(256, blackboxIInterval);
+    EXPECT_EQ(2, blackboxPInterval);
+    EXPECT_EQ(1, blackboxGetRateNum());
+    EXPECT_EQ(2, blackboxGetRateDenom());
+
+    blackboxConfigMutable()->p_denom = 256; // 8kHz logging
+    blackboxInit();
+    EXPECT_EQ(256, blackboxIInterval);
+    EXPECT_EQ(1, blackboxPInterval);
+    EXPECT_EQ(1, blackboxGetRateNum());
+    EXPECT_EQ(1, blackboxGetRateDenom());
+}
+
 
 // STUBS
 extern "C" {
