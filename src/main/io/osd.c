@@ -79,6 +79,11 @@
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 
+#ifdef MAG // For OSD_HOME_DIR
+#include "sensors/compass.h"
+#include "flight/navigation.h"
+#endif
+
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
@@ -263,6 +268,38 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
+#ifdef MAG
+    case OSD_HOME_DIR:
+        if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
+            if (GPS_distanceToHome > 0) {
+                int16_t h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+
+                h = (h + 360) % 360;
+
+                h = h * 2 / 45;
+
+                // Now h has a heading with Up=0, Right=4, Down=8 and Left=12
+                // Our symbols are Down=0, Right=4, Up=8 and Left=12
+                // There're 16 arrow symbols. Transform it.
+                h = 16 - h;
+                h = (h + 8) % 16;
+
+                buff[0] = SYM_ARROW_SOUTH + h;
+            } else {
+                // We don't have a HOME symbol in the font, by now we use this
+                buff[0] = SYM_THR1;
+            }
+
+        } else {
+            // We use this symbol when we don't have a FIX
+            buff[0] = SYM_COLON;
+        }
+
+        buff[1] = 0;
+
+        break;
+
+#endif // COMPASS
 #endif // GPS
 
     case OSD_ALTITUDE:
@@ -581,61 +618,67 @@ void osdDrawElements(void)
         osdDrawSingleElement(OSD_GPS_SPEED);
         osdDrawSingleElement(OSD_GPS_LAT);
         osdDrawSingleElement(OSD_GPS_LON);
+#ifdef COMPASS
+        if (sensors(SENSOR_MAG) || sensors(SENSOR_GPSMAG))
+        	osdDrawSingleElement(OSD_HOME_DIR);            
+#endif
+        
     }
 #endif // GPS
 }
 
 void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 {
-    osdConfig->item_pos[OSD_RSSI_VALUE] = OSD_POS(8, 1) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 1) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_CROSSHAIRS] = OSD_POS(8, 6) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(8, 6) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_HORIZON_SIDEBARS] = OSD_POS(8, 6) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ONTIME] = OSD_POS(22, 1) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_FLYTIME] = OSD_POS(1, 1) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_FLYMODE] = OSD_POS(13, 10) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_CRAFT_NAME] = OSD_POS(10, 11) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_THROTTLE_POS] = OSD_POS(1, 7) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_VTX_CHANNEL] = OSD_POS(25, 11) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_CURRENT_DRAW] = OSD_POS(1, 12) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_MAH_DRAWN] = OSD_POS(1, 11) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_GPS_SPEED] = OSD_POS(26, 6) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_GPS_SATS] = OSD_POS(19, 1) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ALTITUDE] = OSD_POS(23, 7) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ROLL_PIDS] = OSD_POS(7, 13) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_PITCH_PIDS] = OSD_POS(7, 14) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_YAW_PIDS] = OSD_POS(7, 15) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_POWER] = OSD_POS(1, 10) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_PIDRATE_PROFILE] = OSD_POS(25, 10) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_MAIN_BATT_WARNING] = OSD_POS(9, 10) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_AVG_CELL_VOLTAGE] = OSD_POS(12, 2) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_DEBUG] = OSD_POS(1, 0) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_PITCH_ANGLE] = OSD_POS(1, 8) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ROLL_ANGLE] = OSD_POS(1, 9) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_GPS_LAT] = OSD_POS(1, 2) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_GPS_LON] = OSD_POS(18, 2) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_MAIN_BATT_USAGE] = OSD_POS(8, 12) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ARMED_TIME] = OSD_POS(1, 2) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_DISARMED] = OSD_POS(10, 4) | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_RSSI_VALUE]         = OSD_POS(8, 1)   | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_MAIN_BATT_VOLTAGE]  = OSD_POS(12, 1)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_CROSSHAIRS]         = OSD_POS(8, 6)   | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(8, 6)   | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_HORIZON_SIDEBARS]   = OSD_POS(8, 6)   | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_ONTIME]             = OSD_POS(22, 1)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_FLYTIME]            = OSD_POS(1, 1)   | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_FLYMODE]            = OSD_POS(13, 10) | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_CRAFT_NAME]         = OSD_POS(10, 11) | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_THROTTLE_POS]       = OSD_POS(1, 7)   | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_VTX_CHANNEL]        = OSD_POS(25, 11) | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_CURRENT_DRAW]       = OSD_POS(1, 12)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_MAH_DRAWN]          = OSD_POS(1, 11)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_GPS_SPEED]          = OSD_POS(26, 6)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_GPS_SATS]           = OSD_POS(19, 1)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_ALTITUDE]           = OSD_POS(23, 7)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_ROLL_PIDS]          = OSD_POS(7, 13)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_PITCH_PIDS]         = OSD_POS(7, 14)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_YAW_PIDS]           = OSD_POS(7, 15)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_POWER]              = OSD_POS(1, 10)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_PIDRATE_PROFILE]    = OSD_POS(25, 10) | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_MAIN_BATT_WARNING]  = OSD_POS(9, 10)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_AVG_CELL_VOLTAGE]   = OSD_POS(12, 2)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_DEBUG]              = OSD_POS(1, 0)   | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_PITCH_ANGLE]        = OSD_POS(1, 8)   | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_ROLL_ANGLE]         = OSD_POS(1, 9)   | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_GPS_LAT]            = OSD_POS(1, 2)   | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_GPS_LON]            = OSD_POS(18, 2)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_HOME_DIR]           = OSD_POS(14, 9)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_MAIN_BATT_USAGE]    = OSD_POS(8, 12)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_ARMED_TIME]         = OSD_POS(1, 2)   | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_DISARMED]           = OSD_POS(10, 4)  | VISIBLE_FLAG;
 
-    osdConfig->enabled_stats[OSD_STAT_MAX_SPEED] = true;
-    osdConfig->enabled_stats[OSD_STAT_MIN_BATTERY] = true;
-    osdConfig->enabled_stats[OSD_STAT_MIN_RSSI] = true;
-    osdConfig->enabled_stats[OSD_STAT_MAX_CURRENT] = true;
-    osdConfig->enabled_stats[OSD_STAT_USED_MAH] = true;
+    osdConfig->enabled_stats[OSD_STAT_MAX_SPEED]    = true;
+    osdConfig->enabled_stats[OSD_STAT_MIN_BATTERY]  = true;
+    osdConfig->enabled_stats[OSD_STAT_MIN_RSSI]     = true;
+    osdConfig->enabled_stats[OSD_STAT_MAX_CURRENT]  = true;
+    osdConfig->enabled_stats[OSD_STAT_USED_MAH]     = true;
     osdConfig->enabled_stats[OSD_STAT_MAX_ALTITUDE] = false;
-    osdConfig->enabled_stats[OSD_STAT_BLACKBOX] = true;
-    osdConfig->enabled_stats[OSD_STAT_END_BATTERY] = false;
-    osdConfig->enabled_stats[OSD_STAT_FLYTIME] = false;
-    osdConfig->enabled_stats[OSD_STAT_ARMEDTIME] = true;
+    osdConfig->enabled_stats[OSD_STAT_BLACKBOX]     = true;
+    osdConfig->enabled_stats[OSD_STAT_END_BATTERY]  = false;
+    osdConfig->enabled_stats[OSD_STAT_FLYTIME]      = false;
+    osdConfig->enabled_stats[OSD_STAT_ARMEDTIME]    = true;
 
     osdConfig->units = OSD_UNIT_METRIC;
 
     osdConfig->rssi_alarm = 20;
-    osdConfig->cap_alarm = 2200;
+    osdConfig->cap_alarm  = 2200;
     osdConfig->time_alarm = 10; // in minutes
-    osdConfig->alt_alarm = 100; // meters or feet depend on configuration
+    osdConfig->alt_alarm  = 100; // meters or feet depend on configuration
 }
 
 static void osdDrawLogo(int x, int y)
