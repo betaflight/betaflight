@@ -21,8 +21,6 @@
 
 #define USBD_PRODUCT_STRING "AnyFCF7"
 
-#define USE_ESC_SENSOR
-
 #define LED0   PB7
 #define LED1   PB6
 

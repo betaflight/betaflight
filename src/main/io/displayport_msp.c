@@ -58,7 +58,7 @@ static int output(displayPort_t *displayPort, uint8_t cmd, uint8_t *buf, int len
         return 0;
     }
 #endif
-    return mspSerialPush(cmd, buf, len);
+    return mspSerialPush(cmd, buf, len, MSP_DIRECTION_REPLY);
 }
 
 static int heartbeat(displayPort_t *displayPort)
