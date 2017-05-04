@@ -8,7 +8,7 @@ AlienFlight F3 Eagle files are available at:
 
 https://github.com/MJ666/Flight-Controllers
 
-AlienFlightNG (Next Generation) designs are released for noncommercial use (CC BY-NC-SA 4.0) can be found here:
+AlienFlightNG (Next Generation) designs are released for noncommercial use (CC BY-NC-SA 4.0) or (CC BY-NC-ND 4.0) can be found here:
 
 http://www.alienflightng.com
 
