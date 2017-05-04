@@ -309,7 +309,7 @@ const mixer_t mixers[] = {
     { 0, true,  NULL },                // * MIXER_HELI_90_DEG
     { 4, false, mixerVtail4 },         // MIXER_VTAIL4
     { 6, false, mixerHex6H },          // MIXER_HEX6H
-    { 0, true,  NULL },                // MIXER_PPM_TO_SERVO
+    { 0, true,  NULL },                // MIXER_RX_TO_SERVO
     { 2, true,  mixerDualcopter },     // MIXER_DUALCOPTER
     { 1, true,  NULL },                // MIXER_SINGLECOPTER
     { 4, false, mixerAtail4 },         // MIXER_ATAIL4

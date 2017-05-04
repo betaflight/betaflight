@@ -175,7 +175,7 @@ const mixerRules_t servoMixers[] = {
     { 0, NULL },                // MIXER_HELI_90_DEG
     { 0, NULL },                // MIXER_VTAIL4
     { 0, NULL },                // MIXER_HEX6H
-    { 0, NULL },                // MIXER_PPM_TO_SERVO
+    { 0, NULL },                // MIXER_RX_TO_SERVO
     { COUNT_SERVO_RULES(servoMixerDual), servoMixerDual },      // MIXER_DUALCOPTER
     { COUNT_SERVO_RULES(servoMixerSingle), servoMixerSingle },    // MIXER_SINGLECOPTER
     { 0, NULL },                // MIXER_ATAIL4
@@ -347,7 +347,7 @@ void writeServos(void)
         }
         break;
 
-    case MIXER_PPM_TO_SERVO:
+    case MIXER_RX_TO_SERVO:
         for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             pwmWriteServo(servoIndex++, servo[i]);
         }
@@ -464,7 +464,7 @@ static void servoTable(void)
         servoMixer();
         break;
 
-    case MIXER_PPM_TO_SERVO:
+    case MIXER_RX_TO_SERVO:
         for (int i = 0; i < MIN(MAX_SUPPORTED_SERVOS, MAX_SUPPORTED_RC_CHANNEL_COUNT); i++) {
             servo[i] = rcData[i];
         }
