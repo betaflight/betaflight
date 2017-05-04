@@ -483,38 +483,32 @@ static void osdDrawSingleElement(uint8_t item)
     case OSD_MAIN_BATT_USAGE:
     {
         //Set length of indicator bar
-        uint8_t progressSteps = 10;
+        #define MAIN_BATT_USAGE_STEPS 10
 
         //Calculate constrained value
-        float value = constrain(osdConfig()->cap_alarm - getMAhDrawn(), 0, osdConfig()->cap_alarm);
+        float value = constrain(batteryConfig()->batteryCapacity - getMAhDrawn(), 0, batteryConfig()->batteryCapacity);
 
         //Calculate mAh used progress
-        uint8_t mAhUsedProgress = ceil((value / (osdConfig()->cap_alarm / progressSteps)));
+        uint8_t mAhUsedProgress = ceil((value / (batteryConfig()->batteryCapacity / MAIN_BATT_USAGE_STEPS)));
 
         //Create empty battery indicator bar
         buff[0] = SYM_PB_START;
-        for(uint8_t i = 1; i <= progressSteps; i++)
-        {
-            buff[i] = SYM_PB_EMPTY;
+        for(uint8_t i = 1; i <= MAIN_BATT_USAGE_STEPS; i++) {
+            if (i <= mAhUsedProgress)
+                buff[i] = SYM_PB_FULL;
+            else
+                buff[i] = SYM_PB_EMPTY;
         }
-        buff[progressSteps+1] = SYM_PB_CLOSE;
+        buff[MAIN_BATT_USAGE_STEPS+1] = SYM_PB_CLOSE;
 
-        //Fill indicator bar progress
-        for(uint8_t i = 1; i <= mAhUsedProgress; i++)
-        {
-            buff[i] = SYM_PB_FULL;
-        }
-
-        if (mAhUsedProgress > 0 && mAhUsedProgress < progressSteps)
-        {
+        if (mAhUsedProgress > 0 && mAhUsedProgress < MAIN_BATT_USAGE_STEPS) {
             buff[1+mAhUsedProgress] = SYM_PB_END;
         }
 
-        buff[progressSteps+2] = 0;
+        buff[MAIN_BATT_USAGE_STEPS+2] = 0;
 
         break;
     }
-
 
     default:
         return;
@@ -706,13 +700,11 @@ void osdUpdateAlarms(void)
     else
         CLR_BLINK(OSD_FLYTIME);
 
-    if (getMAhDrawn() >= osdConfig()->cap_alarm)
-    {
+    if (getMAhDrawn() >= osdConfig()->cap_alarm) {
         SET_BLINK(OSD_MAH_DRAWN);
         SET_BLINK(OSD_MAIN_BATT_USAGE);
     }
-    else
-    {
+    else {
         CLR_BLINK(OSD_MAH_DRAWN);
         CLR_BLINK(OSD_MAIN_BATT_USAGE);
     }
