@@ -1199,6 +1199,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("Firmware type", "%s",                   "Cleanflight");
         BLACKBOX_PRINT_HEADER_LINE("Firmware revision", "%s %s (%s) %s",    FC_FIRMWARE_NAME, FC_VERSION_STRING, shortGitRevision, targetName);
         BLACKBOX_PRINT_HEADER_LINE("Firmware date", "%s %s",                buildDate, buildTime);
+        BLACKBOX_PRINT_HEADER_LINE("Log start datetime", "%s",              blackboxGetStartDateTime());
         BLACKBOX_PRINT_HEADER_LINE("Craft name", "%s",                      systemConfig()->name);
         BLACKBOX_PRINT_HEADER_LINE("I interval", "%d",                      blackboxIInterval);
         BLACKBOX_PRINT_HEADER_LINE("P interval", "%d/%d",                   blackboxGetRateNum(), blackboxGetRateDenom());
@@ -1206,7 +1207,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("minthrottle", "%d",                     motorConfig()->minthrottle);
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle", "%d",                     motorConfig()->maxthrottle);
         BLACKBOX_PRINT_HEADER_LINE("gyro_scale","0x%x",                     castFloatBytesToInt(1.0f));
-        BLACKBOX_PRINT_HEADER_LINE("motorOutput", "%d,%d",                  motorOutputLowInt, motorOutputHighInt);
+        BLACKBOX_PRINT_HEADER_LINE("motorOutput", "%d,%d",                  motorOutputLowInt,motorOutputHighInt);
         BLACKBOX_PRINT_HEADER_LINE("acc_1G", "%u",                          acc.dev.acc_1G);
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
@@ -1668,6 +1669,22 @@ void blackboxUpdate(timeUs_t currentTimeUs)
             }
         }
     }
+}
+
+/*
+ * Returns start time in ISO 8601 format, YYYY-MM-DDThh:mm:ss
+ * Year value of "0000" indicates time not set
+ */
+static char startDateTime[20] = "0000-01-01T00:00:00";
+const char *blackboxGetStartDateTime(void)
+{
+    return startDateTime;
+}
+
+void blackboxSetStartDateTime(const char *dateTime, timeMs_t timeNowMs)
+{
+    (void)dateTime;
+    (void)timeNowMs;
 }
 
 int blackboxCalculatePDenom(int rateNum, int rateDenom)
