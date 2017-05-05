@@ -101,7 +101,7 @@ Note: the `mmix` command may show a motor mix that is not active, custom motor m
 
 Custom servo mixing rules can be applied to each servo.  Rules are applied in the CLI using `smix`. Rules link flight controller stabilization and receiver signals to physical pwm output pins on the FC board. Currently, pin id's 0 and 1 can only be used for motor outputs. Other pins may or may not work depending on the board you are using.
 
-The mmix statement has the following syntax: `smix n PWM_PIN SIGNAL_SOURCE RATE SPEED	MIN	MAX`
+The mmix statement has the following syntax: `smix n SERVO_ID SIGNAL_SOURCE RATE SPEED	MIN	MAX`
 For example, `smix 0 2 0 100 0 0 100` will assign Stabilised Roll to the third pwm pin on the FC board.
 
 | id | Flight Controller Output signal sources |
