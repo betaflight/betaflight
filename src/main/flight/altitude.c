@@ -31,6 +31,7 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -45,6 +46,13 @@
 #include "sensors/sonar.h"
 
 
+int32_t AltHold;
+static int32_t estimatedVario = 0;                      // variometer in cm/s
+static int32_t estimatedAltitude = 0;                // in cm
+
+
+#if defined(BARO) || defined(SONAR)
+
 enum {
     DEBUG_ALTITUDE_ACC,
     DEBUG_ALTITUDE_VEL,
@@ -57,24 +65,10 @@ PG_RESET_TEMPLATE(airplaneConfig_t, airplaneConfig,
     .fixedwing_althold_reversed = false
 );
 
-int32_t setVelocity = 0;
-uint8_t velocityControl = 0;
-int32_t errorVelocityI = 0;
-int32_t altHoldThrottleAdjustment = 0;
-int32_t AltHold;
-int32_t estimatedVario = 0;                      // variometer in cm/s
-static int32_t estimatedAltitude = 0;                // in cm
-
-
-static pidProfile_t *pidProfile;
-
-void configureAltitudeHold(pidProfile_t *initialPidProfile)
-{
-    pidProfile = initialPidProfile;
-}
-
-#if defined(BARO) || defined(SONAR)
-
+static int32_t setVelocity = 0;
+static uint8_t velocityControl = 0;
+static int32_t errorVelocityI = 0;
+static int32_t altHoldThrottleAdjustment = 0;
 static int16_t initialThrottleHold;
 
 // 40hz update rate (20hz LPF on acc)
@@ -187,7 +181,7 @@ int32_t calculateAltHoldThrottleAdjustment(int32_t vel_tmp, float accZ_tmp, floa
     if (!velocityControl) {
         error = constrain(AltHold - estimatedAltitude, -500, 500);
         error = applyDeadband(error, 10); // remove small P parameter to reduce noise near zero position
-        setVel = constrain((pidProfile->P8[PIDALT] * error / 128), -300, +300); // limit velocity to +/- 3 m/s
+        setVel = constrain((currentPidProfile->P8[PIDALT] * error / 128), -300, +300); // limit velocity to +/- 3 m/s
     } else {
         setVel = setVelocity;
     }
@@ -195,15 +189,15 @@ int32_t calculateAltHoldThrottleAdjustment(int32_t vel_tmp, float accZ_tmp, floa
 
     // P
     error = setVel - vel_tmp;
-    result = constrain((pidProfile->P8[PIDVEL] * error / 32), -300, +300);
+    result = constrain((currentPidProfile->P8[PIDVEL] * error / 32), -300, +300);
 
     // I
-    errorVelocityI += (pidProfile->I8[PIDVEL] * error);
+    errorVelocityI += (currentPidProfile->I8[PIDVEL] * error);
     errorVelocityI = constrain(errorVelocityI, -(8192 * 200), (8192 * 200));
     result += errorVelocityI / 8192;     // I in range +/-200
 
     // D
-    result -= constrain(pidProfile->D8[PIDVEL] * (accZ_tmp + accZ_old) / 512, -150, 150);
+    result -= constrain(currentPidProfile->D8[PIDVEL] * (accZ_tmp + accZ_old) / 512, -150, 150);
 
     return result;
 }
@@ -285,7 +279,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
         baroVel = constrain(baroVel, -1500, 1500);  // constrain baro velocity +/- 1500cm/s
         baroVel = applyDeadband(baroVel, 10);       // to reduce noise near zero
     }
-#endif
+#endif // BARO
 
     // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity).
     // By using CF it's possible to correct the drift of integrated accZ (velocity) without loosing the phase, i.e without delay
@@ -299,7 +293,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     altHoldThrottleAdjustment = calculateAltHoldThrottleAdjustment(vel_tmp, accZ_tmp, accZ_old);
     accZ_old = accZ_tmp;
 }
-#endif
+#endif // defined(BARO) || defined(SONAR)
 
 int32_t getEstimatedAltitude(void)
 {
