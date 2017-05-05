@@ -99,21 +99,12 @@ Note: the `mmix` command may show a motor mix that is not active, custom motor m
 
 ## Custom Servo Mixing
 
-Custom servo mixing rules can be applied to each servo.  Rules are applied in the order they are defined.
+Custom servo mixing rules can be applied to each servo.  Rules are applied in the CLI using `smix`. Rules link flight controller stabilization and receiver signals to physical pwm output pins on the FC board. Currently, pin id's 0 and 1 can only be used for motor outputs. Other pins may or may not work depending on the board you are using.
 
-| id | Servo slot |
-|----|--------------|
-| 0  | GIMBAL PITCH |
-| 1  | GIMBAL ROLL |
-| 2  | ELEVATOR / SINGLECOPTER_4 |
-| 3  | FLAPPERON 1 (LEFT) / SINGLECOPTER_1 |
-| 4  | FLAPPERON 2 (RIGHT) / BICOPTER_LEFT / DUALCOPTER_LEFT / SINGLECOPTER_2 |
-| 5  | RUDDER / BICOPTER_RIGHT / DUALCOPTER_RIGHT / SINGLECOPTER_3 |
-| 6  | THROTTLE (Based ONLY on the first motor output) |
-| 7  | FLAPS |
+The mmix statement has the following syntax: `smix n SERVO_ID SIGNAL_SOURCE RATE SPEED	MIN	MAX`
+For example, `smix 0 2 0 100 0 0 100` will assign Stabilised Roll to the third pwm pin on the FC board.
 
-
-| id | Input sources |
+| id | Flight Controller Output signal sources |
 |----|-----------------|
 | 0  | Stabilised ROLL |
 | 1  | Stabilised PITCH |
@@ -130,6 +121,20 @@ Custom servo mixing rules can be applied to each servo.  Rules are applied in th
 | 12 | GIMBAL PITCH |
 | 13 | GIMBAL ROLL |
 | 13 | FEATURE FLAPS |
+
+| id |  Servo Slot Optional Setup |
+|----|--------------|
+| 0  | GIMBAL PITCH |
+| 1  | GIMBAL ROLL |
+| 2  | ELEVATOR / SINGLECOPTER_4 |
+| 3  | FLAPPERON 1 (LEFT) / SINGLECOPTER_1 |
+| 4  | FLAPPERON 2 (RIGHT) / BICOPTER_LEFT / DUALCOPTER_LEFT / SINGLECOPTER_2 |
+| 5  | RUDDER / BICOPTER_RIGHT / DUALCOPTER_RIGHT / SINGLECOPTER_3 |
+| 6  | THROTTLE (Based ONLY on the first motor output) |
+| 7  | FLAPS |
+
+
+
 
 Note: the `smix` command may show a servo mix that is not active, custom servo mixes are only active for models that use custom mixers.
 
