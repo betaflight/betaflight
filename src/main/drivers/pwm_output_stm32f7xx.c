@@ -138,32 +138,25 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     const IO_t motorIO = IOGetByTag(timerHardware->tag);
 
     const uint8_t timerIndex = getTimerIndex(timer);
-    const bool configureTimer = (timerIndex == dmaMotorTimerCount-1);
 
     IOInit(motorIO, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
     IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP), timerHardware->alternateFunction);
 
     __DMA1_CLK_ENABLE();
 
-    if (configureTimer) {
-        RCC_ClockCmd(timerRCC(timer), ENABLE);
+    RCC_ClockCmd(timerRCC(timer), ENABLE);
 
-        motor->TimHandle.Instance = timerHardware->tim;
-        motor->TimHandle.Init.Prescaler = (SystemCoreClock / timerClockDivisor(timer) / getDshotHz(pwmProtocolType)) - 1;;
-        motor->TimHandle.Init.Period = MOTOR_BITLENGTH;
-        motor->TimHandle.Init.RepetitionCounter = 0;
-        motor->TimHandle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-        motor->TimHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
-        if(HAL_TIM_PWM_Init(&motor->TimHandle) != HAL_OK)
-        {
-            /* Initialization Error */
-            return;
-        }
-
-    }
-    else
+    motor->TimHandle.Instance = timerHardware->tim;
+    motor->TimHandle.Init.Prescaler = (SystemCoreClock / timerClockDivisor(timer) / getDshotHz(pwmProtocolType)) - 1;;
+    motor->TimHandle.Init.Period = MOTOR_BITLENGTH;
+    motor->TimHandle.Init.RepetitionCounter = 0;
+    motor->TimHandle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    motor->TimHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
+    motor->TimHandle.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+    if(HAL_TIM_PWM_Init(&motor->TimHandle) != HAL_OK)
     {
-        motor->TimHandle = dmaMotors[timerIndex].TimHandle;
+        /* Initialization Error */
+        return;
     }
 
     motor->timerDmaSource = timerDmaSource(timerHardware->channel);
