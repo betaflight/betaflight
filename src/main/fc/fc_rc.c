@@ -174,7 +174,7 @@ static void scaleRcCommandToFpvCamAngle(void) {
 void processRcCommand(void)
 {
     static float rcCommandInterp[4] = { 0, 0, 0, 0 };
-    static float rcStepSize[4] = { 0, 0, 0, 0 };;
+    static float rcStepSize[4] = { 0, 0, 0, 0 };
     static int16_t rcInterpolationStepCount;
     static uint16_t currentRxRefreshRate;
     const uint8_t interpolationChannels = rxConfig()->rcInterpolationChannels + 2; //"RP", "RPY", "RPYT"
