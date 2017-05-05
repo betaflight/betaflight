@@ -204,7 +204,7 @@ void processRcCommand(void)
                 rxRefreshRate = rxGetRefreshRate();
         }
 
-        if (isRXDataNew) {
+        if (isRXDataNew && rxRefreshRate > 0) {
             rcInterpolationStepCount = rxRefreshRate / targetPidLooptime;
 
             for (int channel=ROLL; channel < interpolationChannels; channel++) {
@@ -227,10 +227,8 @@ void processRcCommand(void)
                 rcCommandInterp[channel] += rcStepSize[channel];
                 rcCommand[channel] = rcCommandInterp[channel];
                 readyToCalculateRateAxisCnt = MAX(channel, FD_YAW); // throttle channel doesn't require rate calculation
-                readyToCalculateRate = true;
             }
-        } else {
-            rcInterpolationStepCount = 0;
+            readyToCalculateRate = true;
         }
     } else {
         rcInterpolationStepCount = 0; // reset factor in case of level modes flip flopping
