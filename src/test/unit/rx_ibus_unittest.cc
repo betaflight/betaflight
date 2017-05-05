@@ -38,7 +38,7 @@ extern "C" {
 
 extern "C" {
     uint8_t batteryCellCount = 3;
-    int16_t rcCommand[4] = {0, 0, 0, 0};
+    float rcCommand[4] = {0, 0, 0, 0};
     int16_t telemTemperature1 = 0;
     baro_t baro = { .baroTemperature = 50 };
     telemetryConfig_t telemetryConfig_System;

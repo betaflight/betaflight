@@ -406,7 +406,7 @@ TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenDisarmedAndRXLossIsDetected
 extern "C" {
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 uint8_t armingFlags;
-int16_t rcCommand[4];
+float rcCommand[4];
 uint32_t rcModeActivationMask;
 int16_t debug[DEBUG16_VALUE_COUNT];
 bool isUsingSticksToArm = true;
