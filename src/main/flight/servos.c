@@ -157,32 +157,32 @@ typedef struct mixerRules_s {
 
 const mixerRules_t servoMixers[] = {
     { 0, NULL },                // entry 0
-    { COUNT_SERVO_RULES(servoMixerTri), servoMixerTri },       // MULTITYPE_TRI
-    { 0, NULL },                // MULTITYPE_QUADP
-    { 0, NULL },                // MULTITYPE_QUADX
-    { COUNT_SERVO_RULES(servoMixerBI), servoMixerBI },        // MULTITYPE_BI
-    { COUNT_SERVO_RULES(servoMixerGimbal), servoMixerGimbal },    // * MULTITYPE_GIMBAL
-    { 0, NULL },                // MULTITYPE_Y6
-    { 0, NULL },                // MULTITYPE_HEX6
-    { COUNT_SERVO_RULES(servoMixerFlyingWing), servoMixerFlyingWing },// * MULTITYPE_FLYING_WING
-    { 0, NULL },                // MULTITYPE_Y4
-    { 0, NULL },                // MULTITYPE_HEX6X
-    { 0, NULL },                // MULTITYPE_OCTOX8
-    { 0, NULL },                // MULTITYPE_OCTOFLATP
-    { 0, NULL },                // MULTITYPE_OCTOFLATX
-    { COUNT_SERVO_RULES(servoMixerAirplane), servoMixerAirplane },  // * MULTITYPE_AIRPLANE
-    { 0, NULL },                // * MULTITYPE_HELI_120_CCPM
-    { 0, NULL },                // * MULTITYPE_HELI_90_DEG
-    { 0, NULL },                // MULTITYPE_VTAIL4
-    { 0, NULL },                // MULTITYPE_HEX6H
-    { 0, NULL },                // * MULTITYPE_PPM_TO_SERVO
-    { COUNT_SERVO_RULES(servoMixerDual), servoMixerDual },      // MULTITYPE_DUALCOPTER
-    { COUNT_SERVO_RULES(servoMixerSingle), servoMixerSingle },    // MULTITYPE_SINGLECOPTER
-    { 0, NULL },                // MULTITYPE_ATAIL4
-    { 0, NULL },                // MULTITYPE_CUSTOM
-    { 0, NULL },                // MULTITYPE_CUSTOM_PLANE
-    { 0, NULL },                // MULTITYPE_CUSTOM_TRI
-    { 0, NULL },
+    { COUNT_SERVO_RULES(servoMixerTri), servoMixerTri },       // MIXER_TRI
+    { 0, NULL },                // MIXER_QUADP
+    { 0, NULL },                // MIXER_QUADX
+    { COUNT_SERVO_RULES(servoMixerBI), servoMixerBI },        // MIXER_BI
+    { COUNT_SERVO_RULES(servoMixerGimbal), servoMixerGimbal },    // MIXER_GIMBAL
+    { 0, NULL },                // MIXER_Y6
+    { 0, NULL },                // MIXER_HEX6
+    { COUNT_SERVO_RULES(servoMixerFlyingWing), servoMixerFlyingWing },// MIXER_FLYING_WING
+    { 0, NULL },                // MIXER_Y4
+    { 0, NULL },                // MIXER_HEX6X
+    { 0, NULL },                // MIXER_OCTOX8
+    { 0, NULL },                // MIXER_OCTOFLATP
+    { 0, NULL },                // MIXER_OCTOFLATX
+    { COUNT_SERVO_RULES(servoMixerAirplane), servoMixerAirplane },  // MIXER_AIRPLANE
+    { 0, NULL },                // MIXER_HELI_120_CCPM
+    { 0, NULL },                // MIXER_HELI_90_DEG
+    { 0, NULL },                // MIXER_VTAIL4
+    { 0, NULL },                // MIXER_HEX6H
+    { 0, NULL },                // MIXER_RX_TO_SERVO
+    { COUNT_SERVO_RULES(servoMixerDual), servoMixerDual },      // MIXER_DUALCOPTER
+    { COUNT_SERVO_RULES(servoMixerSingle), servoMixerSingle },    // MIXER_SINGLECOPTER
+    { 0, NULL },                // MIXER_ATAIL4
+    { 0, NULL },                // MIXER_CUSTOM
+    { 0, NULL },                // MIXER_CUSTOM_PLANE
+    { 0, NULL },                // MIXER_CUSTOM_TRI
+    { 0, NULL }                 // MIXER_QUADX_1234
 };
 
 int16_t determineServoMiddleOrForwardFromChannel(servoIndex_e servoIndex)
@@ -347,6 +347,12 @@ void writeServos(void)
         }
         break;
 
+    case MIXER_RX_TO_SERVO:
+        for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+            pwmWriteServo(servoIndex++, servo[i]);
+        }
+        break;
+
     default:
         break;
     }
@@ -456,6 +462,12 @@ static void servoTable(void)
     case MIXER_SINGLECOPTER:
     case MIXER_GIMBAL:
         servoMixer();
+        break;
+
+    case MIXER_RX_TO_SERVO:
+        for (int i = 0; i < MIN(MAX_SUPPORTED_SERVOS, MAX_SUPPORTED_RC_CHANNEL_COUNT); i++) {
+            servo[i] = rcData[i];
+        }
         break;
 
     /*
