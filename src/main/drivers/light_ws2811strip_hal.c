@@ -129,6 +129,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     TIM_OCInitStructure.OCMode = TIM_OCMODE_PWM1;
     TIM_OCInitStructure.Pulse = 0;
     TIM_OCInitStructure.OCPolarity = TIM_OCPOLARITY_HIGH;
+    TIM_OCInitStructure.OCNPolarity = TIM_OCPOLARITY_HIGH;
     TIM_OCInitStructure.OCIdleState = TIM_OCIDLESTATE_RESET;
     TIM_OCInitStructure.OCNIdleState  = TIM_OCNIDLESTATE_RESET;
     TIM_OCInitStructure.OCFastMode = TIM_OCFAST_DISABLE;

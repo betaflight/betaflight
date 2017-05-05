@@ -71,7 +71,7 @@ typedef enum mixerMode
     MIXER_HELI_90_DEG = 16,
     MIXER_VTAIL4 = 17,
     MIXER_HEX6H = 18,
-    MIXER_PPM_TO_SERVO = 19,    // PPM -> servo relay
+    MIXER_RX_TO_SERVO = 19,    // PPM -> servo relay
     MIXER_DUALCOPTER = 20,
     MIXER_SINGLECOPTER = 21,
     MIXER_ATAIL4 = 22,
