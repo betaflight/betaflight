@@ -47,10 +47,11 @@ static void inverterSet(int identifier, bool on)
 
 static void initInverter(int identifier)
 {
-    IO_t pin = IOGetByTag(pSerialPinConfig->ioTagInverter[SERIAL_PORT_IDENTIFIER_TO_INDEX(identifier)]);
+    int uartIndex = SERIAL_PORT_IDENTIFIER_TO_INDEX(identifier);
+    IO_t pin = IOGetByTag(pSerialPinConfig->ioTagInverter[uartIndex]);
 
     if (pin) {
-        IOInit(pin, OWNER_INVERTER, RESOURCE_INDEX(SERIAL_PORT_IDENTIFIER_TO_INDEX(identifier)));
+        IOInit(pin, OWNER_INVERTER, RESOURCE_INDEX(uartIndex));
         IOConfigGPIO(pin, IOCFG_OUT_PP);
 
         inverterSet(identifier, false);
