@@ -548,8 +548,8 @@
 
 #define DEF_TIM_AF__PA0__TCH_TIM5_CH1     D(2, 5)
 #define DEF_TIM_AF__PA1__TCH_TIM5_CH2     D(2, 5)
-#define DEF_TIM_AF__PA3__TCH_TIM5_CH3     D(2, 5)
-#define DEF_TIM_AF__PA4__TCH_TIM5_CH4     D(2, 5)
+#define DEF_TIM_AF__PA2__TCH_TIM5_CH3     D(2, 5)
+#define DEF_TIM_AF__PA3__TCH_TIM5_CH4     D(2, 5)
 #define DEF_TIM_AF__PA6__TCH_TIM3_CH1     D(2, 3)
 #define DEF_TIM_AF__PA7__TCH_TIM3_CH2     D(2, 3)
 
@@ -563,7 +563,7 @@
 
 //PORTB
 #define DEF_TIM_AF__PB0__TCH_TIM1_CH2N    D(1, 1)
-#define DEF_TIM_AF__PB1__TCH_TIM1_CH2N    D(1, 1)
+#define DEF_TIM_AF__PB1__TCH_TIM1_CH3N    D(1, 1)
 #define DEF_TIM_AF__PB3__TCH_TIM2_CH2     D(1, 2)
 #define DEF_TIM_AF__PB10__TCH_TIM2_CH3    D(1, 2)
 #define DEF_TIM_AF__PB11__TCH_TIM2_CH4    D(1, 2)
