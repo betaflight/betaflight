@@ -56,6 +56,7 @@ typedef enum {
     OSD_PITCH_ANGLE,
     OSD_ROLL_ANGLE,
     OSD_MAIN_BATT_USAGE,
+    OSD_ARMED_TIME,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -67,6 +68,9 @@ typedef enum {
     OSD_STAT_USED_MAH,
     OSD_STAT_MAX_ALTITUDE,
     OSD_STAT_BLACKBOX,
+    OSD_STAT_END_BATTERY,
+    OSD_STAT_FLYTIME,
+    OSD_STAT_ARMEDTIME,
     OSD_STAT_COUNT // MUST BE LAST
 } osd_states_e;
 

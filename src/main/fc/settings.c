@@ -660,6 +660,9 @@ const clivalue_t valueTable[] = {
     { "osd_stat_used_mah",          VAR_UINT8   | MASTER_VALUE, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_USED_MAH])},
     { "osd_stat_max_alt",           VAR_UINT8   | MASTER_VALUE, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_MAX_ALTITUDE])},
     { "osd_stat_bbox",              VAR_UINT8   | MASTER_VALUE, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_BLACKBOX])},
+    { "osd_stat_endbatt",           VAR_UINT8   | MASTER_VALUE, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_END_BATTERY])},
+    { "osd_stat_flytime",           VAR_UINT8   | MASTER_VALUE, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_FLYTIME])},
+    { "osd_stat_armtime",           VAR_UINT8   | MASTER_VALUE, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_ARMEDTIME])},
 #endif
 
 // PG_SYSTEM_CONFIG
