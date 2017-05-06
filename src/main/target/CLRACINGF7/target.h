@@ -54,10 +54,10 @@
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 8 // 27MHz
 
-#define SDCARD_DMA_CHANNEL_TX               DMA2_Stream1
+#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF1_5
 #define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA2
-#define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_4
+#define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_0
 
 #define USE_VCP
 #define USE_UART1
