@@ -24,6 +24,7 @@
 #ifdef BLACKBOX
 
 #include "blackbox.h"
+#include "blackbox_encoding.h"
 #include "blackbox_io.h"
 
 #include "build/debug.h"
