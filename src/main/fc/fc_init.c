@@ -93,7 +93,6 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
 #include "io/osd.h"
-#include "io/osd_slave.h"
 #include "io/displayport_msp.h"
 #include "io/vtx_rtc6705.h"
 #include "io/vtx_control.h"
@@ -453,11 +452,11 @@ void init(void)
     cmsInit();
 #endif
 
-#if (defined(OSD) || (defined(USE_MSP_DISPLAYPORT) && defined(CMS)) || defined(USE_OSD_SLAVE))
+#if (defined(OSD) || (defined(USE_MSP_DISPLAYPORT) && defined(CMS)))
     displayPort_t *osdDisplayPort = NULL;
 #endif
 
-#if defined(OSD) && !defined(USE_OSD_SLAVE)
+#if defined(OSD)
     //The OSD need to be initialised after GYRO to avoid GYRO initialisation failure on some targets
 
     if (feature(FEATURE_OSD)) {
@@ -470,15 +469,6 @@ void init(void)
         // osdInit  will register with CMS by itself.
         osdInit(osdDisplayPort);
     }
-#endif
-
-#if defined(USE_OSD_SLAVE) && !defined(OSD)
-#if defined(USE_MAX7456)
-    // If there is a max7456 chip for the OSD then use it
-    osdDisplayPort = max7456DisplayPortInit(vcdProfile());
-    // osdInit  will register with CMS by itself.
-    osdSlaveInit(osdDisplayPort);
-#endif
 #endif
 
 #if defined(CMS) && defined(USE_MSP_DISPLAYPORT)
@@ -622,10 +612,6 @@ void init(void)
     latchActiveFeatures();
     motorControlEnable = true;
 
-#ifdef USE_OSD_SLAVE
-    osdSlaveTasksInit();
-#else
     fcTasksInit();
-#endif
     systemState |= SYSTEM_STATE_READY;
 }

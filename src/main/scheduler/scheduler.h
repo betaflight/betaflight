@@ -95,9 +95,6 @@ typedef enum {
 #ifdef OSD
     TASK_OSD,
 #endif
-#ifdef USE_OSD_SLAVE
-    TASK_OSD_SLAVE,
-#endif
 #ifdef USE_BST
     TASK_BST_MASTER_PROCESS,
 #endif

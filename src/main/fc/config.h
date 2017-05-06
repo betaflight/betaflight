@@ -64,7 +64,6 @@ typedef enum {
 
 #define MAX_NAME_LENGTH 16
 
-#ifndef USE_OSD_SLAVE
 typedef struct systemConfig_s {
     uint8_t pidProfileIndex;
     uint8_t activeRateProfile;
@@ -72,14 +71,6 @@ typedef struct systemConfig_s {
     uint8_t task_statistics;
     char name[MAX_NAME_LENGTH + 1]; // FIXME misplaced, see PG_PILOT_CONFIG in CF v1.x
 } systemConfig_t;
-#endif
-
-#ifdef USE_OSD_SLAVE
-typedef struct systemConfig_s {
-    uint8_t debug_mode;
-    uint8_t task_statistics;
-} systemConfig_t;
-#endif
 
 PG_DECLARE(systemConfig_t, systemConfig);
 PG_DECLARE(adcConfig_t, adcConfig);
