@@ -522,8 +522,6 @@ void activateConfig(void)
     setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
 
     imuConfigure(throttleCorrectionConfig()->throttle_correction_angle);
-
-    configureAltitudeHold(currentPidProfile);
 #endif
 }
 
