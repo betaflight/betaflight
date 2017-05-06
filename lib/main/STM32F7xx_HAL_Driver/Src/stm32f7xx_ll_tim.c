@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_ll_tim.c
   * @author  MCD Application Team
-  * @version V1.2.1
-  * @date    24-March-2017
+  * @version V1.2.2
+  * @date    14-April-2017
   * @brief   TIM LL module driver.
   ******************************************************************************
   * @attention
