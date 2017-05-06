@@ -33,7 +33,6 @@
 
 #include "io/displayport_max7456.h"
 #include "io/osd.h"
-#include "io/osd_slave.h"
 
 displayPort_t max7456DisplayPort;
 

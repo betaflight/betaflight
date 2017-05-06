@@ -97,9 +97,7 @@
 
 #include "telemetry/telemetry.h"
 
-#ifndef USE_OSD_SLAVE
 pidProfile_t *currentPidProfile;
-#endif
 
 #ifndef DEFAULT_FEATURES
 #define DEFAULT_FEATURES 0
@@ -119,7 +117,6 @@ PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
 
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
 
-#ifndef USE_OSD_SLAVE
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .pidProfileIndex = 0,
     .activeRateProfile = 0,
@@ -127,14 +124,6 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .task_statistics = true,
     .name = { 0 } // FIXME misplaced, see PG_PILOT_CONFIG in CF v1.x
 );
-#endif
-
-#ifdef USE_OSD_SLAVE
-PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
-    .debug_mode = DEBUG_MODE,
-    .task_statistics = true
-);
-#endif
 
 #ifdef BEEPER
 PG_REGISTER(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 0);
@@ -457,7 +446,6 @@ void pgResetFn_statusLedConfig(statusLedConfig_t *statusLedConfig)
     ;
 }
 
-#ifndef USE_OSD_SLAVE
 uint8_t getCurrentPidProfileIndex(void)
 {
     return systemConfig()->pidProfileIndex;
@@ -481,7 +469,6 @@ uint16_t getCurrentMinthrottle(void)
 {
     return motorConfig()->minthrottle;
 }
-#endif
 
 void resetConfigs(void)
 {
@@ -493,10 +480,8 @@ void resetConfigs(void)
 
     pgActivateProfile(0);
 
-#ifndef USE_OSD_SLAVE
     setPidProfile(0);
     setControlRateProfile(0);
-#endif
 
 #ifdef LED_STRIP
     reevaluateLedConfig();
@@ -505,7 +490,6 @@ void resetConfigs(void)
 
 void activateConfig(void)
 {
-#ifndef USE_OSD_SLAVE
     generateThrottleCurve();
 
     resetAdjustmentStates();
@@ -524,12 +508,10 @@ void activateConfig(void)
     imuConfigure(throttleCorrectionConfig()->throttle_correction_angle);
 
     configureAltitudeHold(currentPidProfile);
-#endif
 }
 
 void validateAndFixConfig(void)
 {
-#ifndef USE_OSD_SLAVE
     if((motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)){
         motorConfigMutable()->mincommand = 1000;
     }
@@ -594,7 +576,6 @@ void validateAndFixConfig(void)
     }
 
     validateAndFixGyroConfig();
-#endif
 
     if (!isSerialConfigValid(serialConfig())) {
         pgResetFn_serialConfig(serialConfigMutable());
@@ -605,7 +586,6 @@ void validateAndFixConfig(void)
 #endif
 }
 
-#ifndef USE_OSD_SLAVE
 void validateAndFixGyroConfig(void)
 {
     // Prevent invalid notch cutoff
@@ -681,19 +661,15 @@ void validateAndFixGyroConfig(void)
             motorConfigMutable()->dev.motorPwmRate = maxEscRate;
     }
 }
-#endif
 
 void readEEPROM(void)
 {
-#ifndef USE_OSD_SLAVE
     suspendRxSignal();
-#endif
 
     // Sanity check, read flash
     if (!loadEEPROM()) {
         failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
     }
-#ifndef USE_OSD_SLAVE
     if (systemConfig()->activeRateProfile >= CONTROL_RATE_PROFILE_COUNT) {// sanity check
         systemConfigMutable()->activeRateProfile = 0;
     }
@@ -703,27 +679,20 @@ void readEEPROM(void)
         systemConfigMutable()->pidProfileIndex = 0;
     }
     setPidProfile(systemConfig()->pidProfileIndex);
-#endif
 
     validateAndFixConfig();
     activateConfig();
 
-#ifndef USE_OSD_SLAVE
     resumeRxSignal();
-#endif
 }
 
 void writeEEPROM(void)
 {
-#ifndef USE_OSD_SLAVE
     suspendRxSignal();
-#endif
 
     writeConfigToEEPROM();
 
-#ifndef USE_OSD_SLAVE
     resumeRxSignal();
-#endif
 }
 
 void resetEEPROM(void)
@@ -747,7 +716,6 @@ void saveConfigAndNotify(void)
     beeperConfirmationBeeps(1);
 }
 
-#ifndef USE_OSD_SLAVE
 void changePidProfile(uint8_t pidProfileIndex)
 {
     if (pidProfileIndex >= MAX_PROFILE_COUNT) {
@@ -757,7 +725,6 @@ void changePidProfile(uint8_t pidProfileIndex)
     currentPidProfile = pidProfilesMutable(pidProfileIndex);
     beeperConfirmationBeeps(pidProfileIndex + 1);
 }
-#endif
 
 void beeperOffSet(uint32_t mask)
 {

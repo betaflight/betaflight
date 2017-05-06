@@ -90,7 +90,6 @@ FEATURES        =
 OFFICIAL_TARGETS  = ALIENFLIGHTF3 ALIENFLIGHTF4 ANYFCF7 BETAFLIGHTF3 BLUEJAYF4 CC3D FURYF4 NAZE REVO SIRINFPV SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3NEO SPRACINGF4EVO STM32F3DISCOVERY
 ALT_TARGETS       = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.mk)))))
 OPBL_TARGETS      = $(filter %_OPBL, $(ALT_TARGETS))
-OSD_SLAVE_TARGETS = SPRACINGF3OSD
 
 VALID_TARGETS   = $(dir $(wildcard $(ROOT)/src/main/target/*/target.mk))
 VALID_TARGETS  := $(subst /,, $(subst ./src/main/target/,, $(VALID_TARGETS)))
@@ -188,15 +187,6 @@ endif
 ifeq ($(filter $(TARGET),$(OPBL_TARGETS)), $(TARGET))
 OPBL            = yes
 endif
-
-ifeq ($(filter $(TARGET),$(OSD_SLAVE_TARGETS)), $(TARGET))
-# build an OSD SLAVE
-OSD_SLAVE       = yes
-else
-# build an FC
-FC              = yes
-endif
-
 
 # silently ignore if the file is not present. Allows for target specific.
 -include $(ROOT)/src/main/target/$(BASE_TARGET)/target.mk
@@ -701,13 +691,6 @@ COMMON_SRC = \
             sensors/battery.c \
             sensors/current.c \
             sensors/voltage.c \
-
-OSD_SLAVE_SRC = \
-            io/displayport_max7456.c \
-            osd_slave/osd_slave_init.c \
-            io/osd_slave.c
-
-FC_SRC = \
             fc/fc_init.c \
             fc/controlrate_profile.c \
             drivers/gyro_sync.c \
@@ -805,12 +788,7 @@ COMMON_DEVICE_SRC = \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC)
 
-ifeq ($(OSD_SLAVE),yes)
-TARGET_FLAGS := -DUSE_OSD_SLAVE $(TARGET_FLAGS)
-COMMON_SRC := $(COMMON_SRC) $(OSD_SLAVE_SRC) $(COMMON_DEVICE_SRC)
-else
-COMMON_SRC := $(COMMON_SRC) $(FC_SRC) $(COMMON_DEVICE_SRC)
-endif
+COMMON_SRC := $(COMMON_SRC) $(COMMON_DEVICE_SRC)
 
 
 SPEED_OPTIMISED_SRC := ""
@@ -881,8 +859,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/serial_softserial.c \
             io/dashboard.c \
             io/displayport_max7456.c \
-            io/osd.c \
-            io/osd_slave.c
+            io/osd.c
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/serial_escserial.c \
