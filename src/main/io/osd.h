@@ -60,12 +60,24 @@ typedef enum {
 } osd_items_e;
 
 typedef enum {
+    OSD_STAT_MAX_SPEED,
+    OSD_STAT_MIN_BATTERY,
+    OSD_STAT_MIN_RSSI,
+    OSD_STAT_MAX_CURRENT,
+    OSD_STAT_USED_MAH,
+    OSD_STAT_MAX_ALTITUDE,
+    OSD_STAT_BLACKBOX,
+    OSD_STAT_COUNT // MUST BE LAST
+} osd_states_e;
+
+typedef enum {
     OSD_UNIT_IMPERIAL,
     OSD_UNIT_METRIC
 } osd_unit_e;
 
 typedef struct osdConfig_s {
     uint16_t item_pos[OSD_ITEM_COUNT];
+    bool enabled_stats[OSD_STAT_COUNT];
 
     // Alarms
     uint8_t rssi_alarm;
