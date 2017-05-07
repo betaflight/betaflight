@@ -80,10 +80,10 @@ bool mpu3050Detect(gyroDev_t *gyro)
     if (gyro->mpuDetectionResult.sensor != MPU_3050) {
         return false;
     }
-    gyro->init = mpu3050Init;
-    gyro->read = mpuGyroRead;
-    gyro->temperature = mpu3050ReadTemperature;
-    gyro->intStatus = mpuCheckDataReady;
+    gyro->initFn = mpu3050Init;
+    gyro->readFn = mpuGyroRead;
+    gyro->temperatureFn = mpu3050ReadTemperature;
+    gyro->intStatusFn = mpuCheckDataReady;
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;

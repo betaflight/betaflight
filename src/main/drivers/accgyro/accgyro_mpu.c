@@ -118,8 +118,8 @@ static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 #endif
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
     gyro->dataReady = true;
-    if (gyro->update) {
-        gyro->update(gyro);
+    if (gyro->updateFn) {
+        gyro->updateFn(gyro);
     }
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT
     const uint32_t now2Us = micros();
@@ -196,7 +196,7 @@ bool mpuAccRead(accDev_t *acc)
 void mpuGyroSetIsrUpdate(gyroDev_t *gyro, sensorGyroUpdateFuncPtr updateFn)
 {
     ATOMIC_BLOCK(NVIC_PRIO_MPU_INT_EXTI) {
-        gyro->update = updateFn;
+        gyro->updateFn = updateFn;
     }
 }
 

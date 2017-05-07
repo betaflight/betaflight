@@ -17,9 +17,9 @@
 
 bool gyroSyncCheckUpdate(gyroDev_t *gyro)
 {
-    if (!gyro->intStatus)
+    if (!gyro->intStatusFn)
         return false;
-    return gyro->intStatus(gyro);
+    return gyro->intStatusFn(gyro);
 }
 
 uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenominator, bool gyro_use_32khz)
