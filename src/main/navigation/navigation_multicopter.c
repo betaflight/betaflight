@@ -524,9 +524,11 @@ bool isMulticopterLandingDetected(void)
 
     bool possibleLandingDetected = isAtMinimalThrust && !verticalMovement && !horizontalMovement;
 
-    navDebug[0] = isAtMinimalThrust * 100 + !verticalMovement * 10 + !horizontalMovement * 1;
-    navDebug[1] = (landingThrSamples == 0) ? (navDebug[1] = 0) : (rcCommandAdjustedThrottle - (landingThrSum / landingThrSamples));
-    navDebug[2] = (currentTimeUs - landingTimer) / 1000;
+    if (debugMode ==DEBUG_NAV) {
+        debug[0] = isAtMinimalThrust * 100 + !verticalMovement * 10 + !horizontalMovement * 1;
+        debug[1] = (landingThrSamples == 0) ? 0 : (rcCommandAdjustedThrottle - (landingThrSum / landingThrSamples));
+        debug[2] = (currentTimeUs - landingTimer) / 1000;
+    }
 
     // If we have surface sensor (for example sonar) - use it to detect touchdown
     if (posControl.flags.hasValidSurfaceSensor && posControl.actualState.surfaceMin >= 0) {

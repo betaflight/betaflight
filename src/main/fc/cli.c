@@ -323,7 +323,8 @@ static const char * const lookupTableAsyncMode[] = {
 static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "NONE",
     "GYRO",
-    "NOTCH"
+    "NOTCH",
+    "NAV"
 };
 
 #ifdef TELEMETRY_LTM

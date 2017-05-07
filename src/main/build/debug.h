@@ -48,5 +48,6 @@ typedef enum {
     DEBUG_NONE,
     DEBUG_GYRO,
     DEBUG_NOTCH,
+    DEBUG_NAV,
     DEBUG_COUNT
 } debugType_e;

@@ -308,16 +308,10 @@ extern int16_t navTargetPosition[3];
 extern int32_t navLatestActualPosition[3];
 extern int16_t navTargetSurface;
 extern int16_t navActualSurface;
-extern int16_t navDebug[4];
 extern uint16_t navFlags;
 extern uint16_t navEPH;
 extern uint16_t navEPV;
 extern int16_t navAccNEU[3];
-#if defined(BLACKBOX)
-#define NAV_BLACKBOX_DEBUG(x,y) navDebug[x] = constrain((y), -32678, 32767)
-#else
-#define NAV_BLACKBOX_DEBUG(x,y)
-#endif
 
 #else
 
