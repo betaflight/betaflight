@@ -371,6 +371,7 @@ void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
     }
 
     HAL_TIM_IC_ConfigChannel(Handle, &TIM_ICInitStructure, channel);
+    HAL_TIM_IC_Start_IT(Handle,channel);
 }
 #else
 void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
@@ -407,18 +408,22 @@ void pwmInConfig(const timerHardware_t *timerHardwarePtr, uint8_t channel)
 
     IO_t io = IOGetByTag(timerHardwarePtr->tag);
     IOInit(io, OWNER_PWMINPUT, RESOURCE_INPUT, RESOURCE_INDEX(channel));
+#if defined(STM32F7)
+    IOConfigGPIOAF(io, timerHardwarePtr->ioMode, timerHardwarePtr->alternateFunction);
+#else
     IOConfigGPIO(io, timerHardwarePtr->ioMode);
+#endif
+
+    timerConfigure(timerHardwarePtr, (uint16_t)PWM_TIMER_PERIOD, PWM_TIMER_MHZ);
+    timerChCCHandlerInit(&self->edgeCb, pwmEdgeCallback);
+    timerChOvrHandlerInit(&self->overflowCb, pwmOverflowCallback);
+    timerChConfigCallbacks(timerHardwarePtr, &self->edgeCb, &self->overflowCb);
 
 #if defined(USE_HAL_DRIVER)
     pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPOLARITY_RISING);
 #else
     pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
 #endif
-    timerConfigure(timerHardwarePtr, (uint16_t)PWM_TIMER_PERIOD, PWM_TIMER_MHZ);
-
-    timerChCCHandlerInit(&self->edgeCb, pwmEdgeCallback);
-    timerChOvrHandlerInit(&self->overflowCb, pwmOverflowCallback);
-    timerChConfigCallbacks(timerHardwarePtr, &self->edgeCb, &self->overflowCb);
 }
 
 #define UNUSED_PPM_TIMER_REFERENCE 0
@@ -442,19 +447,22 @@ void ppmInConfig(const timerHardware_t *timerHardwarePtr)
 
     IO_t io = IOGetByTag(timerHardwarePtr->tag);
     IOInit(io, OWNER_PPMINPUT, RESOURCE_INPUT, 0);
+#if defined(STM32F7)
+    IOConfigGPIOAF(io, timerHardwarePtr->ioMode, timerHardwarePtr->alternateFunction);
+#else
     IOConfigGPIO(io, timerHardwarePtr->ioMode);
+#endif
+
+    timerConfigure(timerHardwarePtr, (uint16_t)PPM_TIMER_PERIOD, PWM_TIMER_MHZ);
+    timerChCCHandlerInit(&self->edgeCb, ppmEdgeCallback);
+    timerChOvrHandlerInit(&self->overflowCb, ppmOverflowCallback);
+    timerChConfigCallbacks(timerHardwarePtr, &self->edgeCb, &self->overflowCb);
 
 #if defined(USE_HAL_DRIVER)
     pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPOLARITY_RISING);
 #else
     pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
 #endif
-
-    timerConfigure(timerHardwarePtr, (uint16_t)PPM_TIMER_PERIOD, PWM_TIMER_MHZ);
-
-    timerChCCHandlerInit(&self->edgeCb, ppmEdgeCallback);
-    timerChOvrHandlerInit(&self->overflowCb, ppmOverflowCallback);
-    timerChConfigCallbacks(timerHardwarePtr, &self->edgeCb, &self->overflowCb);
 }
 
 uint16_t ppmRead(uint8_t channel)
