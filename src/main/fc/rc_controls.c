@@ -197,7 +197,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
 
     if (rcSticks == THR_LO + YAW_LO + PIT_LO + ROL_CE) {
         // GYRO calibration
-        gyroSetCalibrationCycles();
+        gyroStartCalibration();
 
 #ifdef GPS
         if (feature(FEATURE_GPS)) {

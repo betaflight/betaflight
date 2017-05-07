@@ -190,7 +190,7 @@ void mwArm(void)
     static bool firstArmingCalibrationWasCompleted;
 
     if (armingConfig()->gyro_cal_on_first_arm && !firstArmingCalibrationWasCompleted) {
-        gyroSetCalibrationCycles();
+        gyroStartCalibration();
         armingCalibrationWasInitialised = true;
         firstArmingCalibrationWasCompleted = true;
     }
