@@ -31,9 +31,6 @@
 
 #ifdef USE_INVERTER
 
-// XXX This will go away once #3015 is merged.
-#define SERIAL_PORT_IDENTIFIER_TO_INDEX SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX
-
 static const serialPinConfig_t *pSerialPinConfig;
 
 static void inverterSet(int identifier, bool on)
