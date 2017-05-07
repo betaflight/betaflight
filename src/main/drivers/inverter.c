@@ -21,11 +21,66 @@
 #include "platform.h"
 
 #include "drivers/io.h"
-#include "io_impl.h"
+#include "drivers/serial.h"
+
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "inverter.h"
 
 #ifdef USE_INVERTER
+
+#ifdef INVERTER_PIN_UART1
+#define INVERTER_IOTAG_UART1 IO_TAG(INVERTER_PIN_UART1)
+#else
+#define INVERTER_IOTAG_UART1 IO_TAG_NONE
+#endif
+
+#ifdef INVERTER_PIN_UART2
+#define INVERTER_IOTAG_UART2 IO_TAG(INVERTER_PIN_UART2)
+#else
+#define INVERTER_IOTAG_UART2 IO_TAG_NONE
+#endif
+
+#ifdef INVERTER_PIN_UART3
+#define INVERTER_IOTAG_UART3 IO_TAG(INVERTER_PIN_UART3)
+#else
+#define INVERTER_IOTAG_UART3 IO_TAG_NONE
+#endif
+
+#ifdef INVERTER_PIN_UART4
+#define INVERTER_IOTAG_UART4 IO_TAG(INVERTER_PIN_UART4)
+#else
+#define INVERTER_IOTAG_UART4 IO_TAG_NONE
+#endif
+
+#ifdef INVERTER_PIN_UART5
+#define INVERTER_IOTAG_UART5 IO_TAG(INVERTER_PIN_UART5)
+#else
+#define INVERTER_IOTAG_UART5 IO_TAG_NONE
+#endif
+
+#ifdef INVERTER_PIN_UART6
+#define INVERTER_IOTAG_UART6 IO_TAG(INVERTER_PIN_UART6)
+#else
+#define INVERTER_IOTAG_UART6 IO_TAG_NONE
+#endif
+
+const inverterConfig_t *pInverterConfig;
+
+PG_REGISTER_WITH_RESET_TEMPLATE(inverterConfig_t, inverterConfig, PG_INVERTER_CONFIG, 0);
+
+PG_RESET_TEMPLATE(inverterConfig_t, inverterConfig,
+    .ioTag = {
+        INVERTER_IOTAG_UART1,
+        INVERTER_IOTAG_UART2,
+        INVERTER_IOTAG_UART3,
+        INVERTER_IOTAG_UART4,
+        INVERTER_IOTAG_UART5,
+        INVERTER_IOTAG_UART6,
+    },
+);
+
 static void inverterSet(IO_t pin, bool on)
 {
     IOWrite(pin, on);
@@ -41,30 +96,36 @@ static void initInverter(ioTag_t ioTag)
 }
 #endif
 
-void initInverters(void)
+void initInverters(const inverterConfig_t *inverterConfigToUse)
 {
+#ifdef USE_INVERTER
+    pInverterConfig = inverterConfigToUse;
+
 #ifdef INVERTER_PIN_UART1
-    initInverter(IO_TAG(INVERTER_PIN_UART1));
+    initInverter(pInverterConfig->ioTag[0]);
 #endif
 
 #ifdef INVERTER_PIN_UART2
-    initInverter(IO_TAG(INVERTER_PIN_UART2));
+    initInverter(pInverterConfig->ioTag[1]);
 #endif
 
 #ifdef INVERTER_PIN_UART3
-    initInverter(IO_TAG(INVERTER_PIN_UART3));
+    initInverter(pInverterConfig->ioTag[2]);
 #endif
 
 #ifdef INVERTER_PIN_UART4
-    initInverter(IO_TAG(INVERTER_PIN_UART4));
+    initInverter(pInverterConfig->ioTag[3]);
 #endif
 
 #ifdef INVERTER_PIN_UART5
-    initInverter(IO_TAG(INVERTER_PIN_UART5));
+    initInverter(pInverterConfig->ioTag[4]);
 #endif
 
 #ifdef INVERTER_PIN_UART6
-    initInverter(IO_TAG(INVERTER_PIN_UART6));
+    initInverter(pInverterConfig->ioTag[5]);
+#endif
+#else
+    UNUSED(inverterConfigToUse);
 #endif
 }
 
@@ -75,37 +136,37 @@ void enableInverter(USART_TypeDef *USARTx, bool on)
 
 #ifdef INVERTER_PIN_UART1
     if (USARTx == USART1) {
-        pin = IOGetByTag(IO_TAG(INVERTER_PIN_UART1));
+        pin = IOGetByTag(pInverterConfig->ioTag[0]);
     }
 #endif
 
 #ifdef INVERTER_PIN_UART2
     if (USARTx == USART2) {
-        pin = IOGetByTag(IO_TAG(INVERTER_PIN_UART2));
+        pin = IOGetByTag(pInverterConfig->ioTag[1]);
     }
 #endif
 
 #ifdef INVERTER_PIN_UART3
     if (USARTx == USART3) {
-        pin = IOGetByTag(IO_TAG(INVERTER_PIN_UART3));
+        pin = IOGetByTag(pInverterConfig->ioTag[2]);
     }
 #endif
 
 #ifdef INVERTER_PIN_UART4
     if (USARTx == UART4) {
-        pin = IOGetByTag(IO_TAG(INVERTER_PIN_UART4));
+        pin = IOGetByTag(pInverterConfig->ioTag[3]);
     }
 #endif
 
 #ifdef INVERTER_PIN_UART5
     if (USARTx == UART5) {
-        pin = IOGetByTag(IO_TAG(INVERTER_PIN_UART5));
+        pin = IOGetByTag(pInverterConfig->ioTag[4]);
     }
 #endif
 
 #ifdef INVERTER_PIN_UART6
     if (USARTx == USART6) {
-        pin = IOGetByTag(IO_TAG(INVERTER_PIN_UART6));
+        pin = IOGetByTag(pInverterConfig->ioTag[5]);
     }
 #endif
 
