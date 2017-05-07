@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "common/time.h"
 #include "current_ids.h"
 
 typedef enum {
@@ -24,6 +25,7 @@ typedef enum {
     CURRENT_METER_ADC,
     CURRENT_METER_VIRTUAL,
     CURRENT_METER_ESC,
+    CURRENT_METER_MSP,
     CURRENT_METER_MAX = CURRENT_METER_ESC
 } currentMeterSource_e;
 
@@ -48,6 +50,7 @@ typedef enum {
     CURRENT_SENSOR_VIRTUAL = 0,
     CURRENT_SENSOR_ADC,
     CURRENT_SENSOR_ESC,
+    CURRENT_SENSOR_MSP
 } currentSensor_e;
 
 
@@ -93,6 +96,21 @@ typedef struct currentMeterESCState_s {
     int32_t amperage;           // current read by current sensor in centiampere (1/100th A)
 } currentMeterESCState_t;
 
+
+//
+// MSP
+//
+
+typedef struct currentMeterMSPState_s {
+    int32_t mAhDrawn;           // milliampere hours drawn from the battery since start
+    int32_t amperage;           // current read by current sensor in centiampere (1/100th A)
+} currentMeterMSPState_t;
+
+
+//
+// Current Meter API
+//
+
 void currentMeterReset(currentMeter_t *meter);
 
 void currentMeterADCInit(void);
@@ -107,6 +125,11 @@ void currentMeterESCInit(void);
 void currentMeterESCRefresh(int32_t lastUpdateAt);
 void currentMeterESCReadCombined(currentMeter_t *meter);
 void currentMeterESCReadMotor(uint8_t motorNumber, currentMeter_t *meter);
+
+void currentMeterMSPInit(void);
+void currentMeterMSPRefresh(timeUs_t currentTimeUs);
+void currentMeterMSPRead(currentMeter_t *meter);
+void currentMeterMSPSet(uint16_t amperage, uint16_t mAhDrawn);
 
 //
 // API for reading current meters by id.

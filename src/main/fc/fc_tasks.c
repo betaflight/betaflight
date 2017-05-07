@@ -23,6 +23,8 @@
 
 #include "cms/cms.h"
 
+#include "build/debug.h"
+
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/utils.h"
@@ -81,6 +83,8 @@
 
 #include "telemetry/telemetry.h"
 
+#include "io/osd_slave.h"
+
 #ifdef USE_BST
 void taskBstMasterProcess(timeUs_t currentTimeUs);
 #endif
@@ -115,7 +119,12 @@ static void taskHandleSerial(timeUs_t currentTimeUs)
         return;
     }
 #endif
-    mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA, mspFcProcessCommand, mspFcProcessReply);
+#ifndef OSD_SLAVE
+    bool evaluateMspData = ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA;
+#else
+    bool evaluateMspData = osdSlaveIsLocked ?  MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA;;
+#endif
+    mspSerialProcess(evaluateMspData, mspFcProcessCommand, mspFcProcessReply);
 }
 
 void taskBatteryAlerts(timeUs_t currentTimeUs)

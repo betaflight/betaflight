@@ -162,6 +162,7 @@
 
 #define OSD
 #define USE_OSD_OVER_MSP_DISPLAYPORT
+#define USE_MSP_CURRENT_METER
 
 #define LED_STRIP
 #define TRANSPONDER

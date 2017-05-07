@@ -42,6 +42,9 @@ typedef enum FlightLogFieldCondition {
 
     FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME,
 
+    FLIGHT_LOG_FIELD_CONDITION_ACC,
+    FLIGHT_LOG_FIELD_CONDITION_DEBUG,
+
     FLIGHT_LOG_FIELD_CONDITION_NEVER,
 
     FLIGHT_LOG_FIELD_CONDITION_FIRST = FLIGHT_LOG_FIELD_CONDITION_ALWAYS,
@@ -94,7 +97,8 @@ typedef enum FlightLogFieldEncoding {
     FLIGHT_LOG_FIELD_ENCODING_TAG8_8SVB       = 6,
     FLIGHT_LOG_FIELD_ENCODING_TAG2_3S32       = 7,
     FLIGHT_LOG_FIELD_ENCODING_TAG8_4S16       = 8,
-    FLIGHT_LOG_FIELD_ENCODING_NULL            = 9 // Nothing is written to the file, take value to be zero
+    FLIGHT_LOG_FIELD_ENCODING_NULL            = 9, // Nothing is written to the file, take value to be zero
+    FLIGHT_LOG_FIELD_ENCODING_TAG2_3SVARIABLE = 10
 } FlightLogFieldEncoding;
 
 typedef enum FlightLogFieldSign {
