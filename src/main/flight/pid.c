@@ -107,7 +107,7 @@ int32_t axisPID_P[FLIGHT_DYNAMICS_INDEX_COUNT], axisPID_I[FLIGHT_DYNAMICS_INDEX_
 
 static pidState_t pidState[FLIGHT_DYNAMICS_INDEX_COUNT];
 
-PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(pidProfile_t, pidProfile, PG_PID_PROFILE, 2);
+PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(pidProfile_t, pidProfile, PG_PID_PROFILE, 3);
 
 PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
         .bank_mc = {
@@ -191,6 +191,7 @@ PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
 
         .fixedWingItermThrowLimit = FW_ITERM_THROW_LIMIT_DEFAULT,
         .fixedWingReferenceAirspeed = 1000,
+        .fixedWingCoordinatedYawGain = 1.0f,
 );
 
 void pidInit(void)
@@ -656,10 +657,12 @@ static void pidTurnAssistant(pidState_t *pidState)
             // Constrain to somewhat sane limits - 10km/h - 216km/h
             airspeedForCoordinatedTurn = constrainf(airspeedForCoordinatedTurn, 300, 6000);
 
+            // Calculate rate of turn in Earth frame according to FAA's Pilot's Handbook of Aeronautical Knowledge
             float bankAngle = DECIDEGREES_TO_RADIANS(attitude.values.roll);
-            float coordinatedTurnRateOffset = GRAVITY_CMSS * tan_approx(-bankAngle) / airspeedForCoordinatedTurn;
+            float coordinatedTurnRateEarthFrame = GRAVITY_CMSS * tan_approx(-bankAngle) / airspeedForCoordinatedTurn;
 
-            targetRates.V.Z = pidState[YAW].rateTarget + RADIANS_TO_DEGREES(coordinatedTurnRateOffset);
+            // Apply additionan gain
+            targetRates.V.Z = pidState[YAW].rateTarget + RADIANS_TO_DEGREES(coordinatedTurnRateEarthFrame * pidProfile()->fixedWingCoordinatedYawGain);
         }
         else {
             // Don't allow coordinated turn calculation if airplane is in hard bank or steep climb/dive
