@@ -30,17 +30,9 @@
 #include "drivers/sound_beeper.h"
 #include "drivers/vcd.h"
 
-#if FLASH_SIZE <= 128
-#define MAX_PROFILE_COUNT 2
-#else
-#define MAX_PROFILE_COUNT 3
-#endif
-#define MAX_RATEPROFILES 3
-#define MAX_NAME_LENGTH 16
-
 typedef enum {
     FEATURE_RX_PPM = 1 << 0,
-    FEATURE_VBAT = 1 << 1,
+    //FEATURE_VBAT = 1 << 1,
     FEATURE_INFLIGHT_ACC_CAL = 1 << 2,
     FEATURE_RX_SERIAL = 1 << 3,
     FEATURE_MOTOR_STOP = 1 << 4,
@@ -50,7 +42,7 @@ typedef enum {
     FEATURE_FAILSAFE = 1 << 8,
     FEATURE_SONAR = 1 << 9,
     FEATURE_TELEMETRY = 1 << 10,
-    FEATURE_CURRENT_METER = 1 << 11,
+    //FEATURE_CURRENT_METER = 1 << 11,
     FEATURE_3D = 1 << 12,
     FEATURE_RX_PARALLEL_PWM = 1 << 13,
     FEATURE_RX_MSP = 1 << 14,
@@ -58,23 +50,36 @@ typedef enum {
     FEATURE_LED_STRIP = 1 << 16,
     FEATURE_DASHBOARD = 1 << 17,
     FEATURE_OSD = 1 << 18,
-    FEATURE_BLACKBOX = 1 << 19,
+    FEATURE_BLACKBOX_UNUSED = 1 << 19,
     FEATURE_CHANNEL_FORWARDING = 1 << 20,
     FEATURE_TRANSPONDER = 1 << 21,
     FEATURE_AIRMODE = 1 << 22,
-    FEATURE_SDCARD = 1 << 23,
-    FEATURE_VTX = 1 << 24,
+    FEATURE_SDCARD_UNUSED = 1 << 23,
+    //FEATURE_VTX = 1 << 24,
     FEATURE_RX_SPI = 1 << 25,
     FEATURE_SOFTSPI = 1 << 26,
     FEATURE_ESC_SENSOR = 1 << 27,
+    FEATURE_ANTI_GRAVITY = 1 << 28,
 } features_e;
 
+#define MAX_NAME_LENGTH 16
+
+#ifndef USE_OSD_SLAVE
 typedef struct systemConfig_s {
-    uint8_t current_profile_index;
+    uint8_t pidProfileIndex;
+    uint8_t activeRateProfile;
     uint8_t debug_mode;
     uint8_t task_statistics;
-    char name[MAX_NAME_LENGTH + 1];
+    char name[MAX_NAME_LENGTH + 1]; // FIXME misplaced, see PG_PILOT_CONFIG in CF v1.x
 } systemConfig_t;
+#endif
+
+#ifdef USE_OSD_SLAVE
+typedef struct systemConfig_s {
+    uint8_t debug_mode;
+    uint8_t task_statistics;
+} systemConfig_t;
+#endif
 
 PG_DECLARE(systemConfig_t, systemConfig);
 PG_DECLARE(adcConfig_t, adcConfig);
@@ -86,10 +91,8 @@ PG_DECLARE(vcdProfile_t, vcdProfile);
 PG_DECLARE(sdcardConfig_t, sdcardConfig);
 PG_DECLARE(serialPinConfig_t, serialPinConfig);
 
-struct profile_s;
-extern struct profile_s *currentProfile;
-struct controlRateConfig_s;
-extern struct controlRateConfig_s *currentControlRateProfile;
+struct pidProfile_s;
+extern struct pidProfile_s *currentPidProfile;
 
 void beeperOffSet(uint32_t mask);
 void beeperOffSetAll(uint8_t beeperCount);
@@ -99,8 +102,6 @@ uint32_t getBeeperOffMask(void);
 void setBeeperOffMask(uint32_t mask);
 uint32_t getPreferredBeeperOffMask(void);
 void setPreferredBeeperOffMask(uint32_t mask);
-
-void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex);
 
 void initEEPROM(void);
 void resetEEPROM(void);
@@ -113,18 +114,18 @@ void validateAndFixConfig(void);
 void validateAndFixGyroConfig(void);
 void activateConfig(void);
 
-uint8_t getCurrentProfile(void);
-void changeProfile(uint8_t profileIndex);
-struct profile_s;
-void resetProfile(struct profile_s *profile);
+uint8_t getCurrentPidProfileIndex(void);
+void changePidProfile(uint8_t pidProfileIndex);
+struct pidProfile_s;
+void resetPidProfile(struct pidProfile_s *profile);
 
-uint8_t getCurrentControlRateProfile(void);
+uint8_t getCurrentControlRateProfileIndex(void);
 void changeControlRateProfile(uint8_t profileIndex);
+
 bool canSoftwareSerialBeUsed(void);
 
 uint16_t getCurrentMinthrottle(void);
 
 void resetConfigs(void);
-struct master_s;
-void targetConfiguration(struct master_s *config);
-void targetValidateConfiguration(struct master_s *config);
+void targetConfiguration(void);
+void targetValidateConfiguration(void);

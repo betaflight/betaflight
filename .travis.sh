@@ -1,10 +1,11 @@
 #!/bin/bash
 
+FC_VER=$(make version)
 REVISION=$(git rev-parse --short HEAD)
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 REVISION=$(git rev-parse --short HEAD)
 LAST_COMMIT_DATE=$(git log -1 --date=short --format="%cd")
-TARGET_FILE=obj/betaflight_${TARGET}
+TARGET_FILE=obj/betaflight_${FC_VER}_${TARGET}
 TRAVIS_REPO_SLUG=${TRAVIS_REPO_SLUG:=$USER/undefined}
 BUILDNAME=${BUILDNAME:=travis}
 TRAVIS_BUILD_NUMBER=${TRAVIS_BUILD_NUMBER:=undefined}
@@ -46,7 +47,8 @@ elif [ $PUBLISHMETA ] ; then
 	fi
 
 elif [ $TARGET ] ; then
-    make $TARGET
+    make $TARGET || exit $?
+
 	if [ $PUBLISH_URL ] ; then
 		if   [ -f ${TARGET_FILE}.bin ] ; then
 			TARGET_FILE=${TARGET_FILE}.bin
@@ -60,8 +62,10 @@ elif [ $TARGET ] ; then
 		curl -k "${CURL_BASEOPTS[@]}" "${CURL_PUB_BASEOPTS[@]}" --form "file=@${TARGET_FILE}" ${PUBLISH_URL} || true
 		exit 0;
 	fi
+
 elif [ $GOAL ] ; then
     make V=0 $GOAL
+
 else 
     make V=0 all
 fi

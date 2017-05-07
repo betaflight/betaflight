@@ -19,7 +19,7 @@
 
 #define LED0                    PB3
 
-#define INVERTER_PIN_USART1     PB2 // PB2 (BOOT1) used as inverter select GPIO
+#define INVERTER_PIN_UART1      PB2 // PB2 (BOOT1) used as inverter select GPIO
 
 #define BEEPER                  PA15
 #define BEEPER_OPT              PA2
@@ -93,9 +93,7 @@
 #define VBAT_ADC_PIN            PA0
 #define RSSI_ADC_PIN            PB0
 
-#define SPEKTRUM_BIND
-// USART3, PB11 (Flexport)
-#define BIND_PIN   PB11
+#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

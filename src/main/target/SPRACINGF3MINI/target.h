@@ -26,6 +26,10 @@
 #else
 #define TARGET_BOARD_IDENTIFIER "SRFM"
 
+#ifndef SPRACINGF3MINI_REV
+#define SPRACINGF3MINI_REV 2
+#endif
+
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
 #define LED0                    PB3
@@ -78,8 +82,6 @@
 
 #define BRUSHED_ESC_AUTODETECT
 
-#define USB_IO
-
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
@@ -88,6 +90,8 @@
 #ifdef TINYBEEF3
 #define SERIAL_PORT_COUNT       4
 #else
+#define USB_DETECT_PIN          PB5
+
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 #define SERIAL_PORT_COUNT       6
@@ -106,7 +110,6 @@
 
 #define UART3_TX_PIN            PB10 // PB10 (AF7)
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
-
 
 #ifndef TINYBEEF3
 #define SOFTSERIAL1_RX_PIN      PA0 // PA0 / PAD3
@@ -129,7 +132,8 @@
 #define MPU6500_SPI_INSTANCE             SPI1
 #else
 #define USE_I2C
-#define I2C_DEVICE              (I2CDEV_1) // PB6/SCL, PB7/SDA
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
 
@@ -176,15 +180,15 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
 #ifndef TINYBEEF3
-#define DEFAULT_FEATURES        FEATURE_BLACKBOX
 
 #define BUTTONS
 #define BUTTON_A_PIN            PB1
 #define BUTTON_B_PIN            PB0
 
-#define HARDWARE_BIND_PLUG
-#define BINDPLUG_PIN            PB0
+#define BINDPLUG_PIN            BUTTON_B_PIN
 #endif
+
+#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

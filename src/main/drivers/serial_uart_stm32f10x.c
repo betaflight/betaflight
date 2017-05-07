@@ -27,9 +27,9 @@
 
 #include <platform.h>
 
-#include "system.h"
-#include "io.h"
-#include "nvic.h"
+#include "drivers/system.h"
+#include "drivers/io.h"
+#include "drivers/nvic.h"
 #include "dma.h"
 #include "rcc.h"
 
@@ -81,7 +81,7 @@ void uart_tx_dma_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     uartPort_t *s = (uartPort_t*)(descriptor->userParam);
     DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
-    DMA_Cmd(descriptor->channel, DISABLE);
+    DMA_Cmd(descriptor->ref, DISABLE);
 
     if (s->port.txBufferHead != s->port.txBufferTail)
         uartStartTxDMA(s);

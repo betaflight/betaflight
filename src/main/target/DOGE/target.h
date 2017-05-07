@@ -91,7 +91,6 @@
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 
-#define USB_IO
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
@@ -131,9 +130,7 @@
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
-#define SPEKTRUM_BIND
-// Use UART3 for speksat
-#define BIND_PIN                PB11
+#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

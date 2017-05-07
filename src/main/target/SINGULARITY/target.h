@@ -65,15 +65,16 @@
 #define SOFTSERIAL1_TX_PIN      PA3
 
 #define USE_I2C
-#define I2C_DEVICE              (I2CDEV_1) // PB6/SCL, PB7/SDA
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1 // PA4, 5, 6, 7
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
 
-#define VTX
-#define RTC6705_CS_GPIO         GPIOA
-#define RTC6705_CS_PIN          GPIO_Pin_4
+#define VTX_RTC6705
+
+#define RTC6705_CS_PIN          PA4
 #define RTC6705_SPI_INSTANCE    SPI1
 
 #define M25P16_CS_GPIO          GPIOB
@@ -88,13 +89,10 @@
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
-#define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_BLACKBOX)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_UART           SERIAL_PORT_USART2
 
-#define SPEKTRUM_BIND
-// USART2, PA15
-#define BIND_PIN                PA15
+#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

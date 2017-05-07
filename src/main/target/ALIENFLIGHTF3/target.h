@@ -90,21 +90,21 @@
 #define UART3_RX_PIN            PB11
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_2) // SDA (PA10/AF4), SCL (PA9/AF4)
-
+#define USE_I2C_PULLUP
+#define USE_I2C_DEVICE_2
+#define I2C_DEVICE              (I2CDEV_2)
 #define I2C2_SCL                PA9
 #define I2C2_SDA                PA10
-
-// SPI3
-// PA15 38 SPI3_NSS
-// PB3  39 SPI3_SCK
-// PB4  40 SPI3_MISO
-// PB5  41 SPI3_MOSI
 
 #define USE_SPI
 #define USE_SPI_DEVICE_3
 
-#define MPU6500_CS_PIN          PA15
+#define SPI3_NSS_PIN            PA15
+#define SPI3_SCK_PIN            PB3
+#define SPI3_MISO_PIN           PB4
+#define SPI3_MOSI_PIN           PB5
+
+#define MPU6500_CS_PIN          SPI3_NSS_PIN
 #define MPU6500_SPI_INSTANCE    SPI3
 
 #define USE_ADC
@@ -113,12 +113,11 @@
 #define VBAT_ADC_PIN            PA4
 #define VBAT_SCALE_DEFAULT      20
 
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
+// LED strip configuration.
+#define LED_STRIP
 
-#define HARDWARE_BIND_PLUG
-// Hardware bind plug at PB12 (Pin 25)
+#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
+
 #define BINDPLUG_PIN            PB12
 
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP

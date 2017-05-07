@@ -36,8 +36,8 @@
 #define LED1                    PE10 // Orange LEDs - PE10/PE14
 #define LED1_INVERTED
 
-#define BEEPER                  PE9  // Red LEDs - PE9/PE13
-#define BEEPER_INVERTED
+#define BEEPER                  PD12
+#define BEEPER_PWM_HZ           2000  // Beeper PWM frequency in Hz
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -163,6 +163,7 @@
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
 #define USE_I2C
+#define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_ADC
@@ -174,8 +175,7 @@
 
 #define USE_ESC_SENSOR
 
-#define SPEKTRUM_BIND
-#define BIND_PIN                PA3 // USART2, PA3
+#define SPEKTRUM_BIND_PIN       PA3 // USART2, PA3
 
 #define SONAR
 #define SONAR_TRIGGER_PIN       PB0

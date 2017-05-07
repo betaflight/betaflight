@@ -126,6 +126,9 @@ void taskSystem(timeUs_t currentTimeUs)
         totalWaitingTasksSamples = 0;
         totalWaitingTasks = 0;
     }
+#if defined(SIMULATOR_BUILD)
+    averageSystemLoadPercent = 0;
+#endif
 }
 
 #ifndef SKIP_TASK_STATISTICS
@@ -178,7 +181,7 @@ void setTaskEnabled(cfTaskId_e taskId, bool enabled)
     }
 }
 
-uint32_t getTaskDeltaTime(cfTaskId_e taskId)
+timeDelta_t getTaskDeltaTime(cfTaskId_e taskId)
 {
     if (taskId == TASK_SELF) {
         return currentTask->taskLatestDeltaTime;
@@ -224,17 +227,14 @@ void scheduler(void)
     const timeUs_t currentTimeUs = micros();
 
     // Check for realtime tasks
-    timeUs_t timeToNextRealtimeTask = TIMEUS_MAX;
+    bool outsideRealtimeGuardInterval = true;
     for (const cfTask_t *task = queueFirst(); task != NULL && task->staticPriority >= TASK_PRIORITY_REALTIME; task = queueNext()) {
         const timeUs_t nextExecuteAt = task->lastExecutedAt + task->desiredPeriod;
-        if ((int32_t)(currentTimeUs - nextExecuteAt) >= 0) {
-            timeToNextRealtimeTask = 0;
-        } else {
-            const timeUs_t newTimeInterval = nextExecuteAt - currentTimeUs;
-            timeToNextRealtimeTask = MIN(timeToNextRealtimeTask, newTimeInterval);
+        if ((timeDelta_t)(currentTimeUs - nextExecuteAt) >= 0) {
+            outsideRealtimeGuardInterval = false;
+            break;
         }
     }
-    const bool outsideRealtimeGuardInterval = (timeToNextRealtimeTask > 0);
 
     // The task to be invoked
     cfTask_t *selectedTask = NULL;

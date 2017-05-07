@@ -35,6 +35,8 @@
 #define DECIDEGREES_TO_RADIANS(angle) ((angle / 10.0f) * 0.0174532925f)
 #define DEGREES_TO_RADIANS(angle) ((angle) * 0.0174532925f)
 
+#define CM_S_TO_KM_H(centimetersPerSecond) (centimetersPerSecond * 36 / 1000)
+
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define ABS(x) ((x) > 0 ? (x) : -(x))
@@ -74,6 +76,7 @@ typedef union {
     fp_angles_def angles;
 } fp_angles_t;
 
+int gcd(int num, int denom);
 float powerf(float base, int exp);
 int32_t applyDeadband(int32_t value, int32_t deadband);
 
@@ -83,7 +86,7 @@ float devVariance(stdev_t *dev);
 float devStandardDeviation(stdev_t *dev);
 float degreesToRadians(int16_t degrees);
 
-int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax);
+int scaleRange(int x, int srcFrom, int srcTo, int destFrom, int destTo);
 
 void normalizeV(struct fp_vector *src, struct fp_vector *dest);
 
@@ -140,5 +143,5 @@ static inline float constrainf(float amt, float low, float high)
         return amt;
 }
 uint16_t crc16_ccitt(uint16_t crc, unsigned char a);
+uint16_t crc16_ccitt_update(uint16_t crc, const void *data, uint32_t length);
 uint8_t crc8_dvb_s2(uint8_t crc, unsigned char a);
-

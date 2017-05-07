@@ -32,13 +32,14 @@ void targetBusInit(void)
     #endif
     #endif
 
-    if (hardwareRevision != NAZE32_SP) {
-        i2cInit(I2C_DEVICE);
+    if (hardwareRevision == NAZE32_SP) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
-    } else {
+
         if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
             serialRemovePort(SERIAL_PORT_USART3);
             i2cInit(I2C_DEVICE);
         }
+    } else {
+        i2cInit(I2C_DEVICE);
     }
 }

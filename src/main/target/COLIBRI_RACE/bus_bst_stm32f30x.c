@@ -60,17 +60,17 @@ volatile bool coreProReady = false;
 // BST TimeoutUserCallback
 ///////////////////////////////////////////////////////////////////////////////
 
-uint8_t dataBuffer[DATA_BUFFER_SIZE] = {0};
+uint8_t dataBuffer[BST_BUFFER_SIZE] = {0};
 uint8_t dataBufferPointer = 0;
 uint8_t bstWriteDataLen = 0;
 
 uint32_t micros(void);
 
-uint8_t writeData[DATA_BUFFER_SIZE] = {0};
+uint8_t writeData[BST_BUFFER_SIZE] = {0};
 uint8_t currentWriteBufferPointer = 0;
 bool receiverAddress = false;
 
-uint8_t readData[DATA_BUFFER_SIZE] = {0};
+uint8_t readData[BST_BUFFER_SIZE] = {0};
 uint8_t bufferPointer = 0;
 
 bool cleanflight_data_ready = false;
@@ -221,7 +221,7 @@ void bstInitPort(I2C_TypeDef *BSTx/*, uint8_t Address*/)
         BST_InitStructure.I2C_Mode = I2C_Mode_I2C;
         BST_InitStructure.I2C_AnalogFilter = I2C_AnalogFilter_Enable;
         BST_InitStructure.I2C_DigitalFilter = 0x00;
-        BST_InitStructure.I2C_OwnAddress1 = CLEANFLIGHT_FC;
+        BST_InitStructure.I2C_OwnAddress1 = I2C_ADDR_CLEANFLIGHT_FC;
         BST_InitStructure.I2C_Ack = I2C_Ack_Enable;
         BST_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
         BST_InitStructure.I2C_Timing = 0x30E0257A; // 100 Khz, 72Mhz Clock, Analog Filter Delay ON, Rise 100, Fall 10.
@@ -269,7 +269,7 @@ void bstInitPort(I2C_TypeDef *BSTx/*, uint8_t Address*/)
         BST_InitStructure.I2C_Mode = I2C_Mode_I2C;
         BST_InitStructure.I2C_AnalogFilter = I2C_AnalogFilter_Enable;
         BST_InitStructure.I2C_DigitalFilter = 0x00;
-        BST_InitStructure.I2C_OwnAddress1 = CLEANFLIGHT_FC;
+        BST_InitStructure.I2C_OwnAddress1 = I2C_ADDR_CLEANFLIGHT_FC;
         BST_InitStructure.I2C_Ack = I2C_Ack_Enable;
         BST_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
         BST_InitStructure.I2C_Timing = 0x30E0257A; // 100 Khz, 72Mhz Clock, Analog Filter Delay ON, Rise 100, Fall 10.

@@ -48,7 +48,6 @@
 #define USE_BARO_MS5611
 
 #define MAG
-#define USE_MPU9250_MAG // Enables bypass configuration
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883 // External
 
@@ -57,8 +56,6 @@
 #define SONAR
 #define SONAR_TRIGGER_PIN           PA6   // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
 #define SONAR_ECHO_PIN              PB1   // RC_CH8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
-
-#define USB_IO
 
 #define USE_VCP
 #define USE_UART1
@@ -82,7 +79,8 @@
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_2) // SDA (PA10/AF4), SCL (PA9/AF4)
+#define USE_I2C_DEVICE_2
+#define I2C_DEVICE              (I2CDEV_2)
 
 #define I2C2_SCL                PA9
 #define I2C2_SDA                PA10
@@ -103,7 +101,6 @@
 #define CURRENT_METER_ADC_PIN       PB2
 #define RSSI_ADC_PIN                PA6
 
-#define DEFAULT_FEATURES        FEATURE_VBAT
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART1
@@ -113,9 +110,7 @@
 #define NAV_GPS_GLITCH_DETECTION
 #define NAV_MAX_WAYPOINTS               60
 
-#define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN   PA3
+#define SPEKTRUM_BIND_PIN   UART2_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

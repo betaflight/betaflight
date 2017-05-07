@@ -4,64 +4,19 @@ env:
 #  - PUBLISHDOCS=True
 # Specify the main Mafile supported goals.
   - GOAL=test
-  - GOAL=all
+  - GOAL=targets-group-1
+  - GOAL=targets-group-2
+  - GOAL=targets-group-3
+  - GOAL=targets-group-4
+  - GOAL=targets-group-rest
+#  - GOAL=all
+#  - GOAL=AFROMINI
+#  - GOAL=AIORACERF3
+#  - GOAL=...
 # Or specify targets to run.
 #  - TARGET=AFROMINI
 #  - TARGET=AIORACERF3
-#  - TARGET=AIR32
-#  - TARGET=AIRBOTF4
-#  - TARGET=AIRHEROF3
-#  - TARGET=ALIENFLIGHTF1
-#  - TARGET=ALIENFLIGHTF3
-#  - TARGET=ALIENFLIGHTF4
-#  - TARGET=ANYFCF7
-#  - TARGET=BEEBRAIN
-#  - TARGET=BETAFLIGHTF3
-#  - TARGET=BLUEJAYF4
-#  - TARGET=CC3D
-#  - TARGET=CC3D_OPBL
-#  - TARGET=CHEBUZZF3
-#  - TARGET=CJMCU
-#  - TARGET=COLIBRI
-#  - TARGET=COLIBRI_OPBL
-#  - TARGET=COLIBRI_RACE
-#  - TARGET=DOGE
-#  - TARGET=F4BY
-#  - TARGET=FURYF3
-#  - TARGET=FURYF4
-#  - TARGET=FURYF7
-#  - TARGET=IMPULSERCF3
-#  - TARGET=IRCFUSIONF3
-#  - TARGET=ISHAPEDF3
-#  - TARGET=KISSFC
-#  - TARGET=LUXV2_RACE
-#  - TARGET=LUX_RACE
-#  - TARGET=MICROSCISKY
-#  - TARGET=MOTOLAB
-#  - TARGET=NAZE
-#  - TARGET=OMNIBUS
-#  - TARGET=OMNIBUSF4
-#  - TARGET=PIKOBLX
-#  - TARGET=RACEBASE
-#  - TARGET=RCEXPLORERF3
-#  - TARGET=REVO
-#  - TARGET=REVOLT
-#  - TARGET=REVONANO
-#  - TARGET=REVO_OPBL
-#  - TARGET=RMDO
-#  - TARGET=SINGULARITY
-#  - TARGET=SIRINFPV
-#  - TARGET=SOULF4
-#  - TARGET=SPARKY
-#  - TARGET=SPARKY2
-#  - TARGET=SPRACINGF3
-#  - TARGET=SPRACINGF3EVO
-#  - TARGET=SPRACINGF3MINI
-#  - TARGET=STM32F3DISCOVERY
-#  - TARGET=VRRACE
-#  - TARGET=X_RACERSPI
-#  - TARGET=YUPIF4
-#  - TARGET=ZCOREF3
+#  - TARGET=...
 
 # use new docker environment
 sudo: false
@@ -73,6 +28,7 @@ addons:
   apt:
     packages:
       - libc6-i386
+      - time
 
 # We use cpp for unit tests, and c for the main project.
 language: cpp
@@ -82,7 +38,7 @@ install:
   - make arm_sdk_install
 
 before_script:
-  - tools/gcc-arm-none-eabi-6_2-2016q4/bin/arm-none-eabi-gcc --version
+  - tools/gcc-arm-none-eabi-6-2017-q1-update/bin/arm-none-eabi-gcc --version
   - clang --version
   - clang++ --version
 
@@ -93,6 +49,7 @@ cache:
   - downloads
   - tools
     
+
 #notifications:
 #  irc: "chat.freenode.net#cleanflight"
 #  use_notice: true

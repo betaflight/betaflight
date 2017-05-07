@@ -19,12 +19,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "ANY7"
 
-#define CONFIG_START_FLASH_ADDRESS (0x080C0000)
-
 #define USBD_PRODUCT_STRING "AnyFCF7"
-
-#define USE_DSHOT
-#define USE_ESC_SENSOR
 
 #define LED0   PB7
 #define LED1   PB6
@@ -134,9 +129,8 @@
 #define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_4
 
 #define USE_I2C
-#define USE_I2C4
-#define I2C_DEVICE (I2CDEV_4)
-//#define I2C_DEVICE_EXT (I2CDEV_2)
+#define USE_I2C_DEVICE_4
+#define I2C_DEVICE                  (I2CDEV_4)
 
 #define USE_ADC
 #define VBAT_ADC_PIN                PC0
@@ -145,7 +139,6 @@
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
-#define DEFAULT_FEATURES        (FEATURE_BLACKBOX)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 

@@ -53,8 +53,6 @@
 #define MPU6500_CS_PIN          PA4
 #define MPU6500_SPI_INSTANCE    SPI1
 
-#define USB_IO
-
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
@@ -75,6 +73,9 @@
 
 #define UART3_TX_PIN            PB10 // PB10 (AF7)
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
+
+#undef  USE_UART1_RX_DMA
+#undef  USE_UART1_TX_DMA
 
 #undef  USE_I2C
 
@@ -98,7 +99,6 @@
 #define SPI3_MISO_PIN           PB4
 #define SPI3_MOSI_PIN           PB5
 
-#define REMAP_TIM16_DMA
 #define REMAP_TIM17_DMA
 
 #define USE_MAX7456
@@ -109,7 +109,9 @@
 #define MAX7456_DMA_CHANNEL_RX              DMA2_Channel1
 #define MAX7456_DMA_IRQ_HANDLER_ID          DMA2_CH1_HANDLER
 
-#define USE_RTC6705
+#define VTX_RTC6705
+#define VTX_RTC6705SOFTSPI
+
 #define RTC6705_SPIDATA_PIN     PC15
 #define RTC6705_SPILE_PIN       PC14
 #define RTC6705_SPICLK_PIN      PC13
@@ -133,8 +135,6 @@
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
 
-#undef LED_STRIP
-
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
@@ -149,12 +149,10 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
-#define SPEKTRUM_BIND
-// USART3, PB11
-#define BIND_PIN                PB11
+#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
-#define DEFAULT_FEATURES        (FEATURE_BLACKBOX | FEATURE_RX_SERIAL | FEATURE_OSD | FEATURE_VTX)
+#define DEFAULT_FEATURES        (FEATURE_RX_SERIAL | FEATURE_OSD)
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -165,7 +163,5 @@
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(3)|BIT(4))
 
 #define USABLE_TIMER_CHANNEL_COUNT 7
-#define USED_TIMERS             (TIM_N(2) | TIM_N(3) | TIM_N(4))
-#define TIMER_APB1_PERIPHERALS  (RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
-#define TIMER_AHB_PERIPHERALS   (RCC_AHBPeriph_GPIOB)
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(17))
 

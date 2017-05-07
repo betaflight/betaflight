@@ -26,7 +26,7 @@ typedef enum {
     BOXANGLE,
     BOXHORIZON,
     BOXBARO,
-    // BOXVARIO,
+    BOXANTIGRAVITY,
     BOXMAG,
     BOXHEADFREE,
     BOXHEADADJ,
@@ -151,21 +151,6 @@ typedef struct modeActivationProfile_s {
 
 #define IS_RANGE_USABLE(range) ((range)->startStep < (range)->endStep)
 
-typedef struct controlRateConfig_s {
-    uint8_t rcRate8;
-    uint8_t rcYawRate8;
-    uint8_t rcExpo8;
-    uint8_t thrMid8;
-    uint8_t thrExpo8;
-    uint8_t rates[3];
-    uint8_t dynThrPID;
-    uint8_t rcYawExpo8;
-    uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
-} controlRateConfig_t;
-
-#define MAX_CONTROL_RATE_PROFILE_COUNT 3
-PG_DECLARE_ARRAY(controlRateConfig_t, MAX_CONTROL_RATE_PROFILE_COUNT, controlRateProfiles);
-
 extern int16_t rcCommand[4];
 
 typedef struct rcControlsConfig_s {
@@ -173,7 +158,7 @@ typedef struct rcControlsConfig_s {
     uint8_t yaw_deadband;                   // introduce a deadband around the stick center for yaw axis. Must be greater than zero.
     uint8_t alt_hold_deadband;              // defines the neutral zone of throttle stick during altitude hold, default setting is +/-40
     uint8_t alt_hold_fast_change;           // when disabled, turn off the althold when throttle stick is out of deadband defined with alt_hold_deadband; when enabled, altitude changes slowly proportional to stick movement
-    int8_t yaw_control_direction;           // change control direction of yaw (inverted, normal)
+    bool yaw_control_reversed;            // invert control direction of yaw
 } rcControlsConfig_t;
 
 PG_DECLARE(rcControlsConfig_t, rcControlsConfig);
@@ -205,6 +190,7 @@ bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range);
 void updateActivatedModes(void);
 
 bool isAirmodeActive(void);
+bool isAntiGravityModeActive(void);
 
 bool isUsingSticksForArming(void);
 

@@ -18,8 +18,6 @@
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "KTV1"
 
-#define CONFIG_START_FLASH_ADDRESS 0x08080000 //0x08080000 to 0x080A0000 (FLASH_Sector_8)
-
 #define USBD_PRODUCT_STRING "KakuteF4-V1"
 
 #define LED0                    PB5
@@ -28,6 +26,7 @@
 
 #define BEEPER                  PC9
 #define BEEPER_INVERTED
+#define INVERTER_PIN_USART3     PB15
 
 // ICM20689 interrupt
 #define USE_EXTI
@@ -77,6 +76,7 @@
 
 #define USE_VCP
 #define VBUS_SENSING_PIN        PA8
+#define VBUS_SENSING_ENABLED
 
 #define USE_UART1
 #define UART1_RX_PIN            PA10
@@ -114,21 +114,21 @@
 #define SPI3_MOSI_PIN           PC12
 
 #define USE_I2C
+#define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
-//#define I2C_DEVICE_EXT          (I2CDEV_2)
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
-#define VBAT_ADC_PIN           PC3
-#define VBAT_ADC_CHANNEL       ADC_Channel_13
+#define VBAT_ADC_PIN                PC3
+#define VBAT_ADC_CHANNEL            ADC_Channel_13
 
-#define CURRENT_METER_ADC_PIN  PC2
+#define CURRENT_METER_ADC_PIN       PC2
 #define CURRENT_METER_ADC_CHANNEL   ADC_Channel_12
 
 #define RSSI_ADC_PIN                PC1
 #define RSSI_ADC_CHANNEL            ADC_Channel_11
 
-#define DEFAULT_FEATURES        (FEATURE_BLACKBOX | FEATURE_OSD)
+#define DEFAULT_FEATURES        (FEATURE_OSD)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART3

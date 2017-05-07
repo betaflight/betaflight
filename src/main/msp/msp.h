@@ -26,12 +26,19 @@ typedef enum {
     MSP_RESULT_NO_REPLY = 0
 } mspResult_e;
 
+typedef enum {
+    MSP_DIRECTION_REPLY = 0,
+    MSP_DIRECTION_REQUEST = 1
+} mspDirection_e;
+
 typedef struct mspPacket_s {
     sbuf_t buf;
     int16_t cmd;
     int16_t result;
+    uint8_t direction;
 } mspPacket_t;
 
 struct serialPort_s;
 typedef void (*mspPostProcessFnPtr)(struct serialPort_s *port); // msp post process function, used for gracefully handling reboots, etc.
 typedef mspResult_e (*mspProcessCommandFnPtr)(mspPacket_t *cmd, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn);
+typedef void (*mspProcessReplyFnPtr)(mspPacket_t *cmd);

@@ -99,6 +99,15 @@ float acos_approx(float x)
 }
 #endif
 
+int gcd(int num, int denom)
+{
+    if (denom == 0) {
+        return num;
+    }
+
+    return gcd(denom, num % denom);
+}
+
 float powerf(float base, int exp) {
     float result = base;
     for (int count = 1; count < exp; count++) result *= base;
@@ -152,10 +161,10 @@ float degreesToRadians(int16_t degrees)
     return degrees * RAD;
 }
 
-int scaleRange(int x, int srcMin, int srcMax, int destMin, int destMax) {
-    long int a = ((long int) destMax - (long int) destMin) * ((long int) x - (long int) srcMin);
-    long int b = (long int) srcMax - (long int) srcMin;
-    return ((a / b) - (destMax - destMin)) + destMax;
+int scaleRange(int x, int srcFrom, int srcTo, int destFrom, int destTo) {
+    long int a = ((long int) destTo - (long int) destFrom) * ((long int) x - (long int) srcFrom);
+    long int b = (long int) srcTo - (long int) srcFrom;
+    return (a / b) + destFrom;
 }
 
 // Normalize a vector
@@ -346,6 +355,17 @@ uint16_t crc16_ccitt(uint16_t crc, unsigned char a)
         } else {
             crc = crc << 1;
         }
+    }
+    return crc;
+}
+
+uint16_t crc16_ccitt_update(uint16_t crc, const void *data, uint32_t length)
+{
+    const uint8_t *p = (const uint8_t *)data;
+    const uint8_t *pend = p + length;
+
+    for (; p != pend; p++) {
+        crc = crc16_ccitt(crc, *p);
     }
     return crc;
 }

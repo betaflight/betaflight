@@ -20,7 +20,6 @@
 #define TARGET_BOARD_IDENTIFIER "PIKO" // Furious FPV Piko BLX
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
-#define TARGET_CONFIG
 
 #define LED0                    PB9
 #define LED1                    PB5
@@ -76,6 +75,8 @@
 #define CURRENT_METER_ADC_PIN   PB2
 #define VBAT_ADC_PIN            PA5
 
+#define CURRENT_METER_SCALE_DEFAULT 125
+
 #define TRANSPONDER
 #define TRANSPONDER_GPIO                     GPIOA
 #define TRANSPONDER_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
@@ -89,9 +90,7 @@
 #define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC2
 #define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 
-#define SPEKTRUM_BIND
-// USART3, PB11
-#define BIND_PIN                PB11
+#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

@@ -21,13 +21,17 @@
 #include <math.h>
 
 #include "platform.h"
+#include "drivers/system.h"
 
-#include "io.h"
+#include "drivers/io.h"
 #include "pwm_output.h"
 #include "timer.h"
+#include "drivers/pwm_output.h"
 
 #define MULTISHOT_5US_PW    (MULTISHOT_TIMER_MHZ * 5)
 #define MULTISHOT_20US_MULT (MULTISHOT_TIMER_MHZ * 20 / 1000.0f)
+
+#define DSHOT_MAX_COMMAND 47
 
 static pwmWriteFuncPtr pwmWritePtr;
 static pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
@@ -35,6 +39,11 @@ static pwmCompleteWriteFuncPtr pwmCompleteWritePtr = NULL;
 
 #ifdef USE_SERVOS
 static pwmOutputPort_t servos[MAX_SUPPORTED_SERVOS];
+#endif
+
+#ifdef BEEPER
+static pwmOutputPort_t beeperPwm;
+static uint16_t freqBeep=0;
 #endif
 
 bool pwmMotorsEnabled = false;
@@ -50,11 +59,15 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8
     TIM_OCInitStructure.OCMode = TIM_OCMODE_PWM1;
 
     if (output & TIMER_OUTPUT_N_CHANNEL) {
+        TIM_OCInitStructure.OCIdleState = TIM_OCIDLESTATE_RESET;
+        TIM_OCInitStructure.OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPOLARITY_HIGH: TIM_OCPOLARITY_LOW;
         TIM_OCInitStructure.OCNIdleState = TIM_OCNIDLESTATE_RESET;
         TIM_OCInitStructure.OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPOLARITY_HIGH : TIM_OCNPOLARITY_LOW;
     } else {
         TIM_OCInitStructure.OCIdleState = TIM_OCIDLESTATE_SET;
-        TIM_OCInitStructure.OCPolarity =  (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPOLARITY_LOW : TIM_OCPOLARITY_HIGH;
+        TIM_OCInitStructure.OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPOLARITY_LOW : TIM_OCPOLARITY_HIGH;
+        TIM_OCInitStructure.OCNIdleState = TIM_OCNIDLESTATE_SET;
+        TIM_OCInitStructure.OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPOLARITY_LOW : TIM_OCNPOLARITY_HIGH;
     }
 
     TIM_OCInitStructure.Pulse = value;
@@ -95,7 +108,10 @@ static void pwmOutConfig(pwmOutputPort_t *port, const timerHardware_t *timerHard
         inversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output);
 
 #if defined(USE_HAL_DRIVER)
-    HAL_TIM_PWM_Start(Handle, timerHardware->channel);
+    if(timerHardware->output & TIMER_OUTPUT_N_CHANNEL)
+        HAL_TIMEx_PWMN_Start(Handle, timerHardware->channel);
+    else
+        HAL_TIM_PWM_Start(Handle, timerHardware->channel);
     HAL_TIM_Base_Start(Handle);
 #else
     TIM_CtrlPWMOutputs(timerHardware->tim, ENABLE);
@@ -315,6 +331,27 @@ uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType)
             return MOTOR_DSHOT150_MHZ * 1000000;
     }
 }
+
+void pwmWriteDshotCommand(uint8_t index, uint8_t command)
+{
+    if (command <= DSHOT_MAX_COMMAND) {
+        motorDmaOutput_t *const motor = getMotorDmaOutput(index);
+
+        unsigned repeats;
+        if ((command >= 7 && command <= 10) || command == 12) {
+            repeats = 10;
+        } else {
+            repeats = 1;
+        }
+        for (; repeats; repeats--) {
+            motor->requestTelemetry = true;
+            pwmWritePtr(index, command);
+            pwmCompleteMotorUpdate(0);
+
+            delay(1);
+        }
+    }
+}
 #endif
 
 #ifdef USE_SERVOS
@@ -355,4 +392,43 @@ void servoDevInit(const servoDevConfig_t *servoConfig)
     }
 }
 
+#endif
+
+#ifdef BEEPER
+void pwmWriteBeeper(bool onoffBeep)
+{
+        if(!beeperPwm.io)
+            return;
+        if(onoffBeep == true) {
+            *beeperPwm.ccr = (1000000/freqBeep)/2;
+            beeperPwm.enabled = true;
+        } else {
+            *beeperPwm.ccr = 0;
+            beeperPwm.enabled = false;
+        }
+}
+
+void pwmToggleBeeper(void)
+{
+        pwmWriteBeeper(!beeperPwm.enabled);
+}
+
+void beeperPwmInit(IO_t io, uint16_t frequency)
+{
+        const ioTag_t tag=IO_TAG(BEEPER);
+        beeperPwm.io = io;
+        const timerHardware_t *timer = timerGetByTag(tag, TIM_USE_BEEPER);
+        if (beeperPwm.io && timer) {
+            IOInit(beeperPwm.io, OWNER_BEEPER, RESOURCE_INDEX(0));
+#if defined(USE_HAL_DRIVER)
+            IOConfigGPIOAF(beeperPwm.io, IOCFG_AF_PP, timer->alternateFunction);
+#else
+            IOConfigGPIO(beeperPwm.io, IOCFG_AF_PP);
+#endif
+            freqBeep = frequency;
+            pwmOutConfig(&beeperPwm, timer, PWM_TIMER_MHZ, 1000000/freqBeep, (1000000/freqBeep)/2,0);
+        }
+        *beeperPwm.ccr = 0;
+        beeperPwm.enabled = false;
+}
 #endif

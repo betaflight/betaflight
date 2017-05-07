@@ -19,12 +19,20 @@
 #include <stdint.h>
 
 #include "platform.h"
+
+#include "config/feature.h"
+
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
-#include "hardware_revision.h"
-#include "config/config_master.h"
 #include "drivers/io.h"
-#include "config/feature.h"
+
+#include "fc/config.h"
+
+#include "io/serial.h"
+
+#include "telemetry/telemetry.h"
+
+#include "hardware_revision.h"
 
 void targetPreInit(void)
 {
@@ -57,9 +65,13 @@ void targetPreInit(void)
 
     /* ensure the CS pin for the flash is pulled hi so any SD card initialisation does not impact the chip */
     if (hardwareRevision == BJF4_REV3) {
-        IO_t io = IOGetByTag(IO_TAG(M25P16_CS_PIN));
-        IOConfigGPIO(io, IOCFG_OUT_PP);
-        IOHi(io);
+        IO_t flashIo = IOGetByTag(IO_TAG(M25P16_CS_PIN));
+        IOConfigGPIO(flashIo, IOCFG_OUT_PP);
+        IOHi(flashIo);
+
+        IO_t sdcardIo = IOGetByTag(IO_TAG(SDCARD_SPI_CS_PIN));
+        IOConfigGPIO(sdcardIo, IOCFG_OUT_PP);
+        IOHi(sdcardIo);
     }
 }
 

@@ -25,18 +25,15 @@
 #include "scheduler/scheduler.h"
 
 
-void main_step(void)
-{
-    scheduler();
-    processLoopback();
-}
-
-#ifndef NOMAIN
 int main(void)
 {
     init();
     while (true) {
-        main_step();
-    }
-}
+        scheduler();
+        processLoopback();
+#ifdef SIMULATOR_BUILD
+        delayMicroseconds_real(50); // max rate 20kHz
 #endif
+    }
+    return 0;
+}

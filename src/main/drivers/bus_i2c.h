@@ -17,12 +17,15 @@
 
 #pragma once
 
+#include "platform.h"
+
+#include "drivers/io_types.h"
+#include "drivers/rcc_types.h"
+
 #define I2C_SHORT_TIMEOUT            ((uint32_t)0x1000)
 #define I2C_LONG_TIMEOUT             ((uint32_t)(10 * I2C_SHORT_TIMEOUT))
 #define I2C_DEFAULT_TIMEOUT          I2C_SHORT_TIMEOUT
 
-#include "io_types.h"
-#include "rcc_types.h"
 
 #ifndef I2C_DEVICE
 #define I2C_DEVICE I2CINVALID
@@ -33,7 +36,7 @@ typedef enum I2CDevice {
     I2CDEV_1   = 0,
     I2CDEV_2,
     I2CDEV_3,
-#ifdef USE_I2C4
+#ifdef USE_I2C_DEVICE_4
     I2CDEV_4,
 #endif
     I2CDEV_COUNT

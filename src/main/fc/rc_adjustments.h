@@ -46,6 +46,7 @@ typedef enum {
     ADJUSTMENT_RC_RATE_YAW,
     ADJUSTMENT_D_SETPOINT,
     ADJUSTMENT_D_SETPOINT_TRANSITION,
+    ADJUSTMENT_HORIZON_STRENGTH,
     ADJUSTMENT_FUNCTION_COUNT
 } adjustmentFunction_e;
 
@@ -55,17 +56,9 @@ typedef enum {
     ADJUSTMENT_MODE_SELECT
 } adjustmentMode_e;
 
-typedef struct adjustmentStepConfig_s {
-    uint8_t step;
-} adjustmentStepConfig_t;
-
-typedef struct adjustmentSelectConfig_s {
-    uint8_t switchPositions;
-} adjustmentSelectConfig_t;
-
 typedef union adjustmentConfig_u {
-    adjustmentStepConfig_t stepConfig;
-    adjustmentSelectConfig_t selectConfig;
+    uint8_t step;
+    uint8_t switchPositions;
 } adjustmentData_t;
 
 typedef struct adjustmentConfig_s {
@@ -103,10 +96,6 @@ typedef struct adjustmentState_s {
 #define MAX_ADJUSTMENT_RANGE_COUNT 15
 
 PG_DECLARE_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges);
-
-typedef struct adjustmentProfile_s {
-    adjustmentRange_t adjustmentRanges[MAX_ADJUSTMENT_RANGE_COUNT];
-} adjustmentProfile_t;
 
 void resetAdjustmentStates(void);
 void updateAdjustmentStates(void);

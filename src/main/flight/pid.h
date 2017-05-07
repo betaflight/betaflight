@@ -17,15 +17,17 @@
 
 #pragma once
 
+#ifndef USE_OSD_SLAVE
 #include <stdbool.h>
+#include "common/time.h"
+#include "config/parameter_group.h"
 
 #define MAX_PID_PROCESS_DENOM       16
 #define PID_CONTROLLER_BETAFLIGHT   1
 #define PID_MIXER_SCALING           1000.0f
 #define PID_SERVO_MIXER_SCALING     0.7f
-#define YAW_P_LIMIT_MIN             100                 // Maximum value for yaw P limiter
-#define YAW_P_LIMIT_MAX             500                 // Maximum value for yaw P limiter
-#define PIDSUM_LIMIT                0.5f
+#define PIDSUM_LIMIT                500
+#define PIDSUM_LIMIT_YAW            400
 
 // Scaling factors for Pids for better tunable range in configurator for betaflight pid controller. The scaling is based on legacy pid controller or previous float
 #define PTERM_SCALE 0.032029f
@@ -57,6 +59,12 @@ typedef enum {
     PID_STABILISATION_ON
 } pidStabilisationState_e;
 
+typedef enum {
+    PID_CRASH_RECOVERY_OFF = 0,
+    PID_CRASH_RECOVERY_ON,
+    PID_CRASH_RECOVERY_BEEP
+} pidCrashRecovery_e;
+
 typedef struct pidProfile_s {
     uint8_t P8[PID_ITEM_COUNT];
     uint8_t I8[PID_ITEM_COUNT];
@@ -68,24 +76,33 @@ typedef struct pidProfile_s {
     uint16_t dterm_notch_hz;                // Biquad dterm notch hz
     uint16_t dterm_notch_cutoff;            // Biquad dterm notch low cutoff
     uint8_t itermWindupPointPercent;        // Experimental ITerm windup threshold, percent motor saturation
-    uint16_t yaw_p_limit;
-    float pidSumLimit;
+    uint16_t pidSumLimit;
+    uint16_t pidSumLimitYaw;
     uint8_t dterm_average_count;            // Configurable delta count for dterm
     uint8_t vbatPidCompensation;            // Scale PIDsum to battery voltage
     uint8_t pidAtMinThrottle;               // Disable/Enable pids on zero throttle. Normally even without airmode P and D would be active.
     uint8_t levelAngleLimit;                // Max angle in degrees in level mode
     uint8_t levelSensitivity;               // Angle mode sensitivity reflected in degrees assuming user using full stick
 
+    uint8_t horizon_tilt_effect;            // inclination factor for Horizon mode
+    uint8_t horizon_tilt_expert_mode;       // OFF or ON
+
     // Betaflight PID controller parameters
     uint16_t itermThrottleThreshold;        // max allowed throttle delta before iterm accelerated in ms
-    float itermAcceleratorGain;             // Iterm Accelerator Gain when itermThrottlethreshold is hit
+    uint16_t itermAcceleratorGain;          // Iterm Accelerator Gain when itermThrottlethreshold is hit
     uint8_t setpointRelaxRatio;             // Setpoint weight relaxation effect
     uint8_t dtermSetpointWeight;            // Setpoint weight for Dterm (0= measurement, 1= full error, 1 > agressive derivative)
-    float yawRateAccelLimit;                // yaw accel limiter for deg/sec/ms
-    float rateAccelLimit;                   // accel limiter roll/pitch deg/sec/ms
+    uint16_t yawRateAccelLimit;             // yaw accel limiter for deg/sec/ms
+    uint16_t rateAccelLimit;                // accel limiter roll/pitch deg/sec/ms
+    uint16_t crash_dthreshold;              // dterm crash value
+    uint16_t crash_gthreshold;              // gyro crash value
+    uint16_t crash_time;                    // ms
+    uint8_t crash_recovery_angle;           // degrees
+    uint8_t crash_recovery_rate;            // degree/second
+    pidCrashRecovery_e crash_recovery;      // off, on, on and beeps when it is in crash recovery mode
 } pidProfile_t;
 
-//PG_DECLARE_PROFILE(pidProfile_t, pidProfile);
+PG_DECLARE_ARRAY(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles);
 
 typedef struct pidConfig_s {
     uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate
@@ -94,10 +111,9 @@ typedef struct pidConfig_s {
 PG_DECLARE(pidConfig_t, pidConfig);
 
 union rollAndPitchTrims_u;
-void pidController(const pidProfile_t *pidProfile, const union rollAndPitchTrims_u *angleTrim);
+void pidController(const pidProfile_t *pidProfile, const union rollAndPitchTrims_u *angleTrim, timeUs_t currentTimeUs);
 
-extern float axisPIDf[3];
-extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
+extern float axisPID_P[3], axisPID_I[3], axisPID_D[3];
 bool airmodeWasActivated;
 extern uint32_t targetPidLooptime;
 
@@ -110,4 +126,6 @@ void pidSetTargetLooptime(uint32_t pidLooptime);
 void pidSetItermAccelerator(float newItermAccelerator);
 void pidInitFilters(const pidProfile_t *pidProfile);
 void pidInitConfig(const pidProfile_t *pidProfile);
+void pidInit(const pidProfile_t *pidProfile);
 
+#endif

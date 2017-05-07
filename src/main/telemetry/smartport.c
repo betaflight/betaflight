@@ -16,25 +16,34 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
-#include "config/config_profile.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/system.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/compass/compass.h"
 #include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
+#include "drivers/system.h"
 
 #include "fc/config.h"
+#include "fc/controlrate_profile.h"
+#include "fc/fc_msp.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
-#include "fc/fc_msp.h"
+
+#include "flight/altitude.h"
+#include "flight/failsafe.h"
+#include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
+#include "flight/navigation.h"
 
 #include "io/beeper.h"
 #include "io/motors.h"
 #include "io/gps.h"
 #include "io/serial.h"
+
+#include "msp/msp.h"
 
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
@@ -44,23 +53,11 @@
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
 
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/mixer.h"
-#include "flight/failsafe.h"
-#include "flight/navigation.h"
-#include "flight/altitudehold.h"
-
 #include "rx/rx.h"
 #include "rx/msp.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/smartport.h"
-
-#include "msp/msp.h"
-
-extern profile_t *currentProfile;
-extern controlRateConfig_t *currentControlRateProfile;
 
 enum
 {
@@ -326,7 +323,7 @@ void configureSmartPortTelemetryPort(void)
 
     portOptions_t portOptions = 0;
 
-    if (telemetryConfig()->sportHalfDuplex) {
+    if (telemetryConfig()->halfDuplex) {
         portOptions |= SERIAL_BIDIR;
     }
 
@@ -620,33 +617,33 @@ void handleSmartPortTelemetry(void)
                 break;
 #endif
             case FSSP_DATAID_VFAS       :
-                if (feature(FEATURE_VBAT) && batteryCellCount > 0) {
+                if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && getBatteryCellCount() > 0) {
                     uint16_t vfasVoltage;
                     if (telemetryConfig()->frsky_vfas_cell_voltage) {
-                        vfasVoltage = getVbat() / batteryCellCount;
+                        vfasVoltage = getBatteryVoltage() / getBatteryCellCount();
                     } else {
-                        vfasVoltage = getVbat();
+                        vfasVoltage = getBatteryVoltage();
                     }
                     smartPortSendPackage(id, vfasVoltage * 10); // given in 0.1V, convert to volts
                     smartPortHasRequest = 0;
                 }
                 break;
             case FSSP_DATAID_CURRENT    :
-                if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_SENSOR)) {
-                    smartPortSendPackage(id, amperage / 10); // given in 10mA steps, unknown requested unit
+                if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
+                    smartPortSendPackage(id, getAmperage() / 10); // given in 10mA steps, unknown requested unit
                     smartPortHasRequest = 0;
                 }
                 break;
             //case FSSP_DATAID_RPM        :
             case FSSP_DATAID_ALTITUDE   :
                 if (sensors(SENSOR_BARO)) {
-                    smartPortSendPackage(id, baro.BaroAlt); // unknown given unit, requested 100 = 1 meter
+                    smartPortSendPackage(id, getEstimatedAltitude()); // unknown given unit, requested 100 = 1 meter
                     smartPortHasRequest = 0;
                 }
                 break;
             case FSSP_DATAID_FUEL       :
-                if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_SENSOR)) {
-                    smartPortSendPackage(id, mAhDrawn); // given in mAh, unknown requested unit
+                if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
+                    smartPortSendPackage(id, getMAhDrawn()); // given in mAh, unknown requested unit
                     smartPortHasRequest = 0;
                 }
                 break;
@@ -677,7 +674,7 @@ void handleSmartPortTelemetry(void)
             //case FSSP_DATAID_CAP_USED   :
             case FSSP_DATAID_VARIO      :
                 if (sensors(SENSOR_BARO)) {
-                    smartPortSendPackage(id, vario); // unknown given unit but requested in 100 = 1m/s
+                    smartPortSendPackage(id, getEstimatedVario()); // unknown given unit but requested in 100 = 1m/s
                     smartPortHasRequest = 0;
                 }
                 break;
@@ -755,19 +752,19 @@ void handleSmartPortTelemetry(void)
                 } else if (telemetryConfig()->pidValuesAsTelemetry){
                     switch (t2Cnt) {
                         case 0:
-                            tmp2 = currentProfile->pidProfile.P8[ROLL];
-                            tmp2 += (currentProfile->pidProfile.P8[PITCH]<<8);
-                            tmp2 += (currentProfile->pidProfile.P8[YAW]<<16);
+                            tmp2 = currentPidProfile->P8[ROLL];
+                            tmp2 += (currentPidProfile->P8[PITCH]<<8);
+                            tmp2 += (currentPidProfile->P8[YAW]<<16);
                         break;
                         case 1:
-                            tmp2 = currentProfile->pidProfile.I8[ROLL];
-                            tmp2 += (currentProfile->pidProfile.I8[PITCH]<<8);
-                            tmp2 += (currentProfile->pidProfile.I8[YAW]<<16);
+                            tmp2 = currentPidProfile->I8[ROLL];
+                            tmp2 += (currentPidProfile->I8[PITCH]<<8);
+                            tmp2 += (currentPidProfile->I8[YAW]<<16);
                         break;
                         case 2:
-                            tmp2 = currentProfile->pidProfile.D8[ROLL];
-                            tmp2 += (currentProfile->pidProfile.D8[PITCH]<<8);
-                            tmp2 += (currentProfile->pidProfile.D8[YAW]<<16);
+                            tmp2 = currentPidProfile->D8[ROLL];
+                            tmp2 += (currentPidProfile->D8[PITCH]<<8);
+                            tmp2 += (currentPidProfile->D8[YAW]<<16);
                         break;
                         case 3:
                             tmp2 = currentControlRateProfile->rates[FD_ROLL];
@@ -793,8 +790,8 @@ void handleSmartPortTelemetry(void)
                 break;
 #endif
             case FSSP_DATAID_A4         :
-                if (feature(FEATURE_VBAT) && batteryCellCount > 0) {
-                    smartPortSendPackage(id, getVbat() * 10 / batteryCellCount ); // given in 0.1V, convert to volts
+                if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && getBatteryCellCount() > 0) {
+                    smartPortSendPackage(id, getBatteryVoltage() * 10 / getBatteryCellCount()); // given in 0.1V, convert to volts
                     smartPortHasRequest = 0;
                 }
                 break;

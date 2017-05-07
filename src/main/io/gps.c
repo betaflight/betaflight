@@ -183,6 +183,15 @@ typedef enum {
 gpsData_t gpsData;
 
 
+PG_REGISTER_WITH_RESET_TEMPLATE(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
+
+PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
+    .provider = GPS_NMEA,
+    .sbasMode = SBAS_AUTO,
+    .autoConfig = GPS_AUTOCONFIG_ON,
+    .autoBaud = GPS_AUTOBAUD_OFF
+);
+
 static void shiftPacketLog(void)
 {
     uint32_t i;
@@ -426,7 +435,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
                 gpsData.baudrateIndex++;
                 gpsData.baudrateIndex %= GPS_INIT_ENTRIES;
             }
-            gpsData.lastMessage = currentTimeUs / 1000;
+            gpsData.lastMessage = millis();
             // TODO - move some / all of these into gpsData
             GPS_numSat = 0;
             DISABLE_STATE(GPS_FIX);
@@ -435,7 +444,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
 
         case GPS_RECEIVING_DATA:
             // check for no data/gps timeout/cable disconnection etc
-            if (currentTimeUs / 1000 - gpsData.lastMessage > GPS_TIMEOUT) {
+            if (millis() - gpsData.lastMessage > GPS_TIMEOUT) {
                 // remove GPS from capability
                 sensorsClear(SENSOR_GPS);
                 gpsSetState(GPS_LOST_COMMUNICATION);

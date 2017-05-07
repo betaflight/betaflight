@@ -20,7 +20,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "io_types.h"
+#include "drivers/io_types.h"
 #include "rcc_types.h"
 
 typedef uint16_t captureCompare_t;        // 16 bit on both 103 and 303, just register access must be 32bit sometimes (use timCCR_t)
@@ -45,7 +45,7 @@ typedef uint16_t timCCR_t;
 typedef uint16_t timCCER_t;
 typedef uint16_t timSR_t;
 typedef uint16_t timCNT_t;
-#elif defined(UNIT_TEST)
+#elif defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
 typedef uint32_t timCCR_t;
 typedef uint32_t timCCER_t;
 typedef uint32_t timSR_t;
@@ -62,7 +62,8 @@ typedef enum {
     TIM_USE_MOTOR         = 0x4,
     TIM_USE_SERVO         = 0x8,
     TIM_USE_LED           = 0x10,
-    TIM_USE_TRANSPONDER   = 0x20
+    TIM_USE_TRANSPONDER   = 0x20,
+    TIM_USE_BEEPER        = 0x40
 } timerUsageFlag_e;
 
 // use different types from capture and overflow - multiple overflow handlers are implemented as linked list
@@ -95,12 +96,12 @@ typedef struct timerHardware_s {
 #if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
     uint8_t alternateFunction;
 #endif
-#if defined(USE_DSHOT) || defined(LED_STRIP)
+#if defined(USE_DSHOT) || defined(LED_STRIP) || defined(TRANSPONDER)
 #if defined(STM32F4) || defined(STM32F7)
-    DMA_Stream_TypeDef *dmaStream;
+    DMA_Stream_TypeDef *dmaRef;
     uint32_t dmaChannel;
 #elif defined(STM32F3) || defined(STM32F1)
-    DMA_Channel_TypeDef *dmaChannel;
+    DMA_Channel_TypeDef *dmaRef;
 #endif
     uint8_t dmaIrqHandler;
 #endif
@@ -197,3 +198,6 @@ void timerOCPreloadConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t preload);
 
 volatile timCCR_t *timerCCR(TIM_TypeDef *tim, uint8_t channel);
 uint16_t timerDmaSource(uint8_t channel);
+
+uint16_t timerGetPrescalerByDesiredMhz(TIM_TypeDef *tim, uint16_t mhz);
+uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_t hertz);

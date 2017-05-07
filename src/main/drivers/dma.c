@@ -21,7 +21,7 @@
 
 #include <platform.h>
 
-#include "nvic.h"
+#include "drivers/nvic.h"
 #include "dma.h"
 
 /*
@@ -99,19 +99,9 @@ uint8_t dmaGetResourceIndex(dmaIdentifier_e identifier)
 dmaIdentifier_e dmaGetIdentifier(const DMA_Channel_TypeDef* channel)
 {
     for (int i = 0; i < DMA_MAX_DESCRIPTORS; i++) {
-        if (dmaDescriptors[i].channel == channel) {
+        if (dmaDescriptors[i].ref == channel) {
             return i;
         }
     }
     return 0;
-}
-
-dmaChannelDescriptor_t* getDmaDescriptor(const DMA_Channel_TypeDef* channel)
-{
-    for (int i = 0; i < DMA_MAX_DESCRIPTORS; i++) {
-        if (dmaDescriptors[i].channel == channel) {
-            return &dmaDescriptors[i];
-        }
-    }
-    return NULL;
 }

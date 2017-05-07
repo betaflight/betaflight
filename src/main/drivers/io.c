@@ -15,13 +15,13 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "io.h"
-#include "io_impl.h"
-#include "rcc.h"
+#include "platform.h"
+
+#include "drivers/io.h"
+#include "drivers/io_impl.h"
+#include "drivers/rcc.h"
 
 #include "common/utils.h"
-
-#include "target.h"
 
 // io ports defs are stored in array by index now
 struct ioPortDef_s {
@@ -145,6 +145,8 @@ uint32_t IO_EXTI_Line(IO_t io)
     return 1 << IO_GPIOPinIdx(io);
 #elif defined(STM32F7)
     return 1 << IO_GPIOPinIdx(io);
+#elif defined(SIMULATOR_BUILD)
+    return 1;
 #else
 # error "Unknown target type"
 #endif
@@ -238,6 +240,8 @@ void IOToggle(IO_t io)
 // claim IO pin, set owner and resources
 void IOInit(IO_t io, resourceOwner_e owner, uint8_t index)
 {
+    if (!io)
+        return;
     ioRec_t *ioRec = IO_Rec(io);
     ioRec->owner = owner;
     ioRec->index = index;
@@ -245,12 +249,16 @@ void IOInit(IO_t io, resourceOwner_e owner, uint8_t index)
 
 void IORelease(IO_t io)
 {
+    if (!io)
+        return;
     ioRec_t *ioRec = IO_Rec(io);
     ioRec->owner = OWNER_FREE;
 }
 
 resourceOwner_e IOGetOwner(IO_t io)
 {
+    if (!io)
+        return OWNER_FREE;
     ioRec_t *ioRec = IO_Rec(io);
     return ioRec->owner;
 }

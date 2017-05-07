@@ -19,8 +19,6 @@
 
 #define TARGET_BOARD_IDENTIFIER "COLI"
 
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
-
 #define USBD_PRODUCT_STRING "Colibri"
 #ifdef OPBL
 #define USBD_SERIALNUMBER_STRING "0x8020000"
@@ -33,7 +31,7 @@
 
 #define BEEPER                  PC5
 
-#define INVERTER_PIN_USART2     PB2 // PB2 used as inverter select GPIO
+#define INVERTER_PIN_UART2      PB2 // PB2 used as inverter select GPIO
 
 #define MPU6000_CS_PIN          PC4
 #define MPU6000_SPI_INSTANCE    SPI1
@@ -116,6 +114,7 @@
 #define SPI2_MOSI_PIN           PC3
 
 #define USE_I2C
+#define USE_I2C_DEVICE_3
 #define I2C_DEVICE              (I2CDEV_3)
 #define I2C3_SCL                PA8
 #define I2C3_SDA                PC9
@@ -126,7 +125,6 @@
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
-#define DEFAULT_FEATURES        FEATURE_BLACKBOX
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

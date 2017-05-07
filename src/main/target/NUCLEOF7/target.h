@@ -19,18 +19,13 @@
 
 #define TARGET_BOARD_IDENTIFIER "NUC7"
 
-#define CONFIG_START_FLASH_ADDRESS (0x080C0000)
-
 #define USBD_PRODUCT_STRING "NucleoF7"
-
-//#define USE_DSHOT
-//#define USE_ESC_TELEMETRY
 
 #define LED0   PB7
 #define LED1   PB14
 
-//#define BEEPER   PB2
-//#define BEEPER_INVERTED
+#define BEEPER   PA0
+#define BEEPER_INVERTED
 
 #define ACC
 #define USE_FAKE_ACC
@@ -133,11 +128,10 @@
 #define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_4
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_1)
-#define I2C1_SCL PB8
-#define I2C1_SDA PB9
-
-//#define I2C_DEVICE_EXT (I2CDEV_2)
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE                  (I2CDEV_1)
+#define I2C1_SCL                    PB8
+#define I2C1_SDA                    PB9
 
 #define USE_ADC
 #define VBAT_ADC_PIN                PA3
@@ -146,7 +140,6 @@
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
-#define DEFAULT_FEATURES        (FEATURE_BLACKBOX)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 

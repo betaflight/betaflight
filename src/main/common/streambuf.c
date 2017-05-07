@@ -39,6 +39,21 @@ void sbufWriteU32(sbuf_t *dst, uint32_t val)
     sbufWriteU8(dst, val >> 24);
 }
 
+void sbufWriteU16BigEndian(sbuf_t *dst, uint16_t val)
+{
+    sbufWriteU8(dst, val >> 8);
+    sbufWriteU8(dst, (uint8_t)val);
+}
+
+void sbufWriteU32BigEndian(sbuf_t *dst, uint32_t val)
+{
+    sbufWriteU8(dst, val >> 24);
+    sbufWriteU8(dst, val >> 16);
+    sbufWriteU8(dst, val >> 8);
+    sbufWriteU8(dst, (uint8_t)val);
+}
+
+
 void sbufWriteData(sbuf_t *dst, const void *data, int len)
 {
     memcpy(dst->ptr, data, len);
@@ -47,7 +62,7 @@ void sbufWriteData(sbuf_t *dst, const void *data, int len)
 
 void sbufWriteString(sbuf_t *dst, const char *string)
 {
-    sbufWriteData(dst, string, strlen(string));
+    sbufWriteData(dst, string, strlen(string) + 1); // include zero terminator
 }
 
 uint8_t sbufReadU8(sbuf_t *src)
@@ -86,6 +101,11 @@ int sbufBytesRemaining(sbuf_t *buf)
 }
 
 uint8_t* sbufPtr(sbuf_t *buf)
+{
+    return buf->ptr;
+}
+
+const uint8_t* sbufConstPtr(const sbuf_t *buf)
 {
     return buf->ptr;
 }

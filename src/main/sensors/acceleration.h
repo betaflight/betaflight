@@ -18,7 +18,7 @@
 #pragma once
 
 #include "config/parameter_group.h"
-#include "drivers/accgyro.h"
+#include "drivers/accgyro/accgyro.h"
 #include "sensors/sensors.h"
 
 // Type of accelerometer used/detected
@@ -32,10 +32,11 @@ typedef enum {
     ACC_LSM303DLHC,
     ACC_MPU6000,
     ACC_MPU6500,
-    ACC_ICM20689,
     ACC_MPU9250,
-    ACC_ICM20608G,
+    ACC_ICM20601,
     ACC_ICM20602,
+    ACC_ICM20608G,
+    ACC_ICM20689,
     ACC_BMI160,
     ACC_FAKE
 } accelerationSensor_e;

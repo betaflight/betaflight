@@ -38,7 +38,7 @@
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
-#include "drivers/accgyro.h"
+#include "drivers/accgyro/accgyro.h"
 #include "drivers/serial.h"
 
 #include "fc/config.h"
@@ -57,7 +57,7 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
-#include "flight/altitudehold.h"
+#include "flight/altitude.h"
 
 #include "rx/rx.h"
 
@@ -175,9 +175,9 @@ static void sendAccel(void)
 static void sendBaro(void)
 {
     sendDataHead(ID_ALTITUDE_BP);
-    serialize16(baro.BaroAlt / 100);
+    serialize16(getEstimatedAltitude() / 100);
     sendDataHead(ID_ALTITUDE_AP);
-    serialize16(ABS(baro.BaroAlt % 100));
+    serialize16(ABS(getEstimatedAltitude() % 100));
 }
 
 #ifdef GPS
@@ -328,8 +328,8 @@ static void sendFakeLatLong(void)
     // Heading is only displayed on OpenTX if non-zero lat/long is also sent
     int32_t coord[2] = {0,0};
 
-    coord[LAT] = (telemetryConfig()->gpsNoFixLatitude * GPS_DEGREES_DIVIDER);
-    coord[LON] = (telemetryConfig()->gpsNoFixLongitude * GPS_DEGREES_DIVIDER);
+    coord[LAT] = ((0.01f * telemetryConfig()->gpsNoFixLatitude) * GPS_DEGREES_DIVIDER);
+    coord[LON] = ((0.01f * telemetryConfig()->gpsNoFixLongitude) * GPS_DEGREES_DIVIDER);
 
     sendLatLong(coord);
 }
@@ -356,7 +356,7 @@ static void sendGPSLatLong(void)
 static void sendVario(void)
 {
     sendDataHead(ID_VERT_SPEED);
-    serialize16(vario);
+    serialize16(getEstimatedVario());
 }
 
 /*
@@ -371,6 +371,7 @@ static void sendVoltage(void)
     uint32_t cellVoltage;
     uint16_t payload;
 
+    uint8_t cellCount = getBatteryCellCount();
     /*
      * Format for Voltage Data for single cells is like this:
      *
@@ -382,7 +383,7 @@ static void sendVoltage(void)
      * The actual value sent for cell voltage has resolution of 0.002 volts
      * Since vbat has resolution of 0.1 volts it has to be multiplied by 50
      */
-    cellVoltage = ((uint32_t)getVbat() * 100 + batteryCellCount) / (batteryCellCount * 2);
+    cellVoltage = ((uint32_t)getBatteryVoltage() * 100 + cellCount) / (cellCount * 2);
 
     // Cell number is at bit 9-12
     payload = (currentCell << 4);
@@ -397,7 +398,7 @@ static void sendVoltage(void)
     serialize16(payload);
 
     currentCell++;
-    currentCell %= batteryCellCount;
+    currentCell %= cellCount;
 }
 
 /*
@@ -405,17 +406,18 @@ static void sendVoltage(void)
  */
 static void sendVoltageAmp(void)
 {
+    uint16_t batteryVoltage = getBatteryVoltage();
     if (telemetryConfig()->frsky_vfas_precision == FRSKY_VFAS_PRECISION_HIGH) {
         /*
          * Use new ID 0x39 to send voltage directly in 0.1 volts resolution
          */
         sendDataHead(ID_VOLTAGE_AMP);
-        serialize16(getVbat());
+        serialize16(batteryVoltage);
     } else {
-        uint16_t voltage = (getVbat() * 110) / 21;
+        uint16_t voltage = (batteryVoltage * 110) / 21;
         uint16_t vfasVoltage;
         if (telemetryConfig()->frsky_vfas_cell_voltage) {
-            vfasVoltage = voltage / batteryCellCount;
+            vfasVoltage = voltage / getBatteryCellCount();
         } else {
             vfasVoltage = voltage;
         }
@@ -429,7 +431,7 @@ static void sendVoltageAmp(void)
 static void sendAmperage(void)
 {
     sendDataHead(ID_CURRENT);
-    serialize16((uint16_t)(amperage / 10));
+    serialize16((uint16_t)(getAmperage() / 10));
 }
 
 static void sendFuelLevel(void)
@@ -437,9 +439,9 @@ static void sendFuelLevel(void)
     sendDataHead(ID_FUEL_LEVEL);
 
     if (batteryConfig()->batteryCapacity > 0) {
-        serialize16((uint16_t)calculateBatteryPercentage());
+        serialize16((uint16_t)calculateBatteryPercentageRemaining());
     } else {
-        serialize16((uint16_t)constrain(mAhDrawn, 0, 0xFFFF));
+        serialize16((uint16_t)constrain(getMAhDrawn(), 0, 0xFFFF));
     }
 }
 
@@ -537,7 +539,7 @@ void handleFrSkyTelemetry(void)
         sendTemperature1();
         sendThrottleOrBatterySizeAsRpm();
 
-        if ((feature(FEATURE_VBAT) || feature(FEATURE_ESC_SENSOR)) && batteryCellCount > 0) {
+        if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && getBatteryCellCount() > 0) {
             sendVoltage();
             sendVoltageAmp();
             sendAmperage();

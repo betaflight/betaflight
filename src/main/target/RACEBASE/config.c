@@ -21,15 +21,15 @@
 #include <platform.h>
 
 #ifdef TARGET_CONFIG
+
+#include "fc/config.h"
+
 #include "rx/rx.h"
 
-#include "config/config_master.h"
-
-// alternative defaults settings for COLIBRI RACE targets
-void targetConfiguration(master_t *config)
+void targetConfiguration(void)
 {
-    config->rxConfig.sbus_inversion = 0;
-    config->rxConfig.rssi_scale = 19;
-    config->rxConfig.serialrx_provider = SERIALRX_SBUS;
+    rxConfigMutable()->sbus_inversion = 0;
+    rxConfigMutable()->rssi_scale = 19;
+    rxConfigMutable()->serialrx_provider = SERIALRX_SBUS;
 }
 #endif

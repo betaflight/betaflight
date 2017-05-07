@@ -18,6 +18,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 
 #include "platform.h"
 
@@ -25,11 +26,11 @@
 
 #include "common/utils.h"
 
-#include "nvic.h"
+#include "drivers/nvic.h"
 
-#include "io.h"
+#include "drivers/io.h"
 #include "rcc.h"
-#include "system.h"
+#include "drivers/system.h"
 
 #include "timer.h"
 #include "timer_impl.h"
@@ -266,6 +267,7 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz)
     if(tim == TIM1 || tim == TIM2 || tim == TIM3 || tim == TIM4 || tim == TIM5 || tim == TIM8 || tim == TIM9)
     {
         TIM_ClockConfigTypeDef sClockSourceConfig;
+        memset(&sClockSourceConfig, 0, sizeof(sClockSourceConfig));
         sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
         if (HAL_TIM_ConfigClockSource(&timerHandle[timerIndex].Handle, &sClockSourceConfig) != HAL_OK)
         {
@@ -275,7 +277,7 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz)
     if(tim == TIM1 || tim == TIM2 || tim == TIM3 || tim == TIM4 || tim == TIM5 || tim == TIM8 )
     {
         TIM_MasterConfigTypeDef sMasterConfig;
-        sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+        memset(&sMasterConfig, 0, sizeof(sMasterConfig));
         sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
         if (HAL_TIMEx_MasterConfigSynchronization(&timerHandle[timerIndex].Handle, &sMasterConfig) != HAL_OK)
         {
@@ -893,4 +895,18 @@ uint16_t timerDmaSource(uint8_t channel)
             return TIM_DMA_ID_CC4;
     }
     return 0;
+}
+
+uint16_t timerGetPrescalerByDesiredMhz(TIM_TypeDef *tim, uint16_t mhz)
+{
+    // protection here for desired MHZ > SystemCoreClock???
+    if (mhz * 1000000 > (SystemCoreClock / timerClockDivisor(tim))) {
+        return 0;
+    }
+    return (uint16_t)(round((SystemCoreClock / timerClockDivisor(tim) / (mhz * 1000000)) - 1));
+}
+
+uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_t hertz)
+{
+    return ((uint16_t)((SystemCoreClock / timerClockDivisor(tim) / (prescaler + 1)) / hertz));
 }

@@ -30,6 +30,8 @@ typedef struct sbuf_s {
 void sbufWriteU8(sbuf_t *dst, uint8_t val);
 void sbufWriteU16(sbuf_t *dst, uint16_t val);
 void sbufWriteU32(sbuf_t *dst, uint32_t val);
+void sbufWriteU16BigEndian(sbuf_t *dst, uint16_t val);
+void sbufWriteU32BigEndian(sbuf_t *dst, uint32_t val);
 void sbufWriteData(sbuf_t *dst, const void *data, int len);
 void sbufWriteString(sbuf_t *dst, const char *string);
 
@@ -40,6 +42,7 @@ void sbufReadData(sbuf_t *dst, void *data, int len);
 
 int sbufBytesRemaining(sbuf_t *buf);
 uint8_t* sbufPtr(sbuf_t *buf);
+const uint8_t* sbufConstPtr(const sbuf_t *buf);
 void sbufAdvance(sbuf_t *buf, int size);
 
 void sbufSwitchToReader(sbuf_t *buf, uint8_t * base);

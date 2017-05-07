@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32f7xx_ll_dma.h
   * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
+  * @version V1.2.2
+  * @date    14-April-2017
   * @brief   Header file of DMA LL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -236,7 +236,7 @@ typedef struct
   * @}
   */
 
-/** @defgroup DMA_LL_EC_DOUBLEBUFFER_MODE MODE
+/** @defgroup DMA_LL_EC_DOUBLEBUFFER_MODE DOUBLE BUFFER MODE
   * @{
   */
 #define LL_DMA_DOUBLEBUFFER_MODE_DISABLE  0x00000000U               /*!< Disable double buffering mode */

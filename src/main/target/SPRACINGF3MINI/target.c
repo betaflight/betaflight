@@ -40,7 +40,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM2,  CH4,  PB11, TIM_USE_MOTOR, 1 ),  // RC_CH3 - PB11 - *TIM2_CH4, UART3_RX (AF7)
 #else
     // PPM Pad
-#ifdef SPRACINGF3MINI_MKII_REVA
+#if defined(SPRACINGF3MINI_REV) && (SPRACINGF3MINI_REV <= 1)
     DEF_TIM(TIM3, CH2, PB5, TIM_USE_PPM, 0), // PPM - PB5
     // PB4 / TIM3 CH1 is connected to USBPresent
 #else

@@ -28,21 +28,24 @@
 #include "common/utils.h"
 #include "common/filter.h"
 
+#include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "fc/config.h"
+#include "fc/controlrate_profile.h"
+#include "fc/fc_core.h"
+#include "fc/fc_rc.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
-#include "fc/fc_rc.h"
-#include "fc/fc_core.h"
 
 #include "rx/rx.h"
 
 #include "scheduler/scheduler.h"
 
+#include "flight/failsafe.h"
+#include "flight/imu.h"
 #include "flight/pid.h"
-
-#include "config/config_profile.h"
-#include "config/config_master.h"
-#include "config/feature.h"
 
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
@@ -154,7 +157,7 @@ static void scaleRcCommandToFpvCamAngle(void) {
     static int16_t rcCommandThrottlePrevious[THROTTLE_BUFFER_MAX];
     const int rxRefreshRateMs = rxRefreshRate / 1000;
     const int indexMax = constrain(THROTTLE_DELTA_MS / rxRefreshRateMs, 1, THROTTLE_BUFFER_MAX);
-    const int16_t throttleVelocityThreshold = (feature(FEATURE_3D)) ? currentProfile->pidProfile.itermThrottleThreshold / 2 : currentProfile->pidProfile.itermThrottleThreshold;
+    const int16_t throttleVelocityThreshold = (feature(FEATURE_3D)) ? currentPidProfile->itermThrottleThreshold / 2 : currentPidProfile->itermThrottleThreshold;
 
     rcCommandThrottlePrevious[index++] = rcCommand[THROTTLE];
     if (index >= indexMax)
@@ -163,7 +166,7 @@ static void scaleRcCommandToFpvCamAngle(void) {
     const int16_t rcCommandSpeed = rcCommand[THROTTLE] - rcCommandThrottlePrevious[index];
 
     if(ABS(rcCommandSpeed) > throttleVelocityThreshold)
-        pidSetItermAccelerator(currentProfile->pidProfile.itermAcceleratorGain);
+        pidSetItermAccelerator(0.0001f * currentPidProfile->itermAcceleratorGain);
     else
         pidSetItermAccelerator(1.0f);
 }
@@ -181,8 +184,9 @@ void processRcCommand(void)
 
     if (isRXDataNew) {
         currentRxRefreshRate = constrain(getTaskDeltaTime(TASK_RX),1000,20000);
-        if (currentProfile->pidProfile.itermAcceleratorGain > 1.0f)
+        if (isAntiGravityModeActive()) {
             checkForThrottleErrorResetState(currentRxRefreshRate);
+        }
     }
 
     if (rxConfig()->rcInterpolation || flightModeFlags) {
@@ -280,7 +284,7 @@ void updateRcCommands(void)
             } else {
                 tmp = 0;
             }
-            rcCommand[axis] = tmp * -rcControlsConfig()->yaw_control_direction;
+            rcCommand[axis] = tmp * -GET_DIRECTION(rcControlsConfig()->yaw_control_reversed);
         }
         if (rcData[axis] < rxConfig()->midrc) {
             rcCommand[axis] = -rcCommand[axis];

@@ -25,20 +25,21 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/compass.h"
-#include "drivers/compass_ak8975.h"
-#include "drivers/compass_ak8963.h"
-#include "drivers/compass_fake.h"
-#include "drivers/compass_hmc5883l.h"
+#include "drivers/compass/compass.h"
+#include "drivers/compass/compass_ak8975.h"
+#include "drivers/compass/compass_ak8963.h"
+#include "drivers/compass/compass_fake.h"
+#include "drivers/compass/compass_hmc5883l.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 
 #include "fc/config.h"
 #include "fc/runtime_config.h"
 
-#include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
 #include "sensors/compass.h"
+#include "sensors/gyro.h"
+#include "sensors/sensors.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -141,9 +142,12 @@ bool compassInit(void)
     // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)
     // calculate magnetic declination
     mag.magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
+    // copy over SPI bus settings for AK8963 compass
+    magDev.bus = *gyroSensorBus();
     if (!compassDetect(&magDev, compassConfig()->mag_hardware)) {
         return false;
     }
+
     const int16_t deg = compassConfig()->mag_declination / 100;
     const int16_t min = compassConfig()->mag_declination % 100;
     mag.magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units

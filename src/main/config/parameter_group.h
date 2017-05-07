@@ -38,6 +38,10 @@ typedef enum {
     PGR_SIZE_PROFILE_FLAG = 0x8000  // start using flags from the top bit down
 } pgRegistryInternal_e;
 
+enum {
+    PG_PROFILE_COUNT = 3
+};
+
 // function that resets a single parameter group instance
 typedef void (pgResetFunc)(void * /* base */, int /* size */);
 
@@ -45,6 +49,7 @@ typedef struct pgRegistry_s {
     pgn_t pgn;             // The parameter group number, the top 4 bits are reserved for version
     uint16_t size;         // Size of the group in RAM, the top 4 bits are reserved for flags
     uint8_t *address;      // Address of the group in RAM.
+    uint8_t *copy;         // Address of the copy in RAM.
     uint8_t **ptr;         // The pointer to update after loading the record into ram.
     union {
         void *ptr;         // Pointer to init template
@@ -100,18 +105,19 @@ extern const uint8_t __pg_resetdata_end[];
     } while(0)                                                          \
     /**/
 
-#ifdef USE_PARAMETER_GROUPS
 // Declare system config
 #define PG_DECLARE(_type, _name)                                        \
     extern _type _name ## _System;                                      \
+    extern _type _name ## _Copy;                                        \
     static inline const _type* _name(void) { return &_name ## _System; }\
     static inline _type* _name ## Mutable(void) { return &_name ## _System; }\
     struct _dummy                                                       \
     /**/
 
 // Declare system config array
-#define PG_DECLARE_ARRAY(_type, _size, _name)                             \
+#define PG_DECLARE_ARRAY(_type, _size, _name)                           \
     extern _type _name ## _SystemArray[_size];                          \
+    extern _type _name ## _CopyArray[_size];                            \
     static inline const _type* _name(int _index) { return &_name ## _SystemArray[_index]; } \
     static inline _type* _name ## Mutable(int _index) { return &_name ## _SystemArray[_index]; } \
     static inline _type (* _name ## _array(void))[_size] { return &_name ## _SystemArray; } \
@@ -126,38 +132,22 @@ extern const uint8_t __pg_resetdata_end[];
     struct _dummy                                                       \
     /**/
 
-#else
 
-#define PG_DECLARE(_type, _name)                                        \
-    extern _type _name ## _System
-
-#define PG_DECLARE_ARRAY(_type, _size, _name)                           \
-    extern _type _name ## _SystemArray[_size]
-
-// Declare profile config
-#define PG_DECLARE_PROFILE(_type, _name)                                \
-    extern _type *_name ## _ProfileCurrent
-
-#endif // USE_PARAMETER_GROUPS
-
-#ifdef USE_PARAMETER_GROUPS
 // Register system config
 #define PG_REGISTER_I(_type, _name, _pgn, _version, _reset)             \
     _type _name ## _System;                                             \
+    _type _name ## _Copy;                                               \
     /* Force external linkage for g++. Catch multi registration */      \
     extern const pgRegistry_t _name ## _Registry;                       \
     const pgRegistry_t _name ##_Registry PG_REGISTER_ATTRIBUTES = {     \
         .pgn = _pgn | (_version << 12),                                 \
         .size = sizeof(_type) | PGR_SIZE_SYSTEM_FLAG,                   \
         .address = (uint8_t*)&_name ## _System,                         \
+        .copy = (uint8_t*)&_name ## _Copy,                              \
         .ptr = 0,                                                       \
         _reset,                                                         \
     }                                                                   \
     /**/
-#else
-#define PG_REGISTER_I(_type, _name, _pgn, _version, _reset)             \
-    _type _name ## _System
-#endif
 
 #define PG_REGISTER(_type, _name, _pgn, _version)                       \
     PG_REGISTER_I(_type, _name, _pgn, _version, .reset = {.ptr = 0})    \
@@ -173,23 +163,20 @@ extern const uint8_t __pg_resetdata_end[];
     PG_REGISTER_I(_type, _name, _pgn, _version, .reset = {.ptr = (void*)&pgResetTemplate_ ## _name}) \
     /**/
 
-#ifdef USE_PARAMETER_GROUPS
 // Register system config array
 #define PG_REGISTER_ARRAY_I(_type, _size, _name, _pgn, _version, _reset)  \
     _type _name ## _SystemArray[_size];                                 \
+    _type _name ## _CopyArray[_size];                                   \
     extern const pgRegistry_t _name ##_Registry;                        \
     const pgRegistry_t _name ## _Registry PG_REGISTER_ATTRIBUTES = {    \
         .pgn = _pgn | (_version << 12),                                 \
         .size = (sizeof(_type) * _size) | PGR_SIZE_SYSTEM_FLAG,         \
         .address = (uint8_t*)&_name ## _SystemArray,                    \
+        .copy = (uint8_t*)&_name ## _CopyArray,                         \
         .ptr = 0,                                                       \
         _reset,                                                         \
     }                                                                   \
     /**/
-#else
-#define PG_REGISTER_ARRAY_I(_type, _size, _name, _pgn, _version, _reset)  \
-    _type _name ## _SystemArray[_size]
-#endif
 
 #define PG_REGISTER_ARRAY(_type, _size, _name, _pgn, _version)            \
     PG_REGISTER_ARRAY_I(_type, _size, _name, _pgn, _version, .reset = {.ptr = 0}) \
@@ -216,10 +203,9 @@ extern const uint8_t __pg_resetdata_end[];
     _type *_name ## _ProfileCurrent;
 #endif
 
-#ifdef USE_PARAMETER_GROUPS
 // register profile config
 #define PG_REGISTER_PROFILE_I(_type, _name, _pgn, _version, _reset)     \
-    STATIC_UNIT_TESTED _type _name ## _Storage[MAX_PROFILE_COUNT];      \
+    STATIC_UNIT_TESTED _type _name ## _Storage[PG_PROFILE_COUNT];       \
     _PG_PROFILE_CURRENT_DECL(_type, _name)                              \
     extern const pgRegistry_t _name ## _Registry;                       \
     const pgRegistry_t _name ## _Registry PG_REGISTER_ATTRIBUTES = {    \
@@ -230,10 +216,6 @@ extern const uint8_t __pg_resetdata_end[];
         _reset,                                                         \
     }                                                                   \
     /**/
-#else
-#define PG_REGISTER_PROFILE_I(_type, _name, _pgn, _version, _reset)     \
-    STATIC_UNIT_TESTED _type _name ## _Storage[MAX_PROFILE_COUNT]
-#endif
 
 #define PG_REGISTER_PROFILE(_type, _name, _pgn, _version)               \
     PG_REGISTER_PROFILE_I(_type, _name, _pgn, _version, .reset = {.ptr = 0}) \
@@ -257,6 +239,9 @@ extern const uint8_t __pg_resetdata_end[];
         __VA_ARGS__                                                     \
     }                                                                   \
     /**/
+
+#define CONVERT_PARAMETER_TO_FLOAT(param) (0.001f * param)
+#define CONVERT_PARAMETER_TO_PERCENT(param) (0.01f * param)
 
 const pgRegistry_t* pgFind(pgn_t pgn);
 

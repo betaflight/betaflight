@@ -18,6 +18,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 
 #include "platform.h"
 
@@ -25,11 +26,11 @@
 
 #include "common/utils.h"
 
-#include "nvic.h"
+#include "drivers/nvic.h"
 
-#include "io.h"
+#include "drivers/io.h"
 #include "rcc.h"
-#include "system.h"
+#include "drivers/system.h"
 
 #include "timer.h"
 #include "timer_impl.h"
@@ -842,3 +843,17 @@ uint16_t timerDmaSource(uint8_t channel)
     return 0;
 }
 #endif
+
+uint16_t timerGetPrescalerByDesiredMhz(TIM_TypeDef *tim, uint16_t mhz)
+{
+    // protection here for desired MHZ > SystemCoreClock???
+    if ((uint32_t)(mhz * 1000000) > (SystemCoreClock / timerClockDivisor(tim))) {
+        return 0;
+    }
+    return (uint16_t)(round((SystemCoreClock / timerClockDivisor(tim) / (mhz * 1000000)) - 1));
+}
+
+uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_t hertz)
+{
+    return ((uint16_t)((SystemCoreClock / timerClockDivisor(tim) / (prescaler + 1)) / hertz));
+}

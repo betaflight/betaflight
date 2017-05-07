@@ -18,7 +18,6 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "VRRA"
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
 #define USBD_PRODUCT_STRING "VRRACE"
 
@@ -27,7 +26,7 @@
 #define BEEPER PA0
 #define BEEPER_INVERTED
 
-#define INVERTER_PIN_USART6 PD7
+#define INVERTER_PIN_UART6 PD7
 
 #define MPU6500_CS_PIN        PE10
 #define MPU6500_SPI_INSTANCE  SPI2
@@ -145,10 +144,11 @@
 #define SPI3_MOSI_PIN           PC12
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_1)  // PB8-SCL, PB8-SDA
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
 #define USE_I2C_PULLUP
-#define I2C1_SCL             PB8
-#define I2C1_SDA             PB9
+#define I2C1_SCL                PB8
+#define I2C1_SDA                PB9
 */
 
 #define USE_ADC
@@ -159,16 +159,14 @@
 
 #undef LED_STRIP
 
-#define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_SOFTSERIAL | FEATURE_TELEMETRY)
+#define DEFAULT_FEATURES        (FEATURE_SOFTSERIAL | FEATURE_TELEMETRY)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 
 //#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 /*
-#define SPEKTRUM_BIND
-// USART3 Rx, PB11
-#define BIND_PIN             PB11
+#define SPEKTRUM_BIND_PIN             PB11
 */
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
