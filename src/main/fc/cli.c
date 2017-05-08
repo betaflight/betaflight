@@ -324,7 +324,7 @@ static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "NONE",
     "GYRO",
     "NOTCH",
-    "NAV"
+    "NAV_LANDING"
 };
 
 #ifdef TELEMETRY_LTM

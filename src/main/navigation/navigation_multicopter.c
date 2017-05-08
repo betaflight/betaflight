@@ -524,7 +524,7 @@ bool isMulticopterLandingDetected(void)
 
     bool possibleLandingDetected = isAtMinimalThrust && !verticalMovement && !horizontalMovement;
 
-    if (debugMode ==DEBUG_NAV) {
+    if (debugMode == DEBUG_NAV_LANDING_DETECTOR) {
         debug[0] = isAtMinimalThrust * 100 + !verticalMovement * 10 + !horizontalMovement * 1;
         debug[1] = (landingThrSamples == 0) ? 0 : (rcCommandAdjustedThrottle - (landingThrSum / landingThrSamples));
         debug[2] = (currentTimeUs - landingTimer) / 1000;
