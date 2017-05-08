@@ -689,6 +689,7 @@ COMMON_SRC = \
             drivers/transponder_ir.c \
             drivers/transponder_ir_arcitimer.c \
             drivers/transponder_ir_ilap.c \
+            drivers/transponder_ir_erlt.c \
             fc/config.c \
             fc/fc_dispatch.c \
             fc/fc_hardfaults.c \
@@ -1418,3 +1419,4 @@ $(TARGET_OBJS) : Makefile
 
 # include auto-generated dependencies
 -include $(TARGET_DEPS)
+
