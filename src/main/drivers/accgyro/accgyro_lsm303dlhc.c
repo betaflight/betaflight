@@ -166,8 +166,8 @@ bool lsm303dlhcAccDetect(accDev_t *acc)
     if (!ack)
         return false;
 
-    acc->init = lsm303dlhcAccInit;
-    acc->read = lsm303dlhcAccRead;
+    acc->initFn = lsm303dlhcAccInit;
+    acc->readFn = lsm303dlhcAccRead;
     return true;
 }
 #endif

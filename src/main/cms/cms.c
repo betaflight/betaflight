@@ -494,6 +494,8 @@ static void cmsMenuCountPage(displayPort_t *pDisplay)
     pageCount = (p - currentCtx.menu->entries - 1) / MAX_MENU_ITEMS(pDisplay) + 1;
 }
 
+STATIC_UNIT_TESTED long cmsMenuBack(displayPort_t *pDisplay); // Forward; will be resolved after merging
+
 long cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
 {
     CMS_Menu *pMenu = (CMS_Menu *)ptr;
@@ -522,8 +524,9 @@ long cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
         currentCtx.menu = pMenu;
         currentCtx.cursorRow = 0;
 
-        if (pMenu->onEnter)
-            pMenu->onEnter();
+        if (pMenu->onEnter && (pMenu->onEnter() == MENU_CHAIN_BACK)) {
+            return cmsMenuBack(pDisplay);
+        }
 
         cmsMenuCountPage(pDisplay);
         cmsPageSelect(pDisplay, 0);

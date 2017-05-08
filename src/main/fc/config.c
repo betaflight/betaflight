@@ -41,6 +41,7 @@
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/compass/compass.h"
+#include "drivers/inverter.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/light_ws2811strip.h"
@@ -355,62 +356,80 @@ void pgResetFn_serialPinConfig(serialPinConfig_t *serialPinConfig)
         switch (serialPortIdentifiers[index]) {
         case SERIAL_PORT_USART1:
 #ifdef USE_UART1
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART1)] = IO_TAG(UART1_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART1)] = IO_TAG(UART1_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART1)] = IO_TAG(UART1_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART1)] = IO_TAG(UART1_TX_PIN);
+#ifdef INVERTER_PIN_UART1
+            serialPinConfig->ioTagInverter[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART1)] = IO_TAG(INVERTER_PIN_UART1);
+#endif
 #endif
             break;
         case SERIAL_PORT_USART2:
 #ifdef USE_UART2
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART2)] = IO_TAG(UART2_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART2)] = IO_TAG(UART2_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART2)] = IO_TAG(UART2_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART2)] = IO_TAG(UART2_TX_PIN);
+#ifdef INVERTER_PIN_UART2
+            serialPinConfig->ioTagInverter[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART2)] = IO_TAG(INVERTER_PIN_UART2);
+#endif
 #endif
             break;
         case SERIAL_PORT_USART3:
 #ifdef USE_UART3
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART3)] = IO_TAG(UART3_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART3)] = IO_TAG(UART3_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART3)] = IO_TAG(UART3_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART3)] = IO_TAG(UART3_TX_PIN);
+#ifdef INVERTER_PIN_UART3
+            serialPinConfig->ioTagInverter[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART3)] = IO_TAG(INVERTER_PIN_UART3);
+#endif
 #endif
             break;
         case SERIAL_PORT_UART4:
 #ifdef USE_UART4
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_UART4)] = IO_TAG(UART4_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_UART4)] = IO_TAG(UART4_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_UART4)] = IO_TAG(UART4_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_UART4)] = IO_TAG(UART4_TX_PIN);
+#ifdef INVERTER_PIN_UART4
+            serialPinConfig->ioTagInverter[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART4)] = IO_TAG(INVERTER_PIN_UART4);
+#endif
 #endif
             break;
         case SERIAL_PORT_UART5:
 #ifdef USE_UART5
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_UART5)] = IO_TAG(UART5_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_UART5)] = IO_TAG(UART5_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_UART5)] = IO_TAG(UART5_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_UART5)] = IO_TAG(UART5_TX_PIN);
+#ifdef INVERTER_PIN_UART5
+            serialPinConfig->ioTagInverter[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART5)] = IO_TAG(INVERTER_PIN_UART5);
+#endif
 #endif
             break;
         case SERIAL_PORT_USART6:
 #ifdef USE_UART6
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART6)] = IO_TAG(UART6_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART6)] = IO_TAG(UART6_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART6)] = IO_TAG(UART6_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART6)] = IO_TAG(UART6_TX_PIN);
+#ifdef INVERTER_PIN_UART6
+            serialPinConfig->ioTagInverter[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART6)] = IO_TAG(INVERTER_PIN_UART6);
+#endif
 #endif
             break;
         case SERIAL_PORT_USART7:
 #ifdef USE_UART7
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART7)] = IO_TAG(UART7_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART7)] = IO_TAG(UART7_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART7)] = IO_TAG(UART7_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART7)] = IO_TAG(UART7_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_USART8:
 #ifdef USE_UART8
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART8)] = IO_TAG(UART8_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_USART8)] = IO_TAG(UART8_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART8)] = IO_TAG(UART8_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART8)] = IO_TAG(UART8_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_SOFTSERIAL1:
 #ifdef USE_SOFTSERIAL1
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL1)] = IO_TAG(SOFTSERIAL1_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL1)] = IO_TAG(SOFTSERIAL1_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_SOFTSERIAL1)] = IO_TAG(SOFTSERIAL1_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_SOFTSERIAL1)] = IO_TAG(SOFTSERIAL1_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_SOFTSERIAL2:
 #ifdef USE_SOFTSERIAL2
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL2)] = IO_TAG(SOFTSERIAL2_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(SERIAL_PORT_SOFTSERIAL2)] = IO_TAG(SOFTSERIAL2_TX_PIN);
+            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_SOFTSERIAL2)] = IO_TAG(SOFTSERIAL2_RX_PIN);
+            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_SOFTSERIAL2)] = IO_TAG(SOFTSERIAL2_TX_PIN);
 #endif
             break;
         case SERIAL_PORT_USB_VCP:
@@ -523,8 +542,6 @@ void activateConfig(void)
     setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
 
     imuConfigure(throttleCorrectionConfig()->throttle_correction_angle);
-
-    configureAltitudeHold(currentPidProfile);
 #endif
 }
 

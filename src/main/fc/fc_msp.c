@@ -996,9 +996,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_PID:
         for (int i = 0; i < PID_ITEM_COUNT; i++) {
-            sbufWriteU8(dst, currentPidProfile->P8[i]);
-            sbufWriteU8(dst, currentPidProfile->I8[i]);
-            sbufWriteU8(dst, currentPidProfile->D8[i]);
+            sbufWriteU8(dst, currentPidProfile->pid[i].P);
+            sbufWriteU8(dst, currentPidProfile->pid[i].I);
+            sbufWriteU8(dst, currentPidProfile->pid[i].D);
         }
         break;
 
@@ -1444,9 +1444,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
     case MSP_SET_PID:
         for (int i = 0; i < PID_ITEM_COUNT; i++) {
-            currentPidProfile->P8[i] = sbufReadU8(src);
-            currentPidProfile->I8[i] = sbufReadU8(src);
-            currentPidProfile->D8[i] = sbufReadU8(src);
+            currentPidProfile->pid[i].P = sbufReadU8(src);
+            currentPidProfile->pid[i].I = sbufReadU8(src);
+            currentPidProfile->pid[i].D = sbufReadU8(src);
         }
         pidInitConfig(currentPidProfile);
         break;

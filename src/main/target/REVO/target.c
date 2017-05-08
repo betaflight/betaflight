@@ -37,12 +37,12 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM2,  CH3, PA2,  TIM_USE_MOTOR, 1, 0),  // S4_OUT D1_ST1
 #ifdef REVOLT
     DEF_TIM(TIM4,  CH1, PB6,  TIM_USE_LED,   0, 0),  // LED for REVOLT D1_ST0
-#else
-    DEF_TIM(TIM5,  CH2, PA1,  TIM_USE_MOTOR | TIM_USE_LED, 1, 0),  // S5_OUT / LED for REVO D1_ST4
-#ifdef AIRBOTF4
+#elif defined(AIRBOTF4) || defined(AIRBOTF4SD)
+    DEF_TIM(TIM5,  CH2, PA1,  TIM_USE_MOTOR, 1, 0),  // S5_OUT
     DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_MOTOR, 1, 0),  // S6_OUT
+    DEF_TIM(TIM4,  CH1, PB6,  TIM_USE_LED,   0, 0),  // LED D1_ST0, n/a on older AIRBOTF4
 #else
+    DEF_TIM(TIM5,  CH2, PA1,  TIM_USE_MOTOR | TIM_USE_LED, 1, 0),  // S5_OUT / LED
     DEF_TIM(TIM5,  CH1, PA0,  TIM_USE_MOTOR, 1, 0),  // S6_OUT D1_ST2
-#endif /* AIRBOTF4 */
-#endif /* REVOLT */
+#endif
 };

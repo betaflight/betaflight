@@ -83,6 +83,7 @@ typedef struct serialPort_s {
 typedef struct serialPinConfig_s {
     ioTag_t ioTagTx[SERIAL_PORT_MAX_INDEX];
     ioTag_t ioTagRx[SERIAL_PORT_MAX_INDEX];
+    ioTag_t ioTagInverter[SERIAL_PORT_MAX_INDEX];
 } serialPinConfig_t;
 
 struct serialPortVTable {

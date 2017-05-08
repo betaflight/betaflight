@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 
 #include "platform.h"
 
@@ -407,21 +408,21 @@ static void osdDrawSingleElement(uint8_t item)
         case OSD_ROLL_PIDS:
         {
             const pidProfile_t *pidProfile = currentPidProfile;
-            tfp_sprintf(buff, "ROL %3d %3d %3d", pidProfile->P8[PIDROLL], pidProfile->I8[PIDROLL], pidProfile->D8[PIDROLL]);
+            tfp_sprintf(buff, "ROL %3d %3d %3d", pidProfile->pid[PID_ROLL].P, pidProfile->pid[PID_ROLL].I, pidProfile->pid[PID_ROLL].D);
             break;
         }
 
         case OSD_PITCH_PIDS:
         {
             const pidProfile_t *pidProfile = currentPidProfile;
-            tfp_sprintf(buff, "PIT %3d %3d %3d", pidProfile->P8[PIDPITCH], pidProfile->I8[PIDPITCH], pidProfile->D8[PIDPITCH]);
+            tfp_sprintf(buff, "PIT %3d %3d %3d", pidProfile->pid[PID_PITCH].P, pidProfile->pid[PID_PITCH].I, pidProfile->pid[PID_PITCH].D);
             break;
         }
 
         case OSD_YAW_PIDS:
         {
             const pidProfile_t *pidProfile = currentPidProfile;
-            tfp_sprintf(buff, "YAW %3d %3d %3d", pidProfile->P8[PIDYAW], pidProfile->I8[PIDYAW], pidProfile->D8[PIDYAW]);
+            tfp_sprintf(buff, "YAW %3d %3d %3d", pidProfile->pid[PID_YAW].P, pidProfile->pid[PID_YAW].I, pidProfile->pid[PID_YAW].D);
             break;
         }
 
@@ -479,6 +480,36 @@ static void osdDrawSingleElement(uint8_t item)
         break;
     }
 
+    case OSD_MAIN_BATT_USAGE:
+    {
+        //Set length of indicator bar
+        #define MAIN_BATT_USAGE_STEPS 10
+
+        //Calculate constrained value
+        float value = constrain(batteryConfig()->batteryCapacity - getMAhDrawn(), 0, batteryConfig()->batteryCapacity);
+
+        //Calculate mAh used progress
+        uint8_t mAhUsedProgress = ceil((value / (batteryConfig()->batteryCapacity / MAIN_BATT_USAGE_STEPS)));
+
+        //Create empty battery indicator bar
+        buff[0] = SYM_PB_START;
+        for(uint8_t i = 1; i <= MAIN_BATT_USAGE_STEPS; i++) {
+            if (i <= mAhUsedProgress)
+                buff[i] = SYM_PB_FULL;
+            else
+                buff[i] = SYM_PB_EMPTY;
+        }
+        buff[MAIN_BATT_USAGE_STEPS+1] = SYM_PB_CLOSE;
+
+        if (mAhUsedProgress > 0 && mAhUsedProgress < MAIN_BATT_USAGE_STEPS) {
+            buff[1+mAhUsedProgress] = SYM_PB_END;
+        }
+
+        buff[MAIN_BATT_USAGE_STEPS+2] = 0;
+
+        break;
+    }
+
     default:
         return;
     }
@@ -532,6 +563,7 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_DEBUG);
     osdDrawSingleElement(OSD_PITCH_ANGLE);
     osdDrawSingleElement(OSD_ROLL_ANGLE);
+    osdDrawSingleElement(OSD_MAIN_BATT_USAGE);
 
 #ifdef GPS
 #ifdef CMS
@@ -579,6 +611,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdProfile)
 
     osdProfile->item_pos[OSD_GPS_LAT] = OSD_POS(18, 14) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_GPS_LON] = OSD_POS(18, 15) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_MAIN_BATT_USAGE] = OSD_POS(15, 10) | VISIBLE_FLAG;
+
 
     osdProfile->units = OSD_UNIT_METRIC;
     osdProfile->rssi_alarm = 20;
@@ -666,10 +700,14 @@ void osdUpdateAlarms(void)
     else
         CLR_BLINK(OSD_FLYTIME);
 
-    if (getMAhDrawn() >= osdConfig()->cap_alarm)
+    if (getMAhDrawn() >= osdConfig()->cap_alarm) {
         SET_BLINK(OSD_MAH_DRAWN);
-    else
+        SET_BLINK(OSD_MAIN_BATT_USAGE);
+    }
+    else {
         CLR_BLINK(OSD_MAH_DRAWN);
+        CLR_BLINK(OSD_MAIN_BATT_USAGE);
+    }
 
     if (alt >= osdConfig()->alt_alarm)
         SET_BLINK(OSD_ALTITUDE);
@@ -687,6 +725,7 @@ void osdResetAlarms(void)
     CLR_BLINK(OSD_MAH_DRAWN);
     CLR_BLINK(OSD_ALTITUDE);
     CLR_BLINK(OSD_AVG_CELL_VOLTAGE);
+    CLR_BLINK(OSD_MAIN_BATT_USAGE);
 }
 
 static void osdResetStats(void)

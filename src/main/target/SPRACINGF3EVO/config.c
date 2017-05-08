@@ -44,12 +44,12 @@ void targetConfiguration(void)
 
     motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
 
-    pidProfilesMutable(0)->P8[FD_ROLL] = 90;
-    pidProfilesMutable(0)->I8[FD_ROLL] = 44;
-    pidProfilesMutable(0)->D8[FD_ROLL] = 60;
-    pidProfilesMutable(0)->P8[FD_PITCH] = 90;
-    pidProfilesMutable(0)->I8[FD_PITCH] = 44;
-    pidProfilesMutable(0)->D8[FD_PITCH] = 60;
+    pidProfilesMutable(0)->pid[FD_ROLL].P = 90;
+    pidProfilesMutable(0)->pid[FD_ROLL].I = 44;
+    pidProfilesMutable(0)->pid[FD_ROLL].D = 60;
+    pidProfilesMutable(0)->pid[FD_PITCH].P = 90;
+    pidProfilesMutable(0)->pid[FD_PITCH].I = 44;
+    pidProfilesMutable(0)->pid[FD_PITCH].D = 60;
 #endif
 }
 #endif

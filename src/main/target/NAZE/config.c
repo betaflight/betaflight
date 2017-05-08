@@ -64,16 +64,16 @@ void targetConfiguration(void)
     }*/
 
     for (int profileId = 0; profileId < 2; profileId++) {
-        pidProfilesMutable(0)->P8[ROLL] = 60;
-        pidProfilesMutable(0)->I8[ROLL] = 70;
-        pidProfilesMutable(0)->D8[ROLL] = 17;
-        pidProfilesMutable(0)->P8[PITCH] = 80;
-        pidProfilesMutable(0)->I8[PITCH] = 90;
-        pidProfilesMutable(0)->D8[PITCH] = 18;
-        pidProfilesMutable(0)->P8[YAW] = 200;
-        pidProfilesMutable(0)->I8[YAW] = 45;
-        pidProfilesMutable(0)->P8[PIDLEVEL] = 30;
-        pidProfilesMutable(0)->D8[PIDLEVEL] = 30;
+        pidProfilesMutable(0)->pid[PID_ROLL].P = 60;
+        pidProfilesMutable(0)->pid[PID_ROLL].I = 70;
+        pidProfilesMutable(0)->pid[PID_ROLL].D = 17;
+        pidProfilesMutable(0)->pid[PID_PITCH].P = 80;
+        pidProfilesMutable(0)->pid[PID_PITCH].I = 90;
+        pidProfilesMutable(0)->pid[PID_PITCH].D = 18;
+        pidProfilesMutable(0)->pid[PID_YAW].P = 200;
+        pidProfilesMutable(0)->pid[PID_YAW].I = 45;
+        pidProfilesMutable(0)->pid[PID_LEVEL].P = 30;
+        pidProfilesMutable(0)->pid[PID_LEVEL].D = 30;
 
         for (int rateProfileId = 0; rateProfileId < CONTROL_RATE_PROFILE_COUNT; rateProfileId++) {
             controlRateProfilesMutable(rateProfileId)->rcRate8 = 100;

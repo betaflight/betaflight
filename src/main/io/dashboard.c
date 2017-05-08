@@ -325,9 +325,9 @@ void showProfilePage(void)
     for (int axis = 0; axis < 3; ++axis) {
         tfp_sprintf(lineBuffer, "%s P:%3d I:%3d D:%3d",
             axisTitles[axis],
-            pidProfile->P8[axis],
-            pidProfile->I8[axis],
-            pidProfile->D8[axis]
+            pidProfile->pid[axis].P,
+            pidProfile->pid[axis].I,
+            pidProfile->pid[axis].D
         );
         padLineBuffer();
         i2c_OLED_set_line(rowIndex++);
