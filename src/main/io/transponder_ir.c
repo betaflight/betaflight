@@ -30,6 +30,7 @@
 #include "config/parameter_group_ids.h"
 
 #include "drivers/transponder_ir.h"
+#include "drivers/system.h"
 #include "drivers/usb_io.h"
 
 #include "fc/config.h"
@@ -39,7 +40,7 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(transponderConfig_t, transponderConfig, PG_TRANSPONDER_CONFIG, 0);
 
 PG_RESET_TEMPLATE(transponderConfig_t, transponderConfig,
-    .provider = ILAP,
+    .provider = TRANSPONDER_ILAP,
     .reserved = 0,
     .data = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0x0, 0x0, 0x0 }, // Note, this is NOT a valid transponder code, it's just for testing production hardware
 );
@@ -52,6 +53,12 @@ static timeUs_t nextUpdateAtUs = 0;
 
 #define JITTER_DURATION_COUNT (sizeof(jitterDurations) / sizeof(uint8_t))
 static uint8_t jitterDurations[] = {0,9,4,8,3,9,6,7,1,6,9,7,8,2,6};
+
+const transponderRequirement_t transponderRequirements[TRANSPONDER_PROVIDER_COUNT] = {
+    {TRANSPONDER_ILAP, TRANSPONDER_DATA_LENGTH_ILAP, TRANSPONDER_TRANSMIT_DELAY_ILAP, TRANSPONDER_TRANSMIT_JITTER_ILAP},
+    {TRANSPONDER_ARCITIMER, TRANSPONDER_DATA_LENGTH_ARCITIMER, TRANSPONDER_TRANSMIT_DELAY_ARCITIMER, TRANSPONDER_TRANSMIT_JITTER_ARCITIMER},
+    {TRANSPONDER_ERLT, TRANSPONDER_DATA_LENGTH_ERLT, TRANSPONDER_TRANSMIT_DELAY_ERLT, TRANSPONDER_TRANSMIT_JITTER_ERLT}
+};
 
 void transponderUpdate(timeUs_t currentTimeUs)
 {
@@ -66,13 +73,15 @@ void transponderUpdate(timeUs_t currentTimeUs)
         return;
     }
 
-    // TODO use a random number genenerator for random jitter?  The idea here is to avoid multiple transmitters transmitting at the same time.
-    uint32_t jitter = (1000 * jitterDurations[jitterIndex++]);
+    uint8_t provider = transponderConfig()->provider;
+
+    // TODO use a random number generator for random jitter?  The idea here is to avoid multiple transmitters transmitting at the same time.
+    uint32_t jitter = (transponderRequirements[provider - 1].transmitJitter / 10 * jitterDurations[jitterIndex++]);
     if (jitterIndex >= JITTER_DURATION_COUNT) {
         jitterIndex = 0;
     }
 
-    nextUpdateAtUs = currentTimeUs + 4500 + jitter;
+    nextUpdateAtUs = currentTimeUs + transponderRequirements[provider - 1].transmitDelay + jitter;
 
 #ifdef REDUCE_TRANSPONDER_CURRENT_DRAW_WHEN_USB_CABLE_PRESENT
     // reduce current draw when USB cable is plugged in by decreasing the transponder transmit rate.
