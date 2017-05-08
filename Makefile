@@ -1158,6 +1158,7 @@ CFLAGS      += $(ARCH_FLAGS) \
               $(DEBUG_FLAGS) \
               -std=gnu99 \
               -Wall -Wextra -Wunsafe-loop-optimizations -Wdouble-promotion \
+              -Werror \
               -ffunction-sections \
               -fdata-sections \
               -pedantic \
