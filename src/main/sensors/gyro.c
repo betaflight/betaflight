@@ -73,7 +73,7 @@ gyro_t gyro;
 
 
 typedef struct gyroCalibration_s {
-    int32_t g[XYZ_AXIS_COUNT];
+    int32_t sum[XYZ_AXIS_COUNT];
     stdev_t var[XYZ_AXIS_COUNT];
     uint16_t calibratingG;
 } gyroCalibration_t;
@@ -86,7 +86,7 @@ typedef union gyroSoftFilter_u {
 
 typedef struct gyroSensor_s {
     gyroDev_t gyroDev;
-    gyroCalibration_t gyroCalibration;
+    gyroCalibration_t calibration;
     // gyro soft filter
     filterApplyFnPtr softLpfFilterApplyFn;
     gyroSoftLpfFilter_t softLpfFilter;
@@ -433,7 +433,7 @@ void gyroInitFilters(void)
 
 bool isGyroSensorCalibrationComplete(const gyroSensor_t *gyroSensor)
 {
-    return gyroSensor->gyroCalibration.calibratingG == 0;
+    return gyroSensor->calibration.calibratingG == 0;
 }
 
 bool isGyroCalibrationComplete(void)
@@ -458,7 +458,7 @@ static bool isOnFirstGyroCalibrationCycle(const gyroCalibration_t *gyroCalibrati
 
 static void gyroSetCalibrationCycles(gyroSensor_t *gyroSensor)
 {
-    gyroSensor->gyroCalibration.calibratingG = gyroCalculateCalibratingCycles();
+    gyroSensor->calibration.calibratingG = gyroCalculateCalibratingCycles();
 }
 
 void gyroStartCalibration(void)
@@ -470,19 +470,19 @@ STATIC_UNIT_TESTED void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t
 {
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         // Reset g[axis] at start of calibration
-        if (isOnFirstGyroCalibrationCycle(&gyroSensor->gyroCalibration)) {
-            gyroSensor->gyroCalibration.g[axis] = 0;
-            devClear(&gyroSensor->gyroCalibration.var[axis]);
+        if (isOnFirstGyroCalibrationCycle(&gyroSensor->calibration)) {
+            gyroSensor->calibration.sum[axis] = 0;
+            devClear(&gyroSensor->calibration.var[axis]);
             // gyroZero is set to zero until calibration complete
             gyroSensor->gyroDev.gyroZero[axis] = 0;
         }
 
         // Sum up CALIBRATING_GYRO_CYCLES readings
-        gyroSensor->gyroCalibration.g[axis] += gyroSensor->gyroDev.gyroADCRaw[axis];
-        devPush(&gyroSensor->gyroCalibration.var[axis], gyroSensor->gyroDev.gyroADCRaw[axis]);
+        gyroSensor->calibration.sum[axis] += gyroSensor->gyroDev.gyroADCRaw[axis];
+        devPush(&gyroSensor->calibration.var[axis], gyroSensor->gyroDev.gyroADCRaw[axis]);
 
-        if (isOnFinalGyroCalibrationCycle(&gyroSensor->gyroCalibration)) {
-            const float stddev = devStandardDeviation(&gyroSensor->gyroCalibration.var[axis]);
+        if (isOnFinalGyroCalibrationCycle(&gyroSensor->calibration)) {
+            const float stddev = devStandardDeviation(&gyroSensor->calibration.var[axis]);
 
             DEBUG_SET(DEBUG_GYRO, DEBUG_GYRO_CALIBRATION, lrintf(stddev));
 
@@ -491,15 +491,15 @@ STATIC_UNIT_TESTED void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t
                 gyroSetCalibrationCycles(gyroSensor);
                 return;
             }
-            gyroSensor->gyroDev.gyroZero[axis] = (gyroSensor->gyroCalibration.g[axis] + (gyroCalculateCalibratingCycles() / 2)) / gyroCalculateCalibratingCycles();
+            gyroSensor->gyroDev.gyroZero[axis] = (gyroSensor->calibration.sum[axis] + (gyroCalculateCalibratingCycles() / 2)) / gyroCalculateCalibratingCycles();
         }
     }
 
-    if (isOnFinalGyroCalibrationCycle(&gyroSensor->gyroCalibration)) {
+    if (isOnFinalGyroCalibrationCycle(&gyroSensor->calibration)) {
         schedulerResetTaskStatistics(TASK_SELF); // so calibration cycles do not pollute tasks statistics
         beeper(BEEPER_GYRO_CALIBRATED);
     }
-    --gyroSensor->gyroCalibration.calibratingG;
+    --gyroSensor->calibration.calibratingG;
 
 }
 
