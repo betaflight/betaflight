@@ -351,42 +351,42 @@ serialPort_t *openSerialPort(
 #endif
 #ifdef USE_UART1
         case SERIAL_PORT_USART1:
-            serialPort = uartOpen(USART1, rxCallback, baudRate, mode, options);
+            serialPort = uartOpen(UARTDEV_1, rxCallback, baudRate, mode, options);
             break;
 #endif
 #ifdef USE_UART2
         case SERIAL_PORT_USART2:
-            serialPort = uartOpen(USART2, rxCallback, baudRate, mode, options);
+            serialPort = uartOpen(UARTDEV_2, rxCallback, baudRate, mode, options);
             break;
 #endif
 #ifdef USE_UART3
         case SERIAL_PORT_USART3:
-            serialPort = uartOpen(USART3, rxCallback, baudRate, mode, options);
+            serialPort = uartOpen(UARTDEV_3, rxCallback, baudRate, mode, options);
             break;
 #endif
 #ifdef USE_UART4
         case SERIAL_PORT_UART4:
-            serialPort = uartOpen(UART4, rxCallback, baudRate, mode, options);
+            serialPort = uartOpen(UARTDEV_4, rxCallback, baudRate, mode, options);
             break;
 #endif
 #ifdef USE_UART5
         case SERIAL_PORT_UART5:
-            serialPort = uartOpen(UART5, rxCallback, baudRate, mode, options);
+            serialPort = uartOpen(UARTDEV_5, rxCallback, baudRate, mode, options);
             break;
 #endif
 #ifdef USE_UART6
         case SERIAL_PORT_USART6:
-            serialPort = uartOpen(USART6, rxCallback, baudRate, mode, options);
+            serialPort = uartOpen(UARTDEV_6, rxCallback, baudRate, mode, options);
             break;
 #endif
 #ifdef USE_UART7
         case SERIAL_PORT_USART7:
-            serialPort = uartOpen(UART7, rxCallback, baudRate, mode, options);
+            serialPort = uartOpen(UARTDEV_7, rxCallback, baudRate, mode, options);
             break;
 #endif
 #ifdef USE_UART8
         case SERIAL_PORT_USART8:
-            serialPort = uartOpen(UART8, rxCallback, baudRate, mode, options);
+            serialPort = uartOpen(UARTDEV_8, rxCallback, baudRate, mode, options);
             break;
 #endif
 #ifdef USE_SOFTSERIAL1

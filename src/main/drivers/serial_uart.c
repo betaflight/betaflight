@@ -100,37 +100,43 @@ static void uartReconfigure(uartPort_t *uartPort)
     USART_Cmd(uartPort->USARTx, ENABLE);
 }
 
-serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr rxCallback, uint32_t baudRate, portMode_t mode, portOptions_t options)
+serialPort_t *uartOpen(UARTDevice device, serialReceiveCallbackPtr rxCallback, uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     uartPort_t *s = NULL;
 
     if (false) {
 #ifdef USE_UART1
-    } else if (USARTx == USART1) {
+    } else if (device == UARTDEV_1) {
         s = serialUART1(baudRate, mode, options);
-
 #endif
 #ifdef USE_UART2
-    } else if (USARTx == USART2) {
+    } else if (device == UARTDEV_2) {
         s = serialUART2(baudRate, mode, options);
 #endif
 #ifdef USE_UART3
-    } else if (USARTx == USART3) {
+    } else if (device == UARTDEV_3) {
         s = serialUART3(baudRate, mode, options);
 #endif
 #ifdef USE_UART4
-    } else if (USARTx == UART4) {
+    } else if (device == UARTDEV_4) {
         s = serialUART4(baudRate, mode, options);
 #endif
 #ifdef USE_UART5
-    } else if (USARTx == UART5) {
+    } else if (device == UARTDEV_5) {
         s = serialUART5(baudRate, mode, options);
 #endif
 #ifdef USE_UART6
-    } else if (USARTx == USART6) {
+    } else if (device == UARTDEV_6) {
         s = serialUART6(baudRate, mode, options);
 #endif
-
+#ifdef USE_UART7
+    } else if (device == UARTDEV_7) {
+        s = serialUART7(baudRate, mode, options);
+#endif
+#ifdef USE_UART8
+    } else if (device == UARTDEV_8) {
+        s = serialUART8(baudRate, mode, options);
+#endif
     } else {
         return (serialPort_t *)s;
     }
