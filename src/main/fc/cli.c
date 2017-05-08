@@ -62,6 +62,7 @@ extern uint8_t __config_end;
 #include "drivers/flash.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
+#include "drivers/inverter.h"
 #include "drivers/rx_pwm.h"
 #include "drivers/sdcard.h"
 #include "drivers/sensor.h"
@@ -188,7 +189,7 @@ static void cliPrint(const char *str)
     bufWriterFlush(cliWriter);
 }
 
-static void cliPrintBlankLine()
+static void cliPrintLinefeed()
 {
     cliPrint("\r\n");
 }
@@ -196,7 +197,7 @@ static void cliPrintBlankLine()
 static void cliPrintLine(const char *str)
 {
     cliPrint(str);
-    cliPrintBlankLine();
+    cliPrintLinefeed();
 }
 
 #ifdef MINIMAL_CLI
@@ -234,7 +235,7 @@ static void cliPrintLinefva(const char *format, va_list va)
 {
     tfp_format(cliWriter, cliPutp, format, va);
     bufWriterFlush(cliWriter);
-    cliPrintBlankLine();
+    cliPrintLinefeed();
 }
 
 static bool cliDumpPrintLinef(uint8_t dumpMask, bool equalsDefault, const char *format, ...)
@@ -377,11 +378,11 @@ static void dumpPgValue(const clivalue_t *value, uint8_t dumpMask)
         if (dumpMask & SHOW_DEFAULTS && !equalsDefault) {
             cliPrintf(defaultFormat, value->name);
             printValuePointer(value, (uint8_t*)pg->address + valueOffset, 0);
-            cliPrintBlankLine();
+            cliPrintLinefeed();
         }
         cliPrintf(format, value->name);
         printValuePointer(value, (uint8_t*)pg->copy + valueOffset, 0);
-        cliPrintBlankLine();
+        cliPrintLinefeed();
     }
 }
 
@@ -418,7 +419,7 @@ static void cliPrintVarRange(const clivalue_t *var)
                 cliPrint(",");
             cliPrintf(" %s", tableEntry->values[i]);
         }
-        cliPrintBlankLine();
+        cliPrintLinefeed();
     }
     break;
     }
@@ -450,7 +451,7 @@ static void cliRepeat(char ch, uint8_t len)
     for (int i = 0; i < len; i++) {
         bufWriterAppend(cliWriter, ch);
     }
-    cliPrintBlankLine();
+    cliPrintLinefeed();
 }
 #endif
 
@@ -1484,7 +1485,7 @@ static void printServoMix(uint8_t dumpMask, const servoMixer_t *customServoMixer
         );
     }
 
-    cliPrintBlankLine();
+    cliPrintLinefeed();
 }
 
 static void cliServoMix(char *cmdline)
@@ -1526,13 +1527,13 @@ static void cliServoMix(char *cmdline)
             cliPrintf("s");
             for (uint32_t inputSource = 0; inputSource < INPUT_SOURCE_COUNT; inputSource++)
                 cliPrintf("\ti%d", inputSource);
-            cliPrintBlankLine();
+            cliPrintLinefeed();
 
             for (uint32_t servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
                 cliPrintf("%d", servoIndex);
                 for (uint32_t inputSource = 0; inputSource < INPUT_SOURCE_COUNT; inputSource++)
                     cliPrintf("\t%s  ", (servoParams(servoIndex)->reversedSources & (1 << inputSource)) ? "r" : "n");
-                cliPrintBlankLine();
+                cliPrintLinefeed();
             }
             return;
         }
@@ -1665,7 +1666,7 @@ static void cliSdInfo(char *cmdline)
             }
         break;
     }
-    cliPrintBlankLine();
+    cliPrintLinefeed();
 }
 
 #endif
@@ -1702,7 +1703,7 @@ static void cliFlashErase(char *cmdline)
         cliPrintf(".");
         if (i++ > 120) {
             i=0;
-            cliPrintBlankLine();
+            cliPrintLinefeed();
         }
 
         bufWriterFlush(cliWriter);
@@ -1710,7 +1711,7 @@ static void cliFlashErase(char *cmdline)
         delay(100);
     }
     beeper(BEEPER_BLACKBOX_ERASE);
-    cliPrintBlankLine();
+    cliPrintLinefeed();
     cliPrintLine("Done.");
 }
 
@@ -1761,7 +1762,7 @@ static void cliFlashRead(char *cmdline)
                 break;
             }
         }
-        cliPrintBlankLine();
+        cliPrintLinefeed();
     }
 }
 
@@ -1912,7 +1913,7 @@ static void cliFeature(char *cmdline)
             if (mask & (1 << i))
                 cliPrintf("%s ", featureNames[i]);
         }
-        cliPrintBlankLine();
+        cliPrintLinefeed();
     } else if (strncasecmp(cmdline, "list", len) == 0) {
         cliPrint("Available:");
         for (uint32_t i = 0; ; i++) {
@@ -1920,7 +1921,7 @@ static void cliFeature(char *cmdline)
                 break;
             cliPrintf(" %s", featureNames[i]);
         }
-        cliPrintBlankLine();
+        cliPrintLinefeed();
         return;
     } else {
         bool remove = false;
@@ -1997,12 +1998,12 @@ static void cliBeeper(char *cmdline)
             if (mask & (1 << i))
                 cliPrintf("  %s", beeperNameForTableIndex(i));
         }
-        cliPrintBlankLine();
+        cliPrintLinefeed();
     } else if (strncasecmp(cmdline, "list", len) == 0) {
         cliPrint("Available:");
         for (uint32_t i = 0; i < beeperCount; i++)
             cliPrintf(" %s", beeperNameForTableIndex(i));
-        cliPrintBlankLine();
+        cliPrintLinefeed();
         return;
     } else {
         bool remove = false;
@@ -2316,7 +2317,7 @@ static void cliMixer(char *cmdline)
                 break;
             cliPrintf(" %s", mixerNames[i]);
         }
-        cliPrintBlankLine();
+        cliPrintLinefeed();
         return;
     }
 
@@ -2451,7 +2452,7 @@ static void cliDumpPidProfile(uint8_t pidProfileIndex, uint8_t dumpMask)
     changePidProfile(pidProfileIndex);
     cliPrintHashLine("profile");
     cliProfile("");
-    cliPrintBlankLine();
+    cliPrintLinefeed();
     dumpAllValues(PROFILE_VALUE, dumpMask);
 }
 
@@ -2464,7 +2465,7 @@ static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask)
     changeControlRateProfile(rateProfileIndex);
     cliPrintHashLine("rateprofile");
     cliRateProfile("");
-    cliPrintBlankLine();
+    cliPrintLinefeed();
     dumpAllValues(PROFILE_RATE_VALUE, dumpMask);
 }
 
@@ -2496,9 +2497,9 @@ static void cliGet(char *cmdline)
             val = &valueTable[i];
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, 0);
-            cliPrintBlankLine();
+            cliPrintLinefeed();
             cliPrintVarRange(val);
-            cliPrintBlankLine();
+            cliPrintLinefeed();
 
             matchedCommands++;
         }
@@ -2526,7 +2527,7 @@ static void cliSet(char *cmdline)
             val = &valueTable[i];
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, len); // when len is 1 (when * is passed as argument), it will print min/max values as well, for gui
-            cliPrintBlankLine();
+            cliPrintLinefeed();
         }
     } else if ((eqptr = strstr(cmdline, "=")) != NULL) {
         // has equals
@@ -2620,7 +2621,7 @@ static void cliStatus(char *cmdline)
         }
     }
 #endif /* USE_SENSOR_NAMES */
-    cliPrintBlankLine();
+    cliPrintLinefeed();
 
 #ifdef USE_SDCARD
     cliSdInfo(NULL);
@@ -2753,6 +2754,9 @@ const cliResourceValue_t resourceTable[] = {
 #endif
     { OWNER_SERIAL_TX,     PG_SERIAL_PIN_CONFIG, offsetof(serialPinConfig_t, ioTagTx[0]), SERIAL_PORT_MAX_INDEX },
     { OWNER_SERIAL_RX,     PG_SERIAL_PIN_CONFIG, offsetof(serialPinConfig_t, ioTagRx[0]), SERIAL_PORT_MAX_INDEX },
+#ifdef USE_INVERTER
+    { OWNER_INVERTER,      PG_SERIAL_PIN_CONFIG, offsetof(serialPinConfig_t, ioTagInverter[0]), SERIAL_PORT_MAX_INDEX },
+#endif
 };
 
 static ioTag_t *getIoTag(const cliResourceValue_t value, uint8_t index)
@@ -2781,7 +2785,7 @@ static void printResource(uint8_t dumpMask)
             const ioTag_t ioTagDefault = *((const ioTag_t *)defaultConfig + resourceTable[i].offset + index);
 
             bool equalsDefault = ioTag == ioTagDefault;
-            const char *format = "resource %s %d %c%02dn";
+            const char *format = "resource %s %d %c%02d";
             const char *formatUnassigned = "resource %s %d NONE";
             if (!ioTagDefault) {
                 cliDefaultPrintLinef(dumpMask, equalsDefault, formatUnassigned, owner, RESOURCE_INDEX(index));
@@ -2863,15 +2867,15 @@ static void cliResource(char *cmdline)
             const char* owner;
             owner = ownerNames[ioRecs[i].owner];
 
-            cliPrintf("%c%02d: %s ", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
+            cliPrintf("%c%02d: %s", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
             if (ioRecs[i].index > 0) {
-                cliPrintf("%d", ioRecs[i].index);
+                cliPrintf(" %d", ioRecs[i].index);
             }
-            cliPrintLine("\r\n");
+            cliPrintLinefeed();
         }
 
-        cliPrintLine("\r\n");
-        cliPrintLine("\r\n");
+        cliPrintLinefeed();
+
 #ifdef MINIMAL_CLI
         cliPrintLine("DMA:");
 #else
@@ -3033,7 +3037,7 @@ static void printConfig(char *cmdline, bool doDiff)
         if ((dumpMask & (DUMP_ALL | DO_DIFF)) == (DUMP_ALL | DO_DIFF)) {
             cliPrintHashLine("reset configuration to default settings");
             cliPrint("defaults");
-            cliPrintBlankLine();
+            cliPrintLinefeed();
         }
 
         cliPrintHashLine("name");
@@ -3289,7 +3293,7 @@ static void cliHelp(char *cmdline)
             cliPrintf("\r\n\t%s", cmdTable[i].args);
         }
 #endif
-        cliPrintBlankLine();
+        cliPrintLinefeed();
     }
 }
 
@@ -3349,7 +3353,7 @@ void cliProcess(void)
             cliPrompt();
         } else if (bufferIndex && (c == '\n' || c == '\r')) {
             // enter pressed
-            cliPrintBlankLine();
+            cliPrintLinefeed();
 
             // Strip comment starting with # from line
             char *p = cliBuffer;

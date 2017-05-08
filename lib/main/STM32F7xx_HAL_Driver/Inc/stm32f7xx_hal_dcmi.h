@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_dcmi.h
   * @author  MCD Application Team
-  * @version V1.2.1
-  * @date    24-March-2017
+  * @version V1.2.2
+  * @date    14-April-2017
   * @brief   Header file of DCMI HAL module.
   ******************************************************************************
   * @attention

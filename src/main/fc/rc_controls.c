@@ -65,7 +65,7 @@ static pidProfile_t *pidProfile;
 // true if arming is done via the sticks (as opposed to a switch)
 static bool isUsingSticksToArm = true;
 
-int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
+float rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
 
 uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
 
@@ -197,7 +197,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
 
     if (rcSticks == THR_LO + YAW_LO + PIT_LO + ROL_CE) {
         // GYRO calibration
-        gyroSetCalibrationCycles();
+        gyroStartCalibration();
 
 #ifdef GPS
         if (feature(FEATURE_GPS)) {

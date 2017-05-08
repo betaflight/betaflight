@@ -380,7 +380,7 @@ rollAndPitchInclination_t inclination;
 rxRuntimeConfig_t rxRuntimeConfig;
 
 int16_t axisPID[XYZ_AXIS_COUNT];
-int16_t rcCommand[4];
+float rcCommand[4];
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
 uint32_t rcModeActivationMask;

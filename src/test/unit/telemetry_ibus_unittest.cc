@@ -38,7 +38,7 @@ extern "C" {
 
 extern "C" {
     uint8_t testBatteryCellCount =3;
-    int16_t rcCommand[4] = {0, 0, 0, 0};
+    float rcCommand[4] = {0, 0, 0, 0};
     telemetryConfig_t telemetryConfig_System;
 }
 

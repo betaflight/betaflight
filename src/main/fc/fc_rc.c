@@ -173,11 +173,11 @@ static void scaleRcCommandToFpvCamAngle(void) {
 
 void processRcCommand(void)
 {
-    static int16_t lastCommand[4] = { 0, 0, 0, 0 };
-    static int16_t deltaRC[4] = { 0, 0, 0, 0 };
-    static int16_t factor, rcInterpolationFactor;
+    static float rcCommandInterp[4] = { 0, 0, 0, 0 };
+    static float rcStepSize[4] = { 0, 0, 0, 0 };
+    static int16_t rcInterpolationStepCount;
     static uint16_t currentRxRefreshRate;
-    const uint8_t interpolationChannels = rxConfig()->rcInterpolationChannels + 2;
+    const uint8_t interpolationChannels = rxConfig()->rcInterpolationChannels + 2; //"RP", "RPY", "RPYT"
     uint16_t rxRefreshRate;
     bool readyToCalculateRate = false;
     uint8_t readyToCalculateRateAxisCnt = 0;
@@ -204,36 +204,34 @@ void processRcCommand(void)
                 rxRefreshRate = rxGetRefreshRate();
         }
 
-        if (isRXDataNew) {
-            rcInterpolationFactor = rxRefreshRate / targetPidLooptime + 1;
-
-            if (debugMode == DEBUG_RC_INTERPOLATION) {
-                for(int axis = 0; axis < 2; axis++) debug[axis] = rcCommand[axis];
-                debug[3] = rxRefreshRate;
-            }
+        if (isRXDataNew && rxRefreshRate > 0) {
+            rcInterpolationStepCount = rxRefreshRate / targetPidLooptime;
 
             for (int channel=ROLL; channel < interpolationChannels; channel++) {
-                deltaRC[channel] = rcCommand[channel] -  (lastCommand[channel] - deltaRC[channel] * factor / rcInterpolationFactor);
-                lastCommand[channel] = rcCommand[channel];
+                rcStepSize[channel] = (rcCommand[channel] - rcCommandInterp[channel]) / (float)rcInterpolationStepCount;
             }
 
-            factor = rcInterpolationFactor - 1;
+            if (debugMode == DEBUG_RC_INTERPOLATION) {
+                debug[0] = lrintf(rcCommand[0]);
+                debug[1] = lrintf(getTaskDeltaTime(TASK_RX) / 1000);
+                //debug[1] = lrintf(rcCommandInterp[0]);
+                //debug[1] = lrintf(rcStepSize[0]*100);
+            }
         } else {
-            factor--;
+            rcInterpolationStepCount--;
         }
 
         // Interpolate steps of rcCommand
-        if (factor > 0) {
+        if (rcInterpolationStepCount > 0) {
             for (int channel=ROLL; channel < interpolationChannels; channel++) {
-                rcCommand[channel] = lastCommand[channel] - deltaRC[channel] * factor/rcInterpolationFactor;
-                readyToCalculateRateAxisCnt = MAX(channel,FD_YAW); // throttle channel doesn't require rate calculation
-                readyToCalculateRate = true;
+                rcCommandInterp[channel] += rcStepSize[channel];
+                rcCommand[channel] = rcCommandInterp[channel];
+                readyToCalculateRateAxisCnt = MAX(channel, FD_YAW); // throttle channel doesn't require rate calculation
             }
-        } else {
-            factor = 0;
+            readyToCalculateRate = true;
         }
     } else {
-        factor = 0; // reset factor in case of level modes flip flopping
+        rcInterpolationStepCount = 0; // reset factor in case of level modes flip flopping
     }
 
     if (readyToCalculateRate || isRXDataNew) {
@@ -243,6 +241,10 @@ void processRcCommand(void)
         for (int axis = 0; axis <= readyToCalculateRateAxisCnt; axis++)
             calculateSetpointRate(axis);
 
+        if (debugMode == DEBUG_RC_INTERPOLATION) {
+            debug[2] = rcInterpolationStepCount;
+            debug[3] = setpointRate[0];
+        }
         // Scaling of AngleRate to camera angle (Mixing Roll and Yaw)
         if (rxConfig()->fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE))
             scaleRcCommandToFpvCamAngle();
@@ -311,7 +313,7 @@ void updateRcCommands(void)
         const float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
         const float cosDiff = cos_approx(radDiff);
         const float sinDiff = sin_approx(radDiff);
-        const int16_t rcCommand_PITCH = rcCommand[PITCH] * cosDiff + rcCommand[ROLL] * sinDiff;
+        const float rcCommand_PITCH = rcCommand[PITCH] * cosDiff + rcCommand[ROLL] * sinDiff;
         rcCommand[ROLL] = rcCommand[ROLL] * cosDiff - rcCommand[PITCH] * sinDiff;
         rcCommand[PITCH] = rcCommand_PITCH;
     }

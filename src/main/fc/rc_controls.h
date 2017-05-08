@@ -151,7 +151,7 @@ typedef struct modeActivationProfile_s {
 
 #define IS_RANGE_USABLE(range) ((range)->startStep < (range)->endStep)
 
-extern int16_t rcCommand[4];
+extern float rcCommand[4];
 
 typedef struct rcControlsConfig_s {
     uint8_t deadband;                       // introduce a deadband around the stick center for pitch and roll axis. Must be greater than zero.

@@ -339,7 +339,7 @@ void init(void)
 #endif
 /* temp until PGs are implemented. */
 #ifdef USE_INVERTER
-    initInverters();
+    initInverters(serialPinConfig());
 #endif
 
 #ifdef TARGET_BUS_INIT
@@ -556,7 +556,7 @@ void init(void)
     if (mixerConfig()->mixerMode == MIXER_GIMBAL) {
         accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
     }
-    gyroSetCalibrationCycles();
+    gyroStartCalibration();
 #ifdef BARO
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
 #endif

@@ -20,33 +20,17 @@
 
 #include <platform.h>
 
-#include "common/axis.h"
-
-#include "drivers/sensor.h"
-#include "drivers/compass/compass.h"
-#include "drivers/serial.h"
-
-#include "fc/rc_controls.h"
-
-#include "flight/failsafe.h"
-#include "flight/mixer.h"
-#include "flight/pid.h"
-
-#include "rx/rx.h"
+#ifdef TARGET_CONFIG
 
 #include "io/serial.h"
 
-#include "telemetry/telemetry.h"
+#include "rx/rx.h"
 
-#include "sensors/sensors.h"
-#include "sensors/compass.h"
 #include "sensors/barometer.h"
 
-#include "config/feature.h"
+#include "telemetry/telemetry.h"
 
-#include "fc/config.h"
 
-#ifdef TARGET_CONFIG
 void targetConfiguration(void)
 {
     barometerConfigMutable()->baro_hardware = BARO_DEFAULT;

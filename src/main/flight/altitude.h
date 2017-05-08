@@ -31,9 +31,6 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs);
 int32_t getEstimatedAltitude(void);
 int32_t getEstimatedVario(void);
 
-struct pidProfile_s;
-void configureAltitudeHold(struct pidProfile_s *initialPidProfile);
-
 void applyAltHold(void);
 void updateAltHoldState(void);
 void updateSonarAltHoldState(void);
