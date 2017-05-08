@@ -378,6 +378,36 @@ uartPort_t *serialUART5(uint32_t baudRate, portMode_t mode, portOptions_t option
 }
 #endif
 
+// Temporary solution until serialUARTx() are refactored/consolidated
+
+uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, portOptions_t options)
+{
+    switch (device) {
+#ifdef USE_UART1
+    case UARTDEV_1:
+        return serialUART1(baudRate, mode, options);
+#endif
+#ifdef USE_UART2
+    case UARTDEV_2:
+        return serialUART2(baudRate, mode, options);
+#endif
+#ifdef USE_UART3
+    case UARTDEV_3:
+        return serialUART3(baudRate, mode, options);
+#endif
+#ifdef USE_UART4
+    case UARTDEV_4:
+        return serialUART4(baudRate, mode, options);
+#endif
+#ifdef USE_UART5
+    case UARTDEV_5:
+        return serialUART5(baudRate, mode, options);
+#endif
+    default:
+        return NULL;
+    }
+}
+
 void usartIrqHandler(uartPort_t *s)
 {
     uint32_t ISR = s->USARTx->ISR;
