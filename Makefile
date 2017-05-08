@@ -563,6 +563,7 @@ COMMON_SRC = \
 
 HIGHEND_SRC = \
             blackbox/blackbox.c \
+            blackbox/blackbox_encoding.c \
             blackbox/blackbox_io.c \
             cms/cms.c \
             cms/cms_menu_blackbox.c \
