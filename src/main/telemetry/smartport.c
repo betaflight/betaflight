@@ -752,19 +752,19 @@ void handleSmartPortTelemetry(void)
                 } else if (telemetryConfig()->pidValuesAsTelemetry){
                     switch (t2Cnt) {
                         case 0:
-                            tmp2 = currentPidProfile->P8[ROLL];
-                            tmp2 += (currentPidProfile->P8[PITCH]<<8);
-                            tmp2 += (currentPidProfile->P8[YAW]<<16);
+                            tmp2 = currentPidProfile->pid[PID_ROLL].P;
+                            tmp2 += (currentPidProfile->pid[PID_PITCH].P<<8);
+                            tmp2 += (currentPidProfile->pid[PID_YAW].P<<16);
                         break;
                         case 1:
-                            tmp2 = currentPidProfile->I8[ROLL];
-                            tmp2 += (currentPidProfile->I8[PITCH]<<8);
-                            tmp2 += (currentPidProfile->I8[YAW]<<16);
+                            tmp2 = currentPidProfile->pid[PID_ROLL].I;
+                            tmp2 += (currentPidProfile->pid[PID_PITCH].I<<8);
+                            tmp2 += (currentPidProfile->pid[PID_YAW].I<<16);
                         break;
                         case 2:
-                            tmp2 = currentPidProfile->D8[ROLL];
-                            tmp2 += (currentPidProfile->D8[PITCH]<<8);
-                            tmp2 += (currentPidProfile->D8[YAW]<<16);
+                            tmp2 = currentPidProfile->pid[PID_ROLL].D;
+                            tmp2 += (currentPidProfile->pid[PID_PITCH].D<<8);
+                            tmp2 += (currentPidProfile->pid[PID_YAW].D<<16);
                         break;
                         case 3:
                             tmp2 = currentControlRateProfile->rates[FD_ROLL];

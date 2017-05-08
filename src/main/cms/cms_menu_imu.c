@@ -109,9 +109,9 @@ static long cmsx_PidRead(void)
 
     const pidProfile_t *pidProfile = pidProfiles(pidProfileIndex);
     for (uint8_t i = 0; i < 3; i++) {
-        tempPid[i][0] = pidProfile->P8[i];
-        tempPid[i][1] = pidProfile->I8[i];
-        tempPid[i][2] = pidProfile->D8[i];
+        tempPid[i][0] = pidProfile->pid[i].P;
+        tempPid[i][1] = pidProfile->pid[i].I;
+        tempPid[i][2] = pidProfile->pid[i].D;
     }
 
     return 0;
@@ -131,9 +131,9 @@ static long cmsx_PidWriteback(const OSD_Entry *self)
 
     pidProfile_t *pidProfile = currentPidProfile;
     for (uint8_t i = 0; i < 3; i++) {
-        pidProfile->P8[i] = tempPid[i][0];
-        pidProfile->I8[i] = tempPid[i][1];
-        pidProfile->D8[i] = tempPid[i][2];
+        pidProfile->pid[i].P = tempPid[i][0];
+        pidProfile->pid[i].I = tempPid[i][1];
+        pidProfile->pid[i].D = tempPid[i][2];
     }
     pidInitConfig(currentPidProfile);
 
@@ -144,17 +144,17 @@ static OSD_Entry cmsx_menuPidEntries[] =
 {
     { "-- PID --", OME_Label, NULL, pidProfileIndexString, 0},
 
-    { "ROLL  P", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDROLL][0],  0, 200, 1 }, 0 },
-    { "ROLL  I", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDROLL][1],  0, 200, 1 }, 0 },
-    { "ROLL  D", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDROLL][2],  0, 200, 1 }, 0 },
+    { "ROLL  P", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PID_ROLL][0],  0, 200, 1 }, 0 },
+    { "ROLL  I", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PID_ROLL][1],  0, 200, 1 }, 0 },
+    { "ROLL  D", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PID_ROLL][2],  0, 200, 1 }, 0 },
 
-    { "PITCH P", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDPITCH][0], 0, 200, 1 }, 0 },
-    { "PITCH I", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDPITCH][1], 0, 200, 1 }, 0 },
-    { "PITCH D", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDPITCH][2], 0, 200, 1 }, 0 },
+    { "PITCH P", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PID_PITCH][0], 0, 200, 1 }, 0 },
+    { "PITCH I", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PID_PITCH][1], 0, 200, 1 }, 0 },
+    { "PITCH D", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PID_PITCH][2], 0, 200, 1 }, 0 },
 
-    { "YAW   P", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDYAW][0],   0, 200, 1 }, 0 },
-    { "YAW   I", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDYAW][1],   0, 200, 1 }, 0 },
-    { "YAW   D", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDYAW][2],   0, 200, 1 }, 0 },
+    { "YAW   P", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PID_YAW][0],   0, 200, 1 }, 0 },
+    { "YAW   I", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PID_YAW][1],   0, 200, 1 }, 0 },
+    { "YAW   D", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PID_YAW][2],   0, 200, 1 }, 0 },
 
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
@@ -242,9 +242,9 @@ static long cmsx_profileOtherOnEnter(void)
     cmsx_dtermSetpointWeight = pidProfile->dtermSetpointWeight;
     cmsx_setpointRelaxRatio  = pidProfile->setpointRelaxRatio;
 
-    cmsx_angleStrength =     pidProfile->P8[PIDLEVEL];
-    cmsx_horizonStrength =   pidProfile->I8[PIDLEVEL];
-    cmsx_horizonTransition = pidProfile->D8[PIDLEVEL];
+    cmsx_angleStrength =     pidProfile->pid[PID_LEVEL].P;
+    cmsx_horizonStrength =   pidProfile->pid[PID_LEVEL].I;
+    cmsx_horizonTransition = pidProfile->pid[PID_LEVEL].D;
 
     return 0;
 }
@@ -258,9 +258,9 @@ static long cmsx_profileOtherOnExit(const OSD_Entry *self)
     pidProfile->setpointRelaxRatio = cmsx_setpointRelaxRatio;
     pidInitConfig(currentPidProfile);
 
-    pidProfile->P8[PIDLEVEL] = cmsx_angleStrength;
-    pidProfile->I8[PIDLEVEL] = cmsx_horizonStrength;
-    pidProfile->D8[PIDLEVEL] = cmsx_horizonTransition;
+    pidProfile->pid[PID_LEVEL].P = cmsx_angleStrength;
+    pidProfile->pid[PID_LEVEL].I = cmsx_horizonStrength;
+    pidProfile->pid[PID_LEVEL].D = cmsx_horizonTransition;
 
     return 0;
 }

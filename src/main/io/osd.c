@@ -408,21 +408,21 @@ static void osdDrawSingleElement(uint8_t item)
         case OSD_ROLL_PIDS:
         {
             const pidProfile_t *pidProfile = currentPidProfile;
-            tfp_sprintf(buff, "ROL %3d %3d %3d", pidProfile->P8[PIDROLL], pidProfile->I8[PIDROLL], pidProfile->D8[PIDROLL]);
+            tfp_sprintf(buff, "ROL %3d %3d %3d", pidProfile->pid[PID_ROLL].P, pidProfile->pid[PID_ROLL].I, pidProfile->pid[PID_ROLL].D);
             break;
         }
 
         case OSD_PITCH_PIDS:
         {
             const pidProfile_t *pidProfile = currentPidProfile;
-            tfp_sprintf(buff, "PIT %3d %3d %3d", pidProfile->P8[PIDPITCH], pidProfile->I8[PIDPITCH], pidProfile->D8[PIDPITCH]);
+            tfp_sprintf(buff, "PIT %3d %3d %3d", pidProfile->pid[PID_PITCH].P, pidProfile->pid[PID_PITCH].I, pidProfile->pid[PID_PITCH].D);
             break;
         }
 
         case OSD_YAW_PIDS:
         {
             const pidProfile_t *pidProfile = currentPidProfile;
-            tfp_sprintf(buff, "YAW %3d %3d %3d", pidProfile->P8[PIDYAW], pidProfile->I8[PIDYAW], pidProfile->D8[PIDYAW]);
+            tfp_sprintf(buff, "YAW %3d %3d %3d", pidProfile->pid[PID_YAW].P, pidProfile->pid[PID_YAW].I, pidProfile->pid[PID_YAW].D);
             break;
         }
 

@@ -181,7 +181,7 @@ int32_t calculateAltHoldThrottleAdjustment(int32_t vel_tmp, float accZ_tmp, floa
     if (!velocityControl) {
         error = constrain(AltHold - estimatedAltitude, -500, 500);
         error = applyDeadband(error, 10); // remove small P parameter to reduce noise near zero position
-        setVel = constrain((currentPidProfile->P8[PIDALT] * error / 128), -300, +300); // limit velocity to +/- 3 m/s
+        setVel = constrain((currentPidProfile->pid[PID_ALT].P * error / 128), -300, +300); // limit velocity to +/- 3 m/s
     } else {
         setVel = setVelocity;
     }
@@ -189,15 +189,15 @@ int32_t calculateAltHoldThrottleAdjustment(int32_t vel_tmp, float accZ_tmp, floa
 
     // P
     error = setVel - vel_tmp;
-    result = constrain((currentPidProfile->P8[PIDVEL] * error / 32), -300, +300);
+    result = constrain((currentPidProfile->pid[PID_VEL].P * error / 32), -300, +300);
 
     // I
-    errorVelocityI += (currentPidProfile->I8[PIDVEL] * error);
+    errorVelocityI += (currentPidProfile->pid[PID_VEL].I * error);
     errorVelocityI = constrain(errorVelocityI, -(8192 * 200), (8192 * 200));
     result += errorVelocityI / 8192;     // I in range +/-200
 
     // D
-    result -= constrain(currentPidProfile->D8[PIDVEL] * (accZ_tmp + accZ_old) / 512, -150, 150);
+    result -= constrain(currentPidProfile->pid[PID_VEL].D * (accZ_tmp + accZ_old) / 512, -150, 150);
 
     return result;
 }

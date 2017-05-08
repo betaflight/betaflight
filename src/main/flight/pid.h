@@ -35,16 +35,16 @@
 #define DTERM_SCALE 0.000529f
 
 typedef enum {
-    PIDROLL,
-    PIDPITCH,
-    PIDYAW,
-    PIDALT,
-    PIDPOS,
-    PIDPOSR,
-    PIDNAVR,
-    PIDLEVEL,
-    PIDMAG,
-    PIDVEL,
+    PID_ROLL,
+    PID_PITCH,
+    PID_YAW,
+    PID_ALT,
+    PID_POS,
+    PID_POSR,
+    PID_NAVR,
+    PID_LEVEL,
+    PID_MAG,
+    PID_VEL,
     PID_ITEM_COUNT
 } pidIndex_e;
 
@@ -65,10 +65,14 @@ typedef enum {
     PID_CRASH_RECOVERY_BEEP
 } pidCrashRecovery_e;
 
+typedef struct pid8_s {
+    uint8_t P;
+    uint8_t I;
+    uint8_t D;
+} pid8_t;
+
 typedef struct pidProfile_s {
-    uint8_t P8[PID_ITEM_COUNT];
-    uint8_t I8[PID_ITEM_COUNT];
-    uint8_t D8[PID_ITEM_COUNT];
+    pid8_t  pid[PID_ITEM_COUNT];
 
     uint8_t dterm_filter_type;              // Filter selection for dterm
     uint16_t dterm_lpf_hz;                  // Delta Filter in hz

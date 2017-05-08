@@ -388,18 +388,18 @@ void GPS_reset_nav(void)
 // Get the relevant P I D values and set the PID controllers
 void gpsUsePIDs(pidProfile_t *pidProfile)
 {
-    posholdPID_PARAM.kP = (float)pidProfile->P8[PIDPOS] / 100.0f;
-    posholdPID_PARAM.kI = (float)pidProfile->I8[PIDPOS] / 100.0f;
+    posholdPID_PARAM.kP = (float)pidProfile->pid[PID_POS].P / 100.0f;
+    posholdPID_PARAM.kI = (float)pidProfile->pid[PID_POS].I / 100.0f;
     posholdPID_PARAM.Imax = POSHOLD_RATE_IMAX * 100;
 
-    poshold_ratePID_PARAM.kP = (float)pidProfile->P8[PIDPOSR] / 10.0f;
-    poshold_ratePID_PARAM.kI = (float)pidProfile->I8[PIDPOSR] / 100.0f;
-    poshold_ratePID_PARAM.kD = (float)pidProfile->D8[PIDPOSR] / 1000.0f;
+    poshold_ratePID_PARAM.kP = (float)pidProfile->pid[PID_POSR].P / 10.0f;
+    poshold_ratePID_PARAM.kI = (float)pidProfile->pid[PID_POSR].I / 100.0f;
+    poshold_ratePID_PARAM.kD = (float)pidProfile->pid[PID_POSR].D / 1000.0f;
     poshold_ratePID_PARAM.Imax = POSHOLD_RATE_IMAX * 100;
 
-    navPID_PARAM.kP = (float)pidProfile->P8[PIDNAVR] / 10.0f;
-    navPID_PARAM.kI = (float)pidProfile->I8[PIDNAVR] / 100.0f;
-    navPID_PARAM.kD = (float)pidProfile->D8[PIDNAVR] / 1000.0f;
+    navPID_PARAM.kP = (float)pidProfile->pid[PID_NAVR].P / 10.0f;
+    navPID_PARAM.kI = (float)pidProfile->pid[PID_NAVR].I / 100.0f;
+    navPID_PARAM.kD = (float)pidProfile->pid[PID_NAVR].D / 1000.0f;
     navPID_PARAM.Imax = POSHOLD_RATE_IMAX * 100;
 }
 
