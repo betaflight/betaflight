@@ -34,18 +34,6 @@
 #include "fc/config.h"
 #include "fc/runtime_config.h"
 
-#if defined(STM32F40_41xxx) // must be multiples of timer clock
-#define ONESHOT125_TIMER_MHZ  12
-#define ONESHOT42_TIMER_MHZ   21
-#define MULTISHOT_TIMER_MHZ   84
-#define PWM_BRUSHED_TIMER_MHZ 21
-#else
-#define ONESHOT125_TIMER_MHZ  8
-#define ONESHOT42_TIMER_MHZ   24
-#define MULTISHOT_TIMER_MHZ   72
-#define PWM_BRUSHED_TIMER_MHZ 24
-#endif
-
 #define MULTISHOT_5US_PW    (MULTISHOT_TIMER_MHZ * 5)
 #define MULTISHOT_20US_MULT (MULTISHOT_TIMER_MHZ * 20 / 1000.0f)
 
@@ -88,24 +76,8 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8
     TIM_OCInitStructure.TIM_OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_High : TIM_OCPolarity_Low;
     TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
 
-    switch (channel) {
-    case TIM_Channel_1:
-        TIM_OC1Init(tim, &TIM_OCInitStructure);
-        TIM_OC1PreloadConfig(tim, TIM_OCPreload_Enable);
-        break;
-    case TIM_Channel_2:
-        TIM_OC2Init(tim, &TIM_OCInitStructure);
-        TIM_OC2PreloadConfig(tim, TIM_OCPreload_Enable);
-        break;
-    case TIM_Channel_3:
-        TIM_OC3Init(tim, &TIM_OCInitStructure);
-        TIM_OC3PreloadConfig(tim, TIM_OCPreload_Enable);
-        break;
-    case TIM_Channel_4:
-        TIM_OC4Init(tim, &TIM_OCInitStructure);
-        TIM_OC4PreloadConfig(tim, TIM_OCPreload_Enable);
-        break;
-    }
+    timerOCInit(tim, channel, &TIM_OCInitStructure);
+    timerOCPreloadConfig(tim, channel, TIM_OCPreload_Enable);
 }
 
 static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8_t mhz, uint16_t period, uint16_t value, bool enableOutput)
@@ -134,20 +106,7 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
     }
     TIM_Cmd(timerHardware->tim, ENABLE);
 
-    switch (timerHardware->channel) {
-    case TIM_Channel_1:
-        p->ccr = &timerHardware->tim->CCR1;
-        break;
-    case TIM_Channel_2:
-        p->ccr = &timerHardware->tim->CCR2;
-        break;
-    case TIM_Channel_3:
-        p->ccr = &timerHardware->tim->CCR3;
-        break;
-    case TIM_Channel_4:
-        p->ccr = &timerHardware->tim->CCR4;
-        break;
-    }
+    p->ccr = timerCCR(timerHardware->tim, timerHardware->channel);
     p->period = period;
     p->tim = timerHardware->tim;
 

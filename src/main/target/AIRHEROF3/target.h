@@ -109,11 +109,11 @@
 
     #define MAX_PWM_OUTPUT_PORTS        8
     #define TARGET_MOTOR_COUNT          4
-    #define USABLE_TIMER_CHANNEL_COUNT  12
+    #define USABLE_TIMER_CHANNEL_COUNT  10
 #else
     #define MAX_PWM_OUTPUT_PORTS        10
     #define TARGET_MOTOR_COUNT          6
-    #define USABLE_TIMER_CHANNEL_COUNT  14
+    #define USABLE_TIMER_CHANNEL_COUNT  12
 #endif
 
 #define SPEKTRUM_BIND

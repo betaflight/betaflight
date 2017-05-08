@@ -60,8 +60,7 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 
-
-extern const mixer_t mixers[];
+extern const mixer_t * findMixer(mixerMode_e mixerMode);
 
 PG_REGISTER_WITH_RESET_TEMPLATE(servoConfig_t, servoConfig, PG_SERVO_CONFIG, 0);
 
@@ -196,15 +195,16 @@ int servoDirection(int servoIndex, int inputSource)
 void servosInit(void)
 {
     const mixerMode_e currentMixerMode = mixerConfig()->mixerMode;
+    const mixer_t * motorMixer = findMixer(currentMixerMode);
 
     minServoIndex = servoMixers[currentMixerMode].minServoIndex;
     maxServoIndex = servoMixers[currentMixerMode].maxServoIndex;
 
     // enable servos for mixes that require them. note, this shifts motor counts.
-    mixerUsesServos = mixers[currentMixerMode].useServo || feature(FEATURE_SERVO_TILT);
+    mixerUsesServos = motorMixer->useServos || feature(FEATURE_SERVO_TILT);
 
     // if we want camstab/trig, that also enables servos, even if mixer doesn't
-    servoOutputEnabled = mixerUsesServos || feature(FEATURE_CHANNEL_FORWARDING);
+    servoOutputEnabled = motorMixer->useServos || feature(FEATURE_SERVO_TILT) || feature(FEATURE_CHANNEL_FORWARDING);
 
     // give all servos a default command
     for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {

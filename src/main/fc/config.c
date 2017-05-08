@@ -40,6 +40,7 @@
 #include "drivers/rx_spi.h"
 #include "drivers/pwm_output.h"
 #include "drivers/serial.h"
+#include "drivers/timer.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -287,17 +288,21 @@ void validateAndFixConfig(void)
 #endif
 
 #if defined(LED_STRIP) && (defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
-    if (featureConfigured(FEATURE_SOFTSERIAL) && (
-            0
+    if (featureConfigured(FEATURE_SOFTSERIAL)) {
+        const timerHardware_t *timerHardware = timerGetByTag(IO_TAG(WS2811_PIN), TIM_USE_ANY);
+        if (timerHardware != NULL) {
+            if (0
 #if defined(USE_SOFTSERIAL1) && defined(SOFTSERIAL_1_TIMER)
-            || (WS2811_TIMER == SOFTSERIAL_1_TIMER)
+            || (timerHardware->tim == SOFTSERIAL_1_TIMER)
 #endif
 #ifdef USE_SOFTSERIAL2
-            || (WS2811_TIMER == SOFTSERIAL_2_TIMER)
+            || (timerHardware->tim == SOFTSERIAL_2_TIMER)
 #endif
-    )) {
-        // led strip needs the same timer as softserial
-        featureClear(FEATURE_LED_STRIP);
+            ) {
+                // led strip needs the same timer as softserial
+                featureClear(FEATURE_LED_STRIP);
+            }
+        }
     }
 #endif
 

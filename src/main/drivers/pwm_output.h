@@ -17,6 +17,18 @@
 
 #pragma once
 
+#if defined(STM32F40_41xxx) // must be multiples of timer clock
+#define ONESHOT125_TIMER_MHZ  12
+#define ONESHOT42_TIMER_MHZ   21
+#define MULTISHOT_TIMER_MHZ   84
+#define PWM_BRUSHED_TIMER_MHZ 21
+#else
+#define ONESHOT125_TIMER_MHZ  8
+#define ONESHOT42_TIMER_MHZ   24
+#define MULTISHOT_TIMER_MHZ   72
+#define PWM_BRUSHED_TIMER_MHZ 24
+#endif
+
 typedef enum {
     PWM_TYPE_STANDARD = 0,
     PWM_TYPE_ONESHOT125,
