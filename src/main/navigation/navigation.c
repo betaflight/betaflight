@@ -149,7 +149,6 @@ uint16_t navEPH;
 uint16_t navEPV;
 int16_t navAccNEU[3];
 #endif
-int16_t navDebug[4];
 
 static void updateDesiredRTHAltitude(void);
 static void resetAltitudeController(void);
