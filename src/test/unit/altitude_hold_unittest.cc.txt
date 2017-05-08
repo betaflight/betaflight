@@ -133,7 +133,7 @@ TEST(AltitudeHoldTest, TestCalculateTiltAngle)
 
 extern "C" {
 uint32_t rcModeActivationMask;
-int16_t rcCommand[4];
+float rcCommand[4];
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
 uint32_t accTimeSum ;        // keep track for integration of acc

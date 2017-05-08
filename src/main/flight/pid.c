@@ -421,13 +421,18 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
         // -----calculate D component
         if (axis != FD_YAW) {
+            // apply filters
+            float gyroRateFiltered = dtermNotchFilterApplyFn(dtermFilterNotch[axis], gyroRate);
+            gyroRateFiltered = dtermLpfApplyFn(dtermFilterLpf[axis], gyroRateFiltered);
+
             float dynC = dtermSetpointWeight;
             if (pidProfile->setpointRelaxRatio < 100) {
                 dynC *= MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f);
             }
-            const float rD = dynC * currentPidSetpoint - gyroRate;    // cr - y
+            const float rD = dynC * currentPidSetpoint - gyroRateFiltered;    // cr - y
             // Divide rate change by dT to get differential (ie dr/dt)
             float delta = (rD - previousRateError[axis]) / dT;
+
             previousRateError[axis] = rD;
 
             // if crash recovery is on check for a crash
@@ -440,10 +445,6 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                     }
                 }
             }
-
-            // apply filters
-            delta = dtermNotchFilterApplyFn(dtermFilterNotch[axis], delta);
-            delta = dtermLpfApplyFn(dtermFilterLpf[axis], delta);
 
             axisPID_D[axis] = Kd[axis] * delta * tpaFactor;
         }
