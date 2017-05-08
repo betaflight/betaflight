@@ -329,7 +329,7 @@ bool gyroInit(void)
     // Must set gyro targetLooptime before gyroDev.init and initialisation of filters
     gyro.targetLooptime = gyroSetSampleRate(&gyroDev0, gyroConfig()->gyro_lpf, gyroConfig()->gyro_sync_denom, gyroConfig()->gyro_use_32khz);
     gyroDev0.lpf = gyroConfig()->gyro_lpf;
-    gyroDev0.init(&gyroDev0);
+    gyroDev0.initFn(&gyroDev0);
     if (gyroConfig()->gyro_align != ALIGN_DEFAULT) {
         gyroDev0.gyroAlign = gyroConfig()->gyro_align;
     }
@@ -481,7 +481,7 @@ STATIC_UNIT_TESTED void performGyroCalibration(gyroDev_t *gyroDev, gyroCalibrati
 #if defined(GYRO_USES_SPI) && defined(USE_MPU_DATA_READY_SIGNAL)
 static bool gyroUpdateISR(gyroDev_t* gyroDev)
 {
-    if (!gyroDev->dataReady || !gyroDev->read(gyroDev)) {
+    if (!gyroDev->dataReady || !gyroDev->readFn(gyroDev)) {
         return false;
     }
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT
@@ -513,11 +513,11 @@ static bool gyroUpdateISR(gyroDev_t* gyroDev)
 void gyroUpdate(void)
 {
     // range: +/- 8192; +/- 2000 deg/sec
-    if (gyroDev0.update) {
+    if (gyroDev0.updateFn) {
         // if the gyro update function is set then return, since the gyro is read in gyroUpdateISR
         return;
     }
-    if (!gyroDev0.read(&gyroDev0)) {
+    if (!gyroDev0.readFn(&gyroDev0)) {
         return;
     }
     gyroDev0.dataReady = false;
@@ -571,8 +571,8 @@ void gyroUpdate(void)
 
 void gyroReadTemperature(void)
 {
-    if (gyroDev0.temperature) {
-        gyroDev0.temperature(&gyroDev0, &gyroTemperature0);
+    if (gyroDev0.temperatureFn) {
+        gyroDev0.temperatureFn(&gyroDev0, &gyroTemperature0);
     }
 }
 

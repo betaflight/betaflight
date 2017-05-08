@@ -311,7 +311,7 @@ bool accInit(uint32_t gyroSamplingInverval)
         return false;
     }
     acc.dev.acc_1G = 256; // set default
-    acc.dev.init(&acc.dev); // driver initialisation
+    acc.dev.initFn(&acc.dev); // driver initialisation
     // set the acc sampling interval according to the gyro sampling interval
     switch (gyroSamplingInverval) {  // Switch statement kept in place to change acc sampling interval in the future
     case 500:
@@ -453,7 +453,7 @@ static void applyAccelerationTrims(const flightDynamicsTrims_t *accelerationTrim
 
 void accUpdate(rollAndPitchTrims_t *rollAndPitchTrims)
 {
-    if (!acc.dev.read(&acc.dev)) {
+    if (!acc.dev.readFn(&acc.dev)) {
         return;
     }
     acc.isAccelUpdatedAtLeastOnce = true;

@@ -64,7 +64,7 @@ bool bma280Detect(accDev_t *acc)
     if (!ack || sig != 0xFB)
         return false;
 
-    acc->init = bma280Init;
-    acc->read = bma280Read;
+    acc->initFn = bma280Init;
+    acc->readFn = bma280Read;
     return true;
 }
