@@ -23,6 +23,7 @@ typedef enum awf3HardwareRevision_t {
 } awf3HardwareRevision_e;
 
 extern uint8_t hardwareRevision;
+extern bool haveFrSkyRX;
 
 void updateHardwareRevision(void);
 void detectHardwareRevision(void);

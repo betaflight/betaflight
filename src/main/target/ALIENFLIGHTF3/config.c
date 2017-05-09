@@ -24,6 +24,8 @@
 
 #include "common/axis.h"
 
+#include "config/feature.h"
+
 #include "drivers/light_led.h"
 #include "drivers/pwm_esc_detect.h"
 
@@ -34,7 +36,12 @@
 
 #include "rx/rx.h"
 
+#include "io/serial.h"
+
+#include "sensors/battery.h"
 #include "sensors/gyro.h"
+
+#include "telemetry/telemetry.h"
 
 #include "hardware_revision.h"
 
@@ -43,6 +50,7 @@
 #endif
 
 #define BRUSHED_MOTORS_PWM_RATE 32000           // 32kHz
+#define VBAT_SCALE              20
 
 // alternative defaults settings for AlienFlight targets
 void targetConfiguration(void)
@@ -78,8 +86,18 @@ void targetConfiguration(void)
         pidConfigMutable()->pid_process_denom = 2;
     }
 
-    rxConfigMutable()->spektrum_sat_bind = 5;
-    rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
+    if (!haveFrSkyRX) {
+        rxConfigMutable()->serialrx_provider = SERIALRX_SPEKTRUM2048;
+        rxConfigMutable()->spektrum_sat_bind = 5;
+        rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
+        voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale = VBAT_SCALE;
+    } else {
+        rxConfigMutable()->serialrx_provider = SERIALRX_SBUS;
+        rxConfigMutable()->sbus_inversion = 0;
+        serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIALRX_UART)].functionMask = FUNCTION_TELEMETRY_FRSKY | FUNCTION_RX_SERIAL;
+        telemetryConfigMutable()->telemetry_inversion = 0;
+        featureSet(FEATURE_TELEMETRY);
+    }
 
     if (hardwareMotorType == MOTOR_BRUSHED) {
         motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
