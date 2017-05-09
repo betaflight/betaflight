@@ -146,7 +146,6 @@
 #define NAV
 #define NAV_AUTO_MAG_DECLINATION
 #define NAV_GPS_GLITCH_DETECTION
-#define GPS_PROTO_UBLOX_NEO7PLUS
 
 #define USE_ADC
 #define VBAT_ADC_PIN                PC0
