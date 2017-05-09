@@ -353,6 +353,8 @@ serialPort_t *openSerialPort(
             serialPort = usbVcpOpen();
             break;
 #endif
+
+#if defined(USE_UART)
 #ifdef USE_UART1
         case SERIAL_PORT_USART1:
 #endif
@@ -377,7 +379,6 @@ serialPort_t *openSerialPort(
 #ifdef USE_UART8
         case SERIAL_PORT_USART8:
 #endif
-#if defined(USE_UART)
             serialPort = uartOpen(SERIAL_PORT_IDENTIFIER_TO_UARTDEV(identifier), rxCallback, baudRate, mode, options);
             break;
 #endif
