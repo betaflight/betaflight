@@ -940,7 +940,13 @@ static const clivalue_t valueTable[] = {
     { "throttle_tilt_comp_str",     VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  100 }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, throttle_tilt_compensation_strength) },
     { "input_filtering_mode",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, pwmRxInputFilteringMode) },
     { "mode_range_logic_operator",  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_AUX_OPERATOR }, PG_MODE_ACTIVATION_OPERATOR_CONFIG, offsetof(modeActivationOperatorConfig_t, modeActivationOperator) },
+//PG_STATS_CONFIG
+#ifdef STATS
+    { "stats_total_time",    VAR_UINT32 | MASTER_VALUE | MODE_MAX, .config.max = { INT32_MAX }, PG_STATS_CONFIG, offsetof(statsConfig_t, stats_total_time) },
+    { "stats_total_dist",    VAR_UINT32 | MASTER_VALUE | MODE_MAX, .config.max = { INT32_MAX }, PG_STATS_CONFIG, offsetof(statsConfig_t, stats_total_dist) },
+#endif
 };
+
 
 
 static void cliPrint(const char *str)
@@ -1115,6 +1121,7 @@ static bool valuePtrEqualsDefault(uint8_t type, const void *ptr, const void *ptr
     }
     return result;
 }
+
 
 static uint16_t getValueOffset(const clivalue_t *value)
 {

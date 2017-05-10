@@ -590,6 +590,7 @@ COMMON_SRC = \
             fc/rc_controls.c \
             fc/rc_curves.c \
             fc/runtime_config.c \
+            fc/stats.c \
             flight/failsafe.c \
             flight/hil.c \
             flight/imu.c \

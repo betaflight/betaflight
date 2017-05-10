@@ -254,6 +254,8 @@ void mwDisarm(disarmReason_t disarmReason)
         }
 #endif
 
+        statsOnDisarm();
+
         beeper(BEEPER_DISARMING);      // emit disarm tone
     }
 }
@@ -309,7 +311,7 @@ void mwArm(void)
 #else
             beeper(BEEPER_ARMING);
 #endif
-
+            statsOnArm();
             return;
         }
     }
