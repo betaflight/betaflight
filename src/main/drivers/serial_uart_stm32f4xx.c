@@ -33,15 +33,6 @@
 #define UART_RX_BUFFER_SIZE 512
 #define UART_TX_BUFFER_SIZE 512
 
-typedef enum UARTDevice {
-    UARTDEV_1 = 0,
-    UARTDEV_2 = 1,
-    UARTDEV_3 = 2,
-    UARTDEV_4 = 3,
-    UARTDEV_5 = 4,
-    UARTDEV_6 = 5
-} UARTDevice;
-
 typedef struct uartDevice_s {
     USART_TypeDef* dev;
     uartPort_t port;

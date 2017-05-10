@@ -40,6 +40,17 @@
 #define UART8_RX_BUFFER_SIZE    256
 #define UART8_TX_BUFFER_SIZE    256
 
+typedef enum UARTDevice {
+    UARTDEV_1 = 0,
+    UARTDEV_2 = 1,
+    UARTDEV_3 = 2,
+    UARTDEV_4 = 3,
+    UARTDEV_5 = 4,
+    UARTDEV_6 = 5,
+    UARTDEV_7 = 6,
+    UARTDEV_8 = 7
+} UARTDevice;
+
 typedef struct {
     serialPort_t port;
 
@@ -72,7 +83,7 @@ typedef struct {
     USART_TypeDef *USARTx;
 } uartPort_t;
 
-serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr rxCallback, uint32_t baudRate, portMode_t mode, portOptions_t options);
+serialPort_t *uartOpen(UARTDevice device, serialReceiveCallbackPtr rxCallback, uint32_t baudRate, portMode_t mode, portOptions_t options);
 
 // serialPort API
 void uartWrite(serialPort_t *instance, uint8_t ch);
