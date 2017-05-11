@@ -29,9 +29,6 @@
 #define TARGET_BOARD_IDENTIFIER "RVLT"
 #define USBD_PRODUCT_STRING     "Revolt"
 #define TARGET_DEFAULT_MIXER    MIXER_QUADX_1234
-#define USE_UART4
-#define UART4_RX_PIN PA1
-#define UART4_TX_PIN PA0
 
 #elif defined(SOULF4)
 #define TARGET_BOARD_IDENTIFIER "SOUL"
@@ -194,6 +191,12 @@
 #define USE_UART3
 #define UART3_RX_PIN            PB11
 #define UART3_TX_PIN            PB10
+
+#if defined(REVOLT)
+#define USE_UART4
+#define UART4_RX_PIN            PA1
+#define UART4_TX_PIN            PA0
+#endif // REVOLT
 
 #define USE_UART6
 #define UART6_RX_PIN            PC7
