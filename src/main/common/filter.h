@@ -23,6 +23,11 @@
 #define MAX_FIR_DENOISE_WINDOW_SIZE 120
 #endif
 
+#define M_LN2_FLOAT 0.69314718055994530942f
+#define M_PI_FLOAT  3.14159265358979323846f
+#define BIQUAD_BANDWIDTH 1.9f     /* bandwidth in octaves */
+#define BIQUAD_Q 1.0f / sqrtf(2.0f)     /* quality factor - butterworth*/
+
 typedef struct pt1Filter_s {
     float state;
     float k;
@@ -33,6 +38,7 @@ typedef struct pt1Filter_s {
 /* this holds the data required to update samples thru a filter */
 typedef struct biquadFilter_s {
     float b0, b1, b2, a1, a2;
+    float x1, x2, y1, y2;
     float d1, d2;
 } biquadFilter_t;
 
@@ -52,7 +58,8 @@ typedef enum {
 
 typedef enum {
     FILTER_LPF,
-    FILTER_NOTCH
+    FILTER_NOTCH,
+    FILTER_BPF,
 } biquadFilterType_e;
 
 typedef struct firFilter_s {
@@ -71,8 +78,13 @@ float nullFilterApply(void *filter, float input);
 
 void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate);
 void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType);
+void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType);
 float biquadFilterApply(biquadFilter_t *filter, float input);
+float biquadFilterApplyDF2(biquadFilter_t *filter, float input);
 float filterGetNotchQ(uint16_t centerFreq, uint16_t cutoff);
+
+// not exactly correct, but very very close and much much faster
+#define filterGetNotchQApprox(centerFreq, cutoff)   ((float)(cutoff * centerFreq) / ((float)(centerFreq - cutoff) * (float)(centerFreq + cutoff)))
 
 void pt1FilterInit(pt1Filter_t *filter, uint8_t f_cut, float dT);
 float pt1FilterApply(pt1Filter_t *filter, float input);

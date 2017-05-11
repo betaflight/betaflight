@@ -153,7 +153,7 @@ void voltageMeterADCRefresh(void)
         uint8_t channel = voltageMeterAdcChannelMap[i];
         uint16_t rawSample = adcGetChannel(channel);
 
-        uint16_t filteredSample = biquadFilterApply(&state->filter, rawSample);
+        uint16_t filteredSample = biquadFilterApplyDF2(&state->filter, rawSample);
 
         // always calculate the latest voltage, see getLatestVoltage() which does the calculation on demand.
         state->voltageFiltered = voltageAdcToVoltage(filteredSample, config);
@@ -210,7 +210,7 @@ void voltageMeterESCRefresh(void)
 #ifdef USE_ESC_SENSOR
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
     voltageMeterESCState.voltageUnfiltered = escData->dataAge <= ESC_BATTERY_AGE_MAX ? escData->voltage / 10 : 0;
-    voltageMeterESCState.voltageFiltered = biquadFilterApply(&voltageMeterESCState.filter, voltageMeterESCState.voltageUnfiltered);
+    voltageMeterESCState.voltageFiltered = biquadFilterApplyDF2(&voltageMeterESCState.filter, voltageMeterESCState.voltageUnfiltered);
 #endif
 }
 

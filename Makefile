@@ -276,14 +276,14 @@ STARTUP_SRC     = startup_stm32f30x_md_gcc.S
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
 
-VPATH           := $(VPATH):$(CMSIS_DIR)/CM1/CoreSupport:$(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x
-CMSIS_SRC       = $(notdir $(wildcard $(CMSIS_DIR)/CM1/CoreSupport/*.c \
-                  $(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x/*.c))
+VPATH           := $(VPATH):$(CMSIS_DIR)/CM4/CoreSupport:$(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F30x
+CMSIS_SRC       = $(notdir $(wildcard $(CMSIS_DIR)/CM4/CoreSupport/*.c \
+                  $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F30x/*.c))
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(STDPERIPH_DIR)/inc \
-                   $(CMSIS_DIR)/CM1/CoreSupport \
-                   $(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x
+                   $(CMSIS_DIR)/CM4/CoreSupport \
+                   $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F30x
 
 ifneq ($(filter VCP, $(FEATURES)),)
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
@@ -1023,12 +1023,13 @@ else ifeq ($(TARGET),$(filter $(TARGET),$(SITL_TARGETS)))
 SRC := $(TARGET_SRC) $(SITL_SRC) $(VARIANT_SRC)
 endif
 
-ifneq ($(filter $(TARGET),$(F4_TARGETS) $(F7_TARGETS)),)
+ifneq ($(filter $(TARGET),$(F3_TARGETS) $(F4_TARGETS) $(F7_TARGETS)),)
 DSPLIB := $(ROOT)/lib/main/DSP_Lib
 DEVICE_FLAGS += -DARM_MATH_CM4 -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE
 
 INCLUDE_DIRS += $(DSPLIB)/Include
 
+SRC += $(DSPLIB)/Source/BasicMathFunctions/arm_mult_f32.c
 SRC += $(DSPLIB)/Source/TransformFunctions/arm_rfft_fast_f32.c
 SRC += $(DSPLIB)/Source/TransformFunctions/arm_cfft_f32.c
 SRC += $(DSPLIB)/Source/TransformFunctions/arm_rfft_fast_init_f32.c
@@ -1039,6 +1040,7 @@ SRC += $(DSPLIB)/Source/ComplexMathFunctions/arm_cmplx_mag_f32.c
 SRC += $(DSPLIB)/Source/StatisticsFunctions/arm_max_f32.c
 
 SRC += $(wildcard $(DSPLIB)/Source/*/*.S)
+
 endif
 
 

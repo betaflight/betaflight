@@ -135,7 +135,7 @@ void currentMeterADCRefresh(int32_t lastUpdateAt)
 {
     const uint16_t iBatSample = adcGetChannel(ADC_CURRENT);
     currentMeterADCState.amperageLatest = currentMeterADCToCentiamps(iBatSample);
-    currentMeterADCState.amperage = currentMeterADCToCentiamps(biquadFilterApply(&adciBatFilter, iBatSample));
+    currentMeterADCState.amperage = currentMeterADCToCentiamps(biquadFilterApplyDF2(&adciBatFilter, iBatSample));
 
     updateCurrentmAhDrawnState(&currentMeterADCState.mahDrawnState, currentMeterADCState.amperageLatest, lastUpdateAt);
 }
