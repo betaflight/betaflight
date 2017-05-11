@@ -35,17 +35,6 @@ static void handleUsartTxDma(uartPort_t *s);
 #define UART_RX_BUFFER_SIZE UART1_RX_BUFFER_SIZE
 #define UART_TX_BUFFER_SIZE UART1_TX_BUFFER_SIZE
 
-typedef enum UARTDevice {
-    UARTDEV_1 = 0,
-    UARTDEV_2 = 1,
-    UARTDEV_3 = 2,
-    UARTDEV_4 = 3,
-    UARTDEV_5 = 4,
-    UARTDEV_6 = 5,
-    UARTDEV_7 = 6,
-    UARTDEV_8 = 7
-} UARTDevice;
-
 typedef struct uartDevice_s {
     USART_TypeDef* dev;
     uartPort_t port;
@@ -439,11 +428,6 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
 }
 
 #ifdef USE_UART1
-uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t options)
-{
-    return serialUART(UARTDEV_1, baudRate, mode, options);
-}
-
 // USART1 Rx/Tx IRQ Handler
 void USART1_IRQHandler(void)
 {
@@ -453,11 +437,6 @@ void USART1_IRQHandler(void)
 #endif
 
 #ifdef USE_UART2
-uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t options)
-{
-    return serialUART(UARTDEV_2, baudRate, mode, options);
-}
-
 // USART2 Rx/Tx IRQ Handler
 void USART2_IRQHandler(void)
 {
@@ -467,11 +446,6 @@ void USART2_IRQHandler(void)
 #endif
 
 #ifdef USE_UART3
-uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t options)
-{
-    return serialUART(UARTDEV_3, baudRate, mode, options);
-}
-
 // USART3 Rx/Tx IRQ Handler
 void USART3_IRQHandler(void)
 {
@@ -481,11 +455,6 @@ void USART3_IRQHandler(void)
 #endif
 
 #ifdef USE_UART4
-uartPort_t *serialUART4(uint32_t baudRate, portMode_t mode, portOptions_t options)
-{
-    return serialUART(UARTDEV_4, baudRate, mode, options);
-}
-
 // UART4 Rx/Tx IRQ Handler
 void UART4_IRQHandler(void)
 {
@@ -495,11 +464,6 @@ void UART4_IRQHandler(void)
 #endif
 
 #ifdef USE_UART5
-uartPort_t *serialUART5(uint32_t baudRate, portMode_t mode, portOptions_t options)
-{
-    return serialUART(UARTDEV_5, baudRate, mode, options);
-}
-
 // UART5 Rx/Tx IRQ Handler
 void UART5_IRQHandler(void)
 {
@@ -509,11 +473,6 @@ void UART5_IRQHandler(void)
 #endif
 
 #ifdef USE_UART6
-uartPort_t *serialUART6(uint32_t baudRate, portMode_t mode, portOptions_t options)
-{
-    return serialUART(UARTDEV_6, baudRate, mode, options);
-}
-
 // USART6 Rx/Tx IRQ Handler
 void USART6_IRQHandler(void)
 {
@@ -523,11 +482,6 @@ void USART6_IRQHandler(void)
 #endif
 
 #ifdef USE_UART7
-uartPort_t *serialUART7(uint32_t baudRate, portMode_t mode, portOptions_t options)
-{
-    return serialUART(UARTDEV_7, baudRate, mode, options);
-}
-
 // UART7 Rx/Tx IRQ Handler
 void UART7_IRQHandler(void)
 {
@@ -537,11 +491,6 @@ void UART7_IRQHandler(void)
 #endif
 
 #ifdef USE_UART8
-uartPort_t *serialUART8(uint32_t baudRate, portMode_t mode, portOptions_t options)
-{
-    return serialUART(UARTDEV_8, baudRate, mode, options);
-}
-
 // UART8 Rx/Tx IRQ Handler
 void UART8_IRQHandler(void)
 {
