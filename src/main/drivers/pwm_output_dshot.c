@@ -139,7 +139,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
         RCC_ClockCmd(timerRCC(timer), ENABLE);
         TIM_Cmd(timer, DISABLE);
 
-        TIM_TimeBaseStructure.TIM_Prescaler = (uint16_t)((SystemCoreClock / timerClockDivisor(timer) / getDshotHz(pwmProtocolType)) - 1);
+        TIM_TimeBaseStructure.TIM_Prescaler = (uint16_t)((timerClock(timer) / getDshotHz(pwmProtocolType)) - 1);
         TIM_TimeBaseStructure.TIM_Period = MOTOR_BITLENGTH;
         TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
         TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;

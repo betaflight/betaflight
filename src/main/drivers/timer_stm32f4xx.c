@@ -91,3 +91,15 @@ uint8_t timerClockDivisor(TIM_TypeDef *tim)
         return 2;
     }
 }
+
+uint32_t timerClock(TIM_TypeDef *tim)
+{
+#if defined (STM32F40_41xxx)
+    if (tim == TIM8) return SystemCoreClock;
+#endif
+    if (tim == TIM1 || tim == TIM9 || tim == TIM10 || tim == TIM11) {
+        return SystemCoreClock;
+    } else {
+        return SystemCoreClock / 2;
+    }
+}
