@@ -53,7 +53,7 @@
 #define FFT_SAMPLING_RATE            1000  // allows analysis up to 500Hz which is more than motors create
 #define FFT_BPF_HZ                    200  // use a bandpass on gyro data to ignore extreme low and extreme high frequencies
 #define DYN_NOTCH_WIDTH               100  // just an orientation and start value
-#define DYN_NOTCH_CHANGERATE           40  // lower cut does not improve the performance much, higher cut makes it worse...
+#define DYN_NOTCH_CHANGERATE           60  // lower cut does not improve the performance much, higher cut makes it worse...
 #define DYN_NOTCH_MIN_CUTOFF          120  // don't cut too deep into low frequencies
 #define DYN_NOTCH_MAX_CUTOFF          200  // don't go above this cutoff (better filtering with "constant" delay at higher center frequencies)
 
@@ -118,7 +118,7 @@ void gyroDataAnalyseInit(uint32_t targetLooptimeUs) {
     // at 4khz gyro loop rate this means 4khz / 4 / 3 = 333Hz => update every 3ms
     float looptime = targetLooptimeUs * 4 * 3;
     for (int axis = 0; axis < 3; ++axis) {
-        fftResult[axis].centerFreq = 200;
+        fftResult[axis].centerFreq = 200; // any init value
         biquadFilterInitLPF(&fftFreqFilter[axis], DYN_NOTCH_CHANGERATE, looptime);
         biquadFilterInit(&fftGyroFilter[axis], FFT_BPF_HZ, 1000000 / FFT_SAMPLING_RATE, BIQUAD_Q, FILTER_BPF);
     }
@@ -136,15 +136,14 @@ bool isDynamicFilterActive(void) {
 /*
  * Collect gyro data, to be analysed in gyroDataAnalyseUpdate function
  */
-void gyroDataAnalyse(const gyroDev_t *gyroDev, const gyro_t *gyro) {
+void gyroDataAnalyse(const gyroDev_t *gyroDev, biquadFilter_t *notchFilterDyn) {
     if (!isDynamicFilterActive()) {
         return;
     }
-    UNUSED(gyro);
 
     // if gyro sampling is > 1kHz, accumulate multiple samples
     for (int axis = 0; axis < 3; ++axis) {
-        fftAcc[axis] += gyroDev->gyroADC[axis] * gyroDev->scale;
+        fftAcc[axis] += gyroDev->gyroADC[axis];
     }
     fftAccCount++;
 
@@ -158,7 +157,7 @@ void gyroDataAnalyse(const gyroDev_t *gyroDev, const gyro_t *gyro) {
             sample = biquadFilterApplyDF2(&fftGyroFilter[axis], sample);
             gyroData[axis][fftIdx] = sample;
             if (axis == 0)
-                DEBUG_SET(DEBUG_FFT, 2, lrintf(sample));
+                DEBUG_SET(DEBUG_FFT, 2, lrintf(sample * gyroDev->scale));
             fftAcc[axis] = 0;
         }
 
@@ -166,7 +165,7 @@ void gyroDataAnalyse(const gyroDev_t *gyroDev, const gyro_t *gyro) {
     }
 
     // calculate FFT and update filters
-    gyroDataAnalyseUpdate();
+    gyroDataAnalyseUpdate(notchFilterDyn);
 }
 
 void stage_rfft_f32(arm_rfft_fast_instance_f32 * S, float32_t * p, float32_t * pOut);
@@ -189,7 +188,7 @@ typedef enum {
 /*
  * Analyse last gyro data from the last FFT_WINDOW_SIZE milliseconds
  */
-void gyroDataAnalyseUpdate() {
+void gyroDataAnalyseUpdate(biquadFilter_t *notchFilterDyn) {
     static int axis = 0;
     static int step = 0;
     arm_cfft_instance_f32 * Sint = &(fftInstance.Sint);
@@ -295,7 +294,7 @@ void gyroDataAnalyseUpdate() {
             // calculate new filter coefficients
             float cutoffFreq = constrain(fftResult[axis].centerFreq - DYN_NOTCH_WIDTH, DYN_NOTCH_MIN_CUTOFF, DYN_NOTCH_MAX_CUTOFF);
             float notchQ = filterGetNotchQApprox(fftResult[axis].centerFreq, cutoffFreq);
-            biquadFilterUpdate(notchFilterDyn[axis], fftResult[axis].centerFreq, gyro.targetLooptime, notchQ, FILTER_NOTCH);
+            biquadFilterUpdate(&notchFilterDyn[axis], fftResult[axis].centerFreq, gyro.targetLooptime, notchQ, FILTER_NOTCH);
             DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
 
             axis = (axis + 1) % 3;
