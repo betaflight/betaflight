@@ -115,17 +115,12 @@
 
 #define FLASH_SIZE 2048
 
-# define DEFIO_PORT_USED_COUNT 0
-# define DEFIO_PORT_USED_LIST /* empty */
-# define DEFIO_PORT_OFFSET_LIST /* empty */
 
 #define LED_STRIP_TIMER 1
 #define SOFTSERIAL_1_TIMER 2
 #define SOFTSERIAL_2_TIMER 3
 
-#define TARGET_IO_PORTA         0xffff
-#define TARGET_IO_PORTB         0xffff
-#define TARGET_IO_PORTC         0xffff
+#define TARGET_IO_PORTA         0x0001   // define one pin to avoid warnings
 
 #define WS2811_DMA_TC_FLAG (void *)1
 #define WS2811_DMA_HANDLER_IDENTIFER 0
@@ -162,7 +157,7 @@ typedef struct
   uint32_t BRR;
 } GPIO_TypeDef;
 
-#define GPIOA_BASE (0x0001)
+#define GPIOA_BASE ((intptr_t)0x0001)
 
 typedef struct
 {

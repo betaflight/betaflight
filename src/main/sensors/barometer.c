@@ -70,6 +70,10 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 
     baroSensor_e baroHardware = baroHardwareToUse;
 
+#if !defined(USE_BARO_BMP085) && !defined(USE_BARO_MS5611) && !defined(USE_BARO_BMP280) && !defined(USE_BARO_SPI_BMP280)
+    UNUSED(dev);
+#endif
+
 #ifdef USE_BARO_BMP085
     const bmp085Config_t *bmp085Config = NULL;
 
