@@ -133,7 +133,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXLLIGHTS, "LLIGHTS", 16 },
     { BOXCALIB, "CALIB", 17 },
     { BOXGOV, "GOVERNOR", 18 },
-    { BOXOSD, "OSD SW", 19 },
+    { BOXOSD, "OSD DISABLE SW", 19 },
     { BOXTELEMETRY, "TELEMETRY", 20 },
     { BOXGTUNE, "GTUNE", 21 },
     { BOXSONAR, "SONAR", 22 },
