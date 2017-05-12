@@ -70,9 +70,7 @@ static batteryState_e batteryState;
 static batteryState_e voltageState;
 static batteryState_e consumptionState;
 
-#ifdef BOARD_HAS_CURRENT_SENSOR
-#define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
-#else
+#ifndef DEFAULT_CURRENT_METER_SOURCE
 #ifdef USE_VIRTUAL_CURRENT_METER
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_VIRTUAL
 #else
@@ -84,9 +82,7 @@ static batteryState_e consumptionState;
 #endif
 #endif
 
-#ifdef BOARD_HAS_VOLTAGE_DIVIDER
-#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
-#else
+#ifndef DEFAULT_VOLTAGE_METER_SOURCE
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_NONE
 #endif
 

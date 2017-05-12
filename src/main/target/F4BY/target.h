@@ -133,7 +133,7 @@
 #define I2C2_SCL                PB10
 #define I2C2_SDA                PB11
 
-#define BOARD_HAS_VOLTAGE_DIVIDER
+#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define USE_ADC
 #define VBAT_ADC_PIN            PC3
 #define CURRENT_METER_ADC_PIN   PC2

@@ -112,7 +112,7 @@
 #define UART3_TX_PIN            PB10
 #define UART3_RX_PIN            PB11
 
-#define BOARD_HAS_VOLTAGE_DIVIDER
+#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define USE_ADC
 #define ADC_INSTANCE            ADC2
 #define ADC24_DMA_REMAP // moves ADC2 DMA from DMA2ch1 to DMA2ch3.
