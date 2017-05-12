@@ -49,6 +49,7 @@
 #define USE_ESC_SENSOR
 #define I2C3_OVERCLOCK true
 #define TELEMETRY_IBUS
+#define USE_GYRO_DATA_ANALYSE
 #endif
 
 #ifdef STM32F7
@@ -57,6 +58,7 @@
 #define I2C3_OVERCLOCK true
 #define I2C4_OVERCLOCK true
 #define TELEMETRY_IBUS
+#define USE_GYRO_DATA_ANALYSE
 #endif
 
 #if defined(STM32F4) || defined(STM32F7)

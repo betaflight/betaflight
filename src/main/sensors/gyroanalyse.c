@@ -276,14 +276,6 @@ void gyroDataAnalyseUpdate(biquadFilter_t *notchFilterDyn) {
                 }
             }
 
-            // copy data for display in OSD
-            const float scaleFactor = 255.0 / MIN(1, fftResult[axis].maxVal);
-            const int count = MIN(GYRO_FFT_BIN_COUNT, fftBinCount);
-            for (int ii = 0; ii < count; ++ii) {
-                fftResult[axis].bins[ii] = fftData[ii] * scaleFactor;
-            }
-
-
             DEBUG_SET(DEBUG_FFT_FREQ, axis, fftResult[axis].centerFreq);
             DEBUG_SET(DEBUG_FFT_TIME, 1, micros() - startTime);
             break;

@@ -22,7 +22,6 @@
 
 #define GYRO_FFT_BIN_COUNT      16 // FFT_WINDOW_SIZE / 2
 typedef struct gyroFftData_s {
-    uint8_t bins[GYRO_FFT_BIN_COUNT];
     float maxVal;
     uint16_t centerFreq;
 } gyroFftData_t;
