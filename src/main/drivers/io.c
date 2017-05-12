@@ -353,9 +353,20 @@ void IOConfigGPIOAF(IO_t io, ioConfig_t cfg, uint8_t af)
 }
 #endif
 
+#if DEFIO_PORT_USED_COUNT > 0
 static const uint16_t ioDefUsedMask[DEFIO_PORT_USED_COUNT] = { DEFIO_PORT_USED_LIST };
 static const uint8_t ioDefUsedOffset[DEFIO_PORT_USED_COUNT] = { DEFIO_PORT_OFFSET_LIST };
+#else
+// Avoid -Wpedantic warning
+static const uint16_t ioDefUsedMask[1] = {0};
+static const uint8_t ioDefUsedOffset[1] = {0};
+#endif
+#if DEFIO_IO_USED_COUNT
 ioRec_t ioRecs[DEFIO_IO_USED_COUNT];
+#else
+// Avoid -Wpedantic warning
+ioRec_t ioRecs[1];
+#endif
 
 // initialize all ioRec_t structures from ROM
 // currently only bitmask is used, this may change in future

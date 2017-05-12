@@ -33,7 +33,7 @@ typedef struct ioRec_s {
     uint8_t index;
 } ioRec_t;
 
-extern ioRec_t ioRecs[DEFIO_IO_USED_COUNT];
+extern ioRec_t ioRecs[];
 
 int IO_GPIOPortIdx(IO_t io);
 int IO_GPIOPinIdx(IO_t io);
