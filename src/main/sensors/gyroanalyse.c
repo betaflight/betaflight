@@ -85,14 +85,14 @@ static biquadFilter_t fftFreqFilter[3];
 static float hanningWindow[FFT_WINDOW_SIZE];
 
 void initHanning() {
-    for (int i = 0; i < FFT_WINDOW_SIZE; ++i) {
+    for (int i = 0; i < FFT_WINDOW_SIZE; i++) {
         hanningWindow[i] = (0.5 - 0.5 * cosf(2 * M_PIf * i / (FFT_WINDOW_SIZE - 1)));
     }
 }
 
 void initGyroData() {
-    for (int axis = 0; axis < 3; ++axis) {
-        for (int i = 0; i < FFT_WINDOW_SIZE; ++i) {
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        for (int i = 0; i < FFT_WINDOW_SIZE; i++) {
             gyroData[axis][i] = 0;
         }
     }
@@ -117,7 +117,7 @@ void gyroDataAnalyseInit(uint32_t targetLooptimeUs) {
     // recalculation of filters takes 4 calls per axis => each filter gets updated every 3 * 4 = 12 calls
     // at 4khz gyro loop rate this means 4khz / 4 / 3 = 333Hz => update every 3ms
     float looptime = targetLooptimeUs * 4 * 3;
-    for (int axis = 0; axis < 3; ++axis) {
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         fftResult[axis].centerFreq = 200; // any init value
         biquadFilterInitLPF(&fftFreqFilter[axis], DYN_NOTCH_CHANGERATE, looptime);
         biquadFilterInit(&fftGyroFilter[axis], FFT_BPF_HZ, 1000000 / FFT_SAMPLING_RATE, BIQUAD_Q, FILTER_BPF);
@@ -142,7 +142,7 @@ void gyroDataAnalyse(const gyroDev_t *gyroDev, biquadFilter_t *notchFilterDyn) {
     }
 
     // if gyro sampling is > 1kHz, accumulate multiple samples
-    for (int axis = 0; axis < 3; ++axis) {
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         fftAcc[axis] += gyroDev->gyroADC[axis];
     }
     fftAccCount++;
@@ -152,7 +152,7 @@ void gyroDataAnalyse(const gyroDev_t *gyroDev, biquadFilter_t *notchFilterDyn) {
         fftAccCount = 0;
 
         //calculate mean value of accumulated samples
-        for (int axis = 0; axis < 3; ++axis) {
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             float sample = fftAcc[axis] / fftSamplingScale;
             sample = biquadFilterApplyDF2(&fftGyroFilter[axis], sample);
             gyroData[axis][fftIdx] = sample;
@@ -251,7 +251,7 @@ void gyroDataAnalyseUpdate(biquadFilter_t *notchFilterDyn) {
             fftResult[axis].maxVal = 0;
             // iterate over fft data and calculate weighted indexes
             float squaredData;
-            for (int i = 0; i < fftBinCount; ++i) {
+            for (int i = 0; i < fftBinCount; i++) {
                 squaredData = fftData[i] * fftData[i];  //more weight on higher peaks
                 fftResult[axis].maxVal = MAX(fftResult[axis].maxVal, squaredData);
                 fftSum += squaredData;

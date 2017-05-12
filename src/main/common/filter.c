@@ -111,12 +111,11 @@ void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refresh
     }
 
     // precompute the coefficients
-    a0 = 1.0f / a0;
-    filter->b0 = b0 * a0;
-    filter->b1 = b1 * a0;
-    filter->b2 = b2 * a0;
-    filter->a1 = a1 * a0;
-    filter->a2 = a2 * a0;
+    filter->b0 = b0 / a0;
+    filter->b1 = b1 / a0;
+    filter->b2 = b2 / a0;
+    filter->a1 = a1 / a0;
+    filter->a2 = a2 / a0;
 
     // zero initial samples
     filter->x1 = filter->x2 = 0;
