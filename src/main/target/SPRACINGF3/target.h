@@ -94,7 +94,7 @@
 #define ACC_MPU6050_ALIGN       CW270_DEG
 #endif
 
-#if defined(SPRACINGF3) || defined(FLIP32F3OSD)
+#if defined(FLIP32F3OSD)
 #define SONAR
 #define SONAR_TRIGGER_PIN       PB0
 #define SONAR_ECHO_PIN          PB1
