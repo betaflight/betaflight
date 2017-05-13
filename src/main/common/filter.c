@@ -24,6 +24,11 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
+#define M_LN2_FLOAT 0.69314718055994530942f
+#define M_PI_FLOAT  3.14159265358979323846f
+#define BIQUAD_BANDWIDTH 1.9f     /* bandwidth in octaves */
+#define BIQUAD_Q 1.0f / sqrtf(2.0f)     /* quality factor - butterworth*/
+
 // NULL filter
 
 float nullFilterApply(void *filter, float input)
@@ -145,7 +150,7 @@ void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refre
 }
 
 /* Computes a biquadFilter_t filter on a sample (slightly less precise than df2 but works in dynamic mode) */
-float biquadFilterApply(biquadFilter_t *filter, float input)
+float biquadFilterApplyDF1(biquadFilter_t *filter, float input)
 {
     /* compute result */
     const float result = filter->b0 * input + filter->b1 * filter->x1 + filter->b2 * filter->x2 - filter->a1 * filter->y1 - filter->a2 * filter->y2;
@@ -162,7 +167,7 @@ float biquadFilterApply(biquadFilter_t *filter, float input)
 }
 
 /* Computes a biquadFilter_t filter in direct form 2 on a sample (higher precision but can't handle changes in coefficients */
-float biquadFilterApplyDF2(biquadFilter_t *filter, float input)
+float biquadFilterApply(biquadFilter_t *filter, float input)
 {
     const float result = filter->b0 * input + filter->d1;
     filter->d1 = filter->b1 * input - filter->a1 * result + filter->d2;

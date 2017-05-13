@@ -514,7 +514,7 @@ static void filterServos(void)
                 servoFilterIsSet = true;
             }
 
-            servo[servoIdx] = lrintf(biquadFilterApplyDF2(&servoFilter[servoIdx], (float)servo[servoIdx]));
+            servo[servoIdx] = lrintf(biquadFilterApply(&servoFilter[servoIdx], (float)servo[servoIdx]));
             // Sanity check
             servo[servoIdx] = constrain(servo[servoIdx], servoParams(servoIdx)->min, servoParams(servoIdx)->max);
         }

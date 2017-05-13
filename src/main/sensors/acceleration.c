@@ -465,7 +465,7 @@ void accUpdate(rollAndPitchTrims_t *rollAndPitchTrims)
 
     if (accLpfCutHz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            acc.accSmooth[axis] = lrintf(biquadFilterApplyDF2(&accFilter[axis], (float)acc.accSmooth[axis]));
+            acc.accSmooth[axis] = lrintf(biquadFilterApply(&accFilter[axis], (float)acc.accSmooth[axis]));
         }
     }
 

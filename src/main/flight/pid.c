@@ -171,7 +171,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     if (pidProfile->dterm_notch_hz == 0 || pidProfile->dterm_notch_hz > pidFrequencyNyquist) {
         dtermNotchFilterApplyFn = nullFilterApply;
     } else {
-        dtermNotchFilterApplyFn = (filterApplyFnPtr)biquadFilterApplyDF2;
+        dtermNotchFilterApplyFn = (filterApplyFnPtr)biquadFilterApply;
         const float notchQ = filterGetNotchQ(pidProfile->dterm_notch_hz, pidProfile->dterm_notch_cutoff);
         for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
             dtermFilterNotch[axis] = &biquadFilterNotch[axis];
@@ -194,7 +194,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
             }
             break;
         case FILTER_BIQUAD:
-            dtermLpfApplyFn = (filterApplyFnPtr)biquadFilterApplyDF2;
+            dtermLpfApplyFn = (filterApplyFnPtr)biquadFilterApply;
             for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
                 dtermFilterLpf[axis] = &biquadFilter[axis];
                 biquadFilterInitLPF(dtermFilterLpf[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
