@@ -1096,55 +1096,39 @@ static void writeGPSFrame(timeUs_t currentTimeUs)
 static void loadMainState(timeUs_t currentTimeUs)
 {
     blackboxMainState_t *blackboxCurrent = blackboxHistory[0];
-    int i;
 
     blackboxCurrent->time = currentTimeUs;
 
-    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
+    for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->axisPID_Setpoint[i] = axisPID_Setpoint[i];
-    }
-    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->axisPID_P[i] = axisPID_P[i];
-    }
-    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->axisPID_I[i] = axisPID_I[i];
-    }
-    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->axisPID_D[i] = axisPID_D[i];
-    }
-
-    for (i = 0; i < 4; i++) {
-        blackboxCurrent->rcCommand[i] = rcCommand[i];
-    }
-
-    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->gyroADC[i] = lrintf(gyro.gyroADCf[i]);
+        blackboxCurrent->accADC[i] = acc.accADC[i];
+#ifdef MAG
+        blackboxCurrent->magADC[i] = mag.magADC[i];
+#endif
     }
 
-    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
-        blackboxCurrent->accADC[i] = acc.accADC[i];
+    for (int i = 0; i < 4; i++) {
+        blackboxCurrent->rcCommand[i] = rcCommand[i];
     }
 
     blackboxCurrent->attitude[0] = attitude.values.roll;
     blackboxCurrent->attitude[1] = attitude.values.pitch;
     blackboxCurrent->attitude[2] = attitude.values.yaw;
 
-    for (i = 0; i < 4; i++) {
+    for (int i = 0; i < DEBUG16_VALUE_COUNT; i++) {
         blackboxCurrent->debug[i] = debug[i];
     }
 
-    for (i = 0; i < motorCount; i++) {
+    for (int i = 0; i < motorCount; i++) {
         blackboxCurrent->motor[i] = motor[i];
     }
 
     blackboxCurrent->vbatLatest = vbatLatestADC;
     blackboxCurrent->amperageLatest = amperageLatestADC;
-
-#ifdef MAG
-    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
-        blackboxCurrent->magADC[i] = mag.magADC[i];
-    }
-#endif
 
 #ifdef BARO
     blackboxCurrent->BaroAlt = baro.BaroAlt;
@@ -1171,7 +1155,7 @@ static void loadMainState(timeUs_t currentTimeUs)
     blackboxCurrent->navFlags = navFlags;
     blackboxCurrent->navEPH = navEPH;
     blackboxCurrent->navEPV = navEPV;
-    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
+    for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->navPos[i] = navLatestActualPosition[i];
         blackboxCurrent->navRealVel[i] = navActualVelocity[i];
         blackboxCurrent->navAccNEU[i] = navAccNEU[i];
