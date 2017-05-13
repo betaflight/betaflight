@@ -463,6 +463,12 @@ void handleHoTTTelemetry(timeUs_t currentTimeUs)
                             // FIXME Text mode
                             hottSwitchState(HOTT_WAITING_FOR_REQUEST, currentTimeUs);
                         }
+                        else {
+                            // Received garbage - resync
+                            flushHottRxBuffer();
+                            hottSwitchState(HOTT_WAITING_FOR_REQUEST, currentTimeUs);
+                        }
+
                         reprocessState = true;
                     }
                 }
