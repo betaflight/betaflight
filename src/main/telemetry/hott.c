@@ -93,7 +93,8 @@ typedef enum {
     HOTT_WAITING_FOR_REQUEST,
     HOTT_RECEIVING_REQUEST,
     HOTT_WAITING_FOR_TX_WINDOW,
-    HOTT_TRANSMITTING
+    HOTT_TRANSMITTING,
+    HOTT_ENDING_TRANSMISSION
 } hottState_e;
 
 #define HOTT_MESSAGE_PREPARATION_FREQUENCY_5_HZ ((1000 * 1000) / 5)
@@ -483,8 +484,15 @@ void handleHoTTTelemetry(timeUs_t currentTimeUs)
 
             case HOTT_TRANSMITTING:
                 if (hottSendTelemetryDataByte(currentTimeUs)) {
+                    hottSwitchState(HOTT_ENDING_TRANSMISSION, currentTimeUs);
+                }
+                break;
+
+            case HOTT_ENDING_TRANSMISSION:
+                if ((currentTimeUs - hottStateChangeUs) >= HOTT_TX_DELAY_US) {
                     flushHottRxBuffer();
                     hottSwitchState(HOTT_WAITING_FOR_REQUEST, currentTimeUs);
+                    reprocessState = true;
                 }
                 break;
         };
