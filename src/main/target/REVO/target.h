@@ -48,8 +48,6 @@
 
 #endif
 
-#define USE_ESC_SENSOR
-
 #define LED0                    PB5
 #if defined(PODIUMF4)
 #define LED1                    PB4
@@ -194,6 +192,12 @@
 #define UART3_RX_PIN            PB11
 #define UART3_TX_PIN            PB10
 
+#if defined(REVOLT)
+#define USE_UART4
+#define UART4_RX_PIN            PA1
+#define UART4_TX_PIN            PA0
+#endif // REVOLT
+
 #define USE_UART6
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
@@ -201,7 +205,11 @@
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 
+#if defined(REVOLT)
+#define SERIAL_PORT_COUNT       7 //VCP, USART1, USART3, UART4,  USART6, SOFTSERIAL x 2
+#else
 #define SERIAL_PORT_COUNT       6 //VCP, USART1, USART3, USART6, SOFTSERIAL x 2
+#endif
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1

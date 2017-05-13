@@ -181,6 +181,7 @@ void timerStart(void);
 void timerForceOverflow(TIM_TypeDef *tim);
 
 uint8_t timerClockDivisor(TIM_TypeDef *tim);
+uint32_t timerClock(TIM_TypeDef *tim);
 
 void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz);  // TODO - just for migration
 

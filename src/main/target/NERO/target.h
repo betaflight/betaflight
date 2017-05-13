@@ -22,7 +22,7 @@
 
 #define HW_PIN                  PB2
 
-#define BOARD_HAS_VOLTAGE_DIVIDER
+#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 
 #define LED0                    PB6
 #define LED1                    PB5
@@ -120,7 +120,6 @@
 #define USE_ADC
 #define VBAT_ADC_PIN            PC3
 
-//#define USE_ESC_SENSOR
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL

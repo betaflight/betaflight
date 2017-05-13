@@ -176,47 +176,13 @@ static void uartReconfigure(uartPort_t *uartPort)
     return;
 }
 
-serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, portOptions_t options)
+serialPort_t *uartOpen(UARTDevice device, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
-    uartPort_t *s = NULL;
+    uartPort_t *s = serialUART(device, baudRate, mode, options);
 
-    if (false) {
-#ifdef USE_UART1
-    } else if (USARTx == USART1) {
-        s = serialUART1(baudRate, mode, options);
-#endif
-#ifdef USE_UART2
-    } else if (USARTx == USART2) {
-        s = serialUART2(baudRate, mode, options);
-#endif
-#ifdef USE_UART3
-    } else if (USARTx == USART3) {
-        s = serialUART3(baudRate, mode, options);
-#endif
-#ifdef USE_UART4
-    } else if (USARTx == UART4) {
-        s = serialUART4(baudRate, mode, options);
-#endif
-#ifdef USE_UART5
-    } else if (USARTx == UART5) {
-        s = serialUART5(baudRate, mode, options);
-#endif
-#ifdef USE_UART6
-    } else if (USARTx == USART6) {
-        s = serialUART6(baudRate, mode, options);
-#endif
-#ifdef USE_UART7
-    } else if (USARTx == UART7) {
-        s = serialUART7(baudRate, mode, options);
-#endif
-#ifdef USE_UART8
-    } else if (USARTx == UART8) {
-        s = serialUART8(baudRate, mode, options);
-#endif
-    } else {
+    if (!s) {
         return (serialPort_t *)s;
     }
-
 
     s->txDMAEmpty = true;
 

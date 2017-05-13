@@ -757,6 +757,7 @@ FC_SRC = \
             sensors/gyroanalyse.c \
             sensors/initialisation.c \
             blackbox/blackbox.c \
+            blackbox/blackbox_encoding.c \
             blackbox/blackbox_io.c \
             cms/cms.c \
             cms/cms_menu_blackbox.c \
@@ -984,7 +985,7 @@ STM32F7xx_COMMON_SRC = \
             drivers/gpio_stm32f7xx.c \
             drivers/light_ws2811strip_hal.c \
             drivers/bus_spi_hal.c \
-            drivers/pwm_output_stm32f7xx.c \
+            drivers/pwm_output_dshot_hal.c \
             drivers/timer_hal.c \
             drivers/timer_stm32f7xx.c \
             drivers/system_stm32f7xx.c \

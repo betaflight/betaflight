@@ -47,17 +47,18 @@ typedef enum {
 } gyroRateKHz_e;
 
 typedef struct gyroDev_s {
-    sensorGyroInitFuncPtr init;                             // initialize function
-    sensorGyroReadFuncPtr read;                             // read 3 axis data function
-    sensorGyroReadDataFuncPtr temperature;                  // read temperature if available
-    sensorGyroInterruptStatusFuncPtr intStatus;
-    sensorGyroUpdateFuncPtr update;
+    sensorGyroInitFuncPtr initFn;                             // initialize function
+    sensorGyroReadFuncPtr readFn;                             // read 3 axis data function
+    sensorGyroReadDataFuncPtr temperatureFn;                  // read temperature if available
+    sensorGyroInterruptStatusFuncPtr intStatusFn;
+    sensorGyroUpdateFuncPtr updateFn;
     extiCallbackRec_t exti;
     busDevice_t bus;
     float scale;                                            // scalefactor
     int16_t gyroADCRaw[XYZ_AXIS_COUNT];
     int32_t gyroZero[XYZ_AXIS_COUNT];
     int32_t gyroADC[XYZ_AXIS_COUNT];                        // gyro data after calibration and alignment
+    int16_t temperature;
     uint8_t lpf;
     gyroRateKHz_e gyroRateKHz;
     uint8_t mpuDividerDrops;
@@ -72,8 +73,8 @@ typedef struct gyroDev_s {
 } gyroDev_t;
 
 typedef struct accDev_s {
-    sensorAccInitFuncPtr init;                              // initialize function
-    sensorAccReadFuncPtr read;                              // read 3 axis data function
+    sensorAccInitFuncPtr initFn;                              // initialize function
+    sensorAccReadFuncPtr readFn;                              // read 3 axis data function
     busDevice_t bus;
     uint16_t acc_1G;
     int16_t ADCRaw[XYZ_AXIS_COUNT];

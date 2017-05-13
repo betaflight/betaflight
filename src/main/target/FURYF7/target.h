@@ -21,8 +21,6 @@
 
 #define USBD_PRODUCT_STRING "FuryF7"
 
-#define USE_ESC_SENSOR
-
 #define LED0                    PB5
 #define LED1                    PB4
 
@@ -128,7 +126,7 @@
 #define I2C1_SDA                PB7
 
 #define USE_ADC
-#define BOARD_HAS_VOLTAGE_DIVIDER
+#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define VBAT_ADC_PIN            PC1
 #define RSSI_ADC_PIN            PC2
 #define CURRENT_METER_ADC_PIN   PC3

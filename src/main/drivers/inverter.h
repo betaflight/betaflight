@@ -21,6 +21,8 @@
 #define USE_INVERTER
 #endif
 
-void initInverters(void);
+#include "drivers/serial.h"
+
+void initInverters(const serialPinConfig_t *serialPinConfigToUse);
 
 void enableInverter(USART_TypeDef *USARTx, bool on);

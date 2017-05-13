@@ -47,7 +47,7 @@ uint8_t getTimerIndex(TIM_TypeDef *timer)
         }
     }
     dmaMotorTimers[dmaMotorTimerCount++].timer = timer;
-    return dmaMotorTimerCount-1;
+    return dmaMotorTimerCount - 1;
 }
 
 void pwmWriteDigital(uint8_t index, uint16_t value)
@@ -63,13 +63,13 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
     }
 
     uint16_t packet = (value << 1) | (motor->requestTelemetry ? 1 : 0);
-    motor->requestTelemetry = false;    // reset telemetry request to make sure it's triggered only once in a row
+    motor->requestTelemetry = false; // reset telemetry request to make sure it's triggered only once in a row
 
     // compute checksum
     int csum = 0;
     int csum_data = packet;
     for (int i = 0; i < 3; i++) {
-        csum ^=  csum_data;   // xor data by nibbles
+        csum ^= csum_data;   // xor data by nibbles
         csum_data >>= 4;
     }
     csum &= 0xf;
@@ -77,22 +77,17 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
     packet = (packet << 4) | csum;
     // generate pulses for whole packet
     for (int i = 0; i < 16; i++) {
-        motor->dmaBuffer[i] = (packet & 0x8000) ? MOTOR_BIT_1 : MOTOR_BIT_0;  // MSB first
+        motor->dmaBuffer[i] = (packet & 0x8000) ? MOTOR_BIT_1 : MOTOR_BIT_0; // MSB first
         packet <<= 1;
     }
 
-    if(motor->timerHardware->output & TIMER_OUTPUT_N_CHANNEL)
-    {
-        if(HAL_TIMEx_PWMN_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, MOTOR_DMA_BUFFER_SIZE) != HAL_OK)
-        {
+    if (motor->timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
+        if (HAL_TIMEx_PWMN_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, MOTOR_DMA_BUFFER_SIZE) != HAL_OK) {
             /* Starting PWM generation Error */
             return;
         }
-    }
-    else
-    {
-        if(HAL_TIM_PWM_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, MOTOR_DMA_BUFFER_SIZE) != HAL_OK)
-        {
+    } else {
+        if (HAL_TIM_PWM_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, MOTOR_DMA_BUFFER_SIZE) != HAL_OK) {
             /* Starting PWM generation Error */
             return;
         }
@@ -102,15 +97,6 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
 void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
 {
     UNUSED(motorCount);
-
-    if (!pwmMotorsEnabled) {
-        return;
-    }
-
-    for (uint8_t i = 0; i < dmaMotorTimerCount; i++) {
-        //TIM_SetCounter(dmaMotorTimers[i].timer, 0);
-        //TIM_DMACmd(dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources, ENABLE);
-    }
 }
 
 static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
@@ -118,16 +104,6 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
     motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];
     HAL_DMA_IRQHandler(motor->TimHandle.hdma[motor->timerDmaSource]);
 }
-
-/*static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
-{
-    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
-        motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];
-        DMA_Cmd(descriptor->stream, DISABLE);
-        TIM_DMACmd(motor->timerHardware->tim, motor->timerDmaSource, DISABLE);
-        DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
-    }
-}*/
 
 void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
 {
@@ -138,39 +114,31 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     const IO_t motorIO = IOGetByTag(timerHardware->tag);
 
     const uint8_t timerIndex = getTimerIndex(timer);
-    const bool configureTimer = (timerIndex == dmaMotorTimerCount-1);
 
     IOInit(motorIO, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
     IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP), timerHardware->alternateFunction);
 
     __DMA1_CLK_ENABLE();
 
-    if (configureTimer) {
-        RCC_ClockCmd(timerRCC(timer), ENABLE);
+    RCC_ClockCmd(timerRCC(timer), ENABLE);
 
-        motor->TimHandle.Instance = timerHardware->tim;
-        motor->TimHandle.Init.Prescaler = (SystemCoreClock / timerClockDivisor(timer) / getDshotHz(pwmProtocolType)) - 1;;
-        motor->TimHandle.Init.Period = MOTOR_BITLENGTH;
-        motor->TimHandle.Init.RepetitionCounter = 0;
-        motor->TimHandle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-        motor->TimHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
-        if(HAL_TIM_PWM_Init(&motor->TimHandle) != HAL_OK)
-        {
-            /* Initialization Error */
-            return;
-        }
-
-    }
-    else
-    {
-        motor->TimHandle = dmaMotors[timerIndex].TimHandle;
+    motor->TimHandle.Instance = timerHardware->tim;
+    motor->TimHandle.Init.Prescaler = (timerClock(timer) / getDshotHz(pwmProtocolType)) - 1;;
+    motor->TimHandle.Init.Period = MOTOR_BITLENGTH;
+    motor->TimHandle.Init.RepetitionCounter = 0;
+    motor->TimHandle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    motor->TimHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
+    motor->TimHandle.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+    if (HAL_TIM_PWM_Init(&motor->TimHandle) != HAL_OK) {
+        /* Initialization Error */
+        return;
     }
 
     motor->timerDmaSource = timerDmaSource(timerHardware->channel);
     dmaMotorTimers[timerIndex].timerDmaSources |= motor->timerDmaSource;
 
     /* Set the parameters to be configured */
-    motor->hdma_tim.Init.Channel  = timerHardware->dmaChannel;
+    motor->hdma_tim.Init.Channel = timerHardware->dmaChannel;
     motor->hdma_tim.Init.Direction = DMA_MEMORY_TO_PERIPH;
     motor->hdma_tim.Init.PeriphInc = DMA_PINC_DISABLE;
     motor->hdma_tim.Init.MemInc = DMA_MINC_ENABLE;
@@ -184,8 +152,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     motor->hdma_tim.Init.PeriphBurst = DMA_PBURST_SINGLE;
 
     /* Set hdma_tim instance */
-    if(timerHardware->dmaRef == NULL)
-    {
+    if (timerHardware->dmaRef == NULL) {
         /* Initialization Error */
         return;
     }
@@ -198,8 +165,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
 
     /* Initialize TIMx DMA handle */
-    if(HAL_DMA_Init(motor->TimHandle.hdma[motor->timerDmaSource]) != HAL_OK)
-    {
+    if (HAL_DMA_Init(motor->TimHandle.hdma[motor->timerDmaSource]) != HAL_OK) {
         /* Initialization Error */
         return;
     }
@@ -209,17 +175,20 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     /* PWM1 Mode configuration: Channel1 */
     TIM_OCInitStructure.OCMode = TIM_OCMODE_PWM1;
     if (output & TIMER_OUTPUT_N_CHANNEL) {
-        TIM_OCInitStructure.OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPOLARITY_LOW : TIM_OCPOLARITY_HIGH;
+        TIM_OCInitStructure.OCIdleState = TIM_OCIDLESTATE_RESET;
+        TIM_OCInitStructure.OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPOLARITY_HIGH : TIM_OCPOLARITY_LOW;
         TIM_OCInitStructure.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+        TIM_OCInitStructure.OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPOLARITY_HIGH : TIM_OCNPOLARITY_LOW;
     } else {
-        TIM_OCInitStructure.OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPOLARITY_LOW : TIM_OCPOLARITY_HIGH;
         TIM_OCInitStructure.OCIdleState = TIM_OCIDLESTATE_SET;
+        TIM_OCInitStructure.OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPOLARITY_LOW : TIM_OCPOLARITY_HIGH;
+        TIM_OCInitStructure.OCNIdleState = TIM_OCNIDLESTATE_SET;
+        TIM_OCInitStructure.OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPOLARITY_LOW : TIM_OCNPOLARITY_HIGH;
     }
     TIM_OCInitStructure.OCFastMode = TIM_OCFAST_DISABLE;
     TIM_OCInitStructure.Pulse = 0;
 
-    if(HAL_TIM_PWM_ConfigChannel(&motor->TimHandle, &TIM_OCInitStructure, motor->timerHardware->channel) != HAL_OK)
-    {
+    if (HAL_TIM_PWM_ConfigChannel(&motor->TimHandle, &TIM_OCInitStructure, motor->timerHardware->channel) != HAL_OK) {
         /* Configuration Error */
         return;
     }

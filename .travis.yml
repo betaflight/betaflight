@@ -27,12 +27,19 @@ git:
 addons:
   apt:
     packages:
+      - lcov
+      - build-essential
+      - git
       - libc6-i386
       - time
 
 # We use cpp for unit tests, and c for the main project.
 language: cpp
 compiler: clang
+
+before_install:
+  - pip install --user cpp-coveralls
+  - gem install coveralls-lcov
 
 install:
   - make arm_sdk_install

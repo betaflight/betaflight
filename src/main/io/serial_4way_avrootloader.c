@@ -48,6 +48,7 @@
 #define CMD_ERASE_FLASH     0x02
 #define CMD_READ_FLASH_SIL  0x03
 #define CMD_VERIFY_FLASH    0x03
+#define CMD_VERIFY_FLASH_ARM 0x04
 #define CMD_READ_EEPROM     0x04
 #define CMD_PROG_EEPROM     0x05
 #define CMD_READ_SRAM       0x06
@@ -58,14 +59,6 @@
 
 #define CMD_BOOTINIT        0x07
 #define CMD_BOOTSIGN        0x08
-
-// Bootloader result codes
-
-#define brSUCCESS           0x30
-#define brERRORCOMMAND      0xC1
-#define brERRORCRC          0xC2
-#define brNONE              0xFF
-
 
 #define START_BIT_TIMEOUT_MS 2
 
@@ -318,7 +311,7 @@ uint8_t BL_PageErase(ioMem_t *pMem)
     if (BL_SendCMDSetAddress(pMem)) {
         uint8_t sCMD[] = {CMD_ERASE_FLASH, 0x01};
         BL_SendBuf(sCMD, 2);
-        return (BL_GetACK((40 / START_BIT_TIMEOUT_MS)) == brSUCCESS);
+        return (BL_GetACK((1000 / START_BIT_TIMEOUT_MS)) == brSUCCESS);
     }
     return 0;
 }
@@ -331,6 +324,17 @@ uint8_t BL_WriteEEprom(ioMem_t *pMem)
 uint8_t BL_WriteFlash(ioMem_t *pMem)
 {
     return BL_WriteA(CMD_PROG_FLASH, pMem, (40 / START_BIT_TIMEOUT_MS));
+}
+
+uint8_t BL_VerifyFlash(ioMem_t *pMem)
+{
+    if (BL_SendCMDSetAddress(pMem)) {
+        if (!BL_SendCMDSetBuffer(pMem)) return 0;
+        uint8_t sCMD[] = {CMD_VERIFY_FLASH_ARM, 0x01};
+        BL_SendBuf(sCMD, 2);
+        return (BL_GetACK(40 / START_BIT_TIMEOUT_MS));
+    }
+    return 0;
 }
 
 #endif
