@@ -124,17 +124,27 @@ static uint8_t mspSerialChecksumBuf(uint8_t checksum, const uint8_t *data, int l
 
 static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet)
 {
-    serialBeginWrite(msp->port);
     const int len = sbufBytesRemaining(&packet->buf);
     const int mspLen = len < JUMBO_FRAME_SIZE_LIMIT ? len : JUMBO_FRAME_SIZE_LIMIT;
     uint8_t hdr[8] = {'$', 'M', packet->result == MSP_RESULT_ERROR ? '!' : '>', mspLen, packet->cmd};
     int hdrLen = 5;
+
 #define CHECKSUM_STARTPOS 3  // checksum starts from mspLen field
     if (len >= JUMBO_FRAME_SIZE_LIMIT) {
         hdrLen += 2;
         hdr[5] = len & 0xff;
         hdr[6] = (len >> 8) & 0xff;
     }
+
+    // We are allowed to send out the response if 
+    //  a) TX buffer is completely empty (we are talking to well-behaving party that follows request-response scheduling;
+    //     this allows us to transmit jumbo frames bigger than TX buffer (serialWriteBuf will block, but for jumbo frames we don't care)
+    //  b) Response fits into TX buffer
+
+    if (!isSerialTransmitBufferEmpty(msp->port) && ((int)serialTxBytesFree(msp->port) < (hdrLen + len + 1)))
+        return 0;
+
+    serialBeginWrite(msp->port);
     serialWriteBuf(msp->port, hdr, hdrLen);
     uint8_t checksum = mspSerialChecksumBuf(0, hdr + CHECKSUM_STARTPOS, hdrLen - CHECKSUM_STARTPOS);
     if (len > 0) {
@@ -143,7 +153,7 @@ static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet)
     }
     serialWriteBuf(msp->port, &checksum, 1);
     serialEndWrite(msp->port);
-    return sizeof(hdr) + len + 1; // header, data, and checksum
+    return hdrLen + len + 1; // header, data, and checksum
 }
 
 static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp, mspProcessCommandFnPtr mspProcessCommandFn)
