@@ -125,7 +125,8 @@ static displayPort_t *cmsDisplayPortSelectNext(void)
 //
 
 #define LEFT_MENU_COLUMN  1
-#define RIGHT_MENU_COLUMN(p) ((p)->cols - 8)
+//#define RIGHT_MENU_COLUMN(p) ((p)->cols - 8)
+#define RIGHT_MENU_COLUMN(p) ((p)->cols > 21 ? (p)->cols - 10 : (p)->cols - 8)
 #define MAX_MENU_ITEMS(p)    ((p)->rows - 2)
 
 static bool cmsInMenu = false;
