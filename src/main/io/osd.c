@@ -264,20 +264,13 @@ static void osdDrawSingleElement(uint8_t item)
                 val = gpsSol.llh.lon;
             }
 
-            if (val >= 0)
-            {
-                itoa(1000000000 + val, &buff[1], 10);
-                buff[1] = buff[2];
-                buff[2] = buff[3];
-                buff[3] = '.';
-            }
-            else
-            {
-                itoa(-1000000000 + val, &buff[1], 10);
-                buff[2] = buff[3];
-                buff[3] = buff[4];
-                buff[4] = '.';
-            }
+            char wholeDegreeString[5];
+            sprintf(wholeDegreeString, "%d", val / GPS_DEGREES_DIVIDER);
+
+            char wholeUnshifted[32];
+            sprintf(wholeUnshifted, "%d", val);
+
+            sprintf(buff + 1, "%s.%s", wholeDegreeString, wholeUnshifted + strlen(wholeDegreeString));
             break;
         }
 
