@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include "drivers/accgyro/accgyro.h"
 #include "common/axis.h"
 #include "config/parameter_group.h"
 #include "drivers/sensor.h"
