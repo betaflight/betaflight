@@ -17,19 +17,24 @@
 
 #pragma once
 
-#if defined(STM32F745xx)
+#if defined(STM32F745xx) || defined(STM32F746xx) || defined(STM32F722xx)
 #include "stm32f7xx.h"
 #include "stm32f7xx_hal.h"
 
 // Chip Unique ID on F7
+#if defined(STM32F722xx)
+#define U_ID_0 (*(uint32_t*)0x1ff07a10)
+#define U_ID_1 (*(uint32_t*)0x1ff07a14)
+#define U_ID_2 (*(uint32_t*)0x1ff07a18)
+#else
 #define U_ID_0 (*(uint32_t*)0x1ff0f420)
 #define U_ID_1 (*(uint32_t*)0x1ff0f424)
 #define U_ID_2 (*(uint32_t*)0x1ff0f428)
-
-#define STM32F7
 #endif
 
-#if defined(STM32F40_41xxx) || defined (STM32F411xE) || defined (STM32F427_437xx)
+#define STM32F7
+
+#elif defined(STM32F40_41xxx) || defined (STM32F411xE) || defined (STM32F427_437xx)
 #include "stm32f4xx_conf.h"
 #include "stm32f4xx_rcc.h"
 #include "stm32f4xx_gpio.h"
@@ -41,9 +46,8 @@
 #define U_ID_2 (*(uint32_t*)0x1fff7a18)
 
 #define STM32F4
-#endif
 
-#ifdef STM32F303xC
+#elif defined(STM32F303xC)
 #include "stm32f30x_conf.h"
 #include "stm32f30x_rcc.h"
 #include "stm32f30x_gpio.h"
@@ -55,9 +59,8 @@
 #define U_ID_2 (*(uint32_t*)0x1FFFF7B4)
 
 #define STM32F3
-#endif
 
-#ifdef STM32F10X
+#elif defined(STM32F10X)
 
 #include "stm32f10x_conf.h"
 #include "stm32f10x_gpio.h"
