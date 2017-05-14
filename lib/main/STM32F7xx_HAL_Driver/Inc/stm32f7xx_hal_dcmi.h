@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_dcmi.h
   * @author  MCD Application Team
-  * @version V1.1.2
-  * @date    23-September-2016 
+  * @version V1.2.2
+  * @date    14-April-2017
   * @brief   Header file of DCMI HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -43,10 +43,10 @@
  extern "C" {
 #endif
 
-#if defined (DCMI)
-
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f7xx_hal_def.h"
+
+#if defined (DCMI)
  
 /** @addtogroup STM32F7xx_HAL_Driver
   * @{

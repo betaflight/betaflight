@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_smartcard.c
   * @author  MCD Application Team
-  * @version V1.1.2
-  * @date    23-September-2016 
+  * @version V1.2.2
+  * @date    14-April-2017
   * @brief   SMARTCARD HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the SMARTCARD peripheral:
@@ -108,7 +108,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -396,14 +396,14 @@ __weak void HAL_SMARTCARD_MspDeInit(SMARTCARD_HandleTypeDef *hsmartcard)
     This subsection provides a set of functions allowing to manage the SMARTCARD data transfers.
 
   [..]
-    Smartcard is a single wire half duplex communication protocol.
+    (#) Smartcard is a single wire half duplex communication protocol.
     The Smartcard interface is designed to support asynchronous protocol Smartcards as
-    defined in the ISO 7816-3 standard. The USART should be configured as:
-    (+) 8 bits plus parity: where M=1 and PCE=1 in the USART_CR1 register
-    (+) 1.5 stop bits when transmitting and receiving: where STOP=11 in the USART_CR2 register.
+    defined in the ISO 7816-3 standard. 
+    (#) The USART should be configured as:
+        (++) 8 bits plus parity: where M=1 and PCE=1 in the USART_CR1 register
+        (++) 1.5 stop bits when transmitting and receiving: where STOP=11 in the USART_CR2 register.
 
-  [..]
-    (+) There are two modes of transfer:
+    (#) There are two modes of transfer:
         (++) Blocking mode: The communication is performed in polling mode.
              The HAL status of all data processing is returned by the same function
              after finishing transfer.
@@ -417,47 +417,47 @@ __weak void HAL_SMARTCARD_MspDeInit(SMARTCARD_HandleTypeDef *hsmartcard)
              The HAL_SMARTCARD_ErrorCallback() user callback will be executed when a communication
              error is detected.
 
-    (+) Blocking mode APIs are :
+    (#) Blocking mode APIs are :
         (++) HAL_SMARTCARD_Transmit()
         (++) HAL_SMARTCARD_Receive()
 
-    (+) Non Blocking mode APIs with Interrupt are :
+    (#) Non Blocking mode APIs with Interrupt are :
         (++) HAL_SMARTCARD_Transmit_IT()
         (++) HAL_SMARTCARD_Receive_IT()
         (++) HAL_SMARTCARD_IRQHandler()
 
-    (+) Non Blocking mode functions with DMA are :
+    (#) Non Blocking mode functions with DMA are :
         (++) HAL_SMARTCARD_Transmit_DMA()
         (++) HAL_SMARTCARD_Receive_DMA()
 
-    (+) A set of Transfer Complete Callbacks are provided in non Blocking mode:
+    (#) A set of Transfer Complete Callbacks are provided in non Blocking mode:
         (++) HAL_SMARTCARD_TxCpltCallback()
         (++) HAL_SMARTCARD_RxCpltCallback()
         (++) HAL_SMARTCARD_ErrorCallback()
 
     (#) Non-Blocking mode transfers could be aborted using Abort API's :
-        (+) HAL_SMARTCARD_Abort()
-        (+) HAL_SMARTCARD_AbortTransmit()
-        (+) HAL_SMARTCARD_AbortReceive()
-        (+) HAL_SMARTCARD_Abort_IT()
-        (+) HAL_SMARTCARD_AbortTransmit_IT()
-        (+) HAL_SMARTCARD_AbortReceive_IT()
+        (++) HAL_SMARTCARD_Abort()
+        (++) HAL_SMARTCARD_AbortTransmit()
+        (++) HAL_SMARTCARD_AbortReceive()
+        (++) HAL_SMARTCARD_Abort_IT()
+        (++) HAL_SMARTCARD_AbortTransmit_IT()
+        (++) HAL_SMARTCARD_AbortReceive_IT()
 
     (#) For Abort services based on interrupts (HAL_SMARTCARD_Abortxxx_IT), a set of Abort Complete Callbacks are provided:
-        (+) HAL_SMARTCARD_AbortCpltCallback()
-        (+) HAL_SMARTCARD_AbortTransmitCpltCallback()
-        (+) HAL_SMARTCARD_AbortReceiveCpltCallback()
+        (++) HAL_SMARTCARD_AbortCpltCallback()
+        (++) HAL_SMARTCARD_AbortTransmitCpltCallback()
+        (++) HAL_SMARTCARD_AbortReceiveCpltCallback()
 
     (#) In Non-Blocking mode transfers, possible errors are split into 2 categories.
         Errors are handled as follows :
-       (+) Error is considered as Recoverable and non blocking : Transfer could go till end, but error severity is 
-           to be evaluated by user : this concerns Frame Error, Parity Error or Noise Error in Interrupt mode reception .
-           Received character is then retrieved and stored in Rx buffer, Error code is set to allow user to identify error type,
-           and HAL_SMARTCARD_ErrorCallback() user callback is executed. Transfer is kept ongoing on SMARTCARD side.
-           If user wants to abort it, Abort services should be called by user.
-       (+) Error is considered as Blocking : Transfer could not be completed properly and is aborted.
-           This concerns Frame Error in Interrupt mode tranmission, Overrun Error in Interrupt mode reception and all errors in DMA mode.
-           Error code is set to allow user to identify error type, and HAL_SMARTCARD_ErrorCallback() user callback is executed.
+       (++) Error is considered as Recoverable and non blocking : Transfer could go till end, but error severity is 
+            to be evaluated by user : this concerns Frame Error, Parity Error or Noise Error in Interrupt mode reception .
+            Received character is then retrieved and stored in Rx buffer, Error code is set to allow user to identify error type,
+            and HAL_SMARTCARD_ErrorCallback() user callback is executed. Transfer is kept ongoing on SMARTCARD side.
+            If user wants to abort it, Abort services should be called by user.
+       (++) Error is considered as Blocking : Transfer could not be completed properly and is aborted.
+            This concerns Frame Error in Interrupt mode tranmission, Overrun Error in Interrupt mode reception and all errors in DMA mode.
+            Error code is set to allow user to identify error type, and HAL_SMARTCARD_ErrorCallback() user callback is executed.
 
 @endverbatim
   * @{
@@ -1838,16 +1838,6 @@ static HAL_StatusTypeDef SMARTCARD_CheckIdleState(SMARTCARD_HandleTypeDef *hsmar
   {
     /* Wait until TEACK flag is set */
     if(SMARTCARD_WaitOnFlagUntilTimeout(hsmartcard, USART_ISR_TEACK, RESET, tickstart, SMARTCARD_TEACK_REACK_TIMEOUT) != HAL_OK)
-    {
-      /* Timeout occurred */
-      return HAL_TIMEOUT;
-    }
-  }
-  /* Check if the Receiver is enabled */
-  if((hsmartcard->Instance->CR1 & USART_CR1_RE) == USART_CR1_RE)
-  {
-    /* Wait until REACK flag is set */
-    if(SMARTCARD_WaitOnFlagUntilTimeout(hsmartcard, USART_ISR_REACK, RESET, tickstart, SMARTCARD_TEACK_REACK_TIMEOUT) != HAL_OK)
     {
       /* Timeout occurred */
       return HAL_TIMEOUT;

@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_spi.c
   * @author  MCD Application Team
-  * @version V1.1.2
-  * @date    23-September-2016 
+  * @version V1.2.2
+  * @date    14-April-2017
   * @brief   SPI HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Serial Peripheral Interface (SPI) peripheral:
@@ -52,7 +52,17 @@
       (#) The CRC feature is not managed when the DMA circular mode is enabled
       (#) When the SPI DMA Pause/Stop features are used, we must use the following APIs
           the HAL_SPI_DMAPause()/ HAL_SPI_DMAStop() only under the SPI callbacks
+
      [..]
+       (@) The max SPI frequency depend on SPI data size (4bits, 5bits,..., 8bits,...15bits, 16bits),
+           SPI mode(2 Lines fullduplex, 2 lines RxOnly, 1 line TX/RX) and Process mode (Polling, IT, DMA).
+       (@)
+           (+@) TX/RX processes are HAL_SPI_TransmitReceive(), HAL_SPI_TransmitReceive_IT() and HAL_SPI_TransmitReceive_DMA()
+           (+@) RX processes are HAL_SPI_Receive(), HAL_SPI_Receive_IT() and HAL_SPI_Receive_DMA()
+           (+@) TX processes are HAL_SPI_Transmit(), HAL_SPI_Transmit_IT() and HAL_SPI_Transmit_DMA()
+
+  @endverbatim
+
        Using the HAL it is not possible to reach all supported SPI frequency with the differents SPI Modes,
        the following table resume the max SPI frequency reached with data size 8bits/16bits,
        according to frequency used on APBx Peripheral Clock (fPCLK) used by the SPI instance :
@@ -106,18 +116,11 @@
        |    X    |----------------|----------|----------|-----------|----------|-----------|----------|
        |         |       DMA      | Fpclk/2  | Fpclk/2  |     NA    |    NA    | Fpclk/8   | Fpclk/16 |
        +----------------------------------------------------------------------------------------------+
-       @note The max SPI frequency depend on SPI data size (4bits, 5bits,..., 8bits,...15bits, 16bits),
-             SPI mode(2 Lines fullduplex, 2 lines RxOnly, 1 line TX/RX) and Process mode (Polling, IT, DMA).
-       @note
-            (#) TX/RX processes are HAL_SPI_TransmitReceive(), HAL_SPI_TransmitReceive_IT() and HAL_SPI_TransmitReceive_DMA()
-            (#) RX processes are HAL_SPI_Receive(), HAL_SPI_Receive_IT() and HAL_SPI_Receive_DMA()
-            (#) TX processes are HAL_SPI_Transmit(), HAL_SPI_Transmit_IT() and HAL_SPI_Transmit_DMA()
 
-  @endverbatim
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -1853,21 +1856,31 @@ error :
 HAL_StatusTypeDef HAL_SPI_Abort(SPI_HandleTypeDef *hspi)
 {
   HAL_StatusTypeDef errorcode;
+  uint32_t tickstart = 0U;
 
   /* Initialized local variable  */
   errorcode = HAL_OK;
+
+  /* Init tickstart for timeout managment*/
+  tickstart = HAL_GetTick();
 
   /* Disable TXEIE, RXNEIE and ERRIE(mode fault event, overrun error, TI frame error) interrupts */
   if (HAL_IS_BIT_SET(hspi->Instance->CR2, SPI_CR2_TXEIE))
   {
     hspi->TxISR = SPI_AbortTx_ISR;
-    while (hspi->State != HAL_SPI_STATE_ABORT);
   }
 
   if (HAL_IS_BIT_SET(hspi->Instance->CR2, SPI_CR2_RXNEIE))
   {
     hspi->RxISR = SPI_AbortRx_ISR;
-    while (hspi->State != HAL_SPI_STATE_ABORT);
+  }
+
+  while (hspi->State != HAL_SPI_STATE_ABORT)
+  {
+    if ((HAL_GetTick() - tickstart) >=  HAL_MAX_DELAY)
+    {
+      return HAL_TIMEOUT;
+    }
   }
 
   /* Clear ERRIE interrupts in case of DMA Mode */
@@ -1982,23 +1995,33 @@ HAL_StatusTypeDef HAL_SPI_Abort(SPI_HandleTypeDef *hspi)
 HAL_StatusTypeDef HAL_SPI_Abort_IT(SPI_HandleTypeDef *hspi)
 {
   HAL_StatusTypeDef errorcode;
+  uint32_t tickstart = 0U;
   uint32_t abortcplt ;
 
   /* Initialized local variable  */
   errorcode = HAL_OK;
   abortcplt = 1U;
 
+  /* Init tickstart for timeout managment*/
+  tickstart = HAL_GetTick();
+
   /* Change Rx and Tx Irq Handler to Disable TXEIE, RXNEIE and ERRIE interrupts */
   if (HAL_IS_BIT_SET(hspi->Instance->CR2, SPI_CR2_TXEIE))
   {
     hspi->TxISR = SPI_AbortTx_ISR;
-    while (hspi->State != HAL_SPI_STATE_ABORT);
   }
 
   if (HAL_IS_BIT_SET(hspi->Instance->CR2, SPI_CR2_RXNEIE))
   {
     hspi->RxISR = SPI_AbortRx_ISR;
-    while (hspi->State != HAL_SPI_STATE_ABORT);
+  }
+  
+  while (hspi->State != HAL_SPI_STATE_ABORT)
+  {
+    if ((HAL_GetTick() - tickstart) >=  HAL_MAX_DELAY)
+    {
+      return HAL_TIMEOUT;
+    }
   }
 
   /* Clear ERRIE interrupts in case of DMA Mode */
@@ -3624,13 +3647,24 @@ static void SPI_CloseTx_ISR(SPI_HandleTypeDef *hspi)
   */
 static void SPI_AbortRx_ISR(SPI_HandleTypeDef *hspi)
 {
+  uint32_t tickstart = 0U;
+
+  /* Init tickstart for timeout managment*/
+  tickstart = HAL_GetTick();
+
   /* Disable SPI Peripheral */
   __HAL_SPI_DISABLE(hspi);
 
   /* Disable TXEIE, RXNEIE and ERRIE(mode fault event, overrun error, TI frame error) interrupts */
   CLEAR_BIT(hspi->Instance->CR2, (SPI_CR2_TXEIE | SPI_CR2_RXNEIE | SPI_CR2_ERRIE));
 
-  while (HAL_IS_BIT_SET(hspi->Instance->CR2, SPI_CR2_RXNEIE));
+  while (HAL_IS_BIT_SET(hspi->Instance->CR2, SPI_CR2_RXNEIE))
+  {
+    if ((HAL_GetTick() - tickstart) >=  HAL_MAX_DELAY)
+    {
+      hspi->ErrorCode = HAL_SPI_ERROR_ABORT;
+    }
+  }
 
   /* Control the BSY flag */
   if (SPI_WaitFlagStateUntilTimeout(hspi, SPI_FLAG_BSY, RESET, SPI_DEFAULT_TIMEOUT, HAL_GetTick()) != HAL_OK)
@@ -3655,10 +3689,21 @@ static void SPI_AbortRx_ISR(SPI_HandleTypeDef *hspi)
   */
 static void SPI_AbortTx_ISR(SPI_HandleTypeDef *hspi)
 {
+  uint32_t tickstart = 0U;
+
+  /* Init tickstart for timeout managment*/
+  tickstart = HAL_GetTick();
+
   /* Disable TXEIE, RXNEIE and ERRIE(mode fault event, overrun error, TI frame error) interrupts */
   CLEAR_BIT(hspi->Instance->CR2, (SPI_CR2_TXEIE | SPI_CR2_RXNEIE | SPI_CR2_ERRIE));
 
-  while (HAL_IS_BIT_SET(hspi->Instance->CR2, SPI_CR2_TXEIE));
+  while (HAL_IS_BIT_SET(hspi->Instance->CR2, SPI_CR2_TXEIE))
+  {
+    if ((HAL_GetTick() - tickstart) >=  HAL_MAX_DELAY)
+    {
+      hspi->ErrorCode = HAL_SPI_ERROR_ABORT;
+    }
+  }
 
   if (SPI_EndRxTxTransaction(hspi, SPI_DEFAULT_TIMEOUT, HAL_GetTick()) != HAL_OK)
   {
