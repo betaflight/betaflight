@@ -2,13 +2,13 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_qspi.h
   * @author  MCD Application Team
-  * @version V1.1.2
-  * @date    23-September-2016 
+  * @version V1.2.2
+  * @date    14-April-2017
   * @brief   Header file of QSPI HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -119,11 +119,11 @@ typedef struct
   QUADSPI_TypeDef            *Instance;        /* QSPI registers base address        */
   QSPI_InitTypeDef           Init;             /* QSPI communication parameters      */
   uint8_t                    *pTxBuffPtr;      /* Pointer to QSPI Tx transfer Buffer */
-  __IO uint16_t              TxXferSize;       /* QSPI Tx Transfer size              */
-  __IO uint16_t              TxXferCount;      /* QSPI Tx Transfer Counter           */
+  __IO uint32_t              TxXferSize;       /* QSPI Tx Transfer size              */
+  __IO uint32_t              TxXferCount;      /* QSPI Tx Transfer Counter           */
   uint8_t                    *pRxBuffPtr;      /* Pointer to QSPI Rx transfer Buffer */
-  __IO uint16_t              RxXferSize;       /* QSPI Rx Transfer size              */
-  __IO uint16_t              RxXferCount;      /* QSPI Rx Transfer Counter           */
+  __IO uint32_t              RxXferSize;       /* QSPI Rx Transfer size              */
+  __IO uint32_t              RxXferCount;      /* QSPI Rx Transfer Counter           */
   DMA_HandleTypeDef          *hdma;            /* QSPI Rx/Tx DMA Handle parameters   */
   __IO HAL_LockTypeDef       Lock;             /* Locking object                     */
   __IO HAL_QSPI_StateTypeDef State;            /* QSPI communication state           */
