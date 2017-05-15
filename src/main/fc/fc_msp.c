@@ -146,7 +146,6 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOX3DDISABLESWITCH, "DISABLE 3D SWITCH", 29},
     { BOXFPVANGLEMIX, "FPV ANGLE MIX", 30},
     { BOXBLACKBOXERASE, "BLACKBOX ERASE (>30s)", 31 },
-    { BOXDYNAMICFILTER, "DYNAMIC FILTER", 32 },
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -307,10 +306,6 @@ void initActiveBoxIds(void)
         activeBoxIds[activeBoxIdCount++] = BOXANTIGRAVITY;
     }
 
-    if (!feature(FEATURE_DYNAMIC_FILTER)) {
-        activeBoxIds[activeBoxIdCount++] = BOXDYNAMICFILTER;
-    }
-	
     if (sensors(SENSOR_ACC)) {
         activeBoxIds[activeBoxIdCount++] = BOXANGLE;
         activeBoxIds[activeBoxIdCount++] = BOXHORIZON;

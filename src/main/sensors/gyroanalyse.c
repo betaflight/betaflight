@@ -138,7 +138,7 @@ const gyroFftData_t *gyroFftData(int axis)
 
 bool isDynamicFilterActive(void)
 {
-    return (IS_RC_MODE_ACTIVE(BOXDYNAMICFILTER) || feature(FEATURE_DYNAMIC_FILTER));
+    return feature(FEATURE_DYNAMIC_FILTER);
 }
 
 /*
