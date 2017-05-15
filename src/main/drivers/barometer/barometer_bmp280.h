@@ -57,7 +57,7 @@
 #define BMP280_MODE                      (BMP280_PRESSURE_OSR << 2 | BMP280_TEMPERATURE_OSR << 5 | BMP280_FORCED_MODE)
 
 //configure IIR pressure filter
-#define BMP280_FILTER                    (BMP280_FILTER_COEFF_4 << 2)
+#define BMP280_FILTER                    (BMP280_FILTER_COEFF_8 << 2)
 
 #define T_INIT_MAX                       (20)
 // 20/16 = 1.25 ms
