@@ -32,17 +32,12 @@
 
 #include "drivers/system.h"
 #include "drivers/serial.h"
+#include "drivers/serial_uart.h"
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
 #include "drivers/serial_softserial.h"
 #endif
 
-#define USE_UART (defined(USE_UART1) || defined(USE_UART2) || defined(USE_UART3) || defined(USE_UART4) || defined(USE_UART5) || defined(USE_UART6) || defined(USE_UART7) || defined(USE_UART8))
-
-#define USE_SERIAL (USE_UART || defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
-
-#if USE_UART
-#include "drivers/serial_uart.h"
-#endif
+#define USE_SERIAL (defined(USE_UART) || defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
 
 #include "drivers/light_led.h"
 

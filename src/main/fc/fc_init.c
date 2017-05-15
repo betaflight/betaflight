@@ -281,6 +281,10 @@ void init(void)
     busSwitchInit();
 #endif
 
+#ifdef USE_UART
+    uartPinConfigure(serialPinConfig());
+#endif
+
 #if defined(AVOID_UART1_FOR_PWM_PPM)
     serialInit(feature(FEATURE_SOFTSERIAL),
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART1 : SERIAL_PORT_NONE);

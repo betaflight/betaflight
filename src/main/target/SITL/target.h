@@ -59,14 +59,14 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 0
 
-#define USE_UART1
-#define USE_UART2
-#define USE_UART3
-#define USE_UART4
-#define USE_UART5
-#define USE_UART6
-#define USE_UART7
-#define USE_UART8
+//#define USE_UART1
+//#define USE_UART2
+//#define USE_UART3
+//#define USE_UART4
+//#define USE_UART5
+//#define USE_UART6
+//#define USE_UART7
+//#define USE_UART8
 
 //#define USE_SOFTSERIAL1
 //#define USE_SOFTSERIAL2

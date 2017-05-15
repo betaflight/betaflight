@@ -17,6 +17,7 @@
 
 /*
  * Authors:
+ * jflyper - Refactoring, cleanup and made pin-configurable
  * Dominic Clifton - Serial port abstraction, Separation of common STM32 code for cleanflight, various cleanups.
  * Hamasaki/Timecop - Initial baseflight code
 */
@@ -31,12 +32,40 @@
 #include "common/utils.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
-#include "inverter.h"
-#include "dma.h"
+#include "drivers/inverter.h"
+#include "drivers/dma.h"
+#include "drivers/rcc.h"
 
-#include "serial.h"
-#include "serial_uart.h"
-#include "serial_uart_impl.h"
+#include "drivers/serial.h"
+#include "drivers/serial_uart.h"
+#include "drivers/serial_uart_impl.h"
+
+uartDevice_t uartDevice[UARTDEV_COUNT];      // Only configured in target.h
+uartDevice_t *uartDevmap[UARTDEV_COUNT_MAX]; // Full array
+
+void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
+{
+    uartDevice_t *uartdev = uartDevice;
+
+    for (size_t hindex = 0 ; hindex < UARTDEV_COUNT ; hindex++) {
+
+        const uartHardware_t *hardware = &uartHardware[hindex];
+        UARTDevice device = hardware->device;
+
+        for (int pair = 0 ; pair < UARTHARDWARE_PINPAIR_COUNT ; pair++) {
+            if (hardware->pinPair[pair].rx == pSerialPinConfig->ioTagRx[device]
+             && hardware->pinPair[pair].tx == pSerialPinConfig->ioTagTx[device]) {
+                // Matching pin pair found
+
+                uartdev->hardware = hardware;
+                uartdev->rx = hardware->pinPair[pair].rx;
+                uartdev->tx = hardware->pinPair[pair].tx;
+                uartDevmap[device] = uartdev++;
+                break;
+            }
+        }
+    }
+}
 
 static void usartConfigurePinInversion(uartPort_t *uartPort) {
     bool inverted = uartPort->port.options & SERIAL_INVERTED;
@@ -56,7 +85,7 @@ static void usartConfigurePinInversion(uartPort_t *uartPort) {
     }
 }
 
-static void uartReconfigure(uartPort_t *uartPort)
+void uartReconfigure(uartPort_t *uartPort)
 {
     /*RCC_PeriphCLKInitTypeDef RCC_PeriphClkInit;
     RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_USART2|RCC_PERIPHCLK_USART3|
@@ -357,3 +386,75 @@ const struct serialPortVTable uartVTable[] = {
         .endWrite = NULL,
     }
 };
+
+#ifdef USE_UART1
+// USART1 Rx/Tx IRQ Handler
+void USART1_IRQHandler(void)
+{
+    uartPort_t *s = &(uartDevmap[UARTDEV_1]->port);
+    uartIrqHandler(s);
+}
+#endif
+
+#ifdef USE_UART2
+// USART2 Rx/Tx IRQ Handler
+void USART2_IRQHandler(void)
+{
+    uartPort_t *s = &(uartDevmap[UARTDEV_2]->port);
+    uartIrqHandler(s);
+}
+#endif
+
+#ifdef USE_UART3
+// USART3 Rx/Tx IRQ Handler
+void USART3_IRQHandler(void)
+{
+    uartPort_t *s = &(uartDevmap[UARTDEV_3]->port);
+    uartIrqHandler(s);
+}
+#endif
+
+#ifdef USE_UART4
+// UART4 Rx/Tx IRQ Handler
+void UART4_IRQHandler(void)
+{
+    uartPort_t *s = &(uartDevmap[UARTDEV_4]->port);
+    uartIrqHandler(s);
+}
+#endif
+
+#ifdef USE_UART5
+// UART5 Rx/Tx IRQ Handler
+void UART5_IRQHandler(void)
+{
+    uartPort_t *s = &(uartDevmap[UARTDEV_5]->port);
+    uartIrqHandler(s);
+}
+#endif
+
+#ifdef USE_UART6
+// USART6 Rx/Tx IRQ Handler
+void USART6_IRQHandler(void)
+{
+    uartPort_t *s = &(uartDevmap[UARTDEV_6]->port);
+    uartIrqHandler(s);
+}
+#endif
+
+#ifdef USE_UART7
+// UART7 Rx/Tx IRQ Handler
+void UART7_IRQHandler(void)
+{
+    uartPort_t *s = &(uartDevmap[UARTDEV_7]->port);
+    uartIrqHandler(s);
+}
+#endif
+
+#ifdef USE_UART8
+// UART8 Rx/Tx IRQ Handler
+void UART8_IRQHandler(void)
+{
+    uartPort_t *s = &(uartDevmap[UARTDEV_8]->port);
+    uartIrqHandler(s);
+}
+#endif
