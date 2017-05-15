@@ -76,28 +76,6 @@ The lowest channel value considered valid.
 
 The highest channel value considered valid.
 
-### Parameters relevant to **SET-THR** failsafe procedure
-
-#### `failsafe_off_delay`
-
-Delay after failsafe activates before motors finally turn off.  This is the amount of time 'failsafe_throttle' is active.  If you fly at higher altitudes you may need more time to descend safely. Set to zero to keep `failsafe_throttle` active indefinitely.
-
-#### `failsafe_throttle`
-
-Throttle level used for landing.  Specify a value that causes the aircraft to descend at about 1M/sec. Default is set to 1000 which should correspond to throttle off.
-
-#### `failsafe_fw_roll_angle`
-
-This parameter defines amount of roll angle (in 1/10 deg units) to execute on failsafe. Negative = LEFT
-
-#### `failsafe_fw_pitch_angle`
-
-This parameter defines amount of pitch angle (in 1/10 deg units) to execute on `SET-THR` failsafe for an airplane. Negative = CLIMB
-
-#### `failsafe_fw_yaw_rate`
-
-This parameter defines amount of yaw rate (in deg per second units) to execute on `SET-THR` failsafe for an airplane. Negative = LEFT
-
 ### Parameters relevant to **RTH** failsafe procedure
 
 #### `nav_min_rth_distance`
@@ -135,4 +113,26 @@ Enables landing when home position is reached. If OFF the craft will hover indef
 #### `nav_disarm_on_landing`
 
 Instructs the flight controller to disarm the craft when landing is detected
+
+### Parameters relevant to **SET-THR** failsafe procedure
+
+#### `failsafe_off_delay`
+
+Delay after failsafe activates before motors finally turn off.  This is the amount of time 'failsafe_throttle' is active.  If you fly at higher altitudes you may need more time to descend safely. Set to zero to keep `failsafe_throttle` active indefinitely.
+
+#### `failsafe_throttle`
+
+Throttle level used for landing.  Specify a value that causes the aircraft to descend at about 1M/sec. Default is set to 1000 which should correspond to throttle off.
+
+#### `failsafe_fw_roll_angle`
+
+This parameter defines amount of roll angle (in 1/10 deg units) to execute on failsafe. Negative = LEFT
+
+#### `failsafe_fw_pitch_angle`
+
+This parameter defines amount of pitch angle (in 1/10 deg units) to execute on `SET-THR` failsafe for an airplane. Negative = CLIMB
+
+#### `failsafe_fw_yaw_rate`
+
+This parameter defines amount of yaw rate (in deg per second units) to execute on `SET-THR` failsafe for an airplane. Negative = LEFT
 
