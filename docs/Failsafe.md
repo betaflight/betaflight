@@ -1,27 +1,32 @@
 # Failsafe
 
-Failsafe is a state the flight controller will enter when the radio receiver loses the RC link. Any of these of these conditions will trigger it:
+Failsafe is a state the flight controller is meant to enter when the radio receiver loses the RC link. Any of these of these conditions will trigger it:
 
-* Ony one of the flight channels (pitch, roll, throttle or yaw) send no pulse
-* Any channel signal is outside the range between `rx_min_usec` and `rx_max_usec`
+* Any flight channel (pitch, roll, throttle or yaw) sends no pulses
+* Any channel is outside the valid range between `rx_min_usec` and `rx_max_usec`
 * The FAILSAFE aux mode is activated
 
 If the failsafe happens while the flight controller is disarmed, it only prevent arming. If it happens while armed, the failsafe policy configured in `failsafe_procedure` is engaged. The available policies are:
 
 * __DROP:__ Just kill the motors and disarm (crash the craft).
-* __SET-THR:__ Enable an auto-level mode (for multirotor) or enter preconfigured roll/pitch/yaw spiral down (for airplanes) and set the throttle to a predefined value (`failsafe_throttle`) for a predefined time (`failsafe_off_delay`). This is meant to get the craft to a safe-ish landing (or more realistically, a controlled crash), it doesn't require any extra sensor other than gyros and accelerometers.
-* __RTH:__ (Return To Home) One of the key features of inav, it automatically navigates the craft back to the point where it was armed and lands it. Similarly to all other automated navigation methods, it requires GPS and barometer in order to be activated, plus compass for multicopters. Please note that, should any required sensor become unavailable during the failsafe (eg. loss of GPS fix), an emergency landing similar to **SET-THR** (but with barometer support) will be performed. An emergency landing would also be performed right when the failsafe is triggered if any required sensor is reported as unavailable.
-* __NONE:__ Do nothing. This is a dummy procedure meant to let the craft perform a waypoint mission outside of RC range. Highly unsafe when used with manual flight.
+* __SET-THR:__ Enable auto-level mode (for multirotor) or enter preconfigured roll/pitch/yaw spiral down (for airplanes) and set the throttle to a predefined value (`failsafe_throttle`) for a predefined time (`failsafe_off_delay`). This is meant to get the craft to a safe-ish landing (or more realistically, a controlled crash), it doesn't require any extra sensor other than gyros and accelerometers.
+* __RTH:__ (Return To Home) One of the key features of inav, it automatically navigates the craft back to the home position and (optionally) lands it. Similarly to all other automated navigation methods, it requires GPS for any type of craft, plus compass and barometer for multicopters.
+* __NONE:__ Do nothing. This policy is meant to let the craft perform a fully automated flight (eg. waypoint flight) outside of radio range. Highly unsafe when used with manual flight.
 
 Note that:
 * Should the failsafe disarm the flight controller (**DROP**, **SET-THR** after `failsafe_off_delay` or **RTH** with `nav_disarm_on_landing` ON), the flight controller will be disarmed and re-arming will be locked until the signal from the receiver is restored for 30 seconds AND the arming switch is in the OFF position (when an arm switch is in use).
 
-* Prior to starting failsafe it is checked if the throttle position was below `min_throttle` level for the last `failsafe_throttle_low_delay` seconds. If it was, the craft is assumed to be on the ground and is only disarmed. It may be re-armed without a power cycle. This feature can be disabled completely by setting `failsafe_throttle_low_delay` to zero. This is useful for gliders that may fly long with zero throttle.
+* Prior to starting failsafe it is checked if the throttle position has been below `min_throttle` for the last `failsafe_throttle_low_delay` seconds. If it was, the craft is assumed to be on the ground and is simply disarmed. This feature can be disabled completely by setting `failsafe_throttle_low_delay` to zero, which may be necessary to do if the craft may fly long with zero throttle (eg. gliders).
 
-Some notes about **SAFETY**:
-* The failsafe system will be activated regardless of current throttle position. So, when the failsafe intervention is aborted (RC signal restored/failsafe switch set to OFF), the current stick positions will be enforced. Be ready to react quickly.
+## Notes about safety
 
-* The craft may already be on the ground with motors stopped and that motors and props could spin again.  Take care when using `MOTOR_STOP` feature. **Props will spin up without warning**, when armed with `MOTOR_STOP` feature ON (props are not spinning) **_and_** failsafe is activated !
+* If the craft is landed but armed, the failsafe may make the motors and props spin again and even make the craft take off (in case of **RTH** failsafe). Take expecially care of this when using `MOTOR_STOP` feature. **Props will spin up without warning**. Have a look at the `failsafe_throttle_low_delay` setting explained above to learn when this could happen.
+
+* If any required navigation sensor becomes unavailable during a Return to Home (eg. loss of GPS fix), an emergency landing similar to **SET-THR** but with barometer support will be performed after a short timeout. An emergency landing would also be performed right when the failsafe is triggered if any required sensor is reported as unavailable.
+
+* **SET-THR** doesn't control the descend in any other way than setting a fixed throttle. Thus, appropriate testing must be performed to find the right throttle value. Consider that a constant throttle setting will yeld different thrusts depending on battery voltage, so when you evaluate the throttle value do it with a loaded battery. Failure to do so may cause a flyaway.
+
+* When the failsafe mode is aborted (RC signal restored/failsafe switch set to OFF), the current stick positions will be enforced immediately. Be ready to react quickly.
 
 ## RX configuration
 
@@ -29,12 +34,11 @@ In order to engage failsafe mode correctly, you must configure your receiver to 
 
 * Send no signal/pulses over the channels
 * Send an invalid signal over the channels (for example, send values lower than `rx_min_usec`)
-* Set an aux cannel to engage FAILSAFE flight mode.
+* Set an aux channel to engage FAILSAFE mode.
 
 and
 
-* Ensure your receiver does not send out channel data that would cause a disarm by switch or sticks to be registered by the FC. This is especially important for those using a switch to arm.
-
+* Ensure your receiver does not set any aux channel so that the craft would disarm.
 
 ## Failsafe Settings
 
@@ -44,23 +48,21 @@ __Parameters relevant to all failsafe policies__
 
 ### `failsafe_procedure`
 
-Selects the failsafe procedure. Valid procedures are **DROP**, **SET-THR**, **RTH** and **NONE**. See above for a detailed description of each one
+Selects the failsafe procedure. Valid procedures are **DROP**, **SET-THR**, **RTH** and **NONE**. See above for a description of each one.
 
 ### `failsafe_delay`
 
-Guard time for failsafe activation when rx channel data is lost or invalid.  This is the amount of time the flight controller waits to see if it begins receiving a valid signal again before activating failsafe.
+Guard time for failsafe activation when rx channel data is lost or invalid.  This is the amount of time the flight controller waits to see if it begins receiving a valid signal again before activating failsafe. Does not apply when activating the FAILSAFE aux mode.
 
 ### `failsafe_recovery_delay`
 
-Guard time for failsafe de-activation after signal is recovered.  This is the amount of time the flight controller waits to see if the signal is consistent before turning off failsafe procedure. Usefull to avoid swithing in and out of failsafe RTH.
+Guard time for failsafe de-activation after signal is recovered.  This is the amount of time the flight controller waits to see if the signal is consistent before turning off failsafe procedure. Usefull to avoid swithing in and out of failsafe RTH. Does not apply when disactivating the FAILSAFE aux mode.
 
 ### `failsafe_stick_threshold`
 
-This parameter defines recovery from failsafe by stick motion. When set to zero failsafe procedure will be cleared as soon as RC link is recovered. 
+This parameter defines recovery from failsafe by stick motion. When set to zero failsafe procedure will be cleared as soon as RC link is recovered. When this is set to a non-zero value - failsafe won't clear immediately when if RC link is recovered, you will have to move any of Roll/Pitch/Yaw sticks more than this value to exit failsafe.
 
-When this is set to a non-zero value - failsafe won't clear even if RC link is recovered. You will have to deflect any of Roll/Pitch/Yaw sticks beyond this value to exit failsafe.
-
-One use-case is Failsafe-RTH. When on the edge of radio coverage you may end up entering and exiting RTH if radio link is sporadic - happens a lot with long-range pilots. Setting `failsafe_stick_threshold` to a certain value (i.e. 100) RTH will be initiated on first signal loss and will continue as long as pilots want it to continue. When RC link is solid (based on RSSI etc) pilot will move sticks and regain control.
+The use-case is the Return To Home failsafe: when on the edge of radio coverage you may end up entering and exiting failsafe if radio link is sporadic - happens a lot with long-range pilots. Setting `failsafe_stick_threshold` to a certain value (i.e. 100) RTH will be initiated on first signal loss and will continue as long as pilots want it to continue. When RC link is solid (based on RSSI etc) pilot will move sticks and regain control.
 
 ### `failsafe_throttle_low_delay`
 
@@ -68,12 +70,11 @@ Time throttle level must have been below 'min_throttle' to _only disarm_ instead
 
 ### `rx_min_usec`
 
-The lowest channel value considered valid.  e.g. PWM/PPM pulse length
+The lowest channel value considered valid.
 
 ### `rx_max_usec`
 
-The highest channel value considered valid.  e.g. PWM/PPM pulse length
-
+The highest channel value considered valid.
 
 __Parameters relevant to **SET-THR** failsafe policy__
 
@@ -86,8 +87,6 @@ Delay after failsafe activates before motors finally turn off.  This is the amou
 Throttle level used for landing.  Specify a value that causes the aircraft to descend at about 1M/sec. Default is set to 1000 which should correspond to throttle off.
 
 ### `failsafe_fw_roll_angle`
-
-When `SET-THR` failsafe is executed on a fixed-wing craft it's not safe to keep it level - airplane can glide for long distances. 
 
 This parameter defines amount of roll angle (in 1/10 deg units) to execute on failsafe. Negative = LEFT
 
@@ -103,7 +102,7 @@ __Parameters relevant to **RTH** failsafe policy__
 
 ### `nav_min_rth_distance`
 
-If the failsafe happens while the craft is within this distance (in cm) from the home position, the home position is considered immediately reached.
+If the failsafe happens while the craft is within this distance from the home position, the home position is considered immediately reached.
 
 ### `nav_rth_climb_first`
 
@@ -127,7 +126,7 @@ How and when to reach `nav_rth_altitude`. Please read [the page on the wiki](htt
 
 ### `nav_rth_abort_threshold`
 
-If the craft increases its distance from the home position by this amount of centimeters using the position where the failsafe was initially triggered as reference, RTH procedure is aborted and an emergency landing is initiated. It's meant to avoid flyaways due to navigation issues or too strong wind.
+If the craft increases its distance from the point the failsafe was triggered first by this amount, RTH procedure is aborted and an emergency landing is initiated. It's meant to avoid flyaways due to navigation issues, like strong winds.
 
 ### `nav_rth_allow_landing`
 
@@ -136,5 +135,4 @@ Enables landing when home position is reached. If OFF the craft will hover indef
 ### `nav_disarm_on_landing`
 
 Instructs the flight controller to disarm the craft when landing is detected
-
 
