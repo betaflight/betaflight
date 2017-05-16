@@ -26,7 +26,7 @@
 
 #define BEEPER                  PC9
 #define BEEPER_INVERTED
-#define INVERTER_PIN_USART3     PB15
+#define INVERTER_PIN_UART3      PB15
 
 // ICM20689 interrupt
 #define USE_EXTI
