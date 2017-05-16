@@ -21,6 +21,12 @@
 
 // Targets with built-in vtx do not need external vtx
 #if defined(VTX_RTC6705) && !defined(VTX_RTC6705_OPTIONAL)
-# undef VTX_SMARTAUDIO
-# undef VTX_TRAMP
+#undef VTX_SMARTAUDIO
+#undef VTX_TRAMP
 #endif
+
+// analysed gyro data (FFT) is only displayed with MAX7456 chip
+#if defined(USE_GYRO_DATA_ANALYSE) && !defined(USE_MAX7456)
+#undef USE_GYRO_DATA_ANALYSE
+#endif
+

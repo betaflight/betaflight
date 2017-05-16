@@ -78,6 +78,7 @@
 
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
+#include "sensors/gyroanalyse.h"
 #include "sensors/sensors.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
@@ -165,6 +166,40 @@ static int32_t osdGetAltitude(int32_t alt)
             return alt;               // Already in metre / 100
     }
 }
+
+#ifdef USE_GYRO_DATA_ANALYSE
+static void osdDrawBar(int x, int y, int height)
+{
+    static int posX = 0;
+    static int posY = 5;
+    // in development, currently position and height scale are hardcoded
+    // height takes values [0, 255]
+    // screen size is 13x30 NSTC, 16*40 PAL
+    // characters 0x80 - 0x88 are crude indicators in order of decreasing height
+    const int charHeight = height / 32;
+    const int remainder = height % 32;
+    for (int ii = 0; ii < charHeight; ++ ii) {
+        // character 0x7f seems the closest character to a filled in rectangle that could be used for bar
+        displayWriteChar(osdDisplayPort, posX + x, posY + y + 8 - ii, 0x7f);
+    }
+    // top the bar with a character that indicates the remainder
+    const int barTopChar = 0x88 - 9 * remainder / 32;
+    displayWriteChar(osdDisplayPort, posX + x, posY + y + 8 - charHeight, barTopChar);
+}
+
+static void osdDrawSpectrograph(void)
+{
+    // just do the roll axis for now
+    const int axis = FD_ROLL;
+    const gyroFftData_t *fftData = gyroFftData(axis);
+    for (int col = 0; col < 30; ++col) {
+        // use the average of two FFT bins for each bar
+        const int binHeight = (fftData->bins[2 * col] + fftData->bins[2 * col + 1]) / 2;
+        // scale barHeight to screen
+        osdDrawBar(col, 0, binHeight);
+    }
+}
+#endif
 
 static void osdDrawSingleElement(uint8_t item)
 {
@@ -564,6 +599,11 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_PITCH_ANGLE);
     osdDrawSingleElement(OSD_ROLL_ANGLE);
     osdDrawSingleElement(OSD_MAIN_BATT_USAGE);
+#ifdef USE_GYRO_DATA_ANALYSE
+    if (feature(FEATURE_GYRO_DATA_ANALYSE) && (debugMode == DEBUG_FFT || debugMode == DEBUG_FFT_FREQ)) {
+        osdDrawSpectrograph();
+    }
+#endif
 
 #ifdef GPS
 #ifdef CMS
@@ -853,6 +893,7 @@ static void osdShowStats(void)
 #endif
 }
 
+// called when motors armed
 static void osdShowArmed(void)
 {
     displayClearScreen(osdDisplayPort);

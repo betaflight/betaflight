@@ -19,7 +19,15 @@
 
 #include "common/time.h"
 
-void gyroDataAnalyseInit(void);
+#define GYRO_FFT_BIN_COUNT      128
+typedef struct gyroFftData_s {
+    uint8_t bins[GYRO_FFT_BIN_COUNT];
+    float maxVal;
+    uint32_t maxIdx;
+} gyroFftData_t;
+
+void gyroDataAnalyseInit(uint32_t targetLooptime);
+const gyroFftData_t *gyroFftData(int axis);
 struct gyroDev_s;
 struct gyro_s;
 void gyroDataAnalyse(const struct gyroDev_s *gyroDev, const struct gyro_s *gyro);
