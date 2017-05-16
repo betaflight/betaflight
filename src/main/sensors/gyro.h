@@ -17,9 +17,8 @@
 
 #pragma once
 
-#include "config/parameter_group.h"
 #include "common/axis.h"
-#include "drivers/io_types.h"
+#include "config/parameter_group.h"
 #include "drivers/sensor.h"
 
 typedef enum {
