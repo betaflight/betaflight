@@ -75,7 +75,6 @@
 #include "sensors/battery.h"
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
-#include "sensors/gyroanalyse.h"
 #include "sensors/sonar.h"
 #include "sensors/esc_sensor.h"
 
@@ -352,9 +351,6 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_VTXCTRL, true);
 #endif
 #endif
-#ifdef USE_GYRO_DATA_ANALYSE
-    setTaskEnabled(TASK_GYRO_DATA_ANALYSE, true);
-#endif
 }
 #endif
 
@@ -595,15 +591,6 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskFunc = taskVtxControl,
         .desiredPeriod = TASK_PERIOD_HZ(5),          // 5 Hz, 200ms
         .staticPriority = TASK_PRIORITY_IDLE,
-    },
-#endif
-
-#ifdef USE_GYRO_DATA_ANALYSE
-    [TASK_GYRO_DATA_ANALYSE] = {
-        .taskName = "GYROFFT",
-        .taskFunc = gyroDataAnalyseUpdate,
-        .desiredPeriod = TASK_PERIOD_HZ(100),        // 100 Hz, 10ms
-        .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
 #endif

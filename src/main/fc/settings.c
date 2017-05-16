@@ -204,7 +204,10 @@ static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "STACK",
     "ESC_SENSOR_RPM",
     "ESC_SENSOR_TMP",
-    "ALTITUDE"
+    "ALTITUDE",
+    "FFT",
+    "FFT_TIME",
+    "FFT_FREQ"
 };
 
 #ifdef OSD
