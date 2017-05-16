@@ -482,7 +482,6 @@ void processRxState(softSerial_t *softSerial)
 
 void onSerialTimerOverflow(timerOvrHandlerRec_t *cbRec, captureCompare_t capture)
 {
-debug[0]++;
     UNUSED(capture);
     softSerial_t *self = container_of(cbRec, softSerial_t, overCb);
 
@@ -495,7 +494,6 @@ debug[0]++;
 
 void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 {
-debug[1]++;
     UNUSED(capture);
 
     softSerial_t *self = container_of(cbRec, softSerial_t, edgeCb);
