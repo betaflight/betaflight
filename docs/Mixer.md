@@ -231,10 +231,10 @@ mmix 0 1.0 0.0 0.0 0.3   # Left Engine
 mmix 1 1.0 0.0 0.0 -0.3  # Right Engine
 
 smix reset
-# Rule	Servo	Source	Rate	Speed	Min	Max	Box
-smix 0 3 0 100 0 0 100 0  # Roll / Aileron
-smix 1 4 0 100 0 0 100 0  # Roll / Aileron
-smix 2 5 2 100 0 0 100 0  # Yaw / Rudder
-smix 3 2 1 100 0 0 100 0  # Pitch / Elevator
+# Rule	Servo	Source	Rate	Speed	Min	Max
+smix 0 3 0 100 0 0 100  # Roll / Aileron
+smix 1 4 0 100 0 0 100  # Roll / Aileron
+smix 2 5 2 100 0 0 100  # Yaw / Rudder
+smix 3 2 1 100 0 0 100  # Pitch / Elevator
 
 ```
