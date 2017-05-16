@@ -445,7 +445,7 @@ static void cliSetVar(const clivalue_t *var, const cliVar_t value)
     }
 }
 
-#ifndef MINIMAL_CLI
+#if defined(USE_RESOURCE_MGMT) && !defined(MINIMAL_CLI)
 static void cliRepeat(char ch, uint8_t len)
 {
     for (int i = 0; i < len; i++) {
