@@ -430,9 +430,10 @@ static uint32_t packFlightModeFlags(void)
 
     uint32_t ret = 0;
     for (int i = 0; i < activeBoxIdCount; i++) {
-        const uint32_t flag = (tmp & (1 << activeBoxIds[i]));
+        const uint8_t boxId = activeBoxIds[i];
+        const uint32_t flag = (tmp & (1 << boxId));
         if (flag) {
-            ret |= 1 << i;
+            ret |= 1 << boxId;
         }
     }
     return ret;
