@@ -1201,12 +1201,16 @@ LDFLAGS     = \
               $(ARCH_FLAGS) \
               $(LTO_FLAGS) \
               $(DEBUG_FLAGS) \
-              -static \
-              -static-libgcc \
               -Wl,-gc-sections,-Map,$(TARGET_MAP) \
               -Wl,-L$(LINKER_DIR) \
               -Wl,--cref \
               -T$(LD_SCRIPT)
+
+ifneq ($(filter SITL_STATIC,$(OPTIONS)),)
+LDFLAGS     += \
+              -static \
+              -static-libgcc
+endif
 endif
 
 ###############################################################################
