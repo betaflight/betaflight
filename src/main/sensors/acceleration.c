@@ -27,9 +27,10 @@
 #include "common/axis.h"
 #include "common/filter.h"
 
+#include "config/config_reset.h"
+#include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
-#include "config/config_reset.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_adxl345.h"
@@ -60,8 +61,6 @@
 #include "sensors/boardalignment.h"
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
-
-#include "config/feature.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"

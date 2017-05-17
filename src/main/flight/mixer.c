@@ -25,8 +25,8 @@
 #include "build/build_config.h"
 
 #include "common/axis.h"
-#include "common/maths.h"
 #include "common/filter.h"
+#include "common/maths.h"
 
 #include "config/feature.h"
 #include "config/parameter_group.h"
@@ -38,18 +38,19 @@
 
 #include "io/motors.h"
 
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
+
+#include "flight/failsafe.h"
+#include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
+
 #include "rx/rx.h"
 
 #include "sensors/battery.h"
 
-#include "flight/mixer.h"
-#include "flight/failsafe.h"
-#include "flight/pid.h"
-#include "flight/imu.h"
-
-#include "fc/config.h"
-#include "fc/rc_controls.h"
-#include "fc/runtime_config.h"
 
 PG_REGISTER_WITH_RESET_TEMPLATE(flight3DConfig_t, flight3DConfig, PG_MOTOR_3D_CONFIG, 0);
 
