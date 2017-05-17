@@ -109,8 +109,8 @@
 //#define UART3_TX_PIN            PB10
 
 #define USE_UART4
-#define UART4_RX_PIN            PC10
-#define UART4_TX_PIN            PC11
+#define UART4_RX_PIN            PC11
+#define UART4_TX_PIN            PC10
 
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
