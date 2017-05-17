@@ -364,7 +364,7 @@ bool gyroInit(void)
 void gyroInitFilterLpf(gyroSensor_t *gyroSensor, uint8_t lpfHz)
 {
     gyroSensor->softLpfFilterApplyFn = nullFilterApply;
-    const uint32_t gyroFrequencyNyquist = (1.0f / (gyro.targetLooptime * 0.000001f)) / 2; // No rounding needed
+    const uint32_t gyroFrequencyNyquist = 1000000 / 2 / gyro.targetLooptime;
 
     if (lpfHz && lpfHz <= gyroFrequencyNyquist) {  // Initialisation needs to happen once samplingrate is known
         switch (gyroConfig()->gyro_soft_lpf_type) {
@@ -394,11 +394,27 @@ void gyroInitFilterLpf(gyroSensor_t *gyroSensor, uint8_t lpfHz)
     }
 }
 
+static uint16_t calculateNyquistAdjustedNotchHz(uint16_t notchHz, uint16_t notchCutoffHz)
+{
+    const uint32_t gyroFrequencyNyquist = 1000000 / 2 / gyro.targetLooptime;
+    if (notchHz > gyroFrequencyNyquist) {
+        if (notchCutoffHz < gyroFrequencyNyquist) {
+            notchHz = gyroFrequencyNyquist;
+        } else {
+            notchHz = 0;
+        }
+    }
+
+    return notchHz;
+}
+
 void gyroInitFilterNotch1(gyroSensor_t *gyroSensor, uint16_t notchHz, uint16_t notchCutoffHz)
 {
     gyroSensor->notchFilter1ApplyFn = nullFilterApply;
-    const uint32_t gyroFrequencyNyquist = (1.0f / (gyro.targetLooptime * 0.000001f)) / 2; // No rounding needed
-    if (notchHz && notchHz <= gyroFrequencyNyquist) {
+
+    notchHz = calculateNyquistAdjustedNotchHz(notchHz, notchCutoffHz);
+
+    if (notchHz) {
         gyroSensor->notchFilter1ApplyFn = (filterApplyFnPtr)biquadFilterApply;
         const float notchQ = filterGetNotchQ(notchHz, notchCutoffHz);
         for (int axis = 0; axis < 3; axis++) {
@@ -410,8 +426,10 @@ void gyroInitFilterNotch1(gyroSensor_t *gyroSensor, uint16_t notchHz, uint16_t n
 void gyroInitFilterNotch2(gyroSensor_t *gyroSensor, uint16_t notchHz, uint16_t notchCutoffHz)
 {
     gyroSensor->notchFilter2ApplyFn = nullFilterApply;
-    const uint32_t gyroFrequencyNyquist = (1.0f / (gyro.targetLooptime * 0.000001f)) / 2; // No rounding needed
-    if (notchHz && notchHz <= gyroFrequencyNyquist) {
+
+    notchHz = calculateNyquistAdjustedNotchHz(notchHz, notchCutoffHz);
+
+    if (notchHz) {
         gyroSensor->notchFilter2ApplyFn = (filterApplyFnPtr)biquadFilterApply;
         const float notchQ = filterGetNotchQ(notchHz, notchCutoffHz);
         for (int axis = 0; axis < 3; axis++) {
