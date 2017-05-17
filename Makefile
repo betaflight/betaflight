@@ -1025,7 +1025,14 @@ endif
 
 ifneq ($(filter $(TARGET),$(F3_TARGETS) $(F4_TARGETS) $(F7_TARGETS)),)
 DSPLIB := $(ROOT)/lib/main/DSP_Lib
-DEVICE_FLAGS += -DARM_MATH_CM4 -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE
+DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE
+
+ifneq ($(filter $(TARGET),$(F3_TARGETS)) $(F4_TARGETS)),)
+DEVICE_FLAGS += -DARM_MATH_CM4
+endif
+ifneq ($(filter $(TARGET),$(F7_TARGETS)),)
+DEVICE_FLAGS += -DARM_MATH_CM7
+endif
 
 INCLUDE_DIRS += $(DSPLIB)/Include
 
@@ -1194,12 +1201,16 @@ LDFLAGS     = \
               $(ARCH_FLAGS) \
               $(LTO_FLAGS) \
               $(DEBUG_FLAGS) \
-              -static \
-              -static-libgcc \
               -Wl,-gc-sections,-Map,$(TARGET_MAP) \
               -Wl,-L$(LINKER_DIR) \
               -Wl,--cref \
               -T$(LD_SCRIPT)
+
+ifneq ($(filter SITL_STATIC,$(OPTIONS)),)
+LDFLAGS     += \
+              -static \
+              -static-libgcc
+endif
 endif
 
 ###############################################################################
