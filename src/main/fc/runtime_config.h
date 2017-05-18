@@ -51,6 +51,14 @@ extern uint16_t flightModeFlags;
 #define ENABLE_FLIGHT_MODE(mask) enableFlightMode(mask)
 #define FLIGHT_MODE(mask) (flightModeFlags & (mask))
 
+// macro to initialize map from flightModeFlags to boxId_e. Keep it in sync with flightModeFlags_e enum.
+// Each boxId_e is at index of flightModeFlags_e bit, value is -1 if boxId_e does not exist.
+// It is much more memory efficient than full map (uint32_t -> uint8_t)
+#define FLIGHT_MODE_BOXID_MAP_INITIALIZER {                             \
+        BOXANGLE, BOXHORIZON, BOXMAG, BOXBARO, BOXGPSHOME, BOXGPSHOLD,  \
+        BOXHEADFREE, -1, BOXPASSTHRU, BOXSONAR, BOXFAILSAFE}  \
+        /**/
+
 typedef enum {
     GPS_FIX_HOME   = (1 << 0),
     GPS_FIX        = (1 << 1),
