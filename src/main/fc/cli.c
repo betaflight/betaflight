@@ -744,7 +744,8 @@ static const clivalue_t valueTable[] = {
     { "dterm_setpoint_weight",      VAR_FLOAT  | PROFILE_VALUE, .config.minmax = {0, 2 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_setpoint_weight) },
 #ifdef USE_SERVOS
     { "fw_iterm_throw_limit",       VAR_UINT16 | PROFILE_VALUE, .config.minmax = { FW_ITERM_THROW_LIMIT_MIN,  FW_ITERM_THROW_LIMIT_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, fixedWingItermThrowLimit) },
-    { "fw_reference_airspeed",      VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 1,  5000}, PG_PID_PROFILE, offsetof(pidProfile_t, fixedWingReferenceAirspeed) },
+    { "fw_reference_airspeed",      VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { 1,  5000}, PG_PID_PROFILE, offsetof(pidProfile_t, fixedWingReferenceAirspeed) },
+    { "fw_turn_assist_yaw_gain",    VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { 0,  2}, PG_PID_PROFILE, offsetof(pidProfile_t, fixedWingCoordinatedYawGain) },
 #endif
 #ifdef USE_DTERM_NOTCH
     { "dterm_notch_hz",             VAR_UINT16 | PROFILE_VALUE, .config.minmax = {0, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_soft_notch_hz) },
