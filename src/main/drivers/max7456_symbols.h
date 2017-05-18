@@ -160,14 +160,14 @@
 
 // Unit Icon´s (Metric)
 #define SYM_MS          0x9F
-#define SYM_KMH         0xA5
+#define SYM_KMH         0xA1
 #define SYM_ALTM        0xA7
 #define SYM_DISTHOME_M  0xBB
 #define SYM_M           0x0C
 
 // Unit Icon´s (Imperial)
 #define SYM_FTS         0x99
-#define SYM_MPH         0xA6
+#define SYM_MPH         0x20
 #define SYM_ALTFT       0xA8
 #define SYM_DISTHOME_FT 0xB9
 #define SYM_FT          0x0F

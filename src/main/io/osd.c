@@ -765,7 +765,7 @@ static void osdUpdateStats(void)
 
     if (feature(FEATURE_GPS))
     {
-        value = gpsSol.groundSpeed * 36 / 1000;
+        value = gpsSol.groundSpeed;
         if (stats.max_speed < value)
             stats.max_speed = value;
             
