@@ -32,8 +32,6 @@
 #define USE_ACC_SPI_MPU6500
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-//#define ACC_MPU6500_ALIGN       CW0_DEG
-//#define GYRO_MPU6500_ALIGN      CW0_DEG
 #define MPU6500_CS_PIN          SPI1_NSS_PIN
 #define MPU6500_SPI_INSTANCE    SPI1
 //#define MPU_INT_EXTI            PE8
@@ -43,8 +41,6 @@
 #define USE_ACC_SPI_MPU6000
 #define USE_GYRO_MPU6000
 #define USE_GYRO_SPI_MPU6000
-//#define ACC_MPU6000_ALIGN       CW0_DEG
-//#define GYRO_MPU6000_ALIGN      CW0_DEG
 #define MPU6000_CS_PIN          SPI3_NSS_PIN
 #define MPU6000_SPI_INSTANCE    SPI3
 //#define MPU_INT_EXTI            PD0
@@ -72,15 +68,15 @@
 //#define UART2_RX_PIN PA3
 
 // Assigned to shared output I2C2
-//#define USE_UART3
-//#define UART3_RX_PIN PB10
-//#define UART3_TX_PIN PB11
+#define USE_UART3
+#define UART3_RX_PIN PB11
+#define UART3_TX_PIN PB10
 
 #define USE_UART6
 #define UART6_RX_PIN PC7
 #define UART6_TX_PIN PC6
 
-#define SERIAL_PORT_COUNT 3 //VCP, USART1, USART6
+#define SERIAL_PORT_COUNT 4 //VCP, USART1, USART6
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -137,8 +133,8 @@
 #define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_4
 
 #define USE_I2C
-//#define USE_I2C2
-//#define I2C_DEVICE (I2CDEV_2)
+#define USE_I2C_DEVICE_2
+#define I2C_DEVICE (I2CDEV_2)
 
 #define BARO
 #define USE_BARO_BMP280
