@@ -19,9 +19,9 @@
 
 #define USBD_PRODUCT_STRING "OmnibusF7"
 
-#define LED0   PE0
+#define LED0                    PE0
 
-#define BEEPER   PD15
+#define BEEPER                  PD15
 #define BEEPER_INVERTED
 
 #define ACC
@@ -56,11 +56,11 @@
 #define USABLE_TIMER_CHANNEL_COUNT 16
 
 #define USE_VCP
-#define VBUS_SENSING_PIN PC4
+#define VBUS_SENSING_PIN        PC4
 
 #define USE_UART1
-#define UART1_RX_PIN PA10
-#define UART1_TX_PIN PA9
+#define UART1_RX_PIN            PA10
+#define UART1_TX_PIN            PA9
 
 //#define AVOID_UART2_FOR_PWM_PPM
 //#define USE_UART2
@@ -69,14 +69,14 @@
 
 // Assigned to shared output I2C2
 #define USE_UART3
-#define UART3_RX_PIN PB11
-#define UART3_TX_PIN PB10
+#define UART3_RX_PIN            PB11
+#define UART3_TX_PIN            PB10
 
 #define USE_UART6
-#define UART6_RX_PIN PC7
-#define UART6_TX_PIN PC6
+#define UART6_RX_PIN            PC7
+#define UART6_TX_PIN            PC6
 
-#define SERIAL_PORT_COUNT 4 //VCP, USART1, USART6
+#define SERIAL_PORT_COUNT 4
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -148,9 +148,9 @@
 #define BOARD_HAS_VOLTAGE_SENSOR
 
 #define USE_ADC
-#define CURRENT_METER_ADC_PIN       PC2
-#define VBAT_ADC_PIN                PC3
-#define RSSI_ADC_GPIO_PIN           PC5
+#define CURRENT_METER_ADC_PIN   PC2
+#define VBAT_ADC_PIN            PC3
+#define RSSI_ADC_GPIO_PIN       PC5
 
 #define LED_STRIP
 
