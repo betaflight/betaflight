@@ -46,12 +46,24 @@
 #include "io/gps.h"
 #include "io/gps_private.h"
 
-
 //#define GPS_PROTO_UBLOX_NEO7PLUS
 #define GPS_VERSION_DETECTION_TIMEOUT_MS    300
 #define MAX_UBLOX_PAYLOAD_SIZE              256
 #define UBLOX_BUFFER_SIZE                   MAX_UBLOX_PAYLOAD_SIZE
 #define UBLOX_SBAS_MESSAGE_LENGTH           16
+
+#define UBX_DYNMODEL_PEDESTRIAN 3
+#define UBX_DYNMODEL_AIR_1G     6
+#define UBX_DYNMODEL_AIR_4G     8
+
+#define UBX_FIXMODE_2D_ONLY 1
+#define UBX_FIXMODE_3D_ONLY 2
+#define UBX_FIXMODE_AUTO    3
+
+// SBAS_AUTO, SBAS_EGNOS, SBAS_WAAS, SBAS_MSAS, SBAS_GAGAN, SBAS_NONE
+static const uint32_t ubloxScanMode1[] = {
+    0x00000000, 0x00000851, 0x0004E004, 0x00020200, 0x00000180, 0x00000000,
+};
 
 static const char * baudInitData[GPS_BAUDRATE_COUNT] = {
     "$PUBX,41,1,0003,0001,115200,0*1E\r\n",     // GPS_BAUDRATE_115200
@@ -61,90 +73,33 @@ static const char * baudInitData[GPS_BAUDRATE_COUNT] = {
     "$PUBX,41,1,0003,0001,9600,0*16\r\n"        // GPS_BAUDRATE_9600
 };
 
-#ifdef GPS_PROTO_UBLOX_NEO7PLUS
-static const uint8_t ubloxVerPoll[] = {
-    0xB5, 0x62, 0x0A, 0x04, 0x00, 0x00, 0x0E, 0x34,          // MON-VER - Poll version info
-};
-#endif
+// payload types
+typedef struct {
+    uint8_t mode;
+    uint8_t usage;
+    uint8_t maxSBAS;
+    uint8_t scanmode2;
+    uint32_t scanmode1;
+} ubx_sbas;
 
-static const uint8_t ubloxInit_NAV5_Pedestrian[] = {
-    0xB5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xFF, 0xFF, 0x03, 0x03, 0x00,           // CFG-NAV5 - Set engine settings (original MWII code)
-    0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00,           // Collected by resetting a GPS unit to defaults. Changing mode to Pedistrian and
-    0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x3C, 0x00, 0x00, 0x00,           // capturing the data from the U-Center binary console.
-    0x00, 0xC8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x17, 0xC2
-};
+typedef struct {
+    uint8_t class;
+    uint8_t id;
+    uint8_t rate;
+} ubx_msg;
 
-static const uint8_t ubloxInit_NAV5_Airborne1G[] = {
-    0xB5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xFF, 0xFF, 0x06, 0x03, 0x00,           // CFG-NAV5 - Set engine settings
-    0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00,           // Airborne <1G
-    0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x3C, 0x00, 0x00, 0x00,
-    0x00, 0xC8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1A, 0x28
-};
+typedef struct {
+    uint16_t meas;
+    uint16_t nav;
+    uint16_t time;
+} ubx_rate;
 
-static const uint8_t ubloxInit_NAV5_Airborne4G[] = {
-    0xB5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xFF, 0xFF, 0x08, 0x03, 0x00,           // CFG-NAV5 - Set engine settings
-    0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00,           // Airborne <4G
-    0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x3C, 0x00, 0x00, 0x00,
-    0x00, 0xC8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1C, 0x6C
-};
-
-
-static const uint8_t ubloxInit_MSG_NMEA[] = {
-    // DISABLE NMEA messages
-    0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x05, 0x00, 0xFF, 0x19,           // VGS: Course over ground and Ground speed
-    0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x03, 0x00, 0xFD, 0x15,           // GSV: GNSS Satellites in View
-    0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x01, 0x00, 0xFB, 0x11,           // GLL: Latitude and longitude, with time of position fix and status
-    0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x00, 0x00, 0xFA, 0x0F,           // GGA: Global positioning system fix data
-    0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x02, 0x00, 0xFC, 0x13,           // GSA: GNSS DOP and Active Satellites
-    0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x04, 0x00, 0xFE, 0x17            // RMC: Recommended Minimum data
-};
-
-static const uint8_t ubloxInit_MSG_UBX_POSLLH[] = {
-    0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x02, 0x01, 0x0E, 0x47,           // set POSLLH MSG rate
-    0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x03, 0x01, 0x0F, 0x49,           // set STATUS MSG rate
-    0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x06, 0x01, 0x12, 0x4F,           // set SOL MSG rate
-    0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x30, 0x00, 0x3B, 0xA2,           // disable SVINFO
-    0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0x01, 0x12, 0x01, 0x1E, 0x67            // set VELNED MSG rate
-};
-
-#ifdef GPS_PROTO_UBLOX_NEO7PLUS
-static const uint8_t ubloxInit_MSG_UBX_PVT[] = {
-    0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0xB9, // disable POSLLH
-    0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x13, 0xC0, // disable STATUS
-    0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16, 0xD5, // disable SOL
-    0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0xFB, // disable SVINFO
-    0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x22, 0x29, // disable VELNED
-    0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x07, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x18, 0xE1  // enable PVT 1 cycle
-};
-#endif
-
-static const uint8_t ubloxInit_RATE_5Hz[] = {
-    0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xC8, 0x00, 0x01, 0x00, 0x01, 0x00, 0xDE, 0x6A  // set rate to 5Hz (measurement period: 200ms, navigation rate: 1 cycle)
-};
-
-#ifdef GPS_PROTO_UBLOX_NEO7PLUS
-static const uint8_t ubloxInit_RATE_10Hz[] = {
-    0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0x64, 0x00, 0x01, 0x00, 0x01, 0x00, 0x7A, 0x12, // set rate to 10Hz (measurement period: 100ms, navigation rate: 1 cycle)
-};
-#endif
-
-// UBlox 6 Protocol documentation - GPS.G6-SW-10018-F
-// SBAS Configuration Settings Desciption, Page 4/210
-// 31.21 CFG-SBAS (0x06 0x16), Page 142/210
-// A.10 SBAS Configuration (UBX-CFG-SBAS), Page 198/210 - GPS.G6-SW-10018-F
-typedef struct ubloxSbas_s {
-    uint8_t message[UBLOX_SBAS_MESSAGE_LENGTH];
-} ubloxSbas_t;
-
-// Note: these must be defined in the same order is sbasMode_e since no lookup table is used.
-static const ubloxSbas_t ubloxSbas[] = {
-    {{ /* SBAS_AUTO */  0xB5, 0x62, 0x06, 0x16, 0x08, 0x00, 0x03, 0x03, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x2D, 0xC9 }},
-    {{ /* SBAS_EGNOS */ 0xB5, 0x62, 0x06, 0x16, 0x08, 0x00, 0x03, 0x03, 0x03, 0x00, 0x51, 0x08, 0x00, 0x00, 0x86, 0x25 }},
-    {{ /* SBAS_WAAS */  0xB5, 0x62, 0x06, 0x16, 0x08, 0x00, 0x03, 0x03, 0x03, 0x00, 0x04, 0xE0, 0x04, 0x00, 0x15, 0x81 }},
-    {{ /* SBAS_MSAS */  0xB5, 0x62, 0x06, 0x16, 0x08, 0x00, 0x03, 0x03, 0x03, 0x00, 0x00, 0x02, 0x02, 0x00, 0x31, 0xD3 }},
-    {{ /* SBAS_GAGAN */ 0xB5, 0x62, 0x06, 0x16, 0x08, 0x00, 0x03, 0x03, 0x03, 0x00, 0x80, 0x01, 0x00, 0x00, 0xAE, 0xCC }},
-    {{ /* SBAS_NONE */  0xB5, 0x62, 0x06, 0x16, 0x08, 0x00, 0x02, 0x03, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x2C, 0xC1 }},
-};
+typedef union {
+    uint8_t bytes[48];
+    ubx_sbas sbas;
+    ubx_msg msg;
+    ubx_rate rate;
+} ubx_payload;
 
 // UBX support
 typedef struct {
@@ -154,6 +109,11 @@ typedef struct {
     uint8_t msg_id;
     uint16_t length;
 } ubx_header;
+
+typedef struct {
+    ubx_header header;
+    ubx_payload payload;
+} __attribute__((packed)) ubx_message;
 
 typedef struct {
     char swVersion[30];      // Zero-terminated Software Version String
@@ -265,15 +225,23 @@ typedef struct {
 } ubx_nav_pvt;
 
 enum {
-    PREAMBLE1 = 0xb5,
+    PREAMBLE1 = 0xB5,
     PREAMBLE2 = 0x62,
     CLASS_NAV = 0x01,
     CLASS_ACK = 0x05,
     CLASS_CFG = 0x06,
     CLASS_MON = 0x0A,
+    MSG_CLASS_UBX = 0x01,
+    MSG_CLASS_NMEA = 0xF0,
     MSG_VER = 0x04,
     MSG_ACK_NACK = 0x00,
     MSG_ACK_ACK = 0x01,
+    MSG_NMEA_GGA = 0x0,
+    MSG_NMEA_GLL = 0x1,
+    MSG_NMEA_GSA = 0x2,
+    MSG_NMEA_GSV = 0x3,
+    MSG_NMEA_RMC = 0x4,
+    MSG_NMEA_VGS = 0x5,
     MSG_POSLLH = 0x2,
     MSG_STATUS = 0x3,
     MSG_SOL = 0x6,
@@ -283,7 +251,8 @@ enum {
     MSG_CFG_PRT = 0x00,
     MSG_CFG_RATE = 0x08,
     MSG_CFG_SET_RATE = 0x01,
-    MSG_CFG_NAV_SETTINGS = 0x24
+    MSG_CFG_NAV_SETTINGS = 0x24,
+    MSG_CFG_SBAS = 0x16
 } ubx_protocol_bytes;
 
 enum {
@@ -331,6 +300,13 @@ static bool _new_speed;
 //15:17:55  R -> UBX NAV,  Size 100,  'Navigation'
 //15:17:55  R -> UBX NAV-SVINFO,  Size 328,  'Satellite Status and Information'
 
+
+// Send buffer
+static union {
+    ubx_message message;
+    uint8_t bytes[58];
+} send_buffer;
+
 // Receive buffer
 static union {
     ubx_nav_posllh posllh;
@@ -359,6 +335,89 @@ static uint8_t gpsMapFixType(bool fixValid, uint8_t ubloxFixType)
     if (fixValid && ubloxFixType == FIX_3D)
         return GPS_FIX_3D;
     return GPS_NO_FIX;
+}
+
+static void sendConfigMessageUBLOX(void)
+{
+    uint8_t ck_a=0, ck_b=0;
+    send_buffer.message.header.preamble1=PREAMBLE1;
+    send_buffer.message.header.preamble2=PREAMBLE2;
+    _update_checksum(&send_buffer.bytes[2], send_buffer.message.header.length+4, &ck_a, &ck_b);
+    send_buffer.bytes[send_buffer.message.header.length+6] = ck_a;
+    send_buffer.bytes[send_buffer.message.header.length+7] = ck_b;
+    serialWriteBuf(gpsState.gpsPort, send_buffer.bytes, send_buffer.message.header.length+8);
+    //check ack/nack here
+}
+
+#ifdef GPS_PROTO_UBLOX_NEO7PLUS
+static void pollVersion(void)
+{
+    send_buffer.message.header.msg_class = CLASS_MON;
+    send_buffer.message.header.msg_id = MSG_VER;
+    send_buffer.message.header.length = 0;
+    sendConfigMessageUBLOX();
+}
+#endif
+
+static const uint8_t default_payload[] = {
+    0xFF, 0xFF, 0x03, 0x03, 0x00,           // CFG-NAV5 - Set engine settings (original MWII code)
+    0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00,           // Collected by resetting a GPS unit to defaults. Changing mode to Pedistrian and
+    0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x3C, 0x00, 0x00, 0x00,           // capturing the data from the U-Center binary console.
+    0x00, 0xC8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
+static void configureNAV5(uint8_t dynModel, uint8_t fixMode)
+{
+    send_buffer.message.header.msg_class = CLASS_CFG;
+    send_buffer.message.header.msg_id = MSG_CFG_NAV_SETTINGS;
+    send_buffer.message.header.length = 0x24;
+    memcpy(send_buffer.message.payload.bytes, default_payload, sizeof(default_payload));
+    send_buffer.message.payload.bytes[2] = dynModel;
+    send_buffer.message.payload.bytes[3] = fixMode;
+    sendConfigMessageUBLOX();
+}
+
+
+static void configureMSG(uint8_t class, uint8_t id, uint8_t rate)
+{
+    send_buffer.message.header.msg_class = CLASS_CFG;
+    send_buffer.message.header.msg_id = MSG_CFG_SET_RATE;
+    send_buffer.message.header.length = 3;
+    send_buffer.message.payload.msg.class = class;
+    send_buffer.message.payload.msg.id = id;
+    send_buffer.message.payload.msg.rate = rate;
+    sendConfigMessageUBLOX();
+}
+
+/*
+ * measRate in ms
+ * navRate cycles
+ * timeRef 0 UTC, 1 GPS
+ */
+static void configureRATE(uint16_t measRate)
+{
+    send_buffer.message.header.msg_class = CLASS_CFG;
+    send_buffer.message.header.msg_id = MSG_CFG_RATE;
+    send_buffer.message.header.length = 6;
+    send_buffer.message.payload.rate.meas=measRate;
+    send_buffer.message.payload.rate.nav=1;
+    send_buffer.message.payload.rate.time=1;
+    sendConfigMessageUBLOX();
+}
+
+/*
+ */
+static void configureSBAS(void)
+{
+    send_buffer.message.header.msg_class = CLASS_CFG;
+    send_buffer.message.header.msg_id = MSG_CFG_SBAS;
+    send_buffer.message.header.length = 8;
+    send_buffer.message.payload.sbas.mode=(gpsState.gpsConfig->sbasMode == SBAS_NONE?2:3);
+    send_buffer.message.payload.sbas.usage=3;
+    send_buffer.message.payload.sbas.maxSBAS=3;
+    send_buffer.message.payload.sbas.scanmode2=0;
+    send_buffer.message.payload.sbas.scanmode1=ubloxScanMode1[gpsState.gpsConfig->sbasMode];
+    sendConfigMessageUBLOX();
 }
 
 static bool gpsParceFrameUBLOX(void)
@@ -532,81 +591,80 @@ static bool gpsNewFrameUBLOX(uint8_t data)
     return parsed;
 }
 
-// Send UBLOX binary command data and wait until it is completely transmitted
-static bool ubxTransmitAutoConfigCommands(const uint8_t * ubxCmdBuf, uint8_t ubxCmdSize) {
-    while (serialTxBytesFree(gpsState.gpsPort) > 0) {
-        if (gpsState.autoConfigPosition < ubxCmdSize) {
-            serialWrite(gpsState.gpsPort, ubxCmdBuf[gpsState.autoConfigPosition]);
-            gpsState.autoConfigPosition++;
-        }
-        else if (isSerialTransmitBufferEmpty(gpsState.gpsPort)) {
-            gpsState.autoConfigStep++;
-            gpsState.autoConfigPosition = 0;
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-
-    return false;
-}
-
 static bool gpsConfigure(void)
 {
     switch (gpsState.autoConfigStep) {
     case 0: // NAV5
         switch (gpsState.gpsConfig->dynModel) {
             case GPS_DYNMODEL_PEDESTRIAN:
-                ubxTransmitAutoConfigCommands(ubloxInit_NAV5_Pedestrian, sizeof(ubloxInit_NAV5_Pedestrian));
+                configureNAV5(UBX_DYNMODEL_PEDESTRIAN, UBX_FIXMODE_AUTO);
                 break;
             case GPS_DYNMODEL_AIR_1G:   // Default to this
             default:
-                ubxTransmitAutoConfigCommands(ubloxInit_NAV5_Airborne1G, sizeof(ubloxInit_NAV5_Airborne1G));
+                configureNAV5(UBX_DYNMODEL_AIR_1G, UBX_FIXMODE_AUTO);
                 break;
             case GPS_DYNMODEL_AIR_4G:
-                ubxTransmitAutoConfigCommands(ubloxInit_NAV5_Airborne4G, sizeof(ubloxInit_NAV5_Airborne4G));
+                configureNAV5(UBX_DYNMODEL_AIR_4G, UBX_FIXMODE_AUTO);
                 break;
         }
+        gpsState.autoConfigStep++;
         break;
 
     case 1: // NAVX5 - skip
-        //ubxTransmitAutoConfigCommands(ubloxInit_NAVX5, sizeof(ubloxInit_NAVX5));
         gpsState.autoConfigStep++;
         break;
 
     case 2: // Disable NMEA messages
-        ubxTransmitAutoConfigCommands(ubloxInit_MSG_NMEA, sizeof(ubloxInit_MSG_NMEA));
+        configureMSG(MSG_CLASS_NMEA, MSG_NMEA_GGA, 0);
+        configureMSG(MSG_CLASS_NMEA, MSG_NMEA_GLL, 0);
+        configureMSG(MSG_CLASS_NMEA, MSG_NMEA_GSA, 0);
+        configureMSG(MSG_CLASS_NMEA, MSG_NMEA_GSV, 0);
+        configureMSG(MSG_CLASS_NMEA, MSG_NMEA_RMC, 0);
+        configureMSG(MSG_CLASS_NMEA, MSG_NMEA_VGS, 0);
+        gpsState.autoConfigStep++;
         break;
 
     case 3: // Enable UBX messages
 #ifdef GPS_PROTO_UBLOX_NEO7PLUS
-        if (gpsState.hwVersion < 70000) {
+        if ((gpsState.gpsConfig->provider == GPS_UBLOX) || (gpsState.hwVersion < 70000)) {
 #endif
-            ubxTransmitAutoConfigCommands(ubloxInit_MSG_UBX_POSLLH, sizeof(ubloxInit_MSG_UBX_POSLLH));
+            configureMSG(MSG_CLASS_UBX, MSG_POSLLH, 1);
+            configureMSG(MSG_CLASS_UBX, MSG_STATUS, 1);
+            configureMSG(MSG_CLASS_UBX, MSG_SOL,    1);
+            configureMSG(MSG_CLASS_UBX, MSG_VELNED, 1);
+            configureMSG(MSG_CLASS_UBX, MSG_SVINFO, 0);
 #ifdef GPS_PROTO_UBLOX_NEO7PLUS
+            configureMSG(MSG_CLASS_UBX, MSG_PVT,    0);
         }
-        else {
-            ubxTransmitAutoConfigCommands(ubloxInit_MSG_UBX_PVT, sizeof(ubloxInit_MSG_UBX_PVT));
+        else if(gpsState.gpsConfig->provider == GPS_UBLOX7PLUS) {
+            configureMSG(MSG_CLASS_UBX, MSG_POSLLH, 0);
+            configureMSG(MSG_CLASS_UBX, MSG_STATUS, 0);
+            configureMSG(MSG_CLASS_UBX, MSG_SOL,    0);
+            configureMSG(MSG_CLASS_UBX, MSG_VELNED, 0);
+            configureMSG(MSG_CLASS_UBX, MSG_SVINFO, 0);
+            configureMSG(MSG_CLASS_UBX, MSG_PVT,    1);
         }
 #endif
+        gpsState.autoConfigStep++;
         break;
 
     case 4: // Configure RATE
 #ifdef GPS_PROTO_UBLOX_NEO7PLUS
-        if (gpsState.hwVersion < 70000) {
+        if ((gpsState.gpsConfig->provider == GPS_UBLOX) || (gpsState.hwVersion < 70000)) {
 #endif
-            ubxTransmitAutoConfigCommands(ubloxInit_RATE_5Hz, sizeof(ubloxInit_RATE_5Hz));
+            configureRATE(200); // 5Hz
 #ifdef GPS_PROTO_UBLOX_NEO7PLUS
         }
-        else {
-            ubxTransmitAutoConfigCommands(ubloxInit_RATE_10Hz, sizeof(ubloxInit_RATE_10Hz));
+        else if(gpsState.gpsConfig->provider == GPS_UBLOX7PLUS) {
+            configureRATE(100); // 10Hz
         }
 #endif
+        gpsState.autoConfigStep++;
         break;
 
     case 5: // SBAS
-        ubxTransmitAutoConfigCommands(ubloxSbas[gpsState.gpsConfig->sbasMode].message, UBLOX_SBAS_MESSAGE_LENGTH);
+        configureSBAS();
+        gpsState.autoConfigStep++;
         break;
 
     default:
@@ -622,7 +680,8 @@ static bool gpsCheckVersion(void)
 {
 #ifdef GPS_PROTO_UBLOX_NEO7PLUS
     if (gpsState.autoConfigStep == 0) {
-        ubxTransmitAutoConfigCommands(ubloxVerPoll, sizeof(ubloxVerPoll));
+        pollVersion();
+        gpsState.autoConfigStep++;
     }
     else {
         // Wait until version found

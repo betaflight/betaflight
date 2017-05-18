@@ -112,6 +112,15 @@ static gpsProviderDescriptor_t  gpsProviders[GPS_PROVIDER_COUNT] = {
 #else
     { GPS_TYPE_NA, 0, false,  NULL, NULL },
 #endif
+
+    /* UBLOX7PLUS binary */
+#ifdef GPS_PROTO_UBLOX_NEO7PLUS
+    { GPS_TYPE_SERIAL, MODE_RXTX, false,  NULL, &gpsHandleUBLOX },
+#else
+    { GPS_TYPE_NA, 0, false,  NULL, NULL },
+#endif
+
+
 };
 
 PG_REGISTER_WITH_RESET_TEMPLATE(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
