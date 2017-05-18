@@ -53,6 +53,7 @@
 #include "drivers/vcd.h"
 #include "drivers/vtx_common.h"
 #include "drivers/transponder_ir.h"
+#include "drivers/camera_control.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -1842,6 +1843,19 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 if (current_pitmode != pitmode)
                     vtxCommonSetPitMode(pitmode);
             }
+        }
+        break;
+#endif
+
+#ifdef USE_CAMERA_CONTROL
+    case MSP_CAMERA_CONTROL:
+        {
+            if (ARMING_FLAG(ARMED)) {
+                return MSP_RESULT_ERROR;
+            }
+
+            const uint8_t key = sbufReadU8(src);
+            cameraControlKeyPress(key, 0);
         }
         break;
 #endif

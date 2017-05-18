@@ -131,7 +131,11 @@ typedef void pwmCompleteWriteFunc(uint8_t motorCount);   // function pointer use
 
 typedef struct {
     volatile timCCR_t *ccr;
-    TIM_TypeDef *tim;
+    TIM_TypeDef       *tim;
+} timerChannel_t;
+
+typedef struct {
+    timerChannel_t channel;
     float pulseScale;
     float pulseOffset;
     bool forceOverflow;
@@ -181,6 +185,7 @@ void pwmWriteBeeper(bool onoffBeep);
 void pwmToggleBeeper(void);
 void beeperPwmInit(IO_t io, uint16_t frequency);
 #endif
+void pwmOutConfig(timerChannel_t *channel, const timerHardware_t *timerHardware, uint32_t hz, uint16_t period, uint16_t value, uint8_t inversion);
 
 void pwmWriteMotor(uint8_t index, float value);
 void pwmShutdownPulsesForAllMotors(uint8_t motorCount);

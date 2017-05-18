@@ -96,7 +96,7 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8
 #endif
 }
 
-static void pwmOutConfig(pwmOutputPort_t *port, const timerHardware_t *timerHardware, uint32_t hz, uint16_t period, uint16_t value, uint8_t inversion)
+void pwmOutConfig(timerChannel_t *channel, const timerHardware_t *timerHardware, uint32_t hz, uint16_t period, uint16_t value, uint8_t inversion)
 {
 #if defined(USE_HAL_DRIVER)
     TIM_HandleTypeDef* Handle = timerFindTimerHandle(timerHardware->tim);
@@ -121,11 +121,11 @@ static void pwmOutConfig(pwmOutputPort_t *port, const timerHardware_t *timerHard
     TIM_Cmd(timerHardware->tim, ENABLE);
 #endif
 
-    port->ccr = timerChCCR(timerHardware);
+    channel->ccr = timerChCCR(timerHardware);
 
-    port->tim = timerHardware->tim;
+    channel->tim = timerHardware->tim;
 
-    *port->ccr = 0;
+    *channel->ccr = 0;
 }
 
 static void pwmWriteUnused(uint8_t index, float value)
@@ -137,7 +137,7 @@ static void pwmWriteUnused(uint8_t index, float value)
 static void pwmWriteStandard(uint8_t index, float value)
 {
     /* TODO: move value to be a number between 0-1 (i.e. percent throttle from mixer) */
-    *motors[index].ccr = lrintf((value * motors[index].pulseScale) + motors[index].pulseOffset);
+    *motors[index].channel.ccr = lrintf((value * motors[index].pulseScale) + motors[index].pulseOffset);
 }
 
 #ifdef USE_DSHOT
@@ -176,8 +176,8 @@ void pwmShutdownPulsesForAllMotors(uint8_t motorCount)
 {
     for (int index = 0; index < motorCount; index++) {
         // Set the compare register to 0, which stops the output pulsing if the timer overflows
-        if (motors[index].ccr) {
-            *motors[index].ccr = 0;
+        if (motors[index].channel.ccr) {
+            *motors[index].channel.ccr = 0;
         }
     }
 }
@@ -208,11 +208,11 @@ static void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
 {
     for (int index = 0; index < motorCount; index++) {
         if (motors[index].forceOverflow) {
-            timerForceOverflow(motors[index].tim);
+            timerForceOverflow(motors[index].channel.tim);
         }
         // Set the compare register to 0, which stops the output pulsing if the timer overflows before the main loop completes again.
         // This compare register will be set to the output value on the next main loop.
-        *motors[index].ccr = 0;
+        *motors[index].channel.ccr = 0;
     }
 }
 
@@ -327,11 +327,11 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         motors[motorIndex].pulseScale = ((motorConfig->motorPwmProtocol == PWM_TYPE_BRUSHED) ? period : (sLen * hz)) / 1000.0f;
         motors[motorIndex].pulseOffset = (sMin * hz) - (motors[motorIndex].pulseScale * 1000);
   
-        pwmOutConfig(&motors[motorIndex], timerHardware, hz, period, idlePulse, motorConfig->motorPwmInversion);
+        pwmOutConfig(&motors[motorIndex].channel, timerHardware, hz, period, idlePulse, motorConfig->motorPwmInversion);
 
         bool timerAlreadyUsed = false;
         for (int i = 0; i < motorIndex; i++) {
-            if (motors[i].tim == motors[motorIndex].tim) {
+            if (motors[i].channel.tim == motors[motorIndex].channel.tim) {
                 timerAlreadyUsed = true;
                 break;
             }
@@ -424,8 +424,8 @@ uint16_t prepareDshotPacket(motorDmaOutput_t *const motor, const uint16_t value)
 #ifdef USE_SERVOS
 void pwmWriteServo(uint8_t index, float value)
 {
-    if (index < MAX_SUPPORTED_SERVOS && servos[index].ccr) {
-        *servos[index].ccr = lrintf(value);
+    if (index < MAX_SUPPORTED_SERVOS && servos[index].channel.ccr) {
+        *servos[index].channel.ccr = lrintf(value);
     }
 }
 
@@ -453,7 +453,7 @@ void servoDevInit(const servoDevConfig_t *servoConfig)
             /* flag failure and disable ability to arm */
             break;
         }
-        pwmOutConfig(&servos[servoIndex], timer, PWM_TIMER_1MHZ, PWM_TIMER_1MHZ / servoConfig->servoPwmRate, servoConfig->servoCenterPulse, 0);
+        pwmOutConfig(&servos[servoIndex].channel, timer, PWM_TIMER_1MHZ, PWM_TIMER_1MHZ / servoConfig->servoPwmRate, servoConfig->servoCenterPulse, 0);
         servos[servoIndex].enabled = true;
     }
 }
@@ -466,10 +466,10 @@ void pwmWriteBeeper(bool onoffBeep)
         if (!beeperPwm.io)
             return;
         if (onoffBeep == true) {
-            *beeperPwm.ccr = (PWM_TIMER_1MHZ / freqBeep) / 2;
+            *beeperPwm.channel.ccr = (PWM_TIMER_1MHZ / freqBeep) / 2;
             beeperPwm.enabled = true;
         } else {
-            *beeperPwm.ccr = 0;
+            *beeperPwm.channel.ccr = 0;
             beeperPwm.enabled = false;
         }
 }
@@ -492,9 +492,9 @@ void beeperPwmInit(IO_t io, uint16_t frequency)
             IOConfigGPIO(beeperPwm.io, IOCFG_AF_PP);
 #endif
             freqBeep = frequency;
-            pwmOutConfig(&beeperPwm, timer, PWM_TIMER_1MHZ, PWM_TIMER_1MHZ / freqBeep, (PWM_TIMER_1MHZ / freqBeep) / 2, 0);
+            pwmOutConfig(&beeperPwm.channel, timer, PWM_TIMER_1MHZ, PWM_TIMER_1MHZ / freqBeep, (PWM_TIMER_1MHZ / freqBeep) / 2, 0);
         }
-        *beeperPwm.ccr = 0;
+        *beeperPwm.channel.ccr = 0;
         beeperPwm.enabled = false;
 }
 #endif

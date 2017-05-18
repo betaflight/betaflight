@@ -787,6 +787,7 @@ FC_SRC = \
             cms/cms_menu_osd.c \
             common/colorconversion.c \
             common/gps_conversion.c \
+            drivers/camera_control.c \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
             drivers/serial_escserial.c \
@@ -887,6 +888,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/bus_i2c_config.c \
             drivers/bus_spi_config.c \
             drivers/bus_spi_pinconfig.c \
+            drivers/camera_control.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_init.c \

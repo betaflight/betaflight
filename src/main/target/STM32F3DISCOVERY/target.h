@@ -31,6 +31,8 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
+#define CURRENT_TARGET_CPU_VOLTAGE 3.0
+
 #define LED0_PIN                PE8  // Blue LEDs - PE8/PE12
 #define LED0_INVERTED
 #define LED1_PIN                PE10 // Orange LEDs - PE10/PE14
