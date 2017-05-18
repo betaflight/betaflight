@@ -473,11 +473,14 @@ void processRx(timeUs_t currentTimeUs)
     }
 #endif
 
-    // Navigation may override PASSTHRU_MODE
-    if (IS_RC_MODE_ACTIVE(BOXPASSTHRU) && !naivationRequiresAngleMode() && !failsafeRequiresAngleMode()) {
-        ENABLE_FLIGHT_MODE(PASSTHRU_MODE);
-    } else {
-        DISABLE_FLIGHT_MODE(PASSTHRU_MODE);
+    // Handle passthrough mode
+    if (STATE(FIXED_WING)) {
+        if ((IS_RC_MODE_ACTIVE(BOXPASSTHRU) && !naivationRequiresAngleMode() && !failsafeRequiresAngleMode()) ||    // Normal activation of passthrough
+            (!ARMING_FLAG(ARMED) && isCalibrating())){                                                              // Backup - if we are not armed - enforce passthrough while calibrating        
+            ENABLE_FLIGHT_MODE(PASSTHRU_MODE);
+        } else {
+            DISABLE_FLIGHT_MODE(PASSTHRU_MODE);
+        }
     }
 
     /* In airmode Iterm should be prevented to grow when Low thottle and Roll + Pitch Centered.
