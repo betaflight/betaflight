@@ -255,11 +255,11 @@ void updatePositionEstimator(void);
 void applyWaypointNavigationAndAltitudeHold(void);
 
 /* Functions to signal navigation requirements to main loop */
-bool naivationRequiresAngleMode(void);
+bool navigationRequiresAngleMode(void);
 bool navigationRequiresThrottleTiltCompensation(void);
-bool naivationRequiresTurnAssistance(void);
-int8_t naivationGetHeadingControlState(void);
-bool naivationBlockArming(void);
+bool navigationRequiresTurnAssistance(void);
+int8_t navigationGetHeadingControlState(void);
+bool navigationBlockArming(void);
 bool navigationPositionEstimateIsHealthy(void);
 bool navIsCalibrationComplete(void);
 
@@ -315,8 +315,8 @@ extern int16_t navAccNEU[3];
 
 #else
 
-#define naivationRequiresAngleMode() (0)
-#define naivationGetHeadingControlState() (0)
+#define navigationRequiresAngleMode() (0)
+#define navigationGetHeadingControlState() (0)
 #define navigationRequiresThrottleTiltCompensation() (0)
 #define getEstimatedActualVelocity(axis) (0)
 

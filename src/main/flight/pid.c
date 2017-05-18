@@ -549,7 +549,7 @@ static uint8_t getHeadingHoldState()
     }
 
 #if defined(NAV)
-    int navHeadingState = naivationGetHeadingControlState();
+    int navHeadingState = navigationGetHeadingControlState();
     // NAV will prevent MAG_MODE from activating, but require heading control
     if (navHeadingState != NAV_HEADING_CONTROL_NONE) {
         // Apply maghold only if heading control is in auto mode
@@ -722,7 +722,7 @@ void pidController(void)
     }
 
 #ifdef USE_FLM_TURN_ASSIST
-    if (FLIGHT_MODE(TURN_ASSISTANT) || naivationRequiresTurnAssistance()) {
+    if (FLIGHT_MODE(TURN_ASSISTANT) || navigationRequiresTurnAssistance()) {
         pidTurnAssistant(pidState);
     }
 #endif
