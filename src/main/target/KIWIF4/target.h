@@ -81,9 +81,8 @@
 #if defined(KIWIF4V2)
 #define USE_SDCARD
 
-//#define SDCARD_DETECT_INVERTED
 
-#define SDCARD_DETECT_PIN                   PB9
+//#define SDCARD_DETECT_PIN                   PB9
 #define SDCARD_SPI_INSTANCE                 SPI2
 #define SDCARD_SPI_CS_PIN                   PB12
 
