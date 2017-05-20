@@ -2417,7 +2417,7 @@ bool navigationRequiresThrottleTiltCompensation(void)
 /*-----------------------------------------------------------
  * An indicator that ANGLE mode must be forced per NAV requirement
  *-----------------------------------------------------------*/
-bool naivationRequiresAngleMode(void)
+bool navigationRequiresAngleMode(void)
 {
     const navigationFSMStateFlags_t currentState = navGetStateFlags(posControl.navState);
     return (currentState & NAV_REQUIRE_ANGLE) || ((currentState & NAV_REQUIRE_ANGLE_FW) && STATE(FIXED_WING));
@@ -2426,7 +2426,7 @@ bool naivationRequiresAngleMode(void)
 /*-----------------------------------------------------------
  * An indicator that TURN ASSISTANCE is required for navigation
  *-----------------------------------------------------------*/
-bool naivationRequiresTurnAssistance(void)
+bool navigationRequiresTurnAssistance(void)
 {
     const navigationFSMStateFlags_t currentState = navGetStateFlags(posControl.navState);
     if (STATE(FIXED_WING)) {
@@ -2441,7 +2441,7 @@ bool naivationRequiresTurnAssistance(void)
 /**
  * An indicator that NAV is in charge of heading control (a signal to disable other heading controllers)
  */
-int8_t naivationGetHeadingControlState(void)
+int8_t navigationGetHeadingControlState(void)
 {
     // For airplanes report as manual heading control
     if (STATE(FIXED_WING)) {
@@ -2462,7 +2462,7 @@ int8_t naivationGetHeadingControlState(void)
     }
 }
 
-bool naivationBlockArming(void)
+bool navigationBlockArming(void)
 {
     const bool navBoxModesEnabled = IS_RC_MODE_ACTIVE(BOXNAVRTH) || IS_RC_MODE_ACTIVE(BOXNAVWP) || IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD);
     const bool navLaunchComboModesEnabled = IS_RC_MODE_ACTIVE(BOXNAVLAUNCH) && (IS_RC_MODE_ACTIVE(BOXNAVRTH) || IS_RC_MODE_ACTIVE(BOXNAVWP));
