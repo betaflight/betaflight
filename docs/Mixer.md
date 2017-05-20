@@ -120,7 +120,7 @@ For example, `smix 0 2 0 100 0 0 100` will assign Stabilised Roll to the third p
 | 11 | RC AUX 4 |
 | 12 | GIMBAL PITCH |
 | 13 | GIMBAL ROLL |
-| 13 | FEATURE FLAPS |
+| 14 | FEATURE FLAPS |
 
 | id |  Servo Slot Optional Setup |
 |----|--------------|
