@@ -816,7 +816,7 @@ endif
 SPEED_OPTIMISED_SRC := ""
 SIZE_OPTIMISED_SRC  := ""
 
-ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
+ifneq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
 SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             common/encoding.c \
             common/filter.c \
@@ -908,7 +908,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c
-endif #F3
+endif #!F1
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
 VCP_SRC = \
@@ -1117,13 +1117,6 @@ OPTIMISE_DEFAULT    := -Os
 
 LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_DEFAULT)
 
-else ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
-OPTIMISE_DEFAULT    := -O2
-OPTIMISE_SPEED      := -Ofast
-OPTIMISE_SIZE       := -Os
-
-LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
-
 else ifeq ($(TARGET),$(filter $(TARGET),$(SITL_TARGETS)))
 OPTIMISE_DEFAULT    := -Ofast
 OPTIMISE_SPEED      := -Ofast
@@ -1132,9 +1125,11 @@ OPTIMISE_SIZE       := -Os
 LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 
 else
-OPTIMISE_DEFAULT    := -Ofast
+OPTIMISE_DEFAULT    := -O2
+OPTIMISE_SPEED      := -Ofast
+OPTIMISE_SIZE       := -Os
 
-LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_DEFAULT)
+LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 
 endif #TARGETS
 
