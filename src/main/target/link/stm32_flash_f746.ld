@@ -1,9 +1,9 @@
 /*
 *****************************************************************************
 **
-**  File        : stm32_flash_f745.ld
+**  File        : stm32_flash_f746.ld
 **
-**  Abstract    : Linker script for STM32F745VGTx Device with
+**  Abstract    : Linker script for STM32F746VGTx Device with
 **                1024KByte FLASH, 320KByte RAM
 **
 *****************************************************************************
