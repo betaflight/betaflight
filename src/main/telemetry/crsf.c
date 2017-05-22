@@ -204,7 +204,7 @@ void crsfFrameAttitude(sbuf_t *dst)
 /*
 0x21 Flight mode text based
 Payload:
-char[]      Flight mode ( NullÂ­terminated string )
+char[]      Flight mode ( Null­terminated string )
 */
 void crsfFrameFlightMode(sbuf_t *dst)
 {
@@ -226,6 +226,7 @@ void crsfFrameFlightMode(sbuf_t *dst)
         flightMode = "HOR";
     }
     sbufWriteString(dst, flightMode);
+    sbufWriteU8(dst, '\0');     // zero-terminate string
     // write in the frame length
     *lengthPtr = sbufPtr(dst) - lengthPtr;
 }
