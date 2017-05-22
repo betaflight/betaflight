@@ -49,5 +49,6 @@ typedef enum {
     DEBUG_GYRO,
     DEBUG_NOTCH,
     DEBUG_NAV_LANDING_DETECTOR,
+    DEBUG_FW_CLIMB_RATE_TO_ALTITUDE,
     DEBUG_COUNT
 } debugType_e;
