@@ -41,13 +41,16 @@ static const struct serialPortVTable tcpVTable; // Forward
 static tcpPort_t tcpSerialPorts[SERIAL_PORT_COUNT];
 static bool tcpPortInited[SERIAL_PORT_COUNT];
 static bool tcpStart = false;
+
 bool tcpIsStart(void) {
 	return tcpStart;
 }
+
 static void onData(dyad_Event *e) {
 	tcpPort_t* s = (tcpPort_t*)(e->udata);
 	tcpDataIn(s, (uint8_t*)e->data, e->size);
 }
+
 static void onClose(dyad_Event *e) {
 	tcpPort_t* s = (tcpPort_t*)(e->udata);
 	s->clientCount--;
@@ -57,6 +60,7 @@ static void onClose(dyad_Event *e) {
 		s->connected = false;
 	}
 }
+
 static void onAccept(dyad_Event *e) {
 	tcpPort_t* s = (tcpPort_t*)(e->udata);
 	fprintf(stderr, "New connection on UART%u, %d\n", s->id + 1, s->clientCount);
@@ -74,6 +78,7 @@ static void onAccept(dyad_Event *e) {
 	dyad_addListener(e->remote, DYAD_EVENT_DATA, onData, e->udata);
 	dyad_addListener(e->remote, DYAD_EVENT_CLOSE, onClose, e->udata);
 }
+
 static tcpPort_t* tcpReconfigure(tcpPort_t *s, int id)
 {
 	if(tcpPortInited[id]) {
@@ -81,12 +86,12 @@ static tcpPort_t* tcpReconfigure(tcpPort_t *s, int id)
 		return s;
 	}
 
-    if (pthread_mutex_init(&s->txLock, NULL) != 0) {
-		fprintf(stderr, "TX mutex init failed - %d\n", errno);
-		// TODO: clean up & re-init
+        if (pthread_mutex_init(&s->txLock, NULL) != 0) {
+                fprintf(stderr, "TX mutex init failed - %d\n", errno);
+                // TODO: clean up & re-init
 		return NULL;
 	}
-    if (pthread_mutex_init(&s->rxLock, NULL) != 0) {
+        if (pthread_mutex_init(&s->rxLock, NULL) != 0) {
 		fprintf(stderr, "RX mutex init failed - %d\n", errno);
 		// TODO: clean up & re-init
 		return NULL;
@@ -128,10 +133,10 @@ serialPort_t *serTcpOpen(int id, serialReceiveCallbackPtr rxCallback, uint32_t b
     // common serial initialisation code should move to serialPort::init()
     s->port.rxBufferHead = s->port.rxBufferTail = 0;
     s->port.txBufferHead = s->port.txBufferTail = 0;
-	s->port.rxBufferSize = RX_BUFFER_SIZE;
-	s->port.txBufferSize = TX_BUFFER_SIZE;
-	s->port.rxBuffer = s->rxBuffer;
-	s->port.txBuffer = s->txBuffer;
+    s->port.rxBufferSize = RX_BUFFER_SIZE;
+    s->port.txBufferSize = TX_BUFFER_SIZE;
+    s->port.rxBuffer = s->rxBuffer;
+    s->port.txBuffer = s->txBuffer;
 
     // callback works for IRQ-based RX ONLY
     s->port.rxCallback = rxCallback;
@@ -239,7 +244,7 @@ void tcpDataOut(tcpPort_t *instance)
 void tcpDataIn(tcpPort_t *instance, uint8_t* ch, int size)
 {
     tcpPort_t *s = (tcpPort_t *)instance;
-	pthread_mutex_lock(&s->rxLock);
+        pthread_mutex_lock(&s->rxLock);
 
 	while(size--) {
 //		printf("%c", *ch);

@@ -29,13 +29,13 @@ typedef struct {
     uint8_t rxBuffer[RX_BUFFER_SIZE];
     uint8_t txBuffer[TX_BUFFER_SIZE];
 
-	dyad_Stream *serv;
-	dyad_Stream *conn;
-	pthread_mutex_t txLock;
-	pthread_mutex_t rxLock;
-	bool connected;
-	uint16_t clientCount;
-	uint8_t id;
+    dyad_Stream *serv;
+    dyad_Stream *conn;
+    pthread_mutex_t txLock;
+    pthread_mutex_t rxLock;
+    bool connected;
+    uint16_t clientCount;
+    uint8_t id;
 } tcpPort_t;
 
 serialPort_t *serTcpOpen(int id, serialReceiveCallbackPtr rxCallback, uint32_t baudRate, portMode_t mode, portOptions_t options);
