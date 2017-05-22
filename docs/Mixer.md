@@ -215,32 +215,32 @@ smix reverse 5 2 r
 ### Example 4: Custom Airplane with Differential Thrust
 Here is an example of a custom twin engine plane with [Differential Thrust](http://rcvehicles.about.com/od/rcairplanes/ss/RCAirplaneBasic.htm#step8)
 Motors take the first 2 pins, the servos take pins as indicated in the [Servo slot] chart above.
-Settings bellow have motor yaw influence at "0.3", you can change this nuber to have more or less differential thrust over the two motors.
+Settings bellow have motor yaw influence at "0.3", you can change this number to have more or less differential thrust over the two motors.
 Note: You can look at the Motors tab in [INAV Cofigurator](https://chrome.google.com/webstore/detail/inav-configurator/fmaidjmgkdkpafmbnmigkpdnpdhopgel) to see motor and servo outputs.
 
 | Pins | Outputs          |
 |------|------------------|
 | 1    | Left Engine      |
 | 2    | Right Engine     |
-| 3    | [EMPTY]          |
+| 3    | Pitch / Elevator |
 | 4    | Roll / Aileron   |
 | 5    | Roll / Aileron   |
 | 6    | Yaw / Rudder     |
-| 7    | Pitch / Elevator |
+| 7    | [EMPTY]          |
 | 8    | [EMPTY]          |
 
 ```
 mixer CUSTOMAIRPLANE
 mmix reset
-mmix 0 1.0 0.0 0.0 0.3  # Left Engine
+mmix 0 1.0 0.0 0.0 0.3   # Left Engine
 mmix 1 1.0 0.0 0.0 -0.3  # Right Engine
 
 smix reset
 # Rule	Servo	Source	Rate	Speed	Min	Max
 smix 0 3 0 100 0 0 100  # Roll / Aileron
 smix 1 4 0 100 0 0 100  # Roll / Aileron
-smix 3 5 2 100 0 0 100  # Yaw / Rudder
-smix 2 2 1 100 0 0 100  # Pitch / Elevator
+smix 2 5 2 100 0 0 100  # Yaw / Rudder
+smix 3 2 1 100 0 0 100  # Pitch / Elevator
 
 ```
 ### Example 5: Custom Airplane with Flaps
