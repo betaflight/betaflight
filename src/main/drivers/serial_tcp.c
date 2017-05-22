@@ -39,7 +39,7 @@
 
 static const struct serialPortVTable tcpVTable; // Forward
 static tcpPort_t tcpSerialPorts[SERIAL_PORT_COUNT];
-static bool tcpPortInited[SERIAL_PORT_COUNT];
+static bool tcpPortInitialized[SERIAL_PORT_COUNT];
 static bool tcpStart = false;
 bool tcpIsStart(void) {
 	return tcpStart;
@@ -76,8 +76,8 @@ static void onAccept(dyad_Event *e) {
 }
 static tcpPort_t* tcpReconfigure(tcpPort_t *s, int id)
 {
-	if(tcpPortInited[id]) {
-		fprintf(stderr, "port is already initialed!\n");
+	if(tcpPortInitialized[id]) {
+		fprintf(stderr, "port is already initialized!\n");
 		return s;
 	}
 
@@ -93,7 +93,7 @@ static tcpPort_t* tcpReconfigure(tcpPort_t *s, int id)
 	}
 
 	tcpStart = true;
-	tcpPortInited[id] = true;
+	tcpPortInitialized[id] = true;
 
 	s->connected = false;
 	s->clientCount = 0;
