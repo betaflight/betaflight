@@ -57,6 +57,7 @@ typedef enum {
     OSD_ROLL_ANGLE,
     OSD_MAIN_BATT_USAGE,
     OSD_ARMED_TIME,
+    OSD_DISARMED,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
