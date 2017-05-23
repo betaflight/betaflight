@@ -165,6 +165,11 @@ static int32_t osdGetAltitude(int32_t alt)
     }
 }
 
+static void osdFormatPID(char * buff, const char * label, const pid8_t * pid)
+{
+    tfp_sprintf(buff, "%s %3d %3d %3d", label, pid->P, pid->I, pid->D);
+}
+
 static void osdDrawSingleElement(uint8_t item)
 {
     if (!VISIBLE(osdConfig()->item_pos[item]) || BLINK(item))
@@ -340,26 +345,17 @@ static void osdDrawSingleElement(uint8_t item)
         elemPosX = 14;
         elemPosY = 6 - 4; // Top center of the AH area
 
-        int rollAngle = attitude.values.roll;
-        int pitchAngle = attitude.values.pitch;
+        const int rollAngle = constrain(attitude.values.roll, -AH_MAX_ROLL, AH_MAX_ROLL);
+        int pitchAngle = constrain(attitude.values.pitch, -AH_MAX_PITCH, AH_MAX_PITCH);
 
         if (displayScreenSize(osdDisplayPort) == VIDEO_BUFFER_CHARS_PAL) {
             ++elemPosY;
         }
 
-        if (pitchAngle > AH_MAX_PITCH)
-            pitchAngle = AH_MAX_PITCH;
-        if (pitchAngle < -AH_MAX_PITCH)
-            pitchAngle = -AH_MAX_PITCH;
-        if (rollAngle > AH_MAX_ROLL)
-            rollAngle = AH_MAX_ROLL;
-        if (rollAngle < -AH_MAX_ROLL)
-            rollAngle = -AH_MAX_ROLL;
-
         // Convert pitchAngle to y compensation value
         pitchAngle = (pitchAngle / 8) - 41; // 41 = 4 * 9 + 5
 
-        for (int8_t x = -4; x <= 4; x++) {
+        for (int x = -4; x <= 4; x++) {
             int y = (-rollAngle * x) / 64;
             y -= pitchAngle;
             // y += 41; // == 4 * 9 + 5
@@ -400,21 +396,21 @@ static void osdDrawSingleElement(uint8_t item)
     case OSD_ROLL_PIDS:
     {
         const pidProfile_t *pidProfile = currentPidProfile;
-        tfp_sprintf(buff, "ROL %3d %3d %3d", pidProfile->pid[PID_ROLL].P, pidProfile->pid[PID_ROLL].I, pidProfile->pid[PID_ROLL].D);
+        osdFormatPID(buff, "ROL", &pidProfile->pid[PID_ROLL]);
         break;
     }
 
     case OSD_PITCH_PIDS:
     {
         const pidProfile_t *pidProfile = currentPidProfile;
-        tfp_sprintf(buff, "PIT %3d %3d %3d", pidProfile->pid[PID_PITCH].P, pidProfile->pid[PID_PITCH].I, pidProfile->pid[PID_PITCH].D);
+        osdFormatPID(buff, "PIT", &pidProfile->pid[PID_PITCH]);
         break;
     }
 
     case OSD_YAW_PIDS:
     {
         const pidProfile_t *pidProfile = currentPidProfile;
-        tfp_sprintf(buff, "YAW %3d %3d %3d", pidProfile->pid[PID_YAW].P, pidProfile->pid[PID_YAW].I, pidProfile->pid[PID_YAW].D);
+        osdFormatPID(buff, "YAW", &pidProfile->pid[PID_YAW]);
         break;
     }
 
@@ -437,8 +433,7 @@ static void osdDrawSingleElement(uint8_t item)
                 break;
 
             case BATTERY_CRITICAL:
-                tfp_sprintf(buff, "LAND NOW");
-                elemOffsetX += 1;
+                tfp_sprintf(buff, " LAND NOW");
                 break;
 
             default:
@@ -448,7 +443,7 @@ static void osdDrawSingleElement(uint8_t item)
 
     case OSD_AVG_CELL_VOLTAGE:
     {
-        uint16_t cellV = getBatteryVoltage() * 10 / getBatteryCellCount();
+        const int cellV = getBatteryVoltage() * 10 / getBatteryCellCount();
         buff[0] = SYM_BATT_5;
         tfp_sprintf(buff + 1, "%d.%02dV", cellV / 100, cellV % 100);
         break;
