@@ -657,6 +657,16 @@ const clivalue_t valueTable[] = {
     { "osd_rol_ang_pos",            VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_ROLL_ANGLE]) },
     { "osd_battery_usage_pos",      VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_MAIN_BATT_USAGE]) },
 
+    { "osd_stat_max_spd",           VAR_UINT8   | MASTER_VALUE, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_MAX_SPEED])},
+    { "osd_stat_min_batt",          VAR_UINT8   | MASTER_VALUE, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_MIN_BATTERY])},
+    { "osd_stat_min_rssi",          VAR_UINT8   | MASTER_VALUE, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_MIN_RSSI])},
+    { "osd_stat_max_curr",          VAR_UINT8   | MASTER_VALUE, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_MAX_CURRENT])},
+    { "osd_stat_used_mah",          VAR_UINT8   | MASTER_VALUE, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_USED_MAH])},
+    { "osd_stat_max_alt",           VAR_UINT8   | MASTER_VALUE, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_MAX_ALTITUDE])},
+    { "osd_stat_bbox",              VAR_UINT8   | MASTER_VALUE, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_BLACKBOX])},
+    { "osd_stat_endbatt",           VAR_UINT8   | MASTER_VALUE, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_END_BATTERY])},
+    { "osd_stat_flytime",           VAR_UINT8   | MASTER_VALUE, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_FLYTIME])},
+    { "osd_stat_armtime",           VAR_UINT8   | MASTER_VALUE, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_ARMEDTIME])},
 #endif
 
 // PG_SYSTEM_CONFIG

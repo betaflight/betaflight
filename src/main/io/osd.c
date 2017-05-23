@@ -120,6 +120,7 @@ typedef struct statistic_s {
     int16_t max_current; // /10
     int16_t min_rssi;
     int16_t max_altitude;
+    uint16_t armed_time;
 } statistic_t;
 
 static statistic_t stats;
@@ -271,6 +272,13 @@ static void osdDrawSingleElement(uint8_t item)
         {
             buff[0] = SYM_FLY_M;
             tfp_sprintf(buff + 1, "%02d:%02d", flyTime / 60, flyTime % 60);
+            break;
+        }
+
+        case OSD_ARMED_TIME:
+        {
+            buff[0] = SYM_FLY_M;
+            tfp_sprintf(buff + 1, "%02d:%02d", stats.armed_time / 60, stats.armed_time % 60);
             break;
         }
 
@@ -564,6 +572,7 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_PITCH_ANGLE);
     osdDrawSingleElement(OSD_ROLL_ANGLE);
     osdDrawSingleElement(OSD_MAIN_BATT_USAGE);
+    osdDrawSingleElement(OSD_ARMED_TIME);
 
 #ifdef GPS
 #ifdef CMS
@@ -608,13 +617,23 @@ void pgResetFn_osdConfig(osdConfig_t *osdProfile)
     osdProfile->item_pos[OSD_DEBUG] = OSD_POS(7, 12) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_PITCH_ANGLE] = OSD_POS(1, 8) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_ROLL_ANGLE] = OSD_POS(1, 9) | VISIBLE_FLAG;
-
     osdProfile->item_pos[OSD_GPS_LAT] = OSD_POS(18, 14) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_GPS_LON] = OSD_POS(18, 15) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_MAIN_BATT_USAGE] = OSD_POS(15, 10) | VISIBLE_FLAG;
 
+    osdProfile->enabled_stats[OSD_STAT_MAX_SPEED] = true;
+    osdProfile->enabled_stats[OSD_STAT_MIN_BATTERY] = true;
+    osdProfile->enabled_stats[OSD_STAT_MIN_RSSI] = true;
+    osdProfile->enabled_stats[OSD_STAT_MAX_CURRENT] = true;
+    osdProfile->enabled_stats[OSD_STAT_USED_MAH] = true;
+    osdProfile->enabled_stats[OSD_STAT_MAX_ALTITUDE] = false;
+    osdProfile->enabled_stats[OSD_STAT_BLACKBOX] = true;
+    osdProfile->enabled_stats[OSD_STAT_END_BATTERY] = false;
+    osdProfile->enabled_stats[OSD_STAT_FLYTIME] = false;
+    osdProfile->enabled_stats[OSD_STAT_ARMEDTIME] = true;
 
     osdProfile->units = OSD_UNIT_METRIC;
+
     osdProfile->rssi_alarm = 20;
     osdProfile->cap_alarm = 2200;
     osdProfile->time_alarm = 10; // in minutes
@@ -736,6 +755,7 @@ static void osdResetStats(void)
     stats.max_current = 0;
     stats.min_rssi = 99;
     stats.max_altitude = 0;
+    stats.armed_time = 0;
 }
 
 static void osdUpdateStats(void)
@@ -804,6 +824,13 @@ static void osdGetBlackboxStatusString(char * buff, uint8_t len)
 }
 #endif
 
+static void osdDisplayStatisticLabel(uint8_t y, const char * text, const char * value)
+{
+    displayWrite(osdDisplayPort, 2, y, text);
+    displayWrite(osdDisplayPort, 20, y, ":");
+    displayWrite(osdDisplayPort, 22, y, value);
+}
+
 static void osdShowStats(void)
 {
     uint8_t top = 2;
@@ -812,43 +839,60 @@ static void osdShowStats(void)
     displayClearScreen(osdDisplayPort);
     displayWrite(osdDisplayPort, 2, top++, "  --- STATS ---");
 
-    if (STATE(GPS_FIX)) {
-        displayWrite(osdDisplayPort, 2, top, "MAX SPEED        :");
-        itoa(stats.max_speed, buff, 10);
-        displayWrite(osdDisplayPort, 22, top++, buff);
+    if (osdConfig()->enabled_stats[OSD_STAT_ARMEDTIME]) {
+        tfp_sprintf(buff, "%02d:%02d", stats.armed_time / 60, stats.armed_time % 60);
+        osdDisplayStatisticLabel(top++, "ARMED TIME", buff);
     }
 
-    displayWrite(osdDisplayPort, 2, top, "MIN BATTERY      :");
-    tfp_sprintf(buff, "%d.%1dV", stats.min_voltage / 10, stats.min_voltage % 10);
-    displayWrite(osdDisplayPort, 22, top++, buff);
+    if (osdConfig()->enabled_stats[OSD_STAT_FLYTIME]) {
+        tfp_sprintf(buff, "%02d:%02d", flyTime / 60, flyTime % 60);
+        osdDisplayStatisticLabel(top++, "FLY TIME", buff);
+    }
 
-    displayWrite(osdDisplayPort, 2, top, "MIN RSSI         :");
-    itoa(stats.min_rssi, buff, 10);
-    strcat(buff, "%");
-    displayWrite(osdDisplayPort, 22, top++, buff);
+    if (osdConfig()->enabled_stats[OSD_STAT_MAX_SPEED] && STATE(GPS_FIX)) {
+        itoa(stats.max_speed, buff, 10);
+        osdDisplayStatisticLabel(top++, "MAX SPEED", buff);
+    }
+
+    if (osdConfig()->enabled_stats[OSD_STAT_MIN_BATTERY]) {
+        tfp_sprintf(buff, "%d.%1dV", stats.min_voltage / 10, stats.min_voltage % 10);
+        osdDisplayStatisticLabel(top++, "MIN BATTERY", buff);
+    }
+
+    if (osdConfig()->enabled_stats[OSD_STAT_END_BATTERY]) {
+        tfp_sprintf(buff, "%d.%1dV", getBatteryVoltage() / 10, getBatteryVoltage() % 10);
+        osdDisplayStatisticLabel(top++, "END BATTERY", buff);
+    }
+
+    if (osdConfig()->enabled_stats[OSD_STAT_MIN_RSSI]) {
+        itoa(stats.min_rssi, buff, 10);
+        strcat(buff, "%");
+        osdDisplayStatisticLabel(top++, "MIN RSSI", buff);
+    }
 
     if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
-        displayWrite(osdDisplayPort, 2, top, "MAX CURRENT      :");
-        itoa(stats.max_current, buff, 10);
-        strcat(buff, "A");
-        displayWrite(osdDisplayPort, 22, top++, buff);
+        if (osdConfig()->enabled_stats[OSD_STAT_MAX_CURRENT]) {
+            itoa(stats.max_current, buff, 10);
+            strcat(buff, "A");
+            osdDisplayStatisticLabel(top++, "MAX CURRENT", buff);
+        }
 
-        displayWrite(osdDisplayPort, 2, top, "USED MAH         :");
-        itoa(getMAhDrawn(), buff, 10);
-        strcat(buff, "\x07");
-        displayWrite(osdDisplayPort, 22, top++, buff);
+        if (osdConfig()->enabled_stats[OSD_STAT_USED_MAH]) {
+            tfp_sprintf(buff, "%d%c", getMAhDrawn(), SYM_MAH);
+            osdDisplayStatisticLabel(top++, "USED MAH", buff);
+        }
     }
 
-    displayWrite(osdDisplayPort, 2, top, "MAX ALTITUDE     :");
-    int32_t alt = osdGetAltitude(stats.max_altitude);
-    tfp_sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
-    displayWrite(osdDisplayPort, 22, top++, buff);
+    if (osdConfig()->enabled_stats[OSD_STAT_MAX_ALTITUDE]) {
+        int32_t alt = osdGetAltitude(stats.max_altitude);
+        tfp_sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
+        osdDisplayStatisticLabel(top++, "MAX ALTITUDE", buff);
+    }
 
 #ifdef BLACKBOX
-    if (blackboxConfig()->device && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
-        displayWrite(osdDisplayPort, 2, top, "BLACKBOX         :");
+    if (osdConfig()->enabled_stats[OSD_STAT_BLACKBOX] && blackboxConfig()->device && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
         osdGetBlackboxStatusString(buff, 10);
-        displayWrite(osdDisplayPort, 22, top++, buff);
+        osdDisplayStatisticLabel(top++, "BLACKBOX", buff);
     }
 #endif
 }
@@ -884,6 +928,7 @@ static void osdRefresh(timeUs_t currentTimeUs)
 
     if (ARMING_FLAG(ARMED) && sec != lastSec) {
         flyTime++;
+        stats.armed_time++;
         lastSec = sec;
     }
 
