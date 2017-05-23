@@ -1008,6 +1008,11 @@ SITLEXCLUDES = \
             drivers/system.c \
             drivers/rcc.c \
             drivers/serial_uart.c \
+            drivers/rx_xn297.c \
+            drivers/display_ug2864hsweg01.c \
+            telemetry/crsf.c \
+            telemetry/srxl.c \
+            io/displayport_oled.c
 
 
 # check if target.mk supplied
@@ -1138,7 +1143,7 @@ CC_SPEED_OPTIMISATION   := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 CC_SIZE_OPTIMISATION    := $(OPTIMISATION_BASE) $(OPTIMISE_SIZE)
 
 else #DEBUG
-OPTIMISE_DEFAULT    := -O0
+OPTIMISE_DEFAULT    := -Og
 
 CC_DEBUG_OPTIMISATION := $(OPTIMISE_DEFAULT)
 

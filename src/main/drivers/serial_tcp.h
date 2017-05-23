@@ -20,19 +20,14 @@
 #include <netinet/in.h>
 #include <pthread.h>
 #include "dyad.h"
-// Since serial ports can be used for any function these buffer sizes should be equal
-// The two largest things that need to be sent are: 1, MSP responses, 2, UBLOX SVINFO packet.
 
-// Size must be a power of two due to various optimizations which use 'and' instead of 'mod'
-// Various serial routines return the buffer occupied size as uint8_t which would need to be extended in order to
-// increase size further.
 #define RX_BUFFER_SIZE    1400
 #define TX_BUFFER_SIZE    1400
 
 typedef struct {
     serialPort_t port;
-	volatile uint8_t rxBuffer[RX_BUFFER_SIZE];
-	volatile uint8_t txBuffer[TX_BUFFER_SIZE];
+    uint8_t rxBuffer[RX_BUFFER_SIZE];
+    uint8_t txBuffer[TX_BUFFER_SIZE];
 
 	dyad_Stream *serv;
 	dyad_Stream *conn;
@@ -43,16 +38,11 @@ typedef struct {
 	uint8_t id;
 } tcpPort_t;
 
-serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr rxCallback, uint32_t baudRate, portMode_t mode, portOptions_t options);
+serialPort_t *serTcpOpen(int id, serialReceiveCallbackPtr rxCallback, uint32_t baudRate, portMode_t mode, portOptions_t options);
 
 // tcpPort API
-void tcpWrite(serialPort_t *instance, uint8_t ch);
 void tcpDataIn(tcpPort_t *instance, uint8_t* ch, int size);
-uint32_t tcpTotalRxBytesWaiting(const serialPort_t *instance);
-uint32_t tcpTotalTxBytesFree(const serialPort_t *instance);
-uint8_t tcpRead(serialPort_t *instance);
 void tcpDataOut(tcpPort_t *instance);
-bool isTcpTransmitBufferEmpty(const serialPort_t *s);
 
 bool tcpIsStart(void);
 bool* tcpGetUsed(void);

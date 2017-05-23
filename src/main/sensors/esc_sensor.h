@@ -19,6 +19,12 @@
 
 #include "common/time.h"
 
+typedef struct escSensorConfig_s {
+    uint8_t halfDuplex;             // Set to false to listen on the TX pin for telemetry data
+} escSensorConfig_t;
+
+PG_DECLARE(escSensorConfig_t, escSensorConfig);
+
 typedef struct {
     uint8_t dataAge;
     int8_t temperature;
