@@ -1158,7 +1158,6 @@ CFLAGS      += $(ARCH_FLAGS) \
               $(DEBUG_FLAGS) \
               -std=gnu99 \
               -Wall -Wextra -Wunsafe-loop-optimizations -Wdouble-promotion \
-              -Werror \
               -ffunction-sections \
               -fdata-sections \
               -pedantic \
@@ -1170,7 +1169,9 @@ CFLAGS      += $(ARCH_FLAGS) \
               -D'__TARGET__="$(TARGET)"' \
               -D'__REVISION__="$(REVISION)"' \
               -save-temps=obj \
-              -MMD -MP
+              -MMD -MP \
+              $(EXTRA_FLAGS)
+
 
 ASFLAGS     = $(ARCH_FLAGS) \
               -x assembler-with-cpp \
