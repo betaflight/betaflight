@@ -873,6 +873,9 @@ static void osdShowStats(void)
         osdDisplayStatisticLabel(top++, "BLACKBOX", buff);
     }
 #endif
+
+    /* Reset time since last armed here to ensure this timer is at zero when back at "main" OSD screen */
+    stats.armed_time = 0;
 }
 
 static void osdShowArmed(void)
