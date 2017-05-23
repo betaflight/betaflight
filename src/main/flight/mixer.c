@@ -676,10 +676,12 @@ uint16_t convertMotorToExternal(uint16_t motorValue)
 #ifdef USE_DSHOT
     if (isMotorProtocolDshot()) {
         if (feature(FEATURE_3D) && motorValue >= DSHOT_MIN_THROTTLE && motorValue <= DSHOT_3D_DEADBAND_LOW) {
-            motorValue = DSHOT_MIN_THROTTLE + (DSHOT_3D_DEADBAND_LOW - motorValue);
+            // Subtract 1 to compensate for imbalance introduced in convertExternalToMotor()
+            motorValue = DSHOT_MIN_THROTTLE + (DSHOT_3D_DEADBAND_LOW - motorValue) - 1;
         }
 
-        externalValue = motorValue < DSHOT_MIN_THROTTLE ? EXTERNAL_CONVERSION_MIN_VALUE : constrain((motorValue / EXTERNAL_DSHOT_CONVERSION_FACTOR) + EXTERNAL_DSHOT_CONVERSION_OFFSET, EXTERNAL_CONVERSION_MIN_VALUE + 1, EXTERNAL_CONVERSION_MAX_VALUE);
+        // Subtract 1 to compensate for imbalance introduced in convertExternalToMotor()
+        externalValue = motorValue < DSHOT_MIN_THROTTLE ? EXTERNAL_CONVERSION_MIN_VALUE : constrain(((motorValue - 1)/ EXTERNAL_DSHOT_CONVERSION_FACTOR) + EXTERNAL_DSHOT_CONVERSION_OFFSET, EXTERNAL_CONVERSION_MIN_VALUE + 1, EXTERNAL_CONVERSION_MAX_VALUE);
 
         if (feature(FEATURE_3D) && motorValue == DSHOT_DISARM_COMMAND) {
             externalValue = EXTERNAL_CONVERSION_3D_MID_VALUE;
