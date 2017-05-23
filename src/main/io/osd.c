@@ -824,6 +824,13 @@ static void osdGetBlackboxStatusString(char * buff, uint8_t len)
 }
 #endif
 
+static void osdDisplayStatisticLabel(uint8_t y, const char * text, const char * value)
+{
+    displayWrite(osdDisplayPort, 2, y, text);
+    displayWrite(osdDisplayPort, 20, y, ":");
+    displayWrite(osdDisplayPort, 22, y, value);
+}
+
 static void osdShowStats(void)
 {
     uint8_t top = 2;
@@ -833,70 +840,59 @@ static void osdShowStats(void)
     displayWrite(osdDisplayPort, 2, top++, "  --- STATS ---");
 
     if (osdConfig()->enabled_stats[OSD_STAT_ARMEDTIME]) {
-        displayWrite(osdDisplayPort, 2, top, "ARMED TIME       :");
         tfp_sprintf(buff, "%02d:%02d", stats.armed_time / 60, stats.armed_time % 60);
-        displayWrite(osdDisplayPort, 22, top++, buff);
+        osdDisplayStatisticLabel(top++, "ARMED TIME", buff);
     }
 
     if (osdConfig()->enabled_stats[OSD_STAT_FLYTIME]) {
-        displayWrite(osdDisplayPort, 2, top, "FLY TIME         :");
         tfp_sprintf(buff, "%02d:%02d", flyTime / 60, flyTime % 60);
-        displayWrite(osdDisplayPort, 22, top++, buff);
+        osdDisplayStatisticLabel(top++, "FLY TIME", buff);
     }
 
     if (osdConfig()->enabled_stats[OSD_STAT_MAX_SPEED] && STATE(GPS_FIX)) {
-        displayWrite(osdDisplayPort, 2, top, "MAX SPEED        :");
         itoa(stats.max_speed, buff, 10);
-        displayWrite(osdDisplayPort, 22, top++, buff);
+        osdDisplayStatisticLabel(top++, "MAX SPEED", buff);
     }
 
     if (osdConfig()->enabled_stats[OSD_STAT_MIN_BATTERY]) {
-        displayWrite(osdDisplayPort, 2, top, "MIN BATTERY      :");
         tfp_sprintf(buff, "%d.%1dV", stats.min_voltage / 10, stats.min_voltage % 10);
-        displayWrite(osdDisplayPort, 22, top++, buff);
+        osdDisplayStatisticLabel(top++, "MIN BATTERY", buff);
     }
 
     if (osdConfig()->enabled_stats[OSD_STAT_END_BATTERY]) {
-        displayWrite(osdDisplayPort, 2, top, "END BATTERY      :");
         tfp_sprintf(buff, "%d.%1dV", getBatteryVoltage() / 10, getBatteryVoltage() % 10);
-        displayWrite(osdDisplayPort, 22, top++, buff);
+        osdDisplayStatisticLabel(top++, "END BATTERY", buff);
     }
 
     if (osdConfig()->enabled_stats[OSD_STAT_MIN_RSSI]) {
-        displayWrite(osdDisplayPort, 2, top, "MIN RSSI         :");
         itoa(stats.min_rssi, buff, 10);
         strcat(buff, "%");
-        displayWrite(osdDisplayPort, 22, top++, buff);
+        osdDisplayStatisticLabel(top++, "MIN RSSI", buff);
     }
 
     if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
         if (osdConfig()->enabled_stats[OSD_STAT_MAX_CURRENT]) {
-            displayWrite(osdDisplayPort, 2, top, "MAX CURRENT      :");
             itoa(stats.max_current, buff, 10);
             strcat(buff, "A");
-            displayWrite(osdDisplayPort, 22, top++, buff);
+            osdDisplayStatisticLabel(top++, "MAX CURRENT", buff);
         }
 
         if (osdConfig()->enabled_stats[OSD_STAT_USED_MAH]) {
-            displayWrite(osdDisplayPort, 2, top, "USED MAH         :");
-            itoa(getMAhDrawn(), buff, 10);
-            strcat(buff, "\x07");
-            displayWrite(osdDisplayPort, 22, top++, buff);
+            tfp_sprintf(buff, "%d%c", getMAhDrawn(), SYM_MAH);
+            osdDisplayStatisticLabel(top++, "USED MAH", buff);
         }
     }
 
     if (osdConfig()->enabled_stats[OSD_STAT_MAX_ALTITUDE]) {
-        displayWrite(osdDisplayPort, 2, top, "MAX ALTITUDE     :");
         int32_t alt = osdGetAltitude(stats.max_altitude);
         tfp_sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
-        displayWrite(osdDisplayPort, 22, top++, buff);
+        osdDisplayStatisticLabel(top++, "MAX ALTITUDE", buff);
     }
 
 #ifdef BLACKBOX
     if (osdConfig()->enabled_stats[OSD_STAT_BLACKBOX] && blackboxConfig()->device && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
-        displayWrite(osdDisplayPort, 2, top, "BLACKBOX         :");
         osdGetBlackboxStatusString(buff, 10);
-        displayWrite(osdDisplayPort, 22, top++, buff);
+        osdDisplayStatisticLabel(top++, "BLACKBOX", buff);
     }
 #endif
 }
