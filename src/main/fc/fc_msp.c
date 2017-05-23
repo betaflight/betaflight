@@ -1186,6 +1186,17 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, navConfig()->general.land_slowdown_maxalt);
         sbufWriteU16(dst, navConfig()->general.emerg_descent_rate);
         break;
+
+    case MSP_FW_CONFIG:
+        sbufWriteU16(dst, navConfig()->fw.cruise_throttle);
+        sbufWriteU16(dst, navConfig()->fw.min_throttle);
+        sbufWriteU16(dst, navConfig()->fw.max_throttle);
+        sbufWriteU8(dst, navConfig()->fw.max_bank_angle);
+        sbufWriteU8(dst, navConfig()->fw.max_climb_angle);
+        sbufWriteU8(dst, navConfig()->fw.max_dive_angle);
+        sbufWriteU8(dst, navConfig()->fw.pitch_to_throttle);
+        sbufWriteU16(dst, navConfig()->fw.loiter_radius);
+        break;
 #endif
 
     case MSP_CALIBRATION_DATA:
@@ -1686,6 +1697,18 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         navConfigMutable()->general.land_slowdown_maxalt = sbufReadU16(src);
         navConfigMutable()->general.emerg_descent_rate = sbufReadU16(src);
         break;
+
+    case MSP_SET_FW_CONFIG:
+        navConfigMutable()->fw.cruise_throttle = sbufReadU16(src);
+        navConfigMutable()->fw.min_throttle = sbufReadU16(src);
+        navConfigMutable()->fw.max_throttle = sbufReadU16(src);
+        navConfigMutable()->fw.max_bank_angle = sbufReadU8(src);
+        navConfigMutable()->fw.max_climb_angle = sbufReadU8(src);
+        navConfigMutable()->fw.max_dive_angle = sbufReadU8(src);
+        navConfigMutable()->fw.pitch_to_throttle = sbufReadU8(src);
+        navConfigMutable()->fw.loiter_radius = sbufReadU16(src);
+        break;
+
 #endif
 
     case MSP_SET_CALIBRATION_DATA:
