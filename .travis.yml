@@ -27,12 +27,21 @@ git:
 addons:
   apt:
     packages:
+      - lcov
+      - build-essential
+      - git
       - libc6-i386
       - time
 
 # We use cpp for unit tests, and c for the main project.
 language: cpp
 compiler: clang
+dist: trusty
+
+
+before_install:
+  - pip install --user cpp-coveralls
+  - gem install coveralls-lcov
 
 install:
   - make arm_sdk_install
@@ -41,6 +50,7 @@ before_script:
   - tools/gcc-arm-none-eabi-6-2017-q1-update/bin/arm-none-eabi-gcc --version
   - clang --version
   - clang++ --version
+  - gcc --version
 
 script: ./.travis.sh
 

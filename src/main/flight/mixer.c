@@ -25,8 +25,8 @@
 #include "build/build_config.h"
 
 #include "common/axis.h"
-#include "common/maths.h"
 #include "common/filter.h"
+#include "common/maths.h"
 
 #include "config/feature.h"
 #include "config/parameter_group.h"
@@ -38,18 +38,19 @@
 
 #include "io/motors.h"
 
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
+
+#include "flight/failsafe.h"
+#include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
+
 #include "rx/rx.h"
 
 #include "sensors/battery.h"
 
-#include "flight/mixer.h"
-#include "flight/failsafe.h"
-#include "flight/pid.h"
-#include "flight/imu.h"
-
-#include "fc/config.h"
-#include "fc/rc_controls.h"
-#include "fc/runtime_config.h"
 
 PG_REGISTER_WITH_RESET_TEMPLATE(flight3DConfig_t, flight3DConfig, PG_MOTOR_3D_CONFIG, 0);
 
@@ -604,7 +605,7 @@ void mixTable(pidProfile_t *pidProfile)
             throttle = 0.5f;
         }
     } else {
-        if (isAirmodeActive()) {  // Only automatically adjust throttle during airmode scenario
+        if (isAirmodeActive() || throttle > 0.5f) {  // Only automatically adjust throttle when airmode enabled. Airmode logic is always active on high throttle
             const float throttleLimitOffset = motorMixRange / 2.0f;
             throttle = constrainf(throttle, 0.0f + throttleLimitOffset, 1.0f - throttleLimitOffset);
         }
@@ -675,10 +676,12 @@ uint16_t convertMotorToExternal(uint16_t motorValue)
 #ifdef USE_DSHOT
     if (isMotorProtocolDshot()) {
         if (feature(FEATURE_3D) && motorValue >= DSHOT_MIN_THROTTLE && motorValue <= DSHOT_3D_DEADBAND_LOW) {
-            motorValue = DSHOT_MIN_THROTTLE + (DSHOT_3D_DEADBAND_LOW - motorValue);
+            // Subtract 1 to compensate for imbalance introduced in convertExternalToMotor()
+            motorValue = DSHOT_MIN_THROTTLE + (DSHOT_3D_DEADBAND_LOW - motorValue) - 1;
         }
 
-        externalValue = motorValue < DSHOT_MIN_THROTTLE ? EXTERNAL_CONVERSION_MIN_VALUE : constrain((motorValue / EXTERNAL_DSHOT_CONVERSION_FACTOR) + EXTERNAL_DSHOT_CONVERSION_OFFSET, EXTERNAL_CONVERSION_MIN_VALUE + 1, EXTERNAL_CONVERSION_MAX_VALUE);
+        // Subtract 1 to compensate for imbalance introduced in convertExternalToMotor()
+        externalValue = motorValue < DSHOT_MIN_THROTTLE ? EXTERNAL_CONVERSION_MIN_VALUE : constrain(((motorValue - 1)/ EXTERNAL_DSHOT_CONVERSION_FACTOR) + EXTERNAL_DSHOT_CONVERSION_OFFSET, EXTERNAL_CONVERSION_MIN_VALUE + 1, EXTERNAL_CONVERSION_MAX_VALUE);
 
         if (feature(FEATURE_3D) && motorValue == DSHOT_DISARM_COMMAND) {
             externalValue = EXTERNAL_CONVERSION_3D_MID_VALUE;

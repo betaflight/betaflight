@@ -25,8 +25,7 @@
 #include "drivers/timer_def.h"
 
 // DSHOT will work for motor 1-8.
-// If SDCard or UART4 DMA is used motor 6 will not work.
-// If the ADC is used motor 7 will not work.
+// If SDCard or UART4 DMA is used motor 7 will not work.
 // If UART1 DMA is used motor 8 will not work.
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
@@ -36,8 +35,8 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM1, CH2N, PB14, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED | TIMER_OUTPUT_INVERTED , 0), // PWM3  - DMA2_ST6, DMA2_ST2
     DEF_TIM(TIM3, CH3,  PB0,  TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED,                          0), // PWM4  - DMA1_ST7
     DEF_TIM(TIM5, CH1,  PA0,  TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED,                          0), // PWM5  - DMA1_ST2
-    DEF_TIM(TIM5, CH2,  PA1,  TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED,                          0), // PWM6  - (DMA1_ST4)             - DMA SDCard, DMA Serial_TX4
-    DEF_TIM(TIM8, CH3,  PC8,  TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED,                          0), // PWM7  - (DMA2_ST4) DMA2_ST2    - DMA ADC
+    DEF_TIM(TIM8, CH3,  PC8,  TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED,                          0), // PWM6  - (DMA2_ST4) DMA2_ST2
+    DEF_TIM(TIM5, CH2,  PA1,  TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED,                          0), // PWM7  - (DMA1_ST4)             - DMA SDCard, DMA Serial_TX4
     DEF_TIM(TIM8, CH4,  PC9,  TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED,                          0), // PWM8  - (DMA2_ST7)             - DMA Serial_TX1
     DEF_TIM(TIM3, CH4,  PB1,  TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED,                          0), // PWM9  - (DMA1_ST2)             - Collision
     DEF_TIM(TIM1, CH3N, PB15, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED | TIMER_OUTPUT_INVERTED , 0), // PWM10 - (DMA2_ST6), (DMA2_ST6) - Collision

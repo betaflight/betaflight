@@ -20,6 +20,7 @@
 #undef TELEMETRY_IBUS   //no space left
 #undef TELEMETRY_HOTT   //no space left
 #undef TELEMETRY_JETIEXBUS
+#undef USE_GYRO_DATA_ANALYSE
 
 #define TARGET_BOARD_IDENTIFIER "OMNI" // https://en.wikipedia.org/wiki/Omnibus
 
@@ -145,8 +146,8 @@
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
 
 #define USE_ADC
-#define BOARD_HAS_VOLTAGE_DIVIDER
-#define BOARD_HAS_CURRENT_SENSOR
+#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
+#define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #define VBAT_ADC_PIN                PA0
 #define CURRENT_METER_ADC_PIN       PA1
 #define ADC_INSTANCE                ADC1

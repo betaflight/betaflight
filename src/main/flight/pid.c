@@ -158,6 +158,8 @@ static void *ptermYawFilter;
 
 void pidInitFilters(const pidProfile_t *pidProfile)
 {
+    BUILD_BUG_ON(FD_YAW != 2); // only setting up Dterm filters on roll and pitch axes, so ensure yaw axis is 2
+
     static biquadFilter_t biquadFilterNotch[2];
     static pt1Filter_t pt1Filter[2];
     static biquadFilter_t biquadFilter[2];
@@ -166,16 +168,25 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 
     uint32_t pidFrequencyNyquist = (1.0f / dT) / 2; // No rounding needed
 
-    BUILD_BUG_ON(FD_YAW != 2); // only setting up Dterm filters on roll and pitch axes, so ensure yaw axis is 2
+    float dTermNotchHz;
+    if (pidProfile->dterm_notch_hz <= pidFrequencyNyquist) {
+        dTermNotchHz = pidProfile->dterm_notch_hz;
+    } else {
+        if (pidProfile->dterm_notch_cutoff < pidFrequencyNyquist) {
+            dTermNotchHz = pidFrequencyNyquist;
+        } else {
+            dTermNotchHz = 0;
+        }
+    }
 
-    if (pidProfile->dterm_notch_hz == 0 || pidProfile->dterm_notch_hz > pidFrequencyNyquist) {
+    if (!dTermNotchHz) {
         dtermNotchFilterApplyFn = nullFilterApply;
     } else {
         dtermNotchFilterApplyFn = (filterApplyFnPtr)biquadFilterApply;
-        const float notchQ = filterGetNotchQ(pidProfile->dterm_notch_hz, pidProfile->dterm_notch_cutoff);
+        const float notchQ = filterGetNotchQ(dTermNotchHz, pidProfile->dterm_notch_cutoff);
         for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
             dtermFilterNotch[axis] = &biquadFilterNotch[axis];
-            biquadFilterInit(dtermFilterNotch[axis], pidProfile->dterm_notch_hz, targetPidLooptime, notchQ, FILTER_NOTCH);
+            biquadFilterInit(dtermFilterNotch[axis], dTermNotchHz, targetPidLooptime, notchQ, FILTER_NOTCH);
         }
     }
 

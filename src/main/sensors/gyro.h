@@ -17,9 +17,8 @@
 
 #pragma once
 
-#include "config/parameter_group.h"
 #include "common/axis.h"
-#include "drivers/io_types.h"
+#include "config/parameter_group.h"
 #include "drivers/sensor.h"
 
 typedef enum {
@@ -66,6 +65,7 @@ typedef struct gyroConfig_s {
 PG_DECLARE(gyroConfig_t, gyroConfig);
 
 bool gyroInit(void);
+
 void gyroInitFilters(void);
 void gyroUpdate(void);
 const busDevice_t *gyroSensorBus(void);

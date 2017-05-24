@@ -150,7 +150,7 @@ static const char * const featureNames[] = {
     "SONAR", "TELEMETRY", "CURRENT_METER", "3D", "RX_PARALLEL_PWM",
     "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "OSD",
     "UNUSED", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE",
-    "SDCARD", "VTX", "RX_SPI", "SOFTSPI", "ESC_SENSOR", "ANTI_GRAVITY", NULL
+    "SDCARD", "VTX", "RX_SPI", "SOFTSPI", "ESC_SENSOR", "ANTI_GRAVITY", "DYNAMIC_FILTER", NULL
 };
 
 // sync this with rxFailsafeChannelMode_e
@@ -445,7 +445,7 @@ static void cliSetVar(const clivalue_t *var, const cliVar_t value)
     }
 }
 
-#ifndef MINIMAL_CLI
+#if defined(USE_RESOURCE_MGMT) && !defined(MINIMAL_CLI)
 static void cliRepeat(char ch, uint8_t len)
 {
     for (int i = 0; i < len; i++) {

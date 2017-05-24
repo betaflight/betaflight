@@ -25,9 +25,9 @@
 #include "drivers/timer_def.h"
 
 // DSHOT will work for motor 1,3,4,5,6,7 and 8.
-// Motor 2 pin timers have no DMA channel assigned in the hardware.
-// If the ADC is used motor 7 will not work.
-// If UART1 is used motor 8 will not work.
+// Motor 2 pin timers have no DMA channel assigned in the hardware. Remapping of the pin is needed.
+// If SDCard or UART4 DMA is used motor 4 will not work.
+// If UART1 DMA is used motor 8 will not work.
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM1, CH1, PA8,  TIM_USE_PWM | TIM_USE_PPM, TIMER_INPUT_ENABLED,  1), // PWM1  - PA8  RC1  - DMA2_ST6, *DMA2_ST1, DMA2_ST3

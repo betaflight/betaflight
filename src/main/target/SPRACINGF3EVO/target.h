@@ -148,7 +148,7 @@
 #define MPU6500_CS_PIN                   PB9
 #define MPU6500_SPI_INSTANCE             SPI1
 
-#define BOARD_HAS_VOLTAGE_DIVIDER
+#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC2
@@ -156,6 +156,7 @@
 #ifdef AIORACERF3
 #define VBAT_ADC_PIN            PA5
 #define CURRENT_METER_ADC_PIN   PA4
+#define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #else
 #define VBAT_ADC_PIN            PA4
 #define CURRENT_METER_ADC_PIN   PA5

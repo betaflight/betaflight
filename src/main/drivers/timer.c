@@ -680,6 +680,9 @@ _TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM11_IRQHandler, 11);
 #if USED_TIMERS & TIM_N(12)
 _TIM_IRQ_HANDLER(TIM8_BRK_TIM12_IRQHandler, 12);
 #endif
+#if USED_TIMERS & TIM_N(14)
+_TIM_IRQ_HANDLER(TIM8_TRG_COM_TIM14_IRQHandler, 14);
+#endif
 #if USED_TIMERS & TIM_N(15)
 _TIM_IRQ_HANDLER(TIM1_BRK_TIM15_IRQHandler, 15);
 #endif
@@ -846,14 +849,14 @@ uint16_t timerDmaSource(uint8_t channel)
 
 uint16_t timerGetPrescalerByDesiredMhz(TIM_TypeDef *tim, uint16_t mhz)
 {
-    // protection here for desired MHZ > SystemCoreClock???
-    if ((uint32_t)(mhz * 1000000) > (SystemCoreClock / timerClockDivisor(tim))) {
+    // protection here for desired MHZ > timerClock???
+    if ((uint32_t)(mhz * 1000000) > timerClock(tim)) {
         return 0;
     }
-    return (uint16_t)(round((SystemCoreClock / timerClockDivisor(tim) / (mhz * 1000000)) - 1));
+    return (uint16_t)(round((timerClock(tim) / (mhz * 1000000)) - 1));
 }
 
 uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_t hertz)
 {
-    return ((uint16_t)((SystemCoreClock / timerClockDivisor(tim) / (prescaler + 1)) / hertz));
+    return ((uint16_t)((timerClock(tim) / (prescaler + 1)) / hertz));
 }

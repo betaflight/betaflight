@@ -49,3 +49,9 @@ uint8_t timerClockDivisor(TIM_TypeDef *tim)
     UNUSED(tim);
     return 1;
 }
+
+uint32_t timerClock(TIM_TypeDef *tim)
+{
+    UNUSED(tim);
+    return SystemCoreClock;
+}
