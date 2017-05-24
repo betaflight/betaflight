@@ -433,7 +433,6 @@ uint8_t getBatteryCellCount(void)
     return batteryCellCount;
 }
 
-
 int32_t getAmperage(void) {
     return currentMeter.amperage;
 }
