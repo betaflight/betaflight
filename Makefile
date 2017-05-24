@@ -1169,7 +1169,9 @@ CFLAGS      += $(ARCH_FLAGS) \
               -D'__TARGET__="$(TARGET)"' \
               -D'__REVISION__="$(REVISION)"' \
               -save-temps=obj \
-              -MMD -MP
+              -MMD -MP \
+              $(EXTRA_FLAGS)
+
 
 ASFLAGS     = $(ARCH_FLAGS) \
               -x assembler-with-cpp \
