@@ -21,7 +21,7 @@ Vagrant.configure(2) do |config|
     apt-get remove -y binutils-arm-none-eabi gcc-arm-none-eabi
     add-apt-repository ppa:team-gcc-arm-embedded/ppa
     apt-get update
-    apt-get install -y git ccache gcc-arm-embedded=5-2016q3-1~trusty1
+    apt-get install -y git ccache gcc-arm-embedded=6-2017q1-1~trusty3
   SHELL
 end
 
