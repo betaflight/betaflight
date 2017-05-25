@@ -35,6 +35,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <limits.h>
+#include <pthread.h>
 
 #include "dyad.h"
 
@@ -302,6 +303,7 @@ static double dyad_updateTimeout = 1;
 static double dyad_tickInterval = 1;
 static double dyad_lastTick = 0;
 
+static pthread_mutex_t dyad_mutex;
 
 static void panic(const char *fmt, ...) {
   va_list args;
@@ -315,6 +317,10 @@ static void panic(const char *fmt, ...) {
   }
   exit(EXIT_FAILURE);
 }
+
+#define LOCK() do { if(pthread_mutex_lock(&dyad_mutex)) panic("LOCK: %s", strerror(errno)); } while(0)
+#define UNLOCK() do { if(pthread_mutex_unlock(&dyad_mutex)) panic("UNLOCK: %s", strerror(errno)); } while(0)
+
 
 
 static dyad_Event createEvent(int type) {
@@ -678,6 +684,7 @@ void dyad_update(void) {
   dyad_Stream *stream;
   struct timeval tv;
 
+  LOCK();
   destroyClosedStreams();
   updateTickTimer();
   updateStreamTimeouts();
@@ -723,12 +730,14 @@ void dyad_update(void) {
     #pragma warning(pop)
   #endif
 
+  UNLOCK();
   select(dyad_selectSet.maxfd + 1,
          dyad_selectSet.fds[SELECT_READ],
          dyad_selectSet.fds[SELECT_WRITE],
          dyad_selectSet.fds[SELECT_EXCEPT],
          &tv);
 
+  LOCK();
   /* Handle streams */
   stream = dyad_streams;
   while (stream) {
@@ -792,6 +801,7 @@ connectFailed:
 
     stream = stream->next;
   }
+  UNLOCK();
 }
 
 
@@ -806,10 +816,18 @@ void dyad_init(void) {
   /* Stops the SIGPIPE signal being raised when writing to a closed socket */
   signal(SIGPIPE, SIG_IGN);
 #endif
+  pthread_mutexattr_t attr;
+  pthread_mutexattr_init(&attr);
+  pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+  if (pthread_mutex_init(&dyad_mutex, &attr) != 0) {
+    printf("Create updateLock error!\n");
+    exit(1);
+  }
 }
 
 
 void dyad_shutdown(void) {
+  LOCK();
   /* Close and destroy all the streams */
   while (dyad_streams) {
     dyad_close(dyad_streams);
@@ -817,6 +835,8 @@ void dyad_shutdown(void) {
   }
   /* Clear up everything */
   select_deinit(&dyad_selectSet);
+  UNLOCK();
+  pthread_mutex_destroy(&dyad_mutex);
 #ifdef _WIN32
   WSACleanup();
 #endif
@@ -857,8 +877,10 @@ void dyad_setUpdateTimeout(double seconds) {
 
 
 dyad_PanicCallback dyad_atPanic(dyad_PanicCallback func) {
+  LOCK();
   dyad_PanicCallback old = panicCallback;
   panicCallback = func;
+  UNLOCK();
   return old;
 }
 
@@ -868,6 +890,7 @@ dyad_PanicCallback dyad_atPanic(dyad_PanicCallback func) {
 /*---------------------------------------------------------------------------*/
 
 dyad_Stream *dyad_newStream(void) {
+  LOCK();
   dyad_Stream *stream = dyad_realloc(NULL, sizeof(*stream));
   memset(stream, 0, sizeof(*stream));
   stream->state = DYAD_STATE_CLOSED;
@@ -877,6 +900,7 @@ dyad_Stream *dyad_newStream(void) {
   stream->next = dyad_streams;
   dyad_streams = stream;
   dyad_streamCount++;
+  UNLOCK();
   return stream;
 }
 
@@ -884,17 +908,20 @@ dyad_Stream *dyad_newStream(void) {
 void dyad_addListener(
   dyad_Stream *stream, int event, dyad_Callback callback, void *udata
 ) {
+  LOCK();
   Listener listener;
   listener.event = event;
   listener.callback = callback;
   listener.udata = udata;
   vec_push(&stream->listeners, listener);
+  UNLOCK();
 }
 
 
 void dyad_removeListener(
   dyad_Stream *stream, int event, dyad_Callback callback, void *udata
 ) {
+  LOCK();
   int i = stream->listeners.length;
   while (i--) {
     Listener *x = &stream->listeners.data[i];
@@ -902,10 +929,12 @@ void dyad_removeListener(
       vec_splice(&stream->listeners, i, 1);
     }
   }
+  UNLOCK();
 }
 
 
 void dyad_removeAllListeners(dyad_Stream *stream, int event) {
+  LOCK();
   if (event == DYAD_EVENT_NULL) {
     vec_clear(&stream->listeners);
   } else {
@@ -916,12 +945,14 @@ void dyad_removeAllListeners(dyad_Stream *stream, int event) {
       }
     }
   }
+  UNLOCK();
 }
 
 
 void dyad_close(dyad_Stream *stream) {
   dyad_Event e;
   if (stream->state == DYAD_STATE_CLOSED) return;
+  LOCK();
   stream->state = DYAD_STATE_CLOSED;
   /* Close socket */
   if (stream->sockfd != INVALID_SOCKET) {
@@ -935,27 +966,32 @@ void dyad_close(dyad_Stream *stream) {
   /* Clear buffers */
   vec_clear(&stream->lineBuffer);
   vec_clear(&stream->writeBuffer);
+  UNLOCK();
 }
 
 
 void dyad_end(dyad_Stream *stream) {
   if (stream->state == DYAD_STATE_CLOSED) return;
+  LOCK();
   if (stream->writeBuffer.length > 0) {
     stream->state = DYAD_STATE_CLOSING;
   } else {
     dyad_close(stream);
   }
+  UNLOCK();
 }
 
 
 int dyad_listenEx(
   dyad_Stream *stream, const char *host, int port, int backlog
 ) {
+
   struct addrinfo hints, *ai = NULL;
   int err, optval;
   char buf[64];
   dyad_Event e;
 
+  LOCK();
   /* Get addrinfo */
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = AF_UNSPEC;
@@ -995,9 +1031,11 @@ int dyad_listenEx(
   e.msg = "socket is listening";
   stream_emitEvent(stream, &e);
   freeaddrinfo(ai);
+  UNLOCK();
   return 0;
   fail:
   if (ai) freeaddrinfo(ai);
+  UNLOCK();
   return -1;
 }
 
@@ -1012,6 +1050,7 @@ int dyad_connect(dyad_Stream *stream, const char *host, int port) {
   int err;
   char buf[64];
 
+  LOCK();
   /* Resolve host */
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = AF_UNSPEC;
@@ -1029,19 +1068,23 @@ int dyad_connect(dyad_Stream *stream, const char *host, int port) {
   connect(stream->sockfd, ai->ai_addr, ai->ai_addrlen);
   stream->state = DYAD_STATE_CONNECTING;
   freeaddrinfo(ai);
+  UNLOCK();
   return 0;
 fail:
   if (ai) freeaddrinfo(ai);
+  UNLOCK();
   return -1;
 }
 
 
 void dyad_write(dyad_Stream *stream, const void *data, int size) {
   const char *p = data;
+  LOCK();
   while (size--) {
     vec_push(&stream->writeBuffer, *p++);
   }
   stream->flags |= DYAD_FLAG_WRITTEN;
+  UNLOCK();
 }
 
 
@@ -1051,6 +1094,7 @@ void dyad_vwritef(dyad_Stream *stream, const char *fmt, va_list args) {
   char f[] = "%_";
   FILE *fp;
   int c;
+  LOCK();
   while (*fmt) {
     if (*fmt == '%') {
       fmt++;
@@ -1104,6 +1148,7 @@ void dyad_vwritef(dyad_Stream *stream, const char *fmt, va_list args) {
     fmt++;
   }
   stream->flags |= DYAD_FLAG_WRITTEN;
+  UNLOCK();
 }
 
 
