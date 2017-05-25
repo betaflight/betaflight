@@ -60,8 +60,8 @@ typedef struct serialPort_s {
 
     uint32_t rxBufferSize;
     uint32_t txBufferSize;
-    volatile uint8_t *rxBuffer;
-    volatile uint8_t *txBuffer;
+    uint8_t *rxBuffer;
+    uint8_t *txBuffer;
     uint32_t rxBufferHead;
     uint32_t rxBufferTail;
     uint32_t txBufferHead;
@@ -105,6 +105,9 @@ struct serialPortVTable {
     // Optional functions used to buffer large writes.
     void (*beginWrite)(serialPort_t *instance);
     void (*endWrite)(serialPort_t *instance);
+
+    // serialImpl callbacks
+    void (*kickTx)(serialPort_t *port);  // called when new data are written into tx buffer
 };
 
 void serialWrite(serialPort_t *instance, uint8_t ch);
@@ -122,3 +125,29 @@ uint32_t serialGetBaudRate(serialPort_t *instance);
 void serialWriteBufShim(void *instance, const uint8_t *data, int count);
 void serialBeginWrite(serialPort_t *instance);
 void serialEndWrite(serialPort_t *instance);
+
+// serialImpl functions
+bool serialImplOpen(serialPort_t* port, portMode_t mode, const struct serialPortVTable *vtable,
+                    void* rxBuffer, int rxSize, void* txBuffer, int txSize);
+void serialImplWrite(serialPort_t *port, uint8_t ch);
+void serialImplWriteBuf(serialPort_t *port, const void *data, int size);
+uint8_t serialImplRead(serialPort_t *port);
+bool serialImplIsTransmitBufferEmpty(const serialPort_t *port);
+uint32_t serialImplTxBytesFree(const serialPort_t *port);
+uint32_t serialImplRxBytesWaiting(const serialPort_t *port);
+
+#define SERIALIMPL_VTABLE \
+    .serialWrite = serialImplWrite,                                \
+    .serialTotalRxWaiting = serialImplRxBytesWaiting,         \
+    .serialTotalTxFree = serialImplTxBytesFree,               \
+    .serialRead = serialImplRead,                                  \
+    .isSerialTransmitBufferEmpty = serialImplIsTransmitBufferEmpty,\
+    .writeBuf = serialImplWriteBuf                                 \
+    /**/
+
+// serialImpl buffer abstraction functions
+int serialGetTxData(serialPort_t *port, void **dataPtr);
+void serialAckTxData(serialPort_t *port, int txLen);
+int serialGetRxDataBuffer(serialPort_t *port, void **dataPtr);
+void serialAckRxData(serialPort_t *port, int len);
+
