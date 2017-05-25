@@ -182,7 +182,7 @@ static void* tcpThread(void* data) {
 
 	dyad_init();
 	dyad_setTickInterval(0.2f);
-	dyad_setUpdateTimeout(0.5f);
+	dyad_setUpdateTimeout(0.1f);
 
 	while (workerRunning) {
 		dyad_update();
