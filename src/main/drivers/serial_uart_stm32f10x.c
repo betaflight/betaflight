@@ -94,8 +94,8 @@ void uart_tx_dma_IRQHandler(dmaChannelDescriptor_t* descriptor)
 uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     uartPort_t *s;
-    static volatile uint8_t rx1Buffer[UART1_RX_BUFFER_SIZE];
-    static volatile uint8_t tx1Buffer[UART1_TX_BUFFER_SIZE];
+    static uint8_t rx1Buffer[UART1_RX_BUFFER_SIZE];
+    static uint8_t tx1Buffer[UART1_TX_BUFFER_SIZE];
 
     s = &uartPort1;
     s->port.vTable = uartVTable;
@@ -168,8 +168,8 @@ void USART1_IRQHandler(void)
 uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     uartPort_t *s;
-    static volatile uint8_t rx2Buffer[UART2_RX_BUFFER_SIZE];
-    static volatile uint8_t tx2Buffer[UART2_TX_BUFFER_SIZE];
+    static uint8_t rx2Buffer[UART2_RX_BUFFER_SIZE];
+    static uint8_t tx2Buffer[UART2_TX_BUFFER_SIZE];
 
     NVIC_InitTypeDef NVIC_InitStructure;
 
@@ -232,8 +232,8 @@ void USART2_IRQHandler(void)
 uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     uartPort_t *s;
-    static volatile uint8_t rx3Buffer[UART3_RX_BUFFER_SIZE];
-    static volatile uint8_t tx3Buffer[UART3_TX_BUFFER_SIZE];
+    static uint8_t rx3Buffer[UART3_RX_BUFFER_SIZE];
+    static uint8_t tx3Buffer[UART3_TX_BUFFER_SIZE];
 
     NVIC_InitTypeDef NVIC_InitStructure;
 

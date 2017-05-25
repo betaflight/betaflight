@@ -60,9 +60,9 @@ typedef struct escSerial_s {
     IO_t txIO;
 
     const timerHardware_t *rxTimerHardware;
-    volatile uint8_t rxBuffer[ESCSERIAL_BUFFER_SIZE];
+    uint8_t rxBuffer[ESCSERIAL_BUFFER_SIZE];
     const timerHardware_t *txTimerHardware;
-    volatile uint8_t txBuffer[ESCSERIAL_BUFFER_SIZE];
+    uint8_t txBuffer[ESCSERIAL_BUFFER_SIZE];
 
     uint8_t          isSearchingForStartBit;
     uint8_t          rxBitIndex;

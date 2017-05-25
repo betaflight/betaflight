@@ -73,8 +73,8 @@ typedef struct softSerial_s {
 #endif
     const timerHardware_t *exTimerHardware;
 
-    volatile uint8_t rxBuffer[SOFTSERIAL_BUFFER_SIZE];
-    volatile uint8_t txBuffer[SOFTSERIAL_BUFFER_SIZE];
+    uint8_t rxBuffer[SOFTSERIAL_BUFFER_SIZE];
+    uint8_t txBuffer[SOFTSERIAL_BUFFER_SIZE];
 
     uint8_t          isSearchingForStartBit;
     uint8_t          rxBitIndex;

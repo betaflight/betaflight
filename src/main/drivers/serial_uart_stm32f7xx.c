@@ -43,8 +43,8 @@ typedef struct uartDevice_s {
     DMA_Stream_TypeDef *rxDMAStream;
     ioTag_t rx;
     ioTag_t tx;
-    volatile uint8_t rxBuffer[UART_RX_BUFFER_SIZE];
-    volatile uint8_t txBuffer[UART_TX_BUFFER_SIZE];
+    uint8_t rxBuffer[UART_RX_BUFFER_SIZE];
+    uint8_t txBuffer[UART_TX_BUFFER_SIZE];
     uint32_t rcc_ahb1;
     rccPeriphTag_t rcc_apb2;
     rccPeriphTag_t rcc_apb1;

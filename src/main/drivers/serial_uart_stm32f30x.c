@@ -144,8 +144,8 @@ void serialUARTInit(IO_t tx, IO_t rx, portMode_t mode, portOptions_t options, ui
 uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     uartPort_t *s;
-    static volatile uint8_t rx1Buffer[UART1_RX_BUFFER_SIZE];
-    static volatile uint8_t tx1Buffer[UART1_TX_BUFFER_SIZE];
+    static uint8_t rx1Buffer[UART1_RX_BUFFER_SIZE];
+    static uint8_t tx1Buffer[UART1_TX_BUFFER_SIZE];
 
     s = &uartPort1;
     s->port.vTable = uartVTable;
@@ -200,8 +200,8 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
 uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     uartPort_t *s;
-    static volatile uint8_t rx2Buffer[UART2_RX_BUFFER_SIZE];
-    static volatile uint8_t tx2Buffer[UART2_TX_BUFFER_SIZE];
+    static uint8_t rx2Buffer[UART2_RX_BUFFER_SIZE];
+    static uint8_t tx2Buffer[UART2_TX_BUFFER_SIZE];
 
     s = &uartPort2;
     s->port.vTable = uartVTable;
@@ -257,8 +257,8 @@ uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t option
 uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     uartPort_t *s;
-    static volatile uint8_t rx3Buffer[UART3_RX_BUFFER_SIZE];
-    static volatile uint8_t tx3Buffer[UART3_TX_BUFFER_SIZE];
+    static uint8_t rx3Buffer[UART3_RX_BUFFER_SIZE];
+    static uint8_t tx3Buffer[UART3_TX_BUFFER_SIZE];
 
     s = &uartPort3;
     s->port.vTable = uartVTable;
@@ -314,8 +314,8 @@ uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t option
 uartPort_t *serialUART4(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     uartPort_t *s;
-    static volatile uint8_t rx4Buffer[UART4_RX_BUFFER_SIZE];
-    static volatile uint8_t tx4Buffer[UART4_TX_BUFFER_SIZE];
+    static uint8_t rx4Buffer[UART4_RX_BUFFER_SIZE];
+    static uint8_t tx4Buffer[UART4_TX_BUFFER_SIZE];
     NVIC_InitTypeDef NVIC_InitStructure;
 
     s = &uartPort4;
@@ -348,8 +348,8 @@ uartPort_t *serialUART4(uint32_t baudRate, portMode_t mode, portOptions_t option
 uartPort_t *serialUART5(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     uartPort_t *s;
-    static volatile uint8_t rx5Buffer[UART5_RX_BUFFER_SIZE];
-    static volatile uint8_t tx5Buffer[UART5_TX_BUFFER_SIZE];
+    static uint8_t rx5Buffer[UART5_RX_BUFFER_SIZE];
+    static uint8_t tx5Buffer[UART5_TX_BUFFER_SIZE];
     NVIC_InitTypeDef NVIC_InitStructure;
 
     s = &uartPort5;
