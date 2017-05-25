@@ -29,11 +29,10 @@ typedef struct {
     uint8_t rxBuffer[RX_BUFFER_SIZE];
     uint8_t txBuffer[TX_BUFFER_SIZE];
 
-    dyad_Stream *serv;
-    dyad_Stream *conn;
-    pthread_mutex_t txLock;
-    pthread_mutex_t rxLock;
+    bool initialized;
     bool connected;
+    dyad_Stream *server;
+    dyad_Stream *conn;
     uint16_t clientCount;
     uint8_t id;
 } tcpPort_t;

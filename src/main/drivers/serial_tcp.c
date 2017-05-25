@@ -41,18 +41,12 @@
 
 static const struct serialPortVTable tcpVTable; // forward declaration, defined at end of file
 static tcpPort_t tcpSerialPorts[SERIAL_PORT_COUNT];
-static bool tcpPortInitialized[SERIAL_PORT_COUNT];
-static bool tcpStart = false;
 
-bool tcpIsStart(void)
-{
-    return tcpStart;
-}
-
+// Dyad callbacks
 static void onData(dyad_Event *e)
 {
     tcpPort_t* s = (tcpPort_t*)(e->udata);
-    tcpDataIn(s, (uint8_t*)e->data, e->size);
+    tcpDataIn(s, e->data, e->size);
 }
 
 static void onClose(dyad_Event *e)
@@ -69,7 +63,7 @@ static void onClose(dyad_Event *e)
 static void onAccept(dyad_Event *e)
 {
     tcpPort_t* s = (tcpPort_t*)(e->udata);
-    fprintf(stderr, "New connection on UART%u, %d\n", s->id + 1, s->clientCount);
+    fprintf(stderr, "UART%u: New connection (%d)\n", s->id + 1, s->clientCount);
 
     s->connected = true;
     if (s->clientCount > 0) {
@@ -77,61 +71,48 @@ static void onAccept(dyad_Event *e)
         return;
     }
     s->clientCount++;
-    fprintf(stderr, "[NEW]UART%u: %d,%d\n", s->id + 1, s->connected, s->clientCount);
+    fprintf(stderr, "UART%u: [NEW] %d,%d\n", s->id + 1, s->connected, s->clientCount);
     s->conn = e->remote;
-    dyad_setNoDelay(e->remote, 1);
-    dyad_setTimeout(e->remote, 120);
-    dyad_addListener(e->remote, DYAD_EVENT_DATA, onData, e->udata);
-    dyad_addListener(e->remote, DYAD_EVENT_CLOSE, onClose, e->udata);
+    dyad_setNoDelay(s->conn, 1);
+    dyad_setTimeout(s->conn, 120);
+    dyad_addListener(s->conn, DYAD_EVENT_DATA, onData, s);
+    dyad_addListener(s->conn, DYAD_EVENT_CLOSE, onClose, s);
 }
 
-static tcpPort_t* tcpReconfigure(tcpPort_t *s, int id)
+static bool tcpPortInit(tcpPort_t *s, int id)
 {
-    if (tcpPortInitialized[id]) {
-        fprintf(stderr, "port is already initialized!\n");
-        return s;
+    if(s->initialized) {
+        fprintf(stderr, "UART%u: port is already initialized!\n", s->id + 1);
+        return true;
     }
 
-    if (pthread_mutex_init(&s->txLock, NULL) != 0) {
-        fprintf(stderr, "TX mutex init failed - %d\n", errno);
-        // TODO: clean up & re-init
-        return NULL;
-    }
-    if (pthread_mutex_init(&s->rxLock, NULL) != 0) {
-        fprintf(stderr, "RX mutex init failed - %d\n", errno);
-        // TODO: clean up & re-init
-        return NULL;
-    }
-
-    tcpStart = true;
-    tcpPortInitialized[id] = true;
-
+    s->initialized = true;
     s->connected = false;
     s->clientCount = 0;
     s->id = id;
     s->conn = NULL;
-    s->serv = dyad_newStream();
-    dyad_setNoDelay(s->serv, 1);
-    dyad_addListener(s->serv, DYAD_EVENT_ACCEPT, onAccept, s);
+    s->server = dyad_newStream();
+    dyad_setNoDelay(s->server, 1);
+    dyad_addListener(s->server, DYAD_EVENT_ACCEPT, onAccept, s);
 
-    if (dyad_listenEx(s->serv, NULL, BASE_PORT + id + 1, 10) == 0) {
-        fprintf(stderr, "bind port %u for UART%u\n", (unsigned)BASE_PORT + id + 1, (unsigned)id + 1);
+    const unsigned port = BASE_PORT + id + 1;
+    if(dyad_listenEx(s->server, NULL, port, 10) == 0) {
+        fprintf(stderr, "UART%u: bind on port %u\n", id + 1, port);
     } else {
-        fprintf(stderr, "bind port %u for UART%u failed!!\n", (unsigned)BASE_PORT + id + 1, (unsigned)id + 1);
+        fprintf(stderr, "UART%u: bind on port %u failed: %s\n", id + 1, port, strerror(errno));
     }
-    return s;
+    return true;
 }
 
 serialPort_t *serTcpOpen(int id, serialReceiveCallbackPtr rxCallback, uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
-    tcpPort_t *s = NULL;
-
-#if defined(USE_UART1) || defined(USE_UART2) || defined(USE_UART3) || defined(USE_UART4) || defined(USE_UART5) || defined(USE_UART6) || defined(USE_UART7) || defined(USE_UART8)
-    if (id >= 0 && id < SERIAL_PORT_COUNT) {
-	s = tcpReconfigure(&tcpSerialPorts[id], id);
-    }
+#if !(defined(USE_UART1) || defined(USE_UART2) || defined(USE_UART3) || defined(USE_UART4) || defined(USE_UART5) || defined(USE_UART6) || defined(USE_UART7) || defined(USE_UART8))
+    return NULL;
 #endif
-    if (!s)
+    if (id < 0 || id >= SERIAL_PORT_COUNT)
+        return NULL;
+    tcpPort_t *s = &tcpSerialPorts[id];
+    if(!tcpPortInit(s, id))
         return NULL;
 
     serialImplOpen(&s->port, mode, &tcpVTable,
