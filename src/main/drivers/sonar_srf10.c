@@ -91,6 +91,7 @@
 STATIC_UNIT_TESTED volatile int32_t srf10measurementCm = RANGEFINDER_OUT_OF_RANGE;
 static int16_t minimumFiringIntervalMs;
 static uint32_t timeOfLastMeasurementMs;
+static bool isSensorResponding = true;
 
 #ifdef UNIT_TEST
 bool i2cWrite(uint8_t addr_, uint8_t reg, uint8_t data) {UNUSED(addr_); UNUSED(reg); UNUSED(data); return false;}
@@ -99,18 +100,20 @@ bool i2cRead(uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf) {UNUSED(addr
 
 static bool i2c_srf10_send_command(uint8_t command)
 {
-    return i2cWrite(SRF10_I2C_INSTANCE, SRF10_AddressI2C, SRF10_WRITE_CommandRegister, command);
+    isSensorResponding = i2cWrite(SRF10_I2C_INSTANCE, SRF10_AddressI2C, SRF10_WRITE_CommandRegister, command);
+    return isSensorResponding;
 }
 
 static bool i2c_srf10_send_byte(uint8_t i2cRegister, uint8_t val)
 {
-    return i2cWrite(SRF10_I2C_INSTANCE, SRF10_AddressI2C, i2cRegister, val);
+    isSensorResponding = i2cWrite(SRF10_I2C_INSTANCE, SRF10_AddressI2C, i2cRegister, val);
+    return isSensorResponding;
 }
 
 static uint8_t i2c_srf10_read_byte(uint8_t i2cRegister)
 {
     uint8_t byte;
-    i2cRead(SRF10_I2C_INSTANCE, SRF10_AddressI2C, i2cRegister, 1, &byte);
+    isSensorResponding = i2cRead(SRF10_I2C_INSTANCE, SRF10_AddressI2C, i2cRegister, 1, &byte);
     return byte;
 }
 
@@ -154,7 +157,12 @@ static void srf10_start_reading(void)
  */
 static int32_t srf10_get_distance(void)
 {
-    return srf10measurementCm;
+    if (isSensorResponding) {
+        return srf10measurementCm;
+    }
+    else {
+        return RANGEFINDER_HARDWARE_FAILURE;
+    }
 }
 
 bool srf10Detect(rangefinderDev_t *dev)

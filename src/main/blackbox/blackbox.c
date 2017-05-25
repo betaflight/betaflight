@@ -29,26 +29,23 @@
 #include "build/debug.h"
 #include "build/version.h"
 
-#include "common/maths.h"
 #include "common/axis.h"
-#include "common/color.h"
 #include "common/encoding.h"
+#include "common/maths.h"
 #include "common/utils.h"
 
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
-#include "drivers/light_led.h"
-#include "drivers/pwm_rx.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/compass/compass.h"
 #include "drivers/sensor.h"
-#include "drivers/serial.h"
 #include "drivers/time.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
+#include "fc/fc_core.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -59,36 +56,29 @@
 #include "flight/servos.h"
 
 #include "io/beeper.h"
-#include "io/gimbal.h"
 #include "io/gps.h"
-#include "io/ledstrip.h"
-#include "io/serial.h"
-#include "io/statusindicator.h"
 
 #include "navigation/navigation.h"
 
 #include "rx/rx.h"
-#include "rx/msp.h"
 
+#include "sensors/diagnostics.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
-#include "sensors/boardalignment.h"
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
 #include "sensors/pitotmeter.h"
 #include "sensors/rangefinder.h"
 #include "sensors/sensors.h"
 
-#include "telemetry/telemetry.h"
 
-
-#ifdef ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
-#define DEFAULT_BLACKBOX_DEVICE BLACKBOX_DEVICE_FLASH
+#if defined(ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT)
+#define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_FLASH
 #elif defined(ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT)
-#define DEFAULT_BLACKBOX_DEVICE BLACKBOX_DEVICE_SDCARD
+#define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SDCARD
 #else
-#define DEFAULT_BLACKBOX_DEVICE BLACKBOX_DEVICE_SERIAL
+#define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SERIAL
 #endif
 
 PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
@@ -100,8 +90,8 @@ PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
 );
 
 #ifndef BLACKBOX_PRINT_HEADER_LINE
-#define BLACKBOX_PRINT_HEADER_LINE(x, ...) case __COUNTER__: \
-                                                blackboxPrintfHeaderLine(x, __VA_ARGS__); \
+#define BLACKBOX_PRINT_HEADER_LINE(name, format, ...) case __COUNTER__: \
+                                                blackboxPrintfHeaderLine(name, format, __VA_ARGS__); \
                                                 break;
 #define BLACKBOX_PRINT_HEADER_LINE_CUSTOM(...) case __COUNTER__: \
                                                     {__VA_ARGS__}; \
@@ -231,32 +221,32 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"rssi",       -1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_RSSI},
 
     /* Gyros and accelerometers base their P-predictions on the average of the previous 2 frames to reduce noise impact */
-    {"gyroADC",   0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
-    {"gyroADC",   1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
-    {"gyroADC",   2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
-    {"accSmooth",  0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
-    {"accSmooth",  1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
-    {"accSmooth",  2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
-    {"attitude",   0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
-    {"attitude",   1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
-    {"attitude",   2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
-    {"debug",    0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
-    {"debug",    1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
-    {"debug",    2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
-    {"debug",    3, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"gyroADC",     0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"gyroADC",     1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"gyroADC",     2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"accSmooth",   0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"accSmooth",   1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"accSmooth",   2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"attitude",    0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"attitude",    1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"attitude",    2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"debug",       0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"debug",       1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"debug",       2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"debug",       3, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     /* Motors only rarely drops under minthrottle (when stick falls below mincommand), so predict minthrottle for it and use *unsigned* encoding (which is large for negative numbers but more compact for positive ones): */
-    {"motor",      0, UNSIGNED, .Ipredict = PREDICT(MINTHROTTLE), .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(AVERAGE_2), .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_1)},
+    {"motor",       0, UNSIGNED, .Ipredict = PREDICT(MINTHROTTLE), .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(AVERAGE_2), .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_1)},
     /* Subsequent motors base their I-frame values on the first one, P-frame values on the average of last two frames: */
-    {"motor",      1, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_2)},
-    {"motor",      2, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_3)},
-    {"motor",      3, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_4)},
-    {"motor",      4, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_5)},
-    {"motor",      5, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_6)},
-    {"motor",      6, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_7)},
-    {"motor",      7, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_8)},
+    {"motor",       1, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_2)},
+    {"motor",       2, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_3)},
+    {"motor",       3, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_4)},
+    {"motor",       4, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_5)},
+    {"motor",       5, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_6)},
+    {"motor",       6, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_7)},
+    {"motor",       7, UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_8)},
 
     /* Tricopter tail servo */
-    {"servo",      5, UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(TRICOPTER)},
+    {"servo",       5, UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(TRICOPTER)},
 
 #ifdef NAV_BLACKBOX
     {"navState",  -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
@@ -317,7 +307,9 @@ static const blackboxSimpleFieldDefinition_t blackboxSlowFields[] = {
 
     {"failsafePhase",         -1, UNSIGNED, PREDICT(0),      ENCODING(TAG2_3S32)},
     {"rxSignalReceived",      -1, UNSIGNED, PREDICT(0),      ENCODING(TAG2_3S32)},
-    {"rxFlightChannelsValid", -1, UNSIGNED, PREDICT(0),      ENCODING(TAG2_3S32)}
+    {"rxFlightChannelsValid", -1, UNSIGNED, PREDICT(0),      ENCODING(TAG2_3S32)},
+
+    {"hwHealthStatus",        -1, UNSIGNED, PREDICT(0),      ENCODING(UNSIGNED_VB)},
 };
 
 typedef enum BlackboxState {
@@ -347,7 +339,7 @@ typedef struct blackboxMainState_s {
     int16_t gyroADC[XYZ_AXIS_COUNT];
     int16_t accADC[XYZ_AXIS_COUNT];
     int16_t attitude[XYZ_AXIS_COUNT];
-    int16_t debug[4];
+    int16_t debug[DEBUG16_VALUE_COUNT];
     int16_t motor[MAX_SUPPORTED_MOTORS];
     int16_t servo[MAX_SUPPORTED_SERVOS];
 
@@ -397,13 +389,11 @@ typedef struct blackboxSlowState_s {
     uint8_t failsafePhase;
     bool rxSignalReceived;
     bool rxFlightChannelsValid;
+    int32_t hwHealthStatus;
 } __attribute__((__packed__)) blackboxSlowState_t; // We pack this struct so that padding doesn't interfere with memcmp()
 
 //From mixer.c:
 extern uint8_t motorCount;
-
-//From rx.c:
-extern uint16_t rssi;
 
 static BlackboxState blackboxState = BLACKBOX_STATE_DISABLED;
 
@@ -458,7 +448,7 @@ bool blackboxMayEditConfig(void)
     return blackboxState <= BLACKBOX_STATE_STOPPED;
 }
 
-static bool blackboxIsOnlyLoggingIntraframes()
+static bool blackboxIsOnlyLoggingIntraframes(void)
 {
     return blackboxConfig()->rate_num == 1 && blackboxConfig()->rate_denom == blackboxIFrameInterval;
 }
@@ -466,71 +456,71 @@ static bool blackboxIsOnlyLoggingIntraframes()
 static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
 {
     switch (condition) {
-        case FLIGHT_LOG_FIELD_CONDITION_ALWAYS:
-            return true;
+    case FLIGHT_LOG_FIELD_CONDITION_ALWAYS:
+        return true;
 
-        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1:
-        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_2:
-        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_3:
-        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_4:
-        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_5:
-        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_6:
-        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_7:
-        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_8:
-            return motorCount >= condition - FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1 + 1;
+    case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1:
+    case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_2:
+    case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_3:
+    case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_4:
+    case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_5:
+    case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_6:
+    case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_7:
+    case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_8:
+        return motorCount >= condition - FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1 + 1;
 
-        case FLIGHT_LOG_FIELD_CONDITION_TRICOPTER:
-            return mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI;
+    case FLIGHT_LOG_FIELD_CONDITION_TRICOPTER:
+        return mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI;
 
-        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0:
-        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1:
-        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2:
-            return pidBank()->pid[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0].D != 0;
+    case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0:
+    case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1:
+    case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2:
+        return pidBank()->pid[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0].D != 0;
 
-        case FLIGHT_LOG_FIELD_CONDITION_MAG:
+    case FLIGHT_LOG_FIELD_CONDITION_MAG:
 #ifdef MAG
-            return sensors(SENSOR_MAG);
+        return sensors(SENSOR_MAG);
 #else
-            return false;
+        return false;
 #endif
 
-        case FLIGHT_LOG_FIELD_CONDITION_BARO:
+    case FLIGHT_LOG_FIELD_CONDITION_BARO:
 #ifdef BARO
-            return sensors(SENSOR_BARO);
+        return sensors(SENSOR_BARO);
 #else
-            return false;
+        return false;
 #endif
 
-        case FLIGHT_LOG_FIELD_CONDITION_PITOT:
+    case FLIGHT_LOG_FIELD_CONDITION_PITOT:
 #ifdef PITOT
-            return sensors(SENSOR_PITOT);
+        return sensors(SENSOR_PITOT);
 #else
-            return false;
+        return false;
 #endif
 
-        case FLIGHT_LOG_FIELD_CONDITION_VBAT:
-            return feature(FEATURE_VBAT);
+    case FLIGHT_LOG_FIELD_CONDITION_VBAT:
+        return feature(FEATURE_VBAT);
 
-        case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC:
-            return feature(FEATURE_CURRENT_METER) && batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC;
+    case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC:
+        return feature(FEATURE_CURRENT_METER) && batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC;
 
-        case FLIGHT_LOG_FIELD_CONDITION_SONAR:
+    case FLIGHT_LOG_FIELD_CONDITION_SONAR:
 #ifdef SONAR
-            return sensors(SENSOR_SONAR);
+        return sensors(SENSOR_SONAR);
 #else
-            return false;
+        return false;
 #endif
 
-        case FLIGHT_LOG_FIELD_CONDITION_RSSI:
-            return rxConfig()->rssi_channel > 0 || feature(FEATURE_RSSI_ADC);
+    case FLIGHT_LOG_FIELD_CONDITION_RSSI:
+        return rxConfig()->rssi_channel > 0 || feature(FEATURE_RSSI_ADC);
 
-        case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
-            return blackboxConfig()->rate_num < blackboxConfig()->rate_denom;
+    case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
+        return blackboxConfig()->rate_num < blackboxConfig()->rate_denom;
 
-        case FLIGHT_LOG_FIELD_CONDITION_NEVER:
-            return false;
-        default:
-            return false;
+    case FLIGHT_LOG_FIELD_CONDITION_NEVER:
+        return false;
+    default:
+        return false;
     }
 }
 
@@ -556,32 +546,32 @@ static void blackboxSetState(BlackboxState newState)
 {
     //Perform initial setup required for the new state
     switch (newState) {
-        case BLACKBOX_STATE_PREPARE_LOG_FILE:
-            blackboxLoggedAnyFrames = false;
+    case BLACKBOX_STATE_PREPARE_LOG_FILE:
+        blackboxLoggedAnyFrames = false;
         break;
-        case BLACKBOX_STATE_SEND_HEADER:
-            blackboxHeaderBudget = 0;
-            xmitState.headerIndex = 0;
-            xmitState.u.startTime = millis();
+    case BLACKBOX_STATE_SEND_HEADER:
+        blackboxHeaderBudget = 0;
+        xmitState.headerIndex = 0;
+        xmitState.u.startTime = millis();
         break;
-        case BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER:
-        case BLACKBOX_STATE_SEND_GPS_G_HEADER:
-        case BLACKBOX_STATE_SEND_GPS_H_HEADER:
-        case BLACKBOX_STATE_SEND_SLOW_HEADER:
-            xmitState.headerIndex = 0;
-            xmitState.u.fieldIndex = -1;
+    case BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER:
+    case BLACKBOX_STATE_SEND_GPS_G_HEADER:
+    case BLACKBOX_STATE_SEND_GPS_H_HEADER:
+    case BLACKBOX_STATE_SEND_SLOW_HEADER:
+        xmitState.headerIndex = 0;
+        xmitState.u.fieldIndex = -1;
         break;
-        case BLACKBOX_STATE_SEND_SYSINFO:
-            xmitState.headerIndex = 0;
+    case BLACKBOX_STATE_SEND_SYSINFO:
+        xmitState.headerIndex = 0;
         break;
-        case BLACKBOX_STATE_RUNNING:
-            blackboxSlowFrameIterationTimer = SLOW_FRAME_INTERVAL; //Force a slow frame to be written on the first iteration
+    case BLACKBOX_STATE_RUNNING:
+        blackboxSlowFrameIterationTimer = SLOW_FRAME_INTERVAL; //Force a slow frame to be written on the first iteration
         break;
-        case BLACKBOX_STATE_SHUTTING_DOWN:
-            xmitState.u.startTime = millis();
+    case BLACKBOX_STATE_SHUTTING_DOWN:
+        xmitState.u.startTime = millis();
         break;
-        default:
-            ;
+    default:
+        ;
     }
     blackboxState = newState;
 }
@@ -589,8 +579,6 @@ static void blackboxSetState(BlackboxState newState)
 static void writeIntraframe(void)
 {
     blackboxMainState_t *blackboxCurrent = blackboxHistory[0];
-    int x;
-
     blackboxWrite('I');
 
     blackboxWriteUnsignedVB(blackboxIteration);
@@ -601,7 +589,7 @@ static void writeIntraframe(void)
     blackboxWriteSignedVBArray(blackboxCurrent->axisPID_I, XYZ_AXIS_COUNT);
 
     // Don't bother writing the current D term if the corresponding PID setting is zero
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0 + x)) {
             blackboxWriteSignedVB(blackboxCurrent->axisPID_D[x]);
         }
@@ -662,13 +650,13 @@ static void writeIntraframe(void)
     blackboxWriteSigned16VBArray(blackboxCurrent->gyroADC, XYZ_AXIS_COUNT);
     blackboxWriteSigned16VBArray(blackboxCurrent->accADC, XYZ_AXIS_COUNT);
     blackboxWriteSigned16VBArray(blackboxCurrent->attitude, XYZ_AXIS_COUNT);
-    blackboxWriteSigned16VBArray(blackboxCurrent->debug, 4);
+    blackboxWriteSigned16VBArray(blackboxCurrent->debug, DEBUG16_VALUE_COUNT);
 
     //Motors can be below minthrottle when disarmed, but that doesn't happen much
     blackboxWriteUnsignedVB(blackboxCurrent->motor[0] - motorConfig()->minthrottle);
 
     //Motors tend to be similar to each other so use the first motor's value as a predictor of the others
-    for (x = 1; x < motorCount; x++) {
+    for (int x = 1; x < motorCount; x++) {
         blackboxWriteSignedVB(blackboxCurrent->motor[x] - blackboxCurrent->motor[0]);
     }
 
@@ -684,30 +672,30 @@ static void writeIntraframe(void)
     blackboxWriteSignedVB(blackboxCurrent->navEPH);
     blackboxWriteSignedVB(blackboxCurrent->navEPV);
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxCurrent->navPos[x]);
     }
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxCurrent->navRealVel[x]);
     }
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxCurrent->navAccNEU[x]);
     }
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxCurrent->navTargetVel[x]);
     }
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxCurrent->navTargetPos[x]);
     }
 
     blackboxWriteSignedVB(blackboxCurrent->navSurface);
     blackboxWriteSignedVB(blackboxCurrent->navTargetSurface);
 
-    for (x = 0; x < 4; x++) {
+    for (int x = 0; x < 4; x++) {
         blackboxWriteSignedVB(blackboxCurrent->navDebug[x]);
     }
 #endif
@@ -740,7 +728,6 @@ static void blackboxWriteMainStateArrayUsingAveragePredictor(int arrOffsetInHist
 
 static void writeInterframe(void)
 {
-    int x;
     int32_t deltas[8];
 
     blackboxMainState_t *blackboxCurrent = blackboxHistory[0];
@@ -773,7 +760,7 @@ static void writeInterframe(void)
      * The PID D term is frequently set to zero for yaw, which makes the result from the calculation
      * always zero. So don't bother recording D results when PID D terms are zero.
      */
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0 + x)) {
             blackboxWriteSignedVB(blackboxCurrent->axisPID_D[x] - blackboxLast->axisPID_D[x]);
         }
@@ -783,7 +770,7 @@ static void writeInterframe(void)
      * RC tends to stay the same or fairly small for many frames at a time, so use an encoding that
      * can pack multiple values per byte:
      */
-    for (x = 0; x < 4; x++) {
+    for (int x = 0; x < 4; x++) {
         deltas[x] = blackboxCurrent->rcCommand[x] - blackboxLast->rcCommand[x];
     }
 
@@ -802,7 +789,7 @@ static void writeInterframe(void)
 
 #ifdef MAG
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_MAG)) {
-        for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+        for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
             deltas[optionalFieldCount++] = blackboxCurrent->magADC[x] - blackboxLast->magADC[x];
         }
     }
@@ -836,7 +823,7 @@ static void writeInterframe(void)
     blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, gyroADC),   XYZ_AXIS_COUNT);
     blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, accADC), XYZ_AXIS_COUNT);
     blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, attitude), XYZ_AXIS_COUNT);
-    blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, debug), 4);
+    blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, debug), DEBUG16_VALUE_COUNT);
     blackboxWriteMainStateArrayUsingAveragePredictor(offsetof(blackboxMainState_t, motor),     motorCount);
 
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_TRICOPTER)) {
@@ -850,30 +837,30 @@ static void writeInterframe(void)
     blackboxWriteSignedVB(blackboxCurrent->navEPH - blackboxLast->navEPH);
     blackboxWriteSignedVB(blackboxCurrent->navEPV - blackboxLast->navEPV);
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxCurrent->navPos[x] - blackboxLast->navPos[x]);
     }
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxHistory[0]->navRealVel[x] - (blackboxHistory[1]->navRealVel[x] + blackboxHistory[2]->navRealVel[x]) / 2);
     }
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxHistory[0]->navAccNEU[x] - (blackboxHistory[1]->navAccNEU[x] + blackboxHistory[2]->navAccNEU[x]) / 2);
     }
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxHistory[0]->navTargetVel[x] - (blackboxHistory[1]->navTargetVel[x] + blackboxHistory[2]->navTargetVel[x]) / 2);
     }
 
-    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+    for (int x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxHistory[0]->navTargetPos[x] - (blackboxHistory[1]->navTargetPos[x] + blackboxHistory[2]->navTargetPos[x]) / 2);
     }
 
     blackboxWriteSignedVB(blackboxCurrent->navSurface - blackboxLast->navSurface);
     blackboxWriteSignedVB(blackboxCurrent->navTargetSurface - blackboxLast->navTargetSurface);
 
-    for (x = 0; x < 4; x++) {
+    for (int x = 0; x < 4; x++) {
         blackboxWriteSignedVB(blackboxCurrent->navDebug[x] - blackboxLast->navDebug[x]);
     }
 #endif
@@ -905,6 +892,8 @@ static void writeSlowFrame(void)
     values[2] = slowHistory.rxFlightChannelsValid ? 1 : 0;
     blackboxWriteTag2_3S32(values);
 
+    blackboxWriteUnsignedVB(slowHistory.hwHealthStatus);
+
     blackboxSlowFrameIterationTimer = 0;
 }
 
@@ -918,6 +907,13 @@ static void loadSlowState(blackboxSlowState_t *slow)
     slow->failsafePhase = failsafePhase();
     slow->rxSignalReceived = rxIsReceivingSignal();
     slow->rxFlightChannelsValid = rxAreFlightChannelsValid();
+    slow->hwHealthStatus = (getHwGyroStatus()           << 2 * 0) |     // Pack hardware health status into a bit field.
+                           (getHwAccelerometerStatus()  << 2 * 1) |     // Use raw hardwareSensorStatus_e values and pack them using 2 bits per value
+                           (getHwCompassStatus()        << 2 * 2) |     // Report GYRO in 2 lowest bits, then ACC, COMPASS, BARO, GPS, RANGEFINDER and PITOT
+                           (getHwBarometerStatus()      << 2 * 3) |
+                           (getHwGPSStatus()            << 2 * 4) |
+                           (getHwRangefinderStatus()    << 2 * 5) |
+                           (getHwPitotmeterStatus()     << 2 * 6);
 }
 
 /**
@@ -960,7 +956,7 @@ static int gcd(int num, int denom)
     return gcd(denom, num % denom);
 }
 
-static void validateBlackboxConfig()
+static void blackboxValidateConfig(void)
 {
     if (blackboxConfig()->rate_num == 0 || blackboxConfig()->rate_denom == 0
             || blackboxConfig()->rate_num >= blackboxConfig()->rate_denom) {
@@ -979,27 +975,27 @@ static void validateBlackboxConfig()
     // If we've chosen an unsupported device, change the device to serial
     switch (blackboxConfig()->device) {
 #ifdef USE_FLASHFS
-        case BLACKBOX_DEVICE_FLASH:
+    case BLACKBOX_DEVICE_FLASH:
 #endif
 #ifdef USE_SDCARD
-        case BLACKBOX_DEVICE_SDCARD:
+    case BLACKBOX_DEVICE_SDCARD:
 #endif
-        case BLACKBOX_DEVICE_SERIAL:
-            // Device supported, leave the setting alone
+    case BLACKBOX_DEVICE_SERIAL:
+        // Device supported, leave the setting alone
         break;
 
-        default:
-            blackboxConfigMutable()->device = BLACKBOX_DEVICE_SERIAL;
+    default:
+        blackboxConfigMutable()->device = BLACKBOX_DEVICE_SERIAL;
     }
 }
 
 /**
  * Start Blackbox logging if it is not already running. Intended to be called upon arming.
  */
-void startBlackbox(void)
+void blackboxStart(void)
 {
     if (blackboxState == BLACKBOX_STATE_STOPPED) {
-        validateBlackboxConfig();
+        blackboxValidateConfig();
 
         if (!blackboxDeviceOpen()) {
             blackboxSetState(BLACKBOX_STATE_DISABLED);
@@ -1042,27 +1038,27 @@ void startBlackbox(void)
 /**
  * Begin Blackbox shutdown.
  */
-void finishBlackbox(void)
+void blackboxFinish(void)
 {
     switch (blackboxState) {
-        case BLACKBOX_STATE_DISABLED:
-        case BLACKBOX_STATE_STOPPED:
-        case BLACKBOX_STATE_SHUTTING_DOWN:
-            // We're already stopped/shutting down
+    case BLACKBOX_STATE_DISABLED:
+    case BLACKBOX_STATE_STOPPED:
+    case BLACKBOX_STATE_SHUTTING_DOWN:
+        // We're already stopped/shutting down
         break;
 
-        case BLACKBOX_STATE_RUNNING:
-        case BLACKBOX_STATE_PAUSED:
-            blackboxLogEvent(FLIGHT_LOG_EVENT_LOG_END, NULL);
+    case BLACKBOX_STATE_RUNNING:
+    case BLACKBOX_STATE_PAUSED:
+        blackboxLogEvent(FLIGHT_LOG_EVENT_LOG_END, NULL);
 
-            // Fall through
-        default:
-            blackboxSetState(BLACKBOX_STATE_SHUTTING_DOWN);
+        // Fall through
+    default:
+        blackboxSetState(BLACKBOX_STATE_SHUTTING_DOWN);
     }
 }
 
 #ifdef GPS
-static void writeGPSHomeFrame()
+static void writeGPSHomeFrame(void)
 {
     blackboxWrite('H');
 
@@ -1330,84 +1326,84 @@ static bool blackboxWriteSysinfo()
     }
 
     switch (xmitState.headerIndex) {
-        BLACKBOX_PRINT_HEADER_LINE("Firmware type:%s",                      "Cleanflight");
-        BLACKBOX_PRINT_HEADER_LINE("Firmware revision:INAV %s (%s) %s",     FC_VERSION_STRING, shortGitRevision, targetName);
-        BLACKBOX_PRINT_HEADER_LINE("Firmware date:%s %s",                   buildDate, buildTime);
-        BLACKBOX_PRINT_HEADER_LINE("P interval:%d/%d",                      blackboxConfig()->rate_num, blackboxConfig()->rate_denom);
-        BLACKBOX_PRINT_HEADER_LINE("rcRate:%d",                             100); //For compatibility reasons write rc_rate 100
-        BLACKBOX_PRINT_HEADER_LINE("minthrottle:%d",                        motorConfig()->minthrottle);
-        BLACKBOX_PRINT_HEADER_LINE("maxthrottle:%d",                        motorConfig()->maxthrottle);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_scale:0x%x",                       castFloatBytesToInt(1.0f));
-        BLACKBOX_PRINT_HEADER_LINE("acc_1G:%u",                             acc.dev.acc_1G);
+        BLACKBOX_PRINT_HEADER_LINE("Firmware type", ":%s",                  "Cleanflight");
+        BLACKBOX_PRINT_HEADER_LINE("Firmware revision", ":INAV %s (%s) %s", FC_VERSION_STRING, shortGitRevision, targetName);
+        BLACKBOX_PRINT_HEADER_LINE("Firmware date", ":%s %s",               buildDate, buildTime);
+        BLACKBOX_PRINT_HEADER_LINE("P interval", ":%d/%d",                  blackboxConfig()->rate_num, blackboxConfig()->rate_denom);
+        BLACKBOX_PRINT_HEADER_LINE("rcRate", ":%d",                         100); //For compatibility reasons write rc_rate 100
+        BLACKBOX_PRINT_HEADER_LINE("min_throttle", ":%d",                   motorConfig()->minthrottle);
+        BLACKBOX_PRINT_HEADER_LINE("max_throttle", ":%d",                   motorConfig()->maxthrottle);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_scale", ":0x%x",                   castFloatBytesToInt(1.0f));
+        BLACKBOX_PRINT_HEADER_LINE("acc_1G", ":%u",                         acc.dev.acc_1G);
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
             if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
-                blackboxPrintfHeaderLine("vbatscale:%u", batteryConfig()->vbatscale);
+                blackboxPrintfHeaderLine("vbat_scale", ":%u", batteryConfig()->vbatscale);
             } else {
                 xmitState.headerIndex += 2; // Skip the next two vbat fields too
             }
             );
-        BLACKBOX_PRINT_HEADER_LINE("vbatcellvoltage:%u,%u,%u",              batteryConfig()->vbatmincellvoltage,
+        BLACKBOX_PRINT_HEADER_LINE("vbatcellvoltage", ":%u,%u,%u",          batteryConfig()->vbatmincellvoltage,
                                                                             batteryConfig()->vbatwarningcellvoltage,
                                                                             batteryConfig()->vbatmaxcellvoltage);
-        BLACKBOX_PRINT_HEADER_LINE("vbatref:%u",                            vbatReference);
+        BLACKBOX_PRINT_HEADER_LINE("vbatref", ":%u",                        vbatReference);
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
             //Note: Log even if this is a virtual current meter, since the virtual meter uses these parameters too:
             if (feature(FEATURE_CURRENT_METER)) {
-                blackboxPrintfHeaderLine("currentMeter:%d,%d",              batteryConfig()->currentMeterOffset,
+                blackboxPrintfHeaderLine("currentMeter", ":%d,%d",          batteryConfig()->currentMeterOffset,
                                                                             batteryConfig()->currentMeterScale);
             }
             );
 
-        BLACKBOX_PRINT_HEADER_LINE("looptime:%d",                           getPidUpdateRate());
-        BLACKBOX_PRINT_HEADER_LINE("rcExpo:%d",                             currentControlRateProfile->rcExpo8);
-        BLACKBOX_PRINT_HEADER_LINE("rcYawExpo:%d",                          currentControlRateProfile->rcYawExpo8);
-        BLACKBOX_PRINT_HEADER_LINE("thrMid:%d",                             currentControlRateProfile->thrMid8);
-        BLACKBOX_PRINT_HEADER_LINE("thrExpo:%d",                            currentControlRateProfile->thrExpo8);
-        BLACKBOX_PRINT_HEADER_LINE("dynThrPID:%d",                          currentControlRateProfile->dynThrPID);
-        BLACKBOX_PRINT_HEADER_LINE("tpa_breakpoint:%d",                     currentControlRateProfile->tpa_breakpoint);
-        BLACKBOX_PRINT_HEADER_LINE("rates:%d,%d,%d",                        currentControlRateProfile->rates[ROLL],
+        BLACKBOX_PRINT_HEADER_LINE("looptime", ":%d",                       getPidUpdateRate());
+        BLACKBOX_PRINT_HEADER_LINE("rc_expo", ":%d",                        currentControlRateProfile->rcExpo8);
+        BLACKBOX_PRINT_HEADER_LINE("rc_yaw_expo", ":%d",                    currentControlRateProfile->rcYawExpo8);
+        BLACKBOX_PRINT_HEADER_LINE("thr_mid", ":%d",                        currentControlRateProfile->thrMid8);
+        BLACKBOX_PRINT_HEADER_LINE("thr_expo", ":%d",                       currentControlRateProfile->thrExpo8);
+        BLACKBOX_PRINT_HEADER_LINE("tpa_rate", ":%d",                       currentControlRateProfile->dynThrPID);
+        BLACKBOX_PRINT_HEADER_LINE("tpa_breakpoint", ":%d",                 currentControlRateProfile->tpa_breakpoint);
+        BLACKBOX_PRINT_HEADER_LINE("rates", ":%d,%d,%d",                    currentControlRateProfile->rates[ROLL],
                                                                             currentControlRateProfile->rates[PITCH],
                                                                             currentControlRateProfile->rates[YAW]);
-        BLACKBOX_PRINT_HEADER_LINE("rollPID:%d,%d,%d",                      pidBank()->pid[PID_ROLL].P,
+        BLACKBOX_PRINT_HEADER_LINE("rollPID", ":%d,%d,%d",                  pidBank()->pid[PID_ROLL].P,
                                                                             pidBank()->pid[PID_ROLL].I,
                                                                             pidBank()->pid[PID_ROLL].D);
-        BLACKBOX_PRINT_HEADER_LINE("pitchPID:%d,%d,%d",                     pidBank()->pid[PID_PITCH].P,
+        BLACKBOX_PRINT_HEADER_LINE("pitchPID", ":%d,%d,%d",                 pidBank()->pid[PID_PITCH].P,
                                                                             pidBank()->pid[PID_PITCH].I,
                                                                             pidBank()->pid[PID_PITCH].D);
-        BLACKBOX_PRINT_HEADER_LINE("yawPID:%d,%d,%d",                       pidBank()->pid[PID_YAW].P,
+        BLACKBOX_PRINT_HEADER_LINE("yawPID", ":%d,%d,%d",                   pidBank()->pid[PID_YAW].P,
                                                                             pidBank()->pid[PID_YAW].I,
                                                                             pidBank()->pid[PID_YAW].D);
-        BLACKBOX_PRINT_HEADER_LINE("altPID:%d,%d,%d",                       pidBank()->pid[PID_POS_Z].P,
+        BLACKBOX_PRINT_HEADER_LINE("altPID", ":%d,%d,%d",                   pidBank()->pid[PID_POS_Z].P,
                                                                             pidBank()->pid[PID_POS_Z].I,
                                                                             pidBank()->pid[PID_POS_Z].D);
-        BLACKBOX_PRINT_HEADER_LINE("posPID:%d,%d,%d",                       pidBank()->pid[PID_POS_XY].P,
+        BLACKBOX_PRINT_HEADER_LINE("posPID", ":%d,%d,%d",                   pidBank()->pid[PID_POS_XY].P,
                                                                             pidBank()->pid[PID_POS_XY].I,
                                                                             pidBank()->pid[PID_POS_XY].D);
-        BLACKBOX_PRINT_HEADER_LINE("posrPID:%d,%d,%d",                      pidBank()->pid[PID_VEL_XY].P,
+        BLACKBOX_PRINT_HEADER_LINE("posrPID", ":%d,%d,%d",                  pidBank()->pid[PID_VEL_XY].P,
                                                                             pidBank()->pid[PID_VEL_XY].I,
                                                                             pidBank()->pid[PID_VEL_XY].D);
-        BLACKBOX_PRINT_HEADER_LINE("levelPID:%d,%d,%d",                     pidBank()->pid[PID_LEVEL].P,
+        BLACKBOX_PRINT_HEADER_LINE("levelPID", ":%d,%d,%d",                 pidBank()->pid[PID_LEVEL].P,
                                                                             pidBank()->pid[PID_LEVEL].I,
                                                                             pidBank()->pid[PID_LEVEL].D);
-        BLACKBOX_PRINT_HEADER_LINE("magPID:%d",                             pidBank()->pid[PID_HEADING].P);
-        BLACKBOX_PRINT_HEADER_LINE("velPID:%d,%d,%d",                       pidBank()->pid[PID_VEL_Z].P,
+        BLACKBOX_PRINT_HEADER_LINE("magPID", ":%d",                         pidBank()->pid[PID_HEADING].P);
+        BLACKBOX_PRINT_HEADER_LINE("velPID", ":%d,%d,%d",                   pidBank()->pid[PID_VEL_Z].P,
                                                                             pidBank()->pid[PID_VEL_Z].I,
                                                                             pidBank()->pid[PID_VEL_Z].D);
-        BLACKBOX_PRINT_HEADER_LINE("yaw_p_limit:%d",                        pidProfile()->yaw_p_limit);
-        BLACKBOX_PRINT_HEADER_LINE("yaw_lpf_hz:%d",                         (int)(pidProfile()->yaw_lpf_hz * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("dterm_lpf_hz:%d",                       (int)(pidProfile()->dterm_lpf_hz * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("deadband:%d",                           rcControlsConfig()->deadband);
-        BLACKBOX_PRINT_HEADER_LINE("yaw_deadband:%d",                       rcControlsConfig()->yaw_deadband);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_lpf:%d",                           gyroConfig()->gyro_lpf);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_hz:%d",                    gyroConfig()->gyro_soft_lpf_hz);
-        BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz:%d",                         (int)(pidProfile()->acc_soft_lpf_hz * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("acc_hardware:%d",                       accelerometerConfig()->acc_hardware);
-        BLACKBOX_PRINT_HEADER_LINE("baro_hardware:%d",                      barometerConfig()->baro_hardware);
-        BLACKBOX_PRINT_HEADER_LINE("mag_hardware:%d",                       compassConfig()->mag_hardware);
-        BLACKBOX_PRINT_HEADER_LINE("debug_mode:%d",                         systemConfig()->debug_mode);
-        BLACKBOX_PRINT_HEADER_LINE("features:%d",                           featureConfig()->enabledFeatures);
+        BLACKBOX_PRINT_HEADER_LINE("yaw_p_limit", ":%d",                    pidProfile()->yaw_p_limit);
+        BLACKBOX_PRINT_HEADER_LINE("yaw_lpf_hz", ":%d",                     (int)(pidProfile()->yaw_lpf_hz * 100.0f));
+        BLACKBOX_PRINT_HEADER_LINE("dterm_lpf_hz", ":%d",                   (int)(pidProfile()->dterm_lpf_hz * 100.0f));
+        BLACKBOX_PRINT_HEADER_LINE("deadband", ":%d",                       rcControlsConfig()->deadband);
+        BLACKBOX_PRINT_HEADER_LINE("yaw_deadband", ":%d",                   rcControlsConfig()->yaw_deadband);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_hardware_lpf", ":%d",              gyroConfig()->gyro_lpf);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_lpf_hz", ":%d",                    gyroConfig()->gyro_soft_lpf_hz);
+        BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz", ":%d",                     (int)(pidProfile()->acc_soft_lpf_hz * 100.0f));
+        BLACKBOX_PRINT_HEADER_LINE("acc_hardware", ":%d",                   accelerometerConfig()->acc_hardware);
+        BLACKBOX_PRINT_HEADER_LINE("baro_hardware", ":%d",                  barometerConfig()->baro_hardware);
+        BLACKBOX_PRINT_HEADER_LINE("mag_hardware", ":%d",                   compassConfig()->mag_hardware);
+        BLACKBOX_PRINT_HEADER_LINE("debug_mode", ":%d",                     systemConfig()->debug_mode);
+        BLACKBOX_PRINT_HEADER_LINE("features", ":%d",                       featureConfig()->enabledFeatures);
 
         default:
             return true;
@@ -1433,28 +1429,28 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
 
     //Now serialize the data for this specific frame type
     switch (event) {
-        case FLIGHT_LOG_EVENT_SYNC_BEEP:
-            blackboxWriteUnsignedVB(data->syncBeep.time);
+    case FLIGHT_LOG_EVENT_SYNC_BEEP:
+        blackboxWriteUnsignedVB(data->syncBeep.time);
         break;
-        case FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT:
-            if (data->inflightAdjustment.floatFlag) {
-                blackboxWrite(data->inflightAdjustment.adjustmentFunction + FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT_FUNCTION_FLOAT_VALUE_FLAG);
-                blackboxWriteFloat(data->inflightAdjustment.newFloatValue);
-            } else {
-                blackboxWrite(data->inflightAdjustment.adjustmentFunction);
-                blackboxWriteSignedVB(data->inflightAdjustment.newValue);
-            }
+    case FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT:
+        if (data->inflightAdjustment.floatFlag) {
+            blackboxWrite(data->inflightAdjustment.adjustmentFunction + FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT_FUNCTION_FLOAT_VALUE_FLAG);
+            blackboxWriteFloat(data->inflightAdjustment.newFloatValue);
+        } else {
+            blackboxWrite(data->inflightAdjustment.adjustmentFunction);
+            blackboxWriteSignedVB(data->inflightAdjustment.newValue);
+        }
         break;
-        case FLIGHT_LOG_EVENT_LOGGING_RESUME:
-            blackboxWriteUnsignedVB(data->loggingResume.logIteration);
-            blackboxWriteUnsignedVB(data->loggingResume.currentTimeUs);
+    case FLIGHT_LOG_EVENT_LOGGING_RESUME:
+        blackboxWriteUnsignedVB(data->loggingResume.logIteration);
+        blackboxWriteUnsignedVB(data->loggingResume.currentTimeUs);
         break;
-        case FLIGHT_LOG_EVENT_IMU_FAILURE:
-            blackboxWrite(0);
+    case FLIGHT_LOG_EVENT_IMU_FAILURE:
+        blackboxWrite(0);
         break;
-        case FLIGHT_LOG_EVENT_LOG_END:
-            blackboxPrint("End of log");
-            blackboxWrite(0);
+    case FLIGHT_LOG_EVENT_LOG_END:
+        blackboxPrintf("End of log (disarm reason:%d)", getDisarmReason());
+        blackboxWrite(0);
         break;
     }
 }
@@ -1486,12 +1482,13 @@ static bool blackboxShouldLogPFrame(uint32_t pFrameIndex)
     return (pFrameIndex + blackboxConfig()->rate_num - 1) % blackboxConfig()->rate_denom < blackboxConfig()->rate_num;
 }
 
-static bool blackboxShouldLogIFrame() {
+static bool blackboxShouldLogIFrame(void)
+{
     return blackboxPFrameIndex == 0;
 }
 
 // Called once every FC loop in order to keep track of how many FC loop iterations have passed
-static void blackboxAdvanceIterationTimers()
+static void blackboxAdvanceIterationTimers(void)
 {
     blackboxSlowFrameIterationTimer++;
     blackboxIteration++;
@@ -1541,7 +1538,7 @@ static void blackboxLogIteration(timeUs_t currentTimeUs)
             if (GPS_home.lat != gpsHistory.GPS_home[0] || GPS_home.lon != gpsHistory.GPS_home[1]
                 || (blackboxPFrameIndex == (blackboxIFrameInterval / 2) && blackboxIFrameIndex % 128 == 0)) {
 
-                writeGPSHomeFrame(currentTimeUs);
+                writeGPSHomeFrame();
                 writeGPSFrame(currentTimeUs);
             } else if (gpsSol.numSat != gpsHistory.GPS_numSat || gpsSol.llh.lat != gpsHistory.GPS_coord[0]
                     || gpsSol.llh.lon != gpsHistory.GPS_coord[1]) {
@@ -1559,7 +1556,7 @@ static void blackboxLogIteration(timeUs_t currentTimeUs)
 /**
  * Call each flight loop iteration to perform blackbox logging.
  */
-void handleBlackbox(timeUs_t currentTimeUs)
+void blackboxUpdate(timeUs_t currentTimeUs)
 {
     int i;
 
@@ -1568,126 +1565,126 @@ void handleBlackbox(timeUs_t currentTimeUs)
     }
 
     switch (blackboxState) {
-        case BLACKBOX_STATE_PREPARE_LOG_FILE:
-            if (blackboxDeviceBeginLog()) {
-                blackboxSetState(BLACKBOX_STATE_SEND_HEADER);
-            }
+    case BLACKBOX_STATE_PREPARE_LOG_FILE:
+        if (blackboxDeviceBeginLog()) {
+            blackboxSetState(BLACKBOX_STATE_SEND_HEADER);
+        }
         break;
-        case BLACKBOX_STATE_SEND_HEADER:
-            //On entry of this state, xmitState.headerIndex is 0 and startTime is intialised
+    case BLACKBOX_STATE_SEND_HEADER:
+        //On entry of this state, xmitState.headerIndex is 0 and startTime is intialised
 
-            /*
-             * Once the UART has had time to init, transmit the header in chunks so we don't overflow its transmit
-             * buffer, overflow the OpenLog's buffer, or keep the main loop busy for too long.
-             */
-            if (millis() > xmitState.u.startTime + 100) {
-                if (blackboxDeviceReserveBufferSpace(BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION) == BLACKBOX_RESERVE_SUCCESS) {
-                    for (i = 0; i < BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION && blackboxHeader[xmitState.headerIndex] != '\0'; i++, xmitState.headerIndex++) {
-                        blackboxWrite(blackboxHeader[xmitState.headerIndex]);
-                        blackboxHeaderBudget--;
-                    }
+        /*
+         * Once the UART has had time to init, transmit the header in chunks so we don't overflow its transmit
+         * buffer, overflow the OpenLog's buffer, or keep the main loop busy for too long.
+         */
+        if (millis() > xmitState.u.startTime + 100) {
+            if (blackboxDeviceReserveBufferSpace(BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION) == BLACKBOX_RESERVE_SUCCESS) {
+                for (i = 0; i < BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION && blackboxHeader[xmitState.headerIndex] != '\0'; i++, xmitState.headerIndex++) {
+                    blackboxWrite(blackboxHeader[xmitState.headerIndex]);
+                    blackboxHeaderBudget--;
+                }
 
-                    if (blackboxHeader[xmitState.headerIndex] == '\0') {
-                        blackboxPrintfHeaderLine("I interval:%d", blackboxIFrameInterval);
-                        blackboxSetState(BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER);
-                    }
+                if (blackboxHeader[xmitState.headerIndex] == '\0') {
+                    blackboxPrintfHeaderLine("I interval", ":%d", blackboxIFrameInterval);
+                    blackboxSetState(BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER);
                 }
             }
+        }
         break;
-        case BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER:
-            //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-            if (!sendFieldDefinition('I', 'P', blackboxMainFields, blackboxMainFields + 1, ARRAYLEN(blackboxMainFields),
-                    &blackboxMainFields[0].condition, &blackboxMainFields[1].condition)) {
+    case BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER:
+        //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
+        if (!sendFieldDefinition('I', 'P', blackboxMainFields, blackboxMainFields + 1, ARRAYLEN(blackboxMainFields),
+                &blackboxMainFields[0].condition, &blackboxMainFields[1].condition)) {
 #ifdef GPS
-                if (feature(FEATURE_GPS)) {
-                    blackboxSetState(BLACKBOX_STATE_SEND_GPS_H_HEADER);
-                } else
+            if (feature(FEATURE_GPS)) {
+                blackboxSetState(BLACKBOX_STATE_SEND_GPS_H_HEADER);
+            } else
 #endif
-                    blackboxSetState(BLACKBOX_STATE_SEND_SLOW_HEADER);
-            }
-        break;
-#ifdef GPS
-        case BLACKBOX_STATE_SEND_GPS_H_HEADER:
-            //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-            if (!sendFieldDefinition('H', 0, blackboxGpsHFields, blackboxGpsHFields + 1, ARRAYLEN(blackboxGpsHFields),
-                    NULL, NULL)) {
-                blackboxSetState(BLACKBOX_STATE_SEND_GPS_G_HEADER);
-            }
-        break;
-        case BLACKBOX_STATE_SEND_GPS_G_HEADER:
-            //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-            if (!sendFieldDefinition('G', 0, blackboxGpsGFields, blackboxGpsGFields + 1, ARRAYLEN(blackboxGpsGFields),
-                    &blackboxGpsGFields[0].condition, &blackboxGpsGFields[1].condition)) {
                 blackboxSetState(BLACKBOX_STATE_SEND_SLOW_HEADER);
-            }
+        }
+        break;
+#ifdef GPS
+    case BLACKBOX_STATE_SEND_GPS_H_HEADER:
+        //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
+        if (!sendFieldDefinition('H', 0, blackboxGpsHFields, blackboxGpsHFields + 1, ARRAYLEN(blackboxGpsHFields),
+                NULL, NULL)) {
+            blackboxSetState(BLACKBOX_STATE_SEND_GPS_G_HEADER);
+        }
+        break;
+    case BLACKBOX_STATE_SEND_GPS_G_HEADER:
+        //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
+        if (!sendFieldDefinition('G', 0, blackboxGpsGFields, blackboxGpsGFields + 1, ARRAYLEN(blackboxGpsGFields),
+                &blackboxGpsGFields[0].condition, &blackboxGpsGFields[1].condition)) {
+            blackboxSetState(BLACKBOX_STATE_SEND_SLOW_HEADER);
+        }
         break;
 #endif
-        case BLACKBOX_STATE_SEND_SLOW_HEADER:
-            //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-            if (!sendFieldDefinition('S', 0, blackboxSlowFields, blackboxSlowFields + 1, ARRAYLEN(blackboxSlowFields),
-                    NULL, NULL)) {
-                blackboxSetState(BLACKBOX_STATE_SEND_SYSINFO);
-            }
+    case BLACKBOX_STATE_SEND_SLOW_HEADER:
+        //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
+        if (!sendFieldDefinition('S', 0, blackboxSlowFields, blackboxSlowFields + 1, ARRAYLEN(blackboxSlowFields),
+                NULL, NULL)) {
+            blackboxSetState(BLACKBOX_STATE_SEND_SYSINFO);
+        }
         break;
-        case BLACKBOX_STATE_SEND_SYSINFO:
-            //On entry of this state, xmitState.headerIndex is 0
+    case BLACKBOX_STATE_SEND_SYSINFO:
+        //On entry of this state, xmitState.headerIndex is 0
 
-            //Keep writing chunks of the system info headers until it returns true to signal completion
-            if (blackboxWriteSysinfo()) {
-
-                /*
-                 * Wait for header buffers to drain completely before data logging begins to ensure reliable header delivery
-                 * (overflowing circular buffers causes all data to be discarded, so the first few logged iterations
-                 * could wipe out the end of the header if we weren't careful)
-                 */
-                if (blackboxDeviceFlushForce()) {
-                    blackboxSetState(BLACKBOX_STATE_RUNNING);
-                }
-            }
-        break;
-        case BLACKBOX_STATE_PAUSED:
-            // Only allow resume to occur during an I-frame iteration, so that we have an "I" base to work from
-            if (IS_RC_MODE_ACTIVE(BOXBLACKBOX) && blackboxShouldLogIFrame()) {
-                // Write a log entry so the decoder is aware that our large time/iteration skip is intended
-                flightLogEvent_loggingResume_t resume;
-
-                resume.logIteration = blackboxIteration;
-                resume.currentTimeUs = currentTimeUs;
-
-                blackboxLogEvent(FLIGHT_LOG_EVENT_LOGGING_RESUME, (flightLogEventData_t *) &resume);
-                blackboxSetState(BLACKBOX_STATE_RUNNING);
-
-                blackboxLogIteration(currentTimeUs);
-            }
-
-            // Keep the logging timers ticking so our log iteration continues to advance
-            blackboxAdvanceIterationTimers();
-        break;
-        case BLACKBOX_STATE_RUNNING:
-            // On entry to this state, blackboxIteration, blackboxPFrameIndex and blackboxIFrameIndex are reset to 0
-            if (blackboxModeActivationConditionPresent && !IS_RC_MODE_ACTIVE(BOXBLACKBOX)) {
-                blackboxSetState(BLACKBOX_STATE_PAUSED);
-            } else {
-                blackboxLogIteration(currentTimeUs);
-            }
-
-            blackboxAdvanceIterationTimers();
-        break;
-        case BLACKBOX_STATE_SHUTTING_DOWN:
-            //On entry of this state, startTime is set
+        //Keep writing chunks of the system info headers until it returns true to signal completion
+        if (blackboxWriteSysinfo()) {
 
             /*
-             * Wait for the log we've transmitted to make its way to the logger before we release the serial port,
-             * since releasing the port clears the Tx buffer.
-             *
-             * Don't wait longer than it could possibly take if something funky happens.
+             * Wait for header buffers to drain completely before data logging begins to ensure reliable header delivery
+             * (overflowing circular buffers causes all data to be discarded, so the first few logged iterations
+             * could wipe out the end of the header if we weren't careful)
              */
-            if (blackboxDeviceEndLog(blackboxLoggedAnyFrames) && (millis() > xmitState.u.startTime + BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS || blackboxDeviceFlushForce())) {
-                blackboxDeviceClose();
-                blackboxSetState(BLACKBOX_STATE_STOPPED);
+            if (blackboxDeviceFlushForce()) {
+                blackboxSetState(BLACKBOX_STATE_RUNNING);
             }
+        }
         break;
-        default:
+    case BLACKBOX_STATE_PAUSED:
+        // Only allow resume to occur during an I-frame iteration, so that we have an "I" base to work from
+        if (IS_RC_MODE_ACTIVE(BOXBLACKBOX) && blackboxShouldLogIFrame()) {
+            // Write a log entry so the decoder is aware that our large time/iteration skip is intended
+            flightLogEvent_loggingResume_t resume;
+
+            resume.logIteration = blackboxIteration;
+            resume.currentTimeUs = currentTimeUs;
+
+            blackboxLogEvent(FLIGHT_LOG_EVENT_LOGGING_RESUME, (flightLogEventData_t *) &resume);
+            blackboxSetState(BLACKBOX_STATE_RUNNING);
+
+            blackboxLogIteration(currentTimeUs);
+        }
+
+        // Keep the logging timers ticking so our log iteration continues to advance
+        blackboxAdvanceIterationTimers();
+        break;
+    case BLACKBOX_STATE_RUNNING:
+        // On entry to this state, blackboxIteration, blackboxPFrameIndex and blackboxIFrameIndex are reset to 0
+        if (blackboxModeActivationConditionPresent && !IS_RC_MODE_ACTIVE(BOXBLACKBOX)) {
+            blackboxSetState(BLACKBOX_STATE_PAUSED);
+        } else {
+            blackboxLogIteration(currentTimeUs);
+        }
+
+        blackboxAdvanceIterationTimers();
+        break;
+    case BLACKBOX_STATE_SHUTTING_DOWN:
+        //On entry of this state, startTime is set
+
+        /*
+         * Wait for the log we've transmitted to make its way to the logger before we release the serial port,
+         * since releasing the port clears the Tx buffer.
+         *
+         * Don't wait longer than it could possibly take if something funky happens.
+         */
+        if (blackboxDeviceEndLog(blackboxLoggedAnyFrames) && (millis() > xmitState.u.startTime + BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS || blackboxDeviceFlushForce())) {
+            blackboxDeviceClose();
+            blackboxSetState(BLACKBOX_STATE_STOPPED);
+        }
+        break;
+    default:
         break;
     }
 
@@ -1705,7 +1702,7 @@ static bool canUseBlackboxWithCurrentConfiguration(void)
 /**
  * Call during system startup to initialize the blackbox.
  */
-void initBlackbox(void)
+void blackboxInit(void)
 {
     if (canUseBlackboxWithCurrentConfiguration()) {
         blackboxSetState(BLACKBOX_STATE_STOPPED);

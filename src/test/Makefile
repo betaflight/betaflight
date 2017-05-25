@@ -451,13 +451,13 @@ $(OBJECT_DIR)/rx_ranges_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
-$(OBJECT_DIR)/drivers/barometer_ms5611.o : \
-    $(USER_DIR)/drivers/barometer_ms5611.c \
-    $(USER_DIR)/drivers/barometer_ms5611.h \
+$(OBJECT_DIR)/drivers/barometer_ms56xx.o : \
+    $(USER_DIR)/drivers/barometer_ms56xx.c \
+    $(USER_DIR)/drivers/barometer_ms56xx.h \
     $(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/barometer_ms5611.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/barometer_ms56xx.c -o $@
 
 $(OBJECT_DIR)/baro_ms5611_unittest.o : \
 	$(TEST_DIR)/baro_ms5611_unittest.cc \

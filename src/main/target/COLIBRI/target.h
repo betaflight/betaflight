@@ -36,8 +36,7 @@
 
 #define BEEPER                  PC5
 
-#define INVERTER                PB2 // PB2 used as inverter select GPIO
-#define INVERTER_USART          USART2
+#define INVERTER_PIN_UART2      PB2 // PB2 used as inverter select GPIO
 
 #define MPU6000_CS_PIN          PC4
 #define MPU6000_SPI_INSTANCE    SPI1
@@ -124,6 +123,10 @@
 #define I2C_DEVICE              (I2CDEV_3)
 #define I2C3_SCL                PA8
 #define I2C3_SDA                PC9
+
+#define SONAR
+#define SONAR_TRIGGER_PIN       PB8
+#define SONAR_ECHO_PIN          PB9
 
 #define TARGET_CONFIG
 

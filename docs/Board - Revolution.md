@@ -39,12 +39,14 @@ Following section is ported from [RaceFlight](https://github.com/rs2k/raceflight
 | --- | --------- | -------------------------------- |
 | 1   | Ground    |                                  |
 | 2   | +5V       |                                  |
-| 3   | PPM Input | Enable `feature RX_PPM`     |
-| 4   | UART6 TX | |
-| 5   | UART6 RX    | |
-| 6   | Current   | Enable `feature CURRENT_METER`.  Connect to the output of a current sensor, 0v-3.3v input |
-| 7   | Battery Voltage sensor | Enable `feature VBAT`. Connect to main battery using a voltage divider, 0v-3.3v input |
-| 8   | RSSI      | Enable `feature RSSI_ADC`.  Connect to the output of a PWM-RSSI conditioner, 0v-3.3v input |
+| 3   |           |                                  |
+| 4   |           |                                  |
+| 5   | PPM Input | Enable `feature RX_PPM`          |
+| 6   |           |                                  |
+| 7   | UART6 TX  | |
+| 8   | UART6 RX  | |
+| 9   |           |                                  |
+| 10  |           |                                  |
 
 #### RX_PARALLEL_PWM
 
@@ -53,11 +55,13 @@ Following section is ported from [RaceFlight](https://github.com/rs2k/raceflight
 | 1   | Ground   |       |
 | 2   | +5V      |       |
 | 3   | Unused   |       |
-| 4   | CH1      |       |
-| 5   | CH2      |       |
-| 6   | CH3      |       |
-| 7   | CH4/Battery Voltage sensor      | CH4 if battery voltage sensor is disabled |
-| 8   | CH5/CH4  | CH4 if battery voltage monitor is enabled|
+| 4   | Unused   |       |
+| 5   | CH1      |       |
+| 6   | CH2      |       |
+| 7   | CH3      |       |
+| 8   | CH4      |       |
+| 9   | CH5      |       |
+| 10  | CH6      |       |
 
 ### RC_Output connector
 
@@ -70,7 +74,7 @@ Following section is ported from [RaceFlight](https://github.com/rs2k/raceflight
 | 3   | PA3     | MOTOR 3               |       |
 | 4   | PA2     | MOTOR 4               |       |
 | 5   | PA1     | MOTOR 5 / LED Strip   |       |
-| 6   | PA8     | MOTOR 6               |       |
+| 6   | PA0     | MOTOR 6 / RSSI_ADC    |       |
 
 ## Serial Ports
 
@@ -79,7 +83,7 @@ Following section is ported from [RaceFlight](https://github.com/rs2k/raceflight
 | 1     | VCP          | USB PORT       |                                           |
 | 2     | UART1        | MAIN PORT      | Connected to an MCU controllable inverter |
 | 3     | UART3        | FLEX PORT      |                                           |
-| 4     | UART6        | RC connector   | Pins 4 and 5 (Tx and Rx respectively)     |
+| 4     | UART6        | RC connector   |                                           |
 
 The UART6 port is not available when RX_PARALLEL_PWM is used.
 
@@ -106,6 +110,15 @@ You cannot use USART3 and I2C at the same time.
 | 2   | VCC unregulated    |                          |
 | 3   | I2C SCL / UART3 TX | 3.3v level               |
 | 4   | I2C SDA / UART3 RX | 3.3v level (5v tolerant) |
+
+### Pwr sensor connector
+
+| Pin | Signal             | Notes                    |
+| --- | ------------------ | -----------------------  |
+| 1   | GND                |                          |
+| 2   | VCC unregulated    |                          |
+| 3   | Current sensor     | 3.3v max input           |
+| 4   | Voltage sensor     | 3.3v max input |
 
 ## Buzzer
 

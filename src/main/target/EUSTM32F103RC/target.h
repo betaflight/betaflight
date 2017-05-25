@@ -22,8 +22,7 @@
 #define LED0                    PB3
 #define LED1                    PB4
 
-#define INVERTER                PB2
-#define INVERTER_USART          USART2
+#define INVERTER_PIN_UART2      PB2
 
 #define MPU6000_CS_PIN          PB12
 #define MPU6000_SPI_INSTANCE    SPI2

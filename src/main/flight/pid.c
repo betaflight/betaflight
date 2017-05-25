@@ -50,6 +50,7 @@
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
 #include "sensors/compass.h"
+#include "sensors/pitotmeter.h"
 
 
 typedef struct {
@@ -70,9 +71,6 @@ typedef struct {
     // Rate integrator
     float errorGyroIf;
     float errorGyroIfLimit;
-
-    // Axis lock accumulator
-    float axisLockAccum;
 
     // Used for ANGLE filtering
     pt1Filter_t angleFilterState;
@@ -96,8 +94,8 @@ extern uint8_t motorCount;
 extern bool motorLimitReached;
 extern float dT;
 
-int16_t magHoldTargetHeading;
-static pt1Filter_t magHoldRateFilter;
+int16_t headingHoldTarget;
+static pt1Filter_t headingHoldRateFilter;
 
 // Thrust PID Attenuation factor. 0.0f means fully attenuated, 1.0f no attenuation is applied
 static bool pidGainsUpdateRequired = false;
@@ -109,7 +107,7 @@ int32_t axisPID_P[FLIGHT_DYNAMICS_INDEX_COUNT], axisPID_I[FLIGHT_DYNAMICS_INDEX_
 
 static pidState_t pidState[FLIGHT_DYNAMICS_INDEX_COUNT];
 
-PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(pidProfile_t, pidProfile, PG_PID_PROFILE, 0);
+PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(pidProfile_t, pidProfile, PG_PID_PROFILE, 2);
 
 PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
         .bank_mc = {
@@ -148,12 +146,12 @@ PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
 
         .bank_fw = {
             .pid = {
-                [PID_ROLL] =    { 25, 35, 10 },
-                [PID_PITCH] =   { 20, 35, 10 },
-                [PID_YAW] =     { 50, 45, 0 },
+                [PID_ROLL] =    { 5, 7, 50 },
+                [PID_PITCH] =   { 5, 7, 50 },
+                [PID_YAW] =     { 6, 10, 60 },
                 [PID_LEVEL] = {
                     .P = 20,    // Self-level strength
-                    .I = 15,    // Self-leveing low-pass frequency (0 - disabled)
+                    .I = 5,     // Self-leveing low-pass frequency (0 - disabled)
                     .D = 75,    // 75% horizon strength
                 },
                 [PID_HEADING] = { 60, 0, 0 },
@@ -185,10 +183,14 @@ PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
 
         .yaw_p_limit = YAW_P_LIMIT_DEFAULT,
 
+        .heading_hold_rate_limit = HEADING_HOLD_RATE_LIMIT_DEFAULT,
+
         .max_angle_inclination[FD_ROLL] = 300,    // 30 degrees
         .max_angle_inclination[FD_PITCH] = 300,    // 30 degrees
-        .fixedWingItermThrowLimit = FW_ITERM_THROW_LIMIT_DEFAULT,
         .pidSumLimit = PID_SUM_LIMIT_DEFAULT,
+
+        .fixedWingItermThrowLimit = FW_ITERM_THROW_LIMIT_DEFAULT,
+        .fixedWingReferenceAirspeed = 1000,
 );
 
 void pidInit(void)
@@ -225,9 +227,6 @@ void pidResetErrorAccumulators(void)
         pidState[axis].errorGyroIf = 0.0f;
         pidState[axis].errorGyroIfLimit = 0.0f;
     }
-
-    // Reset yaw heading lock accumulator
-    pidState[FD_YAW].axisLockAccum = 0;
 }
 
 static float pidRcCommandToAngle(int16_t stick, int16_t maxInclination)
@@ -258,16 +257,6 @@ float pidRcCommandToRate(int16_t stick, uint8_t rate)
     const float maxRateDPS = rate * 10.0f;
     return scaleRangef((float) stick, -500.0f, 500.0f, -maxRateDPS, maxRateDPS);
 }
-
-/*
-FP-PID has been rescaled to match LuxFloat (and MWRewrite) from Cleanflight 1.13
-*/
-#define FP_PID_RATE_FF_MULTIPLIER   31.0f
-#define FP_PID_RATE_P_MULTIPLIER    31.0f
-#define FP_PID_RATE_I_MULTIPLIER    4.0f
-#define FP_PID_RATE_D_MULTIPLIER    1905.0f
-#define FP_PID_LEVEL_P_MULTIPLIER   65.6f
-#define FP_PID_YAWHOLD_P_MULTIPLIER 80.0f
 
 static float calculateFixedWingTPAFactor(void)
 {
@@ -365,24 +354,6 @@ void updatePIDCoefficients(void)
     pidGainsUpdateRequired = false;
 }
 
-#ifdef USE_FLM_HEADLOCK
-static void pidApplyHeadingLock(pidState_t *pidState)
-{
-    // Heading lock mode is different from Heading hold using compass.
-    // Heading lock attempts to keep heading at current value even if there is an external disturbance.
-    // If there is some external force that rotates the aircraft and Rate PIDs are unable to compensate,
-    // heading lock will bring heading back if disturbance is not too big
-    // Heading error is not integrated when stick input is significant or machine is disarmed.
-    if (ABS(pidState->rateTarget) > 2 || !ARMING_FLAG(ARMED)) {
-        pidState->axisLockAccum = 0;
-    } else {
-        pidState->axisLockAccum += (pidState->rateTarget - pidState->gyroRate) * dT;
-        pidState->axisLockAccum = constrainf(pidState->axisLockAccum, -45, 45);
-        pidState->rateTarget = pidState->axisLockAccum * (pidBank()->pid[PID_HEADING].P / FP_PID_YAWHOLD_P_MULTIPLIER);
-    }
-}
-#endif
-
 static float calcHorizonRateMagnitude(void)
 {
     // Figure out the raw stick positions
@@ -408,9 +379,9 @@ static void pidLevel(pidState_t *pidState, flight_dynamics_index_t axis, float h
 {
     // This is ROLL/PITCH, run ANGLE/HORIZON controllers
     const float angleTarget = pidRcCommandToAngle(rcCommand[axis], pidProfile()->max_angle_inclination[axis]);
-    const float angleError = angleTarget - attitude.raw[axis];
+    const float angleErrorDeg = DECIDEGREES_TO_DEGREES(angleTarget - attitude.raw[axis]);
 
-    float angleRateTarget = constrainf(angleError * (pidBank()->pid[PID_LEVEL].P / FP_PID_LEVEL_P_MULTIPLIER), -currentControlRateProfile->rates[axis] * 10.0f, currentControlRateProfile->rates[axis] * 10.0f);
+    float angleRateTarget = constrainf(angleErrorDeg * (pidBank()->pid[PID_LEVEL].P / FP_PID_LEVEL_P_MULTIPLIER), -currentControlRateProfile->rates[axis] * 10.0f, currentControlRateProfile->rates[axis] * 10.0f);
 
     // Apply simple LPF to angleRateTarget to make response less jerky
     // Ideas behind this:
@@ -469,9 +440,15 @@ static void pidApplyFixedWingRateController(pidState_t *pidState, flight_dynamic
         pidState->errorGyroIfLimit = ABS(pidState->errorGyroIf);
     }
 
-    if (STATE(FIXED_WING) && pidProfile()->fixedWingItermThrowLimit != 0) {
+    if (pidProfile()->fixedWingItermThrowLimit != 0) {
         pidState->errorGyroIf = constrainf(pidState->errorGyroIf, -pidProfile()->fixedWingItermThrowLimit, pidProfile()->fixedWingItermThrowLimit);
     }
+
+#ifdef AUTOTUNE_FIXED_WING
+    if (FLIGHT_MODE(AUTO_TUNE) && !FLIGHT_MODE(PASSTHRU_MODE)) {
+        autotuneFixedWingUpdate(axis, pidState->rateTarget, pidState->gyroRate, newPTerm + newFFTerm);
+    }
+#endif
 
     axisPID[axis] = constrainf(newPTerm + newFFTerm + pidState->errorGyroIf, -pidProfile()->pidSumLimit, +pidProfile()->pidSumLimit);
 
@@ -549,30 +526,25 @@ static void pidApplyMulticopterRateController(pidState_t *pidState, flight_dynam
 #endif
 }
 
-void updateMagHoldHeading(int16_t heading)
+void updateHeadingHoldTarget(int16_t heading)
 {
-    magHoldTargetHeading = heading;
+    headingHoldTarget = heading;
 }
 
-void resetMagHoldHeading(int16_t heading)
+void resetHeadingHoldTarget(int16_t heading)
 {
-    updateMagHoldHeading(heading);
-    pt1FilterReset(&magHoldRateFilter, 0.0f);
+    updateHeadingHoldTarget(heading);
+    pt1FilterReset(&headingHoldRateFilter, 0.0f);
 }
 
-int16_t getMagHoldHeading() {
-    return magHoldTargetHeading;
+int16_t getHeadingHoldTarget() {
+    return headingHoldTarget;
 }
 
-uint8_t getMagHoldState()
+static uint8_t getHeadingHoldState()
 {
-
-    #ifndef MAG
-        return MAG_HOLD_DISABLED;
-    #endif
-
-    if (!sensors(SENSOR_MAG) || !STATE(SMALL_ANGLE)) {
-        return MAG_HOLD_DISABLED;
+    if (!STATE(SMALL_ANGLE)) {
+        return HEADING_HOLD_DISABLED;
     }
 
 #if defined(NAV)
@@ -581,28 +553,28 @@ uint8_t getMagHoldState()
     if (navHeadingState != NAV_HEADING_CONTROL_NONE) {
         // Apply maghold only if heading control is in auto mode
         if (navHeadingState == NAV_HEADING_CONTROL_AUTO) {
-            return MAG_HOLD_ENABLED;
+            return HEADING_HOLD_ENABLED;
         }
     }
     else
 #endif
-    if (ABS(rcCommand[YAW]) < 15 && FLIGHT_MODE(MAG_MODE)) {
-        return MAG_HOLD_ENABLED;
+    if (ABS(rcCommand[YAW]) < 15 && FLIGHT_MODE(HEADING_MODE)) {
+        return HEADING_HOLD_ENABLED;
     } else {
-        return MAG_HOLD_UPDATE_HEADING;
+        return HEADING_HOLD_UPDATE_HEADING;
     }
 
-    return MAG_HOLD_UPDATE_HEADING;
+    return HEADING_HOLD_UPDATE_HEADING;
 }
 
 /*
- * MAG_HOLD P Controller returns desired rotation rate in dps to be fed to Rate controller
+ * HEADING_HOLD P Controller returns desired rotation rate in dps to be fed to Rate controller
  */
-float pidMagHold(void)
+float pidHeadingHold(void)
 {
-    float magHoldRate;
+    float headingHoldRate;
 
-    int16_t error = DECIDEGREES_TO_DEGREES(attitude.values.yaw) - magHoldTargetHeading;
+    int16_t error = DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headingHoldTarget;
 
     /*
      * Convert absolute error into relative to current heading
@@ -645,11 +617,11 @@ float pidMagHold(void)
         New controller for 2deg error requires 2,6dps. 4dps for 3deg and so on up until mag_hold_rate_limit is reached.
     */
 
-    magHoldRate = error * pidBank()->pid[PID_HEADING].P / 30;
-    magHoldRate = constrainf(magHoldRate, -compassConfig()->mag_hold_rate_limit, compassConfig()->mag_hold_rate_limit);
-    magHoldRate = pt1FilterApply4(&magHoldRateFilter, magHoldRate, MAG_HOLD_ERROR_LPF_FREQ, dT);
+    headingHoldRate = error * pidBank()->pid[PID_HEADING].P / 30;
+    headingHoldRate = constrainf(headingHoldRate, -pidProfile()->heading_hold_rate_limit, pidProfile()->heading_hold_rate_limit);
+    headingHoldRate = pt1FilterApply4(&headingHoldRateFilter, headingHoldRate, HEADING_HOLD_ERROR_LPF_FREQ, dT);
 
-    return magHoldRate;
+    return headingHoldRate;
 }
 
 #ifdef USE_FLM_TURN_ASSIST
@@ -660,26 +632,64 @@ float pidMagHold(void)
 static void pidTurnAssistant(pidState_t *pidState)
 {
     t_fp_vector targetRates;
-
     targetRates.V.X = 0.0f;
     targetRates.V.Y = 0.0f;
-    targetRates.V.Z = pidState[YAW].rateTarget;
 
+    if (STATE(FIXED_WING)) {
+        if (calculateCosTiltAngle() >= 0.173648f) {
+            // Ideal banked turn follow the equations:
+            //      forward_vel^2 / radius = Gravity * tan(roll_angle)
+            //      yaw_rate = forward_vel / radius
+            // If we solve for roll angle we get:
+            //      tan(roll_angle) = forward_vel * yaw_rate / Gravity
+            // If we solve for yaw rate we get:
+            //      yaw_rate = tan(roll_angle) * Gravity / forward_vel
+
+#if defined(PITOT)
+            float airspeedForCoordinatedTurn = sensors(SENSOR_PITOT) ?
+                    pitot.airSpeed :
+                    pidProfile()->fixedWingReferenceAirspeed;
+#else
+            float airspeedForCoordinatedTurn = pidProfile()->fixedWingReferenceAirspeed;
+#endif
+
+            // Constrain to somewhat sane limits - 10km/h - 216km/h
+            airspeedForCoordinatedTurn = constrainf(airspeedForCoordinatedTurn, 300, 6000);
+
+            float bankAngle = DECIDEGREES_TO_RADIANS(attitude.values.roll);
+            float coordinatedTurnRateOffset = GRAVITY_CMSS * tan_approx(-bankAngle) / airspeedForCoordinatedTurn;
+
+            targetRates.V.Z = pidState[YAW].rateTarget + RADIANS_TO_DEGREES(coordinatedTurnRateOffset);
+        }
+        else {
+            // Don't allow coordinated turn calculation if airplane is in hard bank or steep climb/dive
+            return;
+        }
+    }
+    else {
+        targetRates.V.Z = pidState[YAW].rateTarget;
+    }
+
+    // Transform calculated rate offsets into body frame and apply
     imuTransformVectorEarthToBody(&targetRates);
 
-    // Add in roll and pitch, replace yaw completery
-    pidState[ROLL].rateTarget += targetRates.V.X;
-    pidState[PITCH].rateTarget += targetRates.V.Y;
-    pidState[YAW].rateTarget = targetRates.V.Z;
+    // Add in roll and pitch, replace yaw completely
+    pidState[ROLL].rateTarget = constrainf(pidState[ROLL].rateTarget + targetRates.V.X, -currentControlRateProfile->rates[ROLL] * 10.0f, currentControlRateProfile->rates[ROLL] * 10.0f);
+    pidState[PITCH].rateTarget = constrainf(pidState[PITCH].rateTarget + targetRates.V.Y, -currentControlRateProfile->rates[PITCH] * 10.0f, currentControlRateProfile->rates[PITCH] * 10.0f);
+    pidState[YAW].rateTarget = constrainf(targetRates.V.Z, -currentControlRateProfile->rates[YAW] * 10.0f, currentControlRateProfile->rates[YAW] * 10.0f);
+
+    debug[0] = pidState[ROLL].rateTarget;
+    debug[1] = pidState[PITCH].rateTarget;
+    debug[2] = pidState[YAW].rateTarget;
 }
 #endif
 
 void pidController(void)
 {
-    uint8_t magHoldState = getMagHoldState();
+    uint8_t headingHoldState = getHeadingHoldState();
 
-    if (magHoldState == MAG_HOLD_UPDATE_HEADING) {
-        updateMagHoldHeading(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
+    if (headingHoldState == HEADING_HOLD_UPDATE_HEADING) {
+        updateHeadingHoldTarget(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
     }
 
     for (int axis = 0; axis < 3; axis++) {
@@ -689,8 +699,8 @@ void pidController(void)
         // Step 2: Read target
         float rateTarget;
 
-        if (axis == FD_YAW && magHoldState == MAG_HOLD_ENABLED) {
-            rateTarget = pidMagHold();
+        if (axis == FD_YAW && headingHoldState == HEADING_HOLD_ENABLED) {
+            rateTarget = pidHeadingHold();
         } else {
             rateTarget = pidRcCommandToRate(rcCommand[axis], currentControlRateProfile->rates[axis]);
         }
@@ -706,14 +716,8 @@ void pidController(void)
         pidLevel(&pidState[FD_PITCH], FD_PITCH, horizonRateMagnitude);
     }
 
-#ifdef USE_FLM_HEADLOCK
-    if (FLIGHT_MODE(HEADING_LOCK) && magHoldState != MAG_HOLD_ENABLED) {
-        pidApplyHeadingLock(&pidState[FD_YAW]);
-    }
-#endif
-
 #ifdef USE_FLM_TURN_ASSIST
-    if (FLIGHT_MODE(TURN_ASSISTANT)) {
+    if (FLIGHT_MODE(TURN_ASSISTANT) || naivationRequiresTurnAssistance()) {
         pidTurnAssistant(pidState);
     }
 #endif

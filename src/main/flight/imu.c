@@ -75,8 +75,7 @@
 #define MAX_ACC_SQ_NEARNESS         25      // 25% or G^2, accepted acceleration of (0.87 - 1.12G)
 #define MAX_GPS_HEADING_ERROR_DEG   60      // Amount of error between GPS CoG and estimated Yaw at witch we stop trusting GPS and fallback to MAG
 
-t_fp_vector imuAccelInBodyFrame;
-t_fp_vector imuMeasuredGravityBF;
+t_fp_vector imuMeasuredAccelBF;
 t_fp_vector imuMeasuredRotationBF;
 static float smallAngleCosZ = 0;
 
@@ -166,7 +165,7 @@ void imuInit(void)
     smallAngleCosZ = cos_approx(degreesToRadians(imuRuntimeConfig.small_angle));
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        imuAccelInBodyFrame.A[axis] = 0;
+        imuMeasuredAccelBF.A[axis] = 0;
     }
 
     imuComputeRotationMatrix();
@@ -492,6 +491,9 @@ static void imuCalculateEstimatedAttitude(float dT)
                 // Re-initialize quaternion from known Roll, Pitch and GPS heading
                 imuComputeQuaternionFromRPY(attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
                 gpsHeadingInitialized = true;
+
+                // Force reset of heading hold target
+                resetHeadingHoldTarget(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
             }
 
             // If we can't use COG and there's MAG available - fallback
@@ -518,7 +520,7 @@ static void imuCalculateEstimatedAttitude(float dT)
 #endif
 
     imuMahonyAHRSupdate(dT,     imuMeasuredRotationBF.A[X], imuMeasuredRotationBF.A[Y], imuMeasuredRotationBF.A[Z],
-                        useAcc, imuMeasuredGravityBF.A[X], imuMeasuredGravityBF.A[Y], imuMeasuredGravityBF.A[Z],
+                        useAcc, imuMeasuredAccelBF.A[X], imuMeasuredAccelBF.A[Y], imuMeasuredAccelBF.A[Z],
                         useMag, mag.magADC[X], mag.magADC[Y], mag.magADC[Z],
                         useCOG, courseOverGround);
 
@@ -552,16 +554,14 @@ static void imuUpdateMeasuredAcceleration(void)
 
 #ifdef ASYNC_GYRO_PROCESSING
     for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        imuAccelInBodyFrame.A[axis] = imuAccumulatedAcc[axis] / imuAccumulatedAccCount;
-        imuMeasuredGravityBF.A[axis] = imuAccelInBodyFrame.A[axis];
+        imuMeasuredAccelBF.A[axis] = imuAccumulatedAcc[axis] / imuAccumulatedAccCount;
         imuAccumulatedAcc[axis] = 0;
     }
     imuAccumulatedAccCount = 0;;
 #else
     /* Convert acceleration to cm/s/s */
     for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        imuAccelInBodyFrame.A[axis] = acc.accADC[axis] * (GRAVITY_CMSS / acc.dev.acc_1G);
-        imuMeasuredGravityBF.A[axis] = imuAccelInBodyFrame.A[axis];
+        imuMeasuredAccelBF.A[axis] = acc.accADC[axis] * (GRAVITY_CMSS / acc.dev.acc_1G);
     }
 #endif
 }

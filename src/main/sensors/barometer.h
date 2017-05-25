@@ -19,7 +19,7 @@
 
 #include "config/parameter_group.h"
 
-#include "drivers/barometer.h"
+#include "drivers/barometer/barometer.h"
 
 typedef enum {
     BARO_NONE = 0,
@@ -27,7 +27,8 @@ typedef enum {
     BARO_BMP085 = 2,
     BARO_MS5611 = 3,
     BARO_BMP280 = 4,
-    BARO_FAKE = 5,
+    BARO_MS5607 = 5,
+    BARO_FAKE = 6,
     BARO_MAX = BARO_FAKE
 } baroSensor_e;
 
@@ -48,9 +49,8 @@ extern baro_t baro;
 
 bool baroInit(void);
 bool baroIsCalibrationComplete(void);
-void baroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
+void baroStartCalibration(void);
 uint32_t baroUpdate(void);
-bool baroIsReady(void);
 int32_t baroCalculateAltitude(void);
 int32_t baroGetLatestAltitude(void);
 bool baroIsHealthy(void);

@@ -97,27 +97,18 @@ static void updateAltitudeVelocityAndPitchController_FW(timeDelta_t deltaMicros)
     static pt1Filter_t velzFilterState;
 
     // On a fixed wing we might not have a reliable climb rate source (if no BARO available), so we can't apply PID controller to
-    // velocity error. We use PID controller on altitude error and calculate desired pitch angle from desired climb rate and forward velocity
+    // velocity error. We use PID controller on altitude error and calculate desired pitch angle
 
-    // FIXME: Use airspeed here
-    float forwardVelocity = MAX(posControl.actualState.velXY, 300.0f);   // Limit min velocity for PID controller at about 10 km/h
+    // Here we use negative values for dive for better clarity
+    int maxClimbDeciDeg = DEGREES_TO_DECIDEGREES(navConfig()->fw.max_climb_angle);
+    int minDiveDeciDeg = -DEGREES_TO_DECIDEGREES(navConfig()->fw.max_dive_angle);
 
-    // Calculate max climb rate from current forward velocity and maximum pitch angle (climb angle is fairly small, approximate tan=sin)
-    float maxVelocityClimb = forwardVelocity * sin_approx(DEGREES_TO_RADIANS(navConfig()->fw.max_climb_angle));
-    float maxVelocityDive = -forwardVelocity * sin_approx(DEGREES_TO_RADIANS(navConfig()->fw.max_dive_angle));
-
-    posControl.desiredState.vel.V.Z = navPidApply2(&posControl.pids.fw_alt, posControl.desiredState.pos.V.Z, posControl.actualState.pos.V.Z, US2S(deltaMicros), maxVelocityDive, maxVelocityClimb, 0);
-    posControl.desiredState.vel.V.Z = pt1FilterApply4(&velzFilterState, posControl.desiredState.vel.V.Z, NAV_FW_VEL_CUTOFF_FREQENCY_HZ, US2S(deltaMicros));
+    float targetPitchAngle = navPidApply2(&posControl.pids.fw_alt, posControl.desiredState.pos.V.Z, posControl.actualState.pos.V.Z, US2S(deltaMicros), minDiveDeciDeg, maxClimbDeciDeg, 0);
+    targetPitchAngle = pt1FilterApply4(&velzFilterState, targetPitchAngle, NAV_FW_PITCH_CUTOFF_FREQENCY_HZ, US2S(deltaMicros));
 
     // Calculate climb angle ( >0 - climb, <0 - dive)
-    int16_t climbAngleDeciDeg = RADIANS_TO_DECIDEGREES(atan2_approx(posControl.desiredState.vel.V.Z, forwardVelocity));
-    climbAngleDeciDeg = constrain(climbAngleDeciDeg, -navConfig()->fw.max_dive_angle * 10, navConfig()->fw.max_climb_angle * 10);
-    posControl.rcAdjustment[PITCH] = climbAngleDeciDeg;
-
-#if defined(NAV_BLACKBOX)
-    navDesiredVelocity[Z] = constrain(posControl.desiredState.vel.V.Z, -32678, 32767);
-    navTargetPosition[Z] = constrain(posControl.desiredState.pos.V.Z, -32678, 32767);
-#endif
+    targetPitchAngle = constrainf(targetPitchAngle, minDiveDeciDeg, maxClimbDeciDeg);
+    posControl.rcAdjustment[PITCH] = targetPitchAngle;
 }
 
 void applyFixedWingAltitudeController(timeUs_t currentTimeUs)
@@ -136,8 +127,7 @@ void applyFixedWingAltitudeController(timeUs_t currentTimeUs)
         return;
     }
 
-    if (posControl.flags.hasValidPositionSensor) {
-        // If we have an update on vertical position data - update velocity and accel targets
+    if (posControl.flags.hasValidAltitudeSensor) {
         if (posControl.flags.verticalPositionDataNew) {
             const timeDelta_t deltaMicrosPositionUpdate = currentTimeUs - previousTimePositionUpdate;
             previousTimePositionUpdate = currentTimeUs;
@@ -297,13 +287,6 @@ static void updatePositionHeadingController_FW(timeUs_t currentTimeUs, timeDelta
 
     // Convert rollAdjustment to decidegrees (rcAdjustment holds decidegrees)
     posControl.rcAdjustment[ROLL] = CENTIDEGREES_TO_DECIDEGREES(rollAdjustment);
-
-    // Update magHold heading lock in case pilot is using MAG mode (prevent MAGHOLD to fight navigation)
-    posControl.desiredState.yaw = wrap_36000(posControl.actualState.yaw + headingError);
-    updateMagHoldHeading(CENTIDEGREES_TO_DEGREES(posControl.desiredState.yaw));
-
-    // Add pitch compensation
-    //posControl.rcAdjustment[PITCH] = -CENTIDEGREES_TO_DECIDEGREES(ABS(rollAdjustment)) * 0.50f;
 }
 
 void applyFixedWingPositionController(timeUs_t currentTimeUs)
@@ -414,7 +397,6 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
 
     // Mix Pitch/Roll/Throttle
     if (isRollAdjustmentValid && (navStateFlags & NAV_CTL_POS)) {
-        pitchCorrection += ABS(posControl.rcAdjustment[ROLL]) * (navConfig()->fw.roll_to_pitch / 100.0f);
         rollCorrection += posControl.rcAdjustment[ROLL];
     }
 
@@ -432,6 +414,7 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
 
     // Limit and apply
     if (isPitchAdjustmentValid && (navStateFlags & NAV_CTL_ALT)) {
+        // PITCH correction is measured according to altitude: <0 - dive/lose altitude, >0 - climb/gain altitude
         // PITCH angle is measured in opposite direction ( >0 - dive, <0 - climb)
         pitchCorrection = constrain(pitchCorrection, -DEGREES_TO_DECIDEGREES(navConfig()->fw.max_dive_angle), DEGREES_TO_DECIDEGREES(navConfig()->fw.max_climb_angle));
         rcCommand[PITCH] = -pidAngleToRcCommand(pitchCorrection, pidProfile()->max_angle_inclination[FD_PITCH]);
@@ -440,15 +423,6 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
     if (isRollAdjustmentValid && (navStateFlags & NAV_CTL_POS)) {
         rollCorrection = constrain(rollCorrection, -DEGREES_TO_DECIDEGREES(navConfig()->fw.max_bank_angle), DEGREES_TO_DECIDEGREES(navConfig()->fw.max_bank_angle));
         rcCommand[ROLL] = pidAngleToRcCommand(rollCorrection, pidProfile()->max_angle_inclination[FD_ROLL]);
-
-        // Calculate coordinated turn rate based on velocity and banking angle
-        if (posControl.actualState.velXY >= 300.0f) {
-            float targetYawRateDPS = RADIANS_TO_DEGREES(tan_approx(DECIDEGREES_TO_RADIANS(-rollCorrection)) * GRAVITY_CMSS / posControl.actualState.velXY);
-            rcCommand[YAW] = pidRateToRcCommand(targetYawRateDPS, currentControlRateProfile->rates[FD_YAW]);
-        }
-        else {
-            rcCommand[YAW] = 0;
-        }
     }
 
     if ((navStateFlags & NAV_CTL_ALT) || (navStateFlags & NAV_CTL_POS)) {
@@ -483,7 +457,7 @@ void applyFixedWingEmergencyLandingController(void)
     // FIXME: Use altitude controller if available (similar to MC code)
     rcCommand[ROLL] = pidAngleToRcCommand(failsafeConfig()->failsafe_fw_roll_angle, pidProfile()->max_angle_inclination[FD_ROLL]);
     rcCommand[PITCH] = pidAngleToRcCommand(failsafeConfig()->failsafe_fw_pitch_angle, pidProfile()->max_angle_inclination[FD_PITCH]);
-    rcCommand[YAW] = pidRateToRcCommand(failsafeConfig()->failsafe_fw_yaw_rate, currentControlRateProfile->rates[FD_YAW]);
+    rcCommand[YAW] = -pidRateToRcCommand(failsafeConfig()->failsafe_fw_yaw_rate, currentControlRateProfile->rates[FD_YAW]);
     rcCommand[THROTTLE] = failsafeConfig()->failsafe_throttle;
 }
 
@@ -498,7 +472,7 @@ void calculateFixedWingInitialHoldPosition(t_fp_vector * pos)
 
 void resetFixedWingHeadingController(void)
 {
-    updateMagHoldHeading(CENTIDEGREES_TO_DEGREES(posControl.actualState.yaw));
+    updateHeadingHoldTarget(CENTIDEGREES_TO_DEGREES(posControl.actualState.yaw));
 }
 
 void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags, timeUs_t currentTimeUs)

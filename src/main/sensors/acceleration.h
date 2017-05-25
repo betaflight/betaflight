@@ -19,7 +19,7 @@
 
 #include "common/axis.h"
 #include "config/parameter_group.h"
-#include "drivers/accgyro.h"
+#include "drivers/accgyro/accgyro.h"
 #include "sensors/sensors.h"
 
 // Type of accelerometer used/detected

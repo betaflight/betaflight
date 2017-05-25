@@ -23,9 +23,9 @@
 
 #include "common/utils.h"
 
-#include "gpio.h"
+#include "drivers/gpio.h"
 
-#include "light_led.h"
+#include "drivers/light_led.h"
 
 void ledInit(void)
 {

@@ -35,7 +35,6 @@ typedef struct failsafeConfig_s {
     uint8_t failsafe_delay;                 // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example (10)
     uint8_t failsafe_recovery_delay;        // Time from RC link recovery to failsafe abort. 1 step = 0.1sec - 1sec in example (10)
     uint8_t failsafe_off_delay;             // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example (200)
-    uint8_t failsafe_kill_switch;           // failsafe switch action is 0: identical to rc link loss, 1: disarms instantly
     uint8_t failsafe_procedure;             // selected full failsafe procedure is 0: auto-landing, 1: Drop it, 2: Return To Home (RTH)
 
     int16_t failsafe_fw_roll_angle;         // Settings to be applies during "LAND" procedure on a fixed-wing
@@ -82,6 +81,7 @@ typedef struct failsafeState_s {
     int16_t events;
     bool monitoring;
     bool active;
+    bool controlling;
     timeMs_t rxDataFailurePeriod;
     timeMs_t rxDataRecoveryPeriod;
     timeMs_t validRxDataReceivedAt;
@@ -110,6 +110,8 @@ void failsafeOnRxResume(void);
 bool failsafeMayRequireNavigationMode(void);
 void failsafeApplyControlInput(void);
 bool failsafeRequiresAngleMode(void);
+bool failsafeRequiresMotorStop(void);
+bool failsafeShouldApplyControlInput(void);
 void failsafeUpdateRcCommandValues(void);
 
 void failsafeOnValidDataReceived(void);

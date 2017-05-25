@@ -36,6 +36,12 @@ typedef enum {
     FRSKY_UNIT_IMPERIALS
 } frskyUnit_e;
 
+typedef enum {
+    LTM_RATE_NORMAL,
+    LTM_RATE_MEDIUM,
+    LTM_RATE_SLOW
+} ltmUpdateRate_e;
+
 typedef struct telemetryConfig_s {
     float gpsNoFixLatitude;
     float gpsNoFixLongitude;
@@ -48,10 +54,12 @@ typedef struct telemetryConfig_s {
     uint8_t hottAlarmSoundInterval;
     uint8_t smartportUartUnidirectional;
     uint8_t ibusTelemetryType;
+    uint8_t ltmUpdateRate;
 } telemetryConfig_t;
 
 PG_DECLARE(telemetryConfig_t, telemetryConfig);
 
+#define TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_IBUS)
 extern serialPort_t *telemetrySharedPort;
 
 void telemetryInit(void);
@@ -62,4 +70,3 @@ void telemetryProcess(timeUs_t currentTimeUs);
 
 bool telemetryDetermineEnabledState(portSharing_e portSharing);
 
-#define TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_LTM)

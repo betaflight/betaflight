@@ -73,29 +73,29 @@ If `arm-none-eabi-gcc` couldn't be found, go back and check that you entered the
 [GNU Tools for ARM Embedded Processors project]: https://launchpad.net/gcc-arm-embedded
 [the older releases]: https://launchpad.net/gcc-arm-embedded/+download
 
-## Checkout CleanFlight sourcecode through git
+## Checkout INAV sourcecode through git
 
 Enter your development directory and clone the [INAV repository][] using the "HTTPS clone URL" which is shown on
 the right side of the INAV GitHub page, like so:
 
 ```
-git clone https://github.com/cleanflight/cleanflight.git
+git clone https://github.com/iNavFlight/inav
 ```
 
-This will download the entire INAV repository for you into a new folder called "cleanflight".
+This will download the entire INAV repository for you into a new folder called "inav".
 
-[CleanFlight repository]: https://github.com/cleanflight/cleanflight
+[INAV repository]: https://github.com/iNavFlight/inav.git
 
 ## Build the code
 
-Enter the cleanflight directory and run `make TARGET=NAZE` to build firmware for the Naze32. When the build completes,
-the .hex firmware should be available as `obj/cleanflight_NAZE.hex` for you to flash using the INAV
+Enter the inav directory and run `make TARGET=NAZE` to build firmware for the Naze32. When the build completes,
+the .hex firmware should be available as `obj/inav_NAZE.hex` for you to flash using the INAV
 Configurator.
 
 ## Updating to the latest source
 
 If you want to erase your local changes and update to the latest version of the INAV source, enter your
-cleanflight directory and run these commands to first erase your local changes, fetch and merge the latest
+inav directory and run these commands to first erase your local changes, fetch and merge the latest
 changes from the repository, then rebuild the firmware:
 
 ```

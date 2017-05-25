@@ -20,15 +20,15 @@
 
 #include "platform.h"
 
-#include "gpio.h"
-#include "light_led.h"
+#include "drivers/gpio.h"
+#include "drivers/light_led.h"
 #include "sound_beeper.h"
-#include "nvic.h"
+#include "drivers/nvic.h"
 #include "build/atomic.h"
 #include "build/build_config.h"
 
-#include "system.h"
-#include "time.h"
+#include "drivers/system.h"
+#include "drivers/time.h"
 
 #ifndef EXTI_CALLBACK_HANDLER_COUNT
 #define EXTI_CALLBACK_HANDLER_COUNT 1

@@ -20,11 +20,11 @@
 
 #include "platform.h"
 
-#include "sensor.h"
-#include "accgyro.h"
-#include "gyro_sync.h"
+#include "drivers/sensor.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/gyro_sync.h"
 
-bool gyroSyncCheckUpdate(gyroDev_t *gyro)
+bool gyroSyncCheckIntStatus(gyroDev_t *gyro)
 {
     if (!gyro->intStatus)
         return false;

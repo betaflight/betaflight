@@ -21,12 +21,12 @@
 
 #include "platform.h"
 
-#include "gpio.h"
-#include "io.h"
+#include "drivers/gpio.h"
+#include "drivers/io.h"
 #include "io_impl.h"
 #include "timer.h"
 
-#include "logging.h"
+#include "drivers/logging.h"
 
 #include "pwm_output.h"
 #include "pwm_rx.h"
@@ -261,6 +261,12 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #if defined(OMNIBUS)
             // remap PWM2 (OUT1) as servo
             if (timerIndex == PWM2 && timerHardwarePtr->tim == TIM8)
+                type = MAP_TO_SERVO_OUTPUT;
+#endif
+
+#if defined(OMNIBUSF4)
+            // remap PWM12 (OUT6) as servo
+            if (timerIndex == PWM12)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 

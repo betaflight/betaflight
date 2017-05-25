@@ -20,15 +20,15 @@
 #include <string.h>
 
 #include "platform.h"
-#include "time.h"
-#include "gpio.h"
+#include "drivers/time.h"
+#include "drivers/gpio.h"
 
-#include "sensor.h"
-#include "accgyro.h"
+#include "drivers/sensor.h"
+#include "drivers/accgyro/accgyro.h"
 
 #include "adc.h"
 #include "adc_impl.h"
-#include "io.h"
+#include "drivers/io.h"
 #include "rcc.h"
 
 #include "common/utils.h"
@@ -126,6 +126,12 @@ void adcInit(drv_adc_config_t *init)
 #ifdef EXTERNAL1_ADC_PIN
     if (init->enableExternal1) {
         adcConfig[ADC_EXTERNAL1].tag = IO_TAG(EXTERNAL1_ADC_PIN);
+    }
+#endif
+
+#ifdef AIRSPEED_ADC_PIN
+    if (init->enableAirSpeed) {
+        adcConfig[ADC_AIRSPEED].tag = IO_TAG(AIRSPEED_ADC_PIN);
     }
 #endif
 

@@ -78,10 +78,7 @@
 
 #define INAV_GPS_TIMEOUT_MS                 1500    // GPS timeout
 #define INAV_BARO_TIMEOUT_MS                200     // Baro timeout
-#define INAV_SONAR_TIMEOUT_MS               200     // Sonar timeout    (missed 3 readings in a row)
-
-#define INAV_SONAR_W1                       0.8461f // Sonar predictive filter gain for altitude
-#define INAV_SONAR_W2                       6.2034f // Sonar predictive filter gain for velocity
+#define INAV_SONAR_TIMEOUT_MS               300     // Sonar timeout    (missed 3 readings in a row)
 
 #define INAV_HISTORY_BUF_SIZE               (INAV_POSITION_PUBLISH_RATE_HZ / 2)     // Enough to hold 0.5 sec historical data
 
@@ -116,17 +113,19 @@ typedef struct {
 typedef struct {
     timeUs_t    lastUpdateTime; // Last update time (us)
     float       alt;            // Raw altitude measurement (cm)
-    float       vel;
 } navPositionEstimatorSONAR_t;
 
 typedef struct {
     timeUs_t    lastUpdateTime; // Last update time (us)
+    // 3D position, velocity and confidence
     t_fp_vector pos;
     t_fp_vector vel;
-    float       surface;
-    float       surfaceVel;
     float       eph;
     float       epv;
+    // Surface offset
+    float       surface;
+    float       surfaceVel;
+    bool        surfaceValid;
 } navPositionEstimatorESTIMATE_t;
 
 typedef struct {
@@ -144,6 +143,7 @@ typedef struct {
 typedef struct {
     t_fp_vector     accelNEU;
     t_fp_vector     accelBias;
+    bool            gravityCalibrationComplete;
 } navPosisitonEstimatorIMU_t;
 
 typedef struct {
@@ -168,17 +168,22 @@ typedef struct {
 
 static navigationPosEstimator_s posEstimator;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(positionEstimationConfig_t, positionEstimationConfig, PG_POSITION_ESTIMATION_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(positionEstimationConfig_t, positionEstimationConfig, PG_POSITION_ESTIMATION_CONFIG, 1);
 
 PG_RESET_TEMPLATE(positionEstimationConfig_t, positionEstimationConfig,
         // Inertial position estimator parameters
         .automatic_mag_declination = 1,
         .reset_altitude_type = NAV_RESET_ALTITUDE_ON_FIRST_ARM,
         .gps_delay_ms = 200,
-        .accz_unarmed_cal = 1,
+        .gravity_calibration_tolerance = 5,     // 5 cm/s/s calibration error accepted (0.5% of gravity)
         .use_gps_velned = 1,         // "Disabled" is mandatory with gps_dyn_model = Pedestrian
 
+        .max_sonar_altitude = 200,
+
         .w_z_baro_p = 0.35f,
+
+        .w_z_sonar_p = 3.500f,
+        .w_z_sonar_v = 6.100f,
 
         .w_z_gps_p = 0.2f,
         .w_z_gps_v = 0.5f,
@@ -421,30 +426,26 @@ void onNewGPSData(void)
 #if defined(BARO)
 /**
  * Read BARO and update alt/vel topic
- *  Function is called at main loop rate, updates happen at reduced rate
+ *  Function is called from TASK_BARO
  */
-static void updateBaroTopic(timeUs_t currentTimeUs)
+void updatePositionEstimator_BaroTopic(timeUs_t currentTimeUs)
 {
-    static navigationTimer_t baroUpdateTimer;
+    static float initialBaroAltitudeOffset = 0.0f;
+    float newBaroAlt = baroCalculateAltitude();
 
-    if (updateTimer(&baroUpdateTimer, HZ2US(INAV_BARO_UPDATE_RATE), currentTimeUs)) {
-        static float initialBaroAltitudeOffset = 0.0f;
-        float newBaroAlt = baroCalculateAltitude();
+    /* If we are required - keep altitude at zero */
+    if (shouldResetReferenceAltitude()) {
+        initialBaroAltitudeOffset = newBaroAlt;
+    }
 
-        /* If we are required - keep altitude at zero */
-        if (shouldResetReferenceAltitude()) {
-            initialBaroAltitudeOffset = newBaroAlt;
-        }
-
-        if (sensors(SENSOR_BARO) && baroIsCalibrationComplete()) {
-            posEstimator.baro.alt = newBaroAlt - initialBaroAltitudeOffset;
-            posEstimator.baro.epv = positionEstimationConfig()->baro_epv;
-            posEstimator.baro.lastUpdateTime = currentTimeUs;
-        }
-        else {
-            posEstimator.baro.alt = 0;
-            posEstimator.baro.lastUpdateTime = 0;
-        }
+    if (sensors(SENSOR_BARO) && baroIsCalibrationComplete()) {
+        posEstimator.baro.alt = newBaroAlt - initialBaroAltitudeOffset;
+        posEstimator.baro.epv = positionEstimationConfig()->baro_epv;
+        posEstimator.baro.lastUpdateTime = currentTimeUs;
+    }
+    else {
+        posEstimator.baro.alt = 0;
+        posEstimator.baro.lastUpdateTime = 0;
     }
 }
 #endif
@@ -474,37 +475,16 @@ static void updatePitotTopic(timeUs_t currentTimeUs)
 #if defined(SONAR)
 /**
  * Read sonar and update alt/vel topic
- *  Function is called at main loop rate, updates happen at reduced rate
+ *  Function is called from TASK_SONAR at arbitrary rate - as soon as new measurements are available
  */
-static void updateSonarTopic(timeUs_t currentTimeUs)
+void updatePositionEstimator_SonarTopic(timeUs_t currentTimeUs)
 {
-    static navigationTimer_t sonarUpdateTimer;
+    float newSonarAlt = rangefinderRead();
+    newSonarAlt = rangefinderCalculateAltitude(newSonarAlt, calculateCosTiltAngle());
 
-    if (updateTimer(&sonarUpdateTimer, HZ2US(INAV_SONAR_UPDATE_RATE), currentTimeUs)) {
-        if (sensors(SENSOR_SONAR)) {
-            /* Read sonar */
-            float newSonarAlt = rangefinderRead();
-            newSonarAlt = rangefinderCalculateAltitude(newSonarAlt, calculateCosTiltAngle());
-
-            /* Apply predictive filter to sonar readings (inspired by PX4Flow) */
-            if (newSonarAlt > 0 && newSonarAlt <= INAV_SONAR_MAX_DISTANCE) {
-                float sonarPredVel, sonarPredAlt;
-                float sonarDt = (currentTimeUs - posEstimator.sonar.lastUpdateTime) * 1e-6;
-                posEstimator.sonar.lastUpdateTime = currentTimeUs;
-
-                sonarPredVel = (sonarDt < 0.25f) ? posEstimator.sonar.vel : 0.0f;
-                sonarPredAlt = posEstimator.sonar.alt + sonarPredVel * sonarDt;
-
-                posEstimator.sonar.alt = sonarPredAlt + INAV_SONAR_W1 * (newSonarAlt - sonarPredAlt);
-                posEstimator.sonar.vel = sonarPredVel + INAV_SONAR_W2 * (newSonarAlt - sonarPredAlt);
-            }
-        }
-        else {
-            /* No sonar */
-            posEstimator.sonar.alt = 0;
-            posEstimator.sonar.vel = 0;
-            posEstimator.sonar.lastUpdateTime = 0;
-        }
+    if (newSonarAlt > 0 && newSonarAlt <= positionEstimationConfig()->max_sonar_altitude) {
+        posEstimator.sonar.alt = newSonarAlt;
+        posEstimator.sonar.lastUpdateTime = currentTimeUs;
     }
 }
 #endif
@@ -516,19 +496,23 @@ static void updateSonarTopic(timeUs_t currentTimeUs)
 static void updateIMUTopic(void)
 {
     static float calibratedGravityCMSS = GRAVITY_CMSS;
+    static timeMs_t gravityCalibrationTimeout = 0;
 
     if (!isImuReady()) {
         posEstimator.imu.accelNEU.V.X = 0;
         posEstimator.imu.accelNEU.V.Y = 0;
         posEstimator.imu.accelNEU.V.Z = 0;
+
+        gravityCalibrationTimeout = millis();
+        posEstimator.imu.gravityCalibrationComplete = false;
     }
     else {
         t_fp_vector accelBF;
 
         /* Read acceleration data in body frame */
-        accelBF.V.X = imuAccelInBodyFrame.V.X;
-        accelBF.V.Y = imuAccelInBodyFrame.V.Y;
-        accelBF.V.Z = imuAccelInBodyFrame.V.Z;
+        accelBF.V.X = imuMeasuredAccelBF.V.X;
+        accelBF.V.Y = imuMeasuredAccelBF.V.Y;
+        accelBF.V.Z = imuMeasuredAccelBF.V.Z;
 
         /* Correct accelerometer bias */
         accelBF.V.X -= posEstimator.imu.accelBias.V.X;
@@ -544,13 +528,30 @@ static void updateIMUTopic(void)
         posEstimator.imu.accelNEU.V.Z = accelBF.V.Z;
 
         /* When unarmed, assume that accelerometer should measure 1G. Use that to correct accelerometer gain */
-        //if (!ARMING_FLAG(ARMED) && imuRuntimeConfig->acc_unarmedcal) {
-        if (!ARMING_FLAG(ARMED) && positionEstimationConfig()->accz_unarmed_cal) {
+        if (!ARMING_FLAG(ARMED) && !posEstimator.imu.gravityCalibrationComplete) {
             // Slowly converge on calibrated gravity while level
-            calibratedGravityCMSS += (posEstimator.imu.accelNEU.V.Z - calibratedGravityCMSS) * 0.0025f;
+            const float gravityOffsetError = posEstimator.imu.accelNEU.V.Z - calibratedGravityCMSS;
+            calibratedGravityCMSS += gravityOffsetError * 0.0025f;
+
+            if (ABS(gravityOffsetError) < positionEstimationConfig()->gravity_calibration_tolerance) {  // Error should be within 0.5% of calibrated gravity
+                if ((millis() - gravityCalibrationTimeout) > 250) {
+                    posEstimator.imu.gravityCalibrationComplete = true;
+                }
+            }
+            else {
+                gravityCalibrationTimeout = millis();
+            }
         }
 
-        posEstimator.imu.accelNEU.V.Z -= calibratedGravityCMSS;
+        /* If calibration is incomplete - report zero acceleration */
+        if (posEstimator.imu.gravityCalibrationComplete) {
+            posEstimator.imu.accelNEU.V.Z -= calibratedGravityCMSS;
+        }
+        else {
+            posEstimator.imu.accelNEU.V.X = 0;
+            posEstimator.imu.accelNEU.V.Y = 0;
+            posEstimator.imu.accelNEU.V.Z = 0;
+        }
 
 #if defined(NAV_BLACKBOX)
         /* Update blackbox values */
@@ -812,17 +813,25 @@ static void updateEstimatedTopic(timeUs_t currentTimeUs)
 
     /* Surface offset */
 #if defined(SONAR)
+    posEstimator.est.surface = posEstimator.est.surface + posEstimator.est.surfaceVel * dt;
+
     if (isSonarValid) {
-        posEstimator.est.surface = posEstimator.sonar.alt;
-        posEstimator.est.surfaceVel = posEstimator.sonar.vel;
+        const float sonarResidual = posEstimator.sonar.alt - posEstimator.est.surface;
+        const float bellCurveScaler = scaleRangef(bellCurve(sonarResidual, 50.0f), 0.0f, 1.0f, 0.1f, 1.0f);
+
+        posEstimator.est.surface += sonarResidual * positionEstimationConfig()->w_z_sonar_p * bellCurveScaler * dt;
+        posEstimator.est.surfaceVel += sonarResidual * positionEstimationConfig()->w_z_sonar_v * sq(bellCurveScaler) * dt;
+        posEstimator.est.surfaceValid = true;
     }
     else {
-        posEstimator.est.surface = -1;
-        posEstimator.est.surfaceVel = 0;
+        posEstimator.est.surfaceVel = 0; // Zero out velocity to prevent estimate to drift away
+        posEstimator.est.surfaceValid = false;
     }
+
 #else
     posEstimator.est.surface = -1;
     posEstimator.est.surfaceVel = 0;
+    posEstimator.est.surfaceValid = false;
 #endif
 
     /* Update uncertainty */
@@ -860,12 +869,7 @@ static void publishEstimatedTopic(timeUs_t currentTimeUs)
         }
 
         /* Publish surface distance */
-        if (posEstimator.est.surface > 0) {
-            updateActualSurfaceDistance(true, posEstimator.est.surface, posEstimator.est.surfaceVel);
-        }
-        else {
-            updateActualSurfaceDistance(false, -1, 0);
-        }
+        updateActualSurfaceDistance(posEstimator.est.surfaceValid, posEstimator.est.surface, posEstimator.est.surfaceVel);
 
         /* Store history data */
         posEstimator.history.pos[posEstimator.history.index] = posEstimator.est.pos;
@@ -909,6 +913,8 @@ void initializePositionEstimator(void)
 
     posEstimator.history.index = 0;
 
+    posEstimator.imu.gravityCalibrationComplete = false;
+
     for (axis = 0; axis < 3; axis++) {
         posEstimator.imu.accelBias.A[axis] = 0;
         posEstimator.est.pos.A[axis] = 0;
@@ -935,16 +941,8 @@ void updatePositionEstimator(void)
     const timeUs_t currentTimeUs = micros();
 
     /* Periodic sensor updates */
-#if defined(BARO)
-    updateBaroTopic(currentTimeUs);
-#endif
-
 #if defined(PITOT)
     updatePitotTopic(currentTimeUs);
-#endif
-
-#if defined(SONAR)
-    updateSonarTopic(currentTimeUs);
 #endif
 
     /* Read updates from IMU, preprocess */
@@ -955,6 +953,11 @@ void updatePositionEstimator(void)
 
     /* Publish estimate */
     publishEstimatedTopic(currentTimeUs);
+}
+
+bool navIsCalibrationComplete(void)
+{
+    return posEstimator.imu.gravityCalibrationComplete;
 }
 
 #endif

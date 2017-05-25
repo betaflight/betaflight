@@ -31,6 +31,8 @@
 #include "rx/rx.h"
 #include "rx/xbus.h"
 
+#include "telemetry/telemetry.h"
+
 //
 // Serial driver for JR's XBus (MODE B) receiver
 //
@@ -314,7 +316,25 @@ bool xBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         return false;
     }
 
-    serialPort_t *xBusPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, xBusDataReceive, baudRate, MODE_RX, SERIAL_NOT_INVERTED);
+#ifdef TELEMETRY
+    bool portShared = telemetryCheckRxPortShared(portConfig);
+#else
+    bool portShared = false;
+#endif
+
+    serialPort_t *xBusPort = openSerialPort(portConfig->identifier, 
+        FUNCTION_RX_SERIAL, 
+        xBusDataReceive, 
+        baudRate, 
+        portShared ? MODE_RXTX : MODE_RX, 
+        SERIAL_NOT_INVERTED | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
+        );
+
+#ifdef TELEMETRY
+    if (portShared) {
+        telemetrySharedPort = xBusPort;
+    }
+#endif
 
     return xBusPort != NULL;
 }

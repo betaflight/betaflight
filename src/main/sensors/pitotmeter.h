@@ -25,7 +25,9 @@ typedef enum {
     PITOT_NONE = 0,
     PITOT_AUTODETECT = 1,
     PITOT_MS4525 = 2,
-    PITOT_FAKE = 3,
+    PITOT_ADC = 3,
+    PITOT_VIRTUAL = 4,
+    PITOT_FAKE = 5,
 } pitotSensor_e;
 
 #define PITOT_MAX  PITOT_FAKE
@@ -49,8 +51,7 @@ extern pitot_t pitot;
 
 bool pitotInit(void);
 bool pitotIsCalibrationComplete(void);
-void pitotSetCalibrationCycles(uint16_t calibrationCyclesRequired);
+void pitotStartCalibration(void);
 uint32_t pitotUpdate(void);
-bool pitotIsReady(void);
 int32_t pitotCalculateAirSpeed(void);
 bool pitotIsHealthy(void);

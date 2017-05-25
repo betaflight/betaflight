@@ -13,7 +13,7 @@ Per-cell monitoring is not supported, as we only use one ADC to read the battery
 
 ## Supported targets
 
-All targets support battery voltage monitoring unless status.
+All targets support battery voltage monitoring unless stated.
 
 ## Connections
 

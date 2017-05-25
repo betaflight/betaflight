@@ -29,8 +29,8 @@
 #include "build/build_config.h"
 
 #include "common/utils.h"
-#include "io.h"
-#include "nvic.h"
+#include "drivers/io.h"
+#include "drivers/nvic.h"
 #include "inverter.h"
 #include "dma.h"
 

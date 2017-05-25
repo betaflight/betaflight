@@ -110,7 +110,10 @@
 #define SPI4_MOSI_PIN           PE14
 
 #define USE_SDCARD
+
+// This is needed for BangGood board that used wrong sdcard socket!!!
 #define SDCARD_DETECT_INVERTED
+
 #define SDCARD_DETECT_PIN                   PD3
 #define SDCARD_DETECT_EXTI_LINE             EXTI_Line3
 #define SDCARD_DETECT_EXTI_PIN_SOURCE       EXTI_PinSource3

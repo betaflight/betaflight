@@ -45,6 +45,7 @@
 #include "sensors/gyro.h"
 #include "sensors/battery.h"
 
+#include "fc/fc_core.h"
 #include "fc/cli.h"
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -103,6 +104,7 @@ int16_t telemTemperature1;      // gyro sensor temperature
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
 static bool isRXDataNew;
+static disarmReason_t lastDisarmReason = DISARM_NONE;
 
 bool isCalibrating(void)
 {
@@ -112,9 +114,27 @@ bool isCalibrating(void)
     }
 #endif
 
-    // Note: compass calibration is handled completely differently, outside of the main loop, see f.CALIBRATE_MAG
+#ifdef PITOT
+    if (sensors(SENSOR_PITOT) && !pitotIsCalibrationComplete()) {
+        return true;
+    }
+#endif
 
-    return (!accIsCalibrationComplete() && sensors(SENSOR_ACC)) || (!gyroIsCalibrationComplete());
+#ifdef NAV
+    if (!navIsCalibrationComplete()) {
+        return true;
+    }
+#endif
+
+    if (!accIsCalibrationComplete() && sensors(SENSOR_ACC)) {
+        return true;
+    }
+
+    if (!gyroIsCalibrationComplete()) {
+        return true;
+    }
+
+    return false;
 }
 
 int16_t getAxisRcCommand(int16_t rawData, int16_t rate, int16_t deadband)
@@ -175,7 +195,7 @@ void annexCode(void)
 {
     int32_t throttleValue;
 
-    if (failsafeIsActive()) {
+    if (failsafeShouldApplyControlInput()) {
         // Failsafe will apply rcCommand for us
         failsafeApplyControlInput();
     }
@@ -220,26 +240,27 @@ void annexCode(void)
 
         warningLedUpdate();
     }
-
-    // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
-    if (gyro.dev.temperature) {
-        gyro.dev.temperature(&gyro.dev, &telemTemperature1);
-    }
 }
 
-void mwDisarm(void)
+void mwDisarm(disarmReason_t disarmReason)
 {
     if (ARMING_FLAG(ARMED)) {
+        lastDisarmReason = disarmReason;
         DISABLE_ARMING_FLAG(ARMED);
 
 #ifdef BLACKBOX
         if (feature(FEATURE_BLACKBOX)) {
-            finishBlackbox();
+            blackboxFinish();
         }
 #endif
 
         beeper(BEEPER_DISARMING);      // emit disarm tone
     }
+}
+
+disarmReason_t getDisarmReason(void)
+{
+    return lastDisarmReason;
 }
 
 #define TELEMETRY_FUNCTION_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_SMARTPORT | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_MAVLINK | FUNCTION_TELEMETRY_IBUS)
@@ -258,7 +279,7 @@ void mwArm(void)
         if (ARMING_FLAG(ARMED)) {
             return;
         }
-        if (IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
+        if (IS_RC_MODE_ACTIVE(BOXFAILSAFE) || IS_RC_MODE_ACTIVE(BOXKILLSWITCH)) {
             return;
         }
         if (!ARMING_FLAG(PREVENT_ARMING)) {
@@ -266,7 +287,7 @@ void mwArm(void)
             ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
             headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 
-            resetMagHoldHeading(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
+            resetHeadingHoldTarget(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
 
 #ifdef BLACKBOX
             if (feature(FEATURE_BLACKBOX)) {
@@ -274,7 +295,7 @@ void mwArm(void)
                 if (sharedBlackboxAndMspPort) {
                     mspSerialReleasePortIfAllocated(sharedBlackboxAndMspPort);
                 }
-                startBlackbox();
+                blackboxStart();
             }
 #endif
             disarmAt = millis() + armingConfig()->auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
@@ -307,7 +328,7 @@ void processRx(timeUs_t currentTimeUs)
     // in 3D mode, we need to be able to disarm by switch at any time
     if (feature(FEATURE_3D)) {
         if (!IS_RC_MODE_ACTIVE(BOXARM))
-            mwDisarm();
+            mwDisarm(DISARM_SWITCH_3D);
     }
 
     updateRSSI(currentTimeUs);
@@ -334,7 +355,7 @@ void processRx(timeUs_t currentTimeUs)
                     && (int32_t)(disarmAt - millis()) < 0
                 ) {
                     // auto-disarm configured and delay is over
-                    mwDisarm();
+                    mwDisarm(DISARM_TIMEOUT);
                     armedBeeperOn = false;
                 } else {
                     // still armed; do warning beeps while armed
@@ -404,17 +425,6 @@ void processRx(timeUs_t currentTimeUs)
         LED1_OFF;
     }
 
-#ifdef USE_FLM_HEADLOCK
-    /* Heading lock mode */
-    if (IS_RC_MODE_ACTIVE(BOXHEADINGLOCK)) {
-        if (!FLIGHT_MODE(HEADING_LOCK)) {
-            ENABLE_FLIGHT_MODE(HEADING_LOCK);
-        }
-    } else {
-        DISABLE_FLIGHT_MODE(HEADING_LOCK);
-    }
-#endif
-
 #ifdef USE_SERVOS
     /* Flaperon mode */
     if (IS_RC_MODE_ACTIVE(BOXFLAPERON) && STATE(FLAPERON_AVAILABLE)) {
@@ -437,16 +447,19 @@ void processRx(timeUs_t currentTimeUs)
     }
 #endif
 
-#if defined(MAG)
-    if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
-        if (IS_RC_MODE_ACTIVE(BOXMAG)) {
-            if (!FLIGHT_MODE(MAG_MODE)) {
-                resetMagHoldHeading(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
-                ENABLE_FLIGHT_MODE(MAG_MODE);
+    if (sensors(SENSOR_ACC)) {
+        if (IS_RC_MODE_ACTIVE(BOXHEADINGHOLD)) {
+            if (!FLIGHT_MODE(HEADING_MODE)) {
+                resetHeadingHoldTarget(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
+                ENABLE_FLIGHT_MODE(HEADING_MODE);
             }
         } else {
-            DISABLE_FLIGHT_MODE(MAG_MODE);
+            DISABLE_FLIGHT_MODE(HEADING_MODE);
         }
+    }
+
+#if defined(MAG)
+    if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
         if (IS_RC_MODE_ACTIVE(BOXHEADFREE)) {
             if (!FLIGHT_MODE(HEADFREE_MODE)) {
                 ENABLE_FLIGHT_MODE(HEADFREE_MODE);
@@ -461,7 +474,7 @@ void processRx(timeUs_t currentTimeUs)
 #endif
 
     // Navigation may override PASSTHRU_MODE
-    if (IS_RC_MODE_ACTIVE(BOXPASSTHRU) && !naivationRequiresAngleMode()) {
+    if (IS_RC_MODE_ACTIVE(BOXPASSTHRU) && !naivationRequiresAngleMode() && !failsafeRequiresAngleMode()) {
         ENABLE_FLIGHT_MODE(PASSTHRU_MODE);
     } else {
         DISABLE_FLIGHT_MODE(PASSTHRU_MODE);
@@ -500,6 +513,10 @@ void processRx(timeUs_t currentTimeUs)
     if (mixerConfig()->mixerMode == MIXER_FLYING_WING || mixerConfig()->mixerMode == MIXER_AIRPLANE || mixerConfig()->mixerMode == MIXER_CUSTOM_AIRPLANE) {
         DISABLE_FLIGHT_MODE(HEADFREE_MODE);
     }
+
+#if defined(AUTOTUNE_FIXED_WING) || defined(AUTOTUNE_MULTIROTOR)
+    autotuneUpdateState();
+#endif
 
 #ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY)) {
@@ -563,7 +580,7 @@ void taskGyro(timeUs_t currentTimeUs) {
 
     if (gyroConfig()->gyroSync) {
         while (true) {
-            if (gyroSyncCheckUpdate(&gyro.dev) || ((currentDeltaTime + cmpTimeUs(micros(), currentTimeUs)) >= (getGyroUpdateRate() + GYRO_WATCHDOG_DELAY))) {
+            if (gyroSyncCheckUpdate() || ((currentDeltaTime + cmpTimeUs(micros(), currentTimeUs)) >= (getGyroUpdateRate() + GYRO_WATCHDOG_DELAY))) {
                 break;
             }
         }
@@ -707,7 +724,7 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
 
 #ifdef BLACKBOX
     if (!cliMode && feature(FEATURE_BLACKBOX)) {
-        handleBlackbox(micros());
+        blackboxUpdate(micros());
     }
 #endif
 }

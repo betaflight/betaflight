@@ -26,8 +26,7 @@
 extern int16_t throttleAngleCorrection;
 extern int16_t smallAngle;
 
-extern t_fp_vector imuAccelInBodyFrame;         // cm/s/s
-extern t_fp_vector imuMeasuredGravityBF;        // cm/s/s
+extern t_fp_vector imuMeasuredAccelBF;         // cm/s/s
 extern t_fp_vector imuMeasuredRotationBF;       // rad/s
 
 typedef union {

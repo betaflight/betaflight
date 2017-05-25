@@ -72,6 +72,7 @@ static uint8_t rssi_channel; // Stores the RX RSSI channel.
 static volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
 
 static rxRuntimeConfig_t *rxRuntimeConfigPtr;
+static serialPort_t *serialPort;
 
 #ifdef SPEKTRUM_BIND
 static IO_t BindPin = DEFIO_IO(NONE);
@@ -283,11 +284,17 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
     bool portShared = false;
 #endif
 
-    serialPort_t *spektrumPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, spektrumDataReceive, SPEKTRUM_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, SERIAL_NOT_INVERTED);
+    serialPort = openSerialPort(portConfig->identifier,
+        FUNCTION_RX_SERIAL,
+        spektrumDataReceive,
+        SPEKTRUM_BAUDRATE,
+        portShared ? MODE_RXTX : MODE_RX,
+        SERIAL_NOT_INVERTED | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
+        );
 
 #ifdef TELEMETRY
     if (portShared) {
-        telemetrySharedPort = spektrumPort;
+        telemetrySharedPort = serialPort;
     }
 #endif
 
@@ -296,6 +303,6 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
         rssi_channel = 0;
     }
 
-    return spektrumPort != NULL;
+    return serialPort != NULL;
 }
 #endif // USE_SERIALRX_SPEKTRUM

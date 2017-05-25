@@ -40,8 +40,6 @@ typedef union flightDynamicsTrims_u {
 
 #define CALIBRATING_GYRO_CYCLES             1000
 #define CALIBRATING_ACC_CYCLES              400
-#define CALIBRATING_BARO_CYCLES             200 // 10 seconds init_delay + 200 * 25 ms = 15 seconds before ground pressure settles
-#define CALIBRATING_PITOT_CYCLES            200
 
 // These bits have to be aligned with sensorIndex_e
 typedef enum {

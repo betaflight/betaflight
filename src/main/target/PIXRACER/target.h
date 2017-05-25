@@ -32,8 +32,7 @@
 #define BEEPER                  PA15
 #define BEEPER_INVERTED
 
-#define INVERTER                PC13
-#define INVERTER_USART          USART6
+#define INVERTER_PIN_UART       PC13
 
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
@@ -44,21 +43,17 @@
 #define GYRO_MPU6500_ALIGN      CW180_DEG_FLIP
 #define ACC_MPU6500_ALIGN       CW180_DEG_FLIP
 
-#ifdef PIXRACER_ICM20608
-    // Variant that uses ICM20608 gyro/acc
-    #define MPU6500_CS_PIN          PC15
-    #define MPU6500_SPI_INSTANCE    SPI1
-
-    #define MPU_INT_EXTI            PC14        // ICM20608
-#else
-    // Variant to use MPU9250 gyro/acc/mag
-    #define USE_MAG_AK8963
-
-    #define MPU6500_CS_PIN          PC2
-    #define MPU6500_SPI_INSTANCE    SPI1
-
-    #define MPU_INT_EXTI            PD15        // MPU9250
-#endif
+#define USE_DUAL_GYRO
+#define ICM20608_CS_PIN         PC15
+#define ICM20608_SPI_INSTANCE   SPI1
+#define GYRO_0_CS_PIN           ICM20608_CS_PIN
+#define GYRO_0_INT_EXTI         PC14
+// MPU9250 gyro/acc/mag
+#define USE_MAG_AK8963
+#define MPU6500_CS_PIN          PC2
+#define GYRO_1_CS_PIN           MPU6500_CS_PIN
+#define MPU6500_SPI_INSTANCE    SPI1
+#define GYRO_1_INT_EXTI         PD15
 
 #define ACC
 #define GYRO
@@ -67,8 +62,8 @@
 #define BARO
 #define USE_BARO_MS5611
 #define USE_BARO_SPI_MS5611
-#define MS5611_CS_PIN               PD7
-#define MS5611_SPI_INSTANCE         SPI2
+#define MS56XX_CS_PIN               PD7
+#define MS56XX_SPI_INSTANCE         SPI2
 
 /*
 #define USE_SDCARD

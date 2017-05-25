@@ -55,23 +55,23 @@ sudo apt-get install gcc-arm-none-eabi=4.9.3.2014q4-0precise12
 After the ARM toolchain from Terry is installed, you should be able to build from source.
 ```
 cd src
-git clone git@github.com:cleanflight/cleanflight.git
-cd cleanflight
+git clone git@github.com:iNavFlight/inav.git
+cd inav
 make TARGET=NAZE
 ```
 
 You'll see a set of files being compiled, and finally linked, yielding both an ELF and then a HEX:
 ```
 ...
-arm-none-eabi-size ./obj/main/cleanflight_NAZE.elf
+arm-none-eabi-size ./obj/main/inav_NAZE.elf
    text    data     bss     dec     hex filename
-  97164     320   11080  108564   1a814 ./obj/main/cleanflight_NAZE.elf
-arm-none-eabi-objcopy -O ihex --set-start 0x8000000 obj/main/cleanflight_NAZE.elf obj/cleanflight_NAZE.hex
-$ ls -la obj/cleanflight_NAZE.hex                                                                                                                                                 
--rw-rw-r-- 1 pim pim 274258 Jan 12 21:45 obj/cleanflight_NAZE.hex
+  97164     320   11080  108564   1a814 ./obj/main/inav_NAZE.elf
+arm-none-eabi-objcopy -O ihex --set-start 0x8000000 obj/main/inav_NAZE.elf obj/inav_NAZE.hex
+$ ls -la obj/inav_NAZE.hex                                                                                                                                                 
+-rw-rw-r-- 1 pim pim 274258 Jan 12 21:45 obj/inav_NAZE.hex
 ```
 
-You can use the INAV-Configurator to flash the ```obj/cleanflight_NAZE.hex``` file.
+You can use the INAV-Configurator to flash the ```obj/inav_NAZE.hex``` file.
 
 ## Bricked/Bad build?
 
@@ -89,10 +89,10 @@ Make sure to remove `obj/` and `make clean`, before building again.
 
 ## Updating and rebuilding
 
-Navigate to the local cleanflight repository and use the following steps to pull the latest changes and rebuild your version of cleanflight:
+Navigate to the local INAV repository and use the following steps to pull the latest changes and rebuild your version of INAV:
 
 ```
-cd src/cleanflight
+cd src/inav
 git reset --hard
 git pull
 make clean TARGET=NAZE

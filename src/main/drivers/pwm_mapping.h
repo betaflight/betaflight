@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "io_types.h"
+#include "drivers/io_types.h"
 
 #if defined(USE_QUAD_MIXER_ONLY)
 #define MAX_PWM_MOTORS  4

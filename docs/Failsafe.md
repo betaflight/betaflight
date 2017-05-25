@@ -7,7 +7,7 @@ There are two types of failsafe:
 
 Receiver based failsafe is where you, from your transmitter and receiver, configure channels to output desired signals if your receiver detects signal loss and goes to the __failsafe mode__. The idea is that you set throttle and other controls so the aircraft descends in a controlled manner.  See your receiver's documentation for this method.
 
-Flight controller based failsafe is where the flight controller attempts to detect signal loss and/or the __failsafe mode__ of your receiver and upon detection goes to __failsafe stage 1__. The idea is that the flight controller starts using __fallback settings__ for all controls, which are set by you, using the CLI command `rxfail` (see `rxfail` section in rx documentation) or the cleanflight-configurator GUI.
+Flight controller based failsafe is where the flight controller attempts to detect signal loss and/or the __failsafe mode__ of your receiver and upon detection goes to __failsafe stage 1__. The idea is that the flight controller starts using __fallback settings__ for all controls, which are set by you, using the CLI command `rxfail` (see `rxfail` section in rx documentation) or the inav-configurator GUI.
 
 It is possible to use both types at the same time, which may be desirable.  Flight controller failsafe can even help if your receiver signal wires come loose, get damaged or your receiver malfunctions in a way the receiver itself cannot detect.
 
@@ -28,12 +28,9 @@ __Stage 2__ is not activated until 5 seconds after the flight controller boots u
 __Stage 2__ will be aborted when it was due to:
 
 * a lost RC signal and the RC signal has recovered.
-* a transmitter failsafe switch was set to ON position and the switch is set to OFF position (and `failsafe_kill_switch` is set to OFF).
 
 Note that:
 * At the end of the stage 2 procedure, the flight controller will be disarmed and re-arming will be locked until the signal from the receiver is restored for 30 seconds AND the arming switch is in the OFF position (when an arm switch is in use).
-
-* When `failsafe_kill_switch` is set to ON and the rc switch configured for failsafe is set to ON, the craft is instantly disarmed. Re-arming is possible when the signal from the receiver has restored for at least 3 seconds AND the arming switch is in the OFF position (when one is in use). Similar effect can be achieved by setting 'failsafe_throttle' to 1000 and 'failsafe_off_delay' to 0. This is not the prefered method, since the reaction is slower and re-arming will be locked.
 
 * Prior to starting a stage 2 intervention it is checked if the throttle position was below `min_throttle` level for the last `failsafe_throttle_low_delay` seconds. If it was, the craft is assumed to be on the ground and is only disarmed. It may be re-armed without a power cycle. This feature can be disabled completely by 
 setting `failsafe_throttle_low_delay` to zero. This is useful for gliders that may fly long with zero throttle.
@@ -86,26 +83,22 @@ Guard time for failsafe de-activation after signal is recovered.  This is the am
 
 ### `failsafe_off_delay`
 
-Delay after failsafe activates before motors finally turn off.  This is the amount of time 'failsafe_throttle' is active.  If you fly at higher altitudes you may need more time to descend safely.
+Delay after failsafe activates before motors finally turn off.  This is the amount of time 'failsafe_throttle' is active.  If you fly at higher altitudes you may need more time to descend safely. Set to zero to keep `failsafe_throttle` active indefinitely. Has no effect when `failsafe_procedure = RTH`
 
 ### `failsafe_throttle`
 
 Throttle level used for landing.  Specify a value that causes the aircraft to descend at about 1M/sec. Default is set to 1000 which should correspond to throttle off.
 
-### `failsafe_kill_switch`
-
-Configure the rc switched failsafe action: the same action as when the rc link is lost (set to OFF) or disarms instantly (set to ON). Also see above.
-
 ### `failsafe_throttle_low_delay`
 
-Time throttle level must have been below 'min_throttle' to _only disarm_ instead of _full failsafe procedure_.
+Time throttle level must have been below 'min_throttle' to _only disarm_ instead of _full failsafe procedure_. Set to zero to disable.
 
 Use standard RX usec values.  See Rx documentation.
 
 ### `failsafe_procedure`
 
-* __Drop:__ Just kill the motors and disarm (crash the craft).
-* __Land:__ Enable an auto-level mode, center the flight sticks and set the throttle to a predefined value (`failsafe_throttle`) for a predefined time (`failsafe_off_delay`). This should allow the craft to come to a safer landing.
+* __DROP:__ Just kill the motors and disarm (crash the craft).
+* __SET-THR:__ Enable an auto-level mode (for multirotor) or enter preconfigured roll/pitch/yaw spiral down (for airplanes) and set the throttle to a predefined value (`failsafe_throttle`) for a predefined time (`failsafe_off_delay`). This should allow the craft to come to a safer landing.
 * __RTH:__ Attempt to return and land the drone at the point of launch. GPS and Barometer required for proper operation. If this more is selected and GPS is not available - the drone will be landed immediately.
 * __NONE:__ Do nothing. This is least safe method but it could be used to execute WP missions outside of RC radio coverage.
 
@@ -116,6 +109,20 @@ This parameter defines recovery from failsafe by stick motion. When set to zero 
 When this is set to a non-zero value - failsafe won't clear even if RC link is recovered. You will have to deflect any of Roll/Pitch/Yaw sticks beyond this value to exit failsafe.
 
 One use-case is Failsafe-RTH. When on the edge of radio coverage you may end up entering and exiting RTH if radio link is sporadic - happens a lot with long-range pilots. Setting `failsafe_stick_threshold` to a certain value (i.e. 100) RTH will be initiated on first signal loss and will continue as long as pilots want it to continue. When RC link is solid (based on RSSI etc) pilot will move sticks and regain control.
+
+### `failsafe_fw_roll_angle`
+
+When `SET-THR` failsafe is executed on a fixed-wing craft it's not safe to keep it level - airplane can glide for long distances. 
+
+This parameter defines amount of roll angle (in 1/10 deg units) to execute on failsafe. Negative = LEFT
+
+### `failsafe_fw_pitch_angle`
+
+This parameter defines amount of pitch angle (in 1/10 deg units) to execute on `SET-THR` failsafe for an airplane. Negative = CLIMB
+
+### `failsafe_fw_yaw_rate`
+
+This parameter defines amount of yaw rate (in deg per second units) to execute on `SET-THR` failsafe for an airplane. Negative = LEFT
 
 ### `rx_min_usec`
 

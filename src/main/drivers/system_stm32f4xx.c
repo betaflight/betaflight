@@ -21,12 +21,12 @@
 
 #include "platform.h"
 
-#include "accgyro_mpu.h"
-#include "exti.h"
-#include "nvic.h"
-#include "system.h"
+#include "drivers/accgyro/accgyro_mpu.h"
+#include "drivers/exti.h"
+#include "drivers/nvic.h"
+#include "drivers/system.h"
 
-#include "exti.h"
+#include "drivers/exti.h"
 
 
 #define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
@@ -34,8 +34,8 @@ void SetSysClock(void);
 
 void systemReset(void)
 {
-    if (mpuReset) {
-        mpuReset();
+    if (mpuResetFn) {
+        mpuResetFn();
     }
 
     __disable_irq();
@@ -44,8 +44,8 @@ void systemReset(void)
 
 void systemResetToBootloader(void)
 {
-    if (mpuReset) {
-        mpuReset();
+    if (mpuResetFn) {
+        mpuResetFn();
     }
 
     *((uint32_t *)0x2001FFFC) = 0xDEADBEEF; // 128KB SRAM STM32F4XX

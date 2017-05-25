@@ -39,6 +39,8 @@
 #include "rx/rx.h"
 #include "rx/sumh.h"
 
+#include "telemetry/telemetry.h"
+
 // driver for SUMH receiver using UART2
 
 #define SUMH_BAUDRATE 115200
@@ -125,7 +127,19 @@ bool sumhInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         return false;
     }
 
-    sumhPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, sumhDataReceive, SUMH_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
+#ifdef TELEMETRY
+    bool portShared = telemetryCheckRxPortShared(portConfig);
+#else
+    bool portShared = false;
+#endif
+
+    sumhPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, sumhDataReceive, SUMH_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, SERIAL_NOT_INVERTED);
+
+#ifdef TELEMETRY
+    if (portShared) {
+        telemetrySharedPort = sumhPort;
+    }
+#endif
 
     return sumhPort != NULL;
 }

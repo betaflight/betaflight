@@ -36,10 +36,9 @@
 #define GPS
 #define GPS_PROTO_UBLOX
 #define NAV
+#define USE_FLM_TURN_ASSIST     // This is mandatory for fixed-wing navigation
 #define TELEMETRY
 #define TELEMETRY_LTM
-#define USE_FLM_HEADLOCK
-#define USE_FLM_TURN_ASSIST
 #define TELEMETRY_FRSKY
 #endif
 
@@ -50,6 +49,7 @@
 #endif
 
 #if (FLASH_SIZE > 128)
+#define AUTOTUNE_FIXED_WING
 #define ASYNC_GYRO_PROCESSING
 #define BOOTLOG
 #define BOOTLOG_DESCRIPTIONS
@@ -80,6 +80,7 @@
 #define USE_SERIALRX_JETIEXBUS
 #define USE_SERIALRX_CRSF
 #define USE_PMW_SERVO_DRIVER
+#define USE_SERIAL_PASSTHROUGH
 #define PWM_DRIVER_PCA9685
 #define NAV_MAX_WAYPOINTS       60
 #define MAX_BOOTLOG_ENTRIES     64

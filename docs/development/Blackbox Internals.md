@@ -11,9 +11,9 @@ rate of 900Hz. That's about 25,000 bytes per second, which is 250,000 baud with 
 
 Please refer to the source code to clarify anything this document leaves unclear:
 
-* INAV's Blackbox logger: [blackbox.c](https://github.com/cleanflight/cleanflight/blob/master/src/main/blackbox/blackbox.c),
-[blackbox_io.c](https://github.com/cleanflight/cleanflight/blob/master/src/main/blackbox/blackbox_io.c),
-[blackbox_fielddefs.h](https://github.com/cleanflight/cleanflight/blob/master/src/main/blackbox/blackbox_fielddefs.h)
+* INAV's Blackbox logger: [blackbox.c](https://github.com/iNavFlight/inav/blob/master/src/main/blackbox/blackbox.c),
+[blackbox_io.c](https://github.com/iNavFlight/inav/blob/master/src/main/blackbox/blackbox_io.c),
+[blackbox_fielddefs.h](https://github.com/iNavFlight/inav/blob/master/src/main/blackbox/blackbox_fielddefs.h)
 * [C implementation of the Blackbox log decoder](https://github.com/cleanflight/blackbox-tools/blob/master/src/parser.c)
 * [JavaScript implementation of the Blackbox log decoder](https://github.com/cleanflight/blackbox-log-viewer/blob/master/js/flightlog_parser.js)
 
