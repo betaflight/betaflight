@@ -281,7 +281,7 @@ void init(void)
     busSwitchInit();
 #endif
 
-#ifdef USE_UART
+#if defined(USE_UART) && !defined(SITL)
     uartPinConfigure(serialPinConfig());
 #endif
 
@@ -342,7 +342,7 @@ void init(void)
     beeperInit(beeperDevConfig());
 #endif
 /* temp until PGs are implemented. */
-#ifdef USE_INVERTER
+#if defined(USE_INVERTER) && !defined(SITL)
     initInverters(serialPinConfig());
 #endif
 

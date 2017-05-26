@@ -21,7 +21,7 @@
 
 #if defined(STM32F1)
 #define UARTDEV_COUNT_MAX 3
-#define UARTHARDWARE_PINPAIR_COUNT 3
+#define UARTHARDWARE_MAX_PINS 3
 #ifndef UART_RX_BUFFER_SIZE
 #define UART_RX_BUFFER_SIZE     256
 #endif
@@ -30,7 +30,7 @@
 #endif
 #elif defined(STM32F3)
 #define UARTDEV_COUNT_MAX 5
-#define UARTHARDWARE_PINPAIR_COUNT 4
+#define UARTHARDWARE_MAX_PINS 4
 #ifndef UART_RX_BUFFER_SIZE
 #define UART_RX_BUFFER_SIZE     256
 #endif
@@ -39,7 +39,7 @@
 #endif
 #elif defined(STM32F4)
 #define UARTDEV_COUNT_MAX 6
-#define UARTHARDWARE_PINPAIR_COUNT 4
+#define UARTHARDWARE_MAX_PINS 4
 #ifndef UART_RX_BUFFER_SIZE
 #define UART_RX_BUFFER_SIZE     512
 #endif
@@ -48,7 +48,7 @@
 #endif
 #elif defined(STM32F7)
 #define UARTDEV_COUNT_MAX 8
-#define UARTHARDWARE_PINPAIR_COUNT 3
+#define UARTHARDWARE_MAX_PINS 3
 #ifndef UART_RX_BUFFER_SIZE
 #define UART_RX_BUFFER_SIZE     512
 #endif
@@ -111,11 +111,6 @@
 
 #define UARTDEV_COUNT (UARTDEV_COUNT_1 + UARTDEV_COUNT_2 + UARTDEV_COUNT_3 + UARTDEV_COUNT_4 + UARTDEV_COUNT_5 + UARTDEV_COUNT_6 + UARTDEV_COUNT_7 + UARTDEV_COUNT_8)
 
-typedef struct uartPinPair_s {
-    ioTag_t rx;
-    ioTag_t tx;
-} uartPinPair_t;
-
 typedef struct uartHardware_s {
     UARTDevice device;    // XXX Not required for full allocation
     USART_TypeDef* reg;
@@ -127,7 +122,8 @@ typedef struct uartHardware_s {
     DMA_Stream_TypeDef *txDMAStream;
     DMA_Stream_TypeDef *rxDMAStream;
 #endif
-    uartPinPair_t pinPair[UARTHARDWARE_PINPAIR_COUNT];
+    ioTag_t rxPins[UARTHARDWARE_MAX_PINS];
+    ioTag_t txPins[UARTHARDWARE_MAX_PINS];
 #if defined(STM32F7)
     uint32_t rcc_ahb1;
     rccPeriphTag_t rcc_apb2;

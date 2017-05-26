@@ -682,6 +682,7 @@ COMMON_SRC = \
             drivers/serial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart.c \
+            drivers/serial_uart_pinconfig.c \
             drivers/sound_beeper.c \
             drivers/stack_check.c \
             drivers/system.c \
@@ -897,6 +898,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             config/config_streamer.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_init.c \
+            drivers/serial_uart_pinconfig.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
@@ -1013,8 +1015,10 @@ SITLEXCLUDES = \
             drivers/light_led.c \
             drivers/system.c \
             drivers/rcc.c \
-            drivers/serial_uart.c \
             drivers/serial_pinconfig.c \
+            drivers/serial_uart.c \
+            drivers/serial_uart_init.c \
+            drivers/serial_uart_pinconfig.c \
             drivers/rx_xn297.c \
             drivers/display_ug2864hsweg01.c \
             telemetry/crsf.c \

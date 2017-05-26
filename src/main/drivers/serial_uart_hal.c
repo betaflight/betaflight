@@ -40,33 +40,6 @@
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 
-uartDevice_t uartDevice[UARTDEV_COUNT];      // Only configured in target.h
-uartDevice_t *uartDevmap[UARTDEV_COUNT_MAX]; // Full array
-
-void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
-{
-    uartDevice_t *uartdev = uartDevice;
-
-    for (size_t hindex = 0 ; hindex < UARTDEV_COUNT ; hindex++) {
-
-        const uartHardware_t *hardware = &uartHardware[hindex];
-        UARTDevice device = hardware->device;
-
-        for (int pair = 0 ; pair < UARTHARDWARE_PINPAIR_COUNT ; pair++) {
-            if (hardware->pinPair[pair].rx == pSerialPinConfig->ioTagRx[device]
-             && hardware->pinPair[pair].tx == pSerialPinConfig->ioTagTx[device]) {
-                // Matching pin pair found
-
-                uartdev->hardware = hardware;
-                uartdev->rx = hardware->pinPair[pair].rx;
-                uartdev->tx = hardware->pinPair[pair].tx;
-                uartDevmap[device] = uartdev++;
-                break;
-            }
-        }
-    }
-}
-
 static void usartConfigurePinInversion(uartPort_t *uartPort) {
     bool inverted = uartPort->port.options & SERIAL_INVERTED;
 

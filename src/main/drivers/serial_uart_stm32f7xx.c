@@ -48,10 +48,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxDMAStream = DMA2_Stream5,
 #endif
         .txDMAStream = DMA2_Stream7,
-        .pinPair = {
-             { DEFIO_TAG_E(PA10), DEFIO_TAG_E(PA9) },
-             { DEFIO_TAG_E(PB7),  DEFIO_TAG_E(PB6) },
-        },
+        .rxPins = { DEFIO_TAG_E(PA10), DEFIO_TAG_E(PB7), IO_TAG_NONE },
+        .txPins = { DEFIO_TAG_E(PA9), DEFIO_TAG_E(PB6), IO_TAG_NONE },
         .af = GPIO_AF7_USART1,
 #ifdef UART1_AHB1_PERIPHERALS
         .rcc_ahb1 = UART1_AHB1_PERIPHERALS,
@@ -73,10 +71,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxDMAStream = DMA1_Stream5,
 #endif
         .txDMAStream = DMA1_Stream6,
-        .pinPair = {
-            { DEFIO_TAG_E(PA3), DEFIO_TAG_E(PA2) },
-            { DEFIO_TAG_E(PD6), DEFIO_TAG_E(PD5) },
-        },
+        .rxPins = { DEFIO_TAG_E(PA3), DEFIO_TAG_E(PD6), IO_TAG_NONE },
+        .txPins = { DEFIO_TAG_E(PA2), DEFIO_TAG_E(PD5), IO_TAG_NONE },
         .af = GPIO_AF7_USART2,
 #ifdef UART2_AHB1_PERIPHERALS
         .rcc_ahb1 = UART2_AHB1_PERIPHERALS,
@@ -98,11 +94,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxDMAStream = DMA1_Stream1,
 #endif
         .txDMAStream = DMA1_Stream3,
-        .pinPair = {
-            { DEFIO_TAG_E(PB11), DEFIO_TAG_E(PB10) },
-            { DEFIO_TAG_E(PC11), DEFIO_TAG_E(PC10) },
-            { DEFIO_TAG_E(PD9),  DEFIO_TAG_E(PD8) },
-        },
+        .rxPins = { DEFIO_TAG_E(PB11), DEFIO_TAG_E(PC11), DEFIO_TAG_E(PD9) },
+        .txPins = { DEFIO_TAG_E(PB10), DEFIO_TAG_E(PC10), DEFIO_TAG_E(PD8) },
         .af = GPIO_AF7_USART3,
 #ifdef UART3_AHB1_PERIPHERALS
         .rcc_ahb1 = UART3_AHB1_PERIPHERALS,
@@ -124,10 +117,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxDMAStream = DMA1_Stream2,
 #endif
         .txDMAStream = DMA1_Stream4,
-        .pinPair = {
-            { DEFIO_TAG_E(PA1),  DEFIO_TAG_E(PA0) },
-            { DEFIO_TAG_E(PC11), DEFIO_TAG_E(PC10) },
-        },
+        .rxPins = { DEFIO_TAG_E(PA1), DEFIO_TAG_E(PC11), IO_TAG_NONE },
+        .txPins = { DEFIO_TAG_E(PA0), DEFIO_TAG_E(PC10), IO_TAG_NONE },
         .af = GPIO_AF8_UART4,
 #ifdef UART4_AHB1_PERIPHERALS
         .rcc_ahb1 = UART4_AHB1_PERIPHERALS,
@@ -149,9 +140,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxDMAStream = DMA1_Stream0,
 #endif
         .txDMAStream = DMA1_Stream7,
-        .pinPair = {
-            { DEFIO_TAG_E(PD2),  DEFIO_TAG_E(PC12) },
-        },
+        .rxPins = { DEFIO_TAG_E(PD2), IO_TAG_NONE, IO_TAG_NONE },
+        .txPins = { DEFIO_TAG_E(PC12), IO_TAG_NONE, IO_TAG_NONE },
         .af = GPIO_AF8_UART5,
 #ifdef UART5_AHB1_PERIPHERALS
         .rcc_ahb1 = UART5_AHB1_PERIPHERALS,
@@ -173,10 +163,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxDMAStream = DMA2_Stream1,
 #endif
         .txDMAStream = DMA2_Stream6,
-        .pinPair = {
-            { DEFIO_TAG_E(PC7),  DEFIO_TAG_E(PC6) },
-            { DEFIO_TAG_E(PG9),  DEFIO_TAG_E(PG14) },
-        },
+        .rxPins = { DEFIO_TAG_E(PC7), DEFIO_TAG_E(PG9), IO_TAG_NONE },
+        .txPins = { DEFIO_TAG_E(PC6), DEFIO_TAG_E(PG14), IO_TAG_NONE },
         .af = GPIO_AF8_USART6,
 #ifdef UART6_AHB1_PERIPHERALS
         .rcc_ahb1 = UART6_AHB1_PERIPHERALS,
@@ -198,10 +186,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxDMAStream = DMA1_Stream3,
 #endif
         .txDMAStream = DMA1_Stream1,
-        .pinPair = {
-            { DEFIO_TAG_E(PE7),  DEFIO_TAG_E(PE8) },
-            { DEFIO_TAG_E(PF6),  DEFIO_TAG_E(PF7) },
-        },
+        .rxPins = { DEFIO_TAG_E(PE7), DEFIO_TAG_E(PF6), IO_TAG_NONE },
+        .txPins = { DEFIO_TAG_E(PE8), DEFIO_TAG_E(PF7), IO_TAG_NONE },
         .af = GPIO_AF8_UART7,
 #ifdef UART7_AHB1_PERIPHERALS
         .rcc_ahb1 = UART7_AHB1_PERIPHERALS,
@@ -223,9 +209,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .rxDMAStream = DMA1_Stream6,
 #endif
         .txDMAStream = DMA1_Stream0,
-        .pinPair = {
-            { DEFIO_TAG_E(PE0),  DEFIO_TAG_E(PE1) },
-        },
+        .rxPins = { DEFIO_TAG_E(PE0), IO_TAG_NONE, IO_TAG_NONE },
+        .txPins = { DEFIO_TAG_E(PE1), IO_TAG_NONE, IO_TAG_NONE },
         .af = GPIO_AF8_UART8,
 #ifdef UART8_AHB1_PERIPHERALS
         .rcc_ahb1 = UART8_AHB1_PERIPHERALS,
