@@ -27,7 +27,6 @@
 #include "pwm_output.h"
 #include "drivers/nvic.h"
 #include "dma.h"
-#include "drivers/system.h"
 #include "rcc.h"
 
 static uint8_t dmaMotorTimerCount = 0;

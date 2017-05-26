@@ -35,7 +35,6 @@
 #include "config/parameter_group_ids.h"
 
 #include "drivers/pwm_output.h"
-#include "drivers/system.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"

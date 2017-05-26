@@ -28,13 +28,12 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
-#include "drivers/system.h"
-#include "drivers/gpio.h"
 #include "drivers/bus_i2c.h"
-
+#include "drivers/gpio.h"
 #include "drivers/sensor.h"
-#include "compass.h"
+#include "drivers/time.h"
 
+#include "compass.h"
 #include "compass_ak8975.h"
 
 // This sensor is available in MPU-9150.

@@ -44,6 +44,7 @@
 #include "common/typeconversion.h"
 
 #include "drivers/system.h"
+#include "drivers/time.h"
 
 // For rcData, stopAllMotors, stopPwmAllMotors
 #include "config/feature.h"

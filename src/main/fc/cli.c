@@ -71,6 +71,7 @@ extern uint8_t __config_end;
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/stack_check.h"
 #include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/timer.h"
 #include "drivers/vcd.h"
 

@@ -31,10 +31,10 @@
 
 #include "common/utils.h"
 
-#include "drivers/system.h"
-
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
+#include "drivers/time.h"
+
 #include "io/serial.h"
 
 #ifdef TELEMETRY

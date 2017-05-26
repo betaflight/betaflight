@@ -20,15 +20,17 @@
 
 #include <platform.h>
 
-#include "drivers/system.h"
-#include "drivers/bus_i2c.h"
+#include "accgyro.h"
+#include "accgyro_l3g4200d.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
 
+#include "drivers/bus_i2c.h"
+#include "drivers/time.h"
 #include "drivers/sensor.h"
-#include "accgyro.h"
-#include "accgyro_l3g4200d.h"
+#include "drivers/system.h"
+
 
 // L3G4200D, Standard address 0x68
 #define L3G4200D_ADDRESS         0x68

@@ -20,7 +20,6 @@
 
 #include "platform.h"
 
-#include "drivers/system.h"
 #include "drivers/io.h"
 
 #include "sound_beeper.h"

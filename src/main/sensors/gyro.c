@@ -51,7 +51,6 @@
 #include "drivers/bus_spi.h"
 #include "drivers/gyro_sync.h"
 #include "drivers/io.h"
-#include "drivers/system.h"
 
 #include "fc/runtime_config.h"
 

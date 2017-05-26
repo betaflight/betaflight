@@ -52,7 +52,7 @@
 #include "usbd_cdc.h"
 #include "usbd_cdc_interface.h"
 #include "stdbool.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/

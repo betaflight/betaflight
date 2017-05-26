@@ -16,7 +16,6 @@
 #include "common/color.h"
 #include "common/maths.h"
 
-#include "drivers/system.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro/accgyro.h"
@@ -25,6 +24,8 @@
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/gpio.h"
+#include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/timer.h"
 #include "drivers/rx_pwm.h"
 

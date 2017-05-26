@@ -23,12 +23,12 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
-#include "drivers/system.h"
+#include "drivers/bus_spi.h"
 #include "drivers/exti.h"
 #include "drivers/io.h"
-#include "drivers/bus_spi.h"
-
 #include "drivers/sensor.h"
+#include "drivers/time.h"
+
 #include "accgyro.h"
 #include "accgyro_mpu.h"
 #include "accgyro_mpu6500.h"

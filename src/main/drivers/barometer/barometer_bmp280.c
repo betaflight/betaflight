@@ -24,8 +24,8 @@
 
 #include "barometer.h"
 
-#include "drivers/system.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/time.h"
 
 #include "barometer_bmp280.h"
 #include "barometer_spi_bmp280.h"

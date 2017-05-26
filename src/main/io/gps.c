@@ -38,11 +38,8 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/system.h"
 #include "drivers/light_led.h"
-
-#include "drivers/light_led.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "io/dashboard.h"
 #include "io/gps.h"
