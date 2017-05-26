@@ -120,7 +120,8 @@
 
 #define MSP_RTH_AND_LAND_CONFIG         21
 #define MSP_SET_RTH_AND_LAND_CONFIG     22
-
+#define MSP_FW_CONFIG                   23
+#define MSP_SET_FW_CONFIG               24
 //
 // MSP commands for Cleanflight original features
 //
