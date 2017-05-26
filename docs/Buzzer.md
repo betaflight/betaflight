@@ -72,4 +72,4 @@ Buzzer support on the CC3D requires that a buzzer circuit be created to which th
 PA15 is unused and not connected according to the CC3D Revision A schematic.
 Connecting to PA15 requires careful soldering.
 
-See the [CC3D - buzzer circuit.pdf](Wiring/CC3D - buzzer circuit.pdf) for details.
+See the [CC3D - buzzer circuit.pdf](Wiring/CC3D%20-%20buzzer%20circuit.pdf) for details.
