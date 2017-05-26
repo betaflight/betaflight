@@ -152,6 +152,7 @@ typedef struct navConfig_s {
         uint16_t launch_motor_spinup_time;   // Time to speed-up motors from idle to launch_throttle (ESC desync prevention)
         uint16_t launch_timeout;             // Launch timeout to disable launch mode and swith to normal flight (ms)
         uint8_t  launch_climb_angle;         // Target climb angle for launch (deg)
+        uint8_t  launch_max_angle;           // Max tilt angle (pitch/roll combined) to consider launch successful. Set to 180 to disable completely [deg]
     } fw;
 } navConfig_t;
 
