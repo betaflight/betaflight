@@ -1241,9 +1241,9 @@ static navigationFSMState_t navSetNewFSMState(navigationFSMState_t newState)
 
 static void navProcessFSMEvents(navigationFSMEvent_t injectedEvent)
 {
-    const uint32_t currentMillis = millis();
+    const timeMs_t currentMillis = millis();
     navigationFSMState_t previousState;
-    static uint32_t lastStateProcessTime = 0;
+    static timeMs_t lastStateProcessTime = 0;
 
     /* If timeout event defined and timeout reached - switch state */
     if ((navFSM[posControl.navState].timeoutMs > 0) && (navFSM[posControl.navState].onEvent[NAV_FSM_EVENT_TIMEOUT] != NAV_STATE_UNDEFINED) &&

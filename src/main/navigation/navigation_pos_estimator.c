@@ -221,7 +221,7 @@ static void inavFilterCorrectVel(int axis, float dt, float e, float w)
 
 #define resetTimer(tim, currentTimeUs) { (tim)->deltaTime = 0; (tim)->lastTriggeredTime = currentTimeUs; }
 #define getTimerDeltaMicros(tim) ((tim)->deltaTime)
-static bool updateTimer(navigationTimer_t * tim, uint32_t interval, timeUs_t currentTimeUs)
+static bool updateTimer(navigationTimer_t * tim, timeUs_t interval, timeUs_t currentTimeUs)
 {
     if ((currentTimeUs - tim->lastTriggeredTime) >= interval) {
         tim->deltaTime = currentTimeUs - tim->lastTriggeredTime;
@@ -254,7 +254,7 @@ static bool shouldResetReferenceAltitude(void)
  * Don't overload your GPS in its config with trash, choose a Hz rate that it can deliver at a sustained rate.
  * (c) CrashPilot1000
  */
-static uint32_t getGPSDeltaTimeFilter(uint32_t dTus)
+static timeUs_t getGPSDeltaTimeFilter(timeUs_t dTus)
 {
     if (dTus >= 225000 && dTus <= 275000) return HZ2US(4);       //  4Hz Data 250ms
     if (dTus >= 180000 && dTus <= 220000) return HZ2US(5);       //  5Hz Data 200ms
@@ -313,7 +313,7 @@ static bool detectGPSGlitch(timeUs_t currentTimeUs)
  */
 void onNewGPSData(void)
 {
-    static uint32_t lastGPSNewDataTime;
+    static timeUs_t lastGPSNewDataTime;
     static int32_t previousLat;
     static int32_t previousLon;
     static int32_t previousAlt;
