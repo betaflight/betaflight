@@ -36,8 +36,8 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/system.h"
 #include "drivers/serial.h"
+#include "drivers/time.h"
 #include "drivers/vtx_common.h"
 
 #include "fc/rc_controls.h"

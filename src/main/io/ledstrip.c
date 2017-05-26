@@ -40,7 +40,6 @@
 
 #include "drivers/light_ws2811strip.h"
 #include "drivers/serial.h"
-#include "drivers/system.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"

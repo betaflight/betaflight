@@ -23,7 +23,7 @@
 #ifdef USE_VCP
 
 #include "drivers/io.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 #include "usb_io.h"
 #include "sdcard.h"
 

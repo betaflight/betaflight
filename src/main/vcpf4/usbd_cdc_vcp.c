@@ -27,7 +27,7 @@
 #include "usbd_cdc_vcp.h"
 #include "stm32f4xx_conf.h"
 #include "stdbool.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 LINE_CODING g_lc;
 

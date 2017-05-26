@@ -30,6 +30,7 @@
 
 #include "fc/config.h"
 
+#include "drivers/time.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)

@@ -28,7 +28,6 @@
 #include "common/color.h"
 #include "light_ws2811strip.h"
 #include "dma.h"
-#include "drivers/system.h"
 #include "rcc.h"
 #include "timer.h"
 

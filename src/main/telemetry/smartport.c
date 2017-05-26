@@ -23,7 +23,7 @@
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/compass/compass.h"
 #include "drivers/sensor.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"

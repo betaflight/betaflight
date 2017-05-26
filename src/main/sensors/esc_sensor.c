@@ -35,7 +35,6 @@
 #include "drivers/pwm_output.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
-#include "drivers/system.h"
 
 #include "esc_sensor.h"
 

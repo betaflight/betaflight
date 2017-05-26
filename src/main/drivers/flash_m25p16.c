@@ -24,9 +24,9 @@
 
 #include "flash.h"
 #include "flash_m25p16.h"
-#include "drivers/io.h"
 #include "drivers/bus_spi.h"
-#include "drivers/system.h"
+#include "drivers/io.h"
+#include "drivers/time.h"
 
 #define M25P16_INSTRUCTION_RDID             0x9F
 #define M25P16_INSTRUCTION_READ_BYTES       0x03

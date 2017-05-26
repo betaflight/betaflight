@@ -21,7 +21,7 @@
 #include <math.h>
 
 #include "platform.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "drivers/io.h"
 #include "pwm_output.h"

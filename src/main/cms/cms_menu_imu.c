@@ -29,8 +29,6 @@
 
 #include "build/version.h"
 
-#include "drivers/system.h"
-
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 #include "cms/cms_menu_imu.h"

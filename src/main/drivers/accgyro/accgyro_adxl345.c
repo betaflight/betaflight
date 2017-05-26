@@ -20,7 +20,6 @@
 
 #include <platform.h>
 
-#include "drivers/system.h"
 #include "drivers/bus_i2c.h"
 
 #include "drivers/sensor.h"

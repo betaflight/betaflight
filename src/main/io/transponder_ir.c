@@ -30,7 +30,6 @@
 #include "config/parameter_group_ids.h"
 
 #include "drivers/transponder_ir.h"
-#include "drivers/system.h"
 #include "drivers/usb_io.h"
 
 #include "fc/config.h"

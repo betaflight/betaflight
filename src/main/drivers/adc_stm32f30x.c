@@ -22,14 +22,13 @@
 #include "platform.h"
 
 #include "drivers/accgyro/accgyro.h"
-#include "drivers/system.h"
 #include "drivers/gpio.h"
-
+#include "drivers/io.h"
 #include "drivers/sensor.h"
+#include "drivers/time.h"
 
 #include "adc.h"
 #include "adc_impl.h"
-#include "drivers/io.h"
 #include "rcc.h"
 #include "dma.h"
 

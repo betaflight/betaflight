@@ -27,8 +27,8 @@
 #ifdef  USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #include "drivers/io.h"
-#include "drivers/system.h"
 #include "drivers/serial.h"
+#include "drivers/time.h"
 #include "drivers/timer.h"
 
 #include "io/serial.h"

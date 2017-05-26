@@ -28,14 +28,14 @@
 #include "common/printf.h"
 
 #include "drivers/bus_spi.h"
-#include "drivers/light_led.h"
-#include "drivers/io.h"
-#include "drivers/system.h"
-#include "drivers/nvic.h"
 #include "drivers/dma.h"
+#include "drivers/io.h"
+#include "drivers/light_led.h"
+#include "drivers/max7456.h"
+#include "drivers/max7456_symbols.h"
+#include "drivers/nvic.h"
+#include "drivers/time.h"
 #include "drivers/vcd.h"
-#include "max7456.h"
-#include "max7456_symbols.h"
 
 // VM0 bits
 #define VIDEO_BUFFER_DISABLE        0x01

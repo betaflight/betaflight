@@ -27,8 +27,6 @@
 
 #include "io/serial.h"
 
-#include "drivers/system.h"
-
 #include "msp/msp.h"
 #include "msp/msp_serial.h"
 

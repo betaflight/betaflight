@@ -28,8 +28,9 @@
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
-#include "drivers/system.h"
 #include "drivers/light_led.h"
+#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "io/serial.h"
 

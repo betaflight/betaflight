@@ -31,7 +31,6 @@
 #include "config/parameter_group_ids.h"
 
 #include "drivers/adc.h"
-#include "drivers/system.h"
 
 #include "fc/runtime_config.h"
 #include "fc/config.h"
