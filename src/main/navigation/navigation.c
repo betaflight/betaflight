@@ -66,7 +66,7 @@ PG_DECLARE_ARRAY(navWaypoint_t, NAV_MAX_WAYPOINTS, nonVolatileWaypointList);
 PG_REGISTER_ARRAY(navWaypoint_t, NAV_MAX_WAYPOINTS, nonVolatileWaypointList, PG_WAYPOINT_MISSION_STORAGE, 0);
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(navConfig_t, navConfig, PG_NAV_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(navConfig_t, navConfig, PG_NAV_CONFIG, 1);
 
 PG_RESET_TEMPLATE(navConfig_t, navConfig,
     .general = {
@@ -127,7 +127,8 @@ PG_RESET_TEMPLATE(navConfig_t, navConfig,
         .launch_motor_timer = 500,             // ms
         .launch_motor_spinup_time = 100,       // ms, time to gredually increase throttle from idle to launch
         .launch_timeout = 5000,                // ms, timeout for launch procedure
-        .launch_climb_angle = 18               // 18 degrees
+        .launch_climb_angle = 18,              // 18 degrees
+        .launch_max_angle = 45                 // 45 deg
     }
 );
 
