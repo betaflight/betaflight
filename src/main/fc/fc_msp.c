@@ -2061,7 +2061,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #if defined(OSD)
                 const uint16_t value = sbufReadU16(src);
 
-                /* Get screen index, 0 is post flight statsitsics, 1 and above are in flight OSD screens */
+                /* Get screen index, 0 is post flight statistics, 1 and above are in flight OSD screens */
                 const uint8_t screen = (sbufBytesRemaining(src) >= 1) ? sbufReadU8(src) : 1;
 
                 if (screen == 0 && addr < OSD_STAT_COUNT) {

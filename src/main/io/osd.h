@@ -72,7 +72,7 @@ typedef enum {
     OSD_STAT_FLYTIME,
     OSD_STAT_ARMEDTIME,
     OSD_STAT_COUNT // MUST BE LAST
-} osd_states_e;
+} osd_stats_e;
 
 typedef enum {
     OSD_UNIT_IMPERIAL,

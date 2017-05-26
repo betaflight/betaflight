@@ -109,8 +109,6 @@ static uint32_t blinkBits[(OSD_ITEM_COUNT + 31)/32];
 #define IS_LO(X)  (rcData[X] < 1250)
 #define IS_MID(X) (rcData[X] > 1250 && rcData[X] < 1750)
 
-//extern uint8_t RSSI; // TODO: not used?
-
 static uint16_t flyTime = 0;
 static uint8_t statRssi;
 
@@ -146,10 +144,10 @@ PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
 static char osdGetAltitudeSymbol()
 {
     switch (osdConfig()->units) {
-        case OSD_UNIT_IMPERIAL:
-            return 0xF;
-        default:
-            return 0xC;
+    case OSD_UNIT_IMPERIAL:
+        return 0xF;
+    default:
+        return 0xC;
     }
 }
 
@@ -160,11 +158,16 @@ static char osdGetAltitudeSymbol()
 static int32_t osdGetAltitude(int32_t alt)
 {
     switch (osdConfig()->units) {
-        case OSD_UNIT_IMPERIAL:
-            return (alt * 328) / 100; // Convert to feet / 100
-        default:
-            return alt;               // Already in metre / 100
+    case OSD_UNIT_IMPERIAL:
+        return (alt * 328) / 100; // Convert to feet / 100
+    default:
+        return alt;               // Already in metre / 100
     }
+}
+
+static void osdFormatPID(char * buff, const char * label, const pid8_t * pid)
+{
+    tfp_sprintf(buff, "%s %3d %3d %3d", label, pid->P, pid->I, pid->D);
 }
 
 static void osdDrawSingleElement(uint8_t item)
@@ -180,7 +183,7 @@ static void osdDrawSingleElement(uint8_t item)
     char buff[32];
 
     switch(item) {
-        case OSD_RSSI_VALUE:
+    case OSD_RSSI_VALUE:
         {
             uint16_t osdRssi = rssi * 100 / 1024; // change range
             if (osdRssi >= 100)
@@ -191,14 +194,12 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
-        case OSD_MAIN_BATT_VOLTAGE:
-        {
-            buff[0] = SYM_BATT_5;
-            tfp_sprintf(buff + 1, "%d.%1dV", getBatteryVoltage() / 10, getBatteryVoltage() % 10);
-            break;
-        }
+    case OSD_MAIN_BATT_VOLTAGE:
+        buff[0] = SYM_BATT_5;
+        tfp_sprintf(buff + 1, "%d.%1dV", getBatteryVoltage() / 10, getBatteryVoltage() % 10);
+        break;
 
-        case OSD_CURRENT_DRAW:
+    case OSD_CURRENT_DRAW:
         {
             int32_t amperage = getAmperage();
             buff[0] = SYM_AMP;
@@ -206,30 +207,24 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
-        case OSD_MAH_DRAWN:
-        {
-            buff[0] = SYM_MAH;
-            tfp_sprintf(buff + 1, "%d", getMAhDrawn());
-            break;
-        }
+    case OSD_MAH_DRAWN:
+        buff[0] = SYM_MAH;
+        tfp_sprintf(buff + 1, "%d", getMAhDrawn());
+        break;
 
 #ifdef GPS
-        case OSD_GPS_SATS:
-        {
-            buff[0] = 0x1f;
-            tfp_sprintf(buff + 1, "%d", GPS_numSat);
-            break;
-        }
+    case OSD_GPS_SATS:
+        buff[0] = 0x1f;
+        tfp_sprintf(buff + 1, "%d", GPS_numSat);
+        break;
 
-        case OSD_GPS_SPEED:
-        {
-            // FIXME ideally we want to use SYM_KMH symbol but it's not in the font any more, so we use K.
-            tfp_sprintf(buff, "%dK", CM_S_TO_KM_H(GPS_speed) * 10);
-            break;
-        }
+    case OSD_GPS_SPEED:
+        // FIXME ideally we want to use SYM_KMH symbol but it's not in the font any more, so we use K.
+        tfp_sprintf(buff, "%dK", CM_S_TO_KM_H(GPS_speed) * 10);
+        break;
 
-        case OSD_GPS_LAT:
-        case OSD_GPS_LON:
+    case OSD_GPS_LAT:
+    case OSD_GPS_LON:
         {
             int32_t val;
             if (item == OSD_GPS_LAT) {
@@ -253,14 +248,14 @@ static void osdDrawSingleElement(uint8_t item)
 
 #endif // GPS
 
-        case OSD_ALTITUDE:
+    case OSD_ALTITUDE:
         {
             int32_t alt = osdGetAltitude(getEstimatedAltitude());
             tfp_sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
             break;
         }
 
-        case OSD_ONTIME:
+    case OSD_ONTIME:
         {
             uint32_t seconds = micros() / 1000000;
             buff[0] = SYM_ON_M;
@@ -268,21 +263,17 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
-        case OSD_FLYTIME:
-        {
-            buff[0] = SYM_FLY_M;
-            tfp_sprintf(buff + 1, "%02d:%02d", flyTime / 60, flyTime % 60);
-            break;
-        }
+    case OSD_FLYTIME:
+        buff[0] = SYM_FLY_M;
+        tfp_sprintf(buff + 1, "%02d:%02d", flyTime / 60, flyTime % 60);
+        break;
 
-        case OSD_ARMED_TIME:
-        {
-            buff[0] = SYM_FLY_M;
-            tfp_sprintf(buff + 1, "%02d:%02d", stats.armed_time / 60, stats.armed_time % 60);
-            break;
-        }
+    case OSD_ARMED_TIME:
+        buff[0] = SYM_FLY_M;
+        tfp_sprintf(buff + 1, "%02d:%02d", stats.armed_time / 60, stats.armed_time % 60);
+        break;
 
-        case OSD_FLYMODE:
+    case OSD_FLYMODE:
         {
             char *p = "ACRO";
 
@@ -300,7 +291,7 @@ static void osdDrawSingleElement(uint8_t item)
             return;
         }
 
-        case OSD_CRAFT_NAME:
+    case OSD_CRAFT_NAME:
         {
             if (strlen(systemConfig()->name) == 0)
                 strcpy(buff, "CRAFT_NAME");
@@ -315,16 +306,14 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
-        case OSD_THROTTLE_POS:
-        {
-            buff[0] = SYM_THR;
-            buff[1] = SYM_THR1;
-            tfp_sprintf(buff + 2, "%d", (constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN));
-            break;
-        }
+    case OSD_THROTTLE_POS:
+        buff[0] = SYM_THR;
+        buff[1] = SYM_THR1;
+        tfp_sprintf(buff + 2, "%d", (constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN));
+        break;
 
 #if defined(VTX_COMMON)
-        case OSD_VTX_CHANNEL:
+    case OSD_VTX_CHANNEL:
         {
             uint8_t band=0, channel=0;
             vtxCommonGetBandAndChannel(&band,&channel);
@@ -339,43 +328,34 @@ static void osdDrawSingleElement(uint8_t item)
         }
 #endif
 
-        case OSD_CROSSHAIRS:
-            elemPosX = 14 - 1; // Offset for 1 char to the left
-            elemPosY = 6;
-            if (displayScreenSize(osdDisplayPort) == VIDEO_BUFFER_CHARS_PAL) {
-                ++elemPosY;
-            }
-            buff[0] = SYM_AH_CENTER_LINE;
-            buff[1] = SYM_AH_CENTER;
-            buff[2] = SYM_AH_CENTER_LINE_RIGHT;
-            buff[3] = 0;
-            break;
+    case OSD_CROSSHAIRS:
+        elemPosX = 14 - 1; // Offset for 1 char to the left
+        elemPosY = 6;
+        if (displayScreenSize(osdDisplayPort) == VIDEO_BUFFER_CHARS_PAL) {
+            ++elemPosY;
+        }
+        buff[0] = SYM_AH_CENTER_LINE;
+        buff[1] = SYM_AH_CENTER;
+        buff[2] = SYM_AH_CENTER_LINE_RIGHT;
+        buff[3] = 0;
+        break;
 
-        case OSD_ARTIFICIAL_HORIZON:
+    case OSD_ARTIFICIAL_HORIZON:
         {
             elemPosX = 14;
             elemPosY = 6 - 4; // Top center of the AH area
 
-            int rollAngle = attitude.values.roll;
-            int pitchAngle = attitude.values.pitch;
+            const int rollAngle = constrain(attitude.values.roll, -AH_MAX_ROLL, AH_MAX_ROLL);
+            int pitchAngle = constrain(attitude.values.pitch, -AH_MAX_PITCH, AH_MAX_PITCH);
 
             if (displayScreenSize(osdDisplayPort) == VIDEO_BUFFER_CHARS_PAL) {
                 ++elemPosY;
             }
 
-            if (pitchAngle > AH_MAX_PITCH)
-                pitchAngle = AH_MAX_PITCH;
-            if (pitchAngle < -AH_MAX_PITCH)
-                pitchAngle = -AH_MAX_PITCH;
-            if (rollAngle > AH_MAX_ROLL)
-                rollAngle = AH_MAX_ROLL;
-            if (rollAngle < -AH_MAX_ROLL)
-                rollAngle = -AH_MAX_ROLL;
-
             // Convert pitchAngle to y compensation value
             pitchAngle = (pitchAngle / 8) - 41; // 41 = 4 * 9 + 5
 
-            for (int8_t x = -4; x <= 4; x++) {
+            for (int x = -4; x <= 4; x++) {
                 int y = (-rollAngle * x) / 64;
                 y -= pitchAngle;
                 // y += 41; // == 4 * 9 + 5
@@ -389,7 +369,7 @@ static void osdDrawSingleElement(uint8_t item)
             return;
         }
 
-        case OSD_HORIZON_SIDEBARS:
+    case OSD_HORIZON_SIDEBARS:
         {
             elemPosX = 14;
             elemPosY = 6;
@@ -413,34 +393,32 @@ static void osdDrawSingleElement(uint8_t item)
             return;
         }
 
-        case OSD_ROLL_PIDS:
+    case OSD_ROLL_PIDS:
         {
             const pidProfile_t *pidProfile = currentPidProfile;
-            tfp_sprintf(buff, "ROL %3d %3d %3d", pidProfile->pid[PID_ROLL].P, pidProfile->pid[PID_ROLL].I, pidProfile->pid[PID_ROLL].D);
+            osdFormatPID(buff, "ROL", &pidProfile->pid[PID_ROLL]);
             break;
         }
 
-        case OSD_PITCH_PIDS:
+    case OSD_PITCH_PIDS:
         {
             const pidProfile_t *pidProfile = currentPidProfile;
-            tfp_sprintf(buff, "PIT %3d %3d %3d", pidProfile->pid[PID_PITCH].P, pidProfile->pid[PID_PITCH].I, pidProfile->pid[PID_PITCH].D);
+            osdFormatPID(buff, "PIT", &pidProfile->pid[PID_PITCH]);
             break;
         }
 
-        case OSD_YAW_PIDS:
+    case OSD_YAW_PIDS:
         {
             const pidProfile_t *pidProfile = currentPidProfile;
-            tfp_sprintf(buff, "YAW %3d %3d %3d", pidProfile->pid[PID_YAW].P, pidProfile->pid[PID_YAW].I, pidProfile->pid[PID_YAW].D);
+            osdFormatPID(buff, "YAW", &pidProfile->pid[PID_YAW]);
             break;
         }
 
-        case OSD_POWER:
-        {
-            tfp_sprintf(buff, "%dW", getAmperage() * getBatteryVoltage() / 1000);
-            break;
-        }
+    case OSD_POWER:
+        tfp_sprintf(buff, "%dW", getAmperage() * getBatteryVoltage() / 1000);
+        break;
 
-        case OSD_PIDRATE_PROFILE:
+    case OSD_PIDRATE_PROFILE:
         {
             const uint8_t pidProfileIndex = getCurrentPidProfileIndex();
             const uint8_t rateProfileIndex = getCurrentControlRateProfileIndex();
@@ -448,75 +426,70 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
-        case OSD_MAIN_BATT_WARNING:
-        {
-            switch(getBatteryState()) {
-                case BATTERY_WARNING:
-                    tfp_sprintf(buff, "LOW BATTERY");
-                    break;
-
-                case BATTERY_CRITICAL:
-                    tfp_sprintf(buff, "LAND NOW");
-                    elemOffsetX += 1;
-                    break;
-
-                default:
-                    return;
-            }
+    case OSD_MAIN_BATT_WARNING:
+        switch(getBatteryState()) {
+        case BATTERY_WARNING:
+            tfp_sprintf(buff, "LOW BATTERY");
             break;
+
+        case BATTERY_CRITICAL:
+            tfp_sprintf(buff, " LAND NOW");
+            break;
+
+        default:
+            return;
         }
+        break;
 
     case OSD_AVG_CELL_VOLTAGE:
         {
-            uint16_t cellV = getBatteryVoltage() * 10 / getBatteryCellCount();
+            const int cellV = getBatteryVoltage() * 10 / getBatteryCellCount();
             buff[0] = SYM_BATT_5;
             tfp_sprintf(buff + 1, "%d.%02dV", cellV / 100, cellV % 100);
             break;
         }
 
     case OSD_DEBUG:
-    {
         sprintf(buff, "DBG %5d %5d %5d %5d", debug[0], debug[1], debug[2], debug[3]);
         break;
-    }
 
     case OSD_PITCH_ANGLE:
     case OSD_ROLL_ANGLE:
-    {
-        const int angle = (item == OSD_PITCH_ANGLE) ? attitude.values.pitch : attitude.values.roll;
-        tfp_sprintf(buff, "%c%02d.%01d", angle < 0 ? '-' : ' ', abs(angle / 10), abs(angle % 10));
-        break;
-    }
+        {
+            const int angle = (item == OSD_PITCH_ANGLE) ? attitude.values.pitch : attitude.values.roll;
+            tfp_sprintf(buff, "%c%02d.%01d", angle < 0 ? '-' : ' ', abs(angle / 10), abs(angle % 10));
+            break;
+        }
 
     case OSD_MAIN_BATT_USAGE:
-    {
-        //Set length of indicator bar
-        #define MAIN_BATT_USAGE_STEPS 10
+        {
+            //Set length of indicator bar
+            #define MAIN_BATT_USAGE_STEPS 10
 
-        //Calculate constrained value
-        float value = constrain(batteryConfig()->batteryCapacity - getMAhDrawn(), 0, batteryConfig()->batteryCapacity);
+            //Calculate constrained value
+            float value = constrain(batteryConfig()->batteryCapacity - getMAhDrawn(), 0, batteryConfig()->batteryCapacity);
 
-        //Calculate mAh used progress
-        uint8_t mAhUsedProgress = ceil((value / (batteryConfig()->batteryCapacity / MAIN_BATT_USAGE_STEPS)));
+            //Calculate mAh used progress
+            uint8_t mAhUsedProgress = ceil((value / (batteryConfig()->batteryCapacity / MAIN_BATT_USAGE_STEPS)));
 
-        //Create empty battery indicator bar
-        buff[0] = SYM_PB_START;
-        for(uint8_t i = 1; i <= MAIN_BATT_USAGE_STEPS; i++) {
-            if (i <= mAhUsedProgress)
-                buff[i] = SYM_PB_FULL;
-            else
-                buff[i] = SYM_PB_EMPTY;
+            //Create empty battery indicator bar
+            buff[0] = SYM_PB_START;
+            for(uint8_t i = 1; i <= MAIN_BATT_USAGE_STEPS; i++) {
+                if (i <= mAhUsedProgress)
+                    buff[i] = SYM_PB_FULL;
+                else
+                    buff[i] = SYM_PB_EMPTY;
+            }
+            buff[MAIN_BATT_USAGE_STEPS+1] = SYM_PB_CLOSE;
+
+            if (mAhUsedProgress > 0 && mAhUsedProgress < MAIN_BATT_USAGE_STEPS) {
+                buff[1+mAhUsedProgress] = SYM_PB_END;
+            }
+
+            buff[MAIN_BATT_USAGE_STEPS+2] = 0;
+
+            break;
         }
-        buff[MAIN_BATT_USAGE_STEPS+1] = SYM_PB_CLOSE;
-
-        if (mAhUsedProgress > 0 && mAhUsedProgress < MAIN_BATT_USAGE_STEPS) {
-            buff[1+mAhUsedProgress] = SYM_PB_END;
-        }
-
-        buff[MAIN_BATT_USAGE_STEPS+2] = 0;
-
-        break;
-    }
 
     default:
         return;
@@ -620,6 +593,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdProfile)
     osdProfile->item_pos[OSD_GPS_LAT] = OSD_POS(18, 14) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_GPS_LON] = OSD_POS(18, 15) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_MAIN_BATT_USAGE] = OSD_POS(15, 10) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_ARMED_TIME] = OSD_POS(1, 2) | VISIBLE_FLAG;
 
     osdProfile->enabled_stats[OSD_STAT_MAX_SPEED] = true;
     osdProfile->enabled_stats[OSD_STAT_MIN_BATTERY] = true;
@@ -722,8 +696,7 @@ void osdUpdateAlarms(void)
     if (getMAhDrawn() >= osdConfig()->cap_alarm) {
         SET_BLINK(OSD_MAH_DRAWN);
         SET_BLINK(OSD_MAIN_BATT_USAGE);
-    }
-    else {
+    } else {
         CLR_BLINK(OSD_MAH_DRAWN);
         CLR_BLINK(OSD_MAIN_BATT_USAGE);
     }
@@ -895,6 +868,9 @@ static void osdShowStats(void)
         osdDisplayStatisticLabel(top++, "BLACKBOX", buff);
     }
 #endif
+
+    /* Reset time since last armed here to ensure this timer is at zero when back at "main" OSD screen */
+    stats.armed_time = 0;
 }
 
 static void osdShowArmed(void)
