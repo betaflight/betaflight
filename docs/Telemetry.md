@@ -30,7 +30,7 @@ For 1, just connect your inverter to a usart or software serial port.
 For 2 and 3 use the CLI command as follows:
 
 ```
-set telemetry_inversion = ON
+set tlm_inversion = ON
 ```
 
 
