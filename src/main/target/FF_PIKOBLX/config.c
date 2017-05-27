@@ -52,16 +52,17 @@ void targetConfiguration(void)
     if (hardwareMotorType == MOTOR_BRUSHED) {
         motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
         motorConfigMutable()->minthrottle = 1049;
-    
-#if defined(FF_ACROWHOOPFR)
-        serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIAL_PORT_USART2)].functionMask = FUNCTION_TELEMETRY_FRSKY;
-        rxConfigMutable()->sbus_inversion = 0;
-        featureSet(FEATURE_TELEMETRY);
-#elif defined(FF_ACROWHOOPSP)
+
+#if defined(FF_ACROWHOOPSP)
         rxConfigMutable()->serialrx_provider = SERIALRX_SPEKTRUM2048;
         rxConfigMutable()->spektrum_sat_bind = 5;
         rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
+#else
+        serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIAL_PORT_USART2)].functionMask = FUNCTION_TELEMETRY_FRSKY;
+        rxConfigMutable()->sbus_inversion = 0;
+        featureSet(FEATURE_TELEMETRY);
 #endif
+        parseRcChannels("TAER1234", rxConfigMutable());
     
         pidProfilesMutable(0)->pid[PID_ROLL].P = 80;
         pidProfilesMutable(0)->pid[PID_ROLL].I = 37;

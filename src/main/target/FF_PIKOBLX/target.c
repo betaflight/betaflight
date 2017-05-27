@@ -25,7 +25,7 @@
 #include "drivers/dma.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-#if defined(FF_RADIANCED) || defined(FF_KOMBINID) || defined(FF_RACEWHOOP)
+#if defined(FF_RADIANCE) || defined(FF_KOMBINI)
     DEF_TIM(TIM17, CH1, PA7, TIM_USE_MOTOR, 1), // PWM1  - PA7  - *TIM17_CH1, TIM1_CH1N, TIM8_CH1
     DEF_TIM(TIM3,  CH1, PA6, TIM_USE_MOTOR, 1), // PWM2  - PA6  - *TIM3_CH1, TIM8_BKIN, TIM1_BKIN, TIM16_CH1
     DEF_TIM(TIM3,  CH3, PB0, TIM_USE_MOTOR, 1), // PWM3  - PB0  - *TIM3_CH3, TIM1_CH2N, TIM8_CH2N

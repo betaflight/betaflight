@@ -17,22 +17,12 @@
 
 #pragma once
 
-#if defined(FF_RADIANCED)
-#define TARGET_BOARD_IDENTIFIER "RADD" // Furious FPV RADIANCE DSHOT 
-#elif defined(FF_RADIANCE)
-#define TARGET_BOARD_IDENTIFIER "RADI" // Furious FPV RADIANCE V1 
-#elif defined(FF_KOMBINID)
-#define TARGET_BOARD_IDENTIFIER "KOMD" // Furious FPV KOMBINI DSHOT 
+#if defined(FF_RADIANCE)
+#define TARGET_BOARD_IDENTIFIER "RADI" // Furious FPV RADIANCE
 #elif defined(FF_KOMBINI)
-#define TARGET_BOARD_IDENTIFIER "KOMB" // Furious FPV KOMBINI V1 
-#elif defined(FF_RACEWHOOP)
-#define TARGET_BOARD_IDENTIFIER "RWHO" // Furious FPV RACEWHOOP
-#elif defined(FF_ACROWHOOPFR)
-#define TARGET_BOARD_IDENTIFIER "AWHF" // Furious FPV ACROWHOOP FRSKY
+#define TARGET_BOARD_IDENTIFIER "KOMB" // Furious FPV KOMBINI
 #elif defined(FF_ACROWHOOPSP)
 #define TARGET_BOARD_IDENTIFIER "AWHS" // Furious FPV ACROWHOOP SPEKTRUM
-#elif defined(FF_NUKE)
-#define TARGET_BOARD_IDENTIFIER "NUKE" // Furious FPV NUKE 
 #else 
 #define TARGET_BOARD_IDENTIFIER "PIKO" // Furious FPV PIKOBLX
 #endif
@@ -41,10 +31,6 @@
 
 #define TARGET_CONFIG
 #define BRUSHED_ESC_AUTODETECT
-
-#if defined(FF_ACROWHOOPFR) || defined(FF_ACROWHOOPSP) || defined(FF_NUKE) || defined(FF_RACEWHOOP)
-#define RX_CHANNELS_TAER
-#endif
 
 #define LED0                    PB9
 #define LED1                    PB5
@@ -101,17 +87,15 @@
 #define VBAT_ADC_PIN            PA5
 
 
-#if defined(FF_KOMBINI) || defined(FF_KOMBINID)
+#if defined(FF_KOMBINI)
 #define CURRENT_METER_SCALE_DEFAULT 125
-#elif defined(FF_RACEWHOOP)
-#define CURRENT_METER_SCALE_DEFAULT 1000
 #endif
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART3
 
-#if defined(FF_RADIANCE) || defined(FF_RADIANCED)
+#if defined(FF_RADIANCE)
 #define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 #else
 #define SPEKTRUM_BIND_PIN       UART3_RX_PIN
