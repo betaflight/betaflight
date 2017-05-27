@@ -444,8 +444,8 @@ static void applyLedFixedLayers()
     for (int ledIndex = 0; ledIndex < ledCounts.count; ledIndex++) {
         const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[ledIndex];
         hsvColor_t color = *getSC(LED_SCOLOR_BACKGROUND);
-	hsvColor_t color2 = *getSC(LED_SCOLOR_BACKGROUND); //next color above the one selected, or color 0 if your are at the maximum
-	hsvColor_t color0 = *getSC(LED_SCOLOR_BACKGROUND); //Previous color to the one selected, modulo color count
+		hsvColor_t nextColor = *getSC(LED_SCOLOR_BACKGROUND); //next color above the one selected, or color 0 if your are at the maximum
+		hsvColor_t previousColor = *getSC(LED_SCOLOR_BACKGROUND); //Previous color to the one selected, modulo color count
 
         int fn = ledGetFunction(ledConfig);
         int hOffset = HSV_HUE_MAX;
@@ -453,8 +453,8 @@ static void applyLedFixedLayers()
         switch (fn) {
             case LED_FUNCTION_COLOR:
                 color = ledStripConfig()->colors[ledGetColor(ledConfig)];
-				color2 = ledStripConfig()->colors[(ledGetColor(ledConfig)+1) % LED_CONFIGURABLE_COLOR_COUNT];
-				color0 = ledStripConfig()->colors[(ledGetColor(ledConfig)-1) % LED_CONFIGURABLE_COLOR_COUNT];
+				nextColor = ledStripConfig()->colors[(ledGetColor(ledConfig)+1) % LED_CONFIGURABLE_COLOR_COUNT];
+				previousColor = ledStripConfig()->colors[(ledGetColor(ledConfig)-1) % LED_CONFIGURABLE_COLOR_COUNT];
 				break;
 
             case LED_FUNCTION_FLIGHT_MODE:
@@ -487,20 +487,20 @@ static void applyLedFixedLayers()
                 break;
         }
 
-        if (ledGetOverlayBit(ledConfig, LED_OVERLAY_THROTTLE)) {
-			if (auxInput < (PWM_RANGE_MIN + PWM_RANGE_MAX)/2) //if below average
-				{
-					color.h = scaleRange(auxInput, PWM_RANGE_MIN, (PWM_RANGE_MIN + PWM_RANGE_MAX) / 2, color0.h, color.h);  //Fade the color smoothly from color to the next color from min to max throttle
-					color.s = scaleRange(auxInput, PWM_RANGE_MIN, (PWM_RANGE_MIN + PWM_RANGE_MAX) / 2, color0.s, color.s);
-					color.v = scaleRange(auxInput, PWM_RANGE_MIN, (PWM_RANGE_MIN + PWM_RANGE_MAX) / 2, color0.v, color.v);
-				}
-			else 
-				{
-					color.h = scaleRange(auxInput, (PWM_RANGE_MAX + PWM_RANGE_MIN) / 2, PWM_RANGE_MAX, color.h, color2.h);  //Fade the color smoothly from color to the next color from min to max throttle
-					color.s = scaleRange(auxInput, (PWM_RANGE_MAX + PWM_RANGE_MIN) / 2, PWM_RANGE_MAX, color.s, color2.s);
-					color.v = scaleRange(auxInput, (PWM_RANGE_MAX + PWM_RANGE_MIN) / 2, PWM_RANGE_MAX, color.v, color2.v);
-				}
-			hOffset = 0;  //this makes throttle function override others, not sure which is best 
+        if (ledGetOverlayBit(ledConfig, LED_OVERLAY_THROTTLE)) {  //smooth fade with selected Aux channel of all HSV values from previousColor through color to nextColor
+			int centerPWM = (PWM_RANGE_MIN + PWM_RANGE_MAX) / 2; 
+			if (auxInput < centerPWM) //if below average
+                {
+                    color.h = scaleRange(auxInput, PWM_RANGE_MIN, centerPWM, previousColor.h, color.h);  
+                    color.s = scaleRange(auxInput, PWM_RANGE_MIN, centerPWM, previousColor.s, color.s);
+                    color.v = scaleRange(auxInput, PWM_RANGE_MIN, centerPWM, previousColor.v, color.v);
+                }
+            else 
+                {
+                    color.h = scaleRange(auxInput, centerPWM, PWM_RANGE_MAX, color.h, nextColor.h);  
+                    color.s = scaleRange(auxInput, centerPWM, PWM_RANGE_MAX, color.s, nextColor.s);
+                    color.v = scaleRange(auxInput, centerPWM, PWM_RANGE_MAX, color.v, nextColor.v);
+                }
         }
 
         color.h = (color.h + hOffset) % (HSV_HUE_MAX + 1);
@@ -971,8 +971,7 @@ void ledStripUpdate(timeUs_t currentTimeUs)
     // apply all layers; triggered timed functions has to update timers
 
     scaledThrottle = ARMING_FLAG(ARMED) ? scaleRange(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX, 0, 100) : 0;
-  //  scaledAux = scaleRange(rcData[ledStripConfig()->ledstrip_aux_channel], PWM_RANGE_MIN, PWM_RANGE_MAX, 0, HSV_HUE_MAX + 1);
-	auxInput = rcData[ledStripConfig()->ledstrip_aux_channel];
+    auxInput = rcData[ledStripConfig()->ledstrip_aux_channel];
 
     applyLedFixedLayers();
 
