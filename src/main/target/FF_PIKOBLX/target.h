@@ -17,21 +17,21 @@
 
 #pragma once
 
-#if defined(RADIANCED)
+#if defined(FF_RADIANCED)
 #define TARGET_BOARD_IDENTIFIER "RADD" // Furious FPV RADIANCE DSHOT 
-#elif defined(RADIANCE)
+#elif defined(FF_RADIANCE)
 #define TARGET_BOARD_IDENTIFIER "RADI" // Furious FPV RADIANCE V1 
-#elif defined(KOMBINID)
+#elif defined(FF_KOMBINID)
 #define TARGET_BOARD_IDENTIFIER "KOMD" // Furious FPV KOMBINI DSHOT 
-#elif defined(KOMBINI)
+#elif defined(FF_KOMBINI)
 #define TARGET_BOARD_IDENTIFIER "KOMB" // Furious FPV KOMBINI V1 
-#elif defined(RACEWHOOP)
+#elif defined(FF_RACEWHOOP)
 #define TARGET_BOARD_IDENTIFIER "RWHO" // Furious FPV RACEWHOOP
-#elif defined(ACROWHOOPFR)
+#elif defined(FF_ACROWHOOPFR)
 #define TARGET_BOARD_IDENTIFIER "AWHF" // Furious FPV ACROWHOOP FRSKY
-#elif defined(ACROWHOOPSP)
+#elif defined(FF_ACROWHOOPSP)
 #define TARGET_BOARD_IDENTIFIER "AWHS" // Furious FPV ACROWHOOP SPEKTRUM
-#elif defined(NUKE)
+#elif defined(FF_NUKE)
 #define TARGET_BOARD_IDENTIFIER "NUKE" // Furious FPV NUKE 
 #else 
 #define TARGET_BOARD_IDENTIFIER "PIKO" // Furious FPV PIKOBLX
@@ -41,12 +41,12 @@
 
 #define TARGET_CONFIG
 
-#if defined(ACROWHOOPFR) || defined(ACROWHOOPSP) || defined(NUKE)
+#if defined(FF_ACROWHOOPFR) || defined(FF_ACROWHOOPSP) || defined(FF_NUKE)
 #define BRUSHED_MOTORS
 #define RX_CHANNELS_TAER
 #endif
 
-#if defined(RACEWHOOP)
+#if defined(FF_RACEWHOOP)
 #define RX_CHANNELS_TAER
 #endif
 
@@ -105,9 +105,9 @@
 #define VBAT_ADC_PIN            PA5
 
 
-#if defined(KOMBINI) || defined(KOMBINID)
+#if defined(FF_KOMBINI) || defined(FF_KOMBINID)
 #define CURRENT_METER_SCALE_DEFAULT 125
-#elif defined(RACEWHOOP)
+#elif defined(FF_RACEWHOOP)
 #define CURRENT_METER_SCALE_DEFAULT 1000
 #endif
 
@@ -115,13 +115,13 @@
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART3
 
-#if defined(RADIANCE) || defined(RADIANCED)
+#if defined(FF_RADIANCE) || defined(FF_RADIANCED)
 #define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 #else
 #define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 #endif
 
-#if !(defined(NUKE) || defined(ACROWHOPFR) || defined(ACROWHOPSP) || defined(RACEWHOOP))
+#if !(defined(FF_NUKE) || defined(FF_ACROWHOPFR) || defined(FF_ACROWHOPSP) || defined(FF_RACEWHOOP))
 #define TRANSPONDER
 #endif
 

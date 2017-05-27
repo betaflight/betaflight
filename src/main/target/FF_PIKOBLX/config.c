@@ -47,15 +47,15 @@
 
 void targetConfiguration(void)
 {
-#if defined(NUKE) || defined(ACROWHOOPFR) || defined(ACROWHOOPSP)
+#if defined(FF_NUKE) || defined(FF_ACROWHOOPFR) || defined(FF_ACROWHOOPSP)
     motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
     motorConfigMutable()->minthrottle = 1049;
     
-#if defined(ACROWHOOPFR)
+#if defined(FF_ACROWHOOPFR)
     serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIAL_PORT_USART2)].functionMask = FUNCTION_TELEMETRY_FRSKY;
     rxConfigMutable()->sbus_inversion = 0;
     featureSet(FEATURE_TELEMETRY);
-#elif defined(ACROWHOOPSP)
+#elif defined(FF_ACROWHOOPSP)
     rxConfigMutable()->serialrx_provider = SERIALRX_SPEKTRUM2048;
     rxConfigMutable()->spektrum_sat_bind = 5;
     rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
