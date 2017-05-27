@@ -40,13 +40,9 @@
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
 #define TARGET_CONFIG
+#define BRUSHED_ESC_AUTODETECT
 
-#if defined(FF_ACROWHOOPFR) || defined(FF_ACROWHOOPSP) || defined(FF_NUKE)
-#define BRUSHED_MOTORS
-#define RX_CHANNELS_TAER
-#endif
-
-#if defined(FF_RACEWHOOP)
+#if defined(FF_ACROWHOOPFR) || defined(FF_ACROWHOOPSP) || defined(FF_NUKE) || defined(FF_RACEWHOOP)
 #define RX_CHANNELS_TAER
 #endif
 
@@ -121,13 +117,8 @@
 #define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 #endif
 
-#if !(defined(FF_NUKE) || defined(FF_ACROWHOPFR) || defined(FF_ACROWHOPSP) || defined(FF_RACEWHOOP))
 #define TRANSPONDER
-#endif
-
-#if !defined(BRUSHED_MOTORS)
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
-#endif
 
 // IO - stm32f303cc in 48pin package
 #define TARGET_IO_PORTA         0xffff

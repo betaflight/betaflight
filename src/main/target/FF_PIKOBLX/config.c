@@ -25,6 +25,8 @@
 
 #include "config/feature.h"
 
+#include "drivers/pwm_esc_detect.h"
+
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 
@@ -47,36 +49,36 @@
 
 void targetConfiguration(void)
 {
-#if defined(FF_NUKE) || defined(FF_ACROWHOOPFR) || defined(FF_ACROWHOOPSP)
-    motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
-    motorConfigMutable()->minthrottle = 1049;
+    if (hardwareMotorType == MOTOR_BRUSHED) {
+        motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
+        motorConfigMutable()->minthrottle = 1049;
     
 #if defined(FF_ACROWHOOPFR)
-    serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIAL_PORT_USART2)].functionMask = FUNCTION_TELEMETRY_FRSKY;
-    rxConfigMutable()->sbus_inversion = 0;
-    featureSet(FEATURE_TELEMETRY);
+        serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIAL_PORT_USART2)].functionMask = FUNCTION_TELEMETRY_FRSKY;
+        rxConfigMutable()->sbus_inversion = 0;
+        featureSet(FEATURE_TELEMETRY);
 #elif defined(FF_ACROWHOOPSP)
-    rxConfigMutable()->serialrx_provider = SERIALRX_SPEKTRUM2048;
-    rxConfigMutable()->spektrum_sat_bind = 5;
-    rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
+        rxConfigMutable()->serialrx_provider = SERIALRX_SPEKTRUM2048;
+        rxConfigMutable()->spektrum_sat_bind = 5;
+        rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
 #endif
     
-    pidProfilesMutable(0)->pid[PID_ROLL].P = 80;
-    pidProfilesMutable(0)->pid[PID_ROLL].I = 37;
-    pidProfilesMutable(0)->pid[PID_ROLL].D = 35;
-    pidProfilesMutable(0)->pid[PID_PITCH].P = 100;
-    pidProfilesMutable(0)->pid[PID_PITCH].I = 37;
-    pidProfilesMutable(0)->pid[PID_PITCH].D = 35;
-    pidProfilesMutable(0)->pid[PID_YAW].P = 180;
-    pidProfilesMutable(0)->pid[PID_YAW].D = 45;
+        pidProfilesMutable(0)->pid[PID_ROLL].P = 80;
+        pidProfilesMutable(0)->pid[PID_ROLL].I = 37;
+        pidProfilesMutable(0)->pid[PID_ROLL].D = 35;
+        pidProfilesMutable(0)->pid[PID_PITCH].P = 100;
+        pidProfilesMutable(0)->pid[PID_PITCH].I = 37;
+        pidProfilesMutable(0)->pid[PID_PITCH].D = 35;
+        pidProfilesMutable(0)->pid[PID_YAW].P = 180;
+        pidProfilesMutable(0)->pid[PID_YAW].D = 45;
     
-    controlRateProfilesMutable(0)->rcRate8 = 100;
-    controlRateProfilesMutable(0)->rcYawRate8 = 100;
-    controlRateProfilesMutable(0)->rcExpo8 = 15;
-    controlRateProfilesMutable(0)->rcYawExpo8 = 15;
-    controlRateProfilesMutable(0)->rates[PID_ROLL] = 80;
-    controlRateProfilesMutable(0)->rates[PID_PITCH] = 80;
-    controlRateProfilesMutable(0)->rates[PID_YAW] = 80;
-#endif
+        controlRateProfilesMutable(0)->rcRate8 = 100;
+        controlRateProfilesMutable(0)->rcYawRate8 = 100;
+        controlRateProfilesMutable(0)->rcExpo8 = 15;
+        controlRateProfilesMutable(0)->rcYawExpo8 = 15;
+        controlRateProfilesMutable(0)->rates[PID_ROLL] = 80;
+        controlRateProfilesMutable(0)->rates[PID_PITCH] = 80;
+        controlRateProfilesMutable(0)->rates[PID_YAW] = 80;
+    }
 }
 #endif
