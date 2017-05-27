@@ -49,6 +49,8 @@
 
 #define INVERTER_PIN_UART2        PB2 // PB2 (BOOT1) abused as inverter select GPIO
 
+#define USE_RX_MSP
+
 #define USE_EXTI
 #define MAG_INT_EXTI            PC14
 #define MPU_INT_EXTI            PC13
