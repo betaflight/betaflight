@@ -453,8 +453,8 @@ static void applyLedFixedLayers()
         switch (fn) {
             case LED_FUNCTION_COLOR:
                 color = ledStripConfig()->colors[ledGetColor(ledConfig)];
-				nextColor = ledStripConfig()->colors[(ledGetColor(ledConfig)+1) % LED_CONFIGURABLE_COLOR_COUNT];
-				previousColor = ledStripConfig()->colors[(ledGetColor(ledConfig)-1) % LED_CONFIGURABLE_COLOR_COUNT];
+				nextColor = ledStripConfig()->colors[(ledGetColor(ledConfig) + 1 + LED_CONFIGURABLE_COLOR_COUNT) % LED_CONFIGURABLE_COLOR_COUNT];
+				previousColor = ledStripConfig()->colors[(ledGetColor(ledConfig) - 1 + LED_CONFIGURABLE_COLOR_COUNT) % LED_CONFIGURABLE_COLOR_COUNT];
 				break;
 
             case LED_FUNCTION_FLIGHT_MODE:
@@ -500,7 +500,7 @@ static void applyLedFixedLayers()
                     color.h = scaleRange(auxInput, centerPWM, PWM_RANGE_MAX, color.h, nextColor.h);  
                     color.s = scaleRange(auxInput, centerPWM, PWM_RANGE_MAX, color.s, nextColor.s);
                     color.v = scaleRange(auxInput, centerPWM, PWM_RANGE_MAX, color.v, nextColor.v);
-                }
+				}
         }
 
         color.h = (color.h + hOffset) % (HSV_HUE_MAX + 1);
