@@ -34,7 +34,7 @@ The MotoF3 also provides built-in power distribution for four ESCs, an on-board 
 
 MotoLab boards all use the built-in USB interface on the STM32F3 microcontroller. New versions of Cleanflight can be installed using Cleanflight Configurator through the USB interface. Installation of new firmware is described here:
 
-[USB Flashing](USB Flashing.md)
+[USB Flashing](USB%20Flashing.md)
 
 Firmware installation using Windows operating system is complicated because the default device driver for the STM32 USB interface in DFU programming mode is not compatible with the Configurator flash tool. The required DFU mode driver must be manually installed. The default driver for the USB port in normal (VCP) mode is also required for connection to Configurator. Additional details on the drivers and their installion is provided here:
 
