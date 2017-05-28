@@ -151,6 +151,25 @@ static char osdGetAltitudeSymbol()
 }
 
 /**
+ * Gets average battery cell voltage in 0.01V units.
+ */
+static int osdGetBatteryAverageCellVoltage(void)
+{
+    return (getBatteryVoltage() * 10) / getBatteryCellCount();
+}
+
+static char osdGetBatterySymbol(int cellVoltage)
+{
+    if(getBatteryState() == BATTERY_CRITICAL) {
+        return SYM_MAIN_BATT; // FIXME: currently the BAT- symbol, ideally replace with a battery with exclamation mark
+    } else {
+        /* Calculate a symbol offset using cell voltage over full cell voltage range */
+        int symOffset = scaleRange(cellVoltage, batteryConfig()->vbatmincellvoltage * 10, batteryConfig()->vbatmaxcellvoltage * 10, 0, 7);
+        return SYM_BATT_EMPTY - constrain(symOffset, 0, 6);
+    }
+}
+
+/**
  * Converts altitude based on the current unit system.
  * @param alt Raw altitude (i.e. as taken from BaroAlt)
  */
@@ -194,7 +213,7 @@ static void osdDrawSingleElement(uint8_t item)
         }
 
     case OSD_MAIN_BATT_VOLTAGE:
-        buff[0] = SYM_BATT_5;
+        buff[0] = osdGetBatterySymbol(osdGetBatteryAverageCellVoltage());
         tfp_sprintf(buff + 1, "%d.%1dV", getBatteryVoltage() / 10, getBatteryVoltage() % 10);
         break;
 
@@ -442,8 +461,8 @@ static void osdDrawSingleElement(uint8_t item)
 
     case OSD_AVG_CELL_VOLTAGE:
         {
-            const int cellV = getBatteryVoltage() * 10 / getBatteryCellCount();
-            buff[0] = SYM_BATT_5;
+            const int cellV = osdGetBatteryAverageCellVoltage();
+            buff[0] = osdGetBatterySymbol(cellV);
             tfp_sprintf(buff + 1, "%d.%02dV", cellV / 100, cellV % 100);
             break;
         }
