@@ -64,7 +64,7 @@ serialPort_t *debugSerialPort = NULL;
 #define dprintf(x) if (debugSerialPort) printf x
 #else
 #define dprintf(x)
-#endif
+#endif // SMARTAUDIO_DPRINTF
 
 #include "build/debug.h"
 

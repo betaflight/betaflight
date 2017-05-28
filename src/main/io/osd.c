@@ -24,7 +24,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -323,7 +322,7 @@ static void osdDrawSingleElement(uint8_t item)
 
             const char vtxBandLetter = vtx58BandLetter[band];
             const char *vtxChannelName = vtx58ChannelNames[channel];
-            sprintf(buff, "%c:%s:%d", vtxBandLetter, vtxChannelName, power);
+            tfp_sprintf(buff, "%c:%s:%d", vtxBandLetter, vtxChannelName, power);
             break;
         }
 #endif
@@ -450,7 +449,7 @@ static void osdDrawSingleElement(uint8_t item)
         }
 
     case OSD_DEBUG:
-        sprintf(buff, "DBG %5d %5d %5d %5d", debug[0], debug[1], debug[2], debug[3]);
+        tfp_sprintf(buff, "DBG %5d %5d %5d %5d", debug[0], debug[1], debug[2], debug[3]);
         break;
 
     case OSD_PITCH_ANGLE:
@@ -755,14 +754,13 @@ static void osdUpdateStats(void)
 }
 
 #ifdef BLACKBOX
-static void osdGetBlackboxStatusString(char * buff, uint8_t len)
+static void osdGetBlackboxStatusString(char * buff)
 {
     bool storageDeviceIsWorking = false;
     uint32_t storageUsed = 0;
     uint32_t storageTotal = 0;
 
-    switch (blackboxConfig()->device)
-    {
+    switch (blackboxConfig()->device) {
 #ifdef USE_SDCARD
     case BLACKBOX_DEVICE_SDCARD:
         storageDeviceIsWorking = sdcard_isInserted() && sdcard_isFunctional() && (afatfs_getFilesystemState() == AFATFS_FILESYSTEM_STATE_READY);
@@ -789,10 +787,10 @@ static void osdGetBlackboxStatusString(char * buff, uint8_t len)
     }
 
     if (storageDeviceIsWorking) {
-        uint16_t storageUsedPercent = (storageUsed * 100) / storageTotal;
-        snprintf(buff, len, "%d%%", storageUsedPercent);
+        const uint16_t storageUsedPercent = (storageUsed * 100) / storageTotal;
+        tfp_sprintf(buff, "%d%%", storageUsedPercent);
     } else {
-        snprintf(buff, len, "FAULT");
+        tfp_sprintf(buff, "FAULT");
     }
 }
 #endif
@@ -864,7 +862,7 @@ static void osdShowStats(void)
 
 #ifdef BLACKBOX
     if (osdConfig()->enabled_stats[OSD_STAT_BLACKBOX] && blackboxConfig()->device && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
-        osdGetBlackboxStatusString(buff, 10);
+        osdGetBlackboxStatusString(buff);
         osdDisplayStatisticLabel(top++, "BLACKBOX", buff);
     }
 #endif
