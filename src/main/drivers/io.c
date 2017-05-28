@@ -389,7 +389,7 @@ IO_t IOGetByTag(ioTag_t tag)
     int portIdx = DEFIO_TAG_GPIOID(tag);
     int pinIdx = DEFIO_TAG_PIN(tag);
 
-    if (portIdx >= DEFIO_PORT_USED_COUNT)
+    if (portIdx < 0 || portIdx >= DEFIO_PORT_USED_COUNT)
         return NULL;
     // check if pin exists
     if (!(ioDefUsedMask[portIdx] & (1 << pinIdx)))
