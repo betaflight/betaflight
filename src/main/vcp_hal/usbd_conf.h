@@ -51,7 +51,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f7xx_hal.h"
+#if (USBD_DEBUG_LEVEL > 0)
 #include <stdio.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 

@@ -17,7 +17,7 @@
 
 #pragma once
 
-#if !defined(UNIT_TEST) && !defined(SITL)
+#if !defined(UNIT_TEST) && !defined(SITL) && !(USBD_DEBUG_LEVEL > 0)
 #pragma GCC poison sprintf snprintf
 #endif
 
