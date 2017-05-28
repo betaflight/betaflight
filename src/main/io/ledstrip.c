@@ -544,9 +544,13 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
         *timer += HZ_TO_US(10);
     }
 
-    if (warningFlags) {
-        const hsvColor_t *warningColor = NULL;
+    const hsvColor_t *warningColor = NULL;
 
+    if (isBeeperOn()) {
+        warningColor = &HSV(ORANGE);
+    }
+
+    if (warningFlags) {
         bool colorOn = (warningFlashCounter % 2) == 0;   // w_w_
         warningFlags_e warningId = warningFlashCounter / 4;
         if (warningFlags & (1 << warningId)) {
@@ -563,8 +567,10 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
                 default:;
             }
         }
-        if (warningColor)
-            applyLedHsv(LED_MOV_OVERLAY(LED_FLAG_OVERLAY(LED_OVERLAY_WARNING)), warningColor);
+    }
+
+    if (warningColor) {
+        applyLedHsv(LED_MOV_OVERLAY(LED_FLAG_OVERLAY(LED_OVERLAY_WARNING)), warningColor);
     }
 }
 
