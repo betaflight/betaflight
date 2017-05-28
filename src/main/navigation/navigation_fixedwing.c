@@ -407,7 +407,16 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
     if (isPitchAdjustmentValid && (navStateFlags & NAV_CTL_ALT)) {
         pitchCorrection += posControl.rcAdjustment[PITCH];
         throttleCorrection += DECIDEGREES_TO_DEGREES(pitchCorrection) * navConfig()->fw.pitch_to_throttle;
-        throttleCorrection = constrain(throttleCorrection, minThrottleCorrection, maxThrottleCorrection);
+
+        if (navStateFlags & NAV_CTL_LAND) {
+            /*
+             * During LAND we do not allow to raise THROTTLE when nose is up
+             * to reduce speed
+             */
+            throttleCorrection = constrain(throttleCorrection, minThrottleCorrection, 0);
+        } else {
+            throttleCorrection = constrain(throttleCorrection, minThrottleCorrection, maxThrottleCorrection);
+        }
     }
 
     // Speed controller - only apply in POS mode
