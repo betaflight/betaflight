@@ -88,14 +88,14 @@
 #define UART2_RX_PIN            PA3 //Shared with PPM
 #define UART2_TX_PIN            PA2
 
-#define INVERTER_PIN_UART2      PC15
+#define INVERTER_PIN_USART2     PC15
 
 //Telemetry
 #define USE_UART3
 #define UART3_RX_PIN            PB11
 #define UART3_TX_PIN            PB10
 
-#define INVERTER_PIN_UART3      PC14
+#define INVERTER_PIN_USART3     PC14
 
 #define SERIAL_PORT_COUNT 4
 

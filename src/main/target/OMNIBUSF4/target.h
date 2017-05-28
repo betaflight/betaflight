@@ -45,9 +45,9 @@
 #define BEEPER_INVERTED
 
 #ifdef OMNIBUSF4SD
-#define INVERTER_PIN_UART6      PC8 // Omnibus F4 V3 and later
+#define INVERTER_PIN_USART6     PC8 // Omnibus F4 V3 and later
 #else
-#define INVERTER_PIN_UART1      PC0 // PC0 used as inverter select GPIO XXX this is not used --- remove it at the next major release
+#define INVERTER_PIN_USART1     PC0 // PC0 used as inverter select GPIO XXX this is not used --- remove it at the next major release
 #endif
 
 #define MPU6000_CS_PIN          PA4
