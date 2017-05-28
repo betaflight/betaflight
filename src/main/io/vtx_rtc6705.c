@@ -30,7 +30,6 @@
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 
-#include "common/printf.h"
 #include "common/utils.h"
 
 #include "config/parameter_group.h"
