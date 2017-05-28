@@ -419,8 +419,8 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
         }
     }
 
-    // Speed controller - only apply in POS mode
-    if (navStateFlags & NAV_CTL_POS) {
+    // Speed controller - only apply in POS mode when NOT NAV_CTL_LAND
+    if (navStateFlags & NAV_CTL_POS && !(navStateFlags & NAV_CTL_LAND)) {
         throttleCorrection += applyFixedWingMinSpeedController(currentTimeUs);
         throttleCorrection = constrain(throttleCorrection, minThrottleCorrection, maxThrottleCorrection);
     }
@@ -442,6 +442,14 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
         uint16_t correctedThrottleValue = constrain(navConfig()->fw.cruise_throttle + throttleCorrection, navConfig()->fw.min_throttle, navConfig()->fw.max_throttle);
         rcCommand[THROTTLE] = constrain(correctedThrottleValue, motorConfig()->minthrottle, motorConfig()->maxthrottle);
     }
+
+    /*
+     * Then altitude is below landing slowdown min. altitude, set throttle to min_throttle
+     * TODO refactor conditions in this metod if logic is proven to be correct
+     */
+     if (sensors(SENSOR_BARO) && posControl.actualState.pos.V.Z < navConfig()->general.land_slowdown_minalt) {
+         rcCommand[THROTTLE] = navConfig()->fw.min_throttle;
+     }
 }
 
 /*-----------------------------------------------------------
