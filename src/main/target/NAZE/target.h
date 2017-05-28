@@ -73,6 +73,8 @@
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
+#define USE_RX_MSP
+
 #define GYRO
 #define USE_GYRO_MPU3050
 #define USE_GYRO_MPU6050
