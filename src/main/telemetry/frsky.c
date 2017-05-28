@@ -416,7 +416,7 @@ static void sendVoltageAmp(void)
     } else {
         uint16_t voltage = (batteryVoltage * 110) / 21;
         uint16_t vfasVoltage;
-        if (telemetryConfig()->frsky_vfas_cell_voltage) {
+        if (telemetryConfig()->report_cell_voltage) {
             vfasVoltage = voltage / getBatteryCellCount();
         } else {
             vfasVoltage = voltage;

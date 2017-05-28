@@ -619,7 +619,7 @@ void handleSmartPortTelemetry(void)
             case FSSP_DATAID_VFAS       :
                 if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && getBatteryCellCount() > 0) {
                     uint16_t vfasVoltage;
-                    if (telemetryConfig()->frsky_vfas_cell_voltage) {
+                    if (telemetryConfig()->report_cell_voltage) {
                         vfasVoltage = getBatteryVoltage() / getBatteryCellCount();
                     } else {
                         vfasVoltage = getBatteryVoltage();
