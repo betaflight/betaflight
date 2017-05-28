@@ -71,10 +71,6 @@ https://travis-ci.org/betaflight/betaflight
 
 [![Build Status](https://travis-ci.org/betaflight/betaflight.svg?branch=master)](https://travis-ci.org/betaflight/betaflight)
 
-Coveralls is used to monitor code coverage: https://coveralls.io/github/betaflight/betaflight
-
-[![Coverage Status](https://coveralls.io/repos/github/betaflight/betaflight/badge.svg?branch=master)](https://coveralls.io/github/betaflight/betaflight?branch=master)
-
 ## Betaflight Releases
 
 https://github.com/betaflight/betaflight/releases
