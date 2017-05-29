@@ -68,7 +68,6 @@
 #define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA2
 #define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_0
 
-
 #define USE_VCP
 #define USE_UART1
 #define UART1_RX_PIN            PA10
@@ -110,28 +109,22 @@
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
 
-
 #define USE_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #define CURRENT_METER_ADC_PIN   PC1
 #define VBAT_ADC_PIN            PC2
 #define RSSI_ADC_PIN            PC3
-
 #define CURRENT_METER_SCALE_DEFAULT 250                     // 3/120A  = 25mv/A
 
 // LED strip configuration.
 #define LED_STRIP
 #define SPEKTRUM_BIND_PIN       UART6_RX_PIN
 #define BINDPLUG_PIN            PB2
-
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
-
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_UART           SERIAL_PORT_USART6
-
 #define TELEMETRY_UART          SERIAL_PORT_USART1
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA         0xffff
