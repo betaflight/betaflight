@@ -26,7 +26,7 @@ typedef struct box_e {
     const uint8_t permanentId;      //
 } box_t;
 
-const box_t *findBoxByBoxId(uint8_t boxId);
+const box_t *findBoxByBoxId(boxId_e boxId);
 const box_t *findBoxByPermanentId(uint8_t permenantId);
 
 void mspFcInit(void);

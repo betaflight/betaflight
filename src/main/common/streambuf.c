@@ -62,7 +62,7 @@ void sbufWriteData(sbuf_t *dst, const void *data, int len)
 
 void sbufWriteString(sbuf_t *dst, const char *string)
 {
-    sbufWriteData(dst, string, strlen(string) + 1); // include zero terminator
+    sbufWriteData(dst, string, strlen(string));
 }
 
 uint8_t sbufReadU8(sbuf_t *src)
