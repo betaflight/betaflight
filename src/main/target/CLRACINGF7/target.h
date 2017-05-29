@@ -18,25 +18,34 @@
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "CLR7"
 
-#define USBD_PRODUCT_STRING "CL_RACING F7"
+#define USBD_PRODUCT_STRING "CLRACINGF7"
 
 #define LED0                    PB0
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 
-#define MPU6000_CS_PIN          PA4
-#define MPU6000_SPI_INSTANCE    SPI1
+#define USE_EXTI
+#define MPU_INT_EXTI            PC4
+#define USE_MPU_DATA_READY_SIGNAL
+//ICM20689
+#define ICM20689_CS_PIN          PA4
+#define ICM20689_SPI_INSTANCE    SPI1
+#define GYRO
+#define USE_GYRO_SPI_ICM20689
+#define GYRO_ICM20689_ALIGN      CW0_DEG
+#define ACC
+#define USE_ACC_SPI_ICM20689
+#define ACC_ICM20689_ALIGN       CW0_DEG
+
+//MPU-6000
 #define ACC
 #define USE_ACC_SPI_MPU6000
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
-
-// MPU6000 interrupts
-#define USE_EXTI
-#define MPU_INT_EXTI            PC4
-#define USE_MPU_DATA_READY_SIGNAL
 #define GYRO_MPU6000_ALIGN      CW0_DEG
 #define ACC_MPU6000_ALIGN       CW0_DEG
+#define MPU6000_CS_PIN          PA4
+#define MPU6000_SPI_INSTANCE    SPI1
 
 #define OSD
 #define USE_MAX7456
