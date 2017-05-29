@@ -445,10 +445,12 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
 
     /*
      * Then altitude is below landing slowdown min. altitude, set throttle to min_throttle
+     * And lock ROLL axis in ZERO position
      * TODO refactor conditions in this metod if logic is proven to be correct
      */
      if (posControl.flags.hasValidAltitudeSensor && posControl.actualState.pos.V.Z < navConfig()->general.land_slowdown_minalt) {
          rcCommand[THROTTLE] = navConfig()->fw.min_throttle;
+         rcCommand[ROLL] = 0;
      }
 }
 
