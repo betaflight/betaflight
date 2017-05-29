@@ -548,7 +548,8 @@ void validateAndFixConfig(void)
 {
 #if !defined(USE_UNCOMMON_MIXERS) && !defined(USE_QUAD_MIXER_ONLY) && !defined(USE_OSD_SLAVE)
     mixerMode_e mixerMode = mixerConfigMutable()->mixerMode;
-    if (mixerMode != MIXER_CUSTOM && mixerMode != MIXER_CUSTOM_AIRPLANE && mixerMode != MIXER_CUSTOM_TRI && mixers[mixerMode].motor == NULL) {
+
+    if (mixerMode != MIXER_CUSTOM && mixerMode != MIXER_CUSTOM_AIRPLANE && mixerMode != MIXER_CUSTOM_TRI && mixerMode != MIXER_GIMBAL && mixerMode != MIXER_PPM_TO_SERVO && mixers[mixerMode].motor == NULL) {
         mixerConfigMutable()->mixerMode = MIXER_CUSTOM;
     }
 #endif
