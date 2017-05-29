@@ -88,7 +88,7 @@ static void mpu6050GyroInit(gyroDev_t *gyro)
     gyro->mpuConfiguration.writeFn(&gyro->bus, MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);   //GYRO_CONFIG   -- FS_SEL = 3: Full scale set to 2000 deg/sec
 
     // ACC Init stuff.
-    // Accel scale 8g (4096 LSB/g)
+    // Accel scale 16g (2048 LSB/g)
     gyro->mpuConfiguration.writeFn(&gyro->bus, MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
 
     gyro->mpuConfiguration.writeFn(&gyro->bus, MPU_RA_INT_PIN_CFG,
