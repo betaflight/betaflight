@@ -233,7 +233,7 @@ Smartport devices can be connected directly to STM32F3 boards such as the SPRaci
 For Smartport on F3 based boards, enable the telemetry inversion setting.
 
 ```
-set telemetry_inversion = ON
+set tlm_inversion = ON
 ```
 
 ### SmartPort on F1 and F3 targets with SoftSerial
@@ -243,7 +243,7 @@ Since F1 targets like Naze32 or Flip32 are not equipped with hardware inverters,
 1. Enable SoftSerial ```feature SOFTSERIAL```
 2. In Configurator assign _Telemetry_ > _Smartport_ > _Auto_ to SoftSerial port of your choice
 3. Enable Telemetry ```feature TELEMETRY```
-4. Confirm telemetry invesion ```set telemetry_inversion = ON```
+4. Confirm telemetry invesion ```set tlm_inversion = ON```
 5. You have to bridge TX and RX lines of SoftSerial and connect them together to S.Port signal line in receiver
 
 Notes:
