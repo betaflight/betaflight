@@ -546,6 +546,12 @@ void activateConfig(void)
 
 void validateAndFixConfig(void)
 {
+#if !defined(USE_UNCOMMON_MIXERS) && !defined(USE_QUAD_MIXER_ONLY) && !defined(USE_OSD_SLAVE)
+    if (mixers[mixerConfigMutable()->mixerMode].motor == NULL) {
+        mixerConfigMutable()->mixerMode = MIXER_CUSTOM;
+    }
+#endif
+
 #ifndef USE_OSD_SLAVE
     if((motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)){
         motorConfigMutable()->mincommand = 1000;
