@@ -268,7 +268,7 @@ while in flight.
 ## Viewing recorded logs
 After your flights, you'll have a series of flight log files with a .TXT extension.
 
-You can view these .TXT flight log files interactively using your web browser with the Cleanflight Blackbox Explorer:
+You can view these .TXT flight log files interactively using your web browser with the INAV Blackbox Explorer:
 
 https://github.com/iNavFlight/blackbox-log-viewer
 
