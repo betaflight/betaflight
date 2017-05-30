@@ -444,13 +444,26 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
     }
 
     /*
-     * Then altitude is below landing slowdown min. altitude, set throttle to min_throttle
-     * And lock ROLL axis in ZERO position
+     * Then altitude is below landing slowdown min. altitude, enable final approach procedure
      * TODO refactor conditions in this metod if logic is proven to be correct
      */
-     if (posControl.flags.hasValidAltitudeSensor && posControl.actualState.pos.V.Z < navConfig()->general.land_slowdown_minalt) {
-         rcCommand[THROTTLE] = navConfig()->fw.min_throttle;
-         rcCommand[ROLL] = 0;
+    if (posControl.flags.hasValidAltitudeSensor && posControl.actualState.pos.V.Z < navConfig()->general.land_slowdown_minalt) {
+        /*
+         * Set motor to min. throttle and stop it when MOTOR_STOP feature is enabled
+         */
+        rcCommand[THROTTLE] = motorConfig()->minthrottle;
+        ENABLE_STATE(NAV_MOTOR_STOP_OR_IDLE);
+
+        /*
+         * Stabilize ROLL axis on 0 degress banking regardless of loiter radius and position
+         */ 
+        rcCommand[ROLL] = 0;
+
+        /*
+         * Stabilize PITCH angle into shallow dive (2 deg hardcoded ATM)
+         * PITCH angle is measured: >0 - dive, <0 - climb)
+         */
+        rcCommand[PITCH] = pidAngleToRcCommand(DEGREES_TO_DECIDEGREES(2), pidProfile()->max_angle_inclination[FD_PITCH]);
      }
 }
 
