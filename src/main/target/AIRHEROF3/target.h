@@ -56,6 +56,10 @@
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883
 
+#define PITOT
+#define USE_PITOT_MS4525
+#define USE_PITOT_ADC
+
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
@@ -76,9 +80,14 @@
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
+
 #define USE_ADC
-#define ADC_INSTANCE            ADC2
+
 #define VBAT_ADC_PIN            PA4
+#define VBAT_ADC_INSTANCE       ADC2
+
+#define AIRSPEED_ADC_PIN        PA1
+#define AIRSPEED_ADC_INSTANCE   ADC1
 
 /*
 #define LED_STRIP
