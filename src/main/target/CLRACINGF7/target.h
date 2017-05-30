@@ -18,25 +18,34 @@
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "CLR7"
 
-#define USBD_PRODUCT_STRING "CL_RACING F7"
+#define USBD_PRODUCT_STRING "CLRACINGF7"
 
 #define LED0                    PB0
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 
-#define MPU6000_CS_PIN          PA4
-#define MPU6000_SPI_INSTANCE    SPI1
+#define USE_EXTI
+#define MPU_INT_EXTI            PC4
+#define USE_MPU_DATA_READY_SIGNAL
+//ICM20689
+#define ICM20689_CS_PIN          PA4
+#define ICM20689_SPI_INSTANCE    SPI1
+#define GYRO
+#define USE_GYRO_SPI_ICM20689
+#define GYRO_ICM20689_ALIGN      CW0_DEG
+#define ACC
+#define USE_ACC_SPI_ICM20689
+#define ACC_ICM20689_ALIGN       CW0_DEG
+
+//MPU-6000
 #define ACC
 #define USE_ACC_SPI_MPU6000
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
-
-// MPU6000 interrupts
-#define USE_EXTI
-#define MPU_INT_EXTI            PC4
-#define USE_MPU_DATA_READY_SIGNAL
 #define GYRO_MPU6000_ALIGN      CW0_DEG
 #define ACC_MPU6000_ALIGN       CW0_DEG
+#define MPU6000_CS_PIN          PA4
+#define MPU6000_SPI_INSTANCE    SPI1
 
 #define OSD
 #define USE_MAX7456
@@ -58,7 +67,6 @@
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF1_5
 #define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA2
 #define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_0
-
 
 #define USE_VCP
 #define USE_UART1
@@ -101,28 +109,22 @@
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
 
-
 #define USE_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #define CURRENT_METER_ADC_PIN   PC1
 #define VBAT_ADC_PIN            PC2
 #define RSSI_ADC_PIN            PC3
-
 #define CURRENT_METER_SCALE_DEFAULT 250                     // 3/120A  = 25mv/A
 
 // LED strip configuration.
 #define LED_STRIP
 #define SPEKTRUM_BIND_PIN       UART6_RX_PIN
 #define BINDPLUG_PIN            PB2
-
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
-
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_UART           SERIAL_PORT_USART6
-
 #define TELEMETRY_UART          SERIAL_PORT_USART1
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA         0xffff
