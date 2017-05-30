@@ -17,9 +17,20 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "PIKO" // Furious FPV Piko BLX
+#if defined(FF_RADIANCE)
+#define TARGET_BOARD_IDENTIFIER "RADI" // Furious FPV RADIANCE
+#elif defined(FF_KOMBINI)
+#define TARGET_BOARD_IDENTIFIER "KOMB" // Furious FPV KOMBINI
+#elif defined(FF_ACROWHOOPSP)
+#define TARGET_BOARD_IDENTIFIER "AWHS" // Furious FPV ACROWHOOP SPEKTRUM
+#else 
+#define TARGET_BOARD_IDENTIFIER "PIKO" // Furious FPV PIKOBLX
+#endif
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
+
+#define TARGET_CONFIG
+#define BRUSHED_ESC_AUTODETECT
 
 #define LED0                    PB9
 #define LED1                    PB5
@@ -63,45 +74,41 @@
 #define UART2_TX_PIN            PB3
 #define UART2_RX_PIN            PB4
 
-#define UART3_TX_PIN            PB10 // PB10 (AF7)
-#define UART3_RX_PIN            PB11 // PB11 (AF7)
+#define UART3_TX_PIN            PB10
+#define UART3_RX_PIN            PB11
 
 #define USE_SPI
 #define USE_SPI_DEVICE_2
 
-#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define USE_ADC
+#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define ADC_INSTANCE            ADC2
 #define CURRENT_METER_ADC_PIN   PB2
 #define VBAT_ADC_PIN            PA5
 
+
+#if defined(FF_KOMBINI)
 #define CURRENT_METER_SCALE_DEFAULT 125
+#endif
+
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#define SERIALRX_PROVIDER       SERIALRX_SBUS
+#define SERIALRX_UART           SERIAL_PORT_USART3
+
+#if defined(FF_RADIANCE)
+#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
+#else
+#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
+#endif
 
 #define TRANSPONDER
-#define TRANSPONDER_GPIO                     GPIOA
-#define TRANSPONDER_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-#define TRANSPONDER_GPIO_AF                  GPIO_AF_6
-#define TRANSPONDER_PIN                      GPIO_Pin_8
-#define TRANSPONDER_PIN_SOURCE               GPIO_PinSource8
-#define TRANSPONDER_TIMER                    TIM1
-#define TRANSPONDER_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
-#define TRANSPONDER_DMA_CHANNEL              DMA1_Channel2
-#define TRANSPONDER_IRQ                      DMA1_Channel2_IRQn
-#define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC2
-#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
-
-#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - stm32f303cc in 48pin package
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
-// #define TARGET_IO_PORTF        (BIT(0)|BIT(1))
-// !!TODO - check the following line is correct
-#define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(3)|BIT(4))
+#define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
-#define USABLE_TIMER_CHANNEL_COUNT 10
-#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15) | TIM_N(17))
-
+#define USABLE_TIMER_CHANNEL_COUNT 9
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(16) | TIM_N(17))
