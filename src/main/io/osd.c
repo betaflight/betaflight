@@ -509,6 +509,14 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
+    case OSD_DISARMED:
+        if (!ARMING_FLAG(ARMED)) {
+            tfp_sprintf(buff, "DISARMED");
+            break;
+        } else {
+            return;
+        }
+
     default:
         return;
     }
@@ -564,6 +572,7 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_ROLL_ANGLE);
     osdDrawSingleElement(OSD_MAIN_BATT_USAGE);
     osdDrawSingleElement(OSD_ARMED_TIME);
+    osdDrawSingleElement(OSD_DISARMED);
 
 #ifdef GPS
 #ifdef CMS
@@ -612,6 +621,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdProfile)
     osdProfile->item_pos[OSD_GPS_LON] = OSD_POS(18, 15) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_MAIN_BATT_USAGE] = OSD_POS(15, 10) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_ARMED_TIME] = OSD_POS(1, 2) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_DISARMED] = OSD_POS(10, 4) | VISIBLE_FLAG;
 
     osdProfile->enabled_stats[OSD_STAT_MAX_SPEED] = true;
     osdProfile->enabled_stats[OSD_STAT_MIN_BATTERY] = true;
