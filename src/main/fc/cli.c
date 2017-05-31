@@ -859,6 +859,10 @@ static const clivalue_t valueTable[] = {
     { "nav_fw_pitch2thr",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  100 }, PG_NAV_CONFIG, offsetof(navConfig_t, fw.pitch_to_throttle) },
     { "nav_fw_loiter_radius",       VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  10000 }, PG_NAV_CONFIG, offsetof(navConfig_t, fw.loiter_radius) },
 
+#ifdef FIXED_WING_LANDING
+    { "nav_fw_land_dive_angle",     VAR_INT8  | MASTER_VALUE, .config.minmax = { -20,  20 }, PG_NAV_CONFIG, offsetof(navConfig_t, fw.land_dive_angle) },
+#endif
+
     { "nav_fw_launch_velocity",     VAR_UINT16 | MASTER_VALUE, .config.minmax = { 100,  10000 }, PG_NAV_CONFIG, offsetof(navConfig_t, fw.launch_velocity_thresh) },
     { "nav_fw_launch_accel",        VAR_UINT16 | MASTER_VALUE, .config.minmax = { 1000,  20000 }, PG_NAV_CONFIG, offsetof(navConfig_t, fw.launch_accel_thresh) },
     { "nav_fw_launch_max_angle",    VAR_UINT8  | MASTER_VALUE, .config.minmax = { 5,  180 }, PG_NAV_CONFIG, offsetof(navConfig_t, fw.launch_max_angle) },

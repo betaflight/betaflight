@@ -468,7 +468,7 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
          * Stabilize PITCH angle into shallow dive (2 deg hardcoded ATM)
          * PITCH angle is measured: >0 - dive, <0 - climb)
          */
-        rcCommand[PITCH] = pidAngleToRcCommand(DEGREES_TO_DECIDEGREES(2), pidProfile()->max_angle_inclination[FD_PITCH]);
+        rcCommand[PITCH] = pidAngleToRcCommand(DEGREES_TO_DECIDEGREES(navConfig()->fw.land_dive_angle), pidProfile()->max_angle_inclination[FD_PITCH]);
      }
 #endif
 }

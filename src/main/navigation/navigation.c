@@ -118,6 +118,9 @@ PG_RESET_TEMPLATE(navConfig_t, navConfig,
         .pitch_to_throttle = 10,   // pwm units per degree of pitch (10pwm units ~ 1% throttle)
         .loiter_radius = 5000,     // 50m
 
+        //Fixed wing landing
+        .land_dive_angle = 2,   // 2 degrees dive by default
+        
         // Fixed wing launch
         .launch_velocity_thresh = 300,         // 3 m/s
         .launch_accel_thresh = 1.9f * 981,     // cm/s/s (1.9*G)
