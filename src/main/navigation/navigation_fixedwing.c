@@ -408,6 +408,7 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
         pitchCorrection += posControl.rcAdjustment[PITCH];
         throttleCorrection += DECIDEGREES_TO_DEGREES(pitchCorrection) * navConfig()->fw.pitch_to_throttle;
 
+#ifdef FIXED_WING_LANDING
         if (navStateFlags & NAV_CTL_LAND) {
             /*
              * During LAND we do not allow to raise THROTTLE when nose is up
@@ -415,8 +416,11 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
              */
             throttleCorrection = constrain(throttleCorrection, minThrottleCorrection, 0);
         } else {
+#endif
             throttleCorrection = constrain(throttleCorrection, minThrottleCorrection, maxThrottleCorrection);
+#ifdef FIXED_WING_LANDING
         }
+#endif
     }
 
     // Speed controller - only apply in POS mode when NOT NAV_CTL_LAND
@@ -443,6 +447,7 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
         rcCommand[THROTTLE] = constrain(correctedThrottleValue, motorConfig()->minthrottle, motorConfig()->maxthrottle);
     }
 
+#ifdef FIXED_WING_LANDING
     /*
      * Then altitude is below landing slowdown min. altitude, enable final approach procedure
      * TODO refactor conditions in this metod if logic is proven to be correct
@@ -465,6 +470,7 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
          */
         rcCommand[PITCH] = pidAngleToRcCommand(DEGREES_TO_DECIDEGREES(2), pidProfile()->max_angle_inclination[FD_PITCH]);
      }
+#endif
 }
 
 /*-----------------------------------------------------------
