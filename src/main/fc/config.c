@@ -546,11 +546,19 @@ void activateConfig(void)
 
 void validateAndFixConfig(void)
 {
-#if !defined(USE_UNCOMMON_MIXERS) && !defined(USE_QUAD_MIXER_ONLY) && !defined(USE_OSD_SLAVE)
+#if !defined(USE_QUAD_MIXER_ONLY) && !defined(USE_OSD_SLAVE)
+    // Reset unsupported mixer mode to default.
+    // This check will be gone when motor/servo mixers are loaded dynamically
+    // by configurator as a part of configuration procedure.
+
     mixerMode_e mixerMode = mixerConfigMutable()->mixerMode;
 
-    if (mixerMode != MIXER_CUSTOM && mixerMode != MIXER_CUSTOM_AIRPLANE && mixerMode != MIXER_CUSTOM_TRI && mixerMode != MIXER_GIMBAL && mixerMode != MIXER_PPM_TO_SERVO && mixers[mixerMode].motor == NULL) {
-        mixerConfigMutable()->mixerMode = MIXER_CUSTOM;
+    if (!(mixerMode == MIXER_CUSTOM || mixerMode == MIXER_CUSTOM_AIRPLANE || mixerMode == MIXER_CUSTOM_TRI)) {
+        if (mixers[mixerMode].motorCount && mixers[mixerMode].motor == NULL)
+            mixerConfigMutable()->mixerMode = MIXER_CUSTOM;
+
+        if (mixers[mixerMode].useServo && servoMixers[mixerMode].servoRuleCount == 0)
+            mixerConfigMutable()->mixerMode = MIXER_CUSTOM_AIRPLANE;
     }
 #endif
 

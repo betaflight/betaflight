@@ -91,6 +91,14 @@ typedef struct servoMixer_s {
 
 PG_DECLARE_ARRAY(servoMixer_t, MAX_SERVO_RULES, customServoMixers);
 
+// Custom mixer configuration
+typedef struct mixerRules_s {
+    uint8_t servoRuleCount;
+    const servoMixer_t *rule;
+} mixerRules_t;
+
+extern const mixerRules_t servoMixers[];
+
 typedef struct servoParam_s {
     uint32_t reversedSources;               // the direction of servo movement for each input source of the servo mixer, bit set=inverted
     int16_t min;                            // servo min

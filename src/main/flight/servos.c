@@ -148,13 +148,6 @@ static const servoMixer_t servoMixerGimbal[] = {
     { SERVO_GIMBAL_ROLL, INPUT_GIMBAL_ROLL,  125, 0, 0, 100, 0 },
 };
 
-
-// Custom mixer configuration
-typedef struct mixerRules_s {
-    uint8_t servoRuleCount;
-    const servoMixer_t *rule;
-} mixerRules_t;
-
 const mixerRules_t servoMixers[] = {
     { 0, NULL },                // entry 0
     { COUNT_SERVO_RULES(servoMixerTri), servoMixerTri },       // MULTITYPE_TRI
