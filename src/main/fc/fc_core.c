@@ -499,7 +499,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
     uint32_t startTime = 0;
     if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
 
-    // Read out gyro temperature if used for telemmetry
+    // Read out gyro temperature if used for telemetry
     if (feature(FEATURE_TELEMETRY)) {
         gyroReadTemperature();
     }
