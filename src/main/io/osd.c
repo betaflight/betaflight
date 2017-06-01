@@ -214,7 +214,7 @@ static void osdDrawSingleElement(uint8_t item)
 
     case OSD_MAIN_BATT_VOLTAGE:
         buff[0] = osdGetBatterySymbol(osdGetBatteryAverageCellVoltage());
-        tfp_sprintf(buff + 1, "%d.%1dV", getBatteryVoltage() / 10, getBatteryVoltage() % 10);
+        tfp_sprintf(buff + 1, "%d.%1d%c", getBatteryVoltage() / 10, getBatteryVoltage() % 10, SYM_VOLT);
         break;
 
     case OSD_CURRENT_DRAW:
@@ -463,7 +463,7 @@ static void osdDrawSingleElement(uint8_t item)
         {
             const int cellV = osdGetBatteryAverageCellVoltage();
             buff[0] = osdGetBatterySymbol(cellV);
-            tfp_sprintf(buff + 1, "%d.%02dV", cellV / 100, cellV % 100);
+            tfp_sprintf(buff + 1, "%d.%02d%c", cellV / 100, cellV % 100, SYM_VOLT);
             break;
         }
 
@@ -845,12 +845,12 @@ static void osdShowStats(void)
     }
 
     if (osdConfig()->enabled_stats[OSD_STAT_MIN_BATTERY]) {
-        tfp_sprintf(buff, "%d.%1dV", stats.min_voltage / 10, stats.min_voltage % 10);
+        tfp_sprintf(buff, "%d.%1d%c", stats.min_voltage / 10, stats.min_voltage % 10, SYM_VOLT);
         osdDisplayStatisticLabel(top++, "MIN BATTERY", buff);
     }
 
     if (osdConfig()->enabled_stats[OSD_STAT_END_BATTERY]) {
-        tfp_sprintf(buff, "%d.%1dV", getBatteryVoltage() / 10, getBatteryVoltage() % 10);
+        tfp_sprintf(buff, "%d.%1d%c", getBatteryVoltage() / 10, getBatteryVoltage() % 10, SYM_VOLT);
         osdDisplayStatisticLabel(top++, "END BATTERY", buff);
     }
 
