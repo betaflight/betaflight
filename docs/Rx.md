@@ -150,6 +150,30 @@ These receivers are reported working (all gives 10 channels serial):
 - FlySky/Turnigy FS-iA10 10-Channel Receiver (http://www.flysky-cn.com/products_detail/productId=53.html)
 - FlySky/Turnigy FS-iA10B 10-Channel Receiver (http://www.flysky-cn.com/products_detail/productId=52.html)
 
+#### Combine flysky ibus telemetry and serial rx on the same FC serial port
+  
+  Connect Flysky FS-iA6B receiver like this:
+```   
+    +---------+
+    | FS-iA6B |
+    |         |
+    | Ser RX  |---|<---\       +------------+
+    |         |        |       | FC         |
+    | Sensor  |--#==#--*-------| SerialTX   |
+    +---------+                +------------+
+```
+
+Use a diode with cathode to receiver serial rx output (for example 1N4148),
+the anode is connected to the FC serial _TX_ pin, and also via a 
+resistor (10KOhm) to the receiver ibus sensor port.
+
+Enable with cli:
+```  
+    serial 1 1088 115200 57600 115200 115200
+    feature RX_SERIAL
+    set serialrx_provider = IBUS
+    save
+```
 ## MultiWii serial protocol (MSP)
 
 Allows you to use MSP commands as the RC input.  Only 8 channel support to maintain compatibility with MSP.
