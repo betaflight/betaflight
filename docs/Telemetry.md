@@ -269,6 +269,8 @@ It runs at a fixed baud rate of 115200.
 
 It should be possible to daisy chain multiple sensors with ibus. This is implemented but not tested because i don't have one of the sensors to test with, the FC shall always be the last sensor in the chain.
 
+It is possible to combine serial rx and ibus telemetry on the same uart pin on the flight controller, see [Rx](Rx.md).
+
 ### Configuration
 
 Ibus telemetry can be enabled in the firmware at build time using defines in target.h. It is enabled by default in those targets that have space left.
