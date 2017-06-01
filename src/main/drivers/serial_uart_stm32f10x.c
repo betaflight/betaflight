@@ -49,7 +49,36 @@ static uartPort_t uartPort2;
 static uartPort_t uartPort3;
 #endif
 
-void uartIrqCallback(uartPort_t *s)
+static void uartConfigIO(IO_t txIO, IO_t rxIO, portMode_t mode, portOptions_t options)
+{
+    if (options & SERIAL_BIDIR) {
+        IOInit(txIO, OWNER_SERIAL_TX, 1);
+        IOConfigGPIO(txIO, (options & SERIAL_BIDIR_PP) ? IOCFG_AF_PP : IOCFG_AF_OD);
+    } else {
+        if (mode & MODE_TX) {
+            IOInit(txIO, OWNER_SERIAL_TX, 1);
+            IOConfigGPIO(txIO, IOCFG_AF_PP);
+        }
+
+        if (mode & MODE_RX) {
+            IOInit(rxIO, OWNER_SERIAL_RX, 1);
+            IOConfigGPIO(rxIO, IOCFG_IPU);
+        }
+    }
+}
+
+static void uartConfigInterrupt(uint8_t irqn, int priority)
+{
+    NVIC_InitTypeDef NVIC_InitStructure;
+
+    NVIC_InitStructure.NVIC_IRQChannel = irqn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(priority);
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(priority);
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+}
+
+static void uartIrqCallback(uartPort_t *s)
 {
     uint16_t SR = s->USARTx->SR;
 
@@ -76,6 +105,7 @@ void uartIrqCallback(uartPort_t *s)
     }
 }
 
+#ifdef USE_UART1
 // USART1 Tx DMA Handler
 void uart_tx_dma_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
@@ -89,7 +119,6 @@ void uart_tx_dma_IRQHandler(dmaChannelDescriptor_t* descriptor)
         s->txDMAEmpty = true;
 }
 
-#ifdef USE_UART1
 // USART1 - Telemetry (RX/TX by DMA)
 uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
@@ -121,20 +150,7 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
 
     // UART1_TX    PA9
     // UART1_RX    PA10
-    if (options & SERIAL_BIDIR) {
-        IOInit(IOGetByTag(IO_TAG(PA9)), OWNER_SERIAL_TX, 1);
-        IOConfigGPIO(IOGetByTag(IO_TAG(PA9)), (options & SERIAL_BIDIR_PP) ? IOCFG_AF_PP : IOCFG_AF_OD);
-    } else {
-        if (mode & MODE_TX) {
-            IOInit(IOGetByTag(IO_TAG(PA9)), OWNER_SERIAL_TX, 1);
-            IOConfigGPIO(IOGetByTag(IO_TAG(PA9)), IOCFG_AF_PP);
-        }
-
-        if (mode & MODE_RX) {
-            IOInit(IOGetByTag(IO_TAG(PA10)), OWNER_SERIAL_RX, 1);
-            IOConfigGPIO(IOGetByTag(IO_TAG(PA10)), IOCFG_IPU);
-        }
-    }
+    uartConfigIO(IOGetByTag(IO_TAG(PA9)), IOGetByTag(IO_TAG(PA10)), mode, options);
 
     // DMA TX Interrupt
     dmaInit(DMA1_CH4_HANDLER, OWNER_SERIAL_TX, 1);
@@ -142,13 +158,7 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
 
 #ifndef USE_UART1_RX_DMA
     // RX/TX Interrupt
-    NVIC_InitTypeDef NVIC_InitStructure;
-
-    NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART1);
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SERIALUART1);
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
+    uartConfigInterrupt(USART1_IRQn, NVIC_PRIO_SERIALUART1);
 #endif
 
     return s;
@@ -171,8 +181,6 @@ uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t option
     static volatile uint8_t rx2Buffer[UART2_RX_BUFFER_SIZE];
     static volatile uint8_t tx2Buffer[UART2_TX_BUFFER_SIZE];
 
-    NVIC_InitTypeDef NVIC_InitStructure;
-
     s = &uartPort2;
     s->port.vTable = uartVTable;
 
@@ -192,27 +200,10 @@ uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t option
 
     // UART2_TX    PA2
     // UART2_RX    PA3
-    if (options & SERIAL_BIDIR) {
-        IOInit(IOGetByTag(IO_TAG(PA2)), OWNER_SERIAL_TX, 2);
-        IOConfigGPIO(IOGetByTag(IO_TAG(PA2)), (options & SERIAL_BIDIR_PP) ? IOCFG_AF_PP : IOCFG_AF_OD);
-    } else {
-        if (mode & MODE_TX) {
-            IOInit(IOGetByTag(IO_TAG(PA2)), OWNER_SERIAL_TX, 2);
-            IOConfigGPIO(IOGetByTag(IO_TAG(PA2)), IOCFG_AF_PP);
-        }
-
-        if (mode & MODE_RX) {
-            IOInit(IOGetByTag(IO_TAG(PA3)), OWNER_SERIAL_RX, 2);
-            IOConfigGPIO(IOGetByTag(IO_TAG(PA3)), IOCFG_IPU);
-        }
-    }
+    uartConfigIO(IOGetByTag(IO_TAG(PA2)), IOGetByTag(IO_TAG(PA3)), mode, options);
 
     // RX/TX Interrupt
-    NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART2);
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SERIALUART2);
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
+    uartConfigInterrupt(USART2_IRQn, NVIC_PRIO_SERIALUART2);
 
     return s;
 }
@@ -235,8 +226,6 @@ uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t option
     static volatile uint8_t rx3Buffer[UART3_RX_BUFFER_SIZE];
     static volatile uint8_t tx3Buffer[UART3_TX_BUFFER_SIZE];
 
-    NVIC_InitTypeDef NVIC_InitStructure;
-
     s = &uartPort3;
     s->port.vTable = uartVTable;
 
@@ -254,27 +243,10 @@ uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t option
 
     RCC_ClockCmd(RCC_APB1(USART3), ENABLE);
 
-    if (options & SERIAL_BIDIR) {
-        IOInit(IOGetByTag(IO_TAG(UART3_TX_PIN)), OWNER_SERIAL_TX, 3);
-        IOConfigGPIO(IOGetByTag(IO_TAG(UART3_TX_PIN)), (options & SERIAL_BIDIR_PP) ? IOCFG_AF_PP : IOCFG_AF_OD);
-    } else {
-        if (mode & MODE_TX) {
-            IOInit(IOGetByTag(IO_TAG(UART3_TX_PIN)), OWNER_SERIAL_TX, 3);
-            IOConfigGPIO(IOGetByTag(IO_TAG(UART3_TX_PIN)), IOCFG_AF_PP);
-        }
-
-        if (mode & MODE_RX) {
-            IOInit(IOGetByTag(IO_TAG(UART3_RX_PIN)), OWNER_SERIAL_RX, 3);
-            IOConfigGPIO(IOGetByTag(IO_TAG(UART3_RX_PIN)), IOCFG_IPU);
-        }
-    }
+    uartConfigIO(IOGetByTag(IO_TAG(UART3_TX_PIN)), IOGetByTag(IO_TAG(UART3_RX_PIN)), mode, options);
 
     // RX/TX Interrupt
-    NVIC_InitStructure.NVIC_IRQChannel = USART3_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SERIALUART3);
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SERIALUART3);
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
+    uartConfigInterrupt(USART3_IRQn, NVIC_PRIO_SERIALUART3);
 
     return s;
 }
