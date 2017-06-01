@@ -319,7 +319,7 @@ const mixer_t mixers[] = {
     { 3, true,  NULL },                // MIXER_CUSTOM_TRI
     { 4, false, mixerQuadX1234 },
 };
-#endif
+#endif // !USE_QUAD_MIXER_ONLY
 
 static uint16_t disarmMotorOutput, deadbandMotor3dHigh, deadbandMotor3dLow;
 uint16_t motorOutputHigh, motorOutputLow;
