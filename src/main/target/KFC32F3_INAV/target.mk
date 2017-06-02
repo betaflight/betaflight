@@ -3,7 +3,6 @@ FEATURES    = VCP ONBOARDFLASH
 
 TARGET_SRC = \
             io/osd.c \
-            rx/eleres.c \
             drivers/accgyro/accgyro_mpu.c \
             drivers/accgyro/accgyro_fake.c \
             drivers/accgyro/accgyro_spi_mpu6000.c \
