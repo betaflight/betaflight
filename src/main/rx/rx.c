@@ -59,6 +59,7 @@
 #include "rx/jetiexbus.h"
 #include "rx/rx_spi.h"
 #include "rx/crsf.h"
+#include "rx/eleres.h"
 
 
 //#define DEBUG_RX_SIGNAL_LOSS
@@ -515,6 +516,14 @@ void parseRcChannels(const char *input)
     }
 }
 
+#ifdef ELERES_RX
+void updateRSSIeleres(uint32_t currentTime)
+{
+    UNUSED(currentTime);
+    rssi = (eleres_rssi() - 18)*1024/106; //RSSI is in range 18-124
+}
+#endif // ELERES_RX
+
 static void updateRSSIPWM(void)
 {
     int16_t pwmRssi = 0;
@@ -567,13 +576,17 @@ void updateRSSI(timeUs_t currentTimeUs)
         updateRSSIPWM();
     } else if (feature(FEATURE_RSSI_ADC)) {
         updateRSSIADC(currentTimeUs);
+#ifdef ELERES_RX
+    } else if (feature(FEATURE_RX_SPI)) {
+        updateRSSIeleres(currentTimeUs);
+#endif
     }
 
     // Apply RSSI inversion
     if (rxConfig()->rssiInvert) {
         rssi = 1023 - rssi;
     }
-    
+
 }
 
 uint16_t rxGetRefreshRate(void)

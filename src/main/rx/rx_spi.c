@@ -32,6 +32,7 @@
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
+#include "rx/eleres.h"
 #include "rx/nrf24_cx10.h"
 #include "rx/nrf24_syma.h"
 #include "rx/nrf24_v202.h"
@@ -106,6 +107,13 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
         protocolSetRcDataFromPayload = inavNrf24SetRcDataFromPayload;
         break;
 #endif
+#ifdef ELERES_RX
+    case RFM22_ELERES:
+        protocolInit = eleresInit;
+        protocolDataReceived = eLeReS_check_irq;
+        protocolSetRcDataFromPayload = eLeReS_control;
+        break;
+#endif
     }
     return true;
 }
@@ -117,11 +125,16 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
  */
 uint8_t rxSpiFrameStatus(void)
 {
-    if (protocolDataReceived(rxSpiPayload) == RX_SPI_RECEIVED_DATA) {
+    switch (protocolDataReceived(rxSpiPayload))
+    {
+    case RX_SPI_RECEIVED_DATA:
         rxSpiNewPacketAvailable = true;
         return RX_FRAME_COMPLETE;
+    case RX_SPI_IDLE_LOOP_REQUIRED:
+        protocolSetRcDataFromPayload(rxSpiRcData, rxSpiPayload);
+    default:
+        return RX_FRAME_PENDING;
     }
-    return RX_FRAME_PENDING;
 }
 
 /*
@@ -137,10 +150,12 @@ bool rxSpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         protocolInit(rxConfig, rxRuntimeConfig);
         ret = true;
     }
+
     rxRuntimeConfig->rxRefreshRate = 10000;
     rxSpiNewPacketAvailable = false;
     rxRuntimeConfig->rcReadRawFn = rxSpiReadRawRC;
     rxRuntimeConfig->rcFrameStatusFn = rxSpiFrameStatus;
+
     return ret;
 }
 #endif

@@ -92,6 +92,7 @@ extern uint8_t __config_end;
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
+#include "rx/eleres.h"
 
 #include "scheduler/scheduler.h"
 
@@ -178,7 +179,7 @@ static const char * const sensorTypeNames[] = {
 #define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG | SENSOR_SONAR | SENSOR_PITOT)
 
 static const char * const hardwareSensorStatusNames[] = {
-    "NONE", "OK", "UNAVAILABLE", "FAILING"
+    "NONE", "OK", "UNAVAILABLE", "FAILING", "CALIBRATING"
 };
 
 static const char * const *sensorHardwareNames[] = {
@@ -266,7 +267,8 @@ static const char * const lookupTableRxSpi[] = {
     "CX10",
     "CX10A",
     "H8_3D",
-    "INAV"
+    "INAV",
+    "ELERES"
 };
 #endif
 
@@ -889,6 +891,20 @@ static const clivalue_t valueTable[] = {
 #ifdef TELEMETRY_LTM
     {"ltm_update_rate",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LTM_UPDATE_RATE }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, ltmUpdateRate) },
 #endif
+#endif
+#ifdef ELERES_RX
+//PG_ELERES_CONFIG
+    { "eleres_freq",                VAR_FLOAT | MASTER_VALUE, .config.minmax = { 415, 450 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleres_freq) },
+    { "eleres_telemetry_en",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleres_telemetry_en) },
+    { "eleres_telemetry_power",     VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 7 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleres_telemetry_power) },
+    { "eleres_loc_en",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleres_loc_en) },
+    { "eleres_loc_power",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 7 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleres_loc_power) },
+    { "eleres_loc_delay",           VAR_UINT16 | MASTER_VALUE, .config.minmax = { 30, 1800 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleres_loc_delay) },
+    { "eleres_signature_1",         VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 255 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleres_signature[0]) },
+    { "eleres_signature_2",         VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 255 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleres_signature[1]) },
+    { "eleres_signature_3",         VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 255 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleres_signature[2]) },
+    { "eleres_signature_4",         VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 255 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleres_signature[3]) },
+
 #endif
 #ifdef LED_STRIP
     { "ledstrip_visual_beeper",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_visual_beeper) },
@@ -2702,6 +2718,41 @@ static void cliDfu(char *cmdline)
     cliRebootEx(true);
 }
 
+#ifdef ELERES_RX
+static void cliEleresBind(char *cmdline)
+{
+    UNUSED(cmdline);
+	char buf[10];
+	uint8_t i;
+
+	if (!feature(FEATURE_RX_SPI))
+	{
+		cliPrint("Eleres not active. Please enable feature ELERES and restart IMU\r\n");
+		return;
+	}
+
+	cliPrint("Waiting for correct bind signature....\r\n");
+	bufWriterFlush(cliWriter);
+	if (eLeReS_Bind())
+	{
+		cliPrint("Bind timeout!\r\n");
+	}
+	else
+	{
+		cliPrint("Signature: ");
+		for(i=0; i<4; i++)
+		{
+			itoa(eleresConfigMutable()->eleres_signature[i], buf, 16);
+			cliPrint(buf);
+			cliPrint(" ");
+		}
+		cliPrint("\r\n");
+		cliPrint("Bind OK!\r\nPlease restart your transmitter.\r\n");
+	}
+
+}
+#endif // ELERES_RX
+
 static void cliExit(char *cmdline)
 {
     UNUSED(cmdline);
@@ -3369,6 +3420,9 @@ const clicmd_t cmdTable[] = {
         "[master|profile|rates|all] {showdefaults}", cliDiff),
     CLI_COMMAND_DEF("dump", "dump configuration",
         "[master|profile|rates|all] {showdefaults}", cliDump),
+#ifdef ELERES_RX
+    CLI_COMMAND_DEF("eleres_bind", NULL, NULL, cliEleresBind),
+#endif // ELERES_RX
     CLI_COMMAND_DEF("exit", NULL, NULL, cliExit),
     CLI_COMMAND_DEF("feature", "configure features",
         "list\r\n"

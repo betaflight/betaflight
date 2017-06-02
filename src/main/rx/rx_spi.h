@@ -29,13 +29,15 @@ typedef enum {
     NRF24RX_CX10A,
     NRF24RX_H8_3D,
     NRF24RX_INAV,
+    RFM22_ELERES,
     NRF24RX_PROTOCOL_COUNT
 } rx_spi_protocol_e;
 
 typedef enum {
     RX_SPI_RECEIVED_NONE = 0,
     RX_SPI_RECEIVED_BIND,
-    RX_SPI_RECEIVED_DATA
+    RX_SPI_RECEIVED_DATA,
+    RX_SPI_IDLE_LOOP_REQUIRED
 } rx_spi_received_e;
 
 // RC channels in AETR order
