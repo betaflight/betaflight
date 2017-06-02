@@ -1120,8 +1120,9 @@ static uint16_t getValueOffset(const clivalue_t *value)
 {
     switch (value->type & VALUE_SECTION_MASK) {
     case MASTER_VALUE:
-    case PROFILE_VALUE:
         return value->offset;
+    case PROFILE_VALUE:
+        return value->offset + sizeof(pidProfile_t) * getConfigProfile();
     case CONTROL_RATE_VALUE:
         return value->offset + sizeof(controlRateConfig_t) * getConfigProfile();
     }
