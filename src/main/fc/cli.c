@@ -942,77 +942,17 @@ static const clivalue_t valueTable[] = {
     { "mode_range_logic_operator",  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_AUX_OPERATOR }, PG_MODE_ACTIVATION_OPERATOR_CONFIG, offsetof(modeActivationOperatorConfig_t, modeActivationOperator) },
 };
 
-static featureConfig_t featureConfigCopy;
-static gyroConfig_t gyroConfigCopy;
-static accelerometerConfig_t accelerometerConfigCopy;
-#ifdef MAG
-static compassConfig_t compassConfigCopy;
-#endif
-#ifdef BARO
-static barometerConfig_t barometerConfigCopy;
-#endif
-#ifdef PITOT
-static pitotmeterConfig_t pitotmeterConfigCopy;
-#endif
-static featureConfig_t featureConfigCopy;
-static rxConfig_t rxConfigCopy;
-#ifdef BLACKBOX
-static blackboxConfig_t blackboxConfigCopy;
-#endif
-static rxChannelRangeConfig_t rxChannelRangeConfigsCopy[NON_AUX_CHANNEL_COUNT];
-static motorConfig_t motorConfigCopy;
-static failsafeConfig_t failsafeConfigCopy;
-static boardAlignment_t boardAlignmentCopy;
-#ifdef USE_SERVOS
-static servoConfig_t servoConfigCopy;
-static gimbalConfig_t gimbalConfigCopy;
-static servoMixer_t customServoMixersCopy[MAX_SERVO_RULES];
-static servoParam_t servoParamsCopy[MAX_SUPPORTED_SERVOS];
-#endif
-static batteryConfig_t batteryConfigCopy;
-static motorMixer_t customMotorMixerCopy[MAX_SUPPORTED_MOTORS];
-static mixerConfig_t mixerConfigCopy;
-static flight3DConfig_t flight3DConfigCopy;
-static serialConfig_t serialConfigCopy;
-static imuConfig_t imuConfigCopy;
-static armingConfig_t armingConfigCopy;
-static rcControlsConfig_t rcControlsConfigCopy;
-#ifdef GPS
-static gpsConfig_t gpsConfigCopy;
-#endif
-#ifdef NAV
-static positionEstimationConfig_t positionEstimationConfigCopy;
-static navConfig_t navConfigCopy;
-#endif
-#ifdef TELEMETRY
-static telemetryConfig_t telemetryConfigCopy;
-#endif
-static modeActivationCondition_t modeActivationConditionsCopy[MAX_MODE_ACTIVATION_CONDITION_COUNT];
-static adjustmentRange_t adjustmentRangesCopy[MAX_ADJUSTMENT_RANGE_COUNT];
-#ifdef LED_STRIP
-static ledStripConfig_t ledStripConfigCopy;
-#endif
-#ifdef OSD
-static osdConfig_t osdConfigCopy;
-#endif
-static systemConfig_t systemConfigCopy;
-#ifdef BEEPER
-static beeperConfig_t beeperConfigCopy;
-#endif
-#ifdef SONAR
-static rangefinderConfig_t rangefinderConfigCopy;
-#endif
-static controlRateConfig_t controlRateProfilesCopy[MAX_CONTROL_RATE_PROFILE_COUNT];
-static pidProfile_t pidProfileCopy[MAX_PROFILE_COUNT];
-static pidAutotuneConfig_t pidAutotuneConfigCopy;
-static modeActivationOperatorConfig_t modeActivationOperatorConfigCopy;
-static beeperConfig_t beeperConfigCopy;
 
 static void cliPrint(const char *str)
 {
     while (*str) {
         bufWriterAppend(cliWriter, *str++);
     }
+}
+
+static void cliPrintLinefeed()
+{
+    cliPrint("\r\n");
 }
 
 #ifdef CLI_MINIMAL_VERBOSITY
@@ -1176,210 +1116,12 @@ static bool valuePtrEqualsDefault(uint8_t type, const void *ptr, const void *ptr
     return result;
 }
 
-typedef struct cliCurrentAndDefaultConfig_s {
-    const void *currentConfig; // the copy
-    const void *defaultConfig; // the PG value as set by default
-} cliCurrentAndDefaultConfig_t;
-
-static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn)
-{
-    static cliCurrentAndDefaultConfig_t ret;
-
-    switch (pgn) {
-    case PG_GYRO_CONFIG:
-        ret.currentConfig = &gyroConfigCopy;
-        ret.defaultConfig = gyroConfig();
-        break;
-    case PG_ACCELEROMETER_CONFIG:
-        ret.currentConfig = &accelerometerConfigCopy;
-        ret.defaultConfig = accelerometerConfig();
-        break;
-#ifdef MAG
-    case PG_COMPASS_CONFIG:
-        ret.currentConfig = &compassConfigCopy;
-        ret.defaultConfig = compassConfig();
-        break;
-#endif
-#ifdef BARO
-    case PG_BAROMETER_CONFIG:
-        ret.currentConfig = &barometerConfigCopy;
-        ret.defaultConfig = barometerConfig();
-        break;
-#endif
-#ifdef PITOT
-    case PG_PITOTMETER_CONFIG:
-        ret.currentConfig = &pitotmeterConfigCopy;
-        ret.defaultConfig = pitotmeterConfig();
-        break;
-#endif
-    case PG_FEATURE_CONFIG:
-        ret.currentConfig = &featureConfigCopy;
-        ret.defaultConfig = featureConfig();
-        break;
-    case PG_RX_CONFIG:
-        ret.currentConfig = &rxConfigCopy;
-        ret.defaultConfig = rxConfig();
-        break;
-#ifdef BLACKBOX
-    case PG_BLACKBOX_CONFIG:
-        ret.currentConfig = &blackboxConfigCopy;
-        ret.defaultConfig = blackboxConfig();
-        break;
-#endif
-    case PG_MOTOR_CONFIG:
-        ret.currentConfig = &motorConfigCopy;
-        ret.defaultConfig = motorConfig();
-        break;
-    case PG_FAILSAFE_CONFIG:
-        ret.currentConfig = &failsafeConfigCopy;
-        ret.defaultConfig = failsafeConfig();
-        break;
-    case PG_BOARD_ALIGNMENT:
-        ret.currentConfig = &boardAlignmentCopy;
-        ret.defaultConfig = boardAlignment();
-        break;
-    case PG_MIXER_CONFIG:
-        ret.currentConfig = &mixerConfigCopy;
-        ret.defaultConfig = mixerConfig();
-        break;
-    case PG_MOTOR_3D_CONFIG:
-        ret.currentConfig = &flight3DConfigCopy;
-        ret.defaultConfig = flight3DConfig();
-        break;
-#ifdef USE_SERVOS
-    case PG_SERVO_CONFIG:
-        ret.currentConfig = &servoConfigCopy;
-        ret.defaultConfig = servoConfig();
-        break;
-    case PG_GIMBAL_CONFIG:
-        ret.currentConfig = &gimbalConfigCopy;
-        ret.defaultConfig = gimbalConfig();
-        break;
-#endif
-    case PG_BATTERY_CONFIG:
-        ret.currentConfig = &batteryConfigCopy;
-        ret.defaultConfig = batteryConfig();
-        break;
-    case PG_SERIAL_CONFIG:
-        ret.currentConfig = &serialConfigCopy;
-        ret.defaultConfig = serialConfig();
-        break;
-    case PG_IMU_CONFIG:
-        ret.currentConfig = &imuConfigCopy;
-        ret.defaultConfig = imuConfig();
-        break;
-    case PG_RC_CONTROLS_CONFIG:
-        ret.currentConfig = &rcControlsConfigCopy;
-        ret.defaultConfig = rcControlsConfig();
-        break;
-    case PG_ARMING_CONFIG:
-        ret.currentConfig = &armingConfigCopy;
-        ret.defaultConfig = armingConfig();
-        break;
-#ifdef GPS
-    case PG_GPS_CONFIG:
-        ret.currentConfig = &gpsConfigCopy;
-        ret.defaultConfig = gpsConfig();
-        break;
-#endif
-#ifdef NAV
-    case PG_POSITION_ESTIMATION_CONFIG:
-        ret.currentConfig = &positionEstimationConfigCopy;
-        ret.defaultConfig = positionEstimationConfig();
-        break;
-    case PG_NAV_CONFIG:
-        ret.currentConfig = &navConfigCopy;
-        ret.defaultConfig = navConfig();
-        break;
-#endif
-#ifdef TELEMETRY
-    case PG_TELEMETRY_CONFIG:
-        ret.currentConfig = &telemetryConfigCopy;
-        ret.defaultConfig = telemetryConfig();
-        break;
-#endif
-#ifdef LED_STRIP
-    case PG_LED_STRIP_CONFIG:
-        ret.currentConfig = &ledStripConfigCopy;
-        ret.defaultConfig = ledStripConfig();
-        break;
-#endif
-#ifdef OSD
-    case PG_OSD_CONFIG:
-       ret.currentConfig = &osdConfigCopy;
-       ret.defaultConfig = osdConfig();
-       break;
-#endif
-    case PG_SYSTEM_CONFIG:
-        ret.currentConfig = &systemConfigCopy;
-        ret.defaultConfig = systemConfig();
-        break;
-    case PG_MODE_ACTIVATION_OPERATOR_CONFIG:
-        ret.currentConfig = &modeActivationOperatorConfigCopy;
-        ret.defaultConfig = modeActivationOperatorConfig();
-        break;
-    case PG_CONTROL_RATE_PROFILES:
-        ret.currentConfig = &controlRateProfilesCopy[0];
-        ret.defaultConfig = controlRateProfiles(0);
-        break;
-    case PG_PID_PROFILE:
-        ret.currentConfig = &pidProfileCopy[getConfigProfile()];
-        ret.defaultConfig = pidProfile();
-        break;
-    case PG_PID_AUTOTUNE_CONFIG:
-        ret.currentConfig = &pidAutotuneConfigCopy;
-        ret.defaultConfig = pidAutotuneConfig();
-        break;
-    case PG_RX_CHANNEL_RANGE_CONFIG:
-        ret.currentConfig = &rxChannelRangeConfigsCopy[0];
-        ret.defaultConfig = rxChannelRangeConfigs(0);
-        break;
-#ifdef USE_SERVOS
-    case PG_SERVO_MIXER:
-        ret.currentConfig = &customServoMixersCopy[0];
-        ret.defaultConfig = customServoMixers(0);
-        break;
-    case PG_SERVO_PARAMS:
-        ret.currentConfig = &servoParamsCopy[0];
-        ret.defaultConfig = servoParams(0);
-        break;
-#endif
-    case PG_MOTOR_MIXER:
-        ret.currentConfig = &customMotorMixerCopy[0];
-        ret.defaultConfig = customMotorMixer(0);
-        break;
-    case PG_MODE_ACTIVATION_PROFILE:
-        ret.currentConfig = &modeActivationConditionsCopy[0];
-        ret.defaultConfig = modeActivationConditions(0);
-        break;
-    case PG_ADJUSTMENT_RANGE_CONFIG:
-        ret.currentConfig = &adjustmentRangesCopy[0];
-        ret.defaultConfig = adjustmentRanges(0);
-        break;
-    case PG_BEEPER_CONFIG:
-        ret.currentConfig = &beeperConfigCopy;
-        ret.defaultConfig = beeperConfig();
-        break;
-#ifdef SONAR
-    case PG_RANGEFINDER_CONFIG:
-        ret.currentConfig = &rangefinderConfigCopy;
-        ret.defaultConfig = rangefinderConfig();
-        break;
-#endif
-    default:
-        ret.currentConfig = NULL;
-        ret.defaultConfig = NULL;
-        break;
-    }
-    return &ret;
-}
-
 static uint16_t getValueOffset(const clivalue_t *value)
 {
     switch (value->type & VALUE_SECTION_MASK) {
     case MASTER_VALUE:
     case PROFILE_VALUE:
-        return value->offset;   // Profile offset within a PG is handled by `getCurrentAndDefaultConfigs()`
+        return value->offset;
     case CONTROL_RATE_VALUE:
         return value->offset + sizeof(controlRateConfig_t) * getConfigProfile();
     }
@@ -1388,40 +1130,27 @@ static uint16_t getValueOffset(const clivalue_t *value)
 
 static void *getValuePointer(const clivalue_t *value)
 {
-    const pgRegistry_t* rec = pgFind(value->pgn);
-
-    switch (value->type & VALUE_SECTION_MASK) {
-    case MASTER_VALUE:
-    case PROFILE_VALUE:
-        return pgIsSystem(rec) ? rec->address + value->offset : rec->address + value->offset + pgSize(rec) * getConfigProfile();
-    case CONTROL_RATE_VALUE:
-        return rec->address + value->offset + sizeof(controlRateConfig_t) * getConfigProfile();
-    }
-    return NULL;
+    const pgRegistry_t* pg = pgFind(value->pgn);
+    return pg->address + getValueOffset(value);
 }
 
 static void dumpPgValue(const clivalue_t *value, uint8_t dumpMask)
 {
+    const pgRegistry_t* pg = pgFind(value->pgn);
+
     const char *format = "set %s = ";
-    const cliCurrentAndDefaultConfig_t *config = getCurrentAndDefaultConfigs(value->pgn);
-    if (config->currentConfig == NULL || config->defaultConfig == NULL) {
-        // has not been set up properly
-        cliPrintf("VALUE %s ERROR\r\n", value->name);
-        return;
-    }
+    const char *defaultFormat = "#set %s = ";
     const int valueOffset = getValueOffset(value);
-    switch (dumpMask & (DO_DIFF | SHOW_DEFAULTS)) {
-    case DO_DIFF:
-        if (valuePtrEqualsDefault(value->type, (uint8_t*)config->currentConfig + valueOffset, (uint8_t*)config->defaultConfig + valueOffset)) {
-            break;
+    const bool equalsDefault = valuePtrEqualsDefault(value->type, pg->copy + valueOffset, pg->address + valueOffset);
+    if (((dumpMask & DO_DIFF) == 0) || !equalsDefault) {
+        if (dumpMask & SHOW_DEFAULTS && !equalsDefault) {
+            cliPrintf(defaultFormat, value->name);
+            printValuePointer(value, (uint8_t*)pg->address + valueOffset, 0);
+            cliPrintLinefeed();
         }
-        // drop through, since not equal to default
-    case 0:
-    case SHOW_DEFAULTS:
         cliPrintf(format, value->name);
-        printValuePointer(value, (uint8_t*)config->currentConfig + valueOffset, 0);
-        cliPrint("\r\n");
-        break;
+        printValuePointer(value, pg->copy + valueOffset, 0);
+        cliPrintLinefeed();
     }
 }
 
@@ -1446,23 +1175,23 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
 static void cliPrintVarRange(const clivalue_t *var)
 {
     switch (var->type & VALUE_MODE_MASK) {
-        case (MODE_DIRECT):
-            cliPrintf("Allowed range: %d - %d\r\n", var->config.minmax.min, var->config.minmax.max);
-            break;
-        case (MODE_MAX):
-            cliPrintf("Allowed range: 0- %d\r\n", var->config.max.max);
-            break;
-        case (MODE_LOOKUP): {
-            const lookupTableEntry_t *tableEntry = &lookupTables[var->config.lookup.tableIndex];
-            cliPrint("Allowed values:");
-            for (uint32_t i = 0; i < tableEntry->valueCount ; i++) {
-                if (i > 0)
-                    cliPrint(",");
-                cliPrintf(" %s", tableEntry->values[i]);
-            }
-            cliPrint("\r\n");
-        }
+    case (MODE_DIRECT):
+        cliPrintf("Allowed range: %d - %d\r\n", var->config.minmax.min, var->config.minmax.max);
         break;
+    case (MODE_MAX):
+        cliPrintf("Allowed range: 0- %d\r\n", var->config.max.max);
+        break;
+    case (MODE_LOOKUP): {
+        const lookupTableEntry_t *tableEntry = &lookupTables[var->config.lookup.tableIndex];
+        cliPrint("Allowed values:");
+        for (uint32_t i = 0; i < tableEntry->valueCount ; i++) {
+            if (i > 0)
+                cliPrint(",");
+            cliPrintf(" %s", tableEntry->values[i]);
+        }
+        cliPrint("\r\n");
+    }
+    break;
     }
 }
 
@@ -3432,44 +3161,24 @@ static void cliResource(char *cmdline)
 static void backupConfigs(void)
 {
     // make copies of configs to do differencing
-    PG_FOREACH(reg) {
-        // currentConfig is the copy
-        const cliCurrentAndDefaultConfig_t *cliCurrentAndDefaultConfig = getCurrentAndDefaultConfigs(pgN(reg));
-        if (cliCurrentAndDefaultConfig->currentConfig) {
-            if (pgIsProfile(reg)) {
-                //memcpy((uint8_t *)cliCurrentAndDefaultConfig->currentConfig, reg->address, reg->size * MAX_PROFILE_COUNT);
-            } else {
-                memcpy((uint8_t *)cliCurrentAndDefaultConfig->currentConfig, reg->address, reg->size);
-            }
-#ifdef SERIAL_CLI_DEBUG
+    PG_FOREACH(pg) {
+        if (pgIsProfile(pg)) {
+            memcpy(pg->copy, pg->address, pgSize(pg) * MAX_PROFILE_COUNT);
         } else {
-            cliPrintf("BACKUP %d SET UP INCORRECTLY\r\n", pgN(reg));
-#endif
+            memcpy(pg->copy, pg->address, pgSize(pg));
         }
     }
-    const pgRegistry_t* reg = pgFind(PG_PID_PROFILE);
-    memcpy(&pidProfileCopy[0], reg->address, sizeof(pidProfile_t) * MAX_PROFILE_COUNT);
 }
 
 static void restoreConfigs(void)
 {
-    PG_FOREACH(reg) {
-        // currentConfig is the copy
-        const cliCurrentAndDefaultConfig_t *cliCurrentAndDefaultConfig = getCurrentAndDefaultConfigs(pgN(reg));
-        if (cliCurrentAndDefaultConfig->currentConfig) {
-            if (pgIsProfile(reg)) {
-                //memcpy(reg->address, (uint8_t *)cliCurrentAndDefaultConfig->currentConfig, reg->size * MAX_PROFILE_COUNT);
-            } else {
-                memcpy(reg->address, (uint8_t *)cliCurrentAndDefaultConfig->currentConfig, reg->size);
-            }
-#ifdef SERIAL_CLI_DEBUG
+    PG_FOREACH(pg) {
+        if (pgIsProfile(pg)) {
+            memcpy(pg->address, pg->copy, pgSize(pg) * MAX_PROFILE_COUNT);
         } else {
-            cliPrintf("RESTORE %d SET UP INCORRECTLY\r\n", pgN(reg));
-#endif
+            memcpy(pg->address, pg->copy, pgSize(pg));
         }
     }
-    const pgRegistry_t* reg = pgFind(PG_PID_PROFILE);
-    memcpy(reg->address, &pidProfileCopy[0], sizeof(pidProfile_t) * MAX_PROFILE_COUNT);
 }
 
 static void printConfig(const char *cmdline, bool doDiff)
@@ -3518,59 +3227,59 @@ static void printConfig(const char *cmdline, bool doDiff)
 
 #ifndef USE_QUAD_MIXER_ONLY
         cliPrintHashLine("mixer");
-        const bool equalsDefault = mixerConfigCopy.mixerMode == mixerConfig()->mixerMode;
+        const bool equalsDefault = mixerConfig_Copy.mixerMode == mixerConfig()->mixerMode;
         const char *formatMixer = "mixer %s\r\n";
         cliDefaultPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[mixerConfig()->mixerMode - 1]);
-        cliDumpPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[mixerConfigCopy.mixerMode - 1]);
+        cliDumpPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[mixerConfig_Copy.mixerMode - 1]);
 
         cliDumpPrintf(dumpMask, customMotorMixer(0)->throttle == 0.0f, "\r\nmmix reset\r\n\r\n");
 
-        printMotorMix(dumpMask, customMotorMixerCopy, customMotorMixer(0));
+        printMotorMix(dumpMask, customMotorMixer_CopyArray, customMotorMixer(0));
 
 #ifdef USE_SERVOS
         cliPrintHashLine("servo");
-        printServo(dumpMask, servoParamsCopy, servoParams(0));
+        printServo(dumpMask, servoParams_CopyArray, servoParams(0));
 
         cliPrintHashLine("servo mix");
         // print custom servo mixer if exists
         cliDumpPrintf(dumpMask, customServoMixers(0)->rate == 0, "smix reset\r\n\r\n");
-        printServoMix(dumpMask, customServoMixersCopy, customServoMixers(0));
+        printServoMix(dumpMask, customServoMixers_CopyArray, customServoMixers(0));
 #endif
 #endif
 
         cliPrintHashLine("feature");
-        printFeature(dumpMask, &featureConfigCopy, featureConfig());
+        printFeature(dumpMask, &featureConfig_Copy, featureConfig());
 
 #ifdef BEEPER
         cliPrintHashLine("beeper");
-        printBeeper(dumpMask, &beeperConfigCopy, beeperConfig());
+        printBeeper(dumpMask, &beeperConfig_Copy, beeperConfig());
 #endif
 
         cliPrintHashLine("map");
-        printMap(dumpMask, &rxConfigCopy, rxConfig());
+        printMap(dumpMask, &rxConfig_Copy, rxConfig());
 
         cliPrintHashLine("serial");
-        printSerial(dumpMask, &serialConfigCopy, serialConfig());
+        printSerial(dumpMask, &serialConfig_Copy, serialConfig());
 
 #ifdef LED_STRIP
         cliPrintHashLine("led");
-        printLed(dumpMask, ledStripConfigCopy.ledConfigs, ledStripConfig()->ledConfigs);
+        printLed(dumpMask, ledStripConfig_Copy.ledConfigs, ledStripConfig()->ledConfigs);
 
         cliPrintHashLine("color");
-        printColor(dumpMask, ledStripConfigCopy.colors, ledStripConfig()->colors);
+        printColor(dumpMask, ledStripConfig_Copy.colors, ledStripConfig()->colors);
 
         cliPrintHashLine("mode_color");
-        printModeColor(dumpMask, &ledStripConfigCopy, ledStripConfig());
+        printModeColor(dumpMask, &ledStripConfig_Copy, ledStripConfig());
 #endif
 
         cliPrintHashLine("aux");
-        printAux(dumpMask, modeActivationConditionsCopy, modeActivationConditions(0));
+        printAux(dumpMask, modeActivationConditions_CopyArray, modeActivationConditions(0));
 
         cliPrintHashLine("adjrange");
-        printAdjustmentRange(dumpMask, adjustmentRangesCopy, adjustmentRanges(0));
+        printAdjustmentRange(dumpMask, adjustmentRanges_CopyArray, adjustmentRanges(0));
 
         cliPrintHashLine("rxrange");
-        printRxRange(dumpMask, rxChannelRangeConfigsCopy, rxChannelRangeConfigs(0));
+        printRxRange(dumpMask, rxChannelRangeConfigs_CopyArray, rxChannelRangeConfigs(0));
 
         cliPrintHashLine("master");
         dumpAllValues(MASTER_VALUE, dumpMask);
