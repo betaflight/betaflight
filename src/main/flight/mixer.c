@@ -51,12 +51,12 @@
 
 //#define MIXER_DEBUG
 
-uint8_t motorCount;
+static uint8_t motorCount;
 
 int16_t motor[MAX_SUPPORTED_MOTORS];
 int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 
-bool motorLimitReached = false;
+static bool motorLimitReached = false;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(flight3DConfig_t, flight3DConfig, PG_MOTOR_3D_CONFIG, 0);
 
@@ -286,6 +286,16 @@ const mixer_t mixers[] = {
     { .motorCount=3, .useServo=true,  .motor=NULL, .enabled=true },                // MIXER_CUSTOM_TRI
 };
 #endif // USE_QUAD_MIXER_ONLY
+
+uint8_t getMotorCount()
+{
+    return motorCount;
+}
+
+bool mixerIsOutputSaturated(void)
+{
+    return motorLimitReached;
+}
 
 bool isMixerEnabled(mixerMode_e mixerMode)
 {

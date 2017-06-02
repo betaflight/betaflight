@@ -90,8 +90,6 @@ typedef struct {
     static filterApplyFnPtr notchFilterApplyFn;
 #endif
 
-extern uint8_t motorCount;
-extern bool motorLimitReached;
 extern float dT;
 
 int16_t headingHoldTarget;
@@ -469,7 +467,7 @@ static void pidApplyMulticopterRateController(pidState_t *pidState, flight_dynam
     // Calculate new P-term
     float newPTerm = rateError * pidState->kP;
     // Constrain YAW by yaw_p_limit value if not servo driven (in that case servo limits apply)
-    if (axis == FD_YAW && (motorCount >= 4 && pidProfile()->yaw_p_limit)) {
+    if (axis == FD_YAW && (getMotorCount() >= 4 && pidProfile()->yaw_p_limit)) {
         newPTerm = constrain(newPTerm, -pidProfile()->yaw_p_limit, pidProfile()->yaw_p_limit);
     }
 
@@ -511,7 +509,7 @@ static void pidApplyMulticopterRateController(pidState_t *pidState, flight_dynam
     pidState->errorGyroIf += (rateError * pidState->kI * antiWindupScaler * dT) + ((newOutputLimited - newOutput) * pidState->kT * dT);
 
     // Don't grow I-term if motors are at their limit
-    if (STATE(ANTI_WINDUP) || motorLimitReached) {
+    if (STATE(ANTI_WINDUP) || mixerIsOutputSaturated()) {
         pidState->errorGyroIf = constrainf(pidState->errorGyroIf, -pidState->errorGyroIfLimit, pidState->errorGyroIfLimit);
     } else {
         pidState->errorGyroIfLimit = ABS(pidState->errorGyroIf);
