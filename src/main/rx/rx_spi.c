@@ -110,8 +110,8 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
 #ifdef ELERES_RX
     case RFM22_ELERES:
         protocolInit = eleresInit;
-        protocolDataReceived = eLeReS_check_irq;
-        protocolSetRcDataFromPayload = eLeReS_control;
+        protocolDataReceived = eLeReSDataReceived;
+        protocolSetRcDataFromPayload = eLeReSSetRcDataFromPayload;
         break;
 #endif
     }

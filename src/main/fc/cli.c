@@ -179,7 +179,7 @@ static const char * const sensorTypeNames[] = {
 #define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG | SENSOR_SONAR | SENSOR_PITOT)
 
 static const char * const hardwareSensorStatusNames[] = {
-    "NONE", "OK", "UNAVAILABLE", "FAILING", "CALIBRATING"
+    "NONE", "OK", "UNAVAILABLE", "FAILING"
 };
 
 static const char * const *sensorHardwareNames[] = {

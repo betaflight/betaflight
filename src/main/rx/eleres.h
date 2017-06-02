@@ -2,10 +2,10 @@
 #include "config/parameter_group.h"
 #include "rx/rx_spi.h"
 
-void eLeReS_control(uint16_t *rcData, const uint8_t *payload);
+void eLeReSSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload);
 uint8_t eLeReS_Bind(void);
 uint8_t eleres_rssi(void);
-rx_spi_received_e eLeReS_check_irq(uint8_t *payload);
+rx_spi_received_e eLeReSDataReceived(uint8_t *payload);
 void eleresInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
 
 typedef struct

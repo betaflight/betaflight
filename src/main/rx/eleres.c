@@ -208,7 +208,7 @@ void to_ready_mode(void)
 
 
 //because we shared SPI bus I can't read data in real IRQ, so need to probe this pin from main idle
-rx_spi_received_e eLeReS_check_irq(uint8_t *payload)
+rx_spi_received_e eLeReSDataReceived(uint8_t *payload)
 {
     static timeMs_t next_loop = 0;
     UNUSED(payload);
@@ -224,7 +224,7 @@ rx_spi_received_e eLeReS_check_irq(uint8_t *payload)
         return RX_SPI_RECEIVED_NONE;
 }
 
-void eLeReS_control(uint16_t *rcData, const uint8_t *payload)
+void eLeReSSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
 {
     UNUSED(payload);
     uint16_t rcData4Values[RC_CHANS];
@@ -790,11 +790,7 @@ void eleresInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     UNUSED(rxConfig);
 
     rxRuntimeConfig->channelCount = RC_CHANS;
-  /*  rxRuntimeConfig->rxRefreshRate = 20000;
 
-    rxRuntimeConfig->rcReadRawFn = eleresRawRC;
-    rxRuntimeConfig->rcFrameStatusFn = eLeReS_control;
-*/
     rfm_spi_write(0x07, 0x80);
     delay(100);
 
@@ -827,8 +823,8 @@ uint8_t eLeReS_Bind(void)
     RED_LED_OFF;
     while(timeout--)
     {
-        eLeReS_check_irq(NULL);
-        eLeReS_control(NULL,NULL);
+        eLeReSDataReceived(NULL);
+        eLeReSSetRcDataFromPayload(NULL,NULL);
         if (RF_Rx_Buffer[0]==0x42)
         {
             for(i=0; i<4; i++)
