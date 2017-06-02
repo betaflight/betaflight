@@ -73,7 +73,6 @@
 #define PG_SERVO_CONFIG 52
 //#define PG_IBUS_TELEMETRY_CONFIG 53
 //#define PG_VTX_CONFIG 54
-#define PG_ELERES_CONFIG 55
 #define PG_CF_END 55
 
 // Driver configuration

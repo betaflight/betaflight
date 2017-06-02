@@ -58,7 +58,6 @@
 #include "msp/msp_serial.h"
 
 #include "rx/rx.h"
-#include "rx/eleres.h"
 
 #include "scheduler/scheduler.h"
 
@@ -253,15 +252,6 @@ void taskUpdateOsd(timeUs_t currentTimeUs)
 }
 #endif
 
-#ifdef ELERES_RX
-void taskUpdateEleresIrq(timeUs_t currentTimeUs)
-{
-    UNUSED(currentTimeUs);
-    if (feature(FEATURE_RX_ELERES))
-        eLeReS_check_irq();
-}
-#endif
-
 void fcTasksInit(void)
 {
     schedulerInit();
@@ -337,9 +327,6 @@ void fcTasksInit(void)
 #else
     setTaskEnabled(TASK_CMS, feature(FEATURE_OSD) || feature(FEATURE_DASHBOARD));
 #endif
-#endif
-#ifdef ELERES_RX
-    setTaskEnabled(TASK_ELERES_IRQ, feature(FEATURE_RX_ELERES));
 #endif
 }
 
@@ -533,13 +520,4 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
-#ifdef ELERES_RX
-    [TASK_ELERES_IRQ] = {
-        .taskName = "RX_ELERES_IRQ",
-        .taskFunc = taskUpdateEleresIrq,
-        .desiredPeriod = TASK_PERIOD_HZ(500),         // 500 Hz
-        .staticPriority = TASK_PRIORITY_IDLE,
-    },
-#endif
-
 };

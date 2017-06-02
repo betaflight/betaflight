@@ -68,6 +68,7 @@ static timeMs_t baroCalibrationTimeout = 0;
 static bool baroCalibrationFinished = false;
 static float baroGroundAltitude = 0;
 static float baroGroundPressure = 101325.0f; // 101325 pascal, 1 standard atmosphere
+static int32_t baroPressure = 0;
 
 bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 {
@@ -259,9 +260,9 @@ uint32_t baroUpdate(void)
         case BAROMETER_NEEDS_CALCULATION:
             baro.dev.get_up();
             baro.dev.start_ut();
-            baro.dev.calculate(&baro.baroPressure, &baro.baroTemperature);
+            baro.dev.calculate(&baroPressure, &baro.baroTemperature);
             if (barometerConfig()->use_median_filtering) {
-                baro.baroPressure = applyBarometerMedianFilter(baro.baroPressure);
+                baroPressure = applyBarometerMedianFilter(baroPressure);
             }
             state = BAROMETER_NEEDS_SAMPLES;
             return baro.dev.ut_delay;
@@ -276,7 +277,7 @@ static float pressureToAltitude(const float pressure)
 
 static void performBaroCalibrationCycle(void)
 {
-    const float baroGroundPressureError = baro.baroPressure - baroGroundPressure;
+    const float baroGroundPressureError = baroPressure - baroGroundPressure;
     baroGroundPressure += baroGroundPressureError * 0.15f;
 
     if (ABS(baroGroundPressureError) < (baroGroundPressure * 0.00005f)) {    // 0.005% calibration error (should give c. 10cm calibration error)
@@ -304,7 +305,7 @@ int32_t baroCalculateAltitude(void)
         }
 #endif
         // calculates height from ground via baro readings
-        baro.BaroAlt = pressureToAltitude(baro.baroPressure) - baroGroundAltitude;
+        baro.BaroAlt = pressureToAltitude(baroPressure) - baroGroundAltitude;
     }
 
     return baro.BaroAlt;
