@@ -1122,8 +1122,8 @@ SIZE        := $(ARM_SDK_PREFIX)size
 
 ifneq ($(DEBUG),GDB)
 OPTIMISATION_BASE   := -flto -fuse-linker-plugin -ffast-math
-OPTIMISE_SPEED      := ""
-OPTIMISE_SIZE       := ""
+OPTIMISE_SPEED      := 
+OPTIMISE_SIZE       := 
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
 OPTIMISE_DEFAULT    := -Os
