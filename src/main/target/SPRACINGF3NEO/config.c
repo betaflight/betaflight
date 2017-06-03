@@ -51,11 +51,6 @@ void targetConfiguration(void)
 {
     barometerConfigMutable()->baro_hardware = BARO_DEFAULT;
     compassConfigMutable()->mag_hardware = MAG_DEFAULT;
-    rxConfigMutable()->sbus_inversion = 1;
     serialConfigMutable()->portConfigs[1].functionMask = FUNCTION_MSP; // So Bluetooth users don't have to change anything.
-    serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(TELEMETRY_UART)].functionMask = FUNCTION_TELEMETRY_SMARTPORT;
-    serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(GPS_UART)].functionMask = FUNCTION_GPS;
-    telemetryConfigMutable()->telemetry_inversion = 1;
-    telemetryConfigMutable()->halfDuplex = 1;
 }
 #endif
