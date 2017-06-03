@@ -31,9 +31,9 @@
 
 #include "build/build_config.h"
 
-#include "drivers/system.h"
 #include "drivers/display.h"
 #include "drivers/display_ug2864hsweg01.h"
+#include "drivers/time.h"
 
 #include "cms/cms.h"
 

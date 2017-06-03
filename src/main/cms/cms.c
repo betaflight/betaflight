@@ -44,6 +44,7 @@
 #include "common/typeconversion.h"
 
 #include "drivers/system.h"
+#include "drivers/time.h"
 
 // For rcData, stopAllMotors, stopPwmAllMotors
 #include "config/feature.h"
@@ -989,7 +990,11 @@ void cmsUpdate(uint32_t currentTimeUs)
             lastCmsHeartBeatMs = currentTimeMs;
         }
     }
-    lastCalledMs = currentTimeMs;
+
+    // Some key (command), notably flash erase, takes too long to use the
+    // currentTimeMs to be used as lastCalledMs (freezes CMS for a minute or so
+    // if used).
+    lastCalledMs = millis();
 }
 
 void cmsHandler(timeUs_t currentTimeUs)

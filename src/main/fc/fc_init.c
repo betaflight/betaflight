@@ -39,6 +39,7 @@
 #include "drivers/nvic.h"
 #include "drivers/sensor.h"
 #include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/dma.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"

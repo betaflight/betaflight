@@ -24,12 +24,12 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
-#include "drivers/system.h"
 #include "drivers/exti.h"
 #include "drivers/gpio.h"
 #include "drivers/gyro_sync.h"
-
 #include "drivers/sensor.h"
+#include "drivers/time.h"
+
 #include "accgyro.h"
 #include "accgyro_mpu.h"
 #include "accgyro_mpu6500.h"

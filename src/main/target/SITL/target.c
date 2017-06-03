@@ -436,63 +436,58 @@ char _Min_Stack_Size;
 // fake EEPROM
 extern uint8_t __config_start;
 extern uint8_t __config_end;
-extern uint32_t __FLASH_CONFIG_Size;
 static FILE *eepromFd = NULL;
-const char *EEPROM_FILE = EEPROM_FILENAME;
 
 void FLASH_Unlock(void) {
 	uint8_t * const eeprom = &__config_start;
 
-	if(eepromFd != NULL) {
+	if (eepromFd != NULL) {
 		printf("[FLASH_Unlock] eepromFd != NULL\n");
 		return;
 	}
 
 	// open or create
-	eepromFd = fopen(EEPROM_FILE,"r+");
-	if(eepromFd != NULL) {
-		long lSize;
-		int c;
-
+	eepromFd = fopen(EEPROM_FILENAME,"r+");
+	if (eepromFd != NULL) {
 		// obtain file size:
 		fseek(eepromFd , 0 , SEEK_END);
-		lSize = ftell(eepromFd);
+		long lSize = ftell(eepromFd);
 		rewind(eepromFd);
 
 		printf("[FLASH_Unlock]size = %ld, %ld\n", lSize, (uintptr_t)(&__config_end - &__config_start));
-		for(unsigned int i=0; i<(uintptr_t)(&__config_end - &__config_start); i++){
-			c = fgetc(eepromFd);
+		for (unsigned i = 0; i < (uintptr_t)(&__config_end - &__config_start); i++) {
+		        int c = fgetc(eepromFd);
 			if(c == EOF) break;
 			eeprom[i] = (uint8_t)c;
 		}
-	}else{
-		eepromFd = fopen(EEPROM_FILE, "w+");
-		fwrite(eeprom, sizeof(uint8_t), (size_t)&__FLASH_CONFIG_Size, eepromFd);
+	} else {
+		eepromFd = fopen(EEPROM_FILENAME, "w+");
+		fwrite(eeprom, sizeof(uint8_t), &__config_end - &__config_start, eepromFd);
 	}
 }
+
 void FLASH_Lock(void) {
 	// flush & close
-	if(eepromFd != NULL) {
+	if (eepromFd != NULL) {
 		const uint8_t *eeprom = &__config_start;
 		fseek(eepromFd, 0, SEEK_SET);
-		fwrite(eeprom, sizeof(uint8_t), (size_t)&__FLASH_CONFIG_Size, eepromFd);
-		fflush(eepromFd);
+		fwrite(eeprom, 1, &__config_end - &__config_start, eepromFd);
 		fclose(eepromFd);
 		eepromFd = NULL;
 	}
 }
 
-FLASH_Status FLASH_ErasePage(uint32_t Page_Address) {
+FLASH_Status FLASH_ErasePage(uintptr_t Page_Address) {
 	UNUSED(Page_Address);
 //	printf("[FLASH_ErasePage]%x\n", Page_Address);
 	return FLASH_COMPLETE;
 }
-FLASH_Status FLASH_ProgramWord(uint32_t addr, uint32_t Data) {
-	if((addr >= (uintptr_t)&__config_start)&&(addr < (uintptr_t)&__config_end)) {
-		*((uint32_t*)(uintptr_t)addr) = Data;
-//		printf("[FLASH_ProgramWord]0x%x = %x\n", addr, *((uint32_t*)(uintptr_t)addr));
-	}else{
-		printf("[FLASH_ProgramWord]Out of Range!! 0x%x = %x\n", addr, *((uint32_t*)(uintptr_t)addr));
+FLASH_Status FLASH_ProgramWord(uintptr_t addr, uint32_t Data) {
+	if ((addr >= (uintptr_t)&__config_start)&&(addr < (uintptr_t)&__config_end)) {
+		*((uint32_t*)addr) = Data;
+		printf("[FLASH_ProgramWord]0x%p = %x\n", (void*)addr, *((uint32_t*)addr));
+	} else {
+	        printf("[FLASH_ProgramWord]Out of Range! 0x%p\n", (void*)addr);
 	}
 	return FLASH_COMPLETE;
 }

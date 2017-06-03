@@ -30,13 +30,13 @@
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 
-#include "common/printf.h"
 #include "common/utils.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
 #include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/vtx_common.h"
 #include "drivers/vtx_rtc6705.h"
 

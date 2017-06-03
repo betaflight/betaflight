@@ -30,7 +30,6 @@
 
 #include "drivers/io.h"
 #include "rcc.h"
-#include "drivers/system.h"
 
 #include "timer.h"
 #include "timer_impl.h"

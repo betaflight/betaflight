@@ -30,14 +30,14 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
-#include "drivers/system.h"
-#include "drivers/io.h"
-#include "drivers/exti.h"
 #include "drivers/bus_spi.h"
-
+#include "drivers/exti.h"
 #include "drivers/gyro_sync.h"
-
+#include "drivers/io.h"
+#include "drivers/time.h"
 #include "drivers/sensor.h"
+#include "drivers/system.h"
+
 #include "accgyro.h"
 #include "accgyro_mpu.h"
 

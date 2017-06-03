@@ -81,9 +81,8 @@
 #if defined(KIWIF4V2)
 #define USE_SDCARD
 
-//#define SDCARD_DETECT_INVERTED
 
-#define SDCARD_DETECT_PIN                   PB9
+//#define SDCARD_DETECT_PIN                   PB9
 #define SDCARD_SPI_INSTANCE                 SPI2
 #define SDCARD_SPI_CS_PIN                   PB12
 
@@ -165,7 +164,7 @@
 #define LED_STRIP
 
 #define USE_ADC
-#define BOARD_HAS_VOLTAGE_DIVIDER
+#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define VBAT_ADC_PIN            PC1
 #define RSSI_ADC_PIN            PC2
 #define CURRENT_METER_ADC_PIN   PC3

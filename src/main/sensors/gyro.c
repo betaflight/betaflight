@@ -51,7 +51,6 @@
 #include "drivers/bus_spi.h"
 #include "drivers/gyro_sync.h"
 #include "drivers/io.h"
-#include "drivers/system.h"
 
 #include "fc/runtime_config.h"
 
@@ -96,6 +95,8 @@ typedef struct gyroSensor_s {
     biquadFilter_t notchFilter1[XYZ_AXIS_COUNT];
     filterApplyFnPtr notchFilter2ApplyFn;
     biquadFilter_t notchFilter2[XYZ_AXIS_COUNT];
+    filterApplyFnPtr notchFilterDynApplyFn;
+    biquadFilter_t notchFilterDyn[XYZ_AXIS_COUNT];
 } gyroSensor_t;
 
 static gyroSensor_t gyroSensor0;
@@ -362,7 +363,7 @@ bool gyroInit(void)
 void gyroInitFilterLpf(gyroSensor_t *gyroSensor, uint8_t lpfHz)
 {
     gyroSensor->softLpfFilterApplyFn = nullFilterApply;
-    const uint32_t gyroFrequencyNyquist = (1.0f / (gyro.targetLooptime * 0.000001f)) / 2; // No rounding needed
+    const uint32_t gyroFrequencyNyquist = 1000000 / 2 / gyro.targetLooptime;
 
     if (lpfHz && lpfHz <= gyroFrequencyNyquist) {  // Initialisation needs to happen once samplingrate is known
         switch (gyroConfig()->gyro_soft_lpf_type) {
@@ -392,11 +393,27 @@ void gyroInitFilterLpf(gyroSensor_t *gyroSensor, uint8_t lpfHz)
     }
 }
 
+static uint16_t calculateNyquistAdjustedNotchHz(uint16_t notchHz, uint16_t notchCutoffHz)
+{
+    const uint32_t gyroFrequencyNyquist = 1000000 / 2 / gyro.targetLooptime;
+    if (notchHz > gyroFrequencyNyquist) {
+        if (notchCutoffHz < gyroFrequencyNyquist) {
+            notchHz = gyroFrequencyNyquist;
+        } else {
+            notchHz = 0;
+        }
+    }
+
+    return notchHz;
+}
+
 void gyroInitFilterNotch1(gyroSensor_t *gyroSensor, uint16_t notchHz, uint16_t notchCutoffHz)
 {
     gyroSensor->notchFilter1ApplyFn = nullFilterApply;
-    const uint32_t gyroFrequencyNyquist = (1.0f / (gyro.targetLooptime * 0.000001f)) / 2; // No rounding needed
-    if (notchHz && notchHz <= gyroFrequencyNyquist) {
+
+    notchHz = calculateNyquistAdjustedNotchHz(notchHz, notchCutoffHz);
+
+    if (notchHz) {
         gyroSensor->notchFilter1ApplyFn = (filterApplyFnPtr)biquadFilterApply;
         const float notchQ = filterGetNotchQ(notchHz, notchCutoffHz);
         for (int axis = 0; axis < 3; axis++) {
@@ -407,10 +424,11 @@ void gyroInitFilterNotch1(gyroSensor_t *gyroSensor, uint16_t notchHz, uint16_t n
 
 void gyroInitFilterNotch2(gyroSensor_t *gyroSensor, uint16_t notchHz, uint16_t notchCutoffHz)
 {
-
     gyroSensor->notchFilter2ApplyFn = nullFilterApply;
-    const uint32_t gyroFrequencyNyquist = (1.0f / (gyro.targetLooptime * 0.000001f)) / 2; // No rounding needed
-    if (notchHz && notchHz <= gyroFrequencyNyquist) {
+
+    notchHz = calculateNyquistAdjustedNotchHz(notchHz, notchCutoffHz);
+
+    if (notchHz) {
         gyroSensor->notchFilter2ApplyFn = (filterApplyFnPtr)biquadFilterApply;
         const float notchQ = filterGetNotchQ(notchHz, notchCutoffHz);
         for (int axis = 0; axis < 3; axis++) {
@@ -419,11 +437,21 @@ void gyroInitFilterNotch2(gyroSensor_t *gyroSensor, uint16_t notchHz, uint16_t n
     }
 }
 
+void gyroInitFilterDynamicNotch(gyroSensor_t *gyroSensor)
+{
+    gyroSensor->notchFilterDynApplyFn = (filterApplyFnPtr)biquadFilterApplyDF1; // must be this function, not DF2
+    const float notchQ = filterGetNotchQ(400, 390); //just any init value
+    for (int axis = 0; axis < 3; axis++) {
+        biquadFilterInit(&gyroSensor->notchFilterDyn[axis], 400, gyro.targetLooptime, notchQ, FILTER_NOTCH);
+    }
+}
+
 static void gyroInitSensorFilters(gyroSensor_t *gyroSensor)
 {
     gyroInitFilterLpf(gyroSensor, gyroConfig()->gyro_soft_lpf_hz);
     gyroInitFilterNotch1(gyroSensor, gyroConfig()->gyro_soft_notch_hz_1, gyroConfig()->gyro_soft_notch_cutoff_1);
     gyroInitFilterNotch2(gyroSensor, gyroConfig()->gyro_soft_notch_hz_2, gyroConfig()->gyro_soft_notch_cutoff_2);
+    gyroInitFilterDynamicNotch(gyroSensor);
 }
 
 void gyroInitFilters(void)
@@ -506,6 +534,7 @@ STATIC_UNIT_TESTED void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t
 void gyroUpdateSensor(gyroSensor_t *gyroSensor)
 {
     if (!gyroSensor->gyroDev.readFn(&gyroSensor->gyroDev)) {
+
         return;
     }
     gyroSensor->gyroDev.dataReady = false;
@@ -527,24 +556,37 @@ void gyroUpdateSensor(gyroSensor_t *gyroSensor)
         return;
     }
 
+#ifdef USE_GYRO_DATA_ANALYSE
+    gyroDataAnalyse(&gyroSensor->gyroDev, gyroSensor->notchFilterDyn);
+#endif
+
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         // scale gyro output to degrees per second
         float gyroADCf = (float)gyroSensor->gyroDev.gyroADC[axis] * gyroSensor->gyroDev.scale;
+
+#ifdef USE_GYRO_DATA_ANALYSE
+        // Apply Dynamic Notch filtering
+        if (axis == 0)
+            DEBUG_SET(DEBUG_FFT, 0, lrintf(gyroADCf)); // store raw data
+
+        if (isDynamicFilterActive())
+            gyroADCf = gyroSensor->notchFilterDynApplyFn(&gyroSensor->notchFilterDyn[axis], gyroADCf);
+
+        if (axis == 0)
+            DEBUG_SET(DEBUG_FFT, 1, lrintf(gyroADCf)); // store data after dynamic notch
+#endif
+
+        // Apply Static Notch filtering
+        DEBUG_SET(DEBUG_NOTCH, axis, lrintf(gyroADCf));
+        gyroADCf = gyroSensor->notchFilter1ApplyFn(&gyroSensor->notchFilter1[axis], gyroADCf);
+        gyroADCf = gyroSensor->notchFilter2ApplyFn(&gyroSensor->notchFilter2[axis], gyroADCf);
 
         // Apply LPF
         DEBUG_SET(DEBUG_GYRO, axis, lrintf(gyroADCf));
         gyroADCf = gyroSensor->softLpfFilterApplyFn(gyroSensor->softLpfFilterPtr[axis], gyroADCf);
 
-        // Apply Notch filtering
-        DEBUG_SET(DEBUG_NOTCH, axis, lrintf(gyroADCf));
-        gyroADCf = gyroSensor->notchFilter1ApplyFn(&gyroSensor->notchFilter1[axis], gyroADCf);
-        gyroADCf = gyroSensor->notchFilter2ApplyFn(&gyroSensor->notchFilter2[axis], gyroADCf);
         gyro.gyroADCf[axis] = gyroADCf;
     }
-
-#ifdef USE_GYRO_DATA_ANALYSE
-    gyroDataAnalyse(&gyroSensor->gyroDev, &gyro);
-#endif
 }
 
 void gyroUpdate(void)

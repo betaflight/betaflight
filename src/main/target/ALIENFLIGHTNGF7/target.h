@@ -119,8 +119,8 @@
 //#define UART3_TX_PIN            PB10
 
 #define USE_UART4
-#define UART4_RX_PIN            PC10
-#define UART4_TX_PIN            PC11
+#define UART4_RX_PIN            PC11
+#define UART4_TX_PIN            PC10
 
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
@@ -158,8 +158,9 @@
 #define I2C1_SDA                PB7
 
 #define USE_ADC
-//#define BOARD_HAS_VOLTAGE_DIVIDER
-//#define BOARD_HAS_CURRENT_SENSOR
+#define ADC1_DMA_STREAM         DMA2_Stream0
+//#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
+//#define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #define VBAT_ADC_PIN            PC0
 #define CURRENT_METER_ADC_PIN   PC1
 #define RSSI_ADC_PIN            PC4
@@ -180,8 +181,6 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define RX_CHANNELS_TAER
-
-#define TELEMETRY_UART          SERIAL_PORT_USART1
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

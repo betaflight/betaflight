@@ -22,7 +22,7 @@
 #include <platform.h>
 
 #include "drivers/io.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "drivers/bus_i2c.h"
 #include "drivers/nvic.h"

@@ -23,11 +23,12 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
-#include "drivers/system.h"
-#include "drivers/exti.h"
 #include "drivers/bus_i2c.h"
-
+#include "drivers/exti.h"
 #include "drivers/sensor.h"
+#include "drivers/system.h"
+#include "drivers/time.h"
+
 #include "accgyro.h"
 #include "accgyro_mpu.h"
 #include "accgyro_mpu3050.h"

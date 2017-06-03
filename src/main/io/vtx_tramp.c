@@ -33,7 +33,6 @@
 
 #include "io/serial.h"
 #include "drivers/serial.h"
-#include "drivers/system.h"
 #include "drivers/vtx_common.h"
 #include "io/vtx_tramp.h"
 #include "io/vtx_string.h"

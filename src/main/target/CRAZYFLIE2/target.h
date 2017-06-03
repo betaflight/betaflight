@@ -26,21 +26,21 @@
 
 #pragma once
 
+#if defined(CRAZYFLIE2BQ)
+#define TARGET_BOARD_IDENTIFIER "CFBQ"
+#define USBD_PRODUCT_STRING     "Crazyflie 2.0 (BigQuad Deck)"
+#else
 #define TARGET_BOARD_IDENTIFIER "CF20"
-
 #define USBD_PRODUCT_STRING     "Crazyflie 2.0"
-
-// Uncomment this define to build for the Crazyflie
-// using the BigQuad expansion deck
-//#define CRAZYFLIE2_USE_BIG_QUAD_DECK
+#endif
 
 #define USABLE_TIMER_CHANNEL_COUNT 14
-#ifndef CRAZYFLIE2_USE_BIG_QUAD_DECK
-#define USED_TIMERS             ( TIM_N(2) | TIM_N(4) )
-#define BRUSHED_MOTORS
+
+#if defined(CRAZYFLIE2BQ)
+#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(14) )
 #else
-#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) )
-#endif //CRAZYFLIE2_USE_BIG_QUAD_DECK
+#define USED_TIMERS             ( TIM_N(2) | TIM_N(4) )
+#endif
 
 #define LED0                    PD2
 #define LED1                    PC0
@@ -55,19 +55,25 @@
 
 #define USE_VCP
 
-#define USE_UART2
-#define UART2_TX_PIN            PA1
-#define UART2_RX_PIN            PA3
+#if defined(CRAZYFLIE2BQ)
+#define USE_UART1
+#define UART1_TX_PIN            PB6
+#define UART1_RX_PIN            PB7
 
 #define USE_UART3
 #define UART3_TX_PIN            PC10
 #define UART3_RX_PIN            PC11
+#endif
 
 #define USE_UART6
 #define UART6_TX_PIN            PC6
 #define UART6_RX_PIN            PC7
 
+#if defined(CRAZYFLIE2BQ)
 #define SERIAL_PORT_COUNT       4
+#else
+#define SERIAL_PORT_COUNT       2
+#endif
 
 #define USE_I2C
 #define USE_I2C_DEVICE_3
@@ -85,17 +91,36 @@
 #define USE_ACC_MPU6500
 #define ACC_MPU6500_ALIGN       CW270_DEG
 
-// Mag isn't working quite right -- disabling it for now
-//#define MAG
-//#define USE_MPU9250_MAG // Enables bypass configuration on the MPU9250 I2C bus
-//#define USE_MAG_AK8963
-//#define MAG_AK8963_ALIGN        CW270_DEG
+#define MAG
+#define USE_MPU9250_MAG // Enables bypass configuration on the MPU9250 I2C bus
+#define USE_MAG_AK8963
+#define MAG_AK8963_ALIGN        CW270_DEG
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PC13
 
 #define USE_SERIALRX_TARGET_CUSTOM
-#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_UART           SERIAL_PORT_USART6
 #define SERIALRX_PROVIDER       SERIALRX_TARGET_CUSTOM
 #define RX_CHANNELS_TAER
+
+#if defined(CRAZYFLIE2BQ)
+#define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
+#else
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#endif
+
+#if defined(CRAZYFLIE2BQ)
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+#define BEEPER                  PC12
+
+#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
+#define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
+#define USE_ADC
+#define ADC_INSTANCE            ADC1
+#define CURRENT_METER_ADC_PIN   PA5
+#define VBAT_ADC_PIN            PA6
+#else
+#define BRUSHED_MOTORS
+#endif

@@ -27,7 +27,6 @@
 #include "pwm_output.h"
 #include "drivers/nvic.h"
 #include "dma.h"
-#include "drivers/system.h"
 #include "rcc.h"
 
 static uint8_t dmaMotorTimerCount = 0;
@@ -123,7 +122,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     RCC_ClockCmd(timerRCC(timer), ENABLE);
 
     motor->TimHandle.Instance = timerHardware->tim;
-    motor->TimHandle.Init.Prescaler = (SystemCoreClock / timerClockDivisor(timer) / getDshotHz(pwmProtocolType)) - 1;
+    motor->TimHandle.Init.Prescaler = (timerClock(timer) / getDshotHz(pwmProtocolType)) - 1;;
     motor->TimHandle.Init.Period = MOTOR_BITLENGTH;
     motor->TimHandle.Init.RepetitionCounter = 0;
     motor->TimHandle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;

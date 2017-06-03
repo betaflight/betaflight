@@ -42,7 +42,7 @@
 #include "common/color.h"
 #include "common/utils.h"
 
-#include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro/accgyro.h"
 

@@ -28,6 +28,7 @@
 #include "drivers/accgyro/accgyro_mpu6500.h"
 #include "drivers/bus_spi.h"
 #include "drivers/io.h"
+#include "drivers/time.h"
 #include "drivers/system.h"
 
 #include "hardware_revision.h"

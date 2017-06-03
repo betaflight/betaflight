@@ -29,14 +29,14 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
-#include "drivers/system.h"
-#include "drivers/nvic.h"
-#include "drivers/io.h"
-#include "drivers/exti.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/exti.h"
+#include "drivers/io.h"
 #include "drivers/light_led.h"
-
+#include "drivers/nvic.h"
 #include "drivers/sensor.h"
+#include "drivers/time.h"
+
 #include "compass.h"
 
 #include "compass_hmc5883l.h"

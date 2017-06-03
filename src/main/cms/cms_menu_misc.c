@@ -26,7 +26,7 @@
 
 #include "build/version.h"
 
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "cms/cms.h"
 #include "cms/cms_types.h"

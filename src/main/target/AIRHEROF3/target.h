@@ -78,7 +78,7 @@
 #define UART3_TX_PIN            PB10 // PB10 (AF7)
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
-#define BOARD_HAS_VOLTAGE_DIVIDER
+#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define USE_ADC
 #define ADC_INSTANCE            ADC2
 #define VBAT_ADC_PIN            PA4

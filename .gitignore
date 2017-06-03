@@ -33,3 +33,9 @@ stm32.mak
 # eclipse launch configurations
 /support/eclipse
 
+# Artefacts for Visual Studio Code
+/.vscode/
+
+# Artefacts for CLion
+/cmake-build-debug/
+/CMakeLists.txt

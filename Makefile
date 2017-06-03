@@ -128,6 +128,12 @@ GROUP_2_TARGETS := \
 	F4BY \
 	FISHDRONEF4 \
 	FLIP32F3OSD \
+	FF_ACROWHOOPSP \
+	FF_FORTINIF4 \
+	FF_KOMBINI \
+	FF_PIKOBLX \
+	FF_PIKOF4 \
+	FF_RADIANCE \
 	FURYF3 \
 	FURYF4 \
 	FURYF7 \
@@ -150,7 +156,6 @@ GROUP_3_TARGETS := \
 	OMNIBUS \
 	OMNIBUSF4 \
 	OMNIBUSF4SD \
-	PIKOBLX \
 	PLUMF4 \
 	PODIUMF4 \
 	RCEXPLORERF3 \
@@ -277,14 +282,14 @@ STARTUP_SRC     = startup_stm32f30x_md_gcc.S
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
 
-VPATH           := $(VPATH):$(CMSIS_DIR)/CM1/CoreSupport:$(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x
-CMSIS_SRC       = $(notdir $(wildcard $(CMSIS_DIR)/CM1/CoreSupport/*.c \
-                  $(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x/*.c))
+VPATH           := $(VPATH):$(CMSIS_DIR)/CM4/CoreSupport:$(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F30x
+CMSIS_SRC       = $(notdir $(wildcard $(CMSIS_DIR)/CM4/CoreSupport/*.c \
+                  $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F30x/*.c))
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(STDPERIPH_DIR)/inc \
-                   $(CMSIS_DIR)/CM1/CoreSupport \
-                   $(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x
+                   $(CMSIS_DIR)/CM4/CoreSupport \
+                   $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F30x
 
 ifneq ($(filter VCP, $(FEATURES)),)
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
@@ -819,7 +824,7 @@ endif
 SPEED_OPTIMISED_SRC := ""
 SIZE_OPTIMISED_SRC  := ""
 
-ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
+ifneq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
 SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             common/encoding.c \
             common/filter.c \
@@ -911,7 +916,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c
-endif #F3
+endif #!F1
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
 VCP_SRC = \
@@ -1011,6 +1016,11 @@ SITLEXCLUDES = \
             drivers/system.c \
             drivers/rcc.c \
             drivers/serial_uart.c \
+            drivers/rx_xn297.c \
+            drivers/display_ug2864hsweg01.c \
+            telemetry/crsf.c \
+            telemetry/srxl.c \
+            io/displayport_oled.c
 
 
 # check if target.mk supplied
@@ -1026,12 +1036,20 @@ else ifeq ($(TARGET),$(filter $(TARGET),$(SITL_TARGETS)))
 SRC := $(TARGET_SRC) $(SITL_SRC) $(VARIANT_SRC)
 endif
 
-ifneq ($(filter $(TARGET),$(F4_TARGETS) $(F7_TARGETS)),)
+ifneq ($(filter $(TARGET),$(F3_TARGETS) $(F4_TARGETS) $(F7_TARGETS)),)
 DSPLIB := $(ROOT)/lib/main/DSP_Lib
-DEVICE_FLAGS += -DARM_MATH_CM4 -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE
+DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE
+
+ifneq ($(filter $(TARGET),$(F3_TARGETS)) $(F4_TARGETS)),)
+DEVICE_FLAGS += -DARM_MATH_CM4
+endif
+ifneq ($(filter $(TARGET),$(F7_TARGETS)),)
+DEVICE_FLAGS += -DARM_MATH_CM7
+endif
 
 INCLUDE_DIRS += $(DSPLIB)/Include
 
+SRC += $(DSPLIB)/Source/BasicMathFunctions/arm_mult_f32.c
 SRC += $(DSPLIB)/Source/TransformFunctions/arm_rfft_fast_f32.c
 SRC += $(DSPLIB)/Source/TransformFunctions/arm_cfft_f32.c
 SRC += $(DSPLIB)/Source/TransformFunctions/arm_rfft_fast_init_f32.c
@@ -1042,6 +1060,7 @@ SRC += $(DSPLIB)/Source/ComplexMathFunctions/arm_cmplx_mag_f32.c
 SRC += $(DSPLIB)/Source/StatisticsFunctions/arm_max_f32.c
 
 SRC += $(wildcard $(DSPLIB)/Source/*/*.S)
+
 endif
 
 
@@ -1111,13 +1130,6 @@ OPTIMISE_DEFAULT    := -Os
 
 LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_DEFAULT)
 
-else ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
-OPTIMISE_DEFAULT    := -O2
-OPTIMISE_SPEED      := -Ofast
-OPTIMISE_SIZE       := -Os
-
-LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
-
 else ifeq ($(TARGET),$(filter $(TARGET),$(SITL_TARGETS)))
 OPTIMISE_DEFAULT    := -Ofast
 OPTIMISE_SPEED      := -Ofast
@@ -1126,9 +1138,11 @@ OPTIMISE_SIZE       := -Os
 LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 
 else
-OPTIMISE_DEFAULT    := -Ofast
+OPTIMISE_DEFAULT    := -O2
+OPTIMISE_SPEED      := -Ofast
+OPTIMISE_SIZE       := -Os
 
-LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_DEFAULT)
+LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 
 endif #TARGETS
 
@@ -1137,7 +1151,7 @@ CC_SPEED_OPTIMISATION   := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 CC_SIZE_OPTIMISATION    := $(OPTIMISATION_BASE) $(OPTIMISE_SIZE)
 
 else #DEBUG
-OPTIMISE_DEFAULT    := -O0
+OPTIMISE_DEFAULT    := -Og
 
 CC_DEBUG_OPTIMISATION := $(OPTIMISE_DEFAULT)
 
@@ -1163,7 +1177,9 @@ CFLAGS      += $(ARCH_FLAGS) \
               -D'__TARGET__="$(TARGET)"' \
               -D'__REVISION__="$(REVISION)"' \
               -save-temps=obj \
-              -MMD -MP
+              -MMD -MP \
+              $(EXTRA_FLAGS)
+
 
 ASFLAGS     = $(ARCH_FLAGS) \
               -x assembler-with-cpp \
@@ -1195,12 +1211,16 @@ LDFLAGS     = \
               $(ARCH_FLAGS) \
               $(LTO_FLAGS) \
               $(DEBUG_FLAGS) \
-              -static \
-              -static-libgcc \
               -Wl,-gc-sections,-Map,$(TARGET_MAP) \
               -Wl,-L$(LINKER_DIR) \
               -Wl,--cref \
               -T$(LD_SCRIPT)
+
+ifneq ($(filter SITL_STATIC,$(OPTIONS)),)
+LDFLAGS     += \
+              -static \
+              -static-libgcc
+endif
 endif
 
 ###############################################################################

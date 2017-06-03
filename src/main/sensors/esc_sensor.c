@@ -35,7 +35,6 @@
 #include "drivers/pwm_output.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
-#include "drivers/system.h"
 
 #include "esc_sensor.h"
 
@@ -63,6 +62,12 @@ Byte 8: Rpm low byte
 Byte 9: 8-bit CRC
 
 */
+
+PG_REGISTER_WITH_RESET_TEMPLATE(escSensorConfig_t, escSensorConfig, PG_ESC_SENSOR_CONFIG, 0);
+
+PG_RESET_TEMPLATE(escSensorConfig_t, escSensorConfig,
+        .halfDuplex = 0
+);
 
 /*
 DEBUG INFORMATION
@@ -183,7 +188,7 @@ bool escSensorInit(void)
         return false;
     }
 
-    portOptions_t options = (SERIAL_NOT_INVERTED);
+    portOptions_t options = SERIAL_NOT_INVERTED  | (escSensorConfig()->halfDuplex ? SERIAL_BIDIR : 0);
 
     // Initialize serial port
     escSensorPort = openSerialPort(portConfig->identifier, FUNCTION_ESC_SENSOR, escSensorDataReceive, ESC_SENSOR_BAUDRATE, MODE_RX, options);

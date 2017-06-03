@@ -31,7 +31,6 @@
 #include "drivers/barometer/barometer_bmp280.h"
 #include "drivers/barometer/barometer_fake.h"
 #include "drivers/barometer/barometer_ms5611.h"
-#include "drivers/system.h"
 
 #include "fc/runtime_config.h"
 
@@ -69,6 +68,10 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
     // Detect what pressure sensors are available. baro->update() is set to sensor-specific update function
 
     baroSensor_e baroHardware = baroHardwareToUse;
+
+#if !defined(USE_BARO_BMP085) && !defined(USE_BARO_MS5611) && !defined(USE_BARO_BMP280) && !defined(USE_BARO_SPI_BMP280)
+    UNUSED(dev);
+#endif
 
 #ifdef USE_BARO_BMP085
     const bmp085Config_t *bmp085Config = NULL;
