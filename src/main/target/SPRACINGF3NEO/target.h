@@ -182,12 +182,13 @@
 #define TELEMETRY_UART                      SERIAL_PORT_UART5
 #define TELEMETRY_PROVIDER_DEFAULT          FUNCTION_TELEMETRY_SMARTPORT
 
-#define BUTTONS
-#define BUTTON_A_PIN            PD2
+#define BUTTONS // Physically located on the optional OSD/VTX board.
+#define BUTTON_A_PIN                        PD2
 
-#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
+#define SPEKTRUM_BIND_PIN                   UART2_RX_PIN
 
-#define BINDPLUG_PIN            PD2
+// FIXME While it's possible to use the button on the OSD/VTX board for binding enabling it here will break binding unless you have the OSD/VTX connected.
+//#define BINDPLUG_PIN                        BUTTON_A_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
