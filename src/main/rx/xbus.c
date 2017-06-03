@@ -23,7 +23,7 @@
 
 #ifdef SERIAL_RX
 
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "io/serial.h"
 

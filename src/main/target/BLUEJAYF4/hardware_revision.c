@@ -23,10 +23,11 @@
 
 #include "build/build_config.h"
 
-#include "drivers/system.h"
 #include "drivers/bus_spi.h"
-#include "drivers/io.h"
 #include "drivers/flash_m25p16.h"
+#include "drivers/io.h"
+#include "drivers/time.h"
+
 #include "hardware_revision.h"
 
 uint8_t hardwareRevision = UNKNOWN;

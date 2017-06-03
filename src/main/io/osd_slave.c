@@ -32,9 +32,9 @@
 #include "common/printf.h"
 #include "common/utils.h"
 
-#include "drivers/max7456_symbols.h"
 #include "drivers/display.h"
-#include "drivers/system.h"
+#include "drivers/max7456_symbols.h"
+#include "drivers/time.h"
 
 #include "io/osd_slave.h"
 

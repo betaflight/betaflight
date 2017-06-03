@@ -21,7 +21,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -38,13 +37,14 @@
 #include "cms/cms_types.h"
 #include "cms/cms_menu_blackbox.h"
 
+#include "common/printf.h"
 #include "common/utils.h"
 
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "fc/config.h"
 
@@ -108,22 +108,22 @@ static void cmsx_Blackbox_GetDeviceStatus()
         unit = "MB";
 
         if (!sdcard_isInserted()) {
-            snprintf(cmsx_BlackboxStatus, CMS_BLACKBOX_STRING_LENGTH, "NO CARD");
+            tfp_sprintf(cmsx_BlackboxStatus, "NO CARD");
         } else if (!sdcard_isFunctional()) {
-            snprintf(cmsx_BlackboxStatus, CMS_BLACKBOX_STRING_LENGTH, "FAULT");
+            tfp_sprintf(cmsx_BlackboxStatus, "FAULT");
         } else {
             switch (afatfs_getFilesystemState()) {
             case AFATFS_FILESYSTEM_STATE_READY:
-                snprintf(cmsx_BlackboxStatus, CMS_BLACKBOX_STRING_LENGTH, "READY");
+                tfp_sprintf(cmsx_BlackboxStatus, "READY");
                 storageDeviceIsWorking = true;
                 break;
             case AFATFS_FILESYSTEM_STATE_INITIALIZATION:
-                snprintf(cmsx_BlackboxStatus, CMS_BLACKBOX_STRING_LENGTH, "INIT");
+                tfp_sprintf(cmsx_BlackboxStatus, "INIT");
                 break;
             case AFATFS_FILESYSTEM_STATE_FATAL:
             case AFATFS_FILESYSTEM_STATE_UNKNOWN:
             default:
-                snprintf(cmsx_BlackboxStatus, CMS_BLACKBOX_STRING_LENGTH, "FAULT");
+                tfp_sprintf(cmsx_BlackboxStatus, "FAULT");
                 break;
             }
         }
@@ -142,25 +142,25 @@ static void cmsx_Blackbox_GetDeviceStatus()
 
         storageDeviceIsWorking = flashfsIsReady();
         if (storageDeviceIsWorking) {
-            snprintf(cmsx_BlackboxStatus, CMS_BLACKBOX_STRING_LENGTH, "READY");
+            tfp_sprintf(cmsx_BlackboxStatus, "READY");
 
             const flashGeometry_t *geometry = flashfsGetGeometry();
             storageUsed = flashfsGetOffset() / 1024;
             storageFree = (geometry->totalSize / 1024) - storageUsed;
         } else {
-            snprintf(cmsx_BlackboxStatus, CMS_BLACKBOX_STRING_LENGTH, "FAULT");
+            tfp_sprintf(cmsx_BlackboxStatus, "FAULT");
         }
 
         break;
 #endif
 
     default:
-        snprintf(cmsx_BlackboxStatus, CMS_BLACKBOX_STRING_LENGTH, "---");
+        tfp_sprintf(cmsx_BlackboxStatus, "---");
     }
 
     /* Storage counters */
-    snprintf(cmsx_BlackboxDeviceStorageUsed, CMS_BLACKBOX_STRING_LENGTH, "%ld%s", storageUsed, unit);
-    snprintf(cmsx_BlackboxDeviceStorageFree, CMS_BLACKBOX_STRING_LENGTH, "%ld%s", storageFree, unit);
+    tfp_sprintf(cmsx_BlackboxDeviceStorageUsed, "%ld%s", storageUsed, unit);
+    tfp_sprintf(cmsx_BlackboxDeviceStorageFree, "%ld%s", storageFree, unit);
 }
 
 static long cmsx_Blackbox_onEnter(void)

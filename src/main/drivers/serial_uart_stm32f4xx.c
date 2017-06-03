@@ -33,15 +33,6 @@
 #define UART_RX_BUFFER_SIZE 512
 #define UART_TX_BUFFER_SIZE 512
 
-typedef enum UARTDevice {
-    UARTDEV_1 = 0,
-    UARTDEV_2 = 1,
-    UARTDEV_3 = 2,
-    UARTDEV_4 = 3,
-    UARTDEV_5 = 4,
-    UARTDEV_6 = 5
-} UARTDevice;
-
 typedef struct uartDevice_s {
     USART_TypeDef* dev;
     uartPort_t port;
@@ -352,11 +343,6 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
 }
 
 #ifdef USE_UART1
-uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t options)
-{
-    return serialUART(UARTDEV_1, baudRate, mode, options);
-}
-
 // USART1 Rx/Tx IRQ Handler
 void USART1_IRQHandler(void)
 {
@@ -367,12 +353,6 @@ void USART1_IRQHandler(void)
 #endif
 
 #ifdef USE_UART2
-// USART2 - GPS or Spektrum or ?? (RX + TX by IRQ)
-uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t options)
-{
-    return serialUART(UARTDEV_2, baudRate, mode, options);
-}
-
 void USART2_IRQHandler(void)
 {
     uartPort_t *s = &(uartHardwareMap[UARTDEV_2]->port);
@@ -382,11 +362,6 @@ void USART2_IRQHandler(void)
 
 #ifdef USE_UART3
 // USART3
-uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t options)
-{
-    return serialUART(UARTDEV_3, baudRate, mode, options);
-}
-
 void USART3_IRQHandler(void)
 {
     uartPort_t *s = &(uartHardwareMap[UARTDEV_3]->port);
@@ -396,11 +371,6 @@ void USART3_IRQHandler(void)
 
 #ifdef USE_UART4
 // UART4
-uartPort_t *serialUART4(uint32_t baudRate, portMode_t mode, portOptions_t options)
-{
-    return serialUART(UARTDEV_4, baudRate, mode, options);
-}
-
 void UART4_IRQHandler(void)
 {
     uartPort_t *s = &(uartHardwareMap[UARTDEV_4]->port);
@@ -410,11 +380,6 @@ void UART4_IRQHandler(void)
 
 #ifdef USE_UART5
 // UART5
-uartPort_t *serialUART5(uint32_t baudRate, portMode_t mode, portOptions_t options)
-{
-    return serialUART(UARTDEV_5, baudRate, mode, options);
-}
-
 void UART5_IRQHandler(void)
 {
     uartPort_t *s = &(uartHardwareMap[UARTDEV_5]->port);
@@ -424,11 +389,6 @@ void UART5_IRQHandler(void)
 
 #ifdef USE_UART6
 // USART6
-uartPort_t *serialUART6(uint32_t baudRate, portMode_t mode, portOptions_t options)
-{
-    return serialUART(UARTDEV_6, baudRate, mode, options);
-}
-
 void USART6_IRQHandler(void)
 {
     uartPort_t *s = &(uartHardwareMap[UARTDEV_6]->port);

@@ -27,8 +27,6 @@
 
 #include "common/utils.h"
 
-#include "drivers/system.h"
-
 #include "drivers/nvic.h"
 #include "drivers/io.h"
 #include "timer.h"

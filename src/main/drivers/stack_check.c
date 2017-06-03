@@ -90,10 +90,10 @@ uint32_t stackUsedSize(void)
 
 uint32_t stackTotalSize(void)
 {
-    return (uint32_t)&_Min_Stack_Size;
+    return (uint32_t)(intptr_t)&_Min_Stack_Size;
 }
 
 uint32_t stackHighMem(void)
 {
-    return (uint32_t)&_estack;
+    return (uint32_t)(intptr_t)&_estack;
 }

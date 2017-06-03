@@ -17,6 +17,7 @@
 
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "YPF4"
+#define TARGET_CONFIG
 
 #define USBD_PRODUCT_STRING     "YupiF4"
 
@@ -128,7 +129,7 @@
 
 
 // ADC inputs
-#define BOARD_HAS_VOLTAGE_DIVIDER
+#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define USE_ADC
 #define VBAT_ADC_PIN            PC1
 #define RSSI_ADC_GPIO_PIN       PC0

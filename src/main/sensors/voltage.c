@@ -28,7 +28,6 @@
 #include "common/utils.h"
 
 #include "drivers/adc.h"
-#include "drivers/system.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"

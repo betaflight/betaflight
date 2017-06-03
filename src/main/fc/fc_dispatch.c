@@ -23,7 +23,8 @@
 
 #include "common/utils.h"
 
-#include "drivers/system.h"
+#include "drivers/time.h"
+
 #include "fc/fc_dispatch.h"
 
 static dispatchEntry_t *head = NULL;

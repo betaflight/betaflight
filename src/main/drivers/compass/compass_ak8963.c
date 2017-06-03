@@ -28,11 +28,11 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
-#include "drivers/system.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
-
 #include "drivers/sensor.h"
+#include "drivers/time.h"
+
 #include "drivers/compass/compass.h"
 
 #include "drivers/accgyro/accgyro.h"

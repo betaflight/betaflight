@@ -33,18 +33,18 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
-#include "drivers/io.h"
-
-#include "drivers/system.h"
-#include "drivers/exti.h"
-#include "drivers/bus_spi.h"
-#include "drivers/gyro_sync.h"
-#include "drivers/light_led.h"
-
-#include "drivers/sensor.h"
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_mpu.h"
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
+#include "drivers/bus_spi.h"
+#include "drivers/exti.h"
+#include "drivers/gyro_sync.h"
+#include "drivers/io.h"
+#include "drivers/light_led.h"
+#include "drivers/sensor.h"
+#include "drivers/time.h"
+#include "drivers/system.h"
+
 
 static void mpu9250AccAndGyroInit(gyroDev_t *gyro);
 

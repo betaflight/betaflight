@@ -21,7 +21,6 @@
 #include "platform.h"
 
 #include "drivers/bus_i2c.h"
-#include "drivers/system.h"
 
 #include "display_ug2864hsweg01.h"
 

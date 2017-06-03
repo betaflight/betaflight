@@ -21,12 +21,6 @@
 #include <stdbool.h>
 
 void systemInit(void);
-void delayMicroseconds(uint32_t us);
-void delay(uint32_t ms);
-
-uint32_t micros(void);
-uint32_t microsISR(void);
-uint32_t millis(void);
 
 typedef enum {
     FAILURE_DEVELOPER = 0,

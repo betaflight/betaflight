@@ -33,10 +33,10 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/light_led.h"
-#include "drivers/system.h"
 #include "drivers/gyro_sync.h"
 #include "drivers/transponder_ir.h"
+#include "drivers/light_led.h"
+#include "drivers/time.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"

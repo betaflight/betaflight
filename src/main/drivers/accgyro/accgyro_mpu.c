@@ -29,14 +29,14 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
-#include "drivers/nvic.h"
-
-#include "drivers/system.h"
-#include "drivers/io.h"
-#include "drivers/exti.h"
 #include "drivers/bus_i2c.h"
-
+#include "drivers/exti.h"
+#include "drivers/io.h"
+#include "drivers/nvic.h"
 #include "drivers/sensor.h"
+#include "drivers/system.h"
+#include "drivers/time.h"
+
 #include "accgyro.h"
 #include "accgyro_mpu3050.h"
 #include "accgyro_mpu6050.h"

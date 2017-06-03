@@ -37,13 +37,13 @@
 
 #include "platform.h"
 
-#include "drivers/system.h"
-#include "drivers/io.h"
-#include "drivers/exti.h"
-#include "drivers/nvic.h"
 #include "drivers/bus_spi.h"
-
+#include "drivers/exti.h"
+#include "drivers/io.h"
+#include "drivers/nvic.h"
 #include "drivers/sensor.h"
+#include "drivers/time.h"
+
 #include "accgyro.h"
 #include "accgyro_spi_bmi160.h"
 

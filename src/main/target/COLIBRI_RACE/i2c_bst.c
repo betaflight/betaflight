@@ -16,7 +16,6 @@
 #include "common/color.h"
 #include "common/maths.h"
 
-#include "drivers/system.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro/accgyro.h"
@@ -25,6 +24,8 @@
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/gpio.h"
+#include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/timer.h"
 #include "drivers/rx_pwm.h"
 
@@ -170,7 +171,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXLLIGHTS, "LLIGHTS;", 16 },
     { BOXCALIB, "CALIB;", 17 },
     { BOXGOV, "GOVERNOR;", 18 },
-    { BOXOSD, "OSD SW;", 19 },
+    { BOXOSD, "OSD DISABLE SW;", 19 },
     { BOXTELEMETRY, "TELEMETRY;", 20 },
     { BOXGTUNE, "GTUNE;", 21 },
     { BOXSONAR, "SONAR;", 22 },

@@ -37,9 +37,9 @@
 
 #define BASE_PORT 5760
 
-const struct serialPortVTable uartVTable[]; // Forward
+static const struct serialPortVTable tcpVTable; // Forward
 static tcpPort_t tcpSerialPorts[SERIAL_PORT_COUNT];
-static bool portInited[SERIAL_PORT_COUNT];
+static bool tcpPortInitialized[SERIAL_PORT_COUNT];
 static bool tcpStart = false;
 bool tcpIsStart(void) {
 	return tcpStart;
@@ -76,8 +76,8 @@ static void onAccept(dyad_Event *e) {
 }
 static tcpPort_t* tcpReconfigure(tcpPort_t *s, int id)
 {
-	if(portInited[id]) {
-		fprintf(stderr, "port had initialed!!\n");
+	if(tcpPortInitialized[id]) {
+		fprintf(stderr, "port is already initialized!\n");
 		return s;
 	}
 
@@ -93,7 +93,7 @@ static tcpPort_t* tcpReconfigure(tcpPort_t *s, int id)
 	}
 
 	tcpStart = true;
-	portInited[id] = true;
+	tcpPortInitialized[id] = true;
 
 	s->connected = false;
 	s->clientCount = 0;
@@ -104,25 +104,26 @@ static tcpPort_t* tcpReconfigure(tcpPort_t *s, int id)
 	dyad_addListener(s->serv, DYAD_EVENT_ACCEPT, onAccept, s);
 
 	if(dyad_listenEx(s->serv, NULL, BASE_PORT + id + 1, 10) == 0) {
-		fprintf(stderr, "bind port %u for UART%u\n", (unsigned)BASE_PORT + id + 1, (unsigned)id+1);
+		fprintf(stderr, "bind port %u for UART%u\n", (unsigned)BASE_PORT + id + 1, (unsigned)id + 1);
 	} else {
-		fprintf(stderr, "bind port %u for UART%u failed!!\n", (unsigned)BASE_PORT + id + 1, (unsigned)id+1);
+		fprintf(stderr, "bind port %u for UART%u failed!!\n", (unsigned)BASE_PORT + id + 1, (unsigned)id + 1);
 	}
 	return s;
 }
 
-serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr rxCallback, uint32_t baudRate, portMode_t mode, portOptions_t options)
+serialPort_t *serTcpOpen(int id, serialReceiveCallbackPtr rxCallback, uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     tcpPort_t *s = NULL;
 
 #if defined(USE_UART1) || defined(USE_UART2) || defined(USE_UART3) || defined(USE_UART4) || defined(USE_UART5) || defined(USE_UART6) || defined(USE_UART7) || defined(USE_UART8)
-	uintptr_t id = ((uintptr_t)USARTx - 1);
+    if(id >= 0 && id < SERIAL_PORT_COUNT) {
 	s = tcpReconfigure(&tcpSerialPorts[id], id);
-#else
-	return (serialPort_t *)s;
+    }
 #endif
+    if(!s)
+        return NULL;
 
-    s->port.vTable = uartVTable;
+    s->port.vTable = &tcpVTable;
 
     // common serial initialisation code should move to serialPort::init()
     s->port.rxBufferHead = s->port.rxBufferTail = 0;
@@ -167,10 +168,10 @@ uint32_t tcpTotalTxBytesFree(const serialPort_t *instance)
     } else {
         bytesUsed = s->port.txBufferSize + s->port.txBufferHead - s->port.txBufferTail;
     }
-	bytesUsed = (s->port.txBufferSize - 1) - bytesUsed;
+    uint32_t bytesFree = (s->port.txBufferSize - 1) - bytesUsed;
     pthread_mutex_unlock(&s->txLock);
 
-    return bytesUsed;
+    return bytesFree;
 }
 
 bool isTcpTransmitBufferEmpty(const serialPort_t *instance)
@@ -217,18 +218,19 @@ void tcpWrite(serialPort_t *instance, uint8_t ch)
 
 void tcpDataOut(tcpPort_t *instance)
 {
-    uint32_t bytesUsed;
     tcpPort_t *s = (tcpPort_t *)instance;
     if(s->conn == NULL) return;
     pthread_mutex_lock(&s->txLock);
 
     if (s->port.txBufferHead < s->port.txBufferTail) {
-        bytesUsed = s->port.txBufferSize + s->port.txBufferHead - s->port.txBufferTail;
-        dyad_write(s->conn, (const void *)(s->port.txBuffer + s->port.txBufferTail), s->port.txBufferSize - s->port.txBufferTail);
+        // send data till end of buffer
+        int chunk = s->port.txBufferSize - s->port.txBufferTail;
+        dyad_write(s->conn, (const void *)&s->port.txBuffer[s->port.txBufferTail], chunk);
         s->port.txBufferTail = 0;
     }
-    bytesUsed = s->port.txBufferHead - s->port.txBufferTail;
-    dyad_write(s->conn, (const void *)(&(s->port.txBuffer[s->port.txBufferTail])), bytesUsed);
+    int chunk = s->port.txBufferHead - s->port.txBufferTail;
+    if(chunk)
+        dyad_write(s->conn, (const void*)&s->port.txBuffer[s->port.txBufferTail], chunk);
     s->port.txBufferTail = s->port.txBufferHead;
 
     pthread_mutex_unlock(&s->txLock);
@@ -252,8 +254,7 @@ void tcpDataIn(tcpPort_t *instance, uint8_t* ch, int size)
 //	printf("\n");
 }
 
-const struct serialPortVTable uartVTable[] = {
-    {
+static const struct serialPortVTable tcpVTable = {
         .serialWrite = tcpWrite,
         .serialTotalRxWaiting = tcpTotalRxBytesWaiting,
         .serialTotalTxFree = tcpTotalTxBytesFree,
@@ -264,5 +265,4 @@ const struct serialPortVTable uartVTable[] = {
         .writeBuf = NULL,
         .beginWrite = NULL,
         .endWrite = NULL,
-    }
 };

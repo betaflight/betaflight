@@ -31,7 +31,7 @@
 #include "common/time.h"
 #include "common/utils.h"
 
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 // DEBUG_SCHEDULER, timings for:
 // 0 - gyroUpdate()
@@ -209,7 +209,7 @@ void schedulerResetTaskStatistics(cfTaskId_e taskId)
     } else if (taskId < TASK_COUNT) {
         cfTasks[taskId].movingSumExecutionTime = 0;
         cfTasks[taskId].totalExecutionTime = 0;
-        cfTasks[taskId].totalExecutionTime = 0;
+        cfTasks[taskId].maxExecutionTime = 0;
     }
 #endif
 }

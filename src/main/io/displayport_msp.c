@@ -30,7 +30,6 @@
 #include "config/parameter_group_ids.h"
 
 #include "drivers/display.h"
-#include "drivers/system.h"
 
 #include "fc/fc_msp.h"
 

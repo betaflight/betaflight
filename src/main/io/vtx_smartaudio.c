@@ -36,8 +36,8 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/system.h"
 #include "drivers/serial.h"
+#include "drivers/time.h"
 #include "drivers/vtx_common.h"
 
 #include "fc/rc_controls.h"
@@ -64,7 +64,7 @@ serialPort_t *debugSerialPort = NULL;
 #define dprintf(x) if (debugSerialPort) printf x
 #else
 #define dprintf(x)
-#endif
+#endif // SMARTAUDIO_DPRINTF
 
 #include "build/debug.h"
 

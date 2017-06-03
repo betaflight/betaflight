@@ -38,11 +38,8 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/system.h"
 #include "drivers/light_led.h"
-
-#include "drivers/light_led.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "io/dashboard.h"
 #include "io/gps.h"
@@ -152,7 +149,11 @@ static const uint8_t ubloxInit[] = {
 // 31.21 CFG-SBAS (0x06 0x16), Page 142/210
 // A.10 SBAS Configuration (UBX-CFG-SBAS), Page 198/210 - GPS.G6-SW-10018-F
 
-#define UBLOX_SBAS_MESSAGE_LENGTH 16
+#define UBLOX_SBAS_PREFIX_LENGTH 10
+
+static const uint8_t ubloxSbasPrefix[UBLOX_SBAS_PREFIX_LENGTH] = { 0xB5, 0x62, 0x06, 0x16, 0x08, 0x00, 0x03, 0x07, 0x03, 0x00 };
+
+#define UBLOX_SBAS_MESSAGE_LENGTH 6
 typedef struct ubloxSbas_s {
     sbasMode_e mode;
     uint8_t message[UBLOX_SBAS_MESSAGE_LENGTH];
@@ -163,11 +164,11 @@ typedef struct ubloxSbas_s {
 // Note: these must be defined in the same order is sbasMode_e since no lookup table is used.
 static const ubloxSbas_t ubloxSbas[] = {
     // NOTE this could be optimized to save a few bytes of flash space since the same prefix is used for each command.
-    { SBAS_AUTO,  { 0xB5, 0x62, 0x06, 0x16, 0x08, 0x00, 0x03, 0x07, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x31, 0xE5}},
-    { SBAS_EGNOS, { 0xB5, 0x62, 0x06, 0x16, 0x08, 0x00, 0x03, 0x07, 0x03, 0x00, 0x51, 0x08, 0x00, 0x00, 0x8A, 0x41}},
-    { SBAS_WAAS,  { 0xB5, 0x62, 0x06, 0x16, 0x08, 0x00, 0x03, 0x07, 0x03, 0x00, 0x04, 0xE0, 0x04, 0x00, 0x19, 0x9D}},
-    { SBAS_MSAS,  { 0xB5, 0x62, 0x06, 0x16, 0x08, 0x00, 0x03, 0x07, 0x03, 0x00, 0x00, 0x02, 0x02, 0x00, 0x35, 0xEF}},
-    { SBAS_GAGAN, { 0xB5, 0x62, 0x06, 0x16, 0x08, 0x00, 0x03, 0x07, 0x03, 0x00, 0x80, 0x01, 0x00, 0x00, 0xB2, 0xE8}}
+    { SBAS_AUTO,  { 0x00, 0x00, 0x00, 0x00, 0x31, 0xE5}},
+    { SBAS_EGNOS, { 0x51, 0x08, 0x00, 0x00, 0x8A, 0x41}},
+    { SBAS_WAAS,  { 0x04, 0xE0, 0x04, 0x00, 0x19, 0x9D}},
+    { SBAS_MSAS,  { 0x00, 0x02, 0x02, 0x00, 0x35, 0xEF}},
+    { SBAS_GAGAN, { 0x80, 0x01, 0x00, 0x00, 0xB2, 0xE8}}
 };
 
 
@@ -372,8 +373,11 @@ void gpsInitUblox(void)
             }
 
             if (gpsData.messageState == GPS_MESSAGE_STATE_SBAS) {
-                if (gpsData.state_position < UBLOX_SBAS_MESSAGE_LENGTH) {
-                    serialWrite(gpsPort, ubloxSbas[gpsConfig()->sbasMode].message[gpsData.state_position]);
+                if (gpsData.state_position < UBLOX_SBAS_PREFIX_LENGTH) {
+                    serialWrite(gpsPort, ubloxSbasPrefix[gpsData.state_position]);
+                    gpsData.state_position++;
+                } else if (gpsData.state_position < UBLOX_SBAS_PREFIX_LENGTH + UBLOX_SBAS_MESSAGE_LENGTH) {
+                    serialWrite(gpsPort, ubloxSbas[gpsConfig()->sbasMode].message[gpsData.state_position - UBLOX_SBAS_PREFIX_LENGTH]);
                     gpsData.state_position++;
                 } else {
                     gpsData.messageState++;

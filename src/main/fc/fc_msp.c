@@ -136,7 +136,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXLLIGHTS, "LLIGHTS", 16 },
     { BOXCALIB, "CALIB", 17 },
     { BOXGOV, "GOVERNOR", 18 },
-    { BOXOSD, "OSD SW", 19 },
+    { BOXOSD, "OSD DISABLE SW", 19 },
     { BOXTELEMETRY, "TELEMETRY", 20 },
     { BOXGTUNE, "GTUNE", 21 },
     { BOXSONAR, "SONAR", 22 },
@@ -349,7 +349,7 @@ void initActiveBoxIds(void)
         BME(BOXFAILSAFE);
     }
 
-    if (mixerConfig()->mixerMode == MIXER_FLYING_WING || mixerConfig()->mixerMode == MIXER_AIRPLANE) {
+    if (mixerConfig()->mixerMode == MIXER_FLYING_WING || mixerConfig()->mixerMode == MIXER_AIRPLANE || mixerConfig()->mixerMode == MIXER_CUSTOM_AIRPLANE) {
         BME(BOXPASSTHRU);
     }
 
@@ -809,6 +809,9 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU16(dst, osdConfig()->alt_alarm);
         for (int i = 0; i < OSD_ITEM_COUNT; i++) {
             sbufWriteU16(dst, osdConfig()->item_pos[i]);
+        }
+        for (int i = 0; i < OSD_STAT_COUNT; i++ ) {
+            sbufWriteU8(dst, osdConfig()->enabled_stats[i]);
         }
 #endif
         break;
@@ -2058,8 +2061,9 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_OSD_CONFIG:
         {
             const uint8_t addr = sbufReadU8(src);
-            // set all the other settings
+
             if ((int8_t)addr == -1) {
+                /* Set general OSD settings */
 #ifdef USE_MAX7456
                 vcdProfileMutable()->video_system = sbufReadU8(src);
 #else
@@ -2074,10 +2078,17 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
             } else {
 #if defined(OSD)
-                // set a position setting
-                const uint16_t pos  = sbufReadU16(src);
-                if (addr < OSD_ITEM_COUNT) {
-                    osdConfigMutable()->item_pos[addr] = pos;
+                const uint16_t value = sbufReadU16(src);
+
+                /* Get screen index, 0 is post flight statistics, 1 and above are in flight OSD screens */
+                const uint8_t screen = (sbufBytesRemaining(src) >= 1) ? sbufReadU8(src) : 1;
+
+                if (screen == 0 && addr < OSD_STAT_COUNT) {
+                    /* Set statistic item enable */
+                    osdConfigMutable()->enabled_stats[addr] = value;
+                } else if (addr < OSD_ITEM_COUNT) {
+                    /* Set element positions */
+                    osdConfigMutable()->item_pos[addr] = value;
                 }
 #else
                 return MSP_RESULT_ERROR;

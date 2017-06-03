@@ -29,27 +29,26 @@
 #include "common/filter.h"
 #include "common/maths.h"
 
+#include "config/config_reset.h"
+#include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
-#include "config/config_reset.h"
 
 #include "drivers/pwm_output.h"
-#include "drivers/system.h"
 
-#include "rx/rx.h"
-
-#include "io/gimbal.h"
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/servos.h"
 
-#include "fc/config.h"
-#include "fc/rc_controls.h"
-#include "fc/runtime_config.h"
+#include "io/gimbal.h"
 
-#include "config/feature.h"
+#include "rx/rx.h"
+
 
 extern mixerMode_e currentMixerMode;
 
@@ -92,9 +91,10 @@ void pgResetFn_servoParams(servoParam_t *instance)
 // no template required since default is zero
 PG_REGISTER(gimbalConfig_t, gimbalConfig, PG_GIMBAL_CONFIG, 0);
 
+int16_t servo[MAX_SUPPORTED_SERVOS];
+
 static uint8_t servoRuleCount = 0;
 static servoMixer_t currentServoMixer[MAX_SERVO_RULES];
-int16_t servo[MAX_SUPPORTED_SERVOS];
 static int useServo;
 
 
@@ -103,34 +103,42 @@ static int useServo;
 static const servoMixer_t servoMixerAirplane[] = {
     { SERVO_FLAPPERON_1, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
     { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
-    { SERVO_RUDDER, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
-    { SERVO_ELEVATOR, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
-    { SERVO_THROTTLE, INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100, 0 },
+    { SERVO_RUDDER,      INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
+    { SERVO_ELEVATOR,    INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
+    { SERVO_THROTTLE,    INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100, 0 },
 };
 
 static const servoMixer_t servoMixerFlyingWing[] = {
     { SERVO_FLAPPERON_1, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
     { SERVO_FLAPPERON_1, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
-    { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL,  -100, 0, 0, 100, 0 },
+    { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL, -100, 0, 0, 100, 0 },
     { SERVO_FLAPPERON_2, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
-    { SERVO_THROTTLE, INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100, 0 },
+    { SERVO_THROTTLE,    INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100, 0 },
 };
 
+#if defined(USE_UNCOMMON_MIXERS)
 static const servoMixer_t servoMixerBI[] = {
     { SERVO_BICOPTER_LEFT, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
-    { SERVO_BICOPTER_LEFT, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
+    { SERVO_BICOPTER_LEFT, INPUT_STABILIZED_PITCH, -100, 0, 0, 100, 0 },
     { SERVO_BICOPTER_RIGHT, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
     { SERVO_BICOPTER_RIGHT, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
 };
+#else
+#define servoMixerBI NULL
+#endif
 
 static const servoMixer_t servoMixerTri[] = {
     { SERVO_RUDDER, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
 };
 
+#if defined(USE_UNCOMMON_MIXERS)
 static const servoMixer_t servoMixerDual[] = {
     { SERVO_DUALCOPTER_LEFT, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
     { SERVO_DUALCOPTER_RIGHT, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
 };
+#else
+#define servoMixerDual NULL
+#endif
 
 static const servoMixer_t servoMixerSingle[] = {
     { SERVO_SINGLECOPTER_1, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
@@ -147,13 +155,6 @@ static const servoMixer_t servoMixerGimbal[] = {
     { SERVO_GIMBAL_PITCH, INPUT_GIMBAL_PITCH, 125, 0, 0, 100, 0 },
     { SERVO_GIMBAL_ROLL, INPUT_GIMBAL_ROLL,  125, 0, 0, 100, 0 },
 };
-
-
-// Custom mixer configuration
-typedef struct mixerRules_s {
-    uint8_t servoRuleCount;
-    const servoMixer_t *rule;
-} mixerRules_t;
 
 const mixerRules_t servoMixers[] = {
     { 0, NULL },                // entry 0
@@ -226,7 +227,7 @@ void loadCustomServoMixer(void)
     memset(currentServoMixer, 0, sizeof(currentServoMixer));
 
     // load custom mixer into currentServoMixer
-    for (uint8_t i = 0; i < MAX_SERVO_RULES; i++) {
+    for (int i = 0; i < MAX_SERVO_RULES; i++) {
         // check if done
         if (customServoMixers(i)->rate == 0)
             break;
@@ -374,7 +375,6 @@ STATIC_UNIT_TESTED void servoMixer(void)
 {
     int16_t input[INPUT_SOURCE_COUNT]; // Range [-500:+500]
     static int16_t currentOutput[MAX_SERVO_RULES];
-    uint8_t i;
 
     if (FLIGHT_MODE(PASSTHRU_MODE)) {
         // Direct passthru from RX
@@ -413,11 +413,12 @@ STATIC_UNIT_TESTED void servoMixer(void)
     input[INPUT_RC_AUX3]     = rcData[AUX3]     - rxConfig()->midrc;
     input[INPUT_RC_AUX4]     = rcData[AUX4]     - rxConfig()->midrc;
 
-    for (i = 0; i < MAX_SUPPORTED_SERVOS; i++)
+    for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         servo[i] = 0;
+    }
 
     // mix servos according to rules
-    for (i = 0; i < servoRuleCount; i++) {
+    for (int i = 0; i < servoRuleCount; i++) {
         // consider rule if no box assigned or box is active
         if (currentServoMixer[i].box == 0 || IS_RC_MODE_ACTIVE(BOXSERVO1 + currentServoMixer[i].box - 1)) {
             uint8_t target = currentServoMixer[i].targetChannel;
@@ -441,7 +442,7 @@ STATIC_UNIT_TESTED void servoMixer(void)
         }
     }
 
-    for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+    for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         servo[i] = ((int32_t)servoParams(i)->rate * servo[i]) / 100L;
         servo[i] += determineServoMiddleOrForwardFromChannel(i);
     }
