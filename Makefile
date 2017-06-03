@@ -884,13 +884,14 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
             drivers/serial_softserial.c \
-            io/dashboard.c \
             io/displayport_max7456.c \
             io/osd.c \
             io/osd_slave.c
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/serial_escserial.c \
+            drivers/vtx_rtc6705_soft_spi.c \
+            drivers/vtx_rtc6705.c \
             drivers/vtx_common.c \
             fc/fc_init.c \
             fc/cli.c \
@@ -902,6 +903,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
+            io/dashboard.c \
             msp/msp_serial.c \
             cms/cms.c \
             cms/cms_menu_blackbox.c \
@@ -910,9 +912,11 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             cms/cms_menu_ledstrip.c \
             cms/cms_menu_misc.c \
             cms/cms_menu_osd.c \
+            io/vtx_string.c \
             io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \
-            io/vtx_tramp.c
+            io/vtx_tramp.c \
+            io/vtx_control.c
 endif #!F1
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
@@ -1119,8 +1123,8 @@ SIZE        := $(ARM_SDK_PREFIX)size
 
 ifneq ($(DEBUG),GDB)
 OPTIMISATION_BASE   := -flto -fuse-linker-plugin -ffast-math
-OPTIMISE_SPEED      := ""
-OPTIMISE_SIZE       := ""
+OPTIMISE_SPEED      := 
+OPTIMISE_SIZE       := 
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
 OPTIMISE_DEFAULT    := -Os
