@@ -546,10 +546,6 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
 
     const hsvColor_t *warningColor = NULL;
 
-    if (isBeeperOn()) {
-        warningColor = &HSV(ORANGE);
-    }
-
     if (warningFlags) {
         bool colorOn = (warningFlashCounter % 2) == 0;   // w_w_
         warningFlags_e warningId = warningFlashCounter / 4;
@@ -566,6 +562,10 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
                     break;
                 default:;
             }
+        }
+    } else {
+        if (isBeeperOn()) {
+            warningColor = &HSV(ORANGE);
         }
     }
 
