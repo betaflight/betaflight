@@ -141,9 +141,11 @@
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
 
+#ifdef USE_DSHOT
 // Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
+#endif
 
 #define MPU6500_CS_PIN                   PB9
 #define MPU6500_SPI_INSTANCE             SPI1
