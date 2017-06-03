@@ -41,6 +41,7 @@ typedef enum ADCDevice {
 #else
     ADCDEV_MAX = ADCDEV_1,
 #endif
+    ADCDEV_COUNT = ADCDEV_MAX + 1
 } ADCDevice;
 
 typedef struct adcTagMap_s {
@@ -62,11 +63,23 @@ typedef struct adcDevice_s {
     ADC_HandleTypeDef ADCHandle;
     DMA_HandleTypeDef DmaHandle;
 #endif
+    bool enabled;
+    int usedChannelCount;
 } adcDevice_t;
 
-extern const adcDevice_t adcHardware[];
+typedef struct adc_config_s {
+    ioTag_t tag;
+    ADCDevice adcDevice;
+    uint8_t adcChannel;         // ADC1_INxx channel number
+    uint8_t dmaIndex;           // index into DMA buffer in case of sparse channels
+    bool enabled;
+    uint8_t sampleTime;
+} adc_config_t;
+
 extern const adcTagMap_t adcTagMap[ADC_TAG_MAP_COUNT];
 extern adc_config_t adcConfig[ADC_CHANNEL_COUNT];
-extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
+extern volatile uint16_t adcValues[ADCDEV_COUNT][ADC_CHANNEL_COUNT];
 
+void adcHardwareInit(drv_adc_config_t *init);
+ADCDevice adcDeviceByInstance(ADC_TypeDef *instance);
 uint8_t adcChannelByTag(ioTag_t ioTag);

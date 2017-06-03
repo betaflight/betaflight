@@ -39,6 +39,11 @@
 #define ONESHOT42_TIMER_MHZ   21
 #define MULTISHOT_TIMER_MHZ   84
 #define PWM_BRUSHED_TIMER_MHZ 21
+#elif defined(STM32F7)
+#define ONESHOT125_TIMER_MHZ  9
+#define ONESHOT42_TIMER_MHZ   27
+#define MULTISHOT_TIMER_MHZ   54
+#define PWM_BRUSHED_TIMER_MHZ 27
 #else
 #define ONESHOT125_TIMER_MHZ  8
 #define ONESHOT42_TIMER_MHZ   24
@@ -73,6 +78,31 @@ static bool pwmMotorsEnabled = true;
 
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t output)
 {
+#if defined(USE_HAL_DRIVER)
+    TIM_HandleTypeDef* Handle = timerFindTimerHandle(tim);
+    if(Handle == NULL) return;
+
+    TIM_OC_InitTypeDef TIM_OCInitStructure;
+
+    TIM_OCInitStructure.OCMode = TIM_OCMODE_PWM1;
+
+    if (output & TIMER_OUTPUT_N_CHANNEL) {
+        TIM_OCInitStructure.OCIdleState = TIM_OCIDLESTATE_RESET;
+        TIM_OCInitStructure.OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPOLARITY_HIGH: TIM_OCPOLARITY_LOW;
+        TIM_OCInitStructure.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+        TIM_OCInitStructure.OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPOLARITY_HIGH : TIM_OCNPOLARITY_LOW;
+    } else {
+        TIM_OCInitStructure.OCIdleState = TIM_OCIDLESTATE_SET;
+        TIM_OCInitStructure.OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPOLARITY_LOW : TIM_OCPOLARITY_HIGH;
+        TIM_OCInitStructure.OCNIdleState = TIM_OCNIDLESTATE_SET;
+        TIM_OCInitStructure.OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPOLARITY_LOW : TIM_OCNPOLARITY_HIGH;
+    }
+
+    TIM_OCInitStructure.Pulse = value;
+    TIM_OCInitStructure.OCFastMode = TIM_OCFAST_DISABLE;
+
+    HAL_TIM_PWM_ConfigChannel(Handle, &TIM_OCInitStructure, channel);
+#else
     TIM_OCInitTypeDef  TIM_OCInitStructure;
 
     TIM_OCStructInit(&TIM_OCInitStructure);
@@ -106,11 +136,16 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8
         TIM_OC4PreloadConfig(tim, TIM_OCPreload_Enable);
         break;
     }
+#endif
 }
 
 static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8_t mhz, uint16_t period, uint16_t value, bool enableOutput)
 {
     pwmOutputPort_t *p = &pwmOutputPorts[allocatedOutputPortCount++];
+#if defined(USE_HAL_DRIVER)
+    TIM_HandleTypeDef* Handle = timerFindTimerHandle(timerHardware->tim);
+    if(Handle == NULL) return p;
+#endif
 
     configTimeBase(timerHardware->tim, period, mhz);
 
@@ -120,7 +155,11 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
     if (enableOutput) {
         // If PWM outputs are enabled - configure as AF_PP - map to timer
         // AF itself was configured by timerInit();
+#if defined(USE_HAL_DRIVER)
+        IOConfigGPIOAF(io, IOCFG_AF_PP, timerHardware->alternateFunction);
+#else
         IOConfigGPIO(io, IOCFG_AF_PP);
+#endif
     }
     else {
         // If PWM outputs are disabled - configure as GPIO and drive low
@@ -129,6 +168,29 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
     }
 
     pwmOCConfig(timerHardware->tim, timerHardware->channel, value, timerHardware->output & TIMER_OUTPUT_INVERTED);
+
+#if defined(USE_HAL_DRIVER)
+    if(timerHardware->output & TIMER_OUTPUT_N_CHANNEL)
+        HAL_TIMEx_PWMN_Start(Handle, timerHardware->channel);
+    else
+        HAL_TIM_PWM_Start(Handle, timerHardware->channel);
+    HAL_TIM_Base_Start(Handle);
+
+    switch (timerHardware->channel) {
+        case TIM_CHANNEL_1:
+            p->ccr = &timerHardware->tim->CCR1;
+            break;
+        case TIM_CHANNEL_2:
+            p->ccr = &timerHardware->tim->CCR2;
+            break;
+        case TIM_CHANNEL_3:
+            p->ccr = &timerHardware->tim->CCR3;
+            break;
+        case TIM_CHANNEL_4:
+            p->ccr = &timerHardware->tim->CCR4;
+            break;
+    }
+#else
     if (timerHardware->output & TIMER_OUTPUT_ENABLED) {
         TIM_CtrlPWMOutputs(timerHardware->tim, ENABLE);
     }
@@ -148,6 +210,7 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
         p->ccr = &timerHardware->tim->CCR4;
         break;
     }
+#endif
     p->period = period;
     p->tim = timerHardware->tim;
 

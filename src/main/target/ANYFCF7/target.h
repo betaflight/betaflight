@@ -133,6 +133,7 @@
 #define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_4
 
 #define USE_I2C
+#define USE_I2C_DEVICE_4
 #define I2C_DEVICE (I2CDEV_4)
 #define I2C_DEVICE_EXT (I2CDEV_2)
 //#define USE_I2C_PULLUP
@@ -146,7 +147,6 @@
 #define NAV
 #define NAV_AUTO_MAG_DECLINATION
 #define NAV_GPS_GLITCH_DETECTION
-#define GPS_PROTO_UBLOX_NEO7PLUS
 
 #define USE_ADC
 #define VBAT_ADC_PIN                PC0

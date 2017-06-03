@@ -30,14 +30,6 @@ typedef enum {
 
 #define ADC_CHANNEL_COUNT (ADC_CHANNEL_MAX + 1)
 
-typedef struct adc_config_s {
-    ioTag_t tag;
-    uint8_t adcChannel;         // ADC1_INxx channel number
-    uint8_t dmaIndex;           // index into DMA buffer in case of sparse channels
-    bool enabled;
-    uint8_t sampleTime;
-} adc_config_t;
-
 typedef struct drv_adc_config_s {
     bool enableVBat;
     bool enableRSSI;

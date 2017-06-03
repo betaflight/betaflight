@@ -36,11 +36,11 @@ typedef enum I2CDevice {
     I2CDEV_1   = 0,
     I2CDEV_2,
     I2CDEV_3,
+#ifdef USE_I2C_DEVICE_4
     I2CDEV_4,
-    I2CDEV_MAX = I2CDEV_4,
+#endif
+    I2CDEV_COUNT
 } I2CDevice;
-
-#define I2CDEV_COUNT    (I2CDEV_MAX + 1)
 
 typedef struct i2cDevice_s {
     I2C_TypeDef *dev;

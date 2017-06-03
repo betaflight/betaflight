@@ -593,13 +593,13 @@ $(OBJECT_DIR)/drivers/gyro_sync.o : \
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/gyro_sync.c -o $@
 
-$(OBJECT_DIR)/drivers/accgyro_fake.o : \
-	$(USER_DIR)/drivers/accgyro_fake.c \
-	$(USER_DIR)/drivers/accgyro_fake.h \
+$(OBJECT_DIR)/drivers/accgyro/accgyro_fake.o : \
+	$(USER_DIR)/drivers/accgyro/accgyro_fake.c \
+	$(USER_DIR)/drivers/accgyro/accgyro_fake.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/accgyro_fake.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/accgyro/accgyro_fake.c -o $@
 
 $(OBJECT_DIR)/sensors/gyro.o : \
 	$(USER_DIR)/sensors/gyro.c \
@@ -622,7 +622,7 @@ $(OBJECT_DIR)/sensor_gyro_unittest : \
 	$(OBJECT_DIR)/common/maths.o \
     $(OBJECT_DIR)/common/filter.o \
 	$(OBJECT_DIR)/drivers/gyro_sync.o \
-	$(OBJECT_DIR)/drivers/accgyro_fake.o \
+	$(OBJECT_DIR)/drivers/accgyro/accgyro_fake.o \
 	$(OBJECT_DIR)/sensors/gyro.o \
 	$(OBJECT_DIR)/sensors/boardalignment.o \
 	$(OBJECT_DIR)/sensor_gyro_unittest.o \

@@ -15,11 +15,15 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <platform.h>
 
 #include "common/axis.h"
+
+#include "drivers/pwm_esc_detect.h"
+#include "drivers/pwm_output.h"
 
 #include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
@@ -34,6 +38,12 @@
 
 #include "sensors/battery.h"
 
+#ifdef BRUSHED_MOTORS_PWM_RATE
+#undef BRUSHED_MOTORS_PWM_RATE
+#endif
+
+#define BRUSHED_MOTORS_PWM_RATE 32000           // 32kHz
+
 // alternative defaults settings for BlueJayF4 targets
 void targetConfiguration(void)
 {
@@ -41,9 +51,14 @@ void targetConfiguration(void)
     serialConfigMutable()->portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
     batteryConfigMutable()->vbatscale = 20;
     rxConfigMutable()->spektrum_sat_bind = 5;
-    motorConfigMutable()->minthrottle = 1000;
-    motorConfigMutable()->maxthrottle = 2000;
-    motorConfigMutable()->motorPwmRate = 32000;
+    rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
+
+    if (hardwareMotorType == MOTOR_BRUSHED) {
+        motorConfigMutable()->motorPwmProtocol = PWM_TYPE_BRUSHED;
+        motorConfigMutable()->motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
+        motorConfigMutable()->minthrottle = 1000;
+    }
+
     pidProfileMutable()->bank_mc.pid[ROLL].P = 36;
     pidProfileMutable()->bank_mc.pid[PITCH].P = 36;
     failsafeConfigMutable()->failsafe_delay = 2;

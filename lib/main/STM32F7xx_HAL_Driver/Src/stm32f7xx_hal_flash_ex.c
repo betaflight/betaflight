@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_flash_ex.c
   * @author  MCD Application Team
-  * @version V1.1.2
-  * @date    23-September-2016 
+  * @version V1.2.2
+  * @date    14-April-2017
   * @brief   Extended FLASH HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the FLASH extension peripheral:
@@ -44,7 +44,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -130,6 +130,13 @@ static HAL_StatusTypeDef  FLASH_OB_UserConfig(uint32_t Wwdg, uint32_t Iwdg, uint
 static void               FLASH_MassErase(uint8_t VoltageRange);
 static HAL_StatusTypeDef  FLASH_OB_UserConfig(uint32_t Wwdg, uint32_t Iwdg, uint32_t Stop, uint32_t Stdby, uint32_t Iwdgstop, uint32_t Iwdgstdby);
 #endif /* FLASH_OPTCR_nDBANK */
+
+#if defined (FLASH_OPTCR2_PCROP)
+static HAL_StatusTypeDef  FLASH_OB_PCROP_Config(uint32_t PCROPSector);
+static HAL_StatusTypeDef  FLASH_OB_PCROP_RDP_Config(uint32_t Pcrop_Rdp);
+static uint32_t           FLASH_OB_GetPCROP(void);
+static uint32_t           FLASH_OB_GetPCROPRDP(void);
+#endif /* FLASH_OPTCR2_PCROP */
 
 extern HAL_StatusTypeDef  FLASH_WaitForLastOperation(uint32_t Timeout);
 /**
@@ -366,6 +373,20 @@ HAL_StatusTypeDef HAL_FLASHEx_OBProgram(FLASH_OBProgramInitTypeDef *pOBInit)
   {
     status = FLASH_OB_BootAddressConfig(OPTIONBYTE_BOOTADDR_1, pOBInit->BootAddr1);
   }
+  
+#if defined (FLASH_OPTCR2_PCROP)
+  /* PCROP configuration */
+  if((pOBInit->OptionType & OPTIONBYTE_PCROP) == OPTIONBYTE_PCROP)
+  {
+    status = FLASH_OB_PCROP_Config(pOBInit->PCROPSector);
+  }
+  
+  /* PCROP_RDP configuration */
+  if((pOBInit->OptionType & OPTIONBYTE_PCROP_RDP) == OPTIONBYTE_PCROP_RDP)
+  {
+    status = FLASH_OB_PCROP_RDP_Config(pOBInit->PCROPRdp);
+  }
+#endif /* FLASH_OPTCR2_PCROP */
 
   /* Process Unlocked */
   __HAL_UNLOCK(&pFlash);
@@ -402,6 +423,14 @@ void HAL_FLASHEx_OBGetConfig(FLASH_OBProgramInitTypeDef *pOBInit)
   
   /*Get Boot Address when Boot pin = 1 */
   pOBInit->BootAddr1 = FLASH_OB_GetBootAddress(OPTIONBYTE_BOOTADDR_1);
+
+#if defined (FLASH_OPTCR2_PCROP)
+  /*Get PCROP Sectors */
+  pOBInit->PCROPSector = FLASH_OB_GetPCROP();
+  
+  /*Get PCROP_RDP Value */
+  pOBInit->PCROPRdp = FLASH_OB_GetPCROPRDP();
+#endif /* FLASH_OPTCR2_PCROP */
 }
 /**
   * @}
@@ -1020,6 +1049,79 @@ static uint32_t FLASH_OB_GetBootAddress(uint32_t BootOption)
 
   return Address;
 }
+
+#if defined (FLASH_OPTCR2_PCROP)
+/**
+  * @brief  Set the PCROP protection for sectors.
+  * @param  PCROPSector: specifies the sector(s) to be PCROP protected.
+  *         This parameter can be one of the following values:
+  *            @arg OB_PCROP_SECTOR_x: A value between OB_PCROP_SECTOR_0 and OB_PCROP_SECTOR_7
+  *            @arg OB_PCROP_SECTOR_ALL
+  *    
+  * @retval HAL Status
+  */
+static HAL_StatusTypeDef FLASH_OB_PCROP_Config(uint32_t PCROPSector)
+{
+  HAL_StatusTypeDef status = HAL_OK;
+  
+  /* Check the parameters */
+  assert_param(IS_OB_PCROP_SECTOR(PCROPSector));
+    
+  /* Wait for last operation to be completed */
+  status = FLASH_WaitForLastOperation((uint32_t)FLASH_TIMEOUT_VALUE);
+
+  if(status == HAL_OK)
+  { 
+    MODIFY_REG(FLASH->OPTCR2, FLASH_OPTCR2_PCROP, PCROPSector);
+  }
+  
+  return status;
+}
+
+/**
+  * @brief  Set the PCROP_RDP value
+  * @param  Pcrop_Rdp: specifies the PCROP_RDP bit value.
+  *    
+  * @retval HAL Status
+  */
+static HAL_StatusTypeDef FLASH_OB_PCROP_RDP_Config(uint32_t Pcrop_Rdp)
+{
+  HAL_StatusTypeDef status = HAL_OK;
+  
+  /* Check the parameters */
+  assert_param(IS_OB_PCROP_RDP_VALUE(Pcrop_Rdp));
+    
+  /* Wait for last operation to be completed */
+  status = FLASH_WaitForLastOperation((uint32_t)FLASH_TIMEOUT_VALUE);
+
+  if(status == HAL_OK)
+  { 
+    MODIFY_REG(FLASH->OPTCR2, FLASH_OPTCR2_PCROP_RDP, Pcrop_Rdp);
+  }
+  
+  return status;
+}
+
+/**
+  * @brief  Return the FLASH PCROP Protection Option Bytes value.
+  * @retval uint32_t FLASH PCROP Protection Option Bytes value
+  */
+static uint32_t FLASH_OB_GetPCROP(void)
+{
+  /* Return the FLASH write protection Register value */
+  return ((uint32_t)(FLASH->OPTCR2 & FLASH_OPTCR2_PCROP));
+}
+
+/**
+  * @brief  Return the FLASH PCROP_RDP option byte value.
+  * @retval uint32_t FLASH PCROP_RDP option byte value
+  */
+static uint32_t FLASH_OB_GetPCROPRDP(void)
+{
+  /* Return the FLASH write protection Register value */
+  return ((uint32_t)(FLASH->OPTCR2 & FLASH_OPTCR2_PCROP_RDP));
+}
+#endif /* FLASH_OPTCR2_PCROP */
 
 /**
   * @}

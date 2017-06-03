@@ -167,7 +167,7 @@ static void updatePreArmingChecks(void)
     }
 
 #if defined(NAV)
-    if (naivationBlockArming()) {
+    if (navigationBlockArming()) {
         ENABLE_ARMING_FLAG(BLOCKED_NAVIGATION_SAFETY);
         DISABLE_ARMING_FLAG(OK_TO_ARM);
     }
@@ -397,7 +397,7 @@ void processRx(timeUs_t currentTimeUs)
 
     bool canUseHorizonMode = true;
 
-    if ((IS_RC_MODE_ACTIVE(BOXANGLE) || failsafeRequiresAngleMode() || naivationRequiresAngleMode()) && sensors(SENSOR_ACC)) {
+    if ((IS_RC_MODE_ACTIVE(BOXANGLE) || failsafeRequiresAngleMode() || navigationRequiresAngleMode()) && sensors(SENSOR_ACC)) {
         // bumpless transfer to Level mode
         canUseHorizonMode = false;
 
@@ -473,11 +473,14 @@ void processRx(timeUs_t currentTimeUs)
     }
 #endif
 
-    // Navigation may override PASSTHRU_MODE
-    if (IS_RC_MODE_ACTIVE(BOXPASSTHRU) && !naivationRequiresAngleMode() && !failsafeRequiresAngleMode()) {
-        ENABLE_FLIGHT_MODE(PASSTHRU_MODE);
-    } else {
-        DISABLE_FLIGHT_MODE(PASSTHRU_MODE);
+    // Handle passthrough mode
+    if (STATE(FIXED_WING)) {
+        if ((IS_RC_MODE_ACTIVE(BOXPASSTHRU) && !navigationRequiresAngleMode() && !failsafeRequiresAngleMode()) ||    // Normal activation of passthrough
+            (!ARMING_FLAG(ARMED) && isCalibrating())){                                                              // Backup - if we are not armed - enforce passthrough while calibrating        
+            ENABLE_FLIGHT_MODE(PASSTHRU_MODE);
+        } else {
+            DISABLE_FLIGHT_MODE(PASSTHRU_MODE);
+        }
     }
 
     /* In airmode Iterm should be prevented to grow when Low thottle and Roll + Pitch Centered.

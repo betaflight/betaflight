@@ -19,7 +19,6 @@
 #include <stdint.h>
 
 #include <platform.h>
-
 #include "build/build_config.h"
 
 #include "drivers/barometer/barometer.h"
@@ -84,6 +83,8 @@ bool bmp280Detect(baroDev_t *baro)
         bmp280ReadRegister(BMP280_TEMPERATURE_CALIB_DIG_T1_LSB_REG, 24, (uint8_t *)&bmp280_cal);
         // set oversampling + power mode (forced), and start sampling
         bmp280WriteRegister(BMP280_CTRL_MEAS_REG, BMP280_MODE);
+        //set filter setting
+        bmp280WriteRegister(BMP280_CONFIG_REG, BMP280_FILTER);
 #else
         bool ack = i2cRead(BARO_I2C_INSTANCE, BMP280_I2C_ADDR, BMP280_CHIP_ID_REG, 1, &bmp280_chip_id);  /* read Chip Id */
         if (!ack || bmp280_chip_id != BMP280_DEFAULT_CHIP_ID)
@@ -93,6 +94,8 @@ bool bmp280Detect(baroDev_t *baro)
         i2cRead(BARO_I2C_INSTANCE, BMP280_I2C_ADDR, BMP280_TEMPERATURE_CALIB_DIG_T1_LSB_REG, 24, (uint8_t *)&bmp280_cal);
         // set oversampling + power mode (forced), and start sampling
         i2cWrite(BARO_I2C_INSTANCE, BMP280_I2C_ADDR, BMP280_CTRL_MEAS_REG, BMP280_MODE);
+        //set filter setting
+        i2cWrite(BARO_I2C_INSTANCE, BMP280_I2C_ADDR, BMP280_CONFIG_REG, BMP280_FILTER);
 #endif
 
         bmp280InitDone = true;
@@ -140,11 +143,32 @@ static void bmp280_start_up(void)
 static void bmp280_get_up(void)
 {
     uint8_t data[BMP280_DATA_FRAME_SIZE];
+    
+    //error free measurements
+    static int32_t bmp280_up_valid;
+    static int32_t bmp280_ut_valid;
+    
+    //read data from sensor
+    bool ack =  i2cRead(BARO_I2C_INSTANCE, BMP280_I2C_ADDR, BMP280_PRESSURE_MSB_REG, BMP280_DATA_FRAME_SIZE, data);
+  
+    //check if pressure and temperature readings are valid, otherwise use previous measurements from the moment
 
-    // read data from sensor
-    i2cRead(BARO_I2C_INSTANCE, BMP280_I2C_ADDR, BMP280_PRESSURE_MSB_REG, BMP280_DATA_FRAME_SIZE, data);
-    bmp280_up = (int32_t)((((uint32_t)(data[0])) << 12) | (((uint32_t)(data[1])) << 4) | ((uint32_t)data[2] >> 4));
-    bmp280_ut = (int32_t)((((uint32_t)(data[3])) << 12) | (((uint32_t)(data[4])) << 4) | ((uint32_t)data[5] >> 4));
+    if(ack){
+    
+    	bmp280_up = (int32_t)((((uint32_t)(data[0])) << 12) | (((uint32_t)(data[1])) << 4) | ((uint32_t)data[2] >> 4));
+     	bmp280_ut = (int32_t)((((uint32_t)(data[3])) << 12) | (((uint32_t)(data[4])) << 4) | ((uint32_t)data[5] >> 4));
+     	
+     	bmp280_up_valid  = bmp280_up;
+     	bmp280_ut_valid  = bmp280_ut;
+     }
+     else
+     {
+    	 //assign previous valid measurements
+     	bmp280_up= bmp280_up_valid;
+     	bmp280_ut= bmp280_ut_valid; 
+     }
+    
+    
 }
 #endif
 

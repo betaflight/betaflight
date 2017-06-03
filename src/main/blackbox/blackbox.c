@@ -24,6 +24,7 @@
 #ifdef BLACKBOX
 
 #include "blackbox.h"
+#include "blackbox_encoding.h"
 #include "blackbox_io.h"
 
 #include "build/debug.h"
@@ -270,10 +271,6 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"navTgtPos",  2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"navSurf",    0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"navTgtSurf", 0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
-    {"navDebug",   0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
-    {"navDebug",   1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
-    {"navDebug",   2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
-    {"navDebug",   3, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
 #endif
 };
 
@@ -373,7 +370,6 @@ typedef struct blackboxMainState_s {
     int16_t navTargetHeading;
     int16_t navSurface;
     int16_t navTargetSurface;
-    int16_t navDebug[4];
 #endif
 } blackboxMainState_t;
 
@@ -694,10 +690,6 @@ static void writeIntraframe(void)
 
     blackboxWriteSignedVB(blackboxCurrent->navSurface);
     blackboxWriteSignedVB(blackboxCurrent->navTargetSurface);
-
-    for (int x = 0; x < 4; x++) {
-        blackboxWriteSignedVB(blackboxCurrent->navDebug[x]);
-    }
 #endif
 
     //Rotate our history buffers:
@@ -859,10 +851,6 @@ static void writeInterframe(void)
 
     blackboxWriteSignedVB(blackboxCurrent->navSurface - blackboxLast->navSurface);
     blackboxWriteSignedVB(blackboxCurrent->navTargetSurface - blackboxLast->navTargetSurface);
-
-    for (int x = 0; x < 4; x++) {
-        blackboxWriteSignedVB(blackboxCurrent->navDebug[x] - blackboxLast->navDebug[x]);
-    }
 #endif
 
     //Rotate our history buffers
@@ -1108,55 +1096,39 @@ static void writeGPSFrame(timeUs_t currentTimeUs)
 static void loadMainState(timeUs_t currentTimeUs)
 {
     blackboxMainState_t *blackboxCurrent = blackboxHistory[0];
-    int i;
 
     blackboxCurrent->time = currentTimeUs;
 
-    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
+    for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->axisPID_Setpoint[i] = axisPID_Setpoint[i];
-    }
-    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->axisPID_P[i] = axisPID_P[i];
-    }
-    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->axisPID_I[i] = axisPID_I[i];
-    }
-    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->axisPID_D[i] = axisPID_D[i];
-    }
-
-    for (i = 0; i < 4; i++) {
-        blackboxCurrent->rcCommand[i] = rcCommand[i];
-    }
-
-    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->gyroADC[i] = lrintf(gyro.gyroADCf[i]);
+        blackboxCurrent->accADC[i] = acc.accADC[i];
+#ifdef MAG
+        blackboxCurrent->magADC[i] = mag.magADC[i];
+#endif
     }
 
-    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
-        blackboxCurrent->accADC[i] = acc.accADC[i];
+    for (int i = 0; i < 4; i++) {
+        blackboxCurrent->rcCommand[i] = rcCommand[i];
     }
 
     blackboxCurrent->attitude[0] = attitude.values.roll;
     blackboxCurrent->attitude[1] = attitude.values.pitch;
     blackboxCurrent->attitude[2] = attitude.values.yaw;
 
-    for (i = 0; i < 4; i++) {
+    for (int i = 0; i < DEBUG16_VALUE_COUNT; i++) {
         blackboxCurrent->debug[i] = debug[i];
     }
 
-    for (i = 0; i < motorCount; i++) {
+    for (int i = 0; i < motorCount; i++) {
         blackboxCurrent->motor[i] = motor[i];
     }
 
     blackboxCurrent->vbatLatest = vbatLatestADC;
     blackboxCurrent->amperageLatest = amperageLatestADC;
-
-#ifdef MAG
-    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
-        blackboxCurrent->magADC[i] = mag.magADC[i];
-    }
-#endif
 
 #ifdef BARO
     blackboxCurrent->BaroAlt = baro.BaroAlt;
@@ -1183,7 +1155,7 @@ static void loadMainState(timeUs_t currentTimeUs)
     blackboxCurrent->navFlags = navFlags;
     blackboxCurrent->navEPH = navEPH;
     blackboxCurrent->navEPV = navEPV;
-    for (i = 0; i < XYZ_AXIS_COUNT; i++) {
+    for (int i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->navPos[i] = navLatestActualPosition[i];
         blackboxCurrent->navRealVel[i] = navActualVelocity[i];
         blackboxCurrent->navAccNEU[i] = navAccNEU[i];
@@ -1192,9 +1164,6 @@ static void loadMainState(timeUs_t currentTimeUs)
     }
     blackboxCurrent->navSurface = navActualSurface;
     blackboxCurrent->navTargetSurface = navTargetSurface;
-    for (i = 0; i < 4; i++) {
-        blackboxCurrent->navDebug[i] = navDebug[i];
-    }
 #endif
 }
 
