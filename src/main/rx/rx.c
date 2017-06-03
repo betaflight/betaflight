@@ -99,11 +99,6 @@ static uint8_t rcSampleIndex = 0;
 #ifndef RX_SPI_DEFAULT_PROTOCOL
 #define RX_SPI_DEFAULT_PROTOCOL 0
 #endif
-
-#ifndef SBUS_INVERSION_DEFAULT
-#define SBUS_INVERSION_DEFAULT 1
-#endif
-
 #ifndef SERIALRX_PROVIDER
 #define SERIALRX_PROVIDER 0
 #endif
@@ -119,7 +114,7 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .halfDuplex = 0,
         .serialrx_provider = SERIALRX_PROVIDER,
         .rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL,
-        .sbus_inversion = SBUS_INVERSION_DEFAULT,
+        .sbus_inversion = 1,
         .spektrum_sat_bind = 0,
         .spektrum_sat_bind_autoreset = 1,
         .midrc = RX_MID_USEC,

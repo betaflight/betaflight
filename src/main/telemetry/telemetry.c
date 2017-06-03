@@ -58,13 +58,9 @@ PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY
 
 #define TELEMETRY_DEFAULT_INVERSION 1
 
-#ifndef TELEMETRY_DEFAULT_HALFDUPLEX
-#define TELEMETRY_DEFAULT_HALFDUPLEX 1
-#endif
-
 PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
     .telemetry_inversion = TELEMETRY_DEFAULT_INVERSION,
-    .halfDuplex = TELEMETRY_DEFAULT_HALFDUPLEX,
+    .halfDuplex = 1,
     .telemetry_switch = 0,
     .gpsNoFixLatitude = 0,
     .gpsNoFixLongitude = 0,

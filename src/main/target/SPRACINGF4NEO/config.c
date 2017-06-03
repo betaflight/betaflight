@@ -20,42 +20,18 @@
 
 #include <platform.h>
 
-#include "common/axis.h"
-
-#include "drivers/sensor.h"
-#include "drivers/compass/compass.h"
 #include "drivers/serial.h"
 
-#include "fc/rc_controls.h"
-
-#include "flight/failsafe.h"
-#include "flight/mixer.h"
-#include "flight/pid.h"
-
-#include "rx/rx.h"
-
-#include "io/serial.h"
-
 #include "telemetry/telemetry.h"
-
-#include "sensors/sensors.h"
-#include "sensors/compass.h"
-#include "sensors/barometer.h"
-
-#include "config/feature.h"
 
 #include "fc/config.h"
 
 #ifdef TARGET_CONFIG
 void targetConfiguration(void)
 {
-    barometerConfigMutable()->baro_hardware = BARO_DEFAULT;
-    compassConfigMutable()->mag_hardware = MAG_DEFAULT;
-    rxConfigMutable()->sbus_inversion = true;
-    serialConfigMutable()->portConfigs[1].functionMask = FUNCTION_MSP; // So Bluetooth users don't have to change anything.
-    serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(TELEMETRY_UART)].functionMask = TELEMETRY_PROVIDER_DEFAULT;
     serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(GPS_UART)].functionMask = FUNCTION_GPS;
-    telemetryConfigMutable()->telemetry_inversion = true;
-    telemetryConfigMutable()->halfDuplex = true;
+    serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(TELEMETRY_UART)].functionMask = TELEMETRY_PROVIDER_DEFAULT
+    telemetryConfigMutable()->halfDuplex = TELEMETRY_DEFAULT_HALFDUPLEX;
 }
 #endif
+
