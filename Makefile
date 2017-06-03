@@ -1332,8 +1332,9 @@ clean:
 	$(V0) rm -rf $(OBJECT_DIR)/$(TARGET)
 	$(V0) echo "Cleaning $(TARGET) succeeded."
 
-## clean_test        : clean up temporary / machine-generated files (tests)
-clean_test:
+## clean_test        : clean up unit tests
+## test_clean        : clean up unit tests (alias for above)
+clean_test test_clean:
 	$(V0) cd src/test && $(MAKE) clean || true
 
 ## clean_<TARGET>    : clean up one specific target
@@ -1344,11 +1345,9 @@ $(CLEAN_TARGETS) :
 $(TARGETS_CLEAN) :
 	$(V0) $(MAKE) -j TARGET=$(subst _clean,,$@) clean
 
-## clean_all         : clean all valid targets
-clean_all:$(CLEAN_TARGETS)
-
-## all_clean         : clean all valid targets (alias for above)
-all_clean:$(TARGETS_CLEAN)
+## clean_all         : clean all valid targets and all tests
+## all_clean         : clean all valid targets and all tests (alias for above)
+clean_all all_clean: clean_test $(CLEAN_TARGETS)
 
 
 flash_$(TARGET): $(TARGET_HEX)
