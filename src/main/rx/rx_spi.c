@@ -107,7 +107,7 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
         protocolSetRcDataFromPayload = inavNrf24SetRcDataFromPayload;
         break;
 #endif
-#ifdef ELERES_RX
+#ifdef USE_RX_ELERES
     case RFM22_ELERES:
         protocolInit = eleresInit;
         protocolDataReceived = eLeReSDataReceived;
@@ -125,16 +125,11 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
  */
 uint8_t rxSpiFrameStatus(void)
 {
-    switch (protocolDataReceived(rxSpiPayload))
-    {
-    case RX_SPI_RECEIVED_DATA:
+    if (protocolDataReceived(rxSpiPayload) == RX_SPI_RECEIVED_DATA) {
         rxSpiNewPacketAvailable = true;
         return RX_FRAME_COMPLETE;
-    case RX_SPI_IDLE_LOOP_REQUIRED:
-        protocolSetRcDataFromPayload(rxSpiRcData, rxSpiPayload);
-    default:
-        return RX_FRAME_PENDING;
     }
+    return RX_FRAME_PENDING;
 }
 
 /*

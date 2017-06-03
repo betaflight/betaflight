@@ -516,13 +516,13 @@ void parseRcChannels(const char *input)
     }
 }
 
-#ifdef ELERES_RX
+#ifdef USE_RX_ELERES
 void updateRSSIeleres(uint32_t currentTime)
 {
     UNUSED(currentTime);
     rssi = (eleres_rssi() - 18)*1024/106; //RSSI is in range 18-124
 }
-#endif // ELERES_RX
+#endif // USE_RX_ELERES
 
 static void updateRSSIPWM(void)
 {
@@ -576,7 +576,7 @@ void updateRSSI(timeUs_t currentTimeUs)
         updateRSSIPWM();
     } else if (feature(FEATURE_RSSI_ADC)) {
         updateRSSIADC(currentTimeUs);
-#ifdef ELERES_RX
+#ifdef USE_RX_ELERES
     } else if (feature(FEATURE_RX_SPI)) {
         updateRSSIeleres(currentTimeUs);
 #endif

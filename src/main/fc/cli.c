@@ -892,7 +892,7 @@ static const clivalue_t valueTable[] = {
     {"ltm_update_rate",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LTM_UPDATE_RATE }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, ltmUpdateRate) },
 #endif
 #endif
-#ifdef ELERES_RX
+#ifdef USE_RX_ELERES
 //PG_ELERES_CONFIG
     { "eleres_freq",                VAR_FLOAT | MASTER_VALUE, .config.minmax = { 415, 450 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleres_freq) },
     { "eleres_telemetry_en",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleres_telemetry_en) },
@@ -2718,7 +2718,7 @@ static void cliDfu(char *cmdline)
     cliRebootEx(true);
 }
 
-#ifdef ELERES_RX
+#ifdef USE_RX_ELERES
 static void cliEleresBind(char *cmdline)
 {
     UNUSED(cmdline);
@@ -2751,7 +2751,7 @@ static void cliEleresBind(char *cmdline)
 	}
 
 }
-#endif // ELERES_RX
+#endif // USE_RX_ELERES
 
 static void cliExit(char *cmdline)
 {
@@ -3420,9 +3420,9 @@ const clicmd_t cmdTable[] = {
         "[master|profile|rates|all] {showdefaults}", cliDiff),
     CLI_COMMAND_DEF("dump", "dump configuration",
         "[master|profile|rates|all] {showdefaults}", cliDump),
-#ifdef ELERES_RX
+#ifdef USE_RX_ELERES
     CLI_COMMAND_DEF("eleres_bind", NULL, NULL, cliEleresBind),
-#endif // ELERES_RX
+#endif // USE_RX_ELERES
     CLI_COMMAND_DEF("exit", NULL, NULL, cliExit),
     CLI_COMMAND_DEF("feature", "configure features",
         "list\r\n"

@@ -84,7 +84,7 @@
 //#define RFM_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 #define USE_RX_SPI
-#define ELERES_RX
+#define USE_RX_ELERES
 #define RX_NSS_PIN                  PC15
 #define RX_NSS_GPIO_CLK_PERIPHERAL  RCC_APB2Periph_GPIOC
 #define RX_SCK_PIN                  PB13

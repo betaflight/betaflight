@@ -69,7 +69,7 @@
 #include "config/parameter_group_ids.h"
 #include "scheduler/scheduler.h"
 
-#ifdef ELERES_RX
+#ifdef USE_RX_ELERES
 
 
 PG_REGISTER_WITH_RESET_TEMPLATE(eleresConfig_t, eleresConfig, PG_ELERES_CONFIG, 0);
@@ -218,10 +218,10 @@ rx_spi_received_e eLeReSDataReceived(uint8_t *payload)
     if (next_loop < millis())
     {
         next_loop = millis() + 20;
-        return RX_SPI_IDLE_LOOP_REQUIRED;
+        eLeReSSetRcDataFromPayload(NULL,NULL);
     }
-    else
-        return RX_SPI_RECEIVED_NONE;
+
+    return RX_SPI_RECEIVED_NONE;
 }
 
 void eLeReSSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
@@ -285,7 +285,7 @@ void eLeReSSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
         }
     }
 
-    if((DataReady & 3) == 1)
+    if((DataReady & 3) == 1 && rcData != NULL)
     {
         if((DataReady & 4)==0)
         {
