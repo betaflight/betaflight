@@ -520,7 +520,7 @@ void parseRcChannels(const char *input)
 void updateRSSIeleres(uint32_t currentTime)
 {
     UNUSED(currentTime);
-    rssi = (eleres_rssi() - 18)*1024/106; //RSSI is in range 18-124
+    rssi = eleresRssi();
 }
 #endif // USE_RX_ELERES
 

@@ -894,16 +894,16 @@ static const clivalue_t valueTable[] = {
 #endif
 #ifdef USE_RX_ELERES
 //PG_ELERES_CONFIG
-    { "eleres_freq",                VAR_FLOAT | MASTER_VALUE, .config.minmax = { 415, 450 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleres_freq) },
-    { "eleres_telemetry_en",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleres_telemetry_en) },
-    { "eleres_telemetry_power",     VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 7 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleres_telemetry_power) },
-    { "eleres_loc_en",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleres_loc_en) },
-    { "eleres_loc_power",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 7 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleres_loc_power) },
-    { "eleres_loc_delay",           VAR_UINT16 | MASTER_VALUE, .config.minmax = { 30, 1800 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleres_loc_delay) },
-    { "eleres_signature_1",         VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 255 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleres_signature[0]) },
-    { "eleres_signature_2",         VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 255 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleres_signature[1]) },
-    { "eleres_signature_3",         VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 255 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleres_signature[2]) },
-    { "eleres_signature_4",         VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 255 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleres_signature[3]) },
+    { "eleres_freq",                VAR_FLOAT | MASTER_VALUE, .config.minmax = { 415, 450 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresFreq) },
+    { "eleres_telemetry_en",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresTelemetryEn) },
+    { "eleres_telemetry_power",     VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 7 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresTelemetryPower) },
+    { "eleres_loc_en",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresLocEn) },
+    { "eleres_loc_power",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 7 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresLocPower) },
+    { "eleres_loc_delay",           VAR_UINT16 | MASTER_VALUE, .config.minmax = { 30, 1800 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresLocDelay) },
+    { "eleres_signature_1",         VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 255 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresSignature[0]) },
+    { "eleres_signature_2",         VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 255 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresSignature[1]) },
+    { "eleres_signature_3",         VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 255 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresSignature[2]) },
+    { "eleres_signature_4",         VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 255 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresSignature[3]) },
 
 #endif
 #ifdef LED_STRIP
@@ -2722,34 +2722,27 @@ static void cliDfu(char *cmdline)
 static void cliEleresBind(char *cmdline)
 {
     UNUSED(cmdline);
-	char buf[10];
-	uint8_t i;
+    char buf[10];
 
-	if (!feature(FEATURE_RX_SPI))
-	{
-		cliPrint("Eleres not active. Please enable feature ELERES and restart IMU\r\n");
-		return;
-	}
+    if (!feature(FEATURE_RX_SPI)) {
+        cliPrint("Eleres not active. Please enable feature ELERES and restart IMU\r\n");
+        return;
+    }
 
-	cliPrint("Waiting for correct bind signature....\r\n");
-	bufWriterFlush(cliWriter);
-	if (eLeReS_Bind())
-	{
-		cliPrint("Bind timeout!\r\n");
-	}
-	else
-	{
-		cliPrint("Signature: ");
-		for(i=0; i<4; i++)
-		{
-			itoa(eleresConfigMutable()->eleres_signature[i], buf, 16);
-			cliPrint(buf);
-			cliPrint(" ");
-		}
-		cliPrint("\r\n");
-		cliPrint("Bind OK!\r\nPlease restart your transmitter.\r\n");
-	}
-
+    cliPrint("Waiting for correct bind signature....\r\n");
+    bufWriterFlush(cliWriter);
+    if (eleresBind()) {
+        cliPrint("Bind timeout!\r\n");
+    } else {
+        cliPrint("Signature: ");
+        for(int i=0; i<4; i++) {
+            itoa(eleresConfigMutable()->eleresSignature[i], buf, 16);
+            cliPrint(buf);
+            cliPrint(" ");
+        }
+        cliPrint("\r\n");
+        cliPrint("Bind OK!\r\nPlease restart your transmitter.\r\n");
+    }
 }
 #endif // USE_RX_ELERES
 

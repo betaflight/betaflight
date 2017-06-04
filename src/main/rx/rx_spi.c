@@ -110,8 +110,8 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
 #ifdef USE_RX_ELERES
     case RFM22_ELERES:
         protocolInit = eleresInit;
-        protocolDataReceived = eLeReSDataReceived;
-        protocolSetRcDataFromPayload = eLeReSSetRcDataFromPayload;
+        protocolDataReceived = eleresDataReceived;
+        protocolSetRcDataFromPayload = eleresSetRcDataFromPayload;
         break;
 #endif
     }
@@ -145,12 +145,10 @@ bool rxSpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         protocolInit(rxConfig, rxRuntimeConfig);
         ret = true;
     }
-
     rxRuntimeConfig->rxRefreshRate = 10000;
     rxSpiNewPacketAvailable = false;
     rxRuntimeConfig->rcReadRawFn = rxSpiReadRawRC;
     rxRuntimeConfig->rcFrameStatusFn = rxSpiFrameStatus;
-
     return ret;
 }
 #endif
