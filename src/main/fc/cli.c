@@ -374,7 +374,7 @@ static void dumpPgValue(const clivalue_t *value, uint8_t dumpMask)
     const char *format = "set %s = ";
     const char *defaultFormat = "#set %s = ";
     const int valueOffset = getValueOffset(value);
-    const bool equalsDefault = valuePtrEqualsDefault(value->type, (uint8_t*)pg->copy + valueOffset, (uint8_t*)pg->address + valueOffset);
+    const bool equalsDefault = valuePtrEqualsDefault(value->type, pg->copy + valueOffset, pg->address + valueOffset);
     if (((dumpMask & DO_DIFF) == 0) || !equalsDefault) {
         if (dumpMask & SHOW_DEFAULTS && !equalsDefault) {
             cliPrintf(defaultFormat, value->name);
@@ -382,7 +382,7 @@ static void dumpPgValue(const clivalue_t *value, uint8_t dumpMask)
             cliPrintLinefeed();
         }
         cliPrintf(format, value->name);
-        printValuePointer(value, (uint8_t*)pg->copy + valueOffset, 0);
+        printValuePointer(value, pg->copy + valueOffset, 0);
         cliPrintLinefeed();
     }
 }
@@ -2971,22 +2971,22 @@ static void cliResource(char *cmdline)
 static void backupConfigs(void)
 {
     // make copies of configs to do differencing
-    PG_FOREACH(reg) {
-        if (pgIsProfile(reg)) {
-            //memcpy((uint8_t *)reg->copy, reg->address, reg->size * MAX_PROFILE_COUNT);
+    PG_FOREACH(pg) {
+        if (pgIsProfile(pg)) {
+            //memcpy(pg->copy, pg->address, pg->size * MAX_PROFILE_COUNT);
         } else {
-            memcpy((uint8_t *)reg->copy, reg->address, reg->size);
+            memcpy(pg->copy, pg->address, pg->size);
         }
     }
 }
 
 static void restoreConfigs(void)
 {
-    PG_FOREACH(reg) {
-        if (pgIsProfile(reg)) {
-            //memcpy(reg->address, (uint8_t *)reg->copy, reg->size * MAX_PROFILE_COUNT);
+    PG_FOREACH(pg) {
+        if (pgIsProfile(pg)) {
+            //memcpy(pg->address, pg->copy, pg->size * MAX_PROFILE_COUNT);
         } else {
-            memcpy(reg->address, (uint8_t *)reg->copy, reg->size);
+            memcpy(pg->address, pg->copy, pg->size);
         }
     }
 }
