@@ -364,9 +364,10 @@ void validateAndFixConfig(void)
     if (!(mixerMode == MIXER_CUSTOM || mixerMode == MIXER_CUSTOM_AIRPLANE || mixerMode == MIXER_CUSTOM_TRI)) {
         if (mixers[mixerMode].motorCount && mixers[mixerMode].motor == NULL)
             mixerConfigMutable()->mixerMode = MIXER_CUSTOM;
-
+#ifdef USE_SERVOS
         if (mixers[mixerMode].useServo && servoMixers[mixerMode].servoRuleCount == 0)
             mixerConfigMutable()->mixerMode = MIXER_CUSTOM_AIRPLANE;
+#endif
     }
 #endif
 
