@@ -148,10 +148,6 @@
 
 #define SPEKTRUM_BIND_PIN       PA3
 
-#if !defined(BRUSHED_MOTORS)
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
-#endif
-
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
 // IO - assuming all IOs on 48pin package
