@@ -38,6 +38,7 @@
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 #include "sensors/barometer.h"
+#include "scheduler/scheduler.h"
 
 #ifdef USE_RX_ELERES
 
@@ -87,13 +88,14 @@ static uint8_t bkgLocCnt;
 static uint8_t rfTxBuffer[10];
 static uint8_t rfRxBuffer[DATA_PACKAGE_SIZE];
 static uint8_t txFull = 0;
+static uint8_t statusRegisters[2];
 
-uint8_t rfmSpiRead(uint8_t address)
+static uint8_t rfmSpiRead(uint8_t address)
 {
     return rxSpiReadCommand(address & 0x7f, 0x00);
 }
 
-void rfmSpiWrite(uint8_t address, uint8_t data)
+static void rfmSpiWrite(uint8_t address, uint8_t data)
 {
     rxSpiWriteCommand(address | 0x80, data);
 }
@@ -103,7 +105,7 @@ uint16_t eleresRssi(void)
     return (localRssi - 18)*1024/106;
 }
 
-void rxReset(void)
+static void rxReset(void)
 {
     rfmSpiWrite(0x07, 1);
     rfmSpiWrite(0x08, 0x03);
@@ -116,7 +118,7 @@ void rxReset(void)
 }
 
 
-void toReadyMode(void)
+static void toReadyMode(void)
 {
     rfmSpiWrite(0x07, 1);
     rfmSpiWrite(0x05, 0);
@@ -126,7 +128,7 @@ void toReadyMode(void)
     rfMode = 0;
 }
 
-void toRxMode(void)
+static void toRxMode(void)
 {
     toReadyMode();
     rxReset();
@@ -134,7 +136,7 @@ void toRxMode(void)
 }
 
 
-void toTxMode(uint8_t bytes_to_send)
+static void toTxMode(uint8_t bytes_to_send)
 {
     uint8_t i;
 
@@ -157,7 +159,7 @@ void toTxMode(uint8_t bytes_to_send)
     txFull = 0;
 }
 
-void frequencyConfigurator(uint32_t frequency)
+static void frequencyConfigurator(uint32_t frequency)
 {
     uint8_t band;
 
@@ -182,7 +184,7 @@ void frequencyConfigurator(uint32_t frequency)
     rfmSpiWrite(0x79, 0);
 }
 
-void rfm22bInitParameter(void)
+static void rfm22bInitParameter(void)
 {
     int8_t i;
     static uint8_t first_init = 1;
@@ -226,7 +228,7 @@ void rfm22bInitParameter(void)
     rfmSpiRead(0x04);
 }
 
-void channelHopping(uint8_t hops)
+static void channelHopping(uint8_t hops)
 {
     hoppingChannel += hops;
     while(hoppingChannel >= 16) hoppingChannel -= 16;
@@ -243,7 +245,7 @@ void channelHopping(uint8_t hops)
     rfmSpiWrite(0x79, holList[hoppingChannel]);
 }
 
-void telemetryRX(void)
+static void telemetryRX(void)
 {
     static uint8_t telem_state;
     static int32_t presfil;
@@ -353,33 +355,31 @@ void telemetryRX(void)
 rx_spi_received_e eleresDataReceived(uint8_t *payload)
 {
     UNUSED(payload);
-    static timeMs_t next_loop;
+
+    statusRegisters[0] = 0;
+    statusRegisters[1] = 0;
 
     if (rxSpiCheckIrq())
-        return RX_SPI_RECEIVED_DATA;
-
-    if (next_loop < millis()) {
-        next_loop = millis() + 20;
+    {
+        statusRegisters[0] = rfmSpiRead(0x03);
+        statusRegisters[1] = rfmSpiRead(0x04);
         return RX_SPI_RECEIVED_DATA;
     }
 
     return RX_SPI_RECEIVED_NONE;
 }
 
-void rfmIrq(void)
+static void parseStatusRegister(const uint8_t *payload)
 {
+    UNUSED(payload);
     static uint16_t rssifil;
     const timeMs_t irq_time = millis();
-    const uint8_t St1 = rfmSpiRead(0x03);
-    const uint8_t St2 = rfmSpiRead(0x04);
 
-    rxSpiWriteByte(0x00);
-
-    if((rfMode & RECEIVE) && (St1 & RF22B_RX_PACKET_RECEIVED_INTERRUPT))
+    if((rfMode & RECEIVE) && (statusRegisters[0] & RF22B_RX_PACKET_RECEIVED_INTERRUPT))
         rfMode |= RECEIVED;
-    if((rfMode & TRANSMIT) && (St1 & RF22B_PACKET_SENT_INTERRUPT))
+    if((rfMode & TRANSMIT) && (statusRegisters[0] & RF22B_PACKET_SENT_INTERRUPT))
         rfMode |= TRANSMITTED;
-    if((rfMode & RECEIVE) && (St2 & RF22B_VALID_SYNCWORD_INTERRUPT))
+    if((rfMode & RECEIVE) && (statusRegisters[1] & RF22B_VALID_SYNCWORD_INTERRUPT))
         rfMode |= PREAMBLE;
 
     if(rfMode & RECEIVED) {
@@ -464,8 +464,7 @@ void eleresSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
     int red_led_local = 0;
     //uint8_t res = RX_FRAME_PENDING;
 
-    if (rxSpiCheckIrq())
-        rfmIrq();
+    parseStatusRegister(statusRegisters);
 
     if (cr_time < (led_time + 500))
         red_led_local = 0;
@@ -638,8 +637,7 @@ void eleresSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
     //return res;
 }
 
-
-uint8_t checkChannel(uint8_t channel, uint8_t *hop_lst)
+static uint8_t checkChannel(uint8_t channel, uint8_t *hop_lst)
 {
     uint8_t new_channel, count = 0, high = 0, i;
     for (i=0; i<16; i++) {
@@ -651,7 +649,7 @@ uint8_t checkChannel(uint8_t channel, uint8_t *hop_lst)
     return new_channel%255;
 }
 
-void bindChannels(const uint8_t* RF_HEAD, uint8_t* hop_lst)
+static void bindChannels(const uint8_t* RF_HEAD, uint8_t* hop_lst)
 {
     uint8_t n;
 

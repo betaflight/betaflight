@@ -101,7 +101,9 @@ typedef enum {
 #ifdef CMS
     TASK_CMS,
 #endif
-
+#ifdef USE_RX_ELERES
+    TASK_RX_ELERES,
+#endif
     /* Count of real tasks */
     TASK_COUNT,
 
