@@ -327,7 +327,7 @@ void configureSmartPortTelemetryPort(void)
         portOptions |= SERIAL_BIDIR;
     }
 
-    if (telemetryConfig()->telemetry_inversion) {
+    if (telemetryConfig()->tlm_frsky_inversion) {
         portOptions |= SERIAL_INVERTED;
     }
 
