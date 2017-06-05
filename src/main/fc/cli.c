@@ -28,8 +28,10 @@
 // FIXME remove this for targets that don't need a CLI.  Perhaps use a no-op macro when USE_CLI is not enabled
 // signal that we're in cli mode
 uint8_t cliMode = 0;
+#ifndef EEPROM_IN_RAM
 extern uint8_t __config_start;   // configured via linker script when building binaries.
 extern uint8_t __config_end;
+#endif
 
 #ifdef USE_CLI
 
@@ -2882,8 +2884,12 @@ static void cliStatus(char *cmdline)
     cliPrintf("Stack used: %d, ", stackUsedSize());
 #endif
     cliPrintLinef("Stack size: %d, Stack address: 0x%x", stackTotalSize(), stackHighMem());
-
-    cliPrintLinef("I2C Errors: %d, config size: %d, max available config: %d", i2cErrorCounter, getEEPROMConfigSize(), &__config_end - &__config_start);
+#ifdef EEPROM_IN_RAM
+#define CONFIG_SIZE EEPROM_SIZE
+#else
+#define CONFIG_SIZE (&__config_end - &__config_start)
+#endif
+    cliPrintLinef("I2C Errors: %d, config size: %d, max available config: %d", i2cErrorCounter, getEEPROMConfigSize(), CONFIG_SIZE);
 
     const int gyroRate = getTaskDeltaTime(TASK_GYROPID) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_GYROPID)));
     const int rxRate = getTaskDeltaTime(TASK_RX) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_RX)));

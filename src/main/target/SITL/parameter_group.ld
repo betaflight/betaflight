@@ -23,17 +23,4 @@ SECTIONS {
 INSERT AFTER .text;
 
 
-__FLASH_CONFIG_Size = 0x2000; /* 8kB */
-SECTIONS {
-  .FLASH_CONFIG BLOCK( DEFINED(__section_alignment__) ? __section_alignment__ : 4 ) :
-  {
-    PROVIDE_HIDDEN (__config_start = . );
-    . = . + __FLASH_CONFIG_Size;
-    PROVIDE_HIDDEN (__config_end = . );
-  }
-}
-INSERT AFTER .bss;
-
-
-
 
