@@ -1,3 +1,4 @@
+
 /*
  * This file is part of Cleanflight.
  *
@@ -35,6 +36,7 @@
 
 #include "drivers/timer.h"
 #include "drivers/timer_def.h"
+
 const timerHardware_t timerHardware[1]; // unused
 
 #include "drivers/accgyro/accgyro_fake.h"
@@ -67,9 +69,11 @@ int lockMainPID(void) {
 #define RAD2DEG (180.0 / M_PI)
 #define ACC_SCALE (256 / 9.80665)
 #define GYRO_SCALE (16.4)
+
 void sendMotorUpdate() {
 	udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));
 }
+
 void updateState(const fdm_packet* pkt) {
 	static double last_timestamp = 0; // in seconds
 	static uint64_t last_realtime = 0; // in uS
@@ -136,7 +140,7 @@ void updateState(const fdm_packet* pkt) {
 #endif
 
 #if defined(SIMULATOR_IMU_SYNC)
-	imuSetHasNewData(deltaSim*1e6);
+	imuSetHasNewData(deltaSim * 1e6);
 	imuUpdateAttitude(micros());
 #endif
 
@@ -250,11 +254,14 @@ void ledInit(const statusLedConfig_t *statusLedConfig) {
 	UNUSED(statusLedConfig);
 	printf("[led]Init...\n");
 }
+
 void timerInit(void) {
 	printf("[timer]Init...\n");
 }
+
 void timerStart(void) {
 }
+
 void failureMode(failureMode_e mode) {
 	printf("[failureMode]!!! %d\n", mode);
 	while(1);
@@ -268,11 +275,13 @@ uint64_t nanos64_real() {
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 	return (ts.tv_sec*1e9 + ts.tv_nsec) - (start_time.tv_sec*1e9 + start_time.tv_nsec);
 }
+
 uint64_t micros64_real() {
 	struct timespec ts;
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 	return 1.0e6*((ts.tv_sec + (ts.tv_nsec*1.0e-9)) - (start_time.tv_sec + (start_time.tv_nsec*1.0e-9)));
 }
+
 uint64_t millis64_real() {
 	struct timespec ts;
 	clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -313,15 +322,18 @@ uint32_t millis(void) {
 void microsleep(uint32_t usec) {
     struct timespec ts;
     ts.tv_sec = 0;
-    ts.tv_nsec = usec*1000UL;
+    ts.tv_nsec = usec * 1000UL;
     while (nanosleep(&ts, &ts) == -1 && errno == EINTR) ;
 }
+
 void delayMicroseconds(uint32_t us) {
 	microsleep(us / simRate);
 }
+
 void delayMicroseconds_real(uint32_t us) {
 	microsleep(us);
 }
+
 void delay(uint32_t ms) {
 	uint64_t start = millis64();
 
@@ -374,6 +386,7 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t _idlePulse, uint
 	}
 	pwmMotorsEnabled = true;
 }
+
 void servoDevInit(const servoDevConfig_t *servoConfig) {
 	UNUSED(servoConfig);
 	for (uint8_t servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
@@ -384,16 +397,20 @@ void servoDevInit(const servoDevConfig_t *servoConfig) {
 pwmOutputPort_t *pwmGetMotors(void) {
 	return motors;
 }
+
 bool pwmAreMotorsEnabled(void) {
 	return pwmMotorsEnabled;
 }
+
 void pwmWriteMotor(uint8_t index, uint16_t value) {
 	motorsPwm[index] = value - idlePulse;
 }
+
 void pwmShutdownPulsesForAllMotors(uint8_t motorCount) {
 	UNUSED(motorCount);
 	pwmMotorsEnabled = false;
 }
+
 void pwmCompleteMotorUpdate(uint8_t motorCount) {
 	UNUSED(motorCount);
 	// send to simulator
@@ -414,6 +431,7 @@ void pwmCompleteMotorUpdate(uint8_t motorCount) {
 	udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));
 //	printf("[pwm]%u:%u,%u,%u,%u\n", idlePulse, motorsPwm[0], motorsPwm[1], motorsPwm[2], motorsPwm[3]);
 }
+
 void pwmWriteServo(uint8_t index, uint16_t value) {
 	servosPwm[index] = value;
 }
