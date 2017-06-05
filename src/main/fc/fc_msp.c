@@ -317,6 +317,7 @@ void initActiveBoxIds(void)
         BME(BOXANGLE);
         BME(BOXHORIZON);
         BME(BOXHEADFREE);
+        BME(BOXHEADADJ);
     }
 
 #ifdef BARO
@@ -328,7 +329,6 @@ void initActiveBoxIds(void)
 #ifdef MAG
     if (sensors(SENSOR_MAG)) {
         BME(BOXMAG);
-        BME(BOXHEADADJ);
     }
 #endif
 
