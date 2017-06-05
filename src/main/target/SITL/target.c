@@ -68,7 +68,7 @@ int lockMainPID(void) {
 }
 
 #define RAD2DEG (180.0 / M_PI)
-#define ACC_SCALE (256 / 9.80665)
+#define ACC_SCALE (512 / 9.8)
 #define GYRO_SCALE (16.4)
 
 void sendMotorUpdate() {
@@ -232,7 +232,6 @@ void targetStart(void)
 void targetShutdown(void)\
 {
 	workerRunning = false;
-	pthread_join(tcpWorker, NULL);
 	pthread_join(udpWorker, NULL);
 	fdmStop();
 	exit(0);
@@ -437,6 +436,10 @@ uint16_t adcGetChannel(uint8_t channel) {
 // stack part
 char _estack;
 char _Min_Stack_Size;
+
+// core part
+uint32_t SystemCoreClock;
+
 
 // fake EEPROM
 static FILE *eepromFd = NULL;

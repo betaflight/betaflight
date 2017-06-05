@@ -117,9 +117,6 @@
 #undef USE_I2C
 #undef USE_SPI
 
-#define FLASH_SIZE 2048
-
-
 #define LED_STRIP_TIMER 1
 #define SOFTSERIAL_1_TIMER 2
 #define SOFTSERIAL_2_TIMER 3
@@ -130,23 +127,23 @@
 #define WS2811_DMA_HANDLER_IDENTIFER 0
 
 
-// belows are internal stuff
+// internal stuff below
 #include <stdint.h>
 #include <stddef.h>
 
-uint32_t SystemCoreClock;
+extern uint32_t SystemCoreClock;
 
 #define UNUSED(x) (void)(x)
 
 typedef enum
 {
-    Mode_TEST = 0x0,
+    Mode_DUMMY = 0x0,
     Mode_Out_PP = 0x10
 } GPIO_Mode;
 
 typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus;
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
-typedef enum {TEST_IRQ = 0 } IRQn_Type;
+typedef enum {DUMMY_IRQ = 0 } IRQn_Type;
 typedef enum {
     EXTI_Trigger_Rising = 0x08,
     EXTI_Trigger_Falling = 0x0C,
@@ -165,20 +162,20 @@ typedef struct
 
 typedef struct
 {
-    void* test;
+    void* dummy;
 } TIM_TypeDef;
 
 typedef struct
 {
-    void* test;
+    void* dummy;
 } TIM_OCInitTypeDef;
 
 typedef struct {
-    void* test;
+    void* dummy;
 } DMA_TypeDef;
 
 typedef struct {
-    void* test;
+    void* dummy;
 } DMA_Channel_TypeDef;
 
 uint8_t DMA_GetFlagStatus(void *);
@@ -187,12 +184,12 @@ void DMA_ClearFlag(uint32_t);
 
 typedef struct
 {
-    void* test;
+    void* dummy;
 } SPI_TypeDef;
 
 typedef struct
 {
-    void* test;
+    void* dummy;
 } USART_TypeDef;
 
 #define USART1 ((USART_TypeDef *)0x0001)
@@ -211,7 +208,7 @@ typedef struct
 
 typedef struct
 {
-    void* test;
+    void* dummy;
 } I2C_TypeDef;
 
 typedef enum
@@ -231,6 +228,7 @@ typedef struct {
 	double velocity_xyz[3];	// m/s, earth frame
 	double position_xyz[3];	// meters, NED from origin
 } fdm_packet;
+
 typedef struct {
 	float motor_speed[4];	// normal: [0.0, 1.0], 3D: [-1.0, 1.0]
 } servo_packet;
