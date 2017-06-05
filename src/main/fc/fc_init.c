@@ -134,6 +134,10 @@
 void targetPreInit(void);
 #endif
 
+#ifdef TARGET_START    /// TODO !!!
+void targetStart(void);
+#endif
+
 #ifdef TARGET_BUS_INIT
 void targetBusInit(void);
 #endif
@@ -627,5 +631,10 @@ void init(void)
 #else
     fcTasksInit();
 #endif
+
     systemState |= SYSTEM_STATE_READY;
+
+#ifdef TARGET_START
+    targetStart();
+#endif
 }

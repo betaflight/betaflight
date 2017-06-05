@@ -212,30 +212,37 @@ void systemInit(void) {
 	ret = udpInit(&stateLink, NULL, 9003, true);
 	printf("start UDP server...%d\n", ret);
 
-	ret = pthread_create(&udpWorker, NULL, udpThread, NULL);
-	if(ret != 0) {
-		printf("Create udpWorker error!\n");
-		exit(1);
-	}
-
 	// serial can't been slow down
 	rescheduleTask(TASK_SERIAL, 1);
 }
 
-void systemReset(void){
-	printf("[system]Reset!\n");
+void targetStart(void)
+{
+	// called when system initialization finished
+	fdmStart();
+	if(pthread_create(&udpWorker, NULL, udpThread, NULL)) {
+		fprintf(stderr, "systemStart: Create udpWorker error: %s\n", strerror(errno));
+		exit(1);
+	}
+}
+
+void targetShutdown(void)\
+{
 	workerRunning = false;
 	pthread_join(tcpWorker, NULL);
 	pthread_join(udpWorker, NULL);
 	fdmStop();
 	exit(0);
 }
+
+void systemReset(void){
+	printf("[system]Reset!\n");
+	targetShutdown();
+}
+
 void systemResetToBootloader(void) {
 	printf("[system]ResetToBootloader!\n");
-	workerRunning = false;
-	pthread_join(tcpWorker, NULL);
-	pthread_join(udpWorker, NULL);
-	exit(0);
+	targetShutdown();
 }
 
 // drivers/light_led.c

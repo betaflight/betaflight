@@ -282,4 +282,8 @@ void init(void)
     osdSlaveTasksInit();
 
     systemState |= SYSTEM_STATE_READY;
+
+#ifdef TARGET_START
+    targetStart();
+#endif
 }
