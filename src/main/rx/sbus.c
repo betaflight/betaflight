@@ -18,6 +18,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#ifdef SITL
+# include <stdio.h>
+#endif
 
 #include "platform.h"
 
@@ -128,9 +131,8 @@ static void sbusDataReceive(uint16_t c)
     static uint32_t sbusFrameStartAt = 0;
     uint32_t now = micros();
 
-    int32_t sbusFrameTime = now - sbusFrameStartAt;
-
-    if (sbusFrameTime > (long)(SBUS_TIME_NEEDED_PER_FRAME + 500)) {
+    int32_t sbusFrameTime = cmp32(now, sbusFrameStartAt);
+    if (sbusFrameTime > SBUS_TIME_NEEDED_PER_FRAME + 500) {
         sbusFramePosition = 0;
     }
 
