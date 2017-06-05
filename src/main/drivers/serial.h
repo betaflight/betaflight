@@ -128,7 +128,8 @@ void serialEndWrite(serialPort_t *instance);
 
 // serialImpl functions
 bool serialImplOpen(serialPort_t* port, portMode_t mode, const struct serialPortVTable *vtable,
-                    void* rxBuffer, int rxSize, void* txBuffer, int txSize);
+                    void* rxBuffer, int rxSize, void* txBuffer, int txSize,
+                    serialReceiveCallbackPtr rxCallback);
 void serialImplWrite(serialPort_t *port, uint8_t ch);
 void serialImplWriteBuf(serialPort_t *port, const void *data, int size);
 uint8_t serialImplRead(serialPort_t *port);

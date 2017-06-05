@@ -110,7 +110,8 @@ void serialEndWrite(serialPort_t *instance)
 // common implementation of serial buffers. Device driver can access receive and transmit buffer as memory blocks
 
 bool serialImplOpen(serialPort_t* port, portMode_t mode, const struct serialPortVTable *vtable,
-                    void* rxBuffer, int rxSize, void* txBuffer, int txSize)
+                    void* rxBuffer, int rxSize, void* txBuffer, int txSize,
+                    serialReceiveCallbackPtr rxCallback)
 {
     port->vTable       = vtable;
     port->mode         = mode;
@@ -125,7 +126,14 @@ bool serialImplOpen(serialPort_t* port, portMode_t mode, const struct serialPort
     port->txBufferTail = 0;
     port->txBufferHead = 0;
 
+    port->rxCallback = rxCallback;
+
     return true;
+}
+
+static void serialKickTx(serialPort_t *port)
+{
+    port->vTable->kickTx(port);
 }
 
 void serialImplWrite(serialPort_t *port, uint8_t ch)
@@ -136,7 +144,7 @@ void serialImplWrite(serialPort_t *port, uint8_t ch)
     } else {
         port->txBuffer[port->txBufferHead] = ch;
         port->txBufferHead = nxt;
-        port->vTable->kickTx(port);
+        serialKickTx(port);
     }
 }
 
@@ -147,6 +155,7 @@ void serialImplWriteBuf(serialPort_t *port, const void *data, int size)
         if (size < chunk) { // all data fit, no wrap
             memcpy(&port->txBuffer[port->txBufferHead], data, size);
             port->txBufferHead += size;
+            serialKickTx(port);
             return;
         }
         // space to end of buffer filled completely, wrap head
@@ -158,6 +167,7 @@ void serialImplWriteBuf(serialPort_t *port, const void *data, int size)
     const int chunk = MIN(size, (int)(port->txBufferTail - port->txBufferHead - 1));
     memcpy(&port->txBuffer[port->txBufferHead], data, chunk);
     port->txBufferHead += chunk;
+    serialKickTx(port);
 }
 
 uint8_t serialImplRead(serialPort_t *port)
@@ -240,6 +250,11 @@ int serialGetRxDataBuffer(serialPort_t *port, void **dataPtr)
 // len must be less or equal to size returned by serialGetRxDataBuffer
 void serialAckRxData(serialPort_t *port, int len)
 {
+    // TODO - rxcallback is far too intrusive
+    if(port->rxCallback)
+        for(unsigned i = port->rxBufferHead; i < port->rxBufferHead + len; i++)
+            port->rxCallback(port->rxBuffer[i]);
+
     unsigned nxt = port->rxBufferHead + len;
     if(nxt >= port->rxBufferSize)
         nxt = 0;
