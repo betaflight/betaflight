@@ -1,0 +1,18 @@
+#!/bin/bash
+
+>&2 echo "UART $@"
+
+port=$2
+
+case $port in
+    1)
+        while true; do  socat -d -d - tcp-listen:5761,reuseaddr,nodelay; sleep 1; done
+        ;;
+    2)
+        setserial /dev/ttyUSB0 spd_cust divisor 240 low_latency
+        while true; do  socat -d -d - /dev/ttyUSB0,raw,echo=0,cs8,clocal=1,b38400,cstopb=1,parenb=1,parodd=0 ; sleep 1; done
+        ;;
+    *)
+        >&2 echo Port $port is not defined
+        ;;
+esac
