@@ -185,6 +185,18 @@
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
 
+#define USE_I2C
+#define USE_I2C_DEVICE_2
+#define I2C2_SCL                NONE // PB10, shared with UART3TX
+#define I2C2_SDA                NONE // PB11, shared with UART3RX
+#if defined(OMNIBUSF4) || defined(OMNIBUSF4SD)
+#define USE_I2C_DEVICE_3
+#define I2C3_SCL                NONE // PA8, PWM6
+#define I2C3_SDA                NONE // PC9, CH6
+#endif
+#define I2C_DEVICE              (I2CDEV_2)
+#define OLED_I2C_INSTANCE              (I2CDEV_3)
+
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PC1
 #define VBAT_ADC_PIN            PC2

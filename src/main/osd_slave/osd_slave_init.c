@@ -34,6 +34,7 @@
 #include "config/parameter_group_ids.h"
 
 #include "drivers/adc.h"
+#include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
 #include "drivers/dma.h"
@@ -90,10 +91,6 @@
 
 #ifdef TARGET_PREINIT
 void targetPreInit(void);
-#endif
-
-#ifdef TARGET_BUS_INIT
-void targetBusInit(void);
 #endif
 
 uint8_t systemState = SYSTEM_STATE_INITIALISING;
@@ -195,6 +192,11 @@ void init(void)
 #endif /* USE_SPI */
 
 #ifdef USE_I2C
+    i2cHardwareConfigure();
+
+    // Note: Unlike UARTs which are configured when client is present,
+    // I2C buses are initialized unconditionally if they are configured.
+
 #ifdef USE_I2C_DEVICE_1
     i2cInit(I2CDEV_1);
 #endif

@@ -2749,6 +2749,10 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef USE_INVERTER
     { OWNER_INVERTER,      PG_SERIAL_PIN_CONFIG, offsetof(serialPinConfig_t, ioTagInverter[0]), SERIAL_PORT_MAX_INDEX },
 #endif
+#ifdef USE_I2C
+    { OWNER_I2C_SCL,       PG_I2C_CONFIG, offsetof(i2cConfig_t, ioTagScl[0]), I2CDEV_COUNT },
+    { OWNER_I2C_SDA,       PG_I2C_CONFIG, offsetof(i2cConfig_t, ioTagSda[0]), I2CDEV_COUNT },
+#endif
 };
 
 static ioTag_t *getIoTag(const cliResourceValue_t value, uint8_t index)

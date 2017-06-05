@@ -102,6 +102,7 @@
 #define ESCSERIAL_TIMER_TX_HARDWARE         0 // PWM 1
 
 #define USE_I2C
+#define USE_I2C_DEVICE_1
 #define I2C_DEVICE                          (I2CDEV_1) // PB6/SCL, PB7/SDA
 
 #if (SPRACINGF4NEO_REV >= 3)
