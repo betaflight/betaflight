@@ -20,12 +20,22 @@
  * Dominic Clifton - Serial port abstraction, Separation of common STM32 code for cleanflight, various cleanups.
  * Hamasaki/Timecop - Initial baseflight code
  */
+
+// pipe2
+#define _GNU_SOURCE
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <pthread.h>
+#include <sys/select.h>
+#include <sys/wait.h>
+#include <signal.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include "platform.h"
 
@@ -37,49 +47,287 @@
 #include "io/serial.h"
 #include "serial_tcp.h"
 
-#define BASE_PORT 5760
-
 static const struct serialPortVTable tcpVTable; // forward declaration, defined at end of file
 static tcpPort_t tcpSerialPorts[SERIAL_PORT_COUNT];
 
-// Dyad callbacks
-static void onData(dyad_Event *e)
+// file descriptor manager
+
+static pthread_mutex_t fdmMutex;
+static pthread_t fdmWorker;
+static volatile bool fdmWorkerRunning;
+struct fdmFd *fdmFdHead = NULL;
+
+void signal_empty_handler(int sig)
 {
-    tcpPort_t* s = (tcpPort_t*)(e->udata);
-    tcpDataIn(s, e->data, e->size);
+    UNUSED(sig);
 }
 
-static void onClose(dyad_Event *e)
+static void* fdmWorkerFn(void* data)
 {
-    tcpPort_t* s = (tcpPort_t*)(e->udata);
-    s->clientCount--;
-    s->conn = NULL;
-    fprintf(stderr, "[CLS]UART%u: %d,%d\n", s->id + 1, s->connected, s->clientCount);
-    if(s->clientCount == 0) {
-        s->connected = false;
+    UNUSED(data);
+    fd_set rfds, wfds, efds;
+
+    sigset_t sset;
+    sigemptyset(&sset);
+    sigaddset(&sset, SIGUSR1);
+    pthread_sigmask(SIG_BLOCK, &sset, NULL);
+
+    sigemptyset(&sset);    // don't block signals in pselect
+
+    // long timeout - signal is used to exit pselect
+    const struct timespec timeout = {5,0};
+
+    pthread_mutex_lock(&fdmMutex);
+    while (fdmWorkerRunning) {
+        // set select flags
+        FD_ZERO(&rfds);
+        FD_ZERO(&wfds);
+        FD_ZERO(&efds);
+        int fdMax=-1;
+        for (struct fdmFd *f = fdmFdHead; f; f = f->next) {
+            if (f->flags & FDM_READ && f->rfd >= 0) {
+                fdMax = MAX(fdMax, f->rfd);
+                FD_SET(f->rfd, &rfds);
+            }
+            if (f->flags & FDM_WRITE && f->wfd >= 0) {
+                fdMax = MAX(fdMax, f->wfd);
+                FD_SET(f->wfd, &wfds);
+            }
+            if (f->flags & FDM_EXCEPT) {
+                // catch exceprions on both descriptors
+                if (f->rfd >= 0) {
+                    fdMax = MAX(fdMax, f->rfd);
+                    FD_SET(f->rfd, &efds);
+                }
+                if (f->wfd >= 0) {
+                    fdMax = MAX(fdMax, f->wfd);
+                    FD_SET(f->wfd, &efds);
+                }
+            }
+        }
+
+        pthread_mutex_unlock(&fdmMutex);
+        int count = pselect(fdMax + 1, &rfds, &wfds, &efds, &timeout, &sset);
+        pthread_mutex_lock(&fdmMutex);
+        if(count < 0 && errno != EINTR) {
+            fprintf(stderr, "pselect failed: %s\n", strerror(errno));
+        }
+        for (fdmFd *f = fdmFdHead; f; f = f->next) {
+            if(count > 0) {  // flags are not cleared on error(EINTR)
+                if(f->flags & FDM_READ && f->rfd >=0 && FD_ISSET(f->rfd, &rfds)) {
+                    f->readCallback(f);
+                }
+                if(f->flags & FDM_WRITE && f->wfd >=0 && FD_ISSET(f->wfd, &wfds)) {
+                    f->writeCallback(f);
+                }
+                if(f->flags & FDM_EXCEPT
+                   && ((f->rfd >=0 && FD_ISSET(f->rfd, &efds))
+                       || (f->wfd >=0 && FD_ISSET(f->wfd, &efds)) )) {
+                    f->exceptCallback(f);
+                }
+            }
+            if(f->flags & FDM_INTR) {
+                f->flags &= ~FDM_INTR;
+                f->intrCallback(f);
+            }
+        }
+        pid_t pid;
+        int status;
+        while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+            if (WIFEXITED(status) || WIFSIGNALED(status)) {
+                fdmFd *chld = NULL;
+                fprintf(stderr, "Child %d terminated\n", pid);
+                for (fdmFd *f = fdmFdHead; f; f = f->next) {
+                    if (f->pid == pid) {
+                        chld = f; break;
+                    }
+                }
+                if (chld) {
+                    chld->pid = -1;
+                }
+            }
+        }
+    }
+    pthread_mutex_unlock(&fdmMutex);
+    printf("FDM worker thread finished\n");
+    return NULL;
+}
+
+// signal worker thread (generate INTR or update masks)
+void fdmWorkerSignal(void)
+{
+    // signal is blocked outside pselect, it's safe to send it without acquiring mutex
+    if(fdmWorker)
+        pthread_kill(fdmWorker, SIGUSR1);
+}
+
+// register fdmFd
+void fdmFdAdd(fdmFd *f)
+{
+    pthread_mutex_lock(&fdmMutex);
+    for (fdmFd *fi = fdmFdHead; fi; fi = f->next) {
+        if(f == fi) {
+            fprintf(stderr, "fdmFd already registered\n");
+            return;
+        }
+    }
+    f->next = fdmFdHead;
+    fdmFdHead = f;
+    pthread_mutex_unlock(&fdmMutex);
+    fdmWorkerSignal();
+}
+
+// remove fdmFd
+void fdmFdDel(fdmFd *f)
+{
+    pthread_mutex_lock(&fdmMutex);
+    for(fdmFd **fi = &fdmFdHead; *fi; fi = &(*fi)->next)
+        if(*fi == f) {
+            *fi = f->next;
+            return;
+        }
+    fprintf(stderr, "fdmFd not found\n");
+    pthread_mutex_unlock(&fdmMutex);
+    fdmWorkerSignal();
+}
+
+// close Fdm
+// No attempt is made to handle queued data  (should be OK in typical FC use case)
+void fdmFdShutdown(fdmFd *f)
+{
+    pthread_mutex_lock(&fdmMutex);
+    if(f->wfd >= 0) {
+        if(close(f->wfd))
+            fprintf(stderr, "fdmFd wfd close(): %s\n", strerror(errno));
+        f->wfd = -1;
+    }
+     if(f->rfd >= 0) {
+        if(close(f->rfd))
+            fprintf(stderr, "fdmFd rfd close(): %s\n", strerror(errno));
+        f->rfd = -1;
+    }
+    f->flags |= FDM_SHUTDOWN;
+    pthread_mutex_unlock(&fdmMutex);
+}
+
+// generate interrupt
+void fdmFdIntr(fdmFd *f)
+{
+    pthread_mutex_lock(&fdmMutex);
+    f->flags |= FDM_INTR;
+    pthread_mutex_unlock(&fdmMutex);
+    fdmWorkerSignal();
+}
+
+int fdmFdRead(fdmFd *f, void* buf, size_t count)
+{
+    int ret;
+    pthread_mutex_lock(&fdmMutex);
+    if (f->rfd >= 0) {
+        ret = read(f->rfd, buf, count);
+    } else {
+        ret = 0;
+    }
+    if (ret < 0) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            // nag user - read should be called only when something is available
+            fprintf(stderr, "fdmFd read() would block: %s\n", strerror(errno));
+            ret = 0;
+        } else {
+            fprintf(stderr, "fdmFd read(): %s\n", strerror(errno));
+            fdmFdShutdown(f);
+        }
+    } else if(ret == 0) {
+        // EOF - other side closed the pipe
+        fprintf(stderr, "fdmFd read EOF\n");
+        fdmFdShutdown(f);
+    }
+    pthread_mutex_unlock(&fdmMutex);
+    return ret;
+}
+
+int fdmFdWrite(fdmFd *f, const void* buf, size_t count)
+{
+    bool signal = false;
+    int ret = 0;
+    pthread_mutex_lock(&fdmMutex);
+    do {
+        if(count == 0) {
+            // writer finished, stop waiting for fd write
+            f->flags &= ~FDM_WRITE;   // no need to signal it
+            break;
+        }
+        if (f->wfd < 0)
+            break;
+        ret = write(f->wfd, buf, count);
+        if (ret < 0) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                // handle it as if nothing was written
+                fprintf(stderr, "fdmFd write() would block: %s\n", strerror(errno));
+                ret = 0;
+            } else if (errno == EPIPE) {
+                // child closed pipe
+                fprintf(stderr, "fdmFd write(): pipe closed\n");
+                fdmFdShutdown(f);
+                break;
+            } else {
+                fprintf(stderr, "fdmFd read(): %s\n", strerror(errno));
+                fdmFdShutdown(f);
+                break;
+            }
+        }
+        if(ret < (int)count) {
+            // partial write. Enable waiting on FD
+            f->flags |= FDM_WRITE;
+            signal = true;
+        }
+    } while(0);
+    pthread_mutex_unlock(&fdmMutex);
+    if(signal)
+        fdmWorkerSignal();
+    return ret;
+}
+
+void fdmInit(void)
+{
+    printf("fdmInit()\n");
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+    if (pthread_mutex_init(&fdmMutex, &attr) != 0) {
+        printf("fdmInit: fdmMutex init: %s\n", strerror(errno));
+        exit(1);
+    }
+    // register signal handler
+    signal(SIGUSR1, &signal_empty_handler);
+
+    fdmWorkerRunning = true;
+}
+
+void fdmStart(void)
+{
+    if(pthread_create(&fdmWorker, NULL, &fdmWorkerFn, NULL)) {
+        fprintf(stderr, "fdmInit: fdmWorker create: %s\n", strerror(errno));
+        exit(1);
     }
 }
 
-static void onAccept(dyad_Event *e)
+void fdmStop(void)
 {
-    tcpPort_t* s = (tcpPort_t*)(e->udata);
-    fprintf(stderr, "UART%u: New connection (%d)\n", s->id + 1, s->clientCount);
-
-    s->connected = true;
-    if (s->clientCount > 0) {
-        dyad_close(e->remote);
-        return;
-    }
-    s->clientCount++;
-    fprintf(stderr, "UART%u: [NEW] %d,%d\n", s->id + 1, s->connected, s->clientCount);
-    s->conn = e->remote;
-    dyad_setNoDelay(s->conn, 1);
-    dyad_setTimeout(s->conn, 120);
-    dyad_addListener(s->conn, DYAD_EVENT_DATA, onData, s);
-    dyad_addListener(s->conn, DYAD_EVENT_CLOSE, onClose, s);
+    printf("fdmStop()\n");
+    fdmWorkerRunning = false;
+    fdmWorkerSignal();
+    pthread_join(fdmWorker, NULL);
+    printf("fdmStop() done\n");
 }
 
-static bool tcpPortInit(tcpPort_t *s, int id)
+// bridge file desccriptors to serial code
+void tcpWriteCb(struct fdmFd* f);
+void tcpReadCb(struct fdmFd* f);
+void tcpIntrCb(struct fdmFd* f);
+void tcpDataOut(tcpPort_t *s);
+
+static bool tcpPortInit(tcpPort_t *s, int id, uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     if(s->initialized) {
         fprintf(stderr, "UART%u: port is already initialized!\n", s->id + 1);
@@ -87,20 +335,74 @@ static bool tcpPortInit(tcpPort_t *s, int id)
     }
 
     s->initialized = true;
-    s->connected = false;
-    s->clientCount = 0;
     s->id = id;
-    s->conn = NULL;
-    s->server = dyad_newStream();
-    dyad_setNoDelay(s->server, 1);
-    dyad_addListener(s->server, DYAD_EVENT_ACCEPT, onAccept, s);
 
-    const unsigned port = BASE_PORT + id + 1;
-    if(dyad_listenEx(s->server, NULL, port, 10) == 0) {
-        fprintf(stderr, "UART%u: bind on port %u\n", id + 1, port);
-    } else {
-        fprintf(stderr, "UART%u: bind on port %u failed: %s\n", id + 1, port, strerror(errno));
+    // create child process
+
+    int stdin_pipe[2], stdout_pipe[2];
+    pipe2(stdin_pipe, O_CLOEXEC);
+    pipe2(stdout_pipe, O_CLOEXEC);
+
+    pid_t pid = fork();
+    if(pid < 0) {
+        fprintf(stderr, "UART%u: fork() failed: %s\n", s->id + 1, strerror(errno));
+        return false;
+    } else if (pid == 0) {
+        // in child process
+        dup2(stdin_pipe[0], STDIN_FILENO);
+        dup2(stdout_pipe[1], STDOUT_FILENO);
+        // O_CLOEXEC - no need to close parent's end
+
+        // build arguments for uart handler
+        char pport[10];
+        snprintf(pport, sizeof(pport), "%d", id + 1);
+        char pbaud[10];
+        snprintf(pbaud, sizeof(pbaud), "%d", baudRate);
+        char pmode[5];
+        snprintf(pmode, sizeof(pmode), "%s%s",
+                 (mode & MODE_RX) ? "RX" : "",
+                 (mode & MODE_RX) ? "TX" : "");
+        char poptions[100];
+        static struct {
+            portOptions_t opt;
+            const char* name;
+        } optmap[] = {
+            {SERIAL_INVERTED, "inverted"},
+            {SERIAL_STOPBITS_2, "stopbits_2"},
+            {SERIAL_PARITY_EVEN, "parity_even"},
+            {SERIAL_BIDIR, "bidir"},
+            {SERIAL_BIDIR_PP, "bidir_pp"}
+        };
+        char *p = poptions;
+        for(unsigned i = 0; i < ARRAYLEN(optmap); i++)
+            if(options & optmap[i].opt)
+                p += snprintf(p, ARRAYEND(poptions) - p, "%s%s", (p > poptions) ? ",":"", optmap[i].name);
+        *p = '\0';
+
+        execl("./uart", "./uart",
+              "--port", pport,
+              "--baud", pbaud,
+              "--mode", pmode,
+              "--options", poptions,
+              (char*) NULL);
+        fprintf(stderr, "UART%u: can't execute UART handler '%s' : %s\n", s->id + 1, "./uart", strerror(errno));
+        exit(1);
     }
+    // parent process
+    // close child's ends of pipes
+    close(stdin_pipe[0]);
+    close(stdout_pipe[1]);
+
+    s->fdmFd.rfd = stdout_pipe[0];
+    s->fdmFd.wfd = stdin_pipe[1];
+    s->fdmFd.flags = FDM_READ | FDM_EXCEPT;
+    s->fdmFd.pid = pid;
+    s->fdmFd.readCallback = &tcpReadCb;
+    s->fdmFd.writeCallback = &tcpWriteCb;
+    s->fdmFd.intrCallback = &tcpIntrCb;
+
+    fdmFdAdd(&s->fdmFd);
+
     return true;
 }
 
@@ -112,13 +414,13 @@ serialPort_t *serTcpOpen(int id, serialReceiveCallbackPtr rxCallback, uint32_t b
     if (id < 0 || id >= SERIAL_PORT_COUNT)
         return NULL;
     tcpPort_t *s = &tcpSerialPorts[id];
-    if(!tcpPortInit(s, id))
+    if(!tcpPortInit(s, id, baudRate, mode, options))
         return NULL;
 
     serialImplOpen(&s->port, mode, &tcpVTable,
-                   s->rxBuffer, sizeof(s->rxBuffer), s->txBuffer, sizeof(s->txBuffer));
+                   s->rxBuffer, sizeof(s->rxBuffer), s->txBuffer, sizeof(s->txBuffer),
+                   rxCallback);
 
-    s->port.rxCallback = rxCallback;
     s->port.baudRate = baudRate;
     s->port.options = options;
 
@@ -128,57 +430,79 @@ serialPort_t *serTcpOpen(int id, serialReceiveCallbackPtr rxCallback, uint32_t b
 void tcpKickTx(serialPort_t *instance)
 {
     tcpPort_t *s = container_of(instance, tcpPort_t, port);
-    UNUSED(s);
-    // NOP now, dyad will check periodically
+    if(!s->buffering)
+        fdmFdIntr(&s->fdmFd);
+}
+
+static void tcpBeginWrite(serialPort_t *instance)
+{
+    tcpPort_t *s = container_of(instance, tcpPort_t, port);
+    if(s->buffering)
+        fprintf(stderr, "UART%d: tcpBeginWrite called twice\n", s->id + 1);
+    s->buffering = true;
 }
 
 static void tcpEndWrite(serialPort_t *instance)
 {
     tcpPort_t *s = container_of(instance, tcpPort_t, port);
+    if(!s->buffering)
+        fprintf(stderr, "UART%d: tcpEndWrite called twice\n", s->id + 1);
+    s->buffering = false;
     tcpDataOut(s);  // force flush of buffer
 }
 
-// bridge to dyad functions to handle data
+// write buffered data to file descriptor
 void tcpDataOut(tcpPort_t *s)
 {
-    if (s->conn == NULL)
-        return;
-
     void *txData;
-    const int txLen = serialGetTxData(&s->port, &txData);
-    if (txLen > 0) {
-#if TODO
-        const int written = dyad_write(s->conn, txData, txLen);
-        serialAckTxData(&s->port, written);
-#else
-        dyad_write(s->conn, txData, txLen);
-        serialAckTxData(&s->port, txLen);
-#endif
+    int txLen, written;
+    do {
+        txLen = serialGetTxData(&s->port, &txData);
+        // txLen == 0 signals to fdm that we are finished
+        written = fdmFdWrite(&s->fdmFd, txData, txLen);
+        if(written > 0)
+            serialAckTxData(&s->port, written);
+    } while(txLen && written == txLen);            // repeat until no data or write buffer is full
+}
+
+// is enabled after write pipe was full
+void tcpWriteCb(struct fdmFd* f)
+{
+    tcpDataOut(container_of(f, tcpPort_t, fdmFd));
+}
+
+void tcpIntrCb(struct fdmFd* f)
+{
+    tcpDataOut(container_of(f, tcpPort_t, fdmFd));
+}
+
+void tcpDataIn(tcpPort_t *s)
+{
+    void *rxBuff;
+    int available = serialGetRxDataBuffer(&s->port, &rxBuff);
+
+    if (available <= 0) {
+        // no space to store data, discard them
+        fprintf(stderr, "UART%u: no buffer space\n", s->id + 1);
+        return;
+    }
+    int count = fdmFdRead(&s->fdmFd, rxBuff, available);
+    // errors are handled in fdmFdRead
+    if(count > 0) {
+        serialAckRxData(&s->port, count);
     }
 }
 
-void tcpDataIn(tcpPort_t *s, const void* data, int size)
+void tcpReadCb(struct fdmFd* f)
 {
-    while (size > 0) {
-        void *rxBuff;
-        int available = serialGetRxDataBuffer(&s->port, &rxBuff);
-        if (available < 0) {
-            // no space to store data, discard them
-            fprintf(stderr, "UART%u: %d bytes of data discarded\n", s->id + 1, size);
-            return;
-        }
-        const int chunk = MIN(available, size);
-        memcpy(rxBuff, data, chunk);
-        data = (uint8_t*)data + chunk; size -= chunk;
-        serialAckRxData(&s->port, chunk);
-    }
+    tcpDataIn(container_of(f, tcpPort_t, fdmFd));
 }
 
 static const struct serialPortVTable tcpVTable = {
     SERIALIMPL_VTABLE,
     .serialSetBaudRate = NULL,
     .setMode = NULL,
-    .beginWrite = NULL,
+    .beginWrite = tcpBeginWrite,
     .endWrite = tcpEndWrite,
     .kickTx = tcpKickTx,
 };

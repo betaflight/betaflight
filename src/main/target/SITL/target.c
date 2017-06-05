@@ -51,7 +51,7 @@ static servo_packet pwmPkt;
 
 static struct timespec start_time;
 static double simRate = 1.0;
-static pthread_t tcpWorker, udpWorker;
+static pthread_t udpWorker;
 static bool workerRunning = true;
 static udpLink_t stateLink, pwmLink;
 static pthread_mutex_t updateLock;
@@ -172,24 +172,9 @@ static void* udpThread(void* data) {
 			updateState(&fdmPkt);
 		}
 	}
-
-	printf("udpThread end!!\n");
-	return NULL;
-}
-
-static void* tcpThread(void* data) {
-	UNUSED(data);
-
-	dyad_init();
-	dyad_setTickInterval(0.2f);
-	dyad_setUpdateTimeout(0.1f);
-
-	while (workerRunning) {
-		dyad_update();
 	}
 
-	dyad_shutdown();
-	printf("tcpThread end!!\n");
+	printf("udpThread end!!\n");
 	return NULL;
 }
 
@@ -219,6 +204,8 @@ void systemInit(void) {
 		exit(1);
 	}
 
+	fdmInit();
+
 	ret = udpInit(&pwmLink, "127.0.0.1", 9002, false);
 	printf("init PwnOut UDP link...%d\n", ret);
 
@@ -240,6 +227,7 @@ void systemReset(void){
 	workerRunning = false;
 	pthread_join(tcpWorker, NULL);
 	pthread_join(udpWorker, NULL);
+	fdmStop();
 	exit(0);
 }
 void systemResetToBootloader(void) {

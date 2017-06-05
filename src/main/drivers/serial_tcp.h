@@ -17,12 +17,30 @@
 
 #pragma once
 
-#include <netinet/in.h>
-#include <pthread.h>
-#include "dyad.h"
+#include <sys/types.h>
 
 #define RX_BUFFER_SIZE    1400
 #define TX_BUFFER_SIZE    1400
+
+enum fdmFlags {
+    FDM_READ = 1 << 0,
+    FDM_WRITE = 1 << 1,
+    FDM_EXCEPT = 1 << 2,
+    FDM_INTR = 1 << 3,
+    FDM_SHUTDOWN = 1 << 4,
+};
+
+typedef struct fdmFd {
+    struct fdmFd *next;
+
+    int rfd, wfd;
+    pid_t pid;
+    enum fdmFlags flags;
+    void (*readCallback)(struct fdmFd* f);
+    void (*writeCallback)(struct fdmFd* f);
+    void (*exceptCallback)(struct fdmFd* f);
+    void (*intrCallback)(struct fdmFd* f);
+} fdmFd;
 
 typedef struct {
     serialPort_t port;
@@ -30,20 +48,12 @@ typedef struct {
     uint8_t txBuffer[TX_BUFFER_SIZE];
 
     bool initialized;
-    bool connected;
-    dyad_Stream *server;
-    dyad_Stream *conn;
-    uint16_t clientCount;
+    bool buffering;
     uint8_t id;
+
+    fdmFd fdmFd;
 } tcpPort_t;
 
 serialPort_t *serTcpOpen(int id, serialReceiveCallbackPtr rxCallback, uint32_t baudRate, portMode_t mode, portOptions_t options);
-
-// tcpPort API
-void tcpDataIn(tcpPort_t *instance, const void* data, int size);
-void tcpDataOut(tcpPort_t *instance);
-
-bool tcpIsStart(void);
-bool* tcpGetUsed(void);
-tcpPort_t* tcpGetPool(void);
-
+void fdmInit(void);
+void fdmStop(void);
