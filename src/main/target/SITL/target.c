@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 #include <errno.h>
 #include <time.h>
@@ -189,18 +190,17 @@ void systemInit(void) {
 	FLASH_Unlock();
 
 	if (pthread_mutex_init(&updateLock, NULL) != 0) {
-		printf("Create updateLock error!\n");
+		fprintf(stderr, "systemInit: updateLock: %s\n", strerror(errno));
 		exit(1);
 	}
 
 	if (pthread_mutex_init(&mainLoopLock, NULL) != 0) {
-		printf("Create mainLoopLock error!\n");
+		fprintf(stderr, "systemInit: mainLoopLock: %s\n", strerror(errno));
 		exit(1);
 	}
 
-	ret = pthread_create(&tcpWorker, NULL, tcpThread, NULL);
-	if(ret != 0) {
-		printf("Create tcpWorker error!\n");
+	if (pthread_mutex_init(&timMutex, NULL) != 0) {
+		fprintf(stderr, "systemInit: timMutex: %s\n", strerror(errno));
 		exit(1);
 	}
 

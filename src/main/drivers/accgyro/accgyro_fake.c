@@ -17,6 +17,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
+#include <errno.h>
 
 #include "platform.h"
 
@@ -41,7 +43,7 @@ static void fakeGyroInit(gyroDev_t *gyro)
     fakeGyroDev = gyro;
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
     if (pthread_mutex_init(&gyro->lock, NULL) != 0) {
-        printf("Create gyro lock error!\n");
+        fprintf(stderr, "fakeGyroInit : Create gyro lock error: %s\n", strerror(errno));
     }
 #endif
 }
@@ -115,7 +117,7 @@ static void fakeAccInit(accDev_t *acc)
     fakeAccDev = acc;
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
     if (pthread_mutex_init(&acc->lock, NULL) != 0) {
-        printf("Create acc lock error!\n");
+        fprintf(stderr, "fakeGyroInit : Create gyro lock error: %s\n", strerror(errno));
     }
 #endif
 }
