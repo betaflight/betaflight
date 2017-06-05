@@ -77,19 +77,10 @@ void sendMotorUpdate() {
 
 void updateState(const fdm_packet* pkt) {
 	static double last_timestamp = 0; // in seconds
-	static uint64_t last_realtime = 0; // in uS
 	static struct timespec last_ts; // last packet
 
 	struct timespec now_ts;
 	clock_gettime(CLOCK_MONOTONIC, &now_ts);
-
-	const uint64_t realtime_now = micros64_real();
-	if(realtime_now > last_realtime + 500*1e3) { // 500ms timeout
-		last_timestamp = pkt->timestamp;
-		last_realtime = realtime_now;
-		sendMotorUpdate();
-		return;
-	}
 
 	const double deltaSim = pkt->timestamp - last_timestamp;  // in seconds
 	if(deltaSim < 0) { // don't use old packet
@@ -148,14 +139,13 @@ void updateState(const fdm_packet* pkt) {
 
 	if(deltaSim < 0.02 && deltaSim > 0) { // simulator should run faster than 50Hz
 //		simRate = simRate * 0.5 + (1e6 * deltaSim / (realtime_now - last_realtime)) * 0.5;
-		struct timespec out_ts;
-		timeval_sub(&out_ts, &now_ts, &last_ts);
-		simRate = deltaSim / (out_ts.tv_sec + 1e-9*out_ts.tv_nsec);
+		struct timespec delta;
+		timeval_sub(&delta, &now_ts, &last_ts);
+		simRate = deltaSim / (delta.tv_sec + 1e-9 * delta.tv_nsec);
 	}
 //	printf("simRate = %lf, millis64 = %lu, millis64_real = %lu, deltaSim = %lf\n", simRate, millis64(), millis64_real(), deltaSim*1e6);
 
 	last_timestamp = pkt->timestamp;
-	last_realtime = micros64_real();
 
 	last_ts.tv_sec = now_ts.tv_sec;
 	last_ts.tv_nsec = now_ts.tv_nsec;
@@ -170,12 +160,20 @@ void updateState(const fdm_packet* pkt) {
 static void* udpThread(void* data) {
 	UNUSED(data);
 	int n = 0;
+	time_t lastForcedUpdate;
 
 	while (workerRunning) {
 		n = udpRecv(&stateLink, &fdmPkt, sizeof(fdm_packet), 100);
 		if(n == sizeof(fdm_packet)) {
 //			printf("[data]new fdm %d\n", n);
 			updateState(&fdmPkt);
+			lastForcedUpdate = time(NULL);
+		} else {
+			// send packet every second to kick other side
+			time_t t = time(NULL);
+			if(lastForcedUpdate != t) {
+				sendMotorUpdate();
+				lastForcedUpdate = t;
 		}
 	}
 	}
