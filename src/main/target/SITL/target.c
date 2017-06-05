@@ -59,6 +59,7 @@ static bool workerRunning = true;
 static udpLink_t stateLink, pwmLink;
 static pthread_mutex_t updateLock;
 static pthread_mutex_t mainLoopLock;
+static pthread_mutex_t timMutex;
 
 int timeval_sub(struct timespec *result, struct timespec *x, struct timespec *y);
 
@@ -271,44 +272,37 @@ void failureMode(failureMode_e mode) {
 // Time part
 // Thanks ArduPilot
 uint64_t nanos64_real() {
-	struct timespec ts;
+	struct timespec ts, uptime;
 	clock_gettime(CLOCK_MONOTONIC, &ts);
-	return (ts.tv_sec*1e9 + ts.tv_nsec) - (start_time.tv_sec*1e9 + start_time.tv_nsec);
+	timeval_sub(&uptime, &ts, &start_time);
+	return uptime.tv_sec * 1000000000UL + uptime.tv_nsec;
 }
 
 uint64_t micros64_real() {
-	struct timespec ts;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-	return 1.0e6*((ts.tv_sec + (ts.tv_nsec*1.0e-9)) - (start_time.tv_sec + (start_time.tv_nsec*1.0e-9)));
+	return nanos64_real() / 1000;
 }
 
 uint64_t millis64_real() {
-	struct timespec ts;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-	return 1.0e3*((ts.tv_sec + (ts.tv_nsec*1.0e-9)) - (start_time.tv_sec + (start_time.tv_nsec*1.0e-9)));
+	return nanos64_real() / 1000000;
 }
 
 uint64_t micros64() {
 	static uint64_t last = 0;
 	static uint64_t out = 0;
+
+	pthread_mutex_lock(&timMutex);
 	uint64_t now = nanos64_real();
 
 	out += (now - last) * simRate;
 	last = now;
+	uint64_t ret = out / 1000;
+	pthread_mutex_unlock(&timMutex);
 
-	return out*1e-3;
-//	return micros64_real();
+	return ret;
 }
+
 uint64_t millis64() {
-	static uint64_t last = 0;
-	static uint64_t out = 0;
-	uint64_t now = nanos64_real();
-
-	out += (now - last) * simRate;
-	last = now;
-
-	return out*1e-6;
-//	return millis64_real();
+	return micros64() / 1000;
 }
 
 uint32_t micros(void) {
