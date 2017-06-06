@@ -282,6 +282,10 @@ void init(void)
     busSwitchInit();
 #endif
 
+#if defined(USE_UART) && !defined(SITL)
+    uartPinConfigure(serialPinConfig());
+#endif
+
 #if defined(AVOID_UART1_FOR_PWM_PPM)
     serialInit(feature(FEATURE_SOFTSERIAL),
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART1 : SERIAL_PORT_NONE);
@@ -339,7 +343,7 @@ void init(void)
     beeperInit(beeperDevConfig());
 #endif
 /* temp until PGs are implemented. */
-#ifdef USE_INVERTER
+#if defined(USE_INVERTER) && !defined(SITL)
     initInverters(serialPinConfig());
 #endif
 

@@ -26,7 +26,6 @@
 #define BEEPER      PC15
 #define BEEPER_INVERTED
 
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 1
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PC13
