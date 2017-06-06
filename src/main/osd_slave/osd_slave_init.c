@@ -165,6 +165,10 @@ void init(void)
     busSwitchInit();
 #endif
 
+#if defined(USE_UART) && !defined(SITL)
+    uartPinConfigure(serialPinConfig());
+#endif
+
     serialInit(false, SERIAL_PORT_NONE);
 
 #ifdef BEEPER
