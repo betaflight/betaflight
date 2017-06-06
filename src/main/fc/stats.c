@@ -16,6 +16,7 @@ PG_REGISTER_WITH_RESET_FN(statsConfig_t, statsConfig, PG_STATS_CONFIG, 0);
 
 void pgResetFn_statsConfig(statsConfig_t *instance)
 {
+    instance->stats_enabled = 0;
     instance->stats_total_time = 0;
     instance->stats_total_dist = 0;
 }
@@ -31,9 +32,11 @@ void statsOnArm(void)
 
 void statsOnDisarm(void)
 {
-	statsConfigMutable()->stats_total_time += (millis() - arm_millis) / 1000;	//[s]
-	statsConfigMutable()->stats_total_dist += (getTotalTravelDistance() - arm_distance_cm) / 100;	//[m]
-	writeEEPROM();
+    if (statsConfig()->stats_enabled) {
+        statsConfigMutable()->stats_total_time += (millis() - arm_millis) / 1000;	//[s]
+        statsConfigMutable()->stats_total_dist += (getTotalTravelDistance() - arm_distance_cm) / 100;	//[m]
+        writeEEPROM();
+    }
 }
 
 #endif
