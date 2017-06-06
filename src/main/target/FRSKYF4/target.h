@@ -19,6 +19,9 @@
 
 #define USBD_PRODUCT_STRING "FRSKYF4"
 
+#define TARGET_CONFIG
+
+
 
 #define LED0                    PB5
 //#define LED1                    PB4 // Remove this at the next major release
@@ -36,16 +39,10 @@
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
 
-#if defined(CL_RACINGF4)
-#define GYRO_MPU6000_ALIGN      CW0_DEG
-#define ACC_MPU6000_ALIGN       CW0_DEG
-#elif defined(OMNIBUSF4SD)
+
 #define GYRO_MPU6000_ALIGN      CW270_DEG
 #define ACC_MPU6000_ALIGN       CW270_DEG
-#else
-#define GYRO_MPU6000_ALIGN      CW180_DEG
-#define ACC_MPU6000_ALIGN       CW180_DEG
-#endif
+
 
 // MPU6000 interrupts
 #define USE_EXTI
@@ -145,6 +142,11 @@
 #define DEFAULT_FEATURES        (FEATURE_OSD)
 #define AVOID_UART1_FOR_PWM_PPM
 #define SPEKTRUM_BIND_PIN       UART1_RX_PIN
+
+#define SERIALRX_PROVIDER       SERIALRX_SBUS
+#define TELEMETRY_UART          SERIAL_PORT_USART6
+#define SERIALRX_UART           SERIAL_PORT_USART1
+
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

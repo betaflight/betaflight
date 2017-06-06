@@ -52,10 +52,11 @@ void targetConfiguration(void)
     barometerConfigMutable()->baro_hardware = BARO_NONE;
     compassConfigMutable()->mag_hardware = MAG_NONE;
     rxConfigMutable()->sbus_inversion = 1;
+
     serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(TELEMETRY_UART)].functionMask = FUNCTION_TELEMETRY_SMARTPORT;
     telemetryConfigMutable()->telemetry_inversion = 1;
     telemetryConfigMutable()->halfDuplex = 1;
 	rxConfigMutable()->rssi_channel =8;
-	blackboxConfigMutable()->device = BLACKBOX_DEVICE_SDCARD;
+
 }
 #endif
