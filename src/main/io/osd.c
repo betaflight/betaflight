@@ -621,7 +621,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdProfile)
     osdProfile->item_pos[OSD_GPS_LON] = OSD_POS(18, 2) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_MAIN_BATT_USAGE] = OSD_POS(8, 12) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_ARMED_TIME] = OSD_POS(1, 2) | VISIBLE_FLAG;
-    osdProfile->item_pos[OSD_DISARMED] = OSD_POS(10, 4) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_DISARMED] = OSD_POS(11, 4) | VISIBLE_FLAG;
 
     osdProfile->enabled_stats[OSD_STAT_MAX_SPEED] = true;
     osdProfile->enabled_stats[OSD_STAT_MIN_BATTERY] = true;
