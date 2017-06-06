@@ -22,7 +22,6 @@
 #define LED0                    PB2
 #define BEEPER                  PA1
 
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 1 // MPU_INT
 
 #define USE_EXTI
 #define USE_MPU_DATA_READY_SIGNAL

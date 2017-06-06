@@ -23,22 +23,10 @@
 // Size must be a power of two due to various optimizations which use 'and' instead of 'mod'
 // Various serial routines return the buffer occupied size as uint8_t which would need to be extended in order to
 // increase size further.
-#define UART1_RX_BUFFER_SIZE    256
-#define UART1_TX_BUFFER_SIZE    256
-#define UART2_RX_BUFFER_SIZE    256
-#define UART2_TX_BUFFER_SIZE    256
-#define UART3_RX_BUFFER_SIZE    256
-#define UART3_TX_BUFFER_SIZE    256
-#define UART4_RX_BUFFER_SIZE    256
-#define UART4_TX_BUFFER_SIZE    256
-#define UART5_RX_BUFFER_SIZE    256
-#define UART5_TX_BUFFER_SIZE    256
-#define UART6_RX_BUFFER_SIZE    256
-#define UART6_TX_BUFFER_SIZE    256
-#define UART7_RX_BUFFER_SIZE    256
-#define UART7_TX_BUFFER_SIZE    256
-#define UART8_RX_BUFFER_SIZE    256
-#define UART8_TX_BUFFER_SIZE    256
+
+#if defined(USE_UART1) || defined(USE_UART2) || defined(USE_UART3) || defined(USE_UART4) || defined(USE_UART5) || defined(USE_UART6) || defined(USE_UART7) || defined(USE_UART8)
+#define USE_UART
+#endif
 
 typedef enum UARTDevice {
     UARTDEV_1 = 0,
@@ -51,7 +39,7 @@ typedef enum UARTDevice {
     UARTDEV_8 = 7
 } UARTDevice;
 
-typedef struct {
+typedef struct uartPort_s {
     serialPort_t port;
 
 #if defined(STM32F7)
@@ -83,6 +71,7 @@ typedef struct {
     USART_TypeDef *USARTx;
 } uartPort_t;
 
+void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig);
 serialPort_t *uartOpen(UARTDevice device, serialReceiveCallbackPtr rxCallback, uint32_t baudRate, portMode_t mode, portOptions_t options);
 
 // serialPort API

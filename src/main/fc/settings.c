@@ -27,24 +27,20 @@
 
 #include "build/debug.h"
 
+#include "blackbox/blackbox.h"
+
+#include "cms/cms.h"
+
 #include "common/utils.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "sensors/esc_sensor.h"
-#include "sensors/gyro.h"
-
-#include "fc/settings.h"
-
-#include "blackbox/blackbox.h"
-
-#include "cms/cms.h"
-
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
 #include "fc/rc_adjustments.h"
+#include "fc/settings.h"
 
 #include "flight/altitude.h"
 #include "flight/failsafe.h"
@@ -68,9 +64,12 @@
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
 #include "sensors/compass.h"
+#include "sensors/esc_sensor.h"
+#include "sensors/gyro.h"
 
 #include "telemetry/frsky.h"
 #include "telemetry/telemetry.h"
+
 
 // Sensor names (used in lookup tables for *_hardware settings and in status command output)
 // sync with accelerationSensor_e

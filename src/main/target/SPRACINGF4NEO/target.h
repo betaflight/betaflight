@@ -18,6 +18,7 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER             "SP4N"
+#define TARGET_CONFIG
 
 #ifndef SPRACINGF4NEO_REV
     #define SPRACINGF4NEO_REV 3
@@ -203,7 +204,6 @@
 #define SERIALRX_PROVIDER                   SERIALRX_SBUS
 
 #define TELEMETRY_UART                      SERIAL_PORT_UART5
-#define TELEMETRY_DEFAULT_HALFDUPLEX        0 // Both pins of UART5 are used for a telemetry circuit
 #define TELEMETRY_PROVIDER_DEFAULT          FUNCTION_TELEMETRY_SMARTPORT
 
 #define BUTTONS // Physically located on the optional OSD/VTX board.

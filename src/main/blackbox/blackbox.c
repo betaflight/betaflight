@@ -281,7 +281,9 @@ typedef enum BlackboxState {
 typedef struct blackboxMainState_s {
     uint32_t time;
 
-    int32_t axisPID_P[XYZ_AXIS_COUNT], axisPID_I[XYZ_AXIS_COUNT], axisPID_D[XYZ_AXIS_COUNT];
+    int32_t axisPID_P[XYZ_AXIS_COUNT];
+    int32_t axisPID_I[XYZ_AXIS_COUNT];
+    int32_t axisPID_D[XYZ_AXIS_COUNT];
 
     int16_t rcCommand[4];
     int16_t gyroADC[XYZ_AXIS_COUNT];
@@ -548,21 +550,21 @@ static void writeIntraframe(void)
     }
 
 #ifdef MAG
-        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_MAG)) {
-            blackboxWriteSigned16VBArray(blackboxCurrent->magADC, XYZ_AXIS_COUNT);
-        }
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_MAG)) {
+        blackboxWriteSigned16VBArray(blackboxCurrent->magADC, XYZ_AXIS_COUNT);
+    }
 #endif
 
 #ifdef BARO
-        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_BARO)) {
-            blackboxWriteSignedVB(blackboxCurrent->BaroAlt);
-        }
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_BARO)) {
+        blackboxWriteSignedVB(blackboxCurrent->BaroAlt);
+    }
 #endif
 
 #ifdef SONAR
-        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_SONAR)) {
-            blackboxWriteSignedVB(blackboxCurrent->sonarRaw);
-        }
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_SONAR)) {
+        blackboxWriteSignedVB(blackboxCurrent->sonarRaw);
+    }
 #endif
 
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_RSSI)) {
@@ -573,6 +575,7 @@ static void writeIntraframe(void)
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_ACC)) {
         blackboxWriteSigned16VBArray(blackboxCurrent->accSmooth, XYZ_AXIS_COUNT);
     }
+
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_DEBUG)) {
         blackboxWriteSigned16VBArray(blackboxCurrent->debug, DEBUG16_VALUE_COUNT);
     }
