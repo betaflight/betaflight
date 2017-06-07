@@ -122,7 +122,7 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .maxcheck = 1900,
         .rx_min_usec = RX_MIN_USEC,          // any of first 4 channels below this value will trigger rx loss detection
         .rx_max_usec = RX_MAX_USEC,         // any of first 4 channels above this value will trigger rx loss detection
-        .rssi_channel = 8,//0,
+        .rssi_channel = 0,
         .rssi_scale = RSSI_SCALE_DEFAULT,
         .rssi_invert = 0,
         .rcInterpolation = RC_SMOOTHING_AUTO,

@@ -16,7 +16,7 @@
 #
 
 # The target to build, see VALID_TARGETS below
-TARGET    ?= FRSKYF4
+TARGET    ?= NAZE
 
 # Compile-time options
 OPTIONS   ?=
@@ -1226,9 +1226,9 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 
 
 ## all               : Build all valid targets
-##all: $(VALID_TARGETS)
+all: $(VALID_TARGETS)
 
-all: $(TARGET)
+
 ## official          : Build all official (travis) targets
 official: $(OFFICIAL_TARGETS)
 

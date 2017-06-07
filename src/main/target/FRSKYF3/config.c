@@ -56,6 +56,6 @@ void targetConfiguration(void)
     telemetryConfigMutable()->telemetry_inversion = 1;
     telemetryConfigMutable()->halfDuplex = 1;
 	rxConfigMutable()->rssi_channel =8;
-	blackboxConfigMutable()->device = BLACKBOX_DEVICE_SDCARD;
+//	blackboxConfigMutable()->device = BLACKBOX_DEVICE_SDCARD;
 }
 #endif

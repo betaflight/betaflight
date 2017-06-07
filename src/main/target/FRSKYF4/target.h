@@ -24,11 +24,10 @@
 
 
 #define LED0                    PB5
-//#define LED1                    PB4 // Remove this at the next major release
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 
-#define INVERTER_PIN_UART6      PC8 // Omnibus F4 V3 and later
+#define INVERTER_PIN_UART6      PC8 
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
@@ -44,7 +43,6 @@
 #define ACC_MPU6000_ALIGN       CW270_DEG
 
 
-// MPU6000 interrupts
 #define USE_EXTI
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
@@ -53,8 +51,6 @@
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW90_DEG
 
-//#define USE_MAG_NAZA                   // Delete this on next major release
-//#define MAG_NAZA_ALIGN CW180_DEG_FLIP  // Ditto
 
 #define BARO
 #define USE_BARO_MS5611
@@ -62,7 +58,7 @@
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 #define BMP280_SPI_INSTANCE     SPI3
-#define BMP280_CS_PIN           PB3 // v1
+#define BMP280_CS_PIN           PB3 
 
 
 #define OSD
@@ -82,9 +78,7 @@
 #define SDCARD_DETECT_PIN               PB7
 #define SDCARD_SPI_INSTANCE             SPI2
 #define SDCARD_SPI_CS_PIN               SPI2_NSS_PIN
-// SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
 #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
-// Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 4 // 21MHz
 
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
@@ -113,11 +107,11 @@
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 
-#define SERIAL_PORT_COUNT       6 //VCP, USART1, USART3, USART6, SOFTSERIAL x 2
+#define SERIAL_PORT_COUNT       6 
 
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
