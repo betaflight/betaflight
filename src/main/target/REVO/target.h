@@ -241,6 +241,8 @@
 #define RSSI_ADC_PIN            PA0
 #endif
 
+#define TRANSPONDER
+
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #if defined(PODIUMF4)
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
