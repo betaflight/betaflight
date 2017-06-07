@@ -177,7 +177,6 @@ GROUP_4_TARGETS := \
 	SPRACINGF3NEO \
 	SPRACINGF3OSD \
 	SPRACINGF4EVO \
-	SPRACINGF4NEO \
 	STM32F3DISCOVERY \
 	TINYBEEF3 \
 
@@ -1295,7 +1294,6 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 
 ## all               : Build all valid targets
 all: $(VALID_TARGETS)
-
 
 ## official          : Build all official (travis) targets
 official: $(OFFICIAL_TARGETS)
