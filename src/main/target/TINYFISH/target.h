@@ -23,9 +23,11 @@
 
 
 #define LED0                    PC14
-#define LED1                    PC15
+#define LED1                    PA13
 
-#define BEEPER                  PB2
+#define BEEPER                  PC15
+#define BEEPER_INVERTED
+
 
 #define USE_EXTI
 #define MPU_INT_EXTI PC13
