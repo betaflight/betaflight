@@ -304,10 +304,17 @@ void updateRcCommands(void)
 
     rcCommand[THROTTLE] = rcLookupThrottle(tmp);
 
-    if (feature(FEATURE_3D) && IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH) && !failsafeIsActive()) {
-        fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
-        rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
+    if (feature(FEATURE_3D) && !failsafeIsActive()) {
+        if IS_RC_MODE_ACTIVE(BOX3DPOSSWITCH) {
+            fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
+            rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
+        }
+        else if IS_RC_MODE_ACTIVE(BOX3DNEGSWITCH) {
+            fix12_t throttleScaler = qConstruct(1000 - rcCommand[THROTTLE], 1000);
+            rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);       
+        }
     }
+
 
     if (FLIGHT_MODE(HEADFREE_MODE)) {
         const float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
