@@ -37,12 +37,6 @@
 #define LED0                    PB3
 #endif
 
-#if defined(ZCOREF3)
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 1
-#elif defined(FLIP32F3OSD)
-#define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU data ready and MAG data ready
-#endif
-
 #define BEEPER                  PC15
 #define BEEPER_INVERTED
 

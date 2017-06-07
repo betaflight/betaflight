@@ -42,7 +42,6 @@
 #define SPI2_MISO_PIN            PB14
 #define SPI2_MOSI_PIN            PB15
 
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
