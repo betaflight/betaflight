@@ -254,14 +254,6 @@ void taskUpdateOsd(timeUs_t currentTimeUs)
 }
 #endif
 
-#ifdef USE_RX_ELERES
-void taskEleres(timeUs_t currentTimeUs)
-{
-    UNUSED(currentTimeUs);
-    eleresSetRcDataFromPayload(NULL,NULL);
-}
-#endif
-
 void fcTasksInit(void)
 {
     schedulerInit();
@@ -337,9 +329,6 @@ void fcTasksInit(void)
 #else
     setTaskEnabled(TASK_CMS, feature(FEATURE_OSD) || feature(FEATURE_DASHBOARD));
 #endif
-#endif
-#ifdef USE_RX_ELERES
-setTaskEnabled(TASK_RX_ELERES, (feature(FEATURE_RX_SPI) && rxConfig()->rx_spi_protocol == RFM22_ELERES));
 #endif
 }
 
@@ -530,15 +519,6 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "CMS",
         .taskFunc = cmsHandler,
         .desiredPeriod = 1000000 / 60,          // 60 Hz
-        .staticPriority = TASK_PRIORITY_LOW,
-    },
-#endif
-
-#ifdef USE_RX_ELERES
-    [TASK_RX_ELERES] = {
-        .taskName = "RX_ELERES",
-        .taskFunc = taskEleres,
-        .desiredPeriod = TASK_PERIOD_HZ(500),
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif

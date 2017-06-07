@@ -89,6 +89,7 @@ static uint8_t rfTxBuffer[10];
 static uint8_t rfRxBuffer[DATA_PACKAGE_SIZE];
 static uint8_t txFull = 0;
 static uint8_t statusRegisters[2];
+static uint8_t *eleresSignaturePtr;
 
 static uint8_t rfmSpiRead(uint8_t address)
 {
@@ -219,8 +220,8 @@ static void rfm22bInitParameter(void)
     rfmSpiWrite(0x73, 0x00);
     rfmSpiWrite(0x74, 0x00);
     for(i=0; i<4; i++) {
-        rfmSpiWrite(0x3a+i, eleresConfig()->eleresSignature[i]);
-        rfmSpiWrite(0x3f+i, eleresConfig()->eleresSignature[i]);
+        rfmSpiWrite(0x3a+i, eleresSignaturePtr[i]);
+        rfmSpiWrite(0x3f+i, eleresSignaturePtr[i]);
     }
 
     frequencyConfigurator((uint32_t)(eleresConfig()->eleresFreq * 100));
@@ -365,6 +366,8 @@ rx_spi_received_e eleresDataReceived(uint8_t *payload)
         statusRegisters[1] = rfmSpiRead(0x04);
         return RX_SPI_RECEIVED_DATA;
     }
+
+    eleresSetRcDataFromPayload(NULL,NULL);
 
     return RX_SPI_RECEIVED_NONE;
 }
@@ -668,14 +671,16 @@ static void bindChannels(const uint8_t* RF_HEAD, uint8_t* hop_lst)
 void eleresInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     UNUSED(rxConfig);
-
+    rxConfigMutable()->rx_spi_protocol = RFM22_ELERES;
     rxRuntimeConfig->channelCount = RC_CHANS;
 
     rfmSpiWrite(0x07, 0x80);
     delay(100);
 
+    eleresSignaturePtr = (uint8_t*)&eleresConfigMutable()->eleresSignature;
+
     rfm22bInitParameter();
-    bindChannels(eleresConfig()->eleresSignature,holList);
+    bindChannels(eleresSignaturePtr,holList);
     channelHoppingTime = 33;
     toRxMode();
     channelHopping(1);
@@ -692,13 +697,13 @@ uint8_t eleresBind(void)
     uint16_t timeout = 10000;
     uint8_t i;
 
-    eleresConfigMutable()->eleresSignature[0] = 0x42;
-    eleresConfigMutable()->eleresSignature[1] = 0x49;
-    eleresConfigMutable()->eleresSignature[2] = 0x4e;
-    eleresConfigMutable()->eleresSignature[3] = 0x44;
+    eleresSignaturePtr[0] = 0x42;
+    eleresSignaturePtr[1] = 0x49;
+    eleresSignaturePtr[2] = 0x4e;
+    eleresSignaturePtr[3] = 0x44;
 
     rfm22bInitParameter();
-    bindChannels(eleresConfig()->eleresSignature,holList);
+    bindChannels(eleresSignaturePtr,holList);
     channelHoppingTime = 33;
     RED_LED_OFF;
     while(timeout--) {
@@ -712,7 +717,7 @@ uint8_t eleresBind(void)
             for(i=0; i<4; i++) eleres_signature_old[i] = rfRxBuffer[i+1];
             if (eleres_signature_OK_count>200) {
                 for(i=0; i<4; i++)
-                    eleresConfigMutable()->eleresSignature[i] = eleres_signature_old[i];
+                    eleresSignaturePtr[i] = eleres_signature_old[i];
                 RED_LED_OFF;
                 saveConfigAndNotify();
                 rfm22bInitParameter();

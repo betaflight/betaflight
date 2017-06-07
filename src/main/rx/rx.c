@@ -577,7 +577,7 @@ void updateRSSI(timeUs_t currentTimeUs)
     } else if (feature(FEATURE_RSSI_ADC)) {
         updateRSSIADC(currentTimeUs);
 #ifdef USE_RX_ELERES
-    } else if (feature(FEATURE_RX_SPI)) {
+    } else if (feature(FEATURE_RX_SPI) && rxConfig()->rx_spi_protocol == RFM22_ELERES) {
         updateRSSIeleres(currentTimeUs);
 #endif
     }

@@ -900,10 +900,7 @@ static const clivalue_t valueTable[] = {
     { "eleres_loc_en",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresLocEn) },
     { "eleres_loc_power",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 7 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresLocPower) },
     { "eleres_loc_delay",           VAR_UINT16 | MASTER_VALUE, .config.minmax = { 30, 1800 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresLocDelay) },
-    { "eleres_signature_1",         VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 255 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresSignature[0]) },
-    { "eleres_signature_2",         VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 255 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresSignature[1]) },
-    { "eleres_signature_3",         VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 255 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresSignature[2]) },
-    { "eleres_signature_4",         VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 255 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresSignature[3]) },
+    { "eleres_signature",           VAR_UINT32 | MASTER_VALUE | MODE_MAX , .config.max = { 4294967295 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresSignature) },
 
 #endif
 #ifdef LED_STRIP
@@ -1082,12 +1079,18 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, u
     switch(var->type & VALUE_MODE_MASK) {
     case MODE_MAX:
     case MODE_DIRECT:
-        cliPrintf("%d", value);
+        if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32)
+            cliPrintf("%u", value);
+        else
+            cliPrintf("%d", value);
         if (full) {
             if ((var->type & VALUE_MODE_MASK) == MODE_DIRECT) {
                 cliPrintf(" %d %d", var->config.minmax.min, var->config.minmax.max);
             } else {
-                cliPrintf(" 0 %d", var->config.max.max);
+                if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32)
+                    cliPrintf(" 0 %u", var->config.max.max);
+                else
+                    cliPrintf(" 0 %d", var->config.max.max);
             }
         }
         break;
@@ -1195,7 +1198,10 @@ static void cliPrintVarRange(const clivalue_t *var)
         cliPrintf("Allowed range: %d - %d\r\n", var->config.minmax.min, var->config.minmax.max);
         break;
     case (MODE_MAX):
-        cliPrintf("Allowed range: 0- %d\r\n", var->config.max.max);
+        if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32)
+            cliPrintf("Allowed range: 0- %u\r\n", var->config.max.max);
+        else
+            cliPrintf("Allowed range: 0- %d\r\n", var->config.max.max);
         break;
     case (MODE_LOOKUP): {
         const lookupTableEntry_t *tableEntry = &lookupTables[var->config.lookup.tableIndex];
@@ -1212,6 +1218,7 @@ static void cliPrintVarRange(const clivalue_t *var)
 }
 
 typedef union {
+    uint32_t uint_value;
     int32_t int_value;
     float float_value;
 } int_float_value_t;
@@ -1232,7 +1239,7 @@ static void cliSetVar(const clivalue_t *var, const int_float_value_t value)
         break;
 
     case VAR_UINT32:
-        *(uint32_t *)ptr = value.int_value;
+        *(uint32_t *)ptr = value.uint_value;
         break;
 
     case VAR_FLOAT:
@@ -2722,7 +2729,6 @@ static void cliDfu(char *cmdline)
 static void cliEleresBind(char *cmdline)
 {
     UNUSED(cmdline);
-    char buf[10];
 
     if (!feature(FEATURE_RX_SPI)) {
         cliPrint("Eleres not active. Please enable feature ELERES and restart IMU\r\n");
@@ -2734,13 +2740,6 @@ static void cliEleresBind(char *cmdline)
     if (eleresBind()) {
         cliPrint("Bind timeout!\r\n");
     } else {
-        cliPrint("Signature: ");
-        for(int i=0; i<4; i++) {
-            itoa(eleresConfigMutable()->eleresSignature[i], buf, 16);
-            cliPrint(buf);
-            cliPrint(" ");
-        }
-        cliPrint("\r\n");
         cliPrint("Bind OK!\r\nPlease restart your transmitter.\r\n");
     }
 }
@@ -3008,17 +3007,20 @@ static void cliSet(char *cmdline)
                     case MODE_DIRECT: {
                             if(*eqptr != 0 && strspn(eqptr, "0123456789.+-") == strlen(eqptr)) {
                                 int32_t value = 0;
+                                uint32_t uvalue = 0;
                                 float valuef = 0;
 
                                 value = atoi(eqptr);
                                 valuef = fastA2F(eqptr);
-
+                                uvalue = strtoul(eqptr, NULL, 10);
                                 // note: compare float values
                                 if ((mode == MODE_DIRECT && (valuef >= valueTable[i].config.minmax.min && valuef <= valueTable[i].config.minmax.max))
                                      || (mode == MODE_MAX && (valuef >= 0 && valuef <= valueTable[i].config.max.max))) {
 
                                     if ((valueTable[i].type & VALUE_TYPE_MASK) == VAR_FLOAT)
                                         tmp.float_value = valuef;
+                                    else if ((valueTable[i].type & VALUE_TYPE_MASK) == VAR_UINT32)
+                                        tmp.uint_value = uvalue;
                                     else
                                         tmp.int_value = value;
 

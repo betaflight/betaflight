@@ -16,7 +16,7 @@ typedef struct
     uint8_t  eleresLocEn;
     uint8_t  eleresLocPower;
     uint16_t eleresLocDelay;
-    uint8_t  eleresSignature[4];
+    uint32_t  eleresSignature;
 } eleresConfig_t;
 
 PG_DECLARE(eleresConfig_t, eleresConfig);
