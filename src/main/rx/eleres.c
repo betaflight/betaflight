@@ -54,6 +54,10 @@
 #define RECEIVED 	8
 #define PREAMBLE	16
 
+#define DATA_FLAG 1
+#define LOCALIZER_FLAG 2
+#define RELAY_FLAG 4
+
 #define RF22B_RX_PACKET_RECEIVED_INTERRUPT  0x02
 #define RF22B_PACKET_SENT_INTERRUPT         0x04
 #define RF22B_VALID_PREAMBLE_INTERRUPT      0x40
@@ -401,7 +405,7 @@ static void parseStatusRegister(const uint8_t *payload)
                 hoppingChannel = rfRxBuffer[21] & 0x0F;
 
             channelHoppingTime = (rfRxBuffer[20] & 0x0F)+18;
-            dataReady |= 1;
+            dataReady |= DATA_FLAG;
         } else if (eleresConfig()->eleresLocEn && eleresConfig()->eleresTelemetryEn && bkgLocEnable==2) {
             if((rfRxBuffer[0] == 'H' && rfRxBuffer[2] == 'L') ||
                     rfRxBuffer[0]=='T' || rfRxBuffer[0]=='P' || rfRxBuffer[0]=='G') {
@@ -410,7 +414,7 @@ static void parseStatusRegister(const uint8_t *payload)
                 bkgLocEnable = 0;
                 channelHopping(0);
                 bkgLocEnable = 2;
-                dataReady |= 4;
+                dataReady |= RELAY_FLAG;
             }
         } else if (eleresConfig()->eleresLocEn) {
             if (rfRxBuffer[0] == 0x4c && rfRxBuffer[1] == 0x4f && rfRxBuffer[2] == 0x43) {
@@ -420,7 +424,7 @@ static void parseStatusRegister(const uint8_t *payload)
             }
         }
 
-        if((dataReady & 2)==0) {
+        if((dataReady & LOCALIZER_FLAG)==0) {
             if (eleresConfig()->eleresTelemetryEn)
                 toTxMode(9);
             else
@@ -430,7 +434,7 @@ static void parseStatusRegister(const uint8_t *payload)
 
     if(rfMode & TRANSMITTED) {
         toReadyMode();
-        if(dataReady & 2) {
+        if(dataReady & LOCALIZER_FLAG) {
             rfmSpiWrite(0x79, holList[0]);
         } else if(irq_time-lastPackTime <= 1500 && bkgLocEnable<2)
             channelHopping(1);
@@ -476,7 +480,7 @@ void eleresSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
     else
         led_time = cr_time;
 
-    if((dataReady & 2) == 0) {
+    if((dataReady & LOCALIZER_FLAG) == 0) {
         if(cr_time > nextPackTime+2) {
             if ((cr_time-lastPackTime > 1500) || firstRun) {
                 localRssi = 18;
@@ -509,8 +513,8 @@ void eleresSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
         }
     }
 
-    if((dataReady & 3) == 1 && rcData != NULL) {
-        if((dataReady & 4)==0) {
+    if((dataReady & 0x03) == DATA_FLAG && rcData != NULL) {
+        if((dataReady & RELAY_FLAG)==0) {
             channel_count = rfRxBuffer[20] >> 4;
             if(channel_count < 4)  channel_count = 4;
             if(channel_count > RC_CHANS) channel_count = 12;
@@ -561,7 +565,7 @@ void eleresSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
     }
 
     if (eleresConfig()->eleresLocEn) {
-        if((dataReady & 3)==3 && rfRxBuffer[19]<128) {
+        if((dataReady & 0x03)==(DATA_FLAG | LOCALIZER_FLAG) && rfRxBuffer[19]<128) {
             if(rx_frames == 0)	guard_time = lastPackTime;
             if(rx_frames < 250) {
                 rx_frames++;
@@ -591,12 +595,12 @@ void eleresSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
             rx_frames = 0;
         }
         if(!ARMING_FLAG(ARMED) && cr_time > localizerTime) {
-            if((dataReady & 2)==0) {
+            if((dataReady & LOCALIZER_FLAG)==0) {
                 rfm22bInitParameter();
                 rfmSpiWrite(0x6d, eleresConfig()->eleresLocPower);
             }
             dataReady &= 0xFB;
-            dataReady |= 2;
+            dataReady |= LOCALIZER_FLAG;
             localizerTime = cr_time+35;
             rfmSpiWrite(0x79, 0);
             red_led_local = 1;
@@ -616,11 +620,11 @@ void eleresSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
             }
         }
 
-        if((ARMING_FLAG(ARMED) || firstRun) && (dataReady & 2)==0)
+        if((ARMING_FLAG(ARMED) || firstRun) && (dataReady & LOCALIZER_FLAG)==0)
             localizerTime = cr_time + (1000L*eleresConfig()->eleresLocDelay);
 
         if (eleresConfig()->eleresTelemetryEn)
-            if(dataReady & 4) {
+            if(dataReady & RELAY_FLAG) {
                 if(rfRxBuffer[0]=='H') bkgLocBuf[0][0]='T';
                 if(rfRxBuffer[0]=='T') {
                     bkgLocBuf[0][0]='T';
