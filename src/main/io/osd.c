@@ -238,7 +238,7 @@ static void osdDrawSingleElement(uint8_t item)
 
     case OSD_GPS_SPEED:
         // FIXME ideally we want to use SYM_KMH symbol but it's not in the font any more, so we use K.
-        tfp_sprintf(buff, "%dK", CM_S_TO_KM_H(GPS_speed) * 10);
+        tfp_sprintf(buff, "%3dK", CM_S_TO_KM_H(GPS_speed));
         break;
 
     case OSD_GPS_LAT:
