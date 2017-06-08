@@ -16,12 +16,8 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "FRF4"
-
 #define USBD_PRODUCT_STRING "FRSKYF4"
-
 #define TARGET_CONFIG
-
-
 
 #define LED0                    PB5
 #define BEEPER                  PB4
@@ -38,10 +34,8 @@
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
 
-
 #define GYRO_MPU6000_ALIGN      CW270_DEG
 #define ACC_MPU6000_ALIGN       CW270_DEG
-
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PC4
@@ -51,7 +45,6 @@
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW90_DEG
 
-
 #define BARO
 #define USE_BARO_MS5611
 
@@ -60,14 +53,12 @@
 #define BMP280_SPI_INSTANCE     SPI3
 #define BMP280_CS_PIN           PB3 
 
-
 #define OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      PA15
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
-
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define USE_SDCARD
@@ -86,7 +77,6 @@
 #define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
 #define SDCARD_DMA_CHANNEL                  DMA_Channel_0
 
-
 #define USE_VCP
 #define VBUS_SENSING_PIN PC5
 
@@ -103,12 +93,10 @@
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
-
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 
 #define SERIAL_PORT_COUNT       6 
-
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 
@@ -123,7 +111,7 @@
 #define SPI2_MOSI_PIN           PB15
 
 #define USE_SPI_DEVICE_3
-  #define SPI3_NSS_PIN            PA15
+#define SPI3_NSS_PIN            PA15
 #define SPI3_SCK_PIN            PC10
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
@@ -140,7 +128,6 @@
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define TELEMETRY_UART          SERIAL_PORT_USART6
 #define SERIALRX_UART           SERIAL_PORT_USART1
-
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

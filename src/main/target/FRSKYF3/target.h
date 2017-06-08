@@ -19,11 +19,9 @@
 
 #define TARGET_BOARD_IDENTIFIER "FRF3"  
 #define TARGET_CONFIG
-
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
 #define LED0                    PB3
-
 #define BEEPER                  PC15
 #define BEEPER_INVERTED
 
@@ -31,43 +29,27 @@
 #define MPU_INT_EXTI PC13
 #define USE_MPU_DATA_READY_SIGNAL
 #define EXTI15_10_CALLBACK_HANDLER_COUNT 1 // MPU_INT, SDCardDetect
-
 #define MPU_ADDRESS             0x69
 
-
-//#define MYMPU6000
-
 #ifdef MYMPU6000
-
 #define MPU6000_SPI_INSTANCE    SPI2
 #define MPU6000_CS_PIN          PB12
-
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW270_DEG
-//CW90_DEG
 
 #define ACC
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW270_DEG
-//CW90_DEG
 #else
 #define GYRO
-
 #define USE_GYRO_MPU6050
 #define GYRO_MPU6050_ALIGN      CW270_DEG
-//CW270_DEG
-//CW90_DEG
-#define ACC
 
+#define ACC
 #define USE_ACC_MPU6050
 #define ACC_MPU6050_ALIGN       CW270_DEG
-//CW270_DEG
-//CW90_DEG
-
-
 #endif
-
 
 #define USE_VCP
 #define USE_UART1
@@ -77,7 +59,6 @@
 #define USE_SOFTSERIAL2
 
 #define SERIAL_PORT_COUNT       6
-
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
 
@@ -97,9 +78,7 @@
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 
-
 #define USE_SPI
-
 #define OSD
 
 // include the max7456 driver
@@ -109,23 +88,19 @@
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
-
 #define USE_SPI
 #define USE_SPI_DEVICE_2 
 #define USE_SPI_DEVICE_1 
-
 
 #define SPI2_NSS_PIN            PB12
 #define SPI2_SCK_PIN            PB13
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
 
-
 #define SPI1_NSS_PIN            PC14
 #define SPI1_SCK_PIN            PA5
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
-
 
 #define USE_SDCARD
 #define USE_SDCARD_SPI1
@@ -136,39 +111,27 @@
 #define SDCARD_SPI_INSTANCE                 SPI1
 #define SDCARD_SPI_CS_PIN                   SPI1_NSS_PIN
 
-
 #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256
-
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4  
 
 #define USE_ESC_SENSOR
-
-
-
-
-
 
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_NONE
 
 #define USE_ADC
-
 #define VBAT_ADC_PIN                PA4
 #define CURRENT_METER_ADC_PIN       PB2
 #define ADC_INSTANCE                ADC2
 #define ADC24_DMA_REMAP
-
-
 
 #define TRANSPONDER
 #define REDUCE_TRANSPONDER_CURRENT_DRAW_WHEN_USB_CABLE_PRESENT
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
-
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
-
 
 #define DEFAULT_FEATURES        ( FEATURE_TELEMETRY | FEATURE_LED_STRIP | FEATURE_OSD)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
@@ -176,13 +139,7 @@
 #define TELEMETRY_UART          SERIAL_PORT_USART3
 #define SERIALRX_UART           SERIAL_PORT_USART2
 
-
-
-
-
 #define SPEKTRUM_BIND_PIN       UART3_RX_PIN
-
-
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
