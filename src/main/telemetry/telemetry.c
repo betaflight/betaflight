@@ -56,9 +56,7 @@
 
 PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
 
-#ifndef TELEMETRY_DEFAULT_INVERSION
 #define TELEMETRY_DEFAULT_INVERSION 1
-#endif
 
 PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
     .telemetry_inversion = TELEMETRY_DEFAULT_INVERSION,
