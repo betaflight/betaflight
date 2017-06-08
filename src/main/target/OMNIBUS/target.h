@@ -21,8 +21,6 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-#define LED0                    PB3
-
 #define BEEPER                  PC15
 #define BEEPER_INVERTED
 
@@ -117,6 +115,10 @@
 #define SPI2_SCK_PIN            PB13
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
+
+//#define USE_RX_SPI
+#define RX_SPI_INSTANCE SPI2
+#define RX_NSS_PIN PB3
 
 #define USE_SDCARD
 #define USE_SDCARD_SPI2

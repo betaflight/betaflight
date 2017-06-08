@@ -44,10 +44,20 @@
 #define BMP280_OVERSAMP_8X               (0x04)
 #define BMP280_OVERSAMP_16X              (0x05)
 
+#define BMP280_FILTER_COEFF_OFF               (0x00)
+#define BMP280_FILTER_COEFF_2                 (0x01)
+#define BMP280_FILTER_COEFF_4                 (0x02)
+#define BMP280_FILTER_COEFF_8                 (0x03)
+#define BMP280_FILTER_COEFF_16                (0x04)
+
+
 // configure pressure and temperature oversampling, forced sampling mode
 #define BMP280_PRESSURE_OSR              (BMP280_OVERSAMP_8X)
 #define BMP280_TEMPERATURE_OSR           (BMP280_OVERSAMP_1X)
 #define BMP280_MODE                      (BMP280_PRESSURE_OSR << 2 | BMP280_TEMPERATURE_OSR << 5 | BMP280_FORCED_MODE)
+
+//configure IIR pressure filter
+#define BMP280_FILTER                    (BMP280_FILTER_COEFF_8 << 2)
 
 #define T_INIT_MAX                       (20)
 // 20/16 = 1.25 ms

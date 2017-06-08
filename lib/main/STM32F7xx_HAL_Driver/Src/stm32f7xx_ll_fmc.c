@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_ll_fmc.c
   * @author  MCD Application Team
-  * @version V1.1.2
-  * @date    23-September-2016 
+  * @version V1.2.2
+  * @date    14-April-2017
   * @brief   FMC Low Layer HAL module driver.
   *    
   *          This file provides firmware functions to manage the following 
@@ -46,7 +46,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:

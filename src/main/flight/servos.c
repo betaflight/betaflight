@@ -17,7 +17,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "platform.h"
@@ -28,37 +27,31 @@
 #include "build/build_config.h"
 
 #include "common/axis.h"
-#include "common/maths.h"
 #include "common/filter.h"
+#include "common/maths.h"
 
-#include "config/feature.h"
 #include "config/config_reset.h"
+#include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
 #include "drivers/pwm_output.h"
-#include "drivers/pwm_mapping.h"
 #include "drivers/time.h"
-
-#include "io/gimbal.h"
-
-#include "navigation/navigation.h"
-
-#include "rx/rx.h"
-
-#include "sensors/sensors.h"
-#include "sensors/acceleration.h"
-#include "sensors/gyro.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "flight/mixer.h"
-#include "flight/servos.h"
-#include "flight/failsafe.h"
-#include "flight/pid.h"
 #include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
+#include "flight/servos.h"
+
+#include "io/gimbal.h"
+
+#include "rx/rx.h"
+
+#include "sensors/gyro.h"
 
 extern const mixer_t * findMixer(mixerMode_e mixerMode);
 
@@ -89,6 +82,9 @@ void pgResetFn_servoParams(servoParam_t *instance)
     }
 }
 
+// no template required since default is zero
+PG_REGISTER(gimbalConfig_t, gimbalConfig, PG_GIMBAL_CONFIG, 0);
+
 int16_t servo[MAX_SUPPORTED_SERVOS];
 
 static uint8_t servoRuleCount = 0;
@@ -99,7 +95,7 @@ static uint8_t mixerUsesServos;
 static uint8_t minServoIndex;
 static uint8_t maxServoIndex;
 
-static biquadFilter_t servoFitlerState[MAX_SUPPORTED_SERVOS];
+static biquadFilter_t servoFilter[MAX_SUPPORTED_SERVOS];
 static bool servoFilterIsSet;
 
 #define COUNT_SERVO_RULES(rules) (sizeof(rules) / sizeof(servoMixer_t))
@@ -161,10 +157,8 @@ const mixerRules_t servoMixers[] = {
     { 0, SERVO_RUDDER, SERVO_RUDDER, NULL },                // MULTITYPE_CUSTOM_TRI
 };
 
-// no template required since default is zero
-PG_REGISTER(gimbalConfig_t, gimbalConfig, PG_GIMBAL_CONFIG, 0);
-
-int16_t getFlaperonDirection(uint8_t servoPin) {
+int16_t getFlaperonDirection(uint8_t servoPin)
+{
     if (servoPin == SERVO_FLAPPERON_2) {
         return -1;
     } else {
@@ -286,9 +280,7 @@ STATIC_UNIT_TESTED void forwardAuxChannelsToServos(uint8_t firstServoIndex)
 {
     // start forwarding from this channel
     uint8_t channelOffset = AUX1;
-
-    int servoOffset;
-    for (servoOffset = 0; servoOffset < MAX_AUX_CHANNEL_COUNT && channelOffset < MAX_SUPPORTED_RC_CHANNEL_COUNT; servoOffset++) {
+    for (int servoOffset = 0; servoOffset < MAX_AUX_CHANNEL_COUNT && channelOffset < MAX_SUPPORTED_RC_CHANNEL_COUNT; servoOffset++) {
         pwmWriteServo(firstServoIndex + servoOffset, rcData[channelOffset++]);
     }
 }
@@ -299,14 +291,14 @@ static void filterServos(void)
         // Initialize servo lowpass filter (servos are calculated at looptime rate)
         if (!servoFilterIsSet) {
             for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-                biquadFilterInitLPF(&servoFitlerState[i], servoConfig()->servo_lowpass_freq, gyro.targetLooptime);
+                biquadFilterInitLPF(&servoFilter[i], servoConfig()->servo_lowpass_freq, gyro.targetLooptime);
             }
             servoFilterIsSet = true;
         }
 
         for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             // Apply servo lowpass filter and do sanity cheching
-            servo[i] = (int16_t) biquadFilterApply(&servoFitlerState[i], (float)servo[i]);
+            servo[i] = (int16_t) biquadFilterApply(&servoFilter[i], (float)servo[i]);
         }
     }
 

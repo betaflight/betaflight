@@ -29,7 +29,7 @@ From right to left when looking at the socket from the edge of the board.
 | 1   | Ground         |                                  |
 | 2   | +5V            |                                  |
 | 3   | RX_PPM         | Enable `feature RX_PPM`          | 
-| 4   | unused         |                                  | 
+| 4   | AIRSPEED       | Airspeed sensor (3.3V max)       | 
 | 5   | USART2 TX      |                                  | 
 | 6   | USART2 RX      |                                  | 
 | 7   | SS1 RX         | Enable `feature SOFT_SERIAL`     |

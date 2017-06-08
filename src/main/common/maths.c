@@ -97,6 +97,15 @@ float acos_approx(float x)
 }
 #endif
 
+int gcd(int num, int denom)
+{
+    if (denom == 0) {
+        return num;
+    }
+
+    return gcd(denom, num % denom);
+}
+
 int32_t wrap_18000(int32_t angle)
 {
     if (angle > 18000)

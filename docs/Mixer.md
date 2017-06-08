@@ -120,7 +120,7 @@ For example, `smix 0 2 0 100 0 0 100` will assign Stabilised Roll to the third p
 | 11 | RC AUX 4 |
 | 12 | GIMBAL PITCH |
 | 13 | GIMBAL ROLL |
-| 13 | FEATURE FLAPS |
+| 14 | FEATURE FLAPS |
 
 | id |  Servo Slot Optional Setup |
 |----|--------------|
@@ -215,31 +215,66 @@ smix reverse 5 2 r
 ### Example 4: Custom Airplane with Differential Thrust
 Here is an example of a custom twin engine plane with [Differential Thrust](http://rcvehicles.about.com/od/rcairplanes/ss/RCAirplaneBasic.htm#step8)
 Motors take the first 2 pins, the servos take pins as indicated in the [Servo slot] chart above.
-Settings bellow have motor yaw influence at "0.3", you can change this nuber to have more or less differential thrust over the two motors.
+Settings bellow have motor yaw influence at "0.3", you can change this number to have more or less differential thrust over the two motors.
 Note: You can look at the Motors tab in [INAV Cofigurator](https://chrome.google.com/webstore/detail/inav-configurator/fmaidjmgkdkpafmbnmigkpdnpdhopgel) to see motor and servo outputs.
 
 | Pins | Outputs          |
 |------|------------------|
 | 1    | Left Engine      |
 | 2    | Right Engine     |
-| 3    | [EMPTY]          |
+| 3    | Pitch / Elevator |
 | 4    | Roll / Aileron   |
 | 5    | Roll / Aileron   |
 | 6    | Yaw / Rudder     |
-| 7    | Pitch / Elevator |
+| 7    | [EMPTY]          |
 | 8    | [EMPTY]          |
 
 ```
 mixer CUSTOMAIRPLANE
 mmix reset
-mmix 0 1.0 0.0 0.0 0.3  # Left Engine
+mmix 0 1.0 0.0 0.0 0.3   # Left Engine
 mmix 1 1.0 0.0 0.0 -0.3  # Right Engine
 
 smix reset
 # Rule	Servo	Source	Rate	Speed	Min	Max
 smix 0 3 0 100 0 0 100  # Roll / Aileron
 smix 1 4 0 100 0 0 100  # Roll / Aileron
-smix 3 5 2 100 0 0 100  # Yaw / Rudder
-smix 2 2 1 100 0 0 100  # Pitch / Elevator
+smix 2 5 2 100 0 0 100  # Yaw / Rudder
+smix 3 2 1 100 0 0 100  # Pitch / Elevator
+
+```
+### Example 5: Custom Airplane with Flaps
+Here is an example of a custom single engine plane with flaps: (https://hobbyking.com/en_us/orange-grey-tundra-color.html) and is an easy model to setup using the settings below. This custom mix assumes left and right ailerons are wired together to use the same output but actuate in reverse. Doing so allows you to conserve output pins so that boards like the Omnibus or SP Racing F3 EVO can include flaps output using only 6 pins total. (Currently, motors always take the first 2 pins even if you use smix to set pin #2.)
+Note: You can look at the Motors tab in [INAV Cofigurator] to see motor and servo outputs.
+
+| Pins | Outputs          |
+|------|------------------|
+| 1    | Main Engine      |
+| 2    | [EMPTY]          |
+| 3    | Pitch / Elevator |
+| 4    | Roll / Aileron   |
+| 5    | Flaps            |
+| 6    | Yaw / Rudder     |
+| 7    | [EMPTY]          |
+| 8    | [EMPTY]          |
+
+```
+# mmix
+mmix load customairplane
+mmix reset
+mmix 0  1.000  0.000  0.000  0.000 # Pin 1
+
+# smix
+smix load customairplane
+smix reset
+smix 0 2 1 100 0 0 100 # Pitch / Stab, Pin 3
+smix 1 2 5 100 0 0 100 # Pitch / RC, Pin 3
+smix 2 3 0 100 0 0 100 # Roll / Stab, Pin 4
+smix 3 3 4 100 0 0 100 # Roll / RC, Pin 4
+smix 4 4 9 100 0 0 100 # RC Aux 2 Flaps, Pin 5
+smix 5 5 2 100 0 0 100 # Yaw / Stab, Pin 6
+smix reverse 3 0 r # REVERSE Stab Roll
+smix reverse 3 4 r # REVERSE RC Roll
+save
 
 ```

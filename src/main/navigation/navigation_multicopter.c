@@ -58,27 +58,6 @@ static int16_t altHoldThrottleRCZero = 1500;
 static pt1Filter_t altholdThrottleFilterState;
 static bool prepareForTakeoffOnReset = false;
 
-/* Calculate global altitude setpoint based on surface setpoint */
-static void updateSurfaceTrackingAltitudeSetpoint(timeDelta_t deltaMicros)
-{
-    /* If we have a surface offset target and a valid surface offset reading - recalculate altitude target */
-    if (posControl.flags.isTerrainFollowEnabled && posControl.desiredState.surface >= 0) {
-        if (posControl.flags.hasValidSurfaceSensor) {
-            // We better overshoot a little bit than undershoot
-            const float targetAltitudeError = navPidApply2(&posControl.pids.surface, posControl.desiredState.surface, posControl.actualState.surface, US2S(deltaMicros), -35.0f, +35.0f, 0);
-            posControl.desiredState.pos.V.Z = posControl.actualState.pos.V.Z + targetAltitudeError;
-        }
-        else {
-            // TODO: We are possible above valid range, we now descend down to attempt to get back within range
-            updateAltitudeTargetFromClimbRate(-50.0f, CLIMB_RATE_KEEP_SURFACE_TARGET);
-        }
-    }
-
-#if defined(NAV_BLACKBOX)
-    navTargetPosition[Z] = constrain(lrintf(posControl.desiredState.pos.V.Z), -32678, 32767);
-#endif
-}
-
 // Position to velocity controller for Z axis
 static void updateAltitudeVelocityController_MC(timeDelta_t deltaMicros)
 {
@@ -137,14 +116,14 @@ bool adjustMulticopterAltitudeFromRCInput(void)
             rcClimbRate = rcThrottleAdjustment * navConfig()->general.max_manual_climb_rate / (altHoldThrottleRCZero - motorConfig()->minthrottle - rcControlsConfig()->alt_hold_deadband);
         }
 
-        updateAltitudeTargetFromClimbRate(rcClimbRate, CLIMB_RATE_UPDATE_SURFACE_TARGET);
+        updateClimbRateToAltitudeController(rcClimbRate, ROC_TO_ALT_NORMAL);
 
         return true;
     }
     else {
         // Adjusting finished - reset desired position to stay exactly where pilot released the stick
         if (posControl.flags.isAdjustingAltitude) {
-            updateAltitudeTargetFromClimbRate(0, CLIMB_RATE_UPDATE_SURFACE_TARGET);
+            updateClimbRateToAltitudeController(0, ROC_TO_ALT_RESET);
         }
 
         return false;
@@ -188,7 +167,7 @@ void resetMulticopterAltitudeController(void)
     if (prepareForTakeoffOnReset) {
         /* If we are preparing for takeoff - start with lowset possible climb rate, adjust alt target and make sure throttle doesn't jump */
         posControl.desiredState.vel.V.Z = -navConfig()->general.max_manual_climb_rate;
-        updateAltitudeTargetFromClimbRate(-navConfig()->general.max_manual_climb_rate, CLIMB_RATE_UPDATE_SURFACE_TARGET);
+        posControl.desiredState.pos.V.Z = posControl.actualState.pos.V.Z - (navConfig()->general.max_manual_climb_rate / posControl.pids.pos[Z].param.kP);
         posControl.pids.vel[Z].integrator = -500.0f;
         pt1FilterReset(&altholdThrottleFilterState, -500.0f);
         prepareForTakeoffOnReset = false;
@@ -222,7 +201,6 @@ static void applyMulticopterAltitudeController(timeUs_t currentTimeUs)
 
         // Check if last correction was too log ago - ignore this update
         if (deltaMicrosPositionUpdate < HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
-            updateSurfaceTrackingAltitudeSetpoint(deltaMicrosPositionUpdate);
             updateAltitudeVelocityController_MC(deltaMicrosPositionUpdate);
             updateAltitudeThrottleController_MC(deltaMicrosPositionUpdate);
         }
@@ -284,8 +262,8 @@ bool adjustMulticopterPositionFromRCInput(void)
     if (rcPitchAdjustment || rcRollAdjustment) {
         // If mode is GPS_CRUISE, move target position, otherwise POS controller will passthru the RC input to ANGLE PID
         if (navConfig()->general.flags.user_control_mode == NAV_GPS_CRUISE) {
-            const float rcVelX = rcPitchAdjustment * navConfig()->general.max_manual_speed / 500;
-            const float rcVelY = rcRollAdjustment * navConfig()->general.max_manual_speed / 500;
+            const float rcVelX = rcPitchAdjustment * navConfig()->general.max_manual_speed / (500 - rcControlsConfig()->pos_hold_deadband);
+            const float rcVelY = rcRollAdjustment * navConfig()->general.max_manual_speed / (500 - rcControlsConfig()->pos_hold_deadband);
 
             // Rotate these velocities from body frame to to earth frame
             const float neuVelX = rcVelX * posControl.actualState.cosYaw - rcVelY * posControl.actualState.sinYaw;
@@ -579,7 +557,7 @@ static void applyMulticopterEmergencyLandingController(timeUs_t currentTimeUs)
 
             // Check if last correction was too log ago - ignore this update
             if (deltaMicrosPositionUpdate < HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
-                updateAltitudeTargetFromClimbRate(-1.0f * navConfig()->general.emerg_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);
+                updateClimbRateToAltitudeController(-1.0f * navConfig()->general.emerg_descent_rate, ROC_TO_ALT_NORMAL);
                 updateAltitudeVelocityController_MC(deltaMicrosPositionUpdate);
                 updateAltitudeThrottleController_MC(deltaMicrosPositionUpdate);
             }

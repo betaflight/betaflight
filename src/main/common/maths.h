@@ -132,6 +132,7 @@ void sensorCalibrationPushSampleForScaleCalculation(sensorCalibrationState_t * s
 void sensorCalibrationSolveForOffset(sensorCalibrationState_t * state, float result[3]);
 void sensorCalibrationSolveForScale(sensorCalibrationState_t * state, float result[3]);
 
+int gcd(int num, int denom);
 int32_t applyDeadband(int32_t value, int32_t deadband);
 
 int constrain(int amt, int low, int high);

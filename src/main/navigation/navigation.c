@@ -66,7 +66,7 @@ PG_DECLARE_ARRAY(navWaypoint_t, NAV_MAX_WAYPOINTS, nonVolatileWaypointList);
 PG_REGISTER_ARRAY(navWaypoint_t, NAV_MAX_WAYPOINTS, nonVolatileWaypointList, PG_WAYPOINT_MISSION_STORAGE, 0);
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(navConfig_t, navConfig, PG_NAV_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(navConfig_t, navConfig, PG_NAV_CONFIG, 1);
 
 PG_RESET_TEMPLATE(navConfig_t, navConfig,
     .general = {
@@ -127,7 +127,8 @@ PG_RESET_TEMPLATE(navConfig_t, navConfig,
         .launch_motor_timer = 500,             // ms
         .launch_motor_spinup_time = 100,       // ms, time to gredually increase throttle from idle to launch
         .launch_timeout = 5000,                // ms, timeout for launch procedure
-        .launch_climb_angle = 18               // 18 degrees
+        .launch_climb_angle = 18,              // 18 degrees
+        .launch_max_angle = 45                 // 45 deg
     }
 );
 
@@ -989,12 +990,13 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_LANDING(navigationF
         }
 
         if (navConfig()->general.flags.rth_allow_landing) {
+            float descentVelLimited = 0;
+
             // A safeguard - if sonar is available and it is reading < 50cm altitude - drop to low descend speed
             if (posControl.flags.hasValidSurfaceSensor && posControl.actualState.surface < 50.0f) {
                 // land_descent_rate == 200 : descend speed = 30 cm/s, gentle touchdown
                 // Do not allow descent velocity slower than -30cm/s so the landing detector works.
-                float descentVelLimited = MIN(-0.15f * navConfig()->general.land_descent_rate, -30.0f);
-                updateAltitudeTargetFromClimbRate(descentVelLimited, CLIMB_RATE_RESET_SURFACE_TARGET);
+                descentVelLimited = MIN(-0.15f * navConfig()->general.land_descent_rate, -30.0f);
             }
             else {
                 // Ramp down descent velocity from 100% at maxAlt altitude to 25% from minAlt to 0cm.
@@ -1004,9 +1006,10 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_LANDING(navigationF
                 descentVelScaling = constrainf(descentVelScaling, 0.25f, 1.0f);
 
                 // Do not allow descent velocity slower than -50cm/s so the landing detector works.
-                float descentVelLimited = MIN(-descentVelScaling * navConfig()->general.land_descent_rate, -50.0f);
-                updateAltitudeTargetFromClimbRate(descentVelLimited, CLIMB_RATE_RESET_SURFACE_TARGET);
+                descentVelLimited = MIN(-descentVelScaling * navConfig()->general.land_descent_rate, -50.0f);
             }
+
+            updateClimbRateToAltitudeController(descentVelLimited, ROC_TO_ALT_NORMAL);
         }
 
         return NAV_FSM_EVENT_NONE;
@@ -1028,7 +1031,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_FINISHED(navigation
 {
     // Stay in this state
     UNUSED(previousState);
-    updateAltitudeTargetFromClimbRate(-0.3f * navConfig()->general.land_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);  // FIXME
+    updateClimbRateToAltitudeController(-0.3f * navConfig()->general.land_descent_rate, ROC_TO_ALT_NORMAL);  // FIXME
     return NAV_FSM_EVENT_NONE;
 }
 
@@ -1239,9 +1242,9 @@ static navigationFSMState_t navSetNewFSMState(navigationFSMState_t newState)
 
 static void navProcessFSMEvents(navigationFSMEvent_t injectedEvent)
 {
-    const uint32_t currentMillis = millis();
+    const timeMs_t currentMillis = millis();
     navigationFSMState_t previousState;
-    static uint32_t lastStateProcessTime = 0;
+    static timeMs_t lastStateProcessTime = 0;
 
     /* If timeout event defined and timeout reached - switch state */
     if ((navFSM[posControl.navState].timeoutMs > 0) && (navFSM[posControl.navState].onEvent[NAV_FSM_EVENT_TIMEOUT] != NAV_STATE_UNDEFINED) &&
@@ -1801,7 +1804,8 @@ void setDesiredPosition(const t_fp_vector * pos, int32_t yaw, navSetWaypointFlag
 
     // Z-position
     if ((useMask & NAV_POS_UPDATE_Z) != 0) {
-        posControl.desiredState.surface = -1;           // When we directly set altitude target we must reset surface tracking
+        updateClimbRateToAltitudeController(0, ROC_TO_ALT_RESET);   // Reset RoC/RoD -> altitude controller
+        posControl.desiredState.surface = -1;                       // When we directly set altitude target we must reset surface tracking
         posControl.desiredState.pos.V.Z = pos->V.Z;
     }
 
@@ -1816,13 +1820,6 @@ void setDesiredPosition(const t_fp_vector * pos, int32_t yaw, navSetWaypointFlag
     else if ((useMask & NAV_POS_UPDATE_BEARING_TAIL_FIRST) != 0) {
         posControl.desiredState.yaw = wrap_36000(calculateBearingToDestination(pos) - 18000);
     }
-
-#if defined(NAV_BLACKBOX)
-    navTargetPosition[X] = constrain(lrintf(posControl.desiredState.pos.V.X), -32678, 32767);
-    navTargetPosition[Y] = constrain(lrintf(posControl.desiredState.pos.V.Y), -32678, 32767);
-    navTargetPosition[Z] = constrain(lrintf(posControl.desiredState.pos.V.Z), -32678, 32767);
-    navTargetSurface = constrain(lrintf(posControl.desiredState.surface), -32678, 32767);
-#endif
 }
 
 void calculateFarAwayTarget(t_fp_vector * farAwayPos, int32_t yaw, int32_t distance)
@@ -1862,32 +1859,37 @@ bool isLandingDetected(void)
 /*-----------------------------------------------------------
  * Z-position controller
  *-----------------------------------------------------------*/
-void updateAltitudeTargetFromClimbRate(float climbRate, navUpdateAltitudeFromRateMode_e mode)
+void updateClimbRateToAltitudeController(float desiredClimbRate, climbRateToAltitudeControllerMode_e mode)
 {
-    // FIXME: On FIXED_WING and multicopter this should work in a different way
-    // Calculate new altitude target
+    static timeUs_t lastUpdateTimeUs;
+    timeUs_t currentTimeUs = micros();
 
-    /* Move surface tracking setpoint if it is set */
-    if (mode == CLIMB_RATE_RESET_SURFACE_TARGET) {
-        posControl.desiredState.surface = -1;
+    if (mode == ROC_TO_ALT_RESET) {
+        lastUpdateTimeUs = currentTimeUs;
+        posControl.desiredState.pos.V.Z = posControl.actualState.pos.V.Z;
     }
     else {
-        if (posControl.flags.isTerrainFollowEnabled) {
-            if (posControl.flags.hasValidSurfaceSensor && (mode == CLIMB_RATE_UPDATE_SURFACE_TARGET)) {
-                posControl.desiredState.surface = constrainf(posControl.actualState.surface + (climbRate / (posControl.pids.pos[Z].param.kP * posControl.pids.surface.param.kP)), 1.0f, INAV_SURFACE_MAX_DISTANCE);
+        if (STATE(FIXED_WING)) {
+            // Fixed wing climb rate controller is open-loop. We simply move the known altitude target
+            float timeDelta = US2S(currentTimeUs - lastUpdateTimeUs);
+
+            DEBUG_SET(DEBUG_FW_CLIMB_RATE_TO_ALTITUDE, 0, desiredClimbRate);
+            DEBUG_SET(DEBUG_FW_CLIMB_RATE_TO_ALTITUDE, 1, timeDelta * 1000);
+
+            if (timeDelta <= HZ2S(MIN_POSITION_UPDATE_RATE_HZ)) {
+                posControl.desiredState.pos.V.Z += desiredClimbRate * timeDelta;
+                posControl.desiredState.pos.V.Z = constrainf(posControl.desiredState.pos.V.Z,           // FIXME: calculate sanity limits in a smarter way
+                                                             posControl.actualState.pos.V.Z - 500,
+                                                             posControl.actualState.pos.V.Z + 500);
             }
         }
         else {
-            posControl.desiredState.surface = -1;
+            // Multicopter climb-rate control is closed-loop, it's possible to directly calculate desired altitude setpoint to yield the required RoC/RoD
+            posControl.desiredState.pos.V.Z = posControl.actualState.pos.V.Z + (desiredClimbRate / posControl.pids.pos[Z].param.kP);
         }
+
+        lastUpdateTimeUs = currentTimeUs;
     }
-
-    posControl.desiredState.pos.V.Z = posControl.actualState.pos.V.Z + (climbRate / posControl.pids.pos[Z].param.kP);
-
-#if defined(NAV_BLACKBOX)
-    navTargetPosition[Z] = constrain(lrintf(posControl.desiredState.pos.V.Z), -32678, 32767);
-    navTargetSurface = constrain(lrintf(posControl.desiredState.surface), -32678, 32767);
-#endif
 }
 
 static void resetAltitudeController(void)
@@ -1966,11 +1968,6 @@ static bool adjustPositionFromRCInput(void)
     else {
         retValue = adjustMulticopterPositionFromRCInput();
     }
-
-#if defined(NAV_BLACKBOX)
-    navTargetPosition[X] = constrain(lrintf(posControl.desiredState.pos.V.X), -32678, 32767);
-    navTargetPosition[Y] = constrain(lrintf(posControl.desiredState.pos.V.Y), -32678, 32767);
-#endif
 
     return retValue;
 }
@@ -2303,6 +2300,11 @@ void applyWaypointNavigationAndAltitudeHold(void)
     if (posControl.flags.isAdjustingPosition)       navFlags |= (1 << 6);
     if (posControl.flags.isAdjustingAltitude)       navFlags |= (1 << 7);
     if (posControl.flags.isAdjustingHeading)        navFlags |= (1 << 8);
+
+    navTargetPosition[X] = constrain(lrintf(posControl.desiredState.pos.V.X), -32678, 32767);
+    navTargetPosition[Y] = constrain(lrintf(posControl.desiredState.pos.V.Y), -32678, 32767);
+    navTargetPosition[Z] = constrain(lrintf(posControl.desiredState.pos.V.Z), -32678, 32767);
+    navTargetSurface = constrain(lrintf(posControl.desiredState.surface), -32678, 32767);
 #endif
 }
 
@@ -2420,7 +2422,7 @@ bool navigationRequiresThrottleTiltCompensation(void)
 /*-----------------------------------------------------------
  * An indicator that ANGLE mode must be forced per NAV requirement
  *-----------------------------------------------------------*/
-bool naivationRequiresAngleMode(void)
+bool navigationRequiresAngleMode(void)
 {
     const navigationFSMStateFlags_t currentState = navGetStateFlags(posControl.navState);
     return (currentState & NAV_REQUIRE_ANGLE) || ((currentState & NAV_REQUIRE_ANGLE_FW) && STATE(FIXED_WING));
@@ -2429,7 +2431,7 @@ bool naivationRequiresAngleMode(void)
 /*-----------------------------------------------------------
  * An indicator that TURN ASSISTANCE is required for navigation
  *-----------------------------------------------------------*/
-bool naivationRequiresTurnAssistance(void)
+bool navigationRequiresTurnAssistance(void)
 {
     const navigationFSMStateFlags_t currentState = navGetStateFlags(posControl.navState);
     if (STATE(FIXED_WING)) {
@@ -2444,7 +2446,7 @@ bool naivationRequiresTurnAssistance(void)
 /**
  * An indicator that NAV is in charge of heading control (a signal to disable other heading controllers)
  */
-int8_t naivationGetHeadingControlState(void)
+int8_t navigationGetHeadingControlState(void)
 {
     // For airplanes report as manual heading control
     if (STATE(FIXED_WING)) {
@@ -2465,7 +2467,7 @@ int8_t naivationGetHeadingControlState(void)
     }
 }
 
-bool naivationBlockArming(void)
+bool navigationBlockArming(void)
 {
     const bool navBoxModesEnabled = IS_RC_MODE_ACTIVE(BOXNAVRTH) || IS_RC_MODE_ACTIVE(BOXNAVWP) || IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD);
     const bool navLaunchComboModesEnabled = IS_RC_MODE_ACTIVE(BOXNAVLAUNCH) && (IS_RC_MODE_ACTIVE(BOXNAVRTH) || IS_RC_MODE_ACTIVE(BOXNAVWP));

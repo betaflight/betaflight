@@ -96,10 +96,6 @@
 #define BIND_PIN                        PC5
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
-#undef GPS_PROTO_NMEA
-#undef GPS_PROTO_UBLOX
-#undef GPS_PROTO_I2C_NAV
-#undef GPS_PROTO_NAZA
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define DEFAULT_FEATURES        FEATURE_VBAT

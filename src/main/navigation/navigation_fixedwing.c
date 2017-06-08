@@ -83,10 +83,14 @@ bool adjustFixedWingAltitudeFromRCInput(void)
     if (rcAdjustment) {
         // set velocity proportional to stick movement
         float rcClimbRate = -rcAdjustment * navConfig()->general.max_manual_climb_rate / (500.0f - rcControlsConfig()->alt_hold_deadband);
-        updateAltitudeTargetFromClimbRate(rcClimbRate, CLIMB_RATE_RESET_SURFACE_TARGET);
+        updateClimbRateToAltitudeController(rcClimbRate, ROC_TO_ALT_NORMAL);
         return true;
     }
     else {
+        // Adjusting finished - reset desired position to stay exactly where pilot released the stick
+        if (posControl.flags.isAdjustingAltitude) {
+            updateClimbRateToAltitudeController(0, ROC_TO_ALT_RESET);
+        }
         return false;
     }
 }

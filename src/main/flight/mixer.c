@@ -17,10 +17,10 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "platform.h"
+
 #include "build/debug.h"
 
 #include "common/axis.h"
@@ -32,27 +32,22 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/time.h"
 #include "drivers/pwm_output.h"
 #include "drivers/pwm_mapping.h"
-
-#include "navigation/navigation.h"
-
-#include "rx/rx.h"
-
-#include "sensors/sensors.h"
-#include "sensors/acceleration.h"
-#include "sensors/gyro.h"
+#include "drivers/time.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "flight/mixer.h"
-#include "flight/servos.h"
 #include "flight/failsafe.h"
-#include "flight/pid.h"
 #include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
+#include "flight/servos.h"
+
+#include "rx/rx.h"
+
 
 //#define MIXER_DEBUG
 
@@ -337,8 +332,6 @@ void mixerUpdateStateFlags(void)
 
 void mixerUsePWMIOConfiguration(void)
 {
-    int i;
-
     motorCount = 0;
 
     const mixerMode_e currentMixerMode = mixerConfig()->mixerMode;
@@ -346,7 +339,7 @@ void mixerUsePWMIOConfiguration(void)
 
     if (currentMixerMode == MIXER_CUSTOM || currentMixerMode == MIXER_CUSTOM_TRI || currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
         // load custom mixer into currentMixer
-        for (i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
+        for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
             // check if done
             if (customMotorMixer(i)->throttle == 0.0f)
                 break;
@@ -357,15 +350,16 @@ void mixerUsePWMIOConfiguration(void)
         motorCount = MIN(mixer->motorCount, pwmGetOutputConfiguration()->motorCount);
         // copy motor-based mixer
         if (mixer->motor) {
-            for (i = 0; i < motorCount; i++)
+            for (int i = 0; i < motorCount; i++) {
                 currentMixer[i] = mixer->motor[i];
+            }
         }
     }
 
     // in 3D mode, mixer gain has to be halved
     if (feature(FEATURE_3D)) {
         if (motorCount > 1) {
-            for (i = 0; i < motorCount; i++) {
+            for (int i = 0; i < motorCount; i++) {
                 currentMixer[i].pitch *= 0.5f;
                 currentMixer[i].roll *= 0.5f;
                 currentMixer[i].yaw *= 0.5f;
@@ -379,8 +373,7 @@ void mixerUsePWMIOConfiguration(void)
 void mixerUsePWMIOConfiguration(void)
 {
     motorCount = 4;
-    int i;
-    for (i = 0; i < motorCount; i++) {
+    for (int i = 0; i < motorCount; i++) {
         currentMixer[i] = mixerQuadX[i];
     }
     mixerResetDisarmedMotors();
@@ -391,19 +384,19 @@ void mixerUsePWMIOConfiguration(void)
 #ifndef USE_QUAD_MIXER_ONLY
 void mixerLoadMix(int index, motorMixer_t *customMixers)
 {
-    int i;
-
     // we're 1-based
     index++;
     // clear existing
-    for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++)
+    for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
         customMixers[i].throttle = 0.0f;
+    }
 
     // do we have anything here to begin with?
     const mixer_t * mixer = findMixer(index);
     if (mixer->motor != NULL) {
-        for (i = 0; i < mixer->motorCount; i++)
+        for (int i = 0; i < mixer->motorCount; i++) {
             customMixers[i] = mixer->motor[i];
+        }
     }
 }
 
@@ -411,27 +404,25 @@ void mixerLoadMix(int index, motorMixer_t *customMixers)
 
 void mixerResetDisarmedMotors(void)
 {
-    int i;
     // set disarmed motor values
-    for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
+    for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
         motor_disarmed[i] = feature(FEATURE_3D) ? flight3DConfig()->neutral3d : motorConfig()->mincommand;
+    }
 }
 
 void writeMotors(void)
 {
-    int i;
-
-    for (i = 0; i < motorCount; i++)
+    for (int i = 0; i < motorCount; i++) {
         pwmWriteMotor(i, motor[i]);
+    }
 }
 
 void writeAllMotors(int16_t mc)
 {
-    int i;
-
     // Sends commands to all motors
-    for (i = 0; i < motorCount; i++)
+    for (int i = 0; i < motorCount; i++) {
         motor[i] = mc;
+    }
     writeMotors();
 }
 
@@ -450,8 +441,6 @@ void stopPwmAllMotors()
 void mixTable(void)
 {
     int16_t input[3];   // RPY, range [-500:+500]
-    int i;
-
     // Allow direct stick input to motors in passthrough mode on airplanes
     if (STATE(FIXED_WING) && FLIGHT_MODE(PASSTHRU_MODE)) {
         // Direct passthru from RX
@@ -476,7 +465,7 @@ void mixTable(void)
     int16_t rpyMixMin = 0;
 
     // motors for non-servo mixes
-    for (i = 0; i < motorCount; i++) {
+    for (int i = 0; i < motorCount; i++) {
         rpyMix[i] =
             input[PITCH] * currentMixer[i].pitch +
             input[ROLL] * currentMixer[i].roll +
@@ -523,7 +512,7 @@ void mixTable(void)
         motorLimitReached = true;
         float mixReduction = (float)throttleRange / rpyMixRange;
 
-        for (i = 0; i < motorCount; i++) {
+        for (int i = 0; i < motorCount; i++) {
             rpyMix[i] =  mixReduction  * rpyMix[i];
         }
 
@@ -539,7 +528,7 @@ void mixTable(void)
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
     if (ARMING_FLAG(ARMED)) {
-        for (i = 0; i < motorCount; i++) {
+        for (int i = 0; i < motorCount; i++) {
             motor[i] = rpyMix[i] + constrain(throttleCommand * currentMixer[i].throttle, throttleMin, throttleMax);
 
             if (failsafeIsActive()) {
@@ -570,7 +559,7 @@ void mixTable(void)
             }
         }
     } else {
-        for (i = 0; i < motorCount; i++) {
+        for (int i = 0; i < motorCount; i++) {
             motor[i] = motor_disarmed[i];
         }
     }
