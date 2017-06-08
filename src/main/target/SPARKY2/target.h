@@ -89,10 +89,7 @@
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6 //inverter
 
-#define USE_SOFTSERIAL1
-#define USE_SOFTSERIAL2
-
-#define SERIAL_PORT_COUNT 6
+#define SERIAL_PORT_COUNT 4
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
@@ -116,14 +113,14 @@
 #define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_ADC
-#define VBAT_ADC_PIN            PC3
+#define VBAT_ADC_PIN            PC1
 #define CURRENT_METER_ADC_PIN   PC2
 
 #undef LED_STRIP
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
-#define SERIALRX_UART           SERIAL_PORT_USART3
+#define SERIALRX_UART           SERIAL_PORT_USART6
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
