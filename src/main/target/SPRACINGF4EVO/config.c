@@ -37,7 +37,7 @@ void targetConfiguration(void)
     rxConfigMutable()->sbus_inversion = 1;
     serialConfigMutable()->portConfigs[1].functionMask = FUNCTION_MSP; // So SPRacingF3OSD users don't have to change anything.
     serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(TELEMETRY_UART)].functionMask = FUNCTION_TELEMETRY_SMARTPORT;
-    telemetryConfigMutable()->telemetry_inversion = 0;
+    telemetryConfigMutable()->tlm_frsky_inversion = false;
     telemetryConfigMutable()->halfDuplex = 0;
 }
 #endif
