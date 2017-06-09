@@ -436,9 +436,9 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             float gyroRateFiltered = dtermNotchFilterApplyFn(dtermFilterNotch[axis], gyroRate);
             gyroRateFiltered = dtermLpfApplyFn(dtermFilterLpf[axis], gyroRateFiltered);
 
-            float dynC = dtermSetpointWeight;
-            if (pidProfile->setpointRelaxRatio < 100) {
-                dynC *= MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f);
+            float dynC = 0;
+            if ( (pidProfile->setpointRelaxRatio < 100) && (!flightModeFlags) ) {
+                dynC = dtermSetpointWeight * MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f);
             }
             const float rD = dynC * currentPidSetpoint - gyroRateFiltered;    // cr - y
             // Divide rate change by dT to get differential (ie dr/dt)

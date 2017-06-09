@@ -189,7 +189,7 @@ void processRcCommand(void)
         }
     }
 
-    if (rxConfig()->rcInterpolation || flightModeFlags) {
+    if (rxConfig()->rcInterpolation) {
          // Set RC refresh rate for sampling and channels to filter
         switch(rxConfig()->rcInterpolation) {
             case(RC_SMOOTHING_AUTO):
