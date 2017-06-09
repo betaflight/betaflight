@@ -556,7 +556,7 @@ static uint8_t getHeadingHoldState()
     }
     else
 #endif
-    if (ABS(rcCommand[YAW]) < 15 && FLIGHT_MODE(HEADING_MODE)) {
+    if (ABS(rcCommand[YAW]) == 0 && FLIGHT_MODE(HEADING_MODE)) {
         return HEADING_HOLD_ENABLED;
     } else {
         return HEADING_HOLD_UPDATE_HEADING;
