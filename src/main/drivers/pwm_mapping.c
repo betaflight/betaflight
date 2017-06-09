@@ -213,33 +213,15 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
-#if defined(COLIBRI_RACE) || defined(LUX_RACE)
-            // remap PWM1+2 as servos
-            if ((timerIndex == PWM6 || timerIndex == PWM7 || timerIndex == PWM8 || timerIndex == PWM9) && timerHardwarePtr->tim == TIM2)
-                type = MAP_TO_SERVO_OUTPUT;
-#endif
-
 #if defined(SPARKY)
             // remap PWM1+2 as servos
             if ((timerIndex == PWM1 || timerIndex == PWM2) && timerHardwarePtr->tim == TIM15)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
-#if defined(FALCORE)
-            // remap PWM5+6 as servos
-            if ((timerIndex == PWM5 || timerIndex == PWM6) && timerHardwarePtr->tim == TIM3)
-                type = MAP_TO_SERVO_OUTPUT;
-#endif
-
 #if defined(SPRACINGF3MINI)
             // remap PWM6+7 as servos
             if ((timerIndex == PWM6 || timerIndex == PWM7) && timerHardwarePtr->tim == TIM15)
-                type = MAP_TO_SERVO_OUTPUT;
-#endif
-
-#if defined(OMNIBUS)
-            // remap PWM2 (OUT1) as servo
-            if (timerIndex == PWM2 && timerHardwarePtr->tim == TIM8)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
@@ -260,12 +242,6 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
             if ((timerIndex == PWM8 || timerIndex == PWM9) && timerHardwarePtr->tim == TIM3) {
                 type = MAP_TO_SERVO_OUTPUT;
             }
-#endif
-
-#if defined(MOTOLAB)
-            // remap PWM 7+8 as servos
-            if (timerIndex == PWM7 || timerIndex == PWM8)
-                type = MAP_TO_SERVO_OUTPUT;
 #endif
 
 #if defined(SINGULARITY)
