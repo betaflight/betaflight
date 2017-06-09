@@ -119,6 +119,7 @@ static const char * const flightControllerIdentifier = CLEANFLIGHT_IDENTIFIER; /
 static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 #ifndef USE_OSD_SLAVE
+// permanent IDs must uniquely identify BOX meaning, DO NOT REUSE THEM!
 static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXARM, "ARM", 0 },
     { BOXANGLE, "ANGLE", 1 },
