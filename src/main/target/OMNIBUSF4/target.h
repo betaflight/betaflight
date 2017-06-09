@@ -30,7 +30,18 @@
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 
-#define INVERTER_PIN_UART1      PC0 // PC0 used as inverter select GPIO
+// Inverter control pins
+// - PC0 has never been used as inverter control on any of the genuine OMNIBUS F4 boards, but leave it as some clones actually implemented it.
+// - PC8 is only used on OMNIBUS F4 V3, and actually is CH6 input.
+// It conflicts with softserial, but should not be a problem if softserial
+// is not turned on and used for some purpose.
+// I Hope that a V3 user come to notice that they can't use the softserial
+// before turning it on and assign some function; V3 does not have CH6 (nor CH5)
+// pads after all ;)
+
+#define INVERTER_PIN_UART1      PC0 // PC0 has never been used as inverter control on genuine OMNIBUS F4 variants
+
+#define INVERTER_PIN_UART6      PC8 // Only for OMNIBUS F4 V3
 
 #define USE_I2C
 #define I2C_DEVICE              (I2CDEV_2)
