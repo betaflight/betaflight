@@ -106,6 +106,9 @@ static const motorMixer_t mixerQuadX[] = {
     { 1.0f,  1.0f, -1.0f, -1.0f },          // FRONT_L
 };
 
+#define DEF_MIXER(_mixerMode, _flyingPlatformType, _motorCount, _useServos, _hasFlaps, _motorMap) \
+    { .mixerMode=_mixerMode, .flyingPlatformType=_flyingPlatformType, .motorCount=_motorCount, .useServos=_useServos, .hasFlaps=_hasFlaps, .motor=_motorMap }
+
 #ifndef USE_QUAD_MIXER_ONLY
 static const motorMixer_t mixerTricopter[] = {
     { 1.0f,  0.0f,  1.333333f,  0.0f },     // REAR
@@ -223,9 +226,6 @@ static const motorMixer_t mixerDualProp[] = {
     { 1.0f,  0.0f,  0.0f, 0.0f },
 };
 
-#define DEF_MIXER(_mixerMode, _flyingPlatformType, _motorCount, _useServos, _hasFlaps, _motorMap) \
-    { .mixerMode=_mixerMode, .flyingPlatformType=_flyingPlatformType, .motorCount=_motorCount, .useServos=_useServos, .hasFlaps=_hasFlaps, .motor=_motorMap }
-
 static const mixer_t mixerTable[] = {
     // motors, use servo, motor mixer
     //         mixerMode                flyingPlatformType   motorCount  useServos   hasFlaps    motorMap
@@ -273,14 +273,21 @@ static const mixer_t mixerTable[] = {
 #endif
 #endif
 };
+#else
+static const mixer_t quadMixerDescriptor = DEF_MIXER( MIXER_QUADX,             PLATFORM_MULTIROTOR, 4,          false,      false,      mixerQuadX );
 #endif // USE_QUAD_MIXER_ONLY
 
 const mixer_t * findMixer(mixerMode_e mixerMode)
 {
+#ifndef USE_QUAD_MIXER_ONLY
     for (unsigned ii = 0; ii < sizeof(mixerTable)/sizeof(mixerTable[0]); ii++) {
         if (mixerTable[ii].mixerMode == mixerMode) 
             return &mixerTable[ii];
     }
+#else
+    if (mixerMode == MIXER_QUADX)
+        return &quadMixerDescriptor;
+#endif
 
     return NULL;
 }

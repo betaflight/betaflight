@@ -176,16 +176,20 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
         // Handle outputs - may override the PWM/PPM inputs
         if (init->flyingPlatformType == PLATFORM_MULTIROTOR) {
             // Multicopter
+#ifdef USE_SERVOS
             if (init->useServoOutputs && (timerHardwarePtr->usageFlags & TIM_USE_MC_SERVO)) {
                 type = MAP_TO_SERVO_OUTPUT;
             }
             else if (init->useChannelForwarding && (timerHardwarePtr->usageFlags & TIM_USE_MC_CHNFW)) {
                 type = MAP_TO_SERVO_OUTPUT;
             }
-            else if (timerHardwarePtr->usageFlags & TIM_USE_MC_MOTOR) {
+            else 
+#endif
+            if (timerHardwarePtr->usageFlags & TIM_USE_MC_MOTOR) {
                 type = MAP_TO_MOTOR_OUTPUT;
             }
         }
+#ifdef USE_SERVOS
         else if (init->flyingPlatformType == PLATFORM_AIRPLANE || init->flyingPlatformType == PLATFORM_HELICOPTER) {
             // Fixed wing or HELI (one/two motors and a lot of servos
             if (timerHardwarePtr->usageFlags & TIM_USE_FW_SERVO) {
@@ -195,6 +199,7 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 type = MAP_TO_MOTOR_OUTPUT;
             }
         }
+#endif
 
         // If timer not mapped - skip
         if (type == MAP_TO_NONE)

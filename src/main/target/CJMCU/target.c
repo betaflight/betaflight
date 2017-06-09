@@ -22,37 +22,6 @@
 #include "drivers/pwm_mapping.h"
 #include "drivers/timer.h"
 
-const uint16_t multiPPM[] = {
-    PWM1  | (MAP_TO_PPM_INPUT << 8), // PPM input
-    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM14 | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM13 | (MAP_TO_MOTOR_OUTPUT << 8),
-    0xFFFF
-};
-
-const uint16_t multiPWM[] = {
-    PWM1  | (MAP_TO_PWM_INPUT << 8),
-    PWM2  | (MAP_TO_PWM_INPUT << 8),
-    PWM3  | (MAP_TO_PWM_INPUT << 8),
-    PWM4  | (MAP_TO_PWM_INPUT << 8),
-    PWM9  | (MAP_TO_PWM_INPUT << 8),
-    PWM10 | (MAP_TO_PWM_INPUT << 8),
-    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM14 | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM13 | (MAP_TO_MOTOR_OUTPUT << 8),
-    0xFFFF
-};
-
-const uint16_t airPPM[] = {
-        0xFFFF
-};
-
-const uint16_t airPWM[] = {
-        0xFFFF
-};
-
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM2, IO_TAG(PA0), TIM_Channel_1, 0, IOCFG_IPD, TIM_USE_PPM | TIM_USE_PWM },          // PWM1 - RC1
     { TIM2, IO_TAG(PA1), TIM_Channel_2, 0, IOCFG_IPD, TIM_USE_PWM },          // PWM2 - RC2
@@ -62,7 +31,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM1, IO_TAG(PA11),TIM_Channel_4, 1, IOCFG_IPD, TIM_USE_PWM },          // PWM10 - OUT2
 
     { TIM3, IO_TAG(PB0), TIM_Channel_3, 0, IOCFG_IPD, TIM_USE_MC_MOTOR },          // PWM7 - RC7
-    { TIM4, IO_TAG(PB9), TIM_Channel_4, 0, IOCFG_IPD, TIM_USE_MC_MOTOR }           // PWM14 - OUT6
+    { TIM4, IO_TAG(PB9), TIM_Channel_4, 0, IOCFG_IPD, TIM_USE_MC_MOTOR },          // PWM14 - OUT6
     { TIM3, IO_TAG(PB1), TIM_Channel_4, 0, IOCFG_IPD, TIM_USE_MC_MOTOR },          // PWM8 - RC8
     { TIM4, IO_TAG(PB8), TIM_Channel_3, 0, IOCFG_IPD, TIM_USE_MC_MOTOR },          // PWM13 - OUT5
 
