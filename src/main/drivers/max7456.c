@@ -435,11 +435,11 @@ void max7456Invert(bool invert)
  * Sets the brighness of black and white pixels.
  *
  * @param black Black brightness (0-3, 0 is darkest)
- * @param white White brightness (0-3, 0 is brightest)
+ * @param white White brightness (0-3, 0 is darkest)
  */
 void max7456Brightness(uint8_t black, uint8_t white)
 {
-    uint8_t reg = (black << 2) | white;
+    uint8_t reg = (black << 2) | (3 - white);
 
     ENABLE_MAX7456;
     for (int i = MAX7456ADD_RB0; i <= MAX7456ADD_RB15; i++) {
