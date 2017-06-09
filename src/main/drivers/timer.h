@@ -73,7 +73,7 @@ typedef struct timerOvrHandlerRec_s {
 typedef struct timerDef_s {
     TIM_TypeDef *TIMx;
     rccPeriphTag_t rcc;
-    uint8_t inputIrq;
+    uint8_t irq;
 } timerDef_t;
 
 typedef enum {

@@ -212,7 +212,7 @@ uint8_t timerInputIrq(TIM_TypeDef *tim)
 {
     for (int i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
         if (timerDefinitions[i].TIMx == tim) {
-            return timerDefinitions[i].inputIrq;
+            return timerDefinitions[i].irq;
         }
     }
     return 0;
