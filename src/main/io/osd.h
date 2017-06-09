@@ -59,6 +59,7 @@ typedef enum {
     OSD_ARMED_TIME,
     OSD_DISARMED,
     OSD_HOME_DIR,
+    OSD_HOME_DIST,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 

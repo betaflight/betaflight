@@ -70,6 +70,7 @@
 #include "fc/runtime_config.h"
 
 #include "flight/altitude.h"
+#include "flight/navigation.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
 
@@ -77,12 +78,8 @@
 
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
-#include "sensors/sensors.h"
-
-#ifdef MAG // For OSD_HOME_DIR
 #include "sensors/compass.h"
-#include "flight/navigation.h"
-#endif
+#include "sensors/sensors.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -145,7 +142,7 @@ PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
 /**
  * Gets the correct altitude symbol for the current unit system
  */
-static char osdGetAltitudeSymbol()
+static char osdGetMetersToSelectedUnitSymbol()
 {
     switch (osdConfig()->units) {
     case OSD_UNIT_IMPERIAL:
@@ -176,15 +173,15 @@ static char osdGetBatterySymbol(int cellVoltage)
 
 /**
  * Converts altitude based on the current unit system.
- * @param alt Raw altitude (i.e. as taken from BaroAlt)
+ * @param meters Value in meters to convert
  */
-static int32_t osdGetAltitude(int32_t alt)
+static int32_t osdGetMetersToSelectedUnit(int32_t meters)
 {
     switch (osdConfig()->units) {
     case OSD_UNIT_IMPERIAL:
-        return (alt * 328) / 100; // Convert to feet / 100
+        return (meters * 328) / 100; // Convert to feet / 100
     default:
-        return alt;               // Already in metre / 100
+        return meters;               // Already in metre / 100
     }
 }
 
@@ -268,6 +265,17 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
+    case OSD_HOME_DIST:
+        if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
+            int32_t distance = osdGetMetersToSelectedUnit(GPS_distanceToHome);
+            tfp_sprintf(buff, "%d%c", distance, osdGetMetersToSelectedUnitSymbol());
+        } else {
+            // We use this symbol when we don't have a FIX
+            buff[0] = SYM_COLON;
+            buff[1] = 0;
+        }
+        break;
+
 #ifdef MAG
     case OSD_HOME_DIR:
         if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
@@ -304,8 +312,8 @@ static void osdDrawSingleElement(uint8_t item)
 
     case OSD_ALTITUDE:
         {
-            const int32_t alt = osdGetAltitude(getEstimatedAltitude());
-            tfp_sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
+            const int32_t alt = osdGetMetersToSelectedUnit(getEstimatedAltitude());
+            tfp_sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetMetersToSelectedUnitSymbol());
             break;
         }
 
@@ -618,6 +626,7 @@ void osdDrawElements(void)
         osdDrawSingleElement(OSD_GPS_SPEED);
         osdDrawSingleElement(OSD_GPS_LAT);
         osdDrawSingleElement(OSD_GPS_LON);
+        osdDrawSingleElement(OSD_HOME_DIST);
 #ifdef COMPASS
         if (sensors(SENSOR_MAG) || sensors(SENSOR_GPSMAG))
         	osdDrawSingleElement(OSD_HOME_DIR);            
@@ -657,6 +666,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->item_pos[OSD_ROLL_ANGLE]         = OSD_POS(1, 9)   | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_GPS_LAT]            = OSD_POS(1, 2)   | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_GPS_LON]            = OSD_POS(18, 2)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_HOME_DIST]          = OSD_POS(15, 9)  | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_HOME_DIR]           = OSD_POS(14, 9)  | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_MAIN_BATT_USAGE]    = OSD_POS(8, 12)  | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_ARMED_TIME]         = OSD_POS(1, 2)   | VISIBLE_FLAG;
@@ -732,7 +742,7 @@ void osdUpdateAlarms(void)
     // This is overdone?
     // uint16_t *itemPos = osdConfig()->item_pos;
 
-    int32_t alt = osdGetAltitude(getEstimatedAltitude()) / 100;
+    int32_t alt = osdGetMetersToSelectedUnit(getEstimatedAltitude()) / 100;
     statRssi = rssi * 100 / 1024;
 
     if (statRssi < osdConfig()->rssi_alarm)
@@ -923,8 +933,8 @@ static void osdShowStats(void)
     }
 
     if (osdConfig()->enabled_stats[OSD_STAT_MAX_ALTITUDE]) {
-        int32_t alt = osdGetAltitude(stats.max_altitude);
-        tfp_sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
+        int32_t alt = osdGetMetersToSelectedUnit(stats.max_altitude);
+        tfp_sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetMetersToSelectedUnitSymbol());
         osdDisplayStatisticLabel(top++, "MAX ALTITUDE", buff);
     }
 
