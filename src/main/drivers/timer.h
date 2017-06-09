@@ -86,6 +86,7 @@ typedef enum {
     TIM_USE_FW_MOTOR        = (1 << 5),
     TIM_USE_FW_SERVO        = (1 << 6),
     TIM_USE_LED             = (1 << 24),
+    TIM_USE_BEEPER          = (1 << 25),
 } timerUsageFlag_e;
 
 typedef struct timerHardware_s {

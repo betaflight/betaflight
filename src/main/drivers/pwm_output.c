@@ -54,6 +54,11 @@ static pwmOutputPort_t *motors[MAX_PWM_MOTORS];
 static pwmOutputPort_t *servos[MAX_PWM_SERVOS];
 #endif
 
+#ifdef BEEPER_PWM
+static pwmOutputPort_t *beeperPwm;
+static uint16_t beeperFrequency = 0;
+#endif
+
 static uint8_t allocatedOutputPortCount = 0;
 
 static bool pwmMotorsEnabled = true;
@@ -299,5 +304,32 @@ void pwmWriteServo(uint8_t index, uint16_t value)
         *servos[index]->ccr = value;
     }
 #endif
+}
+#endif
+
+#ifdef BEEPER_PWM
+void pwmWriteBeeper(bool onoffBeep)
+{
+    if(beeperPwm == NULL)
+        return;
+    
+    if(onoffBeep == true) {
+        *beeperPwm->ccr = (1000000 / beeperFrequency) / 2;
+    } else {
+        *beeperPwm->ccr = 0;
+    }
+}
+
+void beeperPwmInit(ioTag_t tag, uint16_t frequency)
+{
+        const timerHardware_t *timer = timerGetByTag(tag, TIM_USE_BEEPER);
+        if (timer) {
+            beeperFrequency = frequency;
+            beeperPwm = pwmOutConfig(timer, PWM_TIMER_MHZ, 1000000 / beeperFrequency, (1000000 / beeperFrequency) / 2, 1);  // Enable output
+            *beeperPwm->ccr = 0;
+        }
+        else {
+            beeperPwm = NULL;
+        }
 }
 #endif

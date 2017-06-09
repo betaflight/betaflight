@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "drivers/io_types.h"
+
 #if defined(STM32F40_41xxx) // must be multiples of timer clock
 #define ONESHOT125_TIMER_MHZ  12
 #define ONESHOT42_TIMER_MHZ   21
@@ -52,4 +54,5 @@ void pwmEnableMotors(void);
 struct timerHardware_s;
 void pwmMotorConfig(const struct timerHardware_s *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse, motorPwmProtocolTypes_e proto, bool enableOutput);
 void pwmServoConfig(const struct timerHardware_s *timerHardware, uint8_t servoIndex, uint16_t servoPwmRate, uint16_t servoCenterPulse, bool enableOutput);
-
+void pwmWriteBeeper(bool onoffBeep);
+void beeperPwmInit(ioTag_t tag, uint16_t frequency);
