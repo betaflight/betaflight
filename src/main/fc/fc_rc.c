@@ -46,6 +46,7 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/pid.h"
+#include "flight/mixer.h"
 
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
