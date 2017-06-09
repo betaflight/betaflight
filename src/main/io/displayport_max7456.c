@@ -62,6 +62,10 @@ static int release(displayPort_t *displayPort)
 static int clearScreen(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
+
+    max7456Invert(displayPortProfileMax7456()->invert);
+    max7456Brightness(displayPortProfileMax7456()->blackBrightness, displayPortProfileMax7456()->whiteBrightness);
+
     max7456ClearScreen();
 
     return 0;
