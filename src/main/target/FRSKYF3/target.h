@@ -68,7 +68,6 @@
 #define UART3_TX_PIN            PB10 
 #define UART3_RX_PIN            PB11 
 
-#undef USE_I2C
 #define USE_I2C
 #define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
