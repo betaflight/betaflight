@@ -544,9 +544,6 @@ int16_t getHeadingHoldTarget() {
 
 static uint8_t getHeadingHoldState()
 {
-    if (!STATE(SMALL_ANGLE)) {
-        return HEADING_HOLD_DISABLED;
-    }
 
 #if defined(NAV)
     int navHeadingState = navigationGetHeadingControlState();
