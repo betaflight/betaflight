@@ -207,29 +207,12 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
 /*
 #ifdef USE_SERVOS
         if (init->useServos && !init->airplane) {
-#if defined(DOGE)
-            // remap outputs 1+2 (PWM2+3) as servos
-            if ((timerIndex == PWM2 || timerIndex == PWM3) && timerHardwarePtr->tim == TIM4)
-                type = MAP_TO_SERVO_OUTPUT;
-#endif
-
-#if defined(SPARKY)
-            // remap PWM1+2 as servos
-            if ((timerIndex == PWM1 || timerIndex == PWM2) && timerHardwarePtr->tim == TIM15)
-                type = MAP_TO_SERVO_OUTPUT;
-#endif
-
 #if defined(SPRACINGF3MINI)
             // remap PWM6+7 as servos
             if ((timerIndex == PWM6 || timerIndex == PWM7) && timerHardwarePtr->tim == TIM15)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
-#if defined(SPRACINGF3EVO)
-            if ((timerIndex == PWM8 || timerIndex == PWM9) && timerHardwarePtr->tim == TIM3) {
-                type = MAP_TO_SERVO_OUTPUT;
-            }
-#endif
 
 #if defined(SINGULARITY)
             // remap PWM6+7 as servos
@@ -237,12 +220,6 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
         }
-
-#if defined(SPRACINGF3EVO)
-            if ((timerIndex == PWM6 || timerIndex == PWM7 || timerIndex == PWM8 || timerIndex == PWM9) && timerHardwarePtr->tim == TIM3) {
-                type = MAP_TO_SERVO_OUTPUT;
-            }
-#endif
 
 #if defined(SPRACINGF3MINI)
             if (((timerIndex == PWM6 || timerIndex == PWM7) && timerHardwarePtr->tim == TIM15)
