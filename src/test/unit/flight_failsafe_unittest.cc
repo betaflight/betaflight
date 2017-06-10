@@ -23,6 +23,8 @@
 extern "C" {
     #include "build/debug.h"
 
+    #include "config/parameter_group_ids.h"
+
     #include "platform.h"
 
     #include "common/axis.h"
@@ -63,22 +65,18 @@ void resetCallCounters(void) {
 #define PERIOD_OF_10_SCONDS 10000
 #define DE_ACTIVATE_ALL_BOXES 0
 
-rxConfig_t rxConfig;
-failsafeConfig_t failsafeConfig;
 uint32_t sysTickUptime;
 
 void configureFailsafe(void)
 {
-    memset(&rxConfig, 0, sizeof(rxConfig));
-    rxConfig.midrc = TEST_MID_RC;
-    rxConfig.mincheck = TEST_MIN_CHECK;
+    rxConfigMutable()->midrc = TEST_MID_RC;
+    rxConfigMutable()->mincheck = TEST_MIN_CHECK;
 
-    memset(&failsafeConfig, 0, sizeof(failsafeConfig));
-    failsafeConfig.failsafe_delay = 10; // 1 second
-    failsafeConfig.failsafe_off_delay = 50; // 5 seconds
-    failsafeConfig.failsafe_kill_switch = false;
-    failsafeConfig.failsafe_throttle = 1200;
-    failsafeConfig.failsafe_throttle_low_delay = 50; // 5 seconds
+    failsafeConfigMutable()->failsafe_delay = 10; // 1 second
+    failsafeConfigMutable()->failsafe_off_delay = 50; // 5 seconds
+    failsafeConfigMutable()->failsafe_kill_switch = false;
+    failsafeConfigMutable()->failsafe_throttle = 1200;
+    failsafeConfigMutable()->failsafe_throttle_low_delay = 50; // 5 seconds
     sysTickUptime = 0;
 }
 //
@@ -94,8 +92,8 @@ TEST(FlightFailsafeTest, TestFailsafeInitialState)
     DISABLE_ARMING_FLAG(ARMED);
 
     // when
-    useFailsafeConfig(&failsafeConfig);
-    failsafeInit(&rxConfig);
+    failsafeInit();
+    failsafeReset();
 
     // then
     EXPECT_EQ(false, failsafeIsMonitoring());
@@ -162,7 +160,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndStartsLanding)
     failsafeOnValidDataReceived();                  // set last valid sample at current time
 
     // when
-    for (sysTickUptime = 0; sysTickUptime < (uint32_t)(failsafeConfig.failsafe_delay * MILLIS_PER_TENTH_SECOND + PERIOD_RXDATA_FAILURE); sysTickUptime++) {
+    for (sysTickUptime = 0; sysTickUptime < (uint32_t)(PERIOD_RXDATA_FAILURE + failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND); sysTickUptime++) {
         failsafeOnValidDataFailed();
 
         failsafeUpdateState();
@@ -188,7 +186,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndStartsLanding)
 TEST(FlightFailsafeTest, TestFailsafeCausesLanding)
 {
     // given
-    sysTickUptime += failsafeConfig.failsafe_off_delay * MILLIS_PER_TENTH_SECOND;
+    sysTickUptime += failsafeConfig()->failsafe_off_delay * MILLIS_PER_TENTH_SECOND;
     sysTickUptime++;
 
     // when
@@ -243,7 +241,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndJustDisarms)
     failsafeOnValidDataReceived();                  // set last valid sample at current time
 
     // when
-    for (sysTickUptime = 0; sysTickUptime < (uint32_t)(failsafeConfig.failsafe_delay * MILLIS_PER_TENTH_SECOND + PERIOD_RXDATA_FAILURE); sysTickUptime++) {
+    for (sysTickUptime = 0; sysTickUptime < (uint32_t)(failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND + PERIOD_RXDATA_FAILURE); sysTickUptime++) {
         failsafeOnValidDataFailed();
 
         failsafeUpdateState();
@@ -305,7 +303,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsKillswitchEvent)
 
     // and
     throttleStatus = THROTTLE_HIGH;                 // throttle HIGH to go for a failsafe landing procedure
-    failsafeConfig.failsafe_kill_switch = 1;        // configure AUX switch as kill switch
+    failsafeConfigMutable()->failsafe_kill_switch = true;        // configure AUX switch as kill switch
     ACTIVATE_RC_MODE(BOXFAILSAFE);                  // and activate it
     sysTickUptime = 0;                              // restart time from 0
     failsafeOnValidDataReceived();                  // set last valid sample at current time
@@ -362,8 +360,7 @@ TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenDisarmedAndRXLossIsDetected
     configureFailsafe();
 
     // and
-    useFailsafeConfig(&failsafeConfig);
-    failsafeInit(&rxConfig);
+    failsafeInit();
 
     // and
     DISABLE_ARMING_FLAG(ARMED);
@@ -411,6 +408,7 @@ uint32_t rcModeActivationMask;
 int16_t debug[DEBUG16_VALUE_COUNT];
 bool isUsingSticksToArm = true;
 
+PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
 
 // Return system uptime in milliseconds (rollover in 49 days)
 uint32_t millis(void)
@@ -418,10 +416,8 @@ uint32_t millis(void)
     return sysTickUptime;
 }
 
-throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
+throttleStatus_e calculateThrottleStatus()
 {
-    UNUSED(rxConfig);
-    UNUSED(deadband3d_throttle);
     return throttleStatus;
 }
 
