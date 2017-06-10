@@ -162,15 +162,17 @@ telemetry_ibus_unittest_SRC := \
 		$(USER_DIR)/telemetry/ibus.c
 
 
+transponder_ir_unittest_SRC := \
+	        $(USER_DIR)/drivers/transponder_ir_ilap.c \
+	        $(USER_DIR)/drivers/transponder_ir_arcitimer.c
+
+
 type_conversion_unittest_SRC := \
 		$(USER_DIR)/common/typeconversion.c
 
 
 ws2811_unittest_SRC := \
 		$(USER_DIR)/drivers/light_ws2811strip.c
-
-
-
 
 # Please tweak the following variable definitions as needed by your
 # project, except GTEST_HEADERS, which you can use in your own targets
@@ -355,43 +357,6 @@ $(OBJECT_DIR)/$1/$1 : $$($$1_OBJS) \
 	@echo "linking $$@" "$(STDOUT)"
 	$(V1) mkdir -p $(dir $$@)
 	$(V1) $(CXX) $(CXX_FLAGS) $(PG_FLAGS) $$^ -o $$@
-
-$(OBJECT_DIR)/drivers/transponder_ir_arcitimer.o : \
-	$(USER_DIR)/drivers/transponder_ir_arcitimer.c \
-	$(USER_DIR)/drivers/transponder_ir.h \
-    $(USER_DIR)/drivers/transponder_ir_arcitimer.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/transponder_ir_arcitimer.c -o $@
-
-$(OBJECT_DIR)/drivers/transponder_ir_ilap.o : \
-	$(USER_DIR)/drivers/transponder_ir_ilap.c \
-	$(USER_DIR)/drivers/transponder_ir.h \
-    $(USER_DIR)/drivers/transponder_ir_ilap.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/transponder_ir_ilap.c -o $@
-
-$(OBJECT_DIR)/transponder_unittest.o : \
-	$(TEST_DIR)/transponder_unittest.cc \
-	$(USER_DIR)/drivers/transponder_ir.h \
-    $(USER_DIR)/drivers/transponder_ir_arcitimer.h \
-    $(USER_DIR)/drivers/transponder_ir_ilap.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/transponder_unittest.cc -o $@
-
-$(OBJECT_DIR)/transponder_unittest : \
-    $(OBJECT_DIR)/drivers/transponder_ir_arcitimer.o \
-    $(OBJECT_DIR)/drivers/transponder_ir_ilap.o \
-	$(OBJECT_DIR)/transponder_unittest.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
 
 test_$1: $(OBJECT_DIR)/$1/$1
 	$(V1) $$< $$(EXEC_OPTS) "$(STDOUT)" && echo "running $$@: PASS"

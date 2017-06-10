@@ -167,10 +167,10 @@ bool transponderIrInit(const transponderProvider_e provider)
     }
 
     switch (provider) {
-        case ARCITIMER:
+        case TRANSPONDER_ARCITIMER:
             transponderIrInitArcitimer(&transponder);
             break;
-        case ILAP:
+        case TRANSPONDER_ILAP:
             transponderIrInitIlap(&transponder);
             break;
         case TRANSPONDER_ERLT:

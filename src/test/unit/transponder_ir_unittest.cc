@@ -15,10 +15,10 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <stdint.h>
 #include <stdlib.h>
 #include <limits.h>
+
 extern "C" {
     #include <platform.h>
     #include "build/build_config.h"
@@ -27,11 +27,16 @@ extern "C" {
     #include "drivers/transponder_ir_arcitimer.h"
     #include "drivers/transponder_ir_ilap.h"
 }
+
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
+
 extern "C" {
     STATIC_UNIT_TESTED extern uint16_t dmaBufferOffset;
+    STATIC_UNIT_TESTED void updateTransponderDMABufferIlap(transponder_t *transponder, const uint8_t* transponderData);
+    STATIC_UNIT_TESTED void updateTransponderDMABufferArcitimer(transponder_t *transponder, const uint8_t* transponderData);
 }
+
 TEST(transponderTest, updateTransponderDMABufferArcitimer) {
     //input
     uint8_t data[9] = {0x1F, 0xFC, 0x8F, 0x3, 0xF0, 0x1, 0xF8, 0x1F, 0x0};
@@ -63,6 +68,7 @@ TEST(transponderTest, updateTransponderDMABufferArcitimer) {
         EXPECT_EQ(transponder.transponderIrDMABuffer.arcitimer[i], excepted[i]);
     }
 }
+
 TEST(transponderTest, updateTransponderDMABufferIlap) {
     uint8_t data[9] = {0x1F, 0xFC, 0x8F, 0x3, 0xF0, 0x1, 0x0, 0x0, 0x0};
 
@@ -97,6 +103,4 @@ TEST(transponderTest, updateTransponderDMABufferIlap) {
      for(i = 0; i < transponder.dma_buffer_size; i++) {
         EXPECT_EQ(transponder.transponderIrDMABuffer.ilap[i], excepted[i]);
      }
-
-
 }
