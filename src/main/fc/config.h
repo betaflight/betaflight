@@ -22,6 +22,7 @@
 #include "common/time.h"
 #include "config/parameter_group.h"
 #include "drivers/pwm_rx.h"
+#include "fc/stats.h"
 
 #define MAX_PROFILE_COUNT 3
 #define ONESHOT_FEATURE_CHANGED_DELAY_ON_BOOT_MS 1500
@@ -93,6 +94,10 @@ typedef struct beeperConfig_s {
 } beeperConfig_t;
 
 PG_DECLARE(beeperConfig_t, beeperConfig);
+
+#ifdef STATS
+PG_DECLARE(statsConfig_t, statsConfig);
+#endif
 
 void beeperOffSet(uint32_t mask);
 void beeperOffSetAll(uint8_t beeperCount);

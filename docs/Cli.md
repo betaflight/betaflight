@@ -369,6 +369,9 @@ Re-apply any new defaults as desired.
 |  fw_autotune_threshold       | 50  | Threshold [%] of max rate to consider overshoot/undershoot detection |
 |  fw_autotune_ff_to_p_gain    | 10  | FF to P gain (strength relationship) [%] |
 |  fw_autotune_ff_to_i_tc      | 600 | FF to I time (defines time for I to reach the same level of response as FF) [ms]  |
+|  stats                       | OFF | General switch of the statistics recording feature (a.k.a. odometer) |
+|  stats_total_time            |  0  | Total flight time [in seconds]. The value is updated on every disarm when "stats" are enabled. |
+|  stats_total_dist            |  0  | Total flight distance [in meters]. The value is updated on every disarm when "stats" are enabled. |
 
 This Markdown table is made by MarkdwonTableMaker addon for google spreadsheet.
 Original Spreadsheet used to make this table can be found here https://docs.google.com/spreadsheets/d/1ubjYdMGmZ2aAMUNYkdfe3hhIF7wRfIjcuPOi_ysmp00/edit?usp=sharing
