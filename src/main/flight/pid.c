@@ -94,6 +94,7 @@ extern uint8_t motorCount;
 extern bool motorLimitReached;
 extern float dT;
 
+float headingHoldCosZLimit;
 int16_t headingHoldTarget;
 static pt1Filter_t headingHoldRateFilter;
 
@@ -203,6 +204,10 @@ void pidInit(void)
     for (int axis = 0; axis < 3; ++ axis) {
         firFilterInit(&pidState[axis].gyroRateFilter, pidState[axis].gyroRateBuf, PID_GYRO_RATE_BUF_LENGTH, dtermCoeffs);
     }
+
+    // Calculate max overall tilt (max pitch + max roll combined) as a limit to heading hold
+    headingHoldCosZLimit = cos_approx(DECIDEGREES_TO_RADIANS(pidProfile()->max_angle_inclination[FD_ROLL])) * 
+                           cos_approx(DECIDEGREES_TO_RADIANS(pidProfile()->max_angle_inclination[FD_PITCH]));
 }
 
 #ifdef USE_DTERM_NOTCH
@@ -544,6 +549,10 @@ int16_t getHeadingHoldTarget() {
 
 static uint8_t getHeadingHoldState()
 {
+    // Don't apply heading hold if overall tilt is greater than maximum angle inclination
+    if (calculateCosTiltAngle() < headingHoldCosZLimit) {
+        return HEADING_HOLD_DISABLED;
+    }
 
 #if defined(NAV)
     int navHeadingState = navigationGetHeadingControlState();
