@@ -225,13 +225,6 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
-#if defined(RCEXPLORERF3)
-            if (timerIndex == PWM2)
-            {
-                type = MAP_TO_SERVO_OUTPUT;
-            }
-#endif
-
 #if defined(SPRACINGF3EVO)
             if ((timerIndex == PWM8 || timerIndex == PWM9) && timerHardwarePtr->tim == TIM3) {
                 type = MAP_TO_SERVO_OUTPUT;

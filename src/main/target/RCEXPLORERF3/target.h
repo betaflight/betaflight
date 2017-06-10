@@ -93,11 +93,9 @@
 #define LED_STRIP // LED strip configuration using PWM motor output pin 5.
 #define USE_LED_STRIP_ON_DMA1_CHANNEL3
 #define WS2811_PIN                      PB8 // TIM16_CH1
-#define WS2811_TIMER                    TIM16
-#define WS2811_DMA_CHANNEL              DMA1_Channel3
-#define WS2811_IRQ                      DMA1_Channel3_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
+#define WS2811_DMA_STREAM               DMA1_Channel3
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
+
 
 #define SONAR
 #define SONAR_TRIGGER_PIN       PA6   // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
@@ -123,5 +121,5 @@
 #define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
-#define USABLE_TIMER_CHANNEL_COUNT 6
-#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(17))
+#define USABLE_TIMER_CHANNEL_COUNT 7
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(16) | TIM_N(17))
