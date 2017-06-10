@@ -748,30 +748,26 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, batteryConfig()->currentMeterSource);
         break;
 
-    case MSP_TRANSPONDER_CONFIG:
-    {
+    case MSP_TRANSPONDER_CONFIG: {
+#define TRANSPONDER_SUPPORTED_MASK 0x01 // 00000001
+#define TRANSPONDER_PROVIDER_MASK  0x0E // 00001110
+#define TRANSPONDER_DATA_SIZE_MASK 0xF0 // 11110000
+#define TRANSPONDER_PROVIDER_OFFSET   1
+#define TRANSPONDER_DATA_SIZE_OFFSET  4
+
 #ifdef TRANSPONDER
-        uint8_t header = 1; //transponder supported
+        uint8_t header = 0;
 
-        switch(transponderConfig()->provider){
-            case ILAP:
-               header |= 0x02;
-               break;
-            case ARCITIMER:
-                 header |= 0x04;
-                 break;
-            default:
-                break;
-        }
-
-        header |= (sizeof(transponderConfig()->data) << 4);
+        header |= 1 & TRANSPONDER_SUPPORTED_MASK;
+        header |= (transponderConfig()->provider << TRANSPONDER_PROVIDER_OFFSET) & TRANSPONDER_PROVIDER_MASK;
+        header |= ((sizeof(transponderConfig()->data) << TRANSPONDER_DATA_SIZE_OFFSET) & TRANSPONDER_DATA_SIZE_MASK);
 
         sbufWriteU8(dst, header);
         for (unsigned int i = 0; i < sizeof(transponderConfig()->data); i++) {
             sbufWriteU8(dst, transponderConfig()->data[i]);
         }
 #else
-        sbufWriteU8(dst, 0); // Transponder not supported
+        sbufWriteU8(dst, 0 & TRANSPONDER_SUPPORTED_MASK);
 #endif
         break;
     }
