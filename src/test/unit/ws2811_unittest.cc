@@ -20,7 +20,7 @@
 #include <limits.h>
 
 extern "C" {
-    #include "build_config.h"
+    #include "build/build_config.h"
 
     #include "common/color.h"
 
@@ -96,6 +96,9 @@ rgbColor24bpp_t* hsvToRgb24(const hsvColor_t *c) {
     return NULL;
 }
 
-void ws2811LedStripHardwareInit(void) {}
+void ws2811LedStripHardwareInit(ioTag_t ioTag) {
+    UNUSED(ioTag);
+}
+
 void ws2811LedStripDMAEnable(void) {}
 }
