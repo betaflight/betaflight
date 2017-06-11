@@ -23,9 +23,12 @@
 
 #include "platform.h"
 
+#include "build/build_config.h"
 #include "build/debug.h"
 
 #include "scheduler/scheduler.h"
+
+#include "config/config_unittest.h"
 
 #include "common/maths.h"
 #include "common/time.h"
@@ -49,10 +52,11 @@ uint16_t averageSystemLoadPercent = 0;
 
 
 static int taskQueuePos = 0;
-static int taskQueueSize = 0;
+STATIC_UNIT_TESTED int taskQueueSize = 0;
+
 // No need for a linked list for the queue, since items are only inserted at startup
 
-static cfTask_t* taskQueueArray[TASK_COUNT + 1]; // extra item for NULL pointer at end of queue
+STATIC_UNIT_TESTED cfTask_t* taskQueueArray[TASK_COUNT + 1]; // extra item for NULL pointer at end of queue
 
 void queueClear(void)
 {
@@ -329,4 +333,6 @@ void scheduler(void)
         DEBUG_SET(DEBUG_SCHEDULER, 2, micros() - currentTimeUs);
 #endif
     }
+
+    GET_SCHEDULER_LOCALS();
 }

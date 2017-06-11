@@ -15,8 +15,8 @@ USER_DIR = ../main
 
 # specify which files that are included in the test in addition to the unittest file.
 # variables available:
-#   <test_name>_SRC 
-#   <test_name>_DEFINES 
+#   <test_name>_SRC
+#   <test_name>_DEFINES
 
 
 alignsensor_unittest_SRC := \
@@ -29,16 +29,16 @@ altitude_hold_unittest_SRC :=  \
 
 
 baro_bmp085_unittest_SRC := \
-		$(USER_DIR)/drivers/barometer_bmp085.c \
+		$(USER_DIR)/drivers/barometer/barometer_bmp085.c \
 		$(USER_DIR)/drivers/io.c
 
 
 baro_bmp280_unittest_SRC := \
-		$(USER_DIR)/drivers/barometer_bmp280.c
+		$(USER_DIR)/drivers/barometer/barometer_bmp280.c
 
 
 baro_ms5611_unittest_SRC := \
-		$(USER_DIR)/drivers/barometer_ms5611.c
+		$(USER_DIR)/drivers/barometer/barometer_ms5611.c
 
 
 battery_unittest_SRC := \
@@ -51,6 +51,7 @@ blackbox_encoding_unittest_SRC :=  \
 		$(USER_DIR)/common/encoding.c \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/typeconversion.c
+
 
 cms_unittest_SRC := \
 		$(USER_DIR)/cms/cms.c \
@@ -87,7 +88,8 @@ gps_conversion_unittest_SRC := \
 
 
 io_serial_unittest_SRC := \
-		$(USER_DIR)/io/serial.c
+		$(USER_DIR)/io/serial.c \
+		$(USER_DIR)/drivers/serial_pinconfig.c
 
 
 ledstrip_unittest_SRC := \
@@ -127,14 +129,8 @@ rx_rx_unittest_SRC := \
 		$(USER_DIR)/config/feature.c
 
 
-sensor_gyro_unittest_SRC := \
-		$(USER_DIR)/sensors/gyro.c \
-		$(USER_DIR)/sensors/boardalignment.c \
-		$(USER_DIR)/build/debug.c \
-		$(USER_DIR)/common/filter.c \
-		$(USER_DIR)/common/maths.c \
-		$(USER_DIR)/drivers/accgyro_fake.c \
-		$(USER_DIR)/drivers/gyro_sync.c
+scheduler_unittest_SRC := \
+		$(USER_DIR)/scheduler/scheduler.c
 
 
 telemetry_crsf_unittest_SRC := \
@@ -242,7 +238,7 @@ include ../../make/build_verbosity.mk
 test: $(TESTS:%=test_%)
 
 ## junittest   : Build and run the Unit Tests, producing Junit XML result files."
-junittest: EXEC_OPTS = "--gtest_output=xml:$<_results.xml" 
+junittest: EXEC_OPTS = "--gtest_output=xml:$<_results.xml"
 junittest: $(TESTS:%=test_%)
 
 
@@ -296,11 +292,11 @@ $(OBJECT_DIR)/gtest_main.o : $(GTEST_SRCS_)
 
 $(OBJECT_DIR)/gtest.a : $(OBJECT_DIR)/gtest-all.o
 	@echo "linking $@" "$(STDOUT)"
-	$(V1) $(AR) $(ARFLAGS) $@ $^ 
+	$(V1) $(AR) $(ARFLAGS) $@ $^
 
 $(OBJECT_DIR)/gtest_main.a : $(OBJECT_DIR)/gtest-all.o $(OBJECT_DIR)/gtest_main.o
 	@echo "linking $@" "$(STDOUT)"
-	$(V1) $(AR) $(ARFLAGS) $@ $^ 
+	$(V1) $(AR) $(ARFLAGS) $@ $^
 
 -include $(OBJECT_DIR)/gtest-all.d \
          $(OBJECT_DIR)/gtest_main.d
@@ -319,7 +315,7 @@ TEST_CFLAGS	 = $(addprefix -I,$(TEST_INCLUDE_DIRS))
 # param $1 = testname
 define test-specific-stuff
 
-$$1_OBJS = $$(patsubst $$(USER_DIR)%,$$(OBJECT_DIR)/$1%,$$($1_SRC:=.o)) 
+$$1_OBJS = $$(patsubst $$(USER_DIR)%,$$(OBJECT_DIR)/$1%,$$($1_SRC:=.o))
 
 # $$(info $1 -v-v-------)
 # $$(info $1_SRC:  $($1_SRC))

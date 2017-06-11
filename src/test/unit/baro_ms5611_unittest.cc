@@ -34,7 +34,6 @@ extern uint32_t ms5611_ut;
 
 TEST(baroMS5611Test, TestValidMs5611Crc)
 {
-
     // given
     uint16_t ms5611_prom[] = {0x3132,0x3334,0x3536,0x3738,0x3940,0x4142,0x4344,0x450B};
 
@@ -43,12 +42,10 @@ TEST(baroMS5611Test, TestValidMs5611Crc)
 
     // then
     EXPECT_EQ(0, result);
-
 }
 
 TEST(baroMS5611Test, TestInvalidMs5611Crc)
 {
-
     // given
     uint16_t ms5611_prom[] = {0x3132,0x3334,0x3536,0x3738,0x3940,0x4142,0x4344,0x4500};
 
@@ -57,12 +54,10 @@ TEST(baroMS5611Test, TestInvalidMs5611Crc)
 
     // then
     EXPECT_EQ(-1, result);
-
 }
 
 TEST(baroMS5611Test, TestMs5611AllZeroProm)
 {
-
     // given
     uint16_t ms5611_prom[] = {0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000};
 
@@ -71,12 +66,10 @@ TEST(baroMS5611Test, TestMs5611AllZeroProm)
 
     // then
     EXPECT_EQ(-1, result);
-
 }
 
 TEST(baroMS5611Test, TestMs5611AllOnesProm)
 {
-
     // given
     uint16_t ms5611_prom[] = {0xFFFF,0xFFFF,0xFFFF,0xFFFF,0xFFFF,0xFFFF,0xFFFF,0xFFFF};
 
@@ -85,15 +78,13 @@ TEST(baroMS5611Test, TestMs5611AllOnesProm)
 
     // then
     EXPECT_EQ(-1, result);
-
 }
 
 TEST(baroMS5611Test, TestMs5611CalculatePressureGT20Deg)
 {
-
     // given
     int32_t pressure, temperature;
-    uint16_t ms5611_c_test[] = {0x0000, 40127, 36924, 23317, 23282, 33464, 28312, 0x0000}; // calibration data from MS5611 datasheet 
+    uint16_t ms5611_c_test[] = {0x0000, 40127, 36924, 23317, 23282, 33464, 28312, 0x0000}; // calibration data from MS5611 datasheet
     memcpy(&ms5611_c, &ms5611_c_test, sizeof(ms5611_c_test));
 
     ms5611_up = 9085466; // Digital pressure value from MS5611 datasheet
@@ -105,15 +96,13 @@ TEST(baroMS5611Test, TestMs5611CalculatePressureGT20Deg)
     // then
     EXPECT_EQ(2007, temperature); // 20.07 deg C
     EXPECT_EQ(100009, pressure);  // 1000.09 mbar
-
 }
 
 TEST(baroMS5611Test, TestMs5611CalculatePressureLT20Deg)
 {
-
     // given
     int32_t pressure, temperature;
-    uint16_t ms5611_c_test[] = {0x0000, 40127, 36924, 23317, 23282, 33464, 28312, 0x0000}; // calibration data from MS5611 datasheet 
+    uint16_t ms5611_c_test[] = {0x0000, 40127, 36924, 23317, 23282, 33464, 28312, 0x0000}; // calibration data from MS5611 datasheet
     memcpy(&ms5611_c, &ms5611_c_test, sizeof(ms5611_c_test));
 
     ms5611_up = 9085466; // Digital pressure value from MS5611 datasheet
@@ -125,15 +114,13 @@ TEST(baroMS5611Test, TestMs5611CalculatePressureLT20Deg)
     // then
     EXPECT_EQ(205, temperature); // 2.05 deg C
     EXPECT_EQ(96512, pressure);  // 965.12 mbar
-
 }
 
 TEST(baroMS5611Test, TestMs5611CalculatePressureLTMinus15Deg)
 {
-
     // given
     int32_t pressure, temperature;
-    uint16_t ms5611_c_test[] = {0x0000, 40127, 36924, 23317, 23282, 33464, 28312, 0x0000}; // calibration data from MS5611 datasheet 
+    uint16_t ms5611_c_test[] = {0x0000, 40127, 36924, 23317, 23282, 33464, 28312, 0x0000}; // calibration data from MS5611 datasheet
     memcpy(&ms5611_c, &ms5611_c_test, sizeof(ms5611_c_test));
 
     ms5611_up = 9085466; // Digital pressure value from MS5611 datasheet
@@ -145,7 +132,6 @@ TEST(baroMS5611Test, TestMs5611CalculatePressureLTMinus15Deg)
     // then
     EXPECT_EQ(-2710, temperature); // -27.10 deg C
     EXPECT_EQ(90613, pressure);  // 906.13 mbar
-
 }
 
 // STUBS
@@ -154,11 +140,13 @@ extern "C" {
 
 void delay(uint32_t) {}
 void delayMicroseconds(uint32_t) {}
+
 bool i2cWrite(uint8_t, uint8_t, uint8_t) {
-    return 1;
+    return true;
 }
+
 bool i2cRead(uint8_t, uint8_t, uint8_t, uint8_t) {
-    return 1;
+    return true;
 }
 
 }
