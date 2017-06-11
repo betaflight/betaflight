@@ -66,4 +66,5 @@ When SOFTSERIAL is enabled, LED_STRIP and CURRENT_METER are unavailable, but two
 |O                 O|
 \-------[USB]-------/
 ```
-
+### GPS
++ Due to limited flash space GPS is *NOT* availible. *potentially enabled with a custom flash*
