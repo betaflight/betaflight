@@ -142,13 +142,13 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXSONAR, "SONAR", 22 },
     { BOXSERVO1, "SERVO1", 23 },
     { BOXSERVO2, "SERVO2", 24 },
-    { BOXSERVO3, "SERVO3", 25 },
     { BOXBLACKBOX, "BLACKBOX", 26 },
     { BOXFAILSAFE, "FAILSAFE", 27 },
     { BOXAIRMODE, "AIR MODE", 28 },
-    { BOX3DDISABLESWITCH, "DISABLE 3D SWITCH", 29},
-    { BOXFPVANGLEMIX, "FPV ANGLE MIX", 30},
+    { BOX3DPOSSWITCH, "POSITIVE ONLY 3D", 29},
+    { BOX3DNEGSWITCH, "NEGATIVE ONLY 3D", 30},
     { BOXBLACKBOXERASE, "BLACKBOX ERASE (>30s)", 31 },
+   
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -371,7 +371,8 @@ void initActiveBoxIds(void)
     BME(BOXFPVANGLEMIX);
 
     if (feature(FEATURE_3D)) {
-        BME(BOX3DDISABLESWITCH);
+        BME(BOX3DPOSSWITCH);
+        BME(BOX3DNEGSWITCH);
     }
 
     if (feature(FEATURE_SERVO_TILT)) {
@@ -394,7 +395,6 @@ void initActiveBoxIds(void)
     if (mixerConfig()->mixerMode == MIXER_CUSTOM_AIRPLANE) {
         BME(BOXSERVO1);
         BME(BOXSERVO2);
-        BME(BOXSERVO3);
     }
 #endif
 

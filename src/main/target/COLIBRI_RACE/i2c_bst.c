@@ -177,7 +177,6 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXSONAR, "SONAR;", 22 },
     { BOXSERVO1, "SERVO1;", 23 },
     { BOXSERVO2, "SERVO2;", 24 },
-    { BOXSERVO3, "SERVO3;", 25 },
     { BOXBLACKBOX, "BLACKBOX;", 26 },
     { BOXFAILSAFE, "FAILSAFE;", 27 },
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
