@@ -95,7 +95,7 @@ void targetConfiguration(void)
         rxConfigMutable()->serialrx_provider = SERIALRX_SBUS;
         rxConfigMutable()->sbus_inversion = 0;
         serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIALRX_UART)].functionMask = FUNCTION_TELEMETRY_FRSKY | FUNCTION_RX_SERIAL;
-        telemetryConfigMutable()->telemetry_inversion = 0;
+        telemetryConfigMutable()->telemetry_inverted = true;
         featureSet(FEATURE_TELEMETRY);
     }
 
