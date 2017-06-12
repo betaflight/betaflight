@@ -60,6 +60,8 @@ typedef enum {
     OSD_DISARMED,
     OSD_HOME_DIR,
     OSD_HOME_DIST,
+    OSD_NUMERICAL_HEADING,
+    OSD_NUMERICAL_VARIO,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
