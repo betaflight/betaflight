@@ -250,21 +250,20 @@ static void osdDrawSingleElement(uint8_t item)
         {
             int32_t val;
             if (item == OSD_GPS_LAT) {
-                buff[0] = 0x64; // right arrow
+                buff[0] = SYM_ARROW_EAST;
                 val = GPS_coord[LAT];
             } else {
-                buff[0] = 0x60; // down arrow
+                buff[0] = SYM_ARROW_SOUTH;
                 val = GPS_coord[LON];
             }
-            if (val >= 0) {
-                val += 1000000000;
-            } else {
-                val -= 1000000000;
-            }
-            itoa(val, &buff[1], 10);
-            buff[1] = buff[2];
-            buff[2] = buff[3];
-            buff[3] = '.';
+
+            char wholeDegreeString[5];
+            tfp_sprintf(wholeDegreeString, "%d", val / GPS_DEGREES_DIVIDER);
+
+            char wholeUnshifted[12];
+            tfp_sprintf(wholeUnshifted, "%d", val);
+
+            tfp_sprintf(buff + 1, "%s.%s", wholeDegreeString, wholeUnshifted + strlen(wholeDegreeString));
             break;
         }
 
