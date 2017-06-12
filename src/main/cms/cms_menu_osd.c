@@ -101,36 +101,39 @@ static long menuOsdActiveElemsOnExit(const OSD_Entry *self)
 
 OSD_Entry menuOsdActiveElemsEntries[] =
 {
-    {"--- ACTIV ELEM ---", OME_Label, NULL, NULL, 0},
-    {"RSSI", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_RSSI_VALUE], 0},
-    {"BATTERY VOLTAGE", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_VOLTAGE], 0},
-    {"BATTERY USAGE", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_USAGE], 0},
-    {"AVG CELL VOLTAGE", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_AVG_CELL_VOLTAGE], 0},
-    {"CROSSHAIRS", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CROSSHAIRS], 0},
-    {"HORIZON", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ARTIFICIAL_HORIZON], 0},
-    {"HORIZON SIDEBARS", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HORIZON_SIDEBARS], 0},
-    {"UPTIME", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ONTIME], 0},
-    {"FLY TIME", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_FLYTIME], 0},
-    {"FLY MODE", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_FLYMODE], 0},
-    {"NAME", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CRAFT_NAME], 0},
-    {"THROTTLE", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_THROTTLE_POS], 0},
+    {"--- ACTIV ELEM ---", OME_Label,   NULL, NULL, 0},
+    {"RSSI",               OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_RSSI_VALUE], 0},
+    {"BATTERY VOLTAGE",    OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_VOLTAGE], 0},
+    {"BATTERY USAGE",      OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_USAGE], 0},
+    {"AVG CELL VOLTAGE",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_AVG_CELL_VOLTAGE], 0},
+    {"CROSSHAIRS",         OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CROSSHAIRS], 0},
+    {"HORIZON",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ARTIFICIAL_HORIZON], 0},
+    {"HORIZON SIDEBARS",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HORIZON_SIDEBARS], 0},
+    {"UPTIME",             OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ONTIME], 0},
+    {"FLY TIME",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_FLYTIME], 0},
+    {"FLY MODE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_FLYMODE], 0},
+    {"NAME",               OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CRAFT_NAME], 0},
+    {"THROTTLE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_THROTTLE_POS], 0},
 #ifdef VTX_CONTROL
-    {"VTX CHAN", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_VTX_CHANNEL], 0},
+    {"VTX CHAN",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_VTX_CHANNEL], 0},
 #endif // VTX
-    {"CURRENT (A)", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CURRENT_DRAW], 0},
-    {"USED MAH", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAH_DRAWN], 0},
+    {"CURRENT (A)",        OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CURRENT_DRAW], 0},
+    {"USED MAH",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAH_DRAWN], 0},
 #ifdef GPS
-    {"GPS SPEED", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_SPEED], 0},
-    {"GPS SATS.", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_SATS], 0},
+    {"GPS SPEED",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_SPEED], 0},
+    {"GPS SATS.",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_SATS], 0},
+#ifdef COMPASS
+    {"HOME DIR",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HOME_DIR], 0},
+#endif
 #endif // GPS
-    {"ALTITUDE", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ALTITUDE], 0},
-    {"POWER", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_POWER], 0},
-    {"ROLL PID", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ROLL_PIDS], 0},
-    {"PITCH PID", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PITCH_PIDS], 0},
-    {"YAW PID", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_YAW_PIDS], 0},
-    {"DEBUG", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_DEBUG], 0},
-    {"BACK", OME_Back, NULL, NULL, 0},
-    {NULL, OME_END, NULL, NULL, 0}
+    {"ALTITUDE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ALTITUDE], 0},
+    {"POWER",              OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_POWER], 0},
+    {"ROLL PID",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ROLL_PIDS], 0},
+    {"PITCH PID",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PITCH_PIDS], 0},
+    {"YAW PID",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_YAW_PIDS], 0},
+    {"DEBUG",              OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_DEBUG], 0},
+    {"BACK",               OME_Back,    NULL, NULL, 0},
+    {NULL,                 OME_END,     NULL, NULL, 0}
 };
 
 CMS_Menu menuOsdActiveElems = {
@@ -144,10 +147,10 @@ CMS_Menu menuOsdActiveElems = {
 
 OSD_Entry cmsx_menuOsdLayoutEntries[] =
 {
-    {"---SCREEN LAYOUT---", OME_Label, NULL, NULL, 0},
-    {"ACTIVE ELEM", OME_Submenu, cmsMenuChange, &menuOsdActiveElems, 0},
-    {"BACK", OME_Back, NULL, NULL, 0},
-    {NULL, OME_END, NULL, NULL, 0}
+    {"---SCREEN LAYOUT---", OME_Label,   NULL,          NULL, 0},
+    {"ACTIVE ELEM",         OME_Submenu, cmsMenuChange, &menuOsdActiveElems, 0},
+    {"BACK",                OME_Back,    NULL,          NULL, 0},
+    {NULL,                  OME_END,     NULL,          NULL, 0}
 };
 
 CMS_Menu cmsx_menuOsdLayout = {
