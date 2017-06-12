@@ -46,6 +46,9 @@ typedef struct displayPortVTable_s {
 typedef struct displayPortProfile_s {
     int8_t colAdjust;
     int8_t rowAdjust;
+    bool invert;
+    uint8_t blackBrightness;
+    uint8_t whiteBrightness;
 } displayPortProfile_t;
 
 void displayGrab(displayPort_t *instance);

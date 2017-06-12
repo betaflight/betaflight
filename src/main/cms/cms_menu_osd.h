@@ -18,4 +18,4 @@
 #pragma once
 
 extern CMS_Menu cmsx_menuAlarms;
-extern CMS_Menu cmsx_menuOsdLayout;
+extern CMS_Menu cmsx_menuOsd;

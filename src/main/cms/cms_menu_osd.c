@@ -36,6 +36,7 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "io/displayport_max7456.h"
 #include "io/osd.h"
 
 static uint8_t osdConfig_rssi_alarm;
@@ -145,20 +146,55 @@ CMS_Menu menuOsdActiveElems = {
     .entries = menuOsdActiveElemsEntries
 };
 
-OSD_Entry cmsx_menuOsdLayoutEntries[] =
+#ifdef USE_MAX7456
+static bool displayPortProfileMax7456_invert;
+static uint8_t displayPortProfileMax7456_blackBrightness;
+static uint8_t displayPortProfileMax7456_whiteBrightness;
+#endif
+
+static long cmsx_menuOsdOnEnter(void)
 {
-    {"---SCREEN LAYOUT---", OME_Label,   NULL,          NULL, 0},
-    {"ACTIVE ELEM",         OME_Submenu, cmsMenuChange, &menuOsdActiveElems, 0},
-    {"BACK",                OME_Back,    NULL,          NULL, 0},
-    {NULL,                  OME_END,     NULL,          NULL, 0}
+#ifdef USE_MAX7456
+    displayPortProfileMax7456_invert = displayPortProfileMax7456()->invert;
+    displayPortProfileMax7456_blackBrightness = displayPortProfileMax7456()->blackBrightness;
+    displayPortProfileMax7456_whiteBrightness = displayPortProfileMax7456()->whiteBrightness;
+#endif
+
+    return 0;
+}
+
+static long cmsx_menuOsdOnExit(const OSD_Entry *self)
+{
+    UNUSED(self);
+
+#ifdef USE_MAX7456
+    displayPortProfileMax7456Mutable()->invert = displayPortProfileMax7456_invert;
+    displayPortProfileMax7456Mutable()->blackBrightness = displayPortProfileMax7456_blackBrightness;
+    displayPortProfileMax7456Mutable()->whiteBrightness = displayPortProfileMax7456_whiteBrightness;
+#endif
+
+  return 0;
+}
+
+OSD_Entry cmsx_menuOsdEntries[] =
+{
+    {"---OSD---",   OME_Label,   NULL,          NULL,                0},
+    {"ACTIVE ELEM", OME_Submenu, cmsMenuChange, &menuOsdActiveElems, 0},
+#ifdef USE_MAX7456
+    {"INVERT",    OME_Bool,  NULL, &displayPortProfileMax7456_invert,                                   0},
+    {"BRT BLACK", OME_UINT8, NULL, &(OSD_UINT8_t){&displayPortProfileMax7456_blackBrightness, 0, 3, 1}, 0},
+    {"BRT WHITE", OME_UINT8, NULL, &(OSD_UINT8_t){&displayPortProfileMax7456_whiteBrightness, 0, 3, 1}, 0},
+#endif
+    {"BACK", OME_Back, NULL, NULL, 0},
+    {NULL,   OME_END,  NULL, NULL, 0}
 };
 
-CMS_Menu cmsx_menuOsdLayout = {
-    .GUARD_text = "MENULAYOUT",
+CMS_Menu cmsx_menuOsd = {
+    .GUARD_text = "MENUOSD",
     .GUARD_type = OME_MENU,
-    .onEnter = NULL,
-    .onExit = NULL,
+    .onEnter = cmsx_menuOsdOnEnter,
+    .onExit = cmsx_menuOsdOnExit,
     .onGlobalExit = NULL,
-    .entries = cmsx_menuOsdLayoutEntries
+    .entries = cmsx_menuOsdEntries
 };
 #endif // CMS
