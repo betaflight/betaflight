@@ -46,7 +46,7 @@
 //#define MAG_HMC5883_ALIGN       CW90_DEG
 
 #define BARO
-#define USE_BARO_MS5611
+//#define USE_BARO_MS5611
 
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
