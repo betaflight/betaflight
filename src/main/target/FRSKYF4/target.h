@@ -15,6 +15,7 @@
 
 #pragma once
 
+
 #define TARGET_BOARD_IDENTIFIER "FRF4"
 #define USBD_PRODUCT_STRING "FRSKYF4"
 #define TARGET_CONFIG
