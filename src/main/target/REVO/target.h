@@ -224,9 +224,11 @@
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
 
+#if !defined(REVOLT)
 #define USE_I2C
 #define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
+#endif
 
 #define USE_ADC
 #if !defined(PODIUMF4)
