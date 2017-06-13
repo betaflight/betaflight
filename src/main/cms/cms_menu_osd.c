@@ -126,6 +126,7 @@ OSD_Entry menuOsdActiveElemsEntries[] =
 #ifdef COMPASS
     {"HOME DIR",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HOME_DIR], 0},
 #endif
+    {"HOME DIST",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HOME_DIST], 0},
 #endif // GPS
     {"ALTITUDE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ALTITUDE], 0},
     {"POWER",              OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_POWER], 0},

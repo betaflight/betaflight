@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common/axis.h"
+
 // navigation mode
 typedef enum {
     NAV_MODE_NONE = 0,
