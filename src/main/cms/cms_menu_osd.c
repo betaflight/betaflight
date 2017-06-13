@@ -123,9 +123,7 @@ OSD_Entry menuOsdActiveElemsEntries[] =
 #ifdef GPS
     {"GPS SPEED",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_SPEED], 0},
     {"GPS SATS.",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_SATS], 0},
-#ifdef COMPASS
     {"HOME DIR",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HOME_DIR], 0},
-#endif
     {"HOME DIST",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HOME_DIST], 0},
 #endif // GPS
     {"ALTITUDE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ALTITUDE], 0},

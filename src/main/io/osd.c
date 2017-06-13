@@ -78,7 +78,6 @@
 
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
-#include "sensors/compass.h"
 #include "sensors/sensors.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
@@ -276,7 +275,6 @@ static void osdDrawSingleElement(uint8_t item)
         }
         break;
 
-#ifdef MAG
     case OSD_HOME_DIR:
         if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
             if (GPS_distanceToHome > 0) {
@@ -307,7 +305,6 @@ static void osdDrawSingleElement(uint8_t item)
 
         break;
 
-#endif // COMPASS
 #endif // GPS
 
     case OSD_ALTITUDE:
@@ -627,11 +624,7 @@ void osdDrawElements(void)
         osdDrawSingleElement(OSD_GPS_LAT);
         osdDrawSingleElement(OSD_GPS_LON);
         osdDrawSingleElement(OSD_HOME_DIST);
-#ifdef COMPASS
-        if (sensors(SENSOR_MAG) || sensors(SENSOR_GPSMAG))
-        	osdDrawSingleElement(OSD_HOME_DIR);            
-#endif
-        
+        osdDrawSingleElement(OSD_HOME_DIR);
     }
 #endif // GPS
 }
