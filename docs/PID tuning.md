@@ -61,11 +61,11 @@ This controller has code that attempts to compensate for variations in the loopt
 
 It is the first PID Controller designed for 32-bit processors and not derived from MultiWii.
 
-The strength of the auto-leveling correction applied during *Angle* mode is controlled by the LEVEL "P" PID term which is labeled "LEVEL Proportional" in the GUI (prior to version v1.13.0 the parameter `level_angle` was used). This can be used to tune the auto-leveling strength in *Angle* mode compared to *Horizon* mode. The default is 5.0.
+The strength of the auto-leveling correction applied during *Angle* mode is controlled by the LEVEL "P" PID term which is labeled "Angle", "Strength" in the GUI (prior to version v1.13.0 the parameter `level_angle` was used). This can be used to tune the auto-leveling strength in *Angle* mode compared to *Horizon* mode. The default is 50.
 
-The strength of the auto-leveling correction applied during *Horizon* mode is set by the LEVEL "I" PID term which is labeled "LEVEL Integral" in the GUI (prior to version v1.13.0 the parameter `level_horizon` was used). The default is 3.0, which makes the *Horizon* mode apply weaker self-leveling than the *Angle* mode. Note: There is currently a bug in the Configurator which shows this parameter divided by 100 (so it shows as 0.03 rather than 3.0).
+The strength of the auto-leveling correction applied during *Horizon* mode is set by the LEVEL "I" PID term which is labeled "Horizon", "Strength" in the GUI (prior to version v1.13.0 the parameter `level_horizon` was used). The default is also 50.
 
-The transition between self-leveling and acro behavior in *Horizon* mode is controlled by the LEVEL "D" term which is labeled "LEVEL Derivative" in the GUI  (prior to version of v1.13.0 the parameter `sensitivity_horizon` parameter was used) . This sets the percentage of your stick travel that should have self-leveling applied to it, so smaller values cause more of the stick area to fly using only the gyros. The default is 75%
+The transition between self-leveling and acro behavior in *Horizon* mode is controlled by the LEVEL "D" term which is labeled "Horizon", "Transition" in the GUI  (prior to version of v1.13.0 the parameter `sensitivity_horizon` parameter was used) . This sets the percentage of your stick travel that should have self-leveling applied to it, so smaller values cause more of the stick area to fly using only the gyros.
 
 For example, at a setting of "100" for sensitivity horizon, 100% self-leveling strength will be applied at center stick, 50% self-leveling will be applied at 50% stick, and no self-leveling will be applied at 100% stick. If sensitivity is decreased to 75, 100% self-leveling will be applied at center stick, 50% will be applied at 63% stick, and no self-leveling will be applied at 75% stick and onwards.
 
