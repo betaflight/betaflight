@@ -137,6 +137,21 @@ static displayPort_t *osdDisplayPort;
 #define AH_SIDEBAR_WIDTH_POS 7
 #define AH_SIDEBAR_HEIGHT_POS 3
 
+static const char compassBar[] = {
+  SYM_HEADING_W,
+  SYM_HEADING_LINE, SYM_HEADING_DIVIDED_LINE, SYM_HEADING_LINE,
+  SYM_HEADING_N,
+  SYM_HEADING_LINE, SYM_HEADING_DIVIDED_LINE, SYM_HEADING_LINE,
+  SYM_HEADING_E,
+  SYM_HEADING_LINE, SYM_HEADING_DIVIDED_LINE, SYM_HEADING_LINE,
+  SYM_HEADING_S,
+  SYM_HEADING_LINE, SYM_HEADING_DIVIDED_LINE, SYM_HEADING_LINE,
+  SYM_HEADING_W,
+  SYM_HEADING_LINE, SYM_HEADING_DIVIDED_LINE, SYM_HEADING_LINE,
+  SYM_HEADING_N,
+  SYM_HEADING_LINE, SYM_HEADING_DIVIDED_LINE, SYM_HEADING_LINE
+};
+
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
 
 /**
@@ -190,11 +205,17 @@ static void osdFormatPID(char * buff, const char * label, const pid8_t * pid)
     tfp_sprintf(buff, "%s %3d %3d %3d", label, pid->P, pid->I, pid->D);
 }
 
-static uint8_t osdGetDirectionSymbolFromHeading(int heading)
+static uint8_t osdGetHeadingIntoDiscreteDirections(int heading, int directions)
 {
     heading = (heading + 360) % 360;
+    heading = heading * 2 / (360 * 2 / directions);
 
-    heading = heading * 2 / 45;
+    return heading;
+}
+
+static uint8_t osdGetDirectionSymbolFromHeading(int heading)
+{
+    heading = osdGetHeadingIntoDiscreteDirections(heading, 16);
 
     // Now heading has a heading with Up=0, Right=4, Down=8 and Left=12
     // Our symbols are Down=0, Right=4, Up=8 and Left=12
@@ -310,6 +331,17 @@ static void osdDrawSingleElement(uint8_t item)
         break;
 
 #endif // GPS
+
+    case OSD_COMPASS_BAR:
+    {
+        int16_t h = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+
+        h = osdGetHeadingIntoDiscreteDirections(h, 16);
+
+        memcpy(buff, compassBar + h, 9);
+        buff[9]=0;
+        break;
+    }
 
     case OSD_ALTITUDE:
         {
@@ -632,6 +664,7 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_DISARMED);
     osdDrawSingleElement(OSD_NUMERICAL_HEADING);
     osdDrawSingleElement(OSD_NUMERICAL_VARIO);
+    osdDrawSingleElement(OSD_COMPASS_BAR);
 
 #ifdef GPS
 #ifdef CMS
@@ -682,6 +715,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->item_pos[OSD_GPS_LON]            = OSD_POS(18, 2)  | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_HOME_DIST]          = OSD_POS(15, 9)  | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_HOME_DIR]           = OSD_POS(14, 9)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_COMPASS_BAR]        = OSD_POS(10, 8)  | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_MAIN_BATT_USAGE]    = OSD_POS(8, 12)  | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_ARMED_TIME]         = OSD_POS(1, 2)   | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_DISARMED]           = OSD_POS(10, 4)  | VISIBLE_FLAG;
