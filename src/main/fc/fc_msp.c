@@ -840,16 +840,31 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 
 #ifdef OSD
         // OSD specific, not applicable to OSD slaves.
+
+        // Configuration
         sbufWriteU8(dst, osdConfig()->units);
+
+        // Alarms
         sbufWriteU8(dst, osdConfig()->rssi_alarm);
         sbufWriteU16(dst, osdConfig()->cap_alarm);
-        sbufWriteU16(dst, osdConfig()->time_alarm);
+        sbufWriteU16(dst, 0);
         sbufWriteU16(dst, osdConfig()->alt_alarm);
+
+        // Element position and visibility
         for (int i = 0; i < OSD_ITEM_COUNT; i++) {
             sbufWriteU16(dst, osdConfig()->item_pos[i]);
         }
+
+        // Post flight statistics
+        sbufWriteU8(dst, OSD_STAT_COUNT);
         for (int i = 0; i < OSD_STAT_COUNT; i++ ) {
             sbufWriteU8(dst, osdConfig()->enabled_stats[i]);
+        }
+
+        // Timers
+        sbufWriteU8(dst, OSD_TIMER_COUNT);
+        for (int i = 0; i < OSD_TIMER_COUNT; i++) {
+            sbufWriteU16(dst, osdConfig()->timers[i]);
         }
 #endif
         break;
@@ -2154,11 +2169,23 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
 #if defined(OSD)
                 osdConfigMutable()->units = sbufReadU8(src);
+
+                // Alarms
                 osdConfigMutable()->rssi_alarm = sbufReadU8(src);
                 osdConfigMutable()->cap_alarm = sbufReadU16(src);
-                osdConfigMutable()->time_alarm = sbufReadU16(src);
+                sbufReadU16(src); // Skip unused (previously fly timer)
                 osdConfigMutable()->alt_alarm = sbufReadU16(src);
 #endif
+            } else if ((int8_t)addr == -2) {
+#if defined(OSD)
+                // Timers
+                uint8_t index = sbufReadU8(src);
+                if (index > OSD_TIMER_COUNT) {
+                  return MSP_RESULT_ERROR;
+                }
+                osdConfigMutable()->timers[index] = sbufReadU16(src);
+#endif
+                return MSP_RESULT_ERROR;
             } else {
 #if defined(OSD)
                 const uint16_t value = sbufReadU16(src);
@@ -2172,6 +2199,8 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 } else if (addr < OSD_ITEM_COUNT) {
                     /* Set element positions */
                     osdConfigMutable()->item_pos[addr] = value;
+                } else {
+                  return MSP_RESULT_ERROR;
                 }
 #else
                 return MSP_RESULT_ERROR;
