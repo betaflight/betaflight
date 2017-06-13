@@ -118,6 +118,7 @@ typedef struct statistic_s {
     int16_t max_current; // /10
     int16_t min_rssi;
     int16_t max_altitude;
+    int16_t max_distance;
     uint16_t armed_time;
 } statistic_t;
 
@@ -675,6 +676,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->enabled_stats[OSD_STAT_END_BATTERY]  = false;
     osdConfig->enabled_stats[OSD_STAT_FLYTIME]      = false;
     osdConfig->enabled_stats[OSD_STAT_ARMEDTIME]    = true;
+    osdConfig->enabled_stats[OSD_STAT_MAX_DISTANCE] = false;
 
     osdConfig->units = OSD_UNIT_METRIC;
 
@@ -792,13 +794,14 @@ void osdResetAlarms(void)
 
 static void osdResetStats(void)
 {
-    stats.max_current = 0;
-    stats.max_speed = 0;
-    stats.min_voltage = 500;
-    stats.max_current = 0;
-    stats.min_rssi = 99;
+    stats.max_current  = 0;
+    stats.max_speed    = 0;
+    stats.min_voltage  = 500;
+    stats.max_current  = 0;
+    stats.min_rssi     = 99;
     stats.max_altitude = 0;
-    stats.armed_time = 0;
+    stats.max_distance = 0;
+    stats.armed_time   = 0;
 }
 
 static void osdUpdateStats(void)
@@ -822,6 +825,12 @@ static void osdUpdateStats(void)
 
     if (stats.max_altitude < getEstimatedAltitude())
         stats.max_altitude = getEstimatedAltitude();
+
+#ifdef GPS
+    if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME) && (stats.max_distance < GPS_distanceToHome)) {
+            stats.max_distance = GPS_distanceToHome;
+    }
+#endif
 }
 
 #ifdef BLACKBOX
@@ -894,6 +903,11 @@ static void osdShowStats(void)
     if (osdConfig()->enabled_stats[OSD_STAT_MAX_SPEED] && STATE(GPS_FIX)) {
         itoa(stats.max_speed, buff, 10);
         osdDisplayStatisticLabel(top++, "MAX SPEED", buff);
+    }
+
+    if (osdConfig()->enabled_stats[OSD_STAT_MAX_DISTANCE]) {
+        tfp_sprintf(buff, "%d%c", osdGetMetersToSelectedUnit(stats.max_distance), osdGetMetersToSelectedUnitSymbol());
+        osdDisplayStatisticLabel(top++, "MAX DISTANCE", buff);
     }
 
     if (osdConfig()->enabled_stats[OSD_STAT_MIN_BATTERY]) {

@@ -74,6 +74,7 @@ typedef enum {
     OSD_STAT_END_BATTERY,
     OSD_STAT_FLYTIME,
     OSD_STAT_ARMEDTIME,
+    OSD_STAT_MAX_DISTANCE,
     OSD_STAT_COUNT // MUST BE LAST
 } osd_stats_e;
 
