@@ -660,6 +660,7 @@ const clivalue_t valueTable[] = {
     { "osd_disarmed_pos",           VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_DISARMED]) },
 
     { "osd_stat_max_spd",           VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_MAX_SPEED])},
+    { "osd_stat_max_dist",          VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_MAX_DISTANCE])},
     { "osd_stat_min_batt",          VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_MIN_BATTERY])},
     { "osd_stat_min_rssi",          VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_MIN_RSSI])},
     { "osd_stat_max_curr",          VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_MAX_CURRENT])},
