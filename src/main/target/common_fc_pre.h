@@ -125,7 +125,7 @@
 #endif
 
 #if (FLASH_SIZE > 256)
-# Temporarily moved this here because of overflowing flash size on F3
+// Temporarily moved this here because of overflowing flash size on F3
 #define GPS
 
 #define USE_UNCOMMON_MIXERS
