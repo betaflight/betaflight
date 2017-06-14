@@ -17,9 +17,13 @@
 
 #pragma once
 
+#define SCHEDULER_DELAY_LIMIT 1
+#define TASK_GYROPID_DESIRED_PERIOD 100
+
 #define CMS
 #define CMS_MAX_DEVICE 4
 #define USE_FAKE_GYRO
+#define BEEPER
 #define BLACKBOX
 #define MAG
 #define BARO
