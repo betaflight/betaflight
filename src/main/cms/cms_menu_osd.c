@@ -84,6 +84,7 @@ CMS_Menu cmsx_menuAlarms = {
     .entries = cmsx_menuAlarmsEntries,
 };
 
+#ifndef DISABLE_EXTENDED_CMS_OSD_MENU
 static uint16_t osdConfig_item_pos[OSD_ITEM_COUNT];
 
 static long menuOsdActiveElemsOnEnter(void)
@@ -122,7 +123,9 @@ OSD_Entry menuOsdActiveElemsEntries[] =
     {"USED MAH",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAH_DRAWN], 0},
 #ifdef GPS
     {"GPS SPEED",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_SPEED], 0},
-    {"GPS SATS.",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_SATS], 0},
+    {"GPS SATS",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_SATS], 0},
+    {"GPS LAT",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_LAT], 0},
+    {"GPS LON",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_LON], 0},
     {"HOME DIR",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HOME_DIR], 0},
     {"HOME DIST",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HOME_DIST], 0},
 #endif // GPS
@@ -131,7 +134,13 @@ OSD_Entry menuOsdActiveElemsEntries[] =
     {"ROLL PID",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ROLL_PIDS], 0},
     {"PITCH PID",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PITCH_PIDS], 0},
     {"YAW PID",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_YAW_PIDS], 0},
+    {"PROFILES",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PIDRATE_PROFILE], 0},
     {"DEBUG",              OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_DEBUG], 0},
+    {"BATT WARN",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_WARNING], 0},
+    {"DISARMED",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_DISARMED], 0},
+    {"PIT ANG",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PITCH_ANGLE], 0},
+    {"ROL ANG",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ROLL_ANGLE], 0},
+    {"ARMED TIME",         OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ARMED_TIME], 0},
     {"HEADING",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_NUMERICAL_HEADING], 0},
     {"VARIO",              OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_NUMERICAL_VARIO], 0},
     {"BACK",               OME_Back,    NULL, NULL, 0},
@@ -146,6 +155,7 @@ CMS_Menu menuOsdActiveElems = {
     .onGlobalExit = NULL,
     .entries = menuOsdActiveElemsEntries
 };
+#endif /* DISABLE_EXTENDED_CMS_OSD_MENU */
 
 #ifdef USE_MAX7456
 static bool displayPortProfileMax7456_invert;
@@ -180,7 +190,9 @@ static long cmsx_menuOsdOnExit(const OSD_Entry *self)
 OSD_Entry cmsx_menuOsdEntries[] =
 {
     {"---OSD---",   OME_Label,   NULL,          NULL,                0},
+#ifndef DISABLE_EXTENDED_CMS_OSD_MENU
     {"ACTIVE ELEM", OME_Submenu, cmsMenuChange, &menuOsdActiveElems, 0},
+#endif
 #ifdef USE_MAX7456
     {"INVERT",    OME_Bool,  NULL, &displayPortProfileMax7456_invert,                                   0},
     {"BRT BLACK", OME_UINT8, NULL, &(OSD_UINT8_t){&displayPortProfileMax7456_blackBrightness, 0, 3, 1}, 0},
