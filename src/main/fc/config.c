@@ -312,13 +312,11 @@ uint16_t getCurrentMinthrottle(void)
 
 void resetConfigs(void)
 {
-    pgResetAll(MAX_PROFILE_COUNT);
+    pgResetAll();
 
 #if defined(TARGET_CONFIG)
     targetConfiguration();
 #endif
-
-    pgActivateProfile(0);
 
 #ifndef USE_OSD_SLAVE
     setPidProfile(0);
