@@ -132,6 +132,8 @@ OSD_Entry menuOsdActiveElemsEntries[] =
     {"PITCH PID",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PITCH_PIDS], 0},
     {"YAW PID",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_YAW_PIDS], 0},
     {"DEBUG",              OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_DEBUG], 0},
+    {"HEADING",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_NUMERICAL_HEADING], 0},
+    {"VARIO",              OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_NUMERICAL_VARIO], 0},
     {"BACK",               OME_Back,    NULL, NULL, 0},
     {NULL,                 OME_END,     NULL, NULL, 0}
 };

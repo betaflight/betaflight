@@ -190,6 +190,21 @@ static void osdFormatPID(char * buff, const char * label, const pid8_t * pid)
     tfp_sprintf(buff, "%s %3d %3d %3d", label, pid->P, pid->I, pid->D);
 }
 
+static uint8_t osdGetDirectionSymbolFromHeading(int heading)
+{
+    heading = (heading + 360) % 360;
+
+    heading = heading * 2 / 45;
+
+    // Now heading has a heading with Up=0, Right=4, Down=8 and Left=12
+    // Our symbols are Down=0, Right=4, Up=8 and Left=12
+    // There're 16 arrow symbols. Transform it.
+    heading = 16 - heading;
+    heading = (heading + 8) % 16;
+
+    return SYM_ARROW_SOUTH + heading;
+}
+
 static void osdDrawSingleElement(uint8_t item)
 {
     if (!VISIBLE(osdConfig()->item_pos[item]) || BLINK(item)) {
@@ -279,19 +294,8 @@ static void osdDrawSingleElement(uint8_t item)
     case OSD_HOME_DIR:
         if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
             if (GPS_distanceToHome > 0) {
-                int16_t h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(attitude.values.yaw);
-
-                h = (h + 360) % 360;
-
-                h = h * 2 / 45;
-
-                // Now h has a heading with Up=0, Right=4, Down=8 and Left=12
-                // Our symbols are Down=0, Right=4, Up=8 and Left=12
-                // There're 16 arrow symbols. Transform it.
-                h = 16 - h;
-                h = (h + 8) % 16;
-
-                buff[0] = SYM_ARROW_SOUTH + h;
+                const int h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+                buff[0] = osdGetDirectionSymbolFromHeading(h);
             } else {
                 // We don't have a HOME symbol in the font, by now we use this
                 buff[0] = SYM_THR1;
@@ -556,6 +560,21 @@ static void osdDrawSingleElement(uint8_t item)
             return;
         }
 
+    case OSD_NUMERICAL_HEADING:
+        {
+            const int heading = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+            tfp_sprintf(buff, "%c%03d", osdGetDirectionSymbolFromHeading(heading), heading);
+            break;
+        }
+
+    case OSD_NUMERICAL_VARIO:
+        {
+            const int verticalSpeed = osdGetMetersToSelectedUnit(getEstimatedVario());
+            const char directionSymbol = verticalSpeed < 0 ? SYM_ARROW_SOUTH : SYM_ARROW_NORTH;
+            tfp_sprintf(buff, "%c%01d.%01d", directionSymbol, abs(verticalSpeed / 100), abs((verticalSpeed % 100) / 10));
+            break;
+        }
+
     default:
         return;
     }
@@ -612,6 +631,8 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_MAIN_BATT_USAGE);
     osdDrawSingleElement(OSD_ARMED_TIME);
     osdDrawSingleElement(OSD_DISARMED);
+    osdDrawSingleElement(OSD_NUMERICAL_HEADING);
+    osdDrawSingleElement(OSD_NUMERICAL_VARIO);
 
 #ifdef GPS
 #ifdef CMS
@@ -665,6 +686,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->item_pos[OSD_MAIN_BATT_USAGE]    = OSD_POS(8, 12)  | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_ARMED_TIME]         = OSD_POS(1, 2)   | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_DISARMED]           = OSD_POS(10, 4)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_NUMERICAL_HEADING]  = OSD_POS(23, 9)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_NUMERICAL_VARIO]    = OSD_POS(23, 8)  | VISIBLE_FLAG;
 
     osdConfig->enabled_stats[OSD_STAT_MAX_SPEED]    = true;
     osdConfig->enabled_stats[OSD_STAT_MIN_BATTERY]  = true;
