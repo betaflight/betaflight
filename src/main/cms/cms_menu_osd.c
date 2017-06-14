@@ -84,6 +84,7 @@ CMS_Menu cmsx_menuAlarms = {
     .entries = cmsx_menuAlarmsEntries,
 };
 
+#ifndef DISABLE_EXTENDED_CMS_OSD_MENU
 static uint16_t osdConfig_item_pos[OSD_ITEM_COUNT];
 
 static long menuOsdActiveElemsOnEnter(void)
@@ -154,6 +155,7 @@ CMS_Menu menuOsdActiveElems = {
     .onGlobalExit = NULL,
     .entries = menuOsdActiveElemsEntries
 };
+#endif /* DISABLE_EXTENDED_CMS_OSD_MENU */
 
 #ifdef USE_MAX7456
 static bool displayPortProfileMax7456_invert;
@@ -188,7 +190,9 @@ static long cmsx_menuOsdOnExit(const OSD_Entry *self)
 OSD_Entry cmsx_menuOsdEntries[] =
 {
     {"---OSD---",   OME_Label,   NULL,          NULL,                0},
+#ifndef DISABLE_EXTENDED_CMS_OSD_MENU
     {"ACTIVE ELEM", OME_Submenu, cmsMenuChange, &menuOsdActiveElems, 0},
+#endif
 #ifdef USE_MAX7456
     {"INVERT",    OME_Bool,  NULL, &displayPortProfileMax7456_invert,                                   0},
     {"BRT BLACK", OME_UINT8, NULL, &(OSD_UINT8_t){&displayPortProfileMax7456_blackBrightness, 0, 3, 1}, 0},
