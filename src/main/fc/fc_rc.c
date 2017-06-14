@@ -166,7 +166,7 @@ static void scaleRcCommandToFpvCamAngle(void) {
     const int16_t rcCommandSpeed = rcCommand[THROTTLE] - rcCommandThrottlePrevious[index];
 
     if(ABS(rcCommandSpeed) > throttleVelocityThreshold)
-        pidSetItermAccelerator(0.001f * currentPidProfile->itermAcceleratorGain);
+        pidSetItermAccelerator(CONVERT_PARAMETER_TO_FLOAT(currentPidProfile->itermAcceleratorGain));
     else
         pidSetItermAccelerator(1.0f);
 }
