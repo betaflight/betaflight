@@ -696,6 +696,9 @@ COMMON_SRC = \
             drivers/system.c \
             drivers/timer.c \
             drivers/transponder_ir.c \
+            drivers/transponder_ir_arcitimer.c \
+            drivers/transponder_ir_ilap.c \
+            drivers/transponder_ir_erlt.c \
             fc/config.c \
             fc/fc_dispatch.c \
             fc/fc_hardfaults.c \
@@ -783,7 +786,6 @@ FC_SRC = \
             drivers/serial_escserial.c \
             drivers/sonar_hcsr04.c \
             drivers/vtx_common.c \
-            drivers/transponder_ir.c \
             flight/navigation.c \
             io/dashboard.c \
             io/displayport_max7456.c \

@@ -748,16 +748,31 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, batteryConfig()->currentMeterSource);
         break;
 
-    case MSP_TRANSPONDER_CONFIG:
+    case MSP_TRANSPONDER_CONFIG: {
 #ifdef TRANSPONDER
-        sbufWriteU8(dst, 1); //Transponder supported
-        for (unsigned int i = 0; i < sizeof(transponderConfig()->data); i++) {
-            sbufWriteU8(dst, transponderConfig()->data[i]);
+        // Backward compatibility to BFC 3.1.1 is lost for this message type
+        sbufWriteU8(dst, TRANSPONDER_PROVIDER_COUNT);
+        for (unsigned int i = 0; i < TRANSPONDER_PROVIDER_COUNT; i++) {
+            sbufWriteU8(dst, transponderRequirements[i].provider);
+            sbufWriteU8(dst, transponderRequirements[i].dataLength);
+        }
+
+        uint8_t provider = transponderConfig()->provider;
+        sbufWriteU8(dst, provider);
+
+        if (provider) {
+            uint8_t requirementIndex = provider - 1;
+            uint8_t providerDataLength = transponderRequirements[requirementIndex].dataLength;
+
+            for (unsigned int i = 0; i < providerDataLength; i++) {
+                sbufWriteU8(dst, transponderConfig()->data[i]);
+            }
         }
 #else
-        sbufWriteU8(dst, 0); // Transponder not supported
+        sbufWriteU8(dst, 0); // no providers
 #endif
         break;
+    }
 
     case MSP_OSD_CONFIG: {
 #define OSD_FLAGS_OSD_FEATURE           (1 << 0)
@@ -1987,15 +2002,41 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
     switch (cmdMSP) {
 #ifdef TRANSPONDER
-    case MSP_SET_TRANSPONDER_CONFIG:
-        if (dataSize != sizeof(transponderConfig()->data)) {
+    case MSP_SET_TRANSPONDER_CONFIG: {
+        // Backward compatibility to BFC 3.1.1 is lost for this message type
+
+        uint8_t provider = sbufReadU8(src);
+        uint8_t bytesRemaining = dataSize - 1;
+
+        if (provider > TRANSPONDER_PROVIDER_COUNT) {
             return MSP_RESULT_ERROR;
         }
-        for (unsigned int i = 0; i < sizeof(transponderConfig()->data); i++) {
+
+        const uint8_t requirementIndex = provider - 1;
+        const uint8_t transponderDataSize = transponderRequirements[requirementIndex].dataLength;
+
+        transponderConfigMutable()->provider = provider;
+
+        if (provider == TRANSPONDER_NONE) {
+            break;
+        }
+
+        if (bytesRemaining != transponderDataSize) {
+            return MSP_RESULT_ERROR;
+        }
+
+        if (provider != transponderConfig()->provider) {
+            transponderStopRepeating();
+        }
+
+        memset(transponderConfigMutable()->data, 0, sizeof(transponderConfig()->data));
+
+        for (unsigned int i = 0; i < transponderDataSize; i++) {
             transponderConfigMutable()->data[i] = sbufReadU8(src);
         }
         transponderUpdateData();
         break;
+    }
 #endif
 
     case MSP_SET_VOLTAGE_METER_CONFIG: {
