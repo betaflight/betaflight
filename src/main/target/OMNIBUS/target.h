@@ -77,13 +77,14 @@
 #define UART2_TX_PIN            PA14 // PA14 / SWCLK
 #define UART2_RX_PIN            PA15
 
-#define UART3_TX_PIN            PB10 // PB10 (AF7)
-#define UART3_RX_PIN            PB11 // PB11 (AF7)
+#define UART3_TX_PIN            PB10 // PB10 (PWM5)
+#define UART3_RX_PIN            PB11 // PB11 (PWM6)
 
-#undef USE_I2C
-//#define USE_I2C
-//#define USE_I2C_DEVICE_1
-//#define I2C_DEVICE              (I2CDEV_1)
+#define USE_I2C
+#define USE_I2C_DEVICE_1
+#define I2C1_SCL                NONE // PB6 (PWM8)
+#define I2C1_SDA                NONE // PB7 (PWM7)
+#define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
