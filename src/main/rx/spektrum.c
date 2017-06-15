@@ -77,10 +77,10 @@ static volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
 static rxRuntimeConfig_t *rxRuntimeConfigPtr;
 static serialPort_t *serialPort;
 
-#ifdef SPEKTRUM_BIND_PIN
-static IO_t BindPin = DEFIO_IO(NONE);
-#ifdef BINDPLUG_PIN
-static IO_t BindPlug = DEFIO_IO(NONE);
+#ifdef USE_SPEKTRUM_BIND
+static IO_t BindPin;
+#ifdef USE_SPEKTRUM_BIND_PLUG
+static IO_t BindPlug;
 #endif
 #endif
 
@@ -180,13 +180,13 @@ static uint16_t spektrumReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint
     return data;
 }
 
-#ifdef SPEKTRUM_BIND_PIN
+#ifdef USE_SPEKTRUM_BIND
 
-bool spekShouldBind(uint8_t spektrum_sat_bind)
+bool spekShouldBind(rxConfig_t *rxConfig)
 {
-#ifdef BINDPLUG_PIN
-    BindPlug = IOGetByTag(IO_TAG(BINDPLUG_PIN));
-    IOInit(BindPlug, OWNER_RX_BIND, 0);
+#ifdef USE_SPEKTRUM_BIND_PLUG
+    BindPlug = IOGetByTag(rxConfig->spektrum_bind_pin[SPEKTRUM_BIND_PLUG_PIN_INDEX]);
+    IOInit(BindPlug, OWNER_RX_BIND, RESOURCE_INDEX(SPEKTRUM_BIND_PLUG_PIN_INDEX));
     IOConfigGPIO(BindPlug, IOCFG_IPU);
 
     // Check status of bind plug and exit if not active
@@ -198,10 +198,11 @@ bool spekShouldBind(uint8_t spektrum_sat_bind)
 
     return !(
         isMPUSoftReset() ||
-        spektrum_sat_bind == SPEKTRUM_SAT_BIND_DISABLED ||
-        spektrum_sat_bind > SPEKTRUM_SAT_BIND_MAX
+        rxConfig->spektrum_sat_bind == SPEKTRUM_SAT_BIND_DISABLED ||
+        rxConfig->spektrum_sat_bind > SPEKTRUM_SAT_BIND_MAX
     );
 }
+
 /* spektrumBind function ported from Baseflight. It's used to bind satellite receiver to TX.
  * Function must be called immediately after startup so that we don't miss satellite bind window.
  * Known parameters. Tested with DSMX satellite and DX8 radio. Framerate (11ms or 22ms) must be selected from TX.
@@ -211,14 +212,14 @@ bool spekShouldBind(uint8_t spektrum_sat_bind)
 void spektrumBind(rxConfig_t *rxConfig)
 {
     int i;
-    if (!spekShouldBind(rxConfig->spektrum_sat_bind)) {
+    if (!spekShouldBind(rxConfig)) {
         return;
     }
 
     LED1_ON;
 
-    BindPin = IOGetByTag(IO_TAG(SPEKTRUM_BIND_PIN));
-    IOInit(BindPin, OWNER_RX_BIND, 0);
+    BindPin = IOGetByTag(rxConfig->spektrum_bind_pin[SPEKTRUM_BIND_PIN_INDEX]);
+    IOInit(BindPin, OWNER_RX_BIND, RESOURCE_INDEX(SPEKTRUM_BIND_PIN_INDEX));
     IOConfigGPIO(BindPin, IOCFG_OUT_PP);
 
     // RX line, set high

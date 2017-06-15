@@ -28,3 +28,11 @@
 #if defined(USE_QUAD_MIXER_ONLY) && defined(USE_SERVOS)
 #undef USE_SERVOS
 #endif
+
+// Backward compatibility for Spektrum bind functions
+#ifdef SPEKTRUM_BIND_PIN
+#define USE_SPEKTRUM_BIND
+#endif
+#ifdef BINDPLUG_PIN
+#define USE_SPEKTRUM_BIND_PLUG
+#endif
