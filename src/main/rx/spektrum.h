@@ -17,6 +17,10 @@
 
 #pragma once
 
+// Indices of spektrum_bind_pin[]
+#define SPEKTRUM_BIND_PIN_INDEX        0
+#define SPEKTRUM_BIND_PLUG_PIN_INDEX   1
+
 #define SPEKTRUM_SAT_BIND_DISABLED     0
 #define SPEKTRUM_SAT_BIND_MAX         10
 

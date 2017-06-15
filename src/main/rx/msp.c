@@ -24,6 +24,7 @@
 
 #include "common/utils.h"
 
+#include "drivers/io_types.h"
 #include "rx/rx.h"
 #include "rx/msp.h"
 
