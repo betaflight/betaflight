@@ -116,4 +116,4 @@ bool isUsingSticksForArming(void);
 int32_t getRcStickDeflection(int32_t axis, uint16_t midrc);
 struct pidProfile_s;
 struct modeActivationCondition_s;
-void useRcControlsConfig(const struct modeActivationCondition_s *modeActivationConditions, struct pidProfile_s *pidProfileToUse);
+void useRcControlsConfig(struct pidProfile_s *pidProfileToUse);

@@ -524,9 +524,6 @@ static const adjustmentConfig_t pidYawDAdjustmentConfig = {
 TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
 {
     // given
-    modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
-    memset(&modeActivationConditions, 0, sizeof (modeActivationConditions));
-
     pidProfile_t pidProfile;
     memset(&pidProfile, 0, sizeof (pidProfile));
     pidProfile.pid[PID_PITCH].P = 0;
@@ -574,7 +571,7 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
             (1 << 5);
 
     // when
-    useRcControlsConfig(modeActivationConditions, &pidProfile);
+    useRcControlsConfig(&pidProfile);
     processRcAdjustments(&controlRateConfig);
 
     // then
@@ -598,12 +595,6 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
 TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController2)
 {
     // given
-    modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
-    memset(&modeActivationConditions, 0, sizeof (modeActivationConditions));
-
-    //escAndServoConfig_t escAndServoConfig;
-    //memset(&escAndServoConfig, 0, sizeof (escAndServoConfig));
-
     pidProfile_t pidProfile;
     memset(&pidProfile, 0, sizeof (pidProfile));
     pidProfile.pidController = 2;
@@ -653,7 +644,7 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController2)
             (1 << 5);
 
     // when
-    useRcControlsConfig(modeActivationConditions, &escAndServoConfig, &pidProfile);
+    useRcControlsConfig(&escAndServoConfig, &pidProfile);
     processRcAdjustments(&controlRateConfig, &rxConfig);
 
     // then

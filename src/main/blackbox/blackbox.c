@@ -862,7 +862,7 @@ static void blackboxStart(void)
      */
     blackboxBuildConditionCache();
 
-    blackboxModeActivationConditionPresent = isModeActivationConditionPresent(modeActivationConditions(0), BOXBLACKBOX);
+    blackboxModeActivationConditionPresent = isModeActivationConditionPresent(BOXBLACKBOX);
 
     blackboxResetIterationTimers();
 

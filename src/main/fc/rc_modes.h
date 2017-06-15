@@ -102,4 +102,4 @@ bool isAntiGravityModeActive(void);
 
 bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range);
 void updateActivatedModes(void);
-bool isModeActivationConditionPresent(const modeActivationCondition_t *modeActivationConditions, boxId_e modeId);
+bool isModeActivationConditionPresent(boxId_e modeId);

@@ -308,9 +308,9 @@ int32_t getRcStickDeflection(int32_t axis, uint16_t midrc) {
     return MIN(ABS(rcData[axis] - midrc), 500);
 }
 
-void useRcControlsConfig(const modeActivationCondition_t *modeActivationConditions, pidProfile_t *pidProfileToUse)
+void useRcControlsConfig(pidProfile_t *pidProfileToUse)
 {
     pidProfile = pidProfileToUse;
 
-    isUsingSticksToArm = !isModeActivationConditionPresent(modeActivationConditions, BOXARM);
+    isUsingSticksToArm = !isModeActivationConditionPresent(BOXARM);
 }

@@ -85,12 +85,12 @@ void updateActivatedModes(void)
     rcModeUpdate(&newMask);
 }
 
-bool isModeActivationConditionPresent(const modeActivationCondition_t *modeActivationConditions, boxId_e modeId)
+bool isModeActivationConditionPresent(boxId_e modeId)
 {
     uint8_t index;
 
     for (index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
-        const modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[index];
+        const modeActivationCondition_t *modeActivationCondition = modeActivationConditions(index);
 
         if (modeActivationCondition->modeId == modeId && IS_RANGE_USABLE(&modeActivationCondition->range)) {
             return true;
