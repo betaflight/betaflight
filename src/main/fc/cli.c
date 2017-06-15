@@ -63,6 +63,7 @@ extern uint8_t __config_end;
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/inverter.h"
+#include "drivers/light_led.h"
 #include "drivers/rx_pwm.h"
 #include "drivers/sdcard.h"
 #include "drivers/sensor.h"
@@ -2751,6 +2752,7 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef USE_INVERTER
     { OWNER_INVERTER,      PG_SERIAL_PIN_CONFIG, offsetof(serialPinConfig_t, ioTagInverter[0]), SERIAL_PORT_MAX_INDEX },
 #endif
+    { OWNER_LED,           PG_STATUS_LED_CONFIG, offsetof(statusLedConfig_t, ledTags[0]), LED_NUMBER },
 };
 
 static ioTag_t *getIoTag(const cliResourceValue_t value, uint8_t index)

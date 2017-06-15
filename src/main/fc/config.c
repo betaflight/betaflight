@@ -148,7 +148,6 @@ PG_REGISTER_WITH_RESET_FN(pwmConfig_t, pwmConfig, PG_PWM_CONFIG, 0);
 #ifdef USE_PPM
 PG_REGISTER_WITH_RESET_FN(ppmConfig_t, ppmConfig, PG_PPM_CONFIG, 0);
 #endif
-PG_REGISTER_WITH_RESET_FN(statusLedConfig_t, statusLedConfig, PG_STATUS_LED_CONFIG, 0);
 
 #ifdef USE_FLASHFS
 PG_REGISTER_WITH_RESET_TEMPLATE(flashConfig_t, flashConfig, PG_FLASH_CONFIG, 0);
@@ -254,35 +253,6 @@ void pgResetFn_pwmConfig(pwmConfig_t *pwmConfig)
 #define FIRST_PORT_INDEX 0
 #define SECOND_PORT_INDEX 1
 #endif
-
-void pgResetFn_statusLedConfig(statusLedConfig_t *statusLedConfig)
-{
-    for (int i = 0; i < LED_NUMBER; i++) {
-        statusLedConfig->ledTags[i] = IO_TAG_NONE;
-    }
-
-#ifdef LED0
-    statusLedConfig->ledTags[0] = IO_TAG(LED0);
-#endif
-#ifdef LED1
-    statusLedConfig->ledTags[1] = IO_TAG(LED1);
-#endif
-#ifdef LED2
-    statusLedConfig->ledTags[2] = IO_TAG(LED2);
-#endif
-
-    statusLedConfig->polarity = 0
-#ifdef LED0_INVERTED
-    | BIT(0)
-#endif
-#ifdef LED1_INVERTED
-    | BIT(1)
-#endif
-#ifdef LED2_INVERTED
-    | BIT(2)
-#endif
-    ;
-}
 
 #ifndef USE_OSD_SLAVE
 uint8_t getCurrentPidProfileIndex(void)
