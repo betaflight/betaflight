@@ -29,6 +29,7 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "drivers/timer.h"
 #include "drivers/transponder_ir.h"
 #include "drivers/system.h"
 #include "drivers/usb_io.h"
@@ -37,6 +38,7 @@
 
 #include "io/transponder_ir.h"
 
+#if 0
 PG_REGISTER_WITH_RESET_TEMPLATE(transponderConfig_t, transponderConfig, PG_TRANSPONDER_CONFIG, 0);
 
 PG_RESET_TEMPLATE(transponderConfig_t, transponderConfig,
@@ -44,6 +46,27 @@ PG_RESET_TEMPLATE(transponderConfig_t, transponderConfig,
     .reserved = 0,
     .data = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0x0, 0x0, 0x0 }, // Note, this is NOT a valid transponder code, it's just for testing production hardware
 );
+#endif
+PG_REGISTER_WITH_RESET_FN(transponderConfig_t, transponderConfig, PG_TRANSPONDER_CONFIG, 0);
+
+void pgResetFn_transponderConfig(transponderConfig_t *transponderConfig)
+{
+    transponderConfig_t configTemplate = {
+        .provider = TRANSPONDER_ILAP,
+        .reserved = 0,
+        .data = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0x0, 0x0, 0x0 }, // Note, this is NOT a valid transponder code, it's just for testing production hardware
+    };
+
+    memcpy(transponderConfig, &configTemplate, sizeof(*transponderConfig));
+
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+        if (timerHardware[i].usageFlags & TIM_USE_TRANSPONDER) {
+            transponderConfig->ioTag = timerHardware[i].tag;
+            return;
+        }
+    }
+    transponderConfig->ioTag = IO_TAG_NONE;
+}
 
 static bool transponderInitialised = false;
 static bool transponderRepeat = false;
@@ -95,7 +118,7 @@ void transponderUpdate(timeUs_t currentTimeUs)
 
 void transponderInit(void)
 {
-    transponderInitialised = transponderIrInit(transponderConfig()->provider);
+    transponderInitialised = transponderIrInit(transponderConfig()->ioTag, transponderConfig()->provider);
     if (!transponderInitialised) {
         return;
     }

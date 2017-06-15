@@ -113,7 +113,7 @@ struct transponderVTable {
     void (*updateTransponderDMABuffer)(transponder_t *transponder, const uint8_t* transponderData);
 };
 
-bool transponderIrInit(const transponderProvider_e provider);
+bool transponderIrInit(const ioTag_t ioTag, const transponderProvider_e provider);
 void transponderIrDisable(void);
 
 void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder);
