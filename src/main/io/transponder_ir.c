@@ -26,6 +26,7 @@
 #ifdef TRANSPONDER
 #include "build/build_config.h"
 
+#include "config/config_reset.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
@@ -51,21 +52,19 @@ PG_REGISTER_WITH_RESET_FN(transponderConfig_t, transponderConfig, PG_TRANSPONDER
 
 void pgResetFn_transponderConfig(transponderConfig_t *transponderConfig)
 {
-    transponderConfig_t configTemplate = {
+    RESET_CONFIG_2(transponderConfig_t, transponderConfig,
         .provider = TRANSPONDER_ILAP,
         .reserved = 0,
         .data = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0x0, 0x0, 0x0 }, // Note, this is NOT a valid transponder code, it's just for testing production hardware
-    };
-
-    memcpy(transponderConfig, &configTemplate, sizeof(*transponderConfig));
+        .ioTag = IO_TAG_NONE
+    );
 
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
         if (timerHardware[i].usageFlags & TIM_USE_TRANSPONDER) {
             transponderConfig->ioTag = timerHardware[i].tag;
-            return;
+            break;
         }
     }
-    transponderConfig->ioTag = IO_TAG_NONE;
 }
 
 static bool transponderInitialised = false;
