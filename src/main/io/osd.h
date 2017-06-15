@@ -26,6 +26,13 @@
 #define OSD_POS_MAX   0x3FF
 #define OSD_POSCFG_MAX   (VISIBLE_FLAG|0x3FF) // For CLI values
 
+// Character coordinate
+
+#define OSD_POSITION_BITS 5 // 5 bits gives a range 0-31
+#define OSD_POS(x,y)  ((x & 0x001F) | ((y & 0x001F) << OSD_POSITION_BITS))
+#define OSD_X(x)      (x & 0x001F)
+#define OSD_Y(x)      ((x >> OSD_POSITION_BITS) & 0x001F)
+
 typedef enum {
     OSD_RSSI_VALUE,
     OSD_MAIN_BATT_VOLTAGE,

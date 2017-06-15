@@ -315,10 +315,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
 #ifdef OSD
     case OME_VISIBLE:
         if (IS_PRINTVALUE(p) && p->data) {
-            uint32_t address = (uint32_t)p->data;
-            uint16_t *val;
-
-            val = (uint16_t *)address;
+            uint16_t *val = (uint16_t *)p->data;
 
             if (VISIBLE(*val)) {
                 cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "YES");
@@ -757,10 +754,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
 #ifdef OSD
         case OME_VISIBLE:
             if (p->data) {
-                uint32_t address = (uint32_t)p->data;
-                uint16_t *val;
-
-                val = (uint16_t *)address;
+                uint16_t *val = (uint16_t *)p->data;
 
                 if (key == KEY_RIGHT)
                     *val |= VISIBLE_FLAG;
