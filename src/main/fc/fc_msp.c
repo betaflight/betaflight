@@ -1332,13 +1332,13 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
                 uint8_t band=0, channel=0;
                 vtxCommonGetBandAndChannel(&band,&channel);
-                
+
                 uint8_t powerIdx=0; // debug
                 vtxCommonGetPowerIndex(&powerIdx);
-                
+
                 uint8_t pitmode=0;
                 vtxCommonGetPitMode(&pitmode);
-                
+
                 sbufWriteU8(dst, deviceType);
                 sbufWriteU8(dst, band);
                 sbufWriteU8(dst, channel);
@@ -1680,7 +1680,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }*/
         validateAndFixGyroConfig();
 
-        if (sbufBytesRemaining(src)) {        
+        if (sbufBytesRemaining(src)) {
             motorConfigMutable()->dev.motorPwmInversion = sbufReadU8(src);
         }
         break;
@@ -1783,13 +1783,13 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
                 if (sbufBytesRemaining(src) < 2)
                     break;
-            
+
                 uint8_t power = sbufReadU8(src);
                 uint8_t current_power = 0;
                 vtxCommonGetPowerIndex(&current_power);
                 if (current_power != power)
                     vtxCommonSetPowerByIndex(power);
-            
+
                 uint8_t pitmode = sbufReadU8(src);
                 uint8_t current_pitmode = 0;
                 vtxCommonGetPitMode(&current_pitmode);
