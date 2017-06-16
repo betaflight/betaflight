@@ -23,6 +23,7 @@
 extern "C" {
     #include "platform.h"
 
+    #include "drivers/io.h"
     #include "common/maths.h"
     #include "config/parameter_group_ids.h"
     #include "fc/rc_controls.h"

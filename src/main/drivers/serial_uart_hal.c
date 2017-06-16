@@ -58,6 +58,8 @@ static void usartConfigurePinInversion(uartPort_t *uartPort) {
     }
 }
 
+// XXX uartReconfigure does not handle resource management properly.
+
 void uartReconfigure(uartPort_t *uartPort)
 {
     /*RCC_PeriphCLKInitTypeDef RCC_PeriphClkInit;

@@ -107,6 +107,14 @@ static uint8_t rcSampleIndex = 0;
 #define RX_MAX_USEC 2115
 #define RX_MID_USEC 1500
 
+#ifndef SPEKTRUM_BIND_PIN
+#define SPEKTRUM_BIND_PIN NONE
+#endif
+
+#ifndef BINDPLUG_PIN
+#define BINDPLUG_PIN NONE
+#endif
+
 PG_REGISTER_WITH_RESET_FN(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
 void pgResetFn_rxConfig(rxConfig_t *rxConfig)
 {
@@ -115,6 +123,8 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .serialrx_provider = SERIALRX_PROVIDER,
         .rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL,
         .sbus_inversion = 1,
+        .spektrum_bind_pin_override_ioTag = IO_TAG(SPEKTRUM_BIND_PIN),
+        .spektrum_bind_plug_ioTag = IO_TAG(BINDPLUG_PIN),
         .spektrum_sat_bind = 0,
         .spektrum_sat_bind_autoreset = 1,
         .midrc = RX_MID_USEC,

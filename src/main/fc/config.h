@@ -91,7 +91,6 @@ PG_DECLARE(ppmConfig_t, ppmConfig);
 PG_DECLARE(pwmConfig_t, pwmConfig);
 PG_DECLARE(vcdProfile_t, vcdProfile);
 PG_DECLARE(sdcardConfig_t, sdcardConfig);
-PG_DECLARE(serialPinConfig_t, serialPinConfig);
 
 struct pidProfile_s;
 extern struct pidProfile_s *currentPidProfile;

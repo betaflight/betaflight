@@ -257,7 +257,7 @@ void init(void)
     }
 #endif
 
-#ifdef SPEKTRUM_BIND_PIN
+#ifdef USE_SPEKTRUM_BIND
     if (feature(FEATURE_RX_SERIAL)) {
         switch (rxConfig()->serialrx_provider) {
         case SERIALRX_SPEKTRUM1024:

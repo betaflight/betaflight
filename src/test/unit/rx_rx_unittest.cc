@@ -23,6 +23,7 @@
 extern "C" {
     #include "platform.h"
 
+    #include "drivers/io.h"
     #include "rx/rx.h"
     #include "fc/rc_controls.h"
     #include "common/maths.h"

@@ -62,6 +62,7 @@ typedef enum {
     OWNER_TRANSPONDER,
     OWNER_VTX,
     OWNER_COMPASS_CS,
+    OWNER_RX_BIND_PLUG,
     OWNER_TOTAL_COUNT
 } resourceOwner_e;
 

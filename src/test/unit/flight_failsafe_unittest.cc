@@ -35,6 +35,7 @@ extern "C" {
     #include "io/beeper.h"
     #include "fc/rc_controls.h"
 
+    #include "drivers/io.h"
     #include "rx/rx.h"
     #include "flight/failsafe.h"
 }
