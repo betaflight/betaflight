@@ -52,16 +52,6 @@
 
 #include "sensors/battery.h"
 
-
-PG_REGISTER_WITH_RESET_TEMPLATE(flight3DConfig_t, flight3DConfig, PG_MOTOR_3D_CONFIG, 0);
-
-PG_RESET_TEMPLATE(flight3DConfig_t, flight3DConfig,
-    .deadband3d_low = 1406,
-    .deadband3d_high = 1514,
-    .neutral3d = 1460,
-    .deadband3d_throttle = 50
-);
-
 PG_REGISTER_WITH_RESET_TEMPLATE(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
 
 #ifndef TARGET_DEFAULT_MIXER
