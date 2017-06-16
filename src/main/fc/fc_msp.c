@@ -285,14 +285,33 @@ static void serializeBoxNamesReply(sbuf_t *dst)
             sbufWriteU8(dst, ';');
         }
     }
+// callcack for box serialization
+typedef void serializeBoxFn(sbuf_t *dst, const box_t *box);
+
+static void serializeBoxNameFn(sbuf_t *dst, const box_t *box)
+{
+    sbufWriteString(dst, box->boxName);
+    sbufWriteU8(dst, ';');
 }
 
-static void serializeBoxIdsReply(sbuf_t *dst)
+static void serializeBoxPermanentIdFn(sbuf_t *dst, const box_t *box)
 {
+    sbufWriteU8(dst, box->permanentId);
+}
+
+// serialize 'page' of boxNames.
+// Each page contains at most 32 boxes
+static void serializeBoxReply(sbuf_t *dst, int page, serializeBoxFn *serializeBox)
+{
+    unsigned boxIdx = 0;
+    unsigned pageStart = page * 32;
+    unsigned pageEnd = pageStart + 32;
     for (boxId_e id = 0; id < CHECKBOX_ITEM_COUNT; id++) {
-        if(activeBoxIds & (1 << id)) {
-            const box_t *box = findBoxByBoxId(id);
-            sbufWriteU8(dst, box->permanentId);
+        if (activeBoxIdGet(id)) {
+            if (boxIdx >= pageStart && boxIdx < pageEnd) {
+                (*serializeBox)(dst, findBoxByBoxId(id));
+            }
+            boxIdx++;                 // count active boxes
         }
     }
 }
@@ -1043,14 +1062,6 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         }
         break;
 
-    case MSP_BOXNAMES:
-        serializeBoxNamesReply(dst);
-        break;
-
-    case MSP_BOXIDS:
-        serializeBoxIdsReply(dst);
-        break;
-
     case MSP_MOTOR_CONFIG:
         sbufWriteU16(dst, motorConfig()->minthrottle);
         sbufWriteU16(dst, motorConfig()->maxthrottle);
@@ -1327,6 +1338,29 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         return false;
     }
     return true;
+}
+
+static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *arg, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
+{
+    UNUSED(mspPostProcessFn);
+
+    switch (cmdMSP) {
+    case MSP_BOXNAMES:
+        {
+            const int page = sbufBytesRemaining(arg) ? sbufReadU8(arg) : 0;
+            serializeBoxReply(dst, page, &serializeBoxNameFn);
+        }
+        break;
+    case MSP_BOXIDS:
+        {
+            const int page = sbufBytesRemaining(arg) ? sbufReadU8(arg) : 0;
+            serializeBoxReply(dst, page, &serializeBoxPermanentIdFn);
+        }
+        break;
+    default:
+        return MSP_RESULT_CMD_UNKNOWN;
+    }
+    return MSP_RESULT_ACK;
 }
 #endif
 
@@ -2125,6 +2159,8 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
 #ifndef USE_OSD_SLAVE
     } else if (mspFcProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
+    } else if ((ret = mspFcProcessOutCommandWithArg(cmdMSP, src, dst, mspPostProcessFn)) != MSP_RESULT_CMD_UNKNOWN) {
+        /* ret */;
 #endif
 #ifdef USE_OSD_SLAVE
     } else if (mspOsdSlaveProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
