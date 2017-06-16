@@ -18,7 +18,7 @@
 #pragma once
 
 #include "msp/msp.h"
-#include "rc_controls.h"
+#include "fc/rc_modes.h"
 
 typedef struct box_e {
     const uint8_t boxId;            // see boxId_e

@@ -38,7 +38,7 @@
 #include "io/gps.h"
 #include "io/serial.h"
 
-#include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
 #include "io/gps.h"

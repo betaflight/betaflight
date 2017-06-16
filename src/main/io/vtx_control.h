@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 
 #define MAX_CHANNEL_ACTIVATION_CONDITION_COUNT  10
 
