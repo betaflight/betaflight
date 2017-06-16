@@ -830,20 +830,6 @@ static bool mspOsdSlaveProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostPro
 
     switch (cmdMSP) {
     case MSP_STATUS_EX:
-        sbufWriteU16(dst, getTaskDeltaTime(TASK_SERIAL));
-#ifdef USE_I2C
-        sbufWriteU16(dst, i2cGetErrorCounter());
-#else
-        sbufWriteU16(dst, 0);
-#endif
-        sbufWriteU16(dst, 0); // sensors
-        sbufWriteU32(dst, 0); // flight modes
-        sbufWriteU8(dst, 0); // profile
-        sbufWriteU16(dst, constrain(averageSystemLoadPercent, 0, 100));
-        sbufWriteU8(dst, 1); // max profiles
-        sbufWriteU8(dst, 0); // control rate profile
-        break;
-
     case MSP_STATUS:
         sbufWriteU16(dst, getTaskDeltaTime(TASK_SERIAL));
 #ifdef USE_I2C
@@ -855,7 +841,12 @@ static bool mspOsdSlaveProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostPro
         sbufWriteU32(dst, 0); // flight modes
         sbufWriteU8(dst, 0); // profile
         sbufWriteU16(dst, constrain(averageSystemLoadPercent, 0, 100));
-        sbufWriteU16(dst, 0); // gyro cycle time
+        if (cmdMSP == MSP_STATUS_EX) {
+            sbufWriteU8(dst, 1); // max profiles
+            sbufWriteU8(dst, 0); // control rate profile
+        } else {
+            sbufWriteU16(dst, 0); // gyro cycle time
+        }
         break;
 
     default:
@@ -872,32 +863,25 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     switch (cmdMSP) {
     case MSP_STATUS_EX:
-        sbufWriteU16(dst, getTaskDeltaTime(TASK_GYROPID));
-#ifdef USE_I2C
-        sbufWriteU16(dst, i2cGetErrorCounter());
-#else
-        sbufWriteU16(dst, 0);
-#endif
-        sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
-        sbufWriteU32(dst, packFlightModeFlags());
-        sbufWriteU8(dst, getCurrentPidProfileIndex());
-        sbufWriteU16(dst, constrain(averageSystemLoadPercent, 0, 100));
-        sbufWriteU8(dst, MAX_PROFILE_COUNT);
-        sbufWriteU8(dst, getCurrentControlRateProfileIndex());
-        break;
-
     case MSP_STATUS:
-        sbufWriteU16(dst, getTaskDeltaTime(TASK_GYROPID));
+        {
+            sbufWriteU16(dst, getTaskDeltaTime(TASK_GYROPID));
 #ifdef USE_I2C
-        sbufWriteU16(dst, i2cGetErrorCounter());
+            sbufWriteU16(dst, i2cGetErrorCounter());
 #else
-        sbufWriteU16(dst, 0);
+            sbufWriteU16(dst, 0);
 #endif
-        sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
-        sbufWriteU32(dst, packFlightModeFlags());
-        sbufWriteU8(dst, getCurrentPidProfileIndex());
-        sbufWriteU16(dst, constrain(averageSystemLoadPercent, 0, 100));
-        sbufWriteU16(dst, 0); // gyro cycle time
+            sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
+            sbufWriteData(dst, packFlightModeFlags(), 4);
+            sbufWriteU8(dst, getCurrentPidProfileIndex());
+            sbufWriteU16(dst, constrain(averageSystemLoadPercent, 0, 100));
+            if (cmdMSP == MSP_STATUS_EX) {
+                sbufWriteU8(dst, MAX_PROFILE_COUNT);
+                sbufWriteU8(dst, getCurrentControlRateProfileIndex());
+            } else {  // MSP_STATUS
+                sbufWriteU16(dst, 0); // gyro cycle time
+            }
+        }
         break;
 
     case MSP_RAW_IMU:
