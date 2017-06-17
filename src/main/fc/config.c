@@ -257,21 +257,21 @@ void pgResetFn_pwmConfig(pwmConfig_t *pwmConfig)
 
 void pgResetFn_statusLedConfig(statusLedConfig_t *statusLedConfig)
 {
-    for (int i = 0; i < LED_NUMBER; i++) {
-        statusLedConfig->ledTags[i] = IO_TAG_NONE;
+    for (int i = 0; i < STATUS_LED_NUMBER; i++) {
+        statusLedConfig->ioTags[i] = IO_TAG_NONE;
     }
 
 #ifdef LED0
-    statusLedConfig->ledTags[0] = IO_TAG(LED0);
+    statusLedConfig->ioTags[0] = IO_TAG(LED0);
 #endif
 #ifdef LED1
-    statusLedConfig->ledTags[1] = IO_TAG(LED1);
+    statusLedConfig->ioTags[1] = IO_TAG(LED1);
 #endif
 #ifdef LED2
-    statusLedConfig->ledTags[2] = IO_TAG(LED2);
+    statusLedConfig->ioTags[2] = IO_TAG(LED2);
 #endif
 
-    statusLedConfig->polarity = 0
+    statusLedConfig->inversion = 0
 #ifdef LED0_INVERTED
     | BIT(0)
 #endif

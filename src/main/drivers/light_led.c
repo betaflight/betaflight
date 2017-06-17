@@ -22,19 +22,15 @@
 
 #include "light_led.h"
 
-static IO_t leds[LED_NUMBER];
-static uint8_t ledPolarity = 0;
+static IO_t leds[STATUS_LED_NUMBER];
+static uint8_t ledInversion = 0;
 
 void ledInit(const statusLedConfig_t *statusLedConfig)
 {
-    LED0_OFF;
-    LED1_OFF;
-    LED2_OFF;
-
-    ledPolarity = statusLedConfig->polarity;
-    for (int i = 0; i < LED_NUMBER; i++) {
-        if (statusLedConfig->ledTags[i]) {
-            leds[i] = IOGetByTag(statusLedConfig->ledTags[i]);
+    ledInversion = statusLedConfig->inversion;
+    for (int i = 0; i < STATUS_LED_NUMBER; i++) {
+        if (statusLedConfig->ioTags[i]) {
+            leds[i] = IOGetByTag(statusLedConfig->ioTags[i]);
             IOInit(leds[i], OWNER_LED, RESOURCE_INDEX(i));
             IOConfigGPIO(leds[i], IOCFG_OUT_PP);
         } else {
@@ -54,6 +50,6 @@ void ledToggle(int led)
 
 void ledSet(int led, bool on)
 {
-    const bool inverted = (1 << (led)) & ledPolarity;
+    const bool inverted = (1 << (led)) & ledInversion;
     IOWrite(leds[led], on ? inverted : !inverted);
 }

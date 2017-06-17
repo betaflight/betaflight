@@ -74,6 +74,7 @@ extern uint8_t __config_end;
 #include "drivers/time.h"
 #include "drivers/timer.h"
 #include "drivers/vcd.h"
+#include "drivers/light_led.h"
 
 #include "fc/settings.h"
 #include "fc/cli.h"
@@ -2755,6 +2756,7 @@ const cliResourceValue_t resourceTable[] = {
     { OWNER_I2C_SCL,       PG_I2C_CONFIG, offsetof(i2cConfig_t, ioTagScl[0]), I2CDEV_COUNT },
     { OWNER_I2C_SDA,       PG_I2C_CONFIG, offsetof(i2cConfig_t, ioTagSda[0]), I2CDEV_COUNT },
 #endif
+    { OWNER_LED,           PG_STATUS_LED_CONFIG, offsetof(statusLedConfig_t, ioTags[0]), STATUS_LED_NUMBER },
 };
 
 static ioTag_t *getIoTag(const cliResourceValue_t value, uint8_t index)

@@ -36,6 +36,8 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "drivers/light_led.h"
+
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
@@ -713,6 +715,7 @@ const clivalue_t valueTable[] = {
 #ifdef USE_ESC_SENSOR
     { "esc_sensor_halfduplex",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ESC_SENSOR_CONFIG, offsetof(escSensorConfig_t, halfDuplex) },
 #endif
+    { "led_inversion",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 255 }, PG_STATUS_LED_CONFIG, offsetof(statusLedConfig_t, inversion) },
 };
 
 const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);
