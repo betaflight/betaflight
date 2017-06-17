@@ -262,6 +262,7 @@ void init(void)
         switch (rxConfig()->serialrx_provider) {
         case SERIALRX_SPEKTRUM1024:
         case SERIALRX_SPEKTRUM2048:
+        case SERIALRX_SRXL:
             // Spektrum satellite binding if enabled on startup.
             // Must be called before that 100ms sleep so that we don't lose satellite's binding window after startup.
             // The rest of Spektrum initialization will happen later - via spektrumInit()
