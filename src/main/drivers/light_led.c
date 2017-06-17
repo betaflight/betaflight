@@ -31,10 +31,6 @@ static uint8_t ledInversion = 0;
 
 void pgResetFn_statusLedConfig(statusLedConfig_t *statusLedConfig)
 {
-    for (int i = 0; i < STATUS_LED_NUMBER; i++) {
-        statusLedConfig->ioTags[i] = IO_TAG_NONE;
-    }
-
 #ifdef LED0_PIN
     statusLedConfig->ioTags[0] = IO_TAG(LED0_PIN);
 #endif
