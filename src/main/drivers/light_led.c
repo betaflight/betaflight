@@ -17,13 +17,46 @@
 
 #include "platform.h"
 
+#include "config/parameter_group_ids.h"
+
 #include "drivers/io.h"
 #include "io_impl.h"
 
 #include "light_led.h"
 
+PG_REGISTER_WITH_RESET_FN(statusLedConfig_t, statusLedConfig, PG_STATUS_LED_CONFIG, 0);
+
 static IO_t leds[STATUS_LED_NUMBER];
 static uint8_t ledInversion = 0;
+
+void pgResetFn_statusLedConfig(statusLedConfig_t *statusLedConfig)
+{
+    for (int i = 0; i < STATUS_LED_NUMBER; i++) {
+        statusLedConfig->ioTags[i] = IO_TAG_NONE;
+    }
+
+#ifdef LED0_PIN
+    statusLedConfig->ioTags[0] = IO_TAG(LED0_PIN);
+#endif
+#ifdef LED1_PIN
+    statusLedConfig->ioTags[1] = IO_TAG(LED1_PIN);
+#endif
+#ifdef LED2_PIN
+    statusLedConfig->ioTags[2] = IO_TAG(LED2_PIN);
+#endif
+
+    statusLedConfig->inversion = 0
+#ifdef LED0_INVERTED
+    | BIT(0)
+#endif
+#ifdef LED1_INVERTED
+    | BIT(1)
+#endif
+#ifdef LED2_INVERTED
+    | BIT(2)
+#endif
+    ;
+}
 
 void ledInit(const statusLedConfig_t *statusLedConfig)
 {
