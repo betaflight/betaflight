@@ -309,10 +309,11 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsKillswitchEvent)
     // and
     throttleStatus = THROTTLE_HIGH;                 // throttle HIGH to go for a failsafe landing procedure
     failsafeConfigMutable()->failsafe_kill_switch = true;        // configure AUX switch as kill switch
+
     boxBitmask_t newMask;
-    memset(&newMask, 0, sizeof(newMask));
     bitArraySet(&newMask, BOXFAILSAFE);
     rcModeUpdate(&newMask);                         // activate BOXFAILSAFE mode
+
     sysTickUptime = 0;                              // restart time from 0
     failsafeOnValidDataReceived();                  // set last valid sample at current time
     sysTickUptime = PERIOD_RXDATA_FAILURE + 1;      // adjust time to point just past the failure time to
@@ -332,7 +333,8 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsKillswitchEvent)
     sysTickUptime += PERIOD_RXDATA_RECOVERY + 1;    // adjust time to point just past the recovery time to
     failsafeOnValidDataReceived();                  // cause a recovered link
 
-    memset(&rcModeActivationMask, 0, sizeof(rcModeActivationMask)); // BOXFAILSAFE must be off (kill switch)
+    memset(&newMask, 0, sizeof(newMask));
+    rcModeUpdate(&newMask);            // BOXFAILSAFE must be off (kill switch)
 
     // when
     failsafeUpdateState();

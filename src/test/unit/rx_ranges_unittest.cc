@@ -217,5 +217,10 @@ void failsafeOnValidDataFailed(void)
 {
 }
 
+bool IS_RC_MODE_ACTIVE(boxId_e)
+{
+    return false;
+}
+
 }
 

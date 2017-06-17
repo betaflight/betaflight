@@ -35,6 +35,7 @@ extern "C" {
 
     #include "fc/config.h"
     #include "fc/rc_controls.h"
+    #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
 
     #include "drivers/light_ws2811strip.h"
