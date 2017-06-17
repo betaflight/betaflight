@@ -88,6 +88,8 @@
 // #define USE_ESCSERIAL
 // #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
 
+#define USE_ESC_SENSOR
+
 #define USE_I2C
 #define I2C_DEVICE              (I2CDEV_1)
 #if (SPRACINGF4EVO_REV >= 2)
