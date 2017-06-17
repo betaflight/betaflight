@@ -65,8 +65,6 @@ static bool isUsingSticksToArm = true;
 
 float rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
 
-uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
-
 PG_REGISTER_WITH_RESET_TEMPLATE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
 
 PG_RESET_TEMPLATE(rcControlsConfig_t, rcControlsConfig,
@@ -85,15 +83,13 @@ PG_RESET_TEMPLATE(armingConfig_t, armingConfig,
     .auto_disarm_delay = 5
 );
 
-PG_REGISTER_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions, PG_MODE_ACTIVATION_PROFILE, 0);
-
-bool isAirmodeActive(void) {
-    return (IS_RC_MODE_ACTIVE(BOXAIRMODE) || feature(FEATURE_AIRMODE));
-}
-
-bool isAntiGravityModeActive(void) {
-    return (IS_RC_MODE_ACTIVE(BOXANTIGRAVITY) || feature(FEATURE_ANTI_GRAVITY));
-}
+PG_REGISTER_WITH_RESET_TEMPLATE(flight3DConfig_t, flight3DConfig, PG_MOTOR_3D_CONFIG, 0);
+PG_RESET_TEMPLATE(flight3DConfig_t, flight3DConfig,
+    .deadband3d_low = 1406,
+    .deadband3d_high = 1514,
+    .neutral3d = 1460,
+    .deadband3d_throttle = 50
+);
 
 bool isUsingSticksForArming(void)
 {
@@ -308,51 +304,13 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
 
 }
 
-bool isModeActivationConditionPresent(const modeActivationCondition_t *modeActivationConditions, boxId_e modeId)
-{
-    uint8_t index;
-
-    for (index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
-        const modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[index];
-
-        if (modeActivationCondition->modeId == modeId && IS_RANGE_USABLE(&modeActivationCondition->range)) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range) {
-    if (!IS_RANGE_USABLE(range)) {
-        return false;
-    }
-
-    const uint16_t channelValue = constrain(rcData[auxChannelIndex + NON_AUX_CHANNEL_COUNT], CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX - 1);
-    return (channelValue >= 900 + (range->startStep * 25) &&
-            channelValue < 900 + (range->endStep * 25));
-}
-
-void updateActivatedModes(void)
-{
-    rcModeActivationMask = 0;
-
-    for (int index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
-        const modeActivationCondition_t *modeActivationCondition = modeActivationConditions(index);
-
-        if (isRangeActive(modeActivationCondition->auxChannelIndex, &modeActivationCondition->range)) {
-            ACTIVATE_RC_MODE(modeActivationCondition->modeId);
-        }
-    }
-}
-
 int32_t getRcStickDeflection(int32_t axis, uint16_t midrc) {
     return MIN(ABS(rcData[axis] - midrc), 500);
 }
 
-void useRcControlsConfig(const modeActivationCondition_t *modeActivationConditions, pidProfile_t *pidProfileToUse)
+void useRcControlsConfig(pidProfile_t *pidProfileToUse)
 {
     pidProfile = pidProfileToUse;
 
-    isUsingSticksToArm = !isModeActivationConditionPresent(modeActivationConditions, BOXARM);
+    isUsingSticksToArm = !isModeActivationConditionPresent(BOXARM);
 }
