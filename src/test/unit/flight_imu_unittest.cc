@@ -42,6 +42,7 @@ extern "C" {
 
     #include "fc/runtime_config.h"
     #include "fc/rc_controls.h"
+    #include "fc/rc_modes.h"
 
     #include "rx/rx.h"
 
@@ -226,6 +227,11 @@ bool sensors(uint32_t mask)
     UNUSED(mask);
     return false;
 };
+
+bool feature(uint32_t mask) {
+    UNUSED(mask);
+    return false;
+}
 
 uint32_t millis(void) { return 0; }
 uint32_t micros(void) { return 0; }

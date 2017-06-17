@@ -28,6 +28,7 @@ extern "C" {
 #include "telemetry/ibus_shared.h"
 #include "telemetry/telemetry.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 }

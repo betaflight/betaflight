@@ -26,6 +26,7 @@ extern "C" {
     #include "common/maths.h"
     #include "config/parameter_group_ids.h"
     #include "fc/rc_controls.h"
+    #include "fc/rc_modes.h"
     #include "rx/rx.h"
 }
 
@@ -216,6 +217,11 @@ void failsafeOnValidDataReceived(void)
 
 void failsafeOnValidDataFailed(void)
 {
+}
+
+bool IS_RC_MODE_ACTIVE(boxId_e)
+{
+    return false;
 }
 
 }
