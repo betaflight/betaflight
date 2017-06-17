@@ -31,6 +31,22 @@ typedef struct statusLedConfig_s {
 PG_DECLARE(statusLedConfig_t, statusLedConfig);
 
 // Helpful macros
+#ifdef UNIT_TEST
+
+#define LED0_TOGGLE              NOOP
+#define LED0_OFF                 NOOP
+#define LED0_ON                  NOOP
+
+#define LED1_TOGGLE              NOOP
+#define LED1_OFF                 NOOP
+#define LED1_ON                  NOOP
+
+#define LED2_TOGGLE              NOOP
+#define LED2_OFF                 NOOP
+#define LED2_ON                  NOOP
+
+#else
+
 #define LED0_TOGGLE              ledToggle(0)
 #define LED0_OFF                 ledSet(0, false)
 #define LED0_ON                  ledSet(0, true)
@@ -46,3 +62,5 @@ PG_DECLARE(statusLedConfig_t, statusLedConfig);
 void ledInit(const statusLedConfig_t *statusLedConfig);
 void ledToggle(int led);
 void ledSet(int led, bool state);
+
+#endif
