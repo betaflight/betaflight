@@ -681,6 +681,13 @@ void osdDrawElements(void)
         osdDrawSingleElement(OSD_HOME_DIR);
     }
 #endif // GPS
+
+#ifdef USE_ESC_SENSOR
+  if (feature(FEATURE_ESC_SENSOR)) {
+      osdDrawSingleElement(OSD_ESC_TMP);
+      osdDrawSingleElement(OSD_ESC_RPM);
+  }
+#endif
 }
 
 void pgResetFn_osdConfig(osdConfig_t *osdConfig)
