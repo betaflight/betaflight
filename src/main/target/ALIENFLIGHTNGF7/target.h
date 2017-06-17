@@ -25,8 +25,8 @@
 
 #define USBD_PRODUCT_STRING "AlienFlightNG F7"
 
-#define LED0                    PC12
-#define LED1                    PD2
+#define LED0_PIN                PC12
+#define LED1_PIN                PD2
 
 #define BEEPER                  PC13
 #define BEEPER_INVERTED

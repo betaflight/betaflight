@@ -23,8 +23,8 @@
 #define USBD_SERIALNUMBER_STRING "0x8010000"
 #endif
 
-#define LED0                    PC14
-#define LED1                    PC13
+#define LED0_PIN                PC14
+#define LED1_PIN                PC13
 
 #define BEEPER                  PC13
 

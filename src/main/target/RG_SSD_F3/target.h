@@ -19,8 +19,8 @@
 
 #define TARGET_BOARD_IDENTIFIER "RGF3" // rgSSD_F3
 
-#define LED0                     PC1
-#define LED1                     PC0
+#define LED0_PIN                 PC1
+#define LED1_PIN                 PC0
 
 #define BEEPER                   PA8
 #define BEEPER_INVERTED

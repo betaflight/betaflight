@@ -261,14 +261,14 @@ void pgResetFn_statusLedConfig(statusLedConfig_t *statusLedConfig)
         statusLedConfig->ioTags[i] = IO_TAG_NONE;
     }
 
-#ifdef LED0
-    statusLedConfig->ioTags[0] = IO_TAG(LED0);
+#ifdef LED0_PIN
+    statusLedConfig->ioTags[0] = IO_TAG(LED0_PIN);
 #endif
-#ifdef LED1
-    statusLedConfig->ioTags[1] = IO_TAG(LED1);
+#ifdef LED1_PIN
+    statusLedConfig->ioTags[1] = IO_TAG(LED1_PIN);
 #endif
-#ifdef LED2
-    statusLedConfig->ioTags[2] = IO_TAG(LED2);
+#ifdef LED2_PIN
+    statusLedConfig->ioTags[2] = IO_TAG(LED2_PIN);
 #endif
 
     statusLedConfig->inversion = 0

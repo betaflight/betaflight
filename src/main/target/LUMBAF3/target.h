@@ -17,7 +17,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "MCF3"	// LumbaF3 Flight Controller by mC
 
-#define LED0                    PB3
+#define LED0_PIN                PB3
 #define BEEPER                  PC15
 
 // MPU6000 interrupts

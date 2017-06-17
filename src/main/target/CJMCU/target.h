@@ -21,9 +21,9 @@
 #define USE_HARDWARE_REVISION_DETECTION
 #define TARGET_BUS_INIT
 
-#define LED0                    PC14
-#define LED1                    PC13
-#define LED2                    PC15
+#define LED0_PIN                PC14
+#define LED1_PIN                PC13
+#define LED2_PIN                PC15
 
 #undef BEEPER
 
