@@ -26,8 +26,11 @@
 
 void targetBusInit(void)
 {
-#if defined(USE_SPI) && defined(USE_SPI_DEVICE_1)
+#ifdef USE_SPI
+    spiPinConfigure();
+#ifdef USE_SPI_DEVICE_1
     spiInit(SPIDEV_1);
+#endif
 #endif
 
     if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {

@@ -349,6 +349,8 @@ void init(void)
 #else
 
 #ifdef USE_SPI
+    spiPinConfigure();
+
 #ifdef USE_SPI_DEVICE_1
     spiInit(SPIDEV_1);
 #endif

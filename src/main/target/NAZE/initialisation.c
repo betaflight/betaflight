@@ -28,6 +28,7 @@
 void targetBusInit(void)
 {
 #ifdef USE_SPI
+    spiPinConfigure();
 #ifdef USE_SPI_DEVICE_2
     spiInit(SPIDEV_2);
 #endif

@@ -69,22 +69,15 @@ typedef enum SPIDevice {
     SPIDEV_4
 } SPIDevice;
 
-typedef struct SPIDevice_s {
-    SPI_TypeDef *dev;
-    ioTag_t nss;
-    ioTag_t sck;
-    ioTag_t mosi;
-    ioTag_t miso;
-    rccPeriphTag_t rcc;
-    uint8_t af;
-    volatile uint16_t errorCount;
-    bool leadingEdge;
-#if defined(STM32F7)
-    SPI_HandleTypeDef hspi;
-    DMA_HandleTypeDef hdma;
-    uint8_t dmaIrqHandler;
+#if defined(STM32F1)
+#define SPIDEV_COUNT 2
+#elif defined(STM32F3) || defined(STM32F4)
+#define SPIDEV_COUNT 3
+#elif defined(STM32F7)
+#define SPIDEV_COUNT 4
+#else
+#define SPIDEV_COUNT 4
 #endif
-} spiDevice_t;
 
 bool spiInit(SPIDevice device);
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor);
@@ -101,3 +94,11 @@ SPIDevice spiDeviceByInstance(SPI_TypeDef *instance);
 SPI_HandleTypeDef* spiHandleByInstance(SPI_TypeDef *instance);
 DMA_HandleTypeDef* spiSetDMATransmit(DMA_Stream_TypeDef *Stream, uint32_t Channel, SPI_TypeDef *Instance, uint8_t *pData, uint16_t Size);
 #endif
+
+typedef struct spiPinConfig_s {
+    ioTag_t ioTagSck[SPIDEV_COUNT];
+    ioTag_t ioTagMiso[SPIDEV_COUNT];
+    ioTag_t ioTagMosi[SPIDEV_COUNT];
+} spiPinConfig_t;
+
+void spiPinConfigure(void);
