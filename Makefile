@@ -665,6 +665,7 @@ COMMON_SRC = \
             build/version.c \
             $(TARGET_DIR_SRC) \
             main.c \
+            common/bitarray.c \
             common/encoding.c \
             common/filter.c \
             common/maths.c \
@@ -736,6 +737,7 @@ FC_SRC = \
             fc/fc_rc.c \
             fc/rc_adjustments.c \
             fc/rc_controls.c \
+            fc/rc_modes.c \
             fc/cli.c \
             fc/settings.c \
             flight/altitude.c \

@@ -29,6 +29,7 @@
 #include "build/version.h"
 
 #include "common/axis.h"
+#include "common/bitarray.h"
 #include "common/color.h"
 #include "common/maths.h"
 #include "common/streambuf.h"
@@ -59,6 +60,8 @@
 #include "fc/fc_msp.h"
 #include "fc/fc_rc.h"
 #include "fc/rc_adjustments.h"
+#include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
 #include "flight/altitude.h"
@@ -110,12 +113,13 @@
 #endif
 
 #define STATIC_ASSERT(condition, name) \
-    typedef char assert_failed_ ## name [(condition) ? 1 : -1 ]
+    typedef char assert_failed_ ## name [(condition) ? 1 : -1 ] __attribute__((unused))
 
 static const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 #ifndef USE_OSD_SLAVE
+// permanent IDs must uniquely identify BOX meaning, DO NOT REUSE THEM!
 static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXARM, "ARM", 0 },
     { BOXANGLE, "ANGLE", 1 },
@@ -152,9 +156,8 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
-static uint32_t activeBoxIds;
-// check that all boxId_e values fit
-STATIC_ASSERT(sizeof(activeBoxIds) * 8 >= CHECKBOX_ITEM_COUNT, CHECKBOX_ITEMS_wont_fit_in_activeBoxIds);
+
+static boxBitmask_t activeBoxIds;
 
 static const char pidnames[] =
     "ROLL;"
@@ -276,23 +279,41 @@ const box_t *findBoxByPermanentId(uint8_t permanentId)
     return NULL;
 }
 
-static void serializeBoxNamesReply(sbuf_t *dst)
+static bool activeBoxIdGet(boxId_e boxId)
 {
-    for (boxId_e id = 0; id < CHECKBOX_ITEM_COUNT; id++) {
-        if(activeBoxIds & (1 << id)) {
-            const box_t *box = findBoxByBoxId(id);
-            sbufWriteString(dst, box->boxName);
-            sbufWriteU8(dst, ';');
-        }
-    }
+    if(boxId > sizeof(activeBoxIds) * 8)
+        return false;
+    return bitArrayGet(&activeBoxIds, boxId);
 }
 
-static void serializeBoxIdsReply(sbuf_t *dst)
+
+// callcack for box serialization
+typedef void serializeBoxFn(sbuf_t *dst, const box_t *box);
+
+static void serializeBoxNameFn(sbuf_t *dst, const box_t *box)
 {
+    sbufWriteString(dst, box->boxName);
+    sbufWriteU8(dst, ';');
+}
+
+static void serializeBoxPermanentIdFn(sbuf_t *dst, const box_t *box)
+{
+    sbufWriteU8(dst, box->permanentId);
+}
+
+// serialize 'page' of boxNames.
+// Each page contains at most 32 boxes
+static void serializeBoxReply(sbuf_t *dst, int page, serializeBoxFn *serializeBox)
+{
+    unsigned boxIdx = 0;
+    unsigned pageStart = page * 32;
+    unsigned pageEnd = pageStart + 32;
     for (boxId_e id = 0; id < CHECKBOX_ITEM_COUNT; id++) {
-        if(activeBoxIds & (1 << id)) {
-            const box_t *box = findBoxByBoxId(id);
-            sbufWriteU8(dst, box->permanentId);
+        if (activeBoxIdGet(id)) {
+            if (boxIdx >= pageStart && boxIdx < pageEnd) {
+                (*serializeBox)(dst, findBoxByBoxId(id));
+            }
+            boxIdx++;                 // count active boxes
         }
     }
 }
@@ -300,9 +321,11 @@ static void serializeBoxIdsReply(sbuf_t *dst)
 void initActiveBoxIds(void)
 {
     // calculate used boxes based on features and set corresponding activeBoxIds bits
-    uint32_t ena = 0;  // temporary variable to collect result
+    boxBitmask_t ena;  // temporary variable to collect result
+    memset(&ena, 0, sizeof(ena));
+
     // macro to enable boxId (BoxidMaskEnable). Reference to ena is hidden, local use only
-#define BME(boxId) do { ena |= (1 << (boxId)); } while(0)
+#define BME(boxId) do { bitArraySet(&ena, boxId); } while(0)
     BME(BOXARM);
 
     if (!feature(FEATURE_AIRMODE)) {
@@ -399,63 +422,68 @@ void initActiveBoxIds(void)
 
 #undef BME
     // check that all enabled IDs are in boxes array (check may be skipped when using findBoxById() functions)
-    for(boxId_e boxId = 0;  boxId < CHECKBOX_ITEM_COUNT; boxId++)
-        if((ena & (1 << boxId))
-           && findBoxByBoxId(boxId) == NULL)
-            ena &= ~ (1 << boxId);             // this should not happen, but handle it gracefully
+    for (boxId_e boxId = 0;  boxId < CHECKBOX_ITEM_COUNT; boxId++)
+        if (bitArrayGet(&ena, boxId)
+            && findBoxByBoxId(boxId) == NULL)
+            bitArrayClr(&ena, boxId);                 // this should not happen, but handle it gracefully
 
-    activeBoxIds = ena;                        // set global variable
+    activeBoxIds = ena;                               // set global variable
 }
 
-static uint32_t packFlightModeFlags(void)
+// pack used flightModeFlags into supplied array
+// returns number of bits used
+static int packFlightModeFlags(boxBitmask_t *mspFlightModeFlags)
 {
     // Serialize the flags in the order we delivered them, ignoring BOXNAMES and BOXINDEXES
 
-    uint32_t boxEnabledMask = 0;      // enabled BOXes, bits indexed by boxId_e
+    // enabled BOXes, bits indexed by boxId_e
+    boxBitmask_t boxEnabledMask;
+    memset(&boxEnabledMask, 0, sizeof(boxEnabledMask));
 
     // enable BOXes dependent on FLIGHT_MODE, use mapping table (from runtime_config.h)
     // flightMode_boxId_map[HORIZON_MODE] == BOXHORIZON
     static const int8_t flightMode_boxId_map[] = FLIGHT_MODE_BOXID_MAP_INITIALIZER;
     flightModeFlags_e flightModeCopyMask = ~0;  // only modes with bit set will be copied
-    for(unsigned i = 0; i < ARRAYLEN(flightMode_boxId_map); i++) {
-        if(flightMode_boxId_map[i] != -1        // boxId_e does exist for this FLIGHT_MODE
+    for (unsigned i = 0; i < ARRAYLEN(flightMode_boxId_map); i++) {
+        if (flightMode_boxId_map[i] != -1        // boxId_e does exist for this FLIGHT_MODE
            && (flightModeCopyMask & (1 << i))   // this flightmode is copy is enabled
            && FLIGHT_MODE(1 << i)) {            // this flightmode is active
-            boxEnabledMask |= (1 << flightMode_boxId_map[i]);
+            bitArraySet(&boxEnabledMask, flightMode_boxId_map[i]);
         }
     }
 
     // enable BOXes dependent on rcMode bits, indexes are the same.
     // only subset of BOXes depend on rcMode, use mask to select them
-#define BM(x) (1 << (x))
-    const uint32_t rcModeCopyMask = BM(BOXHEADADJ) | BM(BOXCAMSTAB) | BM(BOXCAMTRIG) | BM(BOXBEEPERON)
+#define BM(x) (1ULL << (x))
+    // limited to 64 BOXes now to keep code simple
+    const uint64_t rcModeCopyMask = BM(BOXHEADADJ) | BM(BOXCAMSTAB) | BM(BOXCAMTRIG) | BM(BOXBEEPERON)
         | BM(BOXLEDMAX) | BM(BOXLEDLOW) | BM(BOXLLIGHTS) | BM(BOXCALIB) | BM(BOXGOV) | BM(BOXOSD)
         | BM(BOXTELEMETRY) | BM(BOXGTUNE) | BM(BOXBLACKBOX) | BM(BOXBLACKBOXERASE) | BM(BOXAIRMODE)
         | BM(BOXANTIGRAVITY) | BM(BOXFPVANGLEMIX);
-    for(unsigned i = 0; i < sizeof(rcModeCopyMask) * 8; i++) {
-        if((rcModeCopyMask & BM(i))    // mode copy is enabled
+    STATIC_ASSERT(sizeof(rcModeCopyMask) * 8 >= CHECKBOX_ITEM_COUNT, copy_mask_too_small_for_boxes);
+    for (unsigned i = 0; i < CHECKBOX_ITEM_COUNT; i++) {
+        if ((rcModeCopyMask & BM(i))    // mode copy is enabled
            && IS_RC_MODE_ACTIVE(i)) {    // mode is active
-            boxEnabledMask |= (1 << i);
+            bitArraySet(&boxEnabledMask, i);
         }
     }
 #undef BM
     // copy ARM state
-    if(ARMING_FLAG(ARMED))
-        boxEnabledMask |= (1 << BOXARM);
+    if (ARMING_FLAG(ARMED))
+        bitArraySet(&boxEnabledMask, BOXARM);
 
     // map boxId_e enabled bits to MSP status indexes
     // only active boxIds are sent in status over MSP, other bits are not counted
-    uint32_t mspBoxEnabledMask = 0;
     unsigned mspBoxIdx = 0;           // index of active boxId (matches sent permanentId and boxNames)
     for (boxId_e boxId = 0; boxId < CHECKBOX_ITEM_COUNT; boxId++) {
-        if(activeBoxIds & (1 << boxId)) {
-            if (boxEnabledMask & (1 << boxId))
-                mspBoxEnabledMask |= 1 << mspBoxIdx;      // box is enabled
-            mspBoxIdx++;                                  // box is active, count it
+        if (activeBoxIdGet(boxId)) {
+            if (bitArrayGet(&boxEnabledMask,  boxId))
+                bitArraySet(mspFlightModeFlags,  mspBoxIdx);      // box is enabled
+            mspBoxIdx++;                                          // box is active, count it
         }
     }
-
-    return mspBoxEnabledMask;
+    // return count of used bits
+    return mspBoxIdx;
 }
 
 static void serializeSDCardSummaryReply(sbuf_t *dst)
@@ -830,20 +858,6 @@ static bool mspOsdSlaveProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostPro
 
     switch (cmdMSP) {
     case MSP_STATUS_EX:
-        sbufWriteU16(dst, getTaskDeltaTime(TASK_SERIAL));
-#ifdef USE_I2C
-        sbufWriteU16(dst, i2cGetErrorCounter());
-#else
-        sbufWriteU16(dst, 0);
-#endif
-        sbufWriteU16(dst, 0); // sensors
-        sbufWriteU32(dst, 0); // flight modes
-        sbufWriteU8(dst, 0); // profile
-        sbufWriteU16(dst, constrain(averageSystemLoadPercent, 0, 100));
-        sbufWriteU8(dst, 1); // max profiles
-        sbufWriteU8(dst, 0); // control rate profile
-        break;
-
     case MSP_STATUS:
         sbufWriteU16(dst, getTaskDeltaTime(TASK_SERIAL));
 #ifdef USE_I2C
@@ -855,7 +869,12 @@ static bool mspOsdSlaveProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostPro
         sbufWriteU32(dst, 0); // flight modes
         sbufWriteU8(dst, 0); // profile
         sbufWriteU16(dst, constrain(averageSystemLoadPercent, 0, 100));
-        sbufWriteU16(dst, 0); // gyro cycle time
+        if (cmdMSP == MSP_STATUS_EX) {
+            sbufWriteU8(dst, 1); // max profiles
+            sbufWriteU8(dst, 0); // control rate profile
+        } else {
+            sbufWriteU16(dst, 0); // gyro cycle time
+        }
         break;
 
     default:
@@ -872,32 +891,35 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     switch (cmdMSP) {
     case MSP_STATUS_EX:
-        sbufWriteU16(dst, getTaskDeltaTime(TASK_GYROPID));
-#ifdef USE_I2C
-        sbufWriteU16(dst, i2cGetErrorCounter());
-#else
-        sbufWriteU16(dst, 0);
-#endif
-        sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
-        sbufWriteU32(dst, packFlightModeFlags());
-        sbufWriteU8(dst, getCurrentPidProfileIndex());
-        sbufWriteU16(dst, constrain(averageSystemLoadPercent, 0, 100));
-        sbufWriteU8(dst, MAX_PROFILE_COUNT);
-        sbufWriteU8(dst, getCurrentControlRateProfileIndex());
-        break;
-
     case MSP_STATUS:
-        sbufWriteU16(dst, getTaskDeltaTime(TASK_GYROPID));
+        {
+            boxBitmask_t flightModeFlags;
+            const int flagBits = packFlightModeFlags(&flightModeFlags);
+
+            sbufWriteU16(dst, getTaskDeltaTime(TASK_GYROPID));
 #ifdef USE_I2C
-        sbufWriteU16(dst, i2cGetErrorCounter());
+            sbufWriteU16(dst, i2cGetErrorCounter());
 #else
-        sbufWriteU16(dst, 0);
+            sbufWriteU16(dst, 0);
 #endif
-        sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
-        sbufWriteU32(dst, packFlightModeFlags());
-        sbufWriteU8(dst, getCurrentPidProfileIndex());
-        sbufWriteU16(dst, constrain(averageSystemLoadPercent, 0, 100));
-        sbufWriteU16(dst, 0); // gyro cycle time
+            sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
+            sbufWriteData(dst, &flightModeFlags, 4);        // unconditional part of flags, first 32 bits
+            sbufWriteU8(dst, getCurrentPidProfileIndex());
+            sbufWriteU16(dst, constrain(averageSystemLoadPercent, 0, 100));
+            if (cmdMSP == MSP_STATUS_EX) {
+                sbufWriteU8(dst, MAX_PROFILE_COUNT);
+                sbufWriteU8(dst, getCurrentControlRateProfileIndex());
+            } else {  // MSP_STATUS
+                sbufWriteU16(dst, 0); // gyro cycle time
+            }
+
+            // write flightModeFlags header. Lowest 4 bits contain number of bytes that follow
+            // header is emited even when all bits fit into 32 bits to allow future extension
+            int byteCount = (flagBits - 32 + 7) / 8;        // 32 already stored, round up
+            byteCount = constrain(byteCount, 0, 15);        // limit to 16 bytes (128 bits)
+            sbufWriteU8(dst, byteCount);
+            sbufWriteData(dst, ((uint8_t*)&flightModeFlags) + 4, byteCount);
+        }
         break;
 
     case MSP_RAW_IMU:
@@ -1057,14 +1079,6 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
             sbufWriteU8(dst, adjRange->adjustmentFunction);
             sbufWriteU8(dst, adjRange->auxSwitchChannelIndex);
         }
-        break;
-
-    case MSP_BOXNAMES:
-        serializeBoxNamesReply(dst);
-        break;
-
-    case MSP_BOXIDS:
-        serializeBoxIdsReply(dst);
         break;
 
     case MSP_MOTOR_CONFIG:
@@ -1333,13 +1347,13 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
                 uint8_t band=0, channel=0;
                 vtxCommonGetBandAndChannel(&band,&channel);
-                
+
                 uint8_t powerIdx=0; // debug
                 vtxCommonGetPowerIndex(&powerIdx);
-                
+
                 uint8_t pitmode=0;
                 vtxCommonGetPitMode(&pitmode);
-                
+
                 sbufWriteU8(dst, deviceType);
                 sbufWriteU8(dst, band);
                 sbufWriteU8(dst, channel);
@@ -1358,6 +1372,29 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         return false;
     }
     return true;
+}
+
+static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *arg, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
+{
+    UNUSED(mspPostProcessFn);
+
+    switch (cmdMSP) {
+    case MSP_BOXNAMES:
+        {
+            const int page = sbufBytesRemaining(arg) ? sbufReadU8(arg) : 0;
+            serializeBoxReply(dst, page, &serializeBoxNameFn);
+        }
+        break;
+    case MSP_BOXIDS:
+        {
+            const int page = sbufBytesRemaining(arg) ? sbufReadU8(arg) : 0;
+            serializeBoxReply(dst, page, &serializeBoxPermanentIdFn);
+        }
+        break;
+    default:
+        return MSP_RESULT_CMD_UNKNOWN;
+    }
+    return MSP_RESULT_ACK;
 }
 #endif
 
@@ -1496,7 +1533,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 mac->range.startStep = sbufReadU8(src);
                 mac->range.endStep = sbufReadU8(src);
 
-                useRcControlsConfig(modeActivationConditions(0), currentPidProfile);
+                useRcControlsConfig(currentPidProfile);
             } else {
                 return MSP_RESULT_ERROR;
             }
@@ -1658,7 +1695,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }*/
         validateAndFixGyroConfig();
 
-        if (sbufBytesRemaining(src)) {        
+        if (sbufBytesRemaining(src)) {
             motorConfigMutable()->dev.motorPwmInversion = sbufReadU8(src);
         }
         break;
@@ -1761,13 +1798,13 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
                 if (sbufBytesRemaining(src) < 2)
                     break;
-            
+
                 uint8_t power = sbufReadU8(src);
                 uint8_t current_power = 0;
                 vtxCommonGetPowerIndex(&current_power);
                 if (current_power != power)
                     vtxCommonSetPowerByIndex(power);
-            
+
                 uint8_t pitmode = sbufReadU8(src);
                 uint8_t current_pitmode = 0;
                 vtxCommonGetPitMode(&current_pitmode);
@@ -2177,6 +2214,8 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
 #ifndef USE_OSD_SLAVE
     } else if (mspFcProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
+    } else if ((ret = mspFcProcessOutCommandWithArg(cmdMSP, src, dst, mspPostProcessFn)) != MSP_RESULT_CMD_UNKNOWN) {
+        /* ret */;
 #endif
 #ifdef USE_OSD_SLAVE
     } else if (mspOsdSlaveProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {

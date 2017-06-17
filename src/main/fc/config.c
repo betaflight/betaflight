@@ -335,7 +335,7 @@ void activateConfig(void)
 
     resetAdjustmentStates();
 
-    useRcControlsConfig(modeActivationConditions(0), currentPidProfile);
+    useRcControlsConfig(currentPidProfile);
     useAdjustmentConfig(currentPidProfile);
 
 #ifdef GPS

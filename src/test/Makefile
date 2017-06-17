@@ -106,7 +106,11 @@ parameter_groups_unittest_SRC := \
 
 rc_controls_unittest_SRC := \
 		$(USER_DIR)/fc/rc_controls.c \
-		$(USER_DIR)/common/maths.c
+		$(USER_DIR)/config/parameter_group.c \
+		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/fc/rc_adjustments.c \
+		$(USER_DIR)/fc/rc_modes.c \
 
 
 rx_crsf_unittest_SRC := \
@@ -125,6 +129,8 @@ rx_ranges_unittest_SRC := \
 
 rx_rx_unittest_SRC := \
 		$(USER_DIR)/rx/rx.c \
+		$(USER_DIR)/fc/rc_modes.c \
+		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/config/feature.c
 
