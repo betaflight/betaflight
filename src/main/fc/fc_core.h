@@ -48,3 +48,4 @@ void updateLEDs(void);
 void updateRcCommands(void);
 
 void taskMainPidLoop(timeUs_t currentTimeUs);
+bool isMotorsReversed(void);

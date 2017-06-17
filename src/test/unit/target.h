@@ -17,9 +17,13 @@
 
 #pragma once
 
+#define SCHEDULER_DELAY_LIMIT 1
+#define TASK_GYROPID_DESIRED_PERIOD 100
+
 #define CMS
 #define CMS_MAX_DEVICE 4
 #define USE_FAKE_GYRO
+#define BEEPER
 #define BLACKBOX
 #define MAG
 #define BARO
@@ -68,6 +72,8 @@
 #define LED_STRIP_TIMER 1
 #define SOFTSERIAL_1_TIMER 2
 #define SOFTSERIAL_2_TIMER 3
+
+#define USABLE_TIMER_CHANNEL_COUNT 0
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

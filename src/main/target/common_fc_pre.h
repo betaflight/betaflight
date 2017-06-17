@@ -105,7 +105,6 @@
 #endif
 
 #if (FLASH_SIZE > 128)
-#define GPS
 #define CMS
 #define TELEMETRY_LTM
 #define TELEMETRY_CRSF
@@ -126,5 +125,8 @@
 #endif
 
 #if (FLASH_SIZE > 256)
+// Temporarily moved this here because of overflowing flash size on F3
+#define GPS
+
 #define USE_UNCOMMON_MIXERS
 #endif

@@ -130,6 +130,8 @@ static uint8_t cliWriteBuffer[sizeof(*cliWriter) + 128];
 static char cliBuffer[64];
 static uint32_t bufferIndex = 0;
 
+static bool configIsInCopy = false;
+
 static const char* const emptyName = "-";
 
 #ifndef USE_QUAD_MIXER_ONLY
@@ -2758,6 +2760,10 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef USE_INVERTER
     { OWNER_INVERTER,      PG_SERIAL_PIN_CONFIG, offsetof(serialPinConfig_t, ioTagInverter[0]), SERIAL_PORT_MAX_INDEX },
 #endif
+#ifdef USE_I2C
+    { OWNER_I2C_SCL,       PG_I2C_CONFIG, offsetof(i2cConfig_t, ioTagScl[0]), I2CDEV_COUNT },
+    { OWNER_I2C_SDA,       PG_I2C_CONFIG, offsetof(i2cConfig_t, ioTagSda[0]), I2CDEV_COUNT },
+#endif
 };
 
 static ioTag_t *getIoTag(const cliResourceValue_t value, uint8_t index)
@@ -2770,15 +2776,15 @@ static void printResource(uint8_t dumpMask)
 {
     for (unsigned int i = 0; i < ARRAYLEN(resourceTable); i++) {
         const char* owner = ownerNames[resourceTable[i].owner];
+        const pgRegistry_t* pg = pgFind(resourceTable[i].pgn);
         const void *currentConfig;
         const void *defaultConfig;
-        if (dumpMask & DO_DIFF || dumpMask & SHOW_DEFAULTS) {
-            const pgRegistry_t* pg = pgFind(resourceTable[i].pgn);
+        if (configIsInCopy) {
             currentConfig = pg->copy;
             defaultConfig = pg->address;
-        } else { // Not guaranteed to have initialised default configs in this case
-            currentConfig = pgFind(resourceTable[i].pgn)->address;
-            defaultConfig = currentConfig;
+        } else {
+            currentConfig = pg->address;
+            defaultConfig = NULL;
         }
 
         for (int index = 0; index < MAX_RESOURCE_INDEX(resourceTable[i].maxIndex); index++) {
@@ -2987,6 +2993,8 @@ static void backupConfigs(void)
             memcpy(pg->copy, pg->address, pg->size);
         }
     }
+
+    configIsInCopy = true;
 }
 
 static void restoreConfigs(void)
@@ -2998,6 +3006,8 @@ static void restoreConfigs(void)
             memcpy(pg->address, pg->copy, pg->size);
         }
     }
+
+    configIsInCopy = false;
 }
 
 static void printConfig(char *cmdline, bool doDiff)

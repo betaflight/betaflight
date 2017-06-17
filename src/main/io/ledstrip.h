@@ -116,7 +116,7 @@ typedef enum {
     LED_OVERLAY_THROTTLE,
     LED_OVERLAY_LARSON_SCANNER,
     LED_OVERLAY_BLINK,
-    LED_OVERLAY_LANDING_FLASH,
+    LED_OVERLAY_VTX,
     LED_OVERLAY_INDICATOR,
     LED_OVERLAY_WARNING
 } ledOverlayId_e;
@@ -192,4 +192,3 @@ void applyDefaultLedStripConfig(ledConfig_t *ledConfig);
 void applyDefaultColors(hsvColor_t *colors);
 void applyDefaultModeColors(modeColorIndexes_t *modeColors);
 void applyDefaultSpecialColors(specialColorIndexes_t *specialColors);
-

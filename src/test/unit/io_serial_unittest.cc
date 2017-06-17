@@ -24,28 +24,23 @@ extern "C" {
     #include "platform.h"
 
     #include "drivers/serial.h"
+    #include "drivers/serial_softserial.h"
+    #include "drivers/serial_uart.h"
+
     #include "io/serial.h"
 
-    void serialInit(serialConfig_t *initialSerialConfig);
-
+    void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisable);
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-//uint32_t testFeatureMask = 0;
-uint8_t cliMode = 0;
-
 TEST(IoSerialTest, TestFindPortConfig)
 {
     // given
-    serialConfig_t serialConfig;
-    memset(&serialConfig, 0, sizeof(serialConfig));
+    serialInit(false, SERIAL_PORT_NONE);
 
     // when
-    serialInit(&serialConfig);
-
-    // and
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP);
 
     // then
@@ -54,20 +49,26 @@ TEST(IoSerialTest, TestFindPortConfig)
 
 
 // STUBS
-
 extern "C" {
-//
-//bool feature(uint32_t mask) {
-//    return (mask & testFeatureMask);
-//}s
+    void delay(uint32_t) {}
 
-void delay(uint32_t) {}
-void cliEnter(serialPort_t *) {}
-void cliProcess(void) {}
-bool isSerialTransmitBufferEmpty(serialPort_t *) {
-    return true;
-}
-void mspProcess(void) {}
-void systemResetToBootloader(void) {}
+    bool isSerialTransmitBufferEmpty(const serialPort_t *) { return true; }
 
+    void systemResetToBootloader(void) {}
+
+    bool telemetryCheckRxPortShared(const serialPortConfig_t *) { return false; }
+
+    uint32_t serialRxBytesWaiting(const serialPort_t *) { return 0; }
+    uint8_t serialRead(serialPort_t *) { return 0; }
+    void serialWrite(serialPort_t *, uint8_t) {}
+
+    serialPort_t *usbVcpOpen(void) { return NULL; }
+
+    serialPort_t *uartOpen(UARTDevice, serialReceiveCallbackPtr, uint32_t, portMode_t, portOptions_t) {
+      return NULL;
+    }
+
+    serialPort_t *openSoftSerial(softSerialPortIndex_e, serialReceiveCallbackPtr, uint32_t, portMode_t, portOptions_t) {
+      return NULL;
+    }
 }

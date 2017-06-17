@@ -393,9 +393,7 @@ void initActiveBoxIds(void)
 
     BME(BOXFPVANGLEMIX);
 
-    if (feature(FEATURE_3D)) {
-        BME(BOX3DDISABLESWITCH);
-    }
+    BME(BOX3DDISABLESWITCH);
 
     if (feature(FEATURE_SERVO_TILT)) {
         BME(BOXCAMSTAB);

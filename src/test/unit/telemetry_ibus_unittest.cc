@@ -90,23 +90,23 @@ static bool telemetryDetermineEnabledState_stub_retval;
 
 void rescheduleTask(cfTaskId_e taskId, uint32_t newPeriodMicros)
 {
-    EXPECT_EQ(taskId, TASK_TELEMETRY);
-    EXPECT_EQ(newPeriodMicros, 1000);
+    EXPECT_EQ(TASK_TELEMETRY, taskId);
+    EXPECT_EQ(1000, newPeriodMicros);
 }
 
 
 
 serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
 {
-    EXPECT_EQ(function, FUNCTION_TELEMETRY_IBUS);
+    EXPECT_EQ(FUNCTION_TELEMETRY_IBUS, function);
     return findSerialPortConfig_stub_retval;
 }
 
 
 portSharing_e determinePortSharing(const serialPortConfig_t *portConfig, serialPortFunction_e function)
 {
-    EXPECT_EQ(portConfig, findSerialPortConfig_stub_retval);
-    EXPECT_EQ(function, FUNCTION_TELEMETRY_IBUS);
+    EXPECT_EQ(findSerialPortConfig_stub_retval, portConfig);
+    EXPECT_EQ(FUNCTION_TELEMETRY_IBUS, function);
     return PORTSHARING_UNUSED;
 }
 
@@ -122,16 +122,16 @@ bool isSerialPortShared(const serialPortConfig_t *portConfig,
                         uint16_t functionMask,
                         serialPortFunction_e sharedWithFunction)
 {
-    EXPECT_EQ(portConfig, findSerialPortConfig_stub_retval);
-    EXPECT_EQ(functionMask, FUNCTION_RX_SERIAL);
-    EXPECT_EQ(sharedWithFunction, FUNCTION_TELEMETRY_IBUS);
+    EXPECT_EQ(findSerialPortConfig_stub_retval, portConfig);
+    EXPECT_EQ(FUNCTION_RX_SERIAL, functionMask);
+    EXPECT_EQ(FUNCTION_TELEMETRY_IBUS, sharedWithFunction);
     return portIsShared;
 }
 
 
 serialPortConfig_t *findSerialPortConfig(uint16_t mask)
 {
-    EXPECT_EQ(mask, FUNCTION_TELEMETRY_IBUS);
+    EXPECT_EQ(FUNCTION_TELEMETRY_IBUS, mask);
     return findSerialPortConfig_stub_retval ;
 }
 
@@ -147,24 +147,23 @@ serialPort_t *openSerialPort(
 {
     openSerial_called = true;
     (void) callback;
-    EXPECT_EQ(identifier, SERIAL_PORT_DUMMY_IDENTIFIER);
-    EXPECT_EQ(options, SERIAL_BIDIR);
-    EXPECT_EQ(function, FUNCTION_TELEMETRY_IBUS);
-    EXPECT_EQ(baudrate, 115200);
-    EXPECT_EQ(mode, MODE_RXTX);
+    EXPECT_EQ(SERIAL_PORT_DUMMY_IDENTIFIER, identifier);
+    EXPECT_EQ(SERIAL_BIDIR, options);
+    EXPECT_EQ(FUNCTION_TELEMETRY_IBUS, function);
+    EXPECT_EQ(115200, baudrate);
+    EXPECT_EQ(MODE_RXTX, mode);
     return &serialTestInstance;
 }
 
-
 void closeSerialPort(serialPort_t *serialPort)
 {
-    EXPECT_EQ(serialPort, &serialTestInstance);
+    EXPECT_EQ(&serialTestInstance, serialPort);
 }
 
 
 void serialWrite(serialPort_t *instance, uint8_t ch)
 {
-    EXPECT_EQ(instance, &serialTestInstance);
+    EXPECT_EQ(&serialTestInstance, instance);
     EXPECT_LT(serialWriteStub.pos, sizeof(serialWriteStub.buffer));
     serialWriteStub.buffer[serialWriteStub.pos++] = ch;
     serialReadStub.buffer[serialReadStub.end++] = ch; //characters echoes back on the shared wire
@@ -174,7 +173,7 @@ void serialWrite(serialPort_t *instance, uint8_t ch)
 
 uint32_t serialRxBytesWaiting(const serialPort_t *instance)
 {
-    EXPECT_EQ(instance, &serialTestInstance);
+    EXPECT_EQ(&serialTestInstance, instance);
     EXPECT_GE(serialReadStub.end, serialReadStub.pos);
     int ret = serialReadStub.end - serialReadStub.pos;
     if (ret < 0) {
@@ -187,7 +186,7 @@ uint32_t serialRxBytesWaiting(const serialPort_t *instance)
 
 uint8_t serialRead(serialPort_t *instance)
 {
-    EXPECT_EQ(instance, &serialTestInstance);
+    EXPECT_EQ(&serialTestInstance, instance);
     EXPECT_LT(serialReadStub.pos, serialReadStub.end);
     const uint8_t ch = serialReadStub.buffer[serialReadStub.pos++];
     return ch;
@@ -255,7 +254,7 @@ TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitEnabled)
     handleIbusTelemetry();
 
     //then all is read from serial port
-    EXPECT_EQ(serialReadStub.pos, serialReadStub.end);
+    EXPECT_EQ(serialReadStub.end, serialReadStub.pos);
     EXPECT_TRUE(openSerial_called);
 }
 

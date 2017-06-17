@@ -42,6 +42,7 @@
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
+#include "fc/fc_core.h"
 
 #include "flight/failsafe.h"
 #include "flight/imu.h"
@@ -109,7 +110,6 @@ PG_REGISTER_ARRAY(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR
 #define EXTERNAL_CONVERSION_3D_MID_VALUE 1500
 
 #define TRICOPTER_ERROR_RATE_YAW_SATURATED 75 // rate at which tricopter yaw axis becomes saturated, determined experimentally by TriFlight
-
 
 static uint8_t motorCount;
 static float motorMixRange;
@@ -567,11 +567,14 @@ void mixTable(pidProfile_t *pidProfile)
     float motorMix[MAX_SUPPORTED_MOTORS];
     float motorMixMax = 0, motorMixMin = 0;
     const int yawDirection = GET_DIRECTION(mixerConfig()->yaw_motors_reversed);
+    int motorDirection = GET_DIRECTION(isMotorsReversed());
+        
+        
     for (int i = 0; i < motorCount; i++) {
         float mix =
-            scaledAxisPidRoll  * currentMixer[i].roll +
-            scaledAxisPidPitch * currentMixer[i].pitch +
-            scaledAxisPidYaw   * currentMixer[i].yaw * (-yawDirection);
+            scaledAxisPidRoll  * currentMixer[i].roll  * (motorDirection) +
+            scaledAxisPidPitch * currentMixer[i].pitch * (motorDirection) +
+            scaledAxisPidYaw   * currentMixer[i].yaw * (-yawDirection) * (motorDirection);
 
         if (vbatCompensationFactor > 1.0f) {
             mix *= vbatCompensationFactor;  // Add voltage compensation

@@ -54,6 +54,7 @@
 #include "drivers/rx_pwm.h"
 #include "drivers/pwm_output.h"
 #include "drivers/adc.h"
+#include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
 #include "drivers/buttons.h"
@@ -133,10 +134,6 @@
 
 #ifdef TARGET_PREINIT
 void targetPreInit(void);
-#endif
-
-#ifdef TARGET_BUS_INIT
-void targetBusInit(void);
 #endif
 
 extern uint8_t motorControlEnable;
@@ -367,6 +364,11 @@ void init(void)
 #endif /* USE_SPI */
 
 #ifdef USE_I2C
+    i2cHardwareConfigure();
+
+    // Note: Unlike UARTs which are configured when client is present,
+    // I2C buses are initialized unconditionally if they are configured.
+
 #ifdef USE_I2C_DEVICE_1
     i2cInit(I2CDEV_1);
 #endif

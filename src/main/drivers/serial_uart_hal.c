@@ -58,6 +58,8 @@ static void usartConfigurePinInversion(uartPort_t *uartPort) {
     }
 }
 
+// XXX uartReconfigure does not handle resource management properly.
+
 void uartReconfigure(uartPort_t *uartPort)
 {
     /*RCC_PeriphCLKInitTypeDef RCC_PeriphClkInit;
@@ -75,7 +77,9 @@ void uartReconfigure(uartPort_t *uartPort)
 
     HAL_UART_DeInit(&uartPort->Handle);
     uartPort->Handle.Init.BaudRate = uartPort->port.baudRate;
-    uartPort->Handle.Init.WordLength = UART_WORDLENGTH_8B;
+    // according to the stm32 documentation wordlen has to be 9 for parity bits
+    // this does not seem to matter for rx but will give bad data on tx!
+    uartPort->Handle.Init.WordLength = (uartPort->port.options & SERIAL_PARITY_EVEN) ? UART_WORDLENGTH_9B : UART_WORDLENGTH_8B;
     uartPort->Handle.Init.StopBits = (uartPort->port.options & SERIAL_STOPBITS_2) ? USART_STOPBITS_2 : USART_STOPBITS_1;
     uartPort->Handle.Init.Parity = (uartPort->port.options & SERIAL_PARITY_EVEN) ? USART_PARITY_EVEN : USART_PARITY_NONE;
     uartPort->Handle.Init.HwFlowCtl = UART_HWCONTROL_NONE;

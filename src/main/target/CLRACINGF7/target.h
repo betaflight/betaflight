@@ -87,7 +87,8 @@
 
 #define SERIAL_PORT_COUNT       5
 
-#define USE_I2C
+// XXX To target maintainer: Bus device to configure must be specified.
+//#define USE_I2C
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
