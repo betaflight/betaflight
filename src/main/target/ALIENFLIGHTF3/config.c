@@ -57,7 +57,7 @@ void targetConfiguration(void)
 {
     /* depending on revision ... depends on the LEDs to be utilised. */
     if (hardwareRevision == AFF3_REV_2) {
-        statusLedConfigMutable()->polarity = 0
+        statusLedConfigMutable()->inversion = 0
 #ifdef LED0_A_INVERTED
             | BIT(0)
 #endif
@@ -69,17 +69,17 @@ void targetConfiguration(void)
 #endif
             ;
 
-        for (int i = 0; i < LED_NUMBER; i++) {
-            statusLedConfigMutable()->ledTags[i] = IO_TAG_NONE;
+        for (int i = 0; i < STATUS_LED_NUMBER; i++) {
+            statusLedConfigMutable()->ioTags[i] = IO_TAG_NONE;
         }
 #ifdef LED0_A
-        statusLedConfigMutable()->ledTags[0] = IO_TAG(LED0_A);
+        statusLedConfigMutable()->ioTags[0] = IO_TAG(LED0_A);
 #endif
 #ifdef LED1_A
-        statusLedConfigMutable()->ledTags[1] = IO_TAG(LED1_A);
+        statusLedConfigMutable()->ioTags[1] = IO_TAG(LED1_A);
 #endif
 #ifdef LED2_A
-        statusLedConfigMutable()->ledTags[2] = IO_TAG(LED2_A);
+        statusLedConfigMutable()->ioTags[2] = IO_TAG(LED2_A);
 #endif
     } else {
         gyroConfigMutable()->gyro_sync_denom = 2;
