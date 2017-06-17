@@ -525,11 +525,11 @@ static void osdDrawSingleElement(uint8_t item)
 #ifdef USE_ESC_SENSOR
     case OSD_ESC_TMP:
         buff[0] = SYM_TEMP_C;
-        tfp_sprintf(buff + 1, "%d", escData->temperature);
+        tfp_sprintf(buff + 1, "%d", escData == NULL ? 0 : escData->temperature);
         break;
 
     case OSD_ESC_RPM:
-        tfp_sprintf(buff, "%d", escData->rpm);
+        tfp_sprintf(buff, "%d", escData == NULL ? 0 : escData->rpm);
         break;
 #endif
 
