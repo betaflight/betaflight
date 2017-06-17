@@ -78,6 +78,7 @@
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
+#include "sensors/esc_sensor.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -136,6 +137,10 @@ static displayPort_t *osdDisplayPort;
 #define AH_SIDEBAR_HEIGHT_POS 3
 
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
+
+#ifdef USE_ESC_SENSOR
+static escSensorData_t *escData;
+#endif
 
 /**
  * Gets the correct altitude symbol for the current unit system
@@ -517,6 +522,18 @@ static void osdDrawSingleElement(uint8_t item)
             return;
         }
 
+#ifdef USE_ESC_SENSOR
+    case OSD_ESC_TMP:
+        buff[0] = SYM_TEMP_C;
+        tfp_sprintf(buff + 1, "%d", escData->temperature);
+        break;
+
+    case OSD_ESC_RPM:
+        tfp_sprintf(buff, "%d", escData->rpm);
+        break;
+#endif
+
+
     default:
         return;
     }
@@ -587,6 +604,14 @@ void osdDrawElements(void)
         osdDrawSingleElement(OSD_GPS_LON);
     }
 #endif // GPS
+
+#ifdef USE_ESC_SENSOR
+  if (feature(FEATURE_ESC_SENSOR))
+  {
+      osdDrawSingleElement(OSD_ESC_TMP);
+      osdDrawSingleElement(OSD_ESC_RPM);
+  }
+#endif
 }
 
 void pgResetFn_osdConfig(osdConfig_t *osdProfile)
@@ -622,6 +647,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdProfile)
     osdProfile->item_pos[OSD_MAIN_BATT_USAGE] = OSD_POS(8, 12) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_ARMED_TIME] = OSD_POS(1, 2) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_DISARMED] = OSD_POS(11, 4) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_ESC_TMP] = OSD_POS(18, 2) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_ESC_RPM] = OSD_POS(19, 2) | VISIBLE_FLAG;
 
     osdProfile->enabled_stats[OSD_STAT_MAX_SPEED] = true;
     osdProfile->enabled_stats[OSD_STAT_MIN_BATTERY] = true;
@@ -951,6 +978,12 @@ static void osdRefresh(timeUs_t currentTimeUs)
     }
 
     blinkState = (currentTimeUs / 200000) % 2;
+
+#ifdef USE_ESC_SENSOR
+    if (feature(FEATURE_ESC_SENSOR)) {
+        escData = getEscSensorData(ESC_SENSOR_COMBINED);
+    }
+#endif
 
 #ifdef CMS
     if (!displayIsGrabbed(osdDisplayPort)) {
