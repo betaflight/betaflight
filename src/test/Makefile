@@ -68,13 +68,18 @@ encoding_unittest_SRC := \
 
 
 flight_failsafe_unittest_SRC := \
+		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/flight/failsafe.c
 
 
 flight_imu_unittest_SRC := \
-		$(USER_DIR)/flight/imu.c \
+		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/config/feature.c \
+		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/flight/altitude.c \
-		$(USER_DIR)/common/maths.c
+		$(USER_DIR)/flight/imu.c
 
 
 flight_mixer_unittest :=  \
@@ -93,6 +98,8 @@ io_serial_unittest_SRC := \
 
 
 ledstrip_unittest_SRC := \
+		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/fc/rc_modes.c \
 		$(USER_DIR)/io/ledstrip.c
 
 
@@ -123,8 +130,10 @@ rx_ibus_unittest_SRC := \
 
 
 rx_ranges_unittest_SRC := \
-		$(USER_DIR)/rx/rx.c \
-		$(USER_DIR)/common/maths.c
+		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/fc/rc_modes.c \
+		$(USER_DIR)/rx/rx.c
 
 
 rx_rx_unittest_SRC := \
