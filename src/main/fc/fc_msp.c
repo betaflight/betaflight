@@ -435,6 +435,7 @@ void initActiveBoxIds(void)
 static int packFlightModeFlags(boxBitmask_t *mspFlightModeFlags)
 {
     // Serialize the flags in the order we delivered them, ignoring BOXNAMES and BOXINDEXES
+    memset(&mspFlightModeFlags, 0, sizeof(boxBitmask_t));
 
     // enabled BOXes, bits indexed by boxId_e
     boxBitmask_t boxEnabledMask;
