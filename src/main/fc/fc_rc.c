@@ -47,6 +47,7 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/pid.h"
+#include "flight/mixer.h"
 
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
@@ -167,7 +168,7 @@ static void scaleRcCommandToFpvCamAngle(void) {
     const int16_t rcCommandSpeed = rcCommand[THROTTLE] - rcCommandThrottlePrevious[index];
 
     if(ABS(rcCommandSpeed) > throttleVelocityThreshold)
-        pidSetItermAccelerator(0.0001f * currentPidProfile->itermAcceleratorGain);
+        pidSetItermAccelerator(CONVERT_PARAMETER_TO_FLOAT(currentPidProfile->itermAcceleratorGain));
     else
         pidSetItermAccelerator(1.0f);
 }
@@ -190,7 +191,7 @@ void processRcCommand(void)
         }
     }
 
-    if (rxConfig()->rcInterpolation || flightModeFlags) {
+    if (rxConfig()->rcInterpolation) {
          // Set RC refresh rate for sampling and channels to filter
         switch(rxConfig()->rcInterpolation) {
             case(RC_SMOOTHING_AUTO):

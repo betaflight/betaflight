@@ -19,18 +19,20 @@
 #include <stdint.h>
 
 #include "platform.h"
+#include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
 #include "io/serial.h"
 
 void targetBusInit(void)
 {
-    #if defined(USE_SPI) && defined(USE_SPI_DEVICE_1)
-        spiInit(SPIDEV_1);
-    #endif
+#if defined(USE_SPI) && defined(USE_SPI_DEVICE_1)
+    spiInit(SPIDEV_1);
+#endif
 
     if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
         serialRemovePort(SERIAL_PORT_USART3);
+        i2cHardwareConfigure();
         i2cInit(I2C_DEVICE);
     }
 }

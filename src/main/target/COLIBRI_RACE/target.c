@@ -16,9 +16,11 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include <platform.h>
 
+#include "drivers/bus_i2c.h"
 #include "drivers/io.h"
 #include "drivers/dma.h"
 #include "drivers/timer.h"
@@ -46,10 +48,12 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
 };
 
-
+// XXX Requires some additional work here.
+// XXX Can't do this now without proper semantics about I2C on this target.
 #ifdef USE_BST
 void targetBusInit(void)
 {
+    i2cHardwareConfigure();
     bstInit(BST_DEVICE);
 }
 #endif

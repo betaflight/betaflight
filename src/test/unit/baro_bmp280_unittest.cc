@@ -18,9 +18,10 @@
 
 extern "C" {
 
-    void bmp280_calculate(int32_t *pressure, int32_t *temperature);
-    extern uint32_t bmp280_up;
-    extern uint32_t bmp280_ut;
+void bmp280_calculate(int32_t *pressure, int32_t *temperature);
+
+extern uint32_t bmp280_up;
+extern uint32_t bmp280_ut;
 
 typedef struct bmp280_calib_param_s {
     uint16_t dig_T1; /* calibration T1 data */
@@ -38,7 +39,7 @@ typedef struct bmp280_calib_param_s {
     int32_t t_fine; /* calibration t_fine data */
 } bmp280_calib_param_t;
 
-    bmp280_calib_param_t bmp280_cal;
+bmp280_calib_param_t bmp280_cal;
 }
 
 
@@ -48,7 +49,6 @@ typedef struct bmp280_calib_param_s {
 
 TEST(baroBmp280Test, TestBmp280Calculate)
 {
-
     // given
     int32_t pressure, temperature;
     bmp280_up = 415148; // Digital pressure value
@@ -74,12 +74,10 @@ TEST(baroBmp280Test, TestBmp280Calculate)
     // then
     EXPECT_EQ(100653, pressure); // 100653 Pa
     EXPECT_EQ(2508, temperature); // 25.08 degC
-
 }
 
 TEST(baroBmp280Test, TestBmp280CalculateHighP)
 {
-
     // given
     int32_t pressure, temperature;
     bmp280_up = 215148; // Digital pressure value
@@ -105,12 +103,10 @@ TEST(baroBmp280Test, TestBmp280CalculateHighP)
     // then
     EXPECT_EQ(135382, pressure); // 135385 Pa
     EXPECT_EQ(2508, temperature); // 25.08 degC
-
 }
 
 TEST(baroBmp280Test, TestBmp280CalculateZeroP)
 {
-
     // given
     int32_t pressure, temperature;
     bmp280_up = 415148; // Digital pressure value
@@ -136,19 +132,20 @@ TEST(baroBmp280Test, TestBmp280CalculateZeroP)
     // then
     EXPECT_EQ(0, pressure); // P1=0 trips pressure to 0 Pa, avoiding division by zero
     EXPECT_EQ(2508, temperature); // 25.08 degC
-
 }
 
 // STUBS
 
 extern "C" {
 
-    void delay(uint32_t) {}
-    bool i2cWrite(uint8_t, uint8_t, uint8_t) {
-        return 1;
-    }
-    bool i2cRead(uint8_t, uint8_t, uint8_t, uint8_t) {
-        return 1;
-    }
+void delay(uint32_t) {}
+
+bool i2cWrite(uint8_t, uint8_t, uint8_t) {
+    return true;
+}
+
+bool i2cRead(uint8_t, uint8_t, uint8_t, uint8_t) {
+    return true;
+}
 
 }

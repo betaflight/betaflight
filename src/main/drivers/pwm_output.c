@@ -338,7 +338,7 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t command)
         motorDmaOutput_t *const motor = getMotorDmaOutput(index);
 
         unsigned repeats;
-        if ((command >= 7 && command <= 10) || command == 12) {
+        if ((DSHOT_CMD_SPIN_ONE_WAY >= 7 && DSHOT_CMD_3D_MODE_ON <= 10) || DSHOT_CMD_SAVE_SETTINGS == 12 || (DSHOT_CMD_ROTATE_NORMAL >= 20 && DSHOT_CMD_ROTATE_REVERSE <= 21) ) {
             repeats = 10;
         } else {
             repeats = 1;

@@ -25,7 +25,6 @@
 #define USBD_PRODUCT_STRING     "KroozX"
 
 #define TARGET_CONFIG
-#define TARGET_BUS_INIT
 #define TARGET_PREINIT
 
 #define LED0                    PA14 // Red LED

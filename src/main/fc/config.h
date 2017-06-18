@@ -27,6 +27,7 @@
 #include "drivers/rx_pwm.h"
 #include "drivers/sdcard.h"
 #include "drivers/serial.h"
+#include "drivers/bus_i2c.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/vcd.h"
 
