@@ -124,10 +124,20 @@ extern uint8_t __config_end;
 
 
 static serialPort_t *cliPort;
-static bufWriter_t *cliWriter;
-static uint8_t cliWriteBuffer[sizeof(*cliWriter) + 128];
 
-static char cliBuffer[64];
+#ifdef STM32F1
+#define CLI_IN_BUFFER_SIZE 128
+#define CLI_OUT_BUFFER_SIZE 64
+#else
+// Space required to set array parameters
+#define CLI_IN_BUFFER_SIZE 256
+#define CLI_OUT_BUFFER_SIZE 256
+#endif
+
+static bufWriter_t *cliWriter;
+static uint8_t cliWriteBuffer[sizeof(*cliWriter) + CLI_IN_BUFFER_SIZE];
+
+static char cliBuffer[CLI_OUT_BUFFER_SIZE];
 static uint32_t bufferIndex = 0;
 
 static bool configIsInCopy = false;
@@ -299,7 +309,7 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, b
 
             cliPrintf("%d", value);
             if (i < var->config.array.length - 1) {
-                cliPrint(", ");
+                cliPrint(",");
             }
         }
     } else {
