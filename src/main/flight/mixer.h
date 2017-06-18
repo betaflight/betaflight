@@ -117,7 +117,9 @@ PG_DECLARE(motorConfig_t, motorConfig);
 
 extern int16_t motor[MAX_SUPPORTED_MOTORS];
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
-extern bool motorLimitReached;
+
+uint8_t getMotorCount(void);
+bool mixerIsOutputSaturated(void);
 
 void writeAllMotors(int16_t mc);
 void mixerLoadMix(int index, motorMixer_t *customMixers);
