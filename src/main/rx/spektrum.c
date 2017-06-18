@@ -211,6 +211,7 @@ void spektrumBind(rxConfig_t *rxConfig)
         return;
     }
 
+    // Determine a pin to use
     ioTag_t bindPin;
 
     if (rxConfig->spektrum_bind_pin_override_ioTag) {
@@ -225,6 +226,7 @@ void spektrumBind(rxConfig_t *rxConfig)
         ioTag_t txPin = serialPinConfig()->ioTagTx[index];
         ioTag_t rxPin = serialPinConfig()->ioTagRx[index];
 
+        // Take care half-duplex case
         switch (rxConfig->serialrx_provider) {
         case SERIALRX_SRXL:
 #ifdef TELEMETRY
