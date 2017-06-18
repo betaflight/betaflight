@@ -63,6 +63,8 @@ typedef enum {
     OSD_NUMERICAL_HEADING,
     OSD_NUMERICAL_VARIO,
     OSD_COMPASS_BAR,
+    OSD_ESC_TMP,
+    OSD_ESC_RPM,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
