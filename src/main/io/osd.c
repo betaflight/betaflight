@@ -79,6 +79,7 @@
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
+#include "sensors/esc_sensor.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -153,6 +154,10 @@ static const char compassBar[] = {
 };
 
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
+
+#ifdef USE_ESC_SENSOR
+static escSensorData_t *escData;
+#endif
 
 /**
  * Gets the correct altitude symbol for the current unit system
@@ -605,6 +610,16 @@ static void osdDrawSingleElement(uint8_t item)
             tfp_sprintf(buff, "%c%01d.%01d", directionSymbol, abs(verticalSpeed / 100), abs((verticalSpeed % 100) / 10));
             break;
         }
+#ifdef USE_ESC_SENSOR
+    case OSD_ESC_TMP:
+        buff[0] = SYM_TEMP_C;
+        tfp_sprintf(buff + 1, "%d", escData == NULL ? 0 : escData->temperature);
+        break;
+
+    case OSD_ESC_RPM:
+        tfp_sprintf(buff, "%d", escData == NULL ? 0 : escData->rpm);
+        break;
+#endif
 
     default:
         return;
@@ -681,6 +696,13 @@ void osdDrawElements(void)
         osdDrawSingleElement(OSD_HOME_DIR);
     }
 #endif // GPS
+
+#ifdef USE_ESC_SENSOR
+  if (feature(FEATURE_ESC_SENSOR)) {
+      osdDrawSingleElement(OSD_ESC_TMP);
+      osdDrawSingleElement(OSD_ESC_RPM);
+  }
+#endif
 }
 
 void pgResetFn_osdConfig(osdConfig_t *osdConfig)
@@ -721,6 +743,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->item_pos[OSD_DISARMED]           = OSD_POS(11, 4)  | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_NUMERICAL_HEADING]  = OSD_POS(23, 9)  | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_NUMERICAL_VARIO]    = OSD_POS(23, 8)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_ESC_TMP]            = OSD_POS(18, 2)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_ESC_RPM]            = OSD_POS(19, 2)  | VISIBLE_FLAG;
 
     osdConfig->enabled_stats[OSD_STAT_MAX_SPEED]    = true;
     osdConfig->enabled_stats[OSD_STAT_MIN_BATTERY]  = true;
@@ -1063,6 +1087,12 @@ static void osdRefresh(timeUs_t currentTimeUs)
     }
 
     blinkState = (currentTimeUs / 200000) % 2;
+
+#ifdef USE_ESC_SENSOR
+    if (feature(FEATURE_ESC_SENSOR)) {
+        escData = getEscSensorData(ESC_SENSOR_COMBINED);
+    }
+#endif
 
 #ifdef CMS
     if (!displayIsGrabbed(osdDisplayPort)) {
