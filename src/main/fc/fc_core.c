@@ -207,16 +207,17 @@ void mwArm(void)
         }
         if (!ARMING_FLAG(PREVENT_ARMING)) {
             #ifdef USE_DSHOT
+            //TODO: Use BOXDSHOTREVERSE here
             if (!feature(FEATURE_3D) && !IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH)) {
                 reverseMotors = false;
                 for (unsigned index = 0; index < getMotorCount(); index++) {
-                    pwmWriteDshotCommand(index, DSHOT_CMD_ROTATE_NORMAL);
+                    pwmWriteDshotCommand(index, DSHOT_CMD_SPIN_DIRECTION_NORMAL);
                 }
             }
             if (!feature(FEATURE_3D) && IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH)) {
                 reverseMotors = true;
                 for (unsigned index = 0; index < getMotorCount(); index++) {
-                    pwmWriteDshotCommand(index, DSHOT_CMD_ROTATE_REVERSE);
+                    pwmWriteDshotCommand(index, DSHOT_CMD_SPIN_DIRECTION_REVERSED);
                 }
             }
             #endif

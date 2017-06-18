@@ -370,6 +370,7 @@ void initActiveBoxIds(void)
 
     BME(BOXFPVANGLEMIX);
 
+    //TODO: Split this into BOX3DDISABLESWITCH and BOXDSHOTREVERSE
     BME(BOX3DDISABLESWITCH);
 
     if (feature(FEATURE_SERVO_TILT)) {

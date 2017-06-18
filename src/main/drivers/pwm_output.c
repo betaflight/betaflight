@@ -338,11 +338,21 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t command)
         motorDmaOutput_t *const motor = getMotorDmaOutput(index);
 
         unsigned repeats;
-        if ((command >= DSHOT_CMD_SPIN_ONE_WAY && command <= DSHOT_CMD_3D_MODE_ON ) || command == DSHOT_CMD_SAVE_SETTINGS || (command >= DSHOT_CMD_ROTATE_NORMAL && command <= DSHOT_CMD_ROTATE_REVERSE) ) {
+        switch (command) {
+        case DSHOT_CMD_SPIN_DIRECTION_1:
+        case DSHOT_CMD_SPIN_DIRECTION_2:
+        case DSHOT_CMD_3D_MODE_OFF:
+        case DSHOT_CMD_3D_MODE_ON:
+        case DSHOT_CMD_SAVE_SETTINGS:
+        case DSHOT_CMD_SPIN_DIRECTION_NORMAL:
+        case DSHOT_CMD_SPIN_DIRECTION_REVERSED:
             repeats = 10;
-        } else {
+            break;
+        default:
             repeats = 1;
+            break;
         }
+
         for (; repeats; repeats--) {
             motor->requestTelemetry = true;
             pwmWritePtr(index, command);
