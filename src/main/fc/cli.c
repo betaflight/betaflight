@@ -2978,11 +2978,7 @@ static void backupConfigs(void)
 {
     // make copies of configs to do differencing
     PG_FOREACH(pg) {
-        if (pgIsProfile(pg)) {
-            //memcpy(pg->copy, pg->address, pg->size * MAX_PROFILE_COUNT);
-        } else {
-            memcpy(pg->copy, pg->address, pg->size);
-        }
+        memcpy(pg->copy, pg->address, pg->size);
     }
 
     configIsInCopy = true;
@@ -2991,11 +2987,7 @@ static void backupConfigs(void)
 static void restoreConfigs(void)
 {
     PG_FOREACH(pg) {
-        if (pgIsProfile(pg)) {
-            //memcpy(pg->address, pg->copy, pg->size * MAX_PROFILE_COUNT);
-        } else {
-            memcpy(pg->address, pg->copy, pg->size);
-        }
+        memcpy(pg->address, pg->copy, pg->size);
     }
 
     configIsInCopy = false;
