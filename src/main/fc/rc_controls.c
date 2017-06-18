@@ -144,11 +144,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
         if (IS_RC_MODE_ACTIVE(BOXARM)) {
             rcDisarmTicks = 0;
             // Arming via ARM BOX
-            if (throttleStatus == THROTTLE_LOW) {
-                if (ARMING_FLAG(OK_TO_ARM)) {
-                    mwArm();
-                }
-            }
+            tryArm();
         } else {
             // Disarming via ARM BOX
 
@@ -156,9 +152,9 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
                 rcDisarmTicks++;
                 if (rcDisarmTicks > 3) {
                     if (armingConfig()->disarm_kill_switch) {
-                        mwDisarm();
+                        disarm();
                     } else if (throttleStatus == THROTTLE_LOW) {
-                        mwDisarm();
+                        disarm();
                     }
                 }
             }
@@ -173,7 +169,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
         // Disarm on throttle down + yaw
         if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_CE) {
             if (ARMING_FLAG(ARMED))
-                mwDisarm();
+                disarm();
             else {
                 beeper(BEEPER_DISARM_REPEAT);    // sound tone while stick held
                 rcDelayCommand = 0;              // reset so disarm tone will repeat
@@ -233,7 +229,8 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
 
         if (rcSticks == THR_LO + YAW_HI + PIT_CE + ROL_CE) {
             // Arm via YAW
-            mwArm();
+            tryArm();
+
             return;
         }
     }

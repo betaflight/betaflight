@@ -3494,7 +3494,7 @@ void cliEnter(serialPort_t *serialPort)
 #endif
     cliPrompt();
 
-    ENABLE_ARMING_FLAG(PREVENT_ARMING);
+    setArmingDisabled(ARMING_DISABLED_CLI);
 }
 
 void cliInit(const serialConfig_t *serialConfig)

@@ -596,12 +596,13 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             isRebootScheduled = true;
             break;
         case BST_DISARM:
-            if (ARMING_FLAG(ARMED))
-                    mwDisarm();
-            ENABLE_ARMING_FLAG(PREVENT_ARMING);
+            if (ARMING_FLAG(ARMED)) {
+                    disarm();
+            }
+            setArmingDisabled(ARMING_DISABLED_BST);
             break;
         case BST_ENABLE_ARM:
-                DISABLE_ARMING_FLAG(PREVENT_ARMING);
+            unsetArmingDisabled(ARMING_DISABLED_BST);
             break;
         case BST_SET_DEADBAND:
             rcControlsConfigMutable()->alt_hold_deadband = bstRead8();

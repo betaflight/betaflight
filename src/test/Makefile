@@ -70,6 +70,7 @@ encoding_unittest_SRC := \
 flight_failsafe_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/fc/rc_modes.c \
+		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/flight/failsafe.c
 
 
