@@ -93,8 +93,6 @@
 #define VBAT_ADC_PIN            PA0
 #define RSSI_ADC_PIN            PB0
 
-#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 //#define SONAR

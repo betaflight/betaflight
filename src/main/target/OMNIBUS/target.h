@@ -169,11 +169,6 @@
 
 //#define AVOID_UART3_FOR_PWM_PPM // Disable this for using UART3
 
-#define USE_SPEKTRUM_BIND
-#define USE_SPEKTRUM_BIND_PLUG
-//#define SPEKTRUM_BIND_PIN       NONE // Place holder
-//#define BINDPLUG_PIN            NONE // Place holder
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA         0xffff

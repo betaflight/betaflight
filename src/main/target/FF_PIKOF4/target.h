@@ -98,8 +98,6 @@
 #define UART6_TX_PIN            PC6
 
 #define SERIAL_PORT_COUNT       4
-//SPECKTRUM BIND
-#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define CMS
 #define USE_MSP_DISPLAYPORT

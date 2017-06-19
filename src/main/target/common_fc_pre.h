@@ -125,7 +125,7 @@
 
 #ifdef USE_SERIALRX_SPEKTRUM
 #define USE_SPEKTRUM_BIND
-#define USE_SPEKTRUM_BINDPIN
+#define USE_SPEKTRUM_BIND_PLUG
 #endif
 #endif
 

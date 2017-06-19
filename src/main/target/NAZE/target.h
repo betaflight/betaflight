@@ -146,7 +146,7 @@
 #define RSSI_ADC_PIN            PA1
 #define EXTERNAL1_ADC_PIN       PA5
 
-#define SPEKTRUM_BIND_PIN       PA3
+#define USE_SPEKTRUM_BIND_PIN
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 

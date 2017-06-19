@@ -101,8 +101,6 @@
 
 #define AVOID_UART2_FOR_PWM_PPM
 
-#define SPEKTRUM_BIND_PIN        UART2_RX_PIN
-
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff
