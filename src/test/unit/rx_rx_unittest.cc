@@ -25,11 +25,13 @@ extern "C" {
 
     #include "drivers/io.h"
     #include "rx/rx.h"
-    #include "fc/rc_controls.h"
+    #include "fc/rc_modes.h"
     #include "common/maths.h"
+    #include "common/utils.h"
     #include "config/feature.h"
     #include "config/parameter_group.h"
     #include "config/parameter_group_ids.h"
+    #include "io/beeper.h"
 
     uint32_t rcModeActivationMask;
 
@@ -43,8 +45,6 @@ extern "C" {
     PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
         .enabledFeatures = 0
     );
-    PG_REGISTER_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions, PG_MODE_ACTIVATION_PROFILE, 0);
-
 }
 
 #include "unittest_macros.h"

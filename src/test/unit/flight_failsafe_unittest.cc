@@ -29,15 +29,20 @@ extern "C" {
 
     #include "common/axis.h"
     #include "common/maths.h"
+    #include "common/bitarray.h"
 
     #include "fc/runtime_config.h"
+    #include "fc/rc_modes.h"
+    #include "fc/rc_controls.h"
+
+    #include "flight/failsafe.h"
 
     #include "io/beeper.h"
-    #include "fc/rc_controls.h"
 
     #include "drivers/io.h"
     #include "rx/rx.h"
-    #include "flight/failsafe.h"
+
+    extern boxBitmask_t rcModeActivationMask;
 }
 
 #include "unittest_macros.h"
@@ -305,7 +310,11 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsKillswitchEvent)
     // and
     throttleStatus = THROTTLE_HIGH;                 // throttle HIGH to go for a failsafe landing procedure
     failsafeConfigMutable()->failsafe_kill_switch = true;        // configure AUX switch as kill switch
-    ACTIVATE_RC_MODE(BOXFAILSAFE);                  // and activate it
+
+    boxBitmask_t newMask;
+    bitArraySet(&newMask, BOXFAILSAFE);
+    rcModeUpdate(&newMask);                         // activate BOXFAILSAFE mode
+
     sysTickUptime = 0;                              // restart time from 0
     failsafeOnValidDataReceived();                  // set last valid sample at current time
     sysTickUptime = PERIOD_RXDATA_FAILURE + 1;      // adjust time to point just past the failure time to
@@ -325,7 +334,8 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsKillswitchEvent)
     sysTickUptime += PERIOD_RXDATA_RECOVERY + 1;    // adjust time to point just past the recovery time to
     failsafeOnValidDataReceived();                  // cause a recovered link
 
-    rcModeActivationMask = DE_ACTIVATE_ALL_BOXES;   // BOXFAILSAFE must be off (kill switch)
+    memset(&newMask, 0, sizeof(newMask));
+    rcModeUpdate(&newMask);            // BOXFAILSAFE must be off (kill switch)
 
     // when
     failsafeUpdateState();
@@ -405,7 +415,6 @@ extern "C" {
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 uint8_t armingFlags;
 float rcCommand[4];
-uint32_t rcModeActivationMask;
 int16_t debug[DEBUG16_VALUE_COUNT];
 bool isUsingSticksToArm = true;
 

@@ -33,8 +33,8 @@
 #define USBD_SERIALNUMBER_STRING "0x8020000" // Remove this at the next major release (?)
 #endif
 
-#define LED0                    PB5
-//#define LED1                    PB4 // Remove this at the next major release
+#define LED0_PIN                PB5
+//#define LED1_PIN                PB4 // Remove this at the next major release
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 
@@ -93,9 +93,7 @@
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define USE_SDCARD
 #define USE_SDCARD_SPI2
-#if defined(OMNIBUSF4SD)
 #define SDCARD_DETECT_INVERTED
-#endif
 #define SDCARD_DETECT_PIN               PB7
 #define SDCARD_SPI_INSTANCE             SPI2
 #define SDCARD_SPI_CS_PIN               SPI2_NSS_PIN

@@ -28,6 +28,7 @@ extern "C" {
     #include "common/axis.h"
     #include "common/maths.h"
 
+    #include "config/feature.h"
     #include "config/parameter_group_ids.h"
 
     #include "drivers/accgyro/accgyro.h"
@@ -42,6 +43,7 @@ extern "C" {
 
     #include "fc/runtime_config.h"
     #include "fc/rc_controls.h"
+    #include "fc/rc_modes.h"
 
     #include "rx/rx.h"
 
@@ -57,6 +59,12 @@ extern "C" {
 
     PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
     PG_REGISTER(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
+
+    PG_REGISTER_WITH_RESET_TEMPLATE(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
+
+    PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
+        .enabledFeatures = 0
+    );
 }
 
 #include "unittest_macros.h"

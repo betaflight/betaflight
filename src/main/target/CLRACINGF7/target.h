@@ -20,7 +20,7 @@
 
 #define USBD_PRODUCT_STRING "CLRACINGF7"
 
-#define LED0                    PB0
+#define LED0_PIN                PB0
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 

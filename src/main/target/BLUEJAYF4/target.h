@@ -28,9 +28,9 @@
 
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 
-#define LED0                    PB6
-#define LED1                    PB5
-#define LED2                    PB4
+#define LED0_PIN                PB6
+#define LED1_PIN                PB5
+#define LED2_PIN                PB4
 
 #define BEEPER                  PC1
 #define BEEPER_OPT              PB7

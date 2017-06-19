@@ -211,7 +211,6 @@ void currentMeterESCReadCombined(currentMeter_t *meter)
     meter->amperageLatest = currentMeterESCState.amperage;
     meter->amperage = currentMeterESCState.amperage;
     meter->mAhDrawn = currentMeterESCState.mAhDrawn;
-    currentMeterReset(meter);
 }
 
 void currentMeterESCReadMotor(uint8_t motorNumber, currentMeter_t *meter)

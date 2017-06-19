@@ -27,6 +27,7 @@ extern "C" {
     #include "common/maths.h"
     #include "config/parameter_group_ids.h"
     #include "fc/rc_controls.h"
+    #include "fc/rc_modes.h"
     #include "rx/rx.h"
 }
 
@@ -39,8 +40,6 @@ extern "C" {
 uint32_t rcModeActivationMask;
 
 extern uint16_t applyRxChannelRangeConfiguraton(int sample, const rxChannelRangeConfig_t *range);
-
-PG_REGISTER_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions, PG_MODE_ACTIVATION_PROFILE, 0);
 }
 
 #define RANGE_CONFIGURATION(min, max) new (rxChannelRangeConfig_t) {min, max}

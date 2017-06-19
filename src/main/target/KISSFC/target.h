@@ -29,7 +29,7 @@
 #define ESCSERIAL_TIMER_TX_HARDWARE 6
 #define REMAP_TIM17_DMA
 
-#define LED0                    PB1
+#define LED0_PIN                PB1
 
 #define BEEPER                  PB13
 #define BEEPER_INVERTED

@@ -20,9 +20,9 @@
 
 #define USBD_PRODUCT_STRING     "Swift-Flyer F4BY"
 
-#define LED0                    PE3 // Blue LED
-#define LED1                    PE2 // Red LED
-#define LED2                    PE1 // Blue LED
+#define LED0_PIN                PE3 // Blue LED
+#define LED1_PIN                PE2 // Red LED
+#define LED2_PIN                PE1 // Blue LED
 
 #define BEEPER                  PE5
 

@@ -665,6 +665,7 @@ COMMON_SRC = \
             build/version.c \
             $(TARGET_DIR_SRC) \
             main.c \
+            common/bitarray.c \
             common/encoding.c \
             common/filter.c \
             common/maths.c \
@@ -736,6 +737,7 @@ FC_SRC = \
             fc/fc_rc.c \
             fc/rc_adjustments.c \
             fc/rc_controls.c \
+            fc/rc_modes.c \
             fc/cli.c \
             fc/settings.c \
             flight/altitude.c \
@@ -1016,7 +1018,8 @@ STM32F7xx_COMMON_SRC = \
             drivers/serial_uart_stm32f7xx.c \
             drivers/serial_uart_hal.c
 
-F7EXCLUDES = drivers/bus_spi.c \
+F7EXCLUDES = \
+            drivers/bus_spi.c \
             drivers/bus_i2c.c \
             drivers/timer.c \
             drivers/serial_uart.c

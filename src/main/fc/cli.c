@@ -74,6 +74,7 @@ extern uint8_t __config_end;
 #include "drivers/time.h"
 #include "drivers/timer.h"
 #include "drivers/vcd.h"
+#include "drivers/light_led.h"
 
 #include "fc/settings.h"
 #include "fc/cli.h"
@@ -2755,6 +2756,7 @@ const cliResourceValue_t resourceTable[] = {
     { OWNER_I2C_SCL,       PG_I2C_CONFIG, offsetof(i2cConfig_t, ioTagScl[0]), I2CDEV_COUNT },
     { OWNER_I2C_SDA,       PG_I2C_CONFIG, offsetof(i2cConfig_t, ioTagSda[0]), I2CDEV_COUNT },
 #endif
+    { OWNER_LED,           PG_STATUS_LED_CONFIG, offsetof(statusLedConfig_t, ioTags[0]), STATUS_LED_NUMBER },
 #ifdef USE_SPEKTRUM_BIND
     { OWNER_RX_BIND,       PG_RX_CONFIG, offsetof(rxConfig_t, spektrum_bind_pin_override_ioTag), 0 },
     { OWNER_RX_BIND_PLUG,  PG_RX_CONFIG, offsetof(rxConfig_t, spektrum_bind_plug_ioTag), 0 },
@@ -2982,11 +2984,7 @@ static void backupConfigs(void)
 {
     // make copies of configs to do differencing
     PG_FOREACH(pg) {
-        if (pgIsProfile(pg)) {
-            //memcpy(pg->copy, pg->address, pg->size * MAX_PROFILE_COUNT);
-        } else {
-            memcpy(pg->copy, pg->address, pg->size);
-        }
+        memcpy(pg->copy, pg->address, pg->size);
     }
 
     configIsInCopy = true;
@@ -2995,11 +2993,7 @@ static void backupConfigs(void)
 static void restoreConfigs(void)
 {
     PG_FOREACH(pg) {
-        if (pgIsProfile(pg)) {
-            //memcpy(pg->address, pg->copy, pg->size * MAX_PROFILE_COUNT);
-        } else {
-            memcpy(pg->address, pg->copy, pg->size);
-        }
+        memcpy(pg->address, pg->copy, pg->size);
     }
 
     configIsInCopy = false;

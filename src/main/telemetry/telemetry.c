@@ -35,7 +35,7 @@
 #include "io/serial.h"
 
 #include "fc/config.h"
-#include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
 #include "msp/msp_serial.h"
