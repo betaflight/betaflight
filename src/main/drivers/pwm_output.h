@@ -28,6 +28,8 @@
 #define MAX_SUPPORTED_SERVOS 8
 #endif
 
+#define DSHOT_MAX_COMMAND 47
+
 typedef enum {
     DSHOT_CMD_MOTOR_STOP = 0,
     DSHOT_CMD_BEEP1,
@@ -165,10 +167,15 @@ void servoDevInit(const servoDevConfig_t *servoDevConfig);
 void pwmServoConfig(const struct timerHardware_s *timerHardware, uint8_t servoIndex, uint16_t servoPwmRate, uint16_t servoCenterPulse);
 
 #ifdef USE_DSHOT
+typedef uint8_t(*loadDmaBufferFuncPtr)(motorDmaOutput_t *const motor, uint16_t packet);  // function pointer used to encode a digital motor value into the DMA buffer representation
+
+uint16_t prepareDshotPacket(motorDmaOutput_t *const motor, uint16_t value);
+
+extern loadDmaBufferFuncPtr loadDmaBufferPtr;
+
 uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType);
 void pwmWriteDshotCommand(uint8_t index, uint8_t command);
-void pwmWriteProShot(uint8_t index, float value);
-void pwmWriteDshot(uint8_t index, float value);
+void pwmWriteDigitalInt(uint8_t index, uint16_t value);
 void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output);
 void pwmCompleteDigitalMotorUpdate(uint8_t motorCount);
 #endif

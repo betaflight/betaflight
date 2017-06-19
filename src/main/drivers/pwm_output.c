@@ -31,11 +31,13 @@
 #define MULTISHOT_5US_PW    (MULTISHOT_TIMER_MHZ * 5)
 #define MULTISHOT_20US_MULT (MULTISHOT_TIMER_MHZ * 20 / 1000.0f)
 
-#define DSHOT_MAX_COMMAND 47
-
 static pwmWriteFuncPtr pwmWritePtr;
 static pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
 static pwmCompleteWriteFuncPtr pwmCompleteWritePtr = NULL;
+
+#ifdef USE_DSHOT
+loadDmaBufferFuncPtr loadDmaBufferPtr;
+#endif
 
 #ifdef USE_SERVOS
 static pwmOutputPort_t servos[MAX_SUPPORTED_SERVOS];
@@ -47,6 +49,7 @@ static uint16_t freqBeep=0;
 #endif
 
 bool pwmMotorsEnabled = false;
+bool isDigital = false;
 
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t output)
 {
@@ -156,6 +159,33 @@ static void pwmWriteMultiShot(uint8_t index, float value)
     *motors[index].ccr = lrintf(((value-1000) * MULTISHOT_20US_MULT) + MULTISHOT_5US_PW);
 }
 
+#ifdef USE_DSHOT
+static void pwmWriteDigital(uint8_t index, float value)
+{
+    pwmWriteDigitalInt(index, lrintf(value));
+}
+
+static uint8_t loadDmaBufferDshot(motorDmaOutput_t *const motor, uint16_t packet)
+{
+    for (int i = 0; i < 16; i++) {
+        motor->dmaBuffer[i] = (packet & 0x8000) ? MOTOR_BIT_1 : MOTOR_BIT_0;  // MSB first
+        packet <<= 1;
+	}
+
+    return DSHOT_DMA_BUFFER_SIZE;
+}
+
+static uint8_t loadDmaBufferProshot(motorDmaOutput_t *const motor, uint16_t packet)
+{
+    for (int i = 0; i < 4; i++) {
+        motor->dmaBuffer[i] = PROSHOT_BASE_SYMBOL + ((packet & 0xF000) >> 12) * PROSHOT_BIT_WIDTH;  // Most significant nibble first
+        packet <<= 4;   // Shift 4 bits
+    }
+
+    return PROSHOT_DMA_BUFFER_SIZE;
+}
+#endif
+
 void pwmWriteMotor(uint8_t index, float value)
 {
     if (pwmMotorsEnabled) {
@@ -218,7 +248,6 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
     
     uint32_t timerMhzCounter = 0;
     bool useUnsyncedPwm = motorConfig->useUnsyncedPwm;
-    bool isDigital = false;
 
     switch (motorConfig->motorPwmProtocol) {
     default:
@@ -248,7 +277,8 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         break;
 #ifdef USE_DSHOT
     case PWM_TYPE_PROSHOT1000:
-        pwmWritePtr = pwmWriteProShot;
+        pwmWritePtr = pwmWriteDigital;
+        loadDmaBufferPtr = loadDmaBufferProshot;
         pwmCompleteWritePtr = pwmCompleteDigitalMotorUpdate;
         isDigital = true;
         break;
@@ -256,7 +286,8 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
     case PWM_TYPE_DSHOT600:
     case PWM_TYPE_DSHOT300:
     case PWM_TYPE_DSHOT150:
-        pwmWritePtr = pwmWriteDshot;
+        pwmWritePtr = pwmWriteDigital;
+        loadDmaBufferPtr = loadDmaBufferDshot;
         pwmCompleteWritePtr = pwmCompleteDigitalMotorUpdate;
         isDigital = true;
         break;
@@ -343,7 +374,7 @@ uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType)
 
 void pwmWriteDshotCommand(uint8_t index, uint8_t command)
 {
-    if (command <= DSHOT_MAX_COMMAND) {
+    if (isDigital && (command <= DSHOT_MAX_COMMAND)) {
         motorDmaOutput_t *const motor = getMotorDmaOutput(index);
 
         unsigned repeats;
@@ -364,12 +395,31 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t command)
 
         for (; repeats; repeats--) {
             motor->requestTelemetry = true;
-            pwmWritePtr(index, command);
+            pwmWriteDigitalInt(index, command);
             pwmCompleteMotorUpdate(0);
 
             delay(1);
         }
     }
+}
+
+uint16_t prepareDshotPacket(motorDmaOutput_t *const motor, const uint16_t value)
+{
+    uint16_t packet = (value << 1) | (motor->requestTelemetry ? 1 : 0);
+    motor->requestTelemetry = false;    // reset telemetry request to make sure it's triggered only once in a row
+
+    // compute checksum
+    int csum = 0;
+    int csum_data = packet;
+    for (int i = 0; i < 3; i++) {
+        csum ^=  csum_data;   // xor data by nibbles
+        csum_data >>= 4;
+    }
+    csum &= 0xf;
+    // append checksum
+    packet = (packet << 4) | csum;
+
+    return packet;
 }
 #endif
 

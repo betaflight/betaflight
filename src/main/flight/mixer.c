@@ -339,6 +339,7 @@ bool mixerIsOutputSaturated(int axis, float errorRate)
 bool isMotorProtocolDshot(void) {
 #ifdef USE_DSHOT
     switch(motorConfig()->dev.motorPwmProtocol) {
+    case PWM_TYPE_PROSHOT1000:
     case PWM_TYPE_DSHOT1200:
     case PWM_TYPE_DSHOT600:
     case PWM_TYPE_DSHOT300:
