@@ -37,6 +37,7 @@
 #include "fc/fc_core.h"
 #include "fc/fc_rc.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
 #include "rx/rx.h"

@@ -21,47 +21,6 @@
 
 #include "config/parameter_group.h"
 
-typedef enum {
-    BOXARM = 0,
-    BOXANGLE,
-    BOXHORIZON,
-    BOXBARO,
-    BOXANTIGRAVITY,
-    BOXMAG,
-    BOXHEADFREE,
-    BOXHEADADJ,
-    BOXCAMSTAB,
-    BOXCAMTRIG,
-    BOXGPSHOME,
-    BOXGPSHOLD,
-    BOXPASSTHRU,
-    BOXBEEPERON,
-    BOXLEDMAX,
-    BOXLEDLOW,
-    BOXLLIGHTS,
-    BOXCALIB,
-    BOXGOV,
-    BOXOSD,
-    BOXTELEMETRY,
-    BOXGTUNE,
-    BOXSONAR,
-    BOXSERVO1,
-    BOXSERVO2,
-    BOXSERVO3,
-    BOXBLACKBOX,
-    BOXFAILSAFE,
-    BOXAIRMODE,
-    BOX3DDISABLESWITCH,
-    BOXFPVANGLEMIX,
-    BOXBLACKBOXERASE,
-    CHECKBOX_ITEM_COUNT
-} boxId_e;
-
-extern uint32_t rcModeActivationMask;
-
-#define IS_RC_MODE_ACTIVE(modeId) ((1 << (modeId)) & rcModeActivationMask)
-#define ACTIVATE_RC_MODE(modeId) (rcModeActivationMask |= (1 << modeId))
-
 typedef enum rc_alias {
     ROLL = 0,
     PITCH,
@@ -109,17 +68,6 @@ typedef enum {
 #define THR_CE (3 << (2 * THROTTLE))
 #define THR_HI (2 << (2 * THROTTLE))
 
-#define MAX_MODE_ACTIVATION_CONDITION_COUNT 20
-
-#define CHANNEL_RANGE_MIN 900
-#define CHANNEL_RANGE_MAX 2100
-
-#define MODE_STEP_TO_CHANNEL_VALUE(step) (CHANNEL_RANGE_MIN + 25 * step)
-#define CHANNEL_VALUE_TO_STEP(channelValue) ((constrain(channelValue, CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX) - CHANNEL_RANGE_MIN) / 25)
-
-#define MIN_MODE_RANGE_STEP 0
-#define MAX_MODE_RANGE_STEP ((CHANNEL_RANGE_MAX - CHANNEL_RANGE_MIN) / 25)
-
 // Roll/pitch rates are a proportion used for mixing, so it tops out at 1.0:
 #define CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX  100
 
@@ -127,29 +75,6 @@ typedef enum {
 #define CONTROL_RATE_CONFIG_YAW_RATE_MAX         255
 
 #define CONTROL_RATE_CONFIG_TPA_MAX              100
-
-// steps are 25 apart
-// a value of 0 corresponds to a channel value of 900 or less
-// a value of 48 corresponds to a channel value of 2100 or more
-// 48 steps between 900 and 1200
-typedef struct channelRange_s {
-    uint8_t startStep;
-    uint8_t endStep;
-} channelRange_t;
-
-typedef struct modeActivationCondition_s {
-    boxId_e modeId;
-    uint8_t auxChannelIndex;
-    channelRange_t range;
-} modeActivationCondition_t;
-
-PG_DECLARE_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions);
-
-typedef struct modeActivationProfile_s {
-    modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
-} modeActivationProfile_t;
-
-#define IS_RANGE_USABLE(range) ((range)->startStep < (range)->endStep)
 
 extern float rcCommand[4];
 
@@ -186,15 +111,9 @@ bool areSticksInApModePosition(uint16_t ap_mode);
 throttleStatus_e calculateThrottleStatus(void);
 void processRcStickPositions(throttleStatus_e throttleStatus);
 
-bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range);
-void updateActivatedModes(void);
-
-bool isAirmodeActive(void);
-bool isAntiGravityModeActive(void);
-
 bool isUsingSticksForArming(void);
 
 int32_t getRcStickDeflection(int32_t axis, uint16_t midrc);
-bool isModeActivationConditionPresent(const modeActivationCondition_t *modeActivationConditions, boxId_e modeId);
 struct pidProfile_s;
-void useRcControlsConfig(const modeActivationCondition_t *modeActivationConditions, struct pidProfile_s *pidProfileToUse);
+struct modeActivationCondition_s;
+void useRcControlsConfig(struct pidProfile_s *pidProfileToUse);

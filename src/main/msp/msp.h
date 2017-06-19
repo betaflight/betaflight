@@ -23,7 +23,8 @@
 typedef enum {
     MSP_RESULT_ACK = 1,
     MSP_RESULT_ERROR = -1,
-    MSP_RESULT_NO_REPLY = 0
+    MSP_RESULT_NO_REPLY = 0,
+    MSP_RESULT_CMD_UNKNOWN = -2,   // don't know how to process command, try next handler
 } mspResult_e;
 
 typedef enum {

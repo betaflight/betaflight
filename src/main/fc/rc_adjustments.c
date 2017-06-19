@@ -88,7 +88,7 @@ static void blackboxLogInflightAdjustmentEventFloat(adjustmentFunction_e adjustm
 }
 #endif
 
-static uint8_t adjustmentStateMask = 0;
+STATIC_UNIT_TESTED uint8_t adjustmentStateMask = 0;
 
 #define MARK_ADJUSTMENT_FUNCTION_AS_BUSY(adjustmentIndex) adjustmentStateMask |= (1 << adjustmentIndex)
 #define MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentIndex) adjustmentStateMask &= ~(1 << adjustmentIndex)
@@ -199,9 +199,9 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
 
 #define ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET 1
 
-static adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENT_COUNT];
+STATIC_UNIT_TESTED adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENT_COUNT];
 
-static void configureAdjustment(uint8_t index, uint8_t auxSwitchChannelIndex, const adjustmentConfig_t *adjustmentConfig)
+STATIC_UNIT_TESTED void configureAdjustment(uint8_t index, uint8_t auxSwitchChannelIndex, const adjustmentConfig_t *adjustmentConfig)
 {
     adjustmentState_t *adjustmentState = &adjustmentStates[index];
 
@@ -386,10 +386,7 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
             continue;
         }
 
-        const int32_t signedDiff = now - adjustmentState->timeoutAt;
-        const bool canResetReadyStates = signedDiff >= 0L;
-
-        if (canResetReadyStates) {
+        if (cmp32(now, adjustmentState->timeoutAt) >= 0) {
             adjustmentState->timeoutAt = now + RESET_FREQUENCY_2HZ;
             MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentIndex);
         }
