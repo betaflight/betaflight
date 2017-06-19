@@ -122,6 +122,11 @@
 #define VTX_CONTROL
 #define VTX_SMARTAUDIO
 #define VTX_TRAMP
+
+#ifdef USE_SERIALRX_SPEKTRUM
+#define USE_SPEKTRUM_BIND
+#define USE_SPEKTRUM_BINDPIN
+#endif
 #endif
 
 #if (FLASH_SIZE > 256)
