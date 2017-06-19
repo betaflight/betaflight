@@ -349,6 +349,10 @@ void init(void)
 #else
 
 #ifdef USE_SPI
+    // Initialize CS lines and keep them high
+    max7456PreInit();
+    sensorsPreInit();
+
 #ifdef USE_SPI_DEVICE_1
     spiInit(SPIDEV_1);
 #endif
