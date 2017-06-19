@@ -158,7 +158,9 @@ static void pwmWriteMultiShot(uint8_t index, uint16_t value)
 
 void pwmWriteMotor(uint8_t index, uint16_t value)
 {
-    pwmWritePtr(index, value);
+    if (pwmMotorsEnabled) {
+        pwmWritePtr(index, value);
+    }    
 }
 
 void pwmShutdownPulsesForAllMotors(uint8_t motorCount)
@@ -245,11 +247,16 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         idlePulse = 0;
         break;
 #ifdef USE_DSHOT
+    case PWM_TYPE_PROSHOT1000:
+        pwmWritePtr = pwmWriteProShot;
+        pwmCompleteWritePtr = pwmCompleteDigitalMotorUpdate;
+        isDigital = true;
+        break;
     case PWM_TYPE_DSHOT1200:
     case PWM_TYPE_DSHOT600:
     case PWM_TYPE_DSHOT300:
     case PWM_TYPE_DSHOT150:
-        pwmWritePtr = pwmWriteDigital;
+        pwmWritePtr = pwmWriteDshot;
         pwmCompleteWritePtr = pwmCompleteDigitalMotorUpdate;
         isDigital = true;
         break;
@@ -320,15 +327,17 @@ pwmOutputPort_t *pwmGetMotors(void)
 uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType)
 {
     switch (pwmProtocolType) {
-        case(PWM_TYPE_DSHOT1200):
-            return MOTOR_DSHOT1200_MHZ * 1000000;
-        case(PWM_TYPE_DSHOT600):
-            return MOTOR_DSHOT600_MHZ * 1000000;
-        case(PWM_TYPE_DSHOT300):
-            return MOTOR_DSHOT300_MHZ * 1000000;
-        default:
-        case(PWM_TYPE_DSHOT150):
-            return MOTOR_DSHOT150_MHZ * 1000000;
+    case(PWM_TYPE_PROSHOT1000):
+        return MOTOR_PROSHOT1000_MHZ * 1000000;
+    case(PWM_TYPE_DSHOT1200):
+        return MOTOR_DSHOT1200_MHZ * 1000000;
+    case(PWM_TYPE_DSHOT600):
+        return MOTOR_DSHOT600_MHZ * 1000000;
+    case(PWM_TYPE_DSHOT300):
+        return MOTOR_DSHOT300_MHZ * 1000000;
+    default:
+    case(PWM_TYPE_DSHOT150):
+        return MOTOR_DSHOT150_MHZ * 1000000;
     }
 }
 
