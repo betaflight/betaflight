@@ -131,7 +131,7 @@ motorDmaOutput_t *getMotorDmaOutput(uint8_t index);
 extern bool pwmMotorsEnabled;
 
 struct timerHardware_s;
-typedef void(*pwmWriteFuncPtr)(uint8_t index, uint16_t value);  // function pointer used to write motors
+typedef void(*pwmWriteFuncPtr)(uint8_t index, float value);  // function pointer used to write motors
 typedef void(*pwmCompleteWriteFuncPtr)(uint8_t motorCount);   // function pointer used after motors are written
 
 typedef struct {
@@ -167,8 +167,8 @@ void pwmServoConfig(const struct timerHardware_s *timerHardware, uint8_t servoIn
 #ifdef USE_DSHOT
 uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType);
 void pwmWriteDshotCommand(uint8_t index, uint8_t command);
-void pwmWriteProShot(uint8_t index, uint16_t value);
-void pwmWriteDshot(uint8_t index, uint16_t value);
+void pwmWriteProShot(uint8_t index, float value);
+void pwmWriteDshot(uint8_t index, float value);
 void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output);
 void pwmCompleteDigitalMotorUpdate(uint8_t motorCount);
 #endif
@@ -179,11 +179,11 @@ void pwmToggleBeeper(void);
 void beeperPwmInit(IO_t io, uint16_t frequency);
 #endif
 
-void pwmWriteMotor(uint8_t index, uint16_t value);
+void pwmWriteMotor(uint8_t index, float value);
 void pwmShutdownPulsesForAllMotors(uint8_t motorCount);
 void pwmCompleteMotorUpdate(uint8_t motorCount);
 
-void pwmWriteServo(uint8_t index, uint16_t value);
+void pwmWriteServo(uint8_t index, float value);
 
 pwmOutputPort_t *pwmGetMotors(void);
 bool pwmIsSynced(void);
