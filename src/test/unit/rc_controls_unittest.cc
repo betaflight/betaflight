@@ -26,6 +26,7 @@ extern "C" {
     #include "common/maths.h"
     #include "common/axis.h"
 
+    #include "config/parameter_group.h"
     #include "config/parameter_group_ids.h"
 
     #include "blackbox/blackbox.h"
@@ -250,7 +251,7 @@ protected:
         adjustmentStateMask = 0;
         memset(&adjustmentStates, 0, sizeof(adjustmentStates));
 
-        PG_RESET_CURRENT(rxConfig);
+        PG_RESET(rxConfig);
         rxConfigMutable()->mincheck = DEFAULT_MIN_CHECK;
         rxConfigMutable()->maxcheck = DEFAULT_MAX_CHECK;
         rxConfigMutable()->midrc = 1500;
@@ -307,7 +308,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     };
 
     // and
-    PG_RESET_CURRENT(rxConfig);
+    PG_RESET(rxConfig);
     rxConfigMutable()->mincheck = DEFAULT_MIN_CHECK;
     rxConfigMutable()->maxcheck = DEFAULT_MAX_CHECK;
     rxConfigMutable()->midrc = 1500;
