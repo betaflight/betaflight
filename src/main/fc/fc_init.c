@@ -259,7 +259,7 @@ void init(void)
     }
 #endif
 
-#ifdef USE_SPEKTRUM_BIND
+#if defined(USE_SPEKTRUM_BIND) && !defined(SITL)
     if (feature(FEATURE_RX_SERIAL)) {
         switch (rxConfig()->serialrx_provider) {
         case SERIALRX_SPEKTRUM1024:
