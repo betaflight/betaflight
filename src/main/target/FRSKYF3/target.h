@@ -21,7 +21,7 @@
 #define TARGET_CONFIG
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-#define LED0                    PB3
+#define LED0_PIN                PB3
 #define BEEPER                  PC15
 #define BEEPER_INVERTED
 

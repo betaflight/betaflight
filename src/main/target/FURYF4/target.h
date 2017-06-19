@@ -25,8 +25,8 @@
     #define USBD_PRODUCT_STRING     "FuryF4"
 #endif
 
-#define LED0                    PB5
-#define LED1                    PB4
+#define LED0_PIN                PB5
+#define LED1_PIN                PB4
 
 #define BEEPER                  PA8
 #define BEEPER_INVERTED

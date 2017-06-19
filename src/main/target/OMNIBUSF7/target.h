@@ -19,7 +19,7 @@
 
 #define USBD_PRODUCT_STRING "OmnibusF7"
 
-#define LED0                    PE0
+#define LED0_PIN                PE0
 
 #define BEEPER                  PD15
 #define BEEPER_INVERTED

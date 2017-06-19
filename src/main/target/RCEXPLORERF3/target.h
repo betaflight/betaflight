@@ -21,8 +21,8 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-#define LED0        PB4
-#define LED1        PB5
+#define LED0_PIN    PB4
+#define LED1_PIN    PB5
 
 #define BEEPER      PA0
 #define BEEPER_INVERTED

@@ -22,11 +22,11 @@
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
 // tqfp48 pin 34
-#define LED0                    PA13
+#define LED0_PIN                PA13
 // tqfp48 pin 37
-#define LED1                    PA14
+#define LED1_PIN                PA14
 // tqfp48 pin 38
-#define LED2                    PA15
+#define LED2_PIN                PA15
 
 #define BEEPER                  PB2
 #define BEEPER_INVERTED

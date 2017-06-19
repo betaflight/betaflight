@@ -33,8 +33,8 @@
 #define USBD_SERIALNUMBER_STRING "0x8020000" // Remove this at the next major release (?)
 #endif
 
-#define LED0                    PB5
-//#define LED1                    PB4 // Remove this at the next major release
+#define LED0_PIN                PB5
+//#define LED1_PIN                PB4 // Remove this at the next major release
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 

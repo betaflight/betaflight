@@ -22,9 +22,9 @@
 
 #define USBD_PRODUCT_STRING "Elle0"
 
-#define LED0                    PA8
-#define LED1                    PB4
-#define LED2                    PC2
+#define LED0_PIN                PA8
+#define LED1_PIN                PB4
+#define LED2_PIN                PC2
 
 // MPU9250 interrupt
 #define USE_EXTI
