@@ -743,8 +743,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->item_pos[OSD_DISARMED]           = OSD_POS(11, 4)  | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_NUMERICAL_HEADING]  = OSD_POS(24, 9)  | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_NUMERICAL_VARIO]    = OSD_POS(24, 8)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ESC_TMP]            = OSD_POS(18, 4)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ESC_RPM]            = OSD_POS(19, 4)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_ESC_TMP]            = OSD_POS(1,  5)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_ESC_RPM]            = OSD_POS(1, 6)   | VISIBLE_FLAG;
 
     osdConfig->enabled_stats[OSD_STAT_MAX_SPEED]    = true;
     osdConfig->enabled_stats[OSD_STAT_MIN_BATTERY]  = true;
