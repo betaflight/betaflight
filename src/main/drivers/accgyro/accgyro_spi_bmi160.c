@@ -103,6 +103,7 @@ bool bmi160Detect(const busDevice_t *bus)
         return true;
     IOInit(bus->spi.csnPin, OWNER_MPU_CS, 0);
     IOConfigGPIO(bus->spi.csnPin, SPI_IO_CS_CFG);
+    IOHi(bus->spi.csnPin);
 
     spiSetDivisor(BMI160_SPI_INSTANCE, BMI160_SPI_DIVISOR);
 
