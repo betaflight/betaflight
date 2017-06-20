@@ -206,6 +206,9 @@ void spiPreInit(void)
 #ifdef USE_ACCGYRO_BMI160
     spiPreInitCs(IO_TAG(BMI160_CS_PIN));
 #endif
+#ifdef USE_GYRO_L3GD20
+    spiPreInitCs(IO_TAG(L3GD20_CS_PIN));
+#endif
 #ifdef USE_MAX7456
     spiPreInitCs(IO_TAG(MAX7456_SPI_CS_PIN));
 #endif
@@ -214,6 +217,15 @@ void spiPreInit(void)
 #endif
 #ifdef USE_BARO_SPI_BMP280
     spiPreInitCs(IO_TAG(BMP280_CS_PIN));
+#endif
+#ifdef USE_BARO_SPI_MS5611
+    spiPreInitCs(IO_TAG(MS5611_CS_PIN));
+#endif
+#ifdef USE_MAG_SPI_HMC5883
+    spiPreInitCs(IO_TAG(HMC5883_CS_PIN));
+#endif
+#ifdef USE_MAG_SPI_AK8963
+    spiPreInitCs(IO_TAG(AK8963_CS_PIN));
 #endif
 #ifdef RTC6705_CS_PIN // XXX VTX_RTC6705? Should use USE_ format.
     spiPreInitCs(IO_TAG(RTC6705_CS_PIN));
