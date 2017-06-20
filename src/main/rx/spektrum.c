@@ -273,6 +273,16 @@ void spektrumBind(rxConfig_t *rxConfig)
 
     }
 
+
+    // Release the bind pin to avoid interference with an actual rx pin,
+    // when rxConfig->spektrum_bind_pin_override_ioTag is used.
+    // This happens when the bind pin is connected in parallel to the rx pin.
+
+    if (rxConfig->spektrum_bind_pin_override_ioTag) {
+        delay(50); // Keep it high for 50msec
+        IOConfigGPIO(bindIO, IOCFG_IN_FLOATING);
+    }
+
     // If we came here as a result of hard  reset (power up, with spektrum_sat_bind set), then reset it back to zero and write config
     // Don't reset if hardware bind plug is present
     // Reset only when autoreset is enabled
