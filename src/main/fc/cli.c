@@ -126,7 +126,7 @@ extern uint8_t __config_end;
 
 static serialPort_t *cliPort;
 
-#ifdef STM32F1
+#if defined(STM32F1) || defined(STM32F3)
 #define CLI_IN_BUFFER_SIZE 128
 #define CLI_OUT_BUFFER_SIZE 64
 #else
