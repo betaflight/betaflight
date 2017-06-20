@@ -133,8 +133,8 @@ motorDmaOutput_t *getMotorDmaOutput(uint8_t index);
 extern bool pwmMotorsEnabled;
 
 struct timerHardware_s;
-typedef void(*pwmWriteFuncPtr)(uint8_t index, float value);  // function pointer used to write motors
-typedef void(*pwmCompleteWriteFuncPtr)(uint8_t motorCount);   // function pointer used after motors are written
+typedef void pwmWriteFunc(uint8_t index, float value);  // function pointer used to write motors
+typedef void pwmCompleteWriteFunc(uint8_t motorCount);   // function pointer used after motors are written
 
 typedef struct {
     volatile timCCR_t *ccr;
@@ -167,11 +167,11 @@ void servoDevInit(const servoDevConfig_t *servoDevConfig);
 void pwmServoConfig(const struct timerHardware_s *timerHardware, uint8_t servoIndex, uint16_t servoPwmRate, uint16_t servoCenterPulse);
 
 #ifdef USE_DSHOT
-typedef uint8_t(*loadDmaBufferFuncPtr)(motorDmaOutput_t *const motor, uint16_t packet);  // function pointer used to encode a digital motor value into the DMA buffer representation
+typedef uint8_t loadDmaBufferFunc(motorDmaOutput_t *const motor, uint16_t packet);  // function pointer used to encode a digital motor value into the DMA buffer representation
 
 uint16_t prepareDshotPacket(motorDmaOutput_t *const motor, uint16_t value);
 
-extern loadDmaBufferFuncPtr loadDmaBufferPtr;
+extern loadDmaBufferFunc *loadDmaBuffer;
 
 uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType);
 void pwmWriteDshotCommand(uint8_t index, uint8_t command);

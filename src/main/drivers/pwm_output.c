@@ -31,12 +31,12 @@
 #define MULTISHOT_5US_PW    (MULTISHOT_TIMER_MHZ * 5)
 #define MULTISHOT_20US_MULT (MULTISHOT_TIMER_MHZ * 20 / 1000.0f)
 
-static pwmWriteFuncPtr pwmWritePtr;
+static pwmWriteFunc *pwmWrite;
 static pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
-static pwmCompleteWriteFuncPtr pwmCompleteWritePtr = NULL;
+static pwmCompleteWriteFunc *pwmCompleteWrite = NULL;
 
 #ifdef USE_DSHOT
-loadDmaBufferFuncPtr loadDmaBufferPtr;
+loadDmaBufferFunc *loadDmaBuffer;
 #endif
 
 #ifdef USE_SERVOS
@@ -189,7 +189,7 @@ static uint8_t loadDmaBufferProshot(motorDmaOutput_t *const motor, uint16_t pack
 void pwmWriteMotor(uint8_t index, float value)
 {
     if (pwmMotorsEnabled) {
-        pwmWritePtr(index, value);
+        pwmWrite(index, value);
     }    
 }
 
@@ -212,7 +212,7 @@ void pwmDisableMotors(void)
 void pwmEnableMotors(void)
 {
     /* check motors can be enabled */
-    pwmMotorsEnabled = (pwmWritePtr != pwmWriteUnused);
+    pwmMotorsEnabled = (pwmWrite != &pwmWriteUnused);
 }
 
 bool pwmAreMotorsEnabled(void)
@@ -239,7 +239,7 @@ static void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
 
 void pwmCompleteMotorUpdate(uint8_t motorCount)
 {
-    pwmCompleteWritePtr(motorCount);
+    pwmCompleteWrite(motorCount);
 }
 
 void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount)
@@ -253,49 +253,49 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
     default:
     case PWM_TYPE_ONESHOT125:
         timerMhzCounter = ONESHOT125_TIMER_MHZ;
-        pwmWritePtr = pwmWriteOneShot125;
+        pwmWrite = &pwmWriteOneShot125;
         break;
     case PWM_TYPE_ONESHOT42:
         timerMhzCounter = ONESHOT42_TIMER_MHZ;
-        pwmWritePtr = pwmWriteOneShot42;
+        pwmWrite = &pwmWriteOneShot42;
         break;
     case PWM_TYPE_MULTISHOT:
         timerMhzCounter = MULTISHOT_TIMER_MHZ;
-        pwmWritePtr = pwmWriteMultiShot;
+        pwmWrite = &pwmWriteMultiShot;
         break;
     case PWM_TYPE_BRUSHED:
         timerMhzCounter = PWM_BRUSHED_TIMER_MHZ;
-        pwmWritePtr = pwmWriteBrushed;
+        pwmWrite = &pwmWriteBrushed;
         useUnsyncedPwm = true;
         idlePulse = 0;
         break;
     case PWM_TYPE_STANDARD:
         timerMhzCounter = PWM_TIMER_MHZ;
-        pwmWritePtr = pwmWriteStandard;
+        pwmWrite = &pwmWriteStandard;
         useUnsyncedPwm = true;
         idlePulse = 0;
         break;
 #ifdef USE_DSHOT
     case PWM_TYPE_PROSHOT1000:
-        pwmWritePtr = pwmWriteDigital;
-        loadDmaBufferPtr = loadDmaBufferProshot;
-        pwmCompleteWritePtr = pwmCompleteDigitalMotorUpdate;
+        pwmWrite = &pwmWriteDigital;
+        loadDmaBuffer = &loadDmaBufferProshot;
+        pwmCompleteWrite = &pwmCompleteDigitalMotorUpdate;
         isDigital = true;
         break;
     case PWM_TYPE_DSHOT1200:
     case PWM_TYPE_DSHOT600:
     case PWM_TYPE_DSHOT300:
     case PWM_TYPE_DSHOT150:
-        pwmWritePtr = pwmWriteDigital;
-        loadDmaBufferPtr = loadDmaBufferDshot;
-        pwmCompleteWritePtr = pwmCompleteDigitalMotorUpdate;
+        pwmWrite = &pwmWriteDigital;
+        loadDmaBuffer = &loadDmaBufferDshot;
+        pwmCompleteWrite = &pwmCompleteDigitalMotorUpdate;
         isDigital = true;
         break;
 #endif
     }
 
     if (!isDigital) {
-        pwmCompleteWritePtr = useUnsyncedPwm ? pwmCompleteWriteUnused : pwmCompleteOneshotMotorUpdate;
+        pwmCompleteWrite = useUnsyncedPwm ? &pwmCompleteWriteUnused : &pwmCompleteOneshotMotorUpdate;
     }
 
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
@@ -304,8 +304,8 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
 
         if (timerHardware == NULL) {
             /* not enough motors initialised for the mixer or a break in the motors */
-            pwmWritePtr = pwmWriteUnused;
-            pwmCompleteWritePtr = pwmCompleteWriteUnused;
+            pwmWrite = &pwmWriteUnused;
+            pwmCompleteWrite = &pwmCompleteWriteUnused;
             /* TODO: block arming and add reason system cannot arm */
             return;
         }

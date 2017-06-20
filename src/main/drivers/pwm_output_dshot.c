@@ -64,7 +64,7 @@ void pwmWriteDigitalInt(uint8_t index, uint16_t value)
 
     uint16_t packet = prepareDshotPacket(motor, value);
 
-    uint8_t bufferSize = loadDmaBufferPtr(motor, packet);
+    uint8_t bufferSize = loadDmaBuffer(motor, packet);
 
     DMA_SetCurrDataCounter(motor->timerHardware->dmaRef, bufferSize);
     DMA_Cmd(motor->timerHardware->dmaRef, ENABLE);

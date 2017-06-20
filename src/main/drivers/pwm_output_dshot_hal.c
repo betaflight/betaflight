@@ -59,7 +59,7 @@ void pwmWriteDigitalInt(uint8_t index, uint16_t value)
 
     uint16_t packet = prepareDshotPacket(motor, value);
 
-    uint8_t bufferSize = loadDmaBufferPtr(motor, packet);
+    uint8_t bufferSize = loadDmaBuffer(motor, packet);
 
     if (motor->timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
         if (HAL_TIMEx_PWMN_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, bufferSize) != HAL_OK) {
