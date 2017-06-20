@@ -397,6 +397,7 @@ void max7456Init(const vcdProfile_t *pVcdProfile)
 #endif
     IOInit(max7456CsPin, OWNER_OSD_CS, 0);
     IOConfigGPIO(max7456CsPin, SPI_IO_CS_CFG);
+    IOHi(max7456CsPin);
 
     spiSetDivisor(MAX7456_SPI_INSTANCE, SPI_CLOCK_STANDARD);
     // force soft reset on Max7456

@@ -184,6 +184,61 @@ static IO_t busSwitchResetPin        = IO_NONE;
 }
 #endif
 
+#ifdef USE_SPI
+// Pre-initialize all CS pins to input with pull-up.
+// It's sad that we can't do this with an initialized array,
+// since we will be taking care of configurable CS pins shortly.
+
+void spiPreInit(void)
+{
+#ifdef USE_ACC_SPI_MPU6000
+    spiPreInitCs(IO_TAG(MPU6000_CS_PIN));
+#endif
+#ifdef USE_ACC_SPI_MPU6500
+    spiPreInitCs(IO_TAG(MPU6500_CS_PIN));
+#endif
+#ifdef USE_GYRO_SPI_MPU9250
+    spiPreInitCs(IO_TAG(MPU9250_CS_PIN));
+#endif
+#ifdef USE_GYRO_SPI_ICM20689
+    spiPreInitCs(IO_TAG(ICM20689_CS_PIN));
+#endif
+#ifdef USE_ACCGYRO_BMI160
+    spiPreInitCs(IO_TAG(BMI160_CS_PIN));
+#endif
+#ifdef USE_GYRO_L3GD20
+    spiPreInitCs(IO_TAG(L3GD20_CS_PIN));
+#endif
+#ifdef USE_MAX7456
+    spiPreInitCs(IO_TAG(MAX7456_SPI_CS_PIN));
+#endif
+#ifdef USE_SDCARD
+    spiPreInitCs(IO_TAG(SDCARD_SPI_CS_PIN));
+#endif
+#ifdef USE_BARO_SPI_BMP280
+    spiPreInitCs(IO_TAG(BMP280_CS_PIN));
+#endif
+#ifdef USE_BARO_SPI_MS5611
+    spiPreInitCs(IO_TAG(MS5611_CS_PIN));
+#endif
+#ifdef USE_MAG_SPI_HMC5883
+    spiPreInitCs(IO_TAG(HMC5883_CS_PIN));
+#endif
+#ifdef USE_MAG_SPI_AK8963
+    spiPreInitCs(IO_TAG(AK8963_CS_PIN));
+#endif
+#ifdef RTC6705_CS_PIN // XXX VTX_RTC6705? Should use USE_ format.
+    spiPreInitCs(IO_TAG(RTC6705_CS_PIN));
+#endif
+#ifdef M25P16_CS_PIN // XXX Should use USE_ format.
+    spiPreInitCs(IO_TAG(M25P16_CS_PIN));
+#endif
+#if defined(USE_RX_SPI) && !defined(USE_RX_SOFTSPI)
+    spiPreInitCs(IO_TAG(RX_NSS_PIN));
+#endif
+}
+#endif
+
 void init(void)
 {
 #ifdef USE_HAL_DRIVER
@@ -350,6 +405,9 @@ void init(void)
 
 #ifdef USE_SPI
     spiPinConfigure();
+
+    // Initialize CS lines and keep them high
+    spiPreInit();
 
 #ifdef USE_SPI_DEVICE_1
     spiInit(SPIDEV_1);

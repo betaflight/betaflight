@@ -21,8 +21,6 @@
 
 #include <platform.h>
 
-#include "build/debug.h"
-
 #include "drivers/bus_spi.h"
 #include "drivers/bus_spi_impl.h"
 #include "drivers/exti.h"

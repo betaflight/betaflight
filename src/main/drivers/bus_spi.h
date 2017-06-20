@@ -79,6 +79,7 @@ typedef enum SPIDevice {
 #define SPIDEV_COUNT 4
 #endif
 
+void spiPreInitCs(ioTag_t iotag);
 bool spiInit(SPIDevice device);
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor);
 uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t in);
