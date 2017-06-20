@@ -125,40 +125,42 @@ static void pwmOutConfig(pwmOutputPort_t *port, const timerHardware_t *timerHard
     *port->ccr = 0;
 }
 
-static void pwmWriteUnused(uint8_t index, uint16_t value)
+static void pwmWriteUnused(uint8_t index, float value)
 {
     UNUSED(index);
     UNUSED(value);
 }
 
-static void pwmWriteBrushed(uint8_t index, uint16_t value)
+static void pwmWriteBrushed(uint8_t index, float value)
 {
-    *motors[index].ccr = (value - 1000) * motors[index].period / 1000;
+    *motors[index].ccr = lrintf((value - 1000) * motors[index].period / 1000);
 }
 
-static void pwmWriteStandard(uint8_t index, uint16_t value)
+static void pwmWriteStandard(uint8_t index, float value)
 {
-    *motors[index].ccr = value;
+    *motors[index].ccr = lrintf(value);
 }
 
-static void pwmWriteOneShot125(uint8_t index, uint16_t value)
+static void pwmWriteOneShot125(uint8_t index, float value)
 {
-    *motors[index].ccr = lrintf((float)(value * ONESHOT125_TIMER_MHZ/8.0f));
+    *motors[index].ccr = lrintf(value * ONESHOT125_TIMER_MHZ/8.0f);
 }
 
-static void pwmWriteOneShot42(uint8_t index, uint16_t value)
+static void pwmWriteOneShot42(uint8_t index, float value)
 {
-    *motors[index].ccr = lrintf((float)(value * ONESHOT42_TIMER_MHZ/24.0f));
+    *motors[index].ccr = lrintf(value * ONESHOT42_TIMER_MHZ/24.0f);
 }
 
-static void pwmWriteMultiShot(uint8_t index, uint16_t value)
+static void pwmWriteMultiShot(uint8_t index, float value)
 {
-    *motors[index].ccr = lrintf(((float)(value-1000) * MULTISHOT_20US_MULT) + MULTISHOT_5US_PW);
+    *motors[index].ccr = lrintf(((value-1000) * MULTISHOT_20US_MULT) + MULTISHOT_5US_PW);
 }
 
-void pwmWriteMotor(uint8_t index, uint16_t value)
+void pwmWriteMotor(uint8_t index, float value)
 {
-    pwmWritePtr(index, value);
+    if (pwmMotorsEnabled) {
+        pwmWritePtr(index, value);
+    }    
 }
 
 void pwmShutdownPulsesForAllMotors(uint8_t motorCount)
@@ -245,11 +247,16 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         idlePulse = 0;
         break;
 #ifdef USE_DSHOT
+    case PWM_TYPE_PROSHOT1000:
+        pwmWritePtr = pwmWriteProShot;
+        pwmCompleteWritePtr = pwmCompleteDigitalMotorUpdate;
+        isDigital = true;
+        break;
     case PWM_TYPE_DSHOT1200:
     case PWM_TYPE_DSHOT600:
     case PWM_TYPE_DSHOT300:
     case PWM_TYPE_DSHOT150:
-        pwmWritePtr = pwmWriteDigital;
+        pwmWritePtr = pwmWriteDshot;
         pwmCompleteWritePtr = pwmCompleteDigitalMotorUpdate;
         isDigital = true;
         break;
@@ -320,15 +327,17 @@ pwmOutputPort_t *pwmGetMotors(void)
 uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType)
 {
     switch (pwmProtocolType) {
-        case(PWM_TYPE_DSHOT1200):
-            return MOTOR_DSHOT1200_MHZ * 1000000;
-        case(PWM_TYPE_DSHOT600):
-            return MOTOR_DSHOT600_MHZ * 1000000;
-        case(PWM_TYPE_DSHOT300):
-            return MOTOR_DSHOT300_MHZ * 1000000;
-        default:
-        case(PWM_TYPE_DSHOT150):
-            return MOTOR_DSHOT150_MHZ * 1000000;
+    case(PWM_TYPE_PROSHOT1000):
+        return MOTOR_PROSHOT1000_MHZ * 1000000;
+    case(PWM_TYPE_DSHOT1200):
+        return MOTOR_DSHOT1200_MHZ * 1000000;
+    case(PWM_TYPE_DSHOT600):
+        return MOTOR_DSHOT600_MHZ * 1000000;
+    case(PWM_TYPE_DSHOT300):
+        return MOTOR_DSHOT300_MHZ * 1000000;
+    default:
+    case(PWM_TYPE_DSHOT150):
+        return MOTOR_DSHOT150_MHZ * 1000000;
     }
 }
 
@@ -338,11 +347,21 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t command)
         motorDmaOutput_t *const motor = getMotorDmaOutput(index);
 
         unsigned repeats;
-        if ((command >= 7 && command <= 10) || command == 12) {
+        switch (command) {
+        case DSHOT_CMD_SPIN_DIRECTION_1:
+        case DSHOT_CMD_SPIN_DIRECTION_2:
+        case DSHOT_CMD_3D_MODE_OFF:
+        case DSHOT_CMD_3D_MODE_ON:
+        case DSHOT_CMD_SAVE_SETTINGS:
+        case DSHOT_CMD_SPIN_DIRECTION_NORMAL:
+        case DSHOT_CMD_SPIN_DIRECTION_REVERSED:
             repeats = 10;
-        } else {
+            break;
+        default:
             repeats = 1;
+            break;
         }
+
         for (; repeats; repeats--) {
             motor->requestTelemetry = true;
             pwmWritePtr(index, command);
@@ -355,10 +374,10 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t command)
 #endif
 
 #ifdef USE_SERVOS
-void pwmWriteServo(uint8_t index, uint16_t value)
+void pwmWriteServo(uint8_t index, float value)
 {
     if (index < MAX_SUPPORTED_SERVOS && servos[index].ccr) {
-        *servos[index].ccr = value;
+        *servos[index].ccr = lrintf(value);
     }
 }
 

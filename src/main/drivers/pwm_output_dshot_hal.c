@@ -49,11 +49,9 @@ uint8_t getTimerIndex(TIM_TypeDef *timer)
     return dmaMotorTimerCount - 1;
 }
 
-void pwmWriteDigital(uint8_t index, uint16_t value)
+void pwmWriteDshot(uint8_t index, float value)
 {
-    if (!pwmMotorsEnabled) {
-        return;
-    }
+    const uint16_t digitalValue = lrintf(value);
 
     motorDmaOutput_t * const motor = &dmaMotors[index];
 
@@ -61,7 +59,7 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
         return;
     }
 
-    uint16_t packet = (value << 1) | (motor->requestTelemetry ? 1 : 0);
+    uint16_t packet = (digitalValue << 1) | (motor->requestTelemetry ? 1 : 0);
     motor->requestTelemetry = false; // reset telemetry request to make sure it's triggered only once in a row
 
     // compute checksum
@@ -81,12 +79,55 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
     }
 
     if (motor->timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
-        if (HAL_TIMEx_PWMN_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, MOTOR_DMA_BUFFER_SIZE) != HAL_OK) {
+        if (HAL_TIMEx_PWMN_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, DSHOT_DMA_BUFFER_SIZE) != HAL_OK) {
             /* Starting PWM generation Error */
             return;
         }
     } else {
-        if (HAL_TIM_PWM_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, MOTOR_DMA_BUFFER_SIZE) != HAL_OK) {
+        if (HAL_TIM_PWM_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, DSHOT_DMA_BUFFER_SIZE) != HAL_OK) {
+            /* Starting PWM generation Error */
+            return;
+        }
+    }
+}
+
+void pwmWriteProShot(uint8_t index, float value)
+{
+    const uint16_t digitalValue = lrintf(value);
+
+    motorDmaOutput_t * const motor = &dmaMotors[index];
+
+    if (!motor->timerHardware || !motor->timerHardware->dmaRef) {
+        return;
+    }
+
+    uint16_t packet = (digitalValue << 1) | (motor->requestTelemetry ? 1 : 0);
+    motor->requestTelemetry = false; // reset telemetry request to make sure it's triggered only once in a row
+
+    // compute checksum
+    int csum = 0;
+    int csum_data = packet;
+    for (int i = 0; i < 3; i++) {
+        csum ^=  csum_data;   // xor data by nibbles
+        csum_data >>= 4;
+    }
+    csum &= 0xf;
+    // append checksum
+    packet = (packet << 4) | csum;
+
+    // generate pulses for Proshot
+    for (int i = 0; i < 4; i++) {
+        motor->dmaBuffer[i] = PROSHOT_BASE_SYMBOL + ((packet & 0xF000) >> 12) * PROSHOT_BIT_WIDTH;  // Most significant nibble first
+        packet <<= 4;	// Shift 4 bits
+    }
+
+    if (motor->timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
+        if (HAL_TIMEx_PWMN_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, PROSHOT_DMA_BUFFER_SIZE) != HAL_OK) {
+            /* Starting PWM generation Error */
+            return;
+        }
+    } else {
+        if (HAL_TIM_PWM_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, PROSHOT_DMA_BUFFER_SIZE) != HAL_OK) {
             /* Starting PWM generation Error */
             return;
         }
@@ -122,8 +163,8 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     RCC_ClockCmd(timerRCC(timer), ENABLE);
 
     motor->TimHandle.Instance = timerHardware->tim;
-    motor->TimHandle.Init.Prescaler = (timerClock(timer) / getDshotHz(pwmProtocolType)) - 1;;
-    motor->TimHandle.Init.Period = MOTOR_BITLENGTH;
+    motor->TimHandle.Init.Prescaler = (timerClock(timer) / getDshotHz(pwmProtocolType)) - 1;
+    motor->TimHandle.Init.Period = pwmProtocolType == PWM_TYPE_PROSHOT1000 ? MOTOR_NIBBLE_LENGTH_PROSHOT : MOTOR_BITLENGTH;
     motor->TimHandle.Init.RepetitionCounter = 0;
     motor->TimHandle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     motor->TimHandle.Init.CounterMode = TIM_COUNTERMODE_UP;

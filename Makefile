@@ -665,6 +665,7 @@ COMMON_SRC = \
             build/version.c \
             $(TARGET_DIR_SRC) \
             main.c \
+            common/bitarray.c \
             common/encoding.c \
             common/filter.c \
             common/maths.c \
@@ -677,6 +678,7 @@ COMMON_SRC = \
             config/config_streamer.c \
             drivers/adc.c \
             drivers/buf_writer.c \
+            drivers/bus_i2c_config.c \
             drivers/bus_i2c_soft.c \
             drivers/bus_spi.c \
             drivers/bus_spi_soft.c \
@@ -735,6 +737,7 @@ FC_SRC = \
             fc/fc_rc.c \
             fc/rc_adjustments.c \
             fc/rc_controls.c \
+            fc/rc_modes.c \
             fc/cli.c \
             fc/settings.c \
             flight/altitude.c \
@@ -896,7 +899,11 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             io/osd_slave.c
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
+            drivers/bus_i2c_config.c \
             drivers/serial_escserial.c \
+            drivers/serial_pinconfig.c \
+            drivers/serial_uart_init.c \
+            drivers/serial_uart_pinconfig.c \
             drivers/vtx_rtc6705_soft_spi.c \
             drivers/vtx_rtc6705.c \
             drivers/vtx_common.c \
@@ -907,9 +914,6 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             config/feature.c \
             config/parameter_group.c \
             config/config_streamer.c \
-            drivers/serial_pinconfig.c \
-            drivers/serial_uart_init.c \
-            drivers/serial_uart_pinconfig.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
@@ -1014,7 +1018,8 @@ STM32F7xx_COMMON_SRC = \
             drivers/serial_uart_stm32f7xx.c \
             drivers/serial_uart_hal.c
 
-F7EXCLUDES = drivers/bus_spi.c \
+F7EXCLUDES = \
+            drivers/bus_spi.c \
             drivers/bus_i2c.c \
             drivers/timer.c \
             drivers/serial_uart.c
@@ -1023,6 +1028,7 @@ SITLEXCLUDES = \
             drivers/adc.c \
             drivers/bus_spi.c \
             drivers/bus_i2c.c \
+            drivers/bus_i2c_config.c \
             drivers/dma.c \
             drivers/pwm_output.c \
             drivers/timer.c \

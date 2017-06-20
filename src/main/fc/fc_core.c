@@ -107,7 +107,7 @@ int16_t magHold;
 int16_t headFreeModeHold;
 
 uint8_t motorControlEnable = false;
-
+static bool reverseMotors;
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
 bool isRXDataNew;
@@ -206,6 +206,21 @@ void mwArm(void)
             return;
         }
         if (!ARMING_FLAG(PREVENT_ARMING)) {
+            #ifdef USE_DSHOT
+            //TODO: Use BOXDSHOTREVERSE here
+            if (!feature(FEATURE_3D) && !IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH)) {
+                reverseMotors = false;
+                for (unsigned index = 0; index < getMotorCount(); index++) {
+                    pwmWriteDshotCommand(index, DSHOT_CMD_SPIN_DIRECTION_NORMAL);
+                }
+            }
+            if (!feature(FEATURE_3D) && IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH)) {
+                reverseMotors = true;
+                for (unsigned index = 0; index < getMotorCount(); index++) {
+                    pwmWriteDshotCommand(index, DSHOT_CMD_SPIN_DIRECTION_REVERSED);
+                }
+            }
+            #endif
             ENABLE_ARMING_FLAG(ARMED);
             ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
             headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
@@ -644,4 +659,9 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
         subTaskMotorUpdate();
         runTaskMainSubprocesses = true;
     }
+}
+
+bool isMotorsReversed()
+{
+    return reverseMotors;
 }

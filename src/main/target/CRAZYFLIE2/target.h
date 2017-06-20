@@ -42,9 +42,9 @@
 #define USED_TIMERS             ( TIM_N(2) | TIM_N(4) )
 #endif
 
-#define LED0                    PD2
-#define LED1                    PC0
-#define LED2                    PC3
+#define LED0_PIN                PD2
+#define LED1_PIN                PC0
+#define LED2_PIN                PC3
 
 // Using STM32F405RG, 64 pin package (LQFP64)
 // 16 pins per port, ports A, B, C, and also PD2

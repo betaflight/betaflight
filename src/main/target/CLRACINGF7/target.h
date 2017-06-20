@@ -20,7 +20,7 @@
 
 #define USBD_PRODUCT_STRING "CLRACINGF7"
 
-#define LED0                    PB0
+#define LED0_PIN                PB0
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 
@@ -87,7 +87,8 @@
 
 #define SERIAL_PORT_COUNT       5
 
-#define USE_I2C
+// XXX To target maintainer: Bus device to configure must be specified.
+//#define USE_I2C
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1

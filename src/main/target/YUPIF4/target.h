@@ -21,9 +21,9 @@
 
 #define USBD_PRODUCT_STRING     "YupiF4"
 
-#define LED0                    PB6
-#define LED1                    PB4
-#define LED2                    PB5
+#define LED0_PIN                PB6
+#define LED1_PIN                PB4
+#define LED2_PIN                PB5
 
 #define BEEPER                  PC9
 #define BEEPER_PWM_HZ           2200 // Beeper PWM frequency in Hz

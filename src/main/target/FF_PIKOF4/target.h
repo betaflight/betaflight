@@ -19,8 +19,8 @@
 #define TARGET_BOARD_IDENTIFIER "PIK4"
 #define USBD_PRODUCT_STRING     "PikoF4"
 /*--------------LED----------------*/
-#define LED0                    PA15
-#define LED1                    PB6
+#define LED0_PIN                PA15
+#define LED1_PIN                PB6
 #define LED_STRIP
 /*---------------------------------*/
 

@@ -28,6 +28,9 @@
 
 #include "drivers/sound_beeper.h"
 #include "drivers/time.h"
+#include "drivers/pwm_output.h"
+
+#include "flight/mixer.h"
 
 #include "fc/config.h"
 #include "fc/runtime_config.h"
@@ -152,7 +155,6 @@ static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS + 2];
 
 #define BEEPER_CONFIRMATION_BEEP_DURATION 2
 #define BEEPER_CONFIRMATION_BEEP_GAP_DURATION 20
-
 
 // Beeper off = 0 Beeper on = 1
 static uint8_t beeperIsOn = 0;
@@ -337,6 +339,14 @@ void beeperUpdate(timeUs_t currentTimeUs)
     if (beeperNextToggleTime > currentTimeUs) {
         return;
     }
+
+    #ifdef USE_DSHOT
+    if (!ARMING_FLAG(ARMED) && currentBeeperEntry->mode == BEEPER_RX_SET) {  
+        for (unsigned index = 0; index < getMotorCount(); index++) {
+            pwmWriteDshotCommand(index, DSHOT_CMD_BEEP3);
+        }
+    }
+    #endif
 
     if (!beeperIsOn) {
         beeperIsOn = 1;

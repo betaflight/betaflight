@@ -19,7 +19,7 @@
 #define USBD_PRODUCT_STRING "FRSKYF4"
 #define TARGET_CONFIG
 
-#define LED0                    PB5
+#define LED0_PIN                PB5
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 

@@ -19,7 +19,7 @@
 
 #define USBD_PRODUCT_STRING "OmnibusF7"
 
-#define LED0                    PE0
+#define LED0_PIN                PE0
 
 #define BEEPER                  PD15
 #define BEEPER_INVERTED
@@ -134,7 +134,9 @@
 
 #define USE_I2C
 #define USE_I2C_DEVICE_2
-#define I2C_DEVICE (I2CDEV_2)
+#define I2C_DEVICE              (I2CDEV_2)
+#define I2C2_SCL                NONE        // PB10 (UART3_TX)
+#define I2C2_SDA                NONE        // PB11 (UART3_RX)
 
 #define BARO
 #define USE_BARO_BMP280

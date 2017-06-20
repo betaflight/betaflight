@@ -15,24 +15,25 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
 #include <stdint.h>
+#include <stdbool.h>
 
-#include "platform.h"
-#include "drivers/bus.h"
-#include "drivers/bus_i2c.h"
-#include "drivers/bus_spi.h"
-#include "io/serial.h"
+#include "bitarray.h"
 
-void targetBusInit(void)
+#define BITARRAY_BIT_OP(array, bit, op) ((array)[(bit) / (sizeof((array)[0]) * 8)] op (1 << ((bit) % (sizeof((array)[0]) * 8))))
+
+bool bitArrayGet(const void *array, unsigned bit)
 {
-#if defined(USE_SPI) && defined(USE_SPI_DEVICE_1)
-    spiInit(SPIDEV_1);
-#endif
-
-    if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
-        serialRemovePort(SERIAL_PORT_USART3);
-        i2cHardwareConfigure();
-        i2cInit(I2C_DEVICE);
-    }
+    return BITARRAY_BIT_OP((uint32_t*)array, bit, &);
 }
+
+void bitArraySet(void *array, unsigned bit)
+{
+    BITARRAY_BIT_OP((uint32_t*)array, bit, |=);
+}
+
+void bitArrayClr(void *array, unsigned bit)
+{
+    BITARRAY_BIT_OP((uint32_t*)array, bit, &=~);
+}
+

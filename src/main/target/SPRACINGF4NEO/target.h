@@ -27,16 +27,16 @@
 #define USBD_PRODUCT_STRING                 "SP Racing F4 NEO"
 
 #if (SPRACINGF4NEO_REV >= 3)
-    #define LED0                            PA0
-    #define LED1                            PB1
+    #define LED0_PIN                        PA0
+    #define LED1_PIN                        PB1
 #endif
 #if (SPRACINGF4NEO_REV == 2)
-    #define LED0                            PB9
-    #define LED1                            PB2
+    #define LED0_PIN                        PB9
+    #define LED1_PIN                        PB2
 #endif
 #if (SPRACINGF4NEO_REV == 1)
-    #define LED0                            PB9
-    #define LED1                            PB2
+    #define LED0_PIN                        PB9
+    #define LED1_PIN                        PB2
 #endif
 
 #define BEEPER                              PC15
@@ -103,6 +103,7 @@
 #define ESCSERIAL_TIMER_TX_HARDWARE         0 // PWM 1
 
 #define USE_I2C
+#define USE_I2C_DEVICE_1
 #define I2C_DEVICE                          (I2CDEV_1) // PB6/SCL, PB7/SDA
 
 #if (SPRACINGF4NEO_REV >= 3)

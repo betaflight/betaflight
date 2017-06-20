@@ -28,7 +28,7 @@
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 #define CONFIG_PREFER_ACC_ON
 
-#define LED0                    PC14
+#define LED0_PIN                PC14
 
 #define BEEPER                  PC15
 #define BEEPER_INVERTED
@@ -127,6 +127,7 @@
 #endif
 
 #define USE_I2C
+#define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1) // SDA (PB9/AF4), SCL (PB8/AF4)
 #define I2C1_SCL            PB8
 #define I2C1_SDA            PB9

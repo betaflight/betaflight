@@ -21,10 +21,10 @@
 #define USE_HARDWARE_REVISION_DETECTION
 #define TARGET_CONFIG
 
-#define LED0                    PB3
+#define LED0_PIN                PB3
 #define LED0_INVERTED
 
-#define LED1                    PB4
+#define LED1_PIN                PB4
 #define LED1_INVERTED
 
 #define BEEPER                  PA12

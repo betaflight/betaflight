@@ -19,7 +19,7 @@
 
 #include <stdbool.h>
 #include "config/parameter_group.h"
-#include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 
 typedef enum {
     ADJUSTMENT_NONE = 0,

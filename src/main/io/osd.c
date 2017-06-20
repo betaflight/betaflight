@@ -58,6 +58,7 @@
 #include "drivers/vtx_common.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
+#include "io/beeper.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
 #include "io/osd.h"
@@ -79,6 +80,7 @@
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
+#include "sensors/esc_sensor.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -95,7 +97,8 @@
 
 // Blink control
 
-bool blinkState = true;
+static bool blinkState = true;
+static bool showVisualBeeper = false;
 
 static uint32_t blinkBits[(OSD_ITEM_COUNT + 31)/32];
 #define SET_BLINK(item) (blinkBits[(item) / 32] |= (1 << ((item) % 32)))
@@ -153,6 +156,10 @@ static const char compassBar[] = {
 };
 
 PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
+
+#ifdef USE_ESC_SENSOR
+static escSensorData_t *escData;
+#endif
 
 /**
  * Gets the correct altitude symbol for the current unit system
@@ -518,7 +525,7 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
-    case OSD_MAIN_BATT_WARNING:
+    case OSD_WARNINGS:
         switch(getBatteryState()) {
         case BATTERY_WARNING:
             tfp_sprintf(buff, "LOW BATTERY");
@@ -529,7 +536,13 @@ static void osdDrawSingleElement(uint8_t item)
             break;
 
         default:
-            return;
+            if (showVisualBeeper) {
+                tfp_sprintf(buff, "  * * * *");
+            } else {
+                return;
+            }
+            break;
+
         }
         break;
 
@@ -605,6 +618,16 @@ static void osdDrawSingleElement(uint8_t item)
             tfp_sprintf(buff, "%c%01d.%01d", directionSymbol, abs(verticalSpeed / 100), abs((verticalSpeed % 100) / 10));
             break;
         }
+#ifdef USE_ESC_SENSOR
+    case OSD_ESC_TMP:
+        buff[0] = SYM_TEMP_C;
+        tfp_sprintf(buff + 1, "%d", escData == NULL ? 0 : escData->temperature);
+        break;
+
+    case OSD_ESC_RPM:
+        tfp_sprintf(buff, "%d", escData == NULL ? 0 : escData->rpm);
+        break;
+#endif
 
     default:
         return;
@@ -613,7 +636,7 @@ static void osdDrawSingleElement(uint8_t item)
     displayWrite(osdDisplayPort, elemPosX + elemOffsetX, elemPosY, buff);
 }
 
-void osdDrawElements(void)
+static void osdDrawElements(void)
 {
     displayClearScreen(osdDisplayPort);
 
@@ -621,13 +644,6 @@ void osdDrawElements(void)
     if (IS_RC_MODE_ACTIVE(BOXOSD))
       return;
 
-#if 0
-    if (currentElement)
-        osdDrawElementPositioningHelp();
-#else
-    if (false)
-        ;
-#endif
 #ifdef CMS
     else if (sensors(SENSOR_ACC) || displayIsGrabbed(osdDisplayPort))
 #else
@@ -654,7 +670,7 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_YAW_PIDS);
     osdDrawSingleElement(OSD_POWER);
     osdDrawSingleElement(OSD_PIDRATE_PROFILE);
-    osdDrawSingleElement(OSD_MAIN_BATT_WARNING);
+    osdDrawSingleElement(OSD_WARNINGS);
     osdDrawSingleElement(OSD_AVG_CELL_VOLTAGE);
     osdDrawSingleElement(OSD_DEBUG);
     osdDrawSingleElement(OSD_PITCH_ANGLE);
@@ -681,6 +697,13 @@ void osdDrawElements(void)
         osdDrawSingleElement(OSD_HOME_DIR);
     }
 #endif // GPS
+
+#ifdef USE_ESC_SENSOR
+  if (feature(FEATURE_ESC_SENSOR)) {
+      osdDrawSingleElement(OSD_ESC_TMP);
+      osdDrawSingleElement(OSD_ESC_RPM);
+  }
+#endif
 }
 
 void pgResetFn_osdConfig(osdConfig_t *osdConfig)
@@ -706,7 +729,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->item_pos[OSD_YAW_PIDS]           = OSD_POS(7, 15)  | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_POWER]              = OSD_POS(1, 10)  | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_PIDRATE_PROFILE]    = OSD_POS(25, 10) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_MAIN_BATT_WARNING]  = OSD_POS(9, 10)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_WARNINGS]           = OSD_POS(9, 10)  | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_AVG_CELL_VOLTAGE]   = OSD_POS(12, 2)  | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_DEBUG]              = OSD_POS(1, 0)   | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_PITCH_ANGLE]        = OSD_POS(1, 8)   | VISIBLE_FLAG;
@@ -721,6 +744,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->item_pos[OSD_DISARMED]           = OSD_POS(10, 4)  | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_NUMERICAL_HEADING]  = OSD_POS(23, 9)  | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_NUMERICAL_VARIO]    = OSD_POS(23, 8)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_ESC_TMP]            = OSD_POS(18, 2)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_ESC_RPM]            = OSD_POS(19, 2)  | VISIBLE_FLAG;
 
     osdConfig->enabled_stats[OSD_STAT_MAX_SPEED]    = true;
     osdConfig->enabled_stats[OSD_STAT_MIN_BATTERY]  = true;
@@ -802,12 +827,12 @@ void osdUpdateAlarms(void)
         CLR_BLINK(OSD_RSSI_VALUE);
 
     if (getBatteryState() == BATTERY_OK) {
+        CLR_BLINK(OSD_WARNINGS);
         CLR_BLINK(OSD_MAIN_BATT_VOLTAGE);
-        CLR_BLINK(OSD_MAIN_BATT_WARNING);
         CLR_BLINK(OSD_AVG_CELL_VOLTAGE);
     } else {
+        SET_BLINK(OSD_WARNINGS);
         SET_BLINK(OSD_MAIN_BATT_VOLTAGE);
-        SET_BLINK(OSD_MAIN_BATT_WARNING);
         SET_BLINK(OSD_AVG_CELL_VOLTAGE);
     }
 
@@ -839,7 +864,7 @@ void osdResetAlarms(void)
 {
     CLR_BLINK(OSD_RSSI_VALUE);
     CLR_BLINK(OSD_MAIN_BATT_VOLTAGE);
-    CLR_BLINK(OSD_MAIN_BATT_WARNING);
+    CLR_BLINK(OSD_WARNINGS);
     CLR_BLINK(OSD_GPS_SATS);
     CLR_BLINK(OSD_FLYTIME);
     CLR_BLINK(OSD_MAH_DRAWN);
@@ -1064,6 +1089,12 @@ static void osdRefresh(timeUs_t currentTimeUs)
 
     blinkState = (currentTimeUs / 200000) % 2;
 
+#ifdef USE_ESC_SENSOR
+    if (feature(FEATURE_ESC_SENSOR)) {
+        escData = getEscSensorData(ESC_SENSOR_COMBINED);
+    }
+#endif
+
 #ifdef CMS
     if (!displayIsGrabbed(osdDisplayPort)) {
         osdUpdateAlarms();
@@ -1083,6 +1114,11 @@ static void osdRefresh(timeUs_t currentTimeUs)
 void osdUpdate(timeUs_t currentTimeUs)
 {
     static uint32_t counter = 0;
+
+    if (isBeeperOn()) {
+        showVisualBeeper = true;
+    }
+
 #ifdef MAX7456_DMA_CHANNEL_TX
     // don't touch buffers if DMA transaction is in progress
     if (displayIsTransferInProgress(osdDisplayPort)) {
@@ -1108,6 +1144,8 @@ void osdUpdate(timeUs_t currentTimeUs)
 
     if (counter++ % DRAW_FREQ_DENOM == 0) {
         osdRefresh(currentTimeUs);
+
+        showVisualBeeper = false;
     } else { // rest of time redraw screen 10 chars per idle so it doesn't lock the main idle
         displayDrawScreen(osdDisplayPort);
     }

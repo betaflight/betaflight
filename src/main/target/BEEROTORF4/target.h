@@ -20,7 +20,7 @@
 
 #define USBD_PRODUCT_STRING "BeeRotorF4"
 
-#define LED0                    PB4
+#define LED0_PIN                PB4
 
 #define BEEPER                  PB3
 #define BEEPER_INVERTED
@@ -126,6 +126,7 @@
 //#define SPI_RX_CS_PIN           PD2
 
 #define USE_I2C
+#define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
 #define I2C1_SCL                PB6
 #define I2C1_SDA                PB7

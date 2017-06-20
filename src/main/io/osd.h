@@ -48,7 +48,7 @@ typedef enum {
     OSD_YAW_PIDS,
     OSD_POWER,
     OSD_PIDRATE_PROFILE,
-    OSD_MAIN_BATT_WARNING,
+    OSD_WARNINGS,
     OSD_AVG_CELL_VOLTAGE,
     OSD_GPS_LON,
     OSD_GPS_LAT,
@@ -63,6 +63,8 @@ typedef enum {
     OSD_NUMERICAL_HEADING,
     OSD_NUMERICAL_VARIO,
     OSD_COMPASS_BAR,
+    OSD_ESC_TMP,
+    OSD_ESC_RPM,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 

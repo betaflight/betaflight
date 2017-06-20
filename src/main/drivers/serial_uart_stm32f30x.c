@@ -184,7 +184,7 @@ void serialUARTInitIO(IO_t txIO, IO_t rxIO, portMode_t mode, portOptions_t optio
             ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP)) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP
         );
 
-        IOInit(txIO, OWNER_SERIAL_TX, index);
+        IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(index));
         IOConfigGPIOAF(txIO, ioCfg, af);
 
         if (!(options & SERIAL_INVERTED))
@@ -192,12 +192,12 @@ void serialUARTInitIO(IO_t txIO, IO_t rxIO, portMode_t mode, portOptions_t optio
     } else {
         ioConfig_t ioCfg = IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, (options & SERIAL_INVERTED) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP);
         if ((mode & MODE_TX) && txIO) {
-            IOInit(txIO, OWNER_SERIAL_TX, index);
+            IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(index));
             IOConfigGPIOAF(txIO, ioCfg, af);
         }
 
         if ((mode & MODE_RX) && rxIO) {
-            IOInit(rxIO, OWNER_SERIAL_RX, index);
+            IOInit(rxIO, OWNER_SERIAL_RX, RESOURCE_INDEX(index));
             IOConfigGPIOAF(rxIO, ioCfg, af);
         }
     }
