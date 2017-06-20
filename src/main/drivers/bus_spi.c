@@ -366,3 +366,21 @@ void spiResetErrorCounter(SPI_TypeDef *instance)
     if (device != SPIINVALID)
         spiHardwareMap[device].errorCount = 0;
 }
+
+#ifdef SPI_CS_PINS
+static ioTag_t spiCsPins[] = { SPI_CS_PINS };
+#endif
+
+void spiCsAllInit(void)
+{
+#ifdef SPI_CS_PINS
+    for (size_t i = 0; i < ARRAYLEN(spiCsPins); i++) {
+        IO_t io = IOGetByTag(spiCsPins[i]);
+        if (!io) 
+            continue;
+        // IOInit(max7456CsPin, OWNER_SYSTEM, 0);
+        IOConfigGPIO(io, SPI_IO_CS_CFG);
+        IOHi(io);
+    }
+#endif
+}

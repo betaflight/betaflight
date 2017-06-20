@@ -385,18 +385,17 @@ void max7456ReInit(void)
     }
 }
 
-
-// Here we init only CS and try to init MAX for first time.
+void max7456PreInit(void)
+{
+    max7456CsPin = IOGetByTag(IO_TAG(MAX7456_SPI_CS_PIN));
+    IOInit(max7456CsPin, OWNER_OSD_CS, 0);
+    IOConfigGPIO(max7456CsPin, SPI_IO_CS_CFG);
+    IOHi(max7456CsPin);
+}
 
 void max7456Init(const vcdProfile_t *pVcdProfile)
 {
     max7456HardwareReset();
-
-#ifdef MAX7456_SPI_CS_PIN
-    max7456CsPin = IOGetByTag(IO_TAG(MAX7456_SPI_CS_PIN));
-#endif
-    IOInit(max7456CsPin, OWNER_OSD_CS, 0);
-    IOConfigGPIO(max7456CsPin, SPI_IO_CS_CFG);
 
     spiSetDivisor(MAX7456_SPI_INSTANCE, SPI_CLOCK_STANDARD);
     // force soft reset on Max7456

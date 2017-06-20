@@ -35,6 +35,7 @@
 extern uint16_t maxScreenSize;
 
 struct vcdProfile_s;
+void    max7456PreInit(void);
 void    max7456HardwareReset(void);
 void    max7456Init(const struct vcdProfile_s *vcdProfile);
 void    max7456Invert(bool invert);

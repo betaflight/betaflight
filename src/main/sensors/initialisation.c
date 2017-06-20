@@ -54,6 +54,21 @@ static bool sonarDetect(void)
 }
 #endif
 
+void sensorsPreInit(void)
+{
+#ifdef notdef
+    gyroPreInit();
+    accPreInit();
+#ifdef MAG
+    compassPreInit();
+#endif
+
+#ifdef BARO
+    baroPreInit();
+#endif
+#endif
+}
+
 bool sensorsAutodetect(void)
 {
     // gyro must be initialised before accelerometer
