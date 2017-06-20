@@ -233,6 +233,12 @@ void spiPreInit(void)
 #ifdef M25P16_CS_PIN // XXX Should use USE_ format.
     spiPreInitCs(IO_TAG(M25P16_CS_PIN));
 #endif
+#ifdef USE_RX_NRF24
+    spiPreInitCs(IO_TAG(RX_CE_PIN));
+#endif
+#if defined(USE_RX_SPI) && !defined(USE_RX_SOFTSPI)
+    spiPreInitCs(IO_TAG(RX_NSS_PIN));
+#endif
 }
 #endif
 
