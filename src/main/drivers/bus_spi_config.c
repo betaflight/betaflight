@@ -31,6 +31,7 @@ void spiPreInitCs(ioTag_t iotag)
 {
     IO_t io = IOGetByTag(iotag);
     if (io) {
+        IOInit(io, OWNER_SPI_PREINIT, 0);
         IOConfigGPIO(io, IOCFG_IPU);
     }
 }
