@@ -124,6 +124,7 @@
 #include "flight/pid.h"
 #include "flight/servos.h"
 
+#include "io/rcsplit.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -634,5 +635,10 @@ void init(void)
 #else
     fcTasksInit();
 #endif
+
+#ifdef USE_RCSPLIT
+    rcSplitInit();
+#endif // USE_RCSPLIT
+
     systemState |= SYSTEM_STATE_READY;
 }

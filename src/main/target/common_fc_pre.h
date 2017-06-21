@@ -130,3 +130,5 @@
 
 #define USE_UNCOMMON_MIXERS
 #endif
+
+#define USE_RCSPLIT
