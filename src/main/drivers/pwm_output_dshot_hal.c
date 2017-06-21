@@ -49,85 +49,25 @@ uint8_t getTimerIndex(TIM_TypeDef *timer)
     return dmaMotorTimerCount - 1;
 }
 
-void pwmWriteDshot(uint8_t index, float value)
+void pwmWriteDigitalInt(uint8_t index, uint16_t value)
 {
-    const uint16_t digitalValue = lrintf(value);
-
-    motorDmaOutput_t * const motor = &dmaMotors[index];
+    motorDmaOutput_t *const motor = &dmaMotors[index];
 
     if (!motor->timerHardware || !motor->timerHardware->dmaRef) {
         return;
     }
 
-    uint16_t packet = (digitalValue << 1) | (motor->requestTelemetry ? 1 : 0);
-    motor->requestTelemetry = false; // reset telemetry request to make sure it's triggered only once in a row
+    uint16_t packet = prepareDshotPacket(motor, value);
 
-    // compute checksum
-    int csum = 0;
-    int csum_data = packet;
-    for (int i = 0; i < 3; i++) {
-        csum ^= csum_data;   // xor data by nibbles
-        csum_data >>= 4;
-    }
-    csum &= 0xf;
-    // append checksum
-    packet = (packet << 4) | csum;
-    // generate pulses for whole packet
-    for (int i = 0; i < 16; i++) {
-        motor->dmaBuffer[i] = (packet & 0x8000) ? MOTOR_BIT_1 : MOTOR_BIT_0; // MSB first
-        packet <<= 1;
-    }
+    uint8_t bufferSize = loadDmaBuffer(motor, packet);
 
     if (motor->timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
-        if (HAL_TIMEx_PWMN_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, DSHOT_DMA_BUFFER_SIZE) != HAL_OK) {
+        if (HAL_TIMEx_PWMN_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, bufferSize) != HAL_OK) {
             /* Starting PWM generation Error */
             return;
         }
     } else {
-        if (HAL_TIM_PWM_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, DSHOT_DMA_BUFFER_SIZE) != HAL_OK) {
-            /* Starting PWM generation Error */
-            return;
-        }
-    }
-}
-
-void pwmWriteProShot(uint8_t index, float value)
-{
-    const uint16_t digitalValue = lrintf(value);
-
-    motorDmaOutput_t * const motor = &dmaMotors[index];
-
-    if (!motor->timerHardware || !motor->timerHardware->dmaRef) {
-        return;
-    }
-
-    uint16_t packet = (digitalValue << 1) | (motor->requestTelemetry ? 1 : 0);
-    motor->requestTelemetry = false; // reset telemetry request to make sure it's triggered only once in a row
-
-    // compute checksum
-    int csum = 0;
-    int csum_data = packet;
-    for (int i = 0; i < 3; i++) {
-        csum ^=  csum_data;   // xor data by nibbles
-        csum_data >>= 4;
-    }
-    csum &= 0xf;
-    // append checksum
-    packet = (packet << 4) | csum;
-
-    // generate pulses for Proshot
-    for (int i = 0; i < 4; i++) {
-        motor->dmaBuffer[i] = PROSHOT_BASE_SYMBOL + ((packet & 0xF000) >> 12) * PROSHOT_BIT_WIDTH;  // Most significant nibble first
-        packet <<= 4;	// Shift 4 bits
-    }
-
-    if (motor->timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
-        if (HAL_TIMEx_PWMN_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, PROSHOT_DMA_BUFFER_SIZE) != HAL_OK) {
-            /* Starting PWM generation Error */
-            return;
-        }
-    } else {
-        if (HAL_TIM_PWM_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, PROSHOT_DMA_BUFFER_SIZE) != HAL_OK) {
+        if (HAL_TIM_PWM_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, bufferSize) != HAL_OK) {
             /* Starting PWM generation Error */
             return;
         }
