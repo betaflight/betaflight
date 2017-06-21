@@ -64,7 +64,7 @@ void targetConfiguration(void)
         rxConfigMutable()->serialrx_provider = SERIALRX_SBUS;
         rxConfigMutable()->sbus_inversion = 0;
         serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIALRX_UART)].functionMask = FUNCTION_TELEMETRY_FRSKY | FUNCTION_RX_SERIAL;
-        telemetryConfigMutable()->telemetry_inverted = true;
+        telemetryConfigMutable()->telemetry_inverted = false;
         batteryConfigMutable()->voltageMeterSource = VOLTAGE_METER_ADC;
         batteryConfigMutable()->currentMeterSource = CURRENT_METER_ADC;
         featureSet(FEATURE_TELEMETRY);

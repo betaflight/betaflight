@@ -64,7 +64,7 @@
 
 #define USE_SDCARD
 
-//#define SDCARD_DETECT_INVERTED
+#define SDCARD_DETECT_INVERTED
 
 #define SDCARD_DETECT_PIN               PB11
 #define SDCARD_DETECT_EXTI_LINE         EXTI_Line10
@@ -88,11 +88,11 @@
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
 
-//#define M25P16_CS_PIN        SPI2_NSS_PIN
-//#define M25P16_SPI_INSTANCE  SPI2
+#define M25P16_CS_PIN        SPI2_NSS_PIN
+#define M25P16_SPI_INSTANCE  SPI2
 
-//#define USE_FLASHFS
-//#define USE_FLASH_M25P16
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
 
 #define USE_VCP
 
