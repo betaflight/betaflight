@@ -644,12 +644,7 @@ static void osdDrawElements(void)
     if (IS_RC_MODE_ACTIVE(BOXOSD))
       return;
 
-#ifdef CMS
-    else if (sensors(SENSOR_ACC) || displayIsGrabbed(osdDisplayPort))
-#else
-    else if (sensors(SENSOR_ACC))
-#endif
-    {
+    if (sensors(SENSOR_ACC)) {
         osdDrawSingleElement(OSD_ARTIFICIAL_HORIZON);
     }
 
@@ -683,12 +678,7 @@ static void osdDrawElements(void)
     osdDrawSingleElement(OSD_COMPASS_BAR);
 
 #ifdef GPS
-#ifdef CMS
-    if (sensors(SENSOR_GPS) || displayIsGrabbed(osdDisplayPort))
-#else
-    if (sensors(SENSOR_GPS))
-#endif
-    {
+    if (sensors(SENSOR_GPS)) {
         osdDrawSingleElement(OSD_GPS_SATS);
         osdDrawSingleElement(OSD_GPS_SPEED);
         osdDrawSingleElement(OSD_GPS_LAT);
