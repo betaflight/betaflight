@@ -55,8 +55,10 @@ extern uint8_t __config_end;
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/buf_writer.h"
+#include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/compass/compass.h"
+#include "drivers/compass/compass_hmc5883l.h"
 #include "drivers/display.h"
 #include "drivers/dma.h"
 #include "drivers/flash.h"
@@ -2829,6 +2831,12 @@ const cliResourceValue_t resourceTable[] = {
     { OWNER_I2C_SDA,       PG_I2C_CONFIG, offsetof(i2cConfig_t, ioTagSda[0]), I2CDEV_COUNT },
 #endif
     { OWNER_LED,           PG_STATUS_LED_CONFIG, offsetof(statusLedConfig_t, ioTags[0]), STATUS_LED_NUMBER },
+#ifdef USE_MAG_HMC5883
+    { OWNER_HMC5883_EXTI,  PG_BUSDEV_HMC5883_CONFIG, offsetof(busDeviceConfig_t, drdyTag), 0 },
+#ifdef USE_MAG_SPI_HMC5883
+    { OWNER_HMC5883_CS,    PG_BUSDEV_HMC5883_CONFIG, offsetof(busDeviceConfig_t, spiCsTag), 0 },
+#endif
+#endif
 };
 
 static ioTag_t *getIoTag(const cliResourceValue_t value, uint8_t index)

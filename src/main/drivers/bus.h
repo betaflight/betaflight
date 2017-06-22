@@ -38,6 +38,6 @@ typedef struct busDeviceConfig_s {
     busType_e busType;
     uint8_t   busNum;
     uint8_t   i2cAddr;
-    ioTag_t   spiCsPin;
-    ioTag_t   drdyPin;
+    ioTag_t   spiCsTag;
+    ioTag_t   drdyTag;
 } busDeviceConfig_t;

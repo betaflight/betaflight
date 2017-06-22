@@ -93,6 +93,15 @@ SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
     return SPIINVALID;
 }
 
+SPI_TypeDef *spiInstanceByDevice(SPIDevice device)
+{
+    if (device < SPIDEV_1 || device > (int)ARRAYLEN(spiHardwareMap)) {
+        return NULL;
+    }
+
+    return spiHardwareMap[device].dev;
+}
+
 SPI_HandleTypeDef* spiHandleByInstance(SPI_TypeDef *instance)
 {
     return &spiHardwareMap[spiDeviceByInstance(instance)].hspi;

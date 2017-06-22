@@ -44,7 +44,6 @@ typedef struct compassConfig_s {
                                             // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
     sensor_align_e mag_align;               // mag alignment
     uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
-    ioTag_t interruptTag;
     flightDynamicsTrims_t magZero;
 } compassConfig_t;
 

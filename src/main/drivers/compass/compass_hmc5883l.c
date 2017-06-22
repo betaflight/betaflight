@@ -81,11 +81,13 @@ PG_RESET_TEMPLATE(busDeviceConfig_t, magHMC5883Config,
     .busType = HMC5883_BUSTYPE,
     .busNum = I2C_DEV_TO_CFG(HMC5883_BUSNUM),
     .i2cAddr = MAG_ADDRESS,
-    .spiCsPin = IO_TAG(HMC5883_CS_PIN),
-    .drdyPin = IO_TAG(HMC5883_INT_EXTI),
+    .spiCsTag = IO_TAG(HMC5883_CS_PIN),
+    .drdyTag = IO_TAG(HMC5883_INT_EXTI),
 );
 
+#ifndef USE_MAG_SPI_HMC5883
 static I2CDevice i2cBus;
+#endif
 
 // HMC5883L, default address 0x1E
 // NAZE Target connections
@@ -330,7 +332,7 @@ static bool hmc5883lInit(void)
 bool hmc5883lDetect(magDev_t* mag)
 {
 #ifdef USE_MAG_DATA_READY_SIGNAL
-    hmc5883InterruptIO = IOGetByTag(magHMC5883Config()->drdyPin);
+    hmc5883InterruptIO = IOGetByTag(magHMC5883Config()->drdyTag);
 #endif
 
     uint8_t sig = 0;
