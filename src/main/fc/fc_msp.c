@@ -153,6 +153,9 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOX3DDISABLESWITCH, "DISABLE 3D SWITCH", 29},
     { BOXFPVANGLEMIX, "FPV ANGLE MIX", 30},
     { BOXBLACKBOXERASE, "BLACKBOX ERASE (>30s)", 31 },
+    { BOXCAMERA1, "CAMERA CONTROL 1", 32},
+    { BOXCAMERA2, "CAMERA CONTROL 2", 33},
+    { BOXCAMERA3, "CAMERA CONTROL 3", 34 },
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -418,6 +421,12 @@ void initActiveBoxIds(void)
         BME(BOXSERVO2);
         BME(BOXSERVO3);
     }
+#endif
+
+#ifdef USE_RCSPLIT
+    BME(BOXCAMERA1);
+    BME(BOXCAMERA2);
+    BME(BOXCAMERA3);
 #endif
 
 #undef BME
