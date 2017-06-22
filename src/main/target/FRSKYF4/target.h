@@ -41,13 +41,7 @@
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
-//#define MAG
-//#define USE_MAG_HMC5883
-//#define MAG_HMC5883_ALIGN       CW90_DEG
-
 #define BARO
-//#define USE_BARO_MS5611
-
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 #define BMP280_SPI_INSTANCE     SPI3
