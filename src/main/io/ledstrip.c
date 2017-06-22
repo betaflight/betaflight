@@ -40,9 +40,11 @@
 
 #include "drivers/light_ws2811strip.h"
 #include "drivers/serial.h"
+#include "drivers/vtx_common.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
 #include "flight/failsafe.h"
@@ -57,6 +59,7 @@
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
+#include "io/vtx_string.h"
 
 #include "rx/rx.h"
 
@@ -258,7 +261,7 @@ static const hsvColor_t* getSC(ledSpecialColorIds_e index)
 
 static const char directionCodes[LED_DIRECTION_COUNT] = { 'N', 'E', 'S', 'W', 'U', 'D' };
 static const char baseFunctionCodes[LED_BASEFUNCTION_COUNT]   = { 'C', 'F', 'A', 'L', 'S', 'G', 'R' };
-static const char overlayCodes[LED_OVERLAY_COUNT]   = { 'T', 'O', 'B', 'N', 'I', 'W' };
+static const char overlayCodes[LED_OVERLAY_COUNT]   = { 'T', 'O', 'B', 'V', 'I', 'W' };
 
 #define CHUNK_BUFFER_SIZE 11
 
@@ -488,16 +491,16 @@ static void applyLedFixedLayers()
 
         if (ledGetOverlayBit(ledConfig, LED_OVERLAY_THROTTLE))   //smooth fade with selected Aux channel of all HSV values from previousColor through color to nextColor
 	{
-	    int centerPWM = (PWM_RANGE_MIN + PWM_RANGE_MAX) / 2; 
-            if (auxInput < centerPWM) 
+	    int centerPWM = (PWM_RANGE_MIN + PWM_RANGE_MAX) / 2;
+            if (auxInput < centerPWM)
                 {
-                    color.h = scaleRange(auxInput, PWM_RANGE_MIN, centerPWM, previousColor.h, color.h);  
+                    color.h = scaleRange(auxInput, PWM_RANGE_MIN, centerPWM, previousColor.h, color.h);
                     color.s = scaleRange(auxInput, PWM_RANGE_MIN, centerPWM, previousColor.s, color.s);
                     color.v = scaleRange(auxInput, PWM_RANGE_MIN, centerPWM, previousColor.v, color.v);
                 }
-            else 
+            else
                 {
-                    color.h = scaleRange(auxInput, centerPWM, PWM_RANGE_MAX, color.h, nextColor.h);  
+                    color.h = scaleRange(auxInput, centerPWM, PWM_RANGE_MAX, color.h, nextColor.h);
                     color.s = scaleRange(auxInput, centerPWM, PWM_RANGE_MAX, color.s, nextColor.s);
                     color.v = scaleRange(auxInput, centerPWM, PWM_RANGE_MAX, color.v, nextColor.v);
                 }
@@ -546,10 +549,6 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
 
     const hsvColor_t *warningColor = NULL;
 
-    if (isBeeperOn()) {
-        warningColor = &HSV(ORANGE);
-    }
-
     if (warningFlags) {
         bool colorOn = (warningFlashCounter % 2) == 0;   // w_w_
         warningFlags_e warningId = warningFlashCounter / 4;
@@ -567,12 +566,95 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
                 default:;
             }
         }
+    } else {
+        if (isBeeperOn()) {
+            warningColor = &HSV(ORANGE);
+        }
     }
 
     if (warningColor) {
         applyLedHsv(LED_MOV_OVERLAY(LED_FLAG_OVERLAY(LED_OVERLAY_WARNING)), warningColor);
     }
 }
+
+#ifdef VTX_COMMON
+static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
+{
+    static uint16_t frequency = 0;
+    static uint8_t power = 255;
+    static uint8_t pit = 255;
+    static uint8_t showSettings = false;
+    static uint16_t lastCheck = 0;
+    static bool active = false;
+    static bool blink = false;
+    uint8_t band = 255, channel = 255;
+    uint16_t check = 0;
+
+    if (updateNow) {
+        // keep counter running, so it stays in sync with vtx
+        active = vtxCommonGetBandAndChannel(&band, &channel);
+        vtxCommonGetPowerIndex(&power);
+        vtxCommonGetPitMode(&pit);
+
+        frequency = vtx58frequencyTable[band][channel];
+
+        // check if last vtx values have changed.
+        check = pit + (power << 1) + (band << 4) + (channel << 8);
+        if(!showSettings && check != lastCheck) {
+            // display settings for 3 seconds.
+            showSettings = 15;
+        }
+        lastCheck = check; // quick way to check if any settings changed.
+
+        if(showSettings) {
+            showSettings--;
+        }
+        blink = !blink;
+        *timer += HZ_TO_US(5); // check 5 times a second
+    }
+
+    if(!active) { // no vtx device detected
+        return;
+    }
+
+    hsvColor_t color = {0, 0, 0};
+    if(showSettings) { // show settings
+        uint8_t vtxLedCount = 0;
+        for (int i = 0; i < ledCounts.count && vtxLedCount < 6; ++i) {
+            const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
+            if (ledGetOverlayBit(ledConfig, LED_OVERLAY_VTX)) {
+                if(vtxLedCount == 0) {
+                    color.h = HSV(GREEN).h;
+                    color.s = HSV(GREEN).s;
+                    color.v = blink ? 15 : 0; // blink received settings
+                }
+                else if(vtxLedCount > 0 && power >= vtxLedCount && !pit) { // show power
+                    color.h = HSV(ORANGE).h;
+                    color.s = HSV(ORANGE).s;
+                    color.v = blink ? 15 : 0; // blink received settings
+                }
+                else { // turn rest off
+                    color.h = HSV(BLACK).h;
+                    color.s = HSV(BLACK).s;
+                    color.v = HSV(BLACK).v;
+                }
+                setLedHsv(i, &color);
+                ++vtxLedCount;
+            }
+        }
+    }
+    else { // show frequency
+        // calculate the VTX color based on frequency
+        int hue = constrain((frequency - 5645.0 ) * 1.2, 0, 360);
+        // if we ever want to wrap the hue around the wheel for L band frequencies...
+        //hue = (hue+(hue<0)*((0-hue)/360+1)*361)%361;
+        color.h = hue;
+        color.s = 0;
+        color.v = pit ? (blink ? 15 : 0) : 255; // blink when in pit mode`
+        applyLedHsv(LED_MOV_OVERLAY(LED_FLAG_OVERLAY(LED_OVERLAY_VTX)), &color);
+    }
+}
+#endif
 
 static void applyLedBatteryLayer(bool updateNow, timeUs_t *timer)
 {
@@ -855,8 +937,7 @@ static void applyLedBlinkLayer(bool updateNow, timeUs_t *timer)
         for (int i = 0; i < ledCounts.count; ++i) {
             const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
 
-            if (ledGetOverlayBit(ledConfig, LED_OVERLAY_BLINK) ||
-                    (ledGetOverlayBit(ledConfig, LED_OVERLAY_LANDING_FLASH) && scaledThrottle < 50)) {
+            if (ledGetOverlayBit(ledConfig, LED_OVERLAY_BLINK)) {
                 setLedHsv(i, getSC(LED_SCOLOR_BLINKBACKGROUND));
             }
         }
@@ -904,6 +985,9 @@ typedef enum {
     timGps,
 #endif
     timWarning,
+#ifdef VTX_COMMON
+    timVtx,
+#endif
     timIndicator,
 #ifdef USE_LED_ANIMATION
     timAnimation,
@@ -930,6 +1014,9 @@ static applyLayerFn_timed* layerTable[] = {
     [timGps] = &applyLedGpsLayer,
 #endif
     [timWarning] = &applyLedWarningLayer,
+#ifdef VTX_COMMON
+    [timVtx] = &applyLedVtxLayer,
+#endif
     [timIndicator] = &applyLedIndicatorLayer,
 #ifdef USE_LED_ANIMATION
     [timAnimation] = &applyLedAnimationLayer,

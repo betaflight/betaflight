@@ -38,6 +38,7 @@
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
 #include "flight/imu.h"
@@ -116,21 +117,29 @@ static const servoMixer_t servoMixerFlyingWing[] = {
     { SERVO_THROTTLE,    INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100, 0 },
 };
 
+#if defined(USE_UNCOMMON_MIXERS)
 static const servoMixer_t servoMixerBI[] = {
     { SERVO_BICOPTER_LEFT, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
     { SERVO_BICOPTER_LEFT, INPUT_STABILIZED_PITCH, -100, 0, 0, 100, 0 },
     { SERVO_BICOPTER_RIGHT, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
     { SERVO_BICOPTER_RIGHT, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
 };
+#else
+#define servoMixerBI NULL
+#endif
 
 static const servoMixer_t servoMixerTri[] = {
     { SERVO_RUDDER, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
 };
 
+#if defined(USE_UNCOMMON_MIXERS)
 static const servoMixer_t servoMixerDual[] = {
     { SERVO_DUALCOPTER_LEFT, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
     { SERVO_DUALCOPTER_RIGHT, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
 };
+#else
+#define servoMixerDual NULL
+#endif
 
 static const servoMixer_t servoMixerSingle[] = {
     { SERVO_SINGLECOPTER_1, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
@@ -147,13 +156,6 @@ static const servoMixer_t servoMixerGimbal[] = {
     { SERVO_GIMBAL_PITCH, INPUT_GIMBAL_PITCH, 125, 0, 0, 100, 0 },
     { SERVO_GIMBAL_ROLL, INPUT_GIMBAL_ROLL,  125, 0, 0, 100, 0 },
 };
-
-
-// Custom mixer configuration
-typedef struct mixerRules_s {
-    uint8_t servoRuleCount;
-    const servoMixer_t *rule;
-} mixerRules_t;
 
 const mixerRules_t servoMixers[] = {
     { 0, NULL },                // entry 0

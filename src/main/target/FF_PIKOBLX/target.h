@@ -32,8 +32,8 @@
 #define TARGET_CONFIG
 #define BRUSHED_ESC_AUTODETECT
 
-#define LED0                    PB9
-#define LED1                    PB5
+#define LED0_PIN                PB9
+#define LED1_PIN                PB5
 
 #define BEEPER                  PA0
 #define BEEPER_INVERTED
@@ -41,7 +41,6 @@
 // MPU6000 interrupts
 #define USE_EXTI
 #define MPU_INT_EXTI            PA15
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 #define USE_MPU_DATA_READY_SIGNAL
 
 #define GYRO

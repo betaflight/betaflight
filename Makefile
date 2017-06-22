@@ -119,7 +119,7 @@ GROUP_1_TARGETS := \
 GROUP_2_TARGETS := \
 	CHEBUZZF3 \
 	CJMCU \
-	CL_RACINGF4 \
+	CLRACINGF4 \
 	COLIBRI \
 	COLIBRI_OPBL \
 	COLIBRI_RACE \
@@ -179,6 +179,7 @@ GROUP_4_TARGETS := \
 	SPRACINGF3NEO \
 	SPRACINGF3OSD \
 	SPRACINGF4EVO \
+	SPRACINGF4NEO \
 	STM32F3DISCOVERY \
 	TINYBEEF3 \
 
@@ -664,6 +665,7 @@ COMMON_SRC = \
             build/version.c \
             $(TARGET_DIR_SRC) \
             main.c \
+            common/bitarray.c \
             common/encoding.c \
             common/filter.c \
             common/maths.c \
@@ -676,6 +678,7 @@ COMMON_SRC = \
             config/config_streamer.c \
             drivers/adc.c \
             drivers/buf_writer.c \
+            drivers/bus_i2c_config.c \
             drivers/bus_i2c_soft.c \
             drivers/bus_spi.c \
             drivers/bus_spi_soft.c \
@@ -687,12 +690,17 @@ COMMON_SRC = \
             drivers/resource.c \
             drivers/rcc.c \
             drivers/serial.c \
+            drivers/serial_pinconfig.c \
             drivers/serial_uart.c \
+            drivers/serial_uart_pinconfig.c \
             drivers/sound_beeper.c \
             drivers/stack_check.c \
             drivers/system.c \
             drivers/timer.c \
             drivers/transponder_ir.c \
+            drivers/transponder_ir_arcitimer.c \
+            drivers/transponder_ir_ilap.c \
+            drivers/transponder_ir_erlt.c \
             fc/config.c \
             fc/fc_dispatch.c \
             fc/fc_hardfaults.c \
@@ -729,6 +737,7 @@ FC_SRC = \
             fc/fc_rc.c \
             fc/rc_adjustments.c \
             fc/rc_controls.c \
+            fc/rc_modes.c \
             fc/cli.c \
             fc/settings.c \
             flight/altitude.c \
@@ -780,7 +789,6 @@ FC_SRC = \
             drivers/serial_escserial.c \
             drivers/sonar_hcsr04.c \
             drivers/vtx_common.c \
-            drivers/transponder_ir.c \
             flight/navigation.c \
             io/dashboard.c \
             io/displayport_max7456.c \
@@ -886,13 +894,18 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
             drivers/serial_softserial.c \
-            io/dashboard.c \
             io/displayport_max7456.c \
             io/osd.c \
             io/osd_slave.c
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
+            drivers/bus_i2c_config.c \
             drivers/serial_escserial.c \
+            drivers/serial_pinconfig.c \
+            drivers/serial_uart_init.c \
+            drivers/serial_uart_pinconfig.c \
+            drivers/vtx_rtc6705_soft_spi.c \
+            drivers/vtx_rtc6705.c \
             drivers/vtx_common.c \
             fc/fc_init.c \
             fc/cli.c \
@@ -904,6 +917,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
+            io/dashboard.c \
             msp/msp_serial.c \
             cms/cms.c \
             cms/cms_menu_blackbox.c \
@@ -912,9 +926,11 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             cms/cms_menu_ledstrip.c \
             cms/cms_menu_misc.c \
             cms/cms_menu_osd.c \
+            io/vtx_string.c \
             io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \
-            io/vtx_tramp.c
+            io/vtx_tramp.c \
+            io/vtx_control.c
 endif #!F1
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
@@ -953,6 +969,7 @@ STM32F10x_COMMON_SRC = \
             drivers/gpio_stm32f10x.c \
             drivers/inverter.c \
             drivers/light_ws2811strip_stdperiph.c \
+            drivers/serial_uart_init.c \
             drivers/serial_uart_stm32f10x.c \
             drivers/system_stm32f10x.c \
             drivers/timer_stm32f10x.c
@@ -965,6 +982,7 @@ STM32F30x_COMMON_SRC = \
             drivers/gpio_stm32f30x.c \
             drivers/light_ws2811strip_stdperiph.c \
             drivers/pwm_output_dshot.c \
+            drivers/serial_uart_init.c \
             drivers/serial_uart_stm32f30x.c \
             drivers/system_stm32f30x.c \
             drivers/timer_stm32f30x.c
@@ -979,6 +997,7 @@ STM32F4xx_COMMON_SRC = \
             drivers/inverter.c \
             drivers/light_ws2811strip_stdperiph.c \
             drivers/pwm_output_dshot.c \
+            drivers/serial_uart_init.c \
             drivers/serial_uart_stm32f4xx.c \
             drivers/system_stm32f4xx.c \
             drivers/timer_stm32f4xx.c
@@ -999,7 +1018,8 @@ STM32F7xx_COMMON_SRC = \
             drivers/serial_uart_stm32f7xx.c \
             drivers/serial_uart_hal.c
 
-F7EXCLUDES = drivers/bus_spi.c \
+F7EXCLUDES = \
+            drivers/bus_spi.c \
             drivers/bus_i2c.c \
             drivers/timer.c \
             drivers/serial_uart.c
@@ -1008,13 +1028,17 @@ SITLEXCLUDES = \
             drivers/adc.c \
             drivers/bus_spi.c \
             drivers/bus_i2c.c \
+            drivers/bus_i2c_config.c \
             drivers/dma.c \
             drivers/pwm_output.c \
             drivers/timer.c \
             drivers/light_led.c \
             drivers/system.c \
             drivers/rcc.c \
+            drivers/serial_pinconfig.c \
             drivers/serial_uart.c \
+            drivers/serial_uart_init.c \
+            drivers/serial_uart_pinconfig.c \
             drivers/rx_xn297.c \
             drivers/display_ug2864hsweg01.c \
             telemetry/crsf.c \
@@ -1121,8 +1145,8 @@ SIZE        := $(ARM_SDK_PREFIX)size
 
 ifneq ($(DEBUG),GDB)
 OPTIMISATION_BASE   := -flto -fuse-linker-plugin -ffast-math
-OPTIMISE_SPEED      := ""
-OPTIMISE_SIZE       := ""
+OPTIMISE_SPEED      := 
+OPTIMISE_SIZE       := 
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
 OPTIMISE_DEFAULT    := -Os

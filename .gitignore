@@ -29,3 +29,10 @@ make/local.mk
 mcu.mak
 mcu.mak.old
 stm32.mak
+
+# Artefacts for Visual Studio Code
+/.vscode/
+
+# Artefacts for CLion
+/cmake-build-debug/
+/CMakeLists.txt

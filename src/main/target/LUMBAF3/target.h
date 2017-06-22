@@ -17,7 +17,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "MCF3"	// LumbaF3 Flight Controller by mC
 
-#define LED0                    PB3
+#define LED0_PIN                PB3
 #define BEEPER                  PC15
 
 // MPU6000 interrupts
@@ -67,7 +67,7 @@
 #define SOFTSERIAL1_TX_PIN      PB5
 #define SOFTSERIAL1_RX_PIN      PB0
 
-#define BOARD_HAS_VOLTAGE_DIVIDER
+#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PB1
 #define VBAT_ADC_PIN            PA0         
@@ -88,8 +88,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 8
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(15) )
-
-#define USE_I2C
-#define I2C_DEVICE				(I2CDEV_2)
-#define I2C2_SCL                PB2
-#define I2C2_SDA                PB1

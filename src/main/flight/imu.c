@@ -92,7 +92,7 @@ static float magneticDeclination = 0.0f;       // calculated at startup from con
 static imuRuntimeConfig_t imuRuntimeConfig;
 
 STATIC_UNIT_TESTED float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;    // quaternion of sensor frame relative to earth frame
-static float rMat[3][3];
+STATIC_UNIT_TESTED float rMat[3][3];
 
 attitudeEulerAngles_t attitude = { { 0, 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 

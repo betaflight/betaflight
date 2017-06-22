@@ -21,14 +21,13 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
-#define LED0                    PB5 // Blue LED - PB5
+#define LED0_PIN                PB5 // Blue LED - PB5
 
 #define BEEPER                  PA0
 
 // MPU6050 interrupts
 #define USE_EXTI
 #define MPU_INT_EXTI            PA15
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 #define USE_MPU_DATA_READY_SIGNAL
 //#define ENSURE_MPU_DATA_READY_IS_LOW
 

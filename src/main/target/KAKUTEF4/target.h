@@ -20,9 +20,9 @@
 
 #define USBD_PRODUCT_STRING "KakuteF4-V1"
 
-#define LED0                    PB5
-#define LED1                    PB4
-#define LED2                    PB6
+#define LED0_PIN                PB5
+#define LED1_PIN                PB4
+#define LED2_PIN                PB6
 
 #define BEEPER                  PC9
 #define BEEPER_INVERTED
@@ -31,7 +31,6 @@
 // ICM20689 interrupt
 #define USE_EXTI
 #define MPU_INT_EXTI            PC5
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW

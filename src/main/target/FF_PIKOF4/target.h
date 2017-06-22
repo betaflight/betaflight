@@ -19,8 +19,8 @@
 #define TARGET_BOARD_IDENTIFIER "PIK4"
 #define USBD_PRODUCT_STRING     "PikoF4"
 /*--------------LED----------------*/
-#define LED0                    PA15
-#define LED1                    PB6
+#define LED0_PIN                PA15
+#define LED1_PIN                PB6
 #define LED_STRIP
 /*---------------------------------*/
 
@@ -33,7 +33,6 @@
 // MPU interrupt
 #define USE_EXTI
 #define MPU_INT_EXTI            PC4
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW

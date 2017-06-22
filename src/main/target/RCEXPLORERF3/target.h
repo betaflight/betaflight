@@ -21,8 +21,8 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-#define LED0        PB4
-#define LED1        PB5
+#define LED0_PIN    PB4
+#define LED1_PIN    PB5
 
 #define BEEPER      PA0
 #define BEEPER_INVERTED
@@ -30,7 +30,6 @@
 #define USE_EXTI
 #define USE_MPU_DATA_READY_SIGNAL
 #define MPU_INT_EXTI PA15
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6000

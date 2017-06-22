@@ -22,7 +22,7 @@
 //#ifdef DEBUG_GPS_CONVERSION
 
 extern "C" {
-    #include "flight/gps_conversion.h"
+    #include "common/gps_conversion.h"
 }
 
 #include "unittest_macros.h"

@@ -330,7 +330,7 @@ static void flushHottRxBuffer(void)
 static void workAroundForHottTelemetryOnUsart(serialPort_t *instance, portMode_t mode) {
     closeSerialPort(hottPort);
 
-    portOptions_t portOptions = SERIAL_NOT_INVERTED;
+    portOptions_t portOptions = telemetryConfig()->telemetry_inverted ? SERIAL_INVERTED : SERIAL_NOT_INVERTED;
 
     if (telemetryConfig()->halfDuplex) {
         portOptions |= SERIAL_BIDIR;

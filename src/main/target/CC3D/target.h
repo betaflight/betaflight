@@ -17,7 +17,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "CC3D" // CopterControl 3D
 
-#define LED0                    PB3
+#define LED0_PIN                PB3
 
 #define INVERTER_PIN_UART1      PB2 // PB2 (BOOT1) used as inverter select GPIO
 

@@ -107,6 +107,7 @@
 // DMM special bits
 #define CLEAR_DISPLAY 0x04
 #define CLEAR_DISPLAY_VERT 0x06
+#define INVERT_PIXEL_COLOR 0x08
 
 // Special address for terminating incremental write
 #define END_STRING 0xff
@@ -183,6 +184,7 @@ static uint8_t spiBuff[MAX_CHARS2UPDATE*6];
 
 static uint8_t  videoSignalCfg;
 static uint8_t  videoSignalReg  = OSD_ENABLE; // OSD_ENABLE required to trigger first ReInit
+static uint8_t  displayMemoryModeReg = 0;
 
 static uint8_t  hosRegValue; // HOS (Horizontal offset register) value
 static uint8_t  vosRegValue; // VOS (Vertical offset register) value
@@ -370,7 +372,7 @@ void max7456ReInit(void)
     max7456Send(MAX7456ADD_HOS, hosRegValue);
     max7456Send(MAX7456ADD_VOS, vosRegValue);
 
-    max7456Send(MAX7456ADD_DMM, CLEAR_DISPLAY);
+    max7456Send(MAX7456ADD_DMM, displayMemoryModeReg | CLEAR_DISPLAY);
     DISABLE_MAX7456;
 
     // Clear shadow to force redraw all screen in non-dma mode.
@@ -412,6 +414,38 @@ void max7456Init(const vcdProfile_t *pVcdProfile)
 #endif
 
     // Real init will be made later when driver detect idle.
+}
+
+/**
+ * Sets inversion of black and white pixels.
+ */
+void max7456Invert(bool invert)
+{
+    if (invert)
+        displayMemoryModeReg |= INVERT_PIXEL_COLOR;
+    else
+        displayMemoryModeReg &= ~INVERT_PIXEL_COLOR;
+
+    ENABLE_MAX7456;
+    max7456Send(MAX7456ADD_DMM, displayMemoryModeReg);
+    DISABLE_MAX7456;
+}
+
+/**
+ * Sets the brighness of black and white pixels.
+ *
+ * @param black Black brightness (0-3, 0 is darkest)
+ * @param white White brightness (0-3, 0 is darkest)
+ */
+void max7456Brightness(uint8_t black, uint8_t white)
+{
+    uint8_t reg = (black << 2) | (3 - white);
+
+    ENABLE_MAX7456;
+    for (int i = MAX7456ADD_RB0; i <= MAX7456ADD_RB15; i++) {
+        max7456Send(i, reg);
+    }
+    DISABLE_MAX7456;
 }
 
 //just fill with spaces with some tricks
@@ -560,7 +594,7 @@ void max7456RefreshAll(void)
         ENABLE_MAX7456;
         max7456Send(MAX7456ADD_DMAH, 0);
         max7456Send(MAX7456ADD_DMAL, 0);
-        max7456Send(MAX7456ADD_DMM, 1);
+        max7456Send(MAX7456ADD_DMM, displayMemoryModeReg | 1);
 
         for (xx = 0; xx < maxScreenSize; ++xx)
         {
@@ -569,7 +603,7 @@ void max7456RefreshAll(void)
         }
 
         max7456Send(MAX7456ADD_DMDI, 0xFF);
-        max7456Send(MAX7456ADD_DMM, 0);
+        max7456Send(MAX7456ADD_DMM, displayMemoryModeReg);
         DISABLE_MAX7456;
         max7456Lock = false;
     }

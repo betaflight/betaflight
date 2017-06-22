@@ -52,7 +52,6 @@
 #include "drivers/rx_spi.h"
 #include "drivers/sdcard.h"
 #include "drivers/sensor.h"
-#include "drivers/serial.h"
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
@@ -149,8 +148,6 @@ PG_REGISTER_WITH_RESET_FN(pwmConfig_t, pwmConfig, PG_PWM_CONFIG, 0);
 #ifdef USE_PPM
 PG_REGISTER_WITH_RESET_FN(ppmConfig_t, ppmConfig, PG_PPM_CONFIG, 0);
 #endif
-PG_REGISTER_WITH_RESET_FN(statusLedConfig_t, statusLedConfig, PG_STATUS_LED_CONFIG, 0);
-PG_REGISTER_WITH_RESET_FN(serialPinConfig_t, serialPinConfig, PG_SERIAL_PIN_CONFIG, 0);
 
 #ifdef USE_FLASHFS
 PG_REGISTER_WITH_RESET_TEMPLATE(flashConfig_t, flashConfig, PG_FLASH_CONFIG, 0);
@@ -249,196 +246,6 @@ void pgResetFn_pwmConfig(pwmConfig_t *pwmConfig)
 }
 #endif
 
-
-
-
-// Default pin (NONE).
-// XXX Does this mess belong here???
-#ifdef USE_UART1
-# if !defined(UART1_RX_PIN)
-#  define UART1_RX_PIN NONE
-# endif
-# if !defined(UART1_TX_PIN)
-#  define UART1_TX_PIN NONE
-# endif
-#endif
-
-#ifdef USE_UART2
-# if !defined(UART2_RX_PIN)
-#  define UART2_RX_PIN NONE
-# endif
-# if !defined(UART2_TX_PIN)
-#  define UART2_TX_PIN NONE
-# endif
-#endif
-
-#ifdef USE_UART3
-# if !defined(UART3_RX_PIN)
-#  define UART3_RX_PIN NONE
-# endif
-# if !defined(UART3_TX_PIN)
-#  define UART3_TX_PIN NONE
-# endif
-#endif
-
-#ifdef USE_UART4
-# if !defined(UART4_RX_PIN)
-#  define UART4_RX_PIN NONE
-# endif
-# if !defined(UART4_TX_PIN)
-#  define UART4_TX_PIN NONE
-# endif
-#endif
-
-#ifdef USE_UART5
-# if !defined(UART5_RX_PIN)
-#  define UART5_RX_PIN NONE
-# endif
-# if !defined(UART5_TX_PIN)
-#  define UART5_TX_PIN NONE
-# endif
-#endif
-
-#ifdef USE_UART6
-# if !defined(UART6_RX_PIN)
-#  define UART6_RX_PIN NONE
-# endif
-# if !defined(UART6_TX_PIN)
-#  define UART6_TX_PIN NONE
-# endif
-#endif
-
-#ifdef USE_UART7
-# if !defined(UART7_RX_PIN)
-#  define UART7_RX_PIN NONE
-# endif
-# if !defined(UART7_TX_PIN)
-#  define UART7_TX_PIN NONE
-# endif
-#endif
-
-#ifdef USE_UART8
-# if !defined(UART8_RX_PIN)
-#  define UART8_RX_PIN NONE
-# endif
-# if !defined(UART8_TX_PIN)
-#  define UART8_TX_PIN NONE
-# endif
-#endif
-
-#ifdef USE_SOFTSERIAL1
-# if !defined(SOFTSERIAL1_RX_PIN)
-#  define SOFTSERIAL1_RX_PIN NONE
-# endif
-# if !defined(SOFTSERIAL1_TX_PIN)
-#  define SOFTSERIAL1_TX_PIN NONE
-# endif
-#endif
-
-#ifdef USE_SOFTSERIAL2
-# if !defined(SOFTSERIAL2_RX_PIN)
-#  define SOFTSERIAL2_RX_PIN NONE
-# endif
-# if !defined(SOFTSERIAL2_TX_PIN)
-#  define SOFTSERIAL2_TX_PIN NONE
-# endif
-#endif
-
-void pgResetFn_serialPinConfig(serialPinConfig_t *serialPinConfig)
-{
-    for (int port = 0 ; port < SERIAL_PORT_MAX_INDEX ; port++) {
-        serialPinConfig->ioTagRx[port] = IO_TAG(NONE);
-        serialPinConfig->ioTagTx[port] = IO_TAG(NONE);
-    }
-
-    for (int index = 0 ; index < SERIAL_PORT_COUNT ; index++) {
-        switch (serialPortIdentifiers[index]) {
-        case SERIAL_PORT_USART1:
-#ifdef USE_UART1
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART1)] = IO_TAG(UART1_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART1)] = IO_TAG(UART1_TX_PIN);
-#ifdef INVERTER_PIN_UART1
-            serialPinConfig->ioTagInverter[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART1)] = IO_TAG(INVERTER_PIN_UART1);
-#endif
-#endif
-            break;
-        case SERIAL_PORT_USART2:
-#ifdef USE_UART2
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART2)] = IO_TAG(UART2_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART2)] = IO_TAG(UART2_TX_PIN);
-#ifdef INVERTER_PIN_UART2
-            serialPinConfig->ioTagInverter[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART2)] = IO_TAG(INVERTER_PIN_UART2);
-#endif
-#endif
-            break;
-        case SERIAL_PORT_USART3:
-#ifdef USE_UART3
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART3)] = IO_TAG(UART3_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART3)] = IO_TAG(UART3_TX_PIN);
-#ifdef INVERTER_PIN_UART3
-            serialPinConfig->ioTagInverter[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART3)] = IO_TAG(INVERTER_PIN_UART3);
-#endif
-#endif
-            break;
-        case SERIAL_PORT_UART4:
-#ifdef USE_UART4
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_UART4)] = IO_TAG(UART4_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_UART4)] = IO_TAG(UART4_TX_PIN);
-#ifdef INVERTER_PIN_UART4
-            serialPinConfig->ioTagInverter[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART4)] = IO_TAG(INVERTER_PIN_UART4);
-#endif
-#endif
-            break;
-        case SERIAL_PORT_UART5:
-#ifdef USE_UART5
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_UART5)] = IO_TAG(UART5_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_UART5)] = IO_TAG(UART5_TX_PIN);
-#ifdef INVERTER_PIN_UART5
-            serialPinConfig->ioTagInverter[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART5)] = IO_TAG(INVERTER_PIN_UART5);
-#endif
-#endif
-            break;
-        case SERIAL_PORT_USART6:
-#ifdef USE_UART6
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART6)] = IO_TAG(UART6_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART6)] = IO_TAG(UART6_TX_PIN);
-#ifdef INVERTER_PIN_UART6
-            serialPinConfig->ioTagInverter[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART6)] = IO_TAG(INVERTER_PIN_UART6);
-#endif
-#endif
-            break;
-        case SERIAL_PORT_USART7:
-#ifdef USE_UART7
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART7)] = IO_TAG(UART7_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART7)] = IO_TAG(UART7_TX_PIN);
-#endif
-            break;
-        case SERIAL_PORT_USART8:
-#ifdef USE_UART8
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART8)] = IO_TAG(UART8_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_USART8)] = IO_TAG(UART8_TX_PIN);
-#endif
-            break;
-        case SERIAL_PORT_SOFTSERIAL1:
-#ifdef USE_SOFTSERIAL1
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_SOFTSERIAL1)] = IO_TAG(SOFTSERIAL1_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_SOFTSERIAL1)] = IO_TAG(SOFTSERIAL1_TX_PIN);
-#endif
-            break;
-        case SERIAL_PORT_SOFTSERIAL2:
-#ifdef USE_SOFTSERIAL2
-            serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_SOFTSERIAL2)] = IO_TAG(SOFTSERIAL2_RX_PIN);
-            serialPinConfig->ioTagTx[SERIAL_PORT_IDENTIFIER_TO_INDEX(SERIAL_PORT_SOFTSERIAL2)] = IO_TAG(SOFTSERIAL2_TX_PIN);
-#endif
-            break;
-        case SERIAL_PORT_USB_VCP:
-            break;
-        case SERIAL_PORT_NONE:
-            break;
-        }
-    }
-}
-
 #ifdef SWAP_SERIAL_PORT_0_AND_1_DEFAULTS
 #define FIRST_PORT_INDEX 1
 #define SECOND_PORT_INDEX 0
@@ -446,35 +253,6 @@ void pgResetFn_serialPinConfig(serialPinConfig_t *serialPinConfig)
 #define FIRST_PORT_INDEX 0
 #define SECOND_PORT_INDEX 1
 #endif
-
-void pgResetFn_statusLedConfig(statusLedConfig_t *statusLedConfig)
-{
-    for (int i = 0; i < LED_NUMBER; i++) {
-        statusLedConfig->ledTags[i] = IO_TAG_NONE;
-    }
-
-#ifdef LED0
-    statusLedConfig->ledTags[0] = IO_TAG(LED0);
-#endif
-#ifdef LED1
-    statusLedConfig->ledTags[1] = IO_TAG(LED1);
-#endif
-#ifdef LED2
-    statusLedConfig->ledTags[2] = IO_TAG(LED2);
-#endif
-
-    statusLedConfig->polarity = 0
-#ifdef LED0_INVERTED
-    | BIT(0)
-#endif
-#ifdef LED1_INVERTED
-    | BIT(1)
-#endif
-#ifdef LED2_INVERTED
-    | BIT(2)
-#endif
-    ;
-}
 
 #ifndef USE_OSD_SLAVE
 uint8_t getCurrentPidProfileIndex(void)
@@ -504,13 +282,11 @@ uint16_t getCurrentMinthrottle(void)
 
 void resetConfigs(void)
 {
-    pgResetAll(MAX_PROFILE_COUNT);
+    pgResetAll();
 
 #if defined(TARGET_CONFIG)
     targetConfiguration();
 #endif
-
-    pgActivateProfile(0);
 
 #ifndef USE_OSD_SLAVE
     setPidProfile(0);
@@ -529,7 +305,7 @@ void activateConfig(void)
 
     resetAdjustmentStates();
 
-    useRcControlsConfig(modeActivationConditions(0), currentPidProfile);
+    useRcControlsConfig(currentPidProfile);
     useAdjustmentConfig(currentPidProfile);
 
 #ifdef GPS
@@ -546,10 +322,20 @@ void activateConfig(void)
 
 void validateAndFixConfig(void)
 {
-#if !defined(USE_UNCOMMON_MIXERS) && !defined(USE_QUAD_MIXER_ONLY) && !defined(USE_OSD_SLAVE)
+#if !defined(USE_QUAD_MIXER_ONLY) && !defined(USE_OSD_SLAVE)
+    // Reset unsupported mixer mode to default.
+    // This check will be gone when motor/servo mixers are loaded dynamically
+    // by configurator as a part of configuration procedure.
+
     mixerMode_e mixerMode = mixerConfigMutable()->mixerMode;
-    if (mixerMode != MIXER_CUSTOM && mixerMode != MIXER_CUSTOM_AIRPLANE && mixerMode != MIXER_CUSTOM_TRI && mixers[mixerMode].motor == NULL) {
-        mixerConfigMutable()->mixerMode = MIXER_CUSTOM;
+
+    if (!(mixerMode == MIXER_CUSTOM || mixerMode == MIXER_CUSTOM_AIRPLANE || mixerMode == MIXER_CUSTOM_TRI)) {
+        if (mixers[mixerMode].motorCount && mixers[mixerMode].motor == NULL)
+            mixerConfigMutable()->mixerMode = MIXER_CUSTOM;
+#ifdef USE_SERVOS
+        if (mixers[mixerMode].useServo && servoMixers[mixerMode].servoRuleCount == 0)
+            mixerConfigMutable()->mixerMode = MIXER_CUSTOM_AIRPLANE;
+#endif
     }
 #endif
 

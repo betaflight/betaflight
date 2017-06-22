@@ -21,7 +21,7 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-#define LED0                    PB7
+#define LED0_PIN                PB7
 
 #define BEEPER                  PC15
 
@@ -29,7 +29,6 @@
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PC13
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 1
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 

@@ -48,10 +48,10 @@
 
 #endif
 
-#define LED0                    PB5
+#define LED0_PIN                PB5
 #if defined(PODIUMF4)
-#define LED1                    PB4
-#define LED2                    PB6
+#define LED1_PIN                PB4
+#define LED2_PIN                PB6
 #endif
 
 // Disable LED1, conflicts with AirbotF4/Flip32F4/Revolt beeper
@@ -64,7 +64,7 @@
 #define BEEPER                  PB6
 #define BEEPER_INVERTED
 #else
-#define LED1                    PB4
+#define LED1_PIN                PB4
 // Leave beeper here but with none as io - so disabled unless mapped.
 #define BEEPER                  NONE
 #endif
@@ -136,7 +136,7 @@
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
-#if !defined(AIRBOTF4) && !defined(REVOLT) && !defined(SOULF4) && !defined(PODIUMF4)
+#if defined(AIRBOTF4) || defined(AIRBOTF4SD)
 #define MAG
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW90_DEG
@@ -224,9 +224,17 @@
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
 
+#if defined(AIRBOTF4) || defined(AIRBOTF4SD)
+// On AIRBOTF4 and AIRBOTF4SD, I2C2 and I2C3 are configurable
 #define USE_I2C
-#define USE_I2C_DEVICE_1
-#define I2C_DEVICE              (I2CDEV_1)
+#define USE_I2C_DEVICE_2
+#define I2C2_SCL                NONE // PB10, shared with UART3TX
+#define I2C2_SDA                NONE // PB11, shared with UART3RX
+#define USE_I2C_DEVICE_3
+#define I2C3_SCL                NONE // PA8, PWM6
+#define I2C3_SDA                NONE // PC9, CH6
+#define I2C_DEVICE              (I2CDEV_2)
+#endif
 
 #define USE_ADC
 #if !defined(PODIUMF4)
@@ -240,6 +248,8 @@
 #if defined(AIRBOTF4SD)
 #define RSSI_ADC_PIN            PA0
 #endif
+
+#define TRANSPONDER
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #if defined(PODIUMF4)

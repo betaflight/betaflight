@@ -19,8 +19,8 @@
 
 #define TARGET_BOARD_IDENTIFIER "MSKY" // Micro sciSKY
 
-#define LED0                    PB3
-#define LED1                    PB4
+#define LED0_PIN                PB3
+#define LED1_PIN                PB4
 
 #define BEEPER                  PA12
 

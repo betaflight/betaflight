@@ -21,12 +21,11 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-#define LED0        PB3
+#define LED0_PIN    PB3
 
 #define BEEPER      PC15
 #define BEEPER_INVERTED
 
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 1
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PC13

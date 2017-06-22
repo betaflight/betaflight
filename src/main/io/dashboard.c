@@ -88,43 +88,17 @@ static char lineBuffer[SCREEN_CHARACTER_COLUMN_COUNT + 1];
 #define HALF_SCREEN_CHARACTER_COLUMN_COUNT (SCREEN_CHARACTER_COLUMN_COUNT / 2)
 #define IS_SCREEN_CHARACTER_COLUMN_COUNT_ODD (SCREEN_CHARACTER_COLUMN_COUNT & 1)
 
-static const char* const pageTitles[] = {
-    "CLEANFLIGHT",
-    "ARMED",
-    "BATTERY",
-    "SENSORS",
-    "RX",
-    "PROFILE"
-#ifndef SKIP_TASK_STATISTICS
-    ,"TASKS"
-#endif
-#ifdef GPS
-    ,"GPS"
-#endif
-#ifdef ENABLE_DEBUG_DASHBOARD_PAGE
-    ,"DEBUG"
-#endif
-};
+typedef void (*pageFnPtr)(void);
 
-#define PAGE_COUNT (PAGE_RX + 1)
+#define PAGE_FLAGS_NONE         0
+#define PAGE_FLAGS_SKIP_CYCLING (1 << 0)
 
-const pageId_e cyclePageIds[] = {
-    PAGE_PROFILE,
-#ifdef GPS
-    PAGE_GPS,
-#endif
-    PAGE_RX,
-    PAGE_BATTERY,
-    PAGE_SENSORS
-#ifndef SKIP_TASK_STATISTICS
-    ,PAGE_TASKS
-#endif
-#ifdef ENABLE_DEBUG_DASHBOARD_PAGE
-    ,PAGE_DEBUG,
-#endif
-};
-
-#define CYCLE_PAGE_ID_COUNT (sizeof(cyclePageIds) / sizeof(cyclePageIds[0]))
+typedef struct pageEntry_s {
+    pageId_e id;
+    char *title;
+    pageFnPtr drawFn;
+    uint8_t flags;
+} pageEntry_t;
 
 static const char* tickerCharacters = "|/-\\"; // use 2/4/8 characters so that the divide is optimal.
 #define TICKER_CHARACTER_COUNT (sizeof(tickerCharacters) / sizeof(char))
@@ -132,13 +106,12 @@ static const char* tickerCharacters = "|/-\\"; // use 2/4/8 characters so that t
 typedef enum {
     PAGE_STATE_FLAG_NONE = 0,
     PAGE_STATE_FLAG_CYCLE_ENABLED = (1 << 0),
-    PAGE_STATE_FLAG_FORCE_PAGE_CHANGE = (1 << 1)
+    PAGE_STATE_FLAG_FORCE_PAGE_CHANGE = (1 << 1),
 } pageFlags_e;
 
 typedef struct pageState_s {
     bool pageChanging;
-    pageId_e pageId;
-    pageId_e pageIdBeforeArming;
+    const pageEntry_t *page;
     uint8_t pageFlags;
     uint8_t cycleIndex;
     uint32_t nextPageAt;
@@ -256,7 +229,7 @@ void updateFailsafeStatus(void)
 void showTitle()
 {
     i2c_OLED_set_line(0);
-    i2c_OLED_send_string(pageTitles[pageState.pageId]);
+    i2c_OLED_send_string(pageState.page->title);
 }
 
 void handlePageChange(void)
@@ -362,6 +335,12 @@ void showProfilePage(void)
 
 #ifdef GPS
 void showGpsPage() {
+
+    if (!feature(FEATURE_GPS)) {
+        pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
+        return;
+    }
+
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
     static uint8_t gpsTicker = 0;
@@ -571,9 +550,7 @@ void showTasksPage(void)
 
 void showDebugPage(void)
 {
-    uint8_t rowIndex;
-
-    for (rowIndex = 0; rowIndex < 4; rowIndex++) {
+    for (int rowIndex = 0; rowIndex < 4; rowIndex++) {
         tfp_sprintf(lineBuffer, "%d = %5d", rowIndex, debug[rowIndex]);
         padLineBuffer();
         i2c_OLED_set_line(rowIndex + PAGE_TITLE_LINE_COUNT);
@@ -581,6 +558,36 @@ void showDebugPage(void)
     }
 }
 #endif
+
+static const pageEntry_t pages[PAGE_COUNT] = {
+    { PAGE_WELCOME, "CLEANFLIGHT",  showWelcomePage,    PAGE_FLAGS_SKIP_CYCLING },
+    { PAGE_ARMED,   "ARMED",        showArmedPage,      PAGE_FLAGS_SKIP_CYCLING },
+    { PAGE_PROFILE, "PROFILE",      showProfilePage,    PAGE_FLAGS_NONE },
+#ifdef GPS
+    { PAGE_GPS,     "GPS",          showGpsPage,        PAGE_FLAGS_NONE },
+#endif
+    { PAGE_RX,      "RX",           showRxPage,         PAGE_FLAGS_NONE },
+    { PAGE_BATTERY, "BATTERY",      showBatteryPage,    PAGE_FLAGS_NONE },
+    { PAGE_SENSORS, "SENSORS",      showSensorsPage,    PAGE_FLAGS_NONE },
+#ifndef SKIP_TASK_STATISTICS
+    { PAGE_TASKS,   "TASKS",        showTasksPage,      PAGE_FLAGS_NONE },
+#endif
+#ifdef ENABLE_DEBUG_DASHBOARD_PAGE
+    { PAGE_DEBUG,   "DEBUG",        showDebugPage,      PAGE_FLAGS_NONE },
+#endif
+};
+
+
+void dashboardSetPage(pageId_e pageId)
+{
+    for (int i = 0; i < PAGE_COUNT; i++) {
+        const pageEntry_t *candidatePage = &pages[i];
+        if (candidatePage->id == pageId) {
+            pageState.page = candidatePage;
+        }
+    }
+    pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
+}
 
 void dashboardUpdate(timeUs_t currentTimeUs)
 {
@@ -607,21 +614,22 @@ void dashboardUpdate(timeUs_t currentTimeUs)
         if (!armedStateChanged) {
             return;
         }
-        pageState.pageIdBeforeArming = pageState.pageId;
-        pageState.pageId = PAGE_ARMED;
+        dashboardSetPage(PAGE_ARMED);
         pageState.pageChanging = true;
     } else {
         if (armedStateChanged) {
             pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
-            pageState.pageId = pageState.pageIdBeforeArming;
         }
 
         pageState.pageChanging = (pageState.pageFlags & PAGE_STATE_FLAG_FORCE_PAGE_CHANGE) ||
                 (((int32_t)(currentTimeUs - pageState.nextPageAt) >= 0L && (pageState.pageFlags & PAGE_STATE_FLAG_CYCLE_ENABLED)));
         if (pageState.pageChanging && (pageState.pageFlags & PAGE_STATE_FLAG_CYCLE_ENABLED)) {
-            pageState.cycleIndex++;
-            pageState.cycleIndex = pageState.cycleIndex % CYCLE_PAGE_ID_COUNT;
-            pageState.pageId = cyclePageIds[pageState.cycleIndex];
+
+            do {
+                pageState.cycleIndex++;
+                pageState.cycleIndex = pageState.cycleIndex % PAGE_COUNT;
+                pageState.page = &pages[pageState.cycleIndex];
+            } while (pageState.page->flags & PAGE_FLAGS_SKIP_CYCLING);
         }
     }
 
@@ -644,57 +652,14 @@ void dashboardUpdate(timeUs_t currentTimeUs)
         return;
     }
 
-    switch(pageState.pageId) {
-        case PAGE_WELCOME:
-            showWelcomePage();
-            break;
-        case PAGE_ARMED:
-            showArmedPage();
-            break;
-        case PAGE_BATTERY:
-            showBatteryPage();
-            break;
-        case PAGE_SENSORS:
-            showSensorsPage();
-            break;
-        case PAGE_RX:
-            showRxPage();
-            break;
-        case PAGE_PROFILE:
-            showProfilePage();
-            break;
-#ifndef SKIP_TASK_STATISTICS
-        case PAGE_TASKS:
-            showTasksPage();
-            break;
-#endif
-#ifdef GPS
-        case PAGE_GPS:
-            if (feature(FEATURE_GPS)) {
-                showGpsPage();
-            } else {
-                pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
-            }
-            break;
-#endif
-#ifdef ENABLE_DEBUG_DASHBOARD_PAGE
-        case PAGE_DEBUG:
-            showDebugPage();
-            break;
-#endif
-    }
+    pageState.page->drawFn();
+
     if (!armedState) {
         updateFailsafeStatus();
         updateRxStatus();
         updateTicker();
     }
 
-}
-
-void dashboardSetPage(pageId_e pageId)
-{
-    pageState.pageId = pageId;
-    pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
 }
 
 void dashboardInit(void)
@@ -713,9 +678,10 @@ void dashboardInit(void)
     memset(&pageState, 0, sizeof(pageState));
     dashboardSetPage(PAGE_WELCOME);
 
-    dashboardUpdate(micros());
+    uint32_t now = micros();
+    dashboardUpdate(now);
 
-    dashboardSetNextPageChangeAt(micros() + (1000 * 1000 * 5));
+    dashboardSetNextPageChangeAt(now + PAGE_CYCLE_FREQUENCY);
 }
 
 void dashboardShowFixedPage(pageId_e pageId)
@@ -736,7 +702,7 @@ void dashboardEnablePageCycling(void)
 
 void dashboardResetPageCycling(void)
 {
-    pageState.cycleIndex = CYCLE_PAGE_ID_COUNT - 1; // start at first page
+    pageState.cycleIndex = PAGE_COUNT - 1; // start at first page
 
 }
 
