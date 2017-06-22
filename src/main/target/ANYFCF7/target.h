@@ -52,6 +52,12 @@
 #define BARO
 #define USE_BARO_MS5611
 
+#ifdef ANYFCF7_EXTERNAL_BARO
+    #define USE_BARO_BMP085
+    #define USE_BARO_BMP280
+    #define BARO_I2C_INSTANCE I2C_DEVICE_EXT
+#endif
+
 #define PITOT
 #define USE_PITOT_MS4525
 #define PITOT_I2C_INSTANCE I2C_DEVICE_EXT
