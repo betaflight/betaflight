@@ -18,5 +18,8 @@
 #pragma once
 
 #include "drivers/io_types.h"
+#include "drivers/bus.h"
 
-bool hmc5883lDetect(magDev_t* mag, ioTag_t interruptTag);
+PG_DECLARE(busDeviceConfig_t, magHMC5883Config);
+
+bool hmc5883lDetect(magDev_t* mag);

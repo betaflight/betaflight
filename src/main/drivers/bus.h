@@ -18,7 +18,26 @@
 #pragma once
 
 #include "platform.h"
+#include "drivers/io_types.h"
 
 #ifdef TARGET_BUS_INIT
 void targetBusInit(void);
 #endif
+
+typedef enum {
+    BUSTYPE_NONE = 0,
+    BUSTYPE_I2C,
+    BUSTYPE_SPI,
+} busType_e;
+
+#define BUSTYPE_NONE_STR "NONE"
+#define BUSTYPE_I2C_STR  "I2C"
+#define BUSTYPE_SPI_STR  "SPI"
+
+typedef struct busDeviceConfig_s {
+    busType_e busType;
+    uint8_t   busNum;
+    uint8_t   i2cAddr;
+    ioTag_t   spiCsPin;
+    ioTag_t   drdyPin;
+} busDeviceConfig_t;

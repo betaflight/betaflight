@@ -36,6 +36,7 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "drivers/bus.h"
 #include "drivers/light_led.h"
 
 #include "fc/config.h"
@@ -248,6 +249,10 @@ static const char * const lookupTableFailsafe[] = {
     "AUTO-LAND", "DROP"
 };
 
+static const char * const lookupTableBusType[] = {
+    BUSTYPE_NONE_STR, BUSTYPE_I2C_STR, BUSTYPE_SPI_STR
+};
+
 const lookupTableEntry_t lookupTables[] = {
     { lookupTableOffOn, sizeof(lookupTableOffOn) / sizeof(char *) },
     { lookupTableUnit, sizeof(lookupTableUnit) / sizeof(char *) },
@@ -289,6 +294,7 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef OSD
     { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
 #endif
+    { lookupTableBusType, sizeof(lookupTableBusType) / sizeof(char *) },
 };
 
 const clivalue_t valueTable[] = {
@@ -719,6 +725,12 @@ const clivalue_t valueTable[] = {
     { "esc_sensor_halfduplex",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ESC_SENSOR_CONFIG, offsetof(escSensorConfig_t, halfDuplex) },
 #endif
     { "led_inversion",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, ((1 << STATUS_LED_NUMBER) - 1) }, PG_STATUS_LED_CONFIG, offsetof(statusLedConfig_t, inversion) },
+#ifdef MAG
+#ifdef USE_MAG_HMC5883
+    { "mag_hmc5883_bustype",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BUS_TYPE }, PG_BUSDEV_HMC5883_CONFIG, offsetof(busDeviceConfig_t, busType) },
+    { "mag_hmc5883_busnum",             VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, I2CDEV_COUNT - 1 }, PG_BUSDEV_HMC5883_CONFIG, offsetof(busDeviceConfig_t, busNum) },
+#endif
+#endif
 };
 
 const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);
