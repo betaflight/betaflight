@@ -128,17 +128,16 @@ static serialPort_t *cliPort;
 
 #ifdef STM32F1
 #define CLI_IN_BUFFER_SIZE 128
-#define CLI_OUT_BUFFER_SIZE 64
 #else
 // Space required to set array parameters
 #define CLI_IN_BUFFER_SIZE 256
-#define CLI_OUT_BUFFER_SIZE 256
 #endif
+#define CLI_OUT_BUFFER_SIZE 64
 
 static bufWriter_t *cliWriter;
-static uint8_t cliWriteBuffer[sizeof(*cliWriter) + CLI_IN_BUFFER_SIZE];
+static uint8_t cliWriteBuffer[sizeof(*cliWriter) + CLI_OUT_BUFFER_SIZE];
 
-static char cliBuffer[CLI_OUT_BUFFER_SIZE];
+static char cliBuffer[CLI_IN_BUFFER_SIZE];
 static uint32_t bufferIndex = 0;
 
 static bool configIsInCopy = false;
