@@ -92,6 +92,7 @@ extern uint8_t __config_end;
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
+#include "rx/eleres.h"
 
 #include "scheduler/scheduler.h"
 
@@ -266,7 +267,8 @@ static const char * const lookupTableRxSpi[] = {
     "CX10",
     "CX10A",
     "H8_3D",
-    "INAV"
+    "INAV",
+    "ELERES"
 };
 #endif
 
@@ -859,6 +861,10 @@ static const clivalue_t valueTable[] = {
     { "nav_fw_pitch2thr",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  100 }, PG_NAV_CONFIG, offsetof(navConfig_t, fw.pitch_to_throttle) },
     { "nav_fw_loiter_radius",       VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  10000 }, PG_NAV_CONFIG, offsetof(navConfig_t, fw.loiter_radius) },
 
+#ifdef FIXED_WING_LANDING
+    { "nav_fw_land_dive_angle",     VAR_INT8  | MASTER_VALUE, .config.minmax = { -20,  20 }, PG_NAV_CONFIG, offsetof(navConfig_t, fw.land_dive_angle) },
+#endif
+
     { "nav_fw_launch_velocity",     VAR_UINT16 | MASTER_VALUE, .config.minmax = { 100,  10000 }, PG_NAV_CONFIG, offsetof(navConfig_t, fw.launch_velocity_thresh) },
     { "nav_fw_launch_accel",        VAR_UINT16 | MASTER_VALUE, .config.minmax = { 1000,  20000 }, PG_NAV_CONFIG, offsetof(navConfig_t, fw.launch_accel_thresh) },
     { "nav_fw_launch_max_angle",    VAR_UINT8  | MASTER_VALUE, .config.minmax = { 5,  180 }, PG_NAV_CONFIG, offsetof(navConfig_t, fw.launch_max_angle) },
@@ -889,6 +895,17 @@ static const clivalue_t valueTable[] = {
 #ifdef TELEMETRY_LTM
     {"ltm_update_rate",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LTM_UPDATE_RATE }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, ltmUpdateRate) },
 #endif
+#endif
+#ifdef USE_RX_ELERES
+//PG_ELERES_CONFIG
+    { "eleres_freq",                VAR_FLOAT | MASTER_VALUE, .config.minmax = { 415, 450 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresFreq) },
+    { "eleres_telemetry_en",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresTelemetryEn) },
+    { "eleres_telemetry_power",     VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 7 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresTelemetryPower) },
+    { "eleres_loc_en",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresLocEn) },
+    { "eleres_loc_power",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 7 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresLocPower) },
+    { "eleres_loc_delay",           VAR_UINT16 | MASTER_VALUE, .config.minmax = { 30, 1800 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresLocDelay) },
+    { "eleres_signature",           VAR_UINT32 | MASTER_VALUE | MODE_MAX , .config.max = { 4294967295 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresSignature) },
+
 #endif
 #ifdef LED_STRIP
     { "ledstrip_visual_beeper",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_visual_beeper) },
@@ -940,6 +957,12 @@ static const clivalue_t valueTable[] = {
     { "throttle_tilt_comp_str",     VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  100 }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, throttle_tilt_compensation_strength) },
     { "input_filtering_mode",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, pwmRxInputFilteringMode) },
     { "mode_range_logic_operator",  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_AUX_OPERATOR }, PG_MODE_ACTIVATION_OPERATOR_CONFIG, offsetof(modeActivationOperatorConfig_t, modeActivationOperator) },
+//PG_STATS_CONFIG
+#ifdef STATS
+    { "stats",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_STATS_CONFIG, offsetof(statsConfig_t, stats_enabled) },
+    { "stats_total_time",    VAR_UINT32 | MASTER_VALUE | MODE_MAX, .config.max = { INT32_MAX }, PG_STATS_CONFIG, offsetof(statsConfig_t, stats_total_time) },
+    { "stats_total_dist",    VAR_UINT32 | MASTER_VALUE | MODE_MAX, .config.max = { INT32_MAX }, PG_STATS_CONFIG, offsetof(statsConfig_t, stats_total_dist) },
+#endif
 };
 
 
@@ -1066,12 +1089,18 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, u
     switch(var->type & VALUE_MODE_MASK) {
     case MODE_MAX:
     case MODE_DIRECT:
-        cliPrintf("%d", value);
+        if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32)
+            cliPrintf("%u", value);
+        else
+            cliPrintf("%d", value);
         if (full) {
             if ((var->type & VALUE_MODE_MASK) == MODE_DIRECT) {
                 cliPrintf(" %d %d", var->config.minmax.min, var->config.minmax.max);
             } else {
-                cliPrintf(" 0 %d", var->config.max.max);
+                if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32)
+                    cliPrintf(" 0 %u", var->config.max.max);
+                else
+                    cliPrintf(" 0 %d", var->config.max.max);
             }
         }
         break;
@@ -1180,7 +1209,10 @@ static void cliPrintVarRange(const clivalue_t *var)
         cliPrintf("Allowed range: %d - %d\r\n", var->config.minmax.min, var->config.minmax.max);
         break;
     case (MODE_MAX):
-        cliPrintf("Allowed range: 0- %d\r\n", var->config.max.max);
+        if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32)
+            cliPrintf("Allowed range: 0- %u\r\n", var->config.max.max);
+        else
+            cliPrintf("Allowed range: 0- %d\r\n", var->config.max.max);
         break;
     case (MODE_LOOKUP): {
         const lookupTableEntry_t *tableEntry = &lookupTables[var->config.lookup.tableIndex];
@@ -1197,6 +1229,7 @@ static void cliPrintVarRange(const clivalue_t *var)
 }
 
 typedef union {
+    uint32_t uint_value;
     int32_t int_value;
     float float_value;
 } int_float_value_t;
@@ -1217,7 +1250,7 @@ static void cliSetVar(const clivalue_t *var, const int_float_value_t value)
         break;
 
     case VAR_UINT32:
-        *(uint32_t *)ptr = value.int_value;
+        *(uint32_t *)ptr = value.uint_value;
         break;
 
     case VAR_FLOAT:
@@ -2703,6 +2736,26 @@ static void cliDfu(char *cmdline)
     cliRebootEx(true);
 }
 
+#ifdef USE_RX_ELERES
+static void cliEleresBind(char *cmdline)
+{
+    UNUSED(cmdline);
+
+    if (!feature(FEATURE_RX_SPI)) {
+        cliPrint("Eleres not active. Please enable feature ELERES and restart IMU\r\n");
+        return;
+    }
+
+    cliPrint("Waiting for correct bind signature....\r\n");
+    bufWriterFlush(cliWriter);
+    if (eleresBind()) {
+        cliPrint("Bind timeout!\r\n");
+    } else {
+        cliPrint("Bind OK!\r\nPlease restart your transmitter.\r\n");
+    }
+}
+#endif // USE_RX_ELERES
+
 static void cliExit(char *cmdline)
 {
     UNUSED(cmdline);
@@ -2965,17 +3018,20 @@ static void cliSet(char *cmdline)
                     case MODE_DIRECT: {
                             if(*eqptr != 0 && strspn(eqptr, "0123456789.+-") == strlen(eqptr)) {
                                 int32_t value = 0;
+                                uint32_t uvalue = 0;
                                 float valuef = 0;
 
                                 value = atoi(eqptr);
                                 valuef = fastA2F(eqptr);
-
+                                uvalue = strtoul(eqptr, NULL, 10);
                                 // note: compare float values
                                 if ((mode == MODE_DIRECT && (valuef >= valueTable[i].config.minmax.min && valuef <= valueTable[i].config.minmax.max))
                                      || (mode == MODE_MAX && (valuef >= 0 && valuef <= valueTable[i].config.max.max))) {
 
                                     if ((valueTable[i].type & VALUE_TYPE_MASK) == VAR_FLOAT)
                                         tmp.float_value = valuef;
+                                    else if ((valueTable[i].type & VALUE_TYPE_MASK) == VAR_UINT32)
+                                        tmp.uint_value = uvalue;
                                     else
                                         tmp.int_value = value;
 
@@ -3370,6 +3426,9 @@ const clicmd_t cmdTable[] = {
         "[master|profile|rates|all] {showdefaults}", cliDiff),
     CLI_COMMAND_DEF("dump", "dump configuration",
         "[master|profile|rates|all] {showdefaults}", cliDump),
+#ifdef USE_RX_ELERES
+    CLI_COMMAND_DEF("eleres_bind", NULL, NULL, cliEleresBind),
+#endif // USE_RX_ELERES
     CLI_COMMAND_DEF("exit", NULL, NULL, cliExit),
     CLI_COMMAND_DEF("feature", "configure features",
         "list\r\n"

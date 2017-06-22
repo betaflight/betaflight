@@ -590,6 +590,7 @@ COMMON_SRC = \
             fc/rc_controls.c \
             fc/rc_curves.c \
             fc/runtime_config.c \
+            fc/stats.c \
             flight/failsafe.c \
             flight/hil.c \
             flight/imu.c \
@@ -622,6 +623,7 @@ COMMON_SRC = \
             rx/sumd.c \
             rx/sumh.c \
             rx/xbus.c \
+            rx/eleres.c \
             scheduler/scheduler.c \
             sensors/acceleration.c \
             sensors/battery.c \

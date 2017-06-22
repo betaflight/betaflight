@@ -101,7 +101,6 @@ typedef enum {
 #ifdef CMS
     TASK_CMS,
 #endif
-
     /* Count of real tasks */
     TASK_COUNT,
 

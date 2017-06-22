@@ -67,6 +67,7 @@ void blackboxPrintfHeaderLine(const char *name, const char *fmt, ...)
     blackboxWrite('H');
     blackboxWrite(' ');
     blackboxPrint(name);
+    blackboxWrite(':');
 
     va_start(va, fmt);
 

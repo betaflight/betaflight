@@ -77,13 +77,21 @@
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
-//#define ELERES_RX
 //#define RFM_SPI             SPI2
 //#define RFM_SPI_CS_PIN      PC15
 //#define RFM_IRQ_PIN         PB3
 //#define RFM_SPI_CLK         (SPI_CLOCK_STANDARD*2)
 //#define RFM_RESTORE_CLK     (SPI_CLOCK_FAST)
 
+#define USE_RX_SPI
+#define USE_RX_ELERES
+#define RX_NSS_PIN                  PC15
+#define RX_NSS_GPIO_CLK_PERIPHERAL  RCC_APB2Periph_GPIOC
+#define RX_SCK_PIN                  PB13
+#define RX_MOSI_PIN                 PB15
+#define RX_MISO_PIN                 PB14
+#define RX_SPI_INSTANCE             SPI2
+#define RX_IRQ_PIN                  PB3
 #define USB_IO
 
 #define USE_VCP

@@ -58,6 +58,8 @@
 #include "msp/msp_serial.h"
 
 #include "rx/rx.h"
+#include "rx/eleres.h"
+#include "rx/rx_spi.h"
 
 #include "scheduler/scheduler.h"
 
