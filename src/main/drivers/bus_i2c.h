@@ -45,13 +45,6 @@ typedef enum I2CDevice {
 #define I2CDEV_COUNT 4
 #endif
 
-// Macro to convert CLI bus number to I2CDevice.
-#define I2C_CFG_TO_DEV(x) ((x) - 1)
-
-// I2C device address range in 8-bit address mode
-#define I2C_ADDR8_MIN 8
-#define I2C_ADDR8_MAX 119
-
 typedef struct i2cConfig_s {
     ioTag_t ioTagScl[I2CDEV_COUNT];
     ioTag_t ioTagSda[I2CDEV_COUNT];
