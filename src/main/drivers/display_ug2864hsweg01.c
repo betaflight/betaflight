@@ -24,30 +24,15 @@
 
 #include "display_ug2864hsweg01.h"
 
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
-
 #ifdef USE_I2C_OLED_DISPLAY
 
 #if !defined(OLED_I2C_INSTANCE)
 #if defined(I2C_DEVICE)
 #define OLED_I2C_INSTANCE I2C_DEVICE
 #else
-#define OLED_I2C_INSTANCE I2CINVALID
+#define OLED_I2C_INSTANCE I2C_NONE
 #endif
 #endif
-
-#define OLED_address   0x3C     // OLED at address 0x3C in 7bit
-
-PG_REGISTER_WITH_RESET_TEMPLATE(oledDisplayConfig_t, oledDisplayConfig, PG_OLED_DISPLAY_CONFIG, 0);
-
-PG_RESET_TEMPLATE(oledDisplayConfig_t, oledDisplayConfig,
-    .bus = OLED_I2C_INSTANCE,
-    .address = OLED_address,
-);
-
-static I2CDevice i2cBus = I2CINVALID; // XXX Protect against direct call to i2cWrite and i2cRead
-static uint8_t i2cAddress;
 
 #define INVERSE_CHAR_FORMAT 0x7f // 0b01111111
 #define NORMAL_CHAR_FORMAT  0x00 // 0b00000000
@@ -191,14 +176,16 @@ static const uint8_t multiWiiFont[][5] = { // Refer to "Times New Roman" Font Da
                 { 0x7A, 0x7E, 0x7E, 0x7E, 0x7A }, //   (131)    - 0x00C8 Vertical Bargraph - 6 (full)
         };
 
+#define OLED_address   0x3C     // OLED at address 0x3C in 7bit
+
 static bool i2c_OLED_send_cmd(uint8_t command)
 {
-    return i2cWrite(i2cBus, i2cAddress, 0x80, command);
+    return i2cWrite(OLED_I2C_INSTANCE, OLED_address, 0x80, command);
 }
 
 static bool i2c_OLED_send_byte(uint8_t val)
 {
-    return i2cWrite(i2cBus, i2cAddress, 0x40, val);
+    return i2cWrite(OLED_I2C_INSTANCE, OLED_address, 0x40, val);
 }
 
 void i2c_OLED_clear_display(void)
@@ -270,8 +257,6 @@ void i2c_OLED_send_string(const char *string)
 */
 bool ug2864hsweg01InitI2C(void)
 {
-    i2cBus = I2C_CFG_TO_DEV(oledDisplayConfig()->bus);
-    i2cAddress = oledDisplayConfig()->address;
 
     // Set display OFF
     if (!i2c_OLED_send_cmd(0xAE)) {

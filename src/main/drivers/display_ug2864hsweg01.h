@@ -17,15 +17,6 @@
 
 #pragma once
 
-#include "drivers/bus_i2c.h"
-
-typedef struct oledDisplayConfig_s {
-    I2CDevice bus;
-    uint8_t   address;
-} oledDisplayConfig_t;
-
-PG_DECLARE(oledDisplayConfig_t, oledDisplayConfig);
-
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 

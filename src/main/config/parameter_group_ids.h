@@ -107,8 +107,7 @@
 #define PG_SONAR_CONFIG 516
 #define PG_ESC_SENSOR_CONFIG 517
 #define PG_I2C_CONFIG 518
-#define PG_OLED_DISPLAY_CONFIG 519
-#define PG_BETAFLIGHT_END 519
+#define PG_BETAFLIGHT_END 518
 
 
 // OSD configuration (subject to change)
