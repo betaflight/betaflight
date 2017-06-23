@@ -342,7 +342,7 @@ void initActiveBoxIds(void)
         activeBoxIds[activeBoxIdCount++] = BOXFAILSAFE;
     }
 
-    if (mixerConfig()->mixerMode == MIXER_FLYING_WING || mixerConfig()->mixerMode == MIXER_AIRPLANE) {
+    if (mixerConfig()->mixerMode == MIXER_FLYING_WING || mixerConfig()->mixerMode == MIXER_AIRPLANE || mixerConfig()->mixerMode == MIXER_CUSTOM_AIRPLANE) {
         activeBoxIds[activeBoxIdCount++] = BOXPASSTHRU;
     }
 
