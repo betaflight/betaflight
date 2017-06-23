@@ -254,6 +254,54 @@ static bool gpsReceiveData(void)
     return hasNewData;
 }
 
+static uint8_t nmea_conf0[]="$PMTK251,57600*2C\r\n"; //change baudrate to 57600
+static uint8_t nmea_conf1[]="$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28\r\n"; //disable all messages except GGA and RMC
+static uint8_t nmea_conf2[]="$PMTK220,200*2C\r\n"; //5Hz update, should works for most modules
+static uint8_t nmea_conf3[]="$PMTK220,100*2F\r\n"; //try set 10Hz update if supported
+
+// Send NMEA command like normal string
+static bool nmeaTransmitAutoConfigCommands(const uint8_t * cmd) {
+    while (serialTxBytesFree(gpsState.gpsPort) > 0) {
+        if (cmd[gpsState.autoConfigPosition] != 0) {
+            serialWrite(gpsState.gpsPort, cmd[gpsState.autoConfigPosition]);
+            gpsState.autoConfigPosition++;
+        }
+        else if (isSerialTransmitBufferEmpty(gpsState.gpsPort)) {
+            gpsState.autoConfigStep++;
+            gpsState.autoConfigPosition = 0;
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    return false;
+}
+
+bool gpsConfigure(void)
+{
+    switch (gpsState.autoConfigStep) {
+    case 0:
+        nmeaTransmitAutoConfigCommands(nmea_conf0);
+        break;
+    case 1:
+        nmeaTransmitAutoConfigCommands(nmea_conf1);
+        break;
+    case 2:
+        nmeaTransmitAutoConfigCommands(nmea_conf2);
+        break;
+    case 3:
+        nmeaTransmitAutoConfigCommands(nmea_conf3);
+        break;
+    default:
+        gpsSetState(GPS_RECEIVING_DATA);
+        break;
+    }
+
+    return false;
+}
+
 static bool gpsInitialize(void)
 {
     gpsSetState(GPS_CHANGE_BAUD);
@@ -262,7 +310,19 @@ static bool gpsInitialize(void)
 
 static bool gpsChangeBaud(void)
 {
-    gpsFinalizeChangeBaud();
+    if ((gpsState.gpsConfig->autoBaud != GPS_AUTOBAUD_OFF) && (gpsState.autoBaudrateIndex < GPS_BAUDRATE_COUNT)) {
+        // Do the switch only if TX buffer is empty - make sure all init string was sent at the same baud
+        if (isSerialTransmitBufferEmpty(gpsState.gpsPort)) {
+            // Cycle through all possible bauds and send init string
+            serialSetBaudRate(gpsState.gpsPort, baudRates[gpsToSerialBaudRate[gpsState.autoBaudrateIndex]]);
+            gpsState.autoBaudrateIndex++;
+            gpsSetState(GPS_CHANGE_BAUD);   // switch to the same state to reset state transition time
+        }
+    }
+    else {
+        gpsFinalizeChangeBaud();
+    }
+
     return false;
 }
 
@@ -285,8 +345,7 @@ bool gpsHandleNMEA(void)
 
     case GPS_CHECK_VERSION:
     case GPS_CONFIGURE:
-        // No autoconfig, switch straight to receiving data
-        gpsSetState(GPS_RECEIVING_DATA);
+        gpsConfigure();
         return false;
 
     case GPS_RECEIVING_DATA:
