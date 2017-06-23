@@ -34,7 +34,9 @@ extern "C" {
     #include "flight/mixer.h"
 
     #include "fc/rc_controls.h"
+    #include "fc/rc_modes.h"
 
+    #include "io/gps.h"
     #include "io/serial.h"
 
     #include "rx/rx.h"
@@ -358,17 +360,13 @@ const uint32_t baudRates[] = {0, 9600, 19200, 38400, 57600, 115200, 230400, 2500
         400000, 460800, 500000, 921600, 1000000, 1500000, 2000000, 2470000}; // see baudRate_e
 uint8_t debugMode;
 int32_t blackboxHeaderBudget;
-int32_t GPS_coord[2];
-uint16_t GPS_altitude;
-uint16_t GPS_speed;
-uint8_t GPS_numSat;
-uint16_t GPS_ground_course;
+gpsSolutionData_t gpsSol;
 int32_t GPS_home[2];
 
 gyro_t gyro;
 
 uint16_t motorOutputHigh, motorOutputLow;
-int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
+float motor_disarmed[MAX_SUPPORTED_MOTORS];
 struct pidProfile_s;
 struct pidProfile_s *currentPidProfile;
 uint32_t targetPidLooptime;
@@ -379,7 +377,8 @@ void mspSerialAllocatePorts(void) {}
 uint32_t getArmingBeepTimeMicros(void) {return 0;}
 uint16_t getBatteryVoltageLatest(void) {return 0;}
 uint8_t getMotorCount() {return 4;}
-bool isModeActivationConditionPresent(const modeActivationCondition_t *, boxId_e) {return false;}
+bool IS_RC_MODE_ACTIVE(boxId_e) {return false;}
+bool isModeActivationConditionPresent(boxId_e) {return false;}
 uint32_t millis(void) {return 0;}
 bool sensors(uint32_t) {return false;}
 void serialWrite(serialPort_t *, uint8_t) {}
