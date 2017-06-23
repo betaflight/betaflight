@@ -37,6 +37,7 @@
 #include "config/parameter_group_ids.h"
 
 #include "drivers/light_led.h"
+#include "drivers/display_ug2864hsweg01.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -719,6 +720,10 @@ const clivalue_t valueTable[] = {
     { "esc_sensor_halfduplex",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ESC_SENSOR_CONFIG, offsetof(escSensorConfig_t, halfDuplex) },
 #endif
     { "led_inversion",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, ((1 << STATUS_LED_NUMBER) - 1) }, PG_STATUS_LED_CONFIG, offsetof(statusLedConfig_t, inversion) },
+#ifdef USE_I2C_OLED_DISPLAY
+    { "oled_display_i2c_bus",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, I2CDEV_COUNT }, PG_OLED_DISPLAY_CONFIG, offsetof(oledDisplayConfig_t, bus) },
+    { "oled_display_i2c_addr",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { I2C_ADDR8_MIN, I2C_ADDR8_MAX }, PG_OLED_DISPLAY_CONFIG, offsetof(oledDisplayConfig_t, bus) },
+#endif
 };
 
 const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);
