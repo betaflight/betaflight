@@ -231,10 +231,6 @@ void init(void)
 
     timerInit();  // timer must be initialized before any channel is allocated
 
-#if !defined(USE_HAL_DRIVER)
-    dmaInit();
-#endif
-
 #if defined(AVOID_UART2_FOR_PWM_PPM)
     serialInit(feature(FEATURE_SOFTSERIAL),
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART2 : SERIAL_PORT_NONE);
@@ -266,7 +262,8 @@ void init(void)
 #endif
 
     // when using airplane/wing mixer, servo/motor outputs are remapped
-    pwm_params.airplane = STATE(FIXED_WING);
+    pwm_params.flyingPlatformType = getFlyingPlatformType();
+
 #if defined(USE_UART2) && defined(STM32F10X)
     pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
 #endif
@@ -290,7 +287,7 @@ void init(void)
     pwm_params.useSerialRx = feature(FEATURE_RX_SERIAL);
 
 #ifdef USE_SERVOS
-    pwm_params.useServos = isMixerUsingServos();
+    pwm_params.useServoOutputs = isMixerUsingServos();
     pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
     pwm_params.servoCenterPulse = servoConfig()->servoCenterPulse;
     pwm_params.servoPwmRate = servoConfig()->servoPwmRate;
@@ -326,7 +323,8 @@ void init(void)
     servo handling mechanism, since external device will do that
     */
     if (feature(FEATURE_PWM_SERVO_DRIVER)) {
-        pwm_params.useServos = false;
+        pwm_params.useServoOutputs = false;
+        pwm_params.useChannelForwarding = false;
     }
 #endif
 

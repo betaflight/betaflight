@@ -49,7 +49,15 @@ typedef struct sonarIOConfig_s {
     ioTag_t echoTag;
 } sonarIOConfig_t;
 
+typedef enum {
+    PLATFORM_MULTIROTOR     = 0,
+    PLATFORM_AIRPLANE       = 1,
+    PLATFORM_HELICOPTER     = 2
+} flyingPlatformType_e;
+
 typedef struct drv_pwm_config_s {
+    int flyingPlatformType;
+
     bool enablePWMOutput;
     bool useParallelPWM;
     bool usePPM;
@@ -67,26 +75,17 @@ typedef struct drv_pwm_config_s {
     bool useSonar;
 #endif
 #ifdef USE_SERVOS
-    bool useServos;
-    bool useChannelForwarding;    // configure additional channels as servos
+    bool useServoOutputs;
+    bool useChannelForwarding;      // configure additional channels as servos
     uint16_t servoPwmRate;
     uint16_t servoCenterPulse;
 #endif
-    bool airplane;       // fixed wing hardware config, lots of servos etc
     uint8_t pwmProtocolType;
     uint16_t motorPwmRate;
     uint16_t idlePulse;  // PWM value to use when initializing the driver. set this to either PULSE_1MS (regular pwm),
                          // some higher value (used by 3d mode), or 0, for brushed pwm drivers.
     sonarIOConfig_t sonarIOConfig;
 } drv_pwm_config_t;
-
-
-enum {
-    MAP_TO_PPM_INPUT = 1,
-    MAP_TO_PWM_INPUT,
-    MAP_TO_MOTOR_OUTPUT,
-    MAP_TO_SERVO_OUTPUT,
-};
 
 typedef enum {
     PWM_PF_NONE = 0,

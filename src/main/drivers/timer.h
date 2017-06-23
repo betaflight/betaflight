@@ -73,21 +73,32 @@ typedef struct timerOvrHandlerRec_s {
 typedef struct timerDef_s {
     TIM_TypeDef *TIMx;
     rccPeriphTag_t rcc;
-#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
-    uint8_t alternateFunction;
-#endif
+    uint8_t irq;
 } timerDef_t;
+
+typedef enum {
+    TIM_USE_ANY             = 0,
+    TIM_USE_PPM             = (1 << 0),
+    TIM_USE_PWM             = (1 << 1),
+    TIM_USE_MC_MOTOR        = (1 << 2),     // Multicopter motor output
+    TIM_USE_MC_SERVO        = (1 << 3),     // Multicopter servo output (i.e. TRI)
+    TIM_USE_MC_CHNFW        = (1 << 4),     // Multicopter servo output if channel forwarding is used
+    TIM_USE_FW_MOTOR        = (1 << 5),
+    TIM_USE_FW_SERVO        = (1 << 6),
+    TIM_USE_LED             = (1 << 24),
+    TIM_USE_BEEPER          = (1 << 25),
+} timerUsageFlag_e;
 
 typedef struct timerHardware_s {
     TIM_TypeDef *tim;
     ioTag_t tag;
     uint8_t channel;
-    uint8_t irq;
     uint8_t output;
     ioConfig_t ioMode;
 #if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
     uint8_t alternateFunction;
 #endif
+    uint32_t usageFlags;
 } timerHardware_t;
 
 enum {
@@ -134,6 +145,8 @@ typedef enum {
     TYPE_TIMER
 } channelType_t;
 
+const timerHardware_t *timerGetByTag(ioTag_t tag, timerUsageFlag_e flag);
+
 void timerConfigure(const timerHardware_t *timHw, uint16_t period, uint8_t mhz);  // This interface should be replaced.
 
 void timerChConfigIC(const timerHardware_t *timHw, bool polarityRising, unsigned inputFilterSamples);
@@ -153,11 +166,13 @@ void timerChITConfigDualLo(const timerHardware_t* timHw, FunctionalState newStat
 void timerChITConfig(const timerHardware_t* timHw, FunctionalState newState);
 void timerChClearCCFlag(const timerHardware_t* timHw);
 
-void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriority);
+void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriority, uint8_t irq);
 
 void timerInit(void);
 void timerStart(void);
 void timerForceOverflow(TIM_TypeDef *tim);
+
+uint8_t timerClockDivisor(TIM_TypeDef *tim);
 
 void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz);  // TODO - just for migration
 
@@ -165,10 +180,15 @@ uint16_t timerGetPeriod(const timerHardware_t *timHw);
 
 rccPeriphTag_t timerRCC(TIM_TypeDef *tim);
 
-#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
-uint8_t timerGPIOAF(TIM_TypeDef *tim);
-#endif
-
 #if defined(USE_HAL_DRIVER)
 TIM_HandleTypeDef* timerFindTimerHandle(TIM_TypeDef *tim);
+#else
+void timerOCInit(TIM_TypeDef *tim, uint8_t channel, TIM_OCInitTypeDef *init);
+void timerOCPreloadConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t preload);
+uint16_t timerDmaSource(uint8_t channel);
 #endif
+
+volatile timCCR_t *timerCCR(TIM_TypeDef *tim, uint8_t channel);
+
+uint16_t timerGetPrescalerByDesiredMhz(TIM_TypeDef *tim, uint16_t mhz);
+uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_t hertz);

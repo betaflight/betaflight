@@ -13,7 +13,7 @@ TARGET_SRC = \
             drivers/compass/compass_mag3110.c \
             drivers/max7456.c \
             drivers/light_ws2811strip.c \
-            drivers/light_ws2811strip_stm32f4xx.c
+            drivers/light_ws2811strip_stdperiph.c
 #            drivers/accgyro/accgyro_spi_icm20689.c \
 #            drivers/transponder_ir.c \
 #            io/transponder_ir.c

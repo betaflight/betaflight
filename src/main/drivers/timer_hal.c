@@ -216,18 +216,15 @@ rccPeriphTag_t timerRCC(TIM_TypeDef *tim)
     return 0;
 }
 
-#if defined(STM32F7)
-uint8_t timerGPIOAF(TIM_TypeDef *tim)
+uint8_t timerInputIrq(TIM_TypeDef *tim)
 {
-    for (uint8_t i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
+    for (int i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
         if (timerDefinitions[i].TIMx == tim) {
-            return timerDefinitions[i].alternateFunction;
+            return timerDefinitions[i].irq;
         }
     }
     return 0;
 }
-#endif
-
 
 void timerNVICConfigure(uint8_t irq)
 {
@@ -305,9 +302,11 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
 
     configTimeBase(timerHardwarePtr->tim, period, mhz);
     HAL_TIM_Base_Start(&timeHandle[timerIndex].Handle);
-    timerNVICConfigure(timerHardwarePtr->irq);
+    
+    uint8_t irq = timerInputIrq(timerHardwarePtr->tim);
+    timerNVICConfigure(irq);
     // HACK - enable second IRQ on timers that need it
-    switch(timerHardwarePtr->irq) {
+    switch(irq) {
 
     case TIM1_CC_IRQn:
         timerNVICConfigure(TIM1_UP_TIM10_IRQn);
@@ -320,7 +319,7 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
 }
 
 // allocate and configure timer channel. Timer priority is set to highest priority of its channels
-void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriority)
+void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriority, uint8_t irq)
 {
     uint8_t timerIndex = lookupTimerIndex(timHw->tim);
     if (timerIndex >= USED_TIMER_COUNT) {
@@ -338,10 +337,8 @@ void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriori
         // it would be better to set priority in the end, but current startup sequence is not ready
         configTimeBase(usedTimers[timer], 0, 1);
         HAL_TIM_Base_Start(&timeHandle[timerIndex].Handle);
-
-
-        HAL_NVIC_SetPriority(timHw->irq, NVIC_PRIORITY_BASE(irqPriority), NVIC_PRIORITY_SUB(irqPriority));
-        HAL_NVIC_EnableIRQ(timHw->irq);
+        HAL_NVIC_SetPriority(irq, NVIC_PRIORITY_BASE(irqPriority), NVIC_PRIORITY_SUB(irqPriority));
+        HAL_NVIC_EnableIRQ(irq);
 
         timerInfo[timer].priority = irqPriority;
     }

@@ -67,9 +67,11 @@ DEFINE_DMA_IRQ_HANDLER(2, 5, DMA2_ST5_HANDLER)
 DEFINE_DMA_IRQ_HANDLER(2, 6, DMA2_ST6_HANDLER)
 DEFINE_DMA_IRQ_HANDLER(2, 7, DMA2_ST7_HANDLER)
 
-void dmaInit(void)
+void dmaInit(dmaHandlerIdentifier_e identifier, resourceOwner_t owner, uint8_t resourceIndex)
 {
-    // TODO: Do we need this?
+    RCC_AHB1PeriphClockCmd(dmaDescriptors[identifier].rcc, ENABLE);
+    dmaDescriptors[identifier].owner = owner;
+    dmaDescriptors[identifier].resourceIndex = resourceIndex;
 }
 
 dmaHandlerIdentifier_e dmaFindHandlerIdentifier(DMA_Stream_TypeDef* stream)
@@ -77,7 +79,7 @@ dmaHandlerIdentifier_e dmaFindHandlerIdentifier(DMA_Stream_TypeDef* stream)
     dmaHandlerIdentifier_e i;
 
     for (i = 0; i < (sizeof(dmaDescriptors) / sizeof(dmaDescriptors[0])); i++) {
-        if (stream == dmaDescriptors[i].stream) {
+        if (stream == dmaDescriptors[i].ref) {
             return i;
         }
     }

@@ -64,9 +64,11 @@ DEFINE_DMA_IRQ_HANDLER(2, 5, DMA2_CH5_HANDLER)
 #endif
 
 
-void dmaInit(void)
+void dmaInit(dmaHandlerIdentifier_e identifier, resourceOwner_t owner, uint8_t resourceIndex)
 {
-    // TODO: Do we need this?
+    RCC_AHBPeriphClockCmd(dmaDescriptors[identifier].rcc, ENABLE);
+    dmaDescriptors[identifier].owner = owner;
+    dmaDescriptors[identifier].resourceIndex = resourceIndex;
 }
 
 dmaHandlerIdentifier_e dmaFindHandlerIdentifier(DMA_Channel_TypeDef* channel)
@@ -74,7 +76,7 @@ dmaHandlerIdentifier_e dmaFindHandlerIdentifier(DMA_Channel_TypeDef* channel)
     dmaHandlerIdentifier_e i;
 
     for (i = 0; i < (sizeof(dmaDescriptors) / sizeof(dmaDescriptors[0])); i++) {
-        if (channel == dmaDescriptors[i].channel) {
+        if (channel == dmaDescriptors[i].ref) {
             return i;
         }
     }

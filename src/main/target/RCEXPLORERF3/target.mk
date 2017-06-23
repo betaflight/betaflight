@@ -12,4 +12,4 @@ TARGET_SRC = \
            drivers/serial_usb_vcp.c \
            drivers/flash_m25p16.c \
            drivers/light_ws2811strip.c \
-           drivers/light_ws2811strip_stm32f30x.c
+           drivers/light_ws2811strip_stdperiph.c

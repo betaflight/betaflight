@@ -8,4 +8,4 @@ TARGET_SRC = \
             drivers/compass/compass_hmc5883l.c \
             drivers/max7456.c \
             drivers/light_ws2811strip.c \
-            drivers/light_ws2811strip_stm32f4xx.c
+            drivers/light_ws2811strip_stdperiph.c

@@ -17,48 +17,25 @@
 #include "timer.h"
 
 const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
-    { .TIMx = TIM1,  .rcc = RCC_APB2(TIM1)  },
-    { .TIMx = TIM2,  .rcc = RCC_APB1(TIM2)  },
-    { .TIMx = TIM3,  .rcc = RCC_APB1(TIM3)  },
-    { .TIMx = TIM4,  .rcc = RCC_APB1(TIM4)  },
+    { .TIMx = TIM1,  .rcc = RCC_APB2(TIM1), .irq = TIM1_CC_IRQn },
+    { .TIMx = TIM2,  .rcc = RCC_APB1(TIM2), .irq = TIM2_IRQn },
+    { .TIMx = TIM3,  .rcc = RCC_APB1(TIM3), .irq = TIM3_IRQn },
+    { .TIMx = TIM4,  .rcc = RCC_APB1(TIM4), .irq = TIM4_IRQn },
 #if defined(STM32F10X_HD) || defined(STM32F10X_CL) || defined(STM32F10X_XL) || defined(STM32F10X_HD_VL)
-    { .TIMx = TIM5,  .rcc = RCC_APB1(TIM5)  },
-    { .TIMx = TIM6,  .rcc = RCC_APB1(TIM6)  },
-    { .TIMx = TIM7,  .rcc = RCC_APB1(TIM7)  },
+    { .TIMx = TIM5,  .rcc = RCC_APB1(TIM5), .irq = TIM5_IRQn },
+    { .TIMx = TIM6,  .rcc = RCC_APB1(TIM6), .irq = 0 },
+    { .TIMx = TIM7,  .rcc = RCC_APB1(TIM7), .irq = 0 },
 #endif
 #if defined(STM32F10X_XL) || defined(STM32F10X_HD_VL)
-    { .TIMx = TIM8,  .rcc = RCC_APB1(TIM8)  },
-    { .TIMx = TIM9,  .rcc = RCC_APB2(TIM9)  },
-    { .TIMx = TIM10, .rcc = RCC_APB2(TIM10) },
-    { .TIMx = TIM11, .rcc = RCC_APB2(TIM11) },
-    { .TIMx = TIM12, .rcc = RCC_APB1(TIM12) },
-    { .TIMx = TIM13, .rcc = RCC_APB1(TIM13) },
-    { .TIMx = TIM14, .rcc = RCC_APB1(TIM14) },
+    { .TIMx = TIM8,  .rcc = RCC_APB1(TIM8),  .irq = TIM8_CC_IRQn },
+    { .TIMx = TIM9,  .rcc = RCC_APB2(TIM9),  .irq = TIM1_BRK_TIM9_IRQn },
+    { .TIMx = TIM10, .rcc = RCC_APB2(TIM10), .irq = TIM1_UP_TIM10_IRQn },
+    { .TIMx = TIM11, .rcc = RCC_APB2(TIM11), .irq = TIM1_TRG_COM_TIM11_IRQn },
+    { .TIMx = TIM12, .rcc = RCC_APB1(TIM12), .irq = TIM12_IRQn },
+    { .TIMx = TIM13, .rcc = RCC_APB1(TIM13), .irq = TIM13_IRQn },
+    { .TIMx = TIM14, .rcc = RCC_APB1(TIM14), .irq = TIM14_IRQn },
 #endif
 };
-
-/**
-  * @brief  Selects the TIM Output Compare Mode.
-  * @note   This function does NOT disable the selected channel before changing the Output
-  *         Compare Mode.
-  * @param  TIMx: where x can be 1 to 17 except 6 and 7 to select the TIM peripheral.
-  * @param  TIM_Channel: specifies the TIM Channel
-  *   This parameter can be one of the following values:
-  *     @arg TIM_Channel_1: TIM Channel 1
-  *     @arg TIM_Channel_2: TIM Channel 2
-  *     @arg TIM_Channel_3: TIM Channel 3
-  *     @arg TIM_Channel_4: TIM Channel 4
-  * @param  TIM_OCMode: specifies the TIM Output Compare Mode.
-  *   This parameter can be one of the following values:
-  *     @arg TIM_OCMode_Timing
-  *     @arg TIM_OCMode_Active
-  *     @arg TIM_OCMode_Toggle
-  *     @arg TIM_OCMode_PWM1
-  *     @arg TIM_OCMode_PWM2
-  *     @arg TIM_ForcedAction_Active
-  *     @arg TIM_ForcedAction_InActive
-  * @retval None
-  */
 
 #define CCMR_Offset                 ((uint16_t)0x0018)
 
@@ -91,4 +68,10 @@ void TIM_SelectOCxM_NoDisable(TIM_TypeDef* TIMx, uint16_t TIM_Channel, uint16_t 
         /* Configure the OCxM bits in the CCMRx register */
         *(__IO uint32_t *) tmp |= (uint16_t)(TIM_OCMode << 8);
     }
+}
+
+uint8_t timerClockDivisor(TIM_TypeDef *tim)
+{
+    UNUSED(tim);
+    return 1;
 }

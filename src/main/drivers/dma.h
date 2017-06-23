@@ -15,9 +15,26 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "resource.h"
 
 struct dmaChannelDescriptor_s;
 typedef void (*dmaCallbackHandlerFuncPtr)(struct dmaChannelDescriptor_s *channelDescriptor);
+
+typedef struct dmaChannelDescriptor_s {
+    DMA_TypeDef*                dma;
+#if defined(STM32F4) || defined(STM32F7)
+    DMA_Stream_TypeDef*         ref;
+#else
+    DMA_Channel_TypeDef*        ref;
+#endif
+    dmaCallbackHandlerFuncPtr   irqHandlerCallback;
+    uint8_t                     flagsShift;
+    IRQn_Type                   irqN;
+    uint32_t                    rcc;
+    uint32_t                    userParam;
+    resourceOwner_t             owner;
+    uint8_t                     resourceIndex;
+} dmaChannelDescriptor_t;
 
 #if defined(STM32F4) || defined(STM32F7)
 
@@ -40,17 +57,7 @@ typedef enum {
     DMA2_ST7_HANDLER,
 } dmaHandlerIdentifier_e;
 
-typedef struct dmaChannelDescriptor_s {
-    DMA_TypeDef*                dma;
-    DMA_Stream_TypeDef*         stream;
-    dmaCallbackHandlerFuncPtr   irqHandlerCallback;
-    uint8_t                     flagsShift;
-    IRQn_Type                   irqN;
-    uint32_t                    rcc;
-    uint32_t                    userParam;
-} dmaChannelDescriptor_t;
-
-#define DEFINE_DMA_CHANNEL(d, s, f, i, r) {.dma = d, .stream = s, .irqHandlerCallback = NULL, .flagsShift = f, .irqN = i, .rcc = r, .userParam = 0}
+#define DEFINE_DMA_CHANNEL(d, s, f, i, r) {.dma = d, .ref = s, .irqHandlerCallback = NULL, .flagsShift = f, .irqN = i, .rcc = r, .userParam = 0}
 #define DEFINE_DMA_IRQ_HANDLER(d, s, i) void DMA ## d ## _Stream ## s ## _IRQHandler(void) {\
                                                                 if (dmaDescriptors[i].irqHandlerCallback)\
                                                                     dmaDescriptors[i].irqHandlerCallback(&dmaDescriptors[i]);\
@@ -83,17 +90,7 @@ typedef enum {
     DMA2_CH5_HANDLER,
 } dmaHandlerIdentifier_e;
 
-typedef struct dmaChannelDescriptor_s {
-    DMA_TypeDef*                dma;
-    DMA_Channel_TypeDef*        channel;
-    dmaCallbackHandlerFuncPtr   irqHandlerCallback;
-    uint8_t                     flagsShift;
-    IRQn_Type                   irqN;
-    uint32_t                    rcc;
-    uint32_t                    userParam;
-} dmaChannelDescriptor_t;
-
-#define DEFINE_DMA_CHANNEL(d, c, f, i, r) {.dma = d, .channel = c, .irqHandlerCallback = NULL, .flagsShift = f, .irqN = i, .rcc = r, .userParam = 0}
+#define DEFINE_DMA_CHANNEL(d, c, f, i, r) {.dma = d, .ref = c, .irqHandlerCallback = NULL, .flagsShift = f, .irqN = i, .rcc = r, .userParam = 0}
 #define DEFINE_DMA_IRQ_HANDLER(d, c, i) void DMA ## d ## _Channel ## c ## _IRQHandler(void) {\
                                                                         if (dmaDescriptors[i].irqHandlerCallback)\
                                                                             dmaDescriptors[i].irqHandlerCallback(&dmaDescriptors[i]);\
@@ -119,7 +116,7 @@ dmaHandlerIdentifier_e dmaFindHandlerIdentifier(DMA_Stream_TypeDef* stream);
 dmaHandlerIdentifier_e dmaFindHandlerIdentifier(DMA_Channel_TypeDef* channel);
 #endif
 
-void dmaInit(void);
+void dmaInit(dmaHandlerIdentifier_e identifier, resourceOwner_t owner, uint8_t resourceIndex);
 void dmaEnableClock(dmaHandlerIdentifier_e identifier);
 void dmaSetHandler(dmaHandlerIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam);
 
