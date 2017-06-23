@@ -18,24 +18,20 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "platform.h"
-#include "drivers/bus.h"
-#include "drivers/bus_i2c.h"
+#include <platform.h>
+
 #include "drivers/bus_spi.h"
-#include "io/serial.h"
+#include "drivers/io.h"
 
-extern void spiPreInit(void); // XXX In fc/fc_init.c
+// Bring a pin for possible CS line to pull-up state in preparation for
+// sequential initialization by relevant drivers.
+// Note that the pin is set to input for safety at this point.
 
-void targetBusInit(void)
+void spiPreInitCs(ioTag_t iotag)
 {
-#if defined(USE_SPI) && defined(USE_SPI_DEVICE_1)
-    spiPreInit();
-    spiInit(SPIDEV_1);
-#endif
-
-    if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
-        serialRemovePort(SERIAL_PORT_USART3);
-        i2cHardwareConfigure();
-        i2cInit(I2C_DEVICE);
+    IO_t io = IOGetByTag(iotag);
+    if (io) {
+        IOInit(io, OWNER_SPI_PREINIT, 0);
+        IOConfigGPIO(io, IOCFG_IPU);
     }
 }

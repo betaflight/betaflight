@@ -69,6 +69,7 @@ static void icm20689SpiInit(const busDevice_t *bus)
 
     IOInit(bus->spi.csnPin, OWNER_MPU_CS, 0);
     IOConfigGPIO(bus->spi.csnPin, SPI_IO_CS_CFG);
+    IOHi(bus->spi.csnPin);
 
     spiSetDivisor(ICM20689_SPI_INSTANCE, SPI_CLOCK_STANDARD);
 

@@ -107,7 +107,7 @@ int16_t magHold;
 int16_t headFreeModeHold;
 
 uint8_t motorControlEnable = false;
-static bool reverseMotors;
+static bool reverseMotors = false;
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
 bool isRXDataNew;
