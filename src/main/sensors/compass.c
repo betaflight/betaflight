@@ -48,12 +48,6 @@
 magDev_t magDev;
 mag_t mag;                   // mag access functions
 
-#ifdef MAG_INT_EXTI
-#define COMPASS_INTERRUPT_TAG   IO_TAG(MAG_INT_EXTI)
-#else
-#define COMPASS_INTERRUPT_TAG   IO_TAG_NONE
-#endif
-
 PG_REGISTER_WITH_RESET_TEMPLATE(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 0);
 
 PG_RESET_TEMPLATE(compassConfig_t, compassConfig,
@@ -61,7 +55,6 @@ PG_RESET_TEMPLATE(compassConfig_t, compassConfig,
     // xxx_hardware: 0:default/autodetect, 1: disable
     .mag_hardware = 1,
     .mag_declination = 0,
-    .interruptTag = COMPASS_INTERRUPT_TAG
 );
 
 #ifdef MAG
@@ -83,7 +76,7 @@ retry:
 
     case MAG_HMC5883:
 #ifdef USE_MAG_HMC5883
-        if (hmc5883lDetect(dev, compassConfig()->interruptTag)) {
+        if (hmc5883lDetect(dev)) {
 #ifdef MAG_HMC5883_ALIGN
             dev->magAlign = MAG_HMC5883_ALIGN;
 #endif

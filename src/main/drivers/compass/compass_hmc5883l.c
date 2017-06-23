@@ -29,6 +29,7 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
+#include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/exti.h"
 #include "drivers/io.h"
@@ -37,12 +38,56 @@
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "compass.h"
 
 #include "compass_hmc5883l.h"
 #include "compass_spi_hmc5883l.h"
 
 //#define DEBUG_MAG_DATA_READY_INTERRUPT
+
+PG_REGISTER_WITH_RESET_TEMPLATE(busDeviceConfig_t, magHMC5883Config, PG_BUSDEV_HMC5883_CONFIG, 0);
+
+#ifdef USE_MAG_SPI_HMC5883
+#define HMC5883_BUSTYPE BUSTYPE_SPI
+#else
+#define HMC5883_BUSTYPE BUSTYPE_I2C
+#endif
+
+#ifdef MAG_I2C_INSTANCE
+#define HMC5883_BUSNUM MAG_I2C_INSTANCE
+#else
+#define HMC5883_BUSNUM I2CINVALID
+#endif
+
+#ifndef HMC5883_CS_PIN
+#define HMC5883_CS_PIN NONE
+#endif
+
+#if defined(USE_MAG_DATA_READY_SIGNAL) && defined(MAG_INT_EXTI)
+#define HMC5883_INT_EXTI MAG_INT_EXTI
+#else
+#define HMC5883_INT_EXTI NONE
+#endif
+
+#define MAG_ADDRESS 0x1E
+
+#define I2C_DEV_TO_CFG(x) ((x) + 1)
+#define I2C_CFG_TO_DEV(x) ((x) - 1)
+
+PG_RESET_TEMPLATE(busDeviceConfig_t, magHMC5883Config,
+    .busType = HMC5883_BUSTYPE,
+    .busNum = I2C_DEV_TO_CFG(HMC5883_BUSNUM),
+    .i2cAddr = MAG_ADDRESS,
+    .spiCsTag = IO_TAG(HMC5883_CS_PIN),
+    .drdyTag = IO_TAG(HMC5883_INT_EXTI),
+);
+
+#ifndef USE_MAG_SPI_HMC5883
+static I2CDevice i2cBus;
+#endif
 
 // HMC5883L, default address 0x1E
 // NAZE Target connections
@@ -104,7 +149,6 @@
  *              1  |  1   |  Sleep Mode
  */
 
-#define MAG_ADDRESS 0x1E
 #define MAG_DATA_REGISTER 0x03
 
 #define HMC58X3_R_CONFA 0
@@ -171,7 +215,7 @@ static bool hmc5883lRead(int16_t *magData)
 #ifdef USE_MAG_SPI_HMC5883
 	bool ack = hmc5883SpiReadCommand(MAG_DATA_REGISTER, 6, buf);
 #else
-    bool ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, MAG_DATA_REGISTER, 6, buf);
+    bool ack = i2cRead(i2cBus, MAG_ADDRESS, MAG_DATA_REGISTER, 6, buf);
 #endif
     if (!ack) {
         return false;
@@ -197,14 +241,14 @@ static bool hmc5883lInit(void)
 #ifdef USE_MAG_SPI_HMC5883
     hmc5883SpiWriteCommand(HMC58X3_R_CONFA, 0x010 + HMC_POS_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to pos bias
 #else
-    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_POS_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to pos bias
+    i2cWrite(i2cBus, MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_POS_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to pos bias
 #endif
     // Note that the  very first measurement after a gain change maintains the same gain as the previous setting.
     // The new gain setting is effective from the second measurement and on.
 #ifdef USE_MAG_SPI_HMC5883
 	hmc5883SpiWriteCommand(HMC58X3_R_CONFB, 0x60); // Set the Gain to 2.5Ga (7:5->011)
 #else
-    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFB, 0x60); // Set the Gain to 2.5Ga (7:5->011)
+    i2cWrite(i2cBus, MAG_ADDRESS, HMC58X3_R_CONFB, 0x60); // Set the Gain to 2.5Ga (7:5->011)
 #endif
     delay(100);
     hmc5883lRead(magADC);
@@ -213,7 +257,7 @@ static bool hmc5883lInit(void)
 #ifdef USE_MAG_SPI_HMC5883
 		hmc5883SpiWriteCommand(HMC58X3_R_MODE, 1);
 #else
-        i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_MODE, 1);
+        i2cWrite(i2cBus, MAG_ADDRESS, HMC58X3_R_MODE, 1);
 #endif
         delay(50);
         hmc5883lRead(magADC);       // Get the raw values in case the scales have already been changed.
@@ -235,13 +279,13 @@ static bool hmc5883lInit(void)
 #ifdef USE_MAG_SPI_HMC5883
 	hmc5883SpiWriteCommand(HMC58X3_R_CONFA, 0x010 + HMC_NEG_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to negative bias.
 #else
-    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_NEG_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to negative bias.
+    i2cWrite(i2cBus, MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_NEG_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to negative bias.
 #endif
     for (i = 0; i < 10; i++) {
 #ifdef USE_MAG_SPI_HMC5883
         hmc5883SpiWriteCommand(HMC58X3_R_MODE, 1);
 #else
-        i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_MODE, 1);
+        i2cWrite(i2cBus, MAG_ADDRESS, HMC58X3_R_MODE, 1);
 #endif
         delay(50);
         hmc5883lRead(magADC);               // Get the raw values in case the scales have already been changed.
@@ -269,9 +313,9 @@ static bool hmc5883lInit(void)
     hmc5883SpiWriteCommand(HMC58X3_R_CONFB, 0x20);   // Configuration Register B  -- 001 00000    configuration gain 1.3Ga
     hmc5883SpiWriteCommand(HMC58X3_R_MODE, 0x00);    // Mode register             -- 000000 00    continuous Conversion Mode
 #else
-    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFA, 0x70);   // Configuration Register A  -- 0 11 100 00  num samples: 8 ; output rate: 15Hz ; normal measurement mode
-    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFB, 0x20);   // Configuration Register B  -- 001 00000    configuration gain 1.3Ga
-    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_MODE, 0x00);    // Mode register             -- 000000 00    continuous Conversion Mode
+    i2cWrite(i2cBus, MAG_ADDRESS, HMC58X3_R_CONFA, 0x70);   // Configuration Register A  -- 0 11 100 00  num samples: 8 ; output rate: 15Hz ; normal measurement mode
+    i2cWrite(i2cBus, MAG_ADDRESS, HMC58X3_R_CONFB, 0x20);   // Configuration Register B  -- 001 00000    configuration gain 1.3Ga
+    i2cWrite(i2cBus, MAG_ADDRESS, HMC58X3_R_MODE, 0x00);    // Mode register             -- 000000 00    continuous Conversion Mode
 #endif
     delay(100);
 
@@ -285,12 +329,10 @@ static bool hmc5883lInit(void)
     return true;
 }
 
-bool hmc5883lDetect(magDev_t* mag, ioTag_t interruptTag)
+bool hmc5883lDetect(magDev_t* mag)
 {
 #ifdef USE_MAG_DATA_READY_SIGNAL
-    hmc5883InterruptIO = IOGetByTag(interruptTag);
-#else
-    UNUSED(interruptTag);
+    hmc5883InterruptIO = IOGetByTag(magHMC5883Config()->drdyTag);
 #endif
 
     uint8_t sig = 0;
@@ -298,7 +340,13 @@ bool hmc5883lDetect(magDev_t* mag, ioTag_t interruptTag)
     hmc5883SpiInit();
     bool ack = hmc5883SpiReadCommand(0x0A, 1, &sig);
 #else
-    bool ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, 0x0A, 1, &sig);
+    if (magHMC5883Config()->busType == BUSTYPE_I2C) {
+        i2cBus = I2C_CFG_TO_DEV(magHMC5883Config()->busNum);
+    } else {
+        return false;
+    }
+
+    bool ack = i2cRead(i2cBus, MAG_ADDRESS, 0x0A, 1, &sig);
 #endif
 
     if (!ack || sig != 'H')

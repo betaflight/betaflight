@@ -21,17 +21,22 @@
 
 #include <platform.h>
 
+#include "config/parameter_group.h"
+
 #include "drivers/io.h"
 #include "drivers/bus_spi.h"
 
 #include "compass.h"
 #include "compass_hmc5883l.h"
 
+#define SPI_CFG_TO_DEV(x) ((x) - 1)
+
 #ifdef USE_MAG_SPI_HMC5883
 
 #define DISABLE_HMC5883      IOHi(hmc5883CsPin)
 #define ENABLE_HMC5883       IOLo(hmc5883CsPin)
 
+static SPI_TypeDef *hmc5883SpiInstance;
 static IO_t hmc5883CsPin = IO_NONE;
 
 bool hmc5883SpiWriteCommand(uint8_t reg, uint8_t data)
@@ -41,10 +46,7 @@ bool hmc5883SpiWriteCommand(uint8_t reg, uint8_t data)
     buf[1] = data;
 
     ENABLE_HMC5883;
-
-    //spiTransferByte(HMC5883_SPI_INSTANCE, reg & 0x7F);
-    //spiTransferByte(HMC5883_SPI_INSTANCE, data);
-    spiTransfer(HMC5883_SPI_INSTANCE, NULL, buf, 2);
+    spiTransfer(hmc5883SpiInstance, NULL, buf, 2);
     DISABLE_HMC5883;
 
     return true;
@@ -57,7 +59,7 @@ bool hmc5883SpiReadCommand(uint8_t reg, uint8_t length, uint8_t *data)
     buf[0] = reg | 0x80 | 0x40;
 
     ENABLE_HMC5883;
-    spiTransfer(HMC5883_SPI_INSTANCE, buf, buf, length + 1);
+    spiTransfer(hmc5883SpiInstance, buf, buf, length + 1);
     DISABLE_HMC5883;
 
     memcpy(data, &buf[1], length);
@@ -73,13 +75,19 @@ void hmc5883SpiInit(void)
         return;
     }
 
-    hmc5883CsPin = IOGetByTag(IO_TAG(HMC5883_CS_PIN));
+    if (magHMC5883Config()->busType != BUSTYPE_SPI) {
+        return;
+    }
+
+    hmc5883SpiInstance = spiInstanceByDevice(SPI_CFG_TO_DEV(magHMC5883Config()->busNum));
+
+    hmc5883CsPin = IOGetByTag(magHMC5883Config()->spiCsTag);
     IOInit(hmc5883CsPin, OWNER_COMPASS_CS, 0);
     IOConfigGPIO(hmc5883CsPin, IOCFG_OUT_PP);
 
     DISABLE_HMC5883;
 
-    spiSetDivisor(HMC5883_SPI_INSTANCE, SPI_CLOCK_STANDARD);
+    spiSetDivisor(hmc5883SpiInstance, SPI_CLOCK_STANDARD);
 
     hardwareInitialised = true;
 }
