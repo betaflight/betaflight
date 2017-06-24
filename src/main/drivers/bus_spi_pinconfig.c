@@ -93,8 +93,6 @@ const spiDefaultConfig_t spiDefaultConfig[] = {
 
 void pgResetFn_spiPinConfig(spiPinConfig_t *spiPinConfig)
 {
-    memset(spiPinConfig, 0, sizeof(*spiPinConfig));
-
     for (size_t i = 0 ; i < ARRAYLEN(spiDefaultConfig) ; i++) {
         const spiDefaultConfig_t *defconf = &spiDefaultConfig[i];
         spiPinConfig->ioTagSck[defconf->device] = defconf->sck;
