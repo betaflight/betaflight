@@ -21,6 +21,8 @@
 
 #include <platform.h>
 
+#ifdef USE_SPI
+
 #include "build/debug.h"
 
 #include "drivers/bus_spi.h"
@@ -111,16 +113,16 @@ const spiHardware_t spiHardware[] = {
         .device = SPIDEV_1,
         .reg = SPI1,
         .sckPins = {
-            { DEFIO_TAG_E(PA5), 0 },
-            // { DEFIO_TAG_E(PB3), GPIO_AF },
+            { DEFIO_TAG_E(PA5) },
+            // { DEFIO_TAG_E(PB3) },
         },
         .misoPins = {
-            { DEFIO_TAG_E(PA6), 0 },
-            // { DEFIO_TAG_E(PB4), GPIO_AF },
+            { DEFIO_TAG_E(PA6) },
+            // { DEFIO_TAG_E(PB4) },
         },
         .mosiPins = {
-            { DEFIO_TAG_E(PA7), 0 },
-            // { DEFIO_TAG_E(PB5), GPIO_AF },
+            { DEFIO_TAG_E(PA7) },
+            // { DEFIO_TAG_E(PB5) },
         },
         .rcc = RCC_APB2(SPI1),
     },
@@ -128,16 +130,16 @@ const spiHardware_t spiHardware[] = {
         .device = SPIDEV_2,
         .reg = SPI2,
         .sckPins = {
-            { DEFIO_TAG_E(PB13), 0 },
-            // { DEFIO_TAG_E(PB3), GPIO_AF },
+            { DEFIO_TAG_E(PB13) },
+            // { DEFIO_TAG_E(PB3) },
         },
         .misoPins = {
-            { DEFIO_TAG_E(PB14), 0 },
-            // { DEFIO_TAG_E(PB4), GPIO_AF },
+            { DEFIO_TAG_E(PB14) },
+            // { DEFIO_TAG_E(PB4) },
         },
         .mosiPins = {
-            { DEFIO_TAG_E(PB15), 0 },
-            // { DEFIO_TAG_E(PB5), GPIO_AF },
+            { DEFIO_TAG_E(PB15) },
+            // { DEFIO_TAG_E(PB5) },
         },
         .rcc = RCC_APB1(SPI2),
     },
@@ -167,7 +169,7 @@ const spiHardware_t spiHardware[] = {
         },
         .mosiPins = {
             { DEFIO_TAG_E(PA7) },
-            { DEFIO_TAG_E(PB5), GPIO_AF_SPI1 },
+            { DEFIO_TAG_E(PB5) },
         },
         .af = GPIO_AF_SPI1,
         .rcc = RCC_APB2(SPI1),
@@ -394,3 +396,4 @@ void spiPinConfigure(void)
         }
     }
 }
+#endif

@@ -21,6 +21,8 @@
 
 #include <platform.h>
 
+#ifdef USE_SPI
+
 #include "drivers/bus_spi.h"
 #include "drivers/bus_spi_impl.h"
 #include "drivers/dma.h"
@@ -332,3 +334,4 @@ DMA_HandleTypeDef* spiSetDMATransmit(DMA_Stream_TypeDef *Stream, uint32_t Channe
 
     return &spiDevice[device].hdma;
 }
+#endif

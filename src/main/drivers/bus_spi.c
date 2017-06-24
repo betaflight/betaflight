@@ -21,6 +21,8 @@
 
 #include <platform.h>
 
+#ifdef USE_SPI
+
 #include "drivers/bus_spi.h"
 #include "drivers/bus_spi_impl.h"
 #include "drivers/exti.h"
@@ -265,3 +267,4 @@ void spiResetErrorCounter(SPI_TypeDef *instance)
     if (device != SPIINVALID)
         spiDevice[device].errorCount = 0;
 }
+#endif
