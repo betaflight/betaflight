@@ -77,6 +77,7 @@ typedef enum SPIDevice {
 #define SPIDEV_COUNT 4
 #else
 #define SPIDEV_COUNT 4
+
 #endif
 
 void spiPreInitCs(ioTag_t iotag);

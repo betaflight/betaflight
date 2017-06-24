@@ -19,8 +19,8 @@
 #define TARGET_BOARD_IDENTIFIER "FORT"
 #define USBD_PRODUCT_STRING     "FortiniF4"
 /*--------------LED----------------*/
-#define LED0                    PB5
-#define LED1                    PB6
+#define LED0_PIN                PB5
+#define LED1_PIN                PB6
 #define LED_STRIP
 /*---------------------------------*/
 

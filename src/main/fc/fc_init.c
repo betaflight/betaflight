@@ -124,6 +124,7 @@
 #include "flight/pid.h"
 #include "flight/servos.h"
 
+#include "io/rcsplit.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -278,7 +279,9 @@ void init(void)
     targetPreInit();
 #endif
 
+#if !defined(UNIT_TEST) && !defined(USE_FAKE_LED)
     ledInit(statusLedConfig());
+#endif
     LED2_ON;
 
 #ifdef USE_EXTI
@@ -694,5 +697,10 @@ void init(void)
 #else
     fcTasksInit();
 #endif
+
+#ifdef USE_RCSPLIT
+    rcSplitInit();
+#endif // USE_RCSPLIT
+
     systemState |= SYSTEM_STATE_READY;
 }

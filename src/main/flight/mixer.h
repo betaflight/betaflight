@@ -118,8 +118,8 @@ PG_DECLARE(motorConfig_t, motorConfig);
 #define CHANNEL_FORWARDING_DISABLED (uint8_t)0xFF
 
 extern const mixer_t mixers[];
-extern int16_t motor[MAX_SUPPORTED_MOTORS];
-extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
+extern float motor[MAX_SUPPORTED_MOTORS];
+extern float motor_disarmed[MAX_SUPPORTED_MOTORS];
 struct rxConfig_s;
 
 uint8_t getMotorCount();
@@ -141,5 +141,5 @@ void stopMotors(void);
 void stopPwmAllMotors(void);
 
 bool isMotorProtocolDshot(void);
-uint16_t convertExternalToMotor(uint16_t externalValue);
-uint16_t convertMotorToExternal(uint16_t motorValue);
+float convertExternalToMotor(uint16_t externalValue);
+uint16_t convertMotorToExternal(float motorValue);

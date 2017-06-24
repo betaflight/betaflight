@@ -84,6 +84,7 @@
 #include "telemetry/telemetry.h"
 
 #include "io/osd_slave.h"
+#include "io/rcsplit.h"
 
 #ifdef USE_BST
 void taskBstMasterProcess(timeUs_t currentTimeUs);
@@ -592,6 +593,15 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskFunc = taskVtxControl,
         .desiredPeriod = TASK_PERIOD_HZ(5),          // 5 Hz, 200ms
         .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
+
+#ifdef USE_RCSPLIT
+    [TASK_RCSPLIT] = {
+        .taskName = "RCSPLIT",
+        .taskFunc = rcSplitProcess,
+        .desiredPeriod = TASK_PERIOD_HZ(10),        // 10 Hz, 100ms
+        .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
 #endif

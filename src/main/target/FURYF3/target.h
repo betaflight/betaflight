@@ -28,7 +28,7 @@
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 #define CONFIG_PREFER_ACC_ON
 
-#define LED0                    PC14
+#define LED0_PIN                PC14
 
 #define BEEPER                  PC15
 #define BEEPER_INVERTED

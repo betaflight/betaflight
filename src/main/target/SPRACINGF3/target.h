@@ -30,11 +30,11 @@
 #if defined(ZCOREF3)
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
-#define LED0                    PB8
+#define LED0_PIN                PB8
 #else
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-#define LED0                    PB3
+#define LED0_PIN                PB3
 #endif
 
 #define BEEPER                  PC15

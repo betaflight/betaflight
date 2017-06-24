@@ -47,6 +47,7 @@
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
 #include "flight/failsafe.h"
@@ -322,10 +323,10 @@ typedef struct blackboxSlowState_s {
 } __attribute__((__packed__)) blackboxSlowState_t; // We pack this struct so that padding doesn't interfere with memcmp()
 
 //From mixer.c:
-extern uint16_t motorOutputHigh, motorOutputLow;
+extern float motorOutputHigh, motorOutputLow;
 
 //From rc_controls.c
-extern uint32_t rcModeActivationMask;
+extern boxBitmask_t rcModeActivationMask;
 
 static BlackboxState blackboxState = BLACKBOX_STATE_DISABLED;
 
@@ -753,7 +754,7 @@ static void writeSlowFrame(void)
  */
 static void loadSlowState(blackboxSlowState_t *slow)
 {
-    slow->flightModeFlags = rcModeActivationMask; //was flightModeFlags;
+    memcpy(&slow->flightModeFlags, &rcModeActivationMask, sizeof(slow->flightModeFlags)); //was flightModeFlags;
     slow->stateFlags = stateFlags;
     slow->failsafePhase = failsafePhase();
     slow->rxSignalReceived = rxIsReceivingSignal();
@@ -861,7 +862,7 @@ static void blackboxStart(void)
      */
     blackboxBuildConditionCache();
 
-    blackboxModeActivationConditionPresent = isModeActivationConditionPresent(modeActivationConditions(0), BOXBLACKBOX);
+    blackboxModeActivationConditionPresent = isModeActivationConditionPresent(BOXBLACKBOX);
 
     blackboxResetIterationTimers();
 
@@ -870,7 +871,7 @@ static void blackboxStart(void)
      * it finally plays the beep for this arming event.
      */
     blackboxLastArmingBeep = getArmingBeepTimeMicros();
-    blackboxLastFlightModeFlags = rcModeActivationMask; // record startup status
+    memcpy(&blackboxLastFlightModeFlags, &rcModeActivationMask, sizeof(blackboxLastFlightModeFlags)); // record startup status
 
     blackboxSetState(BLACKBOX_STATE_PREPARE_LOG_FILE);
 }
@@ -1187,6 +1188,9 @@ static bool sendFieldDefinition(char mainFrameChar, char deltaFrameChar, const v
  */
 static bool blackboxWriteSysinfo(void)
 {
+    const uint16_t motorOutputLowInt = lrintf(motorOutputLow);
+    const uint16_t motorOutputHighInt = lrintf(motorOutputHigh);
+
     // Make sure we have enough room in the buffer for our longest line (as of this writing, the "Firmware date" line)
     if (blackboxDeviceReserveBufferSpace(64) != BLACKBOX_RESERVE_SUCCESS) {
         return false;
@@ -1202,7 +1206,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("minthrottle", "%d",                      motorConfig()->minthrottle);
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle", "%d",                      motorConfig()->maxthrottle);
         BLACKBOX_PRINT_HEADER_LINE("gyro_scale","0x%x",                     castFloatBytesToInt(1.0f));
-        BLACKBOX_PRINT_HEADER_LINE("motorOutput", "%d,%d",                   motorOutputLow,motorOutputHigh);
+        BLACKBOX_PRINT_HEADER_LINE("motorOutput", "%d,%d",                   motorOutputLowInt,motorOutputHighInt);
         BLACKBOX_PRINT_HEADER_LINE("acc_1G", "%u",                           acc.dev.acc_1G);
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
@@ -1383,10 +1387,10 @@ static void blackboxCheckAndLogFlightMode(void)
     flightLogEvent_flightMode_t eventData; // Add new data for current flight mode flags
 
     // Use != so that we can still detect a change if the counter wraps
-    if (rcModeActivationMask != blackboxLastFlightModeFlags) {
+    if (memcmp(&rcModeActivationMask, &blackboxLastFlightModeFlags, sizeof(blackboxLastFlightModeFlags))) {
         eventData.lastFlags = blackboxLastFlightModeFlags;
-        blackboxLastFlightModeFlags = rcModeActivationMask;
-        eventData.flags = rcModeActivationMask;
+        memcpy(&blackboxLastFlightModeFlags, &rcModeActivationMask, sizeof(blackboxLastFlightModeFlags));
+        memcpy(&eventData.flags, &rcModeActivationMask, sizeof(eventData.flags));
 
         blackboxLogEvent(FLIGHT_LOG_EVENT_FLIGHTMODE, (flightLogEventData_t *) &eventData);
     }

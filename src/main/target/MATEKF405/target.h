@@ -22,8 +22,8 @@
 
 #define USBD_PRODUCT_STRING  "MatekF4"
 
-#define LED0                    PB9
-#define LED1                    PA14
+#define LED0_PIN                PB9
+#define LED1_PIN                PA14
 
 #define BEEPER                  PC13
 #define BEEPER_INVERTED

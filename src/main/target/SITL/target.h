@@ -45,6 +45,8 @@
 #undef SCHEDULER_DELAY_LIMIT
 #define SCHEDULER_DELAY_LIMIT           1
 
+#define USE_FAKE_LED
+
 #define ACC
 #define USE_FAKE_ACC
 

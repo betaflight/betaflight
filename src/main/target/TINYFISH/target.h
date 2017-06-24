@@ -22,8 +22,8 @@
 #define TARGET_BOARD_IDENTIFIER "TFSH" // http://fishpepper.de/projects/tinyFISH
 
 
-#define LED0                    PC14
-#define LED1                    PA13
+#define LED0_PIN                PC14
+#define LED1_PIN                PA13
 
 #define BEEPER                  PC15
 #define BEEPER_INVERTED

@@ -26,7 +26,7 @@
 
 #define USBD_PRODUCT_STRING     "SP Racing F4 NEO"
 
-#define LED0                    PA0
+#define LED0_PIN                PA0
 
 #define BEEPER                  PC15
 #define BEEPER_INVERTED

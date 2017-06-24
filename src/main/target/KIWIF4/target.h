@@ -32,11 +32,11 @@
 #endif
 
 #if defined(PLUMF4) || defined(KIWIF4V2)
-#define LED0                    PB4
+#define LED0_PIN                PB4
 
 #else
-#define LED0                    PB5
-#define LED1                    PB4				
+#define LED0_PIN                PB5
+#define LED1_PIN                PB4				
 #endif
 
 #define BEEPER                  PA8
