@@ -242,13 +242,12 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
 {
 #define BR_CLEAR_MASK 0xFFC7
-
     uint16_t tempRegister;
 
     SPI_Cmd(instance, DISABLE);
 
     tempRegister = (instance->CR1 & BR_CLEAR_MASK);
-    instance->CR1 = (tempRegister | ((ffs(divisor) - 1) << 3));
+    instance->CR1 = (tempRegister | ((ffs(divisor | 0x100) - 2) << 3));
 
     SPI_Cmd(instance, ENABLE);
 }

@@ -265,10 +265,12 @@ void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
     }
 
     spiDevice[device].hspi.Init.BaudRatePrescaler = (uint8_t []) {
+        0, 0,
         SPI_BAUDRATEPRESCALER_2, SPI_BAUDRATEPRESCALER_4,
         SPI_BAUDRATEPRESCALER_8, SPI_BAUDRATEPRESCALER_16,
         SPI_BAUDRATEPRESCALER_32, SPI_BAUDRATEPRESCALER_64,
-        SPI_BAUDRATEPRESCALER_128, SPI_BAUDRATEPRESCALER_256}[ffs(divisor) - 1];
+        SPI_BAUDRATEPRESCALER_128, SPI_BAUDRATEPRESCALER_256
+    }[ffs(divisor | 0x100)];
 
     if (HAL_SPI_Init(&spiDevice[device].hspi) == HAL_OK)
     {
