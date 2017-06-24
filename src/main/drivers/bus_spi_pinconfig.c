@@ -160,51 +160,54 @@ const spiHardware_t spiHardware[] = {
         .device = SPIDEV_1,
         .reg = SPI1,
         .sckPins = {
-            { DEFIO_TAG_E(PA5), GPIO_AF_SPI1 },
-            { DEFIO_TAG_E(PB3), GPIO_AF_SPI1 },
+            { DEFIO_TAG_E(PA5) },
+            { DEFIO_TAG_E(PB3) },
         },
         .misoPins = {
-            { DEFIO_TAG_E(PA6), GPIO_AF_SPI1 },
-            { DEFIO_TAG_E(PB4), GPIO_AF_SPI1 },
+            { DEFIO_TAG_E(PA6) },
+            { DEFIO_TAG_E(PB4) },
         },
         .mosiPins = {
-            { DEFIO_TAG_E(PA7), GPIO_AF_SPI1 },
+            { DEFIO_TAG_E(PA7) },
             { DEFIO_TAG_E(PB5), GPIO_AF_SPI1 },
         },
+        .af = GPIO_AF_SPI1,
         .rcc = RCC_APB2(SPI1),
     },
     {
         .device = SPIDEV_2,
         .reg = SPI2,
         .sckPins = {
-            { DEFIO_TAG_E(PB13), GPIO_AF_SPI2 },
-            { DEFIO_TAG_E(PB3), GPIO_AF_SPI2 },
+            { DEFIO_TAG_E(PB13) },
+            { DEFIO_TAG_E(PB3) },
         },
         .misoPins = {
-            { DEFIO_TAG_E(PB14), GPIO_AF_SPI2 },
-            { DEFIO_TAG_E(PB4), GPIO_AF_SPI2 },
+            { DEFIO_TAG_E(PB14) },
+            { DEFIO_TAG_E(PB4) },
         },
         .mosiPins = {
-            { DEFIO_TAG_E(PB15), GPIO_AF_SPI2 },
-            { DEFIO_TAG_E(PB5), GPIO_AF_SPI2 },
+            { DEFIO_TAG_E(PB15) },
+            { DEFIO_TAG_E(PB5) },
         },
+        .af = GPIO_AF_SPI2,
         .rcc = RCC_APB1(SPI2),
     },
     {
         .device = SPIDEV_3,
         .reg = SPI3,
         .sckPins = {
-            { DEFIO_TAG_E(PB3), GPIO_AF_SPI3 },
-            { DEFIO_TAG_E(PC10), GPIO_AF_SPI3 },
+            { DEFIO_TAG_E(PB3) },
+            { DEFIO_TAG_E(PC10) },
         },
         .misoPins = {
-            { DEFIO_TAG_E(PB4), GPIO_AF_SPI3 },
-            { DEFIO_TAG_E(PC11), GPIO_AF_SPI3 },
+            { DEFIO_TAG_E(PB4) },
+            { DEFIO_TAG_E(PC11) },
         },
         .mosiPins = {
-            { DEFIO_TAG_E(PB5), GPIO_AF_SPI3 },
-            { DEFIO_TAG_E(PC12), GPIO_AF_SPI3 },
+            { DEFIO_TAG_E(PB5) },
+            { DEFIO_TAG_E(PC12) },
         },
+        .af = GPIO_AF_SPI3,
         .rcc = RCC_APB1(SPI3),
     },
 #endif
@@ -213,51 +216,54 @@ const spiHardware_t spiHardware[] = {
         .device = SPIDEV_1,
         .reg = SPI1,
         .sckPins = {
-            { DEFIO_TAG_E(PA5), GPIO_AF_SPI1 },
-            { DEFIO_TAG_E(PB3), GPIO_AF_SPI1 },
+            { DEFIO_TAG_E(PA5) },
+            { DEFIO_TAG_E(PB3) },
         },
         .misoPins = {
-            { DEFIO_TAG_E(PA6), GPIO_AF_SPI1 },
-            { DEFIO_TAG_E(PB4), GPIO_AF_SPI1 },
+            { DEFIO_TAG_E(PA6) },
+            { DEFIO_TAG_E(PB4) },
         },
         .mosiPins = {
-            { DEFIO_TAG_E(PA7), GPIO_AF_SPI1 },
-            { DEFIO_TAG_E(PB5), GPIO_AF_SPI1 },
+            { DEFIO_TAG_E(PA7) },
+            { DEFIO_TAG_E(PB5) },
         },
+        .af = GPIO_AF_SPI1,
         .rcc = RCC_APB2(SPI1),
     },
     {
         .device = SPIDEV_2,
         .reg = SPI2,
         .sckPins = {
-            { DEFIO_TAG_E(PB10), GPIO_AF_SPI2 },
-            { DEFIO_TAG_E(PB13), GPIO_AF_SPI2 },
+            { DEFIO_TAG_E(PB10) },
+            { DEFIO_TAG_E(PB13) },
         },
         .misoPins = {
-            { DEFIO_TAG_E(PB14), GPIO_AF_SPI2 },
-            { DEFIO_TAG_E(PC2), GPIO_AF_SPI2 },
+            { DEFIO_TAG_E(PB14) },
+            { DEFIO_TAG_E(PC2) },
         },
         .mosiPins = {
-            { DEFIO_TAG_E(PB15), GPIO_AF_SPI2 },
-            { DEFIO_TAG_E(PC3), GPIO_AF_SPI2 },
+            { DEFIO_TAG_E(PB15) },
+            { DEFIO_TAG_E(PC3) },
         },
+        .af = GPIO_AF_SPI2,
         .rcc = RCC_APB1(SPI2),
     },
     {
         .device = SPIDEV_3,
         .reg = SPI3,
         .sckPins = {
-            { DEFIO_TAG_E(PB3), GPIO_AF_SPI3 },
-            { DEFIO_TAG_E(PC10), GPIO_AF_SPI3 },
+            { DEFIO_TAG_E(PB3) },
+            { DEFIO_TAG_E(PC10) },
         },
         .misoPins = {
-            { DEFIO_TAG_E(PB4), GPIO_AF_SPI3 },
-            { DEFIO_TAG_E(PC11), GPIO_AF_SPI3 },
+            { DEFIO_TAG_E(PB4) },
+            { DEFIO_TAG_E(PC11) },
         },
         .mosiPins = {
-            { DEFIO_TAG_E(PB5), GPIO_AF_SPI3 },
-            { DEFIO_TAG_E(PC12), GPIO_AF_SPI3 },
+            { DEFIO_TAG_E(PB5) },
+            { DEFIO_TAG_E(PC12) },
         },
+        .af = GPIO_AF_SPI3,
         .rcc = RCC_APB1(SPI3),
     },
 #endif
@@ -326,7 +332,7 @@ const spiHardware_t spiHardware[] = {
         .reg = SPI4,
         .sckPins = {
             { DEFIO_TAG_E(PE2), GPIO_AF5_SPI4 },
-            { DEFIO_TAG_E(PE12), GPIO_AF6_SPI3 },
+            { DEFIO_TAG_E(PE12), GPIO_AF5_SPI4 },
         },
         .misoPins = {
             { DEFIO_TAG_E(PE5), GPIO_AF5_SPI4 },
@@ -346,33 +352,42 @@ void spiPinConfigure(void)
 {
     const spiPinConfig_t *pConfig = spiPinConfig();
 
-    for (size_t hwindex = 0 ; hwindex < ARRAYLEN(spiDefaultConfig) ; hwindex++) {
+    for (size_t hwindex = 0 ; hwindex < ARRAYLEN(spiHardware) ; hwindex++) {
         const spiHardware_t *hw = &spiHardware[hwindex];
 
         if (!hw->reg) {
             continue;
         }
 
-        int device = hw->device;
+        SPIDevice device = hw->device;
         spiDevice_t *pDev = &spiDevice[device];
 
         for (int pindex = 0 ; pindex < MAX_SPI_PIN_SEL ; pindex++) {
             if (pConfig->ioTagSck[device] == hw->sckPins[pindex].pin) {
                 pDev->sck = hw->sckPins[pindex].pin;
+#ifdef STM32F7
                 pDev->sckAF = hw->sckPins[pindex].af;
+#endif
             }
             if (pConfig->ioTagMiso[device] == hw->misoPins[pindex].pin) {
                 pDev->miso = hw->misoPins[pindex].pin;
+#ifdef STM32F7
                 pDev->misoAF = hw->misoPins[pindex].af;
+#endif
             }
             if (pConfig->ioTagMosi[device] == hw->mosiPins[pindex].pin) {
                 pDev->mosi = hw->mosiPins[pindex].pin;
+#ifdef STM32F7
                 pDev->mosiAF = hw->mosiPins[pindex].af;
+#endif
             }
         }
 
         if (pDev->sck && pDev->miso && pDev->mosi) {
             pDev->dev = hw->reg;
+#ifndef STM32F7
+            pDev->af = hw->af;
+#endif
             pDev->rcc = hw->rcc;
             pDev->leadingEdge = false; // XXX Should be part of transfer context
 #ifdef USE_HAL_DRIVER

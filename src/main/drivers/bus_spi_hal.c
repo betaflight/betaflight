@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <platform.h>
 
@@ -113,13 +114,21 @@ void spiInitDevice(SPIDevice device)
     IOInit(IOGetByTag(spi->miso), OWNER_SPI_MISO, RESOURCE_INDEX(device));
     IOInit(IOGetByTag(spi->mosi), OWNER_SPI_MOSI, RESOURCE_INDEX(device));
 
-#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
+#if defined(STM32F7)
     if(spi->leadingEdge == true)
         IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG_LOW, spi->sckAF);
     else
         IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG_HIGH, spi->sckAF);
     IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_MISO_CFG, spi->misoAF);
     IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_CFG, spi->mosiAF);
+#endif
+#if defined(STM32F3) || defined(STM32F4)
+    if(spi->leadingEdge == true)
+        IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG_LOW, spi->af);
+    else
+        IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG_HIGH, spi->af);
+    IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_MISO_CFG, spi->af);
+    IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_CFG, spi->af);
 #endif
 #if defined(STM32F10X)
     IOConfigGPIO(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG);
@@ -246,7 +255,6 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len
     return true;
 }
 
-
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
 {
     SPIDevice device = spiDeviceByInstance(instance);
@@ -254,39 +262,11 @@ void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
     {
     }
 
-    switch (divisor) {
-    case 2:
-        spiDevice[device].hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
-        break;
-
-    case 4:
-        spiDevice[device].hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
-        break;
-
-    case 8:
-        spiDevice[device].hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
-        break;
-
-    case 16:
-        spiDevice[device].hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
-        break;
-
-    case 32:
-        spiDevice[device].hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
-        break;
-
-    case 64:
-        spiDevice[device].hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
-        break;
-
-    case 128:
-        spiDevice[device].hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_128;
-        break;
-
-    case 256:
-        spiDevice[device].hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
-        break;
-    }
+    spiDevice[device].hspi.Init.BaudRatePrescaler = (uint8_t []) {
+        SPI_BAUDRATEPRESCALER_2, SPI_BAUDRATEPRESCALER_4,
+        SPI_BAUDRATEPRESCALER_8, SPI_BAUDRATEPRESCALER_16,
+        SPI_BAUDRATEPRESCALER_32, SPI_BAUDRATEPRESCALER_64,
+        SPI_BAUDRATEPRESCALER_128, SPI_BAUDRATEPRESCALER_256}[ffs(divisor) - 1];
 
     if (HAL_SPI_Init(&spiDevice[device].hspi) == HAL_OK)
     {
