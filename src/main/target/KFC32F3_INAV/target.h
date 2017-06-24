@@ -120,12 +120,8 @@
 #define CURRENT_METER_ADC_PIN   PA5
 
 #define LED_STRIP
-#define USE_LED_STRIP_ON_DMA1_CHANNEL2
 #define WS2811_PIN                      PA8
-#define WS2811_TIMER                    TIM1
 #define WS2811_DMA_STREAM               DMA1_Channel2
-#define WS2811_IRQ                      DMA1_Channel2_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 
 #define DEFAULT_FEATURES        (FEATURE_BLACKBOX | FEATURE_OSD | FEATURE_VBAT)
