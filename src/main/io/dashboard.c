@@ -365,22 +365,22 @@ void showGpsPage() {
 
 
     char fixChar = STATE(GPS_FIX) ? 'Y' : 'N';
-    tfp_sprintf(lineBuffer, "Sats: %d Fix: %c", GPS_numSat, fixChar);
+    tfp_sprintf(lineBuffer, "Sats: %d Fix: %c", gpsSol.numSat, fixChar);
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "La/Lo: %d/%d", GPS_coord[LAT] / GPS_DEGREES_DIVIDER, GPS_coord[LON] / GPS_DEGREES_DIVIDER);
+    tfp_sprintf(lineBuffer, "La/Lo: %d/%d", gpsSol.llh.lat / GPS_DEGREES_DIVIDER, gpsSol.llh.lon / GPS_DEGREES_DIVIDER);
     padLineBuffer();
     i2c_OLED_set_line(rowIndex++);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "Spd: %d", GPS_speed);
+    tfp_sprintf(lineBuffer, "Spd: %d", gpsSol.groundSpeed);
     padHalfLineBuffer();
     i2c_OLED_set_line(rowIndex);
     i2c_OLED_send_string(lineBuffer);
 
-    tfp_sprintf(lineBuffer, "GC: %d", GPS_ground_course);
+    tfp_sprintf(lineBuffer, "GC: %d", gpsSol.groundCourse);
     padHalfLineBuffer();
     i2c_OLED_set_xy(HALF_SCREEN_CHARACTER_COLUMN_COUNT, rowIndex++);
     i2c_OLED_send_string(lineBuffer);

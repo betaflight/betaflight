@@ -111,7 +111,7 @@ int32_t     Latitude ( degree / 10`000`000 )
 int32_t     Longitude (degree / 10`000`000 )
 uint16_t    Groundspeed ( km/h / 10 )
 uint16_t    GPS heading ( degree / 100 )
-uint16      Altitude ( meter ­ 1000m offset )
+uint16      Altitude ( meter ­1000m offset )
 uint8_t     Satellites in use ( counter )
 */
 void crsfFrameGps(sbuf_t *dst)
@@ -119,14 +119,14 @@ void crsfFrameGps(sbuf_t *dst)
     // use sbufWrite since CRC does not include frame length
     sbufWriteU8(dst, CRSF_FRAME_GPS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
     sbufWriteU8(dst, CRSF_FRAMETYPE_GPS);
-    sbufWriteU32BigEndian(dst, GPS_coord[LAT]); // CRSF and betaflight use same units for degrees
-    sbufWriteU32BigEndian(dst, GPS_coord[LON]);
-    sbufWriteU16BigEndian(dst, (GPS_speed * 36 + 5) / 10); // GPS_speed is in 0.1m/s
-    sbufWriteU16BigEndian(dst, GPS_ground_course * 10); // GPS_ground_course is degrees * 10
+    sbufWriteU32BigEndian(dst, gpsSol.llh.lat); // CRSF and betaflight use same units for degrees
+    sbufWriteU32BigEndian(dst, gpsSol.llh.lon);
+    sbufWriteU16BigEndian(dst, (gpsSol.groundSpeed * 36 + 5) / 10); // gpsSol.groundSpeed is in 0.1m/s
+    sbufWriteU16BigEndian(dst, gpsSol.groundCourse * 10); // gpsSol.groundCourse is degrees * 10
     //Send real GPS altitude only if it's reliable (there's a GPS fix)
-    const uint16_t altitude = (STATE(GPS_FIX) ? GPS_altitude : 0) + 1000;
+    const uint16_t altitude = (STATE(GPS_FIX) ? gpsSol.llh.alt : 0) + 1000;
     sbufWriteU16BigEndian(dst, altitude);
-    sbufWriteU8(dst, GPS_numSat);
+    sbufWriteU8(dst, gpsSol.numSat);
 }
 
 /*
@@ -204,7 +204,7 @@ void crsfFrameAttitude(sbuf_t *dst)
 /*
 0x21 Flight mode text based
 Payload:
-char[]      Flight mode ( Null�terminated string )
+char[]      Flight mode ( Null terminated string )
 */
 void crsfFrameFlightMode(sbuf_t *dst)
 {

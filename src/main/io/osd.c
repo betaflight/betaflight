@@ -277,12 +277,12 @@ static void osdDrawSingleElement(uint8_t item)
 #ifdef GPS
     case OSD_GPS_SATS:
         buff[0] = 0x1f;
-        tfp_sprintf(buff + 1, "%d", GPS_numSat);
+        tfp_sprintf(buff + 1, "%d", gpsSol.numSat);
         break;
 
     case OSD_GPS_SPEED:
         // FIXME ideally we want to use SYM_KMH symbol but it's not in the font any more, so we use K.
-        tfp_sprintf(buff, "%3dK", CM_S_TO_KM_H(GPS_speed));
+        tfp_sprintf(buff, "%3dK", CM_S_TO_KM_H(gpsSol.groundSpeed));
         break;
 
     case OSD_GPS_LAT:
@@ -291,10 +291,10 @@ static void osdDrawSingleElement(uint8_t item)
             int32_t val;
             if (item == OSD_GPS_LAT) {
                 buff[0] = SYM_ARROW_EAST;
-                val = GPS_coord[LAT];
+                val = gpsSol.llh.lat;
             } else {
                 buff[0] = SYM_ARROW_SOUTH;
-                val = GPS_coord[LON];
+                val = gpsSol.llh.lon;
             }
 
             char wholeDegreeString[5];
@@ -880,7 +880,7 @@ static void osdUpdateStats(void)
 {
     int16_t value = 0;
 #ifdef GPS
-    value = CM_S_TO_KM_H(GPS_speed);
+    value = CM_S_TO_KM_H(gpsSol.groundSpeed);
 #endif
     if (stats.max_speed < value)
         stats.max_speed = value;
