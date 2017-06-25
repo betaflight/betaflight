@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "drivers/sensor.h"
+#include "drivers/bus.h"
 
 #define MPU6000_CONFIG              0x1A
 
