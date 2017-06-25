@@ -126,18 +126,11 @@
 
 #define DEFAULT_FEATURES        (FEATURE_OSD )
 
-//#define LED_STRIP
-#define WS2811_GPIO_AF                  GPIO_AF_TIM4
+#define LED_STRIP
 #define WS2811_PIN                      PB6
-#define WS2811_TIMER                    TIM4
-#define WS2811_TIMER_CHANNEL            TIM_Channel_1
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST0_HANDLER
 #define WS2811_DMA_STREAM               DMA1_Stream0
 #define WS2811_DMA_CHANNEL              DMA_Channel_6   // ???
-#define WS2811_DMA_IRQ                  DMA1_Stream0_IRQn
-#define WS2811_DMA_FLAG                 DMA_FLAG_TCIF0
-#define WS2811_DMA_IT                   DMA_IT_TCIF0
-
 
 #define SPEKTRUM_BIND
 #define BIND_PIN                PA1 // USART4 RX
