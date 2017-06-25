@@ -33,7 +33,7 @@ extern "C" {
     #include "config/parameter_group_ids.h"
     #include "io/beeper.h"
 
-    uint32_t rcModeActivationMask;
+    boxBitmask_t rcModeActivationMask;
 
     void rxResetFlightChannelStatus(void);
     bool rxHaveValidFlightChannels(void);
@@ -63,7 +63,7 @@ TEST(RxTest, TestValidFlightChannels)
 {
     // given
     memset(&testData, 0, sizeof(testData));
-    rcModeActivationMask = DE_ACTIVATE_ALL_BOXES;   // BOXFAILSAFE must be OFF
+    memset(&rcModeActivationMask, 0, sizeof(rcModeActivationMask)); // BOXFAILSAFE must be OFF
 
     // and
     rxConfig_t rxConfig;
