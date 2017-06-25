@@ -173,17 +173,17 @@ static void osdFormatVelocityStr(char* buff, int32_t vel)
 {
     switch (osdConfig()->units) {
     case OSD_UNIT_IMPERIAL:
-        tfp_sprintf(buff, "%d%c", osdConvertVelocityToUnit(vel), SYM_MPH);
+        tfp_sprintf(buff, "%2d%c", osdConvertVelocityToUnit(vel), SYM_MPH);
         break;
     default: // Metric
-        tfp_sprintf(buff, "%d%c", osdConvertVelocityToUnit(vel), SYM_KMH);
+        tfp_sprintf(buff, "%3d%c", osdConvertVelocityToUnit(vel), SYM_KMH);
     }
 }
 
-static void osdDrawSingleElement(uint8_t item)
+static bool osdDrawSingleElement(uint8_t item)
 {
     if (!VISIBLE(osdConfig()->item_pos[item]) || BLINK(osdConfig()->item_pos[item])) {
-        return;
+        return false;
     }
 
     uint8_t elemPosX = OSD_X(osdConfig()->item_pos[item]);
@@ -198,7 +198,7 @@ static void osdDrawSingleElement(uint8_t item)
                 osdRssi = 99;
 
             buff[0] = SYM_RSSI;
-            tfp_sprintf(buff + 1, "%d", osdRssi);
+            tfp_sprintf(buff + 1, "%2d", osdRssi);
             break;
         }
 
@@ -207,7 +207,7 @@ static void osdDrawSingleElement(uint8_t item)
             uint8_t p = calculateBatteryPercentage();
             p = (100 - p) / 16.6;
             buff[0] = SYM_BATT_FULL + p;
-            tfp_sprintf(buff + 1, "%d.%1dV", vbat / 10, vbat % 10);
+            tfp_sprintf(buff + 1, "%2d.%1dV", vbat / 10, vbat % 10);
             break;
         }
 
@@ -225,7 +225,7 @@ static void osdDrawSingleElement(uint8_t item)
     case OSD_GPS_SATS:
         buff[0] = 0x1e;
         buff[1] = 0x1f;
-        tfp_sprintf(buff + 2, "%d", gpsSol.numSat);
+        tfp_sprintf(buff + 2, "%2d", gpsSol.numSat);
         break;
 
     case OSD_GPS_SPEED:
@@ -278,7 +278,7 @@ static void osdDrawSingleElement(uint8_t item)
             if (h < 0) h+=360;
 
             buff[0] = 0xA9;
-            tfp_sprintf(&buff[1], "%d%c", h , 0xA8 );
+            tfp_sprintf(&buff[1], "%3d%c", h , 0xA8 );
             break;
         }
 #endif // GPS
@@ -313,7 +313,7 @@ static void osdDrawSingleElement(uint8_t item)
 
 #if 0
             if (isAirmodeActive())
-                p = "AIR";
+                p = "AIR ";
 #endif
 
             if (FLIGHT_MODE(PASSTHRU_MODE))
@@ -333,10 +333,10 @@ static void osdDrawSingleElement(uint8_t item)
             else if (FLIGHT_MODE(ANGLE_MODE))
                 p = "STAB";
             else if (FLIGHT_MODE(HORIZON_MODE))
-                p = "HOR";
+                p = "HOR ";
 
             max7456Write(elemPosX, elemPosY, p);
-            return;
+            return true;
         }
 
     case OSD_CRAFT_NAME:
@@ -354,12 +354,12 @@ static void osdDrawSingleElement(uint8_t item)
     case OSD_THROTTLE_POS:
         buff[0] = SYM_THR;
         buff[1] = SYM_THR1;
-        tfp_sprintf(buff + 2, "%d", (constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN));
+        tfp_sprintf(buff + 2, "%3d", (constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN));
         break;
 
 #ifdef VTX
     case OSD_VTX_CHANNEL:
-        tfp_sprintf(buff, "CH:%d", current_vtx_channel % CHANNELS_PER_BAND + 1);
+        tfp_sprintf(buff, "CH:%2d", current_vtx_channel % CHANNELS_PER_BAND + 1);
         break;
 #endif // VTX
 
@@ -400,6 +400,10 @@ static void osdDrawSingleElement(uint8_t item)
             pitchAngle = (pitchAngle / 8) - 41; // 41 = 4 * 9 + 5
 
             for (int x = -4; x <= 4; x++) {
+                // clear the y area before writing the new horizon character
+                for (int y = 0; y <= 9; y++) {
+                    max7456WriteChar(elemPosX + x, elemPosY + y, 0x20);
+                }
                 int y = (rollAngle * x) / 64;
                 y -= pitchAngle;
                 // y += 41; // == 4 * 9 + 5
@@ -410,7 +414,7 @@ static void osdDrawSingleElement(uint8_t item)
 
             osdDrawSingleElement(OSD_HORIZON_SIDEBARS);
 
-            return;
+            return true;
         }
 
     case OSD_HORIZON_SIDEBARS:
@@ -434,9 +438,10 @@ static void osdDrawSingleElement(uint8_t item)
             max7456WriteChar(elemPosX - hudwidth + 1, elemPosY, SYM_AH_LEFT);
             max7456WriteChar(elemPosX + hudwidth - 1, elemPosY, SYM_AH_RIGHT);
 
-            return;
+            return true;
         }
 
+#if defined(BARO) || defined(GPS)
     case OSD_VARIO:
         {
             int16_t v = getEstimatedActualVelocity(Z) / 50; //50cm = 1 arrow
@@ -472,7 +477,7 @@ static void osdDrawSingleElement(uint8_t item)
             max7456WriteChar(elemPosX, elemPosY+2, vchars[2]);
             max7456WriteChar(elemPosX, elemPosY+3, vchars[3]);
             max7456WriteChar(elemPosX, elemPosY+4, vchars[4]);
-            return;
+            return true;
         }
 
     case OSD_VARIO_NUM:
@@ -482,6 +487,7 @@ static void osdDrawSingleElement(uint8_t item)
             tfp_sprintf(buff, "%c%d.%01d%c", value < 0 ? '-' : ' ', abs(value / 10), abs((value % 10)), 0x9F);
             break;
         }
+#endif
 
     case OSD_ROLL_PIDS:
         {
@@ -508,10 +514,49 @@ static void osdDrawSingleElement(uint8_t item)
         }
 
     default:
-        return;
+        return false;
     }
 
     max7456Write(elemPosX, elemPosY, buff);
+    return true;
+}
+
+static uint8_t osdIncElementIndex(uint8_t elementIndex)
+{
+    ++elementIndex;
+    if (sensors(SENSOR_ACC)) {
+        if (elementIndex == OSD_CROSSHAIRS) {
+            elementIndex = OSD_ONTIME;
+        }
+    }
+    if (feature(FEATURE_CURRENT_METER)) {
+        if (elementIndex == OSD_CURRENT_DRAW) {
+            elementIndex = OSD_GPS_SPEED;
+        }
+
+    }
+    if (sensors(SENSOR_GPS)) {
+        if (elementIndex == OSD_GPS_SPEED) {
+            elementIndex = OSD_ALTITUDE;
+        }
+        if (elementIndex == OSD_GPS_LON) {
+            elementIndex = OSD_VARIO;
+        }
+    }
+
+    if (elementIndex == OSD_ITEM_COUNT) {
+        elementIndex = 0;
+    }
+    return elementIndex;
+}
+
+void osdDrawNextElement(void)
+{
+    static uint8_t elementIndex = 0;
+    while (osdDrawSingleElement(elementIndex) == false) {
+        elementIndex = osdIncElementIndex(elementIndex);
+    }
+    elementIndex = osdIncElementIndex(elementIndex);
 }
 
 void osdDrawElements(void)
@@ -576,6 +621,7 @@ void osdDrawElements(void)
 #endif // defined
 
 }
+
 
 void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 {
@@ -816,7 +862,7 @@ static void osdArmMotors(void)
     osdResetStats();
 }
 
-static void osdRefresh(timeUs_t currentTimeUs)
+static void osdRefreshStats(timeUs_t currentTimeUs)
 {
     static uint8_t lastSec = 0;
     uint8_t sec;
@@ -850,17 +896,6 @@ static void osdRefresh(timeUs_t currentTimeUs)
     }
 
     blinkState = (currentTimeUs / 200000) % 2;
-
-#ifdef CMS
-    if (!displayIsGrabbed(osdDisplayPort)) {
-        osdUpdateAlarms();
-        osdDrawElements();
-#ifdef OSD_CALLS_CMS
-    } else {
-        cmsUpdate(currentTimeUs);
-#endif
-    }
-#endif
 }
 
 /*
@@ -868,18 +903,36 @@ static void osdRefresh(timeUs_t currentTimeUs)
  */
 void osdUpdate(timeUs_t currentTimeUs)
 {
-    static uint32_t counter = 0;
+    static uint8_t iterationCounter = 0;
+
 #ifdef MAX7456_DMA_CHANNEL_TX
     // don't touch buffers if DMA transaction is in progress
     if (max7456DmaInProgres())
         return;
 #endif // MAX7456_DMA_CHANNEL_TX
 
-    // redraw values in buffer
-    if (counter++ % 5 == 0)
-        osdRefresh(currentTimeUs);
-    else // rest of time redraw screen 10 chars per idle to don't lock the main idle
-        max7456DrawScreen();
+    // refresh alarms every 20 iterations
+    if (iterationCounter == 0) {
+        if (!displayIsGrabbed(osdDisplayPort)) {
+            osdUpdateAlarms();
+        }
+    }
+    // refresh statistics every 20 iterations
+    if (iterationCounter++ >= 20) {
+        iterationCounter = 0;
+        osdRefreshStats(currentTimeUs);
+    }
+#ifdef CMS
+    if (!displayIsGrabbed(osdDisplayPort)) {
+        osdDrawNextElement();
+#ifdef OSD_CALLS_CMS
+    } else {
+        cmsUpdate(currentTimeUs);
+#endif
+    }
+#endif
+    // draw part of screen 10 chars per idle to don't lock the main idle
+    max7456DrawScreenPartial();
 
 #ifdef CMS
     // do not allow ARM if we are in menu
