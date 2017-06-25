@@ -216,6 +216,7 @@ COMMON_FLAGS = \
 	-g \
 	-Wall \
 	-Wextra \
+	-Werror \
 	-ggdb3 \
 	-pthread \
 	-O0 \
