@@ -161,7 +161,7 @@ extern uartDevice_t *uartDevmap[];
 
 extern const struct serialPortVTable uartVTable[];
 
-void uartStartTxDMA(uartPort_t *s);
+void uartTryStartTxDMA(uartPort_t *s);
 
 uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, portOptions_t options);
 
