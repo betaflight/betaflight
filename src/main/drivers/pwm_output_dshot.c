@@ -54,7 +54,7 @@ uint8_t getTimerIndex(TIM_TypeDef *timer)
     return dmaMotorTimerCount-1;
 }
 
-void pwmWriteDigitalInt(uint8_t index, uint16_t value)
+void pwmWriteDshotInt(uint8_t index, uint16_t value)
 {
     motorDmaOutput_t *const motor = &dmaMotors[index];
 
@@ -70,7 +70,7 @@ void pwmWriteDigitalInt(uint8_t index, uint16_t value)
     DMA_Cmd(motor->timerHardware->dmaRef, ENABLE);
 }
 
-void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
+void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
 {
     UNUSED(motorCount);
 
@@ -94,7 +94,7 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
     }
 }
 
-void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
+void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
 {
     TIM_OCInitTypeDef TIM_OCInitStructure;
     DMA_InitTypeDef DMA_InitStructure;

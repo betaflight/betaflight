@@ -392,6 +392,10 @@ pwmOutputPort_t *pwmGetMotors(void) {
 bool pwmAreMotorsEnabled(void) {
 	return pwmMotorsEnabled;
 }
+bool isMotorProtocolDshot(void)
+{
+    return false;
+}
 void pwmWriteMotor(uint8_t index, float value) {
 	motorsPwm[index] = value - idlePulse;
 }

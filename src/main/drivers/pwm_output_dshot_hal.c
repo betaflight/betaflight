@@ -49,7 +49,7 @@ uint8_t getTimerIndex(TIM_TypeDef *timer)
     return dmaMotorTimerCount - 1;
 }
 
-void pwmWriteDigitalInt(uint8_t index, uint16_t value)
+void pwmWriteDshotInt(uint8_t index, uint16_t value)
 {
     motorDmaOutput_t *const motor = &dmaMotors[index];
 
@@ -74,7 +74,7 @@ void pwmWriteDigitalInt(uint8_t index, uint16_t value)
     }
 }
 
-void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
+void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
 {
     UNUSED(motorCount);
 }
@@ -85,7 +85,7 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
     HAL_DMA_IRQHandler(motor->TimHandle.hdma[motor->timerDmaSource]);
 }
 
-void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
+void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
 {
     motorDmaOutput_t * const motor = &dmaMotors[motorIndex];
     motor->timerHardware = timerHardware;

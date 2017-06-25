@@ -336,23 +336,6 @@ bool mixerIsOutputSaturated(int axis, float errorRate)
     return false;
 }
 
-bool isMotorProtocolDshot(void) {
-#ifdef USE_DSHOT
-    switch(motorConfig()->dev.motorPwmProtocol) {
-    case PWM_TYPE_PROSHOT1000:
-    case PWM_TYPE_DSHOT1200:
-    case PWM_TYPE_DSHOT600:
-    case PWM_TYPE_DSHOT300:
-    case PWM_TYPE_DSHOT150:
-        return true;
-    default:
-        return false;
-    }
-#else
-    return false;
-#endif
-}
-
 // All PWM motor scaling is done to standard PWM range of 1000-2000 for easier tick conversion with legacy code / configurator
 // DSHOT scaling is done to the actual dshot range
 void initEscEndpoints(void) {
