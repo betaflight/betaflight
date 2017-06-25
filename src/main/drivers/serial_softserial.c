@@ -141,24 +141,10 @@ static void serialTimerTxConfig(const timerHardware_t *timerHardwarePtr, uint8_t
     timerChConfigCallbacks(timerHardwarePtr, &softSerialPorts[reference].timerCb, NULL);
 }
 
-static void serialICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
-{
-    TIM_ICInitTypeDef TIM_ICInitStructure;
-
-    TIM_ICStructInit(&TIM_ICInitStructure);
-    TIM_ICInitStructure.TIM_Channel = channel;
-    TIM_ICInitStructure.TIM_ICPolarity = polarity;
-    TIM_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI;
-    TIM_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1;
-    TIM_ICInitStructure.TIM_ICFilter = 0x0;
-
-    TIM_ICInit(tim, &TIM_ICInitStructure);
-}
-
 static void serialTimerRxConfig(const timerHardware_t *timerHardwarePtr, uint8_t reference, portOptions_t options)
 {
     // start bit is usually a FALLING signal
-    serialICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, (options & SERIAL_INVERTED) ? TIM_ICPolarity_Rising : TIM_ICPolarity_Falling);
+    timerChConfigIC(timerHardwarePtr, (options & SERIAL_INVERTED), 0);
     timerChCCHandlerInit(&softSerialPorts[reference].edgeCb, onSerialRxPinChange);
     timerChConfigCallbacks(timerHardwarePtr, &softSerialPorts[reference].edgeCb, NULL);
 }
@@ -182,15 +168,15 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 
 #ifdef USE_SOFTSERIAL1
     if (portIndex == SOFTSERIAL1) {
-        softSerial->rxTimerHardware = &(timerHardware[SOFTSERIAL_1_TIMER_RX_HARDWARE]);
-        softSerial->txTimerHardware = &(timerHardware[SOFTSERIAL_1_TIMER_TX_HARDWARE]);
+        softSerial->rxTimerHardware = timerGetByTag(IO_TAG(SOFTSERIAL_1_RX_PIN), TIM_USE_ANY);;
+        softSerial->txTimerHardware = timerGetByTag(IO_TAG(SOFTSERIAL_1_TX_PIN), TIM_USE_ANY);;
     }
 #endif
 
 #ifdef USE_SOFTSERIAL2
     if (portIndex == SOFTSERIAL2) {
-        softSerial->rxTimerHardware = &(timerHardware[SOFTSERIAL_2_TIMER_RX_HARDWARE]);
-        softSerial->txTimerHardware = &(timerHardware[SOFTSERIAL_2_TIMER_TX_HARDWARE]);
+        softSerial->rxTimerHardware = timerGetByTag(IO_TAG(SOFTSERIAL_2_RX_PIN), TIM_USE_ANY);;
+        softSerial->txTimerHardware = timerGetByTag(IO_TAG(SOFTSERIAL_2_TX_PIN), TIM_USE_ANY);;
     }
 #endif
 
@@ -296,11 +282,7 @@ void prepareForNextRxByte(softSerial_t *softSerial)
     softSerial->isSearchingForStartBit = true;
     if (softSerial->rxEdge == LEADING) {
         softSerial->rxEdge = TRAILING;
-        serialICConfig(
-            softSerial->rxTimerHardware->tim,
-            softSerial->rxTimerHardware->channel,
-            (softSerial->port.options & SERIAL_INVERTED) ? TIM_ICPolarity_Rising : TIM_ICPolarity_Falling
-        );
+        timerChConfigIC(softSerial->rxTimerHardware, (softSerial->port.options & SERIAL_INVERTED), 0);
     }
 }
 
@@ -384,7 +366,7 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
             softSerial->transmissionErrors++;
         }
 
-        serialICConfig(softSerial->rxTimerHardware->tim, softSerial->rxTimerHardware->channel, inverted ? TIM_ICPolarity_Falling : TIM_ICPolarity_Rising);
+        timerChConfigIC(softSerial->rxTimerHardware, !inverted, 0);
         softSerial->rxEdge = LEADING;
 
         softSerial->rxBitIndex = 0;
@@ -402,10 +384,10 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 
     if (softSerial->rxEdge == TRAILING) {
         softSerial->rxEdge = LEADING;
-        serialICConfig(softSerial->rxTimerHardware->tim, softSerial->rxTimerHardware->channel, inverted ? TIM_ICPolarity_Falling : TIM_ICPolarity_Rising);
+        timerChConfigIC(softSerial->rxTimerHardware, !inverted, 0);
     } else {
         softSerial->rxEdge = TRAILING;
-        serialICConfig(softSerial->rxTimerHardware->tim, softSerial->rxTimerHardware->channel, inverted ? TIM_ICPolarity_Rising : TIM_ICPolarity_Falling);
+        timerChConfigIC(softSerial->rxTimerHardware, inverted, 0);
     }
 }
 

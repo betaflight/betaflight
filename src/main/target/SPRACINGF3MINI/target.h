@@ -81,9 +81,8 @@
 #define UART3_TX_PIN            PB10 // PB10 (AF7)
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
-#define SOFTSERIAL_1_TIMER TIM2
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 9 // PA0 / PAD3
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 10 // PA1 / PAD4
+#define SOFTSERIAL_1_RX_PIN     PA0
+#define SOFTSERIAL_1_TX_PIN     PA1
 
 #define USE_I2C
 #define I2C_DEVICE              (I2CDEV_1) // PB6/SCL, PB7/SDA

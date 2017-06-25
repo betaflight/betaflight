@@ -100,14 +100,17 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
         }
 #endif
 
-#ifdef SOFTSERIAL_1_TIMER
-        if (init->useSoftSerial && timerHardwarePtr->tim == SOFTSERIAL_1_TIMER) {
+#if defined(USE_SOFTSERIAL1)
+        const timerHardware_t *ss1TimerHardware = timerGetByTag(IO_TAG(SOFTSERIAL_1_RX_PIN), TIM_USE_ANY);
+        if (init->useSoftSerial && ss1TimerHardware != NULL && ss1TimerHardware->tim == timerHardwarePtr->tim) {
             addBootlogEvent6(BOOT_EVENT_TIMER_CH_SKIPPED, BOOT_EVENT_FLAGS_WARNING, timerIndex, pwmIOConfiguration.motorCount, pwmIOConfiguration.servoCount, 3);
             continue;
         }
 #endif
-#ifdef SOFTSERIAL_2_TIMER
-        if (init->useSoftSerial && timerHardwarePtr->tim == SOFTSERIAL_2_TIMER) {
+
+#if defined(USE_SOFTSERIAL2)
+        const timerHardware_t *ss2TimerHardware = timerGetByTag(IO_TAG(SOFTSERIAL_2_RX_PIN), TIM_USE_ANY);
+        if (init->useSoftSerial && ss2TimerHardware != NULL && ss2TimerHardware->tim == timerHardwarePtr->tim) {
             addBootlogEvent6(BOOT_EVENT_TIMER_CH_SKIPPED, BOOT_EVENT_FLAGS_WARNING, timerIndex, pwmIOConfiguration.motorCount, pwmIOConfiguration.servoCount, 3);
             continue;
         }
