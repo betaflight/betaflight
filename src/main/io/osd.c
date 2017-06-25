@@ -737,17 +737,18 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->item_pos[OSD_ESC_TMP]            = OSD_POS(18, 2)  | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_ESC_RPM]            = OSD_POS(19, 2)  | VISIBLE_FLAG;
 
-    osdConfig->enabled_stats[OSD_STAT_MAX_SPEED]    = true;
-    osdConfig->enabled_stats[OSD_STAT_MIN_BATTERY]  = true;
-    osdConfig->enabled_stats[OSD_STAT_MIN_RSSI]     = true;
-    osdConfig->enabled_stats[OSD_STAT_MAX_CURRENT]  = true;
-    osdConfig->enabled_stats[OSD_STAT_USED_MAH]     = true;
-    osdConfig->enabled_stats[OSD_STAT_MAX_ALTITUDE] = false;
-    osdConfig->enabled_stats[OSD_STAT_BLACKBOX]     = true;
-    osdConfig->enabled_stats[OSD_STAT_END_BATTERY]  = false;
-    osdConfig->enabled_stats[OSD_STAT_FLYTIME]      = false;
-    osdConfig->enabled_stats[OSD_STAT_ARMEDTIME]    = true;
-    osdConfig->enabled_stats[OSD_STAT_MAX_DISTANCE] = false;
+    osdConfig->enabled_stats[OSD_STAT_MAX_SPEED]       = true;
+    osdConfig->enabled_stats[OSD_STAT_MIN_BATTERY]     = true;
+    osdConfig->enabled_stats[OSD_STAT_MIN_RSSI]        = true;
+    osdConfig->enabled_stats[OSD_STAT_MAX_CURRENT]     = true;
+    osdConfig->enabled_stats[OSD_STAT_USED_MAH]        = true;
+    osdConfig->enabled_stats[OSD_STAT_MAX_ALTITUDE]    = false;
+    osdConfig->enabled_stats[OSD_STAT_BLACKBOX]        = true;
+    osdConfig->enabled_stats[OSD_STAT_END_BATTERY]     = false;
+    osdConfig->enabled_stats[OSD_STAT_FLYTIME]         = false;
+    osdConfig->enabled_stats[OSD_STAT_ARMEDTIME]       = true;
+    osdConfig->enabled_stats[OSD_STAT_MAX_DISTANCE]    = false;
+    osdConfig->enabled_stats[OSD_STAT_BLACKBOX_NUMBER] = true;
 
     osdConfig->units = OSD_UNIT_METRIC;
 
@@ -1020,6 +1021,11 @@ static void osdShowStats(void)
     if (osdConfig()->enabled_stats[OSD_STAT_BLACKBOX] && blackboxConfig()->device && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
         osdGetBlackboxStatusString(buff);
         osdDisplayStatisticLabel(top++, "BLACKBOX", buff);
+    }
+
+    if (osdConfig()->enabled_stats[OSD_STAT_BLACKBOX_NUMBER] && blackboxConfig()->device && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
+        itoa(blackboxGetLogNumber(), buff, 10);
+        osdDisplayStatisticLabel(top++, "BB LOG NUM", buff);
     }
 #endif
 

@@ -511,6 +511,14 @@ bool isBlackboxDeviceFull(void)
     }
 }
 
+unsigned int blackboxGetLogNumber()
+{
+#ifdef USE_SDCARD
+    return blackboxSDCard.largestLogFileNumber;
+#endif
+    return 0;
+}
+
 /**
  * Call once every loop iteration in order to maintain the global blackboxHeaderBudget with the number of bytes we can
  * transmit this iteration.
