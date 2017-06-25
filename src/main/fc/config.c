@@ -293,13 +293,13 @@ void validateAndFixConfig(void)
         if (ledTimerHardware != NULL) {
             bool sameTimerUsed = false;
 
-#if defined(USE_SOFTSERIAL1) && defined(SOFTSERIAL_1_TIMER)
+#if defined(USE_SOFTSERIAL1)
             const timerHardware_t *ss1TimerHardware = timerGetByTag(IO_TAG(SOFTSERIAL_1_RX_PIN), TIM_USE_ANY);
             if (ss1TimerHardware != NULL && ss1TimerHardware->tim == ledTimerHardware->tim) {
                 sameTimerUsed = true;
             }
 #endif
-#ifdef USE_SOFTSERIAL2
+#if defined(USE_SOFTSERIAL2)
             const timerHardware_t *ss2TimerHardware = timerGetByTag(IO_TAG(SOFTSERIAL_2_RX_PIN), TIM_USE_ANY);
             if (ss2TimerHardware != NULL && ss2TimerHardware->tim == ledTimerHardware->tim) {
                 sameTimerUsed = true;

@@ -52,10 +52,6 @@
 
 #define TARGET_BOARD_IDENTIFIER "TEST"
 
-#define LED_STRIP_TIMER 1
-#define SOFTSERIAL_1_TIMER 2
-#define SOFTSERIAL_2_TIMER 3
-
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff

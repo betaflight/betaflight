@@ -75,20 +75,16 @@
 #ifdef SPRACINGF3EVO_1SS
     #define SERIAL_PORT_COUNT       5
 
-    #define SOFTSERIAL_1_TIMER      TIM3
-    #define SOFTSERIAL_1_TIMER_RX_HARDWARE 7
-    #define SOFTSERIAL_1_TIMER_TX_HARDWARE 8
+    #define SOFTSERIAL_1_RX_PIN     PB0
+    #define SOFTSERIAL_1_TX_PIN     PB1
 #else
     #define USE_SOFTSERIAL2
     #define SERIAL_PORT_COUNT       6
 
-    #define SOFTSERIAL_1_TIMER      TIM3
-    #define SOFTSERIAL_1_TIMER_RX_HARDWARE 5
-    #define SOFTSERIAL_1_TIMER_TX_HARDWARE 6
-
-    #define SOFTSERIAL_2_TIMER      TIM3
-    #define SOFTSERIAL_2_TIMER_RX_HARDWARE 7
-    #define SOFTSERIAL_2_TIMER_TX_HARDWARE 8
+    #define SOFTSERIAL_1_RX_PIN     PA6
+    #define SOFTSERIAL_1_TX_PIN     PA7
+    #define SOFTSERIAL_2_RX_PIN     PB0
+    #define SOFTSERIAL_2_TX_PIN     PB1
 #endif
 
 #define USE_I2C
