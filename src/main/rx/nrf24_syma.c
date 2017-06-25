@@ -28,6 +28,7 @@
 
 #include "build/build_config.h"
 
+#include "drivers/io.h"
 #include "drivers/rx_nrf24l01.h"
 #include "drivers/time.h"
 

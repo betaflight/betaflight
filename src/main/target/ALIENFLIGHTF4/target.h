@@ -162,8 +162,6 @@
 // LED strip configuration.
 #define LED_STRIP
 
-#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
-
 #define BINDPLUG_PIN            PB2
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT

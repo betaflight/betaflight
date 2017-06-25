@@ -39,6 +39,7 @@ extern "C" {
 
     #include "io/beeper.h"
 
+    #include "drivers/io.h"
     #include "rx/rx.h"
 
     extern boxBitmask_t rcModeActivationMask;
