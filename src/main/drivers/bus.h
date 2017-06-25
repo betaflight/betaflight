@@ -19,6 +19,14 @@
 
 #include "platform.h"
 
+#include "drivers/io_types.h"
+
+typedef union busDevice_u {
+    struct deviceSpi_s {
+        IO_t csnPin;
+    } spi;
+} busDevice_t;
+
 #ifdef TARGET_BUS_INIT
 void targetBusInit(void);
 #endif

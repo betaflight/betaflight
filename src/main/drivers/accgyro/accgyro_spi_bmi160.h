@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include "drivers/sensor.h"
+#include "drivers/bus.h"
 
 enum pios_bmi160_orientation { // clockwise rotation from board forward
     PIOS_BMI160_TOP_0DEG,

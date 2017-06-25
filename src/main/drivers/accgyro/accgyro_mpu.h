@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "drivers/bus.h"
 #include "drivers/exti.h"
 #include "drivers/sensor.h"
 
