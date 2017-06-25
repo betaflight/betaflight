@@ -41,8 +41,7 @@ static int oledRelease(displayPort_t *displayPort)
 
 static int oledClearScreen(displayPort_t *displayPort)
 {
-    UNUSED(displayPort);
-    i2c_OLED_clear_display_quick();
+    i2c_OLED_clear_display_quick(displayPort->device);
     return 0;
 }
 
@@ -59,17 +58,15 @@ static int oledScreenSize(const displayPort_t *displayPort)
 
 static int oledWrite(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
 {
-    UNUSED(displayPort);
-    i2c_OLED_set_xy(x, y);
-    i2c_OLED_send_string(s);
+    i2c_OLED_set_xy(displayPort->device, x, y);
+    i2c_OLED_send_string(displayPort->device, s);
     return 0;
 }
 
 static int oledWriteChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c)
 {
-    UNUSED(displayPort);
-    i2c_OLED_set_xy(x, y);
-    i2c_OLED_send_char(c);
+    i2c_OLED_set_xy(displayPort->device, x, y);
+    i2c_OLED_send_char(displayPort->device, c);
     return 0;
 }
 
@@ -110,8 +107,9 @@ static const displayPortVTable_t oledVTable = {
     .txBytesFree = oledTxBytesFree
 };
 
-displayPort_t *displayPortOledInit(void)
+displayPort_t *displayPortOledInit(void *device)
 {
+    oledDisplayPort.device = device;
     displayInit(&oledDisplayPort, &oledVTable);
     oledDisplayPort.rows = SCREEN_CHARACTER_ROW_COUNT;
     oledDisplayPort.cols = SCREEN_CHARACTER_COLUMN_COUNT;
