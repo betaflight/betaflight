@@ -40,8 +40,8 @@
 
 // communicate with camera device variables
 serialPort_t *rcSplitSerialPort = NULL;
-rcsplit_switch_state_t switchStates[BOXCAMERA3 - BOXCAMERA1 + 1];
-rcsplit_state_e cameraState = RCSPLIT_STATE_UNKNOWN;
+rcsplitSwitchState_t switchStates[BOXCAMERA3 - BOXCAMERA1 + 1];
+rcsplitState_e cameraState = RCSPLIT_STATE_UNKNOWN;
 
 static uint8_t crc_high_first(uint8_t *ptr, uint8_t len)
 {
@@ -138,7 +138,6 @@ bool rcSplitInit(void)
     // set init value to true, to avoid the action auto run when the flight board start and the switch is on.
     for (boxId_e i = BOXCAMERA1; i <= BOXCAMERA3; i++) {
         uint8_t switchIndex = i - BOXCAMERA1;
-        switchStates[switchIndex].boxId = 1 << i;
         switchStates[switchIndex].isActivated = true; 
     }
     

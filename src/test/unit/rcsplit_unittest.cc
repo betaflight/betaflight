@@ -47,7 +47,7 @@ extern "C" {
 
     int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 
-    rcsplit_state_e unitTestRCsplitState()
+    rcsplitState_e unitTestRCsplitState()
     {
         return cameraState;
     }
@@ -55,7 +55,7 @@ extern "C" {
     bool unitTestIsSwitchActivited(boxId_e boxId)
     {
         uint8_t adjustBoxID = boxId - BOXCAMERA1;
-        rcsplit_switch_state_t switchState = switchStates[adjustBoxID];
+        rcsplitSwitchState_t switchState = switchStates[adjustBoxID];
         return switchState.isActivated;
     }
 
