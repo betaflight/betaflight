@@ -407,20 +407,16 @@ void init(void)
 #endif
 
 #ifdef USE_I2C
-#if defined(NAZE)
-    #if defined(AIRHERO32)
+#if defined(I2C_DEVICE)
+    #if defined(I2C_DEVICE_SHARES_UART3)
         if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
             i2cInit(I2C_DEVICE);
         }
     #else
         i2cInit(I2C_DEVICE);
     #endif
-#elif defined(I2C_DEVICE_SHARES_UART3)
-    if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
-        i2cInit(I2C_DEVICE);
-    }
-#else
-    i2cInit(I2C_DEVICE);
+#endif
+
 #if defined(I2C_DEVICE_EXT)
     #if defined(I2C_DEVICE_EXT_SHARES_UART3)
         if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
@@ -429,7 +425,6 @@ void init(void)
     #else
         i2cInit(I2C_DEVICE_EXT);
     #endif
-#endif
 #endif
 #endif
 
