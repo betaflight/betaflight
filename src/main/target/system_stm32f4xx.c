@@ -422,8 +422,6 @@ uint32_t hse_value = HSE_VALUE;
 /** @addtogroup STM32F4xx_System_Private_Variables
   * @{
   */
-/* core clock is simply a mhz of PLL_N / PLL_P */
-uint32_t SystemCoreClock = (PLL_N / PLL_P) * 1000000;
 
 __I uint8_t AHBPrescTable[16] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 6, 7, 8, 9};
 
@@ -456,8 +454,15 @@ static void SystemInit_ExtMemCtl(void);
   * @param  None
   * @retval None
   */
+
+uint32_t SystemCoreClock;
+uint32_t pll_p = PLL_P, pll_n = PLL_N, pll_q = PLL_Q;
+
 void SystemInit(void)
 {
+  /* core clock is simply a mhz of PLL_N / PLL_P */
+  SystemCoreClock = (pll_n / pll_p) * 1000000;
+
   /* FPU settings ------------------------------------------------------------*/
   #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
     SCB->CPACR |= ((3UL << 10*2)|(3UL << 11*2));  /* set CP10 and CP11 Full Access */
@@ -487,7 +492,7 @@ void SystemInit(void)
 
   /* Configure the System clock source, PLL Multiplier and Divider factors,
      AHB/APBx prescalers and Flash settings ----------------------------------*/
-  SetSysClock();
+  //SetSysClock();
 
   /* Configure the Vector Table location add offset address ------------------*/
 #ifdef VECT_TAB_SRAM
@@ -495,6 +500,16 @@ void SystemInit(void)
 #else
   SCB->VTOR = FLASH_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal FLASH */
 #endif
+}
+
+void SystemInitOC(void)
+{
+    /* PLL setting for overclocking */
+    pll_n = 480;
+    pll_p = 2;
+    pll_q = 10;
+
+    SystemInit();
 }
 
 /**
@@ -673,12 +688,12 @@ void SetSysClock(void)
 
 #if defined(STM32F446xx)
     /* Configure the main PLL */
-    RCC->PLLCFGR = PLL_M | (PLL_N << 6) | (((PLL_P >> 1) -1) << 16) |
-                   (RCC_PLLCFGR_PLLSRC_HSE) | (PLL_Q << 24) | (PLL_R << 28);
+    RCC->PLLCFGR = PLL_M | (pll_n << 6) | (((pll_p >> 1) -1) << 16) |
+                   (RCC_PLLCFGR_PLLSRC_HSE) | (pll_q << 24) | (PLL_R << 28);
 #else
     /* Configure the main PLL */
-    RCC->PLLCFGR = PLL_M | (PLL_N << 6) | (((PLL_P >> 1) -1) << 16) |
-                   (RCC_PLLCFGR_PLLSRC_HSE) | (PLL_Q << 24);
+    RCC->PLLCFGR = PLL_M | (pll_n << 6) | (((pll_p >> 1) -1) << 16) |
+                   (RCC_PLLCFGR_PLLSRC_HSE) | (pll_q << 24);
 #endif /* STM32F446xx */
 
     /* Enable the main PLL */

@@ -266,6 +266,20 @@ void init(void)
     ensureEEPROMContainsValidData();
     readEEPROM();
 
+#if defined(STM32F4) && !defined(DISABLE_OVERCLOCK)
+    // If F4 Overclocking is set and System core clock is not correct a reset is forced
+    if (systemConfig()->cpu_overclock && SystemCoreClock != 240000000) {
+        *((uint32_t *)0x2001FFFC) = 0xDEADBABE; // 128KB SRAM STM32F4XX
+        __disable_irq();
+        NVIC_SystemReset();
+    } else if (!systemConfig()->cpu_overclock && SystemCoreClock == 240000000) {
+        *((uint32_t *)0x2001FFFC) = 0x0;        // 128KB SRAM STM32F4XX
+        __disable_irq();
+        NVIC_SystemReset();
+    }
+
+#endif
+
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
 
     //i2cSetOverclock(masterConfig.i2c_overclock);
