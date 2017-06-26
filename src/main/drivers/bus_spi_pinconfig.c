@@ -35,36 +35,23 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-// Pin defaults
+// Pin defaults for backward compatibility
 #ifndef SPI1_SCK_PIN
-#define SPI1_NSS_PIN    PA4
 #define SPI1_SCK_PIN    PA5
 #define SPI1_MISO_PIN   PA6
 #define SPI1_MOSI_PIN   PA7
 #endif
 
 #ifndef SPI2_SCK_PIN
-#define SPI2_NSS_PIN    PB12
 #define SPI2_SCK_PIN    PB13
 #define SPI2_MISO_PIN   PB14
 #define SPI2_MOSI_PIN   PB15
 #endif
 
 #ifndef SPI3_SCK_PIN
-#define SPI3_NSS_PIN    PA15
 #define SPI3_SCK_PIN    PB3
 #define SPI3_MISO_PIN   PB4
 #define SPI3_MOSI_PIN   PB5
-#endif
-
-#ifndef SPI1_NSS_PIN
-#define SPI1_NSS_PIN NONE
-#endif
-#ifndef SPI2_NSS_PIN
-#define SPI2_NSS_PIN NONE
-#endif
-#ifndef SPI3_NSS_PIN
-#define SPI3_NSS_PIN NONE
 #endif
 
 PG_DECLARE(spiPinConfig_t, spiPinConfig);
