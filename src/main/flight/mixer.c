@@ -339,8 +339,13 @@ bool mixerIsOutputSaturated(int axis, float errorRate)
 // All PWM motor scaling is done to standard PWM range of 1000-2000 for easier tick conversion with legacy code / configurator
 // DSHOT scaling is done to the actual dshot range
 void initEscEndpoints(void) {
+    switch(motorConfig()->dev.motorPwmProtocol) {
 #ifdef USE_DSHOT
-    if (isMotorProtocolDshot()) {
+    case PWM_TYPE_PROSHOT1000:
+    case PWM_TYPE_DSHOT1200:
+    case PWM_TYPE_DSHOT600:
+    case PWM_TYPE_DSHOT300:
+    case PWM_TYPE_DSHOT150:
         disarmMotorOutput = DSHOT_DISARM_COMMAND;
         if (feature(FEATURE_3D))
             motorOutputLow = DSHOT_MIN_THROTTLE + ((DSHOT_3D_DEADBAND_LOW - DSHOT_MIN_THROTTLE) / 100.0f) * CONVERT_PARAMETER_TO_PERCENT(motorConfig()->digitalIdleOffsetValue);
@@ -349,14 +354,17 @@ void initEscEndpoints(void) {
         motorOutputHigh = DSHOT_MAX_THROTTLE;
         deadbandMotor3dHigh = DSHOT_3D_DEADBAND_HIGH + ((DSHOT_MAX_THROTTLE - DSHOT_3D_DEADBAND_HIGH) / 100.0f) * CONVERT_PARAMETER_TO_PERCENT(motorConfig()->digitalIdleOffsetValue); // TODO - Not working yet !! Mixer requires some throttle rescaling changes
         deadbandMotor3dLow = DSHOT_3D_DEADBAND_LOW;
-    } else
+
+        break;
 #endif
-    {
+    default:
         disarmMotorOutput = (feature(FEATURE_3D)) ? flight3DConfig()->neutral3d : motorConfig()->mincommand;
         motorOutputLow = motorConfig()->minthrottle;
         motorOutputHigh = motorConfig()->maxthrottle;
         deadbandMotor3dHigh = flight3DConfig()->deadband3d_high;
         deadbandMotor3dLow = flight3DConfig()->deadband3d_low;
+
+        break;
     }
 
     rcCommandThrottleRange = (PWM_RANGE_MAX - rxConfig()->mincheck);
