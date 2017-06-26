@@ -49,7 +49,7 @@ static uint16_t freqBeep=0;
 #endif
 
 bool pwmMotorsEnabled = false;
-bool isDigital = false;
+bool isDshot = false;
 
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t output)
 {
@@ -160,9 +160,9 @@ static void pwmWriteMultiShot(uint8_t index, float value)
 }
 
 #ifdef USE_DSHOT
-static void pwmWriteDigital(uint8_t index, float value)
+static void pwmWriteDshot(uint8_t index, float value)
 {
-    pwmWriteDigitalInt(index, lrintf(value));
+    pwmWriteDshotInt(index, lrintf(value));
 }
 
 static uint8_t loadDmaBufferDshot(motorDmaOutput_t *const motor, uint16_t packet)
@@ -277,24 +277,24 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         break;
 #ifdef USE_DSHOT
     case PWM_TYPE_PROSHOT1000:
-        pwmWrite = &pwmWriteDigital;
+        pwmWrite = &pwmWriteDshot;
         loadDmaBuffer = &loadDmaBufferProshot;
-        pwmCompleteWrite = &pwmCompleteDigitalMotorUpdate;
-        isDigital = true;
+        pwmCompleteWrite = &pwmCompleteDshotMotorUpdate;
+        isDshot = true;
         break;
     case PWM_TYPE_DSHOT1200:
     case PWM_TYPE_DSHOT600:
     case PWM_TYPE_DSHOT300:
     case PWM_TYPE_DSHOT150:
-        pwmWrite = &pwmWriteDigital;
+        pwmWrite = &pwmWriteDshot;
         loadDmaBuffer = &loadDmaBufferDshot;
-        pwmCompleteWrite = &pwmCompleteDigitalMotorUpdate;
-        isDigital = true;
+        pwmCompleteWrite = &pwmCompleteDshotMotorUpdate;
+        isDshot = true;
         break;
 #endif
     }
 
-    if (!isDigital) {
+    if (!isDshot) {
         pwmCompleteWrite = useUnsyncedPwm ? &pwmCompleteWriteUnused : &pwmCompleteOneshotMotorUpdate;
     }
 
@@ -313,8 +313,8 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         motors[motorIndex].io = IOGetByTag(tag);
 
 #ifdef USE_DSHOT
-        if (isDigital) {
-            pwmDigitalMotorHardwareConfig(timerHardware, motorIndex, motorConfig->motorPwmProtocol,
+        if (isDshot) {
+            pwmDshotMotorHardwareConfig(timerHardware, motorIndex, motorConfig->motorPwmProtocol,
                 motorConfig->motorPwmInversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output);
             motors[motorIndex].enabled = true;
             continue;
@@ -354,6 +354,11 @@ pwmOutputPort_t *pwmGetMotors(void)
     return motors;
 }
 
+bool isMotorProtocolDshot(void)
+{
+    return isDshot;
+}
+
 #ifdef USE_DSHOT
 uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType)
 {
@@ -374,7 +379,7 @@ uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType)
 
 void pwmWriteDshotCommand(uint8_t index, uint8_t command)
 {
-    if (isDigital && (command <= DSHOT_MAX_COMMAND)) {
+    if (isDshot && (command <= DSHOT_MAX_COMMAND)) {
         motorDmaOutput_t *const motor = getMotorDmaOutput(index);
 
         unsigned repeats;
@@ -395,7 +400,7 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t command)
 
         for (; repeats; repeats--) {
             motor->requestTelemetry = true;
-            pwmWriteDigitalInt(index, command);
+            pwmWriteDshotInt(index, command);
             pwmCompleteMotorUpdate(0);
 
             delay(1);

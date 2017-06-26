@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "drivers/sensor.h"
+#include "drivers/bus.h"
 
 uint8_t mpu6500SpiDetect(const busDevice_t *bus);
 

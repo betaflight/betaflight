@@ -138,7 +138,11 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 
-#define SPEKTRUM_BIND_PIN       PB11
+// XXX To target maintainer:
+// USE_SPEKTRUM_BIND is enabled for this target, and it will use
+// RX (or TX if half-duplex) pin of the UART the receiver is connected.
+// If PB11 is critical for this target, please resurrect this line.
+//#define SPEKTRUM_BIND_PIN       PB11
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

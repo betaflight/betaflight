@@ -258,8 +258,6 @@
 #define DEFAULT_FEATURES        FEATURE_TELEMETRY
 #endif
 
-#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA         0xffff

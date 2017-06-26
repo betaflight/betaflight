@@ -114,8 +114,6 @@
 // LED strip configuration.
 #define LED_STRIP
 
-#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
-
 #define BINDPLUG_PIN            PB12
 
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP

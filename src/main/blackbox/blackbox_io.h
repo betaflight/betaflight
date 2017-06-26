@@ -52,6 +52,7 @@ bool blackboxDeviceBeginLog(void);
 bool blackboxDeviceEndLog(bool retainLog);
 
 bool isBlackboxDeviceFull(void);
+unsigned int blackboxGetLogNumber();
 
 void blackboxReplenishHeaderBudget();
 blackboxBufferReserveStatus_e blackboxDeviceReserveBufferSpace(int32_t bytes);

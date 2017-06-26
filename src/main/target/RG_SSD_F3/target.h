@@ -144,8 +144,6 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define SPEKTRUM_BIND_PIN UART3_RX_PIN
-
 // IO - stm32f303rc in 64pin package
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff

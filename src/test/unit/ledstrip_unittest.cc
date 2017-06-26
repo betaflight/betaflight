@@ -31,6 +31,7 @@ extern "C" {
 
     #include "sensors/battery.h"
 
+    #include "drivers/io.h"
     #include "rx/rx.h"
 
     #include "fc/config.h"

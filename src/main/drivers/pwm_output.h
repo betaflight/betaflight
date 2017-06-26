@@ -30,6 +30,15 @@
 
 #define DSHOT_MAX_COMMAND 47
 
+/*
+  DshotSettingRequest (KISS24). Spin direction, 3d and save Settings reqire 10 requests.. and the TLM Byte must always be high if 1-47 are used to send settings
+
+  3D Mode:
+  0 = stop
+  48   (low) - 1047 (high) -> negative direction
+  1048 (low) - 2047 (high) -> positive direction
+ */
+
 typedef enum {
     DSHOT_CMD_MOTOR_STOP = 0,
     DSHOT_CMD_BEEP1,
@@ -166,6 +175,8 @@ void servoDevInit(const servoDevConfig_t *servoDevConfig);
 
 void pwmServoConfig(const struct timerHardware_s *timerHardware, uint8_t servoIndex, uint16_t servoPwmRate, uint16_t servoCenterPulse);
 
+bool isMotorProtocolDshot(void);
+
 #ifdef USE_DSHOT
 typedef uint8_t loadDmaBufferFunc(motorDmaOutput_t *const motor, uint16_t packet);  // function pointer used to encode a digital motor value into the DMA buffer representation
 
@@ -175,9 +186,9 @@ extern loadDmaBufferFunc *loadDmaBuffer;
 
 uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType);
 void pwmWriteDshotCommand(uint8_t index, uint8_t command);
-void pwmWriteDigitalInt(uint8_t index, uint16_t value);
-void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output);
-void pwmCompleteDigitalMotorUpdate(uint8_t motorCount);
+void pwmWriteDshotInt(uint8_t index, uint16_t value);
+void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output);
+void pwmCompleteDshotMotorUpdate(uint8_t motorCount);
 #endif
 
 #ifdef BEEPER

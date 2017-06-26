@@ -206,21 +206,23 @@ void mwArm(void)
             return;
         }
         if (!ARMING_FLAG(PREVENT_ARMING)) {
-            #ifdef USE_DSHOT
-            //TODO: Use BOXDSHOTREVERSE here
-            if (!feature(FEATURE_3D) && !IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH)) {
-                reverseMotors = false;
-                for (unsigned index = 0; index < getMotorCount(); index++) {
-                    pwmWriteDshotCommand(index, DSHOT_CMD_SPIN_DIRECTION_NORMAL);
+#ifdef USE_DSHOT
+            if (!feature(FEATURE_3D)) {
+                //TODO: Use BOXDSHOTREVERSE here
+                if (!IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH)) {
+                    reverseMotors = false;
+                    for (unsigned index = 0; index < getMotorCount(); index++) {
+                        pwmWriteDshotCommand(index, DSHOT_CMD_SPIN_DIRECTION_NORMAL);
+                    }
+                } else {
+                    reverseMotors = true;
+                    for (unsigned index = 0; index < getMotorCount(); index++) {
+                        pwmWriteDshotCommand(index, DSHOT_CMD_SPIN_DIRECTION_REVERSED);
+                    }
                 }
             }
-            if (!feature(FEATURE_3D) && IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH)) {
-                reverseMotors = true;
-                for (unsigned index = 0; index < getMotorCount(); index++) {
-                    pwmWriteDshotCommand(index, DSHOT_CMD_SPIN_DIRECTION_REVERSED);
-                }
-            }
-            #endif
+#endif
+
             ENABLE_ARMING_FLAG(ARMED);
             ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
             headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);

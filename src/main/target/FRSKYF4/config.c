@@ -19,6 +19,7 @@
 #include <platform.h>
 
 #ifdef TARGET_CONFIG
+#include "drivers/io.h"
 #include "rx/rx.h"
 #include "io/serial.h"
 
