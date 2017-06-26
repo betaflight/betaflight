@@ -524,18 +524,18 @@ static bool osdDrawSingleElement(uint8_t item)
 static uint8_t osdIncElementIndex(uint8_t elementIndex)
 {
     ++elementIndex;
-    if (sensors(SENSOR_ACC)) {
+    if (!sensors(SENSOR_ACC)) {
         if (elementIndex == OSD_CROSSHAIRS) {
             elementIndex = OSD_ONTIME;
         }
     }
-    if (feature(FEATURE_CURRENT_METER)) {
+    if (!feature(FEATURE_CURRENT_METER)) {
         if (elementIndex == OSD_CURRENT_DRAW) {
             elementIndex = OSD_GPS_SPEED;
         }
 
     }
-    if (sensors(SENSOR_GPS)) {
+    if (!sensors(SENSOR_GPS)) {
         if (elementIndex == OSD_GPS_SPEED) {
             elementIndex = OSD_ALTITUDE;
         }
