@@ -511,23 +511,25 @@ bool isMixerUsingServos(void)
     return useServo;
 }
 
+static biquadFilter_t servoFilter[MAX_SUPPORTED_SERVOS];
+
+void servosFilterInit(void)
+{
+    if (servoConfig()->servo_lowpass_freq) {
+        for (int servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
+            biquadFilterInitLPF(&servoFilter[servoIdx], servoConfig()->servo_lowpass_freq, targetPidLooptime);
+        }
+    }
+
+}
 static void filterServos(void)
 {
-    static int16_t servoIdx;
-    static bool servoFilterIsSet;
-    static biquadFilter_t servoFilter[MAX_SUPPORTED_SERVOS];
-
 #if defined(MIXER_DEBUG)
     uint32_t startTime = micros();
 #endif
 
     if (servoConfig()->servo_lowpass_freq) {
-        for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-            if (!servoFilterIsSet) {
-                biquadFilterInitLPF(&servoFilter[servoIdx], servoConfig()->servo_lowpass_freq, targetPidLooptime);
-                servoFilterIsSet = true;
-            }
-
+        for (int servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
             servo[servoIdx] = lrintf(biquadFilterApply(&servoFilter[servoIdx], (float)servo[servoIdx]));
             // Sanity check
             servo[servoIdx] = constrain(servo[servoIdx], servoParams(servoIdx)->min, servoParams(servoIdx)->max);
