@@ -778,15 +778,15 @@ static uint8_t numOfSat = 0;
 #ifdef GPS
 bool writeGpsPositionPrameToBST(void)
 {
-    if((lat != GPS_coord[LAT]) || (lon != GPS_coord[LON]) || (alt != GPS_altitude) || (numOfSat != GPS_numSat)) {
-        lat = GPS_coord[LAT];
-        lon = GPS_coord[LON];
-        alt = GPS_altitude;
-        numOfSat = GPS_numSat;
-        uint16_t speed = (GPS_speed * 9 / 25);
+    if((lat != gpsSol.llh.lat) || (lon != gpsSol.llh.lon) || (alt != gpsSol.llh.alt) || (numOfSat != gpsSol.numSat)) {
+        lat = gpsSol.llh.lat;
+        lon = gpsSol.llh.lon;
+        alt = gpsSol.llh.alt;
+        numOfSat = gpsSol.numSat;
+        uint16_t speed = (gpsSol.groundSpeed * 9 / 25);
         uint16_t gpsHeading = 0;
         uint16_t altitude = 0;
-        gpsHeading = GPS_ground_course * 10;
+        gpsHeading = gpsSol.groundCourse * 10;
         altitude = alt * 10 + 1000;
 
         bstMasterStartBuffer(PUBLIC_ADDRESS);

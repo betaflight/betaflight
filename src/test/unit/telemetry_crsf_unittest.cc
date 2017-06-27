@@ -82,12 +82,7 @@ uint16_t    Groundspeed ( km/h / 10 )
 uint16_t    GPS heading ( degree / 100 )
 uint16      Altitude ( meter ­ 1000m offset )
 uint8_t     Satellites in use ( counter )
-uint8_t GPS_numSat;
-int32_t GPS_coord[2];
 uint16_t GPS_distanceToHome;        // distance to home point in meters
-uint16_t GPS_altitude;              // altitude in m
-uint16_t GPS_speed;                 // speed in 0.1m/s
-uint16_t GPS_ground_course = 0;     // degrees * 10
 */
 #define FRAME_HEADER_FOOTER_LEN 4
 
@@ -114,13 +109,13 @@ TEST(TelemetryCrsfTest, TestGPS)
     EXPECT_EQ(0, satelliteCount);
     EXPECT_EQ(crfsCrc(frame, frameLen), frame[18]);
 
-    GPS_coord[LAT] = 56 * GPS_DEGREES_DIVIDER;
-    GPS_coord[LON] = 163 * GPS_DEGREES_DIVIDER;
+    gpsSol.llh.lat = 56 * GPS_DEGREES_DIVIDER;
+    gpsSol.llh.lon = 163 * GPS_DEGREES_DIVIDER;
     ENABLE_STATE(GPS_FIX);
-    GPS_altitude = 2345;              // altitude in m
-    GPS_speed = 163;                 // speed in 0.1m/s, 16.3 m/s = 58.68 km/h, so CRSF (km/h *10) value is 587
-    GPS_numSat = 9;
-    GPS_ground_course = 1479;     // degrees * 10
+    gpsSol.llh.alt = 2345;              // altitude in m
+    gpsSol.groundSpeed = 163;                 // speed in 0.1m/s, 16.3 m/s = 58.68 km/h, so CRSF (km/h *10) value is 587
+    gpsSol.numSat = 9;
+    gpsSol.groundCourse = 1479;     // degrees * 10
     frameLen = getCrsfFrame(frame, CRSF_FRAME_GPS);
     lattitude = frame[3] << 24 | frame[4] << 16 | frame[5] << 8 | frame[6];
     EXPECT_EQ(560000000, lattitude);
@@ -279,12 +274,8 @@ uint8_t useHottAlarmSoundPeriod (void) { return 0; }
 
 attitudeEulerAngles_t attitude = { { 0, 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 
-uint8_t GPS_numSat;
-int32_t GPS_coord[2];
 uint16_t GPS_distanceToHome;        // distance to home point in meters
-uint16_t GPS_altitude;              // altitude in m
-uint16_t GPS_speed;                 // speed in 0.1m/s
-uint16_t GPS_ground_course = 0;     // degrees * 10
+gpsSolutionData_t gpsSol;
 
 void beeperConfirmationBeeps(uint8_t beepCount) {UNUSED(beepCount);}
 
@@ -327,4 +318,3 @@ uint8_t calculateBatteryPercentageRemaining(void) {
 }
 
 }
-

@@ -35,21 +35,23 @@ extern "C" {
     #include "drivers/compass/compass.h"
     #include "drivers/sensor.h"
 
-    #include "sensors/sensors.h"
-    #include "sensors/gyro.h"
-    #include "sensors/compass.h"
-    #include "sensors/acceleration.h"
-    #include "sensors/barometer.h"
-
-    #include "fc/runtime_config.h"
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
-
-    #include "rx/rx.h"
+    #include "fc/runtime_config.h"
 
     #include "flight/mixer.h"
     #include "flight/pid.h"
     #include "flight/imu.h"
+
+    #include "io/gps.h"
+
+    #include "rx/rx.h"
+
+    #include "sensors/acceleration.h"
+    #include "sensors/barometer.h"
+    #include "sensors/compass.h"
+    #include "sensors/gyro.h"
+    #include "sensors/sensors.h"
 
     void imuComputeRotationMatrix(void);
     void imuUpdateEulerAngles(void);
@@ -206,9 +208,7 @@ gyro_t gyro;
 acc_t acc;
 mag_t mag;
 
-uint8_t GPS_numSat;
-uint16_t GPS_speed;
-uint16_t GPS_ground_course;
+gpsSolutionData_t gpsSol;
 
 uint8_t debugMode;
 int16_t debug[DEBUG16_VALUE_COUNT];

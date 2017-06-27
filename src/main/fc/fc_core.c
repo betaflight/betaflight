@@ -231,7 +231,7 @@ void mwArm(void)
 
             //beep to indicate arming
 #ifdef GPS
-            if (feature(FEATURE_GPS) && STATE(GPS_FIX) && GPS_numSat >= 5)
+            if (feature(FEATURE_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5)
                 beeper(BEEPER_ARMING_GPS_FIX);
             else
                 beeper(BEEPER_ARMING);

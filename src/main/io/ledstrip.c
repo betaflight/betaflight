@@ -731,7 +731,7 @@ static void applyLedGpsLayer(bool updateNow, timeUs_t *timer)
         static uint8_t gpsFlashCounter = 0;
         if (gpsPauseCounter > 0) {
             gpsPauseCounter--;
-        } else if (gpsFlashCounter >= GPS_numSat) {
+        } else if (gpsFlashCounter >= gpsSol.numSat) {
             gpsFlashCounter = 0;
             gpsPauseCounter = blinkPauseLength;
         } else {
@@ -743,7 +743,7 @@ static void applyLedGpsLayer(bool updateNow, timeUs_t *timer)
 
     const hsvColor_t *gpsColor;
 
-    if (GPS_numSat == 0 || !sensors(SENSOR_GPS)) {
+    if (gpsSol.numSat == 0 || !sensors(SENSOR_GPS)) {
         gpsColor = getSC(LED_SCOLOR_GPSNOSATS);
     } else {
         bool colorOn = gpsPauseCounter == 0;  // each interval starts with pause
