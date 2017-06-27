@@ -755,10 +755,10 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 static void osdDrawLogo(int x, int y)
 {
     // display logo and help
-    unsigned char fontOffset = 160;
+    int fontOffset = 160;
     for (int row = 0; row < 4; row++) {
         for (int column = 0; column < 24; column++) {
-            if (fontOffset != 255) // FIXME magic number
+            if (fontOffset <= SYM_END_OF_FONT)
                 displayWriteChar(osdDisplayPort, x + column, y + row, fontOffset++);
         }
     }
@@ -801,7 +801,6 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
 void osdUpdateAlarms(void)
 {
     // This is overdone?
-    // uint16_t *itemPos = osdConfig()->item_pos;
 
     int32_t alt = osdGetMetersToSelectedUnit(getEstimatedAltitude()) / 100;
 
@@ -1051,7 +1050,7 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
         armState = ARMING_FLAG(ARMED);
     }
 
-    statRssi = rssi * 100 / 1024;
+    statRssi = scaleRange(rssi, 0, 1024, 0, 100);
 
     osdUpdateStats();
 

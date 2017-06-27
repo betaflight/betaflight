@@ -102,7 +102,7 @@ void doTestArm(bool testEmpty = true)
 
     // given
     // armed alert times out (0.5 seconds)
-    simulationTime += 5e5;
+    simulationTime += 0.5e6;
 
     // when
     // sufficient OSD updates have been called
@@ -114,9 +114,7 @@ void doTestArm(bool testEmpty = true)
     displayPortTestPrint();
 #endif
     if (testEmpty) {
-        for (size_t i = 0; i < UNITTEST_DISPLAYPORT_BUFFER_LEN; i++) {
-            EXPECT_EQ(' ', testDisplayPortBuffer[i]);
-        }
+        displayPortTestBufferIsEmpty();
     }
 }
 
@@ -320,7 +318,7 @@ TEST(OsdTest, TestStatsImperial)
     displayPortTestBufferSubstring(2, 6,  "MAX DISTANCE      : 328%c", SYM_FT);
     displayPortTestBufferSubstring(2, 7,  "MIN BATTERY       : 14.7%c", SYM_VOLT);
     displayPortTestBufferSubstring(2, 8,  "END BATTERY       : 15.2%c", SYM_VOLT);
-    displayPortTestBufferSubstring(2, 9,  "MIN RSSI          : 25%");
+    displayPortTestBufferSubstring(2, 9,  "MIN RSSI          : 25%%");
     displayPortTestBufferSubstring(2, 10, "MAX ALTITUDE      :  6.5%c", SYM_FT);
 }
 
@@ -369,7 +367,7 @@ TEST(OsdTest, TestStatsMetric)
     displayPortTestBufferSubstring(2, 6,  "MAX DISTANCE      : 100%c", SYM_M);
     displayPortTestBufferSubstring(2, 7,  "MIN BATTERY       : 14.7%c", SYM_VOLT);
     displayPortTestBufferSubstring(2, 8,  "END BATTERY       : 15.2%c", SYM_VOLT);
-    displayPortTestBufferSubstring(2, 9,  "MIN RSSI          : 25%");
+    displayPortTestBufferSubstring(2, 9,  "MIN RSSI          : 25%%");
     displayPortTestBufferSubstring(2, 10, "MAX ALTITUDE      :  2.0%c", SYM_M);
 }
 
@@ -406,8 +404,9 @@ TEST(OsdTest, TestAlarms)
 
     // then
     // no elements should flash as all values are out of alarm range
-    for (int i = 0; i < 6; i++) {
-        simulationTime += 1e6;
+    for (int i = 0; i < 30; i++) {
+        // Check for visibility every 100ms, elements should always be visible
+        simulationTime += 0.1e6;
         osdRefresh(simulationTime);
 
 #ifdef DEBUG_OSD
@@ -433,15 +432,16 @@ TEST(OsdTest, TestAlarms)
 
     // then
     // elements showing values in alarm range should flash
-    for (int i = 0; i < 6; i++) {
-        simulationTime += 1e6;
+    for (int i = 0; i < 15; i++) {
+        // Blinking should happen at 5Hz
+        simulationTime += 0.2e6;
         osdRefresh(simulationTime);
 
 #ifdef DEBUG_OSD
         printf("%d\n", i);
         displayPortTestPrint();
 #endif
-        if (i % 2 == 1) {
+        if (i % 2 == 0) {
             displayPortTestBufferSubstring(8,  1, "%c12", SYM_RSSI);
             displayPortTestBufferSubstring(12, 1, "%c13.5%c", SYM_MAIN_BATT, SYM_VOLT);
             displayPortTestBufferSubstring(1,  1, "%c01:", SYM_FLY_M); // only test the minute part of the timer

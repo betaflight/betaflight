@@ -26,6 +26,8 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
+void displayPortTestBufferSubstring(int x, int y, const char * expectedFormat, ...) __attribute__ ((format (printf, 3, 4)));
+
 #define UNITTEST_DISPLAYPORT_ROWS 16
 #define UNITTEST_DISPLAYPORT_COLS 30
 #define UNITTEST_DISPLAYPORT_BUFFER_LEN (UNITTEST_DISPLAYPORT_ROWS * UNITTEST_DISPLAYPORT_COLS)
@@ -146,11 +148,11 @@ void displayPortTestBufferIsEmpty()
 
 void displayPortTestBufferSubstring(int x, int y, const char * expectedFormat, ...)
 {
-    char expected[32];
+    char expected[UNITTEST_DISPLAYPORT_BUFFER_LEN];
 
     va_list args;
     va_start(args, expectedFormat);
-    vsprintf(expected, expectedFormat, args);
+    vsnprintf(expected, UNITTEST_DISPLAYPORT_BUFFER_LEN, expectedFormat, args);
     va_end(args);
 
 #ifdef DEBUG_OSD

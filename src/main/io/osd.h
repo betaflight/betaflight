@@ -29,9 +29,10 @@
 // Character coordinate
 
 #define OSD_POSITION_BITS 5 // 5 bits gives a range 0-31
-#define OSD_POS(x,y)  ((x & 0x001F) | ((y & 0x001F) << OSD_POSITION_BITS))
-#define OSD_X(x)      (x & 0x001F)
-#define OSD_Y(x)      ((x >> OSD_POSITION_BITS) & 0x001F)
+#define OSD_POSITION_XY_MASK ((1 << OSD_POSITION_BITS) - 1)
+#define OSD_POS(x,y)  ((x & OSD_POSITION_XY_MASK) | ((y & OSD_POSITION_XY_MASK) << OSD_POSITION_BITS))
+#define OSD_X(x)      (x & OSD_POSITION_XY_MASK)
+#define OSD_Y(x)      ((x >> OSD_POSITION_BITS) & OSD_POSITION_XY_MASK)
 
 typedef enum {
     OSD_RSSI_VALUE,
