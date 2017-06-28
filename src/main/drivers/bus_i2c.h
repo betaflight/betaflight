@@ -45,8 +45,9 @@ typedef enum I2CDevice {
 #define I2CDEV_COUNT 4
 #endif
 
-// Macro to convert CLI bus number to I2CDevice.
+// Macros to convert between CLI bus number and I2CDevice.
 #define I2C_CFG_TO_DEV(x)   ((x) - 1)
+#define I2C_DEV_TO_CFG(x)   ((x) + 1)
 
 // I2C device address range in 8-bit address mode
 #define I2C_ADDR8_MIN       8
