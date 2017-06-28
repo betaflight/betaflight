@@ -100,7 +100,7 @@ typedef struct statistic_s {
 static statistic_t stats;
 
 uint16_t refreshTimeout = 0;
-#define REFRESH_1S    12
+#define REFRESH_1S    OSD_TASK_FREQUENCY_HZ
 
 static uint8_t armState;
 
@@ -138,16 +138,22 @@ static void osdFormatDistanceStr(char* buff, int32_t dist)
 
     switch (osdConfig()->units) {
     case OSD_UNIT_IMPERIAL:
-        if (dist < 0)
-            tfp_sprintf(buff, "-%d%c", dist_abs / 100, SYM_FT);
-        else
-            tfp_sprintf(buff, "%d%c", dist_abs / 100, SYM_FT);
+        if (dist < 0) {
+            tfp_sprintf(buff, "-%d%c ", dist_abs / 100, SYM_FT);
+        } else {
+            tfp_sprintf(buff, "%d%c ", dist_abs / 100, SYM_FT);
+        }
         break;
     default: // Metric
-        if (dist < 0)
-            tfp_sprintf(buff, "-%d.%01d%c", dist_abs / 100, (dist_abs % 100) / 10, SYM_M);
-        else
-            tfp_sprintf(buff, "%d.%01d%c", dist_abs / 100, (dist_abs % 100) / 10, SYM_M);
+        if (dist < 0) {
+            tfp_sprintf(buff, "-%d.%01d%c ", dist_abs / 100, (dist_abs % 100) / 10, SYM_M);
+        } else {
+            if (dist < 10000) { // less than 100m
+                tfp_sprintf(buff, "%d.%01d%c ", dist_abs / 100, (dist_abs % 100) / 10, SYM_M);
+            } else {
+                tfp_sprintf(buff, "%d%c ", dist_abs / 100, SYM_M);
+            }
+        }
     }
 }
 
@@ -213,7 +219,7 @@ static bool osdDrawSingleElement(uint8_t item)
 
     case OSD_CURRENT_DRAW:
         buff[0] = SYM_AMP;
-        tfp_sprintf(buff + 1, "%d.%02d", abs(amperage) / 100, abs(amperage) % 100);
+        tfp_sprintf(buff + 1, "%d.%02d ", abs(amperage) / 100, abs(amperage) % 100);
         break;
 
     case OSD_MAH_DRAWN:
@@ -886,15 +892,6 @@ static void osdRefreshStats(timeUs_t currentTimeUs)
         lastSec = sec;
     }
 
-    if (refreshTimeout) {
-        if (checkStickPosition(THR_HI) || checkStickPosition(PIT_HI)) // hide statistics
-            refreshTimeout = 1;
-        refreshTimeout--;
-        if (!refreshTimeout)
-            max7456ClearScreen();
-        return;
-    }
-
     blinkState = (currentTimeUs / 200000) % 2;
 }
 
@@ -907,8 +904,9 @@ void osdUpdate(timeUs_t currentTimeUs)
 
 #ifdef MAX7456_DMA_CHANNEL_TX
     // don't touch buffers if DMA transaction is in progress
-    if (max7456DmaInProgres())
+    if (max7456DmaInProgres()) {
         return;
+    }
 #endif // MAX7456_DMA_CHANNEL_TX
 
     // refresh alarms every 20 iterations
@@ -922,6 +920,17 @@ void osdUpdate(timeUs_t currentTimeUs)
         iterationCounter = 0;
         osdRefreshStats(currentTimeUs);
     }
+    if (refreshTimeout) {
+        if (checkStickPosition(THR_HI) || checkStickPosition(PIT_HI)) { // hide statistics
+            refreshTimeout = 1;
+        }
+        refreshTimeout--;
+        if (!refreshTimeout) {
+            max7456ClearScreen();
+        }
+        return;
+    }
+
 #ifdef CMS
     if (!displayIsGrabbed(osdDisplayPort)) {
         osdDrawNextElement();
