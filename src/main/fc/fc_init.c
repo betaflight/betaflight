@@ -384,7 +384,7 @@ void init(void)
     if (0) {}
 #if defined(USE_PPM)
     else if (feature(FEATURE_RX_PPM)) {
-          ppmRxInit(ppmConfig(), motorConfig()->dev.motorPwmProtocol);
+          ppmRxInit(ppmConfig());
     }
 #endif
 #if defined(USE_PWM)

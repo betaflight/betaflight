@@ -229,16 +229,16 @@ void timerNVICConfigure(uint8_t irq)
     NVIC_Init(&NVIC_InitStructure);
 }
 
-void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz)
+void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint32_t hz)
 {
     TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
 
     TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
-    TIM_TimeBaseStructure.TIM_Period = (period - 1) & 0xffff; // AKA TIMx_ARR
+    TIM_TimeBaseStructure.TIM_Period = (period - 1) & 0xFFFF; // AKA TIMx_ARR
 
     // "The counter clock frequency (CK_CNT) is equal to f CK_PSC / (PSC[15:0] + 1)." - STM32F10x Reference Manual 14.4.11
     // Thus for 1Mhz: 72000000 / 1000000 = 72, 72 - 1 = 71 = TIM_Prescaler
-    TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / timerClockDivisor(tim) / ((uint32_t)mhz * 1000000)) - 1;
+    TIM_TimeBaseStructure.TIM_Prescaler = (timerClock(tim) / hz) - 1;
 
     TIM_TimeBaseStructure.TIM_ClockDivision = 0;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
@@ -246,9 +246,9 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz)
 }
 
 // old interface for PWM inputs. It should be replaced
-void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, uint8_t mhz)
+void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, uint32_t hz)
 {
-    configTimeBase(timerHardwarePtr->tim, period, mhz);
+    configTimeBase(timerHardwarePtr->tim, period, hz);
     TIM_Cmd(timerHardwarePtr->tim, ENABLE);
 
     uint8_t irq = timerInputIrq(timerHardwarePtr->tim);
@@ -849,14 +849,19 @@ uint16_t timerDmaSource(uint8_t channel)
 
 uint16_t timerGetPrescalerByDesiredMhz(TIM_TypeDef *tim, uint16_t mhz)
 {
-    // protection here for desired MHZ > timerClock???
-    if ((uint32_t)(mhz * 1000000) > timerClock(tim)) {
-        return 0;
-    }
-    return (uint16_t)(round((timerClock(tim) / (mhz * 1000000)) - 1));
+    return timerGetPrescalerByDesiredHertz(tim, MHZ_TO_HZ(mhz));
 }
 
-uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_t hertz)
+uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_t hz)
 {
-    return ((uint16_t)((timerClock(tim) / (prescaler + 1)) / hertz));
+    return ((uint16_t)((timerClock(tim) / (prescaler + 1)) / hz));
+}
+
+uint16_t timerGetPrescalerByDesiredHertz(TIM_TypeDef *tim, uint32_t hz)
+{
+    // protection here for desired hertz > SystemCoreClock???
+    if (hz > timerClock(tim)) {
+        return 0;
+    }
+    return (uint16_t)((timerClock(tim) + hz / 2 ) / hz) - 1;
 }
