@@ -97,6 +97,8 @@ typedef struct servoMixer_s {
 #define MAX_SERVO_SPEED UINT8_MAX
 #define MAX_SERVO_BOXES 3
 
+#define SERVO_MIXER_INPUT_WIDTH 1000
+
 PG_DECLARE_ARRAY(servoMixer_t, MAX_SERVO_RULES, customServoMixers);
 
 typedef struct servoParam_s {
@@ -121,6 +123,12 @@ typedef struct servoConfig_s {
 } servoConfig_t;
 
 PG_DECLARE(servoConfig_t, servoConfig);
+
+typedef struct servoMetadata_s {
+    int16_t rateSum;
+    float scaleMax;
+    float scaleMin;
+} servoMetadata_t;
 
 extern int16_t servo[MAX_SUPPORTED_SERVOS];
 

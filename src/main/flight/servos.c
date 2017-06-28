@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "platform.h"
@@ -97,6 +98,8 @@ static uint8_t maxServoIndex;
 
 static biquadFilter_t servoFilter[MAX_SUPPORTED_SERVOS];
 static bool servoFilterIsSet;
+
+static servoMetadata_t servoMetadata[MAX_SUPPORTED_SERVOS];
 
 #define COUNT_SERVO_RULES(rules) (sizeof(rules) / sizeof(servoMixer_t))
 // mixer rule format servo, input, rate, speed, min, max, box
@@ -234,6 +237,29 @@ void servosInit(void)
         }
 
     }
+
+    for (uint8_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+        servoMetadata[i].rateSum = 0;
+        servoMetadata[i].scaleMax = 0;
+        servoMetadata[i].scaleMin = 0;
+    }
+
+    /*
+     * Iterate over mixer rules to determine max. possible rate for a servo
+     */ 
+    for (uint8_t i = 0; i < servoRuleCount; i++) {
+        servoMetadata[currentServoMixer[i].targetChannel].rateSum += abs(currentServoMixer[i].rate);
+    }
+
+    /*
+     * Compute scaling factor for upper and lower servo throw
+     */ 
+    for (uint8_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+        const float rateUs = servoMetadata[i].rateSum / 100.0f * 500;
+        servoMetadata[i].scaleMax = (servoParams(i)->max - servoParams(i)->middle) / rateUs;
+        servoMetadata[i].scaleMin = (servoParams(i)->middle - servoParams(i)->min) / rateUs;
+    }
+
 }
 void loadCustomServoMixer(void)
 {
@@ -399,9 +425,8 @@ void servoMixer(void)
     for (int i = 0; i < servoRuleCount; i++) {
         const uint8_t target = currentServoMixer[i].targetChannel;
         const uint8_t from = currentServoMixer[i].inputSource;
-        const uint16_t servo_width = servoParams(target)->max - servoParams(target)->min;
-        const int16_t min = currentServoMixer[i].min * servo_width / 100 - servo_width / 2;
-        const int16_t max = currentServoMixer[i].max * servo_width / 100 - servo_width / 2;
+        const int16_t min = currentServoMixer[i].min * SERVO_MIXER_INPUT_WIDTH / 100 - SERVO_MIXER_INPUT_WIDTH / 2;
+        const int16_t max = currentServoMixer[i].max * SERVO_MIXER_INPUT_WIDTH / 100 - SERVO_MIXER_INPUT_WIDTH / 2;
 
         if (currentServoMixer[i].speed == 0) {
             currentOutput[i] = input[from];
@@ -417,7 +442,25 @@ void servoMixer(void)
     }
 
     for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+        /*
+         * Apply servo rate
+         */
         servo[i] = ((int32_t)servoParams(i)->rate * servo[i]) / 100L;
+        
+        /*
+         * Perform acumulated servo output scaling to match servo min and max values
+         * Important: is servo rate is > 100%, total servo output might be bigger than 
+         * min/max
+         */
+        if (servo[i] > 0) {
+            servo[i] = (int16_t) (servo[i] * servoMetadata[i].scaleMax);
+        } else {
+            servo[i] = (int16_t) (servo[i] * servoMetadata[i].scaleMin);
+        }
+
+        /*
+         * Add a servo midpoint to the calculation
+         */
         servo[i] += determineServoMiddleOrForwardFromChannel(i);
     }
 }
