@@ -67,7 +67,7 @@ static int displayPortTestScreenSize(const displayPort_t *displayPort)
     return 0;
 }
 
-static int displayPortTestWrite(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
+static int displayPortTestWriteString(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
 {
     UNUSED(displayPort);
     for (unsigned int i = 0; i < strlen(s); i++) {
@@ -112,7 +112,7 @@ static const displayPortVTable_t testDisplayPortVTable = {
     .clearScreen = displayPortTestClearScreen,
     .drawScreen = displayPortTestDrawScreen,
     .screenSize = displayPortTestScreenSize,
-    .write = displayPortTestWrite,
+    .writeString = displayPortTestWriteString,
     .writeChar = displayPortTestWriteChar,
     .isTransferInProgress = displayPortTestIsTransferInProgress,
     .heartbeat = displayPortTestHeartbeat,
