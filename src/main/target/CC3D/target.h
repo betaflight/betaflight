@@ -114,9 +114,10 @@
 #undef USE_SERIALRX_SUMD       // Graupner Hott protocol
 #undef USE_SERIALRX_SUMH       // Graupner legacy protocol
 #undef USE_SERIALRX_XBUS       // JR
+#undef LED_STRIP
 #endif
 
-#undef LED_STRIP
+//#undef LED_STRIP
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
 // IO - from schematics
