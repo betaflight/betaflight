@@ -129,7 +129,7 @@ typedef struct pageState_s {
 
 static pageState_t pageState;
 
-void resetDisplay(void)
+static void resetDisplay(void)
 {
     dashboardPresent = ug2864hsweg01InitI2C(bus);
 }
@@ -139,7 +139,7 @@ void LCDprint(uint8_t i)
    i2c_OLED_send_char(bus, i);
 }
 
-void padLineBuffer(void)
+static void padLineBuffer(void)
 {
     uint8_t length = strlen(lineBuffer);
     while (length < sizeof(lineBuffer) - 1) {
@@ -148,7 +148,8 @@ void padLineBuffer(void)
     lineBuffer[length] = 0;
 }
 
-void padHalfLineBuffer(void)
+#ifdef GPS
+static void padHalfLineBuffer(void)
 {
     uint8_t halfLineIndex = sizeof(lineBuffer) / 2;
     uint8_t length = strlen(lineBuffer);
@@ -157,9 +158,11 @@ void padHalfLineBuffer(void)
     }
     lineBuffer[length] = 0;
 }
+#endif
 
 // LCDbar(n,v) : draw a bar graph - n number of chars for width, v value in % to display
-void drawHorizonalPercentageBar(uint8_t width,uint8_t percent) {
+static void drawHorizonalPercentageBar(uint8_t width,uint8_t percent)
+{
     uint8_t i, j;
 
     if (percent > 100)
@@ -178,7 +181,7 @@ void drawHorizonalPercentageBar(uint8_t width,uint8_t percent) {
 }
 
 #if 0
-void fillScreenWithCharacters()
+static void fillScreenWithCharacters()
 {
     for (uint8_t row = 0; row < SCREEN_CHARACTER_ROW_COUNT; row++) {
         for (uint8_t column = 0; column < SCREEN_CHARACTER_COLUMN_COUNT; column++) {
@@ -190,7 +193,7 @@ void fillScreenWithCharacters()
 #endif
 
 
-void updateTicker(void)
+static void updateTicker(void)
 {
     static uint8_t tickerIndex = 0;
     i2c_OLED_set_xy(bus, SCREEN_CHARACTER_COLUMN_COUNT - 1, 0);
@@ -199,7 +202,7 @@ void updateTicker(void)
     tickerIndex = tickerIndex % TICKER_CHARACTER_COUNT;
 }
 
-void updateRxStatus(void)
+static void updateRxStatus(void)
 {
     i2c_OLED_set_xy(bus, SCREEN_CHARACTER_COLUMN_COUNT - 2, 0);
     char rxStatus = '!';
@@ -211,60 +214,57 @@ void updateRxStatus(void)
     i2c_OLED_send_char(bus, rxStatus);
 }
 
-void updateFailsafeStatus(void)
+static void updateFailsafeStatus(void)
 {
     char failsafeIndicator = '?';
     switch (failsafePhase()) {
-        case FAILSAFE_IDLE:
-            failsafeIndicator = '-';
-            break;
-        case FAILSAFE_RX_LOSS_DETECTED:
-            failsafeIndicator = 'R';
-            break;
-        case FAILSAFE_LANDING:
-            failsafeIndicator = 'l';
-            break;
-        case FAILSAFE_LANDED:
-            failsafeIndicator = 'L';
-            break;
-        case FAILSAFE_RX_LOSS_MONITORING:
-            failsafeIndicator = 'M';
-            break;
-        case FAILSAFE_RX_LOSS_RECOVERED:
-            failsafeIndicator = 'r';
-            break;
+    case FAILSAFE_IDLE:
+        failsafeIndicator = '-';
+        break;
+    case FAILSAFE_RX_LOSS_DETECTED:
+        failsafeIndicator = 'R';
+        break;
+    case FAILSAFE_LANDING:
+        failsafeIndicator = 'l';
+        break;
+    case FAILSAFE_LANDED:
+        failsafeIndicator = 'L';
+        break;
+    case FAILSAFE_RX_LOSS_MONITORING:
+        failsafeIndicator = 'M';
+        break;
+    case FAILSAFE_RX_LOSS_RECOVERED:
+        failsafeIndicator = 'r';
+        break;
     }
     i2c_OLED_set_xy(bus, SCREEN_CHARACTER_COLUMN_COUNT - 3, 0);
     i2c_OLED_send_char(bus, failsafeIndicator);
 }
 
-void showTitle()
+static void showTitle()
 {
     i2c_OLED_set_line(bus, 0);
     i2c_OLED_send_string(bus, pageState.page->title);
 }
 
-void handlePageChange(void)
+static void handlePageChange(void)
 {
     i2c_OLED_clear_display_quick(bus);
     showTitle();
 }
 
-void drawRxChannel(uint8_t channelIndex, uint8_t width)
+static void drawRxChannel(uint8_t channelIndex, uint8_t width)
 {
-    uint32_t percentage;
-
     LCDprint(rcChannelLetters[channelIndex]);
 
-    percentage = (constrain(rcData[channelIndex], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN);
+    const uint32_t percentage = (constrain(rcData[channelIndex], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN);
     drawHorizonalPercentageBar(width - 1, percentage);
 }
 
 #define RX_CHANNELS_PER_PAGE_COUNT 14
-void showRxPage(void)
+static void showRxPage(void)
 {
-
-    for (uint8_t channelIndex = 0; channelIndex < rxRuntimeConfig.channelCount && channelIndex < RX_CHANNELS_PER_PAGE_COUNT; channelIndex += 2) {
+    for (int channelIndex = 0; channelIndex < rxRuntimeConfig.channelCount && channelIndex < RX_CHANNELS_PER_PAGE_COUNT; channelIndex += 2) {
         i2c_OLED_set_line(bus, (channelIndex / 2) + PAGE_TITLE_LINE_COUNT);
 
         drawRxChannel(channelIndex, HALF_SCREEN_CHARACTER_COLUMN_COUNT);
@@ -281,7 +281,7 @@ void showRxPage(void)
     }
 }
 
-void showWelcomePage(void)
+static void showWelcomePage(void)
 {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
@@ -293,11 +293,11 @@ void showWelcomePage(void)
     i2c_OLED_send_string(bus, targetName);
 }
 
-void showArmedPage(void)
+static void showArmedPage(void)
 {
 }
 
-void showProfilePage(void)
+static void showProfilePage(void)
 {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
@@ -346,8 +346,8 @@ void showProfilePage(void)
 #define SATELLITE_GRAPH_LEFT_OFFSET ((SCREEN_CHARACTER_COLUMN_COUNT - SATELLITE_COUNT) / 2)
 
 #ifdef GPS
-void showGpsPage() {
-
+static void showGpsPage()
+{
     if (!feature(FEATURE_GPS)) {
         pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
         return;
@@ -438,7 +438,7 @@ void showGpsPage() {
 }
 #endif
 
-void showBatteryPage(void)
+static void showBatteryPage(void)
 {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
@@ -467,7 +467,7 @@ void showBatteryPage(void)
     }
 }
 
-void showSensorsPage(void)
+static void showSensorsPage(void)
 {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
     static const char *format = "%s %5d %5d %5d";
@@ -532,7 +532,7 @@ void showSensorsPage(void)
 }
 
 #ifndef SKIP_TASK_STATISTICS
-void showTasksPage(void)
+static void showTasksPage(void)
 {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
     static const char *format = "%2d%6d%5d%4d%4d";
@@ -560,7 +560,7 @@ void showTasksPage(void)
 
 #ifdef ENABLE_DEBUG_DASHBOARD_PAGE
 
-void showDebugPage(void)
+static void showDebugPage(void)
 {
     for (int rowIndex = 0; rowIndex < 4; rowIndex++) {
         tfp_sprintf(lineBuffer, "%d = %5d", rowIndex, debug[rowIndex]);
