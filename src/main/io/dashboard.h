@@ -16,8 +16,25 @@
  */
 
 #include "common/time.h"
+#include "config/parameter_group.h"
+#include "drivers/bus_i2c.h"
 
 #define ENABLE_DEBUG_DASHBOARD_PAGE
+
+#ifdef OLED_I2C_INSTANCE
+#define DASHBOARD_I2C_INSTANCE  OLED_I2C_INSTANCE
+#else
+#define DASHBOARD_I2C_INSTANCE  I2CDEV_1
+#endif
+
+#define DASHBOARD_I2C_ADDRESS   0x3C     // OLED at address 0x3C in 7bit
+
+typedef struct dashboardConfig_s {
+    I2CDevice device;
+    uint8_t   address;
+} dashboardConfig_t;
+
+PG_DECLARE(dashboardConfig_t, dashboardConfig);
 
 typedef enum {
     PAGE_WELCOME,
