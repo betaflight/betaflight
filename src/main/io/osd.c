@@ -207,7 +207,7 @@ static bool osdDrawSingleElement(uint8_t item)
             uint8_t p = calculateBatteryPercentage();
             p = (100 - p) / 16.6;
             buff[0] = SYM_BATT_FULL + p;
-            tfp_sprintf(buff + 1, "%2d.%1dV", vbat / 10, vbat % 10);
+            tfp_sprintf(buff + 1, "%d.%1dV ", vbat / 10, vbat % 10);
             break;
         }
 
@@ -401,7 +401,7 @@ static bool osdDrawSingleElement(uint8_t item)
 
             for (int x = -4; x <= 4; x++) {
                 // clear the y area before writing the new horizon character
-                for (int y = 0; y <= 9; y++) {
+                for (int y = 0; y <= 7; y++) {
                     max7456WriteChar(elemPosX + x, elemPosY + y, 0x20);
                 }
                 int y = (rollAngle * x) / 64;
