@@ -502,6 +502,10 @@ void init(void)
     // gyro.targetLooptime set in sensorsAutodetect(), so we are ready to call pidInit()
     pidInit(currentPidProfile);
 
+#ifdef USE_SERVOS
+    servosFilterInit();
+#endif
+
     imuInit();
 
     mspFcInit();
