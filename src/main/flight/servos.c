@@ -105,23 +105,23 @@ static rateLimitFilter_t servoSpeedLimitFilter[MAX_SERVO_RULES];
 #define COUNT_SERVO_RULES(rules) (sizeof(rules) / sizeof(servoMixer_t))
 // mixer rule format servo, input, rate, speed, min, max, box
 static const servoMixer_t servoMixerAirplane[] = {
-    { SERVO_FLAPPERON_1, INPUT_STABILIZED_ROLL,  100, 0, 0, 100 },
-    { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL,  100, 0, 0, 100 },
-    { SERVO_FLAPPERON_1, INPUT_FEATURE_FLAPS,    100, 0, 0, 100 },
-    { SERVO_FLAPPERON_2, INPUT_FEATURE_FLAPS,   -100, 0, 0, 100 },
-    { SERVO_RUDDER,      INPUT_STABILIZED_YAW,   100, 0, 0, 100 },
-    { SERVO_ELEVATOR,    INPUT_STABILIZED_PITCH, 100, 0, 0, 100 },
+    { SERVO_FLAPPERON_1, INPUT_STABILIZED_ROLL,  100, 0 },
+    { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL,  100, 0 },
+    { SERVO_FLAPPERON_1, INPUT_FEATURE_FLAPS,    100, 0 },
+    { SERVO_FLAPPERON_2, INPUT_FEATURE_FLAPS,   -100, 0 },
+    { SERVO_RUDDER,      INPUT_STABILIZED_YAW,   100, 0 },
+    { SERVO_ELEVATOR,    INPUT_STABILIZED_PITCH, 100, 0 },
 };
 
 static const servoMixer_t servoMixerFlyingWing[] = {
-    { SERVO_FLAPPERON_1, INPUT_STABILIZED_ROLL,  100, 0, 0, 100 },
-    { SERVO_FLAPPERON_1, INPUT_STABILIZED_PITCH, 100, 0, 0, 100 },
-    { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL, -100, 0, 0, 100 },
-    { SERVO_FLAPPERON_2, INPUT_STABILIZED_PITCH, 100, 0, 0, 100 },
+    { SERVO_FLAPPERON_1, INPUT_STABILIZED_ROLL,  100, 0 },
+    { SERVO_FLAPPERON_1, INPUT_STABILIZED_PITCH, 100, 0 },
+    { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL, -100, 0 },
+    { SERVO_FLAPPERON_2, INPUT_STABILIZED_PITCH, 100, 0 },
 };
 
 static const servoMixer_t servoMixerTri[] = {
-    { SERVO_RUDDER, INPUT_STABILIZED_YAW,   100, 0, 0, 100 },
+    { SERVO_RUDDER, INPUT_STABILIZED_YAW,   100, 0 },
 };
 
 // Custom mixer configuration
@@ -419,9 +419,7 @@ void servoMixer(float dT)
     for (int i = 0; i < servoRuleCount; i++) {
         const uint8_t target = currentServoMixer[i].targetChannel;
         const uint8_t from = currentServoMixer[i].inputSource;
-        const int16_t min = currentServoMixer[i].min * SERVO_MIXER_INPUT_WIDTH / 100 - SERVO_MIXER_INPUT_WIDTH / 2;
-        const int16_t max = currentServoMixer[i].max * SERVO_MIXER_INPUT_WIDTH / 100 - SERVO_MIXER_INPUT_WIDTH / 2;
-
+        
         /*
          * Apply mixer speed limit. 1 [one] speed unit is defined as 10us/s: 
          * 0 = no limiting
@@ -431,7 +429,7 @@ void servoMixer(float dT)
          */
         int16_t inputLimited = (int16_t) rateLimitFilterApply4(&servoSpeedLimitFilter[i], input[from], currentServoMixer[i].speed * 10, dT);
 
-        servo[target] += servoDirection(target, from) * constrain(((int32_t)inputLimited * currentServoMixer[i].rate) / 100, min, max);
+        servo[target] += servoDirection(target, from) * ((int32_t)inputLimited * currentServoMixer[i].rate) / 100;
     }
 
     for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {

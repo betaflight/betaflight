@@ -617,8 +617,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
             sbufWriteU8(dst, customServoMixers(i)->inputSource);
             sbufWriteU8(dst, customServoMixers(i)->rate);
             sbufWriteU8(dst, customServoMixers(i)->speed);
-            sbufWriteU8(dst, customServoMixers(i)->min);
-            sbufWriteU8(dst, customServoMixers(i)->max);
+            sbufWriteU8(dst, 0);
+            sbufWriteU8(dst, 100);
             sbufWriteU8(dst, 0);
         }
         break;
@@ -1537,8 +1537,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             customServoMixersMutable(i)->inputSource = sbufReadU8(src);
             customServoMixersMutable(i)->rate = sbufReadU8(src);
             customServoMixersMutable(i)->speed = sbufReadU8(src);
-            customServoMixersMutable(i)->min = sbufReadU8(src);
-            customServoMixersMutable(i)->max = sbufReadU8(src);
+            sbufReadU16(src); //Read 2bytes for min/max and ignore it
             sbufReadU8(src); //Read 1 byte for `box` and ignore it
             loadCustomServoMixer();
         }
