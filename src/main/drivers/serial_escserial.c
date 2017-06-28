@@ -203,7 +203,7 @@ static void escSerialTimerTxConfig(const timerHardware_t *timerHardwarePtr, uint
 {
     uint32_t timerPeriod = 34;
     TIM_DeInit(timerHardwarePtr->tim);
-    timerConfigure(timerHardwarePtr, timerPeriod, 1e6);
+    timerConfigure(timerHardwarePtr, timerPeriod, MHZ_TO_HZ(1));
     timerChCCHandlerInit(&escSerialPorts[reference].timerCb, onSerialTimerEsc);
     timerChConfigCallbacks(timerHardwarePtr, &escSerialPorts[reference].timerCb, NULL);
 }
@@ -226,7 +226,7 @@ static void escSerialTimerRxConfig(const timerHardware_t *timerHardwarePtr, uint
 {
     // start bit is usually a FALLING signal
     TIM_DeInit(timerHardwarePtr->tim);
-    timerConfigure(timerHardwarePtr, 0xFFFF, 1e6);
+    timerConfigure(timerHardwarePtr, 0xFFFF, MHZ_TO_HZ(1));
     escSerialICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Falling);
     timerChCCHandlerInit(&escSerialPorts[reference].edgeCb, onSerialRxPinChangeEsc);
     timerChConfigCallbacks(timerHardwarePtr, &escSerialPorts[reference].edgeCb, NULL);
