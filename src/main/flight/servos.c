@@ -100,6 +100,7 @@ static biquadFilter_t servoFilter[MAX_SUPPORTED_SERVOS];
 static bool servoFilterIsSet;
 
 static servoMetadata_t servoMetadata[MAX_SUPPORTED_SERVOS];
+static rateLimitFilter_t servoSpeedLimitFilter[MAX_SERVO_RULES];
 
 #define COUNT_SERVO_RULES(rules) (sizeof(rules) / sizeof(servoMixer_t))
 // mixer rule format servo, input, rate, speed, min, max, box
@@ -238,12 +239,6 @@ void servosInit(void)
 
     }
 
-    for (uint8_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        servoMetadata[i].rateSum = 0;
-        servoMetadata[i].scaleMax = 0;
-        servoMetadata[i].scaleMin = 0;
-    }
-
     /*
      * Iterate over mixer rules to determine max. possible rate for a servo
      */ 
@@ -373,7 +368,7 @@ void writeServos(void)
     }
 }
 
-void servoMixer(void)
+void servoMixer(float dT)
 {
     int16_t input[INPUT_SOURCE_COUNT]; // Range [-500:+500]
     static int16_t currentOutput[MAX_SERVO_RULES];
@@ -428,15 +423,14 @@ void servoMixer(void)
         const int16_t min = currentServoMixer[i].min * SERVO_MIXER_INPUT_WIDTH / 100 - SERVO_MIXER_INPUT_WIDTH / 2;
         const int16_t max = currentServoMixer[i].max * SERVO_MIXER_INPUT_WIDTH / 100 - SERVO_MIXER_INPUT_WIDTH / 2;
 
-        if (currentServoMixer[i].speed == 0) {
-            currentOutput[i] = input[from];
-        } else {
-            if (currentOutput[i] < input[from]) {
-                currentOutput[i] = constrain(currentOutput[i] + currentServoMixer[i].speed, currentOutput[i], input[from]);
-            } else if (currentOutput[i] > input[from]) {
-                currentOutput[i] = constrain(currentOutput[i] - currentServoMixer[i].speed, input[from], currentOutput[i]);
-            }
-        }
+        /*
+         * Apply mixer speed limit. 1 [one] speed unit is defined as 10us/s: 
+         * 0 = no limiting
+         * 1 = 10us/s -> full servo sweep (from 1000 to 2000) is performed in 100s 
+         * 10 = 100us/s -> full sweep (from 1000 to 2000)  is performed in 10s
+         * 100 = 1000us/s -> full sweep in 1s
+         */
+        currentOutput[i] = (int16_t) rateLimitFilterApply4(&servoSpeedLimitFilter[i], input[from], currentServoMixer[i].speed * 10, dT);
 
         servo[target] += servoDirection(target, from) * constrain(((int32_t)currentOutput[i] * currentServoMixer[i].rate) / 100, min, max);
     }

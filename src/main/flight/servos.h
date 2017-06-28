@@ -138,5 +138,5 @@ void writeServos(void);
 void servoMixerLoadMix(int index);
 void loadCustomServoMixer(void);
 int servoDirection(int servoIndex, int fromChannel);
-void servoMixer(void);
+void servoMixer(float dT);
 void servosInit(void);

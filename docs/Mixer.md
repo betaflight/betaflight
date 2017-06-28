@@ -133,10 +133,24 @@ For example, `smix 0 2 0 100 0 0 100` will assign Stabilised Roll to the third p
 | 6  | THROTTLE (Based ONLY on the first motor output) |
 | 7  | FLAPS |
 
-
-
-
 Note: the `smix` command may show a servo mix that is not active, custom servo mixes are only active for models that use custom mixers.
+
+### Servo speed
+
+Custom servo mixer allows to define the speed of change for given servo rule. By default, all speeds are set to `0`, that means limiting is _NOT_ applied and rules source is directly written to servo. That mean, if, for example, source (AUX) changes from 1000 to 2000 in one cycle, servo output will also change from 1000 to 2000 in one cycle. In this case, speed is limited only by the servo itself.
+
+If value different than `0` is set as rule speed, speed of change will be lowered accordingly. 
+
+`1 speed = 10 us/s`
+
+**Example speed values**
+* 0 = no limiting
+* 1 = 10us/s -> full servo sweep (from 1000 to 2000) is performed in 100s 
+* 10 = 100us/s -> full sweep (from 1000 to 2000)  is performed in 10s
+* 100 = 1000us/s -> full sweep in 1s
+* 200 = 2000us/s -> full sweep in 0.5s 
+
+Servo speed might be useful for functions like flaps, landing gear retraction and other where full speed provided for hardware is too much.
 
 ## Servo Reversing
 

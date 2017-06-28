@@ -707,7 +707,7 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
 
 #ifdef USE_SERVOS
     if (isMixerUsingServos()) {
-        servoMixer();
+        servoMixer(dT);
         processServoAutotrim();
     }
 
