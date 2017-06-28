@@ -101,8 +101,8 @@ Note: the `mmix` command may show a motor mix that is not active, custom motor m
 
 Custom servo mixing rules can be applied to each servo.  Rules are applied in the CLI using `smix`. Rules link flight controller stabilization and receiver signals to physical pwm output pins on the FC board. Currently, pin id's 0 and 1 can only be used for motor outputs. Other pins may or may not work depending on the board you are using.
 
-The mmix statement has the following syntax: `smix n SERVO_ID SIGNAL_SOURCE RATE SPEED	MIN	MAX`
-For example, `smix 0 2 0 100 0 0 100` will assign Stabilised Roll to the third pwm pin on the FC board.
+The mmix statement has the following syntax: `smix n SERVO_ID SIGNAL_SOURCE RATE SPEED`
+For example, `smix 0 2 0 100 0` will assign Stabilised Roll to the third pwm pin on the FC board.
 
 | id | Flight Controller Output signal sources |
 |----|-----------------|
@@ -133,7 +133,25 @@ For example, `smix 0 2 0 100 0 0 100` will assign Stabilised Roll to the third p
 | 6  | THROTTLE (Based ONLY on the first motor output) |
 | 7  | FLAPS |
 
-Note: the `smix` command may show a servo mix that is not active, custom servo mixes are only active for models that use custom mixers.
+### Servo rule rate
+
+Servo rule rate should be understood as a weight of a rule. To obtain full servo throw without clipping sum of all `smix` rates for a servo should equals `100`. For example, is servo #2 should be driven by sources 0 and 1 (Stablilized Roll and Stablized Pitch) with equal strength, correct rules would be:
+
+```
+smix 0 2 0 50 0
+smix 1 2 1 50 0
+```  
+
+To obtain stronger input of one source, increase rate of this source while decreasing the others. For example, to drive servo #2 in 75% from source 0 and in 25% from source 1, correct rules would be:
+
+```
+smix 0 2 0 75 0
+smix 1 2 1 25 0
+```  
+
+If sum of weights would be bigger than `100`, clipping to servo min and max values might appear.
+
+> Note: the `smix` command may show a servo mix that is not active, custom servo mixes are only active for models that use custom mixers.
 
 ### Servo speed
 
