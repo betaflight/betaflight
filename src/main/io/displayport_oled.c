@@ -56,7 +56,7 @@ static int oledScreenSize(const displayPort_t *displayPort)
     return displayPort->rows * displayPort->cols;
 }
 
-static int oledWrite(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
+static int oledWriteString(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
 {
     i2c_OLED_set_xy(displayPort->device, x, y);
     i2c_OLED_send_string(displayPort->device, s);
@@ -99,7 +99,7 @@ static const displayPortVTable_t oledVTable = {
     .clearScreen = oledClearScreen,
     .drawScreen = oledDrawScreen,
     .screenSize = oledScreenSize,
-    .write = oledWrite,
+    .writeString = oledWriteString,
     .writeChar = oledWriteChar,
     .isTransferInProgress = oledIsTransferInProgress,
     .heartbeat = oledHeartbeat,
