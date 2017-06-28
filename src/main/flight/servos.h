@@ -123,7 +123,6 @@ typedef struct servoConfig_s {
 PG_DECLARE(servoConfig_t, servoConfig);
 
 typedef struct servoMetadata_s {
-    int16_t rateSum;
     float scaleMax;
     float scaleMin;
 } servoMetadata_t;

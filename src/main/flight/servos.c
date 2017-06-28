@@ -114,10 +114,10 @@ static const servoMixer_t servoMixerAirplane[] = {
 };
 
 static const servoMixer_t servoMixerFlyingWing[] = {
-    { SERVO_FLAPPERON_1, INPUT_STABILIZED_ROLL,  100, 0 },
-    { SERVO_FLAPPERON_1, INPUT_STABILIZED_PITCH, 100, 0 },
-    { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL, -100, 0 },
-    { SERVO_FLAPPERON_2, INPUT_STABILIZED_PITCH, 100, 0 },
+    { SERVO_FLAPPERON_1, INPUT_STABILIZED_ROLL,  50, 0 },
+    { SERVO_FLAPPERON_1, INPUT_STABILIZED_PITCH, 50, 0 },
+    { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL, -50, 0 },
+    { SERVO_FLAPPERON_2, INPUT_STABILIZED_PITCH, 50, 0 },
 };
 
 static const servoMixer_t servoMixerTri[] = {
@@ -240,19 +240,11 @@ void servosInit(void)
     }
 
     /*
-     * Iterate over mixer rules to determine max. possible rate for a servo
-     */ 
-    for (uint8_t i = 0; i < servoRuleCount; i++) {
-        servoMetadata[currentServoMixer[i].targetChannel].rateSum += abs(currentServoMixer[i].rate);
-    }
-
-    /*
      * Compute scaling factor for upper and lower servo throw
      */ 
     for (uint8_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        const float rateUs = servoMetadata[i].rateSum / 100.0f * 500;
-        servoMetadata[i].scaleMax = (servoParams(i)->max - servoParams(i)->middle) / rateUs;
-        servoMetadata[i].scaleMin = (servoParams(i)->middle - servoParams(i)->min) / rateUs;
+        servoMetadata[i].scaleMax = (servoParams(i)->max - servoParams(i)->middle) / 500.0f;
+        servoMetadata[i].scaleMin = (servoParams(i)->middle - servoParams(i)->min) / 500.0f;
     }
 
 }
@@ -433,11 +425,12 @@ void servoMixer(float dT)
     }
 
     for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+        
         /*
          * Apply servo rate
          */
         servo[i] = ((int32_t)servoParams(i)->rate * servo[i]) / 100L;
-        
+
         /*
          * Perform acumulated servo output scaling to match servo min and max values
          * Important: is servo rate is > 100%, total servo output might be bigger than 
@@ -453,6 +446,13 @@ void servoMixer(float dT)
          * Add a servo midpoint to the calculation
          */
         servo[i] += determineServoMiddleOrForwardFromChannel(i);
+
+        /*
+         * Constrain servo position to min/max to prevent servo damage
+         * If servo was saturated above min/max, that means that user most probably 
+         * allowed the situation when smix weight sum for an output was above 100
+         */
+        servo[i] = constrain(servo[i], servoParams(i)->min, servoParams(i)->max);
     }
 }
 
