@@ -184,8 +184,7 @@ static void serialTimerTxConfigBL(const timerHardware_t *timerHardwarePtr, uint8
         }
     } while (isTimerPeriodTooLarge(timerPeriod));
 
-    uint8_t mhz = clock / 1000000;
-    timerConfigure(timerHardwarePtr, timerPeriod, mhz);
+    timerConfigure(timerHardwarePtr, timerPeriod, clock);
     timerChCCHandlerInit(&escSerialPorts[reference].timerCb, onSerialTimerBL);
     timerChConfigCallbacks(timerHardwarePtr, &escSerialPorts[reference].timerCb, NULL);
 }
@@ -193,9 +192,8 @@ static void serialTimerTxConfigBL(const timerHardware_t *timerHardwarePtr, uint8
 static void serialTimerRxConfigBL(const timerHardware_t *timerHardwarePtr, uint8_t reference, portOptions_t options)
 {
     // start bit is usually a FALLING signal
-    uint8_t mhz = SystemCoreClock / 2000000;
     TIM_DeInit(timerHardwarePtr->tim);
-    timerConfigure(timerHardwarePtr, 0xFFFF, mhz);
+    timerConfigure(timerHardwarePtr, 0xFFFF, SystemCoreClock / 2);
     escSerialICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, (options & SERIAL_INVERTED) ? TIM_ICPolarity_Rising : TIM_ICPolarity_Falling);
     timerChCCHandlerInit(&escSerialPorts[reference].edgeCb, onSerialRxPinChangeBL);
     timerChConfigCallbacks(timerHardwarePtr, &escSerialPorts[reference].edgeCb, NULL);
@@ -203,9 +201,9 @@ static void serialTimerRxConfigBL(const timerHardware_t *timerHardwarePtr, uint8
 
 static void escSerialTimerTxConfig(const timerHardware_t *timerHardwarePtr, uint8_t reference)
 {
-    uint32_t timerPeriod=34;
+    uint32_t timerPeriod = 34;
     TIM_DeInit(timerHardwarePtr->tim);
-    timerConfigure(timerHardwarePtr, timerPeriod, 1);
+    timerConfigure(timerHardwarePtr, timerPeriod, 1e6);
     timerChCCHandlerInit(&escSerialPorts[reference].timerCb, onSerialTimerEsc);
     timerChConfigCallbacks(timerHardwarePtr, &escSerialPorts[reference].timerCb, NULL);
 }
@@ -228,7 +226,7 @@ static void escSerialTimerRxConfig(const timerHardware_t *timerHardwarePtr, uint
 {
     // start bit is usually a FALLING signal
     TIM_DeInit(timerHardwarePtr->tim);
-    timerConfigure(timerHardwarePtr, 0xFFFF, 1);
+    timerConfigure(timerHardwarePtr, 0xFFFF, 1e6);
     escSerialICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Falling);
     timerChCCHandlerInit(&escSerialPorts[reference].edgeCb, onSerialRxPinChangeEsc);
     timerChConfigCallbacks(timerHardwarePtr, &escSerialPorts[reference].edgeCb, NULL);

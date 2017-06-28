@@ -20,7 +20,9 @@
 #include "drivers/io_types.h"
 #include "timer.h"
 
+#ifndef MAX_SUPPORTED_MOTORS 
 #define MAX_SUPPORTED_MOTORS 12
+#endif
 
 #if defined(USE_QUAD_MIXER_ONLY)
 #define MAX_SUPPORTED_SERVOS 1
@@ -75,45 +77,29 @@ typedef enum {
     PWM_TYPE_MAX
 } motorPwmProtocolTypes_e;
 
-#define PWM_TIMER_MHZ         1
+#define PWM_TIMER_HZ          MHZ_TO_HZ(1)
 
 #ifdef USE_DSHOT
 #define MAX_DMA_TIMERS        8
 
-#define MOTOR_DSHOT1200_MHZ   24
-#define MOTOR_DSHOT600_MHZ    12
-#define MOTOR_DSHOT300_MHZ    6
-#define MOTOR_DSHOT150_MHZ    3
+#define MOTOR_DSHOT1200_HZ    MHZ_TO_HZ(24)
+#define MOTOR_DSHOT600_HZ     MHZ_TO_HZ(12)
+#define MOTOR_DSHOT300_HZ     MHZ_TO_HZ(6)
+#define MOTOR_DSHOT150_HZ     MHZ_TO_HZ(3)
 
 #define MOTOR_BIT_0           7
 #define MOTOR_BIT_1           14
 #define MOTOR_BITLENGTH       19
 
-#define MOTOR_PROSHOT1000_MHZ        24 
+#define MOTOR_PROSHOT1000_HZ         MHZ_TO_HZ(24) 
 #define PROSHOT_BASE_SYMBOL          24 // 1uS
 #define PROSHOT_BIT_WIDTH            3
 #define MOTOR_NIBBLE_LENGTH_PROSHOT  96 // 4uS
 #endif
 
-#if defined(STM32F40_41xxx) // must be multiples of timer clock
-#define ONESHOT125_TIMER_MHZ  12
-#define ONESHOT42_TIMER_MHZ   21
-#define MULTISHOT_TIMER_MHZ   84
-#define PWM_BRUSHED_TIMER_MHZ 21
-#elif defined(STM32F7) // must be multiples of timer clock
-#define ONESHOT125_TIMER_MHZ  9
-#define ONESHOT42_TIMER_MHZ   27
-#define MULTISHOT_TIMER_MHZ   54
-#define PWM_BRUSHED_TIMER_MHZ 27
-#else
-#define ONESHOT125_TIMER_MHZ  8
-#define ONESHOT42_TIMER_MHZ   24
-#define MULTISHOT_TIMER_MHZ   72
-#define PWM_BRUSHED_TIMER_MHZ 24
-#endif
 
 #define DSHOT_DMA_BUFFER_SIZE   18 /* resolution + frame reset (2us) */
-#define PROSHOT_DMA_BUFFER_SIZE 6/* resolution + frame reset (2us) */
+#define PROSHOT_DMA_BUFFER_SIZE 6  /* resolution + frame reset (2us) */
 
 typedef struct {
     TIM_TypeDef *timer;
@@ -149,9 +135,10 @@ typedef struct {
     volatile timCCR_t *ccr;
     TIM_TypeDef *tim;
     bool forceOverflow;
-    uint16_t period;
     bool enabled;
     IO_t io;
+    float pulseScale;
+    float pulseOffset;
 } pwmOutputPort_t;
 
 typedef struct motorDevConfig_s {
