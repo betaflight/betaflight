@@ -928,6 +928,7 @@ void osdUpdate(timeUs_t currentTimeUs)
         if (!refreshTimeout) {
             max7456ClearScreen();
         }
+        max7456DrawScreenPartial();
         return;
     }
 
