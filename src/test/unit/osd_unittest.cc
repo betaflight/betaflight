@@ -24,17 +24,26 @@ extern "C" {
     #include "platform.h"
 
     #include "build/debug.h"
+
     #include "blackbox/blackbox.h"
+
     #include "config/parameter_group_ids.h"
+
     #include "drivers/max7456_symbols.h"
+
     #include "fc/config.h"
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
+
     #include "flight/pid.h"
     #include "flight/imu.h"
+
+    #include "io/gps.h"
     #include "io/osd.h"
+
     #include "sensors/battery.h"
+
     #include "rx/rx.h"
 
     void osdRefresh(timeUs_t currentTimeUs);
@@ -48,10 +57,10 @@ extern "C" {
     int16_t debug[DEBUG16_VALUE_COUNT];
     int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
     uint8_t GPS_numSat;
-    uint16_t GPS_speed;
     uint16_t GPS_distanceToHome;
     uint16_t GPS_directionToHome;
     int32_t GPS_coord[2];
+    gpsSolutionData_t gpsSol;
 
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
     PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
@@ -283,7 +292,7 @@ TEST(OsdTest, TestStatsImperial)
     // and
     // these conditions occur during flight
     rssi = 1024;
-    GPS_speed = 500;
+    gpsSol.groundSpeed = 500;
     GPS_distanceToHome = 20;
     simulationBatteryVoltage = 158;
     simulationAltitude = 100;
@@ -291,7 +300,7 @@ TEST(OsdTest, TestStatsImperial)
     osdRefresh(simulationTime);
 
     rssi = 512;
-    GPS_speed = 800;
+    gpsSol.groundSpeed = 800;
     GPS_distanceToHome = 50;
     simulationBatteryVoltage = 147;
     simulationAltitude = 150;
@@ -299,7 +308,7 @@ TEST(OsdTest, TestStatsImperial)
     osdRefresh(simulationTime);
 
     rssi = 256;
-    GPS_speed = 200;
+    gpsSol.groundSpeed = 200;
     GPS_distanceToHome = 100;
     simulationBatteryVoltage = 152;
     simulationAltitude = 200;
@@ -343,7 +352,7 @@ TEST(OsdTest, TestStatsMetric)
     // and
     // these conditions occur during flight (simplified to less assignments than previous test)
     rssi = 256;
-    GPS_speed = 800;
+    gpsSol.groundSpeed = 800;
     GPS_distanceToHome = 100;
     simulationBatteryVoltage = 147;
     simulationAltitude = 200;
