@@ -253,6 +253,7 @@ Re-apply any new defaults as desired.
 |  blackbox_rate_num  | 1 | Blackbox logging rate numerator. Use num/denom settings to decide if a frame should be logged, allowing control of the portion of logged loop iterations |
 |  blackbox_rate_denom  | 1 | Blackbox logging rate denominator. See blackbox_rate_num. |
 |  blackbox_device  | SPIFLASH | Selection of where to write blackbox data |
+|  sdcard_detect_inverted  | `TARGET dependent` | This setting drives the way SD card is detected in card slot. On some targets (AnyFC F7 clone) different card slot was used and depending of hardware revision ON or OFF setting might be required. If card is not detected, change this value. |
 |  ledstrip_visual_beeper  | OFF |  |
 |  osd_video_system     | 0     |  |
 |  osd_row_shiftdown    | 0     |  |
