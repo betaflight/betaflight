@@ -276,12 +276,13 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
 #endif
 
 #ifdef USE_GYRO_SPI_ICM20689
+    gyro->bus.spi.instance = ICM20689_SPI_INSTANCE;
     gyro->bus.spi.csnPin = gyro->bus.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(ICM20689_CS_PIN)) : gyro->bus.spi.csnPin;
     if (icm20689SpiDetect(&gyro->bus)) {
         gyro->mpuDetectionResult.sensor = ICM_20689_SPI;
         gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
-        gyro->mpuConfiguration.readFn = icm20689SpiReadRegister;
-        gyro->mpuConfiguration.writeFn = icm20689SpiWriteRegister;
+        gyro->mpuConfiguration.readFn = spiReadRegister;
+        gyro->mpuConfiguration.writeFn = spiWriteRegister;
         return true;
     }
 #endif
