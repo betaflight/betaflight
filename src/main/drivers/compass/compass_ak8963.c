@@ -30,6 +30,7 @@
 
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
+#include "drivers/io.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
@@ -108,6 +109,27 @@ typedef enum {
 } ak8963ReadState_e;
 
 static queuedReadState_t queuedRead = { false, 0, 0};
+
+static bool mpu6500SpiWriteRegisterDelayed(const busDevice_t *bus, uint8_t reg, uint8_t data)
+{
+    IOLo(bus->spi.csnPin);
+    spiTransferByte(MPU6500_SPI_INSTANCE, reg);
+    spiTransferByte(MPU6500_SPI_INSTANCE, data);
+    IOHi(bus->spi.csnPin);
+    delayMicroseconds(10);
+
+    return true;
+}
+
+static bool mpu6500SpiReadRegister(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data)
+{
+    IOLo(bus->spi.csnPin);
+    spiTransferByte(MPU6500_SPI_INSTANCE, reg | 0x80); // read transaction
+    spiTransfer(MPU6500_SPI_INSTANCE, data, NULL, length);
+    IOHi(bus->spi.csnPin);
+
+    return true;
+}
 
 static bool ak8963SensorRead(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *buf)
 {

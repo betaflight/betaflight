@@ -248,14 +248,15 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
 #endif
 
 #ifdef USE_GYRO_SPI_MPU6500
+    gyro->bus.spi.instance = MPU6500_SPI_INSTANCE;
     gyro->bus.spi.csnPin = gyro->bus.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU6500_CS_PIN)) : gyro->bus.spi.csnPin;
     const uint8_t mpu6500Sensor = mpu6500SpiDetect(&gyro->bus);
     // some targets using MPU_9250_SPI, ICM_20608_SPI or ICM_20602_SPI state sensor is MPU_65xx_SPI
     if (mpu6500Sensor != MPU_NONE) {
         gyro->mpuDetectionResult.sensor = mpu6500Sensor;
         gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
-        gyro->mpuConfiguration.readFn = mpu6500SpiReadRegister;
-        gyro->mpuConfiguration.writeFn = mpu6500SpiWriteRegister;
+        gyro->mpuConfiguration.readFn = spiReadRegister;
+        gyro->mpuConfiguration.writeFn = spiWriteRegister;
         return true;
     }
 #endif
