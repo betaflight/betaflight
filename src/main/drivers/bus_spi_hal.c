@@ -21,11 +21,11 @@
 #include <platform.h>
 
 #include "drivers/bus_spi.h"
-#include "dma.h"
+#include "drivers/dma.h"
 #include "drivers/io.h"
-#include "io_impl.h"
+#include "drivers/io_impl.h"
 #include "drivers/nvic.h"
-#include "rcc.h"
+#include "drivers/rcc.h"
 
 #ifndef SPI1_SCK_PIN
 #define SPI1_NSS_PIN    PA4
@@ -344,6 +344,26 @@ void spiResetErrorCounter(SPI_TypeDef *instance)
     SPIDevice device = spiDeviceByInstance(instance);
     if (device != SPIINVALID)
         spiHardwareMap[device].errorCount = 0;
+}
+
+bool spiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
+{
+    IOLo(bus->spi.csnPin);
+    spiTransferByte(bus->spi.instance, reg);
+    spiTransferByte(bus->spi.instance, data);
+    IOHi(bus->spi.csnPin);
+
+    return true;
+}
+
+bool spiReadRegister(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data)
+{
+    IOLo(bus->spi.csnPin);
+    spiTransferByte(bus->spi.instance, reg | 0x80); // read transaction
+    spiTransfer(bus->spi.instance, data, NULL, length);
+    IOHi(bus->spi.csnPin);
+
+    return true;
 }
 
 void dmaSPIIRQHandler(dmaChannelDescriptor_t* descriptor)

@@ -21,6 +21,3 @@ bool mpu6000SpiDetect(const busDevice_t *bus);
 
 bool mpu6000SpiAccDetect(accDev_t *acc);
 bool mpu6000SpiGyroDetect(gyroDev_t *gyro);
-
-bool mpu6000SpiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data);
-bool mpu6000SpiReadRegister(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data);

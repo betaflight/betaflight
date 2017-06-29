@@ -30,6 +30,7 @@
 #include "common/utils.h"
 
 #include "drivers/bus_i2c.h"
+#include "drivers/bus_spi.h"
 #include "drivers/exti.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
@@ -233,14 +234,15 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
 {
     UNUSED(gyro); // since there are FCs which have gyro on I2C but other devices on SPI
 #ifdef USE_GYRO_SPI_MPU6000
+    gyro->bus.spi.instance = MPU6000_SPI_INSTANCE;
 #ifdef MPU6000_CS_PIN
     gyro->bus.spi.csnPin = gyro->bus.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU6000_CS_PIN)) : gyro->bus.spi.csnPin;
 #endif
     if (mpu6000SpiDetect(&gyro->bus)) {
         gyro->mpuDetectionResult.sensor = MPU_60x0_SPI;
         gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
-        gyro->mpuConfiguration.readFn = mpu6000SpiReadRegister;
-        gyro->mpuConfiguration.writeFn = mpu6000SpiWriteRegister;
+        gyro->mpuConfiguration.readFn = spiReadRegister;
+        gyro->mpuConfiguration.writeFn = spiWriteRegister;
         return true;
     }
 #endif
