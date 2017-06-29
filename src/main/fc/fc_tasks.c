@@ -151,7 +151,7 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
     // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
     updateRcCommands();
 #endif
-    updateLEDs();
+    updateArmingStatus();
 
 #ifdef BARO
     if (sensors(SENSOR_BARO)) {

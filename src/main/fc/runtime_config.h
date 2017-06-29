@@ -19,10 +19,8 @@
 
 // FIXME some of these are flight modes, some of these are general status indicators
 typedef enum {
-    OK_TO_ARM       = (1 << 0),
-    PREVENT_ARMING  = (1 << 1),
-    ARMED           = (1 << 2),
-    WAS_EVER_ARMED  = (1 << 3)
+    ARMED           = (1 << 0),
+    WAS_EVER_ARMED  = (1 << 1)
 } armingFlag_e;
 
 extern uint8_t armingFlags;
@@ -30,6 +28,23 @@ extern uint8_t armingFlags;
 #define DISABLE_ARMING_FLAG(mask) (armingFlags &= ~(mask))
 #define ENABLE_ARMING_FLAG(mask) (armingFlags |= (mask))
 #define ARMING_FLAG(mask) (armingFlags & (mask))
+
+typedef enum {
+    ARMING_DISABLED_FAILSAFE    = (1 << 0),
+    ARMING_DISABLED_BOXFAILSAFE = (1 << 1),
+    ARMING_DISABLED_THROTTLE    = (1 << 2),
+    ARMING_DISABLED_ANGLE       = (1 << 3),
+    ARMING_DISABLED_LOAD        = (1 << 4),
+    ARMING_DISABLED_CALIBRATING = (1 << 5),
+    ARMING_DISABLED_CLI         = (1 << 6),
+    ARMING_DISABLED_CMS_MENU    = (1 << 7),
+    ARMING_DISABLED_OSD_MENU    = (1 << 8),
+    ARMING_DISABLED_BST         = (1 << 9),
+} armingDisableFlags_e;
+
+void setArmingDisabled(armingDisableFlags_e flag);
+void unsetArmingDisabled(armingDisableFlags_e flag);
+bool isArmingDisabled(void);
 
 typedef enum {
     ANGLE_MODE      = (1 << 0),

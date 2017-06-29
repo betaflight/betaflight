@@ -574,7 +574,7 @@ STATIC_UNIT_TESTED void cmsMenuOpen(void)
             return;
         cmsInMenu = true;
         currentCtx = (cmsCtx_t){ &menuMain, 0, 0 };
-        DISABLE_ARMING_FLAG(OK_TO_ARM);
+        setArmingDisabled(ARMING_DISABLED_CMS_MENU);
     } else {
         // Switch display
         displayPort_t *pNextDisplay = cmsDisplayPortSelectNext();
@@ -642,7 +642,7 @@ long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
         systemReset();
     }
 
-    ENABLE_ARMING_FLAG(OK_TO_ARM);
+    unsetArmingDisabled(ARMING_DISABLED_CMS_MENU);
 
     return 0;
 }

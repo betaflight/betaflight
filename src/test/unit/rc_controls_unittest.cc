@@ -679,8 +679,8 @@ void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
 void handleInflightCalibrationStickPosition(void) {}
 bool feature(uint32_t) { return false;}
 bool sensors(uint32_t) { return false;}
-void mwArm(void) {}
-void mwDisarm(void) {}
+void tryArm(void) {}
+void disarm(void) {}
 void dashboardDisablePageCycling() {}
 void dashboardEnablePageCycling() {}
 
