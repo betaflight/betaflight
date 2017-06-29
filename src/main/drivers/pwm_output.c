@@ -42,7 +42,7 @@ static pwmOutputPort_t servos[MAX_SUPPORTED_SERVOS];
 
 #ifdef BEEPER
 static pwmOutputPort_t beeperPwm;
-static uint16_t freqBeep=0;
+static uint16_t freqBeep = 0;
 #endif
 
 bool pwmMotorsEnabled = false;
@@ -456,7 +456,7 @@ void servoDevInit(const servoDevConfig_t *servoConfig)
             /* flag failure and disable ability to arm */
             break;
         }
-        pwmOutConfig(&servos[servoIndex], timer, PWM_TIMER_HZ, PWM_TIMER_HZ / servoConfig->servoPwmRate, servoConfig->servoCenterPulse, 0);
+        pwmOutConfig(&servos[servoIndex], timer, PWM_TIMER_1MHZ, PWM_TIMER_1MHZ / servoConfig->servoPwmRate, servoConfig->servoCenterPulse, 0);
         servos[servoIndex].enabled = true;
     }
 }
@@ -469,7 +469,7 @@ void pwmWriteBeeper(bool onoffBeep)
         if(!beeperPwm.io)
             return;
         if(onoffBeep == true) {
-            *beeperPwm.ccr = (PWM_TIMER_HZ / freqBeep) / 2;
+            *beeperPwm.ccr = (PWM_TIMER_1MHZ / freqBeep) / 2;
             beeperPwm.enabled = true;
         } else {
             *beeperPwm.ccr = 0;
@@ -495,7 +495,7 @@ void beeperPwmInit(IO_t io, uint16_t frequency)
             IOConfigGPIO(beeperPwm.io, IOCFG_AF_PP);
 #endif
             freqBeep = frequency;
-            pwmOutConfig(&beeperPwm, timer, PWM_TIMER_HZ, PWM_TIMER_HZ / freqBeep, (PWM_TIMER_HZ / freqBeep) / 2, 0);
+            pwmOutConfig(&beeperPwm, timer, PWM_TIMER_1MHZ, PWM_TIMER_1MHZ / freqBeep, (PWM_TIMER_1MHZ / freqBeep) / 2, 0);
         }
         *beeperPwm.ccr = 0;
         beeperPwm.enabled = false;

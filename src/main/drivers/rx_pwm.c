@@ -391,7 +391,7 @@ void pwmRxInit(const pwmConfig_t *pwmConfig)
         IOConfigGPIO(io, IOCFG_AF_PP);
 #endif
 
-        timerConfigure(timer, (uint16_t)PWM_TIMER_PERIOD, PWM_TIMER_HZ);
+        timerConfigure(timer, (uint16_t)PWM_TIMER_PERIOD, PWM_TIMER_1MHZ);
         timerChCCHandlerInit(&port->edgeCb, pwmEdgeCallback);
         timerChOvrHandlerInit(&port->overflowCb, pwmOverflowCallback);
         timerChConfigCallbacks(timer, &port->edgeCb, &port->overflowCb);
@@ -448,7 +448,7 @@ void ppmRxInit(const ppmConfig_t *ppmConfig)
     IOConfigGPIO(io, IOCFG_AF_PP);
 #endif
 
-    timerConfigure(timer, (uint16_t)PPM_TIMER_PERIOD, PWM_TIMER_HZ);
+    timerConfigure(timer, (uint16_t)PPM_TIMER_PERIOD, PWM_TIMER_1MHZ);
     timerChCCHandlerInit(&port->edgeCb, ppmEdgeCallback);
     timerChOvrHandlerInit(&port->overflowCb, ppmOverflowCallback);
     timerChConfigCallbacks(timer, &port->edgeCb, &port->overflowCb);

@@ -134,7 +134,7 @@ typedef enum {
 #define HARDWARE_TIMER_DEFINITION_COUNT 14
 #endif
 
-#define MHZ_TO_HZ(x) (x * 1000000)
+#define MHZ_TO_HZ(x) ((x) * 1000000)
 
 extern const timerHardware_t timerHardware[];
 extern const timerDef_t timerDefinitions[];
