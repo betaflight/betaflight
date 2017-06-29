@@ -59,6 +59,8 @@
     #define UART3_RX_PIN            PB11
     #define UART3_TX_PIN            PB10
 
+    #define I2C_DEVICE_SHARES_UART3
+
     #define SERIAL_PORT_COUNT       4       // UART1, UART2, UART3, SS1
 
     #define MPU6500_CS_GPIO_CLK_PERIPHERAL  NAZE_CS_GPIO_CLK_PERIPHERAL
