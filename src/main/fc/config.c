@@ -88,6 +88,19 @@
 #define BRUSHED_MOTORS_PWM_RATE 16000
 #define BRUSHLESS_MOTORS_PWM_RATE 400
 
+#if !defined(VBAT_ADC_CHANNEL)
+#define VBAT_ADC_CHANNEL ADC_CHN_NONE
+#endif
+#if !defined(RSSI_ADC_CHANNEL)
+#define RSSI_ADC_CHANNEL ADC_CHN_NONE
+#endif
+#if !defined(CURRENT_METER_ADC_CHANNEL)
+#define CURRENT_METER_ADC_CHANNEL ADC_CHN_NONE
+#endif
+#if !defined(AIRSPEED_ADC_CHANNEL)
+#define AIRSPEED_ADC_CHANNEL ADC_CHN_NONE
+#endif
+
 PG_REGISTER_WITH_RESET_TEMPLATE(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
 
 PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
@@ -109,6 +122,17 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
 );
 
 PG_REGISTER(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 0);
+
+PG_REGISTER_WITH_RESET_TEMPLATE(adcChannelConfig_t, adcChannelConfig, PG_ADC_CHANNEL_CONFIG, 0);
+
+PG_RESET_TEMPLATE(adcChannelConfig_t, adcChannelConfig,
+    .adcFunctionChannel = {
+        [ADC_BATTERY]   = VBAT_ADC_CHANNEL,
+        [ADC_RSSI]      = RSSI_ADC_CHANNEL,
+        [ADC_CURRENT]   = CURRENT_METER_ADC_CHANNEL,
+        [ADC_AIRSPEED]  = AIRSPEED_ADC_CHANNEL,
+    }
+);
 
 #ifdef NAV
 void validateNavConfig(void)

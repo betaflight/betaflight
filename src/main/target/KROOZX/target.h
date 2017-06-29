@@ -83,9 +83,12 @@
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
-#define VBAT_ADC_PIN            PC3
-#define CURRENT_METER_ADC_PIN   PC2
-#define RSSI_ADC_PIN            PC0
+#define ADC_CHANNEL_1_PIN               PC3
+#define ADC_CHANNEL_2_PIN               PC2
+#define ADC_CHANNEL_3_PIN               PC0
+#define VBAT_ADC_CHANNEL                ADC_CHN_1
+#define CURRENT_METER_ADC_CHANNEL       ADC_CHN_2
+#define RSSI_ADC_CHANNEL                ADC_CHN_3
 
 #define USE_VCP
 

@@ -162,12 +162,15 @@
 #endif // USE_NRF24
 
 #define USE_ADC
-#define CURRENT_METER_ADC_PIN   PB1
-#define VBAT_ADC_PIN            PA4
-#define RSSI_ADC_PIN            PA1
+#define ADC_CHANNEL_1_PIN               PB1
+#define ADC_CHANNEL_2_PIN               PA4
+#define ADC_CHANNEL_3_PIN               PA1
+#define CURRENT_METER_ADC_CHANNEL       ADC_CHN_1
+#define VBAT_ADC_CHANNEL                ADC_CHN_2
+#define RSSI_ADC_CHANNEL                ADC_CHN_3
 
 //#define NAV_AUTO_MAG_DECLINATION
-#define NAV_GPS_GLITCH_DETECTION
+//#define NAV_GPS_GLITCH_DETECTION
 
 //#define LED_STRIP
 #define WS2811_PIN                      PA6
@@ -175,6 +178,7 @@
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
 
 #undef USE_SERIALRX_SPEKTRUM
+#undef USE_SERIALRX_IBUS
 //#define SPEKTRUM_BIND
 //#define BIND_PIN                PA3
 

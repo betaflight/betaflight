@@ -86,7 +86,7 @@ bool pitotDetect(pitotDev_t *dev, uint8_t pitotHardwareToUse)
             }
 
         case PITOT_ADC:
-#if defined(USE_PITOT_ADC) && defined(AIRSPEED_ADC_PIN)
+#if defined(USE_PITOT_ADC)
             if (adcPitotDetect(dev)) {
                 pitotHardware = PITOT_ADC;
                 break;

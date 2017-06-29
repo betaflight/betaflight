@@ -36,26 +36,24 @@
 #define ADC_INSTANCE                ADC1
 #endif
 
-#ifndef VBAT_ADC_INSTANCE
-#define VBAT_ADC_INSTANCE           ADC_INSTANCE
+#ifndef ADC_CHANNEL_1_INSTANCE
+#define ADC_CHANNEL_1_INSTANCE  ADC_INSTANCE
 #endif
-#ifndef RSSI_ADC_INSTANCE
-#define RSSI_ADC_INSTANCE           ADC_INSTANCE
+#ifndef ADC_CHANNEL_2_INSTANCE
+#define ADC_CHANNEL_2_INSTANCE  ADC_INSTANCE
 #endif
-#ifndef CURRENT_METER_ADC_INSTANCE
-#define CURRENT_METER_ADC_INSTANCE  ADC_INSTANCE
+#ifndef ADC_CHANNEL_3_INSTANCE
+#define ADC_CHANNEL_3_INSTANCE  ADC_INSTANCE
 #endif
-#ifndef EXTERNAL1_ADC_INSTANCE
-#define EXTERNAL1_ADC_INSTANCE      ADC_INSTANCE
-#endif
-#ifndef AIRSPEED_ADC_INSTANCE
-#define AIRSPEED_ADC_INSTANCE       ADC_INSTANCE
+#ifndef ADC_CHANNEL_4_INSTANCE
+#define ADC_CHANNEL_4_INSTANCE  ADC_INSTANCE
 #endif
 
 #ifdef USE_ADC
 
-adc_config_t adcConfig[ADC_CHANNEL_COUNT];
-volatile uint16_t adcValues[ADCDEV_COUNT][ADC_CHANNEL_COUNT];
+static int adcFunctionMap[ADC_FUNCTION_COUNT];
+adc_config_t adcConfig[ADC_CHN_COUNT];  // index 0 is dummy for ADC_CHN_NONE
+volatile uint16_t adcValues[ADCDEV_COUNT][ADC_CHN_COUNT];
 
 uint8_t adcChannelByTag(ioTag_t ioTag)
 {
@@ -66,8 +64,23 @@ uint8_t adcChannelByTag(ioTag_t ioTag)
     return 0;
 }
 
-uint16_t adcGetChannel(uint8_t channel)
+int adcGetFunctionChannelAllocation(uint8_t function)
 {
+    return adcFunctionMap[function];
+}
+
+bool adcIsFunctionAssigned(uint8_t function)
+{
+    // Map function to ADC channel
+    return (adcFunctionMap[function] != ADC_CHN_NONE);
+}
+
+uint16_t adcGetChannel(uint8_t function)
+{
+    int channel = adcFunctionMap[function];
+    if (channel == ADC_CHN_NONE)
+        return 0;
+
     if (adcConfig[channel].adcDevice != ADCINVALID && adcConfig[channel].enabled) {
         return adcValues[adcConfig[channel].adcDevice][adcConfig[channel].dmaIndex];
     } else {
@@ -75,54 +88,83 @@ uint16_t adcGetChannel(uint8_t channel)
     }
 }
 
+static bool isChannelInUse(int channel)
+{
+    for (int i = 0; i < ADC_FUNCTION_COUNT; i++) {
+        if (adcFunctionMap[i] == channel)
+            return true;
+    }
+
+    return false;
+}
+
+static void disableChannelMapping(int channel)
+{
+    for (int i = 0; i < ADC_FUNCTION_COUNT; i++) {
+        if (adcFunctionMap[i] == channel) {
+            adcFunctionMap[i] = ADC_CHN_NONE;
+        }
+    }
+}
+
 void adcInit(drv_adc_config_t *init)
 {
     memset(&adcConfig, 0, sizeof(adcConfig));
 
-#ifdef VBAT_ADC_PIN
-    if (init->enableVBat) {
-        adcConfig[ADC_BATTERY].adcDevice = adcDeviceByInstance(VBAT_ADC_INSTANCE);
-        if (adcConfig[ADC_BATTERY].adcDevice != ADCINVALID) {
-            adcConfig[ADC_BATTERY].tag = IO_TAG(VBAT_ADC_PIN);
+    // Remember ADC function to ADC channel mapping
+    for (int i = 0; i < ADC_FUNCTION_COUNT; i++) {
+        if (init->adcFunctionChannel[i] >= ADC_CHN_1 && init->adcFunctionChannel[i] <= ADC_CHN_MAX) {
+            adcFunctionMap[i] = init->adcFunctionChannel[i];
+        }
+        else {
+            adcFunctionMap[i] = ADC_CHN_NONE;
         }
     }
+
+#ifdef ADC_CHANNEL_1_PIN
+    if (isChannelInUse(ADC_CHN_1)) {
+        adcConfig[ADC_CHN_1].adcDevice = adcDeviceByInstance(ADC_CHANNEL_1_INSTANCE);
+        if (adcConfig[ADC_CHN_1].adcDevice != ADCINVALID) {
+            adcConfig[ADC_CHN_1].tag = IO_TAG(ADC_CHANNEL_1_PIN);
+        }
+    }
+#else
+    disableChannelMapping(ADC_CHN_1);
 #endif
 
-#ifdef RSSI_ADC_PIN
-    if (init->enableRSSI) {
-        adcConfig[ADC_RSSI].adcDevice = adcDeviceByInstance(RSSI_ADC_INSTANCE);
-        if (adcConfig[ADC_RSSI].adcDevice != ADCINVALID) {
-            adcConfig[ADC_RSSI].tag = IO_TAG(RSSI_ADC_PIN);
+#ifdef ADC_CHANNEL_2_PIN
+    if (isChannelInUse(ADC_CHN_2)) {
+        adcConfig[ADC_CHN_2].adcDevice = adcDeviceByInstance(ADC_CHANNEL_2_INSTANCE);
+        if (adcConfig[ADC_CHN_2].adcDevice != ADCINVALID) {
+            adcConfig[ADC_CHN_2].tag = IO_TAG(ADC_CHANNEL_2_PIN);
         }
     }
+#else
+    disableChannelMapping(ADC_CHN_2);
 #endif
 
-#ifdef CURRENT_METER_ADC_PIN
-    if (init->enableCurrentMeter) {
-        adcConfig[ADC_CURRENT].adcDevice = adcDeviceByInstance(CURRENT_METER_ADC_INSTANCE);
-        if (adcConfig[ADC_CURRENT].adcDevice != ADCINVALID) {
-            adcConfig[ADC_CURRENT].tag = IO_TAG(CURRENT_METER_ADC_PIN);
+#ifdef ADC_CHANNEL_3_PIN
+    if (isChannelInUse(ADC_CHN_3)) {
+        adcConfig[ADC_CHN_3].adcDevice = adcDeviceByInstance(ADC_CHANNEL_3_INSTANCE);
+        if (adcConfig[ADC_CHN_3].adcDevice != ADCINVALID) {
+            adcConfig[ADC_CHN_3].tag = IO_TAG(ADC_CHANNEL_3_PIN);
         }
     }
+#else
+    disableChannelMapping(ADC_CHN_3);
 #endif
 
-#ifdef EXTERNAL1_ADC_PIN
-    if (init->enableExternal1) {
-        adcConfig[ADC_EXTERNAL1].adcDevice = adcDeviceByInstance(EXTERNAL1_ADC_INSTANCE);
-        if (adcConfig[ADC_EXTERNAL1].adcDevice != ADCINVALID) {
-            adcConfig[ADC_EXTERNAL1].tag = IO_TAG(EXTERNAL1_ADC_PIN);
+#ifdef ADC_CHANNEL_4_PIN
+    if (isChannelInUse(ADC_CHN_4)) {
+        adcConfig[ADC_CHN_4].adcDevice = adcDeviceByInstance(ADC_CHANNEL_4_INSTANCE);
+        if (adcConfig[ADC_CHN_4].adcDevice != ADCINVALID) {
+            adcConfig[ADC_CHN_4].tag = IO_TAG(ADC_CHANNEL_4_PIN);
         }
     }
+#else
+    disableChannelMapping(ADC_CHN_4);
 #endif
 
-#ifdef AIRSPEED_ADC_PIN
-    if (init->enableAirSpeed) {
-        adcConfig[ADC_AIRSPEED].adcDevice = adcDeviceByInstance(AIRSPEED_ADC_INSTANCE);
-        if (adcConfig[ADC_AIRSPEED].adcDevice != ADCINVALID) {
-            adcConfig[ADC_AIRSPEED].tag = IO_TAG(AIRSPEED_ADC_PIN);
-        }
-    }
-#endif
 
     adcHardwareInit(init);
 }

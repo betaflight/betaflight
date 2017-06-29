@@ -147,9 +147,12 @@
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
-#define VBAT_ADC_PIN            PA2
-#define CURRENT_METER_ADC_PIN   PA3
-#define RSSI_ADC_PIN            PC1
+#define ADC_CHANNEL_1_PIN               PA2
+#define ADC_CHANNEL_2_PIN               PA3
+#define ADC_CHANNEL_3_PIN               PC1
+#define VBAT_ADC_CHANNEL                ADC_CHN_1
+#define CURRENT_METER_ADC_CHANNEL       ADC_CHN_2
+#define RSSI_ADC_CHANNEL                ADC_CHN_3
 
 // SDCARD not yet supported
 //#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT

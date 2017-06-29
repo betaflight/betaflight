@@ -90,10 +90,13 @@
 // #define SOFT_I2C_PB67
 
 #define USE_ADC
-#define CURRENT_METER_ADC_PIN   PB1
-#define VBAT_ADC_PIN            PA4
-#define RSSI_ADC_PIN            PA1
-#define EXTERNAL1_ADC_PIN       PA5
+#define ADC_CHANNEL_1_PIN               PB1
+#define ADC_CHANNEL_2_PIN               PA4
+#define ADC_CHANNEL_3_PIN               PA1
+#define ADC_CHANNEL_4_PIN               PA5
+#define VBAT_ADC_CHANNEL                ADC_CHN_1
+#define CURRENT_METER_ADC_CHANNEL       ADC_CHN_2
+#define RSSI_ADC_CHANNEL                ADC_CHN_3
 
 #define SPEKTRUM_BIND
 // USART2, PA3

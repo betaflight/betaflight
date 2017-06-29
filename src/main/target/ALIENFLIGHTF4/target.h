@@ -144,13 +144,18 @@
 #define I2C1_SDA                PB7
 
 #define USE_ADC
-#define ADC1_DMA_STREAM         DMA2_Stream0
+#define ADC1_DMA_STREAM             DMA2_Stream0
+#define ADC_CHANNEL_1_PIN           PC0
+#define ADC_CHANNEL_2_PIN           PC1
+#define ADC_CHANNEL_3_PIN           PC4
+#define ADC_CHANNEL_4_PIN           PC5
+
+#define VBAT_ADC_CHANNEL            ADC_CHN_1
+#define CURRENT_METER_ADC_CHANNEL   ADC_CHN_2
+#define RSSI_ADC_CHANNEL            ADC_CHN_3
+
 //#define BOARD_HAS_VOLTAGE_DIVIDER
 //#define BOARD_HAS_CURRENT_SENSOR
-#define VBAT_ADC_PIN            PC0
-#define CURRENT_METER_ADC_PIN   PC1
-#define RSSI_ADC_PIN            PC4
-#define EXTERNAL1_ADC_GPIO_PIN  PC5
 
 // LED strip configuration using RC1 pin.
 #define LED_STRIP

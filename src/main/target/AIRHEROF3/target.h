@@ -81,12 +81,14 @@
 #define BOARD_HAS_VOLTAGE_DIVIDER
 
 #define USE_ADC
+#define ADC_CHANNEL_1_PIN               PA4
+#define ADC_CHANNEL_1_INSTANCE          ADC2
+#define ADC_CHANNEL_2_PIN               PA1
+#define ADC_CHANNEL_2_INSTANCE          ADC1
 
-#define VBAT_ADC_PIN            PA4
-#define VBAT_ADC_INSTANCE       ADC2
+#define VBAT_ADC_CHANNEL                ADC_CHN_1
+#define AIRSPEED_ADC_CHANNEL            ADC_CHN_2
 
-#define AIRSPEED_ADC_PIN        PA1
-#define AIRSPEED_ADC_INSTANCE   ADC1
 
 /*
 #define LED_STRIP

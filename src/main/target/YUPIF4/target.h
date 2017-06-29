@@ -126,8 +126,10 @@
 // ADC inputs
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
-#define VBAT_ADC_PIN            PC1
-#define RSSI_ADC_GPIO_PIN       PC0
+#define ADC_CHANNEL_1_PIN       PC1
+#define ADC_CHANNEL_2_PIN       PC0
+#define VBAT_ADC_CHANNEL        ADC_CHN_1
+#define RSSI_ADC_CHANNEL        ADC_CHN_2
 
 // LED Strip can run off Pin 5 (PB1) of the motor outputs
 #define LED_STRIP

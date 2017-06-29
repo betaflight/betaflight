@@ -22,6 +22,7 @@
 #include "common/time.h"
 #include "config/parameter_group.h"
 #include "drivers/pwm_rx.h"
+#include "drivers/adc.h"
 #include "fc/stats.h"
 
 #define MAX_PROFILE_COUNT 3
@@ -94,6 +95,13 @@ typedef struct beeperConfig_s {
 } beeperConfig_t;
 
 PG_DECLARE(beeperConfig_t, beeperConfig);
+
+typedef struct adcChannelConfig_s {
+    uint8_t adcFunctionChannel[ADC_FUNCTION_COUNT];
+} adcChannelConfig_t;
+
+PG_DECLARE(adcChannelConfig_t, adcChannelConfig);
+
 
 #ifdef STATS
 PG_DECLARE(statsConfig_t, statsConfig);

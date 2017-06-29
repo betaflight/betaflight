@@ -26,7 +26,7 @@
 #include "pitotmeter_adc.h"
 #include "adc.h"
 
-#if defined(USE_PITOT_ADC) && defined(AIRSPEED_ADC_PIN)
+#if defined(USE_PITOT_ADC)
 
 /*
  * NXP MPXV7002DP differential pressure sensor
@@ -61,6 +61,6 @@ bool adcPitotDetect(pitotDev_t *pitot)
     pitot->start = adcPitotStart;
     pitot->get = adcPitotRead;
     pitot->calculate = adcPitotCalculate;
-    return true;
+    return adcIsFunctionAssigned(ADC_AIRSPEED);
 }
 #endif

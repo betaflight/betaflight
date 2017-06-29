@@ -60,9 +60,10 @@
 #define USE_BARO_BMP280
 #define USE_BARO_MS5611
 
-//#define PITOT
+#define PITOT
+#define USE_PITOT_ADC
 //#define USE_PITOT_MS4525
-#define PITOT_I2C_INSTANCE      I2C_DEVICE_EXT
+//#define PITOT_I2C_INSTANCE      I2C_DEVICE_EXT
 
 #define M25P16_CS_PIN           PB3
 #define M25P16_SPI_INSTANCE     SPI3
@@ -104,9 +105,13 @@
 #define I2C_DEVICE_EXT          (I2CDEV_2)
 
 #define USE_ADC
-#define CURRENT_METER_ADC_PIN   PC1
-#define VBAT_ADC_PIN            PC2
-#define RSSI_ADC_PIN            PA0
+#define ADC_CHANNEL_1_PIN               PC1
+#define ADC_CHANNEL_2_PIN               PC2
+#define ADC_CHANNEL_3_PIN               PA0
+#define CURRENT_METER_ADC_CHANNEL       ADC_CHN_1
+#define VBAT_ADC_CHANNEL                ADC_CHN_2
+#define RSSI_ADC_CHANNEL                ADC_CHN_3
+
 
 #define SENSORS_SET (SENSOR_ACC|SENSOR_MAG|SENSOR_BARO)
 

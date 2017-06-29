@@ -134,13 +134,18 @@
 
 
 #define USE_ADC
-#define CURRENT_METER_ADC_PIN   PB1
-#define VBAT_ADC_PIN            PA0
+#define ADC_CHANNEL_1_PIN               PA0
+#define ADC_CHANNEL_2_PIN               PB1
+
 #ifdef CC3D_PPM1
-#define RSSI_ADC_PIN            PA1
+#define ADC_CHANNEL_3_PIN               PA1
 #else
-#define RSSI_ADC_PIN            PB0
+#define ADC_CHANNEL_3_PIN               PB0
 #endif
+
+#define VBAT_ADC_CHANNEL                ADC_CHN_1
+#define CURRENT_METER_ADC_CHANNEL       ADC_CHN_2
+#define RSSI_ADC_CHANNEL                ADC_CHN_3
 
 // LED strip is on PWM5 output pin
 //#define LED_STRIP

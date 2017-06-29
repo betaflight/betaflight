@@ -139,7 +139,8 @@
 #define USE_I2C_PULLUP
 
 #define USE_ADC
-#define VBAT_ADC_PIN            PC3
+#define ADC_CHANNEL_1_PIN               PC3
+#define VBAT_ADC_CHANNEL                ADC_CHN_1
 
 #define LED_STRIP
 // LED Strip can run off Pin 6 (PB1) of the ESC outputs.

@@ -97,12 +97,14 @@
 #define I2C2_SCL                PA9
 #define I2C2_SDA                PA10
 
-#define VBAT_SCALE_DEFAULT      78
+#define VBAT_SCALE_DEFAULT       78
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
-#define ADC_INSTANCE            ADC1
-#define VBAT_ADC_PIN            PF4
-#define RSSI_ADC_PIN            PA1
+#define ADC_INSTANCE             ADC1
+#define ADC_CHANNEL_1_PIN        PF4
+#define ADC_CHANNEL_2_PIN        PA1
+#define VBAT_ADC_CHANNEL         ADC_CHN_1
+#define RSSI_ADC_CHANNEL         ADC_CHN_2
 
 #define LED_STRIP
 #define USE_LED_STRIP_ON_DMA1_CHANNEL2

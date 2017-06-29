@@ -373,6 +373,10 @@ Re-apply any new defaults as desired.
 |  stats                       | OFF | General switch of the statistics recording feature (a.k.a. odometer) |
 |  stats_total_time            |  0  | Total flight time [in seconds]. The value is updated on every disarm when "stats" are enabled. |
 |  stats_total_dist            |  0  | Total flight distance [in meters]. The value is updated on every disarm when "stats" are enabled. |
+|  vbat_adc_channel            |  -  | ADC channel to use for battery voltage sensor. Defaults to board VBAT input (if available). 0 = disabled |
+|  rssi_adc_channel            |  -  | ADC channel to use for analog RSSI input. Defaults to board RSSI input (if available). 0 = disabled |
+|  current_adc_channel         |  -  | ADC channel to use for analog current sensor input. Defaults to board CURRENT sensor input (if available). 0 = disabled |
+|  airspeed_adc_channel        |  -  | ADC channel to use for analog pitot tube (airspeed) sensor. If board doesn't have a dedicated connector for analog airspeed sensor will default to 0 |
 
 This Markdown table is made by MarkdwonTableMaker addon for google spreadsheet.
 Original Spreadsheet used to make this table can be found here https://docs.google.com/spreadsheets/d/1ubjYdMGmZ2aAMUNYkdfe3hhIF7wRfIjcuPOi_ysmp00/edit?usp=sharing
