@@ -55,20 +55,17 @@ static void icm20689SpiInit(const busDevice_t *bus)
 
 bool icm20689SpiDetect(const busDevice_t *bus)
 {
-    uint8_t tmp;
-    uint8_t attemptsRemaining = 20;
-
     icm20689SpiInit(bus);
 
     spiSetDivisor(bus->spi.instance, SPI_CLOCK_INITIALIZATON); //low speed
 
-    spiWriteRegister(bus, MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
+    spiWriteReg(bus, MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
 
+    uint8_t attemptsRemaining = 20;
     do {
         delay(150);
-
-        spiReadRegister(bus, MPU_RA_WHO_AM_I, 1, &tmp);
-        if (tmp == ICM20689_WHO_AM_I_CONST) {
+        const uint8_t whoAmI = spiReadReg(bus, MPU_RA_WHO_AM_I);
+        if (whoAmI == ICM20689_WHO_AM_I_CONST) {
             break;
         }
         if (!attemptsRemaining) {

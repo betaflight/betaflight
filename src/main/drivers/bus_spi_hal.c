@@ -346,7 +346,7 @@ void spiResetErrorCounter(SPI_TypeDef *instance)
         spiHardwareMap[device].errorCount = 0;
 }
 
-bool spiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
+bool spiWriteReg(const busDevice_t *bus, uint8_t reg, uint8_t data)
 {
     IOLo(bus->spi.csnPin);
     spiTransferByte(bus->spi.instance, reg);
@@ -356,7 +356,7 @@ bool spiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
     return true;
 }
 
-bool spiReadRegister(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data)
+bool spiReadRegBuf(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data)
 {
     IOLo(bus->spi.csnPin);
     spiTransferByte(bus->spi.instance, reg | 0x80); // read transaction
@@ -364,6 +364,17 @@ bool spiReadRegister(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_
     IOHi(bus->spi.csnPin);
 
     return true;
+}
+
+uint8_t spiReadReg(const busDevice_t *bus, uint8_t reg)
+{
+    uint8_t data;
+    IOLo(bus->spi.csnPin);
+    spiTransferByte(bus->spi.instance, reg | 0x80); // read transaction
+    spiTransfer(bus->spi.instance, &data, NULL, 1);
+    IOHi(bus->spi.csnPin);
+
+    return data;
 }
 
 void dmaSPIIRQHandler(dmaChannelDescriptor_t* descriptor)
