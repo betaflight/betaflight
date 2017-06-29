@@ -478,8 +478,8 @@ void init(void)
     initBoardAlignment(boardAlignment());
 
     if (!sensorsAutodetect()) {
-        // if gyro was not detected due to whatever reason, we give up now.
-        failureMode(FAILURE_MISSING_ACC);
+        // if gyro was not detected due to whatever reason, don't arm.
+        setArmingDisabled(ARMING_DISABLED_NO_GYRO);
     }
 
     systemState |= SYSTEM_STATE_SENSORS_READY;

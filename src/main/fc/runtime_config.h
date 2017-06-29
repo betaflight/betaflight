@@ -40,11 +40,13 @@ typedef enum {
     ARMING_DISABLED_CMS_MENU    = (1 << 7),
     ARMING_DISABLED_OSD_MENU    = (1 << 8),
     ARMING_DISABLED_BST         = (1 << 9),
+    ARMING_DISABLED_NO_GYRO     = (1 << 10),
 } armingDisableFlags_e;
 
 void setArmingDisabled(armingDisableFlags_e flag);
 void unsetArmingDisabled(armingDisableFlags_e flag);
 bool isArmingDisabled(void);
+armingDisableFlags_e getArmingDisableFlags(void);
 
 typedef enum {
     ANGLE_MODE      = (1 << 0),

@@ -2711,7 +2711,7 @@ static void cliStatus(char *cmdline)
     const int systemRate = getTaskDeltaTime(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_SYSTEM)));
     cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
             constrain(averageSystemLoadPercent, 0, 100), getTaskDeltaTime(TASK_GYROPID), gyroRate, rxRate, systemRate);
-
+    cliPrintLinef("Arming disable flags: 0x%x", getArmingDisableFlags() & ~ARMING_DISABLED_CLI);
 }
 
 #ifndef SKIP_TASK_STATISTICS
