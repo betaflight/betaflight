@@ -50,8 +50,29 @@ static void mpu9250AccAndGyroInit(gyroDev_t *gyro);
 
 static bool mpuSpi9250InitDone = false;
 
-#define DISABLE_MPU9250(spiCsnPin)       IOHi(spiCsnPin)
-#define ENABLE_MPU9250(spiCsnPin)        IOLo(spiCsnPin)
+bool mpu9250SpiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
+{
+    IOLo(bus->spi.csnPin);
+    delayMicroseconds(1);
+    spiTransferByte(bus->spi.instance, reg);
+    spiTransferByte(bus->spi.instance, data);
+    IOHi(bus->spi.csnPin);
+    delayMicroseconds(1);
+
+    return true;
+}
+
+static bool mpu9250SpiSlowReadRegister(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data)
+{
+    IOLo(bus->spi.csnPin);
+    delayMicroseconds(1);
+    spiTransferByte(bus->spi.instance, reg | 0x80); // read transaction
+    spiTransfer(bus->spi.instance, data, NULL, length);
+    IOHi(bus->spi.csnPin);
+    delayMicroseconds(1);
+
+    return true;
+}
 
 void mpu9250SpiResetGyro(void)
 {
@@ -63,49 +84,15 @@ void mpu9250SpiResetGyro(void)
 #endif
 }
 
-bool mpu9250SpiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
-{
-    ENABLE_MPU9250(bus->spi.csnPin);
-    delayMicroseconds(1);
-    spiTransferByte(MPU9250_SPI_INSTANCE, reg);
-    spiTransferByte(MPU9250_SPI_INSTANCE, data);
-    DISABLE_MPU9250(bus->spi.csnPin);
-    delayMicroseconds(1);
-
-    return true;
-}
-
-bool mpu9250SpiReadRegister(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data)
-{
-    ENABLE_MPU9250(bus->spi.csnPin);
-    spiTransferByte(MPU9250_SPI_INSTANCE, reg | 0x80); // read transaction
-    spiTransfer(MPU9250_SPI_INSTANCE, data, NULL, length);
-    DISABLE_MPU9250(bus->spi.csnPin);
-
-    return true;
-}
-
-bool mpu9250SpiSlowReadRegister(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data)
-{
-    ENABLE_MPU9250(bus->spi.csnPin);
-    delayMicroseconds(1);
-    spiTransferByte(MPU9250_SPI_INSTANCE, reg | 0x80); // read transaction
-    spiTransfer(MPU9250_SPI_INSTANCE, data, NULL, length);
-    DISABLE_MPU9250(bus->spi.csnPin);
-    delayMicroseconds(1);
-
-    return true;
-}
-
 void mpu9250SpiGyroInit(gyroDev_t *gyro)
 {
     mpuGyroInit(gyro);
 
     mpu9250AccAndGyroInit(gyro);
 
-    spiResetErrorCounter(MPU9250_SPI_INSTANCE);
+    spiResetErrorCounter(gyro->bus.spi.instance);
 
-    spiSetDivisor(MPU9250_SPI_INSTANCE, SPI_CLOCK_FAST); //high speed now that we don't need to write to the slow registers
+    spiSetDivisor(gyro->bus.spi.instance, SPI_CLOCK_FAST); //high speed now that we don't need to write to the slow registers
 
     mpuGyroRead(gyro);
 
@@ -147,7 +134,7 @@ static void mpu9250AccAndGyroInit(gyroDev_t *gyro) {
         return;
     }
 
-    spiSetDivisor(MPU9250_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON); //low speed for writing to slow registers
+    spiSetDivisor(gyro->bus.spi.instance, SPI_CLOCK_INITIALIZATON); //low speed for writing to slow registers
 
     mpu9250SpiWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, MPU9250_BIT_RESET);
     delay(50);
@@ -175,7 +162,7 @@ static void mpu9250AccAndGyroInit(gyroDev_t *gyro) {
     verifympu9250SpiWriteRegister(&gyro->bus, MPU_RA_INT_ENABLE, 0x01); //this resets register MPU_RA_PWR_MGMT_1 and won't read back correctly.
 #endif
 
-    spiSetDivisor(MPU9250_SPI_INSTANCE, SPI_CLOCK_FAST);
+    spiSetDivisor(gyro->bus.spi.instance, SPI_CLOCK_FAST);
 
     mpuSpi9250InitDone = true; //init done
 }
@@ -188,13 +175,13 @@ bool mpu9250SpiDetect(const busDevice_t *bus)
     IOInit(bus->spi.csnPin, OWNER_MPU_CS, 0);
     IOConfigGPIO(bus->spi.csnPin, SPI_IO_CS_CFG);
 
-    spiSetDivisor(MPU9250_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON); //low speed
+    spiSetDivisor(bus->spi.instance, SPI_CLOCK_INITIALIZATON); //low speed
     mpu9250SpiWriteRegister(bus, MPU_RA_PWR_MGMT_1, MPU9250_BIT_RESET);
 
     do {
         delay(150);
 
-        mpu9250SpiReadRegister(bus, MPU_RA_WHO_AM_I, 1, &in);
+        spiReadRegister(bus, MPU_RA_WHO_AM_I, 1, &in);
         if (in == MPU9250_WHO_AM_I_CONST || in == MPU9255_WHO_AM_I_CONST) {
             break;
         }
@@ -203,7 +190,7 @@ bool mpu9250SpiDetect(const busDevice_t *bus)
         }
     } while (attemptsRemaining--);
 
-    spiSetDivisor(MPU9250_SPI_INSTANCE, SPI_CLOCK_FAST);
+    spiSetDivisor(bus->spi.instance, SPI_CLOCK_FAST);
 
     return true;
 }

@@ -262,13 +262,12 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
 #endif
 
 #ifdef  USE_GYRO_SPI_MPU9250
+    gyro->bus.spi.instance = MPU9250_SPI_INSTANCE;
     gyro->bus.spi.csnPin = gyro->bus.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU9250_CS_PIN)) : gyro->bus.spi.csnPin;
     if (mpu9250SpiDetect(&gyro->bus)) {
         gyro->mpuDetectionResult.sensor = MPU_9250_SPI;
         gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
-        gyro->mpuConfiguration.readFn = mpu9250SpiReadRegister;
-        gyro->mpuConfiguration.slowreadFn = mpu9250SpiSlowReadRegister;
-        gyro->mpuConfiguration.verifywriteFn = verifympu9250SpiWriteRegister;
+        gyro->mpuConfiguration.readFn = spiReadRegister;
         gyro->mpuConfiguration.writeFn = mpu9250SpiWriteRegister;
         gyro->mpuConfiguration.resetFn = mpu9250SpiResetGyro;
         return true;
