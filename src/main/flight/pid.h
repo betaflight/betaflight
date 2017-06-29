@@ -75,6 +75,13 @@ typedef struct pidBank_s {
     pid8_t  pid[PID_ITEM_COUNT];
 } pidBank_t;
 
+typedef enum {
+    PID_SCALING_THROTTLE = 0,
+    PID_SCALING_AIRSPEED
+} pidScalingLogic_e;
+
+#define PID_SCALING_STRENGTH_MAX            100
+
 typedef struct pidProfile_s {
     pidBank_t bank_fw;
     pidBank_t bank_mc;
@@ -103,8 +110,13 @@ typedef struct pidProfile_s {
 
     // Airplane-specific parameters
     uint16_t    fixedWingItermThrowLimit;
-    float       fixedWingReferenceAirspeed;     // Reference tuning airspeed for the airplane - the speed for which PID gains are tuned
+    float       fixedWingTrimAirspeed;          // Reference tuning airspeed for the airplane - the speed for which PID gains are tuned
     float       fixedWingCoordinatedYawGain;    // This is the gain of the yaw rate required to keep the yaw rate consistent with the turn rate for a coordinated turn.
+
+    // TPA / APA
+    uint8_t     pidScalingLogic;                // PID scaling algorithm    
+    uint16_t    pidScalingThrottle;             // Breakpoint where TPA is activated
+    uint8_t     pidScalingStrength;             // Strength of TPA/APA
 } pidProfile_t;
 
 typedef struct pidAutotuneConfig_s {

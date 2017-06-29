@@ -690,10 +690,10 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         for (int i = 0 ; i < 3; i++) {
             sbufWriteU8(dst, currentControlRateProfile->rates[i]); // R,P,Y see flight_dynamics_index_t
         }
-        sbufWriteU8(dst, currentControlRateProfile->dynThrPID);
+        sbufWriteU8(dst, pidProfile()->pidScalingStrength);
         sbufWriteU8(dst, currentControlRateProfile->thrMid8);
         sbufWriteU8(dst, currentControlRateProfile->thrExpo8);
-        sbufWriteU16(dst, currentControlRateProfile->tpa_breakpoint);
+        sbufWriteU16(dst, pidProfile()->pidScalingThrottle);
         sbufWriteU8(dst, currentControlRateProfile->rcYawExpo8);
         break;
 
@@ -1447,10 +1447,10 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 }
             }
             rate = sbufReadU8(src);
-            ((controlRateConfig_t*)currentControlRateProfile)->dynThrPID = MIN(rate, CONTROL_RATE_CONFIG_TPA_MAX);
+            pidProfileMutable()->pidScalingStrength = MIN(rate, PID_SCALING_STRENGTH_MAX);
             ((controlRateConfig_t*)currentControlRateProfile)->thrMid8 = sbufReadU8(src);
             ((controlRateConfig_t*)currentControlRateProfile)->thrExpo8 = sbufReadU8(src);
-            ((controlRateConfig_t*)currentControlRateProfile)->tpa_breakpoint = sbufReadU16(src);
+            pidProfileMutable()->pidScalingThrottle = sbufReadU16(src);
             if (dataSize >= 11) {
                 ((controlRateConfig_t*)currentControlRateProfile)->rcYawExpo8 = sbufReadU8(src);
             }
