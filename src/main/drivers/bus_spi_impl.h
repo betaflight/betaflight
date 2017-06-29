@@ -70,3 +70,4 @@ typedef struct SPIDevice_s {
 } spiDevice_t;
 
 extern spiDevice_t spiDevice[SPIDEV_COUNT];
+
