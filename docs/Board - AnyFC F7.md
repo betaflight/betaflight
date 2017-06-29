@@ -19,3 +19,8 @@
 * SD card logging (SPI)
 * 3 AD channels, one with 10k/1k divider, two with 1k series resistor
 
+## Buzzer
+
+Buzzer is supported with additional switching MOSFET transistor when connected to PWM Output #9. 
+
+![Buzzer](assets/images/anyfcf7_buzzer_pwm9.png)
