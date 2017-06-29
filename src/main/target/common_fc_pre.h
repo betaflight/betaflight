@@ -115,6 +115,7 @@
 #define TELEMETRY_SRXL
 #define USE_DASHBOARD
 #define USE_MSP_DISPLAYPORT
+#define USE_RCSPLIT
 #define USE_RX_MSP
 #define USE_SERIALRX_JETIEXBUS
 #define USE_SENSOR_NAMES
@@ -131,10 +132,8 @@
 #endif
 
 #if (FLASH_SIZE > 256)
-// Temporarily moved this here because of overflowing flash size on F3
+// Temporarily moved GPS here because of overflowing flash size on F3
 #define GPS
-
+#define USE_NAV
 #define USE_UNCOMMON_MIXERS
 #endif
-
-#define USE_RCSPLIT
