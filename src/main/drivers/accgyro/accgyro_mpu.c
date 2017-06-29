@@ -287,11 +287,12 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
 #endif
 
 #ifdef USE_ACCGYRO_BMI160
+    gyro->bus.spi.instance = BMI160_SPI_INSTANCE;
     gyro->bus.spi.csnPin = gyro->bus.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(BMI160_CS_PIN)) : gyro->bus.spi.csnPin;
     if (bmi160Detect(&gyro->bus)) {
         gyro->mpuDetectionResult.sensor = BMI_160_SPI;
-        gyro->mpuConfiguration.readFn = bmi160SpiReadRegister;
-        gyro->mpuConfiguration.writeFn = bmi160SpiWriteRegister;
+        gyro->mpuConfiguration.readFn = spiReadRegBuf;
+        gyro->mpuConfiguration.writeFn = spiWriteReg;
         return true;
     }
 #endif
