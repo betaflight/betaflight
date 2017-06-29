@@ -391,6 +391,12 @@ void mavlinkSendHUDAndHeartbeat(void)
     }
 #endif
 
+#if defined(PITOT)
+    if (sensors(SENSOR_PITOT)) {
+        mavAirSpeed = pitot.airSpeed / 100.0f;
+    }
+#endif
+
     // select best source for altitude
 #if defined(NAV)
     mavAltitude = getEstimatedActualPosition(Z) / 100.0f;

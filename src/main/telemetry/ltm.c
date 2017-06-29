@@ -74,6 +74,7 @@
 #include "sensors/diagnostics.h"
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
+#include "sensors/pitotmeter.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/ltm.h"
@@ -261,7 +262,11 @@ void ltm_xframe(sbuf_t *dst)
     ltm_serialise_8(dst, sensorStatus);
     ltm_serialise_8(dst, ltm_x_counter);
     ltm_serialise_8(dst, getDisarmReason());
+#if defined(PITOT)
+    ltm_serialise_8(dst, sensors(SENSOR_PITOT) ? pitot.airSpeed / 100.0f : 0);  // in m/s
+#else
     ltm_serialise_8(dst, 0);
+#endif
     ltm_x_counter++; // overflow is OK
 }
 
