@@ -84,9 +84,8 @@
 #define UART5_TX_PIN            PC12
 #define UART5_RX_PIN            PD2
 
-// TODO
-// #define USE_ESCSERIAL
-// #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1
