@@ -77,7 +77,7 @@ typedef enum {
     PWM_TYPE_MAX
 } motorPwmProtocolTypes_e;
 
-#define PWM_TIMER_HZ          MHZ_TO_HZ(1)
+#define PWM_TIMER_1MHZ        MHZ_TO_HZ(1)
 
 #ifdef USE_DSHOT
 #define MAX_DMA_TIMERS        8
