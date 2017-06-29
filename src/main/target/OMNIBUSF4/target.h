@@ -15,8 +15,6 @@
 
 #pragma once
 
-#define RSSI_SOFTPWM_PIN PA8
-
 #if defined(CL_RACINGF4)
 #define TARGET_BOARD_IDENTIFIER "CLR4"
 #elif defined(OMNIBUSF4SD)
@@ -192,6 +190,9 @@
 #else
 //#define RSSI_ADC_PIN            PA0
 #endif
+
+#define RSSI_SOFTPWM_PIN PA0    // Experimental, on RSSI pin.
+//#define RSSI_SOFTPWM_PIN PA8    // For debugging.
 
 #define USE_ESC_SENSOR
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
