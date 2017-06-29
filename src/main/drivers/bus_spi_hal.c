@@ -346,7 +346,7 @@ void spiResetErrorCounter(SPI_TypeDef *instance)
         spiHardwareMap[device].errorCount = 0;
 }
 
-bool spiWriteReg(const busDevice_t *bus, uint8_t reg, uint8_t data)
+bool spiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
 {
     IOLo(bus->spi.csnPin);
     spiTransferByte(bus->spi.instance, reg);
@@ -356,7 +356,7 @@ bool spiWriteReg(const busDevice_t *bus, uint8_t reg, uint8_t data)
     return true;
 }
 
-bool spiReadRegBuf(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data)
+bool spiReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data)
 {
     IOLo(bus->spi.csnPin);
     spiTransferByte(bus->spi.instance, reg | 0x80); // read transaction
@@ -366,7 +366,7 @@ bool spiReadRegBuf(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t 
     return true;
 }
 
-uint8_t spiReadReg(const busDevice_t *bus, uint8_t reg)
+uint8_t spiReadRegister(const busDevice_t *bus, uint8_t reg)
 {
     uint8_t data;
     IOLo(bus->spi.csnPin);

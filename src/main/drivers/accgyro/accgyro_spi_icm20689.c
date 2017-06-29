@@ -59,12 +59,12 @@ bool icm20689SpiDetect(const busDevice_t *bus)
 
     spiSetDivisor(bus->spi.instance, SPI_CLOCK_INITIALIZATON); //low speed
 
-    spiWriteReg(bus, MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
+    spiWriteRegister(bus, MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
 
     uint8_t attemptsRemaining = 20;
     do {
         delay(150);
-        const uint8_t whoAmI = spiReadReg(bus, MPU_RA_WHO_AM_I);
+        const uint8_t whoAmI = spiReadRegister(bus, MPU_RA_WHO_AM_I);
         if (whoAmI == ICM20689_WHO_AM_I_CONST) {
             break;
         }

@@ -106,11 +106,11 @@ bool bmi160Detect(const busDevice_t *bus)
     spiSetDivisor(bus->spi.instance, BMI160_SPI_DIVISOR);
 
     /* Read this address to acticate SPI (see p. 84) */
-    spiReadReg(bus, 0x7F);
+    spiReadRegister(bus, 0x7F);
     delay(10); // Give SPI some time to start up
 
     /* Check the chip ID */
-    if (spiReadReg(bus, BMI160_REG_CHIPID) != 0xd1){
+    if (spiReadRegister(bus, BMI160_REG_CHIPID) != 0xd1){
         return false;
     }
 
@@ -163,7 +163,7 @@ static int32_t BMI160_Config(const busDevice_t *bus)
     delay(5); // can take up to 3.8ms
 
     // Verify that normal power mode was entered
-    uint8_t pmu_status = spiReadReg(bus, BMI160_REG_PMU_STAT);
+    uint8_t pmu_status = spiReadRegister(bus, BMI160_REG_PMU_STAT);
     if ((pmu_status & 0x3C) != 0x14){
         return -3;
     }
@@ -192,7 +192,7 @@ static int32_t BMI160_Config(const busDevice_t *bus)
     delay(1);
 
     // Enable offset compensation
-    uint8_t val = spiReadReg(bus, BMI160_REG_OFFSET_0);
+    uint8_t val = spiReadRegister(bus, BMI160_REG_OFFSET_0);
     if (BMI160_WriteReg(bus, BMI160_REG_OFFSET_0, val | 0xC0) != 0){
         return -7;
     }
@@ -233,7 +233,7 @@ static int32_t BMI160_do_foc(const busDevice_t *bus)
 
     // Wait for FOC to complete
     for (int i=0; i<50; i++) {
-        val = spiReadReg(bus, BMI160_REG_STATUS);
+        val = spiReadRegister(bus, BMI160_REG_STATUS);
         if (val & BMI160_REG_STATUS_FOC_RDY) {
             break;
         }
@@ -244,7 +244,7 @@ static int32_t BMI160_do_foc(const busDevice_t *bus)
     }
 
     // Program NVM
-    val = spiReadReg(bus, BMI160_REG_CONF);
+    val = spiReadRegister(bus, BMI160_REG_CONF);
     if (BMI160_WriteReg(bus, BMI160_REG_CONF, val | BMI160_REG_CONF_NVM_PROG_EN) != 0) {
         return -4;
     }
@@ -255,7 +255,7 @@ static int32_t BMI160_do_foc(const busDevice_t *bus)
 
     // Wait for NVM programming to complete
     for (int i=0; i<50; i++) {
-        val = spiReadReg(bus, BMI160_REG_STATUS);
+        val = spiReadRegister(bus, BMI160_REG_STATUS);
         if (val & BMI160_REG_STATUS_NVM_RDY) {
             break;
         }

@@ -33,6 +33,6 @@ bool mpu9250SpiDetect(const busDevice_t *bus);
 bool mpu9250SpiAccDetect(accDev_t *acc);
 bool mpu9250SpiGyroDetect(gyroDev_t *gyro);
 
-bool mpu9250SpiWriteReg(const busDevice_t *bus, uint8_t reg, uint8_t data);
-bool mpu9250SpiWriteRegVerify(const busDevice_t *bus, uint8_t reg, uint8_t data);
+bool mpu9250SpiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data);
+bool mpu9250SpiWriteRegisterVerify(const busDevice_t *bus, uint8_t reg, uint8_t data);
 bool mpu9250SpiReadRegBuf(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data);

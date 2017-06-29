@@ -241,8 +241,8 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     if (mpu6000SpiDetect(&gyro->bus)) {
         gyro->mpuDetectionResult.sensor = MPU_60x0_SPI;
         gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
-        gyro->mpuConfiguration.readFn = spiReadRegBuf;
-        gyro->mpuConfiguration.writeFn = spiWriteReg;
+        gyro->mpuConfiguration.readFn = spiReadRegisterBuffer;
+        gyro->mpuConfiguration.writeFn = spiWriteRegister;
         return true;
     }
 #endif
@@ -255,8 +255,8 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     if (mpu6500Sensor != MPU_NONE) {
         gyro->mpuDetectionResult.sensor = mpu6500Sensor;
         gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
-        gyro->mpuConfiguration.readFn = spiReadRegBuf;
-        gyro->mpuConfiguration.writeFn = spiWriteReg;
+        gyro->mpuConfiguration.readFn = spiReadRegisterBuffer;
+        gyro->mpuConfiguration.writeFn = spiWriteRegister;
         return true;
     }
 #endif
@@ -267,8 +267,8 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     if (mpu9250SpiDetect(&gyro->bus)) {
         gyro->mpuDetectionResult.sensor = MPU_9250_SPI;
         gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
-        gyro->mpuConfiguration.readFn = spiReadRegBuf;
-        gyro->mpuConfiguration.writeFn = mpu9250SpiWriteReg;
+        gyro->mpuConfiguration.readFn = spiReadRegisterBuffer;
+        gyro->mpuConfiguration.writeFn = spiWriteRegister;
         gyro->mpuConfiguration.resetFn = mpu9250SpiResetGyro;
         return true;
     }
@@ -280,8 +280,8 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     if (icm20689SpiDetect(&gyro->bus)) {
         gyro->mpuDetectionResult.sensor = ICM_20689_SPI;
         gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
-        gyro->mpuConfiguration.readFn = spiReadRegBuf;
-        gyro->mpuConfiguration.writeFn = spiWriteReg;
+        gyro->mpuConfiguration.readFn = spiReadRegisterBuffer;
+        gyro->mpuConfiguration.writeFn = spiWriteRegister;
         return true;
     }
 #endif
@@ -291,8 +291,8 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     gyro->bus.spi.csnPin = gyro->bus.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(BMI160_CS_PIN)) : gyro->bus.spi.csnPin;
     if (bmi160Detect(&gyro->bus)) {
         gyro->mpuDetectionResult.sensor = BMI_160_SPI;
-        gyro->mpuConfiguration.readFn = spiReadRegBuf;
-        gyro->mpuConfiguration.writeFn = spiWriteReg;
+        gyro->mpuConfiguration.readFn = spiReadRegisterBuffer;
+        gyro->mpuConfiguration.writeFn = spiWriteRegister;
         return true;
     }
 #endif
