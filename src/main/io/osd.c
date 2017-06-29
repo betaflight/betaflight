@@ -36,6 +36,7 @@
 #include "blackbox/blackbox.h"
 #include "blackbox/blackbox_io.h"
 
+#include "build/build_config.h"
 #include "build/debug.h"
 #include "build/version.h"
 
@@ -87,13 +88,6 @@
 #endif
 
 #define VIDEO_BUFFER_CHARS_PAL    480
-
-// Character coordinate
-
-#define OSD_POSITION_BITS 5 // 5 bits gives a range 0-31
-#define OSD_POS(x,y)  ((x & 0x001F) | ((y & 0x001F) << OSD_POSITION_BITS))
-#define OSD_X(x)      (x & 0x001F)
-#define OSD_Y(x)      ((x >> OSD_POSITION_BITS) & 0x001F)
 
 // Blink control
 
@@ -168,9 +162,9 @@ static char osdGetMetersToSelectedUnitSymbol()
 {
     switch (osdConfig()->units) {
     case OSD_UNIT_IMPERIAL:
-        return 0xF;
+        return SYM_FT;
     default:
-        return 0xC;
+        return SYM_M;
     }
 }
 
@@ -277,12 +271,12 @@ static void osdDrawSingleElement(uint8_t item)
 #ifdef GPS
     case OSD_GPS_SATS:
         buff[0] = 0x1f;
-        tfp_sprintf(buff + 1, "%d", GPS_numSat);
+        tfp_sprintf(buff + 1, "%d", gpsSol.numSat);
         break;
 
     case OSD_GPS_SPEED:
         // FIXME ideally we want to use SYM_KMH symbol but it's not in the font any more, so we use K.
-        tfp_sprintf(buff, "%3dK", CM_S_TO_KM_H(GPS_speed));
+        tfp_sprintf(buff, "%3dK", CM_S_TO_KM_H(gpsSol.groundSpeed));
         break;
 
     case OSD_GPS_LAT:
@@ -291,10 +285,10 @@ static void osdDrawSingleElement(uint8_t item)
             int32_t val;
             if (item == OSD_GPS_LAT) {
                 buff[0] = SYM_ARROW_EAST;
-                val = GPS_coord[LAT];
+                val = gpsSol.llh.lat;
             } else {
                 buff[0] = SYM_ARROW_SOUTH;
-                val = GPS_coord[LON];
+                val = gpsSol.llh.lon;
             }
 
             char wholeDegreeString[5];
@@ -761,10 +755,10 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 static void osdDrawLogo(int x, int y)
 {
     // display logo and help
-    char fontOffset = 160;
+    int fontOffset = 160;
     for (int row = 0; row < 4; row++) {
         for (int column = 0; column < 24; column++) {
-            if (fontOffset != 255) // FIXME magic number
+            if (fontOffset <= SYM_END_OF_FONT)
                 displayWriteChar(osdDisplayPort, x + column, y + row, fontOffset++);
         }
     }
@@ -807,10 +801,8 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
 void osdUpdateAlarms(void)
 {
     // This is overdone?
-    // uint16_t *itemPos = osdConfig()->item_pos;
 
     int32_t alt = osdGetMetersToSelectedUnit(getEstimatedAltitude()) / 100;
-    statRssi = rssi * 100 / 1024;
 
     if (statRssi < osdConfig()->rssi_alarm)
         SET_BLINK(OSD_RSSI_VALUE);
@@ -880,7 +872,7 @@ static void osdUpdateStats(void)
 {
     int16_t value = 0;
 #ifdef GPS
-    value = CM_S_TO_KM_H(GPS_speed);
+    value = CM_S_TO_KM_H(gpsSol.groundSpeed);
 #endif
     if (stats.max_speed < value)
         stats.max_speed = value;
@@ -1039,7 +1031,7 @@ static void osdShowArmed(void)
     displayWrite(osdDisplayPort, 12, 7, "ARMED");
 }
 
-static void osdRefresh(timeUs_t currentTimeUs)
+STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
 {
     static uint8_t lastSec = 0;
     uint8_t sec;
@@ -1057,6 +1049,8 @@ static void osdRefresh(timeUs_t currentTimeUs)
 
         armState = ARMING_FLAG(ARMED);
     }
+
+    statRssi = scaleRange(rssi, 0, 1024, 0, 100);
 
     osdUpdateStats();
 

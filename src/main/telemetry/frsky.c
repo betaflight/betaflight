@@ -183,7 +183,7 @@ static void sendBaro(void)
 #ifdef GPS
 static void sendGpsAltitude(void)
 {
-    uint16_t altitude = GPS_altitude;
+    uint16_t altitude = gpsSol.llh.alt;
     //Send real GPS altitude only if it's reliable (there's a GPS fix)
     if (!STATE(GPS_FIX)) {
         altitude = 0;
@@ -230,9 +230,9 @@ static void sendTemperature1(void)
 #ifdef GPS
 static void sendSatalliteSignalQualityAsTemperature2(void)
 {
-    uint16_t satellite = GPS_numSat;
-    if (GPS_hdop > GPS_BAD_QUALITY && ( (cycleNum % 16 ) < 8)) {//Every 1s
-        satellite = constrain(GPS_hdop, 0, GPS_MAX_HDOP_VAL);
+    uint16_t satellite = gpsSol.numSat;
+    if (gpsSol.hdop > GPS_BAD_QUALITY && ( (cycleNum % 16 ) < 8)) {//Every 1s
+        satellite = constrain(gpsSol.hdop, 0, GPS_MAX_HDOP_VAL);
     }
     sendDataHead(ID_TEMPRATURE2);
 
@@ -254,9 +254,9 @@ static void sendSpeed(void)
     //Speed should be sent in knots (GPS speed is in cm/s)
     sendDataHead(ID_GPS_SPEED_BP);
     //convert to knots: 1cm/s = 0.0194384449 knots
-    serialize16(GPS_speed * 1944 / 100000);
+    serialize16(gpsSol.groundSpeed * 1944 / 100000);
     sendDataHead(ID_GPS_SPEED_AP);
-    serialize16((GPS_speed * 1944 / 100) % 100);
+    serialize16((gpsSol.groundSpeed * 1944 / 100) % 100);
 }
 #endif
 
@@ -337,11 +337,14 @@ static void sendFakeLatLong(void)
 static void sendGPSLatLong(void)
 {
     static uint8_t gpsFixOccured = 0;
+    int32_t coord[2] = {0,0};
 
     if (STATE(GPS_FIX) || gpsFixOccured == 1) {
         // If we have ever had a fix, send the last known lat/long
         gpsFixOccured = 1;
-        sendLatLong(GPS_coord);
+        coord[LAT] = gpsSol.llh.lat;
+        coord[LON] = gpsSol.llh.lon;
+        sendLatLong(coord);
     } else {
         // otherwise send fake lat/long in order to display compass value
         sendFakeLatLong();

@@ -254,7 +254,7 @@ void GPS_calculateDistanceAndDirectionToHome(void)
     if (STATE(GPS_FIX_HOME)) {      // If we don't have home set, do not display anything
         uint32_t dist;
         int32_t dir;
-        GPS_distance_cm_bearing(&GPS_coord[LAT], &GPS_coord[LON], &GPS_home[LAT], &GPS_home[LON], &dist, &dir);
+        GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &GPS_home[LAT], &GPS_home[LON], &dist, &dir);
         GPS_distanceToHome = dist / 100;
         GPS_directionToHome = dir / 100;
     } else {
@@ -270,7 +270,7 @@ void onGpsNewData(void)
     uint16_t speed;
 
 
-    if (!(STATE(GPS_FIX) && GPS_numSat >= 5)) {
+    if (!(STATE(GPS_FIX) && gpsSol.numSat >= 5)) {
         return;
     }
 
@@ -284,7 +284,7 @@ void onGpsNewData(void)
 #if defined(GPS_FILTERING)
     GPS_filter_index = (GPS_filter_index + 1) % GPS_FILTER_VECTOR_LENGTH;
     for (axis = 0; axis < 2; axis++) {
-        GPS_read[axis] = GPS_coord[axis];               // latest unfiltered data is in GPS_latitude and GPS_longitude
+        GPS_read[axis] = axis == LAT ? gpsSol.llh.lat : gpsSol.llh.lon; // latest unfiltered data is in GPS_latitude and GPS_longitude
         GPS_degree[axis] = GPS_read[axis] / 10000000;   // get the degree to assure the sum fits to the int32_t
 
         // How close we are to a degree line ? its the first three digits from the fractions of degree
@@ -296,8 +296,13 @@ void onGpsNewData(void)
         GPS_filter_sum[axis] += GPS_filter[axis][GPS_filter_index];
         GPS_filtered[axis] = GPS_filter_sum[axis] / GPS_FILTER_VECTOR_LENGTH + (GPS_degree[axis] * 10000000);
         if (nav_mode == NAV_MODE_POSHOLD) {             // we use gps averaging only in poshold mode...
-            if (fraction3[axis] > 1 && fraction3[axis] < 999)
-                GPS_coord[axis] = GPS_filtered[axis];
+            if (fraction3[axis] > 1 && fraction3[axis] < 999) {
+                if (axis == LAT) {
+                    gpsSol.llh.lat = GPS_filtered[LAT];
+                } else {
+                    gpsSol.llh.lon = GPS_filtered[LON];
+                }
+            }
         }
     }
 #endif
@@ -320,8 +325,8 @@ void onGpsNewData(void)
         // we are navigating
 
         // gps nav calculations, these are common for nav and poshold
-        GPS_distance_cm_bearing(&GPS_coord[LAT], &GPS_coord[LON], &GPS_WP[LAT], &GPS_WP[LON], &wp_distance, &target_bearing);
-        GPS_calc_location_error(&GPS_WP[LAT], &GPS_WP[LON], &GPS_coord[LAT], &GPS_coord[LON]);
+        GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &GPS_WP[LAT], &GPS_WP[LON], &wp_distance, &target_bearing);
+        GPS_calc_location_error(&GPS_WP[LAT], &GPS_WP[LON], &gpsSol.llh.lat, &gpsSol.llh.lon);
 
         switch (nav_mode) {
         case NAV_MODE_POSHOLD:
@@ -359,10 +364,10 @@ void onGpsNewData(void)
 
 void GPS_reset_home_position(void)
 {
-    if (STATE(GPS_FIX) && GPS_numSat >= 5) {
-        GPS_home[LAT] = GPS_coord[LAT];
-        GPS_home[LON] = GPS_coord[LON];
-        GPS_calc_longitude_scaling(GPS_coord[LAT]); // need an initial value for distance and bearing calc
+    if (STATE(GPS_FIX) && gpsSol.numSat >= 5) {
+        GPS_home[LAT] = gpsSol.llh.lat;
+        GPS_home[LON] = gpsSol.llh.lon;
+        GPS_calc_longitude_scaling(gpsSol.llh.lat); // need an initial value for distance and bearing calc
         nav_takeoff_bearing = DECIDEGREES_TO_DEGREES(attitude.values.yaw);              // save takeoff heading
         // Set ground altitude
         ENABLE_STATE(GPS_FIX_HOME);
@@ -429,10 +434,10 @@ void GPS_set_next_wp(int32_t *lat, int32_t *lon)
     GPS_WP[LON] = *lon;
 
     GPS_calc_longitude_scaling(*lat);
-    GPS_distance_cm_bearing(&GPS_coord[LAT], &GPS_coord[LON], &GPS_WP[LAT], &GPS_WP[LON], &wp_distance, &target_bearing);
+    GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &GPS_WP[LAT], &GPS_WP[LON], &wp_distance, &target_bearing);
 
     nav_bearing = target_bearing;
-    GPS_calc_location_error(&GPS_WP[LAT], &GPS_WP[LON], &GPS_coord[LAT], &GPS_coord[LON]);
+    GPS_calc_location_error(&GPS_WP[LAT], &GPS_WP[LON], &gpsSol.llh.lat, &gpsSol.llh.lon);
     original_target_bearing = target_bearing;
     waypoint_speed_gov = navigationConfig()->nav_speed_min;
 }
@@ -484,13 +489,11 @@ static void GPS_calc_velocity(void)
     static int16_t speed_old[2] = { 0, 0 };
     static int32_t last_coord[2] = { 0, 0 };
     static uint8_t init = 0;
-    // y_GPS_speed positive = Up
-    // x_GPS_speed positive = Right
 
     if (init) {
         float tmp = 1.0f / dTnav;
-        actual_speed[GPS_X] = (float)(GPS_coord[LON] - last_coord[LON]) * GPS_scaleLonDown * tmp;
-        actual_speed[GPS_Y] = (float)(GPS_coord[LAT] - last_coord[LAT]) * tmp;
+        actual_speed[GPS_X] = (float)(gpsSol.llh.lon - last_coord[LON]) * GPS_scaleLonDown * tmp;
+        actual_speed[GPS_Y] = (float)(gpsSol.llh.lat - last_coord[LAT]) * tmp;
 
         actual_speed[GPS_X] = (actual_speed[GPS_X] + speed_old[GPS_X]) / 2;
         actual_speed[GPS_Y] = (actual_speed[GPS_Y] + speed_old[GPS_Y]) / 2;
@@ -500,8 +503,8 @@ static void GPS_calc_velocity(void)
     }
     init = 1;
 
-    last_coord[LON] = GPS_coord[LON];
-    last_coord[LAT] = GPS_coord[LAT];
+    last_coord[LON] = gpsSol.llh.lon;
+    last_coord[LAT] = gpsSol.llh.lat;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -666,7 +669,7 @@ void updateGpsWaypointsAndMode(void)
     bool resetNavNow = false;
     static bool gpsReadyBeepDone = false;
 
-    if (STATE(GPS_FIX) && GPS_numSat >= 5) {
+    if (STATE(GPS_FIX) && gpsSol.numSat >= 5) {
 
         //
         // process HOME mode
@@ -701,8 +704,8 @@ void updateGpsWaypointsAndMode(void)
 
                     // Transition to HOLD mode
                     ENABLE_FLIGHT_MODE(GPS_HOLD_MODE);
-                    GPS_hold[LAT] = GPS_coord[LAT];
-                    GPS_hold[LON] = GPS_coord[LON];
+                    GPS_hold[LAT] = gpsSol.llh.lat;
+                    GPS_hold[LON] = gpsSol.llh.lon;
                     GPS_set_next_wp(&GPS_hold[LAT], &GPS_hold[LON]);
                     nav_mode = NAV_MODE_POSHOLD;
                     resetNavNow = true;

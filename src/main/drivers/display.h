@@ -20,8 +20,11 @@
 struct displayPortVTable_s;
 typedef struct displayPort_s {
     const struct displayPortVTable_s *vTable;
+    void *device;
     uint8_t rows;
     uint8_t cols;
+    uint8_t posX;
+    uint8_t posY;
 
     // CMS state
     bool cleared;
@@ -35,7 +38,7 @@ typedef struct displayPortVTable_s {
     int (*clearScreen)(displayPort_t *displayPort);
     int (*drawScreen)(displayPort_t *displayPort);
     int (*screenSize)(const displayPort_t *displayPort);
-    int (*write)(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *text);
+    int (*writeString)(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *text);
     int (*writeChar)(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c);
     bool (*isTransferInProgress)(const displayPort_t *displayPort);
     int (*heartbeat)(displayPort_t *displayPort);
@@ -58,6 +61,7 @@ bool displayIsGrabbed(const displayPort_t *instance);
 void displayClearScreen(displayPort_t *instance);
 void displayDrawScreen(displayPort_t *instance);
 int displayScreenSize(const displayPort_t *instance);
+void displaySetXY(displayPort_t *instance, uint8_t x, uint8_t y);
 int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, const char *s);
 int displayWriteChar(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t c);
 bool displayIsTransferInProgress(const displayPort_t *instance);

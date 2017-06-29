@@ -38,8 +38,6 @@
 #include "drivers/serial_softserial.h"
 #endif
 
-#define USE_SERIAL (defined(USE_UART) || defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
-
 #ifdef SITL
 #include "drivers/serial_tcp.h"
 #endif
@@ -332,7 +330,7 @@ serialPort_t *openSerialPort(
     portMode_t mode,
     portOptions_t options)
 {
-#if !(USE_SERIAL)
+#if !(defined(USE_UART) || defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
     UNUSED(rxCallback);
     UNUSED(baudRate);
     UNUSED(mode);
