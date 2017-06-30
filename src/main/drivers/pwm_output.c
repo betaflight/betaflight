@@ -313,7 +313,7 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
 #endif
 
         /* standard PWM outputs */
-        const unsigned pwmRateHz = useUnsyncedPwm ? motorConfig->motorPwmRate : ceilf(1 / (sMin + sLen));
+        const unsigned pwmRateHz = useUnsyncedPwm ? motorConfig->motorPwmRate : ceilf(1 / (sMin + sLen * 2));
 
         const uint32_t clock = timerClock(timerHardware->tim);
         /* used to find the desired timer frequency for max resolution */
