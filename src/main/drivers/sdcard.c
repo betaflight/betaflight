@@ -31,6 +31,7 @@
 
 #include "sdcard.h"
 #include "sdcard_standard.h"
+#include "blackbox/blackbox.h"
 
 #include "build/debug.h"
 
@@ -156,9 +157,9 @@ bool sdcard_isInserted(void)
 
     result = IORead(sdCardDetectPin) != 0;
 
-#ifdef SDCARD_DETECT_INVERTED
-    result = !result;
-#endif
+    if (blackboxConfig()->invertedCardDetection) {
+        result = !result;
+    }
 
 #endif
 

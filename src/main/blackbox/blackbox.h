@@ -25,6 +25,7 @@ typedef struct blackboxConfig_s {
     uint8_t rate_num;
     uint8_t rate_denom;
     uint8_t device;
+    uint8_t invertedCardDetection;
 } blackboxConfig_t;
 
 PG_DECLARE(blackboxConfig_t, blackboxConfig);
