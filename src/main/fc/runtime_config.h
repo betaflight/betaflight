@@ -47,6 +47,21 @@ typedef enum {
     ARMING_DISABLED_BST         = (1 << 10),
 } armingDisableFlags_e;
 
+extern const char *armingDisableFlagNames[];
+
+#define ARMING_DISBALED_FLAG_NAMES \
+    "NOGYRO",      \
+    "FAILSAFE",    \
+    "BOXFAILSAFE", \
+    "THROTTLE",    \
+    "ANGLE",       \
+    "LOAD",        \
+    "CALIB",       \
+    "CLI",         \
+    "CMS",         \
+    "OSD",         \
+    "BST",
+
 void setArmingDisabled(armingDisableFlags_e flag);
 void unsetArmingDisabled(armingDisableFlags_e flag);
 bool isArmingDisabled(void);

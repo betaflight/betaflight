@@ -2712,9 +2712,16 @@ static void cliStatus(char *cmdline)
     cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
             constrain(averageSystemLoadPercent, 0, 100), getTaskDeltaTime(TASK_GYROPID), gyroRate, rxRate, systemRate);
 #ifdef MINIMAL_CLI
-    cliPrintLinef("0x%x", getArmingDisableFlags() & ~ARMING_DISABLED_CLI);
+    cliPrintLinef("Arming disable flags: 0x%x", getArmingDisableFlags());
 #else
-    cliPrintLinef("Arming disable flags: 0x%x", getArmingDisableFlags() & ~ARMING_DISABLED_CLI);
+    cliPrint("Arming disable flags:");
+    uint16_t flags = getArmingDisableFlags();
+    while (flags) {
+        int bitpos = ffs(flags) - 1;
+        flags &= ~(1 << bitpos);
+        cliPrintf(" %s", armingDisableFlagNames[bitpos]);
+    }
+    cliPrintLinefeed();
 #endif
 }
 
