@@ -259,8 +259,11 @@ void osdSlaveTasksInit(void)
 void fcTasksInit(void)
 {
     schedulerInit();
-    rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
-    setTaskEnabled(TASK_GYROPID, true);
+
+    if (sensors(SENSOR_GYRO)) {
+        rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
+        setTaskEnabled(TASK_GYROPID, true);
+    }
 
     if (sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);
