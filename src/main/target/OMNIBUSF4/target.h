@@ -178,10 +178,9 @@
 #define OLED_I2C_INSTANCE              (I2CDEV_3)
 
 #define USE_ADC
-#define CURRENT_METER_ADC_PIN   PC1
-#define VBAT_ADC_PIN            PC2
-
-//#define RSSI_ADC_PIN          PA0
+#define CURRENT_METER_ADC_PIN   PC1  // Direct from CRNT pad (part of onboard sensor for Pro)
+#define VBAT_ADC_PIN            PC2  // 11:1 (10K + 1K) divider
+#define RSSI_ADC_PIN            PA0  // Direct from RSSI pad
 
 #define TRANSPONDER
 
@@ -189,8 +188,6 @@
 
 #define DEFAULT_FEATURES        (FEATURE_OSD)
 #define AVOID_UART1_FOR_PWM_PPM
-#define SPEKTRUM_BIND_PIN       UART1_RX_PIN
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA (0xffff & ~(BIT(14)|BIT(13)))

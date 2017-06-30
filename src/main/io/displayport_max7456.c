@@ -95,7 +95,7 @@ static int screenSize(const displayPort_t *displayPort)
     return maxScreenSize;
 }
 
-static int write(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
+static int writeString(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
 {
     UNUSED(displayPort);
     max7456Write(x, y, s);
@@ -143,7 +143,7 @@ static const displayPortVTable_t max7456VTable = {
     .clearScreen = clearScreen,
     .drawScreen = drawScreen,
     .screenSize = screenSize,
-    .write = write,
+    .writeString = writeString,
     .writeChar = writeChar,
     .isTransferInProgress = isTransferInProgress,
     .heartbeat = heartbeat,

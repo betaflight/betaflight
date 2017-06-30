@@ -71,7 +71,6 @@ typedef enum SPIDevice {
 
 typedef struct SPIDevice_s {
     SPI_TypeDef *dev;
-    ioTag_t nss;
     ioTag_t sck;
     ioTag_t mosi;
     ioTag_t miso;
@@ -86,6 +85,7 @@ typedef struct SPIDevice_s {
 #endif
 } spiDevice_t;
 
+void spiPreInitCs(ioTag_t iotag);
 bool spiInit(SPIDevice device);
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor);
 uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t in);

@@ -130,17 +130,16 @@ static serialPort_t *cliPort;
 
 #ifdef STM32F1
 #define CLI_IN_BUFFER_SIZE 128
-#define CLI_OUT_BUFFER_SIZE 64
 #else
 // Space required to set array parameters
 #define CLI_IN_BUFFER_SIZE 256
-#define CLI_OUT_BUFFER_SIZE 256
 #endif
+#define CLI_OUT_BUFFER_SIZE 64
 
 static bufWriter_t *cliWriter;
-static uint8_t cliWriteBuffer[sizeof(*cliWriter) + CLI_IN_BUFFER_SIZE];
+static uint8_t cliWriteBuffer[sizeof(*cliWriter) + CLI_OUT_BUFFER_SIZE];
 
-static char cliBuffer[CLI_OUT_BUFFER_SIZE];
+static char cliBuffer[CLI_IN_BUFFER_SIZE];
 static uint32_t bufferIndex = 0;
 
 static bool configIsInCopy = false;
@@ -2714,7 +2713,11 @@ static void cliStatus(char *cmdline)
     const int systemRate = getTaskDeltaTime(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_SYSTEM)));
     cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
             constrain(averageSystemLoadPercent, 0, 100), getTaskDeltaTime(TASK_GYROPID), gyroRate, rxRate, systemRate);
-
+#ifdef MINIMAL_CLI
+    cliPrintLinef("0x%x", getArmingDisableFlags() & ~ARMING_DISABLED_CLI);
+#else
+    cliPrintLinef("Arming disable flags: 0x%x", getArmingDisableFlags() & ~ARMING_DISABLED_CLI);
+#endif
 }
 
 #ifndef SKIP_TASK_STATISTICS
@@ -2831,9 +2834,14 @@ const cliResourceValue_t resourceTable[] = {
     { OWNER_I2C_SDA,       PG_I2C_CONFIG, offsetof(i2cConfig_t, ioTagSda[0]), I2CDEV_COUNT },
 #endif
     { OWNER_LED,           PG_STATUS_LED_CONFIG, offsetof(statusLedConfig_t, ioTags[0]), STATUS_LED_NUMBER },
+#ifdef USE_SPEKTRUM_BIND
+    { OWNER_RX_BIND,       PG_RX_CONFIG, offsetof(rxConfig_t, spektrum_bind_pin_override_ioTag), 0 },
+    { OWNER_RX_BIND_PLUG,  PG_RX_CONFIG, offsetof(rxConfig_t, spektrum_bind_plug_ioTag), 0 },
+#endif
 #ifdef TRANSPONDER
     { OWNER_TRANSPONDER,   PG_TRANSPONDER_CONFIG, offsetof(transponderConfig_t, ioTag), 0 },
 #endif
+=======
 };
 
 static ioTag_t *getIoTag(const cliResourceValue_t value, uint8_t index)
@@ -3496,7 +3504,7 @@ void cliEnter(serialPort_t *serialPort)
 #endif
     cliPrompt();
 
-    ENABLE_ARMING_FLAG(PREVENT_ARMING);
+    setArmingDisabled(ARMING_DISABLED_CLI);
 }
 
 void cliInit(const serialConfig_t *serialConfig)

@@ -25,24 +25,6 @@
 #define BRUSHED_MOTORS_PWM_RATE 16000
 #define BRUSHLESS_MOTORS_PWM_RATE 480
 
-/*
-  DshotSettingRequest (KISS24). Spin direction, 3d and save Settings reqire 10 requests.. and the TLM Byte must always be high if 1-47 are used to send settings
-  0 = stop
-  1-5: beep
-  6: ESC info request (FW Version and SN sent over the tlm wire)
-  7: spin direction 1
-  8: spin direction 2
-  9: 3d mode off
-  10: 3d mode on
-  11: ESC settings request (saved settings over the TLM wire)
-  12: save Settings
-
-  3D Mode:
-  0 = stop
-  48   (low) - 1047 (high) -> negative direction
-  1048 (low) - 2047 (high) -> positive direction
-*/
-
 // Digital protocol has fixed values
 #define DSHOT_DISARM_COMMAND      0
 #define DSHOT_MIN_THROTTLE       48
@@ -140,6 +122,5 @@ void writeMotors(void);
 void stopMotors(void);
 void stopPwmAllMotors(void);
 
-bool isMotorProtocolDshot(void);
 float convertExternalToMotor(uint16_t externalValue);
 uint16_t convertMotorToExternal(float motorValue);

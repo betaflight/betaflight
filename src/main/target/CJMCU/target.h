@@ -76,7 +76,7 @@
 #define USE_RX_NRF24
 #define USE_RX_CX10
 #define USE_RX_H8_3D
-#define USE_RX_INAV
+//#define USE_RX_INAV // Temporary disabled to make some room in flash
 #define USE_RX_SYMA
 #define USE_RX_V202
 //#define RX_SPI_DEFAULT_PROTOCOL RX_SPI_NRF24_SYMA_X5
@@ -107,7 +107,7 @@
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define USE_RX_MSP
-#define SPEKTRUM_BIND_PIN       PA3 // UART2, PA3
+#define USE_SPEKTRUM_BIND
 
 #endif //USE_RX_NRF24
 

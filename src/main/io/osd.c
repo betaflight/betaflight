@@ -36,6 +36,7 @@
 #include "blackbox/blackbox.h"
 #include "blackbox/blackbox_io.h"
 
+#include "build/build_config.h"
 #include "build/debug.h"
 #include "build/version.h"
 
@@ -87,13 +88,6 @@
 #endif
 
 #define VIDEO_BUFFER_CHARS_PAL    480
-
-// Character coordinate
-
-#define OSD_POSITION_BITS 5 // 5 bits gives a range 0-31
-#define OSD_POS(x,y)  ((x & 0x001F) | ((y & 0x001F) << OSD_POSITION_BITS))
-#define OSD_X(x)      (x & 0x001F)
-#define OSD_Y(x)      ((x >> OSD_POSITION_BITS) & 0x001F)
 
 // Blink control
 
@@ -168,9 +162,9 @@ static char osdGetMetersToSelectedUnitSymbol()
 {
     switch (osdConfig()->units) {
     case OSD_UNIT_IMPERIAL:
-        return 0xF;
+        return SYM_FT;
     default:
-        return 0xC;
+        return SYM_M;
     }
 }
 
@@ -277,12 +271,12 @@ static void osdDrawSingleElement(uint8_t item)
 #ifdef GPS
     case OSD_GPS_SATS:
         buff[0] = 0x1f;
-        tfp_sprintf(buff + 1, "%d", GPS_numSat);
+        tfp_sprintf(buff + 1, "%d", gpsSol.numSat);
         break;
 
     case OSD_GPS_SPEED:
         // FIXME ideally we want to use SYM_KMH symbol but it's not in the font any more, so we use K.
-        tfp_sprintf(buff, "%3dK", CM_S_TO_KM_H(GPS_speed));
+        tfp_sprintf(buff, "%3dK", CM_S_TO_KM_H(gpsSol.groundSpeed));
         break;
 
     case OSD_GPS_LAT:
@@ -291,10 +285,10 @@ static void osdDrawSingleElement(uint8_t item)
             int32_t val;
             if (item == OSD_GPS_LAT) {
                 buff[0] = SYM_ARROW_EAST;
-                val = GPS_coord[LAT];
+                val = gpsSol.llh.lat;
             } else {
                 buff[0] = SYM_ARROW_SOUTH;
-                val = GPS_coord[LON];
+                val = gpsSol.llh.lon;
             }
 
             char wholeDegreeString[5];
@@ -644,12 +638,7 @@ static void osdDrawElements(void)
     if (IS_RC_MODE_ACTIVE(BOXOSD))
       return;
 
-#ifdef CMS
-    else if (sensors(SENSOR_ACC) || displayIsGrabbed(osdDisplayPort))
-#else
-    else if (sensors(SENSOR_ACC))
-#endif
-    {
+    if (sensors(SENSOR_ACC)) {
         osdDrawSingleElement(OSD_ARTIFICIAL_HORIZON);
     }
 
@@ -683,12 +672,7 @@ static void osdDrawElements(void)
     osdDrawSingleElement(OSD_COMPASS_BAR);
 
 #ifdef GPS
-#ifdef CMS
-    if (sensors(SENSOR_GPS) || displayIsGrabbed(osdDisplayPort))
-#else
-    if (sensors(SENSOR_GPS))
-#endif
-    {
+    if (sensors(SENSOR_GPS)) {
         osdDrawSingleElement(OSD_GPS_SATS);
         osdDrawSingleElement(OSD_GPS_SPEED);
         osdDrawSingleElement(OSD_GPS_LAT);
@@ -747,17 +731,18 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->item_pos[OSD_ESC_TMP]            = OSD_POS(18, 2)  | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_ESC_RPM]            = OSD_POS(19, 2)  | VISIBLE_FLAG;
 
-    osdConfig->enabled_stats[OSD_STAT_MAX_SPEED]    = true;
-    osdConfig->enabled_stats[OSD_STAT_MIN_BATTERY]  = true;
-    osdConfig->enabled_stats[OSD_STAT_MIN_RSSI]     = true;
-    osdConfig->enabled_stats[OSD_STAT_MAX_CURRENT]  = true;
-    osdConfig->enabled_stats[OSD_STAT_USED_MAH]     = true;
-    osdConfig->enabled_stats[OSD_STAT_MAX_ALTITUDE] = false;
-    osdConfig->enabled_stats[OSD_STAT_BLACKBOX]     = true;
-    osdConfig->enabled_stats[OSD_STAT_END_BATTERY]  = false;
-    osdConfig->enabled_stats[OSD_STAT_FLYTIME]      = false;
-    osdConfig->enabled_stats[OSD_STAT_ARMEDTIME]    = true;
-    osdConfig->enabled_stats[OSD_STAT_MAX_DISTANCE] = false;
+    osdConfig->enabled_stats[OSD_STAT_MAX_SPEED]       = true;
+    osdConfig->enabled_stats[OSD_STAT_MIN_BATTERY]     = true;
+    osdConfig->enabled_stats[OSD_STAT_MIN_RSSI]        = true;
+    osdConfig->enabled_stats[OSD_STAT_MAX_CURRENT]     = true;
+    osdConfig->enabled_stats[OSD_STAT_USED_MAH]        = true;
+    osdConfig->enabled_stats[OSD_STAT_MAX_ALTITUDE]    = false;
+    osdConfig->enabled_stats[OSD_STAT_BLACKBOX]        = true;
+    osdConfig->enabled_stats[OSD_STAT_END_BATTERY]     = false;
+    osdConfig->enabled_stats[OSD_STAT_FLYTIME]         = false;
+    osdConfig->enabled_stats[OSD_STAT_ARMEDTIME]       = true;
+    osdConfig->enabled_stats[OSD_STAT_MAX_DISTANCE]    = false;
+    osdConfig->enabled_stats[OSD_STAT_BLACKBOX_NUMBER] = true;
 
     osdConfig->units = OSD_UNIT_METRIC;
 
@@ -770,10 +755,10 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 static void osdDrawLogo(int x, int y)
 {
     // display logo and help
-    char fontOffset = 160;
+    int fontOffset = 160;
     for (int row = 0; row < 4; row++) {
         for (int column = 0; column < 24; column++) {
-            if (fontOffset != 255) // FIXME magic number
+            if (fontOffset <= SYM_END_OF_FONT)
                 displayWriteChar(osdDisplayPort, x + column, y + row, fontOffset++);
         }
     }
@@ -816,10 +801,8 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
 void osdUpdateAlarms(void)
 {
     // This is overdone?
-    // uint16_t *itemPos = osdConfig()->item_pos;
 
     int32_t alt = osdGetMetersToSelectedUnit(getEstimatedAltitude()) / 100;
-    statRssi = rssi * 100 / 1024;
 
     if (statRssi < osdConfig()->rssi_alarm)
         SET_BLINK(OSD_RSSI_VALUE);
@@ -889,7 +872,7 @@ static void osdUpdateStats(void)
 {
     int16_t value = 0;
 #ifdef GPS
-    value = CM_S_TO_KM_H(GPS_speed);
+    value = CM_S_TO_KM_H(gpsSol.groundSpeed);
 #endif
     if (stats.max_speed < value)
         stats.max_speed = value;
@@ -1031,6 +1014,11 @@ static void osdShowStats(void)
         osdGetBlackboxStatusString(buff);
         osdDisplayStatisticLabel(top++, "BLACKBOX", buff);
     }
+
+    if (osdConfig()->enabled_stats[OSD_STAT_BLACKBOX_NUMBER] && blackboxConfig()->device && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
+        itoa(blackboxGetLogNumber(), buff, 10);
+        osdDisplayStatisticLabel(top++, "BB LOG NUM", buff);
+    }
 #endif
 
     /* Reset time since last armed here to ensure this timer is at zero when back at "main" OSD screen */
@@ -1043,7 +1031,7 @@ static void osdShowArmed(void)
     displayWrite(osdDisplayPort, 12, 7, "ARMED");
 }
 
-static void osdRefresh(timeUs_t currentTimeUs)
+STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
 {
     static uint8_t lastSec = 0;
     uint8_t sec;
@@ -1061,6 +1049,8 @@ static void osdRefresh(timeUs_t currentTimeUs)
 
         armState = ARMING_FLAG(ARMED);
     }
+
+    statRssi = scaleRange(rssi, 0, 1024, 0, 100);
 
     osdUpdateStats();
 
@@ -1153,7 +1143,9 @@ void osdUpdate(timeUs_t currentTimeUs)
 #ifdef CMS
     // do not allow ARM if we are in menu
     if (displayIsGrabbed(osdDisplayPort)) {
-        DISABLE_ARMING_FLAG(OK_TO_ARM);
+        setArmingDisabled(ARMING_DISABLED_OSD_MENU);
+    } else {
+        unsetArmingDisabled(ARMING_DISABLED_OSD_MENU);
     }
 #endif
 }

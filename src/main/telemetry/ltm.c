@@ -133,23 +133,23 @@ static void ltm_gframe(void)
 
     if (!STATE(GPS_FIX))
         gps_fix_type = 1;
-    else if (GPS_numSat < 5)
+    else if (gpsSol.numSat < 5)
         gps_fix_type = 2;
     else
         gps_fix_type = 3;
 
     ltm_initialise_packet('G');
-    ltm_serialise_32(GPS_coord[LAT]);
-    ltm_serialise_32(GPS_coord[LON]);
-    ltm_serialise_8((uint8_t)(GPS_speed / 100));
+    ltm_serialise_32(gpsSol.llh.lat);
+    ltm_serialise_32(gpsSol.llh.lon);
+    ltm_serialise_8((uint8_t)(gpsSol.groundSpeed / 100));
 
 #if defined(BARO) || defined(SONAR)
-    ltm_alt = (sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) ? getEstimatedAltitude() : GPS_altitude * 100;
+    ltm_alt = (sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) ? getEstimatedAltitude() : gpsSol.llh.alt * 100;
 #else
-    ltm_alt = GPS_altitude * 100;
+    ltm_alt = gpsSol.llh.alt * 100;
 #endif
     ltm_serialise_32(ltm_alt);
-    ltm_serialise_8((GPS_numSat << 2) | gps_fix_type);
+    ltm_serialise_8((gpsSol.numSat << 2) | gps_fix_type);
     ltm_finalise();
 #endif
 }

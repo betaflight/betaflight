@@ -36,6 +36,7 @@
 // Using RX DMA disables the use of receive callbacks
 #define USE_UART1_RX_DMA
 #define USE_UART1_TX_DMA
+#define MAX_SUPPORTED_MOTORS 8
 #endif
 
 #ifdef STM32F3
@@ -114,6 +115,7 @@
 #define TELEMETRY_SRXL
 #define USE_DASHBOARD
 #define USE_MSP_DISPLAYPORT
+#define USE_RCSPLIT
 #define USE_RX_MSP
 #define USE_SERIALRX_JETIEXBUS
 #define USE_SENSOR_NAMES
@@ -122,11 +124,16 @@
 #define VTX_CONTROL
 #define VTX_SMARTAUDIO
 #define VTX_TRAMP
+
+#ifdef USE_SERIALRX_SPEKTRUM
+#define USE_SPEKTRUM_BIND
+#define USE_SPEKTRUM_BIND_PLUG
+#endif
 #endif
 
 #if (FLASH_SIZE > 256)
-// Temporarily moved this here because of overflowing flash size on F3
+// Temporarily moved GPS here because of overflowing flash size on F3
 #define GPS
-
+#define USE_NAV
 #define USE_UNCOMMON_MIXERS
 #endif

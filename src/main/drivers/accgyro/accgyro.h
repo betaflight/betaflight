@@ -20,6 +20,7 @@
 #include "platform.h"
 #include "common/axis.h"
 #include "drivers/exti.h"
+#include "drivers/bus.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro/accgyro_mpu.h"
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)

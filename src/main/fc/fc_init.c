@@ -124,6 +124,7 @@
 #include "flight/pid.h"
 #include "flight/servos.h"
 
+#include "io/rcsplit.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -181,6 +182,61 @@ static IO_t busSwitchResetPin        = IO_NONE;
 
     // ENABLE
     IOLo(busSwitchResetPin);
+}
+#endif
+
+#ifdef USE_SPI
+// Pre-initialize all CS pins to input with pull-up.
+// It's sad that we can't do this with an initialized array,
+// since we will be taking care of configurable CS pins shortly.
+
+void spiPreInit(void)
+{
+#ifdef USE_ACC_SPI_MPU6000
+    spiPreInitCs(IO_TAG(MPU6000_CS_PIN));
+#endif
+#ifdef USE_ACC_SPI_MPU6500
+    spiPreInitCs(IO_TAG(MPU6500_CS_PIN));
+#endif
+#ifdef USE_GYRO_SPI_MPU9250
+    spiPreInitCs(IO_TAG(MPU9250_CS_PIN));
+#endif
+#ifdef USE_GYRO_SPI_ICM20689
+    spiPreInitCs(IO_TAG(ICM20689_CS_PIN));
+#endif
+#ifdef USE_ACCGYRO_BMI160
+    spiPreInitCs(IO_TAG(BMI160_CS_PIN));
+#endif
+#ifdef USE_GYRO_L3GD20
+    spiPreInitCs(IO_TAG(L3GD20_CS_PIN));
+#endif
+#ifdef USE_MAX7456
+    spiPreInitCs(IO_TAG(MAX7456_SPI_CS_PIN));
+#endif
+#ifdef USE_SDCARD
+    spiPreInitCs(IO_TAG(SDCARD_SPI_CS_PIN));
+#endif
+#ifdef USE_BARO_SPI_BMP280
+    spiPreInitCs(IO_TAG(BMP280_CS_PIN));
+#endif
+#ifdef USE_BARO_SPI_MS5611
+    spiPreInitCs(IO_TAG(MS5611_CS_PIN));
+#endif
+#ifdef USE_MAG_SPI_HMC5883
+    spiPreInitCs(IO_TAG(HMC5883_CS_PIN));
+#endif
+#ifdef USE_MAG_SPI_AK8963
+    spiPreInitCs(IO_TAG(AK8963_CS_PIN));
+#endif
+#ifdef RTC6705_CS_PIN // XXX VTX_RTC6705? Should use USE_ format.
+    spiPreInitCs(IO_TAG(RTC6705_CS_PIN));
+#endif
+#ifdef M25P16_CS_PIN // XXX Should use USE_ format.
+    spiPreInitCs(IO_TAG(M25P16_CS_PIN));
+#endif
+#if defined(USE_RX_SPI) && !defined(USE_RX_SOFTSPI)
+    spiPreInitCs(IO_TAG(RX_NSS_PIN));
+#endif
 }
 #endif
 
@@ -259,11 +315,12 @@ void init(void)
     }
 #endif
 
-#ifdef SPEKTRUM_BIND_PIN
+#if defined(USE_SPEKTRUM_BIND) && !defined(SITL)
     if (feature(FEATURE_RX_SERIAL)) {
         switch (rxConfig()->serialrx_provider) {
         case SERIALRX_SPEKTRUM1024:
         case SERIALRX_SPEKTRUM2048:
+        case SERIALRX_SRXL:
             // Spektrum satellite binding if enabled on startup.
             // Must be called before that 100ms sleep so that we don't lose satellite's binding window after startup.
             // The rest of Spektrum initialization will happen later - via spektrumInit()
@@ -327,7 +384,7 @@ void init(void)
     if (0) {}
 #if defined(USE_PPM)
     else if (feature(FEATURE_RX_PPM)) {
-          ppmRxInit(ppmConfig(), motorConfig()->dev.motorPwmProtocol);
+          ppmRxInit(ppmConfig());
     }
 #endif
 #if defined(USE_PWM)
@@ -351,6 +408,9 @@ void init(void)
 #else
 
 #ifdef USE_SPI
+    // Initialize CS lines and keep them high
+    spiPreInit();
+
 #ifdef USE_SPI_DEVICE_1
     spiInit(SPIDEV_1);
 #endif
@@ -418,8 +478,9 @@ void init(void)
     initBoardAlignment(boardAlignment());
 
     if (!sensorsAutodetect()) {
-        // if gyro was not detected due to whatever reason, we give up now.
-        failureMode(FAILURE_MISSING_ACC);
+        // if gyro was not detected due to whatever reason, notify and don't arm.
+        failureLedCode(FAILURE_MISSING_ACC, 2);
+        setArmingDisabled(ARMING_DISABLED_NO_GYRO);
     }
 
     systemState |= SYSTEM_STATE_SENSORS_READY;
@@ -441,6 +502,10 @@ void init(void)
 
     // gyro.targetLooptime set in sensorsAutodetect(), so we are ready to call pidInit()
     pidInit(currentPidProfile);
+
+#ifdef USE_SERVOS
+    servosFilterInit();
+#endif
 
     imuInit();
 
@@ -599,7 +664,6 @@ void init(void)
     timerStart();
 
     ENABLE_STATE(SMALL_ANGLE);
-    DISABLE_ARMING_FLAG(PREVENT_ARMING);
 
 #ifdef SOFTSERIAL_LOOPBACK
     // FIXME this is a hack, perhaps add a FUNCTION_LOOPBACK to support it properly
@@ -636,5 +700,10 @@ void init(void)
 #else
     fcTasksInit();
 #endif
+
+#ifdef USE_RCSPLIT
+    rcSplitInit();
+#endif // USE_RCSPLIT
+
     systemState |= SYSTEM_STATE_READY;
 }

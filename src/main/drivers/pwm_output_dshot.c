@@ -54,74 +54,23 @@ uint8_t getTimerIndex(TIM_TypeDef *timer)
     return dmaMotorTimerCount-1;
 }
 
-void pwmWriteDshot(uint8_t index, float value)
+void pwmWriteDshotInt(uint8_t index, uint16_t value)
 {
-    const uint16_t digitalValue = lrintf(value);
-
-    motorDmaOutput_t * const motor = &dmaMotors[index];
+    motorDmaOutput_t *const motor = &dmaMotors[index];
 
     if (!motor->timerHardware || !motor->timerHardware->dmaRef) {
         return;
     }
 
-    uint16_t packet = (digitalValue << 1) | (motor->requestTelemetry ? 1 : 0);
-    motor->requestTelemetry = false;    // reset telemetry request to make sure it's triggered only once in a row
+    uint16_t packet = prepareDshotPacket(motor, value);
 
-    // compute checksum
-    int csum = 0;
-    int csum_data = packet;
-    for (int i = 0; i < 3; i++) {
-        csum ^=  csum_data;   // xor data by nibbles
-        csum_data >>= 4;
-    }
-    csum &= 0xf;
-    // append checksum
-    packet = (packet << 4) | csum;
-    // generate pulses for whole packet
-    for (int i = 0; i < 16; i++) {
-        motor->dmaBuffer[i] = (packet & 0x8000) ? MOTOR_BIT_1 : MOTOR_BIT_0;  // MSB first
-        packet <<= 1;
-    }
+    uint8_t bufferSize = loadDmaBuffer(motor, packet);
 
-    DMA_SetCurrDataCounter(motor->timerHardware->dmaRef, DSHOT_DMA_BUFFER_SIZE);
+    DMA_SetCurrDataCounter(motor->timerHardware->dmaRef, bufferSize);
     DMA_Cmd(motor->timerHardware->dmaRef, ENABLE);
 }
 
-void pwmWriteProShot(uint8_t index, float value)
-{
-    const uint16_t digitalValue = lrintf(value);
-
-    motorDmaOutput_t * const motor = &dmaMotors[index];
-
-    if (!motor->timerHardware || !motor->timerHardware->dmaRef) {
-        return;
-    }
-
-    uint16_t packet = (digitalValue << 1) | (motor->requestTelemetry ? 1 : 0);
-    motor->requestTelemetry = false;    // reset telemetry request to make sure it's triggered only once in a row
-
-    // compute checksum
-    int csum = 0;
-    int csum_data = packet;
-    for (int i = 0; i < 3; i++) {
-        csum ^=  csum_data;   // xor data by nibbles
-        csum_data >>= 4;
-    }
-    csum &= 0xf;
-    // append checksum
-    packet = (packet << 4) | csum;
-
-    // generate pulses for Proshot
-    for (int i = 0; i < 4; i++) {
-        motor->dmaBuffer[i] = PROSHOT_BASE_SYMBOL + ((packet & 0xF000) >> 12) * PROSHOT_BIT_WIDTH;  // Most significant nibble first
-        packet <<= 4;	// Shift 4 bits
-    }
-
-    DMA_SetCurrDataCounter(motor->timerHardware->dmaRef, PROSHOT_DMA_BUFFER_SIZE);
-    DMA_Cmd(motor->timerHardware->dmaRef, ENABLE);
-}
-
-void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
+void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
 {
     UNUSED(motorCount);
 
@@ -145,7 +94,7 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
     }
 }
 
-void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
+void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
 {
     TIM_OCInitTypeDef TIM_OCInitStructure;
     DMA_InitTypeDef DMA_InitStructure;

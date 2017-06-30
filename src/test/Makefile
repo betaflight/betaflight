@@ -70,6 +70,7 @@ encoding_unittest_SRC := \
 flight_failsafe_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/fc/rc_modes.c \
+		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/flight/failsafe.c
 
 
@@ -105,6 +106,17 @@ ledstrip_unittest_SRC := \
 
 maths_unittest_SRC := \
 		$(USER_DIR)/common/maths.c
+
+
+osd_unittest_SRC := \
+		$(USER_DIR)/io/osd.c \
+		$(USER_DIR)/common/typeconversion.c \
+		$(USER_DIR)/drivers/display.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/printf.c
+
+osd_unittest_DEFINES := \
+		OSD
 
 
 parameter_groups_unittest_SRC := \
@@ -185,6 +197,15 @@ type_conversion_unittest_SRC := \
 ws2811_unittest_SRC := \
 		$(USER_DIR)/drivers/light_ws2811strip.c
 
+rcsplit_unittest_SRC := \
+		$(USER_DIR)/common/bitarray.c \
+		$(USER_DIR)/fc/rc_modes.c \
+		$(USER_DIR)/io/rcsplit.c
+
+rcsplit_unitest_DEFINES := \
+		USE_UART3 \
+		USE_RCSPLIT \
+
 # Please tweak the following variable definitions as needed by your
 # project, except GTEST_HEADERS, which you can use in your own targets
 # but shouldn't modify.
@@ -207,6 +228,7 @@ COMMON_FLAGS = \
 	-g \
 	-Wall \
 	-Wextra \
+	-Werror \
 	-ggdb3 \
 	-pthread \
 	-O0 \
@@ -349,7 +371,7 @@ $(OBJECT_DIR)/$1/%.c.o: $(USER_DIR)/%.c
 	@echo "compiling $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
 	$(V1) $(CC) $(C_FLAGS) $(TEST_CFLAGS) \
-                $(foreach def,$1_DEFINES,-D $(def)) \
+                $(foreach def,$($1_DEFINES),-D $(def)) \
                 -c $$< -o $$@
 
 
@@ -357,7 +379,7 @@ $(OBJECT_DIR)/$1/$1.o: $(TEST_DIR)/$1.cc
 	@echo "compiling $$<" "$(STDOUT)"
 	$(V1) mkdir -p $$(dir $$@)
 	$(V1) $(CXX) $(CXX_FLAGS) $(TEST_CFLAGS)  \
-                 $(foreach def,$1_DEFINES,-D $(def)) \
+                 $(foreach def,$($1_DEFINES),-D $(def)) \
                  -c $$< -o $$@
 
 

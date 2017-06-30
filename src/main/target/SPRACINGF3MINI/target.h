@@ -186,8 +186,6 @@
 #define BINDPLUG_PIN            BUTTON_B_PIN
 #endif
 
-#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
-
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))

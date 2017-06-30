@@ -681,6 +681,7 @@ COMMON_SRC = \
             drivers/bus_i2c_config.c \
             drivers/bus_i2c_soft.c \
             drivers/bus_spi.c \
+            drivers/bus_spi_config.c \
             drivers/bus_spi_soft.c \
             drivers/buttons.c \
             drivers/display.c \
@@ -711,6 +712,7 @@ COMMON_SRC = \
             io/serial.c \
             io/statusindicator.c \
             io/transponder_ir.c \
+            io/rcsplit.c \
             msp/msp_serial.c \
             scheduler/scheduler.c \
             sensors/battery.c \
@@ -900,6 +902,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/bus_i2c_config.c \
+            drivers/bus_spi_config.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_init.c \
@@ -1026,9 +1029,10 @@ F7EXCLUDES = \
 
 SITLEXCLUDES = \
             drivers/adc.c \
-            drivers/bus_spi.c \
             drivers/bus_i2c.c \
             drivers/bus_i2c_config.c \
+            drivers/bus_spi.c \
+            drivers/bus_spi_config.c \
             drivers/dma.c \
             drivers/pwm_output.c \
             drivers/timer.c \

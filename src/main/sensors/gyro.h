@@ -19,6 +19,7 @@
 
 #include "common/axis.h"
 #include "config/parameter_group.h"
+#include "drivers/bus.h"
 #include "drivers/sensor.h"
 
 typedef enum {

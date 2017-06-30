@@ -602,7 +602,7 @@ void handleSmartPortTelemetry(void)
                 if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
                     //convert to knots: 1cm/s = 0.0194384449 knots
                     //Speed should be sent in knots/1000 (GPS speed is in cm/s)
-                    uint32_t tmpui = GPS_speed * 1944 / 100;
+                    uint32_t tmpui = gpsSol.groundSpeed * 1944 / 100;
                     smartPortSendPackage(id, tmpui);
                     smartPortHasRequest = 0;
                 }
@@ -649,14 +649,14 @@ void handleSmartPortTelemetry(void)
                     // the MSB of the sent uint32_t helps FrSky keep track
                     // the even/odd bit of our counter helps us keep track
                     if (smartPortIdCnt & 1) {
-                        tmpui = abs(GPS_coord[LON]);  // now we have unsigned value and one bit to spare
+                        tmpui = abs(gpsSol.llh.lon);  // now we have unsigned value and one bit to spare
                         tmpui = (tmpui + tmpui / 2) / 25 | 0x80000000;  // 6/100 = 1.5/25, division by power of 2 is fast
-                        if (GPS_coord[LON] < 0) tmpui |= 0x40000000;
+                        if (gpsSol.llh.lon < 0) tmpui |= 0x40000000;
                     }
                     else {
-                        tmpui = abs(GPS_coord[LAT]);  // now we have unsigned value and one bit to spare
+                        tmpui = abs(gpsSol.llh.lat);  // now we have unsigned value and one bit to spare
                         tmpui = (tmpui + tmpui / 2) / 25;  // 6/100 = 1.5/25, division by power of 2 is fast
-                        if (GPS_coord[LAT] < 0) tmpui |= 0x40000000;
+                        if (gpsSol.llh.lat < 0) tmpui |= 0x40000000;
                     }
                     smartPortSendPackage(id, tmpui);
                     smartPortHasRequest = 0;
@@ -698,10 +698,11 @@ void handleSmartPortTelemetry(void)
                 // the Taranis seems to be able to fit 5 digits on the screen
                 // the Taranis seems to consider this number a signed 16 bit integer
 
-                if (ARMING_FLAG(OK_TO_ARM))
+                if (!isArmingDisabled()) {
                     tmpi += 1;
-                if (ARMING_FLAG(PREVENT_ARMING))
+                } else {
                     tmpi += 2;
+                }
                 if (ARMING_FLAG(ARMED))
                     tmpi += 4;
 
@@ -735,7 +736,7 @@ void handleSmartPortTelemetry(void)
                 if (sensors(SENSOR_GPS)) {
 #ifdef GPS
                     // provide GPS lock status
-                    smartPortSendPackage(id, (STATE(GPS_FIX) ? 1000 : 0) + (STATE(GPS_FIX_HOME) ? 2000 : 0) + GPS_numSat);
+                    smartPortSendPackage(id, (STATE(GPS_FIX) ? 1000 : 0) + (STATE(GPS_FIX_HOME) ? 2000 : 0) + gpsSol.numSat);
                     smartPortHasRequest = 0;
 #endif
                 } else if (feature(FEATURE_GPS)) {
@@ -776,7 +777,7 @@ void handleSmartPortTelemetry(void)
 #ifdef GPS
             case FSSP_DATAID_GPS_ALT    :
                 if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
-                    smartPortSendPackage(id, GPS_altitude * 100); // given in 0.1m , requested in 10 = 1m (should be in mm, probably a bug in opentx, tested on 2.0.1.7)
+                    smartPortSendPackage(id, gpsSol.llh.alt * 100); // given in 0.1m , requested in 10 = 1m (should be in mm, probably a bug in opentx, tested on 2.0.1.7)
                     smartPortHasRequest = 0;
                 }
                 break;

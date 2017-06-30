@@ -21,6 +21,8 @@
 
 #pragma once
 
+#define SYM_END_OF_FONT 0xFF
+
 // Character Symbols
 #define SYM_BLANK 0x20
 

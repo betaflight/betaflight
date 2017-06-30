@@ -153,6 +153,9 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOX3DDISABLESWITCH, "DISABLE 3D SWITCH", 29},
     { BOXFPVANGLEMIX, "FPV ANGLE MIX", 30},
     { BOXBLACKBOXERASE, "BLACKBOX ERASE (>30s)", 31 },
+    { BOXCAMERA1, "CAMERA CONTROL 1", 32},
+    { BOXCAMERA2, "CAMERA CONTROL 2", 33},
+    { BOXCAMERA3, "CAMERA CONTROL 3", 34 },
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -418,6 +421,12 @@ void initActiveBoxIds(void)
         BME(BOXSERVO2);
         BME(BOXSERVO3);
     }
+#endif
+
+#ifdef USE_RCSPLIT
+    BME(BOXCAMERA1);
+    BME(BOXCAMERA2);
+    BME(BOXCAMERA3);
 #endif
 
 #undef BME
@@ -1104,12 +1113,12 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_RAW_GPS:
         sbufWriteU8(dst, STATE(GPS_FIX));
-        sbufWriteU8(dst, GPS_numSat);
-        sbufWriteU32(dst, GPS_coord[LAT]);
-        sbufWriteU32(dst, GPS_coord[LON]);
-        sbufWriteU16(dst, GPS_altitude);
-        sbufWriteU16(dst, GPS_speed);
-        sbufWriteU16(dst, GPS_ground_course);
+        sbufWriteU8(dst, gpsSol.numSat);
+        sbufWriteU32(dst, gpsSol.llh.lat);
+        sbufWriteU32(dst, gpsSol.llh.lon);
+        sbufWriteU16(dst, gpsSol.llh.alt);
+        sbufWriteU16(dst, gpsSol.groundSpeed);
+        sbufWriteU16(dst, gpsSol.groundCourse);
         break;
 
     case MSP_COMP_GPS:
@@ -1120,12 +1129,12 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_GPSSVINFO:
         sbufWriteU8(dst, GPS_numCh);
-           for (int i = 0; i < GPS_numCh; i++) {
-               sbufWriteU8(dst, GPS_svinfo_chn[i]);
-               sbufWriteU8(dst, GPS_svinfo_svid[i]);
-               sbufWriteU8(dst, GPS_svinfo_quality[i]);
-               sbufWriteU8(dst, GPS_svinfo_cno[i]);
-           }
+       for (int i = 0; i < GPS_numCh; i++) {
+           sbufWriteU8(dst, GPS_svinfo_chn[i]);
+           sbufWriteU8(dst, GPS_svinfo_svid[i]);
+           sbufWriteU8(dst, GPS_svinfo_quality[i]);
+           sbufWriteU8(dst, GPS_svinfo_cno[i]);
+       }
         break;
 #endif
 
@@ -1829,11 +1838,11 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         } else {
             DISABLE_STATE(GPS_FIX);
         }
-        GPS_numSat = sbufReadU8(src);
-        GPS_coord[LAT] = sbufReadU32(src);
-        GPS_coord[LON] = sbufReadU32(src);
-        GPS_altitude = sbufReadU16(src);
-        GPS_speed = sbufReadU16(src);
+        gpsSol.numSat = sbufReadU8(src);
+        gpsSol.llh.lat = sbufReadU32(src);
+        gpsSol.llh.lon = sbufReadU32(src);
+        gpsSol.llh.alt = sbufReadU16(src);
+        gpsSol.groundSpeed = sbufReadU16(src);
         GPS_update |= 2;        // New data signalisation to GPS functions // FIXME Magic Numbers
         break;
 

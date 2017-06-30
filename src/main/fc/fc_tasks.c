@@ -84,6 +84,7 @@
 #include "telemetry/telemetry.h"
 
 #include "io/osd_slave.h"
+#include "io/rcsplit.h"
 
 #ifdef USE_BST
 void taskBstMasterProcess(timeUs_t currentTimeUs);
@@ -150,7 +151,7 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
     // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
     updateRcCommands();
 #endif
-    updateLEDs();
+    updateArmingStatus();
 
 #ifdef BARO
     if (sensors(SENSOR_BARO)) {
@@ -258,8 +259,11 @@ void osdSlaveTasksInit(void)
 void fcTasksInit(void)
 {
     schedulerInit();
-    rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
-    setTaskEnabled(TASK_GYROPID, true);
+
+    if (sensors(SENSOR_GYRO)) {
+        rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
+        setTaskEnabled(TASK_GYROPID, true);
+    }
 
     if (sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);
@@ -592,6 +596,15 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskFunc = taskVtxControl,
         .desiredPeriod = TASK_PERIOD_HZ(5),          // 5 Hz, 200ms
         .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
+
+#ifdef USE_RCSPLIT
+    [TASK_RCSPLIT] = {
+        .taskName = "RCSPLIT",
+        .taskFunc = rcSplitProcess,
+        .desiredPeriod = TASK_PERIOD_HZ(10),        // 10 Hz, 100ms
+        .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
 #endif

@@ -26,6 +26,14 @@
 #define OSD_POS_MAX   0x3FF
 #define OSD_POSCFG_MAX   (VISIBLE_FLAG|0x3FF) // For CLI values
 
+// Character coordinate
+
+#define OSD_POSITION_BITS 5 // 5 bits gives a range 0-31
+#define OSD_POSITION_XY_MASK ((1 << OSD_POSITION_BITS) - 1)
+#define OSD_POS(x,y)  ((x & OSD_POSITION_XY_MASK) | ((y & OSD_POSITION_XY_MASK) << OSD_POSITION_BITS))
+#define OSD_X(x)      (x & OSD_POSITION_XY_MASK)
+#define OSD_Y(x)      ((x >> OSD_POSITION_BITS) & OSD_POSITION_XY_MASK)
+
 typedef enum {
     OSD_RSSI_VALUE,
     OSD_MAIN_BATT_VOLTAGE,
@@ -80,6 +88,7 @@ typedef enum {
     OSD_STAT_FLYTIME,
     OSD_STAT_ARMEDTIME,
     OSD_STAT_MAX_DISTANCE,
+    OSD_STAT_BLACKBOX_NUMBER,
     OSD_STAT_COUNT // MUST BE LAST
 } osd_stats_e;
 

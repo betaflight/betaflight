@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "drivers/bus.h"
 #include "drivers/sensor.h"
 
 typedef struct magDev_s {

@@ -30,8 +30,6 @@
 
 #define VBAT_SCALE       113
 
-#define OSD_POS(x,y)  (x | (y << 5))
-
 #ifdef TARGET_CONFIG
 void targetConfiguration(void)
 {
