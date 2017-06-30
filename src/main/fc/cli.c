@@ -2841,7 +2841,6 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef TRANSPONDER
     { OWNER_TRANSPONDER,   PG_TRANSPONDER_CONFIG, offsetof(transponderConfig_t, ioTag), 0 },
 #endif
-=======
 };
 
 static ioTag_t *getIoTag(const cliResourceValue_t value, uint8_t index)
