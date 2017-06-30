@@ -211,7 +211,11 @@ void ltm_sframe(sbuf_t *dst)
     ltm_serialise_16(dst, vbat * 100);    //vbat converted to mv
     ltm_serialise_16(dst, (uint16_t)constrain(mAhDrawn, 0, 0xFFFF));    // current mAh (65535 mAh max)
     ltm_serialise_8(dst, (uint8_t)((rssi * 254) / 1023));        // scaled RSSI (uchar)
-    ltm_serialise_8(dst, 0);              // no airspeed
+#if defined(PITOT)
+    ltm_serialise_8(dst, sensors(SENSOR_PITOT) ? pitot.airSpeed / 100.0f : 0);  // in m/s
+#else
+    ltm_serialise_8(dst, 0);
+#endif
     ltm_serialise_8(dst, (lt_flightmode << 2) | lt_statemode);
 }
 
@@ -262,11 +266,7 @@ void ltm_xframe(sbuf_t *dst)
     ltm_serialise_8(dst, sensorStatus);
     ltm_serialise_8(dst, ltm_x_counter);
     ltm_serialise_8(dst, getDisarmReason());
-#if defined(PITOT)
-    ltm_serialise_8(dst, sensors(SENSOR_PITOT) ? pitot.airSpeed / 100.0f : 0);  // in m/s
-#else
     ltm_serialise_8(dst, 0);
-#endif
     ltm_x_counter++; // overflow is OK
 }
 
