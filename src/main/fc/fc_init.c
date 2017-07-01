@@ -315,7 +315,7 @@ void init(void)
     }
 #endif
 
-#if defined(USE_SPEKTRUM_BIND) && !defined(SITL)
+#if defined(USE_SPEKTRUM_BIND)
     if (feature(FEATURE_RX_SERIAL)) {
         switch (rxConfig()->serialrx_provider) {
         case SERIALRX_SPEKTRUM1024:
@@ -338,7 +338,7 @@ void init(void)
     busSwitchInit();
 #endif
 
-#if defined(USE_UART) && !defined(SITL)
+#if defined(USE_UART)
     uartPinConfigure(serialPinConfig());
 #endif
 
@@ -384,12 +384,12 @@ void init(void)
     if (0) {}
 #if defined(USE_PPM)
     else if (feature(FEATURE_RX_PPM)) {
-          ppmRxInit(ppmConfig());
+        ppmRxInit(ppmConfig());
     }
 #endif
 #if defined(USE_PWM)
     else if (feature(FEATURE_RX_PARALLEL_PWM)) {
-          pwmRxInit(pwmConfig());
+        pwmRxInit(pwmConfig());
     }
 #endif
 
@@ -478,10 +478,8 @@ void init(void)
     initBoardAlignment(boardAlignment());
 
     if (!sensorsAutodetect()) {
-#if !defined(SITL)
         // if gyro was not detected due to whatever reason, notify and don't arm.
         failureLedCode(FAILURE_MISSING_ACC, 2);
-#endif
         setArmingDisabled(ARMING_DISABLED_NO_GYRO);
     }
 
