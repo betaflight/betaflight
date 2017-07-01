@@ -351,7 +351,7 @@ bool bmi160GyroRead(gyroDev_t *gyro)
     };
 
     uint8_t bmi160_rec_buf[BUFFER_SIZE];
-    uint8_t bmi160_tx_buf[BUFFER_SIZE] = {BMI160_REG_GYR_DATA_X_LSB | 0x80, 0, 0, 0, 0, 0, 0};
+    static const uint8_t bmi160_tx_buf[BUFFER_SIZE] = {BMI160_REG_GYR_DATA_X_LSB | 0x80, 0, 0, 0, 0, 0, 0};
 
     IOLo(gyro->bus.spi.csnPin);
     spiTransfer(gyro->bus.spi.instance, bmi160_rec_buf, bmi160_tx_buf, BUFFER_SIZE);   // receive response

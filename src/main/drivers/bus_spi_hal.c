@@ -23,6 +23,7 @@
 
 #ifdef USE_SPI
 
+#include "drivers/bus.h"
 #include "drivers/bus_spi.h"
 #include "drivers/bus_spi_impl.h"
 #include "drivers/dma.h"
@@ -275,7 +276,7 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len
     }
     else // Tx and Rx
     {
-        status = HAL_SPI_TransmitReceive(&spiDevice[device].hspi, (uint8_t *)in, out, len, SPI_DEFAULT_TIMEOUT);
+        status = HAL_SPI_TransmitReceive(&spiDevice[device].hspi, in, out, len, SPI_DEFAULT_TIMEOUT);
     }
 
     if( status != HAL_OK)
@@ -308,6 +309,17 @@ static uint8_t spiBusTransferByte(const busDevice_t *bus, uint8_t in)
         spiTimeoutUserCallback(bus->spi.instance);
     }
     return in;
+}
+
+bool spiBusTransfer(const busDevice_t *bus, uint8_t *rxData, const uint8_t *txData, int len)
+{
+    IOLo(bus->spi.csnPin);
+    const HAL_StatusTypeDef status = HAL_SPI_TransmitReceive(bus->spi.handle, txData, rxData, len, SPI_DEFAULT_TIMEOUT);
+    IOHi(bus->spi.csnPin);
+    if (status != HAL_OK) {
+        spiTimeoutUserCallback(bus->spi.instance);
+    }
+    return true;
 }
 
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)

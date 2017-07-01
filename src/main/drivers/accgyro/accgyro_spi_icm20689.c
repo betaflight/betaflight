@@ -140,7 +140,7 @@ bool icm20689SpiGyroDetect(gyroDev_t *gyro)
     }
 
     gyro->initFn = icm20689GyroInit;
-    gyro->readFn = mpuGyroRead;
+    gyro->readFn = mpuGyroReadSPI;
     gyro->intStatusFn = mpuCheckDataReady;
 
     // 16.4 dps/lsb scalefactor
