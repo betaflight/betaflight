@@ -481,7 +481,7 @@ void FLASH_Unlock(void) {
         long lSize = ftell(eepromFd);
         rewind(eepromFd);
 
-        printf("[FLASH_Unlock]size = %ld, %d\n", lSize, (uintptr_t)(&__config_end - &__config_start));
+        printf("[FLASH_Unlock]size = %ld, %ld\n", lSize, (long)(&__config_end - &__config_start));
         for (unsigned i = 0; i < (uintptr_t)(&__config_end - &__config_start); i++) {
                 int c = fgetc(eepromFd);
             if(c == EOF) break;
