@@ -18,7 +18,8 @@
 #pragma once
 
 #include "drivers/io_types.h"
-#include "rcc_types.h"
+#include "drivers/bus.h"
+#include "drivers/rcc_types.h"
 
 #if defined(STM32F4) || defined(STM32F3)
 #define SPI_IO_AF_CFG      IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
@@ -101,3 +102,7 @@ SPIDevice spiDeviceByInstance(SPI_TypeDef *instance);
 SPI_HandleTypeDef* spiHandleByInstance(SPI_TypeDef *instance);
 DMA_HandleTypeDef* spiSetDMATransmit(DMA_Stream_TypeDef *Stream, uint32_t Channel, SPI_TypeDef *Instance, uint8_t *pData, uint16_t Size);
 #endif
+
+bool spiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data);
+bool spiReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data);
+uint8_t spiReadRegister(const busDevice_t *bus, uint8_t reg);

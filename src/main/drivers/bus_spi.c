@@ -20,11 +20,12 @@
 
 #include <platform.h>
 
+#include "drivers/bus.h"
 #include "drivers/bus_spi.h"
 #include "drivers/exti.h"
 #include "drivers/io.h"
-#include "io_impl.h"
-#include "rcc.h"
+#include "drivers/io_impl.h"
+#include "drivers/rcc.h"
 
 /* for F30x processors */
 #if defined(STM32F303xC)
@@ -350,4 +351,35 @@ void spiResetErrorCounter(SPI_TypeDef *instance)
     SPIDevice device = spiDeviceByInstance(instance);
     if (device != SPIINVALID)
         spiHardwareMap[device].errorCount = 0;
+}
+
+bool spiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
+{
+    IOLo(bus->spi.csnPin);
+    spiTransferByte(bus->spi.instance, reg);
+    spiTransferByte(bus->spi.instance, data);
+    IOHi(bus->spi.csnPin);
+
+    return true;
+}
+
+bool spiReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data)
+{
+    IOLo(bus->spi.csnPin);
+    spiTransferByte(bus->spi.instance, reg | 0x80); // read transaction
+    spiTransfer(bus->spi.instance, data, NULL, length);
+    IOHi(bus->spi.csnPin);
+
+    return true;
+}
+
+uint8_t spiReadRegister(const busDevice_t *bus, uint8_t reg)
+{
+    uint8_t data;
+    IOLo(bus->spi.csnPin);
+    spiTransferByte(bus->spi.instance, reg | 0x80); // read transaction
+    spiTransfer(bus->spi.instance, &data, NULL, 1);
+    IOHi(bus->spi.csnPin);
+
+    return data;
 }
