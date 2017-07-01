@@ -173,12 +173,12 @@ void taskUpdatePitot(timeUs_t currentTimeUs)
 }
 #endif
 
-#ifdef SONAR
-void taskUpdateSonar(timeUs_t currentTimeUs)
+#ifdef RANGEFINDER
+void taskUpdateRangefinder(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
 
-    if (!sensors(SENSOR_SONAR))
+    if (!sensors(SENSOR_RANGEFINDER))
         return;
 
     // Update and adjust task to update at required rate
@@ -187,7 +187,7 @@ void taskUpdateSonar(timeUs_t currentTimeUs)
         rescheduleTask(TASK_SELF, newDeadline);
     }
 
-    updatePositionEstimator_SonarTopic(currentTimeUs);
+    updatePositionEstimator_SurfaceTopic(currentTimeUs);
 }
 #endif
 
@@ -302,8 +302,8 @@ void fcTasksInit(void)
 #ifdef PITOT
     setTaskEnabled(TASK_PITOT, sensors(SENSOR_PITOT));
 #endif
-#ifdef SONAR
-    setTaskEnabled(TASK_SONAR, sensors(SENSOR_SONAR));
+#ifdef RANGEFINDER
+    setTaskEnabled(TASK_RANGEFINDER, sensors(SENSOR_RANGEFINDER));
 #endif
 #ifdef USE_DASHBOARD
     setTaskEnabled(TASK_DASHBOARD, feature(FEATURE_DASHBOARD));
@@ -451,11 +451,11 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef SONAR
-    [TASK_SONAR] = {
-        .taskName = "SONAR",
-        .taskFunc = taskUpdateSonar,
-        .desiredPeriod = TASK_PERIOD_MS(50),                 // every 70 ms, approximately 20 Hz
+#ifdef RANGEFINDER
+    [TASK_RANGEFINDER] = {
+        .taskName = "RANGEFINDER",
+        .taskFunc = taskUpdateRangefinder,
+        .desiredPeriod = TASK_PERIOD_MS(50),
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif

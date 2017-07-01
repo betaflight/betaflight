@@ -649,8 +649,8 @@ HIGHEND_SRC = \
             common/colorconversion.c \
             common/gps_conversion.c \
             drivers/display_ug2864hsweg01.c \
-            drivers/sonar_hcsr04.c \
-            drivers/sonar_srf10.c \
+            drivers/rangefinder_hcsr04.c \
+            drivers/rangefinder_srf10.c \
             io/dashboard.c \
             io/displayport_max7456.c \
             io/displayport_msp.c \

@@ -154,7 +154,7 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
         }
 #endif
 
-#ifdef SONAR
+#ifdef USE_RANGEFINDER_HCSR04
         if (init->useSonar &&
             (
                 timerHardwarePtr->tag == init->sonarIOConfig.triggerTag ||

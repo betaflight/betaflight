@@ -159,11 +159,12 @@
 #define RSSI_ADC_CHANNEL                ADC_CHN_3
 #define VBAT_SCALE_DEFAULT         103
 
-// *************** SONAR *****************************
-// #define SONAR
-// #define SONAR_TRIGGER_PIN       PB10
-// #define SONAR_ECHO_PIN          PB11
-// #define USE_SONAR_SRF10
+// *************** RANGEFINDER *****************************
+// #define RANGEFINDER
+// #define USE_RANGEFINDER_HCSR04
+// #define RANGEFINDER_HCSR04_TRIGGER_PIN       PB10
+// #define RANGEFINDER_HCSR04_ECHO_PIN          PB11
+// #define USE_RANGEFINDER_SRF10
 
 // *************** NAV *****************************
 #define NAV

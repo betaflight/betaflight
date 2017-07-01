@@ -389,7 +389,7 @@ static uint16_t packSensorStatus(void)
             IS_ENABLED(sensors(SENSOR_BARO))    << 1 |
             IS_ENABLED(sensors(SENSOR_MAG))     << 2 |
             IS_ENABLED(sensors(SENSOR_GPS))     << 3 |
-            IS_ENABLED(sensors(SENSOR_SONAR))   << 4 |
+            IS_ENABLED(sensors(SENSOR_RANGEFINDER))   << 4 |
             //IS_ENABLED(sensors(SENSOR_OPFLOW))  << 5 |
             IS_ENABLED(sensors(SENSOR_PITOT))   << 6;
 
@@ -658,7 +658,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_SONAR_ALTITUDE:
-#if defined(SONAR)
+#if defined(RANGEFINDER)
         sbufWriteU32(dst, rangefinderGetLatestAltitude());
 #else
         sbufWriteU32(dst, 0);
@@ -1152,7 +1152,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #else
         sbufWriteU8(dst, 0);
 #endif
-#ifdef SONAR
+#ifdef RANGEFINDER
         sbufWriteU8(dst, rangefinderConfig()->rangefinder_hardware);
 #else
         sbufWriteU8(dst, 0);
@@ -1663,7 +1663,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
         sbufReadU8(src);
 #endif
-#ifdef SONAR
+#ifdef RANGEFINDER
         rangefinderConfigMutable()->rangefinder_hardware = sbufReadU8(src);
 #else
         sbufReadU8(src);        // rangefinder hardware

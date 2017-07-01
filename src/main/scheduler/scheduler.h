@@ -77,8 +77,8 @@ typedef enum {
 #ifdef PITOT
     TASK_PITOT,
 #endif
-#ifdef SONAR
-    TASK_SONAR,
+#ifdef RANGEFINDER
+    TASK_RANGEFINDER,
 #endif
 #ifdef USE_DASHBOARD
     TASK_DASHBOARD,

@@ -213,7 +213,7 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
 #ifdef PITOT
     {"AirSpeed",   -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_PITOT},
 #endif
-#ifdef SONAR
+#ifdef RANGEFINDER
     {"sonarRaw",   -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_SONAR},
 #endif
     {"rssi",       -1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_RSSI},
@@ -352,7 +352,7 @@ typedef struct blackboxMainState_s {
 #ifdef MAG
     int16_t magADC[XYZ_AXIS_COUNT];
 #endif
-#ifdef SONAR
+#ifdef RANGEFINDER
     int32_t sonarRaw;
 #endif
     uint16_t rssi;
@@ -500,8 +500,8 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
         return feature(FEATURE_CURRENT_METER) && batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC;
 
     case FLIGHT_LOG_FIELD_CONDITION_SONAR:
-#ifdef SONAR
-        return sensors(SENSOR_SONAR);
+#ifdef RANGEFINDER
+        return sensors(SENSOR_RANGEFINDER);
 #else
         return false;
 #endif
@@ -634,7 +634,7 @@ static void writeIntraframe(void)
     }
 #endif
 
-#ifdef SONAR
+#ifdef RANGEFINDER
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_SONAR)) {
         blackboxWriteSignedVB(blackboxCurrent->sonarRaw);
     }
@@ -803,7 +803,7 @@ static void writeInterframe(void)
     }
 #endif
 
-#ifdef SONAR
+#ifdef RANGEFINDER
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_SONAR)) {
         deltas[optionalFieldCount++] = blackboxCurrent->sonarRaw - blackboxLast->sonarRaw;
     }
@@ -1144,7 +1144,7 @@ static void loadMainState(timeUs_t currentTimeUs)
     blackboxCurrent->airSpeed = pitot.airSpeed;
 #endif
 
-#ifdef SONAR
+#ifdef RANGEFINDER
     // Store the raw sonar value without applying tilt correction
     blackboxCurrent->sonarRaw = rangefinderRead();
 #endif

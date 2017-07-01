@@ -35,8 +35,8 @@
 #include "drivers/io.h"
 #include "drivers/logging.h"
 #include "drivers/time.h"
-#include "drivers/sonar_hcsr04.h"
-#include "drivers/sonar_srf10.h"
+#include "drivers/rangefinder_hcsr04.h"
+#include "drivers/rangefinder_srf10.h"
 #include "drivers/rangefinder.h"
 
 #include "fc/config.h"
@@ -50,7 +50,7 @@ rangefinder_t rangefinder;
 
 #define RANGEFINDER_HARDWARE_TIMEOUT_MS         500     // Accept 500ms of non-responsive sensor, report HW failure otherwise
 
-#ifdef SONAR
+#ifdef RANGEFINDER
 PG_REGISTER_WITH_RESET_TEMPLATE(rangefinderConfig_t, rangefinderConfig, PG_RANGEFINDER_CONFIG, 0);
 
 PG_RESET_TEMPLATE(rangefinderConfig_t, rangefinderConfig,
@@ -61,22 +61,22 @@ const rangefinderHardwarePins_t * sonarGetHardwarePins(void)
 {
     static rangefinderHardwarePins_t rangefinderHardwarePins;
 
-#if defined(SONAR_PWM_TRIGGER_PIN)
+#if defined(RANGEFINDER_HCSR04_PWM_TRIGGER_PIN)
     // If we are using softserial, parallel PWM or ADC current sensor, then use motor pins for sonar, otherwise use RC pins
     if (feature(FEATURE_SOFTSERIAL)
             || feature(FEATURE_RX_PARALLEL_PWM )
             || (feature(FEATURE_CURRENT_METER) && batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC)) {
-        rangefinderHardwarePins.triggerTag = IO_TAG(SONAR_TRIGGER_PIN_PWM);
-        rangefinderHardwarePins.echoTag = IO_TAG(SONAR_ECHO_PIN_PWM);
+        rangefinderHardwarePins.triggerTag = IO_TAG(RANGEFINDER_HCSR04_TRIGGER_PIN_PWM);
+        rangefinderHardwarePins.echoTag = IO_TAG(RANGEFINDER_HCSR04_ECHO_PIN_PWM);
     } else {
-        rangefinderHardwarePins.triggerTag = IO_TAG(SONAR_TRIGGER_PIN);
-        rangefinderHardwarePins.echoTag = IO_TAG(SONAR_ECHO_PIN);
+        rangefinderHardwarePins.triggerTag = IO_TAG(RANGEFINDER_HCSR04_TRIGGER_PIN);
+        rangefinderHardwarePins.echoTag = IO_TAG(RANGEFINDER_HCSR04_ECHO_PIN);
     }
-#elif defined(SONAR_TRIGGER_PIN)
-    rangefinderHardwarePins.triggerTag = IO_TAG(SONAR_TRIGGER_PIN);
-    rangefinderHardwarePins.echoTag = IO_TAG(SONAR_ECHO_PIN);
+#elif defined(RANGEFINDER_HCSR04_TRIGGER_PIN)
+    rangefinderHardwarePins.triggerTag = IO_TAG(RANGEFINDER_HCSR04_TRIGGER_PIN);
+    rangefinderHardwarePins.echoTag = IO_TAG(RANGEFINDER_HCSR04_ECHO_PIN);
 #else
-#error Sonar not defined for target
+#error Rangefinder not defined for target
 #endif
     return &rangefinderHardwarePins;
 }
@@ -91,16 +91,18 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
 
     switch (rangefinderHardwareToUse) {
         case RANGEFINDER_HCSR04:
+#ifdef USE_RANGEFINDER_HCSR04
             {
                 const rangefinderHardwarePins_t *sonarHardwarePins = sonarGetHardwarePins();
                 if (hcsr04Detect(dev, sonarHardwarePins)) {   // FIXME: Do actual detection if HC-SR04 is plugged in
                     rangefinderHardware = RANGEFINDER_HCSR04;
                 }
             }
+#endif           
             break;
 
         case RANGEFINDER_SRF10:
-#ifdef USE_SONAR_SRF10
+#ifdef USE_RANGEFINDER_SRF10
             if (srf10Detect(dev)) {
                 rangefinderHardware = RANGEFINDER_SRF10;
             }
@@ -115,12 +117,12 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
     addBootlogEvent6(BOOT_EVENT_RANGEFINDER_DETECTION, BOOT_EVENT_FLAGS_NONE, rangefinderHardware, 0, 0, 0);
 
     if (rangefinderHardware == RANGEFINDER_NONE) {
-        sensorsClear(SENSOR_SONAR);
+        sensorsClear(SENSOR_RANGEFINDER);
         return false;
     }
 
     detectedSensors[SENSOR_INDEX_RANGEFINDER] = rangefinderHardware;
-    sensorsSet(SENSOR_SONAR);
+    sensorsSet(SENSOR_RANGEFINDER);
     return true;
 }
 

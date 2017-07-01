@@ -63,9 +63,10 @@
 #define USE_MAG_HMC5883 // External
 #define USE_MAG_MAG3110 // External
 
-#define SONAR
-#define SONAR_ECHO_PIN          PB2  // Has 1K series resistor
-#define SONAR_TRIGGER_PIN       PB4  // FT
+#define RANGEFINDER
+#define USE_RANGEFINDER_HCSR04
+#define RANGEFINDER_HCSR04_ECHO_PIN          PB2  // Has 1K series resistor
+#define RANGEFINDER_HCSR04_TRIGGER_PIN       PB4  // FT
 
 #define USB_IO
 #define USB_CABLE_DETECTION

@@ -72,9 +72,7 @@
 #define INAV_GPS_GLITCH_ACCEL               1000.0f // 10m/s/s max possible acceleration for GPS glitch detection
 
 #define INAV_POSITION_PUBLISH_RATE_HZ       50      // Publish position updates at this rate
-#define INAV_BARO_UPDATE_RATE               20
 #define INAV_PITOT_UPDATE_RATE              10
-#define INAV_SONAR_UPDATE_RATE              15      // Sonar is limited to 1/60ms update rate, go lower that that
 
 #define INAV_GPS_TIMEOUT_MS                 1500    // GPS timeout
 #define INAV_BARO_TIMEOUT_MS                200     // Baro timeout
@@ -178,12 +176,12 @@ PG_RESET_TEMPLATE(positionEstimationConfig_t, positionEstimationConfig,
         .gravity_calibration_tolerance = 5,     // 5 cm/s/s calibration error accepted (0.5% of gravity)
         .use_gps_velned = 1,         // "Disabled" is mandatory with gps_dyn_model = Pedestrian
 
-        .max_sonar_altitude = 200,
+        .max_surface_altitude = 200,
 
         .w_z_baro_p = 0.35f,
 
-        .w_z_sonar_p = 3.500f,
-        .w_z_sonar_v = 6.100f,
+        .w_z_surface_p = 3.500f,
+        .w_z_surface_v = 6.100f,
 
         .w_z_gps_p = 0.2f,
         .w_z_gps_v = 0.5f,
@@ -472,17 +470,17 @@ static void updatePitotTopic(timeUs_t currentTimeUs)
 #endif
 
 
-#if defined(SONAR)
+#if defined(RANGEFINDER)
 /**
  * Read sonar and update alt/vel topic
- *  Function is called from TASK_SONAR at arbitrary rate - as soon as new measurements are available
+ *  Function is called from TASK_RANGEFINDER at arbitrary rate - as soon as new measurements are available
  */
-void updatePositionEstimator_SonarTopic(timeUs_t currentTimeUs)
+void updatePositionEstimator_SurfaceTopic(timeUs_t currentTimeUs)
 {
     float newSonarAlt = rangefinderRead();
     newSonarAlt = rangefinderCalculateAltitude(newSonarAlt, calculateCosTiltAngle());
 
-    if (newSonarAlt > 0 && newSonarAlt <= positionEstimationConfig()->max_sonar_altitude) {
+    if (newSonarAlt > 0 && newSonarAlt <= positionEstimationConfig()->max_surface_altitude) {
         posEstimator.sonar.alt = newSonarAlt;
         posEstimator.sonar.lastUpdateTime = currentTimeUs;
     }
@@ -603,7 +601,7 @@ static void updateEstimatedTopic(timeUs_t currentTimeUs)
                       ((currentTimeUs - posEstimator.gps.lastUpdateTime) <= MS2US(INAV_GPS_TIMEOUT_MS)) &&
                       (posEstimator.gps.eph < positionEstimationConfig()->max_eph_epv);   // EPV is checked later
     bool isBaroValid = sensors(SENSOR_BARO) && ((currentTimeUs - posEstimator.baro.lastUpdateTime) <= MS2US(INAV_BARO_TIMEOUT_MS));
-    bool isSonarValid = sensors(SENSOR_SONAR) && ((currentTimeUs - posEstimator.sonar.lastUpdateTime) <= MS2US(INAV_SONAR_TIMEOUT_MS));
+    bool isSonarValid = sensors(SENSOR_RANGEFINDER) && ((currentTimeUs - posEstimator.sonar.lastUpdateTime) <= MS2US(INAV_SONAR_TIMEOUT_MS));
 
     /* Do some preparations to data */
     if (isBaroValid) {
@@ -812,15 +810,15 @@ static void updateEstimatedTopic(timeUs_t currentTimeUs)
     }
 
     /* Surface offset */
-#if defined(SONAR)
+#if defined(RANGEFINDER)
     posEstimator.est.surface = posEstimator.est.surface + posEstimator.est.surfaceVel * dt;
 
     if (isSonarValid) {
         const float sonarResidual = posEstimator.sonar.alt - posEstimator.est.surface;
         const float bellCurveScaler = scaleRangef(bellCurve(sonarResidual, 50.0f), 0.0f, 1.0f, 0.1f, 1.0f);
 
-        posEstimator.est.surface += sonarResidual * positionEstimationConfig()->w_z_sonar_p * bellCurveScaler * dt;
-        posEstimator.est.surfaceVel += sonarResidual * positionEstimationConfig()->w_z_sonar_v * sq(bellCurveScaler) * dt;
+        posEstimator.est.surface += sonarResidual * positionEstimationConfig()->w_z_surface_p * bellCurveScaler * dt;
+        posEstimator.est.surfaceVel += sonarResidual * positionEstimationConfig()->w_z_surface_v * sq(bellCurveScaler) * dt;
         posEstimator.est.surfaceValid = true;
     }
     else {

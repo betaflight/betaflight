@@ -66,7 +66,7 @@ bool sensorsAutodetect(void)
     compassInit();
 #endif
 
-#ifdef SONAR
+#ifdef RANGEFINDER
     rangefinderInit();
 #endif
 

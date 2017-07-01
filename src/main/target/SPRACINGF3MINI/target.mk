@@ -12,4 +12,4 @@ TARGET_SRC = \
             drivers/light_ws2811strip_stdperiph.c \
             drivers/serial_softserial.c \
             drivers/serial_usb_vcp.c \
-            drivers/sonar_hcsr04.c \
+            drivers/rangefinder_hcsr04.c \

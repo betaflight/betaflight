@@ -20,7 +20,7 @@
 
 #include "platform.h"
 
-#if defined(SONAR) && defined(USE_SONAR_SRF10)
+#if defined(RANGEFINDER) && defined(USE_RANGEFINDER_SRF10)
 
 #include "build/build_config.h"
 
@@ -29,7 +29,7 @@
 #include "drivers/bus_i2c.h"
 
 #include "drivers/rangefinder.h"
-#include "drivers/sonar_srf10.h"
+#include "drivers/rangefinder_srf10.h"
 
 #ifndef SRF10_I2C_INSTANCE
 #define SRF10_I2C_INSTANCE I2CDEV_1
