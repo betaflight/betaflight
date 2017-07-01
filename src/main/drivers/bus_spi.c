@@ -383,3 +383,8 @@ uint8_t spiReadRegister(const busDevice_t *bus, uint8_t reg)
 
     return data;
 }
+
+void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance)
+{
+    bus->spi.instance = instance;
+}
