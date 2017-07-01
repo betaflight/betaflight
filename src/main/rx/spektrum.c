@@ -212,7 +212,7 @@ void spektrumBind(rxConfig_t *rxConfig)
     }
 
     // Determine a pin to use
-    ioTag_t bindPin;
+    ioTag_t bindPin = IO_TAG_NONE;
 
     if (rxConfig->spektrum_bind_pin_override_ioTag) {
         bindPin = rxConfig->spektrum_bind_pin_override_ioTag;
