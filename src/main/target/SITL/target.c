@@ -22,7 +22,6 @@
 
 #include <errno.h>
 #include <time.h>
-#include <pthread.h>
 
 #include "drivers/io.h"
 #include "drivers/dma.h"
