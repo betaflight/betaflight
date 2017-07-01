@@ -1345,22 +1345,20 @@ targets-group-rest: $(GROUP_OTHER_TARGETS)
 
 
 $(VALID_TARGETS):
-		$(V0) echo "" && \
+		$(V0) @echo "" && \
 		echo "Building $@" && \
 		time $(MAKE) binary hex TARGET=$@ && \
 		echo "Building $@ succeeded."
-
-
 
 CLEAN_TARGETS = $(addprefix clean_,$(VALID_TARGETS) )
 TARGETS_CLEAN = $(addsuffix _clean,$(VALID_TARGETS) )
 
 ## clean             : clean up temporary / machine-generated files
 clean:
-	$(V0) echo "Cleaning $(TARGET)"
+	$(V0) @echo "Cleaning $(TARGET)"
 	$(V0) rm -f $(CLEAN_ARTIFACTS)
 	$(V0) rm -rf $(OBJECT_DIR)/$(TARGET)
-	$(V0) echo "Cleaning $(TARGET) succeeded."
+	$(V0) @echo "Cleaning $(TARGET) succeeded."
 
 ## clean_test        : clean up temporary / machine-generated files (tests)
 clean_test:

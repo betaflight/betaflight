@@ -872,7 +872,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
 
 uint16_t cmsHandleKeyWithRepeat(displayPort_t *pDisplay, uint8_t key, int repeatCount)
 {
-    uint16_t ret;
+    uint16_t ret = 0;
 
     for (int i = 0 ; i < repeatCount ; i++) {
         ret = cmsHandleKey(pDisplay, key);
