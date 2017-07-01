@@ -68,6 +68,8 @@
 #define SPI4_NSS_PIN NONE
 #endif
 
+#define SPI_DEFAULT_TIMEOUT 10
+
 
 static spiDevice_t spiHardwareMap[] = {
     { .dev = SPI1, .sck = IO_TAG(SPI1_SCK_PIN), .miso = IO_TAG(SPI1_MISO_PIN), .mosi = IO_TAG(SPI1_MOSI_PIN), .rcc = RCC_APB2(SPI1), .af = GPIO_AF5_SPI1, .leadingEdge = false, .dmaIrqHandler = DMA2_ST3_HANDLER },
@@ -239,13 +241,6 @@ uint32_t spiTimeoutUserCallback(SPI_TypeDef *instance)
     return spiHardwareMap[device].errorCount;
 }
 
-// return uint8_t value or -1 when failure
-uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t in)
-{
-    spiTransfer(instance, &in, &in, 1);
-    return in;
-}
-
 /**
  * Return true if the bus is currently in the middle of a transmission.
  */
@@ -262,8 +257,6 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len
 {
     SPIDevice device = spiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
-
-#define SPI_DEFAULT_TIMEOUT 10
 
     if(!out) // Tx only
     {
@@ -284,6 +277,31 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len
     return true;
 }
 
+static bool spiBusReadBuffer(const busDevice_t *bus, uint8_t *out, int len)
+{
+    const HAL_StatusTypeDef status = HAL_SPI_Receive(bus->spi.handle, out, len, SPI_DEFAULT_TIMEOUT);
+    if (status != HAL_OK) {
+        spiTimeoutUserCallback(bus->spi.instance);
+    }
+    return true;
+}
+
+// return uint8_t value or -1 when failure
+uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t in)
+{
+    spiTransfer(instance, &in, &in, 1);
+    return in;
+}
+
+// return uint8_t value or -1 when failure
+static uint8_t spiBusTransferByte(const busDevice_t *bus, uint8_t in)
+{
+    const HAL_StatusTypeDef status = HAL_SPI_TransmitReceive(bus->spi.handle, &in, &in, 1, SPI_DEFAULT_TIMEOUT);
+    if (status != HAL_OK) {
+        spiTimeoutUserCallback(bus->spi.instance);
+    }
+    return in;
+}
 
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
 {
@@ -349,8 +367,8 @@ void spiResetErrorCounter(SPI_TypeDef *instance)
 bool spiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
 {
     IOLo(bus->spi.csnPin);
-    spiTransferByte(bus->spi.instance, reg);
-    spiTransferByte(bus->spi.instance, data);
+    spiBusTransferByte(bus, reg);
+    spiBusTransferByte(bus, data);
     IOHi(bus->spi.csnPin);
 
     return true;
@@ -359,8 +377,8 @@ bool spiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
 bool spiReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data)
 {
     IOLo(bus->spi.csnPin);
-    spiTransferByte(bus->spi.instance, reg | 0x80); // read transaction
-    spiTransfer(bus->spi.instance, data, NULL, length);
+    spiBusTransferByte(bus, reg | 0x80); // read transaction
+    spiBusReadBuffer(bus, data, length);
     IOHi(bus->spi.csnPin);
 
     return true;
@@ -370,11 +388,17 @@ uint8_t spiReadRegister(const busDevice_t *bus, uint8_t reg)
 {
     uint8_t data;
     IOLo(bus->spi.csnPin);
-    spiTransferByte(bus->spi.instance, reg | 0x80); // read transaction
-    spiTransfer(bus->spi.instance, &data, NULL, 1);
+    spiBusTransferByte(bus, reg | 0x80); // read transaction
+    spiBusReadBuffer(bus, &data, 1);
     IOHi(bus->spi.csnPin);
 
     return data;
+}
+
+void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance)
+{
+    bus->spi.instance = instance;
+    bus->spi.handle = spiHandleByInstance(instance);
 }
 
 void dmaSPIIRQHandler(dmaChannelDescriptor_t* descriptor)

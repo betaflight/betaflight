@@ -84,7 +84,9 @@
 
 static float magGain[3] = { 1.0f, 1.0f, 1.0f };
 
+#if defined(USE_SPI)
 static busDevice_t *bus = NULL; // HACK
+#endif
 
 // FIXME pretend we have real MPU9250 support
 // Is an separate MPU9250 driver really needed? The GYRO/ACC part between MPU6500 and MPU9250 is exactly the same.
@@ -325,21 +327,18 @@ bool ak8963Detect(magDev_t *mag)
 {
     uint8_t sig = 0;
 
-    bus = &mag->bus;
-
 #if defined(USE_SPI)
+    bus = &mag->bus;
 #if defined(MPU6500_SPI_INSTANCE)
-    bus->spi.instance = MPU6500_SPI_INSTANCE;
+    spiBusSetInstance(&mag->bus, MPU6500_SPI_INSTANCE);
 #elif defined(MPU9250_SPI_INSTANCE)
-    bus->spi.instance = MPU9250_SPI_INSTANCE;
-    // initialze I2C master via SPI bus (MPU9250)
+    spiBusSetInstance(&mag->bus, MPU9250_SPI_INSTANCE);
 
+    // initialze I2C master via SPI bus (MPU9250)
     mpu9250SpiWriteRegisterVerify(&mag->bus, MPU_RA_INT_PIN_CFG, MPU6500_BIT_INT_ANYRD_2CLEAR | MPU6500_BIT_BYPASS_EN);
     delay(10);
-
     mpu9250SpiWriteRegisterVerify(&mag->bus, MPU_RA_I2C_MST_CTRL, 0x0D);              // I2C multi-master / 400kHz
     delay(10);
-
     mpu9250SpiWriteRegisterVerify(&mag->bus, MPU_RA_USER_CTRL, 0x30);                 // I2C master mode, SPI mode only
     delay(10);
 #endif

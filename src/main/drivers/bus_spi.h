@@ -106,3 +106,4 @@ DMA_HandleTypeDef* spiSetDMATransmit(DMA_Stream_TypeDef *Stream, uint32_t Channe
 bool spiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data);
 bool spiReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data);
 uint8_t spiReadRegister(const busDevice_t *bus, uint8_t reg);
+void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance);
