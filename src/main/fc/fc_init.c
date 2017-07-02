@@ -642,7 +642,7 @@ void init(void)
 #ifdef USE_SDCARD
     if (blackboxConfig()->device == BLACKBOX_DEVICE_SDCARD) {
         sdcardInsertionDetectInit();
-        sdcard_init(sdcardConfig()->useDma);
+        sdcard_init(sdcardConfig());
         afatfs_init();
     }
 #endif
