@@ -146,4 +146,8 @@ void schedulerInit(void);
 void scheduler(void);
 void taskSystem(timeUs_t currentTimeUs);
 
+#define TASK_PERIOD_HZ(hz) (1000000 / (hz))
+#define TASK_PERIOD_MS(ms) ((ms) * 1000)
+#define TASK_PERIOD_US(us) (us)
+
 #define isSystemOverloaded() (averageSystemLoadPercent >= 100)

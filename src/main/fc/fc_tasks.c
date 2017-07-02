@@ -76,10 +76,6 @@
 
 #include "config/feature.h"
 
-#define TASK_PERIOD_HZ(hz) (1000000 / (hz))
-#define TASK_PERIOD_MS(ms) ((ms) * 1000)
-#define TASK_PERIOD_US(us) (us)
-
 /* VBAT monitoring interval (in microseconds) - 1s*/
 #define VBATINTERVAL (6 * 3500)
 /* IBat monitoring interval (in microseconds) - 6 default looptimes */

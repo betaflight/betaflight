@@ -46,6 +46,8 @@
 #include "sensors/rangefinder.h"
 #include "sensors/battery.h"
 
+#include "scheduler/scheduler.h"
+
 rangefinder_t rangefinder;
 
 #define RANGEFINDER_HARDWARE_TIMEOUT_MS         500     // Accept 500ms of non-responsive sensor, report HW failure otherwise
@@ -96,6 +98,7 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
                 const rangefinderHardwarePins_t *sonarHardwarePins = sonarGetHardwarePins();
                 if (hcsr04Detect(dev, sonarHardwarePins)) {   // FIXME: Do actual detection if HC-SR04 is plugged in
                     rangefinderHardware = RANGEFINDER_HCSR04;
+                    rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_HCSR04_TASK_PERIOD_MS));
                 }
             }
 #endif           
@@ -105,6 +108,7 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
 #ifdef USE_RANGEFINDER_SRF10
             if (srf10Detect(dev)) {
                 rangefinderHardware = RANGEFINDER_SRF10;
+                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_SRF10_TASK_PERIOD_MS));
             }
 #endif
             break;

@@ -17,4 +17,6 @@
 
 #pragma once
 
+#define RANGEFINDER_SRF10_TASK_PERIOD_MS 50
+
 bool srf10Detect(rangefinderDev_t *dev);
