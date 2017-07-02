@@ -182,14 +182,8 @@ static const char * const sensorTypeNames[] = {
 
 #define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
 
-// sync with gyroSensor_e
-static const char * const gyroNames[] = {
-    "AUTO", "NONE", "MPU6050", "L3G4200D", "MPU3050", "L3GD20",
-    "MPU6000", "MPU6500", "MPU9250", "ICM20601", "ICM20602", "ICM20608G", "ICM20689", "BMI160", "FAKE"
-};
-
 static const char * const *sensorHardwareNames[] = {
-    gyroNames, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware
+    lookupTableGyroHardware, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware
 };
 #endif // USE_SENSOR_NAMES
 
