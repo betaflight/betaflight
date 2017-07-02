@@ -71,6 +71,7 @@ extern uint8_t __config_end;
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/stack_check.h"
 #include "drivers/system.h"
+#include "drivers/transponder_ir.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
 #include "drivers/vcd.h"
@@ -104,6 +105,7 @@ extern uint8_t __config_end;
 #include "io/ledstrip.h"
 #include "io/osd.h"
 #include "io/serial.h"
+#include "io/transponder_ir.h"
 #include "io/vtx_rtc6705.h"
 #include "io/vtx_control.h"
 
@@ -2848,6 +2850,9 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef USE_SPEKTRUM_BIND
     { OWNER_RX_BIND,       PG_RX_CONFIG, offsetof(rxConfig_t, spektrum_bind_pin_override_ioTag), 0 },
     { OWNER_RX_BIND_PLUG,  PG_RX_CONFIG, offsetof(rxConfig_t, spektrum_bind_plug_ioTag), 0 },
+#endif
+#ifdef TRANSPONDER
+    { OWNER_TRANSPONDER,   PG_TRANSPONDER_CONFIG, offsetof(transponderConfig_t, ioTag), 0 },
 #endif
 };
 
