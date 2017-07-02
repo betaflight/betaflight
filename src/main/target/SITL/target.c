@@ -269,7 +269,7 @@ void failureMode(failureMode_e mode) {
     while(1);
 }
 
-void failureLedCode(failureMode_e mode, int repeatCount)
+void indicateFailure(failureMode_e mode, int repeatCount)
 {
     UNUSED(repeatCount);
     printf("Failure LED flash for: [failureMode]!!! %d\n", mode);	
