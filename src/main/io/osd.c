@@ -1143,7 +1143,9 @@ void osdUpdate(timeUs_t currentTimeUs)
 #ifdef CMS
     // do not allow ARM if we are in menu
     if (displayIsGrabbed(osdDisplayPort)) {
-        DISABLE_ARMING_FLAG(OK_TO_ARM);
+        setArmingDisabled(ARMING_DISABLED_OSD_MENU);
+    } else {
+        unsetArmingDisabled(ARMING_DISABLED_OSD_MENU);
     }
 #endif
 }

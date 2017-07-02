@@ -315,7 +315,7 @@ void init(void)
     }
 #endif
 
-#if defined(USE_SPEKTRUM_BIND) && !defined(SITL)
+#if defined(USE_SPEKTRUM_BIND)
     if (feature(FEATURE_RX_SERIAL)) {
         switch (rxConfig()->serialrx_provider) {
         case SERIALRX_SPEKTRUM1024:
@@ -338,7 +338,7 @@ void init(void)
     busSwitchInit();
 #endif
 
-#if defined(USE_UART) && !defined(SITL)
+#if defined(USE_UART)
     uartPinConfigure(serialPinConfig());
 #endif
 
@@ -384,12 +384,12 @@ void init(void)
     if (0) {}
 #if defined(USE_PPM)
     else if (feature(FEATURE_RX_PPM)) {
-          ppmRxInit(ppmConfig());
+        ppmRxInit(ppmConfig());
     }
 #endif
 #if defined(USE_PWM)
     else if (feature(FEATURE_RX_PARALLEL_PWM)) {
-          pwmRxInit(pwmConfig());
+        pwmRxInit(pwmConfig());
     }
 #endif
 
@@ -480,8 +480,9 @@ void init(void)
     initBoardAlignment(boardAlignment());
 
     if (!sensorsAutodetect()) {
-        // if gyro was not detected due to whatever reason, we give up now.
-        failureMode(FAILURE_MISSING_ACC);
+        // if gyro was not detected due to whatever reason, notify and don't arm.
+        failureLedCode(FAILURE_MISSING_ACC, 2);
+        setArmingDisabled(ARMING_DISABLED_NO_GYRO);
     }
 
     systemState |= SYSTEM_STATE_SENSORS_READY;
@@ -665,7 +666,6 @@ void init(void)
     timerStart();
 
     ENABLE_STATE(SMALL_ANGLE);
-    DISABLE_ARMING_FLAG(PREVENT_ARMING);
 
 #ifdef SOFTSERIAL_LOOPBACK
     // FIXME this is a hack, perhaps add a FUNCTION_LOOPBACK to support it properly

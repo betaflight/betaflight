@@ -164,9 +164,8 @@ void delay(uint32_t ms)
 #define SHORT_FLASH_DURATION 50
 #define CODE_FLASH_DURATION 250
 
-void failureMode(failureMode_e mode)
+void failureLedCode(failureMode_e mode, int codeRepeatsRemaining)
 {
-    int codeRepeatsRemaining = 10;
     int codeFlashesRemaining;
     int shortFlashesRemaining;
 
@@ -200,6 +199,12 @@ void failureMode(failureMode_e mode)
         }
         delay(1000);
     }
+
+}
+
+void failureMode(failureMode_e mode)
+{
+    failureLedCode(mode, 10);
 
 #ifdef DEBUG
     systemReset();

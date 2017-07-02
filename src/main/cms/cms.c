@@ -574,7 +574,7 @@ STATIC_UNIT_TESTED void cmsMenuOpen(void)
             return;
         cmsInMenu = true;
         currentCtx = (cmsCtx_t){ &menuMain, 0, 0 };
-        DISABLE_ARMING_FLAG(OK_TO_ARM);
+        setArmingDisabled(ARMING_DISABLED_CMS_MENU);
     } else {
         // Switch display
         displayPort_t *pNextDisplay = cmsDisplayPortSelectNext();
@@ -642,7 +642,7 @@ long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
         systemReset();
     }
 
-    ENABLE_ARMING_FLAG(OK_TO_ARM);
+    unsetArmingDisabled(ARMING_DISABLED_CMS_MENU);
 
     return 0;
 }
@@ -872,7 +872,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
 
 uint16_t cmsHandleKeyWithRepeat(displayPort_t *pDisplay, uint8_t key, int repeatCount)
 {
-    uint16_t ret;
+    uint16_t ret = 0;
 
     for (int i = 0 ; i < repeatCount ; i++) {
         ret = cmsHandleKey(pDisplay, key);

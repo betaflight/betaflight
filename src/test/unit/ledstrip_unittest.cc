@@ -382,4 +382,6 @@ bool sensors(uint32_t mask)
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {};
 
+bool isArmingDisabled(void) { return false; }
+
 }

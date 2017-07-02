@@ -574,4 +574,7 @@ extern "C" {
         UNUSED(pDisplay);
         return false;
     }
+
+    void setArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
+    void unsetArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
 }

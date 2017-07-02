@@ -128,7 +128,7 @@ void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsD
     saveConfigAndNotify();
 }
 
-bool isCalibrating()
+static bool isCalibrating()
 {
 #ifdef BARO
     if (sensors(SENSOR_BARO) && !isBaroCalibrationComplete()) {
@@ -141,35 +141,52 @@ bool isCalibrating()
     return (!isAccelerationCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
 }
 
-void updateLEDs(void)
+void updateArmingStatus(void)
 {
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
     } else {
-        if (IS_RC_MODE_ACTIVE(BOXARM) == 0 || armingCalibrationWasInitialised) {
-            ENABLE_ARMING_FLAG(OK_TO_ARM);
+        if (IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
+            setArmingDisabled(ARMING_DISABLED_BOXFAILSAFE);
+        } else {
+            unsetArmingDisabled(ARMING_DISABLED_BOXFAILSAFE);
+        }
+
+        if (calculateThrottleStatus() != THROTTLE_LOW) {
+            setArmingDisabled(ARMING_DISABLED_THROTTLE);
+        } else {
+            unsetArmingDisabled(ARMING_DISABLED_THROTTLE);
         }
 
         if (!STATE(SMALL_ANGLE)) {
-            DISABLE_ARMING_FLAG(OK_TO_ARM);
+            setArmingDisabled(ARMING_DISABLED_ANGLE);
+        } else {
+            unsetArmingDisabled(ARMING_DISABLED_ANGLE);
         }
 
-        if (isCalibrating() || (averageSystemLoadPercent > 100)) {
-            warningLedFlash();
-            DISABLE_ARMING_FLAG(OK_TO_ARM);
+        if (averageSystemLoadPercent > 100) {
+            setArmingDisabled(ARMING_DISABLED_LOAD);
         } else {
-            if (ARMING_FLAG(OK_TO_ARM)) {
-                warningLedDisable();
-            } else {
-                warningLedFlash();
-            }
+            unsetArmingDisabled(ARMING_DISABLED_LOAD);
+        }
+
+        if (isCalibrating()) {
+            setArmingDisabled(ARMING_DISABLED_CALIBRATING);
+        } else {
+            unsetArmingDisabled(ARMING_DISABLED_CALIBRATING);
+        }
+
+        if (isArmingDisabled()) {
+            warningLedFlash();
+        } else {
+            warningLedDisable();
         }
 
         warningLedUpdate();
     }
 }
 
-void mwDisarm(void)
+void disarm(void)
 {
     armingCalibrationWasInitialised = false;
 
@@ -186,7 +203,7 @@ void mwDisarm(void)
     }
 }
 
-void mwArm(void)
+void tryArm(void)
 {
     static bool firstArmingCalibrationWasCompleted;
 
@@ -196,51 +213,47 @@ void mwArm(void)
         firstArmingCalibrationWasCompleted = true;
     }
 
-    if (!isGyroCalibrationComplete()) return;  // prevent arming before gyro is calibrated
+    updateArmingStatus();
 
-    if (ARMING_FLAG(OK_TO_ARM)) {
+    if (!isArmingDisabled()) {
         if (ARMING_FLAG(ARMED)) {
             return;
         }
-        if (IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
-            return;
-        }
-        if (!ARMING_FLAG(PREVENT_ARMING)) {
 #ifdef USE_DSHOT
-            if (!feature(FEATURE_3D)) {
-                //TODO: Use BOXDSHOTREVERSE here
-                if (!IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH)) {
-                    reverseMotors = false;
-                    for (unsigned index = 0; index < getMotorCount(); index++) {
-                        pwmWriteDshotCommand(index, DSHOT_CMD_SPIN_DIRECTION_NORMAL);
-                    }
-                } else {
-                    reverseMotors = true;
-                    for (unsigned index = 0; index < getMotorCount(); index++) {
-                        pwmWriteDshotCommand(index, DSHOT_CMD_SPIN_DIRECTION_REVERSED);
-                    }
+        if (!feature(FEATURE_3D)) {
+            //TODO: Use BOXDSHOTREVERSE here
+            if (!IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH)) {
+                reverseMotors = false;
+                for (unsigned index = 0; index < getMotorCount(); index++) {
+                    pwmWriteDshotCommand(index, DSHOT_CMD_SPIN_DIRECTION_NORMAL);
+                }
+            } else {
+                reverseMotors = true;
+                for (unsigned index = 0; index < getMotorCount(); index++) {
+                    pwmWriteDshotCommand(index, DSHOT_CMD_SPIN_DIRECTION_REVERSED);
                 }
             }
+	}
 #endif
 
-            ENABLE_ARMING_FLAG(ARMED);
-            ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
-            headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+        ENABLE_ARMING_FLAG(ARMED);
+        ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
+        headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 
-            disarmAt = millis() + armingConfig()->auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
+        disarmAt = millis() + armingConfig()->auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
 
-            //beep to indicate arming
+        //beep to indicate arming
 #ifdef GPS
-            if (feature(FEATURE_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5)
-                beeper(BEEPER_ARMING_GPS_FIX);
-            else
-                beeper(BEEPER_ARMING);
-#else
+        if (feature(FEATURE_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5) {
+            beeper(BEEPER_ARMING_GPS_FIX);
+        } else {
             beeper(BEEPER_ARMING);
+        }
+#else
+        beeper(BEEPER_ARMING);
 #endif
 
-            return;
-        }
+        return;
     }
 
     if (!ARMING_FLAG(ARMED)) {
@@ -315,7 +328,7 @@ void processRx(timeUs_t currentTimeUs)
     // in 3D mode, we need to be able to disarm by switch at any time
     if (feature(FEATURE_3D)) {
         if (!IS_RC_MODE_ACTIVE(BOXARM))
-            mwDisarm();
+            disarm();
     }
 
     updateRSSI(currentTimeUs);
@@ -364,7 +377,7 @@ void processRx(timeUs_t currentTimeUs)
                     && (int32_t)(disarmAt - millis()) < 0
                 ) {
                     // auto-disarm configured and delay is over
-                    mwDisarm();
+                    disarm();
                     armedBeeperOn = false;
                 } else {
                     // still armed; do warning beeps while armed

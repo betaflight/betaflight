@@ -30,6 +30,7 @@ extern "C" {
     #include "target.h"
     #include "cms/cms.h"
     #include "cms/cms_types.h"
+    #include "fc/runtime_config.h"
     void cmsMenuOpen(void);
     long cmsMenuBack(displayPort_t *pDisplay);
     uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key);
@@ -141,4 +142,6 @@ void saveConfigAndNotify(void) {}
 void stopMotors(void) {}
 void stopPwmAllMotors(void) {}
 void systemReset(void) {}
+void setArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
+void unsetArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
 }

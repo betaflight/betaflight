@@ -23,6 +23,7 @@
 
 #ifdef USE_SPI
 
+#include "drivers/bus.h"
 #include "drivers/bus_spi.h"
 #include "drivers/bus_spi_impl.h"
 #include "drivers/exti.h"
@@ -265,5 +266,41 @@ void spiResetErrorCounter(SPI_TypeDef *instance)
     SPIDevice device = spiDeviceByInstance(instance);
     if (device != SPIINVALID)
         spiDevice[device].errorCount = 0;
+}
+
+bool spiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
+{
+    IOLo(bus->spi.csnPin);
+    spiTransferByte(bus->spi.instance, reg);
+    spiTransferByte(bus->spi.instance, data);
+    IOHi(bus->spi.csnPin);
+
+    return true;
+}
+
+bool spiReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data)
+{
+    IOLo(bus->spi.csnPin);
+    spiTransferByte(bus->spi.instance, reg | 0x80); // read transaction
+    spiTransfer(bus->spi.instance, data, NULL, length);
+    IOHi(bus->spi.csnPin);
+
+    return true;
+}
+
+uint8_t spiReadRegister(const busDevice_t *bus, uint8_t reg)
+{
+    uint8_t data;
+    IOLo(bus->spi.csnPin);
+    spiTransferByte(bus->spi.instance, reg | 0x80); // read transaction
+    spiTransfer(bus->spi.instance, &data, NULL, 1);
+    IOHi(bus->spi.csnPin);
+
+    return data;
+}
+
+void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance)
+{
+    bus->spi.instance = instance;
 }
 #endif

@@ -127,15 +127,13 @@
 
 typedef bool (*mpuReadRegisterFnPtr)(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t* data);
 typedef bool (*mpuWriteRegisterFnPtr)(const busDevice_t *bus, uint8_t reg, uint8_t data);
-typedef void(*mpuResetFnPtr)(void);
+typedef void (*mpuResetFnPtr)(void);
 
 extern mpuResetFnPtr mpuResetFn;
 
 typedef struct mpuConfiguration_s {
     mpuReadRegisterFnPtr readFn;
     mpuWriteRegisterFnPtr writeFn;
-    mpuReadRegisterFnPtr slowreadFn;
-    mpuWriteRegisterFnPtr verifywriteFn;
     mpuResetFnPtr resetFn;
     uint8_t gyroReadXRegister; // Y and Z must registers follow this, 2 words each
 } mpuConfiguration_t;

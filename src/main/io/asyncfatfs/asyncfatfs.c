@@ -1639,7 +1639,7 @@ static afatfsOperationStatus_e afatfs_appendSuperclusterContinue(afatfsFile_t *f
 {
     afatfsAppendSupercluster_t *opState = &file->operation.state.appendSupercluster;
 
-    afatfsOperationStatus_e status;
+    afatfsOperationStatus_e status = AFATFS_OPERATION_FAILURE;
 
     doMore:
     switch (opState->phase) {
@@ -2387,7 +2387,7 @@ static afatfsFilePtr_t afatfs_allocateFileHandle()
 static afatfsOperationStatus_e afatfs_ftruncateContinue(afatfsFilePtr_t file, bool markDeleted)
 {
     afatfsTruncateFile_t *opState = &file->operation.state.truncateFile;
-    afatfsOperationStatus_e status;
+    afatfsOperationStatus_e status = AFATFS_OPERATION_FAILURE;
 
 #ifdef AFATFS_USE_FREEFILE
     uint32_t oldFreeFileStart, freeFileGrow;

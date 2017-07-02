@@ -49,7 +49,6 @@ extern "C" {
 #include "gtest/gtest.h"
 
 uint32_t testFeatureMask = 0;
-uint16_t flightModeFlags = 0;
 uint16_t testMinThrottle = 0;
 throttleStatus_e throttleStatus = THROTTLE_HIGH;
 
@@ -203,7 +202,7 @@ TEST(FlightFailsafeTest, TestFailsafeCausesLanding)
     EXPECT_EQ(true, failsafeIsActive());
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
-    EXPECT_TRUE(ARMING_FLAG(PREVENT_ARMING));
+    EXPECT_TRUE(isArmingDisabled());
 
     // given
     failsafeOnValidDataFailed();                    // set last invalid sample at current time
@@ -217,7 +216,7 @@ TEST(FlightFailsafeTest, TestFailsafeCausesLanding)
     EXPECT_EQ(true, failsafeIsActive());
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
-    EXPECT_TRUE(ARMING_FLAG(PREVENT_ARMING));
+    EXPECT_TRUE(isArmingDisabled());
 
     // given
     sysTickUptime += PERIOD_OF_30_SECONDS + 1;      // adjust time to point just past the required additional recovery time
@@ -230,7 +229,7 @@ TEST(FlightFailsafeTest, TestFailsafeCausesLanding)
     EXPECT_EQ(false, failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM)); // disarm not called repeatedly.
-    EXPECT_FALSE(ARMING_FLAG(PREVENT_ARMING));
+    EXPECT_FALSE(isArmingDisabled());
 }
 
 /****************************************************************************************/
@@ -269,7 +268,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndJustDisarms)
     EXPECT_EQ(true, failsafeIsActive());
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
-    EXPECT_TRUE(ARMING_FLAG(PREVENT_ARMING));
+    EXPECT_TRUE(isArmingDisabled());
 
     // given
     failsafeOnValidDataFailed();                    // set last invalid sample at current time
@@ -283,7 +282,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndJustDisarms)
     EXPECT_EQ(true, failsafeIsActive());
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
-    EXPECT_TRUE(ARMING_FLAG(PREVENT_ARMING));
+    EXPECT_TRUE(isArmingDisabled());
 
     // given
     sysTickUptime += PERIOD_OF_3_SECONDS + 1;       // adjust time to point just past the required additional recovery time
@@ -296,7 +295,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsRxLossAndJustDisarms)
     EXPECT_EQ(false, failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));  // disarm not called repeatedly.
-    EXPECT_FALSE(ARMING_FLAG(PREVENT_ARMING));
+    EXPECT_FALSE(isArmingDisabled());
 }
 
 /****************************************************************************************/
@@ -325,7 +324,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsKillswitchEvent)
 
     // then
     EXPECT_EQ(true, failsafeIsActive());
-    EXPECT_TRUE(ARMING_FLAG(PREVENT_ARMING));
+    EXPECT_TRUE(isArmingDisabled());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
 
@@ -342,7 +341,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsKillswitchEvent)
 
     // then
     EXPECT_EQ(true, failsafeIsActive());
-    EXPECT_TRUE(ARMING_FLAG(PREVENT_ARMING));
+    EXPECT_TRUE(isArmingDisabled());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
     EXPECT_EQ(FAILSAFE_RX_LOSS_MONITORING, failsafePhase());
 
@@ -357,7 +356,7 @@ TEST(FlightFailsafeTest, TestFailsafeDetectsKillswitchEvent)
     EXPECT_EQ(false, failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));  // disarm not called repeatedly.
-    EXPECT_FALSE(ARMING_FLAG(PREVENT_ARMING));
+    EXPECT_FALSE(isArmingDisabled());
 }
 
 /****************************************************************************************/
@@ -406,14 +405,13 @@ TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenDisarmedAndRXLossIsDetected
     EXPECT_EQ(false, failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
-    EXPECT_FALSE(ARMING_FLAG(PREVENT_ARMING));
+    EXPECT_FALSE(isArmingDisabled());
 }
 
 // STUBS
 
 extern "C" {
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
-uint8_t armingFlags;
 float rcCommand[4];
 int16_t debug[DEBUG16_VALUE_COUNT];
 bool isUsingSticksToArm = true;
@@ -437,24 +435,12 @@ bool feature(uint32_t mask) {
     return (mask & testFeatureMask);
 }
 
-void mwDisarm(void) {
+void disarm(void) {
     callCounts[COUNTER_MW_DISARM]++;
 }
 
 void beeper(beeperMode_e mode) {
     UNUSED(mode);
-}
-
-uint16_t enableFlightMode(flightModeFlags_e mask)
-{
-    flightModeFlags |= (mask);
-    return flightModeFlags;
-}
-
-uint16_t disableFlightMode(flightModeFlags_e mask)
-{
-    flightModeFlags &= ~(mask);
-    return flightModeFlags;
 }
 
 uint16_t getCurrentMinthrottle(void)
@@ -467,4 +453,5 @@ bool isUsingSticksForArming(void)
     return isUsingSticksToArm;
 }
 
+void beeperConfirmationBeeps(uint8_t beepCount) { UNUSED(beepCount); }
 }

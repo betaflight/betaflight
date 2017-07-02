@@ -29,6 +29,28 @@ uint16_t flightModeFlags = 0;
 
 static uint32_t enabledSensors = 0;
 
+static armingDisableFlags_e armingDisableFlags = 0;
+
+void setArmingDisabled(armingDisableFlags_e flag)
+{
+    armingDisableFlags = armingDisableFlags | flag;
+}
+
+void unsetArmingDisabled(armingDisableFlags_e flag)
+{
+    armingDisableFlags = armingDisableFlags & ~flag;
+}
+
+bool isArmingDisabled()
+{
+    return armingDisableFlags;
+}
+
+armingDisableFlags_e getArmingDisableFlags(void)
+{
+    return armingDisableFlags;
+}
+
 /**
  * Enables the given flight mode.  A beep is sounded if the flight mode
  * has changed.  Returns the new 'flightModeFlags' value.

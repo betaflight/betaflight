@@ -72,6 +72,7 @@ extern uint8_t __config_end;
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/stack_check.h"
 #include "drivers/system.h"
+#include "drivers/transponder_ir.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"
 #include "drivers/vcd.h"
@@ -105,6 +106,7 @@ extern uint8_t __config_end;
 #include "io/ledstrip.h"
 #include "io/osd.h"
 #include "io/serial.h"
+#include "io/transponder_ir.h"
 #include "io/vtx_rtc6705.h"
 #include "io/vtx_control.h"
 
@@ -183,17 +185,17 @@ static const char * const sensorTypeNames[] = {
 
 #define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
 
-// sync with gyroSensor_e
-static const char * const gyroNames[] = {
-    "AUTO", "NONE", "MPU6050", "L3G4200D", "MPU3050", "L3GD20",
-    "MPU6000", "MPU6500", "MPU9250", "ICM20601", "ICM20602", "ICM20608G", "ICM20689", "BMI160", "FAKE"
-};
-
 static const char * const *sensorHardwareNames[] = {
-    gyroNames, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware
-
+    lookupTableGyroHardware, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware
 };
 #endif // USE_SENSOR_NAMES
+
+#ifndef MINIMAL_CLI
+static const char *armingDisableFlagNames[] = {
+    "NOGYRO", "FAILSAFE", "BOXFAILSAFE", "THROTTLE",
+    "ANGLE", "LOAD", "CALIB", "CLI", "CMS", "OSD", "BST"
+};
+#endif
 
 static void cliPrint(const char *str)
 {
@@ -1165,7 +1167,7 @@ static void cliRxRange(char *cmdline)
         ptr = cmdline;
         i = atoi(ptr);
         if (i >= 0 && i < NON_AUX_CHANNEL_COUNT) {
-            int rangeMin, rangeMax;
+            int rangeMin = 0, rangeMax = 0;
 
             ptr = nextArg(ptr);
             if (ptr) {
@@ -2712,7 +2714,18 @@ static void cliStatus(char *cmdline)
     const int systemRate = getTaskDeltaTime(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_SYSTEM)));
     cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
             constrain(averageSystemLoadPercent, 0, 100), getTaskDeltaTime(TASK_GYROPID), gyroRate, rxRate, systemRate);
-
+#ifdef MINIMAL_CLI
+    cliPrintLinef("Arming disable flags: 0x%x", getArmingDisableFlags());
+#else
+    cliPrint("Arming disable flags:");
+    uint16_t flags = getArmingDisableFlags();
+    while (flags) {
+        int bitpos = ffs(flags) - 1;
+        flags &= ~(1 << bitpos);
+        cliPrintf(" %s", armingDisableFlagNames[bitpos]);
+    }
+    cliPrintLinefeed();
+#endif
 }
 
 #ifndef SKIP_TASK_STATISTICS
@@ -2832,6 +2845,9 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef USE_SPEKTRUM_BIND
     { OWNER_RX_BIND,       PG_RX_CONFIG, offsetof(rxConfig_t, spektrum_bind_pin_override_ioTag), 0 },
     { OWNER_RX_BIND_PLUG,  PG_RX_CONFIG, offsetof(rxConfig_t, spektrum_bind_plug_ioTag), 0 },
+#endif
+#ifdef TRANSPONDER
+    { OWNER_TRANSPONDER,   PG_TRANSPONDER_CONFIG, offsetof(transponderConfig_t, ioTag), 0 },
 #endif
 #ifdef USE_SPI
     { OWNER_SPI_SCK,       PG_SPI_PIN_CONFIG, offsetof(spiPinConfig_t, ioTagSck[0]), SPIDEV_COUNT },
@@ -3500,7 +3516,7 @@ void cliEnter(serialPort_t *serialPort)
 #endif
     cliPrompt();
 
-    ENABLE_ARMING_FLAG(PREVENT_ARMING);
+    setArmingDisabled(ARMING_DISABLED_CLI);
 }
 
 void cliInit(const serialConfig_t *serialConfig)
