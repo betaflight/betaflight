@@ -92,7 +92,7 @@ static busDevice_t *bus = NULL;
 
 static bool spiWriteRegisterDelay(const busDevice_t *bus, uint8_t reg, uint8_t data)
 {
-    spiWriteRegister(bus, reg, data);
+    spiBusWriteRegister(bus, reg, data);
     delayMicroseconds(10);
     return true;
 }
@@ -118,7 +118,7 @@ static bool ak8963SensorRead(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t 
     spiWriteRegisterDelay(bus, MPU_RA_I2C_SLV0_CTRL, len_ | 0x80);              // read number of bytes
     delay(4);
     __disable_irq();
-    bool ack = spiReadRegisterBuffer(bus, MPU_RA_EXT_SENS_DATA_00, len_, buf);  // read I2C
+    bool ack = spiBusReadRegisterBuffer(bus, MPU_RA_EXT_SENS_DATA_00, buf, len_);    // read I2C
     __enable_irq();
     return ack;
 }
@@ -177,7 +177,7 @@ static bool ak8963SensorCompleteRead(uint8_t *buf)
 
     queuedRead.waiting = false;
 
-    spiReadRegisterBuffer(bus, MPU_RA_EXT_SENS_DATA_00, queuedRead.len, buf);   // read I2C buffer
+    spiBusReadRegisterBuffer(bus, MPU_RA_EXT_SENS_DATA_00, buf, queuedRead.len);               // read I2C buffer
     return true;
 }
 #else

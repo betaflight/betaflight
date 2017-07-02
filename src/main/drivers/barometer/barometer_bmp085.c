@@ -158,12 +158,12 @@ void bmp085Disable(const bmp085Config_t *config)
 
 bool bmp085ReadRegister(busDevice_t *busdev, uint8_t cmd, uint8_t len, uint8_t *data)
 {
-    return i2cReadRegisterBuffer(busdev, cmd, len, data);
+    return i2cBusReadRegisterBuffer(busdev, cmd, data, len);
 }
 
 bool bmp085WriteRegister(busDevice_t *busdev, uint8_t cmd, uint8_t byte)
 {
-    return i2cWriteRegister(busdev, cmd, byte);
+    return i2cBusWriteRegister(busdev, cmd, byte);
 }
 
 bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro)
