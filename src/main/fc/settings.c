@@ -74,13 +74,19 @@
 #include "telemetry/frsky.h"
 #include "telemetry/telemetry.h"
 
-
 // Sensor names (used in lookup tables for *_hardware settings and in status command output)
 // sync with accelerationSensor_e
 const char * const lookupTableAccHardware[] = {
     "AUTO", "NONE", "ADXL345", "MPU6050", "MMA8452", "BMA280", "LSM303DLHC",
     "MPU6000", "MPU6500", "MPU9250", "ICM20601", "ICM20602", "ICM20608", "ICM20689", "BMI160", "FAKE"
 };
+
+// sync with gyroSensor_e
+const char * const lookupTableGyroHardware[] = {
+    "AUTO", "NONE", "MPU6050", "L3G4200D", "MPU3050", "L3GD20",
+    "MPU6000", "MPU6500", "MPU9250", "ICM20601", "ICM20602", "ICM20608G", "ICM20689", "BMI160", "FAKE"
+};
+
 #if defined(USE_SENSOR_NAMES) || defined(BARO)
 // sync with baroSensor_e
 const char * const lookupTableBaroHardware[] = {
@@ -272,6 +278,7 @@ const lookupTableEntry_t lookupTables[] = {
     { lookupTableRxSpi, sizeof(lookupTableRxSpi) / sizeof(char *) },
 #endif
     { lookupTableGyroLpf, sizeof(lookupTableGyroLpf) / sizeof(char *) },
+    { lookupTableGyroHardware, sizeof(lookupTableGyroHardware) / sizeof(char *) },
     { lookupTableAccHardware, sizeof(lookupTableAccHardware) / sizeof(char *) },
 #ifdef BARO
     { lookupTableBaroHardware, sizeof(lookupTableBaroHardware) / sizeof(char *) },

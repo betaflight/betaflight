@@ -41,6 +41,7 @@ typedef enum {
     TABLE_RX_SPI,
 #endif
     TABLE_GYRO_LPF,
+    TABLE_GYRO_HARDWARE,
     TABLE_ACC_HARDWARE,
 #ifdef BARO
     TABLE_BARO_HARDWARE,
@@ -129,6 +130,8 @@ extern const uint16_t valueTableEntryCount;
 
 extern const clivalue_t valueTable[];
 //extern const uint8_t lookupTablesEntryCount;
+
+extern const char * const lookupTableGyroHardware[];
 
 extern const char * const lookupTableAccHardware[];
 //extern const uint8_t lookupTableAccHardwareEntryCount;
