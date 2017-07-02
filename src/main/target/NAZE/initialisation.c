@@ -30,6 +30,7 @@ extern void spiPreInit(void); // XXX In fc/fc_init.c
 void targetBusInit(void)
 {
 #ifdef USE_SPI
+    spiPinConfigure();
     spiPreInit();
 #ifdef USE_SPI_DEVICE_2
     spiInit(SPIDEV_2);

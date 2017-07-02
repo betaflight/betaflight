@@ -408,6 +408,8 @@ void init(void)
 #else
 
 #ifdef USE_SPI
+    spiPinConfigure();
+
     // Initialize CS lines and keep them high
     spiPreInit();
 
