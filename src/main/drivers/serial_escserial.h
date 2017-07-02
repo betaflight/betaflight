@@ -47,3 +47,9 @@ bool isEscSerialTransmitBufferEmpty(const serialPort_t *s);
 
 void escSerialInitialize();
 void escEnablePassthrough(serialPort_t *escPassthroughPort, uint16_t output, uint8_t mode);
+
+typedef struct escSerialConfig_s {
+    ioTag_t ioTag;
+} escSerialConfig_t;
+
+PG_DECLARE(escSerialConfig_t, escSerialConfig);

@@ -34,6 +34,9 @@ typedef enum {
 
 #include "common/utils.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/io.h"
 #include "drivers/nvic.h"
 #include "drivers/time.h"
@@ -100,8 +103,17 @@ extern escSerial_t escSerialPorts[];
 
 extern const struct serialPortVTable escSerialVTable[];
 
-
 escSerial_t escSerialPorts[MAX_ESCSERIAL_PORTS];
+
+PG_REGISTER_WITH_RESET_TEMPLATE(escSerialConfig_t, escSerialConfig, PG_ESCSERIAL_CONFIG, 0);
+
+#ifndef ESCSERIAL_TIMER_PIN
+#define ESCSERIAL_TIMER_PIN NONE
+#endif
+
+PG_RESET_TEMPLATE(escSerialConfig_t, escSerialConfig,
+    .ioTag = IO_TAG(ESCSERIAL_TIMER_PIN),
+);
 
 void onSerialTimerEsc(timerCCHandlerRec_t *cbRec, captureCompare_t capture);
 void onSerialRxPinChangeEsc(timerCCHandlerRec_t *cbRec, captureCompare_t capture);
@@ -260,7 +272,11 @@ serialPort_t *openEscSerial(escSerialPortIndex_e portIndex, serialReceiveCallbac
     }
 
     escSerial->mode = mode;
-    escSerial->txTimerHardware = &(timerHardware[ESCSERIAL_TIMER_TX_HARDWARE]);
+    escSerial->txTimerHardware = timerGetByTag(escSerialConfig()->ioTag, TIM_USE_ANY);
+
+    if (!escSerial->txTimerHardware) {
+        return NULL;
+    }
 
     escSerial->port.vTable = escSerialVTable;
     escSerial->port.baudRate = baud;
@@ -953,6 +969,11 @@ void escEnablePassthrough(serialPort_t *escPassthroughPort, uint16_t output, uin
     }
 
     escPort = openEscSerial(ESCSERIAL1, NULL, motor_output, escBaudrate, 0, mode);
+
+    if (!escPort) {
+        return;
+    }
+
     uint8_t ch;
     while(1) {
         if(mode!=2)

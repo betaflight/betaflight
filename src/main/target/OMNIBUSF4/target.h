@@ -142,7 +142,8 @@
 #define SERIAL_PORT_COUNT       6 //VCP, USART1, USART3, USART6, SOFTSERIAL x 2
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+//#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+#define ESCSERIAL_TIMER_PIN     PB0 // One of motor pin (most cases).
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
