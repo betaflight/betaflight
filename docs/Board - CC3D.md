@@ -23,8 +23,8 @@ The 8 pin RC_Input connector has the following pinouts when used in RX_PPM/RX_SE
 | 1   | Ground    |                                  |
 | 2   | +5V       |                                  |
 | 3   | Unused    |                                  |
-| 4   | SoftSerial1 TX / Sonar trigger | |
-| 5   | SoftSerial1 RX / Sonar Echo / RSSI\_ADC    | Used either for SOFTSERIAL, HC-SR04 Rangefinder or RSSI\_ADC*. Only one feature can be enabled at any time. |
+| 4   | SoftSerial1 TX / HC-SR04 trigger | |
+| 5   | SoftSerial1 RX / HC-SR04 Echo / RSSI\_ADC    | Used either for SOFTSERIAL, HC-SR04 Rangefinder or RSSI\_ADC*. Only one feature can be enabled at any time. |
 | 6   | Current   | Enable `feature CURRENT_METER`.  Connect to the output of a current sensor, 0v-3.3v input |
 | 7   | Battery Voltage sensor | Enable `feature VBAT`. Connect to main battery using a voltage divider, 0v-3.3v input |
 | 8   | PPM Input | Enable `feature RX_PPM` |
@@ -128,7 +128,7 @@ OpenPilot Ground Station (GCS) via USB without requiring a USB to uart adapter.
 
 The following features are not available:
  * Display
- * Sonar
+ * Rangefinder
 
 # Restoring OpenPilot bootloader
 

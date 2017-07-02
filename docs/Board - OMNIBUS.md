@@ -67,7 +67,7 @@ HC-SR04 rangefinder is supported when NOT using PPM.
 |TRIG   | J8 (PPM)   |
 |ECHO   | J4 (RSSI)  |
 
-5V sonar can be connected directly without inline resistors.
+5V rangefinder can be connected directly without inline resistors.
 
 ### OSD
 

@@ -97,7 +97,7 @@ Use either power selector to supply VIN from the serial port adapter sockets, en
 One or both of the power selector jumpers MUST be in the jumper storage position. 
 
 
-Sonar
+HC-SR04 Rangefinder
 
 Inner Middle Bottom Right 
 

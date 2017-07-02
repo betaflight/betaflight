@@ -15,7 +15,7 @@ http://seriouslypro.com/spracingf3evo
 * Race transponder built in - just turn up at a race and have your lap times recorded.
 * Features the latest Accelerometer, Gyro and Mag/Compass and Baro/Altitude sensor technology.
 * Wire up using using pin headers for all major connections for excellent crash-durability.  Use either right-angled or straight pin-headers.
-* No compromise I/O. Use all the features all the time; e.g. Connect your USB + OSD + SmartPort + SBus + GPS + LED Strip + Battery Monitoring + 8 motors - all at the same time! (Sonar will be supported in CF 1.14)
+* No compromise I/O. Use all the features all the time; e.g. Connect your USB + OSD + SmartPort + SBus + GPS + LED Strip + Battery Monitoring + 8 motors - all at the same time!
 * 8 PWM output lines for ESCs and Servos. Arranged for easy wiring on standard pin headers.
 * Supports direct connection of SBus, SumH, SumD, Spektrum1024/2048, XBus receivers. No external inverters required (built-in).
 * Supports direct connection of 3.3v Spektrum Satellite receivers via 3 pin through-hole JST-ZH connector.

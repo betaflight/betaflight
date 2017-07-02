@@ -8,7 +8,7 @@ http://seriouslypro.com/spracingf3
 
 ## Hardware Features
 
-* No compromise I/O. Use all the features all the time; e.g. Connect your OSD + SmartPort + SBus + GPS + LED Strip + Battery Monitoring + Sonar + 8 motors - all at the same time!
+* No compromise I/O. Use all the features all the time; e.g. Connect your OSD + SmartPort + SBus + GPS + LED Strip + Battery Monitoring + HC-SR04 + 8 motors - all at the same time!
 * On-board high-capacity black box flight log recorder - optimize your tuning and see the results of your setup without guesswork. (Acro and Deluxe)
 * Next-generation STM32 F3 processor with hardware floating point unit for efficient flight calculations and faster ARM-Cortex M4 core.
 * Stackable design - perfect for integrating with OSDs and power distribution boards.
@@ -18,7 +18,7 @@ http://seriouslypro.com/spracingf3
 * Dedicated I2C port for connection of OLED display without needing flight battery.
 * Battery monitoring ports for voltage and current.
 * Buzzer port for audible warnings and notifications.
-* Solder pads in addition to connectors for Sonar, PPM, RSSI, Current, GPIO, LED Strip, 3.3v,
+* Solder pads in addition to connectors for HC-SR04, PPM, RSSI, Current, GPIO, LED Strip, 3.3v,
 * Developer friendly debugging port (SWD) and boot mode selection, unbrickable bootloader.
 * Symmetrical design for a super tidy wiring.
 * Wire up using using pin headers, JST-SH sockets or solder pads. Use either right-angled or straight pin-headers.
@@ -79,8 +79,8 @@ The 8 pin IO_2 connector has the following pinouts when used in RX_PARALLEL_PWM 
 | 2   | VCC_IN            | Voltage as-supplied by BEC.                  |
 | 3   | RC_CH3            |                                              |
 | 4   | RC_CH4            |                                              |
-| 5   | RC_CH7/SONAR_TRIG |                                              |
-| 6   | RC_CH8/SONAR_ECHO |                                              |
+| 5   | RC_CH7/HC-SR04_TRIG |                                              |
+| 6   | RC_CH8/HC-SR04_ECHO |                                              |
 | 7   | ADC_1             | Current Sensor                               |
 | 8   | ADC_2             | RSSI                                         |
 
@@ -92,8 +92,8 @@ When RX_PPM/RX_SERIAL is used the IO_2 pinout is as follows.
 | 2   | VCC_IN                    | Voltage as-supplied by BEC.                  |
 | 3   | RX_SERIAL                 | UART3 RX                                     |
 | 4   |                           | UART3_TX                                     |
-| 5   | SONAR_TRIG/SoftSerial2_RX | Enable `feature SONAR/SOFTSERIAL`     |
-| 6   | SONAR_ECHO/SoftSerial2_TX | Enable `feature SONAR/SOFTSERIAL`     |
+| 5   | HC-SR04_TRIG/SoftSerial2_RX | Enable `feature SOFTSERIAL` or HC-SR04 rangefinder     |
+| 6   | HC-SR04_ECHO/SoftSerial2_TX | Enable `feature SOFTSERIAL` or HC-SR04 rangefinder     |
 | 7   | ADC_1                     | Current Sensor                               |
 | 8   | ADC_2                     | RSSI                                         |
 
