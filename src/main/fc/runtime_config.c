@@ -23,8 +23,6 @@
 #include "fc/runtime_config.h"
 #include "io/beeper.h"
 
-const char *armingDisableFlagNames[] = { ARMING_DISBALED_FLAG_NAMES };
-
 uint8_t armingFlags = 0;
 uint8_t stateFlags = 0;
 uint16_t flightModeFlags = 0;

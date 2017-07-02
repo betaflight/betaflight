@@ -190,9 +190,15 @@ static const char * const gyroNames[] = {
 
 static const char * const *sensorHardwareNames[] = {
     gyroNames, lookupTableAccHardware, lookupTableBaroHardware, lookupTableMagHardware
-
 };
 #endif // USE_SENSOR_NAMES
+
+#ifndef MINIMAL_CLI
+static const char *armingDisableFlagNames[] = {
+    "NOGYRO", "FAILSAFE", "BOXFAILSAFE", "THROTTLE",
+    "ANGLE", "LOAD", "CALIB", "CLI", "CMS", "OSD", "BST"
+};
+#endif
 
 static void cliPrint(const char *str)
 {
