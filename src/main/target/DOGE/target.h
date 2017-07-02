@@ -69,9 +69,6 @@
 #define M25P16_CS_PIN           PC15
 #define M25P16_SPI_INSTANCE     SPI2
 
-#define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
-
 #define GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
@@ -101,7 +98,7 @@
 #define SERIAL_PORT_COUNT 6
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+#define ESCSERIAL_TIMER_TX_PIN  PA8 // (Hardware=0)
 
 #define UART1_TX_PIN            PB6
 #define UART1_RX_PIN            PB7

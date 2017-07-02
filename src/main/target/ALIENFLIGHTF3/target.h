@@ -77,7 +77,7 @@
 #define AVOID_UART2_FOR_PWM_PPM
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+#define ESCSERIAL_TIMER_TX_PIN  PB15  // (HARDARE=0)
 
 #define UART1_TX_PIN            PB6
 #define UART1_RX_PIN            PB7

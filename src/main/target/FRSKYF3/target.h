@@ -76,7 +76,7 @@
 
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 
+#define ESCSERIAL_TIMER_TX_PIN  PB9  // (HARDARE=0)
 #define USE_SPI
 #define OSD
 

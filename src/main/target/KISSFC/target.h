@@ -26,7 +26,7 @@
 #define USE_ESC_SENSOR
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 6
+#define ESCSERIAL_TIMER_TX_PIN  PA13  // (Hardware=6, common to KISSFC & KISSCC)
 #define REMAP_TIM17_DMA
 
 #define LED0_PIN                PB1

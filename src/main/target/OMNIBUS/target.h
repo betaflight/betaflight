@@ -87,7 +87,7 @@
 #define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+#define ESCSERIAL_TIMER_TX_PIN  PB4  // (HARDARE=0,PPM)
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1

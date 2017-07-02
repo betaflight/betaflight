@@ -129,7 +129,7 @@
 #define USE_ESC_SENSOR
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+#define ESCSERIAL_TIMER_TX_PIN  PA3  // (HARDARE=0)
 /*---------------------------------*/
 
 /*--------DEFAULT VALUES-----------*/

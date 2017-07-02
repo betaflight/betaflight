@@ -144,12 +144,12 @@
 #define SOFTSERIAL1_RX_PIN      PB0
 #define SOFTSERIAL1_TX_PIN      PB1
     
-    #define SONAR
-    #define SONAR_ECHO_PIN          PB1
-    #define SONAR_TRIGGER_PIN       PB0
+#define SONAR
+#define SONAR_ECHO_PIN          PB1
+#define SONAR_TRIGGER_PIN       PB0
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+#define ESCSERIAL_TIMER_TX_PIN  PB3  // (HARDARE=0,PPM)
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
