@@ -50,7 +50,7 @@ rangefinder_t rangefinder;
 
 #define RANGEFINDER_HARDWARE_TIMEOUT_MS         500     // Accept 500ms of non-responsive sensor, report HW failure otherwise
 
-#ifdef RANGEFINDER
+#ifdef USE_RANGEFINDER
 PG_REGISTER_WITH_RESET_TEMPLATE(rangefinderConfig_t, rangefinderConfig, PG_RANGEFINDER_CONFIG, 0);
 
 PG_RESET_TEMPLATE(rangefinderConfig_t, rangefinderConfig,

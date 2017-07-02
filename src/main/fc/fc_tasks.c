@@ -173,7 +173,7 @@ void taskUpdatePitot(timeUs_t currentTimeUs)
 }
 #endif
 
-#ifdef RANGEFINDER
+#ifdef USE_RANGEFINDER
 void taskUpdateRangefinder(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
@@ -302,7 +302,7 @@ void fcTasksInit(void)
 #ifdef PITOT
     setTaskEnabled(TASK_PITOT, sensors(SENSOR_PITOT));
 #endif
-#ifdef RANGEFINDER
+#ifdef USE_RANGEFINDER
     setTaskEnabled(TASK_RANGEFINDER, sensors(SENSOR_RANGEFINDER));
 #endif
 #ifdef USE_DASHBOARD
@@ -451,7 +451,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef RANGEFINDER
+#ifdef USE_RANGEFINDER
     [TASK_RANGEFINDER] = {
         .taskName = "RANGEFINDER",
         .taskFunc = taskUpdateRangefinder,

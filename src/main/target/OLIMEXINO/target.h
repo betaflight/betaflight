@@ -58,7 +58,7 @@
 #define MAG
 #define USE_MAG_HMC5883
 
-// #define RANGEFINDER
+// #define USE_RANGEFINDER
 // #define USE_RANGEFINDER_HCSR04
 #define RANGEFINDER_HCSR04_TRIGGER_PIN       PB0 // RX7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
 #define RANGEFINDER_HCSR04_ECHO_PIN          PB1 // RX8 (PB1) - only 3.3v ( add a 1K Ohms resistor )

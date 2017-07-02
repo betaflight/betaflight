@@ -94,7 +94,7 @@
 // USART2, PA3
 #define BIND_PIN                PA3
 
-// #define RANGEFINDER
+// #define USE_RANGEFINDER
 // #define USE_RANGEFINDER_HCSR04
 // #define RANGEFINDER_HCSR04_TRIGGER_PIN       PA2   // PWM6 (PA2) - only 3.3v ( add a 1K Ohms resistor )
 // #define RANGEFINDER_HCSR04_ECHO_PIN          PB1   // PWM7 (PB1) - only 3.3v ( add a 1K Ohms resistor )

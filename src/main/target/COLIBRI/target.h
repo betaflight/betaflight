@@ -124,7 +124,7 @@
 #define I2C3_SCL                PA8
 #define I2C3_SDA                PC9
 
-#define RANGEFINDER
+#define USE_RANGEFINDER
 #define USE_RANGEFINDER_HCSR04
 #define RANGEFINDER_HCSR04_TRIGGER_PIN       PB8
 #define RANGEFINDER_HCSR04_ECHO_PIN          PB9

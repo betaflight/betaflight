@@ -469,8 +469,7 @@ static void updatePitotTopic(timeUs_t currentTimeUs)
 }
 #endif
 
-
-#if defined(RANGEFINDER)
+#ifdef(USE_RANGEFINDER)
 /**
  * Read sonar and update alt/vel topic
  *  Function is called from TASK_RANGEFINDER at arbitrary rate - as soon as new measurements are available
@@ -810,7 +809,7 @@ static void updateEstimatedTopic(timeUs_t currentTimeUs)
     }
 
     /* Surface offset */
-#if defined(RANGEFINDER)
+#ifdef(USE_RANGEFINDER)
     posEstimator.est.surface = posEstimator.est.surface + posEstimator.est.surfaceVel * dt;
 
     if (isSonarValid) {

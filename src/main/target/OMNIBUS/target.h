@@ -63,7 +63,7 @@
 #define USE_MAG_HMC5883 // External
 #define USE_MAG_MAG3110 // External
 
-#define RANGEFINDER
+#define USE_RANGEFINDER
 #define USE_RANGEFINDER_HCSR04
 #define RANGEFINDER_HCSR04_ECHO_PIN          PB2  // Has 1K series resistor
 #define RANGEFINDER_HCSR04_TRIGGER_PIN       PB4  // FT

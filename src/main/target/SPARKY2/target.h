@@ -122,7 +122,7 @@
 #define LED_STRIP
 #define LED_STRIP_TIMER         TIM5
 
-// #define RANGEFINDER
+// #define USE_RANGEFINDER
 // #define USE_RANGEFINDER_HCSR04
 // #define RANGEFINDER_HCSR04_TRIGGER_PIN       PC2
 // #define RANGEFINDER_HCSR04_ECHO_PIN          PC3

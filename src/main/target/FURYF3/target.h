@@ -154,7 +154,7 @@
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 
-#define RANGEFINDER
+#define USE_RANGEFINDER
 #define USE_RANGEFINDER_HCSR04
 #define RANGEFINDER_HCSR04_TRIGGER_PIN       PB0 // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
 #define RANGEFINDER_HCSR04_ECHO_PIN          PB1 // RC_CH8 (PB1) - only 3.3v ( add a 1K Ohms resistor )

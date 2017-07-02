@@ -658,7 +658,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_SONAR_ALTITUDE:
-#if defined(RANGEFINDER)
+#ifdef(USE_RANGEFINDER)
         sbufWriteU32(dst, rangefinderGetLatestAltitude());
 #else
         sbufWriteU32(dst, 0);
@@ -1152,7 +1152,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #else
         sbufWriteU8(dst, 0);
 #endif
-#ifdef RANGEFINDER
+#ifdef USE_RANGEFINDER
         sbufWriteU8(dst, rangefinderConfig()->rangefinder_hardware);
 #else
         sbufWriteU8(dst, 0);
@@ -1663,7 +1663,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
         sbufReadU8(src);
 #endif
-#ifdef RANGEFINDER
+#ifdef USE_RANGEFINDER
         rangefinderConfigMutable()->rangefinder_hardware = sbufReadU8(src);
 #else
         sbufReadU8(src);        // rangefinder hardware

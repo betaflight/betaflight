@@ -371,7 +371,7 @@ typedef enum {
 #ifdef MAG
     TABLE_MAG_HARDWARE,
 #endif
-#ifdef RANGEFINDER
+#ifdef USE_RANGEFINDER
     TABLE_RANGEFINDER_HARDWARE,   // currently not used
 #endif
 #ifdef PITOT
@@ -428,7 +428,7 @@ static const lookupTableEntry_t lookupTables[] = {
 #ifdef MAG
     { lookupTableMagHardware, sizeof(lookupTableMagHardware) / sizeof(char *) },
 #endif
-#ifdef RANGEFINDER
+#ifdef USE_RANGEFINDER
     { lookupTableRangefinderHardware, sizeof(lookupTableRangefinderHardware) / sizeof(char *) },
 #endif
 #ifdef PITOT
@@ -548,7 +548,7 @@ static const clivalue_t valueTable[] = {
     { "accgain_z",                  VAR_INT16  | MASTER_VALUE, .config.minmax = { 1,  8192 }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, accGain.raw[Z]) },
 
 // PG_RANGEFINDER_CONFIG
-#ifdef RANGEFINDER
+#ifdef USE_RANGEFINDER
     { "rangefinder_hardware",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RANGEFINDER_HARDWARE }, PG_RANGEFINDER_CONFIG, offsetof(rangefinderConfig_t, rangefinder_hardware) },
 #endif
 

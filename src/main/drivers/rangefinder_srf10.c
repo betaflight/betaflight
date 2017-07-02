@@ -20,7 +20,7 @@
 
 #include "platform.h"
 
-#if defined(RANGEFINDER) && defined(USE_RANGEFINDER_SRF10)
+#if defined(USE_RANGEFINDER) && defined(USE_RANGEFINDER_SRF10)
 
 #include "build/build_config.h"
 
