@@ -240,6 +240,14 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len
     return true;
 }
 
+bool spiBusTransfer(const busDevice_t *bus, uint8_t *rxData, const uint8_t *txData, int length)
+{
+    IOLo(bus->spi.csnPin);
+    spiTransfer(bus->spi.instance, rxData, txData, length);
+    IOHi(bus->spi.csnPin);
+    return true;
+}
+
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
 {
 #define BR_CLEAR_MASK 0xFFC7

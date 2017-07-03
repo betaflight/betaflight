@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "drivers/bus.h"
 #include "drivers/io_types.h"
 #include "drivers/bus.h"
 #include "drivers/rcc_types.h"
@@ -92,6 +93,8 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len
 uint16_t spiGetErrorCounter(SPI_TypeDef *instance);
 void spiResetErrorCounter(SPI_TypeDef *instance);
 SPIDevice spiDeviceByInstance(SPI_TypeDef *instance);
+
+bool spiBusTransfer(const busDevice_t *bus, uint8_t *rxData, const uint8_t *txData, int length);
 
 #if defined(USE_HAL_DRIVER)
 SPI_HandleTypeDef* spiHandleByInstance(SPI_TypeDef *instance);
