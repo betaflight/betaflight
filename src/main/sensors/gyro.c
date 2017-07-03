@@ -77,6 +77,8 @@ typedef struct gyroCalibration_s {
     uint16_t calibratingG;
 } gyroCalibration_t;
 
+bool firstArmingCalibrationWasStarted = false;
+
 typedef union gyroSoftFilter_u {
     biquadFilter_t gyroFilterLpfState[XYZ_AXIS_COUNT];
     pt1Filter_t gyroFilterPt1State[XYZ_AXIS_COUNT];
@@ -489,9 +491,20 @@ static void gyroSetCalibrationCycles(gyroSensor_t *gyroSensor)
     gyroSensor->calibration.calibratingG = gyroCalculateCalibratingCycles();
 }
 
-void gyroStartCalibration(void)
+void gyroStartCalibration(bool isFirstArmingCalibration)
 {
-    gyroSetCalibrationCycles(&gyroSensor0);
+    if (!(isFirstArmingCalibration && firstArmingCalibrationWasStarted)) {
+        gyroSetCalibrationCycles(&gyroSensor0);
+
+        if (isFirstArmingCalibration) {
+            firstArmingCalibrationWasStarted = true;
+        }
+    }
+}
+
+bool isFirstArmingGyroCalibrationRunning(void)
+{
+    return firstArmingCalibrationWasStarted && !isGyroCalibrationComplete();
 }
 
 STATIC_UNIT_TESTED void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t gyroMovementCalibrationThreshold)
@@ -525,7 +538,9 @@ STATIC_UNIT_TESTED void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t
 
     if (isOnFinalGyroCalibrationCycle(&gyroSensor->calibration)) {
         schedulerResetTaskStatistics(TASK_SELF); // so calibration cycles do not pollute tasks statistics
-        beeper(BEEPER_GYRO_CALIBRATED);
+        if (!firstArmingCalibrationWasStarted || !isArmingDisabled()) {
+            beeper(BEEPER_GYRO_CALIBRATED);
+        }
     }
     --gyroSensor->calibration.calibratingG;
 

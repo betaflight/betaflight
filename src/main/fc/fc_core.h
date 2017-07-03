@@ -40,6 +40,8 @@ union rollAndPitchTrims_u;
 void applyAndSaveAccelerometerTrimsDelta(union rollAndPitchTrims_u *rollAndPitchTrimsDelta);
 void handleInflightCalibrationStickPosition();
 
+void resetArmingDisabled(void);
+
 void disarm(void);
 void tryArm(void);
 
