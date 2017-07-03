@@ -252,11 +252,11 @@ void init(void)
 #ifdef USE_RANGEFINDER_HCSR04
     // HC-SR04 has a dedicated connection to FC and require two pins
     if (rangefinderConfig()->rangefinder_hardware == RANGEFINDER_HCSR04) {
-        const rangefinderHardwarePins_t *sonarHardware = sonarGetHardwarePins();
-        if (sonarHardware) {
-            pwm_params.useSonar = true;
-            pwm_params.sonarIOConfig.triggerTag = sonarHardware->triggerTag;
-            pwm_params.sonarIOConfig.echoTag = sonarHardware->echoTag;
+        const rangefinderHardwarePins_t *rangefinderHardwarePins = rangefinderGetHardwarePins();
+        if (rangefinderHardwarePins) {
+            pwm_params.useTriggerRangefinder = true;
+            pwm_params.rangefinderIOConfig.triggerTag = rangefinderHardwarePins->triggerTag;
+            pwm_params.rangefinderIOConfig.echoTag = rangefinderHardwarePins->echoTag;
         }
     }
 #endif

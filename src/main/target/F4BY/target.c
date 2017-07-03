@@ -24,6 +24,6 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM1, IO_TAG(PE13), TIM_Channel_3, 1, IOCFG_AF_PP, GPIO_AF_TIM1,  TIM_USE_MC_MOTOR |                    TIM_USE_FW_SERVO},    // S7_OUT
     { TIM1, IO_TAG(PE14), TIM_Channel_4, 1, IOCFG_AF_PP, GPIO_AF_TIM1,  TIM_USE_MC_MOTOR |                    TIM_USE_FW_SERVO},    // S8_OUT
    
-    { TIM9, IO_TAG(PE6), TIM_Channel_2, 0, IOCFG_AF_PP, GPIO_AF_TIM9,   TIM_USE_ANY },          // sonar echo if needed
+    { TIM9, IO_TAG(PE6), TIM_Channel_2, 0, IOCFG_AF_PP, GPIO_AF_TIM9,   TIM_USE_ANY },          // HC-SR04 echo if needed
 };
 

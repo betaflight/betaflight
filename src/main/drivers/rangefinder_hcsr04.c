@@ -147,7 +147,7 @@ int32_t hcsr04_get_distance(void)
     return lastCalculatedDistance;
 }
 
-bool hcsr04Detect(rangefinderDev_t *dev, const rangefinderHardwarePins_t * sonarHardwarePins)
+bool hcsr04Detect(rangefinderDev_t *dev, const rangefinderHardwarePins_t * rangefinderHardwarePins)
 {
     bool detected = false;
 
@@ -160,8 +160,8 @@ bool hcsr04Detect(rangefinderDev_t *dev, const rangefinderHardwarePins_t * sonar
     RCC_ClockCmd(RCC_APB2(SYSCFG), ENABLE);
 #endif
 
-    triggerIO = IOGetByTag(sonarHardwarePins->triggerTag);
-    echoIO = IOGetByTag(sonarHardwarePins->echoTag);
+    triggerIO = IOGetByTag(rangefinderHardwarePins->triggerTag);
+    echoIO = IOGetByTag(rangefinderHardwarePins->echoTag);
 
     if (IOGetOwner(triggerIO) != OWNER_FREE) {
         addBootlogEvent4(BOOT_EVENT_HARDWARE_IO_CONFLICT, BOOT_EVENT_FLAGS_WARNING, IOGetOwner(triggerIO), OWNER_RANGEFINDER);

@@ -98,8 +98,8 @@
 // RC1              GND
 // RC2              power
 // RC3  PB6/TIM4    unused
-// RC4  PB5/TIM3    SCK / softserial1 TX / sonar trigger
-// RC5  PB0/TIM3    MISO / softserial1 RX / sonar echo / RSSI ADC
+// RC4  PB5/TIM3    SCK / softserial1 TX / HC-SR04 trigger
+// RC5  PB0/TIM3    MISO / softserial1 RX / HC-SR04 echo / RSSI ADC
 // RC6  PB1/TIM3    MOSI / current
 // RC7  PA0/TIM2    CSN / battery voltage
 // RC8  PA1/TIM2    CE / RX_PPM

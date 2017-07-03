@@ -21,4 +21,4 @@
 
 #define RANGEFINDER_HCSR04_TASK_PERIOD_MS 70
 
-bool hcsr04Detect(rangefinderDev_t *dev, const rangefinderHardwarePins_t * sonarHardwarePins);
+bool hcsr04Detect(rangefinderDev_t *dev, const rangefinderHardwarePins_t * rangefinderHardwarePins);

@@ -59,7 +59,7 @@ PG_RESET_TEMPLATE(rangefinderConfig_t, rangefinderConfig,
     .rangefinder_hardware = RANGEFINDER_NONE,
 );
 
-const rangefinderHardwarePins_t * sonarGetHardwarePins(void)
+const rangefinderHardwarePins_t * rangefinderGetHardwarePins(void)
 {
     static rangefinderHardwarePins_t rangefinderHardwarePins;
 
@@ -95,8 +95,8 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
         case RANGEFINDER_HCSR04:
 #ifdef USE_RANGEFINDER_HCSR04
             {
-                const rangefinderHardwarePins_t *sonarHardwarePins = sonarGetHardwarePins();
-                if (hcsr04Detect(dev, sonarHardwarePins)) {   // FIXME: Do actual detection if HC-SR04 is plugged in
+                const rangefinderHardwarePins_t *rangefinderHardwarePins = rangefinderGetHardwarePins();
+                if (hcsr04Detect(dev, rangefinderHardwarePins)) {   // FIXME: Do actual detection if HC-SR04 is plugged in
                     rangefinderHardware = RANGEFINDER_HCSR04;
                     rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_HCSR04_TASK_PERIOD_MS));
                 }

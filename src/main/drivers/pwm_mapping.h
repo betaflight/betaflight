@@ -44,10 +44,10 @@
 
 #define MAX_INPUTS  8
 
-typedef struct sonarIOConfig_s {
+typedef struct rangefinderIOConfig_s {
     ioTag_t triggerTag;
     ioTag_t echoTag;
-} sonarIOConfig_t;
+} rangefinderIOConfig_t;
 
 typedef enum {
     PLATFORM_MULTIROTOR     = 0,
@@ -72,7 +72,7 @@ typedef struct drv_pwm_config_s {
     bool useSoftSerial;
     bool useLEDStrip;
 #ifdef USE_RANGEFINDER
-    bool useSonar;
+    bool useTriggerRangefinder;
 #endif
 #ifdef USE_SERVOS
     bool useServoOutputs;
@@ -84,7 +84,7 @@ typedef struct drv_pwm_config_s {
     uint16_t motorPwmRate;
     uint16_t idlePulse;  // PWM value to use when initializing the driver. set this to either PULSE_1MS (regular pwm),
                          // some higher value (used by 3d mode), or 0, for brushed pwm drivers.
-    sonarIOConfig_t sonarIOConfig;
+    rangefinderIOConfig_t rangefinderIOConfig;
 } drv_pwm_config_t;
 
 typedef enum {

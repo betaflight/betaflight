@@ -155,10 +155,10 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #endif
 
 #ifdef USE_RANGEFINDER_HCSR04
-        if (init->useSonar &&
+        if (init->useTriggerRangefinder &&
             (
-                timerHardwarePtr->tag == init->sonarIOConfig.triggerTag ||
-                timerHardwarePtr->tag == init->sonarIOConfig.echoTag
+                timerHardwarePtr->tag == init->rangefinderIOConfig.triggerTag ||
+                timerHardwarePtr->tag == init->rangefinderIOConfig.echoTag
             )) {
             addBootlogEvent6(BOOT_EVENT_TIMER_CH_SKIPPED, BOOT_EVENT_FLAGS_WARNING, timerIndex, pwmIOConfiguration.motorCount, pwmIOConfiguration.servoCount, 3);
             continue;
