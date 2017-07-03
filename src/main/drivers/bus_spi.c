@@ -51,7 +51,7 @@ SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
 
 #ifdef USE_SPI_DEVICE_4
     if (instance == SPI4)
-        return SPIDEV_3;
+        return SPIDEV_4;
 #endif
 
     return SPIINVALID;
