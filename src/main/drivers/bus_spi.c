@@ -122,19 +122,18 @@ void spiInitDevice(SPIDevice device)
 
 bool spiInit(SPIDevice device)
 {
-    switch (device)
-    {
+    switch (device) {
     case SPIINVALID:
         return false;
     case SPIDEV_1:
-#ifdef USE_SPI_DEVICE_1
+#if defined(USE_SPI_DEVICE_1)
         spiInitDevice(device);
         return true;
 #else
         break;
 #endif
     case SPIDEV_2:
-#ifdef USE_SPI_DEVICE_2
+#if defined(USE_SPI_DEVICE_2)
         spiInitDevice(device);
         return true;
 #else
@@ -167,32 +166,6 @@ uint32_t spiTimeoutUserCallback(SPI_TypeDef *instance)
     return spiDevice[device].errorCount;
 }
 
-// return uint8_t value or -1 when failure
-uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data)
-{
-    uint16_t spiTimeout = 1000;
-
-    while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET)
-        if ((spiTimeout--) == 0)
-            return spiTimeoutUserCallback(instance);
-
-#ifdef STM32F303xC
-    SPI_SendData8(instance, data);
-#else
-    SPI_I2S_SendData(instance, data);
-#endif
-    spiTimeout = 1000;
-    while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_RXNE) == RESET)
-        if ((spiTimeout--) == 0)
-            return spiTimeoutUserCallback(instance);
-
-#ifdef STM32F303xC
-    return ((uint8_t)SPI_ReceiveData8(instance));
-#else
-    return ((uint8_t)SPI_I2S_ReceiveData(instance));
-#endif
-}
-
 /**
  * Return true if the bus is currently in the middle of a transmission.
  */
@@ -204,6 +177,34 @@ bool spiIsBusBusy(SPI_TypeDef *instance)
     return SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET || SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_BSY) == SET;
 #endif
 
+}
+
+void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
+{
+#define BR_CLEAR_MASK 0xFFC7
+    uint16_t tempRegister;
+
+    SPI_Cmd(instance, DISABLE);
+
+    tempRegister = (instance->CR1 & BR_CLEAR_MASK);
+    instance->CR1 = (tempRegister | ((ffs(divisor | 0x100) - 2) << 3));
+
+    SPI_Cmd(instance, ENABLE);
+}
+
+uint16_t spiGetErrorCounter(SPI_TypeDef *instance)
+{
+    SPIDevice device = spiDeviceByInstance(instance);
+    if (device == SPIINVALID)
+        return 0;
+    return spiDevice[device].errorCount;
+}
+
+void spiResetErrorCounter(SPI_TypeDef *instance)
+{
+    SPIDevice device = spiDeviceByInstance(instance);
+    if (device != SPIINVALID)
+        spiDevice[device].errorCount = 0;
 }
 
 bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len)
@@ -236,46 +237,33 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len
         if (out)
             *(out++) = b;
     }
-
     return true;
 }
 
-void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
+// return uint8_t value or -1 when failure
+uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data)
 {
-#define BR_CLEAR_MASK 0xFFC7
-    uint16_t tempRegister;
+    uint16_t spiTimeout = 1000;
 
-    SPI_Cmd(instance, DISABLE);
+    while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET)
+        if ((spiTimeout--) == 0)
+            return spiTimeoutUserCallback(instance);
 
-    tempRegister = (instance->CR1 & BR_CLEAR_MASK);
-    instance->CR1 = (tempRegister | ((ffs(divisor | 0x100) - 2) << 3));
+#ifdef STM32F303xC
+    SPI_SendData8(instance, data);
+#else
+    SPI_I2S_SendData(instance, data);
+#endif
+    spiTimeout = 1000;
+    while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_RXNE) == RESET)
+        if ((spiTimeout--) == 0)
+            return spiTimeoutUserCallback(instance);
 
-    SPI_Cmd(instance, ENABLE);
-}
-
-uint16_t spiGetErrorCounter(SPI_TypeDef *instance)
-{
-    SPIDevice device = spiDeviceByInstance(instance);
-    if (device == SPIINVALID)
-        return 0;
-    return spiDevice[device].errorCount;
-}
-
-void spiResetErrorCounter(SPI_TypeDef *instance)
-{
-    SPIDevice device = spiDeviceByInstance(instance);
-    if (device != SPIINVALID)
-        spiDevice[device].errorCount = 0;
-}
-
-bool spiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
-{
-    IOLo(bus->spi.csnPin);
-    spiTransferByte(bus->spi.instance, reg);
-    spiTransferByte(bus->spi.instance, data);
-    IOHi(bus->spi.csnPin);
-
-    return true;
+#ifdef STM32F303xC
+    return ((uint8_t)SPI_ReceiveData8(instance));
+#else
+    return ((uint8_t)SPI_I2S_ReceiveData(instance));
+#endif
 }
 
 bool spiReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data)
@@ -284,7 +272,6 @@ bool spiReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t length, 
     spiTransferByte(bus->spi.instance, reg | 0x80); // read transaction
     spiTransfer(bus->spi.instance, data, NULL, length);
     IOHi(bus->spi.csnPin);
-
     return true;
 }
 
@@ -295,8 +282,16 @@ uint8_t spiReadRegister(const busDevice_t *bus, uint8_t reg)
     spiTransferByte(bus->spi.instance, reg | 0x80); // read transaction
     spiTransfer(bus->spi.instance, &data, NULL, 1);
     IOHi(bus->spi.csnPin);
-
     return data;
+}
+
+bool spiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
+{
+    IOLo(bus->spi.csnPin);
+    spiTransferByte(bus->spi.instance, reg);
+    spiTransferByte(bus->spi.instance, data);
+    IOHi(bus->spi.csnPin);
+    return true;
 }
 
 void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance)
