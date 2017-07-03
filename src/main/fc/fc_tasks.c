@@ -451,7 +451,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_RANGEFINDER] = {
         .taskName = "RANGEFINDER",
         .taskFunc = taskUpdateRangefinder,
-        .desiredPeriod = TASK_PERIOD_MS(50),
+        .desiredPeriod = TASK_PERIOD_MS(70),
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
