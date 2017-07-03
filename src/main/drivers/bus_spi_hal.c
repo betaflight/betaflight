@@ -261,6 +261,62 @@ bool spiIsBusBusy(SPI_TypeDef *instance)
         return false;
 }
 
+static HAL_StatusTypeDef spiTransferByHandle(SPI_HandleTypeDef *hspi, const uint8_t *txData, uint8_t *rxData, int len)
+{
+    __HAL_LOCK(hspi);
+    // Don't overwrite State in case of HAL_SPI_STATE_BUSY_RX
+    if (hspi->State != HAL_SPI_STATE_BUSY_RX) {
+        hspi->State = HAL_SPI_STATE_BUSY_TX_RX;
+    }
+
+    // Set the transaction information
+    hspi->ErrorCode   = HAL_SPI_ERROR_NONE;
+    hspi->pRxBuffPtr  = (uint8_t *)rxData;
+    hspi->RxXferCount = rxData ? len : 0;
+    hspi->RxXferSize  = rxData ? len : 0;
+    hspi->pTxBuffPtr  = (uint8_t *)txData;
+    hspi->TxXferCount = txData ? len : 0;
+    hspi->TxXferSize  = txData ? len : 0;
+    // Set not used fields to NULL
+    hspi->RxISR       = NULL;
+    hspi->TxISR       = NULL;
+
+    // set rx fifo threshold according the reception data length: 8bit
+    SET_BIT(hspi->Instance->CR2, SPI_RXFIFO_THRESHOLD);
+
+    // Check if the SPI is already enabled
+    if ((hspi->Instance->CR1 & SPI_CR1_SPE) != SPI_CR1_SPE) {
+        __HAL_SPI_ENABLE(hspi);
+    }
+
+    uint16_t spiTimeout = 1000;
+    while (len--) {
+        uint8_t b = txData ? *(txData++) : 0xFF;
+        while (__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_TXE)) {
+            if ((spiTimeout--) == 0) {
+                return spiTimeoutUserCallback(hspi->Instance);
+            }
+        }
+        *(__IO uint8_t *)&hspi->Instance->DR = b;
+        --hspi->TxXferCount;
+        spiTimeout = 1000;
+        while (__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_RXNE)) {
+            if ((spiTimeout--) == 0) {
+                return spiTimeoutUserCallback(hspi->Instance);
+            }
+        }
+        b = *(__IO uint8_t *)&hspi->Instance->DR;
+        --hspi->RxXferCount;
+        if (rxData) {
+            *(rxData++) = b;
+        }
+    }
+
+    hspi->State = HAL_SPI_STATE_READY;
+    __HAL_UNLOCK(hspi);
+    return HAL_OK;
+}
+
 bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len)
 {
     SPIDevice device = spiDeviceByInstance(instance);
@@ -314,7 +370,8 @@ static uint8_t spiBusTransferByte(const busDevice_t *bus, uint8_t in)
 bool spiBusTransfer(const busDevice_t *bus, uint8_t *rxData, const uint8_t *txData, int len)
 {
     IOLo(bus->spi.csnPin);
-    const HAL_StatusTypeDef status = HAL_SPI_TransmitReceive(bus->spi.handle, txData, rxData, len, SPI_DEFAULT_TIMEOUT);
+    //const HAL_StatusTypeDef status = HAL_SPI_TransmitReceive(bus->spi.handle, txData, rxData, len, SPI_DEFAULT_TIMEOUT);
+    const HAL_StatusTypeDef status = spiTransferByHandle(bus->spi.handle, txData, rxData, len);
     IOHi(bus->spi.csnPin);
     if (status != HAL_OK) {
         spiTimeoutUserCallback(bus->spi.instance);
