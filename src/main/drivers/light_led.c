@@ -29,17 +29,23 @@ PG_REGISTER_WITH_RESET_FN(statusLedConfig_t, statusLedConfig, PG_STATUS_LED_CONF
 static IO_t leds[STATUS_LED_NUMBER];
 static uint8_t ledInversion = 0;
 
+#ifndef LED0_PIN
+#define LED0_PIN NONE
+#endif
+
+#ifndef LED1_PIN
+#define LED1_PIN NONE
+#endif
+
+#ifndef LED2_PIN
+#define LED2_PIN NONE
+#endif
+
 void pgResetFn_statusLedConfig(statusLedConfig_t *statusLedConfig)
 {
-#ifdef LED0_PIN
     statusLedConfig->ioTags[0] = IO_TAG(LED0_PIN);
-#endif
-#ifdef LED1_PIN
     statusLedConfig->ioTags[1] = IO_TAG(LED1_PIN);
-#endif
-#ifdef LED2_PIN
     statusLedConfig->ioTags[2] = IO_TAG(LED2_PIN);
-#endif
 
     statusLedConfig->inversion = 0
 #ifdef LED0_INVERTED
