@@ -48,9 +48,6 @@ extern "C" {
 
     void osdRefresh(timeUs_t currentTimeUs);
 
-    uint8_t stateFlags;
-    uint8_t armingFlags;
-    uint16_t flightModeFlags;
     uint16_t rssi;
     attitudeEulerAngles_t attitude;
     pidProfile_t *currentPidProfile;
@@ -498,9 +495,8 @@ TEST(OsdTest, TestElementRssi)
 
 // STUBS
 extern "C" {
-    bool sensors(uint32_t mask) {
-        UNUSED(mask);
-        return true;
+    void beeperConfirmationBeeps(uint8_t beepCount) {
+        UNUSED(beepCount);
     }
 
     bool IS_RC_MODE_ACTIVE(boxId_e boxId) {
@@ -574,7 +570,4 @@ extern "C" {
         UNUSED(pDisplay);
         return false;
     }
-
-    void setArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
-    void unsetArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
 }

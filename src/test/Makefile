@@ -113,7 +113,8 @@ osd_unittest_SRC := \
 		$(USER_DIR)/common/typeconversion.c \
 		$(USER_DIR)/drivers/display.c \
 		$(USER_DIR)/common/maths.c \
-		$(USER_DIR)/common/printf.c
+		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/fc/runtime_config.c
 
 osd_unittest_DEFINES := \
 		OSD

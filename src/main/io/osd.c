@@ -128,7 +128,6 @@ static uint8_t armState;
 
 static displayPort_t *osdDisplayPort;
 
-
 #define AH_MAX_PITCH 200 // Specify maximum AHI pitch value displayed. Default 200 = 20.0 degrees
 #define AH_MAX_ROLL 400  // Specify maximum AHI roll value displayed. Default 400 = 40.0 degrees
 #define AH_SIDEBAR_WIDTH_POS 7
@@ -520,6 +519,19 @@ static void osdDrawSingleElement(uint8_t item)
         }
 
     case OSD_WARNINGS:
+        /* Show common reason for arming being disabled */
+        if (IS_RC_MODE_ACTIVE(BOXARM) && isArmingDisabled()) {
+            const armingDisableFlags_e flags = getArmingDisableFlags();
+            for (int i = 0; i < NUM_ARMING_DISABLE_FLAGS; i++) {
+                if (flags & (1 << i)) {
+                    tfp_sprintf(buff, "%s", armingDisableFlagNames[i]);
+                    break;
+                }
+            }
+            break;
+        }
+
+        /* Show battery state warning */
         switch(getBatteryState()) {
         case BATTERY_WARNING:
             tfp_sprintf(buff, "LOW BATTERY");
@@ -530,6 +542,7 @@ static void osdDrawSingleElement(uint8_t item)
             break;
 
         default:
+            /* Show visual beeper if battery is OK */
             if (showVisualBeeper) {
                 tfp_sprintf(buff, "  * * * *");
             } else {
