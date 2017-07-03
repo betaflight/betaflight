@@ -21,8 +21,8 @@
 
 #define USBD_PRODUCT_STRING "AnyFCF7"
 
-#define LED0   PB7
-#define LED1   PB6
+#define LED0_PIN   PB7
+#define LED1_PIN   PB6
 
 #define BEEPER   PB2 // Unused pin, can be mapped to elsewhere
 #define BEEPER_INVERTED

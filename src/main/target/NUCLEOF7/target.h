@@ -21,8 +21,8 @@
 
 #define USBD_PRODUCT_STRING "NucleoF7"
 
-#define LED0   PB7
-#define LED1   PB14
+#define LED0_PIN   PB7
+#define LED1_PIN   PB14
 
 #define BEEPER   PA0
 #define BEEPER_INVERTED

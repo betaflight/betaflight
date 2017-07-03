@@ -23,8 +23,8 @@
 
 #define USE_ESC_SENSOR
 
-#define LED0   PB6  //red
-#define LED1   PB9  //blue
+#define LED0_PIN   PB6  //red
+#define LED1_PIN   PB9  //blue
 
 #define BEEPER   PB2 // Unused pin, can be mapped to elsewhere
 #define BEEPER_INVERTED
