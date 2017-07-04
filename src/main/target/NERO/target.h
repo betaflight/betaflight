@@ -94,8 +94,9 @@
 
 #define SERIAL_PORT_COUNT       6
 
-//#define USE_ESCSERIAL //TODO: make ESC serial F7 compatible
-//#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+#define ESCSERIAL_TIMER_TX_PIN  PC7 // XXX Provisional (Hardware=0, PPM)
 
 #define USE_SPI
 
