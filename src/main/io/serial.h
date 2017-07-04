@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "common/optimization.h"
 #include "config/parameter_group.h"
 #include "drivers/serial.h"
 
@@ -127,22 +128,22 @@ typedef void serialConsumer(uint8_t);
 //
 // configuration
 //
-void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisable);
-void serialRemovePort(serialPortIdentifier_e identifier);
-uint8_t serialGetAvailablePortCount(void);
-bool serialIsPortAvailable(serialPortIdentifier_e identifier);
-bool isSerialConfigValid(const serialConfig_t *serialConfig);
-serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e identifier);
-bool doesConfigurationUsePort(serialPortIdentifier_e portIdentifier);
-serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function);
-serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function);
+void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisable) OPTIMIZE_FOR_SIZE;
+void serialRemovePort(serialPortIdentifier_e identifier) OPTIMIZE_FOR_SIZE;
+uint8_t serialGetAvailablePortCount(void) OPTIMIZE_FOR_SIZE;
+bool serialIsPortAvailable(serialPortIdentifier_e identifier) OPTIMIZE_FOR_SIZE;
+bool isSerialConfigValid(const serialConfig_t *serialConfig) OPTIMIZE_FOR_SIZE;
+serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e identifier) OPTIMIZE_FOR_SIZE;
+bool doesConfigurationUsePort(serialPortIdentifier_e portIdentifier) OPTIMIZE_FOR_SIZE;
+serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function) OPTIMIZE_FOR_SIZE;
+serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function) OPTIMIZE_FOR_SIZE;
 
-portSharing_e determinePortSharing(const serialPortConfig_t *portConfig, serialPortFunction_e function);
-bool isSerialPortShared(const serialPortConfig_t *portConfig, uint16_t functionMask, serialPortFunction_e sharedWithFunction);
+portSharing_e determinePortSharing(const serialPortConfig_t *portConfig, serialPortFunction_e function) OPTIMIZE_FOR_SIZE;
+bool isSerialPortShared(const serialPortConfig_t *portConfig, uint16_t functionMask, serialPortFunction_e sharedWithFunction) OPTIMIZE_FOR_SIZE;
 
-void pgResetFn_serialConfig(serialConfig_t *serialConfig); //!!TODO remove need for this
-serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identifier);
-int findSerialPortIndexByIdentifier(serialPortIdentifier_e identifier);
+void pgResetFn_serialConfig(serialConfig_t *serialConfig) OPTIMIZE_FOR_SIZE; //!!TODO remove need for this
+serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identifier) OPTIMIZE_FOR_SIZE;
+int findSerialPortIndexByIdentifier(serialPortIdentifier_e identifier) OPTIMIZE_FOR_SIZE;
 //
 // runtime
 //
@@ -153,8 +154,8 @@ serialPort_t *openSerialPort(
     uint32_t baudrate,
     portMode_t mode,
     portOptions_t options
-);
-void closeSerialPort(serialPort_t *serialPort);
+) OPTIMIZE_FOR_SIZE;
+void closeSerialPort(serialPort_t *serialPort) OPTIMIZE_FOR_SIZE;
 
 void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort);
 
@@ -164,5 +165,5 @@ baudRate_e lookupBaudRateIndex(uint32_t baudRate);
 //
 // msp/cli/bootloader
 //
-void serialEvaluateNonMspData(serialPort_t *serialPort, uint8_t receivedChar);
-void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *leftC, serialConsumer *rightC);
+void serialEvaluateNonMspData(serialPort_t *serialPort, uint8_t receivedChar) __attribute__((optimize("Os")));
+void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *leftC, serialConsumer *rightC)__attribute__((optimize("Os")));
