@@ -11,8 +11,12 @@ Vagrant.configure(2) do |config|
   # https://docs.vagrantup.com.
 
   # Every Vagrant development environment requires a box. You can search for
-  # boxes at https://atlas.hashicorp.com/search.
-  config.vm.box = "ubuntu/trusty64"
+  # boxes at https://app.vagrantup.com/boxes/search
+  config.vm.box = "ubuntu/xenial64"
+
+  config.vm.provider "virtualbox" do |v|
+      v.memory = 4096
+  end
 
   # Enable provisioning with a shell script. Additional provisioners such as
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
@@ -21,7 +25,8 @@ Vagrant.configure(2) do |config|
     apt-get remove -y binutils-arm-none-eabi gcc-arm-none-eabi
     add-apt-repository ppa:team-gcc-arm-embedded/ppa
     apt-get update
-    apt-get install -y git ccache gcc-arm-embedded=6-2017q1-1~trusty3
+    apt-get install -y git gcc-arm-embedded=6-2017q2-1~xenial1
+    apt-get install -y make python gcc clang
   SHELL
 end
 
