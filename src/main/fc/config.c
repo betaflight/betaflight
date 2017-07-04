@@ -120,6 +120,16 @@ PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
 
 #ifndef USE_OSD_SLAVE
+#if defined(STM32F4) && !defined(DISABLE_OVERCLOCK)
+PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
+    .pidProfileIndex = 0,
+    .activeRateProfile = 0,
+    .debug_mode = DEBUG_MODE,
+    .task_statistics = true,
+    .cpu_overclock = false,
+    .name = { 0 } // FIXME misplaced, see PG_PILOT_CONFIG in CF v1.x
+);
+#else
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .pidProfileIndex = 0,
     .activeRateProfile = 0,
@@ -127,6 +137,7 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .task_statistics = true,
     .name = { 0 } // FIXME misplaced, see PG_PILOT_CONFIG in CF v1.x
 );
+#endif
 #endif
 
 #ifdef USE_OSD_SLAVE
