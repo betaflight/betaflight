@@ -23,7 +23,8 @@
 
 #include "platform.h"
 
-#if defined(GPS) && defined(GPS_PROTO_NMEA)
+#if defined(GPS)
+#if defined(GPS_PROTO_NMEA) || defined(GPS_PROTO_MTK)
 
 #include "build/build_config.h"
 #include "build/debug.h"
@@ -254,6 +255,8 @@ static bool gpsReceiveData(void)
     return hasNewData;
 }
 
+#ifdef GPS_PROTO_MTK
+
 static uint8_t nmea_conf0[]="$PMTK251,57600*2C\r\n"; //change baudrate to 57600
 static uint8_t nmea_conf1[]="$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28\r\n"; //disable all messages except GGA and RMC
 static uint8_t nmea_conf2[]="$PMTK220,200*2C\r\n"; //5Hz update, should works for most modules
@@ -302,6 +305,8 @@ bool gpsConfigure(void)
     return false;
 }
 
+#endif
+
 static bool gpsInitialize(void)
 {
     gpsSetState(GPS_CHANGE_BAUD);
@@ -310,6 +315,7 @@ static bool gpsInitialize(void)
 
 static bool gpsChangeBaud(void)
 {
+#ifdef GPS_PROTO_MTK
     if ((gpsState.gpsConfig->autoBaud != GPS_AUTOBAUD_OFF) && (gpsState.autoBaudrateIndex < GPS_BAUDRATE_COUNT)) {
         // Do the switch only if TX buffer is empty - make sure all init string was sent at the same baud
         if (isSerialTransmitBufferEmpty(gpsState.gpsPort)) {
@@ -318,8 +324,9 @@ static bool gpsChangeBaud(void)
             gpsState.autoBaudrateIndex++;
             gpsSetState(GPS_CHANGE_BAUD);   // switch to the same state to reset state transition time
         }
-    }
-    else {
+    } else
+#endif
+    {
         gpsFinalizeChangeBaud();
     }
 
@@ -345,7 +352,15 @@ bool gpsHandleNMEA(void)
 
     case GPS_CHECK_VERSION:
     case GPS_CONFIGURE:
-        gpsConfigure();
+#ifdef GPS_PROTO_MTK
+        if(gpsState.gpsConfig->provider == GPS_MTK) {
+            gpsConfigure();
+        } else
+#endif
+        {
+            // No autoconfig, switch straight to receiving data
+            gpsSetState(GPS_RECEIVING_DATA);
+        }
         return false;
 
     case GPS_RECEIVING_DATA:
@@ -353,4 +368,5 @@ bool gpsHandleNMEA(void)
     }
 }
 
+#endif
 #endif
