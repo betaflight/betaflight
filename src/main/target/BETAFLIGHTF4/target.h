@@ -17,25 +17,18 @@
 
 #pragma once
 
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
-
 #define TARGET_BOARD_IDENTIFIER "BFF4"
 #define USBD_PRODUCT_STRING     "BetaFlightF4"
 
-#ifdef OPBL
-#define USBD_SERIALNUMBER_STRING "0x8020000"
-#endif
-
-
 #define USE_ESC_SENSOR
 
-#define LED0                    PB5
+#define LED0_PIN                PB5
 
 // Leave beeper here but with none as io - so disabled unless mapped.
 #define BEEPER                  PB4
 
 // PC0 used as inverter select GPIO
-#define INVERTER_PIN_USART6     PC13
+#define INVERTER_PIN_UART6      PC13
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
@@ -146,6 +139,6 @@
 #define TARGET_IO_PORTD         (BIT(2))
 
 
-#define USABLE_TIMER_CHANNEL_COUNT 11
+#define USABLE_TIMER_CHANNEL_COUNT 8
 
-#define USED_TIMERS             ( TIM_N(1) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9) )
+#define USED_TIMERS             ( TIM_N(1) | TIM_N(3) | TIM_N(4) | TIM_N(8) )
