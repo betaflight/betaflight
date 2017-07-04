@@ -59,7 +59,7 @@ static uint8_t screenBuffer[VIDEO_BUFFER_CHARS_PAL+40]; //for faster writes we u
 static uint8_t shadowBuffer[VIDEO_BUFFER_CHARS_PAL];
 
 //max chars to update in one idle
-#define MAX_CHARS2UPDATE    100
+#define MAX_CHARS2UPDATE    50
 #ifdef MAX7456_DMA_CHANNEL_TX
 volatile bool dmaTransactionInProgress = false;
 #endif
@@ -309,7 +309,7 @@ bool max7456DmaInProgres(void)
 }
 #endif
 
-void max7456DrawScreen(void)
+void max7456DrawScreenPartial(void)
 {
     uint8_t check;
     static uint16_t pos = 0;
