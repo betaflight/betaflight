@@ -108,7 +108,6 @@ int16_t magHold;
 
 int16_t headFreeModeHold;
 
-uint8_t motorControlEnable = false;
 static bool reverseMotors = false;
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
@@ -627,9 +626,8 @@ static void subTaskMotorUpdate(void)
     }
 #endif
 
-    if (motorControlEnable) {
-        writeMotors();
-    }
+    writeMotors();
+
     DEBUG_SET(DEBUG_PIDLOOP, 3, micros() - startTime);
 }
 

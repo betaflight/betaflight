@@ -2231,7 +2231,7 @@ static void cliDshotProg(char *cmdline)
 
                 break;
             default:
-                motorControlEnable = false;
+                pwmDisableMotors();
 
                 int command = atoi(pch);
                 if (command >= 0 && command < DSHOT_MIN_THROTTLE) {
@@ -2259,7 +2259,7 @@ static void cliDshotProg(char *cmdline)
         pch = strtok_r(NULL, " ", &saveptr);
     }
 
-    motorControlEnable = true;
+    pwmEnableMotors();
 }
 #endif
 

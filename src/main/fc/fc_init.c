@@ -137,8 +137,6 @@
 void targetPreInit(void);
 #endif
 
-extern uint8_t motorControlEnable;
-
 #ifdef SOFTSERIAL_LOOPBACK
 serialPort_t *loopbackPort;
 #endif
@@ -709,7 +707,7 @@ void init(void)
 
     // Latch active features AGAIN since some may be modified by init().
     latchActiveFeatures();
-    motorControlEnable = true;
+    pwmEnableMotors();
 
 #ifdef USE_OSD_SLAVE
     osdSlaveTasksInit();

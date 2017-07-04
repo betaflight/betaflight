@@ -134,11 +134,11 @@ typedef void pwmCompleteWriteFunc(uint8_t motorCount);   // function pointer use
 typedef struct {
     volatile timCCR_t *ccr;
     TIM_TypeDef *tim;
+    float pulseScale;
+    float pulseOffset;
     bool forceOverflow;
     bool enabled;
     IO_t io;
-    float pulseScale;
-    float pulseOffset;
 } pwmOutputPort_t;
 
 typedef struct motorDevConfig_s {

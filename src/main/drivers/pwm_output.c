@@ -169,9 +169,7 @@ static uint8_t loadDmaBufferProshot(motorDmaOutput_t *const motor, uint16_t pack
 
 void pwmWriteMotor(uint8_t index, float value)
 {
-    if (pwmMotorsEnabled) {
-        pwmWrite(index, value);
-    }
+    pwmWrite(index, value);
 }
 
 void pwmShutdownPulsesForAllMotors(uint8_t motorCount)
