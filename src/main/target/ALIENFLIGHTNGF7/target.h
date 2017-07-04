@@ -127,8 +127,9 @@
 
 #define SERIAL_PORT_COUNT       6
 
-//#define USE_ESCSERIAL
-//#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PPM/LED_STRIP
+#define ESCSERIAL_TIMER_TX_PIN  PA8 // XXX Provisional (Hardware=0, PPM) XXX Crash if using an LED strip.
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
