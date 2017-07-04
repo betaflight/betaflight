@@ -842,23 +842,14 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             common/typeconversion.c \
             drivers/adc.c \
             drivers/buf_writer.c \
-            drivers/bus_i2c_soft.c \
             drivers/bus_spi.c \
-            drivers/bus_spi_soft.c \
             drivers/exti.c \
             drivers/gyro_sync.c \
             drivers/io.c \
-            drivers/light_led.c \
-            drivers/resource.c \
-            drivers/rx_nrf24l01.c \
-            drivers/rx_spi.c \
-            drivers/rx_xn297.c \
             drivers/pwm_output.c \
             drivers/rcc.c \
-            drivers/rx_pwm.c \
             drivers/serial.c \
             drivers/serial_uart.c \
-            drivers/sound_beeper.c \
             drivers/system.c \
             drivers/timer.c \
             fc/fc_core.c \
@@ -869,16 +860,9 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             flight/imu.c \
             flight/mixer.c \
             flight/pid.c \
-            flight/servos.c \
             io/serial.c \
             rx/ibus.c \
             rx/jetiexbus.c \
-            rx/nrf24_cx10.c \
-            rx/nrf24_inav.c \
-            rx/nrf24_h8_3d.c \
-            rx/nrf24_syma.c \
-            rx/nrf24_v202.c \
-            rx/pwm.c \
             rx/rx.c \
             rx/rx_spi.c \
             rx/crsf.c \
@@ -894,9 +878,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             sensors/gyroanalyse.c \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC) \
-            drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
-            drivers/serial_softserial.c \
             io/displayport_max7456.c \
             io/osd.c \
             io/osd_slave.c
