@@ -113,7 +113,7 @@ hardwareSensorStatus_e getHwBarometerStatus(void)
 
 hardwareSensorStatus_e getHwRangefinderStatus(void)
 {
-#if defined(SONAR)
+#if defined(USE_RANGEFINDER)
     if (detectedSensors[SENSOR_INDEX_RANGEFINDER] != RANGEFINDER_NONE) {
         if (rangefinderIsHealthy()) {
             return HW_SENSOR_OK;

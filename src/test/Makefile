@@ -520,12 +520,12 @@ $(OBJECT_DIR)/baro_bmp280_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
-$(OBJECT_DIR)/drivers/sonar_hcsr04.o : \
-        $(USER_DIR)/drivers/sonar_hcsr04.c \
-        $(USER_DIR)/drivers/sonar_hcsr04.h \
+$(OBJECT_DIR)/drivers/rangefinder_hcsr04.o : \
+        $(USER_DIR)/drivers/rangefinder_hcsr04.c \
+        $(USER_DIR)/drivers/rangefinder_hcsr04.h \
         $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -DSONAR -c $(USER_DIR)/drivers/sonar_hcsr04.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -DSONAR -c $(USER_DIR)/drivers/rangefinder_hcsr04.c -o $@
 
 $(OBJECT_DIR)/sensors/sonar.o : \
 	$(USER_DIR)/sensors/sonar.c \
@@ -537,7 +537,7 @@ $(OBJECT_DIR)/sensors/sonar.o : \
 
 $(OBJECT_DIR)/sonar_unittest.o : \
 	$(TEST_DIR)/sonar_unittest.cc \
-	$(USER_DIR)/drivers/sonar_hcsr04.h \
+	$(USER_DIR)/drivers/rangefinder_hcsr04.h \
 	$(USER_DIR)/sensors/sonar.h \
 	$(GTEST_HEADERS)
 
@@ -546,7 +546,7 @@ $(OBJECT_DIR)/sonar_unittest.o : \
 
 $(OBJECT_DIR)/sonar_unittest : \
 	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/drivers/sonar_hcsr04.o \
+	$(OBJECT_DIR)/drivers/rangefinder_hcsr04.o \
 	$(OBJECT_DIR)/sensors/sonar.o \
 	$(OBJECT_DIR)/sonar_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a

@@ -104,12 +104,13 @@
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW180_DEG
 
-// #define SONAR
-//#define USE_SONAR_SRF10
-#define SONAR_TRIGGER_PIN       PB0
-#define SONAR_ECHO_PIN          PB1
-#define SONAR_TRIGGER_PIN_PWM   PB8
-#define SONAR_ECHO_PIN_PWM      PB9
+// #define USE_RANGEFINDER
+// #define USE_RANGEFINDER_HCSR04
+// #define USE_RANGEFINDER_SRF10
+#define RANGEFINDER_HCSR04_TRIGGER_PIN       PB0
+#define RANGEFINDER_HCSR04_ECHO_PIN          PB1
+#define RANGEFINDER_HCSR04_TRIGGER_PIN_PWM   PB8
+#define RANGEFINDER_HCSR04_ECHO_PIN_PWM      PB9
 
 #define SOFTSERIAL_1_RX_PIN     PA6
 #define SOFTSERIAL_1_TX_PIN     PA7
@@ -150,8 +151,8 @@
 // RC6  PA3/TIM2    USART2 RX
 // RC7  PA6/TIM3    CSN / softserial1 RX / LED_STRIP
 // RC8  PA7/TIM3    SCK / softserial1 TX
-// RC9  PB0/TIM3    MISO / softserial2 RX / sonar trigger
-// RC10 PB1/TIM3    MOSI /softserial2 TX / sonar echo / current
+// RC9  PB0/TIM3    MISO / softserial2 RX / HC-SR04 trigger
+// RC10 PB1/TIM3    MOSI /softserial2 TX / HC-SR04 echo / current
 
 // Nordic Semiconductor uses 'CSN', STM uses 'NSS'
 #define RX_CE_PIN                   PA1

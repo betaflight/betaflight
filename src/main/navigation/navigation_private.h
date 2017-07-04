@@ -33,7 +33,6 @@
 #define NAV_DTERM_CUT_HZ                    10
 #define NAV_ACCELERATION_XY_MAX             980.0f  // cm/s/s       // approx 45 deg lean angle
 
-#define INAV_SONAR_MAX_DISTANCE             55      // Sonar is unreliable above 50cm due to noise from propellers
 #define INAV_SURFACE_MAX_DISTANCE           40
 
 #define HZ2US(hz)   (1000000 / (hz))
@@ -78,7 +77,7 @@ typedef struct navigationFlags_s {
     // Behaviour modifiers
     bool isGCSAssistedNavigationEnabled;    // Does iNav accept WP#255 - follow-me etc.
     bool isGCSAssistedNavigationReset;      // GCS control was disabled - indicate that so code could take action accordingly
-    bool isTerrainFollowEnabled;            // Does iNav use sonar for terrain following (adjusting baro altitude target according to sonar readings)
+    bool isTerrainFollowEnabled;            // Does iNav use rangefinder for terrain following (adjusting baro altitude target according to rangefinders readings)
 
     bool forcedRTHActivated;
 } navigationFlags_t;

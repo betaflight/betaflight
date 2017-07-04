@@ -20,7 +20,7 @@ For Omnibus F4 Pro (v2 with BMP280 baro, current sensor and SD Card use Omnibus 
 
 ## **NOT** supported
 
-* Sonar
+* HC-SR04 Rangefinder
 * ServoTilt
 * Channel Forwarding
 

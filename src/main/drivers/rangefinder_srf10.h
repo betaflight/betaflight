@@ -17,6 +17,6 @@
 
 #pragma once
 
-#include "drivers/rangefinder.h"
+#define RANGEFINDER_SRF10_TASK_PERIOD_MS 70
 
-bool hcsr04Detect(rangefinderDev_t *dev, const rangefinderHardwarePins_t * sonarHardwarePins);
+bool srf10Detect(rangefinderDev_t *dev);

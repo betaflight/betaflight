@@ -20,7 +20,7 @@
 
 #include <platform.h>
 
-#if defined(SONAR)
+#if defined(USE_RANGEFINDER_HCSR04)
 
 #include "build/build_config.h"
 
@@ -36,7 +36,7 @@
 #include "drivers/logging.h"
 
 #include "drivers/rangefinder.h"
-#include "drivers/sonar_hcsr04.h"
+#include "drivers/rangefinder_hcsr04.h"
 
 #define HCSR04_MAX_RANGE_CM 400 // 4m, from HC-SR04 spec sheet
 #define HCSR04_DETECTION_CONE_DECIDEGREES 300 // recommended cone angle30 degrees, from HC-SR04 spec sheet
@@ -96,7 +96,7 @@ void hcsr04_init(void)
 void hcsr04_start_reading(void)
 {
 #if !defined(UNIT_TEST)
-#ifdef SONAR_TRIG_INVERTED
+#ifdef RANGEFINDER_HCSR04_TRIG_INVERTED
     IOLo(triggerIO);
     delayMicroseconds(11);
     IOHi(triggerIO);
@@ -147,7 +147,7 @@ int32_t hcsr04_get_distance(void)
     return lastCalculatedDistance;
 }
 
-bool hcsr04Detect(rangefinderDev_t *dev, const rangefinderHardwarePins_t * sonarHardwarePins)
+bool hcsr04Detect(rangefinderDev_t *dev, const rangefinderHardwarePins_t * rangefinderHardwarePins)
 {
     bool detected = false;
 
@@ -160,27 +160,27 @@ bool hcsr04Detect(rangefinderDev_t *dev, const rangefinderHardwarePins_t * sonar
     RCC_ClockCmd(RCC_APB2(SYSCFG), ENABLE);
 #endif
 
-    triggerIO = IOGetByTag(sonarHardwarePins->triggerTag);
-    echoIO = IOGetByTag(sonarHardwarePins->echoTag);
+    triggerIO = IOGetByTag(rangefinderHardwarePins->triggerTag);
+    echoIO = IOGetByTag(rangefinderHardwarePins->echoTag);
 
     if (IOGetOwner(triggerIO) != OWNER_FREE) {
-        addBootlogEvent4(BOOT_EVENT_HARDWARE_IO_CONFLICT, BOOT_EVENT_FLAGS_WARNING, IOGetOwner(triggerIO), OWNER_SONAR);
+        addBootlogEvent4(BOOT_EVENT_HARDWARE_IO_CONFLICT, BOOT_EVENT_FLAGS_WARNING, IOGetOwner(triggerIO), OWNER_RANGEFINDER);
         return false;
     }
 
     if (IOGetOwner(echoIO) != OWNER_FREE) {
-        addBootlogEvent4(BOOT_EVENT_HARDWARE_IO_CONFLICT, BOOT_EVENT_FLAGS_WARNING, IOGetOwner(echoIO), OWNER_SONAR);
+        addBootlogEvent4(BOOT_EVENT_HARDWARE_IO_CONFLICT, BOOT_EVENT_FLAGS_WARNING, IOGetOwner(echoIO), OWNER_RANGEFINDER);
         return false;
     }
 
     // trigger pin
-    IOInit(triggerIO, OWNER_SONAR, RESOURCE_OUTPUT, 0);
+    IOInit(triggerIO, OWNER_RANGEFINDER, RESOURCE_OUTPUT, 0);
     IOConfigGPIO(triggerIO, IOCFG_OUT_PP);
     IOLo(triggerIO);
     delay(100);
 
     // echo pin
-    IOInit(echoIO, OWNER_SONAR, RESOURCE_INPUT, 0);
+    IOInit(echoIO, OWNER_RANGEFINDER, RESOURCE_INPUT, 0);
     IOConfigGPIO(echoIO, IOCFG_IN_FLOATING);
 
     // HC-SR04 echo line should be low by default and should return a response pulse when triggered

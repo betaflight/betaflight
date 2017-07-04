@@ -98,8 +98,8 @@
 // RC1              GND
 // RC2              power
 // RC3  PB6/TIM4    unused
-// RC4  PB5/TIM3    SCK / softserial1 TX / sonar trigger
-// RC5  PB0/TIM3    MISO / softserial1 RX / sonar echo / RSSI ADC
+// RC4  PB5/TIM3    SCK / softserial1 TX / HC-SR04 trigger
+// RC5  PB0/TIM3    MISO / softserial1 RX / HC-SR04 echo / RSSI ADC
 // RC6  PB1/TIM3    MOSI / current
 // RC7  PA0/TIM2    CSN / battery voltage
 // RC8  PA1/TIM2    CE / RX_PPM
@@ -160,10 +160,11 @@
 
 //#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-//#define SONAR
-//#define USE_SONAR_SRF10
-#define SONAR_ECHO_PIN          PB0
-#define SONAR_TRIGGER_PIN       PB5
+// #define USE_RANGEFINDER
+//#define USE_RANGEFINDER_HCSR04
+//#define USE_RANGEFINDER_SRF10
+#define RANGEFINDER_HCSR04_ECHO_PIN          PB0
+#define RANGEFINDER_HCSR04_TRIGGER_PIN       PB5
 
 //#define NAV_AUTO_MAG_DECLINATION
 //#define NAV_GPS_GLITCH_DETECTION

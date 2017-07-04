@@ -78,11 +78,12 @@
 #define USE_FLASHTOOLS
 #define USE_FLASH_M25P16
 
-//#define SONAR
-#define SONAR_TRIGGER_PIN       PB0 // RX7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
-#define SONAR_ECHO_PIN          PB1 // RX8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
-#define SONAR_TRIGGER_PIN_PWM   PB8 // PWM5 (PB8) - 5v tolerant
-#define SONAR_ECHO_PIN_PWM      PB9 // PWM6 (PB9) - 5v tolerant
+// #define USE_RANGEFINDER
+// #define USE_RANGEFINDER_HCSR04
+#define RANGEFINDER_HCSR04_TRIGGER_PIN       PB0 // RX7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
+#define RANGEFINDER_HCSR04_ECHO_PIN          PB1 // RX8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
+#define RANGEFINDER_HCSR04_TRIGGER_PIN_PWM   PB8 // PWM5 (PB8) - 5v tolerant
+#define RANGEFINDER_HCSR04_ECHO_PIN_PWM      PB9 // PWM6 (PB9) - 5v tolerant
 
 #define USE_UART1
 #define USE_UART2

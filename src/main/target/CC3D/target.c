@@ -28,8 +28,8 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 #else
     { TIM4, IO_TAG(PB6), TIM_Channel_1, 0, IOCFG_IPD,  TIM_USE_PWM },   // S1_IN
 #endif
-    { TIM3, IO_TAG(PB5), TIM_Channel_2, 0, IOCFG_IPD,  TIM_USE_PWM },   // S2_IN - SoftSerial TX - GPIO_PartialRemap_TIM3 / Sonar trigger
-    { TIM3, IO_TAG(PB0), TIM_Channel_3, 0, IOCFG_IPD,  TIM_USE_PWM },   // S3_IN - SoftSerial RX / Sonar echo / RSSI ADC
+    { TIM3, IO_TAG(PB5), TIM_Channel_2, 0, IOCFG_IPD,  TIM_USE_PWM },   // S2_IN - SoftSerial TX - GPIO_PartialRemap_TIM3 / HC-SR04 trigger
+    { TIM3, IO_TAG(PB0), TIM_Channel_3, 0, IOCFG_IPD,  TIM_USE_PWM },   // S3_IN - SoftSerial RX / HC-SR04 echo / RSSI ADC
     { TIM3, IO_TAG(PB1), TIM_Channel_4, 0, IOCFG_IPD,  TIM_USE_PWM },   // S4_IN - Current
     { TIM2, IO_TAG(PA0), TIM_Channel_1, 0, IOCFG_IPD,  TIM_USE_PWM },   // S5_IN - Vbattery
 #ifdef CC3D_PPM1

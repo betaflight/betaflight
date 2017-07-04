@@ -1,6 +1,6 @@
 # Sonar
 
-A sonar sensor can be used to measure altitude for use with BARO and SONAR altitude
+A sonar sensor can be used to measure altitude for use with BARO and RANGEFINDER altitude
 hold modes.
 
 The sonar sensor is used instead of the pressure sensor (barometer) at low altitudes.

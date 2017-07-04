@@ -58,16 +58,16 @@ I2C is available on J22 PWM7 and PWM8
 |SCL    | J22 (PWM7) | J3 (SCL)      |
 |SDA    | J22 (PWM8) | J3 (SDA)      |
 
-### SONAR
+### RANGEFINDER
 
-SONAR is supported when NOT using PPM.
+HC-SR04 rangefinder is supported when NOT using PPM.
 
 |signal | Location   |
 |-------|------------|
 |TRIG   | J8 (PPM)   |
 |ECHO   | J4 (RSSI)  |
 
-5V sonar can be connected directly without inline resistors.
+5V rangefinder can be connected directly without inline resistors.
 
 ### OSD
 

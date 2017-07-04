@@ -397,7 +397,7 @@ void mavlinkSendHUDAndHeartbeat(void)
     mavClimbRate = getEstimatedActualVelocity(Z) / 100.0f;
 #elif defined(GPS)
     if (sensors(SENSOR_GPS)) {
-        // No sonar or baro, just display altitude above MLS
+        // No surface or baro, just display altitude above MLS
         mavAltitude = gpsSol.llh.alt;
     }
 #endif
@@ -411,7 +411,7 @@ void mavlinkSendHUDAndHeartbeat(void)
         DECIDEGREES_TO_DEGREES(attitude.values.yaw),
         // throttle Current throttle setting in integer percent, 0 to 100
         scaleRange(constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, 100),
-        // alt Current altitude (MSL), in meters, if we have sonar or baro use them, otherwise use GPS (less accurate)
+        // alt Current altitude (MSL), in meters, if we have surface or baro use them, otherwise use GPS (less accurate)
         mavAltitude,
         // climb Current climb rate in meters/second
         mavClimbRate);

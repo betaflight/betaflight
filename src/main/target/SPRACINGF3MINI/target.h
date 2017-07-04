@@ -56,9 +56,10 @@
 #define USE_MAG_HMC5883 // External
 #define MAG_AK8963_ALIGN        CW270_DEG_FLIP
 
-#define SONAR
-#define SONAR_ECHO_PIN          PB1
-#define SONAR_TRIGGER_PIN       PB0
+#define USE_RANGEFINDER
+#define USE_RANGEFINDER_HCSR04
+#define RANGEFINDER_HCSR04_ECHO_PIN          PB1
+#define RANGEFINDER_HCSR04_TRIGGER_PIN       PB0
 
 #define USB_IO
 #define USB_CABLE_DETECTION

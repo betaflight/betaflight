@@ -249,14 +249,14 @@ void init(void)
     drv_pwm_config_t pwm_params;
     memset(&pwm_params, 0, sizeof(pwm_params));
 
-#ifdef SONAR
+#ifdef USE_RANGEFINDER_HCSR04
     // HC-SR04 has a dedicated connection to FC and require two pins
     if (rangefinderConfig()->rangefinder_hardware == RANGEFINDER_HCSR04) {
-        const rangefinderHardwarePins_t *sonarHardware = sonarGetHardwarePins();
-        if (sonarHardware) {
-            pwm_params.useSonar = true;
-            pwm_params.sonarIOConfig.triggerTag = sonarHardware->triggerTag;
-            pwm_params.sonarIOConfig.echoTag = sonarHardware->echoTag;
+        const rangefinderHardwarePins_t *rangefinderHardwarePins = rangefinderGetHardwarePins();
+        if (rangefinderHardwarePins) {
+            pwm_params.useTriggerRangefinder = true;
+            pwm_params.rangefinderIOConfig.triggerTag = rangefinderHardwarePins->triggerTag;
+            pwm_params.rangefinderIOConfig.echoTag = rangefinderHardwarePins->echoTag;
         }
     }
 #endif
@@ -392,7 +392,7 @@ void init(void)
     updateHardwareRevision();
 #endif
 
-#if defined(SONAR) && defined(USE_SOFTSERIAL1)
+#if defined(USE_RANGEFINDER_HCSR04) && defined(USE_SOFTSERIAL1)
 #if defined(FURYF3) || defined(OMNIBUS) || defined(SPRACINGF3MINI)
     if ((rangefinderConfig()->rangefinder_hardware == RANGEFINDER_HCSR04) && feature(FEATURE_SOFTSERIAL)) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL1);
@@ -400,7 +400,7 @@ void init(void)
 #endif
 #endif
 
-#if defined(SONAR) && defined(USE_SOFTSERIAL2) && defined(SPRACINGF3)
+#if defined(USE_RANGEFINDER_HCSR04) && defined(USE_SOFTSERIAL2) && defined(SPRACINGF3)
     if ((rangefinderConfig()->rangefinder_hardware == RANGEFINDER_HCSR04) && feature(FEATURE_SOFTSERIAL)) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
     }

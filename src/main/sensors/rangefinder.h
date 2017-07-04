@@ -43,7 +43,7 @@ typedef struct rangefinder_s {
 
 extern rangefinder_t rangefinder;
 
-const rangefinderHardwarePins_t * sonarGetHardwarePins(void);
+const rangefinderHardwarePins_t * rangefinderGetHardwarePins(void);
 
 bool rangefinderInit(void);
 

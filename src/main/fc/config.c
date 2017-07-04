@@ -337,13 +337,13 @@ void validateAndFixConfig(void)
     }
 #endif
 
-#if defined(NAZE) && defined(SONAR)
+#if defined(NAZE) && defined(USE_RANGEFINDER_HCSR04)
     if (featureConfigured(FEATURE_RX_PARALLEL_PWM) && (rangefinderConfig()->rangefinder_hardware == RANGEFINDER_HCSR04) && featureConfigured(FEATURE_CURRENT_METER) && batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC) {
         featureClear(FEATURE_CURRENT_METER);
     }
 #endif
 
-#if defined(OLIMEXINO) && defined(SONAR)
+#if defined(OLIMEXINO) && defined(USE_RANGEFINDER_HCSR04)
     if ((rangefinderConfig()->rangefinder_hardware == RANGEFINDER_HCSR04) && feature(FEATURE_CURRENT_METER) && batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC) {
         featureClear(FEATURE_CURRENT_METER);
     }
@@ -357,13 +357,13 @@ void validateAndFixConfig(void)
 
 #if defined(CC3D)
 #if defined(CC3D_PPM1)
-    #if defined(SONAR) && defined(USE_SOFTSERIAL1)
+    #if defined(USE_RANGEFINDER_HCSR04) && defined(USE_SOFTSERIAL1)
         if ((rangefinderConfig()->rangefinder_hardware == RANGEFINDER_HCSR04) && feature(FEATURE_SOFTSERIAL)) {
             rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NONE;
         }
     #endif
 #else
-    #if defined(SONAR) && defined(USE_SOFTSERIAL1) && defined(RSSI_ADC_GPIO)
+    #if defined(USE_RANGEFINDER_HCSR04) && defined(USE_SOFTSERIAL1) && defined(RSSI_ADC_GPIO)
         // shared pin
         if (((rangefinderConfig()->rangefinder_hardware == RANGEFINDER_HCSR04) + featureConfigured(FEATURE_SOFTSERIAL) + featureConfigured(FEATURE_RSSI_ADC)) > 1) {
            rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NONE;

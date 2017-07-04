@@ -213,8 +213,8 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
 #ifdef PITOT
     {"AirSpeed",   -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_PITOT},
 #endif
-#ifdef SONAR
-    {"sonarRaw",   -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_SONAR},
+#ifdef USE_RANGEFINDER
+    {"surfaceRaw",   -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_SURFACE},
 #endif
     {"rssi",       -1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_RSSI},
 
@@ -352,8 +352,8 @@ typedef struct blackboxMainState_s {
 #ifdef MAG
     int16_t magADC[XYZ_AXIS_COUNT];
 #endif
-#ifdef SONAR
-    int32_t sonarRaw;
+#ifdef USE_RANGEFINDER
+    int32_t surfaceRaw;
 #endif
     uint16_t rssi;
 #ifdef NAV_BLACKBOX
@@ -499,9 +499,9 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
     case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC:
         return feature(FEATURE_CURRENT_METER) && batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC;
 
-    case FLIGHT_LOG_FIELD_CONDITION_SONAR:
-#ifdef SONAR
-        return sensors(SENSOR_SONAR);
+    case FLIGHT_LOG_FIELD_CONDITION_SURFACE:
+#ifdef USE_RANGEFINDER
+        return sensors(SENSOR_RANGEFINDER);
 #else
         return false;
 #endif
@@ -634,9 +634,9 @@ static void writeIntraframe(void)
     }
 #endif
 
-#ifdef SONAR
-    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_SONAR)) {
-        blackboxWriteSignedVB(blackboxCurrent->sonarRaw);
+#ifdef USE_RANGEFINDER
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_SURFACE)) {
+        blackboxWriteSignedVB(blackboxCurrent->surfaceRaw);
     }
 #endif
 
@@ -803,9 +803,9 @@ static void writeInterframe(void)
     }
 #endif
 
-#ifdef SONAR
-    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_SONAR)) {
-        deltas[optionalFieldCount++] = blackboxCurrent->sonarRaw - blackboxLast->sonarRaw;
+#ifdef USE_RANGEFINDER
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_SURFACE)) {
+        deltas[optionalFieldCount++] = blackboxCurrent->surfaceRaw - blackboxLast->surfaceRaw;
     }
 #endif
 
@@ -1144,9 +1144,9 @@ static void loadMainState(timeUs_t currentTimeUs)
     blackboxCurrent->airSpeed = pitot.airSpeed;
 #endif
 
-#ifdef SONAR
-    // Store the raw sonar value without applying tilt correction
-    blackboxCurrent->sonarRaw = rangefinderRead();
+#ifdef USE_RANGEFINDER
+    // Store the raw rangefinder surface readout without applying tilt correction
+    blackboxCurrent->surfaceRaw = rangefinderRead();
 #endif
 
     blackboxCurrent->rssi = rssi;

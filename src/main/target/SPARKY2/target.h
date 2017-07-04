@@ -110,7 +110,7 @@
 //#define I2C_DEVICE_EXT          (I2CDEV_2)
 
 #define USE_ADC
-// PC2 shared with SONAR
+// PC2 shared with HC-SR04
 #define ADC_CHANNEL_1_PIN               PC2
 #define ADC_CHANNEL_2_PIN               PC1
 #define VBAT_ADC_CHANNEL                ADC_CHN_2
@@ -122,10 +122,11 @@
 #define LED_STRIP
 #define LED_STRIP_TIMER         TIM5
 
-//#define SONAR
-//#define SONAR_TRIGGER_PIN       PC2
-//#define SONAR_ECHO_PIN          PC3
-//#define USE_SONAR_SRF10
+// #define USE_RANGEFINDER
+// #define USE_RANGEFINDER_HCSR04
+// #define RANGEFINDER_HCSR04_TRIGGER_PIN       PC2
+// #define RANGEFINDER_HCSR04_ECHO_PIN          PC3
+// #define USE_RANGEFINDER_SRF10
 
 #define DEFAULT_FEATURES        FEATURE_BLACKBOX
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
