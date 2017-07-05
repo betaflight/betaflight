@@ -206,7 +206,7 @@ static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t 
         beeperConfirmationBeeps(1);
     }
     int newValue;
-    switch(adjustmentFunction) {
+    switch (adjustmentFunction) {
         case ADJUSTMENT_RC_EXPO:
             newValue = constrain((int)controlRateConfig->rcExpo8 + delta, 0, 100); // FIXME magic numbers repeated in serial_cli.c
             controlRateConfig->rcExpo8 = newValue;
@@ -316,7 +316,7 @@ static void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
 {
     bool applied = false;
 
-    switch(adjustmentFunction) {
+    switch (adjustmentFunction) {
         case ADJUSTMENT_RATE_PROFILE:
             if (getCurrentControlRateProfile() != position) {
                 changeControlRateProfile(position);

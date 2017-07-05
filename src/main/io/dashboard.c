@@ -323,10 +323,10 @@ static void bitmapDecompressAndShow(uint8_t *bitmap)
     bitmap++;
     uint16_t bitmapSize = (width * height) / 8;
     for (i = 0; i < bitmapSize; i++) {
-        if(count == 0) {
+        if (count == 0) {
             data = *bitmap;
             bitmap++;
-            if(data == *bitmap) {
+            if (data == *bitmap) {
                 bitmap++;
                 count = *bitmap;
                 bitmap++;
@@ -503,7 +503,7 @@ void dashboardUpdate(timeUs_t currentTimeUs)
         return;
     }
 
-    switch(currentPageId) {
+    switch (currentPageId) {
         case PAGE_WELCOME:
             showWelcomePage();
             break;

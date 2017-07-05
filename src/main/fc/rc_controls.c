@@ -280,7 +280,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus, bool disarm_kill_s
         beeper(success ? BEEPER_ACTION_SUCCESS : BEEPER_ACTION_FAIL);
     }
 #endif
-    
+
     // Multiple configuration profiles
     if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_LO)          // ROLL left  -> Profile 1
         i = 1;

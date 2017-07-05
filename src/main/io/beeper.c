@@ -258,7 +258,7 @@ void beeperConfirmationBeeps(uint8_t beepCount)
 
     i = 0;
     cLimit = beepCount * 2;
-    if(cLimit > MAX_MULTI_BEEPS)
+    if (cLimit > MAX_MULTI_BEEPS)
         cLimit = MAX_MULTI_BEEPS;  //stay within array size
     do {
         beep_multiBeeps[i++] = BEEPER_CONFIRMATION_BEEP_DURATION;       // 20ms beep

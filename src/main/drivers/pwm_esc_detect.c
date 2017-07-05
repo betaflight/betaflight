@@ -50,11 +50,11 @@ void detectBrushedESC(void)
             } else {
                 hardwareMotorType = MOTOR_BRUSHED;
             }
-            
+   
             return;
         }
     }
-    
+
     // Not found = assume brushless
     hardwareMotorType = MOTOR_BRUSHLESS;
 }

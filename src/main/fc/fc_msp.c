@@ -669,7 +669,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, (uint8_t)constrain(vbat, 0, 255));
         sbufWriteU16(dst, (uint16_t)constrain(mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
         sbufWriteU16(dst, rssi);
-        if(batteryConfig()->multiwiiCurrentMeterOutput) {
+        if (batteryConfig()->multiwiiCurrentMeterOutput) {
             sbufWriteU16(dst, (uint16_t)constrain(amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
         } else
             sbufWriteU16(dst, (int16_t)constrain(amperage, -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
@@ -1746,7 +1746,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         positionEstimationConfigMutable()->w_xy_gps_p = constrainf(sbufReadU16(src) / 100.0f, 0.0f, 10.0f);
         positionEstimationConfigMutable()->w_xy_gps_v = constrainf(sbufReadU16(src) / 100.0f, 0.0f, 10.0f);
         gpsConfigMutable()->gpsMinSats = constrain(sbufReadU8(src), 5, 10);
-        positionEstimationConfigMutable()->use_gps_velned = constrain(sbufReadU8(src), 0, 1); 
+        positionEstimationConfigMutable()->use_gps_velned = constrain(sbufReadU8(src), 0, 1);
     #endif
         break;
 

@@ -478,7 +478,7 @@ void processRx(timeUs_t currentTimeUs)
     // Handle passthrough mode
     if (STATE(FIXED_WING)) {
         if ((IS_RC_MODE_ACTIVE(BOXPASSTHRU) && !navigationRequiresAngleMode() && !failsafeRequiresAngleMode()) ||    // Normal activation of passthrough
-            (!ARMING_FLAG(ARMED) && isCalibrating())){                                                              // Backup - if we are not armed - enforce passthrough while calibrating        
+            (!ARMING_FLAG(ARMED) && isCalibrating())){                                                              // Backup - if we are not armed - enforce passthrough while calibrating
             ENABLE_FLIGHT_MODE(PASSTHRU_MODE);
         } else {
             DISABLE_FLIGHT_MODE(PASSTHRU_MODE);

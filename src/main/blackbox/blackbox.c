@@ -91,7 +91,7 @@ PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
     .rate_denom = 1,
 #ifdef SDCARD_DETECT_INVERTED
     .invertedCardDetection = 1,
-#else 
+#else
     .invertedCardDetection = 0,
 #endif
 );

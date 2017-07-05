@@ -47,7 +47,7 @@ void TIM_SelectOCxM_NoDisable(TIM_TypeDef* TIMx, uint16_t TIM_Channel, uint16_t 
     tmp = (uint32_t) TIMx;
     tmp += CCMR_Offset;
 
-    if((TIM_Channel == TIM_CHANNEL_1) ||(TIM_Channel == TIM_CHANNEL_3)) {
+    if ((TIM_Channel == TIM_CHANNEL_1) ||(TIM_Channel == TIM_CHANNEL_3)) {
         tmp += (TIM_Channel>>1);
 
         /* Reset the OCxM bits in the CCMRx register */

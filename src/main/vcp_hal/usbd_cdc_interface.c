@@ -123,7 +123,7 @@ static int8_t CDC_Itf_Init(void)
 
   /*##-4- Start the TIM Base generation in interrupt mode ####################*/
   /* Start Channel1 */
-  if(HAL_TIM_Base_Start_IT(&TimHandle) != HAL_OK)
+  if (HAL_TIM_Base_Start_IT(&TimHandle) != HAL_OK)
   {
     /* Starting Error */
     Error_Handler();
@@ -222,14 +222,14 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
   */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-    if(htim->Instance != TIMusb) return;
+    if (htim->Instance != TIMusb) return;
 
     uint32_t buffptr;
     uint32_t buffsize;
 
-    if(UserTxBufPtrOut != UserTxBufPtrIn)
+    if (UserTxBufPtrOut != UserTxBufPtrIn)
     {
-        if(UserTxBufPtrOut > UserTxBufPtrIn) /* Roll-back */
+        if (UserTxBufPtrOut > UserTxBufPtrIn) /* Roll-back */
         {
             buffsize = APP_RX_DATA_SIZE - UserTxBufPtrOut;
         }
@@ -242,7 +242,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
         USBD_CDC_SetTxBuffer(&USBD_Device, (uint8_t*)&UserTxBuffer[buffptr], buffsize);
 
-        if(USBD_CDC_TransmitPacket(&USBD_Device) == USBD_OK)
+        if (USBD_CDC_TransmitPacket(&USBD_Device) == USBD_OK)
         {
             UserTxBufPtrOut += buffsize;
             if (UserTxBufPtrOut == APP_TX_DATA_SIZE)
@@ -288,7 +288,7 @@ static void TIM_Config(void)
   TimHandle.Init.Prescaler = (SystemCoreClock / 2 / (1000000)) - 1;
   TimHandle.Init.ClockDivision = 0;
   TimHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
-  if(HAL_TIM_Base_Init(&TimHandle) != HAL_OK)
+  if (HAL_TIM_Base_Init(&TimHandle) != HAL_OK)
   {
     /* Initialization Error */
     Error_Handler();
@@ -318,7 +318,7 @@ static void Error_Handler(void)
 uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len)
 {
     uint32_t count = 0;
-    if( (rxBuffPtr != NULL))
+    if ( (rxBuffPtr != NULL))
     {
         while ((rxAvailable > 0) && count < len)
         {
@@ -326,7 +326,7 @@ uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len)
             rxBuffPtr++;
             rxAvailable--;
             count++;
-            if(rxAvailable < 1)
+            if (rxAvailable < 1)
                 USBD_CDC_ReceivePacket(&USBD_Device);
         }
     }
@@ -361,7 +361,7 @@ uint32_t CDC_Send_FreeBytes(void)
 uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
 {
     USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)USBD_Device.pClassData;
-    while(hcdc->TxState != 0);
+    while (hcdc->TxState != 0);
 
     for (uint32_t i = 0; i < sendLength; i++)
     {

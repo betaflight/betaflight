@@ -31,7 +31,7 @@ void assertFailed2(const char * file, int line)
         assertFailureLine = line;
     }
 #if defined(USE_ASSERT_STOP)
-    while(1) {
+    while (1) {
         __asm("BKPT #0\n") ; // Break into the debugger
     }
 #endif
@@ -44,7 +44,7 @@ void assertFailed1(int line)
         assertFailureLine = line;
     }
 #if defined(USE_ASSERT_STOP)
-    while(1) {
+    while (1) {
         __asm("BKPT #0\n") ; // Break into the debugger
     }
 #endif

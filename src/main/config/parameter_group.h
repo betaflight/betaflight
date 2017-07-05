@@ -87,7 +87,7 @@ extern const uint8_t __pg_resetdata_end[];
 
 #define PG_FOREACH_PROFILE(_name)                                    \
     PG_FOREACH(_name)                                                \
-        if(pgIsSystem(_name)) \
+        if (pgIsSystem(_name)) \
             continue;                                                \
         else                                                         \
             /**/
@@ -98,7 +98,7 @@ extern const uint8_t __pg_resetdata_end[];
     do {                                                                \
         extern const pgRegistry_t _name ##_Registry;                    \
         pgResetCurrent(&_name ## _Registry);                            \
-    } while(0)                                                          \
+    } while (0)                                                          \
     /**/
 
 // Declare system config

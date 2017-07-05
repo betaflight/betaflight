@@ -104,7 +104,7 @@ typedef enum {
 
 static queuedReadState_t queuedRead = { false, 0, 0};
 
-/* We have AK8963 connected internally to MPU9250 I2C master. Accessing the compass sensor requires 
+/* We have AK8963 connected internally to MPU9250 I2C master. Accessing the compass sensor requires
  * setting up the MPU's I2C host. We have separate implementation of SPI read/write functions to access
  * the MPU registers
  */

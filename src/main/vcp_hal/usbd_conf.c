@@ -84,7 +84,7 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef *hpcd)
 {
   GPIO_InitTypeDef  GPIO_InitStruct;
 
-  if(hpcd->Instance == USB_OTG_FS)
+  if (hpcd->Instance == USB_OTG_FS)
   {
     /* Configure USB FS GPIOs */
     __HAL_RCC_GPIOA_CLK_ENABLE();
@@ -97,7 +97,7 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef *hpcd)
     GPIO_InitStruct.Alternate = GPIO_AF10_OTG_FS;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    if(hpcd->Init.vbus_sensing_enable == 1)
+    if (hpcd->Init.vbus_sensing_enable == 1)
     {
       /* Configure VBUS Pin */
       GPIO_InitStruct.Pin = GPIO_PIN_9;
@@ -122,7 +122,7 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef *hpcd)
     /* Enable USBFS Interrupt */
     HAL_NVIC_EnableIRQ(OTG_FS_IRQn);
   }
-  else if(hpcd->Instance == USB_OTG_HS)
+  else if (hpcd->Instance == USB_OTG_HS)
   {
 #ifdef USE_USB_HS_IN_FS
 
@@ -136,7 +136,7 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef *hpcd)
     GPIO_InitStruct.Alternate = GPIO_AF12_OTG_HS_FS;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-    if(hpcd->Init.vbus_sensing_enable == 1)
+    if (hpcd->Init.vbus_sensing_enable == 1)
     {
       /* Configure VBUS Pin */
       GPIO_InitStruct.Pin = GPIO_PIN_13 ;
@@ -216,13 +216,13 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef *hpcd)
   */
 void HAL_PCD_MspDeInit(PCD_HandleTypeDef *hpcd)
 {
-  if(hpcd->Instance == USB_OTG_FS)
+  if (hpcd->Instance == USB_OTG_FS)
   {
     /* Disable USB FS Clock */
     __HAL_RCC_USB_OTG_FS_CLK_DISABLE();
     __HAL_RCC_SYSCFG_CLK_DISABLE();
   }
-  else if(hpcd->Instance == USB_OTG_HS)
+  else if (hpcd->Instance == USB_OTG_HS)
   {
     /* Disable USB HS Clocks */
     __HAL_RCC_USB_OTG_HS_CLK_DISABLE();
@@ -286,7 +286,7 @@ void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
   USBD_SpeedTypeDef speed = USBD_SPEED_FULL;
 
   /* Set USB Current Speed */
-  switch(hpcd->Init.speed)
+  switch (hpcd->Init.speed)
   {
   case PCD_SPEED_HIGH:
     speed = USBD_SPEED_HIGH;
@@ -559,7 +559,7 @@ uint8_t USBD_LL_IsStallEP(USBD_HandleTypeDef *pdev, uint8_t ep_addr)
 {
   PCD_HandleTypeDef *hpcd = pdev->pData;
 
-  if((ep_addr & 0x80) == 0x80)
+  if ((ep_addr & 0x80) == 0x80)
   {
     return hpcd->IN_ep[ep_addr & 0x7F].is_stall;
   }

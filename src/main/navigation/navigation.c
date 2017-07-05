@@ -120,7 +120,7 @@ PG_RESET_TEMPLATE(navConfig_t, navConfig,
 
         //Fixed wing landing
         .land_dive_angle = 2,   // 2 degrees dive by default
-        
+
         // Fixed wing launch
         .launch_velocity_thresh = 300,         // 3 m/s
         .launch_accel_thresh = 1.9f * 981,     // cm/s/s (1.9*G)
@@ -2100,7 +2100,7 @@ bool loadNonVolatileWaypointList(void)
     resetWaypointList();
 
     for (int i = 0; i < NAV_MAX_WAYPOINTS; i++) {
-        // Load waypoint 
+        // Load waypoint
         setWaypoint(i + 1, nonVolatileWaypointList(i));
 
         // Check if this is the last waypoint

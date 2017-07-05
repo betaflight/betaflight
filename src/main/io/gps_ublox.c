@@ -480,7 +480,7 @@ static bool gpsParceFrameUBLOX(void)
         _new_speed = true;
         break;
     case MSG_VER:
-        if(_class == CLASS_MON) {
+        if (_class == CLASS_MON) {
             //uint32_t swver = _buffer.ver.swVersion;
             gpsState.hwVersion = atoi(_buffer.ver.hwVersion);
         }
@@ -636,7 +636,7 @@ static bool gpsConfigure(void)
 #ifdef GPS_PROTO_UBLOX_NEO7PLUS
             configureMSG(MSG_CLASS_UBX, MSG_PVT,    0);
         }
-        else if(gpsState.gpsConfig->provider == GPS_UBLOX7PLUS) {
+        else if (gpsState.gpsConfig->provider == GPS_UBLOX7PLUS) {
             configureMSG(MSG_CLASS_UBX, MSG_POSLLH, 0);
             configureMSG(MSG_CLASS_UBX, MSG_STATUS, 0);
             configureMSG(MSG_CLASS_UBX, MSG_SOL,    0);
@@ -655,7 +655,7 @@ static bool gpsConfigure(void)
             configureRATE(200); // 5Hz
 #ifdef GPS_PROTO_UBLOX_NEO7PLUS
         }
-        else if(gpsState.gpsConfig->provider == GPS_UBLOX7PLUS) {
+        else if (gpsState.gpsConfig->provider == GPS_UBLOX7PLUS) {
             configureRATE(100); // 10Hz
         }
 #endif
@@ -751,7 +751,7 @@ bool gpsHandleUBLOX(void)
     bool hasNewData = gpsReceiveData();
 
     // Process state
-    switch(gpsState.state) {
+    switch (gpsState.state) {
     default:
         return false;
 

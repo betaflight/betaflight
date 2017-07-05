@@ -168,17 +168,17 @@ static void frequencyConfigurator(uint32_t frequency)
 {
     uint8_t band;
 
-    if(frequency<48000) {
+    if (frequency<48000) {
         frequency -= 24000;
         band = frequency/1000;
-        if(band>23) band = 23;
+        if (band>23) band = 23;
         frequency -= (1000*(uint32_t)band);
         frequency *= 64;
         band |= 0x40;
     } else {
         frequency -= 48000;
         band = frequency/2000;
-        if(band>22) band = 22;
+        if (band>22) band = 22;
         frequency -= (2000*(uint32_t)band);
         frequency *= 32;
         band |= 0x60;
@@ -199,7 +199,7 @@ static void rfm22bInitParameter(void)
     static uint8_t cf3[8] = {0x0f,0x42,0x07,0x20,0x2d,0xd4,0x00,0x00};
     rfmSpiRead(0x03);
     rfmSpiRead(0x04);
-    for(i = 0; i < 8; i++)
+    for (i = 0; i < 8; i++)
         rfmSpiWrite(0x06+i, cf1[i]);
     if (first_init) {
         first_init = 0;
@@ -210,20 +210,20 @@ static void rfm22bInitParameter(void)
     rfmSpiWrite(0x6f, 0xD5);
     rfmSpiWrite(0x1c, 0x02);
     rfmSpiWrite(0x70, 0x00);
-    for(i=0; i<6; i++) rfmSpiWrite(0x20+i, cf2[i]);
+    for (i=0; i<6; i++) rfmSpiWrite(0x20+i, cf2[i]);
     rfmSpiWrite(0x2a, 0x1e);
     rfmSpiWrite(0x72, 0x1F);
     rfmSpiWrite(0x30, 0x8c);
     rfmSpiWrite(0x3e, 22);
-    for(i=0; i<8; i++) rfmSpiWrite(0x32+i, cf3[i]);
-    for(i=0; i<4; i++) rfmSpiWrite(0x43+i, 0xff);
+    for (i=0; i<8; i++) rfmSpiWrite(0x32+i, cf3[i]);
+    for (i=0; i<4; i++) rfmSpiWrite(0x43+i, 0xff);
     rfmSpiWrite(0x6d, eleresConfig()->eleresTelemetryPower | 0x18);
     rfmSpiWrite(0x79, 0x00);
     rfmSpiWrite(0x7a, 0x04);
     rfmSpiWrite(0x71, 0x23);
     rfmSpiWrite(0x73, 0x00);
     rfmSpiWrite(0x74, 0x00);
-    for(i=0; i<4; i++) {
+    for (i=0; i<4; i++) {
         rfmSpiWrite(0x3a+i, eleresSignaturePtr[i]);
         rfmSpiWrite(0x3f+i, eleresSignaturePtr[i]);
     }
@@ -236,15 +236,15 @@ static void rfm22bInitParameter(void)
 static void channelHopping(uint8_t hops)
 {
     hoppingChannel += hops;
-    while(hoppingChannel >= 16) hoppingChannel -= 16;
+    while (hoppingChannel >= 16) hoppingChannel -= 16;
 
     if (eleresConfig()->eleresTelemetryEn && eleresConfig()->eleresLocEn) {
-        if(bkgLocEnable && (hoppingChannel==bkgLocChlist || hoppingChannel==(bkgLocChlist+1)%16)) {
+        if (bkgLocEnable && (hoppingChannel==bkgLocChlist || hoppingChannel==(bkgLocChlist+1)%16)) {
             rfmSpiWrite(0x79,0);
             bkgLocEnable = 2;
             return;
         }
-        if(bkgLocEnable == 2) bkgLocEnable = 1;
+        if (bkgLocEnable == 2) bkgLocEnable = 1;
     }
 
     rfmSpiWrite(0x79, holList[hoppingChannel]);
@@ -275,20 +275,20 @@ static void telemetryRX(void)
     switch (telem_state++) {
     case 0:
 
-        if(presfil>200000) pres = presfil/4 - 50000;
+        if (presfil>200000) pres = presfil/4 - 50000;
         else pres = 1;
 
         themp = (uint8_t)(thempfil/80 + 86);
 
         if (FLIGHT_MODE(FAILSAFE_MODE))    wii_flymode = 7;
-        else if(FLIGHT_MODE(PASSTHRU_MODE))  wii_flymode = 8;
-        else if(FLIGHT_MODE(NAV_RTH_MODE))  wii_flymode = 6;
-        else if(FLIGHT_MODE(NAV_POSHOLD_MODE))  wii_flymode = 5;
-        else if(FLIGHT_MODE(HEADFREE_MODE))  wii_flymode = 4;
-        else if(FLIGHT_MODE(NAV_ALTHOLD_MODE))      wii_flymode = 3;
-        else if(FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))       wii_flymode = 2;
+        else if (FLIGHT_MODE(PASSTHRU_MODE))  wii_flymode = 8;
+        else if (FLIGHT_MODE(NAV_RTH_MODE))  wii_flymode = 6;
+        else if (FLIGHT_MODE(NAV_POSHOLD_MODE))  wii_flymode = 5;
+        else if (FLIGHT_MODE(HEADFREE_MODE))  wii_flymode = 4;
+        else if (FLIGHT_MODE(NAV_ALTHOLD_MODE))      wii_flymode = 3;
+        else if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))       wii_flymode = 2;
         else                      wii_flymode = 1;
-        if(ARMING_FLAG(ARMED)) wii_flymode |= 0x10;
+        if (ARMING_FLAG(ARMED)) wii_flymode |= 0x10;
         rfTxBuffer[0] = 0x54;
         rfTxBuffer[1] = localRssi;
         rfTxBuffer[2] = quality;
@@ -307,9 +307,9 @@ static void telemetryRX(void)
 
             rfTxBuffer[0] = 0x50;
             cnv.val = gpsSol.llh.lat/10;
-            for(i=0; i<4; i++) rfTxBuffer[i+1] = cnv.b[i];
+            for (i=0; i<4; i++) rfTxBuffer[i+1] = cnv.b[i];
             cnv.val = gpsSol.llh.lon/10;
-            for(i=0; i<4; i++) rfTxBuffer[i+5] = cnv.b[i];
+            for (i=0; i<4; i++) rfTxBuffer[i+5] = cnv.b[i];
 
             rfTxBuffer[4] &= 0x0F;
             rfTxBuffer[4] |= (hdop << 4);
@@ -331,7 +331,7 @@ static void telemetryRX(void)
 
             rfTxBuffer[0] = 0x47;
             rfTxBuffer[1] = (STATE(GPS_FIX)<<4) | (gpsSol.numSat & 0x0F);
-            if(gpsSol.numSat > 15) rfTxBuffer[1] |= 0x80;
+            if (gpsSol.numSat > 15) rfTxBuffer[1] |= 0x80;
             rfTxBuffer[2] = ((course>>8) & 0x0F) | ((gpsspeed>>4) & 0xF0);
             rfTxBuffer[3] = course & 0xFF;
             rfTxBuffer[4] = gpsspeed & 0xFF;
@@ -382,15 +382,15 @@ static void parseStatusRegister(const uint8_t *payload)
     static uint16_t rssifil;
     const timeMs_t irq_time = millis();
 
-    if((rfMode & RECEIVE) && (statusRegisters[0] & RF22B_RX_PACKET_RECEIVED_INTERRUPT))
+    if ((rfMode & RECEIVE) && (statusRegisters[0] & RF22B_RX_PACKET_RECEIVED_INTERRUPT))
         rfMode |= RECEIVED;
-    if((rfMode & TRANSMIT) && (statusRegisters[0] & RF22B_PACKET_SENT_INTERRUPT))
+    if ((rfMode & TRANSMIT) && (statusRegisters[0] & RF22B_PACKET_SENT_INTERRUPT))
         rfMode |= TRANSMITTED;
-    if((rfMode & RECEIVE) && (statusRegisters[1] & RF22B_VALID_SYNCWORD_INTERRUPT))
+    if ((rfMode & RECEIVE) && (statusRegisters[1] & RF22B_VALID_SYNCWORD_INTERRUPT))
         rfMode |= PREAMBLE;
 
-    if(rfMode & RECEIVED) {
-        if(bkgLocEnable < 2) {
+    if (rfMode & RECEIVED) {
+        if (bkgLocEnable < 2) {
             lastPackTime = irq_time;
             nextPackTime = irq_time + channelHoppingTime;
         }
@@ -407,9 +407,9 @@ static void parseStatusRegister(const uint8_t *payload)
             channelHoppingTime = (rfRxBuffer[20] & 0x0F)+18;
             dataReady |= DATA_FLAG;
         } else if (eleresConfig()->eleresLocEn && eleresConfig()->eleresTelemetryEn && bkgLocEnable==2) {
-            if((rfRxBuffer[0] == 'H' && rfRxBuffer[2] == 'L') ||
+            if ((rfRxBuffer[0] == 'H' && rfRxBuffer[2] == 'L') ||
                     rfRxBuffer[0]=='T' || rfRxBuffer[0]=='P' || rfRxBuffer[0]=='G') {
-                if(bkgLocCnt==0) bkgLocCnt = 200;
+                if (bkgLocCnt==0) bkgLocCnt = 200;
                 toReadyMode();
                 bkgLocEnable = 0;
                 channelHopping(0);
@@ -424,7 +424,7 @@ static void parseStatusRegister(const uint8_t *payload)
             }
         }
 
-        if((dataReady & LOCALIZER_FLAG)==0) {
+        if ((dataReady & LOCALIZER_FLAG)==0) {
             if (eleresConfig()->eleresTelemetryEn)
                 toTxMode(9);
             else
@@ -432,27 +432,27 @@ static void parseStatusRegister(const uint8_t *payload)
         }
     }
 
-    if(rfMode & TRANSMITTED) {
+    if (rfMode & TRANSMITTED) {
         toReadyMode();
-        if(dataReady & LOCALIZER_FLAG) {
+        if (dataReady & LOCALIZER_FLAG) {
             rfmSpiWrite(0x79, holList[0]);
-        } else if(irq_time-lastPackTime <= 1500 && bkgLocEnable<2)
+        } else if (irq_time-lastPackTime <= 1500 && bkgLocEnable<2)
             channelHopping(1);
         toRxMode();
     }
 
-    if(rfMode & PREAMBLE) {
+    if (rfMode & PREAMBLE) {
         uint8_t rssitmp = rfmSpiRead(0x26);
         if (eleresConfig()->eleresLocEn && eleresConfig()->eleresTelemetryEn && bkgLocEnable==2) {
-            if(rssitmp>124)	rssitmp = 124;
-            if(rssitmp<18)	rssitmp = 18;
+            if (rssitmp>124)	rssitmp = 124;
+            if (rssitmp<18)	rssitmp = 18;
             bkgLocBuf[0][1] = rssitmp + 128;
         } else {
             rssifil -= rssifil/8;
             rssifil += rssitmp;
             localRssi = (rssifil/8 * quality / 100)+10;
-            if(localRssi>124) localRssi = 124;
-            if(localRssi<18)	localRssi = 18;
+            if (localRssi>124) localRssi = 124;
+            if (localRssi<18)	localRssi = 18;
         }
         rfMode &= ~PREAMBLE;
     }
@@ -480,8 +480,8 @@ void eleresSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
     else
         led_time = cr_time;
 
-    if((dataReady & LOCALIZER_FLAG) == 0) {
-        if(cr_time > nextPackTime+2) {
+    if ((dataReady & LOCALIZER_FLAG) == 0) {
+        if (cr_time > nextPackTime+2) {
             if ((cr_time-lastPackTime > 1500) || firstRun) {
                 localRssi = 18;
                 rfm22bInitParameter();
@@ -495,7 +495,7 @@ void eleresSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
                 // res = RX_FRAME_FAILSAFE;
             } else {
 
-                if(cr_time-lastPackTime > 3*channelHoppingTime) {
+                if (cr_time-lastPackTime > 3*channelHoppingTime) {
                     red_led_local=1;
                     if (localRssi > 0x18)
                         localRssi--;
@@ -505,37 +505,37 @@ void eleresSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
                 nextPackTime += channelHoppingTime;
             }
         }
-        if(cr_time > qtest_time) {
+        if (cr_time > qtest_time) {
             qtest_time = cr_time + 500;
             quality = goodFrames * 100 / (500/channelHoppingTime);
-            if(quality > 100) quality = 100;
+            if (quality > 100) quality = 100;
             goodFrames = 0;
         }
     }
 
-    if((dataReady & 0x03) == DATA_FLAG && rcData != NULL) {
-        if((dataReady & RELAY_FLAG)==0) {
+    if ((dataReady & 0x03) == DATA_FLAG && rcData != NULL) {
+        if ((dataReady & RELAY_FLAG)==0) {
             channel_count = rfRxBuffer[20] >> 4;
-            if(channel_count < 4)  channel_count = 4;
-            if(channel_count > RC_CHANS) channel_count = 12;
-            for(i = 0; i<channel_count; i++) {
+            if (channel_count < 4)  channel_count = 4;
+            if (channel_count > RC_CHANS) channel_count = 12;
+            for (i = 0; i<channel_count; i++) {
                 temp_int = rfRxBuffer[i+1];
-                if(i%2 == 0)
+                if (i%2 == 0)
                     temp_int |= ((unsigned int)rfRxBuffer[i/2 + 13] << 4) & 0x0F00;
                 else
                     temp_int |= ((unsigned int)rfRxBuffer[i/2 + 13] << 8) & 0x0F00;
                 if ((temp_int>799) && (temp_int<2201)) rcData4Values[i] = temp_int;
             }
             n = rfRxBuffer[19];
-            for(i=channel_count; i < channel_count+5; i++) {
-                if(i > 11) break;
-                if(n & 0x01) temp_int = BIN_ON_VALUE;
+            for (i=channel_count; i < channel_count+5; i++) {
+                if (i > 11) break;
+                if (n & 0x01) temp_int = BIN_ON_VALUE;
                 else temp_int = BIN_OFF_VALUE;
                 rcData4Values[i] = temp_int;
                 n >>= 1;
             }
-            for(; i<RC_CHANS; i++) rcData4Values[i]=1500;
-            for(i=0; i<RC_CHANS; i++) {
+            for (; i<RC_CHANS; i++) rcData4Values[i]=1500;
+            for (i=0; i<RC_CHANS; i++) {
                 temp_int = rcData4Values[i];
                 if (temp_int < rcData[i] -3)  rcData[i] = temp_int+2;
                 if (temp_int > rcData[i] +3)  rcData[i] = temp_int-2;
@@ -545,10 +545,10 @@ void eleresSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
 
             if (eleresConfig()->eleresTelemetryEn) {
                 if (eleresConfig()->eleresLocEn) {
-                    if(bkgLocEnable == 0) bkgLocCnt=0;
-                    if(bkgLocCnt) bkgLocCnt--;
+                    if (bkgLocEnable == 0) bkgLocCnt=0;
+                    if (bkgLocCnt) bkgLocCnt--;
 
-                    if(bkgLocCnt<128)
+                    if (bkgLocCnt<128)
                         telemetryRX();
                     else
                         memcpy(rfTxBuffer, bkgLocBuf[bkgLocCnt%3], 9);
@@ -565,24 +565,24 @@ void eleresSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
     }
 
     if (eleresConfig()->eleresLocEn) {
-        if((dataReady & 0x03)==(DATA_FLAG | LOCALIZER_FLAG) && rfRxBuffer[19]<128) {
-            if(rx_frames == 0)	guard_time = lastPackTime;
-            if(rx_frames < 250) {
+        if ((dataReady & 0x03)==(DATA_FLAG | LOCALIZER_FLAG) && rfRxBuffer[19]<128) {
+            if (rx_frames == 0)	guard_time = lastPackTime;
+            if (rx_frames < 250) {
                 rx_frames++;
             }
-            if(rx_frames > 20 && cr_time-guard_time > (locForce?5000:20000)) {
+            if (rx_frames > 20 && cr_time-guard_time > (locForce?5000:20000)) {
                 dataReady = 0;
                 localizerTime = cr_time + (1000L*eleresConfig()->eleresLocDelay);
                 rfm22bInitParameter();
                 channelHopping(1);
                 rx_frames = 0;
 
-                if(locForce && eleresConfig()->eleresTelemetryEn) {
+                if (locForce && eleresConfig()->eleresTelemetryEn) {
                     bkgLocEnable = 1;
                     temp_int = 0;
-                    for(i=0; i<16; i++) {
+                    for (i=0; i<16; i++) {
                         uint16_t mult = holList[i] * holList[(i+1)%16];
-                        if(mult > temp_int) {
+                        if (mult > temp_int) {
                             temp_int = mult;
                             bkgLocChlist = i;
                         }
@@ -591,11 +591,11 @@ void eleresSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
             }
         }
 
-        if(cr_time-lastPackTime > 8000) {
+        if (cr_time-lastPackTime > 8000) {
             rx_frames = 0;
         }
-        if(!ARMING_FLAG(ARMED) && cr_time > localizerTime) {
-            if((dataReady & LOCALIZER_FLAG)==0) {
+        if (!ARMING_FLAG(ARMED) && cr_time > localizerTime) {
+            if ((dataReady & LOCALIZER_FLAG)==0) {
                 rfm22bInitParameter();
                 rfmSpiWrite(0x6d, eleresConfig()->eleresLocPower);
             }
@@ -607,7 +607,7 @@ void eleresSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
             led_time = cr_time;
 
             bkgLocEnable = 0;
-            if(!(++loc_cnt & 1) && eleresConfig()->eleresTelemetryEn) {
+            if (!(++loc_cnt & 1) && eleresConfig()->eleresTelemetryEn) {
                 telemetryRX();
                 toTxMode(9);
             } else {
@@ -620,18 +620,18 @@ void eleresSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
             }
         }
 
-        if((ARMING_FLAG(ARMED) || firstRun) && (dataReady & LOCALIZER_FLAG)==0)
+        if ((ARMING_FLAG(ARMED) || firstRun) && (dataReady & LOCALIZER_FLAG)==0)
             localizerTime = cr_time + (1000L*eleresConfig()->eleresLocDelay);
 
         if (eleresConfig()->eleresTelemetryEn)
-            if(dataReady & RELAY_FLAG) {
-                if(rfRxBuffer[0]=='H') bkgLocBuf[0][0]='T';
-                if(rfRxBuffer[0]=='T') {
+            if (dataReady & RELAY_FLAG) {
+                if (rfRxBuffer[0]=='H') bkgLocBuf[0][0]='T';
+                if (rfRxBuffer[0]=='T') {
                     bkgLocBuf[0][0]='T';
                     memcpy(bkgLocBuf[0]+2, rfRxBuffer+2, 7);
                 }
-                if(rfRxBuffer[0]=='P') memcpy(bkgLocBuf[1], rfRxBuffer, 9);
-                if(rfRxBuffer[0]=='G') memcpy(bkgLocBuf[2], rfRxBuffer, 9);
+                if (rfRxBuffer[0]=='P') memcpy(bkgLocBuf[1], rfRxBuffer, 9);
+                if (rfRxBuffer[0]=='G') memcpy(bkgLocBuf[2], rfRxBuffer, 9);
                 dataReady = 0;
             }
     }
@@ -665,7 +665,7 @@ static void bindChannels(const uint8_t* RF_HEAD, uint8_t* hop_lst)
     for (int j=0; j<4; j++) {
         for (int i=0; i<4; i++) {
             n = RF_HEAD[i]%128;
-            if(j==3) n /= 5;
+            if (j==3) n /= 5;
             else n /= j+1;
             hop_lst[4*j+i] = checkChannel(n,hop_lst);
         }
@@ -710,17 +710,17 @@ uint8_t eleresBind(void)
     bindChannels(eleresSignaturePtr,holList);
     channelHoppingTime = 33;
     RED_LED_OFF;
-    while(timeout--) {
+    while (timeout--) {
         eleresDataReceived(NULL);
         eleresSetRcDataFromPayload(NULL,NULL);
         if (rfRxBuffer[0]==0x42) {
-            for(i=0; i<4; i++) {
+            for (i=0; i<4; i++) {
                 if (rfRxBuffer[i+1]==eleres_signature_old[i]) eleres_signature_OK_count++;
                 else eleres_signature_OK_count = 0;
             }
-            for(i=0; i<4; i++) eleres_signature_old[i] = rfRxBuffer[i+1];
+            for (i=0; i<4; i++) eleres_signature_old[i] = rfRxBuffer[i+1];
             if (eleres_signature_OK_count>200) {
-                for(i=0; i<4; i++)
+                for (i=0; i<4; i++)
                     eleresSignaturePtr[i] = eleres_signature_old[i];
                 RED_LED_OFF;
                 saveConfigAndNotify();

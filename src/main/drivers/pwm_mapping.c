@@ -186,7 +186,7 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
             else if (init->useChannelForwarding && (timerHardwarePtr->usageFlags & TIM_USE_MC_CHNFW)) {
                 type = MAP_TO_SERVO_OUTPUT;
             }
-            else 
+            else
 #endif
             if (timerHardwarePtr->usageFlags & TIM_USE_MC_MOTOR) {
                 type = MAP_TO_MOTOR_OUTPUT;
