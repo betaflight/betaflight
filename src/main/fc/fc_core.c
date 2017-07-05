@@ -618,7 +618,7 @@ static void subTaskMotorUpdate(void)
         startTime = micros();
     }
 
-    mixTable(currentPidProfile);
+    mixTable(currentPidProfile->vbatPidCompensation);
 
 #ifdef USE_SERVOS
     // motor outputs are used as sources for servo mixing, so motors must be calculated using mixTable() before servos.
