@@ -35,7 +35,7 @@
 #define PLL_N_OC         480
 #define PLL_P_OC         2
 #define PLL_Q_OC         10
-#define OC_FREQUENCY_HZ  PLL_N_OC/PLL_P_OC*1000000
+#define OC_FREQUENCY_HZ  (1000000*PLL_N_OC/PLL_P_OC)
 
 extern uint32_t SystemCoreClock;          /*!< System Clock Frequency (Core Clock) */
 extern void SystemInit(void);
