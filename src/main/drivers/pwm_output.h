@@ -125,8 +125,6 @@ typedef struct {
 
 motorDmaOutput_t *getMotorDmaOutput(uint8_t index);
 
-extern bool pwmMotorsEnabled;
-
 struct timerHardware_s;
 typedef void pwmWriteFunc(uint8_t index, float value);  // function pointer used to write motors
 typedef void pwmCompleteWriteFunc(uint8_t motorCount);   // function pointer used after motors are written
