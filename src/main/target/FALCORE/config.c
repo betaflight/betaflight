@@ -18,10 +18,25 @@
 #include <stdint.h>
 #include "platform.h"
 #include "config/feature.h"
+#include "drivers/pwm_output.h"
+#include "blackbox/blackbox.h"
 #include "fc/config.h"
+#include "fc/controlrate_profile.h"
+#include "fc/rc_controls.h"
 #include "io/serial.h"
 #include "rx/rx.h"
+#include "sensors/sensors.h"
 #include "sensors/gyro.h"
+#include "sensors/acceleration.h"
+#include "sensors/barometer.h"
+#include "sensors/compass.h"
+#include "sensors/boardalignment.h"
+#include "flight/pid.h"
+#include "flight/mixer.h"
+#include "flight/servos.h"
+#include "flight/imu.h"
+#include "flight/failsafe.h"
+#include "navigation/navigation.h"
 
 
 void targetConfiguration(void)
@@ -39,8 +54,8 @@ void targetConfiguration(void)
     serialConfigMutable()->portConfigs[0].functionMask = FUNCTION_MSP;          // VCP
     serialConfigMutable()->portConfigs[1].functionMask = FUNCTION_GPS;          // UART1
     serialConfigMutable()->portConfigs[2].functionMask = FUNCTION_RX_SERIAL;    // UART2
-    serialConfigMutable()->portConfigs[2].functionMask = FUNCTION_NONE;         // UART4
-    serialConfigMutable()->portConfigs[2].functionMask = FUNCTION_TELEMETRY_MAVLINK;    // UART5
+    serialConfigMutable()->portConfigs[3].functionMask = FUNCTION_NONE;         // UART4
+    serialConfigMutable()->portConfigs[4].functionMask = FUNCTION_TELEMETRY_MAVLINK;    // UART5
 
     
     gyroConfigMutable()->looptime = 1000;
@@ -109,12 +124,84 @@ void targetConfiguration(void)
     navConfigMutable()->general.max_manual_climb_rate = 200;
     navConfigMutable()->general.rth_altitude = 1000;
     
-    navConfigMutable()->general.mc.max_bank_angle = 30;
-    navConfigMutable()->general.mc.hover_throttle = 1500;
-    navConfigMutable()->general.mc.auto_disarm_delay = 2000;
+    navConfigMutable()->mc.max_bank_angle = 30;
+    navConfigMutable()->mc.hover_throttle = 1500;
+    navConfigMutable()->mc.auto_disarm_delay = 2000;
     
+    /*
+    aux 0 0 0 1150 2100
+    aux 1 2 0 1300 1700
+    aux 2 20 0 1150 2100
+    aux 3 3 3 1300 1700
+    aux 4 9 3 1300 1700
+    aux 5 8 3 1700 2100
+    aux 6 19 1 1375 2100
+    */
+
+    for (int index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
+        modeActivationConditionsMutable(index)->modeId = 0;
+        modeActivationConditionsMutable(index)->auxChannelIndex = 0;
+        modeActivationConditionsMutable(index)->range.startStep = 0;
+        modeActivationConditionsMutable(index)->range.endStep = 0;
+    }
+
+    configureModeActivationCondition(0, BOXARM,         0, 1150, 2100);
+    configureModeActivationCondition(1, BOXANGLE,       0, 1300, 1700);
+    configureModeActivationCondition(2, BOXAIRMODE,     0, 1150, 2100);
+    configureModeActivationCondition(3, BOXNAVALTHOLD,  3, 1300, 1700);
+    configureModeActivationCondition(4, BOXNAVPOSHOLD,  3, 1300, 1700);
+    configureModeActivationCondition(5, BOXNAVRTH,      3, 1700, 2100);
+    configureModeActivationCondition(6, BOXANGLE,       3, 1700, 2100);
     
+    // Rates and PIDs
+    setConfigProfile(0);
+    pidProfileMutable()->bank_mc.pid[PID_PITCH].P = 65;
+    pidProfileMutable()->bank_mc.pid[PID_PITCH].I = 50;
+    pidProfileMutable()->bank_mc.pid[PID_PITCH].D = 28;
+    pidProfileMutable()->bank_mc.pid[PID_ROLL].P = 45;
+    pidProfileMutable()->bank_mc.pid[PID_ROLL].I = 40;
+    pidProfileMutable()->bank_mc.pid[PID_ROLL].D = 25;
+    pidProfileMutable()->bank_mc.pid[PID_YAW].P = 90;
+    pidProfileMutable()->bank_mc.pid[PID_YAW].I = 45;
+    pidProfileMutable()->bank_mc.pid[PID_YAW].D = 0;
+    pidProfileMutable()->bank_mc.pid[PID_LEVEL].P = 20;
+    pidProfileMutable()->bank_mc.pid[PID_LEVEL].I = 10;
+    pidProfileMutable()->bank_mc.pid[PID_LEVEL].D = 75;
     
-    
-    
+    pidProfileMutable()->max_angle_inclination[FD_ROLL] = 300;
+    pidProfileMutable()->max_angle_inclination[FD_PITCH] = 300;
+    pidProfileMutable()->dterm_lpf_hz = 70;
+    pidProfileMutable()->yaw_lpf_hz = 35;
+    pidProfileMutable()->dterm_setpoint_weight = 0;
+    pidProfileMutable()->dterm_soft_notch_hz = 0;
+    pidProfileMutable()->dterm_soft_notch_cutoff = 1;
+    pidProfileMutable()->pidSumLimit = 500;
+    pidProfileMutable()->yaw_p_limit = 300;
+    pidProfileMutable()->rollPitchItermIgnoreRate = 200;
+    pidProfileMutable()->yawItermIgnoreRate = 200;
+    pidProfileMutable()->axisAccelerationLimitRollPitch = 0;
+    pidProfileMutable()->axisAccelerationLimitYaw = 10000;
+
+    pidProfileMutable()->bank_mc.pid[PID_POS_Z].P = 50;
+    pidProfileMutable()->bank_mc.pid[PID_POS_Z].I = 0;
+    pidProfileMutable()->bank_mc.pid[PID_POS_Z].D = 0;
+    pidProfileMutable()->bank_mc.pid[PID_VEL_Z].P = 100;
+    pidProfileMutable()->bank_mc.pid[PID_VEL_Z].I = 50;
+    pidProfileMutable()->bank_mc.pid[PID_VEL_Z].D = 10;
+    pidProfileMutable()->bank_mc.pid[PID_POS_XY].P = 50;
+    pidProfileMutable()->bank_mc.pid[PID_POS_XY].I = 100;
+    pidProfileMutable()->bank_mc.pid[PID_POS_XY].D = 10;
+    pidProfileMutable()->bank_mc.pid[PID_VEL_XY].P = 150;
+    pidProfileMutable()->bank_mc.pid[PID_VEL_XY].I = 20;
+    pidProfileMutable()->bank_mc.pid[PID_VEL_XY].D = 70;
+
+    ((controlRateConfig_t*)currentControlRateProfile)->rcExpo8 = 60;
+    ((controlRateConfig_t*)currentControlRateProfile)->rcYawExpo8 = 35;
+    ((controlRateConfig_t*)currentControlRateProfile)->rates[FD_ROLL] = 54;
+    ((controlRateConfig_t*)currentControlRateProfile)->rates[FD_PITCH] = 54;
+    ((controlRateConfig_t*)currentControlRateProfile)->rates[FD_YAW] = 36;
+    ((controlRateConfig_t*)currentControlRateProfile)->thrMid8 = 50;
+    ((controlRateConfig_t*)currentControlRateProfile)->thrExpo8 = 0;
+    ((controlRateConfig_t*)currentControlRateProfile)->dynThrPID = 10;
+    ((controlRateConfig_t*)currentControlRateProfile)->tpa_breakpoint = 1600;
 }
