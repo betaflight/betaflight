@@ -561,8 +561,8 @@ void mixTable(pidProfile_t *pidProfile)
     float motorMixMax = 0, motorMixMin = 0;
     const int yawDirection = GET_DIRECTION(mixerConfig()->yaw_motors_reversed);
     int motorDirection = GET_DIRECTION(isMotorsReversed());
-    
-    
+  
+  
     for (int i = 0; i < motorCount; i++) {
         float mix =
             scaledAxisPidRoll  * currentMixer[i].roll  * (motorDirection) +

@@ -60,7 +60,7 @@ void updateTransponderDMABufferArcitimer(transponder_t *transponder, const uint8
 
 
 const struct transponderVTable arcitimerTansponderVTable = {
- 	updateTransponderDMABufferArcitimer,
+    updateTransponderDMABufferArcitimer,
 };
 
 #endif

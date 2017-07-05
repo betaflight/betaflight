@@ -80,9 +80,9 @@
     #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
     #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
-	
-	#define DEFAULT_FEATURES		FEATURE_OSD
-	
+
+    #define DEFAULT_FEATURES        FEATURE_OSD
+
 #else
 
     #define BARO
