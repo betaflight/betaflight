@@ -499,7 +499,7 @@ void stopPwmAllMotors(void)
 
 float throttle = 0;
 float motorOutputMin, motorOutputMax;
-bool mixerInversion = true;
+bool mixerInversion = false;
 float motorOutputRange;
 
 void calculateThrottleAndCurrentMotorEndpoints(void)
