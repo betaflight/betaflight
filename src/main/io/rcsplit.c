@@ -111,7 +111,7 @@ static void rcSplitProcessMode()
                 argument = RCSPLIT_CTRL_ARGU_INVALID;
                 break;
             }
-        
+      
             if (argument != RCSPLIT_CTRL_ARGU_INVALID) {
                 sendCtrlCommand(argument);
                 switchStates[switchIndex].isActivated = true;

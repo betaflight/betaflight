@@ -272,7 +272,7 @@ void failureMode(failureMode_e mode) {
 void indicateFailure(failureMode_e mode, int repeatCount)
 {
     UNUSED(repeatCount);
-    printf("Failure LED flash for: [failureMode]!!! %d\n", mode);	
+    printf("Failure LED flash for: [failureMode]!!! %d\n", mode);
 }
 
 // Time part
