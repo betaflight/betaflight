@@ -63,14 +63,6 @@ typedef enum mixerMode
     MIXER_QUADX_1234 = 26
 } mixerMode_e;
 
-typedef enum {
-    DEADBAND,
-    NORMAL,
-    INVERTED,
-    NORMAL_TO_DEADBAND,
-    INVERTED_TO_DEADBAND
-} throttle3Dstate_e;
-
 // Custom mixer data per motor
 typedef struct motorMixer_s {
     float throttle;
@@ -124,7 +116,7 @@ void pidInitMixer(const struct pidProfile_s *pidProfile);
 void mixerConfigureOutput(void);
 
 void mixerResetDisarmedMotors(void);
-void mixTable(struct pidProfile_s *pidProfile);
+void mixTable(uint8_t vbatPidCompensation);
 void syncMotors(bool enabled);
 void writeMotors(void);
 void stopMotors(void);
