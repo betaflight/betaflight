@@ -199,7 +199,7 @@ void rssiSoftPwmUpdate(uint32_t currentTime)
 
         // Reject bad measurement (should not happen)
 
-        if (tCycle > 2000) {
+        if (tCycle > 10000) {
             ++badtimer;
             goto restart;
         }
