@@ -63,13 +63,13 @@ typedef enum {
 static uint8_t SENSOR_ADDRESS_TYPE_LOOKUP[] = {
     IBUS_MEAS_TYPE_INTERNAL_VOLTAGE,  // Address 0, sensor 1, not usable since it is reserved for internal voltage
     IBUS_MEAS_TYPE_EXTERNAL_VOLTAGE,  // Address 1 ,sensor 2, VBAT
-    IBUS_MEAS_TYPE_TEMPERATURE,       // Address 2, sensor 3, Baro/Gyro Temp	
+    IBUS_MEAS_TYPE_TEMPERATURE,       // Address 2, sensor 3, Baro/Gyro Temp
     IBUS_MEAS_TYPE_RPM,               // Address 3, sensor 4, Status AS RPM
     IBUS_MEAS_TYPE_RPM,               // Address 4, sensor 5, MAG_COURSE in deg AS RPM
     IBUS_MEAS_TYPE_EXTERNAL_VOLTAGE,  // Address 5, sensor 6, Current in A AS ExtV
     IBUS_MEAS_TYPE_EXTERNAL_VOLTAGE   // Address 6, sensor 7, Baro Alt in cm AS ExtV
 #if defined(GPS)
-   ,IBUS_MEAS_TYPE_RPM,               // Address 7, sensor 8, HOME_DIR in deg AS RPM	
+   ,IBUS_MEAS_TYPE_RPM,               // Address 7, sensor 8, HOME_DIR in deg AS RPM
     IBUS_MEAS_TYPE_RPM,               // Address 8, sensor 9, HOME_DIST in m AS RPM
     IBUS_MEAS_TYPE_RPM,               // Address 9, sensor 10,GPS_COURSE in deg AS RPM
     IBUS_MEAS_TYPE_RPM,               // Address 10,sensor 11,GPS_ALT in m AS RPM
@@ -92,7 +92,7 @@ static uint8_t transmitIbusPacket(uint8_t ibusPacket[static IBUS_MIN_LEN], size_
     for (size_t i = 0; i < packetLength; i++) {
         serialWrite(ibusSerialPort, ibusPacket[i]);
     }
-	return packetLength;
+    return packetLength;
 }
 
 static uint8_t sendIbusCommand(ibusAddress_t address) {
@@ -180,7 +180,7 @@ static uint8_t dispatchMeasurementRequest(ibusAddress_t address) {
         else return sendIbusMeasurement(address, 0);
     }
 #endif
-	else return 0;
+    else return 0;
 }
 
 uint8_t respondToIbusRequest(uint8_t ibusPacket[static IBUS_RX_BUF_LEN]) {
@@ -194,11 +194,11 @@ uint8_t respondToIbusRequest(uint8_t ibusPacket[static IBUS_RX_BUF_LEN]) {
             return dispatchMeasurementRequest(returnAddress);
         }
     }
-	return 0;
+    return 0;
 }
 
 void initSharedIbusTelemetry(serialPort_t *port) {
-	ibusSerialPort = port;
+    ibusSerialPort = port;
 }
 
 void changeTypeIbusTelemetry(uint8_t id, uint8_t type) {

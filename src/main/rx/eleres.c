@@ -48,11 +48,11 @@
 #define RED_LED_OFF {if (redLed) {rfmSpiWrite(0x0e, 0x00);redLed=0;}}
 
 #define RC_CHANS 12
-#define TRANSMIT	1
-#define TRANSMITTED	2
-#define RECEIVE 	4
-#define RECEIVED 	8
-#define PREAMBLE	16
+#define TRANSMIT    1
+#define TRANSMITTED 2
+#define RECEIVE     4
+#define RECEIVED    8
+#define PREAMBLE    16
 
 #define DATA_FLAG 1
 #define LOCALIZER_FLAG 2
@@ -61,10 +61,10 @@
 #define RF22B_RX_PACKET_RECEIVED_INTERRUPT  0x02
 #define RF22B_PACKET_SENT_INTERRUPT         0x04
 #define RF22B_VALID_PREAMBLE_INTERRUPT      0x40
-#define RF22B_VALID_SYNCWORD_INTERRUPT  		0x80
+#define RF22B_VALID_SYNCWORD_INTERRUPT      0x80
 #define DATA_PACKAGE_SIZE 22
-#define BIN_OFF_VALUE	1150
-#define BIN_ON_VALUE	1850
+#define BIN_OFF_VALUE   1150
+#define BIN_ON_VALUE    1850
 
 PG_REGISTER_WITH_RESET_TEMPLATE(eleresConfig_t, eleresConfig, PG_ELERES_CONFIG, 0);
 
@@ -298,7 +298,7 @@ static void telemetryRX(void)
         rfTxBuffer[6] = pres>>8;
         rfTxBuffer[7] = pres&0xFF;
         rfTxBuffer[8] = wii_flymode;
-        rfTxBuffer[8]	|= ((curr>>2) & 0xC0);
+        rfTxBuffer[8] |= ((curr>>2) & 0xC0);
         break;
 
     case 1:
@@ -444,15 +444,15 @@ static void parseStatusRegister(const uint8_t *payload)
     if (rfMode & PREAMBLE) {
         uint8_t rssitmp = rfmSpiRead(0x26);
         if (eleresConfig()->eleresLocEn && eleresConfig()->eleresTelemetryEn && bkgLocEnable==2) {
-            if (rssitmp>124)	rssitmp = 124;
-            if (rssitmp<18)	rssitmp = 18;
+            if (rssitmp>124) rssitmp = 124;
+            if (rssitmp<18) rssitmp = 18;
             bkgLocBuf[0][1] = rssitmp + 128;
         } else {
             rssifil -= rssifil/8;
             rssifil += rssitmp;
             localRssi = (rssifil/8 * quality / 100)+10;
             if (localRssi>124) localRssi = 124;
-            if (localRssi<18)	localRssi = 18;
+            if (localRssi<18) localRssi = 18;
         }
         rfMode &= ~PREAMBLE;
     }
@@ -566,7 +566,7 @@ void eleresSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
 
     if (eleresConfig()->eleresLocEn) {
         if ((dataReady & 0x03)==(DATA_FLAG | LOCALIZER_FLAG) && rfRxBuffer[19]<128) {
-            if (rx_frames == 0)	guard_time = lastPackTime;
+            if (rx_frames == 0) guard_time = lastPackTime;
             if (rx_frames < 250) {
                 rx_frames++;
             }

@@ -23,7 +23,7 @@ typedef enum {
     ADC_BATTERY = 0,
     ADC_RSSI = 1,
     ADC_CURRENT = 2,
-	ADC_AIRSPEED = 3,
+    ADC_AIRSPEED = 3,
     ADC_FUNCTION_COUNT
 } adcFunction_e;
 

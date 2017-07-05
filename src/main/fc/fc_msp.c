@@ -1230,13 +1230,13 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     case MSP_POSITION_ESTIMATION_CONFIG:
     #ifdef NAV
 
-        sbufWriteU16(dst, positionEstimationConfig()->w_z_baro_p * 100); // inav_w_z_baro_p	float as value * 100
-        sbufWriteU16(dst, positionEstimationConfig()->w_z_gps_p * 100);  // 2	inav_w_z_gps_p	float as value * 100
-        sbufWriteU16(dst, positionEstimationConfig()->w_z_gps_v * 100);  // 2	inav_w_z_gps_v	float as value * 100
-        sbufWriteU16(dst, positionEstimationConfig()->w_xy_gps_p * 100); // 2	inav_w_xy_gps_p	float as value * 100
-        sbufWriteU16(dst, positionEstimationConfig()->w_xy_gps_v * 100); // 2	inav_w_xy_gps_v	float as value * 100
-        sbufWriteU8(dst, gpsConfigMutable()->gpsMinSats);                // 1	
-        sbufWriteU8(dst, positionEstimationConfig()->use_gps_velned);    // 1	inav_use_gps_velned	ON/OFF
+        sbufWriteU16(dst, positionEstimationConfig()->w_z_baro_p * 100); //     inav_w_z_baro_p float as value * 100
+        sbufWriteU16(dst, positionEstimationConfig()->w_z_gps_p * 100);  // 2   inav_w_z_gps_p  float as value * 100
+        sbufWriteU16(dst, positionEstimationConfig()->w_z_gps_v * 100);  // 2   inav_w_z_gps_v  float as value * 100
+        sbufWriteU16(dst, positionEstimationConfig()->w_xy_gps_p * 100); // 2   inav_w_xy_gps_p float as value * 100
+        sbufWriteU16(dst, positionEstimationConfig()->w_xy_gps_v * 100); // 2   inav_w_xy_gps_v float as value * 100
+        sbufWriteU8(dst, gpsConfigMutable()->gpsMinSats);                // 1
+        sbufWriteU8(dst, positionEstimationConfig()->use_gps_velned);    // 1   inav_use_gps_velned ON/OFF
 
     #else
         sbufWriteU16(dst, 0);

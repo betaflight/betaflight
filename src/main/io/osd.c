@@ -134,7 +134,7 @@ static int32_t osdConvertDistanceToUnit(int32_t dist)
  */
 static void osdFormatDistanceStr(char* buff, int32_t dist)
 {
-	int32_t dist_abs = abs(osdConvertDistanceToUnit(dist));
+    int32_t dist_abs = abs(osdConvertDistanceToUnit(dist));
 
     switch (osdConfig()->units) {
     case OSD_UNIT_IMPERIAL:
@@ -785,7 +785,7 @@ static void osdUpdateStats(void)
         value = gpsSol.groundSpeed;
         if (stats.max_speed < value)
             stats.max_speed = value;
-   
+
         if (stats.max_distance < GPS_distanceToHome)
             stats.max_distance = GPS_distanceToHome;
     }
