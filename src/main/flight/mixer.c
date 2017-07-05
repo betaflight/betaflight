@@ -255,7 +255,7 @@ static const mixer_t mixerTable[] = {
     //DEF_MIXER( MIXER_DUALCOPTER,        PLATFORM_MULTIROTOR, 0,          false,      false,      NULL ),
     //DEF_MIXER( MIXER_SINGLECOPTER,      PLATFORM_MULTIROTOR, 0,          false,      false,      NULL ),
 
-#if !defined(DISABLE_UNCOMMON_MIXERS) 
+#if !defined(DISABLE_UNCOMMON_MIXERS)
     DEF_MIXER( MIXER_Y4,                PLATFORM_MULTIROTOR, 4,          false,      false,      mixerY4 ),
     DEF_MIXER( MIXER_ATAIL4,            PLATFORM_MULTIROTOR, 4,          false,      false,      mixerAtail4 ),
     DEF_MIXER( MIXER_VTAIL4,            PLATFORM_MULTIROTOR, 4,          false,      false,      mixerVtail4 ),
@@ -281,7 +281,7 @@ const mixer_t * findMixer(mixerMode_e mixerMode)
 {
 #ifndef USE_QUAD_MIXER_ONLY
     for (unsigned ii = 0; ii < sizeof(mixerTable)/sizeof(mixerTable[0]); ii++) {
-        if (mixerTable[ii].mixerMode == mixerMode) 
+        if (mixerTable[ii].mixerMode == mixerMode)
             return &mixerTable[ii];
     }
 #else

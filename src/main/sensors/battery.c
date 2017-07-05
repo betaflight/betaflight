@@ -130,7 +130,7 @@ void batteryUpdate(uint32_t vbatTimeDelta)
         batteryCriticalVoltage = 0;
     }
 
-    switch(batteryState)
+    switch (batteryState)
     {
         case BATTERY_OK:
             if (vbat <= (batteryWarningVoltage - VBATT_HYSTERESIS)) {
@@ -192,7 +192,7 @@ void currentMeterUpdate(int32_t lastUpdateAt)
     int32_t throttleFactor = 0;
     int32_t throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
 
-    switch(batteryConfig()->currentMeterType) {
+    switch (batteryConfig()->currentMeterType) {
         case CURRENT_SENSOR_ADC:
             amperageRaw -= amperageRaw / 8;
             amperageRaw += (amperageLatestADC = adcGetChannel(ADC_CURRENT));

@@ -251,7 +251,7 @@ bool ms56xxDetect(baroDev_t *baro, baroSensor_e baroType)
             }
 #elif defined(USE_BARO_MS5607)
             baro->calculate = ms5607_calculate;
-#else 
+#else
             baro->calculate = ms5611_calculate;
 #endif
 

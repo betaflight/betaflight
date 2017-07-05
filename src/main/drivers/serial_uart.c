@@ -92,7 +92,7 @@ static void uartReconfigure(uartPort_t *uartPort)
 
     usartConfigurePinInversion(uartPort);
 
-    if(uartPort->port.options & SERIAL_BIDIR)
+    if (uartPort->port.options & SERIAL_BIDIR)
         USART_HalfDuplexCmd(uartPort->USARTx, ENABLE);
     else
         USART_HalfDuplexCmd(uartPort->USARTx, DISABLE);

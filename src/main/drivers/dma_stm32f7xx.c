@@ -76,7 +76,7 @@ static void enableDmaClock(uint32_t rcc)
         /* Delay after an RCC peripheral clock enabling */
         tmpreg = READ_BIT(RCC->AHB1ENR, rcc);
         UNUSED(tmpreg);
-    } while(0);
+    } while (0);
 }
 
 void dmaInit(dmaHandlerIdentifier_e identifier, resourceOwner_t owner, uint8_t resourceIndex)
@@ -97,7 +97,7 @@ void dmaSetHandler(dmaHandlerIdentifier_e identifier, dmaCallbackHandlerFuncPtr 
         /* Delay after an RCC peripheral clock enabling */
         tmpreg = READ_BIT(RCC->AHB1ENR, dmaDescriptors[identifier].rcc);
         UNUSED(tmpreg);
-    } while(0);
+    } while (0);
 
     dmaDescriptors[identifier].irqHandlerCallback = callback;
     dmaDescriptors[identifier].userParam = userParam;

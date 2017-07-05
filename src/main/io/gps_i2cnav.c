@@ -110,7 +110,7 @@ bool gpsPollI2CNAV(void)
 bool gpsHandleI2CNAV(void)
 {
     // Process state
-    switch(gpsState.state) {
+    switch (gpsState.state) {
     default:
         return false;
 

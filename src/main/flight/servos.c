@@ -241,7 +241,7 @@ void servosInit(void)
 
     /*
      * Compute scaling factor for upper and lower servo throw
-     */ 
+     */
     for (uint8_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         servoMetadata[i].scaleMax = (servoParams(i)->max - servoParams(i)->middle) / 500.0f;
         servoMetadata[i].scaleMin = (servoParams(i)->middle - servoParams(i)->min) / 500.0f;
@@ -411,11 +411,11 @@ void servoMixer(float dT)
     for (int i = 0; i < servoRuleCount; i++) {
         const uint8_t target = currentServoMixer[i].targetChannel;
         const uint8_t from = currentServoMixer[i].inputSource;
-        
+
         /*
-         * Apply mixer speed limit. 1 [one] speed unit is defined as 10us/s: 
+         * Apply mixer speed limit. 1 [one] speed unit is defined as 10us/s:
          * 0 = no limiting
-         * 1 = 10us/s -> full servo sweep (from 1000 to 2000) is performed in 100s 
+         * 1 = 10us/s -> full servo sweep (from 1000 to 2000) is performed in 100s
          * 10 = 100us/s -> full sweep (from 1000 to 2000)  is performed in 10s
          * 100 = 1000us/s -> full sweep in 1s
          */
@@ -425,7 +425,7 @@ void servoMixer(float dT)
     }
 
     for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        
+
         /*
          * Apply servo rate
          */
@@ -433,7 +433,7 @@ void servoMixer(float dT)
 
         /*
          * Perform acumulated servo output scaling to match servo min and max values
-         * Important: is servo rate is > 100%, total servo output might be bigger than 
+         * Important: is servo rate is > 100%, total servo output might be bigger than
          * min/max
          */
         if (servo[i] > 0) {
@@ -449,7 +449,7 @@ void servoMixer(float dT)
 
         /*
          * Constrain servo position to min/max to prevent servo damage
-         * If servo was saturated above min/max, that means that user most probably 
+         * If servo was saturated above min/max, that means that user most probably
          * allowed the situation when smix weight sum for an output was above 100
          */
         servo[i] = constrain(servo[i], servoParams(i)->min, servoParams(i)->max);

@@ -204,7 +204,7 @@ void pidInit(void)
     }
 
     // Calculate max overall tilt (max pitch + max roll combined) as a limit to heading hold
-    headingHoldCosZLimit = cos_approx(DECIDEGREES_TO_RADIANS(pidProfile()->max_angle_inclination[FD_ROLL])) * 
+    headingHoldCosZLimit = cos_approx(DECIDEGREES_TO_RADIANS(pidProfile()->max_angle_inclination[FD_ROLL])) *
                            cos_approx(DECIDEGREES_TO_RADIANS(pidProfile()->max_angle_inclination[FD_PITCH]));
 }
 
@@ -213,7 +213,7 @@ bool pidInitFilters(void)
 {
     const uint32_t refreshRate = getPidUpdateRate();
     notchFilterApplyFn = nullFilterApply;
-    if(refreshRate != 0 && pidProfile()->dterm_soft_notch_hz != 0){
+    if (refreshRate != 0 && pidProfile()->dterm_soft_notch_hz != 0){
         notchFilterApplyFn = (filterApplyFnPtr)biquadFilterApply;
         for (int axis = 0; axis < 3; ++ axis) {
             biquadFilterInitNotch(&pidState[axis].deltaNotchFilter, refreshRate, pidProfile()->dterm_soft_notch_hz, pidProfile()->dterm_soft_notch_cutoff);

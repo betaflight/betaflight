@@ -195,7 +195,7 @@ void autotuneFixedWingUpdate(const flight_dynamics_index_t axis, float desiredRa
         const timeDelta_t stateTimeMs = currentTimeMs - tuneCurrent[axis].stateEnterTime;
         bool gainsUpdated = false;
 
-        switch(tuneCurrent[axis].state) {
+        switch (tuneCurrent[axis].state) {
             case DEMAND_TOO_LOW:
                 break;
             case DEMAND_OVERSHOOT:

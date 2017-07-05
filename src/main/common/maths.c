@@ -326,8 +326,8 @@ void arraySubInt32(int32_t *dest, int32_t *array1, int32_t *array2, int count)
  */
 void sensorCalibrationResetState(sensorCalibrationState_t * state)
 {
-    for(int i = 0; i < 4; i++){
-        for(int j = 0; j < 4; j++){
+    for (int i = 0; i < 4; i++){
+        for (int j = 0; j < 4; j++){
             state->XtX[i][j] = 0;
         }
 

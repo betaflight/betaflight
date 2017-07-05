@@ -461,7 +461,7 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
 
         /*
          * Stabilize ROLL axis on 0 degress banking regardless of loiter radius and position
-         */ 
+         */
         rcCommand[ROLL] = 0;
 
         /*

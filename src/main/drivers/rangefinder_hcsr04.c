@@ -120,7 +120,7 @@ void hcsr04_update(void)
             // The speed of sound is 340 m/s or approx. 29 microseconds per centimeter.
             // The ping travels out and back, so to find the distance of the
             // object we take half of the distance traveled.
-            // 340 m/s = 0.034 cm/microsecond = 29.41176471 *2 = 58.82352941 rounded to 59 
+            // 340 m/s = 0.034 cm/microsecond = 29.41176471 *2 = 58.82352941 rounded to 59
 
             lastCalculatedDistance = hcsr04SonarPulseTravelTime / 59;
             if (lastCalculatedDistance > HCSR04_MAX_RANGE_CM) {
@@ -131,7 +131,7 @@ void hcsr04_update(void)
             // No measurement within reasonable time - indicate failure
             lastCalculatedDistance = RANGEFINDER_HARDWARE_FAILURE;
         }
-        
+
         // Trigger a new measurement
         lastMeasurementStartedAt = timeNowMs;
         hcsr04_start_reading();
@@ -218,7 +218,7 @@ bool hcsr04Detect(rangefinderDev_t *dev, const rangefinderHardwarePins_t * range
         return true;
     }
     else {
-        // Not detected - free resources 
+        // Not detected - free resources
         IORelease(triggerIO);
         IORelease(echoIO);
         return false;

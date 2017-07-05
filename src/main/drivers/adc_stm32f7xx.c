@@ -152,7 +152,7 @@ static void adcInstanceInit(ADCDevice adcDevice)
 
     //HAL_CLEANINVALIDATECACHE((uint32_t*)&adcValues[adcDevice], configuredAdcChannels);
     /*##-4- Start the conversion process #######################################*/
-    if(HAL_ADC_Start_DMA(&adc->ADCHandle, (uint32_t*)&adcValues[adcDevice], adc->usedChannelCount) != HAL_OK)
+    if (HAL_ADC_Start_DMA(&adc->ADCHandle, (uint32_t*)&adcValues[adcDevice], adc->usedChannelCount) != HAL_OK)
     {
         /* Start Conversation Error */
     }
@@ -166,7 +166,7 @@ void adcHardwareInit(drv_adc_config_t *init)
     for (int i = ADC_CHN_1; i < ADC_CHN_COUNT; i++) {
         if (!adcConfig[i].tag)
             continue;
-            
+   
         adcDevice_t * adc = &adcHardware[adcConfig[i].adcDevice];
 
         IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC, RESOURCE_ADC_CH1 + (i - ADC_CHN_1), 0);

@@ -101,7 +101,7 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
                     rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_HCSR04_TASK_PERIOD_MS));
                 }
             }
-#endif           
+#endif  
             break;
 
         case RANGEFINDER_SRF10:

@@ -139,7 +139,7 @@ uint8_t esc4wayInit(void)
     pwmIOConfiguration_t *pwmIOConfiguration = pwmGetOutputConfiguration();
     for (volatile uint8_t i = 0; i < pwmIOConfiguration->ioCount; i++) {
         if ((pwmIOConfiguration->ioConfigurations[i].flags & PWM_PF_MOTOR) == PWM_PF_MOTOR) {
-            if(motor[pwmIOConfiguration->ioConfigurations[i].index] > 0) {
+            if (motor[pwmIOConfiguration->ioConfigurations[i].index] > 0) {
                 escHardware[escCount].io = IOGetByTag(pwmIOConfiguration->ioConfigurations[i].timerHardware->tag);
                 setEscInput(escCount);
                 setEscHi(escCount);
@@ -418,7 +418,7 @@ void esc4wayProcess(serialPort_t *mspPort)
     #endif
     bool isExitScheduled = false;
 
-    while(1) {
+    while (1) {
         // restart looking for new sequence from host
         do {
             CRC_in.word = 0;
@@ -446,7 +446,7 @@ void esc4wayProcess(serialPort_t *mspPort)
         CRC_check.bytes[1] = ReadByte();
         CRC_check.bytes[0] = ReadByte();
 
-        if(CRC_check.word == CRC_in.word) {
+        if (CRC_check.word == CRC_in.word) {
             ACK_OUT = ACK_OK;
         } else {
             ACK_OUT = ACK_I_INVALID_CRC;
@@ -461,12 +461,12 @@ void esc4wayProcess(serialPort_t *mspPort)
             ioMem.D_PTR_I = ParamBuf;
 
 
-            switch(CMD) {
+            switch (CMD) {
                 // ******* Interface related stuff *******
                 case cmd_InterfaceTestAlive:
                 {
                     if (isMcuConnected()){
-                        switch(CurrentInterfaceMode)
+                        switch (CurrentInterfaceMode)
                         {
                             #ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
                             case imATM_BLB:
@@ -583,7 +583,7 @@ void esc4wayProcess(serialPort_t *mspPort)
                     }
                     O_PARAM_LEN = DeviceInfoSize; //4
                     O_PARAM = (uint8_t *)&DeviceInfo;
-                    if(Connect(&DeviceInfo)) {
+                    if (Connect(&DeviceInfo)) {
                         DeviceInfo.bytes[INTF_MODE_IDX] = CurrentInterfaceMode;
                     } else {
                         SET_DISCONNECTED;
@@ -595,7 +595,7 @@ void esc4wayProcess(serialPort_t *mspPort)
                 #ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
                 case cmd_DeviceEraseAll:
                 {
-                    switch(CurrentInterfaceMode)
+                    switch (CurrentInterfaceMode)
                     {
                         case imSK:
                         {
@@ -639,13 +639,13 @@ void esc4wayProcess(serialPort_t *mspPort)
                     wtf.D_FLASH_ADDR_L=Adress_L;
                     wtf.D_PTR_I = BUF_I;
                     */
-                    switch(CurrentInterfaceMode)
+                    switch (CurrentInterfaceMode)
                     {
                         #ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
                         case imSIL_BLB:
                         case imATM_BLB:
                         {
-                            if(!BL_ReadFlash(CurrentInterfaceMode, &ioMem))
+                            if (!BL_ReadFlash(CurrentInterfaceMode, &ioMem))
                             {
                                 ACK_OUT = ACK_D_GENERAL_ERROR;
                             }
@@ -655,7 +655,7 @@ void esc4wayProcess(serialPort_t *mspPort)
                         #ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
                         case imSK:
                         {
-                            if(!Stk_ReadFlash(&ioMem))
+                            if (!Stk_ReadFlash(&ioMem))
                             {
                                 ACK_OUT = ACK_D_GENERAL_ERROR;
                             }
@@ -706,7 +706,7 @@ void esc4wayProcess(serialPort_t *mspPort)
                         default:
                             ACK_OUT = ACK_I_INVALID_CMD;
                     }
-                    if(ACK_OUT == ACK_OK)
+                    if (ACK_OUT == ACK_OK)
                     {
                         O_PARAM_LEN = ioMem.D_NUM_BYTES;
                         O_PARAM = (uint8_t *)&ParamBuf;

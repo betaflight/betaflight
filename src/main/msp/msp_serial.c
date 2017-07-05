@@ -136,7 +136,7 @@ static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet)
         hdr[6] = (len >> 8) & 0xff;
     }
 
-    // We are allowed to send out the response if 
+    // We are allowed to send out the response if
     //  a) TX buffer is completely empty (we are talking to well-behaving party that follows request-response scheduling;
     //     this allows us to transmit jumbo frames bigger than TX buffer (serialWriteBuf will block, but for jumbo frames we don't care)
     //  b) Response fits into TX buffer

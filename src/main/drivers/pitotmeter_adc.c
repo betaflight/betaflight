@@ -30,7 +30,7 @@
 
 /*
  * NXP MPXV7002DP differential pressure sensor
- * 
+ *
  */
 #define PITOT_ADC_VOLTAGE_SCALER        (2.0f / 1.0f)       // MPXV7002DP is 5V device, assumed resistive divider 1K:1K
 #define PITOT_ADC_VOLTAGE_ZERO          (2.5f)              // Pressure offset is 2.5V

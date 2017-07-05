@@ -77,7 +77,7 @@ void ws2811LedStripHardwareInit(void)
     if (timerHardware == NULL) {
         return;
     }
-    
+
     timer = timerHardware->tim;
 
     ws2811IO = IOGetByTag(IO_TAG(WS2811_PIN));

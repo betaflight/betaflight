@@ -68,7 +68,7 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8
 {
 #if defined(USE_HAL_DRIVER)
     TIM_HandleTypeDef* Handle = timerFindTimerHandle(tim);
-    if(Handle == NULL) return;
+    if (Handle == NULL) return;
 
     TIM_OC_InitTypeDef TIM_OCInitStructure;
 
@@ -116,7 +116,7 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
     pwmOutputPort_t *p = &pwmOutputPorts[allocatedOutputPortCount++];
 #if defined(USE_HAL_DRIVER)
     TIM_HandleTypeDef* Handle = timerFindTimerHandle(timerHardware->tim);
-    if(Handle == NULL) return p;
+    if (Handle == NULL) return p;
 #endif
 
     configTimeBase(timerHardware->tim, period, mhz);
@@ -142,7 +142,7 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
     pwmOCConfig(timerHardware->tim, timerHardware->channel, value, timerHardware->output & TIMER_OUTPUT_INVERTED);
 
 #if defined(USE_HAL_DRIVER)
-    if(timerHardware->output & TIMER_OUTPUT_N_CHANNEL)
+    if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL)
         HAL_TIMEx_PWMN_Start(Handle, timerHardware->channel);
     else
         HAL_TIM_PWM_Start(Handle, timerHardware->channel);
@@ -310,10 +310,10 @@ void pwmWriteServo(uint8_t index, uint16_t value)
 #ifdef BEEPER_PWM
 void pwmWriteBeeper(bool onoffBeep)
 {
-    if(beeperPwm == NULL)
+    if (beeperPwm == NULL)
         return;
-    
-    if(onoffBeep == true) {
+
+    if (onoffBeep == true) {
         *beeperPwm->ccr = (1000000 / beeperFrequency) / 2;
     } else {
         *beeperPwm->ccr = 0;

@@ -222,7 +222,7 @@ bool checkIbusTelemetryState(void) {
     } else {
         freeIbusTelemetryPort();
     }
-    
+
     return true;
 }
 

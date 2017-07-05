@@ -303,7 +303,7 @@ void handleSmartPortTelemetry(void)
 
         int32_t tmpi;
 
-        switch(id) {
+        switch (id) {
 #ifdef GPS
             case FSSP_DATAID_SPEED      :
                 if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {

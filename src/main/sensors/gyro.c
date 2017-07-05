@@ -153,7 +153,7 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev, gyroSensor_e gyroHard
 {
     dev->gyroAlign = ALIGN_DEFAULT;
 
-    switch(gyroHardware) {
+    switch (gyroHardware) {
     case GYRO_AUTODETECT:
         // fallthrough
 

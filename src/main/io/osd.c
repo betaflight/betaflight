@@ -638,7 +638,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->item_pos[OSD_HOME_DIST] = OSD_POS(1, 1);
     osdConfig->item_pos[OSD_HEADING] = OSD_POS(12, 1);
     osdConfig->item_pos[OSD_GPS_SPEED] = OSD_POS(23, 1);
-    
+
     osdConfig->item_pos[OSD_THROTTLE_POS] = OSD_POS(1, 2) | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_CURRENT_DRAW] = OSD_POS(1, 3) | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_MAH_DRAWN] = OSD_POS(1, 4) | VISIBLE_FLAG;
@@ -648,18 +648,18 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->item_pos[OSD_HOME_DIR] = OSD_POS(14, 11);
     osdConfig->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(8, 6) | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_HORIZON_SIDEBARS] = OSD_POS(8, 6) | VISIBLE_FLAG;
-    
+
     osdConfig->item_pos[OSD_CRAFT_NAME] = OSD_POS(20, 2);
     osdConfig->item_pos[OSD_VTX_CHANNEL] = OSD_POS(8, 6);
 
     osdConfig->item_pos[OSD_ONTIME] = OSD_POS(23, 10) | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_FLYTIME] = OSD_POS(23, 11) | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_GPS_SATS] = OSD_POS(0, 11) | VISIBLE_FLAG;
-    
+
     osdConfig->item_pos[OSD_GPS_LAT] = OSD_POS(0, 12);
     osdConfig->item_pos[OSD_FLYMODE] = OSD_POS(12, 12) | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_GPS_LON] = OSD_POS(18, 12);
-    
+
     osdConfig->item_pos[OSD_ROLL_PIDS] = OSD_POS(2, 10);
     osdConfig->item_pos[OSD_PITCH_PIDS] = OSD_POS(2, 11);
     osdConfig->item_pos[OSD_YAW_PIDS] = OSD_POS(2, 12);
@@ -785,7 +785,7 @@ static void osdUpdateStats(void)
         value = gpsSol.groundSpeed;
         if (stats.max_speed < value)
             stats.max_speed = value;
-            
+   
         if (stats.max_distance < GPS_distanceToHome)
             stats.max_distance = GPS_distanceToHome;
     }
@@ -821,7 +821,7 @@ static void osdShowStats(void)
         max7456Write(2, top, "MAX SPEED        :");
         osdFormatVelocityStr(buff, stats.max_speed);
         max7456Write(22, top++, buff);
-        
+
         max7456Write(2, top, "MAX DISTANCE     :");
         osdFormatDistanceStr(buff, stats.max_distance*100);
         max7456Write(22, top++, buff);

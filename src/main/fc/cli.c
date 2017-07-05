@@ -1096,7 +1096,7 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, u
         return; // return from case for float only
     }
 
-    switch(var->type & VALUE_MODE_MASK) {
+    switch (var->type & VALUE_MODE_MASK) {
     case MODE_MAX:
     case MODE_DIRECT:
         if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32)
@@ -1529,7 +1529,7 @@ static void cliSerial(char *cmdline)
             break;
         }
 
-        switch(i) {
+        switch (i) {
             case 0:
                 if (baudRateIndex < BAUD_1200 || baudRateIndex > BAUD_2470000) {
                     continue;
@@ -1582,7 +1582,7 @@ static void cliSerialPassthrough(char *cmdline)
     int index = 0;
 
     while (tok != NULL) {
-        switch(index) {
+        switch (index) {
             case 0:
                 id = atoi(tok);
                 break;
@@ -2038,7 +2038,7 @@ static void cliModeColor(char *cmdline)
         int modeIdx  = args[MODE];
         int funIdx = args[FUNCTION];
         int color = args[COLOR];
-        if(!setModeColor(modeIdx, funIdx, color)) {
+        if (!setModeColor(modeIdx, funIdx, color)) {
             cliShowParseError();
             return;
         }
@@ -2697,7 +2697,7 @@ static void cliMap(char *cmdline)
 
 static const char *checkCommand(const char *cmdLine, const char *command)
 {
-    if(!strncasecmp(cmdLine, command, strlen(command))   // command names match
+    if (!strncasecmp(cmdLine, command, strlen(command))   // command names match
         && !isalnum((unsigned)cmdLine[strlen(command)])) {   // next characted in bufffer is not alphanumeric (command is correctly terminated)
         return cmdLine + strlen(command) + 1;
     } else {
@@ -3016,7 +3016,7 @@ static void cliSet(char *cmdline)
                 switch (mode) {
                     case MODE_MAX:
                     case MODE_DIRECT: {
-                            if(*eqptr != 0 && strspn(eqptr, "0123456789.+-") == strlen(eqptr)) {
+                            if (*eqptr != 0 && strspn(eqptr, "0123456789.+-") == strlen(eqptr)) {
                                 int32_t value = 0;
                                 uint32_t uvalue = 0;
                                 float valuef = 0;
@@ -3613,11 +3613,11 @@ void cliProcess(void)
 
                 const clicmd_t *cmd;
                 for (cmd = cmdTable; cmd < cmdTable + ARRAYLEN(cmdTable); cmd++) {
-                    if(!strncasecmp(cliBuffer, cmd->name, strlen(cmd->name))   // command names match
+                    if (!strncasecmp(cliBuffer, cmd->name, strlen(cmd->name))   // command names match
                        && !isalnum((unsigned)cliBuffer[strlen(cmd->name)]))    // next characted in bufffer is not alphanumeric (command is correctly terminated)
                         break;
                 }
-                if(cmd < cmdTable + ARRAYLEN(cmdTable))
+                if (cmd < cmdTable + ARRAYLEN(cmdTable))
                     cmd->func(cliBuffer + strlen(cmd->name) + 1);
                 else
                     cliPrint("Unknown command, try 'help'");

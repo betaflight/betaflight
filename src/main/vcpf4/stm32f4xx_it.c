@@ -59,7 +59,7 @@ void PendSV_Handler(void)
 #ifdef USE_USB_OTG_FS
 void OTG_FS_WKUP_IRQHandler(void)
 {
-  if(USB_OTG_dev.cfg.low_power)
+  if (USB_OTG_dev.cfg.low_power)
   {
     *(uint32_t *)(0xE000ED10) &= 0xFFFFFFF9 ;
     SystemInit();
@@ -77,7 +77,7 @@ void OTG_FS_WKUP_IRQHandler(void)
 #ifdef USE_USB_OTG_HS
 void OTG_HS_WKUP_IRQHandler(void)
 {
-  if(USB_OTG_dev.cfg.low_power)
+  if (USB_OTG_dev.cfg.low_power)
   {
     *(uint32_t *)(0xE000ED10) &= 0xFFFFFFF9 ;
     SystemInit();

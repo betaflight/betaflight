@@ -89,7 +89,7 @@ typedef enum {
 
 extern uint32_t stateFlags;
 
-typedef enum { 
+typedef enum {
     FLM_MANUAL,
     FLM_ACRO,
     FLM_ANGLE,

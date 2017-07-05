@@ -125,7 +125,7 @@ static uint8_t dispatchMeasurementRequest(ibusAddress_t address) {
     if (address == 1) { //2. VBAT
         return sendIbusMeasurement(address, vbat * 10);
     } else if (address == 2) { //3. BARO_TEMP\GYRO_TEMP
-        if (sensors(SENSOR_BARO)) return sendIbusMeasurement(address, (uint16_t) ((baro.baroTemperature + 50) / 10  + IBUS_TEMPERATURE_OFFSET)); //int32_t 
+        if (sensors(SENSOR_BARO)) return sendIbusMeasurement(address, (uint16_t) ((baro.baroTemperature + 50) / 10  + IBUS_TEMPERATURE_OFFSET)); //int32_t
         else return sendIbusMeasurement(address, (uint16_t) (telemTemperature1 + IBUS_TEMPERATURE_OFFSET)); //int16_t
     } else if (address == 3) { //4. STATUS (sat num AS #0, FIX AS 0, HDOP AS 0, Mode AS 0)
         int16_t status = flightModeToIBusTelemetryMode[getFlightModeForTelemetry()];
@@ -145,9 +145,9 @@ static uint8_t dispatchMeasurementRequest(ibusAddress_t address) {
         return sendIbusMeasurement(address, (uint16_t) (attitude.values.yaw / 10));
     } else if (address == 5) { //6. CURR //In 10*mA, 1 = 10 mA
         if (feature(FEATURE_CURRENT_METER)) return sendIbusMeasurement(address, (uint16_t) amperage); //int32_t
-        else return sendIbusMeasurement(address, 0); 
+        else return sendIbusMeasurement(address, 0);
     } else if (address == 6) { //7. BARO_ALT //In cm => m
-        if (sensors(SENSOR_BARO)) return sendIbusMeasurement(address, (uint16_t) baro.BaroAlt); //int32_t 
+        if (sensors(SENSOR_BARO)) return sendIbusMeasurement(address, (uint16_t) baro.BaroAlt); //int32_t
         else return sendIbusMeasurement(address, 0);
     }
 #if defined(GPS)
@@ -170,7 +170,7 @@ static uint8_t dispatchMeasurementRequest(ibusAddress_t address) {
         if (sensors(SENSOR_GPS)) return sendIbusMeasurement(address, (uint16_t) ((gpsSol.llh.lon % 100000)/10));
         else return sendIbusMeasurement(address, 0);
     } else if (address == 13) { //14. GPS_LAT1 //Lattitude * 1e+7
-        if (sensors(SENSOR_GPS)) return sendIbusMeasurement(address, (uint16_t) (gpsSol.llh.lat / 100000)); 
+        if (sensors(SENSOR_GPS)) return sendIbusMeasurement(address, (uint16_t) (gpsSol.llh.lat / 100000));
         else return sendIbusMeasurement(address, 0);
     } else if (address == 14) { //15. GPS_LON1 //Longitude * 1e+7
         if (sensors(SENSOR_GPS)) return sendIbusMeasurement(address, (uint16_t) (gpsSol.llh.lon / 100000));

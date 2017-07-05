@@ -126,7 +126,7 @@ static bool gpsNewFrameNMEA(char c)
 
             switch (gps_frame) {
                 case FRAME_GGA:        //************* GPGGA FRAME parsing
-                    switch(param) {
+                    switch (param) {
             //          case 1:             // Time information
             //              break;
                         case 2:
@@ -162,7 +162,7 @@ static bool gpsNewFrameNMEA(char c)
                     }
                     break;
                 case FRAME_RMC:        //************* GPRMC FRAME parsing
-                    switch(param) {
+                    switch (param) {
                         case 7:
                             gps_Msg.speed = ((grab_fields(string, 1) * 5144L) / 1000L);    // speed in cm/s added by Mis
                             break;
@@ -272,7 +272,7 @@ bool gpsHandleNMEA(void)
     bool hasNewData = gpsReceiveData();
 
     // Process state
-    switch(gpsState.state) {
+    switch (gpsState.state) {
     default:
         return false;
 
