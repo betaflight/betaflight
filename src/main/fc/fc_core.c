@@ -234,7 +234,7 @@ void tryArm(void)
                     pwmWriteDshotCommand(index, DSHOT_CMD_SPIN_DIRECTION_REVERSED);
                 }
             }
-	    }
+        }
 #endif
 
         ENABLE_ARMING_FLAG(ARMED);

@@ -427,16 +427,16 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 #endif
 
 #if defined(SIMULATOR_BUILD) && defined(SKIP_IMU_CALC)
-	UNUSED(imuMahonyAHRSupdate);
-	UNUSED(useAcc);
-	UNUSED(useMag);
-	UNUSED(useYaw);
-	UNUSED(rawYawError);
+    UNUSED(imuMahonyAHRSupdate);
+    UNUSED(useAcc);
+    UNUSED(useMag);
+    UNUSED(useYaw);
+    UNUSED(rawYawError);
 #else
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_IMU_SYNC)
-//	printf("[imu]deltaT = %u, imuDeltaT = %u, currentTimeUs = %u, micros64_real = %lu\n", deltaT, imuDeltaT, currentTimeUs, micros64_real());
-	deltaT = imuDeltaT;
+//  printf("[imu]deltaT = %u, imuDeltaT = %u, currentTimeUs = %u, micros64_real = %lu\n", deltaT, imuDeltaT, currentTimeUs, micros64_real());
+    deltaT = imuDeltaT;
 #endif
 
     imuMahonyAHRSupdate(deltaT * 1e-6f,

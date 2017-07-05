@@ -169,7 +169,7 @@ static bool hmc5883lRead(int16_t *magData)
 {
     uint8_t buf[6];
 #ifdef USE_MAG_SPI_HMC5883
-	bool ack = hmc5883SpiReadCommand(MAG_DATA_REGISTER, 6, buf);
+    bool ack = hmc5883SpiReadCommand(MAG_DATA_REGISTER, 6, buf);
 #else
     bool ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, MAG_DATA_REGISTER, 6, buf);
 #endif
@@ -202,7 +202,7 @@ static bool hmc5883lInit(void)
     // Note that the  very first measurement after a gain change maintains the same gain as the previous setting.
     // The new gain setting is effective from the second measurement and on.
 #ifdef USE_MAG_SPI_HMC5883
-	hmc5883SpiWriteCommand(HMC58X3_R_CONFB, 0x60); // Set the Gain to 2.5Ga (7:5->011)
+    hmc5883SpiWriteCommand(HMC58X3_R_CONFB, 0x60); // Set the Gain to 2.5Ga (7:5->011)
 #else
     i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFB, 0x60); // Set the Gain to 2.5Ga (7:5->011)
 #endif
@@ -211,7 +211,7 @@ static bool hmc5883lInit(void)
 
     for (i = 0; i < 10; i++) {  // Collect 10 samples
 #ifdef USE_MAG_SPI_HMC5883
-		hmc5883SpiWriteCommand(HMC58X3_R_MODE, 1);
+        hmc5883SpiWriteCommand(HMC58X3_R_MODE, 1);
 #else
         i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_MODE, 1);
 #endif
@@ -233,7 +233,7 @@ static bool hmc5883lInit(void)
 
     // Apply the negative bias. (Same gain)
 #ifdef USE_MAG_SPI_HMC5883
-	hmc5883SpiWriteCommand(HMC58X3_R_CONFA, 0x010 + HMC_NEG_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to negative bias.
+    hmc5883SpiWriteCommand(HMC58X3_R_CONFA, 0x010 + HMC_NEG_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to negative bias.
 #else
     i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_NEG_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to negative bias.
 #endif

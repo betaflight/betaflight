@@ -151,7 +151,7 @@ static uint8_t loadDmaBufferDshot(motorDmaOutput_t *const motor, uint16_t packet
     for (int i = 0; i < 16; i++) {
         motor->dmaBuffer[i] = (packet & 0x8000) ? MOTOR_BIT_1 : MOTOR_BIT_0;  // MSB first
         packet <<= 1;
-	}
+    }
 
     return DSHOT_DMA_BUFFER_SIZE;
 }
@@ -328,7 +328,7 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         */
         motors[motorIndex].pulseScale = ((motorConfig->motorPwmProtocol == PWM_TYPE_BRUSHED) ? period : (sLen * hz)) / 1000.0f;
         motors[motorIndex].pulseOffset = (sMin * hz) - (motors[motorIndex].pulseScale * 1000);
-    
+  
         pwmOutConfig(&motors[motorIndex], timerHardware, hz, period, idlePulse, motorConfig->motorPwmInversion);
 
         bool timerAlreadyUsed = false;
