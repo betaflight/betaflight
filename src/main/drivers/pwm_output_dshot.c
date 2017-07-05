@@ -169,7 +169,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
     DMA_Cmd(dmaRef, DISABLE);
     DMA_DeInit(dmaRef);
-    
+
     DMA_StructInit(&DMA_InitStructure);
 #if defined(STM32F3)
     DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)motor->dmaBuffer;

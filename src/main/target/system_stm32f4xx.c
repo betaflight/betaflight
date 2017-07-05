@@ -642,7 +642,7 @@ void SetSysClock(void)
   {
     HSEStatus = RCC->CR & RCC_CR_HSERDY;
     StartUpCounter++;
-  } while((HSEStatus == 0) && (StartUpCounter != HSE_STARTUP_TIMEOUT));
+  } while ((HSEStatus == 0) && (StartUpCounter != HSE_STARTUP_TIMEOUT));
 
   if ((RCC->CR & RCC_CR_HSERDY) != RESET)
   {
@@ -700,18 +700,18 @@ void SetSysClock(void)
     RCC->CR |= RCC_CR_PLLON;
 
     /* Wait till the main PLL is ready */
-    while((RCC->CR & RCC_CR_PLLRDY) == 0)
+    while ((RCC->CR & RCC_CR_PLLRDY) == 0)
     {
     }
 
 #if defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F446xx) || defined(STM32F469_479xx)
     /* Enable the Over-drive to extend the clock frequency to 180 Mhz */
     PWR->CR |= PWR_CR_ODEN;
-    while((PWR->CSR & PWR_CSR_ODRDY) == 0)
+    while ((PWR->CSR & PWR_CSR_ODRDY) == 0)
     {
     }
     PWR->CR |= PWR_CR_ODSWEN;
-    while((PWR->CSR & PWR_CSR_ODSWRDY) == 0)
+    while ((PWR->CSR & PWR_CSR_ODSWRDY) == 0)
     {
     }
 #endif /* STM32F427_437x || STM32F429_439xx || STM32F446xx || STM32F469_479xx */
@@ -1018,7 +1018,7 @@ void SystemInit_ExtMemCtl(void)
   /* Clock enable command */
   FMC_Bank5_6->SDCMR = 0x00000011;
   tmpreg = FMC_Bank5_6->SDSR & 0x00000020;
-  while((tmpreg != 0) & (timeout-- > 0))
+  while ((tmpreg != 0) & (timeout-- > 0))
   {
     tmpreg = FMC_Bank5_6->SDSR & 0x00000020;
   }
@@ -1029,7 +1029,7 @@ void SystemInit_ExtMemCtl(void)
   /* PALL command */
   FMC_Bank5_6->SDCMR = 0x00000012;
   timeout = 0xFFFF;
-  while((tmpreg != 0) & (timeout-- > 0))
+  while ((tmpreg != 0) & (timeout-- > 0))
   {
   tmpreg = FMC_Bank5_6->SDSR & 0x00000020;
   }
@@ -1037,7 +1037,7 @@ void SystemInit_ExtMemCtl(void)
   /* Auto refresh command */
   FMC_Bank5_6->SDCMR = 0x00000073;
   timeout = 0xFFFF;
-  while((tmpreg != 0) & (timeout-- > 0))
+  while ((tmpreg != 0) & (timeout-- > 0))
   {
   tmpreg = FMC_Bank5_6->SDSR & 0x00000020;
   }
@@ -1045,7 +1045,7 @@ void SystemInit_ExtMemCtl(void)
   /* MRD register program */
   FMC_Bank5_6->SDCMR = 0x00046014;
   timeout = 0xFFFF;
-  while((tmpreg != 0) & (timeout-- > 0))
+  while ((tmpreg != 0) & (timeout-- > 0))
   {
   tmpreg = FMC_Bank5_6->SDSR & 0x00000020;
   }

@@ -214,7 +214,7 @@ static void mspFc4waySerialCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessFnPtr
         escPortIndex = sbufReadU8(src);
     }
 
-    switch(escMode) {
+    switch (escMode) {
     case ESC_4WAY:
         // get channel number
         // switch all motor lines HI
@@ -284,7 +284,7 @@ const box_t *findBoxByPermanentId(uint8_t permanentId)
 
 static bool activeBoxIdGet(boxId_e boxId)
 {
-    if(boxId > sizeof(activeBoxIds) * 8)
+    if (boxId > sizeof(activeBoxIds) * 8)
         return false;
     return bitArrayGet(&activeBoxIds, boxId);
 }
@@ -328,7 +328,7 @@ void initActiveBoxIds(void)
     memset(&ena, 0, sizeof(ena));
 
     // macro to enable boxId (BoxidMaskEnable). Reference to ena is hidden, local use only
-#define BME(boxId) do { bitArraySet(&ena, boxId); } while(0)
+#define BME(boxId) do { bitArraySet(&ena, boxId); } while (0)
     BME(BOXARM);
 
     if (!feature(FEATURE_AIRMODE)) {

@@ -144,7 +144,7 @@ void spiInitDevice(SPIDevice device)
         spi->leadingEdge = true;
     }
 #endif
-    
+
     // Enable SPI clock
     RCC_ClockCmd(spi->rcc, ENABLE);
     RCC_ResetCmd(spi->rcc, ENABLE);
@@ -154,7 +154,7 @@ void spiInitDevice(SPIDevice device)
     IOInit(IOGetByTag(spi->mosi), OWNER_SPI_MOSI, RESOURCE_INDEX(device));
 
 #if defined(STM32F7)
-    if(spi->leadingEdge == true)
+    if (spi->leadingEdge == true)
         IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG_LOW, spi->sckAF);
     else
         IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG_HIGH, spi->sckAF);
@@ -162,7 +162,7 @@ void spiInitDevice(SPIDevice device)
     IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_CFG, spi->mosiAF);
 #endif
 #if defined(STM32F3) || defined(STM32F4)
-    if(spi->leadingEdge == true)
+    if (spi->leadingEdge == true)
         IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG_LOW, spi->af);
     else
         IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG_HIGH, spi->af);
@@ -255,7 +255,7 @@ uint32_t spiTimeoutUserCallback(SPI_TypeDef *instance)
 bool spiIsBusBusy(SPI_TypeDef *instance)
 {
     SPIDevice device = spiDeviceByInstance(instance);
-    if(spiDevice[device].hspi.State == HAL_SPI_STATE_BUSY)
+    if (spiDevice[device].hspi.State == HAL_SPI_STATE_BUSY)
         return true;
     else
         return false;
@@ -266,11 +266,11 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len
     SPIDevice device = spiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
-    if(!out) // Tx only
+    if (!out) // Tx only
     {
         status = HAL_SPI_Transmit(&spiDevice[device].hspi, (uint8_t *)in, len, SPI_DEFAULT_TIMEOUT);
     }
-    else if(!in) // Rx only
+    else if (!in) // Rx only
     {
         status = HAL_SPI_Receive(&spiDevice[device].hspi, out, len, SPI_DEFAULT_TIMEOUT);
     }
@@ -279,7 +279,7 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len
         status = HAL_SPI_TransmitReceive(&spiDevice[device].hspi, in, out, len, SPI_DEFAULT_TIMEOUT);
     }
 
-    if( status != HAL_OK)
+    if ( status != HAL_OK)
         spiTimeoutUserCallback(instance);
 
     return true;

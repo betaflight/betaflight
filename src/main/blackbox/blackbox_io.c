@@ -221,7 +221,7 @@ bool blackboxDeviceOpen(void)
              */
 
 
-            switch(baudRateIndex) {
+            switch (baudRateIndex) {
             case BAUD_1000000:
             case BAUD_1500000:
             case BAUD_2000000:

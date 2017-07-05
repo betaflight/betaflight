@@ -87,7 +87,7 @@ extern const uint8_t __pg_resetdata_end[];
     do {                                                                \
         extern const pgRegistry_t _name ##_Registry;                    \
         pgReset(&_name ## _Registry);                            \
-    } while(0)                                                          \
+    } while (0)                                                          \
     /**/
 
 // Declare system config

@@ -65,7 +65,7 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     },
 #endif
 #ifdef USE_I2C_DEVICE_3
-    {   
+    { 
         .device = I2CDEV_3,
         .reg = I2C3, 
         .sclPins = { DEFIO_TAG_E(PA8) },
@@ -163,12 +163,12 @@ bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_,
 
     HAL_StatusTypeDef status;
 
-    if(reg_ == 0xFF)
+    if (reg_ == 0xFF)
         status = HAL_I2C_Master_Transmit(pHandle ,addr_ << 1, data, len_, I2C_DEFAULT_TIMEOUT);
     else
         status = HAL_I2C_Mem_Write(pHandle ,addr_ << 1, reg_, I2C_MEMADD_SIZE_8BIT,data, len_, I2C_DEFAULT_TIMEOUT);
 
-    if(status != HAL_OK)
+    if (status != HAL_OK)
         return i2cHandleHardwareFailure(device);
 
     return true;
@@ -193,12 +193,12 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
 
     HAL_StatusTypeDef status;
 
-    if(reg_ == 0xFF)
+    if (reg_ == 0xFF)
         status = HAL_I2C_Master_Receive(pHandle ,addr_ << 1, buf, len, I2C_DEFAULT_TIMEOUT);
     else
         status = HAL_I2C_Mem_Read(pHandle, addr_ << 1, reg_, I2C_MEMADD_SIZE_8BIT,buf, len, I2C_DEFAULT_TIMEOUT);
 
-    if(status != HAL_OK)
+    if (status != HAL_OK)
         return i2cHandleHardwareFailure(device);
 
     return true;

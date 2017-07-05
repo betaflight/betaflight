@@ -600,35 +600,35 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
 
         // check if last vtx values have changed.
         check = pit + (power << 1) + (band << 4) + (channel << 8);
-        if(!showSettings && check != lastCheck) {
+        if (!showSettings && check != lastCheck) {
             // display settings for 3 seconds.
             showSettings = 15;
         }
         lastCheck = check; // quick way to check if any settings changed.
 
-        if(showSettings) {
+        if (showSettings) {
             showSettings--;
         }
         blink = !blink;
         *timer += HZ_TO_US(5); // check 5 times a second
     }
 
-    if(!active) { // no vtx device detected
+    if (!active) { // no vtx device detected
         return;
     }
 
     hsvColor_t color = {0, 0, 0};
-    if(showSettings) { // show settings
+    if (showSettings) { // show settings
         uint8_t vtxLedCount = 0;
         for (int i = 0; i < ledCounts.count && vtxLedCount < 6; ++i) {
             const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
             if (ledGetOverlayBit(ledConfig, LED_OVERLAY_VTX)) {
-                if(vtxLedCount == 0) {
+                if (vtxLedCount == 0) {
                     color.h = HSV(GREEN).h;
                     color.s = HSV(GREEN).s;
                     color.v = blink ? 15 : 0; // blink received settings
                 }
-                else if(vtxLedCount > 0 && power >= vtxLedCount && !pit) { // show power
+                else if (vtxLedCount > 0 && power >= vtxLedCount && !pit) { // show power
                     color.h = HSV(ORANGE).h;
                     color.s = HSV(ORANGE).s;
                     color.v = blink ? 15 : 0; // blink received settings
@@ -949,7 +949,7 @@ static void applyLedAnimationLayer(bool updateNow, timeUs_t *timer)
 {
     static uint8_t frameCounter = 0;
     const int animationFrames = ledGridRows;
-    if(updateNow) {
+    if (updateNow) {
         frameCounter = (frameCounter + 1 < animationFrames) ? frameCounter + 1 : 0;
         *timer += HZ_TO_US(20);
     }
@@ -1087,7 +1087,7 @@ bool parseColor(int index, const char *colorConfig)
     };
     for (int componentIndex = 0; result && componentIndex < HSV_COLOR_COMPONENT_COUNT; componentIndex++) {
         int val = atoi(remainingCharacters);
-        if(val > hsv_limit[componentIndex]) {
+        if (val > hsv_limit[componentIndex]) {
             result = false;
             break;
         }
@@ -1128,7 +1128,7 @@ bool setModeColor(ledModeIndex_e modeIndex, int modeColorIndex, int colorIndex)
     if (colorIndex < 0 || colorIndex >= LED_CONFIGURABLE_COLOR_COUNT)
         return false;
     if (modeIndex < LED_MODE_COUNT) {  // modeIndex_e is unsigned, so one-sided test is enough
-        if(modeColorIndex < 0 || modeColorIndex >= LED_DIRECTION_COUNT)
+        if (modeColorIndex < 0 || modeColorIndex >= LED_DIRECTION_COUNT)
             return false;
         ledStripConfigMutable()->modeColors[modeIndex].color[modeColorIndex] = colorIndex;
     } else if (modeIndex == LED_SPECIAL) {

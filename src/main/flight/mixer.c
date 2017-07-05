@@ -339,7 +339,7 @@ bool mixerIsOutputSaturated(int axis, float errorRate)
 // All PWM motor scaling is done to standard PWM range of 1000-2000 for easier tick conversion with legacy code / configurator
 // DSHOT scaling is done to the actual dshot range
 void initEscEndpoints(void) {
-    switch(motorConfig()->dev.motorPwmProtocol) {
+    switch (motorConfig()->dev.motorPwmProtocol) {
 #ifdef USE_DSHOT
     case PWM_TYPE_PROSHOT1000:
     case PWM_TYPE_DSHOT1200:
@@ -516,7 +516,7 @@ void mixTable(pidProfile_t *pidProfile)
             throttlePrevious = rcCommand[THROTTLE];
             throttle = rcCommand[THROTTLE] - rxConfig()->mincheck;
             currentThrottleInputRange = rcCommandThrottleRange3dLow;
-            if(isMotorProtocolDshot()) mixerInversion = true;
+            if (isMotorProtocolDshot()) mixerInversion = true;
         } else if (rcCommand[THROTTLE] >= (rxConfig()->midrc + flight3DConfig()->deadband3d_throttle)) { // Positive handling
             motorOutputMax = motorOutputHigh;
             motorOutputMin = deadbandMotor3dHigh;
@@ -528,7 +528,7 @@ void mixTable(pidProfile_t *pidProfile)
             motorOutputMin = motorOutputLow;
             throttle = rxConfig()->midrc - flight3DConfig()->deadband3d_throttle;
             currentThrottleInputRange = rcCommandThrottleRange3dLow;
-            if(isMotorProtocolDshot()) mixerInversion = true;
+            if (isMotorProtocolDshot()) mixerInversion = true;
         } else {  // Deadband handling from positive to negative
             motorOutputMax = motorOutputHigh;
             motorOutputMin = deadbandMotor3dHigh;
@@ -561,8 +561,8 @@ void mixTable(pidProfile_t *pidProfile)
     float motorMixMax = 0, motorMixMin = 0;
     const int yawDirection = GET_DIRECTION(mixerConfig()->yaw_motors_reversed);
     int motorDirection = GET_DIRECTION(isMotorsReversed());
-        
-        
+    
+    
     for (int i = 0; i < motorCount; i++) {
         float mix =
             scaledAxisPidRoll  * currentMixer[i].roll  * (motorDirection) +

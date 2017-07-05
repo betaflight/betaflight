@@ -155,7 +155,7 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
 
     dev->gyroAlign = ALIGN_DEFAULT;
 
-    switch(gyroHardware) {
+    switch (gyroHardware) {
     case GYRO_DEFAULT:
 #ifdef USE_GYRO_MPU6050
     case GYRO_MPU6050:
@@ -222,7 +222,7 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
 #else
         if (mpu6500GyroDetect(dev)) {
 #endif
-            switch(dev->mpuDetectionResult.sensor) {
+            switch (dev->mpuDetectionResult.sensor) {
             case MPU_9250_SPI:
                 gyroHardware = GYRO_MPU9250;
                 break;

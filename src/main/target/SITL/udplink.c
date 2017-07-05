@@ -15,7 +15,7 @@
 int udpInit(udpLink_t* link, const char* addr, int port, bool isServer) {
 	int one = 1;
 
-	if((link->fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
+	if ((link->fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
 		return -2;
 	}
 
@@ -28,13 +28,13 @@ int udpInit(udpLink_t* link, const char* addr, int port, bool isServer) {
 	link->si.sin_port = htons(port);
 	link->port = port;
 
-	if(addr == NULL) {
+	if (addr == NULL) {
 		link->si.sin_addr.s_addr = htonl(INADDR_ANY);
 	}else{
 		link->si.sin_addr.s_addr = inet_addr(addr);
 	}
 
-	if(isServer) {
+	if (isServer) {
 		if (bind(link->fd, (const struct sockaddr *)&link->si, sizeof(link->si)) == -1) {
 			return -1;
 		}

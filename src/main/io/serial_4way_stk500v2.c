@@ -176,9 +176,9 @@ static uint8_t StkReadLeader(void)
     // Wait for the first bit
     uint32_t waitcycl; //250uS each
 
-    if((StkCmd == CMD_PROGRAM_EEPROM_ISP) || (StkCmd == CMD_CHIP_ERASE_ISP)) {
+    if ((StkCmd == CMD_PROGRAM_EEPROM_ISP) || (StkCmd == CMD_CHIP_ERASE_ISP)) {
          waitcycl = STK_WAITCYLCES_EXT;
-    } else if(StkCmd == CMD_SIGN_ON) {
+    } else if (StkCmd == CMD_SIGN_ON) {
         waitcycl = STK_WAITCYLCES_START;
     } else {
         waitcycl= STK_WAITCYLCES;
@@ -189,7 +189,7 @@ static uint8_t StkReadLeader(void)
     }
 
     //Skip the first bits
-    if (waitcycl == 0){
+    if (waitcycl == 0) {
         goto timeout;
     }
 
@@ -271,7 +271,7 @@ static uint8_t _CMD_LOAD_ADDRESS(ioMem_t *pMem)
 {
     // ignore 0xFFFF
     // assume address is set before and we read or write the immediately following package
-    if((pMem->D_FLASH_ADDR_H == 0xFF) && (pMem->D_FLASH_ADDR_L == 0xFF)) return 1;
+    if ((pMem->D_FLASH_ADDR_H == 0xFF) && (pMem->D_FLASH_ADDR_L == 0xFF)) return 1;
     StkCmd = CMD_LOAD_ADDRESS;
     StkSendPacketHeader();
     StkSendByte(0); // hi byte Msg len
