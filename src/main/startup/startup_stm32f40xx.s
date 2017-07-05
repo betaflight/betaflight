@@ -89,7 +89,7 @@ Reset_Handler:
 
   // Check for overclocking request
   ldr r0, =0x2001FFF8         // Faduf
-  ldr r1, =0xDEADBABE         // Faduf
+  ldr r1, =0xBABEFACE         // Faduf
   ldr r2, [r0, #0]            // Faduf
   str r0, [r0, #0]            // Faduf
   cmp r2, r1                  // Faduf
