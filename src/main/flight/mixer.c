@@ -497,6 +497,23 @@ void stopPwmAllMotors(void)
     delayMicroseconds(1500);
 }
 
+throttle3Dstate_e get3DState(const uint16_t throttlePrevious)
+{
+    throttle3Dstate_e throttle3Dstate;
+
+    if((rcCommand[THROTTLE] <= (rxConfig()->midrc - flight3DConfig()->deadband3d_throttle))) {
+        throttle3Dstate = INVERTED;
+    } else if(rcCommand[THROTTLE] >= (rxConfig()->midrc + flight3DConfig()->deadband3d_throttle)) {
+        throttle3Dstate = NORMAL;
+    } else if((throttlePrevious <= (rxConfig()->midrc - flight3DConfig()->deadband3d_throttle))) {
+        throttle3Dstate = INVERTED_TO_DEADBAND;
+    } else {
+        throttle3Dstate = NORMAL_TO_DEADBAND;
+    }
+
+    return throttle3Dstate;
+}
+
 void mixTable(pidProfile_t *pidProfile)
 {
     // Scale roll/pitch/yaw uniformly to fit within throttle range
@@ -510,26 +527,33 @@ void mixTable(pidProfile_t *pidProfile)
     if (feature(FEATURE_3D)) {
         if (!ARMING_FLAG(ARMED)) throttlePrevious = rxConfig()->midrc; // When disarmed set to mid_rc. It always results in positive direction after arming.
 
-        if ((rcCommand[THROTTLE] <= (rxConfig()->midrc - flight3DConfig()->deadband3d_throttle))) { // Out of band handling
+        throttle3Dstate_e flight3DState = get3DState(throttlePrevious);
+
+        switch(flight3DState) {
+        case(INVERTED):
             motorOutputMax = deadbandMotor3dLow;
             motorOutputMin = motorOutputLow;
             throttlePrevious = rcCommand[THROTTLE];
             throttle = rcCommand[THROTTLE] - rxConfig()->mincheck;
             currentThrottleInputRange = rcCommandThrottleRange3dLow;
-            if (isMotorProtocolDshot()) mixerInversion = true;
-        } else if (rcCommand[THROTTLE] >= (rxConfig()->midrc + flight3DConfig()->deadband3d_throttle)) { // Positive handling
+            if(isMotorProtocolDshot()) mixerInversion = true;
+            break;
+        case(NORMAL):
             motorOutputMax = motorOutputHigh;
             motorOutputMin = deadbandMotor3dHigh;
             throttlePrevious = rcCommand[THROTTLE];
             throttle = rcCommand[THROTTLE] - rxConfig()->midrc - flight3DConfig()->deadband3d_throttle;
             currentThrottleInputRange = rcCommandThrottleRange3dHigh;
-        } else if ((throttlePrevious <= (rxConfig()->midrc - flight3DConfig()->deadband3d_throttle)))  { // Deadband handling from negative to positive
+            break;
+        case(INVERTED_TO_DEADBAND):
             motorOutputMax = deadbandMotor3dLow;
             motorOutputMin = motorOutputLow;
             throttle = rxConfig()->midrc - flight3DConfig()->deadband3d_throttle;
             currentThrottleInputRange = rcCommandThrottleRange3dLow;
-            if (isMotorProtocolDshot()) mixerInversion = true;
-        } else {  // Deadband handling from positive to negative
+            if(isMotorProtocolDshot()) mixerInversion = true;
+            break;
+        default:
+        case(NORMAL_TO_DEADBAND):
             motorOutputMax = motorOutputHigh;
             motorOutputMin = deadbandMotor3dHigh;
             throttle = 0;
