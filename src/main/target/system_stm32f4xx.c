@@ -505,9 +505,9 @@ void SystemInit(void)
 void SystemInitOC(void)
 {
     /* PLL setting for overclocking */
-    pll_n = 480;
-    pll_p = 2;
-    pll_q = 10;
+    pll_n = PLL_N_OC;
+    pll_p = PLL_P_OC;
+    pll_q = PLL_Q_OC;
 
     SystemInit();
 }
