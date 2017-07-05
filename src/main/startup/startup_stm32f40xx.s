@@ -79,14 +79,6 @@ Reset_Handler:
   str     r1, [r0, #0x30]
   dsb
 
-  // Check for overclocking request
-  ldr r0, =0x2001FFFC         // Faduf
-  ldr r1, =0xDEADBABE         // Faduf
-  ldr r2, [r0, #0]            // Faduf
-  str r0, [r0, #0]            // Faduf
-  cmp r2, r1                  // Faduf
-  beq Boot_OC                 // Faduf
-
   // Check for bootloader reboot
   ldr r0, =0x2001FFFC         // mj666
   ldr r1, =0xDEADBEEF         // mj666
@@ -94,6 +86,14 @@ Reset_Handler:
   str r0, [r0, #0]            // mj666
   cmp r2, r1                  // mj666
   beq Reboot_Loader           // mj666
+
+  // Check for overclocking request
+  ldr r0, =0x2001FFF8         // Faduf
+  ldr r1, =0xDEADBABE         // Faduf
+  ldr r2, [r0, #0]            // Faduf
+  str r0, [r0, #0]            // Faduf
+  cmp r2, r1                  // Faduf
+  beq Boot_OC                 // Faduf
 
 /* Copy the data segment initializers from flash to SRAM */  
   movs  r1, #0
