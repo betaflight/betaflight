@@ -166,7 +166,7 @@ void adcHardwareInit(drv_adc_config_t *init)
     for (int i = ADC_CHN_1; i < ADC_CHN_COUNT; i++) {
         if (!adcConfig[i].tag)
             continue;
-   
+
         adcDevice_t * adc = &adcHardware[adcConfig[i].adcDevice];
 
         IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC, RESOURCE_ADC_CH1 + (i - ADC_CHN_1), 0);

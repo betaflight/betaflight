@@ -50,7 +50,7 @@ void detectBrushedESC(void)
             } else {
                 hardwareMotorType = MOTOR_BRUSHED;
             }
-   
+
             return;
         }
     }

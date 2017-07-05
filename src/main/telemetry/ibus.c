@@ -187,7 +187,7 @@ void initIbusTelemetry(void) {
 #if defined(GPS)
     if (type == 1 || type == 2) changeTypeIbusTelemetry(15, IBUS_MEAS_TYPE_SPE);
     if (type == 2) changeTypeIbusTelemetry(10, IBUS_MEAS_TYPE_ALT);
-#endif	
+#endif
     ibusPortSharing = determinePortSharing(ibusSerialPortConfig, FUNCTION_TELEMETRY_IBUS);
     ibusTelemetryEnabled = false;
 }

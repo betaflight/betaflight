@@ -155,17 +155,17 @@ static void bmp280_get_up(void)
 
     if (ack){
 
-    	bmp280_up = (int32_t)((((uint32_t)(data[0])) << 12) | (((uint32_t)(data[1])) << 4) | ((uint32_t)data[2] >> 4));
-     	bmp280_ut = (int32_t)((((uint32_t)(data[3])) << 12) | (((uint32_t)(data[4])) << 4) | ((uint32_t)data[5] >> 4));
-     	
-     	bmp280_up_valid  = bmp280_up;
-     	bmp280_ut_valid  = bmp280_ut;
+        bmp280_up = (int32_t)((((uint32_t)(data[0])) << 12) | (((uint32_t)(data[1])) << 4) | ((uint32_t)data[2] >> 4));
+        bmp280_ut = (int32_t)((((uint32_t)(data[3])) << 12) | (((uint32_t)(data[4])) << 4) | ((uint32_t)data[5] >> 4));
+
+        bmp280_up_valid  = bmp280_up;
+        bmp280_ut_valid  = bmp280_ut;
      }
      else
      {
-    	 //assign previous valid measurements
-     	bmp280_up= bmp280_up_valid;
-     	bmp280_ut= bmp280_ut_valid;
+        //assign previous valid measurements
+        bmp280_up= bmp280_up_valid;
+        bmp280_ut= bmp280_ut_valid;
      }
 
 
