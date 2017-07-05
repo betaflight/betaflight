@@ -118,14 +118,14 @@ static const uint8_t ubloxInit[] = {
     0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00,           // Collected by resetting a GPS unit to defaults. Changing mode to Pedistrian and
     0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x3C, 0x00, 0x00, 0x00,           // capturing the data from the U-Center binary console.
     0x00, 0xC8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x17, 0xC2,
-    
+
     //Preprocessor Airborne_1g Dynamic Platform Model Option
     #elif defined(GPS_UBLOX_MODE_AIRBORNE_1G)
     0xB5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xFF, 0xFF, 0x06, 0x03, 0x00,           // CFG-NAV5 - Set engine settings
     0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00,           // Collected by resetting a GPS unit to defaults. Changing mode to Airborne with
     0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x3C, 0x00, 0x00, 0x00,           // <1g acceleration and capturing the data from the U-Center binary console.
     0x00, 0xC8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1A, 0x28,
-    
+
     //Default Airborne_4g Dynamic Platform Model
     #else
     0xB5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xFF, 0xFF, 0x08, 0x03, 0x00,           // CFG-NAV5 - Set engine settings
@@ -133,7 +133,7 @@ static const uint8_t ubloxInit[] = {
     0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x3C, 0x00, 0x00, 0x00,           // <4g acceleration and capturing the data from the U-Center binary console.
     0x00, 0xC8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1C, 0x6C,
     #endif
-    
+
     // DISABLE NMEA messages
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x05, 0x00, 0xFF, 0x19,           // VGS: Course over ground and Ground speed
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x03, 0x00, 0xFD, 0x15,           // GSV: GNSS Satellites in View
@@ -273,7 +273,7 @@ void gpsInitNmea(void)
 #if defined(COLIBRI_RACE) || defined(LUX_RACE)
     uint32_t now;
 #endif
-    switch(gpsData.state) {
+    switch (gpsData.state) {
         case GPS_INITIALIZING:
 #if defined(COLIBRI_RACE) || defined(LUX_RACE)
            now = millis();
@@ -361,7 +361,7 @@ void gpsInitUblox(void)
         case GPS_CONFIGURE:
 
             // Either use specific config file for GPS or let dynamically upload config
-            if( gpsConfig()->autoConfig == GPS_AUTOCONFIG_OFF ) {
+            if ( gpsConfig()->autoConfig == GPS_AUTOCONFIG_OFF ) {
                 gpsSetState(GPS_RECEIVING_DATA);
                 break;
             }
@@ -628,7 +628,7 @@ static bool gpsNewFrameNMEA(char c)
 
             switch (gps_frame) {
                 case FRAME_GGA:        //************* GPGGA FRAME parsing
-                    switch(param) {
+                    switch (param) {
             //          case 1:             // Time information
             //              break;
                         case 2:
@@ -661,7 +661,7 @@ static bool gpsNewFrameNMEA(char c)
                     }
                     break;
                 case FRAME_RMC:        //************* GPRMC FRAME parsing
-                    switch(param) {
+                    switch (param) {
                         case 7:
                             gps_Msg.speed = ((grab_fields(string, 1) * 5144L) / 1000L);    // speed in cm/s added by Mis
                             break;
@@ -671,7 +671,7 @@ static bool gpsNewFrameNMEA(char c)
                     }
                     break;
                 case FRAME_GSV:
-                    switch(param) {
+                    switch (param) {
                       /*case 1:
                             // Total number of messages of this type in this cycle
                             break; */
@@ -684,17 +684,17 @@ static bool gpsNewFrameNMEA(char c)
                             GPS_numCh = grab_fields(string, 0);
                             break;
                     }
-                    if(param < 4)
+                    if (param < 4)
                         break;
 
                     svPacketIdx = (param - 4) / 4 + 1; // satellite number in packet, 1-4
                     svSatNum    = svPacketIdx + (4 * (svMessageNum - 1)); // global satellite number
                     svSatParam  = param - 3 - (4 * (svPacketIdx - 1)); // parameter number for satellite
 
-                    if(svSatNum > GPS_SV_MAXSATS)
+                    if (svSatNum > GPS_SV_MAXSATS)
                         break;
 
-                    switch(svSatParam) {
+                    switch (svSatParam) {
                         case 1:
                             // SV PRN number
                             GPS_svinfo_chn[svSatNum - 1]  = svSatNum;
@@ -980,7 +980,7 @@ static bool UBLOX_parse_gps(void)
         GPS_numCh = _buffer.svinfo.numCh;
         if (GPS_numCh > 16)
             GPS_numCh = 16;
-        for (i = 0; i < GPS_numCh; i++){
+        for (i = 0; i < GPS_numCh; i++) {
             GPS_svinfo_chn[i]= _buffer.svinfo.channel[i].chn;
             GPS_svinfo_svid[i]= _buffer.svinfo.channel[i].svid;
             GPS_svinfo_quality[i]=_buffer.svinfo.channel[i].quality;
@@ -1103,7 +1103,7 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
     waitForSerialPortToFinishTransmitting(gpsPort);
     waitForSerialPortToFinishTransmitting(gpsPassthroughPort);
 
-    if(!(gpsPort->mode & MODE_TX))
+    if (!(gpsPort->mode & MODE_TX))
         serialSetMode(gpsPort, gpsPort->mode | MODE_TX);
 
 #ifdef USE_DASHBOARD

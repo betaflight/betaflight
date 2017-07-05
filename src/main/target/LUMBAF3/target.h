@@ -70,7 +70,7 @@
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PB1
-#define VBAT_ADC_PIN            PA0         
+#define VBAT_ADC_PIN            PA0     
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

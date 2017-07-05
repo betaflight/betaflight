@@ -906,7 +906,7 @@ bool startedLoggingInTestMode = false;
 
 void startInTestMode(void)
 {
-    if(!startedLoggingInTestMode) {
+    if (!startedLoggingInTestMode) {
         if (blackboxConfig()->device == BLACKBOX_DEVICE_SERIAL) {
             serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP);
             if (sharedBlackboxAndMspPort) {
@@ -919,7 +919,7 @@ void startInTestMode(void)
 }
 void stopInTestMode(void)
 {
-    if(startedLoggingInTestMode) {
+    if (startedLoggingInTestMode) {
         blackboxFinish();
         startedLoggingInTestMode = false;
     }
@@ -954,7 +954,7 @@ bool inMotorTestMode(void) {
     for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
         atLeastOneMotorActivated |= (motor_disarmed[i] != inactiveMotorCommand);
 
-    if(atLeastOneMotorActivated) {
+    if (atLeastOneMotorActivated) {
         resetTime = millis() + 5000; // add 5 seconds
         return true;
     } else {
@@ -1638,7 +1638,7 @@ void blackboxUpdate(timeUs_t currentTimeUs)
             blackboxSetState(BLACKBOX_STATE_ERASED);
             beeper(BEEPER_BLACKBOX_ERASE);
         }
-        break;  
+        break;
     case BLACKBOX_STATE_ERASED:
         if (!IS_RC_MODE_ACTIVE(BOXBLACKBOXERASE)) {
             blackboxSetState(BLACKBOX_STATE_STOPPED);
@@ -1663,13 +1663,13 @@ void blackboxUpdate(timeUs_t currentTimeUs)
         }
 #endif
     } else { // Only log in test mode if there is room!
-        if(blackboxConfig()->on_motor_test) {
+        if (blackboxConfig()->on_motor_test) {
             // Handle Motor Test Mode
-            if(inMotorTestMode()) {
-                if(blackboxState==BLACKBOX_STATE_STOPPED)
+            if (inMotorTestMode()) {
+                if (blackboxState==BLACKBOX_STATE_STOPPED)
                     startInTestMode();
             } else {
-                if(blackboxState!=BLACKBOX_STATE_STOPPED)
+                if (blackboxState!=BLACKBOX_STATE_STOPPED)
                     stopInTestMode();
             }
         }

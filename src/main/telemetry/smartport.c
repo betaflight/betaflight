@@ -242,7 +242,7 @@ static void smartPortDataReceive(uint16_t c)
 
         rxBuffer[smartPortRxBytes++] = c;
 
-        if(smartPortRxBytes == SMARTPORT_FRAME_SIZE) {
+        if (smartPortRxBytes == SMARTPORT_FRAME_SIZE) {
             if (c == (0xFF - checksum)) {
                 smartPortFrameReceived = true;
             }
@@ -280,7 +280,7 @@ static void smartPortSendPackageEx(uint8_t frameId, uint8_t* data)
 {
     uint16_t crc = 0;
     smartPortSendByte(frameId, &crc);
-    for(unsigned i = 0; i < SMARTPORT_PAYLOAD_SIZE; i++) {
+    for (unsigned i = 0; i < SMARTPORT_PAYLOAD_SIZE; i++) {
         smartPortSendByte(*data++, &crc);
     }
     smartPortSendByte(0xFF - (uint8_t)crc, NULL);
@@ -559,11 +559,11 @@ void handleSmartPortTelemetry(void)
         smartPortDataReceive(c);
     }
 
-    if(smartPortFrameReceived) {
+    if (smartPortFrameReceived) {
         smartPortFrameReceived = false;
         // do not check the physical ID here again
         // unless we start receiving other sensors' packets
-        if(smartPortRxBuffer.frameId == FSSP_MSPC_FRAME) {
+        if (smartPortRxBuffer.frameId == FSSP_MSPC_FRAME) {
 
             // Pass only the payload: skip sensorId & frameId
             handleSmartPortMspFrame(&smartPortRxBuffer);
@@ -577,7 +577,7 @@ void handleSmartPortTelemetry(void)
             return;
         }
 
-        if(smartPortMspReplyPending) {
+        if (smartPortMspReplyPending) {
             smartPortMspReplyPending = smartPortSendMspReply();
             smartPortHasRequest = 0;
             return;
@@ -596,7 +596,7 @@ void handleSmartPortTelemetry(void)
         static uint8_t t1Cnt = 0;
         static uint8_t t2Cnt = 0;
 
-        switch(id) {
+        switch (id) {
 #ifdef GPS
             case FSSP_DATAID_SPEED      :
                 if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
@@ -742,7 +742,7 @@ void handleSmartPortTelemetry(void)
                 } else if (feature(FEATURE_GPS)) {
                     smartPortSendPackage(id, 0);
                     smartPortHasRequest = 0;
-                } else if (telemetryConfig()->pidValuesAsTelemetry){
+                } else if (telemetryConfig()->pidValuesAsTelemetry) {
                     switch (t2Cnt) {
                         case 0:
                             tmp2 = currentPidProfile->pid[PID_ROLL].P;

@@ -52,7 +52,7 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8
 {
 #if defined(USE_HAL_DRIVER)
     TIM_HandleTypeDef* Handle = timerFindTimerHandle(tim);
-    if(Handle == NULL) return;
+    if (Handle == NULL) return;
 
     TIM_OC_InitTypeDef TIM_OCInitStructure;
 
@@ -100,7 +100,7 @@ static void pwmOutConfig(pwmOutputPort_t *port, const timerHardware_t *timerHard
 {
 #if defined(USE_HAL_DRIVER)
     TIM_HandleTypeDef* Handle = timerFindTimerHandle(timerHardware->tim);
-    if(Handle == NULL) return;
+    if (Handle == NULL) return;
 #endif
 
     configTimeBase(timerHardware->tim, period, hz);
@@ -111,7 +111,7 @@ static void pwmOutConfig(pwmOutputPort_t *port, const timerHardware_t *timerHard
         );
 
 #if defined(USE_HAL_DRIVER)
-    if(timerHardware->output & TIMER_OUTPUT_N_CHANNEL)
+    if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL)
         HAL_TIMEx_PWMN_Start(Handle, timerHardware->channel);
     else
         HAL_TIM_PWM_Start(Handle, timerHardware->channel);
@@ -171,7 +171,7 @@ void pwmWriteMotor(uint8_t index, float value)
 {
     if (pwmMotorsEnabled) {
         pwmWrite(index, value);
-    }    
+    }
 }
 
 void pwmShutdownPulsesForAllMotors(uint8_t motorCount)
@@ -203,7 +203,7 @@ bool pwmAreMotorsEnabled(void)
 
 static void pwmCompleteWriteUnused(uint8_t motorCount)
 {
-    UNUSED(motorCount);    
+    UNUSED(motorCount);
 }
 
 static void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
@@ -226,7 +226,7 @@ void pwmCompleteMotorUpdate(uint8_t motorCount)
 void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount)
 {
     memset(motors, 0, sizeof(motors));
-    
+
     bool useUnsyncedPwm = motorConfig->useUnsyncedPwm;
 
     float sMin = 0;
@@ -328,7 +328,7 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         */
         motors[motorIndex].pulseScale = ((motorConfig->motorPwmProtocol == PWM_TYPE_BRUSHED) ? period : (sLen * hz)) / 1000.0f;
         motors[motorIndex].pulseOffset = (sMin * hz) - (motors[motorIndex].pulseScale * 1000);
-        
+    
         pwmOutConfig(&motors[motorIndex], timerHardware, hz, period, idlePulse, motorConfig->motorPwmInversion);
 
         bool timerAlreadyUsed = false;
@@ -466,9 +466,9 @@ void servoDevInit(const servoDevConfig_t *servoConfig)
 #ifdef BEEPER
 void pwmWriteBeeper(bool onoffBeep)
 {
-        if(!beeperPwm.io)
+        if (!beeperPwm.io)
             return;
-        if(onoffBeep == true) {
+        if (onoffBeep == true) {
             *beeperPwm.ccr = (PWM_TIMER_1MHZ / freqBeep) / 2;
             beeperPwm.enabled = true;
         } else {

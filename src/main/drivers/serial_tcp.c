@@ -53,7 +53,7 @@ static void onClose(dyad_Event *e) {
 	s->clientCount--;
 	s->conn = NULL;
 	fprintf(stderr, "[CLS]UART%u: %d,%d\n", s->id + 1, s->connected, s->clientCount);
-	if(s->clientCount == 0) {
+	if (s->clientCount == 0) {
 		s->connected = false;
 	}
 }
@@ -62,7 +62,7 @@ static void onAccept(dyad_Event *e) {
 	fprintf(stderr, "New connection on UART%u, %d\n", s->id + 1, s->clientCount);
 
 	s->connected = true;
-	if(s->clientCount > 0) {
+	if (s->clientCount > 0) {
 		dyad_close(e->remote);
 		return;
 	}
@@ -76,7 +76,7 @@ static void onAccept(dyad_Event *e) {
 }
 static tcpPort_t* tcpReconfigure(tcpPort_t *s, int id)
 {
-	if(tcpPortInitialized[id]) {
+	if (tcpPortInitialized[id]) {
 		fprintf(stderr, "port is already initialized!\n");
 		return s;
 	}
@@ -103,7 +103,7 @@ static tcpPort_t* tcpReconfigure(tcpPort_t *s, int id)
 	dyad_setNoDelay(s->serv, 1);
 	dyad_addListener(s->serv, DYAD_EVENT_ACCEPT, onAccept, s);
 
-	if(dyad_listenEx(s->serv, NULL, BASE_PORT + id + 1, 10) == 0) {
+	if (dyad_listenEx(s->serv, NULL, BASE_PORT + id + 1, 10) == 0) {
 		fprintf(stderr, "bind port %u for UART%u\n", (unsigned)BASE_PORT + id + 1, (unsigned)id + 1);
 	} else {
 		fprintf(stderr, "bind port %u for UART%u failed!!\n", (unsigned)BASE_PORT + id + 1, (unsigned)id + 1);
@@ -116,11 +116,11 @@ serialPort_t *serTcpOpen(int id, serialReceiveCallbackPtr rxCallback, uint32_t b
     tcpPort_t *s = NULL;
 
 #if defined(USE_UART1) || defined(USE_UART2) || defined(USE_UART3) || defined(USE_UART4) || defined(USE_UART5) || defined(USE_UART6) || defined(USE_UART7) || defined(USE_UART8)
-    if(id >= 0 && id < SERIAL_PORT_COUNT) {
+    if (id >= 0 && id < SERIAL_PORT_COUNT) {
 	s = tcpReconfigure(&tcpSerialPorts[id], id);
     }
 #endif
-    if(!s)
+    if (!s)
         return NULL;
 
     s->port.vTable = &tcpVTable;
@@ -219,7 +219,7 @@ void tcpWrite(serialPort_t *instance, uint8_t ch)
 void tcpDataOut(tcpPort_t *instance)
 {
     tcpPort_t *s = (tcpPort_t *)instance;
-    if(s->conn == NULL) return;
+    if (s->conn == NULL) return;
     pthread_mutex_lock(&s->txLock);
 
     if (s->port.txBufferHead < s->port.txBufferTail) {
@@ -229,7 +229,7 @@ void tcpDataOut(tcpPort_t *instance)
         s->port.txBufferTail = 0;
     }
     int chunk = s->port.txBufferHead - s->port.txBufferTail;
-    if(chunk)
+    if (chunk)
         dyad_write(s->conn, (const void*)&s->port.txBuffer[s->port.txBufferTail], chunk);
     s->port.txBufferTail = s->port.txBufferHead;
 
@@ -241,7 +241,7 @@ void tcpDataIn(tcpPort_t *instance, uint8_t* ch, int size)
     tcpPort_t *s = (tcpPort_t *)instance;
 	pthread_mutex_lock(&s->rxLock);
 
-	while(size--) {
+	while (size--) {
 //		printf("%c", *ch);
 		s->port.rxBuffer[s->port.rxBufferHead] = *(ch++);
 		if (s->port.rxBufferHead + 1 >= s->port.rxBufferSize) {

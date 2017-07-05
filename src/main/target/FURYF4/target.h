@@ -78,7 +78,7 @@
     #define MAX7456_SPI_CS_PIN      PB12
     #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
     #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
-    
+
     #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 	
 	#define DEFAULT_FEATURES		FEATURE_OSD
@@ -111,7 +111,7 @@
     #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF4
     #define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
     #define SDCARD_DMA_CHANNEL                  DMA_Channel_0
-    
+
     #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #endif

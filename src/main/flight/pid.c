@@ -243,7 +243,7 @@ static float crashDtermThreshold;
 static float crashGyroThreshold;
 
 void pidInitConfig(const pidProfile_t *pidProfile) {
-    for(int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+    for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         Kp[axis] = PTERM_SCALE * pidProfile->pid[axis].P;
         Ki[axis] = ITERM_SCALE * pidProfile->pid[axis].I;
         Kd[axis] = DTERM_SCALE * pidProfile->pid[axis].D;
@@ -359,7 +359,7 @@ static float accelerationLimit(int axis, float currentPidSetpoint) {
     static float previousSetpoint[3];
     const float currentVelocity = currentPidSetpoint- previousSetpoint[axis];
 
-    if(ABS(currentVelocity) > maxVelocity[axis])
+    if (ABS(currentVelocity) > maxVelocity[axis])
         currentPidSetpoint = (currentVelocity > 0) ? previousSetpoint[axis] + maxVelocity[axis] : previousSetpoint[axis] - maxVelocity[axis];
 
     previousSetpoint[axis] = currentPidSetpoint;
@@ -383,7 +383,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         float currentPidSetpoint = getSetpointRate(axis);
 
-        if(maxVelocity[axis])
+        if (maxVelocity[axis])
             currentPidSetpoint = accelerationLimit(axis, currentPidSetpoint);
 
         // Yaw control is GYRO based, direct sticks control is applied to rate PID

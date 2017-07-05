@@ -317,7 +317,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     }
 
     // Compute and apply integral feedback if enabled
-    if(imuRuntimeConfig.dcm_ki > 0.0f) {
+    if (imuRuntimeConfig.dcm_ki > 0.0f) {
         // Stop integrating if spinning beyond the certain limit
         if (spin_rate < DEGREES_TO_RADIANS(SPIN_RATE_LIMIT)) {
             const float dcmKiGain = imuRuntimeConfig.dcm_ki;
@@ -455,7 +455,7 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
     if (sensors(SENSOR_ACC) && acc.isAccelUpdatedAtLeastOnce) {
         IMU_LOCK;
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_IMU_SYNC)
-        if(imuUpdated == false){
+        if (imuUpdated == false) {
             IMU_UNLOCK;
             return;
         }

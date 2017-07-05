@@ -91,7 +91,7 @@
     #define USE_FLASH_M25P16
     #define M25P16_CS_PIN           PB12
     #define M25P16_SPI_INSTANCE     SPI2
-    
+
     #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 	
     #define DEFAULT_FEATURES        (FEATURE_OSD)
@@ -118,9 +118,9 @@
 
     // Performance logging for SD card operations:
     // #define AFATFS_USE_INTROSPECTIVE_LOGGING
-    
+
     #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
-    
+
     #define BARO
     #define USE_BARO_MS5611
 
@@ -143,7 +143,7 @@
 
 #define SOFTSERIAL1_RX_PIN      PB0
 #define SOFTSERIAL1_TX_PIN      PB1
-    
+
     #define SONAR
     #define SONAR_ECHO_PIN          PB1
     #define SONAR_TRIGGER_PIN       PB0

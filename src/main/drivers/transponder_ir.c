@@ -188,7 +188,7 @@ void transponderIrWaitForTransmitComplete(void)
 {
     static uint32_t waitCounter = 0;
 
-    while(transponderIrDataTransferInProgress) {
+    while (transponderIrDataTransferInProgress) {
         waitCounter++;
     }
 }

@@ -67,7 +67,7 @@ void vtxCommonSetBandAndChannel(uint8_t band, uint8_t channel)
 
     if ((band > vtxDevice->capability.bandCount) || (channel > vtxDevice->capability.channelCount))
         return;
-    
+
     if (vtxDevice->vTable->setBandAndChannel)
         vtxDevice->vTable->setBandAndChannel(band, channel);
 }
@@ -80,7 +80,7 @@ void vtxCommonSetPowerByIndex(uint8_t index)
 
     if (index > vtxDevice->capability.powerCount)
         return;
-    
+
     if (vtxDevice->vTable->setPowerByIndex)
         vtxDevice->vTable->setPowerByIndex(index);
 }

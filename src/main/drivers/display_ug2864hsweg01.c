@@ -196,7 +196,7 @@ void i2c_OLED_clear_display(busDevice_t *bus)
     i2c_OLED_send_cmd(bus, 0x40);              // Display start line register to 0
     i2c_OLED_send_cmd(bus, 0);                 // Set low col address to 0
     i2c_OLED_send_cmd(bus, 0x10);              // Set high col address to 0
-    for(uint16_t i = 0; i < 1024; i++) {  // fill the display's RAM with graphic... 128*64 pixel picture
+    for (uint16_t i = 0; i < 1024; i++) {  // fill the display's RAM with graphic... 128*64 pixel picture
         i2c_OLED_send_byte(bus, 0x00);  // clear
     }
     i2c_OLED_send_cmd(bus, 0x81);              // Setup CONTRAST CONTROL, following byte is the contrast Value... always a 2 byte instruction
@@ -210,7 +210,7 @@ void i2c_OLED_clear_display_quick(busDevice_t *bus)
     i2c_OLED_send_cmd(bus, 0x40);              // Display start line register to 0
     i2c_OLED_send_cmd(bus, 0);                 // Set low col address to 0
     i2c_OLED_send_cmd(bus, 0x10);              // Set high col address to 0
-    for(uint16_t i = 0; i < 1024; i++) {      // fill the display's RAM with graphic... 128*64 pixel picture
+    for (uint16_t i = 0; i < 1024; i++) {      // fill the display's RAM with graphic... 128*64 pixel picture
         i2c_OLED_send_byte(bus, 0x00);  // clear
     }
 }

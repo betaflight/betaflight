@@ -351,7 +351,7 @@ void validateAndFixConfig(void)
 #endif
 
 #ifndef USE_OSD_SLAVE
-    if((motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)){
+    if ((motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)) {
         motorConfigMutable()->mincommand = 1000;
     }
 
@@ -467,7 +467,7 @@ void validateAndFixGyroConfig(void)
     // check for looptime restrictions based on motor protocol. Motor times have safety margin
     const float pidLooptime = samplingTime * gyroConfig()->gyro_sync_denom * pidConfig()->pid_process_denom;
     float motorUpdateRestriction;
-    switch(motorConfig()->dev.motorPwmProtocol) {
+    switch (motorConfig()->dev.motorPwmProtocol) {
         case (PWM_TYPE_STANDARD):
             motorUpdateRestriction = 1.0f/BRUSHLESS_MOTORS_PWM_RATE;
             break;
@@ -498,7 +498,7 @@ void validateAndFixGyroConfig(void)
     if (motorConfig()->dev.useUnsyncedPwm && (motorConfig()->dev.motorPwmProtocol <= PWM_TYPE_BRUSHED) && motorConfig()->dev.motorPwmProtocol != PWM_TYPE_STANDARD) {
         uint32_t maxEscRate = lrintf(1.0f / motorUpdateRestriction);
 
-        if(motorConfig()->dev.motorPwmRate > maxEscRate)
+        if (motorConfig()->dev.motorPwmRate > maxEscRate)
             motorConfigMutable()->dev.motorPwmRate = maxEscRate;
     }
 }

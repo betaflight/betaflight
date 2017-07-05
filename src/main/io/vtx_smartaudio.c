@@ -332,7 +332,7 @@ static void saProcessResponse(uint8_t *buf, int len)
         dprintf(("processResponse: outstanding %d got %d\r\n", sa_outstanding, resp));
     }
 
-    switch(resp) {
+    switch (resp) {
     case SA_CMD_GET_SETTINGS_V2: // Version 2 Get Settings
     case SA_CMD_GET_SETTINGS:    // Version 1 Get Settings
         if (len < 7)
@@ -420,7 +420,7 @@ static void saReceiveFramer(uint8_t c)
     static int len;
     static int dlen;
 
-    switch(state) {
+    switch (state) {
     case S_WAITPRE1:
         if (c == 0xAA) {
             state = S_WAITPRE2;

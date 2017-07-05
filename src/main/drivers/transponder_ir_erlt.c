@@ -55,7 +55,7 @@ void updateTransponderDMABufferERLT(transponder_t *transponder, const uint8_t* t
 	addBitToBuffer(transponder, ERLTCyclesForZeroBit, ERLTBitQuiet);
 
 	//add data bits, only the 6 LSB
-	for(int i = 5; i >= 0; i--)
+	for (int i = 5; i >= 0; i--)
 	{
 		uint8_t bv = (byteToSend >> i) & 0x01;
 		paritysum += bv;

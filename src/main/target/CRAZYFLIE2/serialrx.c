@@ -68,10 +68,10 @@ static bool rcFrameComplete = false;
 static void routeIncommingPacket(syslinkPacket_t* slp)
 {
     // Only support packets of type SYSLINK_RADIO_RAW
-    if(slp->type == SYSLINK_RADIO_RAW) {
+    if (slp->type == SYSLINK_RADIO_RAW) {
         crtpPacket_t *crtpPacket = (crtpPacket_t*)(slp->data);
 
-        switch(crtpPacket->header.port) {
+        switch (crtpPacket->header.port) {
             case CRTP_PORT_SETPOINT:
             {
                 crtpCommanderRPYT_t *crtpRYPTPacket =
@@ -95,7 +95,7 @@ static void routeIncommingPacket(syslinkPacket_t* slp)
             case CRTP_PORT_SETPOINT_GENERIC:
                 // First byte of the packet is the type
                 // Only support the CPPM Emulation type
-                if(crtpPacket->data[0] == cppmEmuType) {
+                if (crtpPacket->data[0] == cppmEmuType) {
                     crtpCommanderCPPMEmuPacket_t *crtpCppmPacket =
                             (crtpCommanderCPPMEmuPacket_t*)&crtpPacket->data[1];
 
@@ -124,7 +124,7 @@ static void routeIncommingPacket(syslinkPacket_t* slp)
 static void dataReceive(uint16_t c)
 {
     counter++;
-    switch(rxState) {
+    switch (rxState) {
         case waitForFirstStart:
             rxState = (c == SYSLINK_START_BYTE1) ? waitForSecondStart : waitForFirstStart;
             break;
@@ -205,7 +205,7 @@ bool targetCustomSerialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxR
 {
     rxRuntimeConfigPtr = rxRuntimeConfig;
 
-    if(rxConfig->serialrx_provider != SERIALRX_TARGET_CUSTOM)
+    if (rxConfig->serialrx_provider != SERIALRX_TARGET_CUSTOM)
     {
         return false;
     }

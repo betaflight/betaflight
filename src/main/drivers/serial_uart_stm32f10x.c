@@ -74,7 +74,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     },
 #endif
 #ifdef USE_UART2
-    {   
+    { 
         .device = UARTDEV_2,
         .reg = USART2,
         .rxDMAChannel = UART2_RX_DMA_CHANNEL,
@@ -101,8 +101,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .irqn = USART3_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART3,
         .rxPriority = NVIC_PRIO_SERIALUART3
-    },  
-#endif  
+    },
+#endif
 };
 
 void uart_tx_dma_IRQHandler(dmaChannelDescriptor_t* descriptor)

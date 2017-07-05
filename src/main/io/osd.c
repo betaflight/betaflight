@@ -177,7 +177,7 @@ static int osdGetBatteryAverageCellVoltage(void)
 
 static char osdGetBatterySymbol(int cellVoltage)
 {
-    if(getBatteryState() == BATTERY_CRITICAL) {
+    if (getBatteryState() == BATTERY_CRITICAL) {
         return SYM_MAIN_BATT; // FIXME: currently the BAT- symbol, ideally replace with a battery with exclamation mark
     } else {
         /* Calculate a symbol offset using cell voltage over full cell voltage range */
@@ -532,7 +532,7 @@ static void osdDrawSingleElement(uint8_t item)
         }
 
         /* Show battery state warning */
-        switch(getBatteryState()) {
+        switch (getBatteryState()) {
         case BATTERY_WARNING:
             tfp_sprintf(buff, "LOW BATTERY");
             break;
@@ -586,7 +586,7 @@ static void osdDrawSingleElement(uint8_t item)
 
             //Create empty battery indicator bar
             buff[0] = SYM_PB_START;
-            for(uint8_t i = 1; i <= MAIN_BATT_USAGE_STEPS; i++) {
+            for (uint8_t i = 1; i <= MAIN_BATT_USAGE_STEPS; i++) {
                 if (i <= mAhUsedProgress)
                     buff[i] = SYM_PB_FULL;
                 else
