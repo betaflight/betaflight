@@ -24,8 +24,8 @@
 #define LED0   PB7
 #define LED1   PB6
 
-//#define BEEPER   PB2
-//#define BEEPER_INVERTED
+#define BEEPER   PB4
+#define BEEPER_INVERTED
 
 #define MPU6000_CS_PIN        PA4
 #define MPU6000_SPI_INSTANCE  SPI1
