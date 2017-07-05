@@ -167,7 +167,7 @@ static const char * const lookupTableBaroHardware[] = { "NONE", "AUTO", "BMP085"
 // sync with magSensor_e
 static const char * const lookupTableMagHardware[] = { "NONE", "AUTO", "HMC5883", "AK8975", "GPSMAG", "MAG3110", "AK8963", "IST8310", "FAKE"};
 // sycn with rangefinderType_e
-static const char * const lookupTableRangefinderHardware[] = { "NONE", "HCSR04", "SRF10"};
+static const char * const lookupTableRangefinderHardware[] = { "NONE", "HCSR04", "SRF10", "HCSR04I2C"};
 // sync with pitotSensor_e
 static const char * const lookupTablePitotHardware[] = { "NONE", "AUTO", "MS4525", "ADC", "VIRTUAL", "FAKE"};
 
