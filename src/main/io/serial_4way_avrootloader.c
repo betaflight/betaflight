@@ -311,7 +311,7 @@ uint8_t BL_PageErase(ioMem_t *pMem)
     if (BL_SendCMDSetAddress(pMem)) {
         uint8_t sCMD[] = {CMD_ERASE_FLASH, 0x01};
         BL_SendBuf(sCMD, 2);
-        return (BL_GetACK((1000 / START_BIT_TIMEOUT_MS)) == brSUCCESS);
+        return (BL_GetACK((1400 / START_BIT_TIMEOUT_MS)) == brSUCCESS);
     }
     return 0;
 }
@@ -323,7 +323,7 @@ uint8_t BL_WriteEEprom(ioMem_t *pMem)
 
 uint8_t BL_WriteFlash(ioMem_t *pMem)
 {
-    return BL_WriteA(CMD_PROG_FLASH, pMem, (40 / START_BIT_TIMEOUT_MS));
+    return BL_WriteA(CMD_PROG_FLASH, pMem, (500 / START_BIT_TIMEOUT_MS));
 }
 
 uint8_t BL_VerifyFlash(ioMem_t *pMem)
