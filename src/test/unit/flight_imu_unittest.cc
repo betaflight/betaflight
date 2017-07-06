@@ -235,11 +235,6 @@ bool sensors(uint32_t mask)
     return false;
 };
 
-bool feature(uint32_t mask) {
-    UNUSED(mask);
-    return false;
-}
-
 uint32_t millis(void) { return 0; }
 uint32_t micros(void) { return 0; }
 
