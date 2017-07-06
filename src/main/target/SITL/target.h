@@ -45,6 +45,8 @@
 #undef SCHEDULER_DELAY_LIMIT
 #define SCHEDULER_DELAY_LIMIT           1
 
+#define USE_FAKE_LED
+
 #define ACC
 #define USE_FAKE_ACC
 
@@ -220,12 +222,12 @@ typedef enum
 } FLASH_Status;
 
 typedef struct {
-	double timestamp;	// in seconds
-	double imu_angular_velocity_rpy[3];	// rad/s -> range: +/- 8192; +/- 2000 deg/se
-	double imu_linear_acceleration_xyz[3];	// m/s/s NED, body frame -> sim 1G = 9.80665, FC 1G = 256
-	double imu_orientation_quat[4];	//w, x, y, z
-	double velocity_xyz[3];	// m/s, earth frame
-	double position_xyz[3];	// meters, NED from origin
+    double timestamp;                   // in seconds
+    double imu_angular_velocity_rpy[3]; // rad/s -> range: +/- 8192; +/- 2000 deg/se
+    double imu_linear_acceleration_xyz[3];    // m/s/s NED, body frame -> sim 1G = 9.80665, FC 1G = 256
+    double imu_orientation_quat[4];     //w, x, y, z
+    double velocity_xyz[3];             // m/s, earth frame
+    double position_xyz[3];             // meters, NED from origin
 } fdm_packet;
 typedef struct {
 	float motor_speed[4];	// normal: [0.0, 1.0], 3D: [-1.0, 1.0]

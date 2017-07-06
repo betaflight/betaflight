@@ -43,7 +43,7 @@
 static void usartConfigurePinInversion(uartPort_t *uartPort) {
     bool inverted = uartPort->port.options & SERIAL_INVERTED;
 
-    if(inverted)
+    if (inverted)
     {
         if (uartPort->port.mode & MODE_RX)
         {
@@ -94,7 +94,7 @@ void uartReconfigure(uartPort_t *uartPort)
 
     usartConfigurePinInversion(uartPort);
 
-    if(uartPort->port.options & SERIAL_BIDIR)
+    if (uartPort->port.options & SERIAL_BIDIR)
     {
         HAL_HalfDuplex_Init(&uartPort->Handle);
     }
@@ -167,9 +167,9 @@ void uartReconfigure(uartPort_t *uartPort)
 
             HAL_DMA_DeInit(&uartPort->txDMAHandle);
             HAL_StatusTypeDef status = HAL_DMA_Init(&uartPort->txDMAHandle);
-            if(status != HAL_OK)
+            if (status != HAL_OK)
             {
-                while(1);
+                while (1);
             }
             /* Associate the initialized DMA handle to the UART handle */
             __HAL_LINKDMA(&uartPort->Handle, hdmatx, uartPort->txDMAHandle);
@@ -225,7 +225,7 @@ void uartStartTxDMA(uartPort_t *s)
     uint16_t size = 0;
     uint32_t fromwhere=0;
     HAL_UART_StateTypeDef state = HAL_UART_GetState(&s->Handle);
-    if((state & HAL_UART_STATE_BUSY_TX) == HAL_UART_STATE_BUSY_TX)
+    if ((state & HAL_UART_STATE_BUSY_TX) == HAL_UART_STATE_BUSY_TX)
         return;
 
     if (s->port.txBufferHead > s->port.txBufferTail) {

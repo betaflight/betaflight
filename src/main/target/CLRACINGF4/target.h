@@ -24,7 +24,7 @@
 #endif
 
 
-#define LED0                      PB5
+#define LED0_PIN                  PB5
 #define BEEPER                    PB4
 #define BEEPER_INVERTED
 #define BEEPER_PWM_HZ             3800 // Beeper PWM frequency in Hz
@@ -122,8 +122,6 @@
 #define DEFAULT_RX_FEATURE          FEATURE_RX_SERIAL
 #define DEFAULT_FEATURES            ( FEATURE_OSD  )
 #define CURRENT_METER_SCALE_DEFAULT 250
-#define SPEKTRUM_BIND_PIN           UART6_RX_PIN
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA (0xffff & ~(BIT(14)|BIT(13)))

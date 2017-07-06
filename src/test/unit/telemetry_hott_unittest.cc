@@ -171,11 +171,8 @@ uint16_t batteryWarningVoltage;
 uint8_t useHottAlarmSoundPeriod (void) { return 0; }
 
 
-uint8_t GPS_numSat;
-int32_t GPS_coord[2];
-uint16_t GPS_speed;                 // speed in 0.1m/s
+gpsSolutionData_t gpsSol;
 uint16_t GPS_distanceToHome;        // distance to home point in meters
-uint16_t GPS_altitude;              // altitude in 0.1m
 int16_t GPS_directionToHome;        // direction to home or hol point in degrees
 
 

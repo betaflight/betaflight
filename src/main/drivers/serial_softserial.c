@@ -204,7 +204,7 @@ static bool isTimerPeriodTooLarge(uint32_t timerPeriod)
 
 static void serialTimerConfigureTimebase(const timerHardware_t *timerHardwarePtr, uint32_t baud)
 {
-    uint32_t baseClock = SystemCoreClock / timerClockDivisor(timerHardwarePtr->tim);
+    uint32_t baseClock = timerClock(timerHardwarePtr->tim);
     uint32_t clock = baseClock;
     uint32_t timerPeriod;
 
@@ -220,9 +220,7 @@ static void serialTimerConfigureTimebase(const timerHardware_t *timerHardwarePtr
         }
     } while (isTimerPeriodTooLarge(timerPeriod));
 
-    uint8_t mhz = baseClock / 1000000;
-
-    timerConfigure(timerHardwarePtr, timerPeriod, mhz);
+    timerConfigure(timerHardwarePtr, timerPeriod, baseClock);
 }
 
 static void resetBuffers(softSerial_t *softSerial)

@@ -19,7 +19,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "SIRF"
 
-#define LED0                    PB2
+#define LED0_PIN                PB2
 #define BEEPER                  PA1
 
 
@@ -147,8 +147,6 @@
 #define OSD
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
-
-#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define DEFAULT_FEATURES        (FEATURE_RX_SERIAL | FEATURE_OSD)

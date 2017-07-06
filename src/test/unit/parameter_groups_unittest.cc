@@ -48,7 +48,7 @@ PG_RESET_TEMPLATE(motorConfig_t, motorConfig,
 TEST(ParameterGroupsfTest, Test_pgResetAll)
 {
     memset(motorConfigMutable(), 0, sizeof(motorConfig_t));
-    pgResetAll(0);
+    pgResetAll();
     EXPECT_EQ(1150, motorConfig()->minthrottle);
     EXPECT_EQ(1850, motorConfig()->maxthrottle);
     EXPECT_EQ(1000, motorConfig()->mincommand);
@@ -59,7 +59,7 @@ TEST(ParameterGroupsfTest, Test_pgFind)
 {
     memset(motorConfigMutable(), 0, sizeof(motorConfig_t));
     const pgRegistry_t *pgRegistry = pgFind(PG_MOTOR_CONFIG);
-    pgResetCurrent(pgRegistry);
+    pgReset(pgRegistry);
     EXPECT_EQ(1150, motorConfig()->minthrottle);
     EXPECT_EQ(1850, motorConfig()->maxthrottle);
     EXPECT_EQ(1000, motorConfig()->mincommand);
@@ -68,7 +68,7 @@ TEST(ParameterGroupsfTest, Test_pgFind)
     motorConfig_t motorConfig2;
     memset(&motorConfig2, 0, sizeof(motorConfig_t));
     motorConfigMutable()->dev.motorPwmRate = 500;
-    pgStore(pgRegistry, &motorConfig2, sizeof(motorConfig_t), 0);
+    pgStore(pgRegistry, &motorConfig2, sizeof(motorConfig_t));
     EXPECT_EQ(1150, motorConfig2.minthrottle);
     EXPECT_EQ(1850, motorConfig2.maxthrottle);
     EXPECT_EQ(1000, motorConfig2.mincommand);

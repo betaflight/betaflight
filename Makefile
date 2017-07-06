@@ -682,6 +682,8 @@ COMMON_SRC = \
             drivers/bus_i2c_config.c \
             drivers/bus_i2c_soft.c \
             drivers/bus_spi.c \
+            drivers/bus_spi_config.c \
+            drivers/bus_spi_pinconfig.c \
             drivers/bus_spi_soft.c \
             drivers/buttons.c \
             drivers/display.c \
@@ -841,23 +843,14 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             common/typeconversion.c \
             drivers/adc.c \
             drivers/buf_writer.c \
-            drivers/bus_i2c_soft.c \
             drivers/bus_spi.c \
-            drivers/bus_spi_soft.c \
             drivers/exti.c \
             drivers/gyro_sync.c \
             drivers/io.c \
-            drivers/light_led.c \
-            drivers/resource.c \
-            drivers/rx_nrf24l01.c \
-            drivers/rx_spi.c \
-            drivers/rx_xn297.c \
             drivers/pwm_output.c \
             drivers/rcc.c \
-            drivers/rx_pwm.c \
             drivers/serial.c \
             drivers/serial_uart.c \
-            drivers/sound_beeper.c \
             drivers/system.c \
             drivers/timer.c \
             fc/fc_core.c \
@@ -868,16 +861,9 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             flight/imu.c \
             flight/mixer.c \
             flight/pid.c \
-            flight/servos.c \
             io/serial.c \
             rx/ibus.c \
             rx/jetiexbus.c \
-            rx/nrf24_cx10.c \
-            rx/nrf24_inav.c \
-            rx/nrf24_h8_3d.c \
-            rx/nrf24_syma.c \
-            rx/nrf24_v202.c \
-            rx/pwm.c \
             rx/rx.c \
             rx/rx_spi.c \
             rx/crsf.c \
@@ -893,15 +879,15 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             sensors/gyroanalyse.c \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC) \
-            drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
-            drivers/serial_softserial.c \
             io/displayport_max7456.c \
             io/osd.c \
             io/osd_slave.c
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/bus_i2c_config.c \
+            drivers/bus_spi_config.c \
+            drivers/bus_spi_pinconfig.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_init.c \
@@ -1020,16 +1006,19 @@ STM32F7xx_COMMON_SRC = \
             drivers/serial_uart_stm32f7xx.c \
             drivers/serial_uart_hal.c
 
-F7EXCLUDES = drivers/bus_spi.c \
+F7EXCLUDES = \
+            drivers/bus_spi.c \
             drivers/bus_i2c.c \
             drivers/timer.c \
             drivers/serial_uart.c
 
 SITLEXCLUDES = \
             drivers/adc.c \
-            drivers/bus_spi.c \
             drivers/bus_i2c.c \
             drivers/bus_i2c_config.c \
+            drivers/bus_spi.c \
+            drivers/bus_spi_config.c \
+            drivers/bus_spi_pinconfig.c \
             drivers/dma.c \
             drivers/pwm_output.c \
             drivers/timer.c \
@@ -1138,6 +1127,7 @@ endif
 CROSS_CC    := $(CCACHE) $(ARM_SDK_PREFIX)gcc
 CROSS_CXX   := $(CCACHE) $(ARM_SDK_PREFIX)g++
 OBJCOPY     := $(ARM_SDK_PREFIX)objcopy
+OBJDUMP     := $(ARM_SDK_PREFIX)objdump
 SIZE        := $(ARM_SDK_PREFIX)size
 
 #
@@ -1262,6 +1252,7 @@ CPPCHECK        = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
 TARGET_BIN      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).bin
 TARGET_HEX      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).hex
 TARGET_ELF      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).elf
+TARGET_LST      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).lst
 TARGET_OBJS     = $(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(SRC))))
 TARGET_DEPS     = $(addsuffix .d,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(SRC))))
 TARGET_MAP      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
@@ -1270,12 +1261,16 @@ TARGET_MAP      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 CLEAN_ARTIFACTS := $(TARGET_BIN)
 CLEAN_ARTIFACTS += $(TARGET_HEX)
 CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
+CLEAN_ARTIFACTS += $(TARGET_LST)
 
 # Make sure build date and revision is updated on every incremental build
 $(OBJECT_DIR)/$(TARGET)/build/version.o : $(SRC)
 
 # List of buildable ELF files and their object dependencies.
 # It would be nice to compute these lists, but that seems to be just beyond make.
+
+$(TARGET_LST): $(TARGET_ELF)
+	$(V0) $(OBJDUMP) -S --disassemble $< > $@
 
 $(TARGET_HEX): $(TARGET_ELF)
 	$(V0) $(OBJCOPY) -O ihex --set-start 0x8000000 $< $@
@@ -1342,22 +1337,20 @@ targets-group-rest: $(GROUP_OTHER_TARGETS)
 
 
 $(VALID_TARGETS):
-		$(V0) echo "" && \
+		$(V0) @echo "" && \
 		echo "Building $@" && \
 		time $(MAKE) binary hex TARGET=$@ && \
 		echo "Building $@ succeeded."
-
-
 
 CLEAN_TARGETS = $(addprefix clean_,$(VALID_TARGETS) )
 TARGETS_CLEAN = $(addsuffix _clean,$(VALID_TARGETS) )
 
 ## clean             : clean up temporary / machine-generated files
 clean:
-	$(V0) echo "Cleaning $(TARGET)"
+	$(V0) @echo "Cleaning $(TARGET)"
 	$(V0) rm -f $(CLEAN_ARTIFACTS)
 	$(V0) rm -rf $(OBJECT_DIR)/$(TARGET)
-	$(V0) echo "Cleaning $(TARGET) succeeded."
+	$(V0) @echo "Cleaning $(TARGET) succeeded."
 
 ## clean_test        : clean up temporary / machine-generated files (tests)
 clean_test:

@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include "drivers/sensor.h"
+#include "drivers/bus.h"
 
 enum pios_bmi160_orientation { // clockwise rotation from board forward
     PIOS_BMI160_TOP_0DEG,
@@ -67,9 +67,6 @@ enum bmi160_gyro_range {
     BMI160_RANGE_1000DPS = 0x01,
     BMI160_RANGE_2000DPS = 0x00,
 };
-
-bool bmi160SpiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data);
-bool bmi160SpiReadRegister(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data);
 
 bool bmi160Detect(const busDevice_t *bus);
 bool bmi160SpiAccDetect(accDev_t *acc);

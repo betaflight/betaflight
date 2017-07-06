@@ -286,7 +286,7 @@ void mavlinkSendPosition(void)
         gpsFixType = 1;
     }
     else {
-        if (GPS_numSat < 5) {
+        if (gpsSol.numSat < 5) {
             gpsFixType = 2;
         }
         else {
@@ -300,21 +300,21 @@ void mavlinkSendPosition(void)
         // fix_type 0-1: no fix, 2: 2D fix, 3: 3D fix. Some applications will not use the value of this field unless it is at least two, so always correctly fill in the fix.
         gpsFixType,
         // lat Latitude in 1E7 degrees
-        GPS_coord[LAT],
+        gpsSol.llh.lat,
         // lon Longitude in 1E7 degrees
-        GPS_coord[LON],
+        gpsSol.llh.lon,
         // alt Altitude in 1E3 meters (millimeters) above MSL
-        GPS_altitude * 1000,
+        gpsSol.llh.alt * 1000,
         // eph GPS HDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
         65535,
         // epv GPS VDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
         65535,
         // vel GPS ground speed (m/s * 100). If unknown, set to: 65535
-        GPS_speed,
+        gpsSol.groundSpeed,
         // cog Course over ground (NOT heading, but direction of movement) in degrees * 100, 0.0..359.99 degrees. If unknown, set to: 65535
-        GPS_ground_course * 10,
+        gpsSol.groundCourse * 10,
         // satellites_visible Number of satellites visible. If unknown, set to 255
-        GPS_numSat);
+        gpsSol.numSat);
     msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavMsg);
     mavlinkSerialWrite(mavBuffer, msgLength);
 
@@ -323,16 +323,16 @@ void mavlinkSendPosition(void)
         // time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
         micros(),
         // lat Latitude in 1E7 degrees
-        GPS_coord[LAT],
+        gpsSol.llh.lat,
         // lon Longitude in 1E7 degrees
-        GPS_coord[LON],
+        gpsSol.llh.lon,
         // alt Altitude in 1E3 meters (millimeters) above MSL
-        GPS_altitude * 1000,
+        gpsSol.llh.alt * 1000,
         // relative_alt Altitude above ground in meters, expressed as * 1000 (millimeters)
 #if defined(BARO) || defined(SONAR)
-        (sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) ? getEstimatedAltitude() * 10 : GPS_altitude * 1000,
+        (sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) ? getEstimatedAltitude() * 10 : gpsSol.llh.alt * 1000,
 #else
-        GPS_altitude * 1000,
+        gpsSol.llh.alt * 1000,
 #endif
         // Ground X Speed (Latitude), expressed as m/s * 100
         0,
@@ -391,7 +391,7 @@ void mavlinkSendHUDAndHeartbeat(void)
 #if defined(GPS)
     // use ground speed if source available
     if (sensors(SENSOR_GPS)) {
-        mavGroundSpeed = GPS_speed / 100.0f;
+        mavGroundSpeed = gpsSol.groundSpeed / 100.0f;
     }
 #endif
 
@@ -404,13 +404,13 @@ void mavlinkSendHUDAndHeartbeat(void)
 #if defined(GPS)
     else if (sensors(SENSOR_GPS)) {
         // No sonar or baro, just display altitude above MLS
-        mavAltitude = GPS_altitude;
+        mavAltitude = gpsSol.llh.alt;
     }
 #endif
 #elif defined(GPS)
     if (sensors(SENSOR_GPS)) {
         // No sonar or baro, just display altitude above MLS
-        mavAltitude = GPS_altitude;
+        mavAltitude = gpsSol.llh.alt;
     }
 #endif
 
@@ -436,7 +436,7 @@ void mavlinkSendHUDAndHeartbeat(void)
         mavModes |= MAV_MODE_FLAG_SAFETY_ARMED;
 
     uint8_t mavSystemType;
-    switch(mixerConfig()->mixerMode)
+    switch (mixerConfig()->mixerMode)
     {
         case MIXER_TRI:
             mavSystemType = MAV_TYPE_TRICOPTER;

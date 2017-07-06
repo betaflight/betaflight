@@ -23,8 +23,8 @@
 #define USBD_SERIALNUMBER_STRING "0x8010000"
 #endif
 
-#define LED0                    PC14
-#define LED1                    PC13
+#define LED0_PIN                PC14
+#define LED1_PIN                PC13
 
 #define BEEPER                  PC13
 
@@ -83,8 +83,6 @@
 #define CURRENT_METER_ADC_PIN   PA7
 #define VBAT_ADC_PIN            PA6
 #define RSSI_ADC_PIN            PA5
-
-#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

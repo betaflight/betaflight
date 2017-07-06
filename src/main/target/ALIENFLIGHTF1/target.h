@@ -22,8 +22,8 @@
 
 #define BRUSHED_ESC_AUTODETECT
 
-#define LED0                    PB3
-#define LED1                    PB4
+#define LED0_PIN                PB3
+#define LED1_PIN                PB4
 
 #define BEEPER                  PA12
 
@@ -62,8 +62,8 @@
 #define RSSI_ADC_PIN            PA1
 #define EXTERNAL1_ADC_PIN       PA5
 
-#define SPEKTRUM_BIND_PIN       PA3
-
+#define USE_SPEKTRUM_BIND
+#define USE_SPEKTRUM_BIND_PLUG
 #define BINDPLUG_PIN            PB5
 
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP

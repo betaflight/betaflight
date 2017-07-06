@@ -21,7 +21,7 @@
 #define TARGET_BOARD_IDENTIFIER "PLUM"
 #define USBD_PRODUCT_STRING     "PLUMF4"
 
-#elif defined(KIWIF4V2)	
+#elif defined(KIWIF4V2)
 #define TARGET_BOARD_IDENTIFIER "KIW2"
 #define USBD_PRODUCT_STRING     "KIWIF4V2"
 
@@ -32,11 +32,11 @@
 #endif
 
 #if defined(PLUMF4) || defined(KIWIF4V2)
-#define LED0                    PB4
+#define LED0_PIN                PB4
 
 #else
-#define LED0                    PB5
-#define LED1                    PB4				
+#define LED0_PIN                PB5
+#define LED1_PIN                PB4
 #endif
 
 #define BEEPER                  PA8
@@ -177,8 +177,6 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART1
-
-#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

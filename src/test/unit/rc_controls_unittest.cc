@@ -27,6 +27,7 @@ extern "C" {
     #include "common/axis.h"
     #include "common/bitarray.h"
 
+    #include "config/parameter_group.h"
     #include "config/parameter_group_ids.h"
 
     #include "blackbox/blackbox.h"
@@ -251,7 +252,7 @@ protected:
         adjustmentStateMask = 0;
         memset(&adjustmentStates, 0, sizeof(adjustmentStates));
 
-        PG_RESET_CURRENT(rxConfig);
+        PG_RESET(rxConfig);
         rxConfigMutable()->mincheck = DEFAULT_MIN_CHECK;
         rxConfigMutable()->maxcheck = DEFAULT_MAX_CHECK;
         rxConfigMutable()->midrc = 1500;
@@ -308,7 +309,7 @@ TEST_F(RcControlsAdjustmentsTest, processRcAdjustmentsWithRcRateFunctionSwitchUp
     };
 
     // and
-    PG_RESET_CURRENT(rxConfig);
+    PG_RESET(rxConfig);
     rxConfigMutable()->mincheck = DEFAULT_MIN_CHECK;
     rxConfigMutable()->maxcheck = DEFAULT_MAX_CHECK;
     rxConfigMutable()->midrc = 1500;
@@ -678,8 +679,8 @@ void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t*) {}
 void handleInflightCalibrationStickPosition(void) {}
 bool feature(uint32_t) { return false;}
 bool sensors(uint32_t) { return false;}
-void mwArm(void) {}
-void mwDisarm(void) {}
+void tryArm(void) {}
+void disarm(void) {}
 void dashboardDisablePageCycling() {}
 void dashboardEnablePageCycling() {}
 
@@ -700,4 +701,5 @@ uint8_t stateFlags = 0;
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 rxRuntimeConfig_t rxRuntimeConfig;
 PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
+void resetArmingDisabled(void) {}
 }

@@ -122,6 +122,8 @@ typedef struct rxConfig_s {
     uint8_t rx_spi_protocol;                // type of nrf24 protocol (0 = v202 250kbps). Must be enabled by FEATURE_RX_NRF24 first.
     uint32_t rx_spi_id;
     uint8_t rx_spi_rf_channel_count;
+    ioTag_t spektrum_bind_pin_override_ioTag;
+    ioTag_t spektrum_bind_plug_ioTag;
     uint8_t spektrum_sat_bind;              // number of bind pulses for Spektrum satellite receivers
     uint8_t spektrum_sat_bind_autoreset;    // whenever we will reset (exit) binding mode after hard reboot
     uint8_t rssi_channel;

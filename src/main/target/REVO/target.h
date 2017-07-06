@@ -48,10 +48,10 @@
 
 #endif
 
-#define LED0                    PB5
+#define LED0_PIN                PB5
 #if defined(PODIUMF4)
-#define LED1                    PB4
-#define LED2                    PB6
+#define LED1_PIN                PB4
+#define LED2_PIN                PB6
 #endif
 
 // Disable LED1, conflicts with AirbotF4/Flip32F4/Revolt beeper
@@ -64,7 +64,7 @@
 #define BEEPER                  PB6
 #define BEEPER_INVERTED
 #else
-#define LED1                    PB4
+#define LED1_PIN                PB4
 // Leave beeper here but with none as io - so disabled unless mapped.
 #define BEEPER                  NONE
 #endif
@@ -257,8 +257,6 @@
 #define SERIALRX_UART           SERIAL_PORT_USART6
 #define DEFAULT_FEATURES        FEATURE_TELEMETRY
 #endif
-
-#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

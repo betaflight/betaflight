@@ -22,8 +22,8 @@
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 #define CONFIG_PREFER_ACC_ON
 
-#define LED0                    PB3
-#define LED1                    PB4
+#define LED0_PIN                PB3
+#define LED1_PIN                PB4
 
 #define BEEPER                  PA12
 #define BEEPER_INVERTED
@@ -87,8 +87,6 @@
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define RX_CHANNELS_TAER
-
-#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

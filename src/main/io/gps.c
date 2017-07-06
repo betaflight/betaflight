@@ -71,17 +71,10 @@ static char *gpsPacketLogChar = gpsPacketLog;
 // **********************
 // GPS
 // **********************
-int32_t GPS_coord[2];               // LAT/LON
-
-uint8_t GPS_numSat;
-uint16_t GPS_hdop = 9999;           // Compute GPS quality signal
+gpsSolutionData_t gpsSol;
 uint32_t GPS_packetCount = 0;
 uint32_t GPS_svInfoReceivedCount = 0; // SV = Space Vehicle, counter increments each time SV info is received.
 uint8_t GPS_update = 0;             // it's a binary toggle to distinct a GPS position update
-
-uint16_t GPS_altitude;              // altitude in 0.1m
-uint16_t GPS_speed;                 // speed in 0.1m/s
-uint16_t GPS_ground_course = 0;     // degrees * 10
 
 uint8_t GPS_numCh;                          // Number of channels
 uint8_t GPS_svinfo_chn[GPS_SV_MAXSATS];     // Channel number
@@ -125,14 +118,14 @@ static const uint8_t ubloxInit[] = {
     0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00,           // Collected by resetting a GPS unit to defaults. Changing mode to Pedistrian and
     0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x3C, 0x00, 0x00, 0x00,           // capturing the data from the U-Center binary console.
     0x00, 0xC8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x17, 0xC2,
-    
+
     //Preprocessor Airborne_1g Dynamic Platform Model Option
     #elif defined(GPS_UBLOX_MODE_AIRBORNE_1G)
     0xB5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xFF, 0xFF, 0x06, 0x03, 0x00,           // CFG-NAV5 - Set engine settings
     0x00, 0x00, 0x00, 0x10, 0x27, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00,           // Collected by resetting a GPS unit to defaults. Changing mode to Airborne with
     0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x3C, 0x00, 0x00, 0x00,           // <1g acceleration and capturing the data from the U-Center binary console.
     0x00, 0xC8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1A, 0x28,
-    
+
     //Default Airborne_4g Dynamic Platform Model
     #else
     0xB5, 0x62, 0x06, 0x24, 0x24, 0x00, 0xFF, 0xFF, 0x08, 0x03, 0x00,           // CFG-NAV5 - Set engine settings
@@ -140,7 +133,7 @@ static const uint8_t ubloxInit[] = {
     0xFA, 0x00, 0x64, 0x00, 0x2C, 0x01, 0x00, 0x3C, 0x00, 0x00, 0x00,           // <4g acceleration and capturing the data from the U-Center binary console.
     0x00, 0xC8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1C, 0x6C,
     #endif
-    
+
     // DISABLE NMEA messages
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x05, 0x00, 0xFF, 0x19,           // VGS: Course over ground and Ground speed
     0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x03, 0x00, 0xFD, 0x15,           // GSV: GNSS Satellites in View
@@ -280,7 +273,7 @@ void gpsInitNmea(void)
 #if defined(COLIBRI_RACE) || defined(LUX_RACE)
     uint32_t now;
 #endif
-    switch(gpsData.state) {
+    switch (gpsData.state) {
         case GPS_INITIALIZING:
 #if defined(COLIBRI_RACE) || defined(LUX_RACE)
            now = millis();
@@ -368,7 +361,7 @@ void gpsInitUblox(void)
         case GPS_CONFIGURE:
 
             // Either use specific config file for GPS or let dynamically upload config
-            if( gpsConfig()->autoConfig == GPS_AUTOCONFIG_OFF ) {
+            if ( gpsConfig()->autoConfig == GPS_AUTOCONFIG_OFF ) {
                 gpsSetState(GPS_RECEIVING_DATA);
                 break;
             }
@@ -424,7 +417,7 @@ void gpsInitHardware(void)
 static void updateGpsIndicator(timeUs_t currentTimeUs)
 {
     static uint32_t GPSLEDTime;
-    if ((int32_t)(currentTimeUs - GPSLEDTime) >= 0 && (GPS_numSat >= 5)) {
+    if ((int32_t)(currentTimeUs - GPSLEDTime) >= 0 && (gpsSol.numSat >= 5)) {
         GPSLEDTime = currentTimeUs + 150000;
         LED1_TOGGLE;
     }
@@ -456,8 +449,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
                 gpsData.baudrateIndex %= GPS_INIT_ENTRIES;
             }
             gpsData.lastMessage = millis();
-            // TODO - move some / all of these into gpsData
-            GPS_numSat = 0;
+            gpsSol.numSat = 0;
             DISABLE_STATE(GPS_FIX);
             gpsSetState(GPS_INITIALIZING);
             break;
@@ -636,7 +628,7 @@ static bool gpsNewFrameNMEA(char c)
 
             switch (gps_frame) {
                 case FRAME_GGA:        //************* GPGGA FRAME parsing
-                    switch(param) {
+                    switch (param) {
             //          case 1:             // Time information
             //              break;
                         case 2:
@@ -669,7 +661,7 @@ static bool gpsNewFrameNMEA(char c)
                     }
                     break;
                 case FRAME_RMC:        //************* GPRMC FRAME parsing
-                    switch(param) {
+                    switch (param) {
                         case 7:
                             gps_Msg.speed = ((grab_fields(string, 1) * 5144L) / 1000L);    // speed in cm/s added by Mis
                             break;
@@ -679,7 +671,7 @@ static bool gpsNewFrameNMEA(char c)
                     }
                     break;
                 case FRAME_GSV:
-                    switch(param) {
+                    switch (param) {
                       /*case 1:
                             // Total number of messages of this type in this cycle
                             break; */
@@ -692,17 +684,17 @@ static bool gpsNewFrameNMEA(char c)
                             GPS_numCh = grab_fields(string, 0);
                             break;
                     }
-                    if(param < 4)
+                    if (param < 4)
                         break;
 
                     svPacketIdx = (param - 4) / 4 + 1; // satellite number in packet, 1-4
                     svSatNum    = svPacketIdx + (4 * (svMessageNum - 1)); // global satellite number
                     svSatParam  = param - 3 - (4 * (svPacketIdx - 1)); // parameter number for satellite
 
-                    if(svSatNum > GPS_SV_MAXSATS)
+                    if (svSatNum > GPS_SV_MAXSATS)
                         break;
 
-                    switch(svSatParam) {
+                    switch (svSatParam) {
                         case 1:
                             // SV PRN number
                             GPS_svinfo_chn[svSatNum - 1]  = svSatNum;
@@ -746,16 +738,16 @@ static bool gpsNewFrameNMEA(char c)
                       *gpsPacketLogChar = LOG_NMEA_GGA;
                       frameOK = 1;
                       if (STATE(GPS_FIX)) {
-                            GPS_coord[LAT] = gps_Msg.latitude;
-                            GPS_coord[LON] = gps_Msg.longitude;
-                            GPS_numSat = gps_Msg.numSat;
-                            GPS_altitude = gps_Msg.altitude;
+                            gpsSol.llh.lat = gps_Msg.latitude;
+                            gpsSol.llh.lon = gps_Msg.longitude;
+                            gpsSol.numSat = gps_Msg.numSat;
+                            gpsSol.llh.alt = gps_Msg.altitude;
                         }
                         break;
                     case FRAME_RMC:
                         *gpsPacketLogChar = LOG_NMEA_RMC;
-                        GPS_speed = gps_Msg.speed;
-                        GPS_ground_course = gps_Msg.ground_course;
+                        gpsSol.groundSpeed = gps_Msg.speed;
+                        gpsSol.groundCourse = gps_Msg.ground_course;
                         break;
                     } // end switch
                 } else {
@@ -952,9 +944,9 @@ static bool UBLOX_parse_gps(void)
     case MSG_POSLLH:
         *gpsPacketLogChar = LOG_UBLOX_POSLLH;
         //i2c_dataset.time                = _buffer.posllh.time;
-        GPS_coord[LON] = _buffer.posllh.longitude;
-        GPS_coord[LAT] = _buffer.posllh.latitude;
-        GPS_altitude = _buffer.posllh.altitude_msl / 10 / 100;  //alt in m
+        gpsSol.llh.lon = _buffer.posllh.longitude;
+        gpsSol.llh.lat = _buffer.posllh.latitude;
+        gpsSol.llh.alt = _buffer.posllh.altitude_msl / 10 / 100;  //alt in m
         if (next_fix) {
             ENABLE_STATE(GPS_FIX);
         } else {
@@ -973,14 +965,14 @@ static bool UBLOX_parse_gps(void)
         next_fix = (_buffer.solution.fix_status & NAV_STATUS_FIX_VALID) && (_buffer.solution.fix_type == FIX_3D);
         if (!next_fix)
             DISABLE_STATE(GPS_FIX);
-        GPS_numSat = _buffer.solution.satellites;
-        GPS_hdop = _buffer.solution.position_DOP;
+        gpsSol.numSat = _buffer.solution.satellites;
+        gpsSol.hdop = _buffer.solution.position_DOP;
         break;
     case MSG_VELNED:
         *gpsPacketLogChar = LOG_UBLOX_VELNED;
         // speed_3d                        = _buffer.velned.speed_3d;  // cm/s
-        GPS_speed = _buffer.velned.speed_2d;    // cm/s
-        GPS_ground_course = (uint16_t) (_buffer.velned.heading_2d / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
+        gpsSol.groundSpeed = _buffer.velned.speed_2d;    // cm/s
+        gpsSol.groundCourse = (uint16_t) (_buffer.velned.heading_2d / 10000);     // Heading 2D deg * 100000 rescaled to deg * 10
         _new_speed = true;
         break;
     case MSG_SVINFO:
@@ -988,7 +980,7 @@ static bool UBLOX_parse_gps(void)
         GPS_numCh = _buffer.svinfo.numCh;
         if (GPS_numCh > 16)
             GPS_numCh = 16;
-        for (i = 0; i < GPS_numCh; i++){
+        for (i = 0; i < GPS_numCh; i++) {
             GPS_svinfo_chn[i]= _buffer.svinfo.channel[i].chn;
             GPS_svinfo_svid[i]= _buffer.svinfo.channel[i].svid;
             GPS_svinfo_quality[i]=_buffer.svinfo.channel[i].quality;
@@ -1111,7 +1103,7 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
     waitForSerialPortToFinishTransmitting(gpsPort);
     waitForSerialPortToFinishTransmitting(gpsPassthroughPort);
 
-    if(!(gpsPort->mode & MODE_TX))
+    if (!(gpsPort->mode & MODE_TX))
         serialSetMode(gpsPort, gpsPort->mode | MODE_TX);
 
 #ifdef USE_DASHBOARD

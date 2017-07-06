@@ -28,9 +28,9 @@
 extern "C" {
     #include "platform.h"
     #include "target.h"
-    #include "drivers/display.h"
     #include "cms/cms.h"
     #include "cms/cms_types.h"
+    #include "fc/runtime_config.h"
     void cmsMenuOpen(void);
     long cmsMenuBack(displayPort_t *pDisplay);
     uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key);
@@ -38,101 +38,8 @@ extern "C" {
 }
 
 #include "unittest_macros.h"
+#include "unittest_displayport.h"
 #include "gtest/gtest.h"
-
-static displayPort_t testDisplayPort;
-static int displayPortTestGrab(displayPort_t *displayPort)
-{
-    UNUSED(displayPort);
-    return 0;
-}
-
-static int displayPortTestRelease(displayPort_t *displayPort)
-{
-    UNUSED(displayPort);
-    return 0;
-}
-
-static int displayPortTestClearScreen(displayPort_t *displayPort)
-{
-    UNUSED(displayPort);
-    return 0;
-}
-
-static int displayPortTestDrawScreen(displayPort_t *displayPort)
-{
-    UNUSED(displayPort);
-    return 0;
-}
-
-static int displayPortTestScreenSize(const displayPort_t *displayPort)
-{
-    UNUSED(displayPort);
-    return 0;
-}
-
-static int displayPortTestWrite(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
-{
-    UNUSED(displayPort);
-    UNUSED(x);
-    UNUSED(y);
-    UNUSED(s);
-    return 0;
-}
-
-static int displayPortTestWriteChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c)
-{
-    UNUSED(displayPort);
-    UNUSED(x);
-    UNUSED(y);
-    UNUSED(c);
-    return 0;
-}
-
-static bool displayPortTestIsTransferInProgress(const displayPort_t *displayPort)
-{
-    UNUSED(displayPort);
-    return 0;
-}
-
-static int displayPortTestHeartbeat(displayPort_t *displayPort)
-{
-    UNUSED(displayPort);
-    return 0;
-}
-
-static void displayPortTestResync(displayPort_t *displayPort)
-{
-    UNUSED(displayPort);
-}
-
-static uint32_t displayPortTestTxBytesFree(const displayPort_t *displayPort)
-{
-    UNUSED(displayPort);
-    return 0;
-}
-
-static const displayPortVTable_t testDisplayPortVTable = {
-    .grab = displayPortTestGrab,
-    .release = displayPortTestRelease,
-    .clearScreen = displayPortTestClearScreen,
-    .drawScreen = displayPortTestDrawScreen,
-    .screenSize = displayPortTestScreenSize,
-    .write = displayPortTestWrite,
-    .writeChar = displayPortTestWriteChar,
-    .isTransferInProgress = displayPortTestIsTransferInProgress,
-    .heartbeat = displayPortTestHeartbeat,
-    .resync = displayPortTestResync,
-    .txBytesFree = displayPortTestTxBytesFree
-};
-
-displayPort_t *displayPortTestInit(void)
-{
-    displayInit(&testDisplayPort, &testDisplayPortVTable);
-    testDisplayPort.rows = 10;
-    testDisplayPort.cols = 40;
-    return &testDisplayPort;
-}
 
 TEST(CMSUnittest, TestCmsDisplayPortRegister)
 {
@@ -235,4 +142,6 @@ void saveConfigAndNotify(void) {}
 void stopMotors(void) {}
 void stopPwmAllMotors(void) {}
 void systemReset(void) {}
+void setArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
+void unsetArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
 }

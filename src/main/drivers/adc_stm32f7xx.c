@@ -200,7 +200,7 @@ void adcInit(const adcConfig_t *config)
 
     //HAL_CLEANINVALIDATECACHE((uint32_t*)&adcValues, configuredAdcChannels);
     /*##-4- Start the conversion process #######################################*/
-    if(HAL_ADC_Start_DMA(&adc.ADCHandle, (uint32_t*)&adcValues, configuredAdcChannels) != HAL_OK)
+    if (HAL_ADC_Start_DMA(&adc.ADCHandle, (uint32_t*)&adcValues, configuredAdcChannels) != HAL_OK)
     {
         /* Start Conversation Error */
     }

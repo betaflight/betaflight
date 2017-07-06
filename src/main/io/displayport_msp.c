@@ -100,7 +100,7 @@ static int screenSize(const displayPort_t *displayPort)
     return displayPort->rows * displayPort->cols;
 }
 
-static int write(displayPort_t *displayPort, uint8_t col, uint8_t row, const char *string)
+static int writeString(displayPort_t *displayPort, uint8_t col, uint8_t row, const char *string)
 {
 #define MSP_OSD_MAX_STRING_LENGTH 30 // FIXME move this
     uint8_t buf[MSP_OSD_MAX_STRING_LENGTH + 4];
@@ -125,7 +125,7 @@ static int writeChar(displayPort_t *displayPort, uint8_t col, uint8_t row, uint8
 
     buf[0] = c;
     buf[1] = 0;
-    return write(displayPort, col, row, buf); //!!TODO - check if there is a direct MSP command to do this
+    return writeString(displayPort, col, row, buf); //!!TODO - check if there is a direct MSP command to do this
 }
 
 static bool isTransferInProgress(const displayPort_t *displayPort)
@@ -152,7 +152,7 @@ static const displayPortVTable_t mspDisplayPortVTable = {
     .clearScreen = clearScreen,
     .drawScreen = drawScreen,
     .screenSize = screenSize,
-    .write = write,
+    .writeString = writeString,
     .writeChar = writeChar,
     .isTransferInProgress = isTransferInProgress,
     .heartbeat = heartbeat,

@@ -26,10 +26,10 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
-#define LED0                    PC15
-#define LED1                    PC14
+#define LED0_PIN                PC15
+#define LED1_PIN                PC14
 #ifndef LUXV2_RACE
-#define LED2                    PC13
+#define LED2_PIN                PC13
 #endif
 
 #ifdef LUXV2_RACE
@@ -156,8 +156,6 @@
 #else
 #define DEFAULT_FEATURES        (FEATURE_TELEMETRY)
 #endif
-
-#define SPEKTRUM_BIND_PIN       UART1_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

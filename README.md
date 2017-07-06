@@ -2,6 +2,8 @@
 
 ![Cleanflight](docs/assets/cleanflight/cleanflight-logo-light-wide-1-240px.jpg)
 
+IMPORTANT NOTICE: Support for STM32F1 based flight controllers will be removed in late 2017, this includes NAZE, CC3D (original) and CJMCU like flight controllers.
+
 Cleanflight is flight controller software for multi-rotor and fixed wings.  The Cleanflight project, and related projects such as Betaflight and iNav are
 used on the majority of flight controllers used around the world.  There is no other software used on as many flight-controllers!
 

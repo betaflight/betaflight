@@ -30,6 +30,7 @@
 
 #include "common/utils.h"
 
+#include "drivers/io.h"
 #include "drivers/rx_nrf24l01.h"
 #include "drivers/time.h"
 
@@ -152,7 +153,7 @@ static void decode_bind_packet(uint8_t *packet)
 // Returns whether the data was successfully decoded
 static rx_spi_received_e decode_packet(uint8_t *packet)
 {
-    if(bind_phase != PHASE_BOUND) {
+    if (bind_phase != PHASE_BOUND) {
         decode_bind_packet(packet);
         return RX_SPI_RECEIVED_BIND;
     }

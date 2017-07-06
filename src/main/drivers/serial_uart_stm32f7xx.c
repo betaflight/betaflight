@@ -228,7 +228,7 @@ void uartIrqHandler(uartPort_t *s)
 {
     UART_HandleTypeDef *huart = &s->Handle;
     /* UART in mode Receiver ---------------------------------------------------*/
-    if((__HAL_UART_GET_IT(huart, UART_IT_RXNE) != RESET))
+    if ((__HAL_UART_GET_IT(huart, UART_IT_RXNE) != RESET))
     {
         uint8_t rbyte = (uint8_t)(huart->Instance->RDR & (uint8_t)0xff);
 
@@ -247,37 +247,37 @@ void uartIrqHandler(uartPort_t *s)
     }
 
     /* UART parity error interrupt occurred -------------------------------------*/
-    if((__HAL_UART_GET_IT(huart, UART_IT_PE) != RESET))
+    if ((__HAL_UART_GET_IT(huart, UART_IT_PE) != RESET))
     {
       __HAL_UART_CLEAR_IT(huart, UART_CLEAR_PEF);
     }
 
     /* UART frame error interrupt occurred --------------------------------------*/
-    if((__HAL_UART_GET_IT(huart, UART_IT_FE) != RESET))
+    if ((__HAL_UART_GET_IT(huart, UART_IT_FE) != RESET))
     {
       __HAL_UART_CLEAR_IT(huart, UART_CLEAR_FEF);
     }
 
     /* UART noise error interrupt occurred --------------------------------------*/
-    if((__HAL_UART_GET_IT(huart, UART_IT_NE) != RESET))
+    if ((__HAL_UART_GET_IT(huart, UART_IT_NE) != RESET))
     {
       __HAL_UART_CLEAR_IT(huart, UART_CLEAR_NEF);
     }
 
     /* UART Over-Run interrupt occurred -----------------------------------------*/
-    if((__HAL_UART_GET_IT(huart, UART_IT_ORE) != RESET))
+    if ((__HAL_UART_GET_IT(huart, UART_IT_ORE) != RESET))
     {
       __HAL_UART_CLEAR_IT(huart, UART_CLEAR_OREF);
     }
 
     /* UART in mode Transmitter ------------------------------------------------*/
-    if((__HAL_UART_GET_IT(huart, UART_IT_TXE) != RESET))
+    if ((__HAL_UART_GET_IT(huart, UART_IT_TXE) != RESET))
     {
         HAL_UART_IRQHandler(huart);
     }
 
     /* UART in mode Transmitter (transmission end) -----------------------------*/
-    if((__HAL_UART_GET_IT(huart, UART_IT_TC) != RESET))
+    if ((__HAL_UART_GET_IT(huart, UART_IT_TC) != RESET))
     {
         HAL_UART_IRQHandler(huart);
         handleUsartTxDma(s);
@@ -308,7 +308,7 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
     uartDevice_t *uartdev = uartDevmap[device];
     if (!uartdev) {
         return NULL;
-    }    
+    }
 
     uartPort_t *s = &(uartdev->port);
 
@@ -341,9 +341,14 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
     IO_t rxIO = IOGetByTag(uartdev->rx);
 
     if ((options & SERIAL_BIDIR) && txIO) {
-        // XXX BIDIR_PP handling is missing
+        ioConfig_t ioCfg = IO_CONFIG(
+            ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP)) ? GPIO_MODE_AF_PP : GPIO_MODE_AF_OD,
+            GPIO_SPEED_FREQ_HIGH,
+            ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP)) ? GPIO_PULLDOWN : GPIO_PULLUP
+        );
+
         IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
-        IOConfigGPIOAF(txIO, IOCFG_AF_PP, hardware->af);
+        IOConfigGPIOAF(txIO, ioCfg, hardware->af);
     }
     else {
         if ((mode & MODE_TX) && txIO) {
@@ -365,7 +370,7 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
     //HAL_NVIC_SetPriority(hardware->txIrq, NVIC_PRIORITY_BASE(hardware->txPriority), NVIC_PRIORITY_SUB(hardware->txPriority));
     //HAL_NVIC_EnableIRQ(hardware->txIrq);
 
-    if(!s->rxDMAChannel)
+    if (!s->rxDMAChannel)
     {
         HAL_NVIC_SetPriority(hardware->rxIrq, NVIC_PRIORITY_BASE(hardware->rxPriority), NVIC_PRIORITY_SUB(hardware->rxPriority));
         HAL_NVIC_EnableIRQ(hardware->rxIrq);

@@ -162,44 +162,45 @@ void delay(uint32_t ms)
 }
 
 #define SHORT_FLASH_DURATION 50
+#define SHORT_FLASH_COUNT 5
 #define CODE_FLASH_DURATION 250
 
-void failureMode(failureMode_e mode)
+static void indicate(uint8_t count, uint16_t duration)
 {
-    int codeRepeatsRemaining = 10;
-    int codeFlashesRemaining;
-    int shortFlashesRemaining;
-
-    while (codeRepeatsRemaining--) {
+    if (count) {
         LED1_ON;
         LED0_OFF;
-        shortFlashesRemaining = 5;
-        codeFlashesRemaining = mode + 1;
-        uint8_t flashDuration = SHORT_FLASH_DURATION;
 
-        while (shortFlashesRemaining || codeFlashesRemaining) {
+        while (count--) {
             LED1_TOGGLE;
             LED0_TOGGLE;
             BEEP_ON;
-            delay(flashDuration);
+            delay(duration);
 
             LED1_TOGGLE;
             LED0_TOGGLE;
             BEEP_OFF;
-            delay(flashDuration);
-
-            if (shortFlashesRemaining) {
-                shortFlashesRemaining--;
-                if (shortFlashesRemaining == 0) {
-                    delay(500);
-                    flashDuration = CODE_FLASH_DURATION;
-                }
-            } else {
-                codeFlashesRemaining--;
-            }
+            delay(duration);
         }
+    }
+}
+
+void indicateFailure(failureMode_e mode, int codeRepeatsRemaining)
+{
+    while (codeRepeatsRemaining--) {
+        indicate(SHORT_FLASH_COUNT, SHORT_FLASH_DURATION);
+
+        delay(500);
+
+        indicate(mode + 1, CODE_FLASH_DURATION);
+
         delay(1000);
     }
+}
+
+void failureMode(failureMode_e mode)
+{
+    indicateFailure(mode, 10);
 
 #ifdef DEBUG
     systemReset();

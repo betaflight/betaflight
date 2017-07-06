@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "drivers/bus.h"
 #include "drivers/exti.h"
 #include "drivers/sensor.h"
 
@@ -126,15 +127,13 @@
 
 typedef bool (*mpuReadRegisterFnPtr)(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t* data);
 typedef bool (*mpuWriteRegisterFnPtr)(const busDevice_t *bus, uint8_t reg, uint8_t data);
-typedef void(*mpuResetFnPtr)(void);
+typedef void (*mpuResetFnPtr)(void);
 
 extern mpuResetFnPtr mpuResetFn;
 
 typedef struct mpuConfiguration_s {
     mpuReadRegisterFnPtr readFn;
     mpuWriteRegisterFnPtr writeFn;
-    mpuReadRegisterFnPtr slowreadFn;
-    mpuWriteRegisterFnPtr verifywriteFn;
     mpuResetFnPtr resetFn;
     uint8_t gyroReadXRegister; // Y and Z must registers follow this, 2 words each
 } mpuConfiguration_t;
@@ -200,6 +199,7 @@ void mpuGyroInit(struct gyroDev_s *gyro);
 struct accDev_s;
 bool mpuAccRead(struct accDev_s *acc);
 bool mpuGyroRead(struct gyroDev_s *gyro);
+bool mpuGyroReadSPI(struct gyroDev_s *gyro);
 void mpuDetect(struct gyroDev_s *gyro);
 bool mpuCheckDataReady(struct gyroDev_s *gyro);
 void mpuGyroSetIsrUpdate(struct gyroDev_s *gyro, sensorGyroUpdateFuncPtr updateFn);

@@ -54,43 +54,23 @@ uint8_t getTimerIndex(TIM_TypeDef *timer)
     return dmaMotorTimerCount-1;
 }
 
-void pwmWriteDigital(uint8_t index, uint16_t value)
+void pwmWriteDshotInt(uint8_t index, uint16_t value)
 {
-
-    if (!pwmMotorsEnabled) {
-        return;
-    }
-
-    motorDmaOutput_t * const motor = &dmaMotors[index];
+    motorDmaOutput_t *const motor = &dmaMotors[index];
 
     if (!motor->timerHardware || !motor->timerHardware->dmaRef) {
         return;
     }
 
-    uint16_t packet = (value << 1) | (motor->requestTelemetry ? 1 : 0);
-    motor->requestTelemetry = false;    // reset telemetry request to make sure it's triggered only once in a row
+    uint16_t packet = prepareDshotPacket(motor, value);
 
-    // compute checksum
-    int csum = 0;
-    int csum_data = packet;
-    for (int i = 0; i < 3; i++) {
-        csum ^=  csum_data;   // xor data by nibbles
-        csum_data >>= 4;
-    }
-    csum &= 0xf;
-    // append checksum
-    packet = (packet << 4) | csum;
-    // generate pulses for whole packet
-    for (int i = 0; i < 16; i++) {
-        motor->dmaBuffer[i] = (packet & 0x8000) ? MOTOR_BIT_1 : MOTOR_BIT_0;  // MSB first
-        packet <<= 1;
-    }
+    uint8_t bufferSize = loadDmaBuffer(motor, packet);
 
-    DMA_SetCurrDataCounter(motor->timerHardware->dmaRef, MOTOR_DMA_BUFFER_SIZE);
+    DMA_SetCurrDataCounter(motor->timerHardware->dmaRef, bufferSize);
     DMA_Cmd(motor->timerHardware->dmaRef, ENABLE);
 }
 
-void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
+void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
 {
     UNUSED(motorCount);
 
@@ -114,7 +94,7 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
     }
 }
 
-void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
+void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
 {
     TIM_OCInitTypeDef TIM_OCInitStructure;
     DMA_InitTypeDef DMA_InitStructure;
@@ -139,7 +119,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
         TIM_Cmd(timer, DISABLE);
 
         TIM_TimeBaseStructure.TIM_Prescaler = (uint16_t)((timerClock(timer) / getDshotHz(pwmProtocolType)) - 1);
-        TIM_TimeBaseStructure.TIM_Period = MOTOR_BITLENGTH;
+        TIM_TimeBaseStructure.TIM_Period = pwmProtocolType == PWM_TYPE_PROSHOT1000 ? MOTOR_NIBBLE_LENGTH_PROSHOT : MOTOR_BITLENGTH;
         TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
         TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;
         TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
@@ -189,7 +169,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
 
     DMA_Cmd(dmaRef, DISABLE);
     DMA_DeInit(dmaRef);
-    
+
     DMA_StructInit(&DMA_InitStructure);
 #if defined(STM32F3)
     DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)motor->dmaBuffer;
@@ -205,7 +185,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
 #endif
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)timerChCCR(timerHardware);
-    DMA_InitStructure.DMA_BufferSize = MOTOR_DMA_BUFFER_SIZE;
+    DMA_InitStructure.DMA_BufferSize = pwmProtocolType == PWM_TYPE_PROSHOT1000 ? PROSHOT_DMA_BUFFER_SIZE : DSHOT_DMA_BUFFER_SIZE;
     DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
     DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
     DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Word;

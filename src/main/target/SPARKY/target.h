@@ -21,8 +21,8 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-#define LED0                    PB4  // Blue (Rev 1 & 2) - PB4
-#define LED1                    PB5  // Green (Rev 1) / Red (Rev 2) - PB5
+#define LED0_PIN                PB4  // Blue (Rev 1 & 2) - PB4
+#define LED1_PIN                PB5  // Green (Rev 1) / Red (Rev 2) - PB5
 
 #define BEEPER                  PA1
 #define BEEPER_INVERTED
@@ -89,8 +89,6 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
-
-#define SPEKTRUM_BIND_PIN         UART2_RX_PIN
 
 //#define SONAR
 //#define SONAR_ECHO_PIN          PB1

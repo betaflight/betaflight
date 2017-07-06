@@ -19,6 +19,7 @@
 
 #include "common/axis.h"
 #include "config/parameter_group.h"
+#include "drivers/bus.h"
 #include "drivers/sensor.h"
 
 typedef enum {
@@ -73,7 +74,8 @@ struct mpuConfiguration_s;
 const struct mpuConfiguration_s *gyroMpuConfiguration(void);
 struct mpuDetectionResult_s;
 const struct mpuDetectionResult_s *gyroMpuDetectionResult(void);
-void gyroStartCalibration(void);
+void gyroStartCalibration(bool isFirstArmingCalibration);
+bool isFirstArmingGyroCalibrationRunning(void);
 bool isGyroCalibrationComplete(void);
 void gyroReadTemperature(void);
 int16_t gyroGetTemperature(void);

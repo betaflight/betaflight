@@ -22,8 +22,8 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
-#define LED0                    PB9
-#define LED1                    PB2
+#define LED0_PIN                PB9
+#define LED1_PIN                PB2
 
 #define BEEPER                  PC15
 #define BEEPER_INVERTED
@@ -183,8 +183,6 @@
 
 #define BUTTONS // Physically located on the optional OSD/VTX board.
 #define BUTTON_A_PIN                        PD2
-
-#define SPEKTRUM_BIND_PIN                   UART2_RX_PIN
 
 // FIXME While it's possible to use the button on the OSD/VTX board for binding enabling it here will break binding unless you have the OSD/VTX connected.
 //#define BINDPLUG_PIN                        BUTTON_A_PIN

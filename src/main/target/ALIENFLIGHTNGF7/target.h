@@ -25,8 +25,8 @@
 
 #define USBD_PRODUCT_STRING "AlienFlightNG F7"
 
-#define LED0                    PC12
-#define LED1                    PD2
+#define LED0_PIN                PC12
+#define LED1_PIN                PD2
 
 #define BEEPER                  PC13
 #define BEEPER_INVERTED
@@ -127,8 +127,9 @@
 
 #define SERIAL_PORT_COUNT       6
 
-//#define USE_ESCSERIAL
-//#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PPM/LED_STRIP
+#define ESCSERIAL_TIMER_TX_PIN  PA8 // XXX Provisional (Hardware=0, PPM) XXX Crash if using an LED strip.
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -170,8 +171,6 @@
 
 // LED strip configuration.
 #define LED_STRIP
-
-#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
 #define BINDPLUG_PIN            PB2
 

@@ -15,9 +15,9 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define TARGET_BOARD_IDENTIFIER "MCF3"	// LumbaF3 Flight Controller by mC
+#define TARGET_BOARD_IDENTIFIER "MCF3" // LumbaF3 Flight Controller by mC
 
-#define LED0                    PB3
+#define LED0_PIN                PB3
 #define BEEPER                  PC15
 
 // MPU6000 interrupts
@@ -42,11 +42,11 @@
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN		CW90_DEG
+#define GYRO_MPU6000_ALIGN      CW90_DEG
 
 #define ACC
 #define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN		CW90_DEG
+#define ACC_MPU6000_ALIGN       CW90_DEG
 
 #define USE_VCP
 #define USE_UART1
@@ -70,17 +70,17 @@
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PB1
-#define VBAT_ADC_PIN            PA0         
+#define VBAT_ADC_PIN            PA0
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define LED_STRIP				
+#define LED_STRIP
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART1
-#define DEFAULT_FEATURES		FEATURE_TELEMETRY
-	
+#define DEFAULT_FEATURES        FEATURE_TELEMETRY
+
 // IO - from schematics
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

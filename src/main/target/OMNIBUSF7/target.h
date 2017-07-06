@@ -19,7 +19,7 @@
 
 #define USBD_PRODUCT_STRING "OmnibusF7"
 
-#define LED0                    PE0
+#define LED0_PIN                PE0
 
 #define BEEPER                  PD15
 #define BEEPER_INVERTED
@@ -77,6 +77,10 @@
 #define UART6_TX_PIN            PC6
 
 #define SERIAL_PORT_COUNT 4
+
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PPM
+#define ESCSERIAL_TIMER_TX_PIN  PE13 // XXX Provisional (Hardware=0, PPM)
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1

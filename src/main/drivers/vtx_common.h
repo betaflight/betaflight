@@ -35,7 +35,7 @@ typedef struct vtxDeviceCapability_s {
 } vtxDeviceCapability_t;
 
 typedef struct vtxDevice_s {
-    const struct vtxVTable_s const *vTable;
+    const struct vtxVTable_s * const vTable;
 
     vtxDeviceCapability_t capability;
 

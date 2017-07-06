@@ -28,8 +28,8 @@
 #define BRUSHED_ESC_AUTODETECT
 
 // LED's V1
-#define LED0                    PB4
-#define LED1                    PB5
+#define LED0_PIN                PB4
+#define LED1_PIN                PB5
 
 // LED's V2
 #define LED0_A                  PB8
@@ -113,8 +113,6 @@
 
 // LED strip configuration.
 #define LED_STRIP
-
-#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
 #define BINDPLUG_PIN            PB12
 

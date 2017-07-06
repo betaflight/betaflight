@@ -34,15 +34,9 @@ const pgRegistry_t* pgFind(pgn_t pgn)
     return NULL;
 }
 
-static uint8_t *pgOffset(const pgRegistry_t* reg, uint8_t profileIndex)
+static uint8_t *pgOffset(const pgRegistry_t* reg)
 {
-    const uint16_t regSize = pgSize(reg);
-
-    uint8_t *base = reg->address;
-    if (!pgIsSystem(reg)) {
-        base += (regSize * profileIndex);
-    }
-    return base;
+    return reg->address;
 }
 
 static void pgResetInstance(const pgRegistry_t *reg, uint8_t *base)
@@ -59,18 +53,9 @@ static void pgResetInstance(const pgRegistry_t *reg, uint8_t *base)
     }
 }
 
-void pgReset(const pgRegistry_t* reg, int profileIndex)
+void pgReset(const pgRegistry_t* reg)
 {
-    pgResetInstance(reg, pgOffset(reg, profileIndex));
-}
-
-void pgResetCurrent(const pgRegistry_t *reg)
-{
-    if (pgIsSystem(reg)) {
-        pgResetInstance(reg, reg->address);
-    } else {
-        pgResetInstance(reg, *reg->ptr);
-    }
+    pgResetInstance(reg, pgOffset(reg));
 }
 
 bool pgResetCopy(void *copy, pgn_t pgn)
@@ -83,44 +68,26 @@ bool pgResetCopy(void *copy, pgn_t pgn)
     return false;
 }
 
-void pgLoad(const pgRegistry_t* reg, int profileIndex, const void *from, int size, int version)
+void pgLoad(const pgRegistry_t* reg, const void *from, int size, int version)
 {
-    pgResetInstance(reg, pgOffset(reg, profileIndex));
+    pgResetInstance(reg, pgOffset(reg));
     // restore only matching version, keep defaults otherwise
     if (version == pgVersion(reg)) {
         const int take = MIN(size, pgSize(reg));
-        memcpy(pgOffset(reg, profileIndex), from, take);
+        memcpy(pgOffset(reg), from, take);
     }
 }
 
-int pgStore(const pgRegistry_t* reg, void *to, int size, uint8_t profileIndex)
+int pgStore(const pgRegistry_t* reg, void *to, int size)
 {
     const int take = MIN(size, pgSize(reg));
-    memcpy(to, pgOffset(reg, profileIndex), take);
+    memcpy(to, pgOffset(reg), take);
     return take;
 }
 
-
-void pgResetAll(int profileCount)
+void pgResetAll()
 {
     PG_FOREACH(reg) {
-        if (pgIsSystem(reg)) {
-            pgReset(reg, 0);
-        } else {
-            // reset one instance for each profile
-            for (int profileIndex = 0; profileIndex < profileCount; profileIndex++) {
-                pgReset(reg, profileIndex);
-            }
-        }
-    }
-}
-
-void pgActivateProfile(int profileIndex)
-{
-    PG_FOREACH(reg) {
-        if (!pgIsSystem(reg)) {
-            uint8_t *ptr = pgOffset(reg, profileIndex);
-            *(reg->ptr) = ptr;
-        }
+        pgReset(reg);
     }
 }

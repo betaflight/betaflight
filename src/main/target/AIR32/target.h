@@ -21,7 +21,7 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
-#define LED0                    PB5 // Blue LED - PB5
+#define LED0_PIN                PB5 // Blue LED - PB5
 
 #define BEEPER                  PA0
 
@@ -95,8 +95,6 @@
 #define VBAT_ADC_PIN            PA5
 //#define CURRENT_METER_ADC_PIN   PA5
 #define RSSI_ADC_PIN            PB2
-
-#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

@@ -77,13 +77,6 @@ static volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
 static rxRuntimeConfig_t *rxRuntimeConfigPtr;
 static serialPort_t *serialPort;
 
-#ifdef SPEKTRUM_BIND_PIN
-static IO_t BindPin = DEFIO_IO(NONE);
-#ifdef BINDPLUG_PIN
-static IO_t BindPlug = DEFIO_IO(NONE);
-#endif
-#endif
-
 static uint8_t telemetryBuf[SRXL_FRAME_SIZE_MAX];
 static uint8_t telemetryBufLen = 0;
 
@@ -133,11 +126,11 @@ static uint8_t spektrumFrameStatus(void)
         // This is the first frame status received.
         spek_fade_last_sec_count = fade;
         spek_fade_last_sec = current_secs;
-    } else if(spek_fade_last_sec != current_secs) {
+    } else if (spek_fade_last_sec != current_secs) {
         // If the difference is > 1, then we missed several seconds worth of frames and
         // should just throw out the fade calc (as it's likely a full signal loss).
-        if((current_secs - spek_fade_last_sec) == 1) {
-            if(rssi_channel != 0) {
+        if ((current_secs - spek_fade_last_sec) == 1) {
+            if (rssi_channel != 0) {
                 if (spekHiRes)
                     spekChannelData[rssi_channel] = 2048 - ((fade - spek_fade_last_sec_count) * 2048 / (SPEKTRUM_MAX_FADE_PER_SEC / SPEKTRUM_FADE_REPORTS_PER_SEC));
                 else
@@ -151,7 +144,7 @@ static uint8_t spektrumFrameStatus(void)
     for (int b = 3; b < SPEK_FRAME_SIZE; b += 2) {
         const uint8_t spekChannel = 0x0F & (spekFrame[b - 1] >> spek_chan_shift);
         if (spekChannel < rxRuntimeConfigPtr->channelCount && spekChannel < SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT) {
-            if(rssi_channel == 0 || spekChannel != rssi_channel) {
+            if (rssi_channel == 0 || spekChannel != rssi_channel) {
                 spekChannelData[spekChannel] = ((uint32_t)(spekFrame[b - 1] & spek_chan_mask) << 8) + spekFrame[b];
             }
         }
@@ -180,19 +173,22 @@ static uint16_t spektrumReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint
     return data;
 }
 
-#ifdef SPEKTRUM_BIND_PIN
+#ifdef USE_SPEKTRUM_BIND
 
 bool spekShouldBind(uint8_t spektrum_sat_bind)
 {
-#ifdef BINDPLUG_PIN
-    BindPlug = IOGetByTag(IO_TAG(BINDPLUG_PIN));
-    IOInit(BindPlug, OWNER_RX_BIND, 0);
-    IOConfigGPIO(BindPlug, IOCFG_IPU);
+#ifdef USE_SPEKTRUM_BIND_PLUG
+    IO_t BindPlug = IOGetByTag(rxConfig()->spektrum_bind_plug_ioTag);
 
-    // Check status of bind plug and exit if not active
-    delayMicroseconds(10);  // allow configuration to settle
-    if (IORead(BindPlug)) {
-        return false;
+    if (BindPlug) {
+        IOInit(BindPlug, OWNER_RX_BIND, 0);
+        IOConfigGPIO(BindPlug, IOCFG_IPU);
+
+        // Check status of bind plug and exit if not active
+        delayMicroseconds(10);  // allow configuration to settle
+        if (IORead(BindPlug)) {
+            return false;
+        }
     }
 #endif
 
@@ -202,6 +198,7 @@ bool spekShouldBind(uint8_t spektrum_sat_bind)
         spektrum_sat_bind > SPEKTRUM_SAT_BIND_MAX
     );
 }
+
 /* spektrumBind function ported from Baseflight. It's used to bind satellite receiver to TX.
  * Function must be called immediately after startup so that we don't miss satellite bind window.
  * Known parameters. Tested with DSMX satellite and DX8 radio. Framerate (11ms or 22ms) must be selected from TX.
@@ -210,52 +207,92 @@ bool spekShouldBind(uint8_t spektrum_sat_bind)
  */
 void spektrumBind(rxConfig_t *rxConfig)
 {
-    int i;
     if (!spekShouldBind(rxConfig->spektrum_sat_bind)) {
         return;
     }
 
+    // Determine a pin to use
+    ioTag_t bindPin = IO_TAG_NONE;
+
+    if (rxConfig->spektrum_bind_pin_override_ioTag) {
+        bindPin = rxConfig->spektrum_bind_pin_override_ioTag;
+    } else {
+        const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
+        if (!portConfig) {
+            return;
+        }
+
+        int index = SERIAL_PORT_IDENTIFIER_TO_INDEX(portConfig->identifier);
+        ioTag_t txPin = serialPinConfig()->ioTagTx[index];
+        ioTag_t rxPin = serialPinConfig()->ioTagRx[index];
+
+        // Take care half-duplex case
+        switch (rxConfig->serialrx_provider) {
+        case SERIALRX_SRXL:
+#ifdef TELEMETRY
+            if (feature(FEATURE_TELEMETRY) && !telemetryCheckRxPortShared(portConfig)) {
+                bindPin = txPin;
+            }
+            break;
+#endif
+        default:
+            bindPin = rxPin;
+        }
+
+        if (!bindPin) {
+            return;
+        }
+    }
+
+    IO_t bindIO = IOGetByTag(bindPin);
+
+    IOInit(bindIO, OWNER_RX_BIND, 0);
+    IOConfigGPIO(bindIO, IOCFG_OUT_PP);
+
     LED1_ON;
 
-    BindPin = IOGetByTag(IO_TAG(SPEKTRUM_BIND_PIN));
-    IOInit(BindPin, OWNER_RX_BIND, 0);
-    IOConfigGPIO(BindPin, IOCFG_OUT_PP);
-
     // RX line, set high
-    IOWrite(BindPin, true);
+    IOWrite(bindIO, true);
 
     // Bind window is around 20-140ms after powerup
     delay(60);
     LED1_OFF;
 
-    for (i = 0; i < rxConfig->spektrum_sat_bind; i++) {
-
+    for (int i = 0; i < rxConfig->spektrum_sat_bind; i++) {
         LED0_OFF;
         LED2_OFF;
         // RX line, drive low for 120us
-        IOWrite(BindPin, false);
+        IOWrite(bindIO, false);
         delayMicroseconds(120);
 
         LED0_ON;
         LED2_ON;
         // RX line, drive high for 120us
-        IOWrite(BindPin, true);
+        IOWrite(bindIO, true);
         delayMicroseconds(120);
 
     }
 
-#ifndef BINDPLUG_PIN
+
+    // Release the bind pin to avoid interference with an actual rx pin,
+    // when rxConfig->spektrum_bind_pin_override_ioTag is used.
+    // This happens when the bind pin is connected in parallel to the rx pin.
+
+    if (rxConfig->spektrum_bind_pin_override_ioTag) {
+        delay(50); // Keep it high for 50msec
+        IOConfigGPIO(bindIO, IOCFG_IN_FLOATING);
+    }
+
     // If we came here as a result of hard  reset (power up, with spektrum_sat_bind set), then reset it back to zero and write config
     // Don't reset if hardware bind plug is present
     // Reset only when autoreset is enabled
-    if (rxConfig->spektrum_sat_bind_autoreset == 1 && !isMPUSoftReset()) {
+
+    if (!rxConfig->spektrum_bind_plug_ioTag && rxConfig->spektrum_sat_bind_autoreset == 1 && !isMPUSoftReset()) {
         rxConfig->spektrum_sat_bind = 0;
         saveConfigAndNotify();
     }
-#endif
-
 }
-#endif // SPEKTRUM_BIND_PIN
+#endif // USE_SPEKTRUM_BIND
 
 bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
@@ -276,7 +313,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
     switch (rxConfig->serialrx_provider) {
     case SERIALRX_SRXL:
 #ifdef TELEMETRY
-        srxlEnabled = (feature(FEATURE_TELEMETRY) && !portShared && rxConfig->serialrx_provider == SERIALRX_SRXL);
+        srxlEnabled = (feature(FEATURE_TELEMETRY) && !portShared);
 #endif
     case SERIALRX_SPEKTRUM2048:
         // 11 bit frames

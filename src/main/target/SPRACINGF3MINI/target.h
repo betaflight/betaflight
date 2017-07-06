@@ -22,7 +22,7 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
-#define LED0                    PB8
+#define LED0_PIN                PB8
 #else
 #define TARGET_BOARD_IDENTIFIER "SRFM"
 
@@ -32,7 +32,7 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-#define LED0                    PB3
+#define LED0_PIN                PB3
 #endif
 
 #define BEEPER                  PC15
@@ -185,8 +185,6 @@
 
 #define BINDPLUG_PIN            BUTTON_B_PIN
 #endif
-
-#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

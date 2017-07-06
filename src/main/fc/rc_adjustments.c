@@ -221,7 +221,7 @@ static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t 
 
     beeperConfirmationBeeps(delta > 0 ? 2 : 1);
     int newValue;
-    switch(adjustmentFunction) {
+    switch (adjustmentFunction) {
     case ADJUSTMENT_RC_RATE:
         newValue = constrain((int)controlRateConfig->rcRate8 + delta, 0, 250); // FIXME magic numbers repeated in cli.c
         controlRateConfig->rcRate8 = newValue;
@@ -339,7 +339,7 @@ static void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
 {
     uint8_t beeps = 0;
 
-    switch(adjustmentFunction) {
+    switch (adjustmentFunction) {
     case ADJUSTMENT_RATE_PROFILE:
         {
             if (getCurrentControlRateProfileIndex() != position) {
@@ -352,7 +352,7 @@ static void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
     case ADJUSTMENT_HORIZON_STRENGTH:
         {
             uint8_t newValue = constrain(position, 0, 200); // FIXME magic numbers repeated in serial_cli.c
-            if(pidProfile->pid[PID_LEVEL].D != newValue) {
+            if (pidProfile->pid[PID_LEVEL].D != newValue) {
                 beeps = ((newValue - pidProfile->pid[PID_LEVEL].D) / 8) + 1;
                 pidProfile->pid[PID_LEVEL].D = newValue;
                 blackboxLogInflightAdjustmentEvent(ADJUSTMENT_HORIZON_STRENGTH, position);

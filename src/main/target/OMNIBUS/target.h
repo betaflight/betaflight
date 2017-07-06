@@ -26,7 +26,7 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-#define LED0                    PB3
+#define LED0_PIN                PB3
 
 #define BEEPER                  PC15
 #define BEEPER_INVERTED
@@ -168,10 +168,6 @@
 #define BUTTON_B_PIN            PB0
 
 //#define AVOID_UART3_FOR_PWM_PPM // Disable this for using UART3
-
-#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
-
-#define BINDPLUG_PIN            PB0
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
