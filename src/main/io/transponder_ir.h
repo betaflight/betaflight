@@ -24,6 +24,7 @@ typedef struct transponderConfig_s {
     transponderProvider_e provider;
     uint8_t reserved;
     uint8_t data[9];
+    ioTag_t ioTag;
 } transponderConfig_t;
 
 typedef struct transponderRequirement_s {

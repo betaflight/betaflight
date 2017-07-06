@@ -63,7 +63,7 @@ void targetConfiguration(void)
         featureSet(FEATURE_TELEMETRY);
 #endif
         parseRcChannels("TAER1234", rxConfigMutable());
-    
+
         pidProfilesMutable(0)->pid[PID_ROLL].P = 80;
         pidProfilesMutable(0)->pid[PID_ROLL].I = 37;
         pidProfilesMutable(0)->pid[PID_ROLL].D = 35;
@@ -72,7 +72,7 @@ void targetConfiguration(void)
         pidProfilesMutable(0)->pid[PID_PITCH].D = 35;
         pidProfilesMutable(0)->pid[PID_YAW].P = 180;
         pidProfilesMutable(0)->pid[PID_YAW].D = 45;
-    
+
         controlRateProfilesMutable(0)->rcRate8 = 100;
         controlRateProfilesMutable(0)->rcYawRate8 = 100;
         controlRateProfilesMutable(0)->rcExpo8 = 15;

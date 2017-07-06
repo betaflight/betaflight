@@ -113,6 +113,14 @@ static uint8_t rcSampleIndex = 0;
 #define RX_MAX_USEC 2115
 #define RX_MID_USEC 1500
 
+#ifndef SPEKTRUM_BIND_PIN
+#define SPEKTRUM_BIND_PIN NONE
+#endif
+
+#ifndef BINDPLUG_PIN
+#define BINDPLUG_PIN NONE
+#endif
+
 PG_REGISTER_WITH_RESET_FN(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
 void pgResetFn_rxConfig(rxConfig_t *rxConfig)
 {
@@ -136,7 +144,9 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .rcInterpolationInterval = 19,
         .fpvCamAngleDegrees = 0,
         .max_aux_channel = DEFAULT_AUX_CHANNEL_COUNT,
-        .airModeActivateThreshold = 1350
+        .airModeActivateThreshold = 1350,
+        .spektrum_bind_pin_override_ioTag = IO_TAG(SPEKTRUM_BIND_PIN),
+        .spektrum_bind_plug_ioTag = IO_TAG(BINDPLUG_PIN),
     );
 
 #ifdef RX_CHANNELS_TAER
@@ -452,7 +462,7 @@ static uint16_t getRxfailValue(uint8_t channel)
 {
     const rxFailsafeChannelConfig_t *channelFailsafeConfig = rxFailsafeChannelConfigs(channel);
 
-    switch(channelFailsafeConfig->mode) {
+    switch (channelFailsafeConfig->mode) {
     case RX_FAILSAFE_MODE_AUTO:
         switch (channel) {
         case ROLL:

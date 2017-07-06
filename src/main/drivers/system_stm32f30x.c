@@ -90,7 +90,7 @@ void systemInit(void)
     // Configure NVIC preempt/priority groups
     NVIC_PriorityGroupConfig(NVIC_PRIORITY_GROUPING);
 
-    // cache RCC->CSR value to use it in isMPUSoftreset() and others
+    // cache RCC->CSR value to use it in isMPUSoftReset() and others
     cachedRccCsrValue = RCC->CSR;
     RCC_ClearFlag();
 

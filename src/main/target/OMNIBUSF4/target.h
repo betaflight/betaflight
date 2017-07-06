@@ -33,8 +33,8 @@
 #define USBD_SERIALNUMBER_STRING "0x8020000" // Remove this at the next major release (?)
 #endif
 
-#define LED0                    PB5
-//#define LED1                    PB4 // Remove this at the next major release
+#define LED0_PIN                PB5
+//#define LED1_PIN                PB4 // Remove this at the next major release
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 
@@ -93,9 +93,7 @@
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define USE_SDCARD
 #define USE_SDCARD_SPI2
-#if defined(OMNIBUSF4SD)
 #define SDCARD_DETECT_INVERTED
-#endif
 #define SDCARD_DETECT_PIN               PB7
 #define SDCARD_SPI_INSTANCE             SPI2
 #define SDCARD_SPI_CS_PIN               SPI2_NSS_PIN
@@ -180,10 +178,9 @@
 #define OLED_I2C_INSTANCE              (I2CDEV_3)
 
 #define USE_ADC
-#define CURRENT_METER_ADC_PIN   PC1
-#define VBAT_ADC_PIN            PC2
-
-//#define RSSI_ADC_PIN          PA0
+#define CURRENT_METER_ADC_PIN   PC1  // Direct from CRNT pad (part of onboard sensor for Pro)
+#define VBAT_ADC_PIN            PC2  // 11:1 (10K + 1K) divider
+#define RSSI_ADC_PIN            PA0  // Direct from RSSI pad
 
 #define TRANSPONDER
 
@@ -191,8 +188,6 @@
 
 #define DEFAULT_FEATURES        (FEATURE_OSD)
 #define AVOID_UART1_FOR_PWM_PPM
-#define SPEKTRUM_BIND_PIN       UART1_RX_PIN
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA (0xffff & ~(BIT(14)|BIT(13)))

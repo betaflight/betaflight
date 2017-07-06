@@ -20,7 +20,7 @@
 
 #define USBD_PRODUCT_STRING "BeeRotorF4"
 
-#define LED0                    PB4
+#define LED0_PIN                PB4
 
 #define BEEPER                  PB3
 #define BEEPER_INVERTED

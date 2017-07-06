@@ -19,8 +19,8 @@
 #define TARGET_BOARD_IDENTIFIER "FORT"
 #define USBD_PRODUCT_STRING     "FortiniF4"
 /*--------------LED----------------*/
-#define LED0                    PB5
-#define LED1                    PB6
+#define LED0_PIN                PB5
+#define LED1_PIN                PB6
 #define LED_STRIP
 /*---------------------------------*/
 
@@ -103,8 +103,6 @@
 
 #define SERIAL_PORT_COUNT       5
 //SPECKTRUM BIND
-#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
-
 #define CMS
 #define USE_MSP_DISPLAYPORT
 /*---------------------------------*/

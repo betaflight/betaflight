@@ -17,8 +17,10 @@
 
 #pragma once
 
+#include "drivers/bus.h"
 #include "drivers/io_types.h"
-#include "rcc_types.h"
+#include "drivers/bus.h"
+#include "drivers/rcc_types.h"
 
 #if defined(STM32F4) || defined(STM32F3)
 #define SPI_IO_AF_CFG      IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
@@ -69,23 +71,18 @@ typedef enum SPIDevice {
     SPIDEV_4
 } SPIDevice;
 
-typedef struct SPIDevice_s {
-    SPI_TypeDef *dev;
-    ioTag_t nss;
-    ioTag_t sck;
-    ioTag_t mosi;
-    ioTag_t miso;
-    rccPeriphTag_t rcc;
-    uint8_t af;
-    volatile uint16_t errorCount;
-    bool leadingEdge;
-#if defined(STM32F7)
-    SPI_HandleTypeDef hspi;
-    DMA_HandleTypeDef hdma;
-    uint8_t dmaIrqHandler;
-#endif
-} spiDevice_t;
+#if defined(STM32F1)
+#define SPIDEV_COUNT 2
+#elif defined(STM32F3) || defined(STM32F4)
+#define SPIDEV_COUNT 3
+#elif defined(STM32F7)
+#define SPIDEV_COUNT 4
+#else
+#define SPIDEV_COUNT 4
 
+#endif
+
+void spiPreInitCs(ioTag_t iotag);
 bool spiInit(SPIDevice device);
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor);
 uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t in);
@@ -97,7 +94,22 @@ uint16_t spiGetErrorCounter(SPI_TypeDef *instance);
 void spiResetErrorCounter(SPI_TypeDef *instance);
 SPIDevice spiDeviceByInstance(SPI_TypeDef *instance);
 
+bool spiBusTransfer(const busDevice_t *bus, uint8_t *rxData, const uint8_t *txData, int length);
+
 #if defined(USE_HAL_DRIVER)
 SPI_HandleTypeDef* spiHandleByInstance(SPI_TypeDef *instance);
 DMA_HandleTypeDef* spiSetDMATransmit(DMA_Stream_TypeDef *Stream, uint32_t Channel, SPI_TypeDef *Instance, uint8_t *pData, uint16_t Size);
 #endif
+
+bool spiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data);
+bool spiReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data);
+uint8_t spiReadRegister(const busDevice_t *bus, uint8_t reg);
+void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance);
+
+typedef struct spiPinConfig_s {
+    ioTag_t ioTagSck[SPIDEV_COUNT];
+    ioTag_t ioTagMiso[SPIDEV_COUNT];
+    ioTag_t ioTagMosi[SPIDEV_COUNT];
+} spiPinConfig_t;
+
+void spiPinConfigure(void);

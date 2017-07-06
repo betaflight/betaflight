@@ -21,7 +21,7 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-#define LED0                    PB3
+#define LED0_PIN                PB3
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PC13
@@ -80,8 +80,6 @@
 #define RSSI_ADC_PIN            PB2
 
 #undef LED_STRIP
-
-#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

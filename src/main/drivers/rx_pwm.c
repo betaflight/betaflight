@@ -322,7 +322,7 @@ static void pwmEdgeCallback(timerCCHandlerRec_t *cbRec, captureCompare_t capture
 void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 {
     TIM_HandleTypeDef* Handle = timerFindTimerHandle(tim);
-    if(Handle == NULL) return;
+    if (Handle == NULL) return;
 
     TIM_IC_InitTypeDef TIM_ICInitStructure;
 
@@ -391,7 +391,7 @@ void pwmRxInit(const pwmConfig_t *pwmConfig)
         IOConfigGPIO(io, IOCFG_AF_PP);
 #endif
 
-        timerConfigure(timer, (uint16_t)PWM_TIMER_PERIOD, PWM_TIMER_MHZ);
+        timerConfigure(timer, (uint16_t)PWM_TIMER_PERIOD, PWM_TIMER_1MHZ);
         timerChCCHandlerInit(&port->edgeCb, pwmEdgeCallback);
         timerChOvrHandlerInit(&port->overflowCb, pwmOverflowCallback);
         timerChConfigCallbacks(timer, &port->edgeCb, &port->overflowCb);
@@ -408,7 +408,7 @@ void pwmRxInit(const pwmConfig_t *pwmConfig)
 #define UNUSED_PPM_TIMER_REFERENCE 0
 #define FIRST_PWM_PORT 0
 
-void ppmAvoidPWMTimerClash(TIM_TypeDef *pwmTimer, uint8_t pwmProtocol)
+void ppmAvoidPWMTimerClash(TIM_TypeDef *pwmTimer)
 {
     pwmOutputPort_t *motors = pwmGetMotors();
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS; motorIndex++) {
@@ -416,26 +416,12 @@ void ppmAvoidPWMTimerClash(TIM_TypeDef *pwmTimer, uint8_t pwmProtocol)
             continue;
         }
 
-        switch (pwmProtocol)
-        {
-        case PWM_TYPE_ONESHOT125:
-            ppmCountDivisor = ONESHOT125_TIMER_MHZ;
-            break;
-        case PWM_TYPE_ONESHOT42:
-            ppmCountDivisor = ONESHOT42_TIMER_MHZ;
-            break;
-        case PWM_TYPE_MULTISHOT:
-            ppmCountDivisor = MULTISHOT_TIMER_MHZ;
-            break;
-        case PWM_TYPE_BRUSHED:
-            ppmCountDivisor = PWM_BRUSHED_TIMER_MHZ;
-            break;
-        }
+        ppmCountDivisor = timerClock(pwmTimer) / (pwmTimer->PSC + 1);
         return;
     }
 }
 
-void ppmRxInit(const ppmConfig_t *ppmConfig, uint8_t pwmProtocol)
+void ppmRxInit(const ppmConfig_t *ppmConfig)
 {
     ppmResetDevice();
 
@@ -447,7 +433,7 @@ void ppmRxInit(const ppmConfig_t *ppmConfig, uint8_t pwmProtocol)
         return;
     }
 
-    ppmAvoidPWMTimerClash(timer->tim, pwmProtocol);
+    ppmAvoidPWMTimerClash(timer->tim);
 
     port->mode = INPUT_MODE_PPM;
     port->timerHardware = timer;
@@ -462,7 +448,7 @@ void ppmRxInit(const ppmConfig_t *ppmConfig, uint8_t pwmProtocol)
     IOConfigGPIO(io, IOCFG_AF_PP);
 #endif
 
-    timerConfigure(timer, (uint16_t)PPM_TIMER_PERIOD, PWM_TIMER_MHZ);
+    timerConfigure(timer, (uint16_t)PPM_TIMER_PERIOD, PWM_TIMER_1MHZ);
     timerChCCHandlerInit(&port->edgeCb, ppmEdgeCallback);
     timerChOvrHandlerInit(&port->overflowCb, ppmOverflowCallback);
     timerChConfigCallbacks(timer, &port->edgeCb, &port->overflowCb);

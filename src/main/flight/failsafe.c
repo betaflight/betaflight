@@ -30,6 +30,7 @@
 #include "drivers/time.h"
 
 #include "fc/config.h"
+#include "fc/fc_core.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
@@ -261,8 +262,8 @@ void failsafeUpdateState(void)
                 break;
 
             case FAILSAFE_LANDED:
-                ENABLE_ARMING_FLAG(PREVENT_ARMING); // To prevent accidently rearming by an intermittent rx link
-                mwDisarm();
+                setArmingDisabled(ARMING_DISABLED_FAILSAFE); // To prevent accidently rearming by an intermittent rx link
+                disarm();
                 failsafeState.receivingRxDataPeriod = millis() + failsafeState.receivingRxDataPeriodPreset; // set required period of valid rxData
                 failsafeState.phase = FAILSAFE_RX_LOSS_MONITORING;
                 reprocessState = true;
@@ -274,7 +275,7 @@ void failsafeUpdateState(void)
                     if (millis() > failsafeState.receivingRxDataPeriod) {
                         // rx link is good now, when arming via ARM switch, it must be OFF first
                         if (!(!isUsingSticksForArming() && IS_RC_MODE_ACTIVE(BOXARM))) {
-                            DISABLE_ARMING_FLAG(PREVENT_ARMING);
+                            unsetArmingDisabled(ARMING_DISABLED_FAILSAFE);
                             failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                             reprocessState = true;
                         }

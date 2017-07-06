@@ -19,7 +19,7 @@
 #define USBD_PRODUCT_STRING "FRSKYF4"
 #define TARGET_CONFIG
 
-#define LED0                    PB5
+#define LED0_PIN                PB5
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 
@@ -41,13 +41,7 @@
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
-//#define MAG
-//#define USE_MAG_HMC5883
-//#define MAG_HMC5883_ALIGN       CW90_DEG
-
 #define BARO
-//#define USE_BARO_MS5611
-
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 #define BMP280_SPI_INSTANCE     SPI3
@@ -123,8 +117,6 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define DEFAULT_FEATURES        (FEATURE_OSD)
 #define AVOID_UART1_FOR_PWM_PPM
-#define SPEKTRUM_BIND_PIN       UART1_RX_PIN
-
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define TELEMETRY_UART          SERIAL_PORT_USART6
 #define SERIALRX_UART           SERIAL_PORT_USART1

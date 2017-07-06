@@ -134,6 +134,8 @@ typedef enum {
 #define HARDWARE_TIMER_DEFINITION_COUNT 14
 #endif
 
+#define MHZ_TO_HZ(x) ((x) * 1000000)
+
 extern const timerHardware_t timerHardware[];
 extern const timerDef_t timerDefinitions[];
 
@@ -155,7 +157,7 @@ typedef enum {
     TYPE_TIMER
 } channelType_t;
 
-void timerConfigure(const timerHardware_t *timHw, uint16_t period, uint8_t mhz);  // This interface should be replaced.
+void timerConfigure(const timerHardware_t *timHw, uint16_t period, uint32_t hz);  // This interface should be replaced.
 
 void timerChConfigIC(const timerHardware_t *timHw, bool polarityRising, unsigned inputFilterSamples);
 void timerChConfigICDual(const timerHardware_t* timHw, bool polarityRising, unsigned inputFilterSamples);
@@ -183,7 +185,7 @@ void timerForceOverflow(TIM_TypeDef *tim);
 uint8_t timerClockDivisor(TIM_TypeDef *tim);
 uint32_t timerClock(TIM_TypeDef *tim);
 
-void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz);  // TODO - just for migration
+void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint32_t hz);  // TODO - just for migration
 
 rccPeriphTag_t timerRCC(TIM_TypeDef *tim);
 uint8_t timerInputIrq(TIM_TypeDef *tim);
@@ -200,5 +202,6 @@ void timerOCPreloadConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t preload);
 volatile timCCR_t *timerCCR(TIM_TypeDef *tim, uint8_t channel);
 uint16_t timerDmaSource(uint8_t channel);
 
+uint16_t timerGetPrescalerByDesiredHertz(TIM_TypeDef *tim, uint32_t hz);
 uint16_t timerGetPrescalerByDesiredMhz(TIM_TypeDef *tim, uint16_t mhz);
-uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_t hertz);
+uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_t hz);

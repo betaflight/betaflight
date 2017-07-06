@@ -16,7 +16,7 @@
  */
 #pragma once
 
-#include "drivers/sensor.h"
+#include "drivers/bus.h"
 
 #define ICM20689_WHO_AM_I_CONST             (0x98)
 #define ICM20689_BIT_RESET                  (0x80)
@@ -31,6 +31,3 @@ bool icm20689SpiDetect(const busDevice_t *bus);
 
 bool icm20689SpiAccDetect(accDev_t *acc);
 bool icm20689SpiGyroDetect(gyroDev_t *gyro);
-
-bool icm20689SpiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data);
-bool icm20689SpiReadRegister(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data);

@@ -36,7 +36,7 @@ typedef struct pwmConfig_s {
     inputFilteringMode_e inputFilteringMode;
 } pwmConfig_t;
 
-void ppmRxInit(const ppmConfig_t *ppmConfig, uint8_t pwmProtocol);
+void ppmRxInit(const ppmConfig_t *ppmConfig);
 void pwmRxInit(const pwmConfig_t *pwmConfig);
 
 uint16_t pwmRead(uint8_t channel);

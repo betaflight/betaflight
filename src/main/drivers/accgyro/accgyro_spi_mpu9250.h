@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "drivers/sensor.h"
+#include "drivers/bus.h"
 
 #define mpu9250_CONFIG                      0x1A
 
@@ -34,6 +34,5 @@ bool mpu9250SpiAccDetect(accDev_t *acc);
 bool mpu9250SpiGyroDetect(gyroDev_t *gyro);
 
 bool mpu9250SpiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data);
-bool verifympu9250SpiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data);
-bool mpu9250SpiReadRegister(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data);
-bool mpu9250SpiSlowReadRegister(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data);
+bool mpu9250SpiWriteRegisterVerify(const busDevice_t *bus, uint8_t reg, uint8_t data);
+bool mpu9250SpiReadRegBuf(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data);

@@ -185,35 +185,35 @@ void addGPSCoordinates(HOTT_GPS_MSG_t *hottGPSMessage, int32_t latitude, int32_t
 
 void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage)
 {
-    hottGPSMessage->gps_satelites = GPS_numSat;
+    hottGPSMessage->gps_satelites = gpsSol.numSat;
 
     if (!STATE(GPS_FIX)) {
         hottGPSMessage->gps_fix_char = GPS_FIX_CHAR_NONE;
         return;
     }
 
-    if (GPS_numSat >= 5) {
+    if (gpsSol.numSat >= 5) {
         hottGPSMessage->gps_fix_char = GPS_FIX_CHAR_3D;
     } else {
         hottGPSMessage->gps_fix_char = GPS_FIX_CHAR_2D;
     }
 
-    addGPSCoordinates(hottGPSMessage, GPS_coord[LAT], GPS_coord[LON]);
+    addGPSCoordinates(hottGPSMessage, gpsSol.llh.lat, gpsSol.llh.lon);
 
     // GPS Speed is returned in cm/s (from io/gps.c) and must be sent in km/h (Hott requirement)
-    const uint16_t speed = (GPS_speed * 36) / 1000;
+    const uint16_t speed = (gpsSol.groundSpeed * 36) / 1000;
     hottGPSMessage->gps_speed_L = speed & 0x00FF;
     hottGPSMessage->gps_speed_H = speed >> 8;
 
     hottGPSMessage->home_distance_L = GPS_distanceToHome & 0x00FF;
     hottGPSMessage->home_distance_H = GPS_distanceToHome >> 8;
 
-    uint16_t altitude = GPS_altitude;
+    uint16_t altitude = gpsSol.llh.alt;
     if (!STATE(GPS_FIX)) {
         altitude = getEstimatedAltitude() / 100;
     }
 
-    const uint16_t hottGpsAltitude = (altitude) + HOTT_GPS_ALTITUDE_OFFSET; // GPS_altitude in m ; offset = 500 -> O m
+    const uint16_t hottGpsAltitude = (altitude) + HOTT_GPS_ALTITUDE_OFFSET; // gpsSol.llh.alt in m ; offset = 500 -> O m
 
     hottGPSMessage->altitude_L = hottGpsAltitude & 0x00FF;
     hottGPSMessage->altitude_H = hottGpsAltitude >> 8;
@@ -231,10 +231,10 @@ static inline void updateAlarmBatteryStatus(HOTT_EAM_MSG_t *hottEAMMessage)
 {
     batteryState_e batteryState;
 
-    if (shouldTriggerBatteryAlarmNow()){
+    if (shouldTriggerBatteryAlarmNow()) {
         lastHottAlarmSoundTime = millis();
         batteryState = getBatteryState();
-        if (batteryState == BATTERY_WARNING  || batteryState == BATTERY_CRITICAL){
+        if (batteryState == BATTERY_WARNING  || batteryState == BATTERY_CRITICAL) {
             hottEAMMessage->warning_beeps = 0x10;
             hottEAMMessage->alarm_invers1 = HOTT_EAM_ALARM1_FLAG_BATTERY_1;
         }
@@ -282,7 +282,7 @@ static inline void hottEAMUpdateClimbrate(HOTT_EAM_MSG_t *hottEAMMessage)
     int32_t vario = getEstimatedVario();
     hottEAMMessage->climbrate_L = (30000 + vario) & 0x00FF;
     hottEAMMessage->climbrate_H = (30000 + vario) >> 8;
-    hottEAMMessage->climbrate3s = 120 + (vario / 100);  
+    hottEAMMessage->climbrate3s = 120 + (vario / 100);
 }
 
 void hottPrepareEAMResponse(HOTT_EAM_MSG_t *hottEAMMessage)
@@ -401,7 +401,7 @@ void configureHoTTTelemetryPort(void)
 
 static void hottSendResponse(uint8_t *buffer, int length)
 {
-    if(hottIsSending) {
+    if (hottIsSending) {
         return;
     }
 
@@ -514,7 +514,7 @@ static void hottSendTelemetryData(void) {
     hottReconfigurePort();
 
     --hottMsgRemainingBytesToSendCount;
-    if(hottMsgRemainingBytesToSendCount == 0) {
+    if (hottMsgRemainingBytesToSendCount == 0) {
         hottSerialWrite(hottMsgCrc++);
         return;
     }
@@ -572,7 +572,7 @@ void handleHoTTTelemetry(timeUs_t currentTimeUs)
         return;
 
     if (hottIsSending) {
-        if(currentTimeUs - serialTimer < HOTT_TX_DELAY_US) {
+        if (currentTimeUs - serialTimer < HOTT_TX_DELAY_US) {
             return;
         }
     }

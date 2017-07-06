@@ -226,7 +226,7 @@ void handleVTXControlButton(void)
 
     LED1_OFF;
 
-    switch(actionCounter) {
+    switch (actionCounter) {
         case 4:
             vtxCycleBandOrChannel(0, +1);
             break;

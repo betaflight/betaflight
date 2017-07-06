@@ -139,7 +139,7 @@ static void scaleRcCommandToFpvCamAngle(void) {
     static float cosFactor = 1.0;
     static float sinFactor = 0.0;
 
-    if (lastFpvCamAngleDegrees != rxConfig()->fpvCamAngleDegrees){
+    if (lastFpvCamAngleDegrees != rxConfig()->fpvCamAngleDegrees) {
         lastFpvCamAngleDegrees = rxConfig()->fpvCamAngleDegrees;
         cosFactor = cos_approx(rxConfig()->fpvCamAngleDegrees * RAD);
         sinFactor = sin_approx(rxConfig()->fpvCamAngleDegrees * RAD);
@@ -167,7 +167,7 @@ static void scaleRcCommandToFpvCamAngle(void) {
 
     const int16_t rcCommandSpeed = rcCommand[THROTTLE] - rcCommandThrottlePrevious[index];
 
-    if(ABS(rcCommandSpeed) > throttleVelocityThreshold)
+    if (ABS(rcCommandSpeed) > throttleVelocityThreshold)
         pidSetItermAccelerator(CONVERT_PARAMETER_TO_FLOAT(currentPidProfile->itermAcceleratorGain));
     else
         pidSetItermAccelerator(1.0f);
@@ -193,7 +193,7 @@ void processRcCommand(void)
 
     if (rxConfig()->rcInterpolation) {
          // Set RC refresh rate for sampling and channels to filter
-        switch(rxConfig()->rcInterpolation) {
+        switch (rxConfig()->rcInterpolation) {
             case(RC_SMOOTHING_AUTO):
                 rxRefreshRate = currentRxRefreshRate + 1000; // Add slight overhead to prevent ramps
                 break;

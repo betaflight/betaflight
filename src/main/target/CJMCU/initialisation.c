@@ -24,9 +24,13 @@
 #include "drivers/bus_spi.h"
 #include "io/serial.h"
 
+extern void spiPreInit(void); // XXX In fc/fc_init.c
+
 void targetBusInit(void)
 {
 #if defined(USE_SPI) && defined(USE_SPI_DEVICE_1)
+    spiPinConfigure();
+    spiPreInit();
     spiInit(SPIDEV_1);
 #endif
 

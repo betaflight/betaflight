@@ -120,7 +120,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
 
     dmaInit(timerHardware->dmaIrqHandler, OWNER_LED_STRIP, 0);
     dmaSetHandler(timerHardware->dmaIrqHandler, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, 0);
-    
+
     dmaRef = timerHardware->dmaRef;
     DMA_DeInit(dmaRef);
 

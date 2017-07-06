@@ -24,25 +24,27 @@
 extern "C" {
     #include "build/build_config.h"
 
-    #include "common/color.h"
     #include "common/axis.h"
+    #include "common/color.h"
 
     #include "config/parameter_group_ids.h"
 
-    #include "sensors/battery.h"
-
-    #include "rx/rx.h"
+    #include "drivers/io.h"
+    #include "drivers/light_ws2811strip.h"
+    #include "drivers/timer.h"
+    #include "drivers/timer_def.h"
 
     #include "fc/config.h"
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
 
-    #include "drivers/light_ws2811strip.h"
-    #include "drivers/timer.h"
-    #include "drivers/timer_def.h"
-
+    #include "io/gps.h"
     #include "io/ledstrip.h"
+
+    #include "rx/rx.h"
+
+    #include "sensors/battery.h"
 
     #include "target.h"
 }
@@ -297,7 +299,7 @@ float rcCommand[4];
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 uint32_t rcModeActivationMask;
 uint16_t rssi = 0;
-uint8_t GPS_numSat = 0;
+gpsSolutionData_t gpsSol;
 
 batteryState_e getBatteryState(void) {
     return BATTERY_OK;
@@ -379,5 +381,7 @@ bool sensors(uint32_t mask)
 };
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {};
+
+bool isArmingDisabled(void) { return false; }
 
 }

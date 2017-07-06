@@ -25,8 +25,8 @@
 
 #define USBD_PRODUCT_STRING "AlienFlight F4"
 
-#define LED0                    PC12
-#define LED1                    PD2
+#define LED0_PIN                PC12
+#define LED1_PIN                PD2
 
 #define BEEPER                  PC13
 #define BEEPER_INVERTED
@@ -161,8 +161,6 @@
 
 // LED strip configuration.
 #define LED_STRIP
-
-#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
 #define BINDPLUG_PIN            PB2
 

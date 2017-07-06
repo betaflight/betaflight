@@ -209,10 +209,10 @@ void init(void)
 #endif
 #ifdef USE_I2C_DEVICE_3
     i2cInit(I2CDEV_3);
-#endif  
+#endif
 #ifdef USE_I2C_DEVICE_4
     i2cInit(I2CDEV_4);
-#endif  
+#endif
 #endif /* USE_I2C */
 
 #endif /* TARGET_BUS_INIT */

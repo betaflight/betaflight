@@ -22,15 +22,14 @@
 #include "fc/fc_msp.h"
 
 typedef struct {
-    uint8_t boxId;
     bool isActivated;
-} rcsplit_switch_state_t;
+} rcsplitSwitchState_t;
 
 typedef enum {
     RCSPLIT_STATE_UNKNOWN = 0,
     RCSPLIT_STATE_INITIALIZING,
     RCSPLIT_STATE_IS_READY,
-} rcsplit_state_e;
+} rcsplitState_e;
 
 // packet header and tail
 #define RCSPLIT_PACKET_HEADER           0x55
@@ -51,6 +50,6 @@ bool rcSplitInit(void);
 void rcSplitProcess(timeUs_t currentTimeUs);
 
 // only for unit test
-extern rcsplit_state_e cameraState;
+extern rcsplitState_e cameraState;
 extern serialPort_t *rcSplitSerialPort;
-extern rcsplit_switch_state_t switchStates[BOXCAMERA3 - BOXCAMERA1 + 1];
+extern rcsplitSwitchState_t switchStates[BOXCAMERA3 - BOXCAMERA1 + 1];

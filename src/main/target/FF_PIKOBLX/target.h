@@ -32,8 +32,8 @@
 #define TARGET_CONFIG
 #define BRUSHED_ESC_AUTODETECT
 
-#define LED0                    PB9
-#define LED1                    PB5
+#define LED0_PIN                PB9
+#define LED1_PIN                PB5
 
 #define BEEPER                  PA0
 #define BEEPER_INVERTED
@@ -93,12 +93,6 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART3
-
-#if defined(FF_RADIANCE)
-#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
-#else
-#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
-#endif
 
 #define TRANSPONDER
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE

@@ -20,6 +20,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define NOOP do {} while (0)
+
 #define ARRAYLEN(x) (sizeof(x) / sizeof((x)[0]))
 #define ARRAYEND(x) (&(x)[ARRAYLEN(x)])
 

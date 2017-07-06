@@ -19,6 +19,24 @@
 
 #include "platform.h"
 
+#include "drivers/bus_i2c.h"
+#include "drivers/io_types.h"
+
+typedef union busDevice_u {
+    struct deviceSpi_s {
+        SPI_TypeDef *instance;
+#if defined(USE_HAL_DRIVER)
+        SPI_HandleTypeDef* handle; // cached here for efficiency
+#endif
+        IO_t csnPin;
+    } spi;
+    struct deviceI2C_s {
+       I2CDevice device;
+       uint8_t address;
+    } i2c;
+} busDevice_t;
+
+
 #ifdef TARGET_BUS_INIT
 void targetBusInit(void);
 #endif

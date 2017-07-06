@@ -33,6 +33,7 @@ typedef enum {
 } failureMode_e;
 
 // failure
+void indicateFailure(failureMode_e mode, int repeatCount);
 void failureMode(failureMode_e mode);
 
 // bootloader/IAP

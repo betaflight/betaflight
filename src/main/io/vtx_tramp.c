@@ -134,7 +134,7 @@ void trampCmdU16(uint8_t cmd, uint16_t param)
 void trampSetFreq(uint16_t freq)
 {
     trampConfFreq = freq;
-    if(trampConfFreq != trampCurFreq)
+    if (trampConfFreq != trampCurFreq)
         trampFreqRetries = TRAMP_MAX_RETRIES;
 }
 
@@ -151,7 +151,7 @@ void trampSetBandAndChannel(uint8_t band, uint8_t channel)
 void trampSetRFPower(uint16_t level)
 {
     trampConfPower = level;
-    if(trampConfPower != trampPower)
+    if (trampConfPower != trampPower)
         trampPowerRetries = TRAMP_MAX_RETRIES;
 }
 
@@ -163,7 +163,7 @@ void trampSendRFPower(uint16_t level)
 // return false if error
 bool trampCommitChanges()
 {
-    if(trampStatus != TRAMP_STATUS_ONLINE)
+    if (trampStatus != TRAMP_STATUS_ONLINE)
         return false;
 
     trampStatus = TRAMP_STATUS_SET_FREQ_PW;
@@ -184,7 +184,7 @@ char trampHandleResponse(void)
     case 'r':
         {
             uint16_t min_freq = trampRespBuffer[2]|(trampRespBuffer[3] << 8);
-            if(min_freq != 0) {
+            if (min_freq != 0) {
                 trampRFFreqMin = min_freq;
                 trampRFFreqMax = trampRespBuffer[4]|(trampRespBuffer[5] << 8);
                 trampRFPowerMax = trampRespBuffer[6]|(trampRespBuffer[7] << 8);
@@ -198,15 +198,15 @@ char trampHandleResponse(void)
     case 'v':
         {
             uint16_t freq = trampRespBuffer[2]|(trampRespBuffer[3] << 8);
-            if(freq != 0) {
+            if (freq != 0) {
                 trampCurFreq = freq;
                 trampConfiguredPower = trampRespBuffer[4]|(trampRespBuffer[5] << 8);
                 trampPitMode = trampRespBuffer[7];
                 trampPower = trampRespBuffer[8]|(trampRespBuffer[9] << 8);
                 vtx58_Freq2Bandchan(trampCurFreq, &trampBand, &trampChannel);
 
-                if(trampConfFreq == 0)  trampConfFreq  = trampCurFreq;
-                if(trampConfPower == 0) trampConfPower = trampPower;
+                if (trampConfFreq == 0)  trampConfFreq  = trampCurFreq;
+                if (trampConfPower == 0) trampConfPower = trampPower;
                 return 'v';
             }
 
@@ -217,7 +217,7 @@ char trampHandleResponse(void)
     case 's':
         {
             uint16_t temp = (int16_t)(trampRespBuffer[6]|(trampRespBuffer[7] << 8));
-            if(temp != 0) {
+            if (temp != 0) {
                 trampTemperature = temp;
                 return 's';
             }
@@ -263,7 +263,7 @@ static char trampReceive(uint32_t currentTimeUs)
         uint8_t c = serialRead(trampSerialPort);
         trampRespBuffer[trampReceivePos++] = c;
 
-        switch(trampReceiveState) {
+        switch (trampReceiveState) {
         case S_WAIT_LEN:
             if (c == 0x0F) {
                 trampReceiveState = S_WAIT_CODE;
@@ -339,7 +339,7 @@ void vtxTrampProcess(uint32_t currentTimeUs)
     debug[0] = trampStatus;
 #endif
 
-    switch(replyCode) {
+    switch (replyCode) {
     case 'r':
         if (trampStatus <= TRAMP_STATUS_OFFLINE)
             trampStatus = TRAMP_STATUS_ONLINE;
@@ -351,7 +351,7 @@ void vtxTrampProcess(uint32_t currentTimeUs)
          break;
     }
 
-    switch(trampStatus) {
+    switch (trampStatus) {
 
     case TRAMP_STATUS_OFFLINE:
     case TRAMP_STATUS_ONLINE:
@@ -361,7 +361,7 @@ void vtxTrampProcess(uint32_t currentTimeUs)
                 trampQueryR();
             else {
                 static unsigned int cnt = 0;
-                if(((cnt++) & 1) == 0)
+                if (((cnt++) & 1) == 0)
                     trampQueryV();
                 else
                     trampQueryS();
@@ -391,7 +391,7 @@ void vtxTrampProcess(uint32_t currentTimeUs)
                 done = false;
             }
 
-            if(!done) {
+            if (!done) {
                 trampStatus = TRAMP_STATUS_CHECK_FREQ_PW;
 
                 // delay next status query by 300ms
@@ -560,8 +560,8 @@ static long trampCmsCommence(displayPort_t *pDisp, const void *self)
 
 static void trampCmsInitSettings()
 {
-    if(trampBand > 0) trampCmsBand = trampBand;
-    if(trampChannel > 0) trampCmsChan = trampChannel;
+    if (trampBand > 0) trampCmsBand = trampBand;
+    if (trampChannel > 0) trampCmsChan = trampChannel;
 
     trampCmsUpdateFreqRef();
     trampCmsPitMode = trampPitMode + 1;
@@ -725,7 +725,7 @@ bool vtxTrampInit(void)
 #if defined(VTX_COMMON)
     vtxCommonRegisterDevice(&vtxTramp);
 #endif
-    
+
     return true;
 }
 

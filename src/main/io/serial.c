@@ -38,8 +38,6 @@
 #include "drivers/serial_softserial.h"
 #endif
 
-#define USE_SERIAL (defined(USE_UART) || defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
-
 #ifdef SITL
 #include "drivers/serial_tcp.h"
 #endif
@@ -346,7 +344,7 @@ serialPort_t *openSerialPort(
     portMode_t mode,
     portOptions_t options)
 {
-#if !(USE_SERIAL)
+#if !(defined(USE_UART) || defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
     UNUSED(rxCallback);
     UNUSED(baudRate);
     UNUSED(mode);
@@ -361,7 +359,7 @@ serialPort_t *openSerialPort(
 
     serialPort_t *serialPort = NULL;
 
-    switch(identifier) {
+    switch (identifier) {
 #ifdef USE_VCP
         case SERIAL_PORT_USB_VCP:
             serialPort = usbVcpOpen();
@@ -552,7 +550,7 @@ void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *
     // Either port might be open in a mode other than MODE_RXTX. We rely on
     // serialRxBytesWaiting() to do the right thing for a TX only port. No
     // special handling is necessary OR performed.
-    while(1) {
+    while (1) {
         // TODO: maintain a timestamp of last data received. Use this to
         // implement a guard interval and check for `+++` as an escape sequence
         // to return to CLI command mode.

@@ -117,6 +117,6 @@ void targetValidateConfiguration(void)
 {
     if (hardwareRevision < NAZE32_REV5 && accelerometerConfig()->acc_hardware == ACC_ADXL345) {
         accelerometerConfigMutable()->acc_hardware = ACC_NONE;
-    }  
+    }
 }
 #endif

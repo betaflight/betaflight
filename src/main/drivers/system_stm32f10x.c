@@ -83,7 +83,7 @@ void systemInit(void)
     // Turn on clocks for stuff we use
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
 
-    // cache RCC->CSR value to use it in isMPUSoftreset() and others
+    // cache RCC->CSR value to use it in isMPUSoftReset() and others
     cachedRccCsrValue = RCC->CSR;
     RCC_ClearFlag();
 

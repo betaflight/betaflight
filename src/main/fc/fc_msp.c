@@ -214,7 +214,7 @@ static void mspFc4waySerialCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessFnPtr
         escPortIndex = sbufReadU8(src);
     }
 
-    switch(escMode) {
+    switch (escMode) {
     case ESC_4WAY:
         // get channel number
         // switch all motor lines HI
@@ -284,7 +284,7 @@ const box_t *findBoxByPermanentId(uint8_t permanentId)
 
 static bool activeBoxIdGet(boxId_e boxId)
 {
-    if(boxId > sizeof(activeBoxIds) * 8)
+    if (boxId > sizeof(activeBoxIds) * 8)
         return false;
     return bitArrayGet(&activeBoxIds, boxId);
 }
@@ -328,7 +328,7 @@ void initActiveBoxIds(void)
     memset(&ena, 0, sizeof(ena));
 
     // macro to enable boxId (BoxidMaskEnable). Reference to ena is hidden, local use only
-#define BME(boxId) do { bitArraySet(&ena, boxId); } while(0)
+#define BME(boxId) do { bitArraySet(&ena, boxId); } while (0)
     BME(BOXARM);
 
     if (!feature(FEATURE_AIRMODE)) {
@@ -396,6 +396,7 @@ void initActiveBoxIds(void)
 
     BME(BOXFPVANGLEMIX);
 
+    //TODO: Split this into BOX3DDISABLESWITCH and BOXDSHOTREVERSE
     BME(BOX3DDISABLESWITCH);
 
     if (feature(FEATURE_SERVO_TILT)) {
@@ -910,7 +911,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #else
             sbufWriteU16(dst, 0);
 #endif
-            sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
+            sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4 | sensors(SENSOR_GYRO) << 5);
             sbufWriteData(dst, &flightModeFlags, 4);        // unconditional part of flags, first 32 bits
             sbufWriteU8(dst, getCurrentPidProfileIndex());
             sbufWriteU16(dst, constrain(averageSystemLoadPercent, 0, 100));
@@ -1111,12 +1112,12 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_RAW_GPS:
         sbufWriteU8(dst, STATE(GPS_FIX));
-        sbufWriteU8(dst, GPS_numSat);
-        sbufWriteU32(dst, GPS_coord[LAT]);
-        sbufWriteU32(dst, GPS_coord[LON]);
-        sbufWriteU16(dst, GPS_altitude);
-        sbufWriteU16(dst, GPS_speed);
-        sbufWriteU16(dst, GPS_ground_course);
+        sbufWriteU8(dst, gpsSol.numSat);
+        sbufWriteU32(dst, gpsSol.llh.lat);
+        sbufWriteU32(dst, gpsSol.llh.lon);
+        sbufWriteU16(dst, gpsSol.llh.alt);
+        sbufWriteU16(dst, gpsSol.groundSpeed);
+        sbufWriteU16(dst, gpsSol.groundCourse);
         break;
 
     case MSP_COMP_GPS:
@@ -1127,12 +1128,12 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_GPSSVINFO:
         sbufWriteU8(dst, GPS_numCh);
-           for (int i = 0; i < GPS_numCh; i++) {
-               sbufWriteU8(dst, GPS_svinfo_chn[i]);
-               sbufWriteU8(dst, GPS_svinfo_svid[i]);
-               sbufWriteU8(dst, GPS_svinfo_quality[i]);
-               sbufWriteU8(dst, GPS_svinfo_cno[i]);
-           }
+       for (int i = 0; i < GPS_numCh; i++) {
+           sbufWriteU8(dst, GPS_svinfo_chn[i]);
+           sbufWriteU8(dst, GPS_svinfo_svid[i]);
+           sbufWriteU8(dst, GPS_svinfo_quality[i]);
+           sbufWriteU8(dst, GPS_svinfo_cno[i]);
+       }
         break;
 #endif
 
@@ -1821,11 +1822,11 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         } else {
             DISABLE_STATE(GPS_FIX);
         }
-        GPS_numSat = sbufReadU8(src);
-        GPS_coord[LAT] = sbufReadU32(src);
-        GPS_coord[LON] = sbufReadU32(src);
-        GPS_altitude = sbufReadU16(src);
-        GPS_speed = sbufReadU16(src);
+        gpsSol.numSat = sbufReadU8(src);
+        gpsSol.llh.lat = sbufReadU32(src);
+        gpsSol.llh.lon = sbufReadU32(src);
+        gpsSol.llh.alt = sbufReadU16(src);
+        gpsSol.groundSpeed = sbufReadU16(src);
         GPS_update |= 2;        // New data signalisation to GPS functions // FIXME Magic Numbers
         break;
 

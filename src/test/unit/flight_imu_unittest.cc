@@ -28,27 +28,30 @@ extern "C" {
     #include "common/axis.h"
     #include "common/maths.h"
 
+    #include "config/feature.h"
     #include "config/parameter_group_ids.h"
 
     #include "drivers/accgyro/accgyro.h"
     #include "drivers/compass/compass.h"
     #include "drivers/sensor.h"
 
-    #include "sensors/sensors.h"
-    #include "sensors/gyro.h"
-    #include "sensors/compass.h"
-    #include "sensors/acceleration.h"
-    #include "sensors/barometer.h"
-
-    #include "fc/runtime_config.h"
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
-
-    #include "rx/rx.h"
+    #include "fc/runtime_config.h"
 
     #include "flight/mixer.h"
     #include "flight/pid.h"
     #include "flight/imu.h"
+
+    #include "io/gps.h"
+
+    #include "rx/rx.h"
+
+    #include "sensors/acceleration.h"
+    #include "sensors/barometer.h"
+    #include "sensors/compass.h"
+    #include "sensors/gyro.h"
+    #include "sensors/sensors.h"
 
     void imuComputeRotationMatrix(void);
     void imuUpdateEulerAngles(void);
@@ -58,6 +61,12 @@ extern "C" {
 
     PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
     PG_REGISTER(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
+
+    PG_REGISTER_WITH_RESET_TEMPLATE(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
+
+    PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
+        .enabledFeatures = 0
+    );
 }
 
 #include "unittest_macros.h"
@@ -199,9 +208,7 @@ gyro_t gyro;
 acc_t acc;
 mag_t mag;
 
-uint8_t GPS_numSat;
-uint16_t GPS_speed;
-uint16_t GPS_ground_course;
+gpsSolutionData_t gpsSol;
 
 uint8_t debugMode;
 int16_t debug[DEBUG16_VALUE_COUNT];
@@ -227,11 +234,6 @@ bool sensors(uint32_t mask)
     UNUSED(mask);
     return false;
 };
-
-bool feature(uint32_t mask) {
-    UNUSED(mask);
-    return false;
-}
 
 uint32_t millis(void) { return 0; }
 uint32_t micros(void) { return 0; }
