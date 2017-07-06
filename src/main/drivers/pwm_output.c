@@ -395,10 +395,7 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t command)
         for (; repeats; repeats--) {
             motor->requestTelemetry = true;
             pwmWriteDshotInt(index, command);
-            if (pwmMotorsEnabled) {
-                pwmCompleteDshotMotorUpdate(0);
-            }
-
+            pwmCompleteDshotMotorUpdate(0);
             delay(1);
         }
     }
