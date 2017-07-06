@@ -133,7 +133,7 @@ static OSD_Entry menuMainEntries[] =
     {"PROFILE",     OME_Submenu,  cmsMenuChange, &cmsx_menuImu, 0},
     {"FEATURES",    OME_Submenu,  cmsMenuChange, &menuFeatures, 0},
 #ifdef OSD
-    {"SCR LAYOUT",  OME_Submenu,  cmsMenuChange, &cmsx_menuOsdLayout, 0},
+    {"OSD",         OME_Submenu,  cmsMenuChange, &cmsx_menuOsd, 0},
     {"ALARMS",      OME_Submenu,  cmsMenuChange, &cmsx_menuAlarms, 0},
 #endif
     {"FC&FW INFO",  OME_Submenu,  cmsMenuChange, &menuInfo, 0},

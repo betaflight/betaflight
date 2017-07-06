@@ -37,6 +37,7 @@
 #include "fc/fc_core.h"
 #include "fc/fc_rc.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
 #include "rx/rx.h"
@@ -46,6 +47,7 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/pid.h"
+#include "flight/mixer.h"
 
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
@@ -137,7 +139,7 @@ static void scaleRcCommandToFpvCamAngle(void) {
     static float cosFactor = 1.0;
     static float sinFactor = 0.0;
 
-    if (lastFpvCamAngleDegrees != rxConfig()->fpvCamAngleDegrees){
+    if (lastFpvCamAngleDegrees != rxConfig()->fpvCamAngleDegrees) {
         lastFpvCamAngleDegrees = rxConfig()->fpvCamAngleDegrees;
         cosFactor = cos_approx(rxConfig()->fpvCamAngleDegrees * RAD);
         sinFactor = sin_approx(rxConfig()->fpvCamAngleDegrees * RAD);
@@ -165,8 +167,8 @@ static void scaleRcCommandToFpvCamAngle(void) {
 
     const int16_t rcCommandSpeed = rcCommand[THROTTLE] - rcCommandThrottlePrevious[index];
 
-    if(ABS(rcCommandSpeed) > throttleVelocityThreshold)
-        pidSetItermAccelerator(0.0001f * currentPidProfile->itermAcceleratorGain);
+    if (ABS(rcCommandSpeed) > throttleVelocityThreshold)
+        pidSetItermAccelerator(CONVERT_PARAMETER_TO_FLOAT(currentPidProfile->itermAcceleratorGain));
     else
         pidSetItermAccelerator(1.0f);
 }
@@ -189,9 +191,9 @@ void processRcCommand(void)
         }
     }
 
-    if (rxConfig()->rcInterpolation || flightModeFlags) {
+    if (rxConfig()->rcInterpolation) {
          // Set RC refresh rate for sampling and channels to filter
-        switch(rxConfig()->rcInterpolation) {
+        switch (rxConfig()->rcInterpolation) {
             case(RC_SMOOTHING_AUTO):
                 rxRefreshRate = currentRxRefreshRate + 1000; // Add slight overhead to prevent ramps
                 break;

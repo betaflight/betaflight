@@ -17,7 +17,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "CC3D" // CopterControl 3D
 
-#define LED0                    PB3
+#define LED0_PIN                PB3
 
 #define INVERTER_PIN_UART1      PB2 // PB2 (BOOT1) used as inverter select GPIO
 
@@ -93,8 +93,6 @@
 #define VBAT_ADC_PIN            PA0
 #define RSSI_ADC_PIN            PB0
 
-#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 //#define SONAR
@@ -116,9 +114,10 @@
 #undef USE_SERIALRX_SUMD       // Graupner Hott protocol
 #undef USE_SERIALRX_SUMH       // Graupner legacy protocol
 #undef USE_SERIALRX_XBUS       // JR
+#undef LED_STRIP
 #endif
 
-#undef LED_STRIP
+//#undef LED_STRIP
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
 // IO - from schematics

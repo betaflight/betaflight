@@ -30,7 +30,6 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_output.h"
 #include "drivers/light_led.h"
-#include "drivers/system.h"
 
 #include "flight/mixer.h"
 
@@ -311,7 +310,7 @@ uint16_t _crc_xmodem_update (uint16_t crc, uint8_t data) {
         int i;
 
         crc = crc ^ ((uint16_t)data << 8);
-        for (i=0; i < 8; i++){
+        for (i=0; i < 8; i++) {
             if (crc & 0x8000)
                 crc = (crc << 1) ^ 0x1021;
             else
@@ -433,7 +432,7 @@ void esc4wayProcess(serialPort_t *mspPort)
     #endif
     bool isExitScheduled = false;
 
-    while(1) {
+    while (1) {
         // restart looking for new sequence from host
         do {
             CRC_in.word = 0;
@@ -461,7 +460,7 @@ void esc4wayProcess(serialPort_t *mspPort)
         CRC_check.bytes[1] = ReadByte();
         CRC_check.bytes[0] = ReadByte();
 
-        if(CRC_check.word == CRC_in.word) {
+        if (CRC_check.word == CRC_in.word) {
             ACK_OUT = ACK_OK;
         } else {
             ACK_OUT = ACK_I_INVALID_CRC;
@@ -476,12 +475,12 @@ void esc4wayProcess(serialPort_t *mspPort)
             ioMem.D_PTR_I = ParamBuf;
 
 
-            switch(CMD) {
+            switch (CMD) {
                 // ******* Interface related stuff *******
                 case cmd_InterfaceTestAlive:
                 {
-                    if (isMcuConnected()){
-                        switch(CurrentInterfaceMode)
+                    if (isMcuConnected()) {
+                        switch (CurrentInterfaceMode)
                         {
                             #ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
                             case imATM_BLB:
@@ -600,7 +599,7 @@ void esc4wayProcess(serialPort_t *mspPort)
                     }
                     O_PARAM_LEN = DeviceInfoSize; //4
                     O_PARAM = (uint8_t *)&DeviceInfo;
-                    if(Connect(&DeviceInfo)) {
+                    if (Connect(&DeviceInfo)) {
                         DeviceInfo.bytes[INTF_MODE_IDX] = CurrentInterfaceMode;
                     } else {
                         SET_DISCONNECTED;
@@ -612,7 +611,7 @@ void esc4wayProcess(serialPort_t *mspPort)
                 #ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
                 case cmd_DeviceEraseAll:
                 {
-                    switch(CurrentInterfaceMode)
+                    switch (CurrentInterfaceMode)
                     {
                         case imSK:
                         {
@@ -662,14 +661,14 @@ void esc4wayProcess(serialPort_t *mspPort)
                     wtf.D_FLASH_ADDR_L=Adress_L;
                     wtf.D_PTR_I = BUF_I;
                     */
-                    switch(CurrentInterfaceMode)
+                    switch (CurrentInterfaceMode)
                     {
                         #ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
                         case imSIL_BLB:
                         case imATM_BLB:
                         case imARM_BLB:
                         {
-                            if(!BL_ReadFlash(CurrentInterfaceMode, &ioMem))
+                            if (!BL_ReadFlash(CurrentInterfaceMode, &ioMem))
                             {
                                 ACK_OUT = ACK_D_GENERAL_ERROR;
                             }
@@ -679,7 +678,7 @@ void esc4wayProcess(serialPort_t *mspPort)
                         #ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
                         case imSK:
                         {
-                            if(!Stk_ReadFlash(&ioMem))
+                            if (!Stk_ReadFlash(&ioMem))
                             {
                                 ACK_OUT = ACK_D_GENERAL_ERROR;
                             }
@@ -730,7 +729,7 @@ void esc4wayProcess(serialPort_t *mspPort)
                         default:
                             ACK_OUT = ACK_I_INVALID_CMD;
                     }
-                    if(ACK_OUT == ACK_OK)
+                    if (ACK_OUT == ACK_OK)
                     {
                         O_PARAM_LEN = ioMem.D_NUM_BYTES;
                         O_PARAM = (uint8_t *)&ParamBuf;

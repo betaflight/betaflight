@@ -26,15 +26,14 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
-#include "drivers/nvic.h"
-
-#include "drivers/system.h"
-#include "drivers/gpio.h"
-#include "drivers/exti.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/exti.h"
+#include "drivers/gpio.h"
 #include "drivers/gyro_sync.h"
-
+#include "drivers/nvic.h"
 #include "drivers/sensor.h"
+#include "drivers/time.h"
+
 #include "accgyro.h"
 #include "accgyro_mpu.h"
 #include "accgyro_mpu6050.h"

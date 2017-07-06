@@ -27,9 +27,10 @@
 #include "common/axis.h"
 #include "common/filter.h"
 
+#include "config/config_reset.h"
+#include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
-#include "config/config_reset.h"
 
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_adxl345.h"
@@ -49,7 +50,6 @@
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
 #include "drivers/bus_spi.h"
-#include "drivers/system.h"
 
 #include "fc/config.h"
 #include "fc/runtime_config.h"
@@ -60,8 +60,6 @@
 #include "sensors/boardalignment.h"
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
-
-#include "config/feature.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -122,7 +120,7 @@ void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
 
 bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse)
 {
-    accelerationSensor_e accHardware;
+    accelerationSensor_e accHardware = ACC_NONE;
 
 #ifdef USE_ACC_ADXL345
     drv_adxl345_config_t acc_params;
@@ -227,7 +225,7 @@ retry:
 #ifdef ACC_MPU6500_ALIGN
             dev->accAlign = ACC_MPU6500_ALIGN;
 #endif
-            switch(dev->mpuDetectionResult.sensor) {
+            switch (dev->mpuDetectionResult.sensor) {
             case MPU_9250_SPI:
                 accHardware = ACC_MPU9250;
                 break;

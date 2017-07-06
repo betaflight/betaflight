@@ -20,12 +20,13 @@
 #undef TELEMETRY_IBUS   //no space left
 #undef TELEMETRY_HOTT   //no space left
 #undef TELEMETRY_JETIEXBUS
+#undef USE_GYRO_DATA_ANALYSE
 
 #define TARGET_BOARD_IDENTIFIER "OMNI" // https://en.wikipedia.org/wiki/Omnibus
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-#define LED0                    PB3
+#define LED0_PIN                PB3
 
 #define BEEPER                  PC15
 #define BEEPER_INVERTED
@@ -33,7 +34,6 @@
 #define USE_EXTI
 #define MPU_INT_EXTI PC13
 #define USE_MPU_DATA_READY_SIGNAL
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
 
 #define MPU6000_SPI_INSTANCE    SPI1
 #define MPU6000_CS_PIN          PA4
@@ -77,13 +77,14 @@
 #define UART2_TX_PIN            PA14 // PA14 / SWCLK
 #define UART2_RX_PIN            PA15
 
-#define UART3_TX_PIN            PB10 // PB10 (AF7)
-#define UART3_RX_PIN            PB11 // PB11 (AF7)
+#define UART3_TX_PIN            PB10 // PB10 (PWM5)
+#define UART3_RX_PIN            PB11 // PB11 (PWM6)
 
-#undef USE_I2C
-//#define USE_I2C
-//#define USE_I2C_DEVICE_1
-//#define I2C_DEVICE              (I2CDEV_1)
+#define USE_I2C
+#define USE_I2C_DEVICE_1
+#define I2C1_SCL                NONE // PB6 (PWM8)
+#define I2C1_SDA                NONE // PB7 (PWM7)
+#define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
@@ -167,10 +168,6 @@
 #define BUTTON_B_PIN            PB0
 
 //#define AVOID_UART3_FOR_PWM_PPM // Disable this for using UART3
-
-#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
-
-#define BINDPLUG_PIN            PB0
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

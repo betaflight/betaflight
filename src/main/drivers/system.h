@@ -21,12 +21,6 @@
 #include <stdbool.h>
 
 void systemInit(void);
-void delayMicroseconds(uint32_t us);
-void delay(uint32_t ms);
-
-uint32_t micros(void);
-uint32_t microsISR(void);
-uint32_t millis(void);
 
 typedef enum {
     FAILURE_DEVELOPER = 0,
@@ -39,6 +33,7 @@ typedef enum {
 } failureMode_e;
 
 // failure
+void indicateFailure(failureMode_e mode, int repeatCount);
 void failureMode(failureMode_e mode);
 
 // bootloader/IAP

@@ -221,7 +221,7 @@ bool blackboxDeviceOpen(void)
              */
 
 
-            switch(baudRateIndex) {
+            switch (baudRateIndex) {
             case BAUD_1000000:
             case BAUD_1500000:
             case BAUD_2000000:
@@ -509,6 +509,14 @@ bool isBlackboxDeviceFull(void)
     default:
         return false;
     }
+}
+
+unsigned int blackboxGetLogNumber()
+{
+#ifdef USE_SDCARD
+    return blackboxSDCard.largestLogFileNumber;
+#endif
+    return 0;
 }
 
 /**

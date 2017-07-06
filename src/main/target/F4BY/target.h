@@ -20,9 +20,9 @@
 
 #define USBD_PRODUCT_STRING     "Swift-Flyer F4BY"
 
-#define LED0                    PE3 // Blue LED
-#define LED1                    PE2 // Red LED
-#define LED2                    PE1 // Blue LED
+#define LED0_PIN                PE3 // Blue LED
+#define LED1_PIN                PE2 // Red LED
+#define LED2_PIN                PE1 // Blue LED
 
 #define BEEPER                  PE5
 
@@ -145,8 +145,6 @@
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
-
-#define SPEKTRUM_BIND_PIN       UART6_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

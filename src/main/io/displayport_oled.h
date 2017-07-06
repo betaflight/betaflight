@@ -17,4 +17,4 @@
 
 #pragma once
 
-displayPort_t *displayPortOledInit(void);
+displayPort_t *displayPortOledInit(void *device);

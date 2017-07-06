@@ -37,9 +37,8 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/system.h"
-#include "drivers/sensor.h"
 #include "drivers/accgyro/accgyro.h"
+#include "drivers/sensor.h"
 #include "drivers/serial.h"
 
 #include "fc/rc_controls.h"
@@ -153,7 +152,7 @@ void configureIbusTelemetryPort(void)
         return;
     }
 
-    ibusSerialPort = openSerialPort(ibusSerialPortConfig->identifier, FUNCTION_TELEMETRY_IBUS, NULL, IBUS_BAUDRATE, IBUS_UART_MODE, SERIAL_BIDIR);
+    ibusSerialPort = openSerialPort(ibusSerialPortConfig->identifier, FUNCTION_TELEMETRY_IBUS, NULL, IBUS_BAUDRATE, IBUS_UART_MODE, SERIAL_BIDIR | (telemetryConfig()->telemetry_inverted ? SERIAL_INVERTED : SERIAL_NOT_INVERTED));
 
     if (!ibusSerialPort) {
         return;

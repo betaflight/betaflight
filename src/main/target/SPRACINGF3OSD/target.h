@@ -22,7 +22,7 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
-#define LED0                    PA15
+#define LED0_PIN                PA15
 
 #define USE_EXTI
 

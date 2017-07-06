@@ -17,113 +17,118 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <platform.h>
 
 #include "drivers/io.h"
-#include "drivers/system.h"
+#include "drivers/io_impl.h"
+#include "drivers/nvic.h"
+#include "drivers/time.h"
+#include "drivers/rcc.h"
 
 #include "drivers/bus_i2c.h"
-#include "drivers/nvic.h"
-#include "io_impl.h"
-#include "rcc.h"
+#include "drivers/bus_i2c_impl.h"
 
-#if !defined(SOFT_I2C) && defined(USE_I2C)
+#if defined(USE_I2C) && !defined(SOFT_I2C)
 
 #define CLOCKSPEED 800000    // i2c clockspeed 400kHz default (conform specs), 800kHz  and  1200kHz (Betaflight default)
 
 static void i2cUnstick(IO_t scl, IO_t sda);
 
-#if defined(USE_I2C_PULLUP)
-#define IOCFG_I2C IO_CONFIG(GPIO_MODE_AF_OD, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
-#else
-#define IOCFG_I2C IOCFG_AF_OD
-#endif
+#define IOCFG_I2C_PU IO_CONFIG(GPIO_MODE_AF_OD, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
+#define IOCFG_I2C    IO_CONFIG(GPIO_MODE_AF_OD, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
 
-#ifndef I2C1_SCL
-#define I2C1_SCL PB6
-#endif
+#define GPIO_AF4_I2C GPIO_AF4_I2C1
 
-#ifndef I2C1_SDA
-#define I2C1_SDA PB7
+const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
+#ifdef USE_I2C_DEVICE_1
+    {
+        .device = I2CDEV_1,
+        .reg = I2C1,
+        .sclPins = { DEFIO_TAG_E(PB6), DEFIO_TAG_E(PB8) },
+        .sdaPins = { DEFIO_TAG_E(PB7), DEFIO_TAG_E(PB9) },
+        .rcc = RCC_APB1(I2C1),
+        .ev_irq = I2C1_EV_IRQn,
+        .er_irq = I2C1_ER_IRQn,
+    },
 #endif
-
-#ifndef I2C2_SCL
-#define I2C2_SCL PB10
+#ifdef USE_I2C_DEVICE_2
+    {
+        .device = I2CDEV_2,
+        .reg = I2C2,
+        .sclPins = { DEFIO_TAG_E(PB10), DEFIO_TAG_E(PF1) },
+        .sdaPins = { DEFIO_TAG_E(PB11), DEFIO_TAG_E(PF0) },
+        .rcc = RCC_APB1(I2C2),
+        .ev_irq = I2C2_EV_IRQn,
+        .er_irq = I2C2_ER_IRQn,
+    },
 #endif
-#ifndef I2C2_SDA
-#define I2C2_SDA PB11
+#ifdef USE_I2C_DEVICE_3
+    { 
+        .device = I2CDEV_3,
+        .reg = I2C3, 
+        .sclPins = { DEFIO_TAG_E(PA8) },
+        .sdaPins = { DEFIO_TAG_E(PC9) },
+        .rcc = RCC_APB1(I2C3),
+        .ev_irq = I2C3_EV_IRQn,
+        .er_irq = I2C3_ER_IRQn,
+    },
 #endif
-
-#ifndef I2C3_SCL
-#define I2C3_SCL PA8
-#endif
-#ifndef I2C3_SDA
-#define I2C3_SDA PB4
-#endif
-
-#if defined(USE_I2C_DEVICE_4)
-#ifndef I2C4_SCL
-#define I2C4_SCL PD12
-#endif
-#ifndef I2C4_SDA
-#define I2C4_SDA PD13
-#endif
-#endif
-
-static i2cDevice_t i2cHardwareMap[] = {
-    { .dev = I2C1, .scl = IO_TAG(I2C1_SCL), .sda = IO_TAG(I2C1_SDA), .rcc = RCC_APB1(I2C1), .overClock = I2C1_OVERCLOCK, .ev_irq = I2C1_EV_IRQn, .er_irq = I2C1_ER_IRQn, .af = GPIO_AF4_I2C1 },
-    { .dev = I2C2, .scl = IO_TAG(I2C2_SCL), .sda = IO_TAG(I2C2_SDA), .rcc = RCC_APB1(I2C2), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C2_EV_IRQn, .er_irq = I2C2_ER_IRQn, .af = GPIO_AF4_I2C2 },
-    { .dev = I2C3, .scl = IO_TAG(I2C3_SCL), .sda = IO_TAG(I2C3_SDA), .rcc = RCC_APB1(I2C3), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C3_EV_IRQn, .er_irq = I2C3_ER_IRQn, .af = GPIO_AF4_I2C3 },
-#if defined(USE_I2C_DEVICE_4)
-    { .dev = I2C4, .scl = IO_TAG(I2C4_SCL), .sda = IO_TAG(I2C4_SDA), .rcc = RCC_APB1(I2C4), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C4_EV_IRQn, .er_irq = I2C4_ER_IRQn, .af = GPIO_AF4_I2C4 }
+#ifdef USE_I2C_DEVICE_4
+    {
+        .device = I2CDEV_4,
+        .reg = I2C4,
+        .sclPins = { DEFIO_TAG_E(PD12), DEFIO_TAG_E(PF14) },
+        .sdaPins = { DEFIO_TAG_E(PD13), DEFIO_TAG_E(PF15) },
+        .rcc = RCC_APB1(I2C4),
+        .ev_irq = I2C4_EV_IRQn,
+        .er_irq = I2C4_ER_IRQn,
+    },
 #endif
 };
 
-typedef struct{
-    I2C_HandleTypeDef Handle;
-}i2cHandle_t;
-static i2cHandle_t i2cHandle[I2CDEV_COUNT];
+i2cDevice_t i2cDevice[I2CDEV_COUNT];
 
 void I2C1_ER_IRQHandler(void)
 {
-    HAL_I2C_ER_IRQHandler(&i2cHandle[I2CDEV_1].Handle);
+    HAL_I2C_ER_IRQHandler(&i2cDevice[I2CDEV_1].handle);
 }
 
 void I2C1_EV_IRQHandler(void)
 {
-    HAL_I2C_EV_IRQHandler(&i2cHandle[I2CDEV_1].Handle);
+    HAL_I2C_EV_IRQHandler(&i2cDevice[I2CDEV_1].handle);
 }
 
 void I2C2_ER_IRQHandler(void)
 {
-    HAL_I2C_ER_IRQHandler(&i2cHandle[I2CDEV_2].Handle);
+    HAL_I2C_ER_IRQHandler(&i2cDevice[I2CDEV_2].handle);
 }
 
 void I2C2_EV_IRQHandler(void)
 {
-    HAL_I2C_EV_IRQHandler(&i2cHandle[I2CDEV_2].Handle);
+    HAL_I2C_EV_IRQHandler(&i2cDevice[I2CDEV_2].handle);
 }
 
 void I2C3_ER_IRQHandler(void)
 {
-    HAL_I2C_ER_IRQHandler(&i2cHandle[I2CDEV_3].Handle);
+    HAL_I2C_ER_IRQHandler(&i2cDevice[I2CDEV_3].handle);
 }
 
 void I2C3_EV_IRQHandler(void)
 {
-    HAL_I2C_EV_IRQHandler(&i2cHandle[I2CDEV_3].Handle);
+    HAL_I2C_EV_IRQHandler(&i2cDevice[I2CDEV_3].handle);
 }
 
 #ifdef USE_I2C_DEVICE_4
 void I2C4_ER_IRQHandler(void)
 {
-    HAL_I2C_ER_IRQHandler(&i2cHandle[I2CDEV_4].Handle);
+    HAL_I2C_ER_IRQHandler(&i2cDevice[I2CDEV_4].handle);
 }
 
 void I2C4_EV_IRQHandler(void)
 {
-    HAL_I2C_EV_IRQHandler(&i2cHandle[I2CDEV_4].Handle);
+    HAL_I2C_EV_IRQHandler(&i2cDevice[I2CDEV_4].handle);
 }
 #endif
 
@@ -146,14 +151,24 @@ static bool i2cHandleHardwareFailure(I2CDevice device)
 
 bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
 {
+    if (device == I2CINVALID || device > I2CDEV_COUNT) {
+        return false;
+    }
+
+    I2C_HandleTypeDef *pHandle = &i2cDevice[device].handle;
+
+    if (!pHandle->Instance) {
+        return false;
+    }
+
     HAL_StatusTypeDef status;
 
-    if(reg_ == 0xFF)
-        status = HAL_I2C_Master_Transmit(&i2cHandle[device].Handle,addr_ << 1,data, len_, I2C_DEFAULT_TIMEOUT);
+    if (reg_ == 0xFF)
+        status = HAL_I2C_Master_Transmit(pHandle ,addr_ << 1, data, len_, I2C_DEFAULT_TIMEOUT);
     else
-        status = HAL_I2C_Mem_Write(&i2cHandle[device].Handle,addr_ << 1, reg_, I2C_MEMADD_SIZE_8BIT,data, len_, I2C_DEFAULT_TIMEOUT);
+        status = HAL_I2C_Mem_Write(pHandle ,addr_ << 1, reg_, I2C_MEMADD_SIZE_8BIT,data, len_, I2C_DEFAULT_TIMEOUT);
 
-    if(status != HAL_OK)
+    if (status != HAL_OK)
         return i2cHandleHardwareFailure(device);
 
     return true;
@@ -166,14 +181,24 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data)
 
 bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
+    if (device == I2CINVALID || device > I2CDEV_COUNT) {
+        return false;
+    }
+
+    I2C_HandleTypeDef *pHandle = &i2cDevice[device].handle;
+
+    if (!pHandle->Instance) {
+        return false;
+    }
+
     HAL_StatusTypeDef status;
 
-    if(reg_ == 0xFF)
-        status = HAL_I2C_Master_Receive(&i2cHandle[device].Handle,addr_ << 1,buf, len, I2C_DEFAULT_TIMEOUT);
+    if (reg_ == 0xFF)
+        status = HAL_I2C_Master_Receive(pHandle ,addr_ << 1, buf, len, I2C_DEFAULT_TIMEOUT);
     else
-        status = HAL_I2C_Mem_Read(&i2cHandle[device].Handle,addr_ << 1, reg_, I2C_MEMADD_SIZE_8BIT,buf, len, I2C_DEFAULT_TIMEOUT);
+        status = HAL_I2C_Mem_Read(pHandle, addr_ << 1, reg_, I2C_MEMADD_SIZE_8BIT,buf, len, I2C_DEFAULT_TIMEOUT);
 
-    if(status != HAL_OK)
+    if (status != HAL_OK)
         return i2cHandleHardwareFailure(device);
 
     return true;
@@ -181,87 +206,72 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
 
 void i2cInit(I2CDevice device)
 {
-    /*## Configure the I2C clock source. The clock is derived from the SYSCLK #*/
-//    RCC_PeriphCLKInitTypeDef  RCC_PeriphCLKInitStruct;
-//    RCC_PeriphCLKInitStruct.PeriphClockSelection = i2cHardwareMap[device].clk;
-//    RCC_PeriphCLKInitStruct.I2c1ClockSelection = i2cHardwareMap[device].clk_src;
-//    HAL_RCCEx_PeriphCLKConfig(&RCC_PeriphCLKInitStruct);
-
-    switch (device) {
-    case I2CDEV_1:
-        __HAL_RCC_I2C1_CLK_ENABLE();
-        break;
-    case I2CDEV_2:
-        __HAL_RCC_I2C2_CLK_ENABLE();
-        break;
-    case I2CDEV_3:
-        __HAL_RCC_I2C3_CLK_ENABLE();
-        break;
-#ifdef USE_I2C_DEVICE_4
-    case I2CDEV_4:
-        __HAL_RCC_I2C4_CLK_ENABLE();
-        break;
-#endif
-    default:
-        break;
+    if (device == I2CINVALID) {
+        return;
     }
-        if (device == I2CINVALID)
-            return;
 
-        i2cDevice_t *i2c;
-        i2c = &(i2cHardwareMap[device]);
+    i2cDevice_t *pDev = &i2cDevice[device];
 
-        //I2C_InitTypeDef i2cInit;
+    const i2cHardware_t *hardware = pDev->hardware;
 
-        IO_t scl = IOGetByTag(i2c->scl);
-        IO_t sda = IOGetByTag(i2c->sda);
+    if (!hardware) {
+        return;
+    }
 
-        IOInit(scl, OWNER_I2C_SCL, RESOURCE_INDEX(device));
-        IOInit(sda, OWNER_I2C_SDA, RESOURCE_INDEX(device));
+    IO_t scl = pDev->scl;
+    IO_t sda = pDev->sda;
 
-        // Enable RCC
-        RCC_ClockCmd(i2c->rcc, ENABLE);
+    IOInit(scl, OWNER_I2C_SCL, RESOURCE_INDEX(device));
+    IOInit(sda, OWNER_I2C_SDA, RESOURCE_INDEX(device));
 
+    // Enable RCC
+    RCC_ClockCmd(hardware->rcc, ENABLE);
 
-        i2cUnstick(scl, sda);
+    i2cUnstick(scl, sda);
 
-        // Init pins
-    #ifdef STM32F7
-        IOConfigGPIOAF(scl, IOCFG_I2C, i2c->af);
-        IOConfigGPIOAF(sda, IOCFG_I2C, i2c->af);
-    #else
-        IOConfigGPIO(scl, IOCFG_AF_OD);
-        IOConfigGPIO(sda, IOCFG_AF_OD);
-    #endif
+    // Init pins
+#ifdef STM32F7
+    IOConfigGPIOAF(scl, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, GPIO_AF4_I2C);
+    IOConfigGPIOAF(sda, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, GPIO_AF4_I2C);
+#else
+    IOConfigGPIO(scl, IOCFG_AF_OD);
+    IOConfigGPIO(sda, IOCFG_AF_OD);
+#endif
+
     // Init I2C peripheral
 
-    i2cHandle[device].Handle.Instance             = i2cHardwareMap[device].dev;
+    I2C_HandleTypeDef *pHandle = &pDev->handle;
+
+    memset(pHandle, 0, sizeof(*pHandle));
+
+    pHandle->Instance = pDev->hardware->reg;
+
     /// TODO: HAL check if I2C timing is correct
 
-    if (i2c->overClock) {
+    if (pDev->overClock) {
         // 800khz Maximum speed tested on various boards without issues
-        i2cHandle[device].Handle.Init.Timing          = 0x00500D1D;
+        pHandle->Init.Timing = 0x00500D1D;
     } else {
-        //i2cHandle[device].Handle.Init.Timing          = 0x00500B6A;
-        i2cHandle[device].Handle.Init.Timing          = 0x00500C6F;
+        pHandle->Init.Timing = 0x00500C6F;
     }
-    //i2cHandle[device].Handle.Init.Timing          = 0x00D00E28; /* (Rise time = 120ns, Fall time = 25ns) */
-    i2cHandle[device].Handle.Init.OwnAddress1     = 0x0;
-    i2cHandle[device].Handle.Init.AddressingMode  = I2C_ADDRESSINGMODE_7BIT;
-    i2cHandle[device].Handle.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-    i2cHandle[device].Handle.Init.OwnAddress2     = 0x0;
-    i2cHandle[device].Handle.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-    i2cHandle[device].Handle.Init.NoStretchMode   = I2C_NOSTRETCH_DISABLE;
 
+    pHandle->Init.OwnAddress1 = 0x0;
+    pHandle->Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+    pHandle->Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+    pHandle->Init.OwnAddress2 = 0x0;
+    pHandle->Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+    pHandle->Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
 
-    HAL_I2C_Init(&i2cHandle[device].Handle);
-    /* Enable the Analog I2C Filter */
-    HAL_I2CEx_ConfigAnalogFilter(&i2cHandle[device].Handle,I2C_ANALOGFILTER_ENABLE);
+    HAL_I2C_Init(pHandle);
 
-    HAL_NVIC_SetPriority(i2cHardwareMap[device].er_irq, NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_ER), NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_ER));
-    HAL_NVIC_EnableIRQ(i2cHardwareMap[device].er_irq);
-    HAL_NVIC_SetPriority(i2cHardwareMap[device].ev_irq, NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_EV), NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_EV));
-    HAL_NVIC_EnableIRQ(i2cHardwareMap[device].ev_irq);
+    // Enable the Analog I2C Filter
+    HAL_I2CEx_ConfigAnalogFilter(pHandle, I2C_ANALOGFILTER_ENABLE);
+
+    // Setup interrupt handlers
+    HAL_NVIC_SetPriority(hardware->er_irq, NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_ER), NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_ER));
+    HAL_NVIC_EnableIRQ(hardware->er_irq);
+    HAL_NVIC_SetPriority(hardware->ev_irq, NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_EV), NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_EV));
+    HAL_NVIC_EnableIRQ(hardware->ev_irq);
 }
 
 uint16_t i2cGetErrorCounter(void)

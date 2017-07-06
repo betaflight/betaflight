@@ -26,8 +26,8 @@
 
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 
-#define LED0                    PB3
-#define LED1                    PB4
+#define LED0_PIN                PB3
+#define LED1_PIN                PB4
 
 #define BEEPER                  PA12
 
@@ -48,6 +48,8 @@
 //#define BARO_EOC_PIN            PC14
 
 #define INVERTER_PIN_UART2        PB2 // PB2 (BOOT1) abused as inverter select GPIO
+
+#define USE_RX_MSP
 
 #define USE_EXTI
 #define MAG_INT_EXTI            PC14
@@ -144,11 +146,7 @@
 #define RSSI_ADC_PIN            PA1
 #define EXTERNAL1_ADC_PIN       PA5
 
-#define SPEKTRUM_BIND_PIN       PA3
-
-#if !defined(BRUSHED_MOTORS)
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
-#endif
+#define USE_SPEKTRUM_BIND_PIN
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 

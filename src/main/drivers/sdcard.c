@@ -27,7 +27,7 @@
 #include "dma.h"
 
 #include "drivers/bus_spi.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "sdcard.h"
 #include "sdcard_standard.h"
@@ -553,7 +553,7 @@ void sdcard_init(bool useDMA)
 #ifdef SDCARD_DMA_CHANNEL_TX
     useDMAForTx = useDMA;
     if (useDMAForTx) {
-    	dmaInit(dmaGetIdentifier(SDCARD_DMA_CHANNEL_TX), OWNER_SDCARD, 0);
+        dmaInit(dmaGetIdentifier(SDCARD_DMA_CHANNEL_TX), OWNER_SDCARD, 0);
     }
 #else
     // DMA is not available

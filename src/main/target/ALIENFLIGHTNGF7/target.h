@@ -25,8 +25,8 @@
 
 #define USBD_PRODUCT_STRING "AlienFlightNG F7"
 
-#define LED0                    PC12
-#define LED1                    PD2
+#define LED0_PIN                PC12
+#define LED1_PIN                PD2
 
 #define BEEPER                  PC13
 #define BEEPER_INVERTED
@@ -119,16 +119,17 @@
 //#define UART3_TX_PIN            PB10
 
 #define USE_UART4
-#define UART4_RX_PIN            PC10
-#define UART4_TX_PIN            PC11
+#define UART4_RX_PIN            PC11
+#define UART4_TX_PIN            PC10
 
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 
 #define SERIAL_PORT_COUNT       6
 
-//#define USE_ESCSERIAL
-//#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PPM/LED_STRIP
+#define ESCSERIAL_TIMER_TX_PIN  PA8 // XXX Provisional (Hardware=0, PPM) XXX Crash if using an LED strip.
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -158,6 +159,7 @@
 #define I2C1_SDA                PB7
 
 #define USE_ADC
+#define ADC1_DMA_STREAM         DMA2_Stream0
 //#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 //#define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #define VBAT_ADC_PIN            PC0
@@ -170,8 +172,6 @@
 // LED strip configuration.
 #define LED_STRIP
 
-#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
-
 #define BINDPLUG_PIN            PB2
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
@@ -180,8 +180,6 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define RX_CHANNELS_TAER
-
-#define TELEMETRY_UART          SERIAL_PORT_USART1
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

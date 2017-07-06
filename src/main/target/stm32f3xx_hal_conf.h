@@ -86,7 +86,7 @@
 /**
   * @brief Adjust the value of External High Speed oscillator (HSE) used in your application.
   *        This value is used by the RCC HAL module to compute the system frequency
-  *        (when HSE is used as system clock source, directly or through the PLL).  
+  *        (when HSE is used as system clock source, directly or through the PLL).
   */
 #if !defined  (HSE_VALUE) 
   #define HSE_VALUE    ((uint32_t)8000000) /*!< Value of the External oscillator in Hz */
@@ -115,13 +115,13 @@
   */
 #if !defined  (HSI_STARTUP_TIMEOUT) 
  #define HSI_STARTUP_TIMEOUT   ((uint32_t)5000) /*!< Time out for HSI start up */
-#endif /* HSI_STARTUP_TIMEOUT */  
+#endif /* HSI_STARTUP_TIMEOUT */
 
 /**
   * @brief Internal Low Speed oscillator (LSI) value.
   */
 #if !defined  (LSI_VALUE) 
- #define LSI_VALUE  ((uint32_t)40000)    
+ #define LSI_VALUE  ((uint32_t)40000)
 #endif /* LSI_VALUE */                      /*!< Value of the Internal Low Speed oscillator in Hz
                                              The real value may vary depending on the variations
                                              in voltage and temperature.  */
@@ -130,7 +130,7 @@
   */
 #if !defined  (LSE_VALUE)
  #define LSE_VALUE  ((uint32_t)32768)    /*!< Value of the External Low Speed oscillator in Hz */
-#endif /* LSE_VALUE */     
+#endif /* LSE_VALUE */ 
 
 /**
   * @brief Time out for LSE start up value in ms.
@@ -156,7 +156,7 @@
 /* ########################### System Configuration ######################### */
 /**
   * @brief This is the HAL system configuration section
-  */     
+  */ 
 #define  VDD_VALUE                    ((uint32_t)3300) /*!< Value of VDD in mv */
 #define  TICK_INT_PRIORITY            ((uint32_t)(1<<__NVIC_PRIO_BITS) - 1)   /*!< tick interrupt priority (lowest by default) */
 #define  USE_RTOS                     0
@@ -187,7 +187,7 @@
 #ifdef HAL_DMA_MODULE_ENABLED
   #include "stm32f3xx_hal_dma.h"
 #endif /* HAL_DMA_MODULE_ENABLED */
-   
+ 
 #ifdef HAL_CORTEX_MODULE_ENABLED
  #include "stm32f3xx_hal_cortex.h"
 #endif /* HAL_CORTEX_MODULE_ENABLED */
@@ -235,7 +235,7 @@
 #ifdef HAL_PCCARD_MODULE_ENABLED
   #include "stm32f3xx_hal_pccard.h"
 #endif /* HAL_PCCARD_MODULE_ENABLED */ 
-  
+
 #ifdef HAL_HRTIM_MODULE_ENABLED
  #include "stm32f3xx_hal_hrtim.h"
 #endif /* HAL_HRTIM_MODULE_ENABLED */
@@ -323,8 +323,8 @@
   void assert_failed(uint8_t* file, uint32_t line);
 #else
   #define assert_param(expr) ((void)0U)
-#endif /* USE_FULL_ASSERT */    
-    
+#endif /* USE_FULL_ASSERT */
+
 #ifdef __cplusplus
 }
 #endif

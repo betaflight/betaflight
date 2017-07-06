@@ -19,8 +19,8 @@
 
 #define TARGET_BOARD_IDENTIFIER "MSKY" // Micro sciSKY
 
-#define LED0                    PB3
-#define LED1                    PB4
+#define LED0_PIN                PB3
+#define LED1_PIN                PB4
 
 #define BEEPER                  PA12
 
@@ -70,7 +70,7 @@
 #define USE_I2C_DEVICE_2
 #define I2C_DEVICE              (I2CDEV_2)
 
-#define SPEKTRUM_BIND_PIN       PA3
+#define USE_SPEKTRUM_BIND
 
 #define BRUSHED_MOTORS
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP

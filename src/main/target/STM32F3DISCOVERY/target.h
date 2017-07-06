@@ -31,9 +31,9 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-#define LED0                    PE8  // Blue LEDs - PE8/PE12
+#define LED0_PIN                PE8  // Blue LEDs - PE8/PE12
 #define LED0_INVERTED
-#define LED1                    PE10 // Orange LEDs - PE10/PE14
+#define LED1_PIN                PE10 // Orange LEDs - PE10/PE14
 #define LED1_INVERTED
 
 #define BEEPER                  PD12
@@ -174,8 +174,6 @@
 #define EXTERNAL1_ADC_PIN       PC3
 
 #define USE_ESC_SENSOR
-
-#define SPEKTRUM_BIND_PIN       PA3 // USART2, PA3
 
 #define SONAR
 #define SONAR_TRIGGER_PIN       PB0

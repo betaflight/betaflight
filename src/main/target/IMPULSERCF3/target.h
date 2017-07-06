@@ -21,7 +21,7 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-#define LED0                    PB7
+#define LED0_PIN                PB7
 
 #define BEEPER                  PC15
 
@@ -29,7 +29,6 @@
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PC13
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 1
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
@@ -91,8 +90,6 @@
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_UART           SERIAL_PORT_USART2
-
-#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

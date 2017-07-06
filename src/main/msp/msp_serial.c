@@ -27,8 +27,6 @@
 
 #include "io/serial.h"
 
-#include "drivers/system.h"
-
 #include "msp/msp.h"
 #include "msp/msp_serial.h"
 
@@ -85,7 +83,7 @@ static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
         mspPort->c_state = (c == 'M') ? MSP_HEADER_M : MSP_IDLE;
     } else if (mspPort->c_state == MSP_HEADER_M) {
         mspPort->c_state = MSP_IDLE;
-        switch(c) {
+        switch (c) {
             case '<': // COMMAND
                 mspPort->packetType = MSP_PACKET_COMMAND;
                 mspPort->c_state = MSP_HEADER_ARROW;

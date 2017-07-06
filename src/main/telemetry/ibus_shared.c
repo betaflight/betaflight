@@ -122,7 +122,7 @@ static ibusAddress_t getAddress(const uint8_t *ibusPacket)
 static uint8_t dispatchMeasurementReply(ibusAddress_t address)
 {
     int value;
-    
+
     switch (sensorAddressTypeLookup[address - ibusBaseAddress]) {
     case IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE:
         value = getBatteryVoltage() * 10;

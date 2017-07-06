@@ -44,6 +44,7 @@
 #include "common/typeconversion.h"
 
 #include "drivers/system.h"
+#include "drivers/time.h"
 
 // For rcData, stopAllMotors, stopPwmAllMotors
 #include "config/feature.h"
@@ -314,10 +315,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
 #ifdef OSD
     case OME_VISIBLE:
         if (IS_PRINTVALUE(p) && p->data) {
-            uint32_t address = (uint32_t)p->data;
-            uint16_t *val;
-
-            val = (uint16_t *)address;
+            uint16_t *val = (uint16_t *)p->data;
 
             if (VISIBLE(*val)) {
                 cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "YES");
@@ -576,7 +574,7 @@ STATIC_UNIT_TESTED void cmsMenuOpen(void)
             return;
         cmsInMenu = true;
         currentCtx = (cmsCtx_t){ &menuMain, 0, 0 };
-        DISABLE_ARMING_FLAG(OK_TO_ARM);
+        setArmingDisabled(ARMING_DISABLED_CMS_MENU);
     } else {
         // Switch display
         displayPort_t *pNextDisplay = cmsDisplayPortSelectNext();
@@ -608,7 +606,7 @@ static void cmsTraverseGlobalExit(const CMS_Menu *pMenu)
 }
 
 long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
-{   
+{ 
     int exitType = (int)ptr;
     switch (exitType) {
     case CMS_EXIT_SAVE:
@@ -644,7 +642,7 @@ long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
         systemReset();
     }
 
-    ENABLE_ARMING_FLAG(OK_TO_ARM);
+    unsetArmingDisabled(ARMING_DISABLED_CMS_MENU);
 
     return 0;
 }
@@ -756,10 +754,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
 #ifdef OSD
         case OME_VISIBLE:
             if (p->data) {
-                uint32_t address = (uint32_t)p->data;
-                uint16_t *val;
-
-                val = (uint16_t *)address;
+                uint16_t *val = (uint16_t *)p->data;
 
                 if (key == KEY_RIGHT)
                     *val |= VISIBLE_FLAG;
@@ -877,7 +872,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
 
 uint16_t cmsHandleKeyWithRepeat(displayPort_t *pDisplay, uint8_t key, int repeatCount)
 {
-    uint16_t ret;
+    uint16_t ret = 0;
 
     for (int i = 0 ; i < repeatCount ; i++) {
         ret = cmsHandleKey(pDisplay, key);
@@ -989,7 +984,11 @@ void cmsUpdate(uint32_t currentTimeUs)
             lastCmsHeartBeatMs = currentTimeMs;
         }
     }
-    lastCalledMs = currentTimeMs;
+
+    // Some key (command), notably flash erase, takes too long to use the
+    // currentTimeMs to be used as lastCalledMs (freezes CMS for a minute or so
+    // if used).
+    lastCalledMs = millis();
 }
 
 void cmsHandler(timeUs_t currentTimeUs)

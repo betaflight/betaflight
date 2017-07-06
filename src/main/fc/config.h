@@ -27,6 +27,7 @@
 #include "drivers/rx_pwm.h"
 #include "drivers/sdcard.h"
 #include "drivers/serial.h"
+#include "drivers/bus_i2c.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/vcd.h"
 
@@ -60,6 +61,7 @@ typedef enum {
     FEATURE_SOFTSPI = 1 << 26,
     FEATURE_ESC_SENSOR = 1 << 27,
     FEATURE_ANTI_GRAVITY = 1 << 28,
+    FEATURE_DYNAMIC_FILTER = 1 << 29,
 } features_e;
 
 #define MAX_NAME_LENGTH 16
@@ -70,6 +72,9 @@ typedef struct systemConfig_s {
     uint8_t activeRateProfile;
     uint8_t debug_mode;
     uint8_t task_statistics;
+#if defined(STM32F4) && !defined(DISABLE_OVERCLOCK)
+    uint8_t cpu_overclock;
+#endif
     char name[MAX_NAME_LENGTH + 1]; // FIXME misplaced, see PG_PILOT_CONFIG in CF v1.x
 } systemConfig_t;
 #endif
@@ -89,7 +94,6 @@ PG_DECLARE(ppmConfig_t, ppmConfig);
 PG_DECLARE(pwmConfig_t, pwmConfig);
 PG_DECLARE(vcdProfile_t, vcdProfile);
 PG_DECLARE(sdcardConfig_t, sdcardConfig);
-PG_DECLARE(serialPinConfig_t, serialPinConfig);
 
 struct pidProfile_s;
 extern struct pidProfile_s *currentPidProfile;

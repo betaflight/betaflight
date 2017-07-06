@@ -41,12 +41,12 @@ typedef struct telemetryConfig_s {
     int16_t gpsNoFixLatitude;
     int16_t gpsNoFixLongitude;
     uint8_t telemetry_switch;               // Use aux channel to change serial output & baudrate( MSP / Telemetry ). It disables automatic switching to Telemetry when armed.
-    uint8_t telemetry_inversion;            // also shared with smartport inversion
+    uint8_t telemetry_inverted;
     uint8_t halfDuplex;
     frskyGpsCoordFormat_e frsky_coordinate_format;
     frskyUnit_e frsky_unit;
     uint8_t frsky_vfas_precision;
-    uint8_t frsky_vfas_cell_voltage;
+    uint8_t frsky_vfas_cell_voltage;        // Unused. Use 'report_cell_voltage' instead.
     uint8_t hottAlarmSoundInterval;
     uint8_t pidValuesAsTelemetry;
     uint8_t report_cell_voltage;

@@ -77,7 +77,7 @@ retry:
 
     dev->magAlign = ALIGN_DEFAULT;
 
-    switch(magHardwareToUse) {
+    switch (magHardwareToUse) {
     case MAG_DEFAULT:
         ; // fallthrough
 

@@ -24,10 +24,9 @@
 
 #include "drivers/bus_spi.h"
 #include "drivers/io.h"
-#include "drivers/system.h"
-#include "light_led.h"
-
-#include "vtx_rtc6705.h"
+#include "drivers/light_led.h"
+#include "drivers/time.h"
+#include "drivers/vtx_rtc6705.h"
 
 #define DP_5G_MASK                  0x7000
 #define PA5G_BS_MASK                0x0E00

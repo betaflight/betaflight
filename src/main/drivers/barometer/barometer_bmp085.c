@@ -24,12 +24,12 @@
 
 #include "barometer.h"
 
-#include "drivers/gpio.h"
-#include "drivers/system.h"
 #include "drivers/bus_i2c.h"
-#include "drivers/nvic.h"
 #include "drivers/exti.h"
+#include "drivers/gpio.h"
 #include "drivers/io.h"
+#include "drivers/nvic.h"
+#include "drivers/time.h"
 
 #include "barometer_bmp085.h"
 

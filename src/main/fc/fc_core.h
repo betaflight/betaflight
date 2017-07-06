@@ -40,11 +40,14 @@ union rollAndPitchTrims_u;
 void applyAndSaveAccelerometerTrimsDelta(union rollAndPitchTrims_u *rollAndPitchTrimsDelta);
 void handleInflightCalibrationStickPosition();
 
-void mwDisarm(void);
-void mwArm(void);
+void resetArmingDisabled(void);
+
+void disarm(void);
+void tryArm(void);
 
 void processRx(timeUs_t currentTimeUs);
-void updateLEDs(void);
+void updateArmingStatus(void);
 void updateRcCommands(void);
 
 void taskMainPidLoop(timeUs_t currentTimeUs);
+bool isMotorsReversed(void);

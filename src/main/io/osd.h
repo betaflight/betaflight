@@ -26,6 +26,14 @@
 #define OSD_POS_MAX   0x3FF
 #define OSD_POSCFG_MAX   (VISIBLE_FLAG|0x3FF) // For CLI values
 
+// Character coordinate
+
+#define OSD_POSITION_BITS 5 // 5 bits gives a range 0-31
+#define OSD_POSITION_XY_MASK ((1 << OSD_POSITION_BITS) - 1)
+#define OSD_POS(x,y)  ((x & OSD_POSITION_XY_MASK) | ((y & OSD_POSITION_XY_MASK) << OSD_POSITION_BITS))
+#define OSD_X(x)      (x & OSD_POSITION_XY_MASK)
+#define OSD_Y(x)      ((x >> OSD_POSITION_BITS) & OSD_POSITION_XY_MASK)
+
 typedef enum {
     OSD_RSSI_VALUE,
     OSD_MAIN_BATT_VOLTAGE,
@@ -48,7 +56,7 @@ typedef enum {
     OSD_YAW_PIDS,
     OSD_POWER,
     OSD_PIDRATE_PROFILE,
-    OSD_MAIN_BATT_WARNING,
+    OSD_WARNINGS,
     OSD_AVG_CELL_VOLTAGE,
     OSD_GPS_LON,
     OSD_GPS_LAT,
@@ -56,8 +64,33 @@ typedef enum {
     OSD_PITCH_ANGLE,
     OSD_ROLL_ANGLE,
     OSD_MAIN_BATT_USAGE,
+    OSD_ARMED_TIME,
+    OSD_DISARMED,
+    OSD_HOME_DIR,
+    OSD_HOME_DIST,
+    OSD_NUMERICAL_HEADING,
+    OSD_NUMERICAL_VARIO,
+    OSD_COMPASS_BAR,
+    OSD_ESC_TMP,
+    OSD_ESC_RPM,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
+
+typedef enum {
+    OSD_STAT_MAX_SPEED,
+    OSD_STAT_MIN_BATTERY,
+    OSD_STAT_MIN_RSSI,
+    OSD_STAT_MAX_CURRENT,
+    OSD_STAT_USED_MAH,
+    OSD_STAT_MAX_ALTITUDE,
+    OSD_STAT_BLACKBOX,
+    OSD_STAT_END_BATTERY,
+    OSD_STAT_FLYTIME,
+    OSD_STAT_ARMEDTIME,
+    OSD_STAT_MAX_DISTANCE,
+    OSD_STAT_BLACKBOX_NUMBER,
+    OSD_STAT_COUNT // MUST BE LAST
+} osd_stats_e;
 
 typedef enum {
     OSD_UNIT_IMPERIAL,
@@ -66,6 +99,7 @@ typedef enum {
 
 typedef struct osdConfig_s {
     uint16_t item_pos[OSD_ITEM_COUNT];
+    bool enabled_stats[OSD_STAT_COUNT];
 
     // Alarms
     uint8_t rssi_alarm;

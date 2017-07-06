@@ -21,8 +21,8 @@
 
 #define USBD_PRODUCT_STRING "FuryF7"
 
-#define LED0                    PB5
-#define LED1                    PB4
+#define LED0_PIN                PB5
+#define LED1_PIN                PB4
 
 #define BEEPER                  PD10
 #define BEEPER_INVERTED
@@ -118,6 +118,10 @@
 
 #define SERIAL_PORT_COUNT       6 //VCP, USART1, USART3, USART6, SOFTSERIAL x 2
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+#define ESCSERIAL_TIMER_TX_PIN  PC9 // XXX Provisional (Hardware=0, PPM)
+
 #define USE_I2C
 #define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
@@ -138,7 +142,11 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 
-#define SPEKTRUM_BIND_PIN       PB11
+// XXX To target maintainer:
+// USE_SPEKTRUM_BIND is enabled for this target, and it will use
+// RX (or TX if half-duplex) pin of the UART the receiver is connected.
+// If PB11 is critical for this target, please resurrect this line.
+//#define SPEKTRUM_BIND_PIN       PB11
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

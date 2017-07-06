@@ -17,6 +17,7 @@
 
 /*
  * Authors:
+ * jflyper - Refactoring, cleanup and made pin-configurable
  * Dominic Clifton - Serial port abstraction, Separation of common STM32 code for cleanflight, various cleanups.
  * Hamasaki/Timecop - Initial baseflight code
 */
@@ -31,17 +32,18 @@
 #include "common/utils.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
-#include "inverter.h"
-#include "dma.h"
+#include "drivers/inverter.h"
+#include "drivers/dma.h"
+#include "drivers/rcc.h"
 
-#include "serial.h"
-#include "serial_uart.h"
-#include "serial_uart_impl.h"
+#include "drivers/serial.h"
+#include "drivers/serial_uart.h"
+#include "drivers/serial_uart_impl.h"
 
 static void usartConfigurePinInversion(uartPort_t *uartPort) {
     bool inverted = uartPort->port.options & SERIAL_INVERTED;
 
-    if(inverted)
+    if (inverted)
     {
         if (uartPort->port.mode & MODE_RX)
         {
@@ -56,7 +58,9 @@ static void usartConfigurePinInversion(uartPort_t *uartPort) {
     }
 }
 
-static void uartReconfigure(uartPort_t *uartPort)
+// XXX uartReconfigure does not handle resource management properly.
+
+void uartReconfigure(uartPort_t *uartPort)
 {
     /*RCC_PeriphCLKInitTypeDef RCC_PeriphClkInit;
     RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_USART2|RCC_PERIPHCLK_USART3|
@@ -73,7 +77,9 @@ static void uartReconfigure(uartPort_t *uartPort)
 
     HAL_UART_DeInit(&uartPort->Handle);
     uartPort->Handle.Init.BaudRate = uartPort->port.baudRate;
-    uartPort->Handle.Init.WordLength = UART_WORDLENGTH_8B;
+    // according to the stm32 documentation wordlen has to be 9 for parity bits
+    // this does not seem to matter for rx but will give bad data on tx!
+    uartPort->Handle.Init.WordLength = (uartPort->port.options & SERIAL_PARITY_EVEN) ? UART_WORDLENGTH_9B : UART_WORDLENGTH_8B;
     uartPort->Handle.Init.StopBits = (uartPort->port.options & SERIAL_STOPBITS_2) ? USART_STOPBITS_2 : USART_STOPBITS_1;
     uartPort->Handle.Init.Parity = (uartPort->port.options & SERIAL_PARITY_EVEN) ? USART_PARITY_EVEN : USART_PARITY_NONE;
     uartPort->Handle.Init.HwFlowCtl = UART_HWCONTROL_NONE;
@@ -88,7 +94,7 @@ static void uartReconfigure(uartPort_t *uartPort)
 
     usartConfigurePinInversion(uartPort);
 
-    if(uartPort->port.options & SERIAL_BIDIR)
+    if (uartPort->port.options & SERIAL_BIDIR)
     {
         HAL_HalfDuplex_Init(&uartPort->Handle);
     }
@@ -161,9 +167,9 @@ static void uartReconfigure(uartPort_t *uartPort)
 
             HAL_DMA_DeInit(&uartPort->txDMAHandle);
             HAL_StatusTypeDef status = HAL_DMA_Init(&uartPort->txDMAHandle);
-            if(status != HAL_OK)
+            if (status != HAL_OK)
             {
-                while(1);
+                while (1);
             }
             /* Associate the initialized DMA handle to the UART handle */
             __HAL_LINKDMA(&uartPort->Handle, hdmatx, uartPort->txDMAHandle);
@@ -219,7 +225,7 @@ void uartStartTxDMA(uartPort_t *s)
     uint16_t size = 0;
     uint32_t fromwhere=0;
     HAL_UART_StateTypeDef state = HAL_UART_GetState(&s->Handle);
-    if((state & HAL_UART_STATE_BUSY_TX) == HAL_UART_STATE_BUSY_TX)
+    if ((state & HAL_UART_STATE_BUSY_TX) == HAL_UART_STATE_BUSY_TX)
         return;
 
     if (s->port.txBufferHead > s->port.txBufferTail) {
@@ -357,3 +363,75 @@ const struct serialPortVTable uartVTable[] = {
         .endWrite = NULL,
     }
 };
+
+#ifdef USE_UART1
+// USART1 Rx/Tx IRQ Handler
+void USART1_IRQHandler(void)
+{
+    uartPort_t *s = &(uartDevmap[UARTDEV_1]->port);
+    uartIrqHandler(s);
+}
+#endif
+
+#ifdef USE_UART2
+// USART2 Rx/Tx IRQ Handler
+void USART2_IRQHandler(void)
+{
+    uartPort_t *s = &(uartDevmap[UARTDEV_2]->port);
+    uartIrqHandler(s);
+}
+#endif
+
+#ifdef USE_UART3
+// USART3 Rx/Tx IRQ Handler
+void USART3_IRQHandler(void)
+{
+    uartPort_t *s = &(uartDevmap[UARTDEV_3]->port);
+    uartIrqHandler(s);
+}
+#endif
+
+#ifdef USE_UART4
+// UART4 Rx/Tx IRQ Handler
+void UART4_IRQHandler(void)
+{
+    uartPort_t *s = &(uartDevmap[UARTDEV_4]->port);
+    uartIrqHandler(s);
+}
+#endif
+
+#ifdef USE_UART5
+// UART5 Rx/Tx IRQ Handler
+void UART5_IRQHandler(void)
+{
+    uartPort_t *s = &(uartDevmap[UARTDEV_5]->port);
+    uartIrqHandler(s);
+}
+#endif
+
+#ifdef USE_UART6
+// USART6 Rx/Tx IRQ Handler
+void USART6_IRQHandler(void)
+{
+    uartPort_t *s = &(uartDevmap[UARTDEV_6]->port);
+    uartIrqHandler(s);
+}
+#endif
+
+#ifdef USE_UART7
+// UART7 Rx/Tx IRQ Handler
+void UART7_IRQHandler(void)
+{
+    uartPort_t *s = &(uartDevmap[UARTDEV_7]->port);
+    uartIrqHandler(s);
+}
+#endif
+
+#ifdef USE_UART8
+// UART8 Rx/Tx IRQ Handler
+void UART8_IRQHandler(void)
+{
+    uartPort_t *s = &(uartDevmap[UARTDEV_8]->port);
+    uartIrqHandler(s);
+}
+#endif

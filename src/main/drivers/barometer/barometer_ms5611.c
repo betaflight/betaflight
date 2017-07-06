@@ -25,9 +25,9 @@
 #include "barometer.h"
 #include "barometer_spi_ms5611.h"
 
-#include "drivers/gpio.h"
-#include "drivers/system.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/gpio.h"
+#include "drivers/time.h"
 
 // MS5611, Standard address 0x77
 #define MS5611_ADDR                 0x77

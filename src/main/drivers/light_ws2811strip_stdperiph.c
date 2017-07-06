@@ -28,7 +28,6 @@
 #include "common/color.h"
 #include "light_ws2811strip.h"
 #include "dma.h"
-#include "drivers/system.h"
 #include "rcc.h"
 #include "timer.h"
 
@@ -121,7 +120,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
 
     dmaInit(timerHardware->dmaIrqHandler, OWNER_LED_STRIP, 0);
     dmaSetHandler(timerHardware->dmaIrqHandler, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, 0);
-    
+
     dmaRef = timerHardware->dmaRef;
     DMA_DeInit(dmaRef);
 

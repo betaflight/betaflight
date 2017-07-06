@@ -119,7 +119,7 @@ GROUP_1_TARGETS := \
 GROUP_2_TARGETS := \
 	CHEBUZZF3 \
 	CJMCU \
-	CL_RACINGF4 \
+	CLRACINGF4 \
 	COLIBRI \
 	COLIBRI_OPBL \
 	COLIBRI_RACE \
@@ -128,6 +128,14 @@ GROUP_2_TARGETS := \
 	F4BY \
 	FISHDRONEF4 \
 	FLIP32F3OSD \
+	FF_ACROWHOOPSP \
+	FF_FORTINIF4 \
+	FF_KOMBINI \
+	FF_PIKOBLX \
+	FF_PIKOF4 \
+	FF_RADIANCE \
+	FRSKYF3 \
+	FRSKYF4 \
 	FURYF3 \
 	FURYF4 \
 	FURYF7 \
@@ -150,7 +158,6 @@ GROUP_3_TARGETS := \
 	OMNIBUS \
 	OMNIBUSF4 \
 	OMNIBUSF4SD \
-	PIKOBLX \
 	PLUMF4 \
 	PODIUMF4 \
 
@@ -172,6 +179,7 @@ GROUP_4_TARGETS := \
 	SPRACINGF3NEO \
 	SPRACINGF3OSD \
 	SPRACINGF4EVO \
+	SPRACINGF4NEO \
 	STM32F3DISCOVERY \
 	TINYBEEF3 \
 
@@ -276,14 +284,14 @@ STARTUP_SRC     = startup_stm32f30x_md_gcc.S
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
 
-VPATH           := $(VPATH):$(CMSIS_DIR)/CM1/CoreSupport:$(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x
-CMSIS_SRC       = $(notdir $(wildcard $(CMSIS_DIR)/CM1/CoreSupport/*.c \
-                  $(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x/*.c))
+VPATH           := $(VPATH):$(CMSIS_DIR)/CM4/CoreSupport:$(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F30x
+CMSIS_SRC       = $(notdir $(wildcard $(CMSIS_DIR)/CM4/CoreSupport/*.c \
+                  $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F30x/*.c))
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(STDPERIPH_DIR)/inc \
-                   $(CMSIS_DIR)/CM1/CoreSupport \
-                   $(CMSIS_DIR)/CM1/DeviceSupport/ST/STM32F30x
+                   $(CMSIS_DIR)/CM4/CoreSupport \
+                   $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F30x
 
 ifneq ($(filter VCP, $(FEATURES)),)
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
@@ -657,6 +665,7 @@ COMMON_SRC = \
             build/version.c \
             $(TARGET_DIR_SRC) \
             main.c \
+            common/bitarray.c \
             common/encoding.c \
             common/filter.c \
             common/maths.c \
@@ -669,8 +678,11 @@ COMMON_SRC = \
             config/config_streamer.c \
             drivers/adc.c \
             drivers/buf_writer.c \
+            drivers/bus_i2c_config.c \
             drivers/bus_i2c_soft.c \
             drivers/bus_spi.c \
+            drivers/bus_spi_config.c \
+            drivers/bus_spi_pinconfig.c \
             drivers/bus_spi_soft.c \
             drivers/buttons.c \
             drivers/display.c \
@@ -680,12 +692,17 @@ COMMON_SRC = \
             drivers/resource.c \
             drivers/rcc.c \
             drivers/serial.c \
+            drivers/serial_pinconfig.c \
             drivers/serial_uart.c \
+            drivers/serial_uart_pinconfig.c \
             drivers/sound_beeper.c \
             drivers/stack_check.c \
             drivers/system.c \
             drivers/timer.c \
             drivers/transponder_ir.c \
+            drivers/transponder_ir_arcitimer.c \
+            drivers/transponder_ir_ilap.c \
+            drivers/transponder_ir_erlt.c \
             fc/config.c \
             fc/fc_dispatch.c \
             fc/fc_hardfaults.c \
@@ -696,6 +713,7 @@ COMMON_SRC = \
             io/serial.c \
             io/statusindicator.c \
             io/transponder_ir.c \
+            io/rcsplit.c \
             msp/msp_serial.c \
             scheduler/scheduler.c \
             sensors/battery.c \
@@ -722,6 +740,7 @@ FC_SRC = \
             fc/fc_rc.c \
             fc/rc_adjustments.c \
             fc/rc_controls.c \
+            fc/rc_modes.c \
             fc/cli.c \
             fc/settings.c \
             flight/altitude.c \
@@ -773,7 +792,6 @@ FC_SRC = \
             drivers/serial_escserial.c \
             drivers/sonar_hcsr04.c \
             drivers/vtx_common.c \
-            drivers/transponder_ir.c \
             flight/navigation.c \
             io/dashboard.c \
             io/displayport_max7456.c \
@@ -816,7 +834,7 @@ endif
 SPEED_OPTIMISED_SRC := ""
 SIZE_OPTIMISED_SRC  := ""
 
-ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
+ifneq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
 SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             common/encoding.c \
             common/filter.c \
@@ -824,23 +842,14 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             common/typeconversion.c \
             drivers/adc.c \
             drivers/buf_writer.c \
-            drivers/bus_i2c_soft.c \
             drivers/bus_spi.c \
-            drivers/bus_spi_soft.c \
             drivers/exti.c \
             drivers/gyro_sync.c \
             drivers/io.c \
-            drivers/light_led.c \
-            drivers/resource.c \
-            drivers/rx_nrf24l01.c \
-            drivers/rx_spi.c \
-            drivers/rx_xn297.c \
             drivers/pwm_output.c \
             drivers/rcc.c \
-            drivers/rx_pwm.c \
             drivers/serial.c \
             drivers/serial_uart.c \
-            drivers/sound_beeper.c \
             drivers/system.c \
             drivers/timer.c \
             fc/fc_core.c \
@@ -851,16 +860,9 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             flight/imu.c \
             flight/mixer.c \
             flight/pid.c \
-            flight/servos.c \
             io/serial.c \
             rx/ibus.c \
             rx/jetiexbus.c \
-            rx/nrf24_cx10.c \
-            rx/nrf24_inav.c \
-            rx/nrf24_h8_3d.c \
-            rx/nrf24_syma.c \
-            rx/nrf24_v202.c \
-            rx/pwm.c \
             rx/rx.c \
             rx/rx_spi.c \
             rx/crsf.c \
@@ -876,16 +878,21 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             sensors/gyroanalyse.c \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC) \
-            drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
-            drivers/serial_softserial.c \
-            io/dashboard.c \
             io/displayport_max7456.c \
             io/osd.c \
             io/osd_slave.c
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
+            drivers/bus_i2c_config.c \
+            drivers/bus_spi_config.c \
+            drivers/bus_spi_pinconfig.c \
             drivers/serial_escserial.c \
+            drivers/serial_pinconfig.c \
+            drivers/serial_uart_init.c \
+            drivers/serial_uart_pinconfig.c \
+            drivers/vtx_rtc6705_soft_spi.c \
+            drivers/vtx_rtc6705.c \
             drivers/vtx_common.c \
             fc/fc_init.c \
             fc/cli.c \
@@ -897,6 +904,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
+            io/dashboard.c \
             msp/msp_serial.c \
             cms/cms.c \
             cms/cms_menu_blackbox.c \
@@ -905,10 +913,12 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             cms/cms_menu_ledstrip.c \
             cms/cms_menu_misc.c \
             cms/cms_menu_osd.c \
+            io/vtx_string.c \
             io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \
-            io/vtx_tramp.c
-endif #F3
+            io/vtx_tramp.c \
+            io/vtx_control.c
+endif #!F1
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
 VCP_SRC = \
@@ -946,6 +956,7 @@ STM32F10x_COMMON_SRC = \
             drivers/gpio_stm32f10x.c \
             drivers/inverter.c \
             drivers/light_ws2811strip_stdperiph.c \
+            drivers/serial_uart_init.c \
             drivers/serial_uart_stm32f10x.c \
             drivers/system_stm32f10x.c \
             drivers/timer_stm32f10x.c
@@ -958,6 +969,7 @@ STM32F30x_COMMON_SRC = \
             drivers/gpio_stm32f30x.c \
             drivers/light_ws2811strip_stdperiph.c \
             drivers/pwm_output_dshot.c \
+            drivers/serial_uart_init.c \
             drivers/serial_uart_stm32f30x.c \
             drivers/system_stm32f30x.c \
             drivers/timer_stm32f30x.c
@@ -972,6 +984,7 @@ STM32F4xx_COMMON_SRC = \
             drivers/inverter.c \
             drivers/light_ws2811strip_stdperiph.c \
             drivers/pwm_output_dshot.c \
+            drivers/serial_uart_init.c \
             drivers/serial_uart_stm32f4xx.c \
             drivers/system_stm32f4xx.c \
             drivers/timer_stm32f4xx.c
@@ -992,22 +1005,34 @@ STM32F7xx_COMMON_SRC = \
             drivers/serial_uart_stm32f7xx.c \
             drivers/serial_uart_hal.c
 
-F7EXCLUDES = drivers/bus_spi.c \
+F7EXCLUDES = \
+            drivers/bus_spi.c \
             drivers/bus_i2c.c \
             drivers/timer.c \
             drivers/serial_uart.c
 
 SITLEXCLUDES = \
             drivers/adc.c \
-            drivers/bus_spi.c \
             drivers/bus_i2c.c \
+            drivers/bus_i2c_config.c \
+            drivers/bus_spi.c \
+            drivers/bus_spi_config.c \
+            drivers/bus_spi_pinconfig.c \
             drivers/dma.c \
             drivers/pwm_output.c \
             drivers/timer.c \
             drivers/light_led.c \
             drivers/system.c \
             drivers/rcc.c \
+            drivers/serial_pinconfig.c \
             drivers/serial_uart.c \
+            drivers/serial_uart_init.c \
+            drivers/serial_uart_pinconfig.c \
+            drivers/rx_xn297.c \
+            drivers/display_ug2864hsweg01.c \
+            telemetry/crsf.c \
+            telemetry/srxl.c \
+            io/displayport_oled.c
 
 
 # check if target.mk supplied
@@ -1023,12 +1048,20 @@ else ifeq ($(TARGET),$(filter $(TARGET),$(SITL_TARGETS)))
 SRC := $(TARGET_SRC) $(SITL_SRC) $(VARIANT_SRC)
 endif
 
-ifneq ($(filter $(TARGET),$(F4_TARGETS) $(F7_TARGETS)),)
+ifneq ($(filter $(TARGET),$(F3_TARGETS) $(F4_TARGETS) $(F7_TARGETS)),)
 DSPLIB := $(ROOT)/lib/main/DSP_Lib
-DEVICE_FLAGS += -DARM_MATH_CM4 -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE
+DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE
+
+ifneq ($(filter $(TARGET),$(F3_TARGETS)) $(F4_TARGETS)),)
+DEVICE_FLAGS += -DARM_MATH_CM4
+endif
+ifneq ($(filter $(TARGET),$(F7_TARGETS)),)
+DEVICE_FLAGS += -DARM_MATH_CM7
+endif
 
 INCLUDE_DIRS += $(DSPLIB)/Include
 
+SRC += $(DSPLIB)/Source/BasicMathFunctions/arm_mult_f32.c
 SRC += $(DSPLIB)/Source/TransformFunctions/arm_rfft_fast_f32.c
 SRC += $(DSPLIB)/Source/TransformFunctions/arm_cfft_f32.c
 SRC += $(DSPLIB)/Source/TransformFunctions/arm_rfft_fast_init_f32.c
@@ -1039,6 +1072,7 @@ SRC += $(DSPLIB)/Source/ComplexMathFunctions/arm_cmplx_mag_f32.c
 SRC += $(DSPLIB)/Source/StatisticsFunctions/arm_max_f32.c
 
 SRC += $(wildcard $(DSPLIB)/Source/*/*.S)
+
 endif
 
 
@@ -1092,6 +1126,7 @@ endif
 CROSS_CC    := $(CCACHE) $(ARM_SDK_PREFIX)gcc
 CROSS_CXX   := $(CCACHE) $(ARM_SDK_PREFIX)g++
 OBJCOPY     := $(ARM_SDK_PREFIX)objcopy
+OBJDUMP     := $(ARM_SDK_PREFIX)objdump
 SIZE        := $(ARM_SDK_PREFIX)size
 
 #
@@ -1100,20 +1135,13 @@ SIZE        := $(ARM_SDK_PREFIX)size
 
 ifneq ($(DEBUG),GDB)
 OPTIMISATION_BASE   := -flto -fuse-linker-plugin -ffast-math
-OPTIMISE_SPEED      := ""
-OPTIMISE_SIZE       := ""
+OPTIMISE_SPEED      := 
+OPTIMISE_SIZE       := 
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
 OPTIMISE_DEFAULT    := -Os
 
 LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_DEFAULT)
-
-else ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
-OPTIMISE_DEFAULT    := -O2
-OPTIMISE_SPEED      := -Ofast
-OPTIMISE_SIZE       := -Os
-
-LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 
 else ifeq ($(TARGET),$(filter $(TARGET),$(SITL_TARGETS)))
 OPTIMISE_DEFAULT    := -Ofast
@@ -1123,9 +1151,11 @@ OPTIMISE_SIZE       := -Os
 LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 
 else
-OPTIMISE_DEFAULT    := -Ofast
+OPTIMISE_DEFAULT    := -O2
+OPTIMISE_SPEED      := -Ofast
+OPTIMISE_SIZE       := -Os
 
-LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_DEFAULT)
+LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 
 endif #TARGETS
 
@@ -1134,7 +1164,7 @@ CC_SPEED_OPTIMISATION   := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 CC_SIZE_OPTIMISATION    := $(OPTIMISATION_BASE) $(OPTIMISE_SIZE)
 
 else #DEBUG
-OPTIMISE_DEFAULT    := -O0
+OPTIMISE_DEFAULT    := -Og
 
 CC_DEBUG_OPTIMISATION := $(OPTIMISE_DEFAULT)
 
@@ -1160,7 +1190,9 @@ CFLAGS      += $(ARCH_FLAGS) \
               -D'__TARGET__="$(TARGET)"' \
               -D'__REVISION__="$(REVISION)"' \
               -save-temps=obj \
-              -MMD -MP
+              -MMD -MP \
+              $(EXTRA_FLAGS)
+
 
 ASFLAGS     = $(ARCH_FLAGS) \
               -x assembler-with-cpp \
@@ -1192,12 +1224,16 @@ LDFLAGS     = \
               $(ARCH_FLAGS) \
               $(LTO_FLAGS) \
               $(DEBUG_FLAGS) \
-              -static \
-              -static-libgcc \
               -Wl,-gc-sections,-Map,$(TARGET_MAP) \
               -Wl,-L$(LINKER_DIR) \
               -Wl,--cref \
               -T$(LD_SCRIPT)
+
+ifneq ($(filter SITL_STATIC,$(OPTIONS)),)
+LDFLAGS     += \
+              -static \
+              -static-libgcc
+endif
 endif
 
 ###############################################################################
@@ -1215,6 +1251,7 @@ CPPCHECK        = cppcheck $(CSOURCES) --enable=all --platform=unix64 \
 TARGET_BIN      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).bin
 TARGET_HEX      = $(BIN_DIR)/$(FORKNAME)_$(FC_VER)_$(TARGET).hex
 TARGET_ELF      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).elf
+TARGET_LST      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).lst
 TARGET_OBJS     = $(addsuffix .o,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(SRC))))
 TARGET_DEPS     = $(addsuffix .d,$(addprefix $(OBJECT_DIR)/$(TARGET)/,$(basename $(SRC))))
 TARGET_MAP      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
@@ -1223,12 +1260,16 @@ TARGET_MAP      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 CLEAN_ARTIFACTS := $(TARGET_BIN)
 CLEAN_ARTIFACTS += $(TARGET_HEX)
 CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
+CLEAN_ARTIFACTS += $(TARGET_LST)
 
 # Make sure build date and revision is updated on every incremental build
 $(OBJECT_DIR)/$(TARGET)/build/version.o : $(SRC)
 
 # List of buildable ELF files and their object dependencies.
 # It would be nice to compute these lists, but that seems to be just beyond make.
+
+$(TARGET_LST): $(TARGET_ELF)
+	$(V0) $(OBJDUMP) -S --disassemble $< > $@
 
 $(TARGET_HEX): $(TARGET_ELF)
 	$(V0) $(OBJCOPY) -O ihex --set-start 0x8000000 $< $@
@@ -1295,22 +1336,20 @@ targets-group-rest: $(GROUP_OTHER_TARGETS)
 
 
 $(VALID_TARGETS):
-		$(V0) echo "" && \
+		$(V0) @echo "" && \
 		echo "Building $@" && \
 		time $(MAKE) binary hex TARGET=$@ && \
 		echo "Building $@ succeeded."
-
-
 
 CLEAN_TARGETS = $(addprefix clean_,$(VALID_TARGETS) )
 TARGETS_CLEAN = $(addsuffix _clean,$(VALID_TARGETS) )
 
 ## clean             : clean up temporary / machine-generated files
 clean:
-	$(V0) echo "Cleaning $(TARGET)"
+	$(V0) @echo "Cleaning $(TARGET)"
 	$(V0) rm -f $(CLEAN_ARTIFACTS)
 	$(V0) rm -rf $(OBJECT_DIR)/$(TARGET)
-	$(V0) echo "Cleaning $(TARGET) succeeded."
+	$(V0) @echo "Cleaning $(TARGET) succeeded."
 
 ## clean_test        : clean up temporary / machine-generated files (tests)
 clean_test:

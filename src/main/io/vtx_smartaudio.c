@@ -36,8 +36,8 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/system.h"
 #include "drivers/serial.h"
+#include "drivers/time.h"
 #include "drivers/vtx_common.h"
 
 #include "fc/rc_controls.h"
@@ -64,7 +64,7 @@ serialPort_t *debugSerialPort = NULL;
 #define dprintf(x) if (debugSerialPort) printf x
 #else
 #define dprintf(x)
-#endif
+#endif // SMARTAUDIO_DPRINTF
 
 #include "build/debug.h"
 
@@ -332,7 +332,7 @@ static void saProcessResponse(uint8_t *buf, int len)
         dprintf(("processResponse: outstanding %d got %d\r\n", sa_outstanding, resp));
     }
 
-    switch(resp) {
+    switch (resp) {
     case SA_CMD_GET_SETTINGS_V2: // Version 2 Get Settings
     case SA_CMD_GET_SETTINGS:    // Version 1 Get Settings
         if (len < 7)
@@ -420,7 +420,7 @@ static void saReceiveFramer(uint8_t c)
     static int len;
     static int dlen;
 
-    switch(state) {
+    switch (state) {
     case S_WAITPRE1:
         if (c == 0xAA) {
             state = S_WAITPRE2;

@@ -149,7 +149,7 @@ void enableGPIOPowerUsageAndNoiseReductions(void)
 
 bool isMPUSoftReset(void)
 {
-    if (RCC->CSR & RCC_CSR_SFTRSTF)
+    if (cachedRccCsrValue & RCC_CSR_SFTRSTF)
         return true;
     else
         return false;
@@ -164,7 +164,7 @@ void systemInit(void)
     // Configure NVIC preempt/priority groups
     HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITY_GROUPING);
 
-    // cache RCC->CSR value to use it in isMPUSoftreset() and others
+    // cache RCC->CSR value to use it in isMPUSoftReset() and others
     cachedRccCsrValue = RCC->CSR;
 
     /* Accounts for OP Bootloader, set the Vector Table base address as specified in .ld file */

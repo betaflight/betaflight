@@ -35,7 +35,7 @@
 #include "io/serial.h"
 
 #include "fc/config.h"
-#include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
 #include "msp/msp_serial.h"
@@ -56,14 +56,8 @@
 
 PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
 
-#if defined(STM32F3)
-#define TELEMETRY_DEFAULT_INVERSION 1
-#else
-#define TELEMETRY_DEFAULT_INVERSION 0
-#endif
-
 PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
-    .telemetry_inversion = TELEMETRY_DEFAULT_INVERSION,
+    .telemetry_inverted = false,
     .halfDuplex = 1,
     .telemetry_switch = 0,
     .gpsNoFixLatitude = 0,

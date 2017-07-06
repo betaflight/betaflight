@@ -39,7 +39,7 @@ USBD_HandleTypeDef USBD_Device;
 #include "hw_config.h"
 #endif
 
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "serial.h"
 #include "serial_usb_vcp.h"

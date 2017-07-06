@@ -32,7 +32,7 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "fc/runtime_config.h"
 
@@ -92,7 +92,7 @@ static float magneticDeclination = 0.0f;       // calculated at startup from con
 static imuRuntimeConfig_t imuRuntimeConfig;
 
 STATIC_UNIT_TESTED float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;    // quaternion of sensor frame relative to earth frame
-static float rMat[3][3];
+STATIC_UNIT_TESTED float rMat[3][3];
 
 attitudeEulerAngles_t attitude = { { 0, 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 
@@ -317,7 +317,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     }
 
     // Compute and apply integral feedback if enabled
-    if(imuRuntimeConfig.dcm_ki > 0.0f) {
+    if (imuRuntimeConfig.dcm_ki > 0.0f) {
         // Stop integrating if spinning beyond the certain limit
         if (spin_rate < DEGREES_TO_RADIANS(SPIN_RATE_LIMIT)) {
             const float dcmKiGain = imuRuntimeConfig.dcm_ki;
@@ -419,24 +419,24 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
         useMag = true;
     }
 #if defined(GPS)
-    else if (STATE(FIXED_WING) && sensors(SENSOR_GPS) && STATE(GPS_FIX) && GPS_numSat >= 5 && GPS_speed >= 300) {
+    else if (STATE(FIXED_WING) && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5 && gpsSol.groundSpeed >= 300) {
         // In case of a fixed-wing aircraft we can use GPS course over ground to correct heading
-        rawYawError = DECIDEGREES_TO_RADIANS(attitude.values.yaw - GPS_ground_course);
+        rawYawError = DECIDEGREES_TO_RADIANS(attitude.values.yaw - gpsSol.groundCourse);
         useYaw = true;
     }
 #endif
 
 #if defined(SIMULATOR_BUILD) && defined(SKIP_IMU_CALC)
-	UNUSED(imuMahonyAHRSupdate);
-	UNUSED(useAcc);
-	UNUSED(useMag);
-	UNUSED(useYaw);
-	UNUSED(rawYawError);
+    UNUSED(imuMahonyAHRSupdate);
+    UNUSED(useAcc);
+    UNUSED(useMag);
+    UNUSED(useYaw);
+    UNUSED(rawYawError);
 #else
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_IMU_SYNC)
-//	printf("[imu]deltaT = %u, imuDeltaT = %u, currentTimeUs = %u, micros64_real = %lu\n", deltaT, imuDeltaT, currentTimeUs, micros64_real());
-	deltaT = imuDeltaT;
+//  printf("[imu]deltaT = %u, imuDeltaT = %u, currentTimeUs = %u, micros64_real = %lu\n", deltaT, imuDeltaT, currentTimeUs, micros64_real());
+    deltaT = imuDeltaT;
 #endif
 
     imuMahonyAHRSupdate(deltaT * 1e-6f,
@@ -455,7 +455,7 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
     if (sensors(SENSOR_ACC) && acc.isAccelUpdatedAtLeastOnce) {
         IMU_LOCK;
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_IMU_SYNC)
-        if(imuUpdated == false){
+        if (imuUpdated == false) {
             IMU_UNLOCK;
             return;
         }

@@ -20,14 +20,15 @@
 extern "C" {
 #include <platform.h>
 #include "config/parameter_group.h"
-#include "drivers/system.h"
 #include "drivers/serial.h"
+#include "drivers/time.h"
 #include "io/serial.h"
 #include "rx/rx.h"
 #include "rx/ibus.h"
 #include "telemetry/ibus_shared.h"
 #include "telemetry/telemetry.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 }

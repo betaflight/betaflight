@@ -27,7 +27,6 @@
 #include "common/filter.h"
 
 #include "drivers/adc.h"
-#include "drivers/system.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -212,7 +211,6 @@ void currentMeterESCReadCombined(currentMeter_t *meter)
     meter->amperageLatest = currentMeterESCState.amperage;
     meter->amperage = currentMeterESCState.amperage;
     meter->mAhDrawn = currentMeterESCState.mAhDrawn;
-    currentMeterReset(meter);
 }
 
 void currentMeterESCReadMotor(uint8_t motorNumber, currentMeter_t *meter)

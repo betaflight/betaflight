@@ -21,8 +21,8 @@
 
 #define USBD_PRODUCT_STRING "NucleoF7"
 
-#define LED0   PB7
-#define LED1   PB14
+#define LED0_PIN   PB7
+#define LED1_PIN   PB14
 
 #define BEEPER   PA0
 #define BEEPER_INVERTED
@@ -93,6 +93,10 @@
 
 #define SERIAL_PORT_COUNT 10 //VCP, USART2, USART3, UART4, UART5, USART6, USART7, USART8, SOFTSERIAL x 2
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PPM
+#define ESCSERIAL_TIMER_TX_PIN  PB15 // XXX Provisional (Hardware=0, PPM)
+
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_4
@@ -151,5 +155,6 @@
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 #define TARGET_IO_PORTF 0xffff
+#define TARGET_IO_PORTG 0xffff
 
 #define USED_TIMERS  ( TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9) | TIM_N(10) | TIM_N(11))

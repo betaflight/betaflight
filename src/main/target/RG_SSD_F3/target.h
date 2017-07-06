@@ -19,8 +19,8 @@
 
 #define TARGET_BOARD_IDENTIFIER "RGF3" // rgSSD_F3
 
-#define LED0                     PC1
-#define LED1                     PC0
+#define LED0_PIN                 PC1
+#define LED1_PIN                 PC0
 
 #define BEEPER                   PA8
 #define BEEPER_INVERTED
@@ -42,7 +42,6 @@
 #define SPI2_MISO_PIN            PB14
 #define SPI2_MOSI_PIN            PB15
 
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
@@ -144,8 +143,6 @@
 #define ADC24_DMA_REMAP
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
-
-#define SPEKTRUM_BIND_PIN UART3_RX_PIN
 
 // IO - stm32f303rc in 64pin package
 #define TARGET_IO_PORTA 0xffff

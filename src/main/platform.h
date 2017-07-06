@@ -17,6 +17,10 @@
 
 #pragma once
 
+#if !defined(UNIT_TEST) && !defined(SITL) && !(USBD_DEBUG_LEVEL > 0)
+#pragma GCC poison sprintf snprintf
+#endif
+
 #if defined(STM32F745xx) || defined(STM32F746xx) || defined(STM32F722xx)
 #include "stm32f7xx.h"
 #include "stm32f7xx_hal.h"

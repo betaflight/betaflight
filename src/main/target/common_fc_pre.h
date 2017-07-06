@@ -36,11 +36,13 @@
 // Using RX DMA disables the use of receive callbacks
 #define USE_UART1_RX_DMA
 #define USE_UART1_TX_DMA
+#define MAX_SUPPORTED_MOTORS 8
 #endif
 
 #ifdef STM32F3
 #define MINIMAL_CLI
 #define USE_DSHOT
+#define USE_GYRO_DATA_ANALYSE
 #endif
 
 #ifdef STM32F4
@@ -48,6 +50,7 @@
 #define USE_ESC_SENSOR
 #define I2C3_OVERCLOCK true
 #define TELEMETRY_IBUS
+#define USE_GYRO_DATA_ANALYSE
 #endif
 
 #ifdef STM32F7
@@ -56,6 +59,7 @@
 #define I2C3_OVERCLOCK true
 #define I2C4_OVERCLOCK true
 #define TELEMETRY_IBUS
+#define USE_GYRO_DATA_ANALYSE
 #endif
 
 #if defined(STM32F4) || defined(STM32F7)
@@ -103,7 +107,6 @@
 #endif
 
 #if (FLASH_SIZE > 128)
-#define GPS
 #define CMS
 #define TELEMETRY_CRSF
 #define TELEMETRY_IBUS
@@ -112,6 +115,7 @@
 #define TELEMETRY_SRXL
 #define USE_DASHBOARD
 #define USE_MSP_DISPLAYPORT
+#define USE_RCSPLIT
 #define USE_RX_MSP
 #define USE_SERIALRX_JETIEXBUS
 #define USE_SENSOR_NAMES
@@ -120,8 +124,16 @@
 #define VTX_CONTROL
 #define VTX_SMARTAUDIO
 #define VTX_TRAMP
+
+#ifdef USE_SERIALRX_SPEKTRUM
+#define USE_SPEKTRUM_BIND
+#define USE_SPEKTRUM_BIND_PLUG
+#endif
 #endif
 
 #if (FLASH_SIZE > 256)
+// Temporarily moved GPS here because of overflowing flash size on F3
+#define GPS
+#define USE_NAV
 #define USE_UNCOMMON_MIXERS
 #endif

@@ -45,6 +45,6 @@ void targetConfiguration(void)
 
     rxConfigMutable()->serialrx_provider = SERIALRX_SBUS;
     rxConfigMutable()->sbus_inversion = 0;
-    telemetryConfigMutable()->telemetry_inversion = 0;
+    telemetryConfigMutable()->telemetry_inverted = true;
 }
 #endif

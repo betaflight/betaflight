@@ -22,11 +22,11 @@
 
 #include "build/build_config.h"
 
-#include "drivers/system.h"
-#include "drivers/nvic.h"
-#include "drivers/io.h"
 #include "drivers/exti.h"
-#include "sonar_hcsr04.h"
+#include "drivers/io.h"
+#include "drivers/nvic.h"
+#include "drivers/sonar_hcsr04.h"
+#include "drivers/time.h"
 
 /* HC-SR04 consists of ultrasonic transmitter, receiver, and control circuits.
  * When triggered it sends out a series of 40KHz ultrasonic pulses and receives

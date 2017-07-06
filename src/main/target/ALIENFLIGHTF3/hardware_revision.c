@@ -24,19 +24,25 @@
 #include "build/build_config.h"
 
 #include "drivers/io.h"
-#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "hardware_revision.h"
 
 uint8_t hardwareRevision = AFF3_UNKNOWN;
+bool haveFrSkyRX = true;
 
 static IO_t HWDetectPin = IO_NONE;
+static IO_t RXDetectPin = IO_NONE;
 
 void detectHardwareRevision(void)
 {
     HWDetectPin = IOGetByTag(IO_TAG(HW_PIN));
     IOInit(HWDetectPin, OWNER_SYSTEM, 0);
     IOConfigGPIO(HWDetectPin, IOCFG_IPU);
+
+    RXDetectPin = IOGetByTag(IO_TAG(BEEPER));
+    IOInit(RXDetectPin, OWNER_SYSTEM, 0);
+    IOConfigGPIO(RXDetectPin, IOCFG_IPU);
 
     delayMicroseconds(10);  // allow configuration to settle
 
@@ -45,6 +51,11 @@ void detectHardwareRevision(void)
         hardwareRevision = AFF3_REV_1;
     } else {
         hardwareRevision = AFF3_REV_2;
+    }
+
+    // Check for integrated OpenSky reciever
+    if (IORead(RXDetectPin)) {
+        haveFrSkyRX = false;
     }
 }
 

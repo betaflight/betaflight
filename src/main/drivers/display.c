@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -66,13 +67,23 @@ bool displayIsGrabbed(const displayPort_t *instance)
     return (instance && instance->grabCount > 0);
 }
 
+void displaySetXY(displayPort_t *instance, uint8_t x, uint8_t y)
+{
+    instance->posX = x;
+    instance->posY = y;
+}
+
 int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, const char *s)
 {
-    return instance->vTable->write(instance, x, y, s);
+    instance->posX = x + strlen(s);
+    instance->posY = y;
+    return instance->vTable->writeString(instance, x, y, s);
 }
 
 int displayWriteChar(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t c)
 {
+    instance->posX = x + 1;
+    instance->posY = y;
     return instance->vTable->writeChar(instance, x, y, c);
 }
 

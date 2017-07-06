@@ -39,6 +39,7 @@
 #include "drivers/nvic.h"
 #include "drivers/sensor.h"
 #include "drivers/system.h"
+#include "drivers/time.h"
 #include "drivers/dma.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"
@@ -53,6 +54,7 @@
 #include "drivers/rx_pwm.h"
 #include "drivers/pwm_output.h"
 #include "drivers/adc.h"
+#include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
 #include "drivers/buttons.h"
@@ -122,6 +124,7 @@
 #include "flight/pid.h"
 #include "flight/servos.h"
 
+#include "io/rcsplit.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -132,10 +135,6 @@
 
 #ifdef TARGET_PREINIT
 void targetPreInit(void);
-#endif
-
-#ifdef TARGET_BUS_INIT
-void targetBusInit(void);
 #endif
 
 extern uint8_t motorControlEnable;
@@ -186,6 +185,61 @@ static IO_t busSwitchResetPin        = IO_NONE;
 }
 #endif
 
+#ifdef USE_SPI
+// Pre-initialize all CS pins to input with pull-up.
+// It's sad that we can't do this with an initialized array,
+// since we will be taking care of configurable CS pins shortly.
+
+void spiPreInit(void)
+{
+#ifdef USE_ACC_SPI_MPU6000
+    spiPreInitCs(IO_TAG(MPU6000_CS_PIN));
+#endif
+#ifdef USE_ACC_SPI_MPU6500
+    spiPreInitCs(IO_TAG(MPU6500_CS_PIN));
+#endif
+#ifdef USE_GYRO_SPI_MPU9250
+    spiPreInitCs(IO_TAG(MPU9250_CS_PIN));
+#endif
+#ifdef USE_GYRO_SPI_ICM20689
+    spiPreInitCs(IO_TAG(ICM20689_CS_PIN));
+#endif
+#ifdef USE_ACCGYRO_BMI160
+    spiPreInitCs(IO_TAG(BMI160_CS_PIN));
+#endif
+#ifdef USE_GYRO_L3GD20
+    spiPreInitCs(IO_TAG(L3GD20_CS_PIN));
+#endif
+#ifdef USE_MAX7456
+    spiPreInitCs(IO_TAG(MAX7456_SPI_CS_PIN));
+#endif
+#ifdef USE_SDCARD
+    spiPreInitCs(IO_TAG(SDCARD_SPI_CS_PIN));
+#endif
+#ifdef USE_BARO_SPI_BMP280
+    spiPreInitCs(IO_TAG(BMP280_CS_PIN));
+#endif
+#ifdef USE_BARO_SPI_MS5611
+    spiPreInitCs(IO_TAG(MS5611_CS_PIN));
+#endif
+#ifdef USE_MAG_SPI_HMC5883
+    spiPreInitCs(IO_TAG(HMC5883_CS_PIN));
+#endif
+#ifdef USE_MAG_SPI_AK8963
+    spiPreInitCs(IO_TAG(AK8963_CS_PIN));
+#endif
+#ifdef RTC6705_CS_PIN // XXX VTX_RTC6705? Should use USE_ format.
+    spiPreInitCs(IO_TAG(RTC6705_CS_PIN));
+#endif
+#ifdef M25P16_CS_PIN // XXX Should use USE_ format.
+    spiPreInitCs(IO_TAG(M25P16_CS_PIN));
+#endif
+#if defined(USE_RX_SPI) && !defined(USE_RX_SOFTSPI)
+    spiPreInitCs(IO_TAG(RX_NSS_PIN));
+#endif
+}
+#endif
+
 void init(void)
 {
 #ifdef USE_HAL_DRIVER
@@ -212,6 +266,20 @@ void init(void)
     ensureEEPROMContainsValidData();
     readEEPROM();
 
+#if defined(STM32F4) && !defined(DISABLE_OVERCLOCK)
+    // If F4 Overclocking is set and System core clock is not correct a reset is forced
+    if (systemConfig()->cpu_overclock && SystemCoreClock != OC_FREQUENCY_HZ) {
+        *((uint32_t *)0x2001FFF8) = 0xBABEFACE; // 128KB SRAM STM32F4XX
+        __disable_irq();
+        NVIC_SystemReset();
+    } else if (!systemConfig()->cpu_overclock && SystemCoreClock == OC_FREQUENCY_HZ) {
+        *((uint32_t *)0x2001FFF8) = 0x0;        // 128KB SRAM STM32F4XX
+        __disable_irq();
+        NVIC_SystemReset();
+    }
+
+#endif
+
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
 
     //i2cSetOverclock(masterConfig.i2c_overclock);
@@ -225,7 +293,9 @@ void init(void)
     targetPreInit();
 #endif
 
+#if !defined(UNIT_TEST) && !defined(USE_FAKE_LED)
     ledInit(statusLedConfig());
+#endif
     LED2_ON;
 
 #ifdef USE_EXTI
@@ -259,11 +329,12 @@ void init(void)
     }
 #endif
 
-#ifdef SPEKTRUM_BIND_PIN
+#if defined(USE_SPEKTRUM_BIND)
     if (feature(FEATURE_RX_SERIAL)) {
         switch (rxConfig()->serialrx_provider) {
         case SERIALRX_SPEKTRUM1024:
         case SERIALRX_SPEKTRUM2048:
+        case SERIALRX_SRXL:
             // Spektrum satellite binding if enabled on startup.
             // Must be called before that 100ms sleep so that we don't lose satellite's binding window after startup.
             // The rest of Spektrum initialization will happen later - via spektrumInit()
@@ -279,6 +350,10 @@ void init(void)
 
 #ifdef BUS_SWITCH_PIN
     busSwitchInit();
+#endif
+
+#if defined(USE_UART)
+    uartPinConfigure(serialPinConfig());
 #endif
 
 #if defined(AVOID_UART1_FOR_PWM_PPM)
@@ -323,12 +398,12 @@ void init(void)
     if (0) {}
 #if defined(USE_PPM)
     else if (feature(FEATURE_RX_PPM)) {
-          ppmRxInit(ppmConfig(), motorConfig()->dev.motorPwmProtocol);
+        ppmRxInit(ppmConfig());
     }
 #endif
 #if defined(USE_PWM)
     else if (feature(FEATURE_RX_PARALLEL_PWM)) {
-          pwmRxInit(pwmConfig());
+        pwmRxInit(pwmConfig());
     }
 #endif
 
@@ -338,7 +413,7 @@ void init(void)
     beeperInit(beeperDevConfig());
 #endif
 /* temp until PGs are implemented. */
-#ifdef USE_INVERTER
+#if defined(USE_INVERTER) && !defined(SITL)
     initInverters(serialPinConfig());
 #endif
 
@@ -347,6 +422,11 @@ void init(void)
 #else
 
 #ifdef USE_SPI
+    spiPinConfigure();
+
+    // Initialize CS lines and keep them high
+    spiPreInit();
+
 #ifdef USE_SPI_DEVICE_1
     spiInit(SPIDEV_1);
 #endif
@@ -362,6 +442,11 @@ void init(void)
 #endif /* USE_SPI */
 
 #ifdef USE_I2C
+    i2cHardwareConfigure();
+
+    // Note: Unlike UARTs which are configured when client is present,
+    // I2C buses are initialized unconditionally if they are configured.
+
 #ifdef USE_I2C_DEVICE_1
     i2cInit(I2CDEV_1);
 #endif
@@ -370,10 +455,10 @@ void init(void)
 #endif
 #ifdef USE_I2C_DEVICE_3
     i2cInit(I2CDEV_3);
-#endif  
+#endif
 #ifdef USE_I2C_DEVICE_4
     i2cInit(I2CDEV_4);
-#endif  
+#endif
 #endif /* USE_I2C */
 
 #endif /* TARGET_BUS_INIT */
@@ -409,8 +494,9 @@ void init(void)
     initBoardAlignment(boardAlignment());
 
     if (!sensorsAutodetect()) {
-        // if gyro was not detected due to whatever reason, we give up now.
-        failureMode(FAILURE_MISSING_ACC);
+        // if gyro was not detected due to whatever reason, notify and don't arm.
+        indicateFailure(FAILURE_MISSING_ACC, 2);
+        setArmingDisabled(ARMING_DISABLED_NO_GYRO);
     }
 
     systemState |= SYSTEM_STATE_SENSORS_READY;
@@ -432,6 +518,10 @@ void init(void)
 
     // gyro.targetLooptime set in sensorsAutodetect(), so we are ready to call pidInit()
     pidInit(currentPidProfile);
+
+#ifdef USE_SERVOS
+    servosFilterInit();
+#endif
 
     imuInit();
 
@@ -556,7 +646,7 @@ void init(void)
     if (mixerConfig()->mixerMode == MIXER_GIMBAL) {
         accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
     }
-    gyroStartCalibration();
+    gyroStartCalibration(false);
 #ifdef BARO
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
 #endif
@@ -590,7 +680,6 @@ void init(void)
     timerStart();
 
     ENABLE_STATE(SMALL_ANGLE);
-    DISABLE_ARMING_FLAG(PREVENT_ARMING);
 
 #ifdef SOFTSERIAL_LOOPBACK
     // FIXME this is a hack, perhaps add a FUNCTION_LOOPBACK to support it properly
@@ -627,5 +716,10 @@ void init(void)
 #else
     fcTasksInit();
 #endif
+
+#ifdef USE_RCSPLIT
+    rcSplitInit();
+#endif // USE_RCSPLIT
+
     systemState |= SYSTEM_STATE_READY;
 }

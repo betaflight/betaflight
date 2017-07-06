@@ -23,8 +23,8 @@
 
 //#define USE_ESC_TELEMETRY
 
-#define LED0   PB7  // blue
-#define LED1   PB14 // red
+#define LED0_PIN   PB7  // blue
+#define LED1_PIN   PB14 // red
 
 #define BEEPER   PA0
 #define BEEPER_INVERTED
@@ -94,6 +94,10 @@
 #define USE_SOFTSERIAL2
 
 #define SERIAL_PORT_COUNT 6 //VCP, USART2, USART3, UART4,SOFTSERIAL x 2
+
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PPM
+#define ESCSERIAL_TIMER_TX_PIN  PB15 // XXX Provisional (Hardware=0, PPM)
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1

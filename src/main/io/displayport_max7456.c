@@ -37,8 +37,18 @@
 
 displayPort_t max7456DisplayPort;
 
-// no template required since defaults are zero
-PG_REGISTER(displayPortProfile_t, displayPortProfileMax7456, PG_DISPLAY_PORT_MAX7456_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(displayPortProfile_t, displayPortProfileMax7456, PG_DISPLAY_PORT_MAX7456_CONFIG, 0);
+
+void pgResetFn_displayPortProfileMax7456(displayPortProfile_t *displayPortProfile)
+{
+    displayPortProfile->colAdjust = 0;
+    displayPortProfile->rowAdjust = 0;
+
+    // Set defaults as per MAX7456 datasheet
+    displayPortProfile->invert = false;
+    displayPortProfile->blackBrightness = 0;
+    displayPortProfile->whiteBrightness = 2;
+}
 
 static int grab(displayPort_t *displayPort)
 {
@@ -62,6 +72,10 @@ static int release(displayPort_t *displayPort)
 static int clearScreen(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
+
+    max7456Invert(displayPortProfileMax7456()->invert);
+    max7456Brightness(displayPortProfileMax7456()->blackBrightness, displayPortProfileMax7456()->whiteBrightness);
+
     max7456ClearScreen();
 
     return 0;
@@ -81,7 +95,7 @@ static int screenSize(const displayPort_t *displayPort)
     return maxScreenSize;
 }
 
-static int write(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
+static int writeString(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
 {
     UNUSED(displayPort);
     max7456Write(x, y, s);
@@ -129,7 +143,7 @@ static const displayPortVTable_t max7456VTable = {
     .clearScreen = clearScreen,
     .drawScreen = drawScreen,
     .screenSize = screenSize,
-    .write = write,
+    .writeString = writeString,
     .writeChar = writeChar,
     .isTransferInProgress = isTransferInProgress,
     .heartbeat = heartbeat,

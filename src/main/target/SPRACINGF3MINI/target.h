@@ -22,7 +22,7 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
-#define LED0                    PB8
+#define LED0_PIN                PB8
 #else
 #define TARGET_BOARD_IDENTIFIER "SRFM"
 
@@ -32,7 +32,7 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-#define LED0                    PB3
+#define LED0_PIN                PB3
 #endif
 
 #define BEEPER                  PC15
@@ -47,7 +47,6 @@
 #define ACC
 
 #ifdef TINYBEEF3
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 1 // MPU_INT
 
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW270_DEG
@@ -55,7 +54,6 @@
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW270_DEG
 #else
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
 
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
@@ -187,8 +185,6 @@
 
 #define BINDPLUG_PIN            BUTTON_B_PIN
 #endif
-
-#define SPEKTRUM_BIND_PIN       UART2_RX_PIN
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

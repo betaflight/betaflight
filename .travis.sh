@@ -10,6 +10,8 @@ TRAVIS_REPO_SLUG=${TRAVIS_REPO_SLUG:=$USER/undefined}
 BUILDNAME=${BUILDNAME:=travis}
 TRAVIS_BUILD_NUMBER=${TRAVIS_BUILD_NUMBER:=undefined}
 
+MAKE="make EXTRA_FLAGS=-Werror V=0"
+
 CURL_BASEOPTS=(
 	"--retry" "10"
 	"--retry-max-time" "120" )
@@ -47,7 +49,7 @@ elif [ $PUBLISHMETA ] ; then
 	fi
 
 elif [ $TARGET ] ; then
-    make $TARGET || exit $?
+    $MAKE $TARGET || exit $?
 
 	if [ $PUBLISH_URL ] ; then
 		if   [ -f ${TARGET_FILE}.bin ] ; then
@@ -64,15 +66,16 @@ elif [ $TARGET ] ; then
 	fi
 
 elif [ $GOAL ] ; then
-    make V=0 $GOAL || exit $?
+    $MAKE $GOAL || exit $?
     
+  if [ $PUBLISHCOV ] ; then
     if [ "test" == "$GOAL" ] ; then
         lcov --directory . -b src/test --capture --output-file coverage.info 2>&1 | grep -E ":version '402\*', prefer.*'406\*" --invert-match
         lcov --remove coverage.info 'lib/test/*' 'src/test/*' '/usr/*' --output-file coverage.info # filter out system and test code
         lcov --list coverage.info # debug before upload
         coveralls-lcov coverage.info # uploads to coveralls
     fi
-
+  fi
 else 
-    make V=0 all
+    $MAKE all
 fi

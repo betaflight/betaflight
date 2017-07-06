@@ -22,8 +22,8 @@
 
 #define USBD_PRODUCT_STRING  "MatekF4"
 
-#define LED0                    PB9
-#define LED1                    PA14
+#define LED0_PIN                PB9
+#define LED1_PIN                PA14
 
 #define BEEPER                  PC13
 #define BEEPER_INVERTED
@@ -33,8 +33,8 @@
 #define USE_SPI_DEVICE_1
 
 #define SPI1_SCK_PIN            PA5
-#define SPI1_MISO_PIN   	    PA6
-#define SPI1_MOSI_PIN   	    PA7
+#define SPI1_MISO_PIN           PA6
+#define SPI1_MOSI_PIN           PA7
 
 #define MPU6500_CS_PIN          PC2
 #define MPU6500_SPI_INSTANCE    SPI1
@@ -57,8 +57,8 @@
 
 #define USE_SPI_DEVICE_3
 #define SPI3_SCK_PIN            PB3
-#define SPI3_MISO_PIN   	    PB4
-#define SPI3_MOSI_PIN   	    PB5
+#define SPI3_MISO_PIN           PB4
+#define SPI3_MOSI_PIN           PB5
 
 #define SDCARD_SPI_INSTANCE     SPI3
 #define SDCARD_SPI_CS_PIN       PC1
@@ -68,16 +68,16 @@
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
 
-#define SDCARD_DMA_CHANNEL_TX               	DMA1_Stream7
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG 	DMA_FLAG_TCIF7
-#define SDCARD_DMA_CLK                      	RCC_AHB1Periph_DMA1
-#define SDCARD_DMA_CHANNEL                  	DMA_Channel_0
+#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream7
+#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF7
+#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
+#define SDCARD_DMA_CHANNEL                  DMA_Channel_0
 
 // *************** OSD *****************************
 #define USE_SPI_DEVICE_2
 #define SPI2_SCK_PIN            PB13
-#define SPI2_MISO_PIN   	    PB14
-#define SPI2_MOSI_PIN   	    PB15
+#define SPI2_MISO_PIN           PB14
+#define SPI2_MOSI_PIN           PB15
 
 #define OSD
 #define USE_MAX7456
