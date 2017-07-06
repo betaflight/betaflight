@@ -129,8 +129,6 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .serialrx_provider = SERIALRX_PROVIDER,
         .rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL,
         .sbus_inversion = SBUS_INVERSION_DEFAULT,
-        .spektrum_bind_pin_override_ioTag = IO_TAG(SPEKTRUM_BIND_PIN),
-        .spektrum_bind_plug_ioTag = IO_TAG(BINDPLUG_PIN),
         .spektrum_sat_bind = 0,
         .spektrum_sat_bind_autoreset = 1,
         .midrc = RX_MID_USEC,
@@ -146,7 +144,9 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .rcInterpolationInterval = 19,
         .fpvCamAngleDegrees = 0,
         .max_aux_channel = DEFAULT_AUX_CHANNEL_COUNT,
-        .airModeActivateThreshold = 1350
+        .airModeActivateThreshold = 1350,
+        .spektrum_bind_pin_override_ioTag = IO_TAG(SPEKTRUM_BIND_PIN),
+        .spektrum_bind_plug_ioTag = IO_TAG(BINDPLUG_PIN),
     );
 
 #ifdef RX_CHANNELS_TAER
