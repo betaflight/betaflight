@@ -768,11 +768,17 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 static void osdDrawLogo(int x, int y)
 {
     // display logo and help
-    int fontOffset = 160;
-    for (int row = 0; row < 4; row++) {
+    int fontOffset = 0xb8;
+    for (int row = 0; row < 3; row++) {
         for (int column = 0; column < 24; column++) {
-            if (fontOffset <= SYM_END_OF_FONT)
-                displayWriteChar(osdDisplayPort, x + column, y + row, fontOffset++);
+            if (fontOffset <= SYM_END_OF_FONT) {
+                if((fontOffset < 0xbd) || (fontOffset > 0xcf)) { // exclude characters 189 through 207 (as they are blank)
+                    displayWriteChar(osdDisplayPort, x + column, y + row, fontOffset++);
+                } else {
+                    displayWriteChar(osdDisplayPort, x + column, y + row, SYM_BLANK); // write blank character
+                    fontOffset++;
+                }
+            }
         }
     }
 }
