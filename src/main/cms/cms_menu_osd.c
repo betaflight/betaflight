@@ -39,51 +39,6 @@
 #include "io/displayport_max7456.h"
 #include "io/osd.h"
 
-static uint8_t osdConfig_rssi_alarm;
-static uint16_t osdConfig_cap_alarm;
-static uint16_t osdConfig_time_alarm;
-static uint16_t osdConfig_alt_alarm;
-
-static long cmsx_menuAlarmsOnEnter(void)
-{
-    osdConfig_rssi_alarm = osdConfig()->rssi_alarm;
-    osdConfig_cap_alarm = osdConfig()->cap_alarm;
-    osdConfig_time_alarm = osdConfig()->time_alarm;
-    osdConfig_alt_alarm = osdConfig()->alt_alarm;
-    return 0;
-}
-
-static long cmsx_menuAlarmsOnExit(const OSD_Entry *self)
-{
-    UNUSED(self);
-
-    osdConfigMutable()->rssi_alarm = osdConfig_rssi_alarm;
-    osdConfigMutable()->cap_alarm = osdConfig_cap_alarm;
-    osdConfigMutable()->time_alarm = osdConfig_time_alarm;
-    osdConfigMutable()->alt_alarm = osdConfig_alt_alarm;
-    return 0;
-}
-
-OSD_Entry cmsx_menuAlarmsEntries[] =
-{
-    {"--- ALARMS ---", OME_Label, NULL, NULL, 0},
-    {"RSSI",     OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_rssi_alarm, 5, 90, 5}, 0},
-    {"MAIN BAT", OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_cap_alarm, 50, 30000, 50}, 0},
-    {"FLY TIME", OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_time_alarm, 1, 200, 1}, 0},
-    {"MAX ALT",  OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_alt_alarm, 1, 200, 1}, 0},
-    {"BACK", OME_Back, NULL, NULL, 0},
-    {NULL, OME_END, NULL, NULL, 0}
-};
-
-CMS_Menu cmsx_menuAlarms = {
-    .GUARD_text = "MENUALARMS",
-    .GUARD_type = OME_MENU,
-    .onEnter = cmsx_menuAlarmsOnEnter,
-    .onExit = cmsx_menuAlarmsOnExit,
-    .onGlobalExit = NULL,
-    .entries = cmsx_menuAlarmsEntries,
-};
-
 #ifndef DISABLE_EXTENDED_CMS_OSD_MENU
 static uint16_t osdConfig_item_pos[OSD_ITEM_COUNT];
 
@@ -111,8 +66,8 @@ OSD_Entry menuOsdActiveElemsEntries[] =
     {"CROSSHAIRS",         OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CROSSHAIRS], 0},
     {"HORIZON",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ARTIFICIAL_HORIZON], 0},
     {"HORIZON SIDEBARS",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HORIZON_SIDEBARS], 0},
-    {"UPTIME",             OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ONTIME], 0},
-    {"FLY TIME",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_FLYTIME], 0},
+    {"TIMER 1",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_TIMER_1], 0},
+    {"TIMER 2",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_TIMER_2], 0},
     {"FLY MODE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_FLYMODE], 0},
     {"NAME",               OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CRAFT_NAME], 0},
     {"THROTTLE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_THROTTLE_POS], 0},
@@ -141,7 +96,6 @@ OSD_Entry menuOsdActiveElemsEntries[] =
     {"DISARMED",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_DISARMED], 0},
     {"PIT ANG",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PITCH_ANGLE], 0},
     {"ROL ANG",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ROLL_ANGLE], 0},
-    {"ARMED TIME",         OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ARMED_TIME], 0},
     {"HEADING",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_NUMERICAL_HEADING], 0},
     {"VARIO",              OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_NUMERICAL_VARIO], 0},
     {"BACK",               OME_Back,    NULL, NULL, 0},
@@ -155,6 +109,100 @@ CMS_Menu menuOsdActiveElems = {
     .onExit = menuOsdActiveElemsOnExit,
     .onGlobalExit = NULL,
     .entries = menuOsdActiveElemsEntries
+};
+
+static uint8_t osdConfig_rssi_alarm;
+static uint16_t osdConfig_cap_alarm;
+static uint16_t osdConfig_alt_alarm;
+
+static long menuAlarmsOnEnter(void)
+{
+    osdConfig_rssi_alarm = osdConfig()->rssi_alarm;
+    osdConfig_cap_alarm = osdConfig()->cap_alarm;
+    osdConfig_alt_alarm = osdConfig()->alt_alarm;
+
+    return 0;
+}
+
+static long menuAlarmsOnExit(const OSD_Entry *self)
+{
+    UNUSED(self);
+
+    osdConfigMutable()->rssi_alarm = osdConfig_rssi_alarm;
+    osdConfigMutable()->cap_alarm = osdConfig_cap_alarm;
+    osdConfigMutable()->alt_alarm = osdConfig_alt_alarm;
+
+    return 0;
+}
+
+OSD_Entry menuAlarmsEntries[] =
+{
+    {"--- ALARMS ---", OME_Label, NULL, NULL, 0},
+    {"RSSI",     OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_rssi_alarm, 5, 90, 5}, 0},
+    {"MAIN BAT", OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_cap_alarm, 50, 30000, 50}, 0},
+    {"MAX ALT",  OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_alt_alarm, 1, 200, 1}, 0},
+    {"BACK", OME_Back, NULL, NULL, 0},
+    {NULL, OME_END, NULL, NULL, 0}
+};
+
+CMS_Menu menuAlarms = {
+    .GUARD_text = "MENUALARMS",
+    .GUARD_type = OME_MENU,
+    .onEnter = menuAlarmsOnEnter,
+    .onExit = menuAlarmsOnExit,
+    .onGlobalExit = NULL,
+    .entries = menuAlarmsEntries,
+};
+
+osd_timer_source_e timerSource[OSD_TIMER_COUNT];
+osd_timer_precision_e timerPrecision[OSD_TIMER_COUNT];
+uint8_t timerAlarm[OSD_TIMER_COUNT];
+
+static long menuTimersOnEnter(void)
+{
+    for (int i = 0; i < OSD_TIMER_COUNT; i++) {
+        const uint16_t timer = osdConfig()->timers[i];
+        timerSource[i] = OSD_TIMER_SRC(timer);
+        timerPrecision[i] = OSD_TIMER_PRECISION(timer);
+        timerAlarm[i] = OSD_TIMER_ALARM(timer);
+    }
+
+    return 0;
+}
+
+static long menuTimersOnExit(const OSD_Entry *self)
+{
+    UNUSED(self);
+
+    for (int i = 0; i < OSD_TIMER_COUNT; i++) {
+        osdConfigMutable()->timers[i] = OSD_TIMER(timerSource[i], timerPrecision[i], timerAlarm[i]);
+    }
+
+    return 0;
+}
+
+static const char * osdTimerPrecisionNames[] = {"SCND", "HDTH"};
+
+OSD_Entry menuTimersEntries[] =
+{
+    {"--- TIMERS ---", OME_Label, NULL, NULL, 0},
+    {"1 SRC",          OME_TAB,   NULL, &(OSD_TAB_t){&timerSource[OSD_TIMER_1], OSD_TIMER_SRC_COUNT - 1, osdTimerSourceNames}, 0 },
+    {"1 PREC",         OME_TAB,   NULL, &(OSD_TAB_t){&timerPrecision[OSD_TIMER_1], OSD_TIMER_PREC_COUNT - 1, osdTimerPrecisionNames}, 0},
+    {"1 ALARM",        OME_UINT8, NULL, &(OSD_UINT8_t){&timerAlarm[OSD_TIMER_1], 0, 0xFF, 1}, 0},
+    {"2 SRC",          OME_TAB,   NULL, &(OSD_TAB_t){&timerSource[OSD_TIMER_2], OSD_TIMER_SRC_COUNT - 1, osdTimerSourceNames}, 0 },
+    {"2 PREC",         OME_TAB,   NULL, &(OSD_TAB_t){&timerPrecision[OSD_TIMER_2], OSD_TIMER_PREC_COUNT - 1, osdTimerPrecisionNames}, 0},
+    {"2 ALARM",        OME_UINT8, NULL, &(OSD_UINT8_t){&timerAlarm[OSD_TIMER_2], 0, 0xFF, 1}, 0},
+    {"BACK", OME_Back, NULL, NULL, 0},
+    {NULL, OME_END, NULL, NULL, 0}
+};
+
+CMS_Menu menuTimers = {
+    .GUARD_text = "MENUTIMERS",
+    .GUARD_type = OME_MENU,
+    .onEnter = menuTimersOnEnter,
+    .onExit = menuTimersOnExit,
+    .onGlobalExit = NULL,
+    .entries = menuTimersEntries,
 };
 #endif /* DISABLE_EXTENDED_CMS_OSD_MENU */
 
@@ -193,6 +241,8 @@ OSD_Entry cmsx_menuOsdEntries[] =
     {"---OSD---",   OME_Label,   NULL,          NULL,                0},
 #ifndef DISABLE_EXTENDED_CMS_OSD_MENU
     {"ACTIVE ELEM", OME_Submenu, cmsMenuChange, &menuOsdActiveElems, 0},
+    {"TIMERS",      OME_Submenu, cmsMenuChange, &menuTimers,         0},
+    {"ALARMS",      OME_Submenu, cmsMenuChange, &menuAlarms,         0},
 #endif
 #ifdef USE_MAX7456
     {"INVERT",    OME_Bool,  NULL, &displayPortProfileMax7456_invert,                                   0},
