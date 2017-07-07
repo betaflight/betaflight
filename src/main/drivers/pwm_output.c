@@ -45,8 +45,8 @@ static pwmOutputPort_t beeperPwm;
 static uint16_t freqBeep = 0;
 #endif
 
-bool pwmMotorsEnabled = false;
-bool isDshot = false;
+static bool pwmMotorsEnabled = false;
+static bool isDshot = false;
 
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t output)
 {
@@ -169,9 +169,7 @@ static uint8_t loadDmaBufferProshot(motorDmaOutput_t *const motor, uint16_t pack
 
 void pwmWriteMotor(uint8_t index, float value)
 {
-    if (pwmMotorsEnabled) {
-        pwmWrite(index, value);
-    }
+    pwmWrite(index, value);
 }
 
 void pwmShutdownPulsesForAllMotors(uint8_t motorCount)
@@ -397,8 +395,7 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t command)
         for (; repeats; repeats--) {
             motor->requestTelemetry = true;
             pwmWriteDshotInt(index, command);
-            pwmCompleteMotorUpdate(0);
-
+            pwmCompleteDshotMotorUpdate(0);
             delay(1);
         }
     }

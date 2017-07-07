@@ -469,9 +469,8 @@ void writeMotors(void)
         for (int i = 0; i < motorCount; i++) {
             pwmWriteMotor(i, motor[i]);
         }
+        pwmCompleteMotorUpdate(motorCount);
     }
-
-    pwmCompleteMotorUpdate(motorCount);
 }
 
 static void writeAllMotors(int16_t mc)
