@@ -46,6 +46,12 @@ void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
     for (size_t hindex = 0; hindex < UARTDEV_COUNT_MAX; hindex++) {
 
         const uartHardware_t *hardware = &uartHardware[hindex];
+
+        if (!hardware->reg) {
+            // Empty entry
+            continue;
+        }
+
         UARTDevice device = hardware->device;
 
         for (int pindex = 0 ; pindex < UARTHARDWARE_MAX_PINS ; pindex++) {
