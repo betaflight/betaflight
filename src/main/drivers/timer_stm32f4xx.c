@@ -94,6 +94,10 @@ uint8_t timerClockDivisor(TIM_TypeDef *tim)
 
 uint32_t timerClock(TIM_TypeDef *tim)
 {
+#if defined (STM32F411xE)
+    UNUSED(tim);
+    return SystemCoreClock;
+#else
 #if defined (STM32F40_41xxx)
     if (tim == TIM8) return SystemCoreClock;
 #endif
@@ -102,4 +106,5 @@ uint32_t timerClock(TIM_TypeDef *tim)
     } else {
         return SystemCoreClock / 2;
     }
+#endif
 }
