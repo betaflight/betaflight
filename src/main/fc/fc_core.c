@@ -220,9 +220,8 @@ void tryArm(void)
             return;
         }
 #ifdef USE_DSHOT
-        if (!feature(FEATURE_3D)) {
-            //TODO: Use BOXDSHOTREVERSE here
-            if (!IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH)) {
+        if (isMotorProtocolDshot()) {
+            if (!IS_RC_MODE_ACTIVE(BOXDSHOTREVERSE)) {
                 reverseMotors = false;
                 for (unsigned index = 0; index < getMotorCount(); index++) {
                     pwmWriteDshotCommand(index, DSHOT_CMD_SPIN_DIRECTION_NORMAL);
