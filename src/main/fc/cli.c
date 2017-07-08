@@ -536,6 +536,11 @@ static const clivalue_t valueTable[] = {
     { "current_adc_channel",        VAR_UINT8 | MASTER_VALUE, .config.minmax = {ADC_CHN_NONE, ADC_CHN_MAX}, PG_ADC_CHANNEL_CONFIG, offsetof(adcChannelConfig_t, adcFunctionChannel[ADC_CURRENT]) },
     { "airspeed_adc_channel",       VAR_UINT8 | MASTER_VALUE, .config.minmax = {ADC_CHN_NONE, ADC_CHN_MAX}, PG_ADC_CHANNEL_CONFIG, offsetof(adcChannelConfig_t, adcFunctionChannel[ADC_AIRSPEED]) },
 
+#ifdef USE_ACC_NOTCH
+    { "acc_notch_hz",               VAR_UINT8  | MASTER_VALUE, .config.minmax = {0, 255 }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t,acc_notch_hz)  },
+    { "acc_notch_cutoff",           VAR_UINT8  | MASTER_VALUE, .config.minmax = {1, 255 }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, acc_notch_cutoff)  },
+#endif
+
 // PG_ACCELEROMETER_CONFIG
     { "align_acc",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ALIGNMENT }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, acc_align) },
     { "acc_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ACC_HARDWARE }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, acc_hardware) },

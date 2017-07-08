@@ -214,6 +214,13 @@ void validateAndFixConfig(void)
         pidProfileMutable()->dterm_soft_notch_hz = 0;
     }
 #endif
+
+#ifdef USE_ACC_NOTCH
+    if (accelerometerConfig()->acc_notch_cutoff >= accelerometerConfig()->acc_notch_hz) {
+        accelerometerConfigMutable()->acc_notch_hz = 0;
+    }
+#endif
+
     // Disable unused features
     featureClear(FEATURE_UNUSED_1 | FEATURE_UNUSED_2);
 
