@@ -82,9 +82,13 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
 
 uint8_t timerClockDivisor(TIM_TypeDef *tim)
 {
-#if defined (STM32F40_41xxx)
+#if defined (STM32F411xE)
+    UNUSED(tim);
+    return 1;
+#elif defined (STM32F40_41xxx)
     if (tim == TIM8) return 1;
 #endif
+
     if (tim == TIM1 || tim == TIM9 || tim == TIM10 || tim == TIM11) {
         return 1;
     } else {
@@ -94,12 +98,5 @@ uint8_t timerClockDivisor(TIM_TypeDef *tim)
 
 uint32_t timerClock(TIM_TypeDef *tim)
 {
-#if defined (STM32F40_41xxx)
-    if (tim == TIM8) return SystemCoreClock;
-#endif
-    if (tim == TIM1 || tim == TIM9 || tim == TIM10 || tim == TIM11) {
-        return SystemCoreClock;
-    } else {
-        return SystemCoreClock / 2;
-    }
+    return SystemCoreClock / timerClockDivisor(tim);
 }
