@@ -75,7 +75,7 @@ static filterApplyFnPtr accNotchFilterApplyFn;
 static void *accNotchFilter[XYZ_AXIS_COUNT];
 #endif
 
-PG_REGISTER_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 1);
 
 void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
 {
