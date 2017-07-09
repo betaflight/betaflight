@@ -33,19 +33,7 @@ typedef enum {
     PROTOCOL_COUNT
 } escProtocol_e;
 
-#define ALL_ESCS 255
-
-serialPort_t *openEscSerial(escSerialPortIndex_e portIndex, serialReceiveCallbackPtr callback, uint16_t output, uint32_t baud, portOptions_t options, uint8_t mode);
-
 // serialPort API
-void escSerialWriteByte(serialPort_t *instance, uint8_t ch);
-uint32_t escSerialTotalBytesWaiting(const serialPort_t *instance);
-uint32_t escSerialTxBytesFree(const serialPort_t *instance);
-uint8_t escSerialReadByte(serialPort_t *instance);
-void escSerialSetBaudRate(serialPort_t *s, uint32_t baudRate);
-bool isEscSerialTransmitBufferEmpty(const serialPort_t *s);
-
-void escSerialInitialize();
 void escEnablePassthrough(serialPort_t *escPassthroughPort, uint16_t output, uint8_t mode);
 
 typedef struct escSerialConfig_s {

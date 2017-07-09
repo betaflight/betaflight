@@ -110,8 +110,7 @@ escOutputs_t escOutputs[MAX_SUPPORTED_MOTORS];
 
 extern timerHardware_t* serialTimerHardware;
 
-const struct serialPortVTable escSerialVTable[];
-
+<<<<<<< HEAD
 escSerial_t escSerialPorts[MAX_ESCSERIAL_PORTS];
 
 PG_REGISTER_WITH_RESET_TEMPLATE(escSerialConfig_t, escSerialConfig, PG_ESCSERIAL_CONFIG, 0);
@@ -124,6 +123,15 @@ PG_RESET_TEMPLATE(escSerialConfig_t, escSerialConfig,
     .ioTag = IO_TAG(ESCSERIAL_TIMER_TX_PIN),
 );
 
+void onSerialTimerEsc(timerCCHandlerRec_t *cbRec, captureCompare_t capture);
+void onSerialRxPinChangeEsc(timerCCHandlerRec_t *cbRec, captureCompare_t capture);
+void onSerialTimerBL(timerCCHandlerRec_t *cbRec, captureCompare_t capture);
+void onSerialRxPinChangeBL(timerCCHandlerRec_t *cbRec, captureCompare_t capture);
+=======
+const struct serialPortVTable escSerialVTable[];
+
+escSerial_t escSerialPorts[MAX_ESCSERIAL_PORTS];
+
 enum {
     TRAILING,
     LEADING
@@ -131,6 +139,7 @@ enum {
 
 #define STOP_BIT_MASK (1 << 0)
 #define START_BIT_MASK (1 << (RX_TOTAL_BITS - 1))
+>>>>>>> betaflight/master
 
 // XXX No TIM_DeInit equivalent in HAL driver???
 #ifdef USE_HAL_DRIVER
@@ -241,6 +250,15 @@ static void processTxStateBL(escSerial_t *escSerial)
         escSerial->bitsLeftToTransmit = TX_TOTAL_BITS;
         escSerial->isTransmittingData = true;
 
+<<<<<<< HEAD
+    escSerial->mode = mode;
+    escSerial->txTimerHardware = timerGetByTag(escSerialConfig()->ioTag, TIM_USE_ANY);
+
+    if (!escSerial->txTimerHardware) {
+        return NULL;
+    }
+=======
+>>>>>>> betaflight/master
 
         //set output
         if (escSerial->mode==PROTOCOL_BLHELI || escSerial->mode==PROTOCOL_CASTLE) {
@@ -666,7 +684,7 @@ static serialPort_t *openEscSerial(escSerialPortIndex_e portIndex, serialReceive
     }
 
     escSerial->mode = mode;
-    escSerial->txTimerHardware = timerGetByTag(escSerialConfig()->ioTag, TIM_USE_ANY);
+    escSerial->txTimerHardware = &(timerHardware[ESCSERIAL_TIMER_TX_HARDWARE]);
 
 #ifdef USE_HAL_DRIVER
     escSerial->txTimerHandle = timerFindTimerHandle(escSerial->txTimerHardware->tim);
