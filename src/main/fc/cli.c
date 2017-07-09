@@ -120,6 +120,7 @@ extern uint8_t __config_end;
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
 #include "sensors/compass.h"
+#include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
@@ -877,12 +878,12 @@ static void cliSerialPassthrough(char *cmdline)
         tok = strtok_r(NULL, " ", &saveptr);
     }
 
-    tfp_printf("Port %d ", id);
+    cliPrintf("Port %d ", id);
     serialPort_t *passThroughPort;
     serialPortUsage_t *passThroughPortUsage = findSerialPortUsageByIdentifier(id);
     if (!passThroughPortUsage || passThroughPortUsage->serialPort == NULL) {
         if (!baud) {
-            tfp_printf("closed, specify baud.\r\n");
+            cliPrint("closed, specify baud.\r\n");
             return;
         }
         if (!mode)
@@ -892,17 +893,17 @@ static void cliSerialPassthrough(char *cmdline)
                                          baud, mode,
                                          SERIAL_NOT_INVERTED);
         if (!passThroughPort) {
-            tfp_printf("could not be opened.\r\n");
+            cliPrint("could not be opened.\r\n");
             return;
         }
-        tfp_printf("opened, baud = %d.\r\n", baud);
+        cliPrintf("opened, baud = %d.\r\n", baud);
     } else {
         passThroughPort = passThroughPortUsage->serialPort;
         // If the user supplied a mode, override the port's mode, otherwise
         // leave the mode unchanged. serialPassthrough() handles one-way ports.
-        tfp_printf("already open.\r\n");
+        cliPrint("already open.\r\n");
         if (mode && passThroughPort->mode != mode) {
-            tfp_printf("mode changed from %d to %d.\r\n",
+            cliPrintf("mode changed from %d to %d.\r\n",
                    passThroughPort->mode, mode);
             serialSetMode(passThroughPort, mode);
         }
@@ -913,7 +914,7 @@ static void cliSerialPassthrough(char *cmdline)
         }
     }
 
-    tfp_printf("forwarding, power cycle to exit.\r\n");
+    cliPrint("Forwarding, power cycle to exit.\r\n");
 
     serialPassthrough(cliPort, passThroughPort, NULL, NULL);
 }
@@ -2202,6 +2203,21 @@ static int parseOutputIndex(char *pch, bool allowAllEscs) {
 }
 
 #ifdef USE_DSHOT
+
+#define ESC_INFO_EXPECTED_FRAME_SIZE 15
+
+void printEscInfo(const uint8_t *escInfoBytes)
+{
+    cliPrint("MCU Id: 0x");
+    for (int i = 0; i < 12; i++) {
+        cliPrintf("%02x", escInfoBytes[i]);
+    }
+    cliPrintLinef("\nFirmware version: %d.%02d%c", escInfoBytes[12] / 100, escInfoBytes[12] % 100, (const char)((escInfoBytes[13] & 0x1f) + 97));
+
+    uint8_t escType = (escInfoBytes[13] & 0xe0) >> 5;
+    cliPrintLinef("ESC type: %d", escType);
+}
+
 static void cliDshotProg(char *cmdline)
 {
     if (isEmpty(cmdline) || motorConfig()->dev.motorPwmProtocol < PWM_TYPE_DSHOT150) {
@@ -2232,17 +2248,45 @@ static void cliDshotProg(char *cmdline)
                         for (unsigned i = 0; i < getMotorCount(); i++) {
                             pwmWriteDshotCommand(i, command);
                         }
+
+                        cliPrintf("Command %d written.\r\n", command);
                     } else {
+                        uint8_t escInfoBuffer[ESC_INFO_EXPECTED_FRAME_SIZE];
+                        if (command == DSHOT_CMD_ESC_INFO) {
+                            delay(10); // Wait for potential ESC telemetry transmission to finish
+
+                            startEscDataRead(ESC_INFO_EXPECTED_FRAME_SIZE, escInfoBuffer);
+                        }
+
                         pwmWriteDshotCommand(escIndex, command);
+
+                        if (command == DSHOT_CMD_ESC_INFO) {
+                            bool escInfoReceived = false;
+                            for (int i = 0; i < 10; i++) {
+                                delay(20);
+
+                                if (checkEscDataReadFinished()) {
+                                    escInfoReceived = true;
+
+                                    break;
+                                }
+                            }
+
+                            if (escInfoReceived) {
+                                printEscInfo(escInfoBuffer);
+                            } else {
+                                cliPrint("No ESC info received.");
+                            }
+                        } else {
+                            cliPrintf("Command %d written.\r\n", command);
+                        }
                     }
 
                     if (command <= 5) {
                         delay(10); // wait for sound output to finish
                     }
-
-                    tfp_printf("Command %d written.\r\n", command);
                 } else {
-                    tfp_printf("Invalid command, range 1 to %d.\r\n", DSHOT_MIN_THROTTLE - 1);
+                    cliPrintf("Invalid command, range 1 to %d.\r\n", DSHOT_MIN_THROTTLE - 1);
                 }
 
                 break;

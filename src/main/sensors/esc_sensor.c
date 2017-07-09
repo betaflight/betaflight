@@ -97,12 +97,14 @@ typedef enum {
 } escSensorTriggerState_t;
 
 #define ESC_SENSOR_BAUDRATE 115200
-#define ESC_SENSOR_BUFFSIZE 10
 #define ESC_BOOTTIME 5000               // 5 seconds
 #define ESC_REQUEST_TIMEOUT 100         // 100 ms (data transfer takes only 900us)
 
-static volatile bool tlmFramePending = false;
-static uint8_t tlm[ESC_SENSOR_BUFFSIZE] = { 0, };
+#define TELEMETRY_FRAME_SIZE 10
+static uint8_t telemetryBuffer[TELEMETRY_FRAME_SIZE] = { 0, };
+
+static volatile uint8_t *buffer;
+static volatile uint8_t tlmExpectedFrameSize = 0;
 static uint8_t tlmFramePosition = 0;
 
 static serialPort_t *escSensorPort = NULL;
@@ -118,6 +120,17 @@ static bool combinedDataNeedsUpdate = true;
 
 static uint16_t totalTimeoutCount = 0;
 static uint16_t totalCrcErrorCount = 0;
+
+void startEscDataRead(uint8_t frameLength, uint8_t *frameBuffer)
+{
+    buffer = frameBuffer;
+    tlmExpectedFrameSize = frameLength;
+}
+
+bool checkEscDataReadFinished(void)
+{
+    return tlmExpectedFrameSize == 0;
+}
 
 bool isEscSensorActive(void)
 {
@@ -166,18 +179,16 @@ static void escSensorDataReceive(uint16_t c)
     // KISS ESC sends some data during startup, ignore this for now (maybe future use)
     // startup data could be firmware version and serialnumber
 
-    if (!tlmFramePending) {
+    if (!tlmExpectedFrameSize) {
         return;
     }
 
-    tlm[tlmFramePosition] = (uint8_t)c;
+    buffer[tlmFramePosition++] = (uint8_t)c;
 
-    if (tlmFramePosition == ESC_SENSOR_BUFFSIZE - 1) {
+    if (tlmFramePosition == tlmExpectedFrameSize) {
         tlmFramePosition = 0;
 
-        tlmFramePending = false;
-    } else {
-        tlmFramePosition++;
+        tlmExpectedFrameSize = 0;
     }
 }
 
@@ -221,21 +232,21 @@ static uint8_t get_crc8(uint8_t *Buf, uint8_t BufLen)
 
 static uint8_t decodeEscFrame(void)
 {
-    if (tlmFramePending) {
+    if (tlmExpectedFrameSize) {
         return ESC_SENSOR_FRAME_PENDING;
     }
 
     // Get CRC8 checksum
-    uint16_t chksum = get_crc8(tlm, ESC_SENSOR_BUFFSIZE - 1);
-    uint16_t tlmsum = tlm[ESC_SENSOR_BUFFSIZE - 1];     // last byte contains CRC value
+    uint16_t chksum = get_crc8(telemetryBuffer, TELEMETRY_FRAME_SIZE - 1);
+    uint16_t tlmsum = telemetryBuffer[TELEMETRY_FRAME_SIZE - 1];     // last byte contains CRC value
     uint8_t frameStatus;
     if (chksum == tlmsum) {
         escSensorData[escSensorMotor].dataAge = 0;
-        escSensorData[escSensorMotor].temperature = tlm[0];
-        escSensorData[escSensorMotor].voltage = tlm[1] << 8 | tlm[2];
-        escSensorData[escSensorMotor].current = tlm[3] << 8 | tlm[4];
-        escSensorData[escSensorMotor].consumption = tlm[5] << 8 | tlm[6];
-        escSensorData[escSensorMotor].rpm = tlm[7] << 8 | tlm[8];
+        escSensorData[escSensorMotor].temperature = telemetryBuffer[0];
+        escSensorData[escSensorMotor].voltage = telemetryBuffer[1] << 8 | telemetryBuffer[2];
+        escSensorData[escSensorMotor].current = telemetryBuffer[3] << 8 | telemetryBuffer[4];
+        escSensorData[escSensorMotor].consumption = telemetryBuffer[5] << 8 | telemetryBuffer[6];
+        escSensorData[escSensorMotor].rpm = telemetryBuffer[7] << 8 | telemetryBuffer[8];
 
         combinedDataNeedsUpdate = true;
 
@@ -286,7 +297,8 @@ void escSensorProcess(timeUs_t currentTimeUs)
         case ESC_SENSOR_TRIGGER_READY:
             escTriggerTimestamp = currentTimeMs;
 
-            tlmFramePending = true;
+            buffer = telemetryBuffer;
+            tlmExpectedFrameSize = TELEMETRY_FRAME_SIZE;
             motorDmaOutput_t * const motor = getMotorDmaOutput(escSensorMotor);
             motor->requestTelemetry = true;
             escSensorTriggerState = ESC_SENSOR_TRIGGER_PENDING;

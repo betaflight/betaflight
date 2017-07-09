@@ -45,3 +45,6 @@ void escSensorProcess(timeUs_t currentTime);
 
 escSensorData_t *getEscSensorData(uint8_t motorNumber);
 
+void startEscDataRead(uint8_t frameLength, uint8_t *frameBuffer);
+bool checkEscDataReadFinished(void);
+
