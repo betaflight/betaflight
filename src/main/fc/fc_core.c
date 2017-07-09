@@ -108,7 +108,6 @@ int16_t magHold;
 
 int16_t headFreeModeHold;
 
-uint8_t motorControlEnable = false;
 static bool reverseMotors = false;
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
@@ -221,9 +220,8 @@ void tryArm(void)
             return;
         }
 #ifdef USE_DSHOT
-        if (!feature(FEATURE_3D)) {
-            //TODO: Use BOXDSHOTREVERSE here
-            if (!IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH)) {
+        if (isMotorProtocolDshot()) {
+            if (!IS_RC_MODE_ACTIVE(BOXDSHOTREVERSE)) {
                 reverseMotors = false;
                 for (unsigned index = 0; index < getMotorCount(); index++) {
                     pwmWriteDshotCommand(index, DSHOT_CMD_SPIN_DIRECTION_NORMAL);
@@ -627,9 +625,8 @@ static void subTaskMotorUpdate(void)
     }
 #endif
 
-    if (motorControlEnable) {
-        writeMotors();
-    }
+    writeMotors();
+
     DEBUG_SET(DEBUG_PIDLOOP, 3, micros() - startTime);
 }
 

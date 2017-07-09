@@ -103,7 +103,7 @@ bool areSticksInApModePosition(uint16_t ap_mode)
 
 throttleStatus_e calculateThrottleStatus(void)
 {
-    if (feature(FEATURE_3D) && !IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH)) {
+    if (feature(FEATURE_3D) && !IS_RC_MODE_ACTIVE(BOX3DDISABLE)) {
         if ((rcData[THROTTLE] > (rxConfig()->midrc - flight3DConfig()->deadband3d_throttle) && rcData[THROTTLE] < (rxConfig()->midrc + flight3DConfig()->deadband3d_throttle)))
             return THROTTLE_LOW;
     } else {
