@@ -27,8 +27,8 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 10
 
-#define MPU6000_CS_PIN          PA15
-#define MPU6000_SPI_INSTANCE    SPI1
+#define GYRO_CSN_PIN            PA15
+#define GYRO_SPI_INSTANCE       SPI1
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6000

@@ -103,8 +103,8 @@
 #define SPI3_MISO_PIN           PB4
 #define SPI3_MOSI_PIN           PB5
 
-#define MPU6500_CS_PIN          SPI3_NSS_PIN
-#define MPU6500_SPI_INSTANCE    SPI3
+#define GYRO_CSN_PIN            SPI3_NSS_PIN
+#define GYRO_SPI_INSTANCE       SPI3
 
 #define USE_ADC
 

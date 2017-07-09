@@ -31,8 +31,8 @@
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
-#define ICM20689_CS_PIN          PA4
-#define ICM20689_SPI_INSTANCE    SPI1
+#define GYRO_CSN_PIN             PA4
+#define GYRO_SPI_INSTANCE        SPI1
 
 #define GYRO
 #define USE_GYRO_SPI_ICM20689

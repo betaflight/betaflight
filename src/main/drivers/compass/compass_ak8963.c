@@ -87,7 +87,7 @@
 
 static float magGain[3] = { 1.0f, 1.0f, 1.0f };
 
-#if defined(MPU6500_SPI_INSTANCE) || defined(MPU9250_SPI_INSTANCE)
+#if defined(GYRO_SPI_INSTANCE) || defined(MPU9250_SPI_INSTANCE)
 static busDevice_t *bus = NULL;
 
 static bool spiWriteRegisterDelay(const busDevice_t *bus, uint8_t reg, uint8_t data)
@@ -221,7 +221,7 @@ static bool ak8963Read(int16_t *magData)
     bool ack = false;
     uint8_t buf[7];
 
-#if defined(MPU6500_SPI_INSTANCE) || defined(MPU9250_SPI_INSTANCE)
+#if defined(GYRO_SPI_INSTANCE) || defined(MPU9250_SPI_INSTANCE)
 
     // we currently need a different approach for the MPU9250 connected via SPI.
     // we cannot use the ak8963SensorRead() method for SPI, it is to slow and blocks for far too long.
@@ -295,7 +295,7 @@ restart:
     magData[Y] = -(int16_t)(buf[3] << 8 | buf[2]) * magGain[Y];
     magData[Z] = -(int16_t)(buf[5] << 8 | buf[4]) * magGain[Z];
 
-#if defined(MPU6500_SPI_INSTANCE) || defined(MPU9250_SPI_INSTANCE)
+#if defined(GYRO_SPI_INSTANCE) || defined(MPU9250_SPI_INSTANCE)
     state = CHECK_STATUS;
 #endif
     return ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL1, CNTL1_MODE_ONCE); // start reading again
@@ -305,10 +305,10 @@ bool ak8963Detect(magDev_t *mag)
 {
     uint8_t sig = 0;
 
-#if defined(MPU6500_SPI_INSTANCE) || defined(MPU9250_SPI_INSTANCE)
+#if defined(GYRO_SPI_INSTANCE) || defined(MPU9250_SPI_INSTANCE)
     bus = &mag->bus;
-#if defined(MPU6500_SPI_INSTANCE)
-    spiBusSetInstance(&mag->bus, MPU6500_SPI_INSTANCE);
+#if defined(GYRO_SPI_INSTANCE)
+    spiBusSetInstance(&mag->bus, GYRO_SPI_INSTANCE);
 #elif defined(MPU9250_SPI_INSTANCE)
     spiBusSetInstance(&mag->bus, MPU9250_SPI_INSTANCE);
 #endif

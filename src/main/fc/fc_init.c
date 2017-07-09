@@ -191,19 +191,19 @@ static IO_t busSwitchResetPin        = IO_NONE;
 void spiPreInit(void)
 {
 #ifdef USE_ACC_SPI_MPU6000
-    spiPreInitCs(IO_TAG(MPU6000_CS_PIN));
+    spiPreInitCs(IO_TAG(GYRO_CSN_PIN));
 #endif
 #ifdef USE_ACC_SPI_MPU6500
-    spiPreInitCs(IO_TAG(MPU6500_CS_PIN));
+    spiPreInitCs(IO_TAG(GYRO_CSN_PIN));
 #endif
 #ifdef USE_GYRO_SPI_MPU9250
-    spiPreInitCs(IO_TAG(MPU9250_CS_PIN));
+    spiPreInitCs(IO_TAG(GYRO_CSN_PIN));
 #endif
 #ifdef USE_GYRO_SPI_ICM20689
-    spiPreInitCs(IO_TAG(ICM20689_CS_PIN));
+    spiPreInitCs(IO_TAG(GYRO_CSN_PIN));
 #endif
 #ifdef USE_ACCGYRO_BMI160
-    spiPreInitCs(IO_TAG(BMI160_CS_PIN));
+    spiPreInitCs(IO_TAG(GYRO_CSN_PIN));
 #endif
 #ifdef USE_GYRO_L3GD20
     spiPreInitCs(IO_TAG(L3GD20_CS_PIN));

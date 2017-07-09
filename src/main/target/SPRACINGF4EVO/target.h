@@ -144,8 +144,8 @@
 #define SDCARD_DMA_CHANNEL                  DMA_Channel_0
 
 
-#define MPU6500_CS_PIN                      SPI1_NSS_PIN
-#define MPU6500_SPI_INSTANCE                SPI1
+#define GYRO_CSN_PIN                        SPI1_NSS_PIN
+#define GYRO_SPI_INSTANCE                   SPI1
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC1

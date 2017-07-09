@@ -144,8 +144,8 @@
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
 
-#define MPU6500_CS_PIN                   PB9
-#define MPU6500_SPI_INSTANCE             SPI1
+#define GYRO_CSN_PIN                     PB9
+#define GYRO_SPI_INSTANCE                SPI1
 
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 

@@ -48,8 +48,8 @@
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
-#define MPU6000_CS_PIN          PA4
-#define MPU6000_SPI_INSTANCE    SPI1
+#define GYRO_CSN_PIN            PA4
+#define GYRO_SPI_INSTANCE       SPI1
 
 #define GYRO
 

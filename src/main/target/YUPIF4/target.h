@@ -36,8 +36,8 @@
 #define MPU_INT_EXTI            PC4
 
 //ICM 20689
-#define ICM20689_CS_PIN          PA4
-#define ICM20689_SPI_INSTANCE    SPI1
+#define GYRO_CSN_PIN             PA4
+#define GYRO_SPI_INSTANCE        SPI1
 
 #define ACC
 #define USE_ACC_SPI_ICM20689
@@ -48,8 +48,8 @@
 #define GYRO_ICM20689_ALIGN      CW90_DEG
 
 // MPU 6500
-#define MPU6500_CS_PIN          PA4
-#define MPU6500_SPI_INSTANCE    SPI1
+#define GYRO_CSN_PIN            PA4
+#define GYRO_SPI_INSTANCE       SPI1
 
 #define ACC
 #define USE_ACC_MPU6500

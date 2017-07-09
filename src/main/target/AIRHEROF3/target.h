@@ -36,8 +36,8 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_2
 
-#define MPU6500_CS_PIN          PB12
-#define MPU6500_SPI_INSTANCE    SPI2
+#define GYRO_CSN_PIN            PB12
+#define GYRO_SPI_INSTANCE       SPI2
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6500

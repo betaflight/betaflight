@@ -141,8 +141,8 @@
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
 
-#define MPU6500_CS_PIN                   SPI1_NSS_PIN
-#define MPU6500_SPI_INSTANCE             SPI1
+#define GYRO_CSN_PIN                     SPI1_NSS_PIN
+#define GYRO_SPI_INSTANCE                SPI1
 
 #define CURRENT_METER_SCALE_DEFAULT 300
 

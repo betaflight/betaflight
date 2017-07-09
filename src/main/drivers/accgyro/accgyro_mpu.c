@@ -251,39 +251,19 @@ bool mpuCheckDataReady(gyroDev_t* gyro)
 static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
 {
     UNUSED(gyro); // since there are FCs which have gyro on I2C but other devices on SPI
-#ifdef USE_GYRO_SPI_MPU6000
-    spiBusSetInstance(&gyro->bus, MPU6000_SPI_INSTANCE);
-#ifdef MPU6000_CS_PIN
-    gyro->bus.spi.csnPin = gyro->bus.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU6000_CS_PIN)) : gyro->bus.spi.csnPin;
-#endif
-    if (mpu6000SpiDetect(&gyro->bus)) {
-        gyro->mpuDetectionResult.sensor = MPU_60x0_SPI;
-        gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
-        gyro->mpuConfiguration.readFn = spiReadRegisterBuffer;
-        gyro->mpuConfiguration.writeFn = spiWriteRegister;
-        return true;
-    }
-#endif
 
-#ifdef USE_GYRO_SPI_MPU6500
-    spiBusSetInstance(&gyro->bus, MPU6500_SPI_INSTANCE);
-    gyro->bus.spi.csnPin = gyro->bus.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU6500_CS_PIN)) : gyro->bus.spi.csnPin;
-    const uint8_t mpu6500Sensor = mpu6500SpiDetect(&gyro->bus);
-    // some targets using MPU_9250_SPI, ICM_20608_SPI or ICM_20602_SPI state sensor is MPU_65xx_SPI
-    if (mpu6500Sensor != MPU_NONE) {
-        gyro->mpuDetectionResult.sensor = mpu6500Sensor;
-        gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
-        gyro->mpuConfiguration.readFn = spiReadRegisterBuffer;
-        gyro->mpuConfiguration.writeFn = spiWriteRegister;
-        return true;
-    }
+    uint8_t sensor = MPU_NONE;
+#ifdef GYRO_SPI_INSTANCE
+    spiBusSetInstance(&gyro->bus, GYRO_SPI_INSTANCE);
+#endif
+#ifdef GYRO_CSN_PIN
+    gyro->bus.spi.csnPin = gyro->bus.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(GYRO_CSN_PIN)) : gyro->bus.spi.csnPin;
 #endif
 
 #ifdef  USE_GYRO_SPI_MPU9250
-    spiBusSetInstance(&gyro->bus, MPU9250_SPI_INSTANCE);
-    gyro->bus.spi.csnPin = gyro->bus.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU9250_CS_PIN)) : gyro->bus.spi.csnPin;
-    if (mpu9250SpiDetect(&gyro->bus)) {
-        gyro->mpuDetectionResult.sensor = MPU_9250_SPI;
+    sensor = mpu9250SpiDetect(&gyro->bus);
+    if (sensor != MPU_NONE) {
+        gyro->mpuDetectionResult.sensor = sensor;
         gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
         gyro->mpuConfiguration.readFn = spiReadRegisterBuffer;
         gyro->mpuConfiguration.writeFn = spiWriteRegister;
@@ -291,31 +271,27 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
         return true;
     }
 #endif
-
+#ifdef USE_GYRO_SPI_MPU6000
+    sensor = mpu6000SpiDetect(&gyro->bus);
+#endif
+#ifdef USE_GYRO_SPI_MPU6500
+    sensor = mpu6500SpiDetect(&gyro->bus);
+#endif
 #ifdef USE_GYRO_SPI_ICM20689
-    spiBusSetInstance(&gyro->bus, ICM20689_SPI_INSTANCE);
-    gyro->bus.spi.csnPin = gyro->bus.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(ICM20689_CS_PIN)) : gyro->bus.spi.csnPin;
-    if (icm20689SpiDetect(&gyro->bus)) {
-        gyro->mpuDetectionResult.sensor = ICM_20689_SPI;
-        gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
-        gyro->mpuConfiguration.readFn = spiReadRegisterBuffer;
-        gyro->mpuConfiguration.writeFn = spiWriteRegister;
-        return true;
-    }
+    sensor = icm20689SpiDetect(&gyro->bus);
 #endif
-
 #ifdef USE_ACCGYRO_BMI160
-    spiBusSetInstance(&gyro->bus, BMI160_SPI_INSTANCE);
-    gyro->bus.spi.csnPin = gyro->bus.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(BMI160_CS_PIN)) : gyro->bus.spi.csnPin;
-    if (bmi160Detect(&gyro->bus)) {
-        gyro->mpuDetectionResult.sensor = BMI_160_SPI;
-        gyro->mpuConfiguration.readFn = spiReadRegisterBuffer;
-        gyro->mpuConfiguration.writeFn = spiWriteRegister;
-        return true;
-    }
+    sensor = bmi160Detect(&gyro->bus);
 #endif
 
-    return false;
+    if (sensor == MPU_NONE) {
+        return false;
+    }
+    gyro->mpuDetectionResult.sensor = sensor;
+    gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
+    gyro->mpuConfiguration.readFn = spiReadRegisterBuffer;
+    gyro->mpuConfiguration.writeFn = spiWriteRegister;
+    return true;
 }
 #endif
 

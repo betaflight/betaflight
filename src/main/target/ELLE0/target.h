@@ -33,8 +33,8 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define MPU6500_CS_PIN          PB12
-#define MPU6500_SPI_INSTANCE    SPI2
+#define GYRO_CSN_PIN            PB12
+#define GYRO_SPI_INSTANCE       SPI2
 
 // Using MPU6050 for the moment.
 #define GYRO

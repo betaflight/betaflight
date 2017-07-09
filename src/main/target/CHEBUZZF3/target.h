@@ -71,7 +71,8 @@
 #define L3GD20_SPI                      SPI1
 #define L3GD20_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOE
 #define L3GD20_CS_GPIO                  GPIOE
-#define L3GD20_CS_PIN                   PE3
+#define GYRO_CSN_PIN                    PE3
+#define L3GD20_CS_PIN                   GYRO_CSN_PIN //!!TODO fix L3GD20 gyro code
 
 #define GYRO_L3GD20_ALIGN CW270_DEG
 #define GYRO_MPU6050_ALIGN CW0_DEG

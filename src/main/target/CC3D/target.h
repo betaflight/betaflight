@@ -34,8 +34,8 @@
 #define USE_SPI_DEVICE_2
 
 #define MPU6000_CS_GPIO         GPIOA
-#define MPU6000_CS_PIN          PA4
-#define MPU6000_SPI_INSTANCE    SPI1
+#define GYRO_CSN_PIN            PA4
+#define GYRO_SPI_INSTANCE       SPI1
 
 #define M25P16_CS_GPIO          GPIOB
 #define M25P16_CS_PIN           PB12

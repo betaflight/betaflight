@@ -47,11 +47,11 @@
 #define SPI1_MOSI_PIN           PB5
 #define SPI1_NSS_PIN            PA4
 
-#define MPU6500_CS_PIN          SPI1_NSS_PIN
-#define MPU6500_SPI_INSTANCE    SPI1
+#define GYRO_CSN_PIN            SPI1_NSS_PIN
+#define GYRO_SPI_INSTANCE       SPI1
 
-#define MPU6000_CS_PIN          SPI1_NSS_PIN
-#define MPU6000_SPI_INSTANCE    SPI1
+#define GYRO_CSN_PIN            SPI1_NSS_PIN
+#define GYRO_SPI_INSTANCE       SPI1
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6000

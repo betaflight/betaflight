@@ -77,8 +77,8 @@
 #define SPI1_MISO_PIN           PB4
 #define SPI1_MOSI_PIN           PB5
 
-#define MPU6500_CS_PIN          PB9
-#define MPU6500_SPI_INSTANCE    SPI1
+#define GYRO_CSN_PIN            PB9
+#define GYRO_SPI_INSTANCE       SPI1
 
 #else
 #define USE_GYRO_MPU6050

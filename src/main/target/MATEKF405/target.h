@@ -36,8 +36,8 @@
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
 
-#define MPU6500_CS_PIN          PC2
-#define MPU6500_SPI_INSTANCE    SPI1
+#define GYRO_CSN_PIN            PC2
+#define GYRO_SPI_INSTANCE       SPI1
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PC3

@@ -28,8 +28,8 @@
 
 #define INVERTER_PIN_UART6 PD7
 
-#define MPU6500_CS_PIN        PE10
-#define MPU6500_SPI_INSTANCE  SPI2
+#define GYRO_CSN_PIN          PE10
+#define GYRO_SPI_INSTANCE     SPI2
 
 #define ACC
 #define USE_ACC_SPI_MPU6500

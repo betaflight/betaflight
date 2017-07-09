@@ -37,8 +37,8 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 
-#define MPU6500_CS_PIN          PA4
-#define MPU6500_SPI_INSTANCE    SPI1
+#define GYRO_CSN_PIN            PA4
+#define GYRO_SPI_INSTANCE       SPI1
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6500

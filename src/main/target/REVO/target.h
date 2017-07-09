@@ -76,23 +76,23 @@
 #define INVERTER_PIN_UART1      PC0
 #endif
 
-#define MPU6000_CS_PIN          PA4
-#define MPU6000_SPI_INSTANCE    SPI1
+#define GYRO_CSN_PIN            PA4
+#define GYRO_SPI_INSTANCE       SPI1
 
-#define MPU6500_CS_PIN          PA4
-#define MPU6500_SPI_INSTANCE    SPI1
+#define GYRO_CSN_PIN            PA4
+#define GYRO_SPI_INSTANCE       SPI1
 
 #define GYRO
 #define ACC
 
 #ifdef AIRBOTF4SD
-#undef MPU6000_CS_PIN
-#define MPU6000_CS_PIN          PB13
+#undef GYRO_CSN_PIN  
+#define GYRO_CSN_PIN            PB13
 #define USE_GYRO_SPI_ICM20601
 #define ICM20601_CS_PIN         PA4 // served through MPU6500 code
 #define ICM20601_SPI_INSTANCE   SPI1
 #define USE_DUAL_GYRO
-#define GYRO_0_CS_PIN           MPU6000_CS_PIN
+#define GYRO_0_CS_PIN           GYRO_CSN_PIN  
 #define GYRO_1_CS_PIN           ICM20601_CS_PIN
 #endif
 
