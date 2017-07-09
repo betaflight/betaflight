@@ -60,10 +60,6 @@
 
 /*
 #define SDCARD_DETECT_PIN                   PD2
-#define SDCARD_DETECT_EXTI_LINE             EXTI_Line2
-#define SDCARD_DETECT_EXTI_PIN_SOURCE       EXTI_PinSource2
-#define SDCARD_DETECT_EXTI_PORT_SOURCE      EXTI_PortSourceGPIOD
-#define SDCARD_DETECT_EXTI_IRQn             EXTI2_IRQn
 
 #define SDCARD_SPI_INSTANCE                 SPI3
 #define SDCARD_SPI_CS_PIN                   PB3
