@@ -232,6 +232,7 @@ void annexCode(void)
         }
         else {
             if (!calibratingFinishedBeep) {
+                calibratingFinishedBeep = true;
                 beeper(BEEPER_RUNTIME_CALIBRATION_DONE);
             }
         }
