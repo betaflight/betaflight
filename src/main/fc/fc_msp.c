@@ -194,7 +194,7 @@ typedef enum {
 #define ESC_4WAY 0xff
 
 uint8_t escMode;
-uint8_t escPortIndex = 0;
+uint8_t escPortIndex;
 
 #ifdef USE_ESCSERIAL
 static void mspEscPassthroughFn(serialPort_t *serialPort)
