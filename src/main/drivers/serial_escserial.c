@@ -116,7 +116,7 @@ escSerial_t escSerialPorts[MAX_ESCSERIAL_PORTS];
 PG_REGISTER_WITH_RESET_TEMPLATE(escSerialConfig_t, escSerialConfig, PG_ESCSERIAL_CONFIG, 0);
 
 #ifndef ESCSERIAL_TIMER_TX_PIN
-define ESCSERIAL_TIMER_TX_PIN NONE
+#define ESCSERIAL_TIMER_TX_PIN NONE
 #endif
 
 PG_RESET_TEMPLATE(escSerialConfig_t, escSerialConfig,

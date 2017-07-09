@@ -92,8 +92,7 @@
 #define SERIAL_PORT_COUNT       5 //VCP, USART1, USART2, USART3, USART6
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
-
+#define ESCSERIAL_TIMER_TX_PIN  B8 // (Hardware=0, PPM)
 
 #define USE_SPI
 
