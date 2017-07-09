@@ -81,7 +81,7 @@ static uint32_t needRxSignalMaxDelayUs;
 static uint32_t suspendRxSignalUntil = 0;
 static uint8_t  skipRxSamples = 0;
 
-int16_t rcRaw[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
+static int16_t rcRaw[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 uint32_t rcInvalidPulsPeriod[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
@@ -521,7 +521,7 @@ static void readRxChannelsApplyRanges(void)
     const int channelCount = getRxChannelCount();
     for (int channel = 0; channel < channelCount; channel++) {
 
-        const uint8_t rawChannel = calculateChannelRemapping(rxConfig()->rcmap, REMAPPABLE_CHANNEL_COUNT, channel);
+        const uint8_t rawChannel = calculateChannelRemapping(rxConfig()->rcmap, RX_MAPPABLE_CHANNEL_COUNT, channel);
 
         // sample the channel
         uint16_t sample = rxRuntimeConfig.rcReadRawFn(&rxRuntimeConfig, rawChannel);
@@ -622,7 +622,7 @@ void parseRcChannels(const char *input, rxConfig_t *rxConfig)
 {
     for (const char *c = input; *c; c++) {
         const char *s = strchr(rcChannelLetters, *c);
-        if (s && (s < rcChannelLetters + MAX_MAPPABLE_RX_INPUTS)) {
+        if (s && (s < rcChannelLetters + RX_MAPPABLE_CHANNEL_COUNT)) {
             rxConfig->rcmap[s - rcChannelLetters] = c - input;
         }
     }

@@ -75,11 +75,6 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     6                   TIM1_CH1    TIM1_CH2    TIM1_CH1    TIM1_CH4                TIM1_CH3
     7                               TIM8_CH1    TIM8_CH2    TIM8_CH3                            TIM8_CH4
 */
-uint8_t timerClockDivisor(TIM_TypeDef *tim)
-{
-    UNUSED(tim);
-    return 1;
-}
 
 uint32_t timerClock(TIM_TypeDef *tim)
 {

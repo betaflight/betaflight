@@ -374,7 +374,7 @@ int timeval_sub(struct timespec *result, struct timespec *x, struct timespec *y)
 
 
 // PWM part
-bool pwmMotorsEnabled = false;
+static bool pwmMotorsEnabled = false;
 static pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
 static pwmOutputPort_t servos[MAX_SUPPORTED_SERVOS];
 
@@ -404,6 +404,10 @@ void servoDevInit(const servoDevConfig_t *servoConfig) {
 
 pwmOutputPort_t *pwmGetMotors(void) {
     return motors;
+}
+
+void pwmEnableMotors(void) {
+    pwmMotorsEnabled = true;
 }
 
 bool pwmAreMotorsEnabled(void) {

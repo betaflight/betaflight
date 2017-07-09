@@ -89,6 +89,12 @@
 
 #define VIDEO_BUFFER_CHARS_PAL    480
 
+const char * const osdTimerSourceNames[] = {
+    "ON TIME  ",
+    "TOTAL ARM",
+    "LAST ARM "
+};
+
 // Blink control
 
 static bool blinkState = true;
@@ -106,7 +112,7 @@ static uint32_t blinkBits[(OSD_ITEM_COUNT + 31)/32];
 #define IS_LO(X)  (rcData[X] < 1250)
 #define IS_MID(X) (rcData[X] > 1250 && rcData[X] < 1750)
 
-static uint16_t flyTime = 0;
+static timeUs_t flyTime = 0;
 static uint8_t statRssi;
 
 typedef struct statistic_s {
@@ -116,7 +122,7 @@ typedef struct statistic_s {
     int16_t min_rssi;
     int16_t max_altitude;
     int16_t max_distance;
-    uint16_t armed_time;
+    timeUs_t armed_time;
 } statistic_t;
 
 static statistic_t stats;
@@ -226,6 +232,65 @@ static uint8_t osdGetDirectionSymbolFromHeading(int heading)
     return SYM_ARROW_SOUTH + heading;
 }
 
+static char osdGetTimerSymbol(osd_timer_source_e src)
+{
+    switch (src) {
+    case OSD_TIMER_SRC_ON:
+        return SYM_ON_M;
+    case OSD_TIMER_SRC_TOTAL_ARMED:
+    case OSD_TIMER_SRC_LAST_ARMED:
+        return SYM_FLY_M;
+    default:
+        return ' ';
+    }
+}
+
+static timeUs_t osdGetTimerValue(osd_timer_source_e src)
+{
+    switch (src) {
+    case OSD_TIMER_SRC_ON:
+        return micros();
+    case OSD_TIMER_SRC_TOTAL_ARMED:
+        return flyTime;
+    case OSD_TIMER_SRC_LAST_ARMED:
+        return stats.armed_time;
+    default:
+        return 0;
+    }
+}
+
+STATIC_UNIT_TESTED void osdFormatTime(char * buff, osd_timer_precision_e precision, timeUs_t time)
+{
+    int seconds = time / 1000000;
+    const int minutes = seconds / 60;
+    seconds = seconds % 60;
+
+    switch (precision) {
+    case OSD_TIMER_PREC_SECOND:
+    default:
+        tfp_sprintf(buff, "%02d:%02d", minutes, seconds);
+        break;
+    case OSD_TIMER_PREC_HUNDREDTHS:
+        {
+            const int hundredths = (time / 10000) % 100;
+            tfp_sprintf(buff, "%02d:%02d.%02d", minutes, seconds, hundredths);
+            break;
+        }
+    }
+}
+
+STATIC_UNIT_TESTED void osdFormatTimer(char *buff, bool showSymbol, int timerIndex)
+{
+    const uint16_t timer = osdConfig()->timers[timerIndex];
+    const uint8_t src = OSD_TIMER_SRC(timer);
+
+    if (showSymbol) {
+        *(buff++) = osdGetTimerSymbol(src);
+    }
+
+    osdFormatTime(buff, OSD_TIMER_PRECISION(timer), osdGetTimerValue(src));
+}
+
 static void osdDrawSingleElement(uint8_t item)
 {
     if (!VISIBLE(osdConfig()->item_pos[item]) || BLINK(item)) {
@@ -235,7 +300,7 @@ static void osdDrawSingleElement(uint8_t item)
     uint8_t elemPosX = OSD_X(osdConfig()->item_pos[item]);
     uint8_t elemPosY = OSD_Y(osdConfig()->item_pos[item]);
     uint8_t elemOffsetX = 0;
-    char buff[32];
+    char buff[OSD_ELEMENT_BUFFER_LENGTH];
 
     switch (item) {
     case OSD_RSSI_VALUE:
@@ -350,23 +415,13 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
-    case OSD_ONTIME:
+    case OSD_ITEM_TIMER_1:
+    case OSD_ITEM_TIMER_2:
         {
-            const uint32_t seconds = micros() / 1000000;
-            buff[0] = SYM_ON_M;
-            tfp_sprintf(buff + 1, "%02d:%02d", seconds / 60, seconds % 60);
+            const int timer = item - OSD_ITEM_TIMER_1;
+            osdFormatTimer(buff, true, timer);
             break;
         }
-
-    case OSD_FLYTIME:
-        buff[0] = SYM_FLY_M;
-        tfp_sprintf(buff + 1, "%02d:%02d", flyTime / 60, flyTime % 60);
-        break;
-
-    case OSD_ARMED_TIME:
-        buff[0] = SYM_FLY_M;
-        tfp_sprintf(buff + 1, "%02d:%02d", stats.armed_time / 60, stats.armed_time % 60);
-        break;
 
     case OSD_FLYMODE:
         {
@@ -658,8 +713,8 @@ static void osdDrawElements(void)
     osdDrawSingleElement(OSD_MAIN_BATT_VOLTAGE);
     osdDrawSingleElement(OSD_RSSI_VALUE);
     osdDrawSingleElement(OSD_CROSSHAIRS);
-    osdDrawSingleElement(OSD_FLYTIME);
-    osdDrawSingleElement(OSD_ONTIME);
+    osdDrawSingleElement(OSD_ITEM_TIMER_1);
+    osdDrawSingleElement(OSD_ITEM_TIMER_2);
     osdDrawSingleElement(OSD_FLYMODE);
     osdDrawSingleElement(OSD_THROTTLE_POS);
     osdDrawSingleElement(OSD_VTX_CHANNEL);
@@ -678,7 +733,6 @@ static void osdDrawElements(void)
     osdDrawSingleElement(OSD_PITCH_ANGLE);
     osdDrawSingleElement(OSD_ROLL_ANGLE);
     osdDrawSingleElement(OSD_MAIN_BATT_USAGE);
-    osdDrawSingleElement(OSD_ARMED_TIME);
     osdDrawSingleElement(OSD_DISARMED);
     osdDrawSingleElement(OSD_NUMERICAL_HEADING);
     osdDrawSingleElement(OSD_NUMERICAL_VARIO);
@@ -710,8 +764,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->item_pos[OSD_CROSSHAIRS]         = OSD_POS(8, 6)   | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(8, 6)   | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_HORIZON_SIDEBARS]   = OSD_POS(8, 6)   | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ONTIME]             = OSD_POS(22, 1)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_FLYTIME]            = OSD_POS(1, 1)   | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_ITEM_TIMER_1]       = OSD_POS(22, 1)  | VISIBLE_FLAG;
+    osdConfig->item_pos[OSD_ITEM_TIMER_2]       = OSD_POS(1, 1)   | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_FLYMODE]            = OSD_POS(13, 10) | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_CRAFT_NAME]         = OSD_POS(10, 11) | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_THROTTLE_POS]       = OSD_POS(1, 7)   | VISIBLE_FLAG;
@@ -737,7 +791,6 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->item_pos[OSD_HOME_DIR]           = OSD_POS(14, 9)  | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_COMPASS_BAR]        = OSD_POS(10, 8)  | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_MAIN_BATT_USAGE]    = OSD_POS(8, 12)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ARMED_TIME]         = OSD_POS(1, 2)   | VISIBLE_FLAG;
     osdConfig->item_pos[OSD_DISARMED]           = OSD_POS(11, 4)  | VISIBLE_FLAG; // 10,4 in BF
     osdConfig->item_pos[OSD_NUMERICAL_HEADING]  = OSD_POS(24, 9)  | VISIBLE_FLAG; // 23,9 in BF
     osdConfig->item_pos[OSD_NUMERICAL_VARIO]    = OSD_POS(24, 8)  | VISIBLE_FLAG; // 23,8 in BF
@@ -752,16 +805,18 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->enabled_stats[OSD_STAT_MAX_ALTITUDE]    = false;
     osdConfig->enabled_stats[OSD_STAT_BLACKBOX]        = true;
     osdConfig->enabled_stats[OSD_STAT_END_BATTERY]     = false;
-    osdConfig->enabled_stats[OSD_STAT_FLYTIME]         = false;
-    osdConfig->enabled_stats[OSD_STAT_ARMEDTIME]       = true;
     osdConfig->enabled_stats[OSD_STAT_MAX_DISTANCE]    = false;
     osdConfig->enabled_stats[OSD_STAT_BLACKBOX_NUMBER] = true;
+    osdConfig->enabled_stats[OSD_STAT_TIMER_1]         = false;
+    osdConfig->enabled_stats[OSD_STAT_TIMER_2]         = true;
 
     osdConfig->units = OSD_UNIT_METRIC;
 
+    osdConfig->timers[OSD_TIMER_1] = OSD_TIMER(OSD_TIMER_SRC_ON, OSD_TIMER_PREC_SECOND, 10);
+    osdConfig->timers[OSD_TIMER_2] = OSD_TIMER(OSD_TIMER_SRC_TOTAL_ARMED, OSD_TIMER_PREC_SECOND, 10);
+
     osdConfig->rssi_alarm = 20;
     osdConfig->cap_alarm  = 2200;
-    osdConfig->time_alarm = 10; // in minutes
     osdConfig->alt_alarm  = 100; // meters or feet depend on configuration
 }
 
@@ -837,10 +892,15 @@ void osdUpdateAlarms(void)
     else
         CLR_BLINK(OSD_GPS_SATS);
 
-    if (flyTime / 60 >= osdConfig()->time_alarm && ARMING_FLAG(ARMED))
-        SET_BLINK(OSD_FLYTIME);
-    else
-        CLR_BLINK(OSD_FLYTIME);
+    for (int i = 0; i < OSD_TIMER_COUNT; i++) {
+        const uint16_t timer = osdConfig()->timers[i];
+        const timeUs_t time = osdGetTimerValue(OSD_TIMER_SRC(timer));
+        const timeUs_t alarmTime = OSD_TIMER_ALARM(timer) * 60000000; // convert from minutes to us
+        if (alarmTime != 0 && time >= alarmTime)
+            SET_BLINK(OSD_ITEM_TIMER_1 + i);
+        else
+            CLR_BLINK(OSD_ITEM_TIMER_1 + i);
+    }
 
     if (getMAhDrawn() >= osdConfig()->cap_alarm) {
         SET_BLINK(OSD_MAH_DRAWN);
@@ -862,11 +922,12 @@ void osdResetAlarms(void)
     CLR_BLINK(OSD_MAIN_BATT_VOLTAGE);
     CLR_BLINK(OSD_WARNINGS);
     CLR_BLINK(OSD_GPS_SATS);
-    CLR_BLINK(OSD_FLYTIME);
     CLR_BLINK(OSD_MAH_DRAWN);
     CLR_BLINK(OSD_ALTITUDE);
     CLR_BLINK(OSD_AVG_CELL_VOLTAGE);
     CLR_BLINK(OSD_MAIN_BATT_USAGE);
+    CLR_BLINK(OSD_ITEM_TIMER_1);
+    CLR_BLINK(OSD_ITEM_TIMER_2);
 }
 
 static void osdResetStats(void)
@@ -967,14 +1028,14 @@ static void osdShowStats(void)
     displayClearScreen(osdDisplayPort);
     displayWrite(osdDisplayPort, 2, top++, "  --- STATS ---");
 
-    if (osdConfig()->enabled_stats[OSD_STAT_ARMEDTIME]) {
-        tfp_sprintf(buff, "%02d:%02d", stats.armed_time / 60, stats.armed_time % 60);
-        osdDisplayStatisticLabel(top++, "ARMED TIME", buff);
+    if (osdConfig()->enabled_stats[OSD_STAT_TIMER_1]) {
+        osdFormatTimer(buff, false, OSD_TIMER_1);
+        osdDisplayStatisticLabel(top++, osdTimerSourceNames[OSD_TIMER_SRC(osdConfig()->timers[OSD_TIMER_1])], buff);
     }
 
-    if (osdConfig()->enabled_stats[OSD_STAT_FLYTIME]) {
-        tfp_sprintf(buff, "%02d:%02d", flyTime / 60, flyTime % 60);
-        osdDisplayStatisticLabel(top++, "FLY TIME", buff);
+    if (osdConfig()->enabled_stats[OSD_STAT_TIMER_2]) {
+        osdFormatTimer(buff, false, OSD_TIMER_2);
+        osdDisplayStatisticLabel(top++, osdTimerSourceNames[OSD_TIMER_SRC(osdConfig()->timers[OSD_TIMER_2])], buff);
     }
 
     if (osdConfig()->enabled_stats[OSD_STAT_MAX_SPEED] && STATE(GPS_FIX)) {
@@ -1046,8 +1107,7 @@ static void osdShowArmed(void)
 
 STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
 {
-    static uint8_t lastSec = 0;
-    uint8_t sec;
+    static timeUs_t lastTimeUs = 0;
 
     // detect arm/disarm
     if (armState != ARMING_FLAG(ARMED)) {
@@ -1067,13 +1127,12 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
 
     osdUpdateStats();
 
-    sec = currentTimeUs / 1000000;
-
-    if (ARMING_FLAG(ARMED) && sec != lastSec) {
-        flyTime++;
-        stats.armed_time++;
-        lastSec = sec;
+    if (ARMING_FLAG(ARMED)) {
+        timeUs_t deltaT = currentTimeUs - lastTimeUs;
+        flyTime += deltaT;
+        stats.armed_time += deltaT;
     }
+    lastTimeUs = currentTimeUs;
 
     if (resumeRefreshAt) {
         if (cmp32(currentTimeUs, resumeRefreshAt) < 0) {

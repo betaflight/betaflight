@@ -411,7 +411,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
 
         case BST_RX_MAP:
-            for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++)
+            for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++)
                 bstWrite8(rxConfig()->rcmap[i]);
             break;
 
@@ -563,7 +563,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
            }
            break;
         case BST_SET_RX_MAP:
-            for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
+            for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
                 rxConfigMutable()->rcmap[i] = bstRead8();
             }
             break;
