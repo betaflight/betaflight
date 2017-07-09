@@ -84,7 +84,7 @@ typedef enum {
     OSD_ITEM_ESC_TMP,
     OSD_ITEM_ESC_RPM,
     OSD_ITEM_COUNT // MUST BE LAST
-} osd_items_e;
+} osdItems_e;
 
 typedef enum {
     OSD_STAT_MAX_SPEED,
@@ -100,31 +100,31 @@ typedef enum {
     OSD_STAT_MAX_DISTANCE,
     OSD_STAT_BLACKBOX_NUMBER,
     OSD_STAT_COUNT // MUST BE LAST
-} osd_stats_e;
+} osdStats_e;
 
 typedef enum {
     OSD_UNIT_IMPERIAL,
     OSD_UNIT_METRIC
-} osd_unit_e;
+} osdUnit_e;
 
 typedef enum {
     OSD_TIMER_1,
     OSD_TIMER_2,
     OSD_TIMER_COUNT
-} osd_timer_e;
+} osdTimer_e;
 
 typedef enum {
     OSD_TIMER_SRC_ON,
     OSD_TIMER_SRC_TOTAL_ARMED,
     OSD_TIMER_SRC_LAST_ARMED,
     OSD_TIMER_SRC_COUNT
-} osd_timer_source_e;
+} osdTimerSource_e;
 
 typedef enum {
     OSD_TIMER_PREC_SECOND,
     OSD_TIMER_PREC_HUNDREDTHS,
     OSD_TIMER_PREC_COUNT
-} osd_timer_precision_e;
+} osdTimerPrecision_e;
 
 typedef struct osdConfig_s {
     uint16_t item_pos[OSD_ITEM_COUNT];
@@ -135,7 +135,7 @@ typedef struct osdConfig_s {
     uint16_t alt_alarm;
     uint8_t rssi_alarm;
 
-    osd_unit_e units;
+    osdUnit_e units;
 
     uint16_t timers[OSD_TIMER_COUNT];
 } osdConfig_t;

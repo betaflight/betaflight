@@ -154,8 +154,8 @@ CMS_Menu menuAlarms = {
     .entries = menuAlarmsEntries,
 };
 
-osd_timer_source_e timerSource[OSD_TIMER_COUNT];
-osd_timer_precision_e timerPrecision[OSD_TIMER_COUNT];
+osdTimerSource_e timerSource[OSD_TIMER_COUNT];
+osdTimerPrecision_e timerPrecision[OSD_TIMER_COUNT];
 uint8_t timerAlarm[OSD_TIMER_COUNT];
 
 static long menuTimersOnEnter(void)

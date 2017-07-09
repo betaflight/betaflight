@@ -47,7 +47,7 @@ extern "C" {
     #include "rx/rx.h"
 
     void osdRefresh(timeUs_t currentTimeUs);
-    void osdFormatTime(char * buff, osd_timer_precision_e precision, timeUs_t time);
+    void osdFormatTime(char * buff, osdTimerPrecision_e precision, timeUs_t time);
     void osdFormatTimer(char *buff, bool showSymbol, int timerIndex);
 
     uint16_t rssi;

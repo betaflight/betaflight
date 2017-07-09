@@ -242,7 +242,7 @@ static uint8_t osdGetDirectionSymbolFromHeading(int heading)
     return SYM_ARROW_SOUTH + heading;
 }
 
-static char osdGetTimerSymbol(osd_timer_source_e src)
+static char osdGetTimerSymbol(osdTimerSource_e src)
 {
     switch (src) {
     case OSD_TIMER_SRC_ON:
@@ -255,7 +255,7 @@ static char osdGetTimerSymbol(osd_timer_source_e src)
     }
 }
 
-static timeUs_t osdGetTimerValue(osd_timer_source_e src)
+static timeUs_t osdGetTimerValue(osdTimerSource_e src)
 {
     switch (src) {
     case OSD_TIMER_SRC_ON:
@@ -269,7 +269,7 @@ static timeUs_t osdGetTimerValue(osd_timer_source_e src)
     }
 }
 
-STATIC_UNIT_TESTED void osdFormatTime(char * buff, osd_timer_precision_e precision, timeUs_t time)
+STATIC_UNIT_TESTED void osdFormatTime(char * buff, osdTimerPrecision_e precision, timeUs_t time)
 {
     int seconds = time / 1000000;
     const int minutes = seconds / 60;
