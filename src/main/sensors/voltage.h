@@ -54,7 +54,9 @@ typedef enum {
 #define VBAT_SCALE_MIN 0
 #define VBAT_SCALE_MAX 255
 
+#ifndef VBATT_LPF_FREQ
 #define VBATT_LPF_FREQ  1.0f
+#endif
 
 #ifndef MAX_VOLTAGE_SENSOR_ADC
 #define MAX_VOLTAGE_SENSOR_ADC 1 // VBAT - some boards have external, 12V, 9V and 5V meters.
