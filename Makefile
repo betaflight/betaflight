@@ -1024,6 +1024,7 @@ SITLEXCLUDES = \
             drivers/light_led.c \
             drivers/system.c \
             drivers/rcc.c \
+            drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart.c \
             drivers/serial_uart_init.c \

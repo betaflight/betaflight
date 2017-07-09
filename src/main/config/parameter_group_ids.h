@@ -109,7 +109,8 @@
 #define PG_I2C_CONFIG 518
 #define PG_DASHBOARD_CONFIG 519
 #define PG_SPI_PIN_CONFIG 520
-#define PG_BETAFLIGHT_END 520
+#define PG_ESCSERIAL_CONFIG 521
+#define PG_BETAFLIGHT_END 521
 
 
 // OSD configuration (subject to change)

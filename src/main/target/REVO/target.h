@@ -212,7 +212,7 @@
 #endif
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+#define ESCSERIAL_TIMER_TX_PIN  PB14  // (HARDARE=0,PPM)
 
 #define USE_SPI
 

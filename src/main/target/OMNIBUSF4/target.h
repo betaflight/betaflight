@@ -142,7 +142,11 @@
 #define SERIAL_PORT_COUNT       6 //VCP, USART1, USART3, USART6, SOFTSERIAL x 2
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+#if defined(OMNIBUSF4SD)
+#define ESCSERIAL_TIMER_TX_PIN  PB8  // (Hardware=0)
+#else
+#define ESCSERIAL_TIMER_TX_PIN  PB14 // (Hardware=0)
+#endif
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1

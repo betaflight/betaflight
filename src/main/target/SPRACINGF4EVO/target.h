@@ -85,7 +85,7 @@
 #define UART5_RX_PIN            PD2
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+#define ESCSERIAL_TIMER_TX_PIN  PA3  // (HARDARE=0,PPM)
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1
