@@ -134,7 +134,6 @@ static OSD_Entry menuMainEntries[] =
     {"FEATURES",    OME_Submenu,  cmsMenuChange, &menuFeatures, 0},
 #ifdef OSD
     {"OSD",         OME_Submenu,  cmsMenuChange, &cmsx_menuOsd, 0},
-    {"ALARMS",      OME_Submenu,  cmsMenuChange, &cmsx_menuAlarms, 0},
 #endif
     {"FC&FW INFO",  OME_Submenu,  cmsMenuChange, &menuInfo, 0},
     {"MISC",        OME_Submenu,  cmsMenuChange, &cmsx_menuMisc, 0},

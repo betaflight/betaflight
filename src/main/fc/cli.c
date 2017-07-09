@@ -2080,10 +2080,10 @@ static void cliBeeper(char *cmdline)
 static void printMap(uint8_t dumpMask, const rxConfig_t *rxConfig, const rxConfig_t *defaultRxConfig)
 {
     bool equalsDefault = true;
-    char buf[MAX_MAPPABLE_RX_INPUTS + 1];
-    char bufDefault[MAX_MAPPABLE_RX_INPUTS + 1];
+    char buf[RX_MAPPABLE_CHANNEL_COUNT + 1];
+    char bufDefault[RX_MAPPABLE_CHANNEL_COUNT + 1];
     uint32_t i;
-    for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
+    for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
         buf[rxConfig->rcmap[i]] = rcChannelLetters[i];
         if (defaultRxConfig) {
             bufDefault[defaultRxConfig->rcmap[i]] = rcChannelLetters[i];
@@ -2100,17 +2100,17 @@ static void printMap(uint8_t dumpMask, const rxConfig_t *rxConfig, const rxConfi
 static void cliMap(char *cmdline)
 {
     uint32_t i;
-    char buf[MAX_MAPPABLE_RX_INPUTS + 1];
+    char buf[RX_MAPPABLE_CHANNEL_COUNT + 1];
 
     uint32_t len = strlen(cmdline);
-    if (len == MAX_MAPPABLE_RX_INPUTS) {
+    if (len == RX_MAPPABLE_CHANNEL_COUNT) {
 
-        for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
+        for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
             buf[i] = toupper((unsigned char)cmdline[i]);
         }
         buf[i] = '\0';
 
-        for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
+        for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
             buf[i] = toupper((unsigned char)cmdline[i]);
 
             if (strchr(rcChannelLetters, buf[i]) && !strchr(buf + i + 1, buf[i]))
@@ -2125,7 +2125,7 @@ static void cliMap(char *cmdline)
         return;
     }
 
-    for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
+    for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
         buf[rxConfig()->rcmap[i]] = rcChannelLetters[i];
     }
 
@@ -2195,27 +2195,20 @@ static void cliGpsPassthrough(char *cmdline)
 }
 #endif
 
-#if defined(USE_ESCSERIAL) || defined(USE_DSHOT)
-
-#ifndef ALL_ESCS
-#define ALL_ESCS 255
-#endif
-
-static int parseEscNumber(char *pch, bool allowAllEscs) {
-    int escNumber = atoi(pch);
-    if ((escNumber >= 0) && (escNumber < getMotorCount())) {
-        tfp_printf("Programming on ESC %d.\r\n", escNumber);
-    } else if (allowAllEscs && escNumber == ALL_ESCS) {
-        tfp_printf("Programming on all ESCs.\r\n");
+static int parseOutputIndex(char *pch, bool allowAllEscs) {
+    int outputIndex = atoi(pch);
+    if ((outputIndex >= 0) && (outputIndex < getMotorCount())) {
+        tfp_printf("Using output %d.\r\n", outputIndex);
+    } else if (allowAllEscs && outputIndex == ALL_MOTORS) {
+        tfp_printf("Using all outputs.\r\n");
     } else {
-        tfp_printf("Invalid ESC number, range: 0 to %d.\r\n", getMotorCount() - 1);
+        tfp_printf("Invalid output number, range: 0 to %d.\r\n", getMotorCount() - 1);
 
         return -1;
     }
 
-    return escNumber;
+    return outputIndex;
 }
-#endif
 
 #ifdef USE_DSHOT
 static void cliDshotProg(char *cmdline)
@@ -2229,27 +2222,27 @@ static void cliDshotProg(char *cmdline)
     char *saveptr;
     char *pch = strtok_r(cmdline, " ", &saveptr);
     int pos = 0;
-    int escNumber = 0;
+    int escIndex = 0;
     while (pch != NULL) {
         switch (pos) {
             case 0:
-                escNumber = parseEscNumber(pch, true);
-                if (escNumber == -1) {
+                escIndex = parseOutputIndex(pch, true);
+                if (escIndex == -1) {
                     return;
                 }
 
                 break;
             default:
-                motorControlEnable = false;
+                pwmDisableMotors();
 
                 int command = atoi(pch);
                 if (command >= 0 && command < DSHOT_MIN_THROTTLE) {
-                    if (escNumber == ALL_ESCS) {
+                    if (escIndex == ALL_MOTORS) {
                         for (unsigned i = 0; i < getMotorCount(); i++) {
                             pwmWriteDshotCommand(i, command);
                         }
                     } else {
-                        pwmWriteDshotCommand(escNumber, command);
+                        pwmWriteDshotCommand(escIndex, command);
                     }
 
                     if (command <= 5) {
@@ -2268,7 +2261,7 @@ static void cliDshotProg(char *cmdline)
         pch = strtok_r(NULL, " ", &saveptr);
     }
 
-    motorControlEnable = true;
+    pwmEnableMotors();
 }
 #endif
 
@@ -2285,7 +2278,7 @@ static void cliEscPassthrough(char *cmdline)
     char *pch = strtok_r(cmdline, " ", &saveptr);
     int pos = 0;
     uint8_t mode = 0;
-    int escNumber = 0;
+    int escIndex = 0;
     while (pch != NULL) {
         switch (pos) {
             case 0:
@@ -2304,8 +2297,8 @@ static void cliEscPassthrough(char *cmdline)
                 }
                 break;
             case 1:
-                escNumber = parseEscNumber(pch, mode == PROTOCOL_KISS);
-                if (escNumber == -1) {
+                escIndex = parseOutputIndex(pch, mode == PROTOCOL_KISS);
+                if (escIndex == -1) {
                     return;
                 }
 
@@ -2322,7 +2315,7 @@ static void cliEscPassthrough(char *cmdline)
         pch = strtok_r(NULL, " ", &saveptr);
     }
 
-    escEnablePassthrough(cliPort, escNumber, mode);
+    escEnablePassthrough(cliPort, escIndex, mode);
 }
 #endif
 
@@ -2364,46 +2357,57 @@ static void cliMixer(char *cmdline)
 
 static void cliMotor(char *cmdline)
 {
-    int motor_index = 0;
-    int motor_value = 0;
-    int index = 0;
-    char *pch = NULL;
-    char *saveptr;
-
     if (isEmpty(cmdline)) {
         cliShowParseError();
+
         return;
     }
 
-    pch = strtok_r(cmdline, " ", &saveptr);
+    int motorIndex;
+    int motorValue;
+
+    char *saveptr;
+    char *pch = strtok_r(cmdline, " ", &saveptr);
+    int index = 0;
     while (pch != NULL) {
         switch (index) {
-            case 0:
-                motor_index = atoi(pch);
-                break;
-            case 1:
-                motor_value = atoi(pch);
-                break;
+        case 0:
+            motorIndex = parseOutputIndex(pch, true);
+            if (motorIndex == -1) {
+                return;
+            }
+
+            break;
+        case 1:
+            motorValue = atoi(pch);
+
+            break;
         }
         index++;
         pch = strtok_r(NULL, " ", &saveptr);
     }
 
-    if (motor_index < 0 || motor_index >= MAX_SUPPORTED_MOTORS) {
-        cliShowArgumentRangeError("index", 0, MAX_SUPPORTED_MOTORS - 1);
-        return;
-    }
-
     if (index == 2) {
-        if (motor_value < PWM_RANGE_MIN || motor_value > PWM_RANGE_MAX) {
+        if (motorValue < PWM_RANGE_MIN || motorValue > PWM_RANGE_MAX) {
             cliShowArgumentRangeError("value", 1000, 2000);
         } else {
-            motor_disarmed[motor_index] = convertExternalToMotor(motor_value);
+            uint32_t motorOutputValue = convertExternalToMotor(motorValue);
 
-            cliPrintLinef("motor %d: %d", motor_index, convertMotorToExternal(motor_disarmed[motor_index]));
+            if (motorIndex != ALL_MOTORS) {
+                motor_disarmed[motorIndex] = motorOutputValue;
+
+                cliPrintLinef("motor %d: %d", motorIndex, motorOutputValue);
+            } else  {
+                for (int i = 0; i < getMotorCount(); i++) {
+                    motor_disarmed[i] = motorOutputValue;
+                }
+
+                cliPrintLinef("all motors: %d", motorOutputValue);
+            }
         }
+    } else {
+        cliShowParseError();
     }
-
 }
 
 #ifndef MINIMAL_CLI

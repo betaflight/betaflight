@@ -33,8 +33,6 @@ typedef enum {
     PROTOCOL_COUNT
 } escProtocol_e;
 
-#define ALL_ESCS 255
-
 serialPort_t *openEscSerial(escSerialPortIndex_e portIndex, serialReceiveCallbackPtr callback, uint16_t output, uint32_t baud, portOptions_t options, uint8_t mode);
 
 // serialPort API

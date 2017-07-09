@@ -262,8 +262,6 @@ PG_REGISTER_WITH_RESET_FN(serialPinConfig_t, serialPinConfig, PG_SERIAL_PIN_CONF
 
 void pgResetFn_serialPinConfig(serialPinConfig_t *serialPinConfig)
 {
-    memset(serialPinConfig, 0, sizeof(*serialPinConfig));
-
     for (size_t index = 0 ; index < ARRAYLEN(serialDefaultPin) ; index++) {
         const serialDefaultPin_t *defpin = &serialDefaultPin[index];
         serialPinConfig->ioTagRx[SERIAL_PORT_IDENTIFIER_TO_INDEX(defpin->ident)] = defpin->rxIO;
