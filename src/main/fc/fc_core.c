@@ -226,6 +226,16 @@ void annexCode(void)
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
     } else {
+        static bool calibratingFinishedBeep = false;
+        if (isCalibrating()) {
+            calibratingFinishedBeep = false;
+        }
+        else {
+            if (!calibratingFinishedBeep) {
+                beeper(BEEPER_RUNTIME_CALIBRATION_DONE);
+            }
+        }
+
         if (!IS_RC_MODE_ACTIVE(BOXARM) && failsafeIsReceivingRxData()) {
             ENABLE_ARMING_FLAG(OK_TO_ARM);
         }
