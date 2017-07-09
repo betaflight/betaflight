@@ -111,6 +111,10 @@
 
 #define UARTDEV_COUNT (UARTDEV_COUNT_1 + UARTDEV_COUNT_2 + UARTDEV_COUNT_3 + UARTDEV_COUNT_4 + UARTDEV_COUNT_5 + UARTDEV_COUNT_6 + UARTDEV_COUNT_7 + UARTDEV_COUNT_8)
 
+#if UARTDEV_COUNT > UARTDEV_COUNT_MAX
+#error Too many USE_UARTx defined for the MCU
+#endif
+
 typedef struct uartHardware_s {
     UARTDevice device;    // XXX Not required for full allocation
     USART_TypeDef* reg;

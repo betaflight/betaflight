@@ -36,8 +36,7 @@
 
 #ifdef USE_UART
 
-const uartHardware_t uartHardware[UARTDEV_COUNT] = {
-#ifdef USE_UART1
+const uartHardware_t uartHardware[UARTDEV_COUNT_MAX] = {
     {
         .device = UARTDEV_1,
         .reg = USART1,
@@ -56,9 +55,6 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txPriority = NVIC_PRIO_SERIALUART1_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART1
     },
-#endif
-
-#ifdef USE_UART2
     {
         .device = UARTDEV_2,
         .reg = USART2,
@@ -77,9 +73,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txPriority = NVIC_PRIO_SERIALUART2_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART2
     },
-#endif
 
-#ifdef USE_UART3
+#if !defined(STM32F411xE)
     {
         .device = UARTDEV_3,
         .reg = USART3,
@@ -98,9 +93,6 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txPriority = NVIC_PRIO_SERIALUART3_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART3
     },
-#endif
-
-#ifdef USE_UART4
     {
         .device = UARTDEV_4,
         .reg = UART4,
@@ -119,9 +111,6 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txPriority = NVIC_PRIO_SERIALUART4_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART4
     },
-#endif
-
-#ifdef USE_UART5
     {
         .device = UARTDEV_5,
         .reg = UART5,
@@ -140,9 +129,8 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txPriority = NVIC_PRIO_SERIALUART5_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART5
     },
-#endif
+#endif // !STM32F411xE
 
-#ifdef USE_UART6
     {
         .device = UARTDEV_6,
         .reg = USART6,
@@ -161,7 +149,6 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txPriority = NVIC_PRIO_SERIALUART6_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART6
     },
-#endif
 };
 
 static void handleUsartTxDma(uartPort_t *s)

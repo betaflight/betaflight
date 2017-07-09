@@ -80,8 +80,7 @@
 # define UART3_TX_DMA 0
 #endif
 
-const uartHardware_t uartHardware[UARTDEV_COUNT] = {
-#ifdef USE_UART1
+const uartHardware_t uartHardware[UARTDEV_COUNT_MAX] = {
     {
         .device = UARTDEV_1,
         .reg = USART1,
@@ -95,9 +94,6 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txPriority = NVIC_PRIO_SERIALUART1_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART1_RXDMA,
     },
-#endif
-
-#ifdef USE_UART2
     {
         .device = UARTDEV_2,
         .reg = USART2,
@@ -111,9 +107,6 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txPriority = NVIC_PRIO_SERIALUART2_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART2_RXDMA,
     },
-#endif
-
-#ifdef USE_UART3
     {
         .device = UARTDEV_3,
         .reg = USART3,
@@ -127,9 +120,6 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txPriority = NVIC_PRIO_SERIALUART3_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART3_RXDMA,
     },
-#endif
-
-#ifdef USE_UART4
     // UART4 XXX Not tested (yet!?) Need 303RC, e.g. LUX for testing
     {
         .device = UARTDEV_4,
@@ -144,9 +134,6 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txPriority = NVIC_PRIO_SERIALUART4_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART4_RXDMA,
     },
-#endif
-
-#ifdef USE_UART5
     // UART5 XXX Not tested (yet!?) Need 303RC; e.g. LUX for testing
     {
         .device = UARTDEV_5,
@@ -161,7 +148,6 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         .txPriority = NVIC_PRIO_SERIALUART5,
         .rxPriority = NVIC_PRIO_SERIALUART5,
     },
-#endif
 };
 
 static void handleUsartTxDma(dmaChannelDescriptor_t* descriptor)
