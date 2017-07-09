@@ -637,20 +637,20 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, osdConfig()->units);
 
         // Alarms
-        sbufWriteU8(dst, osdConfig()->rssi_alarm);
-        sbufWriteU16(dst, osdConfig()->cap_alarm);
+        sbufWriteU8(dst, osdConfig()->rssiAlarm);
+        sbufWriteU16(dst, osdConfig()->capacityAlarm);
         sbufWriteU16(dst, 0);
-        sbufWriteU16(dst, osdConfig()->alt_alarm);
+        sbufWriteU16(dst, osdConfig()->altitudeAlarm);
 
         // Element position and visibility
         for (int i = 0; i < OSD_ITEM_COUNT; i++) {
-            sbufWriteU16(dst, osdConfig()->item_pos[i]);
+            sbufWriteU16(dst, osdConfig()->itemPos[i]);
         }
 
         // Post flight statistics
         sbufWriteU8(dst, OSD_STAT_COUNT);
         for (int i = 0; i < OSD_STAT_COUNT; i++ ) {
-            sbufWriteU8(dst, osdConfig()->enabled_stats[i]);
+            sbufWriteU8(dst, osdConfig()->enabledStats[i]);
         }
 
         // Timers
@@ -2010,10 +2010,10 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 osdConfigMutable()->units = sbufReadU8(src);
 
                 // Alarms
-                osdConfigMutable()->rssi_alarm = sbufReadU8(src);
-                osdConfigMutable()->cap_alarm = sbufReadU16(src);
+                osdConfigMutable()->rssiAlarm = sbufReadU8(src);
+                osdConfigMutable()->capacityAlarm = sbufReadU16(src);
                 sbufReadU16(src); // Skip unused (previously fly timer)
-                osdConfigMutable()->alt_alarm = sbufReadU16(src);
+                osdConfigMutable()->altitudeAlarm = sbufReadU16(src);
 #endif
             } else if ((int8_t)addr == -2) {
 #if defined(OSD)
@@ -2034,10 +2034,10 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
                 if (screen == 0 && addr < OSD_STAT_COUNT) {
                     /* Set statistic item enable */
-                    osdConfigMutable()->enabled_stats[addr] = value;
+                    osdConfigMutable()->enabledStats[addr] = value;
                 } else if (addr < OSD_ITEM_COUNT) {
                     /* Set element positions */
-                    osdConfigMutable()->item_pos[addr] = value;
+                    osdConfigMutable()->itemPos[addr] = value;
                 } else {
                   return MSP_RESULT_ERROR;
                 }
