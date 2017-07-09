@@ -2204,18 +2204,95 @@ static int parseOutputIndex(char *pch, bool allowAllEscs) {
 
 #ifdef USE_DSHOT
 
-#define ESC_INFO_EXPECTED_FRAME_SIZE 15
+#define ESC_INFO_V1_EXPECTED_FRAME_SIZE 15
+#define ESC_INFO_V2_EXPECTED_FRAME_SIZE 21
 
-void printEscInfo(const uint8_t *escInfoBytes)
+#define ESC_INFO_VERSION_POSITION 12
+
+void printEscInfo(const uint8_t *escInfoBytes, uint8_t bytesRead)
 {
-    cliPrint("MCU Id: 0x");
-    for (int i = 0; i < 12; i++) {
-        cliPrintf("%02x", escInfoBytes[i]);
-    }
-    cliPrintLinef("\nFirmware version: %d.%02d%c", escInfoBytes[12] / 100, escInfoBytes[12] % 100, (const char)((escInfoBytes[13] & 0x1f) + 97));
+    bool escInfoReceived = false;
+    if (bytesRead > ESC_INFO_VERSION_POSITION) {
+        uint8_t escInfoVersion = 0;
+        uint8_t frameLength = 0;
+        if (escInfoBytes[ESC_INFO_VERSION_POSITION] == 255) {
+            escInfoVersion = 2;
+            frameLength = ESC_INFO_V2_EXPECTED_FRAME_SIZE;
+        } else {
+            escInfoVersion = 1;
+            frameLength = ESC_INFO_V1_EXPECTED_FRAME_SIZE;
+        }
 
-    uint8_t escType = (escInfoBytes[13] & 0xe0) >> 5;
-    cliPrintLinef("ESC type: %d", escType);
+        if (((escInfoVersion == 1) && (bytesRead == ESC_INFO_V1_EXPECTED_FRAME_SIZE))
+            || ((escInfoVersion == 2) && (bytesRead == ESC_INFO_V2_EXPECTED_FRAME_SIZE))) {
+            escInfoReceived = true;
+
+            if (calculateCrc8(escInfoBytes, frameLength - 1) == escInfoBytes[frameLength - 1]) {
+                uint8_t firmwareVersion;
+                char firmwareSubVersion;
+                uint8_t escType;
+                switch (escInfoVersion) {
+                case 1:
+                    firmwareVersion = escInfoBytes[12];
+                    firmwareSubVersion = (char)((escInfoBytes[13] & 0x1f) + 97);
+                    escType = (escInfoBytes[13] & 0xe0) >> 5;
+
+                    break;
+                case 2:
+                    firmwareVersion = escInfoBytes[13];
+                    firmwareSubVersion = (char)escInfoBytes[14];
+                    escType = escInfoBytes[15];
+
+                    break;
+                }
+
+                cliPrint("ESC: ");
+                switch (escType) {
+                case 1:
+                    cliPrintLine("KISS8A");
+
+                    break;
+                case 2:
+                    cliPrintLine("KISS16A");
+
+                    break;
+                case 3:
+                    cliPrintLine("KISS24A");
+
+                    break;
+                case 5:
+                    cliPrintLine("KISS Ultralite");
+
+                    break;
+                default:
+                    cliPrintLine("unknown");
+
+                    break;
+                }
+
+                cliPrint("MCU: 0x");
+                for (int i = 0; i < 12; i++) {
+                    if (i && (i % 3 == 0)) {
+                        cliPrint("-");
+                    }
+                    cliPrintf("%02x", escInfoBytes[i]);
+                }
+                cliPrintLinefeed();
+
+                cliPrintLinef("Firmware: %d.%02d%c", firmwareVersion / 100, firmwareVersion % 100, firmwareSubVersion);
+                if (escInfoVersion == 2) {
+                    cliPrintLinef("Rotation: %s", escInfoBytes[16] ? "reversed" : "normal");
+                    cliPrintLinef("3D: %s", escInfoBytes[17] ? "on" : "off");
+                }
+            } else {
+                cliPrint("Checksum error.");
+            }
+        }
+    }
+
+    if (!escInfoReceived) {
+        cliPrint("No info.");
+    }
 }
 
 static void cliDshotProg(char *cmdline)
@@ -2251,32 +2328,19 @@ static void cliDshotProg(char *cmdline)
 
                         cliPrintf("Command %d written.\r\n", command);
                     } else {
-                        uint8_t escInfoBuffer[ESC_INFO_EXPECTED_FRAME_SIZE];
+                        uint8_t escInfoBuffer[ESC_INFO_V2_EXPECTED_FRAME_SIZE];
                         if (command == DSHOT_CMD_ESC_INFO) {
                             delay(10); // Wait for potential ESC telemetry transmission to finish
 
-                            startEscDataRead(ESC_INFO_EXPECTED_FRAME_SIZE, escInfoBuffer);
+                            startEscDataRead(escInfoBuffer, ESC_INFO_V2_EXPECTED_FRAME_SIZE);
                         }
 
                         pwmWriteDshotCommand(escIndex, command);
 
                         if (command == DSHOT_CMD_ESC_INFO) {
-                            bool escInfoReceived = false;
-                            for (int i = 0; i < 10; i++) {
-                                delay(20);
+                            delay(10);
 
-                                if (checkEscDataReadFinished()) {
-                                    escInfoReceived = true;
-
-                                    break;
-                                }
-                            }
-
-                            if (escInfoReceived) {
-                                printEscInfo(escInfoBuffer);
-                            } else {
-                                cliPrint("No ESC info received.");
-                            }
+                            printEscInfo(escInfoBuffer, getNumberEscBytesRead());
                         } else {
                             cliPrintf("Command %d written.\r\n", command);
                         }
