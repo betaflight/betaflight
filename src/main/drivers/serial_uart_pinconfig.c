@@ -43,7 +43,7 @@ void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig)
 {
     uartDevice_t *uartdev = uartDevice;
 
-    for (size_t hindex = 0; hindex < UARTDEV_COUNT_MAX; hindex++) {
+    for (size_t hindex = 0; hindex < UARTDEV_COUNT; hindex++) {
 
         const uartHardware_t *hardware = &uartHardware[hindex];
         UARTDevice device = hardware->device;
