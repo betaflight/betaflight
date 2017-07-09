@@ -120,6 +120,16 @@ PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
 
 #ifndef USE_OSD_SLAVE
+#if defined(STM32F4) && !defined(DISABLE_OVERCLOCK)
+PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
+    .pidProfileIndex = 0,
+    .activeRateProfile = 0,
+    .debug_mode = DEBUG_MODE,
+    .task_statistics = true,
+    .cpu_overclock = false,
+    .name = { 0 } // FIXME misplaced, see PG_PILOT_CONFIG in CF v1.x
+);
+#else
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .pidProfileIndex = 0,
     .activeRateProfile = 0,
@@ -127,6 +137,7 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .task_statistics = true,
     .name = { 0 } // FIXME misplaced, see PG_PILOT_CONFIG in CF v1.x
 );
+#endif
 #endif
 
 #ifdef USE_OSD_SLAVE
@@ -340,7 +351,7 @@ void validateAndFixConfig(void)
 #endif
 
 #ifndef USE_OSD_SLAVE
-    if((motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)){
+    if ((motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)) {
         motorConfigMutable()->mincommand = 1000;
     }
 
@@ -456,7 +467,7 @@ void validateAndFixGyroConfig(void)
     // check for looptime restrictions based on motor protocol. Motor times have safety margin
     const float pidLooptime = samplingTime * gyroConfig()->gyro_sync_denom * pidConfig()->pid_process_denom;
     float motorUpdateRestriction;
-    switch(motorConfig()->dev.motorPwmProtocol) {
+    switch (motorConfig()->dev.motorPwmProtocol) {
         case (PWM_TYPE_STANDARD):
             motorUpdateRestriction = 1.0f/BRUSHLESS_MOTORS_PWM_RATE;
             break;
@@ -487,7 +498,7 @@ void validateAndFixGyroConfig(void)
     if (motorConfig()->dev.useUnsyncedPwm && (motorConfig()->dev.motorPwmProtocol <= PWM_TYPE_BRUSHED) && motorConfig()->dev.motorPwmProtocol != PWM_TYPE_STANDARD) {
         uint32_t maxEscRate = lrintf(1.0f / motorUpdateRestriction);
 
-        if(motorConfig()->dev.motorPwmRate > maxEscRate)
+        if (motorConfig()->dev.motorPwmRate > maxEscRate)
             motorConfigMutable()->dev.motorPwmRate = maxEscRate;
     }
 }

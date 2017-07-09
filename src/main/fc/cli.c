@@ -190,13 +190,6 @@ static const char * const *sensorHardwareNames[] = {
 };
 #endif // USE_SENSOR_NAMES
 
-#ifndef MINIMAL_CLI
-static const char *armingDisableFlagNames[] = {
-    "NOGYRO", "FAILSAFE", "BOXFAILSAFE", "THROTTLE",
-    "ANGLE", "LOAD", "CALIB", "CLI", "CMS", "OSD", "BST"
-};
-#endif
-
 static void cliPrint(const char *str)
 {
     while (*str) {
@@ -333,7 +326,7 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, b
             break;
         }
 
-        switch(var->type & VALUE_MODE_MASK) {
+        switch (var->type & VALUE_MODE_MASK) {
         case MODE_DIRECT:
             cliPrintf("%d", value);
             if (full) {
@@ -812,7 +805,7 @@ static void cliSerial(char *cmdline)
             break;
         }
 
-        switch(i) {
+        switch (i) {
         case 0:
             if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_1000000) {
                 continue;
@@ -866,7 +859,7 @@ static void cliSerialPassthrough(char *cmdline)
     int index = 0;
 
     while (tok != NULL) {
-        switch(index) {
+        switch (index) {
             case 0:
                 id = atoi(tok);
                 break;
@@ -1332,7 +1325,7 @@ static void cliModeColor(char *cmdline)
         int modeIdx  = args[MODE];
         int funIdx = args[FUNCTION];
         int color = args[COLOR];
-        if(!setModeColor(modeIdx, funIdx, color)) {
+        if (!setModeColor(modeIdx, funIdx, color)) {
             cliShowParseError();
             return;
         }
@@ -2023,7 +2016,7 @@ static void cliBeeper(char *cmdline)
     if (len == 0) {
         cliPrintf("Disabled:");
         for (int32_t i = 0; ; i++) {
-            if (i == beeperCount - 2){
+            if (i == beeperCount - 2) {
                 if (mask == 0)
                     cliPrint("  none");
                 break;
@@ -2090,7 +2083,7 @@ static void printMap(uint8_t dumpMask, const rxConfig_t *rxConfig, const rxConfi
     char buf[16];
     char bufDefault[16];
     uint32_t i;
-    for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
+    for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
         buf[rxConfig->rcmap[i]] = rcChannelLetters[i];
         if (defaultRxConfig) {
             bufDefault[defaultRxConfig->rcmap[i]] = rcChannelLetters[i];
@@ -2133,7 +2126,7 @@ static void cliMap(char *cmdline)
 
 static char *checkCommand(char *cmdLine, const char *command)
 {
-    if(!strncasecmp(cmdLine, command, strlen(command))   // command names match
+    if (!strncasecmp(cmdLine, command, strlen(command))   // command names match
         && (isspace((unsigned)cmdLine[strlen(command)]) || cmdLine[strlen(command)] == 0)) {
         return cmdLine + strlen(command) + 1;
     } else {
@@ -2238,7 +2231,7 @@ static void cliDshotProg(char *cmdline)
 
                 break;
             default:
-                motorControlEnable = false;
+                pwmDisableMotors();
 
                 int command = atoi(pch);
                 if (command >= 0 && command < DSHOT_MIN_THROTTLE) {
@@ -2266,7 +2259,7 @@ static void cliDshotProg(char *cmdline)
         pch = strtok_r(NULL, " ", &saveptr);
     }
 
-    motorControlEnable = true;
+    pwmEnableMotors();
 }
 #endif
 
@@ -2287,13 +2280,13 @@ static void cliEscPassthrough(char *cmdline)
     while (pch != NULL) {
         switch (pos) {
             case 0:
-                if(strncasecmp(pch, "sk", strlen(pch)) == 0) {
+                if (strncasecmp(pch, "sk", strlen(pch)) == 0) {
                     mode = PROTOCOL_SIMONK;
-                } else if(strncasecmp(pch, "bl", strlen(pch)) == 0) {
+                } else if (strncasecmp(pch, "bl", strlen(pch)) == 0) {
                     mode = PROTOCOL_BLHELI;
-                } else if(strncasecmp(pch, "ki", strlen(pch)) == 0) {
+                } else if (strncasecmp(pch, "ki", strlen(pch)) == 0) {
                     mode = PROTOCOL_KISS;
-                } else if(strncasecmp(pch, "cc", strlen(pch)) == 0) {
+                } else if (strncasecmp(pch, "cc", strlen(pch)) == 0) {
                     mode = PROTOCOL_KISSALL;
                 } else {
                     cliShowParseError();
@@ -3474,7 +3467,7 @@ void cliProcess(void)
                         break;
                     }
                 }
-                if(cmd < cmdTable + ARRAYLEN(cmdTable))
+                if (cmd < cmdTable + ARRAYLEN(cmdTable))
                     cmd->func(options);
                 else
                     cliPrint("Unknown command, try 'help'");

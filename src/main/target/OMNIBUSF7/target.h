@@ -78,6 +78,10 @@
 
 #define SERIAL_PORT_COUNT 4
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PPM
+#define ESCSERIAL_TIMER_TX_PIN  PE13 // XXX Provisional (Hardware=0, PPM)
+
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2

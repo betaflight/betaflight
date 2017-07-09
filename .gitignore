@@ -20,9 +20,9 @@ docs/Manual.pdf
 README.pdf
 
 # artefacts of top-level Makefile
-/downloads
-/tools
-/build
+/downloads/
+/tools/
+/build/
 # local changes only
 make/local.mk
 
@@ -32,8 +32,8 @@ mcu.mak.old
 stm32.mak
 
 # artefacts for Visual Studio Code
-/.vscode
+/.vscode/
 
 # artefacts for CLion
-/cmake-build-debug
+/cmake-build-debug/
 /CMakeLists.txt

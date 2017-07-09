@@ -116,7 +116,7 @@ void pidInitMixer(const struct pidProfile_s *pidProfile);
 void mixerConfigureOutput(void);
 
 void mixerResetDisarmedMotors(void);
-void mixTable(struct pidProfile_s *pidProfile);
+void mixTable(uint8_t vbatPidCompensation);
 void syncMotors(bool enabled);
 void writeMotors(void);
 void stopMotors(void);

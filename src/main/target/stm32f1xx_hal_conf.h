@@ -83,7 +83,7 @@
 /**
   * @brief Adjust the value of External High Speed oscillator (HSE) used in your application.
   *        This value is used by the RCC HAL module to compute the system frequency
-  *        (when HSE is used as system clock source, directly or through the PLL).  
+  *        (when HSE is used as system clock source, directly or through the PLL).
   */
 #if !defined  (HSE_VALUE) 
 #if defined(USE_STM3210C_EVAL)
@@ -114,22 +114,22 @@
   #define LSE_VALUE    ((uint32_t)32768) /*!< Value of the External oscillator in Hz*/
 #endif /* LSE_VALUE */
 
-   
+ 
 #if !defined  (LSE_STARTUP_TIMEOUT)
   #define LSE_STARTUP_TIMEOUT    ((uint32_t)5000)   /*!< Time out for LSE start up, in ms */
 #endif /* HSE_STARTUP_TIMEOUT */
 
-   
+ 
 /* Tip: To avoid modifying this file each time you need to use different HSE,
    ===  you can define the HSE value in your toolchain compiler preprocessor. */
 
 /* ########################### System Configuration ######################### */
 /**
   * @brief This is the HAL system configuration section
-  */     
-#define  VDD_VALUE                    ((uint32_t)3300) /*!< Value of VDD in mv */           
-#define  TICK_INT_PRIORITY            ((uint32_t)0x000F)    /*!< tick interrupt priority */            
-#define  USE_RTOS                     0     
+  */ 
+#define  VDD_VALUE                    ((uint32_t)3300) /*!< Value of VDD in mv */     
+#define  TICK_INT_PRIORITY            ((uint32_t)0x000F)    /*!< tick interrupt priority */      
+#define  USE_RTOS                     0 
 #define  PREFETCH_ENABLE              1
 
 /* ########################## Assert Selection ############################## */
@@ -152,7 +152,7 @@
 #define MAC_ADDR4   0
 #define MAC_ADDR5   0
 
-/* Definition of the Ethernet driver buffers size and count */   
+/* Definition of the Ethernet driver buffers size and count */ 
 #define ETH_RX_BUF_SIZE                ETH_MAX_PACKET_SIZE /* buffer size for receive               */
 #define ETH_TX_BUF_SIZE                ETH_MAX_PACKET_SIZE /* buffer size for transmit              */
 #define ETH_RXBUFNB                    ((uint32_t)8)       /* 4 Rx buffers of size ETH_RX_BUF_SIZE  */
@@ -189,7 +189,7 @@
 #define PHY_AUTONEGO_COMPLETE           ((uint16_t)0x0020)  /*!< Auto-Negotiation process completed   */
 #define PHY_LINKED_STATUS               ((uint16_t)0x0004)  /*!< Valid link established               */
 #define PHY_JABBER_DETECTION            ((uint16_t)0x0002)  /*!< Jabber condition detected            */
-  
+
 /* Section 4: Extended PHY Registers */
 
 #define PHY_SR                          ((uint16_t)0x10)    /*!< PHY status register Offset                      */
@@ -220,15 +220,15 @@
 #ifdef HAL_GPIO_MODULE_ENABLED
  #include "stm32f1xx_hal_gpio.h"
 #endif /* HAL_GPIO_MODULE_ENABLED */
-   
+ 
 #ifdef HAL_DMA_MODULE_ENABLED
   #include "stm32f1xx_hal_dma.h"
 #endif /* HAL_DMA_MODULE_ENABLED */
-   
+ 
 #ifdef HAL_ETH_MODULE_ENABLED
   #include "stm32f1xx_hal_eth.h"
-#endif /* HAL_ETH_MODULE_ENABLED */  
-   
+#endif /* HAL_ETH_MODULE_ENABLED */
+ 
 #ifdef HAL_CAN_MODULE_ENABLED
  #include "stm32f1xx_hal_can.h"
 #endif /* HAL_CAN_MODULE_ENABLED */
@@ -291,11 +291,11 @@
 
 #ifdef HAL_SD_MODULE_ENABLED
  #include "stm32f1xx_hal_sd.h"
-#endif /* HAL_SD_MODULE_ENABLED */  
+#endif /* HAL_SD_MODULE_ENABLED */
 
 #ifdef HAL_NAND_MODULE_ENABLED
  #include "stm32f1xx_hal_nand.h"
-#endif /* HAL_NAND_MODULE_ENABLED */     
+#endif /* HAL_NAND_MODULE_ENABLED */ 
 
 #ifdef HAL_SPI_MODULE_ENABLED
  #include "stm32f1xx_hal_spi.h"
@@ -332,8 +332,8 @@
 
 #ifdef HAL_HCD_MODULE_ENABLED
  #include "stm32f1xx_hal_hcd.h"
-#endif /* HAL_HCD_MODULE_ENABLED */   
-   
+#endif /* HAL_HCD_MODULE_ENABLED */ 
+ 
 
 /* Exported macro ------------------------------------------------------------*/
 #ifdef  USE_FULL_ASSERT

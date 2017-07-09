@@ -42,8 +42,8 @@ void dispatchEnable(void)
 
 void dispatchProcess(uint32_t currentTime)
 {
-    for(dispatchEntry_t **p = &head; *p; ) {
-        if(cmp32(currentTime, (*p)->delayedUntil) < 0)
+    for (dispatchEntry_t **p = &head; *p; ) {
+        if (cmp32(currentTime, (*p)->delayedUntil) < 0)
             break;
         // unlink entry first, so handler can replan self
         dispatchEntry_t *current = *p;
@@ -56,7 +56,7 @@ void dispatchAdd(dispatchEntry_t *entry, int delayUs)
 {
     uint32_t delayedUntil = micros() + delayUs;
     dispatchEntry_t **p = &head;
-    while(*p && cmp32((*p)->delayedUntil, delayedUntil) < 0)
+    while (*p && cmp32((*p)->delayedUntil, delayedUntil) < 0)
         p = &(*p)->next;
     entry->next = *p;
     *p = entry;

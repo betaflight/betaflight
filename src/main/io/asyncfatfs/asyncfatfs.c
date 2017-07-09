@@ -28,6 +28,7 @@
 
 #include "fat_standard.h"
 #include "drivers/sdcard.h"
+#include "common/maths.h"
 
 #ifdef AFATFS_DEBUG
     #define ONLY_EXPOSE_FOR_TESTING
@@ -91,9 +92,6 @@
 #define AFATFS_FREESPACE_FILENAME "FREESPAC.E"
 
 #define AFATFS_INTROSPEC_LOG_FILENAME "ASYNCFAT.LOG"
-
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 typedef enum {
     AFATFS_SAVE_DIRECTORY_NORMAL,

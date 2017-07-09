@@ -79,7 +79,7 @@ void updateState(const fdm_packet* pkt) {
     clock_gettime(CLOCK_MONOTONIC, &now_ts);
 
     const uint64_t realtime_now = micros64_real();
-    if(realtime_now > last_realtime + 500*1e3) { // 500ms timeout
+    if (realtime_now > last_realtime + 500*1e3) { // 500ms timeout
         last_timestamp = pkt->timestamp;
         last_realtime = realtime_now;
         sendMotorUpdate();
@@ -87,7 +87,7 @@ void updateState(const fdm_packet* pkt) {
     }
 
     const double deltaSim = pkt->timestamp - last_timestamp;  // in seconds
-    if(deltaSim < 0) { // don't use old packet
+    if (deltaSim < 0) { // don't use old packet
         return;
     }
 
@@ -141,7 +141,7 @@ void updateState(const fdm_packet* pkt) {
 #endif
 
 
-    if(deltaSim < 0.02 && deltaSim > 0) { // simulator should run faster than 50Hz
+    if (deltaSim < 0.02 && deltaSim > 0) { // simulator should run faster than 50Hz
 //		simRate = simRate * 0.5 + (1e6 * deltaSim / (realtime_now - last_realtime)) * 0.5;
         struct timespec out_ts;
         timeval_sub(&out_ts, &now_ts, &last_ts);
@@ -168,7 +168,7 @@ static void* udpThread(void* data) {
 
     while (workerRunning) {
         n = udpRecv(&stateLink, &fdmPkt, sizeof(fdm_packet), 100);
-        if(n == sizeof(fdm_packet)) {
+        if (n == sizeof(fdm_packet)) {
 //			printf("[data]new fdm %d\n", n);
             updateState(&fdmPkt);
         }
@@ -215,7 +215,7 @@ void systemInit(void) {
     }
 
     ret = pthread_create(&tcpWorker, NULL, tcpThread, NULL);
-    if(ret != 0) {
+    if (ret != 0) {
         printf("Create tcpWorker error!\n");
         exit(1);
     }
@@ -227,7 +227,7 @@ void systemInit(void) {
     printf("start UDP server...%d\n", ret);
 
     ret = pthread_create(&udpWorker, NULL, udpThread, NULL);
-    if(ret != 0) {
+    if (ret != 0) {
         printf("Create udpWorker error!\n");
         exit(1);
     }
@@ -266,13 +266,13 @@ void timerStart(void) {
 
 void failureMode(failureMode_e mode) {
     printf("[failureMode]!!! %d\n", mode);
-    while(1);
+    while (1);
 }
 
-void failureLedCode(failureMode_e mode, int repeatCount)
+void indicateFailure(failureMode_e mode, int repeatCount)
 {
     UNUSED(repeatCount);
-    printf("Failure LED flash for: [failureMode]!!! %d\n", mode);	
+    printf("Failure LED flash for: [failureMode]!!! %d\n", mode);
 }
 
 // Time part
@@ -374,7 +374,7 @@ int timeval_sub(struct timespec *result, struct timespec *x, struct timespec *y)
 
 
 // PWM part
-bool pwmMotorsEnabled = false;
+static bool pwmMotorsEnabled = false;
 static pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
 static pwmOutputPort_t servos[MAX_SUPPORTED_SERVOS];
 
@@ -404,6 +404,10 @@ void servoDevInit(const servoDevConfig_t *servoConfig) {
 
 pwmOutputPort_t *pwmGetMotors(void) {
     return motors;
+}
+
+void pwmEnableMotors(void) {
+    pwmMotorsEnabled = true;
 }
 
 bool pwmAreMotorsEnabled(void) {
@@ -440,7 +444,7 @@ void pwmCompleteMotorUpdate(uint8_t motorCount) {
     pwmPkt.motor_speed[2] = motorsPwm[3] / outScale;
 
     // get one "fdm_packet" can only send one "servo_packet"!!
-    if(pthread_mutex_trylock(&updateLock) != 0) return;
+    if (pthread_mutex_trylock(&updateLock) != 0) return;
     udpSend(&pwmLink, &pwmPkt, sizeof(servo_packet));
 //	printf("[pwm]%u:%u,%u,%u,%u\n", idlePulse, motorsPwm[0], motorsPwm[1], motorsPwm[2], motorsPwm[3]);
 }
@@ -483,7 +487,7 @@ void FLASH_Unlock(void) {
         printf("[FLASH_Unlock]size = %ld, %ld\n", lSize, (long)(&__config_end - &__config_start));
         for (unsigned i = 0; i < (uintptr_t)(&__config_end - &__config_start); i++) {
                 int c = fgetc(eepromFd);
-            if(c == EOF) break;
+            if (c == EOF) break;
             eeprom[i] = (uint8_t)c;
         }
     } else {

@@ -137,8 +137,6 @@
 void targetPreInit(void);
 #endif
 
-extern uint8_t motorControlEnable;
-
 #ifdef SOFTSERIAL_LOOPBACK
 serialPort_t *loopbackPort;
 #endif
@@ -265,6 +263,20 @@ void init(void)
 
     ensureEEPROMContainsValidData();
     readEEPROM();
+
+#if defined(STM32F4) && !defined(DISABLE_OVERCLOCK)
+    // If F4 Overclocking is set and System core clock is not correct a reset is forced
+    if (systemConfig()->cpu_overclock && SystemCoreClock != OC_FREQUENCY_HZ) {
+        *((uint32_t *)0x2001FFF8) = 0xBABEFACE; // 128KB SRAM STM32F4XX
+        __disable_irq();
+        NVIC_SystemReset();
+    } else if (!systemConfig()->cpu_overclock && SystemCoreClock == OC_FREQUENCY_HZ) {
+        *((uint32_t *)0x2001FFF8) = 0x0;        // 128KB SRAM STM32F4XX
+        __disable_irq();
+        NVIC_SystemReset();
+    }
+
+#endif
 
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
 
@@ -441,10 +453,10 @@ void init(void)
 #endif
 #ifdef USE_I2C_DEVICE_3
     i2cInit(I2CDEV_3);
-#endif  
+#endif
 #ifdef USE_I2C_DEVICE_4
     i2cInit(I2CDEV_4);
-#endif  
+#endif
 #endif /* USE_I2C */
 
 #endif /* TARGET_BUS_INIT */
@@ -481,7 +493,7 @@ void init(void)
 
     if (!sensorsAutodetect()) {
         // if gyro was not detected due to whatever reason, notify and don't arm.
-        failureLedCode(FAILURE_MISSING_ACC, 2);
+        indicateFailure(FAILURE_MISSING_ACC, 2);
         setArmingDisabled(ARMING_DISABLED_NO_GYRO);
     }
 
@@ -632,7 +644,7 @@ void init(void)
     if (mixerConfig()->mixerMode == MIXER_GIMBAL) {
         accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
     }
-    gyroStartCalibration();
+    gyroStartCalibration(false);
 #ifdef BARO
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
 #endif
@@ -695,7 +707,7 @@ void init(void)
 
     // Latch active features AGAIN since some may be modified by init().
     latchActiveFeatures();
-    motorControlEnable = true;
+    pwmEnableMotors();
 
 #ifdef USE_OSD_SLAVE
     osdSlaveTasksInit();

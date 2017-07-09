@@ -269,7 +269,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 {
     uint32_t i, tmp, junk;
 
-    switch(bstRequest) {
+    switch (bstRequest) {
         case BST_API_VERSION:
             bstWrite8(BST_PROTOCOL_VERSION);
 
@@ -411,7 +411,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
 
         case BST_RX_MAP:
-            for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++)
+            for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++)
                 bstWrite8(rxConfig()->rcmap[i]);
             break;
 
@@ -455,7 +455,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
     uint16_t tmp;
 
     bool ret = BST_PASSED;
-    switch(bstWriteCommand) {
+    switch (bstWriteCommand) {
         case BST_SELECT_SETTING:
             if (!ARMING_FLAG(ARMED)) {
                 changePidProfile(bstRead8());
@@ -563,7 +563,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
            }
            break;
         case BST_SET_RX_MAP:
-            for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
+            for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
                 rxConfigMutable()->rcmap[i] = bstRead8();
             }
             break;
@@ -620,7 +620,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
     }
     bstWrite8(ret);
 
-    if(ret == BST_FAILED)
+    if (ret == BST_FAILED)
         return false;
 
     return true;
@@ -651,18 +651,18 @@ extern bool cleanflight_data_ready;
 void bstProcessInCommand(void)
 {
     readBufferPointer = 2;
-    if(bstCurrentAddress() == I2C_ADDR_CLEANFLIGHT_FC) {
-        if(bstReadCRC() == CRC8 && bstRead8()==BST_USB_COMMANDS) {
+    if (bstCurrentAddress() == I2C_ADDR_CLEANFLIGHT_FC) {
+        if (bstReadCRC() == CRC8 && bstRead8()==BST_USB_COMMANDS) {
             uint8_t i;
             writeBufferPointer = 1;
             cleanflight_data_ready = false;
-            for(i = 0; i < BST_BUFFER_SIZE; i++) {
+            for (i = 0; i < BST_BUFFER_SIZE; i++) {
                 writeData[i] = 0;
             }
             switch (bstRead8()) {
                 case BST_USB_DEVICE_INFO_REQUEST:
                     bstRead8();
-                    if(bstSlaveUSBCommandFeedback(/*bstRead8()*/))
+                    if (bstSlaveUSBCommandFeedback(/*bstRead8()*/))
                         coreProReady = true;
                     break;
                 case BST_READ_COMMANDS:
@@ -679,8 +679,8 @@ void bstProcessInCommand(void)
             }
             cleanflight_data_ready = true;
         }
-    } else if(bstCurrentAddress() == 0x00) {
-        if(bstReadCRC() == CRC8 && bstRead8()==BST_GENERAL_HEARTBEAT) {
+    } else if (bstCurrentAddress() == 0x00) {
+        if (bstReadCRC() == CRC8 && bstRead8()==BST_GENERAL_HEARTBEAT) {
             resetBstTimer = micros();
             needResetCheck = true;
         }
@@ -689,8 +689,8 @@ void bstProcessInCommand(void)
 
 static void resetBstChecker(timeUs_t currentTimeUs)
 {
-    if(needResetCheck) {
-        if(currentTimeUs >= (resetBstTimer + BST_RESET_TIME))
+    if (needResetCheck) {
+        if (currentTimeUs >= (resetBstTimer + BST_RESET_TIME))
         {
             bstTimeoutUserCallback();
             needResetCheck = false;
@@ -709,23 +709,23 @@ static uint8_t sendCounter = 0;
 
 void taskBstMasterProcess(timeUs_t currentTimeUs)
 {
-    if(coreProReady) {
-        if(currentTimeUs >= next02hzUpdateAt_1 && !bstWriteBusy()) {
+    if (coreProReady) {
+        if (currentTimeUs >= next02hzUpdateAt_1 && !bstWriteBusy()) {
             writeFCModeToBST();
             next02hzUpdateAt_1 = currentTimeUs + UPDATE_AT_02HZ;
         }
-        if(currentTimeUs >= next20hzUpdateAt_1 && !bstWriteBusy()) {
-            if(sendCounter == 0)
+        if (currentTimeUs >= next20hzUpdateAt_1 && !bstWriteBusy()) {
+            if (sendCounter == 0)
                 writeRCChannelToBST();
-            else if(sendCounter == 1)
+            else if (sendCounter == 1)
                 writeRollPitchYawToBST();
             sendCounter++;
-            if(sendCounter > 1)
+            if (sendCounter > 1)
                 sendCounter = 0;
             next20hzUpdateAt_1 = currentTimeUs + UPDATE_AT_20HZ;
         }
 #ifdef GPS
-        if(sensors(SENSOR_GPS) && !bstWriteBusy())
+        if (sensors(SENSOR_GPS) && !bstWriteBusy())
             writeGpsPositionPrameToBST();
 #endif
 
@@ -779,7 +779,7 @@ static uint8_t numOfSat = 0;
 #ifdef GPS
 bool writeGpsPositionPrameToBST(void)
 {
-    if((lat != gpsSol.llh.lat) || (lon != gpsSol.llh.lon) || (alt != gpsSol.llh.alt) || (numOfSat != gpsSol.numSat)) {
+    if ((lat != gpsSol.llh.lat) || (lon != gpsSol.llh.lon) || (alt != gpsSol.llh.alt) || (numOfSat != gpsSol.numSat)) {
         lat = gpsSol.llh.lat;
         lon = gpsSol.llh.lon;
         alt = gpsSol.llh.alt;
@@ -826,7 +826,7 @@ bool writeRCChannelToBST(void)
     uint8_t i = 0;
     bstMasterStartBuffer(PUBLIC_ADDRESS);
     bstMasterWrite8(RC_CHANNEL_FRAME_ID);
-    for(i = 0; i < (USABLE_TIMER_CHANNEL_COUNT-1); i++) {
+    for (i = 0; i < (USABLE_TIMER_CHANNEL_COUNT-1); i++) {
         bstMasterWrite16(rcData[i]);
     }
 

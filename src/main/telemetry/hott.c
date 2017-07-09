@@ -231,10 +231,10 @@ static inline void updateAlarmBatteryStatus(HOTT_EAM_MSG_t *hottEAMMessage)
 {
     batteryState_e batteryState;
 
-    if (shouldTriggerBatteryAlarmNow()){
+    if (shouldTriggerBatteryAlarmNow()) {
         lastHottAlarmSoundTime = millis();
         batteryState = getBatteryState();
-        if (batteryState == BATTERY_WARNING  || batteryState == BATTERY_CRITICAL){
+        if (batteryState == BATTERY_WARNING  || batteryState == BATTERY_CRITICAL) {
             hottEAMMessage->warning_beeps = 0x10;
             hottEAMMessage->alarm_invers1 = HOTT_EAM_ALARM1_FLAG_BATTERY_1;
         }
@@ -282,7 +282,7 @@ static inline void hottEAMUpdateClimbrate(HOTT_EAM_MSG_t *hottEAMMessage)
     int32_t vario = getEstimatedVario();
     hottEAMMessage->climbrate_L = (30000 + vario) & 0x00FF;
     hottEAMMessage->climbrate_H = (30000 + vario) >> 8;
-    hottEAMMessage->climbrate3s = 120 + (vario / 100);  
+    hottEAMMessage->climbrate3s = 120 + (vario / 100);
 }
 
 void hottPrepareEAMResponse(HOTT_EAM_MSG_t *hottEAMMessage)
@@ -401,7 +401,7 @@ void configureHoTTTelemetryPort(void)
 
 static void hottSendResponse(uint8_t *buffer, int length)
 {
-    if(hottIsSending) {
+    if (hottIsSending) {
         return;
     }
 
@@ -514,7 +514,7 @@ static void hottSendTelemetryData(void) {
     hottReconfigurePort();
 
     --hottMsgRemainingBytesToSendCount;
-    if(hottMsgRemainingBytesToSendCount == 0) {
+    if (hottMsgRemainingBytesToSendCount == 0) {
         hottSerialWrite(hottMsgCrc++);
         return;
     }
@@ -572,7 +572,7 @@ void handleHoTTTelemetry(timeUs_t currentTimeUs)
         return;
 
     if (hottIsSending) {
-        if(currentTimeUs - serialTimer < HOTT_TX_DELAY_US) {
+        if (currentTimeUs - serialTimer < HOTT_TX_DELAY_US) {
             return;
         }
     }

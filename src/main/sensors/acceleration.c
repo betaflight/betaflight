@@ -225,7 +225,7 @@ retry:
 #ifdef ACC_MPU6500_ALIGN
             dev->accAlign = ACC_MPU6500_ALIGN;
 #endif
-            switch(dev->mpuDetectionResult.sensor) {
+            switch (dev->mpuDetectionResult.sensor) {
             case MPU_9250_SPI:
                 accHardware = ACC_MPU9250;
                 break;

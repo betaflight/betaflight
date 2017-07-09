@@ -235,7 +235,7 @@ static int write_word(config_streamer_t *c, uint32_t value)
         EraseInitStruct.Sector = getFLASHSectorForEEPROM();
         uint32_t SECTORError;
         const HAL_StatusTypeDef status = HAL_FLASHEx_Erase(&EraseInitStruct, &SECTORError);
-        if (status != HAL_OK){
+        if (status != HAL_OK) {
             return -1;
         }
     }

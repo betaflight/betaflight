@@ -51,7 +51,7 @@ SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
 
 #ifdef USE_SPI_DEVICE_4
     if (instance == SPI4)
-        return SPIDEV_3;
+        return SPIDEV_4;
 #endif
 
     return SPIINVALID;
@@ -237,6 +237,14 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len
             *(out++) = b;
     }
 
+    return true;
+}
+
+bool spiBusTransfer(const busDevice_t *bus, uint8_t *rxData, const uint8_t *txData, int length)
+{
+    IOLo(bus->spi.csnPin);
+    spiTransfer(bus->spi.instance, rxData, txData, length);
+    IOHi(bus->spi.csnPin);
     return true;
 }
 

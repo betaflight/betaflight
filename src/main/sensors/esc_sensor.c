@@ -215,7 +215,7 @@ static uint8_t update_crc8(uint8_t crc, uint8_t crc_seed)
 static uint8_t get_crc8(uint8_t *Buf, uint8_t BufLen)
 {
     uint8_t crc = 0;
-    for(int i=0; i<BufLen; i++) crc = update_crc8(Buf[i], crc);
+    for (int i=0; i<BufLen; i++) crc = update_crc8(Buf[i], crc);
     return (crc);
 }
 

@@ -72,6 +72,9 @@ typedef struct systemConfig_s {
     uint8_t activeRateProfile;
     uint8_t debug_mode;
     uint8_t task_statistics;
+#if defined(STM32F4) && !defined(DISABLE_OVERCLOCK)
+    uint8_t cpu_overclock;
+#endif
     char name[MAX_NAME_LENGTH + 1]; // FIXME misplaced, see PG_PILOT_CONFIG in CF v1.x
 } systemConfig_t;
 #endif

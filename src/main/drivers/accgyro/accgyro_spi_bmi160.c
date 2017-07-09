@@ -110,7 +110,7 @@ bool bmi160Detect(const busDevice_t *bus)
     delay(10); // Give SPI some time to start up
 
     /* Check the chip ID */
-    if (spiReadRegister(bus, BMI160_REG_CHIPID) != 0xd1){
+    if (spiReadRegister(bus, BMI160_REG_CHIPID) != 0xd1) {
         return false;
     }
 
@@ -130,7 +130,7 @@ static void BMI160_Init(const busDevice_t *bus)
     }
 
     /* Configure the BMI160 Sensor */
-    if (BMI160_Config(bus) != 0){
+    if (BMI160_Config(bus) != 0) {
         return;
     }
 
@@ -152,12 +152,12 @@ static int32_t BMI160_Config(const busDevice_t *bus)
 {
 
     // Set normal power mode for gyro and accelerometer
-    if (BMI160_WriteReg(bus, BMI160_REG_CMD, BMI160_PMU_CMD_PMU_GYR_NORMAL) != 0){
+    if (BMI160_WriteReg(bus, BMI160_REG_CMD, BMI160_PMU_CMD_PMU_GYR_NORMAL) != 0) {
         return -1;
     }
     delay(100); // can take up to 80ms
 
-    if (BMI160_WriteReg(bus, BMI160_REG_CMD, BMI160_PMU_CMD_PMU_ACC_NORMAL) != 0){
+    if (BMI160_WriteReg(bus, BMI160_REG_CMD, BMI160_PMU_CMD_PMU_ACC_NORMAL) != 0) {
         return -2;
     }
     delay(5); // can take up to 3.8ms
@@ -170,47 +170,47 @@ static int32_t BMI160_Config(const busDevice_t *bus)
 
     // Set odr and ranges
     // Set acc_us = 0 acc_bwp = 0b010 so only the first filter stage is used
-    if (BMI160_WriteReg(bus, BMI160_REG_ACC_CONF, 0x20 | BMI160_ODR_800_Hz) != 0){
+    if (BMI160_WriteReg(bus, BMI160_REG_ACC_CONF, 0x20 | BMI160_ODR_800_Hz) != 0) {
         return -3;
     }
     delay(1);
 
     // Set gyr_bwp = 0b010 so only the first filter stage is used
-    if (BMI160_WriteReg(bus, BMI160_REG_GYR_CONF, 0x20 | BMI160_ODR_3200_Hz) != 0){
+    if (BMI160_WriteReg(bus, BMI160_REG_GYR_CONF, 0x20 | BMI160_ODR_3200_Hz) != 0) {
         return -4;
     }
     delay(1);
 
-    if (BMI160_WriteReg(bus, BMI160_REG_ACC_RANGE, BMI160_RANGE_8G) != 0){
+    if (BMI160_WriteReg(bus, BMI160_REG_ACC_RANGE, BMI160_RANGE_8G) != 0) {
         return -5;
     }
     delay(1);
 
-    if (BMI160_WriteReg(bus, BMI160_REG_GYR_RANGE, BMI160_RANGE_2000DPS) != 0){
+    if (BMI160_WriteReg(bus, BMI160_REG_GYR_RANGE, BMI160_RANGE_2000DPS) != 0) {
         return -6;
     }
     delay(1);
 
     // Enable offset compensation
     uint8_t val = spiReadRegister(bus, BMI160_REG_OFFSET_0);
-    if (BMI160_WriteReg(bus, BMI160_REG_OFFSET_0, val | 0xC0) != 0){
+    if (BMI160_WriteReg(bus, BMI160_REG_OFFSET_0, val | 0xC0) != 0) {
         return -7;
     }
 
     // Enable data ready interrupt
-    if (BMI160_WriteReg(bus, BMI160_REG_INT_EN1, BMI160_INT_EN1_DRDY) != 0){
+    if (BMI160_WriteReg(bus, BMI160_REG_INT_EN1, BMI160_INT_EN1_DRDY) != 0) {
         return -8;
     }
     delay(1);
 
     // Enable INT1 pin
-    if (BMI160_WriteReg(bus, BMI160_REG_INT_OUT_CTRL, BMI160_INT_OUT_CTRL_INT1_CONFIG) != 0){
+    if (BMI160_WriteReg(bus, BMI160_REG_INT_OUT_CTRL, BMI160_INT_OUT_CTRL_INT1_CONFIG) != 0) {
         return -9;
     }
     delay(1);
 
     // Map data ready interrupt to INT1 pin
-    if (BMI160_WriteReg(bus, BMI160_REG_INT_MAP1, BMI160_REG_INT_MAP1_INT1_DRDY) != 0){
+    if (BMI160_WriteReg(bus, BMI160_REG_INT_MAP1, BMI160_REG_INT_MAP1_INT1_DRDY) != 0) {
         return -10;
     }
     delay(1);
@@ -351,7 +351,7 @@ bool bmi160GyroRead(gyroDev_t *gyro)
     };
 
     uint8_t bmi160_rec_buf[BUFFER_SIZE];
-    uint8_t bmi160_tx_buf[BUFFER_SIZE] = {BMI160_REG_GYR_DATA_X_LSB | 0x80, 0, 0, 0, 0, 0, 0};
+    static const uint8_t bmi160_tx_buf[BUFFER_SIZE] = {BMI160_REG_GYR_DATA_X_LSB | 0x80, 0, 0, 0, 0, 0, 0};
 
     IOLo(gyro->bus.spi.csnPin);
     spiTransfer(gyro->bus.spi.instance, bmi160_rec_buf, bmi160_tx_buf, BUFFER_SIZE);   // receive response

@@ -21,7 +21,7 @@
 #define TARGET_BOARD_IDENTIFIER "PLUM"
 #define USBD_PRODUCT_STRING     "PLUMF4"
 
-#elif defined(KIWIF4V2)	
+#elif defined(KIWIF4V2)
 #define TARGET_BOARD_IDENTIFIER "KIW2"
 #define USBD_PRODUCT_STRING     "KIWIF4V2"
 
@@ -36,7 +36,7 @@
 
 #else
 #define LED0_PIN                PB5
-#define LED1_PIN                PB4				
+#define LED1_PIN                PB4
 #endif
 
 #define BEEPER                  PA8

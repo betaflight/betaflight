@@ -147,6 +147,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
             tryArm();
         } else {
             // Disarming via ARM BOX
+            resetArmingDisabled();
 
             if (ARMING_FLAG(ARMED) && rxIsReceivingSignal() && !failsafeIsActive()  ) {
                 rcDisarmTicks++;
@@ -187,7 +188,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
 
     if (rcSticks == THR_LO + YAW_LO + PIT_LO + ROL_CE) {
         // GYRO calibration
-        gyroStartCalibration();
+        gyroStartCalibration(false);
 
 #ifdef GPS
         if (feature(FEATURE_GPS)) {
@@ -232,6 +233,8 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
             tryArm();
 
             return;
+        } else {
+            resetArmingDisabled();
         }
     }
 

@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -35,6 +36,7 @@
 
 #include "drivers/gyro_sync.h"
 #include "drivers/light_led.h"
+#include "drivers/system.h"
 #include "drivers/time.h"
 #include "drivers/transponder_ir.h"
 
@@ -106,12 +108,11 @@ int16_t magHold;
 
 int16_t headFreeModeHold;
 
-uint8_t motorControlEnable = false;
 static bool reverseMotors = false;
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
 bool isRXDataNew;
-static bool armingCalibrationWasInitialised;
+static int lastArmingDisabledReason = 0;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(throttleCorrectionConfig_t, throttleCorrectionConfig, PG_THROTTLE_CORRECTION_CONFIG, 0);
 
@@ -139,6 +140,11 @@ static bool isCalibrating()
     // Note: compass calibration is handled completely differently, outside of the main loop, see f.CALIBRATE_MAG
 
     return (!isAccelerationCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
+}
+
+void resetArmingDisabled(void)
+{
+    lastArmingDisabledReason = 0;
 }
 
 void updateArmingStatus(void)
@@ -188,8 +194,6 @@ void updateArmingStatus(void)
 
 void disarm(void)
 {
-    armingCalibrationWasInitialised = false;
-
     if (ARMING_FLAG(ARMED)) {
         DISABLE_ARMING_FLAG(ARMED);
 
@@ -205,12 +209,8 @@ void disarm(void)
 
 void tryArm(void)
 {
-    static bool firstArmingCalibrationWasCompleted;
-
-    if (armingConfig()->gyro_cal_on_first_arm && !firstArmingCalibrationWasCompleted) {
-        gyroStartCalibration();
-        armingCalibrationWasInitialised = true;
-        firstArmingCalibrationWasCompleted = true;
+    if (armingConfig()->gyro_cal_on_first_arm) {
+        gyroStartCalibration(true);
     }
 
     updateArmingStatus();
@@ -233,7 +233,7 @@ void tryArm(void)
                     pwmWriteDshotCommand(index, DSHOT_CMD_SPIN_DIRECTION_REVERSED);
                 }
             }
-	}
+        }
 #endif
 
         ENABLE_ARMING_FLAG(ARMED);
@@ -241,6 +241,8 @@ void tryArm(void)
         headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 
         disarmAt = millis() + armingConfig()->auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
+
+        lastArmingDisabledReason = 0;
 
         //beep to indicate arming
 #ifdef GPS
@@ -252,12 +254,15 @@ void tryArm(void)
 #else
         beeper(BEEPER_ARMING);
 #endif
+    } else {
+        if (!isFirstArmingGyroCalibrationRunning()) {
+            int armingDisabledReason = ffs(getArmingDisableFlags());
+            if (lastArmingDisabledReason != armingDisabledReason) {
+                lastArmingDisabledReason = armingDisabledReason;
 
-        return;
-    }
-
-    if (!ARMING_FLAG(ARMED)) {
-        beeperConfirmationBeeps(1);
+                beeperWarningBeeps(armingDisabledReason);
+            }
+        }
     }
 }
 
@@ -612,7 +617,7 @@ static void subTaskMotorUpdate(void)
         startTime = micros();
     }
 
-    mixTable(currentPidProfile);
+    mixTable(currentPidProfile->vbatPidCompensation);
 
 #ifdef USE_SERVOS
     // motor outputs are used as sources for servo mixing, so motors must be calculated using mixTable() before servos.
@@ -621,9 +626,8 @@ static void subTaskMotorUpdate(void)
     }
 #endif
 
-    if (motorControlEnable) {
-        writeMotors();
-    }
+    writeMotors();
+
     DEBUG_SET(DEBUG_PIDLOOP, 3, micros() - startTime);
 }
 
@@ -643,7 +647,7 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     static uint8_t pidUpdateCountdown;
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_GYROPID_SYNC)
-    if(lockMainPID() != 0) return;
+    if (lockMainPID() != 0) return;
 #endif
 
     if (debugMode == DEBUG_CYCLETIME) {

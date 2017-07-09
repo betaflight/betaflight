@@ -70,7 +70,7 @@ void softSpiInit(const softSPIDevice_t *dev)
 
 uint8_t softSpiTransferByte(const softSPIDevice_t *dev, uint8_t byte)
 {
-    for(int ii = 0; ii < 8; ++ii) {
+    for (int ii = 0; ii < 8; ++ii) {
         if (byte & 0x80) {
             IOHi(IOGetByTag(dev->mosiTag));
         } else {

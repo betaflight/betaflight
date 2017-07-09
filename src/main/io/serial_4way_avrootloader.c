@@ -86,7 +86,7 @@ static uint8_t suart_getc_(uint8_t *bt)
     uint16_t bitmask = 0;
     uint8_t bit = 0;
     while (micros() < btime);
-    while(1) {
+    while (1) {
         if (ESC_IS_HI)
         {
             bitmask |= (1 << bit);
@@ -109,8 +109,8 @@ static void suart_putc_(uint8_t *tx_b)
     // shift out stopbit first
     uint16_t bitmask = (*tx_b << 2) | 1 | (1 << 10);
     uint32_t btime = micros();
-    while(1) {
-        if(bitmask & 1) {
+    while (1) {
+        if (bitmask & 1) {
             ESC_SET_HI; // 1
         }
         else {
@@ -148,22 +148,22 @@ static uint8_t BL_ReadBuf(uint8_t *pstring, uint8_t len)
     LastCRC_16.word = 0;
     uint8_t  LastACK = brNONE;
     do {
-        if(!suart_getc_(pstring)) goto timeout;
+        if (!suart_getc_(pstring)) goto timeout;
         ByteCrc(pstring);
         pstring++;
         len--;
-    } while(len > 0);
+    } while (len > 0);
 
-    if(isMcuConnected()) {
+    if (isMcuConnected()) {
         //With CRC read 3 more
-        if(!suart_getc_(&LastCRC_16.bytes[0])) goto timeout;
-        if(!suart_getc_(&LastCRC_16.bytes[1])) goto timeout;
-        if(!suart_getc_(&LastACK)) goto timeout;
+        if (!suart_getc_(&LastCRC_16.bytes[0])) goto timeout;
+        if (!suart_getc_(&LastCRC_16.bytes[1])) goto timeout;
+        if (!suart_getc_(&LastACK)) goto timeout;
         if (CRC_16.word != LastCRC_16.word) {
             LastACK = brERRORCRC;
         }
     } else {
-        if(!suart_getc_(&LastACK)) goto timeout;
+        if (!suart_getc_(&LastACK)) goto timeout;
     }
 timeout:
     return (LastACK == brSUCCESS);
@@ -252,7 +252,7 @@ void BL_SendCMDRunRestartBootloader(uint8_32_u *pDeviceInfo)
 static uint8_t BL_SendCMDSetAddress(ioMem_t *pMem) //supports only 16 bit Adr
 {
     // skip if adr == 0xFFFF
-    if((pMem->D_FLASH_ADDR_H == 0xFF) && (pMem->D_FLASH_ADDR_L == 0xFF)) return 1;
+    if ((pMem->D_FLASH_ADDR_H == 0xFF) && (pMem->D_FLASH_ADDR_L == 0xFF)) return 1;
     uint8_t sCMD[] = {CMD_SET_ADDRESS, 0, pMem->D_FLASH_ADDR_H, pMem->D_FLASH_ADDR_L };
     BL_SendBuf(sCMD, 4);
     return (BL_GetACK(2) == brSUCCESS);
@@ -294,7 +294,7 @@ static uint8_t BL_WriteA(uint8_t cmd, ioMem_t *pMem, uint32_t timeout)
 
 uint8_t BL_ReadFlash(uint8_t interface_mode, ioMem_t *pMem)
 {
-    if(interface_mode == imATM_BLB) {
+    if (interface_mode == imATM_BLB) {
         return BL_ReadA(CMD_READ_FLASH_ATM, pMem);
     } else {
         return BL_ReadA(CMD_READ_FLASH_SIL, pMem);
@@ -311,7 +311,7 @@ uint8_t BL_PageErase(ioMem_t *pMem)
     if (BL_SendCMDSetAddress(pMem)) {
         uint8_t sCMD[] = {CMD_ERASE_FLASH, 0x01};
         BL_SendBuf(sCMD, 2);
-        return (BL_GetACK((1000 / START_BIT_TIMEOUT_MS)) == brSUCCESS);
+        return (BL_GetACK((1400 / START_BIT_TIMEOUT_MS)) == brSUCCESS);
     }
     return 0;
 }
@@ -323,7 +323,7 @@ uint8_t BL_WriteEEprom(ioMem_t *pMem)
 
 uint8_t BL_WriteFlash(ioMem_t *pMem)
 {
-    return BL_WriteA(CMD_PROG_FLASH, pMem, (40 / START_BIT_TIMEOUT_MS));
+    return BL_WriteA(CMD_PROG_FLASH, pMem, (500 / START_BIT_TIMEOUT_MS));
 }
 
 uint8_t BL_VerifyFlash(ioMem_t *pMem)

@@ -47,6 +47,11 @@ typedef enum {
     ARMING_DISABLED_BST         = (1 << 10),
 } armingDisableFlags_e;
 
+#define NUM_ARMING_DISABLE_FLAGS 11
+#if defined(OSD) || !defined(MINIMAL_CLI)
+extern const char *armingDisableFlagNames[NUM_ARMING_DISABLE_FLAGS];
+#endif
+
 void setArmingDisabled(armingDisableFlags_e flag);
 void unsetArmingDisabled(armingDisableFlags_e flag);
 bool isArmingDisabled(void);

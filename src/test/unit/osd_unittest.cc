@@ -47,10 +47,9 @@ extern "C" {
     #include "rx/rx.h"
 
     void osdRefresh(timeUs_t currentTimeUs);
+    void osdFormatTime(char * buff, osd_timer_precision_e precision, timeUs_t time);
+    void osdFormatTimer(char *buff, bool showSymbol, int timerIndex);
 
-    uint8_t stateFlags;
-    uint8_t armingFlags;
-    uint16_t flightModeFlags;
     uint16_t rssi;
     attitudeEulerAngles_t attitude;
     pidProfile_t *currentPidProfile;
@@ -272,14 +271,22 @@ TEST(OsdTest, TestStatsImperial)
     osdConfigMutable()->enabled_stats[OSD_STAT_MAX_ALTITUDE]    = true;
     osdConfigMutable()->enabled_stats[OSD_STAT_BLACKBOX]        = false;
     osdConfigMutable()->enabled_stats[OSD_STAT_END_BATTERY]     = true;
-    osdConfigMutable()->enabled_stats[OSD_STAT_FLYTIME]         = true;
-    osdConfigMutable()->enabled_stats[OSD_STAT_ARMEDTIME]       = true;
+    osdConfigMutable()->enabled_stats[OSD_STAT_TIMER_1]         = true;
+    osdConfigMutable()->enabled_stats[OSD_STAT_TIMER_2]         = true;
     osdConfigMutable()->enabled_stats[OSD_STAT_MAX_DISTANCE]    = true;
     osdConfigMutable()->enabled_stats[OSD_STAT_BLACKBOX_NUMBER] = false;
 
     // and
     // using imperial unit system
     osdConfigMutable()->units = OSD_UNIT_IMPERIAL;
+
+    // and
+    // this timer 1 configuration
+    osdConfigMutable()->timers[OSD_TIMER_1] = OSD_TIMER(OSD_TIMER_SRC_TOTAL_ARMED, OSD_TIMER_PREC_HUNDREDTHS, 0);
+
+    // and
+    // this timer 2 configuration
+    osdConfigMutable()->timers[OSD_TIMER_2] = OSD_TIMER(OSD_TIMER_SRC_LAST_ARMED, OSD_TIMER_PREC_SECOND, 0);
 
     // and
     // a GPS fix is present
@@ -321,14 +328,15 @@ TEST(OsdTest, TestStatsImperial)
 
     // then
     // statistics screen should display the following
-    displayPortTestBufferSubstring(2, 3,  "ARMED TIME        : 00:04");
-    displayPortTestBufferSubstring(2, 4,  "FLY TIME          : 00:07");
-    displayPortTestBufferSubstring(2, 5,  "MAX SPEED         : 28");
-    displayPortTestBufferSubstring(2, 6,  "MAX DISTANCE      : 328%c", SYM_FT);
-    displayPortTestBufferSubstring(2, 7,  "MIN BATTERY       : 14.7%c", SYM_VOLT);
-    displayPortTestBufferSubstring(2, 8,  "END BATTERY       : 15.2%c", SYM_VOLT);
-    displayPortTestBufferSubstring(2, 9,  "MIN RSSI          : 25%%");
-    displayPortTestBufferSubstring(2, 10, "MAX ALTITUDE      :  6.5%c", SYM_FT);
+    int row = 3;
+    displayPortTestBufferSubstring(2, row++, "TOTAL ARM         : 00:05.00");
+    displayPortTestBufferSubstring(2, row++, "LAST ARM          : 00:03");
+    displayPortTestBufferSubstring(2, row++, "MAX SPEED         : 28");
+    displayPortTestBufferSubstring(2, row++, "MAX DISTANCE      : 328%c", SYM_FT);
+    displayPortTestBufferSubstring(2, row++, "MIN BATTERY       : 14.7%c", SYM_VOLT);
+    displayPortTestBufferSubstring(2, row++, "END BATTERY       : 15.2%c", SYM_VOLT);
+    displayPortTestBufferSubstring(2, row++, "MIN RSSI          : 25%%");
+    displayPortTestBufferSubstring(2, row++, "MAX ALTITUDE      :  6.5%c", SYM_FT);
 }
 
 /*
@@ -370,14 +378,15 @@ TEST(OsdTest, TestStatsMetric)
 
     // then
     // statistics screen should display the following
-    displayPortTestBufferSubstring(2, 3,  "ARMED TIME        : 00:02");
-    displayPortTestBufferSubstring(2, 4,  "FLY TIME          : 00:09");
-    displayPortTestBufferSubstring(2, 5,  "MAX SPEED         : 28");
-    displayPortTestBufferSubstring(2, 6,  "MAX DISTANCE      : 100%c", SYM_M);
-    displayPortTestBufferSubstring(2, 7,  "MIN BATTERY       : 14.7%c", SYM_VOLT);
-    displayPortTestBufferSubstring(2, 8,  "END BATTERY       : 15.2%c", SYM_VOLT);
-    displayPortTestBufferSubstring(2, 9,  "MIN RSSI          : 25%%");
-    displayPortTestBufferSubstring(2, 10, "MAX ALTITUDE      :  2.0%c", SYM_M);
+    int row = 3;
+    displayPortTestBufferSubstring(2, row++, "TOTAL ARM         : 00:07.50");
+    displayPortTestBufferSubstring(2, row++, "LAST ARM          : 00:02");
+    displayPortTestBufferSubstring(2, row++, "MAX SPEED         : 28");
+    displayPortTestBufferSubstring(2, row++, "MAX DISTANCE      : 100%c", SYM_M);
+    displayPortTestBufferSubstring(2, row++, "MIN BATTERY       : 14.7%c", SYM_VOLT);
+    displayPortTestBufferSubstring(2, row++, "END BATTERY       : 15.2%c", SYM_VOLT);
+    displayPortTestBufferSubstring(2, row++, "MIN RSSI          : 25%%");
+    displayPortTestBufferSubstring(2, row++, "MAX ALTITUDE      :  2.0%c", SYM_M);
 }
 
 /*
@@ -393,15 +402,29 @@ TEST(OsdTest, TestAlarms)
     // the following OSD elements are visible
     osdConfigMutable()->item_pos[OSD_RSSI_VALUE]        = OSD_POS(8, 1)  | VISIBLE_FLAG;
     osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 1) | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_FLYTIME]           = OSD_POS(1, 1)  | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_1]      = OSD_POS(20, 1)  | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_2]      = OSD_POS(1, 1)  | VISIBLE_FLAG;
     osdConfigMutable()->item_pos[OSD_ALTITUDE]          = OSD_POS(23, 7) | VISIBLE_FLAG;
 
     // and
     // this set of alarm values
     osdConfigMutable()->rssi_alarm = 20;
     osdConfigMutable()->cap_alarm  = 2200;
-    osdConfigMutable()->time_alarm = 1; // in minutes
     osdConfigMutable()->alt_alarm  = 100; // meters
+
+    // and
+    // this timer 1 configuration
+    osdConfigMutable()->timers[OSD_TIMER_1] = OSD_TIMER(OSD_TIMER_SRC_ON, OSD_TIMER_PREC_HUNDREDTHS, 2);
+    EXPECT_EQ(OSD_TIMER_SRC_ON, OSD_TIMER_SRC(osdConfig()->timers[OSD_TIMER_1]));
+    EXPECT_EQ(OSD_TIMER_PREC_HUNDREDTHS, OSD_TIMER_PRECISION(osdConfig()->timers[OSD_TIMER_1]));
+    EXPECT_EQ(2, OSD_TIMER_ALARM(osdConfig()->timers[OSD_TIMER_1]));
+
+    // and
+    // this timer 2 configuration
+    osdConfigMutable()->timers[OSD_TIMER_2] = OSD_TIMER(OSD_TIMER_SRC_TOTAL_ARMED, OSD_TIMER_PREC_SECOND, 1);
+    EXPECT_EQ(OSD_TIMER_SRC_TOTAL_ARMED, OSD_TIMER_SRC(osdConfig()->timers[OSD_TIMER_2]));
+    EXPECT_EQ(OSD_TIMER_PREC_SECOND, OSD_TIMER_PRECISION(osdConfig()->timers[OSD_TIMER_2]));
+    EXPECT_EQ(1, OSD_TIMER_ALARM(osdConfig()->timers[OSD_TIMER_2]));
 
     // and
     // using the metric unit system
@@ -424,6 +447,7 @@ TEST(OsdTest, TestAlarms)
         displayPortTestBufferSubstring(8,  1, "%c99", SYM_RSSI);
         displayPortTestBufferSubstring(12, 1, "%c16.8%c", SYM_BATT_FULL, SYM_VOLT);
         displayPortTestBufferSubstring(1,  1, "%c00:", SYM_FLY_M); // only test the minute part of the timer
+        displayPortTestBufferSubstring(20, 1, "%c01:", SYM_ON_M); // only test the minute part of the timer
         displayPortTestBufferSubstring(23, 7, " 0.0%c", SYM_M);
     }
 
@@ -433,11 +457,8 @@ TEST(OsdTest, TestAlarms)
     simulationBatteryState = BATTERY_CRITICAL;
     simulationBatteryVoltage = 135;
     simulationAltitude = 12000;
-    // Fly timer is incremented on periodic calls to osdRefresh, can't simply just increment the simulated system clock
-    for (int i = 0; i < 60; i++) {
-        simulationTime += 1e6;
-        osdRefresh(simulationTime);
-    }
+    simulationTime += 60e6;
+    osdRefresh(simulationTime);
 
     // then
     // elements showing values in alarm range should flash
@@ -454,6 +475,7 @@ TEST(OsdTest, TestAlarms)
             displayPortTestBufferSubstring(8,  1, "%c12", SYM_RSSI);
             displayPortTestBufferSubstring(12, 1, "%c13.5%c", SYM_MAIN_BATT, SYM_VOLT);
             displayPortTestBufferSubstring(1,  1, "%c01:", SYM_FLY_M); // only test the minute part of the timer
+            displayPortTestBufferSubstring(20, 1, "%c02:", SYM_ON_M); // only test the minute part of the timer
             displayPortTestBufferSubstring(23, 7, " 120.0%c", SYM_M);
         } else {
             displayPortTestBufferIsEmpty();
@@ -495,12 +517,63 @@ TEST(OsdTest, TestElementRssi)
     displayPortTestBufferSubstring(8, 1, "%c50", SYM_RSSI);
 }
 
+/*
+ * Tests the time string formatting function with a series of precision settings and time values.
+ */
+TEST(OsdTest, TestFormatTimeString)
+{
+    char buff[OSD_ELEMENT_BUFFER_LENGTH];
+
+    /* Seconds precision, 0 us */
+    osdFormatTime(buff, OSD_TIMER_PREC_SECOND, 0);
+    EXPECT_EQ(0, strcmp("00:00", buff));
+
+    /* Seconds precision, 0.9 seconds */
+    osdFormatTime(buff, OSD_TIMER_PREC_SECOND, 0.9e6);
+    EXPECT_EQ(0, strcmp("00:00", buff));
+
+    /* Seconds precision, 10 seconds */
+    osdFormatTime(buff, OSD_TIMER_PREC_SECOND, 10e6);
+    EXPECT_EQ(0, strcmp("00:10", buff));
+
+    /* Seconds precision, 1 minute */
+    osdFormatTime(buff, OSD_TIMER_PREC_SECOND, 60e6);
+    EXPECT_EQ(0, strcmp("01:00", buff));
+
+    /* Seconds precision, 1 minute 59 seconds */
+    osdFormatTime(buff, OSD_TIMER_PREC_SECOND, 119e6);
+    EXPECT_EQ(0, strcmp("01:59", buff));
+
+    /* Hundredths precision, 0 us */
+    osdFormatTime(buff, OSD_TIMER_PREC_HUNDREDTHS, 0);
+    EXPECT_EQ(0, strcmp("00:00.00", buff));
+
+    /* Hundredths precision, 10 milliseconds (one 100th of a second) */
+    osdFormatTime(buff, OSD_TIMER_PREC_HUNDREDTHS, 10e3);
+    EXPECT_EQ(0, strcmp("00:00.01", buff));
+
+    /* Hundredths precision, 0.9 seconds */
+    osdFormatTime(buff, OSD_TIMER_PREC_HUNDREDTHS, 0.9e6);
+    EXPECT_EQ(0, strcmp("00:00.90", buff));
+
+    /* Hundredths precision, 10 seconds */
+    osdFormatTime(buff, OSD_TIMER_PREC_HUNDREDTHS, 10e6);
+    EXPECT_EQ(0, strcmp("00:10.00", buff));
+
+    /* Hundredths precision, 1 minute */
+    osdFormatTime(buff, OSD_TIMER_PREC_HUNDREDTHS, 60e6);
+    EXPECT_EQ(0, strcmp("01:00.00", buff));
+
+    /* Hundredths precision, 1 minute 59 seconds */
+    osdFormatTime(buff, OSD_TIMER_PREC_HUNDREDTHS, 119e6);
+    EXPECT_EQ(0, strcmp("01:59.00", buff));
+}
+
 
 // STUBS
 extern "C" {
-    bool sensors(uint32_t mask) {
-        UNUSED(mask);
-        return true;
+    void beeperConfirmationBeeps(uint8_t beepCount) {
+        UNUSED(beepCount);
     }
 
     bool IS_RC_MODE_ACTIVE(boxId_e boxId) {
@@ -574,7 +647,4 @@ extern "C" {
         UNUSED(pDisplay);
         return false;
     }
-
-    void setArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
-    void unsetArmingDisabled(armingDisableFlags_e flag) { UNUSED(flag); }
 }
