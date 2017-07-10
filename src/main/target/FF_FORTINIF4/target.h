@@ -18,6 +18,7 @@
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "FORT"
 #define USBD_PRODUCT_STRING     "FortiniF4"
+#define TARGET_CONFIG
 /*--------------LED----------------*/
 #define LED0_PIN                PB5
 #define LED1_PIN                PB6

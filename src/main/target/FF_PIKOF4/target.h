@@ -18,6 +18,7 @@
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "PIK4"
 #define USBD_PRODUCT_STRING     "PikoF4"
+#define TARGET_CONFIG
 /*--------------LED----------------*/
 #define LED0_PIN                PA15
 #define LED1_PIN                PB6
