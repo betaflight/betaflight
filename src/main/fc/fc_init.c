@@ -240,6 +240,12 @@ void spiPreInit(void)
 
 void init(void)
 {
+    /* Load functions into ITCM RAM */ 
+    extern unsigned char critical_code_start; 
+    extern unsigned char critical_code_end; 
+    extern unsigned char critical_code; 
+    memcpy(&critical_code_start, &critical_code, (int) (&critical_code_end - &critical_code_start));
+
 #ifdef USE_HAL_DRIVER
     HAL_Init();
 #endif

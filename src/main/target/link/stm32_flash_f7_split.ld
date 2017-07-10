@@ -35,12 +35,16 @@ SECTIONS
   } >FLASH
 
   /* Critical program code goes into ITCM RAM */
+  /* Copy specific fast-executing code to ITCM RAM */ 
+  critical_code = LOADADDR(.critical_code); 
   .critical_code :
   {
     . = ALIGN(4);
+    critical_code_start = .; 
     *(.critical_code)
     *(.critical_code*)
     . = ALIGN(4);
+    critical_code_end = .; 
   } >ITCM_RAM AT >FLASH1
 
   /* The program code and other data goes into FLASH */

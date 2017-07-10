@@ -22,8 +22,9 @@ ENTRY(Reset_Handler)
 /* Specify the memory areas */
 MEMORY
 {
+    ITCM_ISR (rx)     : ORIGIN = 0x00000000, LENGTH = 1K
+    ITCM_RAM (rx)     : ORIGIN = 0x00000400, LENGTH = 15K
 
-    ITCM_RAM (rx)     : ORIGIN = 0x00000000, LENGTH = 16K
     ITCMFL (rx)       : ORIGIN = 0x00200000, LENGTH = 16K 
     ITCMFL1 (rx)      : ORIGIN = 0x00208000, LENGTH = 480K 
 
