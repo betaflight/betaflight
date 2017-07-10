@@ -60,36 +60,20 @@ static void hcsr04i2cInit(void) {
 }
 
 void hcsr04i2cUpdate(void) {
-    uint8_t response;
+    uint8_t response[3];
 
-    /*
-     * Read status byte
-     */
-    response = hcsr04i2cReadByte(HCSR04_I2C_REGISTRY_STATUS);
+    isHcsr04i2cResponding = i2cRead(I2C_DEVICE, HCSR04_I2C_Address, HCSR04_I2C_REGISTRY_STATUS, 3, response);
+    
     if (!isHcsr04i2cResponding) {
         hcsr04i2cMeasurementCm = RANGEFINDER_HARDWARE_FAILURE;
         return;
-    }
-    
-    if (response == 0) {
-        /*
-         * Rangefinder is reporting everything in place and working
-         */
-        response = hcsr04i2cReadByte(HCSR04_I2C_REGISTRY_DISTANCE_HIGH);
-        if (!isHcsr04i2cResponding) {
-            hcsr04i2cMeasurementCm = RANGEFINDER_HARDWARE_FAILURE;
-            return;
-        }
+    } 
 
-        hcsr04i2cMeasurementCm = (int32_t)((int32_t)response << 8);
+    if (response[HCSR04_I2C_REGISTRY_STATUS] == 0) {
 
-        response = hcsr04i2cReadByte(HCSR04_I2C_REGISTRY_DISTANCE_HIGH);
-        if (!isHcsr04i2cResponding) {
-            hcsr04i2cMeasurementCm = RANGEFINDER_HARDWARE_FAILURE;
-            return;
-        }
-
-        hcsr04i2cMeasurementCm += response;
+        hcsr04i2cMeasurementCm = 
+            (int32_t)((int32_t)response[HCSR04_I2C_REGISTRY_DISTANCE_HIGH] << 8) + 
+            response[HCSR04_I2C_REGISTRY_DISTANCE_LOW];
 
     } else {
         /*
