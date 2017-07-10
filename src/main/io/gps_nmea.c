@@ -257,13 +257,16 @@ static bool gpsReceiveData(void)
 
 #ifdef GPS_PROTO_MTK
 
-static uint8_t nmea_conf0[]="$PMTK251,57600*2C\r\n"; //change baudrate to 57600
-static uint8_t nmea_conf1[]="$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28\r\n"; //disable all messages except GGA and RMC
-static uint8_t nmea_conf2[]="$PMTK220,200*2C\r\n"; //5Hz update, should works for most modules
-static uint8_t nmea_conf3[]="$PMTK220,100*2F\r\n"; //try set 10Hz update if supported
+static uint8_t *mtk_conf[] = {
+(uint8_t *)"$PMTK251,57600*2C\r\n", //change baudrate to 57600
+(uint8_t *)"$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28\r\n", //disable all messages except GGA and RMC
+(uint8_t *)"$PMTK220,200*2C\r\n", //5Hz update, should works for most modules
+(uint8_t *)"$PMTK220,100*2F\r\n" //try set 10Hz update if supported
+};
 
 // Send NMEA command like normal string
-static bool nmeaTransmitAutoConfigCommands(const uint8_t * cmd) {
+static bool nmeaTransmitAutoConfigCommands(const uint8_t * cmd)
+{
     while (serialTxBytesFree(gpsState.gpsPort) > 0) {
         if (cmd[gpsState.autoConfigPosition] != 0) {
             serialWrite(gpsState.gpsPort, cmd[gpsState.autoConfigPosition]);
@@ -284,22 +287,12 @@ static bool nmeaTransmitAutoConfigCommands(const uint8_t * cmd) {
 
 bool gpsConfigure(void)
 {
-    switch (gpsState.autoConfigStep) {
-    case 0:
-        nmeaTransmitAutoConfigCommands(nmea_conf0);
-        break;
-    case 1:
-        nmeaTransmitAutoConfigCommands(nmea_conf1);
-        break;
-    case 2:
-        nmeaTransmitAutoConfigCommands(nmea_conf2);
-        break;
-    case 3:
-        nmeaTransmitAutoConfigCommands(nmea_conf3);
-        break;
-    default:
+
+    if (gpsState.autoConfigStep < sizeof(mtk_conf)/sizeof(mtk_conf[0])) {
+        nmeaTransmitAutoConfigCommands(mtk_conf[gpsState.autoConfigStep]);
+    }
+    else {
         gpsSetState(GPS_RECEIVING_DATA);
-        break;
     }
 
     return false;
@@ -352,15 +345,35 @@ bool gpsHandleNMEA(void)
 
     case GPS_CHECK_VERSION:
     case GPS_CONFIGURE:
-#ifdef GPS_PROTO_MTK
-        if(gpsState.gpsConfig->provider == GPS_MTK) {
-            gpsConfigure();
-        } else
-#endif
-        {
-            // No autoconfig, switch straight to receiving data
-            gpsSetState(GPS_RECEIVING_DATA);
-        }
+        // No autoconfig, switch straight to receiving data
+        gpsSetState(GPS_RECEIVING_DATA);
+        return false;
+
+    case GPS_RECEIVING_DATA:
+        return hasNewData;
+    }
+}
+
+bool gpsHandleMTK(void)
+{
+    // Receive data
+    bool hasNewData = gpsReceiveData();
+
+    // Process state
+    switch(gpsState.state) {
+    default:
+        return false;
+
+    case GPS_INITIALIZING:
+        return gpsInitialize();
+
+    case GPS_CHANGE_BAUD:
+        return gpsChangeBaud();
+
+
+    case GPS_CHECK_VERSION:
+    case GPS_CONFIGURE:
+        gpsConfigure();
         return false;
 
     case GPS_RECEIVING_DATA:
