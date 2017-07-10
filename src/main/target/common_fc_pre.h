@@ -76,6 +76,12 @@
 #define DEFAULT_AUX_CHANNEL_COUNT       6
 #endif
 
+#ifdef USE_ITCM_RAM
+#define CRITICAL_SECTION __attribute__((section(".critical_code")))
+#else
+#define CRITICAL_SECTION
+#endif
+
 #define USE_CLI
 #define USE_PPM
 #define USE_PWM

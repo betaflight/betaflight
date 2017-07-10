@@ -52,19 +52,23 @@
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
 
-float getSetpointRate(int axis) {
+float CRITICAL_SECTION getSetpointRate(int axis)
+{
     return setpointRate[axis];
 }
 
-float getRcDeflection(int axis) {
+float CRITICAL_SECTION getRcDeflection(int axis)
+{
     return rcDeflection[axis];
 }
 
-float getRcDeflectionAbs(int axis) {
+float CRITICAL_SECTION getRcDeflectionAbs(int axis)
+{
     return rcDeflectionAbs[axis];
 }
 
-float getThrottlePIDAttenuation(void) {
+float CRITICAL_SECTION getThrottlePIDAttenuation(void)
+{
     return throttlePIDAttenuation;
 }
 

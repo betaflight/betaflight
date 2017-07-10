@@ -20,6 +20,8 @@
 #include <string.h>
 #include <math.h>
 
+#include "platform.h"
+
 #include "common/filter.h"
 #include "common/maths.h"
 #include "common/utils.h"
@@ -31,7 +33,7 @@
 
 // NULL filter
 
-float nullFilterApply(void *filter, float input)
+float CRITICAL_SECTION nullFilterApply(void *filter, float input)
 {
     UNUSED(filter);
     return input;
@@ -40,20 +42,20 @@ float nullFilterApply(void *filter, float input)
 
 // PT1 Low Pass filter
 
-void pt1FilterInit(pt1Filter_t *filter, uint8_t f_cut, float dT)
+void CRITICAL_SECTION pt1FilterInit(pt1Filter_t *filter, uint8_t f_cut, float dT)
 {
     filter->RC = 1.0f / ( 2.0f * M_PI_FLOAT * f_cut );
     filter->dT = dT;
     filter->k = filter->dT / (filter->RC + filter->dT);
 }
 
-float pt1FilterApply(pt1Filter_t *filter, float input)
+float CRITICAL_SECTION pt1FilterApply(pt1Filter_t *filter, float input)
 {
     filter->state = filter->state + filter->k * (input - filter->state);
     return filter->state;
 }
 
-float pt1FilterApply4(pt1Filter_t *filter, float input, uint8_t f_cut, float dT)
+float CRITICAL_SECTION pt1FilterApply4(pt1Filter_t *filter, float input, uint8_t f_cut, float dT)
 {
     // Pre calculate and store RC
     if (!filter->RC) {
@@ -67,18 +69,18 @@ float pt1FilterApply4(pt1Filter_t *filter, float input, uint8_t f_cut, float dT)
     return filter->state;
 }
 
-float filterGetNotchQ(uint16_t centerFreq, uint16_t cutoff) {
+float CRITICAL_SECTION filterGetNotchQ(uint16_t centerFreq, uint16_t cutoff) {
     float octaves = log2f((float) centerFreq  / (float) cutoff) * 2;
     return sqrtf(powf(2, octaves)) / (powf(2, octaves) - 1);
 }
 
 /* sets up a biquad Filter */
-void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate)
+void CRITICAL_SECTION biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate)
 {
     biquadFilterInit(filter, filterFreq, refreshRate, BIQUAD_Q, FILTER_LPF);
 }
 
-void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType)
+void CRITICAL_SECTION biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType)
 {
     // setup variables
     const float omega = 2.0f * M_PI_FLOAT * filterFreq * refreshRate * 0.000001f;
@@ -128,7 +130,7 @@ void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refresh
     filter->d1 = filter->d2 = 0;
 }
 
-void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType)
+void CRITICAL_SECTION biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType)
 {
     // backup state
     float x1 = filter->x1;
@@ -150,7 +152,7 @@ void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refre
 }
 
 /* Computes a biquadFilter_t filter on a sample (slightly less precise than df2 but works in dynamic mode) */
-float biquadFilterApplyDF1(biquadFilter_t *filter, float input)
+float CRITICAL_SECTION biquadFilterApplyDF1(biquadFilter_t *filter, float input)
 {
     /* compute result */
     const float result = filter->b0 * input + filter->b1 * filter->x1 + filter->b2 * filter->x2 - filter->a1 * filter->y1 - filter->a2 * filter->y2;
@@ -167,7 +169,7 @@ float biquadFilterApplyDF1(biquadFilter_t *filter, float input)
 }
 
 /* Computes a biquadFilter_t filter in direct form 2 on a sample (higher precision but can't handle changes in coefficients */
-float biquadFilterApply(biquadFilter_t *filter, float input)
+float CRITICAL_SECTION biquadFilterApply(biquadFilter_t *filter, float input)
 {
     const float result = filter->b0 * input + filter->d1;
     filter->d1 = filter->b1 * input - filter->a1 * result + filter->d2;
@@ -178,7 +180,7 @@ float biquadFilterApply(biquadFilter_t *filter, float input)
 /*
  * FIR filter
  */
-void firFilterInit2(firFilter_t *filter, float *buf, uint8_t bufLength, const float *coeffs, uint8_t coeffsLength)
+void CRITICAL_SECTION firFilterInit2(firFilter_t *filter, float *buf, uint8_t bufLength, const float *coeffs, uint8_t coeffsLength)
 {
     filter->buf = buf;
     filter->bufLength = bufLength;
@@ -194,12 +196,12 @@ void firFilterInit2(firFilter_t *filter, float *buf, uint8_t bufLength, const fl
  * FIR filter initialisation
  * If the FIR filter is just to be used for averaging, then coeffs can be set to NULL
  */
-void firFilterInit(firFilter_t *filter, float *buf, uint8_t bufLength, const float *coeffs)
+void CRITICAL_SECTION firFilterInit(firFilter_t *filter, float *buf, uint8_t bufLength, const float *coeffs)
 {
     firFilterInit2(filter, buf, bufLength, coeffs, bufLength);
 }
 
-void firFilterUpdate(firFilter_t *filter, float input)
+void CRITICAL_SECTION firFilterUpdate(firFilter_t *filter, float input)
 {
     filter->buf[filter->index++] = input; // index is at the first empty buffer positon
     if (filter->index >= filter->bufLength) {
@@ -210,7 +212,7 @@ void firFilterUpdate(firFilter_t *filter, float input)
 /*
  * Update FIR filter maintaining a moving sum for quick moving average computation
  */
-void firFilterUpdateAverage(firFilter_t *filter, float input)
+void CRITICAL_SECTION firFilterUpdateAverage(firFilter_t *filter, float input)
 {
     filter->movingSum += input; // sum of the last <count> items, to allow quick moving average computation
     filter->movingSum -=  filter->buf[filter->index]; // subtract the value that "drops off" the end of the moving sum
@@ -223,7 +225,7 @@ void firFilterUpdateAverage(firFilter_t *filter, float input)
     }
 }
 
-float firFilterApply(const firFilter_t *filter)
+float CRITICAL_SECTION firFilterApply(const firFilter_t *filter)
 {
     float ret = 0.0f;
     int ii = 0;
@@ -237,7 +239,7 @@ float firFilterApply(const firFilter_t *filter)
     return ret;
 }
 
-float firFilterUpdateAndApply(firFilter_t *filter, float input)
+float CRITICAL_SECTION firFilterUpdateAndApply(firFilter_t *filter, float input)
 {
     firFilterUpdate(filter, input);
     return firFilterApply(filter);
@@ -246,7 +248,7 @@ float firFilterUpdateAndApply(firFilter_t *filter, float input)
 /*
  * Returns average of the last <count> items.
  */
-float firFilterCalcPartialAverage(const firFilter_t *filter, uint8_t count)
+float CRITICAL_SECTION firFilterCalcPartialAverage(const firFilter_t *filter, uint8_t count)
 {
     float ret = 0.0f;
     int index = filter->index;
@@ -260,25 +262,25 @@ float firFilterCalcPartialAverage(const firFilter_t *filter, uint8_t count)
     return ret / count;
 }
 
-float firFilterCalcMovingAverage(const firFilter_t *filter)
+float CRITICAL_SECTION firFilterCalcMovingAverage(const firFilter_t *filter)
 {
     return filter->movingSum / filter->count;
 }
 
-float firFilterLastInput(const firFilter_t *filter)
+float CRITICAL_SECTION firFilterLastInput(const firFilter_t *filter)
 {
     // filter->index points to next empty item in buffer
     const int index = filter->index == 0 ? filter->bufLength - 1 : filter->index - 1;
     return filter->buf[index];
 }
 
-void firFilterDenoiseInit(firFilterDenoise_t *filter, uint8_t gyroSoftLpfHz, uint16_t targetLooptime)
+void CRITICAL_SECTION firFilterDenoiseInit(firFilterDenoise_t *filter, uint8_t gyroSoftLpfHz, uint16_t targetLooptime)
 {
     filter->targetCount = constrain(lrintf((1.0f / (0.000001f * (float)targetLooptime)) / gyroSoftLpfHz), 1, MAX_FIR_DENOISE_WINDOW_SIZE);
 }
 
 // prototype function for denoising of signal by dynamic moving average. Mainly for test purposes
-float firFilterDenoiseUpdate(firFilterDenoise_t *filter, float input)
+float CRITICAL_SECTION firFilterDenoiseUpdate(firFilterDenoise_t *filter, float input)
 {
     filter->state[filter->index] = input;
     filter->movingSum += filter->state[filter->index++];
