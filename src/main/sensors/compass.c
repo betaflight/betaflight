@@ -44,6 +44,7 @@
 #include "fc/runtime_config.h"
 
 #include "io/gps.h"
+#include "io/beeper.h"
 
 #include "sensors/boardalignment.h"
 #include "sensors/compass.h"
@@ -299,6 +300,8 @@ void compassUpdate(timeUs_t currentTimeUs)
             compassConfigMutable()->magZero.raw[axis] = 0;
             magPrev[axis] = 0;
         }
+
+        beeper(BEEPER_ACTION_SUCCESS);
 
         sensorCalibrationResetState(&calState);
         DISABLE_STATE(CALIBRATE_MAG);
