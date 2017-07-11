@@ -48,6 +48,8 @@
 
 #include "scheduler/scheduler.h"
 
+#include "build/debug.h"
+
 rangefinder_t rangefinder;
 
 #define RANGEFINDER_HARDWARE_TIMEOUT_MS         500     // Accept 500ms of non-responsive sensor, report HW failure otherwise
@@ -182,6 +184,9 @@ int32_t rangefinderRead(void)
 {
     if (rangefinder.dev.read) {
         const int32_t distance = rangefinder.dev.read();
+
+        DEBUG_SET(DEBUG_RANGEFINDER, 0, distance);
+
         if (distance >= 0) {
             rangefinder.lastValidResponseTimeMs = millis();
             rangefinder.rawAltitude = applyMedianFilter(distance);
@@ -200,6 +205,8 @@ int32_t rangefinderRead(void)
         rangefinder.rawAltitude = RANGEFINDER_OUT_OF_RANGE;
     }
 
+    DEBUG_SET(DEBUG_RANGEFINDER, 1, rangefinder.rawAltitude);
+
     return rangefinder.rawAltitude;
 }
 
@@ -217,6 +224,7 @@ int32_t rangefinderCalculateAltitude(int32_t rangefinderDistance, float cosTiltA
     } else {
         rangefinder.calculatedAltitude = rangefinderDistance * cosTiltAngle;
     }
+    DEBUG_SET(DEBUG_RANGEFINDER, 2, rangefinder.calculatedAltitude);
     return rangefinder.calculatedAltitude;
 }
 
