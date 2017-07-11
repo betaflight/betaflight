@@ -99,7 +99,6 @@
 #else
 
     #define USE_SDCARD
-    #define USE_SDCARD_SPI2
 
     #define SDCARD_DETECT_INVERTED
 

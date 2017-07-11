@@ -116,7 +116,6 @@
 #define RTC6705_SPICLK_PIN      PC13
 
 #define USE_SDCARD
-#define USE_SDCARD_SPI2
 
 #define SDCARD_SPI_INSTANCE                 SPI2
 #define SDCARD_SPI_CS_GPIO                  SPI2_GPIO

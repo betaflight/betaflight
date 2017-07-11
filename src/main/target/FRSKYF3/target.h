@@ -102,10 +102,8 @@
 #define SPI1_MOSI_PIN           PA7
 
 #define USE_SDCARD
-#define USE_SDCARD_SPI1
 
 #define SDCARD_DETECT_INVERTED
-
 #define SDCARD_DETECT_PIN                   PB5
 #define SDCARD_SPI_INSTANCE                 SPI1
 #define SDCARD_SPI_CS_PIN                   SPI1_NSS_PIN
