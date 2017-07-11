@@ -261,22 +261,22 @@ bool spiIsBusBusy(SPI_TypeDef *instance)
         return false;
 }
 
-bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len)
+bool spiTransfer(SPI_TypeDef *instance, uint8_t *in, const uint8_t *out, int len)
 {
     SPIDevice device = spiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
-    if (!out) // Tx only
+    if (!in) // Tx only
     {
-        status = HAL_SPI_Transmit(&spiDevice[device].hspi, (uint8_t *)in, len, SPI_DEFAULT_TIMEOUT);
+        status = HAL_SPI_Transmit(&spiDevice[device].hspi, (uint8_t *)out, len, SPI_DEFAULT_TIMEOUT);
     }
-    else if (!in) // Rx only
+    else if (!out) // Rx only
     {
-        status = HAL_SPI_Receive(&spiDevice[device].hspi, out, len, SPI_DEFAULT_TIMEOUT);
+        status = HAL_SPI_Receive(&spiDevice[device].hspi, in, len, SPI_DEFAULT_TIMEOUT);
     }
     else // Tx and Rx
     {
-        status = HAL_SPI_TransmitReceive(&spiDevice[device].hspi, in, out, len, SPI_DEFAULT_TIMEOUT);
+        status = HAL_SPI_TransmitReceive(&spiDevice[device].hspi, out, in, len, SPI_DEFAULT_TIMEOUT);
     }
 
     if ( status != HAL_OK)
