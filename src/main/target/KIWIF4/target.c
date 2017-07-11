@@ -25,13 +25,16 @@
 #include "drivers/timer_def.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    DEF_TIM(TIM2,  CH4, PA3,  TIM_USE_MOTOR, 1, 1),
-    DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_MOTOR, 1, 0),
-    DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_MOTOR, 1, 0),
-    DEF_TIM(TIM2,  CH3, PA2,  TIM_USE_MOTOR, 1, 0),
+    DEF_TIM(TIM2,  CH4, PA3,  TIM_USE_MOTOR, 0, 1),                     // (1,6)
+    DEF_TIM(TIM1,  CH2N,PB0,  TIM_USE_MOTOR, TIMER_OUTPUT_INVERTED, 1), // (2,2)
+    DEF_TIM(TIM1,  CH3N,PB1,  TIM_USE_MOTOR, TIMER_OUTPUT_INVERTED, 0), // (2,6)
+    DEF_TIM(TIM2,  CH3, PA2,  TIM_USE_MOTOR, 0, 0),                     // (1,1)
 #if defined(PLUMF4) || defined(KIWIF4V2)
-    DEF_TIM(TIM2,  CH1, PA0,  TIM_USE_LED,   1, 0),  //LED
+    DEF_TIM(TIM5,  CH1, PA0,  TIM_USE_LED,   0, 0), // LED              // (1,2)
+    DEF_TIM(TIM4,  CH1, PB6,  TIM_USE_NONE,  0, 0), // VTX.CLK
+    DEF_TIM(TIM4,  CH2, PB7,  TIM_USE_NONE,  0, 0), // VTX.DTA
 #else
-    DEF_TIM(TIM4,  CH2, PB7,  TIM_USE_LED,   0, 0),  // LED
+    DEF_TIM(TIM4,  CH1, PB6,  TIM_USE_NONE,  0, 0), // VTX.CLK
+    DEF_TIM(TIM4,  CH2, PB7,  TIM_USE_LED,   0, 0), // LED (VTX.CLK)    // (1,3)
 #endif
 };

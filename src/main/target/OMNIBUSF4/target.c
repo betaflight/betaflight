@@ -39,10 +39,19 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM8,  CH3, PC8,  TIM_USE_PWM,                 TIMER_OUTPUT_NONE,     0), // S5_IN
     DEF_TIM(TIM8,  CH4, PC9,  TIM_USE_PWM,                 TIMER_OUTPUT_NONE,     0), // S6_IN
 
+#if 1
+    // Problematic config
+    DEF_TIM(TIM1,  CH2N,PB0,  TIM_USE_MOTOR, TIMER_OUTPUT_INVERTED, 1), // (2,2)
+    DEF_TIM(TIM1,  CH3N,PB1,  TIM_USE_MOTOR, TIMER_OUTPUT_INVERTED, 0), // (2,6)
+    DEF_TIM(TIM2,  CH4, PA3,  TIM_USE_MOTOR, 0, 1),                     // (1,6)
+    DEF_TIM(TIM2,  CH3, PA2,  TIM_USE_MOTOR, 0, 0),                     // (1,1)
+#else
+    // Working config
     DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0), // S1_OUT D1_ST7
     DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0), // S2_OUT D1_ST2
     DEF_TIM(TIM2,  CH4, PA3,  TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 1), // S3_OUT D1_ST6
     DEF_TIM(TIM2,  CH3, PA2,  TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0), // S4_OUT D1_ST1
+#endif
 
 #if defined(OMNIBUSF4SD)
     DEF_TIM(TIM5,  CH2, PA1,  TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0), // S5_OUT
