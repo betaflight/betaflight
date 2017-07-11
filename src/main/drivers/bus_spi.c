@@ -206,14 +206,14 @@ bool spiIsBusBusy(SPI_TypeDef *instance)
 
 }
 
-bool spiTransfer(SPI_TypeDef *instance, uint8_t *in, const uint8_t *out, int len)
+bool spiTransfer(SPI_TypeDef *instance, uint8_t *rxData, const uint8_t *txData, int len)
 {
     uint16_t spiTimeout = 1000;
 
     uint8_t b;
     instance->DR;
     while (len--) {
-        b = out ? *(out++) : 0xFF;
+        b = txData ? *(txData++) : 0xFF;
         while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET) {
             if ((spiTimeout--) == 0)
                 return spiTimeoutUserCallback(instance);
@@ -233,8 +233,8 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *in, const uint8_t *out, int len
 #else
         b = SPI_I2S_ReceiveData(instance);
 #endif
-        if (in)
-            *(in++) = b;
+        if (rxData)
+            *(rxData++) = b;
     }
 
     return true;

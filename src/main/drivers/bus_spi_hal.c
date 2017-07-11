@@ -261,22 +261,22 @@ bool spiIsBusBusy(SPI_TypeDef *instance)
         return false;
 }
 
-bool spiTransfer(SPI_TypeDef *instance, uint8_t *in, const uint8_t *out, int len)
+bool spiTransfer(SPI_TypeDef *instance, uint8_t *rxData, const uint8_t *txData, int len)
 {
     SPIDevice device = spiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
     if (!in) // Tx only
     {
-        status = HAL_SPI_Transmit(&spiDevice[device].hspi, (uint8_t *)out, len, SPI_DEFAULT_TIMEOUT);
+        status = HAL_SPI_Transmit(&spiDevice[device].hspi, (uint8_t *)txData, len, SPI_DEFAULT_TIMEOUT);
     }
     else if (!out) // Rx only
     {
-        status = HAL_SPI_Receive(&spiDevice[device].hspi, in, len, SPI_DEFAULT_TIMEOUT);
+        status = HAL_SPI_Receive(&spiDevice[device].hspi, rxData, len, SPI_DEFAULT_TIMEOUT);
     }
     else // Tx and Rx
     {
-        status = HAL_SPI_TransmitReceive(&spiDevice[device].hspi, out, in, len, SPI_DEFAULT_TIMEOUT);
+        status = HAL_SPI_TransmitReceive(&spiDevice[device].hspi, txData, rxData, len, SPI_DEFAULT_TIMEOUT);
     }
 
     if ( status != HAL_OK)
@@ -295,10 +295,10 @@ static bool spiBusReadBuffer(const busDevice_t *bus, uint8_t *out, int len)
 }
 
 // return uint8_t value or -1 when failure
-uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t in)
+uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data)
 {
-    spiTransfer(instance, &in, &in, 1);
-    return in;
+    spiTransfer(instance, &data, &data, 1);
+    return data;
 }
 
 // return uint8_t value or -1 when failure
