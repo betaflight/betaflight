@@ -25,6 +25,6 @@
 
 void targetConfiguration(void)
 {
-    telemetryConfigMutable()->telemetry_inverted = false;
+    telemetryConfigMutable()->halfDuplex = false;
 }
 #endif
