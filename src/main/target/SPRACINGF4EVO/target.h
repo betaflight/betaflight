@@ -125,11 +125,10 @@
 #define RTC6705_SPI_INSTANCE    SPI3
 
 #define USE_SDCARD
-#define USE_SDCARD_SPI2
 
 #define SDCARD_DETECT_INVERTED
-
 #define SDCARD_DETECT_PIN                   PC14
+
 #define SDCARD_SPI_INSTANCE                 SPI2
 #define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
 

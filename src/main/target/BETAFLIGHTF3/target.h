@@ -96,10 +96,10 @@
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 #define USE_SDCARD
-#define USE_SDCARD_SPI2
-#define SDCARD_DETECT_INVERTED
 
+#define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN                   PC14
+
 #define SDCARD_SPI_INSTANCE                 SPI2
 #define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
 

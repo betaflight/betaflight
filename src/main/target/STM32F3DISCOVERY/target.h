@@ -123,7 +123,6 @@
 #define CMS
 
 //#define USE_SDCARD
-//#define USE_SDCARD_SPI2
 //
 //#define SDCARD_SPI_INSTANCE     SPI2
 //#define SDCARD_SPI_CS_PIN       PB12
