@@ -295,10 +295,12 @@ static bool spiBusReadBuffer(const busDevice_t *bus, uint8_t *out, int len)
 }
 
 // return uint8_t value or -1 when failure
-uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data)
+uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t txByte)
 {
-    spiTransfer(instance, &data, &data, 1);
-    return data;
+    uint8_t rxByte;
+
+    spiTransfer(instance, &rxByte, &txByte, 1);
+    return rxByte;
 }
 
 // return uint8_t value or -1 when failure
