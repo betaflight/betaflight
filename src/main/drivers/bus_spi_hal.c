@@ -266,11 +266,11 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *rxData, const uint8_t *txData, 
     SPIDevice device = spiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
-    if (!in) // Tx only
+    if (!rxData) // Tx only
     {
         status = HAL_SPI_Transmit(&spiDevice[device].hspi, (uint8_t *)txData, len, SPI_DEFAULT_TIMEOUT);
     }
-    else if (!out) // Rx only
+    else if (!txData) // Rx only
     {
         status = HAL_SPI_Receive(&spiDevice[device].hspi, rxData, len, SPI_DEFAULT_TIMEOUT);
     }

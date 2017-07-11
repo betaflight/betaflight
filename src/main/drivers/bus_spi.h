@@ -88,7 +88,7 @@ void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor);
 uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data);
 bool spiIsBusBusy(SPI_TypeDef *instance);
 
-bool spiTransfer(SPI_TypeDef *instance, rxData *in, const uint8_t *txData, int len);
+bool spiTransfer(SPI_TypeDef *instance, uint8_t *rxData, const uint8_t *txData, int len);
 
 uint16_t spiGetErrorCounter(SPI_TypeDef *instance);
 void spiResetErrorCounter(SPI_TypeDef *instance);
