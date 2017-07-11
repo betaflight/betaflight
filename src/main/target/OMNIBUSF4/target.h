@@ -96,7 +96,7 @@
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN               PB7
 #define SDCARD_SPI_INSTANCE             SPI2
-#define SDCARD_SPI_CS_PIN               SPI2_NSS_PIN
+#define SDCARD_SPI_CS_PIN               PB12
 // SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
 #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
 // Divide to under 25MHz for normal operation:
@@ -114,7 +114,7 @@
 #define USE_FLASH_M25P16
 #else
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
-#define M25P16_CS_PIN           SPI3_NSS_PIN
+#define M25P16_CS_PIN           PB3
 #define M25P16_SPI_INSTANCE     SPI3
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
@@ -153,18 +153,12 @@
 
 #if defined(OMNIBUSF4SD) || defined(LUXF4OSD)
 #define USE_SPI_DEVICE_2
-#define SPI2_NSS_PIN            PB12
 #define SPI2_SCK_PIN            PB13
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
 #endif
 
 #define USE_SPI_DEVICE_3
-#if defined(OMNIBUSF4SD)
-  #define SPI3_NSS_PIN          PA15
-#else
-  #define SPI3_NSS_PIN          PB3
-#endif
 #define SPI3_SCK_PIN            PC10
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
