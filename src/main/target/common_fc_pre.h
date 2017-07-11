@@ -77,9 +77,9 @@
 #endif
 
 #ifdef USE_ITCM_RAM
-#define CRITICAL_SECTION __attribute__((section(".critical_code")))
+#define FAST_CODE __attribute__((section(".tcm_code")))
 #else
-#define CRITICAL_SECTION
+#define FAST_CODE
 #endif
 
 #define USE_CLI

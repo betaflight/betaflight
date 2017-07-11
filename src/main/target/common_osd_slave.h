@@ -33,6 +33,8 @@
 
 #define MAX_PROFILE_COUNT 0
 
+#define FAST_CODE
+
 #ifdef STM32F1
 #define MINIMAL_CLI
 #endif

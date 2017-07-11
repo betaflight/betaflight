@@ -278,7 +278,7 @@ void pidInit(const pidProfile_t *pidProfile)
 }
 
 // calculates strength of horizon leveling; 0 = none, 1.0 = most leveling
-static float CRITICAL_SECTION calcHorizonLevelStrength()
+static float FAST_CODE calcHorizonLevelStrength()
 {
     // start with 1.0 at center stick, 0.0 at max stick deflection:
     float horizonLevelStrength = 1.0f -
@@ -338,7 +338,7 @@ static float CRITICAL_SECTION calcHorizonLevelStrength()
     return constrainf(horizonLevelStrength, 0, 1);
 }
 
-static float CRITICAL_SECTION pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint)
+static float FAST_CODE pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint)
 {
     // calculate error angle and limit the angle to the max inclination
     float angle = pidProfile->levelSensitivity * getRcDeflection(axis);
@@ -359,7 +359,7 @@ static float CRITICAL_SECTION pidLevel(int axis, const pidProfile_t *pidProfile,
     return currentPidSetpoint;
 }
 
-static float CRITICAL_SECTION accelerationLimit(int axis, float currentPidSetpoint) 
+static float FAST_CODE accelerationLimit(int axis, float currentPidSetpoint) 
 {
     static float previousSetpoint[3];
     const float currentVelocity = currentPidSetpoint- previousSetpoint[axis];
@@ -373,7 +373,7 @@ static float CRITICAL_SECTION accelerationLimit(int axis, float currentPidSetpoi
 
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
 // Based on 2DOF reference design (matlab)
-void CRITICAL_SECTION pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, timeUs_t currentTimeUs)
+void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, timeUs_t currentTimeUs)
 {
     static float previousRateError[2];
     const float tpaFactor = getThrottlePIDAttenuation();

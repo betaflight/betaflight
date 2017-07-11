@@ -321,7 +321,7 @@ uint8_t getMotorCount()
     return motorCount;
 }
 
-float CRITICAL_SECTION getMotorMixRange()
+float FAST_CODE getMotorMixRange()
 {
     return motorMixRange;
 }
