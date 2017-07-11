@@ -365,18 +365,6 @@ bool bmi160GyroRead(gyroDev_t *gyro)
 }
 
 
-bool checkBMI160DataReady(gyroDev_t* gyro)
-{
-    bool ret;
-    if (gyro->dataReady) {
-        ret = true;
-        gyro->dataReady= false;
-    } else {
-        ret = false;
-    }
-    return ret;
-}
-
 void bmi160SpiGyroInit(gyroDev_t *gyro)
 {
     BMI160_Init(gyro->bus.spi.csnPin);
@@ -412,7 +400,6 @@ bool bmi160SpiGyroDetect(gyroDev_t *gyro)
 
     gyro->initFn = bmi160SpiGyroInit;
     gyro->readFn = bmi160GyroRead;
-    gyro->intStatusFn = checkBMI160DataReady;
     gyro->scale = 1.0f / 16.4f;
 
     return true;

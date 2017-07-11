@@ -201,6 +201,4 @@ bool mpuAccRead(struct accDev_s *acc);
 bool mpuGyroRead(struct gyroDev_s *gyro);
 bool mpuGyroReadSPI(struct gyroDev_s *gyro);
 void mpuDetect(struct gyroDev_s *gyro);
-bool mpuCheckDataReady(struct gyroDev_s *gyro);
 void mpuGyroSetIsrUpdate(struct gyroDev_s *gyro, sensorGyroUpdateFuncPtr updateFn);
-

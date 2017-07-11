@@ -235,18 +235,6 @@ bool mpuGyroReadSPI(gyroDev_t *gyro)
     return true;
 }
 
-bool mpuCheckDataReady(gyroDev_t* gyro)
-{
-    bool ret;
-    if (gyro->dataReady) {
-        ret = true;
-        gyro->dataReady= false;
-    } else {
-        ret = false;
-    }
-    return ret;
-}
-
 #ifdef USE_SPI
 static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
 {
