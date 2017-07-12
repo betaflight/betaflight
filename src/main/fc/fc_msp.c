@@ -1345,6 +1345,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, currentPidProfile->dterm_notch_cutoff);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_hz_2);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_cutoff_2);
+        sbufWriteU8(dst, currentPidProfile->dterm_filter_type);
         break;
 
     case MSP_PID_ADVANCED:
@@ -1744,6 +1745,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (dataSize > 13) {
             gyroConfigMutable()->gyro_soft_notch_hz_2 = sbufReadU16(src);
             gyroConfigMutable()->gyro_soft_notch_cutoff_2 = sbufReadU16(src);
+        }
+        if (dataSize > 17) {
+            currentPidProfile->dterm_filter_type = sbufReadU8(src);
         }
         // reinitialize the gyro filters with the new values
         validateAndFixGyroConfig();
