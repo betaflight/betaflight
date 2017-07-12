@@ -1363,6 +1363,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, currentPidProfile->yawRateAccelLimit);
         sbufWriteU8(dst, currentPidProfile->levelAngleLimit);
         sbufWriteU8(dst, currentPidProfile->levelSensitivity);
+        sbufWriteU16(dst, currentPidProfile->itermThrottleThreshold);
+        sbufWriteU16(dst, currentPidProfile->itermAcceleratorGain);
         break;
 
     case MSP_SENSOR_CONFIG:
@@ -1772,6 +1774,10 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (dataSize > 17) {
             currentPidProfile->levelAngleLimit = sbufReadU8(src);
             currentPidProfile->levelSensitivity = sbufReadU8(src);
+        }
+        if (dataSize > 19) {
+            currentPidProfile->itermThrottleThreshold = sbufReadU16(src);
+            currentPidProfile->itermAcceleratorGain = sbufReadU16(src);
         }
         pidInitConfig(currentPidProfile);
         break;
