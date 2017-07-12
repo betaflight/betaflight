@@ -855,6 +855,7 @@ static void cliSerialPassthrough(char *cmdline)
     int id = -1;
     uint32_t baud = 0;
     unsigned mode = 0;
+    int options = SERIAL_NOT_INVERTED;
     char *saveptr;
     char* tok = strtok_r(cmdline, " ", &saveptr);
     int index = 0;
@@ -867,11 +868,15 @@ static void cliSerialPassthrough(char *cmdline)
             case 1:
                 baud = atoi(tok);
                 break;
-            case 2:
+            default:
                 if (strstr(tok, "rx") || strstr(tok, "RX"))
                     mode |= MODE_RX;
                 if (strstr(tok, "tx") || strstr(tok, "TX"))
                     mode |= MODE_TX;
+                if (strstr(tok, "hd") || strstr(tok, "HD"))
+                    options |= SERIAL_BIDIR;
+                if (strstr(tok, "inv") || strstr(tok, "INV"))
+                    options |= SERIAL_INVERTED;
                 break;
         }
         index++;
@@ -891,17 +896,25 @@ static void cliSerialPassthrough(char *cmdline)
 
         passThroughPort = openSerialPort(id, FUNCTION_NONE, NULL,
                                          baud, mode,
-                                         SERIAL_NOT_INVERTED);
+                                         options);
         if (!passThroughPort) {
             cliPrint("could not be opened.\r\n");
             return;
         }
-        cliPrintf("opened, baud = %d.\r\n", baud);
+        cliPrintf("opened, baud = %d%s%s.\r\n", baud, (options & SERIAL_BIDIR) ? ",hd" : "", (options & SERIAL_INVERTED) ? ",inv" : "");
     } else {
         passThroughPort = passThroughPortUsage->serialPort;
+
+        // If the user supplied options, it can't be changed.
+        if (options != SERIAL_NOT_INVERTED) {
+            cliPrint("can't change options on open port\r\n");
+            return;
+        }
+    
+        cliPrint("already open.\r\n");
+
         // If the user supplied a mode, override the port's mode, otherwise
         // leave the mode unchanged. serialPassthrough() handles one-way ports.
-        cliPrint("already open.\r\n");
         if (mode && passThroughPort->mode != mode) {
             cliPrintf("mode changed from %d to %d.\r\n",
                    passThroughPort->mode, mode);
