@@ -41,8 +41,8 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define MPU9250_CS_PIN          PC4
-#define MPU9250_SPI_INSTANCE    SPI1
+#define GYRO_CSN_PIN            PC4
+#define GYRO_SPI_INSTANCE       SPI1
 
 #define ACC
 #define USE_ACC_SPI_MPU9250

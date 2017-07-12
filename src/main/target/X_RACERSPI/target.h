@@ -29,8 +29,8 @@
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 
-#define MPU6000_CS_PIN          PA15
-#define MPU6000_SPI_INSTANCE    SPI1
+#define GYRO_CSN_PIN            PA15
+#define GYRO_SPI_INSTANCE       SPI1
 
 
 #define GYRO

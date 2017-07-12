@@ -76,23 +76,26 @@
 #define USE_FAKE_GYRO
 #define USE_GYRO_L3GD20
 #define L3GD20_SPI              SPI1
-#define L3GD20_CS_PIN           PE3
+#define GYRO_CSN_PIN            PE3
 #define GYRO_L3GD20_ALIGN       CW270_DEG
 #define USE_GYRO_L3G4200D
 #define USE_GYRO_MPU3050
 #define USE_GYRO_MPU6050
+
 #define USE_GYRO_SPI_MPU6000
-#define MPU6000_CS_PIN          SPI2_NSS_PIN
-#define MPU6000_SPI_INSTANCE    SPI2
+#define GYRO_CSN_PIN            SPI2_NSS_PIN
+#define GYRO_SPI_INSTANCE       SPI2
+
 // Support the GY-91 MPU9250 dev board
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define MPU6500_CS_PIN          PC14
-#define MPU6500_SPI_INSTANCE    SPI2
+#define GYRO_CSN_PIN            PC14
+#define GYRO_SPI_INSTANCE       SPI2
 #define GYRO_MPU6500_ALIGN      CW270_DEG_FLIP
+
 #define USE_GYRO_SPI_MPU9250
-#define MPU9250_CS_PIN          SPI2_NSS_PIN
-#define MPU9250_SPI_INSTANCE    SPI2
+#define GYRO_CS_PIN             SPI2_NSS_PIN
+#define GYRO_SPI_INSTANCE       SPI2
 
 #define ACC
 #define USE_FAKE_ACC

@@ -25,8 +25,8 @@
 #define BEEPER                   PA8
 #define BEEPER_INVERTED
 
-#define MPU6000_CS_PIN           PB2
-#define MPU6000_SPI_INSTANCE     SPI2
+#define GYRO_CSN_PIN             PB2
+#define GYRO_SPI_INSTANCE        SPI2
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1

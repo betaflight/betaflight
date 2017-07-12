@@ -38,8 +38,8 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define MPU6500_CS_PIN          SPI1_NSS_PIN
-#define MPU6500_SPI_INSTANCE    SPI1
+#define GYRO_CSN_PIN            SPI1_NSS_PIN
+#define GYRO_SPI_INSTANCE       SPI1
 
 #define ACC
 #define USE_ACC_SPI_MPU6500

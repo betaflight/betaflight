@@ -50,8 +50,8 @@
 #define ACC_MPU6000_ALIGN       CW180_DEG
 
 #define MPU6000_CS_GPIO         GPIOB
-#define MPU6000_CS_PIN          PB12
-#define MPU6000_SPI_INSTANCE    SPI2
+#define GYRO_CSN_PIN            PB12
+#define GYRO_SPI_INSTANCE       SPI2
 
 #define USE_VCP
 #define USE_UART1

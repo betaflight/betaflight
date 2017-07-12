@@ -42,15 +42,15 @@
 #define ACC_MPU6000_ALIGN       CW180_DEG
 #define GYRO_MPU6000_ALIGN      CW180_DEG
 
-#define MPU6000_CS_PIN          PA4
-#define MPU6000_SPI_INSTANCE    SPI1
+#define GYRO_CSN_PIN            PA4
+#define GYRO_SPI_INSTANCE       SPI1
 
 // MPU6500
 #define ACC_MPU6500_ALIGN       CW90_DEG
 #define GYRO_MPU6500_ALIGN      CW90_DEG
 
-#define MPU6500_CS_PIN          PA4
-#define MPU6500_SPI_INSTANCE    SPI1
+#define GYRO_CSN_PIN            PA4
+#define GYRO_SPI_INSTANCE       SPI1
 
 #define USE_VCP
 #define USE_UART1

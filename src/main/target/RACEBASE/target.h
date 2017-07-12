@@ -36,8 +36,8 @@
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 
-#define MPU6000_CS_PIN          PB5
-#define MPU6000_SPI_INSTANCE    SPI2
+#define GYRO_CSN_PIN            PB5
+#define GYRO_SPI_INSTANCE       SPI2
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6000

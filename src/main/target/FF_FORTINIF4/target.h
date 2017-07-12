@@ -38,14 +38,14 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define MPU6000_CS_PIN          PA8
-#define MPU6000_SPI_INSTANCE    SPI1
+#define GYRO_CSN_PIN            PA8
+#define GYRO_SPI_INSTANCE       SPI1
 
-#define MPU6500_CS_PIN          PA8
-#define MPU6500_SPI_INSTANCE    SPI1
+#define GYRO_CSN_PIN            PA8
+#define GYRO_SPI_INSTANCE       SPI1
 
-#define ICM20689_CS_PIN         PA8
-#define ICM20689_SPI_INSTANCE   SPI1
+#define GYRO_CSN_PIN            PA8
+#define GYRO_SPI_INSTANCE       SPI1
 
 #define GYRO
 #define USE_GYRO_SPI_ICM20689

@@ -32,8 +32,8 @@
 #define MPU_ADDRESS             0x69
 
 #ifdef MYMPU6000
-#define MPU6000_SPI_INSTANCE    SPI2
-#define MPU6000_CS_PIN          PB12
+#define GYRO_SPI_INSTANCE       SPI2
+#define GYRO_CSN_PIN            PB12
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW270_DEG
