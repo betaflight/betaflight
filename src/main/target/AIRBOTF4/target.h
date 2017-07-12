@@ -27,6 +27,10 @@
 
 #define INVERTER_PIN_UART1      PC0 // PC0 used as inverter select GPIO
 
+#define USE_I2C
+#define I2C_DEVICE              (I2CDEV_2)
+#define I2C_DEVICE_SHARES_UART3
+
 // MPU6000 interrupts
 #define USE_EXTI
 #define MPU_INT_EXTI            PC4
@@ -64,8 +68,9 @@
 #define USE_BARO_BMP280
 #define USE_BARO_MS5611
 
-//#define PITOT
-//#define USE_PITOT_MS4525
+#define PITOT
+#define USE_PITOT_ADC
+#define USE_PITOT_MS4525
 #define PITOT_I2C_INSTANCE      I2C_DEVICE
 
 #define M25P16_CS_PIN           PB3
@@ -106,10 +111,6 @@
 #define SPI3_SCK_PIN            PC10
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
-
-#define USE_I2C
-#define I2C_DEVICE              (I2CDEV_2)
-#define I2C_DEVICE_SHARES_UART3
 
 #define USE_ADC
 #define ADC_CHANNEL_1_PIN               PC1
