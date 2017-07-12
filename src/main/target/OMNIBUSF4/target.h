@@ -44,14 +44,19 @@
 #define INVERTER_PIN_UART1      PC0 // PC0 used as inverter select GPIO XXX this is not used --- remove it at the next major release
 #endif
 
-#define MPU6000_CS_PIN          PA4
-#define MPU6000_SPI_INSTANCE    SPI1
-
 #define ACC
 #define USE_ACC_SPI_MPU6000
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
+
+#define MPU6000_CS_PIN          PA4
+#define MPU6000_SPI_INSTANCE    SPI1
+
+// MPU6000 interrupts
+#define USE_EXTI
+#define MPU_INT_EXTI            PC4
+#define USE_MPU_DATA_READY_SIGNAL
 
 #if defined(OMNIBUSF4SD)
 #define GYRO_MPU6000_ALIGN       CW270_DEG
@@ -61,10 +66,17 @@
 #define ACC_MPU6000_ALIGN        CW180_DEG
 #endif
 
-// MPU6000 interrupts
-#define USE_EXTI
-#define MPU_INT_EXTI            PC4
-#define USE_MPU_DATA_READY_SIGNAL
+// Support for iFlight OMNIBUS F4 V3
+// Has ICM20608 instead of MPU6000
+// OMNIBUSF4SD is linked with both MPU6000 and MPU6500 drivers
+#if defined (OMNIBUSF4SD)
+#define USE_ACC_SPI_MPU6500
+#define USE_GYRO_SPI_MPU6500
+#define MPU6500_CS_PIN          MPU6000_CS_PIN
+#define MPU6500_SPI_INSTANCE    MPU6000_SPI_INSTANCE
+#define GYRO_MPU6500_ALIGN      GYRO_MPU6000_ALIGN
+#define ACC_MPU6500_ALIGN       ACC_MPU6000_ALIGN
+#endif
 
 #define MAG
 #define USE_MAG_HMC5883
