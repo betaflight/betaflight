@@ -93,10 +93,10 @@ static int32_t BMI160_do_foc(const busDevice_t *bus);
 static int32_t BMI160_WriteReg(const busDevice_t *bus, uint8_t reg, uint8_t data);
 
 
-bool bmi160Detect(const busDevice_t *bus)
+uint8_t bmi160Detect(const busDevice_t *bus)
 {
     if (BMI160Detected) {
-        return true;
+        return BMI_160_SPI;
     }
 
     IOInit(bus->spi.csnPin, OWNER_MPU_CS, 0);
@@ -111,11 +111,11 @@ bool bmi160Detect(const busDevice_t *bus)
 
     /* Check the chip ID */
     if (spiReadRegister(bus, BMI160_REG_CHIPID) != 0xd1) {
-        return false;
+        return MPU_NONE;
     }
 
     BMI160Detected = true;
-    return true;
+    return BMI_160_SPI;
 }
 
 
@@ -381,7 +381,7 @@ void bmi160SpiAccInit(accDev_t *acc)
 
 bool bmi160SpiAccDetect(accDev_t *acc)
 {
-    if (!bmi160Detect(acc->bus.spi.csnPin)) {
+    if (bmi160Detect(acc->bus.spi.csnPin) == MPU_NONE) {
         return false;
     }
 
@@ -394,7 +394,7 @@ bool bmi160SpiAccDetect(accDev_t *acc)
 
 bool bmi160SpiGyroDetect(gyroDev_t *gyro)
 {
-    if (!bmi160Detect(gyro->bus.spi.csnPin)) {
+    if (bmi160Detect(gyro->bus.spi.csnPin) == MPU_NONE) {
         return false;
     }
 

@@ -53,7 +53,7 @@ static void icm20689SpiInit(const busDevice_t *bus)
     hardwareInitialised = true;
 }
 
-bool icm20689SpiDetect(const busDevice_t *bus)
+uint8_t icm20689SpiDetect(const busDevice_t *bus)
 {
     icm20689SpiInit(bus);
 
@@ -69,13 +69,13 @@ bool icm20689SpiDetect(const busDevice_t *bus)
             break;
         }
         if (!attemptsRemaining) {
-            return false;
+            return MPU_NONE;
         }
     } while (attemptsRemaining--);
 
     spiSetDivisor(bus->spi.instance, SPI_CLOCK_STANDARD);
 
-    return true;
+    return ICM_20689_SPI;
 
 }
 

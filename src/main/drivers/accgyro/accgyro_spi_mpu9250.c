@@ -96,8 +96,8 @@ void mpu9250SpiGyroInit(gyroDev_t *gyro)
 
     mpuGyroRead(gyro);
 
-    if ((((int8_t)gyro->gyroADCRaw[1]) == -1 && ((int8_t)gyro->gyroADCRaw[0]) == -1) || spiGetErrorCounter(MPU9250_SPI_INSTANCE) != 0) {
-        spiResetErrorCounter(MPU9250_SPI_INSTANCE);
+    if ((((int8_t)gyro->gyroADCRaw[1]) == -1 && ((int8_t)gyro->gyroADCRaw[0]) == -1) || spiGetErrorCounter(gyro->bus.spi.instance) != 0) {
+        spiResetErrorCounter(gyro->bus.spi.instance);
         failureMode(FAILURE_GYRO_INIT_FAILED);
     }
 }
@@ -166,7 +166,7 @@ static void mpu9250AccAndGyroInit(gyroDev_t *gyro) {
     mpuSpi9250InitDone = true; //init done
 }
 
-bool mpu9250SpiDetect(const busDevice_t *bus)
+uint8_t mpu9250SpiDetect(const busDevice_t *bus)
 {
     IOInit(bus->spi.csnPin, OWNER_MPU_CS, 0);
     IOConfigGPIO(bus->spi.csnPin, SPI_IO_CS_CFG);
@@ -182,13 +182,13 @@ bool mpu9250SpiDetect(const busDevice_t *bus)
             break;
         }
         if (!attemptsRemaining) {
-            return false;
+            return MPU_NONE;
         }
     } while (attemptsRemaining--);
 
     spiSetDivisor(bus->spi.instance, SPI_CLOCK_FAST);
 
-    return true;
+    return MPU_9250_SPI;
 }
 
 bool mpu9250SpiAccDetect(accDev_t *acc)
