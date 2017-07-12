@@ -168,7 +168,7 @@ uint32_t spiTimeoutUserCallback(SPI_TypeDef *instance)
 }
 
 // return uint8_t value or -1 when failure
-uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data)
+uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t txByte)
 {
     uint16_t spiTimeout = 1000;
 
@@ -177,9 +177,9 @@ uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data)
             return spiTimeoutUserCallback(instance);
 
 #ifdef STM32F303xC
-    SPI_SendData8(instance, data);
+    SPI_SendData8(instance, txByte);
 #else
-    SPI_I2S_SendData(instance, data);
+    SPI_I2S_SendData(instance, txByte);
 #endif
     spiTimeout = 1000;
     while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_RXNE) == RESET)
@@ -206,14 +206,14 @@ bool spiIsBusBusy(SPI_TypeDef *instance)
 
 }
 
-bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len)
+bool spiTransfer(SPI_TypeDef *instance, uint8_t *rxData, const uint8_t *txData, int len)
 {
     uint16_t spiTimeout = 1000;
 
     uint8_t b;
     instance->DR;
     while (len--) {
-        b = in ? *(in++) : 0xFF;
+        b = txData ? *(txData++) : 0xFF;
         while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET) {
             if ((spiTimeout--) == 0)
                 return spiTimeoutUserCallback(instance);
@@ -233,8 +233,8 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len
 #else
         b = SPI_I2S_ReceiveData(instance);
 #endif
-        if (out)
-            *(out++) = b;
+        if (rxData)
+            *(rxData++) = b;
     }
 
     return true;
