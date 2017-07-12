@@ -101,7 +101,7 @@ typedef struct gyroSensor_s {
     biquadFilter_t notchFilterDyn[XYZ_AXIS_COUNT];
 } gyroSensor_t;
 
-static gyroSensor_t gyroSensor0;
+static gyroSensor_t gyroSensor1;
 
 static void gyroInitSensorFilters(gyroSensor_t *gyroSensor);
 
@@ -136,17 +136,17 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
 
 const busDevice_t *gyroSensorBus(void)
 {
-    return &gyroSensor0.gyroDev.bus;
+    return &gyroSensor1.gyroDev.bus;
 }
 
 const mpuConfiguration_t *gyroMpuConfiguration(void)
 {
-    return &gyroSensor0.gyroDev.mpuConfiguration;
+    return &gyroSensor1.gyroDev.mpuConfiguration;
 }
 
 const mpuDetectionResult_t *gyroMpuDetectionResult(void)
 {
-    return &gyroSensor0.gyroDev.mpuDetectionResult;
+    return &gyroSensor1.gyroDev.mpuDetectionResult;
 }
 
 STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
@@ -359,7 +359,7 @@ static bool gyroInitSensor(gyroSensor_t *gyroSensor)
 bool gyroInit(void)
 {
     memset(&gyro, 0, sizeof(gyro));
-    return gyroInitSensor(&gyroSensor0);
+    return gyroInitSensor(&gyroSensor1);
 }
 
 void gyroInitFilterLpf(gyroSensor_t *gyroSensor, uint8_t lpfHz)
@@ -458,7 +458,7 @@ static void gyroInitSensorFilters(gyroSensor_t *gyroSensor)
 
 void gyroInitFilters(void)
 {
-    gyroInitSensorFilters(&gyroSensor0);
+    gyroInitSensorFilters(&gyroSensor1);
 }
 
 bool isGyroSensorCalibrationComplete(const gyroSensor_t *gyroSensor)
@@ -468,7 +468,7 @@ bool isGyroSensorCalibrationComplete(const gyroSensor_t *gyroSensor)
 
 bool isGyroCalibrationComplete(void)
 {
-    return isGyroSensorCalibrationComplete(&gyroSensor0);
+    return isGyroSensorCalibrationComplete(&gyroSensor1);
 }
 
 static bool isOnFinalGyroCalibrationCycle(const gyroCalibration_t *gyroCalibration)
@@ -494,7 +494,7 @@ static void gyroSetCalibrationCycles(gyroSensor_t *gyroSensor)
 void gyroStartCalibration(bool isFirstArmingCalibration)
 {
     if (!(isFirstArmingCalibration && firstArmingCalibrationWasStarted)) {
-        gyroSetCalibrationCycles(&gyroSensor0);
+        gyroSetCalibrationCycles(&gyroSensor1);
 
         if (isFirstArmingCalibration) {
             firstArmingCalibrationWasStarted = true;
@@ -606,22 +606,22 @@ void gyroUpdateSensor(gyroSensor_t *gyroSensor)
 
 void gyroUpdate(void)
 {
-    gyroUpdateSensor(&gyroSensor0);
+    gyroUpdateSensor(&gyroSensor1);
 }
 
 void gyroReadTemperature(void)
 {
-    if (gyroSensor0.gyroDev.temperatureFn) {
-        gyroSensor0.gyroDev.temperatureFn(&gyroSensor0.gyroDev, &gyroSensor0.gyroDev.temperature);
+    if (gyroSensor1.gyroDev.temperatureFn) {
+        gyroSensor1.gyroDev.temperatureFn(&gyroSensor1.gyroDev, &gyroSensor1.gyroDev.temperature);
     }
 }
 
 int16_t gyroGetTemperature(void)
 {
-    return gyroSensor0.gyroDev.temperature;
+    return gyroSensor1.gyroDev.temperature;
 }
 
 int16_t gyroRateDps(int axis)
 {
-    return lrintf(gyro.gyroADCf[axis] / gyroSensor0.gyroDev.scale);
+    return lrintf(gyro.gyroADCf[axis] / gyroSensor1.gyroDev.scale);
 }
