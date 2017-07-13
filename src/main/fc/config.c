@@ -38,7 +38,6 @@
 
 #include "drivers/system.h"
 #include "drivers/rx_spi.h"
-#include "drivers/pwm_mapping.h"
 #include "drivers/pwm_output.h"
 #include "drivers/serial.h"
 #include "drivers/timer.h"
@@ -415,11 +414,6 @@ void validateAndFixConfig(void)
         break;
     }
 #endif
-
-    // Airspeed TPA can not be used on multirotors
-    if (getFlyingPlatformType() != PLATFORM_AIRPLANE) {
-        pidProfileMutable()->pidScalingLogic = PID_SCALING_THROTTLE;
-    }
 }
 
 void applyAndSaveBoardAlignmentDelta(int16_t roll, int16_t pitch)

@@ -38,11 +38,15 @@ and so on.
 #define CONTROL_RATE_CONFIG_YAW_RATE_MIN         2
 #define CONTROL_RATE_CONFIG_YAW_RATE_DEFAULT     20
 
+#define CONTROL_RATE_CONFIG_TPA_MAX              100
+
 typedef struct controlRateConfig_s {
+    uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
     uint8_t rcExpo8;
     uint8_t thrMid8;
     uint8_t thrExpo8;
     uint8_t rates[3];
+    uint8_t dynThrPID;
     uint8_t rcYawExpo8;
 } controlRateConfig_t;
 

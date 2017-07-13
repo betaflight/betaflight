@@ -336,10 +336,6 @@ static const char * const lookupTableLTMRates[] = {
 };
 #endif
 
-static const char * const lookupTablePIDScaling[] = {
-    "THROTTLE", "AIRSPEED"
-};
-
 typedef struct lookupTableEntry_s {
     const char * const *values;
     const uint8_t valueCount;
@@ -399,7 +395,6 @@ typedef enum {
 #ifdef TELEMETRY_LTM
     TABLE_LTM_UPDATE_RATE,
 #endif
-    TABLE_PID_SCALING,
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
@@ -457,7 +452,6 @@ static const lookupTableEntry_t lookupTables[] = {
 #ifdef TELEMETRY_LTM
     {lookupTableLTMRates, sizeof(lookupTableLTMRates) / sizeof(char *) },
 #endif
-    {lookupTablePIDScaling, sizeof(lookupTablePIDScaling) / sizeof(char *) },
 };
 
 #define VALUE_TYPE_OFFSET 0
@@ -686,6 +680,9 @@ static const clivalue_t valueTable[] = {
     { "pitch_rate",                 VAR_UINT8  | CONTROL_RATE_VALUE, .config.minmax = { CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN,  CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rates[FD_PITCH]) },
     { "yaw_rate",                   VAR_UINT8  | CONTROL_RATE_VALUE, .config.minmax = { CONTROL_RATE_CONFIG_YAW_RATE_MIN,  CONTROL_RATE_CONFIG_YAW_RATE_MAX }, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, rates[FD_YAW]) },
 
+    { "tpa_rate",                   VAR_UINT8  | CONTROL_RATE_VALUE, .config.minmax = { 0,  CONTROL_RATE_CONFIG_TPA_MAX}, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, dynThrPID) },
+    { "tpa_breakpoint",             VAR_UINT16 | CONTROL_RATE_VALUE, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX}, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, tpa_breakpoint) },
+
 // PG_SERIAL_CONFIG
     { "reboot_character",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 48,  126 }, PG_SERIAL_CONFIG, offsetof(serialConfig_t, reboot_character) },
 
@@ -751,16 +748,12 @@ static const clivalue_t valueTable[] = {
     { "max_angle_inclination_rll",  VAR_INT16  | PROFILE_VALUE, .config.minmax = { 100,  900 }, PG_PID_PROFILE, offsetof(pidProfile_t, max_angle_inclination[FD_ROLL]) },
     { "max_angle_inclination_pit",  VAR_INT16  | PROFILE_VALUE, .config.minmax = { 100,  900 }, PG_PID_PROFILE, offsetof(pidProfile_t, max_angle_inclination[FD_PITCH]) },
 
-    { "pid_scaling_logic",          VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_PID_SCALING }, PG_PID_PROFILE, offsetof(pidProfile_t, pidScalingLogic) },
-    { "tpa_rate",                   VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0,  PID_SCALING_STRENGTH_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, pidScalingStrength) },
-    { "tpa_breakpoint",             VAR_UINT16 | PROFILE_VALUE, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, pidScalingThrottle) },
-
     { "dterm_lpf_hz",               VAR_UINT8  | PROFILE_VALUE, .config.minmax = {0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_lpf_hz) },
     { "yaw_lpf_hz",                 VAR_UINT8  | PROFILE_VALUE, .config.minmax = {0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, yaw_lpf_hz) },
     { "dterm_setpoint_weight",      VAR_FLOAT  | PROFILE_VALUE, .config.minmax = {0, 2 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_setpoint_weight) },
 #ifdef USE_SERVOS
     { "fw_iterm_throw_limit",       VAR_UINT16 | PROFILE_VALUE, .config.minmax = { FW_ITERM_THROW_LIMIT_MIN,  FW_ITERM_THROW_LIMIT_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, fixedWingItermThrowLimit) },
-    { "fw_trim_airspeed",           VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { 1,  5000}, PG_PID_PROFILE, offsetof(pidProfile_t, fixedWingTrimAirspeed) },
+    { "fw_reference_airspeed",      VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { 1,  5000}, PG_PID_PROFILE, offsetof(pidProfile_t, fixedWingReferenceAirspeed) },
     { "fw_turn_assist_yaw_gain",    VAR_FLOAT  | PROFILE_VALUE, .config.minmax = { 0,  2}, PG_PID_PROFILE, offsetof(pidProfile_t, fixedWingCoordinatedYawGain) },
 #endif
 #ifdef USE_DTERM_NOTCH
