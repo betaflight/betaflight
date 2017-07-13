@@ -1345,6 +1345,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, currentPidProfile->dterm_notch_cutoff);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_hz_2);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_cutoff_2);
+        sbufWriteU8(dst, currentPidProfile->dterm_filter_type);
         break;
 
     case MSP_PID_ADVANCED:
@@ -1362,6 +1363,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, currentPidProfile->yawRateAccelLimit);
         sbufWriteU8(dst, currentPidProfile->levelAngleLimit);
         sbufWriteU8(dst, currentPidProfile->levelSensitivity);
+        sbufWriteU16(dst, currentPidProfile->itermThrottleThreshold);
+        sbufWriteU16(dst, currentPidProfile->itermAcceleratorGain);
         break;
 
     case MSP_SENSOR_CONFIG:
@@ -1745,6 +1748,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             gyroConfigMutable()->gyro_soft_notch_hz_2 = sbufReadU16(src);
             gyroConfigMutable()->gyro_soft_notch_cutoff_2 = sbufReadU16(src);
         }
+        if (dataSize > 17) {
+            currentPidProfile->dterm_filter_type = sbufReadU8(src);
+        }
         // reinitialize the gyro filters with the new values
         validateAndFixGyroConfig();
         gyroInitFilters();
@@ -1768,6 +1774,10 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (dataSize > 17) {
             currentPidProfile->levelAngleLimit = sbufReadU8(src);
             currentPidProfile->levelSensitivity = sbufReadU8(src);
+        }
+        if (dataSize > 19) {
+            currentPidProfile->itermThrottleThreshold = sbufReadU16(src);
+            currentPidProfile->itermAcceleratorGain = sbufReadU16(src);
         }
         pidInitConfig(currentPidProfile);
         break;
