@@ -584,9 +584,12 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU16(dst, 0);
         sbufWriteU16(dst, osdConfig()->alt_alarm);
 
-        // Element position and visibility
+        // Element position and flags
         for (int i = 0; i < OSD_ITEM_COUNT; i++) {
-            sbufWriteU16(dst, osdConfig()->item_pos[i]);
+            //FIXME: this should be changed to separate x, y, and visibility
+            sbufWriteU8(dst, osdConfig()->item[i].x);
+            sbufWriteU8(dst, osdConfig()->item[i].y);
+            sbufWriteU8(dst, osdConfig()->item[i].flags);
         }
 
         // Post flight statistics
@@ -1954,17 +1957,22 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 return MSP_RESULT_ERROR;
             } else {
 #if defined(OSD)
-                const uint16_t value = sbufReadU16(src);
+                // WARNING: this has been reordered:
+                // before: U16 U8 -> data + screen
+                // now   : U8 [U8 U8 U8 or U16]
 
                 /* Get screen index, 0 is post flight statistics, 1 and above are in flight OSD screens */
-                const uint8_t screen = (sbufBytesRemaining(src) >= 1) ? sbufReadU8(src) : 1;
+                const uint8_t screen = (uint8_t) sbufReadU8(src);
 
                 if (screen == 0 && addr < OSD_STAT_COUNT) {
                     /* Set statistic item enable */
-                    osdConfigMutable()->enabled_stats[addr] = value;
+                    osdConfigMutable()->enabled_stats[addr] = (uint16_t) sbufReadU16(src);
                 } else if (addr < OSD_ITEM_COUNT) {
                     /* Set element positions */
-                    osdConfigMutable()->item_pos[addr] = value;
+                    // read x, y, and flags:
+                    osdConfigMutable()->item[addr].x     = (int8_t) sbufReadU8(src);
+                    osdConfigMutable()->item[addr].y     = (int8_t) sbufReadU8(src);
+                    osdConfigMutable()->item[addr].flags = (int8_t) sbufReadU8(src);
                 } else {
                   return MSP_RESULT_ERROR;
                 }

@@ -97,7 +97,7 @@ static int drawScreen(displayPort_t *displayPort)
 
 static int screenSize(const displayPort_t *displayPort)
 {
-    return displayPort->rows * displayPort->cols;
+    return displayPort->rowCount * displayPort->colCount;
 }
 
 static int writeString(displayPort_t *displayPort, uint8_t col, uint8_t row, const char *string)
@@ -136,8 +136,8 @@ static bool isTransferInProgress(const displayPort_t *displayPort)
 
 static void resync(displayPort_t *displayPort)
 {
-    displayPort->rows = 13 + displayPortProfileMsp()->rowAdjust; // XXX Will reflect NTSC/PAL in the future
-    displayPort->cols = 30 + displayPortProfileMsp()->colAdjust;
+    displayPort->rowCount = 13 + displayPortProfileMsp()->rowAdjust; // XXX Will reflect NTSC/PAL in the future
+    displayPort->colCount = 30 + displayPortProfileMsp()->colAdjust;
 }
 
 static uint32_t txBytesFree(const displayPort_t *displayPort)
