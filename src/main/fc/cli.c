@@ -2870,10 +2870,10 @@ static void cliMotor(char *cmdline)
     cliPrintf("motor %d: %d\r\n", motor_index, motor_disarmed[motor_index]);
 }
 
-static void printName(uint8_t dumpMask)
+static void printName(uint8_t dumpMask, const systemConfig_t * sConfig)
 {
-    bool equalsDefault = strlen(systemConfigMutable()->name) == 0;
-    cliDumpPrintf(dumpMask, equalsDefault, "name %s\r\n", equalsDefault ? emptyName : systemConfigMutable()->name);
+    bool equalsDefault = strlen(sConfig->name) == 0;
+    cliDumpPrintf(dumpMask, equalsDefault, "name %s\r\n", equalsDefault ? emptyName : sConfig->name);
 }
 
 static void cliName(char *cmdline)
@@ -2885,7 +2885,7 @@ static void cliName(char *cmdline)
             strncpy(systemConfigMutable()->name, cmdline, MIN(len, MAX_NAME_LENGTH));
         }
     }
-    printName(DUMP_MASTER);
+    printName(DUMP_MASTER, systemConfig());
 }
 
 #ifdef PLAY_SOUND
@@ -3361,6 +3361,9 @@ static void printConfig(const char *cmdline, bool doDiff)
 
         cliPrintHashLine("map");
         printMap(dumpMask, &rxConfig_Copy, rxConfig());
+
+        cliPrintHashLine("name");
+        printName(dumpMask, &systemConfig_Copy);
 
         cliPrintHashLine("serial");
         printSerial(dumpMask, &serialConfig_Copy, serialConfig());
