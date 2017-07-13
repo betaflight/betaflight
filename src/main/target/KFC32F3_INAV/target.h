@@ -106,11 +106,15 @@
 #define UART2_RX_PIN            PA3
 
 #define USE_I2C
-#define I2C_DEVICE              (I2CDEV_1) // SDA (PB9/AF4), SCL (PB8/AF4)
+#define I2C_DEVICE              (I2CDEV_1)
 
 #define I2C1_SCL                PA15
 #define I2C1_SDA                PA14
 
+#define PITOT
+#define USE_PITOT_ADC
+#define USE_PITOT_MS4525
+#define PITOT_I2C_INSTANCE      I2C_DEVICE
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
