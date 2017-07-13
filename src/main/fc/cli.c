@@ -130,6 +130,8 @@ static void cliAssert(char *cmdline);
 static void cliBootlog(char *cmdline);
 #endif
 
+static const char* const emptyName = "-";
+
 // buffer
 static char cliBuffer[64];
 static uint32_t bufferIndex = 0;
@@ -2868,6 +2870,24 @@ static void cliMotor(char *cmdline)
     cliPrintf("motor %d: %d\r\n", motor_index, motor_disarmed[motor_index]);
 }
 
+static void printName(uint8_t dumpMask)
+{
+    bool equalsDefault = strlen(systemConfigMutable()->name) == 0;
+    cliDumpPrintf(dumpMask, equalsDefault, "name %s\r\n", equalsDefault ? emptyName : systemConfigMutable()->name);
+}
+
+static void cliName(char *cmdline)
+{
+    int32_t len = strlen(cmdline);
+    if (len > 0) {
+        memset(systemConfigMutable()->name, 0, ARRAYLEN(systemConfigMutable()->name));
+        if (strncmp(cmdline, emptyName, len)) {
+            strncpy(systemConfigMutable()->name, cmdline, MIN(len, MAX_NAME_LENGTH));
+        }
+    }
+    printName(DUMP_MASTER);
+}
+
 #ifdef PLAY_SOUND
 static void cliPlaySound(char *cmdline)
 {
@@ -3487,6 +3507,7 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("motor",  "get/set motor",
        "<index> [<value>]", cliMotor),
+    CLI_COMMAND_DEF("name", "name of craft", NULL, cliName),
 #ifdef PLAY_SOUND
     CLI_COMMAND_DEF("play_sound", NULL,
         "[<index>]\r\n", cliPlaySound),
