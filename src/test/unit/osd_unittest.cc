@@ -49,6 +49,8 @@ extern "C" {
     void osdRefresh(timeUs_t currentTimeUs);
     void osdFormatTime(char * buff, osd_timer_precision_e precision, timeUs_t time);
     void osdFormatTimer(char *buff, bool showSymbol, int timerIndex);
+    void osdConvertToAbsolutePosition(uint8_t item, int8_t *pos_x, int8_t *pos_y);
+
 
     uint16_t rssi;
     attitudeEulerAngles_t attitude;
@@ -401,11 +403,11 @@ TEST(OsdTest, TestAlarms)
 
     // and
     // the following OSD elements are visible
-    osdConfigMutable()->item_pos[OSD_RSSI_VALUE]        = OSD_POS(8, 1)  | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 1) | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_1]      = OSD_POS(20, 1)  | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_2]      = OSD_POS(1, 1)  | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ALTITUDE]          = OSD_POS(23, 7) | VISIBLE_FLAG;
+    OSD_INIT(osdConfigMutable(), OSD_RSSI_VALUE,    8,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfigMutable(), OSD_MAIN_BATT_VOLTAGE,    12,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfigMutable(), OSD_ITEM_TIMER_1,   20,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfigMutable(), OSD_ITEM_TIMER_2,    1,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfigMutable(), OSD_ALTITUDE,    23,  7, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
 
     // and
     // this set of alarm values
@@ -490,7 +492,7 @@ TEST(OsdTest, TestAlarms)
 TEST(OsdTest, TestElementRssi)
 {
     // given
-    osdConfigMutable()->item_pos[OSD_RSSI_VALUE] = OSD_POS(8, 1) | VISIBLE_FLAG;
+    OSD_INIT(osdConfigMutable(), OSD_RSSI_VALUE,    8,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
     osdConfigMutable()->rssi_alarm = 0;
 
     // when
@@ -568,6 +570,118 @@ TEST(OsdTest, TestFormatTimeString)
     /* Hundredths precision, 1 minute 59 seconds */
     osdFormatTime(buff, OSD_TIMER_PREC_HUNDREDTHS, 119e6);
     EXPECT_EQ(0, strcmp("01:59.00", buff));
+}
+
+/*
+ * Test positioning of OSD elements.
+ */
+TEST(OsdTest, TestElementPositioning)
+{
+    const int highX = UNITTEST_DISPLAYPORT_COLS - 1;
+    const int highY = UNITTEST_DISPLAYPORT_ROWS - 1;
+    const int centreX = highX / 2;
+    const int centreY = highY / 2;
+
+    // given
+    // north west anchoring
+    OSD_INIT(osdConfigMutable(), OSD_CRAFT_NAME, 8, 1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // expect
+    displayPortTestBufferSubstring(8, 1, "CRAFT_NAME");
+
+    // given
+    // south east anchoring
+    OSD_INIT(osdConfigMutable(), OSD_CRAFT_NAME, -8, -2, OSD_FLAG_ORIGIN_SE | OSD_FLAG_VISIBLE);
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // expect
+    displayPortTestBufferSubstring(highX - 8, highY - 2, "CRAFT_NAME");
+
+    // given
+    // north east anchoring
+    OSD_INIT(osdConfigMutable(), OSD_CRAFT_NAME, -8, 4, OSD_FLAG_ORIGIN_NE | OSD_FLAG_VISIBLE);
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // expect
+    displayPortTestBufferSubstring(highX - 8, 4, "CRAFT_NAME");
+
+    // given
+    // south west anchoring
+    OSD_INIT(osdConfigMutable(), OSD_CRAFT_NAME, 6, -2, OSD_FLAG_ORIGIN_SW | OSD_FLAG_VISIBLE);
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // expect
+    displayPortTestBufferSubstring(6, highY - 2, "CRAFT_NAME");
+
+    // given
+    // centre anchoring
+    OSD_INIT(osdConfigMutable(), OSD_CRAFT_NAME, 1, -2, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE);
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // expect
+    displayPortTestBufferSubstring(centreX + 1, centreY - 2, "CRAFT_NAME");
+}
+
+void testRealToAbsConversionSingle(int8_t rel_x, int8_t rel_y, int8_t origin, int8_t abs_x, int8_t abs_y) {
+    // do not test positions out of bounds:
+    if ((abs_x < 0) || (abs_x >= UNITTEST_DISPLAYPORT_COLS) ||
+        (abs_y < 0) || (abs_y >= UNITTEST_DISPLAYPORT_ROWS)){
+        return;
+    }
+    //PRINTF("testing %d %d -> %d %d (0x%02X)\n", rel_y, rel_y, abs_x, abs_y, (uint8_t)origin);
+
+    OSD_INIT(osdConfigMutable(), OSD_RSSI_VALUE, rel_x,  rel_y, origin | OSD_FLAG_VISIBLE);
+
+    int8_t pos_x, pos_y;
+    osdConvertToAbsolutePosition(OSD_RSSI_VALUE, &pos_x, &pos_y);
+
+//    EXPECT_EQ(abs_x, pos_x);
+//    EXPECT_EQ(abs_y, pos_y);
+    EXPECT_TRUE((abs_x == pos_x) && (abs_x == pos_x))
+            << "EXPECTED (" << (int)rel_x << ", " << (int)rel_y << ": " << (int)(uint8_t) origin
+            << ") to be converted into (" << (int)abs_x << ", " << (int)abs_y << ") "
+            << "but got (" << (int) pos_x << ", " << (int)pos_y << ") instead...\n";
+}
+
+/*
+ * Tests the relative to abs position conversion
+ */
+TEST(OsdTest, TestRelAbsConversion)
+{
+    int8_t max_x = UNITTEST_DISPLAYPORT_COLS-1;
+    int8_t max_y = UNITTEST_DISPLAYPORT_ROWS-1;
+    int8_t half_x = max_x/2;
+    int8_t half_y = max_y/2;
+
+    for(int8_t x= -10; x<10; x++){
+        for(int8_t y= -10; y<10; y++){
+            testRealToAbsConversionSingle(x, y, OSD_FLAG_ORIGIN_NW, x+0,      y+0);
+            testRealToAbsConversionSingle(x, y, OSD_FLAG_ORIGIN_N,  x+half_x, y+0);
+            testRealToAbsConversionSingle(x, y, OSD_FLAG_ORIGIN_NE, x+max_x,  y+0);
+            testRealToAbsConversionSingle(x, y, OSD_FLAG_ORIGIN_E,  x+max_x,  y+half_y);
+            testRealToAbsConversionSingle(x, y, OSD_FLAG_ORIGIN_SE, x+max_x,  y+max_y);
+            testRealToAbsConversionSingle(x, y, OSD_FLAG_ORIGIN_S,  x+half_x, y+max_y);
+            testRealToAbsConversionSingle(x, y, OSD_FLAG_ORIGIN_SW, x+0,      y+max_y);
+            testRealToAbsConversionSingle(x, y, OSD_FLAG_ORIGIN_W,  x+0,      y+half_y);
+            testRealToAbsConversionSingle(x, y, OSD_FLAG_ORIGIN_C,  x+half_x, y+half_y);
+        }
+    }
 }
 
 

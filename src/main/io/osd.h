@@ -32,11 +32,11 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 #define OSD_POSCFG_MAX   (VISIBLE_FLAG|0x3FF) // For CLI values
 
 // Character coordinate
-#define OSD_POSITION_BITS 5 // 5 bits gives a range 0-31
-#define OSD_POSITION_XY_MASK ((1 << OSD_POSITION_BITS) - 1)
-#define OSD_POS(x,y)  ((x & OSD_POSITION_XY_MASK) | ((y & OSD_POSITION_XY_MASK) << OSD_POSITION_BITS))
-#define OSD_X(x)      (x & OSD_POSITION_XY_MASK)
-#define OSD_Y(x)      ((x >> OSD_POSITION_BITS) & OSD_POSITION_XY_MASK)
+//#define OSD_POSITION_BITS 5 // 5 bits gives a range 0-31
+//#define OSD_POSITION_XY_MASK ((1 << OSD_POSITION_BITS) - 1)
+//#define OSD_POS(x,y)  {(x), (y)}
+//#define OSD_X(x)      (x & OSD_POSITION_XY_MASK)
+//#define OSD_Y(x)      ((x >> OSD_POSITION_BITS) & OSD_POSITION_XY_MASK)
 
 // Timer configuration
 // Stored as 15[alarm:8][precision:4][source:4]0
@@ -126,8 +126,39 @@ typedef enum {
     OSD_TIMER_PREC_COUNT
 } osd_timer_precision_e;
 
+typedef enum {
+    // visible, bit 0
+    OSD_FLAG_VISIBLE = (1 << 0),
+
+    // bit 1 .. 3 reserved for future use
+
+    // origin, bits 4.7
+    OSD_FLAG_ORIGIN_C  = 0,
+    OSD_FLAG_ORIGIN_N  = (1<<4),
+    OSD_FLAG_ORIGIN_E  = (1<<5),
+    OSD_FLAG_ORIGIN_S  = (1<<6),
+    OSD_FLAG_ORIGIN_W  = (1<<7),
+    OSD_FLAG_ORIGIN_NE = OSD_FLAG_ORIGIN_N | OSD_FLAG_ORIGIN_E,
+    OSD_FLAG_ORIGIN_SE = OSD_FLAG_ORIGIN_S | OSD_FLAG_ORIGIN_E,
+    OSD_FLAG_ORIGIN_SW = OSD_FLAG_ORIGIN_S | OSD_FLAG_ORIGIN_W,
+    OSD_FLAG_ORIGIN_NW = OSD_FLAG_ORIGIN_N | OSD_FLAG_ORIGIN_W
+} osdFlag_e;
+
+#define OSD_FLAG_VISIBLE_MASK (OSD_FLAG_VISIBLE)
+#define OSD_FLAG_ORIGIN_MASK  (OSD_FLAG_ORIGIN_N | OSD_FLAG_ORIGIN_E | OSD_FLAG_ORIGIN_S | OSD_FLAG_ORIGIN_W)
+
+#define OSD_INIT(_config, _item, _x, _y, _flags) { (_config)->item[(_item)] = (osdItem_t) {(_x), (_y), (int8_t)(_flags)}; }
+
+
+typedef struct {
+    int8_t x;
+    int8_t y;
+    int8_t flags;
+} osdItem_t;
+
 typedef struct osdConfig_s {
-    uint16_t item_pos[OSD_ITEM_COUNT];
+    osdItem_t item[OSD_ITEM_COUNT];
+
     bool enabled_stats[OSD_STAT_COUNT];
 
     // Alarms
