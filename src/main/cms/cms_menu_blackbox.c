@@ -52,29 +52,6 @@
 #include "io/flashfs.h"
 #include "io/beeper.h"
 
-
-#ifdef USE_FLASHFS
-static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
-{
-    UNUSED(ptr);
-
-    displayClearScreen(pDisplay);
-    displayWrite(pDisplay, 5, 3, "ERASING FLASH...");
-    displayResync(pDisplay); // Was max7456RefreshAll(); Why at this timing?
-
-    flashfsEraseCompletely();
-    while (!flashfsIsReady()) {
-        delay(100);
-    }
-
-    beeper(BEEPER_BLACKBOX_ERASE);
-    displayClearScreen(pDisplay);
-    displayResync(pDisplay); // Was max7456RefreshAll(); wedges during heavy SPI?
-
-    return 0;
-}
-#endif // USE_FLASHFS
-
 static const char * const cmsx_BlackboxDeviceNames[] = {
     "NONE",
     "FLASH ",
@@ -162,6 +139,31 @@ static void cmsx_Blackbox_GetDeviceStatus()
     tfp_sprintf(cmsx_BlackboxDeviceStorageUsed, "%ld%s", storageUsed, unit);
     tfp_sprintf(cmsx_BlackboxDeviceStorageFree, "%ld%s", storageFree, unit);
 }
+
+#ifdef USE_FLASHFS
+static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
+{
+    UNUSED(ptr);
+
+    displayClearScreen(pDisplay);
+    displayWrite(pDisplay, 5, 3, "ERASING FLASH...");
+    displayResync(pDisplay); // Was max7456RefreshAll(); Why at this timing?
+
+    flashfsEraseCompletely();
+    while (!flashfsIsReady()) {
+        delay(100);
+    }
+
+    beeper(BEEPER_BLACKBOX_ERASE);
+    displayClearScreen(pDisplay);
+    displayResync(pDisplay); // Was max7456RefreshAll(); wedges during heavy SPI?
+
+    // Update storage device status to show new used space amount
+    cmsx_Blackbox_GetDeviceStatus();
+
+    return 0;
+}
+#endif // USE_FLASHFS
 
 static long cmsx_Blackbox_onEnter(void)
 {
