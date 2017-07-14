@@ -216,7 +216,6 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
-
 #if defined(SINGULARITY)
             // remap PWM6+7 as servos
             if (timerIndex == PWM6 || timerIndex == PWM7)
