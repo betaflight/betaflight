@@ -54,7 +54,12 @@ extern "C" {
     void cliGet(char *cmdline);
     void *getValuePointer(const clivalue_t *value);
 
-    
+    const clivalue_t valueTable[] = {
+        { "array_unit_test",             VAR_INT8  | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_RESERVED_FOR_TESTING_1, 0 }
+    };
+    const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);
+    const lookupTableEntry_t lookupTables[] = {};
+  
 
     PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
@@ -78,7 +83,6 @@ extern "C" {
 }
 
 #include "unittest_macros.h"
-#include "unittest_cli.h"
 #include "gtest/gtest.h"
 TEST(CLIUnittest, TestCliSet)
 {

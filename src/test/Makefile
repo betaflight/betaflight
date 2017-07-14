@@ -55,7 +55,6 @@ blackbox_encoding_unittest_SRC :=  \
 cli_unittest_SRC := \
 		$(USER_DIR)/fc/cli.c \
 		$(USER_DIR)/config/feature.c \
-		$(USER_DIR)/fc/settings.c \
 		$(USER_DIR)/config/parameter_group.c \
                 $(USER_DIR)/common/typeconversion.c 
 
