@@ -32,11 +32,11 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM8, CH2, PB8, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED),                         // PWM3 (2,5)
     DEF_TIM(TIM17,CH1, PB9, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED),                         // PWM4 (1,1)
 
+#ifdef BFF3_USE_HEXA_DSHOT
     // For HEXA dshot
     DEF_TIM(TIM1, CH2N,PB0, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED | TIMER_OUTPUT_INVERTED), // PWM5 (1,3)
     DEF_TIM(TIM8, CH3N,PB1, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED | TIMER_OUTPUT_INVERTED), // PWM6 (2,1)
-
-#if 0
+#else
     // For softserial
     DEF_TIM(TIM3, CH3, PB0, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED | TIMER_OUTPUT_INVERTED), // PWM5 (1,2) !LED
     DEF_TIM(TIM3, CH4, PB1, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED | TIMER_OUTPUT_INVERTED), // PWM6 (1,3)
@@ -45,5 +45,6 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM2, CH4, PA3, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED),                         // PWM7/UART2_RX
     DEF_TIM(TIM2, CH3, PA2, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED),                         // PWM8/UART2_TX
 
+    // When using softserial config, LED will have DMA conflict with PB0 (SOFTSERIAL1_RX).
     DEF_TIM(TIM1, CH1, PA8, TIM_USE_MOTOR | TIM_USE_LED, TIMER_OUTPUT_ENABLED),                         // LED  (1,2)
 };
