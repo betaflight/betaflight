@@ -618,6 +618,11 @@ const clivalue_t valueTable[] = {
 #endif
 #endif
 
+// UNIT TEST for arrays (as long as no array entries are defined here)
+#ifdef UNIT_TEST
+   { "array_unit_test",             VAR_INT8  | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_RESERVED_FOR_TESTING_1, 0 }, 
+#endif 
+
 // PG_LED_STRIP_CONFIG
 #ifdef LED_STRIP
     { "ledstrip_visual_beeper",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_visual_beeper) },
