@@ -173,6 +173,25 @@ static int32_t applyMedianFilter(int32_t newReading)
     return medianFilterReady ? quickMedianFilter5(filterSamples) : newReading;
 }
 
+static int32_t computePseudoSnr(int32_t newReading) {
+    #define SNR_SAMPLES 5
+    static int32_t snrSamples[SNR_SAMPLES];
+    static uint8_t snrSampleIndex = 0;
+    static int32_t previousReading = RANGEFINDER_OUT_OF_RANGE;
+    static bool snrReady = false;
+
+    snrSamples[snrSampleIndex] = pow(newReading - previousReading, 2);
+    ++snrSampleIndex;
+    if (snrSampleIndex == SNR_SAMPLES) {
+        snrSampleIndex = 0;
+        snrReady = true;
+    }
+
+    previousReading = newReading;
+
+    return snrReady ? quickMedianFilter5(snrSamples) : RANGEFINDER_OUT_OF_RANGE;
+}
+
 /*
  * This is called periodically by the scheduler
  */
@@ -207,6 +226,8 @@ void rangefinderProcess(float cosTiltAngle)
             // Invalid response / hardware failure
             rangefinder.rawAltitude = RANGEFINDER_HARDWARE_FAILURE;
         }
+
+        DEBUG_SET(DEBUG_RANGEFINDER, 3, computePseudoSnr(distance));
     }
     else {
         // Bad configuration
