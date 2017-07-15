@@ -28,34 +28,49 @@
 #define GYRO
 
 // ICM-20608-G
-#define USE_ACC_MPU6500
-#define USE_ACC_SPI_MPU6500
-#define USE_GYRO_MPU6500
-#define USE_GYRO_SPI_MPU6500
+// #define USE_ACC_MPU6500
+// #define USE_ACC_SPI_MPU6500
+// #define USE_GYRO_MPU6500
+// #define USE_GYRO_SPI_MPU6500
 //#define ACC_MPU6500_ALIGN       CW0_DEG
 //#define GYRO_MPU6500_ALIGN      CW0_DEG
-#define MPU6500_CS_PIN          SPI1_NSS_PIN
-#define MPU6500_SPI_INSTANCE    SPI1
+// #define MPU6500_CS_PIN          SPI1_NSS_PIN
+// #define MPU6500_SPI_INSTANCE    SPI1
 //#define MPU_INT_EXTI            PE8
 
 // MPU6000
-#define USE_ACC_MPU6000
-#define USE_ACC_SPI_MPU6000
-#define USE_GYRO_MPU6000
-#define USE_GYRO_SPI_MPU6000
-//#define ACC_MPU6000_ALIGN       CW0_DEG
-//#define GYRO_MPU6000_ALIGN      CW0_DEG
-#define MPU6000_CS_PIN          SPI3_NSS_PIN
-#define MPU6000_SPI_INSTANCE    SPI3
-//#define MPU_INT_EXTI            PD0
+// #define USE_ACC_MPU6000
+// #define USE_ACC_SPI_MPU6000
+// #define USE_GYRO_MPU6000
+// #define USE_GYRO_SPI_MPU6000
+// #define ACC_MPU6000_ALIGN       CW0_DEG
+// #define GYRO_MPU6000_ALIGN      CW0_DEG
+// #define MPU6000_CS_PIN          SPI3_NSS_PIN
+// #define MPU6000_SPI_INSTANCE    SPI3
+// #define MPU_INT_EXTI            PD0
 
-#define USE_DUAL_GYRO
-#define GYRO_0_CS_PIN           MPU6000_CS_PIN
-#define GYRO_1_CS_PIN           MPU6500_CS_PIN
+// #define USE_DUAL_GYRO
+// #define GYRO_0_CS_PIN           MPU6000_CS_PIN
+// #define GYRO_1_CS_PIN           MPU6500_CS_PIN
 
 // TODO: dual gyro support
 //#define USE_MPU_DATA_READY_SIGNAL
 //#define USE_EXTI
+
+#define USE_EXTI
+#define MPU_INT_EXTI            PD0
+#define USE_MPU_DATA_READY_SIGNAL
+
+#define GYRO
+#define USE_GYRO_SPI_MPU6000
+#define MPU6000_CS_PIN          PA15
+#define MPU6000_SPI_INSTANCE    SPI3
+
+#define ACC
+#define USE_ACC_SPI_MPU6000
+
+#define GYRO_MPU6000_ALIGN      CW0_DEG
+#define ACC_MPU6000_ALIGN       CW0_DEG
 
 #define USABLE_TIMER_CHANNEL_COUNT 16
 
@@ -67,20 +82,20 @@
 #define UART1_TX_PIN PA9
 
 //#define AVOID_UART2_FOR_PWM_PPM
-//#define USE_UART2
-//#define UART2_TX_PIN PA2 //not wired
-//#define UART2_RX_PIN PA3
+#define USE_UART2
+#define UART2_TX_PIN PA2 //not wired
+#define UART2_RX_PIN PA3
 
 // Assigned to shared output I2C2
-//#define USE_UART3
-//#define UART3_RX_PIN PB10
-//#define UART3_TX_PIN PB11
+#define USE_UART3
+#define UART3_RX_PIN PB10
+#define UART3_TX_PIN PB11
 
 #define USE_UART6
 #define UART6_RX_PIN PC7
 #define UART6_TX_PIN PC6
 
-#define SERIAL_PORT_COUNT 3 //VCP, USART1, USART6
+#define SERIAL_PORT_COUNT 3 //VCP, USART1, USART2, USART3, USART6
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -137,8 +152,8 @@
 #define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_4
 
 #define USE_I2C
-//#define USE_I2C2
-//#define I2C_DEVICE (I2CDEV_2)
+#define I2C_DEVICE              (I2CDEV_2)
+#define I2C_DEVICE_SHARES_UART3
 
 #define BARO
 #define USE_BARO_BMP280
@@ -148,15 +163,15 @@
 
 #define SENSORS_SET (SENSOR_ACC | SENSOR_BARO)
 
-#define BOARD_HAS_CURRENT_SENSOR
-#define BOARD_HAS_VOLTAGE_SENSOR
-
 #define USE_ADC
-#define CURRENT_METER_ADC_PIN       PC2
-#define VBAT_ADC_PIN                PC3
-#define RSSI_ADC_GPIO_PIN           PC5
+#define ADC_CHANNEL_1_PIN               PC2
+#define ADC_CHANNEL_2_PIN               PC3
+#define ADC_CHANNEL_3_PIN               PC5
+#define CURRENT_METER_ADC_CHANNEL       ADC_CHN_1
+#define VBAT_ADC_CHANNEL                ADC_CHN_2
+#define RSSI_ADC_CHANNEL                ADC_CHN_3
 
-#define LED_STRIP
+// #define LED_STRIP
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
@@ -166,6 +181,10 @@
 #define SERIALRX_UART           SERIAL_PORT_USART1
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+// Number of available PWM outputs
+#define MAX_PWM_OUTPUT_PORTS    4
+#define TARGET_MOTOR_COUNT      4
 
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff

@@ -17,18 +17,20 @@
 
 #include <platform.h>
 #include "drivers/io.h"
-
-#include "drivers/dma.h"
+#include "drivers/pwm_mapping.h"
 #include "drivers/timer.h"
-#include "drivers/timer_def.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    DEF_TIM(TIM1,  CH3, PE13, TIM_USE_PPM, 0, 1), // RC1 / PPM
 
-    DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_MOTOR, 1, 0), // M1
-    DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_MOTOR, 1, 0), // M2
-    DEF_TIM(TIM1,  CH1, PE9,  TIM_USE_MOTOR, 1, 2), // M3
-    DEF_TIM(TIM1,  CH2, PE11, TIM_USE_MOTOR, 1, 1), // M4
+    { TIM1, IO_TAG(PE13), TIM_CHANNEL_1, 0, IOCFG_AF_PP_PD,      GPIO_AF1_TIM1, TIM_USE_PPM | TIM_USE_PWM }, //PPM Input
+    
 
-    DEF_TIM(TIM4,  CH1, PD12,  TIM_USE_LED, 1,  0 ), // LED
+    // DEF_TIM(TIM1,  CH3, PE13, TIM_USE_PPM, 0, 1), // RC1 / PPM
+
+    // DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_MOTOR, 1, 0), // M1
+    // DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_MOTOR, 1, 0), // M2
+    // DEF_TIM(TIM1,  CH1, PE9,  TIM_USE_MOTOR, 1, 2), // M3
+    // DEF_TIM(TIM1,  CH2, PE11, TIM_USE_MOTOR, 1, 1), // M4
+
+    // DEF_TIM(TIM4,  CH1, PD12,  TIM_USE_LED, 1,  0 ), // LED
 };
