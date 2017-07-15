@@ -706,7 +706,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 
     case MSP_VOLTAGE_METERS:
         // write out id and voltage meter values, once for each meter we support
-        for (int i = 0; i < supportedVoltageMeterCount; i++) {
+        for (int i = 0; i < supportedVoltageMeterCount - (12-getMotorCount()); i++) {
 
             voltageMeter_t meter;
             uint8_t id = (uint8_t)voltageMeterIds[i];
@@ -719,7 +719,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 
     case MSP_CURRENT_METERS:
         // write out id and current meter values, once for each meter we support
-        for (int i = 0; i < supportedCurrentMeterCount; i++) {
+        for (int i = 0; i < supportedCurrentMeterCount - (12-getMotorCount()); i++) {
 
             currentMeter_t meter;
             uint8_t id = (uint8_t)currentMeterIds[i];
@@ -2131,46 +2131,75 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
 
     case MSP_SET_VOLTAGE_METER_CONFIG: {
-        int id = sbufReadU8(src);
+        int8_t config_count = sbufReadU8(src);
 
-        //
-        // find and configure an ADC voltage sensor
-        //
-        int voltageSensorADCIndex;
-        for (voltageSensorADCIndex = 0; voltageSensorADCIndex < MAX_VOLTAGE_SENSOR_ADC; voltageSensorADCIndex++) {
-            if (id == voltageMeterADCtoIDMap[voltageSensorADCIndex]) {
-                break;
+        while (config_count > 0) {
+
+            int8_t subframe_length = sbufReadU8(src);
+            if (subframe_length > 4) {
+                for (int8_t j = 0; j < subframe_length; j++) {
+                    sbufReadU8(src);
+                }
+            } else {
+                int8_t id = sbufReadU8(src);
+
+                //
+                // find and configure an ADC voltage sensor
+                //
+                int8_t voltageSensorADCIndex;
+                for (voltageSensorADCIndex = 0; voltageSensorADCIndex < MAX_VOLTAGE_SENSOR_ADC; voltageSensorADCIndex++) {
+                    if (id == voltageMeterADCtoIDMap[voltageSensorADCIndex]) {
+                        break;
+                    }
+                }
+
+                if (voltageSensorADCIndex < MAX_VOLTAGE_SENSOR_ADC) {
+                    voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatscale = sbufReadU8(src);
+                    voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatresdivval = sbufReadU8(src);
+                    voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatresdivmultiplier = sbufReadU8(src);
+                } else {
+                    // if we had any other types of voltage sensor to configure, this is where we'd do it.
+                    sbufReadU8(src);
+                    sbufReadU8(src);
+                    sbufReadU8(src);
+                }
             }
-        }
-
-        if (voltageSensorADCIndex < MAX_VOLTAGE_SENSOR_ADC) {
-            voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatscale = sbufReadU8(src);
-            voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatresdivval = sbufReadU8(src);
-            voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatresdivmultiplier = sbufReadU8(src);
-        } else {
-            // if we had any other types of voltage sensor to configure, this is where we'd do it.
-            return -1;
+            config_count--;
         }
         break;
     }
 
     case MSP_SET_CURRENT_METER_CONFIG: {
-        int id = sbufReadU8(src);
+        int8_t config_count = sbufReadU8(src);
 
-        switch (id) {
-            case CURRENT_METER_ID_BATTERY_1:
-                currentSensorADCConfigMutable()->scale = sbufReadU16(src);
-                currentSensorADCConfigMutable()->offset = sbufReadU16(src);
-                break;
+        while (config_count > 0) {
+
+            int8_t subframe_length = sbufReadU8(src);
+            if (subframe_length > 5) {
+                for (int8_t j = 0; j < subframe_length; j++) {
+                    sbufReadU8(src);
+                }
+            } else {
+                int id = sbufReadU8(src);
+
+                switch (id) {
+                    case CURRENT_METER_ID_BATTERY_1:
+                        currentSensorADCConfigMutable()->scale = sbufReadU16(src);
+                        currentSensorADCConfigMutable()->offset = sbufReadU16(src);
+                        break;
 #ifdef USE_VIRTUAL_CURRENT_METER
-            case CURRENT_METER_ID_VIRTUAL_1:
-                currentSensorVirtualConfigMutable()->scale = sbufReadU16(src);
-                currentSensorVirtualConfigMutable()->offset = sbufReadU16(src);
-                break;
+                    case CURRENT_METER_ID_VIRTUAL_1:
+                        currentSensorVirtualConfigMutable()->scale = sbufReadU16(src);
+                        currentSensorVirtualConfigMutable()->offset = sbufReadU16(src);
+                        break;
 #endif
-
-            default:
-                return -1;
+                    default:
+                        sbufReadU16(src);
+                        sbufReadU16(src);
+                        break;
+                }
+            }
+            config_count--;
         }
 
         break;
