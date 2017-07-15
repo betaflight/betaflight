@@ -298,40 +298,34 @@ static void cliPrintLinef(const char *format, ...)
     va_end(va);
 }
 
+
 static void printValuePointer(const clivalue_t *var, const void *valuePointer, bool full)
 {
     if ((var->type & VALUE_MODE_MASK) == MODE_ARRAY) {
         for (int i = 0; i < var->config.array.length; i++) {
             switch (var->type & VALUE_TYPE_MASK) {
-                default:
-                case(VAR_UINT8): {
-                    // fetch data
-                    uint8_t value = ((uint8_t *)valuePointer)[i];
-                    cliPrintf("%d", value);
-                    }
-                    break;
+            default:
+            case VAR_UINT8:
+                // uint8_t array
+                cliPrintf("%d", ((uint8_t *)valuePointer)[i]);
+                break;
 
-                case(VAR_INT8): {
-                    // fetch data
-                    int8_t value = ((int8_t *)valuePointer)[i];
-                    cliPrintf("%d", value);
-                    }
-                    break;
+            case VAR_INT8:
+                // int8_t array
+                cliPrintf("%d", ((int8_t *)valuePointer)[i]);
+                break;
 
-                case(VAR_UINT16): {
-                    // fetch data
-                    uint16_t value = ((uint16_t *)valuePointer)[i];
-                    cliPrintf("%d", value);
-                    }
-                    break;
+            case VAR_UINT16:
+                // uin16_t array
+                cliPrintf("%d", ((uint16_t *)valuePointer)[i]);
+                break;
 
-                case(VAR_INT16): {
-                    // fetch data
-                    int16_t value = ((int16_t *)valuePointer)[i];
-                    cliPrintf("%d", value);
-                    }
-                    break;
+            case VAR_INT16:
+                // int16_t array
+                cliPrintf("%d", ((int16_t *)valuePointer)[i]);
+                break;
             }
+
             if (i < var->config.array.length - 1) {
                 cliPrint(",");
             }
@@ -2772,38 +2766,38 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                                 // note: no need to copy substrings for atoi()
                                 //       it stops at the first character that cannot be converted...
                                 switch (val->type & VALUE_TYPE_MASK) {
-                                    default:
-                                    case(VAR_UINT8): {
-                                        // fetch data pointer
-                                        uint8_t *data = (uint8_t *)getValuePointer(val) + i;
-                                        // store value
-                                        *data = (uint8_t)atoi((const char*) valPtr);
-                                        }
-                                        break;
+                                default:
+                                case VAR_UINT8: {
+                                    // fetch data pointer
+                                    uint8_t *data = (uint8_t *)getValuePointer(val) + i;
+                                    // store value
+                                    *data = (uint8_t)atoi((const char*) valPtr);
+                                    }
+                                    break;
 
-                                    case(VAR_INT8): {
-                                        // fetch data pointer
-                                        int8_t *data = (int8_t *)getValuePointer(val) + i;
-                                        // store value
-                                        *data = (int8_t)atoi((const char*) valPtr);
-                                        }
-                                        break;
+                                case VAR_INT8: {
+                                    // fetch data pointer
+                                    int8_t *data = (int8_t *)getValuePointer(val) + i;
+                                    // store value
+                                    *data = (int8_t)atoi((const char*) valPtr);
+                                    }
+                                    break;
 
-                                    case(VAR_UINT16): {
-                                        // fetch data pointer
-                                        uint16_t *data = (uint16_t *)getValuePointer(val) + i;
-                                        // store value
-                                        *data = (uint16_t)atoi((const char*) valPtr);
-                                        }
-                                        break;
+                                case VAR_UINT16: {
+                                    // fetch data pointer
+                                    uint16_t *data = (uint16_t *)getValuePointer(val) + i;
+                                    // store value
+                                    *data = (uint16_t)atoi((const char*) valPtr);
+                                    }
+                                    break;
 
-                                    case(VAR_INT16): {
-                                        // fetch data pointer
-                                        int16_t *data = (int16_t *)getValuePointer(val) + i;
-                                        // store value
-                                        *data = (int16_t)atoi((const char*) valPtr);
-                                        }
-                                        break;
+                                case VAR_INT16: {
+                                    // fetch data pointer
+                                    int16_t *data = (int16_t *)getValuePointer(val) + i;
+                                    // store value
+                                    *data = (int16_t)atoi((const char*) valPtr);
+                                    }
+                                    break;
                                 }
                                 // mark as changed
                                 valueChanged = true;
