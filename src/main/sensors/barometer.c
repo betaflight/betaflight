@@ -28,6 +28,7 @@
 #include "config/parameter_group_ids.h"
 
 #include "drivers/bus.h"
+#include "drivers/bus_spi.h"
 #include "drivers/io.h"
 
 #include "drivers/barometer/barometer.h"
@@ -105,7 +106,7 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 #if defined(USE_BARO_MS5611) || defined(USE_BARO_SPI_MS5611)
 #if defined(USE_BARO_SPI_MS5611)
         dev->busdev.bustype = BUSTYPE_SPI;
-        dev->busdev.busdev_u.spi.instance = MS5611_SPI_INSTANCE;
+        spiBusSetInstance(&dev->busdev, MS5611_SPI_INSTANCE);
         dev->busdev.busdev_u.spi.csnPin = IOGetByTag(IO_TAG(MS5611_CS_PIN));
 #elif defined(USE_BARO_MS5611)
         dev->busdev.bustype = BUSTYPE_I2C;
@@ -125,7 +126,7 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 // XXX Setup busDevice_t (dev->busdev) for BMP280
 #if defined(USE_BARO_SPI_BMP280)
         dev->busdev.bustype = BUSTYPE_SPI;
-        dev->busdev.busdev_u.spi.instance = BMP280_SPI_INSTANCE;
+        spiBusSetInstance(&dev->busdev, BMP280_SPI_INSTANCE);
         dev->busdev.busdev_u.spi.csnPin = IOGetByTag(IO_TAG(BMP280_CS_PIN));
 #elif defined(USE_BARO_BMP280)
         dev->busdev.bustype = BUSTYPE_I2C;
