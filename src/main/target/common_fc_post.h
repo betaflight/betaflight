@@ -23,6 +23,7 @@
 #if defined(VTX_RTC6705) && !defined(VTX_RTC6705_OPTIONAL)
 #undef VTX_SMARTAUDIO
 #undef VTX_TRAMP
+#undef VTX_FURIOUS
 #endif
 
 #if defined(USE_QUAD_MIXER_ONLY) && defined(USE_SERVOS)
