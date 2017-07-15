@@ -125,8 +125,16 @@ static uint8_t dispatchMeasurementRequest(ibusAddress_t address) {
     if (address == 1) { //2. VBAT
         return sendIbusMeasurement(address, vbat * 10);
     } else if (address == 2) { //3. BARO_TEMP\GYRO_TEMP
-        if (sensors(SENSOR_BARO)) return sendIbusMeasurement(address, (uint16_t) ((baro.baroTemperature + 50) / 10  + IBUS_TEMPERATURE_OFFSET)); //int32_t
-        else return sendIbusMeasurement(address, (uint16_t) (telemTemperature1 + IBUS_TEMPERATURE_OFFSET)); //int16_t
+        if (sensors(SENSOR_BARO)) {
+            return sendIbusMeasurement(address, (uint16_t) ((baro.baroTemperature + 50) / 10  + IBUS_TEMPERATURE_OFFSET)); //int32_t
+        } else {
+            /*
+             * There is no temperature data
+             * assuming (baro.baroTemperature + 50) / 10
+             * 0 degrees (no sensor) equals 50 / 10 = 5
+             */
+            return sendIbusMeasurement(address, (uint16_t) (5 + IBUS_TEMPERATURE_OFFSET)); //int16_t
+        }
     } else if (address == 3) { //4. STATUS (sat num AS #0, FIX AS 0, HDOP AS 0, Mode AS 0)
         int16_t status = flightModeToIBusTelemetryMode[getFlightModeForTelemetry()];
 #if defined(GPS)
