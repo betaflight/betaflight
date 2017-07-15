@@ -96,9 +96,8 @@ void taskHandleSerial(timeUs_t currentTimeUs)
 
 void taskUpdateBattery(timeUs_t currentTimeUs)
 {
+#ifdef USE_ADC
     static timeUs_t vbatLastServiced = 0;
-    static timeUs_t ibatLastServiced = 0;
-
     if (feature(FEATURE_VBAT)) {
         if (cmpTimeUs(currentTimeUs, vbatLastServiced) >= VBATINTERVAL) {
             timeUs_t vbatTimeDelta = currentTimeUs - vbatLastServiced;
@@ -106,7 +105,9 @@ void taskUpdateBattery(timeUs_t currentTimeUs)
             batteryUpdate(vbatTimeDelta);
         }
     }
+#endif
 
+    static timeUs_t ibatLastServiced = 0;
     if (feature(FEATURE_CURRENT_METER)) {
         timeUs_t ibatTimeSinceLastServiced = cmpTimeUs(currentTimeUs, ibatLastServiced);
 
