@@ -52,11 +52,11 @@ static bool mpuSpi9250InitDone = false;
 
 bool mpu9250SpiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
 {
-    IOLo(bus->spi.csnPin);
+    IOLo(bus->busdev_u.spi.csnPin);
     delayMicroseconds(1);
-    spiTransferByte(bus->spi.instance, reg);
-    spiTransferByte(bus->spi.instance, data);
-    IOHi(bus->spi.csnPin);
+    spiTransferByte(bus->busdev_u.spi.instance, reg);
+    spiTransferByte(bus->busdev_u.spi.instance, data);
+    IOHi(bus->busdev_u.spi.csnPin);
     delayMicroseconds(1);
 
     return true;
@@ -64,11 +64,11 @@ bool mpu9250SpiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
 
 static bool mpu9250SpiSlowReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data)
 {
-    IOLo(bus->spi.csnPin);
+    IOLo(bus->busdev_u.spi.csnPin);
     delayMicroseconds(1);
-    spiTransferByte(bus->spi.instance, reg | 0x80); // read transaction
-    spiTransfer(bus->spi.instance, data, NULL, length);
-    IOHi(bus->spi.csnPin);
+    spiTransferByte(bus->busdev_u.spi.instance, reg | 0x80); // read transaction
+    spiTransfer(bus->busdev_u.spi.instance, data, NULL, length);
+    IOHi(bus->busdev_u.spi.csnPin);
     delayMicroseconds(1);
 
     return true;
@@ -168,10 +168,10 @@ static void mpu9250AccAndGyroInit(gyroDev_t *gyro) {
 
 uint8_t mpu9250SpiDetect(const busDevice_t *bus)
 {
-    IOInit(bus->spi.csnPin, OWNER_MPU_CS, 0);
-    IOConfigGPIO(bus->spi.csnPin, SPI_IO_CS_CFG);
+    IOInit(bus->busdev_u.spi.csnPin, OWNER_MPU_CS, 0);
+    IOConfigGPIO(bus->busdev_u.spi.csnPin, SPI_IO_CS_CFG);
 
-    spiSetDivisor(bus->spi.instance, SPI_CLOCK_INITIALIZATON); //low speed
+    spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_INITIALIZATON); //low speed
     mpu9250SpiWriteRegister(bus, MPU_RA_PWR_MGMT_1, MPU9250_BIT_RESET);
 
     uint8_t attemptsRemaining = 20;
@@ -186,7 +186,7 @@ uint8_t mpu9250SpiDetect(const busDevice_t *bus)
         }
     } while (attemptsRemaining--);
 
-    spiSetDivisor(bus->spi.instance, SPI_CLOCK_FAST);
+    spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_FAST);
 
     return MPU_9250_SPI;
 }
