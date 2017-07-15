@@ -199,6 +199,11 @@
 #define DEFAULT_FEATURES        (FEATURE_RX_SERIAL | FEATURE_MOTOR_STOP | FEATURE_FAILSAFE) // FEATURE_TELEMETRY changes bind pin from rx to tx
 #endif
 
+#undef VTX_COMMON
+#undef VTX_CONTROL
+#undef VTX_SMARTAUDIO
+#undef VTX_TRAMP
+
 /* OLED Support
  */
 #if defined(BREADBOARD)
