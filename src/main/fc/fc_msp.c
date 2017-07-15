@@ -115,9 +115,6 @@
 #define STATIC_ASSERT(condition, name) \
     typedef char assert_failed_ ## name [(condition) ? 1 : -1 ] __attribute__((unused))
 
-#define BYTES_REMAINING_GTE(src, num) \
-    sbufBytesRemaining(src) >= num
-
 static const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
@@ -1600,7 +1597,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_RC_TUNING:
-        if (BYTES_REMAINING_GTE(src, 10)) {
+        if (sbufBytesRemaining(src) >= 10) {
             currentControlRateProfile->rcRate8 = sbufReadU8(src);
             currentControlRateProfile->rcExpo8 = sbufReadU8(src);
             for (int i = 0; i < 3; i++) {
@@ -1612,10 +1609,10 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             currentControlRateProfile->thrMid8 = sbufReadU8(src);
             currentControlRateProfile->thrExpo8 = sbufReadU8(src);
             currentControlRateProfile->tpa_breakpoint = sbufReadU16(src);
-            if (BYTES_REMAINING_GTE(src, 1)) {
+            if (sbufBytesRemaining(src) >= 1) {
                 currentControlRateProfile->rcYawExpo8 = sbufReadU8(src);
             }
-            if (BYTES_REMAINING_GTE(src, 1)) {
+            if (sbufBytesRemaining(src) >= 1) {
                 currentControlRateProfile->rcYawRate8 = sbufReadU8(src);
             }
             generateThrottleCurve();
@@ -1741,17 +1738,17 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         gyroConfigMutable()->gyro_soft_lpf_hz = sbufReadU8(src);
         currentPidProfile->dterm_lpf_hz = sbufReadU16(src);
         currentPidProfile->yaw_lpf_hz = sbufReadU16(src);
-        if (BYTES_REMAINING_GTE(src, 8)) {
+        if (sbufBytesRemaining(src) >= 8) {
             gyroConfigMutable()->gyro_soft_notch_hz_1 = sbufReadU16(src);
             gyroConfigMutable()->gyro_soft_notch_cutoff_1 = sbufReadU16(src);
             currentPidProfile->dterm_notch_hz = sbufReadU16(src);
             currentPidProfile->dterm_notch_cutoff = sbufReadU16(src);
         }
-        if (BYTES_REMAINING_GTE(src, 4)) {
+        if (sbufBytesRemaining(src) >= 4) {
             gyroConfigMutable()->gyro_soft_notch_hz_2 = sbufReadU16(src);
             gyroConfigMutable()->gyro_soft_notch_cutoff_2 = sbufReadU16(src);
         }
-        if (BYTES_REMAINING_GTE(src, 1)) {
+        if (sbufBytesRemaining(src) >= 1) {
             currentPidProfile->dterm_filter_type = sbufReadU8(src);
         }
         // reinitialize the gyro filters with the new values
@@ -1774,11 +1771,11 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         sbufReadU8(src); // reserved
         currentPidProfile->rateAccelLimit = sbufReadU16(src);
         currentPidProfile->yawRateAccelLimit = sbufReadU16(src);
-        if (BYTES_REMAINING_GTE(src, 2)) {
+        if (sbufBytesRemaining(src) >= 2) {
             currentPidProfile->levelAngleLimit = sbufReadU8(src);
             currentPidProfile->levelSensitivity = sbufReadU8(src);
         }
-        if (BYTES_REMAINING_GTE(src, 4)) {
+        if (sbufBytesRemaining(src) >= 4) {
             currentPidProfile->itermThrottleThreshold = sbufReadU16(src);
             currentPidProfile->itermAcceleratorGain = sbufReadU16(src);
         }
@@ -1931,21 +1928,21 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         rxConfigMutable()->midrc = sbufReadU16(src);
         rxConfigMutable()->mincheck = sbufReadU16(src);
         rxConfigMutable()->spektrum_sat_bind = sbufReadU8(src);
-        if (BYTES_REMAINING_GTE(src, 4)) {
+        if (sbufBytesRemaining(src) >= 4) {
             rxConfigMutable()->rx_min_usec = sbufReadU16(src);
             rxConfigMutable()->rx_max_usec = sbufReadU16(src);
         }
-        if (BYTES_REMAINING_GTE(src, 4)) {
+        if (sbufBytesRemaining(src) >= 4) {
             rxConfigMutable()->rcInterpolation = sbufReadU8(src);
             rxConfigMutable()->rcInterpolationInterval = sbufReadU8(src);
             rxConfigMutable()->airModeActivateThreshold = sbufReadU16(src);
         }
-        if (BYTES_REMAINING_GTE(src, 6)) {
+        if (sbufBytesRemaining(src) >= 6) {
             rxConfigMutable()->rx_spi_protocol = sbufReadU8(src);
             rxConfigMutable()->rx_spi_id = sbufReadU32(src);
             rxConfigMutable()->rx_spi_rf_channel_count = sbufReadU8(src);
         }
-        if (BYTES_REMAINING_GTE(src, 1)) {
+        if (sbufBytesRemaining(src) >= 1) {
             rxConfigMutable()->fpvCamAngleDegrees = sbufReadU8(src);
         }
         break;
