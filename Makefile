@@ -97,7 +97,7 @@ VALID_TARGETS   = $(dir $(wildcard $(ROOT)/src/main/target/*/target.mk))
 VALID_TARGETS  := $(subst /,, $(subst ./src/main/target/,, $(VALID_TARGETS)))
 VALID_TARGETS  := $(VALID_TARGETS) $(ALT_TARGETS)
 VALID_TARGETS  := $(sort $(VALID_TARGETS))
-VALID_TARGETS  := $(filter-out $(DUMMY_TARGETS), $(VALID_TARGETS))
+VALID_TARGETS  := $(filter-out $(SKIP_TARGETS), $(VALID_TARGETS))
 
 GROUP_1_TARGETS := \
 	AFROMINI \
