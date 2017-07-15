@@ -43,8 +43,6 @@ typedef struct busDevice_s {
 #define BUSTYPE_I2C  1
 #define BUSTYPE_SPI  2
 
-#define BUSDEV(pBusdev) &((pBusdev)->busDevice_u)
-
 #ifdef TARGET_BUS_INIT
 void targetBusInit(void);
 #endif
