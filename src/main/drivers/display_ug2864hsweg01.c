@@ -178,12 +178,12 @@ static const uint8_t multiWiiFont[][5] = { // Refer to "Times New Roman" Font Da
 
 static bool i2c_OLED_send_cmd(busDevice_t *bus, uint8_t command)
 {
-    return i2cWrite(bus->i2c.device, bus->i2c.address, 0x80, command);
+    return i2cWrite(bus->busdev_u.i2c.device, bus->busdev_u.i2c.address, 0x80, command);
 }
 
 static bool i2c_OLED_send_byte(busDevice_t *bus, uint8_t val)
 {
-    return i2cWrite(bus->i2c.device, bus->i2c.address, 0x40, val);
+    return i2cWrite(bus->busdev_u.i2c.device, bus->busdev_u.i2c.address, 0x40, val);
 }
 
 void i2c_OLED_clear_display(busDevice_t *bus)
