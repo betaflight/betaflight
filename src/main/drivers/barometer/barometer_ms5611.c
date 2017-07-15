@@ -23,14 +23,12 @@
 #include "build/build_config.h"
 
 #include "barometer.h"
+#include "barometer_ms5611.h"
 #include "barometer_spi_ms5611.h"
 
 #include "drivers/bus_i2c.h"
 #include "drivers/gpio.h"
 #include "drivers/time.h"
-
-// MS5611, Standard address 0x77
-#define MS5611_ADDR                 0x77
 
 #define CMD_RESET               0x1E // ADC reset command
 #define CMD_ADC_READ            0x00 // ADC read command
@@ -45,20 +43,48 @@
 #define CMD_PROM_RD             0xA0 // Prom read command
 #define PROM_NB                 8
 
-static void ms5611_reset(void);
-static uint16_t ms5611_prom(int8_t coef_num);
+static void ms5611_reset(busDevice_t *pBusdev);
+static uint16_t ms5611_prom(busDevice_t *pBusdev, int8_t coef_num);
 STATIC_UNIT_TESTED int8_t ms5611_crc(uint16_t *prom);
-static uint32_t ms5611_read_adc(void);
-static void ms5611_start_ut(void);
-static void ms5611_get_ut(void);
-static void ms5611_start_up(void);
-static void ms5611_get_up(void);
+static uint32_t ms5611_read_adc(busDevice_t *pBusdev);
+static void ms5611_start_ut(baroDev_t *baro);
+static void ms5611_get_ut(baroDev_t *baro);
+static void ms5611_start_up(baroDev_t *baro);
+static void ms5611_get_up(baroDev_t *baro);
 STATIC_UNIT_TESTED void ms5611_calculate(int32_t *pressure, int32_t *temperature);
 
 STATIC_UNIT_TESTED uint32_t ms5611_ut;  // static result of temperature measurement
 STATIC_UNIT_TESTED uint32_t ms5611_up;  // static result of pressure measurement
 STATIC_UNIT_TESTED uint16_t ms5611_c[PROM_NB];  // on-chip ROM
 static uint8_t ms5611_osr = CMD_ADC_4096;
+
+bool ms5611ReadCommand(busDevice_t *pBusdev, uint8_t cmd, uint8_t len, uint8_t *data)
+{
+    switch (pBusdev->bustype) {
+#ifdef USE_BARO_SPI_MS5611
+    case BUSTYPE_SPI:
+        return spiReadRegisterBuffer(pBusdev, cmd | 0x80, len, data);
+#else
+    case BUSTYPE_I2C:
+        return i2cRead(pBusdev->busdev_u.i2c.device, pBusdev->busdev_u.i2c.address, cmd, len, data);
+#endif
+    }
+    return false;
+}
+
+bool ms5611WriteCommand(busDevice_t *pBusdev, uint8_t cmd, uint8_t byte)
+{
+    switch (pBusdev->bustype) {
+#ifdef USE_BARO_SPI_MS5611
+    case BUSTYPE_SPI:
+        return spiWriteRegister(pBusdev, cmd & 0x7f, byte);
+#else
+    case BUSTYPE_I2C:
+        return i2cWrite(pBusdev->busdev_u.i2c.device, pBusdev->busdev_u.i2c.address, cmd, byte);
+#endif
+    }
+    return false;
+}
 
 bool ms5611Detect(baroDev_t *baro)
 {
@@ -67,20 +93,22 @@ bool ms5611Detect(baroDev_t *baro)
 
     delay(10); // No idea how long the chip takes to power-up, but let's make it 10ms
 
+    busDevice_t *pBusdev = &baro->busdev;
+
 #ifdef USE_BARO_SPI_MS5611
         ms5611SpiInit();
         ms5611SpiReadCommand(CMD_PROM_RD, 1, &sig);
         if (sig == 0xFF)
             return false;
 #else
-    if (!i2cRead(BARO_I2C_INSTANCE, MS5611_ADDR, CMD_PROM_RD, 1, &sig))
+    if (!ms5611ReadCommand(pBusdev, CMD_PROM_RD, 1, &sig))
         return false;
 #endif
 
-    ms5611_reset();
+    ms5611_reset(pBusdev);
     // read all coefficients
     for (i = 0; i < PROM_NB; i++)
-        ms5611_c[i] = ms5611_prom(i);
+        ms5611_c[i] = ms5611_prom(pBusdev, i);
     // check crc, bail out if wrong - we are probably talking to BMP085 w/o XCLR line!
     if (ms5611_crc(ms5611_c) != 0)
         return false;
@@ -97,23 +125,23 @@ bool ms5611Detect(baroDev_t *baro)
     return true;
 }
 
-static void ms5611_reset(void)
+static void ms5611_reset(busDevice_t *pBusdev)
 {
 #ifdef USE_BARO_SPI_MS5611
     ms5611SpiWriteCommand(CMD_RESET, 1);
 #else
-    i2cWrite(BARO_I2C_INSTANCE, MS5611_ADDR, CMD_RESET, 1);
+    ms5611WriteCommand(pBusdev, CMD_RESET, 1);
 #endif
     delayMicroseconds(2800);
 }
 
-static uint16_t ms5611_prom(int8_t coef_num)
+static uint16_t ms5611_prom(busDevice_t *pBusdev, int8_t coef_num)
 {
     uint8_t rxbuf[2] = { 0, 0 };
 #ifdef USE_BARO_SPI_MS5611
     ms5611SpiReadCommand(CMD_PROM_RD + coef_num * 2, 2, rxbuf); // send PROM READ command
 #else
-    i2cRead(BARO_I2C_INSTANCE, MS5611_ADDR, CMD_PROM_RD + coef_num * 2, 2, rxbuf); // send PROM READ command
+    ms5611ReadCommand(pBusdev, CMD_PROM_RD + coef_num * 2, 2, rxbuf); // send PROM READ command
 #endif
     return rxbuf[0] << 8 | rxbuf[1];
 }
@@ -148,43 +176,47 @@ STATIC_UNIT_TESTED int8_t ms5611_crc(uint16_t *prom)
     return -1;
 }
 
-static uint32_t ms5611_read_adc(void)
+static uint32_t ms5611_read_adc(busDevice_t *pBusdev)
 {
+(void)pBusdev;
     uint8_t rxbuf[3];
 #ifdef USE_BARO_SPI_MS5611
     ms5611SpiReadCommand(CMD_ADC_READ, 3, rxbuf); // read ADC
 #else
-    i2cRead(BARO_I2C_INSTANCE, MS5611_ADDR, CMD_ADC_READ, 3, rxbuf); // read ADC
+    ms5611ReadCommand(pBusdev, CMD_ADC_READ, 3, rxbuf); // read ADC
 #endif
     return (rxbuf[0] << 16) | (rxbuf[1] << 8) | rxbuf[2];
 }
 
-static void ms5611_start_ut(void)
+static void ms5611_start_ut(baroDev_t *baro)
 {
+(void)baro;
 #ifdef USE_BARO_SPI_MS5611
     ms5611SpiWriteCommand(CMD_ADC_CONV + CMD_ADC_D2 + ms5611_osr, 1); // D2 (temperature) conversion start!
 #else
-    i2cWrite(BARO_I2C_INSTANCE, MS5611_ADDR, CMD_ADC_CONV + CMD_ADC_D2 + ms5611_osr, 1); // D2 (temperature) conversion start!
+    ms5611WriteCommand(&baro->busdev, CMD_ADC_CONV + CMD_ADC_D2 + ms5611_osr, 1); // D2 (temperature) conversion start!
 #endif
 }
 
-static void ms5611_get_ut(void)
+static void ms5611_get_ut(baroDev_t *baro)
 {
-    ms5611_ut = ms5611_read_adc();
+(void)baro;
+    ms5611_ut = ms5611_read_adc(&baro->busdev);
 }
 
-static void ms5611_start_up(void)
+static void ms5611_start_up(baroDev_t *baro)
 {
+(void)baro;
 #ifdef USE_BARO_SPI_MS5611
     ms5611SpiWriteCommand(CMD_ADC_CONV + CMD_ADC_D2 + ms5611_osr, 1); // D2 (temperature) conversion start!
 #else
-    i2cWrite(BARO_I2C_INSTANCE, MS5611_ADDR, CMD_ADC_CONV + CMD_ADC_D1 + ms5611_osr, 1); // D1 (pressure) conversion start!
+    ms5611WriteCommand(&baro->busdev, CMD_ADC_CONV + CMD_ADC_D1 + ms5611_osr, 1); // D1 (pressure) conversion start!
 #endif
 }
 
-static void ms5611_get_up(void)
+static void ms5611_get_up(baroDev_t *baro)
 {
-    ms5611_up = ms5611_read_adc();
+    ms5611_up = ms5611_read_adc(&baro->busdev);
 }
 
 STATIC_UNIT_TESTED void ms5611_calculate(int32_t *pressure, int32_t *temperature)

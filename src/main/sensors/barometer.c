@@ -102,7 +102,16 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 #endif
         ; // fallthough
     case BARO_MS5611:
-#ifdef USE_BARO_MS5611
+#if defined(USE_BARO_MS5611) || defined(USE_BARO_SPI_MS5611)
+#if defined(USE_BARO_SPI_MS5611)
+        dev->busdev.bustype = BUSTYPE_SPI;
+        dev->busdev.busdev_u.spi.instance = MS5611_SPI_INSTANCE;
+        dev->busdev.busdev_u.spi.csnPin = IOGetByTag(IO_TAG(MS5611_CS_PIN));
+#elif defined(USE_BARO_MS5611)
+        dev->busdev.bustype = BUSTYPE_I2C;
+        dev->busdev.busdev_u.i2c.device = BARO_I2C_INSTANCE;
+        dev->busdev.busdev_u.i2c.address = MS5611_I2C_ADDR;
+#endif 
         if (ms5611Detect(dev)) {
             baroHardware = BARO_MS5611;
             break;
