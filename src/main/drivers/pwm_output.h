@@ -18,6 +18,7 @@
 #pragma once
 
 #include "drivers/io_types.h"
+#include "drivers/sound_beeper.h"
 #include "timer.h"
 
 #ifndef MAX_SUPPORTED_MOTORS 
@@ -179,7 +180,7 @@ void pwmCompleteDshotMotorUpdate(uint8_t motorCount);
 #ifdef BEEPER
 void pwmWriteBeeper(bool onoffBeep);
 void pwmToggleBeeper(void);
-void beeperPwmInit(IO_t io, uint16_t frequency);
+void beeperPwmInit(const beeperDevConfig_t *beeperConfig);
 #endif
 
 void pwmWriteMotor(uint8_t index, float value);
