@@ -20,11 +20,15 @@
 #include <math.h>
 
 #include "platform.h"
+#include "build/debug.h"
 
 #include "common/maths.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
+
+#include "drivers/bus.h"
+#include "drivers/io.h"
 
 #include "drivers/barometer/barometer.h"
 #include "drivers/barometer/barometer_bmp085.h"
@@ -107,6 +111,18 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
         ; // fallthough
     case BARO_BMP280:
 #if defined(USE_BARO_BMP280) || defined(USE_BARO_SPI_BMP280)
+
+// XXX Temporary for testing.
+// XXX Setup busDevice_t (dev->busdev) for BMP280
+#if defined(USE_BARO_SPI_BMP280)
+        dev->busdev.bustype = BUSTYPE_SPI;
+        dev->busdev.busdev_u.spi.instance = BMP280_SPI_INSTANCE;
+        dev->busdev.busdev_u.spi.csnPin = IOGetByTag(IO_TAG(BMP280_CS_PIN));
+#elif defined(USE_BARO_BMP280)
+        dev->busdev.bustype = BUSTYPE_I2C;
+        dev->busdev.busdev_u.i2c.device = BARO_I2C_INSTANCE;
+        dev->busdev.busdev_u.i2c.address = BMP280_I2C_ADDR;
+#endif
         if (bmp280Detect(dev)) {
             baroHardware = BARO_BMP280;
             break;
@@ -206,15 +222,15 @@ uint32_t baroUpdate(void)
     switch (state) {
         default:
         case BAROMETER_NEEDS_SAMPLES:
-            baro.dev.get_ut();
-            baro.dev.start_up();
+            baro.dev.get_ut(&baro.dev);
+            baro.dev.start_up(&baro.dev);
             state = BAROMETER_NEEDS_CALCULATION;
             return baro.dev.up_delay;
         break;
 
         case BAROMETER_NEEDS_CALCULATION:
-            baro.dev.get_up();
-            baro.dev.start_ut();
+            baro.dev.get_up(&baro.dev);
+            baro.dev.start_ut(&baro.dev);
             baro.dev.calculate(&baroPressure, &baroTemperature);
             baroPressureSum = recalculateBarometerTotal(barometerConfig()->baro_sample_count, baroPressureSum, baroPressure);
             state = BAROMETER_NEEDS_SAMPLES;

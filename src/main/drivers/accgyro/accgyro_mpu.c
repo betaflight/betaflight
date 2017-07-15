@@ -248,7 +248,7 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     spiBusSetInstance(&gyro->bus, MPU6000_SPI_INSTANCE);
 #endif
 #ifdef MPU6000_CS_PIN
-    gyro->bus.spi.csnPin = gyro->bus.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU6000_CS_PIN)) : gyro->bus.spi.csnPin;
+    gyro->bus.busdev_u.spi.csnPin = gyro->bus.busdev_u.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU6000_CS_PIN)) : gyro->bus.busdev_u.spi.csnPin;
 #endif
     sensor = mpu6000SpiDetect(&gyro->bus);
     if (sensor != MPU_NONE) {
