@@ -532,10 +532,12 @@ static const clivalue_t valueTable[] = {
 #endif
 
 // PG_ADC_CHANNEL_CONFIG
+#ifdef USE_ADC
     { "vbat_adc_channel",           VAR_UINT8 | MASTER_VALUE, .config.minmax = {ADC_CHN_NONE, ADC_CHN_MAX}, PG_ADC_CHANNEL_CONFIG, offsetof(adcChannelConfig_t, adcFunctionChannel[ADC_BATTERY]) },
     { "rssi_adc_channel",           VAR_UINT8 | MASTER_VALUE, .config.minmax = {ADC_CHN_NONE, ADC_CHN_MAX}, PG_ADC_CHANNEL_CONFIG, offsetof(adcChannelConfig_t, adcFunctionChannel[ADC_RSSI]) },
     { "current_adc_channel",        VAR_UINT8 | MASTER_VALUE, .config.minmax = {ADC_CHN_NONE, ADC_CHN_MAX}, PG_ADC_CHANNEL_CONFIG, offsetof(adcChannelConfig_t, adcFunctionChannel[ADC_CURRENT]) },
     { "airspeed_adc_channel",       VAR_UINT8 | MASTER_VALUE, .config.minmax = {ADC_CHN_NONE, ADC_CHN_MAX}, PG_ADC_CHANNEL_CONFIG, offsetof(adcChannelConfig_t, adcFunctionChannel[ADC_AIRSPEED]) },
+#endif
 
 #ifdef USE_ACC_NOTCH
     { "acc_notch_hz",               VAR_UINT8  | MASTER_VALUE, .config.minmax = {0, 255 }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t,acc_notch_hz)  },
@@ -651,10 +653,12 @@ static const clivalue_t valueTable[] = {
 
 // PG_BATTERY_CONFIG
     { "battery_capacity",           VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  20000 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, batteryCapacity) },
+#ifdef USE_ADC
     { "vbat_scale",                 VAR_UINT8  | MASTER_VALUE, .config.minmax = { VBAT_SCALE_MIN,  VBAT_SCALE_MAX }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatscale) },
     { "vbat_max_cell_voltage",      VAR_UINT8  | MASTER_VALUE, .config.minmax = { 10,  50 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatmaxcellvoltage) },
     { "vbat_min_cell_voltage",      VAR_UINT8  | MASTER_VALUE, .config.minmax = { 10,  50 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatmincellvoltage) },
     { "vbat_warning_cell_voltage",  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 10,  50 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatwarningcellvoltage) },
+#endif
     { "current_meter_scale",        VAR_INT16  | MASTER_VALUE, .config.minmax = { -10000,  10000 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, currentMeterScale) },
     { "current_meter_offset",       VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  3300 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, currentMeterOffset) },
     { "multiwii_current_meter_output", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, multiwiiCurrentMeterOutput) },
@@ -1783,13 +1787,9 @@ static void printMotorMix(uint8_t dumpMask, const motorMixer_t *customMotorMixer
             ftoa(yaw, buf3));
     }
 }
-#endif // USE_QUAD_MIXER_ONLY
 
 static void cliMotorMix(char *cmdline)
 {
-#ifdef USE_QUAD_MIXER_ONLY
-    UNUSED(cmdline);
-#else
     int check = 0;
     uint8_t len;
     const char *ptr;
@@ -1851,8 +1851,8 @@ static void cliMotorMix(char *cmdline)
             cliShowArgumentRangeError("index", 0, MAX_SUPPORTED_MOTORS - 1);
         }
     }
-#endif
 }
+#endif // USE_QUAD_MIXER_ONLY
 
 static void printRxRange(uint8_t dumpMask, const rxChannelRangeConfig_t *channelRangeConfigs, const rxChannelRangeConfig_t *defaultChannelRangeConfigs)
 {
@@ -2179,9 +2179,7 @@ static void cliServo(char *cmdline)
         servo->forwardFromChannel = arguments[FORWARD];
     }
 }
-#endif
 
-#ifdef USE_SERVOS
 static void printServoMix(uint8_t dumpMask, const servoMixer_t *customServoMixers, const servoMixer_t *defaultCustomServoMixers)
 {
     const char *format = "smix %d %d %d %d %d\r\n";
@@ -2320,7 +2318,7 @@ static void cliServoMix(char *cmdline)
         }
     }
 }
-#endif
+#endif // USE_SERVOS
 
 #ifdef USE_SDCARD
 
@@ -3485,8 +3483,8 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("mixer", "configure mixer",
         "list\r\n"
         "\t<name>", cliMixer),
-#endif
     CLI_COMMAND_DEF("mmix", "custom motor mixer", NULL, cliMotorMix),
+#endif
     CLI_COMMAND_DEF("motor",  "get/set motor",
        "<index> [<value>]", cliMotor),
 #ifdef PLAY_SOUND
