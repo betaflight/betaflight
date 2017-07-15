@@ -24,8 +24,13 @@
 #define LED1                    PB4
 #define LED2                    PB5
 
-#define BEEPER                  PC9
-//#define BEEPER_INVERTED
+#define BEEPER                  PB14
+#define BEEPER_PWM
+#define BEEPER_INVERTED
+#define BEEPER_PWM_TIMER        TIM12
+#define BEEPER_PWM_TIMER_CH     TIM_Channel_1
+#define BEEPER_PWM_FREQUENCY    3100
+
 
 #define INVERTER_PIN_UART6      PB15
 
@@ -154,6 +159,6 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
-#define USABLE_TIMER_CHANNEL_COUNT 7
-#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(8))
+#define USABLE_TIMER_CHANNEL_COUNT 8
+#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(12))
 
