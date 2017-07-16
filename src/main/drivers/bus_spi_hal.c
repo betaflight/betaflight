@@ -99,6 +99,15 @@ SPI_HandleTypeDef* spiHandleByInstance(SPI_TypeDef *instance)
     return &spiDevice[spiDeviceByInstance(instance)].hspi;
 }
 
+SPI_TypeDef *spiInstanceByDevice(SPIDevice device)
+{
+    if (device >= SPIDEV_COUNT) {
+        return NULL;
+    }
+
+    return spiDevice[device].dev;
+}
+
 DMA_HandleTypeDef* dmaHandleByInstance(SPI_TypeDef *instance)
 {
     return &spiDevice[spiDeviceByInstance(instance)].hdma;

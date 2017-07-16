@@ -82,6 +82,10 @@ typedef enum SPIDevice {
 
 #endif
 
+// Macros to convert between CLI bus number and SPIDevice.
+#define SPI_CFG_TO_DEV(x)   ((x) - 1)
+#define SPI_DEV_TO_CFG(x)   ((x) + 1)
+
 void spiPreInitCs(ioTag_t iotag);
 bool spiInit(SPIDevice device);
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor);
@@ -93,6 +97,7 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *rxData, const uint8_t *txData, 
 uint16_t spiGetErrorCounter(SPI_TypeDef *instance);
 void spiResetErrorCounter(SPI_TypeDef *instance);
 SPIDevice spiDeviceByInstance(SPI_TypeDef *instance);
+SPI_TypeDef *spiInstanceByDevice(SPIDevice device);
 
 bool spiBusTransfer(const busDevice_t *bus, uint8_t *rxData, const uint8_t *txData, int length);
 
