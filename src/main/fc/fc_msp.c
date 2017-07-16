@@ -1166,6 +1166,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_MIXER_CONFIG:
         sbufWriteU8(dst, mixerConfig()->mixerMode);
+        sbufWriteU8(dst, mixerConfig()->yaw_motors_reversed);
         break;
 
     case MSP_RX_CONFIG:
@@ -1920,6 +1921,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
         sbufReadU8(src);
 #endif
+        if (sbufBytesRemaining(src) >= 1) {
+            mixerConfigMutable->yaw_motors_reversed = sbufReadU8(src);
+        }
         break;
 
     case MSP_SET_RX_CONFIG:
