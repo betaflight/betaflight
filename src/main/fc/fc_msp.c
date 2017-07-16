@@ -706,7 +706,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 
     case MSP_VOLTAGE_METERS:
         // write out id and voltage meter values, once for each meter we support
-        for (int i = 0; i < supportedVoltageMeterCount - (12-getMotorCount()); i++) {
+        for (int i = 0; i < supportedVoltageMeterCount - (VOLTAGE_METER_ID_ESC_COUNT - getMotorCount()); i++) {
 
             voltageMeter_t meter;
             uint8_t id = (uint8_t)voltageMeterIds[i];
@@ -719,7 +719,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 
     case MSP_CURRENT_METERS:
         // write out id and current meter values, once for each meter we support
-        for (int i = 0; i < supportedCurrentMeterCount - (12-getMotorCount()); i++) {
+        for (int i = 0; i < supportedCurrentMeterCount - (VOLTAGE_METER_ID_ESC_COUNT - getMotorCount()); i++) {
 
             currentMeter_t meter;
             uint8_t id = (uint8_t)currentMeterIds[i];
