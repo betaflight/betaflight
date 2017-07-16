@@ -96,12 +96,17 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
         ; // fallthough
     case BARO_BMP085:
 #ifdef USE_BARO_BMP085
+        dev->busdev.bustype = BUSTYPE_I2C;
+        dev->busdev.busdev_u.i2c.device = BARO_I2C_INSTANCE;
+        dev->busdev.busdev_u.i2c.address = BMP085_I2C_ADDR;
+
         if (bmp085Detect(bmp085Config, dev)) {
             baroHardware = BARO_BMP085;
             break;
         }
 #endif
         ; // fallthough
+
     case BARO_MS5611:
 #if defined(USE_BARO_MS5611) || defined(USE_BARO_SPI_MS5611)
 #if defined(USE_BARO_SPI_MS5611)
@@ -119,6 +124,7 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
         }
 #endif
         ; // fallthough
+
     case BARO_BMP280:
 #if defined(USE_BARO_BMP280) || defined(USE_BARO_SPI_BMP280)
 
@@ -139,6 +145,7 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
         }
 #endif
         ; // fallthough
+
     case BARO_NONE:
         baroHardware = BARO_NONE;
         break;
