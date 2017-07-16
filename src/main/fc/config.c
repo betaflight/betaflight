@@ -263,8 +263,7 @@ void validateAndFixConfig(void)
         // There is a timer clash between PWM RX pins and motor output pins - this forces us to have same timer tick rate for these timers
         // which is only possible when using brushless motors w/o oneshot (timer tick rate is PWM_TIMER_MHZ)
         // On CC3D OneShot is incompatible with PWM RX
-        motorConfigMutable()->motorPwmProtocol = PWM_TYPE_STANDARD;
-        motorConfigMutable()->motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
+        motorConfigMutable()->motorPwmProtocol = PWM_TYPE_STANDARD; // Motor PWM rate will be handled later
 #endif
 #endif
 
