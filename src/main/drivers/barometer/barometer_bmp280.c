@@ -94,6 +94,34 @@ bool bmp280WriteRegister(busDevice_t *pBusdev, uint8_t reg, uint8_t data)
     return false;
 }
 
+void bmp280BusInit(busDevice_t *pBusdev)
+{
+#ifdef USE_BARO_SPI_MS5611
+    if (pBusdev->bustype == BUSTYPE_SPI) {
+#define DISABLE_BMP280(pBusdev)       IOHi((pBusdev)->busdev_u.spi.csnPin)
+        IOInit(pBusdev->busdev_u.spi.csnPin, OWNER_BARO_CS, 0);
+        IOConfigGPIO(pBusdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
+        DISABLE_BMP280(pBusdev);
+        spiSetDivisor(pBusdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD); // XXX
+    }
+#else
+    UNUSED(pBusdev);
+#endif
+}
+
+void bmp280BusDeinit(busDevice_t *pBusdev)
+{
+#ifdef USE_BARO_SPI_MS5611
+    if (pBusdev->bustype == BUSTYPE_SPI) {
+        IOConfigGPIO(pBusdev->busdev_u.spi.csnPin, IOCFG_IPU);
+        IORelease(pBusdev->busdev_u.spi.csnPin);
+        IOInit(pBusdev->busdev_u.spi.csnPin, OWNER_SPI_PREINIT, 0);
+    }
+#else
+    UNUSED(pBusdev);
+#endif
+}
+
 bool bmp280Detect(baroDev_t *baro)
 {
     if (bmp280InitDone)
@@ -103,19 +131,14 @@ bool bmp280Detect(baroDev_t *baro)
 
     busDevice_t *pBusdev = &baro->busdev;
 
-#ifdef USE_BARO_SPI_BMP280
-    if (pBusdev->bustype == BUSTYPE_SPI) { // For final consoliation
-#define DISABLE_BMP280(pBusdev)       IOHi((pBusdev)->busdev_u.spi.csnPin)
-        IOInit(pBusdev->busdev_u.spi.csnPin, OWNER_BARO_CS, 0);
-        IOConfigGPIO(pBusdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
-        DISABLE_BMP280(pBusdev);
-        spiSetDivisor(pBusdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD); // XXX
-    }
-#endif
+    bmp280BusInit(pBusdev);
 
     bmp280ReadRegister(pBusdev, BMP280_CHIP_ID_REG, 1, &bmp280_chip_id);  /* read Chip Id */
-    if (bmp280_chip_id != BMP280_DEFAULT_CHIP_ID)
+
+    if (bmp280_chip_id != BMP280_DEFAULT_CHIP_ID) {
+        bmp280BusDeinit(pBusdev);
         return false;
+    }
 
     // read calibration
     bmp280ReadRegister(pBusdev, BMP280_TEMPERATURE_CALIB_DIG_T1_LSB_REG, 24, (uint8_t *)&bmp280_cal);
