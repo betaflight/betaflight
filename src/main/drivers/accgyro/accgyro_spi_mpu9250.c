@@ -76,11 +76,14 @@ static bool mpu9250SpiSlowReadRegisterBuffer(const busDevice_t *bus, uint8_t reg
 
 void mpu9250SpiResetGyro(void)
 {
+#if 0
+// XXX This doesn't work. Need a proper busDevice_t.
     // Device Reset
 #ifdef MPU9250_CS_PIN
     busDevice_t bus = { .spi = { .csnPin = IOGetByTag(IO_TAG(MPU9250_CS_PIN)) } };
     mpu9250SpiWriteRegister(&bus, MPU_RA_PWR_MGMT_1, MPU9250_BIT_RESET);
     delay(150);
+#endif
 #endif
 }
 
@@ -90,14 +93,14 @@ void mpu9250SpiGyroInit(gyroDev_t *gyro)
 
     mpu9250AccAndGyroInit(gyro);
 
-    spiResetErrorCounter(gyro->bus.spi.instance);
+    spiResetErrorCounter(gyro->bus.busdev_u.spi.instance);
 
-    spiSetDivisor(gyro->bus.spi.instance, SPI_CLOCK_FAST); //high speed now that we don't need to write to the slow registers
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_FAST); //high speed now that we don't need to write to the slow registers
 
     mpuGyroRead(gyro);
 
-    if ((((int8_t)gyro->gyroADCRaw[1]) == -1 && ((int8_t)gyro->gyroADCRaw[0]) == -1) || spiGetErrorCounter(gyro->bus.spi.instance) != 0) {
-        spiResetErrorCounter(gyro->bus.spi.instance);
+    if ((((int8_t)gyro->gyroADCRaw[1]) == -1 && ((int8_t)gyro->gyroADCRaw[0]) == -1) || spiGetErrorCounter(gyro->bus.busdev_u.spi.instance) != 0) {
+        spiResetErrorCounter(gyro->bus.busdev_u.spi.instance);
         failureMode(FAILURE_GYRO_INIT_FAILED);
     }
 }
@@ -133,7 +136,7 @@ static void mpu9250AccAndGyroInit(gyroDev_t *gyro) {
         return;
     }
 
-    spiSetDivisor(gyro->bus.spi.instance, SPI_CLOCK_INITIALIZATON); //low speed for writing to slow registers
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_INITIALIZATON); //low speed for writing to slow registers
 
     mpu9250SpiWriteRegister(&gyro->bus, MPU_RA_PWR_MGMT_1, MPU9250_BIT_RESET);
     delay(50);
@@ -161,7 +164,7 @@ static void mpu9250AccAndGyroInit(gyroDev_t *gyro) {
     mpu9250SpiWriteRegisterVerify(&gyro->bus, MPU_RA_INT_ENABLE, 0x01); //this resets register MPU_RA_PWR_MGMT_1 and won't read back correctly.
 #endif
 
-    spiSetDivisor(gyro->bus.spi.instance, SPI_CLOCK_FAST);
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_FAST);
 
     mpuSpi9250InitDone = true; //init done
 }
