@@ -24,6 +24,7 @@
 
 #ifdef CMS
 
+#include "build/debug.h"
 #include "build/version.h"
 
 #include "drivers/time.h"
@@ -38,6 +39,7 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 
 #include "flight/mixer.h"
@@ -92,6 +94,7 @@ static uint16_t motorConfig_minthrottle;
 static uint8_t motorConfig_digitalIdleOffsetValue;
 static uint8_t voltageSensorADCConfig_vbatscale;
 static uint8_t batteryConfig_vbatmaxcellvoltage;
+static debugType_e systemConfig_debug_mode;
 
 static long cmsx_menuMiscOnEnter(void)
 {
@@ -99,6 +102,8 @@ static long cmsx_menuMiscOnEnter(void)
     motorConfig_digitalIdleOffsetValue = motorConfig()->digitalIdleOffsetValue / 10;
     voltageSensorADCConfig_vbatscale = voltageSensorADCConfig(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale;
     batteryConfig_vbatmaxcellvoltage = batteryConfig()->vbatmaxcellvoltage;
+    systemConfig_debug_mode = systemConfig()->debug_mode;
+
     return 0;
 }
 
@@ -110,6 +115,8 @@ static long cmsx_menuMiscOnExit(const OSD_Entry *self)
     motorConfigMutable()->digitalIdleOffsetValue = 10 * motorConfig_digitalIdleOffsetValue;
     voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale = voltageSensorADCConfig_vbatscale;
     batteryConfigMutable()->vbatmaxcellvoltage = batteryConfig_vbatmaxcellvoltage;
+    systemConfigMutable()->debug_mode = systemConfig_debug_mode;
+
     return 0;
 }
 
@@ -121,6 +128,7 @@ static OSD_Entry menuMiscEntries[]=
     { "DIGITAL IDLE", OME_UINT8,   NULL,          &(OSD_UINT8_t) { &motorConfig_digitalIdleOffsetValue,      0,  200, 1 },      0 },
     { "VBAT SCALE",   OME_UINT8,   NULL,          &(OSD_UINT8_t) { &voltageSensorADCConfig_vbatscale,        1,  250, 1 },      0 },
     { "VBAT CLMAX",   OME_UINT8,   NULL,          &(OSD_UINT8_t) { &batteryConfig_vbatmaxcellvoltage,       10,   50, 1 },      0 },
+    { "DEBUG MODE",   OME_TAB,     NULL,          &(OSD_TAB_t) { &systemConfig_debug_mode, DEBUG_COUNT - 1, debugModeNames },      0 },
     { "RC PREV",      OME_Submenu, cmsMenuChange, &cmsx_menuRcPreview, 0},
 
     { "BACK", OME_Back, NULL, NULL, 0},
