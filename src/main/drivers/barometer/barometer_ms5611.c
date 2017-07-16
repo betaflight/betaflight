@@ -20,6 +20,8 @@
 
 #include <platform.h>
 
+#if defined(BARO) && (defined(USE_BARO_MS5611) || defined(USE_BARO_SPI_MS5611))
+
 #include "build/build_config.h"
 
 #include "barometer.h"
@@ -65,7 +67,8 @@ bool ms5611ReadCommand(busDevice_t *pBusdev, uint8_t cmd, uint8_t len, uint8_t *
 #ifdef USE_BARO_SPI_MS5611
     case BUSTYPE_SPI:
         return spiReadRegisterBuffer(pBusdev, cmd | 0x80, len, data);
-#else
+#endif
+#ifdef USE_BARO_MS5611
     case BUSTYPE_I2C:
         return i2cRead(pBusdev->busdev_u.i2c.device, pBusdev->busdev_u.i2c.address, cmd, len, data);
 #endif
@@ -79,7 +82,8 @@ bool ms5611WriteCommand(busDevice_t *pBusdev, uint8_t cmd, uint8_t byte)
 #ifdef USE_BARO_SPI_MS5611
     case BUSTYPE_SPI:
         return spiWriteRegister(pBusdev, cmd & 0x7f, byte);
-#else
+#endif
+#ifdef USE_BARO_MS5611
     case BUSTYPE_I2C:
         return i2cWrite(pBusdev->busdev_u.i2c.device, pBusdev->busdev_u.i2c.address, cmd, byte);
 #endif
@@ -269,3 +273,4 @@ STATIC_UNIT_TESTED void ms5611_calculate(int32_t *pressure, int32_t *temperature
     if (temperature)
         *temperature = temp;
 }
+#endif

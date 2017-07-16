@@ -114,23 +114,38 @@ static int32_t baroGroundAltitude = 0;
 static int32_t baroGroundPressure = 8*101325;
 static uint32_t baroPressureSum = 0;
 
+#include "build/debug.h"
+
 bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 {
     // Detect what pressure sensors are available. baro->update() is set to sensor-specific update function
 
     baroSensor_e baroHardware = baroHardwareToUse;
 
-#if !defined(USE_BARO_BMP085) && !defined(USE_BARO_MS5611) && !defined(USE_BARO_BMP280) && !defined(USE_BARO_SPI_BMP280)
+#if !defined(USE_BARO_BMP085) && !defined(USE_BARO_MS5611) && !defined(USE_BARO_SPI_MS5611) && !defined(USE_BARO_BMP280) && !defined(USE_BARO_SPI_BMP280)
     UNUSED(dev);
 #endif
 
-    dev->busdev.bustype = barometerConfig()->baro_bustype;
-    dev->busdev.busdev_u.i2c.device = I2C_CFG_TO_DEV(barometerConfig()->baro_i2c_device);
-    dev->busdev.busdev_u.i2c.address = barometerConfig()->baro_i2c_address;
-#if defined(USE_BARO_SPI_MS5611) || defined(USE_BARO_SPI_BMP280)
-    spiBusSetInstance(&dev->busdev, spiInstanceByDevice(SPI_CFG_TO_DEV(barometerConfig()->baro_spi_device)));
-    dev->busdev.busdev_u.spi.csnPin = IOGetByTag(barometerConfig()->baro_spi_cs);
+    switch (barometerConfig()->baro_bustype) {
+    case BUSTYPE_I2C:
+#ifdef USE_I2C
+        dev->busdev.bustype = BUSTYPE_I2C;
+        dev->busdev.busdev_u.i2c.device = I2C_CFG_TO_DEV(barometerConfig()->baro_i2c_device);
+        dev->busdev.busdev_u.i2c.address = barometerConfig()->baro_i2c_address;
 #endif
+        break;
+
+    case BUSTYPE_SPI:
+#ifdef USE_SPI
+        dev->busdev.bustype = BUSTYPE_SPI;
+        spiBusSetInstance(&dev->busdev, spiInstanceByDevice(SPI_CFG_TO_DEV(barometerConfig()->baro_spi_device)));
+        dev->busdev.busdev_u.spi.csnPin = IOGetByTag(barometerConfig()->baro_spi_cs);
+#endif
+        break;
+
+    default:
+        return false;
+    }
 
 #ifdef USE_BARO_BMP085
     const bmp085Config_t *bmp085Config = NULL;
@@ -148,6 +163,7 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
     switch (baroHardware) {
     case BARO_DEFAULT:
         ; // fallthough
+
     case BARO_BMP085:
 #ifdef USE_BARO_BMP085
         if (bmp085Detect(bmp085Config, dev)) {

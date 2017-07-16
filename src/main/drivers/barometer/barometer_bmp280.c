@@ -21,6 +21,7 @@
 #include <platform.h>
 
 #include "build/build_config.h"
+#include "build/debug.h"
 
 #include "barometer.h"
 
@@ -32,7 +33,7 @@
 
 #include "barometer_bmp280.h"
 
-#ifdef BARO
+#if defined(BARO) && (defined(USE_BARO_BMP280) || defined(USE_BARO_SPI_BMP280))
 
 // BMP280, address 0x76
 
@@ -72,7 +73,8 @@ bool bmp280ReadRegister(busDevice_t *pBusdev, uint8_t reg, uint8_t length, uint8
 #ifdef USE_BARO_SPI_BMP280
     case BUSTYPE_SPI:
         return spiReadRegisterBuffer(pBusdev, reg | 0x80, length, data);
-#else
+#endif
+#ifdef USE_BARO_BMP280
     case BUSTYPE_I2C:
         return i2cRead(pBusdev->busdev_u.i2c.device, pBusdev->busdev_u.i2c.address, reg, length, data);
 #endif
@@ -86,7 +88,8 @@ bool bmp280WriteRegister(busDevice_t *pBusdev, uint8_t reg, uint8_t data)
 #ifdef USE_BARO_SPI_BMP280
     case BUSTYPE_SPI:
         return spiWriteRegister(pBusdev, reg & 0x7f, data);
-#else
+#endif
+#ifdef USE_BARO_BMP280
     case BUSTYPE_I2C:
         return i2cWrite(pBusdev->busdev_u.i2c.device, pBusdev->busdev_u.i2c.address, reg, data);
 #endif
@@ -98,7 +101,7 @@ void bmp280BusInit(busDevice_t *pBusdev)
 {
 #ifdef USE_BARO_SPI_BMP280
     if (pBusdev->bustype == BUSTYPE_SPI) {
-#define DISABLE_BMP280(pBusdev)       IOHi((pBusdev)->busdev_u.spi.csnPin)
+#define DISABLE_BMP280(pBusdev) IOHi((pBusdev)->busdev_u.spi.csnPin)
         IOInit(pBusdev->busdev_u.spi.csnPin, OWNER_BARO_CS, 0);
         IOConfigGPIO(pBusdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
         DISABLE_BMP280(pBusdev);
@@ -135,6 +138,11 @@ bool bmp280Detect(baroDev_t *baro)
 
     bmp280ReadRegister(pBusdev, BMP280_CHIP_ID_REG, 1, &bmp280_chip_id);  /* read Chip Id */
 
+debug[0]++;
+debug[1] = pBusdev->bustype;
+debug[2] = spiDeviceByInstance(pBusdev->busdev_u.spi.instance);
+debug[3] = pBusdev->busdev_u.spi.csnPin;
+
     if (bmp280_chip_id != BMP280_DEFAULT_CHIP_ID) {
         bmp280BusDeinit(pBusdev);
         return false;
@@ -146,8 +154,6 @@ bool bmp280Detect(baroDev_t *baro)
     // set oversampling + power mode (forced), and start sampling
     bmp280WriteRegister(pBusdev, BMP280_CTRL_MEAS_REG, BMP280_MODE);
 
-    bmp280InitDone = true;
-
     // these are dummy as temperature is measured as part of pressure
     baro->ut_delay = 0;
     baro->get_ut = bmp280_get_ut;
@@ -157,6 +163,8 @@ bool bmp280Detect(baroDev_t *baro)
     baro->get_up = bmp280_get_up;
     baro->up_delay = ((T_INIT_MAX + T_MEASURE_PER_OSRS_MAX * (((1 << BMP280_TEMPERATURE_OSR) >> 1) + ((1 << BMP280_PRESSURE_OSR) >> 1)) + (BMP280_PRESSURE_OSR ? T_SETUP_PRESSURE_MAX : 0) + 15) / 16) * 1000;
     baro->calculate = bmp280_calculate;
+
+    bmp280InitDone = true;
 
     return true;
 }
