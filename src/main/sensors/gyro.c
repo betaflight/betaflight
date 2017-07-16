@@ -127,10 +127,10 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .gyro_isr_update = false,
     .gyro_use_32khz = false,
     .gyro_to_use = 0,
-    .enable_gyro_soft_notch_1 = 1,      // gyro soft notch 1 enabled by default
+    .gyro_soft_notch_enabled_1 = true,      // gyro soft notch 1 enabled by default
     .gyro_soft_notch_hz_1 = 400,
     .gyro_soft_notch_cutoff_1 = 300,
-    .enable_gyro_soft_notch_2 = 1,      // gyro soft notch 2 enabled by default
+    .gyro_soft_notch_enabled_2 = true,      // gyro soft notch 2 enabled by default
     .gyro_soft_notch_hz_2 = 200,
     .gyro_soft_notch_cutoff_2 = 100
 );
@@ -453,8 +453,8 @@ void gyroInitFilterDynamicNotch(gyroSensor_t *gyroSensor)
 static void gyroInitSensorFilters(gyroSensor_t *gyroSensor)
 {
     gyroInitFilterLpf(gyroSensor, gyroConfig()->gyro_soft_lpf_hz);
-    gyroInitFilterNotch1(gyroSensor, gyroConfig()->enable_gyro_soft_notch_1 ? gyroConfig()->gyro_soft_notch_hz_1 : 0, gyroConfig()->gyro_soft_notch_cutoff_1);
-    gyroInitFilterNotch2(gyroSensor, gyroConfig()->enable_gyro_soft_notch_2 ? gyroConfig()->gyro_soft_notch_hz_2 : 0, gyroConfig()->gyro_soft_notch_cutoff_2);
+    gyroInitFilterNotch1(gyroSensor, gyroConfig()->gyro_soft_notch_enabled_1 ? gyroConfig()->gyro_soft_notch_hz_1 : 0, gyroConfig()->gyro_soft_notch_cutoff_1);
+    gyroInitFilterNotch2(gyroSensor, gyroConfig()->gyro_soft_notch_enabled_2 ? gyroConfig()->gyro_soft_notch_hz_2 : 0, gyroConfig()->gyro_soft_notch_cutoff_2);
     gyroInitFilterDynamicNotch(gyroSensor);
 }
 

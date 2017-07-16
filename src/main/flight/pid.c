@@ -93,7 +93,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .itermWindupPointPercent = 50,
         .dterm_filter_type = FILTER_BIQUAD,
         .dterm_lpf_hz = 100,    // filtering ON by default
-        .enable_dterm_notch = 1,    // dterm notch filter enabled by default
+        .dterm_notch_enabled = true,    // dterm notch filter enabled by default
         .dterm_notch_hz = 260,
         .dterm_notch_cutoff = 160,
         .vbatPidCompensation = 0,
@@ -170,7 +170,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     uint32_t pidFrequencyNyquist = (1.0f / dT) / 2; // No rounding needed
 
     float dTermNotchHz;
-    if (pidProfile->enable_dterm_notch) {
+    if (pidProfile->dterm_notch_enabled) {
         if (pidProfile->dterm_notch_hz <= pidFrequencyNyquist) {
             dTermNotchHz = pidProfile->dterm_notch_hz;
         } else {

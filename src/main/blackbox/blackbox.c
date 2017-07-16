@@ -1274,7 +1274,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("dterm_filter_type", "%d",               currentPidProfile->dterm_filter_type);
         BLACKBOX_PRINT_HEADER_LINE("dterm_lpf_hz", "%d",                    currentPidProfile->dterm_lpf_hz);
         BLACKBOX_PRINT_HEADER_LINE("yaw_lpf_hz", "%d",                      currentPidProfile->yaw_lpf_hz);
-        BLACKBOX_PRINT_HEADER_LINE("enable_dterm_notch", "%d",              currentPidProfile->enable_dterm_notch);
+        BLACKBOX_PRINT_HEADER_LINE("dterm_notch_enabled", "%d",              currentPidProfile->dterm_notch_enabled);
         BLACKBOX_PRINT_HEADER_LINE("dterm_notch_hz", "%d",                  currentPidProfile->dterm_notch_hz);
         BLACKBOX_PRINT_HEADER_LINE("dterm_notch_cutoff", "%d",              currentPidProfile->dterm_notch_cutoff);
         BLACKBOX_PRINT_HEADER_LINE("iterm_windup", "%d",                    currentPidProfile->itermWindupPointPercent);
@@ -1297,8 +1297,8 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("gyro_lpf", "%d",                        gyroConfig()->gyro_lpf);
         BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_type", "%d",               gyroConfig()->gyro_soft_lpf_type);
         BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_hz", "%d",                 gyroConfig()->gyro_soft_lpf_hz);
-        BLACKBOX_PRINT_HEADER_LINE("enable_gyro_notch", "%d,%d",            gyroConfig()->enable_gyro_soft_notch_1,
-                                                                            gyroConfig()->enable_gyro_soft_notch_2);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_notch_enabled", "%d,%d",           gyroConfig()->gyro_soft_notch_enabled_1,
+                                                                            gyroConfig()->gyro_soft_notch_enabled_2);
         BLACKBOX_PRINT_HEADER_LINE("gyro_notch_hz", "%d,%d",                gyroConfig()->gyro_soft_notch_hz_1,
                                                                             gyroConfig()->gyro_soft_notch_hz_2);
         BLACKBOX_PRINT_HEADER_LINE("gyro_notch_cutoff", "%d,%d",            gyroConfig()->gyro_soft_notch_cutoff_1,
