@@ -299,13 +299,34 @@ static void cliPrintLinef(const char *format, ...)
     va_end(va);
 }
 
+
 static void printValuePointer(const clivalue_t *var, const void *valuePointer, bool full)
 {
     if ((var->type & VALUE_MODE_MASK) == MODE_ARRAY) {
         for (int i = 0; i < var->config.array.length; i++) {
-            uint8_t value = ((uint8_t *)valuePointer)[i];
+            switch (var->type & VALUE_TYPE_MASK) {
+            default:
+            case VAR_UINT8:
+                // uint8_t array
+                cliPrintf("%d", ((uint8_t *)valuePointer)[i]);
+                break;
 
-            cliPrintf("%d", value);
+            case VAR_INT8:
+                // int8_t array
+                cliPrintf("%d", ((int8_t *)valuePointer)[i]);
+                break;
+
+            case VAR_UINT16:
+                // uin16_t array
+                cliPrintf("%d", ((uint16_t *)valuePointer)[i]);
+                break;
+
+            case VAR_INT16:
+                // int16_t array
+                cliPrintf("%d", ((int16_t *)valuePointer)[i]);
+                break;
+            }
+
             if (i < var->config.array.length - 1) {
                 cliPrint(",");
             }
@@ -376,7 +397,7 @@ static uint16_t getValueOffset(const clivalue_t *value)
     return 0;
 }
 
-static void *getValuePointer(const clivalue_t *value)
+STATIC_UNIT_TESTED void *getValuePointer(const clivalue_t *value)
 {
     const pgRegistry_t* rec = pgFind(value->pgn);
     return CONST_CAST(void *, rec->address + getValueOffset(value));
@@ -2637,7 +2658,7 @@ static void cliDefaults(char *cmdline)
     cliReboot();
 }
 
-static void cliGet(char *cmdline)
+STATIC_UNIT_TESTED void cliGet(char *cmdline)
 {
     const clivalue_t *val;
     int matchedCommands = 0;
@@ -2681,7 +2702,7 @@ static uint8_t getWordLength(char *bufBegin, char *bufEnd)
     return bufEnd - bufBegin;
 }
 
-static void cliSet(char *cmdline)
+STATIC_UNIT_TESTED void cliSet(char *cmdline)
 {
     const uint32_t len = strlen(cmdline);
     char *eqptr;
@@ -2706,16 +2727,17 @@ static void cliSet(char *cmdline)
 
         for (uint32_t i = 0; i < valueTableEntryCount; i++) {
             const clivalue_t *val = &valueTable[i];
+
             // ensure exact match when setting to prevent setting variables with shorter names
-            if (strncasecmp(cmdline, valueTable[i].name, strlen(valueTable[i].name)) == 0 && variableNameLength == strlen(valueTable[i].name)) {
+            if (strncasecmp(cmdline, val->name, strlen(val->name)) == 0 && variableNameLength == strlen(val->name)) {
 
                 bool valueChanged = false;
                 int16_t value  = 0;
-                switch (valueTable[i].type & VALUE_MODE_MASK) {
+                switch (val->type & VALUE_MODE_MASK) {
                     case MODE_DIRECT: {
                         int16_t value = atoi(eqptr);
 
-                        if (value >= valueTable[i].config.minmax.min && value <= valueTable[i].config.minmax.max) {
+                        if (value >= val->config.minmax.min && value <= val->config.minmax.max) {
                             cliSetVar(val, value);
                             valueChanged = true;
                         }
@@ -2723,7 +2745,7 @@ static void cliSet(char *cmdline)
 
                     break;
                     case MODE_LOOKUP: {
-                        const lookupTableEntry_t *tableEntry = &lookupTables[valueTable[i].config.lookup.tableIndex];
+                        const lookupTableEntry_t *tableEntry = &lookupTables[val->config.lookup.tableIndex];
                         bool matched = false;
                         for (uint32_t tableValueIndex = 0; tableValueIndex < tableEntry->valueCount && !matched; tableValueIndex++) {
                             matched = strcasecmp(tableEntry->values[tableValueIndex], eqptr) == 0;
@@ -2739,41 +2761,67 @@ static void cliSet(char *cmdline)
 
                     break;
                     case MODE_ARRAY: {
-                        const uint8_t arrayLength = valueTable[i].config.array.length;
+                        const uint8_t arrayLength = val->config.array.length;
                         char *valPtr = eqptr;
-                        uint8_t array[256];
-                        char curVal[4];
+
                         for (int i = 0; i < arrayLength; i++) {
+                            // skip spaces
                             valPtr = skipSpace(valPtr);
-                            char *valEnd = strstr(valPtr, ",");
-                            if ((valEnd != NULL) && (i < arrayLength - 1)) {
-                                uint8_t varLength = getWordLength(valPtr, valEnd);
-                                if (varLength <= 3) {
-                                    strncpy(curVal, valPtr, getWordLength(valPtr, valEnd));
-                                    curVal[varLength] = '\0';
-                                    array[i] = (uint8_t)atoi((const char *)curVal);
-                                    valPtr = valEnd + 1;
-                                } else {
+                            // find next comma (or end of string)
+                            char *valEndPtr = strchr(valPtr, ',');
+
+                            // comma found or last item?
+                            if ((valEndPtr != NULL) || (i == arrayLength - 1)){
+                                // process substring [valPtr, valEndPtr[
+                                // note: no need to copy substrings for atoi()
+                                //       it stops at the first character that cannot be converted...
+                                switch (val->type & VALUE_TYPE_MASK) {
+                                default:
+                                case VAR_UINT8: {
+                                    // fetch data pointer
+                                    uint8_t *data = (uint8_t *)getValuePointer(val) + i;
+                                    // store value
+                                    *data = (uint8_t)atoi((const char*) valPtr);
+                                    }
+                                    break;
+
+                                case VAR_INT8: {
+                                    // fetch data pointer
+                                    int8_t *data = (int8_t *)getValuePointer(val) + i;
+                                    // store value
+                                    *data = (int8_t)atoi((const char*) valPtr);
+                                    }
+                                    break;
+
+                                case VAR_UINT16: {
+                                    // fetch data pointer
+                                    uint16_t *data = (uint16_t *)getValuePointer(val) + i;
+                                    // store value
+                                    *data = (uint16_t)atoi((const char*) valPtr);
+                                    }
+                                    break;
+
+                                case VAR_INT16: {
+                                    // fetch data pointer
+                                    int16_t *data = (int16_t *)getValuePointer(val) + i;
+                                    // store value
+                                    *data = (int16_t)atoi((const char*) valPtr);
+                                    }
                                     break;
                                 }
-                            } else if ((valEnd == NULL) && (i == arrayLength - 1)) {
-                                array[i] = atoi(valPtr);
-
-                                uint8_t *ptr = getValuePointer(val);
-                                memcpy(ptr, array, arrayLength);
+                                // mark as changed
                                 valueChanged = true;
-                            } else {
-                                break;
+
+                                // prepare to parse next item
+                                valPtr = valEndPtr + 1;
                             }
                         }
                     }
-
                     break;
-
                 }
 
                 if (valueChanged) {
-                    cliPrintf("%s set to ", valueTable[i].name);
+                    cliPrintf("%s set to ", val->name);
                     cliPrintVar(val, 0);
                 } else {
                     cliPrintLine("Invalid value");

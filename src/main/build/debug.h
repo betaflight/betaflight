@@ -70,3 +70,5 @@ typedef enum {
     DEBUG_FFT_FREQ,
     DEBUG_COUNT
 } debugType_e;
+
+extern const char * const debugModeNames[DEBUG_COUNT];

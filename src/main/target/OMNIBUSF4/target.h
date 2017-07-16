@@ -19,12 +19,16 @@
 #define TARGET_BOARD_IDENTIFIER "OBSD"
 #elif defined(LUXF4OSD)
 #define TARGET_BOARD_IDENTIFIER "LUX4"
+#elif defined(DYSF4PRO)
+#define TARGET_BOARD_IDENTIFIER "DYS4"
 #else
 #define TARGET_BOARD_IDENTIFIER "OBF4"
 #endif
 
 #if defined(LUXF4OSD)
 #define USBD_PRODUCT_STRING "LuxF4osd"
+#elif defined(DYSF4PRO)
+#define USBD_PRODUCT_STRING "DysF4Pro"
 #else
 #define USBD_PRODUCT_STRING "OmnibusF4"
 #endif

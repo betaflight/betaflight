@@ -179,7 +179,7 @@ void pwmCompleteDshotMotorUpdate(uint8_t motorCount);
 #ifdef BEEPER
 void pwmWriteBeeper(bool onoffBeep);
 void pwmToggleBeeper(void);
-void beeperPwmInit(IO_t io, uint16_t frequency);
+void beeperPwmInit(const ioTag_t tag, uint16_t frequency);
 #endif
 
 void pwmWriteMotor(uint8_t index, float value);
