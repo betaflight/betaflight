@@ -52,6 +52,16 @@ blackbox_encoding_unittest_SRC :=  \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/typeconversion.c
 
+cli_unittest_SRC := \
+		$(USER_DIR)/fc/cli.c \
+		$(USER_DIR)/config/feature.c \
+		$(USER_DIR)/config/parameter_group.c \
+                $(USER_DIR)/common/typeconversion.c 
+
+cli_unittest_DEFINES := \
+		USE_CLI \
+		SystemCoreClock=1000000 \
+		OSD
 
 cms_unittest_SRC := \
 		$(USER_DIR)/cms/cms.c \
