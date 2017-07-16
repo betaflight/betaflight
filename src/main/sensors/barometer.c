@@ -127,8 +127,10 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
     dev->busdev.bustype = barometerConfig()->baro_bustype;
     dev->busdev.busdev_u.i2c.device = I2C_CFG_TO_DEV(barometerConfig()->baro_i2c_device);
     dev->busdev.busdev_u.i2c.address = barometerConfig()->baro_i2c_address;
+#if defined(USE_BARO_SPI_MS5611) || defined(USE_BARO_SPI_BMP280)
     spiBusSetInstance(&dev->busdev, spiInstanceByDevice(SPI_CFG_TO_DEV(barometerConfig()->baro_spi_device)));
     dev->busdev.busdev_u.spi.csnPin = IOGetByTag(barometerConfig()->baro_spi_cs);
+#endif
 
 #ifdef USE_BARO_BMP085
     const bmp085Config_t *bmp085Config = NULL;
