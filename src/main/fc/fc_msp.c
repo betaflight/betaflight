@@ -1346,6 +1346,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_hz_2);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_cutoff_2);
         sbufWriteU8(dst, currentPidProfile->dterm_filter_type);
+        sbufWriteU8(dst, gyroConfig()->enable_gyro_soft_notch_1);
+        sbufWriteU8(dst, gyroConfig()->enable_gyro_soft_notch_2);
+        sbufWriteU8(dst, currentPidProfile->enable_dterm_notch);
         break;
 
     case MSP_PID_ADVANCED:
@@ -1750,6 +1753,11 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         if (sbufBytesRemaining(src) >= 1) {
             currentPidProfile->dterm_filter_type = sbufReadU8(src);
+        }
+        if (sbufBytesRemaining(src) >= 3) {
+            gyroConfigMutable()->enable_gyro_soft_notch_1 = sbufReadU8(src);
+            gyroConfigMutable()->enable_gyro_soft_notch_2 = sbufReadU8(src);
+            currentPidProfile->enable_dterm_notch = sbufReadU8(src);
         }
         // reinitialize the gyro filters with the new values
         validateAndFixGyroConfig();

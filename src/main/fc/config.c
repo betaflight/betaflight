@@ -411,7 +411,7 @@ void validateAndFixConfig(void)
 
     // Prevent invalid notch cutoff
     if (currentPidProfile->dterm_notch_cutoff >= currentPidProfile->dterm_notch_hz) {
-        currentPidProfile->dterm_notch_hz = 0;
+        currentPidProfile->enable_dterm_notch = 0;
     }
 
     validateAndFixGyroConfig();
@@ -431,10 +431,10 @@ void validateAndFixGyroConfig(void)
 {
     // Prevent invalid notch cutoff
     if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1) {
-        gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
+        gyroConfigMutable()->enable_gyro_soft_notch_1 = 0;
     }
     if (gyroConfig()->gyro_soft_notch_cutoff_2 >= gyroConfig()->gyro_soft_notch_hz_2) {
-        gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
+        gyroConfigMutable()->enable_gyro_soft_notch_2 = 0;
     }
 
     float samplingTime = 0.000125f;
