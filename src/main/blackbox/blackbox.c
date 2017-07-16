@@ -83,17 +83,19 @@
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SERIAL
 #endif
 
+#ifdef SDCARD_DETECT_INVERTED
+#define BLACKBOX_INTERVED_CARD_DETECTION 1
+#else
+#define BLACKBOX_INTERVED_CARD_DETECTION 0
+#endif
+
 PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
 
 PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
     .device = DEFAULT_BLACKBOX_DEVICE,
     .rate_num = 1,
     .rate_denom = 1,
-#ifdef SDCARD_DETECT_INVERTED
-    .invertedCardDetection = 1,
-#else
-    .invertedCardDetection = 0,
-#endif
+    .invertedCardDetection = BLACKBOX_INTERVED_CARD_DETECTION,
 );
 
 #define BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS 200
