@@ -114,10 +114,6 @@
 #define USE_SDCARD
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN                   PF14
-#define SDCARD_DETECT_EXTI_LINE             EXTI_Line14
-#define SDCARD_DETECT_EXTI_PIN_SOURCE       EXTI_PinSource14
-#define SDCARD_DETECT_EXTI_PORT_SOURCE      EXTI_PortSourceGPIOF
-#define SDCARD_DETECT_EXTI_IRQn             EXTI9_15_IRQn
 
 #define SDCARD_SPI_INSTANCE                 SPI4
 #define SDCARD_SPI_CS_PIN                   SPI4_NSS_PIN
