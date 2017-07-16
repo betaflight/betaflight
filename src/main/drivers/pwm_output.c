@@ -480,9 +480,8 @@ void pwmToggleBeeper(void)
         pwmWriteBeeper(!beeperPwm.enabled);
 }
 
-void beeperPwmInit(const beeperDevConfig_t *beeperConfig)
+void beeperPwmInit(const ioTag_t tag, uint16_t frequency)
 {
-        const ioTag_t tag = beeperConfig->ioTag;
         beeperPwm.io = IOGetByTag(tag);
         const timerHardware_t *timer = timerGetByTag(tag, TIM_USE_BEEPER);
         if (beeperPwm.io && timer) {
@@ -492,7 +491,7 @@ void beeperPwmInit(const beeperDevConfig_t *beeperConfig)
 #else
             IOConfigGPIO(beeperPwm.io, IOCFG_AF_PP);
 #endif
-            freqBeep = beeperConfig->frequency;
+            freqBeep = frequency;
             pwmOutConfig(&beeperPwm, timer, PWM_TIMER_1MHZ, PWM_TIMER_1MHZ / freqBeep, (PWM_TIMER_1MHZ / freqBeep) / 2, 0);
         }
         *beeperPwm.ccr = 0;
