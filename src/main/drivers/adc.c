@@ -98,6 +98,7 @@ static bool isChannelInUse(int channel)
     return false;
 }
 
+#if !defined(ADC_CHANNEL_1_PIN) || !defined(ADC_CHANNEL_2_PIN) || !defined(ADC_CHANNEL_3_PIN) || !defined(ADC_CHANNEL_4_PIN)
 static void disableChannelMapping(int channel)
 {
     for (int i = 0; i < ADC_FUNCTION_COUNT; i++) {
@@ -106,6 +107,7 @@ static void disableChannelMapping(int channel)
         }
     }
 }
+#endif
 
 void adcInit(drv_adc_config_t *init)
 {
