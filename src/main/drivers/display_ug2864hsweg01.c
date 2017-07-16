@@ -186,9 +186,8 @@ static bool i2c_OLED_send_cmd(busDevice_t *bus, uint8_t command)
 static bool i2c_OLED_send_cmdarray(busDevice_t *bus, const uint8_t *commands, size_t len)
 {
     for (size_t i = 0 ; i < len ; i++) {
-        if (i2c_OLED_send_cmd(bus, commands[i])) {
-            // XXX Funny, i2cWrite is returning errors!?
-            // return;
+        if (!i2c_OLED_send_cmd(bus, commands[i])) {
+            return false;
         }
     }
 
