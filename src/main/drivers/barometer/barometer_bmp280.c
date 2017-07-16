@@ -96,7 +96,7 @@ bool bmp280WriteRegister(busDevice_t *pBusdev, uint8_t reg, uint8_t data)
 
 void bmp280BusInit(busDevice_t *pBusdev)
 {
-#ifdef USE_BARO_SPI_MS5611
+#ifdef USE_BARO_SPI_BMP280
     if (pBusdev->bustype == BUSTYPE_SPI) {
 #define DISABLE_BMP280(pBusdev)       IOHi((pBusdev)->busdev_u.spi.csnPin)
         IOInit(pBusdev->busdev_u.spi.csnPin, OWNER_BARO_CS, 0);
@@ -111,7 +111,7 @@ void bmp280BusInit(busDevice_t *pBusdev)
 
 void bmp280BusDeinit(busDevice_t *pBusdev)
 {
-#ifdef USE_BARO_SPI_MS5611
+#ifdef USE_BARO_SPI_BMP280
     if (pBusdev->bustype == BUSTYPE_SPI) {
         IOConfigGPIO(pBusdev->busdev_u.spi.csnPin, IOCFG_IPU);
         IORelease(pBusdev->busdev_u.spi.csnPin);
