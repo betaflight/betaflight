@@ -155,6 +155,16 @@ baudRate_e lookupBaudRateIndex(uint32_t baudRate)
     return BAUD_AUTO;
 }
 
+int findSerialPortIndexByIdentifier(serialPortIdentifier_e identifier)
+{
+    for (int index = 0; index < SERIAL_PORT_COUNT; index++) {
+        if (serialPortIdentifiers[index] == identifier) {
+            return index;
+        }
+    }
+    return -1;
+}
+
 serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identifier)
 {
     uint8_t index;
