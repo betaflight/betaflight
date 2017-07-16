@@ -138,11 +138,6 @@ bool bmp280Detect(baroDev_t *baro)
 
     bmp280ReadRegister(pBusdev, BMP280_CHIP_ID_REG, 1, &bmp280_chip_id);  /* read Chip Id */
 
-debug[0]++;
-debug[1] = pBusdev->bustype;
-debug[2] = spiDeviceByInstance(pBusdev->busdev_u.spi.instance);
-debug[3] = pBusdev->busdev_u.spi.csnPin;
-
     if (bmp280_chip_id != BMP280_DEFAULT_CHIP_ID) {
         bmp280BusDeinit(pBusdev);
         return false;
