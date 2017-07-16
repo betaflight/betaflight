@@ -147,6 +147,7 @@ static uint32_t bufferIndex = 0;
 static bool configIsInCopy = false;
 
 static const char* const emptyName = "-";
+static const char* const emptryString = "";
 
 #ifndef USE_QUAD_MIXER_ONLY
 // sync this with mixerMode_e
@@ -883,7 +884,7 @@ static void cliSerialPassthrough(char *cmdline)
     serialPortUsage_t *passThroughPortUsage = findSerialPortUsageByIdentifier(id);
     if (!passThroughPortUsage || passThroughPortUsage->serialPort == NULL) {
         if (!baud) {
-            cliPrint("closed, specify baud.\r\n");
+            cliPrintLine("closed, specify baud.");
             return;
         }
         if (!mode)
@@ -893,7 +894,7 @@ static void cliSerialPassthrough(char *cmdline)
                                          baud, mode,
                                          SERIAL_NOT_INVERTED);
         if (!passThroughPort) {
-            cliPrint("could not be opened.\r\n");
+            cliPrintLine("could not be opened.");
             return;
         }
         cliPrintf("opened, baud = %d.\r\n", baud);
@@ -901,7 +902,7 @@ static void cliSerialPassthrough(char *cmdline)
         passThroughPort = passThroughPortUsage->serialPort;
         // If the user supplied a mode, override the port's mode, otherwise
         // leave the mode unchanged. serialPassthrough() handles one-way ports.
-        cliPrint("already open.\r\n");
+        cliPrintLine("already open.");
         if (mode && passThroughPort->mode != mode) {
             cliPrintf("mode changed from %d to %d.\r\n",
                    passThroughPort->mode, mode);
@@ -914,7 +915,7 @@ static void cliSerialPassthrough(char *cmdline)
         }
     }
 
-    cliPrint("Forwarding, power cycle to exit.\r\n");
+    cliPrintLine("Forwarding, power cycle to exit.");
 
     serialPassthrough(cliPort, passThroughPort, NULL, NULL);
 }
@@ -1911,18 +1912,22 @@ static void printFeature(uint8_t dumpMask, const featureConfig_t *featureConfig,
 {
     const uint32_t mask = featureConfig->enabledFeatures;
     const uint32_t defaultMask = featureConfigDefault->enabledFeatures;
-    for (uint32_t i = 0; featureNames[i]; i++) { // disable all feature first
-        const char *format = "feature -%s";
-        cliDefaultPrintLinef(dumpMask, (defaultMask | ~mask) & (1 << i), format, featureNames[i]);
-        cliDumpPrintLinef(dumpMask, (~defaultMask | mask) & (1 << i), format, featureNames[i]);
-    }
-    for (uint32_t i = 0; featureNames[i]; i++) {  // reenable what we want.
-        const char *format = "feature %s";
-        if (defaultMask & (1 << i)) {
-            cliDefaultPrintLinef(dumpMask, (~defaultMask | mask) & (1 << i), format, featureNames[i]);
+    for (uint32_t i = 0; featureNames[i]; i++) { // disabled features first
+        if (strcmp(featureNames[i], emptryString) != 0) { //Skip unused
+            const char *format = "feature -%s";
+            cliDefaultPrintLinef(dumpMask, (defaultMask | ~mask) & (1 << i), format, featureNames[i]);
+            cliDumpPrintLinef(dumpMask, (~defaultMask | mask) & (1 << i), format, featureNames[i]);
         }
-        if (mask & (1 << i)) {
-            cliDumpPrintLinef(dumpMask, (defaultMask | ~mask) & (1 << i), format, featureNames[i]);
+    }
+    for (uint32_t i = 0; featureNames[i]; i++) {  // enabled features
+        if (strcmp(featureNames[i], emptryString) != 0) { //Skip unused
+            const char *format = "feature %s";
+            if (defaultMask & (1 << i)) {
+                cliDefaultPrintLinef(dumpMask, (~defaultMask | mask) & (1 << i), format, featureNames[i]);
+            }
+            if (mask & (1 << i)) {
+                cliDumpPrintLinef(dumpMask, (defaultMask | ~mask) & (1 << i), format, featureNames[i]);
+            }
         }
     }
 }
@@ -1946,7 +1951,7 @@ static void cliFeature(char *cmdline)
         for (uint32_t i = 0; ; i++) {
             if (featureNames[i] == NULL)
                 break;
-            if (strcmp(featureNames[i], "") != 0) //Skip unused
+            if (strcmp(featureNames[i], emptryString) != 0) //Skip unused
                 cliPrintf(" %s", featureNames[i]);
         }
         cliPrintLinefeed();
@@ -2296,13 +2301,33 @@ void printEscInfo(const uint8_t *escInfoBytes, uint8_t bytesRead)
                     cliPrintLinef("3D: %s", escInfoBytes[17] ? "on" : "off");
                 }
             } else {
-                cliPrint("Checksum error.");
+                cliPrintLine("Checksum error.");
             }
         }
     }
 
     if (!escInfoReceived) {
-        cliPrint("No info.");
+        cliPrintLine("No info.");
+    }
+}
+
+static void writeDshotCommand(uint8_t escIndex, uint8_t command)
+{
+    uint8_t escInfoBuffer[ESC_INFO_V2_EXPECTED_FRAME_SIZE];
+    if (command == DSHOT_CMD_ESC_INFO) {
+        cliPrintLinef("Info for ESC %d:", escIndex);
+
+        delay(10); // Wait for potential ESC telemetry transmission to finish
+
+        startEscDataRead(escInfoBuffer, ESC_INFO_V2_EXPECTED_FRAME_SIZE);
+    }
+
+    pwmWriteDshotCommand(escIndex, command);
+
+    if (command == DSHOT_CMD_ESC_INFO) {
+        delay(10);
+
+        printEscInfo(escInfoBuffer, getNumberEscBytesRead());
     }
 }
 
@@ -2334,34 +2359,19 @@ static void cliDshotProg(char *cmdline)
                 if (command >= 0 && command < DSHOT_MIN_THROTTLE) {
                     if (escIndex == ALL_MOTORS) {
                         for (unsigned i = 0; i < getMotorCount(); i++) {
-                            pwmWriteDshotCommand(i, command);
+                            writeDshotCommand(i, command);
                         }
-
-                        cliPrintf("Command %d written.\r\n", command);
                     } else {
-                        uint8_t escInfoBuffer[ESC_INFO_V2_EXPECTED_FRAME_SIZE];
-                        if (command == DSHOT_CMD_ESC_INFO) {
-                            delay(10); // Wait for potential ESC telemetry transmission to finish
+                        writeDshotCommand(escIndex, command);
+		    }
 
-                            startEscDataRead(escInfoBuffer, ESC_INFO_V2_EXPECTED_FRAME_SIZE);
-                        }
-
-                        pwmWriteDshotCommand(escIndex, command);
-
-                        if (command == DSHOT_CMD_ESC_INFO) {
-                            delay(10);
-
-                            printEscInfo(escInfoBuffer, getNumberEscBytesRead());
-                        } else {
-                            cliPrintf("Command %d written.\r\n", command);
-                        }
-                    }
+                    cliPrintLinef("Command %d written.", command);
 
                     if (command <= 5) {
                         delay(10); // wait for sound output to finish
                     }
                 } else {
-                    cliPrintf("Invalid command, range 1 to %d.\r\n", DSHOT_MIN_THROTTLE - 1);
+                    cliPrintLinef("Invalid command, range 1 to %d.", DSHOT_MIN_THROTTLE - 1);
                 }
 
                 break;

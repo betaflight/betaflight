@@ -311,13 +311,14 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
 #endif
 
         /* standard PWM outputs */
-        const unsigned pwmRateHz = useUnsyncedPwm ? motorConfig->motorPwmRate : ceilf(1 / (sMin + sLen * 2));
+        // margin of safety is 4 periods when unsynced
+        const unsigned pwmRateHz = useUnsyncedPwm ? motorConfig->motorPwmRate : ceilf(1 / ((sMin + sLen) * 4));
 
         const uint32_t clock = timerClock(timerHardware->tim);
         /* used to find the desired timer frequency for max resolution */
         const unsigned prescaler = ((clock / pwmRateHz) + 0xffff) / 0x10000; /* rounding up */
         const uint32_t hz = clock / prescaler;
-        const unsigned period = hz / pwmRateHz;
+        const unsigned period = useUnsyncedPwm ? hz / pwmRateHz : 0xffff;
 
         /* 
             if brushed then it is the entire length of the period. 
