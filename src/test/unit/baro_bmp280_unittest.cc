@@ -148,4 +148,28 @@ bool i2cRead(uint8_t, uint8_t, uint8_t, uint8_t) {
     return true;
 }
 
+bool spiWriteRegister(uint8_t, uint8_t, uint8_t) {
+    return true;
+}
+
+bool spiReadRegisterBuffer(uint8_t, uint8_t, uint8_t, uint8_t) {
+    return true;
+}
+
+void spiSetDivisor() {
+}
+
+void IOConfigGPIO() {
+}
+
+void IOHi() {
+}
+
+void IOInit() {
+}
+
+void IORelease() {
+}
+
+
 }
