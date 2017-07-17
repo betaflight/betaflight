@@ -28,6 +28,7 @@
 #include "barometer_ms5611.h"
 
 #include "drivers/bus_i2c.h"
+#include "drivers/bus_i2c_busdev.h"
 #include "drivers/bus_spi.h"
 #include "drivers/io.h"
 #include "drivers/time.h"
@@ -70,7 +71,7 @@ bool ms5611ReadCommand(busDevice_t *pBusdev, uint8_t cmd, uint8_t len, uint8_t *
 #endif
 #ifdef USE_BARO_MS5611
     case BUSTYPE_I2C:
-        return i2cRead(pBusdev->busdev_u.i2c.device, pBusdev->busdev_u.i2c.address, cmd, len, data);
+        return i2cReadRegisterBuffer(pBusdev, cmd, len, data);
 #endif
     }
     return false;
@@ -85,7 +86,7 @@ bool ms5611WriteCommand(busDevice_t *pBusdev, uint8_t cmd, uint8_t byte)
 #endif
 #ifdef USE_BARO_MS5611
     case BUSTYPE_I2C:
-        return i2cWrite(pBusdev->busdev_u.i2c.device, pBusdev->busdev_u.i2c.address, cmd, byte);
+        return i2cWriteRegister(pBusdev, cmd, byte);
 #endif
     }
     return false;
@@ -97,10 +98,7 @@ void ms5611BusInit(busDevice_t *pBusdev)
     if (pBusdev->bustype == BUSTYPE_SPI) {
         IOInit(pBusdev->busdev_u.spi.csnPin, OWNER_BARO_CS, 0);
         IOConfigGPIO(pBusdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
-
-#define DISABLE_MS5611      IOHi(pBusdev->busdev_u.spi.csnPin)
-        DISABLE_MS5611;
-
+        IOHi(pBusdev->busdev_u.spi.csnPin); // Disable
         spiSetDivisor(pBusdev->busdev_u.spi.csnPin, SPI_CLOCK_STANDARD);
     }
 #else

@@ -683,6 +683,7 @@ COMMON_SRC = \
             config/config_streamer.c \
             drivers/adc.c \
             drivers/buf_writer.c \
+            drivers/bus_i2c_busdev.c \
             drivers/bus_i2c_config.c \
             drivers/bus_i2c_soft.c \
             drivers/bus_spi.c \
@@ -847,6 +848,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             common/typeconversion.c \
             drivers/adc.c \
             drivers/buf_writer.c \
+            drivers/bus_i2c_busdev.c \
             drivers/bus_spi.c \
             drivers/exti.c \
             drivers/gyro_sync.c \

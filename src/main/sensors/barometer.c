@@ -20,7 +20,6 @@
 #include <math.h>
 
 #include "platform.h"
-#include "build/debug.h"
 
 #include "common/maths.h"
 
@@ -57,6 +56,8 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
     barometerConfig->baro_cf_vel = 985;
     barometerConfig->baro_cf_alt = 965;
     barometerConfig->baro_hardware = BARO_DEFAULT;
+
+    // For backward compatibility; ceate a valid default value for bus parameters
 
 #ifdef USE_BARO_BMP085
     barometerConfig->baro_bustype = BUSTYPE_I2C;
@@ -112,8 +113,6 @@ static int32_t baroGroundAltitude = 0;
 static int32_t baroGroundPressure = 8*101325;
 static uint32_t baroPressureSum = 0;
 
-#include "build/debug.h"
-
 bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 {
     // Detect what pressure sensors are available. baro->update() is set to sensor-specific update function
@@ -145,28 +144,27 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
         return false;
     }
 
-#ifdef USE_BARO_BMP085
-    const bmp085Config_t *bmp085Config = NULL;
-
-#if defined(BARO_XCLR_GPIO) && defined(BARO_EOC_GPIO)
-    static const bmp085Config_t defaultBMP085Config = {
-        .xclrIO = IO_TAG(BARO_XCLR_PIN),
-        .eocIO = IO_TAG(BARO_EOC_PIN),
-    };
-    bmp085Config = &defaultBMP085Config;
-#endif
-
-#endif
-
     switch (baroHardware) {
     case BARO_DEFAULT:
         ; // fallthough
 
     case BARO_BMP085:
 #ifdef USE_BARO_BMP085
-        if (bmp085Detect(bmp085Config, dev)) {
-            baroHardware = BARO_BMP085;
-            break;
+        {
+            const bmp085Config_t *bmp085Config = NULL;
+
+#if defined(BARO_XCLR_GPIO) && defined(BARO_EOC_GPIO)
+            static const bmp085Config_t defaultBMP085Config = {
+                .xclrIO = IO_TAG(BARO_XCLR_PIN),
+                .eocIO = IO_TAG(BARO_EOC_PIN),
+            };
+            bmp085Config = &defaultBMP085Config;
+#endif
+
+            if (bmp085Detect(bmp085Config, dev)) {
+                baroHardware = BARO_BMP085;
+                break;
+            }
         }
 #endif
         ; // fallthough

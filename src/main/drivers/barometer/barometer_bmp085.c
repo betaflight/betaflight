@@ -26,6 +26,7 @@
 
 #include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/bus_i2c_busdev.h"
 #include "drivers/exti.h"
 #include "drivers/gpio.h"
 #include "drivers/io.h"
@@ -157,12 +158,12 @@ void bmp085Disable(const bmp085Config_t *config)
 
 bool bmp085ReadRegister(busDevice_t *pBusdev, uint8_t cmd, uint8_t len, uint8_t *data)
 {
-    return i2cRead(pBusdev->busdev_u.i2c.device, pBusdev->busdev_u.i2c.address, cmd, len, data);
+    return i2cReadRegisterBuffer(pBusdev, cmd, len, data);
 }
 
 bool bmp085WriteRegister(busDevice_t *pBusdev, uint8_t cmd, uint8_t byte)
 {
-    return i2cWrite(pBusdev->busdev_u.i2c.device, pBusdev->busdev_u.i2c.address, cmd, byte);
+    return i2cWriteRegister(pBusdev, cmd, byte);
 }
 
 bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro)

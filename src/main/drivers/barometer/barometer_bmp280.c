@@ -27,6 +27,7 @@
 
 #include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/bus_i2c_busdev.h"
 #include "drivers/bus_spi.h"
 #include "drivers/io.h"
 #include "drivers/time.h"
@@ -34,8 +35,6 @@
 #include "barometer_bmp280.h"
 
 #if defined(BARO) && (defined(USE_BARO_BMP280) || defined(USE_BARO_SPI_BMP280))
-
-// BMP280, address 0x76
 
 typedef struct bmp280_calib_param_s {
     uint16_t dig_T1; /* calibration T1 data */
@@ -76,7 +75,7 @@ bool bmp280ReadRegister(busDevice_t *pBusdev, uint8_t reg, uint8_t length, uint8
 #endif
 #ifdef USE_BARO_BMP280
     case BUSTYPE_I2C:
-        return i2cRead(pBusdev->busdev_u.i2c.device, pBusdev->busdev_u.i2c.address, reg, length, data);
+        return i2cReadRegisterBuffer(pBusdev, reg, length, data);
 #endif
     }
     return false;
@@ -91,7 +90,7 @@ bool bmp280WriteRegister(busDevice_t *pBusdev, uint8_t reg, uint8_t data)
 #endif
 #ifdef USE_BARO_BMP280
     case BUSTYPE_I2C:
-        return i2cWrite(pBusdev->busdev_u.i2c.device, pBusdev->busdev_u.i2c.address, reg, data);
+        return i2cWriteRegister(pBusdev, reg, data);
 #endif
     }
     return false;
@@ -101,10 +100,9 @@ void bmp280BusInit(busDevice_t *pBusdev)
 {
 #ifdef USE_BARO_SPI_BMP280
     if (pBusdev->bustype == BUSTYPE_SPI) {
-#define DISABLE_BMP280(pBusdev) IOHi((pBusdev)->busdev_u.spi.csnPin)
         IOInit(pBusdev->busdev_u.spi.csnPin, OWNER_BARO_CS, 0);
         IOConfigGPIO(pBusdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
-        DISABLE_BMP280(pBusdev);
+        IOHi((pBusdev)->busdev_u.spi.csnPin); // Disable
         spiSetDivisor(pBusdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD); // XXX
     }
 #else
