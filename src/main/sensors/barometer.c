@@ -56,16 +56,15 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
     barometerConfig->baro_noise_lpf = 600;
     barometerConfig->baro_cf_vel = 985;
     barometerConfig->baro_cf_alt = 965;
+    barometerConfig->baro_hardware = BARO_DEFAULT;
 
 #ifdef USE_BARO_BMP085
-    barometerConfig->baro_hardware = BARO_BMP085;
     barometerConfig->baro_bustype = BUSTYPE_I2C;
     barometerConfig->baro_i2c_device = I2C_DEV_TO_CFG(BARO_I2C_INSTANCE);
     barometerConfig->baro_i2c_address = BMP085_I2C_ADDR;
     barometerConfig->baro_spi_device = SPI_DEV_TO_CFG(SPIINVALID);
     barometerConfig->baro_spi_cs = IO_TAG_NONE;
 #elif defined(USE_BARO_MS5611) || defined(USE_BARO_SPI_MS5611)
-    barometerConfig->baro_hardware = BARO_MS5611;
 #if defined(USE_BARO_SPI_MS5611)
     barometerConfig->baro_bustype = BUSTYPE_SPI;
     barometerConfig->baro_spi_device = SPI_DEV_TO_CFG(spiDeviceByInstance(MS5611_SPI_INSTANCE));
@@ -80,7 +79,6 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
     barometerConfig->baro_spi_cs = IO_TAG_NONE;
 #endif
 #elif defined(USE_BARO_BMP280) || defined(USE_BARO_SPI_BMP280)
-    barometerConfig->baro_hardware = BARO_BMP280;
 #if defined(USE_BARO_SPI_BMP280)
     barometerConfig->baro_bustype = BUSTYPE_SPI;
     barometerConfig->baro_spi_device = SPI_DEV_TO_CFG(spiDeviceByInstance(BMP280_SPI_INSTANCE));
