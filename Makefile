@@ -1342,6 +1342,7 @@ targets-group-rest: $(GROUP_OTHER_TARGETS)
 
 
 $(VALID_TARGETS):
+		$(V0) @echo "The following targets, listed in 'SKIP_TARGETS', will not be built:\r\n\t$(SKIP_TARGETS)"
 		$(V0) @echo "" && \
 		echo "Building $@" && \
 		time $(MAKE) binary hex TARGET=$@ && \
