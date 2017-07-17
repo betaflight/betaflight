@@ -97,7 +97,6 @@ VALID_TARGETS   = $(dir $(wildcard $(ROOT)/src/main/target/*/target.mk))
 VALID_TARGETS  := $(subst /,, $(subst ./src/main/target/,, $(VALID_TARGETS)))
 VALID_TARGETS  := $(VALID_TARGETS) $(ALT_TARGETS)
 VALID_TARGETS  := $(sort $(VALID_TARGETS))
-VALID_TARGETS  := $(filter-out $(SKIP_TARGETS), $(VALID_TARGETS))
 
 GROUP_1_TARGETS := \
 	AFROMINI \
@@ -1342,11 +1341,13 @@ targets-group-rest: $(GROUP_OTHER_TARGETS)
 
 
 $(VALID_TARGETS):
-		$(V0) @echo "The following targets, listed in 'SKIP_TARGETS', will not be built:\r\n\t$(SKIP_TARGETS)"
-		$(V0) @echo "" && \
-		echo "Building $@" && \
-		time $(MAKE) binary hex TARGET=$@ && \
-		echo "Building $@ succeeded."
+	$(V0) $(if $(findstring $@,$(SKIP_TARGETS)), \
+	@echo "" && \
+	echo "Not building $@ since it is listed in SKIP_TARGETS.", \
+	@echo "" && \
+	echo "Building $@" && \
+	time $(MAKE) binary hex TARGET=$@ && \
+	echo "Building $@ succeeded.")
 
 CLEAN_TARGETS = $(addprefix clean_,$(VALID_TARGETS) )
 TARGETS_CLEAN = $(addsuffix _clean,$(VALID_TARGETS) )
