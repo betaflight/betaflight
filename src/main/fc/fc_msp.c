@@ -704,9 +704,14 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         break;
     }
 
-    case MSP_VOLTAGE_METERS:
+    case MSP_VOLTAGE_METERS: {
         // write out id and voltage meter values, once for each meter we support
-        for (int i = 0; i < supportedVoltageMeterCount - (VOLTAGE_METER_ID_ESC_COUNT - getMotorCount()); i++) {
+        uint8_t count = supportedVoltageMeterCount;
+#ifndef USE_OSD_SLAVE
+        count = supportedVoltageMeterCount - (VOLTAGE_METER_ID_ESC_COUNT - getMotorCount());
+#endif
+
+        for (int i = 0; i < count; i++) {
 
             voltageMeter_t meter;
             uint8_t id = (uint8_t)voltageMeterIds[i];
@@ -716,10 +721,15 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
             sbufWriteU8(dst, (uint8_t)constrain(meter.filtered, 0, 255));
         }
         break;
+    }
 
-    case MSP_CURRENT_METERS:
+    case MSP_CURRENT_METERS: {
         // write out id and current meter values, once for each meter we support
-        for (int i = 0; i < supportedCurrentMeterCount - (VOLTAGE_METER_ID_ESC_COUNT - getMotorCount()); i++) {
+        uint8_t count = supportedVoltageMeterCount;
+#ifndef USE_OSD_SLAVE
+        count = supportedVoltageMeterCount - (VOLTAGE_METER_ID_ESC_COUNT - getMotorCount());
+#endif
+        for (int i = 0; i < count; i++) {
 
             currentMeter_t meter;
             uint8_t id = (uint8_t)currentMeterIds[i];
@@ -730,6 +740,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
             sbufWriteU16(dst, (uint16_t)constrain(meter.amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps (mA). Negative range is truncated to zero
         }
         break;
+    }
 
     case MSP_VOLTAGE_METER_CONFIG:
         // by using a sensor type and a sub-frame length it's possible to configure any type of voltage meter,
@@ -2131,77 +2142,50 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
 
     case MSP_SET_VOLTAGE_METER_CONFIG: {
-        int8_t config_count = sbufReadU8(src);
+        int8_t id = sbufReadU8(src);
 
-        while (config_count > 0) {
-
-            int8_t subframe_length = sbufReadU8(src);
-            if (subframe_length > 4) {
-                for (int8_t j = 0; j < subframe_length; j++) {
-                    sbufReadU8(src);
-                }
-            } else {
-                int8_t id = sbufReadU8(src);
-
-                //
-                // find and configure an ADC voltage sensor
-                //
-                int8_t voltageSensorADCIndex;
-                for (voltageSensorADCIndex = 0; voltageSensorADCIndex < MAX_VOLTAGE_SENSOR_ADC; voltageSensorADCIndex++) {
-                    if (id == voltageMeterADCtoIDMap[voltageSensorADCIndex]) {
-                        break;
-                    }
-                }
-
-                if (voltageSensorADCIndex < MAX_VOLTAGE_SENSOR_ADC) {
-                    voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatscale = sbufReadU8(src);
-                    voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatresdivval = sbufReadU8(src);
-                    voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatresdivmultiplier = sbufReadU8(src);
-                } else {
-                    // if we had any other types of voltage sensor to configure, this is where we'd do it.
-                    sbufReadU8(src);
-                    sbufReadU8(src);
-                    sbufReadU8(src);
-                }
+        //
+        // find and configure an ADC voltage sensor
+        //
+        int8_t voltageSensorADCIndex;
+        for (voltageSensorADCIndex = 0; voltageSensorADCIndex < MAX_VOLTAGE_SENSOR_ADC; voltageSensorADCIndex++) {
+            if (id == voltageMeterADCtoIDMap[voltageSensorADCIndex]) {
+                break;
             }
-            config_count--;
+        }
+
+        if (voltageSensorADCIndex < MAX_VOLTAGE_SENSOR_ADC) {
+            voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatscale = sbufReadU8(src);
+            voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatresdivval = sbufReadU8(src);
+            voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatresdivmultiplier = sbufReadU8(src);
+        } else {
+            // if we had any other types of voltage sensor to configure, this is where we'd do it.
+            sbufReadU8(src);
+            sbufReadU8(src);
+            sbufReadU8(src);
         }
         break;
     }
 
     case MSP_SET_CURRENT_METER_CONFIG: {
-        int8_t config_count = sbufReadU8(src);
+        int id = sbufReadU8(src);
 
-        while (config_count > 0) {
-
-            int8_t subframe_length = sbufReadU8(src);
-            if (subframe_length > 5) {
-                for (int8_t j = 0; j < subframe_length; j++) {
-                    sbufReadU8(src);
-                }
-            } else {
-                int id = sbufReadU8(src);
-
-                switch (id) {
-                    case CURRENT_METER_ID_BATTERY_1:
-                        currentSensorADCConfigMutable()->scale = sbufReadU16(src);
-                        currentSensorADCConfigMutable()->offset = sbufReadU16(src);
-                        break;
+        switch (id) {
+            case CURRENT_METER_ID_BATTERY_1:
+                currentSensorADCConfigMutable()->scale = sbufReadU16(src);
+                currentSensorADCConfigMutable()->offset = sbufReadU16(src);
+                break;
 #ifdef USE_VIRTUAL_CURRENT_METER
-                    case CURRENT_METER_ID_VIRTUAL_1:
-                        currentSensorVirtualConfigMutable()->scale = sbufReadU16(src);
-                        currentSensorVirtualConfigMutable()->offset = sbufReadU16(src);
-                        break;
+            case CURRENT_METER_ID_VIRTUAL_1:
+                currentSensorVirtualConfigMutable()->scale = sbufReadU16(src);
+                currentSensorVirtualConfigMutable()->offset = sbufReadU16(src);
+                break;
 #endif
-                    default:
-                        sbufReadU16(src);
-                        sbufReadU16(src);
-                        break;
-                }
-            }
-            config_count--;
+            default:
+                sbufReadU16(src);
+                sbufReadU16(src);
+                break;
         }
-
         break;
     }
 
