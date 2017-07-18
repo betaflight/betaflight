@@ -3032,7 +3032,7 @@ const cliResourceValue_t resourceTable[] = {
     { OWNER_ESCSERIAL,     PG_ESCSERIAL_CONFIG, offsetof(escSerialConfig_t, ioTag), 0 },
 #endif
 #ifdef BARO
-    { OWNER_BARO_CS,       PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_spi_cs), 0 },
+    { OWNER_BARO_CS,       PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_spi_csn), 0 },
 #endif
 };
 
