@@ -111,6 +111,7 @@
 #undef VTX_CONTROL
 #undef VTX_SMARTAUDIO
 #undef VTX_TRAMP
+#undef USE_CAMERA_CONTROL
 
 #undef USE_I2C
 #undef USE_SPI

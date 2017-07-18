@@ -68,6 +68,7 @@
 #include "drivers/max7456.h"
 #include "drivers/vtx_rtc6705.h"
 #include "drivers/vtx_common.h"
+#include "drivers/camera_control.h"
 
 #include "fc/config.h"
 #include "fc/fc_init.h"
@@ -467,6 +468,10 @@ void init(void)
 
 #ifdef VTX_RTC6705
     rtc6705IOInit();
+#endif
+
+#ifdef CAMERA_CONTROL
+    cameraControlInit();
 #endif
 
 #if defined(SONAR_SOFTSERIAL2_EXCLUSIVE) && defined(SONAR) && defined(USE_SOFTSERIAL2)

@@ -110,7 +110,8 @@
 #define PG_DASHBOARD_CONFIG 519
 #define PG_SPI_PIN_CONFIG 520
 #define PG_ESCSERIAL_CONFIG 521
-#define PG_BETAFLIGHT_END 521
+#define PG_CAMERA_CONTROL_CONFIG 522
+#define PG_BETAFLIGHT_END 522
 
 
 // OSD configuration (subject to change)
