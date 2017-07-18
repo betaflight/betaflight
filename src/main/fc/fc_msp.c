@@ -1922,7 +1922,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         sbufReadU8(src);
 #endif
         if (sbufBytesRemaining(src) >= 1) {
-            mixerConfigMutable->yaw_motors_reversed = sbufReadU8(src);
+            mixerConfigMutable()->yaw_motors_reversed = sbufReadU8(src);
         }
         break;
 
