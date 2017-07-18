@@ -882,14 +882,14 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             io/displayport_max7456.c \
             io/osd.c \
             io/osd_slave.c \
-			$(DSPLIB)/Source/BasicMathFunctions/arm_mult_f32.c \
-			$(DSPLIB)/Source/TransformFunctions/arm_rfft_fast_f32.c \
-			$(DSPLIB)/Source/TransformFunctions/arm_cfft_f32.c \
-			$(DSPLIB)/Source/TransformFunctions/arm_rfft_fast_init_f32.c \
-			$(DSPLIB)/Source/TransformFunctions/arm_cfft_radix8_f32.c \
-			$(DSPLIB)/Source/CommonTables/arm_common_tables.c \
-			$(DSPLIB)/Source/ComplexMathFunctions/arm_cmplx_mag_f32.c \
-			$(DSPLIB)/Source/StatisticsFunctions/arm_max_f32.c
+            $(DSPLIB)/Source/BasicMathFunctions/arm_mult_f32.c \
+            $(DSPLIB)/Source/TransformFunctions/arm_rfft_fast_f32.c \
+            $(DSPLIB)/Source/TransformFunctions/arm_cfft_f32.c \
+            $(DSPLIB)/Source/TransformFunctions/arm_rfft_fast_init_f32.c \
+            $(DSPLIB)/Source/TransformFunctions/arm_cfft_radix8_f32.c \
+            $(DSPLIB)/Source/CommonTables/arm_common_tables.c \
+            $(DSPLIB)/Source/ComplexMathFunctions/arm_cmplx_mag_f32.c \
+            $(DSPLIB)/Source/StatisticsFunctions/arm_max_f32.c
 			
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/bus_i2c_config.c \
