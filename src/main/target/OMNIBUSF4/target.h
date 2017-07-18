@@ -96,7 +96,6 @@
 //#define MAG_NAZA_ALIGN CW180_DEG_FLIP  // Ditto
 
 #define BARO
-//#define USE_BARO_MS5611
 #if defined(OMNIBUSF4SD)
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
@@ -104,6 +103,7 @@
 #define BMP280_CS_PIN           PB3 // v1
 #endif
 #define USE_BARO_BMP280
+#define USE_BARO_MS5611
 #define BARO_I2C_INSTANCE         (I2CDEV_2)
 
 #define OSD

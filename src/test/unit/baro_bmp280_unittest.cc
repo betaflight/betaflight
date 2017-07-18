@@ -140,11 +140,11 @@ extern "C" {
 
 void delay(uint32_t) {}
 
-bool i2cWrite(uint8_t, uint8_t, uint8_t) {
+bool i2cWriteRegister(uint8_t, uint8_t, uint8_t) {
     return true;
 }
 
-bool i2cRead(uint8_t, uint8_t, uint8_t, uint8_t) {
+bool i2cReadRegisterBuffer(uint8_t, uint8_t, uint8_t, uint8_t) {
     return true;
 }
 
