@@ -92,9 +92,6 @@ static int32_t BMI160_Config(const busDevice_t *bus);
 static int32_t BMI160_do_foc(const busDevice_t *bus);
 static int32_t BMI160_WriteReg(const busDevice_t *bus, uint8_t reg, uint8_t data);
 
-#define ENABLE_BMI160(pBusdev)  IOLo(pBusdev->busdev_u.spi.csnPin)
-#define DISABLE_BMI160(pBusdev) IOHi(pBusdev->busdev_u.spi.csnPin)
-
 uint8_t bmi160Detect(const busDevice_t *bus)
 {
     if (BMI160Detected) {
@@ -272,12 +269,12 @@ static int32_t BMI160_do_foc(const busDevice_t *bus)
 
 static int32_t BMI160_WriteReg(const busDevice_t *bus, uint8_t reg, uint8_t data)
 {
-    ENABLE_BMI160(bus);
+    IOLo(pBusdev->busdev_u.spi.csnPin); // Enable
 
     spiTransferByte(BMI160_SPI_INSTANCE, 0x7f & reg);
     spiTransferByte(BMI160_SPI_INSTANCE, data);
 
-    DISABLE_BMI160(bus);
+    IOHi(pBusdev->busdev_u.spi.csnPin); // Disable
 
     return 0;
 }
