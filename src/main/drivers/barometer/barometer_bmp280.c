@@ -53,7 +53,6 @@ typedef struct bmp280_calib_param_s {
 } bmp280_calib_param_t;
 
 static uint8_t bmp280_chip_id = 0;
-static bool bmp280InitDone = false;
 STATIC_UNIT_TESTED bmp280_calib_param_t bmp280_cal;
 // uncompensated pressure and temperature
 int32_t bmp280_up = 0;
@@ -125,9 +124,6 @@ void bmp280BusDeinit(busDevice_t *pBusdev)
 
 bool bmp280Detect(baroDev_t *baro)
 {
-    if (bmp280InitDone)
-        return true;
-
     delay(20);
 
     busDevice_t *pBusdev = &baro->busdev;
@@ -156,8 +152,6 @@ bool bmp280Detect(baroDev_t *baro)
     baro->get_up = bmp280_get_up;
     baro->up_delay = ((T_INIT_MAX + T_MEASURE_PER_OSRS_MAX * (((1 << BMP280_TEMPERATURE_OSR) >> 1) + ((1 << BMP280_PRESSURE_OSR) >> 1)) + (BMP280_PRESSURE_OSR ? T_SETUP_PRESSURE_MAX : 0) + 15) / 16) * 1000;
     baro->calculate = bmp280_calculate;
-
-    bmp280InitDone = true;
 
     return true;
 }

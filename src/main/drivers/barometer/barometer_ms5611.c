@@ -60,7 +60,6 @@ STATIC_UNIT_TESTED uint32_t ms5611_ut;  // static result of temperature measurem
 STATIC_UNIT_TESTED uint32_t ms5611_up;  // static result of pressure measurement
 STATIC_UNIT_TESTED uint16_t ms5611_c[PROM_NB];  // on-chip ROM
 static uint8_t ms5611_osr = CMD_ADC_4096;
-static bool ms5611InitDone = false;
 
 bool ms5611ReadCommand(busDevice_t *pBusdev, uint8_t cmd, uint8_t len, uint8_t *data)
 {
@@ -124,10 +123,6 @@ bool ms5611Detect(baroDev_t *baro)
     uint8_t sig;
     int i;
 
-    if (ms5611InitDone) {
-        return true;
-    }
-
     delay(10); // No idea how long the chip takes to power-up, but let's make it 10ms
 
     busDevice_t *pBusdev = &baro->busdev;
@@ -159,8 +154,6 @@ bool ms5611Detect(baroDev_t *baro)
     baro->start_up = ms5611_start_up;
     baro->get_up = ms5611_get_up;
     baro->calculate = ms5611_calculate;
-
-    ms5611InitDone = true;
 
     return true;
 }
