@@ -3032,7 +3032,7 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef USE_ESCSERIAL
     { OWNER_ESCSERIAL,     PG_ESCSERIAL_CONFIG, offsetof(escSerialConfig_t, ioTag), 0 },
 #endif
-#ifdef CAMERA_CONTROL
+#ifdef USE_CAMERA_CONTROL
     { OWNER_CAMERA_CONTROL, PG_CAMERA_CONTROL_CONFIG, offsetof(cameraControlConfig_t, ioTag), 0 },
 #endif
 };
