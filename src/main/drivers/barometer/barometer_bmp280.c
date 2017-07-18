@@ -65,60 +65,60 @@ static void bmp280_get_up(baroDev_t *baro);
 
 STATIC_UNIT_TESTED void bmp280_calculate(int32_t *pressure, int32_t *temperature);
 
-bool bmp280ReadRegister(busDevice_t *pBusdev, uint8_t reg, uint8_t length, uint8_t *data)
+bool bmp280ReadRegister(busDevice_t *busdev, uint8_t reg, uint8_t length, uint8_t *data)
 {
-    switch (pBusdev->bustype) {
+    switch (busdev->bustype) {
 #ifdef USE_BARO_SPI_BMP280
     case BUSTYPE_SPI:
-        return spiReadRegisterBuffer(pBusdev, reg | 0x80, length, data);
+        return spiReadRegisterBuffer(busdev, reg | 0x80, length, data);
 #endif
 #ifdef USE_BARO_BMP280
     case BUSTYPE_I2C:
-        return i2cReadRegisterBuffer(pBusdev, reg, length, data);
+        return i2cReadRegisterBuffer(busdev, reg, length, data);
 #endif
     }
     return false;
 }
 
-bool bmp280WriteRegister(busDevice_t *pBusdev, uint8_t reg, uint8_t data)
+bool bmp280WriteRegister(busDevice_t *busdev, uint8_t reg, uint8_t data)
 {
-    switch (pBusdev->bustype) {
+    switch (busdev->bustype) {
 #ifdef USE_BARO_SPI_BMP280
     case BUSTYPE_SPI:
-        return spiWriteRegister(pBusdev, reg & 0x7f, data);
+        return spiWriteRegister(busdev, reg & 0x7f, data);
 #endif
 #ifdef USE_BARO_BMP280
     case BUSTYPE_I2C:
-        return i2cWriteRegister(pBusdev, reg, data);
+        return i2cWriteRegister(busdev, reg, data);
 #endif
     }
     return false;
 }
 
-void bmp280BusInit(busDevice_t *pBusdev)
+void bmp280BusInit(busDevice_t *busdev)
 {
 #ifdef USE_BARO_SPI_BMP280
-    if (pBusdev->bustype == BUSTYPE_SPI) {
-        IOInit(pBusdev->busdev_u.spi.csnPin, OWNER_BARO_CS, 0);
-        IOConfigGPIO(pBusdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
-        IOHi((pBusdev)->busdev_u.spi.csnPin); // Disable
-        spiSetDivisor(pBusdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD); // XXX
+    if (busdev->bustype == BUSTYPE_SPI) {
+        IOInit(busdev->busdev_u.spi.csnPin, OWNER_BARO_CS, 0);
+        IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
+        IOHi((busdev)->busdev_u.spi.csnPin); // Disable
+        spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD); // XXX
     }
 #else
-    UNUSED(pBusdev);
+    UNUSED(busdev);
 #endif
 }
 
-void bmp280BusDeinit(busDevice_t *pBusdev)
+void bmp280BusDeinit(busDevice_t *busdev)
 {
 #ifdef USE_BARO_SPI_BMP280
-    if (pBusdev->bustype == BUSTYPE_SPI) {
-        IOConfigGPIO(pBusdev->busdev_u.spi.csnPin, IOCFG_IPU);
-        IORelease(pBusdev->busdev_u.spi.csnPin);
-        IOInit(pBusdev->busdev_u.spi.csnPin, OWNER_SPI_PREINIT, 0);
+    if (busdev->bustype == BUSTYPE_SPI) {
+        IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_IPU);
+        IORelease(busdev->busdev_u.spi.csnPin);
+        IOInit(busdev->busdev_u.spi.csnPin, OWNER_SPI_PREINIT, 0);
     }
 #else
-    UNUSED(pBusdev);
+    UNUSED(busdev);
 #endif
 }
 
@@ -126,22 +126,22 @@ bool bmp280Detect(baroDev_t *baro)
 {
     delay(20);
 
-    busDevice_t *pBusdev = &baro->busdev;
+    busDevice_t *busdev = &baro->busdev;
 
-    bmp280BusInit(pBusdev);
+    bmp280BusInit(busdev);
 
-    bmp280ReadRegister(pBusdev, BMP280_CHIP_ID_REG, 1, &bmp280_chip_id);  /* read Chip Id */
+    bmp280ReadRegister(busdev, BMP280_CHIP_ID_REG, 1, &bmp280_chip_id);  /* read Chip Id */
 
     if (bmp280_chip_id != BMP280_DEFAULT_CHIP_ID) {
-        bmp280BusDeinit(pBusdev);
+        bmp280BusDeinit(busdev);
         return false;
     }
 
     // read calibration
-    bmp280ReadRegister(pBusdev, BMP280_TEMPERATURE_CALIB_DIG_T1_LSB_REG, 24, (uint8_t *)&bmp280_cal);
+    bmp280ReadRegister(busdev, BMP280_TEMPERATURE_CALIB_DIG_T1_LSB_REG, 24, (uint8_t *)&bmp280_cal);
 
     // set oversampling + power mode (forced), and start sampling
-    bmp280WriteRegister(pBusdev, BMP280_CTRL_MEAS_REG, BMP280_MODE);
+    bmp280WriteRegister(busdev, BMP280_CTRL_MEAS_REG, BMP280_MODE);
 
     // these are dummy as temperature is measured as part of pressure
     baro->ut_delay = 0;

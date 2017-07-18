@@ -269,12 +269,12 @@ static int32_t BMI160_do_foc(const busDevice_t *bus)
 
 static int32_t BMI160_WriteReg(const busDevice_t *bus, uint8_t reg, uint8_t data)
 {
-    IOLo(pBusdev->busdev_u.spi.csnPin); // Enable
+    IOLo(busdev->busdev_u.spi.csnPin); // Enable
 
     spiTransferByte(BMI160_SPI_INSTANCE, 0x7f & reg);
     spiTransferByte(BMI160_SPI_INSTANCE, data);
 
-    IOHi(pBusdev->busdev_u.spi.csnPin); // Disable
+    IOHi(busdev->busdev_u.spi.csnPin); // Disable
 
     return 0;
 }

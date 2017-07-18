@@ -121,7 +121,7 @@ static bool bmp085InitDone = false;
 STATIC_UNIT_TESTED uint16_t bmp085_ut;  // static result of temperature measurement
 STATIC_UNIT_TESTED uint32_t bmp085_up;  // static result of pressure measurement
 
-static void bmp085_get_cal_param(busDevice_t *pBusdev);
+static void bmp085_get_cal_param(busDevice_t *busdev);
 static void bmp085_start_ut(baroDev_t *baro);
 static void bmp085_get_ut(baroDev_t *baro);
 static void bmp085_start_up(baroDev_t *baro);
@@ -156,14 +156,14 @@ void bmp085Disable(const bmp085Config_t *config)
     BMP085_OFF;
 }
 
-bool bmp085ReadRegister(busDevice_t *pBusdev, uint8_t cmd, uint8_t len, uint8_t *data)
+bool bmp085ReadRegister(busDevice_t *busdev, uint8_t cmd, uint8_t len, uint8_t *data)
 {
-    return i2cReadRegisterBuffer(pBusdev, cmd, len, data);
+    return i2cReadRegisterBuffer(busdev, cmd, len, data);
 }
 
-bool bmp085WriteRegister(busDevice_t *pBusdev, uint8_t cmd, uint8_t byte)
+bool bmp085WriteRegister(busDevice_t *busdev, uint8_t cmd, uint8_t byte)
 {
-    return i2cWriteRegister(pBusdev, cmd, byte);
+    return i2cWriteRegister(busdev, cmd, byte);
 }
 
 bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro)
@@ -196,18 +196,18 @@ bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro)
 
     delay(20); // datasheet says 10ms, we'll be careful and do 20.
 
-    busDevice_t *pBusdev = &baro->busdev;
+    busDevice_t *busdev = &baro->busdev;
 
-    ack = bmp085ReadRegister(pBusdev, BMP085_CHIP_ID__REG, 1, &data); /* read Chip Id */
+    ack = bmp085ReadRegister(busdev, BMP085_CHIP_ID__REG, 1, &data); /* read Chip Id */
     if (ack) {
         bmp085.chip_id = BMP085_GET_BITSLICE(data, BMP085_CHIP_ID);
         bmp085.oversampling_setting = 3;
 
         if (bmp085.chip_id == BMP085_CHIP_ID) { /* get bitslice */
-            bmp085ReadRegister(pBusdev, BMP085_VERSION_REG, 1, &data); /* read Version reg */
+            bmp085ReadRegister(busdev, BMP085_VERSION_REG, 1, &data); /* read Version reg */
             bmp085.ml_version = BMP085_GET_BITSLICE(data, BMP085_ML_VERSION); /* get ML Version */
             bmp085.al_version = BMP085_GET_BITSLICE(data, BMP085_AL_VERSION); /* get AL Version */
-            bmp085_get_cal_param(pBusdev); /* readout bmp085 calibparam structure */
+            bmp085_get_cal_param(busdev); /* readout bmp085 calibparam structure */
             baro->ut_delay = UT_DELAY;
             baro->up_delay = UP_DELAY;
             baro->start_ut = bmp085_start_ut;
@@ -354,10 +354,10 @@ STATIC_UNIT_TESTED void bmp085_calculate(int32_t *pressure, int32_t *temperature
         *temperature = temp;
 }
 
-static void bmp085_get_cal_param(busDevice_t *pBusdev)
+static void bmp085_get_cal_param(busDevice_t *busdev)
 {
     uint8_t data[22];
-    bmp085ReadRegister(pBusdev, BMP085_PROM_START__ADDR, BMP085_PROM_DATA__LEN, data);
+    bmp085ReadRegister(busdev, BMP085_PROM_START__ADDR, BMP085_PROM_DATA__LEN, data);
 
     /*parameters AC1-AC6*/
     bmp085.cal_param.ac1 = (data[0] << 8) | data[1];
