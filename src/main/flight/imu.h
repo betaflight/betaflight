@@ -40,6 +40,7 @@ typedef union {
 } attitudeEulerAngles_t;
 
 extern attitudeEulerAngles_t attitude;
+extern float rMat[3][3];
 
 typedef struct accDeadband_s {
     uint8_t xy;                 // set the acc deadband for xy-Axis
