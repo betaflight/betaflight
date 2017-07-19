@@ -52,8 +52,9 @@
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
 
-static float HeadfreerMat[3][3];
-static float HeadfreeAdjustrMat[2][2];
+float HeadfreerMat[3][3];
+float HeadfreeAdjustrMat[2][2];
+
 static void HeadfreeBodyToEarth(t_fp_vector_def * v) {
     const float x = HeadfreerMat[0][0] * v->X + HeadfreerMat[0][1] * v->Y + HeadfreerMat[0][2] * v->Z;
     const float y = HeadfreerMat[1][0] * v->X + HeadfreerMat[1][1] * v->Y + HeadfreerMat[1][2] * v->Z;
