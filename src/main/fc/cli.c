@@ -905,8 +905,8 @@ static void cliSerialPassthrough(char *cmdline)
     } else {
         passThroughPort = passThroughPortUsage->serialPort;
 
-        // If the user supplied options, it can't be changed.
-        if (options != SERIAL_NOT_INVERTED) {
+        // Options on open ports can't be changed.
+        if (options) {
             cliPrint("can't change options on open port\r\n");
             return;
         }
