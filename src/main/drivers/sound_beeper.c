@@ -69,8 +69,8 @@ void beeperInit(const beeperDevConfig_t *config)
         }
         systemBeep(false);
     } else {
-        beeperIO = IOGetByTag(config->ioTag);
-        beeperPwmInit(beeperIO, beeperFrequency);
+        const ioTag_t beeperTag = config->ioTag;
+        beeperPwmInit(beeperTag, beeperFrequency);
     }
 #else
     UNUSED(config);

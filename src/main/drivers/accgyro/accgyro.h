@@ -51,7 +51,6 @@ typedef struct gyroDev_s {
     sensorGyroInitFuncPtr initFn;                             // initialize function
     sensorGyroReadFuncPtr readFn;                             // read 3 axis data function
     sensorGyroReadDataFuncPtr temperatureFn;                  // read temperature if available
-    sensorGyroInterruptStatusFuncPtr intStatusFn;
     sensorGyroUpdateFuncPtr updateFn;
     extiCallbackRec_t exti;
     busDevice_t bus;

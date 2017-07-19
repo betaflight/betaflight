@@ -41,6 +41,7 @@
 #include "cms/cms_menu_builtin.h"
 #include "cms/cms_types.h"
 
+#include "common/maths.h"
 #include "common/typeconversion.h"
 
 #include "drivers/system.h"
@@ -260,7 +261,8 @@ static void cmsPadToSize(char *buf, int size)
 
 static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
 {
-    char buff[10];
+    #define CMS_DRAW_BUFFER_LEN 10
+    char buff[CMS_DRAW_BUFFER_LEN];
     int cnt = 0;
 
     switch (p->type) {
@@ -306,8 +308,10 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
     case OME_TAB:
         if (IS_PRINTVALUE(p)) {
             OSD_TAB_t *ptr = p->data;
-            //cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay) - 5, row, (char *)ptr->names[*ptr->val]);
-            cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, (char *)ptr->names[*ptr->val]);
+            char * str = (char *)ptr->names[*ptr->val];
+            memcpy(buff, str, MAX(CMS_DRAW_BUFFER_LEN, strlen(str)));
+            cmsPadToSize(buff, CMS_DRAW_BUFFER_LEN);
+            cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, buff);
             CLR_PRINTVALUE(p);
         }
         break;

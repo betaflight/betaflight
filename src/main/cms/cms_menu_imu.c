@@ -88,6 +88,7 @@ static long cmsx_profileIndexOnChange(displayPort_t *displayPort, const void *pt
     UNUSED(ptr);
 
     pidProfileIndex = tmpPidProfileIndex - 1;
+    changePidProfile(pidProfileIndex);
 
     return 0;
 }
@@ -98,6 +99,7 @@ static long cmsx_rateProfileIndexOnChange(displayPort_t *displayPort, const void
     UNUSED(ptr);
 
     rateProfileIndex = tmpRateProfileIndex - 1;
+    changeControlRateProfile(rateProfileIndex);
 
     return 0;
 }

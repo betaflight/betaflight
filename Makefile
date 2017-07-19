@@ -88,6 +88,7 @@ HSE_VALUE       ?= 8000000
 FEATURES        =
 
 OFFICIAL_TARGETS  = ALIENFLIGHTF3 ALIENFLIGHTF4 ANYFCF7 BETAFLIGHTF3 BLUEJAYF4 CC3D FURYF4 NAZE REVO SIRINFPV SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3NEO SPRACINGF4EVO STM32F3DISCOVERY
+SKIP_TARGETS     := ALIENWHOOP
 ALT_TARGETS       = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.mk)))))
 OPBL_TARGETS      = $(filter %_OPBL, $(ALT_TARGETS))
 OSD_SLAVE_TARGETS = SPRACINGF3OSD
@@ -108,13 +109,15 @@ GROUP_1_TARGETS := \
 	ALIENFLIGHTF3 \
 	ALIENFLIGHTF4 \
 	ALIENFLIGHTNGF7 \
+	ALIENWHOOPF4 \
+	ALIENWHOOPF7 \
 	ANYFCF7 \
 	BEEBRAIN \
 	BEEROTORF4 \
 	BETAFLIGHTF3 \
 	BLUEJAYF4 \
 	CC3D \
-	CC3D_OPBL \
+	CC3D_OPBL
 
 GROUP_2_TARGETS := \
 	CHEBUZZF3 \
@@ -141,7 +144,7 @@ GROUP_2_TARGETS := \
 	FURYF7 \
 	IMPULSERCF3 \
 	IRCFUSIONF3 \
-	ISHAPEDF3 \
+	ISHAPEDF3
 
 GROUP_3_TARGETS := \
 	KAKUTEF4 \
@@ -160,6 +163,7 @@ GROUP_3_TARGETS := \
 	OMNIBUSF4SD \
 	PLUMF4 \
 	PODIUMF4 \
+	DYSF4PRO
 
 GROUP_4_TARGETS := \
 	RCEXPLORERF3 \
@@ -181,7 +185,7 @@ GROUP_4_TARGETS := \
 	SPRACINGF4EVO \
 	SPRACINGF4NEO \
 	STM32F3DISCOVERY \
-	TINYBEEF3 \
+	TINYBEEF3
 
 GROUP_OTHER_TARGETS := $(filter-out $(GROUP_1_TARGETS) $(GROUP_2_TARGETS) $(GROUP_3_TARGETS) $(GROUP_4_TARGETS), $(VALID_TARGETS))
 
@@ -787,6 +791,7 @@ FC_SRC = \
             cms/cms_menu_osd.c \
             common/colorconversion.c \
             common/gps_conversion.c \
+            drivers/camera_control.c \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
             drivers/serial_escserial.c \
@@ -887,6 +892,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/bus_i2c_config.c \
             drivers/bus_spi_config.c \
             drivers/bus_spi_pinconfig.c \
+            drivers/camera_control.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_init.c \
@@ -1337,10 +1343,13 @@ targets-group-rest: $(GROUP_OTHER_TARGETS)
 
 
 $(VALID_TARGETS):
-		$(V0) @echo "" && \
-		echo "Building $@" && \
-		time $(MAKE) binary hex TARGET=$@ && \
-		echo "Building $@ succeeded."
+	$(V0) $(if $(findstring $@,$(SKIP_TARGETS)), \
+	@echo "" && \
+	echo "Not building $@ since it is listed in SKIP_TARGETS.", \
+	@echo "" && \
+	echo "Building $@" && \
+	time $(MAKE) binary hex TARGET=$@ && \
+	echo "Building $@ succeeded.")
 
 CLEAN_TARGETS = $(addprefix clean_,$(VALID_TARGETS) )
 TARGETS_CLEAN = $(addsuffix _clean,$(VALID_TARGETS) )

@@ -37,6 +37,7 @@
 #include "config/parameter_group_ids.h"
 
 #include "drivers/light_led.h"
+#include "drivers/camera_control.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -195,36 +196,19 @@ static const char * const lookupTableGyroLpf[] = {
     "EXPERIMENTAL"
 };
 
-static const char * const lookupTableDebug[DEBUG_COUNT] = {
-    "NONE",
-    "CYCLETIME",
-    "BATTERY",
-    "GYRO",
-    "ACCELEROMETER",
-    "MIXER",
-    "AIRMODE",
-    "PIDLOOP",
-    "NOTCH",
-    "RC_INTERPOLATION",
-    "VELOCITY",
-    "DFILTER",
-    "ANGLERATE",
-    "ESC_SENSOR",
-    "SCHEDULER",
-    "STACK",
-    "ESC_SENSOR_RPM",
-    "ESC_SENSOR_TMP",
-    "ALTITUDE",
-    "FFT",
-    "FFT_TIME",
-    "FFT_FREQ"
-};
-
 #ifdef OSD
 static const char * const lookupTableOsdType[] = {
     "AUTO",
     "PAL",
     "NTSC"
+};
+#endif
+
+#ifdef USE_CAMERA_CONTROL
+static const char * const lookupTableCameraControlMode[] = {
+    "HARDWARE_PWM",
+    "SOFTWARE_PWM",
+    "DAC"
 };
 #endif
 
@@ -286,7 +270,7 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef MAG
     { lookupTableMagHardware, sizeof(lookupTableMagHardware) / sizeof(char *) },
 #endif
-    { lookupTableDebug, sizeof(lookupTableDebug) / sizeof(char *) },
+    { debugModeNames, sizeof(debugModeNames) / sizeof(char *) },
     { lookupTableSuperExpoYaw, sizeof(lookupTableSuperExpoYaw) / sizeof(char *) },
     { lookupTablePwmProtocol, sizeof(lookupTablePwmProtocol) / sizeof(char *) },
     { lookupTableRcInterpolation, sizeof(lookupTableRcInterpolation) / sizeof(char *) },
@@ -296,6 +280,9 @@ const lookupTableEntry_t lookupTables[] = {
     { lookupTableCrashRecovery, sizeof(lookupTableCrashRecovery) / sizeof(char *) },
 #ifdef OSD
     { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
+#endif
+#ifdef USE_CAMERA_CONTROL
+    { lookupTableCameraControlMode, sizeof(lookupTableCameraControlMode) / sizeof(char *) },
 #endif
 };
 
@@ -545,7 +532,7 @@ const clivalue_t valueTable[] = {
     { "vbat_pid_gain",              VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, vbatPidCompensation) },
     { "pid_at_min_throttle",        VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PID_PROFILE, offsetof(pidProfile_t, pidAtMinThrottle) },
     { "anti_gravity_threshold",     VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 20, 1000 }, PG_PID_PROFILE, offsetof(pidProfile_t, itermThrottleThreshold) },
-    { "anti_gravity_gain",          VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 1, 30000 }, PG_PID_PROFILE, offsetof(pidProfile_t, itermAcceleratorGain) },
+    { "anti_gravity_gain",          VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 1000, 30000 }, PG_PID_PROFILE, offsetof(pidProfile_t, itermAcceleratorGain) },
     { "setpoint_relax_ratio",       VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 100 }, PG_PID_PROFILE, offsetof(pidProfile_t, setpointRelaxRatio) },
     { "dterm_setpoint_weight",      VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 254 }, PG_PID_PROFILE, offsetof(pidProfile_t, dtermSetpointWeight) },
     { "acc_limit_yaw",              VAR_UINT16 | PROFILE_VALUE, .config.minmax = { 1, 500 }, PG_PID_PROFILE, offsetof(pidProfile_t, yawRateAccelLimit) },
@@ -735,6 +722,13 @@ const clivalue_t valueTable[] = {
 #ifdef USE_DASHBOARD
     { "dashboard_i2c_bus",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, I2CDEV_COUNT }, PG_DASHBOARD_CONFIG, offsetof(dashboardConfig_t, device) },
     { "dashboard_i2c_addr",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { I2C_ADDR8_MIN, I2C_ADDR8_MAX }, PG_DASHBOARD_CONFIG, offsetof(dashboardConfig_t, address) },
+#endif
+
+// PG_CAMERA_CONTROL_CONFIG
+#ifdef USE_CAMERA_CONTROL
+    { "camera_control_mode", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_CAMERA_CONTROL_MODE }, PG_CAMERA_CONTROL_CONFIG, offsetof(cameraControlConfig_t, mode) },
+    { "camera_control_ref_voltage", VAR_UINT16 | MASTER_VALUE, .config.minmax = { 200, 400 }, PG_CAMERA_CONTROL_CONFIG, offsetof(cameraControlConfig_t, refVoltage) },
+    { "camera_control_key_delay", VAR_UINT16 | MASTER_VALUE, .config.minmax = { 100, 500 }, PG_CAMERA_CONTROL_CONFIG, offsetof(cameraControlConfig_t, keyDelayMs) },
 #endif
 };
 

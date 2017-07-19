@@ -93,10 +93,10 @@ static int32_t BMI160_do_foc(const busDevice_t *bus);
 static int32_t BMI160_WriteReg(const busDevice_t *bus, uint8_t reg, uint8_t data);
 
 
-bool bmi160Detect(const busDevice_t *bus)
+uint8_t bmi160Detect(const busDevice_t *bus)
 {
     if (BMI160Detected) {
-        return true;
+        return BMI_160_SPI;
     }
 
     IOInit(bus->spi.csnPin, OWNER_MPU_CS, 0);
@@ -111,11 +111,11 @@ bool bmi160Detect(const busDevice_t *bus)
 
     /* Check the chip ID */
     if (spiReadRegister(bus, BMI160_REG_CHIPID) != 0xd1) {
-        return false;
+        return MPU_NONE;
     }
 
     BMI160Detected = true;
-    return true;
+    return BMI_160_SPI;
 }
 
 
@@ -365,18 +365,6 @@ bool bmi160GyroRead(gyroDev_t *gyro)
 }
 
 
-bool checkBMI160DataReady(gyroDev_t* gyro)
-{
-    bool ret;
-    if (gyro->dataReady) {
-        ret = true;
-        gyro->dataReady= false;
-    } else {
-        ret = false;
-    }
-    return ret;
-}
-
 void bmi160SpiGyroInit(gyroDev_t *gyro)
 {
     BMI160_Init(gyro->bus.spi.csnPin);
@@ -393,7 +381,7 @@ void bmi160SpiAccInit(accDev_t *acc)
 
 bool bmi160SpiAccDetect(accDev_t *acc)
 {
-    if (!bmi160Detect(acc->bus.spi.csnPin)) {
+    if (bmi160Detect(acc->bus.spi.csnPin) == MPU_NONE) {
         return false;
     }
 
@@ -406,13 +394,12 @@ bool bmi160SpiAccDetect(accDev_t *acc)
 
 bool bmi160SpiGyroDetect(gyroDev_t *gyro)
 {
-    if (!bmi160Detect(gyro->bus.spi.csnPin)) {
+    if (bmi160Detect(gyro->bus.spi.csnPin) == MPU_NONE) {
         return false;
     }
 
     gyro->initFn = bmi160SpiGyroInit;
     gyro->readFn = bmi160GyroRead;
-    gyro->intStatusFn = checkBMI160DataReady;
     gyro->scale = 1.0f / 16.4f;
 
     return true;

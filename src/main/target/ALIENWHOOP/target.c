@@ -15,24 +15,39 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+/*
+
+
+
+      
+         \   |   _ _| __|  \ |\ \      /|  |  _ \  _ \ _ \
+        _ \  |     |  _|  .  | \ \ \  / __ | (   |(   |__/
+      _/  _\____|___|___|_|\_|  \_/\_/ _| _|\___/\___/_|
+      
+      
+              Take me to your leader-board...
+      
+
+
+*/
+
 #include <stdint.h>
 
 #include <platform.h>
 #include "drivers/io.h"
 
-#include "drivers/dma.h"
 #include "drivers/timer.h"
 #include "drivers/timer_def.h"
+#include "drivers/dma.h"
 
+/* Currently only supporting brushed quad configuration e.g. Tiny Whoop. Care must be
+ * taken to ensure functionality on both F4 and F7 (STM32F405RGT and STM32F722RET)
+ */
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-
-    DEF_TIM(TIM8, CH4,  PC9, TIM_USE_PPM,   TIMER_INPUT_ENABLED,   0 ), // PPM IN
-    DEF_TIM(TIM2, CH4,  PA3, TIM_USE_MOTOR, TIMER_OUTPUT_ENABLED,  1 ), // S1_OUT - DMA1_ST6_CH3
-    DEF_TIM(TIM3, CH3,  PB0, TIM_USE_MOTOR, TIMER_OUTPUT_ENABLED,  0 ), // S2_OUT - DMA1_ST7_CH5
-    DEF_TIM(TIM1, CH3N, PB1, TIM_USE_MOTOR, TIMER_OUTPUT_INVERTED, 0 ), // S3_OUT - DMA2_ST6_CH0
-    DEF_TIM(TIM2, CH3,  PA2, TIM_USE_MOTOR, TIMER_OUTPUT_ENABLED,  0 ), // S4_OUT - DMA1_ST1_CH3
-
-    DEF_TIM(TIM5, CH1,  PA0, TIM_USE_LED,   TIMER_OUTPUT_ENABLED,  0 ), // LED_STRIP - DMA1_ST2_CH6
-
+    DEF_TIM(TIM8, CH4, PC9, TIM_USE_MOTOR, TIMER_OUTPUT_STANDARD, 0),
+    DEF_TIM(TIM3, CH3, PC8, TIM_USE_MOTOR, TIMER_OUTPUT_STANDARD, 0),
+    DEF_TIM(TIM3, CH2, PC7, TIM_USE_MOTOR, TIMER_OUTPUT_STANDARD, 0),
+    DEF_TIM(TIM8, CH1, PC6, TIM_USE_MOTOR, TIMER_OUTPUT_STANDARD, 0),
 };
 

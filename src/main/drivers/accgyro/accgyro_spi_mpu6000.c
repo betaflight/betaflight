@@ -125,7 +125,7 @@ void mpu6000SpiAccInit(accDev_t *acc)
     acc->acc_1G = 512 * 8;
 }
 
-bool mpu6000SpiDetect(const busDevice_t *bus)
+uint8_t mpu6000SpiDetect(const busDevice_t *bus)
 {
     IOInit(bus->spi.csnPin, OWNER_MPU_CS, 0);
     IOConfigGPIO(bus->spi.csnPin, SPI_IO_CS_CFG);
@@ -144,7 +144,7 @@ bool mpu6000SpiDetect(const busDevice_t *bus)
             break;
         }
         if (!attemptsRemaining) {
-            return false;
+            return MPU_NONE;
         }
     } while (attemptsRemaining--);
 
@@ -166,10 +166,10 @@ bool mpu6000SpiDetect(const busDevice_t *bus)
     case MPU6000_REV_D8:
     case MPU6000_REV_D9:
     case MPU6000_REV_D10:
-        return true;
+        return MPU_60x0_SPI;
     }
 
-    return false;
+    return MPU_NONE;
 }
 
 static void mpu6000AccAndGyroInit(gyroDev_t *gyro)
@@ -245,7 +245,6 @@ bool mpu6000SpiGyroDetect(gyroDev_t *gyro)
 
     gyro->initFn = mpu6000SpiGyroInit;
     gyro->readFn = mpuGyroReadSPI;
-    gyro->intStatusFn = mpuCheckDataReady;
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
 

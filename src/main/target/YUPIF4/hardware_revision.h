@@ -16,18 +16,15 @@
  */
 #pragma once
 
-#include "drivers/bus.h"
+typedef enum yupif4HardwareRevision_t {
+    UNKNOWN = 0,
+    YUPIF4_RACE1,       // Race V1
+    YUPIF4_RACE2,       // Race V2
+    YUPIF4_MINI,        // Mini
+    YUPIF4_NAV,         // Navigation
+} yupif4HardwareRevision_e;
 
-#define ICM20689_WHO_AM_I_CONST             (0x98)
-#define ICM20689_BIT_RESET                  (0x80)
+extern uint8_t hardwareRevision;
 
-bool icm20689AccDetect(accDev_t *acc);
-bool icm20689GyroDetect(gyroDev_t *gyro);
-
-void icm20689AccInit(accDev_t *acc);
-void icm20689GyroInit(gyroDev_t *gyro);
-
-uint8_t icm20689SpiDetect(const busDevice_t *bus);
-
-bool icm20689SpiAccDetect(accDev_t *acc);
-bool icm20689SpiGyroDetect(gyroDev_t *gyro);
+void detectHardwareRevision(void);
+void updateHardwareRevision(void);

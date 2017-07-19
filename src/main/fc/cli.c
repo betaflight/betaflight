@@ -77,6 +77,7 @@ extern uint8_t __config_end;
 #include "drivers/timer.h"
 #include "drivers/vcd.h"
 #include "drivers/light_led.h"
+#include "drivers/camera_control.h"
 
 #include "fc/settings.h"
 #include "fc/cli.h"
@@ -147,6 +148,7 @@ static uint32_t bufferIndex = 0;
 static bool configIsInCopy = false;
 
 static const char* const emptyName = "-";
+static const char* const emptryString = "";
 
 #ifndef USE_QUAD_MIXER_ONLY
 // sync this with mixerMode_e
@@ -298,13 +300,34 @@ static void cliPrintLinef(const char *format, ...)
     va_end(va);
 }
 
+
 static void printValuePointer(const clivalue_t *var, const void *valuePointer, bool full)
 {
     if ((var->type & VALUE_MODE_MASK) == MODE_ARRAY) {
         for (int i = 0; i < var->config.array.length; i++) {
-            uint8_t value = ((uint8_t *)valuePointer)[i];
+            switch (var->type & VALUE_TYPE_MASK) {
+            default:
+            case VAR_UINT8:
+                // uint8_t array
+                cliPrintf("%d", ((uint8_t *)valuePointer)[i]);
+                break;
 
-            cliPrintf("%d", value);
+            case VAR_INT8:
+                // int8_t array
+                cliPrintf("%d", ((int8_t *)valuePointer)[i]);
+                break;
+
+            case VAR_UINT16:
+                // uin16_t array
+                cliPrintf("%d", ((uint16_t *)valuePointer)[i]);
+                break;
+
+            case VAR_INT16:
+                // int16_t array
+                cliPrintf("%d", ((int16_t *)valuePointer)[i]);
+                break;
+            }
+
             if (i < var->config.array.length - 1) {
                 cliPrint(",");
             }
@@ -375,7 +398,7 @@ static uint16_t getValueOffset(const clivalue_t *value)
     return 0;
 }
 
-static void *getValuePointer(const clivalue_t *value)
+STATIC_UNIT_TESTED void *getValuePointer(const clivalue_t *value)
 {
     const pgRegistry_t* rec = pgFind(value->pgn);
     return CONST_CAST(void *, rec->address + getValueOffset(value));
@@ -888,7 +911,7 @@ static void cliSerialPassthrough(char *cmdline)
     serialPortUsage_t *passThroughPortUsage = findSerialPortUsageByIdentifier(id);
     if (!passThroughPortUsage || passThroughPortUsage->serialPort == NULL) {
         if (!baud) {
-            cliPrint("closed, specify baud.\r\n");
+            cliPrintLine("closed, specify baud.");
             return;
         }
         if (!mode)
@@ -898,7 +921,7 @@ static void cliSerialPassthrough(char *cmdline)
                                          baud, mode,
                                          options);
         if (!passThroughPort) {
-            cliPrint("could not be opened.\r\n");
+            cliPrintLine("could not be opened.");
             return;
         }
         cliPrintf("opened, baud = %d%s%s.\r\n", baud, (options & SERIAL_BIDIR) ? ",hd" : "", (options & SERIAL_INVERTED) ? ",inv" : "");
@@ -915,19 +938,22 @@ static void cliSerialPassthrough(char *cmdline)
 
         // If the user supplied a mode, override the port's mode, otherwise
         // leave the mode unchanged. serialPassthrough() handles one-way ports.
+
         if (mode && passThroughPort->mode != mode) {
             cliPrintf("mode changed from %d to %d.\r\n",
                    passThroughPort->mode, mode);
             serialSetMode(passThroughPort, mode);
         }
+      
         // If this port has a rx callback associated we need to remove it now.
         // Otherwise no data will be pushed in the serial port buffer!
+      
         if (passThroughPort->rxCallback) {
             passThroughPort->rxCallback = 0;
         }
     }
 
-    cliPrint("Forwarding, power cycle to exit.\r\n");
+    cliPrintLine("Forwarding, power cycle to exit.");
 
     serialPassthrough(cliPort, passThroughPort, NULL, NULL);
 }
@@ -1924,18 +1950,22 @@ static void printFeature(uint8_t dumpMask, const featureConfig_t *featureConfig,
 {
     const uint32_t mask = featureConfig->enabledFeatures;
     const uint32_t defaultMask = featureConfigDefault->enabledFeatures;
-    for (uint32_t i = 0; featureNames[i]; i++) { // disable all feature first
-        const char *format = "feature -%s";
-        cliDefaultPrintLinef(dumpMask, (defaultMask | ~mask) & (1 << i), format, featureNames[i]);
-        cliDumpPrintLinef(dumpMask, (~defaultMask | mask) & (1 << i), format, featureNames[i]);
-    }
-    for (uint32_t i = 0; featureNames[i]; i++) {  // reenable what we want.
-        const char *format = "feature %s";
-        if (defaultMask & (1 << i)) {
-            cliDefaultPrintLinef(dumpMask, (~defaultMask | mask) & (1 << i), format, featureNames[i]);
+    for (uint32_t i = 0; featureNames[i]; i++) { // disabled features first
+        if (strcmp(featureNames[i], emptryString) != 0) { //Skip unused
+            const char *format = "feature -%s";
+            cliDefaultPrintLinef(dumpMask, (defaultMask | ~mask) & (1 << i), format, featureNames[i]);
+            cliDumpPrintLinef(dumpMask, (~defaultMask | mask) & (1 << i), format, featureNames[i]);
         }
-        if (mask & (1 << i)) {
-            cliDumpPrintLinef(dumpMask, (defaultMask | ~mask) & (1 << i), format, featureNames[i]);
+    }
+    for (uint32_t i = 0; featureNames[i]; i++) {  // enabled features
+        if (strcmp(featureNames[i], emptryString) != 0) { //Skip unused
+            const char *format = "feature %s";
+            if (defaultMask & (1 << i)) {
+                cliDefaultPrintLinef(dumpMask, (~defaultMask | mask) & (1 << i), format, featureNames[i]);
+            }
+            if (mask & (1 << i)) {
+                cliDumpPrintLinef(dumpMask, (defaultMask | ~mask) & (1 << i), format, featureNames[i]);
+            }
         }
     }
 }
@@ -1959,7 +1989,7 @@ static void cliFeature(char *cmdline)
         for (uint32_t i = 0; ; i++) {
             if (featureNames[i] == NULL)
                 break;
-            if (strcmp(featureNames[i], "") != 0) //Skip unused
+            if (strcmp(featureNames[i], emptryString) != 0) //Skip unused
                 cliPrintf(" %s", featureNames[i]);
         }
         cliPrintLinefeed();
@@ -2309,13 +2339,33 @@ void printEscInfo(const uint8_t *escInfoBytes, uint8_t bytesRead)
                     cliPrintLinef("3D: %s", escInfoBytes[17] ? "on" : "off");
                 }
             } else {
-                cliPrint("Checksum error.");
+                cliPrintLine("Checksum error.");
             }
         }
     }
 
     if (!escInfoReceived) {
-        cliPrint("No info.");
+        cliPrintLine("No info.");
+    }
+}
+
+static void writeDshotCommand(uint8_t escIndex, uint8_t command)
+{
+    uint8_t escInfoBuffer[ESC_INFO_V2_EXPECTED_FRAME_SIZE];
+    if (command == DSHOT_CMD_ESC_INFO) {
+        cliPrintLinef("Info for ESC %d:", escIndex);
+
+        delay(10); // Wait for potential ESC telemetry transmission to finish
+
+        startEscDataRead(escInfoBuffer, ESC_INFO_V2_EXPECTED_FRAME_SIZE);
+    }
+
+    pwmWriteDshotCommand(escIndex, command);
+
+    if (command == DSHOT_CMD_ESC_INFO) {
+        delay(10);
+
+        printEscInfo(escInfoBuffer, getNumberEscBytesRead());
     }
 }
 
@@ -2347,34 +2397,19 @@ static void cliDshotProg(char *cmdline)
                 if (command >= 0 && command < DSHOT_MIN_THROTTLE) {
                     if (escIndex == ALL_MOTORS) {
                         for (unsigned i = 0; i < getMotorCount(); i++) {
-                            pwmWriteDshotCommand(i, command);
+                            writeDshotCommand(i, command);
                         }
-
-                        cliPrintf("Command %d written.\r\n", command);
                     } else {
-                        uint8_t escInfoBuffer[ESC_INFO_V2_EXPECTED_FRAME_SIZE];
-                        if (command == DSHOT_CMD_ESC_INFO) {
-                            delay(10); // Wait for potential ESC telemetry transmission to finish
+                        writeDshotCommand(escIndex, command);
+		    }
 
-                            startEscDataRead(escInfoBuffer, ESC_INFO_V2_EXPECTED_FRAME_SIZE);
-                        }
-
-                        pwmWriteDshotCommand(escIndex, command);
-
-                        if (command == DSHOT_CMD_ESC_INFO) {
-                            delay(10);
-
-                            printEscInfo(escInfoBuffer, getNumberEscBytesRead());
-                        } else {
-                            cliPrintf("Command %d written.\r\n", command);
-                        }
-                    }
+                    cliPrintLinef("Command %d written.", command);
 
                     if (command <= 5) {
                         delay(10); // wait for sound output to finish
                     }
                 } else {
-                    cliPrintf("Invalid command, range 1 to %d.\r\n", DSHOT_MIN_THROTTLE - 1);
+                    cliPrintLinef("Invalid command, range 1 to %d.", DSHOT_MIN_THROTTLE - 1);
                 }
 
                 break;
@@ -2640,7 +2675,7 @@ static void cliDefaults(char *cmdline)
     cliReboot();
 }
 
-static void cliGet(char *cmdline)
+STATIC_UNIT_TESTED void cliGet(char *cmdline)
 {
     const clivalue_t *val;
     int matchedCommands = 0;
@@ -2684,7 +2719,7 @@ static uint8_t getWordLength(char *bufBegin, char *bufEnd)
     return bufEnd - bufBegin;
 }
 
-static void cliSet(char *cmdline)
+STATIC_UNIT_TESTED void cliSet(char *cmdline)
 {
     const uint32_t len = strlen(cmdline);
     char *eqptr;
@@ -2709,16 +2744,17 @@ static void cliSet(char *cmdline)
 
         for (uint32_t i = 0; i < valueTableEntryCount; i++) {
             const clivalue_t *val = &valueTable[i];
+
             // ensure exact match when setting to prevent setting variables with shorter names
-            if (strncasecmp(cmdline, valueTable[i].name, strlen(valueTable[i].name)) == 0 && variableNameLength == strlen(valueTable[i].name)) {
+            if (strncasecmp(cmdline, val->name, strlen(val->name)) == 0 && variableNameLength == strlen(val->name)) {
 
                 bool valueChanged = false;
                 int16_t value  = 0;
-                switch (valueTable[i].type & VALUE_MODE_MASK) {
+                switch (val->type & VALUE_MODE_MASK) {
                     case MODE_DIRECT: {
                         int16_t value = atoi(eqptr);
 
-                        if (value >= valueTable[i].config.minmax.min && value <= valueTable[i].config.minmax.max) {
+                        if (value >= val->config.minmax.min && value <= val->config.minmax.max) {
                             cliSetVar(val, value);
                             valueChanged = true;
                         }
@@ -2726,7 +2762,7 @@ static void cliSet(char *cmdline)
 
                     break;
                     case MODE_LOOKUP: {
-                        const lookupTableEntry_t *tableEntry = &lookupTables[valueTable[i].config.lookup.tableIndex];
+                        const lookupTableEntry_t *tableEntry = &lookupTables[val->config.lookup.tableIndex];
                         bool matched = false;
                         for (uint32_t tableValueIndex = 0; tableValueIndex < tableEntry->valueCount && !matched; tableValueIndex++) {
                             matched = strcasecmp(tableEntry->values[tableValueIndex], eqptr) == 0;
@@ -2742,41 +2778,67 @@ static void cliSet(char *cmdline)
 
                     break;
                     case MODE_ARRAY: {
-                        const uint8_t arrayLength = valueTable[i].config.array.length;
+                        const uint8_t arrayLength = val->config.array.length;
                         char *valPtr = eqptr;
-                        uint8_t array[256];
-                        char curVal[4];
+
                         for (int i = 0; i < arrayLength; i++) {
+                            // skip spaces
                             valPtr = skipSpace(valPtr);
-                            char *valEnd = strstr(valPtr, ",");
-                            if ((valEnd != NULL) && (i < arrayLength - 1)) {
-                                uint8_t varLength = getWordLength(valPtr, valEnd);
-                                if (varLength <= 3) {
-                                    strncpy(curVal, valPtr, getWordLength(valPtr, valEnd));
-                                    curVal[varLength] = '\0';
-                                    array[i] = (uint8_t)atoi((const char *)curVal);
-                                    valPtr = valEnd + 1;
-                                } else {
+                            // find next comma (or end of string)
+                            char *valEndPtr = strchr(valPtr, ',');
+
+                            // comma found or last item?
+                            if ((valEndPtr != NULL) || (i == arrayLength - 1)){
+                                // process substring [valPtr, valEndPtr[
+                                // note: no need to copy substrings for atoi()
+                                //       it stops at the first character that cannot be converted...
+                                switch (val->type & VALUE_TYPE_MASK) {
+                                default:
+                                case VAR_UINT8: {
+                                    // fetch data pointer
+                                    uint8_t *data = (uint8_t *)getValuePointer(val) + i;
+                                    // store value
+                                    *data = (uint8_t)atoi((const char*) valPtr);
+                                    }
+                                    break;
+
+                                case VAR_INT8: {
+                                    // fetch data pointer
+                                    int8_t *data = (int8_t *)getValuePointer(val) + i;
+                                    // store value
+                                    *data = (int8_t)atoi((const char*) valPtr);
+                                    }
+                                    break;
+
+                                case VAR_UINT16: {
+                                    // fetch data pointer
+                                    uint16_t *data = (uint16_t *)getValuePointer(val) + i;
+                                    // store value
+                                    *data = (uint16_t)atoi((const char*) valPtr);
+                                    }
+                                    break;
+
+                                case VAR_INT16: {
+                                    // fetch data pointer
+                                    int16_t *data = (int16_t *)getValuePointer(val) + i;
+                                    // store value
+                                    *data = (int16_t)atoi((const char*) valPtr);
+                                    }
                                     break;
                                 }
-                            } else if ((valEnd == NULL) && (i == arrayLength - 1)) {
-                                array[i] = atoi(valPtr);
-
-                                uint8_t *ptr = getValuePointer(val);
-                                memcpy(ptr, array, arrayLength);
+                                // mark as changed
                                 valueChanged = true;
-                            } else {
-                                break;
+
+                                // prepare to parse next item
+                                valPtr = valEndPtr + 1;
                             }
                         }
                     }
-
                     break;
-
                 }
 
                 if (valueChanged) {
-                    cliPrintf("%s set to ", valueTable[i].name);
+                    cliPrintf("%s set to ", val->name);
                     cliPrintVar(val, 0);
                 } else {
                     cliPrintLine("Invalid value");
@@ -2985,6 +3047,9 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 #ifdef USE_ESCSERIAL
     { OWNER_ESCSERIAL,     PG_ESCSERIAL_CONFIG, offsetof(escSerialConfig_t, ioTag), 0 },
+#endif
+#ifdef USE_CAMERA_CONTROL
+    { OWNER_CAMERA_CONTROL, PG_CAMERA_CONTROL_CONFIG, offsetof(cameraControlConfig_t, ioTag), 0 },
 #endif
 };
 

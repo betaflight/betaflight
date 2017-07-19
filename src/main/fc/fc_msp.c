@@ -53,6 +53,7 @@
 #include "drivers/vcd.h"
 #include "drivers/vtx_common.h"
 #include "drivers/transponder_ir.h"
+#include "drivers/camera_control.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -703,9 +704,14 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         break;
     }
 
-    case MSP_VOLTAGE_METERS:
+    case MSP_VOLTAGE_METERS: {
         // write out id and voltage meter values, once for each meter we support
-        for (int i = 0; i < supportedVoltageMeterCount; i++) {
+        uint8_t count = supportedVoltageMeterCount;
+#ifndef USE_OSD_SLAVE
+        count = supportedVoltageMeterCount - (VOLTAGE_METER_ID_ESC_COUNT - getMotorCount());
+#endif
+
+        for (int i = 0; i < count; i++) {
 
             voltageMeter_t meter;
             uint8_t id = (uint8_t)voltageMeterIds[i];
@@ -715,10 +721,15 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
             sbufWriteU8(dst, (uint8_t)constrain(meter.filtered, 0, 255));
         }
         break;
+    }
 
-    case MSP_CURRENT_METERS:
+    case MSP_CURRENT_METERS: {
         // write out id and current meter values, once for each meter we support
-        for (int i = 0; i < supportedCurrentMeterCount; i++) {
+        uint8_t count = supportedVoltageMeterCount;
+#ifndef USE_OSD_SLAVE
+        count = supportedVoltageMeterCount - (VOLTAGE_METER_ID_ESC_COUNT - getMotorCount());
+#endif
+        for (int i = 0; i < count; i++) {
 
             currentMeter_t meter;
             uint8_t id = (uint8_t)currentMeterIds[i];
@@ -729,6 +740,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
             sbufWriteU16(dst, (uint16_t)constrain(meter.amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps (mA). Negative range is truncated to zero
         }
         break;
+    }
 
     case MSP_VOLTAGE_METER_CONFIG:
         // by using a sensor type and a sub-frame length it's possible to configure any type of voltage meter,
@@ -1345,6 +1357,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, currentPidProfile->dterm_notch_cutoff);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_hz_2);
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_cutoff_2);
+        sbufWriteU8(dst, currentPidProfile->dterm_filter_type);
         break;
 
     case MSP_PID_ADVANCED:
@@ -1362,6 +1375,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, currentPidProfile->yawRateAccelLimit);
         sbufWriteU8(dst, currentPidProfile->levelAngleLimit);
         sbufWriteU8(dst, currentPidProfile->levelSensitivity);
+        sbufWriteU16(dst, currentPidProfile->itermThrottleThreshold);
+        sbufWriteU16(dst, currentPidProfile->itermAcceleratorGain);
         break;
 
     case MSP_SENSOR_CONFIG:
@@ -1594,7 +1609,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_RC_TUNING:
-        if (dataSize >= 10) {
+        if (sbufBytesRemaining(src) >= 10) {
             currentControlRateProfile->rcRate8 = sbufReadU8(src);
             currentControlRateProfile->rcExpo8 = sbufReadU8(src);
             for (int i = 0; i < 3; i++) {
@@ -1606,10 +1621,10 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             currentControlRateProfile->thrMid8 = sbufReadU8(src);
             currentControlRateProfile->thrExpo8 = sbufReadU8(src);
             currentControlRateProfile->tpa_breakpoint = sbufReadU16(src);
-            if (dataSize >= 11) {
+            if (sbufBytesRemaining(src) >= 1) {
                 currentControlRateProfile->rcYawExpo8 = sbufReadU8(src);
             }
-            if (dataSize >= 12) {
+            if (sbufBytesRemaining(src) >= 1) {
                 currentControlRateProfile->rcYawRate8 = sbufReadU8(src);
             }
             generateThrottleCurve();
@@ -1735,15 +1750,18 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         gyroConfigMutable()->gyro_soft_lpf_hz = sbufReadU8(src);
         currentPidProfile->dterm_lpf_hz = sbufReadU16(src);
         currentPidProfile->yaw_lpf_hz = sbufReadU16(src);
-        if (dataSize > 5) {
+        if (sbufBytesRemaining(src) >= 8) {
             gyroConfigMutable()->gyro_soft_notch_hz_1 = sbufReadU16(src);
             gyroConfigMutable()->gyro_soft_notch_cutoff_1 = sbufReadU16(src);
             currentPidProfile->dterm_notch_hz = sbufReadU16(src);
             currentPidProfile->dterm_notch_cutoff = sbufReadU16(src);
         }
-        if (dataSize > 13) {
+        if (sbufBytesRemaining(src) >= 4) {
             gyroConfigMutable()->gyro_soft_notch_hz_2 = sbufReadU16(src);
             gyroConfigMutable()->gyro_soft_notch_cutoff_2 = sbufReadU16(src);
+        }
+        if (sbufBytesRemaining(src) >= 1) {
+            currentPidProfile->dterm_filter_type = sbufReadU8(src);
         }
         // reinitialize the gyro filters with the new values
         validateAndFixGyroConfig();
@@ -1765,9 +1783,13 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         sbufReadU8(src); // reserved
         currentPidProfile->rateAccelLimit = sbufReadU16(src);
         currentPidProfile->yawRateAccelLimit = sbufReadU16(src);
-        if (dataSize > 17) {
+        if (sbufBytesRemaining(src) >= 2) {
             currentPidProfile->levelAngleLimit = sbufReadU8(src);
             currentPidProfile->levelSensitivity = sbufReadU8(src);
+        }
+        if (sbufBytesRemaining(src) >= 4) {
+            currentPidProfile->itermThrottleThreshold = sbufReadU16(src);
+            currentPidProfile->itermAcceleratorGain = sbufReadU16(src);
         }
         pidInitConfig(currentPidProfile);
         break;
@@ -1846,6 +1868,19 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 #endif
 
+#ifdef USE_CAMERA_CONTROL
+    case MSP_CAMERA_CONTROL:
+        {
+            if (ARMING_FLAG(ARMED)) {
+                return MSP_RESULT_ERROR;
+            }
+
+            const uint8_t key = sbufReadU8(src);
+            cameraControlKeyPress(key, 0);
+        }
+        break;
+#endif
+
 #ifdef USE_FLASHFS
     case MSP_DATAFLASH_ERASE:
         flashfsEraseCompletely();
@@ -1918,21 +1953,21 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         rxConfigMutable()->midrc = sbufReadU16(src);
         rxConfigMutable()->mincheck = sbufReadU16(src);
         rxConfigMutable()->spektrum_sat_bind = sbufReadU8(src);
-        if (dataSize > 8) {
+        if (sbufBytesRemaining(src) >= 4) {
             rxConfigMutable()->rx_min_usec = sbufReadU16(src);
             rxConfigMutable()->rx_max_usec = sbufReadU16(src);
         }
-        if (dataSize > 12) {
+        if (sbufBytesRemaining(src) >= 4) {
             rxConfigMutable()->rcInterpolation = sbufReadU8(src);
             rxConfigMutable()->rcInterpolationInterval = sbufReadU8(src);
             rxConfigMutable()->airModeActivateThreshold = sbufReadU16(src);
         }
-        if (dataSize > 16) {
+        if (sbufBytesRemaining(src) >= 6) {
             rxConfigMutable()->rx_spi_protocol = sbufReadU8(src);
             rxConfigMutable()->rx_spi_id = sbufReadU32(src);
             rxConfigMutable()->rx_spi_rf_channel_count = sbufReadU8(src);
         }
-        if (dataSize > 22) {
+        if (sbufBytesRemaining(src) >= 1) {
             rxConfigMutable()->fpvCamAngleDegrees = sbufReadU8(src);
         }
         break;
@@ -2107,12 +2142,12 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
 
     case MSP_SET_VOLTAGE_METER_CONFIG: {
-        int id = sbufReadU8(src);
+        int8_t id = sbufReadU8(src);
 
         //
         // find and configure an ADC voltage sensor
         //
-        int voltageSensorADCIndex;
+        int8_t voltageSensorADCIndex;
         for (voltageSensorADCIndex = 0; voltageSensorADCIndex < MAX_VOLTAGE_SENSOR_ADC; voltageSensorADCIndex++) {
             if (id == voltageMeterADCtoIDMap[voltageSensorADCIndex]) {
                 break;
@@ -2125,7 +2160,9 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatresdivmultiplier = sbufReadU8(src);
         } else {
             // if we had any other types of voltage sensor to configure, this is where we'd do it.
-            return -1;
+            sbufReadU8(src);
+            sbufReadU8(src);
+            sbufReadU8(src);
         }
         break;
     }
@@ -2144,11 +2181,11 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 currentSensorVirtualConfigMutable()->offset = sbufReadU16(src);
                 break;
 #endif
-
             default:
-                return -1;
+                sbufReadU16(src);
+                sbufReadU16(src);
+                break;
         }
-
         break;
     }
 

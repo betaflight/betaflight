@@ -110,6 +110,9 @@ typedef enum {
 #ifdef VTX_CONTROL
     TASK_VTXCTRL,
 #endif
+#ifdef USE_CAMERA_CONTROL
+    TASK_CAMCTRL,
+#endif
 
 #ifdef USE_RCSPLIT
     TASK_RCSPLIT,
