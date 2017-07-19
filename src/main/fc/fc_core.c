@@ -476,13 +476,14 @@ void processRx(timeUs_t currentTimeUs)
             /*
             HeadfreeAdjustrMat[0][0] = 1 - rMat[0][0];
             HeadfreeAdjustrMat[0][1] = - rMat[0][1];
-            HeadfreeAdjustrMat[0][2] = - rMat[0][2];
             HeadfreeAdjustrMat[1][0] = - rMat[1][0];
             HeadfreeAdjustrMat[1][1] = 1 - rMat[1][1];
+            */
+            HeadfreeAdjustrMat[0][2] = - rMat[0][2];
             HeadfreeAdjustrMat[1][2] = - rMat[1][2];
             HeadfreeAdjustrMat[2][0] = - rMat[2][0];
             HeadfreeAdjustrMat[2][1] = - rMat[2][1];
-            HeadfreeAdjustrMat[2][2] = 1 - rMat[2][2];*/
+            HeadfreeAdjustrMat[2][2] = 1 - rMat[2][2];
         }
     }
 #endif
