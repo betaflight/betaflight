@@ -207,14 +207,18 @@
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PC1  // Direct from CRNT pad (part of onboard sensor for Pro)
 #define VBAT_ADC_PIN            PC2  // 11:1 (10K + 1K) divider
+#ifdef DYSF4PRO
+#define RSSI_ADC_PIN            PC3  // Direct from RSSI pad
+#else
 #define RSSI_ADC_PIN            PA0  // Direct from RSSI pad
+#endif
 
 #define TRANSPONDER
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 
 #define DEFAULT_FEATURES        (FEATURE_OSD)
-#define AVOID_UART1_FOR_PWM_PPM
+
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA (0xffff & ~(BIT(14)|BIT(13)))
@@ -223,8 +227,8 @@
 #define TARGET_IO_PORTD BIT(2)
 
 #ifdef OMNIBUSF4SD
-#define USABLE_TIMER_CHANNEL_COUNT 13
+#define USABLE_TIMER_CHANNEL_COUNT 15
 #else
-#define USABLE_TIMER_CHANNEL_COUNT 12
+#define USABLE_TIMER_CHANNEL_COUNT 14
 #endif
 #define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9))

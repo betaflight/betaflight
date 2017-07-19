@@ -90,11 +90,11 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .pidSumLimit = PIDSUM_LIMIT,
         .pidSumLimitYaw = PIDSUM_LIMIT_YAW,
         .yaw_lpf_hz = 0,
-        .itermWindupPointPercent = 50,
-        .dterm_filter_type = FILTER_BIQUAD,
         .dterm_lpf_hz = 100,    // filtering ON by default
         .dterm_notch_hz = 260,
         .dterm_notch_cutoff = 160,
+        .dterm_filter_type = FILTER_BIQUAD,
+        .itermWindupPointPercent = 50,
         .vbatPidCompensation = 0,
         .pidAtMinThrottle = PID_STABILISATION_ON,
         .levelAngleLimit = 55,
