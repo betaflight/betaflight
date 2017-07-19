@@ -92,18 +92,17 @@ static int32_t BMI160_Config(const busDevice_t *bus);
 static int32_t BMI160_do_foc(const busDevice_t *bus);
 static int32_t BMI160_WriteReg(const busDevice_t *bus, uint8_t reg, uint8_t data);
 
-
 uint8_t bmi160Detect(const busDevice_t *bus)
 {
     if (BMI160Detected) {
         return BMI_160_SPI;
     }
 
-    IOInit(bus->spi.csnPin, OWNER_MPU_CS, 0);
-    IOConfigGPIO(bus->spi.csnPin, SPI_IO_CS_CFG);
-    IOHi(bus->spi.csnPin);
+    IOInit(bus->busdev_u.spi.csnPin, OWNER_MPU_CS, 0);
+    IOConfigGPIO(bus->busdev_u.spi.csnPin, SPI_IO_CS_CFG);
+    IOHi(bus->busdev_u.spi.csnPin);
 
-    spiSetDivisor(bus->spi.instance, BMI160_SPI_DIVISOR);
+    spiSetDivisor(bus->busdev_u.spi.instance, BMI160_SPI_DIVISOR);
 
     /* Read this address to acticate SPI (see p. 84) */
     spiReadRegister(bus, 0x7F);
@@ -270,12 +269,12 @@ static int32_t BMI160_do_foc(const busDevice_t *bus)
 
 static int32_t BMI160_WriteReg(const busDevice_t *bus, uint8_t reg, uint8_t data)
 {
-    ENABLE_BMI160(bus->spi.csnPin);
+    IOLo(busdev->busdev_u.spi.csnPin); // Enable
 
     spiTransferByte(BMI160_SPI_INSTANCE, 0x7f & reg);
     spiTransferByte(BMI160_SPI_INSTANCE, data);
 
-    DISABLE_BMI160(bus->spi.csnPin);
+    IOHi(busdev->busdev_u.spi.csnPin); // Disable
 
     return 0;
 }
@@ -325,9 +324,9 @@ bool bmi160AccRead(accDev_t *acc)
     uint8_t bmi160_rec_buf[BUFFER_SIZE];
     uint8_t bmi160_tx_buf[BUFFER_SIZE] = {BMI160_REG_ACC_DATA_X_LSB | 0x80, 0, 0, 0, 0, 0, 0};
 
-    IOLo(acc->bus.spi.csnPin);
-    spiTransfer(acc->bus.spi.instance, bmi160_rec_buf, bmi160_tx_buf, BUFFER_SIZE);   // receive response
-    IOHi(acc->bus.spi.csnPin);
+    IOLo(acc->bus.busdev_u.spi.csnPin);
+    spiTransfer(acc->bus.busdev_u.spi.instance, bmi160_rec_buf, bmi160_tx_buf, BUFFER_SIZE);   // receive response
+    IOHi(acc->bus.busdev_u.spi.csnPin);
 
     acc->ADCRaw[X] = (int16_t)((bmi160_rec_buf[IDX_ACCEL_XOUT_H] << 8) | bmi160_rec_buf[IDX_ACCEL_XOUT_L]);
     acc->ADCRaw[Y] = (int16_t)((bmi160_rec_buf[IDX_ACCEL_YOUT_H] << 8) | bmi160_rec_buf[IDX_ACCEL_YOUT_L]);
@@ -353,9 +352,9 @@ bool bmi160GyroRead(gyroDev_t *gyro)
     uint8_t bmi160_rec_buf[BUFFER_SIZE];
     static const uint8_t bmi160_tx_buf[BUFFER_SIZE] = {BMI160_REG_GYR_DATA_X_LSB | 0x80, 0, 0, 0, 0, 0, 0};
 
-    IOLo(gyro->bus.spi.csnPin);
-    spiTransfer(gyro->bus.spi.instance, bmi160_rec_buf, bmi160_tx_buf, BUFFER_SIZE);   // receive response
-    IOHi(gyro->bus.spi.csnPin);
+    IOLo(gyro->bus.busdev_u.spi.csnPin);
+    spiTransfer(gyro->bus.busdev_u.spi.instance, bmi160_rec_buf, bmi160_tx_buf, BUFFER_SIZE);   // receive response
+    IOHi(gyro->bus.busdev_u.spi.csnPin);
 
     gyro->gyroADCRaw[X] = (int16_t)((bmi160_rec_buf[IDX_GYRO_XOUT_H] << 8) | bmi160_rec_buf[IDX_GYRO_XOUT_L]);
     gyro->gyroADCRaw[Y] = (int16_t)((bmi160_rec_buf[IDX_GYRO_YOUT_H] << 8) | bmi160_rec_buf[IDX_GYRO_YOUT_L]);
@@ -367,13 +366,13 @@ bool bmi160GyroRead(gyroDev_t *gyro)
 
 void bmi160SpiGyroInit(gyroDev_t *gyro)
 {
-    BMI160_Init(gyro->bus.spi.csnPin);
+    BMI160_Init(gyro->bus.busdev_u.spi.csnPin);
     bmi160IntExtiInit(gyro);
 }
 
 void bmi160SpiAccInit(accDev_t *acc)
 {
-    BMI160_Init(acc->bus.spi.csnPin);
+    BMI160_Init(acc->bus.busdev_u.spi.csnPin);
 
     acc->acc_1G = 512 * 8;
 }
@@ -381,7 +380,7 @@ void bmi160SpiAccInit(accDev_t *acc)
 
 bool bmi160SpiAccDetect(accDev_t *acc)
 {
-    if (bmi160Detect(acc->bus.spi.csnPin) == MPU_NONE) {
+    if (bmi160Detect(acc->bus.busdev_u.spi.csnPin) == MPU_NONE) {
         return false;
     }
 
@@ -394,7 +393,7 @@ bool bmi160SpiAccDetect(accDev_t *acc)
 
 bool bmi160SpiGyroDetect(gyroDev_t *gyro)
 {
-    if (bmi160Detect(gyro->bus.spi.csnPin) == MPU_NONE) {
+    if (bmi160Detect(gyro->bus.busdev_u.spi.csnPin) == MPU_NONE) {
         return false;
     }
 

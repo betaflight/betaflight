@@ -3041,6 +3041,9 @@ const cliResourceValue_t resourceTable[] = {
     { OWNER_ADC_CURR,      PG_ADC_CONFIG, offsetof(adcConfig_t, current.ioTag), 0 },
     { OWNER_ADC_EXT,       PG_ADC_CONFIG, offsetof(adcConfig_t, external1.ioTag), 0 },
 #endif
+#ifdef BARO
+    { OWNER_BARO_CS,       PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_spi_csn), 0 },
+#endif
 };
 
 static ioTag_t *getIoTag(const cliResourceValue_t value, uint8_t index)

@@ -44,11 +44,11 @@ static void icm20689SpiInit(const busDevice_t *bus)
         return;
     }
 
-    IOInit(bus->spi.csnPin, OWNER_MPU_CS, 0);
-    IOConfigGPIO(bus->spi.csnPin, SPI_IO_CS_CFG);
-    IOHi(bus->spi.csnPin);
+    IOInit(bus->busdev_u.spi.csnPin, OWNER_MPU_CS, 0);
+    IOConfigGPIO(bus->busdev_u.spi.csnPin, SPI_IO_CS_CFG);
+    IOHi(bus->busdev_u.spi.csnPin);
 
-    spiSetDivisor(bus->spi.instance, SPI_CLOCK_STANDARD);
+    spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
 
     hardwareInitialised = true;
 }
@@ -57,7 +57,7 @@ uint8_t icm20689SpiDetect(const busDevice_t *bus)
 {
     icm20689SpiInit(bus);
 
-    spiSetDivisor(bus->spi.instance, SPI_CLOCK_INITIALIZATON); //low speed
+    spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_INITIALIZATON); //low speed
 
     spiWriteRegister(bus, MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
 
@@ -73,7 +73,7 @@ uint8_t icm20689SpiDetect(const busDevice_t *bus)
         }
     } while (attemptsRemaining--);
 
-    spiSetDivisor(bus->spi.instance, SPI_CLOCK_STANDARD);
+    spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
 
     return ICM_20689_SPI;
 
@@ -100,7 +100,7 @@ void icm20689GyroInit(gyroDev_t *gyro)
 {
     mpuGyroInit(gyro);
 
-    spiSetDivisor(gyro->bus.spi.instance, SPI_CLOCK_INITIALIZATON);
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_INITIALIZATON);
 
     gyro->mpuConfiguration.writeFn(&gyro->bus, MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
     delay(100);
@@ -130,7 +130,7 @@ void icm20689GyroInit(gyroDev_t *gyro)
     gyro->mpuConfiguration.writeFn(&gyro->bus, MPU_RA_INT_ENABLE, 0x01); // RAW_RDY_EN interrupt enable
 #endif
 
-    spiSetDivisor(gyro->bus.spi.instance, SPI_CLOCK_STANDARD);
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_STANDARD);
 }
 
 bool icm20689SpiGyroDetect(gyroDev_t *gyro)

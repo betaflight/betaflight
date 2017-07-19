@@ -677,8 +677,8 @@ void dashboardUpdate(timeUs_t currentTimeUs)
 void dashboardInit(void)
 {
     static busDevice_t dashBoardBus;
-    dashBoardBus.i2c.device = I2C_CFG_TO_DEV(dashboardConfig()->device);
-    dashBoardBus.i2c.address = dashboardConfig()->address;
+    dashBoardBus.busdev_u.i2c.device = I2C_CFG_TO_DEV(dashboardConfig()->device);
+    dashBoardBus.busdev_u.i2c.address = dashboardConfig()->address;
     bus = &dashBoardBus;
 
     delay(200);

@@ -239,6 +239,10 @@ static const char * const lookupTableFailsafe[] = {
     "AUTO-LAND", "DROP"
 };
 
+static const char * const lookupTableBusType[] = {
+    "NONE", "I2C", "SPI"
+};
+
 const lookupTableEntry_t lookupTables[] = {
     { lookupTableOffOn, sizeof(lookupTableOffOn) / sizeof(char *) },
     { lookupTableUnit, sizeof(lookupTableUnit) / sizeof(char *) },
@@ -284,6 +288,7 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_CAMERA_CONTROL
     { lookupTableCameraControlMode, sizeof(lookupTableCameraControlMode) / sizeof(char *) },
 #endif
+    { lookupTableBusType, sizeof(lookupTableBusType) / sizeof(char *) },
 };
 
 const clivalue_t valueTable[] = {
@@ -329,6 +334,11 @@ const clivalue_t valueTable[] = {
 
 // PG_BAROMETER_CONFIG
 #ifdef BARO
+    { "baro_bustype",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BUS_TYPE }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_bustype) },
+    { "baro_spi_device",            VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 5 }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_spi_device) },
+    { "baro_i2c_device",            VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 5 }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_i2c_device) },
+    { "baro_i2c_address",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, I2C_ADDR7_MAX }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_i2c_address) },
+
     { "baro_hardware",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BARO_HARDWARE }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_hardware) },
     { "baro_tab_size",              VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, BARO_SAMPLE_COUNT_MAX }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_sample_count) },
     { "baro_noise_lpf",             VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, 1000 }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_noise_lpf) },
@@ -721,7 +731,7 @@ const clivalue_t valueTable[] = {
     { "led_inversion",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, ((1 << STATUS_LED_NUMBER) - 1) }, PG_STATUS_LED_CONFIG, offsetof(statusLedConfig_t, inversion) },
 #ifdef USE_DASHBOARD
     { "dashboard_i2c_bus",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, I2CDEV_COUNT }, PG_DASHBOARD_CONFIG, offsetof(dashboardConfig_t, device) },
-    { "dashboard_i2c_addr",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { I2C_ADDR8_MIN, I2C_ADDR8_MAX }, PG_DASHBOARD_CONFIG, offsetof(dashboardConfig_t, address) },
+    { "dashboard_i2c_addr",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { I2C_ADDR7_MIN, I2C_ADDR7_MAX }, PG_DASHBOARD_CONFIG, offsetof(dashboardConfig_t, address) },
 #endif
 
 // PG_CAMERA_CONTROL_CONFIG

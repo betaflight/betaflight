@@ -57,6 +57,15 @@ SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
     return SPIINVALID;
 }
 
+SPI_TypeDef *spiInstanceByDevice(SPIDevice device)
+{
+    if (device >= SPIDEV_COUNT) {
+        return NULL;
+    }
+
+    return spiDevice[device].dev;
+}
+
 void spiInitDevice(SPIDevice device)
 {
     spiDevice_t *spi = &(spiDevice[device]);
@@ -242,9 +251,9 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *rxData, const uint8_t *txData, 
 
 bool spiBusTransfer(const busDevice_t *bus, uint8_t *rxData, const uint8_t *txData, int length)
 {
-    IOLo(bus->spi.csnPin);
-    spiTransfer(bus->spi.instance, rxData, txData, length);
-    IOHi(bus->spi.csnPin);
+    IOLo(bus->busdev_u.spi.csnPin);
+    spiTransfer(bus->busdev_u.spi.instance, rxData, txData, length);
+    IOHi(bus->busdev_u.spi.csnPin);
     return true;
 }
 
@@ -278,20 +287,20 @@ void spiResetErrorCounter(SPI_TypeDef *instance)
 
 bool spiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
 {
-    IOLo(bus->spi.csnPin);
-    spiTransferByte(bus->spi.instance, reg);
-    spiTransferByte(bus->spi.instance, data);
-    IOHi(bus->spi.csnPin);
+    IOLo(bus->busdev_u.spi.csnPin);
+    spiTransferByte(bus->busdev_u.spi.instance, reg);
+    spiTransferByte(bus->busdev_u.spi.instance, data);
+    IOHi(bus->busdev_u.spi.csnPin);
 
     return true;
 }
 
 bool spiReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data)
 {
-    IOLo(bus->spi.csnPin);
-    spiTransferByte(bus->spi.instance, reg | 0x80); // read transaction
-    spiTransfer(bus->spi.instance, data, NULL, length);
-    IOHi(bus->spi.csnPin);
+    IOLo(bus->busdev_u.spi.csnPin);
+    spiTransferByte(bus->busdev_u.spi.instance, reg | 0x80); // read transaction
+    spiTransfer(bus->busdev_u.spi.instance, data, NULL, length);
+    IOHi(bus->busdev_u.spi.csnPin);
 
     return true;
 }
@@ -299,16 +308,16 @@ bool spiReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t length, 
 uint8_t spiReadRegister(const busDevice_t *bus, uint8_t reg)
 {
     uint8_t data;
-    IOLo(bus->spi.csnPin);
-    spiTransferByte(bus->spi.instance, reg | 0x80); // read transaction
-    spiTransfer(bus->spi.instance, &data, NULL, 1);
-    IOHi(bus->spi.csnPin);
+    IOLo(bus->busdev_u.spi.csnPin);
+    spiTransferByte(bus->busdev_u.spi.instance, reg | 0x80); // read transaction
+    spiTransfer(bus->busdev_u.spi.instance, &data, NULL, 1);
+    IOHi(bus->busdev_u.spi.csnPin);
 
     return data;
 }
 
 void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance)
 {
-    bus->spi.instance = instance;
+    bus->busdev_u.spi.instance = instance;
 }
 #endif
