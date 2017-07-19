@@ -52,7 +52,7 @@
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
 
-static void TransformBodyToEarth(t_fp_vector_def * v) {
+static void HeadfreeBodyToEarth(t_fp_vector_def * v) {
     const float x = rMat[0][0] * v->X + rMat[0][1] * v->Y + rMat[0][2] * v->Z;
     const float y = rMat[1][0] * v->X + rMat[1][1] * v->Y + rMat[1][2] * v->Z;
     const float z = rMat[2][0] * v->X + rMat[2][1] * v->Y + rMat[2][2] * v->Z;
@@ -322,11 +322,11 @@ void updateRcCommands(void)
     }
 
     if (FLIGHT_MODE(HEADFREE_MODE)) {
-        t_fp_vector_def  rcCommandBuff;
+        static t_fp_vector_def  rcCommandBuff;
         rcCommandBuff.X = - rcCommand[ROLL];
         rcCommandBuff.Y = rcCommand[PITCH];
         rcCommandBuff.Z = rcCommand[YAW];
-        TransformBodyToEarth(&rcCommandBuff);
+        HeadfreeBodyToEarth(&rcCommandBuff);
         rcCommand[ROLL] = rcCommandBuff.X;
         rcCommand[PITCH] = rcCommandBuff.Y;
         rcCommand[YAW] = rcCommandBuff.Z;
