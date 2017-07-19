@@ -52,7 +52,7 @@
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
 
-static void TransformVectorBodyToEarth(t_fp_vector_def * v) {
+static void TransformBodyToEarth(t_fp_vector_def * v) {
     const float x = rMat[0][0] * v->X + rMat[0][1] * v->Y + rMat[0][2] * v->Z;
     const float y = rMat[1][0] * v->X + rMat[1][1] * v->Y + rMat[1][2] * v->Z;
     const float z = rMat[2][0] * v->X + rMat[2][1] * v->Y + rMat[2][2] * v->Z;
@@ -61,8 +61,6 @@ static void TransformVectorBodyToEarth(t_fp_vector_def * v) {
     v->Y = y;
     v->Z = z;
 }
-
-
 
 float getSetpointRate(int axis) {
     return setpointRate[axis];
@@ -324,15 +322,14 @@ void updateRcCommands(void)
     }
 
     if (FLIGHT_MODE(HEADFREE_MODE)) {
-        t_fp_vector_def  rcCommandV;
-
-        rcCommandV.X = - rcCommand[ROLL];
-        rcCommandV.Y = rcCommand[PITCH];
-        rcCommandV.Z = rcCommand[YAW];
-        TransformVectorBodyToEarth(&rcCommandV);
-        rcCommand[ROLL] = rcCommandV.X;
-        rcCommand[PITCH] = rcCommandV.Y;
-        rcCommand[YAW] = rcCommandV.Z;
+        t_fp_vector_def  rcCommandBuff;
+        rcCommandBuff.X = - rcCommand[ROLL];
+        rcCommandBuff.Y = rcCommand[PITCH];
+        rcCommandBuff.Z = rcCommand[YAW];
+        TransformBodyToEarth(&rcCommandBuff);
+        rcCommand[ROLL] = rcCommandBuff.X;
+        rcCommand[PITCH] = rcCommandBuff.Y;
+        rcCommand[YAW] = rcCommandBuff.Z;
     }
 }
 
