@@ -106,10 +106,6 @@ enum {
 int16_t magHold;
 #endif
 
-int16_t headFreeModeHold;
-extern float HeadfreeAdjustrMat[2][2];
-extern float HeadfreerMat[3][3];
-
 static bool reverseMotors = false;
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
@@ -246,6 +242,7 @@ void tryArm(void)
 
         ENABLE_ARMING_FLAG(ARMED);
         ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
+
         if (isModeActivationConditionPresent(BOXPREARM)) {
             ENABLE_ARMING_FLAG(WAS_ARMED_WITH_PREARM);
         }
@@ -487,7 +484,17 @@ void processRx(timeUs_t currentTimeUs)
             DISABLE_FLIGHT_MODE(HEADFREE_MODE);
         }
         if (IS_RC_MODE_ACTIVE(BOXHEADADJ)) {
-            headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw); // acquire new heading
+            // acquire new heading only z axis
+            /*
+            HeadfreeAdjustrMat[0][0] = 1 - rMat[0][0];
+            HeadfreeAdjustrMat[0][1] = - rMat[0][1];
+            HeadfreeAdjustrMat[0][2] = - rMat[0][2];
+            HeadfreeAdjustrMat[1][0] = - rMat[1][0];
+            HeadfreeAdjustrMat[1][1] = 1 - rMat[1][1];
+            HeadfreeAdjustrMat[1][2] = - rMat[1][2];
+            HeadfreeAdjustrMat[2][0] = - rMat[2][0];
+            HeadfreeAdjustrMat[2][1] = - rMat[2][1];
+            HeadfreeAdjustrMat[2][2] = 1 - rMat[2][2];*/
         }
     }
 #endif
