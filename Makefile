@@ -712,6 +712,7 @@ COMMON_SRC = \
             fc/fc_dispatch.c \
             fc/fc_hardfaults.c \
             fc/fc_msp.c \
+            fc/fc_msp_box.c \
             fc/fc_tasks.c \
             fc/runtime_config.c \
             io/beeper.c \

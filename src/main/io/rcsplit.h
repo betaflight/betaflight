@@ -48,8 +48,3 @@ typedef enum {
 
 bool rcSplitInit(void);
 void rcSplitProcess(timeUs_t currentTimeUs);
-
-// only for unit test
-extern rcsplitState_e cameraState;
-extern serialPort_t *rcSplitSerialPort;
-extern rcsplitSwitchState_t switchStates[BOXCAMERA3 - BOXCAMERA1 + 1];
