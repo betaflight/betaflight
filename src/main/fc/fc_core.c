@@ -107,6 +107,8 @@ int16_t magHold;
 #endif
 
 int16_t headFreeModeHold;
+extern float HeadfreeAdjustrMat[2][2];
+extern float HeadfreerMat[3][3];
 
 static bool reverseMotors = false;
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
