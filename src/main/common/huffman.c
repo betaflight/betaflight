@@ -18,6 +18,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "platform.h"
+
+#ifdef USE_HUFFMAN
+
 #include "huffman.h"
 
 
@@ -28,15 +32,18 @@ int huffmanEncodeBuf(uint8_t *outBuf, int outBufLen, const uint8_t *inBuf, int i
     uint8_t *outByte = outBuf;
     *outByte = 0;
     uint8_t outBit = 0x80;
-    for (int ii = 0; ii< inLen; ++ii) {
+    
+    for (int ii = 0; ii < inLen; ++ii) {
         const int huffCodeLen = huffmanTable[*inBuf].codeLen;
         const uint16_t huffCode = huffmanTable[*inBuf].code;
         ++inBuf;
         uint16_t testBit = 0x8000;
+
         for (int jj = 0; jj < huffCodeLen; ++jj) {
             if (huffCode & testBit) {
                 *outByte |= outBit;
             }
+
             testBit >>= 1;
             outBit >>= 1;
             if (outBit == 0) {
@@ -45,7 +52,8 @@ int huffmanEncodeBuf(uint8_t *outBuf, int outBufLen, const uint8_t *inBuf, int i
                 *outByte = 0;
                 ++ret;
             }
-            if (ret >= outBufLen) {
+
+            if (ret >= outBufLen && ii < inLen - 1 && jj < huffCodeLen - 1) {
                 return -1;
             }
         }
@@ -57,3 +65,40 @@ int huffmanEncodeBuf(uint8_t *outBuf, int outBufLen, const uint8_t *inBuf, int i
     return ret;
 }
 
+int huffmanEncodeBufStreaming(huffmanState_t *state, const uint8_t *inBuf, int inLen, const huffmanTable_t *huffmanTable)
+{
+    uint8_t *savedOutBytePtr = state->outByte;
+    uint8_t savedOutByte = *savedOutBytePtr;
+
+    for (const uint8_t *pos = inBuf, *end = inBuf + inLen; pos < end; ++pos) {
+        const int huffCodeLen = huffmanTable[*pos].codeLen;
+        const uint16_t huffCode = huffmanTable[*pos].code;
+        uint16_t testBit = 0x8000;
+
+        for (int jj = 0; jj < huffCodeLen; ++jj) {
+            if (huffCode & testBit) {
+                *state->outByte |= state->outBit;
+            }
+
+            testBit >>= 1;
+            state->outBit >>= 1;
+            if (state->outBit == 0) {
+                state->outBit = 0x80;
+                ++state->outByte;
+                *state->outByte = 0;
+                ++state->bytesWritten;
+            }
+
+            // if buffer is filled and we haven't finished compressing
+            if (state->bytesWritten >= state->outBufLen && (pos < end - 1 || jj < huffCodeLen - 1)) {
+                // restore savedOutByte
+                *savedOutBytePtr = savedOutByte;
+                return -1;
+            }
+        }
+    }
+
+    return 0;
+}
+
+#endif

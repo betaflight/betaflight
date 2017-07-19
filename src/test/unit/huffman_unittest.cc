@@ -417,6 +417,92 @@ TEST(HuffmanUnittest, TestHuffmanEncode)
     EXPECT_EQ(0xd8, (int)outBuf[4]);
 }
 
+TEST(HuffmanUnittest, TestHuffmanEncodeStreaming)
+{
+    #define INBUF_LEN1  3
+    #define INBUF_LEN1_CHUNK1 2
+    #define INBUF_LEN1_CHUNK2 (INBUF_LEN1 - INBUF_LEN1_CHUNK1)
+    const uint8_t inBuf1[INBUF_LEN1] = {0,1,1};
+    // 11 101 101
+    // 1110 1101
+    // e    d
+    huffmanState_t state1 = {
+        .bytesWritten = 0,
+        .outByte = outBuf,
+        .outBufLen = OUTBUF_LEN,
+        .outBit = 0x80,
+    };
+    *state1.outByte = 0;
+    int status = huffmanEncodeBufStreaming(&state1, inBuf1, INBUF_LEN1_CHUNK1, huffmanTable);
+    EXPECT_EQ(0, status);
+    status = huffmanEncodeBufStreaming(&state1, inBuf1 + INBUF_LEN1_CHUNK1, INBUF_LEN1_CHUNK2, huffmanTable);
+    EXPECT_EQ(0, status);
+    if (state1.outBit != 0x80) {
+        ++state1.bytesWritten;
+    }
+
+    EXPECT_EQ(1, state1.bytesWritten);
+    EXPECT_EQ(0xed, (int)outBuf[0]);
+
+    #define INBUF_LEN2 4
+    #define INBUF_LEN2_CHUNK1 1
+    #define INBUF_LEN2_CHUNK2 1
+    #define INBUF_LEN2_CHUNK3 2
+    const uint8_t inBuf2[INBUF_LEN2] = {0,1,2,3};
+    // 11 101 1001 10001
+    // 1110 1100 1100 01
+    // e    c    c    8
+    huffmanState_t state2 = {
+        .bytesWritten = 0,
+        .outByte = outBuf,
+        .outBufLen = OUTBUF_LEN,
+        .outBit = 0x80,
+    };
+    *state2.outByte = 0;
+    status = huffmanEncodeBufStreaming(&state2, inBuf2, INBUF_LEN2_CHUNK1, huffmanTable);
+    EXPECT_EQ(0, status);
+    status = huffmanEncodeBufStreaming(&state2, inBuf2 + INBUF_LEN2_CHUNK1, INBUF_LEN2_CHUNK2, huffmanTable);
+    EXPECT_EQ(0, status);
+    status = huffmanEncodeBufStreaming(&state2, inBuf2 + INBUF_LEN2_CHUNK1 + INBUF_LEN2_CHUNK2, INBUF_LEN2_CHUNK3, huffmanTable);
+    EXPECT_EQ(0, status);
+    if (state2.outBit != 0x80) {
+        ++state2.bytesWritten;
+    }
+
+    EXPECT_EQ(2, state2.bytesWritten);
+    EXPECT_EQ(0xec, (int)outBuf[0]);
+    EXPECT_EQ(0xc4, (int)outBuf[1]);
+
+    #define INBUF_LEN3 8
+    #define INBUF_LEN3_CHUNK1 4
+    #define INBUF_LEN3_CHUNK2 (INBUF_LEN3 - INBUF_LEN3_CHUNK1)
+    const uint8_t inBuf3[INBUF_LEN3] = {0,1,2,3,4,5,6,7};
+    // 11 101 1001 10001 10000 011101 011100 011011
+    // 1110 1100 1100 0110 0000 1110 1011 1000 1101 1
+    // e    c    c    6    0    e    b    8    d    8
+    huffmanState_t state3 = {
+        .bytesWritten = 0,
+        .outByte = outBuf,
+        .outBufLen = OUTBUF_LEN,
+        .outBit = 0x80,
+    };
+    *state3.outByte = 0;
+    status = huffmanEncodeBufStreaming(&state3, inBuf3, INBUF_LEN3_CHUNK1, huffmanTable);
+    EXPECT_EQ(0, status);
+    status = huffmanEncodeBufStreaming(&state3, inBuf3 + INBUF_LEN3_CHUNK1, INBUF_LEN3_CHUNK2, huffmanTable);
+    EXPECT_EQ(0, status);
+    if (state3.outBit != 0x80) {
+        ++state3.bytesWritten;
+    }
+
+    EXPECT_EQ(5, state3.bytesWritten);
+    EXPECT_EQ(0xec, (int)outBuf[0]);
+    EXPECT_EQ(0xc6, (int)outBuf[1]);
+    EXPECT_EQ(0x0e, (int)outBuf[2]);
+    EXPECT_EQ(0xb8, (int)outBuf[3]);
+    EXPECT_EQ(0xd8, (int)outBuf[4]);
+}
+
 TEST(HuffmanUnittest, TestHuffmanDecode)
 {
     int len;
