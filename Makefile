@@ -97,7 +97,6 @@ VALID_TARGETS   = $(dir $(wildcard $(ROOT)/src/main/target/*/target.mk))
 VALID_TARGETS  := $(subst /,, $(subst ./src/main/target/,, $(VALID_TARGETS)))
 VALID_TARGETS  := $(VALID_TARGETS) $(ALT_TARGETS)
 VALID_TARGETS  := $(sort $(VALID_TARGETS))
-VALID_TARGETS  := $(filter-out $(SKIP_TARGETS), $(VALID_TARGETS))
 
 GROUP_1_TARGETS := \
 	AFROMINI \
@@ -792,6 +791,7 @@ FC_SRC = \
             cms/cms_menu_osd.c \
             common/colorconversion.c \
             common/gps_conversion.c \
+            drivers/camera_control.c \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
             drivers/serial_escserial.c \
@@ -892,6 +892,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/bus_i2c_config.c \
             drivers/bus_spi_config.c \
             drivers/bus_spi_pinconfig.c \
+            drivers/camera_control.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
             drivers/serial_uart_init.c \
@@ -1342,10 +1343,13 @@ targets-group-rest: $(GROUP_OTHER_TARGETS)
 
 
 $(VALID_TARGETS):
-		$(V0) @echo "" && \
-		echo "Building $@" && \
-		time $(MAKE) binary hex TARGET=$@ && \
-		echo "Building $@ succeeded."
+	$(V0) $(if $(findstring $@,$(SKIP_TARGETS)), \
+	@echo "" && \
+	echo "Not building $@ since it is listed in SKIP_TARGETS.", \
+	@echo "" && \
+	echo "Building $@" && \
+	time $(MAKE) binary hex TARGET=$@ && \
+	echo "Building $@ succeeded.")
 
 CLEAN_TARGETS = $(addprefix clean_,$(VALID_TARGETS) )
 TARGETS_CLEAN = $(addsuffix _clean,$(VALID_TARGETS) )

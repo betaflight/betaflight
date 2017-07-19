@@ -412,7 +412,7 @@ void ppmAvoidPWMTimerClash(TIM_TypeDef *pwmTimer)
 {
     pwmOutputPort_t *motors = pwmGetMotors();
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS; motorIndex++) {
-        if (!motors[motorIndex].enabled || motors[motorIndex].tim != pwmTimer) {
+        if (!motors[motorIndex].enabled || motors[motorIndex].channel.tim != pwmTimer) {
             continue;
         }
 

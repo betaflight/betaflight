@@ -77,6 +77,7 @@ extern uint8_t __config_end;
 #include "drivers/timer.h"
 #include "drivers/vcd.h"
 #include "drivers/light_led.h"
+#include "drivers/camera_control.h"
 
 #include "fc/settings.h"
 #include "fc/cli.h"
@@ -3030,6 +3031,9 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 #ifdef USE_ESCSERIAL
     { OWNER_ESCSERIAL,     PG_ESCSERIAL_CONFIG, offsetof(escSerialConfig_t, ioTag), 0 },
+#endif
+#ifdef USE_CAMERA_CONTROL
+    { OWNER_CAMERA_CONTROL, PG_CAMERA_CONTROL_CONFIG, offsetof(cameraControlConfig_t, ioTag), 0 },
 #endif
 #ifdef USE_ADC
     { OWNER_ADC_BATT,      PG_ADC_CONFIG, offsetof(adcConfig_t, vbat.ioTag), 0 },

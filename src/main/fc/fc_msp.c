@@ -53,6 +53,7 @@
 #include "drivers/vcd.h"
 #include "drivers/vtx_common.h"
 #include "drivers/transponder_ir.h"
+#include "drivers/camera_control.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -703,9 +704,14 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         break;
     }
 
-    case MSP_VOLTAGE_METERS:
+    case MSP_VOLTAGE_METERS: {
         // write out id and voltage meter values, once for each meter we support
-        for (int i = 0; i < supportedVoltageMeterCount; i++) {
+        uint8_t count = supportedVoltageMeterCount;
+#ifndef USE_OSD_SLAVE
+        count = supportedVoltageMeterCount - (VOLTAGE_METER_ID_ESC_COUNT - getMotorCount());
+#endif
+
+        for (int i = 0; i < count; i++) {
 
             voltageMeter_t meter;
             uint8_t id = (uint8_t)voltageMeterIds[i];
@@ -715,10 +721,15 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
             sbufWriteU8(dst, (uint8_t)constrain(meter.filtered, 0, 255));
         }
         break;
+    }
 
-    case MSP_CURRENT_METERS:
+    case MSP_CURRENT_METERS: {
         // write out id and current meter values, once for each meter we support
-        for (int i = 0; i < supportedCurrentMeterCount; i++) {
+        uint8_t count = supportedVoltageMeterCount;
+#ifndef USE_OSD_SLAVE
+        count = supportedVoltageMeterCount - (VOLTAGE_METER_ID_ESC_COUNT - getMotorCount());
+#endif
+        for (int i = 0; i < count; i++) {
 
             currentMeter_t meter;
             uint8_t id = (uint8_t)currentMeterIds[i];
@@ -729,6 +740,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
             sbufWriteU16(dst, (uint16_t)constrain(meter.amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps (mA). Negative range is truncated to zero
         }
         break;
+    }
 
     case MSP_VOLTAGE_METER_CONFIG:
         // by using a sensor type and a sub-frame length it's possible to configure any type of voltage meter,
@@ -1856,6 +1868,19 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 #endif
 
+#ifdef USE_CAMERA_CONTROL
+    case MSP_CAMERA_CONTROL:
+        {
+            if (ARMING_FLAG(ARMED)) {
+                return MSP_RESULT_ERROR;
+            }
+
+            const uint8_t key = sbufReadU8(src);
+            cameraControlKeyPress(key, 0);
+        }
+        break;
+#endif
+
 #ifdef USE_FLASHFS
     case MSP_DATAFLASH_ERASE:
         flashfsEraseCompletely();
@@ -2117,12 +2142,12 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
 
     case MSP_SET_VOLTAGE_METER_CONFIG: {
-        int id = sbufReadU8(src);
+        int8_t id = sbufReadU8(src);
 
         //
         // find and configure an ADC voltage sensor
         //
-        int voltageSensorADCIndex;
+        int8_t voltageSensorADCIndex;
         for (voltageSensorADCIndex = 0; voltageSensorADCIndex < MAX_VOLTAGE_SENSOR_ADC; voltageSensorADCIndex++) {
             if (id == voltageMeterADCtoIDMap[voltageSensorADCIndex]) {
                 break;
@@ -2135,7 +2160,9 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatresdivmultiplier = sbufReadU8(src);
         } else {
             // if we had any other types of voltage sensor to configure, this is where we'd do it.
-            return -1;
+            sbufReadU8(src);
+            sbufReadU8(src);
+            sbufReadU8(src);
         }
         break;
     }
@@ -2154,11 +2181,11 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 currentSensorVirtualConfigMutable()->offset = sbufReadU16(src);
                 break;
 #endif
-
             default:
-                return -1;
+                sbufReadU16(src);
+                sbufReadU16(src);
+                break;
         }
-
         break;
     }
 

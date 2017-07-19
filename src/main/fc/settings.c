@@ -37,6 +37,7 @@
 #include "config/parameter_group_ids.h"
 
 #include "drivers/light_led.h"
+#include "drivers/camera_control.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -203,6 +204,14 @@ static const char * const lookupTableOsdType[] = {
 };
 #endif
 
+#ifdef USE_CAMERA_CONTROL
+static const char * const lookupTableCameraControlMode[] = {
+    "HARDWARE_PWM",
+    "SOFTWARE_PWM",
+    "DAC"
+};
+#endif
+
 static const char * const lookupTableSuperExpoYaw[] = {
     "OFF", "ON", "ALWAYS"
 };
@@ -271,6 +280,9 @@ const lookupTableEntry_t lookupTables[] = {
     { lookupTableCrashRecovery, sizeof(lookupTableCrashRecovery) / sizeof(char *) },
 #ifdef OSD
     { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
+#endif
+#ifdef USE_CAMERA_CONTROL
+    { lookupTableCameraControlMode, sizeof(lookupTableCameraControlMode) / sizeof(char *) },
 #endif
 };
 
@@ -710,6 +722,13 @@ const clivalue_t valueTable[] = {
 #ifdef USE_DASHBOARD
     { "dashboard_i2c_bus",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, I2CDEV_COUNT }, PG_DASHBOARD_CONFIG, offsetof(dashboardConfig_t, device) },
     { "dashboard_i2c_addr",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { I2C_ADDR8_MIN, I2C_ADDR8_MAX }, PG_DASHBOARD_CONFIG, offsetof(dashboardConfig_t, address) },
+#endif
+
+// PG_CAMERA_CONTROL_CONFIG
+#ifdef USE_CAMERA_CONTROL
+    { "camera_control_mode", VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_CAMERA_CONTROL_MODE }, PG_CAMERA_CONTROL_CONFIG, offsetof(cameraControlConfig_t, mode) },
+    { "camera_control_ref_voltage", VAR_UINT16 | MASTER_VALUE, .config.minmax = { 200, 400 }, PG_CAMERA_CONTROL_CONFIG, offsetof(cameraControlConfig_t, refVoltage) },
+    { "camera_control_key_delay", VAR_UINT16 | MASTER_VALUE, .config.minmax = { 100, 500 }, PG_CAMERA_CONTROL_CONFIG, offsetof(cameraControlConfig_t, keyDelayMs) },
 #endif
 };
 
