@@ -60,6 +60,8 @@ typedef enum {
 #define MAX_VOLTAGE_SENSOR_ADC 1 // VBAT - some boards have external, 12V, 9V and 5V meters.
 #endif
 
+#define VOLTAGE_METER_ID_ESC_COUNT 12
+
 typedef enum {
     VOLTAGE_SENSOR_ADC_VBAT = 0,
     VOLTAGE_SENSOR_ADC_12V = 1,
