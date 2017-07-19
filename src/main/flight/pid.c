@@ -56,7 +56,7 @@ float axisPID_P[3], axisPID_I[3], axisPID_D[3];
 
 static float dT;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(pidConfig_t, pidConfig, PG_PID_CONFIG, 1);
 
 #ifdef STM32F10X
 #define PID_PROCESS_DENOM_DEFAULT       1
