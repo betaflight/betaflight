@@ -170,10 +170,7 @@ static void handleUsartTxDma(dmaChannelDescriptor_t* descriptor)
     DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
     DMA_Cmd(descriptor->ref, DISABLE);
 
-    if (s->port.txBufferHead != s->port.txBufferTail)
-        uartStartTxDMA(s);
-    else
-        s->txDMAEmpty = true;
+    uartTryStartTxDMA(s);
 }
 
 void serialUARTInitIO(IO_t txIO, IO_t rxIO, portMode_t mode, portOptions_t options, uint8_t af, uint8_t index)
