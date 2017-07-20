@@ -1369,7 +1369,11 @@ clean_test:
 
 ## clean_<TARGET>    : clean up one specific target
 $(CLEAN_TARGETS) :
-	$(V0) $(MAKE) -j TARGET=$(subst clean_,,$@) clean
+	$(V0) $(if $(findstring $(subst clean_,,$@),$(SKIP_TARGETS)), \
+	@echo "" && \
+	echo "Not cleaning $(subst clean_,,$@) since it is listed in SKIP_TARGETS.", \
+	@echo "" && \
+	$(V0) $(MAKE) -j TARGET=$(subst clean_,,$@) clean)
 
 ## <TARGET>_clean    : clean up one specific target (alias for above)
 $(TARGETS_CLEAN) :
