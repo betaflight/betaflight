@@ -52,13 +52,10 @@
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
 
-float HeadfreerMat[3][3];
-float HeadfreeAdjustrMat[3][3] = {{0,0,0},{0,0,0},{0,0,0}};
-
 static void HeadfreeBodyToEarth(t_fp_vector_def * v) {
-    const float x = HeadfreerMat[0][0] * v->X + HeadfreerMat[0][1] * v->Y + HeadfreerMat[0][2] * v->Z;
-    const float y = HeadfreerMat[1][0] * v->X + HeadfreerMat[1][1] * v->Y + HeadfreerMat[1][2] * v->Z;
-    const float z = HeadfreerMat[2][0] * v->X + HeadfreerMat[2][1] * v->Y + HeadfreerMat[2][2] * v->Z;
+    const float x = rMat[0][0] * v->X + rMat[0][1] * v->Y + rMat[0][2] * v->Z;
+    const float y = rMat[1][0] * v->X + rMat[1][1] * v->Y + rMat[1][2] * v->Z;
+    const float z = rMat[2][0] * v->X + rMat[2][1] * v->Y + rMat[2][2] * v->Z;
 
     v->X = -x;
     v->Y = y;
@@ -325,22 +322,15 @@ void updateRcCommands(void)
     }
 
     if (FLIGHT_MODE(HEADFREE_MODE)) {
-        int i,j;
         static t_fp_vector_def  rcCommandBuff;
-
-        for (i=0;i<3;i++) {
-            for (j=0;j<3;j++) {
-                HeadfreerMat[i][j] = rMat[i][j] + HeadfreeAdjustrMat[i][j];
-            }
-        }
 
         rcCommandBuff.X = - rcCommand[ROLL];
         rcCommandBuff.Y = rcCommand[PITCH];
-        rcCommandBuff.Z = rcCommand[YAW];
+        //rcCommandBuff.Z = rcCommand[YAW];
         HeadfreeBodyToEarth(&rcCommandBuff);
         rcCommand[ROLL] = rcCommandBuff.X;
         rcCommand[PITCH] = rcCommandBuff.Y;
-        rcCommand[YAW] = rcCommandBuff.Z;
+        //rcCommand[YAW] = rcCommandBuff.Z;
     }
 }
 

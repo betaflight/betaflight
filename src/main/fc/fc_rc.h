@@ -16,9 +16,6 @@
  */
 #pragma once
 
-extern float HeadfreerMat[3][3];
-extern float HeadfreeAdjustrMat[3][3];
-
 void processRcCommand(void);
 float getSetpointRate(int axis);
 float getRcDeflection(int axis);
