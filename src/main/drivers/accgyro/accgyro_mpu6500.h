@@ -17,13 +17,6 @@
 
 #pragma once
 
-#define MPU6500_WHO_AM_I_CONST              (0x70)
-#define MPU9250_WHO_AM_I_CONST              (0x71)
-#define MPU9255_WHO_AM_I_CONST              (0x73)
-#define ICM20601_WHO_AM_I_CONST             (0xAC)
-#define ICM20602_WHO_AM_I_CONST             (0x12)
-#define ICM20608G_WHO_AM_I_CONST            (0xAF)
-
 #define MPU6500_BIT_RESET                   (0x80)
 
 // Register 0x37/55 - INT_PIN_CFG / Pin Bypass Enable Configuration
