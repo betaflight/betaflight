@@ -61,10 +61,6 @@ mpuResetFnPtr mpuResetFn;
 #define MPU_ADDRESS             0x68
 #endif
 
-// WHO_AM_I register contents for MPU3050, 6050 and 6500
-#define MPU6500_WHO_AM_I_CONST              (0x70)
-#define MPUx0x0_WHO_AM_I_CONST              (0x68)
-
 #define MPU_INQUIRY_MASK   0x7E
 
 static void mpu6050FindRevision(gyroDev_t *gyro)
