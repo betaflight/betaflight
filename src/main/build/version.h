@@ -26,6 +26,7 @@
 
 #define MW_VERSION              231
 
+extern const char* const firmwareName;
 extern const char* const targetName;
 
 #define GIT_SHORT_REVISION_LENGTH   7 // lower case hexadecimal digits.
