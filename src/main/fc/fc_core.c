@@ -484,16 +484,8 @@ void processRx(timeUs_t currentTimeUs)
             DISABLE_FLIGHT_MODE(HEADFREE_MODE);
         }
         if (IS_RC_MODE_ACTIVE(BOXHEADADJ)) {
-           // rebase 
-           rMat[0][0] = 1;
-           rMat[0][1] = 0;
-           rMat[0][2] = 0;
-           rMat[1][0] = 0;
-           rMat[1][1] = 1;
-           rMat[1][2] = 0;
-           rMat[2][0] = 0;
-           rMat[2][1] = 0;
-           rMat[2][2] = 1;
+           // todo
+
         }
     }
 #endif
