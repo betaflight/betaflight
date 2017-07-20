@@ -89,13 +89,13 @@ typedef struct servoMixer_s {
     uint8_t inputSource;                    // input channel for this rule
     int8_t rate;                            // range [-125;+125] ; can be used to adjust a rate 0-125% and a direction
     uint8_t speed;                          // reduces the speed of the rule, 0=unlimited speed
-    int8_t min;                             // lower bound of rule range [0;100]% of servo max-min
-    int8_t max;                             // lower bound of rule range [0;100]% of servo max-min
 } servoMixer_t;
 
 #define MAX_SERVO_RULES (2 * MAX_SUPPORTED_SERVOS)
 #define MAX_SERVO_SPEED UINT8_MAX
 #define MAX_SERVO_BOXES 3
+
+#define SERVO_MIXER_INPUT_WIDTH 1000
 
 PG_DECLARE_ARRAY(servoMixer_t, MAX_SERVO_RULES, customServoMixers);
 
@@ -122,6 +122,11 @@ typedef struct servoConfig_s {
 
 PG_DECLARE(servoConfig_t, servoConfig);
 
+typedef struct servoMetadata_s {
+    float scaleMax;
+    float scaleMin;
+} servoMetadata_t;
+
 extern int16_t servo[MAX_SUPPORTED_SERVOS];
 
 bool isServoOutputEnabled(void);
@@ -130,5 +135,5 @@ void writeServos(void);
 void servoMixerLoadMix(int index);
 void loadCustomServoMixer(void);
 int servoDirection(int servoIndex, int fromChannel);
-void servoMixer(void);
+void servoMixer(float dT);
 void servosInit(void);

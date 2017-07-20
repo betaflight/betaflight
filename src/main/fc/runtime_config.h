@@ -79,7 +79,8 @@ typedef enum {
     NAV_MOTOR_STOP_OR_IDLE  = (1 << 7),     // navigation requests MOTOR_STOP or motor idle regardless of throttle stick, will only activate if MOTOR_STOP feature is available
     COMPASS_CALIBRATED      = (1 << 8),
     ACCELEROMETER_CALIBRATED= (1 << 9),
-    PWM_DRIVER_AVAILABLE    = (1 << 10)
+    PWM_DRIVER_AVAILABLE    = (1 << 10),
+    HELICOPTER              = (1 << 11)
 } stateFlags_t;
 
 #define DISABLE_STATE(mask) (stateFlags &= ~(mask))
@@ -88,7 +89,7 @@ typedef enum {
 
 extern uint32_t stateFlags;
 
-typedef enum { 
+typedef enum {
     FLM_MANUAL,
     FLM_ACRO,
     FLM_ANGLE,

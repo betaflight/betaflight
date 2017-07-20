@@ -34,23 +34,6 @@
 #include "fc/config.h"
 #include "fc/runtime_config.h"
 
-#if defined(STM32F40_41xxx) // must be multiples of timer clock
-#define ONESHOT125_TIMER_MHZ  12
-#define ONESHOT42_TIMER_MHZ   21
-#define MULTISHOT_TIMER_MHZ   84
-#define PWM_BRUSHED_TIMER_MHZ 21
-#elif defined(STM32F7)
-#define ONESHOT125_TIMER_MHZ  9
-#define ONESHOT42_TIMER_MHZ   27
-#define MULTISHOT_TIMER_MHZ   54
-#define PWM_BRUSHED_TIMER_MHZ 27
-#else
-#define ONESHOT125_TIMER_MHZ  8
-#define ONESHOT42_TIMER_MHZ   24
-#define MULTISHOT_TIMER_MHZ   72
-#define PWM_BRUSHED_TIMER_MHZ 24
-#endif
-
 #define MULTISHOT_5US_PW    (MULTISHOT_TIMER_MHZ * 5)
 #define MULTISHOT_20US_MULT (MULTISHOT_TIMER_MHZ * 20 / 1000.0f)
 
@@ -71,6 +54,11 @@ static pwmOutputPort_t *motors[MAX_PWM_MOTORS];
 static pwmOutputPort_t *servos[MAX_PWM_SERVOS];
 #endif
 
+#ifdef BEEPER_PWM
+static pwmOutputPort_t *beeperPwm;
+static uint16_t beeperFrequency = 0;
+#endif
+
 static uint8_t allocatedOutputPortCount = 0;
 
 static bool pwmMotorsEnabled = true;
@@ -80,7 +68,7 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8
 {
 #if defined(USE_HAL_DRIVER)
     TIM_HandleTypeDef* Handle = timerFindTimerHandle(tim);
-    if(Handle == NULL) return;
+    if (Handle == NULL) return;
 
     TIM_OC_InitTypeDef TIM_OCInitStructure;
 
@@ -118,24 +106,8 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8
     TIM_OCInitStructure.TIM_OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_High : TIM_OCPolarity_Low;
     TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
 
-    switch (channel) {
-    case TIM_Channel_1:
-        TIM_OC1Init(tim, &TIM_OCInitStructure);
-        TIM_OC1PreloadConfig(tim, TIM_OCPreload_Enable);
-        break;
-    case TIM_Channel_2:
-        TIM_OC2Init(tim, &TIM_OCInitStructure);
-        TIM_OC2PreloadConfig(tim, TIM_OCPreload_Enable);
-        break;
-    case TIM_Channel_3:
-        TIM_OC3Init(tim, &TIM_OCInitStructure);
-        TIM_OC3PreloadConfig(tim, TIM_OCPreload_Enable);
-        break;
-    case TIM_Channel_4:
-        TIM_OC4Init(tim, &TIM_OCInitStructure);
-        TIM_OC4PreloadConfig(tim, TIM_OCPreload_Enable);
-        break;
-    }
+    timerOCInit(tim, channel, &TIM_OCInitStructure);
+    timerOCPreloadConfig(tim, channel, TIM_OCPreload_Enable);
 #endif
 }
 
@@ -144,7 +116,7 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
     pwmOutputPort_t *p = &pwmOutputPorts[allocatedOutputPortCount++];
 #if defined(USE_HAL_DRIVER)
     TIM_HandleTypeDef* Handle = timerFindTimerHandle(timerHardware->tim);
-    if(Handle == NULL) return p;
+    if (Handle == NULL) return p;
 #endif
 
     configTimeBase(timerHardware->tim, period, mhz);
@@ -170,7 +142,7 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
     pwmOCConfig(timerHardware->tim, timerHardware->channel, value, timerHardware->output & TIMER_OUTPUT_INVERTED);
 
 #if defined(USE_HAL_DRIVER)
-    if(timerHardware->output & TIMER_OUTPUT_N_CHANNEL)
+    if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL)
         HAL_TIMEx_PWMN_Start(Handle, timerHardware->channel);
     else
         HAL_TIM_PWM_Start(Handle, timerHardware->channel);
@@ -196,21 +168,9 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
     }
     TIM_Cmd(timerHardware->tim, ENABLE);
 
-    switch (timerHardware->channel) {
-    case TIM_Channel_1:
-        p->ccr = &timerHardware->tim->CCR1;
-        break;
-    case TIM_Channel_2:
-        p->ccr = &timerHardware->tim->CCR2;
-        break;
-    case TIM_Channel_3:
-        p->ccr = &timerHardware->tim->CCR3;
-        break;
-    case TIM_Channel_4:
-        p->ccr = &timerHardware->tim->CCR4;
-        break;
-    }
+    p->ccr = timerCCR(timerHardware->tim, timerHardware->channel);
 #endif
+
     p->period = period;
     p->tim = timerHardware->tim;
 
@@ -344,5 +304,32 @@ void pwmWriteServo(uint8_t index, uint16_t value)
         *servos[index]->ccr = value;
     }
 #endif
+}
+#endif
+
+#ifdef BEEPER_PWM
+void pwmWriteBeeper(bool onoffBeep)
+{
+    if (beeperPwm == NULL)
+        return;
+
+    if (onoffBeep == true) {
+        *beeperPwm->ccr = (1000000 / beeperFrequency) / 2;
+    } else {
+        *beeperPwm->ccr = 0;
+    }
+}
+
+void beeperPwmInit(ioTag_t tag, uint16_t frequency)
+{
+        const timerHardware_t *timer = timerGetByTag(tag, TIM_USE_BEEPER);
+        if (timer) {
+            beeperFrequency = frequency;
+            beeperPwm = pwmOutConfig(timer, PWM_TIMER_MHZ, 1000000 / beeperFrequency, (1000000 / beeperFrequency) / 2, 1);  // Enable output
+            *beeperPwm->ccr = 0;
+        }
+        else {
+            beeperPwm = NULL;
+        }
 }
 #endif

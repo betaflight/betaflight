@@ -113,7 +113,8 @@
 #define I2C_DEVICE              (I2CDEV_2)
 
 #define USE_ADC
-#define VBAT_ADC_PIN            PC0
+#define ADC_CHANNEL_1_PIN               PC0
+#define VBAT_ADC_CHANNEL                ADC_CHN_1
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS

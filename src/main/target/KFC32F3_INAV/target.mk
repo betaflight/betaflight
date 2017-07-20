@@ -10,6 +10,8 @@ TARGET_SRC = \
             drivers/barometer/barometer_ms56xx.c \
             drivers/barometer/barometer_spi_ms56xx.c \
             drivers/flash_m25p16.c \
-	    drivers/max7456.c \
+            drivers/max7456.c \
             drivers/light_ws2811strip.c \
-            drivers/light_ws2811strip_stm32f30x.c
+            drivers/light_ws2811strip_stdperiph.c \
+            drivers/pitotmeter_ms4525.c \
+            drivers/pitotmeter_adc.c

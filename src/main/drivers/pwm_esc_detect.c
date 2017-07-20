@@ -36,23 +36,26 @@ uint8_t hardwareMotorType = MOTOR_UNKNOWN;
 
 void detectBrushedESC(void)
 {
-    int i = 0;
-    const uint16_t *setup = multiPPM;
-    while ((!(setup[i] & 0xFF00) >> 8 == MAP_TO_MOTOR_OUTPUT) && i < USABLE_TIMER_CHANNEL_COUNT) {
-        i++;
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+        if (timerHardware[i].usageFlags & TIM_USE_MC_MOTOR) {
+            IO_t MotorDetectPin = IOGetByTag(timerHardware[i].tag);
+            IOInit(MotorDetectPin, OWNER_SYSTEM, RESOURCE_INPUT, 0);
+            IOConfigGPIO(MotorDetectPin, IOCFG_IPU);
+
+            delayMicroseconds(10);  // allow configuration to settle
+
+            // Check presence of brushed ESC's
+            if (IORead(MotorDetectPin)) {
+                hardwareMotorType = MOTOR_BRUSHLESS;
+            } else {
+                hardwareMotorType = MOTOR_BRUSHED;
+            }
+
+            return;
+        }
     }
 
-    IO_t MotorDetectPin = IOGetByTag(timerHardware[i].tag);
-    IOInit(MotorDetectPin, OWNER_SYSTEM, RESOURCE_INPUT, 0);
-    IOConfigGPIO(MotorDetectPin, IOCFG_IPU);
-
-    delayMicroseconds(10);  // allow configuration to settle
-
-    // Check presence of brushed ESC's
-    if (IORead(MotorDetectPin)) {
-        hardwareMotorType = MOTOR_BRUSHLESS;
-    } else {
-        hardwareMotorType = MOTOR_BRUSHED;
-    }
+    // Not found = assume brushless
+    hardwareMotorType = MOTOR_BRUSHLESS;
 }
 #endif

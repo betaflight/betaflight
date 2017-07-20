@@ -77,13 +77,21 @@
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
-//#define ELERES_RX
 //#define RFM_SPI             SPI2
 //#define RFM_SPI_CS_PIN      PC15
 //#define RFM_IRQ_PIN         PB3
 //#define RFM_SPI_CLK         (SPI_CLOCK_STANDARD*2)
 //#define RFM_RESTORE_CLK     (SPI_CLOCK_FAST)
 
+#define USE_RX_SPI
+#define USE_RX_ELERES
+#define RX_NSS_PIN                  PC15
+#define RX_NSS_GPIO_CLK_PERIPHERAL  RCC_APB2Periph_GPIOC
+#define RX_SCK_PIN                  PB13
+#define RX_MOSI_PIN                 PB15
+#define RX_MISO_PIN                 PB14
+#define RX_SPI_INSTANCE             SPI2
+#define RX_IRQ_PIN                  PB3
 #define USB_IO
 
 #define USE_VCP
@@ -98,26 +106,29 @@
 #define UART2_RX_PIN            PA3
 
 #define USE_I2C
-#define I2C_DEVICE              (I2CDEV_1) // SDA (PB9/AF4), SCL (PB8/AF4)
+#define I2C_DEVICE              (I2CDEV_1)
 
 #define I2C1_SCL                PA15
 #define I2C1_SDA                PA14
 
+#define PITOT
+#define USE_PITOT_ADC
+#define USE_PITOT_MS4525
+#define PITOT_I2C_INSTANCE      I2C_DEVICE
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
-#define ADC_INSTANCE            ADC2
-#define VBAT_ADC_PIN            PA4
-#define RSSI_ADC_PIN            PA6
-#define CURRENT_METER_ADC_PIN   PA5
+#define ADC_INSTANCE                    ADC2
+#define ADC_CHANNEL_1_PIN               PA4
+#define ADC_CHANNEL_2_PIN               PA6
+#define ADC_CHANNEL_3_PIN               PA5
+#define VBAT_ADC_CHANNEL                ADC_CHN_1
+#define RSSI_ADC_CHANNEL                ADC_CHN_2
+#define CURRENT_METER_ADC_CHANNEL       ADC_CHN_3
 
 #define LED_STRIP
-#define USE_LED_STRIP_ON_DMA1_CHANNEL2
 #define WS2811_PIN                      PA8
-#define WS2811_TIMER                    TIM1
-#define WS2811_DMA_CHANNEL              DMA1_Channel2
-#define WS2811_IRQ                      DMA1_Channel2_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
+#define WS2811_DMA_STREAM               DMA1_Channel2
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 
 #define DEFAULT_FEATURES        (FEATURE_BLACKBOX | FEATURE_OSD | FEATURE_VBAT)

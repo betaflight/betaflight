@@ -44,6 +44,7 @@
 #include "fc/runtime_config.h"
 
 #include "io/gps.h"
+#include "io/beeper.h"
 
 #include "sensors/boardalignment.h"
 #include "sensors/compass.h"
@@ -109,7 +110,7 @@ bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse)
 
     dev->magAlign = ALIGN_DEFAULT;
 
-    switch(magHardwareToUse) {
+    switch (magHardwareToUse) {
     case MAG_AUTODETECT:
     case MAG_HMC5883:
 #ifdef USE_MAG_HMC5883
@@ -299,6 +300,8 @@ void compassUpdate(timeUs_t currentTimeUs)
             compassConfigMutable()->magZero.raw[axis] = 0;
             magPrev[axis] = 0;
         }
+
+        beeper(BEEPER_ACTION_SUCCESS);
 
         sensorCalibrationResetState(&calState);
         DISABLE_STATE(CALIBRATE_MAG);

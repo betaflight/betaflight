@@ -50,7 +50,7 @@ static TIM_HandleTypeDef TimHandle;
 
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 {
-    if(htim->Instance==WS2811_TIMER)
+    if (htim->Instance==WS2811_TIMER)
     {
         //HAL_TIM_PWM_Stop_DMA(&TimHandle,WS2811_TIMER_CHANNEL);
         ws2811LedDataTransferInProgress = 0;
@@ -117,7 +117,7 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
     dmaSetHandler(WS2811_DMA_HANDLER_IDENTIFER, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, timDMASource);
 
     /* Initialize TIMx DMA handle */
-    if(HAL_DMA_Init(htim->hdma[timDMASource]) != HAL_OK)
+    if (HAL_DMA_Init(htim->hdma[timDMASource]) != HAL_OK)
     {
         /* Initialization Error */
         return;
@@ -132,7 +132,7 @@ void ws2811LedStripHardwareInit(void)
     TimHandle.Init.Period = 135; // 800kHz
     TimHandle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     TimHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
-    if(HAL_TIM_PWM_Init(&TimHandle) != HAL_OK)
+    if (HAL_TIM_PWM_Init(&TimHandle) != HAL_OK)
     {
         /* Initialization Error */
         return;
@@ -148,7 +148,7 @@ void ws2811LedStripHardwareInit(void)
     TIM_OCInitStructure.OCNIdleState  = TIM_OCNIDLESTATE_RESET;
     TIM_OCInitStructure.OCFastMode = TIM_OCFAST_DISABLE;
 
-    if(HAL_TIM_PWM_ConfigChannel(&TimHandle, &TIM_OCInitStructure, WS2811_TIMER_CHANNEL) != HAL_OK)
+    if (HAL_TIM_PWM_ConfigChannel(&TimHandle, &TIM_OCInitStructure, WS2811_TIMER_CHANNEL) != HAL_OK)
     {
         /* Configuration Error */
         return;
@@ -168,7 +168,7 @@ void ws2811LedStripDMAEnable(void)
         return;
     }
 
-    if(  HAL_TIM_PWM_Start_DMA(&TimHandle, WS2811_TIMER_CHANNEL, ledStripDMABuffer, WS2811_DMA_BUFFER_SIZE) != HAL_OK)
+    if (  HAL_TIM_PWM_Start_DMA(&TimHandle, WS2811_TIMER_CHANNEL, ledStripDMABuffer, WS2811_DMA_BUFFER_SIZE) != HAL_OK)
     {
       /* Starting PWM generation Error */
         ws2811LedDataTransferInProgress = 0;

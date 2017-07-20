@@ -113,27 +113,28 @@
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
-#define VBAT_ADC_PIN            PC0
-#define CURRENT_METER_ADC_PIN   PC1
-#define RSSI_ADC_PIN            PC2
-#define EXTERNAL1_ADC_PIN       PC3
+#define ADC_CHANNEL_1_PIN               PC0
+#define ADC_CHANNEL_2_PIN               PC1
+#define ADC_CHANNEL_3_PIN               PC2
+#define ADC_CHANNEL_4_PIN               PC3
+#define VBAT_ADC_CHANNEL                ADC_CHN_1
+#define CURRENT_METER_ADC_CHANNEL       ADC_CHN_2
+#define RSSI_ADC_CHANNEL                ADC_CHN_3
 
 #define LED_STRIP
 #define WS2811_PIN                      PB8 // TIM16_CH1
 #define WS2811_TIMER                    TIM16
-#define WS2811_DMA_CHANNEL              DMA1_Channel3
-#define WS2811_IRQ                      DMA1_Channel3_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
+#define WS2811_DMA_STREAM               DMA1_Channel3
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
-#define LED_STRIP_TIMER                 TIM16
 
 #define SPEKTRUM_BIND
 #define BIND_PIN                PA3 // USART2, PA3
 
-#define SONAR
-#define SONAR_TRIGGER_PIN       PB0
-#define SONAR_ECHO_PIN          PB1
-#define USE_SONAR_SRF10
+#define USE_RANGEFINDER
+#define USE_RANGEFINDER_HCSR04
+#define RANGEFINDER_HCSR04_TRIGGER_PIN       PB0
+#define RANGEFINDER_HCSR04_ECHO_PIN          PB1
+#define USE_RANGEFINDER_SRF10
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

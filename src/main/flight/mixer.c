@@ -51,12 +51,12 @@
 
 //#define MIXER_DEBUG
 
-uint8_t motorCount;
+static uint8_t motorCount;
 
 int16_t motor[MAX_SUPPORTED_MOTORS];
 int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 
-bool motorLimitReached = false;
+static bool motorLimitReached = false;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(flight3DConfig_t, flight3DConfig, PG_MOTOR_3D_CONFIG, 0);
 
@@ -105,6 +105,10 @@ static const motorMixer_t mixerQuadX[] = {
     { 1.0f,  1.0f,  1.0f,  1.0f },          // REAR_L
     { 1.0f,  1.0f, -1.0f, -1.0f },          // FRONT_L
 };
+
+#define DEF_MIXER(_mixerMode, _flyingPlatformType, _motorCount, _useServos, _hasFlaps, _motorMap) \
+    { .mixerMode=_mixerMode, .flyingPlatformType=_flyingPlatformType, .motorCount=_motorCount, .useServos=_useServos, .hasFlaps=_hasFlaps, .motor=_motorMap }
+
 #ifndef USE_QUAD_MIXER_ONLY
 static const motorMixer_t mixerTricopter[] = {
     { 1.0f,  0.0f,  1.333333f,  0.0f },     // REAR
@@ -222,70 +226,81 @@ static const motorMixer_t mixerDualProp[] = {
     { 1.0f,  0.0f,  0.0f, 0.0f },
 };
 
-// Keep synced with mixerMode_e
-const mixer_t mixers[] = {
+static const mixer_t mixerTable[] = {
     // motors, use servo, motor mixer
-    { .motorCount=0, .useServo=false, .motor=NULL, .enabled=true },                // entry 0
-    { .motorCount=3, .useServo=true,  .motor=mixerTricopter, .enabled=true },      // MIXER_TRI
-    { .motorCount=4, .useServo=false, .motor=mixerQuadP, .enabled=true },          // MIXER_QUADP
-    { .motorCount=4, .useServo=false, .motor=mixerQuadX, .enabled=true },          // MIXER_QUADX
+    //         mixerMode                flyingPlatformType   motorCount  useServos   hasFlaps    motorMap
+    DEF_MIXER( MIXER_TRI,               PLATFORM_MULTIROTOR, 3,          true,       false,      mixerTricopter ),
+    DEF_MIXER( MIXER_CUSTOM_TRI,        PLATFORM_MULTIROTOR, 3,          false,      false,      NULL ),
 
-    { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },               // MIXER_BICOPTER
-    { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },               // MIXER_GIMBAL -> this mixer was never implemented in CF, use feature(FEATURE_SERVO_TILT) instead
-    #if !defined(DISABLE_UNCOMMON_MIXERS) && (MAX_SUPPORTED_MOTORS >= 6)
-        { .motorCount=6, .useServo=false, .motor=mixerY6, .enabled=true },         // MIXER_Y6
-        { .motorCount=6, .useServo=false, .motor=mixerHex6P, .enabled=true },      // MIXER_HEX6
-    #else
-        { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },           // MIXER_Y6
-        { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },           // MIXER_HEX6
-    #endif
-    { .motorCount=2, .useServo=true,  .motor=mixerDualProp, .enabled=true },       // MIXER_FLYING_WING
-    #if !defined(DISABLE_UNCOMMON_MIXERS)
-        { .motorCount=4, .useServo=false, .motor=mixerY4, .enabled=true },         // MIXER_Y4
-    #else
-        { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },           // MIXER_Y4
-    #endif
-    #if (MAX_SUPPORTED_MOTORS >= 6)
-        { .motorCount=6, .useServo=false, .motor=mixerHex6X, .enabled=true },      // MIXER_HEX6X
-    #else
-        { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },           // MIXER_HEX6X
-    #endif
-    #if !defined(DISABLE_UNCOMMON_MIXERS) && (MAX_SUPPORTED_MOTORS >= 8)
-        { .motorCount=8, .useServo=false, .motor=mixerOctoX8, .enabled=true },     // MIXER_OCTOX8
-        { .motorCount=8, .useServo=false, .motor=mixerOctoFlatP, .enabled=true },  // MIXER_OCTOFLATP
-        { .motorCount=8, .useServo=false, .motor=mixerOctoFlatX, .enabled=true },  // MIXER_OCTOFLATX
-    #else
-        { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },           // MIXER_OCTOX8
-        { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },           // MIXER_OCTOFLATP
-        { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },           // MIXER_OCTOFLATX
-    #endif
-    { .motorCount=2, .useServo=true,  .motor=mixerDualProp, .enabled=true },       // * MIXER_AIRPLANE
-    { .motorCount=0, .useServo=true,  .motor=NULL, .enabled=false },               // * MIXER_HELI_120_CCPM -> disabled, never fully implemented in CF
-    { .motorCount=0, .useServo=true,  .motor=NULL, .enabled=false },               // * MIXER_HELI_90_DEG -> disabled, never fully implemented in CF
-    #if !defined(DISABLE_UNCOMMON_MIXERS)
-        { .motorCount=4, .useServo=false, .motor=mixerVtail4, .enabled=true },     // MIXER_VTAIL4
-    #if (MAX_SUPPORTED_MOTORS >= 6)
-        { .motorCount=6, .useServo=false, .motor=mixerHex6H, .enabled=true },      // MIXER_HEX6H
-    #else
-        { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },           // MIXER_HEX6H
-    #endif
-    #else
-        { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },           // MIXER_VTAIL4
-        { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },           // MIXER_HEX6H
-    #endif
-    { .motorCount=0, .useServo=true,  .motor=NULL, .enabled=false },               // * MIXER_PPM_TO_SERVO -> looks like this is not implemented at all
-    { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },               // MIXER_DUALCOPTER
-    { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },               // MIXER_SINGLECOPTER
-    #if !defined(DISABLE_UNCOMMON_MIXERS)
-        { .motorCount=4, .useServo=false, .motor=mixerAtail4, .enabled=true },     // MIXER_ATAIL4
-    #else
-        { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },           // MIXER_ATAIL4
-    #endif
-    { .motorCount=0, .useServo=false, .motor=NULL, .enabled=true },                // MIXER_CUSTOM
-    { .motorCount=2, .useServo=true,  .motor=NULL, .enabled=true },                // MIXER_CUSTOM_AIRPLANE
-    { .motorCount=3, .useServo=true,  .motor=NULL, .enabled=true },                // MIXER_CUSTOM_TRI
+    DEF_MIXER( MIXER_QUADP,             PLATFORM_MULTIROTOR, 4,          false,      false,      mixerQuadP ),
+    DEF_MIXER( MIXER_QUADX,             PLATFORM_MULTIROTOR, 4,          false,      false,      mixerQuadX ),
+
+#if (MAX_SUPPORTED_MOTORS >= 6)
+    DEF_MIXER( MIXER_HEX6,              PLATFORM_MULTIROTOR, 6,          false,      false,      mixerHex6X ),
+#endif
+
+    DEF_MIXER( MIXER_CUSTOM,            PLATFORM_MULTIROTOR, 0,          false,      false,      NULL ),
+
+    //DEF_MIXER( MIXER_BICOPTER,          PLATFORM_MULTIROTOR, 0,          false,      false,      NULL ),
+    //DEF_MIXER( MIXER_GIMBAL,            PLATFORM_MULTIROTOR, 0,          false,      false,      NULL ),
+
+    DEF_MIXER( MIXER_FLYING_WING,       PLATFORM_AIRPLANE,   2,          true,       false,      mixerDualProp ),
+    DEF_MIXER( MIXER_AIRPLANE,          PLATFORM_AIRPLANE,   2,          true,       true,       mixerDualProp ),
+    DEF_MIXER( MIXER_CUSTOM_AIRPLANE,   PLATFORM_AIRPLANE,   2,          true,       true,       NULL ),
+
+    //DEF_MIXER( MIXER_HELI_120_CCPM,     PLATFORM_HELICOPTER, 1,          true,       false,      NULL ),
+    //DEF_MIXER( MIXER_HELI_90_DEG,       PLATFORM_HELICOPTER, 1,          true,       false,      NULL ),
+
+    //DEF_MIXER( MIXER_PPM_TO_SERVO,      PLATFORM_MULTIROTOR, 0,          true,       false,      NULL ),
+    //DEF_MIXER( MIXER_DUALCOPTER,        PLATFORM_MULTIROTOR, 0,          false,      false,      NULL ),
+    //DEF_MIXER( MIXER_SINGLECOPTER,      PLATFORM_MULTIROTOR, 0,          false,      false,      NULL ),
+
+#if !defined(DISABLE_UNCOMMON_MIXERS)
+    DEF_MIXER( MIXER_Y4,                PLATFORM_MULTIROTOR, 4,          false,      false,      mixerY4 ),
+    DEF_MIXER( MIXER_ATAIL4,            PLATFORM_MULTIROTOR, 4,          false,      false,      mixerAtail4 ),
+    DEF_MIXER( MIXER_VTAIL4,            PLATFORM_MULTIROTOR, 4,          false,      false,      mixerVtail4 ),
+
+#if (MAX_SUPPORTED_MOTORS >= 6)
+    DEF_MIXER( MIXER_Y6,                PLATFORM_MULTIROTOR, 6,          false,      false,      mixerY6 ),
+    DEF_MIXER( MIXER_HEX6,              PLATFORM_MULTIROTOR, 6,          false,      false,      mixerHex6P ),
+    DEF_MIXER( MIXER_HEX6H,             PLATFORM_MULTIROTOR, 6,          false,      false,      mixerHex6H ),
+#endif
+
+#if (MAX_SUPPORTED_MOTORS >= 8)
+    DEF_MIXER( MIXER_OCTOX8,            PLATFORM_MULTIROTOR, 8,          false,      false,      mixerOctoX8 ),
+    DEF_MIXER( MIXER_OCTOFLATP,         PLATFORM_MULTIROTOR, 8,          false,      false,      mixerOctoFlatP ),
+    DEF_MIXER( MIXER_OCTOFLATX,         PLATFORM_MULTIROTOR, 8,          false,      false,      mixerOctoFlatX ),
+#endif
+#endif
 };
+#else
+static const mixer_t quadMixerDescriptor = DEF_MIXER( MIXER_QUADX,             PLATFORM_MULTIROTOR, 4,          false,      false,      mixerQuadX );
 #endif // USE_QUAD_MIXER_ONLY
+
+const mixer_t * findMixer(mixerMode_e mixerMode)
+{
+#ifndef USE_QUAD_MIXER_ONLY
+    for (unsigned ii = 0; ii < sizeof(mixerTable)/sizeof(mixerTable[0]); ii++) {
+        if (mixerTable[ii].mixerMode == mixerMode)
+            return &mixerTable[ii];
+    }
+#else
+    if (mixerMode == MIXER_QUADX)
+        return &quadMixerDescriptor;
+#endif
+
+    return NULL;
+}
+
+uint8_t getMotorCount()
+{
+    return motorCount;
+}
+
+bool mixerIsOutputSaturated(void)
+{
+    return motorLimitReached;
+}
 
 bool isMixerEnabled(mixerMode_e mixerMode)
 {
@@ -293,26 +308,39 @@ bool isMixerEnabled(mixerMode_e mixerMode)
     UNUSED(mixerMode);
     return true;
 #else
-    return mixers[mixerMode].enabled;
+    const mixer_t * mixer = findMixer(mixerMode);
+    return (mixer != NULL) ? true : false;
 #endif
+}
+
+int getFlyingPlatformType(void)
+{
+    const mixer_t * mixer = findMixer(mixerConfig()->mixerMode);
+
+    if (mixer)
+        return mixer->flyingPlatformType;
+    else
+        return PLATFORM_MULTIROTOR; // safe default
 }
 
 #ifdef USE_SERVOS
 void mixerUpdateStateFlags(void)
 {
-    const mixerMode_e currentMixerMode = mixerConfig()->mixerMode;
+    const mixer_t * mixer = findMixer(mixerConfig()->mixerMode);
 
     // set flag that we're on something with wings
-    if (currentMixerMode == MIXER_FLYING_WING ||
-        currentMixerMode == MIXER_AIRPLANE ||
-        currentMixerMode == MIXER_CUSTOM_AIRPLANE
-    ) {
+    if (mixer->flyingPlatformType == PLATFORM_AIRPLANE) {
         ENABLE_STATE(FIXED_WING);
+        DISABLE_STATE(HELICOPTER);
+    } else if (mixer->flyingPlatformType == PLATFORM_HELICOPTER) {
+        DISABLE_STATE(FIXED_WING);
+        ENABLE_STATE(HELICOPTER);
     } else {
         DISABLE_STATE(FIXED_WING);
+        DISABLE_STATE(HELICOPTER);
     }
 
-    if (currentMixerMode == MIXER_AIRPLANE || currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
+    if (mixer->hasFlaps) {
         ENABLE_STATE(FLAPERON_AVAILABLE);
     } else {
         DISABLE_STATE(FLAPERON_AVAILABLE);
@@ -324,6 +352,8 @@ void mixerUsePWMIOConfiguration(void)
     motorCount = 0;
 
     const mixerMode_e currentMixerMode = mixerConfig()->mixerMode;
+    const mixer_t * mixer = findMixer(mixerConfig()->mixerMode);
+
     if (currentMixerMode == MIXER_CUSTOM || currentMixerMode == MIXER_CUSTOM_TRI || currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
         // load custom mixer into currentMixer
         for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
@@ -334,11 +364,12 @@ void mixerUsePWMIOConfiguration(void)
             motorCount++;
         }
     } else {
-        motorCount = MIN(mixers[currentMixerMode].motorCount, pwmGetOutputConfiguration()->motorCount);
-        // copy motor-based mixers
-        if (mixers[currentMixerMode].motor) {
-            for (int i = 0; i < motorCount; i++)
-                currentMixer[i] = mixers[currentMixerMode].motor[i];
+        motorCount = MIN(mixer->motorCount, pwmGetOutputConfiguration()->motorCount);
+        // copy motor-based mixer
+        if (mixer->motor) {
+            for (int i = 0; i < motorCount; i++) {
+                currentMixer[i] = mixer->motor[i];
+            }
         }
     }
 
@@ -378,9 +409,10 @@ void mixerLoadMix(int index, motorMixer_t *customMixers)
     }
 
     // do we have anything here to begin with?
-    if (mixers[index].motor != NULL) {
-        for (int i = 0; i < mixers[index].motorCount; i++) {
-            customMixers[i] = mixers[index].motor[i];
+    const mixer_t * mixer = findMixer(index);
+    if (mixer->motor != NULL) {
+        for (int i = 0; i < mixer->motorCount; i++) {
+            customMixers[i] = mixer->motor[i];
         }
     }
 }

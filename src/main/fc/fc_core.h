@@ -17,8 +17,6 @@
 
 #pragma once
 
-extern int16_t telemTemperature1;
-
 typedef enum disarmReason_e {
     DISARM_NONE         = 0,
     DISARM_TIMEOUT      = 1,

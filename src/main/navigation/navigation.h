@@ -72,12 +72,12 @@ typedef struct positionEstimationConfig_s {
     uint8_t use_gps_velned;
     uint16_t gps_delay_ms;
 
-    uint16_t max_sonar_altitude;
+    uint16_t max_surface_altitude;
 
     float w_z_baro_p;   // Weight (cutoff frequency) for barometer altitude measurements
 
-    float w_z_sonar_p;  // Weight (cutoff frequency) for sonar altitude measurements
-    float w_z_sonar_v;  // Weight (cutoff frequency) for sonar velocity measurements
+    float w_z_surface_p;  // Weight (cutoff frequency) for surface altitude measurements
+    float w_z_surface_v;  // Weight (cutoff frequency) for surface velocity measurements
 
     float w_z_gps_p;    // GPS altitude data is very noisy and should be used only on airplanes
     float w_z_gps_v;    // Weight (cutoff frequency) for GPS climb rate measurements
@@ -142,7 +142,7 @@ typedef struct navConfig_s {
         uint16_t max_throttle;               // Maximum allowed throttle in auto mode
         uint8_t  pitch_to_throttle;          // Pitch angle (in deg) to throttle gain (in 1/1000's of throttle) (*10)
         uint16_t loiter_radius;              // Loiter radius when executing PH on a fixed wing
-
+        int8_t land_dive_angle;
         uint16_t launch_velocity_thresh;     // Velocity threshold for swing launch detection
         uint16_t launch_accel_thresh;        // Acceleration threshold for launch detection (cm/s/s)
         uint16_t launch_time_thresh;         // Time threshold for launch detection (ms)
@@ -248,7 +248,7 @@ void navigationInit(void);
 
 /* Position estimator update functions */
 void updatePositionEstimator_BaroTopic(timeUs_t currentTimeUs);
-void updatePositionEstimator_SonarTopic(timeUs_t currentTimeUs);
+void updatePositionEstimator_SurfaceTopic(timeUs_t currentTimeUs);
 
 /* Navigation system updates */
 void updateWaypointsAndNavigationMode(void);

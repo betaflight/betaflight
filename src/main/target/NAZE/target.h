@@ -59,6 +59,8 @@
     #define UART3_RX_PIN            PB11
     #define UART3_TX_PIN            PB10
 
+    #define I2C_DEVICE_SHARES_UART3
+
     #define SERIAL_PORT_COUNT       4       // UART1, UART2, UART3, SS1
 
     #define MPU6500_CS_GPIO_CLK_PERIPHERAL  NAZE_CS_GPIO_CLK_PERIPHERAL
@@ -102,19 +104,18 @@
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW180_DEG
 
-// #define SONAR
-//#define USE_SONAR_SRF10
-#define SONAR_TRIGGER_PIN       PB0
-#define SONAR_ECHO_PIN          PB1
-#define SONAR_TRIGGER_PIN_PWM   PB8
-#define SONAR_ECHO_PIN_PWM      PB9
+// #define USE_RANGEFINDER
+// #define USE_RANGEFINDER_HCSR04
+// #define USE_RANGEFINDER_SRF10
+#define RANGEFINDER_HCSR04_TRIGGER_PIN       PB0
+#define RANGEFINDER_HCSR04_ECHO_PIN          PB1
+#define RANGEFINDER_HCSR04_TRIGGER_PIN_PWM   PB8
+#define RANGEFINDER_HCSR04_ECHO_PIN_PWM      PB9
 
-#define SOFTSERIAL_1_TIMER      TIM3
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
-#define SOFTSERIAL_2_TIMER      TIM3
-#define SOFTSERIAL_2_TIMER_RX_HARDWARE 6 // PWM 7
-#define SOFTSERIAL_2_TIMER_TX_HARDWARE 7 // PWM 8
+#define SOFTSERIAL_1_RX_PIN     PA6
+#define SOFTSERIAL_1_TX_PIN     PA7
+#define SOFTSERIAL_2_RX_PIN     PB0
+#define SOFTSERIAL_2_TX_PIN     PB1
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2)
@@ -150,8 +151,8 @@
 // RC6  PA3/TIM2    USART2 RX
 // RC7  PA6/TIM3    CSN / softserial1 RX / LED_STRIP
 // RC8  PA7/TIM3    SCK / softserial1 TX
-// RC9  PB0/TIM3    MISO / softserial2 RX / sonar trigger
-// RC10 PB1/TIM3    MOSI /softserial2 TX / sonar echo / current
+// RC9  PB0/TIM3    MISO / softserial2 RX / HC-SR04 trigger
+// RC10 PB1/TIM3    MOSI /softserial2 TX / HC-SR04 echo / current
 
 // Nordic Semiconductor uses 'CSN', STM uses 'NSS'
 #define RX_CE_PIN                   PA1
@@ -164,20 +165,23 @@
 #endif // USE_NRF24
 
 #define USE_ADC
-#define CURRENT_METER_ADC_PIN   PB1
-#define VBAT_ADC_PIN            PA4
-#define RSSI_ADC_PIN            PA1
+#define ADC_CHANNEL_1_PIN               PB1
+#define ADC_CHANNEL_2_PIN               PA4
+#define ADC_CHANNEL_3_PIN               PA1
+#define CURRENT_METER_ADC_CHANNEL       ADC_CHN_1
+#define VBAT_ADC_CHANNEL                ADC_CHN_2
+#define RSSI_ADC_CHANNEL                ADC_CHN_3
 
 //#define NAV_AUTO_MAG_DECLINATION
-#define NAV_GPS_GLITCH_DETECTION
+//#define NAV_GPS_GLITCH_DETECTION
 
 //#define LED_STRIP
-#define WS2811_TIMER                    TIM3
 #define WS2811_PIN                      PA6
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
 
 #undef USE_SERIALRX_SPEKTRUM
+#undef USE_SERIALRX_IBUS
 //#define SPEKTRUM_BIND
 //#define BIND_PIN                PA3
 

@@ -50,7 +50,7 @@ static bool pitotCalibrationFinished = false;
 static float pitotPressureZero = 0;
 static float pitotPressure = 0;
 static float pitotTemperature = 0;
-static float CalibratedAirspeed = 0;
+static float indicatedAirspeed = 0;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(pitotmeterConfig_t, pitotmeterConfig, PG_PITOTMETER_CONFIG, 0);
 
@@ -86,7 +86,7 @@ bool pitotDetect(pitotDev_t *dev, uint8_t pitotHardwareToUse)
             }
 
         case PITOT_ADC:
-#if defined(USE_PITOT_ADC) && defined(AIRSPEED_ADC_PIN)
+#if defined(USE_PITOT_ADC)
             if (adcPitotDetect(dev)) {
                 pitotHardware = PITOT_ADC;
                 break;
@@ -212,17 +212,16 @@ uint32_t pitotUpdate(void)
     }
 }
 
-#define P0          101325.0f           // standard pressure
-#define CCEXPONENT  0.2857142857f       // exponent of compressibility correction 2/7
-#define CASFACTOR   760.8802669f        // sqrt(5) * speed of sound at standard
-#define TASFACTOR   0.05891022589f      // 1/sqrt(T0)
+#define AIR_DENSITY_SEA_LEVEL_15C   1.225f      // Air density at sea level and 15 degrees Celsius
+#define AIR_GAS_CONST               287.1f      //  J / (kg * K)
+#define P0                          101325.0f   // standard pressure
 
 static void performPitotCalibrationCycle(void)
 {
     const float pitotPressureZeroError = pitotPressure - pitotPressureZero;
     pitotPressureZero += pitotPressureZeroError * 0.15f;
 
-    if (ABS(pitotPressureZeroError) < (pitotPressureZero * 0.00005f)) {    // 0.005% calibration error
+    if (ABS(pitotPressureZeroError) < (P0 * 0.00001f)) {    // 0.001% calibration error
         if ((millis() - pitotCalibrationTimeout) > 250) {
             pitotCalibrationFinished = true;
         }
@@ -235,15 +234,18 @@ static void performPitotCalibrationCycle(void)
 int32_t pitotCalculateAirSpeed(void)
 {
     if (pitotIsCalibrationComplete()) {
-        const float CalibratedAirspeed_tmp = pitotmeterConfig()->pitot_scale * CASFACTOR * sqrtf(powf(fabsf(pitotPressure - pitotPressureZero) / P0 + 1.0f, CCEXPONENT) - 1.0f);
-        CalibratedAirspeed = CalibratedAirspeed * pitotmeterConfig()->pitot_noise_lpf + CalibratedAirspeed_tmp * (1.0f - pitotmeterConfig()->pitot_noise_lpf); // additional LPF to reduce baro noise
-        float TrueAirspeed = CalibratedAirspeed * TASFACTOR * sqrtf(pitotTemperature);
+        // https://en.wikipedia.org/wiki/Indicated_airspeed
+        // Indicated airspeed (IAS) is the airspeed read directly from the airspeed indicator on an aircraft, driven by the pitot-static system.
+        // The IAS is an important value for the pilot because it is the indicated speeds which are specified in the aircraft flight manual for
+        // such important performance values as the stall speed. A typical aircraft will always stall at the same indicated airspeed (for the current configuration)
+        // regardless of density, altitude or true airspeed.
+        //
+        // Therefore we shouldn't care about CAS/TAS and only calculate IAS since it's more indicative to the pilot and more useful in calculations
+        // It also allows us to use pitot_scale to calibrate the dynamic pressure sensor scale
+        const float indicatedAirspeed_tmp = pitotmeterConfig()->pitot_scale * sqrtf(2.0f * fabsf(pitotPressure - pitotPressureZero) / AIR_DENSITY_SEA_LEVEL_15C);
+        indicatedAirspeed += pitotmeterConfig()->pitot_noise_lpf * (indicatedAirspeed_tmp - indicatedAirspeed);
 
-        pitot.airSpeed = TrueAirspeed*100;
-        //debug[0] = (int16_t)(CalibratedAirspeed*100);
-        //debug[1] = (int16_t)(TrueAirspeed*100);
-        //debug[2] = (int16_t)((pitotTemperature-273.15f)*100);
-        //debug[3] = AirSpeed;
+        pitot.airSpeed = indicatedAirspeed * 100;
     } else {
         performPitotCalibrationCycle();
         pitot.airSpeed = 0;

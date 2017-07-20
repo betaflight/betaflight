@@ -63,13 +63,13 @@ typedef enum {
 static uint8_t SENSOR_ADDRESS_TYPE_LOOKUP[] = {
     IBUS_MEAS_TYPE_INTERNAL_VOLTAGE,  // Address 0, sensor 1, not usable since it is reserved for internal voltage
     IBUS_MEAS_TYPE_EXTERNAL_VOLTAGE,  // Address 1 ,sensor 2, VBAT
-    IBUS_MEAS_TYPE_TEMPERATURE,       // Address 2, sensor 3, Baro/Gyro Temp	
+    IBUS_MEAS_TYPE_TEMPERATURE,       // Address 2, sensor 3, Baro/Gyro Temp
     IBUS_MEAS_TYPE_RPM,               // Address 3, sensor 4, Status AS RPM
     IBUS_MEAS_TYPE_RPM,               // Address 4, sensor 5, MAG_COURSE in deg AS RPM
     IBUS_MEAS_TYPE_EXTERNAL_VOLTAGE,  // Address 5, sensor 6, Current in A AS ExtV
     IBUS_MEAS_TYPE_EXTERNAL_VOLTAGE   // Address 6, sensor 7, Baro Alt in cm AS ExtV
 #if defined(GPS)
-   ,IBUS_MEAS_TYPE_RPM,               // Address 7, sensor 8, HOME_DIR in deg AS RPM	
+   ,IBUS_MEAS_TYPE_RPM,               // Address 7, sensor 8, HOME_DIR in deg AS RPM
     IBUS_MEAS_TYPE_RPM,               // Address 8, sensor 9, HOME_DIST in m AS RPM
     IBUS_MEAS_TYPE_RPM,               // Address 9, sensor 10,GPS_COURSE in deg AS RPM
     IBUS_MEAS_TYPE_RPM,               // Address 10,sensor 11,GPS_ALT in m AS RPM
@@ -92,7 +92,7 @@ static uint8_t transmitIbusPacket(uint8_t ibusPacket[static IBUS_MIN_LEN], size_
     for (size_t i = 0; i < packetLength; i++) {
         serialWrite(ibusSerialPort, ibusPacket[i]);
     }
-	return packetLength;
+    return packetLength;
 }
 
 static uint8_t sendIbusCommand(ibusAddress_t address) {
@@ -125,8 +125,16 @@ static uint8_t dispatchMeasurementRequest(ibusAddress_t address) {
     if (address == 1) { //2. VBAT
         return sendIbusMeasurement(address, vbat * 10);
     } else if (address == 2) { //3. BARO_TEMP\GYRO_TEMP
-        if (sensors(SENSOR_BARO)) return sendIbusMeasurement(address, (uint16_t) ((baro.baroTemperature + 50) / 10  + IBUS_TEMPERATURE_OFFSET)); //int32_t 
-        else return sendIbusMeasurement(address, (uint16_t) (telemTemperature1 + IBUS_TEMPERATURE_OFFSET)); //int16_t
+        if (sensors(SENSOR_BARO)) {
+            return sendIbusMeasurement(address, (uint16_t) ((baro.baroTemperature + 50) / 10  + IBUS_TEMPERATURE_OFFSET)); //int32_t
+        } else {
+            /*
+             * There is no temperature data
+             * assuming (baro.baroTemperature + 50) / 10
+             * 0 degrees (no sensor) equals 50 / 10 = 5
+             */
+            return sendIbusMeasurement(address, (uint16_t) (5 + IBUS_TEMPERATURE_OFFSET)); //int16_t
+        }
     } else if (address == 3) { //4. STATUS (sat num AS #0, FIX AS 0, HDOP AS 0, Mode AS 0)
         int16_t status = flightModeToIBusTelemetryMode[getFlightModeForTelemetry()];
 #if defined(GPS)
@@ -145,9 +153,9 @@ static uint8_t dispatchMeasurementRequest(ibusAddress_t address) {
         return sendIbusMeasurement(address, (uint16_t) (attitude.values.yaw / 10));
     } else if (address == 5) { //6. CURR //In 10*mA, 1 = 10 mA
         if (feature(FEATURE_CURRENT_METER)) return sendIbusMeasurement(address, (uint16_t) amperage); //int32_t
-        else return sendIbusMeasurement(address, 0); 
+        else return sendIbusMeasurement(address, 0);
     } else if (address == 6) { //7. BARO_ALT //In cm => m
-        if (sensors(SENSOR_BARO)) return sendIbusMeasurement(address, (uint16_t) baro.BaroAlt); //int32_t 
+        if (sensors(SENSOR_BARO)) return sendIbusMeasurement(address, (uint16_t) baro.BaroAlt); //int32_t
         else return sendIbusMeasurement(address, 0);
     }
 #if defined(GPS)
@@ -170,7 +178,7 @@ static uint8_t dispatchMeasurementRequest(ibusAddress_t address) {
         if (sensors(SENSOR_GPS)) return sendIbusMeasurement(address, (uint16_t) ((gpsSol.llh.lon % 100000)/10));
         else return sendIbusMeasurement(address, 0);
     } else if (address == 13) { //14. GPS_LAT1 //Lattitude * 1e+7
-        if (sensors(SENSOR_GPS)) return sendIbusMeasurement(address, (uint16_t) (gpsSol.llh.lat / 100000)); 
+        if (sensors(SENSOR_GPS)) return sendIbusMeasurement(address, (uint16_t) (gpsSol.llh.lat / 100000));
         else return sendIbusMeasurement(address, 0);
     } else if (address == 14) { //15. GPS_LON1 //Longitude * 1e+7
         if (sensors(SENSOR_GPS)) return sendIbusMeasurement(address, (uint16_t) (gpsSol.llh.lon / 100000));
@@ -180,7 +188,7 @@ static uint8_t dispatchMeasurementRequest(ibusAddress_t address) {
         else return sendIbusMeasurement(address, 0);
     }
 #endif
-	else return 0;
+    else return 0;
 }
 
 uint8_t respondToIbusRequest(uint8_t ibusPacket[static IBUS_RX_BUF_LEN]) {
@@ -194,11 +202,11 @@ uint8_t respondToIbusRequest(uint8_t ibusPacket[static IBUS_RX_BUF_LEN]) {
             return dispatchMeasurementRequest(returnAddress);
         }
     }
-	return 0;
+    return 0;
 }
 
 void initSharedIbusTelemetry(serialPort_t *port) {
-	ibusSerialPort = port;
+    ibusSerialPort = port;
 }
 
 void changeTypeIbusTelemetry(uint8_t id, uint8_t type) {

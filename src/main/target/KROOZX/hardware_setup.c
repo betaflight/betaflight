@@ -28,7 +28,7 @@ void initialisePreBootHardware(void)
     IOInit(DEFIO_IO(OSD_CH_SWITCH), OWNER_SYSTEM, RESOURCE_OUTPUT, 0);
     IOConfigGPIO(DEFIO_IO(OSD_CH_SWITCH), IOCFG_OUT_PP);
     IOLo(DEFIO_IO(OSD_CH_SWITCH));
-    
+
     // Inverting the UART1 port by default
     IOInit(DEFIO_IO(PB13), OWNER_SYSTEM, RESOURCE_OUTPUT, 0);
     IOConfigGPIO(DEFIO_IO(PB13), IOCFG_OUT_PP);

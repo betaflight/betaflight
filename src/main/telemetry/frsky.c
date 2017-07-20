@@ -68,9 +68,6 @@ static serialPortConfig_t *portConfig;
 static bool frskyTelemetryEnabled =  false;
 static portSharing_e frskyPortSharing;
 
-
-extern int16_t telemTemperature1; // FIXME dependency on mw.c
-
 #define CYCLETIME             125
 
 #define PROTOCOL_HEADER       0x5E
@@ -210,7 +207,10 @@ static void sendTemperature1(void)
 #ifdef BARO
     serialize16((baro.baroTemperature + 50)/ 100); //Airmamaf
 #else
-    serialize16(telemTemperature1 / 10);
+    /*
+     * There is no temperature information, so send 0
+     */
+    serialize16(0);
 #endif
 }
 

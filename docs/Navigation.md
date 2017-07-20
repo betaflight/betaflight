@@ -4,7 +4,7 @@ Navigation system in INAV is responsible for assisting the pilot allowing altitu
 
 ## NAV ALTHOLD mode - altitude hold
 
-Altitude hold requires a valid source of altitude - barometer or sonar. The best source is chosen automatically. GPS is available as an altitude source for airplanes only.
+Altitude hold requires a valid source of altitude - barometer, GPS or rangefinder. The best source is chosen automatically. GPS is available as an altitude source for airplanes only.
 In this mode THROTTLE stick controls climb rate (vertical velocity). When pilot moves stick up - quad goes up, pilot moves stick down - quad descends, you keep stick at neutral position - quad hovers.
 
 ### CLI parameters affecting ALTHOLD mode:

@@ -76,37 +76,17 @@
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC2
-#define VBAT_ADC_PIN            PA4
-#define CURRENT_METER_ADC_PIN   PA7
+#define ADC_CHANNEL_1_PIN               PA4
+#define ADC_CHANNEL_2_PIN               PA7
+#define VBAT_ADC_CHANNEL                ADC_CHN_1
+#define CURRENT_METER_ADC_CHANNEL       ADC_CHN_2
 
-#define LED_STRIP
-#if 1
 // LED strip configuration using PWM motor output pin 5.
+#define LED_STRIP
 #define USE_LED_STRIP_ON_DMA1_CHANNEL3
 #define WS2811_PIN                      PA6 // TIM16_CH1
-#define WS2811_TIMER                    TIM16
-#define WS2811_DMA_CHANNEL              DMA1_Channel3
-#define WS2811_IRQ                      DMA1_Channel3_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
+#define WS2811_DMA_STREAM               DMA1_Channel3
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
-#endif
-
-#if 0
-// Alternate LED strip pin
-// FIXME DMA IRQ Transfer Complete is never called because the  TIM17_DMA_RMP needs to be set in SYSCFG_CFGR1
-#define LED_STRIP_TIMER TIM17
-
-#define USE_LED_STRIP_ON_DMA1_CHANNEL7
-#define WS2811_GPIO                     GPIOA
-#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-#define WS2811_GPIO_AF                  GPIO_AF_1
-#define WS2811_PIN                      GPIO_Pin_7 // TIM17_CH1
-#define WS2811_PIN_SOURCE               GPIO_PinSource7
-#define WS2811_TIMER                    TIM17
-#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM17
-#define WS2811_DMA_CHANNEL              DMA1_Channel7
-#define WS2811_IRQ                      DMA1_Channel7_IRQn
-#endif
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -114,9 +94,10 @@
 // USART2, PA3
 #define BIND_PIN                PA3
 
-//#define SONAR
-//#define SONAR_TRIGGER_PIN       PA2   // PWM6 (PA2) - only 3.3v ( add a 1K Ohms resistor )
-//#define SONAR_ECHO_PIN          PB1   // PWM7 (PB1) - only 3.3v ( add a 1K Ohms resistor )
+// #define USE_RANGEFINDER
+// #define USE_RANGEFINDER_HCSR04
+// #define RANGEFINDER_HCSR04_TRIGGER_PIN       PA2   // PWM6 (PA2) - only 3.3v ( add a 1K Ohms resistor )
+// #define RANGEFINDER_HCSR04_ECHO_PIN          PB1   // PWM7 (PB1) - only 3.3v ( add a 1K Ohms resistor )
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 

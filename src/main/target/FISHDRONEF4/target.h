@@ -151,16 +151,20 @@
 
 // *************** ADC *****************************
 #define USE_ADC
-#define VBAT_ADC_PIN            PC0
-#define CURRENT_METER_ADC_PIN   PC1
-#define RSSI_ADC_PIN               PC5
+#define ADC_CHANNEL_1_PIN               PC0
+#define ADC_CHANNEL_2_PIN               PC1
+#define ADC_CHANNEL_3_PIN               PC5
+#define VBAT_ADC_CHANNEL                ADC_CHN_1
+#define CURRENT_METER_ADC_CHANNEL       ADC_CHN_2
+#define RSSI_ADC_CHANNEL                ADC_CHN_3
 #define VBAT_SCALE_DEFAULT         103
 
-// *************** SONAR *****************************
-// #define SONAR
-// #define SONAR_TRIGGER_PIN       PB10
-// #define SONAR_ECHO_PIN          PB11
-// #define USE_SONAR_SRF10
+// *************** RANGEFINDER *****************************
+// #define USE_RANGEFINDER
+// #define USE_RANGEFINDER_HCSR04
+// #define RANGEFINDER_HCSR04_TRIGGER_PIN       PB10
+// #define RANGEFINDER_HCSR04_ECHO_PIN          PB11
+// #define USE_RANGEFINDER_SRF10
 
 // *************** NAV *****************************
 #define NAV

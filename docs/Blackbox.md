@@ -9,7 +9,7 @@ logging device to be recorded, or to a dataflash chip which is present on some f
 
 After your flight, you can view the resulting logs using the interactive log viewer:
 
-https://github.com/cleanflight/blackbox-log-viewer
+https://github.com/iNavFlight/blackbox-log-viewer
 
 You can also use the `blackbox_decode` tool to turn the logs into CSV files for analysis, or render your flight log as a
 video using the `blackbox_render` tool. Those tools can be found in this repository:
@@ -19,7 +19,7 @@ https://github.com/cleanflight/blackbox-tools
 ## Logged data
 The blackbox records flight data on every iteration of the flight control loop. It records the current time in
 microseconds, P, I and D corrections for each axis, your RC command stick positions (after applying expo curves),
-gyroscope data, accelerometer data (after your configured low-pass filtering), barometer and sonar readings, 3-axis
+gyroscope data, accelerometer data (after your configured low-pass filtering), barometer and rangefinder readings, 3-axis
 magnetometer readings, raw VBAT and current measurements, RSSI, and the command being sent to each motor speed
 controller. This is all stored without any approximation or loss of precision, so even quite subtle problems should be
 detectable from the fight data log.
@@ -268,9 +268,9 @@ while in flight.
 ## Viewing recorded logs
 After your flights, you'll have a series of flight log files with a .TXT extension.
 
-You can view these .TXT flight log files interactively using your web browser with the Cleanflight Blackbox Explorer:
+You can view these .TXT flight log files interactively using your web browser with the INAV Blackbox Explorer:
 
-https://github.com/cleanflight/blackbox-log-viewer
+https://github.com/iNavFlight/blackbox-log-viewer
 
 This allows you to scroll around a graphed version of your log and examine your log in detail. You can also export a
 video of your log to share it with others!
@@ -281,4 +281,4 @@ another software package.
 
 You'll find those tools along with instructions for using them in this repository:
 
-https://github.com/cleanflight/blackbox-tools
+https://github.com/iNavFlight/blackbox-log-viewer

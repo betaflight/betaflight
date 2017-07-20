@@ -66,9 +66,8 @@
 #define USE_SOFTSERIAL1
 #define SERIAL_PORT_COUNT       4
 
-#define SOFTSERIAL_1_TIMER TIM3
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
+#define SOFTSERIAL_1_RX_PIN     PA6
+#define SOFTSERIAL_1_TX_PIN     PA7
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
@@ -82,12 +81,14 @@
 #define BOARD_HAS_VOLTAGE_DIVIDER
 
 #define USE_ADC
+#define ADC_CHANNEL_1_PIN               PA4
+#define ADC_CHANNEL_1_INSTANCE          ADC2
+#define ADC_CHANNEL_2_PIN               PA1
+#define ADC_CHANNEL_2_INSTANCE          ADC1
 
-#define VBAT_ADC_PIN            PA4
-#define VBAT_ADC_INSTANCE       ADC2
+#define VBAT_ADC_CHANNEL                ADC_CHN_1
+#define AIRSPEED_ADC_CHANNEL            ADC_CHN_2
 
-#define AIRSPEED_ADC_PIN        PA1
-#define AIRSPEED_ADC_INSTANCE   ADC1
 
 /*
 #define LED_STRIP
@@ -118,11 +119,11 @@
 
     #define MAX_PWM_OUTPUT_PORTS        8
     #define TARGET_MOTOR_COUNT          4
-    #define USABLE_TIMER_CHANNEL_COUNT  12
+    #define USABLE_TIMER_CHANNEL_COUNT  10
 #else
     #define MAX_PWM_OUTPUT_PORTS        10
     #define TARGET_MOTOR_COUNT          6
-    #define USABLE_TIMER_CHANNEL_COUNT  14
+    #define USABLE_TIMER_CHANNEL_COUNT  12
 #endif
 
 #define SPEKTRUM_BIND

@@ -9,7 +9,7 @@ TARGET_SRC = \
             drivers/compass/compass_hmc5883l.c \
             drivers/flash_m25p16.c \
             drivers/light_ws2811strip.c \
-            drivers/light_ws2811strip_stm32f30x.c \
+            drivers/light_ws2811strip_stdperiph.c \
             drivers/serial_softserial.c \
             drivers/serial_usb_vcp.c \
-            drivers/sonar_hcsr04.c \
+            drivers/rangefinder_hcsr04.c \

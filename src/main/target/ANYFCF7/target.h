@@ -24,8 +24,8 @@
 #define LED0   PB7
 #define LED1   PB6
 
-//#define BEEPER   PB2
-//#define BEEPER_INVERTED
+#define BEEPER   PB4
+#define BEEPER_INVERTED
 
 #define MPU6000_CS_PIN        PA4
 #define MPU6000_SPI_INSTANCE  SPI1
@@ -51,6 +51,12 @@
 
 #define BARO
 #define USE_BARO_MS5611
+
+#ifdef ANYFCF7_EXTERNAL_BARO
+    #define USE_BARO_BMP085
+    #define USE_BARO_BMP280
+    #define BARO_I2C_INSTANCE I2C_DEVICE_EXT
+#endif
 
 #define PITOT
 #define USE_PITOT_MS4525
@@ -149,9 +155,12 @@
 #define NAV_GPS_GLITCH_DETECTION
 
 #define USE_ADC
-#define VBAT_ADC_PIN                PC0
-#define CURRENT_METER_ADC_PIN       PC1
-#define RSSI_ADC_PIN                PC2
+#define ADC_CHANNEL_1_PIN               PC0
+#define ADC_CHANNEL_2_PIN               PC1
+#define ADC_CHANNEL_3_PIN               PC2
+#define VBAT_ADC_CHANNEL                ADC_CHN_1
+#define CURRENT_METER_ADC_CHANNEL       ADC_CHN_2
+#define RSSI_ADC_CHANNEL                ADC_CHN_3
 
 #define LED_STRIP
 

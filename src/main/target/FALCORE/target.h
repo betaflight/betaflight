@@ -19,6 +19,8 @@
 
 #define TARGET_BOARD_IDENTIFIER "FLCR" // FaLCoRre
 
+#define TARGET_CONFIG
+
 #define LED0                    PC2
 #define LED1                    PB11
 
@@ -26,9 +28,6 @@
 
 #define BEEPER                  PB4
 #define BEEPER_PWM
-#define BEEPER_INVERTED
-#define BEEPER_PWM_TIMER        TIM16
-#define BEEPER_PWM_TIMER_CH     TIM_Channel_1
 #define BEEPER_PWM_FREQUENCY    2700
 
 #define MPU6500_CS_PIN          PC0
@@ -100,20 +99,19 @@
 #define I2C2_SCL                PA9
 #define I2C2_SDA                PA10
 
-#define VBAT_SCALE_DEFAULT      78
+#define VBAT_SCALE_DEFAULT       78
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
-#define ADC_INSTANCE            ADC1
-#define VBAT_ADC_PIN            PF4
-#define RSSI_ADC_PIN            PA1
+#define ADC_INSTANCE             ADC1
+#define ADC_CHANNEL_1_PIN        PF4
+#define ADC_CHANNEL_2_PIN        PA1
+#define VBAT_ADC_CHANNEL         ADC_CHN_1
+#define RSSI_ADC_CHANNEL         ADC_CHN_2
 
 #define LED_STRIP
 #define USE_LED_STRIP_ON_DMA1_CHANNEL2
 #define WS2811_PIN                      PA8
-#define WS2811_TIMER                    TIM1
-#define WS2811_DMA_CHANNEL              DMA1_Channel2
-#define WS2811_IRQ                      DMA1_Channel2_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
+#define WS2811_DMA_STREAM               DMA1_Channel2
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
@@ -128,9 +126,10 @@
 // USART2, PA3
 #define BIND_PIN                PA3
 
-#define SONAR
-#define SONAR_TRIGGER_PIN       PA7
-#define SONAR_ECHO_PIN          PA2
+#define USE_RANGEFINDER
+#define USE_RANGEFINDER_HCSR04
+#define RANGEFINDER_HCSR04_TRIGGER_PIN       PA7
+#define RANGEFINDER_HCSR04_ECHO_PIN          PA2
 
 #define DEFAULT_FEATURES        FEATURE_BLACKBOX
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM

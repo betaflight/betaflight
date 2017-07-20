@@ -73,7 +73,8 @@
 #define PG_SERVO_CONFIG 52
 //#define PG_IBUS_TELEMETRY_CONFIG 53
 //#define PG_VTX_CONFIG 54
-#define PG_CF_END 55
+#define PG_ELERES_CONFIG 55
+#define PG_CF_END 56
 
 // Driver configuration
 //#define PG_DRIVER_PWM_RX_CONFIG 100
@@ -90,7 +91,9 @@
 #define PG_RANGEFINDER_CONFIG 1006
 #define PG_WAYPOINT_MISSION_STORAGE 1007
 #define PG_PID_AUTOTUNE_CONFIG 1008
-#define PG_INAV_END 1008
+#define PG_STATS_CONFIG 1009
+#define PG_ADC_CHANNEL_CONFIG 1010
+#define PG_INAV_END 1010
 
 // OSD configuration (subject to change)
 //#define PG_OSD_FONT_CONFIG 2047

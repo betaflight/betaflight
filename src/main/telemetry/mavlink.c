@@ -391,13 +391,19 @@ void mavlinkSendHUDAndHeartbeat(void)
     }
 #endif
 
+#if defined(PITOT)
+    if (sensors(SENSOR_PITOT)) {
+        mavAirSpeed = pitot.airSpeed / 100.0f;
+    }
+#endif
+
     // select best source for altitude
 #if defined(NAV)
     mavAltitude = getEstimatedActualPosition(Z) / 100.0f;
     mavClimbRate = getEstimatedActualVelocity(Z) / 100.0f;
 #elif defined(GPS)
     if (sensors(SENSOR_GPS)) {
-        // No sonar or baro, just display altitude above MLS
+        // No surface or baro, just display altitude above MLS
         mavAltitude = gpsSol.llh.alt;
     }
 #endif
@@ -411,7 +417,7 @@ void mavlinkSendHUDAndHeartbeat(void)
         DECIDEGREES_TO_DEGREES(attitude.values.yaw),
         // throttle Current throttle setting in integer percent, 0 to 100
         scaleRange(constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX), PWM_RANGE_MIN, PWM_RANGE_MAX, 0, 100),
-        // alt Current altitude (MSL), in meters, if we have sonar or baro use them, otherwise use GPS (less accurate)
+        // alt Current altitude (MSL), in meters, if we have surface or baro use them, otherwise use GPS (less accurate)
         mavAltitude,
         // climb Current climb rate in meters/second
         mavClimbRate);
@@ -424,7 +430,7 @@ void mavlinkSendHUDAndHeartbeat(void)
         mavModes |= MAV_MODE_FLAG_SAFETY_ARMED;
 
     uint8_t mavSystemType;
-    switch(mixerConfig()->mixerMode)
+    switch (mixerConfig()->mixerMode)
     {
         case MIXER_TRI:
             mavSystemType = MAV_TYPE_TRICOPTER;

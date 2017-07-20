@@ -343,7 +343,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
         }
 
         // Compute and apply integral feedback if enabled
-        if(imuRuntimeConfig.dcm_ki_mag > 0.0f) {
+        if (imuRuntimeConfig.dcm_ki_mag > 0.0f) {
             // Stop integrating if spinning beyond the certain limit
             if (spin_rate_sq < sq(DEGREES_TO_RADIANS(SPIN_RATE_LIMIT))) {
                 integralMagX += imuRuntimeConfig.dcm_ki_mag * ex * dt;    // integral error scaled by Ki
@@ -382,7 +382,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
         ez = (ax * rMat[2][1] - ay * rMat[2][0]);
 
         // Compute and apply integral feedback if enabled
-        if(imuRuntimeConfig.dcm_ki_acc > 0.0f) {
+        if (imuRuntimeConfig.dcm_ki_acc > 0.0f) {
             // Stop integrating if spinning beyond the certain limit
             if (spin_rate_sq < sq(DEGREES_TO_RADIANS(SPIN_RATE_LIMIT))) {
                 integralAccX += imuRuntimeConfig.dcm_ki_acc * ex * dt;    // integral error scaled by Ki

@@ -590,6 +590,7 @@ COMMON_SRC = \
             fc/rc_controls.c \
             fc/rc_curves.c \
             fc/runtime_config.c \
+            fc/stats.c \
             flight/failsafe.c \
             flight/hil.c \
             flight/imu.c \
@@ -622,6 +623,7 @@ COMMON_SRC = \
             rx/sumd.c \
             rx/sumh.c \
             rx/xbus.c \
+            rx/eleres.c \
             scheduler/scheduler.c \
             sensors/acceleration.c \
             sensors/battery.c \
@@ -647,8 +649,8 @@ HIGHEND_SRC = \
             common/colorconversion.c \
             common/gps_conversion.c \
             drivers/display_ug2864hsweg01.c \
-            drivers/sonar_hcsr04.c \
-            drivers/sonar_srf10.c \
+            drivers/rangefinder_hcsr04.c \
+            drivers/rangefinder_srf10.c \
             io/dashboard.c \
             io/displayport_max7456.c \
             io/displayport_msp.c \
@@ -725,7 +727,6 @@ STM32F30x_COMMON_SRC = \
             drivers/bus_i2c_stm32f30x.c \
             drivers/dma.c \
             drivers/gpio_stm32f30x.c \
-            drivers/light_ws2811strip_stm32f30x.c \
             drivers/serial_uart_stm32f30x.c \
             drivers/system_stm32f30x.c \
             drivers/timer_stm32f30x.c

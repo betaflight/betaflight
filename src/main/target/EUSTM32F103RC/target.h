@@ -63,11 +63,12 @@
 #define USE_MAG_AK8975
 #define MAG_AK8975_ALIGN        CW180_DEG_FLIP
 
-// #define SONAR
-#define SONAR_TRIGGER_PIN       PB0
-#define SONAR_ECHO_PIN          PB1
-#define SONAR_TRIGGER_PIN_PWM   PB8
-#define SONAR_ECHO_PIN_PWM      PB9
+// #define USE_RANGEFINDER
+//#define USE_RANGEFINDER_HCSR04
+#define RANGEFINDER_HCSR04_TRIGGER_PIN       PB0
+#define RANGEFINDER_HCSR04_ECHO_PIN          PB1
+#define RANGEFINDER_HCSR04_TRIGGER_PIN_PWM   PB8
+#define RANGEFINDER_HCSR04_ECHO_PIN_PWM      PB9
 
 //#define USE_DASHBOARD
 
@@ -77,12 +78,10 @@
 #define USE_SOFTSERIAL2
 #define SERIAL_PORT_COUNT       4
 
-#define SOFTSERIAL_1_TIMER      TIM3
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
-#define SOFTSERIAL_2_TIMER      TIM3
-#define SOFTSERIAL_2_TIMER_RX_HARDWARE 6 // PWM 7
-#define SOFTSERIAL_2_TIMER_TX_HARDWARE 7 // PWM 8
+#define SOFTSERIAL_1_RX_PIN     PA6
+#define SOFTSERIAL_1_TX_PIN     PA7
+#define SOFTSERIAL_2_RX_PIN     PB0
+#define SOFTSERIAL_2_TX_PIN     PB1
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2)
@@ -92,10 +91,13 @@
 // #define SOFT_I2C_PB67
 
 #define USE_ADC
-#define CURRENT_METER_ADC_PIN   PB1
-#define VBAT_ADC_PIN            PA4
-#define RSSI_ADC_PIN            PA1
-#define EXTERNAL1_ADC_PIN       PA5
+#define ADC_CHANNEL_1_PIN               PB1
+#define ADC_CHANNEL_2_PIN               PA4
+#define ADC_CHANNEL_3_PIN               PA1
+#define ADC_CHANNEL_4_PIN               PA5
+#define VBAT_ADC_CHANNEL                ADC_CHN_1
+#define CURRENT_METER_ADC_CHANNEL       ADC_CHN_2
+#define RSSI_ADC_CHANNEL                ADC_CHN_3
 
 #define SPEKTRUM_BIND
 // USART2, PA3

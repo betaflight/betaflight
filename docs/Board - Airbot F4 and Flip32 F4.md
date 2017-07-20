@@ -19,7 +19,7 @@
 
 ## **NOT** supported
 
-* Sonar
+* HC-SR04 Rangefinder
 * ServoTilt
 * Channel Forwarding
 

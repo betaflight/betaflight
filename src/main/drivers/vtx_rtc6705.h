@@ -15,8 +15,29 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*
+ * Author: Giles Burgess (giles@multiflite.co.uk)
+ *
+ * This source code is provided as is and can be used/modified so long
+ * as this header is maintained with the file at all times.
+ */
+
 #pragma once
 
-#include "drivers/rangefinder.h"
+#include <stdint.h>
 
-bool hcsr04Detect(rangefinderDev_t *dev, const rangefinderHardwarePins_t * sonarHardwarePins);
+#define RTC6705_BAND_COUNT          5
+#define RTC6705_CHANNEL_COUNT       8
+#define RTC6705_RF_POWER_COUNT      2
+
+#define RTC6705_FREQ_MIN            5600
+#define RTC6705_FREQ_MAX            5950
+
+#define RTC6705_BOOT_DELAY 350 // milliseconds
+
+void rtc6705IOInit(void);
+void rtc6705SetBandAndChannel(const uint8_t band, const uint8_t channel);
+void rtc6705SetFreq(const uint16_t freq);
+void rtc6705SetRFPower(const uint8_t rf_power);
+void rtc6705Disable(void);
+void rtc6705Enable(void);

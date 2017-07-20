@@ -131,7 +131,7 @@ static void adcInstanceInit(ADCDevice adcDevice)
     __HAL_LINKDMA(&adc->ADCHandle, DMA_Handle, adc->DmaHandle);
 
     uint8_t rank = 1;
-    for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (int i = ADC_CHN_1; i < ADC_CHN_COUNT; i++) {
         if (!adcConfig[i].enabled || adcConfig[i].adcDevice != adcDevice) {
             continue;
         }
@@ -152,7 +152,7 @@ static void adcInstanceInit(ADCDevice adcDevice)
 
     //HAL_CLEANINVALIDATECACHE((uint32_t*)&adcValues[adcDevice], configuredAdcChannels);
     /*##-4- Start the conversion process #######################################*/
-    if(HAL_ADC_Start_DMA(&adc->ADCHandle, (uint32_t*)&adcValues[adcDevice], adc->usedChannelCount) != HAL_OK)
+    if (HAL_ADC_Start_DMA(&adc->ADCHandle, (uint32_t*)&adcValues[adcDevice], adc->usedChannelCount) != HAL_OK)
     {
         /* Start Conversation Error */
     }
@@ -163,13 +163,13 @@ void adcHardwareInit(drv_adc_config_t *init)
     UNUSED(init);
     int configuredAdcChannels = 0;
 
-    for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (int i = ADC_CHN_1; i < ADC_CHN_COUNT; i++) {
         if (!adcConfig[i].tag)
             continue;
-            
+
         adcDevice_t * adc = &adcHardware[adcConfig[i].adcDevice];
 
-        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC, RESOURCE_ADC_BATTERY + i, 0);
+        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC, RESOURCE_ADC_CH1 + (i - ADC_CHN_1), 0);
         IOConfigGPIO(IOGetByTag(adcConfig[i].tag), IO_CONFIG(GPIO_MODE_ANALOG, 0, GPIO_NOPULL));
 
         adcConfig[i].adcChannel = adcChannelByTag(adcConfig[i].tag);

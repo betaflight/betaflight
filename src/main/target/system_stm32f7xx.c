@@ -167,16 +167,16 @@
       RCC_OscInitStruct.PLL.PLLQ = PLL_Q;
 
       ret = HAL_RCC_OscConfig(&RCC_OscInitStruct);
-      if(ret != HAL_OK)
+      if (ret != HAL_OK)
       {
-        while(1) { ; }
+        while (1) { ; }
       }
 
       /* Activate the OverDrive to reach the 216 MHz Frequency */
       ret = HAL_PWREx_EnableOverDrive();
-      if(ret != HAL_OK)
+      if (ret != HAL_OK)
       {
-        while(1) { ; }
+        while (1) { ; }
       }
       /* Select PLLSAI output as USB clock source */
       PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_CLK48;
@@ -184,9 +184,9 @@
       PeriphClkInitStruct.PLLSAI.PLLSAIN = PLL_SAIN;
       PeriphClkInitStruct.PLLSAI.PLLSAIQ = PLL_SAIQ;
       PeriphClkInitStruct.PLLSAI.PLLSAIP = PLL_SAIP;
-      if(HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct)  != HAL_OK)
+      if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct)  != HAL_OK)
       {
-        while(1) {};
+        while (1) {};
       }
 
       /* Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2 clocks dividers */
@@ -197,9 +197,9 @@
       RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
       ret = HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_7);
-      if(ret != HAL_OK)
+      if (ret != HAL_OK)
       {
-        while(1) { ; }
+        while (1) { ; }
       }
 
       PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_USART2
@@ -223,7 +223,7 @@
       ret = HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
       if (ret != HAL_OK)
       {
-          while(1) { ; }
+          while (1) { ; }
       }
 
     // Activating the timerprescalers while the APBx prescalers are 1/2/4 will connect the TIMxCLK to HCLK which has been configured to 216MHz
@@ -288,9 +288,9 @@ void SystemInit(void)
   /* Configure the system clock to 216 MHz */
   SystemClock_Config();
 
-  if(SystemCoreClock != 216000000)
+  if (SystemCoreClock != 216000000)
   {
-      while(1)
+      while (1)
       {
           // There is a mismatch between the configured clock and the expected clock in portable.h
       }

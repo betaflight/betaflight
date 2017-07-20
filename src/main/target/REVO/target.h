@@ -60,9 +60,10 @@
 #define USE_BARO_BMP280
 #define USE_BARO_MS5611
 
-//#define PITOT
+#define PITOT
+#define USE_PITOT_ADC
 //#define USE_PITOT_MS4525
-#define PITOT_I2C_INSTANCE      I2C_DEVICE_EXT
+//#define PITOT_I2C_INSTANCE      I2C_DEVICE_EXT
 
 #define M25P16_CS_PIN           PB3
 #define M25P16_SPI_INSTANCE     SPI3
@@ -104,24 +105,22 @@
 #define I2C_DEVICE_EXT          (I2CDEV_2)
 
 #define USE_ADC
-#define CURRENT_METER_ADC_PIN   PC1
-#define VBAT_ADC_PIN            PC2
-#define RSSI_ADC_PIN            PA0
+#define ADC_CHANNEL_1_PIN               PC1
+#define ADC_CHANNEL_2_PIN               PC2
+#define ADC_CHANNEL_3_PIN               PA0
+#define CURRENT_METER_ADC_CHANNEL       ADC_CHN_1
+#define VBAT_ADC_CHANNEL                ADC_CHN_2
+#define RSSI_ADC_CHANNEL                ADC_CHN_3
+
 
 #define SENSORS_SET (SENSOR_ACC|SENSOR_MAG|SENSOR_BARO)
 
 #define LED_STRIP
 // LED Strip can run off Pin 5 (PA1) of the MOTOR outputs.
-#define WS2811_GPIO_AF                  GPIO_AF_TIM5
 #define WS2811_PIN                      PA1
-#define WS2811_TIMER                    TIM5
-#define WS2811_TIMER_CHANNEL            TIM_Channel_2
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST4_HANDLER
 #define WS2811_DMA_STREAM               DMA1_Stream4
 #define WS2811_DMA_CHANNEL              DMA_Channel_6
-#define WS2811_DMA_IRQ                  DMA1_Stream4_IRQn
-#define WS2811_DMA_FLAG                 DMA_FLAG_TCIF4
-#define WS2811_DMA_IT                   DMA_IT_TCIF4
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 

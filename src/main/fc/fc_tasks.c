@@ -58,6 +58,8 @@
 #include "msp/msp_serial.h"
 
 #include "rx/rx.h"
+#include "rx/eleres.h"
+#include "rx/rx_spi.h"
 
 #include "scheduler/scheduler.h"
 
@@ -73,10 +75,6 @@
 #include "telemetry/telemetry.h"
 
 #include "config/feature.h"
-
-#define TASK_PERIOD_HZ(hz) (1000000 / (hz))
-#define TASK_PERIOD_MS(ms) ((ms) * 1000)
-#define TASK_PERIOD_US(us) (us)
 
 /* VBAT monitoring interval (in microseconds) - 1s*/
 #define VBATINTERVAL (6 * 3500)
@@ -98,9 +96,8 @@ void taskHandleSerial(timeUs_t currentTimeUs)
 
 void taskUpdateBattery(timeUs_t currentTimeUs)
 {
+#ifdef USE_ADC
     static timeUs_t vbatLastServiced = 0;
-    static timeUs_t ibatLastServiced = 0;
-
     if (feature(FEATURE_VBAT)) {
         if (cmpTimeUs(currentTimeUs, vbatLastServiced) >= VBATINTERVAL) {
             timeUs_t vbatTimeDelta = currentTimeUs - vbatLastServiced;
@@ -108,7 +105,9 @@ void taskUpdateBattery(timeUs_t currentTimeUs)
             batteryUpdate(vbatTimeDelta);
         }
     }
+#endif
 
+    static timeUs_t ibatLastServiced = 0;
     if (feature(FEATURE_CURRENT_METER)) {
         timeUs_t ibatTimeSinceLastServiced = cmpTimeUs(currentTimeUs, ibatLastServiced);
 
@@ -171,12 +170,12 @@ void taskUpdatePitot(timeUs_t currentTimeUs)
 }
 #endif
 
-#ifdef SONAR
-void taskUpdateSonar(timeUs_t currentTimeUs)
+#ifdef USE_RANGEFINDER
+void taskUpdateRangefinder(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
 
-    if (!sensors(SENSOR_SONAR))
+    if (!sensors(SENSOR_RANGEFINDER))
         return;
 
     // Update and adjust task to update at required rate
@@ -185,7 +184,7 @@ void taskUpdateSonar(timeUs_t currentTimeUs)
         rescheduleTask(TASK_SELF, newDeadline);
     }
 
-    updatePositionEstimator_SonarTopic(currentTimeUs);
+    updatePositionEstimator_SurfaceTopic(currentTimeUs);
 }
 #endif
 
@@ -300,8 +299,8 @@ void fcTasksInit(void)
 #ifdef PITOT
     setTaskEnabled(TASK_PITOT, sensors(SENSOR_PITOT));
 #endif
-#ifdef SONAR
-    setTaskEnabled(TASK_SONAR, sensors(SENSOR_SONAR));
+#ifdef USE_RANGEFINDER
+    setTaskEnabled(TASK_RANGEFINDER, sensors(SENSOR_RANGEFINDER));
 #endif
 #ifdef USE_DASHBOARD
     setTaskEnabled(TASK_DASHBOARD, feature(FEATURE_DASHBOARD));
@@ -449,11 +448,11 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef SONAR
-    [TASK_SONAR] = {
-        .taskName = "SONAR",
-        .taskFunc = taskUpdateSonar,
-        .desiredPeriod = TASK_PERIOD_MS(50),                 // every 70 ms, approximately 20 Hz
+#ifdef USE_RANGEFINDER
+    [TASK_RANGEFINDER] = {
+        .taskName = "RANGEFINDER",
+        .taskFunc = taskUpdateRangefinder,
+        .desiredPeriod = TASK_PERIOD_MS(70),
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
@@ -507,7 +506,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_OSD] = {
         .taskName = "OSD",
         .taskFunc = taskUpdateOsd,
-        .desiredPeriod = 1000000 / 60,          // 60 Hz
+        .desiredPeriod = TASK_PERIOD_HZ(OSD_TASK_FREQUENCY_HZ),
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif

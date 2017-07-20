@@ -98,8 +98,8 @@
 // RC1              GND
 // RC2              power
 // RC3  PB6/TIM4    unused
-// RC4  PB5/TIM3    SCK / softserial1 TX / sonar trigger
-// RC5  PB0/TIM3    MISO / softserial1 RX / sonar echo / RSSI ADC
+// RC4  PB5/TIM3    SCK / softserial1 TX / HC-SR04 trigger
+// RC5  PB0/TIM3    MISO / softserial1 RX / HC-SR04 echo / RSSI ADC
 // RC6  PB1/TIM3    MOSI / current
 // RC7  PA0/TIM2    CSN / battery voltage
 // RC8  PA1/TIM2    CE / RX_PPM
@@ -125,9 +125,8 @@
 #undef USE_UART1_RX_DMA
 #endif
 
-#define SOFTSERIAL_1_TIMER      TIM3
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 1 // PWM 2
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 2 // PWM 3
+#define SOFTSERIAL_1_TX_PIN     PB5
+#define SOFTSERIAL_1_RX_PIN     PB0
 
 #define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 
@@ -135,13 +134,18 @@
 
 
 #define USE_ADC
-#define CURRENT_METER_ADC_PIN   PB1
-#define VBAT_ADC_PIN            PA0
+#define ADC_CHANNEL_1_PIN               PA0
+#define ADC_CHANNEL_2_PIN               PB1
+
 #ifdef CC3D_PPM1
-#define RSSI_ADC_PIN            PA1
+#define ADC_CHANNEL_3_PIN               PA1
 #else
-#define RSSI_ADC_PIN            PB0
+#define ADC_CHANNEL_3_PIN               PB0
 #endif
+
+#define VBAT_ADC_CHANNEL                ADC_CHN_1
+#define CURRENT_METER_ADC_CHANNEL       ADC_CHN_2
+#define RSSI_ADC_CHANNEL                ADC_CHN_3
 
 // LED strip is on PWM5 output pin
 //#define LED_STRIP
@@ -156,10 +160,11 @@
 
 //#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-//#define SONAR
-//#define USE_SONAR_SRF10
-#define SONAR_ECHO_PIN          PB0
-#define SONAR_TRIGGER_PIN       PB5
+// #define USE_RANGEFINDER
+//#define USE_RANGEFINDER_HCSR04
+//#define USE_RANGEFINDER_SRF10
+#define RANGEFINDER_HCSR04_ECHO_PIN          PB0
+#define RANGEFINDER_HCSR04_TRIGGER_PIN       PB5
 
 //#define NAV_AUTO_MAG_DECLINATION
 //#define NAV_GPS_GLITCH_DETECTION

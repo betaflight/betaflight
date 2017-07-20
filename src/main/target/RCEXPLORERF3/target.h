@@ -86,22 +86,23 @@
 #define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define ADC_INSTANCE            ADC2
-#define VBAT_ADC_PIN            PA5
-#define CURRENT_METER_ADC_PIN   PB2
-#define RSSI_ADC_PIN            PA6
+#define ADC_CHANNEL_1_PIN               PA5
+#define ADC_CHANNEL_2_PIN               PB2
+#define ADC_CHANNEL_3_PIN               PA6
+#define VBAT_ADC_CHANNEL                ADC_CHN_1
+#define CURRENT_METER_ADC_CHANNEL       ADC_CHN_2
+#define RSSI_ADC_CHANNEL                ADC_CHN_3
 
 #define LED_STRIP // LED strip configuration using PWM motor output pin 5.
 #define USE_LED_STRIP_ON_DMA1_CHANNEL3
 #define WS2811_PIN                      PB8 // TIM16_CH1
-#define WS2811_TIMER                    TIM16
-#define WS2811_DMA_CHANNEL              DMA1_Channel3
-#define WS2811_IRQ                      DMA1_Channel3_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
+#define WS2811_DMA_STREAM               DMA1_Channel3
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
 
-#define SONAR
-#define SONAR_TRIGGER_PIN       PA6   // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
-#define SONAR_ECHO_PIN          PB1   // RC_CH8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
+#define USE_RANGEFINDER
+#define USE_RANGEFINDER_HCSR04
+#define RANGEFINDER_HCSR04_TRIGGER_PIN       PA6   // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
+#define RANGEFINDER_HCSR04_ECHO_PIN          PB1   // RC_CH8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
 
 #define SENSORS_SET (SENSOR_ACC | SENSOR_BARO | SENSOR_GPS | SENSOR_MAG)
 
@@ -123,5 +124,5 @@
 #define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
-#define USABLE_TIMER_CHANNEL_COUNT 6
-#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(17))
+#define USABLE_TIMER_CHANNEL_COUNT 7
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(16) | TIM_N(17))

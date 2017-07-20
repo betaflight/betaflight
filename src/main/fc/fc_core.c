@@ -100,7 +100,6 @@ int16_t headFreeModeHold;
 
 uint8_t motorControlEnable = false;
 
-int16_t telemTemperature1;      // gyro sensor temperature
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
 static bool isRXDataNew;
@@ -226,6 +225,17 @@ void annexCode(void)
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
     } else {
+        static bool calibratingFinishedBeep = false;
+        if (isCalibrating()) {
+            calibratingFinishedBeep = false;
+        }
+        else {
+            if (!calibratingFinishedBeep) {
+                calibratingFinishedBeep = true;
+                beeper(BEEPER_RUNTIME_CALIBRATION_DONE);
+            }
+        }
+
         if (!IS_RC_MODE_ACTIVE(BOXARM) && failsafeIsReceivingRxData()) {
             ENABLE_ARMING_FLAG(OK_TO_ARM);
         }
@@ -253,6 +263,8 @@ void mwDisarm(disarmReason_t disarmReason)
             blackboxFinish();
         }
 #endif
+
+        statsOnDisarm();
 
         beeper(BEEPER_DISARMING);      // emit disarm tone
     }
@@ -309,7 +321,7 @@ void mwArm(void)
 #else
             beeper(BEEPER_ARMING);
 #endif
-
+            statsOnArm();
             return;
         }
     }
@@ -476,7 +488,7 @@ void processRx(timeUs_t currentTimeUs)
     // Handle passthrough mode
     if (STATE(FIXED_WING)) {
         if ((IS_RC_MODE_ACTIVE(BOXPASSTHRU) && !navigationRequiresAngleMode() && !failsafeRequiresAngleMode()) ||    // Normal activation of passthrough
-            (!ARMING_FLAG(ARMED) && isCalibrating())){                                                              // Backup - if we are not armed - enforce passthrough while calibrating        
+            (!ARMING_FLAG(ARMED) && isCalibrating())){                                                              // Backup - if we are not armed - enforce passthrough while calibrating
             ENABLE_FLIGHT_MODE(PASSTHRU_MODE);
         } else {
             DISABLE_FLIGHT_MODE(PASSTHRU_MODE);
@@ -705,12 +717,15 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
 
 #ifdef USE_SERVOS
     if (isMixerUsingServos()) {
-        servoMixer();
+        servoMixer(dT);
+        processServoAutotrim();
     }
+
+    // Servo tilt is not part of servo mixer, but uses servos
     if (feature(FEATURE_SERVO_TILT)) {
         processServoTilt();
     }
-    processServoAutotrim();
+
     //Servos should be filtered or written only when mixer is using servos or special feaures are enabled
     if (isServoOutputEnabled()) {
         writeServos();

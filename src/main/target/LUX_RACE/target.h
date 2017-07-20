@@ -77,16 +77,17 @@
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
-#define VBAT_ADC_PIN            PC0
-#define CURRENT_METER_ADC_PIN   PC1
-#define RSSI_ADC_PIN            PC2
-#define EXTERNAL1_ADC_PIN       PC3
+#define ADC_CHANNEL_1_PIN               PC0
+#define ADC_CHANNEL_2_PIN               PC1
+#define ADC_CHANNEL_3_PIN               PC2
+#define ADC_CHANNEL_4_PIN               PC3
+#define VBAT_ADC_CHANNEL                ADC_CHN_1
+#define CURRENT_METER_ADC_CHANNEL       ADC_CHN_2
+#define RSSI_ADC_CHANNEL                ADC_CHN_3
 
 #define LED_STRIP
 #define WS2811_PIN                      PA6 // TIM16_CH1
-#define WS2811_TIMER                    TIM16
-#define WS2811_DMA_CHANNEL              DMA1_Channel3
-#define WS2811_IRQ                      DMA1_Channel3_IRQn
+#define WS2811_DMA_STREAM               DMA1_Channel3
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
 
@@ -96,11 +97,6 @@
 #define BIND_PIN                        PC5
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
-#undef GPS_PROTO_NMEA
-#undef GPS_PROTO_UBLOX
-#undef GPS_PROTO_I2C_NAV
-#undef GPS_PROTO_NAZA
-#undef GPS_PROTO_UBLOX_NEO7PLUS
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define DEFAULT_FEATURES        FEATURE_VBAT
@@ -115,6 +111,6 @@
 #define TARGET_IO_PORTD         (BIT(2))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
-#define USABLE_TIMER_CHANNEL_COUNT 11
+#define USABLE_TIMER_CHANNEL_COUNT 12
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15))
 

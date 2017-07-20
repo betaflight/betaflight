@@ -133,6 +133,7 @@ Re-apply any new defaults as desired.
 |  inav_use_gps_velned  | ON | Defined if iNav should use velocity data provided by GPS module for doing position and speed estimation. If set to OFF iNav will fallback to calculating velocity from GPS coordinates. Using native velocity data may improve performance on some GPS modules. Some GPS modules introduce significant delay and using native velocity may actually result in much worse performance. |
 |  inav_gps_delay  | 200 | GPS position and velocity data usually arrive with a delay. This parameter defines this delay. Default (200) should be reasonable for most GPS receivers. |
 |  inav_reset_altitude | FIRST_ARM | Defines when relative estimated altitude is reset to zero. Variants - `NEVER` (once reference is acquired it's used regardless); `FIRST_ARM` (keep altitude at zero until firstly armed), `EACH_ARM` (altitude is reset to zero on each arming) |
+|  inav_max_surface_altitude  | 200 | Max allowed altitude for surface following mode. [cm] |
 |  inav_w_z_baro_p  | 0.350 | Weight of barometer measurements in estimated altitude and climb rate |
 |  inav_w_z_gps_p  | 0.200 | Weight of GPS altitude measurements in estimated altitude. Setting is used only of airplanes |
 |  inav_w_z_gps_v  | 0.500 | Weight of GPS climb rate measurements in estimated climb rate. Setting is used on both airplanes and multirotors. If GPS doesn't support native climb rate reporting (i.e. NMEA GPS) you may consider setting this to zero |
@@ -187,6 +188,7 @@ Re-apply any new defaults as desired.
 |  nav_fw_launch_spinup_time    | 100 | Time to bring power from min_throttle to nav_fw_launch_thr - to avoid big stress on ESC and large torque from propeller |
 |  nav_fw_launch_timeout  | 5000 | Maximum time for launch sequence to be executed. After this time LAUNCH mode will be turned off and regular flight mode will take over (ms) |
 |  nav_fw_launch_climb_angle  | 18 | Climb angle for launch sequence (degrees), is also restrained by global max_angle_inclination_pit |
+|  nav_fw_land_dive_angle  | 2 | Dive angle that airplane will use during final landing phase. During dive phase, motor is stopped or IDLE and roll controll is locked to 0 degrees |
 |  serialrx_provider  | SPEK1024 | When feature SERIALRX is enabled, this allows connection to several receivers which output data via digital interface resembling serial. See RX section. |
 |  serialrx_halfduplex  | OFF | Allow serial receiver to operate on UART TX pin. With some receivers will allow control and telemetry over a single wire |
 |  sbus_inversion     | OFF | Standard SBUS (Futaba, FrSKY) uses an inverted signal. Some OpenLRS receivers produce a non-inverted SBUS signal. This setting is to support this type of receivers (including modified FrSKY). This only works on supported hardware (mainly F3 based flight controllers). |
@@ -252,6 +254,7 @@ Re-apply any new defaults as desired.
 |  blackbox_rate_num  | 1 | Blackbox logging rate numerator. Use num/denom settings to decide if a frame should be logged, allowing control of the portion of logged loop iterations |
 |  blackbox_rate_denom  | 1 | Blackbox logging rate denominator. See blackbox_rate_num. |
 |  blackbox_device  | SPIFLASH | Selection of where to write blackbox data |
+|  sdcard_detect_inverted  | `TARGET dependent` | This setting drives the way SD card is detected in card slot. On some targets (AnyFC F7 clone) different card slot was used and depending of hardware revision ON or OFF setting might be required. If card is not detected, change this value. |
 |  ledstrip_visual_beeper  | OFF |  |
 |  osd_video_system     | 0     |  |
 |  osd_row_shiftdown    | 0     |  |
@@ -369,6 +372,13 @@ Re-apply any new defaults as desired.
 |  fw_autotune_threshold       | 50  | Threshold [%] of max rate to consider overshoot/undershoot detection |
 |  fw_autotune_ff_to_p_gain    | 10  | FF to P gain (strength relationship) [%] |
 |  fw_autotune_ff_to_i_tc      | 600 | FF to I time (defines time for I to reach the same level of response as FF) [ms]  |
+|  stats                       | OFF | General switch of the statistics recording feature (a.k.a. odometer) |
+|  stats_total_time            |  0  | Total flight time [in seconds]. The value is updated on every disarm when "stats" are enabled. |
+|  stats_total_dist            |  0  | Total flight distance [in meters]. The value is updated on every disarm when "stats" are enabled. |
+|  vbat_adc_channel            |  -  | ADC channel to use for battery voltage sensor. Defaults to board VBAT input (if available). 0 = disabled |
+|  rssi_adc_channel            |  -  | ADC channel to use for analog RSSI input. Defaults to board RSSI input (if available). 0 = disabled |
+|  current_adc_channel         |  -  | ADC channel to use for analog current sensor input. Defaults to board CURRENT sensor input (if available). 0 = disabled |
+|  airspeed_adc_channel        |  -  | ADC channel to use for analog pitot tube (airspeed) sensor. If board doesn't have a dedicated connector for analog airspeed sensor will default to 0 |
 
 This Markdown table is made by MarkdwonTableMaker addon for google spreadsheet.
 Original Spreadsheet used to make this table can be found here https://docs.google.com/spreadsheets/d/1ubjYdMGmZ2aAMUNYkdfe3hhIF7wRfIjcuPOi_ysmp00/edit?usp=sharing

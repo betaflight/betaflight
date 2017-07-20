@@ -142,7 +142,7 @@ void spiInitDevice(SPIDevice device)
     IOInit(IOGetByTag(spi->mosi), OWNER_SPI, RESOURCE_SPI_MOSI, device + 1);
 
 #if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
-    if(spi->sdcard == true)
+    if (spi->sdcard == true)
         IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG_LOW, spi->af);
     else
         IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG_HIGH, spi->af);
@@ -255,7 +255,7 @@ uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t in)
 bool spiIsBusBusy(SPI_TypeDef *instance)
 {
     SPIDevice device = spiDeviceByInstance(instance);
-    if(spiHardwareMap[device].hspi.State == HAL_SPI_STATE_BUSY)
+    if (spiHardwareMap[device].hspi.State == HAL_SPI_STATE_BUSY)
         return true;
     else
         return false;
@@ -268,11 +268,11 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len
 
 #define SPI_DEFAULT_TIMEOUT 10
 
-    if(!out) // Tx only
+    if (!out) // Tx only
     {
         status = HAL_SPI_Transmit(&spiHardwareMap[device].hspi, (uint8_t *)in, len, SPI_DEFAULT_TIMEOUT);
     }
-    else if(!in) // Rx only
+    else if (!in) // Rx only
     {
         status = HAL_SPI_Receive(&spiHardwareMap[device].hspi, out, len, SPI_DEFAULT_TIMEOUT);
     }
@@ -281,7 +281,7 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len
         status = HAL_SPI_TransmitReceive(&spiHardwareMap[device].hspi, (uint8_t *)in, out, len, SPI_DEFAULT_TIMEOUT);
     }
 
-    if( status != HAL_OK)
+    if ( status != HAL_OK)
         spiTimeoutUserCallback(instance);
 
     return true;

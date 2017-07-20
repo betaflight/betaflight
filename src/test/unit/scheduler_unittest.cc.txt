@@ -65,7 +65,7 @@ extern "C" {
     void taskProcessGPS(void) {simulatedTime+=processGPSTime;}
     void taskUpdateCompass(void) {simulatedTime+=updateCompassTime;}
     void taskUpdateBaro(void) {simulatedTime+=updateBaroTime;}
-    void taskUpdateSonar(void) {simulatedTime+=updateSonarTime;}
+    void taskUpdateRangefinder(void) {simulatedTime+=updateSonarTime;}
     void taskCalculateAltitude(void) {simulatedTime+=calculateAltitudeTime;}
     void taskUpdateDisplay(void) {simulatedTime+=updateDisplayTime;}
     void taskTelemetry(void) {simulatedTime+=telemetryTime;}

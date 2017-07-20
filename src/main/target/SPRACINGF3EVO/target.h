@@ -75,20 +75,16 @@
 #ifdef SPRACINGF3EVO_1SS
     #define SERIAL_PORT_COUNT       5
 
-    #define SOFTSERIAL_1_TIMER      TIM3
-    #define SOFTSERIAL_1_TIMER_RX_HARDWARE 7
-    #define SOFTSERIAL_1_TIMER_TX_HARDWARE 8
+    #define SOFTSERIAL_1_RX_PIN     PB0
+    #define SOFTSERIAL_1_TX_PIN     PB1
 #else
     #define USE_SOFTSERIAL2
     #define SERIAL_PORT_COUNT       6
 
-    #define SOFTSERIAL_1_TIMER      TIM3
-    #define SOFTSERIAL_1_TIMER_RX_HARDWARE 5
-    #define SOFTSERIAL_1_TIMER_TX_HARDWARE 6
-
-    #define SOFTSERIAL_2_TIMER      TIM3
-    #define SOFTSERIAL_2_TIMER_RX_HARDWARE 7
-    #define SOFTSERIAL_2_TIMER_TX_HARDWARE 8
+    #define SOFTSERIAL_1_RX_PIN     PA6
+    #define SOFTSERIAL_1_TX_PIN     PA7
+    #define SOFTSERIAL_2_RX_PIN     PB0
+    #define SOFTSERIAL_2_TX_PIN     PB1
 #endif
 
 #define USE_I2C
@@ -125,23 +121,24 @@
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC2
-#define VBAT_ADC_PIN            PA4
-#define CURRENT_METER_ADC_PIN   PA5
-#define RSSI_ADC_PIN            PB2
+#define ADC_CHANNEL_1_PIN               PA4
+#define ADC_CHANNEL_2_PIN               PA5
+#define ADC_CHANNEL_3_PIN               PB2
+#define VBAT_ADC_CHANNEL                ADC_CHN_1
+#define CURRENT_METER_ADC_CHANNEL       ADC_CHN_2
+#define RSSI_ADC_CHANNEL                ADC_CHN_3
 
 #define LED_STRIP
 #define USE_LED_STRIP_ON_DMA1_CHANNEL2
 #define WS2811_PIN                      PA8
-#define WS2811_TIMER                    TIM1
-#define WS2811_DMA_CHANNEL              DMA1_Channel2
-#define WS2811_IRQ                      DMA1_Channel2_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
+#define WS2811_DMA_STREAM               DMA1_Channel2
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 
-#define SONAR
-#define SONAR_TRIGGER_PIN       PB0
-#define SONAR_ECHO_PIN          PB1
-#define USE_SONAR_SRF10
+#define USE_RANGEFINDER
+#define USE_RANGEFINDER_HCSR04
+#define RANGEFINDER_HCSR04_TRIGGER_PIN       PB0
+#define RANGEFINDER_HCSR04_ECHO_PIN          PB1
+#define USE_RANGEFINDER_SRF10
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 

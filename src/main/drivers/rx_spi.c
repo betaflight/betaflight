@@ -56,6 +56,10 @@ static const softSPIDevice_t softSPIDevice = {
 static bool useSoftSPI = false;
 #endif // USE_RX_SOFTSPI
 
+#ifdef RX_IRQ_PIN
+static IO_t rxIrqPin = IO_NONE;
+#endif
+
 void rxSpiDeviceInit(rx_spi_type_e spiType)
 {
     static bool hardwareInitialised = false;
@@ -79,6 +83,12 @@ void rxSpiDeviceInit(rx_spi_type_e spiType)
 #if defined(STM32F10X)
     RCC_AHBPeriphClockCmd(RX_NSS_GPIO_CLK_PERIPHERAL, ENABLE);
     RCC_AHBPeriphClockCmd(RX_CE_GPIO_CLK_PERIPHERAL, ENABLE);
+#endif
+
+#ifdef RX_IRQ_PIN
+    rxIrqPin = IOGetByTag(IO_TAG(RX_IRQ_PIN));
+    IOInit(rxIrqPin, OWNER_RX, RESOURCE_NONE, 0);
+    IOConfigGPIO(rxIrqPin, IOCFG_IN_FLOATING);
 #endif
 
 #ifdef RX_CE_PIN
@@ -162,5 +172,13 @@ uint8_t rxSpiReadCommandMulti(uint8_t command, uint8_t commandData, uint8_t *ret
     DISABLE_RX();
     return ret;
 }
+
+#ifdef RX_IRQ_PIN
+bool rxSpiCheckIrq()
+{
+    return !IORead(rxIrqPin);
+}
+#endif
+
 #endif
 

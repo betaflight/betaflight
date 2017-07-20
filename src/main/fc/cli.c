@@ -92,6 +92,7 @@ extern uint8_t __config_end;
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
+#include "rx/eleres.h"
 
 #include "scheduler/scheduler.h"
 
@@ -128,6 +129,8 @@ static void cliAssert(char *cmdline);
 #if defined(BOOTLOG)
 static void cliBootlog(char *cmdline);
 #endif
+
+static const char* const emptyName = "-";
 
 // buffer
 static char cliBuffer[64];
@@ -172,10 +175,10 @@ static const char * const lookupTablePitotHardware[] = { "NONE", "AUTO", "MS4525
 
 // sync this with sensors_e
 static const char * const sensorTypeNames[] = {
-    "GYRO", "ACC", "BARO", "MAG", "SONAR", "PITOT", "GPS", "GPS+MAG", NULL
+    "GYRO", "ACC", "BARO", "MAG", "RANGEFINDER", "PITOT", "GPS", "GPS+MAG", NULL
 };
 
-#define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG | SENSOR_SONAR | SENSOR_PITOT)
+#define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG | SENSOR_RANGEFINDER | SENSOR_PITOT)
 
 static const char * const hardwareSensorStatusNames[] = {
     "NONE", "OK", "UNAVAILABLE", "FAILING"
@@ -266,7 +269,8 @@ static const char * const lookupTableRxSpi[] = {
     "CX10",
     "CX10A",
     "H8_3D",
-    "INAV"
+    "INAV",
+    "ELERES"
 };
 #endif
 
@@ -325,7 +329,8 @@ static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "GYRO",
     "NOTCH",
     "NAV_LANDING",
-    "FW_ALTITUDE"
+    "FW_ALTITUDE",
+    "RANGEFINDER"
 };
 
 #ifdef TELEMETRY_LTM
@@ -369,7 +374,7 @@ typedef enum {
 #ifdef MAG
     TABLE_MAG_HARDWARE,
 #endif
-#ifdef SONAR
+#ifdef USE_RANGEFINDER
     TABLE_RANGEFINDER_HARDWARE,   // currently not used
 #endif
 #ifdef PITOT
@@ -426,7 +431,7 @@ static const lookupTableEntry_t lookupTables[] = {
 #ifdef MAG
     { lookupTableMagHardware, sizeof(lookupTableMagHardware) / sizeof(char *) },
 #endif
-#ifdef SONAR
+#ifdef USE_RANGEFINDER
     { lookupTableRangefinderHardware, sizeof(lookupTableRangefinderHardware) / sizeof(char *) },
 #endif
 #ifdef PITOT
@@ -528,6 +533,19 @@ static const clivalue_t valueTable[] = {
     { "gyro_to_use",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 1 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_to_use) },
 #endif
 
+// PG_ADC_CHANNEL_CONFIG
+#ifdef USE_ADC
+    { "vbat_adc_channel",           VAR_UINT8 | MASTER_VALUE, .config.minmax = {ADC_CHN_NONE, ADC_CHN_MAX}, PG_ADC_CHANNEL_CONFIG, offsetof(adcChannelConfig_t, adcFunctionChannel[ADC_BATTERY]) },
+    { "rssi_adc_channel",           VAR_UINT8 | MASTER_VALUE, .config.minmax = {ADC_CHN_NONE, ADC_CHN_MAX}, PG_ADC_CHANNEL_CONFIG, offsetof(adcChannelConfig_t, adcFunctionChannel[ADC_RSSI]) },
+    { "current_adc_channel",        VAR_UINT8 | MASTER_VALUE, .config.minmax = {ADC_CHN_NONE, ADC_CHN_MAX}, PG_ADC_CHANNEL_CONFIG, offsetof(adcChannelConfig_t, adcFunctionChannel[ADC_CURRENT]) },
+    { "airspeed_adc_channel",       VAR_UINT8 | MASTER_VALUE, .config.minmax = {ADC_CHN_NONE, ADC_CHN_MAX}, PG_ADC_CHANNEL_CONFIG, offsetof(adcChannelConfig_t, adcFunctionChannel[ADC_AIRSPEED]) },
+#endif
+
+#ifdef USE_ACC_NOTCH
+    { "acc_notch_hz",               VAR_UINT8  | MASTER_VALUE, .config.minmax = {0, 255 }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t,acc_notch_hz)  },
+    { "acc_notch_cutoff",           VAR_UINT8  | MASTER_VALUE, .config.minmax = {1, 255 }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, acc_notch_cutoff)  },
+#endif
+
 // PG_ACCELEROMETER_CONFIG
     { "align_acc",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ALIGNMENT }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, acc_align) },
     { "acc_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ACC_HARDWARE }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, acc_hardware) },
@@ -540,7 +558,7 @@ static const clivalue_t valueTable[] = {
     { "accgain_z",                  VAR_INT16  | MASTER_VALUE, .config.minmax = { 1,  8192 }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, accGain.raw[Z]) },
 
 // PG_RANGEFINDER_CONFIG
-#ifdef SONAR
+#ifdef USE_RANGEFINDER
     { "rangefinder_hardware",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RANGEFINDER_HARDWARE }, PG_RANGEFINDER_CONFIG, offsetof(rangefinderConfig_t, rangefinder_hardware) },
 #endif
 
@@ -602,6 +620,10 @@ static const clivalue_t valueTable[] = {
     { "blackbox_device",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BLACKBOX_DEVICE }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, device) },
 #endif
 
+#ifdef USE_SDCARD
+    { "sdcard_detect_inverted",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, invertedCardDetection) },
+#endif
+
 // PG_MOTOR_CONFIG
     { "min_throttle",               VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, PG_MOTOR_CONFIG, offsetof(motorConfig_t, minthrottle) },
     { "max_throttle",               VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, PG_MOTOR_CONFIG, offsetof(motorConfig_t, maxthrottle) },
@@ -633,10 +655,12 @@ static const clivalue_t valueTable[] = {
 
 // PG_BATTERY_CONFIG
     { "battery_capacity",           VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  20000 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, batteryCapacity) },
+#ifdef USE_ADC
     { "vbat_scale",                 VAR_UINT8  | MASTER_VALUE, .config.minmax = { VBAT_SCALE_MIN,  VBAT_SCALE_MAX }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatscale) },
     { "vbat_max_cell_voltage",      VAR_UINT8  | MASTER_VALUE, .config.minmax = { 10,  50 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatmaxcellvoltage) },
     { "vbat_min_cell_voltage",      VAR_UINT8  | MASTER_VALUE, .config.minmax = { 10,  50 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatmincellvoltage) },
     { "vbat_warning_cell_voltage",  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 10,  50 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatwarningcellvoltage) },
+#endif
     { "current_meter_scale",        VAR_INT16  | MASTER_VALUE, .config.minmax = { -10000,  10000 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, currentMeterScale) },
     { "current_meter_offset",       VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  3300 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, currentMeterOffset) },
     { "multiwii_current_meter_output", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, multiwiiCurrentMeterOutput) },
@@ -805,10 +829,10 @@ static const clivalue_t valueTable[] = {
     { "inav_gps_delay",             VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  500 }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, gps_delay_ms) },
     { "inav_reset_altitude",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_NAV_RESET_ALTITUDE }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, reset_altitude_type) },
 
-    { "inav_max_sonar_altitude",    VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0,  1000 }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, max_sonar_altitude) },
+    { "inav_max_surface_altitude",    VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0,  1000 }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, max_surface_altitude) },
 
-    { "inav_w_z_sonar_p",           VAR_FLOAT  | MASTER_VALUE, .config.minmax = { 0,  10 }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, w_z_sonar_p) },
-    { "inav_w_z_sonar_v",           VAR_FLOAT  | MASTER_VALUE, .config.minmax = { 0,  10 }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, w_z_sonar_v) },
+    { "inav_w_z_surface_p",           VAR_FLOAT  | MASTER_VALUE, .config.minmax = { 0,  10 }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, w_z_surface_p) },
+    { "inav_w_z_surface_v",           VAR_FLOAT  | MASTER_VALUE, .config.minmax = { 0,  10 }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, w_z_surface_v) },
     { "inav_w_z_baro_p",            VAR_FLOAT  | MASTER_VALUE, .config.minmax = { 0,  10 }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, w_z_baro_p) },
     { "inav_w_z_gps_p",             VAR_FLOAT  | MASTER_VALUE, .config.minmax = { 0,  10 }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, w_z_gps_p) },
     { "inav_w_z_gps_v",             VAR_FLOAT  | MASTER_VALUE, .config.minmax = { 0,  10 }, PG_POSITION_ESTIMATION_CONFIG, offsetof(positionEstimationConfig_t, w_z_gps_v) },
@@ -859,6 +883,10 @@ static const clivalue_t valueTable[] = {
     { "nav_fw_pitch2thr",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  100 }, PG_NAV_CONFIG, offsetof(navConfig_t, fw.pitch_to_throttle) },
     { "nav_fw_loiter_radius",       VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  10000 }, PG_NAV_CONFIG, offsetof(navConfig_t, fw.loiter_radius) },
 
+#ifdef FIXED_WING_LANDING
+    { "nav_fw_land_dive_angle",     VAR_INT8  | MASTER_VALUE, .config.minmax = { -20,  20 }, PG_NAV_CONFIG, offsetof(navConfig_t, fw.land_dive_angle) },
+#endif
+
     { "nav_fw_launch_velocity",     VAR_UINT16 | MASTER_VALUE, .config.minmax = { 100,  10000 }, PG_NAV_CONFIG, offsetof(navConfig_t, fw.launch_velocity_thresh) },
     { "nav_fw_launch_accel",        VAR_UINT16 | MASTER_VALUE, .config.minmax = { 1000,  20000 }, PG_NAV_CONFIG, offsetof(navConfig_t, fw.launch_accel_thresh) },
     { "nav_fw_launch_max_angle",    VAR_UINT8  | MASTER_VALUE, .config.minmax = { 5,  180 }, PG_NAV_CONFIG, offsetof(navConfig_t, fw.launch_max_angle) },
@@ -889,6 +917,17 @@ static const clivalue_t valueTable[] = {
 #ifdef TELEMETRY_LTM
     {"ltm_update_rate",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_LTM_UPDATE_RATE }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, ltmUpdateRate) },
 #endif
+#endif
+#ifdef USE_RX_ELERES
+//PG_ELERES_CONFIG
+    { "eleres_freq",                VAR_FLOAT | MASTER_VALUE, .config.minmax = { 415, 450 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresFreq) },
+    { "eleres_telemetry_en",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresTelemetryEn) },
+    { "eleres_telemetry_power",     VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 7 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresTelemetryPower) },
+    { "eleres_loc_en",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresLocEn) },
+    { "eleres_loc_power",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 7 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresLocPower) },
+    { "eleres_loc_delay",           VAR_UINT16 | MASTER_VALUE, .config.minmax = { 30, 1800 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresLocDelay) },
+    { "eleres_signature",           VAR_UINT32 | MASTER_VALUE | MODE_MAX , .config.max = { 4294967295 }, PG_ELERES_CONFIG, offsetof(eleresConfig_t, eleresSignature) },
+
 #endif
 #ifdef LED_STRIP
     { "ledstrip_visual_beeper",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_visual_beeper) },
@@ -940,6 +979,12 @@ static const clivalue_t valueTable[] = {
     { "throttle_tilt_comp_str",     VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  100 }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, throttle_tilt_compensation_strength) },
     { "input_filtering_mode",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, pwmRxInputFilteringMode) },
     { "mode_range_logic_operator",  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_AUX_OPERATOR }, PG_MODE_ACTIVATION_OPERATOR_CONFIG, offsetof(modeActivationOperatorConfig_t, modeActivationOperator) },
+//PG_STATS_CONFIG
+#ifdef STATS
+    { "stats",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_STATS_CONFIG, offsetof(statsConfig_t, stats_enabled) },
+    { "stats_total_time",    VAR_UINT32 | MASTER_VALUE | MODE_MAX, .config.max = { INT32_MAX }, PG_STATS_CONFIG, offsetof(statsConfig_t, stats_total_time) },
+    { "stats_total_dist",    VAR_UINT32 | MASTER_VALUE | MODE_MAX, .config.max = { INT32_MAX }, PG_STATS_CONFIG, offsetof(statsConfig_t, stats_total_dist) },
+#endif
 };
 
 
@@ -1063,15 +1108,21 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, u
         return; // return from case for float only
     }
 
-    switch(var->type & VALUE_MODE_MASK) {
+    switch (var->type & VALUE_MODE_MASK) {
     case MODE_MAX:
     case MODE_DIRECT:
-        cliPrintf("%d", value);
+        if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32)
+            cliPrintf("%u", value);
+        else
+            cliPrintf("%d", value);
         if (full) {
             if ((var->type & VALUE_MODE_MASK) == MODE_DIRECT) {
                 cliPrintf(" %d %d", var->config.minmax.min, var->config.minmax.max);
             } else {
-                cliPrintf(" 0 %d", var->config.max.max);
+                if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32)
+                    cliPrintf(" 0 %u", var->config.max.max);
+                else
+                    cliPrintf(" 0 %d", var->config.max.max);
             }
         }
         break;
@@ -1180,7 +1231,10 @@ static void cliPrintVarRange(const clivalue_t *var)
         cliPrintf("Allowed range: %d - %d\r\n", var->config.minmax.min, var->config.minmax.max);
         break;
     case (MODE_MAX):
-        cliPrintf("Allowed range: 0- %d\r\n", var->config.max.max);
+        if ((var->type & VALUE_TYPE_MASK) == VAR_UINT32)
+            cliPrintf("Allowed range: 0- %u\r\n", var->config.max.max);
+        else
+            cliPrintf("Allowed range: 0- %d\r\n", var->config.max.max);
         break;
     case (MODE_LOOKUP): {
         const lookupTableEntry_t *tableEntry = &lookupTables[var->config.lookup.tableIndex];
@@ -1197,6 +1251,7 @@ static void cliPrintVarRange(const clivalue_t *var)
 }
 
 typedef union {
+    uint32_t uint_value;
     int32_t int_value;
     float float_value;
 } int_float_value_t;
@@ -1217,7 +1272,7 @@ static void cliSetVar(const clivalue_t *var, const int_float_value_t value)
         break;
 
     case VAR_UINT32:
-        *(uint32_t *)ptr = value.int_value;
+        *(uint32_t *)ptr = value.uint_value;
         break;
 
     case VAR_FLOAT:
@@ -1486,7 +1541,7 @@ static void cliSerial(char *cmdline)
             break;
         }
 
-        switch(i) {
+        switch (i) {
             case 0:
                 if (baudRateIndex < BAUD_1200 || baudRateIndex > BAUD_2470000) {
                     continue;
@@ -1539,7 +1594,7 @@ static void cliSerialPassthrough(char *cmdline)
     int index = 0;
 
     while (tok != NULL) {
-        switch(index) {
+        switch (index) {
             case 0:
                 id = atoi(tok);
                 break;
@@ -1734,13 +1789,9 @@ static void printMotorMix(uint8_t dumpMask, const motorMixer_t *customMotorMixer
             ftoa(yaw, buf3));
     }
 }
-#endif // USE_QUAD_MIXER_ONLY
 
 static void cliMotorMix(char *cmdline)
 {
-#ifdef USE_QUAD_MIXER_ONLY
-    UNUSED(cmdline);
-#else
     int check = 0;
     uint8_t len;
     const char *ptr;
@@ -1802,8 +1853,8 @@ static void cliMotorMix(char *cmdline)
             cliShowArgumentRangeError("index", 0, MAX_SUPPORTED_MOTORS - 1);
         }
     }
-#endif
 }
+#endif // USE_QUAD_MIXER_ONLY
 
 static void printRxRange(uint8_t dumpMask, const rxChannelRangeConfig_t *channelRangeConfigs, const rxChannelRangeConfig_t *defaultChannelRangeConfigs)
 {
@@ -1995,7 +2046,7 @@ static void cliModeColor(char *cmdline)
         int modeIdx  = args[MODE];
         int funIdx = args[FUNCTION];
         int color = args[COLOR];
-        if(!setModeColor(modeIdx, funIdx, color)) {
+        if (!setModeColor(modeIdx, funIdx, color)) {
             cliShowParseError();
             return;
         }
@@ -2130,12 +2181,10 @@ static void cliServo(char *cmdline)
         servo->forwardFromChannel = arguments[FORWARD];
     }
 }
-#endif
 
-#ifdef USE_SERVOS
 static void printServoMix(uint8_t dumpMask, const servoMixer_t *customServoMixers, const servoMixer_t *defaultCustomServoMixers)
 {
-    const char *format = "smix %d %d %d %d %d %d %d\r\n";
+    const char *format = "smix %d %d %d %d %d\r\n";
     for (uint32_t i = 0; i < MAX_SERVO_RULES; i++) {
         servoMixer_t customServoMixer = customServoMixers[i];
         if (customServoMixer.rate == 0) {
@@ -2148,18 +2197,14 @@ static void printServoMix(uint8_t dumpMask, const servoMixer_t *customServoMixer
             equalsDefault = customServoMixer.targetChannel == customServoMixerDefault.targetChannel
                 && customServoMixer.inputSource == customServoMixerDefault.inputSource
                 && customServoMixer.rate == customServoMixerDefault.rate
-                && customServoMixer.speed == customServoMixerDefault.speed
-                && customServoMixer.min == customServoMixerDefault.min
-                && customServoMixer.max == customServoMixerDefault.max;
+                && customServoMixer.speed == customServoMixerDefault.speed;
 
             cliDefaultPrintf(dumpMask, equalsDefault, format,
                 i,
                 customServoMixerDefault.targetChannel,
                 customServoMixerDefault.inputSource,
                 customServoMixerDefault.rate,
-                customServoMixerDefault.speed,
-                customServoMixerDefault.min,
-                customServoMixerDefault.max
+                customServoMixerDefault.speed
             );
         }
         cliDumpPrintf(dumpMask, equalsDefault, format,
@@ -2167,9 +2212,7 @@ static void printServoMix(uint8_t dumpMask, const servoMixer_t *customServoMixer
             customServoMixer.targetChannel,
             customServoMixer.inputSource,
             customServoMixer.rate,
-            customServoMixer.speed,
-            customServoMixer.min,
-            customServoMixer.max
+            customServoMixer.speed
         );
     }
 }
@@ -2249,7 +2292,7 @@ static void cliServoMix(char *cmdline)
 
         cliServoMix("reverse");
     } else {
-        enum {RULE = 0, TARGET, INPUT, RATE, SPEED, MIN, MAX, ARGS_COUNT};
+        enum {RULE = 0, TARGET, INPUT, RATE, SPEED, ARGS_COUNT};
         ptr = strtok(cmdline, " ");
         while (ptr != NULL && check < ARGS_COUNT) {
             args[check++] = atoi(ptr);
@@ -2266,22 +2309,18 @@ static void cliServoMix(char *cmdline)
             args[TARGET] >= 0 && args[TARGET] < MAX_SUPPORTED_SERVOS &&
             args[INPUT] >= 0 && args[INPUT] < INPUT_SOURCE_COUNT &&
             args[RATE] >= -125 && args[RATE] <= 125 &&
-            args[SPEED] >= 0 && args[SPEED] <= MAX_SERVO_SPEED &&
-            args[MIN] >= 0 && args[MIN] <= 100 &&
-            args[MAX] >= 0 && args[MAX] <= 100 && args[MIN] < args[MAX]) {
+            args[SPEED] >= 0 && args[SPEED] <= MAX_SERVO_SPEED) {
             customServoMixersMutable(i)->targetChannel = args[TARGET];
             customServoMixersMutable(i)->inputSource = args[INPUT];
             customServoMixersMutable(i)->rate = args[RATE];
             customServoMixersMutable(i)->speed = args[SPEED];
-            customServoMixersMutable(i)->min = args[MIN];
-            customServoMixersMutable(i)->max = args[MAX];
             cliServoMix("");
         } else {
             cliShowParseError();
         }
     }
 }
-#endif
+#endif // USE_SERVOS
 
 #ifdef USE_SDCARD
 
@@ -2664,7 +2703,7 @@ static void cliMap(char *cmdline)
 
 static const char *checkCommand(const char *cmdLine, const char *command)
 {
-    if(!strncasecmp(cmdLine, command, strlen(command))   // command names match
+    if (!strncasecmp(cmdLine, command, strlen(command))   // command names match
         && !isalnum((unsigned)cmdLine[strlen(command)])) {   // next characted in bufffer is not alphanumeric (command is correctly terminated)
         return cmdLine + strlen(command) + 1;
     } else {
@@ -2702,6 +2741,26 @@ static void cliDfu(char *cmdline)
 #endif
     cliRebootEx(true);
 }
+
+#ifdef USE_RX_ELERES
+static void cliEleresBind(char *cmdline)
+{
+    UNUSED(cmdline);
+
+    if (!feature(FEATURE_RX_SPI)) {
+        cliPrint("Eleres not active. Please enable feature ELERES and restart IMU\r\n");
+        return;
+    }
+
+    cliPrint("Waiting for correct bind signature....\r\n");
+    bufWriterFlush(cliWriter);
+    if (eleresBind()) {
+        cliPrint("Bind timeout!\r\n");
+    } else {
+        cliPrint("Bind OK!\r\nPlease restart your transmitter.\r\n");
+    }
+}
+#endif // USE_RX_ELERES
 
 static void cliExit(char *cmdline)
 {
@@ -2809,6 +2868,24 @@ static void cliMotor(char *cmdline)
     }
 
     cliPrintf("motor %d: %d\r\n", motor_index, motor_disarmed[motor_index]);
+}
+
+static void printName(uint8_t dumpMask, const systemConfig_t * sConfig)
+{
+    bool equalsDefault = strlen(sConfig->name) == 0;
+    cliDumpPrintf(dumpMask, equalsDefault, "name %s\r\n", equalsDefault ? emptyName : sConfig->name);
+}
+
+static void cliName(char *cmdline)
+{
+    int32_t len = strlen(cmdline);
+    if (len > 0) {
+        memset(systemConfigMutable()->name, 0, ARRAYLEN(systemConfigMutable()->name));
+        if (strncmp(cmdline, emptyName, len)) {
+            strncpy(systemConfigMutable()->name, cmdline, MIN(len, MAX_NAME_LENGTH));
+        }
+    }
+    printName(DUMP_MASTER, systemConfig());
 }
 
 #ifdef PLAY_SOUND
@@ -2963,19 +3040,22 @@ static void cliSet(char *cmdline)
                 switch (mode) {
                     case MODE_MAX:
                     case MODE_DIRECT: {
-                            if(*eqptr != 0 && strspn(eqptr, "0123456789.+-") == strlen(eqptr)) {
+                            if (*eqptr != 0 && strspn(eqptr, "0123456789.+-") == strlen(eqptr)) {
                                 int32_t value = 0;
+                                uint32_t uvalue = 0;
                                 float valuef = 0;
 
                                 value = atoi(eqptr);
                                 valuef = fastA2F(eqptr);
-
+                                uvalue = strtoul(eqptr, NULL, 10);
                                 // note: compare float values
                                 if ((mode == MODE_DIRECT && (valuef >= valueTable[i].config.minmax.min && valuef <= valueTable[i].config.minmax.max))
                                      || (mode == MODE_MAX && (valuef >= 0 && valuef <= valueTable[i].config.max.max))) {
 
                                     if ((valueTable[i].type & VALUE_TYPE_MASK) == VAR_FLOAT)
                                         tmp.float_value = valuef;
+                                    else if ((valueTable[i].type & VALUE_TYPE_MASK) == VAR_UINT32)
+                                        tmp.uint_value = uvalue;
                                     else
                                         tmp.int_value = value;
 
@@ -3054,7 +3134,7 @@ static void cliStatus(char *cmdline)
     }
     cliPrint("\r\n");
 
-    cliPrintf("Sensor status: GYRO=%s, ACC=%s, MAG=%s, BARO=%s, SONAR=%s, GPS=%s\r\n",
+    cliPrintf("Sensor status: GYRO=%s, ACC=%s, MAG=%s, BARO=%s, RANGEFINDER=%s, GPS=%s\r\n",
         hardwareSensorStatusNames[getHwGyroStatus()],
         hardwareSensorStatusNames[getHwAccelerometerStatus()],
         hardwareSensorStatusNames[getHwCompassStatus()],
@@ -3062,7 +3142,6 @@ static void cliStatus(char *cmdline)
         hardwareSensorStatusNames[getHwRangefinderStatus()],
         hardwareSensorStatusNames[getHwGPSStatus()]
     );
-
 #endif
 
 #ifdef USE_SDCARD
@@ -3080,6 +3159,30 @@ static void cliStatus(char *cmdline)
     cliPrintf("Stack size: %d, Stack address: 0x%x\r\n", stackTotalSize(), stackHighMem());
 
     cliPrintf("I2C Errors: %d, config size: %d, max available config: %d\r\n", i2cErrorCounter, getEEPROMConfigSize(), &__config_end - &__config_start);
+
+#ifdef USE_ADC
+    static char * adcFunctions[] = { "BATTERY", "RSSI", "CURRENT", "AIRSPEED" };
+    cliPrint("ADC channel usage:\r\n");
+    for (int i = 0; i < ADC_FUNCTION_COUNT; i++) {
+        cliPrintf("  %8s :", adcFunctions[i]);
+
+        cliPrint(" configured = ");
+        if (adcChannelConfig()->adcFunctionChannel[i] == ADC_CHN_NONE) {
+            cliPrint("none");
+        }
+        else {
+            cliPrintf("ADC %d", adcChannelConfig()->adcFunctionChannel[i]);
+        }
+
+        cliPrint(", used = ");
+        if (adcGetFunctionChannelAllocation(i) == ADC_CHN_NONE) {
+            cliPrint("none\r\n");
+        }
+        else {
+            cliPrintf("ADC %d\r\n", adcGetFunctionChannelAllocation(i));
+        }
+    }
+#endif
 
     cliPrintf("System load: %d", averageSystemLoadPercent);
 #ifdef ASYNC_GYRO_PROCESSING
@@ -3259,6 +3362,9 @@ static void printConfig(const char *cmdline, bool doDiff)
         cliPrintHashLine("map");
         printMap(dumpMask, &rxConfig_Copy, rxConfig());
 
+        cliPrintHashLine("name");
+        printName(dumpMask, &systemConfig_Copy);
+
         cliPrintHashLine("serial");
         printSerial(dumpMask, &serialConfig_Copy, serialConfig());
 
@@ -3370,6 +3476,9 @@ const clicmd_t cmdTable[] = {
         "[master|profile|rates|all] {showdefaults}", cliDiff),
     CLI_COMMAND_DEF("dump", "dump configuration",
         "[master|profile|rates|all] {showdefaults}", cliDump),
+#ifdef USE_RX_ELERES
+    CLI_COMMAND_DEF("eleres_bind", NULL, NULL, cliEleresBind),
+#endif // USE_RX_ELERES
     CLI_COMMAND_DEF("exit", NULL, NULL, cliExit),
     CLI_COMMAND_DEF("feature", "configure features",
         "list\r\n"
@@ -3397,10 +3506,11 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("mixer", "configure mixer",
         "list\r\n"
         "\t<name>", cliMixer),
-#endif
     CLI_COMMAND_DEF("mmix", "custom motor mixer", NULL, cliMotorMix),
+#endif
     CLI_COMMAND_DEF("motor",  "get/set motor",
        "<index> [<value>]", cliMotor),
+    CLI_COMMAND_DEF("name", "name of craft", NULL, cliName),
 #ifdef PLAY_SOUND
     CLI_COMMAND_DEF("play_sound", NULL,
         "[<index>]\r\n", cliPlaySound),
@@ -3422,7 +3532,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("set", "change setting", "[<name>=<value>]", cliSet),
 #ifdef USE_SERVOS
     CLI_COMMAND_DEF("smix", "servo mixer",
-        "<rule> <servo> <source> <rate> <speed> <min> <max>\r\n"
+        "<rule> <servo> <source> <rate> <speed>\r\n"
         "\treset\r\n"
         "\tload <mixer>\r\n"
         "\treverse <servo> <source> r|n", cliServoMix),
@@ -3531,11 +3641,11 @@ void cliProcess(void)
 
                 const clicmd_t *cmd;
                 for (cmd = cmdTable; cmd < cmdTable + ARRAYLEN(cmdTable); cmd++) {
-                    if(!strncasecmp(cliBuffer, cmd->name, strlen(cmd->name))   // command names match
+                    if (!strncasecmp(cliBuffer, cmd->name, strlen(cmd->name))   // command names match
                        && !isalnum((unsigned)cliBuffer[strlen(cmd->name)]))    // next characted in bufffer is not alphanumeric (command is correctly terminated)
                         break;
                 }
-                if(cmd < cmdTable + ARRAYLEN(cmdTable))
+                if (cmd < cmdTable + ARRAYLEN(cmdTable))
                     cmd->func(cliBuffer + strlen(cmd->name) + 1);
                 else
                     cliPrint("Unknown command, try 'help'");

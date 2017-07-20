@@ -130,7 +130,7 @@ int32_t decodeLong(uint32_t idx, uint8_t mask)
 {
     union { uint32_t l; uint8_t b[4]; } val;
     val.l=idx;
-    for(int i = 0; i < 4; i++) val.b[i] ^= mask;
+    for (int i = 0; i < 4; i++) val.b[i] ^= mask;
     return val.l;
 }
 
@@ -138,7 +138,7 @@ int16_t decodeShort(uint16_t idx, uint8_t mask)
 {
     union { uint16_t s; uint8_t b[2]; } val;
     val.s=idx;
-    for(int i = 0; i < 2; i++) val.b[i] ^= mask;
+    for (int i = 0; i < 2; i++) val.b[i] ^= mask;
     return val.s;
 }
 
@@ -345,7 +345,7 @@ bool gpsHandleNAZA(void)
     bool hasNewData = gpsReceiveData();
 
     // Process state
-    switch(gpsState.state) {
+    switch (gpsState.state) {
     default:
         return false;
 

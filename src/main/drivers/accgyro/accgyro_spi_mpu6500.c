@@ -102,8 +102,8 @@ uint8_t mpu6500SpiDetect(const busDevice_t *bus)
             return ICM_20608_SPI;
         case ICM20602_WHO_AM_I_CONST:
             return ICM_20602_SPI;
-	case ICM20689_WHO_AM_I_CONST:
-	    return ICM_20689_SPI;
+        case ICM20689_WHO_AM_I_CONST:
+            return ICM_20689_SPI;
         }
     }
 

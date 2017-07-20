@@ -25,9 +25,9 @@
 # define LED0_OFF                 ledSet(0, false)
 # define LED0_ON                  ledSet(0, true)
 #else
-# define LED0_TOGGLE              do {} while(0)
-# define LED0_OFF                 do {} while(0)
-# define LED0_ON                  do {} while(0)
+# define LED0_TOGGLE              do {} while (0)
+# define LED0_OFF                 do {} while (0)
+# define LED0_ON                  do {} while (0)
 #endif
 
 #ifdef LED1
@@ -35,9 +35,9 @@
 # define LED1_OFF                 ledSet(1, false)
 # define LED1_ON                  ledSet(1, true)
 #else
-# define LED1_TOGGLE              do {} while(0)
-# define LED1_OFF                 do {} while(0)
-# define LED1_ON                  do {} while(0)
+# define LED1_TOGGLE              do {} while (0)
+# define LED1_OFF                 do {} while (0)
+# define LED1_ON                  do {} while (0)
 #endif
 
 #ifdef LED2
@@ -45,9 +45,9 @@
 # define LED2_OFF                 ledSet(2, false)
 # define LED2_ON                  ledSet(2, true)
 #else
-# define LED2_TOGGLE              do {} while(0)
-# define LED2_OFF                 do {} while(0)
-# define LED2_ON                  do {} while(0)
+# define LED2_TOGGLE              do {} while (0)
+# define LED2_OFF                 do {} while (0)
+# define LED2_ON                  do {} while (0)
 #endif
 
 void ledInit(bool alternative_led);

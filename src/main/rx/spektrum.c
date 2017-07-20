@@ -126,11 +126,11 @@ uint8_t spektrumFrameStatus(void)
         // This is the first frame status received.
         spek_fade_last_sec_count = fade;
         spek_fade_last_sec = current_secs;
-    } else if(spek_fade_last_sec != current_secs) {
+    } else if (spek_fade_last_sec != current_secs) {
         // If the difference is > 1, then we missed several seconds worth of frames and
         // should just throw out the fade calc (as it's likely a full signal loss).
-        if((current_secs - spek_fade_last_sec) == 1) {
-            if(rssi_channel != 0) {
+        if ((current_secs - spek_fade_last_sec) == 1) {
+            if (rssi_channel != 0) {
                 if (spekHiRes)
                     spekChannelData[rssi_channel] = 2048 - ((fade - spek_fade_last_sec_count) * 2048 / (SPEKTRUM_MAX_FADE_PER_SEC / SPEKTRUM_FADE_REPORTS_PER_SEC));
                 else
@@ -145,7 +145,7 @@ uint8_t spektrumFrameStatus(void)
     for (int b = 3; b < SPEK_FRAME_SIZE; b += 2) {
         const uint8_t spekChannel = 0x0F & (spekFrame[b - 1] >> spek_chan_shift);
         if (spekChannel < rxRuntimeConfigPtr->channelCount && spekChannel < SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT) {
-            if(rssi_channel == 0 || spekChannel != rssi_channel) {
+            if (rssi_channel == 0 || spekChannel != rssi_channel) {
                 spekChannelData[spekChannel] = ((uint32_t)(spekFrame[b - 1] & spek_chan_mask) << 8) + spekFrame[b];
             }
         }

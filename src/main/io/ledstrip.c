@@ -864,7 +864,7 @@ static void applyLedAnimationLayer(bool updateNow, timeUs_t *timer)
 {
     static uint8_t frameCounter = 0;
     const int animationFrames = ledGridHeight;
-    if(updateNow) {
+    if (updateNow) {
         frameCounter = (frameCounter + 1 < animationFrames) ? frameCounter + 1 : 0;
         *timer += LED_STRIP_HZ(20);
     }
@@ -993,7 +993,7 @@ bool parseColor(int index, const char *colorConfig)
     };
     for (int componentIndex = 0; result && componentIndex < HSV_COLOR_COMPONENT_COUNT; componentIndex++) {
         int val = atoi(remainingCharacters);
-        if(val > hsv_limit[componentIndex]) {
+        if (val > hsv_limit[componentIndex]) {
             result = false;
             break;
         }
@@ -1034,7 +1034,7 @@ bool setModeColor(ledModeIndex_e modeIndex, int modeColorIndex, int colorIndex)
     if (colorIndex < 0 || colorIndex >= LED_CONFIGURABLE_COLOR_COUNT)
         return false;
     if (modeIndex < LED_MODE_COUNT) {  // modeIndex_e is unsigned, so one-sided test is enough
-        if(modeColorIndex < 0 || modeColorIndex >= LED_DIRECTION_COUNT)
+        if (modeColorIndex < 0 || modeColorIndex >= LED_DIRECTION_COUNT)
             return false;
         ledStripConfigMutable()->modeColors[modeIndex].color[modeColorIndex] = colorIndex;
     } else if (modeIndex == LED_SPECIAL) {

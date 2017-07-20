@@ -90,7 +90,7 @@
 // GPS Coordinates and Altitude
 #define SYM_LAT 0xCA
 #define SYM_LON 0xCB
-#define SYM_ALT 0xCC
+#define SYM_ALT 0xAA
 
 // GPS Mode and Autopilot
 #define SYM_3DFIX     0xDF

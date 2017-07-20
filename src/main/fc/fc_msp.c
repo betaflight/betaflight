@@ -389,7 +389,7 @@ static uint16_t packSensorStatus(void)
             IS_ENABLED(sensors(SENSOR_BARO))    << 1 |
             IS_ENABLED(sensors(SENSOR_MAG))     << 2 |
             IS_ENABLED(sensors(SENSOR_GPS))     << 3 |
-            IS_ENABLED(sensors(SENSOR_SONAR))   << 4 |
+            IS_ENABLED(sensors(SENSOR_RANGEFINDER))   << 4 |
             //IS_ENABLED(sensors(SENSOR_OPFLOW))  << 5 |
             IS_ENABLED(sensors(SENSOR_PITOT))   << 6;
 
@@ -617,8 +617,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
             sbufWriteU8(dst, customServoMixers(i)->inputSource);
             sbufWriteU8(dst, customServoMixers(i)->rate);
             sbufWriteU8(dst, customServoMixers(i)->speed);
-            sbufWriteU8(dst, customServoMixers(i)->min);
-            sbufWriteU8(dst, customServoMixers(i)->max);
+            sbufWriteU8(dst, 0);
+            sbufWriteU8(dst, 100);
             sbufWriteU8(dst, 0);
         }
         break;
@@ -658,7 +658,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_SONAR_ALTITUDE:
-#if defined(SONAR)
+#ifdef USE_RANGEFINDER
         sbufWriteU32(dst, rangefinderGetLatestAltitude());
 #else
         sbufWriteU32(dst, 0);
@@ -669,7 +669,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, (uint8_t)constrain(vbat, 0, 255));
         sbufWriteU16(dst, (uint16_t)constrain(mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
         sbufWriteU16(dst, rssi);
-        if(batteryConfig()->multiwiiCurrentMeterOutput) {
+        if (batteryConfig()->multiwiiCurrentMeterOutput) {
             sbufWriteU16(dst, (uint16_t)constrain(amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
         } else
             sbufWriteU16(dst, (int16_t)constrain(amperage, -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
@@ -1152,7 +1152,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #else
         sbufWriteU8(dst, 0);
 #endif
-#ifdef SONAR
+#ifdef USE_RANGEFINDER
         sbufWriteU8(dst, rangefinderConfig()->rangefinder_hardware);
 #else
         sbufWriteU8(dst, 0);
@@ -1230,13 +1230,13 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     case MSP_POSITION_ESTIMATION_CONFIG:
     #ifdef NAV
 
-        sbufWriteU16(dst, positionEstimationConfig()->w_z_baro_p * 100); // inav_w_z_baro_p	float as value * 100
-        sbufWriteU16(dst, positionEstimationConfig()->w_z_gps_p * 100);  // 2	inav_w_z_gps_p	float as value * 100
-        sbufWriteU16(dst, positionEstimationConfig()->w_z_gps_v * 100);  // 2	inav_w_z_gps_v	float as value * 100
-        sbufWriteU16(dst, positionEstimationConfig()->w_xy_gps_p * 100); // 2	inav_w_xy_gps_p	float as value * 100
-        sbufWriteU16(dst, positionEstimationConfig()->w_xy_gps_v * 100); // 2	inav_w_xy_gps_v	float as value * 100
-        sbufWriteU8(dst, gpsConfigMutable()->gpsMinSats);                // 1	
-        sbufWriteU8(dst, positionEstimationConfig()->use_gps_velned);    // 1	inav_use_gps_velned	ON/OFF
+        sbufWriteU16(dst, positionEstimationConfig()->w_z_baro_p * 100); //     inav_w_z_baro_p float as value * 100
+        sbufWriteU16(dst, positionEstimationConfig()->w_z_gps_p * 100);  // 2   inav_w_z_gps_p  float as value * 100
+        sbufWriteU16(dst, positionEstimationConfig()->w_z_gps_v * 100);  // 2   inav_w_z_gps_v  float as value * 100
+        sbufWriteU16(dst, positionEstimationConfig()->w_xy_gps_p * 100); // 2   inav_w_xy_gps_p float as value * 100
+        sbufWriteU16(dst, positionEstimationConfig()->w_xy_gps_v * 100); // 2   inav_w_xy_gps_v float as value * 100
+        sbufWriteU8(dst, gpsConfigMutable()->gpsMinSats);                // 1
+        sbufWriteU8(dst, positionEstimationConfig()->use_gps_velned);    // 1   inav_use_gps_velned ON/OFF
 
     #else
         sbufWriteU16(dst, 0);
@@ -1537,8 +1537,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             customServoMixersMutable(i)->inputSource = sbufReadU8(src);
             customServoMixersMutable(i)->rate = sbufReadU8(src);
             customServoMixersMutable(i)->speed = sbufReadU8(src);
-            customServoMixersMutable(i)->min = sbufReadU8(src);
-            customServoMixersMutable(i)->max = sbufReadU8(src);
+            sbufReadU16(src); //Read 2bytes for min/max and ignore it
             sbufReadU8(src); //Read 1 byte for `box` and ignore it
             loadCustomServoMixer();
         }
@@ -1663,7 +1662,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
         sbufReadU8(src);
 #endif
-#ifdef SONAR
+#ifdef USE_RANGEFINDER
         rangefinderConfigMutable()->rangefinder_hardware = sbufReadU8(src);
 #else
         sbufReadU8(src);        // rangefinder hardware
@@ -1747,7 +1746,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         positionEstimationConfigMutable()->w_xy_gps_p = constrainf(sbufReadU16(src) / 100.0f, 0.0f, 10.0f);
         positionEstimationConfigMutable()->w_xy_gps_v = constrainf(sbufReadU16(src) / 100.0f, 0.0f, 10.0f);
         gpsConfigMutable()->gpsMinSats = constrain(sbufReadU8(src), 5, 10);
-        positionEstimationConfigMutable()->use_gps_velned = constrain(sbufReadU8(src), 0, 1); 
+        positionEstimationConfigMutable()->use_gps_velned = constrain(sbufReadU8(src), 0, 1);
     #endif
         break;
 

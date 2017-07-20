@@ -113,9 +113,8 @@
 #define USE_SOFTSERIAL1
 #define SERIAL_PORT_COUNT       5
 
-#define SOFTSERIAL_1_TIMER      TIM3
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
+#define SOFTSERIAL_1_RX_PIN     PB1
+#define SOFTSERIAL_1_TX_PIN     PB0
 
 
 #define USE_ESCSERIAL
@@ -140,7 +139,8 @@
 #define USE_I2C_PULLUP
 
 #define USE_ADC
-#define VBAT_ADC_PIN            PC3
+#define ADC_CHANNEL_1_PIN               PC3
+#define VBAT_ADC_CHANNEL                ADC_CHN_1
 
 #define LED_STRIP
 // LED Strip can run off Pin 6 (PB1) of the ESC outputs.
