@@ -17,6 +17,7 @@ COMMON_SRC = \
             config/config_streamer.c \
             drivers/adc.c \
             drivers/buf_writer.c \
+            drivers/bus.c \
             drivers/bus_i2c_config.c \
             drivers/bus_i2c_busdev.c \
             drivers/bus_i2c_soft.c \
@@ -47,6 +48,7 @@ COMMON_SRC = \
             fc/fc_dispatch.c \
             fc/fc_hardfaults.c \
             fc/fc_msp.c \
+            fc/fc_msp_box.c \
             fc/fc_tasks.c \
             fc/runtime_config.c \
             io/beeper.c \
@@ -183,6 +185,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             common/typeconversion.c \
             drivers/adc.c \
             drivers/buf_writer.c \
+            drivers/bus.c \
             drivers/bus_spi.c \
             drivers/exti.c \
             drivers/gyro_sync.c \
