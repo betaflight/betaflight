@@ -134,7 +134,7 @@ portSharing_e determinePortSharing(const serialPortConfig_t *portConfig, serialP
 bool isSerialPortShared(const serialPortConfig_t *portConfig, uint16_t functionMask, serialPortFunction_e sharedWithFunction);
 
 serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identifier);
-
+int findSerialPortIndexByIdentifier(serialPortIdentifier_e identifier);
 //
 // runtime
 //
