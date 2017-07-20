@@ -28,6 +28,7 @@
 #include "blackbox_encoding.h"
 #include "blackbox_io.h"
 
+#include "build/build_config.h"
 #include "build/debug.h"
 #include "build/version.h"
 
@@ -81,16 +82,13 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
 
 PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
+    .p_denom = 32,
     .device = DEFAULT_BLACKBOX_DEVICE,
-    .rate_num = 1,
-    .rate_denom = 1,
     .on_motor_test = 0, // default off
     .record_acc = 1
 );
 
-#define BLACKBOX_I_INTERVAL 32
 #define BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS 200
-#define SLOW_FRAME_INTERVAL 4096
 
 // Some macros to make writing FLIGHT_LOG_FIELD_* constants shorter:
 
@@ -102,8 +100,7 @@ PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
 
 static const char blackboxHeader[] =
     "H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
-    "H Data version:2\n"
-    "H I interval:" STR(BLACKBOX_I_INTERVAL) "\n";
+    "H Data version:2\n";
 
 static const char* const blackboxFieldHeaderNames[] = {
     "name",
@@ -350,9 +347,16 @@ static uint32_t blackboxConditionCache;
 STATIC_ASSERT((sizeof(blackboxConditionCache) * 8) >= FLIGHT_LOG_FIELD_CONDITION_LAST, too_many_flight_log_conditions);
 
 static uint32_t blackboxIteration;
+static uint16_t blackboxLoopIndex;
 static uint16_t blackboxPFrameIndex;
 static uint16_t blackboxIFrameIndex;
-static uint16_t blackboxSlowFrameIterationTimer;
+// number of flight loop iterations before logging I-frame
+// typically 32 for 1kHz loop, 64 for 2kHz loop etc
+STATIC_UNIT_TESTED int16_t blackboxIInterval = 0;
+// number of flight loop iterations before logging P-frame
+STATIC_UNIT_TESTED int16_t blackboxPInterval = 0;
+STATIC_UNIT_TESTED int32_t blackboxSInterval = 0;
+STATIC_UNIT_TESTED int32_t blackboxSlowFrameIterationTimer;
 static bool blackboxLoggedAnyFrames;
 
 /*
@@ -383,7 +387,7 @@ bool blackboxMayEditConfig(void)
 
 static bool blackboxIsOnlyLoggingIntraframes(void)
 {
-    return blackboxConfig()->rate_num == 1 && blackboxConfig()->rate_denom == 32;
+    return blackboxConfig()->p_denom == 0;
 }
 
 static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
@@ -441,7 +445,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
         return rxConfig()->rssi_channel > 0 || feature(FEATURE_RSSI_ADC);
 
     case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
-        return blackboxConfig()->rate_num < blackboxConfig()->rate_denom;
+        return blackboxConfig()->p_denom != 1;
 
     case FLIGHT_LOG_FIELD_CONDITION_ACC:
         return sensors(SENSOR_ACC) && blackboxConfig()->record_acc;
@@ -495,7 +499,7 @@ static void blackboxSetState(BlackboxState newState)
         xmitState.headerIndex = 0;
         break;
     case BLACKBOX_STATE_RUNNING:
-        blackboxSlowFrameIterationTimer = SLOW_FRAME_INTERVAL; //Force a slow frame to be written on the first iteration
+        blackboxSlowFrameIterationTimer = blackboxSInterval; //Force a slow frame to be written on the first iteration
         break;
     case BLACKBOX_STATE_SHUTTING_DOWN:
         xmitState.u.startTime = millis();
@@ -762,13 +766,13 @@ static void loadSlowState(blackboxSlowState_t *slow)
 /**
  * If the data in the slow frame has changed, log a slow frame.
  *
- * If allowPeriodicWrite is true, the frame is also logged if it has been more than SLOW_FRAME_INTERVAL logging iterations
+ * If allowPeriodicWrite is true, the frame is also logged if it has been more than blackboxSInterval logging iterations
  * since the field was last logged.
  */
-static bool writeSlowFrameIfNeeded(void)
+STATIC_UNIT_TESTED bool writeSlowFrameIfNeeded(void)
 {
     // Write the slow frame peridocially so it can be recovered if we ever lose sync
-    bool shouldWrite = blackboxSlowFrameIterationTimer >= SLOW_FRAME_INTERVAL;
+    bool shouldWrite = blackboxSlowFrameIterationTimer >= blackboxSInterval;
 
     if (shouldWrite) {
         loadSlowState(&slowHistory);
@@ -793,20 +797,6 @@ static bool writeSlowFrameIfNeeded(void)
 
 void blackboxValidateConfig(void)
 {
-    if (blackboxConfig()->rate_num == 0 || blackboxConfig()->rate_denom == 0
-            || blackboxConfig()->rate_num >= blackboxConfig()->rate_denom) {
-        blackboxConfigMutable()->rate_num = 1;
-        blackboxConfigMutable()->rate_denom = 1;
-    } else {
-        /* Reduce the fraction the user entered as much as possible (makes the recorded/skipped frame pattern repeat
-         * itself more frequently)
-         */
-        const int div = gcd(blackboxConfig()->rate_num, blackboxConfig()->rate_denom);
-
-        blackboxConfigMutable()->rate_num /= div;
-        blackboxConfigMutable()->rate_denom /= div;
-    }
-
     // If we've chosen an unsupported device, change the device to serial
     switch (blackboxConfig()->device) {
 #ifdef USE_FLASHFS
@@ -827,8 +817,10 @@ void blackboxValidateConfig(void)
 static void blackboxResetIterationTimers(void)
 {
     blackboxIteration = 0;
-    blackboxPFrameIndex = 0;
+    blackboxLoopIndex = 0;
     blackboxIFrameIndex = 0;
+    blackboxPFrameIndex = 0;
+    blackboxSlowFrameIterationTimer = 0;
 }
 
 /**
@@ -1007,6 +999,7 @@ static void writeGPSFrame(timeUs_t currentTimeUs)
  */
 static void loadMainState(timeUs_t currentTimeUs)
 {
+#ifndef UNIT_TEST
     blackboxMainState_t *blackboxCurrent = blackboxHistory[0];
 
     blackboxCurrent->time = currentTimeUs;
@@ -1053,6 +1046,9 @@ static void loadMainState(timeUs_t currentTimeUs)
     //Tail servo for tricopters
     blackboxCurrent->servo[5] = servo[5];
 #endif
+#else
+    UNUSED(currentTimeUs);
+#endif // UNIT_TEST
 }
 
 /**
@@ -1186,6 +1182,7 @@ static bool sendFieldDefinition(char mainFrameChar, char deltaFrameChar, const v
  */
 static bool blackboxWriteSysinfo(void)
 {
+#ifndef UNIT_TEST
     const uint16_t motorOutputLowInt = lrintf(motorOutputLow);
     const uint16_t motorOutputHighInt = lrintf(motorOutputHigh);
 
@@ -1199,8 +1196,11 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("Firmware type", "%s",                   "Cleanflight");
         BLACKBOX_PRINT_HEADER_LINE("Firmware revision", "%s %s (%s) %s",    FC_FIRMWARE_NAME, FC_VERSION_STRING, shortGitRevision, targetName);
         BLACKBOX_PRINT_HEADER_LINE("Firmware date", "%s %s",                buildDate, buildTime);
+        BLACKBOX_PRINT_HEADER_LINE("Log start datetime", "%s",              blackboxGetStartDateTime());
         BLACKBOX_PRINT_HEADER_LINE("Craft name", "%s",                      systemConfig()->name);
-        BLACKBOX_PRINT_HEADER_LINE("P interval", "%d/%d",                   blackboxConfig()->rate_num, blackboxConfig()->rate_denom);
+        BLACKBOX_PRINT_HEADER_LINE("I interval", "%d",                      blackboxIInterval);
+        BLACKBOX_PRINT_HEADER_LINE("P interval", "%d/%d",                   blackboxGetRateNum(), blackboxGetRateDenom());
+        BLACKBOX_PRINT_HEADER_LINE("P denom", "%d",                         blackboxConfig()->p_denom);
         BLACKBOX_PRINT_HEADER_LINE("minthrottle", "%d",                     motorConfig()->minthrottle);
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle", "%d",                     motorConfig()->maxthrottle);
         BLACKBOX_PRINT_HEADER_LINE("gyro_scale","0x%x",                     castFloatBytesToInt(1.0f));
@@ -1318,6 +1318,7 @@ static bool blackboxWriteSysinfo(void)
     }
 
     xmitState.headerIndex++;
+#endif // UNIT_TEST
     return false;
 }
 
@@ -1389,21 +1390,14 @@ static void blackboxCheckAndLogFlightMode(void)
     }
 }
 
-/*
- * Use the user's num/denom settings to decide if the P-frame of the given index should be logged, allowing the user to control
- * the portion of logged loop iterations.
- */
-static bool blackboxShouldLogPFrame(uint32_t pFrameIndex)
+STATIC_UNIT_TESTED bool blackboxShouldLogPFrame(void)
 {
-    /* Adding a magic shift of "blackboxConfig()->rate_num - 1" in here creates a better spread of
-     * recorded / skipped frames when the I frame's position is considered:
-     */
-    return (pFrameIndex + blackboxConfig()->rate_num - 1) % blackboxConfig()->rate_denom < blackboxConfig()->rate_num;
+    return blackboxPFrameIndex == 0 && blackboxConfig()->p_denom != 0;
 }
 
-static bool blackboxShouldLogIFrame(void)
+STATIC_UNIT_TESTED bool blackboxShouldLogIFrame(void)
 {
-    return blackboxPFrameIndex == 0;
+    return blackboxLoopIndex == 0;
 }
 
 /*
@@ -1417,30 +1411,32 @@ static bool blackboxShouldLogIFrame(void)
 STATIC_UNIT_TESTED bool blackboxShouldLogGpsHomeFrame(void)
 {
     if (GPS_home[0] != gpsHistory.GPS_home[0] || GPS_home[1] != gpsHistory.GPS_home[1]
-        || (blackboxPFrameIndex == BLACKBOX_I_INTERVAL / 2 && blackboxIFrameIndex % 128 == 0)) {
+        || (blackboxPFrameIndex == blackboxIInterval / 2 && blackboxIFrameIndex % 128 == 0)) {
         return true;
     }
     return false;
 }
-#endif
+#endif // GPS
 
 // Called once every FC loop in order to keep track of how many FC loop iterations have passed
-static void blackboxAdvanceIterationTimers(void)
+STATIC_UNIT_TESTED void blackboxAdvanceIterationTimers(void)
 {
-    blackboxSlowFrameIterationTimer++;
-    blackboxIteration++;
-    blackboxPFrameIndex++;
+    ++blackboxSlowFrameIterationTimer;
+    ++blackboxIteration;
 
-    if (blackboxPFrameIndex == BLACKBOX_I_INTERVAL) {
-        blackboxPFrameIndex = 0;
+    if (++blackboxLoopIndex >= blackboxIInterval) {
+        blackboxLoopIndex = 0;
         blackboxIFrameIndex++;
+        blackboxPFrameIndex = 0;
+    } else if (++blackboxPFrameIndex >= blackboxPInterval) {
+        blackboxPFrameIndex = 0;
     }
 }
 
 // Called once every FC loop in order to log the current state
-static void blackboxLogIteration(timeUs_t currentTimeUs)
+STATIC_UNIT_TESTED void blackboxLogIteration(timeUs_t currentTimeUs)
 {
-    // Write a keyframe every BLACKBOX_I_INTERVAL frames so we can resynchronise upon missing frames
+    // Write a keyframe every blackboxIInterval frames so we can resynchronise upon missing frames
     if (blackboxShouldLogIFrame()) {
         /*
          * Don't log a slow frame if the slow data didn't change ("I" frames are already large enough without adding
@@ -1456,7 +1452,7 @@ static void blackboxLogIteration(timeUs_t currentTimeUs)
         blackboxCheckAndLogArmingBeep();
         blackboxCheckAndLogFlightMode(); // Check for FlightMode status change event
 
-        if (blackboxShouldLogPFrame(blackboxPFrameIndex)) {
+        if (blackboxShouldLogPFrame()) {
             /*
              * We assume that slow frames are only interesting in that they aid the interpretation of the main data stream.
              * So only log slow frames during loop iterations where we log a main frame.
@@ -1521,7 +1517,6 @@ void blackboxUpdate(timeUs_t currentTimeUs)
                     blackboxWrite(blackboxHeader[xmitState.headerIndex]);
                     blackboxHeaderBudget--;
                 }
-
                 if (blackboxHeader[xmitState.headerIndex] == '\0') {
                     blackboxSetState(BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER);
                 }
@@ -1673,15 +1668,67 @@ void blackboxUpdate(timeUs_t currentTimeUs)
     }
 }
 
+/*
+ * Returns start time in ISO 8601 format, YYYY-MM-DDThh:mm:ss
+ * Year value of "0000" indicates time not set
+ */
+static char startDateTime[20] = "0000-01-01T00:00:00";
+const char *blackboxGetStartDateTime(void)
+{
+    return startDateTime;
+}
+
+void blackboxSetStartDateTime(const char *dateTime, timeMs_t timeNowMs)
+{
+    (void)dateTime;
+    (void)timeNowMs;
+}
+
+int blackboxCalculatePDenom(int rateNum, int rateDenom)
+{
+    return blackboxIInterval * rateNum / rateDenom;
+}
+
+uint8_t blackboxGetRateNum(void)
+{
+    return blackboxGetRateDenom() * blackboxConfig()->p_denom / blackboxIInterval;
+}
+
+uint8_t blackboxGetRateDenom(void)
+{
+    return gcd(blackboxIInterval, blackboxPInterval);
+}
+
 /**
  * Call during system startup to initialize the blackbox.
  */
 void blackboxInit(void)
 {
+    blackboxResetIterationTimers();
+
+    // an I-frame is written every 32ms
+    // gyro.targetLooptime is 1000 for 1kHz loop, 500 for 2kHz loop etc, gyro.targetLooptime is rounded for short looptimes
+    if (gyro.targetLooptime == 31) { // rounded from 31.25us
+        blackboxIInterval = 1024;
+    } else if (gyro.targetLooptime == 63) { // rounded from 62.5us
+        blackboxIInterval = 512;
+    } else {
+        blackboxIInterval = (uint16_t)(32 * 1000 / gyro.targetLooptime);
+    }
+    // by default p_denom is 32 and a P-frame is written every 1ms
+    // if p_denom is zero then no P-frames are logged
+    if (blackboxConfig()->p_denom == 0) {
+        blackboxPInterval = 0;
+    } else if (blackboxConfig()->p_denom > blackboxIInterval && blackboxIInterval >= 32) {
+        blackboxPInterval = 1;
+    } else {
+        blackboxPInterval = blackboxIInterval /  blackboxConfig()->p_denom;
+    }
     if (blackboxConfig()->device) {
         blackboxSetState(BLACKBOX_STATE_STOPPED);
     } else {
         blackboxSetState(BLACKBOX_STATE_DISABLED);
     }
+    blackboxSInterval = blackboxIInterval * 256; // S-frame is written every 256*32 = 8192ms, approx every 8 seconds
 }
 #endif
