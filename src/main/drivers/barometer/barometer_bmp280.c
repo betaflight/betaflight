@@ -70,11 +70,11 @@ bool bmp280ReadRegister(busDevice_t *busdev, uint8_t reg, uint8_t length, uint8_
     switch (busdev->bustype) {
 #ifdef USE_BARO_SPI_BMP280
     case BUSTYPE_SPI:
-        return spiReadRegisterBuffer(busdev, reg | 0x80, length, data);
+        return spiBusReadRegisterBuffer(busdev, reg | 0x80, data, length);
 #endif
 #ifdef USE_BARO_BMP280
     case BUSTYPE_I2C:
-        return i2cReadRegisterBuffer(busdev, reg, length, data);
+        return i2cBusReadRegisterBuffer(busdev, reg, data, length);
 #endif
     }
     return false;
@@ -85,11 +85,11 @@ bool bmp280WriteRegister(busDevice_t *busdev, uint8_t reg, uint8_t data)
     switch (busdev->bustype) {
 #ifdef USE_BARO_SPI_BMP280
     case BUSTYPE_SPI:
-        return spiWriteRegister(busdev, reg & 0x7f, data);
+        return spiBusWriteRegister(busdev, reg & 0x7f, data);
 #endif
 #ifdef USE_BARO_BMP280
     case BUSTYPE_I2C:
-        return i2cWriteRegister(busdev, reg, data);
+        return i2cBusWriteRegister(busdev, reg, data);
 #endif
     }
     return false;

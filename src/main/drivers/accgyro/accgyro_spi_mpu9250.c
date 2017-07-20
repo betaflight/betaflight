@@ -62,12 +62,12 @@ bool mpu9250SpiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
     return true;
 }
 
-static bool mpu9250SpiSlowReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data)
+static bool mpu9250SpiSlowReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data, uint8_t length)
 {
     IOLo(bus->busdev_u.spi.csnPin);
     delayMicroseconds(1);
     spiTransferByte(bus->busdev_u.spi.instance, reg | 0x80); // read transaction
-    spiTransfer(bus->busdev_u.spi.instance, data, NULL, length);
+    spiTransfer(bus->busdev_u.spi.instance, NULL, data, length);
     IOHi(bus->busdev_u.spi.csnPin);
     delayMicroseconds(1);
 
@@ -118,7 +118,7 @@ bool mpu9250SpiWriteRegisterVerify(const busDevice_t *bus, uint8_t reg, uint8_t 
     uint8_t attemptsRemaining = 20;
     do {
         uint8_t in;
-        mpu9250SpiSlowReadRegisterBuffer(bus, reg, 1, &in);
+        mpu9250SpiSlowReadRegisterBuffer(bus, reg, &in, 1);
         if (in == data) {
             return true;
         } else {
@@ -180,7 +180,7 @@ uint8_t mpu9250SpiDetect(const busDevice_t *bus)
     uint8_t attemptsRemaining = 20;
     do {
         delay(150);
-        const uint8_t in = spiReadRegister(bus, MPU_RA_WHO_AM_I);
+        const uint8_t in = spiBusReadRegister(bus, MPU_RA_WHO_AM_I);
         if (in == MPU9250_WHO_AM_I_CONST || in == MPU9255_WHO_AM_I_CONST) {
             break;
         }
