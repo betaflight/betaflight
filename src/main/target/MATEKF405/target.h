@@ -117,6 +117,25 @@
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART2
 
+// *************** I2C ****************************
+// SLC clash with WS2812 LED
+#define USE_I2C
+#define I2C_DEVICE              (I2CDEV_1)
+#define I2C1_SCL                PB6
+#define I2C1_SDA                PB7
+
+
+#define BARO
+#define USE_BARO_BMP280
+#define USE_BARO_MS5611
+#define USE_BARO_BMP085
+
+#define MAG
+#define USE_MAG_MAG3110 // External
+#define USE_MAG_HMC5883 // External
+#define USE_MAG_AK8963  // External
+#define USE_MAG_AK8975  // External
+
 // *************** ADC *****************************
 #define USE_ADC
 #define ADC_INSTANCE                ADC1
@@ -131,7 +150,7 @@
 #define DEFAULT_FEATURES        (FEATURE_OSD )
 
 #define LED_STRIP
-#define WS2811_PIN                      PB6
+#define WS2811_PIN                      PA15 // S5 pad for iNav
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST0_HANDLER
 #define WS2811_DMA_STREAM               DMA1_Stream0
 #define WS2811_DMA_CHANNEL              DMA_Channel_6   // ???
