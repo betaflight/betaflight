@@ -484,8 +484,11 @@ void processRx(timeUs_t currentTimeUs)
             DISABLE_FLIGHT_MODE(HEADFREE_MODE);
         }
         if (IS_RC_MODE_ACTIVE(BOXHEADADJ)) {
-           // todo
-
+           // rebase earth to body
+           q0 = 1.0f; 
+           q1 = 0.0f; 
+           q2 = 0.0f;
+           q3 = 0.0f; 
         }
     }
 #endif
