@@ -173,13 +173,13 @@ static int32_t applyMedianFilter(int32_t newReading)
     return medianFilterReady ? quickMedianFilter5(filterSamples) : newReading;
 }
 
-static uint32_t computePseudoSnr(int32_t newReading) {
+static int32_t computePseudoSnr(int32_t newReading) {
     #define SNR_SAMPLES 5
-    static uint32_t snrSamples[SNR_SAMPLES];
+    static int32_t snrSamples[SNR_SAMPLES];
     static uint8_t snrSampleIndex = 0;
     static int32_t previousReading = RANGEFINDER_OUT_OF_RANGE;
     static bool snrReady = false;
-    uint32_t pseudoSnr = 0;
+    int32_t pseudoSnr = 0;
 
     snrSamples[snrSampleIndex] = pow(newReading - previousReading, 2);
     ++snrSampleIndex;
