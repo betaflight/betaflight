@@ -373,9 +373,7 @@ void initActiveBoxIds(void)
     }
 #endif
 
-    if (feature(FEATURE_FAILSAFE)) {
-        BME(BOXFAILSAFE);
-    }
+    BME(BOXFAILSAFE);
 
     if (mixerConfig()->mixerMode == MIXER_FLYING_WING || mixerConfig()->mixerMode == MIXER_AIRPLANE || mixerConfig()->mixerMode == MIXER_CUSTOM_AIRPLANE) {
         BME(BOXPASSTHRU);
@@ -895,10 +893,8 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 }
 
 #ifdef USE_OSD_SLAVE
-static bool mspOsdSlaveProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
+static bool mspOsdSlaveProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 {
-    UNUSED(mspPostProcessFn);
-
     switch (cmdMSP) {
     case MSP_STATUS_EX:
     case MSP_STATUS:
@@ -928,10 +924,8 @@ static bool mspOsdSlaveProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostPro
 #endif
 
 #ifndef USE_OSD_SLAVE
-static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
+static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 {
-    UNUSED(mspPostProcessFn);
-
     switch (cmdMSP) {
     case MSP_STATUS_EX:
     case MSP_STATUS:
@@ -1420,10 +1414,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     return true;
 }
 
-static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *arg, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
+static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *arg, sbuf_t *dst)
 {
-    UNUSED(mspPostProcessFn);
-
     switch (cmdMSP) {
     case MSP_BOXNAMES:
         {
@@ -2294,13 +2286,13 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
     if (mspCommonProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
 #ifndef USE_OSD_SLAVE
-    } else if (mspFcProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
+    } else if (mspFcProcessOutCommand(cmdMSP, dst)) {
         ret = MSP_RESULT_ACK;
-    } else if ((ret = mspFcProcessOutCommandWithArg(cmdMSP, src, dst, mspPostProcessFn)) != MSP_RESULT_CMD_UNKNOWN) {
+    } else if ((ret = mspFcProcessOutCommandWithArg(cmdMSP, src, dst)) != MSP_RESULT_CMD_UNKNOWN) {
         /* ret */;
 #endif
 #ifdef USE_OSD_SLAVE
-    } else if (mspOsdSlaveProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
+    } else if (mspOsdSlaveProcessOutCommand(cmdMSP, dst)) {
         ret = MSP_RESULT_ACK;
 #endif
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE

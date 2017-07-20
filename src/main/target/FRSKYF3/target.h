@@ -17,6 +17,8 @@
 
 #pragma once
 
+#undef TELEMETRY_JETIEXBUS // no space left
+
 #define TARGET_BOARD_IDENTIFIER "FRF3"
 #define TARGET_CONFIG
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE

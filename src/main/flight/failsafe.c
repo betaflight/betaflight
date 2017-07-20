@@ -55,14 +55,14 @@
 
 static failsafeState_t failsafeState;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 1);
 
 PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
     .failsafe_delay = 10,                            // 1sec
     .failsafe_off_delay = 10,                        // 1sec
     .failsafe_throttle = 1000,                       // default throttle off.
-    .failsafe_kill_switch = 0,                       // default failsafe switch action is identical to rc link loss
     .failsafe_throttle_low_delay = 100,              // default throttle low delay for "just disarm" on failsafe condition
+    .failsafe_kill_switch = 0,                       // default failsafe switch action is identical to rc link loss
     .failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT // default full failsafe procedure is 0: auto-landing
 );
 

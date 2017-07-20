@@ -15,34 +15,24 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdbool.h>
+#include <stdint.h>
 
-#include "platform.h"
+#include <platform.h>
 
-#include "drivers/bus_i2c.h"
-#include "drivers/io_types.h"
+#ifdef TARGET_CONFIG
 
-typedef struct busDevice_s {
-    uint8_t bustype;
-    union {
-        struct deviceSpi_s {
-            SPI_TypeDef *instance;
-#if defined(USE_HAL_DRIVER)
-            SPI_HandleTypeDef* handle; // cached here for efficiency
-#endif
-            IO_t csnPin;
-        } spi;
-        struct deviceI2C_s {
-           I2CDevice device;
-           uint8_t address;
-        } i2c;
-    } busdev_u;
-} busDevice_t;
+#include "io/serial.h"
 
-#define BUSTYPE_NONE 0
-#define BUSTYPE_I2C  1
-#define BUSTYPE_SPI  2
+#include "rx/rx.h"
 
-#ifdef TARGET_BUS_INIT
-void targetBusInit(void);
+#include "telemetry/telemetry.h"
+
+
+void targetConfiguration(void)
+{
+    serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(TELEMETRY_UART)].functionMask = FUNCTION_TELEMETRY_SMARTPORT;
+    telemetryConfigMutable()->halfDuplex = 0;
+    telemetryConfigMutable()->telemetry_inverted = true;
+}
 #endif

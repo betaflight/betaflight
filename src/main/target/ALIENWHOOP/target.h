@@ -194,9 +194,9 @@
 /* Defaults - What do we want out of the box?
  */
 #if defined(BREADBOARD)
-#define DEFAULT_FEATURES        (FEATURE_RX_SERIAL | FEATURE_MOTOR_STOP )
+#define DEFAULT_FEATURES        (FEATURE_RX_SERIAL | FEATURE_MOTOR_STOP)
 #else
-#define DEFAULT_FEATURES        (FEATURE_RX_SERIAL | FEATURE_MOTOR_STOP | FEATURE_FAILSAFE) // FEATURE_TELEMETRY changes bind pin from rx to tx
+#define DEFAULT_FEATURES        (FEATURE_RX_SERIAL | FEATURE_MOTOR_STOP) // FEATURE_TELEMETRY changes bind pin from rx to tx
 #endif
 
 #undef VTX_COMMON

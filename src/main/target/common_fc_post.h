@@ -39,3 +39,14 @@
 #define USE_I2C_OLED_DISPLAY
 #endif
 #endif
+
+// XXX Remove USE_BARO_BMP280 and USE_BARO_MS5611 if USE_I2C is not defined.
+// XXX This should go away buy editing relevant target.h files
+#if !defined(USE_I2C)
+#if defined(USE_BARO_BMP280)
+#undef USE_BARO_BMP280
+#endif
+#if defined(USE_BARO_MS5611)
+#undef USE_BARO_MS5611
+#endif
+#endif

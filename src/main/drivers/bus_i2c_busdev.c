@@ -15,34 +15,25 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
-#include "platform.h"
+#include <platform.h>
+
+#if defined(USE_I2C)
 
 #include "drivers/bus_i2c.h"
-#include "drivers/io_types.h"
+#include "drivers/bus.h"
 
-typedef struct busDevice_s {
-    uint8_t bustype;
-    union {
-        struct deviceSpi_s {
-            SPI_TypeDef *instance;
-#if defined(USE_HAL_DRIVER)
-            SPI_HandleTypeDef* handle; // cached here for efficiency
-#endif
-            IO_t csnPin;
-        } spi;
-        struct deviceI2C_s {
-           I2CDevice device;
-           uint8_t address;
-        } i2c;
-    } busdev_u;
-} busDevice_t;
+bool i2cReadRegisterBuffer(busDevice_t *busdev, uint8_t reg, uint8_t len, uint8_t *buffer)
+{
+    return i2cRead(busdev->busdev_u.i2c.device, busdev->busdev_u.i2c.address, reg, len, buffer);
+}
 
-#define BUSTYPE_NONE 0
-#define BUSTYPE_I2C  1
-#define BUSTYPE_SPI  2
+bool i2cWriteRegister(busDevice_t *busdev, uint8_t reg, uint8_t data)
+{
+    return i2cWrite(busdev->busdev_u.i2c.device, busdev->busdev_u.i2c.address, reg, data);
+}
 
-#ifdef TARGET_BUS_INIT
-void targetBusInit(void);
 #endif

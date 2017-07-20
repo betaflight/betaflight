@@ -36,10 +36,18 @@ baro_bmp085_unittest_SRC := \
 baro_bmp280_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_bmp280.c
 
+baro_bmp280_unittest_DEFINES := \
+                USE_BARO \
+                USE_BARO_BMP280 \
+                USE_BARO_SPI_BMP280
 
 baro_ms5611_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_ms5611.c
 
+baro_ms5611_unittest_DEFINES := \
+                USE_BARO \
+                USE_BARO_MS5611 \
+                USE_BARO_SPI_MS5611
 
 battery_unittest_SRC := \
 		$(USER_DIR)/sensors/battery.c \

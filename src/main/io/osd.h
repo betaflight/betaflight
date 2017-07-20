@@ -131,9 +131,9 @@ typedef struct osdConfig_s {
     bool enabled_stats[OSD_STAT_COUNT];
 
     // Alarms
-    uint8_t rssi_alarm;
     uint16_t cap_alarm;
     uint16_t alt_alarm;
+    uint8_t rssi_alarm;
 
     osd_unit_e units;
 

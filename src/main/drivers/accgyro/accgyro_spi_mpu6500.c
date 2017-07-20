@@ -44,11 +44,11 @@ static void mpu6500SpiInit(const busDevice_t *bus)
         return;
     }
 
-    IOInit(bus->spi.csnPin, OWNER_MPU_CS, 0);
-    IOConfigGPIO(bus->spi.csnPin, SPI_IO_CS_CFG);
-    IOHi(bus->spi.csnPin);
+    IOInit(bus->busdev_u.spi.csnPin, OWNER_MPU_CS, 0);
+    IOConfigGPIO(bus->busdev_u.spi.csnPin, SPI_IO_CS_CFG);
+    IOHi(bus->busdev_u.spi.csnPin);
 
-    spiSetDivisor(bus->spi.instance, SPI_CLOCK_FAST);
+    spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_FAST);
 
     hardwareInitialised = true;
 }
@@ -90,7 +90,7 @@ void mpu6500SpiAccInit(accDev_t *acc)
 
 void mpu6500SpiGyroInit(gyroDev_t *gyro)
 {
-    spiSetDivisor(gyro->bus.spi.instance, SPI_CLOCK_SLOW);
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_SLOW);
     delayMicroseconds(1);
 
     mpu6500GyroInit(gyro);
@@ -99,7 +99,7 @@ void mpu6500SpiGyroInit(gyroDev_t *gyro)
     spiWriteRegister(&gyro->bus, MPU_RA_USER_CTRL, MPU6500_BIT_I2C_IF_DIS);
     delay(100);
 
-    spiSetDivisor(gyro->bus.spi.instance, SPI_CLOCK_FAST);
+    spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_FAST);
     delayMicroseconds(1);
 }
 

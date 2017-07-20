@@ -29,7 +29,7 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
-#include "drivers/bus_spi.h"
+#include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
 #include "drivers/exti.h"
@@ -206,7 +206,7 @@ bool mpuGyroRead(gyroDev_t *gyro)
 {
     uint8_t data[6];
 
-    const bool ack = gyro->mpuConfiguration.readFn(&gyro->bus, gyro->mpuConfiguration.gyroReadXRegister, 6, data);
+    const bool ack = gyro->mpuConfiguration.readFn(&gyro->bus, MPU_RA_GYRO_XOUT_H, 6, data);
     if (!ack) {
         return false;
     }
@@ -248,12 +248,11 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     spiBusSetInstance(&gyro->bus, MPU6000_SPI_INSTANCE);
 #endif
 #ifdef MPU6000_CS_PIN
-    gyro->bus.spi.csnPin = gyro->bus.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU6000_CS_PIN)) : gyro->bus.spi.csnPin;
+    gyro->bus.busdev_u.spi.csnPin = gyro->bus.busdev_u.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU6000_CS_PIN)) : gyro->bus.busdev_u.spi.csnPin;
 #endif
     sensor = mpu6000SpiDetect(&gyro->bus);
     if (sensor != MPU_NONE) {
         gyro->mpuDetectionResult.sensor = sensor;
-        gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
         gyro->mpuConfiguration.readFn = spiReadRegisterBuffer;
         gyro->mpuConfiguration.writeFn = spiWriteRegister;
         return true;
@@ -265,13 +264,12 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     spiBusSetInstance(&gyro->bus, MPU6500_SPI_INSTANCE);
 #endif
 #ifdef MPU6500_CS_PIN
-    gyro->bus.spi.csnPin = gyro->bus.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU6500_CS_PIN)) : gyro->bus.spi.csnPin;
+    gyro->bus.busdev_u.spi.csnPin = gyro->bus.busdev_u.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU6500_CS_PIN)) : gyro->bus.busdev_u.spi.csnPin;
 #endif
     sensor = mpu6500SpiDetect(&gyro->bus);
     // some targets using MPU_9250_SPI, ICM_20608_SPI or ICM_20602_SPI state sensor is MPU_65xx_SPI
     if (sensor != MPU_NONE) {
         gyro->mpuDetectionResult.sensor = sensor;
-        gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
         gyro->mpuConfiguration.readFn = spiReadRegisterBuffer;
         gyro->mpuConfiguration.writeFn = spiWriteRegister;
         return true;
@@ -283,12 +281,11 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     spiBusSetInstance(&gyro->bus, MPU9250_SPI_INSTANCE);
 #endif
 #ifdef MPU9250_CS_PIN
-    gyro->bus.spi.csnPin = gyro->bus.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU9250_CS_PIN)) : gyro->bus.spi.csnPin;
+    gyro->bus.busdev_u.spi.csnPin = gyro->bus.busdev_u.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU9250_CS_PIN)) : gyro->bus.busdev_u.spi.csnPin;
 #endif
     sensor = mpu9250SpiDetect(&gyro->bus);
     if (sensor != MPU_NONE) {
         gyro->mpuDetectionResult.sensor = sensor;
-        gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
         gyro->mpuConfiguration.readFn = spiReadRegisterBuffer;
         gyro->mpuConfiguration.writeFn = spiWriteRegister;
         gyro->mpuConfiguration.resetFn = mpu9250SpiResetGyro;
@@ -301,12 +298,11 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     spiBusSetInstance(&gyro->bus, ICM20689_SPI_INSTANCE);
 #endif
 #ifdef ICM20689_CS_PIN
-    gyro->bus.spi.csnPin = gyro->bus.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(ICM20689_CS_PIN)) : gyro->bus.spi.csnPin;
+    gyro->bus.busdev_u.spi.csnPin = gyro->bus.busdev_u.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(ICM20689_CS_PIN)) : gyro->bus.busdev_u.spi.csnPin;
 #endif
     sensor = icm20689SpiDetect(&gyro->bus);
     if (sensor != MPU_NONE) {
         gyro->mpuDetectionResult.sensor = sensor;
-        gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
         gyro->mpuConfiguration.readFn = spiReadRegisterBuffer;
         gyro->mpuConfiguration.writeFn = spiWriteRegister;
         return true;
@@ -318,7 +314,7 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     spiBusSetInstance(&gyro->bus, BMI160_SPI_INSTANCE);
 #endif
 #ifdef BMI160_CS_PIN
-    gyro->bus.spi.csnPin = gyro->bus.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(BMI160_CS_PIN)) : gyro->bus.spi.csnPin;
+    gyro->bus.busdev_u.spi.csnPin = gyro->bus.busdev_u.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(BMI160_CS_PIN)) : gyro->bus.busdev_u.spi.csnPin;
 #endif
     sensor = bmi160Detect(&gyro->bus);
     if (sensor != MPU_NONE) {
@@ -354,15 +350,12 @@ void mpuDetect(gyroDev_t *gyro)
         return;
     }
 
-    gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
-
     // If an MPU3050 is connected sig will contain 0.
     uint8_t inquiryResult;
     ack = mpuReadRegisterI2C(&gyro->bus, MPU_RA_WHO_AM_I_LEGACY, 1, &inquiryResult);
     inquiryResult &= MPU_INQUIRY_MASK;
     if (ack && inquiryResult == MPUx0x0_WHO_AM_I_CONST) {
         gyro->mpuDetectionResult.sensor = MPU_3050;
-        gyro->mpuConfiguration.gyroReadXRegister = MPU3050_GYRO_OUT;
         return;
     }
 
