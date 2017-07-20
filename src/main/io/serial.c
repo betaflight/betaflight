@@ -135,6 +135,13 @@ void pgResetFn_serialConfig(serialConfig_t *serialConfig)
     }
 #endif
 
+#ifdef SBUS_TELEMETRY_UART
+    serialPortConfig_t *serialTlemetryUartConfig = serialFindPortConfiguration(SBUS_TELEMETRY_UART);
+    if (serialTlemetryUartConfig) {
+        serialTlemetryUartConfig->functionMask = FUNCTION_TELEMETRY_SMARTPORT;
+    }
+#endif
+
     serialConfig->reboot_character = 'R';
     serialConfig->serial_update_rate_hz = 100;
 }
