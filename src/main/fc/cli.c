@@ -2968,7 +2968,7 @@ static void cliVersion(char *cmdline)
     UNUSED(cmdline);
 
     cliPrintLinef("# %s / %s %s %s / %s (%s)",
-        FC_FIRMWARE_NAME,
+        firmwareName,
         targetName,
         FC_VERSION_STRING,
         buildDate,

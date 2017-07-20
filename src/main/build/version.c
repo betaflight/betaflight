@@ -17,6 +17,7 @@
 
 #include "version.h"
 
+const char * const firmwareName = FC_FIRMWARE_NAME;
 const char * const targetName = __TARGET__;
 const char * const shortGitRevision = __REVISION__;
 const char * const buildDate = __DATE__;

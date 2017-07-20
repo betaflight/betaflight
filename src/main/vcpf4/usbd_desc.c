@@ -58,7 +58,7 @@
   * @{
   */
 #define USBD_LANGID_STRING              0x409
-#define USBD_MANUFACTURER_STRING        FC_FIRMWARE_NAME
+#define USBD_MANUFACTURER_STRING        firmwareName
 
 #ifdef USBD_PRODUCT_STRING
   #define USBD_PRODUCT_HS_STRING          USBD_PRODUCT_STRING
