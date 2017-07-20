@@ -326,7 +326,7 @@ void updateRcCommands(void)
 
         rcCommandBuff.X = - rcCommand[ROLL];
         rcCommandBuff.Y = rcCommand[PITCH];
-        //rcCommandBuff.Z = rcCommand[YAW];
+        rcCommandBuff.Z = rcCommand[YAW];
         HeadfreeBodyToEarth(&rcCommandBuff);
         rcCommand[ROLL] = rcCommandBuff.X;
         rcCommand[PITCH] = rcCommandBuff.Y;
