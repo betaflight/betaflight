@@ -572,20 +572,20 @@ static void showDebugPage(void)
 #endif
 
 static const pageEntry_t pages[PAGE_COUNT] = {
-    { PAGE_WELCOME, "BETAFLIGHT",  showWelcomePage,    PAGE_FLAGS_SKIP_CYCLING },
-    { PAGE_ARMED,   "ARMED",        showArmedPage,      PAGE_FLAGS_SKIP_CYCLING },
-    { PAGE_PROFILE, "PROFILE",      showProfilePage,    PAGE_FLAGS_NONE },
+    { PAGE_WELCOME, FC_FIRMWARE_NAME,  showWelcomePage,    PAGE_FLAGS_SKIP_CYCLING },
+    { PAGE_ARMED,   "ARMED",           showArmedPage,      PAGE_FLAGS_SKIP_CYCLING },
+    { PAGE_PROFILE, "PROFILE",         showProfilePage,    PAGE_FLAGS_NONE },
 #ifdef GPS
-    { PAGE_GPS,     "GPS",          showGpsPage,        PAGE_FLAGS_NONE },
+    { PAGE_GPS,     "GPS",             showGpsPage,        PAGE_FLAGS_NONE },
 #endif
-    { PAGE_RX,      "RX",           showRxPage,         PAGE_FLAGS_NONE },
-    { PAGE_BATTERY, "BATTERY",      showBatteryPage,    PAGE_FLAGS_NONE },
-    { PAGE_SENSORS, "SENSORS",      showSensorsPage,    PAGE_FLAGS_NONE },
+    { PAGE_RX,      "RX",              showRxPage,         PAGE_FLAGS_NONE },
+    { PAGE_BATTERY, "BATTERY",         showBatteryPage,    PAGE_FLAGS_NONE },
+    { PAGE_SENSORS, "SENSORS",         showSensorsPage,    PAGE_FLAGS_NONE },
 #ifndef SKIP_TASK_STATISTICS
-    { PAGE_TASKS,   "TASKS",        showTasksPage,      PAGE_FLAGS_NONE },
+    { PAGE_TASKS,   "TASKS",           showTasksPage,      PAGE_FLAGS_NONE },
 #endif
 #ifdef ENABLE_DEBUG_DASHBOARD_PAGE
-    { PAGE_DEBUG,   "DEBUG",        showDebugPage,      PAGE_FLAGS_NONE },
+    { PAGE_DEBUG,   "DEBUG",           showDebugPage,      PAGE_FLAGS_NONE },
 #endif
 };
 
