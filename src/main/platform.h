@@ -36,7 +36,9 @@
 #define U_ID_2 (*(uint32_t*)0x1ff0f428)
 #endif
 
+#ifndef STM32F7
 #define STM32F7
+#endif
 
 #elif defined(STM32F40_41xxx) || defined (STM32F411xE) || defined (STM32F446xx)
 
@@ -50,7 +52,9 @@
 #define U_ID_1 (*(uint32_t*)0x1fff7a14)
 #define U_ID_2 (*(uint32_t*)0x1fff7a18)
 
+#ifndef STM32F4
 #define STM32F4
+#endif
 
 #elif defined(STM32F303xC)
 #include "stm32f30x_conf.h"
@@ -63,7 +67,9 @@
 #define U_ID_1 (*(uint32_t*)0x1FFFF7B0)
 #define U_ID_2 (*(uint32_t*)0x1FFFF7B4)
 
+#ifndef STM32F3
 #define STM32F3
+#endif
 
 #elif defined(STM32F10X)
 
@@ -76,7 +82,9 @@
 #define U_ID_1 (*(uint32_t*)0x1FFFF7EC)
 #define U_ID_2 (*(uint32_t*)0x1FFFF7F0)
 
+#ifndef STM32F1
 #define STM32F1
+#endif
 
 #elif defined(SITL)
 
