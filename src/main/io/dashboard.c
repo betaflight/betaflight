@@ -572,7 +572,7 @@ static void showDebugPage(void)
 #endif
 
 static const pageEntry_t pages[PAGE_COUNT] = {
-    { PAGE_WELCOME, "CLEANFLIGHT",  showWelcomePage,    PAGE_FLAGS_SKIP_CYCLING },
+    { PAGE_WELCOME, "BETAFLIGHT",  showWelcomePage,    PAGE_FLAGS_SKIP_CYCLING },
     { PAGE_ARMED,   "ARMED",        showArmedPage,      PAGE_FLAGS_SKIP_CYCLING },
     { PAGE_PROFILE, "PROFILE",      showProfilePage,    PAGE_FLAGS_NONE },
 #ifdef GPS
