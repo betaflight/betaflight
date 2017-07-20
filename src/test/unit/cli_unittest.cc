@@ -28,6 +28,7 @@ extern "C" {
     #include "target.h"
     #include "fc/runtime_config.h"
     #include "fc/fc_msp.h"
+    #include "fc/fc_msp_box.h"
     #include "config/parameter_group.h"
     #include "config/feature.h"
     #include "config/parameter_group_ids.h"

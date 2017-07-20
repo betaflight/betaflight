@@ -27,21 +27,23 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "drivers/serial.h"
+
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 
 #include "io/beeper.h"
+#include "io/rcsplit.h"
 #include "io/serial.h"
 
 #include "scheduler/scheduler.h"
 
-#include "drivers/serial.h"
-
-#include "io/rcsplit.h"
 
 // communicate with camera device variables
-serialPort_t *rcSplitSerialPort = NULL;
-rcsplitSwitchState_t switchStates[BOXCAMERA3 - BOXCAMERA1 + 1];
-rcsplitState_e cameraState = RCSPLIT_STATE_UNKNOWN;
+STATIC_UNIT_TESTED serialPort_t *rcSplitSerialPort = NULL;
+STATIC_UNIT_TESTED rcsplitState_e cameraState = RCSPLIT_STATE_UNKNOWN;
+// only for unit test
+STATIC_UNIT_TESTED rcsplitSwitchState_t switchStates[BOXCAMERA3 - BOXCAMERA1 + 1];
 
 static uint8_t crc_high_first(uint8_t *ptr, uint8_t len)
 {

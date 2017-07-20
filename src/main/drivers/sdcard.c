@@ -52,9 +52,6 @@
  */
 #define SDCARD_NON_DMA_CHUNK_SIZE 256
 
-#define STATIC_ASSERT(condition, name ) \
-    typedef char assert_failed_ ## name [(condition) ? 1 : -1 ]
-
 typedef enum {
     // In these states we run at the initialization 400kHz clockspeed:
     SDCARD_STATE_NOT_PRESENT = 0,
