@@ -371,6 +371,11 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
     attitude.values.pitch = lrintf(((0.5f * M_PIf) - acosf(-rMat[2][0])) * (1800.0f / M_PIf));
     attitude.values.yaw = lrintf((-atan2f(rMat[1][0], rMat[0][0]) * (1800.0f / M_PIf) + magneticDeclination));
 
+    /*
+    attitude.values.roll = lrintf(atan2f((q1q3 + q2q0), -(q1q3 - q2q0)) * (1800.0f / M_PIf));
+    attitude.values.pitch = lrintf((acosf(-q1q1 -q2q2 -q3q3 -q0q0)) * (1800.0f / M_PIf));
+    attitude.values.yaw = lrintf((atan2f((q1q3 - q2q0), (q1q3 + q2q0)) * (1800.0f / M_PIf) + magneticDeclination)); */
+
     if (attitude.values.yaw < 0)
         attitude.values.yaw += 3600;
 
