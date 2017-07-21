@@ -37,6 +37,7 @@
 #include "drivers/time.h"
 #include "drivers/rangefinder_hcsr04.h"
 #include "drivers/rangefinder_srf10.h"
+#include "drivers/rangefinder_hcsr04_i2c.h"
 #include "drivers/rangefinder.h"
 
 #include "fc/config.h"
@@ -79,8 +80,6 @@ const rangefinderHardwarePins_t * rangefinderGetHardwarePins(void)
 #elif defined(RANGEFINDER_HCSR04_TRIGGER_PIN)
     rangefinderHardwarePins.triggerTag = IO_TAG(RANGEFINDER_HCSR04_TRIGGER_PIN);
     rangefinderHardwarePins.echoTag = IO_TAG(RANGEFINDER_HCSR04_ECHO_PIN);
-#else
-#error Rangefinder not defined for target
 #endif
     return &rangefinderHardwarePins;
 }
@@ -111,6 +110,15 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
             if (srf10Detect(dev)) {
                 rangefinderHardware = RANGEFINDER_SRF10;
                 rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_SRF10_TASK_PERIOD_MS));
+            }
+#endif
+            break;
+
+            case RANGEFINDER_HCSR04I2C:
+#ifdef USE_RANGEFINDER_HCSR04_I2C
+            if (hcsr04i2c0Detect(dev)) {
+                rangefinderHardware = RANGEFINDER_HCSR04I2C;
+                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_HCSR04_i2C_TASK_PERIOD_MS));
             }
 #endif
             break;
