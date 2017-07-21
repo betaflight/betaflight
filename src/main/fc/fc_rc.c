@@ -62,6 +62,27 @@ static void HeadfreeBodyToEarth(t_fp_vector_def * v) {
     v->Z = z;
 }
 
+static void HeadfreeBodyToEarthQuat(t_fp_vector_def * v) {
+    const float q0q0 = q0*q0;
+    const float q0q1 = q0*q1;
+    const float q0q2 = q0*q2;
+    const float q0q3 = q0*q3;
+    const float q1q1 = q1*q1;
+    const float q1q2 = q1*q2;
+    const float q1q3 = q1*q3;
+    const float q2q2 = q2*q2;
+    const float q2q3 = q2*q3;
+    const float q3q3 = q3*q3;
+
+    const float x = (q0q0 + q1q1 - q2q2 - q3q3) * v->X + 2*(q1q2 - q0q3) * v->Y + 2*(q1q3 + q0q2) * v->Z;
+    const float y = 2*(q1q2 + q0q3) * v->X + (q0q0 - q1q1 + q2q2 - q3q3) * v->Y + 2*(q2q3 - q0q1) * v->Z;
+    const float z = 2*(q1q3 - q0q2) * v->X + 2*(q2q3 + q0q1) * v->Y + (q0q0 - q1q1 - q2q2 + q3q3) * v->Z;
+
+    v->X = -x;
+    v->Y = y;
+    v->Z = z;
+}
+
 float getSetpointRate(int axis) {
     return setpointRate[axis];
 }
@@ -327,10 +348,11 @@ void updateRcCommands(void)
         rcCommandBuff.X = - rcCommand[ROLL];
         rcCommandBuff.Y = rcCommand[PITCH];
         rcCommandBuff.Z = rcCommand[YAW];
-        HeadfreeBodyToEarth(&rcCommandBuff);
+        //HeadfreeBodyToEarth(&rcCommandBuff);
+        HeadfreeBodyToEarthQuat(&rcCommandBuff);
         rcCommand[ROLL] = rcCommandBuff.X;
         rcCommand[PITCH] = rcCommandBuff.Y;
-        //rcCommand[YAW] = rcCommandBuff.Z;
+        rcCommand[YAW] = rcCommandBuff.Z;
     }
 }
 
