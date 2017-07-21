@@ -52,7 +52,7 @@
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
 
-/*
+/* rotation matrix
 static void HeadfreeBodyToEarth(t_fp_vector_def * v) {
     const float x = rMat[0][0] * v->X + rMat[0][1] * v->Y + rMat[0][2] * v->Z;
     const float y = rMat[1][0] * v->X + rMat[1][1] * v->Y + rMat[1][2] * v->Z;
@@ -63,6 +63,7 @@ static void HeadfreeBodyToEarth(t_fp_vector_def * v) {
     v->Z = z;
 }*/
 
+// quaternion
 static void HeadfreeBodyToEarth(t_fp_vector_def * v) {
     const float q0q0 = q0*q0;
     const float q0q1 = q0*q1;
@@ -79,8 +80,7 @@ static void HeadfreeBodyToEarth(t_fp_vector_def * v) {
     const float y = 2*(q1q2 + q0q3) * v->X + (q0q0 - q1q1 + q2q2 - q3q3) * v->Y + 2*(q2q3 - q0q1) * v->Z;
     const float z = 2*(q1q3 - q0q2) * v->X + 2*(q2q3 + q0q1) * v->Y + (q0q0 - q1q1 - q2q2 + q3q3) * v->Z;
 
-    v->X = x;
-    // v->X = -x;
+    v->X = -x;
     v->Y = y;
     v->Z = z;
 }
@@ -347,14 +347,14 @@ void updateRcCommands(void)
     if (FLIGHT_MODE(HEADFREE_MODE)) {
         static t_fp_vector_def  rcCommandBuff;
 
-        //rcCommandBuff.X = - rcCommand[ROLL];
-        rcCommandBuff.X = rcCommand[ROLL];
+        rcCommandBuff.X = - rcCommand[ROLL];
+        //rcCommandBuff.X = rcCommand[ROLL];
         rcCommandBuff.Y = rcCommand[PITCH];
         rcCommandBuff.Z = rcCommand[YAW];
         HeadfreeBodyToEarth(&rcCommandBuff);
         rcCommand[ROLL] = rcCommandBuff.X;
         rcCommand[PITCH] = rcCommandBuff.Y;
-        rcCommand[YAW] = rcCommandBuff.Z;
+        //rcCommand[YAW] = rcCommandBuff.Z;
     }
 }
 
