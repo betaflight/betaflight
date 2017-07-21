@@ -120,6 +120,12 @@ static gpsProviderDescriptor_t  gpsProviders[GPS_PROVIDER_COUNT] = {
     { GPS_TYPE_NA, 0, false,  NULL, NULL },
 #endif
 
+    /* MTK GPS */
+#ifdef GPS_PROTO_MTK
+    { GPS_TYPE_SERIAL, MODE_RXTX, false, NULL, &gpsHandleMTK },
+#else
+    { GPS_TYPE_NA, 0, false,  NULL, NULL },
+#endif
 
 };
 
