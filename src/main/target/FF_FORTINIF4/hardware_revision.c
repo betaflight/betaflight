@@ -17,24 +17,37 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
-#include <platform.h>
+#include "platform.h"
 
-#ifdef TARGET_CONFIG
-#include "fc/config.h"
+#include "build/build_config.h"
 
-#include "config/feature.h"
-
-#include "telemetry/telemetry.h"
+#include "drivers/io.h"
+#include "drivers/time.h"
 
 #include "hardware_revision.h"
 
-void targetConfiguration(void)
-{
-    if (hardwareRevision == FORTINIF4_REV_2) {
-        featureSet(FEATURE_OSD);
-    }
+uint8_t hardwareRevision = FORTINIF4_UNKNOWN;
 
-    telemetryConfigMutable()->halfDuplex = false;
+static IO_t HWDetectPin = IO_NONE;
+
+void detectHardwareRevision(void)
+{
+    HWDetectPin = IOGetByTag(IO_TAG(HW_PIN));
+    IOInit(HWDetectPin, OWNER_SYSTEM, 0);
+    IOConfigGPIO(HWDetectPin, IOCFG_IPU);
+
+    delayMicroseconds(10);  // allow configuration to settle
+
+    // Check hardware revision
+    if (IORead(HWDetectPin)) {
+        hardwareRevision = FORTINIF4_REV_1;
+    } else {
+        hardwareRevision = FORTINIF4_REV_2;
+    }
 }
-#endif
+
+void updateHardwareRevision(void)
+{
+}
