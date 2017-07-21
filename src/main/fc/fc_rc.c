@@ -79,7 +79,8 @@ static void HeadfreeBodyToEarth(t_fp_vector_def * v) {
     const float y = 2*(q1q2 + q0q3) * v->X + (q0q0 - q1q1 + q2q2 - q3q3) * v->Y + 2*(q2q3 - q0q1) * v->Z;
     const float z = 2*(q1q3 - q0q2) * v->X + 2*(q2q3 + q0q1) * v->Y + (q0q0 - q1q1 - q2q2 + q3q3) * v->Z;
 
-    v->X = -x;
+    v->X = x;
+    // v->X = -x;
     v->Y = y;
     v->Z = z;
 }
@@ -346,7 +347,8 @@ void updateRcCommands(void)
     if (FLIGHT_MODE(HEADFREE_MODE)) {
         static t_fp_vector_def  rcCommandBuff;
 
-        rcCommandBuff.X = - rcCommand[ROLL];
+        //rcCommandBuff.X = - rcCommand[ROLL];
+        rcCommandBuff.X = rcCommand[ROLL];
         rcCommandBuff.Y = rcCommand[PITCH];
         rcCommandBuff.Z = rcCommand[YAW];
         HeadfreeBodyToEarth(&rcCommandBuff);
