@@ -53,7 +53,7 @@ CMSIS_DIR       = $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS    = $(SRC_DIR) \
                   $(ROOT)/src/main/target
 LINKER_DIR      = $(ROOT)/src/main/target/link
-
+DSPLIB 			:= $(ROOT)/lib/main/DSP_Lib
 ## V                 : Set verbosity level based on the V= parameter
 ##                     V=0 Low
 ##                     V=1 High
@@ -891,8 +891,16 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/light_ws2811strip.c \
             io/displayport_max7456.c \
             io/osd.c \
-            io/osd_slave.c
-
+            io/osd_slave.c \
+            $(DSPLIB)/Source/BasicMathFunctions/arm_mult_f32.c \
+            $(DSPLIB)/Source/TransformFunctions/arm_rfft_fast_f32.c \
+            $(DSPLIB)/Source/TransformFunctions/arm_cfft_f32.c \
+            $(DSPLIB)/Source/TransformFunctions/arm_rfft_fast_init_f32.c \
+            $(DSPLIB)/Source/TransformFunctions/arm_cfft_radix8_f32.c \
+            $(DSPLIB)/Source/CommonTables/arm_common_tables.c \
+            $(DSPLIB)/Source/ComplexMathFunctions/arm_cmplx_mag_f32.c \
+            $(DSPLIB)/Source/StatisticsFunctions/arm_max_f32.c
+			
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/bus_i2c_config.c \
             drivers/bus_spi_config.c \
@@ -1061,7 +1069,6 @@ SRC := $(TARGET_SRC) $(SITL_SRC) $(VARIANT_SRC)
 endif
 
 ifneq ($(filter $(TARGET),$(F3_TARGETS) $(F4_TARGETS) $(F7_TARGETS)),)
-DSPLIB := $(ROOT)/lib/main/DSP_Lib
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE
 
 ifneq ($(filter $(TARGET),$(F3_TARGETS)) $(F4_TARGETS)),)
@@ -1298,10 +1305,10 @@ $(TARGET_ELF):  $(TARGET_OBJS)
 ifneq ($(DEBUG),GDB)
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
 	$(V1) mkdir -p $(dir $@)
-	$(V1) $(if $(findstring $(subst ./src/main/,,$<),$(SPEED_OPTIMISED_SRC)), \
+	$(V1) $(if $(findstring $(notdir $<),$(SPEED_OPTIMISED_SRC)), \
 	echo "%% (speed optimised) $(notdir $<)" "$(STDOUT)" && \
 	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_SPEED_OPTIMISATION) $<, \
-	$(if $(findstring $(subst ./src/main/,,$<),$(SIZE_OPTIMISED_SRC)), \
+	$(if $(findstring $(notdir $<),$(SIZE_OPTIMISED_SRC)), \
 	echo "%% (size optimised) $(notdir $<)" "$(STDOUT)" && \
 	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_SIZE_OPTIMISATION) $<, \
 	echo "%% $(notdir $<)" "$(STDOUT)" && \
