@@ -40,6 +40,7 @@
 #include "config/parameter_group_ids.h"
 
 #include "drivers/accgyro/accgyro.h"
+#include "drivers/bus_spi.h"
 #include "drivers/compass/compass.h"
 #include "drivers/inverter.h"
 #include "drivers/io.h"
@@ -161,16 +162,17 @@ PG_REGISTER_WITH_RESET_FN(ppmConfig_t, ppmConfig, PG_PPM_CONFIG, 0);
 #endif
 
 #ifdef USE_FLASHFS
-PG_REGISTER_WITH_RESET_TEMPLATE(flashConfig_t, flashConfig, PG_FLASH_CONFIG, 0);
-#ifdef M25P16_CS_PIN
-#define FLASH_CONFIG_CSTAG   IO_TAG(M25P16_CS_PIN)
-#else
-#define FLASH_CONFIG_CSTAG   IO_TAG_NONE
-#endif
+PG_REGISTER_WITH_RESET_FN(flashConfig_t, flashConfig, PG_FLASH_CONFIG, 0);
 
-PG_RESET_TEMPLATE(flashConfig_t, flashConfig,
-    .csTag = FLASH_CONFIG_CSTAG
-);
+void pgResetFn_flashConfig(flashConfig_t *flashConfig)
+{
+#ifdef M25P16_CS_PIN
+    flashConfig->csTag = IO_TAG(M25P16_CS_PIN);
+#else
+    flashConfig->csTag = IO_TAG_NONE;
+#endif
+    flashConfig->spiDevice = SPI_DEV_TO_CFG(spiDeviceByInstance(M25P16_SPI_INSTANCE));
+}
 #endif // USE_FLASH_FS
 
 #ifdef USE_SDCARD

@@ -33,4 +33,5 @@ typedef struct flashGeometry_s {
 
 typedef struct flashConfig_s {
     ioTag_t csTag;
+    uint8_t spiDevice;
 } flashConfig_t;
