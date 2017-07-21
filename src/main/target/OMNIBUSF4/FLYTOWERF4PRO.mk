@@ -1,0 +1,2 @@
+#FLYTOWERF4PRO.mk file
+FEATURES       = VCP SDCARD

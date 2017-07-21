@@ -44,7 +44,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM2,  CH4, PA3,  TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 1), // S3_OUT D1_ST6
     DEF_TIM(TIM2,  CH3, PA2,  TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0), // S4_OUT D1_ST1
 
-#if defined(OMNIBUSF4SD)
+#if defined(OMNIBUSF4SD) || defined(FLYTOWERF4PRO)
     DEF_TIM(TIM5,  CH2, PA1,  TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0), // S5_OUT
     DEF_TIM(TIM4,  CH1, PB6,  TIM_USE_LED,                 TIMER_OUTPUT_STANDARD, 0), // LED strip for F4 V2 / F4-Pro-0X and later (RCD_CS for F4)
 #else
