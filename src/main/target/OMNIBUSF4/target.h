@@ -21,6 +21,10 @@
 #define TARGET_BOARD_IDENTIFIER "LUX4"
 #elif defined(DYSF4PRO)
 #define TARGET_BOARD_IDENTIFIER "DYS4"
+#elif defined(FLYTOWERF4PRO)
+#define TARGET_BOARD_IDENTIFIER "FT4P"
+#elif defined(FLYTOWERF4)
+#define TARGET_BOARD_IDENTIFIER "FTF4"
 #else
 #define TARGET_BOARD_IDENTIFIER "OBF4"
 #endif
@@ -29,6 +33,10 @@
 #define USBD_PRODUCT_STRING "LuxF4osd"
 #elif defined(DYSF4PRO)
 #define USBD_PRODUCT_STRING "DysF4Pro"
+#elif defined(DYSF4PRO)
+#define USBD_PRODUCT_STRING "FLTF4Pro"
+#elif defined(DYSF4PRO)
+#define USBD_PRODUCT_STRING "FLYTOWF4"
 #else
 #define USBD_PRODUCT_STRING "OmnibusF4"
 #endif
@@ -42,7 +50,7 @@
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 
-#ifdef OMNIBUSF4SD
+#if defined(OMNIBUSF4SD) || defined(FLYTOWERF4PRO)
 #define INVERTER_PIN_UART6      PC8 // Omnibus F4 V3 and later
 #else
 #define INVERTER_PIN_UART1      PC0 // PC0 used as inverter select GPIO XXX this is not used --- remove it at the next major release
@@ -88,9 +96,11 @@
 #endif
 #endif
 
+#if !defined(FLYTOWERF4PRO) || !defined(FLYTOWERF4)
 #define MAG
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW90_DEG
+#endif
 
 //#define USE_MAG_NAZA                   // Delete this on next major release
 //#define MAG_NAZA_ALIGN CW180_DEG_FLIP  // Ditto
@@ -99,7 +109,11 @@
 #if defined(OMNIBUSF4SD)
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
+#if defined(FLYTOWERF4PRO) || defined(FLYTOWERF4)
+#define BMP280_SPI_INSTANCE     SPI2
+#else
 #define BMP280_SPI_INSTANCE     SPI3
+#endif
 #define BMP280_CS_PIN           PB3 // v1
 #endif
 #define USE_BARO_BMP280
@@ -113,7 +127,7 @@
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
-#if defined(OMNIBUSF4SD)
+#if defined(OMNIBUSF4SD) || defined(FLYTOWERF4PRO) || defined(FLYTOWERF4)
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define USE_SDCARD
 #define SDCARD_DETECT_INVERTED
@@ -173,7 +187,7 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 
-#if defined(OMNIBUSF4SD) || defined(LUXF4OSD)
+#if defined(OMNIBUSF4SD) || defined(LUXF4OSD) || defined(FLYTOWERF4PRO) || defined(FLYTOWERF4)
 #define USE_SPI_DEVICE_2
 #define SPI2_NSS_PIN            PB12
 #define SPI2_SCK_PIN            PB13
@@ -193,9 +207,16 @@
 
 #define USE_I2C
 #define USE_I2C_DEVICE_2
+
+#if defined(FLYTOWERF4PRO) || defined(FLYTOWERF4)
+#define I2C2_SCL                NONE // PB10, shared with UART3TX
+#define I2C2_SDA                NONE // PB11, shared with UART3RX
+#else
 #define I2C2_SCL                PB10 // PB10, shared with UART3TX
 #define I2C2_SDA                PB11 // PB11, shared with UART3RX
-#if defined(OMNIBUSF4) || defined(OMNIBUSF4SD)
+#endif
+
+#if defined(OMNIBUSF4) || defined(OMNIBUSF4SD) || defined(FLYTOWERF4PRO) || defined(FLYTOWERF4)
 #define USE_I2C_DEVICE_3
 #define I2C3_SCL                NONE // PA8, PWM6
 #define I2C3_SDA                NONE // PC9, CH6
