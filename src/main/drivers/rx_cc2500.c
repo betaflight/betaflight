@@ -33,12 +33,12 @@
 
 #include "build/build_config.h"
 
-#include "system.h"
-#include "bus_spi.h"
-#include "io.h"
-#include "io_impl.h"
-#include "rx_spi.h"
-#include "rx_cc2500.h"
+#include "drivers/bus_spi.h"
+#include "drivers/io.h"
+#include "drivers/io_impl.h"
+#include "drivers/rx_spi.h"
+#include "drivers/rx_cc2500.h"
+#include "drivers/time.h"
 
 static uint8_t cc25xx_current_antenna;
 
