@@ -456,15 +456,9 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
             // if crash recovery is on and accelerometer enabled then check for a crash
             if (pidProfile->crash_recovery && sensors(SENSOR_ACC) && inCrashRecoveryMode == false) {
-                    // Here this is only the test for crashDtermThreshold i dont really know how this part work ;)
-                if (motorMixRange >= 1.0f && ABS(delta) > crashDtermThreshold) {
-                    inCrashRecoveryMode = true;
-                    crashDetectedAtUs = currentTimeUs;
-                    inCrashRecoveryMaybe = false;
-                    }
                     // inCrashRecoveryMode = true only if the error is longer than crashTimeLimitMaybeUs
-                if (motorMixRange >= 1.0f && ABS(errorRate) > crashGyroThreshold 
-                    && cmpTimeUs(currentTimeUs, crashDetectedMaybeAtUs) > crashTimeLimitMaybeUs) {
+                if (motorMixRange >= 1.0f && ABS(errorRate) > crashGyroThreshold  && inCrashRecoveryMaybe == true
+                    && ABS(delta) > crashDtermThreshold && cmpTimeUs(currentTimeUs, crashDetectedMaybeAtUs) > crashTimeLimitMaybeUs) {
                     inCrashRecoveryMode = true;
                     crashDetectedAtUs = currentTimeUs;
                     inCrashRecoveryMaybe = false;
