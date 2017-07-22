@@ -187,12 +187,9 @@ void taskUpdateRangefinder(timeUs_t currentTimeUs)
     /*
      * Process raw rangefinder readout
      */
-    rangefinderRead();
-
-    float newSurfaceAlt = rangefinderGetLatestRawAltitude();
-    newSurfaceAlt = rangefinderCalculateAltitude(newSurfaceAlt, calculateCosTiltAngle());
-
-    updatePositionEstimator_SurfaceTopic(currentTimeUs, newSurfaceAlt);
+    rangefinderProcess(calculateCosTiltAngle());
+    
+    updatePositionEstimator_SurfaceTopic(currentTimeUs, rangefinderGetLatestAltitude());
 }
 #endif
 
