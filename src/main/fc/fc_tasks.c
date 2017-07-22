@@ -184,7 +184,12 @@ void taskUpdateRangefinder(timeUs_t currentTimeUs)
         rescheduleTask(TASK_SELF, newDeadline);
     }
 
-    updatePositionEstimator_SurfaceTopic(currentTimeUs);
+    /*
+     * Process raw rangefinder readout
+     */
+    rangefinderProcess(calculateCosTiltAngle());
+    
+    updatePositionEstimator_SurfaceTopic(currentTimeUs, rangefinderGetLatestAltitude());
 }
 #endif
 
