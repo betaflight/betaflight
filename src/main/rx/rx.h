@@ -19,6 +19,7 @@
 
 #include "common/time.h"
 #include "config/parameter_group.h"
+#include "drivers/io_types.h"
 
 #define STICK_CHANNEL_COUNT 4
 
