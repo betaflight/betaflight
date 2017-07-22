@@ -355,7 +355,7 @@ void updateRcCommands(void)
         HeadfreeEarthToBody(&rcCommandBuff);
         rcCommand[ROLL] = rcCommandBuff.X;
         rcCommand[PITCH] = rcCommandBuff.Y;
-        //rcCommand[YAW] = rcCommandBuff.Z;
+        rcCommand[YAW] = rcCommandBuff.Z;
     }
 }
 
