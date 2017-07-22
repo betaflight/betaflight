@@ -474,11 +474,8 @@ static void updatePitotTopic(timeUs_t currentTimeUs)
  * Read surface and update alt/vel topic
  *  Function is called from TASK_RANGEFINDER at arbitrary rate - as soon as new measurements are available
  */
-void updatePositionEstimator_SurfaceTopic(timeUs_t currentTimeUs)
+void updatePositionEstimator_SurfaceTopic(timeUs_t currentTimeUs, float newSurfaceAlt)
 {
-    float newSurfaceAlt = rangefinderRead();
-    newSurfaceAlt = rangefinderCalculateAltitude(newSurfaceAlt, calculateCosTiltAngle());
-
     if (newSurfaceAlt > 0 && newSurfaceAlt <= positionEstimationConfig()->max_surface_altitude) {
         posEstimator.surface.alt = newSurfaceAlt;
         posEstimator.surface.lastUpdateTime = currentTimeUs;

@@ -188,7 +188,7 @@ timeDelta_t rangefinderUpdate(void)
 /**
  * Get the last distance measured by the sonar in centimeters. When the ground is too far away, RANGEFINDER_OUT_OF_RANGE is returned.
  */
-int32_t rangefinderRead(void)
+void rangefinderRead(void)
 {
     if (rangefinder.dev.read) {
         const int32_t distance = rangefinder.dev.read();
@@ -214,8 +214,6 @@ int32_t rangefinderRead(void)
     }
 
     DEBUG_SET(DEBUG_RANGEFINDER, 1, rangefinder.rawAltitude);
-
-    return rangefinder.rawAltitude;
 }
 
 /**
@@ -243,6 +241,10 @@ int32_t rangefinderCalculateAltitude(int32_t rangefinderDistance, float cosTiltA
 int32_t rangefinderGetLatestAltitude(void)
 {
     return rangefinder.calculatedAltitude;
+}
+
+int32_t rangefinderGetLatestRawAltitude(void) {
+    return rangefinder.rawAltitude;
 }
 
 bool rangefinderIsHealthy(void)
