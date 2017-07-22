@@ -463,7 +463,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                     }}
                     // inCrashRecoveryMode = true only if the error is longer than crashTimeLimitMaybeUs
                 if (motorMixRange >= 1.0f && ABS(errorRate) > crashGyroThreshold) 
-                    && (cmpTimeUs(currentTimeUs, crashDetectedMaybeAtUs) > crashTimeLimitMaybeUs) {
+                    && (cmpTimeUs(currentTimeUs, crashDetectedMaybeAtUs) > crashTimeLimitMaybeUs)) {
                     inCrashRecoveryMode = true;
                     crashDetectedAtUs = currentTimeUs;
                     inCrashRecoveryMaybe = false;
