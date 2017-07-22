@@ -94,6 +94,12 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
     motorConfig->mincommand = 1000;
     motorConfig->digitalIdleOffsetValue = 450;
 
+#ifdef MOTOR1_PIN
+    motorConfig->dev.ioTags[0] = IO_TAG(MOTOR1_PIN);
+    motorConfig->dev.ioTags[1] = IO_TAG(MOTOR2_PIN);
+    motorConfig->dev.ioTags[2] = IO_TAG(MOTOR3_PIN);
+    motorConfig->dev.ioTags[3] = IO_TAG(MOTOR4_PIN);
+#else
     int motorIndex = 0;
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && motorIndex < MAX_SUPPORTED_MOTORS; i++) {
         if (timerHardware[i].usageFlags & TIM_USE_MOTOR) {
@@ -101,6 +107,7 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
             motorIndex++;
         }
     }
+#endif
 }
 
 PG_REGISTER_ARRAY(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR_MIXER, 0);

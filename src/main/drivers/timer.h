@@ -20,8 +20,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "config/parameter_group.h"
 #include "drivers/io_types.h"
 #include "rcc_types.h"
+#include "drivers/timer_def.h"
+
+#define CC_CHANNELS_PER_TIMER 4 // TIM_Channel_1..4
 
 typedef uint16_t captureCompare_t;        // 16 bit on both 103 and 303, just register access must be 32bit sometimes (use timCCR_t)
 
@@ -117,6 +121,26 @@ typedef struct timerHardware_s {
 #endif
 } timerHardware_t;
 
+#ifdef USE_TIMER_MGMT
+
+typedef uint8_t timerTag_t;
+
+typedef struct timerChannelConfig_s {
+    ioTag_t ioTag;
+#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
+    uint8_t pinAF;
+#endif
+    uint8_t dma;
+#if defined(STM32F4) || defined(STM32F7)
+    uint8_t dmaChannel;
+#endif
+    uint8_t inverted;
+} timerChannelConfig_t;
+
+PG_DECLARE_ARRAY(timerChannelConfig_t, TIMER_CHANNEL_COUNT, timerChannelConfig);
+
+#endif
+
 typedef enum {
     TIMER_OUTPUT_NONE      = 0,
     TIMER_OUTPUT_INVERTED  = (1 << 0),
@@ -143,7 +167,12 @@ typedef enum {
 
 #define MHZ_TO_HZ(x) ((x) * 1000000)
 
+#ifdef USE_TIMER_MGMT
+extern timerHardware_t timerHardware[];
+extern const timerTag_t timerTags[TIMER_CHANNEL_COUNT];
+#else
 extern const timerHardware_t timerHardware[];
+#endif
 extern const timerDef_t timerDefinitions[];
 
 typedef enum {

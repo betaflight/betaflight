@@ -75,6 +75,7 @@
 #define PG_SERVO_CONFIG 52
 #define PG_IBUS_TELEMETRY_CONFIG 53 // CF 1.x
 //#define PG_VTX_CONFIG 54 // CF 1.x
+#define PG_TIMER_CHANNEL_CONFIG 55 // structs OK - used to store the timer use (removed from target.c)
 
 // Driver configuration
 #define PG_DRIVER_PWM_RX_CONFIG 100 // does not exist in betaflight

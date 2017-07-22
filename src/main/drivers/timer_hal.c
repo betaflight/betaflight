@@ -26,13 +26,18 @@
 
 #include "common/utils.h"
 
-#include "drivers/nvic.h"
+#include "pg/pg.h"
+#include "pg/pg_ids.h"
 
+#include "drivers/nvic.h"
 #include "drivers/io.h"
+#include "drivers/dma.h"
+
 #include "rcc.h"
 
 #include "timer.h"
 #include "timer_impl.h"
+#include "timer_def.h"
 
 #define TIM_N(n) (1 << (n))
 
@@ -46,9 +51,17 @@
 
 /// TODO: HAL in a lot af calls lookupTimerIndex is used. Instead of passing the timer instance the index should be passed.
 #define USED_TIMER_COUNT BITCOUNT(USED_TIMERS)
-#define CC_CHANNELS_PER_TIMER 4 // TIM_Channel_1..4
 
 #define TIM_IT_CCx(ch) (TIM_IT_CC1 << ((ch) / 4))
+
+#ifdef USE_TIMER_MGMT
+
+const timerTag_t timerTags[TIMER_CHANNEL_COUNT] = { USED_TIMER_CHANNELS };
+timerHardware_t timerHardware[TIMER_CHANNEL_COUNT];
+
+PG_REGISTER_ARRAY(timerChannelConfig_t, TIMER_CHANNEL_COUNT, timerChannelConfig, PG_TIMER_CHANNEL_CONFIG, 0);
+
+#endif
 
 typedef struct timerConfig_s {
     timerCCHandlerRec_t *edgeCallback[CC_CHANNELS_PER_TIMER];
@@ -746,14 +759,14 @@ static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
 #define _TIM_IRQ_HANDLER2(name, i, j)                                   \
     void name(void)                                                     \
     {                                                                   \
-        timCCxHandler(TIM ## i, &timerConfig[TIMER_INDEX(i)]);          \
-        timCCxHandler(TIM ## j, &timerConfig[TIMER_INDEX(j)]);          \
+        timCCxHandler(TIM ## i, &timerConfig[TIMER_INDEX(i)]);  \
+        timCCxHandler(TIM ## j, &timerConfig[TIMER_INDEX(j)]);  \
     } struct dummy
 
 #define _TIM_IRQ_HANDLER(name, i)                                       \
     void name(void)                                                     \
     {                                                                   \
-        timCCxHandler(TIM ## i, &timerConfig[TIMER_INDEX(i)]);          \
+        timCCxHandler(TIM ## i, &timerConfig[TIMER_INDEX(i)]);  \
     } struct dummy
 
 #if USED_TIMERS & TIM_N(1)
@@ -807,69 +820,90 @@ _TIM_IRQ_HANDLER(TIM1_UP_TIM16_IRQHandler, 16);    // only timer16 is used, not 
 _TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM17_IRQHandler, 17);
 #endif
 
-void timerInit(void)
+#ifdef USE_TIMER_MGMT
+TIM_TypeDef* getTimByTag(const timerTag_t tag)
 {
-    memset(timerConfig, 0, sizeof (timerConfig));
-
+#define _CASE(n) case n : return TIM ## n
+    switch (TIMER_TAG_INDEX(tag)) {
 #if USED_TIMERS & TIM_N(1)
-    __HAL_RCC_TIM1_CLK_ENABLE();
+    _CASE(1);
 #endif
 #if USED_TIMERS & TIM_N(2)
-    __HAL_RCC_TIM2_CLK_ENABLE();
+    _CASE(2);
 #endif
 #if USED_TIMERS & TIM_N(3)
-    __HAL_RCC_TIM3_CLK_ENABLE();
+    _CASE(3);
 #endif
 #if USED_TIMERS & TIM_N(4)
-    __HAL_RCC_TIM4_CLK_ENABLE();
+    _CASE(4);
 #endif
 #if USED_TIMERS & TIM_N(5)
-    __HAL_RCC_TIM5_CLK_ENABLE();
+    _CASE(5);
 #endif
 #if USED_TIMERS & TIM_N(6)
-    __HAL_RCC_TIM6_CLK_ENABLE();
+    _CASE(6);
 #endif
 #if USED_TIMERS & TIM_N(7)
-    __HAL_RCC_TIM7_CLK_ENABLE();
+    _CASE(7);
 #endif
 #if USED_TIMERS & TIM_N(8)
-    __HAL_RCC_TIM8_CLK_ENABLE();
+    _CASE(8);
 #endif
 #if USED_TIMERS & TIM_N(9)
-    __HAL_RCC_TIM9_CLK_ENABLE();
+    _CASE(9);
 #endif
 #if USED_TIMERS & TIM_N(10)
-    __HAL_RCC_TIM10_CLK_ENABLE();
+    _CASE(10);
 #endif
 #if USED_TIMERS & TIM_N(11)
-    __HAL_RCC_TIM11_CLK_ENABLE();
+    _CASE(11);
 #endif
 #if USED_TIMERS & TIM_N(12)
-    __HAL_RCC_TIM12_CLK_ENABLE();
+    _CASE(12);
 #endif
 #if USED_TIMERS & TIM_N(13)
-    __HAL_RCC_TIM13_CLK_ENABLE();
+    _CASE(13);
 #endif
 #if USED_TIMERS & TIM_N(14)
-    __HAL_RCC_TIM14_CLK_ENABLE();
+    _CASE(14);
 #endif
 #if USED_TIMERS & TIM_N(15)
-    __HAL_RCC_TIM15_CLK_ENABLE();
+    _CASE(15);
 #endif
 #if USED_TIMERS & TIM_N(16)
-    __HAL_RCC_TIM16_CLK_ENABLE();
+    _CASE(16);
 #endif
 #if USED_TIMERS & TIM_N(17)
-    __HAL_RCC_TIM17_CLK_ENABLE();
+    _CASE(17);
+#endif
+    default: return NULL;
+    }
+#undef _CASE
+}
 #endif
 
-    /* enable the timer peripherals */
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
-        RCC_ClockCmd(timerRCC(timerHardware[i].tim), ENABLE);
+void timerInit(void)
+{
+    memset(timerConfig, 0, sizeof(timerConfig));
+
+#ifdef USE_TIMER_MGMT
+    for (unsigned i = 0; i < TIMER_CHANNEL_COUNT; i++) {
+        timerHardware_t *th = &timerHardware[i];
+        th->tim = getTimByTag(timerTags[i]);
+        th->tag = timerChannelConfig(i)->ioTag;
+        th->channel = TIMER_TAG_CHANNEL_INDEX(timerTags[i]);
+        th->output = timerChannelConfig(i)->inverted ? TIMER_OUTPUT_N_CHANNEL : TIMER_OUTPUT_STANDARD;
+        th->alternateFunction = timerChannelConfig(i)->pinAF;
+        th->dmaRef = getDmaRefByIdentifier(timerChannelConfig(i)->dma);
+#if defined(STM32F7) || defined(STM32F4)
+        th->dmaChannel = timerChannelConfig(i)->dmaChannel;
+#endif
+        th->dmaIrqHandler = timerChannelConfig(i)->dma;
     }
 
+#else
 #if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
-    for (int timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
+    for (unsigned timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
         const timerHardware_t *timerHardwarePtr = &timerHardware[timerIndex];
         if (timerHardwarePtr->usageFlags == TIM_USE_NONE) {
             continue;
@@ -878,12 +912,19 @@ void timerInit(void)
         IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->tag), IOCFG_AF_PP, timerHardwarePtr->alternateFunction);
     }
 #endif
+#endif
+
+    /* enable the timer peripherals */
+    for (unsigned i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+        RCC_ClockCmd(timerRCC(timerHardware[i].tim), ENABLE);
+    }
 
     // initialize timer channel structures
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+    for(unsigned i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
         timerChannelInfo[i].type = TYPE_FREE;
     }
-    for (int i = 0; i < USED_TIMER_COUNT; i++) {
+
+    for(unsigned i = 0; i < USED_TIMER_COUNT; i++) {
         timerInfo[i].priority = ~0;
     }
 }
@@ -940,13 +981,14 @@ void timerForceOverflow(TIM_TypeDef *tim)
 
 const timerHardware_t *timerGetByTag(ioTag_t tag, timerUsageFlag_e flag)
 {
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+    for (unsigned i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
         if (timerHardware[i].tag == tag) {
             if (timerHardware[i].usageFlags & flag || flag == 0) {
                 return &timerHardware[i];
             }
         }
     }
+
     return NULL;
 }
 
@@ -989,7 +1031,7 @@ uint16_t timerGetPrescalerByDesiredMhz(TIM_TypeDef *tim, uint16_t mhz)
 
 uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_t hz)
 {
-    return ((uint16_t)((timerClock(tim) / (prescaler + 1)) / hz));
+    return (uint16_t)((timerClock(tim) / (prescaler + 1)) / hz);
 }
 
 uint16_t timerGetPrescalerByDesiredHertz(TIM_TypeDef *tim, uint32_t hz)

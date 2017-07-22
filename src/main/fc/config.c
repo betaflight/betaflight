@@ -82,6 +82,32 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .powerOnArmingGraceTime = 5,
     .boardIdentifier = TARGET_BOARD_IDENTIFIER
 );
+    
+#ifdef PWM1_PIN
+    pwmConfig->ioTags[0] = IO_TAG(PWM1_PIN);
+#ifdef PWM2_PIN
+    pwmConfig->ioTags[1] = IO_TAG(PWM2_PIN);
+#endif
+#ifdef PWM3_PIN
+    pwmConfig->ioTags[2] = IO_TAG(PWM3_PIN);
+#endif
+#ifdef PWM4_PIN
+    pwmConfig->ioTags[3] = IO_TAG(PWM4_PIN);
+#endif
+#ifdef PWM5_PIN
+    pwmConfig->ioTags[4] = IO_TAG(PWM5_PIN);
+#endif
+#ifdef PWM6_PIN
+    pwmConfig->ioTags[5] = IO_TAG(PWM6_PIN);
+#endif
+#ifdef PWM7_PIN
+    pwmConfig->ioTags[6] = IO_TAG(PWM7_PIN);
+#endif
+#ifdef PWM8_PIN
+    pwmConfig->ioTags[7] = IO_TAG(PWM8_PIN);
+#endif    
+#else
+#endif
 
 #ifdef SWAP_SERIAL_PORT_0_AND_1_DEFAULTS
 #define FIRST_PORT_INDEX 1

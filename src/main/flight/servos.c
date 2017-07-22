@@ -63,6 +63,9 @@ void pgResetFn_servoConfig(servoConfig_t *servoConfig)
     servoConfig->servo_lowpass_freq = 0;
     servoConfig->channelForwardingStartChannel = AUX1;
 
+#ifdef SERVO1_PIN
+    servoConfig->dev.ioTags[0] = IO_TAG(SERVO1_PIN);
+#else
     int servoIndex = 0;
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && servoIndex < MAX_SUPPORTED_SERVOS; i++) {
         if (timerHardware[i].usageFlags & TIM_USE_SERVO) {
@@ -70,6 +73,7 @@ void pgResetFn_servoConfig(servoConfig_t *servoConfig)
             servoIndex++;
         }
     }
+#endif
 }
 
 PG_REGISTER_ARRAY(servoMixer_t, MAX_SERVO_RULES, customServoMixers, PG_SERVO_MIXER, 0);
