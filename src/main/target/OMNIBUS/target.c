@@ -36,4 +36,6 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     // For iNav, PWM6&7 (PWM pins 5&6) are shared with UART3
     { TIM2,  IO_TAG(PB10), TIM_Channel_3, 1, IOCFG_AF_PP, GPIO_AF_1,  TIM_USE_MC_MOTOR | TIM_USE_FW_SERVO }, // Pin PWM5 - PB10 - TIM2_CH3 / UART3_TX (AF7)
     { TIM2,  IO_TAG(PB11), TIM_Channel_4, 1, IOCFG_AF_PP, GPIO_AF_1,  TIM_USE_MC_MOTOR | TIM_USE_FW_SERVO }, // Pin PWM6 - PB11 - TIM2_CH4 / UART3_RX (AF7)
+
+    { TIM1, IO_TAG(PA8),   TIM_Channel_1, 1, IOCFG_AF_PP, GPIO_AF_6,  TIM_USE_LED },
 };
