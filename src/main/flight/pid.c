@@ -264,7 +264,7 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
     ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
     ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
     crashTimeLimitUs = pidProfile->crash_time * 1000;
-    crashTimeLimitMaybeUs = pidProfile->crash_delay;
+    crashTimeLimitMaybeUs = pidProfile->crash_delay * 1000;
     crashRecoveryAngleDeciDegrees = pidProfile->crash_recovery_angle * 10;
     crashRecoveryRate = pidProfile->crash_recovery_rate;
     crashGyroThreshold = pidProfile->crash_gthreshold;
