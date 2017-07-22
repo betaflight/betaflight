@@ -188,7 +188,7 @@ timeDelta_t rangefinderUpdate(void)
 /**
  * Get the last distance measured by the sonar in centimeters. When the ground is too far away, RANGEFINDER_OUT_OF_RANGE is returned.
  */
-int32_t rangefinderRead(void)
+void rangefinderProcess(float cosTiltAngle)
 {
     if (rangefinder.dev.read) {
         const int32_t distance = rangefinder.dev.read();
@@ -213,36 +213,33 @@ int32_t rangefinderRead(void)
         rangefinder.rawAltitude = RANGEFINDER_OUT_OF_RANGE;
     }
 
-    DEBUG_SET(DEBUG_RANGEFINDER, 1, rangefinder.rawAltitude);
-
-    return rangefinder.rawAltitude;
-}
-
-/**
- * Apply tilt correction to the given raw sonar reading in order to compensate for the tilt of the craft when estimating
- * the altitude. Returns the computed altitude in centimeters.
- *
- * When the ground is too far away or the tilt is too large, RANGEFINDER_OUT_OF_RANGE is returned.
- */
-int32_t rangefinderCalculateAltitude(int32_t rangefinderDistance, float cosTiltAngle)
-{
-    // calculate sonar altitude only if the ground is in the sonar cone
-    if (cosTiltAngle < rangefinder.maxTiltCos || rangefinderDistance == RANGEFINDER_OUT_OF_RANGE) {
+    /**
+    * Apply tilt correction to the given raw sonar reading in order to compensate for the tilt of the craft when estimating
+    * the altitude. Returns the computed altitude in centimeters.
+    *
+    * When the ground is too far away or the tilt is too large, RANGEFINDER_OUT_OF_RANGE is returned.
+    */
+    if (cosTiltAngle < rangefinder.maxTiltCos || rangefinder.rawAltitude < 0) {
         rangefinder.calculatedAltitude = RANGEFINDER_OUT_OF_RANGE;
     } else {
-        rangefinder.calculatedAltitude = rangefinderDistance * cosTiltAngle;
+        rangefinder.calculatedAltitude = rangefinder.rawAltitude * cosTiltAngle;
     }
+
+    DEBUG_SET(DEBUG_RANGEFINDER, 1, rangefinder.rawAltitude);
     DEBUG_SET(DEBUG_RANGEFINDER, 2, rangefinder.calculatedAltitude);
-    return rangefinder.calculatedAltitude;
 }
 
 /**
- * Get the latest altitude that was computed by a call to rangefinderCalculateAltitude(), or RANGEFINDER_OUT_OF_RANGE if sonarCalculateAltitude
+ * Get the latest altitude that was computed, or RANGEFINDER_OUT_OF_RANGE if sonarCalculateAltitude
  * has never been called.
  */
 int32_t rangefinderGetLatestAltitude(void)
 {
     return rangefinder.calculatedAltitude;
+}
+
+int32_t rangefinderGetLatestRawAltitude(void) {
+    return rangefinder.rawAltitude;
 }
 
 bool rangefinderIsHealthy(void)

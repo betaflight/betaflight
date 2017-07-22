@@ -48,11 +48,9 @@ const rangefinderHardwarePins_t * rangefinderGetHardwarePins(void);
 
 bool rangefinderInit(void);
 
-
-
-int32_t rangefinderCalculateAltitude(int32_t rangefinderDistance, float cosTiltAngle);
 int32_t rangefinderGetLatestAltitude(void);
+int32_t rangefinderGetLatestRawAltitude(void);
 
 timeDelta_t rangefinderUpdate(void);
-int32_t rangefinderRead(void);
+void rangefinderProcess(float cosTiltAngle);
 bool rangefinderIsHealthy(void);
