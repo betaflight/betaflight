@@ -52,9 +52,6 @@
  */
 #define SDCARD_NON_DMA_CHUNK_SIZE 256
 
-#define STATIC_ASSERT(condition, name ) \
-    typedef char assert_failed_ ## name [(condition) ? 1 : -1 ]
-
 typedef enum {
     // In these states we run at the initialization 400kHz clockspeed:
     SDCARD_STATE_NOT_PRESENT = 0,
@@ -261,7 +258,7 @@ static uint8_t sdcard_waitForNonIdleByte(int maxDelay)
  */
 static uint8_t sdcard_sendCommand(uint8_t commandCode, uint32_t commandArgument)
 {
-    uint8_t command[6] = {
+    const uint8_t command[6] = {
         0x40 | commandCode,
         commandArgument >> 24,
         commandArgument >> 16,
@@ -275,7 +272,7 @@ static uint8_t sdcard_sendCommand(uint8_t commandCode, uint32_t commandArgument)
     if (!sdcard_waitForIdle(SDCARD_MAXIMUM_BYTE_DELAY_FOR_CMD_REPLY) && commandCode != SDCARD_COMMAND_GO_IDLE_STATE)
         return 0xFF;
 
-    spiTransfer(SDCARD_SPI_INSTANCE, NULL, command, sizeof(command));
+    spiTransfer(SDCARD_SPI_INSTANCE, command, NULL, sizeof(command));
 
     /*
      * The card can take up to SDCARD_MAXIMUM_BYTE_DELAY_FOR_CMD_REPLY bytes to send the response, in the meantime
@@ -311,7 +308,7 @@ static bool sdcard_validateInterfaceCondition(void)
         // V1 cards don't support this command
         sdcard.version = 1;
     } else if (status == SDCARD_R1_STATUS_BIT_IDLE) {
-        spiTransfer(SDCARD_SPI_INSTANCE, ifCondReply, NULL, sizeof(ifCondReply));
+        spiTransfer(SDCARD_SPI_INSTANCE, NULL, ifCondReply, sizeof(ifCondReply));
 
         /*
          * We don't bother to validate the SDCard's operating voltage range since the spec requires it to accept our
@@ -335,7 +332,7 @@ static bool sdcard_readOCRRegister(uint32_t *result)
 
     uint8_t response[4];
 
-    spiTransfer(SDCARD_SPI_INSTANCE, response, NULL, sizeof(response));
+    spiTransfer(SDCARD_SPI_INSTANCE, NULL, response, sizeof(response));
 
     if (status == 0) {
         sdcard_deselect();
@@ -373,7 +370,7 @@ static sdcardReceiveBlockStatus_e sdcard_receiveDataBlock(uint8_t *buffer, int c
         return SDCARD_RECEIVE_ERROR;
     }
 
-    spiTransfer(SDCARD_SPI_INSTANCE, buffer, NULL, count);
+    spiTransfer(SDCARD_SPI_INSTANCE, NULL, buffer, count);
 
     // Discard trailing CRC, we don't care
     spiTransferByte(SDCARD_SPI_INSTANCE, 0xFF);
@@ -408,7 +405,7 @@ static bool sdcard_sendDataBlockFinish(void)
 /**
  * Begin sending a buffer of SDCARD_BLOCK_SIZE bytes to the SD card.
  */
-static void sdcard_sendDataBlockBegin(uint8_t *buffer, bool multiBlockWrite)
+static void sdcard_sendDataBlockBegin(const uint8_t *buffer, bool multiBlockWrite)
 {
     // Card wants 8 dummy clock cycles between the write command's response and a data block beginning:
     spiTransferByte(SDCARD_SPI_INSTANCE, 0xFF);
@@ -458,7 +455,7 @@ static void sdcard_sendDataBlockBegin(uint8_t *buffer, bool multiBlockWrite)
     }
     else {
         // Send the first chunk now
-        spiTransfer(SDCARD_SPI_INSTANCE, NULL, buffer, SDCARD_NON_DMA_CHUNK_SIZE);
+        spiTransfer(SDCARD_SPI_INSTANCE, buffer, NULL, SDCARD_NON_DMA_CHUNK_SIZE);
     }
 }
 
@@ -789,7 +786,7 @@ bool sdcard_poll(void)
 #endif
             if (!useDMAForTx) {
                 // Send another chunk
-                spiTransfer(SDCARD_SPI_INSTANCE, NULL, sdcard.pendingOperation.buffer + SDCARD_NON_DMA_CHUNK_SIZE * sdcard.pendingOperation.chunkIndex, SDCARD_NON_DMA_CHUNK_SIZE);
+                spiTransfer(SDCARD_SPI_INSTANCE, sdcard.pendingOperation.buffer + SDCARD_NON_DMA_CHUNK_SIZE * sdcard.pendingOperation.chunkIndex, NULL, SDCARD_NON_DMA_CHUNK_SIZE);
 
                 sdcard.pendingOperation.chunkIndex++;
 

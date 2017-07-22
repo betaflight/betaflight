@@ -59,13 +59,31 @@ uint8_t icm20689SpiDetect(const busDevice_t *bus)
 
     spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_INITIALIZATON); //low speed
 
-    spiWriteRegister(bus, MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
+    spiBusWriteRegister(bus, MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
 
+    uint8_t icmDetected = MPU_NONE;
     uint8_t attemptsRemaining = 20;
     do {
         delay(150);
-        const uint8_t whoAmI = spiReadRegister(bus, MPU_RA_WHO_AM_I);
-        if (whoAmI == ICM20689_WHO_AM_I_CONST) {
+        const uint8_t whoAmI = spiBusReadRegister(bus, MPU_RA_WHO_AM_I);
+        switch (whoAmI) {
+        case ICM20601_WHO_AM_I_CONST:
+            icmDetected = ICM_20601_SPI;
+            break;
+        case ICM20602_WHO_AM_I_CONST:
+            icmDetected = ICM_20602_SPI;
+            break;
+        case ICM20608G_WHO_AM_I_CONST:
+            icmDetected = ICM_20608_SPI;
+            break;
+        case ICM20689_WHO_AM_I_CONST:
+            icmDetected = ICM_20689_SPI;
+            break;
+        default:
+            icmDetected = MPU_NONE;
+            break;
+        }
+        if (icmDetected != MPU_NONE) {
             break;
         }
         if (!attemptsRemaining) {
@@ -75,7 +93,7 @@ uint8_t icm20689SpiDetect(const busDevice_t *bus)
 
     spiSetDivisor(bus->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
 
-    return ICM_20689_SPI;
+    return icmDetected;
 
 }
 
@@ -135,7 +153,13 @@ void icm20689GyroInit(gyroDev_t *gyro)
 
 bool icm20689SpiGyroDetect(gyroDev_t *gyro)
 {
-    if (gyro->mpuDetectionResult.sensor != ICM_20689_SPI) {
+    switch (gyro->mpuDetectionResult.sensor) {
+    case ICM_20601_SPI:
+    case ICM_20602_SPI:
+    case ICM_20608_SPI:
+    case ICM_20689_SPI:
+        break;
+    default:
         return false;
     }
 

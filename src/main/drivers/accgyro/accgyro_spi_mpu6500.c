@@ -57,7 +57,7 @@ uint8_t mpu6500SpiDetect(const busDevice_t *bus)
 {
     mpu6500SpiInit(bus);
 
-    const uint8_t whoAmI = spiReadRegister(bus, MPU_RA_WHO_AM_I);
+    const uint8_t whoAmI = spiBusReadRegister(bus, MPU_RA_WHO_AM_I);
 
     uint8_t mpuDetected = MPU_NONE;
     switch (whoAmI) {
@@ -96,7 +96,7 @@ void mpu6500SpiGyroInit(gyroDev_t *gyro)
     mpu6500GyroInit(gyro);
 
     // Disable Primary I2C Interface
-    spiWriteRegister(&gyro->bus, MPU_RA_USER_CTRL, MPU6500_BIT_I2C_IF_DIS);
+    spiBusWriteRegister(&gyro->bus, MPU_RA_USER_CTRL, MPU6500_BIT_I2C_IF_DIS);
     delay(100);
 
     spiSetDivisor(gyro->bus.busdev_u.spi.instance, SPI_CLOCK_FAST);

@@ -45,6 +45,10 @@ extern "C" {
 
     #include "rx/rx.h"
 
+    extern rcsplitState_e cameraState;
+    extern serialPort_t *rcSplitSerialPort;
+    extern rcsplitSwitchState_t switchStates[BOXCAMERA3 - BOXCAMERA1 + 1];
+
     int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 
     rcsplitState_e unitTestRCsplitState()

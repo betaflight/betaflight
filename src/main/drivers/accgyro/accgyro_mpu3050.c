@@ -68,7 +68,7 @@ static bool mpu3050GyroRead(gyroDev_t *gyro)
 {
     uint8_t data[6];
 
-    const bool ack = gyro->mpuConfiguration.readFn(&gyro->bus, MPU3050_GYRO_OUT, 6, data);
+    const bool ack = gyro->mpuConfiguration.readFn(&gyro->bus, MPU3050_GYRO_OUT, data, 6);
     if (!ack) {
         return false;
     }
@@ -83,7 +83,7 @@ static bool mpu3050GyroRead(gyroDev_t *gyro)
 static bool mpu3050ReadTemperature(gyroDev_t *gyro, int16_t *tempData)
 {
     uint8_t buf[2];
-    if (!gyro->mpuConfiguration.readFn(&gyro->bus, MPU3050_TEMP_OUT, 2, buf)) {
+    if (!gyro->mpuConfiguration.readFn(&gyro->bus, MPU3050_TEMP_OUT, buf, 2)) {
         return false;
     }
 

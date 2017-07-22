@@ -66,11 +66,11 @@ bool ms5611ReadCommand(busDevice_t *busdev, uint8_t cmd, uint8_t len, uint8_t *d
     switch (busdev->bustype) {
 #ifdef USE_BARO_SPI_MS5611
     case BUSTYPE_SPI:
-        return spiReadRegisterBuffer(busdev, cmd | 0x80, len, data);
+        return spiBusReadRegisterBuffer(busdev, cmd | 0x80, data, len);
 #endif
 #ifdef USE_BARO_MS5611
     case BUSTYPE_I2C:
-        return i2cReadRegisterBuffer(busdev, cmd, len, data);
+        return i2cBusReadRegisterBuffer(busdev, cmd, data, len);
 #endif
     }
     return false;
@@ -81,11 +81,11 @@ bool ms5611WriteCommand(busDevice_t *busdev, uint8_t cmd, uint8_t byte)
     switch (busdev->bustype) {
 #ifdef USE_BARO_SPI_MS5611
     case BUSTYPE_SPI:
-        return spiWriteRegister(busdev, cmd & 0x7f, byte);
+        return spiBusWriteRegister(busdev, cmd & 0x7f, byte);
 #endif
 #ifdef USE_BARO_MS5611
     case BUSTYPE_I2C:
-        return i2cWriteRegister(busdev, cmd, byte);
+        return i2cBusWriteRegister(busdev, cmd, byte);
 #endif
     }
     return false;

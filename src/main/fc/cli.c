@@ -84,10 +84,11 @@ extern uint8_t __config_end;
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
+#include "fc/fc_msp.h"
+#include "fc/fc_msp_box.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
-#include "fc/fc_msp.h"
 
 #include "flight/altitude.h"
 #include "flight/failsafe.h"
