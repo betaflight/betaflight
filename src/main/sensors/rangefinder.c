@@ -55,6 +55,9 @@ rangefinder_t rangefinder;
 
 #define RANGEFINDER_HARDWARE_TIMEOUT_MS         500     // Accept 500ms of non-responsive sensor, report HW failure otherwise
 
+#define RANGEFINDER_DYNAMIC_THRESHOLD           600     //Used to determine max. usable rangefinder disatance
+#define RANGEFINDER_DYNAMIC_FACTOR              75    
+
 #ifdef USE_RANGEFINDER
 PG_REGISTER_WITH_RESET_TEMPLATE(rangefinderConfig_t, rangefinderConfig, PG_RANGEFINDER_CONFIG, 0);
 
@@ -151,6 +154,9 @@ bool rangefinderInit(void)
     rangefinder.calculatedAltitude = RANGEFINDER_OUT_OF_RANGE;
     rangefinder.maxTiltCos = cos_approx(DECIDEGREES_TO_RADIANS(rangefinder.dev.detectionConeExtendedDeciDegrees / 2.0f));
     rangefinder.lastValidResponseTimeMs = millis();
+    rangefinder.snrThresholdReached = false;
+    rangefinder.dynamicDistanceThreshold = 0;
+    rangefinder.snr = 0;
 
     return true;
 }
@@ -214,6 +220,34 @@ timeDelta_t rangefinderUpdate(void)
     return rangefinder.dev.delayMs * 1000;  // to microseconds
 }
 
+bool isSurfaceAltitudeValid() {
+
+    /*
+     * Preconditions: raw and calculated altidude > 0
+     * SNR lower than threshold
+     */ 
+    if (
+        rangefinder.calculatedAltitude > 0 &&
+        rangefinder.rawAltitude > 0 &&
+        rangefinder.snr < RANGEFINDER_DYNAMIC_THRESHOLD
+    ) {
+
+        /*
+         * When critical altitude was determined, distance reported by rangefinder
+         * has to be lower than it to assume healthy readout
+         */
+        if (rangefinder.snrThresholdReached) {
+            return (rangefinder.rawAltitude < rangefinder.dynamicDistanceThreshold);
+        } else {
+            return true;
+        }
+
+    } else {
+        return false;
+    }
+
+}
+
 /**
  * Get the last distance measured by the sonar in centimeters. When the ground is too far away, RANGEFINDER_OUT_OF_RANGE is returned.
  */
@@ -237,7 +271,27 @@ void rangefinderProcess(float cosTiltAngle)
             rangefinder.rawAltitude = RANGEFINDER_HARDWARE_FAILURE;
         }
 
-        DEBUG_SET(DEBUG_RANGEFINDER, 3, computePseudoSnr(distance));
+        rangefinder.snr = computePseudoSnr(distance);
+
+        if (rangefinder.snrThresholdReached == false && rangefinder.rawAltitude > 0) {
+
+            if (rangefinder.snr < RANGEFINDER_DYNAMIC_THRESHOLD && rangefinder.dynamicDistanceThreshold < rangefinder.rawAltitude) {
+                rangefinder.dynamicDistanceThreshold = rangefinder.rawAltitude * RANGEFINDER_DYNAMIC_FACTOR / 100;
+            }
+
+            if (rangefinder.snr >= RANGEFINDER_DYNAMIC_THRESHOLD) {
+                rangefinder.snrThresholdReached = true;
+            }
+
+        }
+
+        DEBUG_SET(DEBUG_RANGEFINDER, 3, rangefinder.snr);
+
+        DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 0, rangefinder.rawAltitude);
+        DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 1, rangefinder.snrThresholdReached);
+        DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 2, rangefinder.dynamicDistanceThreshold);
+        DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 3, isSurfaceAltitudeValid());
+
     }
     else {
         // Bad configuration
