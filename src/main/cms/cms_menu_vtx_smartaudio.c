@@ -325,6 +325,7 @@ static long saCmsConfigOpmodelByGvar(displayPort_t *pDisp, const void *self)
     return 0;
 }
 
+#ifdef USE_EXTENDED_CMS_MENUS
 static const char * const saCmsDeviceStatusNames[] = {
     "OFFL",
     "ONL V1",
@@ -356,6 +357,7 @@ static CMS_Menu saCmsMenuStats = {
     .onExit = NULL,
     .entries = saCmsMenuStatsEntries
 };
+#endif /* USE_EXTENDED_CMS_MENUS */
 
 static OSD_TAB_t saCmsEntBand = { &saCmsBand, VTX_SMARTAUDIO_BAND_COUNT, vtx58BandNames };
 
@@ -567,7 +569,9 @@ static OSD_Entry saCmsMenuConfigEntries[] = {
     { "FSEL MODE", OME_TAB,     saCmsConfigFreqModeByGvar,             &saCmsEntFselMode,                                   DYNAMIC },
     { "PIT FMODE", OME_TAB,     saCmsConfigPitFModeByGvar,             &saCmsEntPitFMode,                                   0 },
     { "POR FREQ",  OME_Submenu, (CMSEntryFuncPtr)saCmsORFreqGetString, &saCmsMenuPORFreq,                                   OPTSTRING },
+#ifdef USE_EXTENDED_CMS_MENUS
     { "STATX",     OME_Submenu, cmsMenuChange,                         &saCmsMenuStats,                                     0 },
+#endif /* USE_EXTENDED_CMS_MENUS */
 
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
@@ -636,7 +640,9 @@ static OSD_Entry saCmsMenuOfflineEntries[] =
     { "- VTX SMARTAUDIO -", OME_Label, NULL, NULL, 0 },
 
     { "",      OME_Label,   NULL,          saCmsStatusString, DYNAMIC },
+#ifdef USE_EXTENDED_CMS_MENUS
     { "STATX", OME_Submenu, cmsMenuChange, &saCmsMenuStats,   0 },
+#endif /* USE_EXTENDED_CMS_MENUS */
 
     { "BACK",  OME_Back, NULL, NULL, 0 },
     { NULL,    OME_END, NULL, NULL, 0 }

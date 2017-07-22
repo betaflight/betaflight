@@ -39,7 +39,7 @@
 #include "io/displayport_max7456.h"
 #include "io/osd.h"
 
-#ifndef DISABLE_EXTENDED_CMS_OSD_MENU
+#ifdef USE_EXTENDED_CMS_MENUS
 static uint16_t osdConfig_item_pos[OSD_ITEM_COUNT];
 
 static long menuOsdActiveElemsOnEnter(void)
@@ -208,7 +208,7 @@ CMS_Menu menuTimers = {
     .onExit = menuTimersOnExit,
     .entries = menuTimersEntries,
 };
-#endif /* DISABLE_EXTENDED_CMS_OSD_MENU */
+#endif /* USE_EXTENDED_CMS_MENUS */
 
 #ifdef USE_MAX7456
 static bool displayPortProfileMax7456_invert;
@@ -243,7 +243,7 @@ static long cmsx_menuOsdOnExit(const OSD_Entry *self)
 OSD_Entry cmsx_menuOsdEntries[] =
 {
     {"---OSD---",   OME_Label,   NULL,          NULL,                0},
-#ifndef DISABLE_EXTENDED_CMS_OSD_MENU
+#ifdef USE_EXTENDED_CMS_MENUS
     {"ACTIVE ELEM", OME_Submenu, cmsMenuChange, &menuOsdActiveElems, 0},
     {"TIMERS",      OME_Submenu, cmsMenuChange, &menuTimers,         0},
     {"ALARMS",      OME_Submenu, cmsMenuChange, &menuAlarms,         0},
