@@ -462,8 +462,8 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                         BEEP_ON;
                     }}
                     // inCrashRecoveryMode = true only if the error is longer than crashTimeLimitMaybeUs
-                if (motorMixRange >= 1.0f && ABS(errorRate) > crashGyroThreshold) 
-                    && (cmpTimeUs(currentTimeUs, crashDetectedMaybeAtUs) > crashTimeLimitMaybeUs)) {
+                if (motorMixRange >= 1.0f && ABS(errorRate) > crashGyroThreshold 
+                    && cmpTimeUs(currentTimeUs, crashDetectedMaybeAtUs) > crashTimeLimitMaybeUs) {
                     inCrashRecoveryMode = true;
                     crashDetectedAtUs = currentTimeUs;
                     inCrashRecoveryMaybe = false;
@@ -471,12 +471,12 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                         BEEP_ON;
                     }}
                     // start to measure time if error is greater than crashGyroThreshold
-                if (motorMixRange >= 1.0f && ABS(errorRate) > crashGyroThreshold) && inCrashRecoveryMaybe = false {
+                if (motorMixRange >= 1.0f && ABS(errorRate) > crashGyroThreshold && inCrashRecoveryMaybe = false) {
                     inCrashRecoveryMaybe = true;
                     crashDetectedMaybeAtUs = currentTimeUs;
                     }
                     // reset inCrashRecoveryMaybe if error become smaller than crashGyroThreshold
-                if (motorMixRange >= 1.0f && ABS(errorRate) < crashGyroThreshold) && inCrashRecoveryMaybe = true {
+                if (motorMixRange >= 1.0f && ABS(errorRate) < crashGyroThreshold && inCrashRecoveryMaybe = true) {
                     inCrashRecoveryMaybe = false;
                     }
             }
