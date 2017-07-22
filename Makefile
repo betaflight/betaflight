@@ -650,6 +650,7 @@ HIGHEND_SRC = \
             common/gps_conversion.c \
             drivers/display_ug2864hsweg01.c \
             drivers/rangefinder_hcsr04.c \
+            drivers/rangefinder_hcsr04_i2c.c \
             drivers/rangefinder_srf10.c \
             io/dashboard.c \
             io/displayport_max7456.c \
