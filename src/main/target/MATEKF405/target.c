@@ -32,5 +32,5 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM2, IO_TAG(PA15),   TIM_Channel_1, 1, IOCFG_AF_PP_PD, GPIO_AF_TIM2, TIM_USE_MC_MOTOR |                    TIM_USE_FW_SERVO },
     { TIM1, IO_TAG(PA8),    TIM_Channel_1, 1, IOCFG_AF_PP_PD, GPIO_AF_TIM1, TIM_USE_MC_MOTOR |                    TIM_USE_FW_SERVO },
 
-    { TIM4, IO_TAG(PB6),    TIM_Channel_1, 0, IOCFG_AF_PP_PD, GPIO_AF_TIM1, TIM_USE_LED }
+    { TIM4, IO_TAG(PA15),    TIM_Channel_1, 0, IOCFG_AF_PP_PD, GPIO_AF_TIM1, TIM_USE_LED } // avoid i2c clash for iNav
 };
