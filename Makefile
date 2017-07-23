@@ -284,7 +284,7 @@ $(TARGET_ELF):  $(TARGET_OBJS)
 ifeq ($(DEBUG),GDB)
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
 	$(V1) mkdir -p $(dir $@)
-	$(V1) echo "%% $(notdir $<)" "$(STDOUT)" && \
+	$(V1) echo "%% (debug) $(notdir $<)" "$(STDOUT)" && \
 	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_DEBUG_OPTIMISATION) $<
 else
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c

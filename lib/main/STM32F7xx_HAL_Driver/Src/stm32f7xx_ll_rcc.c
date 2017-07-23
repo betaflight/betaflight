@@ -1168,6 +1168,7 @@ uint32_t LL_RCC_GetDSIClockFreq(uint32_t DSIxSource)
   */
 uint32_t LL_RCC_GetLTDCClockFreq(uint32_t LTDCxSource)
 {
+  (void)LTDCxSource;
   uint32_t ltdc_frequency = LL_RCC_PERIPH_FREQUENCY_NO;
 
   /* Check parameter */
@@ -1192,6 +1193,7 @@ uint32_t LL_RCC_GetLTDCClockFreq(uint32_t LTDCxSource)
   */
 uint32_t LL_RCC_GetSPDIFRXClockFreq(uint32_t SPDIFRXxSource)
 {
+  (void)SPDIFRXxSource;
   uint32_t spdifrx_frequency = LL_RCC_PERIPH_FREQUENCY_NO;
 
   /* Check parameter */
