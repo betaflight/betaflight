@@ -19,7 +19,7 @@
 
 #include "common/axis.h"
 #include "common/time.h"
-
+#include "common/maths.h"
 #include "config/parameter_group.h"
 
 // Exported symbols
@@ -40,8 +40,6 @@ typedef union {
 } attitudeEulerAngles_t;
 
 extern attitudeEulerAngles_t attitude;
-extern float rMat[3][3];
-extern float q0, q1, q2, q3;
 
 typedef struct accDeadband_s {
     uint8_t xy;                 // set the acc deadband for xy-Axis
@@ -74,6 +72,9 @@ int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value);
 
 void imuResetAccelerationSum(void);
 void imuInit(void);
+
+void imuRebaseBodyToEarth(void);
+void imuTransformEarthToBody(t_fp_vector_def * v);
 
 #ifdef SIMULATOR_BUILD
 void imuSetAttitudeRPY(float roll, float pitch, float yaw);  // in deg
