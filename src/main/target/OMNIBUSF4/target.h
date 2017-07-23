@@ -74,7 +74,6 @@
 #undef USE_DASHBOARD
 #undef USE_I2C_OLED_DISPLAY
 
-#if 0
 // Support for iFlight OMNIBUS F4 V3
 // Has ICM20608 instead of MPU6000
 // OMNIBUSF4SD is linked with both MPU6000 and MPU6500 drivers
@@ -85,7 +84,6 @@
 #define MPU6500_SPI_INSTANCE    MPU6000_SPI_INSTANCE
 #define GYRO_MPU6500_ALIGN      GYRO_MPU6000_ALIGN
 #define ACC_MPU6500_ALIGN       ACC_MPU6000_ALIGN
-#endif
 #endif
 
 #define MAG
@@ -104,7 +102,13 @@
 #endif
 #define USE_BARO_BMP280
 #define USE_BARO_MS5611
-#define BARO_I2C_INSTANCE         (I2CDEV_2)
+#define BARO_I2C_INSTANCE       (I2CDEV_2)
+
+#if defined(OMNIBUSF4SD)
+#define DEFAULT_BARO_SPI_BMP280
+#else
+#define DEFAULT_BARO_BMP280
+#endif
 
 #define OSD
 #define USE_MAX7456
@@ -193,15 +197,14 @@
 
 #define USE_I2C
 #define USE_I2C_DEVICE_2
-#define I2C2_SCL                PB10 // PB10, shared with UART3TX
-#define I2C2_SDA                PB11 // PB11, shared with UART3RX
+#define I2C2_SCL                NONE // PB10, shared with UART3TX
+#define I2C2_SDA                NONE // PB11, shared with UART3RX
 #if defined(OMNIBUSF4) || defined(OMNIBUSF4SD)
 #define USE_I2C_DEVICE_3
 #define I2C3_SCL                NONE // PA8, PWM6
 #define I2C3_SDA                NONE // PC9, CH6
 #endif
 #define I2C_DEVICE              (I2CDEV_2)
-#define OLED_I2C_INSTANCE              (I2CDEV_2)
 
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PC1  // Direct from CRNT pad (part of onboard sensor for Pro)
