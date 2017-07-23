@@ -21,7 +21,7 @@
 
 #include <platform.h>
 
-#ifdef USE_SPI
+#if defined(USE_SPI) && !defined(USE_LOWLEVEL_DRIVER)
 
 #include "common/utils.h"
 
