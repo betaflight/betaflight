@@ -322,6 +322,15 @@ void mwArm(void)
             beeper(BEEPER_ARMING);
 #endif
             statsOnArm();
+
+#ifdef USE_RANGEFINDER
+            /*
+             * Since each arm can happen over different surface type, we have to reset
+             * previously computed max. dynamic range threshold
+             */ 
+            rangefinderResetDynamicThreshold();
+#endif
+
             return;
         }
     }

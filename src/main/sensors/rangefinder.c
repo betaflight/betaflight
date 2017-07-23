@@ -143,6 +143,11 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
     return true;
 }
 
+void rangefinderResetDynamicThreshold(void) {
+    rangefinder.snrThresholdReached = false;
+    rangefinder.dynamicDistanceThreshold = 0;
+}
+
 bool rangefinderInit(void)
 {
     if (!rangefinderDetect(&rangefinder.dev, rangefinderConfig()->rangefinder_hardware)) {
@@ -154,9 +159,9 @@ bool rangefinderInit(void)
     rangefinder.calculatedAltitude = RANGEFINDER_OUT_OF_RANGE;
     rangefinder.maxTiltCos = cos_approx(DECIDEGREES_TO_RADIANS(rangefinder.dev.detectionConeExtendedDeciDegrees / 2.0f));
     rangefinder.lastValidResponseTimeMs = millis();
-    rangefinder.snrThresholdReached = false;
-    rangefinder.dynamicDistanceThreshold = 0;
     rangefinder.snr = 0;
+
+    rangefinderResetDynamicThreshold();
 
     return true;
 }
