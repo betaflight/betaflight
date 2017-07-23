@@ -91,8 +91,8 @@ static float magneticDeclination = 0.0f;       // calculated at startup from con
 
 static imuRuntimeConfig_t imuRuntimeConfig;
 
-float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;    // quaternion of sensor frame relative to earth frame
-float rMat[3][3];
+STATIC_UNIT_TESTED float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;    // quaternion of sensor frame relative to earth frame
+STATIC_UNIT_TESTED float rMat[3][3];
 
 attitudeEulerAngles_t attitude = { { 0, 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 
@@ -194,6 +194,34 @@ static void imuTransformVectorBodyToEarth(t_fp_vector * v)
     v->V.X = x;
     v->V.Y = -y;
     v->V.Z = z;
+}
+
+void imuTransformEarthToBody(t_fp_vector_def * v) {
+    const float q0q0 = q0*q0;
+    const float q0q1 = q0*q1;
+    const float q0q2 = q0*q2;
+    const float q0q3 = q0*q3;
+    const float q1q1 = q1*q1;
+    const float q1q2 = q1*q2;
+    const float q1q3 = q1*q3;
+    const float q2q2 = q2*q2;
+    const float q2q3 = q2*q3;
+    const float q3q3 = q3*q3;
+
+    const float x = (q0q0 + q1q1 - q2q2 - q3q3) * v->X + 2*(q1q2 + q0q3) * v->Y + 2*(q1q3 - q0q2) * v->Z;
+    const float y = 2*(q1q2 - q0q3) * v->X + (q0q0 - q1q1 + q2q2 - q3q3) * v->Y + 2*(q2q3 + q0q1) * v->Z;
+    const float z = 2*(q1q3 + q0q2) * v->X + 2*(q2q3 - q0q1) * v->Y + (q0q0 - q1q1 - q2q2 + q3q3) * v->Z;
+
+    v->X = x;
+    v->Y = y;
+    v->Z = z;
+}
+
+void imuRebaseBodyToEarth(void) {
+    q0 = 1.0;
+    q1 = 0.0;
+    q2 = 0.0;
+    q3 = 0.0;
 }
 
 // rotate acc into Earth frame and calculate acceleration in it
@@ -370,11 +398,6 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
     attitude.values.roll = lrintf(atan2f(rMat[2][1], rMat[2][2]) * (1800.0f / M_PIf));
     attitude.values.pitch = lrintf(((0.5f * M_PIf) - acosf(-rMat[2][0])) * (1800.0f / M_PIf));
     attitude.values.yaw = lrintf((-atan2f(rMat[1][0], rMat[0][0]) * (1800.0f / M_PIf) + magneticDeclination));
-
-    /*
-    attitude.values.roll = lrintf(atan2f((q1q3 + q2q0), -(q1q3 - q2q0)) * (1800.0f / M_PIf));
-    attitude.values.pitch = lrintf((acosf(-q1q1 -q2q2 -q3q3 -q0q0)) * (1800.0f / M_PIf));
-    attitude.values.yaw = lrintf((atan2f((q1q3 - q2q0), (q1q3 + q2q0)) * (1800.0f / M_PIf) + magneticDeclination)); */
 
     if (attitude.values.yaw < 0)
         attitude.values.yaw += 3600;
