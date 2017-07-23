@@ -22,14 +22,17 @@
 
 #include "platform.h"
 
-#ifdef USE_MAG_HMC5883
+#if defined(USE_MAG_HMC5883) || defined(USE_MAG_SPI_HMC5883)
 
 #include "build/debug.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
 
+#include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/bus_i2c_busdev.h"
+#include "drivers/bus_spi.h"
 #include "drivers/exti.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"
@@ -40,7 +43,6 @@
 #include "compass.h"
 
 #include "compass_hmc5883l.h"
-#include "compass_spi_hmc5883l.h"
 
 //#define DEBUG_MAG_DATA_READY_INTERRUPT
 
@@ -104,7 +106,6 @@
  *              1  |  1   |  Sleep Mode
  */
 
-#define MAG_ADDRESS 0x1E
 #define MAG_DATA_REGISTER 0x03
 
 #define HMC58X3_R_CONFA 0
@@ -165,14 +166,74 @@ static void hmc5883lConfigureDataReadyInterruptHandling(void)
 #endif
 }
 
-static bool hmc5883lRead(int16_t *magData)
+#ifdef USE_MAG_SPI_HMC5883
+static void hmc5883SpiInit(busDevice_t *busdev)
+{   
+    static bool hardwareInitialised = false;
+
+    if (hardwareInitialised) {
+        return;
+    }
+
+    IOInit(busdev->busdev_u.spi.csnPin, OWNER_COMPASS_CS, 0);
+    IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
+
+    IOHi(busdev->busdev_u.spi.csnPin); // Disable
+
+    spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
+
+    hardwareInitialised = true;
+}
+#endif
+
+static bool hmc5883lReadRegisterBuffer(busDevice_t *busdev, uint8_t reg, uint8_t *buffer, uint8_t len)
+{
+    switch (busdev->bustype) {
+#ifdef USE_MAG_HMC5883
+    case BUSTYPE_I2C:
+        return i2cBusReadRegisterBuffer(busdev, reg, buffer, len);
+#endif
+
+#ifdef USE_MAG_SPI_HMC5883
+    case BUSTYPE_SPI:
+        return spiBusReadRegisterBuffer(busdev, reg, buffer, len);
+#endif
+
+    default:
+        break;
+    }
+
+    return false;
+}
+
+static bool hmc5883lWriteRegister(const busDevice_t *busdev, uint8_t reg, uint8_t data)
+{
+    switch (busdev->bustype) {
+#ifdef USE_MAG_HMC5883
+    case BUSTYPE_I2C:
+        return i2cBusWriteRegister(busdev, reg, data);
+#endif
+
+#ifdef USE_MAG_SPI_HMC5883
+    case BUSTYPE_SPI:
+        return spiBusWriteRegister(busdev, reg, data);
+#endif
+
+    default:
+        break;
+    }
+
+    return false;
+}
+
+static bool hmc5883lRead(magDev_t *magdev, int16_t *magData)
 {
     uint8_t buf[6];
-#ifdef USE_MAG_SPI_HMC5883
-    bool ack = hmc5883SpiReadCommand(MAG_DATA_REGISTER, 6, buf);
-#else
-    bool ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, MAG_DATA_REGISTER, 6, buf);
-#endif
+
+    busDevice_t *busdev = &magdev->busdev;
+
+    bool ack = hmc5883lReadRegisterBuffer(busdev, MAG_DATA_REGISTER, buf, 6);
+
     if (!ack) {
         return false;
     }
@@ -186,39 +247,35 @@ static bool hmc5883lRead(int16_t *magData)
     return true;
 }
 
-static bool hmc5883lInit(void)
+static bool hmc5883lInit(magDev_t *magdev)
 {
+    busDevice_t *busdev = &magdev->busdev;
+
     int16_t magADC[3];
     int i;
     int32_t xyz_total[3] = { 0, 0, 0 }; // 32 bit totals so they won't overflow.
     bool bret = true;           // Error indicator
 
     delay(50);
-#ifdef USE_MAG_SPI_HMC5883
-    hmc5883SpiWriteCommand(HMC58X3_R_CONFA, 0x010 + HMC_POS_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to pos bias
-#else
-    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_POS_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to pos bias
-#endif
+
+    hmc5883lWriteRegister(busdev, HMC58X3_R_CONFA, 0x010 + HMC_POS_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to pos bias
+
     // Note that the  very first measurement after a gain change maintains the same gain as the previous setting.
     // The new gain setting is effective from the second measurement and on.
-#ifdef USE_MAG_SPI_HMC5883
-    hmc5883SpiWriteCommand(HMC58X3_R_CONFB, 0x60); // Set the Gain to 2.5Ga (7:5->011)
-#else
-    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFB, 0x60); // Set the Gain to 2.5Ga (7:5->011)
-#endif
+
+    hmc5883lWriteRegister(busdev, HMC58X3_R_CONFB, 0x60); // Set the Gain to 2.5Ga (7:5->011)
+
     delay(100);
-    hmc5883lRead(magADC);
+
+    hmc5883lRead(magdev, magADC);
 
     for (i = 0; i < 10; i++) {  // Collect 10 samples
-#ifdef USE_MAG_SPI_HMC5883
-        hmc5883SpiWriteCommand(HMC58X3_R_MODE, 1);
-#else
-        i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_MODE, 1);
-#endif
+        hmc5883lWriteRegister(busdev, HMC58X3_R_MODE, 1);
         delay(50);
-        hmc5883lRead(magADC);       // Get the raw values in case the scales have already been changed.
+        hmc5883lRead(magdev, magADC);       // Get the raw values in case the scales have already been changed.
 
         // Since the measurements are noisy, they should be averaged rather than taking the max.
+
         xyz_total[X] += magADC[X];
         xyz_total[Y] += magADC[Y];
         xyz_total[Z] += magADC[Z];
@@ -232,21 +289,16 @@ static bool hmc5883lInit(void)
     }
 
     // Apply the negative bias. (Same gain)
-#ifdef USE_MAG_SPI_HMC5883
-    hmc5883SpiWriteCommand(HMC58X3_R_CONFA, 0x010 + HMC_NEG_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to negative bias.
-#else
-    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_NEG_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to negative bias.
-#endif
+
+    hmc5883lWriteRegister(busdev, HMC58X3_R_CONFA, 0x010 + HMC_NEG_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to negative bias.
+
     for (i = 0; i < 10; i++) {
-#ifdef USE_MAG_SPI_HMC5883
-        hmc5883SpiWriteCommand(HMC58X3_R_MODE, 1);
-#else
-        i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_MODE, 1);
-#endif
+        hmc5883lWriteRegister(busdev, HMC58X3_R_MODE, 1);
         delay(50);
-        hmc5883lRead(magADC);               // Get the raw values in case the scales have already been changed.
+        hmc5883lRead(magdev, magADC);               // Get the raw values in case the scales have already been changed.
 
         // Since the measurements are noisy, they should be averaged.
+
         xyz_total[X] -= magADC[X];
         xyz_total[Y] -= magADC[Y];
         xyz_total[Z] -= magADC[Z];
@@ -264,15 +316,11 @@ static bool hmc5883lInit(void)
     magGain[Z] = fabsf(660.0f * HMC58X3_Z_SELF_TEST_GAUSS * 2.0f * 10.0f / xyz_total[Z]);
 
     // leave test mode
-#ifdef USE_MAG_SPI_HMC5883
-    hmc5883SpiWriteCommand(HMC58X3_R_CONFA, 0x70);   // Configuration Register A  -- 0 11 100 00  num samples: 8 ; output rate: 15Hz ; normal measurement mode
-    hmc5883SpiWriteCommand(HMC58X3_R_CONFB, 0x20);   // Configuration Register B  -- 001 00000    configuration gain 1.3Ga
-    hmc5883SpiWriteCommand(HMC58X3_R_MODE, 0x00);    // Mode register             -- 000000 00    continuous Conversion Mode
-#else
-    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFA, 0x70);   // Configuration Register A  -- 0 11 100 00  num samples: 8 ; output rate: 15Hz ; normal measurement mode
-    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFB, 0x20);   // Configuration Register B  -- 001 00000    configuration gain 1.3Ga
-    i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_MODE, 0x00);    // Mode register             -- 000000 00    continuous Conversion Mode
-#endif
+
+    hmc5883lWriteRegister(busdev, HMC58X3_R_CONFA, 0x70);   // Configuration Register A  -- 0 11 100 00  num samples: 8 ; output rate: 15Hz ; normal measurement mode
+    hmc5883lWriteRegister(busdev, HMC58X3_R_CONFB, 0x20);   // Configuration Register B  -- 001 00000    configuration gain 1.3Ga
+    hmc5883lWriteRegister(busdev, HMC58X3_R_MODE, 0x00);    // Mode register             -- 000000 00    continuous Conversion Mode
+
     delay(100);
 
     if (!bret) {                // Something went wrong so get a best guess
@@ -295,14 +343,16 @@ bool hmc5883lDetect(magDev_t* mag, ioTag_t interruptTag)
 
     uint8_t sig = 0;
 #ifdef USE_MAG_SPI_HMC5883
-    hmc5883SpiInit();
-    bool ack = hmc5883SpiReadCommand(0x0A, 1, &sig);
-#else
-    bool ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, 0x0A, 1, &sig);
+    if (mag->busdev.bustype == BUSTYPE_SPI) {
+        hmc5883SpiInit(&mag->busdev);
+    }
 #endif
 
-    if (!ack || sig != 'H')
+    bool ack = hmc5883lReadRegisterBuffer(&mag->busdev, 0x0A, &sig, 1);
+
+    if (!ack || sig != 'H') {
         return false;
+    }
 
     mag->init = hmc5883lInit;
     mag->read = hmc5883lRead;

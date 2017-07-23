@@ -19,4 +19,6 @@
 
 #include "drivers/io_types.h"
 
+#define HMC5883_I2C_ADDRESS 0x1E
+
 bool hmc5883lDetect(magDev_t* mag, ioTag_t interruptTag);

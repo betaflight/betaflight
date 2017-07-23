@@ -28,14 +28,20 @@
 #define BEEPER_INVERTED
 
 #define ACC
-#define USE_FAKE_ACC
-#define USE_ACC_MPU6050
-#define ACC_MPU6050_ALIGN CW270_DEG
+//#define USE_ACC_MPU6050
+//#define ACC_MPU6050_ALIGN CW270_DEG
+#define USE_ACC_SPI_MPU9250
+//#define USE_FAKE_ACC
 
 #define GYRO
-#define USE_FAKE_GYRO
-#define USE_GYRO_MPU6050
-#define GYRO_MPU6050_ALIGN CW270_DEG
+//#define USE_GYRO_MPU6050
+//#define GYRO_MPU6050_ALIGN CW270_DEG
+
+#define USE_GYRO_SPI_MPU9250
+#define MPU9250_CS_PIN          SPI4_NSS_PIN
+#define MPU9250_SPI_INSTANCE    SPI4
+
+//#define USE_FAKE_GYRO
 
 // MPU6050 interrupts
 #define USE_MPU_DATA_READY_SIGNAL
@@ -43,13 +49,18 @@
 #define USE_EXTI
 
 #define MAG
-#define USE_FAKE_MAG
-#define USE_MAG_HMC5883
-#define MAG_HMC5883_ALIGN CW270_DEG_FLIP
+//#define USE_FAKE_MAG
+//#define USE_MAG_HMC5883
+//#define MAG_HMC5883_ALIGN CW270_DEG_FLIP
+#define USE_MAG_AK8963
+//#define USE_MAG_HMC5883
+//#define USE_MAG_SPI_HMC5883
+#define HMC5883_CS_PIN NONE
+#define HMC5883_SPI_INSTANCE SPI4
 
-#define BARO
-#define USE_FAKE_BARO
-#define USE_BARO_MS5611
+//#define BARO
+//#define USE_FAKE_BARO
+//#define USE_BARO_MS5611
 
 #define USABLE_TIMER_CHANNEL_COUNT 16
 
@@ -110,6 +121,7 @@
 #define SPI4_MISO_PIN           PE13
 #define SPI4_MOSI_PIN           PE14
 
+#if 0
 #define USE_SDCARD
 #define SDCARD_DETECT_INVERTED
 #define SDCARD_DETECT_PIN                   PF14
@@ -126,18 +138,23 @@
 #define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA2
 #define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_4
 
+#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
+#endif
+
 #define USE_I2C
-#define USE_I2C_DEVICE_1
-#define I2C_DEVICE                  (I2CDEV_1)
-#define I2C1_SCL                    PB8
-#define I2C1_SDA                    PB9
+//#define USE_I2C_DEVICE_1
+//#define I2C_DEVICE                  (I2CDEV_1)
+//#define I2C1_SCL                    PB8
+//#define I2C1_SDA                    PB9
+#define USE_I2C_DEVICE_2
+#define I2C_DEVICE                  (I2CDEV_2)
+#define I2C2_SCL                    PB10
+#define I2C2_SDA                    PB11
 
 #define USE_ADC
 #define VBAT_ADC_PIN                PA3
 #define CURRENT_METER_ADC_PIN       PC0
 #define RSSI_ADC_GPIO_PIN           PC3
-
-#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS

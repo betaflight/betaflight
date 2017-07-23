@@ -17,4 +17,7 @@
 
 #pragma once
 
+// AK8975, mag sensor address
+#define AK8975_MAG_I2C_ADDRESS      0x0C
+
 bool ak8975Detect(magDev_t *mag);
