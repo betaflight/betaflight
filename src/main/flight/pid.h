@@ -101,6 +101,7 @@ typedef struct pidProfile_s {
     uint16_t crash_dthreshold;              // dterm crash value
     uint16_t crash_gthreshold;              // gyro crash value
     uint16_t crash_time;                    // ms
+    uint16_t crash_delay;                   // ms
     uint8_t crash_recovery_angle;           // degrees
     uint8_t crash_recovery_rate;            // degree/second
     pidCrashRecovery_e crash_recovery;      // off, on, on and beeps when it is in crash recovery mode
