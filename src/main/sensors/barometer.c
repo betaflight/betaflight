@@ -88,28 +88,17 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
     barometerConfig->baro_spi_csn = IO_TAG(BMP280_CS_PIN);
     barometerConfig->baro_i2c_device = I2C_DEV_TO_CFG(I2CINVALID);
     barometerConfig->baro_i2c_address = 0;
-#elif defined(DEFAULT_BARO_BMP280)
-    barometerConfig->baro_bustype = BUSTYPE_I2C;
-    barometerConfig->baro_i2c_device = I2C_DEV_TO_CFG(BARO_I2C_INSTANCE);
-    barometerConfig->baro_i2c_address = BMP280_I2C_ADDR;
-    barometerConfig->baro_spi_device = SPI_DEV_TO_CFG(SPIINVALID);
-    barometerConfig->baro_spi_csn = IO_TAG_NONE;
 #elif defined(DEFAULT_BARO_SPI_MS5611)
     barometerConfig->baro_bustype = BUSTYPE_SPI;
     barometerConfig->baro_spi_device = SPI_DEV_TO_CFG(spiDeviceByInstance(MS5611_SPI_INSTANCE));
     barometerConfig->baro_spi_csn = IO_TAG(MS5611_CS_PIN);
     barometerConfig->baro_i2c_device = I2C_DEV_TO_CFG(I2CINVALID);
     barometerConfig->baro_i2c_address = 0;
-#elif defined(DEFAULT_BARO_BARO_MS5611)
+#elif defined(DEFAULT_BARO_MS5611) || defined(DEFAULT_BARO_BMP280) || defined(DEFAULT_BARO_BMP085)
+    // All I2C devices shares a default config with address = 0 (per device default)
     barometerConfig->baro_bustype = BUSTYPE_I2C;
     barometerConfig->baro_i2c_device = I2C_DEV_TO_CFG(BARO_I2C_INSTANCE);
-    barometerConfig->baro_i2c_address = MS5611_I2C_ADDR;
-    barometerConfig->baro_spi_device = SPI_DEV_TO_CFG(SPIINVALID);
-    barometerConfig->baro_spi_csn = IO_TAG_NONE;
-#elif defined(DEFAULT_BARO_BMP085)
-    barometerConfig->baro_bustype = BUSTYPE_I2C;
-    barometerConfig->baro_i2c_device = I2C_DEV_TO_CFG(BARO_I2C_INSTANCE);
-    barometerConfig->baro_i2c_address = BMP085_I2C_ADDR;
+    barometerConfig->baro_i2c_address = 0;
     barometerConfig->baro_spi_device = SPI_DEV_TO_CFG(SPIINVALID);
     barometerConfig->baro_spi_csn = IO_TAG_NONE;
 #else
