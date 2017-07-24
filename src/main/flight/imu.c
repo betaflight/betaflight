@@ -209,8 +209,11 @@ void imuTransformVectorEarthToBody(t_fp_vector_def * v) {
 }
 
 void imuRebaseEarthToBody(void) {
-    // only rebase yaw axis
-    q3 = 0.0;
+    // only rebase yaw axis ... ugly hack toDo real quaternion rotation
+    if((fabsf(attitude.values.roll) < 500)  && (fabsf(attitude.values.pitch) < 500)){
+        q3 = 0.0;
+    }
+
 }
 
 // rotate acc into Earth frame and calculate acceleration in it
