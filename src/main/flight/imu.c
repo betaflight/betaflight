@@ -209,9 +209,7 @@ void imuTransformVectorEarthToBody(t_fp_vector_def * v) {
 }
 
 void imuRebaseEarthToBody(void) {
-    q0 = 1.0;
-    q1 = 0.0;
-    q2 = 0.0;
+    // only rebase yaw axis
     q3 = 0.0;
 }
 
