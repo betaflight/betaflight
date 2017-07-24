@@ -198,6 +198,11 @@ bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro)
 
     busDevice_t *busdev = &baro->busdev;
 
+    if ((busdev->bustype == BUSTYPE_I2C) && (busdev->busdev_u.i2c.address == 0)) {
+        // Default address for BMP085
+        busdev->busdev_u.i2c.address = BMP085_I2C_ADDR;
+    }
+
     ack = bmp085ReadRegister(busdev, BMP085_CHIP_ID__REG, 1, &data); /* read Chip Id */
     if (ack) {
         bmp085.chip_id = BMP085_GET_BITSLICE(data, BMP085_CHIP_ID);

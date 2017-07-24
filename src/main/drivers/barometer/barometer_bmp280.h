@@ -17,8 +17,7 @@
 
 #pragma once
 
-//#define BMP280_I2C_ADDR                      (0x76)
-#define BMP280_I2C_ADDR                      (0x77)  // Adafruit 2651
+#define BMP280_I2C_ADDR                      (0x76)
 #define BMP280_DEFAULT_CHIP_ID               (0x58)
 
 #define BMP280_CHIP_ID_REG                   (0xD0)  /* Chip ID Register */
