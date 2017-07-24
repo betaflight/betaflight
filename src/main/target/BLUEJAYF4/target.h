@@ -130,7 +130,7 @@
 #define SPI1_MOSI_PIN           PA7
 
 #define USE_SPI_DEVICE_3
-#define SPI3_NSS_PIN            PB3
+#define SPI3_NSS_PIN            PB7
 #define SPI3_SCK_PIN            PC10
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
