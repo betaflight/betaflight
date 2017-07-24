@@ -330,7 +330,8 @@ static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "NOTCH",
     "NAV_LANDING",
     "FW_ALTITUDE",
-    "RANGEFINDER"
+    "RFIND",
+    "RFIND_Q"
 };
 
 #ifdef TELEMETRY_LTM

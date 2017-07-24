@@ -40,12 +40,17 @@ typedef struct rangefinder_s {
     int32_t rawAltitude;
     int32_t calculatedAltitude;
     timeMs_t lastValidResponseTimeMs;
+    
+    bool snrThresholdReached;
+    int32_t dynamicDistanceThreshold;
+    int16_t snr;
 } rangefinder_t;
 
 extern rangefinder_t rangefinder;
 
 const rangefinderHardwarePins_t * rangefinderGetHardwarePins(void);
 
+void rangefinderResetDynamicThreshold(void);
 bool rangefinderInit(void);
 
 int32_t rangefinderGetLatestAltitude(void);
