@@ -69,6 +69,8 @@ extern "C" {
     batteryState_e simulationBatteryState;
     uint8_t simulationBatteryCellCount;
     uint16_t simulationBatteryVoltage;
+    uint32_t simulationBatteryAmperage;
+    uint32_t simulationMahDrawn;
     int32_t simulationAltitude;
     int32_t simulationVerticalSpeed;
 }
@@ -86,6 +88,8 @@ void setDefualtSimulationState()
     simulationBatteryState = BATTERY_OK;
     simulationBatteryCellCount = 4;
     simulationBatteryVoltage = 168;
+    simulationBatteryAmperage = 0;
+    simulationMahDrawn = 0;
     simulationAltitude = 0;
     simulationVerticalSpeed = 0;
 }
@@ -518,6 +522,132 @@ TEST(OsdTest, TestElementRssi)
 }
 
 /*
+ * Tests the instantaneous battery current OSD element.
+ */
+TEST(OsdTest, TestElementAmperage)
+{
+    // given
+    osdConfigMutable()->item_pos[OSD_CURRENT_DRAW] = OSD_POS(1, 12) | VISIBLE_FLAG;
+
+    // when
+    simulationBatteryAmperage = 0;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 12, "%c0.00", SYM_AMP);
+
+    // when
+    simulationBatteryAmperage = 2156;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 12, "%c21.56", SYM_AMP);
+
+    // when
+    simulationBatteryAmperage = 12345;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 12, "%c123.45", SYM_AMP);
+}
+
+/*
+ * Tests the battery capacity drawn OSD element.
+ */
+TEST(OsdTest, TestElementMahDrawn)
+{
+    // given
+    osdConfigMutable()->item_pos[OSD_MAH_DRAWN] = OSD_POS(1, 11) | VISIBLE_FLAG;
+
+    // when
+    simulationMahDrawn = 0;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 11, "%c0", SYM_MAH);
+
+    // when
+    simulationMahDrawn = 4;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 11, "%c4", SYM_MAH);
+
+    // when
+    simulationMahDrawn = 15;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 11, "%c15", SYM_MAH);
+
+    // when
+    simulationMahDrawn = 246;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 11, "%c246", SYM_MAH);
+
+    // when
+    simulationMahDrawn = 1042;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 11, "%c1042", SYM_MAH);
+}
+
+/*
+ * Tests the altitude OSD element.
+ */
+TEST(OsdTest, TestElementAltitude)
+{
+    // given
+    osdConfigMutable()->item_pos[OSD_ALTITUDE] = OSD_POS(23, 7) | VISIBLE_FLAG;
+
+    // and
+    osdConfigMutable()->units = OSD_UNIT_METRIC;
+
+    // when
+    simulationAltitude = 0;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(23, 7, " 0.0%c", SYM_M);
+
+    // when
+    simulationAltitude = 247;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(23, 7, " 2.4%c", SYM_M);
+
+    // when
+    simulationAltitude = 4247;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(23, 7, " 42.4%c", SYM_M);
+
+    // when
+    simulationAltitude = -247;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(23, 7, "-2.4%c", SYM_M);
+}
+
+/*
  * Tests the time string formatting function with a series of precision settings and time values.
  */
 TEST(OsdTest, TestFormatTimeString)
@@ -614,11 +744,11 @@ extern "C" {
     }
 
     int32_t getAmperage() {
-        return 0;
+        return simulationBatteryAmperage;
     }
 
     int32_t getMAhDrawn() {
-        return 0;
+        return simulationMahDrawn;
     }
 
     int32_t getEstimatedAltitude() {
