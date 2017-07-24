@@ -317,7 +317,7 @@ void updateRcCommands(void)
         rcCommandBuff.X = rcCommand[ROLL];
         rcCommandBuff.Y = rcCommand[PITCH];
         rcCommandBuff.Z = rcCommand[YAW];
-        imuTransformEarthToBody(&rcCommandBuff);
+        imuTransformVectorEarthToBody(&rcCommandBuff);
         rcCommand[ROLL] = rcCommandBuff.X;
         rcCommand[PITCH] = rcCommandBuff.Y;
         rcCommand[YAW] = rcCommandBuff.Z;
