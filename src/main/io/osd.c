@@ -134,8 +134,8 @@ static uint8_t armState;
 
 static displayPort_t *osdDisplayPort;
 
-#define AH_MAX_PITCH 200 // Specify maximum AHI pitch value displayed. Default 200 = 20.0 degrees
-#define AH_MAX_ROLL 400  // Specify maximum AHI roll value displayed. Default 400 = 40.0 degrees
+#define AH_SYMBOL_COUNT 9
+
 #define AH_SIDEBAR_WIDTH_POS 7
 #define AH_SIDEBAR_HEIGHT_POS 3
 
@@ -492,22 +492,25 @@ static void osdDrawSingleElement(uint8_t item)
             elemPosX = 14;
             elemPosY = 6 - 4; // Top center of the AH area
 
-            const int rollAngle = constrain(attitude.values.roll, -AH_MAX_ROLL, AH_MAX_ROLL);
-            int pitchAngle = constrain(attitude.values.pitch, -AH_MAX_PITCH, AH_MAX_PITCH);
+            // Get pitch and roll limits in tenths of degrees
+            const int maxPitch = osdConfig()->ahMaxPitch * 10;
+            const int maxRoll = osdConfig()->ahMaxRoll * 10;
+
+            const int rollAngle = constrain(attitude.values.roll, -maxRoll, maxRoll);
+            int pitchAngle = constrain(attitude.values.pitch, -maxPitch, maxPitch);
 
             if (displayScreenSize(osdDisplayPort) == VIDEO_BUFFER_CHARS_PAL) {
                 ++elemPosY;
             }
 
             // Convert pitchAngle to y compensation value
-            pitchAngle = (pitchAngle / 8) - 41; // 41 = 4 * 9 + 5
+            // (maxPitch / 25) divisor matches previous settings of fixed divisor of 8 and fixed max AHI pitch angle of 20.0 degrees
+            pitchAngle = ((pitchAngle * 25) / maxPitch) - 41; // 41 = 4 * AH_SYMBOL_COUNT + 5
 
             for (int x = -4; x <= 4; x++) {
-                int y = (-rollAngle * x) / 64;
-                y -= pitchAngle;
-                // y += 41; // == 4 * 9 + 5
+                const int y = ((-rollAngle * x) / 64) - pitchAngle;
                 if (y >= 0 && y <= 81) {
-                    displayWriteChar(osdDisplayPort, elemPosX + x, elemPosY + (y / 9), (SYM_AH_BAR9_0 + (y % 9)));
+                    displayWriteChar(osdDisplayPort, elemPosX + x, elemPosY + (y / AH_SYMBOL_COUNT), (SYM_AH_BAR9_0 + (y % AH_SYMBOL_COUNT)));
                 }
             }
 
@@ -818,6 +821,9 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->rssi_alarm = 20;
     osdConfig->cap_alarm  = 2200;
     osdConfig->alt_alarm  = 100; // meters or feet depend on configuration
+
+    osdConfig->ahMaxPitch = 20; // 20 degrees
+    osdConfig->ahMaxRoll = 40; // 40 degrees
 }
 
 static void osdDrawLogo(int x, int y)
