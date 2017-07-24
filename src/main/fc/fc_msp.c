@@ -441,9 +441,9 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 
     case MSP_CURRENT_METERS: {
         // write out id and current meter values, once for each meter we support
-        uint8_t count = supportedVoltageMeterCount;
+        uint8_t count = supportedCurrentMeterCount;
 #ifndef USE_OSD_SLAVE
-        count = supportedVoltageMeterCount - (VOLTAGE_METER_ID_ESC_COUNT - getMotorCount());
+        count = supportedCurrentMeterCount - (VOLTAGE_METER_ID_ESC_COUNT - getMotorCount());
 #endif
         for (int i = 0; i < count; i++) {
 
