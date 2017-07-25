@@ -72,11 +72,11 @@ static void i2cUnstick(IO_t scl, IO_t sda);
 #endif
 
 static i2cDevice_t i2cHardwareMap[] = {
-    { .dev = I2C1, .scl = IO_TAG(I2C1_SCL), .sda = IO_TAG(I2C1_SDA), .rcc = RCC_APB1(I2C1), .overClock = I2C1_OVERCLOCK, .ev_irq = I2C1_EV_IRQn, .er_irq = I2C1_ER_IRQn, .af = GPIO_AF4_I2C1 },
-    { .dev = I2C2, .scl = IO_TAG(I2C2_SCL), .sda = IO_TAG(I2C2_SDA), .rcc = RCC_APB1(I2C2), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C2_EV_IRQn, .er_irq = I2C2_ER_IRQn, .af = GPIO_AF4_I2C2 },
-    { .dev = I2C3, .scl = IO_TAG(I2C3_SCL), .sda = IO_TAG(I2C3_SDA), .rcc = RCC_APB1(I2C3), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C3_EV_IRQn, .er_irq = I2C3_ER_IRQn, .af = GPIO_AF4_I2C3 },
+    { .dev = I2C1, .scl = IO_TAG(I2C1_SCL), .sda = IO_TAG(I2C1_SDA), .rcc = RCC_APB1(I2C1), .speed = I2C_SPEED_400KHZ, .ev_irq = I2C1_EV_IRQn, .er_irq = I2C1_ER_IRQn, .af = GPIO_AF4_I2C1 },
+    { .dev = I2C2, .scl = IO_TAG(I2C2_SCL), .sda = IO_TAG(I2C2_SDA), .rcc = RCC_APB1(I2C2), .speed = I2C_SPEED_400KHZ, .ev_irq = I2C2_EV_IRQn, .er_irq = I2C2_ER_IRQn, .af = GPIO_AF4_I2C2 },
+    { .dev = I2C3, .scl = IO_TAG(I2C3_SCL), .sda = IO_TAG(I2C3_SDA), .rcc = RCC_APB1(I2C3), .speed = I2C_SPEED_400KHZ, .ev_irq = I2C3_EV_IRQn, .er_irq = I2C3_ER_IRQn, .af = GPIO_AF4_I2C3 },
 #if defined(USE_I2C_DEVICE_4)
-    { .dev = I2C4, .scl = IO_TAG(I2C4_SCL), .sda = IO_TAG(I2C4_SDA), .rcc = RCC_APB1(I2C4), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C4_EV_IRQn, .er_irq = I2C4_ER_IRQn, .af = GPIO_AF4_I2C4 }
+    { .dev = I2C4, .scl = IO_TAG(I2C4_SCL), .sda = IO_TAG(I2C4_SDA), .rcc = RCC_APB1(I2C4), .speed = I2C_SPEED_400KHZ, .ev_irq = I2C4_EV_IRQn, .er_irq = I2C4_ER_IRQn, .af = GPIO_AF4_I2C4 }
 #endif
 };
 
@@ -105,10 +105,10 @@ static i2cState_t i2cState[] = {
     { false, false, false, 0, 0, 0, 0, 0, 0, 0, 0 }
 };
 
-void i2cSetOverclock(uint8_t overClock)
+void i2cSetSpeed(uint8_t speed)
 {
     for (unsigned int i = 0; i < sizeof(i2cHardwareMap) / sizeof(i2cHardwareMap[0]); i++) {
-        i2cHardwareMap[i].overClock = overClock;
+        i2cHardwareMap[i].speed = speed;
     }
 }
 
@@ -278,12 +278,31 @@ void i2cInit(I2CDevice device)
     i2cHandle[device].Handle.Instance             = i2cHardwareMap[device].dev;
     /// TODO: HAL check if I2C timing is correct
 
+    switch (i2c->speed) {
+        case I2C_SPEED_400KHZ:
+        default:
+            i2cHandle[device].Handle.Init.Timing = 0x00500C6F;
+            break;
+
+        case I2C_SPEED_800KHZ:
+            i2cHandle[device].Handle.Init.Timing = 0x00500D1D;  // 800khz Maximum speed tested on various boards without issues
+            break;
+
+        case I2C_SPEED_100KHZ:
+            i2cHandle[device].Handle.Init.Timing = TBD;
+            break;
+
+        case I2C_SPEED_200KHZ:
+            i2cHandle[device].Handle.Init.Timing = TBD;
+            break;
+    }
+
     if (i2c->overClock) {
-        // 800khz Maximum speed tested on various boards without issues
-        i2cHandle[device].Handle.Init.Timing          = 0x00500D1D;
+        
+        
     } else {
         //i2cHandle[device].Handle.Init.Timing          = 0x00500B6A;
-        i2cHandle[device].Handle.Init.Timing          = 0x00500C6F;
+        
     }
     //i2cHandle[device].Handle.Init.Timing          = 0x00D00E28; /* (Rise time = 120ns, Fall time = 25ns) */
     i2cHandle[device].Handle.Init.OwnAddress1     = 0x0;
