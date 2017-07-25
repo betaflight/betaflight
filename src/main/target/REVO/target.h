@@ -232,9 +232,10 @@
 #define I2C3_SDA                NONE // PC9, CH6
 #define I2C_DEVICE              (I2CDEV_2)
 #else
-#define USE_I2C
 #define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
+#define I2C1_SCL                PB8
+#define I2C2_SDA                PB9
 #endif
 
 #define USE_ADC
