@@ -73,7 +73,7 @@ int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value);
 void imuResetAccelerationSum(void);
 void imuInit(void);
 
-void imuRebaseEarthToBody(void);
+bool imuRebaseEarthToBody(void);
 void imuTransformVectorEarthToBody(t_fp_vector_def * v);
 
 #ifdef SIMULATOR_BUILD
