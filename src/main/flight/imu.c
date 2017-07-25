@@ -210,11 +210,11 @@ void imuTransformVectorEarthToBody(t_fp_vector_def * v) {
 
 bool imuRebaseEarthToBody(void) {
     // only rebase yaw axis when roll and are pitch quite level
-    if((fabsf(attitude.values.roll) < 200)  && (fabsf(attitude.values.pitch) < 200)){ 
+    if((fabsf(attitude.values.roll) < 200)  && (fabsf(attitude.values.pitch) < 200)){
         // ugly hack math aproximation 2% std deviation
         // q3 = 0.0;
 
-        // quaternion rotation   todo tests
+        // quaternion rotation
         const float sina2 = sinf(-atan2f((2.0*(q0q3 + q1q2)), (1.0 - 2.0*(q2q2 + q3q3)))/2);
         const float cosa2 = cosf(-atan2f((2.0*(q0q3 + q1q2)), (1.0 - 2.0*(q2q2 + q3q3)))/2);
 
