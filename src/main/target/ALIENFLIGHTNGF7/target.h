@@ -53,6 +53,7 @@
 #define USE_MAG_HMC5883
 //#define USE_MAG_SPI_HMC5883
 #define USE_MAG_AK8963
+#define USE_MAG_QMC5883
 
 //#define HMC5883_CS_PIN          PC15
 //#define HMC5883_SPI_INSTANCE    SPI3
