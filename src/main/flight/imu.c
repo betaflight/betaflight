@@ -209,15 +209,19 @@ void imuTransformVectorEarthToBody(t_fp_vector_def * v) {
 }
 
 void imuRebaseEarthToBody(void) {
-    // only rebase yaw axis ... ugly hack toDo real quaternion rotation
-   /*
-    if((fabsf(attitude.values.roll) < 500)  && (fabsf(attitude.values.pitch) < 500)){
+    // only rebase yaw axis ... ugly hack math aproximation 2% std deviation
+    // toDo real quaternion rotation
+    /*
+    if((fabsf(attitude.values.roll) < 200)  && (fabsf(attitude.values.pitch) < 200)){
         q3 = 0.0;
     }*/
 
     // todo tests
     const float sina2 = sinf(atan2f((2.0*(q0q3 + q1q2)), (1.0 - 2.0*(q2q2 + q3q3)))/2);
     const float cosa2 = cosf(atan2f((2.0*(q0q3 + q1q2)), (1.0 - 2.0*(q2q2 + q3q3)))/2);
+
+    //const float sina2 = sqrtf(q2q2 + q3q3);
+    //const float cosa2 = sqrtf(1.0 - (q2q2 + q3q3));
 
     q0 = q0*cosa2 - q3*sina2;
     q1 = q1*cosa2 + q2*sina2;
