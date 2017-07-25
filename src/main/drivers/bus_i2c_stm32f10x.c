@@ -486,7 +486,6 @@ void i2cInit(I2CDevice device)
     i2cInit.I2C_OwnAddress1 = 0x00;
     i2cInit.I2C_Ack = I2C_Ack_Enable;
     i2cInit.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
-    i2cInit.I2C_ClockSpeed = (i2c->overClock ? 800000 : 400000);
 
     switch (i2c->speed) {
         case I2C_SPEED_400KHZ:
