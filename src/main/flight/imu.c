@@ -210,7 +210,7 @@ void imuTransformVectorEarthToBody(t_fp_vector_def * v) {
 
 bool imuRebaseEarthToBody(void) {
     // only rebase yaw axis when roll and are pitch quite level
-    if((fabs(attitude.values.roll) < 200)  && (fabs(attitude.values.pitch) < 200)){
+    if((fabsf(attitude.values.roll)/10.0f < 20.0f)  && (fabs(fattitude.values.pitch)/10.0f < 20.0f)){
         // ugly hack math aproximation 2% std deviation
         // q3 = 0.0f;
 
