@@ -31,6 +31,13 @@
 #define I2C_DEVICE I2CINVALID
 #endif
 
+typedef enum {  // Weird mapping to keep config compatible with previos version
+    I2C_SPEED_100KHZ    = 2,
+    I2C_SPEED_200KHZ    = 3,
+    I2C_SPEED_400KHZ    = 0,
+    I2C_SPEED_800KHZ    = 1,
+} I2CSpeed;
+
 typedef enum I2CDevice {
     I2CINVALID = -1,
     I2CDEV_1   = 0,
@@ -47,7 +54,7 @@ typedef struct i2cDevice_s {
     ioTag_t scl;
     ioTag_t sda;
     rccPeriphTag_t rcc;
-    bool overClock;
+    I2CSpeed speed;
 #if defined(STM32F7)
     uint8_t ev_irq;
     uint8_t er_irq;
@@ -55,7 +62,7 @@ typedef struct i2cDevice_s {
 #endif
 } i2cDevice_t;
 
-void i2cSetOverclock(uint8_t overClock);
+void i2cSetSpeed(uint8_t speed);
 void i2cInit(I2CDevice device);
 bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data);
 bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data);

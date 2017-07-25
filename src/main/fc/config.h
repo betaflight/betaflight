@@ -81,7 +81,7 @@ typedef struct systemConfig_s {
     uint8_t current_profile_index;
     uint8_t asyncMode;
     uint8_t debug_mode;
-    uint8_t i2c_overclock;                  // Overclock i2c Bus for faster IMU readings
+    uint8_t i2c_speed;
     uint8_t throttle_tilt_compensation_strength;      // the correction that will be applied at throttle_correction_angle.
     inputFilteringMode_e pwmRxInputFilteringMode;
     char name[MAX_NAME_LENGTH + 1];

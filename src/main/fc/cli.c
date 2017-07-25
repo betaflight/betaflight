@@ -340,6 +340,12 @@ static const char * const lookupTableLTMRates[] = {
 };
 #endif
 
+#ifdef USE_I2C
+static const char * const lookupTableI2CSpeed[] = {
+    "400KHZ", "800KHZ", "100KHZ", "200KHZ"  // aligh with I2CSpeed
+};
+#endif
+
 typedef struct lookupTableEntry_s {
     const char * const *values;
     const uint8_t valueCount;
@@ -399,7 +405,10 @@ typedef enum {
 #ifdef TELEMETRY_LTM
     TABLE_LTM_UPDATE_RATE,
 #endif
-    LOOKUP_TABLE_COUNT
+#ifdef USE_I2C
+    TABLE_I2C_SPEED,
+#endif
+    LOOKUP_TABLE_COUNT,
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -455,6 +464,9 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableDebug, sizeof(lookupTableDebug) / sizeof(char *) },
 #ifdef TELEMETRY_LTM
     {lookupTableLTMRates, sizeof(lookupTableLTMRates) / sizeof(char *) },
+#endif
+#ifdef USE_I2C
+    {lookupTableI2CSpeed, sizeof(lookupTableI2CSpeed) / sizeof(char *) },
 #endif
 };
 
@@ -970,7 +982,9 @@ static const clivalue_t valueTable[] = {
     { "osd_power_pos",              VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, OSD_POS_MAX_CLI }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_POWER]) },
 #endif
 // PG_SYSTEM_CONFIG
-    { "i2c_overclock",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, i2c_overclock) },
+#ifdef USE_I2C
+    { "i2c_speed",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_I2C_SPEED }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, i2c_speed) },
+#endif
     { "debug_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DEBUG }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, debug_mode) },
 #ifdef ASYNC_GYRO_PROCESSING
     { "acc_task_frequency",         VAR_UINT16 | MASTER_VALUE, .config.minmax = { ACC_TASK_FREQUENCY_MIN,  ACC_TASK_FREQUENCY_MAX }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, accTaskFrequency) },

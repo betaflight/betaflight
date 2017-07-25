@@ -133,10 +133,10 @@ typedef struct i2cBusState_s {
 static volatile uint16_t i2cErrorCount = 0;
 
 static i2cDevice_t i2cHardwareMap[] = {
-    { .dev = I2C1, .scl = IO_TAG(I2C1_SCL), .sda = IO_TAG(I2C1_SDA), .rcc = RCC_APB1(I2C1), .overClock = I2C1_OVERCLOCK },
-    { .dev = I2C2, .scl = IO_TAG(I2C2_SCL), .sda = IO_TAG(I2C2_SDA), .rcc = RCC_APB1(I2C2), .overClock = I2C2_OVERCLOCK },
+    { .dev = I2C1, .scl = IO_TAG(I2C1_SCL), .sda = IO_TAG(I2C1_SDA), .rcc = RCC_APB1(I2C1), .speed = I2C_SPEED_400KHZ },
+    { .dev = I2C2, .scl = IO_TAG(I2C2_SCL), .sda = IO_TAG(I2C2_SDA), .rcc = RCC_APB1(I2C2), .speed = I2C_SPEED_400KHZ },
 #ifdef STM32F4
-    { .dev = I2C3, .scl = IO_TAG(I2C3_SCL), .sda = IO_TAG(I2C3_SDA), .rcc = RCC_APB1(I2C3), .overClock = I2C2_OVERCLOCK }
+    { .dev = I2C3, .scl = IO_TAG(I2C3_SCL), .sda = IO_TAG(I2C3_SDA), .rcc = RCC_APB1(I2C3), .speed = I2C_SPEED_400KHZ }
 #endif
 };
 
@@ -440,10 +440,10 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const uint32_t currentT
     }
 }
 
-void i2cSetOverclock(uint8_t overClock)
+void i2cSetSpeed(uint8_t speed)
 {
     for (unsigned int i = 0; i < sizeof(i2cHardwareMap) / sizeof(i2cHardwareMap[0]); i++) {
-        i2cHardwareMap[i].overClock = overClock;
+        i2cHardwareMap[i].speed = speed;
     }
 }
 
@@ -487,6 +487,25 @@ void i2cInit(I2CDevice device)
     i2cInit.I2C_Ack = I2C_Ack_Enable;
     i2cInit.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
     i2cInit.I2C_ClockSpeed = (i2c->overClock ? 800000 : 400000);
+
+    switch (i2c->speed) {
+        case I2C_SPEED_400KHZ:
+        default:
+            i2cInit.I2C_ClockSpeed = 400000;
+            break;
+
+        case I2C_SPEED_800KHZ:
+            i2cInit.I2C_ClockSpeed = 800000;
+            break;
+
+        case I2C_SPEED_100KHZ:
+            i2cInit.I2C_ClockSpeed = 100000;
+            break;
+
+        case I2C_SPEED_200KHZ:
+            i2cInit.I2C_ClockSpeed = 200000;
+            break;
+    }
 
     I2C_Init(i2c->dev, &i2cInit);
     I2C_StretchClockCmd(i2c->dev, ENABLE);
