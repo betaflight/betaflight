@@ -248,9 +248,10 @@ bool tinyOSDInit(const vcdProfile_t *pVcdProfile)
     portMode_t mode = MODE_RXTX;
 
     baudRate_e baudRateIndex =  osdPortConfig->blackbox_baudrateIndex;
+    uint32_t baudrate = baudRates[baudRateIndex];
 
     // no callback for RX right now...
-    tinyOSDPort = openSerialPort(osdPortConfig->identifier, FUNCTION_NONE, NULL, baudRateIndex, mode, SERIAL_NOT_INVERTED);
+    tinyOSDPort = openSerialPort(osdPortConfig->identifier, FUNCTION_NONE, NULL, baudrate, mode, SERIAL_NOT_INVERTED);
     if (!tinyOSDPort) {
         return false;
     }
@@ -334,7 +335,8 @@ int tinyOSDDrawScreen(displayPort_t *displayPortProfile)
 
 
         // transfer as many new chars as possible:
-        uint16_t allowed_charcount = TINYOSD_PROTOCOL_FRAME_BUFFER_SIZE;
+        uint16_t allowed_charcount = TINYOSD_PROTOCOL_FRAME_BUFFER_SIZE - 1; // minus length
+        uint8_t buffer[TINYOSD_PROTOCOL_FRAME_BUFFER_SIZE];
 
         while (allowed_charcount) {
             // we are allowed to send more updated chars
@@ -352,36 +354,26 @@ int tinyOSDDrawScreen(displayPort_t *displayPortProfile)
                 }
             }
 
+            // start new data set
+            k = 0;
+
             // we ended here because we found an updated char or
             // there is no more data tx allowed
             if (allowed_charcount) {
-                // good news, still allowed to send data, prepare to do so
-                uint16_t buf_free = serialTxBytesFree(tinyOSDPort);
-                uint16_t buf_header = 4 + 1;
-                if (buf_free > (buf_header + 1)) {
-                    // we have space to send data! limit to maxchars2update
-                    buf_free = buf_free - buf_header;
-                    if (buf_free > allowed_charcount) {
-                        // make sure to limit this to allowed charcount
-                        buf_free = allowed_charcount;
-                    }
+                // we know that this byte differs (loop above exited)
+                // add this and all following that differ to buf
+                // but first of all add start address to packet
+                uint8_t page = (pos>>8) & 0x03;  // write commands 0x00, 0x01, 0x02, 0x03 write to pages
+                buffer[k++] = pos & 0xFF;
 
-                    // prepare buffer
-                    uint8_t txbuf[buf_free];
-                    uint8_t *txptr = &txbuf[0];
-
-                    k = 0;
-                    // we know that this byte differs (loop above exited)
-                    // add this and all following that differ to buf
-                    // but first of all add start address to packet
-                    uint8_t page = (pos>>8) & 0x03;  // write commands 0x00, 0x01, 0x02, 0x03 write to pages
-                    *txptr++ = pos & 0xFF;
-                    k++;
-                    while ((SCREEN_BUFFER_CHANGED(pos) || SCREEN_BUFFER_CHANGED(pos+1)) && (allowed_charcount)){
+                while ((k < TINYOSD_PROTOCOL_FRAME_BUFFER_SIZE) && (allowed_charcount)){
+                    if (!SCREEN_BUFFER_CHANGED(pos) && !SCREEN_BUFFER_CHANGED(pos+1)) {
+                        // no changed byte within the next 2 chars -> finish & send buffer
+                        break;
+                    } else {
                         // different byte in buffer OR this is only 1 single equal byte
                         // -> add byte in both cases (it is more eficient to tx gaps as well)
-                        *txptr++ = screenBuffer[pos];
-                        k++;
+                        buffer[k++] = screenBuffer[pos];
                         allowed_charcount--;
 
                         // mark as sent
@@ -396,13 +388,13 @@ int tinyOSDDrawScreen(displayPort_t *displayPortProfile)
                             break;
                         }
                     }
+                }
 
-                    // we added k bytes to the buffer, send it!
-                    if (!tinyOSDSendBuffer(page, txbuf, k)){
+                // we added k bytes to the buffer, send it!
+                if (k) {
+                    if (!tinyOSDSendBuffer(page, buffer, k)){
+                        // there should be no send failures as we checked the free beuf in advance
                     }
-                } else {
-                    // no more space in buf, abort
-                    allowed_charcount = 0;
                 }
             }
         }
@@ -427,44 +419,50 @@ void tinyOSDRefreshAll(void)
 {
     if (!tinyOSDLock) {
         uint16_t xx = 0;
+        uint32_t timeout;
+
         tinyOSDLock = true;
         bool timed_out = false;
 
-        while((!timed_out) && (xx++ < tinyOSD_maxScreenSize)) {
-            // fetch number of free bytes in buffer:
-            uint16_t buf_free = serialTxBytesFree(tinyOSDPort);
-            //uint8_t  min_txcount = 5;
-            uint16_t buf_header = 4 + 1; // transfer 
+        // abort after 500ms
+        timeout = millis() + 500;
 
-            // there is some buffer space
-            // build header
-            uint8_t page = xx>>8;
-            uint8_t data[TINYOSD_PROTOCOL_FRAME_BUFFER_SIZE + 1];
-            uint8_t *data_ptr = &data[0];
-            uint8_t txcount = 0;
+        while((!timed_out) && (xx < tinyOSD_maxScreenSize)) {
+            uint16_t buf_free = 0;
+            // wait until we have enough space in buffer for a full
+            // data frame (header<3> + data<len> + csum<1>)
+            while (buf_free < 3 + TINYOSD_PROTOCOL_FRAME_BUFFER_SIZE + 1) {
+                // fetch free byte count
+                buf_free = serialTxBytesFree(tinyOSDPort);
 
-            // address offset
-            *data_ptr++ = xx & 0xFF;
-            txcount++;
-
-            // fetch data
-            if (buf_free >= TINYOSD_PROTOCOL_FRAME_BUFFER_SIZE) {
-                buf_free = TINYOSD_PROTOCOL_FRAME_BUFFER_SIZE - 1;
-            }
-            while ((xx < tinyOSD_maxScreenSize) && (buf_free-- >= buf_header)) {
-               *data_ptr++ = screenBuffer[xx];
-               shadowBuffer[xx] = screenBuffer[xx];
-               xx++;
-               txcount++;
-            }
-
-            // abort after 500ms
-            uint32_t timeout = millis() + 500;
-            while(!tinyOSDSendBuffer(page, data, txcount)) {
-                // retry until sucessfull or timeout occured
+                // timeout ?
                 if (millis() > timeout) {
                     timed_out = true;
                     break;
+                }
+            }
+            if (timed_out) {
+                break;
+            }
+
+            // build packet
+            uint8_t page = xx>>8;
+            uint8_t data[TINYOSD_PROTOCOL_FRAME_BUFFER_SIZE];
+            uint8_t data_idx = 0;
+
+            // address offset
+            data[data_idx++] = xx & 0xFF;
+
+            while ((xx < tinyOSD_maxScreenSize) && (data_idx<TINYOSD_PROTOCOL_FRAME_BUFFER_SIZE)) {
+               data[data_idx++] = screenBuffer[xx];
+               shadowBuffer[xx] = screenBuffer[xx];
+               xx++;
+            }
+
+            while((!timed_out) && (!tinyOSDSendBuffer(page, data, data_idx - 1))) {
+                // retry until sucessfull or timeout occured
+                if (millis() > timeout) {
+                    timed_out = true;
                 }
             }
         }
