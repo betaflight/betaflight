@@ -212,11 +212,11 @@ bool imuRebaseEarthToBody(void) {
     // only rebase yaw axis when roll and are pitch quite level
     if((fabsf(attitude.values.roll) < 200)  && (fabsf(attitude.values.pitch) < 200)){
         // ugly hack math aproximation 2% std deviation
-        // q3 = 0.0;
+        // q3 = 0.0f;
 
         // quaternion rotation
-        const float sina2 = sinf(-atan2f((2.0*(q0q3 + q1q2)), (1.0 - 2.0*(q2q2 + q3q3)))/2);
-        const float cosa2 = cosf(-atan2f((2.0*(q0q3 + q1q2)), (1.0 - 2.0*(q2q2 + q3q3)))/2);
+        const float sina2 = sinf(-atan2f((2.0f*(q0q3 + q1q2)), (1.0f - 2.0f*(q2q2 + q3q3)))/2.0f);
+        const float cosa2 = cosf(-atan2f((2.0f*(q0q3 + q1q2)), (1.0f - 2.0f*(q2q2 + q3q3)))/2.0f);
 
         q0 = q0*cosa2 - q3*sina2;
         q1 = q1*cosa2 + q2*sina2;
@@ -224,7 +224,7 @@ bool imuRebaseEarthToBody(void) {
         q3 = q3*cosa2 + q0*sina2;
 
         // Normalise quaternion
-        float Norm = 1.0/sqrtf(q0*q0 + q1*q1 + q2*q2 + q3*q3);
+        float Norm = 1.0f/sqrtf(q0*q0 + q1*q1 + q2*q2 + q3*q3);
         q0 *= Norm;
         q1 *= Norm;
         q2 *= Norm;
@@ -411,9 +411,9 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
 
     // quaternion
     /*
-    attitude.values.roll = lrintf(atan2f((+2.0 * (q0q1 + q2q3)), (+1.0 - 2.0 * (q1q1 + q2q2))) * (1800.0f / M_PIf));
-    attitude.values.pitch = lrintf(asinf(+2.0 * (q0q2 - q1q3)) * (1800.0f / M_PIf));
-    attitude.values.yaw = lrintf((-atan2f((+2.0 * (q0q3 + q1q2)), (+1.0 - 2.0 * (q2q2 + q3q3))) * (1800.0f / M_PIf) + magneticDeclination)); */
+    attitude.values.roll = lrintf(atan2f((+2.0f * (q0q1 + q2q3)), (+1.0f - 2.0f * (q1q1 + q2q2))) * (1800.0f / M_PIf));
+    attitude.values.pitch = lrintf(asinf(+2.0f * (q0q2 - q1q3)) * (1800.0f / M_PIf));
+    attitude.values.yaw = lrintf((-atan2f((+2.0f * (q0q3 + q1q2)), (+1.0f - 2.0f * (q2q2 + q3q3))) * (1800.0f / M_PIf) + magneticDeclination)); */
 
     if (attitude.values.yaw < 0)
         attitude.values.yaw += 3600;
