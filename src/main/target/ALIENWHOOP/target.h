@@ -55,14 +55,12 @@
 #define LED0_PIN                PC12 // conflicts UART5
 #define LED1_PIN                PD2  // conflicts UART5
 
+#define LED_STRIP
+
 /* Lost Quad Mode and Alerts - RCX03-787 Low Voltage Active Buzzer
  */
-#if defined(V2DRAFT) // a few boards exist with older pinout
-#define BEEPER                 PC13 // PC13... limited... current (3 mA)... 
-#else
-#define BEEPER                 PA2 // PC13... limited... current (3 mA)... 
-#endif
-#define BEEPER_INVERTED             // [and] must not be used [to drive LED etc]
+#define BEEPER                 PA2
+#define BEEPER_INVERTED
 
 /* Serial Peripheral Interface (SPI) - Up to 50 Mbit/s on F7
  */
@@ -178,23 +176,16 @@
 //#define USE_SPEKTRUM_BIND
 //#define USE_SPEKTRUM_BIND_PLUG
 */
-#if defined(V2DRAFT) // a few of these boards still exist
-#define BINDPLUG_PIN            PB14
-#define SPEKTRUM_BIND_PIN       PA3
-#define SERIALRX_UART           SERIAL_PORT_USART2
-#define RX_CHANNELS_AETR	// FrSky AETR TAER SpektrumRC
-#else
-#define BINDPLUG_PIN          	PC13 // formerly used for beeper (erroneously) on V1 pcb
+#define BINDPLUG_PIN            PC13 // PC13 Current Limited (3 mA). Not suitable for LED/Beeper
 #define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 #define SERIALRX_UART           SERIAL_PORT_USART3
-#define RX_CHANNELS_TAER 	//RX_CHANNELS_AETR
-#endif
+#define RX_CHANNELS_TAER        //RX_CHANNELS_AETR
 #define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM1024 //SERIALRX_SBUS
 
 /* Defaults - What do we want out of the box?
  */
 #if defined(BREADBOARD)
-#define DEFAULT_FEATURES        (FEATURE_RX_SERIAL | FEATURE_MOTOR_STOP)
+#define DEFAULT_FEATURES        (FEATURE_RX_SERIAL | FEATURE_MOTOR_STOP | FEATURE_LED_STRIP )
 #else
 #define DEFAULT_FEATURES        (FEATURE_RX_SERIAL | FEATURE_MOTOR_STOP) // FEATURE_TELEMETRY changes bind pin from rx to tx
 #endif
@@ -235,6 +226,6 @@
 
 /* Timers
  */
-#define USABLE_TIMER_CHANNEL_COUNT 4
-#define USED_TIMERS             ( TIM_N(3) | TIM_N(8) )
+#define USABLE_TIMER_CHANNEL_COUNT 5
+#define USED_TIMERS             ( TIM_N(3) | TIM_N(8) | TIM_N(5) )
 
