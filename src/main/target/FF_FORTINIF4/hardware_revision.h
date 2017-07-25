@@ -14,25 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
+#pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
+typedef enum ftf4HardwareRevision_t {
+    FORTINIF4_UNKNOWN = 0,
+    FORTINIF4_REV_1, // SPI Flash
+    FORTINIF4_REV_2  // OSD
+} ftf4HardwareRevision_e;
 
-#include "platform.h"
+extern uint8_t hardwareRevision;
 
-#include "fc/fc_init.h"
-
-#include "scheduler/scheduler.h"
-
-int main(void)
-{
-    init();
-    while (true) {
-        scheduler();
-        processLoopback();
-#ifdef SIMULATOR_BUILD
-        delayMicroseconds_real(50); // max rate 20kHz
-#endif
-    }
-    return 0;
-}
+void updateHardwareRevision(void);
+void detectHardwareRevision(void);

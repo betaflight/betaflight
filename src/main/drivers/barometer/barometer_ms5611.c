@@ -129,6 +129,11 @@ bool ms5611Detect(baroDev_t *baro)
 
     ms5611BusInit(busdev);
 
+    if ((busdev->bustype == BUSTYPE_I2C) && (busdev->busdev_u.i2c.address == 0)) {
+        // Default address for MS5611
+        busdev->busdev_u.i2c.address = MS5611_I2C_ADDR;
+    }
+
     if (!ms5611ReadCommand(busdev, CMD_PROM_RD, 1, &sig) || sig == 0xFF) {
         ms5611BusDeinit(busdev);
         return false;

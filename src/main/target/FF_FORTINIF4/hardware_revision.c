@@ -15,23 +15,39 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
-#include <platform.h>
+#include "platform.h"
+
+#include "build/build_config.h"
+
 #include "drivers/io.h"
+#include "drivers/time.h"
 
-#include "drivers/dma.h"
-#include "drivers/timer.h"
-#include "drivers/timer_def.h"
+#include "hardware_revision.h"
 
-const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    DEF_TIM(TIM2,  CH4, PA3,  TIM_USE_MOTOR, TIMER_OUTPUT_STANDARD, 1),
-    DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_MOTOR, TIMER_OUTPUT_STANDARD, 0),
-    DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_MOTOR, TIMER_OUTPUT_STANDARD, 0),
-    DEF_TIM(TIM2,  CH3, PA2,  TIM_USE_MOTOR, TIMER_OUTPUT_STANDARD, 0),
-#if defined(PLUMF4) || defined(KIWIF4V2)
-    DEF_TIM(TIM4,  CH1, PA0,  TIM_USE_LED,   TIMER_OUTPUT_STANDARD, 0),  //LED
-#else
-    DEF_TIM(TIM4,  CH2, PB7,  TIM_USE_LED,   TIMER_OUTPUT_NONE, 0),  // LED
-#endif
-};
+uint8_t hardwareRevision = FORTINIF4_UNKNOWN;
+
+static IO_t HWDetectPin = IO_NONE;
+
+void detectHardwareRevision(void)
+{
+    HWDetectPin = IOGetByTag(IO_TAG(HW_PIN));
+    IOInit(HWDetectPin, OWNER_SYSTEM, 0);
+    IOConfigGPIO(HWDetectPin, IOCFG_IPU);
+
+    delayMicroseconds(10);  // allow configuration to settle
+
+    // Check hardware revision
+    if (IORead(HWDetectPin)) {
+        hardwareRevision = FORTINIF4_REV_1;
+    } else {
+        hardwareRevision = FORTINIF4_REV_2;
+    }
+}
+
+void updateHardwareRevision(void)
+{
+}

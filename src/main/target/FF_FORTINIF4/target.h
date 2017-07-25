@@ -19,6 +19,8 @@
 #define TARGET_BOARD_IDENTIFIER "FORT"
 #define USBD_PRODUCT_STRING     "FortiniF4"
 #define TARGET_CONFIG
+#define USE_HARDWARE_REVISION_DETECTION
+#define HW_PIN                  PC14
 /*--------------LED----------------*/
 #define LED0_PIN                PB5
 #define LED1_PIN                PB6
@@ -78,6 +80,15 @@
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
+/*---------------------------------*/
+
+/*-------------OSD-----------------*/
+#define OSD
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE    SPI3
+#define MAX7456_SPI_CS_PIN      PB3
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
+#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 /*---------------------------------*/
 
 /*-----------USB-UARTs-------------*/

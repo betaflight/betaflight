@@ -441,9 +441,9 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 
     case MSP_CURRENT_METERS: {
         // write out id and current meter values, once for each meter we support
-        uint8_t count = supportedVoltageMeterCount;
+        uint8_t count = supportedCurrentMeterCount;
 #ifndef USE_OSD_SLAVE
-        count = supportedVoltageMeterCount - (VOLTAGE_METER_ID_ESC_COUNT - getMotorCount());
+        count = supportedCurrentMeterCount - (VOLTAGE_METER_ID_ESC_COUNT - getMotorCount());
 #endif
         for (int i = 0; i < count; i++) {
 
@@ -890,6 +890,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
     case MSP_MIXER_CONFIG:
         sbufWriteU8(dst, mixerConfig()->mixerMode);
+        sbufWriteU8(dst, mixerConfig()->yaw_motors_reversed);
         break;
 
     case MSP_RX_CONFIG:
@@ -1664,6 +1665,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
         sbufReadU8(src);
 #endif
+        if (sbufBytesRemaining(src) >= 1) {
+            mixerConfigMutable()->yaw_motors_reversed = sbufReadU8(src);
+        }
         break;
 
     case MSP_SET_RX_CONFIG:

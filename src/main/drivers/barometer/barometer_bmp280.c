@@ -130,6 +130,11 @@ bool bmp280Detect(baroDev_t *baro)
 
     bmp280BusInit(busdev);
 
+    if ((busdev->bustype == BUSTYPE_I2C) && (busdev->busdev_u.i2c.address == 0)) {
+        // Default address for BMP280
+        busdev->busdev_u.i2c.address = BMP280_I2C_ADDR;
+    }
+
     bmp280ReadRegister(busdev, BMP280_CHIP_ID_REG, 1, &bmp280_chip_id);  /* read Chip Id */
 
     if (bmp280_chip_id != BMP280_DEFAULT_CHIP_ID) {

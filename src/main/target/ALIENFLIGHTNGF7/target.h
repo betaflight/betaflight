@@ -53,9 +53,13 @@
 #define USE_MAG_HMC5883
 #define USE_MAG_SPI_HMC5883
 #define USE_MAG_AK8963
+#define USE_MAG_SPI_AK8963
 
 #define HMC5883_CS_PIN          PC15
 #define HMC5883_SPI_INSTANCE    SPI3
+
+#define AK8963_CS_PIN           PC15
+#define AK8963_SPI_INSTANCE     SPI3
 
 #define MAG_HMC5883_ALIGN       CW180_DEG
 #define MAG_AK8963_ALIGN        CW270_DEG

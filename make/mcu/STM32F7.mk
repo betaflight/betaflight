@@ -66,14 +66,11 @@ EXCLUDES        = stm32f7xx_hal_can.c \
                   stm32f7xx_ll_i2c.c \
                   stm32f7xx_ll_lptim.c \
                   stm32f7xx_ll_pwr.c \
-                  stm32f7xx_ll_rcc.c \
                   stm32f7xx_ll_rng.c \
                   stm32f7xx_ll_rtc.c \
                   stm32f7xx_ll_sdmmc.c \
-                  stm32f7xx_ll_spi.c \
                   stm32f7xx_ll_tim.c \
-                  stm32f7xx_ll_usart.c \
-                  stm32f7xx_ll_utils.c
+                  stm32f7xx_ll_usart.c
 
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 
@@ -116,7 +113,7 @@ endif
 #Flags
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fsingle-precision-constant -Wdouble-promotion
 
-DEVICE_FLAGS    = -DUSE_HAL_DRIVER
+DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
 ifeq ($(TARGET),$(filter $(TARGET),$(F7X5XG_TARGETS)))
 DEVICE_FLAGS   += -DSTM32F745xx 
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f745.ld
@@ -155,6 +152,7 @@ MCU_COMMON_SRC = \
             drivers/gpio_stm32f7xx.c \
             drivers/light_ws2811strip_hal.c \
             drivers/bus_spi_hal.c \
+            drivers/bus_spi_ll.c \
             drivers/pwm_output_dshot_hal.c \
             drivers/timer_hal.c \
             drivers/timer_stm32f7xx.c \
