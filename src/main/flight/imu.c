@@ -210,10 +210,21 @@ void imuTransformVectorEarthToBody(t_fp_vector_def * v) {
 
 void imuRebaseEarthToBody(void) {
     // only rebase yaw axis ... ugly hack toDo real quaternion rotation
+   /*
     if((fabsf(attitude.values.roll) < 500)  && (fabsf(attitude.values.pitch) < 500)){
         q3 = 0.0;
-    }
+    }*/
 
+    // todo tests
+    const float sina2 = sinf(atan2f((2.0*(q0q3 + q1q2)), (1.0 - 2.0*(q2q2 + q3q3)))/2);
+    const float cosa2 = cosf(atan2f((2.0*(q0q3 + q1q2)), (1.0 - 2.0*(q2q2 + q3q3)))/2);
+
+    q0 = q0*cosa2 - q3*sina2;
+    q1 = q1*cosa2 + q2*sina2;
+    q2 = q2*cosa2 - q1*sina2;
+    q3 = q3*cosa2 + q0*sina2;
+
+    // normalize ???
 }
 
 // rotate acc into Earth frame and calculate acceleration in it
@@ -386,10 +397,16 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
 
 STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
 {
-    /* Compute pitch/roll angles */
+    // rotation matrix 
+    /* 
     attitude.values.roll = lrintf(atan2f(rMat[2][1], rMat[2][2]) * (1800.0f / M_PIf));
     attitude.values.pitch = lrintf(((0.5f * M_PIf) - acosf(-rMat[2][0])) * (1800.0f / M_PIf));
-    attitude.values.yaw = lrintf((-atan2f(rMat[1][0], rMat[0][0]) * (1800.0f / M_PIf) + magneticDeclination));
+    attitude.values.yaw = lrintf((-atan2f(rMat[1][0], rMat[0][0]) * (1800.0f / M_PIf) + magneticDeclination));*/
+
+    // quaternion
+    attitude.values.roll = lrintf(atan2f((+2.0 * (q0q1 + q2q3)), (+1.0 - 2.0 * (q1q1 + q2q2))) * (1800.0f / M_PIf));
+    attitude.values.pitch = lrintf(asinf(+2.0 * (q0q2 - q1q3)) * (1800.0f / M_PIf));
+    attitude.values.yaw = lrintf((-atan2f((+2.0 * (q0q3 + q1q2)), (+1.0 - 2.0 * (q2q2 + q3q3))) * (1800.0f / M_PIf) + magneticDeclination));
 
     if (attitude.values.yaw < 0)
         attitude.values.yaw += 3600;
