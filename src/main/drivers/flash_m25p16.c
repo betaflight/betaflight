@@ -98,12 +98,12 @@ static void m25p16_writeEnable(void)
 
 static uint8_t m25p16_readStatus(void)
 {
-    uint8_t command[2] = { M25P16_INSTRUCTION_READ_STATUS_REG, 0 };
+    const uint8_t command[2] = { M25P16_INSTRUCTION_READ_STATUS_REG, 0 };
     uint8_t in[2];
 
     ENABLE_M25P16;
 
-    spiTransfer(M25P16_SPI_INSTANCE, in, command, sizeof(command));
+    spiTransfer(M25P16_SPI_INSTANCE, command, in, sizeof(command));
 
     DISABLE_M25P16;
 
@@ -137,26 +137,25 @@ bool m25p16_waitForReady(uint32_t timeoutMillis)
  */
 static bool m25p16_readIdentification(void)
 {
-    uint8_t out[] = { M25P16_INSTRUCTION_RDID, 0, 0, 0 };
-    uint8_t in[4];
-    uint32_t chipID;
+    const uint8_t out[] = { M25P16_INSTRUCTION_RDID, 0, 0, 0 };
 
     delay(50); // short delay required after initialisation of SPI device instance.
 
     /* Just in case transfer fails and writes nothing, so we don't try to verify the ID against random garbage
      * from the stack:
      */
+    uint8_t in[4];
     in[1] = 0;
 
     ENABLE_M25P16;
 
-    spiTransfer(M25P16_SPI_INSTANCE, in, out, sizeof(out));
+    spiTransfer(M25P16_SPI_INSTANCE, out, in, sizeof(out));
 
     // Clearing the CS bit terminates the command early so we don't have to read the chip UID:
     DISABLE_M25P16;
 
     // Manufacturer, memory type, and capacity
-    chipID = (in[1] << 16) | (in[2] << 8) | (in[3]);
+    const uint32_t chipID = (in[1] << 16) | (in[2] << 8) | (in[3]);
 
     // All supported chips use the same pagesize of 256 bytes
 
@@ -241,7 +240,7 @@ bool m25p16_init(const flashConfig_t *flashConfig)
  */
 void m25p16_eraseSector(uint32_t address)
 {
-    uint8_t out[] = { M25P16_INSTRUCTION_SECTOR_ERASE, (address >> 16) & 0xFF, (address >> 8) & 0xFF, address & 0xFF};
+    const uint8_t out[] = { M25P16_INSTRUCTION_SECTOR_ERASE, (address >> 16) & 0xFF, (address >> 8) & 0xFF, address & 0xFF};
 
     m25p16_waitForReady(SECTOR_ERASE_TIMEOUT_MILLIS);
 
@@ -249,7 +248,7 @@ void m25p16_eraseSector(uint32_t address)
 
     ENABLE_M25P16;
 
-    spiTransfer(M25P16_SPI_INSTANCE, NULL, out, sizeof(out));
+    spiTransfer(M25P16_SPI_INSTANCE, out, NULL, sizeof(out));
 
     DISABLE_M25P16;
 }
@@ -265,7 +264,7 @@ void m25p16_eraseCompletely(void)
 
 void m25p16_pageProgramBegin(uint32_t address)
 {
-    uint8_t command[] = { M25P16_INSTRUCTION_PAGE_PROGRAM, (address >> 16) & 0xFF, (address >> 8) & 0xFF, address & 0xFF};
+    const uint8_t command[] = { M25P16_INSTRUCTION_PAGE_PROGRAM, (address >> 16) & 0xFF, (address >> 8) & 0xFF, address & 0xFF};
 
     m25p16_waitForReady(DEFAULT_TIMEOUT_MILLIS);
 
@@ -273,12 +272,12 @@ void m25p16_pageProgramBegin(uint32_t address)
 
     ENABLE_M25P16;
 
-    spiTransfer(M25P16_SPI_INSTANCE, NULL, command, sizeof(command));
+    spiTransfer(M25P16_SPI_INSTANCE, command, NULL, sizeof(command));
 }
 
 void m25p16_pageProgramContinue(const uint8_t *data, int length)
 {
-    spiTransfer(M25P16_SPI_INSTANCE, NULL, data, length);
+    spiTransfer(M25P16_SPI_INSTANCE, data, NULL, length);
 }
 
 void m25p16_pageProgramFinish(void)
@@ -320,7 +319,7 @@ void m25p16_pageProgram(uint32_t address, const uint8_t *data, int length)
  */
 int m25p16_readBytes(uint32_t address, uint8_t *buffer, int length)
 {
-    uint8_t command[] = { M25P16_INSTRUCTION_READ_BYTES, (address >> 16) & 0xFF, (address >> 8) & 0xFF, address & 0xFF};
+    const uint8_t command[] = { M25P16_INSTRUCTION_READ_BYTES, (address >> 16) & 0xFF, (address >> 8) & 0xFF, address & 0xFF};
 
     if (!m25p16_waitForReady(DEFAULT_TIMEOUT_MILLIS)) {
         return 0;
@@ -328,8 +327,8 @@ int m25p16_readBytes(uint32_t address, uint8_t *buffer, int length)
 
     ENABLE_M25P16;
 
-    spiTransfer(M25P16_SPI_INSTANCE, NULL, command, sizeof(command));
-    spiTransfer(M25P16_SPI_INSTANCE, buffer, NULL, length);
+    spiTransfer(M25P16_SPI_INSTANCE, command, NULL, sizeof(command));
+    spiTransfer(M25P16_SPI_INSTANCE, NULL, buffer, length);
 
     DISABLE_M25P16;
 

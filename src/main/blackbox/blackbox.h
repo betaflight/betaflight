@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "platform.h"
+#include "build/build_config.h"
 #include "blackbox/blackbox_fielddefs.h"
 #include "common/time.h"
 #include "config/parameter_group.h"
@@ -33,8 +35,7 @@ typedef enum BlackboxDevice {
 } BlackboxDevice_e;
 
 typedef struct blackboxConfig_s {
-    uint8_t rate_num;
-    uint8_t rate_denom;
+    uint16_t p_denom; // I-frame interval / P-frame interval
     uint8_t device;
     uint8_t on_motor_test;
     uint8_t record_acc;
@@ -46,6 +47,22 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data);
 
 void blackboxInit(void);
 void blackboxUpdate(timeUs_t currentTimeUs);
+const char *blackboxGetStartDateTime(void);
+void blackboxSetStartDateTime(const char *dateTime, timeMs_t timeNowMs);
+int blackboxCalculatePDenom(int rateNum, int rateDenom);
+uint8_t blackboxGetRateNum(void);
+uint8_t blackboxGetRateDenom(void);
 void blackboxValidateConfig(void);
 void blackboxFinish(void);
 bool blackboxMayEditConfig(void);
+#ifdef UNIT_TEST
+STATIC_UNIT_TESTED void blackboxLogIteration(timeUs_t currentTimeUs);
+STATIC_UNIT_TESTED bool blackboxShouldLogPFrame(void);
+STATIC_UNIT_TESTED bool blackboxShouldLogIFrame(void);
+STATIC_UNIT_TESTED bool blackboxShouldLogGpsHomeFrame(void);
+STATIC_UNIT_TESTED bool writeSlowFrameIfNeeded(void);
+// Called once every FC loop in order to keep track of how many FC loop iterations have passed
+STATIC_UNIT_TESTED void blackboxAdvanceIterationTimers(void);
+extern int32_t blackboxSInterval;
+extern int32_t blackboxSlowFrameIterationTimer;
+#endif

@@ -64,10 +64,26 @@ static void mpu3050Init(gyroDev_t *gyro)
     gyro->mpuConfiguration.writeFn(&gyro->bus, MPU3050_PWR_MGM, MPU3050_CLK_SEL_PLL_GX);
 }
 
+static bool mpu3050GyroRead(gyroDev_t *gyro)
+{
+    uint8_t data[6];
+
+    const bool ack = gyro->mpuConfiguration.readFn(&gyro->bus, MPU3050_GYRO_OUT, data, 6);
+    if (!ack) {
+        return false;
+    }
+
+    gyro->gyroADCRaw[X] = (int16_t)((data[0] << 8) | data[1]);
+    gyro->gyroADCRaw[Y] = (int16_t)((data[2] << 8) | data[3]);
+    gyro->gyroADCRaw[Z] = (int16_t)((data[4] << 8) | data[5]);
+
+    return true;
+}
+
 static bool mpu3050ReadTemperature(gyroDev_t *gyro, int16_t *tempData)
 {
     uint8_t buf[2];
-    if (!gyro->mpuConfiguration.readFn(&gyro->bus, MPU3050_TEMP_OUT, 2, buf)) {
+    if (!gyro->mpuConfiguration.readFn(&gyro->bus, MPU3050_TEMP_OUT, buf, 2)) {
         return false;
     }
 
@@ -82,7 +98,7 @@ bool mpu3050Detect(gyroDev_t *gyro)
         return false;
     }
     gyro->initFn = mpu3050Init;
-    gyro->readFn = mpuGyroRead;
+    gyro->readFn = mpu3050GyroRead;
     gyro->temperatureFn = mpu3050ReadTemperature;
 
     // 16.4 dps/lsb scalefactor

@@ -49,9 +49,9 @@ typedef enum I2CDevice {
 #define I2C_CFG_TO_DEV(x)   ((x) - 1)
 #define I2C_DEV_TO_CFG(x)   ((x) + 1)
 
-// I2C device address range in 8-bit address mode
-#define I2C_ADDR8_MIN       8
-#define I2C_ADDR8_MAX       119
+// I2C device address range in 7-bit address mode
+#define I2C_ADDR7_MIN       8
+#define I2C_ADDR7_MAX       119
 
 typedef struct i2cConfig_s {
     ioTag_t ioTagScl[I2CDEV_COUNT];

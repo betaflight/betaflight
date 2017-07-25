@@ -60,7 +60,7 @@
 #include "flight/altitude.h"
 #include "sensors/sensors.h"
 #include "sensors/battery.h"
-#include "sensors/barometer.h"
+//#include "sensors/barometer.h"
 #include "telemetry/telemetry.h"
 #include "telemetry/jetiexbus.h"
 #endif //TELEMETRY

@@ -166,12 +166,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 
 static void handleUsartTxDma(uartPort_t *s)
 {
-    DMA_Cmd(s->txDMAStream, DISABLE);
-
-    if (s->port.txBufferHead != s->port.txBufferTail)
-        uartStartTxDMA(s);
-    else
-        s->txDMAEmpty = true;
+    uartTryStartTxDMA(s);
 }
 
 void dmaIRQHandler(dmaChannelDescriptor_t* descriptor)

@@ -18,7 +18,6 @@
 
 #include "drivers/bus.h"
 
-#define ICM20689_WHO_AM_I_CONST             (0x98)
 #define ICM20689_BIT_RESET                  (0x80)
 
 bool icm20689AccDetect(accDev_t *acc);

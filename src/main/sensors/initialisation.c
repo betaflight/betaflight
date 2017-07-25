@@ -56,12 +56,14 @@ static bool sonarDetect(void)
 
 bool sensorsAutodetect(void)
 {
-    // gyro must be initialised before accelerometer
-    if (!gyroInit()) {
-        return false;
-    }
 
-    accInit(gyro.targetLooptime);
+    // gyro must be initialised before accelerometer
+
+    bool gyroDetected = gyroInit();
+
+    if (gyroDetected) {
+        accInit(gyro.targetLooptime);
+    }
 
 #ifdef MAG
     compassInit();
@@ -77,5 +79,5 @@ bool sensorsAutodetect(void)
     }
 #endif
 
-    return true;
+    return gyroDetected;
 }

@@ -470,7 +470,7 @@ void init(void)
     rtc6705IOInit();
 #endif
 
-#ifdef CAMERA_CONTROL
+#ifdef USE_CAMERA_CONTROL
     cameraControlInit();
 #endif
 
