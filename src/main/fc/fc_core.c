@@ -485,6 +485,7 @@ void processRx(timeUs_t currentTimeUs)
         }
         if (IS_RC_MODE_ACTIVE(BOXHEADADJ)) {
             imuRebaseEarthToBody();
+            beeper(BEEPER_RX_SET);
         }
     }
 #endif
