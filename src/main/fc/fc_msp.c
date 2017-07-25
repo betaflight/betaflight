@@ -59,6 +59,7 @@
 #include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
 #include "fc/fc_msp.h"
+#include "fc/fc_msp_box.h"
 #include "fc/fc_rc.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
@@ -113,56 +114,10 @@
 #include "hardware_revision.h"
 #endif
 
-#define STATIC_ASSERT(condition, name) \
-    typedef char assert_failed_ ## name [(condition) ? 1 : -1 ] __attribute__((unused))
-
 static const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 #ifndef USE_OSD_SLAVE
-// permanent IDs must uniquely identify BOX meaning, DO NOT REUSE THEM!
-static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
-    { BOXARM, "ARM", 0 },
-    { BOXANGLE, "ANGLE", 1 },
-    { BOXHORIZON, "HORIZON", 2 },
-    { BOXBARO, "BARO", 3 },
-    { BOXANTIGRAVITY, "ANTI GRAVITY", 4 },
-    { BOXMAG, "MAG", 5 },
-    { BOXHEADFREE, "HEADFREE", 6 },
-    { BOXHEADADJ, "HEADADJ", 7 },
-    { BOXCAMSTAB, "CAMSTAB", 8 },
-    { BOXCAMTRIG, "CAMTRIG", 9 },
-    { BOXGPSHOME, "GPS HOME", 10 },
-    { BOXGPSHOLD, "GPS HOLD", 11 },
-    { BOXPASSTHRU, "PASSTHRU", 12 },
-    { BOXBEEPERON, "BEEPER", 13 },
-    { BOXLEDMAX, "LEDMAX", 14 },
-    { BOXLEDLOW, "LEDLOW", 15 },
-    { BOXLLIGHTS, "LLIGHTS", 16 },
-    { BOXCALIB, "CALIB", 17 },
-    { BOXGOV, "GOVERNOR", 18 },
-    { BOXOSD, "OSD DISABLE SW", 19 },
-    { BOXTELEMETRY, "TELEMETRY", 20 },
-    { BOXGTUNE, "GTUNE", 21 },
-    { BOXSONAR, "SONAR", 22 },
-    { BOXSERVO1, "SERVO1", 23 },
-    { BOXSERVO2, "SERVO2", 24 },
-    { BOXSERVO3, "SERVO3", 25 },
-    { BOXBLACKBOX, "BLACKBOX", 26 },
-    { BOXFAILSAFE, "FAILSAFE", 27 },
-    { BOXAIRMODE, "AIR MODE", 28 },
-    { BOX3DDISABLE, "DISABLE 3D", 29},
-    { BOXFPVANGLEMIX, "FPV ANGLE MIX", 30},
-    { BOXBLACKBOXERASE, "BLACKBOX ERASE (>30s)", 31 },
-    { BOXCAMERA1, "CAMERA CONTROL 1", 32},
-    { BOXCAMERA2, "CAMERA CONTROL 2", 33},
-    { BOXCAMERA3, "CAMERA CONTROL 3", 34 },
-    { BOXDSHOTREVERSE, "DSHOT REVERSE MOTORS", 35 },
-};
-
-// mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
-
-static boxBitmask_t activeBoxIds;
 
 static const char pidnames[] =
     "ROLL;"
@@ -189,7 +144,7 @@ typedef enum {
 } mspSDCardFlags_e;
 
 #define RATEPROFILE_MASK (1 << 7)
-#endif
+#endif //USE_OSD_SLAVE
 
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
 #define ESC_4WAY 0xff
@@ -248,7 +203,7 @@ static void mspFc4waySerialCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessFnPtr
         sbufWriteU8(dst, 0);
     }
 }
-#endif
+#endif //USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 static void mspRebootFn(serialPort_t *serialPort)
 {
@@ -264,245 +219,6 @@ static void mspRebootFn(serialPort_t *serialPort)
 }
 
 #ifndef USE_OSD_SLAVE
-const box_t *findBoxByBoxId(boxId_e boxId)
-{
-    for (unsigned i = 0; i < ARRAYLEN(boxes); i++) {
-        const box_t *candidate = &boxes[i];
-        if (candidate->boxId == boxId)
-            return candidate;
-    }
-    return NULL;
-}
-
-const box_t *findBoxByPermanentId(uint8_t permanentId)
-{
-    for (unsigned i = 0; i < ARRAYLEN(boxes); i++) {
-        const box_t *candidate = &boxes[i];
-        if (candidate->permanentId == permanentId)
-            return candidate;
-    }
-    return NULL;
-}
-
-static bool activeBoxIdGet(boxId_e boxId)
-{
-    if (boxId > sizeof(activeBoxIds) * 8)
-        return false;
-    return bitArrayGet(&activeBoxIds, boxId);
-}
-
-
-// callcack for box serialization
-typedef void serializeBoxFn(sbuf_t *dst, const box_t *box);
-
-static void serializeBoxNameFn(sbuf_t *dst, const box_t *box)
-{
-    sbufWriteString(dst, box->boxName);
-    sbufWriteU8(dst, ';');
-}
-
-static void serializeBoxPermanentIdFn(sbuf_t *dst, const box_t *box)
-{
-    sbufWriteU8(dst, box->permanentId);
-}
-
-// serialize 'page' of boxNames.
-// Each page contains at most 32 boxes
-static void serializeBoxReply(sbuf_t *dst, int page, serializeBoxFn *serializeBox)
-{
-    unsigned boxIdx = 0;
-    unsigned pageStart = page * 32;
-    unsigned pageEnd = pageStart + 32;
-    for (boxId_e id = 0; id < CHECKBOX_ITEM_COUNT; id++) {
-        if (activeBoxIdGet(id)) {
-            if (boxIdx >= pageStart && boxIdx < pageEnd) {
-                (*serializeBox)(dst, findBoxByBoxId(id));
-            }
-            boxIdx++;                 // count active boxes
-        }
-    }
-}
-
-void initActiveBoxIds(void)
-{
-    // calculate used boxes based on features and set corresponding activeBoxIds bits
-    boxBitmask_t ena;  // temporary variable to collect result
-    memset(&ena, 0, sizeof(ena));
-
-    // macro to enable boxId (BoxidMaskEnable). Reference to ena is hidden, local use only
-#define BME(boxId) do { bitArraySet(&ena, boxId); } while (0)
-    BME(BOXARM);
-
-    if (!feature(FEATURE_AIRMODE)) {
-        BME(BOXAIRMODE);
-    }
-
-    if (!feature(FEATURE_ANTI_GRAVITY)) {
-        BME(BOXANTIGRAVITY);
-    }
-
-    if (sensors(SENSOR_ACC)) {
-        BME(BOXANGLE);
-        BME(BOXHORIZON);
-        BME(BOXHEADFREE);
-        BME(BOXHEADADJ);
-    }
-
-#ifdef BARO
-    if (sensors(SENSOR_BARO)) {
-        BME(BOXBARO);
-    }
-#endif
-
-#ifdef MAG
-    if (sensors(SENSOR_MAG)) {
-        BME(BOXMAG);
-    }
-#endif
-
-#ifdef GPS
-    if (feature(FEATURE_GPS)) {
-        BME(BOXGPSHOME);
-        BME(BOXGPSHOLD);
-    }
-#endif
-
-#ifdef SONAR
-    if (feature(FEATURE_SONAR)) {
-        BME(BOXSONAR);
-    }
-#endif
-
-    if (feature(FEATURE_FAILSAFE)) {
-        BME(BOXFAILSAFE);
-    }
-
-    if (mixerConfig()->mixerMode == MIXER_FLYING_WING || mixerConfig()->mixerMode == MIXER_AIRPLANE || mixerConfig()->mixerMode == MIXER_CUSTOM_AIRPLANE) {
-        BME(BOXPASSTHRU);
-    }
-
-    BME(BOXBEEPERON);
-
-#ifdef LED_STRIP
-    if (feature(FEATURE_LED_STRIP)) {
-        BME(BOXLEDLOW);
-    }
-#endif
-
-#ifdef BLACKBOX
-    BME(BOXBLACKBOX);
-#ifdef USE_FLASHFS
-    BME(BOXBLACKBOXERASE);
-#endif
-#endif
-
-    BME(BOXFPVANGLEMIX);
-
-    if (feature(FEATURE_3D)) {
-        BME(BOX3DDISABLE);
-    }
-
-    if (isMotorProtocolDshot()) {
-        BME(BOXDSHOTREVERSE);
-    }
-
-    if (feature(FEATURE_SERVO_TILT)) {
-        BME(BOXCAMSTAB);
-    }
-
-    if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
-        BME(BOXCALIB);
-    }
-
-    BME(BOXOSD);
-
-#ifdef TELEMETRY
-    if (feature(FEATURE_TELEMETRY) && telemetryConfig()->telemetry_switch) {
-        BME(BOXTELEMETRY);
-    }
-#endif
-
-#ifdef USE_SERVOS
-    if (mixerConfig()->mixerMode == MIXER_CUSTOM_AIRPLANE) {
-        BME(BOXSERVO1);
-        BME(BOXSERVO2);
-        BME(BOXSERVO3);
-    }
-#endif
-
-#ifdef USE_RCSPLIT
-    BME(BOXCAMERA1);
-    BME(BOXCAMERA2);
-    BME(BOXCAMERA3);
-#endif
-
-#undef BME
-    // check that all enabled IDs are in boxes array (check may be skipped when using findBoxById() functions)
-    for (boxId_e boxId = 0;  boxId < CHECKBOX_ITEM_COUNT; boxId++)
-        if (bitArrayGet(&ena, boxId)
-            && findBoxByBoxId(boxId) == NULL)
-            bitArrayClr(&ena, boxId);                 // this should not happen, but handle it gracefully
-
-    activeBoxIds = ena;                               // set global variable
-}
-
-// pack used flightModeFlags into supplied array
-// returns number of bits used
-static int packFlightModeFlags(boxBitmask_t *mspFlightModeFlags)
-{
-    // Serialize the flags in the order we delivered them, ignoring BOXNAMES and BOXINDEXES
-    memset(mspFlightModeFlags, 0, sizeof(boxBitmask_t));
-
-    // enabled BOXes, bits indexed by boxId_e
-    boxBitmask_t boxEnabledMask;
-    memset(&boxEnabledMask, 0, sizeof(boxEnabledMask));
-
-    // enable BOXes dependent on FLIGHT_MODE, use mapping table (from runtime_config.h)
-    // flightMode_boxId_map[HORIZON_MODE] == BOXHORIZON
-    static const int8_t flightMode_boxId_map[] = FLIGHT_MODE_BOXID_MAP_INITIALIZER;
-    flightModeFlags_e flightModeCopyMask = ~0;  // only modes with bit set will be copied
-    for (unsigned i = 0; i < ARRAYLEN(flightMode_boxId_map); i++) {
-        if (flightMode_boxId_map[i] != -1        // boxId_e does exist for this FLIGHT_MODE
-           && (flightModeCopyMask & (1 << i))   // this flightmode is copy is enabled
-           && FLIGHT_MODE(1 << i)) {            // this flightmode is active
-            bitArraySet(&boxEnabledMask, flightMode_boxId_map[i]);
-        }
-    }
-
-    // enable BOXes dependent on rcMode bits, indexes are the same.
-    // only subset of BOXes depend on rcMode, use mask to select them
-#define BM(x) (1ULL << (x))
-    // limited to 64 BOXes now to keep code simple
-    const uint64_t rcModeCopyMask = BM(BOXHEADADJ) | BM(BOXCAMSTAB) | BM(BOXCAMTRIG) | BM(BOXBEEPERON)
-        | BM(BOXLEDMAX) | BM(BOXLEDLOW) | BM(BOXLLIGHTS) | BM(BOXCALIB) | BM(BOXGOV) | BM(BOXOSD)
-        | BM(BOXTELEMETRY) | BM(BOXGTUNE) | BM(BOXBLACKBOX) | BM(BOXBLACKBOXERASE) | BM(BOXAIRMODE)
-        | BM(BOXANTIGRAVITY) | BM(BOXFPVANGLEMIX) | BM(BOXDSHOTREVERSE) | BM(BOX3DDISABLE);
-    STATIC_ASSERT(sizeof(rcModeCopyMask) * 8 >= CHECKBOX_ITEM_COUNT, copy_mask_too_small_for_boxes);
-    for (unsigned i = 0; i < CHECKBOX_ITEM_COUNT; i++) {
-        if ((rcModeCopyMask & BM(i))    // mode copy is enabled
-           && IS_RC_MODE_ACTIVE(i)) {    // mode is active
-            bitArraySet(&boxEnabledMask, i);
-        }
-    }
-#undef BM
-    // copy ARM state
-    if (ARMING_FLAG(ARMED))
-        bitArraySet(&boxEnabledMask, BOXARM);
-
-    // map boxId_e enabled bits to MSP status indexes
-    // only active boxIds are sent in status over MSP, other bits are not counted
-    unsigned mspBoxIdx = 0;           // index of active boxId (matches sent permanentId and boxNames)
-    for (boxId_e boxId = 0; boxId < CHECKBOX_ITEM_COUNT; boxId++) {
-        if (activeBoxIdGet(boxId)) {
-            if (bitArrayGet(&boxEnabledMask,  boxId))
-                bitArraySet(mspFlightModeFlags,  mspBoxIdx);      // box is enabled
-            mspBoxIdx++;                                          // box is active, count it
-        }
-    }
-    // return count of used bits
-    return mspBoxIdx;
-}
-
 static void serializeSDCardSummaryReply(sbuf_t *dst)
 {
 #ifdef USE_SDCARD
@@ -603,8 +319,8 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
         }
     }
 }
-#endif
-#endif
+#endif // USE_FLASHFS
+#endif // USE_OSD_SLAVE
 
 /*
  * Returns true if the command was processd, false otherwise.
@@ -704,9 +420,14 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         break;
     }
 
-    case MSP_VOLTAGE_METERS:
+    case MSP_VOLTAGE_METERS: {
         // write out id and voltage meter values, once for each meter we support
-        for (int i = 0; i < supportedVoltageMeterCount; i++) {
+        uint8_t count = supportedVoltageMeterCount;
+#ifndef USE_OSD_SLAVE
+        count = supportedVoltageMeterCount - (VOLTAGE_METER_ID_ESC_COUNT - getMotorCount());
+#endif
+
+        for (int i = 0; i < count; i++) {
 
             voltageMeter_t meter;
             uint8_t id = (uint8_t)voltageMeterIds[i];
@@ -716,10 +437,15 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
             sbufWriteU8(dst, (uint8_t)constrain(meter.filtered, 0, 255));
         }
         break;
+    }
 
-    case MSP_CURRENT_METERS:
+    case MSP_CURRENT_METERS: {
         // write out id and current meter values, once for each meter we support
-        for (int i = 0; i < supportedCurrentMeterCount; i++) {
+        uint8_t count = supportedVoltageMeterCount;
+#ifndef USE_OSD_SLAVE
+        count = supportedVoltageMeterCount - (VOLTAGE_METER_ID_ESC_COUNT - getMotorCount());
+#endif
+        for (int i = 0; i < count; i++) {
 
             currentMeter_t meter;
             uint8_t id = (uint8_t)currentMeterIds[i];
@@ -730,6 +456,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
             sbufWriteU16(dst, (uint16_t)constrain(meter.amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps (mA). Negative range is truncated to zero
         }
         break;
+    }
 
     case MSP_VOLTAGE_METER_CONFIG:
         // by using a sensor type and a sub-frame length it's possible to configure any type of voltage meter,
@@ -884,10 +611,8 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 }
 
 #ifdef USE_OSD_SLAVE
-static bool mspOsdSlaveProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
+static bool mspOsdSlaveProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 {
-    UNUSED(mspPostProcessFn);
-
     switch (cmdMSP) {
     case MSP_STATUS_EX:
     case MSP_STATUS:
@@ -917,10 +642,8 @@ static bool mspOsdSlaveProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostPro
 #endif
 
 #ifndef USE_OSD_SLAVE
-static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
+static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 {
-    UNUSED(mspPostProcessFn);
-
     switch (cmdMSP) {
     case MSP_STATUS_EX:
     case MSP_STATUS:
@@ -1167,6 +890,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_MIXER_CONFIG:
         sbufWriteU8(dst, mixerConfig()->mixerMode);
+        sbufWriteU8(dst, mixerConfig()->yaw_motors_reversed);
         break;
 
     case MSP_RX_CONFIG:
@@ -1285,10 +1009,12 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #ifdef BLACKBOX
         sbufWriteU8(dst, 1); //Blackbox supported
         sbufWriteU8(dst, blackboxConfig()->device);
-        sbufWriteU8(dst, blackboxConfig()->rate_num);
-        sbufWriteU8(dst, blackboxConfig()->rate_denom);
+        sbufWriteU8(dst, blackboxGetRateNum());
+        sbufWriteU8(dst, blackboxGetRateDenom());
+        sbufWriteU8(dst, blackboxConfig()->p_denom);
 #else
         sbufWriteU8(dst, 0); // Blackbox not supported
+        sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
@@ -1409,10 +1135,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     return true;
 }
 
-static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *arg, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
+static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *arg, sbuf_t *dst)
 {
-    UNUSED(mspPostProcessFn);
-
     switch (cmdMSP) {
     case MSP_BOXNAMES:
         {
@@ -1819,8 +1543,15 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         // Don't allow config to be updated while Blackbox is logging
         if (blackboxMayEditConfig()) {
             blackboxConfigMutable()->device = sbufReadU8(src);
-            blackboxConfigMutable()->rate_num = sbufReadU8(src);
-            blackboxConfigMutable()->rate_denom = sbufReadU8(src);
+            const int rateNum = sbufReadU8(src); // was rate_num
+            const int rateDenom = sbufReadU8(src); // was rate_denom
+            if (sbufBytesRemaining(src) >= 1) {
+                // p_denom specified, so use it directly
+                blackboxConfigMutable()->p_denom = sbufReadU8(src);
+            } else {
+                // p_denom not specified in MSP, so calculate it from old rateNum and rateDenom
+                blackboxConfigMutable()->p_denom = blackboxCalculatePDenom(rateNum, rateDenom);
+            }
         }
         break;
 #endif
@@ -1934,6 +1665,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
         sbufReadU8(src);
 #endif
+        if (sbufBytesRemaining(src) >= 1) {
+            mixerConfigMutable()->yaw_motors_reversed = sbufReadU8(src);
+        }
         break;
 
     case MSP_SET_RX_CONFIG:
@@ -2131,12 +1865,12 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
 
     case MSP_SET_VOLTAGE_METER_CONFIG: {
-        int id = sbufReadU8(src);
+        int8_t id = sbufReadU8(src);
 
         //
         // find and configure an ADC voltage sensor
         //
-        int voltageSensorADCIndex;
+        int8_t voltageSensorADCIndex;
         for (voltageSensorADCIndex = 0; voltageSensorADCIndex < MAX_VOLTAGE_SENSOR_ADC; voltageSensorADCIndex++) {
             if (id == voltageMeterADCtoIDMap[voltageSensorADCIndex]) {
                 break;
@@ -2149,7 +1883,9 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             voltageSensorADCConfigMutable(voltageSensorADCIndex)->vbatresdivmultiplier = sbufReadU8(src);
         } else {
             // if we had any other types of voltage sensor to configure, this is where we'd do it.
-            return -1;
+            sbufReadU8(src);
+            sbufReadU8(src);
+            sbufReadU8(src);
         }
         break;
     }
@@ -2168,11 +1904,11 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 currentSensorVirtualConfigMutable()->offset = sbufReadU16(src);
                 break;
 #endif
-
             default:
-                return -1;
+                sbufReadU16(src);
+                sbufReadU16(src);
+                break;
         }
-
         break;
     }
 
@@ -2281,13 +2017,13 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
     if (mspCommonProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
 #ifndef USE_OSD_SLAVE
-    } else if (mspFcProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
+    } else if (mspFcProcessOutCommand(cmdMSP, dst)) {
         ret = MSP_RESULT_ACK;
-    } else if ((ret = mspFcProcessOutCommandWithArg(cmdMSP, src, dst, mspPostProcessFn)) != MSP_RESULT_CMD_UNKNOWN) {
+    } else if ((ret = mspFcProcessOutCommandWithArg(cmdMSP, src, dst)) != MSP_RESULT_CMD_UNKNOWN) {
         /* ret */;
 #endif
 #ifdef USE_OSD_SLAVE
-    } else if (mspOsdSlaveProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
+    } else if (mspOsdSlaveProcessOutCommand(cmdMSP, dst)) {
         ret = MSP_RESULT_ACK;
 #endif
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
@@ -2386,18 +2122,13 @@ void mspFcProcessReply(mspPacket_t *reply)
     }
 }
 
-/*
- * Return a pointer to the process command function
- */
-#ifndef USE_OSD_SLAVE
-void mspFcInit(void)
-{
-    initActiveBoxIds();
-}
-#endif
-
 #ifdef USE_OSD_SLAVE
 void mspOsdSlaveInit(void)
 {
 }
-#endif
+#else
+void mspFcInit(void)
+{
+    initActiveBoxIds();
+}
+#endif // USE_OSD_SLAVE

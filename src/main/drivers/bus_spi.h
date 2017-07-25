@@ -82,28 +82,33 @@ typedef enum SPIDevice {
 
 #endif
 
+// Macros to convert between CLI bus number and SPIDevice.
+#define SPI_CFG_TO_DEV(x)   ((x) - 1)
+#define SPI_DEV_TO_CFG(x)   ((x) + 1)
+
 void spiPreInitCs(ioTag_t iotag);
 bool spiInit(SPIDevice device);
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor);
 uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data);
 bool spiIsBusBusy(SPI_TypeDef *instance);
 
-bool spiTransfer(SPI_TypeDef *instance, uint8_t *rxData, const uint8_t *txData, int len);
+bool spiTransfer(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len);
 
 uint16_t spiGetErrorCounter(SPI_TypeDef *instance);
 void spiResetErrorCounter(SPI_TypeDef *instance);
 SPIDevice spiDeviceByInstance(SPI_TypeDef *instance);
+SPI_TypeDef *spiInstanceByDevice(SPIDevice device);
 
-bool spiBusTransfer(const busDevice_t *bus, uint8_t *rxData, const uint8_t *txData, int length);
+bool spiBusTransfer(const busDevice_t *bus, const uint8_t *txData, uint8_t *rxData, int length);
 
 #if defined(USE_HAL_DRIVER)
 SPI_HandleTypeDef* spiHandleByInstance(SPI_TypeDef *instance);
-DMA_HandleTypeDef* spiSetDMATransmit(DMA_Stream_TypeDef *Stream, uint32_t Channel, SPI_TypeDef *Instance, uint8_t *pData, uint16_t Size);
+DMA_HandleTypeDef* spiSetDMATransmit(DMA_Stream_TypeDef *Stream, uint32_t Channel, SPI_TypeDef *Instance, const uint8_t *pData, uint16_t Size);
 #endif
 
-bool spiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data);
-bool spiReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data);
-uint8_t spiReadRegister(const busDevice_t *bus, uint8_t reg);
+bool spiBusWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data);
+bool spiBusReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data, uint8_t length);
+uint8_t spiBusReadRegister(const busDevice_t *bus, uint8_t reg);
 void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance);
 
 typedef struct spiPinConfig_s {

@@ -70,6 +70,10 @@
 #define ACC_MPU6000_ALIGN        CW180_DEG
 #endif
 
+// XXX Temporary turn this off while bus code manipulation
+#undef USE_DASHBOARD
+#undef USE_I2C_OLED_DISPLAY
+
 // Support for iFlight OMNIBUS F4 V3
 // Has ICM20608 instead of MPU6000
 // OMNIBUSF4SD is linked with both MPU6000 and MPU6500 drivers
@@ -90,12 +94,20 @@
 //#define MAG_NAZA_ALIGN CW180_DEG_FLIP  // Ditto
 
 #define BARO
-#define USE_BARO_MS5611
 #if defined(OMNIBUSF4SD)
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 #define BMP280_SPI_INSTANCE     SPI3
 #define BMP280_CS_PIN           PB3 // v1
+#endif
+#define USE_BARO_BMP280
+#define USE_BARO_MS5611
+#define BARO_I2C_INSTANCE       (I2CDEV_2)
+
+#if defined(OMNIBUSF4SD)
+#define DEFAULT_BARO_SPI_BMP280
+#else
+#define DEFAULT_BARO_BMP280
 #endif
 
 #define OSD
@@ -141,7 +153,6 @@
 #define USE_UART1
 #define UART1_RX_PIN            PA10
 #define UART1_TX_PIN            PA9
-#define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
 #define USE_UART3
 #define UART3_RX_PIN            PB11
@@ -194,19 +205,22 @@
 #define I2C3_SDA                NONE // PC9, CH6
 #endif
 #define I2C_DEVICE              (I2CDEV_2)
-#define OLED_I2C_INSTANCE              (I2CDEV_3)
 
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PC1  // Direct from CRNT pad (part of onboard sensor for Pro)
 #define VBAT_ADC_PIN            PC2  // 11:1 (10K + 1K) divider
+#ifdef DYSF4PRO
+#define RSSI_ADC_PIN            PC3  // Direct from RSSI pad
+#else
 #define RSSI_ADC_PIN            PA0  // Direct from RSSI pad
+#endif
 
 #define TRANSPONDER
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 
 #define DEFAULT_FEATURES        (FEATURE_OSD)
-#define AVOID_UART1_FOR_PWM_PPM
+
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA (0xffff & ~(BIT(14)|BIT(13)))
@@ -215,8 +229,8 @@
 #define TARGET_IO_PORTD BIT(2)
 
 #ifdef OMNIBUSF4SD
-#define USABLE_TIMER_CHANNEL_COUNT 13
+#define USABLE_TIMER_CHANNEL_COUNT 15
 #else
-#define USABLE_TIMER_CHANNEL_COUNT 12
+#define USABLE_TIMER_CHANNEL_COUNT 14
 #endif
 #define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9))

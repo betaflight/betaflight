@@ -1373,6 +1373,9 @@ __STATIC_INLINE uint16_t LL_SPI_ReceiveData16(SPI_TypeDef *SPIx)
   * @param  TxData Value between Min_Data=0x00 and Max_Data=0xFF
   * @retval None
   */
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
 __STATIC_INLINE void LL_SPI_TransmitData8(SPI_TypeDef *SPIx, uint8_t TxData)
 {
   *((__IO uint8_t *)&SPIx->DR) = TxData;
@@ -1389,6 +1392,7 @@ __STATIC_INLINE void LL_SPI_TransmitData16(SPI_TypeDef *SPIx, uint16_t TxData)
 {
   *((__IO uint16_t *)&SPIx->DR) = TxData;
 }
+#pragma GCC diagnostic pop
 
 /**
   * @}
@@ -1397,7 +1401,7 @@ __STATIC_INLINE void LL_SPI_TransmitData16(SPI_TypeDef *SPIx, uint16_t TxData)
 /** @defgroup SPI_LL_EF_Init Initialization and de-initialization functions
   * @{
   */
-
+  
 ErrorStatus LL_SPI_DeInit(SPI_TypeDef *SPIx);
 ErrorStatus LL_SPI_Init(SPI_TypeDef *SPIx, LL_SPI_InitTypeDef *SPI_InitStruct);
 void        LL_SPI_StructInit(LL_SPI_InitTypeDef *SPI_InitStruct);

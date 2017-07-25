@@ -21,7 +21,9 @@
 
 #include <platform.h>
 
-#ifdef USE_SPI
+#if defined(USE_SPI) && !defined(USE_LOWLEVEL_DRIVER)
+
+#include "common/utils.h"
 
 #include "drivers/bus.h"
 #include "drivers/bus_spi.h"
@@ -97,6 +99,15 @@ SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
 SPI_HandleTypeDef* spiHandleByInstance(SPI_TypeDef *instance)
 {
     return &spiDevice[spiDeviceByInstance(instance)].hspi;
+}
+
+SPI_TypeDef *spiInstanceByDevice(SPIDevice device)
+{
+    if (device >= SPIDEV_COUNT) {
+        return NULL;
+    }
+
+    return spiDevice[device].dev;
 }
 
 DMA_HandleTypeDef* dmaHandleByInstance(SPI_TypeDef *instance)
@@ -204,8 +215,7 @@ void spiInitDevice(SPIDevice device)
 
 bool spiInit(SPIDevice device)
 {
-    switch (device)
-    {
+    switch (device) {
     case SPIINVALID:
         return false;
     case SPIDEV_1:
@@ -243,8 +253,9 @@ bool spiInit(SPIDevice device)
 uint32_t spiTimeoutUserCallback(SPI_TypeDef *instance)
 {
     SPIDevice device = spiDeviceByInstance(instance);
-    if (device == SPIINVALID)
+    if (device == SPIINVALID) {
         return -1;
+    }
     spiDevice[device].errorCount++;
     return spiDevice[device].errorCount;
 }
@@ -261,65 +272,57 @@ bool spiIsBusBusy(SPI_TypeDef *instance)
         return false;
 }
 
-bool spiTransfer(SPI_TypeDef *instance, uint8_t *rxData, const uint8_t *txData, int len)
+bool spiTransfer(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len)
 {
     SPIDevice device = spiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
-    if (!rxData) // Tx only
-    {
-        status = HAL_SPI_Transmit(&spiDevice[device].hspi, (uint8_t *)txData, len, SPI_DEFAULT_TIMEOUT);
-    }
-    else if (!txData) // Rx only
-    {
+    if (!rxData) { // Tx only
+        status = HAL_SPI_Transmit(&spiDevice[device].hspi, txData, len, SPI_DEFAULT_TIMEOUT);
+    } else if (!txData) { // Rx only
         status = HAL_SPI_Receive(&spiDevice[device].hspi, rxData, len, SPI_DEFAULT_TIMEOUT);
-    }
-    else // Tx and Rx
-    {
+    } else { // Tx and Rx
         status = HAL_SPI_TransmitReceive(&spiDevice[device].hspi, txData, rxData, len, SPI_DEFAULT_TIMEOUT);
     }
-
-    if ( status != HAL_OK)
+    if (status != HAL_OK) {
         spiTimeoutUserCallback(instance);
-
+    }
     return true;
 }
 
 static bool spiBusReadBuffer(const busDevice_t *bus, uint8_t *out, int len)
 {
-    const HAL_StatusTypeDef status = HAL_SPI_Receive(bus->spi.handle, out, len, SPI_DEFAULT_TIMEOUT);
+    const HAL_StatusTypeDef status = HAL_SPI_Receive(bus->busdev_u.spi.handle, out, len, SPI_DEFAULT_TIMEOUT);
     if (status != HAL_OK) {
-        spiTimeoutUserCallback(bus->spi.instance);
+        spiTimeoutUserCallback(bus->busdev_u.spi.instance);
     }
     return true;
 }
 
-// return uint8_t value or -1 when failure
 uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t txByte)
 {
     uint8_t rxByte;
 
-    spiTransfer(instance, &rxByte, &txByte, 1);
+    spiTransfer(instance, &txByte, &rxByte, 1);
     return rxByte;
 }
 
-// return uint8_t value or -1 when failure
 static uint8_t spiBusTransferByte(const busDevice_t *bus, uint8_t in)
 {
-    const HAL_StatusTypeDef status = HAL_SPI_TransmitReceive(bus->spi.handle, &in, &in, 1, SPI_DEFAULT_TIMEOUT);
+    const HAL_StatusTypeDef status = HAL_SPI_TransmitReceive(bus->busdev_u.spi.handle, &in, &in, 1, SPI_DEFAULT_TIMEOUT);
     if (status != HAL_OK) {
-        spiTimeoutUserCallback(bus->spi.instance);
+        spiTimeoutUserCallback(bus->busdev_u.spi.instance);
     }
     return in;
 }
 
-bool spiBusTransfer(const busDevice_t *bus, uint8_t *rxData, const uint8_t *txData, int len)
+bool spiBusTransfer(const busDevice_t *bus, const uint8_t *txData, uint8_t *rxData, int len)
 {
-    IOLo(bus->spi.csnPin);
-    const HAL_StatusTypeDef status = HAL_SPI_TransmitReceive(bus->spi.handle, txData, rxData, len, SPI_DEFAULT_TIMEOUT);
-    IOHi(bus->spi.csnPin);
+    IOLo(bus->busdev_u.spi.csnPin);
+    const HAL_StatusTypeDef status = HAL_SPI_TransmitReceive(bus->busdev_u.spi.handle, txData, rxData, len, SPI_DEFAULT_TIMEOUT);
+    IOHi(bus->busdev_u.spi.csnPin);
     if (status != HAL_OK) {
-        spiTimeoutUserCallback(bus->spi.instance);
+        spiTimeoutUserCallback(bus->busdev_u.spi.instance);
     }
     return true;
 }
@@ -347,64 +350,67 @@ void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
 uint16_t spiGetErrorCounter(SPI_TypeDef *instance)
 {
     SPIDevice device = spiDeviceByInstance(instance);
-    if (device == SPIINVALID)
+    if (device == SPIINVALID) {
         return 0;
+    }
     return spiDevice[device].errorCount;
 }
 
 void spiResetErrorCounter(SPI_TypeDef *instance)
 {
     SPIDevice device = spiDeviceByInstance(instance);
-    if (device != SPIINVALID)
+    if (device != SPIINVALID) {
         spiDevice[device].errorCount = 0;
+    }
 }
 
-bool spiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
+bool spiBusWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
 {
-    IOLo(bus->spi.csnPin);
+    IOLo(bus->busdev_u.spi.csnPin);
     spiBusTransferByte(bus, reg);
     spiBusTransferByte(bus, data);
-    IOHi(bus->spi.csnPin);
+    IOHi(bus->busdev_u.spi.csnPin);
 
     return true;
 }
 
-bool spiReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data)
+bool spiBusReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data, uint8_t length)
 {
-    IOLo(bus->spi.csnPin);
+    IOLo(bus->busdev_u.spi.csnPin);
     spiBusTransferByte(bus, reg | 0x80); // read transaction
     spiBusReadBuffer(bus, data, length);
-    IOHi(bus->spi.csnPin);
+    IOHi(bus->busdev_u.spi.csnPin);
 
     return true;
 }
 
-uint8_t spiReadRegister(const busDevice_t *bus, uint8_t reg)
+uint8_t spiBusReadRegister(const busDevice_t *bus, uint8_t reg)
 {
     uint8_t data;
-    IOLo(bus->spi.csnPin);
+    IOLo(bus->busdev_u.spi.csnPin);
     spiBusTransferByte(bus, reg | 0x80); // read transaction
     spiBusReadBuffer(bus, &data, 1);
-    IOHi(bus->spi.csnPin);
+    IOHi(bus->busdev_u.spi.csnPin);
 
     return data;
 }
 
 void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance)
 {
-    bus->spi.instance = instance;
-    bus->spi.handle = spiHandleByInstance(instance);
+    bus->busdev_u.spi.instance = instance;
+    bus->busdev_u.spi.handle = spiHandleByInstance(instance);
 }
 
 void dmaSPIIRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     SPIDevice device = descriptor->userParam;
-    if (device != SPIINVALID)
+    if (device != SPIINVALID) {
         HAL_DMA_IRQHandler(&spiDevice[device].hdma);
+    }
 }
 
 
-DMA_HandleTypeDef* spiSetDMATransmit(DMA_Stream_TypeDef *Stream, uint32_t Channel, SPI_TypeDef *Instance, uint8_t *pData, uint16_t Size)
+DMA_HandleTypeDef* spiSetDMATransmit(DMA_Stream_TypeDef *Stream, uint32_t Channel, SPI_TypeDef *Instance, const uint8_t *pData, uint16_t Size)
 {
     SPIDevice device = spiDeviceByInstance(Instance);
 
@@ -436,7 +442,7 @@ DMA_HandleTypeDef* spiSetDMATransmit(DMA_Stream_TypeDef *Stream, uint32_t Channe
 
     //HAL_CLEANCACHE(pData,Size);
     // And Transmit
-    HAL_SPI_Transmit_DMA(&spiDevice[device].hspi, pData, Size);
+    HAL_SPI_Transmit_DMA(&spiDevice[device].hspi, CONST_CAST(uint8_t*, pData), Size);
 
     return &spiDevice[device].hdma;
 }
