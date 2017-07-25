@@ -214,6 +214,9 @@
 
 #define MSP_CAMERA_CONTROL              98
 
+#define MSP_BEEPER_CONFIG               99
+#define MSP_SET_BEEPER_CONFIG           100
+
 //
 // OSD specific
 //
