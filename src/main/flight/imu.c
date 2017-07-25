@@ -224,7 +224,12 @@ void imuRebaseEarthToBody(void) {
     q2 = q2*cosa2 - q1*sina2;
     q3 = q3*cosa2 + q0*sina2;
 
-    // normalize ???
+    // Normalise quaternion
+    float Norm = 1.0/sqrtf(q0*q0 + q1*q1 + q2*q2 + q3*q3);
+    q0 *= Norm;
+    q1 *= Norm;
+    q2 *= Norm;
+    q3 *= Norm;
 }
 
 // rotate acc into Earth frame and calculate acceleration in it
