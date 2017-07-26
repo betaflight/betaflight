@@ -110,7 +110,6 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .crash_recovery_rate = 100, // degrees/second
         .crash_dthreshold = 50,     // degrees/second/second
         .crash_gthreshold = 400,    // degrees/second
-        .crash_setpoint_threshold = 350, // degrees/second
         .crash_recovery = PID_CRASH_RECOVERY_OFF, // off by default
         .horizon_tilt_effect = 75,
         .horizon_tilt_expert_mode = false
@@ -454,7 +453,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                 if (motorMixRange >= 1.0f
                         && ABS(delta) > crashDtermThreshold
                         && ABS(errorRate) > crashGyroThreshold
-                        && ABS(getSetpointRate(axis)) < crashSetpointThreshold) {
+                        && ABS(getSetpointRate(axis)) < crashGyroThreshold) {
                     inCrashRecoveryMode = true;
                     crashDetectedAtUs = currentTimeUs;
                     if (pidProfile->crash_recovery == PID_CRASH_RECOVERY_BEEP) {
