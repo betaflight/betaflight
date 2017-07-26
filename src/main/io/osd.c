@@ -806,55 +806,55 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 {
     // default positions are attached to origin points
     // this way the ui looks similar no matter what the current screen resolution is
-    osdConfig->item[OSD_ITEM_TIMER_2]       = (osdItem_t) {   1,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_DEBUG]              = (osdItem_t) {   1,  0, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_GPS_LAT]            = (osdItem_t) {   1,  2, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE};
+    OSD_INIT(osdConfig, OSD_ITEM_TIMER_2     ,   1,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_DEBUG            ,   1,  0, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_GPS_LAT          ,   1,  2, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
 
-    osdConfig->item[OSD_RSSI_VALUE]         = (osdItem_t) {  -6,  1, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_MAIN_BATT_VOLTAGE]  = (osdItem_t) {   2,  1, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_AVG_CELL_VOLTAGE]   = (osdItem_t) {   2,  2, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_DISARMED]           = (osdItem_t) {   4,  4, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_GPS_SATS]           = (osdItem_t) {   5,  1, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_GPS_LON]            = (osdItem_t) {   4,  2, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_ESC_TMP]            = (osdItem_t) {   4,  2, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_ESC_RPM]            = (osdItem_t) {   5,  2, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE};
+    OSD_INIT(osdConfig, OSD_RSSI_VALUE       ,  -6,  1, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_MAIN_BATT_VOLTAGE,   2,  1, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_AVG_CELL_VOLTAGE ,   2,  2, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_DISARMED         ,   4,  4, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_GPS_SATS         ,   5,  1, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_GPS_LON          ,   4,  2, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_ESC_TMP          ,   4,  2, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_ESC_RPM          ,   5,  2, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE);
 
-    osdConfig->item[OSD_ITEM_TIMER_1]       = (osdItem_t) {  -7,  1, OSD_FLAG_ORIGIN_NE | OSD_FLAG_VISIBLE};
+    OSD_INIT(osdConfig, OSD_ITEM_TIMER_1     ,  -7,  1, OSD_FLAG_ORIGIN_NE | OSD_FLAG_VISIBLE);
 
-    osdConfig->item[OSD_GPS_SPEED]          = (osdItem_t) {  -3, -1, OSD_FLAG_ORIGIN_E | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_ALTITUDE]           = (osdItem_t) {  -6,  0, OSD_FLAG_ORIGIN_E | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_NUMERICAL_HEADING]  = (osdItem_t) {  -6,  2, OSD_FLAG_ORIGIN_E | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_NUMERICAL_VARIO]    = (osdItem_t) {  -6,  1, OSD_FLAG_ORIGIN_E | OSD_FLAG_VISIBLE};
+    OSD_INIT(osdConfig, OSD_GPS_SPEED        ,  -3, -1, OSD_FLAG_ORIGIN_E | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_ALTITUDE         ,  -6,  0, OSD_FLAG_ORIGIN_E | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_NUMERICAL_HEADING,  -6,  2, OSD_FLAG_ORIGIN_E | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_NUMERICAL_VARIO  ,  -6,  1, OSD_FLAG_ORIGIN_E | OSD_FLAG_VISIBLE);
 
-    osdConfig->item[OSD_VTX_CHANNEL]        = (osdItem_t) {  -4, -4, OSD_FLAG_ORIGIN_SE | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_PIDRATE_PROFILE]    = (osdItem_t) {  -4, -5, OSD_FLAG_ORIGIN_SE | OSD_FLAG_VISIBLE};
+    OSD_INIT(osdConfig, OSD_VTX_CHANNEL      ,  -4, -4, OSD_FLAG_ORIGIN_SE | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_PIDRATE_PROFILE  ,  -4, -5, OSD_FLAG_ORIGIN_SE | OSD_FLAG_VISIBLE);
 
-    osdConfig->item[OSD_FLYMODE]            = (osdItem_t) {  -1, -5, OSD_FLAG_ORIGIN_S | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_CRAFT_NAME]         = (osdItem_t) {  -4, -4, OSD_FLAG_ORIGIN_S | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_POWER]              = (osdItem_t) {   1, -5, OSD_FLAG_ORIGIN_S | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_MAIN_BATT_USAGE]    = (osdItem_t) {  -6, -3, OSD_FLAG_ORIGIN_S | OSD_FLAG_VISIBLE};
+    OSD_INIT(osdConfig, OSD_FLYMODE          ,  -1, -5, OSD_FLAG_ORIGIN_S | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_CRAFT_NAME       ,  -4, -4, OSD_FLAG_ORIGIN_S | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_POWER            ,   1, -5, OSD_FLAG_ORIGIN_S | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_MAIN_BATT_USAGE  ,  -6, -3, OSD_FLAG_ORIGIN_S | OSD_FLAG_VISIBLE);
 
-    osdConfig->item[OSD_CURRENT_DRAW]       = (osdItem_t) {   1,  0, OSD_FLAG_ORIGIN_SW | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_MAH_DRAWN]          = (osdItem_t) {   1, -1, OSD_FLAG_ORIGIN_SW | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_ROLL_PIDS]          = (osdItem_t) {   7,  -2, OSD_FLAG_ORIGIN_SW | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_PITCH_PIDS]         = (osdItem_t) {   7,  -1, OSD_FLAG_ORIGIN_SW | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_YAW_PIDS]           = (osdItem_t) {   5,  -0, OSD_FLAG_ORIGIN_SW | OSD_FLAG_VISIBLE};
+    OSD_INIT(osdConfig, OSD_CURRENT_DRAW     ,   1,  0, OSD_FLAG_ORIGIN_SW | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_MAH_DRAWN        ,   1, -1, OSD_FLAG_ORIGIN_SW | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_ROLL_PIDS        ,   7,  -2, OSD_FLAG_ORIGIN_SW | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_PITCH_PIDS       ,   7,  -1, OSD_FLAG_ORIGIN_SW | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_YAW_PIDS         ,   5,  -0, OSD_FLAG_ORIGIN_SW | OSD_FLAG_VISIBLE);
 
-    osdConfig->item[OSD_PITCH_ANGLE]        = (osdItem_t) {   1,  1, OSD_FLAG_ORIGIN_W | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_ROLL_ANGLE]         = (osdItem_t) {   1,  2, OSD_FLAG_ORIGIN_W | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_THROTTLE_POS]       = (osdItem_t) {   1,  0, OSD_FLAG_ORIGIN_W | OSD_FLAG_VISIBLE};
+    OSD_INIT(osdConfig, OSD_PITCH_ANGLE      ,   1,  1, OSD_FLAG_ORIGIN_W | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_ROLL_ANGLE       ,   1,  2, OSD_FLAG_ORIGIN_W | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_THROTTLE_POS     ,   1,  0, OSD_FLAG_ORIGIN_W | OSD_FLAG_VISIBLE);
 
-    osdConfig->item[OSD_WARNINGS]           = (osdItem_t) {  -5,  3, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_HOME_DIST]          = (osdItem_t) {   1,  2, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_HOME_DIR]           = (osdItem_t) {   0,  2, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE};
-    osdConfig->item[OSD_COMPASS_BAR]        = (osdItem_t) {  -4,  1, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE};
+    OSD_INIT(osdConfig, OSD_WARNINGS         ,  -5,  3, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_HOME_DIST        ,   1,  2, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_HOME_DIR         ,   0,  2, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_COMPASS_BAR      ,  -4,  1, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE);
 
     // Crosshair uses 3 chars, from center offset 1 to the left
-    osdConfig->item[OSD_CROSSHAIRS]         = (osdItem_t) { -1,  0, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE};
+    OSD_INIT(osdConfig, OSD_CROSSHAIRS       , -1,  0, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE);
     // AH top center of region is 4 to the left
-    osdConfig->item[OSD_ARTIFICIAL_HORIZON] = (osdItem_t) {  0, -4, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE};
+    OSD_INIT(osdConfig, OSD_ARTIFICIAL_HORIZON ,  0, -4, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE);
     // Horizon is centered
-    osdConfig->item[OSD_HORIZON_SIDEBARS]   = (osdItem_t) {  0,  0, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE};
+    OSD_INIT(osdConfig, OSD_HORIZON_SIDEBARS ,  0,  0, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE);
 
     osdConfig->enabled_stats[OSD_STAT_MAX_SPEED]       = true;
     osdConfig->enabled_stats[OSD_STAT_MIN_BATTERY]     = true;
