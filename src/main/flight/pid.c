@@ -451,7 +451,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                 if (motorMixRange >= 1.0f
                         && ABS(delta) > crashDtermThreshold
                         && ABS(errorRate) > crashGyroThreshold
-                        && ABS(getSetpointRate(axis)) < crashGyroThreshold) {
+                        && ABS(getSetpointRate(axis)) < (crashGyroThreshold - 50)) {
                     inCrashRecoveryMode = true;
                     crashDetectedAtUs = currentTimeUs;
                     if (pidProfile->crash_recovery == PID_CRASH_RECOVERY_BEEP) {
