@@ -266,7 +266,6 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
     crashRecoveryRate = pidProfile->crash_recovery_rate;
     crashGyroThreshold = pidProfile->crash_gthreshold;
     crashDtermThreshold = pidProfile->crash_dthreshold;
-    crashSetpointThreshold = pidProfile->crash_setpoint_threshold;
 }
 
 void pidInit(const pidProfile_t *pidProfile)
