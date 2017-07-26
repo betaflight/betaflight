@@ -340,7 +340,7 @@ TEST(OsdTest, TestStatsImperial)
     displayPortTestBufferSubstring(2, row++, "MIN BATTERY       : 14.7%c", SYM_VOLT);
     displayPortTestBufferSubstring(2, row++, "END BATTERY       : 15.2%c", SYM_VOLT);
     displayPortTestBufferSubstring(2, row++, "MIN RSSI          : 25%%");
-    displayPortTestBufferSubstring(2, row++, "MAX ALTITUDE      :  6.5%c", SYM_FT);
+    displayPortTestBufferSubstring(2, row++, "MAX ALTITUDE      : 6.5%c", SYM_FT);
 }
 
 /*
@@ -390,7 +390,7 @@ TEST(OsdTest, TestStatsMetric)
     displayPortTestBufferSubstring(2, row++, "MIN BATTERY       : 14.7%c", SYM_VOLT);
     displayPortTestBufferSubstring(2, row++, "END BATTERY       : 15.2%c", SYM_VOLT);
     displayPortTestBufferSubstring(2, row++, "MIN RSSI          : 25%%");
-    displayPortTestBufferSubstring(2, row++, "MAX ALTITUDE      :  2.0%c", SYM_M);
+    displayPortTestBufferSubstring(2, row++, "MAX ALTITUDE      : 2.0%c", SYM_M);
 }
 
 /*
@@ -406,7 +406,7 @@ TEST(OsdTest, TestAlarms)
     // the following OSD elements are visible
     osdConfigMutable()->item_pos[OSD_RSSI_VALUE]        = OSD_POS(8, 1)  | VISIBLE_FLAG;
     osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 1) | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_1]      = OSD_POS(20, 1)  | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_1]      = OSD_POS(20, 1) | VISIBLE_FLAG;
     osdConfigMutable()->item_pos[OSD_ITEM_TIMER_2]      = OSD_POS(1, 1)  | VISIBLE_FLAG;
     osdConfigMutable()->item_pos[OSD_ALTITUDE]          = OSD_POS(23, 7) | VISIBLE_FLAG;
 
@@ -452,7 +452,7 @@ TEST(OsdTest, TestAlarms)
         displayPortTestBufferSubstring(12, 1, "%c16.8%c", SYM_BATT_FULL, SYM_VOLT);
         displayPortTestBufferSubstring(1,  1, "%c00:", SYM_FLY_M); // only test the minute part of the timer
         displayPortTestBufferSubstring(20, 1, "%c01:", SYM_ON_M); // only test the minute part of the timer
-        displayPortTestBufferSubstring(23, 7, " 0.0%c", SYM_M);
+        displayPortTestBufferSubstring(23, 7, "   0.0%c", SYM_M);
     }
 
     // when
@@ -535,7 +535,7 @@ TEST(OsdTest, TestElementAmperage)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(1, 12, "%c0.00", SYM_AMP);
+    displayPortTestBufferSubstring(1, 12, "  0.00%c", SYM_AMP);
 
     // when
     simulationBatteryAmperage = 2156;
@@ -543,7 +543,7 @@ TEST(OsdTest, TestElementAmperage)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(1, 12, "%c21.56", SYM_AMP);
+    displayPortTestBufferSubstring(1, 12, " 21.56%c", SYM_AMP);
 
     // when
     simulationBatteryAmperage = 12345;
@@ -551,7 +551,7 @@ TEST(OsdTest, TestElementAmperage)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(1, 12, "%c123.45", SYM_AMP);
+    displayPortTestBufferSubstring(1, 12, "123.45%c", SYM_AMP);
 }
 
 /*
@@ -568,7 +568,7 @@ TEST(OsdTest, TestElementMahDrawn)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(1, 11, "%c0", SYM_MAH);
+    displayPortTestBufferSubstring(1, 11, "   0%c", SYM_MAH);
 
     // when
     simulationMahDrawn = 4;
@@ -576,7 +576,7 @@ TEST(OsdTest, TestElementMahDrawn)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(1, 11, "%c4", SYM_MAH);
+    displayPortTestBufferSubstring(1, 11, "   4%c", SYM_MAH);
 
     // when
     simulationMahDrawn = 15;
@@ -584,7 +584,7 @@ TEST(OsdTest, TestElementMahDrawn)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(1, 11, "%c15", SYM_MAH);
+    displayPortTestBufferSubstring(1, 11, "  15%c", SYM_MAH);
 
     // when
     simulationMahDrawn = 246;
@@ -592,7 +592,7 @@ TEST(OsdTest, TestElementMahDrawn)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(1, 11, "%c246", SYM_MAH);
+    displayPortTestBufferSubstring(1, 11, " 246%c", SYM_MAH);
 
     // when
     simulationMahDrawn = 1042;
@@ -600,7 +600,7 @@ TEST(OsdTest, TestElementMahDrawn)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(1, 11, "%c1042", SYM_MAH);
+    displayPortTestBufferSubstring(1, 11, "1042%c", SYM_MAH);
 }
 
 /*
@@ -620,7 +620,7 @@ TEST(OsdTest, TestElementAltitude)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(23, 7, " 0.0%c", SYM_M);
+    displayPortTestBufferSubstring(23, 7, "   0.0%c", SYM_M);
 
     // when
     simulationAltitude = 247;
@@ -628,7 +628,7 @@ TEST(OsdTest, TestElementAltitude)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(23, 7, " 2.4%c", SYM_M);
+    displayPortTestBufferSubstring(23, 7, "   2.4%c", SYM_M);
 
     // when
     simulationAltitude = 4247;
@@ -636,7 +636,7 @@ TEST(OsdTest, TestElementAltitude)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(23, 7, " 42.4%c", SYM_M);
+    displayPortTestBufferSubstring(23, 7, "  42.4%c", SYM_M);
 
     // when
     simulationAltitude = -247;
@@ -644,7 +644,7 @@ TEST(OsdTest, TestElementAltitude)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(23, 7, "-2.4%c", SYM_M);
+    displayPortTestBufferSubstring(23, 7, "  -2.4%c", SYM_M);
 }
 
 /*
