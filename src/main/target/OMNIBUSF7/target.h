@@ -53,8 +53,6 @@
 //#define USE_MPU_DATA_READY_SIGNAL
 //#define USE_EXTI
 
-#define USABLE_TIMER_CHANNEL_COUNT 16
-
 #define USE_VCP
 #define VBUS_SENSING_PIN        PC4
 
@@ -62,10 +60,10 @@
 #define UART1_RX_PIN            PA10
 #define UART1_TX_PIN            PA9
 
-//#define AVOID_UART2_FOR_PWM_PPM
-//#define USE_UART2
-//#define UART2_TX_PIN PA2 //not wired
-//#define UART2_RX_PIN PA3
+//#define AVOID_UART2_FOR_PWM_PPM // PPM is not working on RC pin anyway
+#define USE_UART2
+#define UART2_TX_PIN            NONE
+#define UART2_RX_PIN            PA3
 
 // Assigned to shared output I2C2
 #define USE_UART3
@@ -76,7 +74,10 @@
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
-#define SERIAL_PORT_COUNT 4
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT 7
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PE13 // (Hardware=0, PPM)
@@ -143,6 +144,9 @@
 #define BMP280_SPI_INSTANCE     SPI1
 #define BMP280_CS_PIN           PA1
 
+#define MAG
+#define USE_MAG_HMC5883
+
 #define SENSORS_SET (SENSOR_ACC | SENSOR_BARO)
 
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
@@ -159,8 +163,8 @@
 
 #define DEFAULT_FEATURES        (FEATURE_OSD)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#define SERIALRX_UART           SERIAL_PORT_USART2
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
-#define SERIALRX_UART           SERIAL_PORT_USART1
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -170,4 +174,6 @@
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 
-#define USED_TIMERS  ( TIM_N(1) | TIM_N(3) | TIM_N(4) )
+#define USABLE_TIMER_CHANNEL_COUNT 10
+
+#define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) )
