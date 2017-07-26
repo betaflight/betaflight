@@ -182,6 +182,17 @@
 
 // #define LED_STRIP
 
+//Following configuration needs to be reviewed, when LED is enabled, VCP stops to work
+//Until someone with deeper knowledge od DMA fixes it, LED are disabled in target
+#define WS2811_PIN                      PD12
+#define WS2811_TIMER                    TIM4
+#define WS2811_TIMER_CHANNEL            TIM_CHANNEL_1
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA2_ST4_HANDLER
+#define WS2811_DMA_STREAM               DMA2_Stream4
+#define WS2811_DMA_IT                   DMA_IT_TCIF2
+#define WS2811_DMA_CHANNEL              DMA_CHANNEL_6
+#define WS2811_TIMER_GPIO_AF            GPIO_AF2_TIM4
+
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #define DEFAULT_FEATURES        (FEATURE_OSD)
