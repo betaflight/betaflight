@@ -147,6 +147,7 @@ typedef enum {
 #define OSD_FLAG_VISIBLE_MASK (OSD_FLAG_VISIBLE)
 #define OSD_FLAG_ORIGIN_MASK  (OSD_FLAG_ORIGIN_N | OSD_FLAG_ORIGIN_E | OSD_FLAG_ORIGIN_S | OSD_FLAG_ORIGIN_W)
 
+#define OSD_INIT(_config, _item, _x, _y, _flags) { (_config)->item[(_item)] = (osdItem_t) {(_x), (_y), (int8_t)(_flags)}; }
 
 
 typedef struct {
