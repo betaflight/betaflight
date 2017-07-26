@@ -241,7 +241,6 @@ static int32_t crashRecoveryAngleDeciDegrees;
 static float crashRecoveryRate;
 static float crashDtermThreshold;
 static float crashGyroThreshold;
-static float crashSetpointThreshold;
 
 void pidInitConfig(const pidProfile_t *pidProfile) {
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
