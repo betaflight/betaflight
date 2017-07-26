@@ -405,11 +405,13 @@ TEST(OsdTest, TestAlarms)
 
     // and
     // the following OSD elements are visible
-    osdConfigMutable()->item[OSD_RSSI_VALUE] = (osdItem_t) {   8,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE};
-    osdConfigMutable()->item[OSD_MAIN_BATT_VOLTAGE] = (osdItem_t) {   12,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE};
-    osdConfigMutable()->item[OSD_ITEM_TIMER_1] = (osdItem_t) {  20,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE};
-    osdConfigMutable()->item[OSD_ITEM_TIMER_2] = (osdItem_t) {   1,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE};
-    osdConfigMutable()->item[OSD_ALTITUDE] = (osdItem_t) {   23,  7, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE};
+    OSD_INIT(osdConfigMutable(), OSD_TIMER_1 ,  -5,  3, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE);
+
+    OSD_INIT(osdConfigMutable(), OSD_RSSI_VALUE,    8,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfigMutable(), OSD_MAIN_BATT_VOLTAGE,    12,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfigMutable(), OSD_ITEM_TIMER_1,   20,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfigMutable(), OSD_ITEM_TIMER_2,    1,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfigMutable(), OSD_ALTITUDE,    23,  7, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
 
     // and
     // this set of alarm values
@@ -494,7 +496,7 @@ TEST(OsdTest, TestAlarms)
 TEST(OsdTest, TestElementRssi)
 {
     // given
-    osdConfigMutable()->item[OSD_RSSI_VALUE] = (osdItem_t) {   8,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE};
+    OSD_INIT(osdConfigMutable(), OSD_RSSI_VALUE,    8,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
     osdConfigMutable()->rssi_alarm = 0;
 
     // when
