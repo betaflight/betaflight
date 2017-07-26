@@ -229,6 +229,10 @@ bool imuRebaseEarthToBody(void) {
         q1 *= Norm;
         q2 *= Norm;
         q3 *= Norm;
+
+        // synchronize rotation matrix data
+        imuComputeRotationMatrix();
+
         return(true);
     }
     return(false);
