@@ -391,6 +391,73 @@ static CMS_Menu cmsx_menuFilterPerProfile = {
     .entries = cmsx_menuFilterPerProfileEntries,
 };
 
+static uint8_t cmsx_dstPidProfile;
+static uint8_t cmsx_dstControlRateProfile;
+
+static const char * const cmsx_ProfileNames[] = {
+    "-",
+    "1",
+    "2",
+    "3"
+};
+
+static OSD_TAB_t cmsx_PidProfileTable = { &cmsx_dstPidProfile, 3, cmsx_ProfileNames };
+static OSD_TAB_t cmsx_ControlRateProfileTable = { &cmsx_dstControlRateProfile, 3, cmsx_ProfileNames };
+
+static long cmsx_menuCopyProfile_onEnter(void)
+{
+    cmsx_dstPidProfile = 0;
+    cmsx_dstControlRateProfile = 0;
+
+    return 0;
+}
+
+static long cmsx_CopyPidProfile(displayPort_t *pDisplay, const void *ptr)
+{
+    UNUSED(pDisplay);
+    UNUSED(ptr);
+
+    if (cmsx_dstPidProfile > 0) {
+        copyPidProfile(cmsx_dstPidProfile - 1, getCurrentPidProfileIndex());
+    }
+
+    return 0;
+}
+
+static long cmsx_CopyControlRateProfile(displayPort_t *pDisplay, const void *ptr)
+{
+    UNUSED(pDisplay);
+    UNUSED(ptr);
+
+    if (cmsx_dstControlRateProfile > 0) {
+        copyControlRateProfile(cmsx_dstControlRateProfile - 1, getCurrentControlRateProfileIndex());
+    }
+
+    return 0;
+}
+
+static OSD_Entry cmsx_menuCopyProfileEntries[] = 
+{
+    { "-- COPY PROFILE --", OME_Label, NULL, NULL, 0},
+    
+    { "CPY PID PROF TO",   OME_TAB,      NULL,                        &cmsx_PidProfileTable, 0 },
+    { "COPY PP",           OME_Funcall,  cmsx_CopyPidProfile,         NULL, 0 },
+    { "CPY RATE PROF TO",  OME_TAB,      NULL,                        &cmsx_ControlRateProfileTable, 0 },
+    { "COPY RP",           OME_Funcall,  cmsx_CopyControlRateProfile, NULL, 0 },
+
+    { "BACK", OME_Back, NULL, NULL, 0 },
+    { NULL, OME_END, NULL, NULL, 0 }
+};
+
+CMS_Menu cmsx_menuCopyProfile = {
+    .GUARD_text = "XCPY",
+    .GUARD_type = OME_MENU,
+    .onEnter = cmsx_menuCopyProfile_onEnter,
+    .onExit = NULL,
+    .onGlobalExit = NULL,
+    .entries = cmsx_menuCopyProfileEntries,
+};
+
 static OSD_Entry cmsx_menuImuEntries[] =
 {
     { "-- IMU --", OME_Label, NULL, NULL, 0},
@@ -404,6 +471,7 @@ static OSD_Entry cmsx_menuImuEntries[] =
     {"RATE",      OME_Submenu, cmsMenuChange,                 &cmsx_menuRateProfile,                                         0},
 
     {"FILT GLB",  OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterGlobal,                                        0},
+    {"COPY PROF", OME_Submenu, cmsMenuChange,                 &cmsx_menuCopyProfile,                                         0},
 
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
@@ -417,4 +485,5 @@ CMS_Menu cmsx_menuImu = {
     .onGlobalExit = NULL,
     .entries = cmsx_menuImuEntries,
 };
+
 #endif // CMS

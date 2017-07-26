@@ -1299,6 +1299,18 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         break;
 
+    case MSP_COPY_PROFILE:
+        value = sbufReadU8(src);        // 0 = pid profile, 1 = control rate profile
+        uint8_t dstProfileIndex = sbufReadU8(src);
+        uint8_t srcProfileIndex = sbufReadU8(src);
+        if (value == 0) {
+            copyPidProfile(dstProfileIndex, srcProfileIndex);
+        }
+        else if (value == 1) {
+            copyControlRateProfile(dstProfileIndex, srcProfileIndex);
+        }
+        break;
+
 #if defined(GPS) || defined(MAG)
     case MSP_SET_HEADING:
         magHold = sbufReadU16(src);

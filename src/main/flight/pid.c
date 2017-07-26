@@ -482,3 +482,11 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         }
     }
 }
+
+void copyPidProfile(const uint8_t dstPidProfileIndex, const uint8_t srcPidProfileIndex) {
+    if ((dstPidProfileIndex < MAX_PROFILE_COUNT-1 && srcPidProfileIndex < MAX_PROFILE_COUNT-1)
+        && dstPidProfileIndex != srcPidProfileIndex
+    ) {
+        memcpy(pidProfilesMutable(dstPidProfileIndex), pidProfilesMutable(srcPidProfileIndex), sizeof(pidProfile_t));
+    }
+}
