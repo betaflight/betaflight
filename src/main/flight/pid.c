@@ -466,7 +466,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                 }
                 if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) < crashTimeDelayUs && ABS(errorRate) < crashGyroThreshold) {
                     inCrashRecoveryMode = false;
-                {
+                }
             }
 
             axisPID_D[axis] = Kd[axis] * delta * tpaFactor;
