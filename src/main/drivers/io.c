@@ -157,11 +157,11 @@ bool IORead(IO_t io)
     if (!io)
         return false;
 #if defined(USE_LOWLEVEL_DRIVER)
-    return !! (LL_GPIO_ReadInputPort(IO_GPIO(io)) & IO_Pin(io));
+    return (LL_GPIO_ReadInputPort(IO_GPIO(io)) & IO_Pin(io));
 #elif defined(USE_HAL_DRIVER)
-    return !! HAL_GPIO_ReadPin(IO_GPIO(io), IO_Pin(io));
+    return HAL_GPIO_ReadPin(IO_GPIO(io), IO_Pin(io));
 #else
-    return !! (IO_GPIO(io)->IDR & IO_Pin(io));
+    return (IO_GPIO(io)->IDR & IO_Pin(io));
 #endif
 }
 
