@@ -76,6 +76,12 @@
 #define DEFAULT_AUX_CHANNEL_COUNT       6
 #endif
 
+#ifdef USE_ITCM_RAM
+#define FAST_CODE __attribute__((section(".tcm_code")))
+#else
+#define FAST_CODE
+#endif
+
 #define USE_CLI
 #define USE_PPM
 #define USE_PWM

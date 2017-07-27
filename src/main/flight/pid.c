@@ -139,7 +139,8 @@ void pidResetErrorGyroState(void)
 
 static float itermAccelerator = 1.0f;
 
-void pidSetItermAccelerator(float newItermAccelerator) {
+void pidSetItermAccelerator(float newItermAccelerator)
+{
     itermAccelerator = newItermAccelerator;
 }
 
@@ -244,7 +245,8 @@ static float crashDtermThreshold;
 static float crashGyroThreshold;
 static float crashSetpointThreshold;
 
-void pidInitConfig(const pidProfile_t *pidProfile) {
+void pidInitConfig(const pidProfile_t *pidProfile) 
+{
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         Kp[axis] = PTERM_SCALE * pidProfile->pid[axis].P;
         Ki[axis] = ITERM_SCALE * pidProfile->pid[axis].I;
@@ -279,7 +281,8 @@ void pidInit(const pidProfile_t *pidProfile)
 }
 
 // calculates strength of horizon leveling; 0 = none, 1.0 = most leveling
-static float calcHorizonLevelStrength() {
+static float FAST_CODE calcHorizonLevelStrength()
+{
     // start with 1.0 at center stick, 0.0 at max stick deflection:
     float horizonLevelStrength = 1.0f -
              MAX(getRcDeflectionAbs(FD_ROLL), getRcDeflectionAbs(FD_PITCH));
@@ -338,7 +341,8 @@ static float calcHorizonLevelStrength() {
     return constrainf(horizonLevelStrength, 0, 1);
 }
 
-static float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint) {
+static float FAST_CODE pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint)
+{
     // calculate error angle and limit the angle to the max inclination
     float angle = pidProfile->levelSensitivity * getRcDeflection(axis);
 #ifdef GPS
@@ -358,7 +362,8 @@ static float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPit
     return currentPidSetpoint;
 }
 
-static float accelerationLimit(int axis, float currentPidSetpoint) {
+static float FAST_CODE accelerationLimit(int axis, float currentPidSetpoint) 
+{
     static float previousSetpoint[3];
     const float currentVelocity = currentPidSetpoint- previousSetpoint[axis];
 
@@ -371,7 +376,7 @@ static float accelerationLimit(int axis, float currentPidSetpoint) {
 
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
 // Based on 2DOF reference design (matlab)
-void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, timeUs_t currentTimeUs)
+void FAST_CODE pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, timeUs_t currentTimeUs)
 {
     static float previousRateError[2];
     const float tpaFactor = getThrottlePIDAttenuation();

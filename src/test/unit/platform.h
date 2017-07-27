@@ -32,6 +32,7 @@
 #define LED_STRIP
 #define USE_SERVOS
 #define TRANSPONDER
+#define FAST_CODE
 
 typedef enum
 {
