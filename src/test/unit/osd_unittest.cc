@@ -406,8 +406,6 @@ TEST(OsdTest, TestAlarms)
 
     // and
     // the following OSD elements are visible
-    OSD_INIT(osdConfigMutable(), OSD_TIMER_1 ,  -5,  3, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE);
-
     OSD_INIT(osdConfigMutable(), OSD_RSSI_VALUE,    8,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
     OSD_INIT(osdConfigMutable(), OSD_MAIN_BATT_VOLTAGE,    12,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
     OSD_INIT(osdConfigMutable(), OSD_ITEM_TIMER_1,   20,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
