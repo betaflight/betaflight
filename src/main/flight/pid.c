@@ -394,7 +394,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim, currentPidSetpoint);
         }
 
-        if (inCrashRecoveryMode && axis != FD_YAW) {
+        if (inCrashRecoveryMode && axis != FD_YAW && cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeDelayUs) {
             // self-level - errorAngle is deviation from horizontal
             const float errorAngle =  -(attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f;
             currentPidSetpoint = errorAngle * levelGain;
@@ -450,8 +450,8 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             previousRateError[axis] = rD;
 
             // if crash recovery is on and accelerometer enabled then check for a crash
-            if (pidProfile->crash_recovery && inCrashRecoveryMode == false && sensors(SENSOR_ACC) && ARMING_FLAG(ARMED)) {
-                if (motorMixRange >= 1.0f
+            if (pidProfile->crash_recovery && sensors(SENSOR_ACC) && ARMING_FLAG(ARMED)) {
+                if (motorMixRange >= 1.0f && inCrashRecoveryMode == false
                         && ABS(delta) > crashDtermThreshold
                         && ABS(errorRate) > crashGyroThreshold
                         && ABS(getSetpointRate(axis)) < crashSetpointThreshold) {
@@ -461,6 +461,9 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                         BEEP_ON;
                     }
                 }
+                if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) < crashTimeDelayUs && ABS(errorRate) < crashGyroThreshold) {
+                    inCrashRecoveryMode = false;
+                {
             }
 
             axisPID_D[axis] = Kd[axis] * delta * tpaFactor;
