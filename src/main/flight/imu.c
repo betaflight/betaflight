@@ -223,12 +223,12 @@ bool imuRebaseEarthToBody(void) {
         q2 = q2*cosa2 - q1*sina2;
         q3 = q3*cosa2 + q0*sina2;
 
-        // Normalise quaternion
-        float Norm = 1.0f/sqrtf(q0*q0 + q1*q1 + q2*q2 + q3*q3);
-        q0 *= Norm;
-        q1 *= Norm;
-        q2 *= Norm;
-        q3 *= Norm;
+        // normalise quaternion
+        const float normalise = 1.0f/sqrtf(q0*q0 + q1*q1 + q2*q2 + q3*q3);
+        q0 *= normalise;
+        q1 *= normalise;
+        q2 *= normalise;
+        q3 *= normalise;
 
         // synchronize rotation matrix data
         imuComputeRotationMatrix();
