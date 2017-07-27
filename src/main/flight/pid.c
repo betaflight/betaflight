@@ -239,6 +239,7 @@ static float levelGain, horizonGain, horizonTransition, horizonCutoffDegrees,
              horizonFactorRatio, ITermWindupPoint, ITermWindupPointInv;
 static uint8_t horizonTiltExpertMode;
 static timeDelta_t crashTimeLimitUs;
+static timeDelta_t crashTimeDelayUs;
 static int32_t crashRecoveryAngleDeciDegrees;
 static float crashRecoveryRate;
 static float crashDtermThreshold;
