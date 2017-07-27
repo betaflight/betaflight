@@ -126,11 +126,15 @@ typedef enum {
     OSD_TIMER_PREC_COUNT
 } osd_timer_precision_e;
 
-typedef enum {
-    // visible, bit 0
-    OSD_FLAG_VISIBLE = (1 << 0),
+#define OSD_PAGE_COUNT 3
 
-    // bit 1 .. 3 reserved for future use
+typedef enum {
+    // visible, bits 0.2
+    OSD_FLAG_VISIBLE_PAGE_1 = (1 << 0),
+    OSD_FLAG_VISIBLE_PAGE_2 = (1 << 1),
+    OSD_FLAG_VISIBLE_PAGE_3 = (1 << 2),
+
+    // bit 3 reserved for future use
 
     // origin, bits 4.7
     OSD_FLAG_ORIGIN_C  = 0,
@@ -144,11 +148,10 @@ typedef enum {
     OSD_FLAG_ORIGIN_NW = OSD_FLAG_ORIGIN_N | OSD_FLAG_ORIGIN_W
 } osdFlag_e;
 
-#define OSD_FLAG_VISIBLE_MASK (OSD_FLAG_VISIBLE)
+#define OSD_FLAG_VISIBLE_MASK (OSD_FLAG_VISIBLE_PAGE_1 | OSD_FLAG_VISIBLE_PAGE_2 | OSD_FLAG_VISIBLE_PAGE_3)
 #define OSD_FLAG_ORIGIN_MASK  (OSD_FLAG_ORIGIN_N | OSD_FLAG_ORIGIN_E | OSD_FLAG_ORIGIN_S | OSD_FLAG_ORIGIN_W)
 
 #define OSD_INIT(_config, _item, _x, _y, _flags) { (_config)->item[(_item)] = (osdItem_t) {(_x), (_y), (int8_t)(_flags)}; }
-
 
 typedef struct {
     int8_t x;
@@ -158,6 +161,8 @@ typedef struct {
 
 typedef struct osdConfig_s {
     osdItem_t item[OSD_ITEM_COUNT];
+    uint8_t page;
+    uint8_t pageAuxChannel;
 
     bool enabled_stats[OSD_STAT_COUNT];
 
@@ -180,5 +185,6 @@ void osdInit(struct displayPort_s *osdDisplayPort);
 void osdResetConfig(osdConfig_t *osdProfile);
 void osdResetAlarms(void);
 void osdUpdate(timeUs_t currentTimeUs);
+void osdSetPage(uint8_t pageIndex);
 
 #endif

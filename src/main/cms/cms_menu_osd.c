@@ -206,6 +206,7 @@ CMS_Menu menuTimers = {
 };
 #endif /* DISABLE_EXTENDED_CMS_OSD_MENU */
 
+static uint8_t osdConfig_pageNo;
 #ifdef USE_MAX7456
 static bool displayPortProfileMax7456_invert;
 static uint8_t displayPortProfileMax7456_blackBrightness;
@@ -214,6 +215,7 @@ static uint8_t displayPortProfileMax7456_whiteBrightness;
 
 static long cmsx_menuOsdOnEnter(void)
 {
+    osdConfig_pageNo = osdConfig()->page + 1;
 #ifdef USE_MAX7456
     displayPortProfileMax7456_invert = displayPortProfileMax7456()->invert;
     displayPortProfileMax7456_blackBrightness = displayPortProfileMax7456()->blackBrightness;
@@ -227,6 +229,7 @@ static long cmsx_menuOsdOnExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
+    osdSetPage(osdConfig_pageNo - 1);
 #ifdef USE_MAX7456
     displayPortProfileMax7456Mutable()->invert = displayPortProfileMax7456_invert;
     displayPortProfileMax7456Mutable()->blackBrightness = displayPortProfileMax7456_blackBrightness;
@@ -239,6 +242,7 @@ static long cmsx_menuOsdOnExit(const OSD_Entry *self)
 OSD_Entry cmsx_menuOsdEntries[] =
 {
     {"---OSD---",   OME_Label,   NULL,          NULL,                0},
+    {"PAGE",        OME_UINT8,   NULL, &(OSD_UINT8_t){&osdConfig_pageNo, 1, OSD_PAGE_COUNT, 1}, 0},
 #ifndef DISABLE_EXTENDED_CMS_OSD_MENU
     {"ACTIVE ELEM", OME_Submenu, cmsMenuChange, &menuOsdActiveElems, 0},
     {"TIMERS",      OME_Submenu, cmsMenuChange, &menuTimers,         0},

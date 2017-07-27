@@ -99,6 +99,7 @@ const char * const osdTimerSourceNames[] = {
 
 static bool blinkState = true;
 static bool showVisualBeeper = false;
+STATIC_UNIT_TESTED uint8_t page = 0;
 
 static uint32_t blinkBits[(OSD_ITEM_COUNT + 31)/32];
 #define SET_BLINK(item) (blinkBits[(item) / 32] |= (1 << ((item) % 32)))
@@ -107,7 +108,6 @@ static uint32_t blinkBits[(OSD_ITEM_COUNT + 31)/32];
 #define BLINK(item) (IS_BLINK(item) && blinkState)
 
 // Things in both OSD and CMS
-
 #define IS_HI(X)  (rcData[X] > 1750)
 #define IS_LO(X)  (rcData[X] < 1250)
 #define IS_MID(X) (rcData[X] > 1250 && rcData[X] < 1750)
@@ -128,7 +128,7 @@ typedef struct statistic_s {
 static statistic_t stats;
 
 uint32_t resumeRefreshAt = 0;
-#define REFRESH_1S    1000 * 1000
+#define REFRESH_1S 1000 * 1000
 
 static uint8_t armState;
 
@@ -339,7 +339,8 @@ static void osdConvertToAbsolutePosition(uint8_t item, int8_t *pos_x, int8_t *po
 
 static void osdDrawSingleElement(uint8_t item)
 {
-    if (!(osdConfig()->item[item].flags & OSD_FLAG_VISIBLE) || BLINK(item)) {
+    // The page visibility check relies on the page flags being the lower 3 bits of the element flags
+    if (!(osdConfig()->item[item].flags & (1 << page)) || BLINK(item)) {
         return;
     }
 
@@ -791,55 +792,55 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 {
     // default positions are attached to origin points
     // this way the ui looks similar no matter what the current screen resolution is
-    OSD_INIT(osdConfig, OSD_ITEM_TIMER_2     ,   1,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_DEBUG            ,   1,  0, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_GPS_LAT          ,   1,  2, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_ITEM_TIMER_2     ,   1,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_DEBUG            ,   1,  0, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_GPS_LAT          ,   1,  2, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE_PAGE_1);
 
-    OSD_INIT(osdConfig, OSD_RSSI_VALUE       ,  -6,  1, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_MAIN_BATT_VOLTAGE,   2,  1, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_AVG_CELL_VOLTAGE ,   2,  2, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_DISARMED         ,   4,  4, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_GPS_SATS         ,   5,  1, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_GPS_LON          ,   4,  2, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_ESC_TMP          ,   4,  2, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_ESC_RPM          ,   5,  2, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_RSSI_VALUE       ,  -6,  1, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_MAIN_BATT_VOLTAGE,   2,  1, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_AVG_CELL_VOLTAGE ,   2,  2, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_DISARMED         ,   4,  4, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_GPS_SATS         ,   5,  1, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_GPS_LON          ,   4,  2, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_ESC_TMP          ,   4,  2, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_ESC_RPM          ,   5,  2, OSD_FLAG_ORIGIN_N | OSD_FLAG_VISIBLE_PAGE_1);
 
-    OSD_INIT(osdConfig, OSD_ITEM_TIMER_1     ,  -7,  1, OSD_FLAG_ORIGIN_NE | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_ITEM_TIMER_1     ,  -7,  1, OSD_FLAG_ORIGIN_NE | OSD_FLAG_VISIBLE_PAGE_1);
 
-    OSD_INIT(osdConfig, OSD_GPS_SPEED        ,  -3, -1, OSD_FLAG_ORIGIN_E | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_ALTITUDE         ,  -6,  0, OSD_FLAG_ORIGIN_E | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_NUMERICAL_HEADING,  -6,  2, OSD_FLAG_ORIGIN_E | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_NUMERICAL_VARIO  ,  -6,  1, OSD_FLAG_ORIGIN_E | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_GPS_SPEED        ,  -3, -1, OSD_FLAG_ORIGIN_E | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_ALTITUDE         ,  -6,  0, OSD_FLAG_ORIGIN_E | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_NUMERICAL_HEADING,  -6,  2, OSD_FLAG_ORIGIN_E | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_NUMERICAL_VARIO  ,  -6,  1, OSD_FLAG_ORIGIN_E | OSD_FLAG_VISIBLE_PAGE_1);
 
-    OSD_INIT(osdConfig, OSD_VTX_CHANNEL      ,  -4, -4, OSD_FLAG_ORIGIN_SE | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_PIDRATE_PROFILE  ,  -4, -5, OSD_FLAG_ORIGIN_SE | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_VTX_CHANNEL      ,  -4, -4, OSD_FLAG_ORIGIN_SE | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_PIDRATE_PROFILE  ,  -4, -5, OSD_FLAG_ORIGIN_SE | OSD_FLAG_VISIBLE_PAGE_1);
 
-    OSD_INIT(osdConfig, OSD_FLYMODE          ,  -1, -5, OSD_FLAG_ORIGIN_S | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_CRAFT_NAME       ,  -4, -4, OSD_FLAG_ORIGIN_S | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_POWER            ,   1, -5, OSD_FLAG_ORIGIN_S | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_MAIN_BATT_USAGE  ,  -6, -3, OSD_FLAG_ORIGIN_S | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_FLYMODE          ,  -1, -5, OSD_FLAG_ORIGIN_S | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_CRAFT_NAME       ,  -4, -4, OSD_FLAG_ORIGIN_S | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_POWER            ,   1, -5, OSD_FLAG_ORIGIN_S | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_MAIN_BATT_USAGE  ,  -6, -3, OSD_FLAG_ORIGIN_S | OSD_FLAG_VISIBLE_PAGE_1);
 
-    OSD_INIT(osdConfig, OSD_CURRENT_DRAW     ,   1,  0, OSD_FLAG_ORIGIN_SW | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_MAH_DRAWN        ,   1, -1, OSD_FLAG_ORIGIN_SW | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_ROLL_PIDS        ,   7,  -2, OSD_FLAG_ORIGIN_SW | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_PITCH_PIDS       ,   7,  -1, OSD_FLAG_ORIGIN_SW | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_YAW_PIDS         ,   5,  -0, OSD_FLAG_ORIGIN_SW | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_CURRENT_DRAW     ,   1,  0, OSD_FLAG_ORIGIN_SW | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_MAH_DRAWN        ,   1, -1, OSD_FLAG_ORIGIN_SW | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_ROLL_PIDS        ,   7,  -2, OSD_FLAG_ORIGIN_SW | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_PITCH_PIDS       ,   7,  -1, OSD_FLAG_ORIGIN_SW | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_YAW_PIDS         ,   5,  -0, OSD_FLAG_ORIGIN_SW | OSD_FLAG_VISIBLE_PAGE_1);
 
-    OSD_INIT(osdConfig, OSD_PITCH_ANGLE      ,   1,  1, OSD_FLAG_ORIGIN_W | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_ROLL_ANGLE       ,   1,  2, OSD_FLAG_ORIGIN_W | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_THROTTLE_POS     ,   1,  0, OSD_FLAG_ORIGIN_W | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_PITCH_ANGLE      ,   1,  1, OSD_FLAG_ORIGIN_W | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_ROLL_ANGLE       ,   1,  2, OSD_FLAG_ORIGIN_W | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_THROTTLE_POS     ,   1,  0, OSD_FLAG_ORIGIN_W | OSD_FLAG_VISIBLE_PAGE_1);
 
-    OSD_INIT(osdConfig, OSD_WARNINGS         ,  -5,  3, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_HOME_DIST        ,   1,  2, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_HOME_DIR         ,   0,  2, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE);
-    OSD_INIT(osdConfig, OSD_COMPASS_BAR      ,  -4,  1, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_WARNINGS         ,  -5,  3, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_HOME_DIST        ,   1,  2, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_HOME_DIR         ,   0,  2, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfig, OSD_COMPASS_BAR      ,  -4,  1, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE_PAGE_1);
 
     // Crosshair uses 3 chars, from center offset 1 to the left
-    OSD_INIT(osdConfig, OSD_CROSSHAIRS       , -1,  0, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_CROSSHAIRS       , -1,  0, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE_PAGE_1);
     // AH top center of region is 4 to the left
-    OSD_INIT(osdConfig, OSD_ARTIFICIAL_HORIZON ,  0, -4, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_ARTIFICIAL_HORIZON ,  0, -4, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE_PAGE_1);
     // Horizon is centered
-    OSD_INIT(osdConfig, OSD_HORIZON_SIDEBARS ,  0,  0, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfig, OSD_HORIZON_SIDEBARS ,  0,  0, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE_PAGE_1);
 
     osdConfig->enabled_stats[OSD_STAT_MAX_SPEED]       = true;
     osdConfig->enabled_stats[OSD_STAT_MIN_BATTERY]     = true;
@@ -855,6 +856,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->enabled_stats[OSD_STAT_TIMER_2]         = true;
 
     osdConfig->units = OSD_UNIT_METRIC;
+    osdConfig->page = 0;
+    osdConfig->pageAuxChannel = 0;
 
     osdConfig->timers[OSD_TIMER_1] = OSD_TIMER(OSD_TIMER_SRC_ON, OSD_TIMER_PREC_SECOND, 10);
     osdConfig->timers[OSD_TIMER_2] = OSD_TIMER(OSD_TIMER_SRC_TOTAL_ARMED, OSD_TIMER_PREC_SECOND, 10);
@@ -882,6 +885,8 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
         return;
 
     //BUILD_BUG_ON(OSD_POS_MAX != OSD_POS(31,31));
+
+    osdSetPage(osdConfig()->page);
 
     osdDisplayPort = osdDisplayPortToUse;
 #ifdef CMS
@@ -1193,6 +1198,19 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
         }
     }
 
+    // Update page based on channel position
+    const unsigned int pageAuxChannel = osdConfig()->pageAuxChannel;
+    if (pageAuxChannel) {
+        const unsigned int chanIdx = 3 + pageAuxChannel;
+        if (IS_HI(chanIdx)) {
+            page = 2;
+        } else if (IS_MID(chanIdx)) {
+            page = 1;
+        } else {
+            page = 0;
+        }
+    }
+
     blinkState = (currentTimeUs / 200000) % 2;
 
 #ifdef USE_ESC_SENSOR
@@ -1264,5 +1282,12 @@ void osdUpdate(timeUs_t currentTimeUs)
         unsetArmingDisabled(ARMING_DISABLED_OSD_MENU);
     }
 #endif
+}
+
+void osdSetPage(uint8_t pageIndex)
+{
+    pageIndex = constrain(pageIndex, 0, OSD_PAGE_COUNT - 1);
+    osdConfigMutable()->page = pageIndex;
+    page = pageIndex;
 }
 #endif // OSD

@@ -628,6 +628,8 @@ const clivalue_t valueTable[] = {
 // PG_OSD_CONFIG
 #ifdef OSD
     { "osd_units",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_UNIT }, PG_OSD_CONFIG, offsetof(osdConfig_t, units) },
+    { "osd_pg",                     VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, OSD_PAGE_COUNT - 1 }, PG_OSD_CONFIG, offsetof(osdConfig_t, page) },
+    { "osd_pg_aux",                 VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, MAX_AUX_CHANNEL_COUNT }, PG_OSD_CONFIG, offsetof(osdConfig_t, pageAuxChannel) },
 
     { "osd_rssi_alarm",             VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 100 }, PG_OSD_CONFIG, offsetof(osdConfig_t, rssi_alarm) },
     { "osd_cap_alarm",              VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 20000 }, PG_OSD_CONFIG, offsetof(osdConfig_t, cap_alarm) },

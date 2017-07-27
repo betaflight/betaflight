@@ -36,6 +36,6 @@ void targetConfiguration(void)
     voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale = VBAT_SCALE;
     barometerConfigMutable()->baro_hardware = 0;
     compassConfigMutable()->mag_hardware = 0;
-    OSD_INIT(osdConfigMutable(), OSD_MAIN_BATT_VOLTAGE, 12, 1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfigMutable(), OSD_MAIN_BATT_VOLTAGE, 12, 1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE_PAGE_1);
 }
 #endif
