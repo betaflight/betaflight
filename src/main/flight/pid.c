@@ -399,6 +399,9 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
         if (inCrashRecoveryMode && axis != FD_YAW && cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeDelayUs) {
             // self-level - errorAngle is deviation from horizontal
+            if (pidProfile->crash_recovery == PID_CRASH_RECOVERY_BEEP) {
+                        BEEP_ON;
+            }
             const float errorAngle =  -(attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f;
             currentPidSetpoint = errorAngle * levelGain;
             if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeLimitUs
@@ -460,9 +463,6 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                         && ABS(getSetpointRate(axis)) < crashSetpointThreshold) {
                     inCrashRecoveryMode = true;
                     crashDetectedAtUs = currentTimeUs;
-                    if (pidProfile->crash_recovery == PID_CRASH_RECOVERY_BEEP) {
-                        BEEP_ON;
-                    }
                 }
                 if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) < crashTimeDelayUs && ABS(errorRate) < crashGyroThreshold) {
                     inCrashRecoveryMode = false;
