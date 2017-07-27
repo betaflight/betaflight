@@ -106,6 +106,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .itermThrottleThreshold = 350,
         .itermAcceleratorGain = 1000,
         .crash_time = 500,          // ms
+        .crash_delay = 0,          // ms
         .crash_recovery_angle = 10, // degrees
         .crash_recovery_rate = 100, // degrees/second
         .crash_dthreshold = 50,     // degrees/second/second
@@ -263,6 +264,7 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
     ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
     ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
     crashTimeLimitUs = pidProfile->crash_time * 1000;
+    crashTimeDelayUs = pidProfile->crash_delay * 1000;
     crashRecoveryAngleDeciDegrees = pidProfile->crash_recovery_angle * 10;
     crashRecoveryRate = pidProfile->crash_recovery_rate;
     crashGyroThreshold = pidProfile->crash_gthreshold;
