@@ -80,7 +80,7 @@
 #define SERIAL_PORT_COUNT 7
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_PIN  PE13 // (Hardware=0, PPM)
+#define ESCSERIAL_TIMER_TX_PIN  PA2 // (Unwired UART2_TX)
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -174,6 +174,6 @@
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 
-#define USABLE_TIMER_CHANNEL_COUNT 10
+#define USABLE_TIMER_CHANNEL_COUNT 11
 
-#define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) )
+#define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(9) )
