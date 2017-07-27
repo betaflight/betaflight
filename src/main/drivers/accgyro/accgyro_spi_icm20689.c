@@ -26,7 +26,6 @@
 
 #include "drivers/bus_spi.h"
 #include "drivers/exti.h"
-#include "drivers/gpio.h"
 #include "drivers/gyro_sync.h"
 #include "drivers/io.h"
 #include "drivers/sensor.h"

@@ -25,6 +25,9 @@
 #include "stm32f7xx.h"
 #include "stm32f7xx_hal.h"
 
+#include "stm32f7xx_ll_spi.h"
+#include "stm32f7xx_ll_gpio.h"
+
 // Chip Unique ID on F7
 #if defined(STM32F722xx)
 #define U_ID_0 (*(uint32_t*)0x1ff07a10)
