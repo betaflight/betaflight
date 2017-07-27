@@ -133,8 +133,8 @@ typedef enum {
     // bit 1 .. 3 reserved for future use
 
     // origin, bits 4.7
-    OSD_FLAG_ORIGIN_C  = 0, 
-    OSD_FLAG_ORIGIN_N  = (1<<4), 
+    OSD_FLAG_ORIGIN_C  = 0,
+    OSD_FLAG_ORIGIN_N  = (1<<4),
     OSD_FLAG_ORIGIN_E  = (1<<5),
     OSD_FLAG_ORIGIN_S  = (1<<6),
     OSD_FLAG_ORIGIN_W  = (1<<7),

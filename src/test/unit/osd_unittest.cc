@@ -400,8 +400,6 @@ TEST(OsdTest, TestAlarms)
 
     // and
     // the following OSD elements are visible
-    OSD_INIT(osdConfigMutable(), OSD_TIMER_1 ,  -5,  3, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE);
-
     OSD_INIT(osdConfigMutable(), OSD_RSSI_VALUE,    8,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
     OSD_INIT(osdConfigMutable(), OSD_MAIN_BATT_VOLTAGE,    12,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
     OSD_INIT(osdConfigMutable(), OSD_ITEM_TIMER_1,   20,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
@@ -571,6 +569,71 @@ TEST(OsdTest, TestFormatTimeString)
     EXPECT_EQ(0, strcmp("01:59.00", buff));
 }
 
+/*
+ * Test positioning of OSD elements.
+ */
+TEST(OsdTest, TestElementPositioning)
+{
+    const int highX = UNITTEST_DISPLAYPORT_COLS - 2;
+    const int highY = UNITTEST_DISPLAYPORT_ROWS - 2;
+    const int centreX = highX / 2;
+    const int centreY = highY / 2;
+
+    // given
+    // north west anchoring
+    OSD_INIT(osdConfigMutable(), OSD_CRAFT_NAME, 8, 1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // expect
+    displayPortTestBufferSubstring(8, 1, "CRAFT_NAME");
+
+    // given
+    // south east anchoring
+    OSD_INIT(osdConfigMutable(), OSD_CRAFT_NAME, -8, -2, OSD_FLAG_ORIGIN_SE | OSD_FLAG_VISIBLE);
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // expect
+    displayPortTestBufferSubstring(highX - 8, highY - 2, "CRAFT_NAME");
+
+    // given
+    // north east anchoring
+    OSD_INIT(osdConfigMutable(), OSD_CRAFT_NAME, -8, 4, OSD_FLAG_ORIGIN_NE | OSD_FLAG_VISIBLE);
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // expect
+    displayPortTestBufferSubstring(highX - 8, 4, "CRAFT_NAME");
+
+    // given
+    // south west anchoring
+    OSD_INIT(osdConfigMutable(), OSD_CRAFT_NAME, 6, -2, OSD_FLAG_ORIGIN_SW | OSD_FLAG_VISIBLE);
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // expect
+    displayPortTestBufferSubstring(6, highY - 2, "CRAFT_NAME");
+
+    // given
+    // centre anchoring
+    OSD_INIT(osdConfigMutable(), OSD_CRAFT_NAME, 1, -2, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE);
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // expect
+    displayPortTestBufferSubstring(centreX + 1, centreY - 2, "CRAFT_NAME");
+}
 
 // STUBS
 extern "C" {
