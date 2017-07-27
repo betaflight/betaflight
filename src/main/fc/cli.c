@@ -3266,44 +3266,6 @@ static void cliResource(char *cmdline)
 }
 #endif /* USE_RESOURCE_MGMT */
 
-static void cliCopyProfile(char *cmdline)
-{
-    if (isEmpty(cmdline)) {
-        cliShowParseError();
-    } else {
-        const int id = atoi(cmdline);           // id = target profile id
-        if (id < 0 || id > MAX_PROFILE_COUNT-1) {
-            cliPrintLinef("Invalid profile id, choose [0-%d]", MAX_PROFILE_COUNT-1);
-        } else {
-            if (id == getCurrentPidProfileIndex()) {
-                cliPrintLine("Can not overwrite current selected profile");
-            } else {
-                copyPidProfile(id, getCurrentPidProfileIndex());
-                cliPrintLinef("Copied profile settings from %d to %d", getCurrentPidProfileIndex(), id);
-            }
-        }
-    }
-}
-
-static void cliCopyRateProfile(char *cmdline)
-{
-    if (isEmpty(cmdline)) {
-        cliShowParseError();
-    } else {
-        const int id = atoi(cmdline);           // id = target rateprofile id
-        if (id < 0 || id > CONTROL_RATE_PROFILE_COUNT-1) {
-            cliPrintLinef("Invalid rateprofile id, choose [0-%d]", CONTROL_RATE_PROFILE_COUNT-1);
-        } else {
-            if (id == getCurrentControlRateProfileIndex()) {
-                cliPrintLine("Can not overwrite current selected rateprofile");
-            } else {
-                copyControlRateProfile(id, getCurrentControlRateProfileIndex());
-                cliPrintLinef("Copied rateprofile settings from %d to %d", getCurrentControlRateProfileIndex(), id);
-            }
-        }
-    }
-}
-
 static void backupConfigs(void)
 {
     // make copies of configs to do differencing
@@ -3602,8 +3564,6 @@ const clicmd_t cmdTable[] = {
 #ifdef VTX_CONTROL
     CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
 #endif
-    CLI_COMMAND_DEF("copyprofile", "copy current profile settings to another profile", "<id> : target profile id", cliCopyProfile),
-    CLI_COMMAND_DEF("copyrateprofile", "copy current rateprofile settings to another rateprofile", "<id> : target rate profile id", cliCopyRateProfile),
 };
 static void cliHelp(char *cmdline)
 {
