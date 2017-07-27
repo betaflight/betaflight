@@ -637,10 +637,9 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 
         // Element position and flags
         for (int i = 0; i < OSD_ITEM_COUNT; i++) {
-            //FIXME: this should be changed to separate x, y, and visibility
-            sbufWriteU8(dst, osdConfig()->item[i].x);
-            sbufWriteU8(dst, osdConfig()->item[i].y);
-            sbufWriteU8(dst, osdConfig()->item[i].flags);
+            sbufWriteU8(dst, (uint8_t) osdConfig()->item[i].x);
+            sbufWriteU8(dst, (uint8_t) osdConfig()->item[i].y);
+            sbufWriteU8(dst, (uint8_t) osdConfig()->item[i].flags);
         }
 
         // Post flight statistics
@@ -2024,10 +2023,6 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 return MSP_RESULT_ERROR;
             } else {
 #if defined(OSD)
-                // WARNING: this has been reordered:
-                // before: U16 U8 -> data + screen
-                // now   : U8 [U8 U8 U8 or U16]
-
                 /* Get screen index, 0 is post flight statistics, 1 and above are in flight OSD screens */
                 const uint8_t screen = (uint8_t) sbufReadU8(src);
 
