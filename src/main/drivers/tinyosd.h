@@ -27,17 +27,38 @@
 #endif
 
 /** PAL or NTSC, value is number of chars total */
+#define TINYOSD_VIDEO_ROWS                35
 #define TINYOSD_VIDEO_LINES_NTSC          13
 #define TINYOSD_VIDEO_LINES_PAL           16
-#define TINYOSD_VIDEO_BUFFER_CHARS_NTSC   (35 * TINYOSD_VIDEO_LINES_NTSC)
-#define TINYOSD_VIDEO_BUFFER_CHARS_PAL    (35 * TINYOSD_VIDEO_LINES_PAL)
+#define TINYOSD_VIDEO_BUFFER_CHARS_NTSC   (TINYOSD_VIDEO_ROWS * TINYOSD_VIDEO_LINES_NTSC)
+#define TINYOSD_VIDEO_BUFFER_CHARS_PAL    (TINYOSD_VIDEO_ROWS * TINYOSD_VIDEO_LINES_PAL)
+#define TINYOSD_VIDEO_BUFFER_SIZE         TINYOSD_VIDEO_BUFFER_CHARS_PAL
 
-#define SCREEN_BUFFER_CHANGED(__pos) (screenBuffer[(__pos)] != shadowBuffer[(__pos)])
+
+// calculate size of dirty table (roudn up to nearest int!)
+#define TINYOSD_VIDEO_BUFFER_DIRTY_SIZE ((TINYOSD_VIDEO_BUFFER_SIZE+8/2)/8)
+
+#define SCREEN_BUFFER_GET_DIRTY_FLAG(__pos)   (screenBufferDirty[__pos / 8] & (1 << (__pos % 8)))
+#define SCREEN_BUFFER_SET_DIRTY_FLAG(__pos)   { screenBufferDirty[__pos / 8] |= (1 << (__pos % 8)); }
+#define SCREEN_BUFFER_CLEAR_DIRTY_FLAG(__pos) { screenBufferDirty[__pos / 8] &= ~(1 << (__pos % 8)); }
+
+#define SCREEN_BUFFER_SET(__pos, __val) { screenBuffer[(__pos)] = (__val); SCREEN_BUFFER_SET_DIRTY_FLAG(__pos); };
+#define SCREEN_BUFFER_GET(__pos) (screenBuffer[(__pos)])
 
 
 extern uint16_t maxScreenSize;
 #define TINYOSD_CRC8_UPDATE(__crc, __val) ((__crc) = tinyosd_crc8_table[(__crc) ^ (__val)])
 #define TINYOSD_CRC8_INIT(__crc, __ival) { (__crc) = (__ival); }
+
+#define TINYOSD_COMMAND_SET_STATUS        0x00
+#define TINYOSD_COMMAND_FILL_SCREEN       0x01
+#define TINYOSD_COMMAND_WRITE_STICKDATA   0x07
+//
+//
+#define TINYOSD_COMMAND_WRITE_PAGE_0      0x10
+#define TINYOSD_COMMAND_WRITE_PAGE_1      0x11
+#define TINYOSD_COMMAND_WRITE_PAGE_2      0x12
+#define TINYOSD_COMMAND_WRITE_PAGE_3      0x13
 
 int tinyOSDGrab(displayPort_t * displayPort);
 int tinyOSDRelease(displayPort_t *displayPort);

@@ -44,8 +44,8 @@
 
 #include "io/serial.h"
 
-#define TINYOSD_STICKSIZE_X 96.0
-#define TINYOSD_STICKSIZE_Y 128.0
+#define TINYOSD_STICKSIZE_X  96.0f
+#define TINYOSD_STICKSIZE_Y 128.0f
 
 #define VIDEO_SIGNAL_DEBOUNCE_MS    100 // Time to wait for input to stabilize
 
@@ -74,12 +74,13 @@
 
 uint16_t tinyOSD_maxScreenSize = TINYOSD_VIDEO_BUFFER_CHARS_PAL;
 static const uint8_t tinyosd_crc8_table[256];
-// We write everything in screenBuffer and then compare
-// screenBuffer with shadowBuffer to upgrade only changed chars.
-// This solution is faster then redrawing entire screen.
 
-static uint8_t screenBuffer[TINYOSD_VIDEO_BUFFER_CHARS_PAL+40]; // For faster writes we use memcpy so we need some space to don't overwrite buffer
-static uint8_t shadowBuffer[TINYOSD_VIDEO_BUFFER_CHARS_PAL];
+
+static uint8_t screenBuffer[TINYOSD_VIDEO_BUFFER_SIZE];
+static uint8_t screenBufferDirty[TINYOSD_VIDEO_BUFFER_DIRTY_SIZE];
+
+
+
 
 //Max chars to update in one idle
 //#define MAX_CHARS2UPDATE    100
@@ -158,11 +159,6 @@ static uint8_t tinyOSDSendBuffer(uint8_t cmd, uint8_t *data, uint8_t len)
     return 1; //serialRead(tinyOSDPort);
 }
 
-static uint8_t tinyOSDSend(uint8_t add, uint8_t data)
-{
-    return tinyOSDSendBuffer(add, &data, 1);
-}
-
 uint8_t tinyOSDGetRowsCount(void)
 {
     return (videoSignalReg & VIDEO_MODE_PAL) ? TINYOSD_VIDEO_LINES_PAL : TINYOSD_VIDEO_LINES_NTSC;
@@ -217,10 +213,11 @@ void tinyOSDReInit(void)
 
 
     // enable osd
-    tinyOSDSend(0x00, 1);
+    tinyOSDSendBuffer(TINYOSD_COMMAND_SET_STATUS, (uint8_t *)"\x01", 1);
 
-    // Clear shadow to force redraw all screen in non-dma mode.
-    memset(shadowBuffer, 0, tinyOSD_maxScreenSize);
+    // set dirty flag to force redraw all screen in non-dma mode.
+    memset(screenBufferDirty, 0xFF, sizeof(screenBufferDirty));
+
     if (firstInit)
     {
         tinyOSDRefreshAll();
@@ -231,6 +228,12 @@ void tinyOSDReInit(void)
 
 bool tinyOSDInit(const vcdProfile_t *pVcdProfile)
 {
+    // clear screen
+    memset(screenBufferDirty, 0x20, sizeof(screenBufferDirty));
+
+    // set dirty flag to force full transfer
+    memset(screenBuffer,      0xFF, sizeof(screenBuffer));
+
     // Setup values to write to registers
     videoSignalCfg = pVcdProfile->video_system;
     hosRegValue = 32 - pVcdProfile->h_offset;
@@ -250,8 +253,10 @@ bool tinyOSDInit(const vcdProfile_t *pVcdProfile)
     baudRate_e baudRateIndex =  osdPortConfig->blackbox_baudrateIndex;
     uint32_t baudrate = baudRates[baudRateIndex];
 
-    // no callback for RX right now...
+    // open assigned serial port (no callback for RX right now)
     tinyOSDPort = openSerialPort(osdPortConfig->identifier, FUNCTION_NONE, NULL, baudrate, mode, SERIAL_NOT_INVERTED);
+
+    // verify opening
     if (!tinyOSDPort) {
         return false;
     }
@@ -259,14 +264,19 @@ bool tinyOSDInit(const vcdProfile_t *pVcdProfile)
     return true;
 }
 
-//just fill with spaces with some tricks
+//just fill with spaces
 int tinyOSDClearScreen(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
-    uint16_t x;
-    uint32_t *p = (uint32_t*)&screenBuffer[0];
-    for (x = 0; x < TINYOSD_VIDEO_BUFFER_CHARS_PAL/4; x++)
-        p[x] = 0x20202020;
+    // fill screen buffer
+    memset(screenBuffer,      0xFF, sizeof(screenBuffer));
+
+    // mark screen buffer as non dirty:
+    memset(screenBufferDirty, 0x00, sizeof(screenBufferDirty));
+
+    // fill whole screen on device with ' ' by FILL command
+    tinyOSDSendBuffer(TINYOSD_COMMAND_FILL_SCREEN, (uint8_t *)" ", 1);
+
     return 0;
 }
 
@@ -283,24 +293,50 @@ uint8_t* tinyOSDGetScreenBuffer(void) {
 int tinyOSDWriteChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c)
 {
     UNUSED(displayPort);
-    screenBuffer[y*CHARS_PER_LINE+x] = c;
+    SCREEN_BUFFER_SET(y * CHARS_PER_LINE + x, c);
     return 0;
 }
 
 int tinyOSDWriteString(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *buff)
 {
     UNUSED(displayPort);
-    uint8_t i = 0;
-    for (i = 0; *(buff+i); i++) {
-        // make sure not to exceed screen size
-        if (x+i < CHARS_PER_LINE) {
-            screenBuffer[y*CHARS_PER_LINE+x+i] = *(buff+i);
+    uint8_t *data_ptr = (uint8_t *)buff;
+    uint8_t  i = 0;
+
+    // start position of write
+    uint16_t fb_pos = y * CHARS_PER_LINE + x;
+
+    for (i = x; i < CHARS_PER_LINE; i++) {
+        if (*data_ptr == 0) {
+            // end of char -> finish
+            break;
         }
+
+        // copy to frame buffer
+        SCREEN_BUFFER_SET(fb_pos, *data_ptr);
+
+        // prepare for next char:
+        fb_pos++;
+        data_ptr++;
     }
     return 0;
 }
 
 #include "build/debug.h"
+
+static void tinyOSDDrawSticks(void) {
+    uint8_t data[5];
+    data[0] = TINYOSD_STICKSIZE_X/2 + (TINYOSD_STICKSIZE_X/2 * rcCommand[ROLL]) / 500.0f;
+    data[1] = TINYOSD_STICKSIZE_Y/2 - (TINYOSD_STICKSIZE_Y/2 * rcCommand[PITCH]) / 500.0f;
+    // throttle is 1000 - 2000, rescale to match out STICK_Y resolution
+    data[2] = TINYOSD_STICKSIZE_Y - (TINYOSD_STICKSIZE_Y * (rcCommand[THROTTLE]-1000.0f))/1000.0f; //(TINYOSD_STICKSIZE_Y/2 * (rcCommand[THROTTLE]-1.0)) / 1000.0;
+    data[3] = TINYOSD_STICKSIZE_X/2 - (TINYOSD_STICKSIZE_X/2 * rcCommand[YAW]) / 500.0f;
+
+    // armed?
+    data[4] = armingFlags;
+
+    tinyOSDSendBuffer(TINYOSD_COMMAND_WRITE_STICKDATA, &data[0], 5);
+}
 
 int tinyOSDDrawScreen(displayPort_t *displayPortProfile)
 {
@@ -319,20 +355,7 @@ int tinyOSDDrawScreen(displayPort_t *displayPortProfile)
         //------------   end of (re)init-------------------------------------
 
         // send stick and armed state data
-        if (1) {
-            uint8_t data[5];
-            data[0] = TINYOSD_STICKSIZE_X/2 + (TINYOSD_STICKSIZE_X/2 * rcCommand[ROLL]) / 500.0; 
-            data[1] = TINYOSD_STICKSIZE_Y/2 - (TINYOSD_STICKSIZE_Y/2 * rcCommand[PITCH]) / 500.0;
-            // throttle is 1000 - 2000, rescale to match out STICK_Y resolution
-            data[2] = TINYOSD_STICKSIZE_Y - (TINYOSD_STICKSIZE_Y * (rcCommand[THROTTLE]-1000.0))/1000; //(TINYOSD_STICKSIZE_Y/2 * (rcCommand[THROTTLE]-1.0)) / 1000.0;
-            data[3] = TINYOSD_STICKSIZE_X/2 - (TINYOSD_STICKSIZE_X/2 * rcCommand[YAW]) / 500.0;
-
-            // armed?
-            data[4] = armingFlags;
-                
-            tinyOSDSendBuffer(0x07, &data[0], 5);
-        }
-
+        tinyOSDDrawSticks();
 
         // transfer as many new chars as possible:
         uint16_t allowed_charcount = TINYOSD_PROTOCOL_FRAME_BUFFER_SIZE - 1; // minus length
@@ -341,12 +364,12 @@ int tinyOSDDrawScreen(displayPort_t *displayPortProfile)
         while (allowed_charcount) {
             // we are allowed to send more updated chars
             // search for next updated char
-            while ((screenBuffer[pos] == shadowBuffer[pos]) && (allowed_charcount)) {
+            while ((!SCREEN_BUFFER_GET_DIRTY_FLAG(pos)) && (allowed_charcount)) {
                 pos++;
                 if (pos >= tinyOSD_maxScreenSize) {
                    // end of screen, restart from zero
                    pos = 0;
-                   if (screenBuffer[pos] == shadowBuffer[pos]){
+                   if (!SCREEN_BUFFER_GET_DIRTY_FLAG(pos)){
                        // no updated char, exit this iteration alltogether
                        // this makes sure that we do not iterate over unchanged frames
                        allowed_charcount = 0;
@@ -367,17 +390,17 @@ int tinyOSDDrawScreen(displayPort_t *displayPortProfile)
                 buffer[k++] = pos & 0xFF;
 
                 while ((k < TINYOSD_PROTOCOL_FRAME_BUFFER_SIZE) && (allowed_charcount)){
-                    if (!SCREEN_BUFFER_CHANGED(pos) && !SCREEN_BUFFER_CHANGED(pos+1)) {
+                    if (!SCREEN_BUFFER_GET_DIRTY_FLAG(pos) && !SCREEN_BUFFER_GET_DIRTY_FLAG(pos+1)) {
                         // no changed byte within the next 2 chars -> finish & send buffer
                         break;
                     } else {
                         // different byte in buffer OR this is only 1 single equal byte
                         // -> add byte in both cases (it is more eficient to tx gaps as well)
-                        buffer[k++] = screenBuffer[pos];
+                        buffer[k++] = SCREEN_BUFFER_GET(pos);
                         allowed_charcount--;
 
                         // mark as sent
-                        shadowBuffer[pos] = screenBuffer[pos];
+                        SCREEN_BUFFER_CLEAR_DIRTY_FLAG(pos);
 
                         // increment
                         pos++;
@@ -392,7 +415,7 @@ int tinyOSDDrawScreen(displayPort_t *displayPortProfile)
 
                 // we added k bytes to the buffer, send it!
                 if (k) {
-                    if (!tinyOSDSendBuffer(page, buffer, k)){
+                    if (!tinyOSDSendBuffer(TINYOSD_COMMAND_WRITE_PAGE_0 + page, buffer, k)){
                         // there should be no send failures as we checked the free beuf in advance
                     }
                 }
@@ -454,12 +477,12 @@ void tinyOSDRefreshAll(void)
             data[data_idx++] = xx & 0xFF;
 
             while ((xx < tinyOSD_maxScreenSize) && (data_idx<TINYOSD_PROTOCOL_FRAME_BUFFER_SIZE)) {
-               data[data_idx++] = screenBuffer[xx];
-               shadowBuffer[xx] = screenBuffer[xx];
+               data[data_idx++] = SCREEN_BUFFER_GET(xx);
+               SCREEN_BUFFER_CLEAR_DIRTY_FLAG(xx);
                xx++;
             }
 
-            while((!timed_out) && (!tinyOSDSendBuffer(page, data, data_idx - 1))) {
+            while((!timed_out) && (!tinyOSDSendBuffer(TINYOSD_COMMAND_WRITE_PAGE_0 + page, data, data_idx - 1))) {
                 // retry until sucessfull or timeout occured
                 if (millis() > timeout) {
                     timed_out = true;
