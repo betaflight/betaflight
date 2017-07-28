@@ -110,7 +110,6 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .crash_recovery_rate = 100, // degrees/second
         .crash_dthreshold = 50,     // degrees/second/second
         .crash_gthreshold = 400,    // degrees/second
-        .crash_setpoint_threshold = 350, // degrees/second
         .crash_recovery = PID_CRASH_RECOVERY_OFF, // off by default
         .horizon_tilt_effect = 75,
         .horizon_tilt_expert_mode = false
@@ -244,7 +243,6 @@ static int32_t crashRecoveryAngleDeciDegrees;
 static float crashRecoveryRate;
 static float crashDtermThreshold;
 static float crashGyroThreshold;
-static float crashSetpointThreshold;
 
 void pidInitConfig(const pidProfile_t *pidProfile)
 {
@@ -270,7 +268,6 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     crashRecoveryRate = pidProfile->crash_recovery_rate;
     crashGyroThreshold = pidProfile->crash_gthreshold;
     crashDtermThreshold = pidProfile->crash_dthreshold;
-    crashSetpointThreshold = pidProfile->crash_setpoint_threshold;
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -455,7 +452,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                 if (motorMixRange >= 1.0f
                         && ABS(delta) > crashDtermThreshold
                         && ABS(errorRate) > crashGyroThreshold
-                        && ABS(getSetpointRate(axis)) < crashSetpointThreshold) {
+                        && ABS(getSetpointRate(axis)) < (crashGyroThreshold - 50)) {
                     inCrashRecoveryMode = true;
                     crashDetectedAtUs = currentTimeUs;
                     if (pidProfile->crash_recovery == PID_CRASH_RECOVERY_BEEP) {
