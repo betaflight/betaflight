@@ -17,8 +17,10 @@
 
 #pragma once
 
-#ifdef STM32F10X
-#define MAX_FIR_DENOISE_WINDOW_SIZE 60
+// Don't use it on F1 and F3 to lower RAM usage
+// FIR/Denoise filter can be cleaned up in the future as it is rarely used and used to be experimental
+#if (defined(STM32F1) || defined(STM32F1))
+#define MAX_FIR_DENOISE_WINDOW_SIZE 1
 #else
 #define MAX_FIR_DENOISE_WINDOW_SIZE 120
 #endif
