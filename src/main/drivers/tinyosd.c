@@ -228,12 +228,6 @@ void tinyOSDReInit(void)
 
 bool tinyOSDInit(const vcdProfile_t *pVcdProfile)
 {
-    // clear screen
-    memset(screenBufferDirty, 0x20, sizeof(screenBufferDirty));
-
-    // set dirty flag to force full transfer
-    memset(screenBuffer,      0xFF, sizeof(screenBuffer));
-
     // Setup values to write to registers
     videoSignalCfg = pVcdProfile->video_system;
     hosRegValue = 32 - pVcdProfile->h_offset;
@@ -261,6 +255,15 @@ bool tinyOSDInit(const vcdProfile_t *pVcdProfile)
         return false;
     }
 
+    // init with empty chars (blankspace)
+    memset(screenBuffer, ' ', sizeof(screenBuffer));
+
+    // fill whole screen on device with ' ' as well by using the FILL command
+    tinyOSDSendBuffer(TINYOSD_COMMAND_FILL_SCREEN, (uint8_t *)"x", 1);
+
+    // mark screen buffer as non dirty:
+    memset(screenBufferDirty, 0x00, sizeof(screenBufferDirty));
+
     return true;
 }
 
@@ -268,14 +271,14 @@ bool tinyOSDInit(const vcdProfile_t *pVcdProfile)
 int tinyOSDClearScreen(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
-    // fill screen buffer
-    memset(screenBuffer,      0xFF, sizeof(screenBuffer));
 
-    // mark screen buffer as non dirty:
-    memset(screenBufferDirty, 0x00, sizeof(screenBufferDirty));
-
-    // fill whole screen on device with ' ' by FILL command
-    tinyOSDSendBuffer(TINYOSD_COMMAND_FILL_SCREEN, (uint8_t *)" ", 1);
+    // clear screen buffer & mark non ' ' bytes as dirty:
+    for(uint16_t i=0; i<TINYOSD_VIDEO_BUFFER_DIRTY_SIZE; i++) {
+        if (SCREEN_BUFFER_GET(i) != ' ') {
+            // clear pixel & set to changed:
+            SCREEN_BUFFER_SET(i, ' ');
+        }
+    }
 
     return 0;
 }
