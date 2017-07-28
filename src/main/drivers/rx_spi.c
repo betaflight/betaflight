@@ -30,7 +30,6 @@
 
 #include "drivers/bus_spi.h"
 #include "bus_spi_soft.h"
-#include "drivers/gpio.h"
 #include "drivers/io.h"
 #include "io_impl.h"
 #include "rcc.h"

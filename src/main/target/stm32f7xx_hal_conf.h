@@ -370,7 +370,6 @@
 
 #ifdef HAL_SPI_MODULE_ENABLED
  #include "stm32f7xx_hal_spi.h"
- #include "stm32f7xx_ll_spi.h"
 #endif /* HAL_SPI_MODULE_ENABLED */
 
 #ifdef HAL_TIM_MODULE_ENABLED

@@ -28,7 +28,6 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_busdev.h"
 #include "drivers/exti.h"
-#include "drivers/gpio.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
 #include "drivers/time.h"

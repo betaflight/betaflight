@@ -34,7 +34,6 @@
 #include "build/build_config.h"
 
 #include "common/utils.h"
-#include "drivers/gpio.h"
 #include "drivers/inverter.h"
 #include "drivers/rcc.h"
 
