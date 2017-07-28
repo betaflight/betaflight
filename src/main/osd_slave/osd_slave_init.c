@@ -114,6 +114,20 @@ static IO_t busSwitchResetPin        = IO_NONE;
 }
 #endif
 
+
+#ifdef USE_SPI
+// Pre-initialize all CS pins to input with pull-up.
+// It's sad that we can't do this with an initialized array,
+// since we will be taking care of configurable CS pins shortly.
+
+void spiPreInit(void)
+{
+#ifdef USE_MAX7456
+    spiPreInitCs(IO_TAG(MAX7456_SPI_CS_PIN));
+#endif
+}
+#endif
+
 void init(void)
 {
 #ifdef USE_HAL_DRIVER
@@ -181,6 +195,11 @@ void init(void)
 #else
 
 #ifdef USE_SPI
+    spiPinConfigure();
+
+    // Initialize CS lines and keep them high
+    spiPreInit();
+
 #ifdef USE_SPI_DEVICE_1
     spiInit(SPIDEV_1);
 #endif
