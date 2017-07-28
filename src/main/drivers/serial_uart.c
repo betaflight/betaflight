@@ -33,7 +33,6 @@
 #include "common/utils.h"
 
 #include "drivers/dma.h"
-#include "drivers/gpio.h"
 #include "drivers/inverter.h"
 #include "drivers/nvic.h"
 #include "drivers/rcc.h"

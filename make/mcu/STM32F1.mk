@@ -59,7 +59,6 @@ MCU_COMMON_SRC = \
             drivers/adc_stm32f10x.c \
             drivers/bus_i2c_stm32f10x.c \
             drivers/dma.c \
-            drivers/gpio_stm32f10x.c \
             drivers/inverter.c \
             drivers/light_ws2811strip_stdperiph.c \
             drivers/serial_uart_init.c \

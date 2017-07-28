@@ -29,7 +29,6 @@
 #include "common/utils.h"
 
 #include "drivers/bus_i2c.h"
-#include "drivers/gpio.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 

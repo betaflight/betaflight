@@ -70,10 +70,6 @@
 #define ACC_MPU6000_ALIGN        CW180_DEG
 #endif
 
-// XXX Temporary turn this off while bus code manipulation
-#undef USE_DASHBOARD
-#undef USE_I2C_OLED_DISPLAY
-
 // Support for iFlight OMNIBUS F4 V3
 // Has ICM20608 instead of MPU6000
 // OMNIBUSF4SD is linked with both MPU6000 and MPU6500 drivers
