@@ -26,6 +26,7 @@ typedef enum {
     RANGEFINDER_HCSR04      = 1,
     RANGEFINDER_SRF10       = 2,
     RANGEFINDER_HCSR04I2C   = 3,
+    RANGEFINDER_VL53L0X     = 4,
 } rangefinderType_e;
 
 typedef struct rangefinderConfig_s {
@@ -57,5 +58,5 @@ int32_t rangefinderGetLatestAltitude(void);
 int32_t rangefinderGetLatestRawAltitude(void);
 
 timeDelta_t rangefinderUpdate(void);
-void rangefinderProcess(float cosTiltAngle);
+bool rangefinderProcess(float cosTiltAngle);
 bool rangefinderIsHealthy(void);

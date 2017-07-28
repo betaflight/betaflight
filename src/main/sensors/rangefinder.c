@@ -38,6 +38,7 @@
 #include "drivers/rangefinder_hcsr04.h"
 #include "drivers/rangefinder_srf10.h"
 #include "drivers/rangefinder_hcsr04_i2c.h"
+#include "drivers/rangefinder_vl53l0x.h"
 #include "drivers/rangefinder.h"
 
 #include "fc/config.h"
@@ -122,6 +123,15 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
             if (hcsr04i2c0Detect(dev)) {
                 rangefinderHardware = RANGEFINDER_HCSR04I2C;
                 rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_HCSR04_i2C_TASK_PERIOD_MS));
+            }
+#endif
+            break;
+
+            case RANGEFINDER_VL53L0X:
+#if defined(USE_RANGEFINDER_VL53L0X)
+            if (vl53l0xDetect(dev)) {
+                rangefinderHardware = RANGEFINDER_VL53L0X;
+                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_VL53L0X_TASK_PERIOD_MS));
             }
 #endif
             break;
@@ -256,12 +266,17 @@ bool isSurfaceAltitudeValid() {
 /**
  * Get the last distance measured by the sonar in centimeters. When the ground is too far away, RANGEFINDER_OUT_OF_RANGE is returned.
  */
-void rangefinderProcess(float cosTiltAngle)
+bool rangefinderProcess(float cosTiltAngle)
 {
     if (rangefinder.dev.read) {
         const int32_t distance = rangefinder.dev.read();
 
         DEBUG_SET(DEBUG_RANGEFINDER, 0, distance);
+
+        // If driver reported no new measurement - don't do anything
+        if (distance == RANGEFINDER_NO_NEW_DATA) {
+            return false;
+        }
 
         if (distance >= 0) {
             rangefinder.lastValidResponseTimeMs = millis();
@@ -317,6 +332,8 @@ void rangefinderProcess(float cosTiltAngle)
 
     DEBUG_SET(DEBUG_RANGEFINDER, 1, rangefinder.rawAltitude);
     DEBUG_SET(DEBUG_RANGEFINDER, 2, rangefinder.calculatedAltitude);
+
+    return true;
 }
 
 /**

@@ -372,22 +372,18 @@ static void i2cWaitForCompletion(I2CDevice device)
     } while (busState[device].state != I2C_STATE_STOPPED);
 }
 
-bool i2cWrite(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t data)
+bool i2cWriteBuffer(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t * data)
 {
-    static uint8_t writeBuf[1];
-
     // Don't try to access the non-initialized device
     if (!busState[device].initialized)
         return false;
 
     // Set up write transaction
-    writeBuf[0] = data;
-
     busState[device].addr = addr << 1;
     busState[device].reg = reg;
     busState[device].rw = I2C_TXN_WRITE;
-    busState[device].len = 1;
-    busState[device].buf = writeBuf;
+    busState[device].len = len;
+    busState[device].buf = data;
     busState[device].txnOk = false;
     busState[device].state = I2C_STATE_STARTING;
 
@@ -396,6 +392,12 @@ bool i2cWrite(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t data)
 
     return busState[device].txnOk;
 }
+
+bool i2cWrite(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t data)
+{
+    return i2cWriteBuffer(device, addr, reg, 1, &data);
+}
+
 
 bool i2cRead(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t* buf)
 {
