@@ -10,7 +10,7 @@ For Omnibus F4 Pro (v2 with BMP280 baro, current sensor and SD Card use Omnibus 
 * Integrated Accelerometer/Gyro MPU6000 or MPU6500 via SPI bus
 * 6 motor outputs
 * 3 UART ports (UART1, UART3, UART6)
-* External I2C bus, pins shared with UART3, can not be used simultaneously
+* External I2C bus, pins shared with UART3, cannot be used simultaneously
 * Inverter for SBUS
 * Blackbox via SDCard or integrated 128mbit flash memory
 * BLHeli Passthrough
@@ -18,11 +18,11 @@ For Omnibus F4 Pro (v2 with BMP280 baro, current sensor and SD Card use Omnibus 
 * Buzzer connector
 * Integrated OSD
 
-## Herdware versions
+## Hardware versions
 
 ### Omnibus F4 v1
 
-* linear volatge stabilizer, tends to overheat
+* linear voltage stabilizer, tends to overheat
 * SBUS inverter connected to UART1
 * PPM and UART1 can be used together when S.BUS jumper is removed (close to PPM/SBUS connector)
 * 128mbit flash memory for Blackbox
@@ -50,7 +50,7 @@ For Omnibus F4 Pro (v2 with BMP280 baro, current sensor and SD Card use Omnibus 
 * switching voltage regulator - solves problem of overheating BEC
 * SD Card slot instead of flash memory
 * SBUS inverter connected to UART6
-* PPM and UART6 can not be used together, there is no jumper to disconnect PPM input from UART6 RX
+* PPM and UART6 cannot be used together, there is no jumper to disconnect PPM input from UART6 RX
 * Uses target **OMNIBUSF4V3**
 
 ## **NOT** supported
@@ -104,8 +104,8 @@ Flashing requires DFU mode and STM32 DFU drivers. Use [Zadig](http://zadig.akeo.
 ## Integrated voltage stabilizer (Omnibus F4 v1 only)
 
 It is integrated with voltage monitoring and always powered when VBAT is connected to battery.
-Because this is **Linear Stabilizer**, it has a tendency to overheat, especially on 4S. Because of that,
-avoid powering too many devices directly to 5V pins on the board. RX receiver is (and board itself) is rather all
+Because this is a **Linear Stabilizer**, it has a tendency to overheat, especially on 4S. Because of that,
+avoid powering too many devices directly to 5V pins on the board. RX receiver (and board itself) is rather all
 it can do without overeating (150mA on 4S gives 1.5W of waste heat!). OSD, LED Strip and other devices should powered from separate BEC if voltage monitoring is to be enabled.
 
 ## LED Strip
