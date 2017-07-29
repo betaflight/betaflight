@@ -115,7 +115,6 @@
 #endif
 
 static const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
-static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 #ifndef USE_OSD_SLAVE
 
@@ -346,7 +345,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         break;
 
     case MSP_BOARD_INFO:
-        sbufWriteData(dst, boardIdentifier, BOARD_IDENTIFIER_LENGTH);
+        sbufWriteData(dst, systemConfig()->boardIdentifier, BOARD_IDENTIFIER_LENGTH);
 #ifdef USE_HARDWARE_REVISION_DETECTION
         sbufWriteU16(dst, hardwareRevision);
 #else
@@ -695,9 +694,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
     case MSP_NAME:
         {
-            const int nameLen = strlen(systemConfig()->name);
+            const int nameLen = strlen(pilotConfig()->name);
             for (int i = 0; i < nameLen; i++) {
-                sbufWriteU8(dst, systemConfig()->name[i]);
+                sbufWriteU8(dst, pilotConfig()->name[i]);
             }
         }
         break;
@@ -1806,9 +1805,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
 
     case MSP_SET_NAME:
-        memset(systemConfigMutable()->name, 0, ARRAYLEN(systemConfig()->name));
+        memset(pilotConfigMutable()->name, 0, ARRAYLEN(pilotConfig()->name));
         for (unsigned int i = 0; i < MIN(MAX_NAME_LENGTH, dataSize); i++) {
-            systemConfigMutable()->name[i] = sbufReadU8(src);
+            pilotConfigMutable()->name[i] = sbufReadU8(src);
         }
         break;
 

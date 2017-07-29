@@ -1915,22 +1915,22 @@ static void cliVtx(char *cmdline)
 
 #endif // VTX_CONTROL
 
-static void printName(uint8_t dumpMask, const systemConfig_t *systemConfig)
+static void printName(uint8_t dumpMask, const pilotConfig_t *pilotConfig)
 {
-    const bool equalsDefault = strlen(systemConfig->name) == 0;
-    cliDumpPrintLinef(dumpMask, equalsDefault, "name %s", equalsDefault ? emptyName : systemConfig->name);
+    const bool equalsDefault = strlen(pilotConfig->name) == 0;
+    cliDumpPrintLinef(dumpMask, equalsDefault, "name %s", equalsDefault ? emptyName : pilotConfig->name);
 }
 
 static void cliName(char *cmdline)
 {
     const uint32_t len = strlen(cmdline);
     if (len > 0) {
-        memset(systemConfigMutable()->name, 0, ARRAYLEN(systemConfig()->name));
+        memset(pilotConfigMutable()->name, 0, ARRAYLEN(pilotConfig()->name));
         if (strncmp(cmdline, emptyName, len)) {
-            strncpy(systemConfigMutable()->name, cmdline, MIN(len, MAX_NAME_LENGTH));
+            strncpy(pilotConfigMutable()->name, cmdline, MIN(len, MAX_NAME_LENGTH));
         }
     }
-    printName(DUMP_MASTER, systemConfig());
+    printName(DUMP_MASTER, pilotConfig());
 }
 
 static void printFeature(uint8_t dumpMask, const featureConfig_t *featureConfig, const featureConfig_t *featureConfigDefault)
@@ -2269,9 +2269,9 @@ void printEscInfo(const uint8_t *escInfoBytes, uint8_t bytesRead)
             escInfoReceived = true;
 
             if (calculateCrc8(escInfoBytes, frameLength - 1) == escInfoBytes[frameLength - 1]) {
-                uint8_t firmwareVersion;
-                char firmwareSubVersion;
-                uint8_t escType;
+                uint8_t firmwareVersion = 0;
+                char firmwareSubVersion = 0;
+                uint8_t escType = 0;
                 switch (escInfoVersion) {
                 case 1:
                     firmwareVersion = escInfoBytes[12];
@@ -2291,23 +2291,18 @@ void printEscInfo(const uint8_t *escInfoBytes, uint8_t bytesRead)
                 switch (escType) {
                 case 1:
                     cliPrintLine("KISS8A");
-
                     break;
                 case 2:
                     cliPrintLine("KISS16A");
-
                     break;
                 case 3:
                     cliPrintLine("KISS24A");
-
                     break;
                 case 5:
                     cliPrintLine("KISS Ultralite");
-
                     break;
                 default:
                     cliPrintLine("unknown");
-
                     break;
                 }
 
@@ -2508,8 +2503,8 @@ static void cliMotor(char *cmdline)
         return;
     }
 
-    int motorIndex;
-    int motorValue;
+    int motorIndex = 0;
+    int motorValue = 0;
 
     char *saveptr;
     char *pch = strtok_r(cmdline, " ", &saveptr);
@@ -3331,7 +3326,7 @@ static void printConfig(char *cmdline, bool doDiff)
         }
 
         cliPrintHashLine("name");
-        printName(dumpMask, &systemConfig_Copy);
+        printName(dumpMask, &pilotConfig_Copy);
 
 #ifdef USE_RESOURCE_MGMT
         cliPrintHashLine("resources");

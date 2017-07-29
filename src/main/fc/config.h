@@ -59,6 +59,9 @@ typedef enum {
 } features_e;
 
 #define MAX_NAME_LENGTH 16
+typedef struct pilotConfig_s {
+    char name[MAX_NAME_LENGTH + 1];
+} pilotConfig_t;
 
 #ifndef USE_OSD_SLAVE
 typedef struct systemConfig_s {
@@ -69,7 +72,7 @@ typedef struct systemConfig_s {
 #if defined(STM32F4) && !defined(DISABLE_OVERCLOCK)
     uint8_t cpu_overclock;
 #endif
-    char name[MAX_NAME_LENGTH + 1]; // FIXME misplaced, see PG_PILOT_CONFIG in CF v1.x
+    char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER) + 1];
 } systemConfig_t;
 #endif
 
@@ -77,9 +80,11 @@ typedef struct systemConfig_s {
 typedef struct systemConfig_s {
     uint8_t debug_mode;
     uint8_t task_statistics;
+    char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER) + 1];
 } systemConfig_t;
 #endif
 
+PG_DECLARE(pilotConfig_t, pilotConfig);
 PG_DECLARE(systemConfig_t, systemConfig);
 PG_DECLARE(adcConfig_t, adcConfig);
 PG_DECLARE(beeperDevConfig_t, beeperDevConfig);
