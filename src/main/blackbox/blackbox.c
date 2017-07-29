@@ -1143,7 +1143,7 @@ static bool sendFieldDefinition(char mainFrameChar, char deltaFrameChar, const v
 
             // The first header is a field name
             if (xmitState.headerIndex == 0) {
-                blackboxPrint(def->name);
+                blackboxWriteString(def->name);
 
                 // Do we need to print an index in brackets after the name?
                 if (def->fieldNameIndex != -1) {
@@ -1197,7 +1197,7 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("Firmware revision", "%s %s (%s) %s",    FC_FIRMWARE_NAME, FC_VERSION_STRING, shortGitRevision, targetName);
         BLACKBOX_PRINT_HEADER_LINE("Firmware date", "%s %s",                buildDate, buildTime);
         BLACKBOX_PRINT_HEADER_LINE("Log start datetime", "%s",              blackboxGetStartDateTime());
-        BLACKBOX_PRINT_HEADER_LINE("Craft name", "%s",                      systemConfig()->name);
+        BLACKBOX_PRINT_HEADER_LINE("Craft name", "%s",                      pilotConfig()->name);
         BLACKBOX_PRINT_HEADER_LINE("I interval", "%d",                      blackboxIInterval);
         BLACKBOX_PRINT_HEADER_LINE("P interval", "%d/%d",                   blackboxGetRateNum(), blackboxGetRateDenom());
         BLACKBOX_PRINT_HEADER_LINE("P denom", "%d",                         blackboxConfig()->p_denom);
@@ -1359,7 +1359,7 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
         blackboxWriteUnsignedVB(data->loggingResume.currentTime);
         break;
     case FLIGHT_LOG_EVENT_LOG_END:
-        blackboxPrint("End of log");
+        blackboxWriteString("End of log");
         blackboxWrite(0);
         break;
     }

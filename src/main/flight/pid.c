@@ -106,6 +106,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .itermThrottleThreshold = 350,
         .itermAcceleratorGain = 1000,
         .crash_time = 500,          // ms
+        .crash_delay = 0,          // ms
         .crash_recovery_angle = 10, // degrees
         .crash_recovery_rate = 100, // degrees/second
         .crash_dthreshold = 50,     // degrees/second/second
@@ -240,6 +241,7 @@ static float levelGain, horizonGain, horizonTransition, horizonCutoffDegrees, ho
 static float ITermWindupPoint, ITermWindupPointInv;
 static uint8_t horizonTiltExpertMode;
 static timeDelta_t crashTimeLimitUs;
+static timeDelta_t crashTimeDelayUs;
 static int32_t crashRecoveryAngleDeciDegrees;
 static float crashRecoveryRate;
 static float crashDtermThreshold;
@@ -266,6 +268,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
     ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
     crashTimeLimitUs = pidProfile->crash_time * 1000;
+    crashTimeDelayUs = pidProfile->crash_delay * 1000;
     crashRecoveryAngleDeciDegrees = pidProfile->crash_recovery_angle * 10;
     crashRecoveryRate = pidProfile->crash_recovery_rate;
     crashGyroThreshold = pidProfile->crash_gthreshold;
@@ -395,8 +398,11 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim, currentPidSetpoint);
         }
 
-        if (inCrashRecoveryMode && axis != FD_YAW) {
+        if (inCrashRecoveryMode && axis != FD_YAW && cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeDelayUs) {
             // self-level - errorAngle is deviation from horizontal
+            if (pidProfile->crash_recovery == PID_CRASH_RECOVERY_BEEP) {
+                        BEEP_ON;
+            }
             const float errorAngle =  -(attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f;
             currentPidSetpoint = errorAngle * levelGain;
             if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeLimitUs
@@ -451,16 +457,17 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             previousRateError[axis] = rD;
 
             // if crash recovery is on and accelerometer enabled then check for a crash
-            if (pidProfile->crash_recovery && inCrashRecoveryMode == false && sensors(SENSOR_ACC) && ARMING_FLAG(ARMED)) {
-                if (motorMixRange >= 1.0f
+            if (pidProfile->crash_recovery && sensors(SENSOR_ACC) && ARMING_FLAG(ARMED)) {
+                if (motorMixRange >= 1.0f && inCrashRecoveryMode == false
                         && ABS(delta) > crashDtermThreshold
                         && ABS(errorRate) > crashGyroThreshold
                         && ABS(getSetpointRate(axis)) < crashSetpointThreshold) {
                     inCrashRecoveryMode = true;
                     crashDetectedAtUs = currentTimeUs;
-                    if (pidProfile->crash_recovery == PID_CRASH_RECOVERY_BEEP) {
-                        BEEP_ON;
-                    }
+                }
+                if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) < crashTimeDelayUs && (ABS(errorRate) < crashGyroThreshold 
+                    || ABS(getSetpointRate(axis)) > crashSetpointThreshold)) {
+                    inCrashRecoveryMode = false;
                 }
             }
 

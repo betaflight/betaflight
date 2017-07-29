@@ -1,5 +1,5 @@
 F3_TARGETS  += $(TARGET)
-FEATURES    = VCP SDCARD
+FEATURES    = VCP SDCARD ONBOARDFLASH
 
 TARGET_SRC = \
             drivers/accgyro/accgyro_adxl345.c \

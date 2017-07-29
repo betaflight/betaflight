@@ -104,16 +104,16 @@ serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
     return findSerialPortConfig_stub_retval;
 }
 
-static portMode_t serialExpectedMode = MODE_RX;
-static portOptions_t serialExpectedOptions = SERIAL_UNIDIR;
+static portMode_e serialExpectedMode = MODE_RX;
+static portOptions_e serialExpectedOptions = SERIAL_UNIDIR;
 
 serialPort_t *openSerialPort(
     serialPortIdentifier_e identifier,
     serialPortFunction_e function,
     serialReceiveCallbackPtr callback,
     uint32_t baudrate,
-    portMode_t mode,
-    portOptions_t options
+    portMode_e mode,
+    portOptions_e options
 )
 {
     openSerial_called = true;
