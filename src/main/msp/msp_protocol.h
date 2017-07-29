@@ -223,6 +223,9 @@
 // External OSD displayport mode messages
 #define MSP_DISPLAYPORT                 182
 
+#define MSP_BEEPER_CONFIG               184
+#define MSP_SET_BEEPER_CONFIG           185
+
 //
 // Multwii original MSP commands
 //

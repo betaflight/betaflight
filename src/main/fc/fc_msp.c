@@ -457,6 +457,12 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU32(dst, featureMask());
         break;
 
+#ifdef BEEPER
+    case MSP_BEEPER_CONFIG:
+        sbufWriteU32(dst, getBeeperOffMask());
+        break;
+#endif
+
     case MSP_BATTERY_STATE: {
         // battery characteristics
         sbufWriteU8(dst, (uint8_t)constrain(getBatteryCellCount(), 0, 255)); // 0 indicates battery not detected.
@@ -1708,6 +1714,13 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         featureClearAll();
         featureSet(sbufReadU32(src)); // features bitmap
         break;
+
+#ifdef BEEPER
+    case MSP_SET_BEEPER_CONFIG:
+        beeperOffClearAll();
+        setBeeperOffMask(sbufReadU32(src));
+        break;
+#endif
 
     case MSP_SET_BOARD_ALIGNMENT_CONFIG:
         boardAlignmentMutable()->rollDegrees = sbufReadU16(src);
