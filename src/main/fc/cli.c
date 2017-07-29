@@ -2969,9 +2969,10 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintLinef("# %s / %s %s %s / %s (%s)",
+    cliPrintLinef("# %s / %s (%s) %s %s / %s (%s)",
         FC_FIRMWARE_NAME,
         targetName,
+        systemConfig()->boardIdentifier,
         FC_VERSION_STRING,
         buildDate,
         buildTime,
