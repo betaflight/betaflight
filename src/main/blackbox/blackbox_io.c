@@ -183,7 +183,7 @@ bool blackboxDeviceOpen(void)
         {
             serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_BLACKBOX);
             baudRate_e baudRateIndex;
-            portOptions_t portOptions = SERIAL_PARITY_NO | SERIAL_NOT_INVERTED;
+            portOptions_e portOptions = SERIAL_PARITY_NO | SERIAL_NOT_INVERTED;
 
             if (!portConfig) {
                 return false;

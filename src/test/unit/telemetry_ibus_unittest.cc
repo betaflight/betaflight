@@ -141,8 +141,8 @@ serialPort_t *openSerialPort(
     serialPortFunction_e function,
     serialReceiveCallbackPtr callback,
     uint32_t baudrate,
-    portMode_t mode,
-    portOptions_t options
+    portMode_e mode,
+    portOptions_e options
 )
 {
     openSerial_called = true;

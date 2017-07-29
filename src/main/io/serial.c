@@ -334,8 +334,8 @@ serialPort_t *openSerialPort(
     serialPortFunction_e function,
     serialReceiveCallbackPtr rxCallback,
     uint32_t baudRate,
-    portMode_t mode,
-    portOptions_t options)
+    portMode_e mode,
+    portOptions_e options)
 {
 #if !(defined(USE_UART) || defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
     UNUSED(rxCallback);

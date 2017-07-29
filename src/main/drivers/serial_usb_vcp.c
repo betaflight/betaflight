@@ -57,7 +57,7 @@ static void usbVcpSetBaudRate(serialPort_t *instance, uint32_t baudRate)
     // TODO implement
 }
 
-static void usbVcpSetMode(serialPort_t *instance, portMode_t mode)
+static void usbVcpSetMode(serialPort_t *instance, portMode_e mode)
 {
     UNUSED(instance);
     UNUSED(mode);

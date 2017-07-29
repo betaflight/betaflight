@@ -81,7 +81,7 @@ bool isSerialTransmitBufferEmpty(const serialPort_t *instance)
     return instance->vTable->isSerialTransmitBufferEmpty(instance);
 }
 
-void serialSetMode(serialPort_t *instance, portMode_t mode)
+void serialSetMode(serialPort_t *instance, portMode_e mode)
 {
     instance->vTable->setMode(instance, mode);
 }

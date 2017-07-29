@@ -419,7 +419,7 @@ static void onSerialRxPinChangeBL(timerCCHandlerRec_t *cbRec, captureCompare_t c
     }
 }
 
-static void serialTimerRxConfigBL(const timerHardware_t *timerHardwarePtr, uint8_t reference, portOptions_t options)
+static void serialTimerRxConfigBL(const timerHardware_t *timerHardwarePtr, uint8_t reference, portOptions_e options)
 {
     // start bit is usually a FALLING signal
     TIM_DeInit(timerHardwarePtr->tim);
@@ -654,7 +654,7 @@ static void resetBuffers(escSerial_t *escSerial)
     escSerial->port.txBufferHead = 0;
 }
 
-static serialPort_t *openEscSerial(escSerialPortIndex_e portIndex, serialReceiveCallbackPtr callback, uint16_t output, uint32_t baud, portOptions_t options, uint8_t mode)
+static serialPort_t *openEscSerial(escSerialPortIndex_e portIndex, serialReceiveCallbackPtr callback, uint16_t output, uint32_t baud, portOptions_e options, uint8_t mode)
 {
     escSerial_t *escSerial = &(escSerialPorts[portIndex]);
 
@@ -811,7 +811,7 @@ static void escSerialSetBaudRate(serialPort_t *s, uint32_t baudRate)
     UNUSED(baudRate);
 }
 
-static void escSerialSetMode(serialPort_t *instance, portMode_t mode)
+static void escSerialSetMode(serialPort_t *instance, portMode_e mode)
 {
     instance->mode = mode;
 }
