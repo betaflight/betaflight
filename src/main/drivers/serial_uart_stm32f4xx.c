@@ -194,10 +194,8 @@ void dmaIRQHandler(dmaChannelDescriptor_t* descriptor)
 
 // XXX Should serialUART be consolidated?
 
-uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, portOptions_t options)
+uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, portOptions_e options)
 {
-    uartPort_t *s;
-
     uartDevice_t *uart = uartDevmap[device];
     if (!uart) return NULL;
 
@@ -205,7 +203,7 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
 
     if (!hardware) return NULL; // XXX Can't happen !?
 
-    s = &(uart->port);
+    uartPort_t *s = &(uart->port);
     s->port.vTable = uartVTable;
 
     s->port.baudRate = baudRate;

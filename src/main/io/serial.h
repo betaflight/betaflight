@@ -151,8 +151,8 @@ serialPort_t *openSerialPort(
     serialPortFunction_e function,
     serialReceiveCallbackPtr rxCallback,
     uint32_t baudrate,
-    portMode_t mode,
-    portOptions_t options
+    portMode_e mode,
+    portOptions_e options
 );
 void closeSerialPort(serialPort_t *serialPort);
 
