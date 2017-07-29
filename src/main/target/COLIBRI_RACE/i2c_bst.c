@@ -23,7 +23,6 @@
 
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
-#include "drivers/gpio.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
 #include "drivers/timer.h"

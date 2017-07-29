@@ -265,6 +265,11 @@ void init(void)
     ensureEEPROMContainsValidData();
     readEEPROM();
 
+    /* TODO: Check to be removed when moving to generic targets */
+    if (strncasecmp(systemConfig()->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER))) {
+       resetEEPROM();
+    }
+
 #if defined(STM32F4) && !defined(DISABLE_OVERCLOCK)
     // If F4 Overclocking is set and System core clock is not correct a reset is forced
     if (systemConfig()->cpu_overclock && SystemCoreClock != OC_FREQUENCY_HZ) {

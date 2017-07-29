@@ -22,8 +22,6 @@
 
 #include "platform.h"
 
-#if defined(USE_MAG_AK8963) || defined(USE_MAG_SPI_AK8963)
-
 #include "build/debug.h"
 
 #include "common/axis.h"
@@ -46,6 +44,10 @@
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
 #include "drivers/compass/compass_ak8963.h"
+<<<<<<< HEAD
+=======
+#include "drivers/compass/compass_spi_ak8963.h"
+>>>>>>> betaflight/master
 
 static float magGain[3] = { 1.0f, 1.0f, 1.0f };
 
@@ -152,7 +154,28 @@ static bool ak8963SlaveReadData(const busDevice_t *busdev, uint8_t *buf)
         WAITING_FOR_DATA
     } ak8963ReadState_e;
 
+<<<<<<< HEAD
     static ak8963ReadState_e state = CHECK_STATUS;
+=======
+    ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL1, CNTL1_MODE_POWER_DOWN); // power down before entering fuse mode
+    ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL1, CNTL1_MODE_FUSE_ROM); // Enter Fuse ROM access mode
+    ak8963SensorRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_ASAX, sizeof(calibration), calibration); // Read the x-, y-, and z-axis calibration values
+
+    magGain[X] = ((((float)(int8_t)calibration[X] - 128) / 256) + 1) * 30;
+    magGain[Y] = ((((float)(int8_t)calibration[Y] - 128) / 256) + 1) * 30;
+    magGain[Z] = ((((float)(int8_t)calibration[Z] - 128) / 256) + 1) * 30;
+
+    ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL1, CNTL1_MODE_POWER_DOWN); // power down after reading.
+
+    // Clear status registers
+    ak8963SensorRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_ST1, 1, &status);
+    ak8963SensorRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_ST2, 1, &status);
+
+    // Trigger first measurement
+    ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL1, CNTL1_MODE_ONCE);
+    return true;
+}
+>>>>>>> betaflight/master
 
     bool ack = false;
 
@@ -164,7 +187,11 @@ static bool ak8963SlaveReadData(const busDevice_t *busdev, uint8_t *buf)
 restart:
     switch (state) {
         case CHECK_STATUS:
+<<<<<<< HEAD
             ak8963SlaveStartRead(busdev, AK8963_MAG_REG_ST1, 1);
+=======
+            ak8963SensorStartRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_ST1, 1);
+>>>>>>> betaflight/master
             state++;
             return false;
 
@@ -207,6 +234,11 @@ restart:
             state = CHECK_STATUS;
         }
     }
+<<<<<<< HEAD
+=======
+#else
+    ack = ak8963SensorRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_ST1, 1, &buf[0]);
+>>>>>>> betaflight/master
 
     return ack;
 }
@@ -365,12 +397,29 @@ void ak8963BusDeInit(const busDevice_t *busdev)
         break;
 #endif
 
+<<<<<<< HEAD
 #ifdef USE_MAG_SPI_AK8963
     case BUSTYPE_SPI:
         IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_IPU);
         IORelease(busdev->busdev_u.spi.csnPin);
         IOInit(busdev->busdev_u.spi.csnPin, OWNER_SPI_PREINIT, 0);
         break;
+=======
+#if defined(USE_SPI) && defined(AK8963_SPI_INSTANCE)
+    spiBusSetInstance(&mag->bus, AK8963_SPI_INSTANCE);
+    mag->bus.busdev_u.spi.csnPin = mag->bus.busdev_u.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(AK8963_CS_PIN)) : mag->bus.busdev_u.spi.csnPin;
+
+    // check for SPI AK8963
+    if (ak8963SpiDetect(mag)) return true;
+#endif
+
+#if defined(MPU6500_SPI_INSTANCE) || defined(MPU9250_SPI_INSTANCE)
+    bus = &mag->bus;
+#if defined(MPU6500_SPI_INSTANCE)
+    spiBusSetInstance(&mag->bus, MPU6500_SPI_INSTANCE);
+#elif defined(MPU9250_SPI_INSTANCE)
+    spiBusSetInstance(&mag->bus, MPU9250_SPI_INSTANCE);
+>>>>>>> betaflight/master
 #endif
 
 #if defined(USE_MAG_AK8963) && (defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250))
@@ -392,8 +441,12 @@ bool ak8963Detect(magDev_t *mag)
     ak8963WriteRegister(busdev, AK8963_MAG_REG_CNTL2, CNTL2_SOFT_RESET); // reset MAG
     delay(4);
 
+<<<<<<< HEAD
     bool ack = ak8963ReadRegisterBuffer(busdev, AK8963_MAG_REG_WIA, 1, &sig);  // check for AK8963
 
+=======
+    bool ack = ak8963SensorRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_WIA, 1, &sig);  // check for AK8963
+>>>>>>> betaflight/master
     if (ack && sig == AK8963_Device_ID) // 0x48 / 01001000 / 'H'
     {
         mag->init = ak8963Init;
@@ -406,4 +459,3 @@ bool ak8963Detect(magDev_t *mag)
 
     return false;
 }
-#endif

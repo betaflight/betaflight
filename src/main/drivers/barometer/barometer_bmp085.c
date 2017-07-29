@@ -28,7 +28,6 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_busdev.h"
 #include "drivers/exti.h"
-#include "drivers/gpio.h"
 #include "drivers/io.h"
 #include "drivers/nvic.h"
 #include "drivers/time.h"
@@ -197,6 +196,11 @@ bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro)
     delay(20); // datasheet says 10ms, we'll be careful and do 20.
 
     busDevice_t *busdev = &baro->busdev;
+
+    if ((busdev->bustype == BUSTYPE_I2C) && (busdev->busdev_u.i2c.address == 0)) {
+        // Default address for BMP085
+        busdev->busdev_u.i2c.address = BMP085_I2C_ADDR;
+    }
 
     ack = bmp085ReadRegister(busdev, BMP085_CHIP_ID__REG, 1, &data); /* read Chip Id */
     if (ack) {

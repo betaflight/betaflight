@@ -28,7 +28,6 @@
 
 #include "drivers/bus_i2c.h"
 #include "drivers/exti.h"
-#include "drivers/gpio.h"
 #include "drivers/gyro_sync.h"
 #include "drivers/nvic.h"
 #include "drivers/sensor.h"

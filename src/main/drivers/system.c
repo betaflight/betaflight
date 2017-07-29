@@ -20,7 +20,6 @@
 
 #include "platform.h"
 
-#include "drivers/gpio.h"
 #include "light_led.h"
 #include "sound_beeper.h"
 #include "drivers/nvic.h"

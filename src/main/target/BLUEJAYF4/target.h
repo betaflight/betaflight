@@ -130,7 +130,7 @@
 #define SPI1_MOSI_PIN           PA7
 
 #define USE_SPI_DEVICE_3
-#define SPI3_NSS_PIN            PB3
+#define SPI3_NSS_PIN            PB7
 #define SPI3_SCK_PIN            PC10
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
@@ -157,5 +157,5 @@
 #define TARGET_IO_PORTC             0xffff
 #define TARGET_IO_PORTD             (BIT(2))
 
-#define USABLE_TIMER_CHANNEL_COUNT     7
+#define USABLE_TIMER_CHANNEL_COUNT     8
 #define USED_TIMERS                   ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(9) )

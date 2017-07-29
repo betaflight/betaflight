@@ -20,7 +20,6 @@
 
 #include "platform.h"
 
-#include "drivers/gpio.h"
 #include "drivers/nvic.h"
 #include "drivers/system.h"
 
@@ -48,13 +47,14 @@ void enableGPIOPowerUsageAndNoiseReductions(void)
 {
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC, ENABLE);
 
-    gpio_config_t gpio;
+    GPIO_InitTypeDef GPIO_InitStructure = {
+        .GPIO_Mode = GPIO_Mode_AIN,
+        .GPIO_Pin = GPIO_Pin_All
+    };
 
-    gpio.mode = Mode_AIN;
-    gpio.pin = Pin_All;
-    gpioInit(GPIOA, &gpio);
-    gpioInit(GPIOB, &gpio);
-    gpioInit(GPIOC, &gpio);
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    GPIO_Init(GPIOB, &GPIO_InitStructure);
+    GPIO_Init(GPIOC, &GPIO_InitStructure);
 }
 
 bool isMPUSoftReset(void)
@@ -91,13 +91,14 @@ void systemInit(void)
 
     // Set USART1 TX (PA9) to output and high state to prevent a rs232 break condition on reset.
     // See issue https://github.com/cleanflight/cleanflight/issues/1433
-    gpio_config_t gpio;
+    GPIO_InitTypeDef GPIO_InitStructure = {
+        .GPIO_Mode = GPIO_Mode_Out_PP,
+        .GPIO_Pin = GPIO_Pin_9,
+        .GPIO_Speed = GPIO_Speed_2MHz
+    };
 
-    gpio.mode = Mode_Out_PP;
-    gpio.speed = Speed_2MHz;
-    gpio.pin = Pin_9;
-    digitalHi(GPIOA, gpio.pin);
-    gpioInit(GPIOA, &gpio);
+    GPIOA->BSRR = GPIO_InitStructure.GPIO_Pin;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
 
     // Turn off JTAG port 'cause we're using the GPIO for leds
 #define AFIO_MAPR_SWJ_CFG_NO_JTAG_SW            (0x2 << 24)

@@ -7,6 +7,8 @@ COMMON_SRC = \
             common/bitarray.c \
             common/encoding.c \
             common/filter.c \
+            common/huffman.c \
+            common/huffman_table.c \
             common/maths.c \
             common/printf.c \
             common/streambuf.c \

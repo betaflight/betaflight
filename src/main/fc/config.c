@@ -117,6 +117,12 @@ PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
     .enabledFeatures = DEFAULT_FEATURES | DEFAULT_RX_FEATURE
 );
 
+PG_REGISTER_WITH_RESET_TEMPLATE(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 0);
+
+PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
+    .name = { 0 }
+);
+
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
 
 #ifndef USE_OSD_SLAVE
@@ -127,7 +133,7 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .debug_mode = DEBUG_MODE,
     .task_statistics = true,
     .cpu_overclock = false,
-    .name = { 0 } // FIXME misplaced, see PG_PILOT_CONFIG in CF v1.x
+    .boardIdentifier = TARGET_BOARD_IDENTIFIER
 );
 #else
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
@@ -135,7 +141,7 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .activeRateProfile = 0,
     .debug_mode = DEBUG_MODE,
     .task_statistics = true,
-    .name = { 0 } // FIXME misplaced, see PG_PILOT_CONFIG in CF v1.x
+    .boardIdentifier = TARGET_BOARD_IDENTIFIER
 );
 #endif
 #endif
@@ -143,7 +149,8 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
 #ifdef USE_OSD_SLAVE
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .debug_mode = DEBUG_MODE,
-    .task_statistics = true
+    .task_statistics = true,
+    .boardIdentifier = TARGET_BOARD_IDENTIFIER
 );
 #endif
 

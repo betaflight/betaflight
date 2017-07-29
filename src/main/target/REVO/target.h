@@ -136,14 +136,13 @@
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
-#if defined(AIRBOTF4) || defined(AIRBOTF4SD)
+// Configure MAG and BARO unconditionally.
 #define MAG
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW90_DEG
 
 #define BARO
 #define USE_BARO_MS5611
-#endif
 
 #if defined(AIRBOTF4SD)
 // SDCARD support for AIRBOTF4SD
@@ -222,9 +221,9 @@
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
 
+#define USE_I2C
 #if defined(AIRBOTF4) || defined(AIRBOTF4SD)
 // On AIRBOTF4 and AIRBOTF4SD, I2C2 and I2C3 are configurable
-#define USE_I2C
 #define USE_I2C_DEVICE_2
 #define I2C2_SCL                NONE // PB10, shared with UART3TX
 #define I2C2_SDA                NONE // PB11, shared with UART3RX
@@ -232,6 +231,11 @@
 #define I2C3_SCL                NONE // PA8, PWM6
 #define I2C3_SDA                NONE // PC9, CH6
 #define I2C_DEVICE              (I2CDEV_2)
+#else
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
+#define I2C1_SCL                PB8
+#define I2C1_SDA                PB9
 #endif
 
 #define USE_ADC

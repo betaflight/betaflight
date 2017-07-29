@@ -131,6 +131,9 @@ VPATH 			:= $(VPATH):$(ROOT)/make
 # start specific includes
 include $(ROOT)/make/mcu/$(TARGET_MCU).mk
 
+# openocd specific includes
+include $(ROOT)/make/openocd.mk
+
 # Configure default flash sizes for the targets (largest size specified gets hit first) if flash not specified already.
 ifeq ($(FLASH_SIZE),)
 ifneq ($(TARGET_FLASH),)
@@ -180,6 +183,7 @@ endif
 # Tool names
 CROSS_CC    := $(CCACHE) $(ARM_SDK_PREFIX)gcc
 CROSS_CXX   := $(CCACHE) $(ARM_SDK_PREFIX)g++
+CROSS_GDB   := $(ARM_SDK_PREFIX)gdb
 OBJCOPY     := $(ARM_SDK_PREFIX)objcopy
 OBJDUMP     := $(ARM_SDK_PREFIX)objdump
 SIZE        := $(ARM_SDK_PREFIX)size
@@ -382,6 +386,11 @@ st-flash_$(TARGET): $(TARGET_BIN)
 
 ## st-flash          : flash firmware (.bin) onto flight controller
 st-flash: st-flash_$(TARGET)
+
+ifneq ($(OPENOCD_COMMAND),)
+openocd-gdb: $(TARGET_ELF)
+	$(V0) $(OPENOCD_COMMAND) & $(CROSS_GDB) $(TARGET_ELF) -ex "target remote localhost:3333" -ex "load"
+endif
 
 binary:
 	$(V0) $(MAKE) -j $(TARGET_BIN)

@@ -28,11 +28,11 @@
 #include "config/parameter_group_ids.h"
 
 #if defined(STM32F40_41xxx)
-#define CAMERA_CONTROL_TIMER_MHZ   84
+#define CAMERA_CONTROL_TIMER_HZ   MHZ_TO_HZ(84)
 #elif defined(STM32F7)
-#define CAMERA_CONTROL_TIMER_MHZ   108
+#define CAMERA_CONTROL_TIMER_HZ   MHZ_TO_HZ(216)
 #else
-#define CAMERA_CONTROL_TIMER_MHZ   72
+#define CAMERA_CONTROL_TIMER_HZ   MHZ_TO_HZ(72)
 #endif
 
 #define CAMERA_CONTROL_PWM_RESOLUTION   128
@@ -109,8 +109,9 @@ void cameraControlInit()
         IOConfigGPIO(cameraControlRuntime.io, IOCFG_AF_PP);
         #endif
 
-        pwmOutConfig(&cameraControlRuntime.channel, timerHardware, CAMERA_CONTROL_TIMER_MHZ * 1000000, CAMERA_CONTROL_PWM_RESOLUTION, 0, 0);
+        pwmOutConfig(&cameraControlRuntime.channel, timerHardware, CAMERA_CONTROL_TIMER_HZ, CAMERA_CONTROL_PWM_RESOLUTION, 0, 0);
 
+        cameraControlRuntime.period = CAMERA_CONTROL_PWM_RESOLUTION;
         *cameraControlRuntime.channel.ccr = cameraControlRuntime.period;
         cameraControlRuntime.enabled = true;
 #endif

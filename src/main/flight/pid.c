@@ -106,6 +106,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .itermThrottleThreshold = 350,
         .itermAcceleratorGain = 1000,
         .crash_time = 500,          // ms
+        .crash_delay = 0,          // ms
         .crash_recovery_angle = 10, // degrees
         .crash_recovery_rate = 100, // degrees/second
         .crash_dthreshold = 50,     // degrees/second/second
@@ -139,7 +140,8 @@ void pidResetErrorGyroState(void)
 
 static float itermAccelerator = 1.0f;
 
-void pidSetItermAccelerator(float newItermAccelerator) {
+void pidSetItermAccelerator(float newItermAccelerator)
+{
     itermAccelerator = newItermAccelerator;
 }
 
@@ -167,7 +169,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     static firFilterDenoise_t denoisingFilter[2];
     static pt1Filter_t pt1FilterYaw;
 
-    uint32_t pidFrequencyNyquist = (1.0f / dT) / 2; // No rounding needed
+    const uint32_t pidFrequencyNyquist = (1.0f / dT) / 2; // No rounding needed
 
     float dTermNotchHz;
     if (pidProfile->dterm_notch_hz <= pidFrequencyNyquist) {
@@ -180,15 +182,15 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         }
     }
 
-    if (!dTermNotchHz) {
-        dtermNotchFilterApplyFn = nullFilterApply;
-    } else {
+    if (dTermNotchHz) {
         dtermNotchFilterApplyFn = (filterApplyFnPtr)biquadFilterApply;
         const float notchQ = filterGetNotchQ(dTermNotchHz, pidProfile->dterm_notch_cutoff);
         for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
             dtermFilterNotch[axis] = &biquadFilterNotch[axis];
             biquadFilterInit(dtermFilterNotch[axis], dTermNotchHz, targetPidLooptime, notchQ, FILTER_NOTCH);
         }
+    } else {
+        dtermNotchFilterApplyFn = nullFilterApply;
     }
 
     if (pidProfile->dterm_lpf_hz == 0 || pidProfile->dterm_lpf_hz > pidFrequencyNyquist) {
@@ -231,20 +233,23 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 }
 
-static float Kp[3], Ki[3], Kd[3], maxVelocity[3];
+static float Kp[3], Ki[3], Kd[3];
+static float maxVelocity[3];
 static float relaxFactor;
 static float dtermSetpointWeight;
-static float levelGain, horizonGain, horizonTransition, horizonCutoffDegrees,
-             horizonFactorRatio, ITermWindupPoint, ITermWindupPointInv;
+static float levelGain, horizonGain, horizonTransition, horizonCutoffDegrees, horizonFactorRatio;
+static float ITermWindupPoint, ITermWindupPointInv;
 static uint8_t horizonTiltExpertMode;
 static timeDelta_t crashTimeLimitUs;
+static timeDelta_t crashTimeDelayUs;
 static int32_t crashRecoveryAngleDeciDegrees;
 static float crashRecoveryRate;
 static float crashDtermThreshold;
 static float crashGyroThreshold;
 static float crashSetpointThreshold;
 
-void pidInitConfig(const pidProfile_t *pidProfile) {
+void pidInitConfig(const pidProfile_t *pidProfile)
+{
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         Kp[axis] = PTERM_SCALE * pidProfile->pid[axis].P;
         Ki[axis] = ITERM_SCALE * pidProfile->pid[axis].I;
@@ -263,6 +268,7 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
     ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
     ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
     crashTimeLimitUs = pidProfile->crash_time * 1000;
+    crashTimeDelayUs = pidProfile->crash_delay * 1000;
     crashRecoveryAngleDeciDegrees = pidProfile->crash_recovery_angle * 10;
     crashRecoveryRate = pidProfile->crash_recovery_rate;
     crashGyroThreshold = pidProfile->crash_gthreshold;
@@ -279,14 +285,13 @@ void pidInit(const pidProfile_t *pidProfile)
 }
 
 // calculates strength of horizon leveling; 0 = none, 1.0 = most leveling
-static float calcHorizonLevelStrength() {
+static float calcHorizonLevelStrength(void)
+{
     // start with 1.0 at center stick, 0.0 at max stick deflection:
-    float horizonLevelStrength = 1.0f -
-             MAX(getRcDeflectionAbs(FD_ROLL), getRcDeflectionAbs(FD_PITCH));
+    float horizonLevelStrength = 1.0f - MAX(getRcDeflectionAbs(FD_ROLL), getRcDeflectionAbs(FD_PITCH));
 
     // 0 at level, 90 at vertical, 180 at inverted (degrees):
-    const float currentInclination = MAX(ABS(attitude.values.roll),
-                                        ABS(attitude.values.pitch)) / 10.0f;
+    const float currentInclination = MAX(ABS(attitude.values.roll), ABS(attitude.values.pitch)) / 10.0f;
 
     // horizonTiltExpertMode:  0 = leveling always active when sticks centered,
     //                         1 = leveling can be totally off when inverted
@@ -296,34 +301,31 @@ static float calcHorizonLevelStrength() {
             // horizonCutoffDegrees: 0 to 125 => 270 to 90 (represents where leveling goes to zero)
             // inclinationLevelRatio (0.0 to 1.0) is smaller (less leveling)
             //  for larger inclinations; 0.0 at horizonCutoffDegrees value:
-            const float inclinationLevelRatio = constrainf(
-                    (horizonCutoffDegrees-currentInclination) / horizonCutoffDegrees, 0, 1);
+            const float inclinationLevelRatio = constrainf((horizonCutoffDegrees-currentInclination) / horizonCutoffDegrees, 0, 1);
             // apply configured horizon sensitivity:
                 // when stick is near center (horizonLevelStrength ~= 1.0)
                 //  H_sensitivity value has little effect,
                 // when stick is deflected (horizonLevelStrength near 0.0)
                 //  H_sensitivity value has more effect:
-            horizonLevelStrength = (horizonLevelStrength - 1) *
-                    100 / horizonTransition + 1;
+            horizonLevelStrength = (horizonLevelStrength - 1) * 100 / horizonTransition + 1;
             // apply inclination ratio, which may lower leveling
             //  to zero regardless of stick position:
             horizonLevelStrength *= inclinationLevelRatio;
-        }
-        else  // d_level=0 or horizon_tilt_effect>=175 means no leveling
+        } else  { // d_level=0 or horizon_tilt_effect>=175 means no leveling
           horizonLevelStrength = 0;
-    } else {  // horizon_tilt_expert_mode = 0 (leveling always active when sticks centered)
+        }
+    } else { // horizon_tilt_expert_mode = 0 (leveling always active when sticks centered)
         float sensitFact;
-        if (horizonFactorRatio < 1.01f) {   // if horizonTiltEffect > 0
+        if (horizonFactorRatio < 1.01f) { // if horizonTiltEffect > 0
             // horizonFactorRatio: 1.0 to 0.0 (larger means more leveling)
             // inclinationLevelRatio (0.0 to 1.0) is smaller (less leveling)
             //  for larger inclinations, goes to 1.0 at inclination==level:
-            const float inclinationLevelRatio = (180-currentInclination)/180 *
-                               (1.0f-horizonFactorRatio) + horizonFactorRatio;
+            const float inclinationLevelRatio = (180-currentInclination)/180 * (1.0f-horizonFactorRatio) + horizonFactorRatio;
             // apply ratio to configured horizon sensitivity:
             sensitFact = horizonTransition * inclinationLevelRatio;
-        }
-        else   // horizonTiltEffect=0 for "old" functionality
+        } else { // horizonTiltEffect=0 for "old" functionality
             sensitFact = horizonTransition;
+        }
 
         if (sensitFact <= 0) {           // zero means no leveling
             horizonLevelStrength = 0;
@@ -362,8 +364,9 @@ static float accelerationLimit(int axis, float currentPidSetpoint) {
     static float previousSetpoint[3];
     const float currentVelocity = currentPidSetpoint- previousSetpoint[axis];
 
-    if (ABS(currentVelocity) > maxVelocity[axis])
+    if (ABS(currentVelocity) > maxVelocity[axis]) {
         currentPidSetpoint = (currentVelocity > 0) ? previousSetpoint[axis] + maxVelocity[axis] : previousSetpoint[axis] - maxVelocity[axis];
+    }
 
     previousSetpoint[axis] = currentPidSetpoint;
     return currentPidSetpoint;
@@ -386,16 +389,20 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         float currentPidSetpoint = getSetpointRate(axis);
 
-        if (maxVelocity[axis])
+        if (maxVelocity[axis]) {
             currentPidSetpoint = accelerationLimit(axis, currentPidSetpoint);
+        }
 
         // Yaw control is GYRO based, direct sticks control is applied to rate PID
         if ((FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) && axis != YAW) {
             currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim, currentPidSetpoint);
         }
 
-        if (inCrashRecoveryMode && axis != FD_YAW) {
+        if (inCrashRecoveryMode && axis != FD_YAW && cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeDelayUs) {
             // self-level - errorAngle is deviation from horizontal
+            if (pidProfile->crash_recovery == PID_CRASH_RECOVERY_BEEP) {
+                        BEEP_ON;
+            }
             const float errorAngle =  -(attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f;
             currentPidSetpoint = errorAngle * levelGain;
             if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeLimitUs
@@ -450,16 +457,17 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             previousRateError[axis] = rD;
 
             // if crash recovery is on and accelerometer enabled then check for a crash
-            if (pidProfile->crash_recovery && inCrashRecoveryMode == false && sensors(SENSOR_ACC) && ARMING_FLAG(ARMED)) {
-                if (motorMixRange >= 1.0f
+            if (pidProfile->crash_recovery && sensors(SENSOR_ACC) && ARMING_FLAG(ARMED)) {
+                if (motorMixRange >= 1.0f && inCrashRecoveryMode == false
                         && ABS(delta) > crashDtermThreshold
                         && ABS(errorRate) > crashGyroThreshold
                         && ABS(getSetpointRate(axis)) < crashSetpointThreshold) {
                     inCrashRecoveryMode = true;
                     crashDetectedAtUs = currentTimeUs;
-                    if (pidProfile->crash_recovery == PID_CRASH_RECOVERY_BEEP) {
-                        BEEP_ON;
-                    }
+                }
+                if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) < crashTimeDelayUs && (ABS(errorRate) < crashGyroThreshold 
+                    || ABS(getSetpointRate(axis)) > crashSetpointThreshold)) {
+                    inCrashRecoveryMode = false;
                 }
             }
 

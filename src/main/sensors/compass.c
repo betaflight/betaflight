@@ -163,11 +163,7 @@ retry:
         ; // fallthrough
 
     case MAG_HMC5883:
-#ifdef USE_MAG_HMC5883
-        dev->busdev.bustype = BUSTYPE_I2C;
-        dev->busdev.busdev_u.i2c.device = MAG_I2C_INSTANCE;
-        dev->busdev.busdev_u.i2c.address = HMC5883_I2C_ADDRESS;
-
+#if defined(USE_MAG_HMC5883) || defined(USE_MAG_SPI_HMC5883)
         if (hmc5883lDetect(dev, compassConfig()->interruptTag)) {
 #ifdef MAG_HMC5883_ALIGN
             dev->magAlign = MAG_HMC5883_ALIGN;
@@ -191,17 +187,7 @@ retry:
         ; // fallthrough
 
     case MAG_AK8963:
-#ifdef USE_MAG_AK8963
-        if (gyroMpuDetectionResult()->sensor == MPU_9250_SPI) {
-            dev->busdev.bustype = BUSTYPE_SLAVE;
-            dev->busdev.busdev_u.i2c.address = AK8963_MAG_I2C_ADDRESS;
-            dev->busdev.busdev_u.i2c.master = gyroSensorBus();
-        } else {
-            dev->busdev.bustype = BUSTYPE_I2C;
-            dev->busdev.busdev_u.i2c.device = I2CDEV_2;
-            dev->busdev.busdev_u.i2c.address = AK8963_MAG_I2C_ADDRESS;
-        }
-
+#if defined(USE_MAG_AK8963) || defined(USE_MAG_SPI_AK8963)
         if (ak8963Detect(dev)) {
 #ifdef MAG_AK8963_ALIGN
             dev->magAlign = MAG_AK8963_ALIGN;
