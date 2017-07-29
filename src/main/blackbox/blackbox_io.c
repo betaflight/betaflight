@@ -84,7 +84,7 @@ void blackboxWrite(uint8_t value)
 }
 
 // Print the null-terminated string 's' to the blackbox device and return the number of bytes written
-int blackboxPrint(const char *s)
+int blackboxWriteString(const char *s)
 {
     int length;
     const uint8_t *pos;

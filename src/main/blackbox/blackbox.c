@@ -1143,7 +1143,7 @@ static bool sendFieldDefinition(char mainFrameChar, char deltaFrameChar, const v
 
             // The first header is a field name
             if (xmitState.headerIndex == 0) {
-                blackboxPrint(def->name);
+                blackboxWriteString(def->name);
 
                 // Do we need to print an index in brackets after the name?
                 if (def->fieldNameIndex != -1) {
@@ -1359,7 +1359,7 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
         blackboxWriteUnsignedVB(data->loggingResume.currentTime);
         break;
     case FLIGHT_LOG_EVENT_LOG_END:
-        blackboxPrint("End of log");
+        blackboxWriteString("End of log");
         blackboxWrite(0);
         break;
     }
