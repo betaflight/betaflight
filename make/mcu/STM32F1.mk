@@ -1,10 +1,13 @@
+#
+# F4 Make file include
+#
 
 ifeq ($(OPBL),yes)
 LD_SCRIPT = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k_opbl.ld
 endif
 
 TARGET_FLASH   := 128
-STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F10x_StdPeriph_Driver
+STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F1/Drivers/STM32F10x_StdPeriph_Driver
 STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
 EXCLUDES        = stm32f10x_crc.c \
                   stm32f10x_cec.c \
