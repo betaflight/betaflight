@@ -17,18 +17,12 @@
 
 #pragma once
 
+#include "platform.h"
+
 #include "drivers/io_types.h"
-#include "timer.h"
+#include "drivers/pwm_output_counts.h"
+#include "drivers/timer.h"
 
-#ifndef MAX_SUPPORTED_MOTORS 
-#define MAX_SUPPORTED_MOTORS 12
-#endif
-
-#if defined(USE_QUAD_MIXER_ONLY)
-#define MAX_SUPPORTED_SERVOS 1
-#else
-#define MAX_SUPPORTED_SERVOS 8
-#endif
 
 #define DSHOT_MAX_COMMAND 47
 
