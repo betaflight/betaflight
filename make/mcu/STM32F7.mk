@@ -6,8 +6,11 @@ ifeq ($(DEBUG_HARDFAULTS),F7)
 CFLAGS               += -DDEBUG_HARDFAULTS
 endif
 
+#CMSIS
+CMSIS_DIR      := $(ROOT)/lib/main/STM32F7/Drivers/CMSIS
+
 #STDPERIPH
-STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F7xx_HAL_Driver
+STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F7/Drivers/STM32F7xx_HAL_Driver
 STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/Src/*.c))
 EXCLUDES        = stm32f7xx_hal_can.c \
                   stm32f7xx_hal_cec.c \
@@ -74,12 +77,12 @@ EXCLUDES        = stm32f7xx_hal_can.c \
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 
 #USB
-USBCORE_DIR = $(ROOT)/lib/main/Middlewares/ST/STM32_USB_Device_Library/Core
+USBCORE_DIR = $(ROOT)/lib/main/STM32F7/Middlewares/ST/STM32_USB_Device_Library/Core
 USBCORE_SRC = $(notdir $(wildcard $(USBCORE_DIR)/Src/*.c))
 EXCLUDES    = usbd_conf_template.c
 USBCORE_SRC := $(filter-out ${EXCLUDES}, $(USBCORE_SRC))
 
-USBCDC_DIR = $(ROOT)/lib/main/Middlewares/ST/STM32_USB_Device_Library/Class/CDC
+USBCDC_DIR = $(ROOT)/lib/main/STM32F7/Middlewares/ST/STM32_USB_Device_Library/Class/CDC
 USBCDC_SRC = $(notdir $(wildcard $(USBCDC_DIR)/Src/*.c))
 EXCLUDES   = usbd_cdc_if_template.c
 USBCDC_SRC := $(filter-out ${EXCLUDES}, $(USBCDC_SRC))
@@ -91,7 +94,7 @@ DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
                         $(USBCDC_SRC)
 
 #CMSIS
-VPATH           := $(VPATH):$(CMSIS_DIR)/CM7/Include:$(CMSIS_DIR)/CM7/Device/ST/STM32F7xx
+VPATH           := $(VPATH):$(CMSIS_DIR)/Include:$(CMSIS_DIR)/Device/ST/STM32F7xx
 VPATH           := $(VPATH):$(STDPERIPH_DIR)/Src
 CMSIS_SRC       = $(notdir $(wildcard $(CMSIS_DIR)/CM7/Include/*.c \
                   $(CMSIS_DIR)/CM7/Device/ST/STM32F7xx/*.c))
@@ -99,8 +102,8 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(STDPERIPH_DIR)/Inc \
                    $(USBCORE_DIR)/Inc \
                    $(USBCDC_DIR)/Inc \
-                   $(CMSIS_DIR)/CM7/Include \
-                   $(CMSIS_DIR)/CM7/Device/ST/STM32F7xx/Include \
+                   $(CMSIS_DIR)/Include \
+                   $(CMSIS_DIR)/Device/ST/STM32F7xx/Include \
                    $(ROOT)/src/main/vcp_hal
 
 ifneq ($(filter SDCARD,$(FEATURES)),)

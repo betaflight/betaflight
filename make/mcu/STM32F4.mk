@@ -1,3 +1,6 @@
+#
+# F4 Make file include
+#
 
 ifeq ($(OPBL),yes)
 ifeq ($(TARGET), $(filter $(TARGET),$(F405_TARGETS)))
@@ -9,8 +12,12 @@ $(error No OPBL linker script specified for $(TARGET`))
 endif
 endif
 
+#CMSIS
+#CMSIS_DIR      := $(ROOT)/lib/main/STM32F4/Drivers/CMSIS
+CMSIS_DIR      := $(ROOT)/lib/main/CMSIS/CM4
+
 #STDPERIPH
-STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F4xx_StdPeriph_Driver
+STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F4/Drivers/STM32F4xx_StdPeriph_Driver
 STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
 EXCLUDES        = stm32f4xx_crc.c \
                   stm32f4xx_can.c \
@@ -69,7 +76,7 @@ DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
                         $(USBCDC_SRC)
 
 #CMSIS
-VPATH           := $(VPATH):$(CMSIS_DIR)/CM4/CoreSupport:$(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx
+VPATH           := $(VPATH):$(CMSIS_DIR)/CoreSupport:$(CMSIS_DIR)/DeviceSupport/ST/STM32F4xx
 CMSIS_SRC       = $(notdir $(wildcard $(CMSIS_DIR)/CM4/CoreSupport/*.c \
                   $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx/*.c))
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
@@ -78,8 +85,10 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(USBCORE_DIR)/inc \
                    $(USBCDC_DIR)/inc \
                    $(USBFS_DIR)/inc \
-                   $(CMSIS_DIR)/CM4/CoreSupport \
-                   $(CMSIS_DIR)/CM4/DeviceSupport/ST/STM32F4xx \
+                   $(CMSIS_DIR)/CoreSupport \
+                   $(CMSIS_DIR)/Include \
+                   $(CMSIS_DIR)/DeviceSupport/ST/STM32F4xx \
+                   $(CMSIS_DIR)/Device/ST/STM32F4xx/Include \
                    $(ROOT)/src/main/vcpf4
 
 ifneq ($(filter SDCARD,$(FEATURES)),)
@@ -96,7 +105,7 @@ DEVICE_FLAGS    = -DSTM32F411xE
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f411.ld
 STARTUP_SRC     = startup_stm32f411xe.s
 else ifeq ($(TARGET),$(filter $(TARGET),$(F405_TARGETS)))
-DEVICE_FLAGS    = -DSTM32F40_41xxx
+DEVICE_FLAGS    = -DSTM32F40_41xxx -DSTM32F405xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f405.ld
 STARTUP_SRC     = startup_stm32f40xx.s
 else ifeq ($(TARGET),$(filter $(TARGET),$(F446_TARGETS)))
