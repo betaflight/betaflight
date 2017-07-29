@@ -56,18 +56,18 @@ void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity);
 typedef enum {
     INPUT_MODE_PPM,
     INPUT_MODE_PWM
-} pwmInputMode_t;
+} pwmInputMode_e;
 
 typedef struct {
-    pwmInputMode_t mode;
+    pwmInputMode_e mode;
     uint8_t channel; // only used for pwm, ignored by ppm
 
     uint8_t state;
+    uint8_t missedEvents;
+
     captureCompare_t rise;
     captureCompare_t fall;
     captureCompare_t capture;
-
-    uint8_t missedEvents;
 
     const timerHardware_t *timerHardware;
     timerCCHandlerRec_t edgeCb;
@@ -86,13 +86,13 @@ static uint8_t lastPPMFrameCount = 0;
 static uint8_t ppmCountDivisor = 1;
 
 typedef struct ppmDevice_s {
-    uint8_t  pulseIndex;
     //uint32_t previousTime;
     uint32_t currentCapture;
     uint32_t currentTime;
     uint32_t deltaTime;
     uint32_t captures[PWM_PORTS_OR_PPM_CAPTURE_COUNT];
     uint32_t largeCounter;
+    uint8_t  pulseIndex;
     int8_t   numChannels;
     int8_t   numChannelsPrevFrame;
     uint8_t  stableFramesSeenCount;
@@ -101,7 +101,7 @@ typedef struct ppmDevice_s {
     bool     overflowed;
 } ppmDevice_t;
 
-ppmDevice_t ppmDev;
+static ppmDevice_t ppmDev;
 
 #define PPM_IN_MIN_SYNC_PULSE_US    2700    // microseconds
 #define PPM_IN_MIN_CHANNEL_PULSE_US 750     // microseconds
@@ -129,8 +129,8 @@ typedef enum {
 } eventSource_e;
 
 typedef struct ppmISREvent_s {
-    eventSource_e source;
     uint32_t capture;
+    eventSource_e source;
 } ppmISREvent_t;
 
 static ppmISREvent_t ppmEvents[20];
