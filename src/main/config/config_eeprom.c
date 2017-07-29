@@ -141,11 +141,6 @@ bool isEEPROMContentValid(void)
 
     eepromConfigSize = p - &__config_start;
 
-    /* TODO: Check to be removed when moving to generic targets */
-    if (strncasecmp(systemConfig()->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER))) {
-        return false;
-    }
-
     // CRC has the property that if the CRC itself is included in the calculation the resulting CRC will have constant value
     return crc == CRC_CHECK_VALUE;
 }
