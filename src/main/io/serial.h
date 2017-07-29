@@ -95,8 +95,8 @@ extern const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT];
 //
 typedef struct serialPortUsage_s {
     serialPort_t *serialPort;
-    serialPortIdentifier_e identifier;
     serialPortFunction_e function;
+    serialPortIdentifier_e identifier;
 } serialPortUsage_t;
 
 serialPort_t *findSharedSerialPort(uint16_t functionMask, serialPortFunction_e sharedWithFunction);
