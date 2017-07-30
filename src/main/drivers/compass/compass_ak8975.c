@@ -31,7 +31,7 @@
 #include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_busdev.h"
-#include "drivers/gpio.h"
+//#include "drivers/gpio.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
@@ -134,6 +134,12 @@ bool ak8975Detect(magDev_t *mag)
     uint8_t sig = 0;
 
     busDevice_t *busdev = &mag->busdev;
+
+#ifdef USE_MAG_AK8975
+    if (busdev->bustype == BUSTYPE_I2C && busdev->busdev_u.i2c.address == 0) {
+        busdev->busdev_u.i2c.address = AK8975_MAG_I2C_ADDRESS;
+    }
+#endif
 
     bool ack = i2cBusReadRegisterBuffer(busdev, AK8975_MAG_REG_WHO_AM_I, &sig, 1);
 

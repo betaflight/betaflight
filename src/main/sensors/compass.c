@@ -74,7 +74,7 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
 // 2. I2C devices are will be handled by address = 0 (per device default).
 // 3. Slave I2C device on SPI gyro
 
-#if defined(USE_MAG_SPI_HMC5883) || defined(USE_MAG_SPI_AK8963)
+#if defined(USE_SPI) && (defined(USE_MAG_SPI_HMC5883) || defined(USE_MAG_SPI_AK8963))
     compassConfig->mag_bustype = BUSTYPE_SPI;
 #ifdef USE_MAG_SPI_HMC5883
     compassConfig->mag_spi_device = SPI_DEV_TO_CFG(spiDeviceByInstance(HMC5883_SPI_INSTANCE));
@@ -106,36 +106,39 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
     compassConfig->mag_spi_csn = IO_TAG_NONE;
 #endif
     compassConfig->interruptTag = COMPASS_INTERRUPT_TAG;
-
-debug[0] = compassConfig->mag_bustype;
-debug[1] = compassConfig->mag_i2c_device;
-debug[2] = compassConfig->mag_i2c_address;
 }
 
-#ifdef MAG
+#if defined(MAG)
 
 static int16_t magADCRaw[XYZ_AXIS_COUNT];
 static uint8_t magInit = 0;
 
-bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse)
+#if !defined(SITL)
+
+bool compassDetect(magDev_t *dev)
 {
     magSensor_e magHardware;
 
     busDevice_t *busdev = &dev->busdev;
 
     switch (compassConfig()->mag_bustype) {
+#ifdef USE_I2C
     case BUSTYPE_I2C:
         busdev->bustype = BUSTYPE_I2C;
         busdev->busdev_u.i2c.device = I2C_CFG_TO_DEV(compassConfig()->mag_i2c_device);
         busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
+#endif
         break;
 
+#ifdef USE_SPI
     case BUSTYPE_SPI:
         busdev->bustype = BUSTYPE_SPI;
         spiBusSetInstance(busdev, spiInstanceByDevice(SPI_CFG_TO_DEV(compassConfig()->mag_spi_device)));
         busdev->busdev_u.spi.csnPin = IOGetByTag(compassConfig()->mag_spi_csn);
+#endif
         break;
 
+#if defined(USE_MAG_AK8963) && ((defined(USE_GYRO_MPU6050) || defined(USE_GYRO_SPI_MPU9250)))
     case BUSTYPE_SLAVE:
         {
             mpuSensor_e sensor = gyroMpuDetectionResult()->sensor;
@@ -148,17 +151,16 @@ bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse)
                 return false;
             }
         }
+#endif
         break;
 
     default:
         return false;
     }
 
-retry:
-
     dev->magAlign = ALIGN_DEFAULT;
 
-    switch (magHardwareToUse) {
+    switch (compassConfig()->mag_hardware) {
     case MAG_DEFAULT:
         ; // fallthrough
 
@@ -203,12 +205,6 @@ retry:
         break;
     }
 
-    if (magHardware == MAG_NONE && magHardwareToUse != MAG_DEFAULT && magHardwareToUse != MAG_NONE) {
-        // Nothing was found and we have a forced sensor that isn't present.
-        magHardwareToUse = MAG_DEFAULT;
-        goto retry;
-    }
-
     if (magHardware == MAG_NONE) {
         return false;
     }
@@ -217,6 +213,14 @@ retry:
     sensorsSet(SENSOR_MAG);
     return true;
 }
+#else
+bool compassDetect(magDev_t *dev)
+{
+    UNUSED(dev);
+
+    return false;
+}
+#endif // !SITL
 
 bool compassInit(void)
 {
@@ -227,7 +231,7 @@ bool compassInit(void)
     // copy over SPI bus settings for AK8963 compass
     //magDev.busdev = *gyroSensorBus();
 
-    if (!compassDetect(&magDev, compassConfig()->mag_hardware)) {
+    if (!compassDetect(&magDev)) {
         return false;
     }
 

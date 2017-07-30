@@ -215,7 +215,7 @@ restart:
 static bool ak8963ReadRegisterBuffer(const busDevice_t *busdev, uint8_t reg, uint8_t len, uint8_t *buf)
 {
     switch (busdev->bustype) {
-#ifdef USE_MAG_AK8963
+#if defined(USE_MAG_AK8963) && defined(USE_I2C) // There is a config that use slave AK8963 without USE_I2C
     case BUSTYPE_I2C:
         return i2cBusReadRegisterBuffer(busdev, reg, buf, len);
 #endif
@@ -236,7 +236,7 @@ static bool ak8963ReadRegisterBuffer(const busDevice_t *busdev, uint8_t reg, uin
 static bool ak8963WriteRegister(const busDevice_t *busdev, uint8_t reg, uint8_t data)
 {
     switch (busdev->bustype) {
-#ifdef USE_MAG_AK8963
+#if defined(USE_MAG_AK8963) && defined(USE_I2C) // There is a config that use slave AK8963 without USE_I2C
     case BUSTYPE_I2C:
         return i2cBusWriteRegister(busdev, reg, data);
 #endif
@@ -388,6 +388,10 @@ bool ak8963Detect(magDev_t *mag)
     busDevice_t *busdev = &mag->busdev;
 
     ak8963BusInit(busdev);
+
+    if ((busdev->bustype == BUSTYPE_I2C || busdev->bustype == BUSTYPE_SLAVE) && busdev->busdev_u.i2c.address == 0) {
+        busdev->busdev_u.i2c.address = AK8963_MAG_I2C_ADDRESS;
+    }
 
     ak8963WriteRegister(busdev, AK8963_MAG_REG_CNTL2, CNTL2_SOFT_RESET); // reset MAG
     delay(4);

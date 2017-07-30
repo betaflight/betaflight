@@ -167,6 +167,15 @@ static void hmc5883lConfigureDataReadyInterruptHandling(void)
 }
 
 #ifdef USE_MAG_SPI_HMC5883
+/*
+ * XXX Fixme
+ * HMC5983 datasheet states SPI mode is
+ *     SCK is high when CS is high
+ *     Data is sampled at the rising edge of SCK
+ * However, it seems that SCK condition is ignored (works with SCK low when CS is high).
+ * Nevertheless, it is nice to conform to the datasheet specification when per device SPI mode
+ * is implemented.
+ */
 static void hmc5883SpiInit(busDevice_t *busdev)
 {   
     static bool hardwareInitialised = false;
@@ -196,7 +205,7 @@ static bool hmc5883lReadRegisterBuffer(busDevice_t *busdev, uint8_t reg, uint8_t
 
 #ifdef USE_MAG_SPI_HMC5883
     case BUSTYPE_SPI:
-        return spiBusReadRegisterBuffer(busdev, reg, buffer, len);
+        return spiBusReadRegisterBuffer(busdev, reg | 0x40, buffer, len);
 #endif
 
     default:
@@ -341,10 +350,19 @@ bool hmc5883lDetect(magDev_t* mag, ioTag_t interruptTag)
     UNUSED(interruptTag);
 #endif
 
+    busDevice_t *busdev = &mag->busdev;
+
     uint8_t sig = 0;
+
 #ifdef USE_MAG_SPI_HMC5883
-    if (mag->busdev.bustype == BUSTYPE_SPI) {
+    if (busdev->bustype == BUSTYPE_SPI) {
         hmc5883SpiInit(&mag->busdev);
+    }
+#endif
+
+#ifdef USE_MAG_HMC5883
+    if (busdev->bustype == BUSTYPE_I2C && busdev->busdev_u.i2c.address == 0) {
+        busdev->busdev_u.i2c.address = HMC5883_I2C_ADDRESS;
     }
 #endif
 
