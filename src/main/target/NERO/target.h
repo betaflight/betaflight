@@ -98,7 +98,6 @@
 #define ESCSERIAL_TIMER_TX_PIN  PC7 // (Hardware=0, PPM)
 
 #define USE_SPI
-#define USE_LOWLEVEL_DRIVER
 
 #define USE_SPI_DEVICE_1
 #define SPI1_NSS_PIN            PC4

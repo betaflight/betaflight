@@ -61,8 +61,6 @@ EXCLUDES        = stm32f7xx_hal_can.c \
                   stm32f7xx_ll_adc.c \
                   stm32f7xx_ll_crc.c \
                   stm32f7xx_ll_dac.c \
-                  stm32f7xx_ll_dma.c \
-                  stm32f7xx_ll_dma2d.c \
                   stm32f7xx_ll_exti.c \
                   stm32f7xx_ll_fmc.c \
                   stm32f7xx_ll_i2c.c \
@@ -151,7 +149,6 @@ MCU_COMMON_SRC = \
             drivers/bus_i2c_hal.c \
             drivers/dma_stm32f7xx.c \
             drivers/light_ws2811strip_hal.c \
-            drivers/bus_spi_hal.c \
             drivers/bus_spi_ll.c \
             drivers/pwm_output_dshot_hal.c \
             drivers/timer_hal.c \
