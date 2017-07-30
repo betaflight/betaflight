@@ -66,10 +66,10 @@ If you are getting oscillations starting at say 3/4 throttle, set tpa breakpoint
 
 ## PID controllers
 
-INAV has a single built-in PID controllers. The PID controller scaling
+INAV has a single built-in PID controller. The PID controller scaling
 means that Betaflight PIDs should be comparable.
 
-Note that very old INAV versions had more  PID controllers.
+Note that very old INAV versions had more  PID controllers. These have been removed.
 
 
 ## RC rate, Pitch and Roll Rates (P/R rate before they were separated), and Yaw rate
