@@ -405,6 +405,23 @@ TEST(FlightFailsafeTest, TestFailsafeNotActivatedWhenDisarmedAndRXLossIsDetected
     EXPECT_EQ(false, failsafeIsActive());
     EXPECT_EQ(FAILSAFE_IDLE, failsafePhase());
     EXPECT_EQ(1, CALL_COUNTER(COUNTER_MW_DISARM));
+    EXPECT_TRUE(isArmingDisabled());
+
+    // given
+    // enough valid data is received
+    uint32_t sysTickTarget = sysTickUptime + PERIOD_RXDATA_RECOVERY;
+    for (; sysTickUptime < sysTickTarget; sysTickUptime++) {
+        failsafeOnValidDataReceived();
+        failsafeUpdateState();
+
+        EXPECT_TRUE(isArmingDisabled());
+    }
+
+    // and
+    sysTickUptime++;                                // adjust time to point just past the failure time to
+    failsafeOnValidDataReceived();                  // cause link recovery
+
+    // then
     EXPECT_FALSE(isArmingDisabled());
 }
 
