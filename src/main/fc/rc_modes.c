@@ -51,6 +51,11 @@ bool isUsingSticksForArming(void)
     return isUsingSticksToArm;
 }
 
+bool isAirmodeActive(void)
+{
+    return feature(FEATURE_AIRMODE) || IS_RC_MODE_ACTIVE(BOXAIRMODE);
+}
+
 #if defined(NAV)
 bool isUsingNavigationModes(void)
 {
