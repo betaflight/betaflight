@@ -311,48 +311,52 @@ STATIC_UNIT_TESTED void osdFormatTimer(char *buff, bool showSymbol, int timerInd
 
 // this will convert from relative positioning (i.e. measured from center pos)
 // to absolute positioning (based on display height and width)
-static void osdConvertToAbsolutePosition(uint8_t item, int8_t *pos_x, int8_t *pos_y) {
+STATIC_UNIT_TESTED void osdConvertToAbsolutePosition(uint8_t item, int8_t *pos_x, int8_t *pos_y) {
     // output display dimensions
-    uint8_t display_width  = osdDisplayPort->colCount - 1;
-    uint8_t display_height = osdDisplayPort->rowCount - 1;
+    uint8_t maxX  = osdDisplayPort->colCount - 1;
+    uint8_t maxY = osdDisplayPort->rowCount - 1;
 
     // x/y position (note: might need origin offset, see below)
-    int8_t elemPosX = osdConfig()->item[item].x;
-    int8_t elemPosY = osdConfig()->item[item].y;
+    int8_t tmpX = osdConfig()->item[item].x;
+    int8_t tmpY = osdConfig()->item[item].y;
 
     // fetch origin positio
     uint8_t origin = (osdConfig()->item[item].flags & OSD_FLAG_ORIGIN_MASK);
 
     // start with center
-    elemPosX += display_width / 2;
-    elemPosY += display_height / 2;
+    tmpX += maxX;
+    tmpY += maxY;
 
 
     // add offsets based on origin
     if (origin & OSD_FLAG_ORIGIN_E) {
         // move east
-        elemPosX += display_width / 2;
+        tmpX += maxX;
     }
 
     if (origin & OSD_FLAG_ORIGIN_W) {
         // move west
-        elemPosX -= display_width / 2;
+        tmpX -= maxX;
     }
 
     if (origin & OSD_FLAG_ORIGIN_N) {
         // move north
-        elemPosY -= display_height / 2;
+        tmpY -= maxY;
     }
 
     if (origin & OSD_FLAG_ORIGIN_S) {
         // move south
-        elemPosY += display_height / 2;
+        tmpY += maxY;
     }
+
+    // rescale
+    tmpX = tmpX / 2;
+    tmpY = tmpY / 2;
 
 
     // make sure to return valid x/y positions \in [0..max]
-    *pos_x = MAX(0, MIN(display_width, elemPosX));
-    *pos_y = MAX(0, MIN(display_height, elemPosY));
+    *pos_x = constrain(tmpX, 0, maxX);
+    *pos_y = constrain(tmpY, 0, maxY);
 }
 
 static void osdDrawSingleElement(uint8_t item)
