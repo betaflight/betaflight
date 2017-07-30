@@ -23,7 +23,6 @@
 #define USBD_SERIALNUMBER_STRING "0x8020000" // Remove this at the next major release (?)
 #endif
 
-
 #define LED0_PIN                  PB5
 #define BEEPER                    PB4
 #define BEEPER_INVERTED
@@ -31,22 +30,32 @@
 
 #define INVERTER_PIN_UART1        PC0 // PC0 used as inverter select GPIO
 
-#define MPU6000_CS_PIN            PA4
-#define MPU6000_SPI_INSTANCE      SPI1
 
-#define ACC
-#define USE_ACC_SPI_MPU6000
-
-#define GYRO
-#define USE_GYRO_SPI_MPU6000
-
-#define GYRO_MPU6000_ALIGN       CW0_DEG
-#define ACC_MPU6000_ALIGN        CW0_DEG
-
-// MPU6000 interrupts
 #define USE_EXTI
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
+
+//  MPU 6000
+#define MPU6000_CS_PIN            PA4
+#define MPU6000_SPI_INSTANCE      SPI1
+#define ACC
+#define USE_ACC_SPI_MPU6000
+#define GYRO
+#define USE_GYRO_SPI_MPU6000
+#define GYRO_MPU6000_ALIGN       CW0_DEG
+#define ACC_MPU6000_ALIGN        CW0_DEG
+
+// ICM-20602
+#define USE_ACC_MPU6500
+#define USE_ACC_SPI_MPU6500
+#define USE_GYRO_MPU6500
+#define USE_GYRO_SPI_MPU6500
+
+#define ACC_MPU6500_ALIGN       CW0_DEG
+#define GYRO_MPU6500_ALIGN      CW0_DEG
+#define MPU6500_CS_PIN          PA4
+#define MPU6500_SPI_INSTANCE    SPI1
+
 
 #define OSD
 #define USE_MAX7456
@@ -68,6 +77,12 @@
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG  DMA_FLAG_TCIF4
 #define SDCARD_DMA_CLK                       RCC_AHB1Periph_DMA1
 #define SDCARD_DMA_CHANNEL                   DMA_Channel_0
+
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
+#define M25P16_CS_PIN           PB3
+#define M25P16_SPI_INSTANCE     SPI3
+
 
 #define USE_VCP
 #define VBUS_SENSING_PIN PC5

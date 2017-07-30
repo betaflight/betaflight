@@ -1,3 +1,6 @@
+#
+# F3 Make file include
+#
 
 ifeq ($(OPBL),yes)
 LD_SCRIPT = $(LINKER_DIR)/stm32_flash_f303_$(FLASH_SIZE)k_opbl.ld
@@ -12,7 +15,7 @@ else
 MCU_COMMON_SRC  = startup_stm32f30x_md_gcc.S
 endif
 
-STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F30x_StdPeriph_Driver
+STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F3/Drivers/STM32F30x_StdPeriph_Driver
 STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
 EXCLUDES        = stm32f30x_crc.c \
                   stm32f30x_can.c
