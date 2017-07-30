@@ -22,13 +22,10 @@
 
 typedef struct flashGeometry_s {
     uint16_t sectors; // Count of the number of erasable blocks on the device
-
-    uint16_t pagesPerSector;
     const uint16_t pageSize; // In bytes
-
     uint32_t sectorSize; // This is just pagesPerSector * pageSize
-
     uint32_t totalSize;  // This is just sectorSize * sectors
+    uint16_t pagesPerSector;
 } flashGeometry_t;
 
 typedef struct flashConfig_s {
