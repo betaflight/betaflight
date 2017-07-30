@@ -50,6 +50,8 @@ extern "C" {
     void osdRefresh(timeUs_t currentTimeUs);
     void osdFormatTime(char * buff, osd_timer_precision_e precision, timeUs_t time);
     void osdFormatTimer(char *buff, bool showSymbol, int timerIndex);
+    void osdConvertToAbsolutePosition(uint8_t item, int8_t *pos_x, int8_t *pos_y);
+
 
     uint16_t rssi;
     attitudeEulerAngles_t attitude;
@@ -77,7 +79,7 @@ extern "C" {
     int32_t simulationVerticalSpeed;
 }
 
-/* #define DEBUG_OSD */
+#define DEBUG_OSD
 
 #include "unittest_macros.h"
 #include "unittest_displayport.h"
@@ -766,6 +768,23 @@ TEST(OsdTest, TestElementPositioning)
     // expect
     displayPortTestBufferSubstring(centreX + 1, centreY - 2, "CRAFT_NAME");
 }
+
+/*
+ * Tests the relative to abs position conversion
+ */
+TEST(OsdTest, TestRelAbsConversion)
+{
+    // given
+    OSD_INIT(osdConfigMutable(), OSD_RSSI_VALUE,    0,  0, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
+
+    int8_t pos_x, pos_y;
+    osdConvertToAbsolutePosition(OSD_RSSI_VALUE, &pos_x, &pos_y);
+
+    EXPECT_EQ(0, pos_x);
+    EXPECT_EQ(0, pos_y);
+
+}
+
 
 // STUBS
 extern "C" {
