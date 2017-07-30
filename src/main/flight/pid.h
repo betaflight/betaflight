@@ -82,7 +82,6 @@ typedef struct pidProfile_s {
     uint8_t itermWindupPointPercent;        // Experimental ITerm windup threshold, percent motor saturation
     uint16_t pidSumLimit;
     uint16_t pidSumLimitYaw;
-    uint8_t dterm_average_count;            // Configurable delta count for dterm
     uint8_t vbatPidCompensation;            // Scale PIDsum to battery voltage
     uint8_t pidAtMinThrottle;               // Disable/Enable pids on zero throttle. Normally even without airmode P and D would be active.
     uint8_t levelAngleLimit;                // Max angle in degrees in level mode
