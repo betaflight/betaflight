@@ -19,8 +19,9 @@
 
 // FIXME some of these are flight modes, some of these are general status indicators
 typedef enum {
-    ARMED           = (1 << 0),
-    WAS_EVER_ARMED  = (1 << 1)
+    ARMED                       = (1 << 0),
+    WAS_EVER_ARMED              = (1 << 1),
+    WAS_ARMED_WITH_PREARM       = (1 << 2)
 } armingFlag_e;
 
 extern uint8_t armingFlags;
@@ -40,15 +41,17 @@ typedef enum {
     ARMING_DISABLED_BOXFAILSAFE = (1 << 3),
     ARMING_DISABLED_THROTTLE    = (1 << 4),
     ARMING_DISABLED_ANGLE       = (1 << 5),
-    ARMING_DISABLED_LOAD        = (1 << 6),
-    ARMING_DISABLED_CALIBRATING = (1 << 7),
-    ARMING_DISABLED_CLI         = (1 << 8),
-    ARMING_DISABLED_CMS_MENU    = (1 << 9),
-    ARMING_DISABLED_OSD_MENU    = (1 << 10),
-    ARMING_DISABLED_BST         = (1 << 11)
+    ARMING_DISABLED_NOPREARM    = (1 << 6),
+    ARMING_DISABLED_LOAD        = (1 << 7),
+    ARMING_DISABLED_CALIBRATING = (1 << 8),
+    ARMING_DISABLED_CLI         = (1 << 9),
+    ARMING_DISABLED_CMS_MENU    = (1 << 10),
+    ARMING_DISABLED_OSD_MENU    = (1 << 11),
+    ARMING_DISABLED_BST         = (1 << 12)
 } armingDisableFlags_e;
 
-#define NUM_ARMING_DISABLE_FLAGS 12
+#define NUM_ARMING_DISABLE_FLAGS 13
+
 #if defined(OSD) || !defined(MINIMAL_CLI)
 extern const char *armingDisableFlagNames[NUM_ARMING_DISABLE_FLAGS];
 #endif

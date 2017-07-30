@@ -182,6 +182,13 @@ void updateArmingStatus(void)
             unsetArmingDisabled(ARMING_DISABLED_CALIBRATING);
         }
 
+        if ((isModeActivationConditionPresent(BOXPREARM) && IS_RC_MODE_ACTIVE(BOXPREARM) && !ARMING_FLAG(WAS_ARMED_WITH_PREARM)) 
+            || !isModeActivationConditionPresent(BOXPREARM)) {
+            unsetArmingDisabled(ARMING_DISABLED_NOPREARM);
+        } else {
+            setArmingDisabled(ARMING_DISABLED_NOPREARM);            
+        }
+
         if (isArmingDisabled()) {
             warningLedFlash();
         } else {
@@ -237,6 +244,9 @@ void tryArm(void)
 
         ENABLE_ARMING_FLAG(ARMED);
         ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
+        if (isModeActivationConditionPresent(BOXPREARM)) {
+            ENABLE_ARMING_FLAG(WAS_ARMED_WITH_PREARM);
+        }
         headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 
         disarmAt = millis() + armingConfig()->auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
@@ -449,6 +459,10 @@ void processRx(timeUs_t currentTimeUs)
         LED1_ON;
     } else {
         LED1_OFF;
+    }
+
+    if (!IS_RC_MODE_ACTIVE(BOXPREARM) && ARMING_FLAG(WAS_ARMED_WITH_PREARM)) {
+        DISABLE_ARMING_FLAG(WAS_ARMED_WITH_PREARM);
     }
 
 #if defined(ACC) || defined(MAG)
