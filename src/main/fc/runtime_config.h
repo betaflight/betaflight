@@ -45,9 +45,10 @@ typedef enum {
     ARMING_DISABLED_CMS_MENU    = (1 << 8),
     ARMING_DISABLED_OSD_MENU    = (1 << 9),
     ARMING_DISABLED_BST         = (1 << 10),
+    ARMING_DISABLED_RX_FAILSAFE = (1 << 11),
 } armingDisableFlags_e;
 
-#define NUM_ARMING_DISABLE_FLAGS 11
+#define NUM_ARMING_DISABLE_FLAGS 12
 #if defined(OSD) || !defined(MINIMAL_CLI)
 extern const char *armingDisableFlagNames[NUM_ARMING_DISABLE_FLAGS];
 #endif

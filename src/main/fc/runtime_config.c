@@ -32,7 +32,8 @@ static uint32_t enabledSensors = 0;
 #if defined(OSD) || !defined(MINIMAL_CLI)
 const char *armingDisableFlagNames[]= {
     "NOGYRO", "FAILSAFE", "BOXFAILSAFE", "THROTTLE",
-    "ANGLE", "LOAD", "CALIB", "CLI", "CMS", "OSD", "BST"
+    "ANGLE", "LOAD", "CALIB", "CLI", "CMS", "OSD", "BST",
+    "RX LOSS"
 };
 #endif
 
