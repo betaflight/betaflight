@@ -273,7 +273,7 @@ int tinyOSDClearScreen(displayPort_t *displayPort)
     UNUSED(displayPort);
 
     // clear screen buffer & mark non ' ' bytes as dirty:
-    for(uint16_t i=0; i<TINYOSD_VIDEO_BUFFER_DIRTY_SIZE; i++) {
+    for(uint16_t i=0; i<TINYOSD_VIDEO_BUFFER_SIZE; i++) {
         if (SCREEN_BUFFER_GET(i) != ' ') {
             // clear pixel & set to changed:
             SCREEN_BUFFER_SET(i, ' ');
