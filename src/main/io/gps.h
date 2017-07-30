@@ -83,12 +83,12 @@ typedef struct gpsLocation_s {
 } gpsLocation_t;
 
 typedef struct gpsSolutionData_s {
-    uint8_t numSat;
     gpsLocation_t llh;
     uint16_t GPS_altitude;          // altitude in 0.1m
     uint16_t groundSpeed;           // speed in 0.1m/s
     uint16_t groundCourse;          // degrees * 10
     uint16_t hdop;                  // generic HDOP value (*100)
+    uint8_t numSat;
 } gpsSolutionData_t;
 
 typedef enum {
@@ -99,8 +99,6 @@ typedef enum {
 } gpsMessageState_e;
 
 typedef struct gpsData_s {
-    uint8_t state;                  // GPS thread state. Used for detecting cable disconnects and configuring attached devices
-    uint8_t baudrateIndex;          // index into auto-detecting or current baudrate
     uint32_t errors;                // gps error counter - crc error/lost of data/sync etc..
     uint32_t timeouts;
     uint32_t lastMessage;           // last time valid GPS data was received (millis)
@@ -108,6 +106,8 @@ typedef struct gpsData_s {
 
     uint32_t state_position;        // incremental variable for loops
     uint32_t state_ts;              // timestamp for last state_position increment
+    uint8_t state;                  // GPS thread state. Used for detecting cable disconnects and configuring attached devices
+    uint8_t baudrateIndex;          // index into auto-detecting or current baudrate
     gpsMessageState_e messageState;
 } gpsData_t;
 

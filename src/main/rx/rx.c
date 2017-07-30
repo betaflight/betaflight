@@ -117,7 +117,7 @@ static uint8_t rcSampleIndex = 0;
 #define BINDPLUG_PIN NONE
 #endif
 
-PG_REGISTER_WITH_RESET_FN(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(rxConfig_t, rxConfig, PG_RX_CONFIG, 1);
 void pgResetFn_rxConfig(rxConfig_t *rxConfig)
 {
     RESET_CONFIG_2(rxConfig_t, rxConfig,
@@ -141,8 +141,8 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .rcInterpolationChannels = 0,
         .rcInterpolationInterval = 19,
         .fpvCamAngleDegrees = 0,
-        .max_aux_channel = DEFAULT_AUX_CHANNEL_COUNT,
-        .airModeActivateThreshold = 1350
+        .airModeActivateThreshold = 1350,
+        .max_aux_channel = DEFAULT_AUX_CHANNEL_COUNT
     );
 
 #ifdef RX_CHANNELS_TAER
