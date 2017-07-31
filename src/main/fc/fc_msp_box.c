@@ -77,6 +77,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXCAMERA2, "CAMERA CONTROL 2", 33},
     { BOXCAMERA3, "CAMERA CONTROL 3", 34 },
     { BOXDSHOTREVERSE, "DSHOT REVERSE MOTORS", 35 },
+    { BOXPREARM, "PREARM", 36 },
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -147,7 +148,7 @@ void initActiveBoxIds(void)
     // macro to enable boxId (BoxidMaskEnable). Reference to ena is hidden, local use only
 #define BME(boxId) do { bitArraySet(&ena, boxId); } while (0)
     BME(BOXARM);
-
+    BME(BOXPREARM);
     if (!feature(FEATURE_AIRMODE)) {
         BME(BOXAIRMODE);
     }
