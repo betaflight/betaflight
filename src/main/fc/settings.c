@@ -54,6 +54,7 @@
 #include "flight/pid.h"
 #include "flight/servos.h"
 
+#include "io/beeper.h"
 #include "io/dashboard.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
@@ -445,11 +446,16 @@ const clivalue_t valueTable[] = {
     { "ibatv_offset",               VAR_INT16  | MASTER_VALUE, .config.minmax = { -16000, 16000 }, PG_CURRENT_SENSOR_VIRTUAL_CONFIG, offsetof(currentSensorVirtualConfig_t, offset) },
 #endif
 
-// PG_BEEPER_DEV_CONFIG
 #ifdef BEEPER
+// PG_BEEPER_DEV_CONFIG
     { "beeper_inversion",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BEEPER_DEV_CONFIG, offsetof(beeperDevConfig_t, isInverted) },
     { "beeper_od",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BEEPER_DEV_CONFIG, offsetof(beeperDevConfig_t, isOpenDrain) },
     { "beeper_frequency",           VAR_INT16  | MASTER_VALUE, .config.minmax = { 0, 16000 }, PG_BEEPER_DEV_CONFIG, offsetof(beeperDevConfig_t, frequency) },
+
+// PG_BEEPER_CONFIG
+#ifdef USE_DSHOT
+    { "beeper_dshot",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BEEPER_CONFIG, offsetof(beeperConfig_t, dshotForward) },
+#endif
 #endif
 
 // PG_MIXER_CONFIG

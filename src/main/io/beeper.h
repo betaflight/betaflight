@@ -51,6 +51,7 @@ typedef enum {
 typedef struct beeperConfig_s {
     uint32_t beeper_off_flags;
     uint32_t preferred_beeper_off_flags;
+    bool dshotForward;
 } beeperConfig_t;
 
 #ifdef BEEPER
