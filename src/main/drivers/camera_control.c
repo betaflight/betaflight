@@ -52,6 +52,10 @@
 #define CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE
 #include "timer.h"
 
+#ifndef CAMERA_CONTROL_PIN
+#define CAMERA_CONTROL_PIN NONE
+#endif
+
 
 PG_REGISTER_WITH_RESET_TEMPLATE(cameraControlConfig_t, cameraControlConfig, PG_CAMERA_CONTROL_CONFIG, 0);
 
@@ -59,7 +63,7 @@ PG_RESET_TEMPLATE(cameraControlConfig_t, cameraControlConfig,
     .mode = CAMERA_CONTROL_MODE_HARDWARE_PWM,
     .refVoltage = 330,
     .keyDelayMs = 150,
-    .ioTag = IO_TAG_NONE
+    .ioTag = IO_TAG(CAMERA_CONTROL_PIN)
 );
 
 static struct {
