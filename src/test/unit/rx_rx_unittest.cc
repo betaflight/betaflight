@@ -59,7 +59,7 @@ typedef struct testData_s {
 
 static testData_t testData;
 
-TEST(RxTest, TestValidFlightChannels)
+TEST(RxTest, TestValidFlightChannelsLowArm)
 {
     // given
     memset(&testData, 0, sizeof(testData));
@@ -80,6 +80,41 @@ TEST(RxTest, TestValidFlightChannels)
 
     // then (ARM channel should be positioned just 1 step above active range to init to OFF)
     EXPECT_EQ(1625, rcData[modeActivationConditions(0)->auxChannelIndex + NON_AUX_CHANNEL_COUNT]);
+
+    // given
+    rxResetFlightChannelStatus();
+
+    // and
+    for (uint8_t channelIndex = 0; channelIndex < MAX_SUPPORTED_RC_CHANNEL_COUNT; channelIndex++) {
+        bool validPulse = isPulseValid(1500);
+        rxUpdateFlightChannelStatus(channelIndex, validPulse);
+    }
+
+    // then
+    EXPECT_TRUE(rxHaveValidFlightChannels());
+}
+
+TEST(RxTest, TestValidFlightChannelsHighArm)
+{
+    // given
+    memset(&testData, 0, sizeof(testData));
+    memset(&rcModeActivationMask, 0, sizeof(rcModeActivationMask)); // BOXFAILSAFE must be OFF
+
+    // and
+    rxConfigMutable()->rx_min_usec = 1000;
+    rxConfigMutable()->rx_max_usec = 2000;
+
+    // and
+    modeActivationConditionsMutable(0)->auxChannelIndex = 0;
+    modeActivationConditionsMutable(0)->modeId = BOXARM;
+    modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1400);
+    modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+
+    // when
+    rxInit();
+
+    // then (ARM channel should be positioned just 1 step below active range to init to OFF)
+    EXPECT_EQ(1375, rcData[modeActivationConditions(0)->auxChannelIndex + NON_AUX_CHANNEL_COUNT]);
 
     // given
     rxResetFlightChannelStatus();
