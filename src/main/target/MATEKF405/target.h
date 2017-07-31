@@ -151,9 +151,9 @@
 
 #define LED_STRIP
 #define WS2811_PIN                      PA15 // S5 pad for iNav
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST0_HANDLER
-#define WS2811_DMA_STREAM               DMA1_Stream0
-#define WS2811_DMA_CHANNEL              DMA_Channel_6   // ???
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST5_HANDLER
+#define WS2811_DMA_STREAM               DMA1_Stream5
+#define WS2811_DMA_CHANNEL              DMA_Channel_3   // ???
 
 #define SPEKTRUM_BIND
 #define BIND_PIN                PA1 // USART4 RX
