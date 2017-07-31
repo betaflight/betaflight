@@ -116,6 +116,7 @@ extern uint8_t __config_end;
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
+#include "rx/frsky_d.h"
 
 #include "scheduler/scheduler.h"
 
@@ -2109,6 +2110,13 @@ static void cliBeeper(char *cmdline)
 }
 #endif
 
+#ifdef FRSKY_BIND
+void cliFrSkyBind(char *cmdline){
+	UNUSED(cmdline);
+	frSkyDBind();
+}
+#endif
+
 static void printMap(uint8_t dumpMask, const rxConfig_t *rxConfig, const rxConfig_t *defaultRxConfig)
 {
     bool equalsDefault = true;
@@ -3482,6 +3490,9 @@ const clicmd_t cmdTable[] = {
 #ifdef BEEPER
     CLI_COMMAND_DEF("beeper", "turn on/off beeper", "list\r\n"
         "\t<+|->[name]", cliBeeper),
+#endif
+#ifdef FRSKY_BIND
+    CLI_COMMAND_DEF("frsky_bind", NULL, NULL, cliFrSkyBind),
 #endif
 #ifdef LED_STRIP
     CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),

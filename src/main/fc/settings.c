@@ -63,6 +63,7 @@
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
+#include "rx/frsky_d.h"
 
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
@@ -727,7 +728,14 @@ const clivalue_t valueTable[] = {
 #endif
 
 #ifdef USE_ESC_SENSOR
-    { "esc_sensor_halfduplex",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ESC_SENSOR_CONFIG, offsetof(escSensorConfig_t, halfDuplex) },
+    { "esc_sensor_halfduplex",          VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ESC_SENSOR_CONFIG, offsetof(escSensorConfig_t, halfDuplex) },
+#endif
+
+#ifdef USE_RX_FRSKYD
+    { "frsky_d_autobind",               VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_FRSKY_D_CONFIG, offsetof(frSkyDConfig_t, autoBind) },
+    { "frsky_d_tx_id",                  VAR_UINT8   | MASTER_VALUE | MODE_ARRAY, .config.array.length = 2, PG_FRSKY_D_CONFIG, offsetof(frSkyDConfig_t, bindTxId) },
+    { "frsky_d_offset",                 VAR_INT8    | MASTER_VALUE, .config.minmax = { -127, 127 }, PG_FRSKY_D_CONFIG, offsetof(frSkyDConfig_t, bindOffset) },
+    { "frsky_d_bind_hop_data",          VAR_UINT8 | MASTER_VALUE | MODE_ARRAY, .config.array.length = 50, PG_FRSKY_D_CONFIG, offsetof(frSkyDConfig_t, bindHopData) },
 #endif
     { "led_inversion",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, ((1 << STATUS_LED_NUMBER) - 1) }, PG_STATUS_LED_CONFIG, offsetof(statusLedConfig_t, inversion) },
 #ifdef USE_DASHBOARD
