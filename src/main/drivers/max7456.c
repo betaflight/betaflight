@@ -25,6 +25,7 @@
 #ifdef USE_MAX7456
 
 #include "common/printf.h"
+#include "common/maths.h"
 
 #include "drivers/bus_spi.h"
 #include "drivers/dma.h"
@@ -473,6 +474,14 @@ void max7456Write(uint8_t x, uint8_t y, const char *buff)
     for (i = 0; *(buff+i); i++)
         if (x+i < CHARS_PER_LINE) // Do not write over screen
             screenBuffer[y*CHARS_PER_LINE+x+i] = *(buff+i);
+}
+
+void max7456WriteVertical(uint8_t x, uint8_t y, const char *buff)
+{
+    uint16_t offset;
+    for (offset = y*CHARS_PER_LINE + x; *buff; offset+= CHARS_PER_LINE)
+        if (offset < MAX(VIDEO_LINES_PAL, VIDEO_LINES_NTSC)) // Do not write over screen
+            screenBuffer[offset] = *buff++;
 }
 
 bool max7456DmaInProgress(void)

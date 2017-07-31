@@ -103,6 +103,14 @@ static int writeString(displayPort_t *displayPort, uint8_t x, uint8_t y, const c
     return 0;
 }
 
+static int writeStringVertical(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
+{
+    UNUSED(displayPort);
+    max7456WriteVertical(x, y, s);
+
+    return 0;
+}
+
 static int writeChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c)
 {
     UNUSED(displayPort);
@@ -144,6 +152,7 @@ static const displayPortVTable_t max7456VTable = {
     .drawScreen = drawScreen,
     .screenSize = screenSize,
     .writeString = writeString,
+    .writeStringVertical = writeStringVertical,
     .writeChar = writeChar,
     .isTransferInProgress = isTransferInProgress,
     .heartbeat = heartbeat,
