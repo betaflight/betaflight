@@ -21,9 +21,9 @@
 #include "drivers/sensor.h"
 
 typedef struct magDev_s {
-    sensorInitFuncPtr init;                                 // initialize function
-    sensorReadFuncPtr read;                                 // read 3 axis data function
-    busDevice_t bus;
+    sensorMagInitFuncPtr init;                                 // initialize function
+    sensorMagReadFuncPtr read;                                 // read 3 axis data function
+    busDevice_t busdev;
     sensor_align_e magAlign;
 } magDev_t;
 

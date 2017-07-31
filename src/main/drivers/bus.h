@@ -35,6 +35,7 @@ typedef struct busDevice_s {
         struct deviceI2C_s {
            I2CDevice device;
            uint8_t address;
+           const struct busDevice_s *master;
         } i2c;
     } busdev_u;
 } busDevice_t;
@@ -42,6 +43,7 @@ typedef struct busDevice_s {
 #define BUSTYPE_NONE 0
 #define BUSTYPE_I2C  1
 #define BUSTYPE_SPI  2
+#define BUSTYPE_SLAVE  3 // Slave I2C on SPI master
 
 #ifdef TARGET_BUS_INIT
 void targetBusInit(void);

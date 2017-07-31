@@ -28,14 +28,22 @@
 #define BEEPER_INVERTED
 
 #define ACC
-#define USE_FAKE_ACC
 #define USE_ACC_MPU6050
 #define ACC_MPU6050_ALIGN CW270_DEG
+#define USE_ACC_SPI_MPU9250
+#define ACC_MPU9250_ALIGN       CW0_DEG_FLIP
+//#define USE_FAKE_ACC
 
 #define GYRO
-#define USE_FAKE_GYRO
-#define USE_GYRO_MPU6050
-#define GYRO_MPU6050_ALIGN CW270_DEG
+//#define USE_GYRO_MPU6050
+//#define GYRO_MPU6050_ALIGN CW270_DEG
+
+#define USE_GYRO_SPI_MPU9250
+#define MPU9250_CS_PIN          SPI4_NSS_PIN
+#define MPU9250_SPI_INSTANCE    SPI4
+#define GYRO_MPU9250_ALIGN      CW0_DEG_FLIP
+
+//#define USE_FAKE_GYRO
 
 // MPU6050 interrupts
 #define USE_MPU_DATA_READY_SIGNAL
@@ -43,13 +51,19 @@
 #define USE_EXTI
 
 #define MAG
-#define USE_FAKE_MAG
-#define USE_MAG_HMC5883
-#define MAG_HMC5883_ALIGN CW270_DEG_FLIP
+//#define USE_FAKE_MAG
+//#define USE_MAG_HMC5883
+#define USE_MAG_SPI_HMC5883
+#define HMC5883_CS_PIN PF15
+#define HMC5883_SPI_INSTANCE SPI4
+#define MAG_HMC5882_ALIGN CW0_DEG_FLIP
+#define USE_MAG_AK8963
+#define MAG_AK8963_ALIGN CW0_DEG_FLIP
 
 #define BARO
-#define USE_FAKE_BARO
+//#define USE_FAKE_BARO
 #define USE_BARO_MS5611
+#define USE_BARO_BMP280
 
 #define USABLE_TIMER_CHANNEL_COUNT 16
 
@@ -100,7 +114,7 @@
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_4
 
-#define SPI1_NSS_PIN            PA4
+#define SPI1_NSS_PIN            PD14
 #define SPI1_SCK_PIN            PA5
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
@@ -112,32 +126,38 @@
 
 #define USE_SDCARD
 #define SDCARD_DETECT_INVERTED
-#define SDCARD_DETECT_PIN                   PF14
+#define SDCARD_DETECT_PIN                   PD15
 
-#define SDCARD_SPI_INSTANCE                 SPI4
-#define SDCARD_SPI_CS_PIN                   SPI4_NSS_PIN
+#define SDCARD_SPI_INSTANCE                 SPI1
+#define SDCARD_SPI_CS_PIN                   SPI1_NSS_PIN
 
 #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 422kHz
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 8 // 27MHz
 
+#if 0
 #define SDCARD_DMA_CHANNEL_TX               DMA2_Stream1
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF1_5
 #define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA2
 #define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_4
+#endif
+
+#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #define USE_I2C
-#define USE_I2C_DEVICE_1
-#define I2C_DEVICE                  (I2CDEV_1)
-#define I2C1_SCL                    PB8
-#define I2C1_SDA                    PB9
+//#define USE_I2C_DEVICE_1
+//#define I2C_DEVICE                  (I2CDEV_1)
+//#define I2C1_SCL                    PB8
+//#define I2C1_SDA                    PB9
+#define USE_I2C_DEVICE_2
+#define I2C_DEVICE                  (I2CDEV_2)
+#define I2C2_SCL                    PB10
+#define I2C2_SDA                    PB11
 
 #define USE_ADC
 #define VBAT_ADC_PIN                PA3
 #define CURRENT_METER_ADC_PIN       PC0
 #define RSSI_ADC_GPIO_PIN           PC3
-
-#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
