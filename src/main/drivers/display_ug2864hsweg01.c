@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -297,15 +298,15 @@ void i2c_OLED_send_string_vertical(busDevice_t *bus, uint8_t x, uint8_t y, const
     // vertical mode
     i2c_OLED_set_vertical_adressing_mode(bus);
 
-    char buffer[128/8];
+    uint8_t buffer[SCREEN_HEIGHT/8];
 
     // Sends a string of chars until null terminator
-    char *sptr;
+    const char *sptr;
     uint8_t i;
     uint8_t j;
 
     uint8_t len = strlen(string);
-    if (len > 128/8) len = 128/8;
+    if (len > SCREEN_HEIGHT/8) len = SCREEN_HEIGHT/8;
 
     for (i = 0; i < 5; i++) {
         i2c_OLED_set_xy(bus, x + i, y);
@@ -313,7 +314,7 @@ void i2c_OLED_send_string_vertical(busDevice_t *bus, uint8_t x, uint8_t y, const
         for(j = 0; j<len; j++) {
             buffer[j] = multiWiiFont[*sptr - 32][i];
             buffer[j] ^= CHAR_FORMAT;  // apply
-            *sptr++;
+            sptr++;
         }
         i2cWriteBuffer(bus->busdev_u.i2c.device, bus->busdev_u.i2c.address, 0x40, len, buffer);
     }
