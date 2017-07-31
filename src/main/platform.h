@@ -27,6 +27,9 @@
 
 #include "stm32f7xx_ll_spi.h"
 #include "stm32f7xx_ll_gpio.h"
+#include "stm32f7xx_ll_dma.h"
+#include "stm32f7xx_ll_rcc.h"
+#include "stm32f7xx_ll_bus.h"
 
 // Chip Unique ID on F7
 #if defined(STM32F722xx)
