@@ -78,7 +78,7 @@ PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
 
 typedef enum {
     FAILSAFE_CHANNEL_HOLD,      // Hold last known good value
-    FAILFAFE_CHANNEL_NEUTRAL,   // RPY = zero, THR = zero
+    FAILSAFE_CHANNEL_NEUTRAL,   // RPY = zero, THR = zero
     FAILSAFE_CHANNEL_AUTO,      // Defined by failsafe configured values
 } failsafeChannelBehavior_e;
 
@@ -101,19 +101,19 @@ static const failsafeProcedureLogic_t failsafeProcedureLogic[] = {
     [FAILSAFE_PROCEDURE_DROP_IT] = {
             .forceAngleMode = true,
             .channelBehavior = {
-                FAILFAFE_CHANNEL_NEUTRAL,       // ROLL
-                FAILFAFE_CHANNEL_NEUTRAL,       // PITCH
-                FAILFAFE_CHANNEL_NEUTRAL,       // YAW
-                FAILFAFE_CHANNEL_NEUTRAL        // THROTTLE
+                FAILSAFE_CHANNEL_NEUTRAL,       // ROLL
+                FAILSAFE_CHANNEL_NEUTRAL,       // PITCH
+                FAILSAFE_CHANNEL_NEUTRAL,       // YAW
+                FAILSAFE_CHANNEL_NEUTRAL        // THROTTLE
             }
     },
 
     [FAILSAFE_PROCEDURE_RTH] = {
             .forceAngleMode = true,
             .channelBehavior = {
-                FAILFAFE_CHANNEL_NEUTRAL,       // ROLL
-                FAILFAFE_CHANNEL_NEUTRAL,       // PITCH
-                FAILFAFE_CHANNEL_NEUTRAL,       // YAW
+                FAILSAFE_CHANNEL_NEUTRAL,       // ROLL
+                FAILSAFE_CHANNEL_NEUTRAL,       // PITCH
+                FAILSAFE_CHANNEL_NEUTRAL,       // YAW
                 FAILSAFE_CHANNEL_HOLD           // THROTTLE
             }
     },
@@ -252,7 +252,7 @@ void failsafeApplyControlInput(void)
                 rcCommand[idx] = failsafeState.lastGoodRcCommand[idx];
                 break;
 
-            case FAILFAFE_CHANNEL_NEUTRAL:
+            case FAILSAFE_CHANNEL_NEUTRAL:
                 switch (idx) {
                     case ROLL:
                     case PITCH:
