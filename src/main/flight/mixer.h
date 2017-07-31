@@ -17,7 +17,10 @@
 
 #pragma once
 
+#include "platform.h"
+
 #include "config/parameter_group.h"
+#include "drivers/pwm_output_counts.h"
 #include "drivers/io_types.h"
 #include "drivers/pwm_output.h"
 
