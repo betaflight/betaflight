@@ -34,6 +34,8 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "cms/cms.h"
+
 #include "drivers/camera_control.h"
 
 #include "fc/config.h"
@@ -123,6 +125,12 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
     static uint8_t rcDisarmTicks;       // this is an extra guard for disarming through switch to prevent that one frame can disarm it
     uint8_t stTmp = 0;
     int i;
+
+#ifdef CMS
+    if (cmsInMenu) {
+        return;
+    }
+#endif
 
     // ------------------ STICKS COMMAND HANDLER --------------------
     // checking sticks positions

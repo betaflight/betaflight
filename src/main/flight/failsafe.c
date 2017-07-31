@@ -154,11 +154,13 @@ void failsafeOnValidDataReceived(void)
     failsafeState.validRxDataReceivedAt = millis();
     if ((failsafeState.validRxDataReceivedAt - failsafeState.validRxDataFailedAt) > PERIOD_RXDATA_RECOVERY) {
         failsafeState.rxLinkState = FAILSAFE_RXLINK_UP;
+        unsetArmingDisabled(ARMING_DISABLED_RX_FAILSAFE);
     }
 }
 
 void failsafeOnValidDataFailed(void)
 {
+    setArmingDisabled(ARMING_DISABLED_RX_FAILSAFE); // To prevent arming with no RX link
     failsafeState.validRxDataFailedAt = millis();
     if ((failsafeState.validRxDataFailedAt - failsafeState.validRxDataReceivedAt) > failsafeState.rxDataFailurePeriod) {
         failsafeState.rxLinkState = FAILSAFE_RXLINK_DOWN;
