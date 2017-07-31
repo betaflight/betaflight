@@ -36,7 +36,6 @@ typedef struct pt1Filter_s {
 typedef struct biquadFilter_s {
     float b0, b1, b2, a1, a2;
     float x1, x2, y1, y2;
-    float d1, d2;
 } biquadFilter_t;
 
 typedef struct firFilterDenoise_s{
