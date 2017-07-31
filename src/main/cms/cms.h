@@ -4,6 +4,8 @@
 
 #include "common/time.h"
 
+extern bool cmsInMenu;
+
 // Device management
 bool cmsDisplayPortRegister(displayPort_t *pDisplay);
 
