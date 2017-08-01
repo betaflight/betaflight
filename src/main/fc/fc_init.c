@@ -71,6 +71,7 @@
 #include "drivers/camera_control.h"
 
 #include "fc/config.h"
+#include "fc/fc_core.h"
 #include "fc/fc_init.h"
 #include "fc/fc_msp.h"
 #include "fc/fc_tasks.h"
@@ -718,6 +719,9 @@ void init(void)
     // Latch active features AGAIN since some may be modified by init().
     latchActiveFeatures();
     pwmEnableMotors();
+
+    resetPowerOnGuardTime();
+    setArmingDisabled(ARMING_DISABLED_POWER_ON_GUARD);
 
 #ifdef USE_OSD_SLAVE
     osdSlaveTasksInit();

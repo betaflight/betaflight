@@ -39,6 +39,7 @@ void applyAndSaveAccelerometerTrimsDelta(union rollAndPitchTrims_u *rollAndPitch
 void handleInflightCalibrationStickPosition();
 
 void resetArmingDisabled(void);
+void resetPowerOnGuardTime(void);
 
 void disarm(void);
 void tryArm(void);
