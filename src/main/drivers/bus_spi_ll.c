@@ -21,7 +21,7 @@
 
 #include <platform.h>
 
-#if defined(USE_SPI) && defined(USE_LOWLEVEL_DRIVER)
+#if defined(USE_SPI)
 
 #include "common/utils.h"
 
@@ -233,27 +233,60 @@ bool spiIsBusBusy(SPI_TypeDef *instance)
 
 bool spiTransfer(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len)
 {
-    uint16_t spiTimeout = 1000;
-
-    uint8_t b;
-    instance->DR;
-    while (len--) {
-        b = txData ? *(txData++) : 0xFF;
+    // set 16-bit transfer
+    CLEAR_BIT(instance->CR2, SPI_RXFIFO_THRESHOLD);
+    while (len > 1) {
+        int spiTimeout = 1000;
         while (!LL_SPI_IsActiveFlag_TXE(instance)) {
-            if ((spiTimeout--) == 0)
+            if ((spiTimeout--) == 0) {
                 return spiTimeoutUserCallback(instance);
+            }
         }
+        uint16_t w;
+        if (txData) {
+            w = *((uint16_t *)txData);
+            txData += 2;
+        } else {
+            w = 0xFFFF;
+        }
+        LL_SPI_TransmitData16(instance, w);
+
+        spiTimeout = 1000;
+        while (!LL_SPI_IsActiveFlag_RXNE(instance)) {
+            if ((spiTimeout--) == 0) {
+                return spiTimeoutUserCallback(instance);
+            }
+        }
+        w = LL_SPI_ReceiveData16(instance);
+        if (rxData) {
+            *((uint16_t *)rxData) = w;
+            rxData += 2;
+        }
+        len -= 2;
+    }
+    // set 8-bit transfer
+    SET_BIT(instance->CR2, SPI_RXFIFO_THRESHOLD);
+    if (len) {
+        int spiTimeout = 1000;
+        while (!LL_SPI_IsActiveFlag_TXE(instance)) {
+            if ((spiTimeout--) == 0) {
+                return spiTimeoutUserCallback(instance);
+            }
+        }
+        uint8_t b = txData ? *(txData++) : 0xFF;
         LL_SPI_TransmitData8(instance, b);
 
         spiTimeout = 1000;
         while (!LL_SPI_IsActiveFlag_RXNE(instance)) {
-            if ((spiTimeout--) == 0)
+            if ((spiTimeout--) == 0) {
                 return spiTimeoutUserCallback(instance);
+            }
         }
         b = LL_SPI_ReceiveData8(instance);
-
-        if (rxData)
+        if (rxData) {
             *(rxData++) = b;
+        }
+        --len;
     }
 
     return true;

@@ -28,12 +28,12 @@
 #include "timer.h"
 #include "drivers/pwm_output.h"
 
-static pwmWriteFunc *pwmWrite;
+static pwmWriteFn *pwmWrite;
 static pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
-static pwmCompleteWriteFunc *pwmCompleteWrite = NULL;
+static pwmCompleteWriteFn *pwmCompleteWrite = NULL;
 
 #ifdef USE_DSHOT
-loadDmaBufferFunc *loadDmaBuffer;
+loadDmaBufferFn *loadDmaBuffer;
 #endif
 
 #ifdef USE_SERVOS
