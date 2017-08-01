@@ -439,10 +439,10 @@ void validateAndFixConfig(void)
 void validateAndFixGyroConfig(void)
 {
     // Prevent invalid notch cutoff
-    if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1) {
+    if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1 || gyroConfig()->gyro_soft_notch_cutoff_1 == 0) {
         gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
     }
-    if (gyroConfig()->gyro_soft_notch_cutoff_2 >= gyroConfig()->gyro_soft_notch_hz_2) {
+    if (gyroConfig()->gyro_soft_notch_cutoff_2 >= gyroConfig()->gyro_soft_notch_hz_2 || gyroConfig()->gyro_soft_notch_cutoff_2 == 0) {
         gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
     }
 
