@@ -281,30 +281,22 @@ void i2cInit(I2CDevice device)
     switch (i2c->speed) {
         case I2C_SPEED_400KHZ:
         default:
-            i2cHandle[device].Handle.Init.Timing = 0x00500C6F;
+            i2cHandle[device].Handle.Init.Timing = 0x00A01B5B;  // 400kHz, Rise 100ns, Fall 10ns    0x00500B6A
             break;
 
         case I2C_SPEED_800KHZ:
-            i2cHandle[device].Handle.Init.Timing = 0x00500D1D;  // 800khz Maximum speed tested on various boards without issues
+            i2cHandle[device].Handle.Init.Timing = 0x00401B1B;  // 800khz, Rise 40, Fall 4
             break;
 
         case I2C_SPEED_100KHZ:
-            i2cHandle[device].Handle.Init.Timing = TBD;
+            i2cHandle[device].Handle.Init.Timing = 0x60100544;  // 100kHz, Rise 100ns, Fall 10ns
             break;
 
         case I2C_SPEED_200KHZ:
-            i2cHandle[device].Handle.Init.Timing = TBD;
+            i2cHandle[device].Handle.Init.Timing = 0x00A01EDF;  // 200kHz, Rise 100ns, Fall 10ns
             break;
     }
 
-    if (i2c->overClock) {
-        
-        
-    } else {
-        //i2cHandle[device].Handle.Init.Timing          = 0x00500B6A;
-        
-    }
-    //i2cHandle[device].Handle.Init.Timing          = 0x00D00E28; /* (Rise time = 120ns, Fall time = 25ns) */
     i2cHandle[device].Handle.Init.OwnAddress1     = 0x0;
     i2cHandle[device].Handle.Init.AddressingMode  = I2C_ADDRESSINGMODE_7BIT;
     i2cHandle[device].Handle.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
