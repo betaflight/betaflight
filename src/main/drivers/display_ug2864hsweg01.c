@@ -228,7 +228,7 @@ void i2c_OLED_set_horizontal_adressing_mode(busDevice_t *bus)
 void i2c_OLED_set_vertical_adressing_mode(busDevice_t *bus)
 {
     static const uint8_t i2c_OLED_cmd_clear_display_pre[] = {
-        0x00, // Set Memory Addressing Mode to Horizontal addressing mode
+        0x01, // Set Memory Addressing Mode to Vertical addressing mode
     };
 
     i2c_OLED_send_cmdarray(bus, i2c_OLED_cmd_clear_display_pre, ARRAYLEN(i2c_OLED_cmd_clear_display_pre));
