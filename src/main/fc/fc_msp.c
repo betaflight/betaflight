@@ -643,8 +643,8 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU16(dst, osdConfig()->altitudeAlarm);
 
         // Element position and visibility
-        for (int i = 0; i < OSD_ITEM_COUNT; i++) {
-            sbufWriteU16(dst, osdConfig()->itemPos[i]);
+        for (int i = 0; i < OSD_ELEMENT_COUNT; i++) {
+            sbufWriteU16(dst, osdConfig()->elementPos[i]);
         }
 
         // Post flight statistics
@@ -2035,9 +2035,9 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 if (screen == 0 && addr < OSD_STAT_COUNT) {
                     /* Set statistic item enable */
                     osdConfigMutable()->enabledStats[addr] = value;
-                } else if (addr < OSD_ITEM_COUNT) {
+                } else if (addr < OSD_ELEMENT_COUNT) {
                     /* Set element positions */
-                    osdConfigMutable()->itemPos[addr] = value;
+                    osdConfigMutable()->elementPos[addr] = value;
                 } else {
                   return MSP_RESULT_ERROR;
                 }

@@ -405,11 +405,11 @@ TEST(OsdTest, TestAlarms)
 
     // and
     // the following OSD elements are visible
-    osdConfigMutable()->itemPos[OSD_ITEM_RSSI_VALUE]        = OSD_POS(8, 1)  | VISIBLE_FLAG;
-    osdConfigMutable()->itemPos[OSD_ITEM_MAIN_BATT_VOLTAGE] = OSD_POS(12, 1) | VISIBLE_FLAG;
-    osdConfigMutable()->itemPos[OSD_ITEM_TIMER_1]           = OSD_POS(20, 1) | VISIBLE_FLAG;
-    osdConfigMutable()->itemPos[OSD_ITEM_TIMER_2]           = OSD_POS(1, 1)  | VISIBLE_FLAG;
-    osdConfigMutable()->itemPos[OSD_ITEM_ALTITUDE]          = OSD_POS(23, 7) | VISIBLE_FLAG;
+    osdConfigMutable()->elementPos[OSD_ELEMENT_RSSI_VALUE]        = OSD_POS(8, 1)  | VISIBLE_FLAG;
+    osdConfigMutable()->elementPos[OSD_ELEMENT_MAIN_BATT_VOLTAGE] = OSD_POS(12, 1) | VISIBLE_FLAG;
+    osdConfigMutable()->elementPos[OSD_ELEMENT_TIMER_1]           = OSD_POS(20, 1) | VISIBLE_FLAG;
+    osdConfigMutable()->elementPos[OSD_ELEMENT_TIMER_2]           = OSD_POS(1, 1)  | VISIBLE_FLAG;
+    osdConfigMutable()->elementPos[OSD_ELEMENT_ALTITUDE]          = OSD_POS(23, 7) | VISIBLE_FLAG;
 
     // and
     // this set of alarm values
@@ -494,7 +494,7 @@ TEST(OsdTest, TestAlarms)
 TEST(OsdTest, TestElementRssi)
 {
     // given
-    osdConfigMutable()->itemPos[OSD_ITEM_RSSI_VALUE] = OSD_POS(8, 1) | VISIBLE_FLAG;
+    osdConfigMutable()->elementPos[OSD_ELEMENT_RSSI_VALUE] = OSD_POS(8, 1) | VISIBLE_FLAG;
     osdConfigMutable()->rssiAlarm = 0;
 
     // when
@@ -528,7 +528,7 @@ TEST(OsdTest, TestElementRssi)
 TEST(OsdTest, TestElementAmperage)
 {
     // given
-    osdConfigMutable()->itemPos[OSD_ITEM_CURRENT_DRAW] = OSD_POS(1, 12) | VISIBLE_FLAG;
+    osdConfigMutable()->elementPos[OSD_ELEMENT_CURRENT_DRAW] = OSD_POS(1, 12) | VISIBLE_FLAG;
 
     // when
     simulationBatteryAmperage = 0;
@@ -561,7 +561,7 @@ TEST(OsdTest, TestElementAmperage)
 TEST(OsdTest, TestElementMahDrawn)
 {
     // given
-    osdConfigMutable()->itemPos[OSD_ITEM_MAH_DRAWN] = OSD_POS(1, 11) | VISIBLE_FLAG;
+    osdConfigMutable()->elementPos[OSD_ELEMENT_MAH_DRAWN] = OSD_POS(1, 11) | VISIBLE_FLAG;
 
     // when
     simulationMahDrawn = 0;
@@ -610,7 +610,7 @@ TEST(OsdTest, TestElementMahDrawn)
 TEST(OsdTest, TestElementAltitude)
 {
     // given
-    osdConfigMutable()->itemPos[OSD_ITEM_ALTITUDE] = OSD_POS(23, 7) | VISIBLE_FLAG;
+    osdConfigMutable()->elementPos[OSD_ELEMENT_ALTITUDE] = OSD_POS(23, 7) | VISIBLE_FLAG;
 
     // and
     osdConfigMutable()->units = OSD_UNIT_METRIC;
