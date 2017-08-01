@@ -190,7 +190,6 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/bus.c \
             drivers/bus_spi.c \
             drivers/exti.c \
-            drivers/gyro_sync.c \
             drivers/io.c \
             drivers/pwm_output.c \
             drivers/rcc.c \
@@ -208,14 +207,12 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             flight/pid.c \
             io/serial.c \
             rx/ibus.c \
-            rx/jetiexbus.c \
             rx/rx.c \
             rx/rx_spi.c \
             rx/crsf.c \
             rx/sbus.c \
             rx/spektrum.c \
             rx/sumd.c \
-            rx/sumh.c \
             rx/xbus.c \
             scheduler/scheduler.c \
             sensors/acceleration.c \
