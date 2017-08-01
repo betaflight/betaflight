@@ -720,8 +720,11 @@ void init(void)
     latchActiveFeatures();
     pwmEnableMotors();
 
-    resetPowerOnGuardTime();
-    setArmingDisabled(ARMING_DISABLED_POWER_ON_GUARD);
+    // Reset arming guard if using switch arming
+    if (isModeActivationConditionPresent(BOXARM)) {
+        resetPowerOnGuardTime();
+        setArmingDisabled(ARMING_DISABLED_POWER_ON_GUARD);
+    }
 
 #ifdef USE_OSD_SLAVE
     osdSlaveTasksInit();

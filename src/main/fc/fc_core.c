@@ -189,7 +189,7 @@ void updateArmingStatus(void)
             unsetArmingDisabled(ARMING_DISABLED_CALIBRATING);
         }
 
-        if ((getArmingDisableFlags() & ARMING_DISABLED_POWER_ON_GUARD)) {
+        if ((getArmingDisableFlags() & ARMING_DISABLED_POWER_ON_GUARD) && isModeActivationConditionPresent(BOXARM)) {
             if (IS_RC_MODE_ACTIVE(BOXARM)) {
                 resetPowerOnGuardTime();
             } else {
