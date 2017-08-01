@@ -110,7 +110,7 @@ int16_t headFreeModeHold;
 
 static bool reverseMotors = false;
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
-static uint32_t powerOnGuardExpiry;
+static uint32_t powerOnGuardExpiry;  // Time in milliseconds at which the power on arming guard expires
 
 bool isRXDataNew;
 static int lastArmingDisabledReason = 0;
@@ -191,10 +191,11 @@ void updateArmingStatus(void)
 
         if ((getArmingDisableFlags() & ARMING_DISABLED_POWER_ON_GUARD) && isModeActivationConditionPresent(BOXARM)) {
             if (IS_RC_MODE_ACTIVE(BOXARM)) {
+                // Arm switch is active so guard period timer is reset
                 resetPowerOnGuardTime();
-            } else {
-                if (millis() >= powerOnGuardExpiry)
-                    unsetArmingDisabled(ARMING_DISABLED_POWER_ON_GUARD);
+            } else if (millis() >= powerOnGuardExpiry) {
+                // Arm switch is off and guard period has elapsed so remove the arming prevention
+                unsetArmingDisabled(ARMING_DISABLED_POWER_ON_GUARD);
             }
         }
 
