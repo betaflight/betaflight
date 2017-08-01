@@ -738,7 +738,17 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
     case MSP_RAW_IMU:
         {
             // Hack scale due to choice of units for sensor data in multiwii
-            const uint8_t scale = (acc.dev.acc_1G > 512) ? 4 : 1;
+
+            uint8_t scale;
+
+            if (acc.dev.acc_1G > 512*4) {
+                scale = 8;
+            } else if (acc.dev.acc_1G >= 512) {
+                scale = 4;
+            } else {
+                scale = 1;
+            }
+
             for (int i = 0; i < 3; i++) {
                 sbufWriteU16(dst, acc.accSmooth[i] / scale);
             }
@@ -1069,7 +1079,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, blackboxConfig()->device);
         sbufWriteU8(dst, blackboxGetRateNum());
         sbufWriteU8(dst, blackboxGetRateDenom());
-        sbufWriteU8(dst, blackboxConfig()->p_denom);
+        sbufWriteU16(dst, blackboxConfig()->p_denom);
 #else
         sbufWriteU8(dst, 0); // Blackbox not supported
         sbufWriteU8(dst, 0);
@@ -1609,7 +1619,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             const int rateDenom = sbufReadU8(src); // was rate_denom
             if (sbufBytesRemaining(src) >= 1) {
                 // p_denom specified, so use it directly
-                blackboxConfigMutable()->p_denom = sbufReadU8(src);
+                blackboxConfigMutable()->p_denom = sbufReadU16(src);
             } else {
                 // p_denom not specified in MSP, so calculate it from old rateNum and rateDenom
                 blackboxConfigMutable()->p_denom = blackboxCalculatePDenom(rateNum, rateDenom);
