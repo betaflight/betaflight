@@ -121,8 +121,8 @@ static void resync(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     max7456RefreshAll();
-    displayPort->rows = max7456GetRowsCount() + displayPortProfileMax7456()->rowAdjust;
-    displayPort->cols = 30 + displayPortProfileMax7456()->colAdjust;
+    displayPort->rowCount = max7456GetRowsCount() + displayPortProfileMax7456()->rowAdjust;
+    displayPort->colCount = 30 + displayPortProfileMax7456()->colAdjust;
 }
 
 static int heartbeat(displayPort_t *displayPort)

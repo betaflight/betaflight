@@ -127,8 +127,8 @@ static displayPort_t *cmsDisplayPortSelectNext(void)
 //
 
 #define LEFT_MENU_COLUMN  1
-#define RIGHT_MENU_COLUMN(p) ((p)->cols - 8)
-#define MAX_MENU_ITEMS(p)    ((p)->rows - 2)
+#define RIGHT_MENU_COLUMN(p) ((p)->colCount - 8)
+#define MAX_MENU_ITEMS(p)    ((p)->rowCount - 2)
 
 bool cmsInMenu = false;
 
@@ -414,7 +414,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
 
     uint8_t i;
     OSD_Entry *p;
-    uint8_t top = (pDisplay->rows - pageMaxRow) / 2 - 1;
+    uint8_t top = (pDisplay->rowCount - pageMaxRow) / 2 - 1;
 
     // Polled (dynamic) value display denominator.
 
