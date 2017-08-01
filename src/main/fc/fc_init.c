@@ -721,7 +721,7 @@ void init(void)
     pwmEnableMotors();
 
     // Reset arming guard if using switch arming
-    if (isModeActivationConditionPresent(BOXARM)) {
+    if (!isUsingSticksForArming()) {
         resetPowerOnGuardTime();
         setArmingDisabled(ARMING_DISABLED_POWER_ON_GUARD);
     }

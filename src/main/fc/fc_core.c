@@ -189,7 +189,7 @@ void updateArmingStatus(void)
             unsetArmingDisabled(ARMING_DISABLED_CALIBRATING);
         }
 
-        if ((getArmingDisableFlags() & ARMING_DISABLED_POWER_ON_GUARD) && isModeActivationConditionPresent(BOXARM)) {
+        if ((getArmingDisableFlags() & ARMING_DISABLED_POWER_ON_GUARD) && !isUsingSticksForArming()) {
             if (IS_RC_MODE_ACTIVE(BOXARM)) {
                 // Arm switch is active so guard period timer is reset
                 resetPowerOnGuardTime();
