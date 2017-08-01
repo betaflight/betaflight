@@ -129,9 +129,6 @@
 
 #define LED_STRIP
 
-#define SPEKTRUM_BIND
-#define BIND_PIN                PA1 // USART4 RX
-
 //#define USE_ESCSERIAL
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
