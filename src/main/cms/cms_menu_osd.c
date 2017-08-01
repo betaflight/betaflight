@@ -40,11 +40,11 @@
 #include "io/osd.h"
 
 #ifndef DISABLE_EXTENDED_CMS_OSD_MENU
-static uint16_t osdConfig_item_pos[OSD_ITEM_COUNT];
+static uint16_t osdConfig_item[OSD_ITEM_COUNT];
 
 static long menuOsdActiveElemsOnEnter(void)
 {
-    memcpy(&osdConfig_item_pos[0], &osdConfig()->item_pos[0], sizeof(uint16_t) * OSD_ITEM_COUNT);
+    memcpy(&osdConfig_item[0], &osdConfig()->item[0], sizeof(uint16_t) * OSD_ITEM_COUNT);
     return 0;
 }
 
@@ -52,52 +52,52 @@ static long menuOsdActiveElemsOnExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    memcpy(&osdConfigMutable()->item_pos[0], &osdConfig_item_pos[0], sizeof(uint16_t) * OSD_ITEM_COUNT);
+    memcpy(&osdConfigMutable()->item[0], &osdConfig_item[0], sizeof(uint16_t) * OSD_ITEM_COUNT);
     return 0;
 }
 
 OSD_Entry menuOsdActiveElemsEntries[] =
 {
     {"--- ACTIV ELEM ---", OME_Label,   NULL, NULL, 0},
-    {"RSSI",               OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_RSSI_VALUE], 0},
-    {"BATTERY VOLTAGE",    OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_VOLTAGE], 0},
-    {"BATTERY USAGE",      OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_USAGE], 0},
-    {"AVG CELL VOLTAGE",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_AVG_CELL_VOLTAGE], 0},
-    {"CROSSHAIRS",         OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CROSSHAIRS], 0},
-    {"HORIZON",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ARTIFICIAL_HORIZON], 0},
-    {"HORIZON SIDEBARS",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HORIZON_SIDEBARS], 0},
-    {"TIMER 1",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ITEM_TIMER_1], 0},
-    {"TIMER 2",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ITEM_TIMER_2], 0},
-    {"FLY MODE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_FLYMODE], 0},
-    {"NAME",               OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CRAFT_NAME], 0},
-    {"THROTTLE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_THROTTLE_POS], 0},
+    {"RSSI",               OME_VISIBLE, NULL, &osdConfig_item[OSD_RSSI_VALUE], 0},
+    {"BATTERY VOLTAGE",    OME_VISIBLE, NULL, &osdConfig_item[OSD_MAIN_BATT_VOLTAGE], 0},
+    {"BATTERY USAGE",      OME_VISIBLE, NULL, &osdConfig_item[OSD_MAIN_BATT_USAGE], 0},
+    {"AVG CELL VOLTAGE",   OME_VISIBLE, NULL, &osdConfig_item[OSD_AVG_CELL_VOLTAGE], 0},
+    {"CROSSHAIRS",         OME_VISIBLE, NULL, &osdConfig_item[OSD_CROSSHAIRS], 0},
+    {"HORIZON",            OME_VISIBLE, NULL, &osdConfig_item[OSD_ARTIFICIAL_HORIZON], 0},
+    {"HORIZON SIDEBARS",   OME_VISIBLE, NULL, &osdConfig_item[OSD_HORIZON_SIDEBARS], 0},
+    {"TIMER 1",            OME_VISIBLE, NULL, &osdConfig_item[OSD_ITEM_TIMER_1], 0},
+    {"TIMER 2",            OME_VISIBLE, NULL, &osdConfig_item[OSD_ITEM_TIMER_2], 0},
+    {"FLY MODE",           OME_VISIBLE, NULL, &osdConfig_item[OSD_FLYMODE], 0},
+    {"NAME",               OME_VISIBLE, NULL, &osdConfig_item[OSD_CRAFT_NAME], 0},
+    {"THROTTLE",           OME_VISIBLE, NULL, &osdConfig_item[OSD_THROTTLE_POS], 0},
 #ifdef VTX_CONTROL
-    {"VTX CHAN",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_VTX_CHANNEL], 0},
+    {"VTX CHAN",           OME_VISIBLE, NULL, &osdConfig_item[OSD_VTX_CHANNEL], 0},
 #endif // VTX
-    {"CURRENT (A)",        OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CURRENT_DRAW], 0},
-    {"USED MAH",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAH_DRAWN], 0},
+    {"CURRENT (A)",        OME_VISIBLE, NULL, &osdConfig_item[OSD_CURRENT_DRAW], 0},
+    {"USED MAH",           OME_VISIBLE, NULL, &osdConfig_item[OSD_MAH_DRAWN], 0},
 #ifdef GPS
-    {"GPS SPEED",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_SPEED], 0},
-    {"GPS SATS",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_SATS], 0},
-    {"GPS LAT",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_LAT], 0},
-    {"GPS LON",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_LON], 0},
-    {"HOME DIR",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HOME_DIR], 0},
-    {"HOME DIST",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HOME_DIST], 0},
+    {"GPS SPEED",          OME_VISIBLE, NULL, &osdConfig_item[OSD_GPS_SPEED], 0},
+    {"GPS SATS",           OME_VISIBLE, NULL, &osdConfig_item[OSD_GPS_SATS], 0},
+    {"GPS LAT",            OME_VISIBLE, NULL, &osdConfig_item[OSD_GPS_LAT], 0},
+    {"GPS LON",            OME_VISIBLE, NULL, &osdConfig_item[OSD_GPS_LON], 0},
+    {"HOME DIR",           OME_VISIBLE, NULL, &osdConfig_item[OSD_HOME_DIR], 0},
+    {"HOME DIST",          OME_VISIBLE, NULL, &osdConfig_item[OSD_HOME_DIST], 0},
 #endif // GPS
-    {"COMPASS BAR",        OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_COMPASS_BAR], 0},
-    {"ALTITUDE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ALTITUDE], 0},
-    {"POWER",              OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_POWER], 0},
-    {"ROLL PID",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ROLL_PIDS], 0},
-    {"PITCH PID",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PITCH_PIDS], 0},
-    {"YAW PID",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_YAW_PIDS], 0},
-    {"PROFILES",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PIDRATE_PROFILE], 0},
-    {"DEBUG",              OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_DEBUG], 0},
-    {"WARNINGS",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_WARNINGS], 0},
-    {"DISARMED",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_DISARMED], 0},
-    {"PIT ANG",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PITCH_ANGLE], 0},
-    {"ROL ANG",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ROLL_ANGLE], 0},
-    {"HEADING",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_NUMERICAL_HEADING], 0},
-    {"VARIO",              OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_NUMERICAL_VARIO], 0},
+    {"COMPASS BAR",        OME_VISIBLE, NULL, &osdConfig_item[OSD_COMPASS_BAR], 0},
+    {"ALTITUDE",           OME_VISIBLE, NULL, &osdConfig_item[OSD_ALTITUDE], 0},
+    {"POWER",              OME_VISIBLE, NULL, &osdConfig_item[OSD_POWER], 0},
+    {"ROLL PID",           OME_VISIBLE, NULL, &osdConfig_item[OSD_ROLL_PIDS], 0},
+    {"PITCH PID",          OME_VISIBLE, NULL, &osdConfig_item[OSD_PITCH_PIDS], 0},
+    {"YAW PID",            OME_VISIBLE, NULL, &osdConfig_item[OSD_YAW_PIDS], 0},
+    {"PROFILES",           OME_VISIBLE, NULL, &osdConfig_item[OSD_PIDRATE_PROFILE], 0},
+    {"DEBUG",              OME_VISIBLE, NULL, &osdConfig_item[OSD_DEBUG], 0},
+    {"WARNINGS",           OME_VISIBLE, NULL, &osdConfig_item[OSD_WARNINGS], 0},
+    {"DISARMED",           OME_VISIBLE, NULL, &osdConfig_item[OSD_DISARMED], 0},
+    {"PIT ANG",            OME_VISIBLE, NULL, &osdConfig_item[OSD_PITCH_ANGLE], 0},
+    {"ROL ANG",            OME_VISIBLE, NULL, &osdConfig_item[OSD_ROLL_ANGLE], 0},
+    {"HEADING",            OME_VISIBLE, NULL, &osdConfig_item[OSD_NUMERICAL_HEADING], 0},
+    {"VARIO",              OME_VISIBLE, NULL, &osdConfig_item[OSD_NUMERICAL_VARIO], 0},
     {"BACK",               OME_Back,    NULL, NULL, 0},
     {NULL,                 OME_END,     NULL, NULL, 0}
 };
@@ -206,6 +206,7 @@ CMS_Menu menuTimers = {
 };
 #endif /* DISABLE_EXTENDED_CMS_OSD_MENU */
 
+static uint8_t osdConfig_pageNo;
 #ifdef USE_MAX7456
 static bool displayPortProfileMax7456_invert;
 static uint8_t displayPortProfileMax7456_blackBrightness;
@@ -214,6 +215,7 @@ static uint8_t displayPortProfileMax7456_whiteBrightness;
 
 static long cmsx_menuOsdOnEnter(void)
 {
+    osdConfig_pageNo = osdConfig()->page + 1;
 #ifdef USE_MAX7456
     displayPortProfileMax7456_invert = displayPortProfileMax7456()->invert;
     displayPortProfileMax7456_blackBrightness = displayPortProfileMax7456()->blackBrightness;
@@ -227,6 +229,7 @@ static long cmsx_menuOsdOnExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
+    osdSetPage(osdConfig_pageNo - 1);
 #ifdef USE_MAX7456
     displayPortProfileMax7456Mutable()->invert = displayPortProfileMax7456_invert;
     displayPortProfileMax7456Mutable()->blackBrightness = displayPortProfileMax7456_blackBrightness;
@@ -239,6 +242,7 @@ static long cmsx_menuOsdOnExit(const OSD_Entry *self)
 OSD_Entry cmsx_menuOsdEntries[] =
 {
     {"---OSD---",   OME_Label,   NULL,          NULL,                0},
+    {"PAGE",        OME_UINT8,   NULL, &(OSD_UINT8_t){&osdConfig_pageNo, 1, OSD_PAGE_COUNT, 1}, 0},
 #ifndef DISABLE_EXTENDED_CMS_OSD_MENU
     {"ACTIVE ELEM", OME_Submenu, cmsMenuChange, &menuOsdActiveElems, 0},
     {"TIMERS",      OME_Submenu, cmsMenuChange, &menuTimers,         0},

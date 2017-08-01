@@ -46,6 +46,8 @@ extern "C" {
 
     #include "rx/rx.h"
 
+    extern uint8_t page;
+
     void osdRefresh(timeUs_t currentTimeUs);
     void osdFormatTime(char * buff, osd_timer_precision_e precision, timeUs_t time);
     void osdFormatTimer(char *buff, bool showSymbol, int timerIndex);
@@ -401,11 +403,11 @@ TEST(OsdTest, TestAlarms)
 
     // and
     // the following OSD elements are visible
-    osdConfigMutable()->item_pos[OSD_RSSI_VALUE]        = OSD_POS(8, 1)  | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 1) | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_1]      = OSD_POS(20, 1)  | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_2]      = OSD_POS(1, 1)  | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ALTITUDE]          = OSD_POS(23, 7) | VISIBLE_FLAG;
+    OSD_INIT(osdConfigMutable(), OSD_RSSI_VALUE,    8,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfigMutable(), OSD_MAIN_BATT_VOLTAGE,    12,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfigMutable(), OSD_ITEM_TIMER_1,   20,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfigMutable(), OSD_ITEM_TIMER_2,    1,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE_PAGE_1);
+    OSD_INIT(osdConfigMutable(), OSD_ALTITUDE,    23,  7, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE_PAGE_1);
 
     // and
     // this set of alarm values
@@ -490,7 +492,7 @@ TEST(OsdTest, TestAlarms)
 TEST(OsdTest, TestElementRssi)
 {
     // given
-    osdConfigMutable()->item_pos[OSD_RSSI_VALUE] = OSD_POS(8, 1) | VISIBLE_FLAG;
+    OSD_INIT(osdConfigMutable(), OSD_RSSI_VALUE,    8,  1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE_PAGE_1);
     osdConfigMutable()->rssi_alarm = 0;
 
     // when
@@ -570,6 +572,142 @@ TEST(OsdTest, TestFormatTimeString)
     EXPECT_EQ(0, strcmp("01:59.00", buff));
 }
 
+/*
+ * Test positioning of OSD elements.
+ */
+TEST(OsdTest, TestElementPositioning)
+{
+    const int highX = UNITTEST_DISPLAYPORT_COLS - 2;
+    const int highY = UNITTEST_DISPLAYPORT_ROWS - 2;
+    const int centreX = highX / 2;
+    const int centreY = highY / 2;
+
+    // given
+    // north west anchoring
+    OSD_INIT(osdConfigMutable(), OSD_CRAFT_NAME, 8, 1, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE_PAGE_1);
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // expect
+    displayPortTestBufferSubstring(8, 1, "CRAFT_NAME");
+
+    // given
+    // south east anchoring
+    OSD_INIT(osdConfigMutable(), OSD_CRAFT_NAME, -8, -2, OSD_FLAG_ORIGIN_SE | OSD_FLAG_VISIBLE_PAGE_1);
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // expect
+    displayPortTestBufferSubstring(highX - 8, highY - 2, "CRAFT_NAME");
+
+    // given
+    // north east anchoring
+    OSD_INIT(osdConfigMutable(), OSD_CRAFT_NAME, -8, 4, OSD_FLAG_ORIGIN_NE | OSD_FLAG_VISIBLE_PAGE_1);
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // expect
+    displayPortTestBufferSubstring(highX - 8, 4, "CRAFT_NAME");
+
+    // given
+    // south west anchoring
+    OSD_INIT(osdConfigMutable(), OSD_CRAFT_NAME, 6, -2, OSD_FLAG_ORIGIN_SW | OSD_FLAG_VISIBLE_PAGE_1);
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // expect
+    displayPortTestBufferSubstring(6, highY - 2, "CRAFT_NAME");
+
+    // given
+    // centre anchoring
+    OSD_INIT(osdConfigMutable(), OSD_CRAFT_NAME, 1, -2, OSD_FLAG_ORIGIN_C | OSD_FLAG_VISIBLE_PAGE_1);
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // expect
+    displayPortTestBufferSubstring(centreX + 1, centreY - 2, "CRAFT_NAME");
+}
+
+/*
+ * Test selecting an OSD page using the value of a channel..
+ */
+TEST(OsdTest, TestSelectingPageViaChannelValue)
+{
+    // given
+    // OSD page assigned to channel 6 (aux 2, index 5)
+    osdConfigMutable()->pageAuxChannel = 2;
+
+    // and
+    // These state variables
+    rssi = 0;
+
+    // and
+    // The following elements visible on page 1
+    OSD_INIT(osdConfigMutable(), OSD_RSSI_VALUE, 0, 2, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE_PAGE_1);
+
+    // and
+    // The following elements visible on page 2
+    OSD_INIT(osdConfigMutable(), OSD_FLYMODE, 0, 3, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE_PAGE_2);
+
+    // and
+    // The following elements visible on page 3
+    OSD_INIT(osdConfigMutable(), OSD_CRAFT_NAME, 0, 4, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE_PAGE_3);
+
+    // when
+    // OSD page channel position is low
+    rcData[5] = 1100;
+
+    // and
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // expect
+    // Only page 1 elements are visible
+    EXPECT_EQ(0, page);
+    displayPortTestBufferSubstring(0, 2, "%c0", SYM_RSSI);
+    displayPortTestBufferSubstring(0, 3, "     ");
+    displayPortTestBufferSubstring(0, 4, "     ");
+
+    // when
+    // OSD page channel position is mid
+    rcData[5] = 1500;
+
+    // and
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // expect
+    // Only page 2 elements are visible
+    EXPECT_EQ(1, page);
+    displayPortTestBufferSubstring(0, 2, "     ");
+    displayPortTestBufferSubstring(0, 3, "ACRO");
+    displayPortTestBufferSubstring(0, 4, "     ");
+
+    // when
+    // OSD page channel position is high
+    rcData[5] = 1900;
+
+    // and
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // expect
+    // Only page 3 elements are visible
+    EXPECT_EQ(2, page);
+    displayPortTestBufferSubstring(0, 2, "     ");
+    displayPortTestBufferSubstring(0, 3, "     ");
+    displayPortTestBufferSubstring(0, 4, "CRAFT_NAME");
+}
 
 // STUBS
 extern "C" {
