@@ -129,75 +129,7 @@ uint16_t i2cGetErrorCounter(void)
 
 bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
 {
-    if (device == I2CINVALID || device > I2CDEV_COUNT) {
-        return false;
-    }
-
-    I2C_TypeDef *I2Cx = i2cDevice[device].reg;
-
-    if (!I2Cx) {
-        return false;
-    }
-
-    addr_ <<= 1;
-
-    /* Test on BUSY Flag */
-    i2cTimeout = I2C_LONG_TIMEOUT;
-    while (I2C_GetFlagStatus(I2Cx, I2C_ISR_BUSY) != RESET) {
-        if ((i2cTimeout--) == 0) {
-            return i2cTimeoutUserCallback();
-        }
-    }
-
-    /* Configure slave address, nbytes, reload, end mode and start or stop generation */
-    I2C_TransferHandling(I2Cx, addr_, 1, I2C_Reload_Mode, I2C_Generate_Start_Write);
-
-    /* Wait until TXIS flag is set */
-    i2cTimeout = I2C_LONG_TIMEOUT;
-    while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TXIS) == RESET) {
-        if ((i2cTimeout--) == 0) {
-            return i2cTimeoutUserCallback();
-        }
-    }
-
-    /* Send Register address */
-    I2C_SendData(I2Cx, (uint8_t) reg);
-
-    /* Wait until TCR flag is set */
-    i2cTimeout = I2C_LONG_TIMEOUT;
-    while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TCR) == RESET)
-    {
-        if ((i2cTimeout--) == 0) {
-            return i2cTimeoutUserCallback();
-        }
-    }
-
-    /* Configure slave address, nbytes, reload, end mode and start or stop generation */
-    I2C_TransferHandling(I2Cx, addr_, 1, I2C_AutoEnd_Mode, I2C_No_StartStop);
-
-    /* Wait until TXIS flag is set */
-    i2cTimeout = I2C_LONG_TIMEOUT;
-    while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TXIS) == RESET) {
-        if ((i2cTimeout--) == 0) {
-            return i2cTimeoutUserCallback();
-        }
-    }
-
-    /* Write data to TXDR */
-    I2C_SendData(I2Cx, data);
-
-    /* Wait until STOPF flag is set */
-    i2cTimeout = I2C_LONG_TIMEOUT;
-    while (I2C_GetFlagStatus(I2Cx, I2C_ISR_STOPF) == RESET) {
-        if ((i2cTimeout--) == 0) {
-            return i2cTimeoutUserCallback();
-        }
-    }
-
-    /* Clear STOPF flag */
-    I2C_ClearFlag(I2Cx, I2C_ICR_STOPCF);
-
-    return true;
+    return i2cWriteBuffer(device, addr_, reg, 1, &data);
 }
 
 
