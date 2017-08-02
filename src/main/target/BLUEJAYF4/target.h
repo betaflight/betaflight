@@ -60,8 +60,10 @@
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW0_DEG
 
-//#define MAG
+#define MAG
+#define USE_MAG_HMC5883
 //#define USE_MAG_AK8963
+#define HMC5883_I2C_INSTANCE    I2CDEV_1
 
 #define BARO
 #define USE_BARO_MS5611
