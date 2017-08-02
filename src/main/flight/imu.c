@@ -212,8 +212,9 @@ bool imuRebaseEarthToBody(void) {
     // only rebase yaw axis when roll and are pitch quite level
     if((fabsf(attitude.values.roll/10.0f) < 20.0f)  && (fabsf(attitude.values.pitch/10.0f) < 20.0f)){
         // quaternion rotation
-        const float sina2 = sinf(-atan2f((2.0f*(q0q3 + q1q2)), (1.0f - 2.0f*(q2q2 + q3q3)))/2.0f);
-        const float cosa2 = cosf(-atan2f((2.0f*(q0q3 + q1q2)), (1.0f - 2.0f*(q2q2 + q3q3)))/2.0f);
+        const float atan2 = (-atan2f((2.0f*(q0q3 + q1q2)), (1.0f - 2.0f*(q2q2 + q3q3)))/2.0f);
+        const float sina2 = sinf(atan2);
+        const float cosa2 = cosf(atan2);
 
         q0 = q0*cosa2 - q3*sina2;
         q1 = q1*cosa2 + q2*sina2;
