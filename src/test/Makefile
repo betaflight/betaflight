@@ -150,6 +150,7 @@ osd_unittest_SRC := \
 		$(USER_DIR)/drivers/display.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/config/feature.c \
 		$(USER_DIR)/fc/runtime_config.c
 
 osd_unittest_DEFINES := \

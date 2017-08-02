@@ -28,6 +28,7 @@ extern "C" {
     #include "blackbox/blackbox.h"
 
     #include "config/parameter_group_ids.h"
+    #include "config/feature.h"
 
     #include "drivers/max7456_symbols.h"
 
