@@ -140,6 +140,8 @@
 #define USE_I2C
 #define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
+#define I2C1_SCL                PB8
+#define I2C1_SDA                PB9
 #define USE_I2C_PULLUP
 
 #define USE_ADC
