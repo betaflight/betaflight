@@ -43,6 +43,7 @@
 #include "cms/cms_menu_osd.h"
 #include "cms/cms_menu_ledstrip.h"
 #include "cms/cms_menu_misc.h"
+#include "cms/cms_menu_power.h"
 
 // VTX supplied menus
 
@@ -115,6 +116,7 @@ static OSD_Entry menuFeaturesEntries[] =
 #ifdef USE_LED_STRIP
     {"LED STRIP", OME_Submenu, cmsMenuChange, &cmsx_menuLedstrip, 0},
 #endif // LED_STRIP
+    {"POWER", OME_Submenu, cmsMenuChange, &cmsx_menuPower, 0},
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
 };

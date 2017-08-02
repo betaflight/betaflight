@@ -26,8 +26,10 @@ typedef enum {
     CURRENT_METER_VIRTUAL,
     CURRENT_METER_ESC,
     CURRENT_METER_MSP,
-    CURRENT_METER_MAX = CURRENT_METER_ESC
+    CURRENT_METER_COUNT
 } currentMeterSource_e;
+
+extern const char * const currentMeterSourceNames[CURRENT_METER_COUNT];
 
 typedef struct currentMeter_s {
     int32_t amperage;           // current read by current sensor in centiampere (1/100th A)
