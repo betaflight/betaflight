@@ -44,6 +44,7 @@
 #include "sensors/pitotmeter.h"
 #include "sensors/gyro.h"
 #include "sensors/battery.h"
+#include "sensors/rangefinder.h"
 
 #include "fc/fc_core.h"
 #include "fc/cli.h"
