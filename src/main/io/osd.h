@@ -139,14 +139,14 @@ typedef enum {
     // visible, bit 0
     OSD_FLAG_VISIBLE = (1 << 0),
 
-    // bit 1 .. 11 reserved for future use
+    // bit 1 .. 3 reserved for future use
 
-    // origin, bits 12..15
+    // origin, bits 4.7
     OSD_FLAG_ORIGIN_C  = 0, 
-    OSD_FLAG_ORIGIN_N  = (1<<12), 
-    OSD_FLAG_ORIGIN_E  = (1<<13),
-    OSD_FLAG_ORIGIN_S  = (1<<14),
-    OSD_FLAG_ORIGIN_W  = (1<<15),
+    OSD_FLAG_ORIGIN_N  = (1<<4), 
+    OSD_FLAG_ORIGIN_E  = (1<<5),
+    OSD_FLAG_ORIGIN_S  = (1<<6),
+    OSD_FLAG_ORIGIN_W  = (1<<7),
     OSD_FLAG_ORIGIN_NE = OSD_FLAG_ORIGIN_N | OSD_FLAG_ORIGIN_E,
     OSD_FLAG_ORIGIN_SE = OSD_FLAG_ORIGIN_S | OSD_FLAG_ORIGIN_E,
     OSD_FLAG_ORIGIN_SW = OSD_FLAG_ORIGIN_S | OSD_FLAG_ORIGIN_W,
