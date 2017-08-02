@@ -21,6 +21,8 @@
 #include "common/time.h"
 #include "config/parameter_group.h"
 
+#define OSD_TASK_FREQUENCY_HZ   100
+
 #define OSD_NUM_TIMER_TYPES 3
 extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 
@@ -145,6 +147,8 @@ extern uint32_t resumeRefreshAt;
 PG_DECLARE(osdConfig_t, osdConfig);
 
 struct displayPort_s;
+extern struct displayPort_s *osdDisplayPort;
+
 void osdInit(struct displayPort_s *osdDisplayPort);
 void osdResetConfig(osdConfig_t *osdProfile);
 void osdResetAlarms(void);

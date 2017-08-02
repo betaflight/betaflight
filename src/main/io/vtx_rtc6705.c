@@ -63,11 +63,11 @@ PG_RESET_TEMPLATE(vtxRTC6705Config_t, vtxRTC6705Config,
 #if defined(CMS) || defined(VTX_COMMON)
 #ifdef RTC6705_POWER_PIN
 static const char * const rtc6705PowerNames[RTC6705_POWER_COUNT] = {
-    "---", "25 ", "200",
+    "---", " 25 ", "200",
 };
 #else
 static const char * const rtc6705PowerNames[RTC6705_POWER_COUNT] = {
-    "25 ", "200",
+    " 25 ", "200",
 };
 #endif
 #endif

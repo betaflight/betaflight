@@ -45,7 +45,7 @@ static const uint16_t trampPowerTable[] = {
 };
 
 static const char * const trampPowerNames[] = {
-    "---", "25 ", "100", "200", "400", "600"
+    "---", " 25 ", "100", "200", "400", "600"
 };
 #endif
 

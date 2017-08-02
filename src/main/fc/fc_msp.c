@@ -43,6 +43,7 @@
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/compass/compass.h"
+#include "drivers/display.h"
 #include "drivers/flash.h"
 #include "drivers/io.h"
 #include "drivers/max7456.h"
@@ -2047,6 +2048,9 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 } else {
                   return MSP_RESULT_ERROR;
                 }
+
+                // force full screen rewrite
+                if (osdDisplayPort) displayClearScreen(osdDisplayPort);
 #else
                 return MSP_RESULT_ERROR;
 #endif

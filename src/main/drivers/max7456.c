@@ -486,7 +486,7 @@ bool max7456DmaInProgress(void)
 
 #include "build/debug.h"
 
-void max7456DrawScreen(void)
+void max7456DrawScreenPartial(void)
 {
     uint8_t stallCheck;
     uint8_t videoSense;
