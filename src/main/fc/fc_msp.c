@@ -337,8 +337,8 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
 
         huffmanState_t state = {
             .bytesWritten = 0,
-            .outByte = sbufPtr(dst) + MSP_PORT_DATAFLASH_INFO_SIZE + HUFFMAN_INFO_SIZE,
-            .outBufLen = readLen - HUFFMAN_INFO_SIZE,
+            .outByte = sbufPtr(dst) + sizeof(uint16_t) + sizeof(uint8_t) + HUFFMAN_INFO_SIZE,
+            .outBufLen = readLen,
             .outBit = 0x80,
         };
         *state.outByte = 0;
@@ -363,7 +363,7 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
         }
 
         // header
-        sbufWriteU16(dst, sizeof(uint16_t) + state.bytesWritten);
+        sbufWriteU16(dst, HUFFMAN_INFO_SIZE + state.bytesWritten);
         sbufWriteU8(dst, compressionMethod);
         // payload
         sbufWriteU16(dst, bytesReadTotal);
