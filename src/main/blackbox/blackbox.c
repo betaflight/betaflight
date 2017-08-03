@@ -102,9 +102,6 @@ PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
 #define BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS 200
 static const int32_t blackboxSInterval = 4096;
 
-#define STATIC_ASSERT(condition, name ) \
-    typedef char assert_failed_ ## name [(condition) ? 1 : -1 ]
-
 // Some macros to make writing FLIGHT_LOG_FIELD_* constants shorter:
 
 #define PREDICT(x) CONCAT(FLIGHT_LOG_FIELD_PREDICTOR_, x)
