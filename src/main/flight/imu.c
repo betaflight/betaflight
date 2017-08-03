@@ -87,8 +87,6 @@ static float throttleAngleScale;
 static float fc_acc;
 static float smallAngleCosZ = 0;
 
-static float magneticDeclination = 0.0f;       // calculated at startup from config
-
 static imuRuntimeConfig_t imuRuntimeConfig;
 
 STATIC_UNIT_TESTED float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;    // quaternion of sensor frame relative to earth frame
@@ -409,13 +407,13 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
     // rotation matrix
     attitude.values.roll = lrintf(atan2f(rMat[2][1], rMat[2][2]) * (1800.0f / M_PIf));
     attitude.values.pitch = lrintf(((0.5f * M_PIf) - acosf(-rMat[2][0])) * (1800.0f / M_PIf));
-    attitude.values.yaw = lrintf((-atan2f(rMat[1][0], rMat[0][0]) * (1800.0f / M_PIf) + magneticDeclination));
+    attitude.values.yaw = lrintf((-atan2f(rMat[1][0], rMat[0][0]) * (1800.0f / M_PIf)));
 
     // quaternion
     /*
     attitude.values.roll = lrintf(atan2f((+2.0f * (q0q1 + q2q3)), (+1.0f - 2.0f * (q1q1 + q2q2))) * (1800.0f / M_PIf));
     attitude.values.pitch = lrintf(asinf(+2.0f * (q0q2 - q1q3)) * (1800.0f / M_PIf));
-    attitude.values.yaw = lrintf((-atan2f((+2.0f * (q0q3 + q1q2)), (+1.0f - 2.0f * (q2q2 + q3q3))) * (1800.0f / M_PIf) + magneticDeclination)); */
+    attitude.values.yaw = lrintf((-atan2f((+2.0f * (q0q3 + q1q2)), (+1.0f - 2.0f * (q2q2 + q3q3))) * (1800.0f / M_PIf))); */
 
     if (attitude.values.yaw < 0)
         attitude.values.yaw += 3600;
