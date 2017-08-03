@@ -70,6 +70,7 @@
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
+#include "sensors/pitotmeter.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -519,6 +520,16 @@ static bool osdDrawSingleElement(uint8_t item)
             break;
         }
 
+    case OSD_AIR_SPEED:
+        {
+        #ifdef PITOT
+            osdFormatVelocityStr(buff, pitot.airSpeed);
+        #else 
+            return false;
+        #endif
+            break;
+        }
+
     default:
         return false;
     }
@@ -626,6 +637,11 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_VARIO_NUM);
 #endif // defined
 
+#ifdef PITOT
+    if (sensors(SENSOR_PITOT)) {
+        osdDrawSingleElement(OSD_AIR_SPEED);
+    }
+#endif
 }
 
 
@@ -664,6 +680,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->item_pos[OSD_PITCH_PIDS] = OSD_POS(2, 11);
     osdConfig->item_pos[OSD_YAW_PIDS] = OSD_POS(2, 12);
     osdConfig->item_pos[OSD_POWER] = OSD_POS(15, 1);
+
+    osdConfig->item_pos[OSD_AIR_SPEED] = OSD_POS(3, 5);
 
     osdConfig->rssi_alarm = 20;
     osdConfig->cap_alarm = 2200;

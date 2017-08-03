@@ -968,6 +968,7 @@ static const clivalue_t valueTable[] = {
     { "osd_pid_pitch_pos",          VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, OSD_POS_MAX_CLI }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_PITCH_PIDS]) },
     { "osd_pid_yaw_pos",            VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, OSD_POS_MAX_CLI }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_YAW_PIDS]) },
     { "osd_power_pos",              VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, OSD_POS_MAX_CLI }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_POWER]) },
+    { "osd_air_speed",              VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, OSD_POS_MAX_CLI }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_AIR_SPEED]) },
 #endif
 // PG_SYSTEM_CONFIG
     { "i2c_overclock",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, i2c_overclock) },

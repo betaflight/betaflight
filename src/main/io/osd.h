@@ -58,6 +58,7 @@ typedef enum {
     OSD_HEADING,
     OSD_VARIO,
     OSD_VARIO_NUM,
+    OSD_AIR_SPEED,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 

@@ -124,6 +124,7 @@ OSD_Entry menuOsdActiveElemsEntries[] =
     {"VARIO NUM", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_VARIO_NUM], 0},
 #endif // defined
     {"ALTITUDE", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ALTITUDE], 0},
+    {"AIR SPEED", OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_AIR_SPEED], 0},
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
 };
