@@ -141,7 +141,7 @@ bool compassInit(void)
 {
     // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)
     // calculate magnetic declination
-    mag.magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
+    //mag.magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
     // copy over SPI bus settings for AK8963 compass
     magDev.bus = *gyroSensorBus();
     if (!compassDetect(&magDev, compassConfig()->mag_hardware)) {
