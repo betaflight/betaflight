@@ -310,15 +310,12 @@ static uint8_t osdIncElementIndex(uint8_t elementIndex) {
         // check for visibility
         if (VISIBLE(osdConfig()->item_pos[elementIndex])) {
             // found next visible item
-            break;
+            return elementIndex;
         }
     }
-    if (max_inc == 0) {
-        // no osd item is visible
-        elementIndex = OSD_ITEM_COUNT;
-    }
 
-    return elementIndex;
+    // no item found
+    return OSD_ITEM_COUNT;
 }
 
 static void osdDrawSingleElement(uint8_t item)
