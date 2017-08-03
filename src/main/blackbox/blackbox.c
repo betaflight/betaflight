@@ -1318,11 +1318,13 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("Firmware type", "%s",                   "Cleanflight");
         BLACKBOX_PRINT_HEADER_LINE("Firmware revision", "INAV %s (%s) %s",  FC_VERSION_STRING, shortGitRevision, targetName);
         BLACKBOX_PRINT_HEADER_LINE("Firmware date", "%s %s",                buildDate, buildTime);
+        BLACKBOX_PRINT_HEADER_LINE("Log start datetime", "%s",              blackboxGetStartDateTime());
+        BLACKBOX_PRINT_HEADER_LINE("Craft name", "%s",                      systemConfig()->name);
         BLACKBOX_PRINT_HEADER_LINE("P interval", "%d/%d",                   blackboxConfig()->rate_num, blackboxConfig()->rate_denom);
-        BLACKBOX_PRINT_HEADER_LINE("rcRate", "%d",                          100); //For compatibility reasons write rc_rate 100
-        BLACKBOX_PRINT_HEADER_LINE("min_throttle", "%d",                    motorConfig()->minthrottle);
-        BLACKBOX_PRINT_HEADER_LINE("max_throttle", "%d",                    motorConfig()->maxthrottle);
+        BLACKBOX_PRINT_HEADER_LINE("minthrottle", "%d",                     motorConfig()->minthrottle);
+        BLACKBOX_PRINT_HEADER_LINE("maxthrottle", "%d",                     motorConfig()->maxthrottle);
         BLACKBOX_PRINT_HEADER_LINE("gyro_scale", "0x%x",                    castFloatBytesToInt(1.0f));
+        BLACKBOX_PRINT_HEADER_LINE("motorOutput", "%d,%d",                  motorConfig()->minthrottle,motorConfig()->maxthrottle);
         BLACKBOX_PRINT_HEADER_LINE("acc_1G", "%u",                          acc.dev.acc_1G);
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
@@ -1346,6 +1348,8 @@ static bool blackboxWriteSysinfo(void)
             );
 
         BLACKBOX_PRINT_HEADER_LINE("looptime", "%d",                        getPidUpdateRate());
+        BLACKBOX_PRINT_HEADER_LINE("gyro_sync_denom", "%d",                 gyroConfig()->gyroSyncDenominator);
+        BLACKBOX_PRINT_HEADER_LINE("rc_rate", "%d",                         100); //For compatibility reasons write rc_rate 100
         BLACKBOX_PRINT_HEADER_LINE("rc_expo", "%d",                         currentControlRateProfile->rcExpo8);
         BLACKBOX_PRINT_HEADER_LINE("rc_yaw_expo", "%d",                     currentControlRateProfile->rcYawExpo8);
         BLACKBOX_PRINT_HEADER_LINE("thr_mid", "%d",                         currentControlRateProfile->thrMid8);
@@ -1381,16 +1385,25 @@ static bool blackboxWriteSysinfo(void)
                                                                             pidBank()->pid[PID_VEL_Z].I,
                                                                             pidBank()->pid[PID_VEL_Z].D);
         BLACKBOX_PRINT_HEADER_LINE("yaw_p_limit", "%d",                     pidProfile()->yaw_p_limit);
-        BLACKBOX_PRINT_HEADER_LINE("yaw_lpf_hz", "%d",                      (int)(pidProfile()->yaw_lpf_hz * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("dterm_lpf_hz", "%d",                    (int)(pidProfile()->dterm_lpf_hz * 100.0f));
+        BLACKBOX_PRINT_HEADER_LINE("yaw_lpf_hz", "%d",                      pidProfile()->yaw_lpf_hz);
+        BLACKBOX_PRINT_HEADER_LINE("dterm_lpf_hz", "%d",                    pidProfile()->dterm_lpf_hz);
+        BLACKBOX_PRINT_HEADER_LINE("dterm_notch_hz", "%d",                  pidProfile()->dterm_soft_notch_hz);
+        BLACKBOX_PRINT_HEADER_LINE("dterm_notch_cutoff", "%d",              pidProfile()->dterm_soft_notch_cutoff);
         BLACKBOX_PRINT_HEADER_LINE("deadband", "%d",                        rcControlsConfig()->deadband);
         BLACKBOX_PRINT_HEADER_LINE("yaw_deadband", "%d",                    rcControlsConfig()->yaw_deadband);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_hardware_lpf", "%d",               gyroConfig()->gyro_lpf);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_lpf", "%d",                        gyroConfig()->gyro_lpf);
         BLACKBOX_PRINT_HEADER_LINE("gyro_lpf_hz", "%d",                     gyroConfig()->gyro_soft_lpf_hz);
-        BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz", "%d",                      (int)(pidProfile()->acc_soft_lpf_hz * 100.0f));
+        BLACKBOX_PRINT_HEADER_LINE("gyro_notch_hz", "%d,%d",                gyroConfig()->gyro_soft_notch_hz_1,
+                                                                            gyroConfig()->gyro_soft_notch_hz_2);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_notch_cutoff", "%d,%d",            gyroConfig()->gyro_soft_notch_cutoff_1,
+                                                                            gyroConfig()->gyro_soft_notch_cutoff_2);
+        BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz", "%d",                      pidProfile()->acc_soft_lpf_hz);
         BLACKBOX_PRINT_HEADER_LINE("acc_hardware", "%d",                    accelerometerConfig()->acc_hardware);
         BLACKBOX_PRINT_HEADER_LINE("baro_hardware", "%d",                   barometerConfig()->baro_hardware);
         BLACKBOX_PRINT_HEADER_LINE("mag_hardware", "%d",                    compassConfig()->mag_hardware);
+        BLACKBOX_PRINT_HEADER_LINE("serialrx_provider", "%d",               rxConfig()->serialrx_provider);
+        BLACKBOX_PRINT_HEADER_LINE("motor_pwm_protocol", "%d",              motorConfig()->motorPwmProtocol);
+        BLACKBOX_PRINT_HEADER_LINE("motor_pwm_rate", "%d",                  motorConfig()->motorPwmRate);
         BLACKBOX_PRINT_HEADER_LINE("debug_mode", "%d",                      systemConfig()->debug_mode);
         BLACKBOX_PRINT_HEADER_LINE("features", "%d",                        featureConfig()->enabledFeatures);
 
@@ -1690,6 +1703,22 @@ void blackboxUpdate(timeUs_t currentTimeUs)
     if (isBlackboxDeviceFull()) {
         blackboxSetState(BLACKBOX_STATE_STOPPED);
     }
+}
+
+/*
+ * Returns start time in ISO 8601 format, YYYY-MM-DDThh:mm:ss
+ * Year value of "0000" indicates time not set
+ */
+static char startDateTime[20] = "0000-01-01T00:00:00";
+const char *blackboxGetStartDateTime(void)
+{
+    return startDateTime;
+}
+
+void blackboxSetStartDateTime(const char *dateTime, timeMs_t timeNowMs)
+{
+    (void)dateTime;
+    (void)timeNowMs;
 }
 
 static bool canUseBlackboxWithCurrentConfiguration(void)
