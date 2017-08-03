@@ -328,15 +328,12 @@ static uint8_t osdIncElementIndex(uint8_t elementIndex) {
         // check for visibility
         if (osdConfig()->item[elementIndex].flags & OSD_FLAG_VISIBLE) {
             // found next visible item
-            break;
+            return elementIndex;
         }
     }
-    if (max_inc == 0) {
-        // no osd item is visible
-        elementIndex = OSD_ITEM_COUNT;
-    }
 
-    return elementIndex;
+    // no osd item is visible, return invalid item
+    return OSD_ITEM_COUNT;
 }
 
 // this will convert from relative positioning (i.e. measured from center pos)
@@ -825,8 +822,8 @@ static void osdDrawSingleElement(uint8_t item)
         while (*bptr) {
             *bptr++ = ' ';
         }
-    }       
-            
+    }
+
     // send prepared string to display at given position
     displayWrite(osdDisplayPort, elemPosX, elemPosY, buff);
 }

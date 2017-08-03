@@ -262,7 +262,7 @@ bool tinyOSDInit(const vcdProfile_t *pVcdProfile)
 int tinyOSDClearScreen(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
-    tinyOSDSendBuffer(TINYOSD_COMMAND_FILL_SCREEN, (uint8_t *)"x", 1);
+    tinyOSDSendBuffer(TINYOSD_COMMAND_FILL_SCREEN, (uint8_t *)" ", 1);
 
     return 0;
 }
@@ -274,33 +274,32 @@ uint8_t* tinyOSDGetScreenBuffer(void) {
 int tinyOSDWriteChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c)
 {
     UNUSED(displayPort);
-    tinyOSDSendBuffer(TINYOSD_COMMAND_WRITE_PAGE_0, (uint8_t *)"x", 1);
-    SCREEN_BUFFER_SET(y * CHARS_PER_LINE + x, c);
+    uint8_t buffer[3];
+
+    uint16_t pos = y * CHARS_PER_LINE + x;
+    uint8_t page    = (pos>>8) & 0x03;
+    buffer[0] = pos & 0xFF;
+    buffer[1] = c;
+
+    tinyOSDSendBuffer(TINYOSD_COMMAND_WRITE_PAGE_0 + page, buffer, 2);
+
     return 0;
 }
 
 int tinyOSDWriteString(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *buff)
 {
     UNUSED(displayPort);
-    uint8_t *data_ptr = (uint8_t *)buff;
-    uint8_t  i = 0;
-
     // start position of write
-    uint16_t fb_pos = y * CHARS_PER_LINE + x;
+    uint16_t pos = y * CHARS_PER_LINE + x;
+    uint8_t page    = (pos>>8) & 0x03;
+    uint8_t len = strlen(buff)+1;
+    uint8_t buffer[len];
 
-    for (i = x; i < CHARS_PER_LINE; i++) {
-        if (*data_ptr == 0) {
-            // end of char -> finish
-            break;
-        }
+    buffer[0] = pos & 0xFF;
+    strcpy((char*)&buffer[1], buff);
 
-        // copy to frame buffer
-        SCREEN_BUFFER_SET(fb_pos, *data_ptr);
+    tinyOSDSendBuffer(TINYOSD_COMMAND_WRITE_PAGE_0 + page, buffer, len);
 
-        // prepare for next char:
-        fb_pos++;
-        data_ptr++;
-    }
     return 0;
 }
 
@@ -323,89 +322,6 @@ static void tinyOSDDrawSticks(void) {
 int tinyOSDDrawScreen(displayPort_t *displayPortProfile)
 {
     UNUSED(displayPortProfile);
-    //uint8_t stallCheck;
-    //uint8_t videoSense;
-    //static uint32_t lastSigCheckMs = 0;
-    //uint32_t nowMs;
-    //static uint32_t videoDetectTimeMs = 0;
-    static uint16_t pos = 0;
-    int k = 0;
-
-    if (!tinyOSDLock && !fontIsLoading) {
-        tinyOSDLock = true;
-        //nowMs = millis();
-        //------------   end of (re)init-------------------------------------
-
-        // send stick and armed state data
-        tinyOSDDrawSticks();
-
-        // transfer as many new chars as possible:
-        uint16_t allowed_charcount = TINYOSD_PROTOCOL_FRAME_BUFFER_SIZE - 1; // minus length
-        uint8_t buffer[TINYOSD_PROTOCOL_FRAME_BUFFER_SIZE];
-
-        while (allowed_charcount) {
-            // we are allowed to send more updated chars
-            // search for next updated char
-            while ((!SCREEN_BUFFER_GET_DIRTY_FLAG(pos)) && (allowed_charcount)) {
-                pos++;
-                if (pos >= tinyOSD_maxScreenSize) {
-                   // end of screen, restart from zero
-                   pos = 0;
-                   if (!SCREEN_BUFFER_GET_DIRTY_FLAG(pos)){
-                       // no updated char, exit this iteration alltogether
-                       // this makes sure that we do not iterate over unchanged frames
-                       allowed_charcount = 0;
-                   }
-                }
-            }
-
-            // start new data set
-            k = 0;
-
-            // we ended here because we found an updated char or
-            // there is no more data tx allowed
-            if (allowed_charcount) {
-                // we know that this byte differs (loop above exited)
-                // add this and all following that differ to buf
-                // but first of all add start address to packet
-                uint8_t page = (pos>>8) & 0x03;  // write commands 0x00, 0x01, 0x02, 0x03 write to pages
-                buffer[k++] = pos & 0xFF;
-
-                while ((k < TINYOSD_PROTOCOL_FRAME_BUFFER_SIZE) && (allowed_charcount)){
-                    if (!SCREEN_BUFFER_GET_DIRTY_FLAG(pos) && !SCREEN_BUFFER_GET_DIRTY_FLAG(pos+1)) {
-                        // no changed byte within the next 2 chars -> finish & send buffer
-                        break;
-                    } else {
-                        // different byte in buffer OR this is only 1 single equal byte
-                        // -> add byte in both cases (it is more eficient to tx gaps as well)
-                        buffer[k++] = SCREEN_BUFFER_GET(pos);
-                        allowed_charcount--;
-
-                        // mark as sent
-                        SCREEN_BUFFER_CLEAR_DIRTY_FLAG(pos);
-
-                        // increment
-                        pos++;
-
-                        // take care of counters
-                        if (pos >= tinyOSD_maxScreenSize) {
-                            pos = 0;
-                            break;
-                        }
-                    }
-                }
-
-                // we added k bytes to the buffer, send it!
-                if (k) {
-                    if (!tinyOSDSendBuffer(TINYOSD_COMMAND_WRITE_PAGE_0 + page, buffer, k)){
-                        // there should be no send failures as we checked the free beuf in advance
-                    }
-                }
-            }
-        }
-
-        tinyOSDLock = false;
-    }
     return 0;
 }
 
