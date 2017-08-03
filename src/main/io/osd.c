@@ -213,8 +213,10 @@ static void osdFormatPID(char * buff, const char * label, const pid8_t * pid)
 
 static uint8_t osdGetHeadingIntoDiscreteDirections(int heading, int directions)
 {
-    heading = (heading + 360) % 360;
-    heading = heading * 2 / (360 * 2 / directions);
+    // Split input heading 0..359 into sectors 0..(directions-1), but offset
+    // by half a sector so that sector 0 gets centered around heading 0.
+    heading = (heading * 2 + 360 / directions) % 720;
+    heading = heading / (360 * 2 / directions);
 
     return heading;
 }
