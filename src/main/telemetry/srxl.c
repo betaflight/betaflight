@@ -103,6 +103,13 @@ static void srxlSerialize16(sbuf_t *dst, uint16_t v)
     srxlSerialize8(dst, (uint8_t)v);
 }
 
+static void srxlSerialize16le(sbuf_t *dst, uint16_t v)
+{
+    // Use LittleEndian format
+    srxlSerialize8(dst, (uint8_t)v);
+    srxlSerialize8(dst,  (v >> 8));
+}
+
 static void srxlFinalize(sbuf_t *dst)
 {
     sbufWriteU16(dst, srxlCrc);
@@ -192,13 +199,13 @@ void srxlFrameFlightPackCurrent(sbuf_t *dst)
 {
     srxlSerialize8(dst, SRXL_FRAMETYPE_TELE_FP_MAH);
     srxlSerialize8(dst, SRXL_FRAMETYPE_SID);
-    srxlSerialize16(dst, getAmperage() / 10);
-    srxlSerialize16(dst, 0xffff);
-    srxlSerialize16(dst, 0xff7f); // temp A Seems to be some endian problem some where in the Spektrum Chain
-    srxlSerialize16(dst, 0xffff);
-    srxlSerialize16(dst, 0xffff);
-    srxlSerialize16(dst, 0xff7f); // temp B Seems to be some endian problem some where in the Spektrum Chain
-    srxlSerialize16(dst, 0xffff);
+    srxlSerialize16le(dst, getAmperage() / 10);
+    srxlSerialize16le(dst, getMAhDrawn());
+    srxlSerialize16le(dst, 0x7fff);            // temp A
+    srxlSerialize16le(dst, 0xffff);
+    srxlSerialize16le(dst, 0xffff);
+    srxlSerialize16le(dst, 0x7fff);            // temp B
+    srxlSerialize16le(dst, 0xffff);
 }
 
 // schedule array to decide how often each type of frame is sent
