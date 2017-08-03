@@ -20,6 +20,7 @@
 #include <math.h>
 
 #include "platform.h"
+#include "build/debug.h"
 
 #include "drivers/io.h"
 #include "timer.h"
@@ -55,6 +56,7 @@ static pwmOutputPort_t *servos[MAX_PWM_SERVOS];
 #endif
 
 #ifdef BEEPER_PWM
+static pwmOutputPort_t  beeperPwmPort;
 static pwmOutputPort_t *beeperPwm;
 static uint16_t beeperFrequency = 0;
 #endif
@@ -98,48 +100,30 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8
     if (output & TIMER_OUTPUT_N_CHANNEL) {
         TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Disable;
         TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Enable;
+        TIM_OCInitStructure.TIM_OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_Low : TIM_OCPolarity_High;
+        TIM_OCInitStructure.TIM_OCNIdleState = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCIdleState_Set : TIM_OCIdleState_Reset;
     } else {
         TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
         TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Disable;
+        TIM_OCInitStructure.TIM_OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_High : TIM_OCPolarity_Low;
+        TIM_OCInitStructure.TIM_OCIdleState = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCIdleState_Reset : TIM_OCIdleState_Set;
     }
     TIM_OCInitStructure.TIM_Pulse = value;
-    TIM_OCInitStructure.TIM_OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_High : TIM_OCPolarity_Low;
-    TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
 
     timerOCInit(tim, channel, &TIM_OCInitStructure);
     timerOCPreloadConfig(tim, channel, TIM_OCPreload_Enable);
 #endif
 }
 
-static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8_t mhz, uint16_t period, uint16_t value, bool enableOutput)
+static void pwmOutConfigTimer(pwmOutputPort_t * p, const timerHardware_t *timerHardware, uint8_t mhz, uint16_t period, uint16_t value)
 {
-    pwmOutputPort_t *p = &pwmOutputPorts[allocatedOutputPortCount++];
 #if defined(USE_HAL_DRIVER)
     TIM_HandleTypeDef* Handle = timerFindTimerHandle(timerHardware->tim);
     if (Handle == NULL) return p;
 #endif
 
     configTimeBase(timerHardware->tim, period, mhz);
-
-    const IO_t io = IOGetByTag(timerHardware->tag);
-    IOInit(io, OWNER_MOTOR, RESOURCE_OUTPUT, allocatedOutputPortCount);
-
-    if (enableOutput) {
-        // If PWM outputs are enabled - configure as AF_PP - map to timer
-        // AF itself was configured by timerInit();
-#if defined(USE_HAL_DRIVER)
-        IOConfigGPIOAF(io, IOCFG_AF_PP, timerHardware->alternateFunction);
-#else
-        IOConfigGPIO(io, IOCFG_AF_PP);
-#endif
-    }
-    else {
-        // If PWM outputs are disabled - configure as GPIO and drive low
-        IOConfigGPIO(io, IOCFG_OUT_OD);
-        IOLo(io);
-    }
-
-    pwmOCConfig(timerHardware->tim, timerHardware->channel, value, timerHardware->output & TIMER_OUTPUT_INVERTED);
+    pwmOCConfig(timerHardware->tim, timerHardware->channel, value, timerHardware->output);
 
 #if defined(USE_HAL_DRIVER)
     if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL)
@@ -175,7 +159,26 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
     p->tim = timerHardware->tim;
 
     *p->ccr = 0;
+}
 
+static pwmOutputPort_t *pwmOutConfigMotor(const timerHardware_t *timerHardware, uint8_t mhz, uint16_t period, uint16_t value, bool enableOutput)
+{
+    pwmOutputPort_t *p = &pwmOutputPorts[allocatedOutputPortCount++];
+
+    const IO_t io = IOGetByTag(timerHardware->tag);
+    IOInit(io, OWNER_MOTOR, RESOURCE_OUTPUT, allocatedOutputPortCount);
+
+    if (enableOutput) {
+        // If PWM outputs are enabled - configure as AF_PP - map to timer
+        IOConfigGPIOAF(io, IOCFG_AF_PP, timerHardware->alternateFunction);
+    }
+    else {
+        // If PWM outputs are disabled - configure as GPIO and drive low
+        IOConfigGPIO(io, IOCFG_OUT_OD);
+        IOLo(io);
+    }
+
+    pwmOutConfigTimer(p, timerHardware, mhz, period, value);
     return p;
 }
 
@@ -275,14 +278,14 @@ void pwmMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, ui
     }
 
     const uint32_t hz = timerMhzCounter * 1000000;
-    motors[motorIndex] = pwmOutConfig(timerHardware, timerMhzCounter, hz / motorPwmRate, idlePulse, enableOutput);
+    motors[motorIndex] = pwmOutConfigMotor(timerHardware, timerMhzCounter, hz / motorPwmRate, idlePulse, enableOutput);
     motors[motorIndex]->pwmWritePtr = pwmWritePtr;
 }
 
 #ifdef USE_SERVOS
 void pwmServoConfig(const timerHardware_t *timerHardware, uint8_t servoIndex, uint16_t servoPwmRate, uint16_t servoCenterPulse, bool enableOutput)
 {
-    servos[servoIndex] = pwmOutConfig(timerHardware, PWM_TIMER_MHZ, 1000000 / servoPwmRate, servoCenterPulse, enableOutput);
+    servos[servoIndex] = pwmOutConfigMotor(timerHardware, PWM_TIMER_MHZ, 1000000 / servoPwmRate, servoCenterPulse, enableOutput);
 }
 
 void pwmWriteServo(uint8_t index, uint16_t value)
@@ -322,14 +325,15 @@ void pwmWriteBeeper(bool onoffBeep)
 
 void beeperPwmInit(ioTag_t tag, uint16_t frequency)
 {
-        const timerHardware_t *timer = timerGetByTag(tag, TIM_USE_BEEPER);
-        if (timer) {
-            beeperFrequency = frequency;
-            beeperPwm = pwmOutConfig(timer, PWM_TIMER_MHZ, 1000000 / beeperFrequency, (1000000 / beeperFrequency) / 2, 1);  // Enable output
-            *beeperPwm->ccr = 0;
-        }
-        else {
-            beeperPwm = NULL;
-        }
+    const timerHardware_t *timer = timerGetByTag(tag, TIM_USE_BEEPER);
+    if (timer) {
+        beeperPwm = &beeperPwmPort;
+        beeperFrequency = frequency;
+        IOConfigGPIOAF(IOGetByTag(tag), IOCFG_AF_PP, timer->alternateFunction);
+        pwmOutConfigTimer(beeperPwm, timer, PWM_TIMER_MHZ, 1000000 / beeperFrequency, (1000000 / beeperFrequency) / 2);
+    }
+    else {
+        beeperPwm = NULL;
+    }
 }
 #endif

@@ -43,13 +43,6 @@ void targetConfiguration(void)
 {
     systemConfigMutable()->asyncMode = ASYNC_MODE_NONE;
     mixerConfigMutable()->mixerMode = MIXER_QUADX;
-    
-    featureSet(FEATURE_VBAT);
-    featureSet(FEATURE_RX_SERIAL);
-    featureSet(FEATURE_GPS);
-    featureSet(FEATURE_TELEMETRY);
-    featureSet(FEATURE_LED_STRIP);
-    featureSet(FEATURE_BLACKBOX);
 
     serialConfigMutable()->portConfigs[0].functionMask = FUNCTION_MSP;          // VCP
     serialConfigMutable()->portConfigs[1].functionMask = FUNCTION_GPS;          // UART1
