@@ -69,6 +69,36 @@ uint32_t simulationTime = 0;
 
 #include "gtest/gtest.h"
 
+TEST(ArmingPreventionTest, NoPrearm)
+{
+    // given
+    simulationTime = 0;
+
+    // and
+    modeActivationConditionsMutable(0)->auxChannelIndex = 0;
+    modeActivationConditionsMutable(0)->modeId = BOXARM;
+    modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    useRcControlsConfig(NULL);
+
+    // and
+    rxConfigMutable()->mincheck = 1050;
+
+    // given
+    rcData[THROTTLE] = 1000;
+    ENABLE_STATE(SMALL_ANGLE);
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    // arming should now be enabled
+    EXPECT_FALSE(isUsingSticksForArming());
+    EXPECT_EQ(0, getArmingDisableFlags());
+    EXPECT_FALSE(isArmingDisabled());
+}
+
 TEST(ArmingPreventionTest, Prearm)
 {
     // given
@@ -102,7 +132,20 @@ TEST(ArmingPreventionTest, Prearm)
     EXPECT_EQ(ARMING_DISABLED_NOPREARM, getArmingDisableFlags());
 
     // given
-    // prearm is enabled
+    // ARM switch is on
+    rcData[4] = 1800;
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    // arming is disabled as PREARM is off
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_NOPREARM, getArmingDisableFlags());
+
+    // given
+    // PREARM switch is on
     rcData[5] = 1800;
 
     // when
@@ -110,7 +153,20 @@ TEST(ArmingPreventionTest, Prearm)
     updateArmingStatus();
 
     // expect
-    // arming enabled as arm switch has been off for sufficient time
+    // arming is still disabled as ARM was on when PREARM was on
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_NOPREARM, getArmingDisableFlags());
+
+    // given
+    // ARM switch is off
+    rcData[4] = 1000;
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    // arming should now be enabled
     EXPECT_EQ(0, getArmingDisableFlags());
     EXPECT_FALSE(isArmingDisabled());
 }
