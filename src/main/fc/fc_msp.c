@@ -48,6 +48,7 @@
 #include "fc/fc_msp.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
 #include "flight/failsafe.h"
