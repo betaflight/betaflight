@@ -94,6 +94,10 @@
 // Turn internal pullups, they are weak, but better than nothing.
 #define USE_I2C_PULLUP
 
+#define PITOT
+#define USE_PITOT_MS4525
+#define USE_PITOT_ADC
+
 #define USE_SPI
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
 
