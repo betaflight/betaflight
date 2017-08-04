@@ -25,7 +25,7 @@ before_install:
 
 install:
   - ./install-toolchain.sh
-  - export TOOLCHAINPATH=$PWD/gcc-arm-none-eabi-6_2-2016q4/bin
+  - export TOOLCHAINPATH=$PWD/gcc-arm-none-eabi-6-2017-q2-update/bin
 
 before_script:
   - $TOOLCHAINPATH/arm-none-eabi-gcc --version
@@ -37,7 +37,7 @@ script: ./.travis.sh
 cache: 
   apt: true
   directories:
-  - $PWD/gcc-arm-none-eabi-6_2-2016q4
+  - $PWD/gcc-arm-none-eabi-6-2017-q2-update
 
 notifications:
   #slack: inavflight:UWRoWFJ4cbbpHXT8HJJlAPXa
