@@ -184,15 +184,11 @@ void pgResetFn_flashConfig(flashConfig_t *flashConfig)
 
 #ifdef USE_SDCARD
 PG_REGISTER_WITH_RESET_TEMPLATE(sdcardConfig_t, sdcardConfig, PG_SDCARD_CONFIG, 0);
-#if defined(SDCARD_DMA_CHANNEL_TX)
-#define SDCARD_CONFIG_USE_DMA   true
-#else
-#define SDCARD_CONFIG_USE_DMA   false
-#endif
+
 PG_RESET_TEMPLATE(sdcardConfig_t, sdcardConfig,
-    .useDma = SDCARD_CONFIG_USE_DMA
+    .useDma = false
 );
-#endif
+#endif // USE_SDCARD
 
 // no template required since defaults are zero
 PG_REGISTER(vcdProfile_t, vcdProfile, PG_VCD_CONFIG, 0);
