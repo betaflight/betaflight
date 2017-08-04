@@ -325,7 +325,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
         cameraControlKeyPress(CAMERA_CONTROL_KEY_DOWN, 0);
     } else if (rcSticks == THR_LO + YAW_CE + PIT_HI + ROL_CE) {
         cameraControlKeyPress(CAMERA_CONTROL_KEY_UP, 2000);
-    }else if (rcSticks == THR_CE + YAW_HI + PIT_LO + ROL_CE) {                       //add enter key when it is in the camera osd
+    } else if (rcSticks == THR_CE + YAW_HI + PIT_LO + ROL_CE) {                       //add enter key when it is in the camera osd
         cameraControlKeyPress(CAMERA_CONTROL_KEY_ENTER, 0);
     }
 #endif
