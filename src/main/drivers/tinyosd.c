@@ -44,6 +44,9 @@
 
 #include "io/serial.h"
 
+static bool  tinyOSDLock        = false;
+static serialPort_t *tinyOSDPort;
+
 #define TINYOSD_STICKSIZE_X  96.0f
 #define TINYOSD_STICKSIZE_Y 128.0f
 
@@ -80,11 +83,145 @@ static uint8_t screenBuffer[TINYOSD_VIDEO_BUFFER_SIZE];
 static uint8_t screenBufferDirty[TINYOSD_VIDEO_BUFFER_DIRTY_SIZE];
 
 
-
-
 //Max chars to update in one idle
 //#define MAX_CHARS2UPDATE    100
 #define TINYOSD_PROTOCOL_FRAME_BUFFER_SIZE 32
+
+
+
+typedef enum {
+    OSD_WRITE_MODE_VERTICAL = 0x0,
+    OSD_WRITE_MODE_HORIZONTAL
+} openTCOCommandOSDWriteMode_e;
+
+#define OPENTCO_PROTOCOL_HEADER 0x80
+
+#define OPENTCO_MAX_DATA_LENGTH 60
+
+#define OPENTCO_DEVICE_OSD 0x00
+#define OPENTCO_DEVICE_VTX 0x01
+#define OPENTCO_DEVICE_CAM 0x02
+
+#define OPENTCO_OSD_COMMAND_SET_REGISTER    0x00
+#define OPENTCO_OSD_COMMAND_FILL_REGION     0x01
+#define OPENTCO_OSD_COMMAND_WRITE           0x02
+#define OPENTCO_OSD_COMMAND_WRITE_BUFFER_H  0x08
+#define OPENTCO_OSD_COMMAND_WRITE_BUFFER_V  0x09
+#define OPENTCO_OSD_COMMAND_SPECIAL         0x0F
+
+#define OPENTCO_OSD_REGISTER_STATUS         0x00
+#define OPENTCO_OSD_REGISTER_VIDEO_FORMAT   0x01
+
+#define OPENTCO_OSD_COMMAND_SPECIAL_SUB_STICKSTATUS 0x00
+
+static void openTCOCommandOSDSetRegister(const uint8_t reg, const uint8_t value);
+static void openTCOCommandOSDFillRegion(const uint8_t x, const uint8_t y, const uint8_t width, const uint8_t height, const uint8_t value);
+static void openTCOCommandOSDWrite(const uint8_t x, const uint8_t y, const uint8_t value);
+static void openTCOCommandOSDWriteBuffer(const uint8_t x, const uint8_t y, const openTCOCommandOSDWriteMode_e mode, const uint8_t len, const uint8_t *data);
+static void openTCOCommandOSDSpecialCommand(const uint8_t len, const uint8_t *data);
+static void openTCOCommandOSDFillScreen(const uint8_t value);
+static void openTCOEncode(const uint8_t device, const uint8_t command, const uint8_t datalen, const uint8_t *data);
+
+static void openTCOCommandOSDSetRegister(uint8_t reg, uint8_t value)
+{
+    uint8_t buffer[2];
+    buffer[0] = reg;
+    buffer[1] = value;
+    openTCOEncode(OPENTCO_DEVICE_OSD, OPENTCO_OSD_COMMAND_SET_REGISTER, 2, buffer);
+}
+
+static void openTCOCommandOSDFillRegion(const uint8_t x, const uint8_t y, uint8_t width, uint8_t height, uint8_t value)
+{
+    uint8_t buffer[5];
+    buffer[0] = x;
+    buffer[1] = y;
+    buffer[2] = width;
+    buffer[3] = height;
+    buffer[4] = value;
+
+    // fill a region with given char
+    openTCOEncode(OPENTCO_DEVICE_OSD, OPENTCO_OSD_COMMAND_FILL_REGION, 5, buffer);
+}
+
+static void openTCOCommandOSDWrite(const uint8_t x, const uint8_t y, const uint8_t value)
+{
+    uint8_t buffer[3];
+    buffer[0] = x;
+    buffer[1] = y;
+    buffer[2] = value;
+    openTCOEncode(OPENTCO_DEVICE_OSD, OPENTCO_OSD_COMMAND_WRITE, 3, buffer);
+}
+
+
+static void openTCOCommandOSDWriteBuffer(const uint8_t x, const uint8_t y, const openTCOCommandOSDWriteMode_e mode, const uint8_t len, const uint8_t *data)
+{
+    uint8_t buffer[OPENTCO_MAX_DATA_LENGTH];
+    if (len >= OPENTCO_MAX_DATA_LENGTH - 2) {
+        // invalid data length! abort
+        return;
+    }
+
+    buffer[0] = x;
+    buffer[1] = y;
+    memcpy(buffer + 2, data, len);
+
+    if (mode == OSD_WRITE_MODE_VERTICAL) {
+        openTCOEncode(OPENTCO_DEVICE_OSD, OPENTCO_OSD_COMMAND_WRITE_BUFFER_V, len + 2, buffer);
+    } else {
+        openTCOEncode(OPENTCO_DEVICE_OSD, OPENTCO_OSD_COMMAND_WRITE_BUFFER_H, len + 2, buffer);
+    }
+}
+
+static void openTCOCommandOSDSpecialCommand(const uint8_t len, const uint8_t *data)
+{
+    // send anything you like, data[0] is treated as subcommand
+    openTCOEncode(OPENTCO_DEVICE_OSD, OPENTCO_OSD_COMMAND_SPECIAL, len, data);
+}
+
+static void openTCOCommandOSDFillScreen(const uint8_t value) {
+    openTCOCommandOSDFillRegion(0, 0, 255, 255, value);
+}
+
+static void openTCOEncode(const uint8_t device, const uint8_t command, const uint8_t datalen, const uint8_t *data){
+    uint8_t crc = 0;
+    uint8_t header[2];
+
+    // lock access
+    // FIXME: once this is used from multiple drivers we should
+    // add a wait with a timeout
+    if (!tinyOSDLock) {
+        tinyOSDLock = true;
+    } else {
+        return;
+    }
+
+    // create header
+    header[0] = OPENTCO_PROTOCOL_HEADER;
+    header[1] = ((device & 0x0F)<<4) | (command & 0x0F);
+
+    // calculate checksum:
+    TINYOSD_CRC8_INIT(crc, 0);
+    TINYOSD_CRC8_UPDATE(crc, header[0]);
+    TINYOSD_CRC8_UPDATE(crc, header[1]);
+
+    // send header
+    serialWriteBuf(tinyOSDPort, header, 2);
+
+    // send data
+    serialWriteBuf(tinyOSDPort, data, datalen);
+
+    // calc crc over data
+    for (uint8_t idx=0; idx < datalen; idx++){
+        TINYOSD_CRC8_UPDATE(crc, data[idx]);
+    }
+
+    // send checksum
+    serialWriteBuf(tinyOSDPort, &crc, 1);
+
+    // unlock access
+    tinyOSDLock = false;
+}
+
 
 //static uint8_t  videoSignalCfg;
 static uint8_t  video_system;
@@ -92,11 +229,9 @@ static uint8_t  video_system;
 static uint8_t  hosRegValue; // HOS (Horizontal offset register) value
 static uint8_t  vosRegValue; // VOS (Vertical offset register) value
 
-static bool  tinyOSDLock        = false;
+
 static bool fontIsLoading       = false;
 
-static serialPort_t *tinyOSDPort;
-#define TINYOSD_PROTOCOL_HEADER 0x80
 
 
 int tinyOSDGrab(displayPort_t * displayPort)
@@ -113,90 +248,22 @@ int tinyOSDRelease(displayPort_t *displayPort)
     return 0;
 }
 
-static uint8_t tinyOSDSendBuffer(uint8_t cmd, uint8_t *data, uint8_t len)
-{
-    if (!tinyOSDPort) {
-        // no port opened, return zero
-        return 0;
-    }
-
-    // check for space in buffer
-    uint16_t buf_free = serialTxBytesFree(tinyOSDPort);
-    if (buf_free < (3 + len + 1)) {
-        // no space to send
-        return 0;
-    }
-
-
-    // very simple protocol:
-    // [HEADER] LEN ADDR <n DATA> [CSUM]
-    uint8_t header[3];
-    header[0] = TINYOSD_PROTOCOL_HEADER;
-    header[1] = len;
-    header[2] = cmd;
-
-    // send header
-    serialWriteBuf(tinyOSDPort,header, 3);
-
-    // send data
-    serialWriteBuf(tinyOSDPort, data, len);
-
-    // calculate checksum:
-    uint8_t crc = 0;
-    TINYOSD_CRC8_INIT(crc, 0);
-    TINYOSD_CRC8_UPDATE(crc, header[0]);
-    TINYOSD_CRC8_UPDATE(crc, header[1]);
-    TINYOSD_CRC8_UPDATE(crc, header[2]);
-
-    for (uint8_t idx=0; idx < len; idx++){
-        TINYOSD_CRC8_UPDATE(crc, data[idx]);
-    }
-
-    // send checksum
-    serialWrite(tinyOSDPort, crc);
-
-    // expect a single byte reply:
-    return 1; //serialRead(tinyOSDPort);
-}
-
 void tinyOSDReInit(void)
 {
     //uint8_t maxScreenRows;
     //uint8_t srdata = 0;
     //uint16_t x;
     static bool firstInit = true;
-/*
-    ENABLE_MAX7456;
-
-    switch(videoSignalCfg) {
-        case VIDEO_SYSTEM_PAL:
-            videoSignalReg = VIDEO_MODE_PAL | OSD_ENABLE;
-            break;
-
-        case VIDEO_SYSTEM_NTSC:
-            videoSignalReg = VIDEO_MODE_NTSC | OSD_ENABLE;
-            break;
-
-        case VIDEO_SYSTEM_AUTO:
-            srdata = max7456Send(MAX7456ADD_STAT, 0x00);
-
-            if (VIN_IS_NTSC(srdata)) {
-                videoSignalReg = VIDEO_MODE_NTSC | OSD_ENABLE;
-            } else if (VIN_IS_PAL(srdata)) {
-                videoSignalReg = VIDEO_MODE_PAL | OSD_ENABLE;
-            } else {
-                // No valid input signal, fallback to default (XXX NTSC for now)
-                videoSignalReg = VIDEO_MODE_NTSC | OSD_ENABLE;
-            }
-            break;
-    }
-*/
 
     if (video_system == VIDEO_SYSTEM_AUTO) {
         // fetch video mode from tinyOSD FIXME
         video_system = VIDEO_SYSTEM_NTSC;
+    } else {
+        // set video system
+        openTCOCommandOSDSetRegister(OPENTCO_OSD_REGISTER_VIDEO_FORMAT, video_system);
     }
 
+    // FIXME: feth this info from device
     if (video_system == VIDEO_SYSTEM_PAL) {
         tinyOSD_maxScreenSize = TINYOSD_VIDEO_BUFFER_CHARS_PAL;
     } else {              // NTSC
@@ -204,10 +271,7 @@ void tinyOSDReInit(void)
     }
 
     // enable osd
-    tinyOSDSendBuffer(TINYOSD_COMMAND_SET_STATUS, (uint8_t *)"\x01", 1);
-
-    // set dirty flag to force redraw all screen in non-dma mode.
-    memset(screenBufferDirty, 0xFF, sizeof(screenBufferDirty));
+    openTCOCommandOSDSetRegister(OPENTCO_OSD_REGISTER_STATUS, 1);
 
     if (firstInit)
     {
@@ -221,8 +285,8 @@ bool tinyOSDInit(const vcdProfile_t *pVcdProfile)
 {
     // Setup values to write to registers
     video_system = pVcdProfile->video_system;
-    hosRegValue = 32 - pVcdProfile->h_offset;
-    vosRegValue = 16 - pVcdProfile->v_offset;
+    //hosRegValue = 32 - pVcdProfile->h_offset;
+    //vosRegValue = 16 - pVcdProfile->v_offset;
 
     // find tinyosd serial port
     serialPortConfig_t *osdPortConfig = findSerialPortConfig(FUNCTION_TINYOSD);
@@ -246,24 +310,17 @@ bool tinyOSDInit(const vcdProfile_t *pVcdProfile)
         return false;
     }
 
-    // init with empty chars (blankspace)
-    //memset(screenBuffer, ' ', sizeof(screenBuffer));
-
-    // fill whole screen on device with ' ' as well by using the FILL command
-    tinyOSDSendBuffer(TINYOSD_COMMAND_FILL_SCREEN, (uint8_t *)"x", 1);
-
-    // mark screen buffer as non dirty:
-    //memset(screenBufferDirty, 0x00, sizeof(screenBufferDirty));
+    // fill whole screen on device with ' '
+    openTCOCommandOSDFillScreen(' ');
 
     return true;
 }
 
-//just fill with spaces
+// fill the whole screen with spaces
 int tinyOSDClearScreen(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
-    tinyOSDSendBuffer(TINYOSD_COMMAND_FILL_SCREEN, (uint8_t *)" ", 1);
-
+    openTCOCommandOSDFillScreen(' ');
     return 0;
 }
 
@@ -274,49 +331,34 @@ uint8_t* tinyOSDGetScreenBuffer(void) {
 int tinyOSDWriteChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c)
 {
     UNUSED(displayPort);
-    uint8_t buffer[3];
-
-    uint16_t pos = y * CHARS_PER_LINE + x;
-    uint8_t page    = (pos>>8) & 0x03;
-    buffer[0] = pos & 0xFF;
-    buffer[1] = c;
-
-    tinyOSDSendBuffer(TINYOSD_COMMAND_WRITE_PAGE_0 + page, buffer, 2);
-
+    openTCOCommandOSDWrite(x, y, c);
     return 0;
 }
 
 int tinyOSDWriteString(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *buff)
 {
     UNUSED(displayPort);
-    // start position of write
-    uint16_t pos = y * CHARS_PER_LINE + x;
-    uint8_t page    = (pos>>8) & 0x03;
-    uint8_t len = strlen(buff)+1;
-    uint8_t buffer[len];
-
-    buffer[0] = pos & 0xFF;
-    strcpy((char*)&buffer[1], buff);
-
-    tinyOSDSendBuffer(TINYOSD_COMMAND_WRITE_PAGE_0 + page, buffer, len);
-
+    uint8_t len = strlen(buff);
+    openTCOCommandOSDWriteBuffer(x, y, OSD_WRITE_MODE_HORIZONTAL, len, (const uint8_t *)buff);
     return 0;
 }
 
 #include "build/debug.h"
 
 static void tinyOSDDrawSticks(void) {
-    uint8_t data[5];
-    data[0] = TINYOSD_STICKSIZE_X/2 + (TINYOSD_STICKSIZE_X/2 * rcCommand[ROLL]) / 500.0f;
-    data[1] = TINYOSD_STICKSIZE_Y/2 - (TINYOSD_STICKSIZE_Y/2 * rcCommand[PITCH]) / 500.0f;
+    uint8_t buffer[6];
+
+    // assemble special subcommand
+    buffer[0] = OPENTCO_OSD_COMMAND_SPECIAL_SUB_STICKSTATUS;
+    buffer[1] = TINYOSD_STICKSIZE_X/2 + (TINYOSD_STICKSIZE_X/2 * rcCommand[ROLL]) / 500.0f;
+    buffer[2] = TINYOSD_STICKSIZE_Y/2 - (TINYOSD_STICKSIZE_Y/2 * rcCommand[PITCH]) / 500.0f;
     // throttle is 1000 - 2000, rescale to match out STICK_Y resolution
-    data[2] = TINYOSD_STICKSIZE_Y - (TINYOSD_STICKSIZE_Y * (rcCommand[THROTTLE]-1000.0f))/1000.0f; //(TINYOSD_STICKSIZE_Y/2 * (rcCommand[THROTTLE]-1.0)) / 1000.0;
-    data[3] = TINYOSD_STICKSIZE_X/2 - (TINYOSD_STICKSIZE_X/2 * rcCommand[YAW]) / 500.0f;
-
+    buffer[3] = TINYOSD_STICKSIZE_Y - (TINYOSD_STICKSIZE_Y * (rcCommand[THROTTLE]-1000.0f))/1000.0f; //(TINYOSD_STICKSIZE_Y/2 * (rcCommand[THROTTLE]-1.0)) / 1000.0;
+    buffer[4] = TINYOSD_STICKSIZE_X/2 - (TINYOSD_STICKSIZE_X/2 * rcCommand[YAW]) / 500.0f;
     // armed?
-    data[4] = armingFlags;
+    buffer[5] = armingFlags;
 
-    tinyOSDSendBuffer(TINYOSD_COMMAND_WRITE_STICKDATA, &data[0], 5);
+    openTCOCommandOSDSpecialCommand(6, buffer);
 }
 
 int tinyOSDDrawScreen(displayPort_t *displayPortProfile)
@@ -338,64 +380,11 @@ int tinyOSDHeartbeat(displayPort_t *displayPort){
 // This funcktion refresh all and should not be used when copter is armed
 void tinyOSDRefreshAll(void)
 {
-    if (!tinyOSDLock) {
-        uint16_t xx = 0;
-        uint32_t timeout;
-
-        tinyOSDLock = true;
-        bool timed_out = false;
-
-        // abort after 500ms
-        timeout = millis() + 500;
-
-        while((!timed_out) && (xx < tinyOSD_maxScreenSize)) {
-            uint16_t buf_free = 0;
-            // wait until we have enough space in buffer for a full
-            // data frame (header<3> + data<len> + csum<1>)
-            while (buf_free < 3 + TINYOSD_PROTOCOL_FRAME_BUFFER_SIZE + 1) {
-                // fetch free byte count
-                buf_free = serialTxBytesFree(tinyOSDPort);
-
-                // timeout ?
-                if (millis() > timeout) {
-                    timed_out = true;
-                    break;
-                }
-            }
-            if (timed_out) {
-                break;
-            }
-
-            // build packet
-            uint8_t page = xx>>8;
-            uint8_t data[TINYOSD_PROTOCOL_FRAME_BUFFER_SIZE];
-            uint8_t data_idx = 0;
-
-            // address offset
-            data[data_idx++] = xx & 0xFF;
-
-            while ((xx < tinyOSD_maxScreenSize) && (data_idx<TINYOSD_PROTOCOL_FRAME_BUFFER_SIZE)) {
-               data[data_idx++] = SCREEN_BUFFER_GET(xx);
-               SCREEN_BUFFER_CLEAR_DIRTY_FLAG(xx);
-               xx++;
-            }
-
-            while((!timed_out) && (!tinyOSDSendBuffer(TINYOSD_COMMAND_WRITE_PAGE_0 + page, data, data_idx - 1))) {
-                // retry until sucessfull or timeout occured
-                if (millis() > timeout) {
-                    timed_out = true;
-                }
-            }
-        }
-
-        tinyOSDLock = false;
-    }
+    // FIXME: with successive osd item drawing this has to be handled differently
 }
 
 void tinyOSDResync(displayPort_t *displayPort)
 {
-    tinyOSDRefreshAll();
-
     if (video_system == VIDEO_SYSTEM_PAL) {
         displayPort->rowCount = TINYOSD_VIDEO_LINES_PAL;
     } else {
@@ -415,43 +404,6 @@ void tinyOSDWriteNvm(uint8_t char_address, const uint8_t *font_data)
 {
     UNUSED(char_address);
     UNUSED(font_data);
-/*    uint8_t x;
-
-#ifdef MAX7456_DMA_CHANNEL_TX
-    while (dmaTransactionInProgress);
-#endif
-    while (max7456Lock);
-    max7456Lock = true;
-
-    ENABLE_MAX7456;
-    // disable display
-    fontIsLoading = true;
-    max7456Send(MAX7456ADD_VM0, 0);
-
-    max7456Send(MAX7456ADD_CMAH, char_address); // set start address high
-
-    for(x = 0; x < 54; x++) {
-        max7456Send(MAX7456ADD_CMAL, x); //set start address low
-        max7456Send(MAX7456ADD_CMDI, font_data[x]);
-#ifdef LED0_TOGGLE
-        LED0_TOGGLE;
-#else
-        LED1_TOGGLE;
-#endif
-    }
-
-    // Transfer 54 bytes from shadow ram to NVM
-
-    max7456Send(MAX7456ADD_CMM, WRITE_NVR);
-
-    // Wait until bit 5 in the status register returns to 0 (12ms)
-
-    while ((max7456Send(MAX7456ADD_STAT, 0x00) & STAT_NVR_BUSY) != 0x00);
-
-    DISABLE_MAX7456;
-
-    max7456Lock = false;
-*/
 }
 
 
