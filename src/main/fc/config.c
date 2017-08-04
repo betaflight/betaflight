@@ -41,6 +41,7 @@
 #include "drivers/pwm_output.h"
 #include "drivers/serial.h"
 #include "drivers/timer.h"
+#include "drivers/bus_i2c.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -112,7 +113,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .current_profile_index = 0,
     .debug_mode = DEBUG_NONE,
-    .i2c_overclock = 0,
+    .i2c_speed = I2C_SPEED_400KHZ,
     .accTaskFrequency = ACC_TASK_FREQUENCY_DEFAULT,
     .attitudeTaskFrequency = ATTITUDE_TASK_FREQUENCY_DEFAULT,
     .asyncMode = ASYNC_MODE_NONE,

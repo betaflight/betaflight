@@ -187,7 +187,7 @@ void init(void)
     ensureEEPROMContainsValidData();
     readEEPROM();
 
-    i2cSetOverclock(systemConfig()->i2c_overclock);
+    i2cSetSpeed(systemConfig()->i2c_speed);
 
 #ifdef USE_HARDWARE_PREBOOT_SETUP
     initialisePreBootHardware();
