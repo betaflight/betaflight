@@ -182,11 +182,15 @@ void updateArmingStatus(void)
             unsetArmingDisabled(ARMING_DISABLED_CALIBRATING);
         }
 
-        if ((isModeActivationConditionPresent(BOXPREARM) && IS_RC_MODE_ACTIVE(BOXPREARM) && !ARMING_FLAG(WAS_ARMED_WITH_PREARM)) 
-            || !isModeActivationConditionPresent(BOXPREARM)) {
-            unsetArmingDisabled(ARMING_DISABLED_NOPREARM);
-        } else {
-            setArmingDisabled(ARMING_DISABLED_NOPREARM);            
+        if (isModeActivationConditionPresent(BOXPREARM)) {
+            if (isModeActivationConditionPresent(BOXPREARM)
+                  && IS_RC_MODE_ACTIVE(BOXPREARM)
+                  && !ARMING_FLAG(WAS_ARMED_WITH_PREARM)
+                  && (isUsingSticksForArming() ? true : !IS_RC_MODE_ACTIVE(BOXARM))) {
+                unsetArmingDisabled(ARMING_DISABLED_NOPREARM);
+            } else {
+                setArmingDisabled(ARMING_DISABLED_NOPREARM);
+            }
         }
 
         if (isArmingDisabled()) {
