@@ -214,10 +214,15 @@ bool imuRebaseEarthToBody(void) {
         const float sina2 = sinf(atan2);
         const float cosa2 = cosf(atan2);
 
-        q0 = q0*cosa2 - q3*sina2;
-        q1 = q1*cosa2 + q2*sina2;
-        q2 = q2*cosa2 - q1*sina2;
-        q3 = q3*cosa2 + q0*sina2;
+        const float q0buff = q0*cosa2 - q3*sina2;
+        const float q1buff = q1*cosa2 + q2*sina2;
+        const float q2buff = q2*cosa2 - q1*sina2;
+        const float q3buff = q3*cosa2 + q0*sina2;
+
+        q0 = q0buff;
+        q1 = q1buff;
+        q2 = q2buff;
+        q3 = q3buff;
 
         // normalise quaternion
         const float normalise = 1.0f/sqrtf(q0*q0 + q1*q1 + q2*q2 + q3*q3);
