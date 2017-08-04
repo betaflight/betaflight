@@ -74,6 +74,7 @@ FC_SRC = \
             fc/controlrate_profile.c \
             drivers/camera_control.c \
             drivers/gyro_sync.c \
+            drivers/rx_cc2500.c \
             drivers/rx_nrf24l01.c \
             drivers/rx_spi.c \
             drivers/rx_xn297.c \
@@ -97,6 +98,7 @@ FC_SRC = \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
+            rx/cc2500_frsky.c \
             rx/ibus.c \
             rx/jetiexbus.c \
             rx/msp.c \
