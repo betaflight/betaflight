@@ -64,7 +64,7 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
     //   a. Precedence is in the order of popularity; BMP280, MS5611 then BMP085, then
     //   b. If SPI variant is specified, it is likely onboard, so take it.
 
-#if !(defined(DEFAULT_BARO_SPI_BMP280) || defined(DEFAULT_BARO_BMP280) || defined(DEFAULT_BARO_SPI_MS5611) || defined(DEFAULT_BARO_BARO_MS5611) || defined(DEFAULT_BARO_BMP085))
+#if !(defined(DEFAULT_BARO_SPI_BMP280) || defined(DEFAULT_BARO_BMP280) || defined(DEFAULT_BARO_SPI_MS5611) || defined(DEFAULT_BARO_MS5611) || defined(DEFAULT_BARO_BMP085))
 #if defined(USE_BARO_BMP280) || defined(USE_BARO_SPI_BMP280)
 #if defined(USE_BARO_SPI_BMP280)
 #define DEFAULT_BARO_SPI_BMP280
