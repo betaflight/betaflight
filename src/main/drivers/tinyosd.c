@@ -45,7 +45,7 @@
 #include "io/serial.h"
 
 static bool  tinyOSDLock        = false;
-static serialPort_t *tinyOSDPort;
+static serialPort_t *tinyOSDPort = 0;
 
 #define TINYOSD_STICKSIZE_X  96.0f
 #define TINYOSD_STICKSIZE_Y 128.0f
@@ -156,19 +156,20 @@ static void openTCOCommandOSDWrite(const uint8_t x, const uint8_t y, const uint8
 static void openTCOCommandOSDWriteBuffer(const uint8_t x, const uint8_t y, const openTCOCommandOSDWriteMode_e mode, const uint8_t len, const uint8_t *data)
 {
     uint8_t buffer[OPENTCO_MAX_DATA_LENGTH];
-    if (len >= OPENTCO_MAX_DATA_LENGTH - 2) {
+    if (len >= OPENTCO_MAX_DATA_LENGTH - 3) {
         // invalid data length! abort
         return;
     }
 
-    buffer[0] = x;
-    buffer[1] = y;
-    memcpy(buffer + 2, data, len);
+    buffer[0] = len + 2;
+    buffer[1] = x;
+    buffer[2] = y;
+    memcpy(buffer + 3, data, len);
 
     if (mode == OSD_WRITE_MODE_VERTICAL) {
-        openTCOEncode(OPENTCO_DEVICE_OSD, OPENTCO_OSD_COMMAND_WRITE_BUFFER_V, len + 2, buffer);
+        openTCOEncode(OPENTCO_DEVICE_OSD, OPENTCO_OSD_COMMAND_WRITE_BUFFER_V, len + 3, buffer);
     } else {
-        openTCOEncode(OPENTCO_DEVICE_OSD, OPENTCO_OSD_COMMAND_WRITE_BUFFER_H, len + 2, buffer);
+        openTCOEncode(OPENTCO_DEVICE_OSD, OPENTCO_OSD_COMMAND_WRITE_BUFFER_H, len + 3, buffer);
     }
 }
 
@@ -186,6 +187,7 @@ static void openTCOEncode(const uint8_t device, const uint8_t command, const uin
     uint8_t crc = 0;
     uint8_t header[2];
 
+    if (!tinyOSDPort) return;
     // lock access
     // FIXME: once this is used from multiple drivers we should
     // add a wait with a timeout
