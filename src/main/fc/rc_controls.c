@@ -313,7 +313,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
 #endif
 
 #ifdef USE_CAMERA_CONTROL
-    if (rcSticks == THR_LO + YAW_CE + PIT_LO + ROL_CE) {
+    if (rcSticks == THR_CE + YAW_HI + PIT_CE + ROL_CE) {
         cameraControlKeyPress(CAMERA_CONTROL_KEY_ENTER, 0);
     } else if (rcSticks == THR_CE + YAW_CE + PIT_CE + ROL_LO) {
         cameraControlKeyPress(CAMERA_CONTROL_KEY_LEFT, 0);
