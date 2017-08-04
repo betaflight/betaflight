@@ -203,9 +203,11 @@ uint32_t pitotUpdate(void)
         case PITOTMETER_NEEDS_CALCULATION:
             pitot.dev.get();
             pitot.dev.calculate(&pitotPressure, &pitotTemperature);
+            DEBUG_SET(DEBUG_PITOT, 0, pitotPressure);
             if (pitotmeterConfig()->use_median_filtering) {
                 pitotPressure = applyPitotmeterMedianFilter(pitotPressure);
             }
+            DEBUG_SET(DEBUG_PITOT, 1, pitotPressure);
             state = PITOTMETER_NEEDS_SAMPLES;
            return pitot.dev.delay;
         break;
@@ -244,6 +246,9 @@ int32_t pitotCalculateAirSpeed(void)
         // It also allows us to use pitot_scale to calibrate the dynamic pressure sensor scale
         const float indicatedAirspeed_tmp = pitotmeterConfig()->pitot_scale * sqrtf(2.0f * fabsf(pitotPressure - pitotPressureZero) / AIR_DENSITY_SEA_LEVEL_15C);
         indicatedAirspeed += pitotmeterConfig()->pitot_noise_lpf * (indicatedAirspeed_tmp - indicatedAirspeed);
+
+        DEBUG_SET(DEBUG_PITOT, 2, indicatedAirspeed_tmp);
+        DEBUG_SET(DEBUG_PITOT, 3, indicatedAirspeed);
 
         pitot.airSpeed = indicatedAirspeed * 100;
     } else {
