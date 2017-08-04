@@ -30,6 +30,8 @@
 
 #define INVERTER_PIN_UART1        PC0 // PC0 used as inverter select GPIO
 
+#define CAMERA_CONTROL_PIN    PB9    // define dedicated camera_osd_control pin
+
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PC4
@@ -104,7 +106,9 @@
 #define UART4_RX_PIN            PA1
 #define UART4_TX_PIN            PA0
 
-#define SERIAL_PORT_COUNT       5 //VCP, USART1, USART3,USART4, USART6,
+#define USE_SOFTSERIAL1
+
+#define SERIAL_PORT_COUNT       6 //VCP, USART1, USART3,USART4, USART6, SOFT_SERIAL1
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PB9  // (HARDARE=0,PPM)
