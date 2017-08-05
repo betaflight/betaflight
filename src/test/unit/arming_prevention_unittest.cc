@@ -66,8 +66,160 @@ extern "C" {
 }
 
 uint32_t simulationTime = 0;
+bool gyroCalibDone = false;
 
 #include "gtest/gtest.h"
+
+TEST(ArmingPreventionTest, CalibrationAngleThrottleArmSwitch)
+{
+    // given
+    simulationTime = 0;
+    gyroCalibDone = false;
+
+    // and
+    modeActivationConditionsMutable(0)->auxChannelIndex = 0;
+    modeActivationConditionsMutable(0)->modeId = BOXARM;
+    modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    useRcControlsConfig(NULL);
+
+    // and
+    rxConfigMutable()->mincheck = 1050;
+
+    // and
+    // default channel positions
+    rcData[THROTTLE] = 1400;
+    rcData[4] = 1800;
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_CALIBRATING | ARMING_DISABLED_ANGLE | ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE, getArmingDisableFlags());
+
+    // given
+    // gyro calibration is done
+    gyroCalibDone = true;
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_ANGLE | ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE, getArmingDisableFlags());
+
+    // given
+    // quad is level
+    ENABLE_STATE(SMALL_ANGLE);
+
+    // when
+    updateArmingStatus();
+
+    // expect
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE, getArmingDisableFlags());
+
+    // given
+    rcData[THROTTLE] = 1000;
+
+    // when
+    updateArmingStatus();
+
+    // expect
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_ARM_SWITCH, getArmingDisableFlags());
+
+    // given
+    rcData[4] = 1000;
+
+    // when
+    // arm guard time elapses
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_EQ(0, getArmingDisableFlags());
+    EXPECT_FALSE(isArmingDisabled());
+}
+
+TEST(ArmingPreventionTest, ArmingGuardRadioLeftOnAndArmed)
+{
+    // given
+    simulationTime = 0;
+    gyroCalibDone = false;
+
+    // and
+    modeActivationConditionsMutable(0)->auxChannelIndex = 0;
+    modeActivationConditionsMutable(0)->modeId = BOXARM;
+    modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    useRcControlsConfig(NULL);
+
+    // and
+    rxConfigMutable()->mincheck = 1050;
+
+    // and
+    rcData[THROTTLE] = 1000;
+    ENABLE_STATE(SMALL_ANGLE);
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(isUsingSticksForArming());
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_CALIBRATING, getArmingDisableFlags());
+
+    // given
+    // arm channel takes a safe default value from the RX after power on
+    rcData[4] = 1500;
+
+    // and
+    // a short time passes while calibration is in progress
+    simulationTime += 1e6;
+
+    // and
+    // during calibration RF link is established and ARM switch is on
+    rcData[4] = 1800;
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_CALIBRATING | ARMING_DISABLED_ARM_SWITCH, getArmingDisableFlags());
+
+    // given
+    // calibration is done
+    gyroCalibDone = true;
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_ARM_SWITCH, getArmingDisableFlags());
+
+    // given
+    // arm switch is switched off by user
+    rcData[4] = 1000;
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    // arming enabled as arm switch has been off for sufficient time
+    EXPECT_EQ(0, getArmingDisableFlags());
+    EXPECT_FALSE(isArmingDisabled());
+}
+
 
 TEST(ArmingPreventionTest, Prearm)
 {
@@ -134,7 +286,7 @@ extern "C" {
     void blackboxFinish(void) {}
     bool isAccelerationCalibrationComplete(void) { return true; }
     bool isBaroCalibrationComplete(void) { return true; }
-    bool isGyroCalibrationComplete(void) { return true; }
+    bool isGyroCalibrationComplete(void) { return gyroCalibDone; }
     void gyroStartCalibration(bool) {}
     bool isFirstArmingGyroCalibrationRunning(void) { return false; }
     void pidController(const pidProfile_t *, const rollAndPitchTrims_t *, timeUs_t) {}
