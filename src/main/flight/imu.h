@@ -19,7 +19,7 @@
 
 #include "common/axis.h"
 #include "common/time.h"
-
+#include "common/maths.h"
 #include "config/parameter_group.h"
 
 // Exported symbols
@@ -72,6 +72,9 @@ int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value);
 
 void imuResetAccelerationSum(void);
 void imuInit(void);
+
+bool imuRebaseEarthToBody(void);
+void imuTransformVectorEarthToBody(t_fp_vector_def * v);
 
 #ifdef SIMULATOR_BUILD
 void imuSetAttitudeRPY(float roll, float pitch, float yaw);  // in deg

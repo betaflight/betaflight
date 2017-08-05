@@ -92,6 +92,8 @@ static float magneticDeclination = 0.0f;       // calculated at startup from con
 static imuRuntimeConfig_t imuRuntimeConfig;
 
 STATIC_UNIT_TESTED float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;    // quaternion of sensor frame relative to earth frame
+static float q0q0, q0q1, q0q2, q0q3, q1q1, q1q2, q1q3, q2q2, q2q3, q3q3;
+
 STATIC_UNIT_TESTED float rMat[3][3];
 
 attitudeEulerAngles_t attitude = { { 0, 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
@@ -108,16 +110,16 @@ PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
 
 STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
 {
-    float q1q1 = sq(q1);
-    float q2q2 = sq(q2);
-    float q3q3 = sq(q3);
-
-    float q0q1 = q0 * q1;
-    float q0q2 = q0 * q2;
-    float q0q3 = q0 * q3;
-    float q1q2 = q1 * q2;
-    float q1q3 = q1 * q3;
-    float q2q3 = q2 * q3;
+    q0q0 = q0*q0;
+    q0q1 = q0*q1;
+    q0q2 = q0*q2;
+    q0q3 = q0*q3;
+    q1q1 = q1*q1;
+    q1q2 = q1*q2;
+    q1q3 = q1*q3;
+    q2q2 = q2*q2;
+    q2q3 = q2*q3;
+    q3q3 = q3*q3;
 
     rMat[0][0] = 1.0f - 2.0f * q2q2 - 2.0f * q3q3;
     rMat[0][1] = 2.0f * (q1q2 + -q0q3);
@@ -194,6 +196,44 @@ static void imuTransformVectorBodyToEarth(t_fp_vector * v)
     v->V.X = x;
     v->V.Y = -y;
     v->V.Z = z;
+}
+
+void imuTransformVectorEarthToBody(t_fp_vector_def * v) {
+    const float x = (q0q0 + q1q1 - q2q2 - q3q3) * v->X + 2*(q1q2 + q0q3) * v->Y + 2*(q1q3 - q0q2) * v->Z;
+    const float y = 2*(q1q2 - q0q3) * v->X + (q0q0 - q1q1 + q2q2 - q3q3) * v->Y + 2*(q2q3 + q0q1) * v->Z;
+    const float z = 2*(q1q3 + q0q2) * v->X + 2*(q2q3 - q0q1) * v->Y + (q0q0 - q1q1 - q2q2 + q3q3) * v->Z;
+
+    v->X = x;
+    v->Y = y;
+    v->Z = z;
+}
+
+bool imuRebaseEarthToBody(void) {
+    // only rebase yaw axis when roll and are pitch quite level
+    if((fabsf(attitude.values.roll/10.0f) < 20.0f)  && (fabsf(attitude.values.pitch/10.0f) < 20.0f)){
+        // quaternion rotation
+        const float atan2 = (-atan2f((2.0f*(q0q3 + q1q2)), (1.0f - 2.0f*(q2q2 + q3q3)))/2.0f);
+        const float sina2 = sinf(atan2);
+        const float cosa2 = cosf(atan2);
+
+        q0 = q0*cosa2 - q3*sina2;
+        q1 = q1*cosa2 + q2*sina2;
+        q2 = q2*cosa2 - q1*sina2;
+        q3 = q3*cosa2 + q0*sina2;
+
+        // normalise quaternion
+        const float normalise = 1.0f/sqrtf(q0*q0 + q1*q1 + q2*q2 + q3*q3);
+        q0 *= normalise;
+        q1 *= normalise;
+        q2 *= normalise;
+        q3 *= normalise;
+
+        // synchronize rotation matrix data
+        imuComputeRotationMatrix();
+
+        return(true);
+    }
+    return(false);
 }
 
 // rotate acc into Earth frame and calculate acceleration in it
@@ -366,10 +406,16 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
 
 STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
 {
-    /* Compute pitch/roll angles */
+    // rotation matrix
     attitude.values.roll = lrintf(atan2f(rMat[2][1], rMat[2][2]) * (1800.0f / M_PIf));
     attitude.values.pitch = lrintf(((0.5f * M_PIf) - acosf(-rMat[2][0])) * (1800.0f / M_PIf));
     attitude.values.yaw = lrintf((-atan2f(rMat[1][0], rMat[0][0]) * (1800.0f / M_PIf) + magneticDeclination));
+
+    // quaternion
+    /*
+    attitude.values.roll = lrintf(atan2f((+2.0f * (q0q1 + q2q3)), (+1.0f - 2.0f * (q1q1 + q2q2))) * (1800.0f / M_PIf));
+    attitude.values.pitch = lrintf(asinf(+2.0f * (q0q2 - q1q3)) * (1800.0f / M_PIf));
+    attitude.values.yaw = lrintf((-atan2f((+2.0f * (q0q3 + q1q2)), (+1.0f - 2.0f * (q2q2 + q3q3))) * (1800.0f / M_PIf) + magneticDeclination)); */
 
     if (attitude.values.yaw < 0)
         attitude.values.yaw += 3600;
