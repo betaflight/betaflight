@@ -652,6 +652,7 @@ HIGHEND_SRC = \
             drivers/rangefinder_hcsr04.c \
             drivers/rangefinder_hcsr04_i2c.c \
             drivers/rangefinder_srf10.c \
+            drivers/rangefinder_vl53l0x.c \
             io/dashboard.c \
             io/displayport_max7456.c \
             io/displayport_msp.c \
@@ -945,7 +946,7 @@ all: $(VALID_TARGETS)
 $(VALID_TARGETS):
 	$(V0) echo "" && \
 	echo "Building $@" && \
-	$(MAKE) -j TARGET=$@ && \
+	$(MAKE) -j 4 TARGET=$@ && \
 	echo "Building $@ succeeded."
 
 ## clean             : clean up all temporary / machine-generated files
@@ -961,11 +962,11 @@ clean_test:
 
 ## clean_<TARGET>    : clean up one specific target
 $(CLEAN_TARGETS) :
-	$(V0) $(MAKE) -j TARGET=$(subst clean_,,$@) clean
+	$(V0) $(MAKE) -j 4 TARGET=$(subst clean_,,$@) clean
 
 ## <TARGET>_clean    : clean up one specific target (alias for above)
 $(TARGETS_CLEAN) :
-	$(V0) $(MAKE) -j TARGET=$(subst _clean,,$@) clean
+	$(V0) $(MAKE) -j 4 TARGET=$(subst _clean,,$@) clean
 
 ## clean_all         : clean all valid targets
 clean_all:$(CLEAN_TARGETS)
