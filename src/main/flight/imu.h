@@ -28,6 +28,11 @@ extern int accSumCount;
 extern float accVelScale;
 extern int32_t accSum[XYZ_AXIS_COUNT];
 
+struct quaternion {
+    float w,x,y,z;
+    float ww,wx,wy,wz,xx,xy,xz,yy,yz,zz;
+};
+#define DEFINE_QUATERNION(X) static struct  quaternion X = {.w=1, .x=0, .y=0,.z=0, .ww=0, .wx=0, .wy=0, .wz=0, .xx=0, .xy=0, .xz=0, .yy=0, .yz=0, .zz=0}
 
 typedef union {
     int16_t raw[XYZ_AXIS_COUNT];
@@ -73,9 +78,6 @@ int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value);
 void imuResetAccelerationSum(void);
 void imuInit(void);
 
-bool imuRebaseEarthToBody(void);
-void imuTransformVectorEarthToBody(t_fp_vector_def * v);
-
 #ifdef SIMULATOR_BUILD
 void imuSetAttitudeRPY(float roll, float pitch, float yaw);  // in deg
 void imuSetAttitudeQuat(float w, float x, float y, float z);
@@ -84,4 +86,5 @@ void imuSetHasNewData(uint32_t dt);
 #endif
 #endif
 
-
+void imuHeadfreeQuaternionTransformVectorEarthToBody(t_fp_vector_def * v);
+bool imuHeadfreeQuaternionRebase(void);

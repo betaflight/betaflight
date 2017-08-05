@@ -89,20 +89,11 @@ static float smallAngleCosZ = 0;
 
 static imuRuntimeConfig_t imuRuntimeConfig;
 
-//STATIC_UNIT_TESTED float q.w = 1.0f, q.x = 0.0f, q.y = 0.0f, q.z = 0.0f;    // quaternion of sensor frame relative to earth frame
-//static float q.wq.w, q.wq.x, q.wq.y, q.wq.z, q.xq.x, q.xq.y, q.xq.z, q.yq.y, q.yq.z, q.zq.z;
-
 STATIC_UNIT_TESTED float rMat[3][3];
 
-struct quaternion {
-    float w,x,y,z;
-    float ww,wx,wy,wz,xx,xy,xz,yy,yz,zz;
-};
-
-#define DEFINE_QUATERNION(X) static struct  quaternion X = {.w=1, .x=0, .y=0,.z=0}
-
+// quaternion of sensor frame relative to earth frame
 DEFINE_QUATERNION(q);
- 
+
 attitudeEulerAngles_t attitude = { { 0, 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 
 PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
@@ -115,8 +106,7 @@ PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
     .acc_unarmedcal = 1
 );
 
-STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
-{
+STATIC_UNIT_TESTED void imuComputeQuaternionProducts(void){
     q.ww = q.w*q.w;
     q.wx = q.w*q.x;
     q.wy = q.w*q.y;
@@ -127,6 +117,10 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
     q.yy = q.y*q.y;
     q.yz = q.y*q.z;
     q.zz = q.z*q.z;
+}
+
+STATIC_UNIT_TESTED void imuComputeRotationMatrix(void){
+    imuComputeQuaternionProducts();
 
     rMat[0][0] = 1.0f - 2.0f * q.yy - 2.0f * q.zz;
     rMat[0][1] = 2.0f * (q.xy + -q.wz);
@@ -203,49 +197,6 @@ static void imuTransformVectorBodyToEarth(t_fp_vector * v)
     v->V.X = x;
     v->V.Y = -y;
     v->V.Z = z;
-}
-
-void imuTransformVectorEarthToBody(t_fp_vector_def * v) {
-    const float x = (q.ww + q.xx - q.yy - q.zz) * v->X + 2*(q.xy + q.wz) * v->Y + 2*(q.xz - q.wy) * v->Z;
-    const float y = 2*(q.xy - q.wz) * v->X + (q.ww - q.xx + q.yy - q.zz) * v->Y + 2*(q.yz + q.wx) * v->Z;
-    const float z = 2*(q.xz + q.wy) * v->X + 2*(q.yz - q.wx) * v->Y + (q.ww - q.xx - q.yy + q.zz) * v->Z;
-
-    v->X = x;
-    v->Y = y;
-    v->Z = z;
-}
-
-bool imuRebaseEarthToBody(void) {
-    // only rebase yaw axis when roll and are pitch quite level
-    if((fabsf(attitude.values.roll/10.0f) < 20.0f)  && (fabsf(attitude.values.pitch/10.0f) < 20.0f)){
-        // quaternion rotation
-        const float atan2 = (-atan2f((2.0f*(q.wz + q.xy)), (1.0f - 2.0f*(q.yy + q.zz)))/2.0f);
-        const float sina2 = sinf(atan2);
-        const float cosa2 = cosf(atan2);
-
-        const float wbuff = q.w*cosa2 - q.z*sina2;
-        const float xbuff = q.x*cosa2 + q.y*sina2;
-        const float ybuff = q.y*cosa2 - q.x*sina2;
-        const float zbuff = q.z*cosa2 + q.w*sina2;
-
-        q.w = wbuff;
-        q.x = xbuff;
-        q.y = ybuff;
-        q.z = zbuff;
-
-        // normalise quaternion
-        const float normalise = 1.0f/sqrtf(q.w*q.w + q.x*q.x + q.y*q.y + q.z*q.z);
-        q.w *= normalise;
-        q.x *= normalise;
-        q.y *= normalise;
-        q.z *= normalise;
-
-        // synchronize rotation matrix data
-        imuComputeRotationMatrix();
-
-        return(true);
-    }
-    return(false);
 }
 
 // rotate acc into Earth frame and calculate acceleration in it
@@ -425,9 +376,9 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
 
     // quaternion
     /*
-    attitude.values.roll = lrintf(atan2f((+2.0f * (q.wq.x + q.yq.z)), (+1.0f - 2.0f * (q.xq.x + q.yq.y))) * (1800.0f / M_PIf));
-    attitude.values.pitch = lrintf(asinf(+2.0f * (q.wq.y - q.xq.z)) * (1800.0f / M_PIf));
-    attitude.values.yaw = lrintf((-atan2f((+2.0f * (q.wq.z + q.xq.y)), (+1.0f - 2.0f * (q.yq.y + q.zq.z))) * (1800.0f / M_PIf))); */
+    attitude.values.roll = lrintf(atan2f((+2.0f * (q.wx + q.yz)), (+1.0f - 2.0f * (q.xx + q.yy))) * (1800.0f / M_PIf));
+    attitude.values.pitch = lrintf(asinf(+2.0f * (q.wy - q.xz)) * (1800.0f / M_PIf));
+    attitude.values.yaw = lrintf((-atan2f((+2.0f * (q.wz + q.xy)), (+1.0f - 2.0f * (q.yy + q.zz))) * (1800.0f / M_PIf))); */
 
     if (attitude.values.yaw < 0)
         attitude.values.yaw += 3600;
@@ -586,4 +537,47 @@ void imuSetHasNewData(uint32_t dt)
     IMU_UNLOCK;
 }
 #endif
+
+void imuHeadfreeQuaternionTransformVectorEarthToBody(t_fp_vector_def * v) {
+    const float x = (q.ww + q.xx - q.yy - q.zz) * v->X + 2*(q.xy + q.wz) * v->Y + 2*(q.xz - q.wy) * v->Z;
+    const float y = 2*(q.xy - q.wz) * v->X + (q.ww - q.xx + q.yy - q.zz) * v->Y + 2*(q.yz + q.wx) * v->Z;
+    const float z = 2*(q.xz + q.wy) * v->X + 2*(q.yz - q.wx) * v->Y + (q.ww - q.xx - q.yy + q.zz) * v->Z;
+
+    v->X = x;
+    v->Y = y;
+    v->Z = z;
+}
+
+bool imuHeadfreeQuaternionRebase(void){
+    float roll, pitch, yaw, cosRoll2, cosPitch2, cosYaw2, sinRoll2, sinPitch2 , sinYaw2 , cosPitch2cosYaw2, sinPitch2sinYaw2 ;
+
+    if((fabsf(attitude.values.roll/10.0f) < 45.0f)  && (fabsf(attitude.values.pitch/10.0f) < 45.0f)){
+        roll = atan2f((+2.0f * (q.wx + q.yz)), (+1.0f - 2.0f * (q.xx + q.yy)));
+        pitch = asinf(+2.0f * (q.wy - q.xz));
+        yaw = 0;
+
+        cosRoll2 = cos(roll/2);
+        cosPitch2 = cos(pitch/2);
+        cosYaw2 = cos(yaw/2);
+        sinRoll2 = sin(roll/2);
+        sinPitch2 = sin(pitch/2);
+        sinYaw2 = sin(yaw/2);
+        cosPitch2cosYaw2 = cosPitch2 * cosYaw2;
+        sinPitch2sinYaw2 = sinPitch2 * sinYaw2;
+
+        IMU_LOCK;
+        q.w = cosRoll2 * cosPitch2cosYaw2 + sinRoll2 * sinPitch2sinYaw2 ;
+        q.x = sinRoll2 * cosPitch2cosYaw2 - cosRoll2 * sinPitch2sinYaw2 ;
+        q.y = cosRoll2 * sinPitch2 * cosYaw2 + sinRoll2 * cosPitch2 * sinYaw2 ;
+        q.z = cosRoll2 * cosPitch2 * sinYaw2 - sinRoll2 * sinPitch2 * cosYaw2;
+        imuComputeRotationMatrix();
+        imuUpdateEulerAngles();
+        IMU_UNLOCK;
+
+        return(true);
+    } else {
+        return(false);
+    }
+
+}
 
