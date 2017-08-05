@@ -42,15 +42,16 @@ typedef enum {
     ARMING_DISABLED_THROTTLE    = (1 << 4),
     ARMING_DISABLED_ANGLE       = (1 << 5),
     ARMING_DISABLED_NOPREARM    = (1 << 6),
-    ARMING_DISABLED_LOAD        = (1 << 7),
-    ARMING_DISABLED_CALIBRATING = (1 << 8),
-    ARMING_DISABLED_CLI         = (1 << 9),
-    ARMING_DISABLED_CMS_MENU    = (1 << 10),
-    ARMING_DISABLED_OSD_MENU    = (1 << 11),
-    ARMING_DISABLED_BST         = (1 << 12)
+    ARMING_DISABLED_ARM_SWITCH  = (1 << 7),
+    ARMING_DISABLED_LOAD        = (1 << 8),
+    ARMING_DISABLED_CALIBRATING = (1 << 9),
+    ARMING_DISABLED_CLI         = (1 << 10),
+    ARMING_DISABLED_CMS_MENU    = (1 << 11),
+    ARMING_DISABLED_OSD_MENU    = (1 << 12),
+    ARMING_DISABLED_BST         = (1 << 13)
 } armingDisableFlags_e;
 
-#define NUM_ARMING_DISABLE_FLAGS 13
+#define NUM_ARMING_DISABLE_FLAGS 14
 
 #if defined(OSD) || !defined(MINIMAL_CLI)
 extern const char *armingDisableFlagNames[NUM_ARMING_DISABLE_FLAGS];

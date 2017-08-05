@@ -182,11 +182,20 @@ void updateArmingStatus(void)
             unsetArmingDisabled(ARMING_DISABLED_CALIBRATING);
         }
 
-        if ((isModeActivationConditionPresent(BOXPREARM) && IS_RC_MODE_ACTIVE(BOXPREARM) && !ARMING_FLAG(WAS_ARMED_WITH_PREARM)) 
+        if ((isModeActivationConditionPresent(BOXPREARM) && IS_RC_MODE_ACTIVE(BOXPREARM) && !ARMING_FLAG(WAS_ARMED_WITH_PREARM))
             || !isModeActivationConditionPresent(BOXPREARM)) {
             unsetArmingDisabled(ARMING_DISABLED_NOPREARM);
         } else {
-            setArmingDisabled(ARMING_DISABLED_NOPREARM);            
+            setArmingDisabled(ARMING_DISABLED_NOPREARM);
+        }
+
+        if (!isUsingSticksForArming()) {
+          // If arming is disabled and the ARM switch is on
+          if (isArmingDisabled() && IS_RC_MODE_ACTIVE(BOXARM)) {
+              setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+          } else if (!IS_RC_MODE_ACTIVE(BOXARM)) {
+              unsetArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+          }
         }
 
         if (isArmingDisabled()) {
