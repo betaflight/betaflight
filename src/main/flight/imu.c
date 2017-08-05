@@ -548,7 +548,7 @@ void imuHeadfreeQuaternionTransformVectorEarthToBody(t_fp_vector_def * v) {
     v->Z = z;
 }
 
-bool imuHeadfreeQuaternionRebase(void){
+bool imuHeadfreeQuaternionRebaseYaw(void){
     float roll, pitch, yaw, cosRoll2, cosPitch2, cosYaw2, sinRoll2, sinPitch2 , sinYaw2 , cosPitch2cosYaw2, sinPitch2sinYaw2 ;
 
     if((fabsf(attitude.values.roll/10.0f) < 45.0f)  && (fabsf(attitude.values.pitch/10.0f) < 45.0f)){
