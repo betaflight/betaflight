@@ -321,7 +321,7 @@ void updateRcCommands(void)
         } else {
             rcCommandBuff.Z = 0;
         }
-        imuTransformVectorEarthToBody(&rcCommandBuff);
+        imuHeadfreeQuaternionTransformVectorEarthToBody(&rcCommandBuff);
         rcCommand[ROLL] = rcCommandBuff.X;
         rcCommand[PITCH] = rcCommandBuff.Y;
         if ((!FLIGHT_MODE(ANGLE_MODE)&&(!FLIGHT_MODE(HORIZON_MODE)))) {
