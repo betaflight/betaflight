@@ -31,6 +31,7 @@
 #include "common/color.h"
 #include "common/maths.h"
 #include "common/streambuf.h"
+#include "common/bitarray.h"
 #include "common/utils.h"
 
 #include "drivers/accgyro/accgyro.h"
@@ -338,18 +339,14 @@ static void initActiveBoxIds(void)
     activeBoxIds[activeBoxIdCount++] = BOXCAMERA2;
     activeBoxIds[activeBoxIdCount++] = BOXCAMERA3;
 #endif
-
-    // Limit simultaneous active boxes to 32 (to fit into 32-bit flags)
-    activeBoxIdCount = MIN(activeBoxIdCount, 32);
 }
 
 #define IS_ENABLED(mask) (mask == 0 ? 0 : 1)
 #define CHECK_ACTIVE_BOX(condition, index)    do { if (IS_ENABLED(condition)) { activeBoxes[index] = 1; } } while(0)
 
-static uint32_t packBoxModeFlags(void)
+static void packBoxModeFlags(boxBitmask_t * mspBoxModeFlags)
 {
     uint8_t activeBoxes[CHECKBOX_ITEM_COUNT];
-
     memset(activeBoxes, 0, sizeof(activeBoxes));
 
     // Serialize the flags in the order we delivered them, ignoring BOXNAMES and BOXINDEXES
@@ -389,13 +386,12 @@ static uint32_t packBoxModeFlags(void)
     CHECK_ACTIVE_BOX(IS_ENABLED(IS_RC_MODE_ACTIVE(BOXKILLSWITCH)),  BOXKILLSWITCH);
     CHECK_ACTIVE_BOX(IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHOMERESET)),   BOXHOMERESET);
 
-    uint32_t ret = 0;
+    memset(mspBoxModeFlags, 0, sizeof(boxBitmask_t));
     for (uint32_t i = 0; i < activeBoxIdCount; i++) {
         if (activeBoxes[activeBoxIds[i]]) {
-            ret |= 1 << i;
+            bitArraySet(mspBoxModeFlags, i);
         }
     }
-    return ret;
 }
 
 static uint16_t packSensorStatus(void)
@@ -569,31 +565,36 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, HW_SENSOR_NONE);                   // Optical flow
         break;
 
-    case MSP_STATUS_EX:
-        sbufWriteU16(dst, (uint16_t)cycleTime);
-#ifdef USE_I2C
-        sbufWriteU16(dst, i2cGetErrorCounter());
-#else
-        sbufWriteU16(dst, 0);
-#endif
-        sbufWriteU16(dst, packSensorStatus());
-        sbufWriteU32(dst, packBoxModeFlags());
-        sbufWriteU8(dst, getConfigProfile());
-        sbufWriteU16(dst, averageSystemLoadPercent);
-        sbufWriteU16(dst, armingFlags);
-        sbufWriteU8(dst, accGetCalibrationAxisFlags());
+    case MSP_ACTIVEBOXES:
+        {
+            boxBitmask_t mspBoxModeFlags;
+            packBoxModeFlags(&mspBoxModeFlags);
+            sbufWriteData(dst, &mspBoxModeFlags, sizeof(mspBoxModeFlags));
+        }
         break;
 
+    case MSP_STATUS_EX:
     case MSP_STATUS:
-        sbufWriteU16(dst, (uint16_t)cycleTime);
+        {
+            boxBitmask_t mspBoxModeFlags;
+            packBoxModeFlags(&mspBoxModeFlags);
+
+            sbufWriteU16(dst, (uint16_t)cycleTime);
 #ifdef USE_I2C
-        sbufWriteU16(dst, i2cGetErrorCounter());
+            sbufWriteU16(dst, i2cGetErrorCounter());
 #else
-        sbufWriteU16(dst, 0);
+            sbufWriteU16(dst, 0);
 #endif
-        sbufWriteU16(dst, packSensorStatus());
-        sbufWriteU32(dst, packBoxModeFlags());
-        sbufWriteU8(dst, getConfigProfile());
+            sbufWriteU16(dst, packSensorStatus());
+            sbufWriteData(dst, &mspBoxModeFlags, 4);
+            sbufWriteU8(dst, getConfigProfile());
+
+            if (cmdMSP == MSP_STATUS_EX) {
+                sbufWriteU16(dst, averageSystemLoadPercent);
+                sbufWriteU16(dst, armingFlags);
+                sbufWriteU8(dst, accGetCalibrationAxisFlags());
+            }
+        }
         break;
 
     case MSP_RAW_IMU:

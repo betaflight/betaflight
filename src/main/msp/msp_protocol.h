@@ -262,7 +262,7 @@
 #define MSP_ANALOG               110    //out message         vbat, powermetersum, rssi if available on RX
 #define MSP_RC_TUNING            111    //out message         rc rate, rc expo, rollpitch rate, yaw rate, dyn throttle PID
 #define MSP_PID                  112    //out message         P I D coeff (9 are used currently)
-#define MSP_BOX                  113    //out message         BOX setup (number is dependant of your setup)
+#define MSP_ACTIVEBOXES          113    //out message         Active box flags (full width, more than 32 bits)
 #define MSP_MISC                 114    //out message         powermeter trig
 #define MSP_MOTOR_PINS           115    //out message         which pins are in use for motors & servos, for GUI
 #define MSP_BOXNAMES             116    //out message         the aux switch names
