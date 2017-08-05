@@ -17,18 +17,23 @@
 
 #pragma once
 
-typedef enum {
-    FRSKY_VFAS_PRECISION_LOW = 0,
-    FRSKY_VFAS_PRECISION_HIGH
-} frskyVFasPrecision_e;
+#include <stdbool.h>
+#include <stdint.h>
 
-typedef void frSkyTelemetryInitFrameFn(void);
-typedef void frSkyTelemetryWriteFn(uint8_t ch);
+#include "rx_spi.h"
 
-void handleFrSkyTelemetry(void);
-void checkFrSkyTelemetryState(void);
+typedef struct frSkyDConfig_s {
+    bool autoBind;
+    uint8_t bindHopData[50];
+    uint8_t bindTxId[2];
+    int8_t  bindOffset;
+} frSkyDConfig_t;
 
-void initFrSkyTelemetry(void);
+PG_DECLARE(frSkyDConfig_t, frSkyDConfig);
 
-void initFrSkyExternalTelemetry(frSkyTelemetryInitFrameFn *frSkyTelemetryInitFrameExternal, frSkyTelemetryWriteFn *frSkyTelemetryWriteExternal);
-void deinitFrSkyExternalTelemetry(void);
+struct rxConfig_s;
+struct rxRuntimeConfig_s;
+void frskyD_Rx_Init(const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig);
+void frskyD_Rx_SetRCdata(uint16_t *rcData, const uint8_t *payload);
+rx_spi_received_e frskyD_Rx_DataReceived(uint8_t *payload);
+void frSkyDBind();
