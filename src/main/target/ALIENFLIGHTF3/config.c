@@ -97,6 +97,8 @@ void targetConfiguration(void)
         serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIALRX_UART)].functionMask = FUNCTION_TELEMETRY_FRSKY | FUNCTION_RX_SERIAL;
         telemetryConfigMutable()->telemetry_inverted = false;
         featureSet(FEATURE_TELEMETRY);
+        beeperDevConfigMutable()->isOpenDrain = false;
+        beeperDevConfigMutable()->isInverted = true;
     }
 
     if (hardwareMotorType == MOTOR_BRUSHED) {
