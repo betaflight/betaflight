@@ -117,11 +117,15 @@ static void updateAltitudeVelocityAndPitchController_FW(timeDelta_t deltaMicros)
     const float demSEB = demSPE * wSPE - demSKE * wSKE;
     const float estSEB = estSPE * wSPE - estSKE * wSKE;
 
+    // SEB to pitch angle gain to account for airspeed
+    const float pitchGainInv = GRAVITY_MSS; // GRAVITY_MSS * airspeed;
+
     // Here we use negative values for dive for better clarity
     int maxClimbDeciDeg = DEGREES_TO_DECIDEGREES(navConfig()->fw.max_climb_angle);
     int minDiveDeciDeg = -DEGREES_TO_DECIDEGREES(navConfig()->fw.max_dive_angle);
 
-    float targetPitchAngle = navPidApply2(&posControl.pids.fw_alt, demSEB, estSEB, US2S(deltaMicros), minDiveDeciDeg, maxClimbDeciDeg, 0);
+    // PID controller to translate energy balance error [J] into pitch angle [decideg]
+    float targetPitchAngle = navPidApply2(&posControl.pids.fw_alt, demSEB, estSEB, US2S(deltaMicros), minDiveDeciDeg, maxClimbDeciDeg, 0) / pitchGainInv;
     targetPitchAngle = pt1FilterApply4(&velzFilterState, targetPitchAngle, NAV_FW_PITCH_CUTOFF_FREQENCY_HZ, US2S(deltaMicros));
 
     // Calculate climb angle ( >0 - climb, <0 - dive)
