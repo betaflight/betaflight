@@ -1005,7 +1005,7 @@ static void vl53l0x_Init(void)
 
     // Apply range parameters
 #if 1   // LONG RANGE
-    setSignalRateLimit(0.1f);
+    setSignalRateLimit(0.25f);
     setVcselPulsePeriod(VcselPeriodPreRange, 18);
     setVcselPulsePeriod(VcselPeriodFinalRange, 14);
 #endif
