@@ -94,7 +94,8 @@ STATIC_UNIT_TESTED float rMat[3][3];
 // quaternion of sensor frame relative to earth frame
 DEFINE_QUATERNION(q);
 
-attitudeEulerAngles_t attitude = { { 0, 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
+// absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
+DEFINE_EULER(attitude);
 
 PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
 
