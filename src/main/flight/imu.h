@@ -43,6 +43,7 @@ typedef union {
         int16_t yaw;
     } values;
 } attitudeEulerAngles_t;
+#define DEFINE_EULER(X) attitudeEulerAngles_t X = { { 0, 0, 0 } }
 
 extern attitudeEulerAngles_t attitude;
 
