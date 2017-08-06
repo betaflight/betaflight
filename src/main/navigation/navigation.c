@@ -2605,9 +2605,9 @@ void navigationUsePIDs(void)
                                         (float)pidProfile()->bank_fw.pid[PID_POS_XY].I / 100.0f,
                                         (float)pidProfile()->bank_fw.pid[PID_POS_XY].D / 100.0f);
 
-    navPidInit(&posControl.pids.fw_alt, (float)pidProfile()->bank_fw.pid[PID_POS_Z].P / 100.0f,
-                                        (float)pidProfile()->bank_fw.pid[PID_POS_Z].I / 100.0f,
-                                        (float)pidProfile()->bank_fw.pid[PID_POS_Z].D / 100.0f);
+    navPidInit(&posControl.pids.fw_alt, (float)pidProfile()->bank_fw.pid[PID_POS_Z].P / 9.80665f,
+                                        (float)pidProfile()->bank_fw.pid[PID_POS_Z].I / 9.80665f,
+                                        (float)pidProfile()->bank_fw.pid[PID_POS_Z].D / 9.80665f);
 }
 
 void navigationInit(void)

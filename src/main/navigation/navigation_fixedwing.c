@@ -103,11 +103,25 @@ static void updateAltitudeVelocityAndPitchController_FW(timeDelta_t deltaMicros)
     // On a fixed wing we might not have a reliable climb rate source (if no BARO available), so we can't apply PID controller to
     // velocity error. We use PID controller on altitude error and calculate desired pitch angle
 
+    // Update energies
+    const float demSPE = (posControl.desiredState.pos.V.Z / 100.0f) * GRAVITY_MSS;
+    const float demSKE = 0.0f;
+
+    const float estSPE = (posControl.actualState.pos.V.Z / 100.0f) * GRAVITY_MSS;
+    const float estSKE = 0.0f;
+
+    const float speedWeight = 0.0f; // no speed sensing for now
+
+    const float wSKE = speedWeight;
+    const float wSPE = 1.0f - speedWeight;
+    const float demSEB = demSPE * wSPE - demSKE * wSKE;
+    const float estSEB = estSPE * wSPE - estSKE * wSKE;
+
     // Here we use negative values for dive for better clarity
     int maxClimbDeciDeg = DEGREES_TO_DECIDEGREES(navConfig()->fw.max_climb_angle);
     int minDiveDeciDeg = -DEGREES_TO_DECIDEGREES(navConfig()->fw.max_dive_angle);
 
-    float targetPitchAngle = navPidApply2(&posControl.pids.fw_alt, posControl.desiredState.pos.V.Z, posControl.actualState.pos.V.Z, US2S(deltaMicros), minDiveDeciDeg, maxClimbDeciDeg, 0);
+    float targetPitchAngle = navPidApply2(&posControl.pids.fw_alt, demSEB, estSEB, US2S(deltaMicros), minDiveDeciDeg, maxClimbDeciDeg, 0);
     targetPitchAngle = pt1FilterApply4(&velzFilterState, targetPitchAngle, NAV_FW_PITCH_CUTOFF_FREQENCY_HZ, US2S(deltaMicros));
 
     // Calculate climb angle ( >0 - climb, <0 - dive)
@@ -115,7 +129,7 @@ static void updateAltitudeVelocityAndPitchController_FW(timeDelta_t deltaMicros)
     posControl.rcAdjustment[PITCH] = targetPitchAngle;
 }
 
-void applyFixedWingAltitudeController(timeUs_t currentTimeUs)
+void applyFixedWingAltitudeAndThrottleController(timeUs_t currentTimeUs)
 {
     static timeUs_t previousTimePositionUpdate;         // Occurs @ altitude sensor update rate (max MAX_ALTITUDE_UPDATE_RATE_HZ)
     static timeUs_t previousTimeUpdate;                 // Occurs @ looptime rate
@@ -530,7 +544,7 @@ void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags,
         // Don't apply anything if ground speed is too low (<3m/s)
         if (posControl.actualState.velXY > 300) {
             if (navStateFlags & NAV_CTL_ALT)
-                applyFixedWingAltitudeController(currentTimeUs);
+                applyFixedWingAltitudeAndThrottleController(currentTimeUs);
 
             if (navStateFlags & NAV_CTL_POS)
                 applyFixedWingPositionController(currentTimeUs);
@@ -541,7 +555,7 @@ void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags,
         }
 #else
         if (navStateFlags & NAV_CTL_ALT)
-            applyFixedWingAltitudeController(currentTimeUs);
+            applyFixedWingAltitudeAndThrottleController(currentTimeUs);
 
         if (navStateFlags & NAV_CTL_POS)
             applyFixedWingPositionController(currentTimeUs);
