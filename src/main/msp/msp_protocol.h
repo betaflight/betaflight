@@ -306,7 +306,7 @@
 #define MSP_RESERVE_2            252    //reserved for system usage
 #define MSP_DEBUGMSG             253    //out message         debug string buffer
 #define MSP_DEBUG                254    //out message         debug1,debug2,debug3,debug4
-#define MSP_RESERVE_3            255    //reserved for system usage
+#define MSP_V2_FRAME             255    //MSPv2 payload indicator
 
 // Additional commands that are not compatible with MultiWii
 #define MSP_STATUS_EX            150    //out message         cycletime, errors_count, CPU load, sensor present etc

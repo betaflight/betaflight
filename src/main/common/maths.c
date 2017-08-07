@@ -481,6 +481,14 @@ uint8_t crc8_dvb_s2(uint8_t crc, unsigned char a)
     return crc;
 }
 
+uint8_t crc8_dvb_s2_buf(uint8_t crc, const unsigned char * data, int length)
+{
+    while (length-- > 0) {
+        crc = crc8_dvb_s2(crc, *data++);
+    }
+    return crc;
+}
+
 float bellCurve(const float x, const float curveWidth)
 {
     return powf(M_Ef, -sq(x) / (2.0f * sq(curveWidth)));

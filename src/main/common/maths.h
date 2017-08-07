@@ -177,5 +177,6 @@ float acos_approx(float x);
 void arraySubInt32(int32_t *dest, int32_t *array1, int32_t *array2, int count);
 uint16_t crc16_ccitt(uint16_t crc, unsigned char a);
 uint8_t crc8_dvb_s2(uint8_t crc, unsigned char a);
+uint8_t crc8_dvb_s2_buf(uint8_t crc, const unsigned char * data, int length);
 
 float bellCurve(const float x, const float curveWidth);
