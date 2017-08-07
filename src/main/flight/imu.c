@@ -303,9 +303,9 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
         const float ez_ef = -(hy * bx);
 
         // Rotate mag error vector back to BF and accumulate
-           ex += rMat[2][0] * ez_ef;
-           ey += rMat[2][1] * ez_ef;
-           ez += rMat[2][2] * ez_ef;
+        ex += rMat[2][0] * ez_ef;
+        ey += rMat[2][1] * ez_ef;
+        ez += rMat[2][2] * ez_ef;
     }
 
     // Use measured acceleration vector
@@ -371,9 +371,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     imuComputeRotationMatrix();
 }
 
-STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
-{
-    // both modes equal walues ok
+STATIC_UNIT_TESTED void imuUpdateEulerAngles(void){
     if (FLIGHT_MODE(HEADFREE_MODE)) {
        attitude.values.roll = lrintf(atan2f((+2.0f * (headfree.wx + headfree.yz)), (+1.0f - 2.0f * (headfree.xx + headfree.yy))) * (1800.0f / M_PIf));
        attitude.values.pitch = lrintf(asinf(+2.0f * (headfree.wy - headfree.xz)) * (1800.0f / M_PIf));
