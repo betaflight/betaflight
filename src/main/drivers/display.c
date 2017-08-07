@@ -32,6 +32,11 @@ void displayClearScreen(displayPort_t *instance)
     instance->cursorRow = -1;
 }
 
+void displayFillRegion(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t width, uint8_t height, uint8_t value)
+{
+    instance->vTable->fillRegion(instance, x, y, width, height, value);
+}
+
 void displayDrawScreen(displayPort_t *instance)
 {
     instance->vTable->drawScreen(instance);

@@ -611,9 +611,7 @@ static void osdDrawSingleElement(uint8_t item)
             pitchAngle = ((pitchAngle * 25) / maxPitch) - 41; // 41 = 4 * AH_SYMBOL_COUNT + 5
 
             // clear the area before writing the new horizon characters
-            for (int y = 0; y <= 7; y++) {
-                displayWrite(osdDisplayPort, elemPosX - 4, elemPosY+y, "         ");
-            }
+            displayFillRegion(osdDisplayPort, elemPosX - 4, elemPosY, 9, 9, ' ');
 
             // if not visible: abort after clearing here
             if (!(osdConfig()->item[item].flags & OSD_FLAG_VISIBLE)){
@@ -817,15 +815,12 @@ static void osdDrawSingleElement(uint8_t item)
 
     if (BLINK(item)) {
         // this item should be invisible right now because it blinks
-        // send "empty" string to clear previously used space
-        char *bptr = buff;
-        while (*bptr) {
-            *bptr++ = ' ';
-        }
+        // fill with spaces to clear
+        displayFillRegion(osdDisplayPort, elemPosX, elemPosY, strlen(buff), 1, ' ');
+    } else {
+        // send prepared string to display at given position
+        displayWrite(osdDisplayPort, elemPosX, elemPosY, buff);
     }
-
-    // send prepared string to display at given position
-    displayWrite(osdDisplayPort, elemPosX, elemPosY, buff);
 }
 
 void pgResetFn_osdConfig(osdConfig_t *osdConfig)

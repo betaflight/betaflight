@@ -130,7 +130,7 @@ static void openTCOCommandOSDSetRegister(uint8_t reg, uint8_t value)
     openTCOEncode(OPENTCO_DEVICE_OSD, OPENTCO_OSD_COMMAND_SET_REGISTER, 2, buffer);
 }
 
-static void openTCOCommandOSDFillRegion(const uint8_t x, const uint8_t y, uint8_t width, uint8_t height, uint8_t value)
+static void openTCOCommandOSDFillRegion(const uint8_t x, const uint8_t y, const uint8_t width, const uint8_t height, const uint8_t value)
 {
     uint8_t buffer[5];
     buffer[0] = x;
@@ -325,6 +325,13 @@ int tinyOSDClearScreen(displayPort_t *displayPort)
     openTCOCommandOSDFillScreen(' ');
     return 0;
 }
+
+int tinyOSDFillRegion(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t width, uint8_t height, uint8_t value){
+    UNUSED(displayPort);
+    openTCOCommandOSDFillRegion(x, y, width, height, value);
+    return 0;
+}
+
 
 uint8_t* tinyOSDGetScreenBuffer(void) {
     return screenBuffer;

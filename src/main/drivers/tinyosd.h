@@ -73,6 +73,7 @@ uint8_t tinyOSDGetColsCount(void);
 int tinyOSDWriteString(displayPort_t *, uint8_t x, uint8_t y, const char *buff);
 int tinyOSDWriteChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c);
 int tinyOSDClearScreen(displayPort_t *);
+int tinyOSDFillRegion(displayPort_t*, uint8_t x, uint8_t y, uint8_t width, uint8_t height, uint8_t value);
 void tinyOSDRefreshAll(void);
 bool tinyOSDIsTransferInProgress(const displayPort_t *);
 int tinyOSDHeartbeat(displayPort_t *displayPort);
