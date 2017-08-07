@@ -542,7 +542,6 @@ void imuSetHasNewData(uint32_t dt)
 }
 #endif
 
-// dislocation is ok
 bool imuQuaternionHeadfreeDislocationSet(void){
     float roll, pitch, yaw, cosRoll2, cosPitch2, cosYaw2, sinRoll2, sinPitch2 , sinYaw2 , cosPitch2cosYaw2, sinPitch2sinYaw2 ;
 
@@ -573,7 +572,6 @@ bool imuQuaternionHeadfreeDislocationSet(void){
     }
 }
 
-// check online for quaternion multiplication for rotaton formulas
 void imuQuaternionMultiplication(quaternion *q1, quaternion *q2, quaternion *result){
     float A, B, C, D, E, F, G, H;
     A = (q1->w + q1->x)*(q2->w + q2->x);
@@ -591,7 +589,6 @@ void imuQuaternionMultiplication(quaternion *q1, quaternion *q2, quaternion *res
     result->z = D + (E - F - G + H)/2;
 }
 
-// translation ok tested headfree without mag (todo check multiply order )
 void imuQuaternionHeadfreeTransformVectorEarthToBody(t_fp_vector_def *v) {
     imuQuaternionMultiplication(&dislocation, &q, &headfree);
     imuQuaternionComputeProducts(&headfree);
