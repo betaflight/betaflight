@@ -123,14 +123,14 @@ static int writeChar(displayPort_t *displayPort, uint8_t col, uint8_t row, uint8
     return writeString(displayPort, col, row, buf); //!!TODO - check if there is a direct MSP command to do this
 }
 
-static void fillRegion(displayPort_t *displayPort, uint8_t xs, uint8_t ys, uint8_t width, uint8_t height, uint8_t value)
+static int fillRegion(displayPort_t *displayPort, uint8_t xs, uint8_t ys, uint8_t width, uint8_t height, uint8_t value)
 {
     // FIXME: add fillRegion to MSP!
     // for now: send single requests:
     if ((value == ' ') && (ys >= displayPort->rowCount) && (xs >= displayPort->colCount)) {
         // speed optimize -> issue clear command
         clearScreen(displayPort);
-        return;
+        return 0;
     }
 
     // create null terminated "fill" string
@@ -147,6 +147,8 @@ static void fillRegion(displayPort_t *displayPort, uint8_t xs, uint8_t ys, uint8
         height--;
         y++;
     }
+
+    return 1;
 }
 
 static bool isTransferInProgress(const displayPort_t *displayPort)
