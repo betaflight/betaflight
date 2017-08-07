@@ -83,7 +83,7 @@ static int clearScreen(displayPort_t *displayPort)
 static int drawScreen(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
-    max7456DrawScreenPartial();
+    //max7456DrawScreenPartial();
 
     return 0;
 }
@@ -104,7 +104,7 @@ static int writeChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c
     return 0;
 }
 
-int fillRegion(displayPort_t *displayPort, uint8_t xs, uint8_t ys, uint8_t width, uint8_t height, uint8_t value)
+static int fillRegion(displayPort_t *displayPort, uint8_t xs, uint8_t ys, uint8_t width, uint8_t height, uint8_t value)
 {
     // FIXME: add fillRegion to MSP!
     // for now: send single requests:

@@ -66,14 +66,14 @@ static int oledWriteChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8
     return 0;
 }
 
-static void oledFillRegion(displayPort_t *displayPort, uint8_t xs, uint8_t ys, uint8_t width, uint8_t height, uint8_t value)
+static int oledFillRegion(displayPort_t *displayPort, uint8_t xs, uint8_t ys, uint8_t width, uint8_t height, uint8_t value)
 {
     // FIXME: add fillRegion to MSP!
     // for now: send single requests:
     if ((value == ' ') && (ys >= displayPort->rowCount) && (xs >= displayPort->colCount)) {
         // speed optimize -> issue clear command
         oledClearScreen(displayPort);
-        return;
+        return 0;
     }
 
     // create null terminated "fill" string
@@ -90,6 +90,8 @@ static void oledFillRegion(displayPort_t *displayPort, uint8_t xs, uint8_t ys, u
         height--;
         y++;
     }
+
+    return 1;
 }
 
 static bool oledIsTransferInProgress(const displayPort_t *displayPort)
