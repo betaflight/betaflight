@@ -373,20 +373,15 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
 
 STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
 {
-    // rotation matrix
-    attitude.values.roll = lrintf(atan2f(rMat[2][1], rMat[2][2]) * (1800.0f / M_PIf));
-    attitude.values.pitch = lrintf(((0.5f * M_PIf) - acosf(-rMat[2][0])) * (1800.0f / M_PIf));
     if (FLIGHT_MODE(HEADFREE_MODE)) {
+       attitude.values.roll = lrintf(atan2f((+2.0f * (headfree.wx + headfree.yz)), (+1.0f - 2.0f * (headfree.xx + headfree.yy))) * (1800.0f / M_PIf));
+       attitude.values.pitch = lrintf(asinf(+2.0f * (headfree.wy - headfree.xz)) * (1800.0f / M_PIf));
        attitude.values.yaw = lrintf((-atan2f((+2.0f * (headfree.wz + headfree.xy)), (+1.0f - 2.0f * (headfree.yy + headfree.zz))) * (1800.0f / M_PIf)));
     } else{
+       attitude.values.roll = lrintf(atan2f(rMat[2][1], rMat[2][2]) * (1800.0f / M_PIf));
+       attitude.values.pitch = lrintf(((0.5f * M_PIf) - acosf(-rMat[2][0])) * (1800.0f / M_PIf));
        attitude.values.yaw = lrintf((-atan2f(rMat[1][0], rMat[0][0]) * (1800.0f / M_PIf)));
     }
-
-    // quaternion
-    /*
-    attitude.values.roll = lrintf(atan2f((+2.0f * (q.wx + q.yz)), (+1.0f - 2.0f * (q.xx + q.yy))) * (1800.0f / M_PIf));
-    attitude.values.pitch = lrintf(asinf(+2.0f * (q.wy - q.xz)) * (1800.0f / M_PIf));
-    attitude.values.yaw = lrintf((-atan2f((+2.0f * (q.wz + q.xy)), (+1.0f - 2.0f * (q.yy + q.zz))) * (1800.0f / M_PIf))); */
 
     if (attitude.values.yaw < 0)
         attitude.values.yaw += 3600;
