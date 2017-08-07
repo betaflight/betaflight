@@ -456,7 +456,7 @@ void max7456ReInit(void)
         uint16_t x;
         uint32_t *p = (uint32_t*)&screenBuffer[0];
         for (x = 0; x < VIDEO_BUFFER_CHARS_PAL/4; x++)
-            p[x] = 0x20202020;
+            p[x] = 0x60603020;
     }
 
     uint8_t* max7456GetScreenBuffer(void) {
@@ -468,13 +468,40 @@ void max7456ReInit(void)
         screenBuffer[y*CHARS_PER_LINE+x] = c;
     }
 
-    void max7456Write(uint8_t x, uint8_t y, const char *buff)
-    {
-        uint8_t i = 0;
-        for (i = 0; *(buff+i); i++)
-            if (x+i < CHARS_PER_LINE) // Do not write over screen
-                screenBuffer[y*CHARS_PER_LINE+x+i] = *(buff+i);
+void max7456Write(uint8_t x, uint8_t y, const char *buff)
+{
+    /*uint8_t i = 0;
+    for (i = 0; *(buff+i); i++)
+        if (x+i < CHARS_PER_LINE) // Do not write over screen
+            screenBuffer[y*CHARS_PER_LINE+x+i] = *(buff+i);
+    */
+
+    if (!max7456Lock){
+        max7456Lock = true;
+        uint16_t pos = y * CHARS_PER_LINE + x;
+        uint8_t len = strlen(buff);
+
+        uint8_t spi_buff[len + 5];
+        spi_buff[0] = MAX7456ADD_DMAH;
+        spi_buff[1] = pos >> 8;
+        spi_buff[2] = MAX7456ADD_DMAL;
+        spi_buff[3] = pos & 0xff;
+        spi_buff[4] = MAX7456ADD_DMDI;
+        memcpy(spi_buff + 5, buff, len);
+        len = len + 5;
+
+        max7456Lock = true;
+        #ifdef MAX7456_DMA_CHANNEL_TX
+        max7456SendDma(spi_buff, NULL, len);
+        #else
+        ENABLE_MAX7456;
+        for (uint8_t k=0; k < len; k++)
+            spiTransferByte(MAX7456_SPI_INSTANCE, spi_buff[k]);
+        DISABLE_MAX7456;
+        #endif // MAX7456_DMA_CHANNEL_TX
+        max7456Lock = false;
     }
+}
 
     bool max7456DmaInProgress(void)
     {

@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -103,13 +104,14 @@ static int writeChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c
     return 0;
 }
 
-static void displayFillRegion(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t width, uint8_t height, uint8_t value)
+int fillRegion(displayPort_t *displayPort, uint8_t xs, uint8_t ys, uint8_t width, uint8_t height, uint8_t value)
+{
     // FIXME: add fillRegion to MSP!
     // for now: send single requests:
     if ((value == ' ') && (ys >= displayPort->rowCount) && (xs >= displayPort->colCount)) {
         // speed optimize -> issue clear command
         clearScreen(displayPort);
-        return;
+        return 1;
     }
 
     // create null terminated "fill" string
@@ -120,12 +122,14 @@ static void displayFillRegion(displayPort_t *displayPort, uint8_t x, uint8_t y, 
     uint8_t y = ys;
     while (height > 0) {
         // output string:
-        writeString(displayPort, xs, y, buffer);
+        writeString(displayPort, xs, y, (const char *)buffer);
 
         // keep track of position and count
         height--;
         y++;
     }
+
+    return 0;
 }
 
 static bool isTransferInProgress(const displayPort_t *displayPort)
