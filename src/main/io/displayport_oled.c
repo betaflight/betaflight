@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -65,6 +66,32 @@ static int oledWriteChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8
     return 0;
 }
 
+static void oledFillRegion(displayPort_t *displayPort, uint8_t xs, uint8_t ys, uint8_t width, uint8_t height, uint8_t value)
+{
+    // FIXME: add fillRegion to MSP!
+    // for now: send single requests:
+    if ((value == ' ') && (ys >= displayPort->rowCount) && (xs >= displayPort->colCount)) {
+        // speed optimize -> issue clear command
+        oledClearScreen(displayPort);
+        return;
+    }
+
+    // create null terminated "fill" string
+    uint8_t buffer[width+1];
+    memset(buffer, value, width);
+    buffer[width] = 0;
+
+    uint8_t y = ys;
+    while (height > 0) {
+        // output string:
+        oledWriteString(displayPort, xs, y, (const char*)buffer);
+
+        // keep track of position and count
+        height--;
+        y++;
+    }
+}
+
 static bool oledIsTransferInProgress(const displayPort_t *displayPort)
 {
     UNUSED(displayPort);
@@ -93,6 +120,7 @@ static const displayPortVTable_t oledVTable = {
     .release = oledRelease,
     .clearScreen = oledClearScreen,
     .drawScreen = oledDrawScreen,
+    .fillRegion = oledFillRegion,
     .writeString = oledWriteString,
     .writeChar = oledWriteChar,
     .isTransferInProgress = oledIsTransferInProgress,

@@ -57,6 +57,7 @@ static const displayPortVTable_t tinyOSDVTable = {
     .release = tinyOSDRelease,
     .clearScreen = tinyOSDClearScreen,
     .drawScreen = tinyOSDDrawScreen,
+    .fillRegion = tinyOSDFillRegion,
     .writeString = tinyOSDWriteString,
     .writeChar = tinyOSDWriteChar,
     .isTransferInProgress = tinyOSDIsTransferInProgress,
