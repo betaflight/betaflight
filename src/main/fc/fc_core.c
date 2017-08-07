@@ -246,7 +246,8 @@ void tryArm(void)
         if (isModeActivationConditionPresent(BOXPREARM)) {
             ENABLE_ARMING_FLAG(WAS_ARMED_WITH_PREARM);
         }
-        headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+
+        imuQuaternionHeadfreeDislocationSet();
 
         disarmAt = millis() + armingConfig()->auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
 
