@@ -373,6 +373,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
 
 STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
 {
+    // both modes equal walues ok
     if (FLIGHT_MODE(HEADFREE_MODE)) {
        attitude.values.roll = lrintf(atan2f((+2.0f * (headfree.wx + headfree.yz)), (+1.0f - 2.0f * (headfree.xx + headfree.yy))) * (1800.0f / M_PIf));
        attitude.values.pitch = lrintf(asinf(+2.0f * (headfree.wy - headfree.xz)) * (1800.0f / M_PIf));
@@ -541,8 +542,9 @@ void imuSetHasNewData(uint32_t dt)
 }
 #endif
 
+// dislocation is ok
 bool imuQuaternionHeadfreeDislocationSet(void){
-    static float roll, pitch, yaw, cosRoll2, cosPitch2, cosYaw2, sinRoll2, sinPitch2 , sinYaw2 , cosPitch2cosYaw2, sinPitch2sinYaw2;
+    float roll, pitch, yaw, cosRoll2, cosPitch2, cosYaw2, sinRoll2, sinPitch2 , sinYaw2 , cosPitch2cosYaw2, sinPitch2sinYaw2 ;
 
     if((fabsf(attitude.values.roll/10.0f) < 45.0f)  && (fabsf(attitude.values.pitch/10.0f) < 45.0f)){
         roll = 0;
@@ -571,8 +573,9 @@ bool imuQuaternionHeadfreeDislocationSet(void){
     }
 }
 
+// check online for quaternion multiplication for rotaton formulas
 void imuQuaternionMultiplication(quaternion *q1, quaternion *q2, quaternion *result){
-    static float A, B, C, D, E, F, G, H, w, x, y, z, recipNorm;
+    float A, B, C, D, E, F, G, H;
     A = (q1->w + q1->x)*(q2->w + q2->x);
     B = (q1->z - q1->y)*(q2->y - q2->z);
     C = (q1->w - q1->x)*(q2->y + q2->z);
@@ -582,26 +585,15 @@ void imuQuaternionMultiplication(quaternion *q1, quaternion *q2, quaternion *res
     G = (q1->w + q1->y)*(q2->w - q2->z);
     H = (q1->w - q1->y)*(q2->w + q2->z);
 
-    w = B + (-E - F + G + H)/2;
-    x = A - (E + F + G + H)/2;
-    y = C + (E - F + G - H)/2;
-    z = D + (E - F - G + H)/2;
-
-    // Normalise quaternion
-    recipNorm = invSqrt(sq(w) + sq(x) + sq(y) + sq(z));
-    w *= recipNorm;
-    x *= recipNorm;
-    y *= recipNorm;
-    z *= recipNorm;
-
-    result->w = w;
-    result->x = x;
-    result->y = y;
-    result->z = z;
+    result->w = B + (-E - F + G + H)/2;
+    result->x = A - (E + F + G + H)/2;
+    result->y = C + (E - F + G - H)/2;
+    result->z = D + (E - F - G + H)/2;
 }
 
+// translation ok tested headfree without mag (todo check multiply order )
 void imuQuaternionHeadfreeTransformVectorEarthToBody(t_fp_vector_def *v) {
-    imuQuaternionMultiplication(&q, &dislocation, &headfree);
+    imuQuaternionMultiplication(&dislocation, &q, &headfree);
     imuQuaternionComputeProducts(&headfree);
 
     const float x = (headfree.ww + headfree.xx - headfree.yy - headfree.zz) * v->X + 2*(headfree.xy + headfree.wz) * v->Y + 2*(headfree.xz - headfree.wy) * v->Z;
