@@ -376,8 +376,11 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
     // rotation matrix
     attitude.values.roll = lrintf(atan2f(rMat[2][1], rMat[2][2]) * (1800.0f / M_PIf));
     attitude.values.pitch = lrintf(((0.5f * M_PIf) - acosf(-rMat[2][0])) * (1800.0f / M_PIf));
-    //attitude.values.yaw = lrintf((-atan2f(rMat[1][0], rMat[0][0]) * (1800.0f / M_PIf)));
-    attitude.values.yaw = lrintf((-atan2f((+2.0f * (headfree.wz + headfree.xy)), (+1.0f - 2.0f * (headfree.yy + headfree.zz))) * (1800.0f / M_PIf)));
+    if (FLIGHT_MODE(HEADFREE_MODE)) {
+       attitude.values.yaw = lrintf((-atan2f((+2.0f * (headfree.wz + headfree.xy)), (+1.0f - 2.0f * (headfree.yy + headfree.zz))) * (1800.0f / M_PIf)));
+    } else{
+       attitude.values.yaw = lrintf((-atan2f(rMat[1][0], rMat[0][0]) * (1800.0f / M_PIf)));
+    }
 
     // quaternion
     /*
