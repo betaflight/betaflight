@@ -64,6 +64,7 @@ typedef enum {
     TABLE_CAMERA_CONTROL_MODE,
 #endif
     TABLE_BUS_TYPE,
+    TABLE_ANTI_GRAVITY_TYPE,
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 

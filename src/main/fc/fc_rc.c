@@ -162,15 +162,22 @@ static void scaleRcCommandToFpvCamAngle(void) {
     const int16_t throttleVelocityThreshold = (feature(FEATURE_3D)) ? currentPidProfile->itermThrottleThreshold / 2 : currentPidProfile->itermThrottleThreshold;
 
     rcCommandThrottlePrevious[index++] = rcCommand[THROTTLE];
-    if (index >= indexMax)
+
+    if (index >= indexMax) {
         index = 0;
+    }
 
     const int16_t rcCommandSpeed = rcCommand[THROTTLE] - rcCommandThrottlePrevious[index];
 
-    if (ABS(rcCommandSpeed) > throttleVelocityThreshold)
-        pidSetItermAccelerator(CONVERT_PARAMETER_TO_FLOAT(currentPidProfile->itermAcceleratorGain));
-    else
+    if (ABS(rcCommandSpeed) > throttleVelocityThreshold) {
+        if (currentPidProfile->antiGravityType == ANTI_GRAVITY_RESET) {
+            pidSetItermAccelerator(0.0f);
+        } else {
+            pidSetItermAccelerator(CONVERT_PARAMETER_TO_FLOAT(currentPidProfile->itermAcceleratorGain));
+        }
+    } else {
         pidSetItermAccelerator(1.0f);
+    }
 }
 
 void processRcCommand(void)

@@ -105,6 +105,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .rateAccelLimit = 0,
         .itermThrottleThreshold = 350,
         .itermAcceleratorGain = 1000,
+        .antiGravityType = ANTI_GRAVITY_ACCELERATOR,
         .crash_time = 500,          // ms
         .crash_delay = 0,          // ms
         .crash_recovery_angle = 10, // degrees

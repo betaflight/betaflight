@@ -65,6 +65,11 @@ typedef enum {
     PID_CRASH_RECOVERY_BEEP
 } pidCrashRecovery_e;
 
+typedef enum {
+    ANTI_GRAVITY_ACCELERATOR = 0,
+    ANTI_GRAVITY_RESET
+} antiGravityType_e;
+
 typedef struct pid8_s {
     uint8_t P;
     uint8_t I;
@@ -93,6 +98,7 @@ typedef struct pidProfile_s {
     // Betaflight PID controller parameters
     uint16_t itermThrottleThreshold;        // max allowed throttle delta before iterm accelerated in ms
     uint16_t itermAcceleratorGain;          // Iterm Accelerator Gain when itermThrottlethreshold is hit
+    uint8_t antiGravityType;                // Anti gravity type. Full reset or accelerator
     uint8_t setpointRelaxRatio;             // Setpoint weight relaxation effect
     uint8_t dtermSetpointWeight;            // Setpoint weight for Dterm (0= measurement, 1= full error, 1 > aggressive derivative)
     uint16_t yawRateAccelLimit;             // yaw accel limiter for deg/sec/ms
