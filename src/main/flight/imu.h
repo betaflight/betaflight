@@ -87,5 +87,5 @@ void imuSetHasNewData(uint32_t dt);
 #endif
 #endif
 
-void imuHeadfreeQuaternionTransformVectorEarthToBody(t_fp_vector_def * v);
-bool imuHeadfreeQuaternionRebaseYaw(void);
+bool imuQuaternionHeadfreeDislocationSet(void);
+void imuQuaternionHeadfreeTransformVectorEarthToBody(t_fp_vector_def * v);

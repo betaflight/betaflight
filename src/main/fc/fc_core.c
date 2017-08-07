@@ -483,7 +483,7 @@ void processRx(timeUs_t currentTimeUs)
             DISABLE_FLIGHT_MODE(HEADFREE_MODE);
         }
         if (IS_RC_MODE_ACTIVE(BOXHEADADJ)) {
-            if (imuHeadfreeQuaternionRebaseYaw()){
+            if (imuQuaternionHeadfreeDislocationSet()){
                beeper(BEEPER_RX_SET);
             }
         }
