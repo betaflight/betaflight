@@ -93,6 +93,9 @@ STATIC_UNIT_TESTED float rMat[3][3];
 
 // quaternion of sensor frame relative to earth frame
 DEFINE_QUATERNION(q);
+// headfree quaternions
+DEFINE_QUATERNION(headfree);
+DEFINE_QUATERNION(dislocation);
 
 // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 DEFINE_EULER(attitude);
@@ -107,21 +110,21 @@ PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
     .acc_unarmedcal = 1
 );
 
-STATIC_UNIT_TESTED void imuComputeQuaternionProducts(void){
-    q.ww = q.w*q.w;
-    q.wx = q.w*q.x;
-    q.wy = q.w*q.y;
-    q.wz = q.w*q.z;
-    q.xx = q.x*q.x;
-    q.xy = q.x*q.y;
-    q.xz = q.x*q.z;
-    q.yy = q.y*q.y;
-    q.yz = q.y*q.z;
-    q.zz = q.z*q.z;
+void imuQuaternionComputeProducts(quaternion *quat){
+    quat->ww = quat->w*quat->w;
+    quat->wx = quat->w*quat->x;
+    quat->wy = quat->w*quat->y;
+    quat->wz = quat->w*quat->z;
+    quat->xx = quat->x*quat->x;
+    quat->xy = quat->x*quat->y;
+    quat->xz = quat->x*quat->z;
+    quat->yy = quat->y*quat->y;
+    quat->yz = quat->y*quat->z;
+    quat->zz = quat->z*quat->z;
 }
 
 STATIC_UNIT_TESTED void imuComputeRotationMatrix(void){
-    imuComputeQuaternionProducts();
+    imuQuaternionComputeProducts(&q);
 
     rMat[0][0] = 1.0f - 2.0f * q.yy - 2.0f * q.zz;
     rMat[0][1] = 2.0f * (q.xy + -q.wz);
@@ -539,23 +542,13 @@ void imuSetHasNewData(uint32_t dt)
 }
 #endif
 
-void imuHeadfreeQuaternionTransformVectorEarthToBody(t_fp_vector_def * v) {
-    const float x = (q.ww + q.xx - q.yy - q.zz) * v->X + 2*(q.xy + q.wz) * v->Y + 2*(q.xz - q.wy) * v->Z;
-    const float y = 2*(q.xy - q.wz) * v->X + (q.ww - q.xx + q.yy - q.zz) * v->Y + 2*(q.yz + q.wx) * v->Z;
-    const float z = 2*(q.xz + q.wy) * v->X + 2*(q.yz - q.wx) * v->Y + (q.ww - q.xx - q.yy + q.zz) * v->Z;
-
-    v->X = x;
-    v->Y = y;
-    v->Z = z;
-}
-
-bool imuHeadfreeQuaternionRebaseYaw(void){
+bool imuQuaternionHeadfreeDislocationSet(void){
     float roll, pitch, yaw, cosRoll2, cosPitch2, cosYaw2, sinRoll2, sinPitch2 , sinYaw2 , cosPitch2cosYaw2, sinPitch2sinYaw2 ;
 
     if((fabsf(attitude.values.roll/10.0f) < 45.0f)  && (fabsf(attitude.values.pitch/10.0f) < 45.0f)){
-        roll = atan2f((+2.0f * (q.wx + q.yz)), (+1.0f - 2.0f * (q.xx + q.yy)));
-        pitch = asinf(+2.0f * (q.wy - q.xz));
-        yaw = 0;
+        roll = 0;
+        pitch = 0;
+        yaw = -atan2f((+2.0f * (q.wz + q.xy)), (+1.0f - 2.0f * (q.yy + q.zz)));
 
         cosRoll2 = cos(roll/2);
         cosPitch2 = cos(pitch/2);
@@ -566,19 +559,45 @@ bool imuHeadfreeQuaternionRebaseYaw(void){
         cosPitch2cosYaw2 = cosPitch2 * cosYaw2;
         sinPitch2sinYaw2 = sinPitch2 * sinYaw2;
 
-        IMU_LOCK;
-        q.w = cosRoll2 * cosPitch2cosYaw2 + sinRoll2 * sinPitch2sinYaw2 ;
-        q.x = sinRoll2 * cosPitch2cosYaw2 - cosRoll2 * sinPitch2sinYaw2 ;
-        q.y = cosRoll2 * sinPitch2 * cosYaw2 + sinRoll2 * cosPitch2 * sinYaw2 ;
-        q.z = cosRoll2 * cosPitch2 * sinYaw2 - sinRoll2 * sinPitch2 * cosYaw2;
-        imuComputeRotationMatrix();
-        imuUpdateEulerAngles();
-        IMU_UNLOCK;
+        dislocation.w = cosRoll2 * cosPitch2cosYaw2 + sinRoll2 * sinPitch2sinYaw2 ;
+        dislocation.x = sinRoll2 * cosPitch2cosYaw2 - cosRoll2 * sinPitch2sinYaw2 ;
+        dislocation.y = cosRoll2 * sinPitch2 * cosYaw2 + sinRoll2 * cosPitch2 * sinYaw2 ;
+        dislocation.z = cosRoll2 * cosPitch2 * sinYaw2 - sinRoll2 * sinPitch2 * cosYaw2;
+
+        imuQuaternionComputeProducts(&dislocation);
 
         return(true);
     } else {
         return(false);
     }
-
 }
 
+void imuQuaternionMultiplication(quaternion *q1, quaternion *q2, quaternion *result){
+    float A, B, C, D, E, F, G, H;
+    A = (q1->w + q1->x)*(q2->w + q2->x);
+    B = (q1->z - q1->y)*(q2->y - q2->z);
+    C = (q1->w - q1->x)*(q2->y + q2->z); 
+    D = (q1->y + q1->z)*(q2->w - q2->x);
+    E = (q1->x + q1->z)*(q2->x + q2->y);
+    F = (q1->x - q1->z)*(q2->x - q2->y);
+    G = (q1->w + q1->y)*(q2->w - q2->z);
+    H = (q1->w - q1->y)*(q2->w + q2->z);
+
+    result->w = B + (-E - F + G + H)/2;
+    result->x = A - (E + F + G + H)/2; 
+    result->y = C + (E - F + G - H)/2; 
+    result->z = D + (E - F - G + H)/2;
+}
+
+void imuQuaternionHeadfreeTransformVectorEarthToBody(t_fp_vector_def *v) {
+    imuQuaternionMultiplication(&q, &dislocation, &headfree);
+    imuQuaternionComputeProducts(&headfree);
+
+    const float x = (headfree.ww + headfree.xx - headfree.yy - headfree.zz) * v->X + 2*(headfree.xy + headfree.wz) * v->Y + 2*(headfree.xz - headfree.wy) * v->Z;
+    const float y = 2*(headfree.xy - headfree.wz) * v->X + (headfree.ww - headfree.xx + headfree.yy - headfree.zz) * v->Y + 2*(headfree.yz + headfree.wx) * v->Z;
+    const float z = 2*(headfree.xz + headfree.wy) * v->X + 2*(headfree.yz - headfree.wx) * v->Y + (headfree.ww - headfree.xx - headfree.yy + headfree.zz) * v->Z;
+
+    v->X = x;
+    v->Y = y;
+    v->Z = z;
+}
