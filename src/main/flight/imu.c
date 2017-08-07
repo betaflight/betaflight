@@ -587,11 +587,12 @@ void imuQuaternionMultiplication(quaternion *q1, quaternion *q2, quaternion *res
     result->x = A - (E + F + G + H)/2;
     result->y = C + (E - F + G - H)/2;
     result->z = D + (E - F - G + H)/2;
+
+    imuQuaternionComputeProducts(result);
 }
 
 void imuQuaternionHeadfreeTransformVectorEarthToBody(t_fp_vector_def *v) {
     imuQuaternionMultiplication(&dislocation, &q, &headfree);
-    imuQuaternionComputeProducts(&headfree);
 
     const float x = (headfree.ww + headfree.xx - headfree.yy - headfree.zz) * v->X + 2*(headfree.xy + headfree.wz) * v->Y + 2*(headfree.xz - headfree.wy) * v->Z;
     const float y = 2*(headfree.xy - headfree.wz) * v->X + (headfree.ww - headfree.xx + headfree.yy - headfree.zz) * v->Y + 2*(headfree.yz + headfree.wx) * v->Z;
