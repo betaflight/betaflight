@@ -111,16 +111,16 @@ PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
 );
 
 void imuQuaternionComputeProducts(quaternion *quat){
-    quat->ww = quat->w*quat->w;
-    quat->wx = quat->w*quat->x;
-    quat->wy = quat->w*quat->y;
-    quat->wz = quat->w*quat->z;
-    quat->xx = quat->x*quat->x;
-    quat->xy = quat->x*quat->y;
-    quat->xz = quat->x*quat->z;
-    quat->yy = quat->y*quat->y;
-    quat->yz = quat->y*quat->z;
-    quat->zz = quat->z*quat->z;
+    quat->ww = quat->w * quat->w;
+    quat->wx = quat->w * quat->x;
+    quat->wy = quat->w * quat->y;
+    quat->wz = quat->w * quat->z;
+    quat->xx = quat->x * quat->x;
+    quat->xy = quat->x * quat->y;
+    quat->xz = quat->x * quat->z;
+    quat->yy = quat->y * quat->y;
+    quat->yz = quat->y * quat->z;
+    quat->zz = quat->z * quat->z;
 }
 
 STATIC_UNIT_TESTED void imuComputeRotationMatrix(void){
@@ -542,7 +542,7 @@ void imuSetHasNewData(uint32_t dt)
 #endif
 
 bool imuQuaternionHeadfreeDislocationSet(void){
-    float roll, pitch, yaw, cosRoll2, cosPitch2, cosYaw2, sinRoll2, sinPitch2 , sinYaw2 , cosPitch2cosYaw2, sinPitch2sinYaw2 ;
+    static float roll, pitch, yaw, cosRoll2, cosPitch2, cosYaw2, sinRoll2, sinPitch2 , sinYaw2 , cosPitch2cosYaw2, sinPitch2sinYaw2;
 
     if((fabsf(attitude.values.roll/10.0f) < 45.0f)  && (fabsf(attitude.values.pitch/10.0f) < 45.0f)){
         roll = 0;
@@ -572,7 +572,7 @@ bool imuQuaternionHeadfreeDislocationSet(void){
 }
 
 void imuQuaternionMultiplication(quaternion *q1, quaternion *q2, quaternion *result){
-    float A, B, C, D, E, F, G, H;
+    static float A, B, C, D, E, F, G, H, w, x, y, z, recipNorm;
     A = (q1->w + q1->x)*(q2->w + q2->x);
     B = (q1->z - q1->y)*(q2->y - q2->z);
     C = (q1->w - q1->x)*(q2->y + q2->z);
@@ -582,10 +582,22 @@ void imuQuaternionMultiplication(quaternion *q1, quaternion *q2, quaternion *res
     G = (q1->w + q1->y)*(q2->w - q2->z);
     H = (q1->w - q1->y)*(q2->w + q2->z);
 
-    result->w = B + (-E - F + G + H)/2;
-    result->x = A - (E + F + G + H)/2;
-    result->y = C + (E - F + G - H)/2;
-    result->z = D + (E - F - G + H)/2;
+    w = B + (-E - F + G + H)/2;
+    x = A - (E + F + G + H)/2;
+    y = C + (E - F + G - H)/2;
+    z = D + (E - F - G + H)/2;
+
+    // Normalise quaternion
+    recipNorm = invSqrt(sq(w) + sq(x) + sq(y) + sq(z));
+    w *= recipNorm;
+    x *= recipNorm;
+    y *= recipNorm;
+    z *= recipNorm;
+
+    result->w = w;
+    result->x = x;
+    result->y = y;
+    result->z = z;
 }
 
 void imuQuaternionHeadfreeTransformVectorEarthToBody(t_fp_vector_def *v) {
