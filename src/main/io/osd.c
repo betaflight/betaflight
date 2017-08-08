@@ -408,18 +408,19 @@ static bool osdDrawSingleElement(uint8_t item)
 
             for (int x = -4; x <= 4; x++) {
                 // clear the y area before writing the new horizon character
-                for (int y = 0; y <= 7; y++) {
+                for (int y = 0; y <= 8; y++) {
                     max7456WriteChar(elemPosX + x, elemPosY + y, 0x20);
                 }
                 int y = (rollAngle * x) / 64;
                 y -= pitchAngle;
                 // y += 41; // == 4 * 9 + 5
-                if (y >= 0 && y <= 81) {
+                if (y >= 0 && y <= 80) {
                     max7456WriteChar(elemPosX + x, elemPosY + (y / 9), (SYM_AH_BAR9_0 + (y % 9)));
                 }
             }
 
             osdDrawSingleElement(OSD_HORIZON_SIDEBARS);
+            osdDrawSingleElement(OSD_CROSSHAIRS);
 
             return true;
         }
@@ -491,7 +492,7 @@ static bool osdDrawSingleElement(uint8_t item)
         {
             int16_t value = getEstimatedActualVelocity(Z) / 10; //limit precision to 10cm
 
-            tfp_sprintf(buff, "%c%d.%01d%c", value < 0 ? '-' : ' ', abs(value / 10), abs((value % 10)), 0x9F);
+            tfp_sprintf(buff, "%c%d.%01d%c ", value < 0 ? '-' : ' ', abs(value / 10), abs((value % 10)), 0x9F);
             break;
         }
 #endif
@@ -594,7 +595,6 @@ void osdDrawElements(void)
 #endif
     {
         osdDrawSingleElement(OSD_ARTIFICIAL_HORIZON);
-        osdDrawSingleElement(OSD_CROSSHAIRS);
     }
 
     osdDrawSingleElement(OSD_MAIN_BATT_VOLTAGE);
