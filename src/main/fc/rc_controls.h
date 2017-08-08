@@ -49,6 +49,9 @@ typedef enum {
     BOXTURNASSIST   = 26,
     BOXAUTOTRIM     = 27,
     BOXAUTOTUNE     = 28,
+    BOXCAMERA1      = 29,
+    BOXCAMERA2      = 30,
+    BOXCAMERA3      = 31,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 

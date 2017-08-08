@@ -54,6 +54,7 @@
 #include "io/osd.h"
 #include "io/pwmdriver_i2c.h"
 #include "io/serial.h"
+#include "io/rcsplit.h"
 
 #include "msp/msp_serial.h"
 
@@ -522,6 +523,15 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskFunc = cmsHandler,
         .desiredPeriod = 1000000 / 60,          // 60 Hz
         .staticPriority = TASK_PRIORITY_LOW,
+    },
+#endif
+
+#ifdef USE_RCSPLIT
+    [TASK_RCSPLIT] = {
+        .taskName = "RCSPLIT",
+        .taskFunc = rcSplitProcess,
+        .desiredPeriod = TASK_PERIOD_HZ(10),        // 10 Hz, 100ms
+        .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
 };

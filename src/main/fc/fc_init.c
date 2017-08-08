@@ -85,6 +85,7 @@
 #include "io/pwmdriver_i2c.h"
 #include "io/osd.h"
 #include "io/displayport_msp.h"
+#include "io/rcsplit.h"
 
 #include "msp/msp_serial.h"
 
@@ -631,6 +632,10 @@ void init(void)
     motorControlEnable = true;
 
     fcTasksInit();
+
+#ifdef USE_RCSPLIT
+    rcSplitInit();
+#endif // USE_RCSPLIT
 
     addBootlogEvent2(BOOT_EVENT_SYSTEM_READY, BOOT_EVENT_FLAGS_NONE);
     systemState |= SYSTEM_STATE_READY;

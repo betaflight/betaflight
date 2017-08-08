@@ -141,6 +141,9 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXNAVLAUNCH, "NAV LAUNCH;", 36 },
     { BOXAUTOTRIM, "SERVO AUTOTRIM;", 37 },
     { BOXKILLSWITCH, "KILLSWITCH;", 38 },
+    { BOXCAMERA1, "CAMERA CONTROL 1;", 39 },
+    { BOXCAMERA2, "CAMERA CONTROL 2;", 40 },
+    { BOXCAMERA3, "CAMERA CONTROL 3;", 41 },
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -328,6 +331,12 @@ static void initActiveBoxIds(void)
 
     activeBoxIds[activeBoxIdCount++] = BOXKILLSWITCH;
     activeBoxIds[activeBoxIdCount++] = BOXFAILSAFE;
+
+#ifdef USE_RCSPLIT
+    activeBoxIds[activeBoxIdCount++] = BOXCAMERA1;
+    activeBoxIds[activeBoxIdCount++] = BOXCAMERA2;
+    activeBoxIds[activeBoxIdCount++] = BOXCAMERA3;
+#endif
 }
 
 #define IS_ENABLED(mask) (mask == 0 ? 0 : 1)
