@@ -650,6 +650,8 @@ void max7456WriteNvm(uint8_t char_address, const uint8_t *font_data)
 
     max7456Send(MAX7456ADD_CMAH, char_address); // set start address high
 
+
+
     for (x = 0; x < 54; x++) {
         max7456Send(MAX7456ADD_CMAL, x); //set start address low
         max7456Send(MAX7456ADD_CMDI, font_data[x]);
