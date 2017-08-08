@@ -372,9 +372,9 @@ STATIC_UNIT_TESTED void osdConvertToAbsolutePosition(uint8_t item, int8_t *pos_x
         tmpY += maxY;
     }
 
-    // rescale
-    tmpX = tmpX / 2;
-    tmpY = tmpY / 2;
+    // rescale (round to next full int)
+    tmpX = (tmpX + 1) / 2;
+    tmpY = (tmpY + 1) / 2;
 
     // add offset
     tmpX += osdConfig()->item[item].x;
@@ -698,7 +698,10 @@ static void osdDrawSingleElement(uint8_t item)
             const armingDisableFlags_e flags = getArmingDisableFlags();
             for (int i = 0; i < NUM_ARMING_DISABLE_FLAGS; i++) {
                 if (flags & (1 << i)) {
-                    tfp_sprintf(buff, "%11s", armingDisableFlagNames[i]);
+                    // center warning flag name
+                    tfp_sprintf(buff, "           ");
+                    int name_len = strlen(armingDisableFlagNames[i]);
+                    tfp_sprintf(buff + 11/2 - name_len/2, "%s", armingDisableFlagNames[i]);
                     break;
                 }
             }
