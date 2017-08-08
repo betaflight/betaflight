@@ -127,13 +127,7 @@ void rtc6705SetFreq(uint16_t channel_freq)
 
 void rtc6705SetBandAndChannel(const uint8_t band, const uint8_t channel)
 {
-    // band and channel are 1-based, not 0-based
-
-    // example for raceband/ch8:
-    // (5 - 1) * 8 + (8 - 1)
-    //    4    * 8 +    7
-    //     32 + 7 = 39
-    uint8_t freqIndex = ((band - 1) * RTC6705_BAND_COUNT) + (channel - 1);
+    uint8_t freqIndex = (band * RTC6705_CHANNEL_COUNT) + channel;
 
     uint16_t freq = vtx_freq[freqIndex];
     rtc6705SetFreq(freq);
