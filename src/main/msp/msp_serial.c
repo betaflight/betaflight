@@ -252,7 +252,7 @@ static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet, mspVersion_e msp
         mspHeaderV2_t * hdrV2 = (mspHeaderV2_t *)&hdrBuf[hdrLen];
         hdrLen += sizeof(mspHeaderV2_t);
 
-        const int v1PayloadSize = sizeof(mspHeaderV2_t) + dataLen + 1;
+        const int v1PayloadSize = sizeof(mspHeaderV2_t) + dataLen + 1;  // MSPv2 header + data payload + MSPv2 checksum
         hdrV1->cmd = MSP_V2_FRAME_ID;
 
         // Add JUMBO-frame header if necessary
