@@ -268,6 +268,7 @@ static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet, mspVersion_e msp
         }
 
         // Fill V2 header
+        hdrV2->flags = 0;   // Unused at the moment
         hdrV2->cmd = packet->cmd;
         hdrV2->size = dataLen;
 
