@@ -954,7 +954,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
             sbufWriteU8(dst, serialConfig()->portConfigs[i].msp_baudrateIndex);
             sbufWriteU8(dst, serialConfig()->portConfigs[i].gps_baudrateIndex);
             sbufWriteU8(dst, serialConfig()->portConfigs[i].telemetry_baudrateIndex);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].blackbox_baudrateIndex);
+            sbufWriteU8(dst, serialConfig()->portConfigs[i].peripheral_baudrateIndex);
         }
         break;
 
@@ -2020,7 +2020,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 portConfig->msp_baudrateIndex = sbufReadU8(src);
                 portConfig->gps_baudrateIndex = sbufReadU8(src);
                 portConfig->telemetry_baudrateIndex = sbufReadU8(src);
-                portConfig->blackbox_baudrateIndex = sbufReadU8(src);
+                portConfig->peripheral_baudrateIndex = sbufReadU8(src);
             }
         }
         break;
