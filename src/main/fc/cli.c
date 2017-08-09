@@ -3064,7 +3064,7 @@ static void cliSet(char *cmdline)
 
                                 value = atoi(eqptr);
                                 valuef = fastA2F(eqptr);
-                                uvalue = strtoul(eqptr, NULL, 10);
+                                uvalue = fastA2UL(eqptr);
                                 // note: compare float values
                                 if ((mode == MODE_DIRECT && (valuef >= valueTable[i].config.minmax.min && valuef <= valueTable[i].config.minmax.max))
                                      || (mode == MODE_MAX && (valuef >= 0 && valuef <= valueTable[i].config.max.max))) {
