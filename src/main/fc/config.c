@@ -197,18 +197,6 @@ PG_RESET_TEMPLATE(sdcardConfig_t, sdcardConfig,
 // no template required since defaults are zero
 PG_REGISTER(vcdProfile_t, vcdProfile, PG_VCD_CONFIG, 0);
 
-#ifdef SONAR
-void resetSonarConfig(sonarConfig_t *sonarConfig)
-{
-#if defined(SONAR_TRIGGER_PIN) && defined(SONAR_ECHO_PIN)
-    sonarConfig->triggerTag = IO_TAG(SONAR_TRIGGER_PIN);
-    sonarConfig->echoTag = IO_TAG(SONAR_ECHO_PIN);
-#else
-#error Sonar not defined for target
-#endif
-}
-#endif
-
 #ifdef USE_ADC
 void pgResetFn_adcConfig(adcConfig_t *adcConfig)
 {
