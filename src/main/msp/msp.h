@@ -23,7 +23,8 @@
 
 typedef enum {
     MSP_V1,
-    MSP_V2
+    MSP_V2_OVER_V1,
+    MSP_V2_NATIVE
 } mspVersion_e;
 
 // return positive for ACK, negative on error, zero for no reply
