@@ -25,6 +25,7 @@
 
 #ifndef USE_MAX7456  // MAX7456 and tinyOSD video buffers will not fit into memory
 
+#include "build/debug.h"
 #include "common/printf.h"
 #include "common/maths.h"
 #include "io/osd.h"
@@ -40,6 +41,7 @@
 #include "drivers/dma.h"
 #include "drivers/serial.h"
 #include "drivers/vcd.h"
+#include "sensors/gyroanalyse.h"
 #include "tinyosd.h"
 
 #include "io/serial.h"
@@ -113,6 +115,7 @@ typedef enum {
 #define OPENTCO_OSD_REGISTER_VIDEO_FORMAT   0x01
 
 #define OPENTCO_OSD_COMMAND_SPECIAL_SUB_STICKSTATUS 0x00
+#define OPENTCO_OSD_COMMAND_SPECIAL_SUB_SPECTRUM    0x01
 
 static void openTCOCommandOSDSetRegister(const uint8_t reg, const uint8_t value);
 static void openTCOCommandOSDFillRegion(const uint8_t x, const uint8_t y, const uint8_t width, const uint8_t height, const uint8_t value);
@@ -337,6 +340,49 @@ uint8_t* tinyOSDGetScreenBuffer(void) {
     return screenBuffer;
 }
 
+static void tinyOSDDrawSticks(void) {
+    uint8_t buffer[7];
+
+    // assemble special subcommand
+    buffer[0] = 6;
+    buffer[1] = OPENTCO_OSD_COMMAND_SPECIAL_SUB_STICKSTATUS;
+    buffer[2] = TINYOSD_STICKSIZE_X/2 + (TINYOSD_STICKSIZE_X/2 * rcCommand[ROLL]) / 500.0f;
+    buffer[3] = TINYOSD_STICKSIZE_Y/2 - (TINYOSD_STICKSIZE_Y/2 * rcCommand[PITCH]) / 500.0f;
+    // throttle is 1000 - 2000, rescale to match out STICK_Y resolution
+    buffer[4] = TINYOSD_STICKSIZE_Y - (TINYOSD_STICKSIZE_Y * (rcCommand[THROTTLE]-1000.0f))/1000.0f; //(TINYOSD_STICKSIZE_Y/2 * (rcCommand[THROTTLE]-1.0)) / 1000.0;
+    buffer[5] = TINYOSD_STICKSIZE_X/2 - (TINYOSD_STICKSIZE_X/2 * rcCommand[YAW]) / 500.0f;
+    // armed?
+    buffer[6] = armingFlags;
+
+    openTCOCommandOSDSpecialCommand(7, buffer);
+}
+
+static void tinyOSDDrawFFT(void) {
+    uint8_t buffer[3 + GYRO_FFT_BIN_COUNT];
+    uint8_t axis = 0;
+
+    const gyroFftData_t *gyro_fft = gyroFftData(axis);
+
+    // assemble special subcommand
+    buffer[0] = 2+GYRO_FFT_BIN_COUNT;
+    buffer[1] = OPENTCO_OSD_COMMAND_SPECIAL_SUB_SPECTRUM;
+    buffer[2] = axis;
+
+    static float maxgyro[3];
+
+    // add scaled data:
+    float maxval = gyro_fft->maxVal;
+    // simple LPF  y[i] = y[i-1] + (a) * ( x[i] - y[i-1] )
+    maxgyro[axis] = maxgyro[axis] + 0.01 * (maxval - maxgyro[axis]);
+
+    for(uint32_t i=0; i < GYRO_FFT_BIN_COUNT; i++) {
+        // make sure to limit this to 255.0 in any case
+        buffer[3 + i] = MAX(255.0, ((255.0 * gyro_fft->bin2[i]) / maxgyro[axis]));
+    }
+
+    openTCOCommandOSDSpecialCommand(3 + GYRO_FFT_BIN_COUNT, buffer);
+}
+
 int tinyOSDWriteChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c)
 {
     UNUSED(displayPort);
@@ -352,24 +398,6 @@ int tinyOSDWriteString(displayPort_t *displayPort, uint8_t x, uint8_t y, const c
     return 0;
 }
 
-#include "build/debug.h"
-
-static void tinyOSDDrawSticks(void) {
-    uint8_t buffer[6];
-
-    // assemble special subcommand
-    buffer[0] = OPENTCO_OSD_COMMAND_SPECIAL_SUB_STICKSTATUS;
-    buffer[1] = TINYOSD_STICKSIZE_X/2 + (TINYOSD_STICKSIZE_X/2 * rcCommand[ROLL]) / 500.0f;
-    buffer[2] = TINYOSD_STICKSIZE_Y/2 - (TINYOSD_STICKSIZE_Y/2 * rcCommand[PITCH]) / 500.0f;
-    // throttle is 1000 - 2000, rescale to match out STICK_Y resolution
-    buffer[3] = TINYOSD_STICKSIZE_Y - (TINYOSD_STICKSIZE_Y * (rcCommand[THROTTLE]-1000.0f))/1000.0f; //(TINYOSD_STICKSIZE_Y/2 * (rcCommand[THROTTLE]-1.0)) / 1000.0;
-    buffer[4] = TINYOSD_STICKSIZE_X/2 - (TINYOSD_STICKSIZE_X/2 * rcCommand[YAW]) / 500.0f;
-    // armed?
-    buffer[5] = armingFlags;
-
-    openTCOCommandOSDSpecialCommand(6, buffer);
-}
-
 int tinyOSDDrawScreen(displayPort_t *displayPortProfile)
 {
     UNUSED(displayPortProfile);
@@ -383,6 +411,11 @@ bool tinyOSDIsTransferInProgress(const displayPort_t *displayPort){
 
 int tinyOSDHeartbeat(displayPort_t *displayPort){
     UNUSED(displayPort);
+
+    // FIXME: this should not be sent with 100hz...
+    tinyOSDDrawFFT();
+    tinyOSDDrawSticks();
+
     return 0;
 }
 
