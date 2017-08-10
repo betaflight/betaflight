@@ -25,6 +25,7 @@ void i2a(int num, char *bf);
 char a2i(char ch, const char **src, int base, int *nump);
 char *ftoa(float x, char *floatString);
 float fastA2F(const char *p);
+unsigned long int fastA2UL(const char *p);
 
 #ifndef HAVE_ITOA_FUNCTION
 char *itoa(int i, char *a, int r);
