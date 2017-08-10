@@ -453,10 +453,6 @@ void validateAndFixGyroConfig(void)
 #endif
     }
 
-#if !defined(GYRO_USES_SPI) || !defined(USE_MPU_DATA_READY_SIGNAL)
-    gyroConfigMutable()->gyro_isr_update = false;
-#endif
-
     // check for looptime restrictions based on motor protocol. Motor times have safety margin
     const float pidLooptime = samplingTime * gyroConfig()->gyro_sync_denom * pidConfig()->pid_process_denom;
     float motorUpdateRestriction;

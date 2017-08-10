@@ -54,7 +54,6 @@ typedef struct gyroConfig_s {
     uint8_t  gyro_lpf;                         // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
     uint8_t  gyro_soft_lpf_type;
     uint8_t  gyro_soft_lpf_hz;
-    bool     gyro_isr_update;
     bool     gyro_use_32khz;
     uint8_t  gyro_to_use;
     uint16_t gyro_soft_notch_hz_1;
