@@ -65,7 +65,7 @@ static float fftResolution;                 // hz per bin
 static float gyroData[3][FFT_WINDOW_SIZE];  // gyro data used for frequency analysis
 
 static arm_rfft_fast_instance_f32 fftInstance;
-static float fftData[FFT_WINDOW_SIZE];
+float fftData[FFT_WINDOW_SIZE];
 static float rfftData[FFT_WINDOW_SIZE];
 static gyroFftData_t fftResult[3];
 static uint16_t fftMaxFreq = 0;             // nyquist rate
@@ -263,6 +263,7 @@ void gyroDataAnalyseUpdate(biquadFilter_t *notchFilterDyn)
             float squaredData;
             for (int i = 0; i < fftBinCount; i++) {
                 squaredData = fftData[i] * fftData[i];  //more weight on higher peaks
+                fftResult[axis].bin2[i] = squaredData;
                 fftResult[axis].maxVal = MAX(fftResult[axis].maxVal, squaredData);
                 fftSum += squaredData;
                 fftWeightedSum += squaredData * (i + 1); // calculate weighted index starting at 1, not 0
