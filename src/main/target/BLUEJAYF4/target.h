@@ -112,13 +112,19 @@
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
+// Provisioning for UART4 on motor outputs 1 & 2
+// Keep pins NONE here to avoid UART4 showing up unless explicitly resource-mapped.
+#define USE_UART4
+#define UART4_RX_PIN            NONE // PA1
+#define UART4_TX_PIN            NONE // PA0
+
 #define USE_SOFTSERIAL1
 #define SOFTSERIAL1_RX_PIN      PB0 // PWM5
 #define SOFTSERIAL1_TX_PIN      PB1 // PWM6
 
 #define USE_SOFTSERIAL2
 
-#define SERIAL_PORT_COUNT       6
+#define SERIAL_PORT_COUNT       7
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PC7  // (HARDARE=0,PPM)
