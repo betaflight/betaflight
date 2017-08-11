@@ -302,6 +302,7 @@ static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet, mspVersion_e msp
         crcLen++;
     }
     else if (mspVersion == MSP_V2_OVER_V1) {
+        hdrBuf[1] = 'M';
         mspHeaderV1_t * hdrV1 = (mspHeaderV1_t *)&hdrBuf[hdrLen];
 
         hdrLen += sizeof(mspHeaderV1_t);
