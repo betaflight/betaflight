@@ -59,10 +59,12 @@ static long cmsx_Ledstrip_FeatureRead(void)
 
 static long cmsx_Ledstrip_FeatureWriteback(void)
 {
-    if (cmsx_FeatureLedstrip)
-        featureSet(FEATURE_LED_STRIP);
-    else
-        featureClear(FEATURE_LED_STRIP);
+    if (featureRead) {
+        if (cmsx_FeatureLedstrip)
+            featureSet(FEATURE_LED_STRIP);
+        else
+            featureClear(FEATURE_LED_STRIP);
+    }
 
     return 0;
 }
