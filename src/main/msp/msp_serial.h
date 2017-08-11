@@ -84,6 +84,7 @@ typedef struct mspPort_s {
     mspState_e c_state;
     uint8_t inBuf[MSP_PORT_INBUF_SIZE];
     uint16_t cmdMSP;
+    uint8_t cmdFlags;
     mspVersion_e mspVersion;
     uint8_t offset;
     uint8_t dataSize;

@@ -37,6 +37,7 @@ typedef enum {
 typedef struct mspPacket_s {
     sbuf_t buf;
     int16_t cmd;
+    uint8_t flags;
     int16_t result;
 } mspPacket_t;
 

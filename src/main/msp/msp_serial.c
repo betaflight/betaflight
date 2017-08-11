@@ -150,6 +150,7 @@ static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
                 else {
                     mspPort->dataSize = hdr->size;
                     mspPort->cmdMSP = hdr->cmd;
+                    mspPort->cmdFlags = 0;
                     mspPort->offset = 0;                // re-use buffer
                     mspPort->c_state = mspPort->dataSize > 0 ? MSP_PAYLOAD_V1 : MSP_CHECKSUM_V1;    // If no payload - jump to checksum byte
                 }
@@ -180,6 +181,7 @@ static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
                 mspHeaderV2_t * hdrv2 = (mspHeaderV2_t *)&mspPort->inBuf[sizeof(mspHeaderV1_t)];
                 mspPort->dataSize = hdrv2->size;
                 mspPort->cmdMSP = hdrv2->cmd;
+                mspPort->cmdFlags = hdrv2->flags;
                 mspPort->offset = 0;                // re-use buffer
                 mspPort->c_state = mspPort->dataSize > 0 ? MSP_PAYLOAD_V2_OVER_V1 : MSP_CHECKSUM_V2_OVER_V1;
             }
@@ -211,6 +213,7 @@ static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
                 mspHeaderV2_t * hdrv2 = (mspHeaderV2_t *)&mspPort->inBuf[0];
                 mspPort->dataSize = hdrv2->size;
                 mspPort->cmdMSP = hdrv2->cmd;
+                mspPort->cmdFlags = hdrv2->flags;
                 mspPort->offset = 0;                // re-use buffer
                 mspPort->c_state = mspPort->dataSize > 0 ? MSP_PAYLOAD_V2_NATIVE : MSP_CHECKSUM_V2_NATIVE;
             }
@@ -321,7 +324,7 @@ static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet, mspVersion_e msp
         }
 
         // Fill V2 header
-        hdrV2->flags = 0;   // Unused at the moment
+        hdrV2->flags = packet->flags;
         hdrV2->cmd = packet->cmd;
         hdrV2->size = dataLen;
 
@@ -340,7 +343,7 @@ static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet, mspVersion_e msp
         mspHeaderV2_t * hdrV2 = (mspHeaderV2_t *)&hdrBuf[hdrLen];
         hdrLen += sizeof(mspHeaderV2_t);
 
-        hdrV2->flags = 0;   // Unused at the moment
+        hdrV2->flags = packet->flags;
         hdrV2->cmd = packet->cmd;
         hdrV2->size = dataLen;
 
@@ -364,6 +367,7 @@ static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp, mspPr
     mspPacket_t reply = {
         .buf = { .ptr = outBuf, .end = ARRAYEND(outBuf), },
         .cmd = -1,
+        .flags = 0,
         .result = 0,
     };
     uint8_t *outBufHead = reply.buf.ptr;
@@ -371,6 +375,7 @@ static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp, mspPr
     mspPacket_t command = {
         .buf = { .ptr = msp->inBuf, .end = msp->inBuf + msp->dataSize, },
         .cmd = msp->cmdMSP,
+        .flags = msp->cmdFlags,
         .result = 0,
     };
 
