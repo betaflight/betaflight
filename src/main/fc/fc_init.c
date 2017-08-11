@@ -564,7 +564,6 @@ void init(void)
         default:
         case OSD_DEVICE_NONE:
             // no device is used
-            featureClear(FEATURE_OSD);
             osdDisplayPort = NULL;
             break;
 
@@ -578,16 +577,17 @@ void init(void)
             osdDisplayPort = displayPortMspInit();
             break;
 #endif
-#if !defined(USE_MAX7456)
         case OSD_DEVICE_TINYOSD:
             osdDisplayPort = tinyOSDDisplayPortInit(vcdProfile());
             break;
-#endif
         }
 
         // osdInit will register with CMS by itself.
         if (osdDisplayPort != NULL) {
             osdInit(osdDisplayPort);
+        } else {
+            // no valid osd found, disable feature
+            featureClear(FEATURE_OSD);
         }
     }
 #endif

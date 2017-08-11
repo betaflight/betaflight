@@ -139,6 +139,7 @@ FC_SRC = \
             drivers/sonar_hcsr04.c \
             drivers/vtx_common.c \
             drivers/tinyosd.c \
+            drivers/opentco.c \
             flight/navigation.c \
             io/dashboard.c \
             io/displayport_max7456.c \
