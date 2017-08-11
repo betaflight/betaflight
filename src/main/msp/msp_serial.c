@@ -272,16 +272,16 @@ static int mspSerialSendFrame(mspPort_t *msp, const uint8_t * hdr, int hdrLen, c
 static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet, mspVersion_e mspVersion)
 {
     const int dataLen = sbufBytesRemaining(&packet->buf);
-    uint8_t hdrBuf[16] = {'$', 'M', packet->result == MSP_RESULT_ERROR ? '!' : '>'};
+    uint8_t hdrBuf[16] = {'$', 0, packet->result == MSP_RESULT_ERROR ? '!' : '>'};
     uint8_t crcBuf[2];
     int hdrLen = 3;
     int crcLen = 0;
 
     #define V1_CHECKSUM_STARTPOS 3
     if (mspVersion == MSP_V1) {
+        hdrBuf[1] = 'M';
         mspHeaderV1_t * hdrV1 = (mspHeaderV1_t *)&hdrBuf[hdrLen];
         hdrLen += sizeof(mspHeaderV1_t);
-
         hdrV1->cmd = packet->cmd;
 
         // Add JUMBO-frame header if necessary
@@ -303,6 +303,7 @@ static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet, mspVersion_e msp
     }
     else if (mspVersion == MSP_V2_OVER_V1) {
         mspHeaderV1_t * hdrV1 = (mspHeaderV1_t *)&hdrBuf[hdrLen];
+
         hdrLen += sizeof(mspHeaderV1_t);
 
         mspHeaderV2_t * hdrV2 = (mspHeaderV2_t *)&hdrBuf[hdrLen];
@@ -340,6 +341,7 @@ static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet, mspVersion_e msp
         crcLen++;
     }
     else if (mspVersion == MSP_V2_NATIVE) {
+        hdrBuf[1] = 'X';
         mspHeaderV2_t * hdrV2 = (mspHeaderV2_t *)&hdrBuf[hdrLen];
         hdrLen += sizeof(mspHeaderV2_t);
 
