@@ -68,9 +68,9 @@ static const displayPortVTable_t tinyOSDVTable = {
 
 displayPort_t *tinyOSDDisplayPortInit(const vcdProfile_t *vcdProfile)
 {
-    displayInit(&tinyOSDDisplayPort, &tinyOSDVTable);
     if (tinyOSDInit(vcdProfile)) {
         // init succeeded, prepare osd
+        displayInit(&tinyOSDDisplayPort, &tinyOSDVTable);
         tinyOSDResync(&tinyOSDDisplayPort);
         // return port on sucessfull init
         return &tinyOSDDisplayPort;
