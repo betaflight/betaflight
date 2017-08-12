@@ -534,7 +534,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_OSD] = {
         .taskName = "OSD",
         .taskFunc = osdUpdate,
-        .desiredPeriod = TASK_PERIOD_HZ(60),        // 60 Hz
+        .desiredPeriod = TASK_PERIOD_HZ(OSD_TASK_FREQUENCY_HZ),        // 60 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
