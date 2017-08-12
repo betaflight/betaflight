@@ -62,6 +62,8 @@ void targetBusInit(void)
 #endif
 
     i2cHardwareConfigure();
+    i2cInit(I2CDEV_2);
+    
     bstInit(BST_DEVICE);
 }
 #endif
