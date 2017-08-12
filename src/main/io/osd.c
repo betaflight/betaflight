@@ -100,7 +100,7 @@ const char * const osdTimerSourceNames[] = {
 static bool blinkState = true;
 static bool showVisualBeeper = false;
 
-static uint32_t blinkBits[(OSD_ITEM_COUNT + 31)/32];
+static uint32_t blinkBits[(OSD_ELEMENT_COUNT + 31)/32];
 #define SET_BLINK(item) (blinkBits[(item) / 32] |= (1 << ((item) % 32)))
 #define CLR_BLINK(item) (blinkBits[(item) / 32] &= ~(1 << ((item) % 32)))
 #define IS_BLINK(item) (blinkBits[(item) / 32] & (1 << ((item) % 32)))
@@ -244,7 +244,7 @@ static uint8_t osdGetDirectionSymbolFromHeading(int heading)
     return SYM_ARROW_SOUTH + heading;
 }
 
-static char osdGetTimerSymbol(osd_timer_source_e src)
+static char osdGetTimerSymbol(osdTimerSource_e src)
 {
     switch (src) {
     case OSD_TIMER_SRC_ON:
@@ -257,7 +257,7 @@ static char osdGetTimerSymbol(osd_timer_source_e src)
     }
 }
 
-static timeUs_t osdGetTimerValue(osd_timer_source_e src)
+static timeUs_t osdGetTimerValue(osdTimerSource_e src)
 {
     switch (src) {
     case OSD_TIMER_SRC_ON:
@@ -271,7 +271,7 @@ static timeUs_t osdGetTimerValue(osd_timer_source_e src)
     }
 }
 
-STATIC_UNIT_TESTED void osdFormatTime(char * buff, osd_timer_precision_e precision, timeUs_t time)
+STATIC_UNIT_TESTED void osdFormatTime(char * buff, osdTimerPrecision_e precision, timeUs_t time)
 {
     int seconds = time / 1000000;
     const int minutes = seconds / 60;
@@ -305,17 +305,17 @@ STATIC_UNIT_TESTED void osdFormatTimer(char *buff, bool showSymbol, int timerInd
 
 static void osdDrawSingleElement(uint8_t item)
 {
-    if (!VISIBLE(osdConfig()->item_pos[item]) || BLINK(item)) {
+    if (!VISIBLE(osdConfig()->elementPos[item]) || BLINK(item)) {
         return;
     }
 
-    uint8_t elemPosX = OSD_X(osdConfig()->item_pos[item]);
-    uint8_t elemPosY = OSD_Y(osdConfig()->item_pos[item]);
+    uint8_t elemPosX = OSD_X(osdConfig()->elementPos[item]);
+    uint8_t elemPosY = OSD_Y(osdConfig()->elementPos[item]);
     uint8_t elemOffsetX = 0;
     char buff[OSD_ELEMENT_BUFFER_LENGTH];
 
     switch (item) {
-    case OSD_RSSI_VALUE:
+    case OSD_ELEMENT_RSSI_VALUE:
         {
             uint16_t osdRssi = rssi * 100 / 1024; // change range
             if (osdRssi >= 100)
@@ -325,37 +325,37 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
-    case OSD_MAIN_BATT_VOLTAGE:
+    case OSD_ELEMENT_MAIN_BATT_VOLTAGE:
         buff[0] = osdGetBatterySymbol(osdGetBatteryAverageCellVoltage());
         tfp_sprintf(buff + 1, "%d.%1d%c", getBatteryVoltage() / 10, getBatteryVoltage() % 10, SYM_VOLT);
         break;
 
-    case OSD_CURRENT_DRAW:
+    case OSD_ELEMENT_CURRENT_DRAW:
         {
             const int32_t amperage = getAmperage();
             tfp_sprintf(buff, "%3d.%02d%c", abs(amperage) / 100, abs(amperage) % 100, SYM_AMP);
             break;
         }
 
-    case OSD_MAH_DRAWN:
+    case OSD_ELEMENT_MAH_DRAWN:
         tfp_sprintf(buff, "%4d%c", getMAhDrawn(), SYM_MAH);
         break;
 
 #ifdef GPS
-    case OSD_GPS_SATS:
+    case OSD_ELEMENT_GPS_SATS:
         tfp_sprintf(buff, "%c%d", 0x1f, gpsSol.numSat);
         break;
 
-    case OSD_GPS_SPEED:
+    case OSD_ELEMENT_GPS_SPEED:
         // FIXME ideally we want to use SYM_KMH symbol but it's not in the font any more, so we use K.
         tfp_sprintf(buff, "%3dK", CM_S_TO_KM_H(gpsSol.groundSpeed));
         break;
 
-    case OSD_GPS_LAT:
-    case OSD_GPS_LON:
+    case OSD_ELEMENT_GPS_LAT:
+    case OSD_ELEMENT_GPS_LON:
         {
             int32_t val;
-            if (item == OSD_GPS_LAT) {
+            if (item == OSD_ELEMENT_GPS_LAT) {
                 buff[0] = SYM_ARROW_EAST;
                 val = gpsSol.llh.lat;
             } else {
@@ -373,7 +373,7 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
-    case OSD_HOME_DIST:
+    case OSD_ELEMENT_HOME_DIST:
         if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
             int32_t distance = osdGetMetersToSelectedUnit(GPS_distanceToHome);
             tfp_sprintf(buff, "%d%c", distance, osdGetMetersToSelectedUnitSymbol());
@@ -384,7 +384,7 @@ static void osdDrawSingleElement(uint8_t item)
         }
         break;
 
-    case OSD_HOME_DIR:
+    case OSD_ELEMENT_HOME_DIR:
         if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
             if (GPS_distanceToHome > 0) {
                 const int h = GPS_directionToHome - DECIDEGREES_TO_DEGREES(attitude.values.yaw);
@@ -405,7 +405,7 @@ static void osdDrawSingleElement(uint8_t item)
 
 #endif // GPS
 
-    case OSD_COMPASS_BAR:
+    case OSD_ELEMENT_COMPASS_BAR:
     {
         int16_t h = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 
@@ -416,21 +416,21 @@ static void osdDrawSingleElement(uint8_t item)
         break;
     }
 
-    case OSD_ALTITUDE:
+    case OSD_ELEMENT_ALTITUDE:
         {
             osdFormatAltitudeString(buff, getEstimatedAltitude(), true);
             break;
         }
 
-    case OSD_ITEM_TIMER_1:
-    case OSD_ITEM_TIMER_2:
+    case OSD_ELEMENT_TIMER_1:
+    case OSD_ELEMENT_TIMER_2:
         {
-            const int timer = item - OSD_ITEM_TIMER_1;
+            const int timer = item - OSD_ELEMENT_TIMER_1;
             osdFormatTimer(buff, true, timer);
             break;
         }
 
-    case OSD_FLYMODE:
+    case OSD_ELEMENT_FLYMODE:
         {
             char *p = "ACRO";
 
@@ -448,7 +448,7 @@ static void osdDrawSingleElement(uint8_t item)
             return;
         }
 
-    case OSD_CRAFT_NAME:
+    case OSD_ELEMENT_CRAFT_NAME:
         if (strlen(pilotConfig()->name) == 0)
             strcpy(buff, "CRAFT_NAME");
         else {
@@ -460,14 +460,14 @@ static void osdDrawSingleElement(uint8_t item)
         }
         break;
 
-    case OSD_THROTTLE_POS:
+    case OSD_ELEMENT_THROTTLE_POS:
         buff[0] = SYM_THR;
         buff[1] = SYM_THR1;
         tfp_sprintf(buff + 2, "%d", (constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN));
         break;
 
 #if defined(VTX_COMMON)
-    case OSD_VTX_CHANNEL:
+    case OSD_ELEMENT_VTX_CHANNEL:
         {
             uint8_t band=0, channel=0;
             vtxCommonGetBandAndChannel(&band,&channel);
@@ -482,7 +482,7 @@ static void osdDrawSingleElement(uint8_t item)
         }
 #endif
 
-    case OSD_CROSSHAIRS:
+    case OSD_ELEMENT_CROSSHAIRS:
         elemPosX = 14 - 1; // Offset for 1 char to the left
         elemPosY = 6;
         if (displayScreenSize(osdDisplayPort) == VIDEO_BUFFER_CHARS_PAL) {
@@ -494,7 +494,7 @@ static void osdDrawSingleElement(uint8_t item)
         buff[3] = 0;
         break;
 
-    case OSD_ARTIFICIAL_HORIZON:
+    case OSD_ELEMENT_ARTIFICIAL_HORIZON:
         {
             elemPosX = 14;
             elemPosY = 6 - 4; // Top center of the AH area
@@ -518,12 +518,12 @@ static void osdDrawSingleElement(uint8_t item)
                 }
             }
 
-            osdDrawSingleElement(OSD_HORIZON_SIDEBARS);
+            osdDrawSingleElement(OSD_ELEMENT_HORIZON_SIDEBARS);
 
             return;
         }
 
-    case OSD_HORIZON_SIDEBARS:
+    case OSD_ELEMENT_HORIZON_SIDEBARS:
         {
             elemPosX = 14;
             elemPosY = 6;
@@ -547,32 +547,32 @@ static void osdDrawSingleElement(uint8_t item)
             return;
         }
 
-    case OSD_ROLL_PIDS:
+    case OSD_ELEMENT_ROLL_PIDS:
         {
             const pidProfile_t *pidProfile = currentPidProfile;
             osdFormatPID(buff, "ROL", &pidProfile->pid[PID_ROLL]);
             break;
         }
 
-    case OSD_PITCH_PIDS:
+    case OSD_ELEMENT_PITCH_PIDS:
         {
             const pidProfile_t *pidProfile = currentPidProfile;
             osdFormatPID(buff, "PIT", &pidProfile->pid[PID_PITCH]);
             break;
         }
 
-    case OSD_YAW_PIDS:
+    case OSD_ELEMENT_YAW_PIDS:
         {
             const pidProfile_t *pidProfile = currentPidProfile;
             osdFormatPID(buff, "YAW", &pidProfile->pid[PID_YAW]);
             break;
         }
 
-    case OSD_POWER:
+    case OSD_ELEMENT_POWER:
         tfp_sprintf(buff, "%dW", getAmperage() * getBatteryVoltage() / 1000);
         break;
 
-    case OSD_PIDRATE_PROFILE:
+    case OSD_ELEMENT_PIDRATE_PROFILE:
         {
             const uint8_t pidProfileIndex = getCurrentPidProfileIndex();
             const uint8_t rateProfileIndex = getCurrentControlRateProfileIndex();
@@ -580,7 +580,7 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
-    case OSD_WARNINGS:
+    case OSD_ELEMENT_WARNINGS:
         /* Show common reason for arming being disabled */
         if (IS_RC_MODE_ACTIVE(BOXARM) && isArmingDisabled()) {
             const armingDisableFlags_e flags = getArmingDisableFlags();
@@ -615,7 +615,7 @@ static void osdDrawSingleElement(uint8_t item)
         }
         break;
 
-    case OSD_AVG_CELL_VOLTAGE:
+    case OSD_ELEMENT_AVG_CELL_VOLTAGE:
         {
             const int cellV = osdGetBatteryAverageCellVoltage();
             buff[0] = osdGetBatterySymbol(cellV);
@@ -623,19 +623,19 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
-    case OSD_DEBUG:
+    case OSD_ELEMENT_DEBUG:
         tfp_sprintf(buff, "DBG %5d %5d %5d %5d", debug[0], debug[1], debug[2], debug[3]);
         break;
 
-    case OSD_PITCH_ANGLE:
-    case OSD_ROLL_ANGLE:
+    case OSD_ELEMENT_PITCH_ANGLE:
+    case OSD_ELEMENT_ROLL_ANGLE:
         {
-            const int angle = (item == OSD_PITCH_ANGLE) ? attitude.values.pitch : attitude.values.roll;
+            const int angle = (item == OSD_ELEMENT_PITCH_ANGLE) ? attitude.values.pitch : attitude.values.roll;
             tfp_sprintf(buff, "%c%02d.%01d", angle < 0 ? '-' : ' ', abs(angle / 10), abs(angle % 10));
             break;
         }
 
-    case OSD_MAIN_BATT_USAGE:
+    case OSD_ELEMENT_MAIN_BATT_USAGE:
         {
             //Set length of indicator bar
             #define MAIN_BATT_USAGE_STEPS 11 // Use an odd number so the bar can be centralised.
@@ -665,7 +665,7 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
-    case OSD_DISARMED:
+    case OSD_ELEMENT_DISARMED:
         if (!ARMING_FLAG(ARMED)) {
             tfp_sprintf(buff, "DISARMED");
             break;
@@ -673,14 +673,14 @@ static void osdDrawSingleElement(uint8_t item)
             return;
         }
 
-    case OSD_NUMERICAL_HEADING:
+    case OSD_ELEMENT_NUMERICAL_HEADING:
         {
             const int heading = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
             tfp_sprintf(buff, "%c%03d", osdGetDirectionSymbolFromHeading(heading), heading);
             break;
         }
 
-    case OSD_NUMERICAL_VARIO:
+    case OSD_ELEMENT_NUMERICAL_VARIO:
         {
             const int verticalSpeed = osdGetMetersToSelectedUnit(getEstimatedVario());
             const char directionSymbol = verticalSpeed < 0 ? SYM_ARROW_SOUTH : SYM_ARROW_NORTH;
@@ -688,11 +688,11 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 #ifdef USE_ESC_SENSOR
-    case OSD_ESC_TMP:
+    case OSD_ELEMENT_ESC_TMP:
         tfp_sprintf(buff, "%d%c", escData == NULL ? 0 : escData->temperature, SYM_TEMP_C);
         break;
 
-    case OSD_ESC_RPM:
+    case OSD_ELEMENT_ESC_RPM:
         tfp_sprintf(buff, "%d", escData == NULL ? 0 : escData->rpm);
         break;
 #endif
@@ -713,117 +713,117 @@ static void osdDrawElements(void)
       return;
 
     if (sensors(SENSOR_ACC)) {
-        osdDrawSingleElement(OSD_ARTIFICIAL_HORIZON);
+        osdDrawSingleElement(OSD_ELEMENT_ARTIFICIAL_HORIZON);
     }
 
-    osdDrawSingleElement(OSD_MAIN_BATT_VOLTAGE);
-    osdDrawSingleElement(OSD_RSSI_VALUE);
-    osdDrawSingleElement(OSD_CROSSHAIRS);
-    osdDrawSingleElement(OSD_ITEM_TIMER_1);
-    osdDrawSingleElement(OSD_ITEM_TIMER_2);
-    osdDrawSingleElement(OSD_FLYMODE);
-    osdDrawSingleElement(OSD_THROTTLE_POS);
-    osdDrawSingleElement(OSD_VTX_CHANNEL);
-    osdDrawSingleElement(OSD_CURRENT_DRAW);
-    osdDrawSingleElement(OSD_MAH_DRAWN);
-    osdDrawSingleElement(OSD_CRAFT_NAME);
-    osdDrawSingleElement(OSD_ALTITUDE);
-    osdDrawSingleElement(OSD_ROLL_PIDS);
-    osdDrawSingleElement(OSD_PITCH_PIDS);
-    osdDrawSingleElement(OSD_YAW_PIDS);
-    osdDrawSingleElement(OSD_POWER);
-    osdDrawSingleElement(OSD_PIDRATE_PROFILE);
-    osdDrawSingleElement(OSD_WARNINGS);
-    osdDrawSingleElement(OSD_AVG_CELL_VOLTAGE);
-    osdDrawSingleElement(OSD_DEBUG);
-    osdDrawSingleElement(OSD_PITCH_ANGLE);
-    osdDrawSingleElement(OSD_ROLL_ANGLE);
-    osdDrawSingleElement(OSD_MAIN_BATT_USAGE);
-    osdDrawSingleElement(OSD_DISARMED);
-    osdDrawSingleElement(OSD_NUMERICAL_HEADING);
-    osdDrawSingleElement(OSD_NUMERICAL_VARIO);
-    osdDrawSingleElement(OSD_COMPASS_BAR);
+    osdDrawSingleElement(OSD_ELEMENT_MAIN_BATT_VOLTAGE);
+    osdDrawSingleElement(OSD_ELEMENT_RSSI_VALUE);
+    osdDrawSingleElement(OSD_ELEMENT_CROSSHAIRS);
+    osdDrawSingleElement(OSD_ELEMENT_TIMER_1);
+    osdDrawSingleElement(OSD_ELEMENT_TIMER_2);
+    osdDrawSingleElement(OSD_ELEMENT_FLYMODE);
+    osdDrawSingleElement(OSD_ELEMENT_THROTTLE_POS);
+    osdDrawSingleElement(OSD_ELEMENT_VTX_CHANNEL);
+    osdDrawSingleElement(OSD_ELEMENT_CURRENT_DRAW);
+    osdDrawSingleElement(OSD_ELEMENT_MAH_DRAWN);
+    osdDrawSingleElement(OSD_ELEMENT_CRAFT_NAME);
+    osdDrawSingleElement(OSD_ELEMENT_ALTITUDE);
+    osdDrawSingleElement(OSD_ELEMENT_ROLL_PIDS);
+    osdDrawSingleElement(OSD_ELEMENT_PITCH_PIDS);
+    osdDrawSingleElement(OSD_ELEMENT_YAW_PIDS);
+    osdDrawSingleElement(OSD_ELEMENT_POWER);
+    osdDrawSingleElement(OSD_ELEMENT_PIDRATE_PROFILE);
+    osdDrawSingleElement(OSD_ELEMENT_WARNINGS);
+    osdDrawSingleElement(OSD_ELEMENT_AVG_CELL_VOLTAGE);
+    osdDrawSingleElement(OSD_ELEMENT_DEBUG);
+    osdDrawSingleElement(OSD_ELEMENT_PITCH_ANGLE);
+    osdDrawSingleElement(OSD_ELEMENT_ROLL_ANGLE);
+    osdDrawSingleElement(OSD_ELEMENT_MAIN_BATT_USAGE);
+    osdDrawSingleElement(OSD_ELEMENT_DISARMED);
+    osdDrawSingleElement(OSD_ELEMENT_NUMERICAL_HEADING);
+    osdDrawSingleElement(OSD_ELEMENT_NUMERICAL_VARIO);
+    osdDrawSingleElement(OSD_ELEMENT_COMPASS_BAR);
 
 #ifdef GPS
     if (sensors(SENSOR_GPS)) {
-        osdDrawSingleElement(OSD_GPS_SATS);
-        osdDrawSingleElement(OSD_GPS_SPEED);
-        osdDrawSingleElement(OSD_GPS_LAT);
-        osdDrawSingleElement(OSD_GPS_LON);
-        osdDrawSingleElement(OSD_HOME_DIST);
-        osdDrawSingleElement(OSD_HOME_DIR);
+        osdDrawSingleElement(OSD_ELEMENT_GPS_SATS);
+        osdDrawSingleElement(OSD_ELEMENT_GPS_SPEED);
+        osdDrawSingleElement(OSD_ELEMENT_GPS_LAT);
+        osdDrawSingleElement(OSD_ELEMENT_GPS_LON);
+        osdDrawSingleElement(OSD_ELEMENT_HOME_DIST);
+        osdDrawSingleElement(OSD_ELEMENT_HOME_DIR);
     }
 #endif // GPS
 
 #ifdef USE_ESC_SENSOR
   if (feature(FEATURE_ESC_SENSOR)) {
-      osdDrawSingleElement(OSD_ESC_TMP);
-      osdDrawSingleElement(OSD_ESC_RPM);
+      osdDrawSingleElement(OSD_ELEMENT_ESC_TMP);
+      osdDrawSingleElement(OSD_ELEMENT_ESC_RPM);
   }
 #endif
 }
 
 void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 {
-    osdConfig->item_pos[OSD_RSSI_VALUE]         = OSD_POS(8, 1)   | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_MAIN_BATT_VOLTAGE]  = OSD_POS(12, 1)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_CROSSHAIRS]         = OSD_POS(8, 6)   | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(8, 6)   | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_HORIZON_SIDEBARS]   = OSD_POS(8, 6)   | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ITEM_TIMER_1]       = OSD_POS(22, 1)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ITEM_TIMER_2]       = OSD_POS(1, 1)   | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_FLYMODE]            = OSD_POS(13, 10) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_CRAFT_NAME]         = OSD_POS(10, 11) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_THROTTLE_POS]       = OSD_POS(1, 7)   | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_VTX_CHANNEL]        = OSD_POS(25, 11) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_CURRENT_DRAW]       = OSD_POS(1, 12)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_MAH_DRAWN]          = OSD_POS(1, 11)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_GPS_SPEED]          = OSD_POS(26, 6)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_GPS_SATS]           = OSD_POS(19, 1)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ALTITUDE]           = OSD_POS(23, 7)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ROLL_PIDS]          = OSD_POS(7, 13)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_PITCH_PIDS]         = OSD_POS(7, 14)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_YAW_PIDS]           = OSD_POS(7, 15)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_POWER]              = OSD_POS(1, 10)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_PIDRATE_PROFILE]    = OSD_POS(25, 10) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_WARNINGS]           = OSD_POS(9, 10)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_AVG_CELL_VOLTAGE]   = OSD_POS(12, 2)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_DEBUG]              = OSD_POS(1, 0)   | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_PITCH_ANGLE]        = OSD_POS(1, 8)   | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ROLL_ANGLE]         = OSD_POS(1, 9)   | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_GPS_LAT]            = OSD_POS(1, 2)   | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_GPS_LON]            = OSD_POS(18, 2)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_HOME_DIST]          = OSD_POS(15, 9)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_HOME_DIR]           = OSD_POS(14, 9)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_COMPASS_BAR]        = OSD_POS(10, 8)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_MAIN_BATT_USAGE]    = OSD_POS(8, 12)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_DISARMED]           = OSD_POS(10, 4)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_NUMERICAL_HEADING]  = OSD_POS(23, 9)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_NUMERICAL_VARIO]    = OSD_POS(23, 8)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ESC_TMP]            = OSD_POS(18, 2)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ESC_RPM]            = OSD_POS(19, 2)  | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_RSSI_VALUE]         = OSD_POS(8, 1)   | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_MAIN_BATT_VOLTAGE]  = OSD_POS(12, 1)  | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_CROSSHAIRS]         = OSD_POS(8, 6)   | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_ARTIFICIAL_HORIZON] = OSD_POS(8, 6)   | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_HORIZON_SIDEBARS]   = OSD_POS(8, 6)   | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_TIMER_1]            = OSD_POS(22, 1)  | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_TIMER_2]            = OSD_POS(1, 1)   | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_FLYMODE]            = OSD_POS(13, 10) | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_CRAFT_NAME]         = OSD_POS(10, 11) | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_THROTTLE_POS]       = OSD_POS(1, 7)   | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_VTX_CHANNEL]        = OSD_POS(25, 11) | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_CURRENT_DRAW]       = OSD_POS(1, 12)  | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_MAH_DRAWN]          = OSD_POS(1, 11)  | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_GPS_SPEED]          = OSD_POS(26, 6)  | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_GPS_SATS]           = OSD_POS(19, 1)  | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_ALTITUDE]           = OSD_POS(23, 7)  | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_ROLL_PIDS]          = OSD_POS(7, 13)  | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_PITCH_PIDS]         = OSD_POS(7, 14)  | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_YAW_PIDS]           = OSD_POS(7, 15)  | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_POWER]              = OSD_POS(1, 10)  | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_PIDRATE_PROFILE]    = OSD_POS(25, 10) | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_WARNINGS]           = OSD_POS(9, 10)  | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_AVG_CELL_VOLTAGE]   = OSD_POS(12, 2)  | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_DEBUG]              = OSD_POS(1, 0)   | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_PITCH_ANGLE]        = OSD_POS(1, 8)   | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_ROLL_ANGLE]         = OSD_POS(1, 9)   | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_GPS_LAT]            = OSD_POS(1, 2)   | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_GPS_LON]            = OSD_POS(18, 2)  | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_HOME_DIST]          = OSD_POS(15, 9)  | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_HOME_DIR]           = OSD_POS(14, 9)  | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_COMPASS_BAR]        = OSD_POS(10, 8)  | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_MAIN_BATT_USAGE]    = OSD_POS(8, 12)  | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_DISARMED]           = OSD_POS(10, 4)  | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_NUMERICAL_HEADING]  = OSD_POS(23, 9)  | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_NUMERICAL_VARIO]    = OSD_POS(23, 8)  | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_ESC_TMP]            = OSD_POS(18, 2)  | VISIBLE_FLAG;
+    osdConfig->elementPos[OSD_ELEMENT_ESC_RPM]            = OSD_POS(19, 2)  | VISIBLE_FLAG;
 
-    osdConfig->enabled_stats[OSD_STAT_MAX_SPEED]       = true;
-    osdConfig->enabled_stats[OSD_STAT_MIN_BATTERY]     = true;
-    osdConfig->enabled_stats[OSD_STAT_MIN_RSSI]        = true;
-    osdConfig->enabled_stats[OSD_STAT_MAX_CURRENT]     = true;
-    osdConfig->enabled_stats[OSD_STAT_USED_MAH]        = true;
-    osdConfig->enabled_stats[OSD_STAT_MAX_ALTITUDE]    = false;
-    osdConfig->enabled_stats[OSD_STAT_BLACKBOX]        = true;
-    osdConfig->enabled_stats[OSD_STAT_END_BATTERY]     = false;
-    osdConfig->enabled_stats[OSD_STAT_MAX_DISTANCE]    = false;
-    osdConfig->enabled_stats[OSD_STAT_BLACKBOX_NUMBER] = true;
-    osdConfig->enabled_stats[OSD_STAT_TIMER_1]         = false;
-    osdConfig->enabled_stats[OSD_STAT_TIMER_2]         = true;
+    osdConfig->enabledStats[OSD_STAT_MAX_SPEED]       = true;
+    osdConfig->enabledStats[OSD_STAT_MIN_BATTERY]     = true;
+    osdConfig->enabledStats[OSD_STAT_MIN_RSSI]        = true;
+    osdConfig->enabledStats[OSD_STAT_MAX_CURRENT]     = true;
+    osdConfig->enabledStats[OSD_STAT_USED_MAH]        = true;
+    osdConfig->enabledStats[OSD_STAT_MAX_ALTITUDE]    = false;
+    osdConfig->enabledStats[OSD_STAT_BLACKBOX]        = true;
+    osdConfig->enabledStats[OSD_STAT_END_BATTERY]     = false;
+    osdConfig->enabledStats[OSD_STAT_MAX_DISTANCE]    = false;
+    osdConfig->enabledStats[OSD_STAT_BLACKBOX_NUMBER] = true;
+    osdConfig->enabledStats[OSD_STAT_TIMER_1]         = false;
+    osdConfig->enabledStats[OSD_STAT_TIMER_2]         = true;
 
     osdConfig->units = OSD_UNIT_METRIC;
 
     osdConfig->timers[OSD_TIMER_1] = OSD_TIMER(OSD_TIMER_SRC_ON, OSD_TIMER_PREC_SECOND, 10);
     osdConfig->timers[OSD_TIMER_2] = OSD_TIMER(OSD_TIMER_SRC_TOTAL_ARMED, OSD_TIMER_PREC_SECOND, 10);
 
-    osdConfig->rssi_alarm = 20;
-    osdConfig->cap_alarm  = 2200;
-    osdConfig->alt_alarm  = 100; // meters or feet depend on configuration
+    osdConfig->rssiAlarm = 20;
+    osdConfig->capacityAlarm  = 2200;
+    osdConfig->altitudeAlarm  = 100; // meters or feet depend on configuration
 }
 
 static void osdDrawLogo(int x, int y)
@@ -878,62 +878,62 @@ void osdUpdateAlarms(void)
 
     int32_t alt = osdGetMetersToSelectedUnit(getEstimatedAltitude()) / 100;
 
-    if (statRssi < osdConfig()->rssi_alarm)
-        SET_BLINK(OSD_RSSI_VALUE);
+    if (statRssi < osdConfig()->rssiAlarm)
+        SET_BLINK(OSD_ELEMENT_RSSI_VALUE);
     else
-        CLR_BLINK(OSD_RSSI_VALUE);
+        CLR_BLINK(OSD_ELEMENT_RSSI_VALUE);
 
     if (getBatteryState() == BATTERY_OK) {
-        CLR_BLINK(OSD_WARNINGS);
-        CLR_BLINK(OSD_MAIN_BATT_VOLTAGE);
-        CLR_BLINK(OSD_AVG_CELL_VOLTAGE);
+        CLR_BLINK(OSD_ELEMENT_WARNINGS);
+        CLR_BLINK(OSD_ELEMENT_MAIN_BATT_VOLTAGE);
+        CLR_BLINK(OSD_ELEMENT_AVG_CELL_VOLTAGE);
     } else {
-        SET_BLINK(OSD_WARNINGS);
-        SET_BLINK(OSD_MAIN_BATT_VOLTAGE);
-        SET_BLINK(OSD_AVG_CELL_VOLTAGE);
+        SET_BLINK(OSD_ELEMENT_WARNINGS);
+        SET_BLINK(OSD_ELEMENT_MAIN_BATT_VOLTAGE);
+        SET_BLINK(OSD_ELEMENT_AVG_CELL_VOLTAGE);
     }
 
     if (STATE(GPS_FIX) == 0)
-        SET_BLINK(OSD_GPS_SATS);
+        SET_BLINK(OSD_ELEMENT_GPS_SATS);
     else
-        CLR_BLINK(OSD_GPS_SATS);
+        CLR_BLINK(OSD_ELEMENT_GPS_SATS);
 
     for (int i = 0; i < OSD_TIMER_COUNT; i++) {
         const uint16_t timer = osdConfig()->timers[i];
         const timeUs_t time = osdGetTimerValue(OSD_TIMER_SRC(timer));
         const timeUs_t alarmTime = OSD_TIMER_ALARM(timer) * 60000000; // convert from minutes to us
         if (alarmTime != 0 && time >= alarmTime)
-            SET_BLINK(OSD_ITEM_TIMER_1 + i);
+            SET_BLINK(OSD_ELEMENT_TIMER_1 + i);
         else
-            CLR_BLINK(OSD_ITEM_TIMER_1 + i);
+            CLR_BLINK(OSD_ELEMENT_TIMER_1 + i);
     }
 
-    if (getMAhDrawn() >= osdConfig()->cap_alarm) {
-        SET_BLINK(OSD_MAH_DRAWN);
-        SET_BLINK(OSD_MAIN_BATT_USAGE);
+    if (getMAhDrawn() >= osdConfig()->capacityAlarm) {
+        SET_BLINK(OSD_ELEMENT_MAH_DRAWN);
+        SET_BLINK(OSD_ELEMENT_MAIN_BATT_USAGE);
     } else {
-        CLR_BLINK(OSD_MAH_DRAWN);
-        CLR_BLINK(OSD_MAIN_BATT_USAGE);
+        CLR_BLINK(OSD_ELEMENT_MAH_DRAWN);
+        CLR_BLINK(OSD_ELEMENT_MAIN_BATT_USAGE);
     }
 
-    if (alt >= osdConfig()->alt_alarm)
-        SET_BLINK(OSD_ALTITUDE);
+    if (alt >= osdConfig()->altitudeAlarm)
+        SET_BLINK(OSD_ELEMENT_ALTITUDE);
     else
-        CLR_BLINK(OSD_ALTITUDE);
+        CLR_BLINK(OSD_ELEMENT_ALTITUDE);
 }
 
 void osdResetAlarms(void)
 {
-    CLR_BLINK(OSD_RSSI_VALUE);
-    CLR_BLINK(OSD_MAIN_BATT_VOLTAGE);
-    CLR_BLINK(OSD_WARNINGS);
-    CLR_BLINK(OSD_GPS_SATS);
-    CLR_BLINK(OSD_MAH_DRAWN);
-    CLR_BLINK(OSD_ALTITUDE);
-    CLR_BLINK(OSD_AVG_CELL_VOLTAGE);
-    CLR_BLINK(OSD_MAIN_BATT_USAGE);
-    CLR_BLINK(OSD_ITEM_TIMER_1);
-    CLR_BLINK(OSD_ITEM_TIMER_2);
+    CLR_BLINK(OSD_ELEMENT_RSSI_VALUE);
+    CLR_BLINK(OSD_ELEMENT_MAIN_BATT_VOLTAGE);
+    CLR_BLINK(OSD_ELEMENT_WARNINGS);
+    CLR_BLINK(OSD_ELEMENT_GPS_SATS);
+    CLR_BLINK(OSD_ELEMENT_MAH_DRAWN);
+    CLR_BLINK(OSD_ELEMENT_ALTITUDE);
+    CLR_BLINK(OSD_ELEMENT_AVG_CELL_VOLTAGE);
+    CLR_BLINK(OSD_ELEMENT_MAIN_BATT_USAGE);
+    CLR_BLINK(OSD_ELEMENT_TIMER_1);
+    CLR_BLINK(OSD_ELEMENT_TIMER_2);
 }
 
 static void osdResetStats(void)
@@ -1034,67 +1034,67 @@ static void osdShowStats(void)
     displayClearScreen(osdDisplayPort);
     displayWrite(osdDisplayPort, 2, top++, "  --- STATS ---");
 
-    if (osdConfig()->enabled_stats[OSD_STAT_TIMER_1]) {
+    if (osdConfig()->enabledStats[OSD_STAT_TIMER_1]) {
         osdFormatTimer(buff, false, OSD_TIMER_1);
         osdDisplayStatisticLabel(top++, osdTimerSourceNames[OSD_TIMER_SRC(osdConfig()->timers[OSD_TIMER_1])], buff);
     }
 
-    if (osdConfig()->enabled_stats[OSD_STAT_TIMER_2]) {
+    if (osdConfig()->enabledStats[OSD_STAT_TIMER_2]) {
         osdFormatTimer(buff, false, OSD_TIMER_2);
         osdDisplayStatisticLabel(top++, osdTimerSourceNames[OSD_TIMER_SRC(osdConfig()->timers[OSD_TIMER_2])], buff);
     }
 
-    if (osdConfig()->enabled_stats[OSD_STAT_MAX_SPEED] && STATE(GPS_FIX)) {
+    if (osdConfig()->enabledStats[OSD_STAT_MAX_SPEED] && STATE(GPS_FIX)) {
         itoa(stats.max_speed, buff, 10);
         osdDisplayStatisticLabel(top++, "MAX SPEED", buff);
     }
 
-    if (osdConfig()->enabled_stats[OSD_STAT_MAX_DISTANCE]) {
+    if (osdConfig()->enabledStats[OSD_STAT_MAX_DISTANCE]) {
         tfp_sprintf(buff, "%d%c", osdGetMetersToSelectedUnit(stats.max_distance), osdGetMetersToSelectedUnitSymbol());
         osdDisplayStatisticLabel(top++, "MAX DISTANCE", buff);
     }
 
-    if (osdConfig()->enabled_stats[OSD_STAT_MIN_BATTERY]) {
+    if (osdConfig()->enabledStats[OSD_STAT_MIN_BATTERY]) {
         tfp_sprintf(buff, "%d.%1d%c", stats.min_voltage / 10, stats.min_voltage % 10, SYM_VOLT);
         osdDisplayStatisticLabel(top++, "MIN BATTERY", buff);
     }
 
-    if (osdConfig()->enabled_stats[OSD_STAT_END_BATTERY]) {
+    if (osdConfig()->enabledStats[OSD_STAT_END_BATTERY]) {
         tfp_sprintf(buff, "%d.%1d%c", getBatteryVoltage() / 10, getBatteryVoltage() % 10, SYM_VOLT);
         osdDisplayStatisticLabel(top++, "END BATTERY", buff);
     }
 
-    if (osdConfig()->enabled_stats[OSD_STAT_MIN_RSSI]) {
+    if (osdConfig()->enabledStats[OSD_STAT_MIN_RSSI]) {
         itoa(stats.min_rssi, buff, 10);
         strcat(buff, "%");
         osdDisplayStatisticLabel(top++, "MIN RSSI", buff);
     }
 
     if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
-        if (osdConfig()->enabled_stats[OSD_STAT_MAX_CURRENT]) {
+        if (osdConfig()->enabledStats[OSD_STAT_MAX_CURRENT]) {
             itoa(stats.max_current, buff, 10);
             strcat(buff, "A");
             osdDisplayStatisticLabel(top++, "MAX CURRENT", buff);
         }
 
-        if (osdConfig()->enabled_stats[OSD_STAT_USED_MAH]) {
+        if (osdConfig()->enabledStats[OSD_STAT_USED_MAH]) {
             tfp_sprintf(buff, "%d%c", getMAhDrawn(), SYM_MAH);
             osdDisplayStatisticLabel(top++, "USED MAH", buff);
         }
     }
 
-    if (osdConfig()->enabled_stats[OSD_STAT_MAX_ALTITUDE]) {
+    if (osdConfig()->enabledStats[OSD_STAT_MAX_ALTITUDE]) {
         osdFormatAltitudeString(buff, stats.max_altitude, false);
         osdDisplayStatisticLabel(top++, "MAX ALTITUDE", buff);
     }
 
 #ifdef BLACKBOX
-    if (osdConfig()->enabled_stats[OSD_STAT_BLACKBOX] && blackboxConfig()->device && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
+    if (osdConfig()->enabledStats[OSD_STAT_BLACKBOX] && blackboxConfig()->device && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
         osdGetBlackboxStatusString(buff);
         osdDisplayStatisticLabel(top++, "BLACKBOX", buff);
     }
 
-    if (osdConfig()->enabled_stats[OSD_STAT_BLACKBOX_NUMBER] && blackboxConfig()->device && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
+    if (osdConfig()->enabledStats[OSD_STAT_BLACKBOX_NUMBER] && blackboxConfig()->device && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
         itoa(blackboxGetLogNumber(), buff, 10);
         osdDisplayStatisticLabel(top++, "BB LOG NUM", buff);
     }

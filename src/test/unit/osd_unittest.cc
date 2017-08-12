@@ -47,7 +47,7 @@ extern "C" {
     #include "rx/rx.h"
 
     void osdRefresh(timeUs_t currentTimeUs);
-    void osdFormatTime(char * buff, osd_timer_precision_e precision, timeUs_t time);
+    void osdFormatTime(char * buff, osdTimerPrecision_e precision, timeUs_t time);
     void osdFormatTimer(char *buff, bool showSymbol, int timerIndex);
 
     uint16_t rssi;
@@ -268,18 +268,18 @@ TEST(OsdTest, TestStatsImperial)
 {
     // given
     // this set of enabled post flight statistics
-    osdConfigMutable()->enabled_stats[OSD_STAT_MAX_SPEED]       = true;
-    osdConfigMutable()->enabled_stats[OSD_STAT_MIN_BATTERY]     = true;
-    osdConfigMutable()->enabled_stats[OSD_STAT_MIN_RSSI]        = true;
-    osdConfigMutable()->enabled_stats[OSD_STAT_MAX_CURRENT]     = false;
-    osdConfigMutable()->enabled_stats[OSD_STAT_USED_MAH]        = false;
-    osdConfigMutable()->enabled_stats[OSD_STAT_MAX_ALTITUDE]    = true;
-    osdConfigMutable()->enabled_stats[OSD_STAT_BLACKBOX]        = false;
-    osdConfigMutable()->enabled_stats[OSD_STAT_END_BATTERY]     = true;
-    osdConfigMutable()->enabled_stats[OSD_STAT_TIMER_1]         = true;
-    osdConfigMutable()->enabled_stats[OSD_STAT_TIMER_2]         = true;
-    osdConfigMutable()->enabled_stats[OSD_STAT_MAX_DISTANCE]    = true;
-    osdConfigMutable()->enabled_stats[OSD_STAT_BLACKBOX_NUMBER] = false;
+    osdConfigMutable()->enabledStats[OSD_STAT_MAX_SPEED]       = true;
+    osdConfigMutable()->enabledStats[OSD_STAT_MIN_BATTERY]     = true;
+    osdConfigMutable()->enabledStats[OSD_STAT_MIN_RSSI]        = true;
+    osdConfigMutable()->enabledStats[OSD_STAT_MAX_CURRENT]     = false;
+    osdConfigMutable()->enabledStats[OSD_STAT_USED_MAH]        = false;
+    osdConfigMutable()->enabledStats[OSD_STAT_MAX_ALTITUDE]    = true;
+    osdConfigMutable()->enabledStats[OSD_STAT_BLACKBOX]        = false;
+    osdConfigMutable()->enabledStats[OSD_STAT_END_BATTERY]     = true;
+    osdConfigMutable()->enabledStats[OSD_STAT_TIMER_1]         = true;
+    osdConfigMutable()->enabledStats[OSD_STAT_TIMER_2]         = true;
+    osdConfigMutable()->enabledStats[OSD_STAT_MAX_DISTANCE]    = true;
+    osdConfigMutable()->enabledStats[OSD_STAT_BLACKBOX_NUMBER] = false;
 
     // and
     // using imperial unit system
@@ -405,17 +405,17 @@ TEST(OsdTest, TestAlarms)
 
     // and
     // the following OSD elements are visible
-    osdConfigMutable()->item_pos[OSD_RSSI_VALUE]        = OSD_POS(8, 1)  | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 1) | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_1]      = OSD_POS(20, 1) | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_2]      = OSD_POS(1, 1)  | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ALTITUDE]          = OSD_POS(23, 7) | VISIBLE_FLAG;
+    osdConfigMutable()->elementPos[OSD_ELEMENT_RSSI_VALUE]        = OSD_POS(8, 1)  | VISIBLE_FLAG;
+    osdConfigMutable()->elementPos[OSD_ELEMENT_MAIN_BATT_VOLTAGE] = OSD_POS(12, 1) | VISIBLE_FLAG;
+    osdConfigMutable()->elementPos[OSD_ELEMENT_TIMER_1]           = OSD_POS(20, 1) | VISIBLE_FLAG;
+    osdConfigMutable()->elementPos[OSD_ELEMENT_TIMER_2]           = OSD_POS(1, 1)  | VISIBLE_FLAG;
+    osdConfigMutable()->elementPos[OSD_ELEMENT_ALTITUDE]          = OSD_POS(23, 7) | VISIBLE_FLAG;
 
     // and
     // this set of alarm values
-    osdConfigMutable()->rssi_alarm = 20;
-    osdConfigMutable()->cap_alarm  = 2200;
-    osdConfigMutable()->alt_alarm  = 100; // meters
+    osdConfigMutable()->rssiAlarm = 20;
+    osdConfigMutable()->capacityAlarm  = 2200;
+    osdConfigMutable()->altitudeAlarm  = 100; // meters
 
     // and
     // this timer 1 configuration
@@ -494,8 +494,8 @@ TEST(OsdTest, TestAlarms)
 TEST(OsdTest, TestElementRssi)
 {
     // given
-    osdConfigMutable()->item_pos[OSD_RSSI_VALUE] = OSD_POS(8, 1) | VISIBLE_FLAG;
-    osdConfigMutable()->rssi_alarm = 0;
+    osdConfigMutable()->elementPos[OSD_ELEMENT_RSSI_VALUE] = OSD_POS(8, 1) | VISIBLE_FLAG;
+    osdConfigMutable()->rssiAlarm = 0;
 
     // when
     rssi = 1024;
@@ -528,7 +528,7 @@ TEST(OsdTest, TestElementRssi)
 TEST(OsdTest, TestElementAmperage)
 {
     // given
-    osdConfigMutable()->item_pos[OSD_CURRENT_DRAW] = OSD_POS(1, 12) | VISIBLE_FLAG;
+    osdConfigMutable()->elementPos[OSD_ELEMENT_CURRENT_DRAW] = OSD_POS(1, 12) | VISIBLE_FLAG;
 
     // when
     simulationBatteryAmperage = 0;
@@ -561,7 +561,7 @@ TEST(OsdTest, TestElementAmperage)
 TEST(OsdTest, TestElementMahDrawn)
 {
     // given
-    osdConfigMutable()->item_pos[OSD_MAH_DRAWN] = OSD_POS(1, 11) | VISIBLE_FLAG;
+    osdConfigMutable()->elementPos[OSD_ELEMENT_MAH_DRAWN] = OSD_POS(1, 11) | VISIBLE_FLAG;
 
     // when
     simulationMahDrawn = 0;
@@ -610,7 +610,7 @@ TEST(OsdTest, TestElementMahDrawn)
 TEST(OsdTest, TestElementAltitude)
 {
     // given
-    osdConfigMutable()->item_pos[OSD_ALTITUDE] = OSD_POS(23, 7) | VISIBLE_FLAG;
+    osdConfigMutable()->elementPos[OSD_ELEMENT_ALTITUDE] = OSD_POS(23, 7) | VISIBLE_FLAG;
 
     // and
     osdConfigMutable()->units = OSD_UNIT_METRIC;

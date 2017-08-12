@@ -40,11 +40,11 @@
 #include "io/osd.h"
 
 #ifndef DISABLE_EXTENDED_CMS_OSD_MENU
-static uint16_t osdConfig_item_pos[OSD_ITEM_COUNT];
+static uint16_t osdConfig_elementPos[OSD_ELEMENT_COUNT];
 
 static long menuOsdActiveElemsOnEnter(void)
 {
-    memcpy(&osdConfig_item_pos[0], &osdConfig()->item_pos[0], sizeof(uint16_t) * OSD_ITEM_COUNT);
+    memcpy(&osdConfig_elementPos[0], &osdConfig()->elementPos[0], sizeof(uint16_t) * OSD_ELEMENT_COUNT);
     return 0;
 }
 
@@ -52,52 +52,52 @@ static long menuOsdActiveElemsOnExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    memcpy(&osdConfigMutable()->item_pos[0], &osdConfig_item_pos[0], sizeof(uint16_t) * OSD_ITEM_COUNT);
+    memcpy(&osdConfigMutable()->elementPos[0], &osdConfig_elementPos[0], sizeof(uint16_t) * OSD_ELEMENT_COUNT);
     return 0;
 }
 
 OSD_Entry menuOsdActiveElemsEntries[] =
 {
     {"--- ACTIV ELEM ---", OME_Label,   NULL, NULL, 0},
-    {"RSSI",               OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_RSSI_VALUE], 0},
-    {"BATTERY VOLTAGE",    OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_VOLTAGE], 0},
-    {"BATTERY USAGE",      OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAIN_BATT_USAGE], 0},
-    {"AVG CELL VOLTAGE",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_AVG_CELL_VOLTAGE], 0},
-    {"CROSSHAIRS",         OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CROSSHAIRS], 0},
-    {"HORIZON",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ARTIFICIAL_HORIZON], 0},
-    {"HORIZON SIDEBARS",   OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HORIZON_SIDEBARS], 0},
-    {"TIMER 1",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ITEM_TIMER_1], 0},
-    {"TIMER 2",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ITEM_TIMER_2], 0},
-    {"FLY MODE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_FLYMODE], 0},
-    {"NAME",               OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CRAFT_NAME], 0},
-    {"THROTTLE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_THROTTLE_POS], 0},
+    {"RSSI",               OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_RSSI_VALUE], 0},
+    {"BATTERY VOLTAGE",    OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_MAIN_BATT_VOLTAGE], 0},
+    {"BATTERY USAGE",      OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_MAIN_BATT_USAGE], 0},
+    {"AVG CELL VOLTAGE",   OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_AVG_CELL_VOLTAGE], 0},
+    {"CROSSHAIRS",         OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_CROSSHAIRS], 0},
+    {"HORIZON",            OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_ARTIFICIAL_HORIZON], 0},
+    {"HORIZON SIDEBARS",   OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_HORIZON_SIDEBARS], 0},
+    {"TIMER 1",            OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_TIMER_1], 0},
+    {"TIMER 2",            OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_TIMER_2], 0},
+    {"FLY MODE",           OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_FLYMODE], 0},
+    {"NAME",               OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_CRAFT_NAME], 0},
+    {"THROTTLE",           OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_THROTTLE_POS], 0},
 #ifdef VTX_CONTROL
-    {"VTX CHAN",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_VTX_CHANNEL], 0},
+    {"VTX CHAN",           OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_VTX_CHANNEL], 0},
 #endif // VTX
-    {"CURRENT (A)",        OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CURRENT_DRAW], 0},
-    {"USED MAH",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAH_DRAWN], 0},
+    {"CURRENT (A)",        OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_CURRENT_DRAW], 0},
+    {"USED MAH",           OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_MAH_DRAWN], 0},
 #ifdef GPS
-    {"GPS SPEED",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_SPEED], 0},
-    {"GPS SATS",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_SATS], 0},
-    {"GPS LAT",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_LAT], 0},
-    {"GPS LON",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_LON], 0},
-    {"HOME DIR",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HOME_DIR], 0},
-    {"HOME DIST",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_HOME_DIST], 0},
+    {"GPS SPEED",          OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_GPS_SPEED], 0},
+    {"GPS SATS",           OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_GPS_SATS], 0},
+    {"GPS LAT",            OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_GPS_LAT], 0},
+    {"GPS LON",            OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_GPS_LON], 0},
+    {"HOME DIR",           OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_HOME_DIR], 0},
+    {"HOME DIST",          OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_HOME_DIST], 0},
 #endif // GPS
-    {"COMPASS BAR",        OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_COMPASS_BAR], 0},
-    {"ALTITUDE",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ALTITUDE], 0},
-    {"POWER",              OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_POWER], 0},
-    {"ROLL PID",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ROLL_PIDS], 0},
-    {"PITCH PID",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PITCH_PIDS], 0},
-    {"YAW PID",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_YAW_PIDS], 0},
-    {"PROFILES",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PIDRATE_PROFILE], 0},
-    {"DEBUG",              OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_DEBUG], 0},
-    {"WARNINGS",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_WARNINGS], 0},
-    {"DISARMED",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_DISARMED], 0},
-    {"PIT ANG",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_PITCH_ANGLE], 0},
-    {"ROL ANG",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_ROLL_ANGLE], 0},
-    {"HEADING",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_NUMERICAL_HEADING], 0},
-    {"VARIO",              OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_NUMERICAL_VARIO], 0},
+    {"COMPASS BAR",        OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_COMPASS_BAR], 0},
+    {"ALTITUDE",           OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_ALTITUDE], 0},
+    {"POWER",              OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_POWER], 0},
+    {"ROLL PID",           OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_ROLL_PIDS], 0},
+    {"PITCH PID",          OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_PITCH_PIDS], 0},
+    {"YAW PID",            OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_YAW_PIDS], 0},
+    {"PROFILES",           OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_PIDRATE_PROFILE], 0},
+    {"DEBUG",              OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_DEBUG], 0},
+    {"WARNINGS",           OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_WARNINGS], 0},
+    {"DISARMED",           OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_DISARMED], 0},
+    {"PIT ANG",            OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_PITCH_ANGLE], 0},
+    {"ROL ANG",            OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_ROLL_ANGLE], 0},
+    {"HEADING",            OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_NUMERICAL_HEADING], 0},
+    {"VARIO",              OME_VISIBLE, NULL, &osdConfig_elementPos[OSD_ELEMENT_NUMERICAL_VARIO], 0},
     {"BACK",               OME_Back,    NULL, NULL, 0},
     {NULL,                 OME_END,     NULL, NULL, 0}
 };
@@ -111,15 +111,15 @@ CMS_Menu menuOsdActiveElems = {
     .entries = menuOsdActiveElemsEntries
 };
 
-static uint8_t osdConfig_rssi_alarm;
-static uint16_t osdConfig_cap_alarm;
-static uint16_t osdConfig_alt_alarm;
+static uint8_t osdConfig_rssiAlarm;
+static uint16_t osdConfig_capacityAlarm;
+static uint16_t osdConfig_altitudeAlarm;
 
 static long menuAlarmsOnEnter(void)
 {
-    osdConfig_rssi_alarm = osdConfig()->rssi_alarm;
-    osdConfig_cap_alarm = osdConfig()->cap_alarm;
-    osdConfig_alt_alarm = osdConfig()->alt_alarm;
+    osdConfig_rssiAlarm = osdConfig()->rssiAlarm;
+    osdConfig_capacityAlarm = osdConfig()->capacityAlarm;
+    osdConfig_altitudeAlarm = osdConfig()->altitudeAlarm;
 
     return 0;
 }
@@ -128,9 +128,9 @@ static long menuAlarmsOnExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    osdConfigMutable()->rssi_alarm = osdConfig_rssi_alarm;
-    osdConfigMutable()->cap_alarm = osdConfig_cap_alarm;
-    osdConfigMutable()->alt_alarm = osdConfig_alt_alarm;
+    osdConfigMutable()->rssiAlarm = osdConfig_rssiAlarm;
+    osdConfigMutable()->capacityAlarm = osdConfig_capacityAlarm;
+    osdConfigMutable()->altitudeAlarm = osdConfig_altitudeAlarm;
 
     return 0;
 }
@@ -138,9 +138,9 @@ static long menuAlarmsOnExit(const OSD_Entry *self)
 OSD_Entry menuAlarmsEntries[] =
 {
     {"--- ALARMS ---", OME_Label, NULL, NULL, 0},
-    {"RSSI",     OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_rssi_alarm, 5, 90, 5}, 0},
-    {"MAIN BAT", OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_cap_alarm, 50, 30000, 50}, 0},
-    {"MAX ALT",  OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_alt_alarm, 1, 200, 1}, 0},
+    {"RSSI",     OME_UINT8,  NULL, &(OSD_UINT8_t){&osdConfig_rssiAlarm, 5, 90, 5}, 0},
+    {"MAIN BAT", OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_capacityAlarm, 50, 30000, 50}, 0},
+    {"MAX ALT",  OME_UINT16, NULL, &(OSD_UINT16_t){&osdConfig_altitudeAlarm, 1, 200, 1}, 0},
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
 };
@@ -154,8 +154,8 @@ CMS_Menu menuAlarms = {
     .entries = menuAlarmsEntries,
 };
 
-osd_timer_source_e timerSource[OSD_TIMER_COUNT];
-osd_timer_precision_e timerPrecision[OSD_TIMER_COUNT];
+osdTimerSource_e timerSource[OSD_TIMER_COUNT];
+osdTimerPrecision_e timerPrecision[OSD_TIMER_COUNT];
 uint8_t timerAlarm[OSD_TIMER_COUNT];
 
 static long menuTimersOnEnter(void)

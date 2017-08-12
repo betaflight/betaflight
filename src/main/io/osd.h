@@ -46,45 +46,45 @@ extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 #define OSD_TIMER_ALARM(timer)      ((timer >> 8) & 0xFF)
 
 typedef enum {
-    OSD_RSSI_VALUE,
-    OSD_MAIN_BATT_VOLTAGE,
-    OSD_CROSSHAIRS,
-    OSD_ARTIFICIAL_HORIZON,
-    OSD_HORIZON_SIDEBARS,
-    OSD_ITEM_TIMER_1,
-    OSD_ITEM_TIMER_2,
-    OSD_FLYMODE,
-    OSD_CRAFT_NAME,
-    OSD_THROTTLE_POS,
-    OSD_VTX_CHANNEL,
-    OSD_CURRENT_DRAW,
-    OSD_MAH_DRAWN,
-    OSD_GPS_SPEED,
-    OSD_GPS_SATS,
-    OSD_ALTITUDE,
-    OSD_ROLL_PIDS,
-    OSD_PITCH_PIDS,
-    OSD_YAW_PIDS,
-    OSD_POWER,
-    OSD_PIDRATE_PROFILE,
-    OSD_WARNINGS,
-    OSD_AVG_CELL_VOLTAGE,
-    OSD_GPS_LON,
-    OSD_GPS_LAT,
-    OSD_DEBUG,
-    OSD_PITCH_ANGLE,
-    OSD_ROLL_ANGLE,
-    OSD_MAIN_BATT_USAGE,
-    OSD_DISARMED,
-    OSD_HOME_DIR,
-    OSD_HOME_DIST,
-    OSD_NUMERICAL_HEADING,
-    OSD_NUMERICAL_VARIO,
-    OSD_COMPASS_BAR,
-    OSD_ESC_TMP,
-    OSD_ESC_RPM,
-    OSD_ITEM_COUNT // MUST BE LAST
-} osd_items_e;
+    OSD_ELEMENT_RSSI_VALUE,
+    OSD_ELEMENT_MAIN_BATT_VOLTAGE,
+    OSD_ELEMENT_CROSSHAIRS,
+    OSD_ELEMENT_ARTIFICIAL_HORIZON,
+    OSD_ELEMENT_HORIZON_SIDEBARS,
+    OSD_ELEMENT_TIMER_1,
+    OSD_ELEMENT_TIMER_2,
+    OSD_ELEMENT_FLYMODE,
+    OSD_ELEMENT_CRAFT_NAME,
+    OSD_ELEMENT_THROTTLE_POS,
+    OSD_ELEMENT_VTX_CHANNEL,
+    OSD_ELEMENT_CURRENT_DRAW,
+    OSD_ELEMENT_MAH_DRAWN,
+    OSD_ELEMENT_GPS_SPEED,
+    OSD_ELEMENT_GPS_SATS,
+    OSD_ELEMENT_ALTITUDE,
+    OSD_ELEMENT_ROLL_PIDS,
+    OSD_ELEMENT_PITCH_PIDS,
+    OSD_ELEMENT_YAW_PIDS,
+    OSD_ELEMENT_POWER,
+    OSD_ELEMENT_PIDRATE_PROFILE,
+    OSD_ELEMENT_WARNINGS,
+    OSD_ELEMENT_AVG_CELL_VOLTAGE,
+    OSD_ELEMENT_GPS_LON,
+    OSD_ELEMENT_GPS_LAT,
+    OSD_ELEMENT_DEBUG,
+    OSD_ELEMENT_PITCH_ANGLE,
+    OSD_ELEMENT_ROLL_ANGLE,
+    OSD_ELEMENT_MAIN_BATT_USAGE,
+    OSD_ELEMENT_DISARMED,
+    OSD_ELEMENT_HOME_DIR,
+    OSD_ELEMENT_HOME_DIST,
+    OSD_ELEMENT_NUMERICAL_HEADING,
+    OSD_ELEMENT_NUMERICAL_VARIO,
+    OSD_ELEMENT_COMPASS_BAR,
+    OSD_ELEMENT_ESC_TMP,
+    OSD_ELEMENT_ESC_RPM,
+    OSD_ELEMENT_COUNT // MUST BE LAST
+} osdElements_e;
 
 typedef enum {
     OSD_STAT_MAX_SPEED,
@@ -100,42 +100,42 @@ typedef enum {
     OSD_STAT_MAX_DISTANCE,
     OSD_STAT_BLACKBOX_NUMBER,
     OSD_STAT_COUNT // MUST BE LAST
-} osd_stats_e;
+} osdStats_e;
 
 typedef enum {
     OSD_UNIT_IMPERIAL,
     OSD_UNIT_METRIC
-} osd_unit_e;
+} osdUnit_e;
 
 typedef enum {
     OSD_TIMER_1,
     OSD_TIMER_2,
     OSD_TIMER_COUNT
-} osd_timer_e;
+} osdTimer_e;
 
 typedef enum {
     OSD_TIMER_SRC_ON,
     OSD_TIMER_SRC_TOTAL_ARMED,
     OSD_TIMER_SRC_LAST_ARMED,
     OSD_TIMER_SRC_COUNT
-} osd_timer_source_e;
+} osdTimerSource_e;
 
 typedef enum {
     OSD_TIMER_PREC_SECOND,
     OSD_TIMER_PREC_HUNDREDTHS,
     OSD_TIMER_PREC_COUNT
-} osd_timer_precision_e;
+} osdTimerPrecision_e;
 
 typedef struct osdConfig_s {
-    uint16_t item_pos[OSD_ITEM_COUNT];
-    bool enabled_stats[OSD_STAT_COUNT];
+    uint16_t elementPos[OSD_ELEMENT_COUNT];
+    bool enabledStats[OSD_STAT_COUNT];
 
     // Alarms
-    uint16_t cap_alarm;
-    uint16_t alt_alarm;
-    uint8_t rssi_alarm;
+    uint16_t capacityAlarm;
+    uint16_t altitudeAlarm;
+    uint8_t rssiAlarm;
 
-    osd_unit_e units;
+    osdUnit_e units;
 
     uint16_t timers[OSD_TIMER_COUNT];
 } osdConfig_t;
