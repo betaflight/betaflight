@@ -732,6 +732,13 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
             byteCount = constrain(byteCount, 0, 15);        // limit to 16 bytes (128 bits)
             sbufWriteU8(dst, byteCount);
             sbufWriteData(dst, ((uint8_t*)&flightModeFlags) + 4, byteCount);
+
+            // Write arming disable flags
+            // 1 byte, flag count
+            sbufWriteU8(dst, NUM_ARMING_DISABLE_FLAGS);
+            // 4 bytes, flags
+            uint32_t armingDisableFlags = getArmingDisableFlags();
+            sbufWriteU32(dst, armingDisableFlags);
         }
         break;
 
