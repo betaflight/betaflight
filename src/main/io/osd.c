@@ -206,6 +206,16 @@ static int32_t osdGetMetersToSelectedUnit(int32_t meters)
     }
 }
 
+static void osdFormatAltitudeString(char * buff, int altitude, bool pad)
+{
+    const int alt = osdGetMetersToSelectedUnit(altitude);
+    int altitudeIntergerPart = abs(alt / 100);
+    if (alt < 0) {
+        altitudeIntergerPart *= -1;
+    }
+    tfp_sprintf(buff, pad ? "%4d.%01d%c" : "%d.%01d%c", altitudeIntergerPart, abs((alt % 100) / 10), osdGetMetersToSelectedUnitSymbol());
+}
+
 static void osdFormatPID(char * buff, const char * label, const pid8_t * pid)
 {
     tfp_sprintf(buff, "%s %3d %3d %3d", label, pid->P, pid->I, pid->D);
@@ -309,8 +319,7 @@ static void osdDrawSingleElement(uint8_t item)
             if (osdRssi >= 100)
                 osdRssi = 99;
 
-            buff[0] = SYM_RSSI;
-            tfp_sprintf(buff + 1, "%d", osdRssi);
+            tfp_sprintf(buff, "%c%d", SYM_RSSI, osdRssi);
             break;
         }
 
@@ -322,20 +331,17 @@ static void osdDrawSingleElement(uint8_t item)
     case OSD_CURRENT_DRAW:
         {
             const int32_t amperage = getAmperage();
-            buff[0] = SYM_AMP;
-            tfp_sprintf(buff + 1, "%d.%02d", abs(amperage) / 100, abs(amperage) % 100);
+            tfp_sprintf(buff, "%3d.%02d%c", abs(amperage) / 100, abs(amperage) % 100, SYM_AMP);
             break;
         }
 
     case OSD_MAH_DRAWN:
-        buff[0] = SYM_MAH;
-        tfp_sprintf(buff + 1, "%d", getMAhDrawn());
+        tfp_sprintf(buff, "%4d%c", getMAhDrawn(), SYM_MAH);
         break;
 
 #ifdef GPS
     case OSD_GPS_SATS:
-        buff[0] = 0x1f;
-        tfp_sprintf(buff + 1, "%d", gpsSol.numSat);
+        tfp_sprintf(buff, "%c%d", 0x1f, gpsSol.numSat);
         break;
 
     case OSD_GPS_SPEED:
@@ -410,8 +416,7 @@ static void osdDrawSingleElement(uint8_t item)
 
     case OSD_ALTITUDE:
         {
-            const int32_t alt = osdGetMetersToSelectedUnit(getEstimatedAltitude());
-            tfp_sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetMetersToSelectedUnitSymbol());
+            osdFormatAltitudeString(buff, getEstimatedAltitude(), true);
             break;
         }
 
@@ -682,8 +687,7 @@ static void osdDrawSingleElement(uint8_t item)
         }
 #ifdef USE_ESC_SENSOR
     case OSD_ESC_TMP:
-        buff[0] = SYM_TEMP_C;
-        tfp_sprintf(buff + 1, "%d", escData == NULL ? 0 : escData->temperature);
+        tfp_sprintf(buff, "%d%c", escData == NULL ? 0 : escData->temperature, SYM_TEMP_C);
         break;
 
     case OSD_ESC_RPM:
@@ -1078,8 +1082,7 @@ static void osdShowStats(void)
     }
 
     if (osdConfig()->enabled_stats[OSD_STAT_MAX_ALTITUDE]) {
-        int32_t alt = osdGetMetersToSelectedUnit(stats.max_altitude);
-        tfp_sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetMetersToSelectedUnitSymbol());
+        osdFormatAltitudeString(buff, stats.max_altitude, false);
         osdDisplayStatisticLabel(top++, "MAX ALTITUDE", buff);
     }
 
