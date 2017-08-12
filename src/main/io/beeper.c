@@ -363,7 +363,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
     }
 
     #ifdef USE_DSHOT
-    if (!ARMING_FLAG(ARMED) && currentBeeperEntry->mode == BEEPER_RX_SET) {
+    if (!ARMING_FLAG(ARMED) && beeperConfig()->dshotForward && currentBeeperEntry->mode == BEEPER_RX_SET) {
         for (unsigned index = 0; index < getMotorCount(); index++) {
             pwmWriteDshotCommand(index, DSHOT_CMD_BEEP3);
         }
