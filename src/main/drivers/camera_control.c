@@ -62,7 +62,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(cameraControlConfig_t, cameraControlConfig, PG_C
 PG_RESET_TEMPLATE(cameraControlConfig_t, cameraControlConfig,
     .mode = CAMERA_CONTROL_MODE_HARDWARE_PWM,
     .refVoltage = 330,
-    .keyDelayMs = 150,
+    .keyDelayMs = 180,
     .ioTag = IO_TAG(CAMERA_CONTROL_PIN)
 );
 
