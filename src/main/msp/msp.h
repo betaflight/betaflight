@@ -22,9 +22,10 @@
 #define MSP_V2_FRAME_ID         255
 
 typedef enum {
-    MSP_V1,
-    MSP_V2_OVER_V1,
-    MSP_V2_NATIVE
+    MSP_V1          = 0,
+    MSP_V2_OVER_V1  = 1,
+    MSP_V2_NATIVE   = 2,
+    MSP_VERSION_COUNT
 } mspVersion_e;
 
 // return positive for ACK, negative on error, zero for no reply
