@@ -27,6 +27,7 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 
+#include "common/crc.h"
 #include "common/maths.h"
 #include "common/utils.h"
 

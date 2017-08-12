@@ -27,6 +27,7 @@ extern "C" {
     #include "build/debug.h"
 
     #include "common/axis.h"
+    #include "common/crc.h"
     #include "common/filter.h"
     #include "common/gps_conversion.h"
     #include "common/maths.h"

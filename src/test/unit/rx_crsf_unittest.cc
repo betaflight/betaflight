@@ -26,7 +26,7 @@ extern "C" {
 
     #include "build/debug.h"
 
-    #include "common/maths.h"
+    #include "common/crc.h"
     #include "common/utils.h"
 
     #include "io/serial.h"

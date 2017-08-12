@@ -163,7 +163,8 @@ rc_controls_unittest_SRC := \
 
 rx_crsf_unittest_SRC := \
 		$(USER_DIR)/rx/crsf.c \
-		$(USER_DIR)/common/maths.c
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c
 
 
 rx_ibus_unittest_SRC := \
@@ -186,12 +187,15 @@ rx_rx_unittest_SRC := \
 
 
 scheduler_unittest_SRC := \
-		$(USER_DIR)/scheduler/scheduler.c
+		$(USER_DIR)/scheduler/scheduler.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c
 
 
 telemetry_crsf_unittest_SRC := \
 		$(USER_DIR)/rx/crsf.c \
 		$(USER_DIR)/telemetry/crsf.c \
+		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/common/gps_conversion.c \

@@ -23,7 +23,7 @@
 
 #include "rx_spi.h"
 #include "rx_nrf24l01.h"
-#include "common/maths.h"
+#include "common/crc.h"
 
 
 static const uint8_t xn297_data_scramble[30] = {
