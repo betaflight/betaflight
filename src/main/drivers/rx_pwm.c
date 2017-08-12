@@ -321,23 +321,20 @@ static void pwmEdgeCallback(timerCCHandlerRec_t *cbRec, captureCompare_t capture
 
 void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 {
-    TIM_HandleTypeDef* Handle = timerFindTimerHandle(tim);
-    if (Handle == NULL) return;
+    LL_TIM_IC_InitTypeDef init;
 
-    TIM_IC_InitTypeDef TIM_ICInitStructure;
-
-    TIM_ICInitStructure.ICPolarity = polarity;
-    TIM_ICInitStructure.ICSelection = TIM_ICSELECTION_DIRECTTI;
-    TIM_ICInitStructure.ICPrescaler = TIM_ICPSC_DIV1;
+    init.ICPolarity = polarity;
+    init.ICActiveInput = LL_TIM_ACTIVEINPUT_DIRECTTI;
+    init.ICPrescaler = LL_TIM_ICPSC_DIV1;
 
     if (inputFilteringMode == INPUT_FILTERING_ENABLED) {
-        TIM_ICInitStructure.ICFilter = INPUT_FILTER_TO_HELP_WITH_NOISE_FROM_OPENLRS_TELEMETRY_RX;
+        init.ICFilter = INPUT_FILTER_TO_HELP_WITH_NOISE_FROM_OPENLRS_TELEMETRY_RX;
     } else {
-        TIM_ICInitStructure.ICFilter = 0x00;
+        init.ICFilter = 0x00;
     }
 
-    HAL_TIM_IC_ConfigChannel(Handle, &TIM_ICInitStructure, channel);
-    HAL_TIM_IC_Start_IT(Handle,channel);
+    LL_TIM_IC_Init(tim, channel, &init);
+    LL_TIM_EnableIT(tim, channel);
 }
 #else
 void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)

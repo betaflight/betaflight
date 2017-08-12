@@ -72,11 +72,6 @@ typedef struct escSerial_s {
     const timerHardware_t *txTimerHardware;
     volatile uint8_t txBuffer[ESCSERIAL_BUFFER_SIZE];
 
-#ifdef USE_HAL_DRIVER
-    const TIM_HandleTypeDef *txTimerHandle;
-    const TIM_HandleTypeDef *rxTimerHandle;
-#endif
-
     uint8_t          isSearchingForStartBit;
     uint8_t          rxBitIndex;
     uint8_t          rxLastLeadingEdgeAtBitIndex;
@@ -132,11 +127,10 @@ enum {
 #define STOP_BIT_MASK (1 << 0)
 #define START_BIT_MASK (1 << (RX_TOTAL_BITS - 1))
 
-// XXX No TIM_DeInit equivalent in HAL driver???
 #ifdef USE_HAL_DRIVER
-static void TIM_DeInit(TIM_TypeDef *tim)
+void TIM_DeInit(TIM_TypeDef * timer)
 {
-    UNUSED(tim);
+    LL_TIM_DeInit(timer);
 }
 #endif
 
@@ -386,7 +380,7 @@ static void onSerialRxPinChangeBL(timerCCHandlerRec_t *cbRec, captureCompare_t c
         // This is clobbers transmission, but it is okay because we are
         // always half-duplex.
 #ifdef USE_HAL_DRIVER
-        __HAL_TIM_SetCounter(escSerial->txTimerHandle, __HAL_TIM_GetAutoreload(escSerial->txTimerHandle) / 2);
+        LL_TIM_SetCounter(escSerial->txTimerHardware->tim, escSerial->txTimerHardware->tim->ARR / 2);
 #else
         TIM_SetCounter(escSerial->txTimerHardware->tim, escSerial->txTimerHardware->tim->ARR / 2);
 #endif
@@ -578,9 +572,9 @@ static void onSerialRxPinChangeEsc(timerCCHandlerRec_t *cbRec, captureCompare_t 
 
     //clear timer
 #ifdef USE_HAL_DRIVER
-    __HAL_TIM_SetCounter(escSerial->rxTimerHandle, 0);
+    LL_TIM_SetCounter(escSerial->rxTimerHardware->tim, 0);
 #else
-    TIM_SetCounter(escSerial->rxTimerHardware->tim,0);
+    TIM_SetCounter(escSerial->rxTimerHardware->tim, 0);
 #endif
 
     if (capture > 40 && capture < 90)
@@ -660,17 +654,10 @@ static serialPort_t *openEscSerial(escSerialPortIndex_e portIndex, serialReceive
 
     if (mode != PROTOCOL_KISSALL) {
         escSerial->rxTimerHardware = &(timerHardware[output]);
-#ifdef USE_HAL_DRIVER
-        escSerial->rxTimerHandle = timerFindTimerHandle(escSerial->rxTimerHardware->tim);
-#endif
     }
 
     escSerial->mode = mode;
     escSerial->txTimerHardware = timerGetByTag(escSerialConfig()->ioTag, TIM_USE_ANY);
-
-#ifdef USE_HAL_DRIVER
-    escSerial->txTimerHandle = timerFindTimerHandle(escSerial->txTimerHardware->tim);
-#endif
 
     escSerial->port.vTable = escSerialVTable;
     escSerial->port.baudRate = baud;

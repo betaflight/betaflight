@@ -51,58 +51,49 @@ static bool isDshot = false;
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t output)
 {
 #if defined(USE_HAL_DRIVER)
-    TIM_HandleTypeDef* Handle = timerFindTimerHandle(tim);
-    if (Handle == NULL) return;
+    LL_TIM_OC_InitTypeDef init;
 
-    TIM_OC_InitTypeDef TIM_OCInitStructure;
-
-    TIM_OCInitStructure.OCMode = TIM_OCMODE_PWM1;
+    init.OCMode = LL_TIM_OCMODE_PWM1;
 
     if (output & TIMER_OUTPUT_N_CHANNEL) {
-        TIM_OCInitStructure.OCIdleState = TIM_OCIDLESTATE_RESET;
-        TIM_OCInitStructure.OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPOLARITY_HIGH: TIM_OCPOLARITY_LOW;
-        TIM_OCInitStructure.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-        TIM_OCInitStructure.OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPOLARITY_HIGH : TIM_OCNPOLARITY_LOW;
+        init.OCIdleState = LL_TIM_OCIDLESTATE_LOW;
+        init.OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? LL_TIM_OCPOLARITY_HIGH: LL_TIM_OCPOLARITY_LOW;
+        init.OCNIdleState = LL_TIM_OCIDLESTATE_LOW;
+        init.OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? LL_TIM_OCPOLARITY_HIGH : LL_TIM_OCPOLARITY_LOW;
     } else {
-        TIM_OCInitStructure.OCIdleState = TIM_OCIDLESTATE_SET;
-        TIM_OCInitStructure.OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPOLARITY_LOW : TIM_OCPOLARITY_HIGH;
-        TIM_OCInitStructure.OCNIdleState = TIM_OCNIDLESTATE_SET;
-        TIM_OCInitStructure.OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPOLARITY_LOW : TIM_OCNPOLARITY_HIGH;
+        init.OCIdleState = LL_TIM_OCIDLESTATE_HIGH;
+        init.OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? LL_TIM_OCPOLARITY_LOW : LL_TIM_OCPOLARITY_HIGH;
+        init.OCNIdleState = LL_TIM_OCIDLESTATE_HIGH;
+        init.OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? LL_TIM_OCPOLARITY_LOW : LL_TIM_OCPOLARITY_HIGH;
     }
 
-    TIM_OCInitStructure.Pulse = value;
-    TIM_OCInitStructure.OCFastMode = TIM_OCFAST_DISABLE;
+    init.CompareValue = value;
 
-    HAL_TIM_PWM_ConfigChannel(Handle, &TIM_OCInitStructure, channel);
+    LL_TIM_OC_Init(tim, channel, &init);
 #else
-    TIM_OCInitTypeDef TIM_OCInitStructure;
+    TIM_OCInitTypeDef init;
 
-    TIM_OCStructInit(&TIM_OCInitStructure);
-    TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+    TIM_OCStructInit(&init);
+    init.TIM_OCMode = TIM_OCMode_PWM1;
 
     if (output & TIMER_OUTPUT_N_CHANNEL) {
-        TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Enable;
-        TIM_OCInitStructure.TIM_OCNIdleState = TIM_OCNIdleState_Reset;
-        TIM_OCInitStructure.TIM_OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPolarity_High : TIM_OCNPolarity_Low;
+        init.TIM_OutputNState = TIM_OutputNState_Enable;
+        init.TIM_OCNIdleState = TIM_OCNIdleState_Reset;
+        init.TIM_OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPolarity_High : TIM_OCNPolarity_Low;
     } else {
-        TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-        TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
-        TIM_OCInitStructure.TIM_OCPolarity =  (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_Low : TIM_OCPolarity_High;
+        init.TIM_OutputState = TIM_OutputState_Enable;
+        init.TIM_OCIdleState = TIM_OCIdleState_Set;
+        init.TIM_OCPolarity =  (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_Low : TIM_OCPolarity_High;
     }
-    TIM_OCInitStructure.TIM_Pulse = value;
+    init.TIM_Pulse = value;
 
-    timerOCInit(tim, channel, &TIM_OCInitStructure);
+    timerOCInit(tim, channel, &init);
     timerOCPreloadConfig(tim, channel, TIM_OCPreload_Enable);
 #endif
 }
 
 void pwmOutConfig(timerChannel_t *channel, const timerHardware_t *timerHardware, uint32_t hz, uint16_t period, uint16_t value, uint8_t inversion)
 {
-#if defined(USE_HAL_DRIVER)
-    TIM_HandleTypeDef* Handle = timerFindTimerHandle(timerHardware->tim);
-    if (Handle == NULL) return;
-#endif
-
     configTimeBase(timerHardware->tim, period, hz);
     pwmOCConfig(timerHardware->tim, 
         timerHardware->channel, 
@@ -111,11 +102,8 @@ void pwmOutConfig(timerChannel_t *channel, const timerHardware_t *timerHardware,
         );
 
 #if defined(USE_HAL_DRIVER)
-    if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL)
-        HAL_TIMEx_PWMN_Start(Handle, timerHardware->channel);
-    else
-        HAL_TIM_PWM_Start(Handle, timerHardware->channel);
-    HAL_TIM_Base_Start(Handle);
+    LL_TIM_OC_EnableFast(timerHardware->tim, timerHardware->channel);
+    LL_TIM_EnableCounter(timerHardware->tim);
 #else
     TIM_CtrlPWMOutputs(timerHardware->tim, ENABLE);
     TIM_Cmd(timerHardware->tim, ENABLE);
