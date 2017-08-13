@@ -5,6 +5,7 @@ COMMON_SRC = \
             $(TARGET_DIR_SRC) \
             main.c \
             common/bitarray.c \
+            common/crc.c \
             common/encoding.c \
             common/filter.c \
             common/huffman.c \
