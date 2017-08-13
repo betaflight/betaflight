@@ -227,7 +227,7 @@ void tryArm(void)
             return;
         }
 #ifdef USE_DSHOT
-        if (isMotorProtocolDshot()) {
+        if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXDSHOTREVERSE)) {
             if (!IS_RC_MODE_ACTIVE(BOXDSHOTREVERSE)) {
                 reverseMotors = false;
                 for (unsigned index = 0; index < getMotorCount(); index++) {
