@@ -2035,8 +2035,9 @@ static void printBeeper(uint8_t dumpMask, const beeperConfig_t *beeperConfig, co
     for (int32_t i = 0; i < beeperCount - 2; i++) {
         const char *formatOff = "beeper -%s";
         const char *formatOn = "beeper %s";
-        cliDefaultPrintLinef(dumpMask, ~(mask ^ defaultMask) & (1 << i), mask & (1 << i) ? formatOn : formatOff, beeperNameForTableIndex(i));
-        cliDumpPrintLinef(dumpMask, ~(mask ^ defaultMask) & (1 << i), mask & (1 << i) ? formatOff : formatOn, beeperNameForTableIndex(i));
+        const uint32_t beeperModeMask = beeperModeMaskForTableIndex(i);
+        cliDefaultPrintLinef(dumpMask, ~(mask ^ defaultMask) & beeperModeMask, mask & beeperModeMask ? formatOn : formatOff, beeperNameForTableIndex(i));
+        cliDumpPrintLinef(dumpMask, ~(mask ^ defaultMask) & beeperModeMask, mask & beeperModeMask ? formatOff : formatOn, beeperNameForTableIndex(i));
     }
 }
 
@@ -2054,7 +2055,8 @@ static void cliBeeper(char *cmdline)
                     cliPrint("  none");
                 break;
             }
-            if (mask & (1 << i))
+
+            if (mask & beeperModeMaskForTableIndex(i))
                 cliPrintf("  %s", beeperNameForTableIndex(i));
         }
         cliPrintLinefeed();
@@ -2085,8 +2087,7 @@ static void cliBeeper(char *cmdline)
                         if (i == BEEPER_PREFERENCE-1)
                             setBeeperOffMask(getPreferredBeeperOffMask());
                         else {
-                            mask = 1 << i;
-                            beeperOffSet(mask);
+                            beeperOffSet(beeperModeMaskForTableIndex(i));
                         }
                     cliPrint("Disabled");
                 }
@@ -2097,8 +2098,7 @@ static void cliBeeper(char *cmdline)
                         if (i == BEEPER_PREFERENCE-1)
                             setPreferredBeeperOffMask(getBeeperOffMask());
                         else {
-                            mask = 1 << i;
-                            beeperOffClear(mask);
+                            beeperOffClear(beeperModeMaskForTableIndex(i));
                         }
                     cliPrint("Enabled");
                 }
