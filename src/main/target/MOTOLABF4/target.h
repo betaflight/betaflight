@@ -30,14 +30,11 @@
 
 #define USBD_PRODUCT_STRING "MotoLabF4"
 
-#define LED0                    PC3
-#define LED1                    PC4
+#define LED0_PIN                PC3
+//#define LED1                    PC4
 
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
-
-//#define INVERTER                PC0 // PC0 used as inverter select GPIO
-//#define INVERTER_USART          USART1
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
