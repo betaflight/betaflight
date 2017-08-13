@@ -72,6 +72,7 @@ typedef struct systemConfig_s {
 #if defined(STM32F4) && !defined(DISABLE_OVERCLOCK)
     uint8_t cpu_overclock;
 #endif
+    uint8_t powerOnArmGuardTime; // in seconds
     char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER) + 1];
 } systemConfig_t;
 #endif
