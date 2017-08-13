@@ -91,7 +91,7 @@ static int drawScreen(displayPort_t *displayPort)
 static int writeString(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
 {
     UNUSED(displayPort);
-    max7456Write(x, y, s);
+    max7456WriteString(x, y, s);
 
     return 0;
 }
@@ -106,28 +106,8 @@ static int writeChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c
 
 static int fillRegion(displayPort_t *displayPort, uint8_t xs, uint8_t ys, uint8_t width, uint8_t height, uint8_t value)
 {
-    // FIXME: add fillRegion to MSP!
-    // for now: send single requests:
-    if ((value == ' ') && (ys >= displayPort->rowCount) && (xs >= displayPort->colCount)) {
-        // speed optimize -> issue clear command
-        clearScreen(displayPort);
-        return 1;
-    }
-
-    // create null terminated "fill" string
-    uint8_t buffer[width+1];
-    memset(buffer, value, width);
-    buffer[width] = 0;
-
-    uint8_t y = ys;
-    while (height > 0) {
-        // output string:
-        writeString(displayPort, xs, y, (const char *)buffer);
-
-        // keep track of position and count
-        height--;
-        y++;
-    }
+    UNUSED(displayPort);
+    max7456FillRegion(xs, ys, width, height, value);
 
     return 0;
 }
