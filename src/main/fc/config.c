@@ -134,6 +134,7 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .debug_mode = DEBUG_MODE,
     .task_statistics = true,
     .cpu_overclock = false,
+    .powerOnArmingGraceTime = 5,
     .boardIdentifier = TARGET_BOARD_IDENTIFIER
 );
 #else

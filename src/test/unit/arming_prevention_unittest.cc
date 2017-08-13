@@ -70,7 +70,7 @@ bool gyroCalibDone = false;
 
 #include "gtest/gtest.h"
 
-TEST(ArmingPreventionTest, CalibrationAngleThrottleArmSwitch)
+TEST(ArmingPreventionTest, CalibrationPowerOnGraceAngleThrottleArmSwitch)
 {
     // given
     simulationTime = 0;
@@ -91,13 +91,17 @@ TEST(ArmingPreventionTest, CalibrationAngleThrottleArmSwitch)
     rcData[THROTTLE] = 1400;
     rcData[4] = 1800;
 
+    // and
+    systemConfigMutable()->powerOnArmingGraceTime = 5;
+    setArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
+
     // when
     updateActivatedModes();
     updateArmingStatus();
 
     // expect
     EXPECT_TRUE(isArmingDisabled());
-    EXPECT_EQ(ARMING_DISABLED_CALIBRATING | ARMING_DISABLED_ANGLE | ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE, getArmingDisableFlags());
+    EXPECT_EQ(ARMING_DISABLED_BOOT_GRACE_TIME | ARMING_DISABLED_CALIBRATING | ARMING_DISABLED_ANGLE | ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE, getArmingDisableFlags());
 
     // given
     // gyro calibration is done
@@ -109,7 +113,7 @@ TEST(ArmingPreventionTest, CalibrationAngleThrottleArmSwitch)
 
     // expect
     EXPECT_TRUE(isArmingDisabled());
-    EXPECT_EQ(ARMING_DISABLED_ANGLE | ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE, getArmingDisableFlags());
+    EXPECT_EQ(ARMING_DISABLED_BOOT_GRACE_TIME | ARMING_DISABLED_ANGLE | ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE, getArmingDisableFlags());
 
     // given
     // quad is level
@@ -120,10 +124,21 @@ TEST(ArmingPreventionTest, CalibrationAngleThrottleArmSwitch)
 
     // expect
     EXPECT_TRUE(isArmingDisabled());
-    EXPECT_EQ(ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE, getArmingDisableFlags());
+    EXPECT_EQ(ARMING_DISABLED_BOOT_GRACE_TIME | ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE, getArmingDisableFlags());
 
     // given
     rcData[THROTTLE] = 1000;
+
+    // when
+    updateArmingStatus();
+
+    // expect
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_BOOT_GRACE_TIME | ARMING_DISABLED_ARM_SWITCH, getArmingDisableFlags());
+
+    // given
+    // arming grace time has elapsed
+    simulationTime += systemConfig()->powerOnArmingGraceTime * 1e6;
 
     // when
     updateArmingStatus();
@@ -219,7 +234,6 @@ TEST(ArmingPreventionTest, ArmingGuardRadioLeftOnAndArmed)
     EXPECT_EQ(0, getArmingDisableFlags());
     EXPECT_FALSE(isArmingDisabled());
 }
-
 
 TEST(ArmingPreventionTest, Prearm)
 {

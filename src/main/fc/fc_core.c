@@ -152,6 +152,12 @@ void updateArmingStatus(void)
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
     } else {
+        // Check if the power on arming grace time has elapsed
+        if ((getArmingDisableFlags() & ARMING_DISABLED_BOOT_GRACE_TIME) && (millis() >= systemConfig()->powerOnArmingGraceTime * 1000)) {
+            // If so, unset the grace time arming disable flag
+            unsetArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
+        }
+
         if (IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
             setArmingDisabled(ARMING_DISABLED_BOXFAILSAFE);
         } else {
