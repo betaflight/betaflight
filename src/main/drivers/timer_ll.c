@@ -521,25 +521,18 @@ void timerChConfigOC(const timerHardware_t* timHw, bool outEnable, bool stateHig
     TIM_TypeDef * timer = timHw->tim;
     const uint32_t channel = timHw->channel;
 
-    LL_TIM_OC_InitTypeDef  init;
+    LL_TIM_OC_InitTypeDef init;
 
-    init.OCMode = TIM_OCMODE_INACTIVE;
     init.OCPolarity = stateHigh ? TIM_OCPOLARITY_HIGH : TIM_OCPOLARITY_LOW;
     init.OCNPolarity = TIM_OCPOLARITY_HIGH;
     init.OCIdleState = TIM_OCIDLESTATE_RESET;
     init.OCNIdleState = TIM_OCNIDLESTATE_RESET;
 
+    init.OCMode = outEnable ? TIM_OCMODE_INACTIVE : TIM_OCMODE_TIMING;
     LL_TIM_OC_Init(timer, channel, &init);
 
-    if (outEnable) {
-        init.OCMode = TIM_OCMODE_INACTIVE;
-        LL_TIM_OC_ConfigOutput(timer, channel, &init);
-        LL_TIM_OC_EnableFast(timer, channel);
-    } else {
-        init.OCMode = TIM_OCMODE_TIMING;
-        LL_TIM_OC_ConfigOutput(timer, channel, &init);
-        LL_TIM_OC_EnableFast(timer, channel);
-    }
+    LL_TIM_OC_EnableFast(timer, channel);
+    LL_TIM_EnableCounter(timer);
 }
 
 static void timCCxHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig)
