@@ -67,6 +67,7 @@ extern "C" {
 
 uint32_t simulationTime = 0;
 bool gyroCalibDone = false;
+bool simulationHaveRx = false;
 
 #include "gtest/gtest.h"
 
@@ -159,7 +160,6 @@ TEST(ArmingPreventionTest, CalibrationPowerOnGraceAngleThrottleArmSwitch)
     EXPECT_EQ(0, getArmingDisableFlags());
     EXPECT_FALSE(isArmingDisabled());
 }
-
 TEST(ArmingPreventionTest, ArmingGuardRadioLeftOnAndArmed)
 {
     // given
@@ -281,11 +281,76 @@ TEST(ArmingPreventionTest, Prearm)
     EXPECT_FALSE(isArmingDisabled());
 }
 
+TEST(ArmingPreventionTest, RadioTurnedOnAtAnyTimeArmed)
+{
+    // given
+    simulationTime = 30e6; // 30 seconds after boot
+    gyroCalibDone = true;
+
+    // and
+    modeActivationConditionsMutable(0)->auxChannelIndex = 0;
+    modeActivationConditionsMutable(0)->modeId = BOXARM;
+    modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    useRcControlsConfig(NULL);
+
+    // and
+    rxConfigMutable()->mincheck = 1050;
+
+    // and
+    rcData[THROTTLE] = 1000;
+    ENABLE_STATE(SMALL_ANGLE);
+
+    // and
+    // RX has no link to radio
+    simulationHaveRx = false;
+
+    // and
+    // arm channel has a safe default value
+    rcData[4] = 1100;
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(isUsingSticksForArming());
+    EXPECT_FALSE(isArmingDisabled());
+    EXPECT_EQ(0, getArmingDisableFlags());
+
+    // given
+    // RF link is established and arm switch is turned on on radio
+    simulationHaveRx = true;
+    rcData[4] = 1800;
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(isUsingSticksForArming());
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_BAD_RX_RECOVERY | ARMING_DISABLED_ARM_SWITCH, getArmingDisableFlags());
+
+    // given
+    // arm switch turned off by user
+    rcData[4] = 1100;
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(isUsingSticksForArming());
+    EXPECT_FALSE(isArmingDisabled());
+    EXPECT_EQ(0, getArmingDisableFlags());
+}
+
 // STUBS
 extern "C" {
     uint32_t micros(void) { return simulationTime; }
     uint32_t millis(void) { return micros() / 1000; }
-    bool rxIsReceivingSignal(void) { return false; }
+    bool rxIsReceivingSignal(void) { return simulationHaveRx; }
 
     bool feature(uint32_t) { return false; }
     void warningLedFlash(void) {}

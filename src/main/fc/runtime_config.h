@@ -38,21 +38,22 @@ typedef enum {
     ARMING_DISABLED_NO_GYRO         = (1 << 0),
     ARMING_DISABLED_FAILSAFE        = (1 << 1),
     ARMING_DISABLED_RX_FAILSAFE     = (1 << 2),
-    ARMING_DISABLED_BOXFAILSAFE     = (1 << 3),
-    ARMING_DISABLED_THROTTLE        = (1 << 4),
-    ARMING_DISABLED_ANGLE           = (1 << 5),
-    ARMING_DISABLED_BOOT_GRACE_TIME = (1 << 6),
-    ARMING_DISABLED_NOPREARM        = (1 << 7),
-    ARMING_DISABLED_ARM_SWITCH      = (1 << 8),
-    ARMING_DISABLED_LOAD            = (1 << 9),
-    ARMING_DISABLED_CALIBRATING     = (1 << 10),
-    ARMING_DISABLED_CLI             = (1 << 11),
-    ARMING_DISABLED_CMS_MENU        = (1 << 12),
-    ARMING_DISABLED_OSD_MENU        = (1 << 13),
-    ARMING_DISABLED_BST             = (1 << 14)
+    ARMING_DISABLED_BAD_RX_RECOVERY = (1 << 3),
+    ARMING_DISABLED_BOXFAILSAFE     = (1 << 4),
+    ARMING_DISABLED_THROTTLE        = (1 << 5),
+    ARMING_DISABLED_ANGLE           = (1 << 6),
+    ARMING_DISABLED_BOOT_GRACE_TIME = (1 << 7),
+    ARMING_DISABLED_NOPREARM        = (1 << 8),
+    ARMING_DISABLED_ARM_SWITCH      = (1 << 9),
+    ARMING_DISABLED_LOAD            = (1 << 10),
+    ARMING_DISABLED_CALIBRATING     = (1 << 11),
+    ARMING_DISABLED_CLI             = (1 << 12),
+    ARMING_DISABLED_CMS_MENU        = (1 << 13),
+    ARMING_DISABLED_OSD_MENU        = (1 << 14),
+    ARMING_DISABLED_BST             = (1 << 15)
 } armingDisableFlags_e;
 
-#define NUM_ARMING_DISABLE_FLAGS 15
+#define NUM_ARMING_DISABLE_FLAGS 16
 
 #if defined(OSD) || !defined(MINIMAL_CLI)
 extern const char *armingDisableFlagNames[NUM_ARMING_DISABLE_FLAGS];
