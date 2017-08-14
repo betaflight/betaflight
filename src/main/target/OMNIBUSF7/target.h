@@ -158,7 +158,7 @@
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PC2
 #define VBAT_ADC_PIN            PC3
-#define RSSI_ADC_GPIO_PIN       PC5
+#define RSSI_ADC_PIN            PC5
 
 #define LED_STRIP
 
