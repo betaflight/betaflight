@@ -98,7 +98,6 @@ static uint8_t channr;
 static uint32_t missingPackets;
 static uint8_t calData[255][3];
 static uint32_t time_tune;
-static bool eol;
 static uint8_t listLength;
 static uint8_t bindIdx;
 static uint8_t cnt;
@@ -110,9 +109,11 @@ static uint32_t packet_timer;
 static uint8_t protocol_state;
 static int16_t word_temp;
 static uint32_t start_time;
+static int8_t bindOffset;
 
 static IO_t GdoPin;
 static IO_t BindPin = DEFIO_IO(NONE);
+static bool lastBindPinStatus;
 static IO_t FrskyLedPin;
 #if defined(PA_LNA)
 static IO_t TxEnPin;
@@ -129,27 +130,30 @@ static uint8_t telemetry_id;
 static uint8_t telemetryRX;
 static uint8_t v1; // A1
 static uint8_t v2; // A2
-static uint32_t time_t;
+static uint32_t telemetryTime;
 
 #if defined(HUB)
 #define MAX_SERIAL_BYTES 64
-uint8_t hub_index;
-uint8_t idxx = 0;
-uint8_t idx_ok = 0;
-uint8_t telemetry_expected_id = 0;
-uint8_t srx_data[MAX_SERIAL_BYTES]; // buffer for telemetry serial data
+static uint8_t hub_index;
+static uint8_t idxx = 0;
+static uint8_t idx_ok = 0;
+static uint8_t telemetry_expected_id = 0;
+static uint8_t srx_data[MAX_SERIAL_BYTES]; // buffer for telemetry serial data
 #endif
 #endif
 
 PG_REGISTER_WITH_RESET_TEMPLATE(frSkyDConfig_t, frSkyDConfig, PG_FRSKY_D_CONFIG,
                                 0);
 
-PG_RESET_TEMPLATE(frSkyDConfig_t, frSkyDConfig, .autoBind = false,
-                  .bindHopData = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-                  .bindTxId = {0, 0}, .bindOffset = 0);
+PG_RESET_TEMPLATE(frSkyDConfig_t, frSkyDConfig,
+    .autoBind = false,
+    .bindTxId = {0, 0},
+    .bindOffset = 0,
+    .bindHopData = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+);
 
 rx_spi_received_e ret;
 
@@ -197,21 +201,23 @@ static uint8_t frsky_append_hub_data(uint8_t *buf)
     return index;
 }
 
-static void frSkyTelemetryInitFrameSpi(void) { hub_index = 0; }
+static void frSkyTelemetryInitFrameSpi(void)
+{
+    hub_index = 0;
+    idxx = 0;
+}
 
-static void frSkyTelemetryWriteSpi(uint8_t ch) { srx_data[hub_index++] = ch; }
+static void frSkyTelemetryWriteSpi(uint8_t ch)
+{
+    if (hub_index < MAX_SERIAL_BYTES) {
+        srx_data[hub_index++] = ch;
+    }
+}
 #endif
 
 static void telemetry_build_frame(uint8_t *packet)
 {
-#ifdef USE_ADC
-    //	if(feature(FEATURE_VBAT)){
-    //		v1 =vbat;
-    //		v2=0;
-    //	}
-    //	else
     v1 = 0;
-#endif
     uint8_t bytes_used = 0;
     telemetry_id = packet[4];
     frame[0] = 0x11; // length
@@ -243,7 +249,10 @@ static void TX_enable()
 }
 #endif
 
-void frSkyDBind() { bindRequested = true; }
+void frSkyDBind()
+{
+    bindRequested = true;
+}
 
 static void initialize()
 {
@@ -311,8 +320,8 @@ static void initTuneRx(void)
 {
     cc2500_writeReg(CC2500_19_FOCCFG, 0x14);
     time_tune = millis();
-    frSkyDConfigMutable()->bindOffset = -126;
-    cc2500_writeReg(CC2500_0C_FSCTRL0, (uint8_t)frSkyDConfig()->bindOffset);
+    bindOffset = -126;
+    cc2500_writeReg(CC2500_0C_FSCTRL0, (uint8_t)bindOffset);
     cc2500_writeReg(CC2500_07_PKTCTRL1, 0x0C);
     cc2500_writeReg(CC2500_18_MCSM0, 0x8);
 
@@ -327,13 +336,13 @@ static void initTuneRx(void)
 
 static bool tuneRx(uint8_t *packet)
 {
-    if (frSkyDConfig()->bindOffset >= 126) {
-        frSkyDConfigMutable()->bindOffset = -126;
+    if (bindOffset >= 126) {
+        bindOffset = -126;
     }
     if ((millis() - time_tune) > 50) {
         time_tune = millis();
-        frSkyDConfigMutable()->bindOffset += 5;
-        cc2500_writeReg(CC2500_0C_FSCTRL0, (uint8_t)frSkyDConfig()->bindOffset);
+        bindOffset += 5;
+        cc2500_writeReg(CC2500_0C_FSCTRL0, (uint8_t)bindOffset);
     }
     if (GDO_1) {
         ccLen = cc2500_readReg(CC2500_3B_RXBYTES | CC2500_READ_BURST) & 0x7F;
@@ -343,6 +352,8 @@ static bool tuneRx(uint8_t *packet)
                 if (packet[2] == 0x01) {
                     Lqi = packet[ccLen - 1] & 0x7F;
                     if (Lqi < 50) {
+                        frSkyDConfigMutable()->bindOffset = bindOffset;
+
                         return true;
                     }
                 }
@@ -364,7 +375,6 @@ static void initGetBind(void)
     delayMicroseconds(20); // waiting flush FIFO
 
     cc2500_strobe(CC2500_SRX);
-    eol = false;
     listLength = 0;
     bindIdx = 0x05;
 }
@@ -387,6 +397,7 @@ static bool getBind1(uint8_t *packet)
                             frSkyDConfigMutable()->bindHopData[packet[5] + n] =
                                 packet[6 + n];
                         }
+
                         return true;
                     }
                 }
@@ -418,27 +429,25 @@ static bool getBind2(uint8_t *packet)
                                             packet[6 + i];
                                     }
                                     listLength = 47;
-                                    eol = true;
 
-                                    bindIdx = bindIdx + 5;
-                                    return false;
+                                    return true;
                                 }
 #endif
                                 for (uint8_t n = 0; n < 5; n++) {
                                     if (packet[6 + n] == packet[ccLen - 3] ||
                                         (packet[6 + n] == 0)) {
                                         if (bindIdx >= 0x2D) {
-                                            eol = true;
                                             listLength = packet[5] + n;
-                                            break;
+
+                                            return true;
                                         }
                                     }
-                                    frSkyDConfigMutable()
-                                        ->bindHopData[packet[5] + n] =
-                                        packet[6 + n];
+
+                                    frSkyDConfigMutable()->bindHopData[packet[5] + n] = packet[6 + n];
                                 }
 
                                 bindIdx = bindIdx + 5;
+
                                 return false;
                             }
                         }
@@ -447,12 +456,11 @@ static bool getBind2(uint8_t *packet)
             }
         }
 
-        if (eol) {
-            return true;
-        }
+        return false;
+    } else {
+        return true;
     }
 
-    return false;
 }
 
 static void nextChannel(uint8_t skip)
@@ -471,19 +479,23 @@ static void nextChannel(uint8_t skip)
     cc2500_strobe(CC2500_SFRX);
 }
 
-static bool bindButtonPressed(void)
+static bool checkBindRequested(bool reset)
 {
-    if (!IORead(BindPin)) {
-        delayMicroseconds(10);
+    bool bindPinStatus = IORead(BindPin);
+    if (lastBindPinStatus && !bindPinStatus) {
+        bindRequested = true;
+    }
+    lastBindPinStatus = bindPinStatus;
+
+    if (!bindRequested) {
+        return false;
+    } else {
+        if (reset) {
+            bindRequested = false;
+        }
+
         return true;
     }
-
-    return false;
-}
-
-static bool doBind()
-{
-    return frSkyDConfig()->autoBind || bindRequested || bindButtonPressed();
 }
 
 void frskyD_Rx_SetRCdata(uint16_t *rcData, const uint8_t *packet)
@@ -519,9 +531,7 @@ rx_spi_received_e frskyD_Rx_DataReceived(uint8_t *packet)
 
         break;
     case STATE_BIND:
-        if (doBind()) {
-            bindRequested = false;
-
+        if (checkBindRequested(true) || frSkyDConfig()->autoBind) {
             FLED_on;
             initTuneRx();
 
@@ -582,11 +592,14 @@ rx_spi_received_e frskyD_Rx_DataReceived(uint8_t *packet)
     case STATE_UPDATE:
         packet_timer = micros();
         protocol_state = STATE_DATA;
-        if (bindRequested) {
+
+        if (checkBindRequested(false)) {
             packet_timer = 0;
             t_out = 50;
             missingPackets = 0;
+
             protocol_state = STATE_INIT;
+
             break;
         }
     // here FS code could be
@@ -609,7 +622,7 @@ rx_spi_received_e frskyD_Rx_DataReceived(uint8_t *packet)
 #ifdef FRSKY_TELEMETRY
                             if ((packet[3] % 4) == 2) {
                                 telemetryRX = 1;
-                                time_t = micros();
+                                telemetryTime = micros();
                                 compute_RSSIdbm(packet);
                                 telemetry_build_frame(packet);
                                 protocol_state = STATE_TELEM;
@@ -663,7 +676,7 @@ rx_spi_received_e frskyD_Rx_DataReceived(uint8_t *packet)
 #ifdef FRSKY_TELEMETRY
     case STATE_TELEM:
         if (telemetryRX) {
-            if ((micros() - time_t) >= 1380) {
+            if ((micros() - telemetryTime) >= 1380) {
                 cc2500_strobe(CC2500_SIDLE);
                 CC2500_SetPower(6);
                 cc2500_strobe(CC2500_SFRX);
@@ -714,6 +727,8 @@ void frskyD_Rx_Setup(rx_spi_protocol_e protocol)
     IOConfigGPIO(GdoPin, IOCFG_IN_FLOATING);
     IOConfigGPIO(BindPin, IOCFG_IPU);
     IOConfigGPIO(FrskyLedPin, IOCFG_OUT_PP);
+
+    lastBindPinStatus = IORead(BindPin);
     start_time = millis();
     packet_timer = 0;
     t_out = 50;

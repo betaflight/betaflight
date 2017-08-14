@@ -69,7 +69,7 @@
 #endif
 
 static serialPort_t *frskyPort = NULL;
-static serialPortConfig_t *portConfig;
+static serialPortConfig_t *portConfig = NULL;
 
 #define FRSKY_BAUDRATE 9600
 #define FRSKY_INITIAL_PORT_MODE MODE_TX
@@ -485,23 +485,23 @@ void deinitFrSkyExternalTelemetry(void)
 
 void freeFrSkyTelemetryPort(void)
 {
-    closeSerialPort(frskyPort);
-    frskyPort = NULL;
-    frSkyTelemetryWrite = NULL;
+    if (frskyPort) {
+        closeSerialPort(frskyPort);
+        frskyPort = NULL;
+        frSkyTelemetryWrite = NULL;
+    }
 }
 
 static void configureFrSkyTelemetryPort(void)
 {
-    if (!portConfig) {
-        return;
-    }
+    if (portConfig) {
+        frskyPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_FRSKY, NULL, FRSKY_BAUDRATE, FRSKY_INITIAL_PORT_MODE, telemetryConfig()->telemetry_inverted ? SERIAL_NOT_INVERTED : SERIAL_INVERTED);
+        if (!frskyPort) {
+            return;
+        }
 
-    frskyPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_FRSKY, NULL, FRSKY_BAUDRATE, FRSKY_INITIAL_PORT_MODE, telemetryConfig()->telemetry_inverted ? SERIAL_NOT_INVERTED : SERIAL_INVERTED);
-    if (!frskyPort) {
-        return;
+        frSkyTelemetryWrite = frSkyTelemetryWriteSerial;
     }
-
-    frSkyTelemetryWrite = frSkyTelemetryWriteSerial;
 }
 
 bool hasEnoughTimeLapsedSinceLastTelemetryTransmission(uint32_t currentMillis)
@@ -516,22 +516,25 @@ bool checkFrSkySerialTelemetryEnabled(void)
 
 void checkFrSkyTelemetryState(void)
 {
-    if (portConfig && telemetryCheckRxPortShared(portConfig)) {
-        if (!checkFrSkySerialTelemetryEnabled() && telemetrySharedPort != NULL) {
-            frskyPort = telemetrySharedPort;
-            frSkyTelemetryWrite = &frSkyTelemetryWriteSerial;
-        }
-    } else {
-        bool newTelemetryEnabledValue = telemetryDetermineEnabledState(frskyPortSharing);
+    if (portConfig) {
+        if (telemetryCheckRxPortShared(portConfig)) {
+            if (!checkFrSkySerialTelemetryEnabled() && telemetrySharedPort != NULL) {
+                frskyPort = telemetrySharedPort;
+                frSkyTelemetryWrite = &frSkyTelemetryWriteSerial;
+            }
+        } else {
+            bool newTelemetryEnabledValue = telemetryDetermineEnabledState(frskyPortSharing);
 
-        if (newTelemetryEnabledValue == checkFrSkySerialTelemetryEnabled()) {
-            return;
-        }
+            if (newTelemetryEnabledValue == checkFrSkySerialTelemetryEnabled()) {
+                return;
+            }
 
-        if (newTelemetryEnabledValue)
-            configureFrSkyTelemetryPort();
-        else
-            freeFrSkyTelemetryPort();
+            if (newTelemetryEnabledValue) {
+                configureFrSkyTelemetryPort();
+            } else {
+                freeFrSkyTelemetryPort();
+            }
+        }
     }
 }
 
