@@ -15,6 +15,8 @@
 
 #pragma once
 
+#define TARGET_CONFIG
+
 #define TARGET_BOARD_IDENTIFIER "OBF7"
 
 #define USBD_PRODUCT_STRING "OmnibusF7"
@@ -74,10 +76,13 @@
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
+#define USE_UART7
+#define UART7_RX_PIN            PE7
+
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 
-#define SERIAL_PORT_COUNT 7
+#define SERIAL_PORT_COUNT 8
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PA2 // (Unwired UART2_TX)
@@ -168,6 +173,7 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
+#define ESC_SENSOR_UART         SERIAL_PORT_USART7
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
