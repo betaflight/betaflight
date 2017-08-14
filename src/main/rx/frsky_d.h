@@ -24,9 +24,9 @@
 
 typedef struct frSkyDConfig_s {
     bool autoBind;
-    uint8_t bindHopData[50];
     uint8_t bindTxId[2];
     int8_t  bindOffset;
+    uint8_t bindHopData[50];
 } frSkyDConfig_t;
 
 PG_DECLARE(frSkyDConfig_t, frSkyDConfig);
