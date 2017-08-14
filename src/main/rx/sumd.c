@@ -23,6 +23,7 @@
 
 #ifdef SERIAL_RX
 
+#include "common/crc.h"
 #include "common/utils.h"
 
 #include "drivers/time.h"
@@ -49,22 +50,6 @@
 static bool sumdFrameDone = false;
 static uint16_t sumdChannels[SUMD_MAX_CHANNEL];
 static uint16_t crc;
-
-#define CRC_POLYNOME 0x1021
-
-// CRC calculation, adds a 8 bit unsigned to 16 bit crc
-static void CRC16(uint8_t value)
-{
-    uint8_t i;
-
-    crc = crc ^ (int16_t)value << 8;
-    for (i = 0; i < 8; i++) {
-    if (crc & 0x8000)
-        crc = (crc << 1) ^ CRC_POLYNOME;
-    else
-        crc = (crc << 1);
-    }
-}
 
 static uint8_t sumd[SUMD_BUFFSIZE] = { 0, };
 static uint8_t sumdChannelCount;
@@ -96,7 +81,7 @@ static void sumdDataReceive(uint16_t c)
         sumd[sumdIndex] = (uint8_t)c;
     sumdIndex++;
     if (sumdIndex < sumdChannelCount * 2 + 4)
-        CRC16((uint8_t)c);
+        crc = crc16_ccitt(crc, (uint8_t)c);
     else
         if (sumdIndex == sumdChannelCount * 2 + 5) {
             sumdIndex = 0;
