@@ -182,6 +182,7 @@ void beeperWarningBeeps(uint8_t) {}
 void beeperUpdate(timeUs_t) {}
 uint32_t getArmingBeepTimeMicros(void) {return 0;}
 beeperMode_e beeperModeForTableIndex(int) {return BEEPER_SILENCE;}
+uint32_t beeperModeMaskForTableIndex(int idx) {UNUSED(idx); return 0;}
 const char *beeperNameForTableIndex(int) {return NULL;}
 int beeperTableEntryCount(void) {return 0;}
 bool isBeeperOn(void) {return false;}
