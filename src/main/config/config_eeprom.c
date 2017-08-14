@@ -24,7 +24,7 @@
 
 #include "build/build_config.h"
 
-#include "common/maths.h"
+#include "common/crc.h"
 
 #include "config/config_eeprom.h"
 #include "config/config_streamer.h"

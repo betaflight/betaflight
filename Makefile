@@ -541,6 +541,7 @@ COMMON_SRC = \
             build/build_config.c \
             build/debug.c \
             build/version.c \
+            common/crc.c \
             common/encoding.c \
             common/filter.c \
             common/maths.c \
