@@ -15,6 +15,8 @@
 
 #pragma once
 
+#define TARGET_CONFIG
+
 #define TARGET_BOARD_IDENTIFIER "OBF7"
 
 #define USBD_PRODUCT_STRING "OmnibusF7"

@@ -142,13 +142,6 @@ void pgResetFn_serialConfig(serialConfig_t *serialConfig)
     }
 #endif
 
-#ifdef ESC_SENSOR_UART
-    serialPortConfig_t *serialEscSensorUartConfig = serialFindPortConfiguration(ESC_SENSOR_UART);
-    if (serialEscSensorUartConfig) {
-        serialEscSensorUartConfig->functionMask = FUNCTION_ESC_SENSOR;
-    }
-#endif
-
     serialConfig->reboot_character = 'R';
     serialConfig->serial_update_rate_hz = 100;
 }
