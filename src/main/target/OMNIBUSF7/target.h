@@ -15,9 +15,15 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "OBF7"
+#define TARGET_CONFIG
 
+#ifdef OMNIBUSF7V2
+#define TARGET_BOARD_IDENTIFIER "OB72"
+#define USBD_PRODUCT_STRING "OmnibusF7V2"
+#else
+#define TARGET_BOARD_IDENTIFIER "OBF7"
 #define USBD_PRODUCT_STRING "OmnibusF7"
+#endif
 
 #define LED0_PIN                PE0
 
@@ -26,14 +32,13 @@
 
 #define ACC
 #define GYRO
+#define USE_DUAL_GYRO
 
 // ICM-20608-G
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define MPU6500_CS_PIN          SPI1_NSS_PIN
-#define MPU6500_SPI_INSTANCE    SPI1
 //#define MPU_INT_EXTI            PE8
 
 // MPU6000
@@ -41,17 +46,28 @@
 #define USE_ACC_SPI_MPU6000
 #define USE_GYRO_MPU6000
 #define USE_GYRO_SPI_MPU6000
-#define MPU6000_CS_PIN          SPI3_NSS_PIN
-#define MPU6000_SPI_INSTANCE    SPI3
 //#define MPU_INT_EXTI            PD0
 
-#define USE_DUAL_GYRO
+#ifdef OMNIBUSF7V2
+#define MPU6000_CS_PIN          SPI1_NSS_PIN
+#define MPU6000_SPI_INSTANCE    SPI1
+#define MPU6500_CS_PIN          SPI3_NSS_PIN
+#define MPU6500_SPI_INSTANCE    SPI3
+#define GYRO_1_CS_PIN           MPU6000_CS_PIN
+#define GYRO_0_CS_PIN           MPU6500_CS_PIN
+#else
+#define MPU6000_CS_PIN          SPI3_NSS_PIN
+#define MPU6000_SPI_INSTANCE    SPI3
+#define MPU6500_CS_PIN          SPI1_NSS_PIN
+#define MPU6500_SPI_INSTANCE    SPI1
 #define GYRO_0_CS_PIN           MPU6000_CS_PIN
 #define GYRO_1_CS_PIN           MPU6500_CS_PIN
+#endif
 
 // TODO: dual gyro support
 //#define USE_MPU_DATA_READY_SIGNAL
-//#define USE_EXTI
+
+#define USE_EXTI
 
 #define USE_VCP
 #define VBUS_SENSING_PIN        PC4
@@ -74,10 +90,19 @@
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
+#ifdef OMNIBUSF7V2
+#define USE_UART7
+#define UART7_RX_PIN            PE7
+#endif
+
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 
+#ifdef OMNIBUSF7V2
+#define SERIAL_PORT_COUNT 8
+#else
 #define SERIAL_PORT_COUNT 7
+#endif
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PA2 // (Unwired UART2_TX)
@@ -168,6 +193,7 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
+#define ESC_SENSOR_UART         SERIAL_PORT_USART7
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
