@@ -23,31 +23,33 @@
 
 #ifdef TELEMETRY
 
-#include "config/feature.h"
 #include "build/version.h"
 
+#include "common/crc.h"
 #include "common/streambuf.h"
 #include "common/utils.h"
 
-#include "sensors/battery.h"
+#include "config/feature.h"
 
 #include "io/gps.h"
 #include "io/serial.h"
 
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "io/gps.h"
-
 #include "flight/imu.h"
+
+#include "io/gps.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 
+#include "sensors/battery.h"
+
 #include "telemetry/telemetry.h"
 #include "telemetry/srxl.h"
 
-#include "fc/config.h"
 
 #define SRXL_CYCLETIME_US           100000 // 100ms, 10 Hz
 
@@ -62,26 +64,10 @@
 #define SRXL_FRAMETYPE_SID          0x00
 
 static bool srxlTelemetryEnabled;
-static uint16_t srxlCrc;
 static uint8_t srxlFrame[SRXL_FRAME_SIZE_MAX];
-
-#define SRXL_POLY 0x1021
-static uint16_t srxlCrc16(uint16_t crc, uint8_t data)
-{
-    crc = crc ^ data << 8;
-    for (int i = 0; i < 8; i++) {
-        if (crc & 0x8000) {
-            crc = crc << 1 ^ SRXL_POLY;
-        } else {
-            crc = crc << 1;
-        }
-    }
-    return crc;
-}
 
 static void srxlInitializeFrame(sbuf_t *dst)
 {
-    srxlCrc = 0;
     dst->ptr = srxlFrame;
     dst->end = ARRAYEND(srxlFrame);
 
@@ -90,29 +76,9 @@ static void srxlInitializeFrame(sbuf_t *dst)
     sbufWriteU8(dst, SRXL_PACKET_LENGTH);
 }
 
-static void srxlSerialize8(sbuf_t *dst, uint8_t v)
-{
-    sbufWriteU8(dst, v);
-    srxlCrc = srxlCrc16(srxlCrc, v);
-}
-
-static void srxlSerialize16(sbuf_t *dst, uint16_t v)
-{
-    // Use BigEndian format
-    srxlSerialize8(dst,  (v >> 8));
-    srxlSerialize8(dst, (uint8_t)v);
-}
-
-static void srxlSerialize16le(sbuf_t *dst, uint16_t v)
-{
-    // Use LittleEndian format
-    srxlSerialize8(dst, (uint8_t)v);
-    srxlSerialize8(dst,  (v >> 8));
-}
-
 static void srxlFinalize(sbuf_t *dst)
 {
-    sbufWriteU16(dst, srxlCrc);
+    crc16_ccitt_sbuf_append(dst, &srxlFrame[3]); // start at byte 3, since CRC does not include device address and packet length
     sbufSwitchToReader(dst, srxlFrame);
     // write the telemetry frame to the receiver.
     srxlRxWriteTelemetryData(sbufPtr(dst), sbufBytesRemaining(dst));
@@ -140,15 +106,15 @@ typedef struct
 */
 void srxlFrameQos(sbuf_t *dst)
 {
-    srxlSerialize8(dst, SRXL_FRAMETYPE_TELE_QOS);
-    srxlSerialize8(dst, SRXL_FRAMETYPE_SID);
-    srxlSerialize16(dst, 0xFFFF); // A
-    srxlSerialize16(dst, 0xFFFF); // B
-    srxlSerialize16(dst, 0xFFFF); // L
-    srxlSerialize16(dst, 0xFFFF); // R
-    srxlSerialize16(dst, 0xFFFF); // F
-    srxlSerialize16(dst, 0xFFFF); // H
-    srxlSerialize16(dst, 0xFFFF); // rxVoltage
+    sbufWriteU8(dst, SRXL_FRAMETYPE_TELE_QOS);
+    sbufWriteU8(dst, SRXL_FRAMETYPE_SID);
+    sbufWriteU16BigEndian(dst, 0xFFFF); // A
+    sbufWriteU16BigEndian(dst, 0xFFFF); // B
+    sbufWriteU16BigEndian(dst, 0xFFFF); // L
+    sbufWriteU16BigEndian(dst, 0xFFFF); // R
+    sbufWriteU16BigEndian(dst, 0xFFFF); // F
+    sbufWriteU16BigEndian(dst, 0xFFFF); // H
+    sbufWriteU16BigEndian(dst, 0xFFFF); // rxVoltage
 }
 
 /*
@@ -166,18 +132,18 @@ typedef struct
 */
 void srxlFrameRpm(sbuf_t *dst)
 {
-    srxlSerialize8(dst, SRXL_FRAMETYPE_TELE_RPM);
-    srxlSerialize8(dst, SRXL_FRAMETYPE_SID);
-    srxlSerialize16(dst, 0xFFFF); // pulse leading edges
-    srxlSerialize16(dst, getBatteryVoltage() * 10);   // vbat is in units of 0.1V
-    srxlSerialize16(dst, 0x7FFF); // temperature
-    srxlSerialize8(dst, 0xFF);    // dbmA
-    srxlSerialize8(dst, 0xFF);    // dbmB
+    sbufWriteU8(dst, SRXL_FRAMETYPE_TELE_RPM);
+    sbufWriteU8(dst, SRXL_FRAMETYPE_SID);
+    sbufWriteU16BigEndian(dst, 0xFFFF); // pulse leading edges
+    sbufWriteU16BigEndian(dst, getBatteryVoltage() * 10);   // vbat is in units of 0.1V
+    sbufWriteU16BigEndian(dst, 0x7FFF); // temperature
+    sbufWriteU8(dst, 0xFF);    // dbmA
+    sbufWriteU8(dst, 0xFF);    // dbmB
 
     /* unused */
-    srxlSerialize16(dst, 0xFFFF);
-    srxlSerialize16(dst, 0xFFFF);
-    srxlSerialize16(dst, 0xFFFF);
+    sbufWriteU16BigEndian(dst, 0xFFFF);
+    sbufWriteU16BigEndian(dst, 0xFFFF);
+    sbufWriteU16BigEndian(dst, 0xFFFF);
 }
 
 /*
@@ -197,22 +163,22 @@ typedef struct
 
 void srxlFrameFlightPackCurrent(sbuf_t *dst)
 {
-    srxlSerialize8(dst, SRXL_FRAMETYPE_TELE_FP_MAH);
-    srxlSerialize8(dst, SRXL_FRAMETYPE_SID);
-    srxlSerialize16le(dst, getAmperage() / 10);
-    srxlSerialize16le(dst, getMAhDrawn());
-    srxlSerialize16le(dst, 0x7fff);            // temp A
-    srxlSerialize16le(dst, 0xffff);
-    srxlSerialize16le(dst, 0xffff);
-    srxlSerialize16le(dst, 0x7fff);            // temp B
-    srxlSerialize16le(dst, 0xffff);
+    sbufWriteU8(dst, SRXL_FRAMETYPE_TELE_FP_MAH);
+    sbufWriteU8(dst, SRXL_FRAMETYPE_SID);
+    sbufWriteU16(dst, getAmperage() / 10);
+    sbufWriteU16(dst, getMAhDrawn());
+    sbufWriteU16(dst, 0x7fff);            // temp A
+    sbufWriteU16(dst, 0xffff);
+    sbufWriteU16(dst, 0xffff);
+    sbufWriteU16(dst, 0x7fff);            // temp B
+    sbufWriteU16(dst, 0xffff);
 }
 
 // schedule array to decide how often each type of frame is sent
 #define SRXL_SCHEDULE_COUNT_MAX     3
 
-typedef void (*srxlSchedulePtr)(sbuf_t *dst);
-const srxlSchedulePtr srxlScheduleFuncs[SRXL_SCHEDULE_COUNT_MAX] = {
+typedef void (*srxlScheduleFnPtr)(sbuf_t *dst);
+const srxlScheduleFnPtr srxlScheduleFuncs[SRXL_SCHEDULE_COUNT_MAX] = {
     /* must send srxlFrameQos, Rpm and then alternating items of our own */
     srxlFrameQos,
     srxlFrameRpm,
@@ -226,10 +192,10 @@ static void processSrxl(void)
     sbuf_t srxlPayloadBuf;
     sbuf_t *dst = &srxlPayloadBuf;
 
-    srxlSchedulePtr srxlPtr = srxlScheduleFuncs[srxlScheduleIndex];
-    if (srxlPtr) {
+    srxlScheduleFnPtr srxlFnPtr = srxlScheduleFuncs[srxlScheduleIndex];
+    if (srxlFnPtr) {
         srxlInitializeFrame(dst);
-        srxlPtr(dst);
+        srxlFnPtr(dst);
         srxlFinalize(dst);
     }
     srxlScheduleIndex = (srxlScheduleIndex + 1) % SRXL_SCHEDULE_COUNT_MAX;
