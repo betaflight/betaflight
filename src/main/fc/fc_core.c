@@ -152,6 +152,30 @@ void updateArmingStatus(void)
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
     } else {
+        // Check if the power on arming grace time has elapsed
+        if ((getArmingDisableFlags() & ARMING_DISABLED_BOOT_GRACE_TIME) && (millis() >= systemConfig()->powerOnArmingGraceTime * 1000)) {
+            // If so, unset the grace time arming disable flag
+            unsetArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
+        }
+
+        // If switch is used for arming then check it is not defaulting to on when the RX link recovers from a fault
+        if (!isUsingSticksForArming()) {
+            static bool hadRx = false;
+            const bool haveRx = rxIsReceivingSignal();
+
+            const bool justGotRxBack = !hadRx && haveRx;
+
+            if (justGotRxBack && IS_RC_MODE_ACTIVE(BOXARM)) {
+                // If the RX has just started to receive a signal again and the arm switch is on, apply arming restriction
+                setArmingDisabled(ARMING_DISABLED_BAD_RX_RECOVERY);
+            } else if (haveRx && !IS_RC_MODE_ACTIVE(BOXARM)) {
+                // If RX signal is OK and the arm switch is off, remove arming restriction
+                unsetArmingDisabled(ARMING_DISABLED_BAD_RX_RECOVERY);
+            }
+
+            hadRx = haveRx;
+        }
+
         if (IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
             setArmingDisabled(ARMING_DISABLED_BOXFAILSAFE);
         } else {
@@ -182,11 +206,20 @@ void updateArmingStatus(void)
             unsetArmingDisabled(ARMING_DISABLED_CALIBRATING);
         }
 
-        if ((isModeActivationConditionPresent(BOXPREARM) && IS_RC_MODE_ACTIVE(BOXPREARM) && !ARMING_FLAG(WAS_ARMED_WITH_PREARM)) 
+        if ((isModeActivationConditionPresent(BOXPREARM) && IS_RC_MODE_ACTIVE(BOXPREARM) && !ARMING_FLAG(WAS_ARMED_WITH_PREARM))
             || !isModeActivationConditionPresent(BOXPREARM)) {
             unsetArmingDisabled(ARMING_DISABLED_NOPREARM);
         } else {
-            setArmingDisabled(ARMING_DISABLED_NOPREARM);            
+            setArmingDisabled(ARMING_DISABLED_NOPREARM);
+        }
+
+        if (!isUsingSticksForArming()) {
+          // If arming is disabled and the ARM switch is on
+          if (isArmingDisabled() && IS_RC_MODE_ACTIVE(BOXARM)) {
+              setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+          } else if (!IS_RC_MODE_ACTIVE(BOXARM)) {
+              unsetArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+          }
         }
 
         if (isArmingDisabled()) {

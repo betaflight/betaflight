@@ -719,6 +719,8 @@ void init(void)
     latchActiveFeatures();
     pwmEnableMotors();
 
+    setArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
+
 #ifdef USE_OSD_SLAVE
     osdSlaveTasksInit();
 #else

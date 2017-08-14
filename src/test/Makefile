@@ -28,6 +28,14 @@ altitude_hold_unittest_SRC :=  \
 		$(USER_DIR)/flight/altitude.c
 
 
+arming_prevention_unittest_SRC := \
+		$(USER_DIR)/fc/fc_core.c \
+		$(USER_DIR)/fc/rc_controls.c \
+		$(USER_DIR)/fc/rc_modes.c \
+		$(USER_DIR)/fc/runtime_config.c \
+		$(USER_DIR)/common/bitarray.c
+
+
 baro_bmp085_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_bmp085.c \
 		$(USER_DIR)/drivers/io.c
