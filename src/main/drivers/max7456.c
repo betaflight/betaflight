@@ -30,6 +30,7 @@
 #include "common/streambuf.h"
 
 #include "drivers/bus_spi.h"
+#include "drivers/display.h"
 #include "drivers/dma.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"
@@ -65,6 +66,8 @@ static IO_t max7456CsPin        = IO_NONE;
 #define MAX7456_MAX_STRING_LENGTH             CHARS_PER_LINE
 #define MAX7456_MAX_FRAME_LENGTH              (6 + 2 * MAX7456_MAX_STRING_LENGTH)*5  // FIXME: DEBUGGING
 static uint8_t max7456Buffer[MAX7456_MAX_FRAME_LENGTH];
+
+static void max7456ReloadProfilePrivate();
 
 static uint8_t max7456ReadWriteRegister(uint8_t add, uint8_t data)
 {
@@ -195,9 +198,8 @@ uint8_t max7456GetRowsCount(void)
 
 void max7456ReInit(void)
 {
-    uint8_t maxScreenRows;
+    //uint8_t maxScreenRows;
     uint8_t srdata = 0;
-    uint16_t x;
     static bool firstInit = true;
 
     ENABLE_MAX7456;
@@ -227,16 +229,10 @@ void max7456ReInit(void)
 
     if (videoSignalReg & VIDEO_MODE_PAL) { //PAL
         //maxScreenSize = VIDEO_BUFFER_CHARS_PAL;
-        maxScreenRows = VIDEO_LINES_PAL;
+        //maxScreenRows = VIDEO_LINES_PAL;
     } else {              // NTSC
         //maxScreenSize = VIDEO_BUFFER_CHARS_NTSC;
-        maxScreenRows = VIDEO_LINES_NTSC;
-    }
-
-
-    // Set all rows to same charactor black/white level.
-    for (x = 0; x < maxScreenRows; x++) {
-        max7456ReadWriteRegister(MAX7456ADD_RB0 + x, BWBRIGHTNESS);
+        //maxScreenRows = VIDEO_LINES_NTSC;
     }
 
     // Make sure the Max7456 is enabled
@@ -245,6 +241,9 @@ void max7456ReInit(void)
     max7456ReadWriteRegister(MAX7456ADD_VOS, vosRegValue);
     max7456ReadWriteRegister(MAX7456ADD_DMM, displayMemoryModeReg | CLEAR_DISPLAY);
     DISABLE_MAX7456;
+
+    // reload profile settings
+    max7456ReloadProfilePrivate();
 
     // Clear shadow to force redraw all screen in non-dma mode.
     if (firstInit)
@@ -286,43 +285,40 @@ void max7456Init(const vcdProfile_t *pVcdProfile)
     // Real init will be made later when driver detect idle.
 }
 
-/**
- * Sets inversion of black and white pixels.
- */
-void max7456Invert(bool invert)
+static void max7456ReloadProfilePrivate()
 {
-    return;
-    if (invert)
+    if (displayPortProfile()->invert) {
         displayMemoryModeReg |= INVERT_PIXEL_COLOR;
-    else
+    } else {
         displayMemoryModeReg &= ~INVERT_PIXEL_COLOR;
-
-    if (!max7456Lock){
-        max7456Lock = true;
-        ENABLE_MAX7456;
-        max7456ReadWriteRegister(MAX7456ADD_DMM, displayMemoryModeReg);
-        DISABLE_MAX7456;
-        max7456Lock = false;
     }
-}
 
-/**
- * Sets the brighness of black and white pixels.
- *
- * @param black Black brightness (0-3, 0 is darkest)
- * @param white White brightness (0-3, 0 is darkest)
- */
-void max7456Brightness(uint8_t black, uint8_t white)
-{
+    // max7456 brightness:
+    // black: 0 =   0%  1 =  10%  2 =  20%  3 =  30%
+    // white: 0 =  80%  1 =  90%  2 = 100%  3 = 120% (inverted in driver)
+    // map 0..100 -> 0..3
+    uint8_t black = (displayPortProfile()->blackBrightness) / 33;
+    // map 0..100 -> 0..3
+    uint8_t white = (displayPortProfile()->whiteBrightness) / 33;
+    // register value
     uint8_t reg = (black << 2) | (3 - white);
 
+    ENABLE_MAX7456;
+    // set inverted/normal
+    max7456ReadWriteRegister(MAX7456ADD_DMM, displayMemoryModeReg);
+
+    // send brightness to max7456
+    for (int i = MAX7456ADD_RB0; i <= MAX7456ADD_RB15; i++) {
+        max7456ReadWriteRegister(i, reg);
+    }
+    DISABLE_MAX7456;
+}
+
+void max7456ReloadProfile()
+{
     if (!max7456Lock){
         max7456Lock = true;
-        ENABLE_MAX7456;
-        for (int i = MAX7456ADD_RB0; i <= MAX7456ADD_RB15; i++) {
-            max7456ReadWriteRegister(i, reg);
-        }
-        DISABLE_MAX7456;
+        max7456ReloadProfilePrivate();
         max7456Lock = false;
     }
 }

@@ -184,5 +184,6 @@ void    max7456WriteChar(uint8_t x, uint8_t y, uint8_t c);
 void    max7456ClearScreen(void);
 void    max7456FillRegion(uint8_t xs, uint8_t ys, uint8_t width, uint8_t height, uint8_t value);
 void    max7456RefreshAll(void);
+void    max7456ReloadProfile();
 uint8_t* max7456GetScreenBuffer(void);
 bool    max7456DmaInProgress(void);
