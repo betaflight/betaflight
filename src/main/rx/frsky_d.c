@@ -22,7 +22,7 @@
 
 #include "platform.h"
 
-#ifdef USE_RX_FRSKYD
+#ifdef USE_RX_FRSKY_D
 
 #include "build/build_config.h"
 
