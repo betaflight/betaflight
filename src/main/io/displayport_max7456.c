@@ -83,19 +83,7 @@ static int writeChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c
 static int reloadProfile (displayPort_t *displayPort)
 {
     UNUSED(displayPort);
-
-    max7456Invert(displayPortProfile()->invert);
-
-    // max7456 brightness:
-    // black: 0 =   0%  1 =  10%  2 =  20%  3 =  30%
-    // white: 0 =  80%  1 =  90%  2 = 100%  3 = 120% (inverted in driver)
-    // map 0..100 -> 0..3
-    uint8_t bblack = (displayPortProfile()->blackBrightness) / 33;
-    // map 0..100 -> 0..3
-    uint8_t bwhite = (displayPortProfile()->whiteBrightness) / 33;
-    // send to max7456
-    max7456Brightness(bblack, bwhite);
-
+    max7456ReloadProfile();
     return 0;
 }
 

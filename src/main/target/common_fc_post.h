@@ -36,8 +36,7 @@
 #undef USE_DASHBOARD
 #else
 #ifdef USE_DASHBOARD
-// XXX flash overflow, quick hack for development FIXME
-//#define USE_I2C_OLED_DISPLAY
+#define USE_I2C_OLED_DISPLAY
 #endif
 #endif
 

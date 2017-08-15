@@ -2010,8 +2010,8 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
                 osdConfigMutable()->device = sbufReadU8(src);
                 displayPortProfileMutable()->invert = (sbufReadU8(src) != 0) ? true : false;
-                displayPortProfileMutable()->blackBrightness = sbufReadU8(src);
-                displayPortProfileMutable()->whiteBrightness = sbufReadU8(src);
+                displayPortProfileMutable()->blackBrightness = MIN(100, sbufReadU8(src));
+                displayPortProfileMutable()->whiteBrightness = MIN(100, sbufReadU8(src));
                 // force profile update
                 osdReloadProfile();
 
