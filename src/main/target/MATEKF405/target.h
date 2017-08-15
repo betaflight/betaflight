@@ -51,6 +51,29 @@
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW180_DEG
 
+// *************** Baro **************************
+#define USE_I2C
+
+#if defined(BARO_I2C1)
+// Useful for MATEKF405_OSD, since it does not have the SCL / SDA pads
+#define USE_I2C_DEVICE_3
+#define I2C_DEVICE              (I2CDEV_3)
+#define I2C3_SCL                PC9        // S4 pad
+#define I2C3_SDA                PA8        // S6 pad
+#define BARO_I2C_INSTANCE       (I2CDEV_3)
+#else
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
+#define I2C1_SCL                PB6        // SCL pad
+#define I2C1_SDA                PB7        // SDA pad
+#define BARO_I2C_INSTANCE       (I2CDEV_1)
+#endif
+
+#define BARO
+#define USE_BARO_BMP280
+#define USE_BARO_MS5611
+#define USE_BARO_BMP085
+
 // *************** SD Card **************************
 #define USE_SDCARD
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
