@@ -2020,7 +2020,6 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 osdConfigMutable()->timers[index] = sbufReadU16(src);
                 return MSP_RESULT_ERROR;
             } else {
-#if defined(OSD)
                 /* Get screen index, 0 is post flight statistics, 1 and above are in flight OSD screens */
                 const uint8_t screen = (uint8_t) sbufReadU8(src);
 

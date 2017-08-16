@@ -233,7 +233,7 @@ bool tinyOSDInit(const vcdProfile_t *pVcdProfile)
     }
 
     // we will do fw upgrades in the feature so reserve rx and tx
-    portMode_t mode = MODE_RXTX;
+    portMode_e mode = MODE_RXTX;
 
     baudRate_e baudRateIndex =  osdPortConfig->blackbox_baudrateIndex;
     uint32_t baudrate = baudRates[baudRateIndex];
