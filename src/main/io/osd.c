@@ -452,7 +452,7 @@ static void osdDrawSingleElement(uint8_t item)
         if (strlen(pilotConfig()->name) == 0)
             strcpy(buff, "CRAFT_NAME");
         else {
-            for (int i = 0; i < MAX_NAME_LENGTH; i++) {
+            for (unsigned int i = 0; i < MAX_NAME_LENGTH; i++) {
                 buff[i] = toupper((unsigned char)pilotConfig()->name[i]);
                 if (pilotConfig()->name[i] == 0)
                     break;
