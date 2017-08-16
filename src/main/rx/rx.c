@@ -617,7 +617,6 @@ static void updateRSSIPWM(void)
 }
 
 #define RSSI_ADC_SAMPLE_COUNT 16
-//#define RSSI_SCALE (0xFFF / 100.0f)
 
 static void updateRSSIADC(timeUs_t currentTimeUs)
 {
