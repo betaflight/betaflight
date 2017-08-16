@@ -14,19 +14,17 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 #pragma once
 
-#define FTOA_BUFFER_SIZE 13
+#include <stdint.h>
 
-void uli2a(unsigned long int num, unsigned int base, int uc, char *bf);
-void li2a(long num, char *bf);
-void ui2a(unsigned int num, unsigned int base, int uc, char *bf);
-void i2a(int num, char *bf);
-char a2i(char ch, const char **src, int base, int *nump);
-char *ftoa(float x, char *floatString);
-float fastA2F(const char *p);
-unsigned long int fastA2UL(const char *p);
+struct sbuf_s;
 
-#ifndef HAVE_ITOA_FUNCTION
-char *itoa(int i, char *a, int r);
-#endif
+uint16_t crc16_ccitt(uint16_t crc, unsigned char a);
+uint16_t crc16_ccitt_update(uint16_t crc, const void *data, uint32_t length);
+void crc16_ccitt_sbuf_append(struct sbuf_s *dst, uint8_t *start);
+
+uint8_t crc8_dvb_s2(uint8_t crc, unsigned char a);
+uint8_t crc8_dvb_s2_update(uint8_t crc, const void *data, uint32_t length);
+void crc8_dvb_s2_sbuf_append(struct sbuf_s *dst, uint8_t *start);

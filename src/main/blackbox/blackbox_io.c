@@ -213,7 +213,7 @@ bool blackboxDeviceOpen(void)
             }
 
             blackboxPortSharing = determinePortSharing(portConfig, FUNCTION_BLACKBOX);
-            baudRateIndex = portConfig->blackbox_baudrateIndex;
+            baudRateIndex = portConfig->peripheral_baudrateIndex;
 
             if (baudRates[baudRateIndex] == 230400) {
                 /*

@@ -542,6 +542,7 @@ COMMON_SRC = \
             build/debug.c \
             build/version.c \
             common/bitarray.c \
+            common/crc.c \
             common/encoding.c \
             common/filter.c \
             common/maths.c \

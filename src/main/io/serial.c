@@ -112,7 +112,7 @@ void pgResetFn_serialConfig(serialConfig_t *serialConfig)
         serialConfig->portConfigs[i].msp_baudrateIndex = BAUD_115200;
         serialConfig->portConfigs[i].gps_baudrateIndex = BAUD_38400;
         serialConfig->portConfigs[i].telemetry_baudrateIndex = BAUD_AUTO;
-        serialConfig->portConfigs[i].blackbox_baudrateIndex = BAUD_115200;
+        serialConfig->portConfigs[i].peripheral_baudrateIndex = BAUD_115200;
     }
 
     serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;

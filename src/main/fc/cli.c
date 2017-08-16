@@ -1496,14 +1496,14 @@ static void printSerial(uint8_t dumpMask, const serialConfig_t *serialConfig, co
                 && serialConfig->portConfigs[i].msp_baudrateIndex == serialConfigDefault->portConfigs[i].msp_baudrateIndex
                 && serialConfig->portConfigs[i].gps_baudrateIndex == serialConfigDefault->portConfigs[i].gps_baudrateIndex
                 && serialConfig->portConfigs[i].telemetry_baudrateIndex == serialConfigDefault->portConfigs[i].telemetry_baudrateIndex
-                && serialConfig->portConfigs[i].blackbox_baudrateIndex == serialConfigDefault->portConfigs[i].blackbox_baudrateIndex;
+                && serialConfig->portConfigs[i].peripheral_baudrateIndex == serialConfigDefault->portConfigs[i].peripheral_baudrateIndex;
             cliDefaultPrintf(dumpMask, equalsDefault, format,
                 serialConfigDefault->portConfigs[i].identifier,
                 serialConfigDefault->portConfigs[i].functionMask,
                 baudRates[serialConfigDefault->portConfigs[i].msp_baudrateIndex],
                 baudRates[serialConfigDefault->portConfigs[i].gps_baudrateIndex],
                 baudRates[serialConfigDefault->portConfigs[i].telemetry_baudrateIndex],
-                baudRates[serialConfigDefault->portConfigs[i].blackbox_baudrateIndex]
+                baudRates[serialConfigDefault->portConfigs[i].peripheral_baudrateIndex]
             );
         }
         cliDumpPrintf(dumpMask, equalsDefault, format,
@@ -1512,7 +1512,7 @@ static void printSerial(uint8_t dumpMask, const serialConfig_t *serialConfig, co
             baudRates[serialConfig->portConfigs[i].msp_baudrateIndex],
             baudRates[serialConfig->portConfigs[i].gps_baudrateIndex],
             baudRates[serialConfig->portConfigs[i].telemetry_baudrateIndex],
-            baudRates[serialConfig->portConfigs[i].blackbox_baudrateIndex]
+            baudRates[serialConfig->portConfigs[i].peripheral_baudrateIndex]
             );
     }
 }
@@ -1582,7 +1582,7 @@ static void cliSerial(char *cmdline)
                 if (baudRateIndex < BAUD_19200 || baudRateIndex > BAUD_250000) {
                     continue;
                 }
-                portConfig.blackbox_baudrateIndex = baudRateIndex;
+                portConfig.peripheral_baudrateIndex = baudRateIndex;
                 break;
         }
 
@@ -3065,7 +3065,7 @@ static void cliSet(char *cmdline)
 
                                 value = atoi(eqptr);
                                 valuef = fastA2F(eqptr);
-                                uvalue = strtoul(eqptr, NULL, 10);
+                                uvalue = fastA2UL(eqptr);
                                 // note: compare float values
                                 if ((mode == MODE_DIRECT && (valuef >= valueTable[i].config.minmax.min && valuef <= valueTable[i].config.minmax.max))
                                      || (mode == MODE_MAX && (valuef >= 0 && valuef <= valueTable[i].config.max.max))) {
