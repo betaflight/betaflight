@@ -95,11 +95,6 @@ static int drawScreen(displayPort_t *displayPort)
     return output(displayPort, MSP_DISPLAYPORT, subcmd, sizeof(subcmd));
 }
 
-static int screenSize(const displayPort_t *displayPort)
-{
-    return displayPort->rowCount * displayPort->colCount;
-}
-
 static int writeString(displayPort_t *displayPort, uint8_t col, uint8_t row, const char *string)
 {
 #define MSP_OSD_MAX_STRING_LENGTH 30 // FIXME move this
@@ -151,7 +146,6 @@ static const displayPortVTable_t mspDisplayPortVTable = {
     .release = release,
     .clearScreen = clearScreen,
     .drawScreen = drawScreen,
-    .screenSize = screenSize,
     .writeString = writeString,
     .writeChar = writeChar,
     .isTransferInProgress = isTransferInProgress,

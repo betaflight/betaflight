@@ -52,59 +52,11 @@ void pgResetFn_displayPortProfileTinyOSD(displayPortProfile_t *displayPortProfil
     displayPortProfile->whiteBrightness = 0;
 }
 
-
-/*
-static int clearScreen(displayPort_t *)
-{
-    tinyOSDClearScreen();
-    return 0;
-}
-
-static int drawScreen(displayPort_t *)
-{
-    tinyOSDDrawScreen();
-    return 0;
-}
-
-static int screenSize(const displayPort_t *)
-{
-    return maxScreenSize;
-}
-
-static int writeString(displayPort_t *, uint8_t x, uint8_t y, const char *s)
-{
-    tinyOSDWriteString(x, y, s);
-    return 0;
-}
-
-static int writeChar(displayPort_t *, uint8_t x, uint8_t y, uint8_t c)
-{
-    tinyOSDWriteChar(x, y, c);
-    return 0;
-}
-
-static bool isTransferInProgress(const displayPort_t *)
-{
-    return false;
-}
-
-static int heartbeat(displayPort_t *)
-{
-    return 0;
-}
-
-static uint32_t txBytesFree(const displayPort_t *)
-{
-    return UINT32_MAX;
-}
-*/
-
 static const displayPortVTable_t tinyOSDVTable = {
     .grab = tinyOSDGrab,
     .release = tinyOSDRelease,
     .clearScreen = tinyOSDClearScreen,
     .drawScreen = tinyOSDDrawScreen,
-    .screenSize = tinyOSDScreenSize,
     .writeString = tinyOSDWriteString,
     .writeChar = tinyOSDWriteChar,
     .isTransferInProgress = tinyOSDIsTransferInProgress,

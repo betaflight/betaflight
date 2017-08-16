@@ -43,6 +43,7 @@
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/compass/compass.h"
+#include "drivers/display.h"
 #include "drivers/flash.h"
 #include "drivers/io.h"
 #include "drivers/max7456.h"
@@ -617,14 +618,13 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 
         sbufWriteU8(dst, osdFlags);
 
-#ifdef USE_MAX7456
         // send video system (AUTO/PAL/NTSC)
         sbufWriteU8(dst, vcdProfile()->video_system);
-#else
-        sbufWriteU8(dst, 0);
-#endif
 
         // OSD specific, not applicable to OSD slaves.
+        sbufWriteU8(dst, osdConfig()->device);
+        sbufWriteU8(dst, displayScreenSizeRows(osdDisplayPort));
+        sbufWriteU8(dst, displayScreenSizeCols(osdDisplayPort));
 
         // Configuration
         sbufWriteU8(dst, osdConfig()->units);
@@ -2001,12 +2001,10 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
             if ((int8_t)addr == -1) {
                 /* Set general OSD settings */
-#ifdef USE_MAX7456
                 vcdProfileMutable()->video_system = sbufReadU8(src);
-#else
-                sbufReadU8(src); // Skip video system
-#endif
-                osdConfigMutable()->units = sbufReadU8(src);
+
+                osdConfigMutable()->device = sbufReadU8(src);
+                osdConfigMutable()->units  = sbufReadU8(src);
 
                 // Alarms
                 osdConfigMutable()->rssi_alarm = sbufReadU8(src);
