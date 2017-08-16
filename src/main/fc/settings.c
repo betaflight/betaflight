@@ -291,7 +291,6 @@ const lookupTableEntry_t lookupTables[] = {
     { lookupTableFailsafe, sizeof(lookupTableFailsafe) / sizeof(char *) },
     { lookupTableCrashRecovery, sizeof(lookupTableCrashRecovery) / sizeof(char *) },
     { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
-#endif
 #ifdef USE_CAMERA_CONTROL
     { lookupTableCameraControlMode, sizeof(lookupTableCameraControlMode) / sizeof(char *) },
 #endif

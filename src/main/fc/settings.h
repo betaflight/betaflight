@@ -58,7 +58,6 @@ typedef enum {
     TABLE_FAILSAFE,
     TABLE_CRASH_RECOVERY,
     TABLE_OSD_MODE,
-#endif
 #ifdef USE_CAMERA_CONTROL
     TABLE_CAMERA_CONTROL_MODE,
 #endif
