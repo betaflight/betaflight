@@ -43,6 +43,7 @@ void pgResetFn_displayPortProfile(displayPortProfile_t *profile)
 
 void displayClearScreen(displayPort_t *instance)
 {
+    instance->vTable->reloadProfile(instance);
     instance->vTable->clearScreen(instance);
     instance->cleared = true;
     instance->cursorRow = -1;
