@@ -26,21 +26,16 @@
 #include "build/build_config.h"
 #include "build/version.h"
 
-#include "common/streambuf.h"
-#include "common/maths.h"
 #include "common/axis.h"
-#include "common/utils.h"
+#include "common/crc.h"
+#include "common/streambuf.h"
 #include "common/time.h"
+#include "common/utils.h"
 
-#include "drivers/time.h"
+#include "config/feature.h"
+
 #include "drivers/serial.h"
-
-#include "sensors/battery.h"
-
-#include "io/gps.h"
-#include "io/serial.h"
-
-#include "navigation/navigation.h"
+#include "drivers/time.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -48,14 +43,19 @@
 
 #include "flight/imu.h"
 
-#include "rx/rx.h"
+#include "io/gps.h"
+#include "io/serial.h"
+
+#include "navigation/navigation.h"
+
 #include "rx/crsf.h"
+#include "rx/rx.h"
 
-#include "telemetry/telemetry.h"
+#include "sensors/battery.h"
+
 #include "telemetry/crsf.h"
+#include "telemetry/telemetry.h"
 
-#include "config/feature.h"
-//#include "config/config.h"
 
 #define CRSF_CYCLETIME_US                   100000 // 100ms, 10 Hz
 

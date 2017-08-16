@@ -105,7 +105,7 @@ typedef struct serialPortConfig_s {
     serialPortIdentifier_e identifier;
     uint8_t msp_baudrateIndex;
     uint8_t gps_baudrateIndex;
-    uint8_t blackbox_baudrateIndex;
+    uint8_t peripheral_baudrateIndex;
     uint8_t telemetry_baudrateIndex; // not used for all telemetry systems, e.g. HoTT only works at 19200.
 } serialPortConfig_t;
 

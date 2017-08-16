@@ -26,6 +26,7 @@
 #include "common/streambuf.h"
 #include "common/utils.h"
 #include "common/maths.h"
+#include "common/crc.h"
 
 #include "drivers/serial.h"
 
@@ -330,8 +331,8 @@ static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet, mspVersion_e msp
         hdrV2->size = dataLen;
 
         // V2 CRC: only V2 header + data payload
-        crcBuf[crcLen] = crc8_dvb_s2_buf(0, (uint8_t *)hdrV2, sizeof(mspHeaderV2_t));
-        crcBuf[crcLen] = crc8_dvb_s2_buf(crcBuf[crcLen], sbufPtr(&packet->buf), dataLen);
+        crcBuf[crcLen] = crc8_dvb_s2_update(0, (uint8_t *)hdrV2, sizeof(mspHeaderV2_t));
+        crcBuf[crcLen] = crc8_dvb_s2_update(crcBuf[crcLen], sbufPtr(&packet->buf), dataLen);
         crcLen++;
 
         // V1 CRC: All headers + data payload + V2 CRC byte
@@ -348,8 +349,8 @@ static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet, mspVersion_e msp
         hdrV2->cmd = packet->cmd;
         hdrV2->size = dataLen;
 
-        crcBuf[crcLen] = crc8_dvb_s2_buf(0, (uint8_t *)hdrV2, sizeof(mspHeaderV2_t));
-        crcBuf[crcLen] = crc8_dvb_s2_buf(crcBuf[crcLen], sbufPtr(&packet->buf), dataLen);
+        crcBuf[crcLen] = crc8_dvb_s2_update(0, (uint8_t *)hdrV2, sizeof(mspHeaderV2_t));
+        crcBuf[crcLen] = crc8_dvb_s2_update(crcBuf[crcLen], sbufPtr(&packet->buf), dataLen);
         crcLen++;
     }
     else {
