@@ -86,8 +86,8 @@ static uint8_t screenBufferDirty[TINYOSD_VIDEO_BUFFER_DIRTY_SIZE];
 //#define MAX_CHARS2UPDATE    100
 #define TINYOSD_PROTOCOL_FRAME_BUFFER_SIZE 32
 
-static uint8_t  videoSignalCfg;
-static uint8_t  videoSignalReg  = 1; // OSD_ENABLE required to trigger first ReInit
+//static uint8_t  videoSignalCfg;
+static uint8_t  video_system;
 
 static uint8_t  hosRegValue; // HOS (Horizontal offset register) value
 static uint8_t  vosRegValue; // VOS (Vertical offset register) value
@@ -159,19 +159,9 @@ static uint8_t tinyOSDSendBuffer(uint8_t cmd, uint8_t *data, uint8_t len)
     return 1; //serialRead(tinyOSDPort);
 }
 
-uint8_t tinyOSDGetRowsCount(void)
-{
-    return (videoSignalReg & VIDEO_MODE_PAL) ? TINYOSD_VIDEO_LINES_PAL : TINYOSD_VIDEO_LINES_NTSC;
-}
-
-uint8_t tinyOSDGetColsCount(void)
-{
-    return 35;
-}
-
 void tinyOSDReInit(void)
 {
-    uint8_t maxScreenRows;
+    //uint8_t maxScreenRows;
     //uint8_t srdata = 0;
     //uint16_t x;
     static bool firstInit = true;
@@ -201,16 +191,17 @@ void tinyOSDReInit(void)
             break;
     }
 */
-    videoSignalReg = VIDEO_MODE_NTSC;
 
-    if (videoSignalReg & VIDEO_MODE_PAL) { //PAL
-        tinyOSD_maxScreenSize = TINYOSD_VIDEO_BUFFER_CHARS_PAL;
-        maxScreenRows = TINYOSD_VIDEO_LINES_PAL;
-    } else {              // NTSC
-        tinyOSD_maxScreenSize = TINYOSD_VIDEO_BUFFER_CHARS_NTSC;
-        maxScreenRows = TINYOSD_VIDEO_LINES_NTSC;
+    if (video_system == VIDEO_SYSTEM_AUTO) {
+        // fetch video mode from tinyOSD FIXME
+        video_system = VIDEO_SYSTEM_NTSC;
     }
 
+    if (video_system == VIDEO_SYSTEM_PAL) {
+        tinyOSD_maxScreenSize = TINYOSD_VIDEO_BUFFER_CHARS_PAL;
+    } else {              // NTSC
+        tinyOSD_maxScreenSize = TINYOSD_VIDEO_BUFFER_CHARS_NTSC;
+    }
 
     // enable osd
     tinyOSDSendBuffer(TINYOSD_COMMAND_SET_STATUS, (uint8_t *)"\x01", 1);
@@ -229,7 +220,7 @@ void tinyOSDReInit(void)
 bool tinyOSDInit(const vcdProfile_t *pVcdProfile)
 {
     // Setup values to write to registers
-    videoSignalCfg = pVcdProfile->video_system;
+    video_system = pVcdProfile->video_system;
     hosRegValue = 32 - pVcdProfile->h_offset;
     vosRegValue = 16 - pVcdProfile->v_offset;
 
@@ -281,12 +272,6 @@ int tinyOSDClearScreen(displayPort_t *displayPort)
     }
 
     return 0;
-}
-
-int tinyOSDScreenSize(const displayPort_t *displayPort)
-{
-    UNUSED(displayPort);
-    return tinyOSD_maxScreenSize;
 }
 
 uint8_t* tinyOSDGetScreenBuffer(void) {
@@ -500,8 +485,14 @@ void tinyOSDRefreshAll(void)
 void tinyOSDResync(displayPort_t *displayPort)
 {
     tinyOSDRefreshAll();
-    displayPort->rows = tinyOSDGetRowsCount();
-    displayPort->cols = tinyOSDGetColsCount();
+
+    if (video_system == VIDEO_SYSTEM_PAL) {
+        displayPort->rowCount = TINYOSD_VIDEO_LINES_PAL;
+    } else {
+        displayPort->rowCount = TINYOSD_VIDEO_LINES_NTSC;
+    }
+
+    displayPort->colCount = TINYOSD_VIDEO_COLS;
 }
 
 uint32_t tinyOSDTxBytesFree(const displayPort_t *displayPort)

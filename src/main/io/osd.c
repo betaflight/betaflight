@@ -138,7 +138,7 @@ uint32_t resumeRefreshAt = 0;
 
 static uint8_t armState;
 
-static displayPort_t *osdDisplayPort;
+displayPort_t *osdDisplayPort;
 
 #define AH_SYMBOL_COUNT 9
 

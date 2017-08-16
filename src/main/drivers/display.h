@@ -16,6 +16,7 @@
  */
 
 #pragma once
+#include <stdint.h>
 
 struct displayPortVTable_s;
 typedef struct displayPort_s {
@@ -37,7 +38,6 @@ typedef struct displayPortVTable_s {
     int (*release)(displayPort_t *displayPort);
     int (*clearScreen)(displayPort_t *displayPort);
     int (*drawScreen)(displayPort_t *displayPort);
-    int (*screenSize)(const displayPort_t *displayPort);
     int (*writeString)(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *text);
     int (*writeChar)(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c);
     bool (*isTransferInProgress)(const displayPort_t *displayPort);
@@ -60,7 +60,8 @@ void displayReleaseAll(displayPort_t *instance);
 bool displayIsGrabbed(const displayPort_t *instance);
 void displayClearScreen(displayPort_t *instance);
 void displayDrawScreen(displayPort_t *instance);
-int displayScreenSize(const displayPort_t *instance);
+uint8_t displayScreenSizeRows(const displayPort_t *instance);
+uint8_t displayScreenSizeCols(const displayPort_t *instance);
 void displaySetXY(displayPort_t *instance, uint8_t x, uint8_t y);
 int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, const char *s);
 int displayWriteChar(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t c);

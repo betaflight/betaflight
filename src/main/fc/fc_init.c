@@ -587,7 +587,7 @@ void init(void)
 #endif
         }
 
-        // osdInit  will register with CMS by itself.
+        // osdInit will register with CMS by itself.
         if (osdDisplayPort != NULL) {
             osdInit(osdDisplayPort);
         }

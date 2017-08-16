@@ -191,6 +191,8 @@ extern uint32_t resumeRefreshAt;
 PG_DECLARE(osdConfig_t, osdConfig);
 
 struct displayPort_s;
+extern struct displayPort_s *osdDisplayPort;
+
 void osdInit(struct displayPort_s *osdDisplayPort);
 void osdResetConfig(osdConfig_t *osdProfile);
 void osdResetAlarms(void);

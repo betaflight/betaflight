@@ -37,9 +37,14 @@ void displayDrawScreen(displayPort_t *instance)
     instance->vTable->drawScreen(instance);
 }
 
-int displayScreenSize(const displayPort_t *instance)
+uint8_t displayScreenSizeRows(const displayPort_t *instance)
 {
-    return instance->vTable->screenSize(instance);
+    return instance->rowCount;
+}
+
+uint8_t displayScreenSizeCols(const displayPort_t *instance)
+{
+    return instance->colCount;
 }
 
 void displayGrab(displayPort_t *instance)

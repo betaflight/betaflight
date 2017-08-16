@@ -27,11 +27,11 @@
 #endif
 
 /** PAL or NTSC, value is number of chars total */
-#define TINYOSD_VIDEO_ROWS                35
+#define TINYOSD_VIDEO_COLS                35
 #define TINYOSD_VIDEO_LINES_NTSC          13
 #define TINYOSD_VIDEO_LINES_PAL           16
-#define TINYOSD_VIDEO_BUFFER_CHARS_NTSC   (TINYOSD_VIDEO_ROWS * TINYOSD_VIDEO_LINES_NTSC)
-#define TINYOSD_VIDEO_BUFFER_CHARS_PAL    (TINYOSD_VIDEO_ROWS * TINYOSD_VIDEO_LINES_PAL)
+#define TINYOSD_VIDEO_BUFFER_CHARS_NTSC   (TINYOSD_VIDEO_COLS * TINYOSD_VIDEO_LINES_NTSC)
+#define TINYOSD_VIDEO_BUFFER_CHARS_PAL    (TINYOSD_VIDEO_COLS * TINYOSD_VIDEO_LINES_PAL)
 #define TINYOSD_VIDEO_BUFFER_SIZE         TINYOSD_VIDEO_BUFFER_CHARS_PAL
 
 
@@ -46,7 +46,7 @@
 #define SCREEN_BUFFER_GET(__pos) (screenBuffer[(__pos)])
 
 
-extern uint16_t maxScreenSize;
+//extern uint16_t maxScreenSize;
 #define TINYOSD_CRC8_UPDATE(__crc, __val) ((__crc) = tinyosd_crc8_table[(__crc) ^ (__val)])
 #define TINYOSD_CRC8_INIT(__crc, __ival) { (__crc) = (__ival); }
 
@@ -73,7 +73,6 @@ uint8_t tinyOSDGetColsCount(void);
 int tinyOSDWriteString(displayPort_t *, uint8_t x, uint8_t y, const char *buff);
 int tinyOSDWriteChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c);
 int tinyOSDClearScreen(displayPort_t *);
-int tinyOSDScreenSize(const displayPort_t *);
 void tinyOSDRefreshAll(void);
 bool tinyOSDIsTransferInProgress(const displayPort_t *);
 int tinyOSDHeartbeat(displayPort_t *displayPort);
