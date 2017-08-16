@@ -294,8 +294,9 @@ void IOConfigGPIOAF(IO_t io, ioConfig_t cfg, uint8_t af)
 
     LL_GPIO_InitTypeDef init = {
         .Pin = IO_Pin(io),
-        .Mode = (cfg >> 0) & 0x13,
+        .Mode = (cfg >> 0) & 0x03,
         .Speed = (cfg >> 2) & 0x03,
+        .OutputType = (cfg >> 4) & 0x01,
         .Pull = (cfg >> 5) & 0x03,
         .Alternate = af
     };
