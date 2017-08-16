@@ -1924,7 +1924,7 @@ static void printName(uint8_t dumpMask, const pilotConfig_t *pilotConfig)
 
 static void cliName(char *cmdline)
 {
-    const int len = strlen(cmdline);
+    const unsigned int len = strlen(cmdline);
     if (len > 0) {
         memset(pilotConfigMutable()->name, 0, ARRAYLEN(pilotConfig()->name));
         if (strncmp(cmdline, emptyName, len)) {
