@@ -114,7 +114,6 @@
 #define PG_FRSKY_D_CONFIG 523
 #define PG_BETAFLIGHT_END 523
 
-
 // OSD configuration (subject to change)
 #define PG_OSD_FONT_CONFIG 2047
 #define PG_OSD_VIDEO_CONFIG 2046

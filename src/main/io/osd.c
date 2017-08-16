@@ -31,9 +31,8 @@
 
 #include "platform.h"
 
-#ifdef OSD
 
-#ifdef OSD
+#ifdef USE_MAX7456
 #define DEFAULT_OSD_DEVICE OSD_DEVICE_MAX7456
 #else
 #define DEFAULT_OSD_DEVICE OSD_DEVICE_NONE
@@ -855,8 +854,10 @@ static void osdDrawLogo(int x, int y)
 
 void osdInit(displayPort_t *osdDisplayPortToUse)
 {
-    if (!osdDisplayPortToUse)
+    if ((!feature(FEATURE_OSD)) || (!osdDisplayPortToUse)) {
+        // no osd hw active
         return;
+    }
 
     BUILD_BUG_ON(OSD_POS_MAX != OSD_POS(31,31));
 
@@ -1197,6 +1198,11 @@ void osdUpdate(timeUs_t currentTimeUs)
 {
     static uint32_t counter = 0;
 
+    if (osdConfig()->device == OSD_DEVICE_NONE) {
+        // osd not active -> return
+        return;
+    }
+
     if (isBeeperOn()) {
         showVisualBeeper = true;
     }
@@ -1241,4 +1247,3 @@ void osdUpdate(timeUs_t currentTimeUs)
     }
 #endif
 }
-#endif // OSD

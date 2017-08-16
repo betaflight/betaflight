@@ -57,7 +57,6 @@ typedef enum {
     TABLE_LOWPASS_TYPE,
     TABLE_FAILSAFE,
     TABLE_CRASH_RECOVERY,
-#ifdef OSD
     TABLE_OSD_MODE,
 #endif
 #ifdef USE_CAMERA_CONTROL
