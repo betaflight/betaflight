@@ -317,15 +317,17 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
         break;
 
     case OME_VISIBLE:
-        if (IS_PRINTVALUE(p) && p->data) {
-            uint16_t *val = (uint16_t *)p->data;
+        if (feature(FEATURE_OSD)) {
+            if (IS_PRINTVALUE(p) && p->data) {
+                osdItem_t *item = (osdItem_t *)p->data;
 
-            if (VISIBLE(*val)) {
-                cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "YES");
-            } else {
-                cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "NO ");
+                if (item->flags & OSD_FLAG_VISIBLE) {
+                    cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "YES");
+                } else {
+                    cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "NO ");
+                }
+                CLR_PRINTVALUE(p);
             }
-            CLR_PRINTVALUE(p);
         }
         break;
 
@@ -755,12 +757,12 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
 
         case OME_VISIBLE:
             if (p->data) {
-                uint16_t *val = (uint16_t *)p->data;
+                osdItem_t *item = (osdItem_t *)p->data;
 
                 if (key == KEY_RIGHT)
-                    *val |= VISIBLE_FLAG;
+                    item->flags |= OSD_FLAG_VISIBLE;
                 else
-                    *val %= ~VISIBLE_FLAG;
+                    item->flags &= ~OSD_FLAG_VISIBLE;
                 SET_PRINTVALUE(p);
             }
             break;

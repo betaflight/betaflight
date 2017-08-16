@@ -660,7 +660,6 @@ const clivalue_t valueTable[] = {
     { "osd_item_throttle",           VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_THROTTLE_POS]) },
     { "osd_item_vtx_channel",        VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_VTX_CHANNEL]) },
     { "osd_item_crosshairs",         VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_CROSSHAIRS]) },
-    { "osd_item_ah_sbar",            VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_HORIZON_SIDEBARS]) },
     { "osd_item_horizon",            VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_ARTIFICIAL_HORIZON]) },
     { "osd_item_current",            VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_CURRENT_DRAW]) },
     { "osd_item_mah_drawn",          VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_MAH_DRAWN]) },

@@ -355,12 +355,11 @@ void max7456ReInit(void)
 
     if (videoSignalReg & VIDEO_MODE_PAL) { //PAL
         maxScreenSize = VIDEO_BUFFER_CHARS_PAL;
-        screenSizeRows = VIDEO_LINES_PAL;
+        maxScreenRows = VIDEO_LINES_PAL;
     } else {              // NTSC
         maxScreenSize = VIDEO_BUFFER_CHARS_NTSC;
         maxScreenRows = VIDEO_LINES_NTSC;
     }
-    screenSizeCols = VIDEO_COLS;
 
 
         // Set all rows to same charactor black/white level.
@@ -488,7 +487,7 @@ void max7456ReInit(void)
 
     #include "build/debug.h"
 
-    void max7456DrawScreen(void)
+void max7456DrawScreenPartial(void)
     {
         uint8_t stallCheck;
         uint8_t videoSense;

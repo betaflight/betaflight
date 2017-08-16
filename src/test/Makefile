@@ -92,6 +92,7 @@ cli_unittest_DEFINES := \
 cms_unittest_SRC := \
 		$(USER_DIR)/cms/cms.c \
 		$(USER_DIR)/common/typeconversion.c \
+                $(USER_DIR)/config/feature.c \
 		$(USER_DIR)/drivers/display.c
 
 

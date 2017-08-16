@@ -2035,6 +2035,9 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 } else {
                   return MSP_RESULT_ERROR;
                 }
+
+                // force full screen rewrite
+                if (osdDisplayPort) displayClearScreen(osdDisplayPort);
             }
         }
         break;
