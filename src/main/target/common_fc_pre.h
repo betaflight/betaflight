@@ -112,7 +112,6 @@
 #define TELEMETRY_JETIEXBUS
 #define TELEMETRY_MAVLINK
 #define TELEMETRY_SRXL
-#define USE_DASHBOARD
 #define USE_MSP_DISPLAYPORT
 #define USE_RCSPLIT
 #define USE_RX_MSP
@@ -133,6 +132,8 @@
 #endif
 
 #if (FLASH_SIZE > 256)
+// Temporarily moved DASHBOARD here because of overflowing flash size of F3
+#define USE_DASHBOARD
 // Temporarily moved GPS here because of overflowing flash size on F3
 #define GPS
 #define USE_NAV

@@ -15,6 +15,8 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+#ifndef USE_MAX7456
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -258,8 +260,8 @@ int tinyOSDWriteString(displayPort_t *displayPort, uint8_t x, uint8_t y, const c
     return 0;
 }
 
-
 void tinyOSDSetRegister(uint8_t reg, uint8_t value)
+
 {
     // start frame
     opentcoInitializeFrame(sbuf, OPENTCO_DEVICE_OSD, OPENTCO_OSD_COMMAND_SET_REGISTER);
@@ -270,6 +272,17 @@ void tinyOSDSetRegister(uint8_t reg, uint8_t value)
 
     // send
     opentcoSendFrame(sbuf);
+}
+
+int tinyOSDReloadProfile (displayPort_t * displayPort)
+{
+    UNUSED(displayPort);
+
+    tinyOSDSetRegister(OPENTCO_OSD_REGISTER_INVERT, displayPortProfile()->invert);
+    tinyOSDSetRegister(OPENTCO_OSD_REGISTER_BRIGHTNESS_BLACK, displayPortProfile()->blackBrightness);
+    tinyOSDSetRegister(OPENTCO_OSD_REGISTER_BRIGHTNESS_WHITE, displayPortProfile()->whiteBrightness);
+
+    return 0;
 }
 
 int tinyOSDDrawScreen(displayPort_t *displayPortProfile)
@@ -334,3 +347,4 @@ void tinyOSDWriteNvm(uint8_t char_address, const uint8_t *font_data)
     UNUSED(font_data);
 }
 
+#endif  // USE_MAX7456

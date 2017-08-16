@@ -16,7 +16,19 @@
  */
 
 #pragma once
+#include "config/parameter_group.h"
 #include <stdint.h>
+
+
+typedef struct displayPortProfile_s {
+    int8_t colAdjust;
+    int8_t rowAdjust;
+    bool invert;
+    uint8_t blackBrightness;
+    uint8_t whiteBrightness;
+} displayPortProfile_t;
+
+PG_DECLARE(displayPortProfile_t, displayPortProfile);
 
 struct displayPortVTable_s;
 typedef struct displayPort_s {
@@ -26,6 +38,10 @@ typedef struct displayPort_s {
     uint8_t colCount;
     uint8_t posX;
     uint8_t posY;
+
+    // brightness
+    uint8_t brightness_white;
+    uint8_t brightness_black;
 
     // CMS state
     bool cleared;
@@ -41,19 +57,12 @@ typedef struct displayPortVTable_s {
     int (*fillRegion)(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t width, uint8_t height, uint8_t value);
     int (*writeString)(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *text);
     int (*writeChar)(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c);
+    int (*reloadProfile)(displayPort_t *displayPort);
     bool (*isTransferInProgress)(const displayPort_t *displayPort);
     int (*heartbeat)(displayPort_t *displayPort);
     void (*resync)(displayPort_t *displayPort);
     uint32_t (*txBytesFree)(const displayPort_t *displayPort);
 } displayPortVTable_t;
-
-typedef struct displayPortProfile_s {
-    int8_t colAdjust;
-    int8_t rowAdjust;
-    bool invert;
-    uint8_t blackBrightness;
-    uint8_t whiteBrightness;
-} displayPortProfile_t;
 
 void displayGrab(displayPort_t *instance);
 void displayRelease(displayPort_t *instance);
@@ -67,6 +76,7 @@ uint8_t displayScreenSizeCols(const displayPort_t *instance);
 void displaySetXY(displayPort_t *instance, uint8_t x, uint8_t y);
 int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, const char *s);
 int displayWriteChar(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t c);
+int displayReloadProfile(displayPort_t *instance);
 bool displayIsTransferInProgress(const displayPort_t *instance);
 void displayHeartbeat(displayPort_t *instance);
 void displayResync(displayPort_t *instance);

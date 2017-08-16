@@ -63,7 +63,7 @@ static IO_t max7456CsPin        = IO_NONE;
 
 // allow writes of at least the line width
 #define MAX7456_MAX_STRING_LENGTH             CHARS_PER_LINE
-#define MAX7456_MAX_FRAME_LENGTH              (6 + 2 * MAX7456_MAX_STRING_LENGTH)
+#define MAX7456_MAX_FRAME_LENGTH              (6 + 2 * MAX7456_MAX_STRING_LENGTH)*5  // FIXME: DEBUGGING
 static uint8_t max7456Buffer[MAX7456_MAX_FRAME_LENGTH];
 
 static uint8_t max7456ReadWriteRegister(uint8_t add, uint8_t data)
@@ -291,14 +291,19 @@ void max7456Init(const vcdProfile_t *pVcdProfile)
  */
 void max7456Invert(bool invert)
 {
+    return;
     if (invert)
         displayMemoryModeReg |= INVERT_PIXEL_COLOR;
     else
         displayMemoryModeReg &= ~INVERT_PIXEL_COLOR;
 
-    ENABLE_MAX7456;
-    max7456ReadWriteRegister(MAX7456ADD_DMM, displayMemoryModeReg);
-    DISABLE_MAX7456;
+    if (!max7456Lock){
+        max7456Lock = true;
+        ENABLE_MAX7456;
+        max7456ReadWriteRegister(MAX7456ADD_DMM, displayMemoryModeReg);
+        DISABLE_MAX7456;
+        max7456Lock = false;
+    }
 }
 
 /**
@@ -311,11 +316,15 @@ void max7456Brightness(uint8_t black, uint8_t white)
 {
     uint8_t reg = (black << 2) | (3 - white);
 
-    ENABLE_MAX7456;
-    for (int i = MAX7456ADD_RB0; i <= MAX7456ADD_RB15; i++) {
-        max7456ReadWriteRegister(i, reg);
+    if (!max7456Lock){
+        max7456Lock = true;
+        ENABLE_MAX7456;
+        for (int i = MAX7456ADD_RB0; i <= MAX7456ADD_RB15; i++) {
+            max7456ReadWriteRegister(i, reg);
+        }
+        DISABLE_MAX7456;
+        max7456Lock = false;
     }
-    DISABLE_MAX7456;
 }
 
 //just fill with spaces with some tricks
@@ -372,8 +381,6 @@ void max7456StallCheck(void)
         max7456Lock = true;
 
         ENABLE_MAX7456;
-        // make sure to exit auto increment mode
-        max7456ReadWriteRegister(MAX7456ADD_DMDI, 0xFF);
         stallCheck = max7456ReadWriteRegister(MAX7456ADD_VM0|MAX7456ADD_READ, 0x00);
         DISABLE_MAX7456;
 
@@ -422,23 +429,25 @@ void max7456StallCheck(void)
     }
 }
 
-void max7456SendBuffer(sbuf_t *sbuf)
+void max7456SendBuffer(sbuf_t *buf)
 {
     if (!max7456Lock) {
         // prepare to send buffer
         max7456Lock = true;
 
         // switch buffer to reader
-        sbufSwitchToReader(sbuf, max7456Buffer);
+        sbufSwitchToReader(buf, max7456Buffer);
 
         #ifdef MAX7456_DMA_CHANNEL_TX
-        max7456SendDma(sbufPtr(sbuf), NULL, sbufBytesRemaining(sbuf));
+        max7456SendDma(sbufPtr(buf), NULL, sbufBytesRemaining(buf));
         #else
         ENABLE_MAX7456;
-        for (uint8_t k=0; k < sbufBytesRemaining(sbuf); k++) {
+        uint8_t todo = sbufBytesRemaining(buf);
+        for (uint8_t k=0; k < todo; k++) {
             // transfer all bytes
-            spiTransferByte(MAX7456_SPI_INSTANCE, sbufReadU8(sbuf));
+            spiTransferByte(MAX7456_SPI_INSTANCE, sbufReadU8(buf));
         }
+
         DISABLE_MAX7456;
         #endif // MAX7456_DMA_CHANNEL_TX
         max7456Lock = false;
@@ -452,6 +461,7 @@ void max7456WriteString(uint8_t x, uint8_t y, const char *buff)
     // check for overflows, ignore strings that are to long
     uint32_t len = strlen(buff);
     if (len >= MAX7456_MAX_STRING_LENGTH) return;
+    if (len == 0) return;
 
     // point to the buffer
     sbuf->ptr = max7456Buffer;
@@ -464,7 +474,7 @@ void max7456WriteString(uint8_t x, uint8_t y, const char *buff)
     sbufWriteU8(sbuf, MAX7456ADD_DMAH);
     sbufWriteU8(sbuf, pos >> 8);
     sbufWriteU8(sbuf, MAX7456ADD_DMAL);
-    sbufWriteU8(sbuf, pos & 0xFF8);
+    sbufWriteU8(sbuf, pos & 0xFF);
 
     // use autoincrement mode?
     if (len != 1) {
@@ -502,12 +512,11 @@ void max7456WriteChar(uint8_t x, uint8_t y, uint8_t c)
     sbufWriteU8(sbuf, MAX7456ADD_DMAH);
     sbufWriteU8(sbuf, pos >> 8);
     sbufWriteU8(sbuf, MAX7456ADD_DMAL);
-    sbufWriteU8(sbuf, pos & 0xFF8);
+    sbufWriteU8(sbuf, pos & 0xFF);
 
     // add data
     sbufWriteU8(sbuf, MAX7456ADD_DMDI);
     sbufWriteU8(sbuf, c);
-
 
     // send streambuffer
     max7456SendBuffer(sbuf);

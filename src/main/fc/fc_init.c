@@ -577,9 +577,11 @@ void init(void)
             osdDisplayPort = displayPortMspInit();
             break;
 #endif
+#ifndef USE_MAX7456
         case OSD_DEVICE_TINYOSD:
             osdDisplayPort = tinyOSDDisplayPortInit(vcdProfile());
             break;
+#endif
         }
 
         // osdInit will register with CMS by itself.

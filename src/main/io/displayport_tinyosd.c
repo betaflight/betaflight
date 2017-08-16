@@ -41,17 +41,6 @@
 
 displayPort_t tinyOSDDisplayPort;
 
-PG_REGISTER_WITH_RESET_FN(displayPortProfile_t, displayPortProfileTinyOSD, PG_DISPLAY_PORT_TINYOSD_CONFIG, 0);
-
-void pgResetFn_displayPortProfileTinyOSD(displayPortProfile_t *displayPortProfile)
-{
-    displayPortProfile->colAdjust = 0;
-    displayPortProfile->rowAdjust = 0;
-    displayPortProfile->invert = false;
-    displayPortProfile->blackBrightness = 0;
-    displayPortProfile->whiteBrightness = 0;
-}
-
 static const displayPortVTable_t tinyOSDVTable = {
     .grab = tinyOSDGrab,
     .release = tinyOSDRelease,
@@ -60,6 +49,7 @@ static const displayPortVTable_t tinyOSDVTable = {
     .fillRegion = tinyOSDFillRegion,
     .writeString = tinyOSDWriteString,
     .writeChar = tinyOSDWriteChar,
+    .reloadProfile = tinyOSDReloadProfile,
     .isTransferInProgress = tinyOSDIsTransferInProgress,
     .heartbeat = tinyOSDHeartbeat,
     .resync = tinyOSDResync,

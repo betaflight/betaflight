@@ -15,6 +15,8 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifdef USE_I2C_OLED_DISPLAY
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -25,6 +27,7 @@
 
 #include "drivers/display.h"
 #include "drivers/display_ug2864hsweg01.h"
+
 
 static displayPort_t oledDisplayPort;
 
@@ -139,3 +142,5 @@ displayPort_t *displayPortOledInit(void *device)
     oledDisplayPort.colCount = SCREEN_CHARACTER_COLUMN_COUNT;
     return &oledDisplayPort;
 }
+
+#endif  // USE_I2C_OLED_DISPLAY

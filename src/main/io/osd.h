@@ -18,6 +18,7 @@
 #pragma once
 
 #include "common/time.h"
+#include "drivers/display.h"
 #include "config/parameter_group.h"
 
 #define OSD_TASK_FREQUENCY_HZ   100
@@ -203,9 +204,16 @@ extern uint32_t resumeRefreshAt;
 PG_DECLARE(osdConfig_t, osdConfig);
 
 struct displayPort_s;
-extern struct displayPort_s *osdDisplayPort;
+//extern struct displayPort_s *osdDisplayPort;
 
 void osdInit(struct displayPort_s *osdDisplayPort);
 void osdResetConfig(osdConfig_t *osdProfile);
 void osdResetAlarms(void);
 void osdUpdate(timeUs_t currentTimeUs);
+void osdRedraw();
+void osdReloadProfile();
+
+
+int osdColCount();
+int osdRowCount();
+
