@@ -149,8 +149,8 @@
 #define MSP_PID_CONTROLLER              59
 #define MSP_SET_PID_CONTROLLER          60
 
-#define MSP_ARMING_CONFIG               61 //out message         Returns auto_disarm_delay and disarm_kill_switch parameters
-#define MSP_SET_ARMING_CONFIG           62 //in message          Sets auto_disarm_delay and disarm_kill_switch parameters
+#define MSP_ARMING_CONFIG               61
+#define MSP_SET_ARMING_CONFIG           62
 
 //
 // Baseflight MSP commands (if enabled they exist in Cleanflight)
