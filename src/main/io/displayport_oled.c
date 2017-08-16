@@ -53,7 +53,7 @@ static int oledDrawScreen(displayPort_t *displayPort)
 
 static int oledScreenSize(const displayPort_t *displayPort)
 {
-    return displayPort->rows * displayPort->cols;
+    return displayPort->rowCount * displayPort->colCount;
 }
 
 static int oledWriteString(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
@@ -111,7 +111,7 @@ displayPort_t *displayPortOledInit(void *device)
 {
     oledDisplayPort.device = device;
     displayInit(&oledDisplayPort, &oledVTable);
-    oledDisplayPort.rows = SCREEN_CHARACTER_ROW_COUNT;
-    oledDisplayPort.cols = SCREEN_CHARACTER_COLUMN_COUNT;
+    oledDisplayPort.rowCount = SCREEN_CHARACTER_ROW_COUNT;
+    oledDisplayPort.colCount = SCREEN_CHARACTER_COLUMN_COUNT;
     return &oledDisplayPort;
 }
