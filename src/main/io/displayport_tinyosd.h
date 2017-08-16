@@ -17,10 +17,5 @@
 
 #pragma once
 
-#include "config/parameter_group.h"
-#include "drivers/display.h"
-
-PG_DECLARE(displayPortProfile_t, displayPortProfileTinyOSD);
-
 struct vcdProfile_s;
 displayPort_t *tinyOSDDisplayPortInit(const struct vcdProfile_s *vcdProfile);

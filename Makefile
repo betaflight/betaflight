@@ -382,7 +382,7 @@ flash_$(TARGET): $(TARGET_HEX)
 flash: flash_$(TARGET)
 
 st-flash_$(TARGET): $(TARGET_BIN)
-	$(V0) st-flash --reset write $< 0x08000000
+	$(V0) st-flash write $< 0x08000000
 
 ## st-flash          : flash firmware (.bin) onto flight controller
 st-flash: st-flash_$(TARGET)

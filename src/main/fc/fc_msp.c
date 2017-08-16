@@ -623,8 +623,13 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 
         // OSD specific, not applicable to OSD slaves.
         sbufWriteU8(dst, osdConfig()->device);
-        sbufWriteU8(dst, displayScreenSizeRows(osdDisplayPort));
-        sbufWriteU8(dst, displayScreenSizeCols(osdDisplayPort));
+        sbufWriteU8(dst, osdRowCount());
+        sbufWriteU8(dst, osdColCount());
+
+        // video brightness & inversion
+        sbufWriteU8(dst, displayPortProfile()->invert);
+        sbufWriteU8(dst, displayPortProfile()->blackBrightness);
+        sbufWriteU8(dst, displayPortProfile()->whiteBrightness);
 
         // Configuration
         sbufWriteU8(dst, osdConfig()->units);
@@ -2004,6 +2009,12 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 vcdProfileMutable()->video_system = sbufReadU8(src);
 
                 osdConfigMutable()->device = sbufReadU8(src);
+                displayPortProfileMutable()->invert = (sbufReadU8(src) != 0) ? true : false;
+                displayPortProfileMutable()->blackBrightness = sbufReadU8(src);
+                displayPortProfileMutable()->whiteBrightness = sbufReadU8(src);
+                // force profile update
+                osdReloadProfile();
+
                 osdConfigMutable()->units  = sbufReadU8(src);
 
                 // Alarms
@@ -2011,6 +2022,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 osdConfigMutable()->cap_alarm = sbufReadU16(src);
                 sbufReadU16(src); // Skip unused (previously fly timer)
                 osdConfigMutable()->alt_alarm = sbufReadU16(src);
+
             } else if ((int8_t)addr == -2) {
                 // Timers
                 uint8_t index = sbufReadU8(src);
@@ -2037,7 +2049,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 }
 
                 // force full screen rewrite
-                if (osdDisplayPort) displayClearScreen(osdDisplayPort);
+                osdRedraw();
             }
         }
         break;

@@ -734,13 +734,11 @@ const clivalue_t valueTable[] = {
 #endif
 
 // PG_DISPLAY_PORT_MSP_CONFIG
-#ifdef USE_MAX7456
-    { "displayport_max7456_col_adjust", VAR_INT8| MASTER_VALUE, .config.minmax = { -6, 0 }, PG_DISPLAY_PORT_MAX7456_CONFIG, offsetof(displayPortProfile_t, colAdjust) },
-    { "displayport_max7456_row_adjust", VAR_INT8| MASTER_VALUE, .config.minmax = { -3, 0 }, PG_DISPLAY_PORT_MAX7456_CONFIG, offsetof(displayPortProfile_t, rowAdjust) },
-    { "displayport_max7456_inv",        VAR_UINT8| MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_DISPLAY_PORT_MAX7456_CONFIG, offsetof(displayPortProfile_t, invert) },
-    { "displayport_max7456_blk",        VAR_UINT8| MASTER_VALUE, .config.minmax = { 0, 3 }, PG_DISPLAY_PORT_MAX7456_CONFIG, offsetof(displayPortProfile_t, blackBrightness) },
-    { "displayport_max7456_wht",        VAR_UINT8| MASTER_VALUE, .config.minmax = { 0, 3 }, PG_DISPLAY_PORT_MAX7456_CONFIG, offsetof(displayPortProfile_t, whiteBrightness) },
-#endif
+    { "displayport_profile_col_adjust", VAR_INT8| MASTER_VALUE, .config.minmax = { -6, 0 }, PG_DISPLAY_PORT_PROFILE_CONFIG, offsetof(displayPortProfile_t, colAdjust) },
+    { "displayport_profile_row_adjust", VAR_INT8| MASTER_VALUE, .config.minmax = { -3, 0 }, PG_DISPLAY_PORT_PROFILE_CONFIG, offsetof(displayPortProfile_t, rowAdjust) },
+    { "displayport_profile_inv",        VAR_UINT8| MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_DISPLAY_PORT_PROFILE_CONFIG, offsetof(displayPortProfile_t, invert) },
+    { "displayport_profile_blk",        VAR_UINT8| MASTER_VALUE, .config.minmax = { 0, 100 }, PG_DISPLAY_PORT_PROFILE_CONFIG, offsetof(displayPortProfile_t, blackBrightness) },
+    { "displayport_profile_wht",        VAR_UINT8| MASTER_VALUE, .config.minmax = { 0, 100 }, PG_DISPLAY_PORT_PROFILE_CONFIG, offsetof(displayPortProfile_t, whiteBrightness) },
 
 #ifdef USE_ESC_SENSOR
     { "esc_sensor_halfduplex",          VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ESC_SENSOR_CONFIG, offsetof(escSensorConfig_t, halfDuplex) },

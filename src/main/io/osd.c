@@ -1270,6 +1270,28 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
 #endif
 }
 
+void osdRedraw()
+{
+    // force a full redraw
+    displayClearScreen(osdDisplayPort);
+}
+
+void osdReloadProfile()
+{
+    displayReloadProfile(osdDisplayPort);
+    osdRedraw();
+}
+
+int osdRowCount()
+{
+    return osdDisplayPort->rowCount;
+}
+
+int osdColCount()
+{
+    return osdDisplayPort->colCount;
+}
+
 /*
  * Called periodically by the scheduler
  */
