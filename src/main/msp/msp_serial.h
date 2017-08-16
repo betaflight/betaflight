@@ -26,9 +26,20 @@ typedef enum {
     MSP_IDLE,
     MSP_HEADER_START,
     MSP_HEADER_M,
-    MSP_HEADER_ARROW,
-    MSP_HEADER_SIZE,
-    MSP_HEADER_CMD,
+    MSP_HEADER_X,
+
+    MSP_HEADER_V1,
+    MSP_PAYLOAD_V1,
+    MSP_CHECKSUM_V1,
+
+    MSP_HEADER_V2_OVER_V1,
+    MSP_PAYLOAD_V2_OVER_V1,
+    MSP_CHECKSUM_V2_OVER_V1,
+
+    MSP_HEADER_V2_NATIVE,
+    MSP_PAYLOAD_V2_NATIVE,
+    MSP_CHECKSUM_V2_NATIVE,
+
     MSP_COMMAND_RECEIVED
 } mspState_e;
 
@@ -50,15 +61,35 @@ typedef enum {
 #define MSP_PORT_OUTBUF_SIZE 256
 #endif
 
+typedef struct __attribute__((packed)) {
+    uint8_t size;
+    uint8_t cmd;
+} mspHeaderV1_t;
+
+typedef struct __attribute__((packed)) {
+    uint16_t size;
+} mspHeaderJUMBO_t;
+
+typedef struct __attribute__((packed)) {
+    uint8_t  flags;
+    uint16_t cmd;
+    uint16_t size;
+} mspHeaderV2_t;
+
+#define MSP_MAX_HEADER_SIZE     9
+
 struct serialPort_s;
 typedef struct mspPort_s {
     struct serialPort_s *port; // null when port unused.
-    uint8_t offset;
-    uint8_t dataSize;
-    uint8_t checksum;
-    uint8_t cmdMSP;
     mspState_e c_state;
     uint8_t inBuf[MSP_PORT_INBUF_SIZE];
+    uint16_t cmdMSP;
+    uint8_t cmdFlags;
+    mspVersion_e mspVersion;
+    uint8_t offset;
+    uint8_t dataSize;
+    uint8_t checksum1;
+    uint8_t checksum2;
 } mspPort_t;
 
 
