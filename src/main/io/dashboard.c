@@ -366,7 +366,7 @@ static void showGpsPage()
     i2c_OLED_set_xy(bus, 0, rowIndex);
     i2c_OLED_send_char(bus, tickerCharacters[gpsTicker]);
 
-    i2c_OLED_set_xy(bus, MAX(0, SATELLITE_GRAPH_LEFT_OFFSET), rowIndex++);
+    i2c_OLED_set_xy(bus, MAX(0, (uint8_t)SATELLITE_GRAPH_LEFT_OFFSET), rowIndex++);
 
     uint32_t index;
     for (index = 0; index < SATELLITE_COUNT && index < SCREEN_CHARACTER_COLUMN_COUNT; index++) {
