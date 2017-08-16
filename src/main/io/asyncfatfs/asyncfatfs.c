@@ -928,7 +928,7 @@ static afatfsOperationStatus_e afatfs_cacheSector(uint32_t physicalSectorIndex, 
             if (eraseCount < AFATFS_MIN_MULTIPLE_BLOCK_WRITE_COUNT) {
                 eraseCount = 0;
             } else {
-                eraseCount = MIN(eraseCount, UINT16_MAX); // If caller asked for a longer chain of sectors we silently truncate that here
+                eraseCount = MIN(eraseCount, (uint32_t)UINT16_MAX); // If caller asked for a longer chain of sectors we silently truncate that here
             }
 
             afatfs.cacheDescriptor[cacheSectorIndex].consecutiveEraseBlockCount = eraseCount;
