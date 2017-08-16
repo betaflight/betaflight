@@ -17,6 +17,7 @@
 
 
 #include "common/maths.h"
+#include "common/crc.h"
 #include "opentco.h"
 
 #include <stdbool.h>
