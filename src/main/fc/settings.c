@@ -215,6 +215,13 @@ static const char * const lookupTableCameraControlMode[] = {
 };
 #endif
 
+static const char * const lookupTableOsdDevice[] = {
+    "none",
+    "MAX7456",
+    "MSP",
+    "tinyOSD"
+};
+
 static const char * const lookupTableSuperExpoYaw[] = {
     "OFF", "ON", "ALWAYS"
 };
@@ -292,6 +299,7 @@ const lookupTableEntry_t lookupTables[] = {
     { lookupTableCameraControlMode, sizeof(lookupTableCameraControlMode) / sizeof(char *) },
 #endif
     { lookupTableBusType, sizeof(lookupTableBusType) / sizeof(char *) },
+    { lookupTableOsdDevice, sizeof(lookupTableOsdDevice) / sizeof(char *) },
 };
 
 const clivalue_t valueTable[] = {
@@ -700,6 +708,7 @@ const clivalue_t valueTable[] = {
     { "osd_stat_tim_1",             VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_TIMER_1])},
     { "osd_stat_tim_2",             VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_TIMER_2])},
 #endif
+    { "osd_device",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OSD_TYPE }, PG_OSD_CONFIG, offsetof(osdConfig_t, device) },
 
 // PG_SYSTEM_CONFIG
 #ifndef SKIP_TASK_STATISTICS

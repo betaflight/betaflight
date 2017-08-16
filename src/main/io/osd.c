@@ -33,6 +33,13 @@
 
 #ifdef OSD
 
+#ifdef OSD
+#define DEFAULT_OSD_DEVICE OSD_DEVICE_MAX7456
+#else
+#define DEFAULT_OSD_DEVICE OSD_DEVICE_NONE
+#endif
+
+
 #include "blackbox/blackbox.h"
 #include "blackbox/blackbox_io.h"
 
@@ -830,6 +837,8 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 
     osdConfig->ahMaxPitch = 20; // 20 degrees
     osdConfig->ahMaxRoll = 40; // 40 degrees
+
+    osdConfig->device = DEFAULT_OSD_DEVICE;
 }
 
 static void osdDrawLogo(int x, int y)
