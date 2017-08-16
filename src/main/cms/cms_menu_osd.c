@@ -22,7 +22,7 @@
 
 #include "platform.h"
 
-#if defined(OSD) && defined(CMS)
+#if defined(CMS)
 
 #include "build/version.h"
 

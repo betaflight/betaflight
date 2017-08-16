@@ -407,11 +407,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #ifdef USE_OSD_SLAVE
         sbufWriteU8(dst, 1);  // 1 == OSD
 #else
-#if defined(OSD) && defined(USE_MAX7456)
-        sbufWriteU8(dst, 2);  // 2 == FC with OSD
-#else
-        sbufWriteU8(dst, 0);  // 0 == FC
-#endif
+        sbufWriteU8(dst, 2);  // 2 == FC with OSD (capabilities)
 #endif
         break;
 
@@ -611,9 +607,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #define OSD_FLAGS_OSD_HARDWARE_MAX_7456 (1 << 4)
 
         uint8_t osdFlags = 0;
-#if defined(OSD)
         osdFlags |= OSD_FLAGS_OSD_FEATURE;
-#endif
 #if defined(USE_OSD_SLAVE)
         osdFlags |= OSD_FLAGS_OSD_SLAVE;
 #endif
@@ -630,7 +624,6 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, 0);
 #endif
 
-#ifdef OSD
         // OSD specific, not applicable to OSD slaves.
 
         // Configuration
@@ -658,7 +651,6 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         for (int i = 0; i < OSD_TIMER_COUNT; i++) {
             sbufWriteU16(dst, osdConfig()->timers[i]);
         }
-#endif
         break;
     }
 
@@ -2001,7 +1993,6 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         batteryConfigMutable()->currentMeterSource = sbufReadU8(src);
         break;
 
-#if defined(OSD) || defined (USE_OSD_SLAVE)
     case MSP_SET_OSD_CONFIG:
         {
             const uint8_t addr = sbufReadU8(src);
@@ -2013,7 +2004,6 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
                 sbufReadU8(src); // Skip video system
 #endif
-#if defined(OSD)
                 osdConfigMutable()->units = sbufReadU8(src);
 
                 // Alarms
@@ -2021,19 +2011,15 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 osdConfigMutable()->cap_alarm = sbufReadU16(src);
                 sbufReadU16(src); // Skip unused (previously fly timer)
                 osdConfigMutable()->alt_alarm = sbufReadU16(src);
-#endif
             } else if ((int8_t)addr == -2) {
-#if defined(OSD)
                 // Timers
                 uint8_t index = sbufReadU8(src);
                 if (index > OSD_TIMER_COUNT) {
                   return MSP_RESULT_ERROR;
                 }
                 osdConfigMutable()->timers[index] = sbufReadU16(src);
-#endif
                 return MSP_RESULT_ERROR;
             } else {
-#if defined(OSD)
                 const uint16_t value = sbufReadU16(src);
 
                 /* Get screen index, 0 is post flight statistics, 1 and above are in flight OSD screens */
@@ -2048,9 +2034,6 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 } else {
                   return MSP_RESULT_ERROR;
                 }
-#else
-                return MSP_RESULT_ERROR;
-#endif
             }
         }
         break;
@@ -2070,7 +2053,6 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
         return MSP_RESULT_ERROR;
 #endif
-#endif // OSD || USE_OSD_SLAVE
 
     default:
 #ifdef USE_OSD_SLAVE

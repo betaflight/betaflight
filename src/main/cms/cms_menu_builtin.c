@@ -132,9 +132,7 @@ static OSD_Entry menuMainEntries[] =
 
     {"PROFILE",     OME_Submenu,  cmsMenuChange, &cmsx_menuImu, 0},
     {"FEATURES",    OME_Submenu,  cmsMenuChange, &menuFeatures, 0},
-#ifdef OSD
     {"OSD",         OME_Submenu,  cmsMenuChange, &cmsx_menuOsd, 0},
-#endif
     {"FC&FW INFO",  OME_Submenu,  cmsMenuChange, &menuInfo, 0},
     {"MISC",        OME_Submenu,  cmsMenuChange, &cmsx_menuMisc, 0},
     {"EXIT",        OME_OSD_Exit, cmsMenuExit,   (void *)CMS_EXIT, 0},

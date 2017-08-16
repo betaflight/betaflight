@@ -199,13 +199,11 @@ static const char * const lookupTableGyroLpf[] = {
     "EXPERIMENTAL"
 };
 
-#ifdef OSD
 static const char * const lookupTableOsdType[] = {
     "AUTO",
     "PAL",
     "NTSC"
 };
-#endif
 
 #ifdef USE_CAMERA_CONTROL
 static const char * const lookupTableCameraControlMode[] = {
@@ -292,7 +290,6 @@ const lookupTableEntry_t lookupTables[] = {
     { lookupTableLowpassType, sizeof(lookupTableLowpassType) / sizeof(char *) },
     { lookupTableFailsafe, sizeof(lookupTableFailsafe) / sizeof(char *) },
     { lookupTableCrashRecovery, sizeof(lookupTableCrashRecovery) / sizeof(char *) },
-#ifdef OSD
     { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
 #endif
 #ifdef USE_CAMERA_CONTROL
@@ -643,7 +640,7 @@ const clivalue_t valueTable[] = {
 #endif
 
 // PG_OSD_CONFIG
-#ifdef OSD
+    { "osd_device",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OSD_TYPE }, PG_OSD_CONFIG, offsetof(osdConfig_t, device) },
     { "osd_units",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_UNIT }, PG_OSD_CONFIG, offsetof(osdConfig_t, units) },
 
     { "osd_rssi_alarm",             VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 100 }, PG_OSD_CONFIG, offsetof(osdConfig_t, rssi_alarm) },
@@ -706,8 +703,6 @@ const clivalue_t valueTable[] = {
     { "osd_stat_bb_no",             VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_BLACKBOX_NUMBER])},
     { "osd_stat_tim_1",             VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_TIMER_1])},
     { "osd_stat_tim_2",             VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_TIMER_2])},
-#endif
-    { "osd_device",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OSD_TYPE }, PG_OSD_CONFIG, offsetof(osdConfig_t, device) },
 
 // PG_SYSTEM_CONFIG
 #ifndef SKIP_TASK_STATISTICS
