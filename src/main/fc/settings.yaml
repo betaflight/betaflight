@@ -1413,6 +1413,10 @@ groups:
       - name: i2c_speed
         condition: USE_I2C
         table: i2c_speed
+      - name: cpu_underclock
+        field: cpuUnderclock
+        condition: USE_UNDERCLOCK
+        type: bool
       - name: debug_mode
         table: debug_modes
       - name: acc_task_frequency

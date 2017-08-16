@@ -183,10 +183,13 @@ void init(void)
 #endif
 
     initEEPROM();
-
     ensureEEPROMContainsValidData();
     readEEPROM();
 
+#ifdef USE_UNDERCLOCK
+    systemClockSetup(systemConfig()->cpuUnderclock);
+#endif
+    
     i2cSetSpeed(systemConfig()->i2c_speed);
 
 #ifdef USE_HARDWARE_PREBOOT_SETUP

@@ -26,9 +26,7 @@
 #include "drivers/system.h"
 
 #define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
-
-// from system_stm32f10x.c
-void SetSysClock(void);
+void SetSysClock(uint8_t underclock);
 
 void systemReset(void)
 {
@@ -66,12 +64,29 @@ bool isMPUSoftReset(void)
         return false;
 }
 
+static void systemTimekeepingSetup(void)
+{
+    RCC_ClocksTypeDef clocks;
+    RCC_GetClocksFreq(&clocks);
+
+    cycleCounterInit();
+    SysTick_Config(clocks.SYSCLK_Frequency / 1000);
+}
+
+void systemClockSetup(uint8_t cpuUnderclock)
+{
+    // Configure the RCC. Note that this should be called only once per boot
+    SetSysClock(cpuUnderclock);
+
+    // Re-initialize system timekeeping - CPU clock changed
+    systemTimekeepingSetup();
+}
+
 void systemInit(void)
 {
     checkForBootLoaderRequest();
 
-    SetSysClock();
-
+    
 #ifdef CC3D
     /* Accounts for OP Bootloader, set the Vector Table base address as specified in .ld file */
     extern void *isr_vector_table_base;
@@ -104,12 +119,10 @@ void systemInit(void)
 #define AFIO_MAPR_SWJ_CFG_NO_JTAG_SW            (0x2 << 24)
     AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_NO_JTAG_SW;
 
-    // Init cycle counter
-    cycleCounterInit();
-
+    
     memset(extiHandlerConfigs, 0x00, sizeof(extiHandlerConfigs));
     // SysTick
-    SysTick_Config(SystemCoreClock / 1000);
+    systemTimekeepingSetup();
 }
 
 void checkForBootLoaderRequest(void)

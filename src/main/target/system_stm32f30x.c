@@ -131,20 +131,6 @@ uint32_t hse_value = HSE_VALUE;
 
   __I uint8_t AHBPrescTable[16] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 6, 7, 8, 9};
 
-/**
-  * @}
-  */
-
-/** @addtogroup STM32F30x_System_Private_FunctionPrototypes
-  * @{
-  */
-
-void SetSysClock(void);
-
-/**
-  * @}
-  */
-
 /** @addtogroup STM32F30x_System_Private_Functions
   * @{
   */
@@ -187,10 +173,6 @@ void SystemInit(void)
 
   /* Disable all interrupts */
   RCC->CIR = 0x00000000;
-
-  /* Configure the System clock source, PLL Multiplier and Divider factors,
-     AHB/APBx prescalers and Flash settings ----------------------------------*/
-  //SetSysClock(); // called from main()
 
 #ifdef VECT_TAB_SRAM
   SCB->VTOR = SRAM_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal SRAM. */
@@ -287,7 +269,7 @@ void SystemCoreClockUpdate (void)
   * @param  None
   * @retval None
   */
-void SetSysClock(void)
+void SetSysClock(uint8_t underclock)
 {
   __IO uint32_t StartUpCounter = 0, HSEStatus = 0;
 
@@ -332,11 +314,23 @@ void SetSysClock(void)
     /* PLL configuration */
     RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_PLLSRC | RCC_CFGR_PLLXTPRE | RCC_CFGR_PLLMULL));
 
-    if (HSE_VALUE == 12000000) {
-        RCC->CFGR |= (uint32_t)(RCC_CFGR_PLLSRC_PREDIV1 | RCC_CFGR_PLLXTPRE_PREDIV1 | RCC_CFGR_PLLMULL6);
+    if (!underclock) {
+        // Full speed
+        if (HSE_VALUE == 12000000) {
+            RCC->CFGR |= (uint32_t)(RCC_CFGR_PLLSRC_PREDIV1 | RCC_CFGR_PLLXTPRE_PREDIV1 | RCC_CFGR_PLLMULL6);
+        }
+        else {
+            RCC->CFGR |= (uint32_t)(RCC_CFGR_PLLSRC_PREDIV1 | RCC_CFGR_PLLXTPRE_PREDIV1 | RCC_CFGR_PLLMULL9);
+        }
     }
     else {
-        RCC->CFGR |= (uint32_t)(RCC_CFGR_PLLSRC_PREDIV1 | RCC_CFGR_PLLXTPRE_PREDIV1 | RCC_CFGR_PLLMULL9);
+        // Reduced speed
+        if (HSE_VALUE == 12000000) {
+            RCC->CFGR |= (uint32_t)(RCC_CFGR_PLLSRC_PREDIV1 | RCC_CFGR_PLLXTPRE_PREDIV1 | RCC_CFGR_PLLMULL4);
+        }
+        else {
+            RCC->CFGR |= (uint32_t)(RCC_CFGR_PLLSRC_PREDIV1 | RCC_CFGR_PLLXTPRE_PREDIV1 | RCC_CFGR_PLLMULL6);
+        }
     }
 
     /* Enable PLL */
@@ -360,6 +354,9 @@ void SetSysClock(void)
   { /* If HSE fails to start-up, the application will have wrong clock
          configuration. User can add here some code to deal with this error */
   }
+
+  // Update clock info
+  SystemCoreClockUpdate();
 }
 
 /**
