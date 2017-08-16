@@ -90,7 +90,6 @@ static int reloadProfile (displayPort_t *displayPort)
 
 static int clearScreen(displayPort_t *displayPort)
 {
-    reloadProfile(displayPort);
     max7456ClearScreen();
 
     return 0;

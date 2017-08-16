@@ -944,6 +944,8 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
 
     displayClearScreen(osdDisplayPort);
 
+    displayReloadProfile(osdDisplayPort);
+
     osdDrawLogo(3, 1);
 
     char string_buffer[30];
