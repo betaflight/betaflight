@@ -79,9 +79,13 @@ typedef enum {
      */
     FAILSAFE_RETURN_TO_HOME,
 #endif
-    /* Failsafe mode is performing an emergency landing. This is the
-     * first recovery phase enabled when failsafe_procedure = SET-THR.
-     * If an emergency landing can't be executed, this phase will
+    /* Failsafe mode is performing a simplified landing procedure.
+     * This is done by setting throttle and roll/pitch/yaw controls
+     * to a pre-configured values that will allow aircraft
+     * to reach ground in somewhat safe "controlled crash" way.
+     * This is the first recovery phase enabled when
+     * failsafe_procedure = SET-THR. Once timeout expires or if a
+     * "controlled crash" can't be executed, this phase will
      * transition to FAILSAFE_LANDED.
      */
     FAILSAFE_LANDING,
