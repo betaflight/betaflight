@@ -44,6 +44,8 @@
 
 #include "scheduler/scheduler.h"
 
+#include "sensors/battery.h"
+
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/pid.h"
@@ -299,9 +301,15 @@ void updateRcCommands(void)
     if (feature(FEATURE_3D)) {
         tmp = constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
         tmp = (uint32_t)(tmp - PWM_RANGE_MIN);
+        if (getLowVoltageCutoff()->enabled) {
+            tmp = tmp * getLowVoltageCutoff()->percentage / 100;
+        }
     } else {
         tmp = constrain(rcData[THROTTLE], rxConfig()->mincheck, PWM_RANGE_MAX);
         tmp = (uint32_t)(tmp - rxConfig()->mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - rxConfig()->mincheck);
+        if (getLowVoltageCutoff()->enabled) {
+            tmp = tmp * getLowVoltageCutoff()->percentage / 100;
+        }
     }
 
     rcCommand[THROTTLE] = rcLookupThrottle(tmp);
