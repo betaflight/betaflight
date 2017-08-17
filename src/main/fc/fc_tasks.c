@@ -525,12 +525,14 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
+#if defined(USE_OPENTCO) || defined(USE_MAX7456)
     [TASK_OSD] = {
         .taskName = "OSD",
         .taskFunc = osdUpdate,
-        .desiredPeriod = TASK_PERIOD_HZ(OSD_TASK_FREQUENCY_HZ),        // 60 Hz
+        .desiredPeriod = TASK_PERIOD_HZ(OSD_TASK_FREQUENCY_HZ),
         .staticPriority = TASK_PRIORITY_LOW,
     },
+#endif
 #endif
 
 #ifdef USE_OSD_SLAVE

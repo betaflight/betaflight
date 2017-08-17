@@ -217,7 +217,9 @@ static const char * const lookupTableOsdDevice[] = {
     "none",
     "MAX7456",
     "MSP",
+#if defined(USE_OPENTCO)
     "OPENTCO"
+#endif
 };
 
 static const char * const lookupTableSuperExpoYaw[] = {

@@ -37,6 +37,8 @@
 
 #include "fc/config.h"
 
+#if defined(USE_OPENTCO)
+
 displayPort_t opentcoOSDDisplayPort;
 
 static const displayPortVTable_t opentcoOSDVTable = {
@@ -69,3 +71,4 @@ displayPort_t *opentcoDisplayPortInit(const vcdProfile_t *vcdProfile)
     }
 }
 
+#endif  // defined(USE_OPENTCO)

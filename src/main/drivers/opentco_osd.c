@@ -194,11 +194,11 @@ static void opentcoOSDDrawSpectrum(uint8_t axis) {
     // use simple LPF for rescaling to max
     // y[i] = y[i-1] + (a) * ( x[i] - y[i-1] )
     static float maxgyro[3];
-    maxgyro[axis] = maxgyro[axis] + 0.01 * (gyro_fft->maxVal - maxgyro[axis]);
+    maxgyro[axis] = maxgyro[axis] + 0.01f * (gyro_fft->maxVal - maxgyro[axis]);
 
     for(int i=0; i < GYRO_FFT_BIN_COUNT; i++) {
         // make sure to limit this to 255.0 in any case
-        uint8_t bin_value = MIN(255.0, ((255.0 * gyro_fft->bin2[i]) / maxgyro[axis]));
+        uint8_t bin_value = MIN(255.0f, ((255.0f * gyro_fft->bin2[i]) / maxgyro[axis]));
         // add to streambuffer
         sbufWriteU8(device->sbuf, bin_value);
     }

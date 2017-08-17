@@ -42,6 +42,7 @@
 #define MINIMAL_CLI
 #define USE_DSHOT
 #define USE_GYRO_DATA_ANALYSE
+#define USE_OPENTCO
 #endif
 
 #ifdef STM32F4
@@ -50,6 +51,7 @@
 #define I2C3_OVERCLOCK true
 #define TELEMETRY_IBUS
 #define USE_GYRO_DATA_ANALYSE
+#define USE_OPENTCO
 #endif
 
 #ifdef STM32F7
@@ -59,6 +61,7 @@
 #define I2C4_OVERCLOCK true
 #define TELEMETRY_IBUS
 #define USE_GYRO_DATA_ANALYSE
+#define USE_OPENTCO
 #endif
 
 #if defined(STM32F4) || defined(STM32F7)

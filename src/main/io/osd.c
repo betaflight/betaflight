@@ -31,13 +31,13 @@
 
 #include "platform.h"
 
-
 #ifdef USE_MAX7456
 #define DEFAULT_OSD_DEVICE OSD_DEVICE_MAX7456
 #else
 #define DEFAULT_OSD_DEVICE OSD_DEVICE_NONE
 #endif
 
+#if defined(USE_OPENTCO) || defined(USE_MAX7456)  || defined(USE_OSD_SLAVE)
 
 #include "blackbox/blackbox.h"
 #include "blackbox/blackbox_io.h"
@@ -1338,3 +1338,5 @@ void osdUpdate(timeUs_t currentTimeUs)
     }
 #endif
 }
+
+#endif
