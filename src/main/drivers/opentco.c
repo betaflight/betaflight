@@ -72,6 +72,7 @@ static bool opentcoDecodeResponse(opentcoDevice_t *device, uint8_t requested_reg
     uint8_t data[5];
     for(int i = 0; i < 5; i++) {
         uint8_t rx = serialRead(device->serialPort);
+        data[i] = rx;
         crc = crc8_dvb_s2(crc, rx);
     }
 
@@ -91,22 +92,13 @@ static bool opentcoDecodeResponse(opentcoDevice_t *device, uint8_t requested_reg
     return true;
 }
 
-static bool opentcoAccessRegister(opentcoDevice_t *device, uint8_t reg, uint8_t mode, uint16_t *val)
+bool opentcoReadRegister(opentcoDevice_t *device, uint8_t reg, uint16_t *val)
 {
-    uint32_t max_retries = 1;
+    uint32_t max_retries = 3;
 
     while (max_retries--) {
-        // start frame
-        opentcoInitializeFrame(device, OPENTCO_OSD_COMMAND_REGISTER_ACCESS | mode);
-
-        // add register
-        sbufWriteU8(device->sbuf, reg);
-
-        // add value (will be ignored on read access)
-        sbufWriteU16(device->sbuf, *val);
-
-        // send
-        opentcoSendFrame(device);
+        // send read request
+        opentcoWriteRegister(device, reg | OPENTCO_REGISTER_ACCESS_MODE_READ, 0);
 
         // wait 100ms for reply
         timeMs_t timeout = millis() + 100;
@@ -143,15 +135,22 @@ static bool opentcoAccessRegister(opentcoDevice_t *device, uint8_t reg, uint8_t 
     return false;
 }
 
-bool opentcoReadRegister(opentcoDevice_t *device, uint8_t reg, uint16_t *val)
-{
-    return opentcoAccessRegister(device, reg, OPENTCO_REGISTER_ACCESS_MODE_READ, val);
-}
-
-
 bool opentcoWriteRegister(opentcoDevice_t *device, uint8_t reg, uint16_t val)
 {
-    return opentcoAccessRegister(device, reg, OPENTCO_REGISTER_ACCESS_MODE_WRITE, &val);
+    // start frame
+    opentcoInitializeFrame(device, OPENTCO_OSD_COMMAND_REGISTER_ACCESS);
+
+    // add register
+    sbufWriteU8(device->sbuf, reg);
+
+    // add value
+    sbufWriteU16(device->sbuf, val);
+
+    // send
+    opentcoSendFrame(device);
+
+    //FIXME: check if actually written (read response)
+    return true;
 }
 
 /*
