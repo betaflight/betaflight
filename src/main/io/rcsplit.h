@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include "common/time.h"
 #include "fc/fc_msp.h"
+#include "fc/rc_modes.h"
 
 typedef struct {
     uint8_t boxId;
@@ -50,7 +51,9 @@ typedef enum {
 bool rcSplitInit(void);
 void rcSplitProcess(timeUs_t currentTimeUs);
 
+#ifdef UNIT_TEST
 // only for unit test
 extern rcsplit_state_e cameraState;
 extern serialPort_t *rcSplitSerialPort;
 extern rcsplit_switch_state_t switchStates[BOXCAMERA3 - BOXCAMERA1 + 1];
+#endif

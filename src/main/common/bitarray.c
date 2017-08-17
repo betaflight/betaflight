@@ -15,27 +15,24 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdint.h>
+#include <stdbool.h>
 
-#include "blackbox/blackbox_fielddefs.h"
+#include "bitarray.h"
 
-#include "config/parameter_group.h"
+#define BITARRAY_BIT_OP(array, bit, op) ((array)[(bit) / (sizeof((array)[0]) * 8)] op (1 << ((bit) % (sizeof((array)[0]) * 8))))
 
-typedef struct blackboxConfig_s {
-    uint8_t rate_num;
-    uint8_t rate_denom;
-    uint8_t device;
-    uint8_t invertedCardDetection;
-} blackboxConfig_t;
+bool bitArrayGet(const void *array, unsigned bit)
+{
+    return BITARRAY_BIT_OP((uint32_t*)array, bit, &);
+}
 
-PG_DECLARE(blackboxConfig_t, blackboxConfig);
+void bitArraySet(void *array, unsigned bit)
+{
+    BITARRAY_BIT_OP((uint32_t*)array, bit, |=);
+}
 
-void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data);
-
-void blackboxInit(void);
-void blackboxUpdate(timeUs_t currentTimeUs);
-const char *blackboxGetStartDateTime(void);
-void blackboxSetStartDateTime(const char *dateTime, timeMs_t timeNowMs);
-void blackboxStart(void);
-void blackboxFinish(void);
-bool blackboxMayEditConfig(void);
+void bitArrayClr(void *array, unsigned bit)
+{
+    BITARRAY_BIT_OP((uint32_t*)array, bit, &=~);
+}

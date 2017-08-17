@@ -42,6 +42,7 @@
 #include "fc/fc_core.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
+#include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
 #include "flight/pid.h"
@@ -63,22 +64,9 @@
 #define AIRMODE_DEADBAND 25
 #define MIN_RC_TICK_INTERVAL_MS     20
 
-// true if arming is done via the sticks (as opposed to a switch)
-static bool isUsingSticksToArm = true;
-
-// Count of mode activation ranged (per box mode)
-static uint8_t specifiedConditionCountPerMode[CHECKBOX_ITEM_COUNT];
-
-#ifdef NAV
-// true if pilot has any of GPS modes configured
-static bool isUsingNAVModes = false;
-#endif
-
 stickPositions_e rcStickPositions;
 
 int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
-
-uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
 
 PG_REGISTER_WITH_RESET_TEMPLATE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
 
@@ -96,21 +84,6 @@ PG_RESET_TEMPLATE(armingConfig_t, armingConfig,
     .disarm_kill_switch = 1,
     .auto_disarm_delay = 5
 );
-
-PG_REGISTER_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions, PG_MODE_ACTIVATION_PROFILE, 0);
-PG_REGISTER(modeActivationOperatorConfig_t, modeActivationOperatorConfig, PG_MODE_ACTIVATION_OPERATOR_CONFIG, 0);
-
-bool isUsingSticksForArming(void)
-{
-    return isUsingSticksToArm;
-}
-
-#if defined(NAV)
-bool isUsingNavigationModes(void)
-{
-    return isUsingNAVModes;
-}
-#endif
 
 bool areSticksInApModePosition(uint16_t ap_mode)
 {
@@ -197,7 +170,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus, bool disarm_kill_s
     rcSticks = stTmp;
 
     // perform actions
-    if (!isUsingSticksToArm) {
+    if (!isUsingSticksForArming()) {
         if (IS_RC_MODE_ACTIVE(BOXARM)) {
             rcDisarmTicks = 0;
             // Arming via ARM BOX
@@ -235,7 +208,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus, bool disarm_kill_s
         return;
     }
 
-   if (isUsingSticksToArm) {
+   if (isUsingSticksForArming()) {
         // Disarm on throttle down + yaw
         if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_CE) {
             // Dont disarm if fixedwing and motorstop
@@ -300,7 +273,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus, bool disarm_kill_s
 
 
     // Arming by sticks
-    if (isUsingSticksToArm) {
+    if (isUsingSticksForArming()) {
         if (STATE(FIXED_WING) && feature(FEATURE_MOTOR_STOP) && fixed_wing_auto_arm) {
             // Auto arm on throttle when using fixedwing and motorstop
             if (throttleStatus != THROTTLE_LOW) {
@@ -352,94 +325,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus, bool disarm_kill_s
     }
 }
 
-bool isModeActivationConditionPresent(boxId_e modeId)
-{
-    for (int index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
-        if (modeActivationConditions(index)->modeId == modeId && IS_RANGE_USABLE(&modeActivationConditions(index)->range)) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range) {
-    if (!IS_RANGE_USABLE(range)) {
-        return false;
-    }
-
-    uint16_t channelValue = constrain(rcData[auxChannelIndex + NON_AUX_CHANNEL_COUNT], CHANNEL_RANGE_MIN, CHANNEL_RANGE_MAX - 1);
-    return (channelValue >= 900 + (range->startStep * 25) &&
-            channelValue < 900 + (range->endStep * 25));
-}
-
-void updateActivatedModes(void)
-{
-    // Unfortunately for AND logic it's not enough to simply check if any of the specified channel range conditions are valid for a mode.
-    // We need to count the total number of conditions specified for each mode, and check that all those conditions are currently valid.
-
-    uint8_t activeConditionCountPerMode[CHECKBOX_ITEM_COUNT];
-    memset(activeConditionCountPerMode, 0, CHECKBOX_ITEM_COUNT);
-
-    for (int index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
-        if (isRangeActive(modeActivationConditions(index)->auxChannelIndex, &modeActivationConditions(index)->range)) {
-            // Increment the number of valid conditions for this mode
-            activeConditionCountPerMode[modeActivationConditions(index)->modeId]++;
-        }
-    }
-
-    // Disable all modes to begin with
-    rcModeActivationMask = 0;
-
-    // Now see which modes should be enabled
-    for (int modeIndex = 0; modeIndex < CHECKBOX_ITEM_COUNT; modeIndex++) {
-        // only modes with conditions specified are considered
-        if (specifiedConditionCountPerMode[modeIndex] > 0) {
-            // For AND logic, the specified condition count and valid condition count must be the same.
-            // For OR logic, the valid condition count must be greater than zero.
-
-            if (modeActivationOperatorConfig()->modeActivationOperator == MODE_OPERATOR_AND) {
-                // AND the conditions
-                if (activeConditionCountPerMode[modeIndex] == specifiedConditionCountPerMode[modeIndex]) {
-                    ACTIVATE_RC_MODE(modeIndex);
-                }
-            }
-            else {
-                // OR the conditions
-                if (activeConditionCountPerMode[modeIndex] > 0) {
-                    ACTIVATE_RC_MODE(modeIndex);
-                }
-            }
-        }
-    }
-}
-
 int32_t getRcStickDeflection(int32_t axis, uint16_t midrc) {
     return MIN(ABS(rcData[axis] - midrc), 500);
 }
 
-void updateUsedModeActivationConditionFlags(void)
-{
-    memset(specifiedConditionCountPerMode, 0, CHECKBOX_ITEM_COUNT);
-    for (int index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
-        if (IS_RANGE_USABLE(&modeActivationConditions(index)->range)) {
-            specifiedConditionCountPerMode[modeActivationConditions(index)->modeId]++;
-        }
-    }
-
-    isUsingSticksToArm = !isModeActivationConditionPresent(BOXARM);
-
-#ifdef NAV
-    isUsingNAVModes = isModeActivationConditionPresent(BOXNAVPOSHOLD) ||
-                        isModeActivationConditionPresent(BOXNAVRTH) ||
-                        isModeActivationConditionPresent(BOXNAVWP);
-#endif
-}
-
-void configureModeActivationCondition(int macIndex, boxId_e modeId, uint8_t auxChannelIndex, uint16_t startPwm, uint16_t endPwm)
-{
-    modeActivationConditionsMutable(macIndex)->modeId = modeId;
-    modeActivationConditionsMutable(macIndex)->auxChannelIndex = auxChannelIndex;
-    modeActivationConditionsMutable(macIndex)->range.startStep = CHANNEL_VALUE_TO_STEP(startPwm);
-    modeActivationConditionsMutable(macIndex)->range.endStep = CHANNEL_VALUE_TO_STEP(endPwm);
-}

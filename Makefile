@@ -541,6 +541,7 @@ COMMON_SRC = \
             build/build_config.c \
             build/debug.c \
             build/version.c \
+            common/bitarray.c \
             common/crc.c \
             common/encoding.c \
             common/filter.c \
@@ -590,6 +591,7 @@ COMMON_SRC = \
             fc/rc_adjustments.c \
             fc/rc_controls.c \
             fc/rc_curves.c \
+            fc/rc_modes.c \
             fc/runtime_config.c \
             fc/stats.c \
             flight/failsafe.c \

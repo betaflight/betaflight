@@ -20,6 +20,7 @@
 #include "config/parameter_group.h"
 
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 
 //#define USE_INFLIGHT_PROFILE_ADJUSTMENT - not currently enabled
 

@@ -41,6 +41,9 @@
 
 #define BIT(x) (1 << (x))
 
+#define STATIC_ASSERT(condition, name) \
+    typedef char assert_failed_ ## name [(condition) ? 1 : -1 ] __attribute__((unused))
+
 /*
 http://resnet.uoregon.edu/~gurney_j/jmpc/bitwise.html
 */
