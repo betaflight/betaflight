@@ -164,7 +164,7 @@ static void trampCmsInitSettings()
     trampCmsPitMode = trampPitMode + 1;
 
     if (trampConfiguredPower > 0) {
-        for (uint8_t i = 0; i < sizeof(trampPowerTable); i++) {
+        for (uint8_t i = 0; i < VTX_TRAMP_POWER_COUNT; i++) {
             if (trampConfiguredPower <= trampPowerTable[i]) {
                 trampCmsPower = i + 1;
                 break;
