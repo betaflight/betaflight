@@ -62,7 +62,7 @@ void targetConfiguration(void)
     // Frsky version
     serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIALRX_UART)].functionMask = FUNCTION_TELEMETRY_FRSKY | FUNCTION_RX_SERIAL;
 #endif
-    
+
     pidProfilesMutable(0)->pid[PID_ROLL].P = 90;
     pidProfilesMutable(0)->pid[PID_ROLL].I = 44;
     pidProfilesMutable(0)->pid[PID_ROLL].D = 60;

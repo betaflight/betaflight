@@ -74,7 +74,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     },
 #endif
 #ifdef USE_UART2
-    { 
+    {
         .device = UARTDEV_2,
         .reg = USART2,
         .rxDMAChannel = UART2_RX_DMA_CHANNEL,

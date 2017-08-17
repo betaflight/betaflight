@@ -216,7 +216,7 @@ void i2c_OLED_clear_display_quick(busDevice_t *bus)
 }
 
 void i2c_OLED_clear_display(busDevice_t *bus)
-{   
+{
     static const uint8_t i2c_OLED_cmd_clear_display_pre[] = {
         0xa6, // Set Normal Display
         0xae, // Display OFF

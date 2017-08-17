@@ -32,7 +32,7 @@ int huffmanEncodeBuf(uint8_t *outBuf, int outBufLen, const uint8_t *inBuf, int i
     uint8_t *outByte = outBuf;
     *outByte = 0;
     uint8_t outBit = 0x80;
-    
+
     for (int ii = 0; ii < inLen; ++ii) {
         const int huffCodeLen = huffmanTable[*inBuf].codeLen;
         const uint16_t huffCode = huffmanTable[*inBuf].code;

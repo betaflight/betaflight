@@ -104,8 +104,8 @@ void pwmOutConfig(timerChannel_t *channel, const timerHardware_t *timerHardware,
 #endif
 
     configTimeBase(timerHardware->tim, period, hz);
-    pwmOCConfig(timerHardware->tim, 
-        timerHardware->channel, 
+    pwmOCConfig(timerHardware->tim,
+        timerHardware->channel,
         value,
         inversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output
         );
@@ -233,7 +233,7 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
     default:
     case PWM_TYPE_ONESHOT125:
         sMin = 125e-6f;
-        sLen = 125e-6f; 
+        sLen = 125e-6f;
         break;
     case PWM_TYPE_ONESHOT42:
         sMin = 42e-6f;
@@ -241,7 +241,7 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         break;
     case PWM_TYPE_MULTISHOT:
         sMin = 5e-6f;
-        sLen = 20e-6f; 
+        sLen = 20e-6f;
         break;
     case PWM_TYPE_BRUSHED:
         sMin = 0;
@@ -250,7 +250,7 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         break;
     case PWM_TYPE_STANDARD:
         sMin = 1e-3f;
-        sLen = 1e-3f; 
+        sLen = 1e-3f;
         useUnsyncedPwm = true;
         idlePulse = 0;
         break;
@@ -294,8 +294,8 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
 
 #ifdef USE_DSHOT
         if (isDshot) {
-            pwmDshotMotorHardwareConfig(timerHardware, 
-                motorIndex, 
+            pwmDshotMotorHardwareConfig(timerHardware,
+                motorIndex,
                 motorConfig->motorPwmProtocol,
                 motorConfig->motorPwmInversion ? timerHardware->output ^ TIMER_OUTPUT_INVERTED : timerHardware->output);
             motors[motorIndex].enabled = true;
@@ -320,14 +320,14 @@ void motorDevInit(const motorDevConfig_t *motorConfig, uint16_t idlePulse, uint8
         const uint32_t hz = clock / prescaler;
         const unsigned period = useUnsyncedPwm ? hz / pwmRateHz : 0xffff;
 
-        /* 
-            if brushed then it is the entire length of the period. 
-            TODO: this can be moved back to periodMin and periodLen 
+        /*
+            if brushed then it is the entire length of the period.
+            TODO: this can be moved back to periodMin and periodLen
             once mixer outputs a 0..1 float value.
         */
         motors[motorIndex].pulseScale = ((motorConfig->motorPwmProtocol == PWM_TYPE_BRUSHED) ? period : (sLen * hz)) / 1000.0f;
         motors[motorIndex].pulseOffset = (sMin * hz) - (motors[motorIndex].pulseScale * 1000);
-  
+
         pwmOutConfig(&motors[motorIndex].channel, timerHardware, hz, period, idlePulse, motorConfig->motorPwmInversion);
 
         bool timerAlreadyUsed = false;

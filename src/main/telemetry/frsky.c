@@ -134,7 +134,7 @@ static uint8_t cycleNum = 0;
 static void sendDataHead(uint8_t id)
 {
     frSkyTelemetryWrite(PROTOCOL_HEADER);
-    frSkyTelemetryWrite(id);	
+    frSkyTelemetryWrite(id);
 }
 
 static void sendTelemetryTail(void)
@@ -147,7 +147,7 @@ static void serializeFrsky(uint8_t data)
     // take care of byte stuffing
     if (data == 0x5e) {
         frSkyTelemetryWrite(0x5d);
-        frSkyTelemetryWrite(0x3e);	
+        frSkyTelemetryWrite(0x3e);
     } else if (data == 0x5d) {
         frSkyTelemetryWrite(0x5d);
         frSkyTelemetryWrite(0x3d);
@@ -463,7 +463,7 @@ void frSkyTelemetryWriteSerial(uint8_t ch)
 {
     serialWrite(frskyPort, ch);
 }
-    
+
 
 void initFrSkyTelemetry(void)
 {

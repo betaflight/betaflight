@@ -468,7 +468,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                     inCrashRecoveryMode = true;
                     crashDetectedAtUs = currentTimeUs;
                 }
-                if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) < crashTimeDelayUs && (ABS(errorRate) < crashGyroThreshold 
+                if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) < crashTimeDelayUs && (ABS(errorRate) < crashGyroThreshold
                     || ABS(getSetpointRate(axis)) > crashSetpointThreshold)) {
                     inCrashRecoveryMode = false;
                 }

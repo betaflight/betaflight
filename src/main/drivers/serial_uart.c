@@ -259,7 +259,7 @@ void uartWrite(serialPort_t *instance, uint8_t ch)
     if (s->txDMAChannel)
 #endif
     {
-        uartTryStartTxDMA(s); 
+        uartTryStartTxDMA(s);
     } else {
         USART_ITConfig(s->USARTx, USART_IT_TXE, ENABLE);
     }

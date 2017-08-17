@@ -2112,8 +2112,8 @@ static void cliBeeper(char *cmdline)
 
 #ifdef FRSKY_BIND
 void cliFrSkyBind(char *cmdline){
-	UNUSED(cmdline);
-	frSkyDBind();
+    UNUSED(cmdline);
+    frSkyDBind();
 }
 #endif
 
@@ -2391,7 +2391,7 @@ static void cliDshotProg(char *cmdline)
                         }
                     } else {
                         writeDshotCommand(escIndex, command);
-		    }
+                    }
 
                     cliPrintLinef("Command %d written.", command);
 

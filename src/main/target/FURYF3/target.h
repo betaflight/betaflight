@@ -142,7 +142,7 @@
 
 #define SOFTSERIAL1_RX_PIN      PB0
 #define SOFTSERIAL1_TX_PIN      PB1
-    
+
 #define SONAR
 #define SONAR_ECHO_PIN          PB1
 #define SONAR_TRIGGER_PIN       PB0

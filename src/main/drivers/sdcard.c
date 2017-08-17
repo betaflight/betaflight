@@ -439,7 +439,7 @@ static void sdcard_sendDataBlockBegin(const uint8_t *buffer, bool multiBlockWrit
 
         LL_SPI_EnableDMAReq_TX(SDCARD_SPI_INSTANCE);
 
-#elif defined(SDCARD_DMA_CHANNEL_TX) 
+#elif defined(SDCARD_DMA_CHANNEL_TX)
 
         // Queue the transmission of the sector payload
 #ifdef SDCARD_DMA_CLK
