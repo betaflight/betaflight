@@ -79,8 +79,9 @@ void targetConfiguration(void)
     *customMotorMixerMutable(6) = (motorMixer_t){ 1.0f, -1.0f,  0.414178f,  1.0f };    // MIDREAR_R
     *customMotorMixerMutable(7) = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L
 
+
     strcpy(pilotConfigMutable()->name, "BeeBrain V2");
-    osdConfigMutable()->item_pos[OSD_CRAFT_NAME] = OSD_POS(9, 11) | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(23, 10) | VISIBLE_FLAG;
+    OSD_INIT(osdConfigMutable(), OSD_CRAFT_NAME,  9, 11, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
+    OSD_INIT(osdConfigMutable(), OSD_MAIN_BATT_VOLTAGE, 23, 10, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
 }
 #endif
