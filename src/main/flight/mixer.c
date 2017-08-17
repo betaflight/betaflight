@@ -543,7 +543,8 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
     motorOutputRange = motorOutputMax - motorOutputMin;
 }
 
-void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS]) {
+static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
+{
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
     for (uint32_t i = 0; i < motorCount; i++) {
@@ -586,33 +587,35 @@ void mixTable(uint8_t vbatPidCompensation)
     // Find min and max throttle based on conditions. Throttle has to be known before mixing
     calculateThrottleAndCurrentMotorEndpoints();
 
-    float motorMix[MAX_SUPPORTED_MOTORS];
-
     // Calculate and Limit the PIDsum
-    const float scaledAxisPidRoll =
+    float scaledAxisPidRoll =
         constrainf((axisPID_P[FD_ROLL] + axisPID_I[FD_ROLL] + axisPID_D[FD_ROLL]) / PID_MIXER_SCALING, -pidSumLimit, pidSumLimit);
-    const float scaledAxisPidPitch =
+    float scaledAxisPidPitch =
         constrainf((axisPID_P[FD_PITCH] + axisPID_I[FD_PITCH] + axisPID_D[FD_PITCH]) / PID_MIXER_SCALING, -pidSumLimit, pidSumLimit);
-    const float scaledAxisPidYaw =
+    float scaledAxisPidYaw =
         constrainf((axisPID_P[FD_YAW] + axisPID_I[FD_YAW]) / PID_MIXER_SCALING, -pidSumLimitYaw, pidSumLimitYaw);
+    if (isMotorsReversed()) {
+        scaledAxisPidRoll = -scaledAxisPidRoll;
+        scaledAxisPidPitch = -scaledAxisPidPitch;
+        scaledAxisPidYaw = -scaledAxisPidYaw;
+    }
+    if (mixerConfig()->yaw_motors_reversed) {
+        scaledAxisPidYaw = -scaledAxisPidYaw;
+    }
 
     // Calculate voltage compensation
     const float vbatCompensationFactor = (vbatPidCompensation)  ? calculateVbatPidCompensation() : 1.0f;
 
     // Find roll/pitch/yaw desired output
+    float motorMix[MAX_SUPPORTED_MOTORS];
     float motorMixMax = 0, motorMixMin = 0;
-    const int yawDirection = GET_DIRECTION(mixerConfig()->yaw_motors_reversed);
-    int motorDirection = GET_DIRECTION(isMotorsReversed());
-  
     for (int i = 0; i < motorCount; i++) {
         float mix =
-            scaledAxisPidRoll  * currentMixer[i].roll  * (motorDirection) +
-            scaledAxisPidPitch * currentMixer[i].pitch * (motorDirection) +
-            scaledAxisPidYaw   * currentMixer[i].yaw * (-yawDirection) * (motorDirection);
+            scaledAxisPidRoll  * currentMixer[i].roll +
+            scaledAxisPidPitch * currentMixer[i].pitch +
+            scaledAxisPidYaw   * currentMixer[i].yaw;
 
-        if (vbatCompensationFactor > 1.0f) {
-            mix *= vbatCompensationFactor;  // Add voltage compensation
-        }
+        mix *= vbatCompensationFactor;  // Add voltage compensation
 
         if (mix > motorMixMax) {
             motorMixMax = mix;
