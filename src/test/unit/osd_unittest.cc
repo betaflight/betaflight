@@ -649,6 +649,84 @@ TEST(OsdTest, TestElementAltitude)
 }
 
 /*
+ * Tests the battery notifications shown on the warnings OSD element.
+ */
+TEST(OsdTest, TestElementWarningsBattery)
+{
+    // given
+    osdConfigMutable()->item_pos[OSD_WARNINGS] = OSD_POS(9, 10) | VISIBLE_FLAG;
+
+    // and
+    batteryConfigMutable()->vbatfullcellvoltage = 41;
+
+    // and
+    // 4S battery
+    simulationBatteryCellCount = 4;
+
+    // and
+    // full battery
+    simulationBatteryVoltage = 168;
+    simulationBatteryState = BATTERY_OK;
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(9, 10, "           ");
+
+    // given
+    // low battery
+    simulationBatteryVoltage = 140;
+    simulationBatteryState = BATTERY_WARNING;
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(9, 10, "LOW BATTERY ");
+
+    // given
+    // crtical battery
+    simulationBatteryVoltage = 132;
+    simulationBatteryState = BATTERY_CRITICAL;
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(9, 10, " LAND NOW   ");
+
+    // given
+    // used battery
+    simulationBatteryVoltage = ((batteryConfig()->vbatmaxcellvoltage - 2) * simulationBatteryCellCount) - 1;
+    simulationBatteryState = BATTERY_OK;
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(9, 10, "BATT NOT FULL");
+
+    // given
+    // full battery
+    simulationBatteryVoltage = ((batteryConfig()->vbatmaxcellvoltage - 2) * simulationBatteryCellCount);
+    simulationBatteryState = BATTERY_OK;
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(9, 10, "             ");
+
+    // TODO
+}
+
+/*
  * Tests the time string formatting function with a series of precision settings and time values.
  */
 TEST(OsdTest, TestFormatTimeString)
@@ -742,6 +820,10 @@ extern "C" {
 
     uint16_t getBatteryVoltage() {
         return simulationBatteryVoltage;
+    }
+
+    uint16_t getBatteryAverageCellVoltage() {
+        return simulationBatteryVoltage / simulationBatteryCellCount;
     }
 
     int32_t getAmperage() {

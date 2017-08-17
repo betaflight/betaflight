@@ -596,6 +596,13 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
+        /* Show warning if battery is not fresh */
+        if (!ARMING_FLAG(WAS_EVER_ARMED) && (getBatteryState() == BATTERY_OK)
+              && getBatteryAverageCellVoltage() < batteryConfig()->vbatfullcellvoltage) {
+            tfp_sprintf(buff, "BATT NOT FULL");
+            break;
+        }
+
         /* Show battery state warning */
         switch (getBatteryState()) {
         case BATTERY_WARNING:
