@@ -47,7 +47,9 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1_RX_DMA
         .rxDMAStream = DMA2_Stream5,
 #endif
+#ifdef USE_UART1_TX_DMA
         .txDMAStream = DMA2_Stream7,
+#endif
         .rxPins = { DEFIO_TAG_E(PA10), DEFIO_TAG_E(PB7), IO_TAG_NONE },
         .txPins = { DEFIO_TAG_E(PA9), DEFIO_TAG_E(PB6), IO_TAG_NONE },
         .af = GPIO_AF7_USART1,
@@ -70,7 +72,9 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART2_RX_DMA
         .rxDMAStream = DMA1_Stream5,
 #endif
+#ifdef USE_UART2_TX_DMA
         .txDMAStream = DMA1_Stream6,
+#endif
         .rxPins = { DEFIO_TAG_E(PA3), DEFIO_TAG_E(PD6), IO_TAG_NONE },
         .txPins = { DEFIO_TAG_E(PA2), DEFIO_TAG_E(PD5), IO_TAG_NONE },
         .af = GPIO_AF7_USART2,
@@ -93,7 +97,9 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART3_RX_DMA
         .rxDMAStream = DMA1_Stream1,
 #endif
+#ifdef USE_UART3_TX_DMA
         .txDMAStream = DMA1_Stream3,
+#endif
         .rxPins = { DEFIO_TAG_E(PB11), DEFIO_TAG_E(PC11), DEFIO_TAG_E(PD9) },
         .txPins = { DEFIO_TAG_E(PB10), DEFIO_TAG_E(PC10), DEFIO_TAG_E(PD8) },
         .af = GPIO_AF7_USART3,
@@ -116,7 +122,9 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART4_RX_DMA
         .rxDMAStream = DMA1_Stream2,
 #endif
+#ifdef USE_UART4_TX_DMA
         .txDMAStream = DMA1_Stream4,
+#endif
         .rxPins = { DEFIO_TAG_E(PA1), DEFIO_TAG_E(PC11), IO_TAG_NONE },
         .txPins = { DEFIO_TAG_E(PA0), DEFIO_TAG_E(PC10), IO_TAG_NONE },
         .af = GPIO_AF8_UART4,
@@ -139,7 +147,9 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART5_RX_DMA
         .rxDMAStream = DMA1_Stream0,
 #endif
+#ifdef USE_UART5_TX_DMA
         .txDMAStream = DMA1_Stream7,
+#endif
         .rxPins = { DEFIO_TAG_E(PD2), IO_TAG_NONE, IO_TAG_NONE },
         .txPins = { DEFIO_TAG_E(PC12), IO_TAG_NONE, IO_TAG_NONE },
         .af = GPIO_AF8_UART5,
@@ -162,7 +172,9 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART6_RX_DMA
         .rxDMAStream = DMA2_Stream1,
 #endif
+#ifdef USE_UART6_TX_DMA
         .txDMAStream = DMA2_Stream6,
+#endif
         .rxPins = { DEFIO_TAG_E(PC7), DEFIO_TAG_E(PG9), IO_TAG_NONE },
         .txPins = { DEFIO_TAG_E(PC6), DEFIO_TAG_E(PG14), IO_TAG_NONE },
         .af = GPIO_AF8_USART6,
@@ -185,7 +197,9 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART7_RX_DMA
         .rxDMAStream = DMA1_Stream3,
 #endif
+#ifdef USE_UART7_TX_DMA
         .txDMAStream = DMA1_Stream1,
+#endif
         .rxPins = { DEFIO_TAG_E(PE7), DEFIO_TAG_E(PF6), IO_TAG_NONE },
         .txPins = { DEFIO_TAG_E(PE8), DEFIO_TAG_E(PF7), IO_TAG_NONE },
         .af = GPIO_AF8_UART7,
@@ -208,7 +222,9 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART8_RX_DMA
         .rxDMAStream = DMA1_Stream6,
 #endif
+#ifdef USE_UART8_TX_DMA
         .txDMAStream = DMA1_Stream0,
+#endif
         .rxPins = { DEFIO_TAG_E(PE0), IO_TAG_NONE, IO_TAG_NONE },
         .txPins = { DEFIO_TAG_E(PE1), IO_TAG_NONE, IO_TAG_NONE },
         .af = GPIO_AF8_UART8,
