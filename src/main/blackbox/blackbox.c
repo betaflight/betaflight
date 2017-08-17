@@ -1644,7 +1644,7 @@ void blackboxUpdate(timeUs_t currentTimeUs)
     // Did we run out of room on the device? Stop!
     if (isBlackboxDeviceFull()) {
 #ifdef USE_FLASHFS
-        if (blackboxState != BLACKBOX_STATE_ERASING 
+        if (blackboxState != BLACKBOX_STATE_ERASING
             && blackboxState != BLACKBOX_STATE_START_ERASE
             && blackboxState != BLACKBOX_STATE_ERASED) {
 #endif

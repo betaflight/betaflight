@@ -36,40 +36,40 @@ void transponderIrInitERLT(transponder_t *transponder){
 
 void addBitToBuffer(transponder_t *transponder, uint8_t cycles, uint8_t pulsewidth)
 {
-	for (int i = 0; i < cycles; i++) {
-		transponder->transponderIrDMABuffer.erlt[dmaBufferOffset++] = pulsewidth;
+    for (int i = 0; i < cycles; i++) {
+        transponder->transponderIrDMABuffer.erlt[dmaBufferOffset++] = pulsewidth;
     }
 }
 
 void updateTransponderDMABufferERLT(transponder_t *transponder, const uint8_t* transponderData)
 {
-	uint8_t byteToSend = ~(*transponderData); //transponderData is stored inverted, so invert before using
-	uint8_t paritysum = 0; //sum of one bits
+    uint8_t byteToSend = ~(*transponderData); //transponderData is stored inverted, so invert before using
+    uint8_t paritysum = 0; //sum of one bits
 
-	dmaBufferOffset = 0; //reset buffer count
+    dmaBufferOffset = 0; //reset buffer count
 
-	//start bit 1, always pulsed, bit value = 0
-	addBitToBuffer(transponder, ERLTCyclesForZeroBit, transponder->bitToggleOne);
+    //start bit 1, always pulsed, bit value = 0
+    addBitToBuffer(transponder, ERLTCyclesForZeroBit, transponder->bitToggleOne);
 
-	//start bit 2, always not pulsed, bit value = 0
-	addBitToBuffer(transponder, ERLTCyclesForZeroBit, ERLTBitQuiet);
+    //start bit 2, always not pulsed, bit value = 0
+    addBitToBuffer(transponder, ERLTCyclesForZeroBit, ERLTBitQuiet);
 
-	//add data bits, only the 6 LSB
-	for (int i = 5; i >= 0; i--)
-	{
-		uint8_t bv = (byteToSend >> i) & 0x01;
-		paritysum += bv;
-		addBitToBuffer(transponder, (bv ? ERLTCyclesForOneBit : ERLTCyclesForZeroBit), ((i % 2) ? transponder->bitToggleOne : ERLTBitQuiet));
-	}
+    //add data bits, only the 6 LSB
+    for (int i = 5; i >= 0; i--)
+    {
+        uint8_t bv = (byteToSend >> i) & 0x01;
+        paritysum += bv;
+        addBitToBuffer(transponder, (bv ? ERLTCyclesForOneBit : ERLTCyclesForZeroBit), ((i % 2) ? transponder->bitToggleOne : ERLTBitQuiet));
+    }
 
-	//parity bit, always pulsed, bit value is zero if sum is even, one if odd
-	addBitToBuffer(transponder, ((paritysum % 2) ?  ERLTCyclesForOneBit : ERLTCyclesForZeroBit), transponder->bitToggleOne);
+    //parity bit, always pulsed, bit value is zero if sum is even, one if odd
+    addBitToBuffer(transponder, ((paritysum % 2) ?  ERLTCyclesForOneBit : ERLTCyclesForZeroBit), transponder->bitToggleOne);
 
-	//add final zero after the pulsed parity bit to stop pulses until the next update
-	transponder->transponderIrDMABuffer.erlt[dmaBufferOffset++] = ERLTBitQuiet;
+    //add final zero after the pulsed parity bit to stop pulses until the next update
+    transponder->transponderIrDMABuffer.erlt[dmaBufferOffset++] = ERLTBitQuiet;
 
-	//reset buffer size to that required by this ERLT id
-	transponder->dma_buffer_size = dmaBufferOffset;
+    //reset buffer size to that required by this ERLT id
+    transponder->dma_buffer_size = dmaBufferOffset;
 }
 
 const struct transponderVTable erltTansponderVTable = {

@@ -512,7 +512,7 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
         if((rcCommand[THROTTLE] <= (rxConfig()->midrc - flight3DConfig()->deadband3d_throttle))) {
             motorOutputMax = deadbandMotor3dLow;
             motorOutputMin = motorOutputLow;
-            throttlePrevious = rcCommand[THROTTLE];					//3D Mode Throttle Fix #3696
+            throttlePrevious = rcCommand[THROTTLE];                //3D Mode Throttle Fix #3696
             throttle = rcCommand[THROTTLE] - rxConfig()->mincheck; //3D Mode Throttle Fix #3696
             currentThrottleInputRange = rcCommandThrottleRange3dLow;
             if(isMotorProtocolDshot()) mixerInversion = true;

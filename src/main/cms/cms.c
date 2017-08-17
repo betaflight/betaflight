@@ -610,7 +610,7 @@ static void cmsTraverseGlobalExit(const CMS_Menu *pMenu)
 }
 
 long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
-{ 
+{
     int exitType = (int)ptr;
     switch (exitType) {
     case CMS_EXIT_SAVE:

@@ -16,7 +16,7 @@
  */
 
 /*
- * Cleanflight (or Baseflight): original 
+ * Cleanflight (or Baseflight): original
  * jflyper: Mono-timer and single-wire half-duplex
  */
 

@@ -20,12 +20,12 @@ extern "C" {
 #endif
 
 typedef struct {
-	int fd;
-	struct sockaddr_in si;
-	struct sockaddr_in recv;
-	int port;
-	char* addr;
-	bool isServer;
+    int fd;
+    struct sockaddr_in si;
+    struct sockaddr_in recv;
+    int port;
+    char* addr;
+    bool isServer;
 } udpLink_t;
 
 int udpInit(udpLink_t* link, const char* addr, int port, bool isServer);

@@ -138,7 +138,7 @@ void spiInitDevice(SPIDevice device)
     LL_SPI_Disable(spi->dev);
     LL_SPI_DeInit(spi->dev);
 
-    LL_SPI_InitTypeDef init = 
+    LL_SPI_InitTypeDef init =
     {
         .TransferDirection = SPI_DIRECTION_2LINES,
         .Mode = SPI_MODE_MASTER,
@@ -152,7 +152,7 @@ void spiInitDevice(SPIDevice device)
         .CRCCalculation = SPI_CRCCALCULATION_DISABLE,
     };
     LL_SPI_SetRxFIFOThreshold(spi->dev, SPI_RXFIFO_THRESHOLD_QF);
-    
+
     LL_SPI_Init(spi->dev, &init);
     LL_SPI_Enable(spi->dev);
 }
@@ -227,7 +227,7 @@ uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t txByte)
  */
 bool spiIsBusBusy(SPI_TypeDef *instance)
 {
-    return LL_SPI_GetTxFIFOLevel(instance) != LL_SPI_TX_FIFO_EMPTY 
+    return LL_SPI_GetTxFIFOLevel(instance) != LL_SPI_TX_FIFO_EMPTY
         || LL_SPI_IsActiveFlag_BSY(instance);
 }
 

@@ -65,9 +65,9 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     },
 #endif
 #ifdef USE_I2C_DEVICE_3
-    { 
+    {
         .device = I2CDEV_3,
-        .reg = I2C3, 
+        .reg = I2C3,
         .sclPins = { DEFIO_TAG_E(PA8) },
         .sdaPins = { DEFIO_TAG_E(PC9) },
         .rcc = RCC_APB1(I2C3),

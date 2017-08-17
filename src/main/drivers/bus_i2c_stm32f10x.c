@@ -366,7 +366,7 @@ void i2cInit(I2CDevice device)
         return;
 
     i2cDevice_t *pDev = &i2cDevice[device];
-    const i2cHardware_t *hw = pDev->hardware; 
+    const i2cHardware_t *hw = pDev->hardware;
 
     if (!hw) {
         return;

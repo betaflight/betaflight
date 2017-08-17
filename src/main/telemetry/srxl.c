@@ -183,15 +183,15 @@ void srxlFrameRpm(sbuf_t *dst)
 /*
 typedef struct
 {
-	UINT8		identifier;        // Source device = 0x34
-	UINT8		sID;		   // Secondary ID
-	INT16		current_A;	   // Instantaneous current, 0.1A (0-3276.8A)
-	INT16		chargeUsed_A;	   // Integrated mAh used, 1mAh (0-32.766Ah)
-	UINT16		temp_A;		   // Temperature, 0.1C (0-150C, 0x7FFF indicates not populated)
-	INT16		current_B;	   // Instantaneous current, 0.1A (0-3276.8A)
-	INT16		chargeUsed_B;	   // Integrated mAh used, 1mAh (0-32.766Ah)
-	UINT16		temp_B;		   // Temperature, 0.1C (0-150C, 0x7FFF indicates not populated)
-	UINT16		spare;		   // Not used
+    UINT8   identifier;     // Source device = 0x34
+    UINT8   sID;            // Secondary ID
+    INT16   current_A;      // Instantaneous current, 0.1A (0-3276.8A)
+    INT16   chargeUsed_A;   // Integrated mAh used, 1mAh (0-32.766Ah)
+    UINT16  temp_A;         // Temperature, 0.1C (0-150C, 0x7FFF indicates not populated)
+    INT16   current_B;      // Instantaneous current, 0.1A (0-3276.8A)
+    INT16   chargeUsed_B;   // Integrated mAh used, 1mAh (0-32.766Ah)
+    UINT16  temp_B;         // Temperature, 0.1C (0-150C, 0x7FFF indicates not populated)
+    UINT16  spare;          // Not used
 } STRU_TELE_FP_MAH;
 */
 
