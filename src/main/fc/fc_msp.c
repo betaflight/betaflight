@@ -609,7 +609,9 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #define OSD_FLAGS_OSD_HARDWARE_MAX_7456 (1 << 4)
 #define OSD_FLAGS_OSD_HARDWARE_OPENTCO  (1 << 5)
 
+#if defined(USE_OPENTCO) || defined(USE_MAX7456) || defined(USE_OSD_SLAVE)
         uint8_t osdFlags = 0;
+#endif
 #if defined(USE_OPENTCO) || defined(USE_MAX7456)
         osdFlags |= OSD_FLAGS_OSD_FEATURE;
 #endif
