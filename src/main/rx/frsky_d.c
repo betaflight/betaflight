@@ -27,6 +27,7 @@
 #include "build/build_config.h"
 
 #include "common/utils.h"
+#include "common/maths.h"
 
 #include "drivers/cc2500.h"
 #include "drivers/io.h"
@@ -128,8 +129,6 @@ static uint8_t frame[20];
 static int16_t RSSI_dBm;
 static uint8_t telemetry_id;
 static uint8_t telemetryRX;
-static uint8_t v1; // A1
-static uint8_t v2; // A2
 static uint32_t telemetryTime;
 
 #if defined(HUB)
@@ -178,6 +177,8 @@ static void compute_RSSIdbm(uint8_t *packet)
     } else {
         RSSI_dBm = ((((uint16_t)packet[ccLen - 2]) * 18) >> 5) + 65;
     }
+
+    processRssi(constrain((RSSI_dBm << 3) / 10, 0, 100));
 }
 
 #if defined(HUB)
@@ -217,14 +218,15 @@ static void frSkyTelemetryWriteSpi(uint8_t ch)
 
 static void telemetry_build_frame(uint8_t *packet)
 {
-    v1 = 0;
+    const uint16_t adcExternal1Sample = adcGetChannel(ADC_EXTERNAL1);
+    const uint16_t adcRssiSample = adcGetChannel(ADC_RSSI);
     uint8_t bytes_used = 0;
     telemetry_id = packet[4];
     frame[0] = 0x11; // length
     frame[1] = frSkyDConfig()->bindTxId[0];
     frame[2] = frSkyDConfig()->bindTxId[1];
-    frame[3] = v1; // A1 voltages
-    frame[4] = v2; // A2
+    frame[3] = (uint8_t)((adcExternal1Sample & 0xff0) >> 4); // A1
+    frame[4] = (uint8_t)((adcRssiSample & 0xff0) >> 4);      // A2
     frame[5] = (uint8_t)RSSI_dBm;
 #if defined(HUB)
     bytes_used = frsky_append_hub_data(&frame[8]);

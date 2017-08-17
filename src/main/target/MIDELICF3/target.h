@@ -87,6 +87,11 @@
 #define ADC_INSTANCE            ADC1
 #define VBAT_ADC_PIN            PA0
 #define CURRENT_METER_ADC_PIN   PA1
+
+// Can be used on motor 1 / 2 pads (A02 / A03):
+#define EXTERNAL1_ADC_PIN       NONE
+#define RSSI_ADC_PIN            NONE
+
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 
