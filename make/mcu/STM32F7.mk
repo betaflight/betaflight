@@ -58,19 +58,13 @@ EXCLUDES        = stm32f7xx_hal_can.c \
                   stm32f7xx_hal_timebase_rtc_wakeup_template.c \
                   stm32f7xx_hal_timebase_tim_template.c \
                   stm32f7xx_hal_wwdg.c \
-                  stm32f7xx_ll_adc.c \
                   stm32f7xx_ll_crc.c \
-                  stm32f7xx_ll_dac.c \
-                  stm32f7xx_ll_exti.c \
                   stm32f7xx_ll_fmc.c \
-                  stm32f7xx_ll_i2c.c \
                   stm32f7xx_ll_lptim.c \
                   stm32f7xx_ll_pwr.c \
                   stm32f7xx_ll_rng.c \
                   stm32f7xx_ll_rtc.c \
-                  stm32f7xx_ll_sdmmc.c \
-                  stm32f7xx_ll_tim.c \
-                  stm32f7xx_ll_usart.c
+                  stm32f7xx_ll_sdmmc.c
 
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 
@@ -146,12 +140,12 @@ MCU_COMMON_SRC = \
             target/system_stm32f7xx.c \
             drivers/accgyro/accgyro_mpu.c \
             drivers/adc_stm32f7xx.c \
-            drivers/bus_i2c_hal.c \
+            drivers/bus_i2c_ll.c \
             drivers/dma_stm32f7xx.c \
             drivers/light_ws2811strip_hal.c \
             drivers/bus_spi_ll.c \
             drivers/pwm_output_dshot_hal.c \
-            drivers/timer_hal.c \
+            drivers/timer_ll.c \
             drivers/timer_stm32f7xx.c \
             drivers/system_stm32f7xx.c \
             drivers/serial_uart_stm32f7xx.c \

@@ -90,49 +90,17 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 
 i2cDevice_t i2cDevice[I2CDEV_COUNT];
 
-void I2C1_ER_IRQHandler(void)
-{
-    HAL_I2C_ER_IRQHandler(&i2cDevice[I2CDEV_1].handle);
-}
-
-void I2C1_EV_IRQHandler(void)
-{
-    HAL_I2C_EV_IRQHandler(&i2cDevice[I2CDEV_1].handle);
-}
-
-void I2C2_ER_IRQHandler(void)
-{
-    HAL_I2C_ER_IRQHandler(&i2cDevice[I2CDEV_2].handle);
-}
-
-void I2C2_EV_IRQHandler(void)
-{
-    HAL_I2C_EV_IRQHandler(&i2cDevice[I2CDEV_2].handle);
-}
-
-void I2C3_ER_IRQHandler(void)
-{
-    HAL_I2C_ER_IRQHandler(&i2cDevice[I2CDEV_3].handle);
-}
-
-void I2C3_EV_IRQHandler(void)
-{
-    HAL_I2C_EV_IRQHandler(&i2cDevice[I2CDEV_3].handle);
-}
-
-#ifdef USE_I2C_DEVICE_4
-void I2C4_ER_IRQHandler(void)
-{
-    HAL_I2C_ER_IRQHandler(&i2cDevice[I2CDEV_4].handle);
-}
-
-void I2C4_EV_IRQHandler(void)
-{
-    HAL_I2C_EV_IRQHandler(&i2cDevice[I2CDEV_4].handle);
-}
-#endif
-
 static volatile uint16_t i2cErrorCount = 0;
+
+///////////////////////////////////////////////////////////////////////////////
+// I2C TimeoutUserCallback
+///////////////////////////////////////////////////////////////////////////////
+
+uint32_t i2cTimeoutUserCallback(void)
+{
+    i2cErrorCount++;
+    return false;
+}
 
 static bool i2cOverClock;
 
@@ -185,22 +153,78 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
         return false;
     }
 
-    I2C_HandleTypeDef *pHandle = &i2cDevice[device].handle;
+    I2C_TypeDef *I2Cx = i2cDevice[device].reg;
 
-    if (!pHandle->Instance) {
+    if (!I2Cx) {
         return false;
     }
 
-    HAL_StatusTypeDef status;
+    addr_ <<= 1;
 
-    if (reg_ == 0xFF)
-        status = HAL_I2C_Master_Receive(pHandle ,addr_ << 1, buf, len, I2C_DEFAULT_TIMEOUT);
-    else
-        status = HAL_I2C_Mem_Read(pHandle, addr_ << 1, reg_, I2C_MEMADD_SIZE_8BIT,buf, len, I2C_DEFAULT_TIMEOUT);
+    /* Test on BUSY Flag */
+    unsigned i2cTimeout = I2C_LONG_TIMEOUT;
+    while (LL_I2C_IsActiveFlag_BUSY(I2Cx)) {
+        if ((i2cTimeout--) == 0) {
+            return i2cTimeoutUserCallback();
+        }
+    }
 
-    if (status != HAL_OK)
-        return i2cHandleHardwareFailure(device);
+    /* Configure slave address, nbytes, reload, end mode and start or stop generation */
+    LL_I2C_HandleTransfer(I2Cx, addr_, LL_I2C_ADDRSLAVE_7BIT, 1, LL_I2C_MODE_SOFTEND, LL_I2C_GENERATE_START_WRITE);
 
+    /* Wait until TXIS flag is set */
+    i2cTimeout = I2C_LONG_TIMEOUT;
+    while (!LL_I2C_IsActiveFlag_TXIS(I2Cx)) {
+        if ((i2cTimeout--) == 0) {
+            return i2cTimeoutUserCallback();
+        }
+    }
+
+    /* Send Register address */
+    LL_I2C_TransmitData8(I2Cx, (uint8_t)reg_);
+
+    /* Wait until TC flag is set */
+    i2cTimeout = I2C_LONG_TIMEOUT;
+    while (!LL_I2C_IsActiveFlag_TC(I2Cx)) {
+        if ((i2cTimeout--) == 0) {
+            return i2cTimeoutUserCallback();
+        }
+    }
+
+    /* Configure slave address, nbytes, reload, end mode and start or stop generation */
+    LL_I2C_HandleTransfer(I2Cx, addr_, LL_I2C_ADDRSLAVE_7BIT, len, LL_I2C_MODE_AUTOEND, LL_I2C_GENERATE_START_READ);
+
+    /* Wait until all data are received */
+    while (len) {
+        /* Wait until RXNE flag is set */
+        i2cTimeout = I2C_LONG_TIMEOUT;
+        while (!LL_I2C_IsActiveFlag_RXNE(I2Cx)) {
+            if ((i2cTimeout--) == 0) {
+                return i2cTimeoutUserCallback();
+            }
+        }
+
+        /* Read data from RXDR */
+        *buf = LL_I2C_ReceiveData8(I2Cx);
+        /* Point to the next location where the byte read will be saved */
+        buf++;
+
+        /* Decrement the read bytes counter */
+        len--;
+    }
+
+    /* Wait until STOPF flag is set */
+    i2cTimeout = I2C_LONG_TIMEOUT;
+    while (!LL_I2C_IsActiveFlag_STOP(I2Cx)) {
+        if ((i2cTimeout--) == 0) {
+            return i2cTimeoutUserCallback();
+        }
+    }
+
+    /* Clear STOPF flag */
+    LL_I2C_ClearFlag_STOP(I2Cx);
+
+    /* If all operations OK */
     return true;
 }
 
@@ -239,33 +263,25 @@ void i2cInit(I2CDevice device)
 #endif
 
     // Init I2C peripheral
+    I2C_TypeDef * instance = hardware->reg;
 
-    I2C_HandleTypeDef *pHandle = &pDev->handle;
-
-    memset(pHandle, 0, sizeof(*pHandle));
-
-    pHandle->Instance = pDev->hardware->reg;
-
-    /// TODO: HAL check if I2C timing is correct
+    LL_I2C_InitTypeDef init;
+    LL_I2C_StructInit(&init);
 
     if (pDev->overClock) {
         // 800khz Maximum speed tested on various boards without issues
-        pHandle->Init.Timing = 0x00500D1D;
+        init.Timing = 0x00500D1D;
     } else {
-        pHandle->Init.Timing = 0x00500C6F;
+        init.Timing = 0x00500C6F;
     }
 
-    pHandle->Init.OwnAddress1 = 0x0;
-    pHandle->Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-    pHandle->Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-    pHandle->Init.OwnAddress2 = 0x0;
-    pHandle->Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-    pHandle->Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+    init.OwnAddress1 = 0x0;
+    init.OwnAddrSize = I2C_ADDRESSINGMODE_7BIT;
 
-    HAL_I2C_Init(pHandle);
+    LL_I2C_Init(instance, &init);
 
     // Enable the Analog I2C Filter
-    HAL_I2CEx_ConfigAnalogFilter(pHandle, I2C_ANALOGFILTER_ENABLE);
+    LL_I2C_ConfigFilters(instance, I2C_ANALOGFILTER_ENABLE, 0);
 
     // Setup interrupt handlers
     HAL_NVIC_SetPriority(hardware->er_irq, NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_ER), NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_ER));

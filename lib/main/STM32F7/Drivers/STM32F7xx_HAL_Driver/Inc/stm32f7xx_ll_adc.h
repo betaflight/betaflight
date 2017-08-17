@@ -4365,6 +4365,7 @@ __STATIC_INLINE void LL_ADC_ClearFlag_AWD1(ADC_TypeDef *ADCx)
   */
 __STATIC_INLINE uint32_t LL_ADC_IsActiveFlag_MST_EOCS(ADC_Common_TypeDef *ADCxy_COMMON)
 {
+  (void)ADCxy_COMMON;
   return (READ_BIT(ADC1->SR, LL_ADC_FLAG_EOCS) == (LL_ADC_FLAG_EOCS));
 }
 

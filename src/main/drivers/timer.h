@@ -192,10 +192,14 @@ uint8_t timerInputIrq(TIM_TypeDef *tim);
 const timerHardware_t *timerGetByTag(ioTag_t tag, timerUsageFlag_e flag);
 
 #if defined(USE_HAL_DRIVER)
-TIM_HandleTypeDef* timerFindTimerHandle(TIM_TypeDef *tim);
+
+void LL_TIM_EnableIT(TIM_TypeDef *tim, const uint32_t channel);
+
 #else
+
 void timerOCInit(TIM_TypeDef *tim, uint8_t channel, TIM_OCInitTypeDef *init);
 void timerOCPreloadConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t preload);
+
 #endif
 
 volatile timCCR_t *timerCCR(TIM_TypeDef *tim, uint8_t channel);

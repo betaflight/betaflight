@@ -67,9 +67,6 @@ typedef struct softSerial_s {
     IO_t txIO;
 
     const timerHardware_t *timerHardware;
-#ifdef USE_HAL_DRIVER
-    const TIM_HandleTypeDef *timerHandle;
-#endif
     const timerHardware_t *exTimerHardware;
 
     volatile uint8_t rxBuffer[SOFTSERIAL_BUFFER_SIZE];
@@ -333,10 +330,6 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
         timerChConfigCallbacks(softSerial->timerHardware, &softSerial->edgeCb, &softSerial->overCb);
     }
 
-#ifdef USE_HAL_DRIVER
-    softSerial->timerHandle = timerFindTimerHandle(softSerial->timerHardware->tim);
-#endif
-
     if (!(options & SERIAL_BIDIR)) {
         serialOutputPortActivate(softSerial);
         setTxSignal(softSerial, ENABLE);
@@ -505,7 +498,7 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
         // of the bit period.
 
 #ifdef USE_HAL_DRIVER
-        __HAL_TIM_SetCounter(self->timerHandle, __HAL_TIM_GetAutoreload(self->timerHandle) / 2);
+        LL_TIM_SetCounter(self->timerHardware->tim, self->timerHardware->tim->ARR / 2);
 #else
         TIM_SetCounter(self->timerHardware->tim, self->timerHardware->tim->ARR / 2);
 #endif
