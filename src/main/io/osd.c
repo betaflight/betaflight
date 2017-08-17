@@ -558,7 +558,7 @@ static void osdDrawSingleElement(uint8_t item)
             strcpy(buff, "   CRAFT_NAME   ");
         else {
             memset(buff, ' ', MAX_NAME_LENGTH);
-            for (int i = 0; i < MAX_NAME_LENGTH; i++) {
+            for (unsigned int i = 0; i < MAX_NAME_LENGTH; i++) {
                 if (pilotConfig()->name[i] == 0){
                     break;
                 }
@@ -988,7 +988,7 @@ void osdUpdateAlarms(void)
     else
         CLR_BLINK(OSD_GPS_SATS);
 
-    for (int i = 0; i < OSD_TIMER_COUNT; i++) {
+    for (uint32_t i = 0; i < OSD_TIMER_COUNT; i++) {
         const uint16_t timer = osdConfig()->timers[i];
         const timeUs_t time = osdGetTimerValue(OSD_TIMER_SRC(timer));
         const timeUs_t alarmTime = OSD_TIMER_ALARM(timer) * 60000000; // convert from minutes to us
@@ -1268,8 +1268,8 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
             cmsUpdate(currentTimeUs);
 #endif
         }
-    }
 #endif
+    }
 }
 
 void osdRedraw()

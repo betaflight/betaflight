@@ -84,12 +84,14 @@ static int reloadProfile (displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     max7456ReloadProfile();
+
     return 0;
 }
 
 
 static int clearScreen(displayPort_t *displayPort)
 {
+    UNUSED(displayPort);
     max7456ClearScreen();
 
     return 0;

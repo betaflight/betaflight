@@ -66,7 +66,7 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/exti.h"
 #include "drivers/max7456.h"
-#include "drivers/tinyosd.h"
+#include "drivers/opentco_osd.h"
 #include "drivers/vtx_rtc6705.h"
 #include "drivers/vtx_common.h"
 #include "drivers/camera_control.h"
@@ -87,7 +87,7 @@
 
 #include "io/beeper.h"
 #include "io/displayport_max7456.h"
-#include "io/displayport_tinyosd.h"
+#include "io/displayport_opentco.h"
 #include "io/serial.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
@@ -562,7 +562,8 @@ void init(void)
 #if !defined(USE_OSD_SLAVE)
     //The OSD need to be initialised after GYRO to avoid GYRO initialisation failure on some targets
     if (feature(FEATURE_OSD)) {
-        switch (osdConfig()->device) {
+        switch (osdConfig()->device)
+        {
         default:
         case OSD_DEVICE_NONE:
             // no device is used
@@ -579,11 +580,9 @@ void init(void)
             osdDisplayPort = displayPortMspInit();
             break;
 #endif
-#ifndef USE_MAX7456
-        case OSD_DEVICE_TINYOSD:
-            osdDisplayPort = tinyOSDDisplayPortInit(vcdProfile());
+        case OSD_DEVICE_OPENTCO:
+            osdDisplayPort = opentcoDisplayPortInit(vcdProfile());
             break;
-#endif
         }
 
         // osdInit will register with CMS by itself.
