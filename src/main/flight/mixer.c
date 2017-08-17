@@ -595,7 +595,7 @@ void mixTable(uint8_t vbatPidCompensation)
     float scaledAxisPidPitch =
         constrainf((axisPID_P[FD_PITCH] + axisPID_I[FD_PITCH] + axisPID_D[FD_PITCH]) / PID_MIXER_SCALING, -pidSumLimit, pidSumLimit);
     float scaledAxisPidYaw =
-        constrainf((axisPID_P[FD_YAW] + axisPID_I[FD_YAW]) / PID_MIXER_SCALING, -pidSumLimitYaw, pidSumLimitYaw);
+        -constrainf((axisPID_P[FD_YAW] + axisPID_I[FD_YAW]) / PID_MIXER_SCALING, -pidSumLimitYaw, pidSumLimitYaw);
     if (isMotorsReversed()) {
         scaledAxisPidRoll = -scaledAxisPidRoll;
         scaledAxisPidPitch = -scaledAxisPidPitch;
