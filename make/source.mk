@@ -138,14 +138,14 @@ FC_SRC = \
             drivers/serial_escserial.c \
             drivers/sonar_hcsr04.c \
             drivers/vtx_common.c \
-            drivers/tinyosd.c \
+            drivers/opentco_osd.c \
             drivers/opentco.c \
             flight/navigation.c \
             io/dashboard.c \
             io/displayport_max7456.c \
             io/displayport_msp.c \
             io/displayport_oled.c \
-            io/displayport_tinyosd.c \
+            io/displayport_opentco.c \
             io/gps.c \
             io/ledstrip.c \
             io/osd.c \

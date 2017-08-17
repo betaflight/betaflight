@@ -82,7 +82,6 @@ extern "C" {
 
 /* #define DEBUG_OSD */
 
-
 #include "unittest_macros.h"
 #include "unittest_displayport.h"
 #include "gtest/gtest.h"
@@ -547,12 +546,12 @@ TEST(OsdTest, TestElementRssi)
 TEST(OsdTest, TestElementAmperage)
 {
     // given
-    osdConfigMutable()->item_pos[OSD_CURRENT_DRAW] = OSD_POS(1, 12) | VISIBLE_FLAG;
+    OSD_INIT(osdConfigMutable(), OSD_CURRENT_DRAW,    1,  12, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
 
     // when
     simulationBatteryAmperage = 0;
     displayClearScreen(&testDisplayPort);
-    osdRefresh(simulationTime);
+    runForGivenTime(0.1e6);
 
     // then
     displayPortTestBufferSubstring(1, 12, "  0.00%c", SYM_AMP);
@@ -560,7 +559,7 @@ TEST(OsdTest, TestElementAmperage)
     // when
     simulationBatteryAmperage = 2156;
     displayClearScreen(&testDisplayPort);
-    osdRefresh(simulationTime);
+    runForGivenTime(0.1e6);
 
     // then
     displayPortTestBufferSubstring(1, 12, " 21.56%c", SYM_AMP);
@@ -568,7 +567,7 @@ TEST(OsdTest, TestElementAmperage)
     // when
     simulationBatteryAmperage = 12345;
     displayClearScreen(&testDisplayPort);
-    osdRefresh(simulationTime);
+    runForGivenTime(0.1e6);
 
     // then
     displayPortTestBufferSubstring(1, 12, "123.45%c", SYM_AMP);
@@ -580,12 +579,12 @@ TEST(OsdTest, TestElementAmperage)
 TEST(OsdTest, TestElementMahDrawn)
 {
     // given
-    osdConfigMutable()->item_pos[OSD_MAH_DRAWN] = OSD_POS(1, 11) | VISIBLE_FLAG;
+    OSD_INIT(osdConfigMutable(), OSD_MAH_DRAWN,    1,  11, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
 
     // when
     simulationMahDrawn = 0;
     displayClearScreen(&testDisplayPort);
-    osdRefresh(simulationTime);
+    runForGivenTime(0.1e6);
 
     // then
     displayPortTestBufferSubstring(1, 11, "   0%c", SYM_MAH);
@@ -593,7 +592,7 @@ TEST(OsdTest, TestElementMahDrawn)
     // when
     simulationMahDrawn = 4;
     displayClearScreen(&testDisplayPort);
-    osdRefresh(simulationTime);
+    runForGivenTime(0.1e6);
 
     // then
     displayPortTestBufferSubstring(1, 11, "   4%c", SYM_MAH);
@@ -601,7 +600,7 @@ TEST(OsdTest, TestElementMahDrawn)
     // when
     simulationMahDrawn = 15;
     displayClearScreen(&testDisplayPort);
-    osdRefresh(simulationTime);
+    runForGivenTime(0.1e6);
 
     // then
     displayPortTestBufferSubstring(1, 11, "  15%c", SYM_MAH);
@@ -609,7 +608,7 @@ TEST(OsdTest, TestElementMahDrawn)
     // when
     simulationMahDrawn = 246;
     displayClearScreen(&testDisplayPort);
-    osdRefresh(simulationTime);
+    runForGivenTime(0.1e6);
 
     // then
     displayPortTestBufferSubstring(1, 11, " 246%c", SYM_MAH);
@@ -617,7 +616,7 @@ TEST(OsdTest, TestElementMahDrawn)
     // when
     simulationMahDrawn = 1042;
     displayClearScreen(&testDisplayPort);
-    osdRefresh(simulationTime);
+    runForGivenTime(0.1e6);
 
     // then
     displayPortTestBufferSubstring(1, 11, "1042%c", SYM_MAH);
@@ -629,7 +628,7 @@ TEST(OsdTest, TestElementMahDrawn)
 TEST(OsdTest, TestElementAltitude)
 {
     // given
-    osdConfigMutable()->item_pos[OSD_ALTITUDE] = OSD_POS(23, 7) | VISIBLE_FLAG;
+    OSD_INIT(osdConfigMutable(), OSD_ALTITUDE,   23,  7, OSD_FLAG_ORIGIN_NW | OSD_FLAG_VISIBLE);
 
     // and
     osdConfigMutable()->units = OSD_UNIT_METRIC;
@@ -637,7 +636,7 @@ TEST(OsdTest, TestElementAltitude)
     // when
     simulationAltitude = 0;
     displayClearScreen(&testDisplayPort);
-    osdRefresh(simulationTime);
+    runForGivenTime(0.1e6);
 
     // then
     displayPortTestBufferSubstring(23, 7, "   0.0%c", SYM_M);
@@ -645,7 +644,7 @@ TEST(OsdTest, TestElementAltitude)
     // when
     simulationAltitude = 247;
     displayClearScreen(&testDisplayPort);
-    osdRefresh(simulationTime);
+    runForGivenTime(0.1e6);
 
     // then
     displayPortTestBufferSubstring(23, 7, "   2.4%c", SYM_M);
@@ -653,7 +652,7 @@ TEST(OsdTest, TestElementAltitude)
     // when
     simulationAltitude = 4247;
     displayClearScreen(&testDisplayPort);
-    osdRefresh(simulationTime);
+    runForGivenTime(0.1e6);
 
     // then
     displayPortTestBufferSubstring(23, 7, "  42.4%c", SYM_M);
@@ -661,7 +660,7 @@ TEST(OsdTest, TestElementAltitude)
     // when
     simulationAltitude = -247;
     displayClearScreen(&testDisplayPort);
-    osdRefresh(simulationTime);
+    runForGivenTime(0.1e6);
 
     // then
     displayPortTestBufferSubstring(23, 7, "  -2.4%c", SYM_M);
@@ -726,8 +725,9 @@ TEST(OsdTest, TestElementPositioning)
 {
     const int highX = UNITTEST_DISPLAYPORT_COLS - 1;
     const int highY = UNITTEST_DISPLAYPORT_ROWS - 1;
-    const int centreX = highX / 2;
-    const int centreY = highY / 2;
+    // calc center, round to next int:
+    const int centreX = (highX + 1) / 2;
+    const int centreY = (highY + 1) / 2;
 
     // given
     // north west anchoring

@@ -107,13 +107,43 @@ static uint32_t displayPortTestTxBytesFree(const displayPort_t *displayPort)
     return 0;
 }
 
+static int dispayPortTestReloadProfile(displayPort_t *displayPort)
+{
+    UNUSED(displayPort);
+    return 0;
+}
+
+
+static int displayPortTestFillRegion(displayPort_t *displayPort, uint8_t xs, uint8_t ys, uint8_t width, uint8_t height, uint8_t value)
+{
+    // create null terminated "fill" string
+    uint8_t buffer[width+1];
+    memset(buffer, value, width);
+    buffer[width] = 0;
+
+    uint8_t y = ys;
+    while (height > 0) {
+        // output string:
+        displayPortTestWriteString(displayPort, xs, y, (const char *)buffer);
+
+        // keep track of position and count
+        height--;
+        y++;
+    }
+
+
+    return 0;
+}
+
 static const displayPortVTable_t testDisplayPortVTable = {
     .grab = displayPortTestGrab,
     .release = displayPortTestRelease,
     .clearScreen = displayPortTestClearScreen,
-    .drawScreen = displayPortTestDrawScreen,
+    .drawScreen  = displayPortTestDrawScreen,
+    .fillRegion  = displayPortTestFillRegion,
     .writeString = displayPortTestWriteString,
     .writeChar = displayPortTestWriteChar,
+    .reloadProfile = dispayPortTestReloadProfile,
     .isTransferInProgress = displayPortTestIsTransferInProgress,
     .heartbeat = displayPortTestHeartbeat,
     .resync = displayPortTestResync,

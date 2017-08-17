@@ -122,7 +122,7 @@ extern "C" {
 
 TEST(SchedulerUnittest, TestPriorites)
 {
-    EXPECT_EQ(20, TASK_COUNT);
+    EXPECT_EQ(21, TASK_COUNT);
 
     EXPECT_EQ(TASK_PRIORITY_MEDIUM_HIGH, cfTasks[TASK_SYSTEM].staticPriority);
     EXPECT_EQ(TASK_PRIORITY_REALTIME, cfTasks[TASK_GYROPID].staticPriority);
