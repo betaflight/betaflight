@@ -413,7 +413,7 @@ static void sdcard_sendDataBlockBegin(const uint8_t *buffer, bool multiBlockWrit
 #if defined(SDCARD_DMA_TX) && defined(USE_HAL_DRIVER)
 
 #ifdef SDCARD_DMA_CLK
-        LL_AHB1_GRP1_EnableClock(SDCARD_DMA_CLK);
+        // LL_AHB1_GRP1_EnableClock(SDCARD_DMA_CLK); // XXX Should not be necessary; dmaInit handles it.
 #endif
         LL_DMA_InitTypeDef init;
 
@@ -430,7 +430,9 @@ static void sdcard_sendDataBlockBegin(const uint8_t *buffer, bool multiBlockWrit
 
         init.MemoryOrM2MDstAddress = (uint32_t)buffer;
         init.MemoryOrM2MDstIncMode = LL_DMA_MEMORY_INCREMENT;
-        init.MemoryOrM2MDstDataSize = SDCARD_BLOCK_SIZE;
+        init.MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_BYTE;
+
+        init.NbData = SDCARD_BLOCK_SIZE;
 
         LL_DMA_DeInit(SDCARD_DMA_TX, SDCARD_DMA_STREAM_TX);
         LL_DMA_Init(SDCARD_DMA_TX, SDCARD_DMA_STREAM_TX, &init);
@@ -443,7 +445,7 @@ static void sdcard_sendDataBlockBegin(const uint8_t *buffer, bool multiBlockWrit
 
         // Queue the transmission of the sector payload
 #ifdef SDCARD_DMA_CLK
-        RCC_AHB1PeriphClockCmd(SDCARD_DMA_CLK, ENABLE);
+        // RCC_AHB1PeriphClockCmd(SDCARD_DMA_CLK, ENABLE); // XXX Shouldn't be needed ...
 #endif
         DMA_InitTypeDef init;
 
