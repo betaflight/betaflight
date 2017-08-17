@@ -24,6 +24,8 @@
 
 #include <stdbool.h>
 
+#if defined(USE_OPENTCO)
+
 // openTCO allows multiple devices to share a single uart
 // or to use an indivual uart for every device
 // for now only ONE device of each class (camera, vtx, osd) is supported
@@ -153,32 +155,6 @@ bool opentcoWriteRegister(opentcoDevice_t *device, uint8_t reg, uint16_t val)
     return true;
 }
 
-/*
-static void opentcoFetchRegisters()
-{
-    // fetch all registers
-    uint8_t device = OPENTCO_DEVICE_OSD;
-    for (uint8_t reg = 0; reg < OPENTCO_MAX_REGISTER; reg++) {
-        // try n times to retrieve register
-        uint32_t retries = 5;
-        while (retries--) {
-            if (opentcoReadRegister(device, reg, &opentcoRegister[reg])) {
-                // success, fetch next
-                break;
-            }
-        }
-        if (retries == 0) {
-            // failed multiple times, give up
-            return false;
-        }
-    }
-
-    opentcoRegisterSynced = true;
-    return true;
-}
-
-*/
-
 void opentcoInitializeFrame(opentcoDevice_t *device, uint8_t command)
 {
     // point to the buffer
@@ -217,4 +193,5 @@ void opentcoSendFrame(opentcoDevice_t *device)
     }
 }
 
+#endif  // defined(USE_OPENTCO)
 

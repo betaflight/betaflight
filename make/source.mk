@@ -68,7 +68,7 @@ COMMON_SRC = \
 OSD_SLAVE_SRC = \
             io/displayport_max7456.c \
             osd_slave/osd_slave_init.c \
-            io/osd_slave.c
+            io/osd_slave.c 
 
 FC_SRC = \
             fc/fc_init.c \

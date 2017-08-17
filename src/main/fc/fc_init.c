@@ -578,9 +578,11 @@ void init(void)
             osdDisplayPort = displayPortMspInit();
             break;
 #endif
+#if defined(USE_OPENTCO)
         case OSD_DEVICE_OPENTCO:
             osdDisplayPort = opentcoDisplayPortInit(vcdProfile());
             break;
+#endif
         }
 
         // osdInit will register with CMS by itself.

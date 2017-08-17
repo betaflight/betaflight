@@ -17,8 +17,7 @@
 
 #pragma once
 
-//#include "config/parameter_group.h"
-//#include "drivers/display.h"
+#include "drivers/display.h"
 
 struct vcdProfile_s;
 displayPort_t *max7456DisplayPortInit(const struct vcdProfile_s *vcdProfile);

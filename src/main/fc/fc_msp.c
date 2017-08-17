@@ -600,22 +600,30 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         break;
     }
 
+
     case MSP_OSD_CONFIG: {
 #define OSD_FLAGS_OSD_FEATURE           (1 << 0)
 #define OSD_FLAGS_OSD_SLAVE             (1 << 1)
 #define OSD_FLAGS_RESERVED_1            (1 << 2)
 #define OSD_FLAGS_RESERVED_2            (1 << 3)
 #define OSD_FLAGS_OSD_HARDWARE_MAX_7456 (1 << 4)
+#define OSD_FLAGS_OSD_HARDWARE_OPENTCO  (1 << 5)
 
         uint8_t osdFlags = 0;
+#if defined(USE_OPENTCO) || defined(USE_MAX7456)
         osdFlags |= OSD_FLAGS_OSD_FEATURE;
+#endif
 #if defined(USE_OSD_SLAVE)
         osdFlags |= OSD_FLAGS_OSD_SLAVE;
 #endif
 #ifdef USE_MAX7456
         osdFlags |= OSD_FLAGS_OSD_HARDWARE_MAX_7456;
 #endif
+#ifdef USE_OPENTCO
+        osdFlags |= OSD_FLAGS_OSD_HARDWARE_OPENTCO;
+#endif
 
+#if (defined(USE_OPENTCO) || defined(USE_MAX7456)) && !defined(USE_OSD_SLAVE)
         sbufWriteU8(dst, osdFlags);
 
         // send video system (AUTO/PAL/NTSC)
@@ -658,6 +666,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         for (int i = 0; i < OSD_TIMER_COUNT; i++) {
             sbufWriteU16(dst, osdConfig()->timers[i]);
         }
+#endif
         break;
     }
 
@@ -2002,55 +2011,58 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
     case MSP_SET_OSD_CONFIG:
         {
-            const uint8_t addr = sbufReadU8(src);
+#if (defined(USE_OPENTCO) || defined(USE_MAX7456)) && !defined(USE_OSD_SLAVE)
+        const uint8_t addr = sbufReadU8(src);
+        if ((int8_t)addr == -1) {
+            /* Set general OSD settings */
+            vcdProfileMutable()->video_system = sbufReadU8(src);
 
-            if ((int8_t)addr == -1) {
-                /* Set general OSD settings */
-                vcdProfileMutable()->video_system = sbufReadU8(src);
+            osdConfigMutable()->device = sbufReadU8(src);
+            displayPortProfileMutable()->invert = (sbufReadU8(src) != 0) ? true : false;
+            displayPortProfileMutable()->blackBrightness = MIN(100, sbufReadU8(src));
+            displayPortProfileMutable()->whiteBrightness = MIN(100, sbufReadU8(src));
+            // force profile update
+            osdReloadProfile();
 
-                osdConfigMutable()->device = sbufReadU8(src);
-                displayPortProfileMutable()->invert = (sbufReadU8(src) != 0) ? true : false;
-                displayPortProfileMutable()->blackBrightness = MIN(100, sbufReadU8(src));
-                displayPortProfileMutable()->whiteBrightness = MIN(100, sbufReadU8(src));
-                // force profile update
-                osdReloadProfile();
+            osdConfigMutable()->units  = sbufReadU8(src);
 
-                osdConfigMutable()->units  = sbufReadU8(src);
+            // Alarms
+            osdConfigMutable()->rssi_alarm = sbufReadU8(src);
+            osdConfigMutable()->cap_alarm = sbufReadU16(src);
+            sbufReadU16(src); // Skip unused (previously fly timer)
+            osdConfigMutable()->alt_alarm = sbufReadU16(src);
 
-                // Alarms
-                osdConfigMutable()->rssi_alarm = sbufReadU8(src);
-                osdConfigMutable()->cap_alarm = sbufReadU16(src);
-                sbufReadU16(src); // Skip unused (previously fly timer)
-                osdConfigMutable()->alt_alarm = sbufReadU16(src);
-
-            } else if ((int8_t)addr == -2) {
-                // Timers
-                uint8_t index = sbufReadU8(src);
-                if (index > OSD_TIMER_COUNT) {
-                  return MSP_RESULT_ERROR;
-                }
-                osdConfigMutable()->timers[index] = sbufReadU16(src);
-                return MSP_RESULT_ERROR;
-            } else {
-                /* Get screen index, 0 is post flight statistics, 1 and above are in flight OSD screens */
-                const uint8_t screen = (uint8_t) sbufReadU8(src);
-
-                if (screen == 0 && addr < OSD_STAT_COUNT) {
-                    /* Set statistic item enable */
-                    osdConfigMutable()->enabled_stats[addr] = (uint16_t) sbufReadU16(src);
-                } else if (addr < OSD_ITEM_COUNT) {
-                    /* Set element positions */
-                    // read x, y, and flags:
-                    osdConfigMutable()->item[addr].x     = (int8_t) sbufReadU8(src);
-                    osdConfigMutable()->item[addr].y     = (int8_t) sbufReadU8(src);
-                    osdConfigMutable()->item[addr].flags = (int8_t) sbufReadU8(src);
-                } else {
-                  return MSP_RESULT_ERROR;
-                }
-
-                // force full screen rewrite
-                osdRedraw();
+        } else if ((int8_t)addr == -2) {
+            // Timers
+            uint8_t index = sbufReadU8(src);
+            if (index > OSD_TIMER_COUNT) {
+              return MSP_RESULT_ERROR;
             }
+            osdConfigMutable()->timers[index] = sbufReadU16(src);
+            return MSP_RESULT_ERROR;
+        } else {
+            /* Get screen index, 0 is post flight statistics, 1 and above are in flight OSD screens */
+            const uint8_t screen = (uint8_t) sbufReadU8(src);
+
+            if (screen == 0 && addr < OSD_STAT_COUNT) {
+                /* Set statistic item enable */
+                osdConfigMutable()->enabled_stats[addr] = (uint16_t) sbufReadU16(src);
+            } else if (addr < OSD_ITEM_COUNT) {
+                /* Set element positions */
+                // read x, y, and flags:
+                osdConfigMutable()->item[addr].x     = (int8_t) sbufReadU8(src);
+                osdConfigMutable()->item[addr].y     = (int8_t) sbufReadU8(src);
+                osdConfigMutable()->item[addr].flags = (int8_t) sbufReadU8(src);
+            } else {
+              return MSP_RESULT_ERROR;
+            }
+
+            // force full screen rewrite
+            osdRedraw();
+        }
+#else
+        return MSP_RESULT_ERROR;
+#endif
         }
         break;
 
