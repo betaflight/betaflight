@@ -43,7 +43,6 @@
 static sbuf_t max7456StreamBuffer;
 static sbuf_t *sbuf = &max7456StreamBuffer;
 
-
 #ifdef MAX7456_DMA_CHANNEL_TX
 volatile bool dmaTransactionInProgress = false;
 #endif
@@ -66,9 +65,7 @@ static IO_t max7456CsPin        = IO_NONE;
 #define MAX7456_MAX_STRING_LENGTH             CHARS_PER_LINE
 #define MAX7456_MAX_FRAME_LENGTH              (6 + 2 * MAX7456_MAX_STRING_LENGTH)*5  // FIXME: DEBUGGING
 static uint8_t max7456Buffer[MAX7456_MAX_FRAME_LENGTH];
-
 static void max7456ReloadProfilePrivate();
-
 static uint8_t max7456ReadWriteRegister(uint8_t add, uint8_t data)
 {
     spiTransferByte(MAX7456_SPI_INSTANCE, add);
@@ -301,7 +298,6 @@ static void max7456ReloadProfilePrivate()
     } else {
         displayMemoryModeReg &= ~INVERT_PIXEL_COLOR;
     }
-
 
     // max7456 brightness:
     // black: 0 =   0%  1 =  10%  2 =  20%  3 =  30%

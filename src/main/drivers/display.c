@@ -42,7 +42,6 @@ void pgResetFn_displayPortProfile(displayPortProfile_t *profile)
     profile->whiteBrightness = 100;
 }
 
-
 void displayEnableFeature(displayPort_t *displayport, uint16_t features)
 {
     // make sure that only supported features are enabled:
@@ -56,7 +55,6 @@ void displayDisableFeature(displayPort_t *displayport, uint16_t features)
     displayPortProfileMutable()->enabledFeatures = ~(features) & displayPortProfile()->enabledFeatures;
     displayReloadProfile(displayport);
 }
-
 
 void displayClearScreen(displayPort_t *instance)
 {

@@ -2023,8 +2023,12 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             vcdProfileMutable()->video_system = sbufReadU8(src);
 
             osdConfigMutable()->device = sbufReadU8(src);
+<<<<<<< HEAD
             // note: supported features can not be set by msp
             displayPortProfileMutable()->enabledFeatures = sbufReadU16(src);
+=======
+            displayPortProfileMutable()->invert = (sbufReadU8(src) != 0) ? true : false;
+>>>>>>> 09dd816ee69108099196fd77d7a4c759643d1631
             displayPortProfileMutable()->blackBrightness = MIN(100, sbufReadU8(src));
             displayPortProfileMutable()->whiteBrightness = MIN(100, sbufReadU8(src));
             // force profile update

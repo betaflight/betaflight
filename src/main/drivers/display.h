@@ -52,6 +52,10 @@ typedef struct displayPort_s {
     uint8_t posX;
     uint8_t posY;
 
+    // brightness
+    uint8_t brightness_white;
+    uint8_t brightness_black;
+
     // CMS state
     bool cleared;
     int8_t cursorRow;
