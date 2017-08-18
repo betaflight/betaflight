@@ -287,11 +287,21 @@ void max7456Init(const vcdProfile_t *pVcdProfile)
 
 static void max7456ReloadProfilePrivate()
 {
-    if (displayPortProfile()->invert) {
+    if (displayPortProfile()->enabledFeatures & DISPLAY_FEATURE_ENABLE) {
+        videoSignalReg |= OSD_ENABLE;
+    } else {
+        videoSignalReg &= ~OSD_ENABLE;
+    }
+    max7456ReadWriteRegister(MAX7456ADD_VM0, videoSignalReg);
+
+
+    // invert requested?
+    if (displayPortProfile()->enabledFeatures & DISPLAY_FEATURE_INVERT) {
         displayMemoryModeReg |= INVERT_PIXEL_COLOR;
     } else {
         displayMemoryModeReg &= ~INVERT_PIXEL_COLOR;
     }
+
 
     // max7456 brightness:
     // black: 0 =   0%  1 =  10%  2 =  20%  3 =  30%

@@ -33,13 +33,30 @@ void pgResetFn_displayPortProfile(displayPortProfile_t *profile)
     profile->colAdjust = 0;
     profile->rowAdjust = 0;
 
-    // set defaults
-    profile->invert = false;
+    // set default: no features supported/activated
+    profile->enabledFeatures = 0;
+    profile->supportedFeatures = 0;
 
     // brightness values are now stored in percent
     profile->blackBrightness = 0;
     profile->whiteBrightness = 100;
 }
+
+
+void displayEnableFeature(displayPort_t *displayport, uint16_t features)
+{
+    // make sure that only supported features are enabled:
+    displayPortProfileMutable()->enabledFeatures |= features & displayPortProfile()->supportedFeatures;
+    displayReloadProfile(displayport);
+}
+
+void displayDisableFeature(displayPort_t *displayport, uint16_t features)
+{
+    // disable given features
+    displayPortProfileMutable()->enabledFeatures = ~(features) & displayPortProfile()->enabledFeatures;
+    displayReloadProfile(displayport);
+}
+
 
 void displayClearScreen(displayPort_t *instance)
 {

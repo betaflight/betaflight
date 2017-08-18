@@ -738,7 +738,7 @@ const clivalue_t valueTable[] = {
 // PG_DISPLAY_PORT_MSP_CONFIG
     { "displayport_profile_col_adjust", VAR_INT8| MASTER_VALUE, .config.minmax = { -6, 0 }, PG_DISPLAY_PORT_PROFILE_CONFIG, offsetof(displayPortProfile_t, colAdjust) },
     { "displayport_profile_row_adjust", VAR_INT8| MASTER_VALUE, .config.minmax = { -3, 0 }, PG_DISPLAY_PORT_PROFILE_CONFIG, offsetof(displayPortProfile_t, rowAdjust) },
-    { "displayport_profile_inv",        VAR_UINT8| MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_DISPLAY_PORT_PROFILE_CONFIG, offsetof(displayPortProfile_t, invert) },
+    { "displayport_profile_enabled_feature", VAR_UINT16| MASTER_VALUE | MODE_DIRECT, .config.minmax = { -32768, 32768}, PG_DISPLAY_PORT_PROFILE_CONFIG, offsetof(displayPortProfile_t, enabledFeatures) },
     { "displayport_profile_blk",        VAR_UINT8| MASTER_VALUE, .config.minmax = { 0, 100 }, PG_DISPLAY_PORT_PROFILE_CONFIG, offsetof(displayPortProfile_t, blackBrightness) },
     { "displayport_profile_wht",        VAR_UINT8| MASTER_VALUE, .config.minmax = { 0, 100 }, PG_DISPLAY_PORT_PROFILE_CONFIG, offsetof(displayPortProfile_t, whiteBrightness) },
 

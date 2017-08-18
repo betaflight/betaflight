@@ -636,8 +636,11 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, osdRowCount());
         sbufWriteU8(dst, osdColCount());
 
-        // video brightness & inversion
-        sbufWriteU8(dst, displayPortProfile()->invert);
+        // video features
+        sbufWriteU16(dst, displayPortProfile()->supportedFeatures);
+        sbufWriteU16(dst, displayPortProfile()->enabledFeatures);
+
+        // brightness
         sbufWriteU8(dst, displayPortProfile()->blackBrightness);
         sbufWriteU8(dst, displayPortProfile()->whiteBrightness);
 
@@ -2020,7 +2023,8 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             vcdProfileMutable()->video_system = sbufReadU8(src);
 
             osdConfigMutable()->device = sbufReadU8(src);
-            displayPortProfileMutable()->invert = (sbufReadU8(src) != 0) ? true : false;
+            // note: supported features can not be set by msp
+            displayPortProfileMutable()->enabledFeatures = sbufReadU16(src);
             displayPortProfileMutable()->blackBrightness = MIN(100, sbufReadU8(src));
             displayPortProfileMutable()->whiteBrightness = MIN(100, sbufReadU8(src));
             // force profile update

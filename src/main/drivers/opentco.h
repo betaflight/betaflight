@@ -69,10 +69,11 @@ typedef enum {
 #define OPENTCO_OSD_COMMAND_SPECIAL_SUB_SPECTRUM     0x01
 
 typedef enum {
-    OPENTCO_OSD_ENABLE           = (1 << 0),
-    OPENTCO_OSD_SHOW_STICKOVERLAY     = (1 << 1),
-    OPENTCO_OSD_SHOW_SPECTRUMOVERLAY  = (1 << 2),
-    OPENTCO_OSD_SHOW_CROSSHAIR        = (1 << 3)
+    OPENTCO_OSD_ENABLE                = (1 << 0),
+    OPENTCO_OSD_SHOW_LOGO             = (1 << 1),
+    OPENTCO_OSD_SHOW_STICKOVERLAY     = (1 << 2),
+    OPENTCO_OSD_SHOW_SPECTRUMOVERLAY  = (1 << 3),
+    OPENTCO_OSD_SHOW_CROSSHAIR        = (1 << 4)
 } opentcoOSDRegisterStatus_e;
 
 

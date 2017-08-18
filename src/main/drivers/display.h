@@ -23,10 +23,23 @@
 typedef struct displayPortProfile_s {
     int8_t colAdjust;
     int8_t rowAdjust;
-    bool invert;
+
     uint8_t blackBrightness;
     uint8_t whiteBrightness;
+
+    uint16_t supportedFeatures;
+    uint16_t enabledFeatures;
 } displayPortProfile_t;
+
+typedef enum {
+    DISPLAY_FEATURE_ENABLE           = (1 << 0),
+    DISPLAY_FEATURE_INVERT           = (1 << 1),
+    DISPLAY_FEATURE_RENDER_LOGO      = (1 << 2),
+    DISPLAY_FEATURE_RENDER_STICKS    = (1 << 3),
+    DISPLAY_FEATURE_RENDER_SPECTRUM  = (1 << 4),
+    DISPLAY_FEATURE_RENDER_CROSSHAIR = (1 << 5)
+} displayFeatures_e;
+
 
 PG_DECLARE(displayPortProfile_t, displayPortProfile);
 
@@ -38,10 +51,6 @@ typedef struct displayPort_s {
     uint8_t colCount;
     uint8_t posX;
     uint8_t posY;
-
-    // brightness
-    uint8_t brightness_white;
-    uint8_t brightness_black;
 
     // CMS state
     bool cleared;
@@ -81,4 +90,7 @@ bool displayIsTransferInProgress(const displayPort_t *instance);
 void displayHeartbeat(displayPort_t *instance);
 void displayResync(displayPort_t *instance);
 uint16_t displayTxBytesFree(const displayPort_t *instance);
+void displayEnableFeature(displayPort_t *displayport, uint16_t features);
+void displayDisableFeature(displayPort_t *displayport, uint16_t features);
+
 void displayInit(displayPort_t *instance, const displayPortVTable_t *vTable);

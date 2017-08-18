@@ -215,7 +215,7 @@ static uint8_t displayPortProfileMax7456_whiteBrightness;
 static long cmsx_menuOsdOnEnter(void)
 {
 #ifdef USE_MAX7456
-    displayPortProfileMax7456_invert = displayPortProfile()->invert;
+    displayPortProfileMax7456_invert = displayPortProfile()->enabledFeatures & DISPLAY_FEATURE_INVERT;
     displayPortProfileMax7456_blackBrightness = displayPortProfile()->blackBrightness;
     displayPortProfileMax7456_whiteBrightness = displayPortProfile()->whiteBrightness;
 #endif
@@ -228,7 +228,9 @@ static long cmsx_menuOsdOnExit(const OSD_Entry *self)
     UNUSED(self);
 
 #ifdef USE_MAX7456
-    displayPortProfileMutable()->invert = displayPortProfileMax7456_invert;
+    displayPortProfileMutable()->enabledFeatures &= ~(DISPLAY_FEATURE_INVERT);
+    if (displayPortProfileMax7456_invert) displayPortProfileMutable()->enabledFeatures |= DISPLAY_FEATURE_INVERT;
+
     displayPortProfileMutable()->blackBrightness = displayPortProfileMax7456_blackBrightness;
     displayPortProfileMutable()->whiteBrightness = displayPortProfileMax7456_whiteBrightness;
 #endif
