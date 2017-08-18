@@ -168,6 +168,8 @@ void calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs);
 void parseRcChannels(const char *input, rxConfig_t *rxConfig);
 
 void updateRSSI(timeUs_t currentTimeUs);
+void processRssi(uint8_t rssiPercentage);
+
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRangeConfig);
 
 void suspendRxSignal(void);
