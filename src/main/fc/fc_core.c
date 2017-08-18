@@ -109,6 +109,8 @@ int16_t magHold;
 int16_t headFreeModeHold;
 
 static bool reverseMotors = false;
+static bool flipOverAfterCrashMode = false;
+
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
 bool isRXDataNew;
@@ -261,14 +263,14 @@ void tryArm(void)
             return;
         }
 #ifdef USE_DSHOT
-        if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXDSHOTREVERSE)) {
+        if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH)) {
             pwmDisableMotors();
 
-            if (!IS_RC_MODE_ACTIVE(BOXDSHOTREVERSE)) {
-                reverseMotors = false;
+            if (!IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+                flipOverAfterCrashMode = false;
                 pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL);
             } else {
-                reverseMotors = true;
+                flipOverAfterCrashMode = true;
                 pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_REVERSED);
             }
 
@@ -723,7 +725,11 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     }
 }
 
-bool isMotorsReversed()
+bool isMotorsReversed(void)
 {
     return reverseMotors;
+}
+bool isFlipOverAfterCrashMode(void)
+{
+    return flipOverAfterCrashMode;
 }
