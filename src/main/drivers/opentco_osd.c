@@ -44,7 +44,6 @@ static uint8_t  video_system;
 
 //static void opentcoOSDSetRegister(uint8_t reg, uint16_t value);
 void opentcoOSDRefreshAll(void);
-static void opentcoOSDActivateFeatures();
 
 int opentcoOSDGrab(displayPort_t * displayPort)
 {
@@ -95,28 +94,28 @@ int opentcoOSDClearScreen(displayPort_t *displayPort)
 
 static void opentcoOSDQuerySupportedFeatures()
 {
-    // enable osd, try to enable all features
-    uint16_t featureset = 0xFFFF & ~(OPENTCO_OSD_ENABLE);
-
-    // try to enable all requested features
-    if (!opentcoWriteRegister(device, OPENTCO_OSD_REGISTER_STATUS, featureset)) {
-        // failed, disable
-        displayPortProfileMutable()->supportedFeatures = 0;
-        displayPortProfileMutable()->enabledFeatures = 0;
-        return;
-    }
+    uint16_t opentcoFeatures;
 
     // fetch available and acitvated features
-    if (!opentcoReadRegister(device, OPENTCO_OSD_REGISTER_STATUS, &featureset)) {
-        // failed, disable
-        displayPortProfileMutable()->supportedFeatures = 0;
-        displayPortProfileMutable()->enabledFeatures = 0;
-        return;
-    }
+    opentcoReadRegister(device, OPENTCO_OSD_REGISTER_SUPPORTED_FEATURES,  &opentcoFeatures);
 
-    // store supported features and deactivate unsupported features
-    displayPortProfileMutable()->supportedFeatures = featureset;
-    displayPortProfileMutable()->enabledFeatures &= featureset;
+    // opentco features do not necessarily have to match
+    // with betaflight features -> convert!
+    uint16_t displayFeature = 0;
+    if (opentcoFeatures & OPENTCO_OSD_FEATURE_ENABLE) displayFeature |= DISPLAY_FEATURE_ENABLE;
+    if (opentcoFeatures & OPENTCO_OSD_FEATURE_INVERT) displayFeature |= DISPLAY_FEATURE_INVERT;
+    if (opentcoFeatures & OPENTCO_OSD_FEATURE_BRIGHTNESS) displayFeature |= DISPLAY_FEATURE_BRIGHTNESS;
+    if (opentcoFeatures & OPENTCO_OSD_FEATURE_RENDER_CROSSHAIR) displayFeature |= DISPLAY_FEATURE_RENDER_CROSSHAIR;
+    if (opentcoFeatures & OPENTCO_OSD_FEATURE_RENDER_LOGO) displayFeature |= DISPLAY_FEATURE_RENDER_LOGO;
+    if (opentcoFeatures & OPENTCO_OSD_FEATURE_RENDER_PILOTLOGO) displayFeature |= DISPLAY_FEATURE_RENDER_PILOTLOGO;
+    if (opentcoFeatures & OPENTCO_OSD_FEATURE_RENDER_SPECTRUM) displayFeature |= DISPLAY_FEATURE_RENDER_SPECTRUM;
+    if (opentcoFeatures & OPENTCO_OSD_FEATURE_RENDER_STICKS) displayFeature |= DISPLAY_FEATURE_RENDER_STICKS;
+
+    // store
+    displayPortProfileMutable()->supportedFeatures = displayFeature;
+
+    // disable any unsupported features:
+    displayPortProfileMutable()->enabledFeatures &=  displayFeature;
 }
 
 bool opentcoOSDInit(const vcdProfile_t *pVcdProfile)
@@ -131,6 +130,9 @@ bool opentcoOSDInit(const vcdProfile_t *pVcdProfile)
         // no device found
         return false;
     }
+
+    // start with disabled features (switch osd off!)
+    displayPortProfileMutable()->enabledFeatures = 0;
 
     if (video_system == VIDEO_SYSTEM_AUTO) {
         // fetch current video mode from opentco OSD
@@ -273,13 +275,29 @@ void opentcoOSDSetRegister(uint8_t reg, uint16_t value)
     opentcoWriteRegister(device, reg, value);
 }
 
+static void opentcoOSDSendEnabledFeatures()
+{
+    // enable features, convert bf display features to opentco:
+    uint16_t displayFeature = displayPortProfile()->enabledFeatures;
+    uint16_t opentcoFeature = 0;
+    if (displayFeature & DISPLAY_FEATURE_ENABLE) opentcoFeature |= OPENTCO_OSD_FEATURE_ENABLE;
+    if (displayFeature & DISPLAY_FEATURE_INVERT) opentcoFeature |= OPENTCO_OSD_FEATURE_INVERT;
+    if (displayFeature & DISPLAY_FEATURE_BRIGHTNESS) opentcoFeature |= OPENTCO_OSD_FEATURE_BRIGHTNESS;
+    if (displayFeature & DISPLAY_FEATURE_RENDER_CROSSHAIR) opentcoFeature |= OPENTCO_OSD_FEATURE_RENDER_CROSSHAIR;
+    if (displayFeature & DISPLAY_FEATURE_RENDER_LOGO) opentcoFeature |= OPENTCO_OSD_FEATURE_RENDER_LOGO;
+    if (displayFeature & DISPLAY_FEATURE_RENDER_PILOTLOGO) opentcoFeature |= OPENTCO_OSD_FEATURE_RENDER_PILOTLOGO;
+    if (displayFeature & DISPLAY_FEATURE_RENDER_SPECTRUM) opentcoFeature |= OPENTCO_OSD_FEATURE_RENDER_SPECTRUM;
+    if (displayFeature & DISPLAY_FEATURE_RENDER_STICKS) opentcoFeature |= OPENTCO_OSD_FEATURE_RENDER_STICKS;
+
+    // activate
+    opentcoOSDSetRegister(OPENTCO_OSD_REGISTER_STATUS, opentcoFeature);
+}
+
 int opentcoOSDReloadProfile (displayPort_t * displayPort)
 {
     UNUSED(displayPort);
 
-    // enable features
-    // FIXME: this assumes that opentco featureset = bf featureset
-    opentcoOSDSetRegister(OPENTCO_OSD_REGISTER_STATUS, displayPortProfile()->enabledFeatures);
+    opentcoOSDSendEnabledFeatures();
 
     // set brightness
     opentcoOSDSetRegister(OPENTCO_OSD_REGISTER_BRIGHTNESS_BLACK, displayPortProfile()->blackBrightness);
@@ -302,24 +320,40 @@ bool opentcoOSDIsTransferInProgress(const displayPort_t *displayPort){
 int opentcoOSDHeartbeat(displayPort_t *displayPort){
     UNUSED(displayPort);
 
-    static timeUs_t opentcoOSDNextCycleTimeSticks;
-    static timeUs_t opentcoOSDNextCycleTimeSpectrum;
+    static timeUs_t opentcoOSDNextCycleTime;
+    static uint8_t opentcoOSDNextCycleItem = 0;
 
     // draw additional data at a fixed framerate
     // note: only draw a single item every iteration
     timeUs_t currentTimeUs = micros();
-    if (currentTimeUs >= opentcoOSDNextCycleTimeSticks) {
-        // draw stick overlay?
-        if (displayPortProfile()->enabledFeatures & DISPLAY_FEATURE_RENDER_STICKS) {
-            opentcoOSDDrawSticks();
+    if (currentTimeUs >= opentcoOSDNextCycleTime) {
+        switch (++opentcoOSDNextCycleItem)
+        {
+        default:
+        case 0:
+            // send enabled features
+            opentcoOSDSendEnabledFeatures();
+            break;
+
+        case 1:
+            // draw stick overlay?
+            if (displayPortProfile()->enabledFeatures & DISPLAY_FEATURE_RENDER_STICKS) {
+                opentcoOSDDrawSticks();
+            }
+            break;
+
+        case 2:
+            // draw spectrum overlay?
+            if (displayPortProfile()->enabledFeatures & DISPLAY_FEATURE_RENDER_SPECTRUM) {
+                opentcoOSDDrawSpectrum(0); // FIXME: add axis round robin
+            }
+            // last item -> return to zero
+            opentcoOSDNextCycleItem = 0;
+            break;
         }
-        opentcoOSDNextCycleTimeSticks = currentTimeUs + OPENTCO_OSD_CYCLETIME_US_STICKS;
-    } else if (currentTimeUs >= opentcoOSDNextCycleTimeSpectrum) {
-        // draw spectrum overlay?
-        if (displayPortProfile()->enabledFeatures & DISPLAY_FEATURE_RENDER_SPECTRUM) {
-            opentcoOSDDrawSpectrum(0); // FIXME: add axis round robin
-        }
-        opentcoOSDNextCycleTimeSpectrum = currentTimeUs + OPENTCO_OSD_CYCLETIME_US_SPECTRUM;
+
+        // store next time
+        opentcoOSDNextCycleTime = currentTimeUs + OPENTCO_OSD_CYCLETIME_US;
     }
 
     return 0;

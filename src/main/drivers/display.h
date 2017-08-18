@@ -34,10 +34,14 @@ typedef struct displayPortProfile_s {
 typedef enum {
     DISPLAY_FEATURE_ENABLE           = (1 << 0),
     DISPLAY_FEATURE_INVERT           = (1 << 1),
-    DISPLAY_FEATURE_RENDER_LOGO      = (1 << 2),
-    DISPLAY_FEATURE_RENDER_STICKS    = (1 << 3),
-    DISPLAY_FEATURE_RENDER_SPECTRUM  = (1 << 4),
-    DISPLAY_FEATURE_RENDER_CROSSHAIR = (1 << 5)
+    DISPLAY_FEATURE_BRIGHTNESS       = (1 << 2),
+    // 3..7
+    DISPLAY_FEATURE_RENDER_LOGO      = (1 << 8),
+    DISPLAY_FEATURE_RENDER_PILOTLOGO = (1 << 9),
+    DISPLAY_FEATURE_RENDER_STICKS    = (1 << 10),
+    DISPLAY_FEATURE_RENDER_SPECTRUM  = (1 << 11),
+    DISPLAY_FEATURE_RENDER_CROSSHAIR = (1 << 12)
+    // 13..15
 } displayFeatures_e;
 
 

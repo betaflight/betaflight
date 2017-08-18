@@ -57,9 +57,8 @@ typedef enum {
 #define OPENTCO_REGISTER_ACCESS_MODE_WRITE           0x00
 
 #define OPENTCO_OSD_REGISTER_STATUS                  0x00  // R/W
-//
-#define OPENTCO_OSD_REGISTER_VIDEO_FORMAT            0x01  // R/W
-#define OPENTCO_OSD_REGISTER_INVERT                  0x02  // R/W
+#define OPENTCO_OSD_REGISTER_SUPPORTED_FEATURES      0x01  // R
+#define OPENTCO_OSD_REGISTER_VIDEO_FORMAT            0x02  // R/W
 #define OPENTCO_OSD_REGISTER_BRIGHTNESS_BLACK        0x03  // R/W
 #define OPENTCO_OSD_REGISTER_BRIGHTNESS_WHITE        0x04  // R/W
 #define OPENTCO_MAX_REGISTER                         0x0F
@@ -69,13 +68,17 @@ typedef enum {
 #define OPENTCO_OSD_COMMAND_SPECIAL_SUB_SPECTRUM     0x01
 
 typedef enum {
-    OPENTCO_OSD_ENABLE                = (1 << 0),
-    OPENTCO_OSD_SHOW_LOGO             = (1 << 1),
-    OPENTCO_OSD_SHOW_STICKOVERLAY     = (1 << 2),
-    OPENTCO_OSD_SHOW_SPECTRUMOVERLAY  = (1 << 3),
-    OPENTCO_OSD_SHOW_CROSSHAIR        = (1 << 4)
-} opentcoOSDRegisterStatus_e;
-
+    OPENTCO_OSD_FEATURE_ENABLE                = (1 << 0),
+    OPENTCO_OSD_FEATURE_INVERT                = (1 << 1),
+    OPENTCO_OSD_FEATURE_BRIGHTNESS            = (1 << 2),
+    // 3..7
+    OPENTCO_OSD_FEATURE_RENDER_LOGO           = (1 << 8),
+    OPENTCO_OSD_FEATURE_RENDER_PILOTLOGO      = (1 << 9),
+    OPENTCO_OSD_FEATURE_RENDER_STICKS         = (1 << 10),
+    OPENTCO_OSD_FEATURE_RENDER_SPECTRUM       = (1 << 11),
+    OPENTCO_OSD_FEATURE_RENDER_CROSSHAIR      = (1 << 12)
+    // 13..15
+} opentcoOSDFeatures_e;
 
 typedef struct {
     serialPort_t *serialPort;

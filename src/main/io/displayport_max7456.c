@@ -148,12 +148,11 @@ static const displayPortVTable_t max7456VTable = {
 displayPort_t *max7456DisplayPortInit(const vcdProfile_t *vcdProfile)
 {
     // set supported featurs:
-    displayPortProfileMutable()->supportedFeatures = DISPLAY_FEATURE_ENABLE | DISPLAY_FEATURE_INVERT;
-    // default: enabled
-    displayPortProfileMutable()->enabledFeatures |= DISPLAY_FEATURE_ENABLE;
+    displayPortProfileMutable()->supportedFeatures = MAX7456_FEATURESET;
 
     // init display port
     displayInit(&max7456DisplayPort, &max7456VTable);
+
     // init driver
     max7456Init(vcdProfile);
 

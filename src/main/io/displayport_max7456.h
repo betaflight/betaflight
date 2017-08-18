@@ -19,5 +19,7 @@
 
 #include "drivers/display.h"
 
+#define MAX7456_FEATURESET (DISPLAY_FEATURE_ENABLE | DISPLAY_FEATURE_INVERT | DISPLAY_FEATURE_BRIGHTNESS)
+
 struct vcdProfile_s;
 displayPort_t *max7456DisplayPortInit(const struct vcdProfile_s *vcdProfile);

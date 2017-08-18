@@ -31,8 +31,7 @@
 #define OPENTCO_OSD_STICKSIZE_Y 128.0f
 
 
-#define OPENTCO_OSD_CYCLETIME_US_STICKS         (1000000/25)  // 25 Hz
-#define OPENTCO_OSD_CYCLETIME_US_SPECTRUM       (1000000/25)  // 25 Hz
+#define OPENTCO_OSD_CYCLETIME_US         (1000000/25)  // 25 Hz
 
 
 int opentcoOSDGrab(displayPort_t * displayPort);

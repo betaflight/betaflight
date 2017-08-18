@@ -946,6 +946,8 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
 
     displayReloadProfile(osdDisplayPort);
 
+    displayEnableFeature(osdDisplayPort, DISPLAY_FEATURE_ENABLE);
+
     osdDrawLogo(3, 1);
 
     char string_buffer[30];
