@@ -43,7 +43,7 @@ If barometer is NOT present, RTH will fly directly to home, altitude control her
 If barometer is present, RTH will maintain altitude during the return and when home is reached copter will attempt automated landing.
 When deciding what altitude to maintain, RTH has 4 different modes of operation (controlled by *nav_rth_alt_mode* and *nav_rth_altitude* cli variables):
 * 0 (NAV_RTH_NO_ALT) - keep current altitude during whole RTH sequence (*nav_rth_altitude* is ignored)
-* 1 (NAX_RTH_EXTRA_ALT) - climb to current altitude plus extra margin prior to heading home (*nav_rth_altitude* defines the extra altitude (cm))
+* 1 (NAV_RTH_EXTRA_ALT) - climb to current altitude plus extra margin prior to heading home (*nav_rth_altitude* defines the extra altitude (cm))
 * 2 (NAV_RTH_CONST_ALT) - climb/descend to predefined altitude before heading home (*nav_rth_altitude* defined altitude above launch point (cm))
 * 3 (NAV_RTH_MAX_ALT) - track maximum altitude of the whole flight, climb to that altitude prior to the return (*nav_rth_altitude* is ignored)
 * 4 (NAV_RTH_AT_LEAST_ALT) - same as 2 (NAV_RTH_CONST_ALT), but only climb, do not descend
