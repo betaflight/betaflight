@@ -63,7 +63,7 @@ static serialPort_t *smartAudioSerialPort = NULL;
 
 #if defined(CMS) || defined(VTX_COMMON)
 static const char * const saPowerNames[] = {
-    "---", "25 ", "200", "500", "800",
+    "---", " 25 ", "200", "500", "800",
 };
 #endif
 

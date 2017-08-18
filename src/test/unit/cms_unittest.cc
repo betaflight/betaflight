@@ -28,6 +28,8 @@
 extern "C" {
     #include "platform.h"
     #include "target.h"
+    #include "config/feature.h"
+    #include "config/parameter_group_ids.h"
     #include "cms/cms.h"
     #include "cms/cms_types.h"
     #include "fc/runtime_config.h"
@@ -35,6 +37,9 @@ extern "C" {
     long cmsMenuBack(displayPort_t *pDisplay);
     uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key);
     extern CMS_Menu *currentMenu;    // Points to top entry of the current page
+
+    PG_REGISTER(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
+
 }
 
 #include "unittest_macros.h"

@@ -26,6 +26,10 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
+extern "C" {
+    extern uint32_t micros();
+};
+
 void displayPortTestBufferSubstring(int x, int y, const char * expectedFormat, ...) __attribute__ ((format (printf, 3, 4)));
 
 #define UNITTEST_DISPLAYPORT_ROWS 16
@@ -61,15 +65,12 @@ static int displayPortTestDrawScreen(displayPort_t *displayPort)
     return 0;
 }
 
-static int displayPortTestScreenSize(const displayPort_t *displayPort)
-{
-    UNUSED(displayPort);
-    return 0;
-}
-
 static int displayPortTestWriteString(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
 {
     UNUSED(displayPort);
+#ifdef DEBUG_OSD
+    printf("@%10d: writing %2d %2d '%s'\n",micros(),x, y, s);
+#endif
     for (unsigned int i = 0; i < strlen(s); i++) {
         testDisplayPortBuffer[(y * UNITTEST_DISPLAYPORT_COLS) + x + i] = s[i];
     }
@@ -111,7 +112,6 @@ static const displayPortVTable_t testDisplayPortVTable = {
     .release = displayPortTestRelease,
     .clearScreen = displayPortTestClearScreen,
     .drawScreen = displayPortTestDrawScreen,
-    .screenSize = displayPortTestScreenSize,
     .writeString = displayPortTestWriteString,
     .writeChar = displayPortTestWriteChar,
     .isTransferInProgress = displayPortTestIsTransferInProgress,
@@ -159,7 +159,20 @@ void displayPortTestBufferSubstring(int x, int y, const char * expectedFormat, .
     displayPortTestPrint();
 #endif
 
+    bool success = true;
     for (size_t i = 0; i < strlen(expected); i++) {
+        if (expected[i] != testDisplayPortBuffer[(y * testDisplayPort.colCount) + x + i]){
+            success = false;
+        }
         EXPECT_EQ(expected[i], testDisplayPortBuffer[(y * testDisplayPort.colCount) + x + i]);
+    }
+    if (!success){
+        char fbuf[256];
+        strncpy(fbuf, &testDisplayPortBuffer[(y * testDisplayPort.colCount) + x], 256);
+        fbuf[strlen(expected)] = 0;
+        std::cout << "displayPortTestBufferSubstring("
+             << (int)x << ", "
+             << (int)y << ", '"
+             << expected << "') failed! got '" << fbuf << "' instead\n";
     }
 }

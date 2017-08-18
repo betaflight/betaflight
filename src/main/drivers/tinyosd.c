@@ -247,13 +247,13 @@ bool tinyOSDInit(const vcdProfile_t *pVcdProfile)
     }
 
     // init with empty chars (blankspace)
-    memset(screenBuffer, ' ', sizeof(screenBuffer));
+    //memset(screenBuffer, ' ', sizeof(screenBuffer));
 
     // fill whole screen on device with ' ' as well by using the FILL command
     tinyOSDSendBuffer(TINYOSD_COMMAND_FILL_SCREEN, (uint8_t *)"x", 1);
 
     // mark screen buffer as non dirty:
-    memset(screenBufferDirty, 0x00, sizeof(screenBufferDirty));
+    //memset(screenBufferDirty, 0x00, sizeof(screenBufferDirty));
 
     return true;
 }
@@ -262,14 +262,7 @@ bool tinyOSDInit(const vcdProfile_t *pVcdProfile)
 int tinyOSDClearScreen(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
-
-    // clear screen buffer & mark non ' ' bytes as dirty:
-    for(uint16_t i=0; i<TINYOSD_VIDEO_BUFFER_SIZE; i++) {
-        if (SCREEN_BUFFER_GET(i) != ' ') {
-            // clear pixel & set to changed:
-            SCREEN_BUFFER_SET(i, ' ');
-        }
-    }
+    tinyOSDSendBuffer(TINYOSD_COMMAND_FILL_SCREEN, (uint8_t *)"x", 1);
 
     return 0;
 }
@@ -281,6 +274,7 @@ uint8_t* tinyOSDGetScreenBuffer(void) {
 int tinyOSDWriteChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c)
 {
     UNUSED(displayPort);
+    tinyOSDSendBuffer(TINYOSD_COMMAND_WRITE_PAGE_0, (uint8_t *)"x", 1);
     SCREEN_BUFFER_SET(y * CHARS_PER_LINE + x, c);
     return 0;
 }

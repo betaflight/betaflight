@@ -20,15 +20,29 @@
 #include "common/time.h"
 #include "config/parameter_group.h"
 
+#define OSD_TASK_FREQUENCY_HZ   100
+
 #define OSD_NUM_TIMER_TYPES 3
 extern const char * const osdTimerSourceNames[OSD_NUM_TIMER_TYPES];
 
 #define OSD_ELEMENT_BUFFER_LENGTH 32
 
-#define VISIBLE_FLAG  0x0800
-#define VISIBLE(x)    (x & VISIBLE_FLAG)
-#define OSD_POS_MAX   0x3FF
-#define OSD_POSCFG_MAX   (VISIBLE_FLAG|0x3FF) // For CLI values
+//#define VISIBLE_FLAG  0x0800
+//#define VISIBLE(x)    (x & VISIBLE_FLAG)
+//#define OSD_POS_MAX   0x3FF
+//#define OSD_POSCFG_MAX   (VISIBLE_FLAG|0x3FF) // For CLI values
+
+#ifdef USE_ESC_SENSOR
+    #define ESC_DEFAULT_VISIBILITY OSD_FLAG_VISIBLE
+#else
+    #define ESC_DEFAULT_VISIBILITY 0
+#endif
+#ifdef GPS
+    #define GPS_DEFAULT_VISIBILITY OSD_FLAG_VISIBLE
+#else
+    #define GPS_DEFAULT_VISIBILITY 0
+#endif
+#define HORIZON_DEFAULT_VISIBILITY (sensors(SENSOR_ACC)?OSD_FLAG_VISIBLE:0)
 
 // Character coordinate
 //#define OSD_POSITION_BITS 5 // 5 bits gives a range 0-31
@@ -132,9 +146,6 @@ typedef enum {
     OSD_DEVICE_TINYOSD
 } osd_device_e;
 
-#define OSD_FLAG_VISIBLE_OFFSET 0
-#define OSD_FLAG_ORIGIN_OFFSET  1
-
 typedef enum {
     // visible, bit 0
     OSD_FLAG_VISIBLE = (1 << 0),
@@ -157,6 +168,7 @@ typedef enum {
 #define OSD_FLAG_ORIGIN_MASK  (OSD_FLAG_ORIGIN_N | OSD_FLAG_ORIGIN_E | OSD_FLAG_ORIGIN_S | OSD_FLAG_ORIGIN_W)
 
 #define OSD_INIT(_config, _item, _x, _y, _flags) { (_config)->item[(_item)] = (osdItem_t) {(_x), (_y), (int8_t)(_flags)}; }
+
 
 typedef struct {
     int8_t x;
