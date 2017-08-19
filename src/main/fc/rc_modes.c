@@ -19,6 +19,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "platform.h"
+
 #include "rc_modes.h"
 
 #include "common/bitarray.h"

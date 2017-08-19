@@ -44,49 +44,39 @@
 
 const adcDevice_t adcHardware[] = {
     { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Streamx = ADC1_DMA_STREAM, .channel = DMA_CHANNEL_0 },
-    //{ .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .DMAy_Streamx = DMA2_Stream1, .channel = DMA_Channel_0 }
+    { .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .DMAy_Streamx = ADC2_DMA_STREAM, .channel = DMA_CHANNEL_1 },
+    { .ADCx = ADC3, .rccADC = RCC_APB2(ADC3), .DMAy_Streamx = ADC3_DMA_STREAM, .channel = DMA_CHANNEL_2 }
 };
 
 /* note these could be packed up for saving space */
 const adcTagMap_t adcTagMap[] = {
 /*
-    { DEFIO_TAG_E__PF3,  ADC_Channel_9  },
-    { DEFIO_TAG_E__PF4,  ADC_Channel_14 },
-    { DEFIO_TAG_E__PF5,  ADC_Channel_15 },
-    { DEFIO_TAG_E__PF6,  ADC_Channel_4  },
-    { DEFIO_TAG_E__PF7,  ADC_Channel_5  },
-    { DEFIO_TAG_E__PF8,  ADC_Channel_6  },
-    { DEFIO_TAG_E__PF9,  ADC_Channel_7  },
-    { DEFIO_TAG_E__PF10, ADC_Channel_8  },
+    { DEFIO_TAG_E__PF3, ADC_DEVICES_3,   ADC_CHANNEL_9  },
+    { DEFIO_TAG_E__PF4, ADC_DEVICES_3,   ADC_CHANNEL_14 },
+    { DEFIO_TAG_E__PF5, ADC_DEVICES_3,   ADC_CHANNEL_15 },
+    { DEFIO_TAG_E__PF6, ADC_DEVICES_3,   ADC_CHANNEL_4  },
+    { DEFIO_TAG_E__PF7, ADC_DEVICES_3,   ADC_CHANNEL_5  },
+    { DEFIO_TAG_E__PF8, ADC_DEVICES_3,   ADC_CHANNEL_6  },
+    { DEFIO_TAG_E__PF9, ADC_DEVICES_3,   ADC_CHANNEL_7  },
+    { DEFIO_TAG_E__PF10,ADC_DEVICES_3,   ADC_CHANNEL_8  },
 */
-    { DEFIO_TAG_E__PC0, ADC_CHANNEL_10 },
-    { DEFIO_TAG_E__PC1, ADC_CHANNEL_11 },
-    { DEFIO_TAG_E__PC2, ADC_CHANNEL_12 },
-    { DEFIO_TAG_E__PC3, ADC_CHANNEL_13 },
-    { DEFIO_TAG_E__PC4, ADC_CHANNEL_14 },
-    { DEFIO_TAG_E__PC5, ADC_CHANNEL_15 },
-    { DEFIO_TAG_E__PB0, ADC_CHANNEL_8  },
-    { DEFIO_TAG_E__PB1, ADC_CHANNEL_9  },
-    { DEFIO_TAG_E__PA0, ADC_CHANNEL_0  },
-    { DEFIO_TAG_E__PA1, ADC_CHANNEL_1  },
-    { DEFIO_TAG_E__PA2, ADC_CHANNEL_2  },
-    { DEFIO_TAG_E__PA3, ADC_CHANNEL_3  },
-    { DEFIO_TAG_E__PA4, ADC_CHANNEL_4  },
-    { DEFIO_TAG_E__PA5, ADC_CHANNEL_5  },
-    { DEFIO_TAG_E__PA6, ADC_CHANNEL_6  },
-    { DEFIO_TAG_E__PA7, ADC_CHANNEL_7  },
+    { DEFIO_TAG_E__PC0, ADC_DEVICES_123, ADC_CHANNEL_10 },
+    { DEFIO_TAG_E__PC1, ADC_DEVICES_123, ADC_CHANNEL_11 },
+    { DEFIO_TAG_E__PC2, ADC_DEVICES_123, ADC_CHANNEL_12 },
+    { DEFIO_TAG_E__PC3, ADC_DEVICES_123, ADC_CHANNEL_13 },
+    { DEFIO_TAG_E__PC4, ADC_DEVICES_12,  ADC_CHANNEL_14 },
+    { DEFIO_TAG_E__PC5, ADC_DEVICES_12,  ADC_CHANNEL_15 },
+    { DEFIO_TAG_E__PB0, ADC_DEVICES_12,  ADC_CHANNEL_8  },
+    { DEFIO_TAG_E__PB1, ADC_DEVICES_12,  ADC_CHANNEL_9  },
+    { DEFIO_TAG_E__PA0, ADC_DEVICES_123, ADC_CHANNEL_0  },
+    { DEFIO_TAG_E__PA1, ADC_DEVICES_123, ADC_CHANNEL_1  },
+    { DEFIO_TAG_E__PA2, ADC_DEVICES_123, ADC_CHANNEL_2  },
+    { DEFIO_TAG_E__PA3, ADC_DEVICES_123, ADC_CHANNEL_3  },
+    { DEFIO_TAG_E__PA4, ADC_DEVICES_12,  ADC_CHANNEL_4  },
+    { DEFIO_TAG_E__PA5, ADC_DEVICES_12,  ADC_CHANNEL_5  },
+    { DEFIO_TAG_E__PA6, ADC_DEVICES_12,  ADC_CHANNEL_6  },
+    { DEFIO_TAG_E__PA7, ADC_DEVICES_12,  ADC_CHANNEL_7  },
 };
-
-ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
-{
-    if (instance == ADC1)
-        return ADCDEV_1;
-/*
-    if (instance == ADC2) // TODO add ADC2 and 3
-        return ADCDEV_2;
-*/
-    return ADCINVALID;
-}
 
 void adcInit(const adcConfig_t *config)
 {
@@ -119,8 +109,9 @@ void adcInit(const adcConfig_t *config)
 
     bool adcActive = false;
     for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
-        if (!adcOperatingConfig[i].tag)
+        if (!adcVerifyPin(adcOperatingConfig[i].tag, device)) {
             continue;
+        }
 
         adcActive = true;
         IOInit(IOGetByTag(adcOperatingConfig[i].tag), OWNER_ADC_BATT + i, 0);
