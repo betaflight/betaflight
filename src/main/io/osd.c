@@ -325,9 +325,37 @@ static bool osdDrawSingleElement(uint8_t item)
 
             if (FLIGHT_MODE(PASSTHRU_MODE))
                 p = "PASS";
-            else if (FLIGHT_MODE(FAILSAFE_MODE))
+            else if (FLIGHT_MODE(FAILSAFE_MODE)) {
                 p = "!FS!";
-            else if (FLIGHT_MODE(HEADFREE_MODE))
+                // See failsafe.h for each phase explanation
+                switch (failsafePhase()) {
+                    case FAILSAFE_RX_LOSS_IDLE:
+                        p = "F:RX"; // RX to indicate that failsafe is waiting
+                                   // for the RX to become available
+                        break;
+#ifdef NAV
+                    case FAILSAFE_RETURN_TO_HOME:
+                        p = "F:RT"; // RT for RETURN
+                        break;
+#endif
+                    case FAILSAFE_LANDING:
+                        p = "F:LA"; // LA for LANDING
+                        break;
+                    case FAILSAFE_LANDED:
+                        p = "F:DR"; // DR for DROP
+                        break;
+                    case FAILSAFE_RX_LOSS_MONITORING:
+                        p = "F:WA"; // WA for WAITING
+                        break;
+                    case FAILSAFE_IDLE:
+                    case FAILSAFE_RX_LOSS_DETECTED:
+                    case FAILSAFE_RX_LOSS_RECOVERED:
+                        /* Failsafe not active or phase is very brief.
+                         * Nothing interesting to show.
+                         */
+                        break;
+                }
+            } else if (FLIGHT_MODE(HEADFREE_MODE))
                 p = "!HF!";
             else if (FLIGHT_MODE(NAV_RTH_MODE))
                 p = "RTL ";
