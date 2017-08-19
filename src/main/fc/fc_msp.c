@@ -664,6 +664,9 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         for (int i = 0; i < OSD_TIMER_COUNT; i++) {
             sbufWriteU16(dst, osdConfig()->timers[i]);
         }
+
+        // Enabled warnings
+        sbufWriteU16(dst, osdConfig()->enabledWarnings);
 #endif
         break;
     }
@@ -2083,6 +2086,11 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 osdConfigMutable()->cap_alarm = sbufReadU16(src);
                 sbufReadU16(src); // Skip unused (previously fly timer)
                 osdConfigMutable()->alt_alarm = sbufReadU16(src);
+
+                if (sbufBytesRemaining(src) >= 2) {
+                    /* Enabled warnings */
+                    osdConfigMutable()->enabledWarnings = sbufReadU16(src);
+                }
 #endif
             } else if ((int8_t)addr == -2) {
 #if defined(OSD)
