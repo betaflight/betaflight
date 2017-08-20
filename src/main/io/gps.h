@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <stdbool.h>
+
 #include "config/parameter_group.h"
 
 #define GPS_DBHZ_MIN 0
@@ -106,11 +108,11 @@ typedef struct gpsLocation_s {
 
 typedef struct gpsSolutionData_s {
     struct {
-        unsigned gpsHeartbeat   : 1;     // Toggle each update
-        unsigned validVelNE     : 1;
-        unsigned validVelD      : 1;
-        unsigned validMag       : 1;
-        unsigned validEPE       : 1;    // EPH/EPV values are valid - actual accuracy
+        bool gpsHeartbeat;  // Toggle each update
+        bool validVelNE;
+        bool validVelD;
+        bool validMag;
+        bool validEPE;      // EPH/EPV values are valid - actual accuracy
     } flags;
 
     gpsFixType_e fixType;
