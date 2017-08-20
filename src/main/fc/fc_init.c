@@ -521,9 +521,11 @@ void init(void)
 
     rxInit();
 
-#ifdef OSD
+#if (defined(OSD) || (defined(USE_MSP_DISPLAYPORT) && defined(CMS)))
     displayPort_t *osdDisplayPort = NULL;
+#endif
 
+#ifdef OSD
     if (feature(FEATURE_OSD)) {
 #if defined(USE_MAX7456)
         // If there is a max7456 chip for the OSD then use it
