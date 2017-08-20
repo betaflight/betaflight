@@ -99,7 +99,7 @@ typedef struct gpsCoordinateDDDMMmmmm_s {
 
 /* LLH Location in NEU axis system */
 typedef struct gpsLocation_s {
-    int32_t lat;    // Lattitude * 1e+7
+    int32_t lat;    // Latitude * 1e+7
     int32_t lon;    // Longitude * 1e+7
     int32_t alt;    // Altitude in centimeters (meters * 100)
 } gpsLocation_t;
