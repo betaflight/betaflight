@@ -148,47 +148,126 @@ int16_t getAxisRcCommand(int16_t rawData, int16_t rate, int16_t deadband)
     return rcLookup(stickDeflection, rate);
 }
 
-static void updatePreArmingChecks(void)
+static void updateArmingStatus(void)
 {
-    DISABLE_ARMING_FLAG(BLOCKED_ALL_FLAGS);
+    if (ARMING_FLAG(ARMED)) {
+        LED0_ON;
+    } else {
+        /* CHECK: Run-time calibration */
+        static bool calibratingFinishedBeep = false;
+        if (isCalibrating()) {
+            ENABLE_ARMING_FLAG(ARMING_DISABLED_SENSORS_CALIBRATING);
+            calibratingFinishedBeep = false;
+        }
+        else {
+            DISABLE_ARMING_FLAG(ARMING_DISABLED_SENSORS_CALIBRATING);
 
-    if (!STATE(SMALL_ANGLE)) {
-        ENABLE_ARMING_FLAG(BLOCKED_UAV_NOT_LEVEL);
-        DISABLE_ARMING_FLAG(OK_TO_ARM);
-    }
+            if (!calibratingFinishedBeep) {
+                calibratingFinishedBeep = true;
+                beeper(BEEPER_RUNTIME_CALIBRATION_DONE);
+            }
+        }
 
-    if (isCalibrating()) {
-        ENABLE_ARMING_FLAG(BLOCKED_SENSORS_CALIBRATING);
-        DISABLE_ARMING_FLAG(OK_TO_ARM);
-    }
+        /* CHECK: RX signal */
+        if (failsafeIsReceivingRxData()) {
+            ENABLE_ARMING_FLAG(ARMING_DISABLED_RC_LINK);
+        }
+        else {
+            DISABLE_ARMING_FLAG(ARMING_DISABLED_RC_LINK);
+        }
 
-    if (isSystemOverloaded()) {
-        ENABLE_ARMING_FLAG(BLOCKED_SYSTEM_OVERLOADED);
-        DISABLE_ARMING_FLAG(OK_TO_ARM);
-    }
+        /* CHECK: Throttle */
+        if (calculateThrottleStatus() != THROTTLE_LOW) {
+            ENABLE_ARMING_FLAG(ARMING_DISABLED_THROTTLE);
+        } else {
+            ENABLE_ARMING_FLAG(ARMING_DISABLED_THROTTLE);
+        }
 
+        /* CHECK: Angle */
+        if (!STATE(SMALL_ANGLE)) {
+            ENABLE_ARMING_FLAG(ARMING_DISABLED_NOT_LEVEL);
+        }
+        else {
+            DISABLE_ARMING_FLAG(ARMING_DISABLED_NOT_LEVEL);
+        }
+
+        /* CHECK: CPU load */
+        if (isSystemOverloaded()) {
+            ENABLE_ARMING_FLAG(ARMING_DISABLED_SYSTEM_OVERLOADED);
+        }
+        else {
+            DISABLE_ARMING_FLAG(ARMING_DISABLED_SYSTEM_OVERLOADED);
+        }
+        
 #if defined(NAV)
-    if (navigationBlockArming()) {
-        ENABLE_ARMING_FLAG(BLOCKED_NAVIGATION_SAFETY);
-        DISABLE_ARMING_FLAG(OK_TO_ARM);
-    }
+        /* CHECK: Navigation safety */
+        if (navigationBlockArming()) {
+            ENABLE_ARMING_FLAG(ARMING_DISABLED_NAVIGATION_UNSAFE);
+        }
+        else {
+            DISABLE_ARMING_FLAG(ARMING_DISABLED_NAVIGATION_UNSAFE);
+        }
 #endif
 
 #if defined(MAG)
-    if (sensors(SENSOR_MAG) && !STATE(COMPASS_CALIBRATED)) {
-        ENABLE_ARMING_FLAG(BLOCKED_COMPASS_NOT_CALIBRATED);
-        DISABLE_ARMING_FLAG(OK_TO_ARM);
-    }
+        /* CHECK: */
+        if (sensors(SENSOR_MAG) && !STATE(COMPASS_CALIBRATED)) {
+            ENABLE_ARMING_FLAG(ARMING_DISABLED_COMPASS_NOT_CALIBRATED);
+        }
+        else {
+            DISABLE_ARMING_FLAG(ARMING_DISABLED_COMPASS_NOT_CALIBRATED);
+        }
 #endif
 
-    if (sensors(SENSOR_ACC) && !STATE(ACCELEROMETER_CALIBRATED)) {
-        ENABLE_ARMING_FLAG(BLOCKED_ACCELEROMETER_NOT_CALIBRATED);
-        DISABLE_ARMING_FLAG(OK_TO_ARM);
-    }
+        /* CHECK: */
+        if (sensors(SENSOR_ACC) && !STATE(ACCELEROMETER_CALIBRATED)) {
+            ENABLE_ARMING_FLAG(ARMING_DISABLED_ACCELEROMETER_NOT_CALIBRATED);
+        }
+        else {
+            DISABLE_ARMING_FLAG(ARMING_DISABLED_ACCELEROMETER_NOT_CALIBRATED);
+        }
 
-    if (!isHardwareHealthy()) {
-        ENABLE_ARMING_FLAG(BLOCKED_HARDWARE_FAILURE);
-        DISABLE_ARMING_FLAG(OK_TO_ARM);
+        /* CHECK: */
+        if (!isHardwareHealthy()) {
+            ENABLE_ARMING_FLAG(ARMING_DISABLED_HARDWARE_FAILURE);
+        }        
+        else {
+            DISABLE_ARMING_FLAG(ARMING_DISABLED_HARDWARE_FAILURE);
+        }
+
+        /* CHECK: Arming switch */
+        if (!isUsingSticksForArming()) {
+            // If arming is disabled and the ARM switch is on
+            if (isArmingDisabled() && IS_RC_MODE_ACTIVE(BOXARM)) {
+                ENABLE_ARMING_FLAG(ARMING_DISABLED_ARM_SWITCH);
+            } else if (!IS_RC_MODE_ACTIVE(BOXARM)) {
+                DISABLE_ARMING_FLAG(ARMING_DISABLED_ARM_SWITCH);
+            }
+        }
+
+        /* CHECK: BOXFAILSAFE */
+        if (IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
+            ENABLE_ARMING_FLAG(ARMING_DISABLED_BOXFAILSAFE);
+        }
+        else {
+            DISABLE_ARMING_FLAG(ARMING_DISABLED_BOXFAILSAFE);
+        }
+
+        /* CHECK: BOXFAILSAFE */
+        if (IS_RC_MODE_ACTIVE(BOXKILLSWITCH)) {
+            ENABLE_ARMING_FLAG(ARMING_DISABLED_BOXKILLSWITCH);
+        }
+        else {
+            DISABLE_ARMING_FLAG(ARMING_DISABLED_BOXKILLSWITCH);
+        }
+
+        if (isArmingDisabled()) {
+            warningLedFlash();
+        } else {
+            warningLedDisable();
+        }
+
+        warningLedUpdate();
     }
 }
 
@@ -224,34 +303,7 @@ void annexCode(void)
         }
     }
 
-    if (ARMING_FLAG(ARMED)) {
-        LED0_ON;
-    } else {
-        static bool calibratingFinishedBeep = false;
-        if (isCalibrating()) {
-            calibratingFinishedBeep = false;
-        }
-        else {
-            if (!calibratingFinishedBeep) {
-                calibratingFinishedBeep = true;
-                beeper(BEEPER_RUNTIME_CALIBRATION_DONE);
-            }
-        }
-
-        if (!IS_RC_MODE_ACTIVE(BOXARM) && failsafeIsReceivingRxData()) {
-            ENABLE_ARMING_FLAG(OK_TO_ARM);
-        }
-
-        updatePreArmingChecks();
-
-        if (ARMING_FLAG(OK_TO_ARM)) {
-            warningLedDisable();
-        } else {
-            warningLedFlash();
-        }
-
-        warningLedUpdate();
-    }
+    updateArmingStatus();
 }
 
 void mwDisarm(disarmReason_t disarmReason)
@@ -289,52 +341,50 @@ void releaseSharedTelemetryPorts(void) {
 
 void mwArm(void)
 {
-    if (ARMING_FLAG(OK_TO_ARM)) {
+    updateArmingStatus();
+
+    if (!isArmingDisabled()) {
         if (ARMING_FLAG(ARMED)) {
             return;
         }
-        if (IS_RC_MODE_ACTIVE(BOXFAILSAFE) || IS_RC_MODE_ACTIVE(BOXKILLSWITCH)) {
-            return;
-        }
-        if (!ARMING_FLAG(PREVENT_ARMING)) {
-            ENABLE_ARMING_FLAG(ARMED);
-            ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
-            headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 
-            resetHeadingHoldTarget(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
+        ENABLE_ARMING_FLAG(ARMED);
+        ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
+        headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+
+        resetHeadingHoldTarget(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
 
 #ifdef BLACKBOX
-            if (feature(FEATURE_BLACKBOX)) {
-                serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP);
-                if (sharedBlackboxAndMspPort) {
-                    mspSerialReleasePortIfAllocated(sharedBlackboxAndMspPort);
-                }
-                blackboxStart();
+        if (feature(FEATURE_BLACKBOX)) {
+            serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP);
+            if (sharedBlackboxAndMspPort) {
+                mspSerialReleasePortIfAllocated(sharedBlackboxAndMspPort);
             }
+            blackboxStart();
+        }
 #endif
-            disarmAt = millis() + armingConfig()->auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
+        disarmAt = millis() + armingConfig()->auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
 
-            //beep to indicate arming
+        //beep to indicate arming
 #ifdef NAV
-            if (navigationPositionEstimateIsHealthy())
-                beeper(BEEPER_ARMING_GPS_FIX);
-            else
-                beeper(BEEPER_ARMING);
-#else
+        if (navigationPositionEstimateIsHealthy())
+            beeper(BEEPER_ARMING_GPS_FIX);
+        else
             beeper(BEEPER_ARMING);
+#else
+        beeper(BEEPER_ARMING);
 #endif
-            statsOnArm();
+        statsOnArm();
 
 #ifdef USE_RANGEFINDER
-            /*
-             * Since each arm can happen over different surface type, we have to reset
-             * previously computed max. dynamic range threshold
-             */ 
-            rangefinderResetDynamicThreshold();
+        /*
+         * Since each arm can happen over different surface type, we have to reset
+         * previously computed max. dynamic range threshold
+         */ 
+        rangefinderResetDynamicThreshold();
 #endif
 
-            return;
-        }
+        return;
     }
 
     if (!ARMING_FLAG(ARMED)) {

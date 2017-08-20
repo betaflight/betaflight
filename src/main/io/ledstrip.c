@@ -537,7 +537,7 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
                 warningFlags |= 1 << WARNING_LOW_BATTERY;
             if (failsafeIsActive())
                 warningFlags |= 1 << WARNING_FAILSAFE;
-            if (!ARMING_FLAG(ARMED) && !ARMING_FLAG(OK_TO_ARM))
+            if (!ARMING_FLAG(ARMED) && isArmingDisabled())
                 warningFlags |= 1 << WARNING_ARMING_DISABLED;
             if (!isHardwareHealthy())
                 warningFlags |= 1 << WARNING_HW_ERROR;

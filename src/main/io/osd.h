@@ -84,6 +84,7 @@ typedef struct osdConfig_s {
 
 PG_DECLARE(osdConfig_t, osdConfig);
 
-void osdInit(void);
+struct displayPort_s;
+void osdInit(struct displayPort_s *osdDisplayPort);
 void osdResetAlarms(void);
 void osdUpdate(timeUs_t currentTimeUs);

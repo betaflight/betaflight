@@ -173,12 +173,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus, bool disarm_kill_s
     if (!isUsingSticksForArming()) {
         if (IS_RC_MODE_ACTIVE(BOXARM)) {
             rcDisarmTicks = 0;
-            // Arming via ARM BOX
-            if (throttleStatus == THROTTLE_LOW) {
-                if (ARMING_FLAG(OK_TO_ARM)) {
-                    mwArm();
-                }
-            }
+            mwArm();
         } else {
             // Disarming via ARM BOX
             // Don't disarm via switch if failsafe is active or receiver doesn't receive data - we can't trust receiver

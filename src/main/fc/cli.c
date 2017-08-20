@@ -3706,7 +3706,7 @@ void cliEnter(serialPort_t *serialPort)
     cliPrint("\r\nCLI\r\n");
 #endif
     cliPrompt();
-    ENABLE_ARMING_FLAG(PREVENT_ARMING);
+    ENABLE_ARMING_FLAG(ARMING_DISABLED_CLI);
 }
 
 void cliInit(const serialConfig_t *serialConfig)

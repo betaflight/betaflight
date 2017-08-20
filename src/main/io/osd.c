@@ -48,11 +48,9 @@
 #include "config/parameter_group_ids.h"
 
 #include "drivers/display.h"
-#include "drivers/max7456.h"
 #include "drivers/max7456_symbols.h"
 #include "drivers/time.h"
 
-#include "io/displayport_max7456.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
 #include "io/osd.h"
@@ -76,8 +74,9 @@
 #include "hardware_revision.h"
 #endif
 
-// Character coordinate and attributes
+#define VIDEO_BUFFER_CHARS_PAL    480
 
+// Character coordinate and attributes
 #define OSD_POS(x,y)  (x | (y << 5))
 #define OSD_X(x)      (x & 0x001F)
 #define OSD_Y(x)      ((x >> 5) & 0x001F)
@@ -104,12 +103,11 @@ uint16_t refreshTimeout = 0;
 #define REFRESH_1S    OSD_TASK_FREQUENCY_HZ
 
 static uint8_t armState;
-
 static displayPort_t *osdDisplayPort;
-
 
 #define AH_MAX_PITCH 200 // Specify maximum AHI pitch value displayed. Default 200 = 20.0 degrees
 #define AH_MAX_ROLL 400  // Specify maximum AHI roll value displayed. Default 400 = 40.0 degrees
+#define AH_SYMBOL_COUNT 9
 #define AH_SIDEBAR_WIDTH_POS 7
 #define AH_SIDEBAR_HEIGHT_POS 3
 
@@ -342,7 +340,7 @@ static bool osdDrawSingleElement(uint8_t item)
             else if (FLIGHT_MODE(HORIZON_MODE))
                 p = "HOR ";
 
-            max7456Write(elemPosX, elemPosY, p);
+            displayWrite(osdDisplayPort, elemPosX, elemPosY, p);
             return true;
         }
 
@@ -373,7 +371,7 @@ static bool osdDrawSingleElement(uint8_t item)
     case OSD_CROSSHAIRS:
         elemPosX = 14 - 1; // Offset for 1 char to the left
         elemPosY = 6;
-        if (maxScreenSize == VIDEO_BUFFER_CHARS_PAL) {
+        if (displayScreenSize(osdDisplayPort) == VIDEO_BUFFER_CHARS_PAL) {
             ++elemPosY;
         }
         buff[0] = SYM_AH_CENTER_LINE;
@@ -387,35 +385,24 @@ static bool osdDrawSingleElement(uint8_t item)
             elemPosX = 14;
             elemPosY = 6 - 4; // Top center of the AH area
 
-            int rollAngle = -attitude.values.roll;
-            int pitchAngle = attitude.values.pitch;
+            int rollAngle = constrain(attitude.values.roll, -AH_MAX_ROLL, AH_MAX_ROLL);
+            int pitchAngle = constrain(attitude.values.pitch, -AH_MAX_PITCH, AH_MAX_PITCH);
 
-            if (maxScreenSize == VIDEO_BUFFER_CHARS_PAL) {
+            if (displayScreenSize(osdDisplayPort) == VIDEO_BUFFER_CHARS_PAL) {
                 ++elemPosY;
             }
 
-            if (pitchAngle > AH_MAX_PITCH)
-                pitchAngle = AH_MAX_PITCH;
-            if (pitchAngle < -AH_MAX_PITCH)
-                pitchAngle = -AH_MAX_PITCH;
-            if (rollAngle > AH_MAX_ROLL)
-                rollAngle = AH_MAX_ROLL;
-            if (rollAngle < -AH_MAX_ROLL)
-                rollAngle = -AH_MAX_ROLL;
-
             // Convert pitchAngle to y compensation value
-            pitchAngle = (pitchAngle / 8) - 41; // 41 = 4 * 9 + 5
+            pitchAngle = ((pitchAngle * 25) / AH_MAX_PITCH) - 41; // 41 = 4 * 9 + 5
 
             for (int x = -4; x <= 4; x++) {
                 // clear the y area before writing the new horizon character
                 for (int y = 0; y <= 8; y++) {
-                    max7456WriteChar(elemPosX + x, elemPosY + y, 0x20);
+                    displayWriteChar(osdDisplayPort, elemPosX + x, elemPosY + y, 0x20);
                 }
-                int y = (rollAngle * x) / 64;
-                y -= pitchAngle;
-                // y += 41; // == 4 * 9 + 5
+                const int y = (-rollAngle * x) / 64 - pitchAngle;
                 if (y >= 0 && y <= 80) {
-                    max7456WriteChar(elemPosX + x, elemPosY + (y / 9), (SYM_AH_BAR9_0 + (y % 9)));
+                    displayWriteChar(osdDisplayPort, elemPosX + x, elemPosY + (y / AH_SYMBOL_COUNT), (SYM_AH_BAR9_0 + (y % AH_SYMBOL_COUNT)));
                 }
             }
 
@@ -430,7 +417,7 @@ static bool osdDrawSingleElement(uint8_t item)
             elemPosX = 14;
             elemPosY = 6;
 
-            if (maxScreenSize == VIDEO_BUFFER_CHARS_PAL) {
+            if (displayScreenSize(osdDisplayPort) == VIDEO_BUFFER_CHARS_PAL) {
                 ++elemPosY;
             }
 
@@ -438,13 +425,13 @@ static bool osdDrawSingleElement(uint8_t item)
             const int8_t hudwidth = AH_SIDEBAR_WIDTH_POS;
             const int8_t hudheight = AH_SIDEBAR_HEIGHT_POS;
             for (int  y = -hudheight; y <= hudheight; y++) {
-                max7456WriteChar(elemPosX - hudwidth, elemPosY + y, SYM_AH_DECORATION);
-                max7456WriteChar(elemPosX + hudwidth, elemPosY + y, SYM_AH_DECORATION);
+                displayWriteChar(osdDisplayPort, elemPosX - hudwidth, elemPosY + y, SYM_AH_DECORATION);
+                displayWriteChar(osdDisplayPort, elemPosX + hudwidth, elemPosY + y, SYM_AH_DECORATION);
             }
 
             // AH level indicators
-            max7456WriteChar(elemPosX - hudwidth + 1, elemPosY, SYM_AH_LEFT);
-            max7456WriteChar(elemPosX + hudwidth - 1, elemPosY, SYM_AH_RIGHT);
+            displayWriteChar(osdDisplayPort, elemPosX - hudwidth + 1, elemPosY, SYM_AH_LEFT);
+            displayWriteChar(osdDisplayPort, elemPosX + hudwidth - 1, elemPosY, SYM_AH_RIGHT);
 
             return true;
         }
@@ -480,11 +467,11 @@ static bool osdDrawSingleElement(uint8_t item)
             else if (v == -5)
                 vchars[4] = 0xA4;
 
-            max7456WriteChar(elemPosX, elemPosY, vchars[0]);
-            max7456WriteChar(elemPosX, elemPosY+1, vchars[1]);
-            max7456WriteChar(elemPosX, elemPosY+2, vchars[2]);
-            max7456WriteChar(elemPosX, elemPosY+3, vchars[3]);
-            max7456WriteChar(elemPosX, elemPosY+4, vchars[4]);
+            displayWriteChar(osdDisplayPort, elemPosX, elemPosY, vchars[0]);
+            displayWriteChar(osdDisplayPort, elemPosX, elemPosY+1, vchars[1]);
+            displayWriteChar(osdDisplayPort, elemPosX, elemPosY+2, vchars[2]);
+            displayWriteChar(osdDisplayPort, elemPosX, elemPosY+3, vchars[3]);
+            displayWriteChar(osdDisplayPort, elemPosX, elemPosY+4, vchars[4]);
             return true;
         }
 
@@ -535,7 +522,7 @@ static bool osdDrawSingleElement(uint8_t item)
         return false;
     }
 
-    max7456Write(elemPosX, elemPosY, buff);
+    displayWrite(osdDisplayPort, elemPosX, elemPosY, buff);
     return true;
 }
 
@@ -579,7 +566,7 @@ void osdDrawNextElement(void)
 
 void osdDrawElements(void)
 {
-    max7456ClearScreen();
+    displayClearScreen(osdDisplayPort);
 
 #if 0
     if (currentElement)
@@ -691,46 +678,35 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->video_system = 0;
 }
 
-void osdInit(void)
+void osdInit(displayPort_t *osdDisplayPortToUse)
 {
+    if (!osdDisplayPortToUse)
+        return;
+
     BUILD_BUG_ON(OSD_POS_MAX != OSD_POS(31,31));
 
-    armState = ARMING_FLAG(ARMED);
+    osdDisplayPort = osdDisplayPortToUse;
 
-    max7456Init(osdConfig()->video_system);
-
-    max7456ClearScreen();
-
-    // display logo and help
-#ifdef notdef
-    // Logo is disabled.
-    // May be a smaller one; probably needs more symbols than BF does.
-    char x = 160;
-    for (int i = 1; i < 5; i++) {
-        for (int j = 3; j < 27; j++) {
-            if (x != 255)
-                max7456WriteChar(j, i, x++);
-        }
-    }
-#endif
-
-    char string_buffer[30];
-    tfp_sprintf(string_buffer, "INAV VERSION: %s", FC_VERSION_STRING);
-    max7456Write(5, 6, string_buffer);
-#ifdef CMS
-    max7456Write(7, 7,  CMS_STARTUP_HELP_TEXT1);
-    max7456Write(11, 8, CMS_STARTUP_HELP_TEXT2);
-    max7456Write(11, 9, CMS_STARTUP_HELP_TEXT3);
-#endif
-
-    max7456RefreshAll();
-
-    refreshTimeout = 4 * REFRESH_1S;
-
-    osdDisplayPort = max7456DisplayPortInit();
 #ifdef CMS
     cmsDisplayPortRegister(osdDisplayPort);
 #endif
+
+    armState = ARMING_FLAG(ARMED);
+
+    displayClearScreen(osdDisplayPort);
+
+    char string_buffer[30];
+    tfp_sprintf(string_buffer, "INAV VERSION: %s", FC_VERSION_STRING);
+    displayWrite(osdDisplayPort, 5, 6, string_buffer);
+#ifdef CMS
+    displayWrite(osdDisplayPort, 7, 7,  CMS_STARTUP_HELP_TEXT1);
+    displayWrite(osdDisplayPort, 11, 8, CMS_STARTUP_HELP_TEXT2);
+    displayWrite(osdDisplayPort, 11, 9, CMS_STARTUP_HELP_TEXT3);
+#endif
+
+    displayResync(osdDisplayPort);
+
+    refreshTimeout = 4 * REFRESH_1S;
 }
 
 void osdUpdateAlarms(void)
@@ -832,58 +808,54 @@ static void osdShowStats(void)
     uint8_t top = 2;
     char buff[10];
 
-    max7456ClearScreen();
-    max7456Write(2, top++, "  --- STATS ---");
+    displayClearScreen(osdDisplayPort);
+    displayWrite(osdDisplayPort, 2, top++, "  --- STATS ---");
 
     if (STATE(GPS_FIX)) {
-        max7456Write(2, top, "MAX SPEED        :");
+        displayWrite(osdDisplayPort, 2, top, "MAX SPEED        :");
         osdFormatVelocityStr(buff, stats.max_speed);
-        max7456Write(22, top++, buff);
+        displayWrite(osdDisplayPort, 22, top++, buff);
 
-        max7456Write(2, top, "MAX DISTANCE     :");
+        displayWrite(osdDisplayPort, 2, top, "MAX DISTANCE     :");
         osdFormatDistanceStr(buff, stats.max_distance*100);
-        max7456Write(22, top++, buff);
+        displayWrite(osdDisplayPort, 22, top++, buff);
 
-        max7456Write(2, top, "TRAVELED DISTANCE:");
+        displayWrite(osdDisplayPort, 2, top, "TRAVELED DISTANCE:");
         osdFormatDistanceStr(buff, getTotalTravelDistance());
-        max7456Write(22, top++, buff);
+        displayWrite(osdDisplayPort, 22, top++, buff);
     }
 
-    max7456Write(2, top, "MIN BATTERY      :");
+    displayWrite(osdDisplayPort, 2, top, "MIN BATTERY      :");
     tfp_sprintf(buff, "%d.%1dV", stats.min_voltage / 10, stats.min_voltage % 10);
-    max7456Write(22, top++, buff);
+    displayWrite(osdDisplayPort, 22, top++, buff);
 
-    max7456Write(2, top, "MIN RSSI         :");
+    displayWrite(osdDisplayPort, 2, top, "MIN RSSI         :");
     itoa(stats.min_rssi, buff, 10);
     strcat(buff, "%");
-    max7456Write(22, top++, buff);
+    displayWrite(osdDisplayPort, 22, top++, buff);
 
     if (feature(FEATURE_CURRENT_METER)) {
-        max7456Write(2, top, "MAX CURRENT      :");
+        displayWrite(osdDisplayPort, 2, top, "MAX CURRENT      :");
         itoa(stats.max_current, buff, 10);
         strcat(buff, "A");
-        max7456Write(22, top++, buff);
+        displayWrite(osdDisplayPort, 22, top++, buff);
 
-        max7456Write(2, top, "USED MAH         :");
+        displayWrite(osdDisplayPort, 2, top, "USED MAH         :");
         itoa(mAhDrawn, buff, 10);
         strcat(buff, "\x07");
-        max7456Write(22, top++, buff);
+        displayWrite(osdDisplayPort, 22, top++, buff);
     }
 
-    max7456Write(2, top, "MAX ALTITUDE     :");
+    displayWrite(osdDisplayPort, 2, top, "MAX ALTITUDE     :");
     osdFormatDistanceStr(buff, stats.max_altitude);
-    max7456Write(22, top++, buff);
-
-    refreshTimeout = 60 * REFRESH_1S;
+    displayWrite(osdDisplayPort, 22, top++, buff);
 }
 
 // called when motors armed
-static void osdArmMotors(void)
+static void osdShowArmed(void)
 {
-    max7456ClearScreen();
-    max7456Write(12, 7, "ARMED");
-    refreshTimeout = REFRESH_1S / 2;
-    osdResetStats();
+    displayClearScreen(osdDisplayPort);
+    displayWrite(osdDisplayPort, 12, 7, "ARMED");
 }
 
 static void osdRefreshStats(timeUs_t currentTimeUs)
@@ -893,10 +865,14 @@ static void osdRefreshStats(timeUs_t currentTimeUs)
 
     // detect arm/disarm
     if (armState != ARMING_FLAG(ARMED)) {
-        if (ARMING_FLAG(ARMED))
-            osdArmMotors(); // reset statistic etc
-        else
+        if (ARMING_FLAG(ARMED)) {
+            osdResetStats();
+            osdShowArmed(); // reset statistic etc
+            refreshTimeout = REFRESH_1S / 2;
+        } else {
             osdShowStats(); // show statistic
+            refreshTimeout = 60 * REFRESH_1S;
+        }
 
         armState = ARMING_FLAG(ARMED);
     }
@@ -920,12 +896,10 @@ void osdUpdate(timeUs_t currentTimeUs)
 {
     static uint8_t iterationCounter = 0;
 
-#ifdef MAX7456_DMA_CHANNEL_TX
     // don't touch buffers if DMA transaction is in progress
-    if (max7456DmaInProgres()) {
+    if (displayIsTransferInProgress(osdDisplayPort)) {
         return;
     }
-#endif // MAX7456_DMA_CHANNEL_TX
 
     // refresh alarms every 20 iterations
     if (iterationCounter == 0) {
@@ -933,39 +907,48 @@ void osdUpdate(timeUs_t currentTimeUs)
             osdUpdateAlarms();
         }
     }
+
     // refresh statistics every 20 iterations
     if (iterationCounter++ >= 20) {
         iterationCounter = 0;
         osdRefreshStats(currentTimeUs);
     }
+
     if (refreshTimeout) {
         if (checkStickPosition(THR_HI) || checkStickPosition(PIT_HI)) { // hide statistics
             refreshTimeout = 1;
         }
+
         refreshTimeout--;
         if (!refreshTimeout) {
-            max7456ClearScreen();
+            displayClearScreen(osdDisplayPort);
         }
-        max7456DrawScreenPartial();
+
+        displayHeartbeat(osdDisplayPort);
+        displayDrawScreen(osdDisplayPort);
         return;
     }
 
 #ifdef CMS
     if (!displayIsGrabbed(osdDisplayPort)) {
         osdDrawNextElement();
+        displayHeartbeat(osdDisplayPort);
 #ifdef OSD_CALLS_CMS
     } else {
         cmsUpdate(currentTimeUs);
 #endif
     }
 #endif
+
     // draw part of screen 10 chars per idle to don't lock the main idle
-    max7456DrawScreenPartial();
+    displayDrawScreen(osdDisplayPort);
 
 #ifdef CMS
     // do not allow ARM if we are in menu
     if (displayIsGrabbed(osdDisplayPort)) {
-        DISABLE_ARMING_FLAG(OK_TO_ARM);
+        ENABLE_ARMING_FLAG(ARMING_DISABLED_OSD_MENU);
+    } else {
+        DISABLE_ARMING_FLAG(ARMING_DISABLED_OSD_MENU);
     }
 #endif
 }

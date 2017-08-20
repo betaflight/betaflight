@@ -36,25 +36,47 @@ static int oledGrab(displayPort_t *displayPort)
 static int oledRelease(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
-
-    i2c_OLED_clear_display_quick();
-
     return 0;
 }
 
-static int oledClear(displayPort_t *displayPort)
+static int oledClearScreen(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     i2c_OLED_clear_display_quick();
     return 0;
 }
 
-static int oledWrite(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
+static int oledDrawScreen(displayPort_t *displayPort)
+{
+    UNUSED(displayPort);
+    return 0;
+}
+
+static int oledScreenSize(const displayPort_t *displayPort)
+{
+    return displayPort->rows * displayPort->cols;
+}
+
+static int oledWriteString(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
 {
     UNUSED(displayPort);
     i2c_OLED_set_xy(x, y);
     i2c_OLED_send_string(s);
     return 0;
+}
+
+static int oledWriteChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c)
+{
+    UNUSED(displayPort);
+    i2c_OLED_set_xy(x, y);
+    i2c_OLED_send_char(c);
+    return 0;
+}
+
+static bool oledIsTransferInProgress(const displayPort_t *displayPort)
+{
+    UNUSED(displayPort);
+    return false;
 }
 
 static int oledHeartbeat(displayPort_t *displayPort)
@@ -77,8 +99,12 @@ static uint32_t oledTxBytesFree(const displayPort_t *displayPort)
 static const displayPortVTable_t oledVTable = {
     .grab = oledGrab,
     .release = oledRelease,
-    .clear = oledClear,
-    .write = oledWrite,
+    .clearScreen = oledClearScreen,
+    .drawScreen = oledDrawScreen,
+    .screenSize = oledScreenSize,
+    .writeString = oledWriteString,
+    .writeChar = oledWriteChar,
+    .isTransferInProgress = oledIsTransferInProgress,
     .heartbeat = oledHeartbeat,
     .resync = oledResync,
     .txBytesFree = oledTxBytesFree
@@ -86,9 +112,8 @@ static const displayPortVTable_t oledVTable = {
 
 displayPort_t *displayPortOledInit(void)
 {
-    oledDisplayPort.vTable = &oledVTable;
+    displayInit(&oledDisplayPort, &oledVTable);
     oledDisplayPort.rows = SCREEN_CHARACTER_ROW_COUNT;
     oledDisplayPort.cols = SCREEN_CHARACTER_COLUMN_COUNT;
-    oledDisplayPort.isGrabbed = false;
     return &oledDisplayPort;
 }
