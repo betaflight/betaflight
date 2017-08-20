@@ -42,6 +42,8 @@ typedef struct batteryConfig_s {
     bool useConsumptionAlerts;              // Issue alerts based on total power consumption
     uint8_t consumptionWarningPercentage;   // Percentage of remaining capacity that should trigger a battery warning
     uint8_t vbathysteresis;                 // hysteresis for alarm, default 1 = 0.1V
+
+    uint8_t vbatfullcellvoltage;            // Cell voltage at which the battery is deemed to be "full" 0.1V units, default is 41 (4.1V)
    
 } batteryConfig_t;
 
@@ -77,6 +79,7 @@ uint8_t calculateBatteryPercentageRemaining(void);
 uint16_t getBatteryVoltage(void);
 uint16_t getBatteryVoltageLatest(void);
 uint8_t getBatteryCellCount(void);
+uint16_t getBatteryAverageCellVoltage(void);
 
 int32_t getAmperage(void);
 int32_t getAmperageLatest(void);

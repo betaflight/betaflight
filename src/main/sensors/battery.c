@@ -106,7 +106,9 @@ PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
     .useVBatAlerts = true,
     .useConsumptionAlerts = false,
     .consumptionWarningPercentage = 10,
-    .vbathysteresis = 1
+    .vbathysteresis = 1,
+
+    .vbatfullcellvoltage = 41
 );
 
 void batteryUpdateVoltage(timeUs_t currentTimeUs)
@@ -460,6 +462,11 @@ uint16_t getBatteryVoltageLatest(void)
 uint8_t getBatteryCellCount(void)
 {
     return batteryCellCount;
+}
+
+uint16_t getBatteryAverageCellVoltage(void)
+{
+    return voltageMeter.filtered / batteryCellCount;
 }
 
 int32_t getAmperage(void) {
