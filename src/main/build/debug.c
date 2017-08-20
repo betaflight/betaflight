@@ -49,5 +49,6 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "ALTITUDE",
     "FFT",
     "FFT_TIME",
-    "FFT_FREQ"
+    "FFT_FREQ",
+    "FRSKY_D_RX"
 };
