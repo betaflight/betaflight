@@ -275,6 +275,8 @@ void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
     instance->CR1 = (tempRegister | ((ffs(divisor | 0x100) - 2) << 3));
 
     SPI_Cmd(instance, ENABLE);
+
+#undef BR_BITS
 }
 
 uint16_t spiGetErrorCounter(SPI_TypeDef *instance)
