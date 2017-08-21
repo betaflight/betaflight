@@ -249,6 +249,8 @@ bool spiTransfer(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, 
     return true;
 }
 
+#include "build/debug.h"
+
 bool spiBusTransfer(const busDevice_t *bus, const uint8_t *txData, uint8_t *rxData, int length)
 {
     IOLo(bus->busdev_u.spi.csnPin);
@@ -259,10 +261,17 @@ bool spiBusTransfer(const busDevice_t *bus, const uint8_t *txData, uint8_t *rxDa
 
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
 {
-#define BR_CLEAR_MASK 0xFFC7
+#define BR_BITS ((BIT(5) | BIT(4) | BIT(3)))
+
+    // SPI2 and SPI3 are always on APB1/AHB1 which PCLK is half that of APB2/AHB2.
+
+    if (instance == SPI2 || instance == SPI3) {
+        divisor /= 2; // Safe for divisor == 0 or 1
+    }
+
     SPI_Cmd(instance, DISABLE);
 
-    const uint16_t tempRegister = (instance->CR1 & BR_CLEAR_MASK);
+    const uint16_t tempRegister = (instance->CR1 & ~BR_BITS);
     instance->CR1 = (tempRegister | ((ffs(divisor | 0x100) - 2) << 3));
 
     SPI_Cmd(instance, ENABLE);
