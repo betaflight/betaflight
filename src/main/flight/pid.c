@@ -114,7 +114,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .crash_setpoint_threshold = 350, // degrees/second
         .crash_recovery = PID_CRASH_RECOVERY_OFF, // off by default
         .horizon_tilt_effect = 75,
-        .horizon_tilt_expert_mode = false
+        .horizon_tilt_expert_mode = false,
+        .gyroRateLimitYaw = 1000
     );
 }
 
@@ -238,6 +239,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 
 static float Kp[3], Ki[3], Kd[3];
 static float maxVelocity[3];
+static float gyroRateLimitYaw;
 static float relaxFactor;
 static float dtermSetpointWeight;
 static float levelGain, horizonGain, horizonTransition, horizonCutoffDegrees, horizonFactorRatio;
@@ -258,6 +260,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         Ki[axis] = ITERM_SCALE * pidProfile->pid[axis].I;
         Kd[axis] = DTERM_SCALE * pidProfile->pid[axis].D;
     }
+    gyroRateLimitYaw = pidProfile->gyroRateLimitYaw;
     dtermSetpointWeight = pidProfile->dtermSetpointWeight / 127.0f;
     relaxFactor = 1.0f / (pidProfile->setpointRelaxRatio / 100.0f);
     levelGain = pidProfile->pid[PID_LEVEL].P / 10.0f;
@@ -419,7 +422,10 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                 BEEP_OFF;
             }
         }
-        const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
+        float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
+        if (axis == FD_YAW) {
+            gyroRate = constrainf(gyroRate, -gyroRateLimitYaw, gyroRateLimitYaw);
+        }
 
         // --------low-level gyro-based PID based on 2DOF PID controller. ----------
         // 2-DOF PID controller with optional filter on derivative term.
