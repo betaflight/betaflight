@@ -155,7 +155,9 @@ uint8_t escPortIndex;
 #ifdef USE_ESCSERIAL
 static void mspEscPassthroughFn(serialPort_t *serialPort)
 {
-    escEnablePassthrough(serialPort, escPortIndex, escMode);
+    if (serialPort) {
+        escEnablePassthrough(serialPort, escPortIndex, escMode);
+    }
 }
 #endif
 

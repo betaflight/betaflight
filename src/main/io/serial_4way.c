@@ -422,6 +422,10 @@ void esc4wayProcess(serialPort_t *mspPort)
     uint8_t *InBuff;
     ioMem_t ioMem;
 
+    if (!mspPort) {
+        return;
+    }
+
     port = mspPort;
 
     // Start here  with UART Main loop
