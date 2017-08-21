@@ -105,7 +105,7 @@
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI1
 #define MAX7456_SPI_CS_PIN      PB1
-#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 //#define MAX7456_DMA_CHANNEL_TX            DMA1_Channel3
 //#define MAX7456_DMA_CHANNEL_RX            DMA1_Channel2
