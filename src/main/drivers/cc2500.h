@@ -138,16 +138,16 @@ enum {
 #define CC2500_LQI_CRC_OK_BM 0x80
 #define CC2500_LQI_EST_BM 0x7F
 
-// void FrskyRXspiInit();
-uint8_t cc2500_readFifo(uint8_t *dpbuffer, uint8_t len);
-uint8_t cc2500_writeFifo(uint8_t *dpbuffer, uint8_t len);
-uint8_t cc2500_ReadRegisterMulti(uint8_t address, uint8_t *data,
+uint8_t cc2500ReadFifo(uint8_t *dpbuffer, uint8_t len);
+uint8_t cc2500WriteFifo(uint8_t *dpbuffer, uint8_t len);
+
+uint8_t cc2500ReadRegisterMulti(uint8_t address, uint8_t *data,
                                  uint8_t length);
-uint8_t CC2500_WriteRegisterMulti(uint8_t address, uint8_t *data,
+uint8_t cc2500WriteRegisterMulti(uint8_t address, uint8_t *data,
                                   uint8_t length);
 
-uint8_t cc2500_readReg(uint8_t reg);
-void cc2500_strobe(uint8_t address);
-uint8_t cc2500_writeReg(uint8_t address, uint8_t data);
-void CC2500_SetPower(uint8_t power);
-uint8_t CC2500_Reset();
+uint8_t cc2500ReadReg(uint8_t reg);
+void cc2500Strobe(uint8_t address);
+uint8_t cc2500WriteReg(uint8_t address, uint8_t data);
+void cc2500SetPower(uint8_t power);
+uint8_t cc2500Reset();

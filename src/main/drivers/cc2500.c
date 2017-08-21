@@ -7,56 +7,56 @@
 
 #include "platform.h"
 
-#ifdef USE_RX_CC2500
-
 #include "build/build_config.h"
-#include "cc2500.h"
-#include "io.h"
-#include "rx_spi.h"
-#include "system.h"
-#include "time.h"
+
+#include "drivers/cc2500.h"
+#include "drivers/io.h"
+#include "drivers/rx_spi.h"
+#include "drivers/system.h"
+#include "drivers/time.h"
+
 
 #define NOP 0xFF
 
-uint8_t cc2500_readFifo(uint8_t *dpbuffer, uint8_t len)
+uint8_t cc2500ReadFifo(uint8_t *dpbuffer, uint8_t len)
 {
     return rxSpiReadCommandMulti(CC2500_3F_RXFIFO | CC2500_READ_BURST, NOP, dpbuffer, len);
 }
 
-uint8_t cc2500_writeFifo(uint8_t *dpbuffer, uint8_t len)
+uint8_t cc2500WriteFifo(uint8_t *dpbuffer, uint8_t len)
 {
     uint8_t ret;
-    cc2500_strobe(CC2500_SFTX); // 0x3B SFTX
+    cc2500Strobe(CC2500_SFTX); // 0x3B SFTX
     ret = rxSpiWriteCommandMulti(CC2500_3F_TXFIFO | CC2500_WRITE_BURST,
                                  dpbuffer, len);
-    cc2500_strobe(CC2500_STX); // 0x35
+    cc2500Strobe(CC2500_STX); // 0x35
     return ret;
 }
 
-uint8_t cc2500_ReadRegisterMulti(uint8_t address, uint8_t *data, uint8_t length)
+uint8_t cc2500ReadRegisterMulti(uint8_t address, uint8_t *data, uint8_t length)
 {
     return rxSpiReadCommandMulti(address, NOP, data, length);
 }
 
-uint8_t cc2500_WriteRegisterMulti(uint8_t address, uint8_t *data,
+uint8_t cc2500WriteRegisterMulti(uint8_t address, uint8_t *data,
                                   uint8_t length)
 {
     return rxSpiWriteCommandMulti(address, data, length);
 }
 
-uint8_t cc2500_readReg(uint8_t reg)
+uint8_t cc2500ReadReg(uint8_t reg)
 {
     return rxSpiReadCommand(reg | 0x80, NOP);
 }
 
-void cc2500_strobe(uint8_t address) { rxSpiWriteByte(address); }
+void cc2500Strobe(uint8_t address) { rxSpiWriteByte(address); }
 
-uint8_t cc2500_writeReg(uint8_t address, uint8_t data)
+uint8_t cc2500WriteReg(uint8_t address, uint8_t data)
 {
     return rxSpiWriteCommand(address, data);
 }
 
-void CC2500_SetPower(uint8_t power)
+void cc2500SetPower(uint8_t power)
 {
     const uint8_t patable[8] = {
         0xC5, // -12dbm
@@ -70,16 +70,15 @@ void CC2500_SetPower(uint8_t power)
     };
     if (power > 7)
         power = 7;
-    cc2500_writeReg(CC2500_3E_PATABLE, patable[power]);
+    cc2500WriteReg(CC2500_3E_PATABLE, patable[power]);
 }
 
-uint8_t CC2500_Reset()
+uint8_t cc2500Reset()
 {
-    cc2500_strobe(CC2500_SRES);
+    cc2500Strobe(CC2500_SRES);
     delayMicroseconds(1000); // 1000us
     // CC2500_SetTxRxMode(TXRX_OFF);
     // RX_EN_off;//off tx
     // TX_EN_off;//off rx
-    return cc2500_readReg(CC2500_0E_FREQ1) == 0xC4; // check if reset
+    return cc2500ReadReg(CC2500_0E_FREQ1) == 0xC4; // check if reset
 }
-#endif
