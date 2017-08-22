@@ -717,9 +717,15 @@ const clivalue_t valueTable[] = {
 
 // PG_VTX_CONFIG
 #ifdef VTX_RTC6705
-    { "vtx_band",                   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 5 }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, band) },
-    { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 8 }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, channel) },
-    { "vtx_power",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, RTC6705_POWER_COUNT - 1 }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, power) },
+    { "vtx_rtc6705_band",                   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 5 }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, band) },
+    { "vtx_rtc6705_channel",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 8 }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, channel) },
+    { "vtx_rtc6705_power",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, RTC6705_POWER_COUNT - 1 }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, power) },
+#endif
+
+#if defined(VTX_COMMON)
+    { "vtx_band",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, VTX_COMMON_MAX_BAND }, PG_VTX_CONFIG, offsetof(vtxDevice_t, band) },
+    { "vtx_channel",        VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, VTX_COMMON_MAX_CHANNEL }, PG_VTX_CONFIG, offsetof(vtxDevice_t, channel) },
+    { "vtx_power",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, VTX_COMMON_MAX_POWER_COUNT - 1 }, PG_VTX_CONFIG, offsetof(vtxDevice_t, power) },
 #endif
 
 // PG_VCD_CONFIG

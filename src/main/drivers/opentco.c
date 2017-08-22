@@ -85,8 +85,9 @@ static bool opentcoDecodeResponse(opentcoDevice_t *device, uint8_t requested_reg
     uint8_t valid_devcmd = ((OPENTCO_DEVICE_RESPONSE | device->id) << 4) | OPENTCO_OSD_COMMAND_REGISTER_ACCESS;
     if (data[0] != valid_devcmd) return false;
 
-    // response to our request?
-    if (data[1] != requested_reg) return false;
+    // response to our request? reply should contain register id WITHOUT read bit set
+    uint8_t valid_reg = requested_reg & ~OPENTCO_REGISTER_ACCESS_MODE_READ;
+    if (data[1] != valid_reg) return false;
 
     // return value
     *reply = (data[3] << 8) | data[2];

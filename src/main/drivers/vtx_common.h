@@ -35,6 +35,10 @@ typedef struct vtxDeviceCapability_s {
     uint8_t powerCount;
 } vtxDeviceCapability_t;
 
+#define VTX_COMMON_MAX_CHANNEL 8
+#define VTX_COMMON_MAX_BAND 5
+#define VTX_COMMON_MAX_POWER_COUNT 8
+
 typedef struct vtxDevice_s {
     const struct vtxVTable_s * const vTable;
 
@@ -51,6 +55,9 @@ typedef struct vtxDevice_s {
     uint8_t pitMode; // 0 = non-PIT, 1 = PIT
 
 } vtxDevice_t;
+
+PG_DECLARE(vtxDevice_t, vtxConfig);
+
 
 // {set,get}BandAndChannel: band and channel are 1 origin
 // {set,get}PowerByIndex: 0 = Power OFF, 1 = device dependent

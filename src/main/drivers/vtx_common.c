@@ -29,6 +29,16 @@
 
 #include "vtx_common.h"
 
+
+PG_REGISTER_WITH_RESET_TEMPLATE(vtxDevice_t, vtxConfig, PG_VTX_CONFIG, 0);
+
+PG_RESET_TEMPLATE(vtxDevice_t, vtxConfig,
+    .band = 4,    //Fatshark/Airwaves
+    .channel = 1, //CH1
+    .power = VTX_RTC6705_DEFAULT_POWER
+);
+
+
 vtxDevice_t *vtxDevice = NULL;
 
 void vtxCommonInit(void)
