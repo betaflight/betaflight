@@ -125,6 +125,9 @@ bool opentcoOSDInit(const vcdProfile_t *pVcdProfile)
     //hosRegValue = 32 - pVcdProfile->h_offset;
     //vosRegValue = 16 - pVcdProfile->v_offset;
 
+    // configure device:
+    device->id = OPENTCO_DEVICE_OSD;
+
     // open serial port
     if (!opentcoInit(device)) {
         // no device found
