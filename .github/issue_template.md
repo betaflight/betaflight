@@ -1,5 +1,5 @@
 # If your issue looks like hardware fault or a configuration problem this may be is the wrong place to post to.
-## Please consider to using [RCGroups](rcgroups.com/forums/showthread.php?t=2464844), [Slack](slack.betaflight.tech) or any other forum before posting here or even better ask the manufacturer of the hardware you are using.
+## Please consider using [RCGroups](https://rcgroups.com/forums/showthread.php?t=2464844), [Slack](https://slack.betaflight.tech) or any other forum before posting here or even better ask the manufacturer of the hardware you are using.
 
 ## If you post here please follow these steps
 1.) Describe your problem
