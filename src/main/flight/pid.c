@@ -106,7 +106,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .itermThrottleThreshold = 350,
         .itermAcceleratorGain = 1000,
         .crash_time = 500,          // ms
-        .crash_delay = 0,          // ms
+        .crash_delay = 0,           // ms
         .crash_recovery_angle = 10, // degrees
         .crash_recovery_rate = 100, // degrees/second
         .crash_dthreshold = 50,     // degrees/second/second
@@ -115,7 +115,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .crash_recovery = PID_CRASH_RECOVERY_OFF, // off by default
         .horizon_tilt_effect = 75,
         .horizon_tilt_expert_mode = false,
-        .gyroRateLimitYaw = 1000
+        .crash_limit_yaw = 200
     );
 }
 
@@ -239,7 +239,6 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 
 static float Kp[3], Ki[3], Kd[3];
 static float maxVelocity[3];
-static float gyroRateLimitYaw;
 static float relaxFactor;
 static float dtermSetpointWeight;
 static float levelGain, horizonGain, horizonTransition, horizonCutoffDegrees, horizonFactorRatio;
@@ -252,6 +251,7 @@ static float crashRecoveryRate;
 static float crashDtermThreshold;
 static float crashGyroThreshold;
 static float crashSetpointThreshold;
+static float crashLimitYaw;
 
 void pidInitConfig(const pidProfile_t *pidProfile)
 {
@@ -260,7 +260,6 @@ void pidInitConfig(const pidProfile_t *pidProfile)
         Ki[axis] = ITERM_SCALE * pidProfile->pid[axis].I;
         Kd[axis] = DTERM_SCALE * pidProfile->pid[axis].D;
     }
-    gyroRateLimitYaw = pidProfile->gyroRateLimitYaw;
     dtermSetpointWeight = pidProfile->dtermSetpointWeight / 127.0f;
     relaxFactor = 1.0f / (pidProfile->setpointRelaxRatio / 100.0f);
     levelGain = pidProfile->pid[PID_LEVEL].P / 10.0f;
@@ -280,6 +279,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     crashGyroThreshold = pidProfile->crash_gthreshold;
     crashDtermThreshold = pidProfile->crash_dthreshold;
     crashSetpointThreshold = pidProfile->crash_setpoint_threshold;
+    crashLimitYaw = pidProfile->crash_limit_yaw;
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -394,45 +394,48 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     // ----------PID controller----------
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         float currentPidSetpoint = getSetpointRate(axis);
-
         if (maxVelocity[axis]) {
             currentPidSetpoint = accelerationLimit(axis, currentPidSetpoint);
         }
-
         // Yaw control is GYRO based, direct sticks control is applied to rate PID
         if ((FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) && axis != YAW) {
             currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim, currentPidSetpoint);
         }
 
-        if (inCrashRecoveryMode && axis != FD_YAW && cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeDelayUs) {
-            // self-level - errorAngle is deviation from horizontal
+        // -----calculate error rate
+        const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
+        float errorRate = currentPidSetpoint - gyroRate; // r - y
+
+        if (inCrashRecoveryMode && cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeDelayUs) {
             if (pidProfile->crash_recovery == PID_CRASH_RECOVERY_BEEP) {
-                        BEEP_ON;
+                BEEP_ON;
             }
-            const float errorAngle =  -(attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f;
-            currentPidSetpoint = errorAngle * levelGain;
+            if (axis == FD_YAW) {
+                // on yaw axis, prevent "yaw spin to the moon" after crash by constraining errorRate
+                errorRate = constrainf(errorRate, -crashLimitYaw, crashLimitYaw);
+            } else {
+                // on roll and pitch axes calculate currentPidSetpoint and errorRate to level the aircraft to recover from crash
+                // errorAngle is deviation from horizontal
+                const float errorAngle =  -(attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f;
+                currentPidSetpoint = errorAngle * levelGain;
+                errorRate = currentPidSetpoint - gyroRate;
+            }
             if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeLimitUs
                 || (motorMixRange < 1.0f
                        && ABS(attitude.raw[FD_ROLL] - angleTrim->raw[FD_ROLL]) < crashRecoveryAngleDeciDegrees
                        && ABS(attitude.raw[FD_PITCH] - angleTrim->raw[FD_PITCH]) < crashRecoveryAngleDeciDegrees
                        && ABS(gyro.gyroADCf[FD_ROLL]) < crashRecoveryRate
-                       && ABS(gyro.gyroADCf[FD_PITCH]) < crashRecoveryRate)
+                       && ABS(gyro.gyroADCf[FD_PITCH]) < crashRecoveryRate
+                       && ABS(gyro.gyroADCf[FD_YAW]) < crashRecoveryRate)
                        ) {
                 inCrashRecoveryMode = false;
                 BEEP_OFF;
             }
         }
-        float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
-        if (axis == FD_YAW) {
-            gyroRate = constrainf(gyroRate, -gyroRateLimitYaw, gyroRateLimitYaw);
-        }
 
         // --------low-level gyro-based PID based on 2DOF PID controller. ----------
         // 2-DOF PID controller with optional filter on derivative term.
         // b = 1 and only c (dtermSetpointWeight) can be tuned (amount derivative on measurement or error).
-
-        // -----calculate error rate
-        const float errorRate = currentPidSetpoint - gyroRate;       // r - y
 
         // -----calculate P component and add Dynamic Part based on stick input
         axisPID_P[axis] = Kp[axis] * errorRate * tpaFactor;
