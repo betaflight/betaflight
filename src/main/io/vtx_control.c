@@ -40,7 +40,7 @@
 
 #if defined(VTX_CONTROL) && defined(VTX_COMMON)
 
-PG_REGISTER(vtxConfig_t, vtxConfig, PG_VTX_CONFIG, 1);
+PG_REGISTER(vtxConfig_t, vtxConfig, PG_VTX_CONTROL_CONFIG, 1);
 
 static uint8_t locked = 0;
 

@@ -97,7 +97,7 @@ typedef enum {
 
 
 typedef enum {
-    OPENTCO_VTX_POWER_0MW     = 0,
+    OPENTCO_VTX_POWER_PITMODE = 0,
     OPENTCO_VTX_POWER_5MW     = 1,
     OPENTCO_VTX_POWER_10MW    = 2,
     OPENTCO_VTX_POWER_25MW    = 3,
@@ -110,7 +110,6 @@ typedef enum {
 
 #define OPENTCO_VTX_REGISTER_SUPPORTED_POWER         0x04  // R/W: (1 << opentcoVTXPower_e)
 #define OPENTCO_VTX_REGISTER_POWER                   0x05  // R/W: opentcoVTXPower_e
-
 
 typedef struct {
     serialPort_t *serialPort;

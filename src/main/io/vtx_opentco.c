@@ -48,9 +48,9 @@
 
 #include "build/debug.h"
 
-char *vtxOpentcoSupportedPowerNames[OPENTCO_POWER_COUNT][4];
+char *vtxOpentcoSupportedPowerNames[OPENTCO_VTX_POWER_COUNT][4];
 
-const char * const vtxOpentcoPowerNames[OPENTCO_POWER_COUNT] = {
+const char * const vtxOpentcoPowerNames[OPENTCO_VTX_POWER_COUNT] = {
     "---", "5  ", "10 ", "25 ", "100", "200", "500", "800"
 };
 
@@ -59,19 +59,19 @@ static bool vtxOpentcoPitmodeActive;
 
 static vtxVTable_t opentcoVTable;    // Forward
 static vtxDevice_t vtxOpentco = {
-    .vTable = &rtc6705VTable,
+    .vTable = &opentcoVTable,
     .capability.bandCount = 5,
     .capability.channelCount = 8,
-    .capability.powerCount = OPENTCO_POWER_COUNT,
+    .capability.powerCount = OPENTCO_VTX_POWER_COUNT,
     .bandNames = (char **)vtx58BandNames,
     .channelNames = (char **)vtx58ChannelNames,
     .powerNames = (char **)vtxOpentcoSupportedPowerNames,
 };
 
-
 static opentcoDevice_t vtxOpentcoDevice;
 static opentcoDevice_t *device = &vtxOpentcoDevice;
 
+static bool vtxOpentcoQuerySupportedFeatures(void);
 
 bool vtxOpentcoInit(void)
 {
@@ -93,7 +93,7 @@ bool vtxOpentcoInit(void)
     return true;
 }
 
-static bool vtxOpentcoQuerySupportedFeatures()
+static bool vtxOpentcoQuerySupportedFeatures(void)
 {
     // fetch available power rates
     if (!opentcoReadRegister(device, OPENTCO_VTX_REGISTER_SUPPORTED_POWER,  &vtxOpentcoSupportedPower)) {
@@ -101,11 +101,14 @@ static bool vtxOpentcoQuerySupportedFeatures()
         return false;
     }
 
-    // pointer to update supported power levels
-    vtxOpentcoSupportedPowerNames[OPENTCO_POWER_COUNT][4]
+    // start with entry 0
     uint32_t powerIndex = 0;
 
     for (uint32_t i = 0; i < OPENTCO_VTX_POWER_COUNT; i++) {
+        // pre init all power levels as null terminated string
+        vtxOpentcoSupportedPowerNames[i][0] = 0;
+
+        // check for device support
         if (vtxOpentcoSupportedPower & (1 << i)) {
             // copy string to supported feature list
             memcpy(vtxOpentcoSupportedPowerNames[powerIndex], vtxOpentcoPowerNames[i], 4);
@@ -113,21 +116,14 @@ static bool vtxOpentcoQuerySupportedFeatures()
         }
     }
 
+
+    // store maximum power index
+    vtxOpentco.capability.powerCount = powerIndex;
+
     return true;
 }
 
-bool vtxOpentcoConfigure(void)
-{
-    // transfer all properties to device
-    if (!vtxOpentcoSetPitMode(vtxConfig()->pitMode)) return false;
-    if (!vtxOpentcoSetPowerByIndex(vtxConfig()->powerIndex)) return false;
-    if (!vtxOpentcoSetBandAndChannel(vtxConfig()->.band - 1, vtxConfig()->.channel - 1)) return false;
-
-    // sucess
-    return true;
-}
-
-void vtxOpentcoProcess(uint32_t now)
+static void vtxOpentcoProcess(uint32_t now)
 {
     UNUSED(now);
 
@@ -139,36 +135,39 @@ void vtxOpentcoProcess(uint32_t now)
 }
 
 // Interface to common VTX API
-vtxDevType_e vtxRTC6705GetDeviceType(void)
+static vtxDevType_e vtxOpentcoGetDeviceType(void)
 {
     return VTXDEV_OPENTCO;
 }
 
-bool vtxOpentcoIsReady(void)
+static bool vtxOpentcoIsReady(void)
 {
     return true;
 }
 
-void vtxOpentcoSetBandAndChannel(uint8_t band, uint8_t channel)
+static bool vtxOpentcoSetBandAndChannel(uint8_t band, uint8_t channel)
 {
     if (band && channel) {
-        // FIXME: add some security emasures like writing to a second reg to enable freq changes!
+        // FIXME: add some security measures like writing to a second reg to enable freq changes!
         if (!opentcoWriteRegister(device, OPENTCO_VTX_REGISTER_BAND, band - 1)){
             // failed to store setting
-            return;
+            return false;
         }
         if (!opentcoWriteRegister(device, OPENTCO_VTX_REGISTER_CHANNEL, channel - 1)){
             // failed to store setting
-            return;
+            return false;
         }
 
         // config suceeded, store settings
-        vtxConfigMutable()->band = band;
-        vtxConfigMutable()->channel = channel;
+        vtxDeviceConfigMutable()->band = band;
+        vtxDeviceConfigMutable()->channel = channel;
     }
+
+    // all fine
+    return true;
 }
 
-void vtxOpentcoSetPowerByIndex(uint8_t index)
+static bool vtxOpentcoSetPowerByIndex(uint8_t index)
 {
     // check if this is supported:
     while((!(vtxOpentcoSupportedPower & (1 << index))) && (index > 0)) {
@@ -177,17 +176,23 @@ void vtxOpentcoSetPowerByIndex(uint8_t index)
     }
 
     // try to store the setting:
-    if (opentcoWriteRegister(device, OPENTCO_VTX_REGISTER_POWER, index)) {
-        // sucess, store value
-        vtxConfigMutable()->powerIndex = index;
+    if (!opentcoWriteRegister(device, OPENTCO_VTX_REGISTER_POWER, index)) {
+        // failed
+        return false;
     }
+
+    // sucess, store value
+    vtxDeviceConfigMutable()->powerIndex = index;
+
+    return true;
 }
 
-void vtxOpentcoSetPitMode(uint8_t onoff)
+static bool vtxOpentcoSetPitMode(uint8_t onoff)
 {
     // pitmode supported?
     if (!(vtxOpentcoSupportedPower & OPENTCO_VTX_POWER_PITMODE)){
-        return;
+        // set value and return true anyway (this is not critical)
+        return true;
     }
 
 
@@ -197,36 +202,51 @@ void vtxOpentcoSetPitMode(uint8_t onoff)
         value |= OPENTCO_VTX_STATUS_PITMODE;
     }
 
-    if (opentcoWriteRegister(device, OPENTCO_VTX_REGISTER_STATUS, value)) {
-        // setting was stored sucessfully
-        vtxOpentcoPitmodeActive = onoff;
+    if (!opentcoWriteRegister(device, OPENTCO_VTX_REGISTER_STATUS, value)) {
+        // failed!
+        return false;
     }
 
-    return;
-}
+    // setting was stored sucessfully
+    vtxOpentcoPitmodeActive = onoff;
 
-bool vtxOpentcoGetBandAndChannel(uint8_t *pBand, uint8_t *pChannel)
-{
-    *pBand = vtxConfig()->band;
-    *pChannel = vtxConfig()->channel;
     return true;
 }
 
-bool vtxOpentcoGetPowerIndex(uint8_t *pIndex)
+static bool vtxOpentcoGetBandAndChannel(uint8_t *pBand, uint8_t *pChannel)
 {
-    *pIndex = vtxConfig()->powerIndex;
+    *pBand = vtxDeviceConfig()->band;
+    *pChannel = vtxDeviceConfig()->channel;
     return true;
 }
 
-bool vtxOpentcoGetPitMode(uint8_t *pOnOff)
+static bool vtxOpentcoGetPowerIndex(uint8_t *pIndex)
+{
+    *pIndex = vtxDeviceConfig()->powerIndex;
+    return true;
+}
+
+static bool vtxOpentcoGetPitMode(uint8_t *pOnOff)
 {
     *pOnOff = vtxOpentcoPitmodeActive;
     return true;
 }
 
-static vtxVTable_t rtc6705VTable = {
+
+bool vtxOpentcoConfigure(void)
+{
+    // transfer all properties to device
+    if (!vtxOpentcoSetPitMode(vtxDeviceConfig()->pitMode)) return false;
+    if (!vtxOpentcoSetPowerByIndex(vtxDeviceConfig()->powerIndex)) return false;
+    if (!vtxOpentcoSetBandAndChannel(vtxDeviceConfig()->band - 1, vtxDeviceConfig()->channel - 1)) return false;
+
+    // sucess
+    return true;
+}
+
+static vtxVTable_t opentcoVTable = {
     .process = vtxOpentcoProcess,
-    .getDeviceType =vvtxOpentcoGetDeviceType,
+    .getDeviceType = vtxOpentcoGetDeviceType,
     .isReady = vtxOpentcoIsReady,
     .setBandAndChannel = vtxOpentcoSetBandAndChannel,
     .setPowerByIndex = vtxOpentcoSetPowerByIndex,

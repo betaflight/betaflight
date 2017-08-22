@@ -61,6 +61,7 @@
 #include "io/ledstrip.h"
 #include "io/osd.h"
 #include "io/vtx_rtc6705.h"
+#include "drivers/vtx_common.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -723,9 +724,9 @@ const clivalue_t valueTable[] = {
 #endif
 
 #if defined(VTX_COMMON)
-    { "vtx_band",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, VTX_COMMON_MAX_BAND }, PG_VTX_CONFIG, offsetof(vtxDevice_t, band) },
-    { "vtx_channel",        VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, VTX_COMMON_MAX_CHANNEL }, PG_VTX_CONFIG, offsetof(vtxDevice_t, channel) },
-    { "vtx_power",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, VTX_COMMON_MAX_POWER_COUNT - 1 }, PG_VTX_CONFIG, offsetof(vtxDevice_t, power) },
+    { "vtx_device_band",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, VTX_COMMON_MAX_BAND }, PG_VTX_DEVICE_CONFIG, offsetof(vtxDeviceConfig_t, band) },
+    { "vtx_device_channel",        VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, VTX_COMMON_MAX_CHANNEL }, PG_VTX_DEVICE_CONFIG, offsetof(vtxDeviceConfig_t, channel) },
+    { "vtx_device_powerindex",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, VTX_COMMON_MAX_POWER_COUNT - 1 }, PG_VTX_DEVICE_CONFIG, offsetof(vtxDeviceConfig_t, powerIndex) },
 #endif
 
 // PG_VCD_CONFIG

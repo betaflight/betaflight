@@ -105,6 +105,7 @@
 #include "io/vtx_control.h"
 #include "io/vtx_smartaudio.h"
 #include "io/vtx_tramp.h"
+#include "io/vtx_opentco.h"
 
 #include "scheduler/scheduler.h"
 
