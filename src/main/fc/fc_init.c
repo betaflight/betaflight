@@ -694,7 +694,7 @@ void init(void)
 
     // FIXME: add feature / vtx device selection
     //        and do opentco init only on request
-    vtxOpentcoInit();
+    //vtxOpentcoInit();
 
 #ifdef VTX_SMARTAUDIO
     vtxSmartAudioInit();
