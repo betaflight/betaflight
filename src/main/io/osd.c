@@ -85,7 +85,7 @@
 
 bool blinkState = true;
 
-static uint16_t flyTime = 0;
+static timeUs_t flyTime = 0;
 static uint8_t statRssi;
 
 typedef struct statistic_s {
@@ -99,10 +99,11 @@ typedef struct statistic_s {
 
 static statistic_t stats;
 
-uint16_t refreshTimeout = 0;
-#define REFRESH_1S    OSD_TASK_FREQUENCY_HZ
+uint32_t resumeRefreshAt = 0;
+#define REFRESH_1S    (1000*1000)
 
 static uint8_t armState;
+
 static displayPort_t *osdDisplayPort;
 
 #define AH_MAX_PITCH 200 // Specify maximum AHI pitch value displayed. Default 200 = 20.0 degrees
@@ -308,9 +309,12 @@ static bool osdDrawSingleElement(uint8_t item)
         }
 
     case OSD_FLYTIME:
-        buff[0] = SYM_FLY_M;
-        tfp_sprintf(buff + 1, "%02d:%02d", flyTime / 60, flyTime % 60);
-        break;
+        {
+            const uint32_t seconds = flyTime / 1000000;
+            buff[0] = SYM_FLY_M;
+            tfp_sprintf(buff + 1, "%02d:%02d", seconds / 60, seconds % 60);
+            break;
+        }
 
     case OSD_FLYMODE:
         {
@@ -512,7 +516,7 @@ static bool osdDrawSingleElement(uint8_t item)
         {
         #ifdef PITOT
             osdFormatVelocityStr(buff, pitot.airSpeed);
-        #else 
+        #else
             return false;
         #endif
             break;
@@ -706,7 +710,7 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
 
     displayResync(osdDisplayPort);
 
-    refreshTimeout = 4 * REFRESH_1S;
+    resumeRefreshAt = micros() + (4 * REFRESH_1S);
 }
 
 void osdUpdateAlarms(void)
@@ -736,7 +740,7 @@ void osdUpdateAlarms(void)
     else
         osdConfigMutable()->item_pos[OSD_GPS_SATS] &= ~BLINK_FLAG;
 
-    if (flyTime / 60 >= osdConfig()->time_alarm && ARMING_FLAG(ARMED))
+    if ((flyTime / 1000000) / 60 >= osdConfig()->time_alarm && ARMING_FLAG(ARMED))
         osdConfigMutable()->item_pos[OSD_FLYTIME] |= BLINK_FLAG;
     else
         osdConfigMutable()->item_pos[OSD_FLYTIME] &= ~BLINK_FLAG;
@@ -858,79 +862,51 @@ static void osdShowArmed(void)
     displayWrite(osdDisplayPort, 12, 7, "ARMED");
 }
 
-static void osdRefreshStats(timeUs_t currentTimeUs)
+static void osdRefresh(timeUs_t currentTimeUs)
 {
-    static uint8_t lastSec = 0;
-    uint8_t sec;
+    static timeUs_t lastTimeUs = 0;
 
     // detect arm/disarm
     if (armState != ARMING_FLAG(ARMED)) {
         if (ARMING_FLAG(ARMED)) {
             osdResetStats();
             osdShowArmed(); // reset statistic etc
-            refreshTimeout = REFRESH_1S / 2;
+            resumeRefreshAt = currentTimeUs + (REFRESH_1S / 2);
         } else {
             osdShowStats(); // show statistic
-            refreshTimeout = 60 * REFRESH_1S;
+            resumeRefreshAt = currentTimeUs + (60 * REFRESH_1S);
         }
 
         armState = ARMING_FLAG(ARMED);
     }
 
-    osdUpdateStats();
+    if (ARMING_FLAG(ARMED)) {
+        timeUs_t deltaT = currentTimeUs - lastTimeUs;
+        flyTime += deltaT;
+    }
 
-    sec = currentTimeUs / 1000000;
+    lastTimeUs = currentTimeUs;
 
-    if (ARMING_FLAG(ARMED) && sec != lastSec) {
-        flyTime++;
-        lastSec = sec;
+    if (resumeRefreshAt) {
+        if (cmp32(currentTimeUs, resumeRefreshAt) < 0) {
+            // in timeout period, check sticks for activity to resume display.
+            if (checkStickPosition(THR_HI) || checkStickPosition(PIT_HI)) {
+                resumeRefreshAt = 0;
+            }
+
+            displayHeartbeat(osdDisplayPort);
+            return;
+        } else {
+            displayClearScreen(osdDisplayPort);
+            resumeRefreshAt = 0;
+        }
     }
 
     blinkState = (currentTimeUs / 200000) % 2;
-}
-
-/*
- * Called periodically by the scheduler
- */
-void osdUpdate(timeUs_t currentTimeUs)
-{
-    static uint8_t iterationCounter = 0;
-
-    // don't touch buffers if DMA transaction is in progress
-    if (displayIsTransferInProgress(osdDisplayPort)) {
-        return;
-    }
-
-    // refresh alarms every 20 iterations
-    if (iterationCounter == 0) {
-        if (!displayIsGrabbed(osdDisplayPort)) {
-            osdUpdateAlarms();
-        }
-    }
-
-    // refresh statistics every 20 iterations
-    if (iterationCounter++ >= 20) {
-        iterationCounter = 0;
-        osdRefreshStats(currentTimeUs);
-    }
-
-    if (refreshTimeout) {
-        if (checkStickPosition(THR_HI) || checkStickPosition(PIT_HI)) { // hide statistics
-            refreshTimeout = 1;
-        }
-
-        refreshTimeout--;
-        if (!refreshTimeout) {
-            displayClearScreen(osdDisplayPort);
-        }
-
-        displayHeartbeat(osdDisplayPort);
-        displayDrawScreen(osdDisplayPort);
-        return;
-    }
 
 #ifdef CMS
     if (!displayIsGrabbed(osdDisplayPort)) {
+        osdUpdateAlarms();
         osdDrawNextElement();
         displayHeartbeat(osdDisplayPort);
 #ifdef OSD_CALLS_CMS
@@ -939,9 +915,35 @@ void osdUpdate(timeUs_t currentTimeUs)
 #endif
     }
 #endif
+}
 
-    // draw part of screen 10 chars per idle to don't lock the main idle
-    displayDrawScreen(osdDisplayPort);
+/*
+ * Called periodically by the scheduler
+ */
+void osdUpdate(timeUs_t currentTimeUs)
+{
+    static uint32_t counter = 0;
+
+    // don't touch buffers if DMA transaction is in progress
+    if (displayIsTransferInProgress(osdDisplayPort)) {
+        return;
+    }
+
+#define DRAW_FREQ_DENOM     1
+#define STATS_FREQ_DENOM    20
+    counter++;
+
+    if ((counter % STATS_FREQ_DENOM) == 0) {
+        osdUpdateStats();
+    }
+
+    if ((counter & DRAW_FREQ_DENOM) == 0) {
+        // redraw values in buffer
+        osdRefresh(currentTimeUs);
+    } else {
+        // rest of time redraw screen 10 chars per idle so it doesn't lock the main idle
+        displayDrawScreen(osdDisplayPort);
+    }
 
 #ifdef CMS
     // do not allow ARM if we are in menu
