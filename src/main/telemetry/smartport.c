@@ -407,8 +407,10 @@ void handleSmartPortTelemetry(void)
                 // the Taranis seems to be able to fit 5 digits on the screen
                 // the Taranis seems to consider this number a signed 16 bit integer
 
-                if (isArmingDisabled())
+                if (!isArmingDisabled())
                     tmpi += 1;
+                else
+                    tmpi += 2;
                 if (ARMING_FLAG(ARMED))
                     tmpi += 4;
 
