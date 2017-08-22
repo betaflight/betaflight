@@ -285,7 +285,7 @@ void escSensorProcess(timeUs_t currentTimeUs)
 {
     const timeMs_t currentTimeMs = currentTimeUs / 1000;
 
-    if (!escSensorPort) {
+    if (!escSensorPort || !pwmAreMotorsEnabled()) {
         return;
     }
 

@@ -372,11 +372,9 @@ uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType)
     }
 }
 
-void pwmWriteDshotCommand(uint8_t index, uint8_t command)
+void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command)
 {
     if (isDshot && (command <= DSHOT_MAX_COMMAND)) {
-        motorDmaOutput_t *const motor = getMotorDmaOutput(index);
-
         unsigned repeats;
         switch (command) {
         case DSHOT_CMD_SPIN_DIRECTION_1:
@@ -394,8 +392,17 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t command)
         }
 
         for (; repeats; repeats--) {
-            motor->requestTelemetry = true;
-            pwmWriteDshotInt(index, command);
+            for (uint8_t i = 0; i < motorCount; i++) {
+                if ((i == index) || (index == ALL_MOTORS)) {
+                    motorDmaOutput_t *const motor = getMotorDmaOutput(i);
+                    motor->requestTelemetry = true;
+                    pwmWriteDshotInt(i, command);
+                } else {
+                    // Needed to avoid DMA errors
+                    pwmWriteDshotInt(i, DSHOT_CMD_MOTOR_STOP);
+                }
+            }
+
             pwmCompleteDshotMotorUpdate(0);
             delay(1);
         }

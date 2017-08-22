@@ -264,14 +264,10 @@ void tryArm(void)
         if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXDSHOTREVERSE)) {
             if (!IS_RC_MODE_ACTIVE(BOXDSHOTREVERSE)) {
                 reverseMotors = false;
-                for (unsigned index = 0; index < getMotorCount(); index++) {
-                    pwmWriteDshotCommand(index, DSHOT_CMD_SPIN_DIRECTION_NORMAL);
-                }
+                pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL);
             } else {
                 reverseMotors = true;
-                for (unsigned index = 0; index < getMotorCount(); index++) {
-                    pwmWriteDshotCommand(index, DSHOT_CMD_SPIN_DIRECTION_REVERSED);
-                }
+                pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_REVERSED);
             }
         }
 #endif
