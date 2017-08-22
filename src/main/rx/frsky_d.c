@@ -614,7 +614,7 @@ rx_spi_received_e frSkyDDataReceived(uint8_t *packet)
             }
         }
 
-        if (cmp32(currentPacketReceivedTime, lastPacketReceivedTime) > (t_out * SYNC)) {
+        if (cmpTimeUs(currentPacketReceivedTime, lastPacketReceivedTime) > (t_out * SYNC)) {
 #ifdef USE_FRSKY_RX_PA_LNA
             RX_enable();
 #endif
