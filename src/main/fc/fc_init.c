@@ -158,7 +158,6 @@ void processLoopback(void)
 #endif
 }
 
-
 #ifdef VTX_RTC6705
 bool canUpdateVTX(void)
 {
