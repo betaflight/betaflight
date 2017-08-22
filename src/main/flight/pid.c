@@ -415,21 +415,29 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                 errorRate = constrainf(errorRate, -crashLimitYaw, crashLimitYaw);
             } else {
                 // on roll and pitch axes calculate currentPidSetpoint and errorRate to level the aircraft to recover from crash
-                // errorAngle is deviation from horizontal
-                const float errorAngle =  -(attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f;
-                currentPidSetpoint = errorAngle * levelGain;
-                errorRate = currentPidSetpoint - gyroRate;
+                if (sensors(SENSOR_ACC)) {
+                    // errorAngle is deviation from horizontal
+                    const float errorAngle =  -(attitude.raw[axis] - angleTrim->raw[axis]) / 10.0f;
+                    currentPidSetpoint = errorAngle * levelGain;
+                    errorRate = currentPidSetpoint - gyroRate;
+                }
             }
             if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeLimitUs
                 || (motorMixRange < 1.0f
-                       && ABS(attitude.raw[FD_ROLL] - angleTrim->raw[FD_ROLL]) < crashRecoveryAngleDeciDegrees
-                       && ABS(attitude.raw[FD_PITCH] - angleTrim->raw[FD_PITCH]) < crashRecoveryAngleDeciDegrees
                        && ABS(gyro.gyroADCf[FD_ROLL]) < crashRecoveryRate
                        && ABS(gyro.gyroADCf[FD_PITCH]) < crashRecoveryRate
-                       && ABS(gyro.gyroADCf[FD_YAW]) < crashRecoveryRate)
-                       ) {
-                inCrashRecoveryMode = false;
-                BEEP_OFF;
+                       && ABS(gyro.gyroADCf[FD_YAW]) < crashRecoveryRate)) {
+                if (sensors(SENSOR_ACC)) {
+                    // check aircraft nearly level
+                    if (ABS(attitude.raw[FD_ROLL] - angleTrim->raw[FD_ROLL]) < crashRecoveryAngleDeciDegrees
+                       && ABS(attitude.raw[FD_PITCH] - angleTrim->raw[FD_PITCH]) < crashRecoveryAngleDeciDegrees) {
+                        inCrashRecoveryMode = false;
+                        BEEP_OFF;
+                    }
+                } else {
+                    inCrashRecoveryMode = false;
+                    BEEP_OFF;
+                }
             }
         }
 
@@ -469,7 +477,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             previousRateError[axis] = rD;
 
             // if crash recovery is on and accelerometer enabled then check for a crash
-            if (pidProfile->crash_recovery && sensors(SENSOR_ACC) && ARMING_FLAG(ARMED)) {
+            if (pidProfile->crash_recovery && ARMING_FLAG(ARMED)) {
                 if (motorMixRange >= 1.0f && inCrashRecoveryMode == false
                         && ABS(delta) > crashDtermThreshold
                         && ABS(errorRate) > crashGyroThreshold
