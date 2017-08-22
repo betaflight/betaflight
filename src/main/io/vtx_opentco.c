@@ -51,7 +51,7 @@
 char *vtxOpentcoSupportedPowerNames[OPENTCO_VTX_POWER_COUNT][4];
 
 const char * const vtxOpentcoPowerNames[OPENTCO_VTX_POWER_COUNT] = {
-    "---", "5  ", "10 ", "25 ", "100", "200", "500", "800"
+    "---", "5  ", "10 ", "25 ", "100", "200", "500", "600", "800"
 };
 
 static uint16_t vtxOpentcoSupportedPower;
