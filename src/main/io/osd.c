@@ -59,6 +59,7 @@
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
 #include "flight/imu.h"
@@ -318,10 +319,9 @@ static bool osdDrawSingleElement(uint8_t item)
         {
             char *p = "ACRO";
 
-#if 0
-            if (isAirmodeActive())
+            if (isAirmodeActive()) {
                 p = "AIR ";
-#endif
+            }
 
             if (FLIGHT_MODE(PASSTHRU_MODE))
                 p = "PASS";
