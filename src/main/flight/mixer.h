@@ -107,8 +107,9 @@ extern float motor[MAX_SUPPORTED_MOTORS];
 extern float motor_disarmed[MAX_SUPPORTED_MOTORS];
 struct rxConfig_s;
 
-uint8_t getMotorCount();
-float getMotorMixRange();
+uint8_t getMotorCount(void);
+float getMotorMixRange(void);
+bool areMotorsRunning(void);
 bool mixerIsOutputSaturated(int axis, float errorRate);
 
 void mixerLoadMix(int index, motorMixer_t *customMixers);

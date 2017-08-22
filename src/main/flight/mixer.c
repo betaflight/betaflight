@@ -316,14 +316,32 @@ static float disarmMotorOutput, deadbandMotor3dHigh, deadbandMotor3dLow;
 float motorOutputHigh, motorOutputLow;
 static float rcCommandThrottleRange, rcCommandThrottleRange3dLow, rcCommandThrottleRange3dHigh;
 
-uint8_t getMotorCount()
+uint8_t getMotorCount(void)
 {
     return motorCount;
 }
 
-float getMotorMixRange()
+float getMotorMixRange(void)
 {
     return motorMixRange;
+}
+
+bool areMotorsRunning(void)
+{
+    bool motorsRunning = false;
+    if (ARMING_FLAG(ARMED)) {
+        motorsRunning = true;
+    } else {
+        for (int i = 0; i < motorCount; i++) {
+            if (motor_disarmed[i] != disarmMotorOutput) {
+                motorsRunning = true;
+
+                break;
+            }
+        }
+    }
+
+    return motorsRunning;
 }
 
 bool mixerIsOutputSaturated(int axis, float errorRate)
