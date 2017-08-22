@@ -44,6 +44,7 @@ extern uint8_t __config_end;
 #include "common/maths.h"
 #include "common/printf.h"
 #include "common/typeconversion.h"
+#include "common/string_light.h"
 
 #include "config/config_eeprom.h"
 #include "config/feature.h"
@@ -1330,7 +1331,7 @@ static const char *processChannelRangeArgs(const char *ptr, channelRange_t *rang
     for (uint32_t argIndex = 0; argIndex < 2; argIndex++) {
         ptr = nextArg(ptr);
         if (ptr) {
-            int val = atoi(ptr);
+            int val = sl_atoi(ptr);
             val = CHANNEL_VALUE_TO_STEP(val);
             if (val >= MIN_MODE_RANGE_STEP && val <= MAX_MODE_RANGE_STEP) {
                 if (argIndex == 0) {
@@ -1451,13 +1452,13 @@ static void cliAux(char *cmdline)
         printAux(DUMP_MASTER, modeActivationConditions(0), NULL);
     } else {
         ptr = cmdline;
-        i = atoi(ptr++);
+        i = sl_atoi(ptr++);
         if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
             modeActivationCondition_t *mac = modeActivationConditionsMutable(i);
             uint8_t validArgumentCount = 0;
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                val = sl_atoi(ptr);
                 if (val >= 0 && val < CHECKBOX_ITEM_COUNT) {
                     mac->modeId = val;
                     validArgumentCount++;
@@ -1465,7 +1466,7 @@ static void cliAux(char *cmdline)
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                val = sl_atoi(ptr);
                 if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
                     mac->auxChannelIndex = val;
                     validArgumentCount++;
@@ -1532,7 +1533,7 @@ static void cliSerial(char *cmdline)
 
     const char *ptr = cmdline;
 
-    int val = atoi(ptr++);
+    int val = sl_atoi(ptr++);
     currentConfig = serialFindPortConfiguration(val);
     if (currentConfig) {
         portConfig.identifier = val;
@@ -1541,7 +1542,7 @@ static void cliSerial(char *cmdline)
 
     ptr = nextArg(ptr);
     if (ptr) {
-        val = atoi(ptr);
+        val = sl_atoi(ptr);
         portConfig.functionMask = val & 0xFFFF;
         validArgumentCount++;
     }
@@ -1552,7 +1553,7 @@ static void cliSerial(char *cmdline)
             break;
         }
 
-        val = atoi(ptr);
+        val = sl_atoi(ptr);
 
         uint8_t baudRateIndex = lookupBaudRateIndex(val);
         if (baudRates[baudRateIndex] != (uint32_t) val) {
@@ -1614,10 +1615,10 @@ static void cliSerialPassthrough(char *cmdline)
     while (tok != NULL) {
         switch (index) {
             case 0:
-                id = atoi(tok);
+                id = sl_atoi(tok);
                 break;
             case 1:
-                baud = atoi(tok);
+                baud = sl_atoi(tok);
                 break;
             case 2:
                 if (strstr(tok, "rx") || strstr(tok, "RX"))
@@ -1718,14 +1719,14 @@ static void cliAdjustmentRange(char *cmdline)
         printAdjustmentRange(DUMP_MASTER, adjustmentRanges(0), NULL);
     } else {
         ptr = cmdline;
-        i = atoi(ptr++);
+        i = sl_atoi(ptr++);
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
             adjustmentRange_t *ar = adjustmentRangesMutable(i);
             uint8_t validArgumentCount = 0;
 
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                val = sl_atoi(ptr);
                 if (val >= 0 && val < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT) {
                     ar->adjustmentIndex = val;
                     validArgumentCount++;
@@ -1733,7 +1734,7 @@ static void cliAdjustmentRange(char *cmdline)
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                val = sl_atoi(ptr);
                 if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
                     ar->auxChannelIndex = val;
                     validArgumentCount++;
@@ -1744,7 +1745,7 @@ static void cliAdjustmentRange(char *cmdline)
 
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                val = sl_atoi(ptr);
                 if (val >= 0 && val < ADJUSTMENT_FUNCTION_COUNT) {
                     ar->adjustmentFunction = val;
                     validArgumentCount++;
@@ -1752,7 +1753,7 @@ static void cliAdjustmentRange(char *cmdline)
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(ptr);
+                val = sl_atoi(ptr);
                 if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
                     ar->auxSwitchChannelIndex = val;
                     validArgumentCount++;
@@ -1816,12 +1817,12 @@ static void cliMotorMix(char *cmdline)
 
     if (isEmpty(cmdline)) {
         printMotorMix(DUMP_MASTER, customMotorMixer(0), NULL);
-    } else if (strncasecmp(cmdline, "reset", 5) == 0) {
+    } else if (sl_strncasecmp(cmdline, "reset", 5) == 0) {
         // erase custom mixer
         for (uint32_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
             customMotorMixerMutable(i)->throttle = 0.0f;
         }
-    } else if (strncasecmp(cmdline, "load", 4) == 0) {
+    } else if (sl_strncasecmp(cmdline, "load", 4) == 0) {
         ptr = nextArg(cmdline);
         if (ptr) {
             len = strlen(ptr);
@@ -1830,7 +1831,7 @@ static void cliMotorMix(char *cmdline)
                     cliPrint("Invalid name\r\n");
                     break;
                 }
-                if (strncasecmp(ptr, mixerNames[i], len) == 0) {
+                if (sl_strncasecmp(ptr, mixerNames[i], len) == 0) {
                     mixerLoadMix(i, customMotorMixerMutable(0));
                     cliPrintf("Loaded %s\r\n", mixerNames[i]);
                     cliMotorMix("");
@@ -1840,7 +1841,7 @@ static void cliMotorMix(char *cmdline)
         }
     } else {
         ptr = cmdline;
-        uint32_t i = atoi(ptr); // get motor number
+        uint32_t i = sl_atoi(ptr); // get motor number
         if (i < MAX_SUPPORTED_MOTORS) {
             ptr = nextArg(ptr);
             if (ptr) {
@@ -1903,23 +1904,23 @@ static void cliRxRange(char *cmdline)
 
     if (isEmpty(cmdline)) {
         printRxRange(DUMP_MASTER, rxChannelRangeConfigs(0), NULL);
-    } else if (strcasecmp(cmdline, "reset") == 0) {
+    } else if (sl_strcasecmp(cmdline, "reset") == 0) {
         resetAllRxChannelRangeConfigurations();
     } else {
         ptr = cmdline;
-        i = atoi(ptr);
+        i = sl_atoi(ptr);
         if (i >= 0 && i < NON_AUX_CHANNEL_COUNT) {
             int rangeMin, rangeMax;
 
             ptr = nextArg(ptr);
             if (ptr) {
-                rangeMin = atoi(ptr);
+                rangeMin = sl_atoi(ptr);
                 validArgumentCount++;
             }
 
             ptr = nextArg(ptr);
             if (ptr) {
-                rangeMax = atoi(ptr);
+                rangeMax = sl_atoi(ptr);
                 validArgumentCount++;
             }
 
@@ -1967,7 +1968,7 @@ static void cliLed(char *cmdline)
         printLed(DUMP_MASTER, ledStripConfig()->ledConfigs, NULL);
     } else {
         ptr = cmdline;
-        i = atoi(ptr);
+        i = sl_atoi(ptr);
         if (i < LED_MAX_STRIP_LENGTH) {
             ptr = nextArg(cmdline);
             if (!parseLedStripConfig(i, ptr)) {
@@ -2002,7 +2003,7 @@ static void cliColor(char *cmdline)
         printColor(DUMP_MASTER, ledStripConfig()->colors, NULL);
     } else {
         const char *ptr = cmdline;
-        const int i = atoi(ptr);
+        const int i = sl_atoi(ptr);
         if (i < LED_CONFIGURABLE_COLOR_COUNT) {
             ptr = nextArg(cmdline);
             if (!parseColor(i, ptr)) {
@@ -2052,7 +2053,7 @@ static void cliModeColor(char *cmdline)
         int argNo = 0;
         const char* ptr = strtok(cmdline, " ");
         while (ptr && argNo < ARGS_COUNT) {
-            args[argNo++] = atoi(ptr);
+            args[argNo++] = sl_atoi(ptr);
             ptr = strtok(NULL, " ");
         }
 
@@ -2155,7 +2156,7 @@ static void cliServo(char *cmdline)
                     return;
                 }
 
-                arguments[validArgumentCount++] = atoi(ptr);
+                arguments[validArgumentCount++] = sl_atoi(ptr);
 
                 do {
                     ptr++;
@@ -2244,13 +2245,13 @@ static void cliServoMix(char *cmdline)
 
     if (len == 0) {
         printServoMix(DUMP_MASTER, customServoMixers(0), NULL);
-    } else if (strncasecmp(cmdline, "reset", 5) == 0) {
+    } else if (sl_strncasecmp(cmdline, "reset", 5) == 0) {
         // erase custom mixer
         pgResetCopy(customServoMixersMutable(0), PG_SERVO_MIXER);
         for (uint32_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             servoParamsMutable(i)->reversedSources = 0;
         }
-    } else if (strncasecmp(cmdline, "load", 4) == 0) {
+    } else if (sl_strncasecmp(cmdline, "load", 4) == 0) {
         ptr = nextArg(cmdline);
         if (ptr) {
             len = strlen(ptr);
@@ -2259,7 +2260,7 @@ static void cliServoMix(char *cmdline)
                     cliPrintf("Invalid name\r\n");
                     break;
                 }
-                if (strncasecmp(ptr, mixerNames[i], len) == 0) {
+                if (sl_strncasecmp(ptr, mixerNames[i], len) == 0) {
                     servoMixerLoadMix(i);
                     cliPrintf("Loaded %s\r\n", mixerNames[i]);
                     cliServoMix("");
@@ -2267,7 +2268,7 @@ static void cliServoMix(char *cmdline)
                 }
             }
         }
-    } else if (strncasecmp(cmdline, "reverse", 7) == 0) {
+    } else if (sl_strncasecmp(cmdline, "reverse", 7) == 0) {
         enum {SERVO = 0, INPUT, REVERSE, ARGS_COUNT};
         char *ptr = strchr(cmdline, ' ');
 
@@ -2289,7 +2290,7 @@ static void cliServoMix(char *cmdline)
 
         ptr = strtok(ptr, " ");
         while (ptr != NULL && check < ARGS_COUNT - 1) {
-            args[check++] = atoi(ptr);
+            args[check++] = sl_atoi(ptr);
             ptr = strtok(NULL, " ");
         }
 
@@ -2313,7 +2314,7 @@ static void cliServoMix(char *cmdline)
         enum {RULE = 0, TARGET, INPUT, RATE, SPEED, ARGS_COUNT};
         ptr = strtok(cmdline, " ");
         while (ptr != NULL && check < ARGS_COUNT) {
-            args[check++] = atoi(ptr);
+            args[check++] = sl_atoi(ptr);
             ptr = strtok(NULL, " ");
         }
 
@@ -2442,7 +2443,7 @@ static void cliFlashErase(char *cmdline)
 
 static void cliFlashWrite(char *cmdline)
 {
-    uint32_t address = atoi(cmdline);
+    uint32_t address = sl_atoi(cmdline);
     char *text = strchr(cmdline, ' ');
 
     if (!text) {
@@ -2458,7 +2459,7 @@ static void cliFlashWrite(char *cmdline)
 
 static void cliFlashRead(char *cmdline)
 {
-    uint32_t address = atoi(cmdline);
+    uint32_t address = sl_atoi(cmdline);
     uint32_t length;
 
     uint8_t buffer[32];
@@ -2468,7 +2469,7 @@ static void cliFlashRead(char *cmdline)
     if (!nextArg) {
         cliShowParseError();
     } else {
-        length = atoi(nextArg);
+        length = sl_atoi(nextArg);
 
         cliPrintf("Reading %u bytes at %u:\r\n", length, address);
 
@@ -2539,7 +2540,7 @@ static void cliFeature(char *cmdline)
                 cliPrintf("%s ", featureNames[i]);
         }
         cliPrint("\r\n");
-    } else if (strncasecmp(cmdline, "list", len) == 0) {
+    } else if (sl_strncasecmp(cmdline, "list", len) == 0) {
         cliPrint("Available: ");
         for (uint32_t i = 0; ; i++) {
             if (featureNames[i] == NULL)
@@ -2565,7 +2566,7 @@ static void cliFeature(char *cmdline)
                 break;
             }
 
-            if (strncasecmp(cmdline, featureNames[i], len) == 0) {
+            if (sl_strncasecmp(cmdline, featureNames[i], len) == 0) {
 
                 mask = 1 << i;
 #ifndef GPS
@@ -2620,7 +2621,7 @@ static void cliBeeper(char *cmdline)
                 cliPrintf("  %s", beeperNameForTableIndex(i));
         }
         cliPrint("\r\n");
-    } else if (strncasecmp(cmdline, "list", len) == 0) {
+    } else if (sl_strncasecmp(cmdline, "list", len) == 0) {
         cliPrint("Available:");
         for (uint32_t i = 0; i < beeperCount; i++)
             cliPrintf("  %s", beeperNameForTableIndex(i));
@@ -2639,7 +2640,7 @@ static void cliBeeper(char *cmdline)
                 cliPrint("Invalid name\r\n");
                 break;
             }
-            if (strncasecmp(cmdline, beeperNameForTableIndex(i), len) == 0) {
+            if (sl_strncasecmp(cmdline, beeperNameForTableIndex(i), len) == 0) {
                 if (remove) { // beeper off
                     if (i == BEEPER_ALL-1)
                         beeperOffSetAll(beeperCount-2);
@@ -2702,7 +2703,7 @@ static void cliMap(char *cmdline)
     if (len == 8) {
         // uppercase it
         for (uint32_t i = 0; i < 8; i++)
-            cmdline[i] = toupper((unsigned char)cmdline[i]);
+            cmdline[i] = sl_toupper((unsigned char)cmdline[i]);
         for (uint32_t i = 0; i < 8; i++) {
             if (strchr(rcChannelLetters, cmdline[i]) && !strchr(cmdline + i + 1, cmdline[i]))
                 continue;
@@ -2721,8 +2722,8 @@ static void cliMap(char *cmdline)
 
 static const char *checkCommand(const char *cmdLine, const char *command)
 {
-    if (!strncasecmp(cmdLine, command, strlen(command))   // command names match
-        && !isalnum((unsigned)cmdLine[strlen(command)])) {   // next characted in bufffer is not alphanumeric (command is correctly terminated)
+    if (!sl_strncasecmp(cmdLine, command, strlen(command))   // command names match
+        && !sl_isalnum((unsigned)cmdLine[strlen(command)])) {   // next characted in bufffer is not alphanumeric (command is correctly terminated)
         return cmdLine + strlen(command) + 1;
     } else {
         return 0;
@@ -2818,7 +2819,7 @@ static void cliMixer(char *cmdline)
     if (len == 0) {
         cliPrintf("Mixer: %s\r\n", mixerNames[mixerConfigMutable()->mixerMode - 1]);
         return;
-    } else if (strncasecmp(cmdline, "list", len) == 0) {
+    } else if (sl_strncasecmp(cmdline, "list", len) == 0) {
         cliPrint("Available mixers: ");
         for (uint32_t i = 0; ; i++) {
             if (mixerNames[i] == NULL)
@@ -2834,7 +2835,7 @@ static void cliMixer(char *cmdline)
             cliPrint("Invalid name\r\n");
             return;
         }
-        if (strncasecmp(cmdline, mixerNames[i], len) == 0) {
+        if (sl_strncasecmp(cmdline, mixerNames[i], len) == 0) {
             mixerConfigMutable()->mixerMode = i + 1;
             break;
         }
@@ -2861,10 +2862,10 @@ static void cliMotor(char *cmdline)
     while (pch != NULL) {
         switch (index) {
             case 0:
-                motor_index = atoi(pch);
+                motor_index = sl_atoi(pch);
                 break;
             case 1:
-                motor_value = atoi(pch);
+                motor_value = sl_atoi(pch);
                 break;
         }
         index++;
@@ -2928,7 +2929,7 @@ static void cliPlaySound(char *cmdline)
             }
         }
     } else {       //index value was given
-        i = atoi(cmdline);
+        i = sl_atoi(cmdline);
         if ((name=beeperNameForTableIndex(i)) == NULL) {
             cliPrintf("No sound for index %d\r\n", i);
             return;
@@ -2948,7 +2949,7 @@ static void cliProfile(char *cmdline)
         cliPrintf("profile %d\r\n", getConfigProfile() + 1);
         return;
     } else {
-        const int i = atoi(cmdline) - 1;
+        const int i = sl_atoi(cmdline) - 1;
         if (i >= 0 && i < MAX_PROFILE_COUNT) {
             setConfigProfileAndWriteEEPROM(i);
             cliProfile("");
@@ -3050,7 +3051,7 @@ static void cliSet(char *cmdline)
         for (uint32_t i = 0; i < ARRAYLEN(valueTable); i++) {
             val = &valueTable[i];
             // ensure exact match when setting to prevent setting variables with shorter names
-            if (strncasecmp(cmdline, valueTable[i].name, strlen(valueTable[i].name)) == 0 && variableNameLength == strlen(valueTable[i].name)) {
+            if (sl_strncasecmp(cmdline, valueTable[i].name, strlen(valueTable[i].name)) == 0 && variableNameLength == strlen(valueTable[i].name)) {
 
                 bool changeValue = false;
                 int_float_value_t tmp = {0};
@@ -3063,7 +3064,7 @@ static void cliSet(char *cmdline)
                                 uint32_t uvalue = 0;
                                 float valuef = 0;
 
-                                value = atoi(eqptr);
+                                value = sl_atoi(eqptr);
                                 valuef = fastA2F(eqptr);
                                 uvalue = fastA2UL(eqptr);
                                 // note: compare float values
@@ -3086,7 +3087,7 @@ static void cliSet(char *cmdline)
                             const lookupTableEntry_t *tableEntry = &lookupTables[valueTable[i].config.lookup.tableIndex];
                             bool matched = false;
                             for (uint32_t tableValueIndex = 0; tableValueIndex < tableEntry->valueCount && !matched; tableValueIndex++) {
-                                matched = strcasecmp(tableEntry->values[tableValueIndex], eqptr) == 0;
+                                matched = sl_strcasecmp(tableEntry->values[tableValueIndex], eqptr) == 0;
 
                                 if (matched) {
                                     tmp.int_value = tableValueIndex;
@@ -3599,7 +3600,7 @@ void cliProcess(void)
             const clicmd_t *cmd, *pstart = NULL, *pend = NULL;
             uint32_t i = bufferIndex;
             for (cmd = cmdTable; cmd < cmdTable + ARRAYLEN(cmdTable); cmd++) {
-                if (bufferIndex && (strncasecmp(cliBuffer, cmd->name, bufferIndex) != 0))
+                if (bufferIndex && (sl_strncasecmp(cliBuffer, cmd->name, bufferIndex) != 0))
                     continue;
                 if (!pstart)
                     pstart = cmd;
@@ -3659,8 +3660,8 @@ void cliProcess(void)
 
                 const clicmd_t *cmd;
                 for (cmd = cmdTable; cmd < cmdTable + ARRAYLEN(cmdTable); cmd++) {
-                    if (!strncasecmp(cliBuffer, cmd->name, strlen(cmd->name))   // command names match
-                       && !isalnum((unsigned)cliBuffer[strlen(cmd->name)]))    // next characted in bufffer is not alphanumeric (command is correctly terminated)
+                    if (!sl_strncasecmp(cliBuffer, cmd->name, strlen(cmd->name))   // command names match
+                       && !sl_isalnum((unsigned)cliBuffer[strlen(cmd->name)]))    // next characted in bufffer is not alphanumeric (command is correctly terminated)
                         break;
                 }
                 if (cmd < cmdTable + ARRAYLEN(cmdTable))

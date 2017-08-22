@@ -14,20 +14,16 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 #pragma once
 
-#define FTOA_BUFFER_SIZE 13
+int sl_isalnum(int c);
+int sl_isdigit(int c);
+int sl_isupper(int c);
+int sl_islower(int c);
+int sl_tolower(int c);
+int sl_toupper(int c);
 
-void uli2a(unsigned long int num, unsigned int base, int uc, char *bf);
-void li2a(long num, char *bf);
-void ui2a(unsigned int num, unsigned int base, int uc, char *bf);
-void i2a(int num, char *bf);
-int a2d(char ch);
-char a2i(char ch, const char **src, int base, int *nump);
-char *ftoa(float x, char *floatString);
-float fastA2F(const char *p);
-unsigned long int fastA2UL(const char *p);
-
-#ifndef HAVE_ITOA_FUNCTION
-char *itoa(int i, char *a, int r);
-#endif
+int sl_strcasecmp(const char * s1, const char * s2);
+int sl_strncasecmp(const char * s1, const char * s2, int n);
+int sl_atoi(const char * s);
