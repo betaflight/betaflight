@@ -53,19 +53,6 @@ int sl_toupper(int c)
 int sl_strcasecmp(const char * s1, const char * s2)
 {
     return sl_strncasecmp(s1, s2, INT_MAX);
-    // const unsigned char * ucs1 = (const unsigned char *) s1;
-    // const unsigned char * ucs2 = (const unsigned char *) s2;
-
-    // int d = 0;
-
-    // for ( ; ; ) {
-        // const int c1 = sl_tolower(*ucs1++);
-        // const int c2 = sl_tolower(*ucs2++);
-        // if (((d = c1 - c2) != 0) || (c2 == '\0')) {
-            // break;
-        // }
-    // }
-    // return d;
 }
 
 int sl_strncasecmp(const char * s1, const char * s2, int n)
@@ -84,19 +71,4 @@ int sl_strncasecmp(const char * s1, const char * s2, int n)
     }
 
     return d;
-}
-
-int sl_atoi(const char * s)
-{
-    int num = 0;
-    int digit;
-
-    while ((digit = a2d(*s)) >= 0) {
-        if (digit > 10)
-            break;
-        num = num * 10 + digit;
-        s++;
-    }
-
-    return num;
 }

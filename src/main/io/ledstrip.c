@@ -285,10 +285,10 @@ bool parseLedStripConfig(int ledIndex, const char *config)
         }
         switch (parseState) {
             case X_COORDINATE:
-                x = sl_atoi(chunk);
+                x = fastA2I(chunk);
                 break;
             case Y_COORDINATE:
-                y = sl_atoi(chunk);
+                y = fastA2I(chunk);
                 break;
             case DIRECTIONS:
                 for (char *ch = chunk; *ch; ch++) {
@@ -318,7 +318,7 @@ bool parseLedStripConfig(int ledIndex, const char *config)
                 }
                 break;
             case RING_COLORS:
-                color = sl_atoi(chunk);
+                color = fastA2I(chunk);
                 if (color >= LED_CONFIGURABLE_COLOR_COUNT)
                     color = 0;
                 break;
@@ -994,7 +994,7 @@ bool parseColor(int index, const char *colorConfig)
         [HSV_VALUE] = HSV_VALUE_MAX,
     };
     for (int componentIndex = 0; result && componentIndex < HSV_COLOR_COMPONENT_COUNT; componentIndex++) {
-        int val = sl_atoi(remainingCharacters);
+        int val = fastA2I(remainingCharacters);
         if (val > hsv_limit[componentIndex]) {
             result = false;
             break;

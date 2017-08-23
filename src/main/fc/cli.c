@@ -1331,7 +1331,7 @@ static const char *processChannelRangeArgs(const char *ptr, channelRange_t *rang
     for (uint32_t argIndex = 0; argIndex < 2; argIndex++) {
         ptr = nextArg(ptr);
         if (ptr) {
-            int val = sl_atoi(ptr);
+            int val = fastA2I(ptr);
             val = CHANNEL_VALUE_TO_STEP(val);
             if (val >= MIN_MODE_RANGE_STEP && val <= MAX_MODE_RANGE_STEP) {
                 if (argIndex == 0) {
@@ -1452,13 +1452,13 @@ static void cliAux(char *cmdline)
         printAux(DUMP_MASTER, modeActivationConditions(0), NULL);
     } else {
         ptr = cmdline;
-        i = sl_atoi(ptr++);
+        i = fastA2I(ptr++);
         if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
             modeActivationCondition_t *mac = modeActivationConditionsMutable(i);
             uint8_t validArgumentCount = 0;
             ptr = nextArg(ptr);
             if (ptr) {
-                val = sl_atoi(ptr);
+                val = fastA2I(ptr);
                 if (val >= 0 && val < CHECKBOX_ITEM_COUNT) {
                     mac->modeId = val;
                     validArgumentCount++;
@@ -1466,7 +1466,7 @@ static void cliAux(char *cmdline)
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = sl_atoi(ptr);
+                val = fastA2I(ptr);
                 if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
                     mac->auxChannelIndex = val;
                     validArgumentCount++;
@@ -1533,7 +1533,7 @@ static void cliSerial(char *cmdline)
 
     const char *ptr = cmdline;
 
-    int val = sl_atoi(ptr++);
+    int val = fastA2I(ptr++);
     currentConfig = serialFindPortConfiguration(val);
     if (currentConfig) {
         portConfig.identifier = val;
@@ -1542,7 +1542,7 @@ static void cliSerial(char *cmdline)
 
     ptr = nextArg(ptr);
     if (ptr) {
-        val = sl_atoi(ptr);
+        val = fastA2I(ptr);
         portConfig.functionMask = val & 0xFFFF;
         validArgumentCount++;
     }
@@ -1553,7 +1553,7 @@ static void cliSerial(char *cmdline)
             break;
         }
 
-        val = sl_atoi(ptr);
+        val = fastA2I(ptr);
 
         uint8_t baudRateIndex = lookupBaudRateIndex(val);
         if (baudRates[baudRateIndex] != (uint32_t) val) {
@@ -1615,10 +1615,10 @@ static void cliSerialPassthrough(char *cmdline)
     while (tok != NULL) {
         switch (index) {
             case 0:
-                id = sl_atoi(tok);
+                id = fastA2I(tok);
                 break;
             case 1:
-                baud = sl_atoi(tok);
+                baud = fastA2I(tok);
                 break;
             case 2:
                 if (strstr(tok, "rx") || strstr(tok, "RX"))
@@ -1719,14 +1719,14 @@ static void cliAdjustmentRange(char *cmdline)
         printAdjustmentRange(DUMP_MASTER, adjustmentRanges(0), NULL);
     } else {
         ptr = cmdline;
-        i = sl_atoi(ptr++);
+        i = fastA2I(ptr++);
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
             adjustmentRange_t *ar = adjustmentRangesMutable(i);
             uint8_t validArgumentCount = 0;
 
             ptr = nextArg(ptr);
             if (ptr) {
-                val = sl_atoi(ptr);
+                val = fastA2I(ptr);
                 if (val >= 0 && val < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT) {
                     ar->adjustmentIndex = val;
                     validArgumentCount++;
@@ -1734,7 +1734,7 @@ static void cliAdjustmentRange(char *cmdline)
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = sl_atoi(ptr);
+                val = fastA2I(ptr);
                 if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
                     ar->auxChannelIndex = val;
                     validArgumentCount++;
@@ -1745,7 +1745,7 @@ static void cliAdjustmentRange(char *cmdline)
 
             ptr = nextArg(ptr);
             if (ptr) {
-                val = sl_atoi(ptr);
+                val = fastA2I(ptr);
                 if (val >= 0 && val < ADJUSTMENT_FUNCTION_COUNT) {
                     ar->adjustmentFunction = val;
                     validArgumentCount++;
@@ -1753,7 +1753,7 @@ static void cliAdjustmentRange(char *cmdline)
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                val = sl_atoi(ptr);
+                val = fastA2I(ptr);
                 if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
                     ar->auxSwitchChannelIndex = val;
                     validArgumentCount++;
@@ -1841,7 +1841,7 @@ static void cliMotorMix(char *cmdline)
         }
     } else {
         ptr = cmdline;
-        uint32_t i = sl_atoi(ptr); // get motor number
+        uint32_t i = fastA2I(ptr); // get motor number
         if (i < MAX_SUPPORTED_MOTORS) {
             ptr = nextArg(ptr);
             if (ptr) {
@@ -1908,19 +1908,19 @@ static void cliRxRange(char *cmdline)
         resetAllRxChannelRangeConfigurations();
     } else {
         ptr = cmdline;
-        i = sl_atoi(ptr);
+        i = fastA2I(ptr);
         if (i >= 0 && i < NON_AUX_CHANNEL_COUNT) {
             int rangeMin, rangeMax;
 
             ptr = nextArg(ptr);
             if (ptr) {
-                rangeMin = sl_atoi(ptr);
+                rangeMin = fastA2I(ptr);
                 validArgumentCount++;
             }
 
             ptr = nextArg(ptr);
             if (ptr) {
-                rangeMax = sl_atoi(ptr);
+                rangeMax = fastA2I(ptr);
                 validArgumentCount++;
             }
 
@@ -1968,7 +1968,7 @@ static void cliLed(char *cmdline)
         printLed(DUMP_MASTER, ledStripConfig()->ledConfigs, NULL);
     } else {
         ptr = cmdline;
-        i = sl_atoi(ptr);
+        i = fastA2I(ptr);
         if (i < LED_MAX_STRIP_LENGTH) {
             ptr = nextArg(cmdline);
             if (!parseLedStripConfig(i, ptr)) {
@@ -2003,7 +2003,7 @@ static void cliColor(char *cmdline)
         printColor(DUMP_MASTER, ledStripConfig()->colors, NULL);
     } else {
         const char *ptr = cmdline;
-        const int i = sl_atoi(ptr);
+        const int i = fastA2I(ptr);
         if (i < LED_CONFIGURABLE_COLOR_COUNT) {
             ptr = nextArg(cmdline);
             if (!parseColor(i, ptr)) {
@@ -2053,7 +2053,7 @@ static void cliModeColor(char *cmdline)
         int argNo = 0;
         const char* ptr = strtok(cmdline, " ");
         while (ptr && argNo < ARGS_COUNT) {
-            args[argNo++] = sl_atoi(ptr);
+            args[argNo++] = fastA2I(ptr);
             ptr = strtok(NULL, " ");
         }
 
@@ -2156,7 +2156,7 @@ static void cliServo(char *cmdline)
                     return;
                 }
 
-                arguments[validArgumentCount++] = sl_atoi(ptr);
+                arguments[validArgumentCount++] = fastA2I(ptr);
 
                 do {
                     ptr++;
@@ -2290,7 +2290,7 @@ static void cliServoMix(char *cmdline)
 
         ptr = strtok(ptr, " ");
         while (ptr != NULL && check < ARGS_COUNT - 1) {
-            args[check++] = sl_atoi(ptr);
+            args[check++] = fastA2I(ptr);
             ptr = strtok(NULL, " ");
         }
 
@@ -2314,7 +2314,7 @@ static void cliServoMix(char *cmdline)
         enum {RULE = 0, TARGET, INPUT, RATE, SPEED, ARGS_COUNT};
         ptr = strtok(cmdline, " ");
         while (ptr != NULL && check < ARGS_COUNT) {
-            args[check++] = sl_atoi(ptr);
+            args[check++] = fastA2I(ptr);
             ptr = strtok(NULL, " ");
         }
 
@@ -2443,7 +2443,7 @@ static void cliFlashErase(char *cmdline)
 
 static void cliFlashWrite(char *cmdline)
 {
-    uint32_t address = sl_atoi(cmdline);
+    uint32_t address = fastA2I(cmdline);
     char *text = strchr(cmdline, ' ');
 
     if (!text) {
@@ -2459,7 +2459,7 @@ static void cliFlashWrite(char *cmdline)
 
 static void cliFlashRead(char *cmdline)
 {
-    uint32_t address = sl_atoi(cmdline);
+    uint32_t address = fastA2I(cmdline);
     uint32_t length;
 
     uint8_t buffer[32];
@@ -2469,7 +2469,7 @@ static void cliFlashRead(char *cmdline)
     if (!nextArg) {
         cliShowParseError();
     } else {
-        length = sl_atoi(nextArg);
+        length = fastA2I(nextArg);
 
         cliPrintf("Reading %u bytes at %u:\r\n", length, address);
 
@@ -2862,10 +2862,10 @@ static void cliMotor(char *cmdline)
     while (pch != NULL) {
         switch (index) {
             case 0:
-                motor_index = sl_atoi(pch);
+                motor_index = fastA2I(pch);
                 break;
             case 1:
-                motor_value = sl_atoi(pch);
+                motor_value = fastA2I(pch);
                 break;
         }
         index++;
@@ -2929,7 +2929,7 @@ static void cliPlaySound(char *cmdline)
             }
         }
     } else {       //index value was given
-        i = sl_atoi(cmdline);
+        i = fastA2I(cmdline);
         if ((name=beeperNameForTableIndex(i)) == NULL) {
             cliPrintf("No sound for index %d\r\n", i);
             return;
@@ -2949,7 +2949,7 @@ static void cliProfile(char *cmdline)
         cliPrintf("profile %d\r\n", getConfigProfile() + 1);
         return;
     } else {
-        const int i = sl_atoi(cmdline) - 1;
+        const int i = fastA2I(cmdline) - 1;
         if (i >= 0 && i < MAX_PROFILE_COUNT) {
             setConfigProfileAndWriteEEPROM(i);
             cliProfile("");
@@ -3064,7 +3064,7 @@ static void cliSet(char *cmdline)
                                 uint32_t uvalue = 0;
                                 float valuef = 0;
 
-                                value = sl_atoi(eqptr);
+                                value = fastA2I(eqptr);
                                 valuef = fastA2F(eqptr);
                                 uvalue = fastA2UL(eqptr);
                                 // note: compare float values
