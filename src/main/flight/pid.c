@@ -115,7 +115,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .crash_recovery = PID_CRASH_RECOVERY_OFF, // off by default
         .horizon_tilt_effect = 75,
         .horizon_tilt_expert_mode = false,
-        .crash_limit_yaw = 200
+        .crash_limit_yaw = 200,
+        .itermLimit = 100
     );
 }
 
@@ -242,7 +243,7 @@ static float maxVelocity[3];
 static float relaxFactor;
 static float dtermSetpointWeight;
 static float levelGain, horizonGain, horizonTransition, horizonCutoffDegrees, horizonFactorRatio;
-static float ITermWindupPoint, ITermWindupPointInv;
+static float ITermWindupPointInv;
 static uint8_t horizonTiltExpertMode;
 static timeDelta_t crashTimeLimitUs;
 static timeDelta_t crashTimeDelayUs;
@@ -252,6 +253,7 @@ static float crashDtermThreshold;
 static float crashGyroThreshold;
 static float crashSetpointThreshold;
 static float crashLimitYaw;
+static float itermLimit;
 
 void pidInitConfig(const pidProfile_t *pidProfile)
 {
@@ -270,7 +272,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     horizonFactorRatio = (100 - pidProfile->horizon_tilt_effect) * 0.01f;
     maxVelocity[FD_ROLL] = maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 100 * dT;
     maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 100 * dT;
-    ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
+    const float ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
     ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
     crashTimeLimitUs = pidProfile->crash_time * 1000;
     crashTimeDelayUs = pidProfile->crash_delay * 1000;
@@ -280,6 +282,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     crashDtermThreshold = pidProfile->crash_dthreshold;
     crashSetpointThreshold = pidProfile->crash_setpoint_threshold;
     crashLimitYaw = pidProfile->crash_limit_yaw;
+    itermLimit = pidProfile->itermLimit;
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -456,7 +459,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
         // -----calculate I component
         const float ITerm = axisPID_I[axis];
-        const float ITermNew = ITerm + Ki[axis] * errorRate * dT * dynKi * itermAccelerator;
+        const float ITermNew = constrainf(ITerm + Ki[axis] * errorRate * dT * dynKi * itermAccelerator, -itermLimit, itermLimit);
         const bool outputSaturated = mixerIsOutputSaturated(axis, errorRate);
         if (outputSaturated == false || ABS(ITermNew) < ABS(ITerm)) {
             // Only increase ITerm if output is not saturated

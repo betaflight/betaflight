@@ -106,6 +106,7 @@ typedef struct pidProfile_s {
     uint8_t crash_recovery_rate;            // degree/second
     pidCrashRecovery_e crash_recovery;      // off, on, on and beeps when it is in crash recovery mode
     uint16_t crash_limit_yaw;               // limits yaw errorRate, so crashes don't cause huge throttle increase
+    uint16_t itermLimit;
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles);
