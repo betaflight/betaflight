@@ -302,14 +302,16 @@ bool spiBusTransfer(const busDevice_t *bus, const uint8_t *txData, uint8_t *rxDa
 
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
 {
-    // SPI2 and SPI3 are always on APB1/AHB1 which PCLK is half that of APB2/AHB2.
+#if !(defined(STM32F1) || defined(STM32F3))
+    // SPI2 and SPI3 are on APB1/AHB1 which PCLK is half that of APB2/AHB2.
 
     if (instance == SPI2 || instance == SPI3) {
         divisor /= 2; // Safe for divisor == 0 or 1
     }
+#endif
 
     LL_SPI_Disable(instance);
-    LL_SPI_SetBaudRatePrescaler(instance, (ffs(divisor | 0x100) - 2) << SPI_CR1_BR_Pos);
+    LL_SPI_SetBaudRatePrescaler(instance, divisor ? (ffs(divisor | 0x100) - 2) << SPI_CR1_BR_Pos : 0);
     LL_SPI_Enable(instance);
 }
 
