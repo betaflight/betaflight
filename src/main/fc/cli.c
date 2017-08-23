@@ -2339,24 +2339,18 @@ void printEscInfo(const uint8_t *escInfoBytes, uint8_t bytesRead)
     }
 }
 
-static void writeDshotCommand(uint8_t escIndex, uint8_t command)
+static void executeEscInfoCommand(uint8_t escIndex)
 {
     uint8_t escInfoBuffer[ESC_INFO_V2_EXPECTED_FRAME_SIZE];
-    if (command == DSHOT_CMD_ESC_INFO) {
-        cliPrintLinef("Info for ESC %d:", escIndex);
+    cliPrintLinef("Info for ESC %d:", escIndex);
 
-        delay(10); // Wait for potential ESC telemetry transmission to finish
+    startEscDataRead(escInfoBuffer, ESC_INFO_V2_EXPECTED_FRAME_SIZE);
 
-        startEscDataRead(escInfoBuffer, ESC_INFO_V2_EXPECTED_FRAME_SIZE);
-    }
+    pwmWriteDshotCommand(escIndex, getMotorCount(), DSHOT_CMD_ESC_INFO);
 
-    pwmWriteDshotCommand(escIndex, command);
+    delay(5);
 
-    if (command == DSHOT_CMD_ESC_INFO) {
-        delay(10);
-
-        printEscInfo(escInfoBuffer, getNumberEscBytesRead());
-    }
+    printEscInfo(escInfoBuffer, getNumberEscBytesRead());
 }
 
 static void cliDshotProg(char *cmdline)
@@ -2385,18 +2379,26 @@ static void cliDshotProg(char *cmdline)
 
                 int command = atoi(pch);
                 if (command >= 0 && command < DSHOT_MIN_THROTTLE) {
-                    if (escIndex == ALL_MOTORS) {
-                        for (unsigned i = 0; i < getMotorCount(); i++) {
-                            writeDshotCommand(i, command);
-                        }
+                    if (command == DSHOT_CMD_ESC_INFO) {
+                        delay(5); // Wait for potential ESC telemetry transmission to finish
+                    }
+
+                    if (command != DSHOT_CMD_ESC_INFO) {
+                        pwmWriteDshotCommand(escIndex, getMotorCount(), command);
                     } else {
-                        writeDshotCommand(escIndex, command);
+                        if (escIndex != ALL_MOTORS) {
+                            executeEscInfoCommand(escIndex);
+                        } else {
+                            for (uint8_t i = 0; i < getMotorCount(); i++) {
+                                executeEscInfoCommand(i);
+                            }
+                        }
                     }
 
                     cliPrintLinef("Command %d written.", command);
 
                     if (command <= 5) {
-                        delay(10); // wait for sound output to finish
+                        delay(20); // wait for sound output to finish
                     }
                 } else {
                     cliPrintLinef("Invalid command, range 1 to %d.", DSHOT_MIN_THROTTLE - 1);

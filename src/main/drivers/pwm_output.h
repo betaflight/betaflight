@@ -24,6 +24,8 @@
 #include "drivers/timer.h"
 
 
+#define ALL_MOTORS 255
+
 #define DSHOT_MAX_COMMAND 47
 
 /*
@@ -168,7 +170,7 @@ uint16_t prepareDshotPacket(motorDmaOutput_t *const motor, uint16_t value);
 extern loadDmaBufferFn *loadDmaBuffer;
 
 uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType);
-void pwmWriteDshotCommand(uint8_t index, uint8_t command);
+void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command);
 void pwmWriteDshotInt(uint8_t index, uint16_t value);
 void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output);
 void pwmCompleteDshotMotorUpdate(uint8_t motorCount);
