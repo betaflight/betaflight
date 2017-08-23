@@ -90,7 +90,7 @@ void targetConfiguration(void)
         rxConfigMutable()->serialrx_provider = SERIALRX_SPEKTRUM2048;
         rxConfigMutable()->spektrum_sat_bind = 5;
         rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
-        voltageSensorADCConfigMutable(VOLTAGE_SENSOR_ADC_VBAT)->vbatscale = VBAT_SCALE;
+        parseRcChannels("TAER1234", rxConfigMutable());
     } else {
         rxConfigMutable()->serialrx_provider = SERIALRX_SBUS;
         rxConfigMutable()->sbus_inversion = 0;
@@ -99,6 +99,7 @@ void targetConfiguration(void)
         featureSet(FEATURE_TELEMETRY);
         beeperDevConfigMutable()->isOpenDrain = false;
         beeperDevConfigMutable()->isInverted = true;
+        parseRcChannels("AETR1234", rxConfigMutable());
     }
 
     if (hardwareMotorType == MOTOR_BRUSHED) {
