@@ -66,6 +66,7 @@ void pwmWriteDshotInt(uint8_t index, uint16_t value)
 
     uint8_t bufferSize = loadDmaBuffer(motor, packet);
 
+    motor->timer->timerDmaSources |= motor->timerDmaSource;
     DMA_SetCurrDataCounter(motor->timerHardware->dmaRef, bufferSize);
     DMA_Cmd(motor->timerHardware->dmaRef, ENABLE);
 }
@@ -77,6 +78,7 @@ void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
     for (int i = 0; i < dmaMotorTimerCount; i++) {
         TIM_SetCounter(dmaMotorTimers[i].timer, 0);
         TIM_DMACmd(dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources, ENABLE);
+        dmaMotorTimers[i].timerDmaSources = 0;
     }
 }
 
@@ -138,7 +140,8 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     timerOCInit(timer, timerHardware->channel, &TIM_OCInitStructure);
     timerOCPreloadConfig(timer, timerHardware->channel, TIM_OCPreload_Enable);
     motor->timerDmaSource = timerDmaSource(timerHardware->channel);
-    dmaMotorTimers[timerIndex].timerDmaSources |= motor->timerDmaSource;
+    motor->timer = &dmaMotorTimers[timerIndex];
+    motor->timer->timerDmaSources &= ~motor->timerDmaSource;
 
     TIM_CCxCmd(timer, timerHardware->channel, TIM_CCx_Enable);
 

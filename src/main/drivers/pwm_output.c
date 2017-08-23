@@ -397,9 +397,6 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command)
                     motorDmaOutput_t *const motor = getMotorDmaOutput(i);
                     motor->requestTelemetry = true;
                     pwmWriteDshotInt(i, command);
-                } else {
-                    // Needed to avoid DMA errors
-                    pwmWriteDshotInt(i, DSHOT_CMD_MOTOR_STOP);
                 }
             }
 
