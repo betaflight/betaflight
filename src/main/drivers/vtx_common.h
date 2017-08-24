@@ -17,6 +17,8 @@
 
 /* Created by jflyper */
 
+#pragma once
+
 typedef enum {
     VTXDEV_UNSUPPORTED = 0, // reserved for MSP
     VTXDEV_RTC6705    = 1,

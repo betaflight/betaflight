@@ -15,6 +15,8 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 bool bitArrayGet(const void *array, unsigned bit);
 void bitArraySet(void *array, unsigned bit);
 void bitArrayClr(void *array, unsigned bit);

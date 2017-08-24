@@ -15,6 +15,8 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 // FC configuration (defined by cleanflight v1)
 #define PG_FAILSAFE_CONFIG 1 // struct OK
 #define PG_BOARD_ALIGNMENT 2 // struct OK
@@ -125,4 +127,3 @@
 #define PG_RESERVED_FOR_TESTING_1 4095
 #define PG_RESERVED_FOR_TESTING_2 4094
 #define PG_RESERVED_FOR_TESTING_3 4093
-
