@@ -17,4 +17,8 @@
 
 #pragma once
 
+#ifdef USE_I2C_OLED_DISPLAY
+
 displayPort_t *displayPortOledInit(void *device);
+
+#endif  // USE_I2C_OLED_DISPLAY

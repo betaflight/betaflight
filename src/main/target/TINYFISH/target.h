@@ -23,7 +23,7 @@
 
 
 #define LED0_PIN                PC14
-#define LED1_PIN                PA13
+#define LED1_PIN                PA0 // DEBUGGING PA13
 
 #define BEEPER                  PC15
 #define BEEPER_INVERTED

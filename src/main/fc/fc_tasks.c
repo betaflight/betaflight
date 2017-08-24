@@ -338,9 +338,7 @@ void fcTasksInit(void)
 #ifdef TRANSPONDER
     setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
 #endif
-#ifdef OSD
     setTaskEnabled(TASK_OSD, feature(FEATURE_OSD));
-#endif
 #ifdef USE_OSD_SLAVE
     setTaskEnabled(TASK_OSD_SLAVE, true);
 #endif
@@ -527,11 +525,11 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
-#ifdef OSD
+#if defined(USE_OPENTCO) || defined(USE_MAX7456)
     [TASK_OSD] = {
         .taskName = "OSD",
         .taskFunc = osdUpdate,
-        .desiredPeriod = TASK_PERIOD_HZ(60),        // 60 Hz
+        .desiredPeriod = TASK_PERIOD_HZ(OSD_TASK_FREQUENCY_HZ),
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif

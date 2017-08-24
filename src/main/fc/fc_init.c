@@ -66,6 +66,7 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/exti.h"
 #include "drivers/max7456.h"
+#include "drivers/opentco_osd.h"
 #include "drivers/vtx_rtc6705.h"
 #include "drivers/vtx_common.h"
 #include "drivers/camera_control.h"
@@ -86,6 +87,7 @@
 
 #include "io/beeper.h"
 #include "io/displayport_max7456.h"
+#include "io/displayport_opentco.h"
 #include "io/serial.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
@@ -103,6 +105,7 @@
 #include "io/vtx_control.h"
 #include "io/vtx_smartaudio.h"
 #include "io/vtx_tramp.h"
+#include "io/vtx_opentco.h"
 
 #include "scheduler/scheduler.h"
 
@@ -552,22 +555,45 @@ void init(void)
     cmsInit();
 #endif
 
-#if (defined(OSD) || (defined(USE_MSP_DISPLAYPORT) && defined(CMS)) || defined(USE_OSD_SLAVE))
+//#if (defined(OSD) || (defined(USE_MSP_DISPLAYPORT) && defined(CMS)) || defined(USE_OSD_SLAVE))
     displayPort_t *osdDisplayPort = NULL;
-#endif
+//#endif
 
-#if defined(OSD) && !defined(USE_OSD_SLAVE)
+#if !defined(USE_OSD_SLAVE)
     //The OSD need to be initialised after GYRO to avoid GYRO initialisation failure on some targets
-
     if (feature(FEATURE_OSD)) {
+        switch (osdConfig()->device)
+        {
+        default:
+        case OSD_DEVICE_NONE:
+            // no device is used
+            osdDisplayPort = NULL;
+            break;
+
 #if defined(USE_MAX7456)
-        // If there is a max7456 chip for the OSD then use it
-        osdDisplayPort = max7456DisplayPortInit(vcdProfile());
-#elif defined(USE_OSD_OVER_MSP_DISPLAYPORT) // OSD over MSP; not supported (yet)
-        osdDisplayPort = displayPortMspInit();
+        case OSD_DEVICE_MAX7456:
+            osdDisplayPort = max7456DisplayPortInit(vcdProfile());
+            break;
 #endif
-        // osdInit  will register with CMS by itself.
-        osdInit(osdDisplayPort);
+#if defined(USE_OSD_OVER_MSP_DISPLAYPORT) // OSD over MSP; not supported (yet)
+        case OSD_DEVICE_MSP:
+            osdDisplayPort = displayPortMspInit();
+            break;
+#endif
+#if defined(USE_OPENTCO)
+        case OSD_DEVICE_OPENTCO:
+            osdDisplayPort = opentcoDisplayPortInit(vcdProfile());
+            break;
+#endif
+        }
+
+        // osdInit will register with CMS by itself.
+        if (osdDisplayPort != NULL) {
+            osdInit(osdDisplayPort);
+        } else {
+            // no valid osd found, disable feature
+            featureClear(FEATURE_OSD);
+        }
     }
 #endif
 
@@ -664,6 +690,10 @@ void init(void)
     vtxControlInit();
 
     vtxCommonInit();
+
+    // FIXME: add feature / vtx device selection
+    //        and do opentco init only on request
+    //vtxOpentcoInit();
 
 #ifdef VTX_SMARTAUDIO
     vtxSmartAudioInit();

@@ -87,11 +87,12 @@ cli_unittest_SRC := \
 cli_unittest_DEFINES := \
 		USE_CLI \
 		SystemCoreClock=1000000 \
-		OSD
+		OSD \
 
 cms_unittest_SRC := \
 		$(USER_DIR)/cms/cms.c \
 		$(USER_DIR)/common/typeconversion.c \
+                $(USER_DIR)/config/feature.c \
 		$(USER_DIR)/drivers/display.c
 
 
@@ -150,9 +151,11 @@ osd_unittest_SRC := \
 		$(USER_DIR)/drivers/display.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/config/feature.c \
 		$(USER_DIR)/fc/runtime_config.c
 
 osd_unittest_DEFINES := \
+		USE_MAX7456 \
 		OSD
 
 

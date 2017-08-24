@@ -95,11 +95,6 @@ static int drawScreen(displayPort_t *displayPort)
     return output(displayPort, MSP_DISPLAYPORT, subcmd, sizeof(subcmd));
 }
 
-static int screenSize(const displayPort_t *displayPort)
-{
-    return displayPort->rows * displayPort->cols;
-}
-
 static int writeString(displayPort_t *displayPort, uint8_t col, uint8_t row, const char *string)
 {
 #define MSP_OSD_MAX_STRING_LENGTH 30 // FIXME move this
@@ -128,6 +123,34 @@ static int writeChar(displayPort_t *displayPort, uint8_t col, uint8_t row, uint8
     return writeString(displayPort, col, row, buf); //!!TODO - check if there is a direct MSP command to do this
 }
 
+static int fillRegion(displayPort_t *displayPort, uint8_t xs, uint8_t ys, uint8_t width, uint8_t height, uint8_t value)
+{
+    // FIXME: add fillRegion to MSP!
+    // for now: send single requests:
+    if ((value == ' ') && (ys >= displayPort->rowCount) && (xs >= displayPort->colCount)) {
+        // speed optimize -> issue clear command
+        clearScreen(displayPort);
+        return 0;
+    }
+
+    // create null terminated "fill" string
+    uint8_t buffer[width+1];
+    memset(buffer, value, width);
+    buffer[width] = 0;
+
+    uint8_t y = ys;
+    while (height > 0) {
+        // output string:
+        writeString(displayPort, xs, y, (const char *)buffer);
+
+        // keep track of position and count
+        height--;
+        y++;
+    }
+
+    return 1;
+}
+
 static bool isTransferInProgress(const displayPort_t *displayPort)
 {
     UNUSED(displayPort);
@@ -136,8 +159,8 @@ static bool isTransferInProgress(const displayPort_t *displayPort)
 
 static void resync(displayPort_t *displayPort)
 {
-    displayPort->rows = 13 + displayPortProfileMsp()->rowAdjust; // XXX Will reflect NTSC/PAL in the future
-    displayPort->cols = 30 + displayPortProfileMsp()->colAdjust;
+    displayPort->rowCount = 13 + displayPortProfileMsp()->rowAdjust; // XXX Will reflect NTSC/PAL in the future
+    displayPort->colCount = 30 + displayPortProfileMsp()->colAdjust;
 }
 
 static uint32_t txBytesFree(const displayPort_t *displayPort)
@@ -151,7 +174,7 @@ static const displayPortVTable_t mspDisplayPortVTable = {
     .release = release,
     .clearScreen = clearScreen,
     .drawScreen = drawScreen,
-    .screenSize = screenSize,
+    .fillRegion = fillRegion,
     .writeString = writeString,
     .writeChar = writeChar,
     .isTransferInProgress = isTransferInProgress,

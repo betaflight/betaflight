@@ -127,8 +127,8 @@ static displayPort_t *cmsDisplayPortSelectNext(void)
 //
 
 #define LEFT_MENU_COLUMN  1
-#define RIGHT_MENU_COLUMN(p) ((p)->cols - 8)
-#define MAX_MENU_ITEMS(p)    ((p)->rows - 2)
+#define RIGHT_MENU_COLUMN(p) ((p)->colCount - 8)
+#define MAX_MENU_ITEMS(p)    ((p)->rowCount - 2)
 
 bool cmsInMenu = false;
 
@@ -316,20 +316,20 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
         }
         break;
 
-#ifdef OSD
     case OME_VISIBLE:
-        if (IS_PRINTVALUE(p) && p->data) {
-            uint16_t *val = (uint16_t *)p->data;
+        if (feature(FEATURE_OSD)) {
+            if (IS_PRINTVALUE(p) && p->data) {
+                osdItem_t *item = (osdItem_t *)p->data;
 
-            if (VISIBLE(*val)) {
-                cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "YES");
-            } else {
-                cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "NO ");
+                if (item->flags & OSD_FLAG_VISIBLE) {
+                    cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "YES");
+                } else {
+                    cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "NO ");
+                }
+                CLR_PRINTVALUE(p);
             }
-            CLR_PRINTVALUE(p);
         }
         break;
-#endif
 
     case OME_UINT8:
         if (IS_PRINTVALUE(p) && p->data) {
@@ -414,7 +414,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
 
     uint8_t i;
     OSD_Entry *p;
-    uint8_t top = (pDisplay->rows - pageMaxRow) / 2 - 1;
+    uint8_t top = (pDisplay->rowCount - pageMaxRow) / 2 - 1;
 
     // Polled (dynamic) value display denominator.
 
@@ -755,19 +755,17 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
             }
             break;
 
-#ifdef OSD
         case OME_VISIBLE:
             if (p->data) {
-                uint16_t *val = (uint16_t *)p->data;
+                osdItem_t *item = (osdItem_t *)p->data;
 
                 if (key == KEY_RIGHT)
-                    *val |= VISIBLE_FLAG;
+                    item->flags |= OSD_FLAG_VISIBLE;
                 else
-                    *val %= ~VISIBLE_FLAG;
+                    item->flags &= ~OSD_FLAG_VISIBLE;
                 SET_PRINTVALUE(p);
             }
             break;
-#endif
 
         case OME_UINT8:
         case OME_FLOAT:

@@ -42,6 +42,7 @@
 #define MINIMAL_CLI
 #define USE_DSHOT
 #define USE_GYRO_DATA_ANALYSE
+#define USE_OPENTCO
 #endif
 
 #ifdef STM32F4
@@ -50,6 +51,7 @@
 #define I2C3_OVERCLOCK true
 #define TELEMETRY_IBUS
 #define USE_GYRO_DATA_ANALYSE
+#define USE_OPENTCO
 #endif
 
 #ifdef STM32F7
@@ -59,6 +61,7 @@
 #define I2C4_OVERCLOCK true
 #define TELEMETRY_IBUS
 #define USE_GYRO_DATA_ANALYSE
+#define USE_OPENTCO
 #endif
 
 #if defined(STM32F4) || defined(STM32F7)
@@ -112,7 +115,6 @@
 #define TELEMETRY_JETIEXBUS
 #define TELEMETRY_MAVLINK
 #define TELEMETRY_SRXL
-#define USE_DASHBOARD
 #define USE_MSP_DISPLAYPORT
 #define USE_RCSPLIT
 #define USE_RX_MSP
@@ -133,6 +135,8 @@
 #endif
 
 #if (FLASH_SIZE > 256)
+// Temporarily moved DASHBOARD here because of overflowing flash size of F3
+#define USE_DASHBOARD
 // Temporarily moved GPS here because of overflowing flash size on F3
 #define GPS
 #define USE_NAV

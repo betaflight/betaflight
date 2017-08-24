@@ -17,9 +17,14 @@
 
 #pragma once
 
-#include "drivers/display.h"
+#include <stdbool.h>
+#include <stdint.h>
 
-#define MAX7456_FEATURESET (DISPLAY_FEATURE_ENABLE | DISPLAY_FEATURE_INVERT | DISPLAY_FEATURE_BRIGHTNESS)
+#include "config/parameter_group.h"
 
-struct vcdProfile_s;
-displayPort_t *max7456DisplayPortInit(const struct vcdProfile_s *vcdProfile);
+
+//extern const char * const vtxOpentcoPowerNames[OPENTCO_VTX_POWER_COUNT];
+
+bool vtxOpentcoConfigure(void);
+bool vtxOpentcoInit();
+

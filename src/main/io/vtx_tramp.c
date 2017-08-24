@@ -442,25 +442,28 @@ bool vtxTrampIsReady(void)
     return trampStatus > TRAMP_STATUS_OFFLINE;
 }
 
-void vtxTrampSetBandAndChannel(uint8_t band, uint8_t channel)
+bool vtxTrampSetBandAndChannel(uint8_t band, uint8_t channel)
 {
     if (band && channel) {
         trampSetBandAndChannel(band, channel);
         trampCommitChanges();
     }
+    return true;
 }
 
-void vtxTrampSetPowerByIndex(uint8_t index)
+bool vtxTrampSetPowerByIndex(uint8_t index)
 {
     if (index) {
         trampSetRFPower(trampPowerTable[index - 1]);
         trampCommitChanges();
     }
+    return true;
 }
 
-void vtxTrampSetPitMode(uint8_t onoff)
+bool vtxTrampSetPitMode(uint8_t onoff)
 {
     trampSetPitMode(onoff);
+    return true;
 }
 
 bool vtxTrampGetBandAndChannel(uint8_t *pBand, uint8_t *pChannel)

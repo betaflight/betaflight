@@ -23,11 +23,23 @@
 #include <string.h>
 
 #include "platform.h"
-#include "build/debug.h"
+#include "config/parameter_group_ids.h"
+#include "config/parameter_group.h"
 
+#include "build/debug.h"
+#define VTX_COMMON
 #if defined(VTX_COMMON)
 
 #include "vtx_common.h"
+
+
+PG_REGISTER_WITH_RESET_TEMPLATE(vtxDeviceConfig_t, vtxDeviceConfig, PG_VTX_DEVICE_CONFIG, 0);
+
+PG_RESET_TEMPLATE(vtxDeviceConfig_t, vtxDeviceConfig,
+    .band = 4,    //Fatshark/Airwaves
+    .channel = 1, //CH1
+    .powerIndex = 1
+);
 
 vtxDevice_t *vtxDevice = NULL;
 
@@ -60,39 +72,45 @@ vtxDevType_e vtxCommonGetDeviceType(void)
 }
 
 // band and channel are 1 origin
-void vtxCommonSetBandAndChannel(uint8_t band, uint8_t channel)
+bool vtxCommonSetBandAndChannel(uint8_t band, uint8_t channel)
 {
     if (!vtxDevice)
-        return;
+        return false;
 
     if ((band > vtxDevice->capability.bandCount) || (channel > vtxDevice->capability.channelCount))
-        return;
+        return false;
 
     if (vtxDevice->vTable->setBandAndChannel)
-        vtxDevice->vTable->setBandAndChannel(band, channel);
+        return vtxDevice->vTable->setBandAndChannel(band, channel);
+
+    return false;
 }
 
 // index is zero origin, zero = power off completely
-void vtxCommonSetPowerByIndex(uint8_t index)
+bool vtxCommonSetPowerByIndex(uint8_t index)
 {
     if (!vtxDevice)
-        return;
+        return false;
 
     if (index > vtxDevice->capability.powerCount)
-        return;
+        return false;
 
     if (vtxDevice->vTable->setPowerByIndex)
-        vtxDevice->vTable->setPowerByIndex(index);
+        return vtxDevice->vTable->setPowerByIndex(index);
+
+    return false;
 }
 
 // on = 1, off = 0
-void vtxCommonSetPitMode(uint8_t onoff)
+bool vtxCommonSetPitMode(uint8_t onoff)
 {
     if (!vtxDevice)
-        return;
+        return false;
 
     if (vtxDevice->vTable->setPitMode)
-        vtxDevice->vTable->setPitMode(onoff);
+        return vtxDevice->vTable->setPitMode(onoff);
+
+    return false;
 }
 
 bool vtxCommonGetBandAndChannel(uint8_t *pBand, uint8_t *pChannel)

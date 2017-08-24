@@ -57,13 +57,12 @@ typedef enum {
     TABLE_LOWPASS_TYPE,
     TABLE_FAILSAFE,
     TABLE_CRASH_RECOVERY,
-#ifdef OSD
-    TABLE_OSD,
-#endif
+    TABLE_OSD_MODE,
 #ifdef USE_CAMERA_CONTROL
     TABLE_CAMERA_CONTROL_MODE,
 #endif
     TABLE_BUS_TYPE,
+    TABLE_OSD_TYPE,
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 

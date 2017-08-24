@@ -22,14 +22,51 @@
 #include "platform.h"
 
 #include "common/utils.h"
+#include "config/parameter_group_ids.h"
 
 #include "display.h"
 
+PG_REGISTER_WITH_RESET_FN(displayPortProfile_t, displayPortProfile, PG_DISPLAY_PORT_PROFILE_CONFIG, 0);
+
+void pgResetFn_displayPortProfile(displayPortProfile_t *profile)
+{
+    profile->colAdjust = 0;
+    profile->rowAdjust = 0;
+
+    // set default: no features supported/activated
+    profile->enabledFeatures = 0;
+    profile->supportedFeatures = 0;
+
+    // brightness values are now stored in percent
+    profile->blackBrightness = 0;
+    profile->whiteBrightness = 100;
+}
+
+void displayEnableFeature(displayPort_t *displayport, uint16_t features)
+{
+    // make sure that only supported features are enabled:
+    displayPortProfileMutable()->enabledFeatures |= features & displayPortProfile()->supportedFeatures;
+    displayReloadProfile(displayport);
+}
+
+void displayDisableFeature(displayPort_t *displayport, uint16_t features)
+{
+    // disable given features
+    displayPortProfileMutable()->enabledFeatures = ~(features) & displayPortProfile()->enabledFeatures;
+    displayReloadProfile(displayport);
+}
+
 void displayClearScreen(displayPort_t *instance)
 {
+    instance->vTable->reloadProfile(instance);
     instance->vTable->clearScreen(instance);
     instance->cleared = true;
     instance->cursorRow = -1;
+}
+
+void displayFillRegion(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t width, uint8_t height, uint8_t value)
+{
+    instance->vTable->fillRegion(instance, x, y, width, height, value);
 }
 
 void displayDrawScreen(displayPort_t *instance)
@@ -37,9 +74,14 @@ void displayDrawScreen(displayPort_t *instance)
     instance->vTable->drawScreen(instance);
 }
 
-int displayScreenSize(const displayPort_t *instance)
+uint8_t displayScreenSizeRows(const displayPort_t *instance)
 {
-    return instance->vTable->screenSize(instance);
+    return instance->rowCount;
+}
+
+uint8_t displayScreenSizeCols(const displayPort_t *instance)
+{
+    return instance->colCount;
 }
 
 void displayGrab(displayPort_t *instance)
@@ -85,6 +127,11 @@ int displayWriteChar(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t c)
     instance->posX = x + 1;
     instance->posY = y;
     return instance->vTable->writeChar(instance, x, y, c);
+}
+
+int displayReloadProfile(displayPort_t *instance)
+{
+    return instance->vTable->reloadProfile(instance);
 }
 
 bool displayIsTransferInProgress(const displayPort_t *instance)

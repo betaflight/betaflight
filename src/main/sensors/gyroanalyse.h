@@ -24,8 +24,10 @@
 typedef struct gyroFftData_s {
     float maxVal;
     uint16_t centerFreq;
+    float bin2[GYRO_FFT_BIN_COUNT];
 } gyroFftData_t;
 
+extern float fftData[];
 void gyroDataAnalyseInit(uint32_t targetLooptime);
 const gyroFftData_t *gyroFftData(int axis);
 struct gyroDev_s;

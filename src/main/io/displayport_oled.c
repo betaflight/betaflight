@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -24,6 +25,7 @@
 
 #include "drivers/display.h"
 #include "drivers/display_ug2864hsweg01.h"
+
 
 static displayPort_t oledDisplayPort;
 
@@ -51,11 +53,6 @@ static int oledDrawScreen(displayPort_t *displayPort)
     return 0;
 }
 
-static int oledScreenSize(const displayPort_t *displayPort)
-{
-    return displayPort->rows * displayPort->cols;
-}
-
 static int oledWriteString(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
 {
     i2c_OLED_set_xy(displayPort->device, x, y);
@@ -68,6 +65,34 @@ static int oledWriteChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8
     i2c_OLED_set_xy(displayPort->device, x, y);
     i2c_OLED_send_char(displayPort->device, c);
     return 0;
+}
+
+static int oledFillRegion(displayPort_t *displayPort, uint8_t xs, uint8_t ys, uint8_t width, uint8_t height, uint8_t value)
+{
+    // FIXME: add fillRegion to MSP!
+    // for now: send single requests:
+    if ((value == ' ') && (ys >= displayPort->rowCount) && (xs >= displayPort->colCount)) {
+        // speed optimize -> issue clear command
+        oledClearScreen(displayPort);
+        return 0;
+    }
+
+    // create null terminated "fill" string
+    uint8_t buffer[width+1];
+    memset(buffer, value, width);
+    buffer[width] = 0;
+
+    uint8_t y = ys;
+    while (height > 0) {
+        // output string:
+        oledWriteString(displayPort, xs, y, (const char*)buffer);
+
+        // keep track of position and count
+        height--;
+        y++;
+    }
+
+    return 1;
 }
 
 static bool oledIsTransferInProgress(const displayPort_t *displayPort)
@@ -98,7 +123,7 @@ static const displayPortVTable_t oledVTable = {
     .release = oledRelease,
     .clearScreen = oledClearScreen,
     .drawScreen = oledDrawScreen,
-    .screenSize = oledScreenSize,
+    .fillRegion = oledFillRegion,
     .writeString = oledWriteString,
     .writeChar = oledWriteChar,
     .isTransferInProgress = oledIsTransferInProgress,
@@ -111,7 +136,7 @@ displayPort_t *displayPortOledInit(void *device)
 {
     oledDisplayPort.device = device;
     displayInit(&oledDisplayPort, &oledVTable);
-    oledDisplayPort.rows = SCREEN_CHARACTER_ROW_COUNT;
-    oledDisplayPort.cols = SCREEN_CHARACTER_COLUMN_COUNT;
+    oledDisplayPort.rowCount = SCREEN_CHARACTER_ROW_COUNT;
+    oledDisplayPort.colCount = SCREEN_CHARACTER_COLUMN_COUNT;
     return &oledDisplayPort;
 }

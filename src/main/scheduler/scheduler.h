@@ -92,9 +92,7 @@ typedef enum {
 #ifdef STACK_CHECK
     TASK_STACK_CHECK,
 #endif
-#ifdef OSD
     TASK_OSD,
-#endif
 #ifdef USE_OSD_SLAVE
     TASK_OSD_SLAVE,
 #endif

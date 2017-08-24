@@ -63,7 +63,7 @@ static serialPort_t *smartAudioSerialPort = NULL;
 
 #if defined(CMS) || defined(VTX_COMMON)
 static const char * const saPowerNames[] = {
-    "---", "25 ", "200", "500", "800",
+    "---", " 25 ", "200", "500", "800",
 };
 #endif
 
@@ -569,7 +569,7 @@ static void saGetPitFreq(void)
 }
 #endif
 
-void saSetBandAndChannel(uint8_t band, uint8_t channel)
+bool saSetBandAndChannel(uint8_t band, uint8_t channel)
 {
     static uint8_t buf[6] = { 0xAA, 0x55, SACMD(SA_CMD_SET_CHAN), 1 };
 
@@ -577,6 +577,7 @@ void saSetBandAndChannel(uint8_t band, uint8_t channel)
     buf[5] = CRC8(buf, 5);
 
     saQueueCmd(buf, 6);
+    return true;
 }
 
 void saSetMode(int mode)
@@ -715,30 +716,32 @@ bool vtxSAIsReady(void)
     return !(saDevice.version == 0);
 }
 
-void vtxSASetBandAndChannel(uint8_t band, uint8_t channel)
+bool vtxSASetBandAndChannel(uint8_t band, uint8_t channel)
 {
     if (band && channel)
         saSetBandAndChannel(band - 1, channel - 1);
+    return true;
 }
 
-void vtxSASetPowerByIndex(uint8_t index)
+bool vtxSASetPowerByIndex(uint8_t index)
 {
     if (index == 0) {
         // SmartAudio doesn't support power off.
-        return;
+        return true;
     }
 
     saSetPowerByIndex(index - 1);
+    return true;
 }
 
-void vtxSASetPitMode(uint8_t onoff)
+bool vtxSASetPitMode(uint8_t onoff)
 {
     if (!(vtxSAIsReady() && (saDevice.version == 2)))
-        return;
+        return true;
 
     if (onoff) {
         // SmartAudio can not turn pit mode on by software.
-        return;
+        return true;
     }
 
     uint8_t newmode = SA_MODE_CLR_PITMODE;
@@ -751,7 +754,7 @@ void vtxSASetPitMode(uint8_t onoff)
 
     saSetMode(newmode);
 
-    return;
+    return true;
 }
 
 bool vtxSAGetBandAndChannel(uint8_t *pBand, uint8_t *pChannel)

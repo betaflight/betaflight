@@ -61,6 +61,7 @@
 #include "io/ledstrip.h"
 #include "io/osd.h"
 #include "io/vtx_rtc6705.h"
+#include "drivers/vtx_common.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -199,13 +200,11 @@ static const char * const lookupTableGyroLpf[] = {
     "EXPERIMENTAL"
 };
 
-#ifdef OSD
 static const char * const lookupTableOsdType[] = {
     "AUTO",
     "PAL",
     "NTSC"
 };
-#endif
 
 #ifdef USE_CAMERA_CONTROL
 static const char * const lookupTableCameraControlMode[] = {
@@ -214,6 +213,15 @@ static const char * const lookupTableCameraControlMode[] = {
     "DAC"
 };
 #endif
+
+static const char * const lookupTableOsdDevice[] = {
+    "none",
+    "MAX7456",
+    "MSP",
+#if defined(USE_OPENTCO)
+    "OPENTCO"
+#endif
+};
 
 static const char * const lookupTableSuperExpoYaw[] = {
     "OFF", "ON", "ALWAYS"
@@ -285,13 +293,12 @@ const lookupTableEntry_t lookupTables[] = {
     { lookupTableLowpassType, sizeof(lookupTableLowpassType) / sizeof(char *) },
     { lookupTableFailsafe, sizeof(lookupTableFailsafe) / sizeof(char *) },
     { lookupTableCrashRecovery, sizeof(lookupTableCrashRecovery) / sizeof(char *) },
-#ifdef OSD
     { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
-#endif
 #ifdef USE_CAMERA_CONTROL
     { lookupTableCameraControlMode, sizeof(lookupTableCameraControlMode) / sizeof(char *) },
 #endif
     { lookupTableBusType, sizeof(lookupTableBusType) / sizeof(char *) },
+    { lookupTableOsdDevice, sizeof(lookupTableOsdDevice) / sizeof(char *) },
 };
 
 const clivalue_t valueTable[] = {
@@ -639,7 +646,7 @@ const clivalue_t valueTable[] = {
 #endif
 
 // PG_OSD_CONFIG
-#ifdef OSD
+    { "osd_device",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OSD_TYPE }, PG_OSD_CONFIG, offsetof(osdConfig_t, device) },
     { "osd_units",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_UNIT }, PG_OSD_CONFIG, offsetof(osdConfig_t, units) },
 
     { "osd_rssi_alarm",             VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 100 }, PG_OSD_CONFIG, offsetof(osdConfig_t, rssi_alarm) },
@@ -652,43 +659,42 @@ const clivalue_t valueTable[] = {
     { "osd_tim1",                   VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, INT16_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, timers[OSD_TIMER_1]) },
     { "osd_tim2",                   VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, INT16_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, timers[OSD_TIMER_2]) },
 
-    { "osd_vbat_pos",               VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_MAIN_BATT_VOLTAGE]) },
-    { "osd_rssi_pos",               VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_RSSI_VALUE]) },
-    { "osd_tim_1_pos",              VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_ITEM_TIMER_1]) },
-    { "osd_tim_2_pos",              VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_ITEM_TIMER_2]) },
-    { "osd_flymode_pos",            VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_FLYMODE]) },
-    { "osd_throttle_pos",           VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_THROTTLE_POS]) },
-    { "osd_vtx_channel_pos",        VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_VTX_CHANNEL]) },
-    { "osd_crosshairs",             VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_CROSSHAIRS]) },
-    { "osd_ah_sbar",                VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_HORIZON_SIDEBARS]) },
-    { "osd_ah_pos",                 VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_ARTIFICIAL_HORIZON]) },
-    { "osd_current_pos",            VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_CURRENT_DRAW]) },
-    { "osd_mah_drawn_pos",          VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_MAH_DRAWN]) },
-    { "osd_craft_name_pos",         VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_CRAFT_NAME]) },
-    { "osd_gps_speed_pos",          VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_GPS_SPEED]) },
-    { "osd_gps_lon_pos",            VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_GPS_LON]) },
-    { "osd_gps_lat_pos",            VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_GPS_LAT]) },
-    { "osd_gps_sats_pos",           VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_GPS_SATS]) },
-    { "osd_home_dir_pos",           VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_HOME_DIR]) },
-    { "osd_home_dist_pos",          VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_HOME_DIST]) },
-    { "osd_compass_bar_pos",        VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_COMPASS_BAR]) },
-    { "osd_altitude_pos",           VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_ALTITUDE]) },
-    { "osd_pid_roll_pos",           VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_ROLL_PIDS]) },
-    { "osd_pid_pitch_pos",          VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_PITCH_PIDS]) },
-    { "osd_pid_yaw_pos",            VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_YAW_PIDS]) },
-    { "osd_debug_pos",              VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_DEBUG]) },
-    { "osd_power_pos",              VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_POWER]) },
-    { "osd_pidrate_profile_pos",    VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_PIDRATE_PROFILE]) },
-    { "osd_warnings_pos",           VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_WARNINGS]) },
-    { "osd_avg_cell_voltage_pos",   VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_AVG_CELL_VOLTAGE]) },
-    { "osd_pit_ang_pos",            VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_PITCH_ANGLE]) },
-    { "osd_rol_ang_pos",            VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_ROLL_ANGLE]) },
-    { "osd_battery_usage_pos",      VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_MAIN_BATT_USAGE]) },
-    { "osd_disarmed_pos",           VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_DISARMED]) },
-    { "osd_nheading_pos",           VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_NUMERICAL_HEADING]) },
-    { "osd_nvario_pos",             VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_NUMERICAL_VARIO]) },
-    { "osd_esc_tmp_pos",            VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_ESC_TMP]) },
-    { "osd_esc_rpm_pos",            VAR_UINT16  | MASTER_VALUE, .config.minmax = { 0, OSD_POSCFG_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_ESC_RPM]) },
+    { "osd_item_vbat",               VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_MAIN_BATT_VOLTAGE]) },
+    { "osd_item_rssi",               VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_RSSI_VALUE]) },
+    { "osd_item_tim_1",              VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_ITEM_TIMER_1]) },
+    { "osd_item_tim_2",              VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_ITEM_TIMER_2]) },
+    { "osd_item_flymode",            VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_FLYMODE]) },
+    { "osd_item_throttle",           VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_THROTTLE_POS]) },
+    { "osd_item_vtx_channel",        VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_VTX_CHANNEL]) },
+    { "osd_item_crosshairs",         VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_CROSSHAIRS]) },
+    { "osd_item_horizon",            VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_ARTIFICIAL_HORIZON]) },
+    { "osd_item_current",            VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_CURRENT_DRAW]) },
+    { "osd_item_mah_drawn",          VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_MAH_DRAWN]) },
+    { "osd_item_craft_name",         VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_CRAFT_NAME]) },
+    { "osd_item_gps_speed",          VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_GPS_SPEED]) },
+    { "osd_item_gps_lon",            VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_GPS_LON]) },
+    { "osd_item_gps_lat",            VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_GPS_LAT]) },
+    { "osd_item_gps_sats",           VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_GPS_SATS]) },
+    { "osd_item_home_dir",           VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_HOME_DIR]) },
+    { "osd_item_home_dist",          VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_HOME_DIST]) },
+    { "osd_item_compass_bar",        VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_COMPASS_BAR]) },
+    { "osd_item_altitude",           VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_ALTITUDE]) },
+    { "osd_item_pid_roll",           VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_ROLL_PIDS]) },
+    { "osd_item_pid_pitch",          VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_PITCH_PIDS]) },
+    { "osd_item_pid_yaw",            VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_YAW_PIDS]) },
+    { "osd_item_debug",              VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_DEBUG]) },
+    { "osd_item_power",              VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_POWER]) },
+    { "osd_item_pidrate_profile",    VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_PIDRATE_PROFILE]) },
+    { "osd_item_warnings",           VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_WARNINGS]) },
+    { "osd_item_avg_cell_voltage",   VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_AVG_CELL_VOLTAGE]) },
+    { "osd_item_pit_ang",            VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_PITCH_ANGLE]) },
+    { "osd_item_rol_ang",            VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_ROLL_ANGLE]) },
+    { "osd_item_battery_usage",      VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_MAIN_BATT_USAGE]) },
+    { "osd_item_disarmed",           VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_DISARMED]) },
+    { "osd_item_nheading",           VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_NUMERICAL_HEADING]) },
+    { "osd_item_nvario",             VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_NUMERICAL_VARIO]) },
+    { "osd_item_esc_tmp",            VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_ESC_TMP]) },
+    { "osd_item_esc_rpm",            VAR_INT8 | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_OSD_CONFIG, offsetof(osdConfig_t, item[OSD_ESC_RPM]) },
 
     { "osd_stat_max_spd",           VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_MAX_SPEED])},
     { "osd_stat_max_dist",          VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_MAX_DISTANCE])},
@@ -702,7 +708,6 @@ const clivalue_t valueTable[] = {
     { "osd_stat_bb_no",             VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_BLACKBOX_NUMBER])},
     { "osd_stat_tim_1",             VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_TIMER_1])},
     { "osd_stat_tim_2",             VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats[OSD_STAT_TIMER_2])},
-#endif
 
 // PG_SYSTEM_CONFIG
 #ifndef SKIP_TASK_STATISTICS
@@ -716,9 +721,15 @@ const clivalue_t valueTable[] = {
 
 // PG_VTX_CONFIG
 #ifdef VTX_RTC6705
-    { "vtx_band",                   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 5 }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, band) },
-    { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 8 }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, channel) },
-    { "vtx_power",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, RTC6705_POWER_COUNT - 1 }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, power) },
+    { "vtx_rtc6705_band",                   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 5 }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, band) },
+    { "vtx_rtc6705_channel",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 8 }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, channel) },
+    { "vtx_rtc6705_power",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, RTC6705_POWER_COUNT - 1 }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, power) },
+#endif
+
+#if defined(VTX_COMMON)
+    { "vtx_device_band",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, VTX_COMMON_MAX_BAND }, PG_VTX_DEVICE_CONFIG, offsetof(vtxDeviceConfig_t, band) },
+    { "vtx_device_channel",        VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, VTX_COMMON_MAX_CHANNEL }, PG_VTX_DEVICE_CONFIG, offsetof(vtxDeviceConfig_t, channel) },
+    { "vtx_device_powerindex",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, VTX_COMMON_MAX_POWER_COUNT - 1 }, PG_VTX_DEVICE_CONFIG, offsetof(vtxDeviceConfig_t, powerIndex) },
 #endif
 
 // PG_VCD_CONFIG
@@ -735,13 +746,11 @@ const clivalue_t valueTable[] = {
 #endif
 
 // PG_DISPLAY_PORT_MSP_CONFIG
-#ifdef USE_MAX7456
-    { "displayport_max7456_col_adjust", VAR_INT8| MASTER_VALUE, .config.minmax = { -6, 0 }, PG_DISPLAY_PORT_MAX7456_CONFIG, offsetof(displayPortProfile_t, colAdjust) },
-    { "displayport_max7456_row_adjust", VAR_INT8| MASTER_VALUE, .config.minmax = { -3, 0 }, PG_DISPLAY_PORT_MAX7456_CONFIG, offsetof(displayPortProfile_t, rowAdjust) },
-    { "displayport_max7456_inv",        VAR_UINT8| MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_DISPLAY_PORT_MAX7456_CONFIG, offsetof(displayPortProfile_t, invert) },
-    { "displayport_max7456_blk",        VAR_UINT8| MASTER_VALUE, .config.minmax = { 0, 3 }, PG_DISPLAY_PORT_MAX7456_CONFIG, offsetof(displayPortProfile_t, blackBrightness) },
-    { "displayport_max7456_wht",        VAR_UINT8| MASTER_VALUE, .config.minmax = { 0, 3 }, PG_DISPLAY_PORT_MAX7456_CONFIG, offsetof(displayPortProfile_t, whiteBrightness) },
-#endif
+    { "displayport_profile_col_adjust", VAR_INT8| MASTER_VALUE, .config.minmax = { -6, 0 }, PG_DISPLAY_PORT_PROFILE_CONFIG, offsetof(displayPortProfile_t, colAdjust) },
+    { "displayport_profile_row_adjust", VAR_INT8| MASTER_VALUE, .config.minmax = { -3, 0 }, PG_DISPLAY_PORT_PROFILE_CONFIG, offsetof(displayPortProfile_t, rowAdjust) },
+    { "displayport_profile_enabled_feature", VAR_UINT16| MASTER_VALUE | MODE_DIRECT, .config.minmax = { INT16_MIN, INT16_MAX }, PG_DISPLAY_PORT_PROFILE_CONFIG, offsetof(displayPortProfile_t, enabledFeatures) },
+    { "displayport_profile_blk",        VAR_UINT8| MASTER_VALUE, .config.minmax = { 0, 100 }, PG_DISPLAY_PORT_PROFILE_CONFIG, offsetof(displayPortProfile_t, blackBrightness) },
+    { "displayport_profile_wht",        VAR_UINT8| MASTER_VALUE, .config.minmax = { 0, 100 }, PG_DISPLAY_PORT_PROFILE_CONFIG, offsetof(displayPortProfile_t, whiteBrightness) },
 
 #ifdef USE_ESC_SENSOR
     { "esc_sensor_halfduplex",          VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ESC_SENSOR_CONFIG, offsetof(escSensorConfig_t, halfDuplex) },
