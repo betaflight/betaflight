@@ -32,10 +32,17 @@
 
 #include "vtx_common.h"
 
-
 PG_REGISTER_WITH_RESET_TEMPLATE(vtxDeviceConfig_t, vtxDeviceConfig, PG_VTX_DEVICE_CONFIG, 0);
 
+#ifdef VTX_RTC6705
+    // preselect on board vtx
+    #define VTX_DEVICE_DEFAULT          VTX_DEVICE_RTC6705
+#else
+   #define VTX_DEVICE_DEFAULT          VTX_DEVICE_NONE
+#endif
+
 PG_RESET_TEMPLATE(vtxDeviceConfig_t, vtxDeviceConfig,
+    .device = VTX_DEVICE_DEFAULT,
     .band = 4,    //Fatshark/Airwaves
     .channel = 1, //CH1
     .powerIndex = 1
@@ -63,12 +70,40 @@ void vtxCommonProcess(uint32_t currentTimeUs)
         vtxDevice->vTable->process(currentTimeUs);
 }
 
-vtxDevType_e vtxCommonGetDeviceType(void)
+vtxDevice_e vtxCommonGetDeviceType(void)
 {
-    if (!vtxDevice || !vtxDevice->vTable->getDeviceType)
-        return VTXDEV_UNKNOWN;
+    if (!vtxDevice) {
+        return VTX_DEVICE_UNKNOWN;
+    }
 
-    return vtxDevice->vTable->getDeviceType();
+    return vtxDeviceConfig()->device;
+}
+
+bool vtxCommonGetBandName(uint8_t band, char *name)
+{
+    if (band > vtxDevice->capability.bandCount) {
+        return false;
+    }
+    name = vtxDevice->bandNames[band];
+    return true;
+}
+
+bool vtxCommonGetChannelName(uint8_t ch, char *name)
+{
+    if (ch > vtxDevice->capability.channelCount) {
+        return false;
+    }
+    name = vtxDevice->channelNames[ch];
+    return true;
+}
+
+bool vtxCommonGetPowerName(uint8_t index, char *name)
+{
+    if (index > vtxDevice->capability.powerCount) {
+        return false;
+    }
+    name = vtxDevice->powerNames[index];
+    return true;
 }
 
 // band and channel are 1 origin

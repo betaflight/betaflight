@@ -609,7 +609,7 @@ void saSetPowerByIndex(uint8_t index)
     saQueueCmd(buf, 6);
 }
 
-bool vtxSmartAudioInit()
+vtxDevice_t *vtxSmartAudioInit()
 {
 #ifdef SMARTAUDIO_DPRINTF
     // Setup debugSerialPort
@@ -627,12 +627,10 @@ bool vtxSmartAudioInit()
     }
 
     if (!smartAudioSerialPort) {
-        return false;
+        return NULL;
     }
 
-    vtxCommonRegisterDevice(&vtxSmartAudio);
-
-    return true;
+    return &vtxSmartAudio;
 }
 
 void vtxSAProcess(uint32_t now)
@@ -706,10 +704,10 @@ void vtxSAProcess(uint32_t now)
 #ifdef VTX_COMMON
 // Interface to common VTX API
 
-vtxDevType_e vtxSAGetDeviceType(void)
+/*vtxDevType_e vtxSAGetDeviceType(void)
 {
     return VTXDEV_SMARTAUDIO;
-}
+}*/
 
 bool vtxSAIsReady(void)
 {
@@ -787,7 +785,7 @@ bool vtxSAGetPitMode(uint8_t *pOnOff)
 
 static const vtxVTable_t saVTable = {
     .process = vtxSAProcess,
-    .getDeviceType = vtxSAGetDeviceType,
+    //.getDeviceType = vtxSAGetDeviceType,
     .isReady = vtxSAIsReady,
     .setBandAndChannel = vtxSASetBandAndChannel,
     .setPowerByIndex = vtxSASetPowerByIndex,

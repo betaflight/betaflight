@@ -26,5 +26,5 @@
 //extern const char * const vtxOpentcoPowerNames[OPENTCO_VTX_POWER_COUNT];
 
 bool vtxOpentcoConfigure(void);
-bool vtxOpentcoInit();
+vtxDevice_t *vtxOpentcoInit();
 

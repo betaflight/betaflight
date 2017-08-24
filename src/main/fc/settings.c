@@ -223,6 +223,14 @@ static const char * const lookupTableOsdDevice[] = {
 #endif
 };
 
+static const char * const lookupTableVtxDevice[] = {
+    "none",
+    "Smartaudio",
+    "Tramp",
+    "RTC6705",
+    "openTCO"
+};
+
 static const char * const lookupTableSuperExpoYaw[] = {
     "OFF", "ON", "ALWAYS"
 };
@@ -299,6 +307,7 @@ const lookupTableEntry_t lookupTables[] = {
 #endif
     { lookupTableBusType, sizeof(lookupTableBusType) / sizeof(char *) },
     { lookupTableOsdDevice, sizeof(lookupTableOsdDevice) / sizeof(char *) },
+    { lookupTableVtxDevice, sizeof(lookupTableVtxDevice) / sizeof(char *) },
 };
 
 const clivalue_t valueTable[] = {
@@ -723,6 +732,7 @@ const clivalue_t valueTable[] = {
     { "vtx_rtc6705_power",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, RTC6705_POWER_COUNT - 1 }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, power) },
 #endif
 
+    { "vtx_device",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_VTX_TYPE }, PG_VTX_DEVICE_CONFIG, offsetof(vtxDeviceConfig_t, device) },
 #if defined(VTX_COMMON)
     { "vtx_device_band",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, VTX_COMMON_MAX_BAND }, PG_VTX_DEVICE_CONFIG, offsetof(vtxDeviceConfig_t, band) },
     { "vtx_device_channel",        VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, VTX_COMMON_MAX_CHANNEL }, PG_VTX_DEVICE_CONFIG, offsetof(vtxDeviceConfig_t, channel) },

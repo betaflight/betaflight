@@ -1186,30 +1186,79 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, compassConfig()->mag_hardware);
         break;
 
-#if defined(VTX_COMMON)
+#if 1 //defined(VTX_COMMON)
     case MSP_VTX_CONFIG:
         {
-            uint8_t deviceType = vtxCommonGetDeviceType();
-            if (deviceType != VTXDEV_UNKNOWN) {
-
-                uint8_t band=0, channel=0;
-                vtxCommonGetBandAndChannel(&band,&channel);
-
-                uint8_t powerIdx=0; // debug
-                vtxCommonGetPowerIndex(&powerIdx);
-
+            vtxDevice_e deviceType = vtxCommonGetDeviceType();
+            if (deviceType != VTX_DEVICE_NONE) {
+                uint8_t band=0;
+                uint8_t channel=0;
+                uint8_t powerIdx=0;
                 uint8_t pitmode=0;
+
+                vtxCommonGetBandAndChannel(&band,&channel);
+                vtxCommonGetPowerIndex(&powerIdx);
                 vtxCommonGetPitMode(&pitmode);
 
-                sbufWriteU8(dst, deviceType);
-                sbufWriteU8(dst, band);
-                sbufWriteU8(dst, channel);
-                sbufWriteU8(dst, powerIdx);
-                sbufWriteU8(dst, pitmode);
-                // future extensions here...
+                // fetch capability:
+                vtxDeviceCapability_t capability;
+                if (!vtxCommonGetDeviceCapability(&capability)) {
+                    // seems like device is not configured, abort!
+                    sbufWriteU8(dst, VTX_DEVICE_NONE); // no VTX detected
+                    break;
+                } else {
+                    FIXME: why is this not called
+                    // device is available
+                    sbufWriteU8(dst, deviceType);
+                    sbufWriteU8(dst, band);
+                    sbufWriteU8(dst, channel);
+                    sbufWriteU8(dst, powerIdx);
+                    sbufWriteU8(dst, pitmode);
+
+
+                    // send supported bands
+                    sbufWriteU8(dst, capability.bandCount);
+                    for(int i = 0; i < capability.bandCount; i++) {
+                        /*char *ptr;
+                        if (vtxCommonGetBandName(i, ptr))
+                            sbufWriteString(dst, ptr);*/
+                        sbufWriteString(dst, "A");
+                        sbufWriteU8(dst, 0);
+                    }
+                    // send supported channels
+                    sbufWriteU8(dst, capability.channelCount);
+                    for(int i = 0; i < capability.channelCount; i++) {
+                        /*char *ptr;
+                        if (vtxCommonGetChannelName(i, ptr))
+                            sbufWriteString(dst, ptr);*/
+                        sbufWriteString(dst, "B");
+                        sbufWriteU8(dst, 0);
+                    }
+                    // send supported powers
+                    sbufWriteU8(dst, capability.powerCount);
+                    for(int i = 0; i < capability.powerCount; i++) {
+                        /*char *ptr;
+                        if (vtxCommonGetPowerName(i, ptr))
+                            sbufWriteString(dst, ptr);*/
+                        sbufWriteString(dst, "C");
+                        sbufWriteU8(dst, 0);
+                    }
+                    /*
+                    sbufWriteU8(dst, 1);
+                    sbufWriteString(dst, "ABC");
+                    sbufWriteU8(dst, 0);
+                    sbufWriteU8(dst, 1);
+                    sbufWriteString(dst, "ABC");
+                    sbufWriteU8(dst, 0);
+                    sbufWriteU8(dst, 1);
+                    sbufWriteString(dst, "ABC");
+                    sbufWriteU8(dst, 0);
+                    */
+                    // future extensions here...
+                }
             }
             else {
-                sbufWriteU8(dst, VTXDEV_UNKNOWN); // no VTX detected
+                sbufWriteU8(dst, VTX_DEVICE_NONE); // no VTX detected
             }
         }
 #endif
@@ -1649,7 +1698,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             const uint8_t band    = (tmp / 8) + 1;
             const uint8_t channel = (tmp % 8) + 1;
 
-            if (vtxCommonGetDeviceType() != VTXDEV_UNKNOWN) {
+            if (vtxCommonGetDeviceType() != VTX_DEVICE_NONE) {
                 uint8_t current_band=0, current_channel=0;
                 vtxCommonGetBandAndChannel(&current_band,&current_channel);
                 if ((current_band != band) || (current_channel != channel))

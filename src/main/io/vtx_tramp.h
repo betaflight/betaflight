@@ -1,4 +1,5 @@
 #pragma once
+#include "drivers/vtx_common.h"
 
 #define VTX_TRAMP_POWER_COUNT 5
 extern const uint16_t trampPowerTable[VTX_TRAMP_POWER_COUNT];
@@ -12,7 +13,7 @@ extern uint32_t trampCurFreq;
 extern uint16_t trampConfiguredPower; // Configured transmitting power
 extern int16_t trampTemperature;
 
-bool vtxTrampInit();
+vtxDevice_t *vtxTrampInit();
 bool trampCommitChanges();
 void trampSetPitMode(uint8_t onoff);
 void trampSetBandAndChannel(uint8_t band, uint8_t channel);

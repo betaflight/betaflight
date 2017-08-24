@@ -73,7 +73,7 @@ static opentcoDevice_t *device = &vtxOpentcoDevice;
 
 static bool vtxOpentcoQuerySupportedFeatures(void);
 
-bool vtxOpentcoInit(void)
+vtxDevice_t *vtxOpentcoInit(void)
 {
     // configure device
     device->id = OPENTCO_DEVICE_VTX;
@@ -81,16 +81,14 @@ bool vtxOpentcoInit(void)
     // open serial port
     if (!opentcoInit(device)) {
         // no device found
-        return false;
+        return NULL;
     }
 
     // fetch supported power
-    if (!vtxOpentcoQuerySupportedFeatures()) return false;
+    if (!vtxOpentcoQuerySupportedFeatures()) return NULL;
 
     // register device
-    vtxCommonRegisterDevice(&vtxOpentco);
-
-    return true;
+    return &vtxOpentco;
 }
 
 static bool vtxOpentcoQuerySupportedFeatures(void)
@@ -135,10 +133,10 @@ static void vtxOpentcoProcess(uint32_t now)
 }
 
 // Interface to common VTX API
-static vtxDevType_e vtxOpentcoGetDeviceType(void)
+/*static vtxDevType_e vtxOpentcoGetDeviceType(void)
 {
     return VTXDEV_OPENTCO;
-}
+}*/
 
 static bool vtxOpentcoIsReady(void)
 {
@@ -246,7 +244,7 @@ bool vtxOpentcoConfigure(void)
 
 static vtxVTable_t opentcoVTable = {
     .process = vtxOpentcoProcess,
-    .getDeviceType = vtxOpentcoGetDeviceType,
+    //.getDeviceType = vtxOpentcoGetDeviceType,
     .isReady = vtxOpentcoIsReady,
     .setBandAndChannel = vtxOpentcoSetBandAndChannel,
     .setPowerByIndex = vtxOpentcoSetPowerByIndex,

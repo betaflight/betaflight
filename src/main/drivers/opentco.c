@@ -26,40 +26,100 @@
 
 #if defined(USE_OPENTCO)
 
-// openTCO allows multiple devices to share a single uart
-// or to use an indivual uart for every device
+static bool opentcoDetectDevice(opentcoDevice_t *device);
+static void opentcoRegisterDevice(opentcoDevice_t *device);
+static opentcoDevice_t *firstDevice = NULL;
+
+// openTCO allows multiple (virtual) devices to share a single cpu and uart
+// - or -
+// use an indivual uart for every device
+//
 // for now only ONE device of each class (camera, vtx, osd) is supported
 //
 // this function scans all serialports configured as FUNCTION_OPENTCO
 // for a given deviceid and returns the FIRST successful hit
 bool opentcoInit(opentcoDevice_t *device)
 {
-    // scan all opentco serial ports
+    // first: iterate over the open opentcoDevice list in order
+    // to reuse an already opened port:
+    // find attachment point
+    opentcoDevice_t *currentDevice = firstDevice;
+    while(currentDevice != NULL) {
+        // temporarily set serial port
+        device->serialPort = currentDevice->serialPort;
+
+        // try to detect this device on bus
+        if (opentcoDetectDevice(device)) {
+            // found device on this port, store this device
+            opentcoRegisterDevice(device);
+
+            // and done
+            return true;
+        }
+        // next device
+        currentDevice = currentDevice->next;
+    }
+
+    // not found in the current device list, scan all serial ports
+    // (this will skip already opened ports, this is why we need
+    // to scan the list above
+
+    // start with the first one:
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_OPENTCO);
 
     while (portConfig != NULL) {
         // extract baudrate
         uint32_t baudrate = baudRates[portConfig->blackbox_baudrateIndex];
 
-        // open assigned serial port
+        // try tp open the serial port
         device->serialPort = openSerialPort(portConfig->identifier, FUNCTION_OPENTCO, NULL, baudrate, MODE_RXTX, SERIAL_NOT_INVERTED);
 
-        // try to detect the given device:
-        uint16_t tmp;
-        if (opentcoReadRegister(device, 0, &tmp)){
-            // success, found port for this device
-            return true;
+        if (device->serialPort != NULL) {
+            // try to detect the given device:
+            if (opentcoDetectDevice(device)) {
+                opentcoRegisterDevice(device);
+                return true;
+            }
+            // device not found, close port
+            closeSerialPort(device->serialPort);
         }
-
-        // device not found, close port
-        closeSerialPort(device->serialPort);
 
         // find next portConfig
         portConfig = findNextSerialPortConfig(FUNCTION_OPENTCO);
     }
 
+    // clear serialport
     device->serialPort = NULL;
     return false;
+}
+
+// device detected on bus?
+static bool opentcoDetectDevice(opentcoDevice_t *device)
+{
+    uint16_t tmp;
+    return opentcoReadRegister(device, 0, &tmp);
+}
+
+// keep a linked list of devices
+static void opentcoRegisterDevice(opentcoDevice_t *device)
+{
+    // new device, should not have next pointer
+    device->next = NULL;
+
+    if (firstDevice == NULL) {
+        // no active device in chain, store this
+        firstDevice = device;
+        return;
+    }
+
+    // find attachment point
+    opentcoDevice_t *currentDevice = firstDevice;
+    while(currentDevice->next != NULL) {
+        currentDevice = currentDevice->next;
+    }
+
+    // add device to list
+    currentDevice->next = device;
 }
 
 static bool opentcoDecodeResponse(opentcoDevice_t *device, uint8_t requested_reg, uint16_t *reply)
@@ -187,10 +247,11 @@ void opentcoSendFrame(opentcoDevice_t *device)
     sbufSwitchToReader(device->sbuf, device->buffer);
 
     // send data if possible
-    if (!device->locked) {
-        device->locked = true;
+    serialPort_t *serialPort = device->serialPort;
+    if (!serialPort->locked) {
+        serialPort->locked = true;
         serialWriteBuf(device->serialPort, sbufPtr(device->sbuf), sbufBytesRemaining(device->sbuf));
-        device->locked = false;
+        serialPort->locked = false;
     }
 }
 

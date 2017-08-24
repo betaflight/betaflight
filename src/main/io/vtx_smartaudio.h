@@ -1,4 +1,5 @@
 #pragma once
+#include "drivers/vtx_common.h"
 
 // opmode flags, GET side
 #define SA_MODE_GET_FREQ_BY_FREQ            1
@@ -60,7 +61,7 @@ bool saSetBandAndChannel(uint8_t band, uint8_t channel);
 void saSetMode(int mode);
 void saSetPowerByIndex(uint8_t index);
 void saSetFreq(uint16_t freq);
-bool vtxSmartAudioInit();
+vtxDevice_t *vtxSmartAudioInit();
 
 #ifdef SMARTAUDIO_DPRINTF
 #ifdef OMNIBUSF4

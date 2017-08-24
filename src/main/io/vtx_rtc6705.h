@@ -21,6 +21,7 @@
 #include <stdint.h>
 
 #include "config/parameter_group.h"
+#include "drivers/vtx_common.h"
 
 typedef struct vtxRTC6705Config_s {
     uint8_t band;       // 1=A, 2=B, 3=E, 4=F(Airwaves/Fatshark), 5=Raceband
@@ -41,5 +42,5 @@ PG_DECLARE(vtxRTC6705Config_t, vtxRTC6705Config);
 extern const char * const rtc6705PowerNames[RTC6705_POWER_COUNT];
 
 void vtxRTC6705Configure(void);
-bool vtxRTC6705Init();
+vtxDevice_t *vtxRTC6705Init();
 

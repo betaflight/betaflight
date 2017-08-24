@@ -432,10 +432,10 @@ void vtxTrampProcess(uint32_t currentTimeUs)
 
 // Interface to common VTX API
 
-vtxDevType_e vtxTrampGetDeviceType(void)
+/*vtxDevType_e vtxTrampGetDeviceType(void)
 {
     return VTXDEV_TRAMP;
-}
+}*/
 
 bool vtxTrampIsReady(void)
 {
@@ -504,7 +504,7 @@ bool vtxTrampGetPitMode(uint8_t *pOnOff)
 
 static const vtxVTable_t trampVTable = {
     .process = vtxTrampProcess,
-    .getDeviceType = vtxTrampGetDeviceType,
+    //.getDeviceType = vtxTrampGetDeviceType,
     .isReady = vtxTrampIsReady,
     .setBandAndChannel = vtxTrampSetBandAndChannel,
     .setPowerByIndex = vtxTrampSetPowerByIndex,
@@ -516,7 +516,7 @@ static const vtxVTable_t trampVTable = {
 
 #endif
 
-bool vtxTrampInit(void)
+vtxDevice_t *vtxTrampInit(void)
 {
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_TRAMP);
 
@@ -525,14 +525,10 @@ bool vtxTrampInit(void)
     }
 
     if (!trampSerialPort) {
-        return false;
+        return NULL;
     }
 
-#if defined(VTX_COMMON)
-    vtxCommonRegisterDevice(&vtxTramp);
-#endif
-
-    return true;
+    return &vtxTramp;
 }
 
 #endif // VTX_TRAMP

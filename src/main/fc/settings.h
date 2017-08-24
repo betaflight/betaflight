@@ -63,6 +63,7 @@ typedef enum {
 #endif
     TABLE_BUS_TYPE,
     TABLE_OSD_TYPE,
+    TABLE_VTX_TYPE,
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 

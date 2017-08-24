@@ -112,8 +112,9 @@ typedef enum {
 #define OPENTCO_VTX_REGISTER_SUPPORTED_POWER         0x04  // R/W: (1 << opentcoVTXPower_e)
 #define OPENTCO_VTX_REGISTER_POWER                   0x05  // R/W: opentcoVTXPower_e
 
-typedef struct {
+typedef struct opentcoDevice_s{
     serialPort_t *serialPort;
+    struct opentcoDevice_s *next;
 
     uint8_t buffer[OPENTCO_MAX_FRAME_LENGTH];
 
@@ -121,8 +122,6 @@ typedef struct {
     sbuf_t *sbuf;
 
     uint8_t id;
-
-    bool locked;
 } opentcoDevice_t;
 
 bool opentcoInit(opentcoDevice_t *device);

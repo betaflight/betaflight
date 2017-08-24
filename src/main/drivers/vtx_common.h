@@ -14,9 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
+#pragma once
 
 /* Created by jflyper */
-
+/*
 typedef enum {
     VTXDEV_UNSUPPORTED = 0, // reserved for MSP
     VTXDEV_RTC6705    = 1,
@@ -26,7 +27,7 @@ typedef enum {
     VTXDEV_OPENTCO    = 5,
     VTXDEV_UNKNOWN    = 0xFF,
 } vtxDevType_e;
-
+*/
 struct vtxVTable_s;
 
 typedef struct vtxDeviceCapability_s {
@@ -39,7 +40,17 @@ typedef struct vtxDeviceCapability_s {
 #define VTX_COMMON_MAX_BAND 5
 #define VTX_COMMON_MAX_POWER_COUNT 8
 
+typedef enum {
+    VTX_DEVICE_NONE    = 0,
+    VTX_DEVICE_SMARTAUDIO = 1,
+    VTX_DEVICE_TRAMP = 2,
+    VTX_DEVICE_RTC6705 = 3,
+    VTX_DEVICE_OPENTCO = 4,
+    VTX_DEVICE_UNKNOWN = 0xFF
+} vtxDevice_e;
+
 typedef struct vtxDeviceConfig_s {
+    vtxDevice_e device;
     uint8_t band; // Band = 1, 1-based
     uint8_t channel; // CH1 = 1, 1-based
     uint8_t powerIndex; // Lowest/Off = 0
@@ -65,7 +76,7 @@ PG_DECLARE(vtxDeviceConfig_t, vtxDeviceConfig);
 
 typedef struct vtxVTable_s {
     void (*process)(uint32_t currentTimeUs);
-    vtxDevType_e (*getDeviceType)(void);
+    //vtxDevType_e (*getDeviceType)(void);
     bool (*isReady)(void);
 
     bool (*setBandAndChannel)(uint8_t band, uint8_t channel);
@@ -95,3 +106,7 @@ bool vtxCommonGetBandAndChannel(uint8_t *pBand, uint8_t *pChannel);
 bool vtxCommonGetPowerIndex(uint8_t *pIndex);
 bool vtxCommonGetPitMode(uint8_t *pOnOff);
 bool vtxCommonGetDeviceCapability(vtxDeviceCapability_t *pDeviceCapability);
+
+bool vtxCommonGetBandName(uint8_t band, char *name);
+bool vtxCommonGetPowerName(uint8_t index, char *name);
+bool vtxCommonGetChannelName(uint8_t ch, char *name);

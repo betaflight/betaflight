@@ -688,31 +688,49 @@ void init(void)
 #endif
 
 #ifdef VTX_CONTROL
+#ifdef VTX_COMMON
     vtxControlInit();
 
     vtxCommonInit();
 
-    // FIXME: add feature / vtx device selection
-    //        and do opentco init only on request
-    //vtxOpentcoInit();
+    vtxDevice_t *vtxDevice;
+    switch (vtxDeviceConfig()->device)
+    {
+    default:
+    case VTX_DEVICE_NONE:
+        // no device is used
+        vtxDevice = NULL;
+        break;
+#ifdef VTX_RTC6705
+    case VTX_DEVICE_RTC6705:
+        vtxDevice = vtxRTC6705Init();
+        break;
+#endif
 
 #ifdef VTX_SMARTAUDIO
-    vtxSmartAudioInit();
+    case VTX_DEVICE_SMARTAUDIO:
+        vtxDevice = vtxSmartAudioInit();
+        break;
 #endif
 
 #ifdef VTX_TRAMP
-    vtxTrampInit();
+    case VTX_DEVICE_TRAMP:
+        vtxDevice = vtxTrampInit();
+        break;
 #endif
 
-#ifdef VTX_RTC6705
-#ifdef VTX_RTC6705OPTIONAL
-    if (!vtxCommonDeviceRegistered()) // external VTX takes precedence when configured.
+#ifdef USE_OPENTCO
+    case VTX_DEVICE_OPENTCO:
+        vtxDevice = vtxOpentcoInit();
+        break;
 #endif
-    {
-        vtxRTC6705Init();
+    }
+
+    // osd devcie configured? initialize!
+    if (vtxDevice != NULL) {
+        vtxCommonRegisterDevice(vtxDevice);
     }
 #endif
-
 #endif // VTX_CONTROL
 
     // start all timers

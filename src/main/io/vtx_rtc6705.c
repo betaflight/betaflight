@@ -85,11 +85,9 @@ static vtxDevice_t vtxRTC6705 = {
 };
 #endif
 
-bool vtxRTC6705Init(void)
+vtxDevice_t *vtxRTC6705Init(void)
 {
-    vtxCommonRegisterDevice(&vtxRTC6705);
-
-    return true;
+    return &vtxRTC6705;
 }
 
 void vtxRTC6705Configure(void)
