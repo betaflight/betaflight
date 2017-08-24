@@ -418,6 +418,10 @@ void validateAndFixConfig(void)
         pgResetFn_serialConfig(serialConfigMutable());
     }
 
+#ifndef USE_GYRO_DATA_ANALYSE
+    featureClear(FEATURE_DYNAMIC_FILTER);
+#endif
+
 #if defined(TARGET_VALIDATECONFIG)
     targetValidateConfiguration();
 #endif
