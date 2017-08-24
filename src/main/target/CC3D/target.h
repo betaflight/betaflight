@@ -15,6 +15,8 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #define TARGET_BOARD_IDENTIFIER "CC3D" // CopterControl 3D
 
 #define LED0_PIN                PB3

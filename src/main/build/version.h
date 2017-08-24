@@ -15,6 +15,8 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #define FC_FIRMWARE_NAME            "Betaflight"
 #define FC_VERSION_MAJOR            3  // increment when a major release is made (big new feature, etc)
 #define FC_VERSION_MINOR            2  // increment when a minor release is made (small new feature, change etc)

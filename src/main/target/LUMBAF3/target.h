@@ -15,6 +15,8 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #define TARGET_BOARD_IDENTIFIER "MCF3" // LumbaF3 Flight Controller by mC
 
 #define LED0_PIN                PB3
