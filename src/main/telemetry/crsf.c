@@ -144,21 +144,12 @@ void crsfFrameBatterySensor(sbuf_t *dst)
     sbufWriteU8(dst, CRSF_FRAME_BATTERY_SENSOR_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
     sbufWriteU8(dst, CRSF_FRAMETYPE_BATTERY_SENSOR);
     sbufWriteU16BigEndian(dst, getBatteryVoltage()); // vbat is in units of 0.1V
-#ifdef CLEANFLIGHT
-    const amperageMeter_t *amperageMeter = getAmperageMeter(batteryConfig()->amperageMeterSource);
-    const int16_t amperage = constrain(amperageMeter->amperage, -0x8000, 0x7FFF) / 10; // send amperage in 0.01 A steps, range is -320A to 320A
-    sbufWriteU16BigEndian(dst, amperage); // amperage is in units of 0.1A
-    const uint32_t batteryCapacity = batteryConfig()->batteryCapacity;
-    const uint8_t batteryRemainingPercentage = batteryCapacityRemainingPercentage();
-#else
     sbufWriteU16BigEndian(dst, getAmperage() / 10);
     const uint32_t batteryCapacity = batteryConfig()->batteryCapacity;
     const uint8_t batteryRemainingPercentage = calculateBatteryPercentageRemaining();
-#endif
     sbufWriteU8(dst, (batteryCapacity >> 16));
     sbufWriteU8(dst, (batteryCapacity >> 8));
     sbufWriteU8(dst, (uint8_t)batteryCapacity);
-
     sbufWriteU8(dst, batteryRemainingPercentage);
 }
 
