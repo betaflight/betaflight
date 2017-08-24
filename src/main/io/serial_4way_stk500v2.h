@@ -24,4 +24,3 @@ uint8_t Stk_WriteEEprom(ioMem_t *pMem);
 uint8_t Stk_ReadFlash(ioMem_t *pMem);
 uint8_t Stk_WriteFlash(ioMem_t *pMem);
 uint8_t Stk_Chip_Erase(void);
-

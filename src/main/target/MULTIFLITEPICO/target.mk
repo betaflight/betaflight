@@ -1,5 +1,5 @@
 F3_TARGETS  += $(TARGET)
-FEATURES    = 
+FEATURES    =
 
 TARGET_SRC = \
             drivers/accgyro/accgyro_mpu.c \
@@ -9,4 +9,3 @@ TARGET_SRC = \
             drivers/barometer/barometer_bmp280.c \
             drivers/compass/compass_ak8975.c \
             drivers/compass/compass_hmc5883l.c
-

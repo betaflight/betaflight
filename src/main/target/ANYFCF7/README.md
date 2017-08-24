@@ -18,4 +18,3 @@
 * support for CAN
 * SD card logging (SPI)
 * 3 AD channels, one with 10k/1k divider, two with 1k series resistor
-

@@ -63,4 +63,3 @@ bool fakeMagDetect(magDev_t *mag)
     return true;
 }
 #endif // USE_FAKE_MAG
-

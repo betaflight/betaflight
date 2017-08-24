@@ -87,4 +87,3 @@ TEST(ParameterGroupsfTest, Test_pgFind)
 
 extern "C" {
 }
-

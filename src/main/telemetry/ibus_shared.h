@@ -39,6 +39,3 @@ void initSharedIbusTelemetry(serialPort_t * port);
 
 
 bool isChecksumOkIa6b(const uint8_t *ibusPacket, const uint8_t length);
-
-
-

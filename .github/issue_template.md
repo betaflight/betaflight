@@ -7,5 +7,5 @@
 2.) Include ways to reproduce the problem;
 3.) Provide information about your flightcontroller and other components including how they are connected/wired;
 4.) Add the used configuration and firmware version;
-5.) Create a `diff` and post it here in a code block. Put \`\`\` (three backticks) at the start and end of the `diff` block; and 
+5.) Create a `diff` and post it here in a code block. Put \`\`\` (three backticks) at the start and end of the `diff` block; and
 6.) Remove this Text :).

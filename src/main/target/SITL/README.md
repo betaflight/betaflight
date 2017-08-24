@@ -45,5 +45,3 @@ UARTx will bind on `tcp://127.0.0.1:576x` when port been open.
 
 `eeprom.bin`, size 8192 Byte, is for config saving.
 size can be changed in `src/main/target/SITL/parameter_group.ld` >> `__FLASH_CONFIG_Size`
-
-

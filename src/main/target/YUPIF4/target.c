@@ -36,4 +36,3 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM3, CH4, PC9,   TIM_USE_BEEPER,              TIMER_OUTPUT_ENABLED, 0 ), // BEEPER PWM
     DEF_TIM(TIM12, CH1, PB14, TIM_USE_BEEPER,              TIMER_OUTPUT_ENABLED, 0 ), // BEEPER PWM OPT
 };
-

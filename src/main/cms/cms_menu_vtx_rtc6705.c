@@ -100,4 +100,3 @@ CMS_Menu cmsx_menuVtxRTC6705 = {
 };
 
 #endif // CMS
-

@@ -439,4 +439,3 @@ typedef struct {
 
 
 bool lsm303dlhcAccDetect(accDev_t *acc);
-

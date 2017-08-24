@@ -236,4 +236,3 @@ void adcInit(const adcConfig_t *config)
 
     ADC_StartConversion(adc.ADCx);
 }
-

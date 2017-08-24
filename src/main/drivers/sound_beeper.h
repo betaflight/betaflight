@@ -39,4 +39,3 @@ typedef struct beeperDevConfig_s {
 void systemBeep(bool on);
 void systemBeepToggle(void);
 void beeperInit(const beeperDevConfig_t *beeperDevConfig);
-

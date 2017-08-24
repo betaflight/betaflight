@@ -250,7 +250,7 @@ protected:
         findSerialPortConfig_stub_retval = &serialTestInstanceConfig;
 
         EXPECT_TRUE(ibusInit(&initialRxConfig, &rxRuntimeConfig));
-    
+
         EXPECT_TRUE(initSharedIbusTelemetryCalled);
 
         //handle that internal ibus position is not set to zero at init
@@ -330,7 +330,7 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6B_HalfPacketReceived_then_interPacketGap
     const uint8_t packet_half[] = {0x20, 0x00, //length and reserved (unknown) bits
                                     0x00, 0xab, 0x01, 0xab, 0x02, 0xab, 0x03, 0xab, 0x04, 0xab, //channel 1..5
                                     0x05, 0xab};
-    const uint8_t packet_full[] = {0x20, 0x00, //length and reserved (unknown) bits 
+    const uint8_t packet_full[] = {0x20, 0x00, //length and reserved (unknown) bits
                                     0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00, //channel 1..5
                                     0x05, 0x00, 0x06, 0x00, 0x07, 0x00, 0x08, 0x00, 0x09, 0x00, //channel 6..10
                                     0x0a, 0x00, 0x0b, 0x00, 0x0c, 0x00, 0x0d, 0x00,             //channel 11..14
@@ -343,7 +343,7 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6B_HalfPacketReceived_then_interPacketGap
 
     microseconds_stub_value += 5000;
     EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
-    
+
     for (size_t i=0; i < sizeof(packet_full); i++) {
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
         stub_serialRxCallback(packet_full[i]);
@@ -452,9 +452,9 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6B_OnePacketReceived_not_shared_port)
 
 TEST_F(IbusRxProtocollUnitTest, Test_OneTelemetryPacketReceived)
 {
-    uint8_t packet[] = {0x04, 0x81, 0x7a, 0xff}; //ibus sensor discovery 
+    uint8_t packet[] = {0x04, 0x81, 0x7a, 0xff}; //ibus sensor discovery
     resetStubTelemetry();
-    
+
     receivePacket(packet, sizeof(packet));
 
     //no frame complete signal to rx system, but telemetry system is called
@@ -466,7 +466,7 @@ TEST_F(IbusRxProtocollUnitTest, Test_OneTelemetryPacketReceived)
 
 TEST_F(IbusRxProtocollUnitTest, Test_OneTelemetryIgnoreTxEchoToRx)
 {
-    uint8_t packet[] = {0x04, 0x81, 0x7a, 0xff}; //ibus sensor discovery 
+    uint8_t packet[] = {0x04, 0x81, 0x7a, 0xff}; //ibus sensor discovery
     resetStubTelemetry();
     stubTelemetryIgnoreRxChars = 4;
 
@@ -475,7 +475,7 @@ TEST_F(IbusRxProtocollUnitTest, Test_OneTelemetryIgnoreTxEchoToRx)
     rxRuntimeConfig.rcFrameStatusFn();
     EXPECT_TRUE(stubTelemetryCalled);
 
-    //when those four bytes are sent and looped back 
+    //when those four bytes are sent and looped back
     resetStubTelemetry();
     rxRuntimeConfig.rcFrameStatusFn();
     receivePacket(packet, sizeof(packet));
@@ -483,7 +483,7 @@ TEST_F(IbusRxProtocollUnitTest, Test_OneTelemetryIgnoreTxEchoToRx)
     //then they are ignored
     EXPECT_FALSE(stubTelemetryCalled);
 
-    //and then next packet can be received    
+    //and then next packet can be received
     receivePacket(packet, sizeof(packet));
     rxRuntimeConfig.rcFrameStatusFn();
     EXPECT_TRUE(stubTelemetryCalled);
@@ -492,7 +492,7 @@ TEST_F(IbusRxProtocollUnitTest, Test_OneTelemetryIgnoreTxEchoToRx)
 
 TEST_F(IbusRxProtocollUnitTest, Test_OneTelemetryShouldNotIgnoreTxEchoAfterInterFrameGap)
 {
-    uint8_t packet[] = {0x04, 0x81, 0x7a, 0xff}; //ibus sensor discovery 
+    uint8_t packet[] = {0x04, 0x81, 0x7a, 0xff}; //ibus sensor discovery
     resetStubTelemetry();
     stubTelemetryIgnoreRxChars = 4;
 
@@ -506,9 +506,8 @@ TEST_F(IbusRxProtocollUnitTest, Test_OneTelemetryShouldNotIgnoreTxEchoAfterInter
     resetStubTelemetry();
     rxRuntimeConfig.rcFrameStatusFn();
 
-    //then next packet can be received    
+    //then next packet can be received
     receivePacket(packet, sizeof(packet));
     rxRuntimeConfig.rcFrameStatusFn();
     EXPECT_TRUE(stubTelemetryCalled);
 }
-

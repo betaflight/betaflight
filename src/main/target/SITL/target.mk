@@ -6,4 +6,3 @@ TARGET_SRC = \
             drivers/barometer/barometer_fake.c \
             drivers/compass/compass_fake.c \
             drivers/serial_tcp.c
-

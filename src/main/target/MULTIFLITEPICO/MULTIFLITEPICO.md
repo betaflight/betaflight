@@ -33,12 +33,12 @@ The features of the FC are detailed below:
 
 (*) Spektrum Compatible DSM2 satellites are supported out of the box. DSMX sat will work with DSM2 protocol with default settings (DSM2, 11bit, 11ms is preset). This is chosen for maximum compatibility. For optimal connection it is recommended to adjust settings to match the capabilities of your transmitter and satellite receiver. If possible it is recommended to use the DSMX protocol since it is known as more reliable. Also to make use of additional channels you should adjust the following two parameters with the BetaFlight Configurator.
 
-    set serialrx_provider = 1   (0 for 1024bit, 1 for 2048bit) 
+    set serialrx_provider = 1   (0 for 1024bit, 1 for 2048bit)
     set spektrum_sat_bind = 5
-    
+
 For more detail of the different bind modes please refer the CleanFlight Spektrum Bind document.
 
-Deltang receivers in serial mode will work like any other Spektrum satellite receiver (10bit, 22ms) only the bind process will be different. 
+Deltang receivers in serial mode will work like any other Spektrum satellite receiver (10bit, 22ms) only the bind process will be different.
 
 The pin layout for the MULTIFLITEPICO is very similar to SPRACINGF3.
 

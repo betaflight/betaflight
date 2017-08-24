@@ -34,7 +34,7 @@ extern "C" {
 
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
-    
+
 
     #include "io/beeper.h"
     #include "io/serial.h"
@@ -118,13 +118,13 @@ TEST(RCSplitTest, TestRecvWhoAreYouResponse)
     unitTestResetRCSplit();
     testData.isRunCamSplitOpenPortSupported = true;
     testData.isRunCamSplitPortConfigurated = true;
-    
+
     bool result = rcSplitInit();
     EXPECT_EQ(true, result);
 
-    // here will generate a number in [6-255], it's make the serialRxBytesWaiting() and serialRead() run at least 5 times, 
+    // here will generate a number in [6-255], it's make the serialRxBytesWaiting() and serialRead() run at least 5 times,
     // so the "who are you response" will full received, and cause the state change to RCSPLIT_STATE_IS_READY;
-    int8_t randNum = rand() % 127 + 6; 
+    int8_t randNum = rand() % 127 + 6;
     testData.maxTimesOfRespDataAvailable = randNum;
     rcSplitProcess((timeUs_t)0);
 
@@ -138,7 +138,7 @@ TEST(RCSplitTest, TestWifiModeChangeWithDeviceUnready)
     testData.isRunCamSplitOpenPortSupported = true;
     testData.isRunCamSplitPortConfigurated = true;
     testData.maxTimesOfRespDataAvailable = 0;
-    
+
     bool result = rcSplitInit();
     EXPECT_EQ(true, result);
 
@@ -187,7 +187,7 @@ TEST(RCSplitTest, TestWifiModeChangeWithDeviceReady)
     testData.isRunCamSplitOpenPortSupported = true;
     testData.isRunCamSplitPortConfigurated = true;
     testData.maxTimesOfRespDataAvailable = 0;
-    
+
     bool result = rcSplitInit();
     EXPECT_EQ(true, result);
 
@@ -195,7 +195,7 @@ TEST(RCSplitTest, TestWifiModeChangeWithDeviceReady)
     for (uint8_t i = 0; i <= BOXCAMERA3 - BOXCAMERA1; i++) {
         memset(modeActivationConditionsMutable(i), 0, sizeof(modeActivationCondition_t));
     }
-    
+
 
     // bind aux1 to wifi button with range [900,1600]
     modeActivationConditionsMutable(0)->auxChannelIndex = 0;
@@ -222,7 +222,7 @@ TEST(RCSplitTest, TestWifiModeChangeWithDeviceReady)
     updateActivatedModes();
 
     // runn process loop
-    int8_t randNum = rand() % 127 + 6; 
+    int8_t randNum = rand() % 127 + 6;
     testData.maxTimesOfRespDataAvailable = randNum;
     rcSplitProcess((timeUs_t)0);
 
@@ -240,7 +240,7 @@ TEST(RCSplitTest, TestWifiModeChangeCombine)
     testData.isRunCamSplitOpenPortSupported = true;
     testData.isRunCamSplitPortConfigurated = true;
     testData.maxTimesOfRespDataAvailable = 0;
-    
+
     bool result = rcSplitInit();
     EXPECT_EQ(true, result);
 
@@ -248,7 +248,7 @@ TEST(RCSplitTest, TestWifiModeChangeCombine)
     for (uint8_t i = 0; i <= BOXCAMERA3 - BOXCAMERA1; i++) {
         memset(modeActivationConditionsMutable(i), 0, sizeof(modeActivationCondition_t));
     }
-    
+
 
     // bind aux1 to wifi button with range [900,1600]
     modeActivationConditionsMutable(0)->auxChannelIndex = 0;
@@ -275,7 +275,7 @@ TEST(RCSplitTest, TestWifiModeChangeCombine)
     updateActivatedModes();
 
     // runn process loop
-    int8_t randNum = rand() % 127 + 6; 
+    int8_t randNum = rand() % 127 + 6;
     testData.maxTimesOfRespDataAvailable = randNum;
     rcSplitProcess((timeUs_t)0);
 
@@ -361,8 +361,8 @@ extern "C" {
         return NULL;
     }
 
-    uint32_t serialRxBytesWaiting(const serialPort_t *instance) 
-    { 
+    uint32_t serialRxBytesWaiting(const serialPort_t *instance)
+    {
         UNUSED(instance);
 
         testData.maxTimesOfRespDataAvailable--;
@@ -373,9 +373,9 @@ extern "C" {
         return 0;
     }
 
-    uint8_t serialRead(serialPort_t *instance) 
-    { 
-        UNUSED(instance); 
+    uint8_t serialRead(serialPort_t *instance)
+    {
+        UNUSED(instance);
 
         if (testData.maxTimesOfRespDataAvailable > 0) {
             static uint8_t i = 0;
@@ -388,41 +388,41 @@ extern "C" {
             return buffer[i++];
         }
 
-        return 0; 
+        return 0;
     }
 
-    void sbufWriteString(sbuf_t *dst, const char *string) 
-    { 
-        UNUSED(dst); UNUSED(string); 
+    void sbufWriteString(sbuf_t *dst, const char *string)
+    {
+        UNUSED(dst); UNUSED(string);
 
         if (testData.isAllowBufferReadWrite) {
             sbufWriteData(dst, string, strlen(string));
         }
     }
-    void sbufWriteU8(sbuf_t *dst, uint8_t val) 
-    { 
-        UNUSED(dst); UNUSED(val); 
+    void sbufWriteU8(sbuf_t *dst, uint8_t val)
+    {
+        UNUSED(dst); UNUSED(val);
 
         if (testData.isAllowBufferReadWrite) {
             *dst->ptr++ = val;
         }
     }
-    
+
     void sbufWriteData(sbuf_t *dst, const void *data, int len)
     {
-        UNUSED(dst); UNUSED(data); UNUSED(len); 
+        UNUSED(dst); UNUSED(data); UNUSED(len);
 
         if (testData.isAllowBufferReadWrite) {
             memcpy(dst->ptr, data, len);
             dst->ptr += len;
-            
+
         }
     }
 
     // modifies streambuf so that written data are prepared for reading
     void sbufSwitchToReader(sbuf_t *buf, uint8_t *base)
     {
-        UNUSED(buf); UNUSED(base); 
+        UNUSED(buf); UNUSED(base);
 
         if (testData.isAllowBufferReadWrite) {
             buf->end = buf->ptr;

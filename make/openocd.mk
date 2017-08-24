@@ -15,4 +15,3 @@ endif
 ifneq ($(OPENOCD_CFG),)
 OPENOCD_COMMAND = $(OPENOCD) -f $(OPENOCD_IF) -f $(OPENOCD_CFG)
 endif
-

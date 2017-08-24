@@ -32,4 +32,3 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
     DEF_TIM(TIM1, CH1, PA8,  TIM_USE_LED,   TIMER_OUTPUT_ENABLED)  //DMA1_CH2 - LED
 };
-

@@ -27,7 +27,7 @@ Betaflight has the following features:
 
 ## Installation & Documentation
 
-See: https://github.com/betaflight/betaflight/wiki 
+See: https://github.com/betaflight/betaflight/wiki
 
 ## IRC Support and Developers Channel
 
@@ -89,18 +89,18 @@ Origins for this fork (Thanks!):
 * **Dominic Clifton** (for Cleanflight), and
 * **Sambas** (for the original STM32F4 port).
 
-The Betaflight Configurator is forked from Cleanflight Configurator and its origins. 
+The Betaflight Configurator is forked from Cleanflight Configurator and its origins.
 
 Origins for Betaflight Configurator:
 * **Dominic Clifton** (for Cleanflight configurator), and
-* **ctn** (for the original Configurator). 
+* **ctn** (for the original Configurator).
 
 Big thanks to current and past contributors:
 * Budden, Martin (martinbudden)
 * Bardwell, Joshua (joshuabardwell)
 * Blackman, Jason (blckmn)
 * ctzsnooze
-* Höglund, Anders (andershoglund) 
+* Höglund, Anders (andershoglund)
 * Ledvin, Peter (ledvinap) - **IO code awesomeness!**
 * kc10kevin
 * Keeble, Gary (MadmanK)

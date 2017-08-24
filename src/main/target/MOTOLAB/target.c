@@ -36,4 +36,3 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM17, CH1, PA7,  TIM_USE_PPM,   0 ), // PPM   - PA7  - *TIM17_CH1, TIM1_CH1N, TIM8_CH1
     DEF_TIM(TIM16, CH1, PB8,  TIM_USE_LED,   0 ), // LED   - PB8  - *TIM16_CH1, TIM4_CH3, TIM8_CH2
 };
-

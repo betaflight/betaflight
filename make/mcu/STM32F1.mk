@@ -69,12 +69,12 @@ MCU_COMMON_SRC = \
             drivers/system_stm32f10x.c \
             drivers/timer_stm32f10x.c
 
-DSP_LIB := 
+DSP_LIB :=
 
 ifneq ($(DEBUG),GDB)
 OPTIMISE_DEFAULT    := -Os
-OPTIMISE_SPEED      := 
-OPTIMISE_SIZE       := 
+OPTIMISE_SPEED      :=
+OPTIMISE_SIZE       :=
 
 LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_DEFAULT)
 endif

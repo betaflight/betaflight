@@ -44,7 +44,7 @@ typedef struct batteryConfig_s {
     uint8_t vbathysteresis;                 // hysteresis for alarm, default 1 = 0.1V
 
     uint8_t vbatfullcellvoltage;            // Cell voltage at which the battery is deemed to be "full" 0.1V units, default is 41 (4.1V)
-   
+
 } batteryConfig_t;
 
 typedef struct lowVoltageCutoff_s {

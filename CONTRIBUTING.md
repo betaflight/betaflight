@@ -11,5 +11,3 @@ Please search for existing issues *before* creating new ones.
 # Developers
 
 Please refer to the development section in the `docs/development` folder.
-
-

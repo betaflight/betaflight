@@ -237,8 +237,8 @@ static void batteryUpdateVoltageState(void)
 
 }
 
-static void batteryUpdateLVC(timeUs_t currentTimeUs) 
-{   
+static void batteryUpdateLVC(timeUs_t currentTimeUs)
+{
     if (batteryConfig()->lvcPercentage < 100) {
         if (voltageState == BATTERY_CRITICAL && !lowVoltageCutoff.enabled) {
             lowVoltageCutoff.enabled = true;
@@ -247,7 +247,7 @@ static void batteryUpdateLVC(timeUs_t currentTimeUs)
         }
         if (lowVoltageCutoff.enabled) {
             if (cmp32(currentTimeUs,lowVoltageCutoff.startTime) < LVC_AFFECT_TIME) {
-                lowVoltageCutoff.percentage = 100 - (cmp32(currentTimeUs,lowVoltageCutoff.startTime) * (100 - batteryConfig()->lvcPercentage) / LVC_AFFECT_TIME); 
+                lowVoltageCutoff.percentage = 100 - (cmp32(currentTimeUs,lowVoltageCutoff.startTime) * (100 - batteryConfig()->lvcPercentage) / LVC_AFFECT_TIME);
             }
             else {
                 lowVoltageCutoff.percentage = batteryConfig()->lvcPercentage;

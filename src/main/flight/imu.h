@@ -80,5 +80,3 @@ void imuSetAttitudeQuat(float w, float x, float y, float z);
 void imuSetHasNewData(uint32_t dt);
 #endif
 #endif
-
-

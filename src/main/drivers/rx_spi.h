@@ -32,4 +32,3 @@ uint8_t rxSpiWriteCommand(uint8_t command, uint8_t data);
 uint8_t rxSpiWriteCommandMulti(uint8_t command, const uint8_t *data, uint8_t length);
 uint8_t rxSpiReadCommand(uint8_t command, uint8_t commandData);
 uint8_t rxSpiReadCommandMulti(uint8_t command, uint8_t commandData, uint8_t *retData, uint8_t length);
-

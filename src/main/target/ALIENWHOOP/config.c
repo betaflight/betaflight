@@ -83,4 +83,3 @@ void targetConfiguration(void)
     compassConfigMutable()->mag_hardware =  MAG_DEFAULT;
 }
 #endif
-
