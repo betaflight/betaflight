@@ -83,4 +83,3 @@ uint32_t Virtual_Com_Port_GetBaudRate(void);
 #endif /* __usb_prop_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
-

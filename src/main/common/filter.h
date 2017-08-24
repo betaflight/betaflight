@@ -98,4 +98,3 @@ float firFilterLastInput(const firFilter_t *filter);
 
 void firFilterDenoiseInit(firFilterDenoise_t *filter, uint8_t gyroSoftLpfHz, uint16_t targetLooptime);
 float firFilterDenoiseUpdate(firFilterDenoise_t *filter, float input);
-

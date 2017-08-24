@@ -83,5 +83,3 @@ void warningLedUpdate(void)
 
     warningLedRefresh();
 }
-
-

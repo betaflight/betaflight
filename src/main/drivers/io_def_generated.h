@@ -1160,4 +1160,3 @@
 # define DEFIO_PORT_USED_LIST /* empty */
 # define DEFIO_PORT_OFFSET_LIST /* empty */
 #endif
-

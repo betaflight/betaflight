@@ -31,4 +31,3 @@ void targetConfiguration(void)
     telemetryConfigMutable()->halfDuplex = 0;
 }
 #endif
-

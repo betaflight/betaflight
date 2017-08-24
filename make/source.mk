@@ -167,7 +167,7 @@ FC_SRC = \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c \
             io/vtx_control.c
-            
+
 COMMON_DEVICE_SRC = \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC)

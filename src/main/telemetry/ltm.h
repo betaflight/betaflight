@@ -25,4 +25,3 @@ void checkLtmTelemetryState(void);
 
 void freeLtmTelemetryPort(void);
 void configureLtmTelemetryPort(void);
-

@@ -36,4 +36,3 @@ void bitArrayClr(void *array, unsigned bit)
 {
     BITARRAY_BIT_OP((uint32_t*)array, bit, &=~);
 }
-

@@ -344,4 +344,3 @@ breakpad_clean:
 	$(V1) [ ! -d "$(BREAKPAD_DIR)" ] || $(RM) -rf $(BREAKPAD_DIR)
 	$(V0) @echo " CLEAN        $(BREAKPAD_DL_FILE)"
 	$(V1) $(RM) -f $(BREAKPAD_DL_FILE)
-

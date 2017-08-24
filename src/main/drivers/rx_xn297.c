@@ -87,4 +87,3 @@ uint8_t XN297_WritePayload(uint8_t *data, int len, const uint8_t *rxAddr)
     packet[RX_TX_ADDR_LEN + len + 1] = crc & 0xff;
     return NRF24L01_WritePayload(packet, RX_TX_ADDR_LEN + len + 2);
 }
-

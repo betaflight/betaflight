@@ -59,4 +59,3 @@ void updateHardwareRevision(void)
 {
 
 }
-

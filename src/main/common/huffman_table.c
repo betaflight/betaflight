@@ -282,4 +282,3 @@ const huffmanTable_t huffmanTable[HUFFMAN_TABLE_SIZE] = {
     {  9, 0x2800 }, // 0xFF 001010000
     { 12, 0x0000 }, // EOF  000000000000
 };
-

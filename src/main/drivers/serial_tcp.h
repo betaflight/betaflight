@@ -47,4 +47,3 @@ void tcpDataOut(tcpPort_t *instance);
 bool tcpIsStart(void);
 bool* tcpGetUsed(void);
 tcpPort_t* tcpGetPool(void);
-

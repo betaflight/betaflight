@@ -94,7 +94,7 @@ DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
 #CMSIS
 VPATH           := $(VPATH):$(CMSIS_DIR)/Include:$(CMSIS_DIR)/Device/ST/STM32F7xx
 VPATH           := $(VPATH):$(STDPERIPH_DIR)/Src
-CMSIS_SRC       := 
+CMSIS_SRC       :=
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(STDPERIPH_DIR)/Inc \
                    $(USBCORE_DIR)/Inc \
@@ -114,7 +114,7 @@ ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fs
 
 DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
 ifeq ($(TARGET),$(filter $(TARGET),$(F7X5XG_TARGETS)))
-DEVICE_FLAGS   += -DSTM32F745xx 
+DEVICE_FLAGS   += -DSTM32F745xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f745.ld
 STARTUP_SRC     = startup_stm32f745xx.s
 TARGET_FLASH   := 2048

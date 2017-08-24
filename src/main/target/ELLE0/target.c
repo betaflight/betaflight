@@ -47,5 +47,3 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 // I2C
 //UART3 RX: DMA1_ST1
 //UART3 TX: DMA1_ST3
-
-

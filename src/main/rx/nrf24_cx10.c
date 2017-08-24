@@ -300,4 +300,3 @@ void cx10Nrf24Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfi
     cx10Nrf24Setup((rx_spi_protocol_e)rxConfig->rx_spi_protocol);
 }
 #endif
-

@@ -95,4 +95,3 @@ int32_t unittest_pidMultiWiiRewrite_DTerm[3];
 
 #endif // UNIT_TEST
 #endif // SRC_MAIN_FLIGHT_PID_C_
-

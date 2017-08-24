@@ -33,4 +33,3 @@ uint32_t softSerialTxBytesFree(const serialPort_t *instance);
 uint8_t softSerialReadByte(serialPort_t *instance);
 void softSerialSetBaudRate(serialPort_t *s, uint32_t baudRate);
 bool isSoftSerialTransmitBufferEmpty(const serialPort_t *s);
-

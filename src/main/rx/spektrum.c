@@ -384,4 +384,3 @@ bool srxlRxIsActive(void)
 }
 
 #endif // SERIAL_RX
-

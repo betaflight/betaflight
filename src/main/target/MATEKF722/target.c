@@ -37,4 +37,3 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
     DEF_TIM(TIM2, CH1, PA15, TIM_USE_LED, TIMER_OUTPUT_ENABLED, 0)     // LED STRIP  DMA1_ST5
 };
-

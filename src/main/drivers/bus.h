@@ -50,4 +50,3 @@ void targetBusInit(void);
 bool busWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data);
 bool busReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data, uint8_t length);
 uint8_t busReadRegister(const busDevice_t *bus, uint8_t reg);
-

@@ -52,4 +52,3 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
     DEF_TIM(TIM5, CH1, PA0, TIM_USE_LED, TIMER_OUTPUT_STANDARD, 0),
 };
-

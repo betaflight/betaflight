@@ -82,7 +82,7 @@ cli_unittest_SRC := \
 		$(USER_DIR)/fc/cli.c \
 		$(USER_DIR)/config/feature.c \
 		$(USER_DIR)/config/parameter_group.c \
-                $(USER_DIR)/common/typeconversion.c 
+                $(USER_DIR)/common/typeconversion.c
 
 cli_unittest_DEFINES := \
 		USE_CLI \
@@ -446,4 +446,3 @@ endef
 
 #apply the canned recipe above to all tests
 $(eval $(foreach test,$(TESTS),$(call test-specific-stuff,$(test))))
-

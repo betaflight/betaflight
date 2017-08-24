@@ -41,4 +41,3 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM4, CH4, PB9, TIM_USE_MOTOR, 0 )  // PWM14 - OUT6
 
 };
-

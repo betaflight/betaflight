@@ -375,4 +375,3 @@ uint32_t Virtual_Com_Port_GetBaudRate(void)
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
-

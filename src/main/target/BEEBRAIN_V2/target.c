@@ -30,4 +30,3 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM1,  CH1,  PA8,  TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED ),                         // PWM3  - PA8  - DMA1_CH2 - *TIM1_CH1, TIM4_ETR
     DEF_TIM(TIM8,  CH2N, PB0,  TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED | TIMER_OUTPUT_INVERTED ), // PWM4  - PB0  - DMA2_CH5 - TIM3_CH3, TIM1_CH2N, *TIM8_CH2N
 };
-

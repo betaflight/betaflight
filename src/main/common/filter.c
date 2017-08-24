@@ -286,4 +286,3 @@ float firFilterDenoiseUpdate(firFilterDenoise_t *filter, float input)
     else
         return filter->movingSum / ++filter->filledCount + 1;
 }
-

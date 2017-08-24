@@ -144,4 +144,3 @@ uint8_t rxSpiReadCommandMulti(uint8_t command, uint8_t commandData, uint8_t *ret
     return ret;
 }
 #endif
-

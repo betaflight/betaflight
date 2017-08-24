@@ -145,6 +145,3 @@ extern const char * const lookupTableBaroHardware[];
 
 extern const char * const lookupTableMagHardware[];
 //extern const uint8_t lookupTableMagHardwareEntryCount;
-
-
-

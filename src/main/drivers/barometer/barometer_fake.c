@@ -70,4 +70,3 @@ bool fakeBaroDetect(baroDev_t *baro)
     return true;
 }
 #endif // USE_FAKE_BARO
-

@@ -72,4 +72,3 @@ TEST(GpsConversionTest, GPSCoordToDegrees_NMEA_Values)
         EXPECT_EQ(result, expectation->degrees);
     }
 }
-

@@ -16,4 +16,3 @@
 * external SPI (shared with U4/5)
 * 128Mb dataflash logging (SPI)
 * Voltage measurement, with 10k/1k divider
-

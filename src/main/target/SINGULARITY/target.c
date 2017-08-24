@@ -36,4 +36,3 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM15, CH2, PA3,  TIM_USE_MOTOR, 1), // SOFTSERIAL1 TX
     DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_LED,   1), // LED_STRIP
 };
-

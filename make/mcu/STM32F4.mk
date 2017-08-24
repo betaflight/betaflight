@@ -17,7 +17,7 @@ ifeq ($(PERIPH_DRIVER), HAL)
 CMSIS_DIR      := $(ROOT)/lib/main/STM32F4/Drivers/CMSIS
 STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F4/Drivers/STM32F4xx_HAL_Driver
 STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/Src/*.c))
-EXCLUDES        = 
+EXCLUDES        =
 else
 CMSIS_DIR      := $(ROOT)/lib/main/CMSIS/CM4
 STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F4/Drivers/STM32F4xx_StdPeriph_Driver
@@ -102,7 +102,7 @@ VPATH           := $(VPATH):$(CMSIS_DIR)/CoreSupport:$(CMSIS_DIR)/DeviceSupport/
 VPATH           := $(VPATH):$(CMSIS_DIR)/Core:$(CMSIS_DIR)/Device/ST/STM32F4xx
 
 ifeq ($(PERIPH_DRIVER), HAL)
-CMSIS_SRC       := 
+CMSIS_SRC       :=
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(STDPERIPH_DIR)/Inc \
                    $(USBCORE_DIR)/Inc \
