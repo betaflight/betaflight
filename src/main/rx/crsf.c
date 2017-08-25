@@ -33,12 +33,18 @@
 
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
+#include "drivers/system.h"
 #include "drivers/time.h"
 
 #include "io/serial.h"
 
+#include "msp/msp.h"
+
 #include "rx/rx.h"
 #include "rx/crsf.h"
+
+#include "telemetry/crsf.h"
+#include "telemetry/msp_shared.h"
 
 #define CRSF_TIME_NEEDED_PER_FRAME_US   1000
 #define CRSF_TIME_BETWEEN_FRAMES_US     4000 // a frame is sent by the transmitter every 4 milliseconds
@@ -46,16 +52,16 @@
 #define CRSF_DIGITAL_CHANNEL_MIN 172
 #define CRSF_DIGITAL_CHANNEL_MAX 1811
 
+#define CRSF_PAYLOAD_OFFSET offsetof(crsfFrameDef_t, type)
+
 STATIC_UNIT_TESTED bool crsfFrameDone = false;
 STATIC_UNIT_TESTED crsfFrame_t crsfFrame;
-
 STATIC_UNIT_TESTED uint32_t crsfChannelData[CRSF_MAX_CHANNEL];
 
 static serialPort_t *serialPort;
 static uint32_t crsfFrameStartAt = 0;
 static uint8_t telemetryBuf[CRSF_FRAME_SIZE_MAX];
 static uint8_t telemetryBufLen = 0;
-
 
 /*
  * CRSF protocol
@@ -133,6 +139,9 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c)
     if (crsfFramePosition < fullFrameLength) {
         crsfFrame.bytes[crsfFramePosition++] = (uint8_t)c;
         crsfFrameDone = crsfFramePosition < fullFrameLength ? false : true;
+        if (crsfFrameDone) {
+            crsfFramePosition = 0;
+        }
     }
 }
 
@@ -176,6 +185,20 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(void)
             crsfChannelData[14] = rcChannels->chan14;
             crsfChannelData[15] = rcChannels->chan15;
             return RX_FRAME_COMPLETE;
+        } else {
+            if (crsfFrame.frame.type == CRSF_FRAMETYPE_DEVICE_PING) {
+                // TODO: CRC CHECK
+                scheduleDeviceInfoResponse();
+                return RX_FRAME_COMPLETE;
+            } else if (crsfFrame.frame.type == CRSF_FRAMETYPE_MSP_REQ || crsfFrame.frame.type == CRSF_FRAMETYPE_MSP_WRITE) {
+                // TODO: CRC CHECK
+                uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + 2;
+                uint8_t *frameEnd = (uint8_t *)&crsfFrame.frame.payload + 2 + CRSF_FRAME_RX_MSP_PAYLOAD_SIZE;
+                if(handleMspFrame(frameStart, frameEnd)) {
+                    scheduleMspResponse();
+                }
+                return RX_FRAME_COMPLETE;
+            }
         }
     }
     return RX_FRAME_PENDING;
@@ -222,6 +245,7 @@ void crsfRxSendTelemetryData(void)
 
 bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
+
     for (int ii = 0; ii < CRSF_MAX_CHANNEL; ++ii) {
         crsfChannelData[ii] = (16 * rxConfig->midrc) / 10 - 1408;
     }

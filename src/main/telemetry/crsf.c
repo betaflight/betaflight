@@ -24,6 +24,7 @@
 #ifdef TELEMETRY
 
 #include "config/feature.h"
+#include "build/build_config.h"
 #include "build/version.h"
 
 #include "config/parameter_group.h"
@@ -31,6 +32,7 @@
 
 #include "common/crc.h"
 #include "common/maths.h"
+#include "common/printf.h"
 #include "common/streambuf.h"
 #include "common/utils.h"
 
@@ -51,12 +53,17 @@
 
 #include "telemetry/telemetry.h"
 #include "telemetry/crsf.h"
+#include "telemetry/msp_shared.h"
 
 #include "fc/config.h"
 
 #define CRSF_CYCLETIME_US                   100000 // 100ms, 10 Hz
+#define CRSF_DEVICEINFO_VERSION             0x01
+#define CRSF_DEVICEINFO_PARAMETER_COUNT     255
 
 static bool crsfTelemetryEnabled;
+static bool deviceInfoReplyPending;
+static bool mspReplyPending;
 static uint8_t crsfFrame[CRSF_FRAME_SIZE_MAX];
 
 static void crsfInitializeFrame(sbuf_t *dst)
@@ -223,6 +230,41 @@ void crsfFrameFlightMode(sbuf_t *dst)
     *lengthPtr = sbufPtr(dst) - lengthPtr;
 }
 
+void scheduleDeviceInfoResponse() {
+    deviceInfoReplyPending = true;
+}
+
+/*
+0x29 Device Info
+Payload:
+uint8_t     Destination
+uint8_t     Origin
+char[]      Device Name ( Null terminated string )
+uint32_t    Null Bytes
+uint32_t    Null Bytes
+uint32_t    Null Bytes
+uint8_t     255 (Max MSP Parameter)
+uint8_t     0x01 (Parameter version 1)
+*/
+void crsfFrameDeviceInfo(sbuf_t *dst) {
+
+    char buff[30];
+    tfp_sprintf(buff, "%s %s: %s", FC_FIRMWARE_NAME, FC_VERSION_STRING, systemConfig()->boardIdentifier);
+
+    uint8_t *lengthPtr = sbufPtr(dst);
+    sbufWriteU8(dst, 0);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_DEVICE_INFO);
+    sbufWriteU8(dst, CRSF_ADDRESS_RADIO_TRANSMITTER);
+    sbufWriteU8(dst, CRSF_ADDRESS_BETAFLIGHT);
+    sbufWriteStringWithZeroTerminator(dst, buff);
+    for (unsigned int ii=0; ii<12; ii++) {
+        sbufWriteU8(dst, 0x00);
+    }
+    sbufWriteU8(dst, CRSF_DEVICEINFO_PARAMETER_COUNT);
+    sbufWriteU8(dst, CRSF_DEVICEINFO_VERSION);
+    *lengthPtr = sbufPtr(dst) - lengthPtr;
+}
+
 #define BV(x)  (1 << (x)) // bit value
 
 // schedule array to decide how often each type of frame is sent
@@ -238,6 +280,25 @@ typedef enum {
 static uint8_t crsfScheduleCount;
 static uint8_t crsfSchedule[CRSF_SCHEDULE_COUNT_MAX];
 
+void scheduleMspResponse() {
+    if (!mspReplyPending) {
+        mspReplyPending = true;
+    }
+}
+
+void crsfSendMspResponse(uint8_t *payload)
+{
+    sbuf_t crsfPayloadBuf;
+    sbuf_t *dst = &crsfPayloadBuf;
+
+    crsfInitializeFrame(dst);
+    sbufWriteU8(dst, CRSF_FRAME_TX_MSP_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_EXT_TYPE_CRC);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_MSP_RESP);
+    sbufWriteU8(dst, CRSF_ADDRESS_RADIO_TRANSMITTER);
+    sbufWriteU8(dst, CRSF_ADDRESS_BETAFLIGHT);
+    sbufWriteData(dst, payload, CRSF_FRAME_TX_MSP_PAYLOAD_SIZE);
+    crsfFinalize(dst);
+ }
 
 static void processCrsf(void)
 {
@@ -257,6 +318,7 @@ static void processCrsf(void)
         crsfFrameBatterySensor(dst);
         crsfFinalize(dst);
     }
+
     if (currentSchedule & BV(CRSF_FRAME_FLIGHT_MODE_INDEX)) {
         crsfInitializeFrame(dst);
         crsfFrameFlightMode(dst);
@@ -277,6 +339,10 @@ void initCrsfTelemetry(void)
     // check if there is a serial port open for CRSF telemetry (ie opened by the CRSF RX)
     // and feature is enabled, if so, set CRSF telemetry enabled
     crsfTelemetryEnabled = crsfRxIsActive();
+
+    deviceInfoReplyPending = false;
+    mspReplyPending = false;
+
     int index = 0;
     crsfSchedule[index++] = BV(CRSF_FRAME_ATTITUDE_INDEX);
     crsfSchedule[index++] = BV(CRSF_FRAME_BATTERY_SENSOR_INDEX);
@@ -311,7 +377,18 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
     // Actual telemetry data only needs to be sent at a low frequency, ie 10Hz
     if (currentTimeUs >= crsfLastCycleTime + CRSF_CYCLETIME_US) {
         crsfLastCycleTime = currentTimeUs;
-        processCrsf();
+        if (deviceInfoReplyPending) {
+            sbuf_t crsfPayloadBuf;
+            sbuf_t *dst = &crsfPayloadBuf;
+            crsfInitializeFrame(dst);
+            crsfFrameDeviceInfo(dst);
+            crsfFinalize(dst);
+            deviceInfoReplyPending = false;
+        } else if (mspReplyPending) {
+            mspReplyPending = sendMspReply(CRSF_FRAME_TX_MSP_PAYLOAD_SIZE, &crsfSendMspResponse);
+        } else {
+            processCrsf();
+        }
     }
 }
 

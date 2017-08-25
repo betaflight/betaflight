@@ -19,9 +19,12 @@
 
 #include "common/time.h"
 #include "rx/crsf.h"
+#include "telemetry/msp_shared.h"
 
 void initCrsfTelemetry(void);
 bool checkCrsfTelemetryState(void);
 void handleCrsfTelemetry(timeUs_t currentTimeUs);
+void scheduleDeviceInfoResponse();
+void scheduleMspResponse();
 
 int getCrsfFrame(uint8_t *frame, crsfFrameType_e frameType);
