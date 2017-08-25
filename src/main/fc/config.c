@@ -372,9 +372,11 @@ void validateAndFixConfig(void)
         featureClear(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
     }
 
+#ifdef USE_RX_SPI
     if (featureConfigured(FEATURE_RX_SPI)) {
         featureClear(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_MSP);
     }
+#endif
 
     if (featureConfigured(FEATURE_RX_PARALLEL_PWM)) {
         featureClear(FEATURE_RX_SERIAL | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
@@ -417,6 +419,73 @@ void validateAndFixConfig(void)
     if (!isSerialConfigValid(serialConfig())) {
         pgResetFn_serialConfig(serialConfigMutable());
     }
+
+// clear features that are not supported.
+// I have kept them all here in one place, some could be moved to sections of code above.
+
+#ifndef USE_PPM
+    featureClear(FEATURE_RX_PPM);
+#endif
+
+#ifndef SERIAL_RX
+    featureClear(FEATURE_RX_SERIAL);
+#endif
+
+#if !defined(USE_SOFTSERIAL1) && !defined(USE_SOFTSERIAL2)
+    featureClear(FEATURE_SOFTSERIAL);
+#endif
+
+#ifndef GPS
+    featureClear(FEATURE_GPS);
+#endif
+
+#ifndef SONAR
+    featureClear(FEATURE_SONAR);
+#endif
+
+#ifndef TELEMETRY
+    featureClear(FEATURE_TELEMETRY);
+#endif
+
+#ifndef USE_PWM
+    featureClear(FEATURE_RX_PARALLEL_PWM);
+#endif
+
+#ifndef USE_RX_MSP
+    featureClear(FEATURE_RX_MSP);
+#endif
+
+#ifndef LED_STRIP
+    featureClear(FEATURE_LED_STRIP);
+#endif
+
+#ifndef USE_DASHBOARD
+    featureClear(FEATURE_DASHBOARD);
+#endif
+
+#ifndef OSD
+    featureClear(FEATURE_OSD);
+#endif
+
+#ifndef USE_SERVOS
+    featureClear(FEATURE_SERVO_TILT | FEATURE_CHANNEL_FORWARDING);
+#endif
+
+#ifndef TRANSPONDER
+    featureClear(FEATURE_TRANSPONDER);
+#endif
+
+#ifndef USE_RX_SPI
+    featureClear(FEATURE_RX_SPI);
+#endif
+
+#ifndef USE_SOFTSPI
+    featureClear(FEATURE_SOFTSPI);
+#endif
+
+#ifndef USE_ESC_SENSOR
+    featureClear(FEATURE_ESC_SENSOR);
+#endif
 
 #ifndef USE_GYRO_DATA_ANALYSE
     featureClear(FEATURE_DYNAMIC_FILTER);
