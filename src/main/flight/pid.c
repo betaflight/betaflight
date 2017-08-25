@@ -415,6 +415,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             }
             if (axis == FD_YAW) {
                 // on yaw axis, prevent "yaw spin to the moon" after crash by constraining errorRate
+#if !(defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_ICM20649))
 #define GYRO_POTENTIAL_OVERFLOW_RATE 1990.0f
                 if (gyroRate > GYRO_POTENTIAL_OVERFLOW_RATE || gyroRate < -GYRO_POTENTIAL_OVERFLOW_RATE) {
                     // ICM gyros are specified to +/- 2000 deg/sec, in a crash they can go out of spec.
@@ -423,7 +424,9 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                     // If there is a sign reversal we will actually increase crash-induced yaw spin
                     // so best thing to do is set error to zero.
                     errorRate = 0.0f;
-                } else {
+                } else
+#endif
+                {
                     errorRate = constrainf(errorRate, -crashLimitYaw, crashLimitYaw);
                 }
             } else {
