@@ -415,7 +415,8 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             }
             if (axis == FD_YAW) {
                 // on yaw axis, prevent "yaw spin to the moon" after crash by constraining errorRate
-                if (gyroRate > 1990.0f || gyroRate < -1990.0f) {
+#define GYRO_POTENTIAL_OVERFLOW_RATE 1990.0f
+                if (gyroRate > GYRO_POTENTIAL_OVERFLOW_RATE || gyroRate < -GYRO_POTENTIAL_OVERFLOW_RATE) {
                     // ICM gyros are specified to +/- 2000 deg/sec, in a crash they can go out of spec.
                     // This can cause an overflow and sign reversal in the output.
                     // Overflow and sign reversal seems to result in a gyro value of +1996 or -1996.
