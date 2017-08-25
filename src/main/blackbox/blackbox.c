@@ -925,25 +925,8 @@ void stopInTestMode(void)
  */
 bool inMotorTestMode(void) {
     static uint32_t resetTime = 0;
-    uint16_t inactiveMotorCommand;
-    if (feature(FEATURE_3D)) {
-       inactiveMotorCommand = flight3DConfig()->neutral3d;
-#ifdef USE_DSHOT
-    } else if (isMotorProtocolDshot()) {
-       inactiveMotorCommand = DSHOT_DISARM_COMMAND;
-#endif
-    } else {
-       inactiveMotorCommand = motorConfig()->mincommand;
-    }
 
-    int i;
-    bool atLeastOneMotorActivated = false;
-
-    // set disarmed motor values
-    for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
-        atLeastOneMotorActivated |= (motor_disarmed[i] != inactiveMotorCommand);
-
-    if (atLeastOneMotorActivated) {
+    if (!ARMING_FLAG(ARMED) && areMotorsRunning()) {
         resetTime = millis() + 5000; // add 5 seconds
         return true;
     } else {
