@@ -26,8 +26,6 @@
 #define STR(x) STR_HELPER(x)
 #define FC_VERSION_STRING STR(FC_VERSION_MAJOR) "." STR(FC_VERSION_MINOR) "." STR(FC_VERSION_PATCH_LEVEL)
 
-#define MW_VERSION              231
-
 extern const char* const targetName;
 
 #define GIT_SHORT_REVISION_LENGTH   7 // lower case hexadecimal digits.
