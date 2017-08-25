@@ -415,7 +415,17 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             }
             if (axis == FD_YAW) {
                 // on yaw axis, prevent "yaw spin to the moon" after crash by constraining errorRate
-                errorRate = constrainf(errorRate, -crashLimitYaw, crashLimitYaw);
+#define GYRO_POTENTIAL_OVERFLOW_RATE 1990.0f
+                if (gyroRate > GYRO_POTENTIAL_OVERFLOW_RATE || gyroRate < -GYRO_POTENTIAL_OVERFLOW_RATE) {
+                    // ICM gyros are specified to +/- 2000 deg/sec, in a crash they can go out of spec.
+                    // This can cause an overflow and sign reversal in the output.
+                    // Overflow and sign reversal seems to result in a gyro value of +1996 or -1996.
+                    // If there is a sign reversal we will actually increase crash-induced yaw spin
+                    // so best thing to do is set error to zero.
+                    errorRate = 0.0f;
+                } else {
+                    errorRate = constrainf(errorRate, -crashLimitYaw, crashLimitYaw);
+                }
             } else {
                 // on roll and pitch axes calculate currentPidSetpoint and errorRate to level the aircraft to recover from crash
                 if (sensors(SENSOR_ACC)) {
