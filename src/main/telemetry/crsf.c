@@ -51,6 +51,7 @@
 
 #include "telemetry/telemetry.h"
 #include "telemetry/crsf.h"
+#include "telemetry/msp_shared.h"
 
 #include "fc/config.h"
 
@@ -58,13 +59,15 @@
 
 static bool crsfTelemetryEnabled;
 static uint8_t crsfFrame[CRSF_FRAME_SIZE_MAX];
+static crsfExtMspPackage_t extMspPackage;
+static bool mspReplyPending = false;
 
-static void crsfInitializeFrame(sbuf_t *dst)
+static void crsfInitializeFrame(sbuf_t *dst, uint8_t originAddr)
 {
     dst->ptr = crsfFrame;
     dst->end = ARRAYEND(crsfFrame);
 
-    sbufWriteU8(dst, CRSF_ADDRESS_BROADCAST);
+    sbufWriteU8(dst, originAddr);
 }
 
 static void crsfWriteCrc(sbuf_t *dst, uint8_t *start)
@@ -226,10 +229,37 @@ void crsfFrameFlightMode(sbuf_t *dst)
 #define BV(x)  (1 << (x)) // bit value
 
 // schedule array to decide how often each type of frame is sent
-#define CRSF_SCHEDULE_COUNT_MAX     5
+#define CRSF_SCHEDULE_COUNT_MAX     6
 static uint8_t crsfScheduleCount;
 static uint8_t crsfSchedule[CRSF_SCHEDULE_COUNT_MAX];
 
+void scheduleMspResponse(mspPackage_t *package, uint8_t destAddr, uint8_t originAddr) {
+    extMspPackage.destAddr = destAddr;
+    extMspPackage.originAddr = originAddr;
+    extMspPackage.mspPackage = package;
+    mspReplyPending = true;
+}
+
+void crsfSendMspResponse(uint8_t *packet) 
+{
+    sbuf_t crsfPayloadBuf;
+    sbuf_t mspPayload;
+    sbuf_t *dst = &crsfPayloadBuf;
+    sbuf_t *msp = &mspPayload;
+
+    msp->ptr = packet;
+    msp->end = packet + CRSF_PAYLOAD_SIZE_MAX - 2;
+
+    crsfInitializeFrame(dst, CRSF_ADDRESS_BROADCAST);
+    sbufWriteU8(dst, CRSF_FRAME_MSP_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
+    sbufWriteU8(dst, CRSF_FRAMETYPE_MSP);
+    sbufWriteU8(dst, extMspPackage.originAddr);
+    sbufWriteU8(dst, extMspPackage.destAddr);
+    while (sbufBytesRemaining(msp)) {
+        sbufWriteU8(dst, sbufReadU8(msp));
+    }
+    crsfFinalize(dst);
+}
 
 static void processCrsf(void)
 {
@@ -240,27 +270,32 @@ static void processCrsf(void)
     sbuf_t *dst = &crsfPayloadBuf;
 
     if (currentSchedule & BV(CRSF_FRAME_ATTITUDE)) {
-        crsfInitializeFrame(dst);
+        crsfInitializeFrame(dst, CRSF_ADDRESS_BROADCAST);
         crsfFrameAttitude(dst);
         crsfFinalize(dst);
     }
     if (currentSchedule & BV(CRSF_FRAME_BATTERY_SENSOR)) {
-        crsfInitializeFrame(dst);
+        crsfInitializeFrame(dst, CRSF_ADDRESS_BROADCAST);
         crsfFrameBatterySensor(dst);
         crsfFinalize(dst);
     }
     if (currentSchedule & BV(CRSF_FRAME_FLIGHT_MODE)) {
-        crsfInitializeFrame(dst);
+        crsfInitializeFrame(dst, CRSF_ADDRESS_BROADCAST);
         crsfFrameFlightMode(dst);
         crsfFinalize(dst);
     }
 #ifdef GPS
     if (currentSchedule & BV(CRSF_FRAME_GPS)) {
-        crsfInitializeFrame(dst);
+        crsfInitializeFrame(dst, CRSF_ADDRESS_BROADCAST);
         crsfFrameGps(dst);
         crsfFinalize(dst);
     }
 #endif
+    if (currentSchedule & BV(CRSF_FRAME_MSP)) {
+        if (mspReplyPending) {
+            mspReplyPending = sendMspReply(extMspPackage.mspPackage, CRSF_PAYLOAD_SIZE_MAX-2, &crsfSendMspResponse);
+        }
+    }
     crsfScheduleIndex = (crsfScheduleIndex + 1) % crsfScheduleCount;
 }
 
@@ -276,6 +311,7 @@ void initCrsfTelemetry(void)
     if (feature(FEATURE_GPS)) {
         crsfSchedule[index++] = BV(CRSF_FRAME_GPS);
     }
+    crsfSchedule[index++] = BV(CRSF_FRAME_MSP);
     crsfScheduleCount = (uint8_t)index;
 
  }
@@ -312,7 +348,7 @@ int getCrsfFrame(uint8_t *frame, crsfFrameType_e frameType)
     sbuf_t crsfFrameBuf;
     sbuf_t *sbuf = &crsfFrameBuf;
 
-    crsfInitializeFrame(sbuf);
+    crsfInitializeFrame(sbuf, CRSF_ADDRESS_BROADCAST);
     switch (frameType) {
     default:
     case CRSF_FRAME_ATTITUDE:

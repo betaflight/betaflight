@@ -30,15 +30,20 @@ extern "C" {
     #include "common/utils.h"
 
     #include "io/serial.h"
-
+	
     #include "rx/rx.h"
     #include "rx/crsf.h"
+
+    #include "telemetry/crsf.h"
+    #include "telemetry/msp_shared.h"
 
     void crsfDataReceive(uint16_t c);
     uint8_t crsfFrameCRC(void);
     uint8_t crsfFrameStatus(void);
     uint16_t crsfReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
+    bool sendMspReply(mspPackage_t *package, uint8_t payloadSize, mspResponseFnPtr responseFn);
+    void scheduleMspResponse(mspPackage_t *package, uint8_t destAddr, uint8_t originAddr);
     extern bool crsfFrameDone;
     extern crsfFrame_t crsfFrame;
     extern uint32_t crsfChannelData[CRSF_MAX_CHANNEL];

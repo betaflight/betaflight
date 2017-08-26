@@ -1,3 +1,6 @@
+#pragma once
+
+#include "msp/msp.h"
 
 typedef void (*mspResponseFnPtr)(uint8_t *packet);
 

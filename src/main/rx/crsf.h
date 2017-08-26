@@ -22,6 +22,8 @@
 #define CRSF_PORT_MODE          MODE_RXTX
 
 #define CRSF_MAX_CHANNEL        16
+#define CRSF_MSP_RX_BUF_SIZE 64
+#define CRSF_MSP_TX_BUF_SIZE 256
 
 typedef enum {
     CRSF_FRAMETYPE_GPS = 0x02,
@@ -29,7 +31,8 @@ typedef enum {
     CRSF_FRAMETYPE_LINK_STATISTICS = 0x14,
     CRSF_FRAMETYPE_RC_CHANNELS_PACKED = 0x16,
     CRSF_FRAMETYPE_ATTITUDE = 0x1E,
-    CRSF_FRAMETYPE_FLIGHT_MODE = 0x21
+    CRSF_FRAMETYPE_FLIGHT_MODE = 0x21,
+    CRSF_FRAMETYPE_MSP = 0x33
 } crsfFrameTypes_e;
 
 enum {
@@ -38,6 +41,7 @@ enum {
     CRSF_FRAME_LINK_STATISTICS_PAYLOAD_SIZE = 10,
     CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE = 22, // 11 bits per channel * 16 channels = 22 bytes.
     CRSF_FRAME_ATTITUDE_PAYLOAD_SIZE = 6,
+    CRSF_FRAME_MSP_PAYLOAD_SIZE = 30,
     CRSF_FRAME_LENGTH_ADDRESS = 1, // length of ADDRESS field
     CRSF_FRAME_LENGTH_FRAMELENGTH = 1, // length of FRAMELENGTH field
     CRSF_FRAME_LENGTH_TYPE = 1, // length of TYPE field
@@ -47,6 +51,8 @@ enum {
 
 enum {
     CRSF_ADDRESS_BROADCAST = 0x00,
+    CRSF_ADDRESS_LUA = 0x0D,
+    CRSF_ADDRESS_BETAFLIGHT = 0x1B,
     CRSF_ADDRESS_TBS_CORE_PNP_PRO = 0x8,
     CRSF_ADDRESS_RESERVED1 = 0x8A,
     CRSF_ADDRESS_CURRENT_SENSOR = 0xC0,
@@ -73,7 +79,6 @@ typedef union crsfFrame_u {
     uint8_t bytes[CRSF_FRAME_SIZE_MAX];
     crsfFrameDef_t frame;
 } crsfFrame_t;
-
 
 void crsfRxWriteTelemetryData(const void *data, int len);
 void crsfRxSendTelemetryData(void);

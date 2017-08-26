@@ -18,17 +18,26 @@
 #pragma once
 
 #include "common/time.h"
+#include "telemetry/msp_shared.h"
 
 typedef enum {
     CRSF_FRAME_START = 0,
     CRSF_FRAME_ATTITUDE = CRSF_FRAME_START,
     CRSF_FRAME_BATTERY_SENSOR,
     CRSF_FRAME_FLIGHT_MODE,
-    CRSF_FRAME_GPS
+    CRSF_FRAME_GPS,
+    CRSF_FRAME_MSP
 } crsfFrameType_e;
+
+typedef struct crsfExtMspPackage_s {
+    uint8_t destAddr;
+    uint8_t originAddr;
+    mspPackage_t *mspPackage;
+} crsfExtMspPackage_t;
 
 void initCrsfTelemetry(void);
 bool checkCrsfTelemetryState(void);
 void handleCrsfTelemetry(timeUs_t currentTimeUs);
+void scheduleMspResponse(mspPackage_t *package, uint8_t destAddr, uint8_t originAddr);
 
 int getCrsfFrame(uint8_t *frame, crsfFrameType_e frameType);
