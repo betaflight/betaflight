@@ -200,6 +200,8 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     if (pidProfile->dterm_lpf_hz == 0 || pidProfile->dterm_lpf_hz > pidFrequencyNyquist) {
         dtermLpfApplyFn = nullFilterApply;
     } else {
+        memset(&dtermFilterLpfUnion, 0, sizeof(dtermFilterLpfUnion));
+
         switch (pidProfile->dterm_filter_type) {
         default:
             dtermLpfApplyFn = nullFilterApply;
