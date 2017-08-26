@@ -549,6 +549,7 @@ COMMON_SRC = \
             common/printf.c \
             common/streambuf.c \
             common/typeconversion.c \
+            common/string_light.c \
             config/config_eeprom.c \
             config/config_streamer.c \
             config/feature.c \
