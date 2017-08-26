@@ -67,6 +67,7 @@
 #include "drivers/io.h"
 #include "drivers/exti.h"
 #include "drivers/io_pca9685.h"
+#include "drivers/vcd.h"
 
 #include "fc/cli.h"
 #include "fc/fc_tasks.h"
@@ -85,6 +86,7 @@
 #include "io/pwmdriver_i2c.h"
 #include "io/osd.h"
 #include "io/displayport_msp.h"
+#include "io/displayport_max7456.h"
 #include "io/rcsplit.h"
 
 #include "msp/msp_serial.h"
@@ -519,14 +521,30 @@ void init(void)
 
     rxInit();
 
+#if (defined(OSD) || (defined(USE_MSP_DISPLAYPORT) && defined(CMS)))
+    displayPort_t *osdDisplayPort = NULL;
+#endif
+
 #ifdef OSD
     if (feature(FEATURE_OSD)) {
-        osdInit();
+#if defined(USE_MAX7456)
+        // If there is a max7456 chip for the OSD then use it
+        static vcdProfile_t vcdProfile;
+        vcdProfile.video_system = osdConfig()->video_system;
+        osdDisplayPort = max7456DisplayPortInit(&vcdProfile);
+#elif defined(USE_OSD_OVER_MSP_DISPLAYPORT) // OSD over MSP; not supported (yet)
+        osdDisplayPort = displayPortMspInit();
+#endif
+        // osdInit  will register with CMS by itself.
+        osdInit(osdDisplayPort);
     }
 #endif
 
 #if defined(USE_MSP_DISPLAYPORT) && defined(CMS)
-    cmsDisplayPortRegister(displayPortMspInit());
+    // If OSD is not active, then register MSP_DISPLAYPORT as a CMS device.
+    if (!osdDisplayPort) {
+        cmsDisplayPortRegister(displayPortMspInit());
+    }
 #endif
 
 #ifdef GPS
@@ -609,11 +627,7 @@ void init(void)
     // TODO - not implemented yet
     timerStart();
 
-    ENABLE_STATE(SMALL_ANGLE);
-    DISABLE_ARMING_FLAG(PREVENT_ARMING);
-
     // Now that everything has powered up the voltage and cell count be determined.
-
     if (feature(FEATURE_VBAT | FEATURE_CURRENT_METER))
         batteryInit();
 

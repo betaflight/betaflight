@@ -17,8 +17,14 @@
 
 #pragma once
 
-#include "config/parameter_group.h"
-#include "drivers/display.h"
+// Video Character Display parameters
 
-struct displayPort_s;
-struct displayPort_s *displayPortMspInit(void);
+typedef struct vcdProfile_s {
+    uint8_t video_system;
+} vcdProfile_t;
+
+enum VIDEO_SYSTEMS {
+    VIDEO_SYSTEM_AUTO = 0,
+    VIDEO_SYSTEM_PAL,
+    VIDEO_SYSTEM_NTSC
+};
