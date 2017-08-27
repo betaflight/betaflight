@@ -38,17 +38,15 @@ static TIM_HandleTypeDef TimHandle;
 static uint16_t timerChannel = 0;
 static bool timerNChannel = false;
 
-void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
-{
-    if (htim->Instance == TimHandle.Instance) {
-        //HAL_TIM_PWM_Stop_DMA(&TimHandle,WS2811_TIMER_CHANNEL);
-        ws2811LedDataTransferInProgress = 0;
-    }
-}
-
 void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     HAL_DMA_IRQHandler(TimHandle.hdma[descriptor->userParam]);
+    if(timerNChannel) {
+        HAL_TIMEx_PWMN_Stop_DMA(&TimHandle,timerChannel);
+    } else {
+        HAL_TIM_PWM_Stop_DMA(&TimHandle,timerChannel);
+    }
+    ws2811LedDataTransferInProgress = 0;
 }
 
 void ws2811LedStripHardwareInit(ioTag_t ioTag)
@@ -86,7 +84,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
 
     ws2811IO = IOGetByTag(ioTag);
     IOInit(ws2811IO, OWNER_LED_STRIP, 0);
-    IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP), timerHardware->alternateFunction);
+    IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN), timerHardware->alternateFunction);
 
     __DMA1_CLK_ENABLE();
 
