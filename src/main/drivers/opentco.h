@@ -28,6 +28,7 @@ typedef enum {
 } openTCOCommandOSDWriteMode_e;
 
 #define OPENTCO_PROTOCOL_HEADER 0x80
+#define OPENTCO_CRC8_FROM_HEADER (0x89)
 
 #define OPENTCO_MAX_DATA_LENGTH       60
 #define OPENTCO_MAX_FRAME_LENGTH     (OPENTCO_MAX_DATA_LENGTH + 4)

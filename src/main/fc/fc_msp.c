@@ -1207,7 +1207,6 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
                     sbufWriteU8(dst, VTX_DEVICE_NONE); // no VTX detected
                     break;
                 } else {
-                    FIXME: why is this not called
                     // device is available
                     sbufWriteU8(dst, deviceType);
                     sbufWriteU8(dst, band);
@@ -1219,28 +1218,25 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
                     // send supported bands
                     sbufWriteU8(dst, capability.bandCount);
                     for(int i = 0; i < capability.bandCount; i++) {
-                        /*char *ptr;
-                        if (vtxCommonGetBandName(i, ptr))
-                            sbufWriteString(dst, ptr);*/
-                        sbufWriteString(dst, "A");
+                        char *ptr;
+                        if (vtxCommonGetBandName(i, &ptr))
+                            sbufWriteString(dst, ptr);
                         sbufWriteU8(dst, 0);
                     }
                     // send supported channels
                     sbufWriteU8(dst, capability.channelCount);
                     for(int i = 0; i < capability.channelCount; i++) {
-                        /*char *ptr;
-                        if (vtxCommonGetChannelName(i, ptr))
-                            sbufWriteString(dst, ptr);*/
-                        sbufWriteString(dst, "B");
+                        char *ptr;
+                        if (vtxCommonGetChannelName(i, &ptr))
+                            sbufWriteString(dst, ptr);
                         sbufWriteU8(dst, 0);
                     }
                     // send supported powers
                     sbufWriteU8(dst, capability.powerCount);
                     for(int i = 0; i < capability.powerCount; i++) {
-                        /*char *ptr;
-                        if (vtxCommonGetPowerName(i, ptr))
-                            sbufWriteString(dst, ptr);*/
-                        sbufWriteString(dst, "C");
+                        char *ptr;
+                        if (vtxCommonGetPowerName(i, &ptr))
+                            sbufWriteString(dst, ptr);
                         sbufWriteU8(dst, 0);
                     }
                     /*

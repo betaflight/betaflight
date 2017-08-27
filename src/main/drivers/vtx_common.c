@@ -79,30 +79,30 @@ vtxDevice_e vtxCommonGetDeviceType(void)
     return vtxDeviceConfig()->device;
 }
 
-bool vtxCommonGetBandName(uint8_t band, char *name)
+bool vtxCommonGetBandName(uint8_t band, char **name)
 {
     if (band > vtxDevice->capability.bandCount) {
         return false;
     }
-    name = vtxDevice->bandNames[band];
+    *name = vtxDevice->bandNames[band];
     return true;
 }
 
-bool vtxCommonGetChannelName(uint8_t ch, char *name)
+bool vtxCommonGetChannelName(uint8_t ch, char **name)
 {
     if (ch > vtxDevice->capability.channelCount) {
         return false;
     }
-    name = vtxDevice->channelNames[ch];
+    *name = vtxDevice->channelNames[ch];
     return true;
 }
 
-bool vtxCommonGetPowerName(uint8_t index, char *name)
+bool vtxCommonGetPowerName(uint8_t index, char **name)
 {
     if (index > vtxDevice->capability.powerCount) {
         return false;
     }
-    name = vtxDevice->powerNames[index];
+    *name = vtxDevice->powerNames[index];
     return true;
 }
 

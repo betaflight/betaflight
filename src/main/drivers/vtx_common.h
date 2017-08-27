@@ -107,6 +107,6 @@ bool vtxCommonGetPowerIndex(uint8_t *pIndex);
 bool vtxCommonGetPitMode(uint8_t *pOnOff);
 bool vtxCommonGetDeviceCapability(vtxDeviceCapability_t *pDeviceCapability);
 
-bool vtxCommonGetBandName(uint8_t band, char *name);
-bool vtxCommonGetPowerName(uint8_t index, char *name);
-bool vtxCommonGetChannelName(uint8_t ch, char *name);
+bool vtxCommonGetBandName(uint8_t band, char **name);
+bool vtxCommonGetPowerName(uint8_t index, char **name);
+bool vtxCommonGetChannelName(uint8_t ch, char **name);

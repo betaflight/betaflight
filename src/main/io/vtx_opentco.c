@@ -48,9 +48,7 @@
 
 #include "build/debug.h"
 
-char *vtxOpentcoSupportedPowerNames[OPENTCO_VTX_POWER_COUNT][4];
-
-const char * const vtxOpentcoPowerNames[OPENTCO_VTX_POWER_COUNT] = {
+char *vtxOpentcoSupportedPowerNames[OPENTCO_VTX_POWER_COUNT] = {
     "---", "5  ", "10 ", "25 ", "100", "200", "500", "600", "800"
 };
 
@@ -103,17 +101,12 @@ static bool vtxOpentcoQuerySupportedFeatures(void)
     uint32_t powerIndex = 0;
 
     for (uint32_t i = 0; i < OPENTCO_VTX_POWER_COUNT; i++) {
-        // pre init all power levels as null terminated string
-        vtxOpentcoSupportedPowerNames[i][0] = 0;
-
         // check for device support
-        if (vtxOpentcoSupportedPower & (1 << i)) {
-            // copy string to supported feature list
-            memcpy(vtxOpentcoSupportedPowerNames[powerIndex], vtxOpentcoPowerNames[i], 4);
-            powerIndex++;
+        if (!(vtxOpentcoSupportedPower & (1 << i))) {
+            // this index is not supported, disable
+            vtxOpentcoSupportedPowerNames[powerIndex][0] = 0;
         }
     }
-
 
     // store maximum power index
     vtxOpentco.capability.powerCount = powerIndex;
