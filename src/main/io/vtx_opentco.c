@@ -48,9 +48,14 @@
 
 #include "build/debug.h"
 
-char *vtxOpentcoSupportedPowerNames[OPENTCO_VTX_POWER_COUNT] = {
+const char *vtxOpentcoPowerNameDisabled = "";
+const char *vtxOpentcoSupportedPowerNames[OPENTCO_VTX_POWER_COUNT];
+
+const char *vtxOpentcoPowerNames[OPENTCO_VTX_POWER_COUNT] = {
     "---", "5  ", "10 ", "25 ", "100", "200", "500", "600", "800"
 };
+
+
 
 static uint16_t vtxOpentcoSupportedPower;
 static bool vtxOpentcoPitmodeActive;
@@ -91,25 +96,30 @@ vtxDevice_t *vtxOpentcoInit(void)
 
 static bool vtxOpentcoQuerySupportedFeatures(void)
 {
+    // pre init to none
+    for (uint32_t i = 0; i < OPENTCO_VTX_POWER_COUNT; i++) {
+        vtxOpentcoSupportedPowerNames[i] = vtxOpentcoPowerNameDisabled;
+    }
+
     // fetch available power rates
     if (!opentcoReadRegister(device, OPENTCO_VTX_REGISTER_SUPPORTED_POWER,  &vtxOpentcoSupportedPower)) {
         // failed to fetch supported power register, this is bad..
         return false;
     }
 
-    // start with entry 0
-    uint32_t powerIndex = 0;
-
     for (uint32_t i = 0; i < OPENTCO_VTX_POWER_COUNT; i++) {
         // check for device support
         if (!(vtxOpentcoSupportedPower & (1 << i))) {
             // this index is not supported, disable
-            vtxOpentcoSupportedPowerNames[powerIndex][0] = 0;
+            vtxOpentcoSupportedPowerNames[i] = vtxOpentcoPowerNameDisabled;
+        } else {
+            // enabled, copy name
+            vtxOpentcoSupportedPowerNames[i] = vtxOpentcoPowerNames[i];
         }
     }
 
     // store maximum power index
-    vtxOpentco.capability.powerCount = powerIndex;
+    vtxOpentco.capability.powerCount = OPENTCO_VTX_POWER_COUNT;
 
     return true;
 }
