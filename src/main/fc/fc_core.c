@@ -169,7 +169,7 @@ static void updateArmingStatus(void)
         }
 
         /* CHECK: RX signal */
-        if (failsafeIsReceivingRxData()) {
+        if (!failsafeIsReceivingRxData()) {
             ENABLE_ARMING_FLAG(ARMING_DISABLED_RC_LINK);
         }
         else {
@@ -180,7 +180,7 @@ static void updateArmingStatus(void)
         if (calculateThrottleStatus() != THROTTLE_LOW) {
             ENABLE_ARMING_FLAG(ARMING_DISABLED_THROTTLE);
         } else {
-            ENABLE_ARMING_FLAG(ARMING_DISABLED_THROTTLE);
+            DISABLE_ARMING_FLAG(ARMING_DISABLED_THROTTLE);
         }
 
         /* CHECK: Angle */
@@ -269,6 +269,11 @@ static void updateArmingStatus(void)
 
         warningLedUpdate();
     }
+
+    debug[0] = (armingFlags >> 0) & 0x00FF;
+    debug[1] = (armingFlags >> 8) & 0x00FF;
+    debug[2] = (armingFlags >> 16) & 0x00FF;
+    debug[3] = (armingFlags >> 24) & 0x00FF;
 }
 
 void annexCode(void)
