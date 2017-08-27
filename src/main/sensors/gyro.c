@@ -577,6 +577,8 @@ void gyroUpdateSensor(gyroSensor_t *gyroSensor)
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         // scale gyro output to degrees per second
         float gyroADCf = (float)gyroSensor->gyroDev.gyroADC[axis] * gyroSensor->gyroDev.scale;
+        // DEBUG_GYRO_NOTCH records the unfiltered gyro output
+        DEBUG_SET(DEBUG_GYRO_NOTCH, axis, lrintf(gyroADCf));
 
 #ifdef USE_GYRO_DATA_ANALYSE
         // Apply Dynamic Notch filtering
@@ -591,7 +593,6 @@ void gyroUpdateSensor(gyroSensor_t *gyroSensor)
 #endif
 
         // Apply Static Notch filtering
-        DEBUG_SET(DEBUG_NOTCH, axis, lrintf(gyroADCf));
         gyroADCf = gyroSensor->notchFilter1ApplyFn(&gyroSensor->notchFilter1[axis], gyroADCf);
         gyroADCf = gyroSensor->notchFilter2ApplyFn(&gyroSensor->notchFilter2[axis], gyroADCf);
 
