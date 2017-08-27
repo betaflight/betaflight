@@ -94,6 +94,16 @@
 #define USE_GYRO_SPI_MPU9250
 #define MPU9250_CS_PIN          SPI2_NSS_PIN
 #define MPU9250_SPI_INSTANCE    SPI2
+// BMI160 gyro support
+//#define USE_ACCGYRO_BMI160
+#ifdef USE_ACCGYRO_BMI160
+#define BMI160_CS_PIN           SPI2_NSS_PIN
+#define BMI160_SPI_INSTANCE     SPI2
+#define BMI160_SPI_DIVISOR      16
+#define BMI160_INT_EXTI         PC13
+#define USE_MPU_DATA_READY_SIGNAL
+#define USE_EXTI
+#endif
 
 #define ACC
 #define USE_FAKE_ACC

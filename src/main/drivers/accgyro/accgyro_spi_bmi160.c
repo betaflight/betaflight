@@ -37,6 +37,8 @@
 
 #include "platform.h"
 
+#ifdef USE_ACCGYRO_BMI160
+
 #include "drivers/bus_spi.h"
 #include "drivers/exti.h"
 #include "drivers/io.h"
@@ -47,8 +49,6 @@
 #include "accgyro.h"
 #include "accgyro_spi_bmi160.h"
 
-
-#ifdef USE_ACCGYRO_BMI160
 
 /* BMI160 Registers */
 #define BMI160_REG_CHIPID 0x00
