@@ -46,7 +46,6 @@ static void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 {
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         ws2811LedDataTransferInProgress = 0;
-        DMA_Cmd(descriptor->ref, DISABLE);
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
     }
 }
@@ -140,6 +139,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Word;
     DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Word;
     DMA_InitStructure.DMA_Priority = DMA_Priority_VeryHigh;
+    DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Enable;
 #elif defined(STM32F3) || defined(STM32F1)
     DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)ledStripDMABuffer;
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
@@ -148,7 +148,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     DMA_InitStructure.DMA_Priority = DMA_Priority_High;
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
 #endif
-    DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+    DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
 
     DMA_Init(dmaRef, &DMA_InitStructure);
     TIM_DMACmd(timer, timerDmaSource(timerHardware->channel), ENABLE);

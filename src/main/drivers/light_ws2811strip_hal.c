@@ -41,7 +41,6 @@ static bool timerNChannel = false;
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 {
     if (htim->Instance == TimHandle.Instance) {
-        //HAL_TIM_PWM_Stop_DMA(&TimHandle,WS2811_TIMER_CHANNEL);
         ws2811LedDataTransferInProgress = 0;
     }
 }
@@ -97,9 +96,9 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     hdma_tim.Init.MemInc = DMA_MINC_ENABLE;
     hdma_tim.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
     hdma_tim.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
-    hdma_tim.Init.Mode = DMA_NORMAL;
+    hdma_tim.Init.Mode = DMA_CIRCULAR;
     hdma_tim.Init.Priority = DMA_PRIORITY_HIGH;
-    hdma_tim.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+    hdma_tim.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
     hdma_tim.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
     hdma_tim.Init.MemBurst = DMA_MBURST_SINGLE;
     hdma_tim.Init.PeriphBurst = DMA_PBURST_SINGLE;
