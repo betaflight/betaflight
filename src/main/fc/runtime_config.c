@@ -49,7 +49,7 @@ void unsetArmingDisabled(armingDisableFlags_e flag)
     armingDisableFlags = armingDisableFlags & ~flag;
 }
 
-bool isArmingDisabled()
+bool isArmingDisabled(void)
 {
     return armingDisableFlags;
 }

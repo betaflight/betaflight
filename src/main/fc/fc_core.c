@@ -216,7 +216,7 @@ void updateArmingStatus(void)
 
         if (!isUsingSticksForArming()) {
           // If arming is disabled and the ARM switch is on
-          if (isArmingDisabled() && IS_RC_MODE_ACTIVE(BOXARM)) {
+          if (isArmingDisabled() && !(armingConfig()->gyro_cal_on_first_arm && !(getArmingDisableFlags() & ~(ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_CALIBRATING))) && IS_RC_MODE_ACTIVE(BOXARM)) {
               setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
           } else if (!IS_RC_MODE_ACTIVE(BOXARM)) {
               unsetArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
