@@ -535,7 +535,7 @@ void validateAndFixGyroConfig(void)
     float motorUpdateRestriction;
     switch (motorConfig()->dev.motorPwmProtocol) {
         case (PWM_TYPE_STANDARD):
-            motorUpdateRestriction = 1.0f/BRUSHLESS_MOTORS_PWM_RATE;
+            motorUpdateRestriction = 1.0f / BRUSHLESS_MOTORS_PWM_RATE;
             break;
         case (PWM_TYPE_ONESHOT125):
             motorUpdateRestriction = 0.0005f;
@@ -555,17 +555,19 @@ void validateAndFixGyroConfig(void)
             motorUpdateRestriction = 0.00003125f;
     }
 
-    if (pidLooptime < motorUpdateRestriction) {
-        const uint8_t maxPidProcessDenom = constrain(motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom), 1, MAX_PID_PROCESS_DENOM);
-        pidConfigMutable()->pid_process_denom = MIN(pidConfigMutable()->pid_process_denom, maxPidProcessDenom);
-    }
+    if (!motorConfig()->dev.useUnsyncedPwm) {
+        if (pidLooptime < motorUpdateRestriction) {
+            const uint8_t minPidProcessDenom = constrain(motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom), 1, MAX_PID_PROCESS_DENOM);
 
-    // Prevent overriding the max rate of motors
-    if (motorConfig()->dev.useUnsyncedPwm && (motorConfig()->dev.motorPwmProtocol <= PWM_TYPE_BRUSHED) && motorConfig()->dev.motorPwmProtocol != PWM_TYPE_STANDARD) {
-        uint32_t maxEscRate = lrintf(1.0f / motorUpdateRestriction);
+            pidConfigMutable()->pid_process_denom = MAX(pidConfigMutable()->pid_process_denom, minPidProcessDenom);
+        }
+    } else {
+        // Prevent overriding the max rate of motors
+        if ((motorConfig()->dev.motorPwmProtocol <= PWM_TYPE_BRUSHED) && (motorConfig()->dev.motorPwmProtocol != PWM_TYPE_STANDARD)) {
+            const uint32_t maxEscRate = lrintf(1.0f / motorUpdateRestriction);
 
-        if (motorConfig()->dev.motorPwmRate > maxEscRate)
-            motorConfigMutable()->dev.motorPwmRate = maxEscRate;
+            motorConfigMutable()->dev.motorPwmRate = MIN(motorConfig()->dev.motorPwmRate, maxEscRate);
+        }
     }
 }
 #endif
