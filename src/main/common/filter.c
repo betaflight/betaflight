@@ -67,6 +67,32 @@ float pt1FilterApply4(pt1Filter_t *filter, float input, uint8_t f_cut, float dT)
     return filter->state;
 }
 
+// Slew filter with limit
+
+void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold)
+{
+    filter->state = 0.0f;
+    filter->slewLimit = slewLimit;
+    filter->threshold = threshold;
+}
+
+float slewFilterApply(slewFilter_t *filter, float input)
+{
+    if (filter->state >= filter->threshold) {
+        if (input >= filter->state - filter->slewLimit) {
+            filter->state = input;
+        }
+    } else if (filter->state <= -filter->threshold) {
+        if (input <= filter->state + filter->slewLimit) {
+            filter->state = input;
+        }
+    } else {
+        filter->state = input;
+    }
+    return filter->state;
+}
+
+
 float filterGetNotchQ(uint16_t centerFreq, uint16_t cutoff) {
     float octaves = log2f((float) centerFreq  / (float) cutoff) * 2;
     return sqrtf(powf(2, octaves)) / (powf(2, octaves) - 1);

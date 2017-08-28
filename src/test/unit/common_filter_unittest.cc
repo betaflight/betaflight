@@ -145,3 +145,56 @@ TEST(FilterUnittest, TestFirFilterApply)
     expected = 7.0f * 26.0f + 6.0 * 27.0 + 5.0 * 28.0 + 4.0f * 29.0f;
     EXPECT_FLOAT_EQ(expected, firFilterApply(&filter));
 }
+
+TEST(FilterUnittest, TestSlewFilterInit)
+{
+    slewFilter_t filter;
+
+    slewFilterInit(&filter, 0.0f, 0.0f);
+    EXPECT_EQ(0, filter.state);
+    EXPECT_EQ(0, filter.slewLimit);
+    EXPECT_EQ(0, filter.threshold);
+
+    slewFilterInit(&filter, 1800.0f, 1900.0f);
+    EXPECT_EQ(0, filter.state);
+    EXPECT_EQ(1800, filter.slewLimit);
+    EXPECT_EQ(1900, filter.threshold);
+}
+
+TEST(FilterUnittest, TestSlewFilter)
+{
+    slewFilter_t filter;
+    slewFilterInit(&filter, 2000.0f, 1900.0f);
+    EXPECT_EQ(0, filter.state);
+    EXPECT_EQ(2000, filter.slewLimit);
+    EXPECT_EQ(1900, filter.threshold);
+
+    slewFilterApply(&filter, 1800.0f);
+    EXPECT_EQ(1800, filter.state);
+    slewFilterApply(&filter, -1800.0f);
+    EXPECT_EQ(-1800, filter.state);
+    slewFilterApply(&filter, -200.0f);
+    EXPECT_EQ(-200, filter.state);
+
+    slewFilterApply(&filter, 1900.0f);
+    EXPECT_EQ(1900, filter.state);
+    slewFilterApply(&filter, -2000.0f);
+    EXPECT_EQ(1900, filter.state);
+    slewFilterApply(&filter, -200.0f);
+    EXPECT_EQ(1900, filter.state);
+    slewFilterApply(&filter, 1800.0f);
+    EXPECT_EQ(1800, filter.state);
+    slewFilterApply(&filter, -200.0f);
+    EXPECT_EQ(-200, filter.state);
+
+    slewFilterApply(&filter, -1900.0f);
+    EXPECT_EQ(-1900, filter.state);
+    slewFilterApply(&filter, 2000.0f);
+    EXPECT_EQ(-1900, filter.state);
+    slewFilterApply(&filter, 200.0f);
+    EXPECT_EQ(-1900, filter.state);
+    slewFilterApply(&filter, -1800.0f);
+    EXPECT_EQ(-1800, filter.state);
+    slewFilterApply(&filter, 200.0f);
+    EXPECT_EQ(200, filter.state);
+}
