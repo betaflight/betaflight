@@ -32,6 +32,12 @@ typedef struct pt1Filter_s {
     float dT;
 } pt1Filter_t;
 
+typedef struct slewFilter_s {
+    float state;
+    float slewLimit;
+    float threshold;
+} slewFilter_t;
+
 /* this holds the data required to update samples thru a filter */
 typedef struct biquadFilter_s {
     float b0, b1, b2, a1, a2;
@@ -49,7 +55,8 @@ typedef struct firFilterDenoise_s{
 typedef enum {
     FILTER_PT1 = 0,
     FILTER_BIQUAD,
-    FILTER_FIR
+    FILTER_FIR,
+    FILTER_SLEW
 } filterType_e;
 
 typedef enum {
@@ -85,6 +92,9 @@ float filterGetNotchQ(uint16_t centerFreq, uint16_t cutoff);
 void pt1FilterInit(pt1Filter_t *filter, uint8_t f_cut, float dT);
 float pt1FilterApply(pt1Filter_t *filter, float input);
 float pt1FilterApply4(pt1Filter_t *filter, float input, uint8_t f_cut, float dT);
+
+void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold);
+float slewFilterApply(slewFilter_t *filter, float input);
 
 void firFilterInit(firFilter_t *filter, float *buf, uint8_t bufLength, const float *coeffs);
 void firFilterInit2(firFilter_t *filter, float *buf, uint8_t bufLength, const float *coeffs, uint8_t coeffsLength);
