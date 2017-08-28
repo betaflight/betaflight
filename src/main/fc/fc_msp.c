@@ -1209,15 +1209,16 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
                 } else {
                     // device is available
                     sbufWriteU8(dst, deviceType);
-                    sbufWriteU8(dst, band);
-                    sbufWriteU8(dst, channel);
+                    // msp uses n-1 as band and channel value to set
+                    sbufWriteU8(dst, band - 1);
+                    sbufWriteU8(dst, channel - 1);
+
                     sbufWriteU8(dst, powerIdx);
                     sbufWriteU8(dst, pitmode);
 
-
                     // send supported bands
                     sbufWriteU8(dst, capability.bandCount);
-                    for(int i = 0; i < capability.bandCount; i++) {
+                    for(int i = 1; i <= capability.bandCount; i++) {
                         char *ptr;
                         if (vtxCommonGetBandName(i, &ptr))
                             sbufWriteString(dst, ptr);
@@ -1225,7 +1226,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
                     }
                     // send supported channels
                     sbufWriteU8(dst, capability.channelCount);
-                    for(int i = 0; i < capability.channelCount; i++) {
+                    for(int i = 1; i <= capability.channelCount; i++) {
                         char *ptr;
                         if (vtxCommonGetChannelName(i, &ptr))
                             sbufWriteString(dst, ptr);
@@ -1239,17 +1240,6 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
                             sbufWriteString(dst, ptr);
                         sbufWriteU8(dst, 0);
                     }
-                    /*
-                    sbufWriteU8(dst, 1);
-                    sbufWriteString(dst, "ABC");
-                    sbufWriteU8(dst, 0);
-                    sbufWriteU8(dst, 1);
-                    sbufWriteString(dst, "ABC");
-                    sbufWriteU8(dst, 0);
-                    sbufWriteU8(dst, 1);
-                    sbufWriteString(dst, "ABC");
-                    sbufWriteU8(dst, 0);
-                    */
                     // future extensions here...
                 }
             }

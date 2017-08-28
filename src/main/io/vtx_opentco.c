@@ -146,14 +146,20 @@ static bool vtxOpentcoIsReady(void)
     return true;
 }
 
+// channel and band are 1 origin (channel=0 -> "1", .., channel=7 -> "8")
 static bool vtxOpentcoSetBandAndChannel(uint8_t band, uint8_t channel)
 {
     if (band && channel) {
         // FIXME: add some security measures like writing to a second reg to enable freq changes!
+
+
+        // bf uses band 0 (none) ... N+1 -> correct this here by substracting 1
         if (!opentcoWriteRegister(device, OPENTCO_VTX_REGISTER_BAND, band - 1)){
             // failed to store setting
             return false;
         }
+
+        // bf uses channel 0 (none) ... N+1 -> correct this here by substracting 1
         if (!opentcoWriteRegister(device, OPENTCO_VTX_REGISTER_CHANNEL, channel - 1)){
             // failed to store setting
             return false;
@@ -190,13 +196,6 @@ static bool vtxOpentcoSetPowerByIndex(uint8_t index)
 
 static bool vtxOpentcoSetPitMode(uint8_t onoff)
 {
-    // pitmode supported?
-    if (!(vtxOpentcoSupportedPower & OPENTCO_VTX_POWER_PITMODE)){
-        // set value and return true anyway (this is not critical)
-        return true;
-    }
-
-
     uint16_t value = OPENTCO_VTX_STATUS_ENABLE;
     if (onoff) {
         // activate pitmode
@@ -239,7 +238,7 @@ bool vtxOpentcoConfigure(void)
     // transfer all properties to device
     if (!vtxOpentcoSetPitMode(vtxDeviceConfig()->pitMode)) return false;
     if (!vtxOpentcoSetPowerByIndex(vtxDeviceConfig()->powerIndex)) return false;
-    if (!vtxOpentcoSetBandAndChannel(vtxDeviceConfig()->band - 1, vtxDeviceConfig()->channel - 1)) return false;
+    if (!vtxOpentcoSetBandAndChannel(vtxDeviceConfig()->band, vtxDeviceConfig()->channel)) return false;
 
     // sucess
     return true;
