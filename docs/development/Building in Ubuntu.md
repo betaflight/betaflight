@@ -50,6 +50,14 @@ For Ubuntu 12.04 (previous LTS, called Precise Penguin), you should pin:
 sudo apt-get install gcc-arm-none-eabi=4.9.3.2014q4-0precise12
 ```
 
+## Install Ruby
+
+Install the Ruby package for your distribution. On Debian based distributions, you should
+install the ruby package
+```
+sudo apt-get install ruby
+```
+
 ## Building on Ubuntu
 
 After the ARM toolchain from Terry is installed, you should be able to build from source.

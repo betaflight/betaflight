@@ -73,6 +73,10 @@ If `arm-none-eabi-gcc` couldn't be found, go back and check that you entered the
 [GNU Tools for ARM Embedded Processors project]: https://launchpad.net/gcc-arm-embedded
 [the older releases]: https://launchpad.net/gcc-arm-embedded/+download
 
+## Ruby
+
+Ruby is installed by default on macOS.
+
 ## Checkout INAV sourcecode through git
 
 Enter your development directory and clone the [INAV repository][] using the "HTTPS clone URL" which is shown on

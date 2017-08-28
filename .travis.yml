@@ -26,6 +26,7 @@ before_install:
 install:
   - ./install-toolchain.sh
   - export TOOLCHAINPATH=$PWD/gcc-arm-none-eabi-6-2017-q2-update/bin
+  - export PATH=$TOOLCHAINPATH:$PATH
 
 before_script:
   - $TOOLCHAINPATH/arm-none-eabi-gcc --version

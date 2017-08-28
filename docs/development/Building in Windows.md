@@ -51,6 +51,10 @@ add the "bin" subdirectory to the PATH Windows environment variable: ```%PATH%;C
 
 ![GNU ARM Toolchain Setup](assets/010.toolchain_path.png)
 
+##Setup Ruby
+
+Install the latest Ruby version using [Ruby Installer](https://rubyinstaller.org).
+
 ## Checkout and compile INAV
 
 Head over to the INAV Github page and grab the URL of the GIT Repository: "https://github.com/iNavFlight/inav.git"

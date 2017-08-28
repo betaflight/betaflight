@@ -9,4 +9,4 @@ RUN mkdir -p /home/src && apt-get update && \
     apt-get remove -y binutils-arm-none-eabi gcc-arm-none-eabi && \
     add-apt-repository -y ppa:terry.guo/gcc-arm-embedded && \
     apt-get update && \
-    apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi make git gcc
+    apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi make git gcc ruby
