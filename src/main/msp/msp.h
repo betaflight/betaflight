@@ -28,6 +28,8 @@ typedef enum {
     MSP_VERSION_COUNT
 } mspVersion_e;
 
+#define MSP_VERSION_MAGIC_INITIALIZER { 'M', 'M', 'X' }
+
 // return positive for ACK, negative on error, zero for no reply
 typedef enum {
     MSP_RESULT_ACK = 1,

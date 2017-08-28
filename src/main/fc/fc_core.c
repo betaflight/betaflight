@@ -269,11 +269,6 @@ static void updateArmingStatus(void)
 
         warningLedUpdate();
     }
-
-    debug[0] = (armingFlags >> 0) & 0x00FF;
-    debug[1] = (armingFlags >> 8) & 0x00FF;
-    debug[2] = (armingFlags >> 16) & 0x00FF;
-    debug[3] = (armingFlags >> 24) & 0x00FF;
 }
 
 void annexCode(void)

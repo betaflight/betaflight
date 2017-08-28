@@ -186,15 +186,40 @@ typedef enum {
 } mspFlashfsFlags_e;
 
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
-static void msp4WayIfFn(serialPort_t *serialPort)
+#define ESC_4WAY 0xff
+
+static uint8_t escMode;
+static uint8_t escPortIndex;
+
+static void mspFc4waySerialCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessFnPtr *mspPostProcessFn)
 {
-    // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
-    // bootloader mode before try to connect any ESC
-    // Start to activate here
-    esc4wayProcess(serialPort);
-    // former used MSP uart is still active
-    // proceed as usual with MSP commands
+    const unsigned int dataSize = sbufBytesRemaining(src);
+
+    if (dataSize == 0) {
+        // Legacy format
+        escMode = ESC_4WAY;
+    } else {
+        escMode = sbufReadU8(src);
+        escPortIndex = sbufReadU8(src);
+    }
+
+    switch (escMode) {
+    case ESC_4WAY:
+        // get channel number
+        // switch all motor lines HI
+        // reply with the count of ESC found
+        sbufWriteU8(dst, esc4wayInit());
+
+        if (mspPostProcessFn) {
+            *mspPostProcessFn = esc4wayProcess;
+        }
+        break;
+
+    default:
+        sbufWriteU8(dst, 0);
+    }
 }
+
 #endif
 
 static void mspRebootFn(serialPort_t *serialPort)
@@ -480,23 +505,25 @@ static void serializeDataflashSummaryReply(sbuf_t *dst)
 }
 
 #ifdef USE_FLASHFS
-static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, uint8_t size)
+static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, uint16_t size)
 {
-    uint8_t buffer[128];
-    int bytesRead;
+    // Check how much bytes we can read
+    const int bytesRemainingInBuf = sbufBytesRemaining(dst);
+    uint16_t readLen = (size > bytesRemainingInBuf) ? bytesRemainingInBuf : size;
 
-    if (size > sizeof(buffer)) {
-        size = sizeof(buffer);
+    // size will be lower than that requested if we reach end of volume
+    const uint32_t flashfsSize = flashfsGetSize();
+    if (readLen > flashfsSize - address) {
+        // truncate the request
+        readLen = flashfsSize - address;
     }
 
+    // Write address
     sbufWriteU32(dst, address);
 
-    // bytesRead will be lower than that requested if we reach end of volume
-    bytesRead = flashfsReadAbs(address, buffer, size);
-
-    for (int i = 0; i < bytesRead; i++) {
-        sbufWriteU8(dst, buffer[i]);
-    }
+    // Read into streambuf directly
+    const int bytesRead = flashfsReadAbs(address, sbufPtr(dst), readLen);
+    sbufAdvance(dst, bytesRead);
 }
 #endif
 
@@ -1291,20 +1318,6 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #endif
         break;
 
-#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
-    case MSP_SET_4WAY_IF:
-        if (!ARMING_FLAG(ARMED)) {
-            // get channel number
-            // switch all motor lines HI
-            // reply with the count of ESC found
-            sbufWriteU8(dst, esc4wayInit());
-            if (mspPostProcessFn) {
-                *mspPostProcessFn = msp4WayIfFn;
-            }
-        }
-        break;
-#endif
-
     default:
         return false;
     }
@@ -1332,8 +1345,22 @@ static void mspFcWaypointOutCommand(sbuf_t *dst, sbuf_t *src)
 #ifdef USE_FLASHFS
 static void mspFcDataFlashReadCommand(sbuf_t *dst, sbuf_t *src)
 {
+    const unsigned int dataSize = sbufBytesRemaining(src);
+    uint16_t readLength;
+
     const uint32_t readAddress = sbufReadU32(src);
-    serializeDataflashReadReply(dst, readAddress, 128);
+
+    // Request payload:
+    //  uint32_t    - address to read from
+    //  uint16_t    - size of block to read (optional)
+    if (dataSize >= sizeof(uint32_t) + sizeof(uint16_t)) {
+        readLength = sbufReadU16(src);
+    }
+    else {
+        readLength = 128;
+    }
+
+    serializeDataflashReadReply(dst, readAddress, readLength);
 }
 #endif
 
@@ -2106,6 +2133,11 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
 
     if (mspFcProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
+#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
+    } else if (cmdMSP == MSP_SET_4WAY_IF) {
+        mspFc4waySerialCommand(dst, src, mspPostProcessFn);
+        ret = MSP_RESULT_ACK;
+#endif
 #ifdef NAV
     } else if (cmdMSP == MSP_WP) {
         mspFcWaypointOutCommand(dst, src);
