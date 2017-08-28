@@ -25,19 +25,18 @@ typedef struct sdcardConfig_s {
 } sdcardConfig_t;
 
 typedef struct sdcardMetadata_s {
-    uint8_t manufacturerID;
+    uint32_t numBlocks; /* Card capacity in 512-byte blocks*/
     uint16_t oemID;
+    uint8_t manufacturerID;
 
     char productName[5];
 
+    uint32_t productSerial;
     uint8_t productRevisionMajor;
     uint8_t productRevisionMinor;
-    uint32_t productSerial;
 
     uint16_t productionYear;
     uint8_t productionMonth;
-
-    uint32_t numBlocks; /* Card capacity in 512-byte blocks*/
 } sdcardMetadata_t;
 
 typedef enum {

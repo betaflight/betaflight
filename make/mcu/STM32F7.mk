@@ -6,8 +6,11 @@ ifeq ($(DEBUG_HARDFAULTS),F7)
 CFLAGS               += -DDEBUG_HARDFAULTS
 endif
 
+#CMSIS
+CMSIS_DIR      := $(ROOT)/lib/main/STM32F7/Drivers/CMSIS
+
 #STDPERIPH
-STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F7xx_HAL_Driver
+STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F7/Drivers/STM32F7xx_HAL_Driver
 STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/Src/*.c))
 EXCLUDES        = stm32f7xx_hal_can.c \
                   stm32f7xx_hal_cec.c \
@@ -58,11 +61,8 @@ EXCLUDES        = stm32f7xx_hal_can.c \
                   stm32f7xx_ll_adc.c \
                   stm32f7xx_ll_crc.c \
                   stm32f7xx_ll_dac.c \
-                  stm32f7xx_ll_dma.c \
-                  stm32f7xx_ll_dma2d.c \
                   stm32f7xx_ll_exti.c \
                   stm32f7xx_ll_fmc.c \
-                  stm32f7xx_ll_gpio.c \
                   stm32f7xx_ll_i2c.c \
                   stm32f7xx_ll_lptim.c \
                   stm32f7xx_ll_pwr.c \
@@ -75,12 +75,12 @@ EXCLUDES        = stm32f7xx_hal_can.c \
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 
 #USB
-USBCORE_DIR = $(ROOT)/lib/main/Middlewares/ST/STM32_USB_Device_Library/Core
+USBCORE_DIR = $(ROOT)/lib/main/STM32F7/Middlewares/ST/STM32_USB_Device_Library/Core
 USBCORE_SRC = $(notdir $(wildcard $(USBCORE_DIR)/Src/*.c))
 EXCLUDES    = usbd_conf_template.c
 USBCORE_SRC := $(filter-out ${EXCLUDES}, $(USBCORE_SRC))
 
-USBCDC_DIR = $(ROOT)/lib/main/Middlewares/ST/STM32_USB_Device_Library/Class/CDC
+USBCDC_DIR = $(ROOT)/lib/main/STM32F7/Middlewares/ST/STM32_USB_Device_Library/Class/CDC
 USBCDC_SRC = $(notdir $(wildcard $(USBCDC_DIR)/Src/*.c))
 EXCLUDES   = usbd_cdc_if_template.c
 USBCDC_SRC := $(filter-out ${EXCLUDES}, $(USBCDC_SRC))
@@ -92,16 +92,15 @@ DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
                         $(USBCDC_SRC)
 
 #CMSIS
-VPATH           := $(VPATH):$(CMSIS_DIR)/CM7/Include:$(CMSIS_DIR)/CM7/Device/ST/STM32F7xx
+VPATH           := $(VPATH):$(CMSIS_DIR)/Include:$(CMSIS_DIR)/Device/ST/STM32F7xx
 VPATH           := $(VPATH):$(STDPERIPH_DIR)/Src
-CMSIS_SRC       = $(notdir $(wildcard $(CMSIS_DIR)/CM7/Include/*.c \
-                  $(CMSIS_DIR)/CM7/Device/ST/STM32F7xx/*.c))
+CMSIS_SRC       :=
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(STDPERIPH_DIR)/Inc \
                    $(USBCORE_DIR)/Inc \
                    $(USBCDC_DIR)/Inc \
-                   $(CMSIS_DIR)/CM7/Include \
-                   $(CMSIS_DIR)/CM7/Device/ST/STM32F7xx/Include \
+                   $(CMSIS_DIR)/Include \
+                   $(CMSIS_DIR)/Device/ST/STM32F7xx/Include \
                    $(ROOT)/src/main/vcp_hal
 
 ifneq ($(filter SDCARD,$(FEATURES)),)
@@ -115,7 +114,7 @@ ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fs
 
 DEVICE_FLAGS    = -DUSE_HAL_DRIVER -DUSE_FULL_LL_DRIVER
 ifeq ($(TARGET),$(filter $(TARGET),$(F7X5XG_TARGETS)))
-DEVICE_FLAGS   += -DSTM32F745xx 
+DEVICE_FLAGS   += -DSTM32F745xx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f745.ld
 STARTUP_SRC     = startup_stm32f745xx.s
 TARGET_FLASH   := 2048
@@ -149,9 +148,7 @@ MCU_COMMON_SRC = \
             drivers/adc_stm32f7xx.c \
             drivers/bus_i2c_hal.c \
             drivers/dma_stm32f7xx.c \
-            drivers/gpio_stm32f7xx.c \
             drivers/light_ws2811strip_hal.c \
-            drivers/bus_spi_hal.c \
             drivers/bus_spi_ll.c \
             drivers/pwm_output_dshot_hal.c \
             drivers/timer_hal.c \

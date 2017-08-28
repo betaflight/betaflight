@@ -13,4 +13,3 @@ Available at: flyinglemon.eu
 - Other connectors: RSSI, Current sensor, LED strip, Buzzer, Video IN/Out + LC filter
 - dedicated PDB with current sensor
 - Size: 36mm x 36mm
-

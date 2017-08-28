@@ -376,7 +376,8 @@ uint32_t rcModeActivationMask;
 void mspSerialAllocatePorts(void) {}
 uint32_t getArmingBeepTimeMicros(void) {return 0;}
 uint16_t getBatteryVoltageLatest(void) {return 0;}
-uint8_t getMotorCount() {return 4;}
+uint8_t getMotorCount(void) {return 4;}
+bool areMotorsRunning(void) { return false; }
 bool IS_RC_MODE_ACTIVE(boxId_e) {return false;}
 bool isModeActivationConditionPresent(boxId_e) {return false;}
 uint32_t millis(void) {return 0;}
@@ -388,7 +389,7 @@ bool feature(uint32_t) {return false;}
 void mspSerialReleasePortIfAllocated(serialPort_t *) {}
 serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
 serialPort_t *findSharedSerialPort(uint16_t , serialPortFunction_e ) {return NULL;}
-serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, uint32_t, portMode_t, portOptions_t) {return NULL;}
+serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, uint32_t, portMode_e, portOptions_e) {return NULL;}
 void closeSerialPort(serialPort_t *) {}
 portSharing_e determinePortSharing(const serialPortConfig_t *, serialPortFunction_e ) {return PORTSHARING_UNUSED;}
 failsafePhase_e failsafePhase(void) {return FAILSAFE_IDLE;}

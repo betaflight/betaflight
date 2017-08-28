@@ -695,6 +695,7 @@ void baroSetCalibrationCycles(uint16_t) {}
 
 void blackboxLogEvent(FlightLogEvent, flightLogEventData_t *) {}
 
+bool cmsInMenu = false;
 uint8_t armingFlags = 0;
 int16_t heading;
 uint8_t stateFlags = 0;

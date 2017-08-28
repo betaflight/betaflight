@@ -20,14 +20,14 @@
 
 
 
-      
+
          \   |   _ _| __|  \ |\ \      /|  |  _ \  _ \ _ \
         _ \  |     |  _|  .  | \ \ \  / __ | (   |(   |__/
       _/  _\____|___|___|_|\_|  \_/\_/ _| _|\___/\___/_|
-      
-      
+
+
               Take me to your leader-board...
-      
+
 
 
 */
@@ -52,4 +52,3 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
     DEF_TIM(TIM5, CH1, PA0, TIM_USE_LED, TIMER_OUTPUT_STANDARD, 0),
 };
-

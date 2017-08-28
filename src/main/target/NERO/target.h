@@ -62,9 +62,12 @@
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
 
-//#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream5
-//#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF1_5
-//#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
+//#define SDCARD_DMA_STREAM_TX_FULL           DMA1_Stream5
+//#define SDCARD_DMA_TX                       DMA1
+//#define SDCARD_DMA_STREAM_TX                5
+//#define SDCARD_DMA_CLK                      LL_AHB1_GRP1_PERIPH_DMA1
+
+//#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF1_0
 //#define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_0
 
 #define USE_I2C
@@ -98,7 +101,6 @@
 #define ESCSERIAL_TIMER_TX_PIN  PC7 // (Hardware=0, PPM)
 
 #define USE_SPI
-#define USE_LOWLEVEL_DRIVER
 
 #define USE_SPI_DEVICE_1
 #define SPI1_NSS_PIN            PC4

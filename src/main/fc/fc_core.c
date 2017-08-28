@@ -152,6 +152,30 @@ void updateArmingStatus(void)
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
     } else {
+        // Check if the power on arming grace time has elapsed
+        if ((getArmingDisableFlags() & ARMING_DISABLED_BOOT_GRACE_TIME) && (millis() >= systemConfig()->powerOnArmingGraceTime * 1000)) {
+            // If so, unset the grace time arming disable flag
+            unsetArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
+        }
+
+        // If switch is used for arming then check it is not defaulting to on when the RX link recovers from a fault
+        if (!isUsingSticksForArming()) {
+            static bool hadRx = false;
+            const bool haveRx = rxIsReceivingSignal();
+
+            const bool justGotRxBack = !hadRx && haveRx;
+
+            if (justGotRxBack && IS_RC_MODE_ACTIVE(BOXARM)) {
+                // If the RX has just started to receive a signal again and the arm switch is on, apply arming restriction
+                setArmingDisabled(ARMING_DISABLED_BAD_RX_RECOVERY);
+            } else if (haveRx && !IS_RC_MODE_ACTIVE(BOXARM)) {
+                // If RX signal is OK and the arm switch is off, remove arming restriction
+                unsetArmingDisabled(ARMING_DISABLED_BAD_RX_RECOVERY);
+            }
+
+            hadRx = haveRx;
+        }
+
         if (IS_RC_MODE_ACTIVE(BOXFAILSAFE)) {
             setArmingDisabled(ARMING_DISABLED_BOXFAILSAFE);
         } else {
@@ -180,6 +204,23 @@ void updateArmingStatus(void)
             setArmingDisabled(ARMING_DISABLED_CALIBRATING);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_CALIBRATING);
+        }
+
+        if (isModeActivationConditionPresent(BOXPREARM)) {
+            if (IS_RC_MODE_ACTIVE(BOXPREARM) && !ARMING_FLAG(WAS_ARMED_WITH_PREARM)) {
+                unsetArmingDisabled(ARMING_DISABLED_NOPREARM);
+            } else {
+                setArmingDisabled(ARMING_DISABLED_NOPREARM);
+            }
+        }
+
+        if (!isUsingSticksForArming()) {
+          // If arming is disabled and the ARM switch is on
+          if (isArmingDisabled() && !(armingConfig()->gyro_cal_on_first_arm && !(getArmingDisableFlags() & ~(ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_CALIBRATING))) && IS_RC_MODE_ACTIVE(BOXARM)) {
+              setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+          } else if (!IS_RC_MODE_ACTIVE(BOXARM)) {
+              unsetArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
+          }
         }
 
         if (isArmingDisabled()) {
@@ -220,23 +261,22 @@ void tryArm(void)
             return;
         }
 #ifdef USE_DSHOT
-        if (isMotorProtocolDshot()) {
+        if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXDSHOTREVERSE)) {
             if (!IS_RC_MODE_ACTIVE(BOXDSHOTREVERSE)) {
                 reverseMotors = false;
-                for (unsigned index = 0; index < getMotorCount(); index++) {
-                    pwmWriteDshotCommand(index, DSHOT_CMD_SPIN_DIRECTION_NORMAL);
-                }
+                pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL);
             } else {
                 reverseMotors = true;
-                for (unsigned index = 0; index < getMotorCount(); index++) {
-                    pwmWriteDshotCommand(index, DSHOT_CMD_SPIN_DIRECTION_REVERSED);
-                }
+                pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_REVERSED);
             }
         }
 #endif
 
         ENABLE_ARMING_FLAG(ARMED);
         ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
+        if (isModeActivationConditionPresent(BOXPREARM)) {
+            ENABLE_ARMING_FLAG(WAS_ARMED_WITH_PREARM);
+        }
         headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 
         disarmAt = millis() + armingConfig()->auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
@@ -449,6 +489,10 @@ void processRx(timeUs_t currentTimeUs)
         LED1_ON;
     } else {
         LED1_OFF;
+    }
+
+    if (!IS_RC_MODE_ACTIVE(BOXPREARM) && ARMING_FLAG(WAS_ARMED_WITH_PREARM)) {
+        DISABLE_ARMING_FLAG(WAS_ARMED_WITH_PREARM);
     }
 
 #if defined(ACC) || defined(MAG)

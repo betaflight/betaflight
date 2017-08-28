@@ -23,7 +23,7 @@
 #define TARGET_BOARD_IDENTIFIER "KOMB" // Furious FPV KOMBINI
 #elif defined(FF_ACROWHOOPSP)
 #define TARGET_BOARD_IDENTIFIER "AWHS" // Furious FPV ACROWHOOP SPEKTRUM
-#else 
+#else
 #define TARGET_BOARD_IDENTIFIER "PIKO" // Furious FPV PIKOBLX
 #endif
 

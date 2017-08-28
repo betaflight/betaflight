@@ -74,4 +74,3 @@ void targetPreInit(void)
         IOHi(sdcardIo);
     }
 }
-

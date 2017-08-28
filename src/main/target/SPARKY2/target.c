@@ -37,4 +37,3 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM5,  CH2, PA1,  TIM_USE_MOTOR, 1, 0 ), // S5_OUT - GPIO_PartialRemap_TIM3
     DEF_TIM(TIM5,  CH1, PA0,  TIM_USE_MOTOR, 1, 0 ), // S6_OUT
 };
-

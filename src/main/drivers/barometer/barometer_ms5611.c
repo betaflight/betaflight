@@ -98,7 +98,7 @@ void ms5611BusInit(busDevice_t *busdev)
         IOInit(busdev->busdev_u.spi.csnPin, OWNER_BARO_CS, 0);
         IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
         IOHi(busdev->busdev_u.spi.csnPin); // Disable
-        spiSetDivisor(busdev->busdev_u.spi.csnPin, SPI_CLOCK_STANDARD);
+        spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD); // XXX
     }
 #else
     UNUSED(busdev);
@@ -122,6 +122,7 @@ bool ms5611Detect(baroDev_t *baro)
 {
     uint8_t sig;
     int i;
+    bool defaultAddressApplied = false;
 
     delay(10); // No idea how long the chip takes to power-up, but let's make it 10ms
 
@@ -132,11 +133,11 @@ bool ms5611Detect(baroDev_t *baro)
     if ((busdev->bustype == BUSTYPE_I2C) && (busdev->busdev_u.i2c.address == 0)) {
         // Default address for MS5611
         busdev->busdev_u.i2c.address = MS5611_I2C_ADDR;
+        defaultAddressApplied = true;
     }
 
     if (!ms5611ReadCommand(busdev, CMD_PROM_RD, 1, &sig) || sig == 0xFF) {
-        ms5611BusDeinit(busdev);
-        return false;
+        goto fail;
     }
 
     ms5611_reset(busdev);
@@ -147,8 +148,7 @@ bool ms5611Detect(baroDev_t *baro)
 
     // check crc, bail out if wrong - we are probably talking to BMP085 w/o XCLR line!
     if (ms5611_crc(ms5611_c) != 0) {
-        ms5611BusDeinit(busdev);
-        return false;
+        goto fail;
     }
 
     // TODO prom + CRC
@@ -161,6 +161,15 @@ bool ms5611Detect(baroDev_t *baro)
     baro->calculate = ms5611_calculate;
 
     return true;
+
+fail:;
+    ms5611BusDeinit(busdev);
+
+    if (defaultAddressApplied) {
+        busdev->busdev_u.i2c.address = 0;
+    }
+
+    return false;
 }
 
 static void ms5611_reset(busDevice_t *busdev)

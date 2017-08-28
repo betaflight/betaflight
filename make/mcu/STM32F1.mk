@@ -1,10 +1,13 @@
+#
+# F4 Make file include
+#
 
 ifeq ($(OPBL),yes)
 LD_SCRIPT = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k_opbl.ld
 endif
 
 TARGET_FLASH   := 128
-STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F10x_StdPeriph_Driver
+STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F1/Drivers/STM32F10x_StdPeriph_Driver
 STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
 EXCLUDES        = stm32f10x_crc.c \
                   stm32f10x_cec.c \
@@ -59,7 +62,6 @@ MCU_COMMON_SRC = \
             drivers/adc_stm32f10x.c \
             drivers/bus_i2c_stm32f10x.c \
             drivers/dma.c \
-            drivers/gpio_stm32f10x.c \
             drivers/inverter.c \
             drivers/light_ws2811strip_stdperiph.c \
             drivers/serial_uart_init.c \
@@ -67,12 +69,12 @@ MCU_COMMON_SRC = \
             drivers/system_stm32f10x.c \
             drivers/timer_stm32f10x.c
 
-DSP_LIB := 
+DSP_LIB :=
 
 ifneq ($(DEBUG),GDB)
 OPTIMISE_DEFAULT    := -Os
-OPTIMISE_SPEED      := 
-OPTIMISE_SIZE       := 
+OPTIMISE_SPEED      :=
+OPTIMISE_SIZE       :=
 
 LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_DEFAULT)
 endif

@@ -58,6 +58,7 @@ typedef enum {
     BOXCAMERA2,
     BOXCAMERA3,
     BOXDSHOTREVERSE,
+    BOXPREARM,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 

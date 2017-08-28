@@ -13,5 +13,3 @@ TARGET_SRC = \
             drivers/vtx_rtc6705.c \
             io/osd.c \
             io/transponder_ir.c \
-
-

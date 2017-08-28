@@ -21,7 +21,7 @@
 
 #include <platform.h>
 
-#if defined(USE_SPI) && defined(USE_LOWLEVEL_DRIVER)
+#if defined(USE_SPI)
 
 #include "common/utils.h"
 
@@ -138,7 +138,7 @@ void spiInitDevice(SPIDevice device)
     LL_SPI_Disable(spi->dev);
     LL_SPI_DeInit(spi->dev);
 
-    LL_SPI_InitTypeDef init = 
+    LL_SPI_InitTypeDef init =
     {
         .TransferDirection = SPI_DIRECTION_2LINES,
         .Mode = SPI_MODE_MASTER,
@@ -152,7 +152,7 @@ void spiInitDevice(SPIDevice device)
         .CRCCalculation = SPI_CRCCALCULATION_DISABLE,
     };
     LL_SPI_SetRxFIFOThreshold(spi->dev, SPI_RXFIFO_THRESHOLD_QF);
-    
+
     LL_SPI_Init(spi->dev, &init);
     LL_SPI_Enable(spi->dev);
 }
@@ -227,33 +227,66 @@ uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t txByte)
  */
 bool spiIsBusBusy(SPI_TypeDef *instance)
 {
-    return LL_SPI_GetTxFIFOLevel(instance) != LL_SPI_TX_FIFO_EMPTY 
+    return LL_SPI_GetTxFIFOLevel(instance) != LL_SPI_TX_FIFO_EMPTY
         || LL_SPI_IsActiveFlag_BSY(instance);
 }
 
 bool spiTransfer(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len)
 {
-    uint16_t spiTimeout = 1000;
-
-    uint8_t b;
-    instance->DR;
-    while (len--) {
-        b = txData ? *(txData++) : 0xFF;
+    // set 16-bit transfer
+    CLEAR_BIT(instance->CR2, SPI_RXFIFO_THRESHOLD);
+    while (len > 1) {
+        int spiTimeout = 1000;
         while (!LL_SPI_IsActiveFlag_TXE(instance)) {
-            if ((spiTimeout--) == 0)
+            if ((spiTimeout--) == 0) {
                 return spiTimeoutUserCallback(instance);
+            }
         }
+        uint16_t w;
+        if (txData) {
+            w = *((uint16_t *)txData);
+            txData += 2;
+        } else {
+            w = 0xFFFF;
+        }
+        LL_SPI_TransmitData16(instance, w);
+
+        spiTimeout = 1000;
+        while (!LL_SPI_IsActiveFlag_RXNE(instance)) {
+            if ((spiTimeout--) == 0) {
+                return spiTimeoutUserCallback(instance);
+            }
+        }
+        w = LL_SPI_ReceiveData16(instance);
+        if (rxData) {
+            *((uint16_t *)rxData) = w;
+            rxData += 2;
+        }
+        len -= 2;
+    }
+    // set 8-bit transfer
+    SET_BIT(instance->CR2, SPI_RXFIFO_THRESHOLD);
+    if (len) {
+        int spiTimeout = 1000;
+        while (!LL_SPI_IsActiveFlag_TXE(instance)) {
+            if ((spiTimeout--) == 0) {
+                return spiTimeoutUserCallback(instance);
+            }
+        }
+        uint8_t b = txData ? *(txData++) : 0xFF;
         LL_SPI_TransmitData8(instance, b);
 
         spiTimeout = 1000;
         while (!LL_SPI_IsActiveFlag_RXNE(instance)) {
-            if ((spiTimeout--) == 0)
+            if ((spiTimeout--) == 0) {
                 return spiTimeoutUserCallback(instance);
+            }
         }
         b = LL_SPI_ReceiveData8(instance);
-
-        if (rxData)
+        if (rxData) {
             *(rxData++) = b;
+        }
+        --len;
     }
 
     return true;
@@ -269,13 +302,16 @@ bool spiBusTransfer(const busDevice_t *bus, const uint8_t *txData, uint8_t *rxDa
 
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
 {
+#if !(defined(STM32F1) || defined(STM32F3))
+    // SPI2 and SPI3 are on APB1/AHB1 which PCLK is half that of APB2/AHB2.
+
+    if (instance == SPI2 || instance == SPI3) {
+        divisor /= 2; // Safe for divisor == 0 or 1
+    }
+#endif
+
     LL_SPI_Disable(instance);
-#define BR_CLEAR_MASK 0xFFC7
-
-    const uint16_t tempRegister = (instance->CR1 & BR_CLEAR_MASK);
-    instance->CR1 = (tempRegister | ((ffs(divisor | 0x100) - 2) << 3));
-
-    //LL_SPI_SetBaudRatePrescaler(instance, baudRatePrescaler);
+    LL_SPI_SetBaudRatePrescaler(instance, divisor ? (ffs(divisor | 0x100) - 2) << SPI_CR1_BR_Pos : 0);
     LL_SPI_Enable(instance);
 }
 

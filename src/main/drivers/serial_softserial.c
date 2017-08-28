@@ -16,7 +16,7 @@
  */
 
 /*
- * Cleanflight (or Baseflight): original 
+ * Cleanflight (or Baseflight): original
  * jflyper: Mono-timer and single-wire half-duplex
  */
 
@@ -236,7 +236,7 @@ static void resetBuffers(softSerial_t *softSerial)
     softSerial->port.txBufferHead = 0;
 }
 
-serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallbackPtr rxCallback, uint32_t baud, portMode_t mode, portOptions_t options)
+serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallbackPtr rxCallback, uint32_t baud, portMode_e mode, portOptions_e options)
 {
     softSerial_t *softSerial = &(softSerialPorts[portIndex]);
 
@@ -615,7 +615,7 @@ void softSerialSetBaudRate(serialPort_t *s, uint32_t baudRate)
     serialTimerConfigureTimebase(softSerial->timerHardware, baudRate);
 }
 
-void softSerialSetMode(serialPort_t *instance, portMode_t mode)
+void softSerialSetMode(serialPort_t *instance, portMode_e mode)
 {
     instance->mode = mode;
 }

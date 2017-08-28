@@ -60,8 +60,10 @@
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW0_DEG
 
-//#define MAG
+#define MAG
+#define USE_MAG_HMC5883
 //#define USE_MAG_AK8963
+#define HMC5883_I2C_INSTANCE    I2CDEV_1
 
 #define BARO
 #define USE_BARO_MS5611
@@ -110,13 +112,19 @@
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
+// Provisioning for UART4 on motor outputs 1 & 2
+// Keep pins NONE here to avoid UART4 showing up unless explicitly resource-mapped.
+#define USE_UART4
+#define UART4_RX_PIN            NONE // PA1
+#define UART4_TX_PIN            NONE // PA0
+
 #define USE_SOFTSERIAL1
 #define SOFTSERIAL1_RX_PIN      PB0 // PWM5
 #define SOFTSERIAL1_TX_PIN      PB1 // PWM6
 
 #define USE_SOFTSERIAL2
 
-#define SERIAL_PORT_COUNT       6
+#define SERIAL_PORT_COUNT       7
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PC7  // (HARDARE=0,PPM)
@@ -138,6 +146,8 @@
 #define USE_I2C
 #define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
+#define I2C1_SCL                PB8
+#define I2C1_SDA                PB9
 #define USE_I2C_PULLUP
 
 #define USE_ADC

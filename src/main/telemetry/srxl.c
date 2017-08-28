@@ -58,6 +58,7 @@
 #define SRXL_FRAMETYPE_TELE_QOS     0x7F
 #define SRXL_FRAMETYPE_TELE_RPM     0x7E
 #define SRXL_FRAMETYPE_POWERBOX     0x0A
+#define SRXL_FRAMETYPE_TELE_FP_MAH  0x34
 #define SRXL_FRAMETYPE_SID          0x00
 
 static bool srxlTelemetryEnabled;
@@ -100,6 +101,13 @@ static void srxlSerialize16(sbuf_t *dst, uint16_t v)
     // Use BigEndian format
     srxlSerialize8(dst,  (v >> 8));
     srxlSerialize8(dst, (uint8_t)v);
+}
+
+static void srxlSerialize16le(sbuf_t *dst, uint16_t v)
+{
+    // Use LittleEndian format
+    srxlSerialize8(dst, (uint8_t)v);
+    srxlSerialize8(dst,  (v >> 8));
 }
 
 static void srxlFinalize(sbuf_t *dst)
@@ -175,40 +183,29 @@ void srxlFrameRpm(sbuf_t *dst)
 /*
 typedef struct
 {
-    UINT8 identifier; // Source device = 0x0A
-    UINT8 sID; // Secondary ID
-    UINT16 volt1; // Volts, 0.01v
-    UINT16 volt2; // Volts, 0.01v
-    UINT16 capacity1; // mAh, 1mAh
-    UINT16 capacity2; // mAh, 1mAh
-    UINT16 spare16_1;
-    UINT16 spare16_2;
-    UINT8 spare;
-    UINT8 alarms; // Alarm bitmask (see below)
-} STRU_TELE_POWERBOX;
+    UINT8   identifier;     // Source device = 0x34
+    UINT8   sID;            // Secondary ID
+    INT16   current_A;      // Instantaneous current, 0.1A (0-3276.8A)
+    INT16   chargeUsed_A;   // Integrated mAh used, 1mAh (0-32.766Ah)
+    UINT16  temp_A;         // Temperature, 0.1C (0-150C, 0x7FFF indicates not populated)
+    INT16   current_B;      // Instantaneous current, 0.1A (0-3276.8A)
+    INT16   chargeUsed_B;   // Integrated mAh used, 1mAh (0-32.766Ah)
+    UINT16  temp_B;         // Temperature, 0.1C (0-150C, 0x7FFF indicates not populated)
+    UINT16  spare;          // Not used
+} STRU_TELE_FP_MAH;
 */
-#define TELE_PBOX_ALARM_VOLTAGE_1 (0x01)
-#define TELE_PBOX_ALARM_VOLTAGE_2 (0x02)
-#define TELE_PBOX_ALARM_CAPACITY_1 (0x04)
-#define TELE_PBOX_ALARM_CAPACITY_2 (0x08)
-//#define TELE_PBOX_ALARM_RPM (0x10)
-//#define TELE_PBOX_ALARM_TEMPERATURE (0x20)
-#define TELE_PBOX_ALARM_RESERVED_1 (0x40)
-#define TELE_PBOX_ALARM_RESERVED_2 (0x80)
 
-void srxlFramePowerBox(sbuf_t *dst)
+void srxlFrameFlightPackCurrent(sbuf_t *dst)
 {
-    srxlSerialize8(dst, SRXL_FRAMETYPE_POWERBOX);
+    srxlSerialize8(dst, SRXL_FRAMETYPE_TELE_FP_MAH);
     srxlSerialize8(dst, SRXL_FRAMETYPE_SID);
-    srxlSerialize16(dst, getBatteryVoltage() * 10); // vbat is in units of 0.1V - vbat1
-    srxlSerialize16(dst, getBatteryVoltage() * 10); // vbat is in units of 0.1V - vbat2
-    srxlSerialize16(dst, getAmperage() / 10);
-    srxlSerialize16(dst, 0xFFFF);
-
-    srxlSerialize16(dst, 0xFFFF); // spare
-    srxlSerialize16(dst, 0xFFFF); // spare
-    srxlSerialize8(dst, 0xFF); // spare
-    srxlSerialize8(dst, 0x00); // ALARMS
+    srxlSerialize16le(dst, getAmperage() / 10);
+    srxlSerialize16le(dst, getMAhDrawn());
+    srxlSerialize16le(dst, 0x7fff);            // temp A
+    srxlSerialize16le(dst, 0xffff);
+    srxlSerialize16le(dst, 0xffff);
+    srxlSerialize16le(dst, 0x7fff);            // temp B
+    srxlSerialize16le(dst, 0xffff);
 }
 
 // schedule array to decide how often each type of frame is sent
@@ -219,7 +216,7 @@ const srxlSchedulePtr srxlScheduleFuncs[SRXL_SCHEDULE_COUNT_MAX] = {
     /* must send srxlFrameQos, Rpm and then alternating items of our own */
     srxlFrameQos,
     srxlFrameRpm,
-    srxlFramePowerBox
+    srxlFrameFlightPackCurrent
 };
 
 static void processSrxl(void)

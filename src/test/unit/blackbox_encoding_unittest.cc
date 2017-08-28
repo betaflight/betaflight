@@ -246,7 +246,7 @@ PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
 int32_t blackboxHeaderBudget;
 void mspSerialAllocatePorts(void) {}
 void blackboxWrite(uint8_t value) {serialWrite(blackboxPort, value);}
-int blackboxPrint(const char *s)
+int blackboxWriteString(const char *s)
 {
     const uint8_t *pos = (uint8_t*)s;
     while (*pos) {

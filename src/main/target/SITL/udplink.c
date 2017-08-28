@@ -65,4 +65,3 @@ int udpRecv(udpLink_t* link, void* data, size_t size, uint32_t timeout_ms) {
     ret = recvfrom(link->fd, data, size, 0, (struct sockaddr *)&link->recv, &len);
     return ret;
 }
-

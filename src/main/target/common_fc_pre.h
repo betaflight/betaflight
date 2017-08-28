@@ -26,7 +26,7 @@
 //#pragma GCC diagnostic warning "-Wpadded"
 
 //#define SCHEDULER_DEBUG // define this to use scheduler debug[] values. Undefined by default for performance reasons
-#define DEBUG_MODE DEBUG_NONE // change this to change initial debug mode
+#define DEBUG_MODE DEBUG_GYRO_NOTCH // change this to change initial debug mode
 
 #define I2C1_OVERCLOCK true
 #define I2C2_OVERCLOCK true
@@ -36,7 +36,6 @@
 // Using RX DMA disables the use of receive callbacks
 #define USE_UART1_RX_DMA
 #define USE_UART1_TX_DMA
-#define MAX_SUPPORTED_MOTORS 8
 #endif
 
 #ifdef STM32F3
@@ -125,6 +124,7 @@
 #define VTX_SMARTAUDIO
 #define VTX_TRAMP
 #define USE_CAMERA_CONTROL
+#define USE_HUFFMAN
 
 #ifdef USE_SERIALRX_SPEKTRUM
 #define USE_SPEKTRUM_BIND

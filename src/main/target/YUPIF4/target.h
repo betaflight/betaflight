@@ -27,6 +27,9 @@
 #define LED1_PIN                PB4
 #define LED2_PIN                PB5
 
+//define camera control
+#define CAMERA_CONTROL_PIN      PB7 // Camera control
+
 #define BEEPER                  PC9
 #define BEEPER_OPT              PB14
 #define BEEPER_PWM_HZ           3150 // Beeper PWM frequency in Hz
@@ -119,7 +122,7 @@
 #define SPI1_MOSI_PIN           PA7
 
 #define USE_SPI_DEVICE_3 //dataslash - SD Card
-#define SPI3_NSS_PIN            PB3
+#define SPI3_NSS_PIN            PA15
 #define SPI3_SCK_PIN            PC10
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
@@ -129,7 +132,7 @@
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI1
 #define MAX7456_SPI_CS_PIN      PA14
-#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 // ADC inputs

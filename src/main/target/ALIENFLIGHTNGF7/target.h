@@ -89,9 +89,12 @@
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 8 // 27MHz
 
-#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
+#define SDCARD_DMA_STREAM_TX_FULL           DMA1_Stream4
+#define SDCARD_DMA_TX                       DMA1
+#define SDCARD_DMA_STREAM_TX                4
+#define SDCARD_DMA_CLK                      LL_AHB1_GRP1_PERIPH_DMA1
+
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF4
-#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
 #define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_0
 
 // Performance logging for SD card operations:
@@ -188,4 +191,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT      13
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(8) )
-

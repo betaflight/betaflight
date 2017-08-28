@@ -4,6 +4,8 @@
 
 #include "common/time.h"
 
+extern bool cmsInMenu;
+
 // Device management
 bool cmsDisplayPortRegister(displayPort_t *pDisplay);
 
@@ -23,4 +25,3 @@ void cmsUpdate(uint32_t currentTimeUs);
 #define CMS_EXIT             (0)
 #define CMS_EXIT_SAVE        (1)
 #define CMS_EXIT_SAVEREBOOT  (2)
-

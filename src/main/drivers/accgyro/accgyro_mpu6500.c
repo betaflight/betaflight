@@ -25,7 +25,6 @@
 #include "common/maths.h"
 
 #include "drivers/exti.h"
-#include "drivers/gpio.h"
 #include "drivers/gyro_sync.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"

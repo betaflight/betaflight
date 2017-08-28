@@ -53,6 +53,13 @@ static int32_t calculatedAltitude;
 
 PG_REGISTER_WITH_RESET_TEMPLATE(sonarConfig_t, sonarConfig, PG_SONAR_CONFIG, 0);
 
+#ifndef SONAR_TRIGGER_PIN
+#define SONAR_TRIGGER_PIN NONE
+#endif
+#ifndef SONAR_ECHO_PIN
+#define SONAR_ECHO_PIN    NONE
+#endif
+
 PG_RESET_TEMPLATE(sonarConfig_t, sonarConfig,
     .triggerTag = IO_TAG(SONAR_TRIGGER_PIN),
     .echoTag = IO_TAG(SONAR_ECHO_PIN)

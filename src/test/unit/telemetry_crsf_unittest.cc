@@ -27,6 +27,7 @@ extern "C" {
     #include "build/debug.h"
 
     #include "common/axis.h"
+    #include "common/crc.h"
     #include "common/filter.h"
     #include "common/gps_conversion.h"
     #include "common/maths.h"
@@ -288,8 +289,8 @@ uint32_t serialTxBytesFree(const serialPort_t *) {return 0;}
 uint8_t serialRead(serialPort_t *) {return 0;}
 void serialWrite(serialPort_t *, uint8_t) {}
 void serialWriteBuf(serialPort_t *, const uint8_t *, int) {}
-void serialSetMode(serialPort_t *, portMode_t ) {}
-serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, uint32_t, portMode_t, portOptions_t) {return NULL;}
+void serialSetMode(serialPort_t *, portMode_e) {}
+serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, uint32_t, portMode_e, portOptions_e) {return NULL;}
 void closeSerialPort(serialPort_t *) {}
 
 serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) {return NULL;}

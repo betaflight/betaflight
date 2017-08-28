@@ -36,4 +36,3 @@ void serializeBoxPermanentIdFn(struct sbuf_s *dst, const box_t *box);
 typedef void serializeBoxFn(struct sbuf_s *dst, const box_t *box);
 void serializeBoxReply(struct sbuf_s *dst, int page, serializeBoxFn *serializeBox);
 void initActiveBoxIds(void);
-

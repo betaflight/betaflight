@@ -43,27 +43,27 @@ Here are the general hardware specifications for this boards:
 - 5V buck-boost power converter for FPV (some versions)
 - brushless versions are designed for 4S operation and also have an 5V power output
 - battery monitoring with an LED or buzzer output (for some variants only)
-- current monitoring (F4/F7 V1.1 versions) 
+- current monitoring (F4/F7 V1.1 versions)
 - SDCard Reader for black box monitoring (F4/F7 V1.1 versions)
 - (**) integrated OpenSky (FrSky compatible) receiver with FrSky hub telemetry (F4/F7 V2 versions)
 - hardware detection of brushed and brushless versions with individual defaults
 
 (*) Spektrum Compatible DSM2 satellites are supported out of the box. DSMX sat will work with DSM2 protocol with default settings (DSM2, 11bit, 11ms is preset). This is chosen for maximum compatibility. For optimal connection it is recommended to adjust settings to match the capabilities of your transmitter and satellite receiver. If possible it is recommended to use the DSMX protocol since it is known as more reliable. Also to make use of additional channels you should adjust the following two parameters with the Cleanflight Configurator.
 
-    set serialrx_provider = 1   (0 for 1024bit, 1 for 2048bit) 
+    set serialrx_provider = 1   (0 for 1024bit, 1 for 2048bit)
     set spektrum_sat_bind = 5
 
-(**) This receiver is based on the uSky and OpenSky projects. http://www.fishpepper.de 
-    
+(**) This receiver is based on the uSky and OpenSky projects. http://www.fishpepper.de
+
 For more detail of the different bind modes please refer the CleanFlight Spektrum Bind document.
 
-Deltang receivers in serial mode will work like any other Spektrum satellite compatible receiver (10bit, 22ms) only the bind process will be different. 
+Deltang receivers in serial mode will work like any other Spektrum satellite compatible receiver (10bit, 22ms) only the bind process will be different.
 
 The pin layout for the AlienFlight F1 is very similar to NAZE32 or the related clones (MW32, Flip32, etc.). The pin layout for the AlienFlight F3 is similar to Sparky. The new AlienFlightF3 V2 design have the sensor connected via SPI and some slightly different pin layout. All AlienFlight F3 flight controllers running the same firmware which takes care on the differences with a hardware detection. The AlienFlight F4 and F7 have their individual pin layouts and are independent designs.
 
 (**) OpenSky receiver with telemetry is enabled by default if present on the board.
 
-The AlienFlight firmware will be built as target ALIENFLIGHTF1, ALIENFLIGHTF3, ALIENFLIGHTF4 or ALIENFLIGHTNGF7. The firmware image will come with alternative default settings which will give the user a plug and play experience. There is no computer needed to get this into the air with a small Quadcopter. A preconfigured custom mixer for an Octocopter is part of the default settings to allow clean straight wiring with the AlienFlight. The mixer can be activated with "mixer custom" in the CLI. To use the AlienFlight controller in a Hexa- or Octocopter or to do some more tuning additional configuration changes can be done as usual in the CLI or the BetaFlight configurator. 
+The AlienFlight firmware will be built as target ALIENFLIGHTF1, ALIENFLIGHTF3, ALIENFLIGHTF4 or ALIENFLIGHTNGF7. The firmware image will come with alternative default settings which will give the user a plug and play experience. There is no computer needed to get this into the air with a small Quadcopter. A preconfigured custom mixer for an Octocopter is part of the default settings to allow clean straight wiring with the AlienFlight. The mixer can be activated with "mixer custom" in the CLI. To use the AlienFlight controller in a Hexa- or Octocopter or to do some more tuning additional configuration changes can be done as usual in the CLI or the BetaFlight configurator.
 
 ## Flashing the firmware
 

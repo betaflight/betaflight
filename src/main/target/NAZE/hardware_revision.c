@@ -118,4 +118,3 @@ ioTag_t selectMPUIntExtiConfigByHardwareRevision(void)
     }
 #endif
 }
-

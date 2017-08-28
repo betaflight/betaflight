@@ -30,7 +30,7 @@ typedef struct batteryConfig_s {
     uint8_t vbatmincellvoltage;             // minimum voltage per cell, this triggers battery critical alarm, in 0.1V units, default is 33 (3.3V)
     uint8_t vbatwarningcellvoltage;         // warning voltage per cell, this triggers battery warning alarm, in 0.1V units, default is 35 (3.5V)
     uint8_t vbatnotpresentcellvoltage;      // Between vbatmaxcellvoltage and 2*this is considered to be USB powered. Below this it is notpresent
-
+    uint8_t lvcPercentage;                  // Percentage of throttle when lvc is triggered
     voltageMeterSource_e voltageMeterSource; // source of battery voltage meter used, either ADC or ESC
 
     // current
@@ -42,7 +42,16 @@ typedef struct batteryConfig_s {
     bool useConsumptionAlerts;              // Issue alerts based on total power consumption
     uint8_t consumptionWarningPercentage;   // Percentage of remaining capacity that should trigger a battery warning
     uint8_t vbathysteresis;                 // hysteresis for alarm, default 1 = 0.1V
+
+    uint8_t vbatfullcellvoltage;            // Cell voltage at which the battery is deemed to be "full" 0.1V units, default is 41 (4.1V)
+
 } batteryConfig_t;
+
+typedef struct lowVoltageCutoff_s {
+    bool enabled;
+    uint8_t percentage;
+    timeUs_t startTime;
+} lowVoltageCutoff_t;
 
 PG_DECLARE(batteryConfig_t, batteryConfig);
 
@@ -60,7 +69,7 @@ void batteryUpdatePresence(void);
 batteryState_e getBatteryState(void);
 const  char * getBatteryStateString(void);
 
-void batteryUpdateStates(void);
+void batteryUpdateStates(timeUs_t currentTimeUs);
 void batteryUpdateAlarms(void);
 
 struct rxConfig_s;
@@ -70,9 +79,12 @@ uint8_t calculateBatteryPercentageRemaining(void);
 uint16_t getBatteryVoltage(void);
 uint16_t getBatteryVoltageLatest(void);
 uint8_t getBatteryCellCount(void);
+uint16_t getBatteryAverageCellVoltage(void);
 
 int32_t getAmperage(void);
 int32_t getAmperageLatest(void);
 int32_t getMAhDrawn(void);
 
 void batteryUpdateCurrentMeter(timeUs_t currentTimeUs);
+
+lowVoltageCutoff_t *getLowVoltageCutoff(void);

@@ -70,10 +70,6 @@
 #define ACC_MPU6000_ALIGN        CW180_DEG
 #endif
 
-// XXX Temporary turn this off while bus code manipulation
-#undef USE_DASHBOARD
-#undef USE_I2C_OLED_DISPLAY
-
 // Support for iFlight OMNIBUS F4 V3
 // Has ICM20608 instead of MPU6000
 // OMNIBUSF4SD is linked with both MPU6000 and MPU6500 drivers
@@ -95,11 +91,11 @@
 
 #define BARO
 #if defined(OMNIBUSF4SD)
-#define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 #define BMP280_SPI_INSTANCE     SPI3
 #define BMP280_CS_PIN           PB3 // v1
 #endif
+#define USE_BARO_BMP085
 #define USE_BARO_BMP280
 #define USE_BARO_MS5611
 #define BARO_I2C_INSTANCE       (I2CDEV_2)
@@ -114,7 +110,7 @@
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      PA15
-#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 #if defined(OMNIBUSF4SD)
@@ -217,9 +213,14 @@
 
 #define TRANSPONDER
 
+#define SONAR
+
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 
 #define DEFAULT_FEATURES        (FEATURE_OSD)
+
+#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
+#define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

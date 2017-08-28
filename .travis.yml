@@ -54,11 +54,11 @@ before_script:
 
 script: ./.travis.sh
 
-cache: 
+cache:
   directories:
   - downloads
   - tools
-    
+
 
 #notifications:
 #  irc: "chat.freenode.net#cleanflight"

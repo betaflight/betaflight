@@ -33,6 +33,7 @@
 #include "common/color.h"
 #include "common/maths.h"
 #include "common/streambuf.h"
+#include "common/huffman.h"
 
 #include "config/config_eeprom.h"
 #include "config/feature.h"
@@ -115,7 +116,6 @@
 #endif
 
 static const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
-static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 #ifndef USE_OSD_SLAVE
 
@@ -287,7 +287,12 @@ static void serializeDataflashSummaryReply(sbuf_t *dst)
 }
 
 #ifdef USE_FLASHFS
-static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uint16_t size, bool useLegacyFormat)
+enum compressionType_e {
+    NO_COMPRESSION,
+    HUFFMAN
+};
+
+static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uint16_t size, bool useLegacyFormat, bool allowCompression)
 {
     BUILD_BUG_ON(MSP_PORT_DATAFLASH_INFO_SIZE < 16);
 
@@ -297,26 +302,73 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
         readLen = bytesRemainingInBuf;
     }
     // size will be lower than that requested if we reach end of volume
-    if (readLen > flashfsGetSize() - address) {
+    const uint32_t flashfsSize = flashfsGetSize();
+    if (readLen > flashfsSize - address) {
         // truncate the request
-        readLen = flashfsGetSize() - address;
+        readLen = flashfsSize - address;
     }
     sbufWriteU32(dst, address);
-    if (!useLegacyFormat) {
-        // new format supports variable read lengths
-        sbufWriteU16(dst, readLen);
-        sbufWriteU8(dst, 0); // placeholder for compression format
-    }
 
-    // bytesRead will equal readLen
-    const int bytesRead = flashfsReadAbs(address, sbufPtr(dst), readLen);
-    sbufAdvance(dst, bytesRead);
+    // legacy format does not support compression
+    const uint8_t compressionMethod = (!allowCompression || useLegacyFormat) ? NO_COMPRESSION : HUFFMAN;
 
-    if (useLegacyFormat) {
-        // pad the buffer with zeros
-        for (int i = bytesRead; i < size; i++) {
-            sbufWriteU8(dst, 0);
+    if (compressionMethod == NO_COMPRESSION) {
+        if (!useLegacyFormat) {
+            // new format supports variable read lengths
+            sbufWriteU16(dst, readLen);
+            sbufWriteU8(dst, 0); // placeholder for compression format
         }
+
+        const int bytesRead = flashfsReadAbs(address, sbufPtr(dst), readLen);
+
+        sbufAdvance(dst, bytesRead);
+
+        if (useLegacyFormat) {
+            // pad the buffer with zeros
+            for (int i = bytesRead; i < size; i++) {
+                sbufWriteU8(dst, 0);
+            }
+        }
+    } else {
+#ifdef USE_HUFFMAN
+        // compress in 256-byte chunks
+        const uint16_t READ_BUFFER_SIZE = 256;
+        uint8_t readBuffer[READ_BUFFER_SIZE];
+
+        huffmanState_t state = {
+            .bytesWritten = 0,
+            .outByte = sbufPtr(dst) + sizeof(uint16_t) + sizeof(uint8_t) + HUFFMAN_INFO_SIZE,
+            .outBufLen = readLen,
+            .outBit = 0x80,
+        };
+        *state.outByte = 0;
+
+        uint16_t bytesReadTotal = 0;
+        // read until output buffer overflows or flash is exhausted
+        while (state.bytesWritten < state.outBufLen && address + bytesReadTotal < flashfsSize) {
+            const int bytesRead = flashfsReadAbs(address + bytesReadTotal, readBuffer,
+                MIN(sizeof(readBuffer), flashfsSize - address - bytesReadTotal));
+
+            const int status = huffmanEncodeBufStreaming(&state, readBuffer, bytesRead, huffmanTable);
+            if (status == -1) {
+                // overflow
+                break;
+            }
+
+            bytesReadTotal += bytesRead;
+        }
+
+        if (state.outBit != 0x80) {
+            ++state.bytesWritten;
+        }
+
+        // header
+        sbufWriteU16(dst, HUFFMAN_INFO_SIZE + state.bytesWritten);
+        sbufWriteU8(dst, compressionMethod);
+        // payload
+        sbufWriteU16(dst, bytesReadTotal);
+        sbufAdvance(dst, state.bytesWritten);
+#endif
     }
 }
 #endif // USE_FLASHFS
@@ -346,7 +398,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         break;
 
     case MSP_BOARD_INFO:
-        sbufWriteData(dst, boardIdentifier, BOARD_IDENTIFIER_LENGTH);
+        sbufWriteData(dst, systemConfig()->boardIdentifier, BOARD_IDENTIFIER_LENGTH);
 #ifdef USE_HARDWARE_REVISION_DETECTION
         sbufWriteU16(dst, hardwareRevision);
 #else
@@ -405,6 +457,12 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU32(dst, featureMask());
         break;
 
+#ifdef BEEPER
+    case MSP_BEEPER_CONFIG:
+        sbufWriteU32(dst, getBeeperOffMask());
+        break;
+#endif
+
     case MSP_BATTERY_STATE: {
         // battery characteristics
         sbufWriteU8(dst, (uint8_t)constrain(getBatteryCellCount(), 0, 255)); // 0 indicates battery not detected.
@@ -441,9 +499,9 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 
     case MSP_CURRENT_METERS: {
         // write out id and current meter values, once for each meter we support
-        uint8_t count = supportedVoltageMeterCount;
+        uint8_t count = supportedCurrentMeterCount;
 #ifndef USE_OSD_SLAVE
-        count = supportedVoltageMeterCount - (VOLTAGE_METER_ID_ESC_COUNT - getMotorCount());
+        count = supportedCurrentMeterCount - (VOLTAGE_METER_ID_ESC_COUNT - getMotorCount());
 #endif
         for (int i = 0; i < count; i++) {
 
@@ -674,13 +732,30 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
             byteCount = constrain(byteCount, 0, 15);        // limit to 16 bytes (128 bits)
             sbufWriteU8(dst, byteCount);
             sbufWriteData(dst, ((uint8_t*)&flightModeFlags) + 4, byteCount);
+
+            // Write arming disable flags
+            // 1 byte, flag count
+            sbufWriteU8(dst, NUM_ARMING_DISABLE_FLAGS);
+            // 4 bytes, flags
+            uint32_t armingDisableFlags = getArmingDisableFlags();
+            sbufWriteU32(dst, armingDisableFlags);
         }
         break;
 
     case MSP_RAW_IMU:
         {
             // Hack scale due to choice of units for sensor data in multiwii
-            const uint8_t scale = (acc.dev.acc_1G > 512) ? 4 : 1;
+
+            uint8_t scale;
+
+            if (acc.dev.acc_1G > 512*4) {
+                scale = 8;
+            } else if (acc.dev.acc_1G >= 512) {
+                scale = 4;
+            } else {
+                scale = 1;
+            }
+
             for (int i = 0; i < 3; i++) {
                 sbufWriteU16(dst, acc.accSmooth[i] / scale);
             }
@@ -695,9 +770,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
     case MSP_NAME:
         {
-            const int nameLen = strlen(systemConfig()->name);
+            const int nameLen = strlen(pilotConfig()->name);
             for (int i = 0; i < nameLen; i++) {
-                sbufWriteU8(dst, systemConfig()->name[i]);
+                sbufWriteU8(dst, pilotConfig()->name[i]);
             }
         }
         break;
@@ -1011,13 +1086,13 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU8(dst, blackboxConfig()->device);
         sbufWriteU8(dst, blackboxGetRateNum());
         sbufWriteU8(dst, blackboxGetRateDenom());
-        sbufWriteU8(dst, blackboxConfig()->p_denom);
+        sbufWriteU16(dst, blackboxConfig()->p_denom);
 #else
         sbufWriteU8(dst, 0); // Blackbox not supported
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
         sbufWriteU8(dst, 0);
-        sbufWriteU8(dst, 0);
+        sbufWriteU16(dst, 0);
 #endif
         break;
 
@@ -1057,8 +1132,6 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, motorConfig()->dev.motorPwmRate);
         sbufWriteU16(dst, motorConfig()->digitalIdleOffsetValue);
         sbufWriteU8(dst, gyroConfig()->gyro_use_32khz);
-        //!!TODO gyro_isr_update to be added pending decision
-        //sbufWriteU8(dst, gyroConfig()->gyro_isr_update);
         sbufWriteU8(dst, motorConfig()->dev.motorPwmInversion);
         break;
 
@@ -1186,16 +1259,20 @@ static void mspFcDataFlashReadCommand(sbuf_t *dst, sbuf_t *src)
     const unsigned int dataSize = sbufBytesRemaining(src);
     const uint32_t readAddress = sbufReadU32(src);
     uint16_t readLength;
+    bool allowCompression = false;
     bool useLegacyFormat;
     if (dataSize >= sizeof(uint32_t) + sizeof(uint16_t)) {
         readLength = sbufReadU16(src);
+        if (sbufBytesRemaining(src)) {
+            allowCompression = sbufReadU8(src);
+        }
         useLegacyFormat = false;
     } else {
         readLength = 128;
         useLegacyFormat = true;
     }
 
-    serializeDataflashReadReply(dst, readAddress, readLength, useLegacyFormat);
+    serializeDataflashReadReply(dst, readAddress, readLength, useLegacyFormat, allowCompression);
 }
 #endif
 
@@ -1375,7 +1452,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
     case MSP_SET_SERVO_CONFIGURATION:
 #ifdef USE_SERVOS
-        if (dataSize != 1 + 14) {
+        if (dataSize != 1 + 12) {
             return MSP_RESULT_ERROR;
         }
         i = sbufReadU8(src);
@@ -1448,10 +1525,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (sbufBytesRemaining(src)) {
             gyroConfigMutable()->gyro_use_32khz = sbufReadU8(src);
         }
-        //!!TODO gyro_isr_update to be added pending decision
-        /*if (sbufBytesRemaining(src)) {
-            gyroConfigMutable()->gyro_isr_update = sbufReadU8(src);
-        }*/
         validateAndFixGyroConfig();
 
         if (sbufBytesRemaining(src)) {
@@ -1545,9 +1618,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             blackboxConfigMutable()->device = sbufReadU8(src);
             const int rateNum = sbufReadU8(src); // was rate_num
             const int rateDenom = sbufReadU8(src); // was rate_denom
-            if (sbufBytesRemaining(src) >= 1) {
+            if (sbufBytesRemaining(src) >= 2) {
                 // p_denom specified, so use it directly
-                blackboxConfigMutable()->p_denom = sbufReadU8(src);
+                blackboxConfigMutable()->p_denom = sbufReadU16(src);
             } else {
                 // p_denom not specified in MSP, so calculate it from old rateNum and rateDenom
                 blackboxConfigMutable()->p_denom = blackboxCalculatePDenom(rateNum, rateDenom);
@@ -1652,6 +1725,13 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         featureClearAll();
         featureSet(sbufReadU32(src)); // features bitmap
         break;
+
+#ifdef BEEPER
+    case MSP_SET_BEEPER_CONFIG:
+        beeperOffClearAll();
+        setBeeperOffMask(sbufReadU32(src));
+        break;
+#endif
 
     case MSP_SET_BOARD_ALIGNMENT_CONFIG:
         boardAlignmentMutable()->rollDegrees = sbufReadU16(src);
@@ -1806,9 +1886,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
 
     case MSP_SET_NAME:
-        memset(systemConfigMutable()->name, 0, ARRAYLEN(systemConfig()->name));
+        memset(pilotConfigMutable()->name, 0, ARRAYLEN(pilotConfig()->name));
         for (unsigned int i = 0; i < MIN(MAX_NAME_LENGTH, dataSize); i++) {
-            systemConfigMutable()->name[i] = sbufReadU8(src);
+            pilotConfigMutable()->name[i] = sbufReadU8(src);
         }
         break;
 
@@ -1999,7 +2079,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         return mspFcProcessInCommand(cmdMSP, src);
 #endif
     }
-    return MSP_RESULT_ERROR;
+    return MSP_RESULT_ACK;
 }
 
 /*

@@ -64,11 +64,14 @@ extern "C" {
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
     PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
+    PG_REGISTER(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 0);
 
     timeUs_t simulationTime = 0;
     batteryState_e simulationBatteryState;
     uint8_t simulationBatteryCellCount;
     uint16_t simulationBatteryVoltage;
+    uint32_t simulationBatteryAmperage;
+    uint32_t simulationMahDrawn;
     int32_t simulationAltitude;
     int32_t simulationVerticalSpeed;
 }
@@ -86,6 +89,8 @@ void setDefualtSimulationState()
     simulationBatteryState = BATTERY_OK;
     simulationBatteryCellCount = 4;
     simulationBatteryVoltage = 168;
+    simulationBatteryAmperage = 0;
+    simulationMahDrawn = 0;
     simulationAltitude = 0;
     simulationVerticalSpeed = 0;
 }
@@ -336,7 +341,7 @@ TEST(OsdTest, TestStatsImperial)
     displayPortTestBufferSubstring(2, row++, "MIN BATTERY       : 14.7%c", SYM_VOLT);
     displayPortTestBufferSubstring(2, row++, "END BATTERY       : 15.2%c", SYM_VOLT);
     displayPortTestBufferSubstring(2, row++, "MIN RSSI          : 25%%");
-    displayPortTestBufferSubstring(2, row++, "MAX ALTITUDE      :  6.5%c", SYM_FT);
+    displayPortTestBufferSubstring(2, row++, "MAX ALTITUDE      : 6.5%c", SYM_FT);
 }
 
 /*
@@ -386,7 +391,7 @@ TEST(OsdTest, TestStatsMetric)
     displayPortTestBufferSubstring(2, row++, "MIN BATTERY       : 14.7%c", SYM_VOLT);
     displayPortTestBufferSubstring(2, row++, "END BATTERY       : 15.2%c", SYM_VOLT);
     displayPortTestBufferSubstring(2, row++, "MIN RSSI          : 25%%");
-    displayPortTestBufferSubstring(2, row++, "MAX ALTITUDE      :  2.0%c", SYM_M);
+    displayPortTestBufferSubstring(2, row++, "MAX ALTITUDE      : 2.0%c", SYM_M);
 }
 
 /*
@@ -402,7 +407,7 @@ TEST(OsdTest, TestAlarms)
     // the following OSD elements are visible
     osdConfigMutable()->item_pos[OSD_RSSI_VALUE]        = OSD_POS(8, 1)  | VISIBLE_FLAG;
     osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 1) | VISIBLE_FLAG;
-    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_1]      = OSD_POS(20, 1)  | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_1]      = OSD_POS(20, 1) | VISIBLE_FLAG;
     osdConfigMutable()->item_pos[OSD_ITEM_TIMER_2]      = OSD_POS(1, 1)  | VISIBLE_FLAG;
     osdConfigMutable()->item_pos[OSD_ALTITUDE]          = OSD_POS(23, 7) | VISIBLE_FLAG;
 
@@ -448,7 +453,7 @@ TEST(OsdTest, TestAlarms)
         displayPortTestBufferSubstring(12, 1, "%c16.8%c", SYM_BATT_FULL, SYM_VOLT);
         displayPortTestBufferSubstring(1,  1, "%c00:", SYM_FLY_M); // only test the minute part of the timer
         displayPortTestBufferSubstring(20, 1, "%c01:", SYM_ON_M); // only test the minute part of the timer
-        displayPortTestBufferSubstring(23, 7, " 0.0%c", SYM_M);
+        displayPortTestBufferSubstring(23, 7, "   0.0%c", SYM_M);
     }
 
     // when
@@ -515,6 +520,210 @@ TEST(OsdTest, TestElementRssi)
 
     // then
     displayPortTestBufferSubstring(8, 1, "%c50", SYM_RSSI);
+}
+
+/*
+ * Tests the instantaneous battery current OSD element.
+ */
+TEST(OsdTest, TestElementAmperage)
+{
+    // given
+    osdConfigMutable()->item_pos[OSD_CURRENT_DRAW] = OSD_POS(1, 12) | VISIBLE_FLAG;
+
+    // when
+    simulationBatteryAmperage = 0;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 12, "  0.00%c", SYM_AMP);
+
+    // when
+    simulationBatteryAmperage = 2156;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 12, " 21.56%c", SYM_AMP);
+
+    // when
+    simulationBatteryAmperage = 12345;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 12, "123.45%c", SYM_AMP);
+}
+
+/*
+ * Tests the battery capacity drawn OSD element.
+ */
+TEST(OsdTest, TestElementMahDrawn)
+{
+    // given
+    osdConfigMutable()->item_pos[OSD_MAH_DRAWN] = OSD_POS(1, 11) | VISIBLE_FLAG;
+
+    // when
+    simulationMahDrawn = 0;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 11, "   0%c", SYM_MAH);
+
+    // when
+    simulationMahDrawn = 4;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 11, "   4%c", SYM_MAH);
+
+    // when
+    simulationMahDrawn = 15;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 11, "  15%c", SYM_MAH);
+
+    // when
+    simulationMahDrawn = 246;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 11, " 246%c", SYM_MAH);
+
+    // when
+    simulationMahDrawn = 1042;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 11, "1042%c", SYM_MAH);
+}
+
+/*
+ * Tests the altitude OSD element.
+ */
+TEST(OsdTest, TestElementAltitude)
+{
+    // given
+    osdConfigMutable()->item_pos[OSD_ALTITUDE] = OSD_POS(23, 7) | VISIBLE_FLAG;
+
+    // and
+    osdConfigMutable()->units = OSD_UNIT_METRIC;
+
+    // when
+    simulationAltitude = 0;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(23, 7, "   0.0%c", SYM_M);
+
+    // when
+    simulationAltitude = 247;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(23, 7, "   2.4%c", SYM_M);
+
+    // when
+    simulationAltitude = 4247;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(23, 7, "  42.4%c", SYM_M);
+
+    // when
+    simulationAltitude = -247;
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(23, 7, "  -2.4%c", SYM_M);
+}
+
+/*
+ * Tests the battery notifications shown on the warnings OSD element.
+ */
+TEST(OsdTest, TestElementWarningsBattery)
+{
+    // given
+    osdConfigMutable()->item_pos[OSD_WARNINGS] = OSD_POS(9, 10) | VISIBLE_FLAG;
+
+    // and
+    batteryConfigMutable()->vbatfullcellvoltage = 41;
+
+    // and
+    // 4S battery
+    simulationBatteryCellCount = 4;
+
+    // and
+    // full battery
+    simulationBatteryVoltage = 168;
+    simulationBatteryState = BATTERY_OK;
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(9, 10, "           ");
+
+    // given
+    // low battery
+    simulationBatteryVoltage = 140;
+    simulationBatteryState = BATTERY_WARNING;
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(9, 10, "LOW BATTERY ");
+
+    // given
+    // crtical battery
+    simulationBatteryVoltage = 132;
+    simulationBatteryState = BATTERY_CRITICAL;
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(9, 10, " LAND NOW   ");
+
+    // given
+    // used battery
+    simulationBatteryVoltage = ((batteryConfig()->vbatmaxcellvoltage - 2) * simulationBatteryCellCount) - 1;
+    simulationBatteryState = BATTERY_OK;
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(9, 10, "BATT NOT FULL");
+
+    // given
+    // full battery
+    simulationBatteryVoltage = ((batteryConfig()->vbatmaxcellvoltage - 2) * simulationBatteryCellCount);
+    simulationBatteryState = BATTERY_OK;
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(9, 10, "             ");
+
+    // TODO
 }
 
 /*
@@ -613,12 +822,16 @@ extern "C" {
         return simulationBatteryVoltage;
     }
 
+    uint16_t getBatteryAverageCellVoltage() {
+        return simulationBatteryVoltage / simulationBatteryCellCount;
+    }
+
     int32_t getAmperage() {
-        return 0;
+        return simulationBatteryAmperage;
     }
 
     int32_t getMAhDrawn() {
-        return 0;
+        return simulationMahDrawn;
     }
 
     int32_t getEstimatedAltitude() {

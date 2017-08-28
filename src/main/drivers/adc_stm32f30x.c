@@ -22,7 +22,6 @@
 #include "platform.h"
 
 #include "drivers/accgyro/accgyro.h"
-#include "drivers/gpio.h"
 #include "drivers/io.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
@@ -237,4 +236,3 @@ void adcInit(const adcConfig_t *config)
 
     ADC_StartConversion(adc.ADCx);
 }
-

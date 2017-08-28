@@ -27,6 +27,7 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 
+#include "common/crc.h"
 #include "common/maths.h"
 #include "common/utils.h"
 
@@ -236,11 +237,11 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         return false;
     }
 
-    serialPort = openSerialPort(portConfig->identifier, 
-        FUNCTION_RX_SERIAL, 
-        crsfDataReceive, 
-        CRSF_BAUDRATE, 
-        CRSF_PORT_MODE, 
+    serialPort = openSerialPort(portConfig->identifier,
+        FUNCTION_RX_SERIAL,
+        crsfDataReceive,
+        CRSF_BAUDRATE,
+        CRSF_PORT_MODE,
         CRSF_PORT_OPTIONS | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
         );
 

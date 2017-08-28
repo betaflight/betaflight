@@ -13,6 +13,10 @@
 #include "build/build_config.h"
 
 #include "drivers/nvic.h"
+#include "drivers/io.h"
+#include "drivers/io_impl.h"
+#include "drivers/rcc.h"
+
 #include "bus_bst.h"
 
 
@@ -22,36 +26,25 @@
 #define BST_SHORT_TIMEOUT        ((uint32_t)0x1000)
 #define BST_LONG_TIMEOUT         ((uint32_t)(10 * BST_SHORT_TIMEOUT))
 
-#if !defined(BST1_SCL_GPIO)
-#define BST1_SCL_GPIO            GPIOB
-#define BST1_SCL_GPIO_AF         GPIO_AF_4
-#define BST1_SCL_PIN             GPIO_Pin_6
-#define BST1_SCL_PIN_SOURCE      GPIO_PinSource6
-#define BST1_SCL_CLK_SOURCE      RCC_AHBPeriph_GPIOB
-#define BST1_SDA_GPIO            GPIOB
-#define BST1_SDA_GPIO_AF         GPIO_AF_4
-#define BST1_SDA_PIN             GPIO_Pin_7
-#define BST1_SDA_PIN_SOURCE      GPIO_PinSource7
-#define BST1_SDA_CLK_SOURCE      RCC_AHBPeriph_GPIOB
+#if !defined(BST1_SCL_PIN)
+#define BST1_SCL_PIN             PB6
+#define BST1_SDA_PIN             PB7
 #endif
 
-#if !defined(BST2_SCL_GPIO)
-#define BST2_SCL_GPIO            GPIOF
-#define BST2_SCL_GPIO_AF         GPIO_AF_4
-#define BST2_SCL_PIN             GPIO_Pin_6
-#define BST2_SCL_PIN_SOURCE      GPIO_PinSource6
-#define BST2_SCL_CLK_SOURCE      RCC_AHBPeriph_GPIOF
-#define BST2_SDA_GPIO            GPIOA
-#define BST2_SDA_GPIO_AF         GPIO_AF_4
-#define BST2_SDA_PIN             GPIO_Pin_10
-#define BST2_SDA_PIN_SOURCE      GPIO_PinSource10
-#define BST2_SDA_CLK_SOURCE      RCC_AHBPeriph_GPIOA
+#if !defined(BST2_SCL_PIN)
+#define BST2_SCL_PIN             PA9 /* PF6 */
+#define BST2_SDA_PIN             PA10
 #endif
 
-static volatile uint16_t bst1ErrorCount = 0;
-static volatile uint16_t bst2ErrorCount = 0;
+static volatile uint16_t bstErrorCount = 0;
 
 static I2C_TypeDef *BSTx = NULL;
+
+static IO_t scl;
+static IO_t sda;
+
+static GPIO_TypeDef * bstSclGpio;
+static uint16_t bstSclPin;
 
 volatile uint8_t CRC8 = 0;
 volatile bool coreProReady = false;
@@ -173,11 +166,8 @@ void I2C2_EV_IRQHandler()
 
 uint32_t bstTimeoutUserCallback()
 {
-    if (BSTx == I2C1) {
-        bst1ErrorCount++;
-    } else {
-        bst2ErrorCount++;
-    }
+    bstErrorCount++;
+
     I2C_GenerateSTOP(BSTx, ENABLE);
     receiverAddress = false;
     dataBufferPointer = 0;
@@ -187,127 +177,63 @@ uint32_t bstTimeoutUserCallback()
     return false;
 }
 
-void bstInitPort(I2C_TypeDef *BSTx/*, uint8_t Address*/)
-{
-    NVIC_InitTypeDef nvic;
-    GPIO_InitTypeDef GPIO_InitStructure;
-    I2C_InitTypeDef BST_InitStructure;
-
-    if (BSTx == I2C1) {
-        RCC_AHBPeriphClockCmd(BST1_SCL_CLK_SOURCE | BST1_SDA_CLK_SOURCE, ENABLE);
-        RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C1, ENABLE);
-        RCC_I2CCLKConfig(RCC_I2C1CLK_SYSCLK);
-
-        GPIO_PinAFConfig(BST1_SCL_GPIO, BST1_SCL_PIN_SOURCE, BST1_SCL_GPIO_AF);
-        GPIO_PinAFConfig(BST1_SDA_GPIO, BST1_SDA_PIN_SOURCE, BST1_SDA_GPIO_AF);
-
-        GPIO_StructInit(&GPIO_InitStructure);
-        I2C_StructInit(&BST_InitStructure);
-
-        // Init pins
-        GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-        GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-        GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-        GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-
-        GPIO_InitStructure.GPIO_Pin = BST1_SCL_PIN;
-        GPIO_Init(BST1_SCL_GPIO, &GPIO_InitStructure);
-
-        GPIO_InitStructure.GPIO_Pin = BST1_SDA_PIN;
-        GPIO_Init(BST1_SDA_GPIO, &GPIO_InitStructure);
-
-        I2C_StructInit(&BST_InitStructure);
-
-        BST_InitStructure.I2C_Mode = I2C_Mode_I2C;
-        BST_InitStructure.I2C_AnalogFilter = I2C_AnalogFilter_Enable;
-        BST_InitStructure.I2C_DigitalFilter = 0x00;
-        BST_InitStructure.I2C_OwnAddress1 = I2C_ADDR_CLEANFLIGHT_FC;
-        BST_InitStructure.I2C_Ack = I2C_Ack_Enable;
-        BST_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
-        BST_InitStructure.I2C_Timing = 0x30E0257A; // 100 Khz, 72Mhz Clock, Analog Filter Delay ON, Rise 100, Fall 10.
-
-        I2C_Init(I2C1, &BST_InitStructure);
-
-        I2C_GeneralCallCmd(I2C1, ENABLE);
-
-        nvic.NVIC_IRQChannel = I2C1_EV_IRQn;
-        nvic.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_BST_READ_DATA);
-        nvic.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_BST_READ_DATA);
-        nvic.NVIC_IRQChannelCmd = ENABLE;
-        NVIC_Init(&nvic);
-
-        I2C_ITConfig(I2C1, I2C_IT_ADDRI | I2C_IT_RXI | I2C_IT_STOPI | I2C_IT_NACKI | I2C_IT_ERRI, ENABLE);
-
-        I2C_Cmd(I2C1, ENABLE);
-    }
-
-    if (BSTx == I2C2) {
-        RCC_AHBPeriphClockCmd(BST2_SCL_CLK_SOURCE | BST2_SDA_CLK_SOURCE, ENABLE);
-        RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C2, ENABLE);
-        RCC_I2CCLKConfig(RCC_I2C2CLK_SYSCLK);
-
-        GPIO_PinAFConfig(BST2_SCL_GPIO, BST2_SCL_PIN_SOURCE, BST2_SCL_GPIO_AF);
-        GPIO_PinAFConfig(BST2_SDA_GPIO, BST2_SDA_PIN_SOURCE, BST2_SDA_GPIO_AF);
-
-        GPIO_StructInit(&GPIO_InitStructure);
-        I2C_StructInit(&BST_InitStructure);
-
-        // Init pins
-        GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-        GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-        GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-        GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-
-        GPIO_InitStructure.GPIO_Pin = BST2_SCL_PIN;
-        GPIO_Init(BST2_SCL_GPIO, &GPIO_InitStructure);
-
-        GPIO_InitStructure.GPIO_Pin = BST2_SDA_PIN;
-        GPIO_Init(BST2_SDA_GPIO, &GPIO_InitStructure);
-
-        I2C_StructInit(&BST_InitStructure);
-
-        BST_InitStructure.I2C_Mode = I2C_Mode_I2C;
-        BST_InitStructure.I2C_AnalogFilter = I2C_AnalogFilter_Enable;
-        BST_InitStructure.I2C_DigitalFilter = 0x00;
-        BST_InitStructure.I2C_OwnAddress1 = I2C_ADDR_CLEANFLIGHT_FC;
-        BST_InitStructure.I2C_Ack = I2C_Ack_Enable;
-        BST_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
-        BST_InitStructure.I2C_Timing = 0x30E0257A; // 100 Khz, 72Mhz Clock, Analog Filter Delay ON, Rise 100, Fall 10.
-
-        I2C_Init(I2C2, &BST_InitStructure);
-
-        I2C_GeneralCallCmd(I2C2, ENABLE);
-
-        nvic.NVIC_IRQChannel = I2C2_EV_IRQn;
-        nvic.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_BST_READ_DATA);
-        nvic.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_BST_READ_DATA);
-        nvic.NVIC_IRQChannelCmd = ENABLE;
-        NVIC_Init(&nvic);
-
-        I2C_ITConfig(I2C2, I2C_IT_ADDRI | I2C_IT_RXI | I2C_IT_STOPI | I2C_IT_NACKI | I2C_IT_ERRI, ENABLE);
-
-        I2C_Cmd(I2C2, ENABLE);
-    }
-}
+#define IOCFG_BST IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_OD, GPIO_PuPd_NOPULL)
 
 void bstInit(BSTDevice index)
 {
-    if (index == BSTDEV_1) {
-        BSTx = I2C1;
+    NVIC_InitTypeDef nvic;
+    I2C_InitTypeDef bstInit;
+
+    BSTx = (index == BSTDEV_1) ? I2C1 : I2C2;
+
+    if (BSTx == I2C1) {
+        scl = IOGetByTag(IO_TAG(BST1_SCL_PIN));
+        sda = IOGetByTag(IO_TAG(BST1_SDA_PIN));
     } else {
-        BSTx = I2C2;
+        scl = IOGetByTag(IO_TAG(BST2_SCL_PIN));
+        sda = IOGetByTag(IO_TAG(BST2_SDA_PIN));
     }
-    bstInitPort(BSTx);
+
+    bstSclGpio = IO_GPIO(scl);
+    bstSclPin = IO_Pin(scl);
+
+    RCC_ClockCmd((BSTx == I2C2) ? RCC_APB1(I2C2) : RCC_APB1(I2C1), ENABLE);
+    RCC_I2CCLKConfig((BSTx == I2C2) ? RCC_I2C2CLK_SYSCLK : RCC_I2C1CLK_SYSCLK);
+
+    IOInit(scl, OWNER_I2C_SCL, RESOURCE_INDEX(index));
+    IOConfigGPIOAF(scl, IOCFG_BST, GPIO_AF_4);
+
+    IOInit(sda, OWNER_I2C_SDA, RESOURCE_INDEX(index));
+    IOConfigGPIOAF(sda, IOCFG_BST, GPIO_AF_4);
+
+    I2C_StructInit(&bstInit);
+
+    bstInit.I2C_Mode = I2C_Mode_I2C;
+    bstInit.I2C_AnalogFilter = I2C_AnalogFilter_Enable;
+    bstInit.I2C_DigitalFilter = 0x00;
+    bstInit.I2C_OwnAddress1 = I2C_ADDR_CLEANFLIGHT_FC;
+    bstInit.I2C_Ack = I2C_Ack_Enable;
+    bstInit.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
+    bstInit.I2C_Timing = 0x30E0257A; // 100 Khz, 72Mhz Clock, Analog Filter Delay ON, Rise 100, Fall 10.
+
+    I2C_Init(BSTx, &bstInit);
+
+    I2C_GeneralCallCmd(BSTx, ENABLE);
+
+    nvic.NVIC_IRQChannel = (BSTx == I2C2) ? I2C2_EV_IRQn : I2C1_EV_IRQn;
+    nvic.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_BST_READ_DATA);
+    nvic.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_BST_READ_DATA);
+    nvic.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&nvic);
+
+    I2C_ITConfig(BSTx, I2C_IT_ADDRI | I2C_IT_RXI | I2C_IT_STOPI | I2C_IT_NACKI | I2C_IT_ERRI, ENABLE);
+
+    I2C_Cmd(BSTx, ENABLE);
 }
 
 uint16_t bstGetErrorCounter(void)
 {
-    if (BSTx == I2C1) {
-        return bst1ErrorCount;
-    }
-
-    return bst2ErrorCount;
-
+    return bstErrorCount;
 }
 
 /*************************************************************************************************/
@@ -346,12 +272,10 @@ void bstMasterWriteLoop(void)
 {
     static uint32_t bstMasterWriteTimeout = 0;
     uint32_t currentTime = micros();
+
     if (bstWriteDataLen && dataBufferPointer==0) {
-        bool scl_set = false;
-        if (BSTx == I2C1)
-            scl_set = BST1_SCL_GPIO->IDR&BST1_SCL_PIN;
-        else
-            scl_set = BST2_SCL_GPIO->IDR&BST2_SCL_PIN;
+        bool scl_set = (bstSclGpio->IDR & bstSclPin);
+
         if (I2C_GetFlagStatus(BSTx, I2C_FLAG_BUSY)==RESET && scl_set) {
             I2C_TransferHandling(BSTx, dataBuffer[dataBufferPointer], dataBuffer[dataBufferPointer+1]+1, I2C_AutoEnd_Mode, I2C_Generate_Start_Write);
             I2C_ITConfig(BSTx, I2C_IT_TXI, ENABLE);

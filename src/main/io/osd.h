@@ -138,6 +138,9 @@ typedef struct osdConfig_s {
     osd_unit_e units;
 
     uint16_t timers[OSD_TIMER_COUNT];
+
+    uint8_t ahMaxPitch;
+    uint8_t ahMaxRoll;
 } osdConfig_t;
 
 extern uint32_t resumeRefreshAt;

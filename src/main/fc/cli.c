@@ -28,8 +28,10 @@
 // FIXME remove this for targets that don't need a CLI.  Perhaps use a no-op macro when USE_CLI is not enabled
 // signal that we're in cli mode
 uint8_t cliMode = 0;
+#ifndef EEPROM_IN_RAM
 extern uint8_t __config_start;   // configured via linker script when building binaries.
 extern uint8_t __config_end;
+#endif
 
 #ifdef USE_CLI
 
@@ -114,6 +116,7 @@ extern uint8_t __config_end;
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
+#include "rx/frsky_d.h"
 
 #include "scheduler/scheduler.h"
 
@@ -1913,22 +1916,22 @@ static void cliVtx(char *cmdline)
 
 #endif // VTX_CONTROL
 
-static void printName(uint8_t dumpMask, const systemConfig_t *systemConfig)
+static void printName(uint8_t dumpMask, const pilotConfig_t *pilotConfig)
 {
-    const bool equalsDefault = strlen(systemConfig->name) == 0;
-    cliDumpPrintLinef(dumpMask, equalsDefault, "name %s", equalsDefault ? emptyName : systemConfig->name);
+    const bool equalsDefault = strlen(pilotConfig->name) == 0;
+    cliDumpPrintLinef(dumpMask, equalsDefault, "name %s", equalsDefault ? emptyName : pilotConfig->name);
 }
 
 static void cliName(char *cmdline)
 {
-    const uint32_t len = strlen(cmdline);
+    const unsigned int len = strlen(cmdline);
     if (len > 0) {
-        memset(systemConfigMutable()->name, 0, ARRAYLEN(systemConfig()->name));
+        memset(pilotConfigMutable()->name, 0, ARRAYLEN(pilotConfig()->name));
         if (strncmp(cmdline, emptyName, len)) {
-            strncpy(systemConfigMutable()->name, cmdline, MIN(len, MAX_NAME_LENGTH));
+            strncpy(pilotConfigMutable()->name, cmdline, MIN(len, MAX_NAME_LENGTH));
         }
     }
-    printName(DUMP_MASTER, systemConfig());
+    printName(DUMP_MASTER, pilotConfig());
 }
 
 static void printFeature(uint8_t dumpMask, const featureConfig_t *featureConfig, const featureConfig_t *featureConfigDefault)
@@ -2032,8 +2035,9 @@ static void printBeeper(uint8_t dumpMask, const beeperConfig_t *beeperConfig, co
     for (int32_t i = 0; i < beeperCount - 2; i++) {
         const char *formatOff = "beeper -%s";
         const char *formatOn = "beeper %s";
-        cliDefaultPrintLinef(dumpMask, ~(mask ^ defaultMask) & (1 << i), mask & (1 << i) ? formatOn : formatOff, beeperNameForTableIndex(i));
-        cliDumpPrintLinef(dumpMask, ~(mask ^ defaultMask) & (1 << i), mask & (1 << i) ? formatOff : formatOn, beeperNameForTableIndex(i));
+        const uint32_t beeperModeMask = beeperModeMaskForTableIndex(i);
+        cliDefaultPrintLinef(dumpMask, ~(mask ^ defaultMask) & beeperModeMask, mask & beeperModeMask ? formatOn : formatOff, beeperNameForTableIndex(i));
+        cliDumpPrintLinef(dumpMask, ~(mask ^ defaultMask) & beeperModeMask, mask & beeperModeMask ? formatOff : formatOn, beeperNameForTableIndex(i));
     }
 }
 
@@ -2051,7 +2055,8 @@ static void cliBeeper(char *cmdline)
                     cliPrint("  none");
                 break;
             }
-            if (mask & (1 << i))
+
+            if (mask & beeperModeMaskForTableIndex(i))
                 cliPrintf("  %s", beeperNameForTableIndex(i));
         }
         cliPrintLinefeed();
@@ -2082,8 +2087,7 @@ static void cliBeeper(char *cmdline)
                         if (i == BEEPER_PREFERENCE-1)
                             setBeeperOffMask(getPreferredBeeperOffMask());
                         else {
-                            mask = 1 << i;
-                            beeperOffSet(mask);
+                            beeperOffSet(beeperModeMaskForTableIndex(i));
                         }
                     cliPrint("Disabled");
                 }
@@ -2094,8 +2098,7 @@ static void cliBeeper(char *cmdline)
                         if (i == BEEPER_PREFERENCE-1)
                             setPreferredBeeperOffMask(getBeeperOffMask());
                         else {
-                            mask = 1 << i;
-                            beeperOffClear(mask);
+                            beeperOffClear(beeperModeMaskForTableIndex(i));
                         }
                     cliPrint("Enabled");
                 }
@@ -2104,6 +2107,13 @@ static void cliBeeper(char *cmdline)
             }
         }
     }
+}
+#endif
+
+#ifdef USE_RX_FRSKY_D
+void cliFrSkyBind(char *cmdline){
+    UNUSED(cmdline);
+    frSkyDBind();
 }
 #endif
 
@@ -2267,9 +2277,9 @@ void printEscInfo(const uint8_t *escInfoBytes, uint8_t bytesRead)
             escInfoReceived = true;
 
             if (calculateCrc8(escInfoBytes, frameLength - 1) == escInfoBytes[frameLength - 1]) {
-                uint8_t firmwareVersion;
-                char firmwareSubVersion;
-                uint8_t escType;
+                uint8_t firmwareVersion = 0;
+                char firmwareSubVersion = 0;
+                uint8_t escType = 0;
                 switch (escInfoVersion) {
                 case 1:
                     firmwareVersion = escInfoBytes[12];
@@ -2289,23 +2299,18 @@ void printEscInfo(const uint8_t *escInfoBytes, uint8_t bytesRead)
                 switch (escType) {
                 case 1:
                     cliPrintLine("KISS8A");
-
                     break;
                 case 2:
                     cliPrintLine("KISS16A");
-
                     break;
                 case 3:
                     cliPrintLine("KISS24A");
-
                     break;
                 case 5:
                     cliPrintLine("KISS Ultralite");
-
                     break;
                 default:
                     cliPrintLine("unknown");
-
                     break;
                 }
 
@@ -2334,24 +2339,18 @@ void printEscInfo(const uint8_t *escInfoBytes, uint8_t bytesRead)
     }
 }
 
-static void writeDshotCommand(uint8_t escIndex, uint8_t command)
+static void executeEscInfoCommand(uint8_t escIndex)
 {
     uint8_t escInfoBuffer[ESC_INFO_V2_EXPECTED_FRAME_SIZE];
-    if (command == DSHOT_CMD_ESC_INFO) {
-        cliPrintLinef("Info for ESC %d:", escIndex);
+    cliPrintLinef("Info for ESC %d:", escIndex);
 
-        delay(10); // Wait for potential ESC telemetry transmission to finish
+    startEscDataRead(escInfoBuffer, ESC_INFO_V2_EXPECTED_FRAME_SIZE);
 
-        startEscDataRead(escInfoBuffer, ESC_INFO_V2_EXPECTED_FRAME_SIZE);
-    }
+    pwmWriteDshotCommand(escIndex, getMotorCount(), DSHOT_CMD_ESC_INFO);
 
-    pwmWriteDshotCommand(escIndex, command);
+    delay(5);
 
-    if (command == DSHOT_CMD_ESC_INFO) {
-        delay(10);
-
-        printEscInfo(escInfoBuffer, getNumberEscBytesRead());
-    }
+    printEscInfo(escInfoBuffer, getNumberEscBytesRead());
 }
 
 static void cliDshotProg(char *cmdline)
@@ -2380,18 +2379,26 @@ static void cliDshotProg(char *cmdline)
 
                 int command = atoi(pch);
                 if (command >= 0 && command < DSHOT_MIN_THROTTLE) {
-                    if (escIndex == ALL_MOTORS) {
-                        for (unsigned i = 0; i < getMotorCount(); i++) {
-                            writeDshotCommand(i, command);
-                        }
+                    if (command == DSHOT_CMD_ESC_INFO) {
+                        delay(5); // Wait for potential ESC telemetry transmission to finish
+                    }
+
+                    if (command != DSHOT_CMD_ESC_INFO) {
+                        pwmWriteDshotCommand(escIndex, getMotorCount(), command);
                     } else {
-                        writeDshotCommand(escIndex, command);
-		    }
+                        if (escIndex != ALL_MOTORS) {
+                            executeEscInfoCommand(escIndex);
+                        } else {
+                            for (uint8_t i = 0; i < getMotorCount(); i++) {
+                                executeEscInfoCommand(i);
+                            }
+                        }
+                    }
 
                     cliPrintLinef("Command %d written.", command);
 
                     if (command <= 5) {
-                        delay(10); // wait for sound output to finish
+                        delay(20); // wait for sound output to finish
                     }
                 } else {
                     cliPrintLinef("Invalid command, range 1 to %d.", DSHOT_MIN_THROTTLE - 1);
@@ -2506,8 +2513,8 @@ static void cliMotor(char *cmdline)
         return;
     }
 
-    int motorIndex;
-    int motorValue;
+    int motorIndex = 0;
+    int motorValue = 0;
 
     char *saveptr;
     char *pch = strtok_r(cmdline, " ", &saveptr);
@@ -2882,8 +2889,12 @@ static void cliStatus(char *cmdline)
     cliPrintf("Stack used: %d, ", stackUsedSize());
 #endif
     cliPrintLinef("Stack size: %d, Stack address: 0x%x", stackTotalSize(), stackHighMem());
-
-    cliPrintLinef("I2C Errors: %d, config size: %d, max available config: %d", i2cErrorCounter, getEEPROMConfigSize(), &__config_end - &__config_start);
+#ifdef EEPROM_IN_RAM
+#define CONFIG_SIZE EEPROM_SIZE
+#else
+#define CONFIG_SIZE (&__config_end - &__config_start)
+#endif
+    cliPrintLinef("I2C Errors: %d, config size: %d, max available config: %d", i2cErrorCounter, getEEPROMConfigSize(), CONFIG_SIZE);
 
     const int gyroRate = getTaskDeltaTime(TASK_GYROPID) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_GYROPID)));
     const int rxRate = getTaskDeltaTime(TASK_RX) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_RX)));
@@ -2968,9 +2979,10 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintLinef("# %s / %s %s %s / %s (%s)",
+    cliPrintLinef("# %s / %s (%s) %s %s / %s (%s)",
         FC_FIRMWARE_NAME,
         targetName,
+        systemConfig()->boardIdentifier,
         FC_VERSION_STRING,
         buildDate,
         buildTime,
@@ -3325,7 +3337,7 @@ static void printConfig(char *cmdline, bool doDiff)
         }
 
         cliPrintHashLine("name");
-        printName(dumpMask, &systemConfig_Copy);
+        printName(dumpMask, &pilotConfig_Copy);
 
 #ifdef USE_RESOURCE_MGMT
         cliPrintHashLine("resources");
@@ -3481,18 +3493,21 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("beeper", "turn on/off beeper", "list\r\n"
         "\t<+|->[name]", cliBeeper),
 #endif
+#ifdef USE_RX_FRSKY_D
+    CLI_COMMAND_DEF("frsky_bind", NULL, NULL, cliFrSkyBind),
+#endif
 #ifdef LED_STRIP
     CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
 #endif
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", NULL, cliDefaults),
     CLI_COMMAND_DEF("bl", "reboot into bootloader", NULL, cliBootloader),
     CLI_COMMAND_DEF("diff", "list configuration changes from default",
-        "[master|profile|rates|all] {showdefaults}", cliDiff),
+        "[master|profile|rates|all] {defaults}", cliDiff),
 #ifdef USE_DSHOT
     CLI_COMMAND_DEF("dshotprog", "program DShot ESC(s)", "<index> <command>+", cliDshotProg),
 #endif
     CLI_COMMAND_DEF("dump", "dump configuration",
-        "[master|profile|rates|all] {showdefaults}", cliDump),
+        "[master|profile|rates|all] {defaults}", cliDump),
 #ifdef USE_ESCSERIAL
     CLI_COMMAND_DEF("escprog", "passthrough esc to serial", "<mode [sk/bl/ki/cc]> <index>", cliEscPassthrough),
 #endif

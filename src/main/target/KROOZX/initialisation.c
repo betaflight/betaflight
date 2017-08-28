@@ -28,4 +28,3 @@ void targetPreInit(void)
     IOConfigGPIO(osdChSwitch, IOCFG_OUT_PP);
     IOLo(osdChSwitch);
 }
-

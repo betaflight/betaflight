@@ -33,7 +33,6 @@
 #include "common/utils.h"
 
 #include "drivers/dma.h"
-#include "drivers/gpio.h"
 #include "drivers/inverter.h"
 #include "drivers/nvic.h"
 #include "drivers/rcc.h"
@@ -49,7 +48,7 @@ void uartSetBaudRate(serialPort_t *instance, uint32_t baudRate)
     uartReconfigure(uartPort);
 }
 
-void uartSetMode(serialPort_t *instance, portMode_t mode)
+void uartSetMode(serialPort_t *instance, portMode_e mode)
 {
     uartPort_t *uartPort = (uartPort_t *)instance;
     uartPort->port.mode = mode;
@@ -260,7 +259,7 @@ void uartWrite(serialPort_t *instance, uint8_t ch)
     if (s->txDMAChannel)
 #endif
     {
-        uartTryStartTxDMA(s); 
+        uartTryStartTxDMA(s);
     } else {
         USART_ITConfig(s->USARTx, USART_IT_TXE, ENABLE);
     }

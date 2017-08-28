@@ -54,7 +54,7 @@ typedef enum {
     DEBUG_MIXER,
     DEBUG_AIRMODE,
     DEBUG_PIDLOOP,
-    DEBUG_NOTCH,
+    DEBUG_GYRO_NOTCH,
     DEBUG_RC_INTERPOLATION,
     DEBUG_VELOCITY,
     DEBUG_DTERM_FILTER,
@@ -68,6 +68,7 @@ typedef enum {
     DEBUG_FFT,
     DEBUG_FFT_TIME,
     DEBUG_FFT_FREQ,
+    DEBUG_FRSKY_D_RX,
     DEBUG_COUNT
 } debugType_e;
 

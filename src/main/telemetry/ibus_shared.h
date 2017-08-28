@@ -19,8 +19,8 @@
  * The ibus_shared module implements the ibus telemetry packet handling
  * which is shared between the ibus serial rx and the ibus telemetry.
  *
- * There is only one 'user' active at any time, serial rx will open the 
- * serial port if both functions are enabled at the same time 
+ * There is only one 'user' active at any time, serial rx will open the
+ * serial port if both functions are enabled at the same time
  */
 
 #pragma once
@@ -39,6 +39,3 @@ void initSharedIbusTelemetry(serialPort_t * port);
 
 
 bool isChecksumOkIa6b(const uint8_t *ibusPacket, const uint8_t length);
-
-
-

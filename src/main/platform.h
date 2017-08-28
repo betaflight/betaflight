@@ -25,6 +25,12 @@
 #include "stm32f7xx.h"
 #include "stm32f7xx_hal.h"
 
+#include "stm32f7xx_ll_spi.h"
+#include "stm32f7xx_ll_gpio.h"
+#include "stm32f7xx_ll_dma.h"
+#include "stm32f7xx_ll_rcc.h"
+#include "stm32f7xx_ll_bus.h"
+
 // Chip Unique ID on F7
 #if defined(STM32F722xx)
 #define U_ID_0 (*(uint32_t*)0x1ff07a10)
@@ -42,10 +48,7 @@
 
 #elif defined(STM32F40_41xxx) || defined (STM32F411xE) || defined (STM32F446xx)
 
-#include "stm32f4xx_conf.h"
-#include "stm32f4xx_rcc.h"
-#include "stm32f4xx_gpio.h"
-#include "core_cm4.h"
+#include "stm32f4xx.h"
 
 // Chip Unique ID on F405
 #define U_ID_0 (*(uint32_t*)0x1fff7a10)

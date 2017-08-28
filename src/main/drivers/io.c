@@ -157,9 +157,9 @@ bool IORead(IO_t io)
     if (!io)
         return false;
 #if defined(USE_HAL_DRIVER)
-    return !! HAL_GPIO_ReadPin(IO_GPIO(io),IO_Pin(io));
+    return (LL_GPIO_ReadInputPort(IO_GPIO(io)) & IO_Pin(io));
 #else
-    return !! (IO_GPIO(io)->IDR & IO_Pin(io));
+    return (IO_GPIO(io)->IDR & IO_Pin(io));
 #endif
 }
 
@@ -168,12 +168,7 @@ void IOWrite(IO_t io, bool hi)
     if (!io)
         return;
 #if defined(USE_HAL_DRIVER)
-    if (hi) {
-        HAL_GPIO_WritePin(IO_GPIO(io),IO_Pin(io),GPIO_PIN_SET);
-    }
-    else {
-        HAL_GPIO_WritePin(IO_GPIO(io),IO_Pin(io),GPIO_PIN_RESET);
-    }
+    LL_GPIO_SetOutputPin(IO_GPIO(io), IO_Pin(io) << (hi ? 0 : 16));
 #elif defined(STM32F4)
     if (hi) {
         IO_GPIO(io)->BSRRL = IO_Pin(io);
@@ -191,7 +186,7 @@ void IOHi(IO_t io)
     if (!io)
         return;
 #if defined(USE_HAL_DRIVER)
-    HAL_GPIO_WritePin(IO_GPIO(io),IO_Pin(io),GPIO_PIN_SET);
+    LL_GPIO_SetOutputPin(IO_GPIO(io), IO_Pin(io));
 #elif defined(STM32F4)
     IO_GPIO(io)->BSRRL = IO_Pin(io);
 #else
@@ -204,7 +199,7 @@ void IOLo(IO_t io)
     if (!io)
         return;
 #if defined(USE_HAL_DRIVER)
-    HAL_GPIO_WritePin(IO_GPIO(io),IO_Pin(io),GPIO_PIN_RESET);
+    LL_GPIO_ResetOutputPin(IO_GPIO(io), IO_Pin(io));
 #elif defined(STM32F4)
     IO_GPIO(io)->BSRRH = IO_Pin(io);
 #else
@@ -216,13 +211,16 @@ void IOToggle(IO_t io)
 {
     if (!io)
         return;
+
     uint32_t mask = IO_Pin(io);
     // Read pin state from ODR but write to BSRR because it only changes the pins
     // high in the mask value rather than all pins. XORing ODR directly risks
     // setting other pins incorrectly because it change all pins' state.
 #if defined(USE_HAL_DRIVER)
-    (void)mask;
-    HAL_GPIO_TogglePin(IO_GPIO(io),IO_Pin(io));
+    if (LL_GPIO_ReadOutputPort(IO_GPIO(io)) & mask) {
+        mask <<= 16;   // bit is set, shift mask to reset half
+    }
+    LL_GPIO_SetOutputPin(IO_GPIO(io), mask);
 #elif defined(STM32F4)
     if (IO_GPIO(io)->ODR & mask) {
         IO_GPIO(io)->BSRRH = mask;
@@ -284,18 +282,7 @@ void IOConfigGPIO(IO_t io, ioConfig_t cfg)
 
 void IOConfigGPIO(IO_t io, ioConfig_t cfg)
 {
-    if (!io)
-        return;
-    rccPeriphTag_t rcc = ioPortDefs[IO_GPIOPortIdx(io)].rcc;
-    RCC_ClockCmd(rcc, ENABLE);
-
-    GPIO_InitTypeDef init = {
-        .Pin = IO_Pin(io),
-        .Mode = (cfg >> 0) & 0x13,
-        .Speed = (cfg >> 2) & 0x03,
-        .Pull = (cfg >> 5) & 0x03,
-    };
-    HAL_GPIO_Init(IO_GPIO(io), &init);
+    IOConfigGPIOAF(io, cfg, 0);
 }
 
 void IOConfigGPIOAF(IO_t io, ioConfig_t cfg, uint8_t af)
@@ -305,15 +292,18 @@ void IOConfigGPIOAF(IO_t io, ioConfig_t cfg, uint8_t af)
     rccPeriphTag_t rcc = ioPortDefs[IO_GPIOPortIdx(io)].rcc;
     RCC_ClockCmd(rcc, ENABLE);
 
-    GPIO_InitTypeDef init = {
+    LL_GPIO_InitTypeDef init = {
         .Pin = IO_Pin(io),
-        .Mode = (cfg >> 0) & 0x13,
+        .Mode = (cfg >> 0) & 0x03,
         .Speed = (cfg >> 2) & 0x03,
+        .OutputType = (cfg >> 4) & 0x01,
         .Pull = (cfg >> 5) & 0x03,
         .Alternate = af
     };
-    HAL_GPIO_Init(IO_GPIO(io), &init);
+
+    LL_GPIO_Init(IO_GPIO(io), &init);
 }
+
 #elif defined(STM32F3) || defined(STM32F4)
 
 void IOConfigGPIO(IO_t io, ioConfig_t cfg)

@@ -26,7 +26,7 @@ extern "C" {
 
     #include "build/debug.h"
 
-    #include "common/maths.h"
+    #include "common/crc.h"
     #include "common/utils.h"
 
     #include "io/serial.h"
@@ -275,7 +275,7 @@ extern "C" {
 
 int16_t debug[DEBUG16_VALUE_COUNT];
 uint32_t micros(void) {return dummyTimeUs;}
-serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, uint32_t, portMode_t, portOptions_t) {return NULL;}
+serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, uint32_t, portMode_e, portOptions_e) {return NULL;}
 serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
 void serialWriteBuf(serialPort_t *, const uint8_t *, int) {}
 bool telemetryCheckRxPortShared(const serialPortConfig_t *) {return false;}

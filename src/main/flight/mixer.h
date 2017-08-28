@@ -17,7 +17,10 @@
 
 #pragma once
 
+#include "platform.h"
+
 #include "config/parameter_group.h"
+#include "drivers/pwm_output_counts.h"
 #include "drivers/io_types.h"
 #include "drivers/pwm_output.h"
 
@@ -99,15 +102,14 @@ PG_DECLARE(motorConfig_t, motorConfig);
 
 #define CHANNEL_FORWARDING_DISABLED (uint8_t)0xFF
 
-#define ALL_MOTORS 255
-
 extern const mixer_t mixers[];
 extern float motor[MAX_SUPPORTED_MOTORS];
 extern float motor_disarmed[MAX_SUPPORTED_MOTORS];
 struct rxConfig_s;
 
-uint8_t getMotorCount();
-float getMotorMixRange();
+uint8_t getMotorCount(void);
+float getMotorMixRange(void);
+bool areMotorsRunning(void);
 bool mixerIsOutputSaturated(int axis, float errorRate);
 
 void mixerLoadMix(int index, motorMixer_t *customMixers);

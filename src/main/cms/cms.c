@@ -130,7 +130,7 @@ static displayPort_t *cmsDisplayPortSelectNext(void)
 #define RIGHT_MENU_COLUMN(p) ((p)->cols - 8)
 #define MAX_MENU_ITEMS(p)    ((p)->rows - 2)
 
-static bool cmsInMenu = false;
+bool cmsInMenu = false;
 
 typedef struct cmsCtx_s {
     const CMS_Menu *menu;         // menu for this context
@@ -261,7 +261,7 @@ static void cmsPadToSize(char *buf, int size)
 
 static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
 {
-    #define CMS_DRAW_BUFFER_LEN 10
+    #define CMS_DRAW_BUFFER_LEN 10u
     char buff[CMS_DRAW_BUFFER_LEN];
     int cnt = 0;
 
@@ -610,7 +610,7 @@ static void cmsTraverseGlobalExit(const CMS_Menu *pMenu)
 }
 
 long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
-{ 
+{
     int exitType = (int)ptr;
     switch (exitType) {
     case CMS_EXIT_SAVE:
@@ -913,19 +913,19 @@ void cmsUpdate(uint32_t currentTimeUs)
         if (IS_MID(THROTTLE) && IS_LO(YAW) && IS_HI(PITCH) && !ARMING_FLAG(ARMED)) {
             key = KEY_MENU;
         }
-        else if (IS_MID(THROTTLE) && IS_MID(YAW) && IS_MID(ROLL) && IS_HI(PITCH)) {
+        else if (IS_HI(PITCH)) {
             key = KEY_UP;
         }
-        else if (IS_MID(THROTTLE) && IS_MID(YAW) && IS_MID(ROLL) && IS_LO(PITCH)) {
+        else if (IS_LO(PITCH)) {
             key = KEY_DOWN;
         }
-        else if (IS_MID(THROTTLE) && IS_MID(YAW) && IS_LO(ROLL) && IS_MID(PITCH)) {
+        else if (IS_LO(ROLL)) {
             key = KEY_LEFT;
         }
-        else if (IS_MID(THROTTLE) && IS_MID(YAW) && IS_HI(ROLL) && IS_MID(PITCH)) {
+        else if (IS_HI(ROLL)) {
             key = KEY_RIGHT;
         }
-        else if ((IS_HI(YAW) || IS_LO(YAW)) && IS_MID(THROTTLE) && IS_MID(ROLL) && IS_MID(PITCH))
+        else if (IS_HI(YAW) || IS_LO(YAW))
         {
             key = KEY_ESC;
         }

@@ -82,7 +82,7 @@ extern int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];       // interval [1000;2
 
 #define RSSI_SCALE_MIN 1
 #define RSSI_SCALE_MAX 255
-#define RSSI_SCALE_DEFAULT 30
+#define RSSI_SCALE_DEFAULT (4095.0f / 100.0f + 0.5f) // 100% @ 4095
 
 typedef enum {
     RX_FAILSAFE_MODE_AUTO = 0,
@@ -119,7 +119,8 @@ typedef struct rxConfig_s {
     uint8_t serialrx_provider;              // type of UART-based receiver (0 = spek 10, 1 = spek 11, 2 = sbus). Must be enabled by FEATURE_RX_SERIAL first.
     uint8_t sbus_inversion;                 // default sbus (Futaba, FrSKY) is inverted. Support for uninverted OpenLRS (and modified FrSKY) receivers.
     uint8_t halfDuplex;                     // allow rx to operate in half duplex mode on F4, ignored for F1 and F3.
-    uint8_t rx_spi_protocol;                // type of nrf24 protocol (0 = v202 250kbps). Must be enabled by FEATURE_RX_NRF24 first.
+    uint8_t rx_spi_protocol;                // type of SPI RX protocol
+                                            // nrf24: 0 = v202 250kbps. (Must be enabled by FEATURE_RX_NRF24 first.)
     uint32_t rx_spi_id;
     uint8_t rx_spi_rf_channel_count;
     ioTag_t spektrum_bind_pin_override_ioTag;
@@ -136,11 +137,11 @@ typedef struct rxConfig_s {
     uint8_t rcInterpolationChannels;
     uint8_t rcInterpolationInterval;
     uint8_t fpvCamAngleDegrees;             // Camera angle to be scaled into rc commands
-    uint8_t max_aux_channel;
     uint16_t airModeActivateThreshold;      // Throttle setpoint where airmode gets activated
 
     uint16_t rx_min_usec;
     uint16_t rx_max_usec;
+    uint8_t max_aux_channel;
 } rxConfig_t;
 
 PG_DECLARE(rxConfig_t, rxConfig);
@@ -167,6 +168,8 @@ void calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs);
 void parseRcChannels(const char *input, rxConfig_t *rxConfig);
 
 void updateRSSI(timeUs_t currentTimeUs);
+void processRssi(uint8_t rssiPercentage);
+
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRangeConfig);
 
 void suspendRxSignal(void);

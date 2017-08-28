@@ -134,8 +134,8 @@ static uint8_t armState;
 
 static displayPort_t *osdDisplayPort;
 
-#define AH_MAX_PITCH 200 // Specify maximum AHI pitch value displayed. Default 200 = 20.0 degrees
-#define AH_MAX_ROLL 400  // Specify maximum AHI roll value displayed. Default 400 = 40.0 degrees
+#define AH_SYMBOL_COUNT 9
+
 #define AH_SIDEBAR_WIDTH_POS 7
 #define AH_SIDEBAR_HEIGHT_POS 3
 
@@ -206,6 +206,16 @@ static int32_t osdGetMetersToSelectedUnit(int32_t meters)
     }
 }
 
+static void osdFormatAltitudeString(char * buff, int altitude, bool pad)
+{
+    const int alt = osdGetMetersToSelectedUnit(altitude);
+    int altitudeIntergerPart = abs(alt / 100);
+    if (alt < 0) {
+        altitudeIntergerPart *= -1;
+    }
+    tfp_sprintf(buff, pad ? "%4d.%01d%c" : "%d.%01d%c", altitudeIntergerPart, abs((alt % 100) / 10), osdGetMetersToSelectedUnitSymbol());
+}
+
 static void osdFormatPID(char * buff, const char * label, const pid8_t * pid)
 {
     tfp_sprintf(buff, "%s %3d %3d %3d", label, pid->P, pid->I, pid->D);
@@ -213,8 +223,10 @@ static void osdFormatPID(char * buff, const char * label, const pid8_t * pid)
 
 static uint8_t osdGetHeadingIntoDiscreteDirections(int heading, int directions)
 {
-    heading = (heading + 360) % 360;
-    heading = heading * 2 / (360 * 2 / directions);
+    // Split input heading 0..359 into sectors 0..(directions-1), but offset
+    // by half a sector so that sector 0 gets centered around heading 0.
+    heading = (heading * 2 + 360 / directions) % 720;
+    heading = heading / (360 * 2 / directions);
 
     return heading;
 }
@@ -309,8 +321,7 @@ static void osdDrawSingleElement(uint8_t item)
             if (osdRssi >= 100)
                 osdRssi = 99;
 
-            buff[0] = SYM_RSSI;
-            tfp_sprintf(buff + 1, "%d", osdRssi);
+            tfp_sprintf(buff, "%c%d", SYM_RSSI, osdRssi);
             break;
         }
 
@@ -322,20 +333,17 @@ static void osdDrawSingleElement(uint8_t item)
     case OSD_CURRENT_DRAW:
         {
             const int32_t amperage = getAmperage();
-            buff[0] = SYM_AMP;
-            tfp_sprintf(buff + 1, "%d.%02d", abs(amperage) / 100, abs(amperage) % 100);
+            tfp_sprintf(buff, "%3d.%02d%c", abs(amperage) / 100, abs(amperage) % 100, SYM_AMP);
             break;
         }
 
     case OSD_MAH_DRAWN:
-        buff[0] = SYM_MAH;
-        tfp_sprintf(buff + 1, "%d", getMAhDrawn());
+        tfp_sprintf(buff, "%4d%c", getMAhDrawn(), SYM_MAH);
         break;
 
 #ifdef GPS
     case OSD_GPS_SATS:
-        buff[0] = 0x1f;
-        tfp_sprintf(buff + 1, "%d", gpsSol.numSat);
+        tfp_sprintf(buff, "%c%d", 0x1f, gpsSol.numSat);
         break;
 
     case OSD_GPS_SPEED:
@@ -410,8 +418,7 @@ static void osdDrawSingleElement(uint8_t item)
 
     case OSD_ALTITUDE:
         {
-            const int32_t alt = osdGetMetersToSelectedUnit(getEstimatedAltitude());
-            tfp_sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetMetersToSelectedUnitSymbol());
+            osdFormatAltitudeString(buff, getEstimatedAltitude(), true);
             break;
         }
 
@@ -442,12 +449,12 @@ static void osdDrawSingleElement(uint8_t item)
         }
 
     case OSD_CRAFT_NAME:
-        if (strlen(systemConfig()->name) == 0)
+        if (strlen(pilotConfig()->name) == 0)
             strcpy(buff, "CRAFT_NAME");
         else {
-            for (int i = 0; i < MAX_NAME_LENGTH; i++) {
-                buff[i] = toupper((unsigned char)systemConfig()->name[i]);
-                if (systemConfig()->name[i] == 0)
+            for (unsigned int i = 0; i < MAX_NAME_LENGTH; i++) {
+                buff[i] = toupper((unsigned char)pilotConfig()->name[i]);
+                if (pilotConfig()->name[i] == 0)
                     break;
             }
         }
@@ -492,22 +499,25 @@ static void osdDrawSingleElement(uint8_t item)
             elemPosX = 14;
             elemPosY = 6 - 4; // Top center of the AH area
 
-            const int rollAngle = constrain(attitude.values.roll, -AH_MAX_ROLL, AH_MAX_ROLL);
-            int pitchAngle = constrain(attitude.values.pitch, -AH_MAX_PITCH, AH_MAX_PITCH);
+            // Get pitch and roll limits in tenths of degrees
+            const int maxPitch = osdConfig()->ahMaxPitch * 10;
+            const int maxRoll = osdConfig()->ahMaxRoll * 10;
+
+            const int rollAngle = constrain(attitude.values.roll, -maxRoll, maxRoll);
+            int pitchAngle = constrain(attitude.values.pitch, -maxPitch, maxPitch);
 
             if (displayScreenSize(osdDisplayPort) == VIDEO_BUFFER_CHARS_PAL) {
                 ++elemPosY;
             }
 
             // Convert pitchAngle to y compensation value
-            pitchAngle = (pitchAngle / 8) - 41; // 41 = 4 * 9 + 5
+            // (maxPitch / 25) divisor matches previous settings of fixed divisor of 8 and fixed max AHI pitch angle of 20.0 degrees
+            pitchAngle = ((pitchAngle * 25) / maxPitch) - 41; // 41 = 4 * AH_SYMBOL_COUNT + 5
 
             for (int x = -4; x <= 4; x++) {
-                int y = (-rollAngle * x) / 64;
-                y -= pitchAngle;
-                // y += 41; // == 4 * 9 + 5
+                const int y = ((-rollAngle * x) / 64) - pitchAngle;
                 if (y >= 0 && y <= 81) {
-                    displayWriteChar(osdDisplayPort, elemPosX + x, elemPosY + (y / 9), (SYM_AH_BAR9_0 + (y % 9)));
+                    displayWriteChar(osdDisplayPort, elemPosX + x, elemPosY + (y / AH_SYMBOL_COUNT), (SYM_AH_BAR9_0 + (y % AH_SYMBOL_COUNT)));
                 }
             }
 
@@ -583,6 +593,13 @@ static void osdDrawSingleElement(uint8_t item)
                     break;
                 }
             }
+            break;
+        }
+
+        /* Show warning if battery is not fresh */
+        if (!ARMING_FLAG(WAS_EVER_ARMED) && (getBatteryState() == BATTERY_OK)
+              && getBatteryAverageCellVoltage() < batteryConfig()->vbatfullcellvoltage) {
+            tfp_sprintf(buff, "BATT NOT FULL");
             break;
         }
 
@@ -682,8 +699,7 @@ static void osdDrawSingleElement(uint8_t item)
         }
 #ifdef USE_ESC_SENSOR
     case OSD_ESC_TMP:
-        buff[0] = SYM_TEMP_C;
-        tfp_sprintf(buff + 1, "%d", escData == NULL ? 0 : escData->temperature);
+        tfp_sprintf(buff, "%d%c", escData == NULL ? 0 : escData->temperature, SYM_TEMP_C);
         break;
 
     case OSD_ESC_RPM:
@@ -818,6 +834,9 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->rssi_alarm = 20;
     osdConfig->cap_alarm  = 2200;
     osdConfig->alt_alarm  = 100; // meters or feet depend on configuration
+
+    osdConfig->ahMaxPitch = 20; // 20 degrees
+    osdConfig->ahMaxRoll = 40; // 40 degrees
 }
 
 static void osdDrawLogo(int x, int y)
@@ -1078,8 +1097,7 @@ static void osdShowStats(void)
     }
 
     if (osdConfig()->enabled_stats[OSD_STAT_MAX_ALTITUDE]) {
-        int32_t alt = osdGetMetersToSelectedUnit(stats.max_altitude);
-        tfp_sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetMetersToSelectedUnitSymbol());
+        osdFormatAltitudeString(buff, stats.max_altitude, false);
         osdDisplayStatisticLabel(top++, "MAX ALTITUDE", buff);
     }
 

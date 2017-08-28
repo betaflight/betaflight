@@ -283,7 +283,7 @@ void SystemInit(void)
     if (DATA_CACHE_ENABLE) {
         SCB_EnableDCache();
     }
-    
+
     /* Configure the system clock to 216 MHz */
     SystemClock_Config();
 

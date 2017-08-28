@@ -363,10 +363,8 @@ void beeperUpdate(timeUs_t currentTimeUs)
     }
 
     #ifdef USE_DSHOT
-    if (!ARMING_FLAG(ARMED) && currentBeeperEntry->mode == BEEPER_RX_SET) {
-        for (unsigned index = 0; index < getMotorCount(); index++) {
-            pwmWriteDshotCommand(index, DSHOT_CMD_BEEP3);
-        }
+    if (!areMotorsRunning() && beeperConfig()->dshotForward && currentBeeperEntry->mode == BEEPER_RX_SET) {
+        pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_BEEP3);
     }
     #endif
 
@@ -432,6 +430,18 @@ beeperMode_e beeperModeForTableIndex(int idx)
 }
 
 /*
+ * Returns the binary mask for the 'beeperMode_e' value corresponding to a given
+ * beeper-table index, or 0 if the beeperMode is BEEPER_SILENCE.
+ */
+uint32_t beeperModeMaskForTableIndex(int idx)
+{
+    beeperMode_e beeperMode = beeperModeForTableIndex(idx);
+    if (beeperMode == BEEPER_SILENCE)
+        return 0;
+    return 1 << (beeperMode - 1);
+}
+
+/*
  * Returns the name for the given beeper-table index, or NULL if none.
  */
 const char *beeperNameForTableIndex(int idx)
@@ -470,6 +480,7 @@ void beeperWarningBeeps(uint8_t beepCount) {UNUSED(beepCount);}
 void beeperUpdate(timeUs_t currentTimeUs) {UNUSED(currentTimeUs);}
 uint32_t getArmingBeepTimeMicros(void) {return 0;}
 beeperMode_e beeperModeForTableIndex(int idx) {UNUSED(idx); return BEEPER_SILENCE;}
+uint32_t beeperModeMaskForTableIndex(int idx) {UNUSED(idx); return 0;}
 const char *beeperNameForTableIndex(int idx) {UNUSED(idx); return NULL;}
 int beeperTableEntryCount(void) {return 0;}
 bool isBeeperOn(void) {return false;}

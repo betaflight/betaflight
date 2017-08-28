@@ -34,6 +34,8 @@
 
 // file name to save config
 #define EEPROM_FILENAME "eeprom.bin"
+#define EEPROM_IN_RAM
+#define EEPROM_SIZE     8192
 
 #define U_ID_0 0
 #define U_ID_1 1
@@ -214,7 +216,7 @@ typedef struct
 } I2C_TypeDef;
 
 typedef enum
-{ 
+{
   FLASH_BUSY = 1,
   FLASH_ERROR_PG,
   FLASH_ERROR_WRP,
@@ -231,7 +233,7 @@ typedef struct {
     double position_xyz[3];             // meters, NED from origin
 } fdm_packet;
 typedef struct {
-	float motor_speed[4];	// normal: [0.0, 1.0], 3D: [-1.0, 1.0]
+    float motor_speed[4];   // normal: [0.0, 1.0], 3D: [-1.0, 1.0]
 } servo_packet;
 
 void FLASH_Unlock(void);
@@ -247,4 +249,3 @@ uint64_t micros64();
 uint64_t millis64();
 
 int lockMainPID(void);
-

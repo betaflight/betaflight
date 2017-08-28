@@ -5,6 +5,8 @@
  *      Author: borisb
  */
 
+#pragma once
+
 #include "drivers/accgyro/accgyro.h"
 
 bool gyroSyncCheckUpdate(gyroDev_t *gyro);

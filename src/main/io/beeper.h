@@ -34,11 +34,11 @@ typedef enum {
     BEEPER_BAT_LOW,                 // Warning beeps when battery is getting low (repeats)
     BEEPER_GPS_STATUS,              // FIXME **** Disable beeper when connected to USB ****
     BEEPER_RX_SET,                  // Beeps when aux channel is set for beep or beep sequence how many satellites has found if GPS enabled
-    BEEPER_DISARM_REPEAT,           // Beeps sounded while stick held in disarm position
     BEEPER_ACC_CALIBRATION,         // ACC inflight calibration completed confirmation
     BEEPER_ACC_CALIBRATION_FAIL,    // ACC inflight calibration failed
     BEEPER_READY_BEEP,              // Ring a tone when GPS is locked and ready
     BEEPER_MULTI_BEEPS,             // Internal value used by 'beeperConfirmationBeeps()'.
+    BEEPER_DISARM_REPEAT,           // Beeps sounded while stick held in disarm position
     BEEPER_ARMED,                   // Warning beeps when board is armed (repeats until board is disarmed or throttle is increased)
     BEEPER_SYSTEM_INIT,             // Initialisation beeps when board is powered on
     BEEPER_USB,                     // Some boards have beeper powered USB connected
@@ -51,6 +51,7 @@ typedef enum {
 typedef struct beeperConfig_s {
     uint32_t beeper_off_flags;
     uint32_t preferred_beeper_off_flags;
+    bool dshotForward;
 } beeperConfig_t;
 
 #ifdef BEEPER
@@ -64,6 +65,7 @@ void beeperConfirmationBeeps(uint8_t beepCount);
 void beeperWarningBeeps(uint8_t beepCount);
 uint32_t getArmingBeepTimeMicros(void);
 beeperMode_e beeperModeForTableIndex(int idx);
+uint32_t beeperModeMaskForTableIndex(int idx);
 const char *beeperNameForTableIndex(int idx);
 int beeperTableEntryCount(void);
 bool isBeeperOn(void);

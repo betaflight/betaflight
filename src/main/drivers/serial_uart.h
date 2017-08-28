@@ -28,7 +28,7 @@
 #define USE_UART
 #endif
 
-typedef enum UARTDevice {
+typedef enum {
     UARTDEV_1 = 0,
     UARTDEV_2 = 1,
     UARTDEV_3 = 2,
@@ -37,7 +37,7 @@ typedef enum UARTDevice {
     UARTDEV_6 = 5,
     UARTDEV_7 = 6,
     UARTDEV_8 = 7
-} UARTDevice;
+} UARTDevice_e;
 
 typedef struct uartPort_s {
     serialPort_t port;
@@ -59,7 +59,6 @@ typedef struct uartPort_s {
     uint32_t txDMAIrq;
 
     uint32_t rxDMAPos;
-    bool txDMAEmpty;
 
     uint32_t txDMAPeripheralBaseAddr;
     uint32_t rxDMAPeripheralBaseAddr;
@@ -69,10 +68,11 @@ typedef struct uartPort_s {
     UART_HandleTypeDef Handle;
 #endif
     USART_TypeDef *USARTx;
+    bool txDMAEmpty;
 } uartPort_t;
 
 void uartPinConfigure(const serialPinConfig_t *pSerialPinConfig);
-serialPort_t *uartOpen(UARTDevice device, serialReceiveCallbackPtr rxCallback, uint32_t baudRate, portMode_t mode, portOptions_t options);
+serialPort_t *uartOpen(UARTDevice_e device, serialReceiveCallbackPtr rxCallback, uint32_t baudRate, portMode_e mode, portOptions_e options);
 
 // serialPort API
 void uartWrite(serialPort_t *instance, uint8_t ch);

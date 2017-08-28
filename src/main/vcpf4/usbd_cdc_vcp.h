@@ -71,4 +71,3 @@ typedef struct
 
 
 #endif /* __USBD_CDC_VCP_H */
-

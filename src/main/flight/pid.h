@@ -82,7 +82,6 @@ typedef struct pidProfile_s {
     uint8_t itermWindupPointPercent;        // Experimental ITerm windup threshold, percent motor saturation
     uint16_t pidSumLimit;
     uint16_t pidSumLimitYaw;
-    uint8_t dterm_average_count;            // Configurable delta count for dterm
     uint8_t vbatPidCompensation;            // Scale PIDsum to battery voltage
     uint8_t pidAtMinThrottle;               // Disable/Enable pids on zero throttle. Normally even without airmode P and D would be active.
     uint8_t levelAngleLimit;                // Max angle in degrees in level mode
@@ -102,9 +101,12 @@ typedef struct pidProfile_s {
     uint16_t crash_gthreshold;              // gyro crash value
     uint16_t crash_setpoint_threshold;      // setpoint must be below this value to detect crash, so flips and rolls are not interpreted as crashes
     uint16_t crash_time;                    // ms
+    uint16_t crash_delay;                   // ms
     uint8_t crash_recovery_angle;           // degrees
     uint8_t crash_recovery_rate;            // degree/second
     pidCrashRecovery_e crash_recovery;      // off, on, on and beeps when it is in crash recovery mode
+    uint16_t crash_limit_yaw;               // limits yaw errorRate, so crashes don't cause huge throttle increase
+    uint16_t itermLimit;
 } pidProfile_t;
 
 PG_DECLARE_ARRAY(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles);

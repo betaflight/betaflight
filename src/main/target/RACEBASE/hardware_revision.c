@@ -27,7 +27,6 @@
 #include "drivers/bus_spi.h"
 #include "drivers/sensor.h"
 #include "drivers/io.h"
-#include "drivers/gpio.h"
 #include "drivers/exti.h"
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/accgyro/accgyro_mpu.h"
@@ -39,31 +38,24 @@ uint8_t hardwareRevision = 1;
 
 void detectHardwareRevision(void)
 {
-    gpio_config_t gpio;
+    GPIO_InitTypeDef GPIO_InitStructure = {
+        .GPIO_Mode = GPIO_Mode_OUT,
+        .GPIO_OType = GPIO_OType_PP,
+        .GPIO_PuPd = GPIO_PuPd_NOPULL,
+        .GPIO_Speed = GPIO_Speed_2MHz
+    };
 
     // GYRO CS as output
-    gpio.pin = GPIO_Pin_5;
-    gpio.mode = Mode_Out_PP;
-    gpio.speed = Speed_2MHz;
-    gpioInit(GPIOB, &gpio);
-    GPIO_SetBits(GPIOB,   GPIO_Pin_5);
+    GPIO_InitStructure.GPIO_Pin = (GPIO_Pin_5 | GPIO_Pin_12);
+    GPIO_Init(GPIOB, &GPIO_InitStructure);
+    GPIO_SetBits(GPIOB, GPIO_InitStructure.GPIO_Pin);
 
-    gpio.pin = GPIO_Pin_7;
-    gpio.mode = Mode_Out_PP;
-    gpio.speed = Speed_2MHz;
-    gpioInit(GPIOA, &gpio);
-    GPIO_SetBits(GPIOA,   GPIO_Pin_7);
-
-    gpio.pin = GPIO_Pin_12;
-    gpio.mode = Mode_Out_PP;
-    gpio.speed = Speed_2MHz;
-    gpioInit(GPIOB, &gpio);
-    GPIO_SetBits(GPIOB,   GPIO_Pin_12);
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    GPIO_SetBits(GPIOA, GPIO_InitStructure.GPIO_Pin);
 }
-
 
 void updateHardwareRevision(void)
 {
 
 }
-

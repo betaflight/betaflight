@@ -104,11 +104,8 @@ typedef struct sdcard_t {
 
 static sdcard_t sdcard;
 
-#ifdef SDCARD_DMA_CHANNEL_TX
+#if defined(SDCARD_DMA_CHANNEL_TX) || defined(SDCARD_DMA_TX)
     static bool useDMAForTx;
-#if defined(USE_HAL_DRIVER)
-    DMA_HandleTypeDef *sdDMAHandle;
-#endif
 #else
     // DMA channel not available so we can hard-code this to allow the non-DMA paths to be stripped by optimization
     static const bool useDMAForTx = false;
@@ -413,47 +410,74 @@ static void sdcard_sendDataBlockBegin(const uint8_t *buffer, bool multiBlockWrit
     spiTransferByte(SDCARD_SPI_INSTANCE, multiBlockWrite ? SDCARD_MULTIPLE_BLOCK_WRITE_START_TOKEN : SDCARD_SINGLE_BLOCK_WRITE_START_TOKEN);
 
     if (useDMAForTx) {
-#ifdef SDCARD_DMA_CHANNEL_TX
-#if defined(USE_HAL_DRIVER)
-        sdDMAHandle = spiSetDMATransmit(SDCARD_DMA_CHANNEL_TX, SDCARD_DMA_CHANNEL, SDCARD_SPI_INSTANCE, buffer, SDCARD_BLOCK_SIZE);
-#else
+#if defined(SDCARD_DMA_TX) && defined(USE_HAL_DRIVER)
+
+#ifdef SDCARD_DMA_CLK
+        // LL_AHB1_GRP1_EnableClock(SDCARD_DMA_CLK); // XXX Should not be necessary; dmaInit handles it.
+#endif
+        LL_DMA_InitTypeDef init;
+
+        LL_DMA_StructInit(&init);
+
+        init.Channel = SDCARD_DMA_CHANNEL;
+        init.Mode = LL_DMA_MODE_NORMAL;
+        init.Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
+
+        init.PeriphOrM2MSrcAddress = (uint32_t)&SDCARD_SPI_INSTANCE->DR;
+        init.Priority = LL_DMA_PRIORITY_LOW;
+        init.PeriphOrM2MSrcIncMode  = LL_DMA_PERIPH_NOINCREMENT;
+        init.PeriphOrM2MSrcDataSize = LL_DMA_PDATAALIGN_BYTE;
+
+        init.MemoryOrM2MDstAddress = (uint32_t)buffer;
+        init.MemoryOrM2MDstIncMode = LL_DMA_MEMORY_INCREMENT;
+        init.MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_BYTE;
+
+        init.NbData = SDCARD_BLOCK_SIZE;
+
+        LL_DMA_DeInit(SDCARD_DMA_TX, SDCARD_DMA_STREAM_TX);
+        LL_DMA_Init(SDCARD_DMA_TX, SDCARD_DMA_STREAM_TX, &init);
+
+        LL_DMA_EnableStream(SDCARD_DMA_TX, SDCARD_DMA_STREAM_TX);
+
+        LL_SPI_EnableDMAReq_TX(SDCARD_SPI_INSTANCE);
+
+#elif defined(SDCARD_DMA_CHANNEL_TX)
+
         // Queue the transmission of the sector payload
 #ifdef SDCARD_DMA_CLK
-        RCC_AHB1PeriphClockCmd(SDCARD_DMA_CLK, ENABLE);
+        // RCC_AHB1PeriphClockCmd(SDCARD_DMA_CLK, ENABLE); // XXX Shouldn't be needed ...
 #endif
-        DMA_InitTypeDef DMA_InitStructure;
+        DMA_InitTypeDef init;
 
-        DMA_StructInit(&DMA_InitStructure);
+        DMA_StructInit(&init);
 #ifdef SDCARD_DMA_CHANNEL
-        DMA_InitStructure.DMA_Channel = SDCARD_DMA_CHANNEL;
-        DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t) buffer;
-        DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
+        init.DMA_Channel = SDCARD_DMA_CHANNEL;
+        init.DMA_Memory0BaseAddr = (uint32_t) buffer;
+        init.DMA_DIR = DMA_DIR_MemoryToPeripheral;
 #else
-        DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
-        DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t) buffer;
-        DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
+        init.DMA_M2M = DMA_M2M_Disable;
+        init.DMA_MemoryBaseAddr = (uint32_t) buffer;
+        init.DMA_DIR = DMA_DIR_PeripheralDST;
 #endif
-        DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) &SDCARD_SPI_INSTANCE->DR;
-        DMA_InitStructure.DMA_Priority = DMA_Priority_Low;
-        DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-        DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+        init.DMA_PeripheralBaseAddr = (uint32_t) &SDCARD_SPI_INSTANCE->DR;
+        init.DMA_Priority = DMA_Priority_Low;
+        init.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+        init.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
 
-        DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-        DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+        init.DMA_MemoryInc = DMA_MemoryInc_Enable;
+        init.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
 
-        DMA_InitStructure.DMA_BufferSize = SDCARD_BLOCK_SIZE;
-        DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+        init.DMA_BufferSize = SDCARD_BLOCK_SIZE;
+        init.DMA_Mode = DMA_Mode_Normal;
 
         DMA_DeInit(SDCARD_DMA_CHANNEL_TX);
-        DMA_Init(SDCARD_DMA_CHANNEL_TX, &DMA_InitStructure);
+        DMA_Init(SDCARD_DMA_CHANNEL_TX, &init);
 
         DMA_Cmd(SDCARD_DMA_CHANNEL_TX, ENABLE);
 
         SPI_I2S_DMACmd(SDCARD_SPI_INSTANCE, SPI_I2S_DMAReq_Tx, ENABLE);
 #endif
-#endif
-    }
-    else {
+    } else {
         // Send the first chunk now
         spiTransfer(SDCARD_SPI_INSTANCE, buffer, NULL, SDCARD_NON_DMA_CHUNK_SIZE);
     }
@@ -547,7 +571,12 @@ static bool sdcard_checkInitDone(void)
  */
 void sdcard_init(bool useDMA)
 {
-#ifdef SDCARD_DMA_CHANNEL_TX
+#if defined(SDCARD_DMA_TX)
+    useDMAForTx = useDMA;
+    if (useDMAForTx) {
+        dmaInit(dmaGetIdentifier(SDCARD_DMA_STREAM_TX_FULL), OWNER_SDCARD, 0);
+    }
+#elif defined(SDCARD_DMA_CHANNEL_TX)
     useDMAForTx = useDMA;
     if (useDMAForTx) {
         dmaInit(dmaGetIdentifier(SDCARD_DMA_CHANNEL_TX), OWNER_SDCARD, 0);
@@ -736,17 +765,11 @@ bool sdcard_poll(void)
             // Have we finished sending the write yet?
             sendComplete = false;
 
-#ifdef SDCARD_DMA_CHANNEL_TX
-#if defined(USE_HAL_DRIVER)
-            //if (useDMAForTx && __HAL_DMA_GET_FLAG(sdDMAHandle, SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG) == SET) {
-            //if (useDMAForTx && HAL_DMA_PollForTransfer(sdDMAHandle, HAL_DMA_FULL_TRANSFER, HAL_MAX_DELAY) == HAL_OK) {
-            if (useDMAForTx && (sdDMAHandle->State == HAL_DMA_STATE_READY)) {
-                //__HAL_DMA_CLEAR_FLAG(sdDMAHandle, SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG);
-
-                //__HAL_DMA_DISABLE(sdDMAHandle);
-
+#ifdef SDCARD_DMA_TX
+            // TODO : need to verify this
+            if (useDMAForTx && LL_DMA_IsEnabledStream(SDCARD_DMA_TX, SDCARD_DMA_STREAM_TX)) {
                 // Drain anything left in the Rx FIFO (we didn't read it during the write)
-                while (__HAL_SPI_GET_FLAG(spiHandleByInstance(SDCARD_SPI_INSTANCE), SPI_FLAG_RXNE) == SET) {
+                while (LL_SPI_IsActiveFlag_RXNE(SDCARD_SPI_INSTANCE)) {
                     SDCARD_SPI_INSTANCE->DR;
                 }
 
@@ -754,11 +777,11 @@ bool sdcard_poll(void)
                 while (spiIsBusBusy(SDCARD_SPI_INSTANCE)) {
                 }
 
-                HAL_SPI_DMAStop(spiHandleByInstance(SDCARD_SPI_INSTANCE));
+                LL_SPI_DisableDMAReq_TX(SDCARD_SPI_INSTANCE);
 
                 sendComplete = true;
             }
-#else
+#elif defined(SDCARD_DMA_CHANNEL_TX)
 #ifdef SDCARD_DMA_CHANNEL
             if (useDMAForTx && DMA_GetFlagStatus(SDCARD_DMA_CHANNEL_TX, SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG) == SET) {
                 DMA_ClearFlag(SDCARD_DMA_CHANNEL_TX, SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG);
@@ -782,7 +805,6 @@ bool sdcard_poll(void)
 
                 sendComplete = true;
             }
-#endif
 #endif
             if (!useDMAForTx) {
                 // Send another chunk

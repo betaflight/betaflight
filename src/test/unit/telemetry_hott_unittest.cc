@@ -213,13 +213,13 @@ void serialWrite(serialPort_t *instance, uint8_t ch)
     UNUSED(ch);
 }
 
-void serialSetMode(serialPort_t *instance, portMode_t mode)
+void serialSetMode(serialPort_t *instance, portMode_e mode)
 {
     UNUSED(instance);
     UNUSED(mode);
 }
 
-serialPort_t *openSerialPort(serialPortIdentifier_e identifier, serialPortFunction_e functionMask, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, portOptions_t options)
+serialPort_t *openSerialPort(serialPortIdentifier_e identifier, serialPortFunction_e functionMask, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_e mode, portOptions_e options)
 {
     UNUSED(identifier);
     UNUSED(functionMask);

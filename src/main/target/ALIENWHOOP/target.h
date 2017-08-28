@@ -20,14 +20,14 @@
 
 
 
-      
+
          \   |   _ _| __|  \ |\ \      /|  |  _ \  _ \ _ \
         _ \  |     |  _|  .  | \ \ \  / __ | (   |(   |__/
       _/  _\____|___|___|_|\_|  \_/\_/ _| _|\___/\___/_|
-      
-      
+
+
               Take me to your leader-board...
-      
+
 
 
 */
@@ -104,7 +104,7 @@
 //#define SPI5_MOSI_PIN
 #endif
 
-/* Motion Processing Unit (MPU) - Invensense 6-axis MPU-6500 or 9-axis MPU-9250 
+/* Motion Processing Unit (MPU) - Invensense 6-axis MPU-6500 or 9-axis MPU-9250
  */
 // Interrupt
 #define USE_EXTI
@@ -129,7 +129,7 @@
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW0_DEG
 
-/* Optional Digital Pressure Sensor (barometer) - Bosch BMP280 
+/* Optional Digital Pressure Sensor (barometer) - Bosch BMP280
  * TODO: not implemented on V1 or V2 pcb
  */
 #define BARO
@@ -204,13 +204,13 @@
 #define I2C_DEVICE              (I2CDEV_1)
 #define USE_I2C_PULLUP
 #define I2C1_SCL                PB6
-#define I2C1_SDA                PB7 
+#define I2C1_SDA                PB7
 #else
 #undef CMS
 #undef USE_I2C
 #endif
 
-/* MCU Pin Mapping - LPFQ64 Flags 
+/* MCU Pin Mapping - LPFQ64 Flags
  */
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
@@ -228,4 +228,3 @@
  */
 #define USABLE_TIMER_CHANNEL_COUNT 5
 #define USED_TIMERS             ( TIM_N(3) | TIM_N(8) | TIM_N(5) )
-

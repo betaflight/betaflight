@@ -125,7 +125,6 @@ void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refresh
     // zero initial samples
     filter->x1 = filter->x2 = 0;
     filter->y1 = filter->y2 = 0;
-    filter->d1 = filter->d2 = 0;
 }
 
 void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType)
@@ -135,8 +134,6 @@ void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refre
     float x2 = filter->x2;
     float y1 = filter->y1;
     float y2 = filter->y2;
-    float d1 = filter->d1;
-    float d2 = filter->d2;
 
     biquadFilterInit(filter, filterFreq, refreshRate, Q, filterType);
 
@@ -145,8 +142,6 @@ void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refre
     filter->x2 = x2;
     filter->y1 = y1;
     filter->y2 = y2;
-    filter->d1 = d1;
-    filter->d2 = d2;
 }
 
 /* Computes a biquadFilter_t filter on a sample (slightly less precise than df2 but works in dynamic mode) */
@@ -169,9 +164,9 @@ float biquadFilterApplyDF1(biquadFilter_t *filter, float input)
 /* Computes a biquadFilter_t filter in direct form 2 on a sample (higher precision but can't handle changes in coefficients */
 float biquadFilterApply(biquadFilter_t *filter, float input)
 {
-    const float result = filter->b0 * input + filter->d1;
-    filter->d1 = filter->b1 * input - filter->a1 * result + filter->d2;
-    filter->d2 = filter->b2 * input - filter->a2 * result;
+    const float result = filter->b0 * input + filter->x1;
+    filter->x1 = filter->b1 * input - filter->a1 * result + filter->x2;
+    filter->x2 = filter->b2 * input - filter->a2 * result;
     return result;
 }
 
@@ -291,4 +286,3 @@ float firFilterDenoiseUpdate(firFilterDenoise_t *filter, float input)
     else
         return filter->movingSum / ++filter->filledCount + 1;
 }
-

@@ -26,4 +26,3 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM1, CH4, PE14, TIM_USE_MOTOR,  1, 0), // S8_OUT
     DEF_TIM(TIM9, CH2, PE6,  TIM_USE_MOTOR,  0, 0), // sonar echo if needed
 };
-

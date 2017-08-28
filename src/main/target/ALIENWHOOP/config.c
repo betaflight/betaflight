@@ -20,14 +20,14 @@
 
 
 
-      
+
          \   |   _ _| __|  \ |\ \      /|  |  _ \  _ \ _ \
         _ \  |     |  _|  .  | \ \ \  / __ | (   |(   |__/
       _/  _\____|___|___|_|\_|  \_/\_/ _| _|\___/\___/_|
-      
-      
+
+
               Take me to your leader-board...
-      
+
 
 
 */
@@ -61,8 +61,8 @@ void targetConfiguration(void)
 {
     if (hardwareMotorType == MOTOR_BRUSHED) {
         motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
-	motorConfigMutable()->minthrottle = 1080;
-	motorConfigMutable()->maxthrottle = 2000;
+    motorConfigMutable()->minthrottle = 1080;
+    motorConfigMutable()->maxthrottle = 2000;
         pidConfigMutable()->pid_process_denom = 1;
     }
 
@@ -83,4 +83,3 @@ void targetConfiguration(void)
     compassConfigMutable()->mag_hardware =  MAG_DEFAULT;
 }
 #endif
-

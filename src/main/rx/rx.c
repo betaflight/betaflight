@@ -117,7 +117,7 @@ static uint8_t rcSampleIndex = 0;
 #define BINDPLUG_PIN NONE
 #endif
 
-PG_REGISTER_WITH_RESET_FN(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(rxConfig_t, rxConfig, PG_RX_CONFIG, 1);
 void pgResetFn_rxConfig(rxConfig_t *rxConfig)
 {
     RESET_CONFIG_2(rxConfig_t, rxConfig,
@@ -130,7 +130,7 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .spektrum_sat_bind = 0,
         .spektrum_sat_bind_autoreset = 1,
         .midrc = RX_MID_USEC,
-        .mincheck = 1100,
+        .mincheck = 1050,
         .maxcheck = 1900,
         .rx_min_usec = RX_MIN_USEC,          // any of first 4 channels below this value will trigger rx loss detection
         .rx_max_usec = RX_MAX_USEC,         // any of first 4 channels above this value will trigger rx loss detection
@@ -141,8 +141,8 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .rcInterpolationChannels = 0,
         .rcInterpolationInterval = 19,
         .fpvCamAngleDegrees = 0,
-        .max_aux_channel = DEFAULT_AUX_CHANNEL_COUNT,
-        .airModeActivateThreshold = 1350
+        .airModeActivateThreshold = 1350,
+        .max_aux_channel = DEFAULT_AUX_CHANNEL_COUNT
     );
 
 #ifdef RX_CHANNELS_TAER
@@ -616,16 +616,11 @@ static void updateRSSIPWM(void)
     rssi = (uint16_t)((constrain(pwmRssi - 1000, 0, 1000) / 1000.0f) * 1023.0f);
 }
 
-#define RSSI_ADC_SAMPLE_COUNT 16
-//#define RSSI_SCALE (0xFFF / 100.0f)
-
 static void updateRSSIADC(timeUs_t currentTimeUs)
 {
 #ifndef USE_ADC
     UNUSED(currentTimeUs);
 #else
-    static uint8_t adcRssiSamples[RSSI_ADC_SAMPLE_COUNT];
-    static uint8_t adcRssiSampleIndex = 0;
     static uint32_t rssiUpdateAt = 0;
 
     if ((int32_t)(currentTimeUs - rssiUpdateAt) < 0) {
@@ -636,26 +631,36 @@ static void updateRSSIADC(timeUs_t currentTimeUs)
     const uint16_t adcRssiSample = adcGetChannel(ADC_RSSI);
     const uint8_t rssiPercentage = adcRssiSample / rxConfig()->rssi_scale;
 
-    adcRssiSampleIndex = (adcRssiSampleIndex + 1) % RSSI_ADC_SAMPLE_COUNT;
+    processRssi(rssiPercentage);
+#endif
+}
 
-    adcRssiSamples[adcRssiSampleIndex] = rssiPercentage;
+#define RSSI_SAMPLE_COUNT 16
 
-    int16_t adcRssiMean = 0;
-    for (int sampleIndex = 0; sampleIndex < RSSI_ADC_SAMPLE_COUNT; sampleIndex++) {
-        adcRssiMean += adcRssiSamples[sampleIndex];
+void processRssi(uint8_t rssiPercentage)
+{
+    static uint8_t rssiSamples[RSSI_SAMPLE_COUNT];
+    static uint8_t rssiSampleIndex = 0;
+
+    rssiSampleIndex = (rssiSampleIndex + 1) % RSSI_SAMPLE_COUNT;
+
+    rssiSamples[rssiSampleIndex] = rssiPercentage;
+
+    int16_t rssiMean = 0;
+    for (int sampleIndex = 0; sampleIndex < RSSI_SAMPLE_COUNT; sampleIndex++) {
+        rssiMean += rssiSamples[sampleIndex];
     }
 
-    adcRssiMean = adcRssiMean / RSSI_ADC_SAMPLE_COUNT;
+    rssiMean = rssiMean / RSSI_SAMPLE_COUNT;
 
-    adcRssiMean=constrain(adcRssiMean, 0, 100);
+    rssiMean=constrain(rssiMean, 0, 100);
 
     // RSSI_Invert option
     if (rxConfig()->rssi_invert) {
-        adcRssiMean = 100 - adcRssiMean;
+        rssiMean = 100 - rssiMean;
     }
 
-    rssi = (uint16_t)((adcRssiMean / 100.0f) * 1023.0f);
-#endif
+    rssi = (uint16_t)((rssiMean / 100.0f) * 1023.0f);
 }
 
 void updateRSSI(timeUs_t currentTimeUs)

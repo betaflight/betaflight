@@ -18,4 +18,3 @@ enum rcc_reg {
 
 void RCC_ClockCmd(rccPeriphTag_t periphTag, FunctionalState NewState);
 void RCC_ResetCmd(rccPeriphTag_t periphTag, FunctionalState NewState);
-

@@ -84,7 +84,7 @@ void blackboxWrite(uint8_t value)
 }
 
 // Print the null-terminated string 's' to the blackbox device and return the number of bytes written
-int blackboxPrint(const char *s)
+int blackboxWriteString(const char *s)
 {
     int length;
     const uint8_t *pos;
@@ -183,7 +183,7 @@ bool blackboxDeviceOpen(void)
         {
             serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_BLACKBOX);
             baudRate_e baudRateIndex;
-            portOptions_t portOptions = SERIAL_PARITY_NO | SERIAL_NOT_INVERTED;
+            portOptions_e portOptions = SERIAL_PARITY_NO | SERIAL_NOT_INVERTED;
 
             if (!portConfig) {
                 return false;

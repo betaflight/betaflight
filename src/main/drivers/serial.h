@@ -20,13 +20,13 @@
 #include "drivers/io.h"
 #include "config/parameter_group.h"
 
-typedef enum portMode_t {
+typedef enum {
     MODE_RX = 1 << 0,
     MODE_TX = 1 << 1,
     MODE_RXTX = MODE_RX | MODE_TX
-} portMode_t;
+} portMode_e;
 
-typedef enum portOptions_t {
+typedef enum {
     SERIAL_NOT_INVERTED  = 0 << 0,
     SERIAL_INVERTED      = 1 << 0,
     SERIAL_STOPBITS_1    = 0 << 1,
@@ -45,7 +45,7 @@ typedef enum portOptions_t {
      */
     SERIAL_BIDIR_OD      = 0 << 4,
     SERIAL_BIDIR_PP      = 1 << 4
-} portOptions_t;
+} portOptions_e;
 
 typedef void (*serialReceiveCallbackPtr)(uint16_t data);   // used by serial drivers to return frames to app
 
@@ -54,8 +54,8 @@ typedef struct serialPort_s {
     const struct serialPortVTable *vTable;
 
     uint8_t identifier;
-    portMode_t mode;
-    portOptions_t options;
+    portMode_e mode;
+    portOptions_e options;
 
     uint32_t baudRate;
 
@@ -102,7 +102,7 @@ struct serialPortVTable {
 
     bool (*isSerialTransmitBufferEmpty)(const serialPort_t *instance);
 
-    void (*setMode)(serialPort_t *instance, portMode_t mode);
+    void (*setMode)(serialPort_t *instance, portMode_e mode);
 
     void (*writeBuf)(serialPort_t *instance, const void *data, int count);
     // Optional functions used to buffer large writes.
@@ -116,7 +116,7 @@ uint32_t serialTxBytesFree(const serialPort_t *instance);
 void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count);
 uint8_t serialRead(serialPort_t *instance);
 void serialSetBaudRate(serialPort_t *instance, uint32_t baudRate);
-void serialSetMode(serialPort_t *instance, portMode_t mode);
+void serialSetMode(serialPort_t *instance, portMode_e mode);
 bool isSerialTransmitBufferEmpty(const serialPort_t *instance);
 void serialPrint(serialPort_t *instance, const char *str);
 uint32_t serialGetBaudRate(serialPort_t *instance);
