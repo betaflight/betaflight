@@ -62,7 +62,8 @@ typedef enum {
 
 typedef enum {
     OSD_UNIT_IMPERIAL,
-    OSD_UNIT_METRIC
+    OSD_UNIT_METRIC,
+    OSD_UNIT_UK, // Show speed in mp/h, other values in metric
 } osd_unit_e;
 
 typedef struct osdConfig_s {

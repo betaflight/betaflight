@@ -49,8 +49,12 @@ tables:
     values: ["ATTI", "CRUISE"]
   - name: nav_rth_alt_mode
     values: ["CURRENT", "EXTRA", "FIXED", "MAX", "AT_LEAST"]
-  - name: unit
-    values: ["IMPERIAL", "METRIC"]
+  - name: osd_unit
+    values: ["IMPERIAL", "METRIC", "UK"]
+    enum: osd_unit_e
+  - name: frsky_unit
+    values: ["METRIC", "IMPERIAL"]
+    enum: frskyUnit_e
   - name: ltm_rates
     values: ["NORMAL", "MEDIUM", "SLOW"]
   - name: i2c_speed
@@ -1195,7 +1199,7 @@ groups:
         max: FRSKY_FORMAT_NMEA
         type: uint8_t # TODO: This seems to use an enum, we should use table:
       - name: frsky_unit
-        table: unit
+        table: frsky_unit
         type: uint8_t
       - name: frsky_vfas_precision
         min: FRSKY_VFAS_PRECISION_LOW
@@ -1273,7 +1277,7 @@ groups:
         max: 1
       - name: osd_units
         field: units
-        table: unit
+        table: osd_unit
         type: uint8_t
 
       - name: osd_rssi_alarm
