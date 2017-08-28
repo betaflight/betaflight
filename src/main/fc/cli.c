@@ -3493,14 +3493,11 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("beeper", "turn on/off beeper", "list\r\n"
         "\t<+|->[name]", cliBeeper),
 #endif
-#ifdef USE_RX_FRSKY_D
-    CLI_COMMAND_DEF("frsky_bind", NULL, NULL, cliFrSkyBind),
-#endif
+    CLI_COMMAND_DEF("bl", "reboot into bootloader", NULL, cliBootloader),
 #ifdef LED_STRIP
     CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
 #endif
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", NULL, cliDefaults),
-    CLI_COMMAND_DEF("bl", "reboot into bootloader", NULL, cliBootloader),
     CLI_COMMAND_DEF("diff", "list configuration changes from default",
         "[master|profile|rates|all] {defaults}", cliDiff),
 #ifdef USE_DSHOT
@@ -3521,6 +3518,9 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_FLASH_TOOLS
     CLI_COMMAND_DEF("flash_read", NULL, "<length> <address>", cliFlashRead),
     CLI_COMMAND_DEF("flash_write", NULL, "<address> <message>", cliFlashWrite),
+#endif
+#ifdef USE_RX_FRSKY_D
+    CLI_COMMAND_DEF("frsky_bind", NULL, NULL, cliFrSkyBind),
 #endif
 #endif
     CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),
