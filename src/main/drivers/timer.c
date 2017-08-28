@@ -709,6 +709,9 @@ void timerInit(void)
 #if defined(STM32F3) || defined(STM32F4)
     for (int timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
         const timerHardware_t *timerHardwarePtr = &timerHardware[timerIndex];
+        if (timerHardwarePtr->usageFlags == TIM_USE_NONE) {
+            continue;
+        }
         IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->tag), IOCFG_AF_PP, timerHardwarePtr->alternateFunction);
     }
 #endif
