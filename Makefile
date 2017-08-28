@@ -916,8 +916,8 @@ $(OBJECT_DIR)/$(TARGET)/build/version.o : $(TARGET_SRC)
 
 # Settings generator
 .PHONY: settings clean-settings
-TOOL_DIR		= $(ROOT)/tools
-SETTINGS_GENERATOR	= $(TOOL_DIR)/settings.rb
+UTILS_DIR			= $(ROOT)/src/utils
+SETTINGS_GENERATOR	= $(UTILS_DIR)/settings.rb
 
 GENERATED_SETTINGS	= $(SRC_DIR)/fc/settings_generated.h $(SRC_DIR)/fc/settings_generated.c
 SETTINGS_FILE 		= $(SRC_DIR)/fc/settings.yaml
