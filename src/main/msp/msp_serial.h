@@ -83,8 +83,8 @@ typedef struct mspPort_s {
     struct serialPort_s *port; // null when port unused.
     mspState_e c_state;
     uint8_t inBuf[MSP_PORT_INBUF_SIZE];
-    int offset;
-    int dataSize;
+    uint_fast16_t offset;
+    uint_fast16_t dataSize;
     mspVersion_e mspVersion;
     uint8_t cmdFlags;
     uint16_t cmdMSP;
