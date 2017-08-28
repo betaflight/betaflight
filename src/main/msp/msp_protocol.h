@@ -57,10 +57,10 @@
    field setters.
 */
 
-#define MSP_PROTOCOL_VERSION                0
+#define MSP_PROTOCOL_VERSION                0   // Same version over MSPv1 & MSPv2 - message format didn't change and it backward compatible
 
-#define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   26 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MAJOR                   2   // increment when major changes are made
+#define API_VERSION_MINOR                   0   // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -262,7 +262,7 @@
 #define MSP_ANALOG               110    //out message         vbat, powermetersum, rssi if available on RX
 #define MSP_RC_TUNING            111    //out message         rc rate, rc expo, rollpitch rate, yaw rate, dyn throttle PID
 #define MSP_PID                  112    //out message         P I D coeff (9 are used currently)
-#define MSP_BOX                  113    //out message         BOX setup (number is dependant of your setup)
+#define MSP_ACTIVEBOXES          113    //out message         Active box flags (full width, more than 32 bits)
 #define MSP_MISC                 114    //out message         powermeter trig
 #define MSP_MOTOR_PINS           115    //out message         which pins are in use for motors & servos, for GUI
 #define MSP_BOXNAMES             116    //out message         the aux switch names
@@ -306,7 +306,7 @@
 #define MSP_RESERVE_2            252    //reserved for system usage
 #define MSP_DEBUGMSG             253    //out message         debug string buffer
 #define MSP_DEBUG                254    //out message         debug1,debug2,debug3,debug4
-#define MSP_RESERVE_3            255    //reserved for system usage
+#define MSP_V2_FRAME             255    //MSPv2 payload indicator
 
 // Additional commands that are not compatible with MultiWii
 #define MSP_STATUS_EX            150    //out message         cycletime, errors_count, CPU load, sensor present etc
@@ -319,3 +319,6 @@
 #define MSP_SERVO_MIX_RULES      241    //out message         Returns servo mixer configuration
 #define MSP_SET_SERVO_MIX_RULE   242    //in message          Sets servo mixer configuration
 #define MSP_SET_4WAY_IF          245    //in message          Sets 4way interface
+
+// MSPv2 includes
+#include "msp_protocol_v2_inav.h"

@@ -15,10 +15,6 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include "config/parameter_group.h"
-#include "drivers/display.h"
-
-struct displayPort_s;
-struct displayPort_s *displayPortMspInit(void);
+bool bitArrayGet(const void *array, unsigned bit);
+void bitArraySet(void *array, unsigned bit);
+void bitArrayClr(void *array, unsigned bit);

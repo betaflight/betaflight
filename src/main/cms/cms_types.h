@@ -66,6 +66,7 @@ typedef struct
 #define PRINT_VALUE    0x01  // Value has been changed, need to redraw
 #define PRINT_LABEL    0x02  // Text label should be printed
 #define DYNAMIC        0x04  // Value should be updated dynamically
+#define OPTSTRING      0x08  // (Temporary) Flag for OME_Submenu, indicating func should be called to get a string to display.
 
 #define IS_PRINTVALUE(p) ((p)->flags & PRINT_VALUE)
 #define SET_PRINTVALUE(p) { (p)->flags |= PRINT_VALUE; }
@@ -77,8 +78,10 @@ typedef struct
 
 #define IS_DYNAMIC(p) ((p)->flags & DYNAMIC)
 
-
 typedef long (*CMSMenuFuncPtr)(void);
+
+// Special return value(s) for function chaining by CMSMenuFuncPtr
+#define MENU_CHAIN_BACK  (-1) // Causes automatic cmsMenuBack
 
 /*
 onExit function is called with self:
@@ -153,3 +156,7 @@ typedef struct
 {
     char *val;
 } OSD_String_t;
+
+// This is a function used in the func member if the type is OME_Submenu.
+
+typedef char * (*CMSMenuOptFuncPtr)(void);

@@ -541,12 +541,15 @@ COMMON_SRC = \
             build/build_config.c \
             build/debug.c \
             build/version.c \
+            common/bitarray.c \
+            common/crc.c \
             common/encoding.c \
             common/filter.c \
             common/maths.c \
             common/printf.c \
             common/streambuf.c \
             common/typeconversion.c \
+            common/string_light.c \
             config/config_eeprom.c \
             config/config_streamer.c \
             config/feature.c \
@@ -589,6 +592,7 @@ COMMON_SRC = \
             fc/rc_adjustments.c \
             fc/rc_controls.c \
             fc/rc_curves.c \
+            fc/rc_modes.c \
             fc/runtime_config.c \
             fc/stats.c \
             flight/failsafe.c \
@@ -605,6 +609,7 @@ COMMON_SRC = \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
             io/statusindicator.c \
+            io/rcsplit.c \
             msp/msp_serial.c \
             rx/ibus.c \
             rx/jetiexbus.c \

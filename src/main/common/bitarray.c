@@ -15,10 +15,24 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdint.h>
+#include <stdbool.h>
 
-#include "config/parameter_group.h"
-#include "drivers/display.h"
+#include "bitarray.h"
 
-struct displayPort_s;
-struct displayPort_s *displayPortMspInit(void);
+#define BITARRAY_BIT_OP(array, bit, op) ((array)[(bit) / (sizeof((array)[0]) * 8)] op (1 << ((bit) % (sizeof((array)[0]) * 8))))
+
+bool bitArrayGet(const void *array, unsigned bit)
+{
+    return BITARRAY_BIT_OP((uint32_t*)array, bit, &);
+}
+
+void bitArraySet(void *array, unsigned bit)
+{
+    BITARRAY_BIT_OP((uint32_t*)array, bit, |=);
+}
+
+void bitArrayClr(void *array, unsigned bit)
+{
+    BITARRAY_BIT_OP((uint32_t*)array, bit, &=~);
+}

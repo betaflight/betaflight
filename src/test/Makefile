@@ -243,17 +243,17 @@ $(OBJECT_DIR)/telemetry_hott_unittest : \
 
 
 
-$(OBJECT_DIR)/io/rc_controls.o : \
-	$(USER_DIR)/io/rc_controls.c \
-	$(USER_DIR)/io/rc_controls.h \
+$(OBJECT_DIR)/fc/rc_controls.o : \
+	$(USER_DIR)/fc/rc_controls.c \
+	$(USER_DIR)/fc/rc_controls.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/rc_controls.c -o $@
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/fc/rc_controls.c -o $@
 
 $(OBJECT_DIR)/rc_controls_unittest.o : \
 	$(TEST_DIR)/rc_controls_unittest.cc \
-	$(USER_DIR)/io/rc_controls.h \
+	$(USER_DIR)/fc/rc_controls.h \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
@@ -630,6 +630,30 @@ $(OBJECT_DIR)/sensor_gyro_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+$(OBJECT_DIR)/io/rcsplit.o : \
+	$(USER_DIR)/io/rcsplit.c \
+	$(USER_DIR)/io/rcsplit.h
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/io/rcsplit.c -o $@
+
+$(OBJECT_DIR)/rcsplit_unittest.o : \
+	$(TEST_DIR)/rcsplit_unittest.cc \
+	$(GTEST_HEADERS)
+	
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/rcsplit_unittest.cc -o $@
+
+$(OBJECT_DIR)/rcsplit_unittest : \
+	$(OBJECT_DIR)/rcsplit_unittest.o \
+	$(OBJECT_DIR)/io/rcsplit.o \
+    $(OBJECT_DIR)/fc/rc_controls.o \
+	$(OBJECT_DIR)/rx/rx.o \
+	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/gtest_main.a 
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
 $(OBJECT_DIR)/drivers/system.o : \
 	$(USER_DIR)/drivers/system.c \
 	$(USER_DIR)/drivers/system.h \
@@ -661,3 +685,4 @@ test-%: $(OBJECT_DIR)/%
 	$<
 
 -include $(DEPS)
+

@@ -42,6 +42,7 @@
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 
 #include "flight/failsafe.h"
 
