@@ -575,6 +575,7 @@ void gyroUpdateSensor(gyroSensor_t *gyroSensor)
 #endif
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        DEBUG_SET(DEBUG_GYRO_RAW, axis, gyroSensor->gyroDev.gyroADCRaw[axis]);
         // scale gyro output to degrees per second
         float gyroADCf = (float)gyroSensor->gyroDev.gyroADC[axis] * gyroSensor->gyroDev.scale;
         // DEBUG_GYRO_NOTCH records the unfiltered gyro output
