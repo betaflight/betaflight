@@ -29,7 +29,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 
 #include "platform.h"
 
@@ -38,30 +37,28 @@
 
 #include "build/build_config.h"
 
-#include "common/maths.h"
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/streambuf.h"
 #include "common/utils.h"
 
-#include "drivers/time.h"
 #include "drivers/serial.h"
-
-#include "io/serial.h"
+#include "drivers/time.h"
 
 #include "fc/config.h"
 #include "fc/fc_core.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "flight/mixer.h"
-#include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
 
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
+#include "io/serial.h"
 
 #include "navigation/navigation.h"
 
@@ -76,8 +73,8 @@
 #include "sensors/sensors.h"
 #include "sensors/pitotmeter.h"
 
-#include "telemetry/telemetry.h"
 #include "telemetry/ltm.h"
+#include "telemetry/telemetry.h"
 
 
 #define TELEMETRY_LTM_INITIAL_PORT_MODE MODE_TX
@@ -89,46 +86,26 @@ static serialPort_t *ltmPort;
 static serialPortConfig_t *portConfig;
 static bool ltmEnabled;
 static portSharing_e ltmPortSharing;
-static uint8_t ltm_crc;
-static uint8_t ltmPayload[LTM_MAX_MESSAGE_SIZE];
+static uint8_t ltmFrame[LTM_MAX_MESSAGE_SIZE];
 static uint8_t ltm_x_counter;
 
 static void ltm_initialise_packet(sbuf_t *dst)
 {
-    ltm_crc = 0;
-    dst->ptr = ltmPayload;
-    dst->end = ARRAYEND(ltmPayload);
+    dst->ptr = ltmFrame;
+    dst->end = ARRAYEND(ltmFrame);
 
     sbufWriteU8(dst, '$');
     sbufWriteU8(dst, 'T');
 }
 
-static void ltm_serialise_8(sbuf_t *dst, uint8_t v)
-{
-    sbufWriteU8(dst, v);
-    ltm_crc ^= v;
-}
-
-static void ltm_serialise_16(sbuf_t *dst, uint16_t v)
-{
-    ltm_serialise_8(dst, (uint8_t)v);
-    ltm_serialise_8(dst,  (v >> 8));
-}
-
-#if defined(GPS)
-static void ltm_serialise_32(sbuf_t *dst, uint32_t v)
-{
-    ltm_serialise_8(dst, (uint8_t)v);
-    ltm_serialise_8(dst, (v >> 8));
-    ltm_serialise_8(dst, (v >> 16));
-    ltm_serialise_8(dst, (v >> 24));
-}
-#endif
-
 static void ltm_finalise(sbuf_t *dst)
 {
-    sbufWriteU8(dst, ltm_crc);
-    sbufSwitchToReader(dst, ltmPayload);
+    uint8_t crc = 0;
+    for (const uint8_t *ptr = &ltmFrame[3]; ptr < dst->ptr; ++ptr) {
+        crc ^= *ptr;
+    }
+    sbufWriteU8(dst, crc);
+    sbufSwitchToReader(dst, ltmFrame);
     serialWriteBuf(ltmPort, sbufPtr(dst), sbufBytesRemaining(dst));
 }
 
@@ -162,11 +139,11 @@ void ltm_gframe(sbuf_t *dst)
 #endif
 
     sbufWriteU8(dst, 'G');
-    ltm_serialise_32(dst, ltm_lat);
-    ltm_serialise_32(dst, ltm_lon);
-    ltm_serialise_8(dst, (uint8_t)ltm_gs);
-    ltm_serialise_32(dst, ltm_alt);
-    ltm_serialise_8(dst, (gpsSol.numSat << 2) | gps_fix_type);
+    sbufWriteU32(dst, ltm_lat);
+    sbufWriteU32(dst, ltm_lon);
+    sbufWriteU8(dst, (uint8_t)ltm_gs);
+    sbufWriteU32(dst, ltm_alt);
+    sbufWriteU8(dst, (gpsSol.numSat << 2) | gps_fix_type);
 }
 #endif
 
@@ -208,15 +185,15 @@ void ltm_sframe(sbuf_t *dst)
     if (failsafeIsActive())
         lt_statemode |= 2;
     sbufWriteU8(dst, 'S');
-    ltm_serialise_16(dst, vbat * 100);    //vbat converted to mv
-    ltm_serialise_16(dst, (uint16_t)constrain(mAhDrawn, 0, 0xFFFF));    // current mAh (65535 mAh max)
-    ltm_serialise_8(dst, (uint8_t)((rssi * 254) / 1023));        // scaled RSSI (uchar)
+    sbufWriteU16(dst, vbat * 100);    //vbat converted to mv
+    sbufWriteU16(dst, (uint16_t)constrain(mAhDrawn, 0, 0xFFFF));    // current mAh (65535 mAh max)
+    sbufWriteU8(dst, (uint8_t)((rssi * 254) / 1023));        // scaled RSSI (uchar)
 #if defined(PITOT)
-    ltm_serialise_8(dst, sensors(SENSOR_PITOT) ? pitot.airSpeed / 100.0f : 0);  // in m/s
+    sbufWriteU8(dst, sensors(SENSOR_PITOT) ? pitot.airSpeed / 100.0f : 0);  // in m/s
 #else
-    ltm_serialise_8(dst, 0);
+    sbufWriteU8(dst, 0);
 #endif
-    ltm_serialise_8(dst, (lt_flightmode << 2) | lt_statemode);
+    sbufWriteU8(dst, (lt_flightmode << 2) | lt_statemode);
 }
 
 /*
@@ -226,9 +203,9 @@ void ltm_sframe(sbuf_t *dst)
 void ltm_aframe(sbuf_t *dst)
 {
     sbufWriteU8(dst, 'A');
-    ltm_serialise_16(dst, DECIDEGREES_TO_DEGREES(attitude.values.pitch));
-    ltm_serialise_16(dst, DECIDEGREES_TO_DEGREES(attitude.values.roll));
-    ltm_serialise_16(dst, DECIDEGREES_TO_DEGREES(attitude.values.yaw));
+    sbufWriteU16(dst, DECIDEGREES_TO_DEGREES(attitude.values.pitch));
+    sbufWriteU16(dst, DECIDEGREES_TO_DEGREES(attitude.values.roll));
+    sbufWriteU16(dst, DECIDEGREES_TO_DEGREES(attitude.values.yaw));
 }
 
 #if defined(GPS)
@@ -240,11 +217,11 @@ void ltm_aframe(sbuf_t *dst)
 void ltm_oframe(sbuf_t *dst)
 {
     sbufWriteU8(dst, 'O');
-    ltm_serialise_32(dst, GPS_home.lat);
-    ltm_serialise_32(dst, GPS_home.lon);
-    ltm_serialise_32(dst, GPS_home.alt);
-    ltm_serialise_8(dst, 1);                 // OSD always ON
-    ltm_serialise_8(dst, STATE(GPS_FIX_HOME) ? 1 : 0);
+    sbufWriteU32(dst, GPS_home.lat);
+    sbufWriteU32(dst, GPS_home.lon);
+    sbufWriteU32(dst, GPS_home.alt);
+    sbufWriteU8(dst, 1);                 // OSD always ON
+    sbufWriteU8(dst, STATE(GPS_FIX_HOME) ? 1 : 0);
 }
 #endif
 
@@ -259,14 +236,14 @@ void ltm_xframe(sbuf_t *dst)
 
     sbufWriteU8(dst, 'X');
 #if defined(GPS)
-    ltm_serialise_16(dst, gpsSol.hdop);
+    sbufWriteU16(dst, gpsSol.hdop);
 #else
-    ltm_serialise_16(dst, 9999);
+    sbufWriteU16(dst, 9999);
 #endif
-    ltm_serialise_8(dst, sensorStatus);
-    ltm_serialise_8(dst, ltm_x_counter);
-    ltm_serialise_8(dst, getDisarmReason());
-    ltm_serialise_8(dst, 0);
+    sbufWriteU8(dst, sensorStatus);
+    sbufWriteU8(dst, ltm_x_counter);
+    sbufWriteU8(dst, getDisarmReason());
+    sbufWriteU8(dst, 0);
     ltm_x_counter++; // overflow is OK
 }
 
@@ -276,12 +253,12 @@ void ltm_xframe(sbuf_t *dst)
 void ltm_nframe(sbuf_t *dst)
 {
     sbufWriteU8(dst, 'N');
-    ltm_serialise_8(dst, NAV_Status.mode);
-    ltm_serialise_8(dst, NAV_Status.state);
-    ltm_serialise_8(dst, NAV_Status.activeWpAction);
-    ltm_serialise_8(dst, NAV_Status.activeWpNumber);
-    ltm_serialise_8(dst, NAV_Status.error);
-    ltm_serialise_8(dst, NAV_Status.flags);
+    sbufWriteU8(dst, NAV_Status.mode);
+    sbufWriteU8(dst, NAV_Status.state);
+    sbufWriteU8(dst, NAV_Status.activeWpAction);
+    sbufWriteU8(dst, NAV_Status.activeWpNumber);
+    sbufWriteU8(dst, NAV_Status.error);
+    sbufWriteU8(dst, NAV_Status.flags);
 }
 #endif
 
@@ -351,8 +328,8 @@ static void process_ltm(void)
     static uint8_t ltm_scheduler = 0;
     uint8_t current_schedule = ltm_schedule[ltm_scheduler];
 
-    sbuf_t ltmPayloadBuf;
-    sbuf_t *dst = &ltmPayloadBuf;
+    sbuf_t ltmFrameBuf;
+    sbuf_t *dst = &ltmFrameBuf;
 
     if (current_schedule & LTM_BIT_AFRAME) {
         ltm_initialise_packet(dst);
@@ -400,12 +377,11 @@ static void process_ltm(void)
 void handleLtmTelemetry(void)
 {
     static uint32_t ltm_lastCycleTime;
-    uint32_t now;
     if (!ltmEnabled)
         return;
     if (!ltmPort)
         return;
-    now = millis();
+    const uint32_t now = millis();
     if ((now - ltm_lastCycleTime) >= LTM_CYCLETIME) {
         process_ltm();
         ltm_lastCycleTime = now;
@@ -476,10 +452,10 @@ void checkLtmTelemetryState(void)
 
 int getLtmFrame(uint8_t *frame, ltm_frame_e ltmFrameType)
 {
-    static uint8_t ltmPayload[LTM_MAX_MESSAGE_SIZE];
+    static uint8_t ltmFrame[LTM_MAX_MESSAGE_SIZE];
 
-    sbuf_t ltmPayloadBuf = { .ptr = ltmPayload, .end =ARRAYEND(ltmPayload) };
-    sbuf_t * const sbuf = &ltmPayloadBuf;
+    sbuf_t ltmFrameBuf = { .ptr = ltmFrame, .end =ARRAYEND(ltmFrame) };
+    sbuf_t * const sbuf = &ltmFrameBuf;
 
     switch (ltmFrameType) {
     default:
@@ -506,7 +482,7 @@ int getLtmFrame(uint8_t *frame, ltm_frame_e ltmFrameType)
         break;
 #endif
     }
-    sbufSwitchToReader(sbuf, ltmPayload);
+    sbufSwitchToReader(sbuf, ltmFrame);
     const int frameSize = sbufBytesRemaining(sbuf);
     for (int ii = 0; sbufBytesRemaining(sbuf); ++ii) {
         frame[ii] = sbufReadU8(sbuf);
