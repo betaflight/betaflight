@@ -272,7 +272,7 @@ static int mspSerialSendFrame(mspPort_t *msp, const uint8_t * hdr, int hdrLen, c
 
 static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet, mspVersion_e mspVersion)
 {
-    static const uint8_t mspMagic[MSP_VERSION_COUNT] = { 'M', 'M', 'X' };
+    static const uint8_t mspMagic[MSP_VERSION_COUNT] = MSP_VERSION_MAGIC_INITIALIZER;
     const int dataLen = sbufBytesRemaining(&packet->buf);
     uint8_t hdrBuf[16] = { '$', mspMagic[mspVersion], packet->result == MSP_RESULT_ERROR ? '!' : '>'};
     uint8_t crcBuf[2];
