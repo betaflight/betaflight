@@ -32,21 +32,24 @@ extern "C" {
     #include "config/parameter_group.h"
     #include "config/parameter_group_ids.h"
 
-    #include "drivers/system.h"
     #include "drivers/serial.h"
+    #include "drivers/system.h"
 
-    #include "sensors/sensors.h"
-    #include "sensors/battery.h"
-
-    #include "io/serial.h"
-    #include "io/gps.h"
-
-    #include "telemetry/telemetry.h"
-    #include "telemetry/hott.h"
+    #include "fc/runtime_config.h"
 
     #include "flight/pid.h"
 
-    #include "fc/runtime_config.h"
+    #include "io/gps.h"
+    #include "io/serial.h"
+
+    #include "navigation/navigation.h"
+
+    #include "sensors/battery.h"
+    #include "sensors/sensors.h"
+
+    #include "telemetry/hott.h"
+    #include "telemetry/telemetry.h"
+
 
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
 }
@@ -247,7 +250,11 @@ batteryState_e getBatteryState(void) {
     return BATTERY_OK;
 }
 
-float getEstimatedActualPosition(int axis) {
+float getEstimatedActualPosition(int) {
+    return 0.0f;
+}
+
+float getEstimatedActualVelocity(int) {
     return 0.0f;
 }
 
