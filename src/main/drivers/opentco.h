@@ -92,10 +92,8 @@ typedef enum {
     OPENTCO_VTX_STATUS_PITMODE  = (1 << 1)
 } opentcoVTXStatus_e;
 
-#define OPENTCO_VTX_REGISTER_BAND                    0x01  // R/W: 0 = A, 1 = B, 2 = E, 3 = F, 4 = R
-#define OPENTCO_VTX_REGISTER_CHANNEL                 0x02  // R/W: 0 = 1, ... 7 = 8
-#define OPENTCO_VTX_REGISTER_FREQUENCY               0x03  // R/W: 5000 ... 6000 MHz
-
+#define OPENTCO_VTX_REGISTER_BAND_AND_CHANNEL        0x01  // R/W ((CH << 8) | BAND) with CH = 0..7, BAND 0 = A, 1 = B, 2 = E, 3 = F, 4 = R
+#define OPENTCO_VTX_REGISTER_FREQUENCY               0x02  // R/W: 5000 ... 6000 MHz
 
 typedef enum {
     OPENTCO_VTX_POWER_NONE    = (1 << 0),

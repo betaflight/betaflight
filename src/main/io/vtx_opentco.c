@@ -153,14 +153,15 @@ static bool vtxOpentcoSetBandAndChannel(uint8_t band, uint8_t channel)
         // FIXME: add some security measures like writing to a second reg to enable freq changes!
 
 
-        // bf uses band 0 (none) ... N+1 -> correct this here by substracting 1
-        if (!opentcoWriteRegister(device, OPENTCO_VTX_REGISTER_BAND, band - 1)){
-            // failed to store setting
-            return false;
-        }
-
         // bf uses channel 0 (none) ... N+1 -> correct this here by substracting 1
-        if (!opentcoWriteRegister(device, OPENTCO_VTX_REGISTER_CHANNEL, channel - 1)){
+        // -> 0..7
+        uint16_t bandAndChannel = ((uint16_t)channel-1) << 8;
+        // bf uses band 0 (none) ... N+1 -> correct this here by substracting 1
+        // 0..x
+        bandAndChannel |= (band - 1);
+
+        // set
+        if (!opentcoWriteRegister(device, OPENTCO_VTX_REGISTER_BAND_AND_CHANNEL, bandAndChannel)){
             // failed to store setting
             return false;
         }
