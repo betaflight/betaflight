@@ -74,7 +74,7 @@
 #define UART3_TX_PIN            PB10
 
 
-#if defined(CC3D_NRF24) || defined(CC3D_NRF24_OPBL)
+#if defined(CC3D_NRF24)
 #define USE_RX_NRF24
 #endif
 
@@ -168,28 +168,10 @@
 
 //#define NAV_AUTO_MAG_DECLINATION
 //#define NAV_GPS_GLITCH_DETECTION
-
+#undef BLACKBOX
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
-#ifdef OPBL
-
-#ifdef USE_RX_NRF24
-#undef USE_SERVOS
-#endif // USE_RX_NRF24
-
-#define TARGET_MOTOR_COUNT 4
-#undef USE_MAG_AK8975
-#undef USE_MAG_MAG3110
-#undef BLACKBOX
-#undef SERIAL_RX
-#undef SPEKTRUM_BIND
-
-#else
-#define TARGET_MOTOR_COUNT 4
 #define DISABLE_UNCOMMON_MIXERS
-#undef BLACKBOX
-#endif //OPBL
-
 
 #ifdef USE_RX_NRF24
 #undef USE_RX_PWM
@@ -198,7 +180,7 @@
 #undef SPEKTRUM_BIND
 #endif
 
-#define AUTOTUNE_FIXED_WING
+#define TARGET_MOTOR_COUNT 4
 
 // Number of available PWM outputs
 #define MAX_PWM_OUTPUT_PORTS    11
