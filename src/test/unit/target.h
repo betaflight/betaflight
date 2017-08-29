@@ -26,6 +26,7 @@
 #define GPS_PROTO_NAZA
 #define GPS_PROTO_MTK
 #define USE_DASHBOARD
+#define NAV
 #define TELEMETRY
 #define TELEMETRY_FRSKY
 #define TELEMETRY_HOTT
