@@ -18,6 +18,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 
 #include "platform.h"
 
@@ -870,4 +871,45 @@ void timerForceOverflow(TIM_TypeDef *tim)
         // Force an overflow by setting the UG bit
         tim->EGR |= TIM_EGR_UG;
     }
+}
+
+const timerHardware_t *timerGetByTag(ioTag_t tag, timerUsageFlag_e flag)
+{
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+        if (timerHardware[i].tag == tag) {
+            if (timerHardware[i].usageFlags & flag || flag == 0) {
+                return &timerHardware[i];
+            }
+        }
+    }
+    return NULL;
+}
+
+uint16_t timerDmaSource(uint8_t channel)
+{
+    switch (channel) {
+        case TIM_CHANNEL_1:
+            return TIM_DMA_ID_CC1;
+        case TIM_CHANNEL_2:
+            return TIM_DMA_ID_CC2;
+        case TIM_CHANNEL_3:
+            return TIM_DMA_ID_CC3;
+        case TIM_CHANNEL_4:
+            return TIM_DMA_ID_CC4;
+    }
+    return 0;
+}
+
+uint16_t timerGetPrescalerByDesiredMhz(TIM_TypeDef *tim, uint16_t mhz)
+{
+    // protection here for desired MHZ > SystemCoreClock???
+    if ((uint32_t)(mhz * 1000000) > (SystemCoreClock / timerClockDivisor(tim))) {
+        return 0;
+    }
+    return (uint16_t)(round((SystemCoreClock / timerClockDivisor(tim) / (mhz * 1000000)) - 1));
+}
+
+uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_t hertz)
+{
+    return ((uint16_t)((SystemCoreClock / timerClockDivisor(tim) / (prescaler + 1)) / hertz));
 }
