@@ -16,6 +16,8 @@
  */
 
 
+#include "gtest/gtest.h"
+
 extern "C" {
     #include <stdbool.h>
     #include <stdint.h>
@@ -30,7 +32,7 @@ extern "C" {
     #include "config/parameter_group_ids.h"
 
     #include "fc/rc_controls.h"
-    
+    #include "fc/rc_modes.h"
 
     #include "io/beeper.h"
     #include "io/serial.h"
@@ -70,9 +72,6 @@ typedef struct testData_s {
 } testData_t;
 
 static testData_t testData;
-
-#include "unittest_macros.h"
-#include "gtest/gtest.h"
 
 TEST(RCSplitTest, TestRCSplitInitWithoutPortConfigurated)
 {
@@ -183,7 +182,7 @@ TEST(RCSplitTest, TestWifiModeChangeWithDeviceReady)
     testData.isRunCamSplitOpenPortSupported = true;
     testData.isRunCamSplitPortConfigurated = true;
     testData.maxTimesOfRespDataAvailable = 0;
-    
+
     bool result = rcSplitInit();
     EXPECT_EQ(true, result);
 
@@ -191,7 +190,7 @@ TEST(RCSplitTest, TestWifiModeChangeWithDeviceReady)
     for (uint8_t i = 0; i <= BOXCAMERA3 - BOXCAMERA1; i++) {
         memset(modeActivationConditionsMutable(i), 0, sizeof(modeActivationCondition_t));
     }
-    
+
 
     // bind aux1 to wifi button with range [900,1600]
     modeActivationConditionsMutable(0)->auxChannelIndex = 0;
@@ -245,7 +244,7 @@ TEST(RCSplitTest, TestWifiModeChangeCombine)
     for (uint8_t i = 0; i <= BOXCAMERA3 - BOXCAMERA1; i++) {
         memset(modeActivationConditionsMutable(i), 0, sizeof(modeActivationCondition_t));
     }
-    
+
 
     // bind aux1 to wifi button with range [900,1600]
     modeActivationConditionsMutable(0)->auxChannelIndex = 0;
@@ -445,7 +444,7 @@ extern "C" {
     timeMs_t millis(void) { return 0; }
     void mwArm(void) {}
     void mwDisarm(void) {}
-    
+
     void saveConfigAndNotify(void) {}
     void setConfigProfileAndWriteEEPROM(uint8_t profileIndex) { UNUSED(profileIndex); }
     uint8_t stateFlags;
