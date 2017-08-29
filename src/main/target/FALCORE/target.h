@@ -53,6 +53,7 @@
 #define MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_MAG3110
+#define USE_MAG_QMC5883
 #define MAG_I2C_INSTANCE        I2C_DEVICE_EXT
 
 #define USB_IO

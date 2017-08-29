@@ -50,6 +50,7 @@
 #define USE_MPU9250_MAG // Enables bypass configuration
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883 // External
+#define USE_MAG_QMC5883 // External
 #define MAG_AK8975_ALIGN        CW180_DEG
 
 #define USB_IO

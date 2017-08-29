@@ -61,6 +61,7 @@
 #define USE_MAG_MAG3110
 #define USE_MAG_HMC5883
 #define USE_MAG_IST8310
+#define USE_MAG_QMC5883
 #define MAG_IST8310_ALIGN CW270_DEG
 
 // *************** BARO *****************************

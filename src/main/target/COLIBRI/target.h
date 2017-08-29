@@ -54,6 +54,7 @@
 
 #define MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
 
 #ifdef QUANTON
 #define ACC_MPU6000_ALIGN       CW90_DEG

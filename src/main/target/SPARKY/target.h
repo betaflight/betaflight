@@ -48,6 +48,7 @@
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883
 #define USE_MAG_MAG3110
+#define USE_MAG_QMC5883
 #define MAG_AK8975_ALIGN        CW180_DEG_FLIP
 
 #define USE_VCP
