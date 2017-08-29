@@ -68,6 +68,7 @@ PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
     .frsky_vfas_cell_voltage = 0,
     .hottAlarmSoundInterval = 5,
     .smartportUartUnidirectional = 0,
+    .smartportFuelPercent = 0,
     .ibusTelemetryType = 0,
     .ltmUpdateRate = LTM_RATE_NORMAL
 );

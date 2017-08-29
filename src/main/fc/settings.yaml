@@ -1210,6 +1210,10 @@ groups:
         field: smartportUartUnidirectional
         condition: TELEMETRY_SMARTPORT
         type: bool
+      - name: smartport_fuel_percent
+        field: smartportFuelPercent
+        condition: TELEMETRY_SMARTPORT
+        type: bool
       - name: ibus_telemetry_type
         field: ibusTelemetryType
         min: 0
