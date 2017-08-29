@@ -83,6 +83,11 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];
     HAL_DMA_IRQHandler(motor->TimHandle.hdma[motor->timerDmaSource]);
+    if (motor->timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
+        HAL_TIMEx_PWMN_Stop_DMA(&motor->TimHandle,motor->timerHardware->channel);
+    } else {
+        HAL_TIM_PWM_Stop_DMA(&motor->TimHandle,motor->timerHardware->channel);
+    }
 }
 
 void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
@@ -96,7 +101,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     const uint8_t timerIndex = getTimerIndex(timer);
 
     IOInit(motorIO, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
-    IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP), timerHardware->alternateFunction);
+    IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN), timerHardware->alternateFunction);
 
     __DMA1_CLK_ENABLE();
 
