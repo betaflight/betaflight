@@ -29,8 +29,8 @@
 #include "drivers/logging.h"
 
 #include "pwm_output.h"
-#include "pwm_rx.h"
 #include "pwm_mapping.h"
+#include "rx_pwm.h"
 
 enum {
     MAP_TO_NONE,

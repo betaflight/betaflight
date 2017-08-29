@@ -24,7 +24,7 @@
 #include "common/axis.h"
 #include "common/color.h"
 
-#include "drivers/pwm_rx.h"
+#include "drivers/rx_pwm.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"

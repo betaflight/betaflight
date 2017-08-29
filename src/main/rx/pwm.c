@@ -29,7 +29,7 @@
 
 #include "config/feature.h"
 
-#include "drivers/pwm_rx.h"
+#include "drivers/rx_pwm.h"
 
 #include "fc/config.h"
 
