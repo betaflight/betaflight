@@ -170,7 +170,11 @@ static pwmOutputPort_t *pwmOutConfigMotor(const timerHardware_t *timerHardware, 
 
     if (enableOutput) {
         // If PWM outputs are enabled - configure as AF_PP - map to timer
+#ifdef STM32F1
+        IOConfigGPIO(io, IOCFG_AF_PP);
+#else
         IOConfigGPIOAF(io, IOCFG_AF_PP, timerHardware->alternateFunction);
+#endif
     }
     else {
         // If PWM outputs are disabled - configure as GPIO and drive low
