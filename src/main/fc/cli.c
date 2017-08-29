@@ -2244,14 +2244,28 @@ static void cliGpsPassthrough(char *cmdline)
 }
 #endif
 
+#ifdef MINIMAL_CLI
+#define PARSE_OUTPUT_SINGLE "Out"
+#define PARSE_OUTPUT_ALL "All"
+#define PARSE_OUTPUT_INVALID "Range"
+#else
+#define PARSE_OUTPUT_SINGLE "Using output"
+#define PARSE_OUTPUT_ALL "Using all outputs"
+#define PARSE_OUTPUT_INVALID "Invalid output number. Range"
+#endif
+
 static int parseOutputIndex(char *pch, bool allowAllEscs) {
     int outputIndex = atoi(pch);
     if ((outputIndex >= 0) && (outputIndex < getMotorCount())) {
-        tfp_printf("Using output %d.\r\n", outputIndex);
+        tfp_printf(PARSE_OUTPUT_SINGLE ": %d\r\n", outputIndex);
     } else if (allowAllEscs && outputIndex == ALL_MOTORS) {
-        tfp_printf("Using all outputs.\r\n");
+        tfp_printf(PARSE_OUTPUT_ALL "\r\n");
     } else {
-        tfp_printf("Invalid output number, range: 0 to %d.\r\n", getMotorCount() - 1);
+        tfp_printf(PARSE_OUTPUT_INVALID ": 0 - %d", getMotorCount() - 1);
+        if (allowAllEscs) {
+            tfp_printf(", 255");
+        }
+        tfp_printf("\r\n");
 
         return -1;
     }
@@ -2272,6 +2286,46 @@ enum {
 };
 
 #define ESC_INFO_VERSION_POSITION 12
+
+#ifdef MINIMAL_CLI
+#define ESC_INFO_TYPE "Type"
+#define ESC_INFO_MCU "MCU"
+#define ESC_INFO_FIRMWARE "Fw"
+#define ESC_INFO_ROTATION "Rot"
+#define ESC_INFO_ROTATION_NORMAL "n"
+#define ESC_INFO_ROTATION_REVERSED "r"
+#define ESC_INFO_3D "3D"
+#define ESC_INFO_VOLTAGE_LIMIT "Vmin"
+#define ESC_INFO_CURRENT_LIMIT "Amax"
+#define ESC_INFO_LED "LED"
+#define ESC_INFO_ON "x"
+#define ESC_INFO_OFF "-"
+#define ESC_INFO_UNSUPPORTED "u"
+#define ESC_INFO_NO_INFO "-"
+#define ESC_INFO_CHECKSUM_ERROR "Err"
+#define ESC_INFO_START "ESC"
+#define DSHOT_COMMAND_SENT "Sent"
+#define DSHOT_COMMAND_ERROR "Range"
+#else
+#define ESC_INFO_TYPE "ESC Type"
+#define ESC_INFO_MCU "MCU Serial No"
+#define ESC_INFO_FIRMWARE "Firmware Version"
+#define ESC_INFO_ROTATION "Rotation direction"
+#define ESC_INFO_ROTATION_NORMAL "normal"
+#define ESC_INFO_ROTATION_REVERSED "reversed"
+#define ESC_INFO_3D "3D"
+#define ESC_INFO_VOLTAGE_LIMIT "Low Voltage Limit"
+#define ESC_INFO_CURRENT_LIMIT "Current Limit"
+#define ESC_INFO_LED "LED"
+#define ESC_INFO_ON "on"
+#define ESC_INFO_OFF "off"
+#define ESC_INFO_UNSUPPORTED "unsupported"
+#define ESC_INFO_NO_INFO "No Info"
+#define ESC_INFO_CHECKSUM_ERROR "Checksum Error"
+#define ESC_INFO_START "Info for ESC"
+#define DSHOT_COMMAND_SENT "Command Sent"
+#define DSHOT_COMMAND_ERROR "Invalid command. Range"
+#endif
 
 void printEscInfo(const uint8_t *escInfoBuffer, uint8_t bytesRead)
 {
@@ -2318,7 +2372,7 @@ void printEscInfo(const uint8_t *escInfoBuffer, uint8_t bytesRead)
                     break;
                 }
 
-                cliPrint("ESC: ");
+                cliPrint(ESC_INFO_TYPE ": ");
                 switch (escInfoVersion) {
                 case ESC_INFO_KISS_V1:
                 case ESC_INFO_KISS_V2:
@@ -2356,7 +2410,7 @@ void printEscInfo(const uint8_t *escInfoBuffer, uint8_t bytesRead)
                     break;
                 }
 
-                cliPrint("MCU: 0x");
+                cliPrint(ESC_INFO_MCU ": 0x");
                 for (int i = 0; i < 12; i++) {
                     if (i && (i % 3 == 0)) {
                         cliPrint("-");
@@ -2368,27 +2422,27 @@ void printEscInfo(const uint8_t *escInfoBuffer, uint8_t bytesRead)
                 switch (escInfoVersion) {
                 case ESC_INFO_KISS_V1:
                 case ESC_INFO_KISS_V2:
-                    cliPrintLinef("Firmware: %d.%02d%c", firmwareVersion / 100, firmwareVersion % 100, (char)firmwareSubVersion);
+                    cliPrintLinef(ESC_INFO_FIRMWARE ": %d.%02d%c", firmwareVersion / 100, firmwareVersion % 100, (char)firmwareSubVersion);
 
                     break;
                 case ESC_INFO_BLHELI32:
-                    cliPrintLinef("Firmware: %d.%02d%", firmwareVersion, firmwareSubVersion);
+                    cliPrintLinef(ESC_INFO_FIRMWARE ": %d.%02d", firmwareVersion, firmwareSubVersion);
 
                     break;
                 }
                 if (escInfoVersion == ESC_INFO_KISS_V2 || escInfoVersion == ESC_INFO_BLHELI32) {
-                    cliPrintLinef("Rotation: %s", escInfoBuffer[16] ? "reversed" : "normal");
-                    cliPrintLinef("3D: %s", escInfoBuffer[17] ? "on" : "off");
+                    cliPrintLinef(ESC_INFO_ROTATION ": %s", escInfoBuffer[16] ? ESC_INFO_ROTATION_REVERSED : ESC_INFO_ROTATION_NORMAL);
+                    cliPrintLinef(ESC_INFO_3D ": %s", escInfoBuffer[17] ? ESC_INFO_ON : ESC_INFO_OFF);
                     if (escInfoVersion == ESC_INFO_BLHELI32) {
                         uint8_t setting = escInfoBuffer[18];
-                        cliPrint("Low voltage limit: ");
+                        cliPrint(ESC_INFO_VOLTAGE_LIMIT ": ");
                         switch (setting) {
                         case 0:
-                            cliPrintLine("off");
+                            cliPrintLine(ESC_INFO_OFF);
 
                             break;
                         case 255:
-                            cliPrintLine("unsupported");
+                            cliPrintLine(ESC_INFO_UNSUPPORTED);
 
                             break;
                         default:
@@ -2398,14 +2452,14 @@ void printEscInfo(const uint8_t *escInfoBuffer, uint8_t bytesRead)
                         }
 
                         setting = escInfoBuffer[19];
-                        cliPrint("Current limit: ");
+                        cliPrint(ESC_INFO_CURRENT_LIMIT ": ");
                         switch (setting) {
                         case 0:
-                            cliPrintLine("off");
+                            cliPrintLine(ESC_INFO_OFF);
 
                             break;
                         case 255:
-                            cliPrintLine("unsupported");
+                            cliPrintLine(ESC_INFO_UNSUPPORTED);
 
                             break;
                         default:
@@ -2416,24 +2470,24 @@ void printEscInfo(const uint8_t *escInfoBuffer, uint8_t bytesRead)
 
                         for (int i = 0; i < 4; i++) {
                             setting = escInfoBuffer[i + 20];
-                            cliPrintLinef("LED %d: %s", i, setting ? (setting == 255) ? "unsupported" : "on" : "off");
+                            cliPrintLinef(ESC_INFO_LED "%d: %s", i, setting ? (setting == 255) ? ESC_INFO_UNSUPPORTED : ESC_INFO_ON : ESC_INFO_OFF);
                         }
                     }
                 }
             } else {
-                cliPrintLine("Checksum error.");
+                cliPrintLine(ESC_INFO_CHECKSUM_ERROR);
             }
         }
     }
 
     if (!escInfoReceived) {
-        cliPrintLine("No info.");
+        cliPrintLine(ESC_INFO_NO_INFO);
     }
 }
 
 static void executeEscInfoCommand(uint8_t escIndex)
 {
-    cliPrintLinef("Info for ESC %d:", escIndex);
+    cliPrintLinef(ESC_INFO_START " %d:", escIndex);
 
     uint8_t escInfoBuffer[ESC_INFO_BLHELI32_EXPECTED_FRAME_SIZE];
 
@@ -2496,13 +2550,13 @@ static void cliDshotProg(char *cmdline)
                         }
                     }
 
-                    cliPrintLinef("Command %d written.", command);
+                    cliPrintLinef(DSHOT_COMMAND_SENT ": %d", command);
 
                     if (command <= 5) {
                         delay(20); // wait for sound output to finish
                     }
                 } else {
-                    cliPrintLinef("Invalid command, range 1 to %d.", DSHOT_MIN_THROTTLE - 1);
+                    cliPrintLinef(DSHOT_COMMAND_ERROR ": 1 - %d", DSHOT_MIN_THROTTLE - 1);
                 }
             }
 
