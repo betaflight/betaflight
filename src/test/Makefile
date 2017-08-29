@@ -105,6 +105,24 @@ $(OBJECT_DIR)/common/maths.o : \
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/maths.c -o $@
 
 
+$(OBJECT_DIR)/common/bitarray.o : \
+	$(USER_DIR)/common/bitarray.c \
+	$(USER_DIR)/common/bitarray.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/bitarray.c -o $@
+
+
+$(OBJECT_DIR)/common/string_light.o : \
+	$(USER_DIR)/common/string_light.c \
+	$(USER_DIR)/common/string_light.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/string_light.c -o $@
+
+
 $(OBJECT_DIR)/sensors/battery.o : $(USER_DIR)/sensors/battery.c $(USER_DIR)/sensors/battery.h $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/sensors/battery.c -o $@
@@ -237,6 +255,7 @@ $(OBJECT_DIR)/telemetry_hott_unittest : \
 	$(OBJECT_DIR)/telemetry/hott.o \
 	$(OBJECT_DIR)/telemetry_hott_unittest.o \
 	$(OBJECT_DIR)/common/gps_conversion.o \
+	$(OBJECT_DIR)/common/string_light.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
@@ -250,6 +269,14 @@ $(OBJECT_DIR)/fc/rc_controls.o : \
 
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/fc/rc_controls.c -o $@
+
+$(OBJECT_DIR)/fc/rc_modes.o : \
+	$(USER_DIR)/fc/rc_modes.c \
+	$(USER_DIR)/fc/rc_modes.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/fc/rc_modes.c -o $@
 
 $(OBJECT_DIR)/rc_controls_unittest.o : \
 	$(TEST_DIR)/rc_controls_unittest.cc \
@@ -640,14 +667,16 @@ $(OBJECT_DIR)/io/rcsplit.o : \
 $(OBJECT_DIR)/rcsplit_unittest.o : \
 	$(TEST_DIR)/rcsplit_unittest.cc \
 	$(GTEST_HEADERS)
-	
+
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/rcsplit_unittest.cc -o $@
 
 $(OBJECT_DIR)/rcsplit_unittest : \
 	$(OBJECT_DIR)/rcsplit_unittest.o \
+	$(OBJECT_DIR)/common/bitarray.o \
 	$(OBJECT_DIR)/io/rcsplit.o \
-    $(OBJECT_DIR)/fc/rc_controls.o \
+	$(OBJECT_DIR)/fc/rc_modes.o \
+	$(OBJECT_DIR)/fc/rc_controls.o \
 	$(OBJECT_DIR)/rx/rx.o \
 	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/gtest_main.a 
