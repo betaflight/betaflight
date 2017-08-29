@@ -573,8 +573,8 @@ COMMON_SRC = \
             drivers/pwm_esc_detect.c \
             drivers/pwm_mapping.c \
             drivers/pwm_output.c \
-            drivers/pwm_rx.c \
             drivers/rcc.c \
+            drivers/rx_pwm.c \
             drivers/serial.c \
             drivers/serial_uart.c \
             drivers/sound_beeper.c \

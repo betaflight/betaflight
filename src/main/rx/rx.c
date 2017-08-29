@@ -35,7 +35,7 @@
 
 
 #include "drivers/adc.h"
-#include "drivers/pwm_rx.h"
+#include "drivers/rx_pwm.h"
 #include "drivers/rx_spi.h"
 #include "drivers/serial.h"
 #include "drivers/time.h"
