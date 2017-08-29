@@ -88,9 +88,9 @@ static bool qmc5883Init(magDev_t *magDev)
     bool ack = true;
 
     ack = ack && i2cWrite(MAG_I2C_INSTANCE, QMC5883L_MAG_I2C_ADDRESS, 0x0B, 0x01);
-    ack = ack && i2cWrite(MAG_I2C_INSTANCE, QMC5883L_MAG_I2C_ADDRESS, 0x20, 0x40);
-    ack = ack && i2cWrite(MAG_I2C_INSTANCE, QMC5883L_MAG_I2C_ADDRESS, 0x21, 0x01);
-    ack = ack && i2cWrite(MAG_I2C_INSTANCE, QMC5883L_MAG_I2C_ADDRESS, QMC5883L_REG_CONF1, QMC5883L_MODE_CONTINUOUS | QMC5883L_ODR_100HZ | QMC5883L_OSR_512 | QMC5883L_RNG_8G);
+    // ack = ack && i2cWrite(MAG_I2C_INSTANCE, QMC5883L_MAG_I2C_ADDRESS, 0x20, 0x40);
+    // ack = ack && i2cWrite(MAG_I2C_INSTANCE, QMC5883L_MAG_I2C_ADDRESS, 0x21, 0x01);
+    ack = ack && i2cWrite(MAG_I2C_INSTANCE, QMC5883L_MAG_I2C_ADDRESS, QMC5883L_REG_CONF1, QMC5883L_MODE_CONTINUOUS | QMC5883L_ODR_200HZ | QMC5883L_OSR_512 | QMC5883L_RNG_8G);
 
     if (!ack) {
         return false;
@@ -119,9 +119,9 @@ static bool qmc5883Read(magDev_t *magDev)
         return false;
     }
 
-    magDev->magADCRaw[X] = (int16_t)(buf[0] << 8 | buf[1]);
-    magDev->magADCRaw[Y] = (int16_t)(buf[2] << 8 | buf[3]);
-    magDev->magADCRaw[Z] = (int16_t)(buf[4] << 8 | buf[5]);
+    magDev->magADCRaw[X] = (int16_t)(buf[1] << 8 | buf[0]);
+    magDev->magADCRaw[Y] = (int16_t)(buf[3] << 8 | buf[2]);
+    magDev->magADCRaw[Z] = (int16_t)(buf[5] << 8 | buf[4]);
 
     return true;
 }
