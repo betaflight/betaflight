@@ -135,7 +135,7 @@ void crsfFrameGps(sbuf_t *dst)
 Payload:
 uint16_t    Voltage ( mV * 100 )
 uint16_t    Current ( mA * 100 )
-uint24_t    Capacity ( mAh )
+uint24_t    Fuel ( drawn mAh )
 uint8_t     Battery remaining ( percent )
 */
 void crsfFrameBatterySensor(sbuf_t *dst)
@@ -145,11 +145,11 @@ void crsfFrameBatterySensor(sbuf_t *dst)
     sbufWriteU8(dst, CRSF_FRAMETYPE_BATTERY_SENSOR);
     sbufWriteU16BigEndian(dst, getBatteryVoltage()); // vbat is in units of 0.1V
     sbufWriteU16BigEndian(dst, getAmperage() / 10);
-    const uint32_t batteryCapacity = batteryConfig()->batteryCapacity;
+    const uint32_t mAhDrawn = getMAhDrawn();
     const uint8_t batteryRemainingPercentage = calculateBatteryPercentageRemaining();
-    sbufWriteU8(dst, (batteryCapacity >> 16));
-    sbufWriteU8(dst, (batteryCapacity >> 8));
-    sbufWriteU8(dst, (uint8_t)batteryCapacity);
+    sbufWriteU8(dst, (mAhDrawn >> 16));
+    sbufWriteU8(dst, (mAhDrawn >> 8));
+    sbufWriteU8(dst, (uint8_t)mAhDrawn);
     sbufWriteU8(dst, batteryRemainingPercentage);
 }
 

@@ -58,6 +58,7 @@ extern "C" {
 
     uint16_t testBatteryVoltage = 0;
     int32_t testAmperage = 0;
+    int32_t testmAhDrawn = 0;
 
     serialPort_t *telemetrySharedPort;
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
@@ -155,7 +156,7 @@ TEST(TelemetryCrsfTest, TestBattery)
 
     testBatteryVoltage = 33; // 3.3V = 3300 mv
     testAmperage = 2960; // = 29.60A = 29600mA - amperage is in 0.01A steps
-    batteryConfigMutable()->batteryCapacity = 1234;
+    testmAhDrawn = 1234;
     frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_BATTERY_SENSOR);
     voltage = frame[3] << 8 | frame[4]; // mV * 100
     EXPECT_EQ(33, voltage);
@@ -316,6 +317,10 @@ batteryState_e getBatteryState(void) {
 
 uint8_t calculateBatteryPercentageRemaining(void) {
     return 67;
+}
+
+int32_t getMAhDrawn(void){
+  return testmAhDrawn;
 }
 
 }
