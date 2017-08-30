@@ -61,29 +61,29 @@ void targetConfiguration(void)
         rxChannelRangeConfigsMutable(channel)->max = 1860;
     }*/
 
-    for (int profileId = 0; profileId < 2; profileId++) {
-        pidProfilesMutable(0)->pid[PID_ROLL].P = 60;
-        pidProfilesMutable(0)->pid[PID_ROLL].I = 70;
-        pidProfilesMutable(0)->pid[PID_ROLL].D = 17;
-        pidProfilesMutable(0)->pid[PID_PITCH].P = 80;
-        pidProfilesMutable(0)->pid[PID_PITCH].I = 90;
-        pidProfilesMutable(0)->pid[PID_PITCH].D = 18;
-        pidProfilesMutable(0)->pid[PID_YAW].P = 200;
-        pidProfilesMutable(0)->pid[PID_YAW].I = 45;
-        pidProfilesMutable(0)->pid[PID_LEVEL].P = 30;
-        pidProfilesMutable(0)->pid[PID_LEVEL].D = 30;
+    for (int profileId = 0; profileId < MAX_PROFILE_COUNT; profileId++) {
+        pidProfilesMutable(profileId)->pid[PID_ROLL].P = 60;
+        pidProfilesMutable(profileId)->pid[PID_ROLL].I = 70;
+        pidProfilesMutable(profileId)->pid[PID_ROLL].D = 17;
+        pidProfilesMutable(profileId)->pid[PID_PITCH].P = 80;
+        pidProfilesMutable(profileId)->pid[PID_PITCH].I = 90;
+        pidProfilesMutable(profileId)->pid[PID_PITCH].D = 18;
+        pidProfilesMutable(profileId)->pid[PID_YAW].P = 200;
+        pidProfilesMutable(profileId)->pid[PID_YAW].I = 45;
+        pidProfilesMutable(profileId)->pid[PID_LEVEL].P = 30;
+        pidProfilesMutable(profileId)->pid[PID_LEVEL].D = 30;
 
-        for (int rateProfileId = 0; rateProfileId < CONTROL_RATE_PROFILE_COUNT; rateProfileId++) {
-            controlRateProfilesMutable(rateProfileId)->rcRate8 = 100;
-            controlRateProfilesMutable(rateProfileId)->rcYawRate8 = 110;
-            controlRateProfilesMutable(rateProfileId)->rcExpo8 = 0;
-            controlRateProfilesMutable(rateProfileId)->rates[FD_ROLL] = 77;
-            controlRateProfilesMutable(rateProfileId)->rates[FD_PITCH] = 77;
-            controlRateProfilesMutable(rateProfileId)->rates[FD_YAW] = 80;
+        pidProfilesMutable(profileId)->dtermSetpointWeight = 200;
+        pidProfilesMutable(profileId)->setpointRelaxRatio = 50;
+    }
 
-            pidProfilesMutable(0)->dtermSetpointWeight = 200;
-            pidProfilesMutable(0)->setpointRelaxRatio = 50;
-        }
+    for (int rateProfileId = 0; rateProfileId < CONTROL_RATE_PROFILE_COUNT; rateProfileId++) {
+        controlRateProfilesMutable(rateProfileId)->rcRate8 = 100;
+        controlRateProfilesMutable(rateProfileId)->rcYawRate8 = 110;
+        controlRateProfilesMutable(rateProfileId)->rcExpo8 = 0;
+        controlRateProfilesMutable(rateProfileId)->rates[FD_ROLL] = 77;
+        controlRateProfilesMutable(rateProfileId)->rates[FD_PITCH] = 77;
+        controlRateProfilesMutable(rateProfileId)->rates[FD_YAW] = 80;
     }
 #endif
 
