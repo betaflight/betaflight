@@ -39,16 +39,16 @@
 #include "drivers/system.h"
 #include "drivers/time.h"
 
-#include "accgyro.h"
-#include "accgyro_mpu3050.h"
-#include "accgyro_mpu6050.h"
-#include "accgyro_mpu6500.h"
-#include "accgyro_spi_bmi160.h"
-#include "accgyro_spi_icm20689.h"
-#include "accgyro_spi_mpu6000.h"
-#include "accgyro_spi_mpu6500.h"
-#include "accgyro_spi_mpu9250.h"
-#include "accgyro_mpu.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/accgyro/accgyro_mpu3050.h"
+#include "drivers/accgyro/accgyro_mpu6050.h"
+#include "drivers/accgyro/accgyro_mpu6500.h"
+#include "drivers/accgyro/accgyro_spi_bmi160.h"
+#include "drivers/accgyro/accgyro_spi_icm20689.h"
+#include "drivers/accgyro/accgyro_spi_mpu6000.h"
+#include "drivers/accgyro/accgyro_spi_mpu6500.h"
+#include "drivers/accgyro/accgyro_spi_mpu9250.h"
+#include "drivers/accgyro/accgyro_mpu.h"
 
 
 mpuResetFnPtr mpuResetFn;

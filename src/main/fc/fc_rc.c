@@ -23,14 +23,11 @@
 
 #include "build/debug.h"
 
-#include "common/maths.h"
 #include "common/axis.h"
+#include "common/maths.h"
 #include "common/utils.h"
-#include "common/filter.h"
 
 #include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -40,33 +37,36 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
+#include "flight/failsafe.h"
+#include "flight/imu.h"
+#include "flight/pid.h"
 #include "rx/rx.h"
 
 #include "scheduler/scheduler.h"
 
 #include "sensors/battery.h"
 
-#include "flight/failsafe.h"
-#include "flight/imu.h"
-#include "flight/pid.h"
-#include "flight/mixer.h"
 
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
 
-float getSetpointRate(int axis) {
+float getSetpointRate(int axis)
+{
     return setpointRate[axis];
 }
 
-float getRcDeflection(int axis) {
+float getRcDeflection(int axis)
+{
     return rcDeflection[axis];
 }
 
-float getRcDeflectionAbs(int axis) {
+float getRcDeflectionAbs(int axis)
+{
     return rcDeflectionAbs[axis];
 }
 
-float getThrottlePIDAttenuation(void) {
+float getThrottlePIDAttenuation(void)
+{
     return throttlePIDAttenuation;
 }
 
@@ -75,10 +75,8 @@ static int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];    // lookup table for 
 
 void generateThrottleCurve(void)
 {
-    uint8_t i;
-
-    for (i = 0; i < THROTTLE_LOOKUP_LENGTH; i++) {
-        int16_t tmp = 10 * i - currentControlRateProfile->thrMid8;
+    for (int i = 0; i < THROTTLE_LOOKUP_LENGTH; i++) {
+        const int16_t tmp = 10 * i - currentControlRateProfile->thrMid8;
         uint8_t y = 1;
         if (tmp > 0)
             y = 100 - currentControlRateProfile->thrMid8;
@@ -89,7 +87,7 @@ void generateThrottleCurve(void)
     }
 }
 
-int16_t rcLookupThrottle(int32_t tmp)
+static int16_t rcLookupThrottle(int32_t tmp)
 {
     const int32_t tmp2 = tmp / 100;
     // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
@@ -114,6 +112,7 @@ static void calculateSetpointRate(int axis)
         rcRate += RC_RATE_INCREMENTAL * (rcRate - 2.0f);
     }
 
+    // scale rcCommandf to range [-1.0, 1.0]
     float rcCommandf = rcCommand[axis] / 500.0f;
     rcDeflection[axis] = rcCommandf;
     const float rcCommandfAbs = ABS(rcCommandf);
@@ -196,16 +195,16 @@ void processRcCommand(void)
     if (rxConfig()->rcInterpolation) {
          // Set RC refresh rate for sampling and channels to filter
         switch (rxConfig()->rcInterpolation) {
-            case(RC_SMOOTHING_AUTO):
-                rxRefreshRate = currentRxRefreshRate + 1000; // Add slight overhead to prevent ramps
-                break;
-            case(RC_SMOOTHING_MANUAL):
-                rxRefreshRate = 1000 * rxConfig()->rcInterpolationInterval;
-                break;
-            case(RC_SMOOTHING_OFF):
-            case(RC_SMOOTHING_DEFAULT):
-            default:
-                rxRefreshRate = rxGetRefreshRate();
+        case RC_SMOOTHING_AUTO:
+            rxRefreshRate = currentRxRefreshRate + 1000; // Add slight overhead to prevent ramps
+            break;
+        case RC_SMOOTHING_MANUAL:
+            rxRefreshRate = 1000 * rxConfig()->rcInterpolationInterval;
+            break;
+        case RC_SMOOTHING_OFF:
+        case RC_SMOOTHING_DEFAULT:
+        default:
+            rxRefreshRate = rxGetRefreshRate();
         }
 
         if (isRXDataNew && rxRefreshRate > 0) {
