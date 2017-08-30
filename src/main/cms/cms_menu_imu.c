@@ -391,7 +391,7 @@ static CMS_Menu cmsx_menuFilterPerProfile = {
     .entries = cmsx_menuFilterPerProfileEntries,
 };
 
-#ifndef DISABLE_EXTENDED_CMS_MENUS
+#ifdef USE_COPY_PROFILE_CMS_MENU
 
 static uint8_t cmsx_dstPidProfile;
 static uint8_t cmsx_dstControlRateProfile;
@@ -475,7 +475,7 @@ static OSD_Entry cmsx_menuImuEntries[] =
     {"RATE",      OME_Submenu, cmsMenuChange,                 &cmsx_menuRateProfile,                                         0},
 
     {"FILT GLB",  OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterGlobal,                                        0},
-#ifndef DISABLE_EXTENDED_CMS_MENUS
+#ifdef USE_COPY_PROFILE_CMS_MENU
     {"COPY PROF", OME_Submenu, cmsMenuChange,                 &cmsx_menuCopyProfile,                                         0},
 #endif
 
