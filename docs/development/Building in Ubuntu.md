@@ -27,6 +27,8 @@ For Linux Mint 18 (Ubuntu 16, 2016-09-11)
 sudo apt install git
 sudo apt install gcc
 sudo apt install gcc-arm-none-eabi
+
+
 sudo apt-get install libnewlib-arm-none-eabi
 
 cd src
@@ -56,6 +58,17 @@ Install the Ruby package for your distribution. On Debian based distributions, y
 install the ruby package
 ```
 sudo apt-get install ruby
+```
+
+## Installing Ruby 2.4
+
+Since in some cases apt-get will install ruby 1.9 which does not work, you can force ruby 2.4 by
+
+```
+sudo apt-get remove ruby
+sudo apt-add-repository ppa:brightbox/ruby-ng
+sudo apt-get update
+apt-get install ruby2.4 ruby2.4-dev
 ```
 
 ## Building on Ubuntu
