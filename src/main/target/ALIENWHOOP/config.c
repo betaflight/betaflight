@@ -65,8 +65,7 @@
 
 void targetConfiguration(void)
 {
-    if (hardwareMotorType == MOTOR_BRUSHED) 
-    {
+    if (hardwareMotorType == MOTOR_BRUSHED) {
         motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
         motorConfigMutable()->minthrottle = 1080;
         motorConfigMutable()->maxthrottle = 2000;
@@ -105,8 +104,7 @@ void targetConfiguration(void)
 
     /* AlienWhoop PIDs based on Ole Gravy Leg (aka Matt Williamson's) PIDs 
      */
-    for (int profileId = 0; profileId < MAX_PROFILE_COUNT; profileId++) 
-    {
+    for (int profileId = 0; profileId < MAX_PROFILE_COUNT; profileId++) {
         /* AlienWhoop PIDs tested with 6mm and 7mm motors on most frames */
         pidProfilesMutable(profileId)->pid[PID_PITCH].P = 75;
         pidProfilesMutable(profileId)->pid[PID_PITCH].I = 36;
@@ -128,8 +126,7 @@ void targetConfiguration(void)
         pidProfilesMutable(profileId)->itermThrottleThreshold = 400;
     }
 
-    for (int rateProfileId = 0; rateProfileId < CONTROL_RATE_PROFILE_COUNT; rateProfileId++) 
-    {
+    for (int rateProfileId = 0; rateProfileId < CONTROL_RATE_PROFILE_COUNT; rateProfileId++) {
         /* RC Rates */
         controlRateProfilesMutable(rateProfileId)->rcRate8 = 100;
         controlRateProfilesMutable(rateProfileId)->rcYawRate8 = 100;
