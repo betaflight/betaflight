@@ -424,7 +424,7 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
     }
 
     // Speed controller - only apply in POS mode when NOT NAV_CTL_LAND
-    if (navStateFlags & NAV_CTL_POS && !(navStateFlags & NAV_CTL_LAND)) {
+    if ((navStateFlags & NAV_CTL_POS) && !(navStateFlags & NAV_CTL_LAND)) {
         throttleCorrection += applyFixedWingMinSpeedController(currentTimeUs);
         throttleCorrection = constrain(throttleCorrection, minThrottleCorrection, maxThrottleCorrection);
     }
@@ -452,26 +452,28 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
      * Then altitude is below landing slowdown min. altitude, enable final approach procedure
      * TODO refactor conditions in this metod if logic is proven to be correct
      */
-    if (posControl.flags.hasValidAltitudeSensor && posControl.actualState.pos.V.Z < navConfig()->general.land_slowdown_minalt) {
-        /*
-         * Set motor to min. throttle and stop it when MOTOR_STOP feature is enabled
-         */
-        rcCommand[THROTTLE] = motorConfig()->minthrottle;
-        ENABLE_STATE(NAV_MOTOR_STOP_OR_IDLE);
+    if (navStateFlags & NAV_CTL_LAND) {
+        if (posControl.flags.hasValidAltitudeSensor && posControl.actualState.pos.V.Z < navConfig()->general.land_slowdown_minalt) {
+            /*
+             * Set motor to min. throttle and stop it when MOTOR_STOP feature is enabled
+             */
+            rcCommand[THROTTLE] = motorConfig()->minthrottle;
+            ENABLE_STATE(NAV_MOTOR_STOP_OR_IDLE);
 
-        /*
-         * Stabilize ROLL axis on 0 degress banking regardless of loiter radius and position
-         */
-        rcCommand[ROLL] = 0;
+            /*
+             * Stabilize ROLL axis on 0 degress banking regardless of loiter radius and position
+             */
+            rcCommand[ROLL] = 0;
 
-        /*
-         * Stabilize PITCH angle into shallow dive as specified by the
-         * nav_fw_land_dive_angle setting (default value is 2 - defined
-         * in navigation.c).
-         * PITCH angle is measured: >0 - dive, <0 - climb)
-         */
-        rcCommand[PITCH] = pidAngleToRcCommand(DEGREES_TO_DECIDEGREES(navConfig()->fw.land_dive_angle), pidProfile()->max_angle_inclination[FD_PITCH]);
-     }
+            /*
+             * Stabilize PITCH angle into shallow dive as specified by the
+             * nav_fw_land_dive_angle setting (default value is 2 - defined
+             * in navigation.c).
+             * PITCH angle is measured: >0 - dive, <0 - climb)
+             */
+            rcCommand[PITCH] = pidAngleToRcCommand(DEGREES_TO_DECIDEGREES(navConfig()->fw.land_dive_angle), pidProfile()->max_angle_inclination[FD_PITCH]);
+        }
+    }
 #endif
 }
 
