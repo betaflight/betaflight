@@ -133,7 +133,7 @@ void taskBatteryAlerts(timeUs_t currentTimeUs)
 {
     if (!ARMING_FLAG(ARMED)) {
         // the battery *might* fall out in flight, but if that happens the FC will likely be off too unless the user has battery backup.
-        batteryUpdatePresence();
+        batteryUpdatePresence(currentTimeUs);
     }
     batteryUpdateStates(currentTimeUs);
     batteryUpdateAlarms();

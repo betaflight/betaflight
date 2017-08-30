@@ -158,9 +158,14 @@ static void updateBatteryBeeperAlert(void)
     }
 }
 
-void batteryUpdatePresence(void)
+void batteryUpdatePresence(timeUs_t currentTimeUs)
 {
     bool isVoltageStable = ABS(voltageMeter.filtered - voltageMeter.unfiltered) <= VBAT_STABLE_MAX_DELTA;
+
+#ifdef USE_ESC_SENSOR
+    // Delaying cell detection when voltage meter source is ESC Sensor
+    isVoltageStable = isVoltageStable && (batteryConfig()->voltageMeterSource == VOLTAGE_METER_ESC && currentTimeUs > ESC_SENSOR_BOOT_DELAY * 1000);
+#endif
 
     bool isVoltageFromBat = (voltageMeter.filtered >= batteryConfig()->vbatnotpresentcellvoltage  //above ~0V
                             && voltageMeter.filtered <= batteryConfig()->vbatmaxcellvoltage)  //1s max cell voltage check

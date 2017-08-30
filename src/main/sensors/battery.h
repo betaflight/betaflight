@@ -62,9 +62,11 @@ typedef enum {
     BATTERY_NOT_PRESENT
 } batteryState_e;
 
+#define ESC_SENSOR_BOOT_DELAY 6000      // 6 seconds
+
 void batteryInit(void);
 void batteryUpdateVoltage(timeUs_t currentTimeUs);
-void batteryUpdatePresence(void);
+void batteryUpdatePresence(timeUs_t currentTimeUs);
 
 batteryState_e getBatteryState(void);
 const  char * getBatteryStateString(void);
