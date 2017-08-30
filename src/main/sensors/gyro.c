@@ -364,6 +364,7 @@ bool gyroInit(void)
     case DEBUG_GYRO:
     case DEBUG_GYRO_RAW:
         gyroDebugMode = debugMode;
+        break;
     default:
         // debugMode is not gyro-related
         gyroDebugMode = DEBUG_NONE;
