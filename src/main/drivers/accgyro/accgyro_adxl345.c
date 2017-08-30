@@ -129,7 +129,7 @@ bool adxl345Detect(accDev_t *acc, drv_adxl345_config_t *init)
     // use ADXL345's fifo to filter data or not
     useFifo = init->useFifo;
 
-    acc->init = adxl345Init;
-    acc->read = adxl345Read;
+    acc->initFn = adxl345Init;
+    acc->readFn = adxl345Read;
     return true;
 }

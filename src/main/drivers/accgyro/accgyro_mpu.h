@@ -30,6 +30,18 @@
 #define MPU_RA_WHO_AM_I         0x75
 #define MPU_RA_WHO_AM_I_LEGACY  0x00
 
+
+#define MPUx0x0_WHO_AM_I_CONST              (0x68) // MPU3050, 6000 and 6050
+#define MPU6000_WHO_AM_I_CONST              (0x68)
+#define MPU6500_WHO_AM_I_CONST              (0x70)
+#define MPU9250_WHO_AM_I_CONST              (0x71)
+#define MPU9255_WHO_AM_I_CONST              (0x73)
+#define ICM20601_WHO_AM_I_CONST             (0xAC)
+#define ICM20602_WHO_AM_I_CONST             (0x12)
+#define ICM20608G_WHO_AM_I_CONST            (0xAF)
+#define ICM20689_WHO_AM_I_CONST             (0x98)
+
+
 // RA = Register Address
 
 #define MPU_RA_XG_OFFS_TC       0x00    //[7] PWR_MODE, [6:1] XG_OFFS_TC, [0] OTP_BNK_VLD
@@ -126,15 +138,13 @@
 
 typedef bool (*mpuReadRegisterFnPtr)(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t* data);
 typedef bool (*mpuWriteRegisterFnPtr)(const busDevice_t *bus, uint8_t reg, uint8_t data);
-typedef void(*mpuResetFnPtr)(void);
+typedef void (*mpuResetFnPtr)(void);
 
 extern mpuResetFnPtr mpuResetFn;
 
 typedef struct mpuConfiguration_s {
     mpuReadRegisterFnPtr readFn;
     mpuWriteRegisterFnPtr writeFn;
-    mpuReadRegisterFnPtr slowreadFn;
-    mpuWriteRegisterFnPtr verifywriteFn;
     mpuResetFnPtr resetFn;
     uint8_t gyroReadXRegister; // Y and Z must registers follow this, 2 words each
 } mpuConfiguration_t;
@@ -204,4 +214,3 @@ bool mpuGyroRead(struct gyroDev_s *gyro);
 void mpuDetect(struct gyroDev_s *gyro);
 bool mpuCheckDataReady(struct gyroDev_s *gyro);
 void mpuGyroSetIsrUpdate(struct gyroDev_s *gyro, sensorGyroUpdateFuncPtr updateFn);
-

@@ -27,14 +27,17 @@
 #include "build/debug.h"
 
 #include "common/maths.h"
+#include "common/utils.h"
 
-#include "drivers/nvic.h"
-
-#include "drivers/system.h"
-#include "drivers/time.h"
+#include "drivers/bus_i2c.h"
+#include "drivers/bus_spi.h"
+#include "drivers/exti.h"
 #include "drivers/io.h"
 #include "drivers/exti.h"
-#include "drivers/bus_i2c.h"
+#include "drivers/nvic.h"
+#include "drivers/sensor.h"
+#include "drivers/system.h"
+#include "drivers/time.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro/accgyro.h"
@@ -55,10 +58,6 @@ mpuResetFnPtr mpuResetFn;
 #endif
 
 #define MPU_ADDRESS             0x68
-
-// WHO_AM_I register contents for MPU3050, 6050 and 6500
-#define MPU6500_WHO_AM_I_CONST              (0x70)
-#define MPUx0x0_WHO_AM_I_CONST              (0x68)
 
 #define MPU_INQUIRY_MASK   0x7E
 
@@ -115,8 +114,8 @@ static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 #endif
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
     gyro->dataReady = true;
-    if (gyro->update) {
-        gyro->update(gyro);
+    if (gyro->updateFn) {
+        gyro->updateFn(gyro);
     }
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT
     const uint32_t now2Us = micros();
@@ -161,14 +160,14 @@ static void mpuIntExtiInit(gyroDev_t *gyro)
 bool mpuReadRegisterI2C(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t* data)
 {
     UNUSED(bus);
-    bool ack = i2cRead(MPU_I2C_INSTANCE, MPU_ADDRESS, reg, length, data);
+    const bool ack = i2cRead(MPU_I2C_INSTANCE, MPU_ADDRESS, reg, length, data);
     return ack;
 }
 
 bool mpuWriteRegisterI2C(const busDevice_t *bus, uint8_t reg, uint8_t data)
 {
     UNUSED(bus);
-    bool ack = i2cWrite(MPU_I2C_INSTANCE, MPU_ADDRESS, reg, data);
+    const bool ack = i2cWrite(MPU_I2C_INSTANCE, MPU_ADDRESS, reg, data);
     return ack;
 }
 
@@ -176,7 +175,7 @@ bool mpuAccRead(accDev_t *acc)
 {
     uint8_t data[6];
 
-    bool ack = acc->mpuConfiguration.readFn(&acc->bus, MPU_RA_ACCEL_XOUT_H, 6, data);
+    const bool ack = acc->mpuConfiguration.readFn(&acc->bus, MPU_RA_ACCEL_XOUT_H, 6, data);
     if (!ack) {
         return false;
     }
@@ -191,7 +190,7 @@ bool mpuAccRead(accDev_t *acc)
 void mpuGyroSetIsrUpdate(gyroDev_t *gyro, sensorGyroUpdateFuncPtr updateFn)
 {
     ATOMIC_BLOCK(NVIC_PRIO_MPU_INT_EXTI) {
-        gyro->update = updateFn;
+        gyro->updateFn = updateFn;
     }
 }
 
@@ -227,11 +226,16 @@ bool mpuCheckDataReady(gyroDev_t* gyro)
 static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
 {
     UNUSED(gyro); // since there are FCs which have gyro on I2C but other devices on SPI
+
+    uint8_t sensor = MPU_NONE;
+    UNUSED(sensor);
+
 #ifdef USE_GYRO_SPI_MPU6000
 #ifdef MPU6000_CS_PIN
     gyro->bus.spi.csnPin = gyro->bus.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU6000_CS_PIN)) : gyro->bus.spi.csnPin;
 #endif
-    if (mpu6000SpiDetect(&gyro->bus)) {
+    sensor = mpu6000SpiDetect(&gyro->bus);
+    if (sensor != MPU_NONE) {
         gyro->mpuDetectionResult.sensor = MPU_60x0_SPI;
         gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
         gyro->mpuConfiguration.readFn = mpu6000SpiReadRegister;
@@ -241,11 +245,13 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
 #endif
 
 #ifdef USE_GYRO_SPI_MPU6500
+#ifdef MPU6500_CS_PIN
     gyro->bus.spi.csnPin = gyro->bus.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU6500_CS_PIN)) : gyro->bus.spi.csnPin;
-    const uint8_t mpu6500Sensor = mpu6500SpiDetect(&gyro->bus);
+#endif
+    sensor = mpu6500SpiDetect(&gyro->bus);
     // some targets using MPU_9250_SPI, ICM_20608_SPI or ICM_20602_SPI state sensor is MPU_65xx_SPI
-    if (mpu6500Sensor != MPU_NONE) {
-        gyro->mpuDetectionResult.sensor = mpu6500Sensor;
+    if (sensor != MPU_NONE) {
+        gyro->mpuDetectionResult.sensor = sensor;
         gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
         gyro->mpuConfiguration.readFn = mpu6500SpiReadRegister;
         gyro->mpuConfiguration.writeFn = mpu6500SpiWriteRegister;
@@ -254,13 +260,14 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
 #endif
 
 #ifdef  USE_GYRO_SPI_MPU9250
+#ifdef MPU9250_CS_PIN
     gyro->bus.spi.csnPin = gyro->bus.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(MPU9250_CS_PIN)) : gyro->bus.spi.csnPin;
-    if (mpu9250SpiDetect(&gyro->bus)) {
+#endif
+    sensor = mpu9250SpiDetect(&gyro->bus);
+    if (sensor != MPU_NONE) {
         gyro->mpuDetectionResult.sensor = MPU_9250_SPI;
         gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
         gyro->mpuConfiguration.readFn = mpu9250SpiReadRegister;
-        gyro->mpuConfiguration.slowreadFn = mpu9250SpiSlowReadRegister;
-        gyro->mpuConfiguration.verifywriteFn = verifympu9250SpiWriteRegister;
         gyro->mpuConfiguration.writeFn = mpu9250SpiWriteRegister;
         gyro->mpuConfiguration.resetFn = mpu9250SpiResetGyro;
         return true;
@@ -268,8 +275,11 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
 #endif
 
 #ifdef USE_GYRO_SPI_ICM20608
+#ifdef ICM20608_CS_PIN
     gyro->bus.spi.csnPin = gyro->bus.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(ICM20608_CS_PIN)) : gyro->bus.spi.csnPin;
-    if (icm20608SpiDetect(&gyro->bus)) {
+#endif
+    sensor = icm20608SpiDetect(&gyro->bus);
+    if (sensor != MPU_NONE) {
         mpuDetectionResult.sensor = ICM_20608_SPI;
         mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
         mpuConfiguration.readFn = icm20608SpiReadRegister;
@@ -279,8 +289,11 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
 #endif
 
 #ifdef USE_GYRO_SPI_ICM20689
+#ifdef ICM20689_CS_PIN
     gyro->bus.spi.csnPin = gyro->bus.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(ICM20689_CS_PIN)) : gyro->bus.spi.csnPin;
-    if (icm20689SpiDetect(&gyro->bus)) {
+#endif
+    sensor = icm20689SpiDetect(&gyro->bus);
+    if (sensor != MPU_NONE) {
         gyro->mpuDetectionResult.sensor = ICM_20689_SPI;
         gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
         gyro->mpuConfiguration.readFn = icm20689SpiReadRegister;
@@ -289,7 +302,6 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     }
 #endif
 
-    UNUSED(gyro);
     return false;
 }
 #endif

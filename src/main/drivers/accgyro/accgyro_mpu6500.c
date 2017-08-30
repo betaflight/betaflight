@@ -46,8 +46,8 @@ bool mpu6500AccDetect(accDev_t *acc)
         return false;
     }
 
-    acc->init = mpu6500AccInit;
-    acc->read = mpuAccRead;
+    acc->initFn = mpu6500AccInit;
+    acc->readFn = mpuAccRead;
 
     return true;
 }
@@ -107,9 +107,9 @@ bool mpu6500GyroDetect(gyroDev_t *gyro)
         return false;
     }
 
-    gyro->init = mpu6500GyroInit;
-    gyro->read = mpuGyroRead;
-    gyro->intStatus = mpuCheckDataReady;
+    gyro->initFn = mpu6500GyroInit;
+    gyro->readFn = mpuGyroRead;
+    gyro->intStatusFn = mpuCheckDataReady;
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
