@@ -111,3 +111,57 @@ typedef enum {
     CRSF_ADDRESS_CRSF_TRANSMITTER = 0xEE
 } crsfAddress_e;
 
+typedef enum {
+    CRSF_UINT8 = 0,
+    CRSF_INT8 = 1,
+    CRSF_UINT16 = 2,
+    CRSF_INT16 = 3,
+    CRSF_UINT32 = 4,
+    CRSF_INT32 = 5,
+    CRSF_UINT64 = 6,
+    CRSF_INT64 = 7,
+    CRSF_FLOAT = 8,
+    CRSF_TEXT_SELECTION = 9,
+    CRSF_STRING = 10,
+    CRSF_FOLDER = 11,
+    CRSF_INFO = 12,
+    CRSF_COMMAND = 13,
+    CRSF_VTX = 15,
+    CRSF_OUT_OF_RANGE = 127,
+} crsfProtocolParameterType_e;
+
+typedef enum {
+    CRSF_BROADCAST_FRAME_LENGTH_OFFSET = 1,
+    CRSF_BROADCAST_FRAME_TYPE_OFFSET = 2,
+    CRSF_BROADCAST_FRAME_PAYLOAD_OFFSET = 3,
+} crsfBroadcastFrameOffset_e;
+
+typedef enum {
+    CRSF_EXTENDED_FRAME_LENGTH_OFFSET = 1,
+    CRSF_EXTENDED_FRAME_TYPE_OFFSET = 2,
+    CRSF_EXTENDED_FRAME_DESTINATION_OFFSET = 3,
+    CRSF_EXTENDED_FRAME_ORIGIN_OFFSET = 4,
+    CRSF_EXTENDED_FRAME_PAYLOAD_OFFSET = 5,
+} crsfExtendedFrameOffset_e;
+
+enum { CRSF_PARAMETER_WRITE_DATA_OFFSET = 1 };
+
+typedef enum {
+    CRSF_PARAM_SKIP_STRING = 0,
+    CRSF_PARAM_INCLUDE_STRING = 1
+} crsfProtocolParamPackString_e;
+
+
+struct sbuf_s;
+struct clivalue_s;
+void crsfProtocolPackOutOfRangeCli(struct sbuf_s *dst);
+void crsfProtocolPackFolderCli(struct sbuf_s *dst, const struct clivalue_s *value, crsfProtocolParamPackString_e paramPackString);
+void crsfProtocolPackU8Cli(struct sbuf_s *dst, const struct clivalue_s *value, crsfProtocolParamPackString_e paramPackString);
+void crsfProtocolUnpackU8Cli(const struct clivalue_s *value, const uint8_t *payload);
+void crsfProtocolPackU16Cli(struct sbuf_s *dst, const struct clivalue_s *value, crsfProtocolParamPackString_e paramPackString);
+void crsfProtocolUnpackU16Cli(const struct clivalue_s *value, const uint8_t *payload);
+
+void crsfParameterWriteEntryHeader(struct sbuf_s *dst, uint8_t destinationAddress);
+void crsfProtocolParameterRead(struct sbuf_s *dst, const uint8_t *payload, uint8_t originAddress, crsfProtocolParamPackString_e paramPackString);
+void crsfProtocolParameterWrite(const uint8_t *payload);
+bool crsfInterpretExtendedFrame(struct sbuf_s *dst, uint8_t *frame);

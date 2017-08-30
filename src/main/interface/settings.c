@@ -506,7 +506,9 @@ const lookupTableEntry_t lookupTables[] = {
 #undef LOOKUP_TABLE_ENTRY
 
 const clivalue_t valueTable[] = {
+    { "ROOT",                       FOLDER_VALUE, .config.parent = { 0 }, 0, 0 },
 // PG_GYRO_CONFIG
+    { "Gyro",                       FOLDER_VALUE, .config.parent = { 0 }, 0, 0 },
     { "align_gyro",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ALIGNMENT }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_align) },
     { "gyro_hardware_lpf",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_HARDWARE_LPF }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_hardware_lpf) },
 #if defined(USE_32K_CAPABLE_GYRO) && defined(USE_GYRO_DLPF_EXPERIMENTAL)
@@ -1189,6 +1191,7 @@ const clivalue_t valueTable[] = {
     { "gyro_2_i2c_address", VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, I2C_ADDR7_MAX }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, 1, i2cAddress) },
     { "gyro_2_sensor_align", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ALIGNMENT }, PG_GYRO_DEVICE_CONFIG, PG_ARRAY_ELEMENT_OFFSET(gyroDeviceConfig_t, 1, align) },
 #endif
+    { "END",                        MODE_EOF, .config.parent = { 0 }, 0, 0 },
 };
 
 const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);

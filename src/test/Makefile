@@ -111,6 +111,18 @@ common_filter_unittest_SRC := \
 		$(USER_DIR)/common/maths.c
 
 
+crsfprotocol_unittest_SRC := \
+		$(USER_DIR)/build/debug.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/config/parameter_group.c \
+		$(USER_DIR)/interface/settings.c \
+		$(USER_DIR)/interface/crsf_protocol.c
+
+crsfprotocol_unittest_DEFINES := \
+		USE_CRSF_PROTOCOL
+
+
 encoding_unittest_SRC := \
 		$(USER_DIR)/common/encoding.c
 

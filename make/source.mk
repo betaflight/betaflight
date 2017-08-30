@@ -86,6 +86,7 @@ COMMON_SRC = \
             flight/servos_tricopter.c \
             interface/cli.c \
             interface/settings.c \
+            interface/crsf_protocol.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
@@ -280,6 +281,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             i2c_bst.c \
             interface/cli.c \
             interface/settings.c \
+            interface/crsf_protocol.c \
             io/dashboard.c \
             io/osd.c \
             io/serial.c \
