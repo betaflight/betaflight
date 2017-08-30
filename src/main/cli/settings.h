@@ -161,18 +161,20 @@ typedef enum {
     MASTER_VALUE = (0 << VALUE_SECTION_OFFSET),
     PROFILE_VALUE = (1 << VALUE_SECTION_OFFSET),
     PROFILE_RATE_VALUE = (2 << VALUE_SECTION_OFFSET),
+    FOLDER_VALUE = (3 << VALUE_SECTION_OFFSET),
 
     // value mode, bits 5-6
     MODE_DIRECT = (0 << VALUE_MODE_OFFSET),
     MODE_LOOKUP = (1 << VALUE_MODE_OFFSET),
     MODE_ARRAY = (2 << VALUE_MODE_OFFSET),
-    MODE_BITSET = (3 << VALUE_MODE_OFFSET)
+    MODE_BITSET = (3 << VALUE_MODE_OFFSET),
+    MODE_EOF = (4 << VALUE_MODE_OFFSET)
 } cliValueFlag_e;
 
 
 #define VALUE_TYPE_MASK (0x07)
 #define VALUE_SECTION_MASK (0x18)
-#define VALUE_MODE_MASK (0x60)
+#define VALUE_MODE_MASK (0xe0)
 
 typedef struct cliMinMaxConfig_s {
     const int16_t min;
@@ -187,12 +189,17 @@ typedef struct cliArrayLengthConfig_s {
     const uint8_t length;
 } cliArrayLengthConfig_t;
 
+typedef struct cliParentConfig_s {
+    const uint16_t parent;
+} cliParentConfig_t;
+
 typedef union {
     cliLookupTableConfig_t lookup;  // used for MODE_LOOKUP excl. VAR_UINT32
     cliMinMaxConfig_t minmax;       // used for MODE_DIRECT
     cliArrayLengthConfig_t array;   // used for MODE_ARRAY
     uint8_t bitpos;                 // used for MODE_BITSET
     uint32_t u32_max;               // used for MODE_DIRECT with VAR_UINT32
+    cliParentConfig_t parent;
 } cliValueConfig_t;
 
 typedef struct clivalue_s {

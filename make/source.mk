@@ -99,6 +99,7 @@ COMMON_SRC = \
             rx/rx_spi.c \
             rx/rx_spi_common.c \
             rx/crsf.c \
+            rx/crsf_protocol.c \
             rx/sbus.c \
             rx/sbus_channels.c \
             rx/spektrum.c \
@@ -316,7 +317,8 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             io/vtx_tramp.c \
             io/vtx_control.c \
             io/spektrum_vtx_control.c \
-            pg/pg.h
+            pg/pg.h \
+            rx/crsf_protocol.c \
 
 # F4 and F7 optimizations
 ifneq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))

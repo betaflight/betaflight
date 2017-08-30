@@ -577,7 +577,9 @@ const lookupTableEntry_t lookupTables[] = {
 #undef LOOKUP_TABLE_ENTRY
 
 const clivalue_t valueTable[] = {
+    { "ROOT",                       FOLDER_VALUE, .config.parent = { 0 }, 0, 0 },
 // PG_GYRO_CONFIG
+    { "Gyro",                       FOLDER_VALUE, .config.parent = { 0 }, 0, 0 },
     { "align_gyro",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ALIGNMENT }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_align) },
     { "gyro_hardware_lpf",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_HARDWARE_LPF }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_hardware_lpf) },
 #if defined(USE_32K_CAPABLE_GYRO) && defined(USE_GYRO_DLPF_EXPERIMENTAL)
@@ -1413,6 +1415,7 @@ const clivalue_t valueTable[] = {
     { "flysky_spi_rf_channels", VAR_UINT8 | MASTER_VALUE | MODE_ARRAY, .config.array.length = 16, PG_FLYSKY_CONFIG, offsetof(flySkyConfig_t, rfChannelMap) },
     { "flysky_spi_protocol",    VAR_UINT8 | MASTER_VALUE, .config.minmax = { 0, UINT8_MAX }, PG_FLYSKY_CONFIG, offsetof(flySkyConfig_t, protocol) },
 #endif
+    { "END",                        MODE_EOF, .config.parent = { 0 }, 0, 0 },
 };
 
 const uint16_t valueTableEntryCount = ARRAYLEN(valueTable);
