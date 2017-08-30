@@ -108,6 +108,7 @@
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
+#include "sensors/esc_sensor.h"
 
 #include "telemetry/telemetry.h"
 
@@ -496,7 +497,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         }
         break;
     }
-
+	
     case MSP_CURRENT_METERS: {
         // write out id and current meter values, once for each meter we support
         uint8_t count = supportedCurrentMeterCount;
@@ -922,6 +923,12 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, compassConfig()->mag_declination / 10);
         break;
 #endif
+	case MSP_EXTRA_ESC_DATA:
+        for (int i = 0; i < getMotorCount(); i++) {			
+            sbufWriteU8(dst, getEscSensorData(i)->temperature);
+            sbufWriteU16(dst, getEscSensorData(i)->rpm);
+        }
+        break;
 
 #ifdef GPS
     case MSP_GPS_CONFIG:
