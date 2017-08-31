@@ -929,9 +929,6 @@ uint16_t timerGetPrescalerByDesiredHertz(TIM_TypeDef *tim, uint32_t hz)
 
 HAL_StatusTypeDef TIM_DMACmd(TIM_HandleTypeDef *htim, uint32_t Channel, FunctionalState NewState)
 {
-    /* Check the parameters */
-    assert_param(IS_TIM_CCXN_INSTANCE(htim->Instance, Channel));
-
     switch (Channel) {
     case TIM_CHANNEL_1: {
         if (NewState != DISABLE) {
@@ -988,9 +985,6 @@ HAL_StatusTypeDef TIM_DMACmd(TIM_HandleTypeDef *htim, uint32_t Channel, Function
 
 HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Channel, uint32_t *pData, uint16_t Length)
 {
-    /* Check the parameters */
-    assert_param(IS_TIM_CCX_INSTANCE(htim->Instance, Channel));
-
     if ((htim->State == HAL_TIM_STATE_BUSY)) {
         return HAL_BUSY;
     } else if ((htim->State == HAL_TIM_STATE_READY)) {

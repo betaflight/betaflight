@@ -108,6 +108,9 @@ typedef enum {
 typedef struct {
     TIM_TypeDef *timer;
     uint16_t timerDmaSources;
+#ifdef USE_DSHOT_DMAR
+    uint32_t dmaBurstBuffer[DSHOT_DMA_BUFFER_SIZE * 4];
+#endif
 } motorDmaTimer_t;
 
 typedef struct {
@@ -126,6 +129,7 @@ typedef struct {
     TIM_HandleTypeDef TimHandle;
     DMA_HandleTypeDef hdma_tim;
     uint16_t timerDmaIndex;
+    uint8_t timerIndex;
 #endif
 } motorDmaOutput_t;
 
