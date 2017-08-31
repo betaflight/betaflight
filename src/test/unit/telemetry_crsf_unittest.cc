@@ -91,7 +91,7 @@ TEST(TelemetryCrsfTest, TestGPS)
 {
     uint8_t frame[CRSF_FRAME_SIZE_MAX];
 
-    int frameLen = getCrsfFrame(frame, CRSF_FRAME_GPS);
+    int frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_GPS);
     EXPECT_EQ(CRSF_FRAME_GPS_PAYLOAD_SIZE + FRAME_HEADER_FOOTER_LEN, frameLen);
     EXPECT_EQ(CRSF_ADDRESS_BROADCAST, frame[0]); // address
     EXPECT_EQ(17, frame[1]); // length
@@ -117,7 +117,7 @@ TEST(TelemetryCrsfTest, TestGPS)
     gpsSol.groundSpeed = 163;                 // speed in 0.1m/s, 16.3 m/s = 58.68 km/h, so CRSF (km/h *10) value is 587
     gpsSol.numSat = 9;
     gpsSol.groundCourse = 1479;     // degrees * 10
-    frameLen = getCrsfFrame(frame, CRSF_FRAME_GPS);
+    frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_GPS);
     lattitude = frame[3] << 24 | frame[4] << 16 | frame[5] << 8 | frame[6];
     EXPECT_EQ(560000000, lattitude);
     longitude = frame[7] << 24 | frame[8] << 16 | frame[9] << 8 | frame[10];
@@ -138,7 +138,7 @@ TEST(TelemetryCrsfTest, TestBattery)
     uint8_t frame[CRSF_FRAME_SIZE_MAX];
 
     testBatteryVoltage = 0; // 0.1V units
-    int frameLen = getCrsfFrame(frame, CRSF_FRAME_BATTERY_SENSOR);
+    int frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_BATTERY_SENSOR);
     EXPECT_EQ(CRSF_FRAME_BATTERY_SENSOR_PAYLOAD_SIZE + FRAME_HEADER_FOOTER_LEN, frameLen);
     EXPECT_EQ(CRSF_ADDRESS_BROADCAST, frame[0]); // address
     EXPECT_EQ(10, frame[1]); // length
@@ -156,7 +156,7 @@ TEST(TelemetryCrsfTest, TestBattery)
     testBatteryVoltage = 33; // 3.3V = 3300 mv
     testAmperage = 2960; // = 29.60A = 29600mA - amperage is in 0.01A steps
     batteryConfigMutable()->batteryCapacity = 1234;
-    frameLen = getCrsfFrame(frame, CRSF_FRAME_BATTERY_SENSOR);
+    frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_BATTERY_SENSOR);
     voltage = frame[3] << 8 | frame[4]; // mV * 100
     EXPECT_EQ(33, voltage);
     current = frame[5] << 8 | frame[6]; // mA * 100
@@ -175,7 +175,7 @@ TEST(TelemetryCrsfTest, TestAttitude)
     attitude.values.pitch = 0;
     attitude.values.roll = 0;
     attitude.values.yaw = 0;
-    int frameLen = getCrsfFrame(frame, CRSF_FRAME_ATTITUDE);
+    int frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_ATTITUDE);
     EXPECT_EQ(CRSF_FRAME_ATTITUDE_PAYLOAD_SIZE + FRAME_HEADER_FOOTER_LEN, frameLen);
     EXPECT_EQ(CRSF_ADDRESS_BROADCAST, frame[0]); // address
     EXPECT_EQ(8, frame[1]); // length
@@ -191,7 +191,7 @@ TEST(TelemetryCrsfTest, TestAttitude)
     attitude.values.pitch = 678; // decidegrees == 1.183333232852155 rad
     attitude.values.roll = 1495; // 2.609267231731523 rad
     attitude.values.yaw = -1799; //3.139847324337799 rad
-    frameLen = getCrsfFrame(frame, CRSF_FRAME_ATTITUDE);
+    frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_ATTITUDE);
     pitch = frame[3] << 8 | frame[4]; // rad / 10000
     EXPECT_EQ(11833, pitch);
     roll = frame[5] << 8 | frame[6];
@@ -207,7 +207,7 @@ TEST(TelemetryCrsfTest, TestFlightMode)
 
     // nothing set, so ACRO mode
     airMode = false;
-    int frameLen = getCrsfFrame(frame, CRSF_FRAME_FLIGHT_MODE);
+    int frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_FLIGHT_MODE);
     EXPECT_EQ(5 + FRAME_HEADER_FOOTER_LEN, frameLen);
     EXPECT_EQ(CRSF_ADDRESS_BROADCAST, frame[0]); // address
     EXPECT_EQ(7, frame[1]); // length
@@ -222,7 +222,7 @@ TEST(TelemetryCrsfTest, TestFlightMode)
 
     enableFlightMode(ANGLE_MODE);
     EXPECT_EQ(ANGLE_MODE, FLIGHT_MODE(ANGLE_MODE));
-    frameLen = getCrsfFrame(frame, CRSF_FRAME_FLIGHT_MODE);
+    frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_FLIGHT_MODE);
     EXPECT_EQ(5 + FRAME_HEADER_FOOTER_LEN, frameLen);
     EXPECT_EQ(CRSF_ADDRESS_BROADCAST, frame[0]); // address
     EXPECT_EQ(7, frame[1]); // length
@@ -237,7 +237,7 @@ TEST(TelemetryCrsfTest, TestFlightMode)
     disableFlightMode(ANGLE_MODE);
     enableFlightMode(HORIZON_MODE);
     EXPECT_EQ(HORIZON_MODE, FLIGHT_MODE(HORIZON_MODE));
-    frameLen = getCrsfFrame(frame, CRSF_FRAME_FLIGHT_MODE);
+    frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_FLIGHT_MODE);
     EXPECT_EQ(4 + FRAME_HEADER_FOOTER_LEN, frameLen);
     EXPECT_EQ(CRSF_ADDRESS_BROADCAST, frame[0]); // address
     EXPECT_EQ(6, frame[1]); // length
@@ -250,7 +250,7 @@ TEST(TelemetryCrsfTest, TestFlightMode)
 
     disableFlightMode(HORIZON_MODE);
     airMode = true;
-    frameLen = getCrsfFrame(frame, CRSF_FRAME_FLIGHT_MODE);
+    frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_FLIGHT_MODE);
     EXPECT_EQ(4 + FRAME_HEADER_FOOTER_LEN, frameLen);
     EXPECT_EQ(CRSF_ADDRESS_BROADCAST, frame[0]); // address
     EXPECT_EQ(6, frame[1]); // length

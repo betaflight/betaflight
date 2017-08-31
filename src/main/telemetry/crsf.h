@@ -18,14 +18,7 @@
 #pragma once
 
 #include "common/time.h"
-
-typedef enum {
-    CRSF_FRAME_START = 0,
-    CRSF_FRAME_ATTITUDE = CRSF_FRAME_START,
-    CRSF_FRAME_BATTERY_SENSOR,
-    CRSF_FRAME_FLIGHT_MODE,
-    CRSF_FRAME_GPS
-} crsfFrameType_e;
+#include "rx/crsf.h"
 
 void initCrsfTelemetry(void);
 bool checkCrsfTelemetryState(void);
