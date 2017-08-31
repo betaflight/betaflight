@@ -255,7 +255,7 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
         // If RX and TX pins are both assigned, we CAN use either with a timer.
         // However, for consistency with hardware UARTs, we only use TX pin,
         // and this pin must have a timer, and it should not be N-Channel.
-        if (!(timerTx && !(timerTx->output & TIMER_OUTPUT_N_CHANNEL))) {
+        if (!timerTx || (timerTx->output & TIMER_OUTPUT_N_CHANNEL)) {
             return NULL;
         }
 
@@ -266,7 +266,7 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
     } else {
         if (mode & MODE_RX) {
             // Need a pin & a timer on RX. Channel should not be N-Channel.
-            if (!(timerRx && !(timerRx->output & TIMER_OUTPUT_N_CHANNEL))) {
+            if (!timerRx || (timerRx->output & TIMER_OUTPUT_N_CHANNEL)) {
                 return NULL;
             }
 
