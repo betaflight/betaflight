@@ -810,6 +810,7 @@ void timerInit(void)
         if (timerHardwarePtr->usageFlags == TIM_USE_NONE) {
             continue;
         }
+        // XXX IOConfigGPIOAF in timerInit should eventually go away.
         IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->tag), IOCFG_AF_PP, timerHardwarePtr->alternateFunction);
     }
 #endif
