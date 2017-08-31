@@ -119,7 +119,7 @@ static void pwmOutConfigTimer(pwmOutputPort_t * p, const timerHardware_t *timerH
 {
 #if defined(USE_HAL_DRIVER)
     TIM_HandleTypeDef* Handle = timerFindTimerHandle(timerHardware->tim);
-    if (Handle == NULL) return p;
+    if (Handle == NULL) return;
 #endif
 
     configTimeBase(timerHardware->tim, period, mhz);
