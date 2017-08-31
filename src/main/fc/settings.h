@@ -17,6 +17,10 @@
 
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
+#include "config/parameter_group.h"
+
 
 typedef enum {
     TABLE_OFF_ON = 0,
