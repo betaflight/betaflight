@@ -223,6 +223,8 @@
 // External OSD displayport mode messages
 #define MSP_DISPLAYPORT                 182
 
+#define MSP_COPY_PROFILE                183
+
 #define MSP_BEEPER_CONFIG               184
 #define MSP_SET_BEEPER_CONFIG           185
 
