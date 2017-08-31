@@ -59,7 +59,6 @@
     #define BARO_I2C_INSTANCE I2C_DEVICE_EXT
 #endif
 
-#define PITOT
 #define USE_PITOT_MS4525
 #define PITOT_I2C_INSTANCE I2C_DEVICE_EXT
 

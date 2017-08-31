@@ -81,7 +81,6 @@
 #define USE_MAG_MAG3110
 #define USE_MAG_QMC5883
 
-#define PITOT
 #define USE_PITOT_MS4525
 #define PITOT_I2C_INSTANCE I2C_DEVICE
 
