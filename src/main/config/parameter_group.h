@@ -187,5 +187,6 @@ const pgRegistry_t* pgFind(pgn_t pgn);
 void pgLoad(const pgRegistry_t* reg, const void *from, int size, int version);
 int pgStore(const pgRegistry_t* reg, void *to, int size);
 void pgResetAll();
+void pgResetInstance(const pgRegistry_t *reg, uint8_t *base);
 bool pgResetCopy(void *copy, pgn_t pgn);
 void pgReset(const pgRegistry_t* reg);

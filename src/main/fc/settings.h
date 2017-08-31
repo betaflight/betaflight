@@ -119,7 +119,7 @@ typedef union {
     cliArrayLengthConfig_t array;
 } cliValueConfig_t;
 
-typedef struct {
+typedef struct clivalue_s {
     const char *name;
     const uint8_t type; // see cliValueFlag_e
     const cliValueConfig_t config;

@@ -39,7 +39,7 @@ static uint8_t *pgOffset(const pgRegistry_t* reg)
     return reg->address;
 }
 
-static void pgResetInstance(const pgRegistry_t *reg, uint8_t *base)
+void pgResetInstance(const pgRegistry_t *reg, uint8_t *base)
 {
     const uint16_t regSize = pgSize(reg);
 
