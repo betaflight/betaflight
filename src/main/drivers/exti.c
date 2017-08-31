@@ -3,13 +3,14 @@
 #include <string.h>
 
 #include "platform.h"
-#include "build/assert.h"
-
-#include "drivers/nvic.h"
-#include "io_impl.h"
-#include "drivers/exti.h"
 
 #ifdef USE_EXTI
+
+#include "build/assert.h"
+
+#include "drivers/exti.h"
+#include "drivers/io_impl.h"
+#include "drivers/nvic.h"
 
 typedef struct {
     extiCallbackRec_t* handler;
@@ -222,4 +223,4 @@ _EXTI_IRQ_HANDLER(EXTI4_IRQHandler);
 _EXTI_IRQ_HANDLER(EXTI9_5_IRQHandler);
 _EXTI_IRQ_HANDLER(EXTI15_10_IRQHandler);
 
-#endif
+#endif // USE_EXTI
