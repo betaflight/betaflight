@@ -160,6 +160,8 @@ static void updateBatteryBeeperAlert(void)
 
 void batteryUpdatePresence(timeUs_t currentTimeUs)
 {
+    UNUSED(currentTimeUs);
+
     bool isVoltageStable = ABS(voltageMeter.filtered - voltageMeter.unfiltered) <= VBAT_STABLE_MAX_DELTA;
 
 #ifdef USE_ESC_SENSOR
