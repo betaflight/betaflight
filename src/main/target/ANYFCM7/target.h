@@ -53,7 +53,6 @@
 #define BARO
 #define USE_BARO_MS5611
 
-#define PITOT
 #define USE_PITOT_MS4525
 #define PITOT_I2C_INSTANCE I2C_DEVICE
 

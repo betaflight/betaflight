@@ -82,8 +82,6 @@
   #define BMP280_CS_PIN           PB3 // v1
 #endif
 
-#define PITOT
-#define USE_PITOT_ADC
 #define USE_PITOT_MS4525
 #define PITOT_I2C_INSTANCE      I2C_DEVICE
 

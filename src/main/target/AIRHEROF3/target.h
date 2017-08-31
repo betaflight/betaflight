@@ -57,7 +57,6 @@
 #define USE_MAG_HMC5883
 #define USE_MAG_QMC5883
 
-#define PITOT
 #define USE_PITOT_MS4525
 #define USE_PITOT_ADC
 

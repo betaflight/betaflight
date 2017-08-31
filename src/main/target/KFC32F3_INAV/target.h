@@ -112,8 +112,6 @@
 #define I2C1_SCL                PA15
 #define I2C1_SDA                PA14
 
-#define PITOT
-#define USE_PITOT_ADC
 #define USE_PITOT_MS4525
 #define PITOT_I2C_INSTANCE      I2C_DEVICE
 
