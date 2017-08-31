@@ -402,10 +402,16 @@ static uint16_t getValueOffset(const clivalue_t *value)
     return 0;
 }
 
-STATIC_UNIT_TESTED void *getValuePointer(const clivalue_t *value)
+void *cliGetValuePointer(const clivalue_t *value)
 {
     const pgRegistry_t* rec = pgFind(value->pgn);
     return CONST_CAST(void *, rec->address + getValueOffset(value));
+}
+
+const void *cliGetDefaultPointer(const clivalue_t *value)
+{
+    const pgRegistry_t* rec = pgFind(value->pgn);
+    return rec->address + getValueOffset(value);
 }
 
 static void dumpPgValue(const clivalue_t *value, uint8_t dumpMask)
@@ -448,7 +454,7 @@ static void dumpAllValues(uint16_t valueSection, uint8_t dumpMask)
 
 static void cliPrintVar(const clivalue_t *var, bool full)
 {
-    const void *ptr = getValuePointer(var);
+    const void *ptr = cliGetValuePointer(var);
 
     printValuePointer(var, ptr, full);
 }
@@ -481,7 +487,7 @@ static void cliPrintVarRange(const clivalue_t *var)
 
 static void cliSetVar(const clivalue_t *var, const int16_t value)
 {
-    void *ptr = getValuePointer(var);
+    void *ptr = cliGetValuePointer(var);
 
     switch (var->type & VALUE_TYPE_MASK) {
     case VAR_UINT8:
@@ -2788,7 +2794,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                                 default:
                                 case VAR_UINT8: {
                                     // fetch data pointer
-                                    uint8_t *data = (uint8_t *)getValuePointer(val) + i;
+                                    uint8_t *data = (uint8_t *)cliGetValuePointer(val) + i;
                                     // store value
                                     *data = (uint8_t)atoi((const char*) valPtr);
                                     }
@@ -2796,7 +2802,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
 
                                 case VAR_INT8: {
                                     // fetch data pointer
-                                    int8_t *data = (int8_t *)getValuePointer(val) + i;
+                                    int8_t *data = (int8_t *)cliGetValuePointer(val) + i;
                                     // store value
                                     *data = (int8_t)atoi((const char*) valPtr);
                                     }
@@ -2804,7 +2810,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
 
                                 case VAR_UINT16: {
                                     // fetch data pointer
-                                    uint16_t *data = (uint16_t *)getValuePointer(val) + i;
+                                    uint16_t *data = (uint16_t *)cliGetValuePointer(val) + i;
                                     // store value
                                     *data = (uint16_t)atoi((const char*) valPtr);
                                     }
@@ -2812,7 +2818,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
 
                                 case VAR_INT16: {
                                     // fetch data pointer
-                                    int16_t *data = (int16_t *)getValuePointer(val) + i;
+                                    int16_t *data = (int16_t *)cliGetValuePointer(val) + i;
                                     // store value
                                     *data = (int16_t)atoi((const char*) valPtr);
                                     }

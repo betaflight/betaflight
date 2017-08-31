@@ -53,7 +53,6 @@ extern "C" {
 
     void cliSet(char *cmdline);
     void cliGet(char *cmdline);
-    void *getValuePointer(const clivalue_t *value);
 
     const clivalue_t valueTable[] = {
         { "array_unit_test",             VAR_INT8  | MODE_ARRAY | MASTER_VALUE, .config.array.length = 3, PG_RESERVED_FOR_TESTING_1, 0 }
@@ -99,7 +98,7 @@ TEST(CLIUnittest, TestCliSet)
     };
 
     printf("\n===============================\n");
-    int8_t *data = (int8_t *)getValuePointer(&cval);
+    int8_t *data = (int8_t *)cliGetValuePointer(&cval);
     for(int i=0; i<3; i++){
         printf("data[%d] = %d\n", i, data[i]);
     }
