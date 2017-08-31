@@ -226,7 +226,15 @@ void crsfFrameFlightMode(sbuf_t *dst)
 #define BV(x)  (1 << (x)) // bit value
 
 // schedule array to decide how often each type of frame is sent
-#define CRSF_SCHEDULE_COUNT_MAX     5
+typedef enum {
+    CRSF_FRAME_START_INDEX = 0,
+    CRSF_FRAME_ATTITUDE_INDEX = CRSF_FRAME_START_INDEX,
+    CRSF_FRAME_BATTERY_SENSOR_INDEX,
+    CRSF_FRAME_FLIGHT_MODE_INDEX,
+    CRSF_FRAME_GPS_INDEX,
+    CRSF_SCHEDULE_COUNT_MAX
+} crsfFrameTypeIndex_e;
+
 static uint8_t crsfScheduleCount;
 static uint8_t crsfSchedule[CRSF_SCHEDULE_COUNT_MAX];
 
@@ -239,23 +247,23 @@ static void processCrsf(void)
     sbuf_t crsfPayloadBuf;
     sbuf_t *dst = &crsfPayloadBuf;
 
-    if (currentSchedule & BV(CRSF_FRAME_ATTITUDE)) {
+    if (currentSchedule & BV(CRSF_FRAME_ATTITUDE_INDEX)) {
         crsfInitializeFrame(dst);
         crsfFrameAttitude(dst);
         crsfFinalize(dst);
     }
-    if (currentSchedule & BV(CRSF_FRAME_BATTERY_SENSOR)) {
+    if (currentSchedule & BV(CRSF_FRAME_BATTERY_SENSOR_INDEX)) {
         crsfInitializeFrame(dst);
         crsfFrameBatterySensor(dst);
         crsfFinalize(dst);
     }
-    if (currentSchedule & BV(CRSF_FRAME_FLIGHT_MODE)) {
+    if (currentSchedule & BV(CRSF_FRAME_FLIGHT_MODE_INDEX)) {
         crsfInitializeFrame(dst);
         crsfFrameFlightMode(dst);
         crsfFinalize(dst);
     }
 #ifdef GPS
-    if (currentSchedule & BV(CRSF_FRAME_GPS)) {
+    if (currentSchedule & BV(CRSF_FRAME_GPS_INDEX)) {
         crsfInitializeFrame(dst);
         crsfFrameGps(dst);
         crsfFinalize(dst);
@@ -270,11 +278,11 @@ void initCrsfTelemetry(void)
     // and feature is enabled, if so, set CRSF telemetry enabled
     crsfTelemetryEnabled = crsfRxIsActive();
     int index = 0;
-    crsfSchedule[index++] = BV(CRSF_FRAME_ATTITUDE);
-    crsfSchedule[index++] = BV(CRSF_FRAME_BATTERY_SENSOR);
-    crsfSchedule[index++] = BV(CRSF_FRAME_FLIGHT_MODE);
+    crsfSchedule[index++] = BV(CRSF_FRAME_ATTITUDE_INDEX);
+    crsfSchedule[index++] = BV(CRSF_FRAME_BATTERY_SENSOR_INDEX);
+    crsfSchedule[index++] = BV(CRSF_FRAME_FLIGHT_MODE_INDEX);
     if (feature(FEATURE_GPS)) {
-        crsfSchedule[index++] = BV(CRSF_FRAME_GPS);
+        crsfSchedule[index++] = BV(CRSF_FRAME_GPS_INDEX);
     }
     crsfScheduleCount = (uint8_t)index;
 
@@ -315,17 +323,17 @@ int getCrsfFrame(uint8_t *frame, crsfFrameType_e frameType)
     crsfInitializeFrame(sbuf);
     switch (frameType) {
     default:
-    case CRSF_FRAME_ATTITUDE:
+    case CRSF_FRAMETYPE_ATTITUDE:
         crsfFrameAttitude(sbuf);
         break;
-    case CRSF_FRAME_BATTERY_SENSOR:
+    case CRSF_FRAMETYPE_BATTERY_SENSOR:
         crsfFrameBatterySensor(sbuf);
         break;
-    case CRSF_FRAME_FLIGHT_MODE:
+    case CRSF_FRAMETYPE_FLIGHT_MODE:
         crsfFrameFlightMode(sbuf);
         break;
 #if defined(GPS)
-    case CRSF_FRAME_GPS:
+    case CRSF_FRAMETYPE_GPS:
         crsfFrameGps(sbuf);
         break;
 #endif

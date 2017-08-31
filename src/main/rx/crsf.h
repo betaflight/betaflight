@@ -30,7 +30,7 @@ typedef enum {
     CRSF_FRAMETYPE_RC_CHANNELS_PACKED = 0x16,
     CRSF_FRAMETYPE_ATTITUDE = 0x1E,
     CRSF_FRAMETYPE_FLIGHT_MODE = 0x21
-} crsfFrameTypes_e;
+} crsfFrameType_e;
 
 enum {
     CRSF_FRAME_GPS_PAYLOAD_SIZE = 15,
