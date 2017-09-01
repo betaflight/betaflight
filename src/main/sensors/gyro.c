@@ -68,7 +68,7 @@
 #include "hardware_revision.h"
 #endif
 
-#if !defined(USE_GYRO_SPI_MPU6000)
+#if !defined(USE_GYRO_SPI_MPU6000) && (FLASH_SIZE > 128)
 #define USE_GYRO_INVERSION_FILTER
 #endif
 
