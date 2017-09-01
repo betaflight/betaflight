@@ -750,8 +750,10 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
             if (acc.dev.acc_1G > 512*4) {
                 scale = 8;
-            } else if (acc.dev.acc_1G >= 512) {
+            } else if (acc.dev.acc_1G > 512*2) {
                 scale = 4;
+            } else if (acc.dev.acc_1G >= 512) {
+                scale = 2;
             } else {
                 scale = 1;
             }
