@@ -107,12 +107,12 @@
 
 #if (FLASH_SIZE > 128)
 #define CMS
+#define GPS
 #define TELEMETRY_CRSF
 #define TELEMETRY_IBUS
 #define TELEMETRY_JETIEXBUS
 #define TELEMETRY_MAVLINK
 #define TELEMETRY_SRXL
-#define USE_DASHBOARD
 #define USE_MSP_DISPLAYPORT
 #define USE_RCSPLIT
 #define USE_RX_MSP
@@ -134,8 +134,7 @@
 #endif
 
 #if (FLASH_SIZE > 256)
-// Temporarily moved GPS here because of overflowing flash size on F3
-#define GPS
+#define USE_DASHBOARD
 #define USE_NAV
 #define USE_UNCOMMON_MIXERS
 #endif
