@@ -92,6 +92,26 @@ float slewFilterApply(slewFilter_t *filter, float input)
     return filter->state;
 }
 
+void inversionFilterInit(inversionFilter_t *filter, uint16_t limit)
+{
+    filter->limit = limit;
+}
+
+float inversionFilterApply(inversionFilter_t *filter, float input, float filteredPrevious)
+{
+    UNUSED(filter);
+    if (filteredPrevious > filter->limit) {
+        if (input < 0.0f) {
+            return filteredPrevious;
+        }
+    } else if (filteredPrevious < -filter->limit) {
+        if (input > 0.0f) {
+            return filteredPrevious;
+        }
+    }
+    return input;
+}
+
 
 float filterGetNotchQ(uint16_t centerFreq, uint16_t cutoff) {
     float octaves = log2f((float) centerFreq  / (float) cutoff) * 2;

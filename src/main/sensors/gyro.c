@@ -68,6 +68,11 @@
 #include "hardware_revision.h"
 #endif
 
+#if !defined(USE_GYRO_SPI_MPU6000) && (FLASH_SIZE > 128)
+#define USE_GYRO_INVERSION_FILTER
+#endif
+
+
 gyro_t gyro;
 static uint8_t gyroDebugMode;
 
@@ -89,6 +94,9 @@ typedef union gyroSoftFilter_u {
 typedef struct gyroSensor_s {
     gyroDev_t gyroDev;
     gyroCalibration_t calibration;
+#ifdef USE_GYRO_INVERSION_FILTER
+    inversionFilter_t inversionFilterYaw;
+#endif
     // gyro soft filter
     filterApplyFnPtr softLpfFilterApplyFn;
     gyroSoftLpfFilter_t softLpfFilter;
@@ -374,6 +382,13 @@ bool gyroInit(void)
     return gyroInitSensor(&gyroSensor1);
 }
 
+#ifdef USE_GYRO_INVERSION_FILTER
+void gyroInitFilterInversion(gyroSensor_t *gyroSensor)
+{
+    inversionFilterInit(&gyroSensor->inversionFilterYaw, 800);
+}
+#endif
+
 void gyroInitFilterLpf(gyroSensor_t *gyroSensor, uint8_t lpfHz)
 {
     gyroSensor->softLpfFilterApplyFn = nullFilterApply;
@@ -468,6 +483,9 @@ static void gyroInitFilterDynamicNotch(gyroSensor_t *gyroSensor)
 
 static void gyroInitSensorFilters(gyroSensor_t *gyroSensor)
 {
+#ifdef USE_GYRO_INVERSION_FILTER
+    gyroInitFilterInversion(gyroSensor);
+#endif
     gyroInitFilterLpf(gyroSensor, gyroConfig()->gyro_soft_lpf_hz);
     gyroInitFilterNotch1(gyroSensor, gyroConfig()->gyro_soft_notch_hz_1, gyroConfig()->gyro_soft_notch_cutoff_1);
     gyroInitFilterNotch2(gyroSensor, gyroConfig()->gyro_soft_notch_hz_2, gyroConfig()->gyro_soft_notch_cutoff_2);
@@ -598,6 +616,11 @@ void gyroUpdateSensor(gyroSensor_t *gyroSensor)
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             // NOTE: this branch optimized for when there is no gyro debugging, ensure it is kept in step with non-optimized branch
             float gyroADCf = (float)gyroSensor->gyroDev.gyroADC[axis] * gyroSensor->gyroDev.scale;
+#ifdef USE_GYRO_INVERSION_FILTER
+            if (axis == Z) {
+                gyroADCf = inversionFilterApply(&gyroSensor->inversionFilterYaw, gyroADCf, gyro.gyroADCf[Z]);
+            }
+#endif
 #ifdef USE_GYRO_DATA_ANALYSE
             gyroADCf = gyroSensor->notchFilterDynApplyFn(&gyroSensor->notchFilterDyn[axis], gyroADCf);
 #endif
@@ -613,6 +636,12 @@ void gyroUpdateSensor(gyroSensor_t *gyroSensor)
             float gyroADCf = (float)gyroSensor->gyroDev.gyroADC[axis] * gyroSensor->gyroDev.scale;
             // DEBUG_GYRO_NOTCH records the unfiltered gyro output
             DEBUG_SET(DEBUG_GYRO_NOTCH, axis, lrintf(gyroADCf));
+
+#ifdef USE_GYRO_INVERSION_FILTER
+            if (axis == Z) {
+                gyroADCf = inversionFilterApply(&gyroSensor->inversionFilterYaw, gyroADCf, gyro.gyroADCf[Z]);
+            }
+#endif
 
 #ifdef USE_GYRO_DATA_ANALYSE
             // Apply Dynamic Notch filtering
