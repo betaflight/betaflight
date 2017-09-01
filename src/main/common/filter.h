@@ -38,6 +38,10 @@ typedef struct slewFilter_s {
     float threshold;
 } slewFilter_t;
 
+typedef struct inversionFilter_s {
+    float limit;
+} inversionFilter_t;
+
 /* this holds the data required to update samples thru a filter */
 typedef struct biquadFilter_s {
     float b0, b1, b2, a1, a2;
@@ -56,7 +60,8 @@ typedef enum {
     FILTER_PT1 = 0,
     FILTER_BIQUAD,
     FILTER_FIR,
-    FILTER_SLEW
+    FILTER_SLEW,
+    FILTER_INVERSION
 } filterType_e;
 
 typedef enum {
@@ -95,6 +100,9 @@ float pt1FilterApply4(pt1Filter_t *filter, float input, uint8_t f_cut, float dT)
 
 void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold);
 float slewFilterApply(slewFilter_t *filter, float input);
+
+void inversionFilterInit(inversionFilter_t *filter, uint16_t limit);
+float inversionFilterApply(inversionFilter_t *filter, float input, float filteredPrevious);
 
 void firFilterInit(firFilter_t *filter, float *buf, uint8_t bufLength, const float *coeffs);
 void firFilterInit2(firFilter_t *filter, float *buf, uint8_t bufLength, const float *coeffs, uint8_t coeffsLength);

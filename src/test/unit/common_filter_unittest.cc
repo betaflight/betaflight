@@ -24,6 +24,7 @@
 
 extern "C" {
     #include "common/filter.h"
+    #include "common/utils.h"
 }
 
 #include "unittest_macros.h"
@@ -198,3 +199,178 @@ TEST(FilterUnittest, TestSlewFilter)
     slewFilterApply(&filter, 200.0f);
     EXPECT_EQ(200, filter.state);
 }
+
+TEST(FilterUnittest, TestInversionFilter)
+{
+    const float gyroValues[] = { 1998, 851, -962, 1998 };
+    inversionFilter_t inversionFilter;
+    inversionFilterInit(&inversionFilter, 1200);
+    pt1Filter_t pt1Filter;
+    const float targetLooptime = 500.0f;
+    pt1FilterInit(&pt1Filter, 100, targetLooptime * 0.000001f);
+
+    float previousValueFiltered = 1998.0f;
+    float gyro;
+
+    for (int ii = 0; ii < 100; ++ii) {
+        previousValueFiltered = pt1FilterApply(&pt1Filter, 1998.0f);
+    }
+    EXPECT_LE(1990, previousValueFiltered);
+
+    int ii = 0;
+    gyro = inversionFilterApply(&inversionFilter, gyroValues[ii], previousValueFiltered);
+    EXPECT_EQ(1998, gyro);
+    previousValueFiltered = pt1FilterApply(&pt1Filter, gyro);
+    EXPECT_LE(1900, previousValueFiltered);
+
+    ++ii;
+    gyro = inversionFilterApply(&inversionFilter, gyroValues[ii], previousValueFiltered);
+    EXPECT_EQ(851, gyro);
+    previousValueFiltered = pt1FilterApply(&pt1Filter, gyro);
+    EXPECT_LE(1700, previousValueFiltered);
+
+    ++ii;
+    gyro = inversionFilterApply(&inversionFilter, gyroValues[ii], previousValueFiltered);
+    EXPECT_LE(1700, gyro);
+    previousValueFiltered = pt1FilterApply(&pt1Filter, gyro);
+    EXPECT_LE(1700, previousValueFiltered);
+
+    ++ii;
+    gyro = inversionFilterApply(&inversionFilter, gyroValues[ii], previousValueFiltered);
+    EXPECT_EQ(1998, gyro);
+    previousValueFiltered = pt1FilterApply(&pt1Filter, gyro);
+    EXPECT_LE(1700, previousValueFiltered);
+}
+
+TEST(FilterUnittest, TestInversionFilter2)
+{
+    inversionFilter_t inversionFilter;
+    inversionFilterInit(&inversionFilter, 800);
+    pt1Filter_t pt1Filter;
+    const float targetLooptime = 500.0f;
+    pt1FilterInit(&pt1Filter, 100, targetLooptime * 0.000001f);
+
+    float previousValueFiltered = 1998.0f;
+    float gyro;
+
+    for (int ii = 0; ii < 100; ++ii) {
+        previousValueFiltered = pt1FilterApply(&pt1Filter, 1998.0f);
+    }
+    EXPECT_LE(1990, previousValueFiltered);
+
+    const float gyroValues[] = { 1998,1952,1541,1480,1493,1124,664,556,788,1063,912,979,864,229,-384,-807,-1526,1998,-1998 };
+    int ii = 0;
+    gyro = inversionFilterApply(&inversionFilter, gyroValues[ii], previousValueFiltered);
+    EXPECT_EQ(1998, gyro);
+    previousValueFiltered = pt1FilterApply(&pt1Filter, gyro);
+    EXPECT_LE(1900, previousValueFiltered);
+
+    ++ii;
+    gyro = inversionFilterApply(&inversionFilter, gyroValues[ii], previousValueFiltered);
+    EXPECT_EQ(1952, gyro);
+    previousValueFiltered = pt1FilterApply(&pt1Filter, gyro);
+    EXPECT_LE(1900, previousValueFiltered);
+
+    ++ii;
+    gyro = inversionFilterApply(&inversionFilter, gyroValues[ii], previousValueFiltered);
+    EXPECT_LE(1541, gyro);
+    previousValueFiltered = pt1FilterApply(&pt1Filter, gyro);
+    EXPECT_LE(1800, previousValueFiltered);
+
+    ++ii;
+    gyro = inversionFilterApply(&inversionFilter, gyroValues[ii], previousValueFiltered);
+    EXPECT_EQ(1480, gyro);
+    previousValueFiltered = pt1FilterApply(&pt1Filter, gyro);
+    EXPECT_LE(1700, previousValueFiltered);
+
+    ++ii;
+    gyro = inversionFilterApply(&inversionFilter, gyroValues[ii], previousValueFiltered);
+    EXPECT_EQ(1493, gyro);
+    previousValueFiltered = pt1FilterApply(&pt1Filter, gyro);
+    EXPECT_LE(1700, previousValueFiltered);
+
+    ++ii;
+    gyro = inversionFilterApply(&inversionFilter, gyroValues[ii], previousValueFiltered);
+    EXPECT_EQ(1124, gyro);
+    previousValueFiltered = pt1FilterApply(&pt1Filter, gyro);
+    EXPECT_LE(1500, previousValueFiltered);
+
+    ++ii;
+    gyro = inversionFilterApply(&inversionFilter, gyroValues[ii], previousValueFiltered);
+    EXPECT_EQ(664, gyro);
+    previousValueFiltered = pt1FilterApply(&pt1Filter, gyro);
+    EXPECT_LE(1300, previousValueFiltered);
+
+    ++ii;
+    gyro = inversionFilterApply(&inversionFilter, gyroValues[ii], previousValueFiltered);
+    EXPECT_EQ(556, gyro);
+    previousValueFiltered = pt1FilterApply(&pt1Filter, gyro);
+    EXPECT_LE(1100, previousValueFiltered);
+
+    ++ii;
+    gyro = inversionFilterApply(&inversionFilter, gyroValues[ii], previousValueFiltered);
+    EXPECT_EQ(788, gyro);
+    previousValueFiltered = pt1FilterApply(&pt1Filter, gyro);
+    EXPECT_LE(1000, previousValueFiltered);
+
+    ++ii;
+    gyro = inversionFilterApply(&inversionFilter, gyroValues[ii], previousValueFiltered);
+    EXPECT_EQ(1063, gyro);
+    previousValueFiltered = pt1FilterApply(&pt1Filter, gyro);
+    EXPECT_LE(1000, previousValueFiltered);
+
+    ++ii;
+    gyro = inversionFilterApply(&inversionFilter, gyroValues[ii], previousValueFiltered);
+    EXPECT_EQ(912, gyro);
+    previousValueFiltered = pt1FilterApply(&pt1Filter, gyro);
+    EXPECT_LE(1000, previousValueFiltered);
+
+    ++ii;
+    gyro = inversionFilterApply(&inversionFilter, gyroValues[ii], previousValueFiltered);
+    EXPECT_EQ(979, gyro);
+    previousValueFiltered = pt1FilterApply(&pt1Filter, gyro);
+    EXPECT_LE(1000, previousValueFiltered);
+
+    ++ii;
+    gyro = inversionFilterApply(&inversionFilter, gyroValues[ii], previousValueFiltered);
+    EXPECT_EQ(864, gyro);
+    previousValueFiltered = pt1FilterApply(&pt1Filter, gyro);
+    EXPECT_LE(950, previousValueFiltered);
+
+    ++ii;
+    gyro = inversionFilterApply(&inversionFilter, gyroValues[ii], previousValueFiltered);
+    EXPECT_EQ(229, gyro);
+    previousValueFiltered = pt1FilterApply(&pt1Filter, gyro);
+    EXPECT_LE(800, previousValueFiltered);
+
+    ++ii;
+    gyro = inversionFilterApply(&inversionFilter, gyroValues[ii], previousValueFiltered);
+    EXPECT_LE(800, gyro);
+    previousValueFiltered = pt1FilterApply(&pt1Filter, gyro);
+    EXPECT_LE(800, previousValueFiltered);
+
+    ++ii;
+    gyro = inversionFilterApply(&inversionFilter, gyroValues[ii], previousValueFiltered);
+    EXPECT_LE(800, gyro);
+    previousValueFiltered = pt1FilterApply(&pt1Filter, gyro);
+    EXPECT_LE(800, previousValueFiltered);
+
+    ++ii;
+    gyro = inversionFilterApply(&inversionFilter, gyroValues[ii], previousValueFiltered);
+    EXPECT_LE(800, gyro);
+    previousValueFiltered = pt1FilterApply(&pt1Filter, gyro);
+    EXPECT_LE(800, previousValueFiltered);
+
+    ++ii;
+    gyro = inversionFilterApply(&inversionFilter, gyroValues[ii], previousValueFiltered);
+    EXPECT_LE(1000, gyro);
+    previousValueFiltered = pt1FilterApply(&pt1Filter, gyro);
+    EXPECT_LE(1000, previousValueFiltered);
+
+    ++ii;
+    gyro = inversionFilterApply(&inversionFilter, gyroValues[ii], previousValueFiltered);
+    EXPECT_LE(1000, gyro);
+    previousValueFiltered = pt1FilterApply(&pt1Filter, gyro);
+    EXPECT_LE(1000, previousValueFiltered);
+}
+
