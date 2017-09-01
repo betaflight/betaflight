@@ -44,6 +44,7 @@
 #include "drivers/accgyro/accgyro_mpu6050.h"
 #include "drivers/accgyro/accgyro_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_bmi160.h"
+#include "drivers/accgyro/accgyro_spi_icm20649.h"
 #include "drivers/accgyro/accgyro_spi_icm20689.h"
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
@@ -110,7 +111,8 @@ static void gyroInitSensorFilters(gyroSensor_t *gyroSensor);
 
 #ifdef STM32F10X
 #define GYRO_SYNC_DENOM_DEFAULT 8
-#elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_ICM20601)  || defined(USE_GYRO_SPI_ICM20689)
+#elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20649) \
+   || defined(USE_GYRO_SPI_ICM20689)
 #define GYRO_SYNC_DENOM_DEFAULT 1
 #else
 #define GYRO_SYNC_DENOM_DEFAULT 4
@@ -258,6 +260,17 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
     }
 #endif
 
+#ifdef USE_GYRO_SPI_ICM20649
+    case GYRO_ICM20649:
+        if (icm20649SpiGyroDetect(dev)) {
+            gyroHardware = GYRO_ICM20649;
+#ifdef GYRO_ICM20649_ALIGN
+            dev->gyroAlign = GYRO_ICM20649_ALIGN;
+#endif
+            break;
+        }
+#endif
+
 #ifdef USE_GYRO_SPI_ICM20689
     case GYRO_ICM20689:
         if (icm20689SpiGyroDetect(dev)) {
@@ -302,7 +315,8 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
 
 static bool gyroInitSensor(gyroSensor_t *gyroSensor)
 {
-#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20689)
+#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) \
+ || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20601) || defined(USE_GYRO_SPI_ICM20649) || defined(USE_GYRO_SPI_ICM20689)
 
 #if defined(MPU_INT_EXTI)
     gyroSensor->gyroDev.mpuIntExtiTag =  IO_TAG(MPU_INT_EXTI);

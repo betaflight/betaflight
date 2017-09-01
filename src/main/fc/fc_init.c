@@ -200,6 +200,9 @@ void spiPreInit(void)
 #ifdef USE_GYRO_SPI_MPU9250
     spiPreInitCs(IO_TAG(MPU9250_CS_PIN));
 #endif
+#ifdef USE_GYRO_SPI_ICM20649
+    spiPreInitCs(IO_TAG(ICM20649_CS_PIN));
+#endif
 #ifdef USE_GYRO_SPI_ICM20689
     spiPreInitCs(IO_TAG(ICM20689_CS_PIN));
 #endif

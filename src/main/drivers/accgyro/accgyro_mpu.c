@@ -44,6 +44,7 @@
 #include "drivers/accgyro/accgyro_mpu6050.h"
 #include "drivers/accgyro/accgyro_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_bmi160.h"
+#include "drivers/accgyro/accgyro_spi_icm20649.h"
 #include "drivers/accgyro/accgyro_spi_icm20689.h"
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
@@ -285,6 +286,22 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
         gyro->mpuConfiguration.readFn = spiBusReadRegisterBuffer;
         gyro->mpuConfiguration.writeFn = spiBusWriteRegister;
         gyro->mpuConfiguration.resetFn = mpu9250SpiResetGyro;
+        return true;
+    }
+#endif
+
+#ifdef USE_GYRO_SPI_ICM20649
+#ifdef ICM20649_SPI_INSTANCE
+    spiBusSetInstance(&gyro->bus, ICM20649_SPI_INSTANCE);
+#endif
+#ifdef ICM20649_CS_PIN
+    gyro->bus.busdev_u.spi.csnPin = gyro->bus.busdev_u.spi.csnPin == IO_NONE ? IOGetByTag(IO_TAG(ICM20649_CS_PIN)) : gyro->bus.busdev_u.spi.csnPin;
+#endif
+    sensor = icm20649SpiDetect(&gyro->bus);
+    if (sensor != MPU_NONE) {
+        gyro->mpuDetectionResult.sensor = sensor;
+        gyro->mpuConfiguration.readFn = spiBusReadRegisterBuffer;
+        gyro->mpuConfiguration.writeFn = spiBusWriteRegister;
         return true;
     }
 #endif
