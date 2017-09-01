@@ -92,6 +92,66 @@ float slewFilterApply(slewFilter_t *filter, float input)
     return filter->state;
 }
 
+/*
+ * If ABS(input) >= limit, then filter latches
+ * It remains latched until there are latchCount consecutive inputs where
+ * 1000.0f <= ABS(input) < limit
+ */
+void inversionFilterInit(inversionFilter_t *filter, uint16_t count)
+{
+    filter->latched = IF_LATCH_OFF;
+    filter->latchCount = count;
+    filter->itemCount = 0;
+    filter->limit = 1950.0f;
+}
+
+float inversionFilterApply(inversionFilter_t *filter, float input)
+{
+    float ret = input;
+    if (filter->latched == IF_LATCH_OFF) {
+        if (input >= filter->limit) {
+            filter->latched = IF_LATCH_HIGH;
+            filter->itemCount = 0;
+            filter->latchValue = input;
+        } else if (input <= -filter->limit) {
+            filter->latched = IF_LATCH_LOW;
+            filter->itemCount = 0;
+            filter->latchValue = input;
+        }
+    } else if (filter->latched == IF_LATCH_LOW) {
+        if (input <= -filter->limit) {
+            filter->itemCount = 0;
+            filter->latchValue = input;
+        } else if (input <= -1000.0f) {
+            ++filter->itemCount;
+            if (filter->itemCount > filter->latchCount) {
+                filter->latched = IF_LATCH_OFF;
+            } else {
+                ret = filter->latchValue;
+            }
+        } else {
+            filter->itemCount = 0;
+            ret = filter->latchValue;
+        }
+    } else if (filter->latched == IF_LATCH_HIGH) {
+        if (input >= filter->limit) {
+            filter->itemCount = 0;
+            filter->latchValue = input;
+        } else if (input >= 1000.0f) {
+            ++filter->itemCount;
+            if (filter->itemCount > filter->latchCount) {
+                filter->latched = IF_LATCH_OFF;
+            } else {
+                ret = filter->latchValue;
+            }
+        } else {
+            filter->itemCount = 0;
+            ret = filter->latchValue;
+        }
+    }
+    return ret;
+}
+
 
 float filterGetNotchQ(uint16_t centerFreq, uint16_t cutoff) {
     float octaves = log2f((float) centerFreq  / (float) cutoff) * 2;
