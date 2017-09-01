@@ -894,18 +894,18 @@ static void cliSerialPassthrough(char *cmdline)
 
     while (tok != NULL) {
         switch (index) {
-            case 0:
-                id = atoi(tok);
-                break;
-            case 1:
-                baud = atoi(tok);
-                break;
-            case 2:
-                if (strstr(tok, "rx") || strstr(tok, "RX"))
-                    mode |= MODE_RX;
-                if (strstr(tok, "tx") || strstr(tok, "TX"))
-                    mode |= MODE_TX;
-                break;
+        case 0:
+            id = atoi(tok);
+            break;
+        case 1:
+            baud = atoi(tok);
+            break;
+        case 2:
+            if (strstr(tok, "rx") || strstr(tok, "RX"))
+                mode |= MODE_RX;
+            if (strstr(tok, "tx") || strstr(tok, "TX"))
+                mode |= MODE_TX;
+            break;
         }
         index++;
         tok = strtok_r(NULL, " ", &saveptr);
@@ -1702,28 +1702,28 @@ static void cliSdInfo(char *cmdline)
     cliPrint("'\r\n" "Filesystem: ");
 
     switch (afatfs_getFilesystemState()) {
-        case AFATFS_FILESYSTEM_STATE_READY:
-            cliPrint("Ready");
+    case AFATFS_FILESYSTEM_STATE_READY:
+        cliPrint("Ready");
         break;
-        case AFATFS_FILESYSTEM_STATE_INITIALIZATION:
-            cliPrint("Initializing");
+    case AFATFS_FILESYSTEM_STATE_INITIALIZATION:
+        cliPrint("Initializing");
         break;
-        case AFATFS_FILESYSTEM_STATE_UNKNOWN:
-        case AFATFS_FILESYSTEM_STATE_FATAL:
-            cliPrint("Fatal");
+    case AFATFS_FILESYSTEM_STATE_UNKNOWN:
+    case AFATFS_FILESYSTEM_STATE_FATAL:
+        cliPrint("Fatal");
 
-            switch (afatfs_getLastError()) {
-                case AFATFS_ERROR_BAD_MBR:
-                    cliPrint(" - no FAT MBR partitions");
-                break;
-                case AFATFS_ERROR_BAD_FILESYSTEM_HEADER:
-                    cliPrint(" - bad FAT header");
-                break;
-                case AFATFS_ERROR_GENERIC:
-                case AFATFS_ERROR_NONE:
-                    ; // Nothing more detailed to print
-                break;
-            }
+        switch (afatfs_getLastError()) {
+        case AFATFS_ERROR_BAD_MBR:
+            cliPrint(" - no FAT MBR partitions");
+            break;
+        case AFATFS_ERROR_BAD_FILESYSTEM_HEADER:
+            cliPrint(" - bad FAT header");
+            break;
+        case AFATFS_ERROR_GENERIC:
+        case AFATFS_ERROR_NONE:
+            ; // Nothing more detailed to print
+            break;
+        }
         break;
     }
     cliPrintLinefeed();
@@ -2458,44 +2458,44 @@ static void cliDshotProg(char *cmdline)
     int escIndex = 0;
     while (pch != NULL) {
         switch (pos) {
-            case 0:
-                escIndex = parseOutputIndex(pch, true);
-                if (escIndex == -1) {
-                    return;
+        case 0:
+            escIndex = parseOutputIndex(pch, true);
+            if (escIndex == -1) {
+                return;
+            }
+
+            break;
+        default:
+            pwmDisableMotors();
+
+            int command = atoi(pch);
+            if (command >= 0 && command < DSHOT_MIN_THROTTLE) {
+                if (command == DSHOT_CMD_ESC_INFO) {
+                    delay(5); // Wait for potential ESC telemetry transmission to finish
                 }
 
-                break;
-            default:
-                pwmDisableMotors();
-
-                int command = atoi(pch);
-                if (command >= 0 && command < DSHOT_MIN_THROTTLE) {
-                    if (command == DSHOT_CMD_ESC_INFO) {
-                        delay(5); // Wait for potential ESC telemetry transmission to finish
-                    }
-
-                    if (command != DSHOT_CMD_ESC_INFO) {
-                        pwmWriteDshotCommand(escIndex, getMotorCount(), command);
+                if (command != DSHOT_CMD_ESC_INFO) {
+                    pwmWriteDshotCommand(escIndex, getMotorCount(), command);
+                } else {
+                    if (escIndex != ALL_MOTORS) {
+                        executeEscInfoCommand(escIndex);
                     } else {
-                        if (escIndex != ALL_MOTORS) {
-                            executeEscInfoCommand(escIndex);
-                        } else {
-                            for (uint8_t i = 0; i < getMotorCount(); i++) {
-                                executeEscInfoCommand(i);
-                            }
+                        for (uint8_t i = 0; i < getMotorCount(); i++) {
+                            executeEscInfoCommand(i);
                         }
                     }
-
-                    cliPrintLinef("Command %d written.", command);
-
-                    if (command <= 5) {
-                        delay(20); // wait for sound output to finish
-                    }
-                } else {
-                    cliPrintLinef("Invalid command, range 1 to %d.", DSHOT_MIN_THROTTLE - 1);
                 }
 
-                break;
+                cliPrintLinef("Command %d written.", command);
+
+                if (command <= 5) {
+                    delay(20); // wait for sound output to finish
+                }
+            } else {
+                cliPrintLinef("Invalid command, range 1 to %d.", DSHOT_MIN_THROTTLE - 1);
+            }
+
+            break;
         }
 
         pos++;
@@ -2522,34 +2522,34 @@ static void cliEscPassthrough(char *cmdline)
     int escIndex = 0;
     while (pch != NULL) {
         switch (pos) {
-            case 0:
-                if (strncasecmp(pch, "sk", strlen(pch)) == 0) {
-                    mode = PROTOCOL_SIMONK;
-                } else if (strncasecmp(pch, "bl", strlen(pch)) == 0) {
-                    mode = PROTOCOL_BLHELI;
-                } else if (strncasecmp(pch, "ki", strlen(pch)) == 0) {
-                    mode = PROTOCOL_KISS;
-                } else if (strncasecmp(pch, "cc", strlen(pch)) == 0) {
-                    mode = PROTOCOL_KISSALL;
-                } else {
-                    cliShowParseError();
-
-                    return;
-                }
-                break;
-            case 1:
-                escIndex = parseOutputIndex(pch, mode == PROTOCOL_KISS);
-                if (escIndex == -1) {
-                    return;
-                }
-
-                break;
-            default:
+        case 0:
+            if (strncasecmp(pch, "sk", strlen(pch)) == 0) {
+                mode = PROTOCOL_SIMONK;
+            } else if (strncasecmp(pch, "bl", strlen(pch)) == 0) {
+                mode = PROTOCOL_BLHELI;
+            } else if (strncasecmp(pch, "ki", strlen(pch)) == 0) {
+                mode = PROTOCOL_KISS;
+            } else if (strncasecmp(pch, "cc", strlen(pch)) == 0) {
+                mode = PROTOCOL_KISSALL;
+            } else {
                 cliShowParseError();
 
                 return;
+            }
+            break;
+        case 1:
+            escIndex = parseOutputIndex(pch, mode == PROTOCOL_KISS);
+            if (escIndex == -1) {
+                return;
+            }
 
-                break;
+            break;
+        default:
+            cliShowParseError();
+
+            return;
+
+            break;
 
         }
         pos++;
@@ -2834,7 +2834,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                 bool valueChanged = false;
                 int16_t value  = 0;
                 switch (val->type & VALUE_MODE_MASK) {
-                    case MODE_DIRECT: {
+                case MODE_DIRECT: {
                         int16_t value = atoi(eqptr);
 
                         if (value >= val->config.minmax.min && value <= val->config.minmax.max) {
@@ -2844,7 +2844,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                     }
 
                     break;
-                    case MODE_LOOKUP: {
+                case MODE_LOOKUP: {
                         const lookupTableEntry_t *tableEntry = &lookupTables[val->config.lookup.tableIndex];
                         bool matched = false;
                         for (uint32_t tableValueIndex = 0; tableValueIndex < tableEntry->valueCount && !matched; tableValueIndex++) {
@@ -2860,7 +2860,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                     }
 
                     break;
-                    case MODE_ARRAY: {
+                case MODE_ARRAY: {
                         const uint8_t arrayLength = val->config.array.length;
                         char *valPtr = eqptr;
 
