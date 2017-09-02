@@ -26,6 +26,7 @@
 
 require 'fileutils'
 require 'open3'
+require 'rbconfig'
 require 'set'
 require 'shellwords'
 require 'stringio'
@@ -262,6 +263,8 @@ class Generator
         @src_root = src_root
         @settings_file = settings_file
         @output_dir = File.dirname(settings_file)
+
+        @gpluspluspath = nil
 
         @count = 0
         @max_name_length = 0
@@ -570,7 +573,37 @@ class Generator
         value
     end
 
+    def find_gplusplus
+        # Look for the compiler in PATH manually, since there
+        # are some issues with the built-in search by spawn()
+        # on Windows if PATH contains spaces.
+        return if @gpluspluspath
+        dirs = (ENV["PATH"] || "").split(File::PATH_SEPARATOR)
+        bin = "arm-none-eabi-g++"
+        dirs.each do |dir|
+            p = File.join(dir, bin)
+            ['', '.exe'].each do |suffix|
+                f = p + suffix
+                if File.executable?(f)
+                    dputs "Found #{bin} at #{f}"
+                    @gpluspluspath = f
+                    return
+                end
+            end
+        end
+
+        raise "Could not find #{bin} in PATH, looked in #{dirs}"
+    end
+
+    def join_args(args)
+        if RbConfig::CONFIG['host_os'] =~ /mswin|mingw/
+            return args.join(' ')
+        end
+        return Shellwords.join(args)
+    end
+
     def compile_test_file(prog)
+        find_gplusplus
         buf = StringIO.new
         # cstddef for offsetof()
         headers = ["target.h", "platform.h", "cstddef"]
@@ -591,7 +624,7 @@ class Generator
             file = File.join(dir, "test.cpp")
             File.open(file, 'w') {|file| file.write(buf.string)}
             cflags = Shellwords.split(ENV["CFLAGS"] || "")
-            args = ["arm-none-eabi-g++"]
+            args = [@gpluspluspath]
             cflags.each do |flag|
                 # Don't generate temporary files
                 if flag == "" || flag == "-MMD" || flag == "-MP" || flag.start_with?("-save-temps")
@@ -611,7 +644,7 @@ class Generator
 
             args << "-o" << File.join(dir, "test") << file
             dputs "Compiling #{buf.string}"
-            stdout, stderr = Open3.capture3(Shellwords.join(args))
+            stdout, stderr = Open3.capture3(join_args(args))
             dputs "Output: #{stderr}"
             stderr
         end
