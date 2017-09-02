@@ -95,7 +95,7 @@ float slewFilterApply(slewFilter_t *filter, float input)
 /*
  * If ABS(input) >= limit, then filter latches
  * It remains latched until there are latchCount consecutive inputs where
- * 1000.0f <= ABS(input) < limit
+ * lowerLimit <= ABS(input) < upperLimit
  */
 void inversionFilterInit(inversionFilter_t *filter, uint16_t lowerLimit, uint16_t upperLimit, uint16_t latchCount)
 {
