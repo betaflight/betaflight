@@ -97,32 +97,33 @@ float slewFilterApply(slewFilter_t *filter, float input)
  * It remains latched until there are latchCount consecutive inputs where
  * 1000.0f <= ABS(input) < limit
  */
-void inversionFilterInit(inversionFilter_t *filter, uint16_t count)
+void inversionFilterInit(inversionFilter_t *filter, uint16_t lowerLimit, uint16_t upperLimit, uint16_t latchCount)
 {
     filter->latched = IF_LATCH_OFF;
-    filter->latchCount = count;
+    filter->lowerLimit = lowerLimit;
+    filter->upperLimit = upperLimit;
+    filter->latchCount = latchCount;
     filter->itemCount = 0;
-    filter->limit = 1950.0f;
 }
 
 float inversionFilterApply(inversionFilter_t *filter, float input)
 {
     float ret = input;
     if (filter->latched == IF_LATCH_OFF) {
-        if (input >= filter->limit) {
+        if (input >= filter->upperLimit) {
             filter->latched = IF_LATCH_HIGH;
             filter->itemCount = 0;
             filter->latchValue = input;
-        } else if (input <= -filter->limit) {
+        } else if (input <= -filter->upperLimit) {
             filter->latched = IF_LATCH_LOW;
             filter->itemCount = 0;
             filter->latchValue = input;
         }
     } else if (filter->latched == IF_LATCH_LOW) {
-        if (input <= -filter->limit) {
+        if (input <= -filter->upperLimit) {
             filter->itemCount = 0;
             filter->latchValue = input;
-        } else if (input <= -1000.0f) {
+        } else if (input <= -filter->lowerLimit) {
             ++filter->itemCount;
             if (filter->itemCount > filter->latchCount) {
                 filter->latched = IF_LATCH_OFF;
@@ -134,10 +135,10 @@ float inversionFilterApply(inversionFilter_t *filter, float input)
             ret = filter->latchValue;
         }
     } else if (filter->latched == IF_LATCH_HIGH) {
-        if (input >= filter->limit) {
+        if (input >= filter->upperLimit) {
             filter->itemCount = 0;
             filter->latchValue = input;
-        } else if (input >= 1000.0f) {
+        } else if (input >= filter->lowerLimit) {
             ++filter->itemCount;
             if (filter->itemCount > filter->latchCount) {
                 filter->latched = IF_LATCH_OFF;

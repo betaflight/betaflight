@@ -203,7 +203,7 @@ TEST(FilterUnittest, TestInversionFilter)
 {
     inversionFilter_t inversionFilterVal;
     inversionFilter_t *inversionFilter = &inversionFilterVal;
-    inversionFilterInit(inversionFilter, 5);
+    inversionFilterInit(inversionFilter, 1000, 1950, 5);
 
     float gyro;
 
@@ -307,7 +307,7 @@ TEST(FilterUnittest, TestInversionFilter2)
 {
     inversionFilter_t inversionFilterVal;
     inversionFilter_t *inversionFilter = &inversionFilterVal;
-    inversionFilterInit(inversionFilter, 5);
+    inversionFilterInit(inversionFilter, 1000, 1950, 5);
 
     float gyro;
 

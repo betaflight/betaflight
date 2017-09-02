@@ -45,7 +45,8 @@ typedef enum {
 } inversionFilterLatch_e;
 
 typedef struct inversionFilter_s {
-    float limit;
+    float lowerLimit;
+    float upperLimit;
     float latchValue;
     inversionFilterLatch_e latched;
     uint8_t latchCount;
@@ -111,7 +112,7 @@ float pt1FilterApply4(pt1Filter_t *filter, float input, uint8_t f_cut, float dT)
 void slewFilterInit(slewFilter_t *filter, float slewLimit, float threshold);
 float slewFilterApply(slewFilter_t *filter, float input);
 
-void inversionFilterInit(inversionFilter_t *filter, uint16_t limit);
+void inversionFilterInit(inversionFilter_t *filter, uint16_t lowerLimit, uint16_t upperLimit, uint16_t latchCount);
 float inversionFilterApply(inversionFilter_t *filter, float input);
 
 void firFilterInit(firFilter_t *filter, float *buf, uint8_t bufLength, const float *coeffs);

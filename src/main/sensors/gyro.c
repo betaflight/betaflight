@@ -399,7 +399,8 @@ bool gyroInit(void)
 #ifdef USE_GYRO_INVERSION_FILTER
 void gyroInitFilterInversion(gyroSensor_t *gyroSensor)
 {
-    inversionFilterInit(&gyroSensor->inversionFilterYaw, 10);
+    const uint16_t limitCount = 1000 / gyro.targetLooptime;
+    inversionFilterInit(&gyroSensor->inversionFilterYaw, 500, 1950, constrain(limitCount, 2, 8));
 }
 #endif
 
