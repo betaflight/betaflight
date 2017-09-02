@@ -268,6 +268,9 @@ USER_INCLUDE_DIR = $(USER_DIR)
 
 OBJECT_DIR = ../../obj/test
 
+# Determine the OS
+UNAME := $(shell uname -s)
+
 # Use clang/clang++ by default
 CC  := clang
 CXX := clang++
@@ -278,11 +281,14 @@ COMMON_FLAGS = \
 	-Wextra \
 	-Werror \
 	-ggdb3 \
-	-pthread \
 	-O0 \
 	-DUNIT_TEST \
 	-isystem $(GTEST_DIR)/inc \
 	-MMD -MP
+
+ifneq ($(UNAME), Darwin)
+COMMON_FLAGS += -pthread
+endif
 
 # Flags passed to the C compiler.
 C_FLAGS = $(COMMON_FLAGS) \
@@ -298,8 +304,7 @@ COVERAGE_FLAGS := --coverage
 C_FLAGS   += $(COVERAGE_FLAGS)
 CXX_FLAGS += $(COVERAGE_FLAGS)
 
-# Determine the OS and set up the parameter group linker flags accordingly
-UNAME := $(shell uname -s)
+# Set up the parameter group linker flags according to OS
 ifeq ($(UNAME), Darwin)
 PG_FLAGS = -Wl,-map,$(OBJECT_DIR)/$@.map
 else
