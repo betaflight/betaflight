@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include "platform.h"
 
@@ -436,6 +437,12 @@ static uint16_t calculateNyquistAdjustedNotchHz(uint16_t notchHz, uint16_t notch
     return notchHz;
 }
 
+void gyroInitSlewLimiter(gyroSensor_t *gyroSensor) {
+
+    for (int axis = 0; axis < 3; axis++)
+    	gyroSensor->gyroDev.gyroADCRawP[axis] = 0;
+}
+
 static void gyroInitFilterNotch1(gyroSensor_t *gyroSensor, uint16_t notchHz, uint16_t notchCutoffHz)
 {
     gyroSensor->notchFilter1ApplyFn = nullFilterApply;
@@ -582,17 +589,15 @@ STATIC_UNIT_TESTED void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t
 
 }
 
-void gyroInitSlewLimiter(gyroSensor_t *gyroSensor, uint8_t limiter) {
-
-	// may be done elsewhere in zeroing of gyrosensor?
-    for (int axis = 0; axis < 3; axis++)
-    	gyroSensor->gyroDev.gyroADCRawP[axis] = 0;
-}
-
-uint32_t gyroSlewLimiter(int axis, int32_t newRawGyro)
+uint32_t gyroSlewLimiter(int axis, gyroSensor_t *gyroSensor)
 {
-	// probably should use gyroConfig()->gyro_slewlimit instead of 1<<14
+	// Probably should use gyroConfig()->gyro_slewlimit instead of 1<<14.
+	// Gate clip at 20 M/S gives rotation of say 45 deg at a 0.1M radius
+	// or a contact time of 5mS. Average yaw rate 9000 deg/S so gyro max
+	// rate probably exceeded almost instantly. So choose limit for
+	// impossible rate of change of rate.
 
+	int32_t newRawGyro = (int32_t) gyroSensor->gyroDev.gyroADCRaw[axis];
 	if (abs(newRawGyro - gyroSensor->gyroDev.gyroADCRawP[axis]) > (1<<14))
 		newRawGyro = gyroSensor->gyroDev.gyroADCRawP[axis];
 	else
@@ -612,7 +617,7 @@ void gyroUpdateSensor(gyroSensor_t *gyroSensor)
         // move gyro data into 32-bit variables to avoid overflows in calculations
     	// move 16-bit gyro data into 32-bit variables to avoid overflows in calculations
     	for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) // assume unroll
-    		gyroSensor->gyroDev.gyroADC[axis] = gyroSlewLimiter(axis, (int32_t) gyroSensor->gyroDev.gyroADCRaw[axis])
+    		gyroSensor->gyroDev.gyroADC[axis] = gyroSlewLimiter(axis, gyroSensor)
     			- gyroSensor->gyroDev.gyroZero[axis];
 
         alignSensors(gyroSensor->gyroDev.gyroADC, gyroSensor->gyroDev.gyroAlign);
