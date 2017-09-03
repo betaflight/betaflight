@@ -47,13 +47,17 @@ void targetConfiguration(void)
     }
 
     /* Specific PID values for YupiF4 */
-    pidProfilesMutable(0)->pid[PID_ROLL].P = 30;
-    pidProfilesMutable(0)->pid[PID_ROLL].I = 45;
-    pidProfilesMutable(0)->pid[PID_ROLL].D = 20;
-    pidProfilesMutable(0)->pid[PID_PITCH].P = 30;
-    pidProfilesMutable(0)->pid[PID_PITCH].I = 50;
-    pidProfilesMutable(0)->pid[PID_PITCH].D = 20;
-    pidProfilesMutable(0)->pid[PID_YAW].P = 40;
-    pidProfilesMutable(0)->pid[PID_YAW].I = 50;
+    for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
+        pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
+
+        pidProfile->pid[PID_ROLL].P = 30;
+        pidProfile->pid[PID_ROLL].I = 45;
+        pidProfile->pid[PID_ROLL].D = 20;
+        pidProfile->pid[PID_PITCH].P = 30;
+        pidProfile->pid[PID_PITCH].I = 50;
+        pidProfile->pid[PID_PITCH].D = 20;
+        pidProfile->pid[PID_YAW].P = 40;
+        pidProfile->pid[PID_YAW].I = 50;
+    }
 }
 #endif

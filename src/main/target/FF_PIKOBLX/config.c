@@ -64,22 +64,30 @@ void targetConfiguration(void)
 #endif
         parseRcChannels("TAER1234", rxConfigMutable());
 
-        pidProfilesMutable(0)->pid[PID_ROLL].P = 80;
-        pidProfilesMutable(0)->pid[PID_ROLL].I = 37;
-        pidProfilesMutable(0)->pid[PID_ROLL].D = 35;
-        pidProfilesMutable(0)->pid[PID_PITCH].P = 100;
-        pidProfilesMutable(0)->pid[PID_PITCH].I = 37;
-        pidProfilesMutable(0)->pid[PID_PITCH].D = 35;
-        pidProfilesMutable(0)->pid[PID_YAW].P = 180;
-        pidProfilesMutable(0)->pid[PID_YAW].D = 45;
+        for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
+            pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
 
-        controlRateProfilesMutable(0)->rcRate8 = 100;
-        controlRateProfilesMutable(0)->rcYawRate8 = 100;
-        controlRateProfilesMutable(0)->rcExpo8 = 15;
-        controlRateProfilesMutable(0)->rcYawExpo8 = 15;
-        controlRateProfilesMutable(0)->rates[PID_ROLL] = 80;
-        controlRateProfilesMutable(0)->rates[PID_PITCH] = 80;
-        controlRateProfilesMutable(0)->rates[PID_YAW] = 80;
+            pidProfile->pid[PID_ROLL].P = 80;
+            pidProfile->pid[PID_ROLL].I = 37;
+            pidProfile->pid[PID_ROLL].D = 35;
+            pidProfile->pid[PID_PITCH].P = 100;
+            pidProfile->pid[PID_PITCH].I = 37;
+            pidProfile->pid[PID_PITCH].D = 35;
+            pidProfile->pid[PID_YAW].P = 180;
+            pidProfile->pid[PID_YAW].D = 45;
+        }
+
+        for (uint8_t rateProfileIndex = 0; rateProfileIndex < CONTROL_RATE_PROFILE_COUNT; rateProfileIndex++) {
+            controlRateConfig_t *controlRateConfig = controlRateProfilesMutable(rateProfileIndex);
+
+            controlRateConfig->rcRate8 = 100;
+            controlRateConfig->rcYawRate8 = 100;
+            controlRateConfig->rcExpo8 = 15;
+            controlRateConfig->rcYawExpo8 = 15;
+            controlRateConfig->rates[PID_ROLL] = 80;
+            controlRateConfig->rates[PID_PITCH] = 80;
+            controlRateConfig->rates[PID_YAW] = 80;
+        }
     }
 }
 #endif
