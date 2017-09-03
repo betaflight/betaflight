@@ -69,7 +69,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
     .pid_process_denom = PID_PROCESS_DENOM_DEFAULT
 );
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 1);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 2);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -98,7 +98,6 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .vbatPidCompensation = 0,
         .pidAtMinThrottle = PID_STABILISATION_ON,
         .levelAngleLimit = 55,
-        .levelSensitivity = 55,
         .setpointRelaxRatio = 100,
         .dtermSetpointWeight = 60,
         .yawRateAccelLimit = 100,
@@ -354,7 +353,7 @@ static float calcHorizonLevelStrength(void)
 static float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint) {
     // calculate error angle and limit the angle to the max inclination
     // rcDeflection is in range [-1.0, 1.0]
-    float angle = pidProfile->levelSensitivity * getRcDeflection(axis);
+    float angle = pidProfile->levelAngleLimit * getRcDeflection(axis);
 #ifdef GPS
     angle += GPS_angle[axis];
 #endif
