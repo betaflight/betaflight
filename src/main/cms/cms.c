@@ -600,7 +600,9 @@ static void cmsTraverseGlobalExit(const CMS_Menu *pMenu)
 {
     for (const OSD_Entry *p = pMenu->entries; p->type != OME_END ; p++) {
         if (p->type == OME_Submenu) {
-            cmsTraverseGlobalExit(p->data);
+            if (p->data) {
+                cmsTraverseGlobalExit(p->data);
+            }
         }
     }
 
@@ -633,7 +635,7 @@ long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
     displayRelease(pDisplay);
     currentCtx.menu = NULL;
 
-    // always clear sceen on exit
+    // always issue a clear screen on exit
     displayClearScreen(pDisplay);
 
     if (exitType == CMS_EXIT_SAVEREBOOT) {
@@ -979,7 +981,10 @@ void cmsUpdate(uint32_t currentTimeUs)
             }
         }
 
-        cmsDrawMenu(pCurrentDisplay, currentTimeUs);
+        if (cmsInMenu) {
+            // still in menu? exit might have been called already
+            cmsDrawMenu(pCurrentDisplay, currentTimeUs);
+        }
 
         if (currentTimeMs > lastCmsHeartBeatMs + 500) {
             // Heart beat for external CMS display device @ 500msec

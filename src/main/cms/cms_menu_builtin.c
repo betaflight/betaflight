@@ -101,7 +101,7 @@ static OSD_Entry menuFeaturesEntries[] =
 #endif
 #if defined(VTX_CONTROL)
     // will be filled by vtx driver
-    {"VTX", OME_Submenu, cmsMenuChange, 0, 0},
+    {"VTX", OME_Submenu, cmsMenuChange, NULL, 0},
 #endif // VTX_CONTROL
 #ifdef LED_STRIP
     {"LED STRIP", OME_Submenu, cmsMenuChange, &cmsx_menuLedstrip, 0},
