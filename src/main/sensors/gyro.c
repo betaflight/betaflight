@@ -363,6 +363,7 @@ static bool gyroInitSensor(gyroSensor_t *gyroSensor)
     if (gyroConfig()->gyro_align != ALIGN_DEFAULT) {
         gyroSensor->gyroDev.gyroAlign = gyroConfig()->gyro_align;
     }
+
     gyroInitSensorFilters(gyroSensor);
 #ifdef USE_GYRO_DATA_ANALYSE
     gyroDataAnalyseInit(gyro.targetLooptime);
@@ -482,6 +483,7 @@ static void gyroInitFilterDynamicNotch(gyroSensor_t *gyroSensor)
 
 static void gyroInitSensorFilters(gyroSensor_t *gyroSensor)
 {
+	gyroInitSlewLimiter(gyroSensor);
     gyroInitFilterLpf(gyroSensor, gyroConfig()->gyro_soft_lpf_hz);
     gyroInitFilterNotch1(gyroSensor, gyroConfig()->gyro_soft_notch_hz_1, gyroConfig()->gyro_soft_notch_cutoff_1);
     gyroInitFilterNotch2(gyroSensor, gyroConfig()->gyro_soft_notch_hz_2, gyroConfig()->gyro_soft_notch_cutoff_2);
@@ -580,6 +582,25 @@ STATIC_UNIT_TESTED void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t
 
 }
 
+void gyroInitSlewLimiter(gyroSensor_t *gyroSensor, uint8_t limiter) {
+
+	// may be done elsewhere in zeroing of gyrosensor?
+    for (int axis = 0; axis < 3; axis++)
+    	gyroSensor->gyroDev.gyroADCRawP[axis] = 0;
+}
+
+uint32_t gyroSlewLimiter(int axis, int32_t newRawGyro)
+{
+	// probably should use gyroConfig()->gyro_slewlimit instead of 1<<14
+
+	if (abs(newRawGyro - gyroSensor->gyroDev.gyroADCRawP[axis]) > (1<<14))
+		newRawGyro = gyroSensor->gyroDev.gyroADCRawP[axis];
+	else
+		gyroSensor->gyroDev.gyroADCRawP[axis] = newRawGyro;
+
+	return newRawGyro;
+}
+
 void gyroUpdateSensor(gyroSensor_t *gyroSensor)
 {
     if (!gyroSensor->gyroDev.readFn(&gyroSensor->gyroDev)) {
@@ -589,9 +610,10 @@ void gyroUpdateSensor(gyroSensor_t *gyroSensor)
 
     if (isGyroSensorCalibrationComplete(gyroSensor)) {
         // move gyro data into 32-bit variables to avoid overflows in calculations
-        gyroSensor->gyroDev.gyroADC[X] = (int32_t)gyroSensor->gyroDev.gyroADCRaw[X] - (int32_t)gyroSensor->gyroDev.gyroZero[X];
-        gyroSensor->gyroDev.gyroADC[Y] = (int32_t)gyroSensor->gyroDev.gyroADCRaw[Y] - (int32_t)gyroSensor->gyroDev.gyroZero[Y];
-        gyroSensor->gyroDev.gyroADC[Z] = (int32_t)gyroSensor->gyroDev.gyroADCRaw[Z] - (int32_t)gyroSensor->gyroDev.gyroZero[Z];
+    	// move 16-bit gyro data into 32-bit variables to avoid overflows in calculations
+    	for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) // assume unroll
+    		gyroSensor->gyroDev.gyroADC[axis] = gyroSlewLimiter(axis, (int32_t) gyroSensor->gyroDev.gyroADCRaw[axis])
+    			- gyroSensor->gyroDev.gyroZero[axis];
 
         alignSensors(gyroSensor->gyroDev.gyroADC, gyroSensor->gyroDev.gyroAlign);
     } else {

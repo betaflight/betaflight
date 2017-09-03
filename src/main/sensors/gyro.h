@@ -61,6 +61,7 @@ typedef struct gyroConfig_s {
     uint16_t gyro_soft_notch_cutoff_1;
     uint16_t gyro_soft_notch_hz_2;
     uint16_t gyro_soft_notch_cutoff_2;
+    uint32_t gyro_slewlimit;
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);

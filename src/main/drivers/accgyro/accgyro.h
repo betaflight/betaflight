@@ -58,6 +58,7 @@ typedef struct gyroDev_s {
     int32_t gyroZero[XYZ_AXIS_COUNT];
     int32_t gyroADC[XYZ_AXIS_COUNT];                        // gyro data after calibration and alignment
     int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+    int32_t gyroADCRawP[XYZ_AXIS_COUNT];					// prev gyro data for slew limit check
     int16_t temperature;
     uint8_t lpf;
     gyroRateKHz_e gyroRateKHz;
