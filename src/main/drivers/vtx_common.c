@@ -159,6 +159,15 @@ bool vtxCommonGetBandAndChannel(uint8_t *pBand, uint8_t *pChannel)
         return false;
 }
 
+CMS_Menu *vtxCommonGetCmsEntry()
+{
+
+    if (!vtxDevice)
+        return 0;
+
+    return vtxDevice->cmsMenu;
+}
+
 bool vtxCommonGetPowerIndex(uint8_t *pIndex)
 {
     if (!vtxDevice)

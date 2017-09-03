@@ -45,10 +45,11 @@
 #include "cms/cms_menu_misc.h"
 
 // VTX supplied menus
+//#include "cms/cms_menu_vtx_rtc6705.h"
+//#include "cms/cms_menu_vtx_smartaudio.h"
+//#include "cms/cms_menu_vtx_tramp.h"
 
-#include "cms/cms_menu_vtx_rtc6705.h"
-#include "cms/cms_menu_vtx_smartaudio.h"
-#include "cms/cms_menu_vtx_tramp.h"
+#include "drivers/vtx_common.h"
 
 
 // Info
@@ -99,15 +100,8 @@ static OSD_Entry menuFeaturesEntries[] =
     {"BLACKBOX", OME_Submenu, cmsMenuChange, &cmsx_menuBlackbox, 0},
 #endif
 #if defined(VTX_CONTROL)
-#if defined(VTX_RTC6705)
-    {"VTX", OME_Submenu, cmsMenuChange, &cmsx_menuVtxRTC6705, 0},
-#endif // VTX_RTC6705
-#if defined(VTX_SMARTAUDIO)
-    {"VTX SA", OME_Submenu, cmsMenuChange, &cmsx_menuVtxSmartAudio, 0},
-#endif
-#if defined(VTX_TRAMP)
-    {"VTX TR", OME_Submenu, cmsMenuChange, &cmsx_menuVtxTramp, 0},
-#endif
+    // will be filled by vtx driver
+    {"VTX", OME_Submenu, cmsMenuChange, 0, 0},
 #endif // VTX_CONTROL
 #ifdef LED_STRIP
     {"LED STRIP", OME_Submenu, cmsMenuChange, &cmsx_menuLedstrip, 0},
@@ -116,14 +110,31 @@ static OSD_Entry menuFeaturesEntries[] =
     {NULL, OME_END, NULL, NULL, 0}
 };
 
+static long cmsx_FeaturesInit(void)
+{
+    // fetch vtx cms entry from driver
+    OSD_Entry *entry = &menuFeaturesEntries[0];
+    while(entry->type != OME_END) {
+        if (entry->text != 0) {
+            if (strcmp(entry->text, "VTX")) {
+                // this is the vtx entry, update pointer to menu
+                entry->data = vtxCommonGetCmsMenu();
+            }
+        }
+        entry++;
+    }
+    return 0;
+}
+
 static CMS_Menu menuFeatures = {
     .GUARD_text = "MENUFEATURES",
     .GUARD_type = OME_MENU,
-    .onEnter = NULL,
+    .onEnter = cmsx_FeaturesInit,
     .onExit = NULL,
     .onGlobalExit = NULL,
     .entries = menuFeaturesEntries,
 };
+
 
 // Main
 

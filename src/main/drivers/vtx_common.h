@@ -15,6 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
+#include "cms/cms_types.h"
 
 /* Created by jflyper */
 /*
@@ -66,6 +67,8 @@ typedef struct vtxDevice_s {
     char **bandNames;    // char *bandNames[bandCount]
     char **channelNames;    // char *channelNames[channelCount]
     char **powerNames;   // char *powerNames[powerCount]
+
+    CMS_Menu *cmsMenu;
 } vtxDevice_t;
 
 PG_DECLARE(vtxDeviceConfig_t, vtxDeviceConfig);
@@ -110,3 +113,5 @@ bool vtxCommonGetDeviceCapability(vtxDeviceCapability_t *pDeviceCapability);
 bool vtxCommonGetBandName(uint8_t band, char **name);
 bool vtxCommonGetPowerName(uint8_t index, char **name);
 bool vtxCommonGetChannelName(uint8_t ch, char **name);
+
+CMS_Menu *vtxCommonGetCmsMenu();

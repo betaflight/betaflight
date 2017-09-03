@@ -69,6 +69,7 @@ static vtxDevice_t vtxOpentco = {
     .bandNames = (char **)vtx58BandNames,
     .channelNames = (char **)vtx58ChannelNames,
     .powerNames = (char **)vtxOpentcoSupportedPowerNames,
+    .cmsMenu = 0
 };
 
 static opentcoDevice_t vtxOpentcoDevice;
@@ -159,6 +160,7 @@ static bool vtxOpentcoSetBandAndChannel(uint8_t band, uint8_t channel)
         // bf uses band 0 (none) ... N+1 -> correct this here by substracting 1
         // 0..x
         bandAndChannel |= (band - 1);
+
 
         // set
         if (!opentcoWriteRegister(device, OPENTCO_VTX_REGISTER_BAND_AND_CHANNEL, bandAndChannel)){
@@ -254,7 +256,7 @@ static vtxVTable_t opentcoVTable = {
     .setPitMode = vtxOpentcoSetPitMode,
     .getBandAndChannel = vtxOpentcoGetBandAndChannel,
     .getPowerIndex = vtxOpentcoGetPowerIndex,
-    .getPitMode = vtxOpentcoGetPitMode,
+    .getPitMode = vtxOpentcoGetPitMode
 };
 
 #endif // VTX_COMMON
