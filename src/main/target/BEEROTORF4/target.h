@@ -90,6 +90,7 @@
 #define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
 #define SDCARD_DMA_CHANNEL                  DMA_Channel_0
 
+#define USB_IO
 #define USE_VCP
 #define VBUS_SENSING_ENABLED
 #define VBUS_SENSING_PIN        PC5

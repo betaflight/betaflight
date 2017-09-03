@@ -83,6 +83,7 @@
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      PB10
 // *************** UART *****************************
+#define USB_IO
 #define USE_VCP
 #define VBUS_SENSING_PIN        PB12
 #define VBUS_SENSING_ENABLED

@@ -92,6 +92,7 @@
 #define ENSURE_MPU_DATA_READY_IS_LOW
 #define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 
+#define USB_IO
 #define USE_VCP
 #define VBUS_SENSING_PIN PA9
 #define VBUS_SENSING_ENABLED
