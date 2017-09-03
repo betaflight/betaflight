@@ -159,7 +159,7 @@ bool vtxCommonGetBandAndChannel(uint8_t *pBand, uint8_t *pChannel)
         return false;
 }
 
-CMS_Menu *vtxCommonGetCmsEntry()
+CMS_Menu *vtxCommonGetCmsMenu()
 {
 
     if (!vtxDevice)

@@ -21,9 +21,9 @@
 #include <stdint.h>
 
 #include "config/parameter_group.h"
+#include "drivers/vtx_common.h"
 
-
-//extern const char * const vtxOpentcoPowerNames[OPENTCO_VTX_POWER_COUNT];
+extern const char *vtxOpentcoSupportedPowerNames[];
 
 bool vtxOpentcoConfigure(void);
 vtxDevice_t *vtxOpentcoInit();

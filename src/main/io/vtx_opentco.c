@@ -29,6 +29,7 @@
 
 #include "cms/cms.h"
 #include "cms/cms_types.h"
+#include "cms/cms_menu_vtx_opentco.h"
 
 #include "common/utils.h"
 
@@ -69,7 +70,7 @@ static vtxDevice_t vtxOpentco = {
     .bandNames = (char **)vtx58BandNames,
     .channelNames = (char **)vtx58ChannelNames,
     .powerNames = (char **)vtxOpentcoSupportedPowerNames,
-    .cmsMenu = 0
+    .cmsMenu = &cmsx_menuVtxOpenTCO
 };
 
 static opentcoDevice_t vtxOpentcoDevice;

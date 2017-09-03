@@ -30,41 +30,41 @@
 #include "cms/cms_types.h"
 
 #include "io/vtx_string.h"
-#include "io/vtx_rtc6705.h"
+#include "io/vtx_opentco.h"
+#include "drivers/vtx_common.h"
 
 
-static uint8_t cmsx_vtxBand;
-static uint8_t cmsx_vtxChannel;
-static uint8_t cmsx_vtxPower;
+static uint8_t cmsx_vtxOpenTcoBand;
+static uint8_t cmsx_vtxOpenTcoChannel;
+static uint8_t cmsx_vtxOpenTcoPower;
 
-static const char * const rtc6705BandNames[] = {
-    "BOSCAM A",
-    "BOSCAM B",
-    "BOSCAM E",
-    "FATSHARK",
-    "RACEBAND",
-};
-
-static OSD_TAB_t entryVtxBand =         {&cmsx_vtxBand, ARRAYLEN(rtc6705BandNames) - 1, &rtc6705BandNames[0]};
-static OSD_UINT8_t entryVtxChannel =    {&cmsx_vtxChannel, 1, 8, 1};
-static OSD_TAB_t entryVtxPower =        {&cmsx_vtxPower, RTC6705_POWER_COUNT - 1, &rtc6705PowerNames[0]};
+static OSD_TAB_t entryVtxBand    = {&cmsx_vtxOpenTcoBand, 1, &vtx58BandNames[0]};
+static OSD_TAB_t entryVtxChannel = {&cmsx_vtxOpenTcoChannel, 1, &vtx58ChannelNames[0]};
+static OSD_TAB_t entryVtxPower   = {&cmsx_vtxOpenTcoPower, 1, &vtxOpentcoSupportedPowerNames[0]};
 
 static void cmsx_Vtx_ConfigRead(void)
 {
-    cmsx_vtxBand = vtxRTC6705Config()->band - 1;
-    cmsx_vtxChannel = vtxRTC6705Config()->channel;
-    cmsx_vtxPower = vtxRTC6705Config()->power;
+    vtxCommonGetBandAndChannel(&cmsx_vtxOpenTcoBand, &cmsx_vtxOpenTcoChannel);
+    vtxCommonGetPowerIndex(&cmsx_vtxOpenTcoPower);
 }
 
 static void cmsx_Vtx_ConfigWriteback(void)
 {
-    vtxRTC6705ConfigMutable()->band = cmsx_vtxBand + 1;
-    vtxRTC6705ConfigMutable()->channel = cmsx_vtxChannel;
-    vtxRTC6705ConfigMutable()->power = cmsx_vtxPower;
+    vtxCommonSetBandAndChannel(cmsx_vtxOpenTcoBand,  cmsx_vtxOpenTcoChannel);
+    vtxCommonSetPowerByIndex(cmsx_vtxOpenTcoPower);
 }
 
 static long cmsx_Vtx_onEnter(void)
 {
+    // query capabilities:
+    vtxDeviceCapability_t vtxCapabilities;
+    if (vtxCommonGetDeviceCapability(&vtxCapabilities)) {
+        // fill max entries:
+        entryVtxBand.max = vtxCapabilities.bandCount;
+        entryVtxChannel.max = vtxCapabilities.channelCount;
+        entryVtxPower.max = vtxCapabilities.powerCount;
+    }
+
     cmsx_Vtx_ConfigRead();
 
     return 0;
@@ -82,7 +82,7 @@ static long cmsx_Vtx_onExit(const OSD_Entry *self)
 
 static OSD_Entry cmsx_menuVtxEntries[] =
 {
-    {"--- VTX ---", OME_Label, NULL, NULL, 0},
+    {"--- VTX openTCO ---", OME_Label, NULL, NULL, 0},
     {"BAND", OME_TAB, NULL, &entryVtxBand, 0},
     {"CHANNEL", OME_UINT8, NULL, &entryVtxChannel, 0},
     {"POWER", OME_TAB, NULL, &entryVtxPower, 0},
@@ -90,7 +90,7 @@ static OSD_Entry cmsx_menuVtxEntries[] =
     {NULL, OME_END, NULL, NULL, 0}
 };
 
-CMS_Menu cmsx_menuVtxRTC6705 = {
+CMS_Menu cmsx_menuVtxOpenTCO = {
     .GUARD_text = "MENUVTX",
     .GUARD_type = OME_MENU,
     .onEnter = cmsx_Vtx_onEnter,

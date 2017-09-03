@@ -133,6 +133,7 @@ FC_SRC = \
             cms/cms_menu_osd.c \
             cms/cms_menu_vtx_rtc6705.c \
             cms/cms_menu_vtx_smartaudio.c \
+            cms/cms_menu_vtx_opentco.c \
             cms/cms_menu_vtx_tramp.c \
             common/colorconversion.c \
             common/gps_conversion.c \

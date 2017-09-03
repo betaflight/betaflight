@@ -115,11 +115,9 @@ static long cmsx_FeaturesInit(void)
     // fetch vtx cms entry from driver
     OSD_Entry *entry = &menuFeaturesEntries[0];
     while(entry->type != OME_END) {
-        if (entry->text != 0) {
-            if (strcmp(entry->text, "VTX")) {
-                // this is the vtx entry, update pointer to menu
-                entry->data = vtxCommonGetCmsMenu();
-            }
+        if ((entry->text != 0) && (strcmp(entry->text, "VTX") == 0)) {
+            // this is the vtx entry, update pointer to menu
+            entry->data = vtxCommonGetCmsMenu();
         }
         entry++;
     }
