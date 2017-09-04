@@ -33,6 +33,10 @@ typedef enum {
 #define OPENTCO_MAX_DATA_LENGTH       60
 #define OPENTCO_MAX_FRAME_LENGTH     (OPENTCO_MAX_DATA_LENGTH + 4)
 
+
+#define OPENTCO_MAX_STRING_LENGTH 16
+
+
 // 0x01..0x07 = valid device ids
 #define OPENTCO_DEVICE_OSD                           0x00
 #define OPENTCO_DEVICE_VTX                           0x01
@@ -129,5 +133,7 @@ bool opentcoInit(opentcoDevice_t *device);
 void opentcoInitializeFrame(opentcoDevice_t *device, uint8_t command);
 void opentcoSendFrame(opentcoDevice_t *device);
 
-bool opentcoReadRegister(opentcoDevice_t *device, uint8_t reg, uint16_t *val);
-bool opentcoWriteRegister(opentcoDevice_t *device, uint8_t reg, uint16_t val);
+bool opentcoReadRegisterUint16(opentcoDevice_t *device, uint8_t reg, uint16_t *val);
+bool opentcoWriteRegisterUint16(opentcoDevice_t *device, uint8_t reg, uint16_t val);
+
+bool opentcoReadRegisterStringArray(opentcoDevice_t *device, uint8_t reg, uint8_t *index, uint8_t *max, char *val);

@@ -24,7 +24,7 @@
 
 #include <stdbool.h>
 
-#if defined(USE_OPENTCO)
+#if 1 //defined(USE_OPENTCO)
 
 static bool opentcoDetectDevice(opentcoDevice_t *device);
 static void opentcoRegisterDevice(opentcoDevice_t *device);
@@ -97,7 +97,7 @@ bool opentcoInit(opentcoDevice_t *device)
 static bool opentcoDetectDevice(opentcoDevice_t *device)
 {
     uint16_t tmp;
-    return opentcoReadRegister(device, 0, &tmp);
+    return opentcoReadRegisterUint16(device, 0, &tmp);
 }
 
 // keep a linked list of devices
@@ -122,7 +122,7 @@ static void opentcoRegisterDevice(opentcoDevice_t *device)
     currentDevice->next = device;
 }
 
-static bool opentcoDecodeResponse(opentcoDevice_t *device, uint8_t requested_reg, uint16_t *reply)
+static bool opentcoDecodeResponseUint16(opentcoDevice_t *device, uint8_t requested_reg, uint16_t *reply)
 {
     // header has been checked beforehand, test the remaining 5 bytes:
     // ... [DEVICE:4|CMD:4] [REGISTER:8] [VALUE_LO:8] [VALUE_HI:8] [CRC:8]
@@ -155,21 +155,27 @@ static bool opentcoDecodeResponse(opentcoDevice_t *device, uint8_t requested_reg
     return true;
 }
 
-bool opentcoReadRegister(opentcoDevice_t *device, uint8_t reg, uint16_t *val)
+// read a 16 bit register
+// register request replies will contain 6 bytes:
+// [HEADER:8] [DEVICE:4|CMD:4] [REGISTER:8] [VALUE_LO:8] [VALUE_HI:8] [CRC:8]
+bool opentcoReadRegisterUint16(opentcoDevice_t *device, uint8_t reg, uint16_t *val)
 {
     uint32_t max_retries = 3;
 
     while (max_retries--) {
+        // flush rx buffer
+        while (serialRxBytesWaiting(device->serialPort)) {
+            serialRead(device->serialPort);
+        }
+
         // send read request
-        opentcoWriteRegister(device, reg | OPENTCO_REGISTER_ACCESS_MODE_READ, 0);
+        opentcoWriteRegisterUint16(device, reg | OPENTCO_REGISTER_ACCESS_MODE_READ, 0);
 
         // wait 100ms for reply
         timeMs_t timeout = millis() + 100;
 
         bool header_received = false;
         while (millis() < timeout) {
-            // register request replies will contain 6 bytes:
-            // [HEADER:8] [DEVICE:4|CMD:4] [REGISTER:8] [VALUE_LO:8] [VALUE_HI:8] [CRC:8]
             if (!header_received) {
                 // read serial bytes until we find a header:
                 if (serialRxBytesWaiting(device->serialPort) > 0) {
@@ -182,7 +188,7 @@ bool opentcoReadRegister(opentcoDevice_t *device, uint8_t reg, uint16_t *val)
                 // header found, now wait for the remaining bytes to arrive
                 if (serialRxBytesWaiting(device->serialPort) >= 5) {
                     // try to decode this packet
-                    if (!opentcoDecodeResponse(device, reg, val)) {
+                    if (!opentcoDecodeResponseUint16(device, reg, val)) {
                         // received broken / bad response
                         break;
                     }
@@ -198,7 +204,98 @@ bool opentcoReadRegister(opentcoDevice_t *device, uint8_t reg, uint16_t *val)
     return false;
 }
 
-bool opentcoWriteRegister(opentcoDevice_t *device, uint8_t reg, uint16_t val)
+static bool opentcoDecodeResponseStringArray(opentcoDevice_t *device, uint8_t requested_reg, uint8_t *index, uint8_t *max, char *val)
+{
+    // header has been checked beforehand, test the remaining 6 + OPENTCO_MAX_STRING_LENGTH -1 bytes:
+    // ... [DEVICE:4|CMD:4] [REGISTER:8] [MAX_INDEX:4|INDEX:4] [STRING:OPENTCO_MAX_STRING_LENGTH * 8] [CRC:8]
+
+    // prepare crc calc
+    uint8_t crc = crc8_dvb_s2(0, OPENTCO_PROTOCOL_HEADER);
+
+    // fetch data (serial buffer already contains enough bytes)
+    uint8_t data[5 + OPENTCO_MAX_STRING_LENGTH - 1];
+    for(int i = 0; i < 20; i++) {
+        uint8_t rx = serialRead(device->serialPort);
+        data[i] = rx;
+        crc = crc8_dvb_s2(crc, rx);
+    }
+
+    // check crc
+    if (crc != 0) return false;
+
+    // check device and command
+    uint8_t valid_devcmd = ((OPENTCO_DEVICE_RESPONSE | device->id) << 4) | OPENTCO_OSD_COMMAND_REGISTER_ACCESS;
+    if (data[0] != valid_devcmd) return false;
+
+    // response to our request? reply should contain register id WITHOUT read bit set
+    uint8_t valid_reg = requested_reg & ~OPENTCO_REGISTER_ACCESS_MODE_READ;
+    if (data[1] != valid_reg) return false;
+
+    // decode index and max index:
+    *max = (data[2] >> 4) & 0x0F;
+    *index = data[2] & 0x0F;
+
+    // copy string to return value:
+    uint32_t todo = OPENTCO_MAX_STRING_LENGTH - 1;
+    char *sptr = (char *)&data[3];
+    while(todo--) {
+        *val++ = *sptr++;
+    }
+    // loop iterates SIZE-1, make sure to zero terminate string
+    *val = 0;
+
+    return true;
+}
+// read a string array register
+// register request replies will contain 6 + OPENTCO_MAX_STRING_LENGTH bytes:
+// [HEADER:8] [DEVICE:4|CMD:4] [REGISTER:8] [MAX_INDEX:4|INDEX:4] [STRING:OPENTCO_MAX_STRING_LENGTH * 8] [CRC:8]
+bool opentcoReadRegisterStringArray(opentcoDevice_t *device, uint8_t reg, uint8_t *index, uint8_t *max, char *val)
+{
+    uint32_t max_retries = 3;
+
+    while (max_retries--) {
+        // flush rx buffer
+        while (serialRxBytesWaiting(device->serialPort)) {
+            serialRead(device->serialPort);
+        }
+
+        // send read request
+        opentcoWriteRegisterUint16(device, reg | OPENTCO_REGISTER_ACCESS_MODE_READ, 0);
+
+        // wait 100ms for reply
+        timeMs_t timeout = millis() + 100;
+
+        bool header_received = false;
+        while (millis() < timeout) {
+            if (!header_received) {
+                // read serial bytes until we find a header:
+                if (serialRxBytesWaiting(device->serialPort) > 0) {
+                    uint8_t rx = serialRead(device->serialPort);
+                    if (rx == OPENTCO_PROTOCOL_HEADER) {
+                        header_received = true;
+                    }
+                }
+            } else {
+                // header found, now wait for the remaining bytes to arrive
+                if (serialRxBytesWaiting(device->serialPort) >= 5 + OPENTCO_MAX_STRING_LENGTH - 1) {
+                    // enough bytes -> try to decode this packet
+                    if (!opentcoDecodeResponseStringArray(device, reg, index, max, val)) {
+                        // received broken / bad response
+                        break;
+                    }
+
+                    // received valid data
+                    return true;
+                }
+            }
+        }
+    }
+
+    // failed n times
+    return false;
+}
+
+bool opentcoWriteRegisterUint16(opentcoDevice_t *device, uint8_t reg, uint16_t val)
 {
     // start frame
     opentcoInitializeFrame(device, OPENTCO_OSD_COMMAND_REGISTER_ACCESS);

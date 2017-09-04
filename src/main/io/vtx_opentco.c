@@ -49,13 +49,16 @@
 
 #include "build/debug.h"
 
-const char *vtxOpentcoPowerNameDisabled = "";
-const char *vtxOpentcoSupportedPowerNames[OPENTCO_VTX_POWER_COUNT];
+//const char *vtxOpentcoPowerNameDisabled = "";
 
-const char *vtxOpentcoPowerNames[OPENTCO_VTX_POWER_COUNT] = {
+
+/*const char *vtxOpentcoPowerNames[OPENTCO_VTX_POWER_COUNT] = {
     "---", "5  ", "10 ", "25 ", "100", "200", "500", "600", "800"
-};
+};*/
 
+char vtxOpentcoPowerNames[OPENTCO_VTX_POWER_COUNT][4];
+
+char *vtxOpentcoSupportedPowerNames[OPENTCO_VTX_POWER_COUNT];
 
 
 static uint16_t vtxOpentcoSupportedPower;
@@ -100,30 +103,44 @@ static bool vtxOpentcoQuerySupportedFeatures(void)
 {
     // pre init to none
     for (uint32_t i = 0; i < OPENTCO_VTX_POWER_COUNT; i++) {
-        vtxOpentcoSupportedPowerNames[i] = vtxOpentcoPowerNameDisabled;
+        vtxOpentcoPowerNames[i][0] = 0;
     }
 
-    // fetch available power rates
-    if (!opentcoReadRegister(device, OPENTCO_VTX_REGISTER_SUPPORTED_POWER,  &vtxOpentcoSupportedPower)) {
-        // failed to fetch supported power register, this is bad..
+    // fetch available power rates, reset counter to zero
+    if (!opentcoWriteRegisterUint16(device, OPENTCO_VTX_REGISTER_SUPPORTED_POWER,  0)) {
         return false;
     }
 
+    // fetch all available power indices:
     for (uint32_t i = 0; i < OPENTCO_VTX_POWER_COUNT; i++) {
-        // check for device support
-        if (!(vtxOpentcoSupportedPower & (1 << i))) {
-            // this index is not supported, disable
-            vtxOpentcoSupportedPowerNames[i] = vtxOpentcoPowerNameDisabled;
-        } else {
-            // enabled, copy name
-            vtxOpentcoSupportedPowerNames[i] = vtxOpentcoPowerNames[i];
+        uint8_t max_index;
+        uint8_t index;
+        char result[OPENTCO_MAX_STRING_LENGTH];
+        if (!opentcoReadRegisterStringArray(device, OPENTCO_VTX_REGISTER_SUPPORTED_POWER, &index, &max_index, result)) {
+            // failed to fetch supported power register, this is bad..
+            return false;
+        }
+        // fine, sucessfully retrieved string
+        // copy to local array:
+        if (index < OPENTCO_VTX_POWER_COUNT) {
+            // copy first 3 chars + zero temination to string:
+            strncpy(vtxOpentcoPowerNames[index], result, 3);
+            // ensure zero temination
+            vtxOpentcoPowerNames[index][3] = 0;
+            // add pointer to supported power name array
+            vtxOpentcoSupportedPowerNames[index] = &vtxOpentcoPowerNames[index][0];
+        }
+        // check if we finished:
+        if (i >= max_index) {
+            // finished
+            // store maximum power index
+            vtxOpentco.capability.powerCount = max_index + 1;
+            return true;
         }
     }
 
-    // store maximum power index
-    vtxOpentco.capability.powerCount = OPENTCO_VTX_POWER_COUNT;
-
-    return true;
+    // device returned more power levels that we can store, abort
+    return false;
 }
 
 static void vtxOpentcoProcess(uint32_t now)
@@ -164,7 +181,7 @@ static bool vtxOpentcoSetBandAndChannel(uint8_t band, uint8_t channel)
 
 
         // set
-        if (!opentcoWriteRegister(device, OPENTCO_VTX_REGISTER_BAND_AND_CHANNEL, bandAndChannel)){
+        if (!opentcoWriteRegisterUint16(device, OPENTCO_VTX_REGISTER_BAND_AND_CHANNEL, bandAndChannel)){
             // failed to store setting
             return false;
         }
@@ -187,7 +204,7 @@ static bool vtxOpentcoSetPowerByIndex(uint8_t index)
     }
 
     // try to store the setting:
-    if (!opentcoWriteRegister(device, OPENTCO_VTX_REGISTER_POWER, index)) {
+    if (!opentcoWriteRegisterUint16(device, OPENTCO_VTX_REGISTER_POWER, index)) {
         // failed
         return false;
     }
@@ -206,7 +223,7 @@ static bool vtxOpentcoSetPitMode(uint8_t onoff)
         value |= OPENTCO_VTX_STATUS_PITMODE;
     }
 
-    if (!opentcoWriteRegister(device, OPENTCO_VTX_REGISTER_STATUS, value)) {
+    if (!opentcoWriteRegisterUint16(device, OPENTCO_VTX_REGISTER_STATUS, value)) {
         // failed!
         return false;
     }

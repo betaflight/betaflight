@@ -97,7 +97,7 @@ static void opentcoOSDQuerySupportedFeatures()
     uint16_t opentcoFeatures;
 
     // fetch available and acitvated features
-    opentcoReadRegister(device, OPENTCO_OSD_REGISTER_SUPPORTED_FEATURES,  &opentcoFeatures);
+    opentcoReadRegisterUint16(device, OPENTCO_OSD_REGISTER_SUPPORTED_FEATURES,  &opentcoFeatures);
 
     // opentco features do not necessarily have to match
     // with betaflight features -> convert!
@@ -140,11 +140,11 @@ bool opentcoOSDInit(const vcdProfile_t *pVcdProfile)
     if (video_system == VIDEO_SYSTEM_AUTO) {
         // fetch current video mode from opentco OSD
         uint16_t tmp;
-        opentcoReadRegister(device, OPENTCO_OSD_REGISTER_VIDEO_FORMAT, &tmp);
+        opentcoReadRegisterUint16(device, OPENTCO_OSD_REGISTER_VIDEO_FORMAT, &tmp);
         video_system = tmp;
     } else {
         // set video system
-        opentcoWriteRegister(device, OPENTCO_OSD_REGISTER_VIDEO_FORMAT, video_system);
+        opentcoWriteRegisterUint16(device, OPENTCO_OSD_REGISTER_VIDEO_FORMAT, video_system);
     }
 
     // try to enable all enabled osd features
@@ -275,7 +275,7 @@ int opentcoOSDWriteString(displayPort_t *displayPort, uint8_t x, uint8_t y, cons
 
 void opentcoOSDSetRegister(uint8_t reg, uint16_t value)
 {
-    opentcoWriteRegister(device, reg, value);
+    opentcoWriteRegisterUint16(device, reg, value);
 }
 
 static void opentcoOSDSendEnabledFeatures()
