@@ -17,12 +17,6 @@
 
 #pragma once
 
-#define MPU6500_WHO_AM_I_CONST              (0x70)
-#define MPU9250_WHO_AM_I_CONST              (0x71)
-#define ICM20608G_WHO_AM_I_CONST            (0xAF)
-#define ICM20602_WHO_AM_I_CONST             (0x12)
-#define ICM20689_WHO_AM_I_CONST             (0x98)
-
 #define MPU6500_BIT_RESET                   (0x80)
 #define MPU6500_BIT_INT_ANYRD_2CLEAR        (1 << 4)
 #define MPU6500_BIT_BYPASS_EN               (1 << 0)

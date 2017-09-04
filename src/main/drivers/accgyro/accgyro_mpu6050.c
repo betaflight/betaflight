@@ -68,8 +68,8 @@ bool mpu6050AccDetect(accDev_t *acc)
         return false;
     }
 
-    acc->init = mpu6050AccInit;
-    acc->read = mpuAccRead;
+    acc->initFn = mpu6050AccInit;
+    acc->readFn = mpuAccRead;
     acc->revisionCode = (acc->mpuDetectionResult.resolution == MPU_HALF_RESOLUTION ? 'o' : 'n'); // es/non-es variance between MPU6050 sensors, half of the naze boards are mpu6000ES.
 
     return true;
@@ -105,9 +105,9 @@ bool mpu6050GyroDetect(gyroDev_t *gyro)
     if (gyro->mpuDetectionResult.sensor != MPU_60x0) {
         return false;
     }
-    gyro->init = mpu6050GyroInit;
-    gyro->read = mpuGyroRead;
-    gyro->intStatus = mpuCheckDataReady;
+    gyro->initFn = mpu6050GyroInit;
+    gyro->readFn = mpuGyroRead;
+    gyro->intStatusFn = mpuCheckDataReady;
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;

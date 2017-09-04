@@ -289,7 +289,7 @@ bool accInit(uint32_t targetLooptime)
         return false;
     }
     acc.dev.acc_1G = 256; // set default
-    acc.dev.init(&acc.dev);
+    acc.dev.initFn(&acc.dev);
     acc.accTargetLooptime = targetLooptime;
     accInitFilters();
     if (accelerometerConfig()->acc_align != ALIGN_DEFAULT) {
@@ -449,7 +449,7 @@ static void applyAccelerationZero(const flightDynamicsTrims_t * accZero, const f
 
 void accUpdate(void)
 {
-    if (!acc.dev.read(&acc.dev)) {
+    if (!acc.dev.readFn(&acc.dev)) {
         return;
     }
 

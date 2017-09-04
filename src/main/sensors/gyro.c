@@ -292,7 +292,7 @@ bool gyroInit(void)
     gyroDev0.lpf = gyroConfig()->gyro_lpf;
     gyro.targetLooptime = gyroSetSampleRate(&gyroDev0, gyroConfig()->looptime, gyroConfig()->gyro_lpf, gyroConfig()->gyroSync, gyroConfig()->gyroSyncDenominator);
     // driver initialisation
-    gyroDev0.init(&gyroDev0);
+    gyroDev0.initFn(&gyroDev0);
 
     if (gyroConfig()->gyro_align != ALIGN_DEFAULT) {
         gyroDev0.gyroAlign = gyroConfig()->gyro_align;
@@ -405,7 +405,7 @@ STATIC_UNIT_TESTED void performGyroCalibration(gyroDev_t *dev, gyroCalibration_t
 void gyroUpdate(void)
 {
     // range: +/- 8192; +/- 2000 deg/sec
-    if (gyroDev0.read(&gyroDev0)) {
+    if (gyroDev0.readFn(&gyroDev0)) {
         if (isCalibrationComplete(&gyroCalibration)) {
             // Copy gyro value into int32_t (to prevent overflow) and then apply calibration and alignment
             gyroADC[X] = (int32_t)gyroDev0.gyroADCRaw[X] - (int32_t)gyroDev0.gyroZero[X];
@@ -447,8 +447,8 @@ void gyroUpdate(void)
 
 void gyroReadTemperature(void)
 {
-    if (gyroDev0.temperature) {
-        gyroDev0.temperature(&gyroDev0, &gyroTemperature0);
+    if (gyroDev0.temperatureFn) {
+        gyroDev0.temperatureFn(&gyroDev0, &gyroTemperature0);
     }
 }
 
