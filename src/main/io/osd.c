@@ -124,9 +124,13 @@ static int32_t osdConvertDistanceToUnit(int32_t dist)
     switch (osdConfig()->units) {
     case OSD_UNIT_IMPERIAL:
         return (dist * 328) / 100; // Convert to feet / 100
-    default:
+    case OSD_UNIT_UK:
+        FALLTHROUGH;
+    case OSD_UNIT_METRIC:
         return dist;               // Already in meter / 100
     }
+    // Unreachable
+    return -1;
 }
 
 /**
@@ -145,7 +149,9 @@ static void osdFormatDistanceStr(char* buff, int32_t dist)
             tfp_sprintf(buff, "%d%c ", dist_abs / 100, SYM_FT);
         }
         break;
-    default: // Metric
+    case OSD_UNIT_UK:
+        FALLTHROUGH;
+    case OSD_UNIT_METRIC:
         if (dist < 0) {
             tfp_sprintf(buff, "-%d.%01d%c ", dist_abs / 100, (dist_abs % 100) / 10, SYM_M);
         } else {
@@ -155,6 +161,7 @@ static void osdFormatDistanceStr(char* buff, int32_t dist)
                 tfp_sprintf(buff, "%d%c ", dist_abs / 100, SYM_M);
             }
         }
+        break;
     }
 }
 
@@ -165,11 +172,15 @@ static void osdFormatDistanceStr(char* buff, int32_t dist)
 static int32_t osdConvertVelocityToUnit(int32_t vel)
 {
     switch (osdConfig()->units) {
+    case OSD_UNIT_UK:
+        FALLTHROUGH;
     case OSD_UNIT_IMPERIAL:
         return (vel * 224) / 10000; // Convert to mph
-    default:
+    case OSD_UNIT_METRIC:
         return (vel * 36) / 1000;   // Convert to kmh
     }
+    // Unreachable
+    return -1;
 }
 
 /**
@@ -179,11 +190,14 @@ static int32_t osdConvertVelocityToUnit(int32_t vel)
 static void osdFormatVelocityStr(char* buff, int32_t vel)
 {
     switch (osdConfig()->units) {
+    case OSD_UNIT_UK:
+        FALLTHROUGH;
     case OSD_UNIT_IMPERIAL:
         tfp_sprintf(buff, "%2d%c", osdConvertVelocityToUnit(vel), SYM_MPH);
         break;
-    default: // Metric
+    case OSD_UNIT_METRIC:
         tfp_sprintf(buff, "%3d%c", osdConvertVelocityToUnit(vel), SYM_KMH);
+        break;
     }
 }
 
