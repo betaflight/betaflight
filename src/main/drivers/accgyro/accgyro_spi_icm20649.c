@@ -75,7 +75,7 @@ uint8_t icm20649SpiDetect(const busDevice_t *bus)
         const uint8_t whoAmI = spiBusReadRegister(bus, ICM20649_RA_WHO_AM_I);
         if (whoAmI == ICM20649_WHO_AM_I_CONST) {
             icmDetected = ICM_20649_SPI;
-	} else {
+        } else {
             icmDetected = MPU_NONE;
         }
         if (icmDetected != MPU_NONE) {
@@ -135,7 +135,7 @@ void icm20649GyroInit(gyroDev_t *gyro)
     gyro->mpuConfiguration.writeFn(&gyro->bus, ICM20649_RA_REG_BANK_SEL, 2 << 4); // config in bank 2
     delay(15);
     const uint8_t gyro_fsr = gyroConfig()->gyro_high_fsr ? ICM20649_FSR_4000DPS : ICM20649_FSR_2000DPS;
-    uint8_t raGyroConfigData = gyro->gyroRateKHz > GYRO_RATE_1_kHz ? 0 : 1; // deactivate GYRO_FCHOICE for sample rates over 1kHz (opposite of other invensense chips)
+    uint8_t raGyroConfigData = gyro->gyroRateKHz > GYRO_RATE_1100_Hz ? 0 : 1; // deactivate GYRO_FCHOICE for sample rates over 1kHz (opposite of other invensense chips)
     raGyroConfigData |= gyro_fsr << 1 | gyro->lpf << 3;
     gyro->mpuConfiguration.writeFn(&gyro->bus, ICM20649_RA_GYRO_CONFIG_1, raGyroConfigData);
     delay(15);
