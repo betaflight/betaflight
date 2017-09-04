@@ -384,7 +384,7 @@ void pwmWriteDshotCommand(uint8_t index, uint8_t motorCount, uint8_t command)
         case DSHOT_CMD_SAVE_SETTINGS:
         case DSHOT_CMD_SPIN_DIRECTION_NORMAL:
         case DSHOT_CMD_SPIN_DIRECTION_REVERSED:
-            repeats = 20;
+            repeats = 10;
             break;
         default:
             repeats = 1;
