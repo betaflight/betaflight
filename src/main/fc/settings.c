@@ -60,6 +60,7 @@
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/osd.h"
+#include "io/vtx_control.h"
 #include "io/vtx_rtc6705.h"
 
 #include "rx/rx.h"
@@ -715,11 +716,16 @@ const clivalue_t valueTable[] = {
 #endif
     { "pwr_on_arm_grace",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 30 }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, powerOnArmingGraceTime) },
 
-// PG_VTX_CONFIG
+// PG_VTX_RTC6705_CONFIG
 #ifdef VTX_RTC6705
     { "vtx_band",                   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 5 }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, band) },
     { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 8 }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, channel) },
     { "vtx_power",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, RTC6705_POWER_COUNT - 1 }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, power) },
+#endif
+
+// PG_VTX_CONFIG
+#if defined(VTX_CONTROL) && defined(VTX_COMMON)
+    { "vtx_halfduplex",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_VTX_CONFIG, offsetof(vtxConfig_t, halfDuplex) },
 #endif
 
 // PG_VCD_CONFIG
