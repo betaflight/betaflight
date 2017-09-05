@@ -69,6 +69,15 @@ typedef struct serialPort_s {
     uint32_t txBufferTail;
 
     serialReceiveCallbackPtr rxCallback;
+
+    // Statistics
+    int32_t  statState;
+    uint32_t statRxBytes;
+    uint32_t statTxBytes;
+    uint32_t statRxFrames;
+    uint32_t statTxFrames;
+    uint32_t statErrors;
+
 } serialPort_t;
 
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
@@ -125,3 +134,10 @@ uint32_t serialGetBaudRate(serialPort_t *instance);
 void serialWriteBufShim(void *instance, const uint8_t *data, int count);
 void serialBeginWrite(serialPort_t *instance);
 void serialEndWrite(serialPort_t *instance);
+
+// Statistics service for transport level frames
+void serialStatSetState(serialPort_t *instance, int state);
+void serialStatRxFrame(serialPort_t *instance);
+void serialStatTxFrame(serialPort_t *instance);
+void serialStatError(serialPort_t *instance);
+void serialStatCopyToDebug(serialPort_t *instance);
