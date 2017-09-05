@@ -262,6 +262,8 @@ void tryArm(void)
         }
 #ifdef USE_DSHOT
         if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXDSHOTREVERSE)) {
+            pwmDisableMotors();
+
             if (!IS_RC_MODE_ACTIVE(BOXDSHOTREVERSE)) {
                 reverseMotors = false;
                 pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL);
@@ -269,6 +271,8 @@ void tryArm(void)
                 reverseMotors = true;
                 pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_REVERSED);
             }
+
+            pwmEnableMotors();
         }
 #endif
 
