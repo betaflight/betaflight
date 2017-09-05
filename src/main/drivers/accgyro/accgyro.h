@@ -58,7 +58,9 @@ typedef struct gyroDev_s {
     int32_t gyroZero[XYZ_AXIS_COUNT];
     int32_t gyroADC[XYZ_AXIS_COUNT];                        // gyro data after calibration and alignment
     int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+#if !defined(BEEBRAIN)
     int32_t gyroADCRawPrevious[XYZ_AXIS_COUNT];
+#endif
     int16_t temperature;
     uint8_t lpf;
     gyroRateKHz_e gyroRateKHz;

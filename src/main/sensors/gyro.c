@@ -437,11 +437,13 @@ static uint16_t calculateNyquistAdjustedNotchHz(uint16_t notchHz, uint16_t notch
     return notchHz;
 }
 
+#if !defined(BEEBRAIN)
 void gyroInitSlewLimiter(gyroSensor_t *gyroSensor) {
 
     for (int axis = 0; axis < 3; axis++)
     	gyroSensor->gyroDev.gyroADCRawPrevious[axis] = 0;
 }
+#endif
 
 static void gyroInitFilterNotch1(gyroSensor_t *gyroSensor, uint16_t notchHz, uint16_t notchCutoffHz)
 {
@@ -490,7 +492,9 @@ static void gyroInitFilterDynamicNotch(gyroSensor_t *gyroSensor)
 
 static void gyroInitSensorFilters(gyroSensor_t *gyroSensor)
 {
+#if !defined(BEEBRAIN)
 	gyroInitSlewLimiter(gyroSensor);
+#endif
     gyroInitFilterLpf(gyroSensor, gyroConfig()->gyro_soft_lpf_hz);
     gyroInitFilterNotch1(gyroSensor, gyroConfig()->gyro_soft_notch_hz_1, gyroConfig()->gyro_soft_notch_cutoff_1);
     gyroInitFilterNotch2(gyroSensor, gyroConfig()->gyro_soft_notch_hz_2, gyroConfig()->gyro_soft_notch_cutoff_2);
@@ -589,7 +593,9 @@ STATIC_UNIT_TESTED void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t
 
 }
 
-uint32_t gyroSlewLimiter(int axis, gyroSensor_t *gyroSensor)
+//#if defined(USE_GYRO_SPI_ICM20649) || defined(USE_GYRO_SPI_ICM20689)
+#if !defined(BEEBRAIN)
+int32_t gyroSlewLimiter(int axis, gyroSensor_t *gyroSensor)
 {
 	int32_t newRawGyro = (int32_t) gyroSensor->gyroDev.gyroADCRaw[axis];
 
@@ -600,6 +606,8 @@ uint32_t gyroSlewLimiter(int axis, gyroSensor_t *gyroSensor)
 
 	return newRawGyro;
 }
+#endif
+
 
 void gyroUpdateSensor(gyroSensor_t *gyroSensor)
 {
@@ -615,9 +623,13 @@ void gyroUpdateSensor(gyroSensor_t *gyroSensor)
     			- gyroSensor->gyroDev.gyroZero[X];
     	gyroSensor->gyroDev.gyroADC[Y] = gyroSensor->gyroDev.gyroADCRaw[Y]
     			- gyroSensor->gyroDev.gyroZero[Y];
-
+#if !defined(BEEBRAIN)
     	gyroSensor->gyroDev.gyroADC[Z] = gyroSlewLimiter(Z, gyroSensor)
     			- gyroSensor->gyroDev.gyroZero[Z];
+#else
+    	gyroSensor->gyroDev.gyroADC[Z] = gyroSensor->gyroDev.gyroADCRaw[Z]
+    	    			- gyroSensor->gyroDev.gyroZero[Z];
+#endif
 
         alignSensors(gyroSensor->gyroDev.gyroADC, gyroSensor->gyroDev.gyroAlign);
     } else {
