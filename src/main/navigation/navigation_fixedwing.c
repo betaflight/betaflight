@@ -110,22 +110,24 @@ static void updateAltitudeVelocityAndPitchController_FW(timeDelta_t deltaMicros)
     const float estSPE = (posControl.actualState.pos.V.Z / 100.0f) * GRAVITY_MSS;
     const float estSKE = 0.0f;
 
+    // speedWeight controls balance between potential and kinetic energy used for pitch controller
+    //  speedWeight = 1.0 : pitch will only control airspeed and won't control altitude
+    //  speedWeight = 0.5 : pitch will be used to control both airspeed and altitude
+    //  speedWeight = 0.0 : pitch will only control altitude
     const float speedWeight = 0.0f; // no speed sensing for now
 
-    const float wSKE = speedWeight;
-    const float wSPE = 1.0f - speedWeight;
-    const float demSEB = demSPE * wSPE - demSKE * wSKE;
-    const float estSEB = estSPE * wSPE - estSKE * wSKE;
+    const float demSEB = demSPE * (1.0f - speedWeight) - demSKE * speedWeight;
+    const float estSEB = estSPE * (1.0f - speedWeight) - estSKE * speedWeight;
 
-    // SEB to pitch angle gain to account for airspeed
-    const float pitchGainInv = GRAVITY_MSS; // GRAVITY_MSS * airspeed;
+    // SEB to pitch angle gain to account for airspeed (with respect to specified reference (tuning) speed
+    const float pitchGainInv = 1.0f / 1.0f;
 
     // Here we use negative values for dive for better clarity
     const float maxClimbDeciDeg = DEGREES_TO_DECIDEGREES(navConfig()->fw.max_climb_angle);
     const float minDiveDeciDeg = -DEGREES_TO_DECIDEGREES(navConfig()->fw.max_dive_angle);
 
     // PID controller to translate energy balance error [J] into pitch angle [decideg]
-    float targetPitchAngle = navPidApply2(&posControl.pids.fw_alt, demSEB, estSEB, US2S(deltaMicros), minDiveDeciDeg, maxClimbDeciDeg, 0) / pitchGainInv;
+    float targetPitchAngle = navPidApply3(&posControl.pids.fw_alt, demSEB, estSEB, US2S(deltaMicros), minDiveDeciDeg, maxClimbDeciDeg, 0, pitchGainInv);
     targetPitchAngle = pt1FilterApply4(&velzFilterState, targetPitchAngle, NAV_FW_PITCH_CUTOFF_FREQENCY_HZ, US2S(deltaMicros));
 
     // Reconstrain pitch angle ( >0 - climb, <0 - dive)
