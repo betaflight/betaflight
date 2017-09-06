@@ -297,17 +297,17 @@ const mixer_t mixers[] = {
     { 8, false, mixerOctoFlatP },      // MIXER_OCTOFLATP
     { 8, false, mixerOctoFlatX },      // MIXER_OCTOFLATX
     { 1, true,  mixerSingleProp },     // * MIXER_AIRPLANE
-    { 0, true,  NULL },                // * MIXER_HELI_120_CCPM
-    { 0, true,  NULL },                // * MIXER_HELI_90_DEG
+    { 1, true,  mixerSingleProp },     // * MIXER_HELI_120_CCPM
+    { 1, true,  mixerSingleProp },     // * MIXER_HELI_90_DEG
     { 4, false, mixerVtail4 },         // MIXER_VTAIL4
     { 6, false, mixerHex6H },          // MIXER_HEX6H
     { 0, true,  NULL },                // * MIXER_PPM_TO_SERVO
     { 2, true,  mixerDualcopter },     // MIXER_DUALCOPTER
     { 1, true,  NULL },                // MIXER_SINGLECOPTER
     { 4, false, mixerAtail4 },         // MIXER_ATAIL4
-    { 0, false, NULL },                // MIXER_CUSTOM
-    { 2, true,  NULL },                // MIXER_CUSTOM_AIRPLANE
-    { 3, true,  NULL },                // MIXER_CUSTOM_TRI
+    { 4, true, NULL },                // MIXER_CUSTOM
+    { 2, false,  NULL },                // MIXER_CUSTOM_AIRPLANE
+    { 3, false,  NULL },                // MIXER_CUSTOM_TRI
     { 4, false, mixerQuadX1234 },
 };
 #endif // !USE_QUAD_MIXER_ONLY
@@ -603,7 +603,7 @@ void mixTable(uint8_t vbatPidCompensation)
     float motorMixMax = 0, motorMixMin = 0;
     const int yawDirection = GET_DIRECTION(mixerConfig()->yaw_motors_reversed);
     int motorDirection = GET_DIRECTION(isMotorsReversed());
-  
+
     for (int i = 0; i < motorCount; i++) {
         float mix =
             scaledAxisPidRoll  * currentMixer[i].roll  * (motorDirection) +
