@@ -1,3 +1,15 @@
+## CODE NOT TESTED ! 
+
+
+A fork of betaflight for helicopter mixer. 
+
+Introduction：
+Set the mixer to "Heli 120", then change the "resource" in CLI to make servos run. 
+Settings can be modified in "Servos" tab of betaflight configurator(expert mode).  
+
+
+
+
 ![BetaFlight Notice, version 3.2 will be the last version of Betaflight to support STM32F1 based flight controllers, this includes NAZE, CC3D (original) and CJMCU like flight controllers](https://raw.githubusercontent.com/wiki/betaflight/betaflight/images/betaflight/bf3_2_notice.png)
 
 ![BetaFlight](https://raw.githubusercontent.com/wiki/betaflight/betaflight/images/betaflight/bf_logo.png)
