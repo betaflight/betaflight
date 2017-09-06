@@ -294,7 +294,7 @@ const mixer_t mixers[] = {
     { 8, false, mixerOctoFlatP },      // MIXER_OCTOFLATP
     { 8, false, mixerOctoFlatX },      // MIXER_OCTOFLATX
     { 1, true,  mixerSingleProp },     // * MIXER_AIRPLANE
-    { 0, true,  NULL },                // * MIXER_HELI_120_CCPM
+    { 1, true,  mixerSingleProp },     // * MIXER_HELI_120_CCPM
     { 0, true,  NULL },                // * MIXER_HELI_90_DEG
     { 4, false, mixerVtail4 },         // MIXER_VTAIL4
     { 6, false, mixerHex6H },          // MIXER_HEX6H
