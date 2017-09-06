@@ -79,6 +79,7 @@
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
+#define USB_IO
 #define USE_VCP
 #define VBUS_SENSING_PIN        PC5
 #define VBUS_SENSING_ENABLED

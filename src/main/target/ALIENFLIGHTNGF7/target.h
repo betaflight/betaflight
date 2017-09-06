@@ -105,6 +105,7 @@
 //#define USE_FLASHFS
 //#define USE_FLASH_M25P16
 
+#define USB_IO
 #define USE_VCP
 
 #define USE_UART1

@@ -28,8 +28,10 @@
 #if defined(STM32F4)
 #include "usb_core.h"
 #include "usbd_cdc_vcp.h"
+#include "usb_io.h"
 #elif defined(STM32F7)
 #include "vcp_hal/usbd_cdc_interface.h"
+#include "usb_io.h"
 USBD_HandleTypeDef USBD_Device;
 #else
 #include "usb_core.h"
@@ -184,10 +186,14 @@ serialPort_t *usbVcpOpen(void)
     vcpPort_t *s;
 
 #if defined(STM32F4)
+    usbGenerateDisconnectPulse();
+
     IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, RESOURCE_INPUT, 0);
     IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, RESOURCE_OUTPUT, 0);
     USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
 #elif defined(STM32F7)
+    usbGenerateDisconnectPulse();
+
     IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, RESOURCE_INPUT, 0);
     IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, RESOURCE_OUTPUT, 0);
     /* Init Device Library */

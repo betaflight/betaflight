@@ -63,6 +63,7 @@
 #define USE_PITOT_MS4525
 #define PITOT_I2C_INSTANCE      I2C_DEVICE_EXT
 
+#define USB_IO
 #define USE_VCP
 #define VBUS_SENSING_PIN        PA8
 
