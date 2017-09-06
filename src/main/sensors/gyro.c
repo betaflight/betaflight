@@ -70,7 +70,7 @@
 #include "hardware_revision.h"
 #endif
 
-#if (FLASH_SIZE > 128) && !defined(USE_GYRO_SPI_MPU6000)
+#if (FLASH_SIZE > 128) // && !defined(USE_GYRO_SPI_MPU6000)
 #define USE_GYRO_SLEW_LIMITER
 #endif
 
