@@ -151,7 +151,11 @@
 //#define USE_MAX7456
 //#define USE_OSD_OVER_MSP_DISPLAYPORT
 
-//#define LED_STRIP
+#define LED_STRIP
+#define WS2811_PIN                      PA1
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST6_HANDLER
+#define WS2811_DMA_STREAM               DMA1_Stream6
+#define WS2811_DMA_CHANNEL              DMA_Channel_3   // ???
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
