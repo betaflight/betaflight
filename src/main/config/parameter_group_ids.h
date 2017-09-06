@@ -114,7 +114,8 @@
 #define PG_ESCSERIAL_CONFIG 521
 #define PG_CAMERA_CONTROL_CONFIG 522
 #define PG_FRSKY_D_CONFIG 523
-#define PG_BETAFLIGHT_END 523
+#define PG_FLYSKY_CONFIG 524
+#define PG_BETAFLIGHT_END 524
 
 
 // OSD configuration (subject to change)
