@@ -22,6 +22,7 @@
 #include "config/parameter_group.h"
 
 #define GRAVITY_CMSS    980.665f
+#define GRAVITY_MSS     9.80665f
 
 extern int16_t throttleAngleCorrection;
 extern int16_t smallAngle;
