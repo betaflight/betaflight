@@ -474,13 +474,10 @@ static void applyLedFixedLayers()
         case LED_FUNCTION_ARM_STATE:
             color = ARMING_FLAG(ARMED) ? *getSC(LED_SCOLOR_ARMED) : *getSC(LED_SCOLOR_DISARMED);
             
-            if (ARMING_FLAG(ARMED))
-                {
+            if (ARMING_FLAG(ARMED)) {
                     nextColor = ledStripConfig()->colors[15];
                     previousColor = ledStripConfig()->colors[14];
-                }
-            else
-                {
+                } else {
                     nextColor = ledStripConfig()->colors[13];
                     previousColor = ledStripConfig()->colors[12];
                 }
