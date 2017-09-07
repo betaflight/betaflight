@@ -124,7 +124,7 @@ PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
     .name = { 0 }
 );
 
-PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 1);
 
 #ifndef USE_OSD_SLAVE
 #if defined(STM32F4) && !defined(DISABLE_OVERCLOCK)

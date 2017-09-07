@@ -87,4 +87,4 @@ int32_t getMAhDrawn(void);
 
 void batteryUpdateCurrentMeter(timeUs_t currentTimeUs);
 
-lowVoltageCutoff_t *getLowVoltageCutoff(void);
+const lowVoltageCutoff_t *getLowVoltageCutoff(void);

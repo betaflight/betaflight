@@ -123,7 +123,7 @@ static void gyroInitSensorFilters(gyroSensor_t *gyroSensor);
 #define GYRO_SYNC_DENOM_DEFAULT 4
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 1);
 
 PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .gyro_align = ALIGN_DEFAULT,
