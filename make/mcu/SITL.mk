@@ -25,7 +25,6 @@ MCU_EXCLUDES = \
             drivers/dma.c \
             drivers/pwm_output.c \
             drivers/timer.c \
-            drivers/light_led.c \
             drivers/system.c \
             drivers/rcc.c \
             drivers/serial_escserial.c \

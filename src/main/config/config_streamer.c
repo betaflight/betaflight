@@ -23,8 +23,10 @@
 
 #include "config/config_streamer.h"
 
+#ifndef EEPROM_IN_RAM
 extern uint8_t __config_start;   // configured via linker script when building binaries.
 extern uint8_t __config_end;
+#endif
 
 #if !defined(FLASH_PAGE_SIZE)
 // F1

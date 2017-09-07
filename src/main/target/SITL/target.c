@@ -254,12 +254,6 @@ void systemResetToBootloader(void) {
     exit(0);
 }
 
-// drivers/light_led.c
-void ledInit(const statusLedConfig_t *statusLedConfig) {
-    UNUSED(statusLedConfig);
-    printf("[led]Init...\n");
-}
-
 void timerInit(void) {
     printf("[timer]Init...\n");
 }
