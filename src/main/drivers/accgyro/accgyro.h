@@ -72,6 +72,7 @@ typedef struct gyroDev_s {
     mpuDetectionResult_t mpuDetectionResult;
     ioTag_t mpuIntExtiTag;
     mpuConfiguration_t mpuConfiguration;
+    bool gyro_high_fsr;
 } gyroDev_t;
 
 typedef struct accDev_s {
@@ -88,6 +89,7 @@ typedef struct accDev_s {
     sensor_align_e accAlign;
     mpuDetectionResult_t mpuDetectionResult;
     mpuConfiguration_t mpuConfiguration;
+    bool acc_high_fsr;
 } accDev_t;
 
 static inline void accDevLock(accDev_t *acc)
