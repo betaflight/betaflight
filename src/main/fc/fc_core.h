@@ -49,3 +49,4 @@ void updateRcCommands(void);
 
 void taskMainPidLoop(timeUs_t currentTimeUs);
 bool isMotorsReversed(void);
+bool isFlipOverAfterCrashMode(void);
