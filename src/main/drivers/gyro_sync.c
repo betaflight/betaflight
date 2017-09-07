@@ -43,7 +43,7 @@ uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenomin
                 break;
             case ICM_20649_SPI:
                 gyro->gyroRateKHz = GYRO_RATE_9_kHz;
-                gyroSamplePeriod = 111.1f;
+                gyroSamplePeriod = 1000000.0f / 9000.0f;
                 break;
             default:
                 gyro->gyroRateKHz = GYRO_RATE_8_kHz;
@@ -55,7 +55,7 @@ uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenomin
         switch (gyro->mpuDetectionResult.sensor) {
         case ICM_20649_SPI:
             gyro->gyroRateKHz = GYRO_RATE_1100_Hz;
-            gyroSamplePeriod = 909.1f;
+            gyroSamplePeriod = 1000000.0f / 1100.0f;
             break;
         default:
             gyro->gyroRateKHz = GYRO_RATE_1_kHz;

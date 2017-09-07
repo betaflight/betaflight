@@ -510,7 +510,7 @@ void validateAndFixGyroConfig(void)
     float samplingTime;
     switch (gyroMpuDetectionResult()->sensor) {
     case ICM_20649_SPI:
-        samplingTime = 0.0001111f;
+        samplingTime = 1.0f / 9000.0f;
         break;
     case BMI_160_SPI:
         samplingTime = 0.0003125f;
@@ -526,7 +526,7 @@ void validateAndFixGyroConfig(void)
         gyroConfigMutable()->gyro_use_32khz = false;
         switch (gyroMpuDetectionResult()->sensor) {
         case ICM_20649_SPI:
-            samplingTime = 0.0009091f;
+            samplingTime = 1.0f / 1100.0f;
             break;
         default:
             samplingTime = 0.001f;
