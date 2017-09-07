@@ -104,6 +104,15 @@
 //#define SPI5_MOSI_PIN
 #endif
 
+/* OSD MAX7456E */
+#define OSD
+
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE    SPI2
+#define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
+#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
+
 /* Motion Processing Unit (MPU) - Invensense 6-axis MPU-6500 or 9-axis MPU-9250
  */
 // Interrupt
@@ -132,11 +141,13 @@
 /* Optional Digital Pressure Sensor (barometer) - Bosch BMP280
  * TODO: not implemented on V1 or V2 pcb
  */
+#if defined(BREADBOARD)
 #define BARO
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 #define BMP280_SPI_INSTANCE     SPI3
 #define BMP280_CS_PIN           SPI3_NSS_PIN
+#endif
 
 /* Serial ports etc.
  */
@@ -185,9 +196,9 @@
 /* Defaults - What do we want out of the box?
  */
 #if defined(BREADBOARD)
-#define DEFAULT_FEATURES        (FEATURE_RX_SERIAL | FEATURE_MOTOR_STOP | FEATURE_LED_STRIP )
+#define DEFAULT_FEATURES        (FEATURE_RX_SERIAL | FEATURE_MOTOR_STOP | FEATURE_LED_STRIP | FEATURE_OSD )
 #else
-#define DEFAULT_FEATURES        (FEATURE_RX_SERIAL | FEATURE_MOTOR_STOP) // FEATURE_TELEMETRY changes bind pin from rx to tx
+#define DEFAULT_FEATURES        (FEATURE_RX_SERIAL | FEATURE_MOTOR_STOP )  // TODO FEATURE_OSD for V3 board ... FEATURE_TELEMETRY changes bind pin from rx to tx
 #endif
 
 #undef VTX_COMMON
