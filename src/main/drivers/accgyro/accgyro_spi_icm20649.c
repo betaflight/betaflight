@@ -35,9 +35,6 @@
 #include "accgyro_mpu.h"
 #include "accgyro_spi_icm20649.h"
 
-static bool use4kDps = true; // TODO: make these configurable for testing
-static bool use30g = true;
-
 static void icm20649SpiInit(const busDevice_t *bus)
 {
     static bool hardwareInitialised = false;
@@ -75,7 +72,7 @@ uint8_t icm20649SpiDetect(const busDevice_t *bus)
         const uint8_t whoAmI = spiBusReadRegister(bus, ICM20649_RA_WHO_AM_I);
         if (whoAmI == ICM20649_WHO_AM_I_CONST) {
             icmDetected = ICM_20649_SPI;
-	} else {
+        } else {
             icmDetected = MPU_NONE;
         }
         if (icmDetected != MPU_NONE) {
@@ -94,13 +91,13 @@ void icm20649AccInit(accDev_t *acc)
 {
     // 2,048 LSB/g 16g
     // 1,024 LSB/g 30g
-    acc->acc_1G = use30g ? 1024 : 2048;
+    acc->acc_1G = acc->acc_high_fsr ? 1024 : 2048;
 
     spiSetDivisor(acc->bus.busdev_u.spi.instance, SPI_CLOCK_STANDARD);
 
     acc->mpuConfiguration.writeFn(&acc->bus, ICM20649_RA_REG_BANK_SEL, 2 << 4); // config in bank 2
     delay(15);
-    const uint8_t acc_fsr = use30g ? ICM20649_FSR_30G : ICM20649_FSR_16G;
+    const uint8_t acc_fsr = acc->acc_high_fsr ? ICM20649_FSR_30G : ICM20649_FSR_16G;
     acc->mpuConfiguration.writeFn(&acc->bus, ICM20649_RA_ACCEL_CONFIG, acc_fsr << 1);
     delay(15);
     acc->mpuConfiguration.writeFn(&acc->bus, ICM20649_RA_REG_BANK_SEL, 0 << 4); // back to bank 0
@@ -134,8 +131,8 @@ void icm20649GyroInit(gyroDev_t *gyro)
     delay(15);
     gyro->mpuConfiguration.writeFn(&gyro->bus, ICM20649_RA_REG_BANK_SEL, 2 << 4); // config in bank 2
     delay(15);
-    const uint8_t gyro_fsr = use4kDps ? ICM20649_FSR_4000DPS : ICM20649_FSR_2000DPS;
-    uint8_t raGyroConfigData = gyro->gyroRateKHz > GYRO_RATE_1_kHz ? 0 : 1; // deactivate GYRO_FCHOICE for sample rates over 1kHz (opposite of other invensense chips)
+    const uint8_t gyro_fsr = gyro->gyro_high_fsr ? ICM20649_FSR_4000DPS : ICM20649_FSR_2000DPS;
+    uint8_t raGyroConfigData = gyro->gyroRateKHz > GYRO_RATE_1100_Hz ? 0 : 1; // deactivate GYRO_FCHOICE for sample rates over 1kHz (opposite of other invensense chips)
     raGyroConfigData |= gyro_fsr << 1 | gyro->lpf << 3;
     gyro->mpuConfiguration.writeFn(&gyro->bus, ICM20649_RA_GYRO_CONFIG_1, raGyroConfigData);
     delay(15);
@@ -164,7 +161,7 @@ bool icm20649SpiGyroDetect(gyroDev_t *gyro)
 
     // 16.4 dps/lsb 2kDps
     //  8.2 dps/lsb 4kDps
-    gyro->scale = 1.0f / (use4kDps ? 8.2f : 16.4f);
+    gyro->scale = 1.0f / (gyro->gyro_high_fsr ? 8.2f : 16.4f);
 
     return true;
 }

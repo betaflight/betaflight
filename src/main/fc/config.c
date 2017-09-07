@@ -507,13 +507,31 @@ void validateAndFixGyroConfig(void)
         gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
     }
 
-    float samplingTime = 0.000125f;
+    float samplingTime;
+    switch (gyroMpuDetectionResult()->sensor) {
+    case ICM_20649_SPI:
+        samplingTime = 1.0f / 9000.0f;
+        break;
+    case BMI_160_SPI:
+        samplingTime = 0.0003125f;
+        break;
+    default:
+        samplingTime = 0.000125f;
+        break;
+    }
 
     if (gyroConfig()->gyro_lpf != GYRO_LPF_256HZ && gyroConfig()->gyro_lpf != GYRO_LPF_NONE) {
         pidConfigMutable()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
         gyroConfigMutable()->gyro_sync_denom = 1;
         gyroConfigMutable()->gyro_use_32khz = false;
-        samplingTime = 0.001f;
+        switch (gyroMpuDetectionResult()->sensor) {
+        case ICM_20649_SPI:
+            samplingTime = 1.0f / 1100.0f;
+            break;
+        default:
+            samplingTime = 0.001f;
+            break;
+        }
     }
 
     if (gyroConfig()->gyro_use_32khz) {

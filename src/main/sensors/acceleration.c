@@ -113,7 +113,8 @@ void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
     RESET_CONFIG_2(accelerometerConfig_t, instance,
         .acc_lpf_hz = 10,
         .acc_align = ALIGN_DEFAULT,
-        .acc_hardware = ACC_DEFAULT
+        .acc_hardware = ACC_DEFAULT,
+        .acc_high_fsr = false,
     );
     resetRollAndPitchTrims(&instance->accelerometerTrims);
     resetFlightDynamicsTrims(&instance->accZero);
@@ -317,6 +318,7 @@ bool accInit(uint32_t gyroSamplingInverval)
     acc.dev.bus = *gyroSensorBus();
     acc.dev.mpuConfiguration = *gyroMpuConfiguration();
     acc.dev.mpuDetectionResult = *gyroMpuDetectionResult();
+    acc.dev.acc_high_fsr = accelerometerConfig()->acc_high_fsr;
     if (!accDetect(&acc.dev, accelerometerConfig()->acc_hardware)) {
         return false;
     }

@@ -127,6 +127,7 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .gyro_lpf = GYRO_LPF_256HZ,
     .gyro_soft_lpf_type = FILTER_PT1,
     .gyro_soft_lpf_hz = 90,
+    .gyro_high_fsr = false,
     .gyro_use_32khz = false,
     .gyro_to_use = 0,
     .gyro_soft_notch_hz_1 = 400,
@@ -335,6 +336,7 @@ static bool gyroInitSensor(gyroSensor_t *gyroSensor)
     mpuDetect(&gyroSensor->gyroDev);
     mpuResetFn = gyroSensor->gyroDev.mpuConfiguration.resetFn; // must be set after mpuDetect
 #endif
+    gyroSensor->gyroDev.gyro_high_fsr = gyroConfig()->gyro_high_fsr;
 
     const gyroSensor_e gyroHardware = gyroDetect(&gyroSensor->gyroDev);
     if (gyroHardware == GYRO_NONE) {

@@ -36,17 +36,32 @@ uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenomin
             gyro->gyroRateKHz = GYRO_RATE_32_kHz;
             gyroSamplePeriod = 31.5f;
         } else {
-#ifdef USE_ACCGYRO_BMI160
-            gyro->gyroRateKHz = GYRO_RATE_3200_Hz;
-            gyroSamplePeriod = 312.0f;
-#else
-            gyro->gyroRateKHz = GYRO_RATE_8_kHz;
-            gyroSamplePeriod = 125.0f;
-#endif
+            switch (gyro->mpuDetectionResult.sensor) {
+            case BMI_160_SPI:
+                gyro->gyroRateKHz = GYRO_RATE_3200_Hz;
+                gyroSamplePeriod = 312.0f;
+                break;
+            case ICM_20649_SPI:
+                gyro->gyroRateKHz = GYRO_RATE_9_kHz;
+                gyroSamplePeriod = 1000000.0f / 9000.0f;
+                break;
+            default:
+                gyro->gyroRateKHz = GYRO_RATE_8_kHz;
+                gyroSamplePeriod = 125.0f;
+                break;
+            }
         }
     } else {
-        gyro->gyroRateKHz = GYRO_RATE_1_kHz;
-        gyroSamplePeriod = 1000.0f;
+        switch (gyro->mpuDetectionResult.sensor) {
+        case ICM_20649_SPI:
+            gyro->gyroRateKHz = GYRO_RATE_1100_Hz;
+            gyroSamplePeriod = 1000000.0f / 1100.0f;
+            break;
+        default:
+            gyro->gyroRateKHz = GYRO_RATE_1_kHz;
+            gyroSamplePeriod = 1000.0f;
+            break;
+        }
         gyroSyncDenominator = 1; // Always full Sampling 1khz
     }
 
