@@ -318,6 +318,7 @@ bool accInit(uint32_t gyroSamplingInverval)
     acc.dev.bus = *gyroSensorBus();
     acc.dev.mpuConfiguration = *gyroMpuConfiguration();
     acc.dev.mpuDetectionResult = *gyroMpuDetectionResult();
+    acc.dev.acc_high_fsr = accelerometerConfig()->acc_high_fsr;
     if (!accDetect(&acc.dev, accelerometerConfig()->acc_hardware)) {
         return false;
     }
