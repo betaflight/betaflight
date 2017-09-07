@@ -310,7 +310,12 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
     sbufWriteU32(dst, address);
 
     // legacy format does not support compression
+#ifdef USE_HUFFMAN
     const uint8_t compressionMethod = (!allowCompression || useLegacyFormat) ? NO_COMPRESSION : HUFFMAN;
+#else
+    const uint8_t compressionMethod = NO_COMPRESSION;
+    UNUSED(allowCompression);
+#endif
 
     if (compressionMethod == NO_COMPRESSION) {
         if (!useLegacyFormat) {
