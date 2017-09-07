@@ -1,19 +1,19 @@
 /*
-* This file is part of Cleanflight.
-*
-* Cleanflight is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* Cleanflight is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * This file is part of Cleanflight.
+ *
+ * Cleanflight is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Cleanflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -21,7 +21,7 @@
 
 #include <platform.h>
 
-#ifdef USE_RX_A7105
+#ifdef USE_RX_FLYSKY
 
 #include "drivers/rx_a7105.h"
 #include "drivers/bus_spi.h"
@@ -32,7 +32,6 @@
 #include "drivers/exti.h"
 #include "drivers/time.h"
 
-
 #ifdef RX_PA_TXEN_PIN
 static IO_t txEnIO = IO_NONE;
 #endif
@@ -42,22 +41,19 @@ static extiCallbackRec_t a7105extiCallbackRec;
 static volatile uint32_t timeEvent = 0;
 static volatile bool occurEvent = false;
 
-
 void a7105extiHandler(extiCallbackRec_t* cb)
 {
     UNUSED(cb);
-    if (IORead (rxIntIO) != 0)
-    {
+
+    if (IORead (rxIntIO) != 0) {
         timeEvent = micros();
         occurEvent = true;
     }
 }
 
-
-void A7105Init (uint32_t id)
-{
+void A7105Init (uint32_t id) {
     spiDeviceByInstance(RX_SPI_INSTANCE);
-    rxIntIO = IOGetByTag(IO_TAG(RX_IRQ_PIN));                               /* config receiver IRQ pin */
+    rxIntIO = IOGetByTag(IO_TAG(RX_IRQ_PIN)); /* config receiver IRQ pin */
     IOInit(rxIntIO, OWNER_RX_SPI_CS, 0);
 #ifdef STM32F7
     EXTIHandlerInit(&a7105extiCallbackRec, a7105extiHandler);
@@ -79,20 +75,19 @@ void A7105Init (uint32_t id)
     A7105WriteID(id);
 }
 
-
 void A7105Config (const uint8_t *regsTable, uint8_t size)
 {
-    if (regsTable)
-    {
+    if (regsTable) {
         uint32_t timeout = 1000;
 
-        for (uint8_t i = 0; i < size; i++)
-        {
-            if (regsTable[i] != 0xFF) { A7105WriteReg ((A7105Reg_t)i, regsTable[i]); }
+        for (uint8_t i = 0; i < size; i++) {
+            if (regsTable[i] != 0xFF) {A7105WriteReg ((A7105Reg_t)i, regsTable[i]);}
         }
+
         A7105Strobe(A7105_STANDBY);
 
         A7105WriteReg(A7105_02_CALC, 0x01);
+
         while ((A7105ReadReg(A7105_02_CALC) != 0) || timeout--) {}
 
         A7105ReadReg(A7105_22_IF_CALIB_I);
@@ -103,57 +98,53 @@ void A7105Config (const uint8_t *regsTable, uint8_t size)
     }
 }
 
-
-bool A7105RxTxFinished (uint32_t *timeStamp)
-{
+bool A7105RxTxFinished (uint32_t *timeStamp) {
     bool result = false;
-    if (occurEvent)
-    {
-        if (timeStamp) *timeStamp = timeEvent;
+
+    if (occurEvent) {
+        if (timeStamp) {
+            *timeStamp = timeEvent;
+        }
+
         occurEvent = false;
         result = true;
     }
     return result;
 }
 
-
 void A7105SoftReset (void)
 {
     rxSpiWriteCommand((uint8_t)A7105_00_MODE, 0x00);
 }
-
 
 uint8_t A7105ReadReg (A7105Reg_t reg)
 {
     return rxSpiReadCommand((uint8_t)reg | 0x40, 0xFF);
 }
 
-
 void A7105WriteReg (A7105Reg_t reg, uint8_t data)
 {
     rxSpiWriteCommand((uint8_t)reg, data);
 }
 
-
 void A7105Strobe (A7105State_t state)
 {
-    if (A7105_TX == state || A7105_RX == state)
-    {
+    if (A7105_TX == state || A7105_RX == state) {
         EXTIEnable(rxIntIO, true);
-    }
-    else
-    {
+    } else {
         EXTIEnable(rxIntIO, false);
     }
+
 #ifdef RX_PA_TXEN_PIN
-    if (A7105_TX == state)
-        IOHi(txEnIO);                                                       /* enable PA */
-    else
-        IOLo(txEnIO);                                                       /* disable PA */
+    if (A7105_TX == state) {
+        IOHi(txEnIO); /* enable PA */
+    } else {
+        IOLo(txEnIO); /* disable PA */
+    }
 #endif
+
     rxSpiWriteByte((uint8_t)state);
 }
-
 
 void A7105WriteID(uint32_t id)
 {
@@ -165,37 +156,37 @@ void A7105WriteID(uint32_t id)
     rxSpiWriteCommandMulti((uint8_t)A7105_06_ID_DATA, &data[0], sizeof(data));
 }
 
-
 uint32_t A7105ReadID (void)
 {
     uint32_t id;
     uint8_t data[4];
     rxSpiReadCommandMulti ( (uint8_t)A7105_06_ID_DATA | 0x40, 0xFF, &data[0], sizeof(data));
-    id  = data[0] << 24 | data[1] << 16 | data[2] << 8 | data[3] << 0;
+    id = data[0] << 24 | data[1] << 16 | data[2] << 8 | data[3] << 0;
     return id;
 }
 
-
 void A7105ReadFIFO (uint8_t *data, uint8_t num)
 {
-    if (data)
-    {
-        if(num > 64) num = 64;
-        A7105Strobe(A7105_RST_RDPTR);                                       /* reset read pointer */
+    if (data) {
+        if(num > 64){
+            num = 64;
+        }
+
+        A7105Strobe(A7105_RST_RDPTR); /* reset read pointer */
         rxSpiReadCommandMulti((uint8_t)A7105_05_FIFO_DATA | 0x40, 0xFF, data, num);
     }
 }
 
-
 void A7105WriteFIFO (uint8_t *data, uint8_t num)
 {
-    if (data)
-    {
-        if(num > 64) num = 64;
-        A7105Strobe(A7105_RST_WRPTR);                                       /* reset write pointer */
+    if (data) {
+        if(num > 64) {
+            num = 64;
+        }
+
+        A7105Strobe(A7105_RST_WRPTR); /* reset write pointer */
         rxSpiWriteCommandMulti((uint8_t)A7105_05_FIFO_DATA, data, num);
     }
 }
-
 
 #endif /* USE_RX_FLYSKY */
