@@ -198,3 +198,170 @@ TEST(FilterUnittest, TestSlewFilter)
     slewFilterApply(&filter, 200.0f);
     EXPECT_EQ(200, filter.state);
 }
+
+TEST(FilterUnittest, TestInversionFilter)
+{
+    inversionFilter_t inversionFilterVal;
+    inversionFilter_t *inversionFilter = &inversionFilterVal;
+    inversionFilterInit(inversionFilter, 1000, 1950, 5);
+
+    float gyro;
+
+    gyro = inversionFilterApply(inversionFilter, 1991);
+    EXPECT_EQ(1991, gyro);
+    EXPECT_EQ(IF_LATCH_HIGH, inversionFilter->latched);
+    EXPECT_EQ(0, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, 1992);
+    EXPECT_EQ(1992, gyro);
+    EXPECT_EQ(IF_LATCH_HIGH, inversionFilter->latched);
+    EXPECT_EQ(0, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, 0);
+    EXPECT_EQ(1992, gyro);
+    EXPECT_EQ(IF_LATCH_HIGH, inversionFilter->latched);
+    EXPECT_EQ(0, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, -1000);
+    EXPECT_EQ(1992, gyro);
+    EXPECT_EQ(IF_LATCH_HIGH, inversionFilter->latched);
+    EXPECT_EQ(0, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, -1000);
+    EXPECT_EQ(1992, gyro);
+    EXPECT_EQ(IF_LATCH_HIGH, inversionFilter->latched);
+    EXPECT_EQ(0, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, 1500);
+    EXPECT_EQ(1992, gyro);
+    EXPECT_EQ(IF_LATCH_HIGH, inversionFilter->latched);
+    EXPECT_EQ(1, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, 1500);
+    EXPECT_EQ(1992, gyro);
+    EXPECT_EQ(IF_LATCH_HIGH, inversionFilter->latched);
+    EXPECT_EQ(2, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, 1500);
+    EXPECT_EQ(1992, gyro);
+    EXPECT_EQ(IF_LATCH_HIGH, inversionFilter->latched);
+    EXPECT_EQ(3, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, 1500);
+    EXPECT_EQ(1992, gyro);
+    EXPECT_EQ(IF_LATCH_HIGH, inversionFilter->latched);
+    EXPECT_EQ(4, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, 1500);
+    EXPECT_EQ(1992, gyro);
+    EXPECT_EQ(IF_LATCH_HIGH, inversionFilter->latched);
+    EXPECT_EQ(5, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, 1500);
+    EXPECT_EQ(1500, gyro);
+    EXPECT_EQ(IF_LATCH_OFF, inversionFilter->latched);
+
+    gyro = inversionFilterApply(inversionFilter, 1992);
+    EXPECT_EQ(1992, gyro);
+    EXPECT_EQ(IF_LATCH_HIGH, inversionFilter->latched);
+    EXPECT_EQ(0, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, 1500);
+    EXPECT_EQ(1992, gyro);
+    EXPECT_EQ(IF_LATCH_HIGH, inversionFilter->latched);
+    EXPECT_EQ(1, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, 1500);
+    EXPECT_EQ(1992, gyro);
+    EXPECT_EQ(IF_LATCH_HIGH, inversionFilter->latched);
+    EXPECT_EQ(2, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, 1500);
+    EXPECT_EQ(1992, gyro);
+    EXPECT_EQ(IF_LATCH_HIGH, inversionFilter->latched);
+    EXPECT_EQ(3, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, 1991);
+    EXPECT_EQ(1991, gyro);
+    EXPECT_EQ(IF_LATCH_HIGH, inversionFilter->latched);
+    EXPECT_EQ(0, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, 1500);
+    EXPECT_EQ(1991, gyro);
+    EXPECT_EQ(IF_LATCH_HIGH, inversionFilter->latched);
+    EXPECT_EQ(1, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, 1500);
+    EXPECT_EQ(1991, gyro);
+    EXPECT_EQ(IF_LATCH_HIGH, inversionFilter->latched);
+    EXPECT_EQ(2, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, -200);
+    EXPECT_EQ(1991, gyro);
+    EXPECT_EQ(IF_LATCH_HIGH, inversionFilter->latched);
+    EXPECT_EQ(0, inversionFilter->itemCount);
+
+}
+
+TEST(FilterUnittest, TestInversionFilter2)
+{
+    inversionFilter_t inversionFilterVal;
+    inversionFilter_t *inversionFilter = &inversionFilterVal;
+    inversionFilterInit(inversionFilter, 1000, 1950, 5);
+
+    float gyro;
+
+    gyro = inversionFilterApply(inversionFilter, -1991);
+    EXPECT_EQ(-1991, gyro);
+    EXPECT_EQ(IF_LATCH_LOW, inversionFilter->latched);
+    EXPECT_EQ(0, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, -1992);
+    EXPECT_EQ(-1992, gyro);
+    EXPECT_EQ(IF_LATCH_LOW, inversionFilter->latched);
+    EXPECT_EQ(0, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, 0);
+    EXPECT_EQ(-1992, gyro);
+    EXPECT_EQ(IF_LATCH_LOW, inversionFilter->latched);
+    EXPECT_EQ(0, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, 1000);
+    EXPECT_EQ(-1992, gyro);
+    EXPECT_EQ(IF_LATCH_LOW, inversionFilter->latched);
+    EXPECT_EQ(0, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, 1000);
+    EXPECT_EQ(-1992, gyro);
+    EXPECT_EQ(IF_LATCH_LOW, inversionFilter->latched);
+    EXPECT_EQ(0, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, -1500);
+    EXPECT_EQ(-1992, gyro);
+    EXPECT_EQ(IF_LATCH_LOW, inversionFilter->latched);
+    EXPECT_EQ(1, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, -1500);
+    EXPECT_EQ(-1992, gyro);
+    EXPECT_EQ(IF_LATCH_LOW, inversionFilter->latched);
+    EXPECT_EQ(2, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, -1500);
+    EXPECT_EQ(-1992, gyro);
+    EXPECT_EQ(IF_LATCH_LOW, inversionFilter->latched);
+    EXPECT_EQ(3, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, -1500);
+    EXPECT_EQ(-1992, gyro);
+    EXPECT_EQ(IF_LATCH_LOW, inversionFilter->latched);
+    EXPECT_EQ(4, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, -1500);
+    EXPECT_EQ(-1992, gyro);
+    EXPECT_EQ(IF_LATCH_LOW, inversionFilter->latched);
+    EXPECT_EQ(5, inversionFilter->itemCount);
+
+    gyro = inversionFilterApply(inversionFilter, -1500);
+    EXPECT_EQ(-1500, gyro);
+    EXPECT_EQ(IF_LATCH_OFF, inversionFilter->latched);
+}
