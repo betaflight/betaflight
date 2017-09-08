@@ -99,7 +99,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .pidAtMinThrottle = PID_STABILISATION_ON,
         .levelAngleLimit = 55,
         .setpointRelaxRatio = 100,
-        .dtermSetpointWeight = 60,
+        .dtermSetpointWeight = 0,
         .yawRateAccelLimit = 100,
         .rateAccelLimit = 0,
         .itermThrottleThreshold = 350,
