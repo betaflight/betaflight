@@ -20,19 +20,20 @@
 #include <stdint.h>
 
 // simple buffer-based serializer/deserializer without implicit size check
-// little-endian encoding implemneted now
 
 typedef struct sbuf_s {
-    uint8_t *ptr;          // data pointer must be first (sbuff_t* is equivalent to uint8_t **)
+    uint8_t *ptr;          // data pointer must be first (sbuf_t* is equivalent to uint8_t **)
     uint8_t *end;
 } sbuf_t;
 
 sbuf_t *sbufInit(sbuf_t *sbuf, uint8_t *ptr, uint8_t *end);
+
 void sbufWriteU8(sbuf_t *dst, uint8_t val);
 void sbufWriteU16(sbuf_t *dst, uint16_t val);
 void sbufWriteU32(sbuf_t *dst, uint32_t val);
 void sbufWriteU16BigEndian(sbuf_t *dst, uint16_t val);
 void sbufWriteU32BigEndian(sbuf_t *dst, uint32_t val);
+void sbufFill(sbuf_t *dst, uint8_t data, int len);
 void sbufWriteData(sbuf_t *dst, const void *data, int len);
 void sbufWriteString(sbuf_t *dst, const char *string);
 void sbufWriteStringWithZeroTerminator(sbuf_t *dst, const char *string);

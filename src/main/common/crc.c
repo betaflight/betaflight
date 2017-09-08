@@ -77,3 +77,25 @@ void crc8_dvb_s2_sbuf_append(sbuf_t *dst, uint8_t *start)
     }
     sbufWriteU8(dst, crc);
 }
+
+uint8_t crc8_xor_update(uint8_t crc, const void *data, uint32_t length)
+{
+    const uint8_t *p = (const uint8_t *)data;
+    const uint8_t *pend = p + length;
+
+    for (; p != pend; p++) {
+        crc ^= *p;
+    }
+    return crc;
+}
+
+void crc8_xor_sbuf_append(sbuf_t *dst, uint8_t *start)
+{
+    uint8_t crc = 0;
+    const uint8_t *end = dst->ptr;
+    for (uint8_t *ptr = start; ptr < end; ++ptr) {
+        crc ^= *ptr;
+    }
+    sbufWriteU8(dst, crc);
+}
+
