@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "drivers/io.h" // For ioTag_t
+
 #ifndef WHITEBRIGHTNESS
   #define WHITEBRIGHTNESS 0x01
 #endif
@@ -35,6 +37,15 @@
 extern uint16_t maxScreenSize;
 
 struct vcdProfile_s;
+
+typedef struct max7456Config_s {
+    ioTag_t max7456IoTagCsn;
+    uint8_t max7456SpiDevice;
+    uint8_t max7456UseDma;
+} max7456Config_t;
+
+PG_DECLARE(max7456Config_t, max7456Config);
+
 void    max7456HardwareReset(void);
 void    max7456Init(const struct vcdProfile_s *vcdProfile);
 void    max7456Invert(bool invert);

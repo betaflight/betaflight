@@ -23,6 +23,8 @@
 
 #if defined(USE_SPI)
 
+#include "build/debug.h"
+
 #include "common/utils.h"
 
 #include "drivers/bus.h"
@@ -71,39 +73,17 @@ spiDevice_t spiDevice[SPIDEV_COUNT];
 
 #define SPI_DEFAULT_TIMEOUT 10
 
-SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
+static LL_SPI_InitTypeDef defaultInit =
 {
-#ifdef USE_SPI_DEVICE_1
-    if (instance == SPI1)
-        return SPIDEV_1;
-#endif
-
-#ifdef USE_SPI_DEVICE_2
-    if (instance == SPI2)
-        return SPIDEV_2;
-#endif
-
-#ifdef USE_SPI_DEVICE_3
-    if (instance == SPI3)
-        return SPIDEV_3;
-#endif
-
-#ifdef USE_SPI_DEVICE_4
-    if (instance == SPI4)
-        return SPIDEV_4;
-#endif
-
-    return SPIINVALID;
-}
-
-SPI_TypeDef *spiInstanceByDevice(SPIDevice device)
-{
-    if (device >= SPIDEV_COUNT) {
-        return NULL;
-    }
-
-    return spiDevice[device].dev;
-}
+    .TransferDirection = SPI_DIRECTION_2LINES,
+    .Mode = SPI_MODE_MASTER,
+    .DataWidth = SPI_DATASIZE_8BIT,
+    .NSS = SPI_NSS_SOFT,
+    .BaudRate = SPI_BAUDRATEPRESCALER_8,
+    .BitOrder = SPI_FIRSTBIT_MSB,
+    .CRCPoly = 7,
+    .CRCCalculation = SPI_CRCCALCULATION_DISABLE,
+};
 
 void spiInitDevice(SPIDevice device)
 {
@@ -128,80 +108,30 @@ void spiInitDevice(SPIDevice device)
     IOInit(IOGetByTag(spi->miso), OWNER_SPI_MISO, RESOURCE_INDEX(device));
     IOInit(IOGetByTag(spi->mosi), OWNER_SPI_MOSI, RESOURCE_INDEX(device));
 
+    // XXX This shouldn't be necessary as SCK is always output.
     if (spi->leadingEdge == true)
         IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG_LOW, spi->sckAF);
     else
         IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG_HIGH, spi->sckAF);
+
     IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_MISO_CFG, spi->misoAF);
     IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_CFG, spi->mosiAF);
 
     LL_SPI_Disable(spi->dev);
     LL_SPI_DeInit(spi->dev);
 
-    LL_SPI_InitTypeDef init =
-    {
-        .TransferDirection = SPI_DIRECTION_2LINES,
-        .Mode = SPI_MODE_MASTER,
-        .DataWidth = SPI_DATASIZE_8BIT,
-        .ClockPolarity = spi->leadingEdge ? SPI_POLARITY_LOW : SPI_POLARITY_HIGH,
-        .ClockPhase = spi->leadingEdge ? SPI_PHASE_1EDGE : SPI_PHASE_2EDGE,
-        .NSS = SPI_NSS_SOFT,
-        .BaudRate = SPI_BAUDRATEPRESCALER_8,
-        .BitOrder = SPI_FIRSTBIT_MSB,
-        .CRCPoly = 7,
-        .CRCCalculation = SPI_CRCCALCULATION_DISABLE,
-    };
     LL_SPI_SetRxFIFOThreshold(spi->dev, SPI_RXFIFO_THRESHOLD_QF);
 
-    LL_SPI_Init(spi->dev, &init);
+    // XXX These should go away
+    defaultInit.ClockPolarity = spi->leadingEdge ? SPI_POLARITY_LOW : SPI_POLARITY_HIGH,
+    defaultInit.ClockPhase = spi->leadingEdge ? SPI_PHASE_1EDGE : SPI_PHASE_2EDGE,
+
+    LL_SPI_Init(spi->dev, &defaultInit);
     LL_SPI_Enable(spi->dev);
-}
 
-bool spiInit(SPIDevice device)
-{
-    switch (device) {
-    case SPIINVALID:
-        return false;
-    case SPIDEV_1:
-#if defined(USE_SPI_DEVICE_1)
-        spiInitDevice(device);
-        return true;
-#else
-        break;
-#endif
-    case SPIDEV_2:
-#if defined(USE_SPI_DEVICE_2)
-        spiInitDevice(device);
-        return true;
-#else
-        break;
-#endif
-    case SPIDEV_3:
-#if defined(USE_SPI_DEVICE_3)
-        spiInitDevice(device);
-        return true;
-#else
-        break;
-#endif
-    case SPIDEV_4:
-#if defined(USE_SPI_DEVICE_4)
-        spiInitDevice(device);
-        return true;
-#else
-        break;
-#endif
+    if (spi->dev == SPI3) {
+        debug[0] = spi->dev->CR1 + 10000; 
     }
-    return false;
-}
-
-uint32_t spiTimeoutUserCallback(SPI_TypeDef *instance)
-{
-    SPIDevice device = spiDeviceByInstance(instance);
-    if (device == SPIINVALID) {
-        return -1;
-    }
-    spiDevice[device].errorCount++;
-    return spiDevice[device].errorCount;
 }
 
 uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t txByte)
@@ -292,15 +222,7 @@ bool spiTransfer(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, 
     return true;
 }
 
-bool spiBusTransfer(const busDevice_t *bus, const uint8_t *txData, uint8_t *rxData, int length)
-{
-    IOLo(bus->busdev_u.spi.csnPin);
-    spiTransfer(bus->busdev_u.spi.instance, txData, rxData, length);
-    IOHi(bus->busdev_u.spi.csnPin);
-    return true;
-}
-
-void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
+static uint16_t spiDivisorToBRbits(SPI_TypeDef *instance, uint16_t divisor)
 {
 #if !(defined(STM32F1) || defined(STM32F3))
     // SPI2 and SPI3 are on APB1/AHB1 which PCLK is half that of APB2/AHB2.
@@ -308,64 +230,65 @@ void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
     if (instance == SPI2 || instance == SPI3) {
         divisor /= 2; // Safe for divisor == 0 or 1
     }
+#else
+    UNUSED(instance);
 #endif
 
+    return divisor ? ((ffs(divisor | 0x100) - 2) << SPI_CR1_BR_Pos) : 0;
+}
+
+void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
+{
     LL_SPI_Disable(instance);
-    LL_SPI_SetBaudRatePrescaler(instance, divisor ? (ffs(divisor | 0x100) - 2) << SPI_CR1_BR_Pos : 0);
+    LL_SPI_SetBaudRatePrescaler(instance, spiDivisorToBRbits(instance, divisor));
     LL_SPI_Enable(instance);
 }
 
-uint16_t spiGetErrorCounter(SPI_TypeDef *instance)
+void spiBusSetModeAndDivisor(busDevice_t *bus, SPIMode_e mode, SPIClockDivider_e divisor)
 {
-    SPIDevice device = spiDeviceByInstance(instance);
-    if (device == SPIINVALID) {
-        return 0;
+    switch (mode) {
+    case SPI_MODE0:
+        defaultInit.ClockPolarity = SPI_POLARITY_LOW;
+        defaultInit.ClockPhase = SPI_PHASE_1EDGE;
+        break;
+    case SPI_MODE1:
+        defaultInit.ClockPolarity = SPI_POLARITY_LOW;
+        defaultInit.ClockPhase = SPI_PHASE_2EDGE;
+        break;
+    case SPI_MODE2:
+        defaultInit.ClockPolarity = SPI_POLARITY_HIGH;
+        defaultInit.ClockPhase = SPI_PHASE_1EDGE;
+        break;
+    case SPI_MODE3:
+        defaultInit.ClockPolarity = SPI_POLARITY_HIGH;
+        defaultInit.ClockPhase = SPI_PHASE_2EDGE;
+        break;
     }
-    return spiDevice[device].errorCount;
+
+    LL_SPI_Disable(bus->busdev_u.spi.instance);
+    LL_SPI_DeInit(bus->busdev_u.spi.instance);
+
+    LL_SPI_Init(bus->busdev_u.spi.instance, &defaultInit);
+    LL_SPI_SetBaudRatePrescaler(bus->busdev_u.spi.instance, spiDivisorToBRbits(bus->busdev_u.spi.instance, divisor));
+
+    // Configure for 8-bit reads. XXX Is this STM32F303xC specific?
+    LL_SPI_SetRxFIFOThreshold(bus->busdev_u.spi.instance, SPI_RXFIFO_THRESHOLD_QF);
+
+    LL_SPI_Enable(bus->busdev_u.spi.instance);
+
+    bus->busdev_u.spi.modeCache = bus->busdev_u.spi.instance->CR1;
 }
 
-void spiResetErrorCounter(SPI_TypeDef *instance)
+void spiBusModeSetup(const busDevice_t *bus)
 {
-    SPIDevice device = spiDeviceByInstance(instance);
-    if (device != SPIINVALID) {
-        spiDevice[device].errorCount = 0;
+    // XXX We rely on MSTR bit to detect valid modeCache during experiment and transition.
+    if (bus->busdev_u.spi.modeCache) {
+        LL_SPI_Disable(bus->busdev_u.spi.instance);
+        // XXX Compare overheads of checking v.s. register writing v.s. transient signal glitches
+        if (bus->busdev_u.spi.instance->CR1 != bus->busdev_u.spi.modeCache) {
+            bus->busdev_u.spi.instance->CR1 = bus->busdev_u.spi.modeCache;
+        }
     }
+    LL_SPI_Enable(bus->busdev_u.spi.instance);
 }
-
-bool spiBusWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
-{
-    IOLo(bus->busdev_u.spi.csnPin);
-    spiTransferByte(bus->busdev_u.spi.instance, reg);
-    spiTransferByte(bus->busdev_u.spi.instance, data);
-    IOHi(bus->busdev_u.spi.csnPin);
-
-    return true;
-}
-
-bool spiBusReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data, uint8_t length)
-{
-    IOLo(bus->busdev_u.spi.csnPin);
-    spiTransferByte(bus->busdev_u.spi.instance, reg | 0x80); // read transaction
-    spiTransfer(bus->busdev_u.spi.instance, NULL, data, length);
-    IOHi(bus->busdev_u.spi.csnPin);
-
-    return true;
-}
-
-uint8_t spiBusReadRegister(const busDevice_t *bus, uint8_t reg)
-{
-    uint8_t data;
-    IOLo(bus->busdev_u.spi.csnPin);
-    spiTransferByte(bus->busdev_u.spi.instance, reg | 0x80); // read transaction
-    spiTransfer(bus->busdev_u.spi.instance, NULL, &data, 1);
-    IOHi(bus->busdev_u.spi.csnPin);
-
-    return data;
-}
-
-void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance)
-{
-    bus->busdev_u.spi.instance = instance;
-}
-
 #endif
