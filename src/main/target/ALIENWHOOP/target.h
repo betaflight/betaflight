@@ -201,10 +201,12 @@
 #define DEFAULT_FEATURES        (FEATURE_RX_SERIAL | FEATURE_MOTOR_STOP )  // TODO FEATURE_OSD for V3 board ... FEATURE_TELEMETRY changes bind pin from rx to tx
 #endif
 
+/* OSD currently dependent upon CMS, SMARTAUDIO, TRAMP
 #undef VTX_COMMON
 #undef VTX_CONTROL
 #undef VTX_SMARTAUDIO
 #undef VTX_TRAMP
+*/
 
 /* OLED Support
  */
@@ -217,7 +219,7 @@
 #define I2C1_SCL                PB6
 #define I2C1_SDA                PB7
 #else
-#undef CMS
+//#undef CMS // TODO: OSD depends upon CMS
 #undef USE_I2C
 #endif
 
