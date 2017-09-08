@@ -109,12 +109,13 @@ PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
     .enabledFeatures = DEFAULT_FEATURES | DEFAULT_RX_FEATURE
 );
 
-PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 1);
 
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .current_profile_index = 0,
     .debug_mode = DEBUG_NONE,
     .i2c_speed = I2C_SPEED_400KHZ,
+    .cpuUnderclock = 0,
     .accTaskFrequency = ACC_TASK_FREQUENCY_DEFAULT,
     .attitudeTaskFrequency = ATTITUDE_TASK_FREQUENCY_DEFAULT,
     .asyncMode = ASYNC_MODE_NONE,

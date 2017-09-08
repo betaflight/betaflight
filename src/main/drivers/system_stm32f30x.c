@@ -26,7 +26,7 @@
 #include "drivers/system.h"
 
 #define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
-void SetSysClock(void);
+void SetSysClock(uint8_t underclock);
 
 void systemReset(void)
 {
@@ -40,7 +40,6 @@ void systemResetToBootloader(void)
     // 1FFFF004 -> 1FFFF021 -> PC
 
     *((uint32_t *)0x20009FFC) = 0xDEADBEEF; // 40KB SRAM STM32F30X
-
     systemReset();
 }
 
@@ -80,13 +79,30 @@ bool isMPUSoftReset(void)
         return false;
 }
 
+static void systemTimekeepingSetup(void)
+{
+    RCC_ClocksTypeDef clocks;
+    RCC_GetClocksFreq(&clocks);
+
+    cycleCounterInit();
+    SysTick_Config(clocks.SYSCLK_Frequency / 1000);
+}
+
+void systemClockSetup(uint8_t cpuUnderclock)
+{
+    // Configure the RCC. Note that this should be called only once per boot
+    SetSysClock(cpuUnderclock);
+
+    // Re-initialize system timekeeping - CPU clock changed
+    systemTimekeepingSetup();
+}
+
 void systemInit(void)
 {
     checkForBootLoaderRequest();
 
     // Enable FPU
     SCB->CPACR = (0x3 << (10 * 2)) | (0x3 << (11 * 2));
-    SetSysClock();
 
     // Configure NVIC preempt/priority groups
     NVIC_PriorityGroupConfig(NVIC_PRIORITY_GROUPING);
@@ -96,13 +112,10 @@ void systemInit(void)
     RCC_ClearFlag();
 
     enableGPIOPowerUsageAndNoiseReductions();
-
-    // Init cycle counter
-    cycleCounterInit();
-
     memset(extiHandlerConfigs, 0x00, sizeof(extiHandlerConfigs));
-    // SysTick
-    SysTick_Config(SystemCoreClock / 1000);
+
+    // Pre-setup SysTick and system time - final setup is done in systemClockSetup
+    systemTimekeepingSetup();
 }
 
 void checkForBootLoaderRequest(void)
