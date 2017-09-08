@@ -76,7 +76,6 @@
 
 gyro_t gyro;
 static uint8_t gyroDebugMode;
-static bool gyroUseSlewFilter;
 
 
 typedef struct gyroCalibration_s {
@@ -364,18 +363,6 @@ static bool gyroInitSensor(gyroSensor_t *gyroSensor)
         break;
     }
 
-    switch (gyroHardware) {
-    case GYRO_ICM20601:
-    case GYRO_ICM20602:
-    case GYRO_ICM20608G:
-    case GYRO_ICM20689:
-        gyroUseSlewFilter = true;
-        break;
-    default:
-        gyroUseSlewFilter = false;
-        break;
-    }
-
     // Must set gyro targetLooptime before gyroDev.init and initialisation of filters
     gyro.targetLooptime = gyroSetSampleRate(&gyroSensor->gyroDev, gyroConfig()->gyro_lpf, gyroConfig()->gyro_sync_denom, gyroConfig()->gyro_use_32khz);
     gyroSensor->gyroDev.lpf = gyroConfig()->gyro_lpf;
@@ -617,16 +604,11 @@ STATIC_UNIT_TESTED void performGyroCalibration(gyroSensor_t *gyroSensor, uint8_t
 int32_t gyroSlewLimiter(gyroSensor_t *gyroSensor, int axis)
 {
     int32_t newRawGyro = (int32_t)gyroSensor->gyroDev.gyroADCRaw[axis];
-    if (gyroUseSlewFilter == false) {
-        return newRawGyro;
-    }
-
     if (abs(newRawGyro - gyroSensor->gyroDev.gyroADCRawPrevious[axis]) > (1<<14)) {
         newRawGyro = gyroSensor->gyroDev.gyroADCRawPrevious[axis];
     } else {
         gyroSensor->gyroDev.gyroADCRawPrevious[axis] = newRawGyro;
     }
-
     return newRawGyro;
 }
 #endif
