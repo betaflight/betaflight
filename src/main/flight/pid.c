@@ -99,7 +99,7 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .pidAtMinThrottle = PID_STABILISATION_ON,
         .levelAngleLimit = 55,
         .setpointRelaxRatio = 100,
-        .dtermSetpointWeight = 60,
+        .dtermSetpointWeight = 0,
         .yawRateAccelLimit = 100,
         .rateAccelLimit = 0,
         .itermThrottleThreshold = 350,
@@ -488,7 +488,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             gyroRateFiltered = dtermLpfApplyFn(dtermFilterLpf[axis], gyroRateFiltered);
 
             float dynC = 0;
-            if ( (pidProfile->setpointRelaxRatio < 100) && (!flightModeFlags) ) {
+            if ( (pidProfile->dtermSetpointWeight > 0) && (!flightModeFlags) ) {
                 dynC = dtermSetpointWeight * MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f);
             }
             const float rD = dynC * currentPidSetpoint - gyroRateFiltered;    // cr - y
