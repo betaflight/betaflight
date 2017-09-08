@@ -43,7 +43,10 @@
 #define BEEPER_INVERTED
 
 #ifdef OMNIBUSF4SD
+// These inverter control pins collide with timer channels on CH5 and CH6 pads.
+// Users of these timers/pads must un-map the inverter assignment explicitly.
 #define INVERTER_PIN_UART6      PC8 // Omnibus F4 V3 and later
+#define INVERTER_PIN_UART3      PC9 // Omnibus F4 Pro Corners
 #else
 #define INVERTER_PIN_UART1      PC0 // PC0 used as inverter select GPIO XXX this is not used --- remove it at the next major release
 #endif
