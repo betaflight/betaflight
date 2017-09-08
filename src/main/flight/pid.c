@@ -488,7 +488,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             gyroRateFiltered = dtermLpfApplyFn(dtermFilterLpf[axis], gyroRateFiltered);
 
             float dynC = 0;
-            if ( (pidProfile->setpointRelaxRatio < 100) && (!flightModeFlags) ) {
+            if ( (pidProfile->dtermSetpointWeight > 0) && (!flightModeFlags) ) {
                 dynC = dtermSetpointWeight * MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f);
             }
             const float rD = dynC * currentPidSetpoint - gyroRateFiltered;    // cr - y
