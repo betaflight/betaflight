@@ -26,7 +26,8 @@ Vagrant.configure(2) do |config|
     add-apt-repository ppa:team-gcc-arm-embedded/ppa
     apt-get update
     apt-get install -y git gcc-arm-embedded=6-2017q2-1~xenial1
-    apt-get install -y make python gcc clang
+    apt-get install -y make python gcc clang ntpdate
+    ntpdate -u pool.ntp.org
   SHELL
 end
 
