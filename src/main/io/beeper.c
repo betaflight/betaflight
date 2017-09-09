@@ -212,8 +212,9 @@ typedef struct beeperTableEntry_s {
     { BEEPER_ENTRY(BEEPER_SYSTEM_INIT,           16, NULL,                 "SYSTEM_INIT") },
     { BEEPER_ENTRY(BEEPER_USB,                   17, NULL,                 "ON_USB") },
     { BEEPER_ENTRY(BEEPER_BLACKBOX_ERASE,        18, beep_2shortBeeps,     "BLACKBOX_ERASE") },
-    { BEEPER_ENTRY(BEEPER_ALL,                   19, NULL,                 "ALL") },
-    { BEEPER_ENTRY(BEEPER_PREFERENCE,            20, NULL,                 "PREFERRED") },
+    { BEEPER_ENTRY(BEEPER_CRASH_FLIP_MODE,       19, beep_2longerBeeps,    "CRASH FLIP") },
+    { BEEPER_ENTRY(BEEPER_ALL,                   20, NULL,                 "ALL") },
+    { BEEPER_ENTRY(BEEPER_PREFERENCE,            21, NULL,                 "PREFERRED") },
 };
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;
@@ -363,7 +364,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
         return;
     }
 
-    #ifdef USE_DSHOT
+#ifdef USE_DSHOT
     if (!areMotorsRunning() && beeperConfig()->dshotBeaconTone && (beeperConfig()->dshotBeaconTone <= DSHOT_CMD_BEACON5) && (currentBeeperEntry->mode == BEEPER_RX_SET || currentBeeperEntry->mode == BEEPER_RX_LOST)) {
         pwmDisableMotors();
         delay(1);
@@ -372,7 +373,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
 
         pwmEnableMotors();
     }
-    #endif
+#endif
 
     if (!beeperIsOn) {
         beeperIsOn = 1;
