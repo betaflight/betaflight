@@ -23,6 +23,7 @@
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "io/serial.h"
 #include "rx/rx.h"
 #include "sensors/sensors.h"
@@ -50,6 +51,7 @@ void targetConfiguration(void)
     featureSet(FEATURE_TELEMETRY);
     featureSet(FEATURE_LED_STRIP);
     featureSet(FEATURE_BLACKBOX);
+    featureSet(FEATURE_AIRMODE);
 
     serialConfigMutable()->portConfigs[0].functionMask = FUNCTION_MSP;          // VCP
     serialConfigMutable()->portConfigs[1].functionMask = FUNCTION_GPS;          // UART1
@@ -147,11 +149,10 @@ void targetConfiguration(void)
 
     configureModeActivationCondition(0, BOXARM,         0, 1150, 2100);
     configureModeActivationCondition(1, BOXANGLE,       0, 1300, 1700);
-    configureModeActivationCondition(2, BOXAIRMODE,     0, 1150, 2100);
-    configureModeActivationCondition(3, BOXNAVALTHOLD,  3, 1300, 1700);
-    configureModeActivationCondition(4, BOXNAVPOSHOLD,  3, 1300, 1700);
-    configureModeActivationCondition(5, BOXNAVRTH,      3, 1700, 2100);
-    configureModeActivationCondition(6, BOXANGLE,       3, 1700, 2100);
+    configureModeActivationCondition(2, BOXNAVALTHOLD,  3, 1300, 1700);
+    configureModeActivationCondition(3, BOXNAVPOSHOLD,  3, 1300, 1700);
+    configureModeActivationCondition(4, BOXNAVRTH,      3, 1700, 2100);
+    configureModeActivationCondition(5, BOXANGLE,       3, 1700, 2100);
     
     // Rates and PIDs
     setConfigProfile(0);

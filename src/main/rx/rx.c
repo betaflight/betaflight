@@ -35,13 +35,14 @@
 
 
 #include "drivers/adc.h"
-#include "drivers/pwm_rx.h"
+#include "drivers/rx_pwm.h"
 #include "drivers/rx_spi.h"
 #include "drivers/serial.h"
 #include "drivers/time.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 
 #include "flight/failsafe.h"
 

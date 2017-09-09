@@ -70,10 +70,10 @@
 
 
 static spiDevice_t spiHardwareMap[] = {
-    { .dev = SPI1, .nss = IO_TAG(SPI1_NSS_PIN), .sck = IO_TAG(SPI1_SCK_PIN), .miso = IO_TAG(SPI1_MISO_PIN), .mosi = IO_TAG(SPI1_MOSI_PIN), .rcc = RCC_APB2(SPI1), .af = GPIO_AF5_SPI1, .sdcard = false, .dmaIrqHandler = DMA2_ST3_HANDLER },
-    { .dev = SPI2, .nss = IO_TAG(SPI2_NSS_PIN), .sck = IO_TAG(SPI2_SCK_PIN), .miso = IO_TAG(SPI2_MISO_PIN), .mosi = IO_TAG(SPI2_MOSI_PIN), .rcc = RCC_APB1(SPI2), .af = GPIO_AF5_SPI2, .sdcard = false, .dmaIrqHandler = DMA1_ST4_HANDLER },
-    { .dev = SPI3, .nss = IO_TAG(SPI3_NSS_PIN), .sck = IO_TAG(SPI3_SCK_PIN), .miso = IO_TAG(SPI3_MISO_PIN), .mosi = IO_TAG(SPI3_MOSI_PIN), .rcc = RCC_APB1(SPI3), .af = GPIO_AF6_SPI3, .sdcard = false, .dmaIrqHandler = DMA1_ST7_HANDLER },
-    { .dev = SPI4, .nss = IO_TAG(SPI4_NSS_PIN), .sck = IO_TAG(SPI4_SCK_PIN), .miso = IO_TAG(SPI4_MISO_PIN), .mosi = IO_TAG(SPI4_MOSI_PIN), .rcc = RCC_APB2(SPI4), .af = GPIO_AF5_SPI4, .sdcard = false, .dmaIrqHandler = DMA2_ST1_HANDLER }
+    { .dev = SPI1, .nss = IO_TAG(SPI1_NSS_PIN), .sck = IO_TAG(SPI1_SCK_PIN), .miso = IO_TAG(SPI1_MISO_PIN), .mosi = IO_TAG(SPI1_MOSI_PIN), .rcc = RCC_APB2(SPI1), .af = GPIO_AF5_SPI1, .leadingEdge = false, .dmaIrqHandler = DMA2_ST3_HANDLER },
+    { .dev = SPI2, .nss = IO_TAG(SPI2_NSS_PIN), .sck = IO_TAG(SPI2_SCK_PIN), .miso = IO_TAG(SPI2_MISO_PIN), .mosi = IO_TAG(SPI2_MOSI_PIN), .rcc = RCC_APB1(SPI2), .af = GPIO_AF5_SPI2, .leadingEdge = false, .dmaIrqHandler = DMA1_ST4_HANDLER },
+    { .dev = SPI3, .nss = IO_TAG(SPI3_NSS_PIN), .sck = IO_TAG(SPI3_SCK_PIN), .miso = IO_TAG(SPI3_MISO_PIN), .mosi = IO_TAG(SPI3_MOSI_PIN), .rcc = RCC_APB1(SPI3), .af = GPIO_AF6_SPI3, .leadingEdge = false, .dmaIrqHandler = DMA1_ST7_HANDLER },
+    { .dev = SPI4, .nss = IO_TAG(SPI4_NSS_PIN), .sck = IO_TAG(SPI4_SCK_PIN), .miso = IO_TAG(SPI4_MISO_PIN), .mosi = IO_TAG(SPI4_MOSI_PIN), .rcc = RCC_APB2(SPI4), .af = GPIO_AF5_SPI4, .leadingEdge = false, .dmaIrqHandler = DMA2_ST1_HANDLER }
 };
 
 SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
@@ -129,8 +129,9 @@ void spiInitDevice(SPIDevice device)
     spiDevice_t *spi = &(spiHardwareMap[device]);
 
 #ifdef SDCARD_SPI_INSTANCE
-    if (spi->dev == SDCARD_SPI_INSTANCE)
-        spi->sdcard = true;
+    if (spi->dev == SDCARD_SPI_INSTANCE) {
+        spi->leadingEdge = true;
+    }
 #endif
 
     // Enable SPI clock
@@ -142,10 +143,11 @@ void spiInitDevice(SPIDevice device)
     IOInit(IOGetByTag(spi->mosi), OWNER_SPI, RESOURCE_SPI_MOSI, device + 1);
 
 #if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
-    if (spi->sdcard == true)
+    if (spi->leadingEdge == true) {
         IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG_LOW, spi->af);
-    else
+    } else {
         IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG_HIGH, spi->af);
+    }
     IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_MISO_CFG, spi->af);
     IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_CFG, spi->af);
 
@@ -178,17 +180,15 @@ void spiInitDevice(SPIDevice device)
     spiHardwareMap[device].hspi.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
     spiHardwareMap[device].hspi.Init.TIMode = SPI_TIMODE_DISABLED;
 
-    if (spi->sdcard) {
+    if (spi->leadingEdge) {
         spiHardwareMap[device].hspi.Init.CLKPolarity = SPI_POLARITY_LOW;
         spiHardwareMap[device].hspi.Init.CLKPhase = SPI_PHASE_1EDGE;
-    }
-    else {
+    } else {
         spiHardwareMap[device].hspi.Init.CLKPolarity = SPI_POLARITY_HIGH;
         spiHardwareMap[device].hspi.Init.CLKPhase = SPI_PHASE_2EDGE;
     }
 
-    if (HAL_SPI_Init(&spiHardwareMap[device].hspi) == HAL_OK)
-    {
+    if (HAL_SPI_Init(&spiHardwareMap[device].hspi) == HAL_OK) {
         if (spi->nss) {
             IOHi(IOGetByTag(spi->nss));
         }

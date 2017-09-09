@@ -63,6 +63,7 @@
 #define USE_MAG_AK8963
 #define MAG_AK8963_ALIGN        CW0_DEG_FLIP
 #define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
 
 #define USE_VCP
 #define USE_UART1 // Not connected - TX (PB6) RX PB7 (AF7)

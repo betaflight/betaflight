@@ -35,9 +35,6 @@
 #define IOCFG_I2C IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_OD, GPIO_PuPd_NOPULL)
 #endif
 
-#define I2C_HIGHSPEED_TIMING  0x00500E30  // 1000 Khz, 72Mhz Clock, Analog Filter Delay ON, Setup 40, Hold 4.
-#define I2C_STANDARD_TIMING   0x00E0257A  // 400 Khz, 72Mhz Clock, Analog Filter Delay ON, Rise 100, Fall 10.
-
 #define I2C_SHORT_TIMEOUT   ((uint32_t)0x1000)
 #define I2C_LONG_TIMEOUT    ((uint32_t)(10 * I2C_SHORT_TIMEOUT))
 #define I2C_GPIO_AF         GPIO_AF_4
@@ -102,8 +99,8 @@ typedef struct i2cBusState_s {
 static volatile uint16_t i2cErrorCount = 0;
 
 static i2cDevice_t i2cHardwareMap[] = {
-    { .dev = I2C1, .scl = IO_TAG(I2C1_SCL), .sda = IO_TAG(I2C1_SDA), .rcc = RCC_APB1(I2C1), .overClock = I2C1_OVERCLOCK },
-    { .dev = I2C2, .scl = IO_TAG(I2C2_SCL), .sda = IO_TAG(I2C2_SDA), .rcc = RCC_APB1(I2C2), .overClock = I2C2_OVERCLOCK }
+    { .dev = I2C1, .scl = IO_TAG(I2C1_SCL), .sda = IO_TAG(I2C1_SDA), .rcc = RCC_APB1(I2C1), .speed = I2C_SPEED_400KHZ },
+    { .dev = I2C2, .scl = IO_TAG(I2C2_SCL), .sda = IO_TAG(I2C2_SDA), .rcc = RCC_APB1(I2C2), .speed = I2C_SPEED_400KHZ }
 };
 
 static i2cBusState_t busState[I2CDEV_COUNT] = { { 0 } };
@@ -308,10 +305,10 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const uint32_t currentT
     }
 }
 
-void i2cSetOverclock(uint8_t overClock)
+void i2cSetSpeed(uint8_t speed)
 {
     for (unsigned int i = 0; i < sizeof(i2cHardwareMap) / sizeof(i2cHardwareMap[0]); i++) {
-        i2cHardwareMap[i].overClock = overClock;
+        i2cHardwareMap[i].speed = speed;
     }
 }
 
@@ -347,8 +344,26 @@ void i2cInit(I2CDevice device)
         .I2C_OwnAddress1 = 0x00,
         .I2C_Ack = I2C_Ack_Enable,
         .I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit,
-        .I2C_Timing = (i2c->overClock ? I2C_HIGHSPEED_TIMING : I2C_STANDARD_TIMING)
     };
+
+    switch (i2c->speed) {
+        case I2C_SPEED_400KHZ:
+        default:
+            i2cInit.I2C_Timing = 0x00E0257A;    // 400 Khz, 72Mhz Clock, Analog Filter Delay ON, Rise 100, Fall 10.
+            break;
+
+        case I2C_SPEED_800KHZ:
+            i2cInit.I2C_Timing = 0x00601C2E;    // 800 Khz, 72Mhz Clock, Analog Filter Delay ON, Rise 40, Fall 4.
+            break;
+
+        case I2C_SPEED_100KHZ:
+            i2cInit.I2C_Timing = 0x10C08DCF;    // 100 Khz, 72Mhz Clock, Analog Filter Delay ON, Rise 100, Fall 10.
+            break;
+
+        case I2C_SPEED_200KHZ:
+            i2cInit.I2C_Timing = 0xA010031A;    // 200 Khz, 72Mhz Clock, Analog Filter Delay ON, Rise 100, Fall 10.
+            break;
+    }
 
     I2C_Init(i2c->dev, &i2cInit);
     I2C_StretchClockCmd(i2c->dev, ENABLE);
@@ -372,22 +387,18 @@ static void i2cWaitForCompletion(I2CDevice device)
     } while (busState[device].state != I2C_STATE_STOPPED);
 }
 
-bool i2cWrite(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t data)
+bool i2cWriteBuffer(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t * data)
 {
-    static uint8_t writeBuf[1];
-
     // Don't try to access the non-initialized device
     if (!busState[device].initialized)
         return false;
 
     // Set up write transaction
-    writeBuf[0] = data;
-
     busState[device].addr = addr << 1;
     busState[device].reg = reg;
     busState[device].rw = I2C_TXN_WRITE;
-    busState[device].len = 1;
-    busState[device].buf = writeBuf;
+    busState[device].len = len;
+    busState[device].buf = data;
     busState[device].txnOk = false;
     busState[device].state = I2C_STATE_STARTING;
 
@@ -396,6 +407,12 @@ bool i2cWrite(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t data)
 
     return busState[device].txnOk;
 }
+
+bool i2cWrite(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t data)
+{
+    return i2cWriteBuffer(device, addr, reg, 1, &data);
+}
+
 
 bool i2cRead(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t* buf)
 {

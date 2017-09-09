@@ -50,8 +50,10 @@
 
 #define MAG
 #define USE_MAG_AK8975
+#define USE_MAG_QMC5883
 #define MAG_AK8975_ALIGN        CW90_DEG_FLIP
 
+#define USB_IO
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2

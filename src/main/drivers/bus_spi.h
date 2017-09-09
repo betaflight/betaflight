@@ -18,13 +18,13 @@
 #pragma once
 
 #include "drivers/io_types.h"
-#include "rcc_types.h"
+#include "drivers/rcc_types.h"
 
 #if defined(STM32F4) || defined(STM32F3)
-#define SPI_IO_AF_CFG      IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
-#define SPI_IO_AF_SCK_CFG  IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN)
-#define SPI_IO_AF_MISO_CFG IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
-#define SPI_IO_CS_CFG      IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
+#define SPI_IO_AF_CFG           IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
+#define SPI_IO_AF_SCK_CFG       IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN)
+#define SPI_IO_AF_MISO_CFG      IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
+#define SPI_IO_CS_CFG           IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
 #elif defined(STM32F7)
 #define SPI_IO_AF_CFG           IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
 #define SPI_IO_AF_SCK_CFG_HIGH  IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
@@ -32,10 +32,10 @@
 #define SPI_IO_AF_MISO_CFG      IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
 #define SPI_IO_CS_CFG           IO_CONFIG(GPIO_MODE_OUTPUT_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
 #elif defined(STM32F1)
-#define SPI_IO_AF_SCK_CFG     IO_CONFIG(GPIO_Mode_AF_PP,       GPIO_Speed_50MHz)
-#define SPI_IO_AF_MOSI_CFG    IO_CONFIG(GPIO_Mode_AF_PP,       GPIO_Speed_50MHz)
-#define SPI_IO_AF_MISO_CFG    IO_CONFIG(GPIO_Mode_IN_FLOATING, GPIO_Speed_50MHz)
-#define SPI_IO_CS_CFG         IO_CONFIG(GPIO_Mode_Out_PP,      GPIO_Speed_50MHz)
+#define SPI_IO_AF_SCK_CFG       IO_CONFIG(GPIO_Mode_AF_PP,       GPIO_Speed_50MHz)
+#define SPI_IO_AF_MOSI_CFG      IO_CONFIG(GPIO_Mode_AF_PP,       GPIO_Speed_50MHz)
+#define SPI_IO_AF_MISO_CFG      IO_CONFIG(GPIO_Mode_IN_FLOATING, GPIO_Speed_50MHz)
+#define SPI_IO_CS_CFG           IO_CONFIG(GPIO_Mode_Out_PP,      GPIO_Speed_50MHz)
 #endif
 
 /*
@@ -47,17 +47,17 @@ typedef enum {
     SPI_CLOCK_SLOW          = 128, //00.65625 MHz
     SPI_CLOCK_STANDARD      = 8,   //10.50000 MHz
     SPI_CLOCK_FAST          = 4,   //21.00000 MHz
-    SPI_CLOCK_ULTRAFAST     = 2,   //42.00000 MHz
+    SPI_CLOCK_ULTRAFAST     = 2    //42.00000 MHz
 #elif defined(STM32F7)
     SPI_CLOCK_SLOW          = 256, //00.42188 MHz
     SPI_CLOCK_STANDARD      = 16,  //06.57500 MHz
     SPI_CLOCK_FAST          = 4,   //27.00000 MHz
-    SPI_CLOCK_ULTRAFAST     = 2,   //54.00000 MHz
+    SPI_CLOCK_ULTRAFAST     = 2    //54.00000 MHz
 #else
     SPI_CLOCK_SLOW          = 128, //00.56250 MHz
     SPI_CLOCK_STANDARD      = 4,   //09.00000 MHz
     SPI_CLOCK_FAST          = 2,   //18.00000 MHz
-    SPI_CLOCK_ULTRAFAST     = 2,   //18.00000 MHz
+    SPI_CLOCK_ULTRAFAST     = 2    //18.00000 MHz
 #endif
 } SPIClockDivider_e;
 
@@ -66,9 +66,18 @@ typedef enum SPIDevice {
     SPIDEV_1   = 0,
     SPIDEV_2,
     SPIDEV_3,
-    SPIDEV_4,
-    SPIDEV_MAX = SPIDEV_4,
+    SPIDEV_4
 } SPIDevice;
+
+#if defined(STM32F1)
+#define SPIDEV_COUNT 2
+#elif defined(STM32F3) || defined(STM32F4)
+#define SPIDEV_COUNT 3
+#elif defined(STM32F7)
+#define SPIDEV_COUNT 4
+#else
+#define SPIDEV_COUNT 4
+#endif
 
 typedef struct SPIDevice_s {
     SPI_TypeDef *dev;
@@ -79,8 +88,7 @@ typedef struct SPIDevice_s {
     rccPeriphTag_t rcc;
     uint8_t af;
     volatile uint16_t errorCount;
-    bool sdcard;
-    bool nrf24l01;
+    bool leadingEdge;
 #if defined(STM32F7)
     SPI_HandleTypeDef hspi;
     DMA_HandleTypeDef hdma;

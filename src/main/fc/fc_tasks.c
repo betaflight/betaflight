@@ -54,6 +54,7 @@
 #include "io/osd.h"
 #include "io/pwmdriver_i2c.h"
 #include "io/serial.h"
+#include "io/rcsplit.h"
 
 #include "msp/msp_serial.h"
 
@@ -184,7 +185,12 @@ void taskUpdateRangefinder(timeUs_t currentTimeUs)
         rescheduleTask(TASK_SELF, newDeadline);
     }
 
-    updatePositionEstimator_SurfaceTopic(currentTimeUs);
+    /*
+     * Process raw rangefinder readout
+     */
+    if (rangefinderProcess(calculateCosTiltAngle())) {
+        updatePositionEstimator_SurfaceTopic(currentTimeUs, rangefinderGetLatestAltitude());
+    }
 }
 #endif
 
@@ -506,7 +512,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_OSD] = {
         .taskName = "OSD",
         .taskFunc = taskUpdateOsd,
-        .desiredPeriod = TASK_PERIOD_HZ(OSD_TASK_FREQUENCY_HZ),
+        .desiredPeriod = TASK_PERIOD_HZ(100),
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -515,8 +521,17 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_CMS] = {
         .taskName = "CMS",
         .taskFunc = cmsHandler,
-        .desiredPeriod = 1000000 / 60,          // 60 Hz
+        .desiredPeriod = TASK_PERIOD_HZ(50),
         .staticPriority = TASK_PRIORITY_LOW,
+    },
+#endif
+
+#ifdef USE_RCSPLIT
+    [TASK_RCSPLIT] = {
+        .taskName = "RCSPLIT",
+        .taskFunc = rcSplitProcess,
+        .desiredPeriod = TASK_PERIOD_HZ(10),        // 10 Hz, 100ms
+        .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
 };

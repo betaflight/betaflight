@@ -167,7 +167,7 @@
 
 // Unit Icon´s (Imperial)
 #define SYM_FTS         0x99
-#define SYM_MPH         0x20
+#define SYM_MPH         0xB0
 #define SYM_ALTFT       0xA8
 #define SYM_DISTHOME_FT 0xB9
 #define SYM_FT          0x0F

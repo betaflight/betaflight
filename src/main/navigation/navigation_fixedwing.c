@@ -103,19 +103,39 @@ static void updateAltitudeVelocityAndPitchController_FW(timeDelta_t deltaMicros)
     // On a fixed wing we might not have a reliable climb rate source (if no BARO available), so we can't apply PID controller to
     // velocity error. We use PID controller on altitude error and calculate desired pitch angle
 
-    // Here we use negative values for dive for better clarity
-    int maxClimbDeciDeg = DEGREES_TO_DECIDEGREES(navConfig()->fw.max_climb_angle);
-    int minDiveDeciDeg = -DEGREES_TO_DECIDEGREES(navConfig()->fw.max_dive_angle);
+    // Update energies
+    const float demSPE = (posControl.desiredState.pos.V.Z / 100.0f) * GRAVITY_MSS;
+    const float demSKE = 0.0f;
 
-    float targetPitchAngle = navPidApply2(&posControl.pids.fw_alt, posControl.desiredState.pos.V.Z, posControl.actualState.pos.V.Z, US2S(deltaMicros), minDiveDeciDeg, maxClimbDeciDeg, 0);
+    const float estSPE = (posControl.actualState.pos.V.Z / 100.0f) * GRAVITY_MSS;
+    const float estSKE = 0.0f;
+
+    // speedWeight controls balance between potential and kinetic energy used for pitch controller
+    //  speedWeight = 1.0 : pitch will only control airspeed and won't control altitude
+    //  speedWeight = 0.5 : pitch will be used to control both airspeed and altitude
+    //  speedWeight = 0.0 : pitch will only control altitude
+    const float speedWeight = 0.0f; // no speed sensing for now
+
+    const float demSEB = demSPE * (1.0f - speedWeight) - demSKE * speedWeight;
+    const float estSEB = estSPE * (1.0f - speedWeight) - estSKE * speedWeight;
+
+    // SEB to pitch angle gain to account for airspeed (with respect to specified reference (tuning) speed
+    const float pitchGainInv = 1.0f / 1.0f;
+
+    // Here we use negative values for dive for better clarity
+    const float maxClimbDeciDeg = DEGREES_TO_DECIDEGREES(navConfig()->fw.max_climb_angle);
+    const float minDiveDeciDeg = -DEGREES_TO_DECIDEGREES(navConfig()->fw.max_dive_angle);
+
+    // PID controller to translate energy balance error [J] into pitch angle [decideg]
+    float targetPitchAngle = navPidApply3(&posControl.pids.fw_alt, demSEB, estSEB, US2S(deltaMicros), minDiveDeciDeg, maxClimbDeciDeg, 0, pitchGainInv);
     targetPitchAngle = pt1FilterApply4(&velzFilterState, targetPitchAngle, NAV_FW_PITCH_CUTOFF_FREQENCY_HZ, US2S(deltaMicros));
 
-    // Calculate climb angle ( >0 - climb, <0 - dive)
+    // Reconstrain pitch angle ( >0 - climb, <0 - dive)
     targetPitchAngle = constrainf(targetPitchAngle, minDiveDeciDeg, maxClimbDeciDeg);
     posControl.rcAdjustment[PITCH] = targetPitchAngle;
 }
 
-void applyFixedWingAltitudeController(timeUs_t currentTimeUs)
+void applyFixedWingAltitudeAndThrottleController(timeUs_t currentTimeUs)
 {
     static timeUs_t previousTimePositionUpdate;         // Occurs @ altitude sensor update rate (max MAX_ALTITUDE_UPDATE_RATE_HZ)
     static timeUs_t previousTimeUpdate;                 // Occurs @ looptime rate
@@ -424,7 +444,7 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
     }
 
     // Speed controller - only apply in POS mode when NOT NAV_CTL_LAND
-    if (navStateFlags & NAV_CTL_POS && !(navStateFlags & NAV_CTL_LAND)) {
+    if ((navStateFlags & NAV_CTL_POS) && !(navStateFlags & NAV_CTL_LAND)) {
         throttleCorrection += applyFixedWingMinSpeedController(currentTimeUs);
         throttleCorrection = constrain(throttleCorrection, minThrottleCorrection, maxThrottleCorrection);
     }
@@ -452,24 +472,28 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
      * Then altitude is below landing slowdown min. altitude, enable final approach procedure
      * TODO refactor conditions in this metod if logic is proven to be correct
      */
-    if (posControl.flags.hasValidAltitudeSensor && posControl.actualState.pos.V.Z < navConfig()->general.land_slowdown_minalt) {
-        /*
-         * Set motor to min. throttle and stop it when MOTOR_STOP feature is enabled
-         */
-        rcCommand[THROTTLE] = motorConfig()->minthrottle;
-        ENABLE_STATE(NAV_MOTOR_STOP_OR_IDLE);
+    if (navStateFlags & NAV_CTL_LAND) {
+        if (posControl.flags.hasValidAltitudeSensor && posControl.actualState.pos.V.Z < navConfig()->general.land_slowdown_minalt) {
+            /*
+             * Set motor to min. throttle and stop it when MOTOR_STOP feature is enabled
+             */
+            rcCommand[THROTTLE] = motorConfig()->minthrottle;
+            ENABLE_STATE(NAV_MOTOR_STOP_OR_IDLE);
 
-        /*
-         * Stabilize ROLL axis on 0 degress banking regardless of loiter radius and position
-         */
-        rcCommand[ROLL] = 0;
+            /*
+             * Stabilize ROLL axis on 0 degress banking regardless of loiter radius and position
+             */
+            rcCommand[ROLL] = 0;
 
-        /*
-         * Stabilize PITCH angle into shallow dive (2 deg hardcoded ATM)
-         * PITCH angle is measured: >0 - dive, <0 - climb)
-         */
-        rcCommand[PITCH] = pidAngleToRcCommand(DEGREES_TO_DECIDEGREES(navConfig()->fw.land_dive_angle), pidProfile()->max_angle_inclination[FD_PITCH]);
-     }
+            /*
+             * Stabilize PITCH angle into shallow dive as specified by the
+             * nav_fw_land_dive_angle setting (default value is 2 - defined
+             * in navigation.c).
+             * PITCH angle is measured: >0 - dive, <0 - climb)
+             */
+            rcCommand[PITCH] = pidAngleToRcCommand(DEGREES_TO_DECIDEGREES(navConfig()->fw.land_dive_angle), pidProfile()->max_angle_inclination[FD_PITCH]);
+        }
+    }
 #endif
 }
 
@@ -530,7 +554,7 @@ void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags,
         // Don't apply anything if ground speed is too low (<3m/s)
         if (posControl.actualState.velXY > 300) {
             if (navStateFlags & NAV_CTL_ALT)
-                applyFixedWingAltitudeController(currentTimeUs);
+                applyFixedWingAltitudeAndThrottleController(currentTimeUs);
 
             if (navStateFlags & NAV_CTL_POS)
                 applyFixedWingPositionController(currentTimeUs);
@@ -541,7 +565,7 @@ void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags,
         }
 #else
         if (navStateFlags & NAV_CTL_ALT)
-            applyFixedWingAltitudeController(currentTimeUs);
+            applyFixedWingAltitudeAndThrottleController(currentTimeUs);
 
         if (navStateFlags & NAV_CTL_POS)
             applyFixedWingPositionController(currentTimeUs);

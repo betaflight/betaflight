@@ -23,7 +23,7 @@
 #include "fc/runtime_config.h"
 #include "io/beeper.h"
 
-uint16_t armingFlags = 0;
+uint32_t armingFlags = 0;
 uint32_t stateFlags = 0;
 uint32_t flightModeFlags = 0;
 

@@ -43,22 +43,23 @@
 #define USE_MPU_DATA_READY_SIGNAL
 //#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 #define MPU_INT_EXTI            PC5
-#define MPU9250_CS_PIN          PC4
-#define MPU9250_SPI_INSTANCE    SPI1
+#define MPU6500_CS_PIN          PC4
+#define MPU6500_SPI_INSTANCE    SPI1
 
 #define ACC
-#define USE_ACC_SPI_MPU9250
-#define ACC_MPU9250_ALIGN       CW0_DEG
+#define USE_ACC_SPI_MPU6500
+#define ACC_MPU6500_ALIGN       CW0_DEG
 
 #define GYRO
-#define USE_GYRO_SPI_MPU9250
-#define GYRO_MPU9250_ALIGN      CW0_DEG
+#define USE_GYRO_SPI_MPU6500
+#define GYRO_MPU6500_ALIGN      CW0_DEG
 
 #define MAG
 #define USE_MAG_AK8963
 #define USE_MAG_AK8975
 #define USE_MAG_MAG3110
 #define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
 
 #define BARO
 #define USE_BARO_BMP085
@@ -94,6 +95,7 @@
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
+#define USB_IO
 #define USE_VCP
 //#define VBUS_SENSING_PIN PA8
 //#define VBUS_SENSING_ENABLED

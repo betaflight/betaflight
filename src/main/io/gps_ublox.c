@@ -32,6 +32,7 @@
 
 
 #include "common/axis.h"
+#include "common/typeconversion.h"
 #include "common/gps_conversion.h"
 #include "common/maths.h"
 #include "common/utils.h"
@@ -482,7 +483,7 @@ static bool gpsParceFrameUBLOX(void)
     case MSG_VER:
         if (_class == CLASS_MON) {
             //uint32_t swver = _buffer.ver.swVersion;
-            gpsState.hwVersion = atoi(_buffer.ver.hwVersion);
+            gpsState.hwVersion = fastA2I(_buffer.ver.hwVersion);
         }
         break;
 #endif

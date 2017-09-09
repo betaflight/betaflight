@@ -284,3 +284,47 @@ float fastA2F(const char *p)
     return sign * (frac ? (value / scale) : (value * scale));
 }
 
+unsigned long int fastA2UL(const char *p)
+{
+    unsigned long int result = 0;
+    unsigned char digit;
+
+    while (white_space(*p)) {
+        p += 1;
+    }
+
+    for ( ; ; p++) {
+        digit = *p - '0';
+        if (digit > 9) {
+            break;
+        }
+        result *= 10;
+        result += digit;
+    }
+    return result;
+}
+
+int fastA2I(const char *s)
+{
+    int sign = 1;
+    int num = 0;
+    int digit;
+
+    while (white_space(*s)) {
+        s++;
+    }
+
+    if (*s == '-') {
+        sign = -1;
+        s++;
+    }
+
+    while ((digit = a2d(*s)) >= 0) {
+        if (digit > 10)
+            break;
+        num = num * 10 + digit;
+        s++;
+    }
+
+    return sign * num;
+}

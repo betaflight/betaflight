@@ -185,10 +185,10 @@ TIM_HandleTypeDef* timerFindTimerHandle(TIM_TypeDef *tim);
 #else
 void timerOCInit(TIM_TypeDef *tim, uint8_t channel, TIM_OCInitTypeDef *init);
 void timerOCPreloadConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t preload);
-uint16_t timerDmaSource(uint8_t channel);
 #endif
 
 volatile timCCR_t *timerCCR(TIM_TypeDef *tim, uint8_t channel);
+uint16_t timerDmaSource(uint8_t channel);
 
 uint16_t timerGetPrescalerByDesiredMhz(TIM_TypeDef *tim, uint16_t mhz);
 uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_t hertz);

@@ -23,9 +23,9 @@
 
 #include "blackbox/blackbox.h"
 
+#include "build/assert.h"
 #include "build/atomic.h"
 #include "build/build_config.h"
-#include "build/assert.h"
 #include "build/debug.h"
 
 #include "common/axis.h"
@@ -33,58 +33,71 @@
 #include "common/maths.h"
 #include "common/printf.h"
 
+#include "config/config_eeprom.h"
+#include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "cms/cms.h"
 
-#include "drivers/logging.h"
-#include "drivers/nvic.h"
-#include "drivers/sensor.h"
-#include "drivers/time.h"
+#include "drivers/accgyro/accgyro.h"
+#include "drivers/adc.h"
+#include "drivers/compass/compass.h"
+#include "drivers/bus_i2c.h"
+#include "drivers/bus_spi.h"
 #include "drivers/dma.h"
 #include "drivers/exti.h"
+#include "drivers/flash_m25p16.h"
 #include "drivers/gpio.h"
+#include "drivers/gyro_sync.h"
+#include "drivers/inverter.h"
 #include "drivers/io.h"
+#include "drivers/io_pca9685.h"
 #include "drivers/light_led.h"
-#include "drivers/sound_beeper.h"
-#include "drivers/timer.h"
-#include "drivers/serial.h"
-#include "drivers/serial_softserial.h"
-#include "drivers/serial_uart.h"
-#include "drivers/system.h"
-#include "drivers/accgyro/accgyro.h"
-#include "drivers/compass/compass.h"
+#include "drivers/logging.h"
+#include "drivers/nvic.h"
 #include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_mapping.h"
 #include "drivers/pwm_output.h"
-#include "drivers/pwm_rx.h"
 #include "drivers/pwm_output.h"
-#include "drivers/adc.h"
-#include "drivers/bus_i2c.h"
-#include "drivers/bus_spi.h"
-#include "drivers/inverter.h"
-#include "drivers/flash_m25p16.h"
+#include "drivers/rx_pwm.h"
 #include "drivers/sdcard.h"
-#include "drivers/gyro_sync.h"
-#include "drivers/io.h"
-#include "drivers/exti.h"
-#include "drivers/io_pca9685.h"
+#include "drivers/sensor.h"
+#include "drivers/serial.h"
+#include "drivers/serial_softserial.h"
+#include "drivers/serial_uart.h"
+#include "drivers/sound_beeper.h"
+#include "drivers/system.h"
+#include "drivers/time.h"
+#include "drivers/timer.h"
+#include "drivers/vcd.h"
 
 #include "fc/cli.h"
+#include "fc/config.h"
+#include "fc/fc_msp.h"
 #include "fc/fc_tasks.h"
 #include "fc/rc_controls.h"
-#include "fc/fc_msp.h"
 #include "fc/runtime_config.h"
 
-#include "io/beeper.h"
-#include "io/serial.h"
-#include "io/flashfs.h"
-#include "io/gps.h"
-#include "io/gimbal.h"
-#include "io/ledstrip.h"
-#include "io/dashboard.h"
+#include "flight/failsafe.h"
+#include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
+#include "flight/servos.h"
+
 #include "io/asyncfatfs/asyncfatfs.h"
+#include "io/beeper.h"
+#include "io/dashboard.h"
+#include "io/displayport_msp.h"
+#include "io/displayport_max7456.h"
+#include "io/flashfs.h"
+#include "io/gimbal.h"
+#include "io/gps.h"
+#include "io/ledstrip.h"
 #include "io/pwmdriver_i2c.h"
 #include "io/osd.h"
-#include "io/displayport_msp.h"
+#include "io/rcsplit.h"
+#include "io/serial.h"
 
 #include "msp/msp_serial.h"
 
@@ -93,31 +106,18 @@
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 
-#include "sensors/sensors.h"
-#include "sensors/barometer.h"
-#include "sensors/compass.h"
 #include "sensors/acceleration.h"
-#include "sensors/gyro.h"
+#include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
-#include "sensors/pitotmeter.h"
+#include "sensors/compass.h"
+#include "sensors/gyro.h"
 #include "sensors/initialisation.h"
+#include "sensors/pitotmeter.h"
 #include "sensors/rangefinder.h"
+#include "sensors/sensors.h"
 
 #include "telemetry/telemetry.h"
-
-#include "fc/config.h"
-
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/mixer.h"
-#include "flight/servos.h"
-#include "flight/failsafe.h"
-
-#include "config/config_eeprom.h"
-#include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
 
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
@@ -183,11 +183,14 @@ void init(void)
 #endif
 
     initEEPROM();
-
     ensureEEPROMContainsValidData();
     readEEPROM();
 
-    i2cSetOverclock(systemConfig()->i2c_overclock);
+#ifdef USE_UNDERCLOCK
+    systemClockSetup(systemConfig()->cpuUnderclock);
+#endif
+    
+    i2cSetSpeed(systemConfig()->i2c_speed);
 
 #ifdef USE_HARDWARE_PREBOOT_SETUP
     initialisePreBootHardware();
@@ -518,14 +521,30 @@ void init(void)
 
     rxInit();
 
+#if (defined(OSD) || (defined(USE_MSP_DISPLAYPORT) && defined(CMS)))
+    displayPort_t *osdDisplayPort = NULL;
+#endif
+
 #ifdef OSD
     if (feature(FEATURE_OSD)) {
-        osdInit();
+#if defined(USE_MAX7456)
+        // If there is a max7456 chip for the OSD then use it
+        static vcdProfile_t vcdProfile;
+        vcdProfile.video_system = osdConfig()->video_system;
+        osdDisplayPort = max7456DisplayPortInit(&vcdProfile);
+#elif defined(USE_OSD_OVER_MSP_DISPLAYPORT) // OSD over MSP; not supported (yet)
+        osdDisplayPort = displayPortMspInit();
+#endif
+        // osdInit  will register with CMS by itself.
+        osdInit(osdDisplayPort);
     }
 #endif
 
 #if defined(USE_MSP_DISPLAYPORT) && defined(CMS)
-    cmsDisplayPortRegister(displayPortMspInit());
+    // If OSD is not active, then register MSP_DISPLAYPORT as a CMS device.
+    if (!osdDisplayPort) {
+        cmsDisplayPortRegister(displayPortMspInit());
+    }
 #endif
 
 #ifdef GPS
@@ -608,11 +627,7 @@ void init(void)
     // TODO - not implemented yet
     timerStart();
 
-    ENABLE_STATE(SMALL_ANGLE);
-    DISABLE_ARMING_FLAG(PREVENT_ARMING);
-
     // Now that everything has powered up the voltage and cell count be determined.
-
     if (feature(FEATURE_VBAT | FEATURE_CURRENT_METER))
         batteryInit();
 
@@ -631,6 +646,10 @@ void init(void)
     motorControlEnable = true;
 
     fcTasksInit();
+
+#ifdef USE_RCSPLIT
+    rcSplitInit();
+#endif // USE_RCSPLIT
 
     addBootlogEvent2(BOOT_EVENT_SYSTEM_READY, BOOT_EVENT_FLAGS_NONE);
     systemState |= SYSTEM_STATE_READY;

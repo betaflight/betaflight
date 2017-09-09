@@ -279,15 +279,15 @@ static inline void hottEAMUpdateBatteryDrawnCapacity(HOTT_EAM_MSG_t *hottEAMMess
 
 static inline void hottEAMUpdateAltitudeAndClimbrate(HOTT_EAM_MSG_t *hottEAMMessage)
 {
-    const int32_t alt = MAX(0, getEstimatedActualPosition(Z) / 100.0f + HOTT_GPS_ALTITUDE_OFFSET);     // Value of 500 = 0m
+    const int32_t alt = MAX(0, (int32_t)(getEstimatedActualPosition(Z) / 100.0f + HOTT_GPS_ALTITUDE_OFFSET));     // Value of 500 = 0m
     hottEAMMessage->altitude_L = alt & 0xFF;
     hottEAMMessage->altitude_H = alt >> 8;
 
-    const int32_t climbrate = MAX(0, getEstimatedActualVelocity(Z) + 30000);
+    const int32_t climbrate = MAX(0, (int32_t)(getEstimatedActualVelocity(Z) + 30000));
     hottEAMMessage->climbrate_L = climbrate & 0xFF;
     hottEAMMessage->climbrate_H = climbrate >> 8;
 
-    const int32_t climbrate3s = MAX(0, 3.0f * getEstimatedActualVelocity(Z) / 100 + 120);
+    const int32_t climbrate3s = MAX(0, (int32_t)(3.0f * getEstimatedActualVelocity(Z) / 100 + 120));
     hottEAMMessage->climbrate3s = climbrate3s & 0xFF;
 }
 

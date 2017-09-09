@@ -57,7 +57,10 @@
 
 #define ACC
 #define GYRO
+
 #define MAG
+#define USE_MAG_QMC5883
+#define USE_MAG_HMC5883
 
 #define BARO
 #define USE_BARO_MS5611
@@ -89,6 +92,7 @@
 #define ENSURE_MPU_DATA_READY_IS_LOW
 #define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 
+#define USB_IO
 #define USE_VCP
 #define VBUS_SENSING_PIN PA9
 #define VBUS_SENSING_ENABLED

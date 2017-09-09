@@ -113,8 +113,8 @@ bool l3g4200dDetect(gyroDev_t *gyro)
     if (deviceid != L3G4200D_ID)
         return false;
 
-    gyro->init = l3g4200dInit;
-    gyro->read = l3g4200dRead;
+    gyro->initFn = l3g4200dInit;
+    gyro->readFn = l3g4200dRead;
 
     // 14.2857dps/lsb scalefactor
     gyro->scale = 1.0f / 14.2857f;

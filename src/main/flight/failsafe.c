@@ -37,6 +37,7 @@
 #include "fc/fc_core.h"
 #include "fc/config.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 #include "fc/controlrate_profile.h"
 
@@ -78,7 +79,7 @@ PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
 
 typedef enum {
     FAILSAFE_CHANNEL_HOLD,      // Hold last known good value
-    FAILFAFE_CHANNEL_NEUTRAL,   // RPY = zero, THR = zero
+    FAILSAFE_CHANNEL_NEUTRAL,   // RPY = zero, THR = zero
     FAILSAFE_CHANNEL_AUTO,      // Defined by failsafe configured values
 } failsafeChannelBehavior_e;
 
@@ -101,19 +102,19 @@ static const failsafeProcedureLogic_t failsafeProcedureLogic[] = {
     [FAILSAFE_PROCEDURE_DROP_IT] = {
             .forceAngleMode = true,
             .channelBehavior = {
-                FAILFAFE_CHANNEL_NEUTRAL,       // ROLL
-                FAILFAFE_CHANNEL_NEUTRAL,       // PITCH
-                FAILFAFE_CHANNEL_NEUTRAL,       // YAW
-                FAILFAFE_CHANNEL_NEUTRAL        // THROTTLE
+                FAILSAFE_CHANNEL_NEUTRAL,       // ROLL
+                FAILSAFE_CHANNEL_NEUTRAL,       // PITCH
+                FAILSAFE_CHANNEL_NEUTRAL,       // YAW
+                FAILSAFE_CHANNEL_NEUTRAL        // THROTTLE
             }
     },
 
     [FAILSAFE_PROCEDURE_RTH] = {
             .forceAngleMode = true,
             .channelBehavior = {
-                FAILFAFE_CHANNEL_NEUTRAL,       // ROLL
-                FAILFAFE_CHANNEL_NEUTRAL,       // PITCH
-                FAILFAFE_CHANNEL_NEUTRAL,       // YAW
+                FAILSAFE_CHANNEL_NEUTRAL,       // ROLL
+                FAILSAFE_CHANNEL_NEUTRAL,       // PITCH
+                FAILSAFE_CHANNEL_NEUTRAL,       // YAW
                 FAILSAFE_CHANNEL_HOLD           // THROTTLE
             }
     },
@@ -252,7 +253,7 @@ void failsafeApplyControlInput(void)
                 rcCommand[idx] = failsafeState.lastGoodRcCommand[idx];
                 break;
 
-            case FAILFAFE_CHANNEL_NEUTRAL:
+            case FAILSAFE_CHANNEL_NEUTRAL:
                 switch (idx) {
                     case ROLL:
                     case PITCH:
@@ -466,7 +467,7 @@ void failsafeUpdateState(void)
                 break;
 
             case FAILSAFE_LANDED:
-                ENABLE_ARMING_FLAG(PREVENT_ARMING); // To prevent accidently rearming by an intermittent rx link
+                ENABLE_ARMING_FLAG(ARMING_DISABLED_FAILSAFE_SYSTEM); // To prevent accidently rearming by an intermittent rx link
                 mwDisarm(DISARM_FAILSAFE);
                 failsafeState.receivingRxDataPeriod = millis() + failsafeState.receivingRxDataPeriodPreset; // set required period of valid rxData
                 failsafeState.phase = FAILSAFE_RX_LOSS_MONITORING;
@@ -480,7 +481,7 @@ void failsafeUpdateState(void)
                     if (millis() > failsafeState.receivingRxDataPeriod) {
                         // rx link is good now, when arming via ARM switch, it must be OFF first
                         if (!(!isUsingSticksForArming() && IS_RC_MODE_ACTIVE(BOXARM))) {
-                            DISABLE_ARMING_FLAG(PREVENT_ARMING);
+                            DISABLE_ARMING_FLAG(ARMING_DISABLED_FAILSAFE_SYSTEM);
                             failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                             reprocessState = true;
                         }

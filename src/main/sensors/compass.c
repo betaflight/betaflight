@@ -35,6 +35,7 @@
 #include "drivers/compass/compass_hmc5883l.h"
 #include "drivers/compass/compass_mag3110.h"
 #include "drivers/compass/compass_ist8310.h"
+#include "drivers/compass/compass_qmc5883l.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/logging.h"
@@ -194,6 +195,21 @@ bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse)
             dev->magAlign = MAG_IST8310_ALIGN;
 #endif
             magHardware = MAG_IST8310;
+            break;
+        }
+#endif
+        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+        if (magHardwareToUse != MAG_AUTODETECT) {
+            break;
+        }
+
+    case MAG_QMC5883:
+#ifdef USE_MAG_QMC5883
+        if (qmc5883Detect(dev)) {
+#ifdef MAG_QMC5883L_ALIGN
+            dev->magAlign = MAG_QMC5883L_ALIGN;
+#endif
+            magHardware = MAG_QMC5883;
             break;
         }
 #endif

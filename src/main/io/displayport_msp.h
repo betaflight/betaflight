@@ -17,5 +17,8 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
+#include "drivers/display.h"
+
 struct displayPort_s;
 struct displayPort_s *displayPortMspInit(void);

@@ -62,6 +62,7 @@
 #define USE_MAG_AK8975  // External
 #define USE_MAG_HMC5883 // External
 #define USE_MAG_MAG3110 // External
+#define USE_MAG_QMC5883 // External
 
 #define USE_RANGEFINDER
 #define USE_RANGEFINDER_HCSR04
@@ -94,20 +95,7 @@
 // Turn internal pullups, they are weak, but better than nothing.
 #define USE_I2C_PULLUP
 
-// OSD disabled for now
-#if 0
-// OSD define info:
-//   feature name (includes source) -> MAX_OSD, used in target.mk
-// include the osd code
-#define OSD
-// include the max7456 driver
-#define USE_MAX7456
-#define MAX7456_SPI_INSTANCE    SPI1
-#define MAX7456_SPI_CS_PIN      PB1
-//#define MAX7456_DMA_CHANNEL_TX            DMA1_Channel3
-//#define MAX7456_DMA_CHANNEL_RX            DMA1_Channel2
-//#define MAX7456_DMA_IRQ_HANDLER_ID        DMA1_CH3_HANDLER
-#endif
+#define USE_PITOT_MS4525
 
 #define USE_SPI
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
@@ -165,32 +153,9 @@
 
 #define LED_STRIP
 #define WS2811_PIN                      PA8
-#define WS2811_TIMER                    TIM1
 #define WS2811_DMA_STREAM               DMA1_Channel2
-#define WS2811_IRQ                      DMA1_Channel2_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 
-// No transponder support for iNav (for now?)
-#if 0
-#define TRANSPONDER
-#define TRANSPONDER_GPIO                     GPIOA
-#define TRANSPONDER_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-#define TRANSPONDER_GPIO_AF                  GPIO_AF_6
-#define TRANSPONDER_PIN                      GPIO_Pin_8
-#define TRANSPONDER_PIN_SOURCE               GPIO_PinSource8
-
-#define TRANSPONDER_TIMER                    TIM1
-#define TRANSPONDER_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
-#define TRANSPONDER_DMA_CHANNEL              DMA1_Channel2
-#define TRANSPONDER_IRQ                      DMA1_Channel2_IRQn
-#define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC2
-#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
-
-#define REDUCE_TRANSPONDER_CURRENT_DRAW_WHEN_USB_CABLE_PRESENT
-#endif
-
-// Not supported on INAV-1.2
 //#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
@@ -219,6 +184,6 @@
 #define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
-#define USABLE_TIMER_CHANNEL_COUNT  7
+#define USABLE_TIMER_CHANNEL_COUNT  8
 
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15))

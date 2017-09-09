@@ -59,6 +59,7 @@
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW90_DEG
 #define USE_MAG_MAG3110
+#define USE_MAG_QMC5883
 
 #define OSD
 #define USE_MAX7456
@@ -89,6 +90,7 @@
 #define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
 #define SDCARD_DMA_CHANNEL                  DMA_Channel_0
 
+#define USB_IO
 #define USE_VCP
 #define VBUS_SENSING_ENABLED
 #define VBUS_SENSING_PIN        PC5

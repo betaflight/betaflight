@@ -31,6 +31,7 @@
 #include "common/color.h"
 #include "common/maths.h"
 #include "common/streambuf.h"
+#include "common/bitarray.h"
 #include "common/utils.h"
 
 #include "drivers/accgyro/accgyro.h"
@@ -48,6 +49,7 @@
 #include "fc/fc_msp.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 
 #include "flight/failsafe.h"
@@ -141,6 +143,9 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXNAVLAUNCH, "NAV LAUNCH;", 36 },
     { BOXAUTOTRIM, "SERVO AUTOTRIM;", 37 },
     { BOXKILLSWITCH, "KILLSWITCH;", 38 },
+    { BOXCAMERA1, "CAMERA CONTROL 1;", 39 },
+    { BOXCAMERA2, "CAMERA CONTROL 2;", 40 },
+    { BOXCAMERA3, "CAMERA CONTROL 3;", 41 },
     { CHECKBOX_ITEM_COUNT, NULL, 0xFF }
 };
 
@@ -181,15 +186,40 @@ typedef enum {
 } mspFlashfsFlags_e;
 
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
-static void msp4WayIfFn(serialPort_t *serialPort)
+#define ESC_4WAY 0xff
+
+static uint8_t escMode;
+static uint8_t escPortIndex;
+
+static void mspFc4waySerialCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessFnPtr *mspPostProcessFn)
 {
-    // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
-    // bootloader mode before try to connect any ESC
-    // Start to activate here
-    esc4wayProcess(serialPort);
-    // former used MSP uart is still active
-    // proceed as usual with MSP commands
+    const unsigned int dataSize = sbufBytesRemaining(src);
+
+    if (dataSize == 0) {
+        // Legacy format
+        escMode = ESC_4WAY;
+    } else {
+        escMode = sbufReadU8(src);
+        escPortIndex = sbufReadU8(src);
+    }
+
+    switch (escMode) {
+    case ESC_4WAY:
+        // get channel number
+        // switch all motor lines HI
+        // reply with the count of ESC found
+        sbufWriteU8(dst, esc4wayInit());
+
+        if (mspPostProcessFn) {
+            *mspPostProcessFn = esc4wayProcess;
+        }
+        break;
+
+    default:
+        sbufWriteU8(dst, 0);
+    }
 }
+
 #endif
 
 static void mspRebootFn(serialPort_t *serialPort)
@@ -260,7 +290,9 @@ static void initActiveBoxIds(void)
 #endif
     }
 
-    activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
+    if (!feature(FEATURE_AIRMODE)) {
+        activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
+    }
 
     activeBoxIds[activeBoxIdCount++] = BOXHEADINGHOLD;
 
@@ -328,57 +360,65 @@ static void initActiveBoxIds(void)
 
     activeBoxIds[activeBoxIdCount++] = BOXKILLSWITCH;
     activeBoxIds[activeBoxIdCount++] = BOXFAILSAFE;
+
+#ifdef USE_RCSPLIT
+    activeBoxIds[activeBoxIdCount++] = BOXCAMERA1;
+    activeBoxIds[activeBoxIdCount++] = BOXCAMERA2;
+    activeBoxIds[activeBoxIdCount++] = BOXCAMERA3;
+#endif
 }
 
 #define IS_ENABLED(mask) (mask == 0 ? 0 : 1)
+#define CHECK_ACTIVE_BOX(condition, index)    do { if (IS_ENABLED(condition)) { activeBoxes[index] = 1; } } while(0)
 
-static uint32_t packFlightModeFlags(void)
+static void packBoxModeFlags(boxBitmask_t * mspBoxModeFlags)
 {
+    uint8_t activeBoxes[CHECKBOX_ITEM_COUNT];
+    memset(activeBoxes, 0, sizeof(activeBoxes));
+
     // Serialize the flags in the order we delivered them, ignoring BOXNAMES and BOXINDEXES
     // Requires new Multiwii protocol version to fix
     // It would be preferable to setting the enabled bits based on BOXINDEX.
-    const uint32_t tmp = IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << BOXANGLE |
-        IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)) << BOXHORIZON |
-        IS_ENABLED(FLIGHT_MODE(HEADING_MODE)) << BOXHEADINGHOLD |
-        IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE)) << BOXHEADFREE |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHEADADJ)) << BOXHEADADJ |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMSTAB)) << BOXCAMSTAB |
-        IS_ENABLED(FLIGHT_MODE(PASSTHRU_MODE)) << BOXPASSTHRU |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBEEPERON)) << BOXBEEPERON |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDLOW)) << BOXLEDLOW |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLLIGHTS)) << BOXLLIGHTS |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXOSD)) << BOXOSD |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXTELEMETRY)) << BOXTELEMETRY |
-        IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |
-        IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE |
-        IS_ENABLED(FLIGHT_MODE(NAV_ALTHOLD_MODE)) << BOXNAVALTHOLD |
-        IS_ENABLED(FLIGHT_MODE(NAV_POSHOLD_MODE)) << BOXNAVPOSHOLD |
-        IS_ENABLED(FLIGHT_MODE(NAV_RTH_MODE)) << BOXNAVRTH |
-        IS_ENABLED(FLIGHT_MODE(NAV_WP_MODE)) << BOXNAVWP |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGCSNAV)) << BOXGCSNAV |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXSURFACE)) << BOXSURFACE |
+    CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)),           BOXANGLE);
+    CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)),         BOXHORIZON);
+    CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(HEADING_MODE)),         BOXHEADINGHOLD);
+    CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE)),        BOXHEADFREE);
+    CHECK_ACTIVE_BOX(IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHEADADJ)),     BOXHEADADJ);
+    CHECK_ACTIVE_BOX(IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMSTAB)),     BOXCAMSTAB);
+    CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(PASSTHRU_MODE)),        BOXPASSTHRU);
+    CHECK_ACTIVE_BOX(IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBEEPERON)),    BOXBEEPERON);
+    CHECK_ACTIVE_BOX(IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDLOW)),      BOXLEDLOW);
+    CHECK_ACTIVE_BOX(IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLLIGHTS)),     BOXLLIGHTS);
+    CHECK_ACTIVE_BOX(IS_ENABLED(IS_RC_MODE_ACTIVE(BOXOSD)),         BOXOSD);
+    CHECK_ACTIVE_BOX(IS_ENABLED(IS_RC_MODE_ACTIVE(BOXTELEMETRY)),   BOXTELEMETRY);
+    CHECK_ACTIVE_BOX(IS_ENABLED(ARMING_FLAG(ARMED)),                BOXARM);
+    CHECK_ACTIVE_BOX(IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)),    BOXBLACKBOX);
+    CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)),        BOXFAILSAFE);
+    CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(NAV_ALTHOLD_MODE)),     BOXNAVALTHOLD);
+    CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(NAV_POSHOLD_MODE)),     BOXNAVPOSHOLD);
+    CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(NAV_RTH_MODE)),         BOXNAVRTH);
+    CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(NAV_WP_MODE)),          BOXNAVWP);
+    CHECK_ACTIVE_BOX(IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)),     BOXAIRMODE);
+    CHECK_ACTIVE_BOX(IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGCSNAV)),      BOXGCSNAV);
+    CHECK_ACTIVE_BOX(IS_ENABLED(IS_RC_MODE_ACTIVE(BOXSURFACE)),     BOXSURFACE);
 #ifdef USE_FLM_FLAPERON
-        IS_ENABLED(FLIGHT_MODE(FLAPERON)) << BOXFLAPERON |
+    CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(FLAPERON)),             BOXFLAPERON);
 #endif
 #ifdef USE_FLM_TURN_ASSIST
-        IS_ENABLED(FLIGHT_MODE(TURN_ASSISTANT)) << BOXTURNASSIST |
+    CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(TURN_ASSISTANT)),       BOXTURNASSIST);
 #endif
-        IS_ENABLED(FLIGHT_MODE(NAV_LAUNCH_MODE)) << BOXNAVLAUNCH |
-        IS_ENABLED(FLIGHT_MODE(AUTO_TUNE)) << BOXAUTOTUNE |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAUTOTRIM)) << BOXAUTOTRIM |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXKILLSWITCH)) << BOXKILLSWITCH |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHOMERESET)) << BOXHOMERESET;
+    CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(NAV_LAUNCH_MODE)),      BOXNAVLAUNCH);
+    CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(AUTO_TUNE)),            BOXAUTOTUNE);
+    CHECK_ACTIVE_BOX(IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAUTOTRIM)),    BOXAUTOTRIM);
+    CHECK_ACTIVE_BOX(IS_ENABLED(IS_RC_MODE_ACTIVE(BOXKILLSWITCH)),  BOXKILLSWITCH);
+    CHECK_ACTIVE_BOX(IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHOMERESET)),   BOXHOMERESET);
 
-    uint32_t ret = 0;
+    memset(mspBoxModeFlags, 0, sizeof(boxBitmask_t));
     for (uint32_t i = 0; i < activeBoxIdCount; i++) {
-        const int flag = (tmp & (1 << activeBoxIds[i]));
-        if (flag) {
-            ret |= 1 << i;
+        if (activeBoxes[activeBoxIds[i]]) {
+            bitArraySet(mspBoxModeFlags, i);
         }
     }
-    return ret;
 }
 
 static uint16_t packSensorStatus(void)
@@ -465,23 +505,25 @@ static void serializeDataflashSummaryReply(sbuf_t *dst)
 }
 
 #ifdef USE_FLASHFS
-static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, uint8_t size)
+static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, uint16_t size)
 {
-    uint8_t buffer[128];
-    int bytesRead;
+    // Check how much bytes we can read
+    const int bytesRemainingInBuf = sbufBytesRemaining(dst);
+    uint16_t readLen = (size > bytesRemainingInBuf) ? bytesRemainingInBuf : size;
 
-    if (size > sizeof(buffer)) {
-        size = sizeof(buffer);
+    // size will be lower than that requested if we reach end of volume
+    const uint32_t flashfsSize = flashfsGetSize();
+    if (readLen > flashfsSize - address) {
+        // truncate the request
+        readLen = flashfsSize - address;
     }
 
+    // Write address
     sbufWriteU32(dst, address);
 
-    // bytesRead will be lower than that requested if we reach end of volume
-    bytesRead = flashfsReadAbs(address, buffer, size);
-
-    for (int i = 0; i < bytesRead; i++) {
-        sbufWriteU8(dst, buffer[i]);
-    }
+    // Read into streambuf directly
+    const int bytesRead = flashfsReadAbs(address, sbufPtr(dst), readLen);
+    sbufAdvance(dst, bytesRead);
 }
 #endif
 
@@ -552,31 +594,36 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, HW_SENSOR_NONE);                   // Optical flow
         break;
 
-    case MSP_STATUS_EX:
-        sbufWriteU16(dst, (uint16_t)cycleTime);
-#ifdef USE_I2C
-        sbufWriteU16(dst, i2cGetErrorCounter());
-#else
-        sbufWriteU16(dst, 0);
-#endif
-        sbufWriteU16(dst, packSensorStatus());
-        sbufWriteU32(dst, packFlightModeFlags());
-        sbufWriteU8(dst, getConfigProfile());
-        sbufWriteU16(dst, averageSystemLoadPercent);
-        sbufWriteU16(dst, armingFlags);
-        sbufWriteU8(dst, accGetCalibrationAxisFlags());
+    case MSP_ACTIVEBOXES:
+        {
+            boxBitmask_t mspBoxModeFlags;
+            packBoxModeFlags(&mspBoxModeFlags);
+            sbufWriteData(dst, &mspBoxModeFlags, sizeof(mspBoxModeFlags));
+        }
         break;
 
+    case MSP_STATUS_EX:
     case MSP_STATUS:
-        sbufWriteU16(dst, (uint16_t)cycleTime);
+        {
+            boxBitmask_t mspBoxModeFlags;
+            packBoxModeFlags(&mspBoxModeFlags);
+
+            sbufWriteU16(dst, (uint16_t)cycleTime);
 #ifdef USE_I2C
-        sbufWriteU16(dst, i2cGetErrorCounter());
+            sbufWriteU16(dst, i2cGetErrorCounter());
 #else
-        sbufWriteU16(dst, 0);
+            sbufWriteU16(dst, 0);
 #endif
-        sbufWriteU16(dst, packSensorStatus());
-        sbufWriteU32(dst, packFlightModeFlags());
-        sbufWriteU8(dst, getConfigProfile());
+            sbufWriteU16(dst, packSensorStatus());
+            sbufWriteData(dst, &mspBoxModeFlags, 4);
+            sbufWriteU8(dst, getConfigProfile());
+
+            if (cmdMSP == MSP_STATUS_EX) {
+                sbufWriteU16(dst, averageSystemLoadPercent);
+                sbufWriteU16(dst, armingFlags);
+                sbufWriteU8(dst, accGetCalibrationAxisFlags());
+            }
+        }
         break;
 
     case MSP_RAW_IMU:
@@ -945,7 +992,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
             sbufWriteU8(dst, serialConfig()->portConfigs[i].msp_baudrateIndex);
             sbufWriteU8(dst, serialConfig()->portConfigs[i].gps_baudrateIndex);
             sbufWriteU8(dst, serialConfig()->portConfigs[i].telemetry_baudrateIndex);
-            sbufWriteU8(dst, serialConfig()->portConfigs[i].blackbox_baudrateIndex);
+            sbufWriteU8(dst, serialConfig()->portConfigs[i].peripheral_baudrateIndex);
         }
         break;
 
@@ -1271,20 +1318,6 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #endif
         break;
 
-#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
-    case MSP_SET_4WAY_IF:
-        if (!ARMING_FLAG(ARMED)) {
-            // get channel number
-            // switch all motor lines HI
-            // reply with the count of ESC found
-            sbufWriteU8(dst, esc4wayInit());
-            if (mspPostProcessFn) {
-                *mspPostProcessFn = msp4WayIfFn;
-            }
-        }
-        break;
-#endif
-
     default:
         return false;
     }
@@ -1312,8 +1345,22 @@ static void mspFcWaypointOutCommand(sbuf_t *dst, sbuf_t *src)
 #ifdef USE_FLASHFS
 static void mspFcDataFlashReadCommand(sbuf_t *dst, sbuf_t *src)
 {
+    const unsigned int dataSize = sbufBytesRemaining(src);
+    uint16_t readLength;
+
     const uint32_t readAddress = sbufReadU32(src);
-    serializeDataflashReadReply(dst, readAddress, 128);
+
+    // Request payload:
+    //  uint32_t    - address to read from
+    //  uint16_t    - size of block to read (optional)
+    if (dataSize >= sizeof(uint32_t) + sizeof(uint16_t)) {
+        readLength = sbufReadU16(src);
+    }
+    else {
+        readLength = 128;
+    }
+
+    serializeDataflashReadReply(dst, readAddress, readLength);
 }
 #endif
 
@@ -2011,7 +2058,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 portConfig->msp_baudrateIndex = sbufReadU8(src);
                 portConfig->gps_baudrateIndex = sbufReadU8(src);
                 portConfig->telemetry_baudrateIndex = sbufReadU8(src);
-                portConfig->blackbox_baudrateIndex = sbufReadU8(src);
+                portConfig->peripheral_baudrateIndex = sbufReadU8(src);
             }
         }
         break;
@@ -2086,6 +2133,11 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
 
     if (mspFcProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
+#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
+    } else if (cmdMSP == MSP_SET_4WAY_IF) {
+        mspFc4waySerialCommand(dst, src, mspPostProcessFn);
+        ret = MSP_RESULT_ACK;
+#endif
 #ifdef NAV
     } else if (cmdMSP == MSP_WP) {
         mspFcWaypointOutCommand(dst, src);

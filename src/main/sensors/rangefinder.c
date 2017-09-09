@@ -37,6 +37,8 @@
 #include "drivers/time.h"
 #include "drivers/rangefinder_hcsr04.h"
 #include "drivers/rangefinder_srf10.h"
+#include "drivers/rangefinder_hcsr04_i2c.h"
+#include "drivers/rangefinder_vl53l0x.h"
 #include "drivers/rangefinder.h"
 
 #include "fc/config.h"
@@ -53,6 +55,9 @@
 rangefinder_t rangefinder;
 
 #define RANGEFINDER_HARDWARE_TIMEOUT_MS         500     // Accept 500ms of non-responsive sensor, report HW failure otherwise
+
+#define RANGEFINDER_DYNAMIC_THRESHOLD           600     //Used to determine max. usable rangefinder disatance
+#define RANGEFINDER_DYNAMIC_FACTOR              75    
 
 #ifdef USE_RANGEFINDER
 PG_REGISTER_WITH_RESET_TEMPLATE(rangefinderConfig_t, rangefinderConfig, PG_RANGEFINDER_CONFIG, 0);
@@ -79,8 +84,6 @@ const rangefinderHardwarePins_t * rangefinderGetHardwarePins(void)
 #elif defined(RANGEFINDER_HCSR04_TRIGGER_PIN)
     rangefinderHardwarePins.triggerTag = IO_TAG(RANGEFINDER_HCSR04_TRIGGER_PIN);
     rangefinderHardwarePins.echoTag = IO_TAG(RANGEFINDER_HCSR04_ECHO_PIN);
-#else
-#error Rangefinder not defined for target
 #endif
     return &rangefinderHardwarePins;
 }
@@ -115,6 +118,24 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
 #endif
             break;
 
+            case RANGEFINDER_HCSR04I2C:
+#ifdef USE_RANGEFINDER_HCSR04_I2C
+            if (hcsr04i2c0Detect(dev)) {
+                rangefinderHardware = RANGEFINDER_HCSR04I2C;
+                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_HCSR04_i2C_TASK_PERIOD_MS));
+            }
+#endif
+            break;
+
+            case RANGEFINDER_VL53L0X:
+#if defined(USE_RANGEFINDER_VL53L0X)
+            if (vl53l0xDetect(dev)) {
+                rangefinderHardware = RANGEFINDER_VL53L0X;
+                rescheduleTask(TASK_RANGEFINDER, TASK_PERIOD_MS(RANGEFINDER_VL53L0X_TASK_PERIOD_MS));
+            }
+#endif
+            break;
+
         case RANGEFINDER_NONE:
             rangefinderHardware = RANGEFINDER_NONE;
             break;
@@ -132,6 +153,11 @@ static bool rangefinderDetect(rangefinderDev_t * dev, uint8_t rangefinderHardwar
     return true;
 }
 
+void rangefinderResetDynamicThreshold(void) {
+    rangefinder.snrThresholdReached = false;
+    rangefinder.dynamicDistanceThreshold = 0;
+}
+
 bool rangefinderInit(void)
 {
     if (!rangefinderDetect(&rangefinder.dev, rangefinderConfig()->rangefinder_hardware)) {
@@ -143,6 +169,9 @@ bool rangefinderInit(void)
     rangefinder.calculatedAltitude = RANGEFINDER_OUT_OF_RANGE;
     rangefinder.maxTiltCos = cos_approx(DECIDEGREES_TO_RADIANS(rangefinder.dev.detectionConeExtendedDeciDegrees / 2.0f));
     rangefinder.lastValidResponseTimeMs = millis();
+    rangefinder.snr = 0;
+
+    rangefinderResetDynamicThreshold();
 
     return true;
 }
@@ -165,6 +194,35 @@ static int32_t applyMedianFilter(int32_t newReading)
     return medianFilterReady ? quickMedianFilter5(filterSamples) : newReading;
 }
 
+static int16_t computePseudoSnr(int32_t newReading) {
+    #define SNR_SAMPLES 5
+    static int16_t snrSamples[SNR_SAMPLES];
+    static uint8_t snrSampleIndex = 0;
+    static int32_t previousReading = RANGEFINDER_OUT_OF_RANGE;
+    static bool snrReady = false;
+    int16_t pseudoSnr = 0;
+
+    snrSamples[snrSampleIndex] = constrain((int)(pow(newReading - previousReading, 2) / 10), 0, 6400);
+    ++snrSampleIndex;
+    if (snrSampleIndex == SNR_SAMPLES) {
+        snrSampleIndex = 0;
+        snrReady = true;
+    }
+
+    previousReading = newReading;
+
+    if (snrReady) {
+
+        for (uint8_t i = 0; i < SNR_SAMPLES; i++) {
+            pseudoSnr += snrSamples[i];
+        }
+
+        return constrain(pseudoSnr, 0, 32000);
+    } else {
+        return RANGEFINDER_OUT_OF_RANGE;
+    }
+}
+
 /*
  * This is called periodically by the scheduler
  */
@@ -177,15 +235,48 @@ timeDelta_t rangefinderUpdate(void)
     return rangefinder.dev.delayMs * 1000;  // to microseconds
 }
 
+bool isSurfaceAltitudeValid() {
+
+    /*
+     * Preconditions: raw and calculated altidude > 0
+     * SNR lower than threshold
+     */ 
+    if (
+        rangefinder.calculatedAltitude > 0 &&
+        rangefinder.rawAltitude > 0 &&
+        rangefinder.snr < RANGEFINDER_DYNAMIC_THRESHOLD
+    ) {
+
+        /*
+         * When critical altitude was determined, distance reported by rangefinder
+         * has to be lower than it to assume healthy readout
+         */
+        if (rangefinder.snrThresholdReached) {
+            return (rangefinder.rawAltitude < rangefinder.dynamicDistanceThreshold);
+        } else {
+            return true;
+        }
+
+    } else {
+        return false;
+    }
+
+}
+
 /**
  * Get the last distance measured by the sonar in centimeters. When the ground is too far away, RANGEFINDER_OUT_OF_RANGE is returned.
  */
-int32_t rangefinderRead(void)
+bool rangefinderProcess(float cosTiltAngle)
 {
     if (rangefinder.dev.read) {
         const int32_t distance = rangefinder.dev.read();
 
         DEBUG_SET(DEBUG_RANGEFINDER, 0, distance);
+
+        // If driver reported no new measurement - don't do anything
+        if (distance == RANGEFINDER_NO_NEW_DATA) {
+            return false;
+        }
 
         if (distance >= 0) {
             rangefinder.lastValidResponseTimeMs = millis();
@@ -199,42 +290,63 @@ int32_t rangefinderRead(void)
             // Invalid response / hardware failure
             rangefinder.rawAltitude = RANGEFINDER_HARDWARE_FAILURE;
         }
+
+        rangefinder.snr = computePseudoSnr(distance);
+
+        if (rangefinder.snrThresholdReached == false && rangefinder.rawAltitude > 0) {
+
+            if (rangefinder.snr < RANGEFINDER_DYNAMIC_THRESHOLD && rangefinder.dynamicDistanceThreshold < rangefinder.rawAltitude) {
+                rangefinder.dynamicDistanceThreshold = rangefinder.rawAltitude * RANGEFINDER_DYNAMIC_FACTOR / 100;
+            }
+
+            if (rangefinder.snr >= RANGEFINDER_DYNAMIC_THRESHOLD) {
+                rangefinder.snrThresholdReached = true;
+            }
+
+        }
+
+        DEBUG_SET(DEBUG_RANGEFINDER, 3, rangefinder.snr);
+
+        DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 0, rangefinder.rawAltitude);
+        DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 1, rangefinder.snrThresholdReached);
+        DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 2, rangefinder.dynamicDistanceThreshold);
+        DEBUG_SET(DEBUG_RANGEFINDER_QUALITY, 3, isSurfaceAltitudeValid());
+
     }
     else {
         // Bad configuration
         rangefinder.rawAltitude = RANGEFINDER_OUT_OF_RANGE;
     }
 
-    DEBUG_SET(DEBUG_RANGEFINDER, 1, rangefinder.rawAltitude);
-
-    return rangefinder.rawAltitude;
-}
-
-/**
- * Apply tilt correction to the given raw sonar reading in order to compensate for the tilt of the craft when estimating
- * the altitude. Returns the computed altitude in centimeters.
- *
- * When the ground is too far away or the tilt is too large, RANGEFINDER_OUT_OF_RANGE is returned.
- */
-int32_t rangefinderCalculateAltitude(int32_t rangefinderDistance, float cosTiltAngle)
-{
-    // calculate sonar altitude only if the ground is in the sonar cone
-    if (cosTiltAngle < rangefinder.maxTiltCos || rangefinderDistance == RANGEFINDER_OUT_OF_RANGE) {
+    /**
+    * Apply tilt correction to the given raw sonar reading in order to compensate for the tilt of the craft when estimating
+    * the altitude. Returns the computed altitude in centimeters.
+    *
+    * When the ground is too far away or the tilt is too large, RANGEFINDER_OUT_OF_RANGE is returned.
+    */
+    if (cosTiltAngle < rangefinder.maxTiltCos || rangefinder.rawAltitude < 0) {
         rangefinder.calculatedAltitude = RANGEFINDER_OUT_OF_RANGE;
     } else {
-        rangefinder.calculatedAltitude = rangefinderDistance * cosTiltAngle;
+        rangefinder.calculatedAltitude = rangefinder.rawAltitude * cosTiltAngle;
     }
+
+    DEBUG_SET(DEBUG_RANGEFINDER, 1, rangefinder.rawAltitude);
     DEBUG_SET(DEBUG_RANGEFINDER, 2, rangefinder.calculatedAltitude);
-    return rangefinder.calculatedAltitude;
+
+    return true;
 }
 
 /**
- * Get the latest altitude that was computed by a call to rangefinderCalculateAltitude(), or RANGEFINDER_OUT_OF_RANGE if sonarCalculateAltitude
+ * Get the latest altitude that was computed, or RANGEFINDER_OUT_OF_RANGE if sonarCalculateAltitude
  * has never been called.
  */
 int32_t rangefinderGetLatestAltitude(void)
 {
     return rangefinder.calculatedAltitude;
+}
+
+int32_t rangefinderGetLatestRawAltitude(void) {
+    return rangefinder.rawAltitude;
 }
 
 bool rangefinderIsHealthy(void)

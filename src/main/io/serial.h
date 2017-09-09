@@ -40,7 +40,8 @@ typedef enum {
     FUNCTION_RX_SERIAL           = (1 << 6), // 64
     FUNCTION_BLACKBOX            = (1 << 7), // 128
     FUNCTION_TELEMETRY_MAVLINK   = (1 << 8), // 256
-    FUNCTION_TELEMETRY_IBUS      = (1 << 9) // 512
+    FUNCTION_TELEMETRY_IBUS      = (1 << 9), // 512
+    FUNCTION_RCSPLIT             = (1 << 10) // 1024
 } serialPortFunction_e;
 
 typedef enum {
@@ -104,7 +105,7 @@ typedef struct serialPortConfig_s {
     serialPortIdentifier_e identifier;
     uint8_t msp_baudrateIndex;
     uint8_t gps_baudrateIndex;
-    uint8_t blackbox_baudrateIndex;
+    uint8_t peripheral_baudrateIndex;
     uint8_t telemetry_baudrateIndex; // not used for all telemetry systems, e.g. HoTT only works at 19200.
 } serialPortConfig_t;
 

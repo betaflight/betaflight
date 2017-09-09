@@ -47,7 +47,7 @@ static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
 {
     UNUSED(ptr);
 
-    displayClear(pDisplay);
+    displayClearScreen(pDisplay);
     displayWrite(pDisplay, 5, 3, "ERASING FLASH...");
     displayResync(pDisplay); // Was max7456RefreshAll(); Why at this timing?
 
@@ -56,7 +56,7 @@ static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
         delay(100);
     }
 
-    displayClear(pDisplay);
+    displayClearScreen(pDisplay);
     displayResync(pDisplay); // Was max7456RefreshAll(); wedges during heavy SPI?
 
     return 0;
@@ -71,20 +71,24 @@ static long cmsx_menuBlackboxOnEnter(void)
 {
     if (!featureRead) {
         cmsx_FeatureBlackbox = feature(FEATURE_BLACKBOX) ? 1 : 0;
+        blackboxConfig_rate_denom = blackboxConfig()->rate_denom;
         featureRead = true;
     }
-    blackboxConfig_rate_denom = blackboxConfig()->rate_denom;
     return 0;
 }
 
 static long cmsx_Blackbox_FeatureWriteback(void)
 {
-    if (cmsx_FeatureBlackbox)
-        featureSet(FEATURE_BLACKBOX);
-    else
-        featureClear(FEATURE_BLACKBOX);
+    // If we did read the data into CMS cache - write it back
+    if (featureRead) {
+        if (cmsx_FeatureBlackbox)
+            featureSet(FEATURE_BLACKBOX);
+        else
+            featureClear(FEATURE_BLACKBOX);
 
-    blackboxConfigMutable()->rate_denom = blackboxConfig_rate_denom;
+        blackboxConfigMutable()->rate_denom = blackboxConfig_rate_denom;
+    }
+
     return 0;
 }
 

@@ -56,6 +56,7 @@
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883
 #define USE_MAG_MAG3110
+#define USE_MAG_QMC5883
 #define MAG_AK8963_ALIGN        CW270_DEG
 
 #define BARO
@@ -73,6 +74,7 @@
 #define USE_FLASH_M25P16
 #define USE_FLASH_TOOLS
 
+#define USB_IO
 #define USE_VCP
 #define VBUS_SENSING_PIN        PA8
 

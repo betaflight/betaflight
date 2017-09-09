@@ -94,7 +94,8 @@ Re-apply any new defaults as desired.
 |  Variable Name | Default Value | Description |
 |  ------ | ------ | ------ |
 |  looptime  | 2000 | This is the main loop time (in us). Changing this affects PID effect with some PID controllers (see PID section for details). Default of 3500us/285Hz should work for everyone. Setting it to zero does not limit loop time, so it will go as fast as possible. |
-|  i2c_overclock  | OFF | Enabling this feature speeds up IMU speed significantly and faster looptimes are possible. |
+|  i2c_speed | 400KHZ | This setting controls the clock speed of I2C bus. 400KHZ is the default that most setups are able to use. Some noise-free setups may be overclocked to 800KHZ. Some sensor chips or setups with long wires may work unreliably at 400KHZ - user can try lowering the clock speed to 200KHZ or even 100KHZ. User need to bear in ming that lower clock speeds might require higher looptimes (lower looptime rate) |
+|  cpu_underclock  | OFF | This option is only available on certain architectures (F3 CPUs at the moment). It makes CPU clock lower to reduce interference to long-range RC systems working at 433MHz |
 |  gyro_sync  | OFF | This option enables gyro_sync feature. In this case the loop will be synced to gyro refresh rate. Loop will always wait for the newest gyro measurement. Use gyro_lpf and gyro_sync_denom determine the gyro refresh rate. Note that different targets have different limits. Setting too high refresh rate can mean that FC cannot keep up with the gyro and higher gyro_sync_denom is needed, |
 |  gyro_sync_denom  | 2 | This option determines the sampling ratio. Denominator of 1 means full gyro sampling rate. Denominator 2 would mean 1/2 samples will be collected. Denominator and gyro_lpf will together determine the control loop speed. |
 |  acc_task_frequency  | 500 | Determines accelerometer task frequency in async_mode = ALL. Depending on UAV type this frequency can be lowered to conserve CPU resources as long as vibrations are not a problem. |
@@ -198,11 +199,12 @@ Re-apply any new defaults as desired.
 |  frsky_default_lattitude  | 0.000 | OpenTX needs a valid set of coordinates to show compass value. A fake value defined in this setting is sent while no fix is acquired. |
 |  frsky_default_longitude  | 0.000 | OpenTX needs a valid set of coordinates to show compass value. A fake value defined in this setting is sent while no fix is acquired. |
 |  frsky_coordinates_format  | 0 | FRSKY_FORMAT_DMS (default), FRSKY_FORMAT_NMEA |
-|  frsky_unit  | IMPERIAL | IMPERIAL , METRIC |
+|  frsky_unit  | METRIC | METRIC , IMPERIAL |
 |  frsky_vfas_precision  | 0 | Set to 1 to send raw VBat value in 0.1V resolution for receivers that can handle it, or 0 (default) to use the standard method |
 |  frsky_vfas_cell_voltage  | OFF |  |
 |  hott_alarm_sound_interval  | 5 | Battery alarm delay in seconds for Hott telemetry |
 |  smartport_uart_unidir  | OFF | Turn UART into UNIDIR for smartport telemetry for usage on F1 and F4 target. See Telemertry.md for details |
+|  smartport_fuel_percent  | OFF | Set to ON for `Fuel` telemetry to return remaining battery percentage (calculated using `battery_capacity` variable), mAh drawn otherwise. |
 |  ibus_telemetry_type  | 0 | Type compatibility ibus telemetry for transmitters. See Telemetry.md label IBUS for details. |
 |  ltm_update_rate  | NORMAL | Defines the LTM update rate (use of bandwidth [NORMAL/MEDIUM/SLOW]). See Telemetry.md, LTM section for details. |
 |  battery_capacity  | 0 | Battery capacity in mAH. This value is used in conjunction with the current meter to determine remaining battery capacity. |
@@ -231,7 +233,7 @@ Re-apply any new defaults as desired.
 |  yaw_motor_direction  | 1 | Use if you need to inverse yaw motor direction. |
 |  yaw_jump_prevention_limit  | 200 | Prevent yaw jumps during yaw stops and rapid YAW input. To disable set to 500. Adjust this if your aircraft 'skids out'. Higher values increases YAW authority but can cause roll/pitch instability in case of underpowered UAVs. Lower values makes yaw adjustments more gentle but can cause UAV unable to keep heading |
 |  tri_unarmed_servo  | ON | On tricopter mix only, if this is set to ON, servo will always be correcting regardless of armed state. to disable this, set it to OFF. |
-|  servo_lpf_hz  | 0 | Selects the servo PWM output cutoff frequency. Value is in [Hz] |
+|  servo_lpf_hz  | 20 | Selects the servo PWM output cutoff frequency. Value is in [Hz] |
 |  servo_center_pulse  | 1500 | Servo midpoint |
 |  servo_pwm_rate  | 50 | Output frequency (in Hz) servo pins. When using tricopters or gimbal with digital servo, this rate can be increased. Max of 498Hz (for 500Hz pwm period), and min of 50Hz. Most digital servos will support for example 330Hz. |
 |  failsafe_delay  | 5 | Time in deciseconds to wait before activating failsafe when signal is lost. See [Failsafe documentation](Failsafe.md#failsafe_delay). |

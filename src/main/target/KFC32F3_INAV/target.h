@@ -48,6 +48,7 @@
 
 #define MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
 
 #define USE_SPI
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
@@ -111,8 +112,6 @@
 #define I2C1_SCL                PA15
 #define I2C1_SDA                PA14
 
-#define PITOT
-#define USE_PITOT_ADC
 #define USE_PITOT_MS4525
 #define PITOT_I2C_INSTANCE      I2C_DEVICE
 

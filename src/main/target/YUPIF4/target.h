@@ -71,11 +71,13 @@
 
 #define MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
 
 #define BARO
 #define USE_BARO_BMP280
 
 // Serial Ports
+#define USB_IO
 #define USE_VCP
 
 #define USE_UART1

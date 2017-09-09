@@ -21,6 +21,6 @@ Vagrant.configure(2) do |config|
     apt-get remove -y binutils-arm-none-eabi gcc-arm-none-eabi
     add-apt-repository ppa:terry.guo/gcc-arm-embedded
     apt-get update
-    apt-get install -y git gcc-arm-none-eabi=4.9.3.2015q3-1trusty1
+    apt-get install -y git gcc-arm-none-eabi=4.9.3.2015q3-1trusty1 ruby
   SHELL
 end

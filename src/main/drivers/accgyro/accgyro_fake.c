@@ -66,10 +66,10 @@ static bool fakeGyroInitStatus(gyroDev_t *gyro)
 
 bool fakeGyroDetect(gyroDev_t *gyro)
 {
-    gyro->init = fakeGyroInit;
-    gyro->intStatus = fakeGyroInitStatus;
-    gyro->read = fakeGyroRead;
-    gyro->temperature = fakeGyroReadTemperature;
+    gyro->initFn = fakeGyroInit;
+    gyro->intStatusFn = fakeGyroInitStatus;
+    gyro->readFn = fakeGyroRead;
+    gyro->temperatureFn = fakeGyroReadTemperature;
     gyro->scale = 1.0f / 16.4f;
     return true;
 }
@@ -102,8 +102,8 @@ static bool fakeAccRead(accDev_t *acc)
 
 bool fakeAccDetect(accDev_t *acc)
 {
-    acc->init = fakeAccInit;
-    acc->read = fakeAccRead;
+    acc->initFn = fakeAccInit;
+    acc->readFn = fakeAccRead;
     acc->revisionCode = 0;
     return true;
 }

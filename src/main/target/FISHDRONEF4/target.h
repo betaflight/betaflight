@@ -61,6 +61,7 @@
 #define USE_MAG_MAG3110
 #define USE_MAG_HMC5883
 #define USE_MAG_IST8310
+#define USE_MAG_QMC5883
 #define MAG_IST8310_ALIGN CW270_DEG
 
 // *************** BARO *****************************
@@ -112,6 +113,7 @@
 #define USE_FLASH_M25P16
 
 // *************** UART *****************************
+#define USB_IO
 #define USE_VCP
 
 // provide for Telemetry module

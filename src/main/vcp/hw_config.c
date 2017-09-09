@@ -150,8 +150,11 @@ void Set_System(void)
  *******************************************************************************/
 void Set_USBClock(void)
 {
+    RCC_ClocksTypeDef RCC_Clocks;
+    RCC_GetClocksFreq(&RCC_Clocks);
+
     /* Select USBCLK source */
-    RCC_USBCLKConfig(RCC_USBCLKSource_PLLCLK_1Div5);
+    RCC_USBCLKConfig(RCC_Clocks.SYSCLK_Frequency == 72000000 ? RCC_USBCLKSource_PLLCLK_1Div5 : RCC_USBCLKSource_PLLCLK_Div1);
 
     /* Enable the USB clock */
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USB, ENABLE);

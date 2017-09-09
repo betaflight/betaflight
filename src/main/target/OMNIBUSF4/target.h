@@ -69,6 +69,7 @@
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW90_DEG
 #define USE_MAG_MAG3110
+#define USE_MAG_QMC5883
 
 #define BARO
 #define USE_BARO_BMP085
@@ -81,11 +82,14 @@
   #define BMP280_CS_PIN           PB3 // v1
 #endif
 
-#define PITOT
-#define USE_PITOT_ADC
 #define USE_PITOT_MS4525
 #define PITOT_I2C_INSTANCE      I2C_DEVICE
 
+#define USE_RANGEFINDER
+#define USE_RANGEFINDER_HCSR04_I2C
+#define RANGEFINDER_HCSR04_I2C_I2C_INSTANCE (I2C_DEVICE)
+
+#define USB_IO
 #define USE_VCP
 #define VBUS_SENSING_PIN        PC5
 #define VBUS_SENSING_ENABLED

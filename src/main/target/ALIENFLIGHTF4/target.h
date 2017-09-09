@@ -54,6 +54,7 @@
 #define MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_AK8963
+#define USE_MAG_QMC5883
 
 #define MAG_HMC5883_ALIGN       CW180_DEG
 #define MAG_AK8963_ALIGN        CW270_DEG
@@ -94,6 +95,7 @@
 //#define USE_FLASHFS
 //#define USE_FLASH_M25P16
 
+#define USB_IO
 #define USE_VCP
 
 #define USE_UART1

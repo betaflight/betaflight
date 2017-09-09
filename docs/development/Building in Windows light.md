@@ -38,6 +38,10 @@ download https://launchpad.net/gcc-arm-embedded/4.9/4.9-2015-q2-update/+download
 
 extract it into C:\devtools\gcc-arm-none-eabi-4_9-2015q2-20150609-win32 (folder already there)
 
+##Install Ruby
+
+Install the latest Ruby version using [Ruby Installer](https://rubyinstaller.org).
+
 ##Test
 Run C:\devtools\shF4.cmd
 

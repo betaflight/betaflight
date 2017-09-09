@@ -50,6 +50,7 @@
 
 #define MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
 #define MAG_HMC5883_ALIGN       CW90_DEG
 
 #define BARO
@@ -74,6 +75,7 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 17
 
+#define USB_IO
 
 #define USE_VCP
 #define VBUS_SENSING_PIN        PA9

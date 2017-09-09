@@ -49,6 +49,7 @@
 
 #define MAG
 #define USE_MAG_HMC5883
+#define USE_MAG_QMC5883
 #define MAG_HMC5883_ALIGN       CW270_DEG_FLIP
 #define MAG_I2C_INSTANCE        I2CDEV_1
 
@@ -90,6 +91,7 @@
 #define CURRENT_METER_ADC_CHANNEL       ADC_CHN_2
 #define RSSI_ADC_CHANNEL                ADC_CHN_3
 
+#define USB_IO
 #define USE_VCP
 
 #define USE_UART1

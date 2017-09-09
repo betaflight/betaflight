@@ -83,6 +83,7 @@
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      PB10
 // *************** UART *****************************
+#define USB_IO
 #define USE_VCP
 #define VBUS_SENSING_PIN        PB12
 #define VBUS_SENSING_ENABLED
@@ -117,6 +118,26 @@
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART2
 
+// *************** I2C ****************************
+// SLC clash with WS2812 LED
+#define USE_I2C
+#define I2C_DEVICE              (I2CDEV_1)
+#define I2C1_SCL                PB6
+#define I2C1_SDA                PB7
+
+
+#define BARO
+#define USE_BARO_BMP280
+#define USE_BARO_MS5611
+#define USE_BARO_BMP085
+
+#define MAG
+#define USE_MAG_MAG3110 // External
+#define USE_MAG_HMC5883 // External
+#define USE_MAG_AK8963  // External
+#define USE_MAG_AK8975  // External
+#define USE_MAG_QMC5883 // External
+
 // *************** ADC *****************************
 #define USE_ADC
 #define ADC_INSTANCE                ADC1
@@ -131,10 +152,10 @@
 #define DEFAULT_FEATURES        (FEATURE_OSD )
 
 #define LED_STRIP
-#define WS2811_PIN                      PB6
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST0_HANDLER
-#define WS2811_DMA_STREAM               DMA1_Stream0
-#define WS2811_DMA_CHANNEL              DMA_Channel_6   // ???
+#define WS2811_PIN                      PA15 // S5 pad for iNav
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST5_HANDLER
+#define WS2811_DMA_STREAM               DMA1_Stream5
+#define WS2811_DMA_CHANNEL              DMA_Channel_3   // ???
 
 #define SPEKTRUM_BIND
 #define BIND_PIN                PA1 // USART4 RX
@@ -146,6 +167,6 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
-#define USABLE_TIMER_CHANNEL_COUNT 8
+#define USABLE_TIMER_CHANNEL_COUNT 7
 #define MAX_PWM_OUTPUT_PORTS       6
 #define USED_TIMERS             (TIM_N(1)|TIM_N(2)|TIM_N(3)|TIM_N(4)|TIM_N(5)|TIM_N(8))
