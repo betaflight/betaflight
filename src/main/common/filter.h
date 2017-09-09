@@ -44,7 +44,7 @@ typedef struct biquadFilter_s {
     float x1, x2, y1, y2;
 } biquadFilter_t;
 
-typedef struct firFilterDenoise_s{
+typedef struct firFilterDenoise_s {
     int filledCount;
     int targetCount;
     int index;
