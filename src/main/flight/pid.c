@@ -126,7 +126,7 @@ void pgResetFn_pidProfiles(pidProfile_t *pidProfiles)
     }
 }
 
-void pidSetTargetLooptime(uint32_t pidLooptime)
+static void pidSetTargetLooptime(uint32_t pidLooptime)
 {
     targetPidLooptime = pidLooptime;
     dT = (float)targetPidLooptime * 0.000001f;
@@ -199,8 +199,6 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     if (pidProfile->dterm_lpf_hz == 0 || pidProfile->dterm_lpf_hz > pidFrequencyNyquist) {
         dtermLpfApplyFn = nullFilterApply;
     } else {
-        memset(&dtermFilterLpfUnion, 0, sizeof(dtermFilterLpfUnion));
-
         switch (pidProfile->dterm_filter_type) {
         default:
             dtermLpfApplyFn = nullFilterApply;
@@ -294,6 +292,16 @@ void pidInit(const pidProfile_t *pidProfile)
     pidInitMixer(pidProfile);
 }
 
+
+void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex)
+{
+    if ((dstPidProfileIndex < MAX_PROFILE_COUNT-1 && srcPidProfileIndex < MAX_PROFILE_COUNT-1)
+        && dstPidProfileIndex != srcPidProfileIndex
+    ) {
+        memcpy(pidProfilesMutable(dstPidProfileIndex), pidProfilesMutable(srcPidProfileIndex), sizeof(pidProfile_t));
+    }
+}
+
 // calculates strength of horizon leveling; 0 = none, 1.0 = most leveling
 static float calcHorizonLevelStrength(void)
 {
@@ -371,7 +379,8 @@ static float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPit
     return currentPidSetpoint;
 }
 
-static float accelerationLimit(int axis, float currentPidSetpoint) {
+static float accelerationLimit(int axis, float currentPidSetpoint)
+{
     static float previousSetpoint[3];
     const float currentVelocity = currentPidSetpoint- previousSetpoint[axis];
 
@@ -521,13 +530,5 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             axisPID_I[axis] = 0;
             axisPID_D[axis] = 0;
         }
-    }
-}
-
-void copyPidProfile(const uint8_t dstPidProfileIndex, const uint8_t srcPidProfileIndex) {
-    if ((dstPidProfileIndex < MAX_PROFILE_COUNT-1 && srcPidProfileIndex < MAX_PROFILE_COUNT-1)
-        && dstPidProfileIndex != srcPidProfileIndex
-    ) {
-        memcpy(pidProfilesMutable(dstPidProfileIndex), pidProfilesMutable(srcPidProfileIndex), sizeof(pidProfile_t));
     }
 }

@@ -420,7 +420,7 @@ static long cmsx_CopyPidProfile(displayPort_t *pDisplay, const void *ptr)
     UNUSED(ptr);
 
     if (cmsx_dstPidProfile > 0) {
-        copyPidProfile(cmsx_dstPidProfile - 1, getCurrentPidProfileIndex());
+        pidCopyProfile(cmsx_dstPidProfile - 1, getCurrentPidProfileIndex());
     }
 
     return 0;

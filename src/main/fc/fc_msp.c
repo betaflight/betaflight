@@ -1326,7 +1326,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         uint8_t dstProfileIndex = sbufReadU8(src);
         uint8_t srcProfileIndex = sbufReadU8(src);
         if (value == 0) {
-            copyPidProfile(dstProfileIndex, srcProfileIndex);
+            pidCopyProfile(dstProfileIndex, srcProfileIndex);
         }
         else if (value == 1) {
             copyControlRateProfile(dstProfileIndex, srcProfileIndex);

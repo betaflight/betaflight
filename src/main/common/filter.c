@@ -295,6 +295,7 @@ float firFilterLastInput(const firFilter_t *filter)
 
 void firFilterDenoiseInit(firFilterDenoise_t *filter, uint8_t gyroSoftLpfHz, uint16_t targetLooptime)
 {
+    memset(filter, 0, sizeof(firFilterDenoise_t));
     filter->targetCount = constrain(lrintf((1.0f / (0.000001f * (float)targetLooptime)) / gyroSoftLpfHz), 1, MAX_FIR_DENOISE_WINDOW_SIZE);
 }
 
@@ -303,12 +304,14 @@ float firFilterDenoiseUpdate(firFilterDenoise_t *filter, float input)
 {
     filter->state[filter->index] = input;
     filter->movingSum += filter->state[filter->index++];
-    if (filter->index == filter->targetCount)
+    if (filter->index == filter->targetCount) {
         filter->index = 0;
+    }
     filter->movingSum -= filter->state[filter->index];
 
-    if (filter->targetCount >= filter->filledCount)
+    if (filter->targetCount >= filter->filledCount) {
         return filter->movingSum / filter->targetCount;
-    else
+    } else {
         return filter->movingSum / ++filter->filledCount + 1;
+    }
 }
