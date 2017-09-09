@@ -176,7 +176,8 @@ void uartReconfigure(uartPort_t *uartPort)
 
             __HAL_DMA_SET_COUNTER(&uartPort->txDMAHandle, 0);
         } else {
-            __HAL_UART_ENABLE_IT(&uartPort->Handle, UART_IT_TXE);
+            /* Enable the UART Transmit Data Register Empty Interrupt */
+            SET_BIT(uartPort->USARTx->CR1, USART_CR1_TXEIE);
         }
     }
     return;
