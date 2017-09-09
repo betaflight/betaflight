@@ -318,3 +318,4 @@
 #define MSP_SERVO_MIX_RULES      241    //out message         Returns servo mixer configuration
 #define MSP_SET_SERVO_MIX_RULE   242    //in message          Sets servo mixer configuration
 #define MSP_SET_4WAY_IF          245    //in message          Sets 4way interface
+#define MSP_SET_RTC              246    //in message          Sets the RTC clock
