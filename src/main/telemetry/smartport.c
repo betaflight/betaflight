@@ -365,8 +365,12 @@ static void processMspPacket(mspPacket_t* packet)
 {
     initSmartPortMspReply(0);
 
-    if (mspFcProcessCommand(packet, &smartPortMspReply, NULL) == MSP_RESULT_ERROR) {
+    mspPostProcessFnPtr mspPostProcessFn = NULL;
+    if (mspFcProcessCommand(packet, &smartPortMspReply, &mspPostProcessFn) == MSP_RESULT_ERROR) {
         sbufWriteU8(&smartPortMspReply.buf, SMARTPORT_MSP_ERROR);
+    }
+    if (mspPostProcessFn) {
+        mspPostProcessFn(NULL);
     }
 
     // change streambuf direction
