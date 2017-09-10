@@ -225,6 +225,8 @@ void beeper(beeperMode_e mode)
         mode == BEEPER_SILENCE || (
             (getBeeperOffMask() & (1 << (BEEPER_USB - 1)))
             && (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && (getBatteryCellCount() == 0))
+            && (mode != BEEPER_GYRO_CALIBRATED)  // Allow the GYRO_CALIBRATED beeps to override -ON_USB because
+                                                 // calibration can complete before the battery cells detection
         )
     ) {
         beeperSilence();
