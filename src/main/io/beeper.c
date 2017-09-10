@@ -364,11 +364,12 @@ void beeperUpdate(timeUs_t currentTimeUs)
 
     #ifdef USE_DSHOT
     if (!areMotorsRunning() && beeperConfig()->dshotForward && currentBeeperEntry->mode == BEEPER_RX_SET) {
-	pwmDisableMotors();
+        pwmDisableMotors();
+        delay(1);
 
         pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_BEEP3);
 
-	pwmEnableMotors();
+        pwmEnableMotors();
     }
     #endif
 

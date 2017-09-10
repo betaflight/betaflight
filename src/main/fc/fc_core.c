@@ -265,6 +265,7 @@ void tryArm(void)
 #ifdef USE_DSHOT
         if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH)) {
             pwmDisableMotors();
+            delay(1);
 
             if (!IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
                 flipOverAfterCrashMode = false;
