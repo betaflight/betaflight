@@ -190,6 +190,7 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(void)
                 // TODO: CRC CHECK
                 scheduleDeviceInfoResponse();
                 return RX_FRAME_COMPLETE;
+#if defined(USE_MSP_OVER_TELEMETRY)
             } else if (crsfFrame.frame.type == CRSF_FRAMETYPE_MSP_REQ || crsfFrame.frame.type == CRSF_FRAMETYPE_MSP_WRITE) {
                 // TODO: CRC CHECK
                 uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + 2;
@@ -198,6 +199,7 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(void)
                     scheduleMspResponse();
                 }
                 return RX_FRAME_COMPLETE;
+#endif
             }
         }
     }

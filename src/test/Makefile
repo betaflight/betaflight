@@ -214,6 +214,13 @@ telemetry_crsf_unittest_SRC := \
 		$(USER_DIR)/common/typeconversion.c \
 		$(USER_DIR)/fc/runtime_config.c
 
+telemetry_crsf_unittest_DEFINES := \
+		FLASH_SIZE=128 \
+		STM32F10X_MD \
+		__TARGET__="TEST" \
+		__REVISION__="revision"
+
+
 telemetry_crsf_msp_unittest_SRC := \
 		$(USER_DIR)/rx/crsf.c \
 		$(USER_DIR)/common/crc.c \
@@ -227,12 +234,8 @@ telemetry_crsf_msp_unittest_SRC := \
 		$(USER_DIR)/telemetry/msp_shared.c \
 		$(USER_DIR)/fc/runtime_config.c
 
-
-telemetry_crsf_unittest_DEFINES := \
-		FLASH_SIZE=128 \
-		STM32F10X_MD \
-		__TARGET__="TEST" \
-		__REVISION__="revision"
+telemetry_crsf_msp_unittest_DEFINES := \
+		USE_MSP_OVER_TELEMETRY
 
 
 telemetry_hott_unittest_SRC := \

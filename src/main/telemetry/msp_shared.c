@@ -6,7 +6,7 @@
 
 #include "platform.h"
 
-#ifdef TELEMETRY
+#if defined(USE_MSP_OVER_TELEMETRY)
 
 #include "build/build_config.h"
 

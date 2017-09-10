@@ -169,7 +169,9 @@ typedef struct smartPortFrame_s {
 static smartPortFrame_t smartPortRxBuffer;
 static uint8_t smartPortRxBytes = 0;
 static bool smartPortFrameReceived = false;
+#if defined(USE_MSP_OVER_TELEMETRY)
 static bool smartPortMspReplyPending = false;
+#endif
 
 static void smartPortDataReceive(uint16_t c)
 {
@@ -327,9 +329,11 @@ void checkSmartPortTelemetryState(void)
         freeSmartPortTelemetryPort();
 }
 
+#if defined(USE_MSP_OVER_TELEMETRY)
 void smartPortSendMspResponse(uint8_t *payload) {
     smartPortSendPackageEx(FSSP_MSPS_FRAME, payload);
 }
+#endif
 
 void handleSmartPortTelemetry(void)
 {
@@ -352,6 +356,8 @@ void handleSmartPortTelemetry(void)
         smartPortFrameReceived = false;
         // do not check the physical ID here again
         // unless we start receiving other sensors' packets
+
+#if defined(USE_MSP_OVER_TELEMETRY)
         if (smartPortRxBuffer.frameId == FSSP_MSPC_FRAME) {
 
             // Pass only the payload: skip sensorId & frameId
@@ -361,6 +367,7 @@ void handleSmartPortTelemetry(void)
                 smartPortMspReplyPending = handleMspFrame(frameStart, frameEnd);
             }
         }
+#endif
     }
 
     while (smartPortHasRequest) {
@@ -370,11 +377,13 @@ void handleSmartPortTelemetry(void)
             return;
         }
 
+#if defined(USE_MSP_OVER_TELEMETRY)
         if (smartPortMspReplyPending) {
             smartPortMspReplyPending = sendMspReply(SMARTPORT_PAYLOAD_SIZE, &smartPortSendMspResponse);
             smartPortHasRequest = 0;
             return;
         }
+#endif
 
         // we can send back any data we want, our table keeps track of the order and frequency of each data type we send
         uint16_t id = frSkyDataIdTable[smartPortIdCnt];
