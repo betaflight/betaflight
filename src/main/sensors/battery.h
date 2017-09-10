@@ -59,7 +59,8 @@ typedef enum {
     BATTERY_OK = 0,
     BATTERY_WARNING,
     BATTERY_CRITICAL,
-    BATTERY_NOT_PRESENT
+    BATTERY_NOT_PRESENT,
+    BATTERY_INIT
 } batteryState_e;
 
 void batteryInit(void);

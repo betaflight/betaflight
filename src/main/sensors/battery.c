@@ -154,6 +154,7 @@ static void updateBatteryBeeperAlert(void)
             break;
         case BATTERY_OK:
         case BATTERY_NOT_PRESENT:
+        case BATTERY_INIT:
             break;
     }
 }
@@ -168,7 +169,7 @@ void batteryUpdatePresence(void)
 
 
     if (
-        voltageState == BATTERY_NOT_PRESENT
+        (voltageState == BATTERY_NOT_PRESENT || voltageState == BATTERY_INIT)
         && isVoltageFromBat
         && isVoltageStable
     ) {
@@ -275,7 +276,7 @@ batteryState_e getBatteryState(void)
     return batteryState;
 }
 
-const char * const batteryStateStrings[] = {"OK", "WARNING", "CRITICAL", "NOT PRESENT"};
+const char * const batteryStateStrings[] = {"OK", "WARNING", "CRITICAL", "NOT PRESENT", "INIT"};
 
 const char * getBatteryStateString(void)
 {
@@ -287,13 +288,13 @@ void batteryInit(void)
     //
     // presence
     //
-    batteryState = BATTERY_NOT_PRESENT;
+    batteryState = BATTERY_INIT;
     batteryCellCount = 0;
 
     //
     // voltage
     //
-    voltageState = BATTERY_NOT_PRESENT;
+    voltageState = BATTERY_INIT;
     batteryWarningVoltage = 0;
     batteryCriticalVoltage = 0;
     lowVoltageCutoff.enabled = false;
