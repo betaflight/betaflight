@@ -112,16 +112,24 @@ static bool vtxOpentcoQuerySupportedFeatures(void)
     }
 
     // fetch all available power indices:
-    for (uint32_t i = 0; i < OPENTCO_VTX_POWER_COUNT; i++) {
-        uint8_t max_index;
-        uint8_t index;
-        char result[OPENTCO_MAX_STRING_LENGTH];
-        if (!opentcoReadRegisterStringArray(device, OPENTCO_VTX_REGISTER_SUPPORTED_POWER, &index, &max_index, result)) {
-            // failed to fetch supported power register, this is bad..
-            return false;
-        }
-        // fine, sucessfully retrieved string
-        // copy to local array:
+    char result[OPENTCO_MAX_STRING_LENGTH];
+    uint8_t result_len;
+    if (!opentcoReadRegisterString(device, OPENTCO_VTX_REGISTER_SUPPORTED_POWER, &result_len, result)) {
+        // failed to fetch supported power register, this is bad..
+        return false;
+    }
+    /*
+    // fine, sucessfully retrieved string
+    // extract data from e.g. "---10 25 \0"
+    uint32_t result_len = strlen(result);
+    for (uint32_t i = 0; i < OPENTCO_VTX_MAX_POWER_COUNT; i++) {
+        // power names are 3 chars
+        strncpy(vtxOpentcoPowerNames[i], &result[i * 3], 3);
+        // add zero termination
+        vtxOpentcoPowerNames[i][3] = 0;
+    }
+
+
         if (index < OPENTCO_VTX_POWER_COUNT) {
             // copy first 3 chars + zero temination to string:
             strncpy(vtxOpentcoPowerNames[index], result, 3);
@@ -138,7 +146,7 @@ static bool vtxOpentcoQuerySupportedFeatures(void)
             return true;
         }
     }
-
+*/
     // device returned more power levels that we can store, abort
     return false;
 }
