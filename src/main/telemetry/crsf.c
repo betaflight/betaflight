@@ -63,7 +63,9 @@
 
 static bool crsfTelemetryEnabled;
 static bool deviceInfoReplyPending;
+#if defined(USE_MSP_OVER_TELEMETRY)
 static bool mspReplyPending;
+#endif
 static uint8_t crsfFrame[CRSF_FRAME_SIZE_MAX];
 
 static void crsfInitializeFrame(sbuf_t *dst)
@@ -280,6 +282,7 @@ typedef enum {
 static uint8_t crsfScheduleCount;
 static uint8_t crsfSchedule[CRSF_SCHEDULE_COUNT_MAX];
 
+#if defined(USE_MSP_OVER_TELEMETRY)
 void scheduleMspResponse() {
     if (!mspReplyPending) {
         mspReplyPending = true;
@@ -298,7 +301,8 @@ void crsfSendMspResponse(uint8_t *payload)
     sbufWriteU8(dst, CRSF_ADDRESS_BETAFLIGHT);
     sbufWriteData(dst, payload, CRSF_FRAME_TX_MSP_PAYLOAD_SIZE);
     crsfFinalize(dst);
- }
+}
+#endif
 
 static void processCrsf(void)
 {
@@ -341,7 +345,9 @@ void initCrsfTelemetry(void)
     crsfTelemetryEnabled = crsfRxIsActive();
 
     deviceInfoReplyPending = false;
+#if defined(USE_MSP_OVER_TELEMETRY)
     mspReplyPending = false;
+#endif
 
     int index = 0;
     crsfSchedule[index++] = BV(CRSF_FRAME_ATTITUDE_INDEX);
@@ -384,8 +390,10 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
             crsfFrameDeviceInfo(dst);
             crsfFinalize(dst);
             deviceInfoReplyPending = false;
+#if defined(USE_MSP_OVER_TELEMETRY)
         } else if (mspReplyPending) {
             mspReplyPending = sendMspReply(CRSF_FRAME_TX_MSP_PAYLOAD_SIZE, &crsfSendMspResponse);
+#endif
         } else {
             processCrsf();
         }

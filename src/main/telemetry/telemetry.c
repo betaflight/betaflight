@@ -101,7 +101,9 @@ void telemetryInit(void)
 #ifdef TELEMETRY_IBUS
     initIbusTelemetry();
 #endif
+#if defined(USE_MSP_OVER_TELEMETRY)
     initSharedMsp();
+#endif
 
     telemetryCheckState();
 }
