@@ -60,7 +60,7 @@ extern "C" {
     #include "telemetry/msp_shared.h"
     #include "telemetry/smartport.h"
 
-    bool handleMspFrame(uint8_t *frameStart, uint8_t *frameEnd);
+    bool handleMspFrame(uint8_t *frameStart, uint8_t *frameEnd, mspFrameHandling_t handling);
     bool sendMspReply(uint8_t payloadSize, mspResponseFnPtr responseFn);
     uint8_t sbufReadU8(sbuf_t *src);
     int sbufBytesRemaining(sbuf_t *buf);
@@ -130,7 +130,7 @@ TEST(CrossFireMSPTest, ResponsePacketTest)
     crsfFrameDone = true;
     uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + 2;
     uint8_t *frameEnd = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_RX_MSP_PAYLOAD_SIZE + 2;
-    handleMspFrame(frameStart, frameEnd);
+    handleMspFrame(frameStart, frameEnd, MSP_FRAME_HANDLING_NORMAL);
     for (unsigned int ii=1; ii<30; ii++) {
         EXPECT_EQ(ii, sbufReadU8(&mspPackage.responsePacket->buf));
     }
@@ -151,7 +151,7 @@ TEST(CrossFireMSPTest, WriteResponseTest)
     crsfFrameDone = true;
     uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + 2;
     uint8_t *frameEnd = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_RX_MSP_PAYLOAD_SIZE + 2;
-    bool pending1 = handleMspFrame(frameStart, frameEnd);
+    bool pending1 = handleMspFrame(frameStart, frameEnd, MSP_FRAME_HANDLING_NORMAL);
     EXPECT_FALSE(pending1); // not done yet*/
     EXPECT_EQ(0x29, mspPackage.requestBuffer[0]);
     EXPECT_EQ(0x28, mspPackage.requestBuffer[1]);
@@ -164,7 +164,7 @@ TEST(CrossFireMSPTest, WriteResponseTest)
     crsfFrameDone = true;
     uint8_t *frameStart2 = (uint8_t *)&crsfFrame.frame.payload + 2;
     uint8_t *frameEnd2 = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_RX_MSP_PAYLOAD_SIZE + 2;
-    bool pending2 = handleMspFrame(frameStart2, frameEnd2);
+    bool pending2 = handleMspFrame(frameStart2, frameEnd2, MSP_FRAME_HANDLING_NORMAL);
     EXPECT_FALSE(pending2); // not done yet
     EXPECT_EQ(0x23, mspPackage.requestBuffer[5]);
     EXPECT_EQ(0x46, mspPackage.requestBuffer[6]);
@@ -179,7 +179,7 @@ TEST(CrossFireMSPTest, WriteResponseTest)
     crsfFrameDone = true;
     uint8_t *frameStart3 = (uint8_t *)&crsfFrame.frame.payload + 2;
     uint8_t *frameEnd3 = frameStart3 + CRSF_FRAME_RX_MSP_PAYLOAD_SIZE;
-    bool pending3 = handleMspFrame(frameStart3, frameEnd3);
+    bool pending3 = handleMspFrame(frameStart3, frameEnd3, MSP_FRAME_HANDLING_NORMAL);
     EXPECT_FALSE(pending3); // not done yet
     EXPECT_EQ(0x0F, mspPackage.requestBuffer[12]);
     EXPECT_EQ(0x00, mspPackage.requestBuffer[13]);
@@ -194,7 +194,7 @@ TEST(CrossFireMSPTest, WriteResponseTest)
     crsfFrameDone = true;
     uint8_t *frameStart4 = (uint8_t *)&crsfFrame.frame.payload + 2;
     uint8_t *frameEnd4 = frameStart4 + CRSF_FRAME_RX_MSP_PAYLOAD_SIZE;
-    bool pending4 = handleMspFrame(frameStart4, frameEnd4);
+    bool pending4 = handleMspFrame(frameStart4, frameEnd4, MSP_FRAME_HANDLING_NORMAL);
     EXPECT_FALSE(pending4); // not done yet
     EXPECT_EQ(0x21, mspPackage.requestBuffer[19]);
     EXPECT_EQ(0x53, mspPackage.requestBuffer[20]);
@@ -210,7 +210,7 @@ TEST(CrossFireMSPTest, WriteResponseTest)
     crsfFrameDone = true;
     uint8_t *frameStart5 = (uint8_t *)&crsfFrame.frame.payload + 2;
     uint8_t *frameEnd5 = frameStart2 + CRSF_FRAME_RX_MSP_PAYLOAD_SIZE;
-    bool pending5 = handleMspFrame(frameStart5, frameEnd5);
+    bool pending5 = handleMspFrame(frameStart5, frameEnd5, MSP_FRAME_HANDLING_NORMAL);
     EXPECT_TRUE(pending5); // not done yet
     EXPECT_EQ(0x00, mspPackage.requestBuffer[26]);
     EXPECT_EQ(0x37, mspPackage.requestBuffer[27]);
@@ -233,7 +233,7 @@ TEST(CrossFireMSPTest, SendMspReply) {
     crsfFrameDone = true;
     uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + 2;
     uint8_t *frameEnd = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_RX_MSP_PAYLOAD_SIZE + 2;
-    bool handled = handleMspFrame(frameStart, frameEnd);
+    bool handled = handleMspFrame(frameStart, frameEnd, MSP_FRAME_HANDLING_NORMAL);
     EXPECT_TRUE(handled);
     bool replyPending = sendMspReply(64, &testSendMspResponse);
     EXPECT_FALSE(replyPending);

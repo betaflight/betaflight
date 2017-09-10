@@ -353,13 +353,11 @@ void handleSmartPortTelemetry(void)
         // do not check the physical ID here again
         // unless we start receiving other sensors' packets
         if (smartPortRxBuffer.frameId == FSSP_MSPC_FRAME) {
-
             // Pass only the payload: skip sensorId & frameId
-            if (!smartPortMspReplyPending) {
-                uint8_t *frameStart = (uint8_t *)&smartPortRxBuffer + SMARTPORT_PAYLOAD_OFFSET;
-                uint8_t *frameEnd = (uint8_t *)&smartPortRxBuffer + SMARTPORT_PAYLOAD_OFFSET + SMARTPORT_PAYLOAD_SIZE;
-                smartPortMspReplyPending = handleMspFrame(frameStart, frameEnd);
-            }
+            uint8_t *frameStart = (uint8_t *)&smartPortRxBuffer + SMARTPORT_PAYLOAD_OFFSET;
+            uint8_t *frameEnd = (uint8_t *)&smartPortRxBuffer + SMARTPORT_PAYLOAD_OFFSET + SMARTPORT_PAYLOAD_SIZE;
+
+            smartPortMspReplyPending = handleMspFrame(frameStart, frameEnd, MSP_FRAME_HANDLING_FORCED);
         }
     }
 
