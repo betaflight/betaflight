@@ -284,9 +284,7 @@ static uint8_t crsfSchedule[CRSF_SCHEDULE_COUNT_MAX];
 
 #if defined(USE_MSP_OVER_TELEMETRY)
 void scheduleMspResponse() {
-    if (!mspReplyPending) {
-        mspReplyPending = true;
-    }
+    mspReplyPending = true;
 }
 
 void crsfSendMspResponse(uint8_t *payload)

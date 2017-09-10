@@ -363,7 +363,7 @@ void handleSmartPortTelemetry(void)
             uint8_t *frameStart = (uint8_t *)&smartPortRxBuffer + SMARTPORT_PAYLOAD_OFFSET;
             uint8_t *frameEnd = (uint8_t *)&smartPortRxBuffer + SMARTPORT_PAYLOAD_OFFSET + SMARTPORT_PAYLOAD_SIZE;
 
-            smartPortMspReplyPending = handleMspFrame(frameStart, frameEnd, MSP_FRAME_HANDLING_FORCED);
+            smartPortMspReplyPending = handleMspFrame(frameStart, frameEnd);
         }
 #endif
     }
