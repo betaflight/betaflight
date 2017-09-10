@@ -616,24 +616,24 @@ TEST(OsdTest, TestElementPower)
     simulationBatteryVoltage = 100; // 10V
 
     // and
-    simulationBatteryAmperage = 0;
+    simulationBatteryAmperage = 0; // 0A
 
     // when
     displayClearScreen(&testDisplayPort);
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(1, 10, "0W");
+    displayPortTestBufferSubstring(1, 10, "   0W");
 
     // given
-    simulationBatteryAmperage = 10; // 0.1AA
+    simulationBatteryAmperage = 10; // 0.1A
 
     // when
     displayClearScreen(&testDisplayPort);
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(1, 10, "1W");
+    displayPortTestBufferSubstring(1, 10, "   1W");
 
     // given
     simulationBatteryAmperage = 120; // 1.2A
@@ -643,7 +643,7 @@ TEST(OsdTest, TestElementPower)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(1, 10, "12W");
+    displayPortTestBufferSubstring(1, 10, "  12W");
 
     // given
     simulationBatteryAmperage = 1230; // 12.3A
@@ -653,7 +653,7 @@ TEST(OsdTest, TestElementPower)
     osdRefresh(simulationTime);
 
     // then
-    displayPortTestBufferSubstring(1, 10, "123W");
+    displayPortTestBufferSubstring(1, 10, " 123W");
 
     // given
     simulationBatteryAmperage = 12340; // 123.4A
