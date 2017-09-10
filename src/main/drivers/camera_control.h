@@ -38,8 +38,11 @@ typedef enum {
 
 typedef struct cameraControlConfig_s {
     cameraControlMode_e mode;
+    // measured in 10 mV steps
     uint16_t refVoltage;
     uint16_t keyDelayMs;
+    // measured 100 Ohm steps
+    uint16_t internalResistance;
 
     ioTag_t ioTag;
 } cameraControlConfig_t;
