@@ -10,7 +10,7 @@ https://www.youtube.com/watch?v=YNzqTGEl2xQ
 
 Basically, the goal of the PID controller is to bring the craft's rotation rate in all three axes to the rate that you're commanding with your sticks. An error is computed which is the difference between your target rotation rate and the actual one measured by the gyroscopes, and the controller tries to bring this error to zero.
 
-##PIDs
+## PIDs
 
 **The P term** controls the strength of the correction that is applied to bring the craft toward the target angle or rotation rate. If the P term is too low, the craft will be difficult to control as it won't respond quickly enough to keep itself stable. If it is set too high, the craft will rapidly oscillate/shake as it continually overshoots its target.
 
@@ -19,7 +19,7 @@ Basically, the goal of the PID controller is to bring the craft's rotation rate 
 **The D term** attempts to increase system stability by monitoring the rate of change in the error. If the error is rapidly converging to zero, the D term causes the strength of the correction to be backed off in order to avoid overshooting the target.
 
 
-##TPA and TPA Breakpoint
+## TPA and TPA Breakpoint
 
 *TPA* stands for Throttle PID Attenuation and according to [AlexYork.net](http://blog.alexyorke.net/what-is-tpa/):
 
