@@ -2456,6 +2456,7 @@ static void cliDshotProg(char *cmdline)
     char *pch = strtok_r(cmdline, " ", &saveptr);
     int pos = 0;
     int escIndex = 0;
+    bool firstCommand = true;
     while (pch != NULL) {
         switch (pos) {
         case 0:
@@ -2466,33 +2467,41 @@ static void cliDshotProg(char *cmdline)
 
             break;
         default:
-            pwmDisableMotors();
+            {
+                int command = atoi(pch);
+                if (command >= 0 && command < DSHOT_MIN_THROTTLE) {
+                    if (firstCommand) {
+                        pwmDisableMotors();
 
-            int command = atoi(pch);
-            if (command >= 0 && command < DSHOT_MIN_THROTTLE) {
-                if (command == DSHOT_CMD_ESC_INFO) {
-                    delay(5); // Wait for potential ESC telemetry transmission to finish
-                }
+                        if (command == DSHOT_CMD_ESC_INFO) {
+                            delay(5); // Wait for potential ESC telemetry transmission to finish
+                        } else {
+                            delay(1);
+                        }
 
-                if (command != DSHOT_CMD_ESC_INFO) {
-                    pwmWriteDshotCommand(escIndex, getMotorCount(), command);
-                } else {
-                    if (escIndex != ALL_MOTORS) {
-                        executeEscInfoCommand(escIndex);
+                        firstCommand = false;
+                    }
+
+                    if (command != DSHOT_CMD_ESC_INFO) {
+                        pwmWriteDshotCommand(escIndex, getMotorCount(), command);
                     } else {
-                        for (uint8_t i = 0; i < getMotorCount(); i++) {
-                            executeEscInfoCommand(i);
+                        if (escIndex != ALL_MOTORS) {
+                            executeEscInfoCommand(escIndex);
+                        } else {
+                            for (uint8_t i = 0; i < getMotorCount(); i++) {
+                                executeEscInfoCommand(i);
+                            }
                         }
                     }
-                }
 
-                cliPrintLinef("Command %d written.", command);
+                    cliPrintLinef("Command %d written.", command);
 
-                if (command <= 5) {
-                    delay(20); // wait for sound output to finish
+                    if (command <= 5) {
+                        delay(20); // wait for sound output to finish
+                    }
+                } else {
+                    cliPrintLinef("Invalid command, range 1 to %d.", DSHOT_MIN_THROTTLE - 1);
                 }
-            } else {
-                cliPrintLinef("Invalid command, range 1 to %d.", DSHOT_MIN_THROTTLE - 1);
             }
 
             break;
