@@ -43,8 +43,6 @@
 #include "io/gps.h"
 #include "io/serial.h"
 
-#include "msp/msp.h"
-
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
 #include "sensors/battery.h"
@@ -54,10 +52,10 @@
 #include "sensors/gyro.h"
 
 #include "rx/rx.h"
-#include "rx/msp.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/smartport.h"
+#include "telemetry/msp_shared.h"
 
 enum
 {
@@ -164,7 +162,6 @@ typedef struct smartPortFrame_s {
 } __attribute__((packed)) smartPortFrame_t;
 
 #define SMARTPORT_FRAME_SIZE  sizeof(smartPortFrame_t)
-#define SMARTPORT_TX_BUF_SIZE 256
 
 #define SMARTPORT_PAYLOAD_OFFSET offsetof(smartPortFrame_t, valueId)
 #define SMARTPORT_PAYLOAD_SIZE   (SMARTPORT_FRAME_SIZE - SMARTPORT_PAYLOAD_OFFSET - 1)
@@ -172,29 +169,7 @@ typedef struct smartPortFrame_s {
 static smartPortFrame_t smartPortRxBuffer;
 static uint8_t smartPortRxBytes = 0;
 static bool smartPortFrameReceived = false;
-
-#define SMARTPORT_MSP_VERSION    1
-#define SMARTPORT_MSP_VER_SHIFT  5
-#define SMARTPORT_MSP_VER_MASK   (0x7 << SMARTPORT_MSP_VER_SHIFT)
-#define SMARTPORT_MSP_VERSION_S  (SMARTPORT_MSP_VERSION << SMARTPORT_MSP_VER_SHIFT)
-
-#define SMARTPORT_MSP_ERROR_FLAG (1 << 5)
-#define SMARTPORT_MSP_START_FLAG (1 << 4)
-#define SMARTPORT_MSP_SEQ_MASK   0x0F
-
-#define SMARTPORT_MSP_RX_BUF_SIZE 64
-
-static uint8_t smartPortMspTxBuffer[SMARTPORT_TX_BUF_SIZE];
-static mspPacket_t smartPortMspReply;
 static bool smartPortMspReplyPending = false;
-
-#define SMARTPORT_MSP_RES_ERROR (-10)
-
-enum {
-    SMARTPORT_MSP_VER_MISMATCH=0,
-    SMARTPORT_MSP_CRC_ERROR=1,
-    SMARTPORT_MSP_ERROR=2
-};
 
 static void smartPortDataReceive(uint16_t c)
 {
@@ -352,194 +327,8 @@ void checkSmartPortTelemetryState(void)
         freeSmartPortTelemetryPort();
 }
 
-static void initSmartPortMspReply(int16_t cmd)
-{
-    smartPortMspReply.buf.ptr    = smartPortMspTxBuffer;
-    smartPortMspReply.buf.end    = ARRAYEND(smartPortMspTxBuffer);
-
-    smartPortMspReply.cmd    = cmd;
-    smartPortMspReply.result = 0;
-}
-
-static void processMspPacket(mspPacket_t* packet)
-{
-    initSmartPortMspReply(0);
-
-    if (mspFcProcessCommand(packet, &smartPortMspReply, NULL) == MSP_RESULT_ERROR) {
-        sbufWriteU8(&smartPortMspReply.buf, SMARTPORT_MSP_ERROR);
-    }
-
-    // change streambuf direction
-    sbufSwitchToReader(&smartPortMspReply.buf, smartPortMspTxBuffer);
-    smartPortMspReplyPending = true;
-}
-
-/**
- * Request frame format:
- * - Header: 1 byte
- *   - Reserved: 2 bits (future use)
- *   - Error-flag: 1 bit
- *   - Start-flag: 1 bit
- *   - CSeq: 4 bits
- *
- * - MSP payload:
- *   - if Error-flag == 0:
- *     - size: 1 byte
- *     - payload
- *     - CRC (request type included)
- *   - if Error-flag == 1:
- *     - size: 1 byte (== 1)
- *     - error: 1 Byte
- *       - 0: Version mismatch (type=0)
- *       - 1: Sequence number error
- *       - 2: MSP error
- *     - CRC (request type included)
- */
-bool smartPortSendMspReply()
-{
-    static uint8_t checksum = 0;
-    static uint8_t seq = 0;
-
-    uint8_t packet[SMARTPORT_PAYLOAD_SIZE];
-    uint8_t* p = packet;
-    uint8_t* end = p + SMARTPORT_PAYLOAD_SIZE;
-
-    sbuf_t* txBuf = &smartPortMspReply.buf;
-
-    // detect first reply packet
-    if (txBuf->ptr == smartPortMspTxBuffer) {
-
-        // header
-        uint8_t head = SMARTPORT_MSP_START_FLAG | (seq++ & SMARTPORT_MSP_SEQ_MASK);
-        if (smartPortMspReply.result < 0) {
-            head |= SMARTPORT_MSP_ERROR_FLAG;
-        }
-        *p++ = head;
-
-        uint8_t size = sbufBytesRemaining(txBuf);
-        *p++ = size;
-
-        checksum = size ^ smartPortMspReply.cmd;
-    }
-    else {
-        // header
-        *p++ = (seq++ & SMARTPORT_MSP_SEQ_MASK);
-    }
-
-    while ((p < end) && (sbufBytesRemaining(txBuf) > 0)) {
-        *p = sbufReadU8(txBuf);
-        checksum ^= *p++; // MSP checksum
-    }
-
-    // to be continued...
-    if (p == end) {
-        smartPortSendPackageEx(FSSP_MSPS_FRAME,packet);
-        return true;
-    }
-
-    // nothing left in txBuf,
-    // append the MSP checksum
-    *p++ = checksum;
-
-    // pad with zeros
-    while (p < end)
-        *p++ = 0;
-
-    smartPortSendPackageEx(FSSP_MSPS_FRAME,packet);
-    return false;
-}
-
-void smartPortSendErrorReply(uint8_t error, int16_t cmd)
-{
-    initSmartPortMspReply(cmd);
-    sbufWriteU8(&smartPortMspReply.buf,error);
-    smartPortMspReply.result = SMARTPORT_MSP_RES_ERROR;
-
-    sbufSwitchToReader(&smartPortMspReply.buf, smartPortMspTxBuffer);
-    smartPortMspReplyPending = true;
-}
-
-/**
- * Request frame format:
- * - Header: 1 byte
- *   - Version: 3 bits
- *   - Start-flag: 1 bit
- *   - CSeq: 4 bits
- *
- * - MSP payload:
- *   - Size: 1 Byte
- *   - Type: 1 Byte
- *   - payload...
- *   - CRC
- */
-void handleSmartPortMspFrame(smartPortFrame_t* sp_frame)
-{
-    static uint8_t mspBuffer[SMARTPORT_MSP_RX_BUF_SIZE];
-    static uint8_t mspStarted = 0;
-    static uint8_t lastSeq = 0;
-    static uint8_t checksum = 0;
-    static mspPacket_t cmd;
-
-    // re-assemble MSP frame & forward to MSP port when complete
-    uint8_t* p = ((uint8_t*)sp_frame) + SMARTPORT_PAYLOAD_OFFSET;
-    uint8_t* end = p + SMARTPORT_PAYLOAD_SIZE;
-
-    uint8_t head = *p++;
-    uint8_t seq = head & SMARTPORT_MSP_SEQ_MASK;
-    uint8_t version = (head & SMARTPORT_MSP_VER_MASK) >> SMARTPORT_MSP_VER_SHIFT;
-
-    if (version != SMARTPORT_MSP_VERSION) {
-        mspStarted = 0;
-        smartPortSendErrorReply(SMARTPORT_MSP_VER_MISMATCH,0);
-        return;
-    }
-
-    // check start-flag
-    if (head & SMARTPORT_MSP_START_FLAG) {
-
-        //TODO: if (p_size > SMARTPORT_MSP_RX_BUF_SIZE) error!
-        uint8_t p_size = *p++;
-        cmd.cmd = *p++;
-        cmd.result = 0;
-
-        cmd.buf.ptr = mspBuffer;
-        cmd.buf.end = mspBuffer + p_size;
-
-        checksum = p_size ^ cmd.cmd;
-        mspStarted = 1;
-    } else if (!mspStarted) {
-        // no start packet yet, throw this one away
-        return;
-    } else if (((lastSeq + 1) & SMARTPORT_MSP_SEQ_MASK) != seq) {
-        // packet loss detected!
-        mspStarted = 0;
-        return;
-    }
-
-    // copy payload bytes
-    while ((p < end) && sbufBytesRemaining(&cmd.buf)) {
-        checksum ^= *p;
-        sbufWriteU8(&cmd.buf,*p++);
-    }
-
-    // reached end of smart port frame
-    if (p == end) {
-        lastSeq = seq;
-        return;
-    }
-
-    // last byte must be the checksum
-    if (checksum != *p) {
-        mspStarted = 0;
-        smartPortSendErrorReply(SMARTPORT_MSP_CRC_ERROR,cmd.cmd);
-        return;
-    }
-
-    // end of MSP packet reached
-    mspStarted = 0;
-    sbufSwitchToReader(&cmd.buf,mspBuffer);
-
-    processMspPacket(&cmd);
+void smartPortSendMspResponse(uint8_t *payload) {
+    smartPortSendPackageEx(FSSP_MSPS_FRAME, payload);
 }
 
 void handleSmartPortTelemetry(void)
@@ -566,7 +355,11 @@ void handleSmartPortTelemetry(void)
         if (smartPortRxBuffer.frameId == FSSP_MSPC_FRAME) {
 
             // Pass only the payload: skip sensorId & frameId
-            handleSmartPortMspFrame(&smartPortRxBuffer);
+            if (!smartPortMspReplyPending) {
+                uint8_t *frameStart = (uint8_t *)&smartPortRxBuffer + SMARTPORT_PAYLOAD_OFFSET;
+                uint8_t *frameEnd = (uint8_t *)&smartPortRxBuffer + SMARTPORT_PAYLOAD_OFFSET + SMARTPORT_PAYLOAD_SIZE;
+                smartPortMspReplyPending = handleMspFrame(frameStart, frameEnd);
+            }
         }
     }
 
@@ -578,7 +371,7 @@ void handleSmartPortTelemetry(void)
         }
 
         if (smartPortMspReplyPending) {
-            smartPortMspReplyPending = smartPortSendMspReply();
+            smartPortMspReplyPending = sendMspReply(SMARTPORT_PAYLOAD_SIZE, &smartPortSendMspResponse);
             smartPortHasRequest = 0;
             return;
         }

@@ -31,6 +31,8 @@ extern "C" {
     #include "common/filter.h"
     #include "common/gps_conversion.h"
     #include "common/maths.h"
+    #include "common/printf.h"
+    #include "common/typeconversion.h"
 
     #include "config/parameter_group.h"
     #include "config/parameter_group_ids.h"
@@ -38,6 +40,7 @@ extern "C" {
     #include "drivers/serial.h"
     #include "drivers/system.h"
 
+    #include "fc/config.h"
     #include "fc/runtime_config.h"
 
     #include "flight/pid.h"
@@ -53,6 +56,7 @@ extern "C" {
 
     #include "telemetry/crsf.h"
     #include "telemetry/telemetry.h"
+    #include "telemetry/msp_shared.h"
 
     bool airMode;
 
@@ -63,6 +67,7 @@ extern "C" {
     serialPort_t *telemetrySharedPort;
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
+    PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
@@ -293,6 +298,7 @@ void serialWriteBuf(serialPort_t *, const uint8_t *, int) {}
 void serialSetMode(serialPort_t *, portMode_e) {}
 serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, uint32_t, portMode_e, portOptions_e) {return NULL;}
 void closeSerialPort(serialPort_t *) {}
+bool isSerialTransmitBufferEmpty(const serialPort_t *) { return true; }
 
 serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) {return NULL;}
 
@@ -322,5 +328,8 @@ uint8_t calculateBatteryPercentageRemaining(void) {
 int32_t getMAhDrawn(void){
   return testmAhDrawn;
 }
+
+bool sendMspReply(uint8_t, mspResponseFnPtr) { return false; }
+bool handleMspFrame(uint8_t *, uint8_t *) { return false; }
 
 }
