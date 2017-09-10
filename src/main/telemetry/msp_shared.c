@@ -86,12 +86,12 @@ void sendMspErrorResponse(uint8_t error, int16_t cmd)
     sbufSwitchToReader(&mspPackage.responsePacket->buf, mspPackage.responseBuffer);
 }
 
-bool handleMspFrame(uint8_t *frameStart, uint8_t *frameEnd)
+bool handleMspFrame(uint8_t *frameStart, uint8_t *frameEnd, mspFrameHandling_t handling)
 {
     static uint8_t mspStarted = 0;
     static uint8_t lastSeq = 0;
 
-    if (sbufBytesRemaining(&mspPackage.responsePacket->buf) > 0) {
+    if (handling != MSP_FRAME_HANDLING_FORCED && sbufBytesRemaining(&mspPackage.responsePacket->buf) > 0) {
         return false;
     }
 

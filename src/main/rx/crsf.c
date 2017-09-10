@@ -195,7 +195,7 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(void)
                 // TODO: CRC CHECK
                 uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + 2;
                 uint8_t *frameEnd = (uint8_t *)&crsfFrame.frame.payload + 2 + CRSF_FRAME_RX_MSP_PAYLOAD_SIZE;
-                if(handleMspFrame(frameStart, frameEnd)) {
+                if(handleMspFrame(frameStart, frameEnd, MSP_FRAME_HANDLING_NORMAL)) {
                     scheduleMspResponse();
                 }
                 return RX_FRAME_COMPLETE;

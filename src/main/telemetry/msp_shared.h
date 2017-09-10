@@ -24,6 +24,11 @@ typedef union mspTxBuffer_u {
     uint8_t crsfMspTxBuffer[CRSF_MSP_TX_BUF_SIZE];
 } mspTxBuffer_t;
 
+typedef enum mspFrameHandling_e {
+    MSP_FRAME_HANDLING_NORMAL,
+    MSP_FRAME_HANDLING_FORCED
+} mspFrameHandling_t;
+
 void initSharedMsp();
-bool handleMspFrame(uint8_t *frameStart, uint8_t *frameEnd);
+bool handleMspFrame(uint8_t *frameStart, uint8_t *frameEnd, mspFrameHandling_t handling);
 bool sendMspReply(uint8_t payloadSize, mspResponseFnPtr responseFn);
