@@ -330,6 +330,6 @@ int32_t getMAhDrawn(void){
 }
 
 bool sendMspReply(uint8_t, mspResponseFnPtr) { return false; }
-bool handleMspFrame(uint8_t *, uint8_t *, mspFrameHandling_t) { return false; }
+bool handleMspFrame(uint8_t *, uint8_t *)  { return false; }
 
 }
