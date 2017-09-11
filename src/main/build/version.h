@@ -36,3 +36,5 @@ extern const char* const buildDate;  // "MMM DD YYYY" MMM = Jan/Feb/...
 
 #define BUILD_TIME_LENGTH 8
 extern const char* const buildTime;  // "HH:MM:SS"
+
+#define MSP_API_VERSION_STRING STR(API_VERSION_MAJOR) "." STR(API_VERSION_MINOR)

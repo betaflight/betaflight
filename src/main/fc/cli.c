@@ -114,6 +114,8 @@ extern uint8_t __config_end;
 #include "io/vtx_rtc6705.h"
 #include "io/vtx_control.h"
 
+#include "msp/msp_protocol.h"
+
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 #include "rx/frsky_d.h"
@@ -3079,14 +3081,15 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintLinef("# %s / %s (%s) %s %s / %s (%s)",
+    cliPrintLinef("# %s / %s (%s) %s %s / %s (%s) MSP API: %s",
         FC_FIRMWARE_NAME,
         targetName,
         systemConfig()->boardIdentifier,
         FC_VERSION_STRING,
         buildDate,
         buildTime,
-        shortGitRevision
+        shortGitRevision,
+        MSP_API_VERSION_STRING
     );
 }
 
