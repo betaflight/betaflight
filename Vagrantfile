@@ -16,6 +16,10 @@ Vagrant.configure(2) do |config|
 
   config.vm.provider "virtualbox" do |v|
       v.memory = 4096
+      v.customize [ "guestproperty", "set", :id, "/VirtualBox/GuestAdd/VBoxService/--timesync-interval", 10000]
+      v.customize [ "guestproperty", "set", :id, "/VirtualBox/GuestAdd/VBoxService/--timesync-min-adjust", 100]
+      v.customize [ "guestproperty", "set", :id, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-on-restore", 1]
+      v.customize [ "guestproperty", "set", :id, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold", 1000]
   end
 
   # Enable provisioning with a shell script. Additional provisioners such as
