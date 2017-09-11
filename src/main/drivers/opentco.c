@@ -302,13 +302,13 @@ static bool opentcoReadRegister(opentcoDevice_t *device, uint8_t reg, void *targ
     return false;
 }
 
-// read a 16 bit register
+// read a register and return a 16 bit value register
 bool opentcoReadRegisterUint16(opentcoDevice_t *device, uint8_t reg, uint16_t *val) {
     return opentcoReadRegister(device, reg, (void*)val);
 }
 
 
-// read a string array register
+// read a register and return a string
 bool opentcoReadRegisterString(opentcoDevice_t *device, uint8_t reg, char *val)
 {
     return opentcoReadRegister(device, reg, (void*)val);
