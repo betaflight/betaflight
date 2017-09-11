@@ -19,7 +19,7 @@ Vagrant.configure(2) do |config|
       v.customize [ "guestproperty", "set", :id, "/VirtualBox/GuestAdd/VBoxService/--timesync-interval", 10000]
       v.customize [ "guestproperty", "set", :id, "/VirtualBox/GuestAdd/VBoxService/--timesync-min-adjust", 100]
       v.customize [ "guestproperty", "set", :id, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-on-restore", 1]
-      v.customize [ "guestproperty", "set", :id, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold", 1000]
+      v.customize [ "guestproperty", "set", :id, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold", 10000]
   end
 
   # Enable provisioning with a shell script. Additional provisioners such as
@@ -30,8 +30,7 @@ Vagrant.configure(2) do |config|
     add-apt-repository ppa:team-gcc-arm-embedded/ppa
     apt-get update
     apt-get install -y git gcc-arm-embedded=6-2017q2-1~xenial1
-    apt-get install -y make python gcc clang ntp
-    timedatectl set-ntp true
+    apt-get install -y make python gcc clang
   SHELL
 end
 
