@@ -2762,11 +2762,11 @@ static void cliSave(char *cmdline)
 
 static void cliDefaults(char *cmdline)
 {
-    UNUSED(cmdline);
-
     cliPrintHashLine("resetting to defaults");
-    resetEEPROM();
-    cliReboot();
+    resetConfigs();
+    if (isEmpty(cmdline)) {
+        cliSave(NULL);
+    }
 }
 
 STATIC_UNIT_TESTED void cliGet(char *cmdline)
@@ -3435,7 +3435,7 @@ static void printConfig(char *cmdline, bool doDiff)
 
         if ((dumpMask & (DUMP_ALL | DO_DIFF)) == (DUMP_ALL | DO_DIFF)) {
             cliPrintHashLine("reset configuration to default settings");
-            cliPrint("defaults");
+            cliPrint("defaults nosave");
             cliPrintLinefeed();
         }
 
@@ -3600,7 +3600,7 @@ const clicmd_t cmdTable[] = {
 #ifdef LED_STRIP
     CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
 #endif
-    CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", NULL, cliDefaults),
+    CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", "[nosave]", cliDefaults),
     CLI_COMMAND_DEF("diff", "list configuration changes from default",
         "[master|profile|rates|all] {defaults}", cliDiff),
 #ifdef USE_DSHOT
