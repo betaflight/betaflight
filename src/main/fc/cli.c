@@ -2762,9 +2762,19 @@ static void cliSave(char *cmdline)
 
 static void cliDefaults(char *cmdline)
 {
+    bool saveConfigs;
+
+    if (isEmpty(cmdline)) {
+        saveConfigs = true;
+    } else if (strncasecmp(cmdline, "nosave", 6) == 0) {
+        saveConfigs = false;
+    } else {
+        return;
+    }
+
     cliPrintHashLine("resetting to defaults");
     resetConfigs();
-    if (isEmpty(cmdline)) {
+    if (saveConfigs) {
         cliSave(NULL);
     }
 }
