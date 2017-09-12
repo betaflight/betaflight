@@ -72,6 +72,8 @@ typedef enum {
     DEBUG_GYRO_RAW,
     DEBUG_MAX7456_SIGNAL,
     DEBUG_MAX7456_SPICLOCK,
+    DEBUG_SBUS,
+    DEBUG_FPORT,
     DEBUG_COUNT
 } debugType_e;
 

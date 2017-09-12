@@ -17,12 +17,14 @@
 
 #pragma once
 
-#undef USE_TELEMETRY_IBUS   //no space left
-#undef USE_TELEMETRY_HOTT   //no space left
-#undef USE_TELEMETRY_JETIEXBUS // no space left
-#undef USE_TELEMETRY_MAVLINK   // no space left
-#undef USE_RCDEVICE // no space left
-#undef USE_RTC_TIME // no space left
+// Removed to make the firmware fit into flash:
+#undef USE_TELEMETRY_IBUS
+#undef USE_TELEMETRY_HOTT
+#undef USE_TELEMETRY_JETIEXBUS
+#undef USE_TELEMETRY_MAVLINK
+#undef USE_TELEMETRY_LTM
+#undef USE_RCDEVICE
+#undef USE_RTC_TIME
 
 #define TARGET_BOARD_IDENTIFIER "OMNI" // https://en.wikipedia.org/wiki/Omnibus
 

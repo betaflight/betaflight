@@ -111,10 +111,12 @@ FC_SRC = \
             rx/rx_spi.c \
             rx/crsf.c \
             rx/sbus.c \
+            rx/sbus_channels.c \
             rx/spektrum.c \
             rx/sumd.c \
             rx/sumh.c \
             rx/xbus.c \
+            rx/fport.c \
             sensors/acceleration.c \
             sensors/boardalignment.c \
             sensors/compass.c \
@@ -222,9 +224,11 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             rx/rx_spi.c \
             rx/crsf.c \
             rx/sbus.c \
+            rx/sbus_channels.c \
             rx/spektrum.c \
             rx/sumd.c \
             rx/xbus.c \
+            rx/fport.c \
             scheduler/scheduler.c \
             sensors/acceleration.c \
             sensors/boardalignment.c \

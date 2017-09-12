@@ -18,7 +18,10 @@
 #pragma once
 
 #include "common/time.h"
+
 #include "config/parameter_group.h"
+
+#include "drivers/io_types.h"
 
 #define STICK_CHANNEL_COUNT 4
 
@@ -57,6 +60,7 @@ typedef enum {
     SERIALRX_CRSF = 9,
     SERIALRX_SRXL = 10,
     SERIALRX_TARGET_CUSTOM = 11,
+    SERIALRX_FPORT = 12,
 } SerialRXType;
 
 #define MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT          12
