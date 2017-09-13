@@ -273,6 +273,20 @@ void init(void)
        resetEEPROM();
     }
 
+#if defined(STM32F4) && !defined(DISABLE_OVERCLOCK)
+    // If F4 Overclocking is set and System core clock is not correct a reset is forced
+    if (systemConfig()->cpu_overclock && SystemCoreClock != OC_FREQUENCY_HZ) {
+        *((uint32_t *)0x2001FFF8) = 0xBABEFACE; // 128KB SRAM STM32F4XX
+        __disable_irq();
+        NVIC_SystemReset();
+    } else if (!systemConfig()->cpu_overclock && SystemCoreClock == OC_FREQUENCY_HZ) {
+        *((uint32_t *)0x2001FFF8) = 0x0;        // 128KB SRAM STM32F4XX
+        __disable_irq();
+        NVIC_SystemReset();
+    }
+
+#endif
+
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
 
     //i2cSetOverclock(masterConfig.i2c_overclock);
@@ -335,20 +349,6 @@ void init(void)
             break;
         }
     }
-#endif
-
-#if defined(STM32F4) && !defined(DISABLE_OVERCLOCK)
-    // If F4 Overclocking is set and System core clock is not correct a reset is forced
-    if (systemConfig()->cpu_overclock && SystemCoreClock != OC_FREQUENCY_HZ) {
-        *((uint32_t *)0x2001FFF8) = 0xBABEFACE; // 128KB SRAM STM32F4XX
-        __disable_irq();
-        NVIC_SystemReset();
-    } else if (!systemConfig()->cpu_overclock && SystemCoreClock == OC_FREQUENCY_HZ) {
-        *((uint32_t *)0x2001FFF8) = 0x0;        // 128KB SRAM STM32F4XX
-        __disable_irq();
-        NVIC_SystemReset();
-    }
-
 #endif
 
     delay(100);
