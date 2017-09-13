@@ -104,42 +104,46 @@ void targetConfiguration(void)
 
     /* AlienWhoop PIDs based on Ole Gravy Leg (aka Matt Williamson's) PIDs 
      */
-    for (int profileId = 0; profileId < MAX_PROFILE_COUNT; profileId++) {
-        /* AlienWhoop PIDs tested with 6mm and 7mm motors on most frames */
-        pidProfilesMutable(profileId)->pid[PID_PITCH].P = 75;
-        pidProfilesMutable(profileId)->pid[PID_PITCH].I = 36;
-        pidProfilesMutable(profileId)->pid[PID_PITCH].D = 25;
-        pidProfilesMutable(profileId)->pid[PID_ROLL].P = 75;
-        pidProfilesMutable(profileId)->pid[PID_ROLL].I = 36;
-        pidProfilesMutable(profileId)->pid[PID_ROLL].D = 25;
-        pidProfilesMutable(profileId)->pid[PID_YAW].P = 70;
-        pidProfilesMutable(profileId)->pid[PID_YAW].I = 36;
+    for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
+        pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
 
-        pidProfilesMutable(profileId)->pid[PID_LEVEL].P = 30;
-        pidProfilesMutable(profileId)->pid[PID_LEVEL].D = 30;
+        /* AlienWhoop PIDs tested with 6mm and 7mm motors on most frames */
+        pidProfile->pid[PID_PITCH].P = 75;
+        pidProfile->pid[PID_PITCH].I = 36;
+        pidProfile->pid[PID_PITCH].D = 25;
+        pidProfile->pid[PID_ROLL].P = 75;
+        pidProfile->pid[PID_ROLL].I = 36;
+        pidProfile->pid[PID_ROLL].D = 25;
+        pidProfile->pid[PID_YAW].P = 70;
+        pidProfile->pid[PID_YAW].I = 36;
+
+        pidProfile->pid[PID_LEVEL].P = 30;
+        pidProfile->pid[PID_LEVEL].D = 30;
 
         /* Setpoints */
-        pidProfilesMutable(profileId)->dtermSetpointWeight = 100;
-        pidProfilesMutable(profileId)->setpointRelaxRatio = 100; // default to snappy for racers
+        pidProfile->dtermSetpointWeight = 100;
+        pidProfile->setpointRelaxRatio = 100; // default to snappy for racers
 
         /* Throttle PID Attenuation (TPA) */
-        pidProfilesMutable(profileId)->itermThrottleThreshold = 400;
+        pidProfile->itermThrottleThreshold = 400;
     }
 
-    for (int rateProfileId = 0; rateProfileId < CONTROL_RATE_PROFILE_COUNT; rateProfileId++) {
+    for (uint8_t rateProfileIndex = 0; rateProfileIndex < CONTROL_RATE_PROFILE_COUNT; rateProfileIndex++) {
+        controlRateConfig_t *controlRateConfig = controlRateProfilesMutable(rateProfileIndex);
+
         /* RC Rates */
-        controlRateProfilesMutable(rateProfileId)->rcRate8 = 100;
-        controlRateProfilesMutable(rateProfileId)->rcYawRate8 = 100;
-        controlRateProfilesMutable(rateProfileId)->rcExpo8 = 0;
+        controlRateConfig->rcRate8 = 100;
+        controlRateConfig->rcYawRate8 = 100;
+        controlRateConfig->rcExpo8 = 0;
 
         /* Super Expo Rates */
-        controlRateProfilesMutable(rateProfileId)->rates[FD_ROLL] = 80;
-        controlRateProfilesMutable(rateProfileId)->rates[FD_PITCH] = 80;
-        controlRateProfilesMutable(rateProfileId)->rates[FD_YAW] = 85;
+        controlRateConfig->rates[FD_ROLL] = 80;
+        controlRateConfig->rates[FD_PITCH] = 80;
+        controlRateConfig->rates[FD_YAW] = 85;
 
         /* Throttle PID Attenuation (TPA) */
-        controlRateProfilesMutable(rateProfileId)->dynThrPID = 0; // tpa_rate off
-        controlRateProfilesMutable(rateProfileId)->tpa_breakpoint = 1600;
+        controlRateConfig->dynThrPID = 0; // tpa_rate off
+        controlRateConfig->tpa_breakpoint = 1600;
     }
 }
 #endif

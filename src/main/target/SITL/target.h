@@ -35,7 +35,7 @@
 // file name to save config
 #define EEPROM_FILENAME "eeprom.bin"
 #define EEPROM_IN_RAM
-#define EEPROM_SIZE     8192
+#define EEPROM_SIZE     32768
 
 #define U_ID_0 0
 #define U_ID_1 1
@@ -136,6 +136,15 @@
 #include <stddef.h>
 
 uint32_t SystemCoreClock;
+
+#ifdef EEPROM_IN_RAM
+extern uint8_t eepromData[EEPROM_SIZE];
+#define __config_start (*eepromData)
+#define __config_end (*ARRAYEND(eepromData))
+#else
+extern uint8_t __config_start;   // configured via linker script when building binaries.
+extern uint8_t __config_end;
+#endif
 
 #define UNUSED(x) (void)(x)
 

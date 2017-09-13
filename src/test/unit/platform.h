@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <stdio.h>
+
 #define USE_PARAMETER_GROUPS
 
 #define U_ID_0 0

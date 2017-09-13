@@ -71,3 +71,11 @@ void changeControlRateProfile(uint8_t controlRateProfileIndex)
     setControlRateProfile(controlRateProfileIndex);
     generateThrottleCurve();
 }
+
+void copyControlRateProfile(const uint8_t dstControlRateProfileIndex, const uint8_t srcControlRateProfileIndex) {
+    if ((dstControlRateProfileIndex < CONTROL_RATE_PROFILE_COUNT-1 && srcControlRateProfileIndex < CONTROL_RATE_PROFILE_COUNT-1)
+        && dstControlRateProfileIndex != srcControlRateProfileIndex
+    ) {
+        memcpy(controlRateProfilesMutable(dstControlRateProfileIndex), controlRateProfilesMutable(srcControlRateProfileIndex), sizeof(controlRateConfig_t));
+    }
+}

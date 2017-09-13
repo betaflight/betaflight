@@ -31,6 +31,9 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
+#undef TELEMETRY_JETIEXBUS // ROM SAVING
+
+
 #define CURRENT_TARGET_CPU_VOLTAGE 3.0
 
 #define LED0_PIN                PE8  // Blue LEDs - PE8/PE12
@@ -126,12 +129,12 @@
 #define USE_BARO_BMP280
 #define USE_BARO_MS5611
 
-#define OSD
+//#define OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN
 
-#define CMS
+//#define CMS
 
 //#define USE_SDCARD
 //

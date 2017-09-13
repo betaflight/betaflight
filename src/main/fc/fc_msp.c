@@ -311,7 +311,12 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
     sbufWriteU32(dst, address);
 
     // legacy format does not support compression
+#ifdef USE_HUFFMAN
     const uint8_t compressionMethod = (!allowCompression || useLegacyFormat) ? NO_COMPRESSION : HUFFMAN;
+#else
+    const uint8_t compressionMethod = NO_COMPRESSION;
+    UNUSED(allowCompression);
+#endif
 
     if (compressionMethod == NO_COMPRESSION) {
         if (!useLegacyFormat) {
@@ -497,7 +502,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         }
         break;
     }
-	
+
     case MSP_CURRENT_METERS: {
         // write out id and current meter values, once for each meter we support
         uint8_t count = supportedCurrentMeterCount;
@@ -751,8 +756,10 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 
             if (acc.dev.acc_1G > 512*4) {
                 scale = 8;
-            } else if (acc.dev.acc_1G >= 512) {
+            } else if (acc.dev.acc_1G > 512*2) {
                 scale = 4;
+            } else if (acc.dev.acc_1G >= 512) {
+                scale = 2;
             } else {
                 scale = 1;
             }
@@ -923,12 +930,16 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, compassConfig()->mag_declination / 10);
         break;
 #endif
-	case MSP_EXTRA_ESC_DATA:
-        for (int i = 0; i < getMotorCount(); i++) {			
+
+#ifdef USE_DSHOT
+    case MSP_ESC_SENSOR_DATA:
+        sbufWriteU8(dst, getMotorCount());
+        for (int i = 0; i < getMotorCount(); i++) {         
             sbufWriteU8(dst, getEscSensorData(i)->temperature);
             sbufWriteU16(dst, getEscSensorData(i)->rpm);
         }
         break;
+#endif
 
 #ifdef GPS
     case MSP_GPS_CONFIG:
@@ -1169,7 +1180,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, currentPidProfile->rateAccelLimit);
         sbufWriteU16(dst, currentPidProfile->yawRateAccelLimit);
         sbufWriteU8(dst, currentPidProfile->levelAngleLimit);
-        sbufWriteU8(dst, currentPidProfile->levelSensitivity);
+        sbufWriteU8(dst, 0); // was pidProfile.levelSensitivity
         sbufWriteU16(dst, currentPidProfile->itermThrottleThreshold);
         sbufWriteU16(dst, currentPidProfile->itermAcceleratorGain);
         break;
@@ -1318,6 +1329,18 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 value = 0;
             }
             changeControlRateProfile(value);
+        }
+        break;
+
+    case MSP_COPY_PROFILE:
+        value = sbufReadU8(src);        // 0 = pid profile, 1 = control rate profile
+        uint8_t dstProfileIndex = sbufReadU8(src);
+        uint8_t srcProfileIndex = sbufReadU8(src);
+        if (value == 0) {
+            pidCopyProfile(dstProfileIndex, srcProfileIndex);
+        }
+        else if (value == 1) {
+            copyControlRateProfile(dstProfileIndex, srcProfileIndex);
         }
         break;
 
@@ -1578,7 +1601,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         currentPidProfile->yawRateAccelLimit = sbufReadU16(src);
         if (sbufBytesRemaining(src) >= 2) {
             currentPidProfile->levelAngleLimit = sbufReadU8(src);
-            currentPidProfile->levelSensitivity = sbufReadU8(src);
+            sbufReadU8(src); // was pidProfile.levelSensitivity
         }
         if (sbufBytesRemaining(src) >= 4) {
             currentPidProfile->itermThrottleThreshold = sbufReadU16(src);

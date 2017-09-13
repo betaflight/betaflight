@@ -42,8 +42,10 @@
 
 typedef enum {
     GYRO_RATE_1_kHz,
+    GYRO_RATE_1100_Hz,
     GYRO_RATE_3200_Hz,
     GYRO_RATE_8_kHz,
+    GYRO_RATE_9_kHz,
     GYRO_RATE_32_kHz,
 } gyroRateKHz_e;
 
@@ -58,6 +60,7 @@ typedef struct gyroDev_s {
     int32_t gyroZero[XYZ_AXIS_COUNT];
     int32_t gyroADC[XYZ_AXIS_COUNT];                        // gyro data after calibration and alignment
     int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+    int32_t gyroADCRawPrevious[XYZ_AXIS_COUNT];
     int16_t temperature;
     uint8_t lpf;
     gyroRateKHz_e gyroRateKHz;
@@ -70,6 +73,7 @@ typedef struct gyroDev_s {
     mpuDetectionResult_t mpuDetectionResult;
     ioTag_t mpuIntExtiTag;
     mpuConfiguration_t mpuConfiguration;
+    bool gyro_high_fsr;
 } gyroDev_t;
 
 typedef struct accDev_s {
@@ -86,6 +90,7 @@ typedef struct accDev_s {
     sensor_align_e accAlign;
     mpuDetectionResult_t mpuDetectionResult;
     mpuConfiguration_t mpuConfiguration;
+    bool acc_high_fsr;
 } accDev_t;
 
 static inline void accDevLock(accDev_t *acc)

@@ -35,10 +35,9 @@
 #include "drivers/vtx_common.h"
 
 #include "io/serial.h"
+#include "io/vtx_control.h"
 #include "io/vtx_string.h"
 #include "io/vtx_tramp.h"
-
-#define TRAMP_SERIAL_OPTIONS (SERIAL_BIDIR)
 
 #if defined(CMS) || defined(VTX_COMMON)
 const uint16_t trampPowerTable[VTX_TRAMP_POWER_COUNT] = {
@@ -518,7 +517,14 @@ bool vtxTrampInit(void)
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_TRAMP);
 
     if (portConfig) {
-        trampSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_TRAMP, NULL, 9600, MODE_RXTX, TRAMP_SERIAL_OPTIONS);
+        portOptions_e portOptions = 0; 
+#if defined(VTX_COMMON)
+        portOptions = portOptions | (vtxConfig()->halfDuplex ? SERIAL_BIDIR : SERIAL_UNIDIR);
+#else
+        portOptions = SERIAL_BIDIR;
+#endif
+
+        trampSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_TRAMP, NULL, 9600, MODE_RXTX, portOptions);
     }
 
     if (!trampSerialPort) {

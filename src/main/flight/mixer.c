@@ -43,6 +43,7 @@
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
 #include "fc/fc_core.h"
+#include "fc/fc_rc.h"
 
 #include "flight/failsafe.h"
 #include "flight/imu.h"
@@ -563,6 +564,34 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
     motorOutputRange = motorOutputMax - motorOutputMin;
 }
 
+static void applyFlipOverAfterCrashModeToMotors(void)
+{
+    float motorMix[MAX_SUPPORTED_MOTORS];
+
+    for (int i = 0; i < motorCount; i++) {
+        if (getRcDeflectionAbs(FD_ROLL) > getRcDeflectionAbs(FD_PITCH)) {
+            motorMix[i] = getRcDeflection(FD_ROLL) * pidSumLimit * currentMixer[i].roll * (-1);
+        } else {
+            motorMix[i] = getRcDeflection(FD_PITCH) * pidSumLimit * currentMixer[i].pitch * (-1);
+        }
+    }
+    // Apply the mix to motor endpoints
+    for (uint32_t i = 0; i < motorCount; i++) {
+        float motorOutput =  motorOutputMin + motorOutputRange * (motorMix[i]);
+        //Add a little bit to the motorOutputMin so props aren't spinning when sticks are centered
+        motorOutput = (motorOutput < motorOutputMin + 20 ) ? disarmMotorOutput : motorOutput;
+
+        motor[i] = motorOutput;
+    }
+
+    // Disarmed mode
+    if (!ARMING_FLAG(ARMED)) {
+        for (int i = 0; i < motorCount; i++) {
+            motor[i] = motor_disarmed[i];
+        }
+    }
+}
+
 static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
 {
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
@@ -604,6 +633,10 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
 
 void mixTable(uint8_t vbatPidCompensation)
 {
+    if (isFlipOverAfterCrashMode()) {
+        applyFlipOverAfterCrashModeToMotors();        
+        return;
+    }
     // Find min and max throttle based on conditions. Throttle has to be known before mixing
     calculateThrottleAndCurrentMotorEndpoints();
 

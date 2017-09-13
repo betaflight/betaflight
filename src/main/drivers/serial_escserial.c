@@ -660,6 +660,10 @@ static serialPort_t *openEscSerial(escSerialPortIndex_e portIndex, serialReceive
 
     if (mode != PROTOCOL_KISSALL) {
         escSerial->rxTimerHardware = &(timerHardware[output]);
+        // N-Channels can't be used as RX.
+        if (escSerial->rxTimerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
+            return NULL;
+        }
 #ifdef USE_HAL_DRIVER
         escSerial->rxTimerHandle = timerFindTimerHandle(escSerial->rxTimerHardware->tim);
 #endif

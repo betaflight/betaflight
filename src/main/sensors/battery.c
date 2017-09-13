@@ -87,7 +87,7 @@ static batteryState_e consumptionState;
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_NONE
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 1);
+PG_REGISTER_WITH_RESET_TEMPLATE(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 2);
 
 PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
     // voltage
@@ -265,7 +265,7 @@ void batteryUpdateStates(timeUs_t currentTimeUs)
     batteryState = MAX(voltageState, consumptionState);
 }
 
-lowVoltageCutoff_t *getLowVoltageCutoff(void)
+const lowVoltageCutoff_t *getLowVoltageCutoff(void)
 {
     return &lowVoltageCutoff;
 }

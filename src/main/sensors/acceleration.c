@@ -45,6 +45,7 @@
 #include "drivers/accgyro/accgyro_mpu6050.h"
 #include "drivers/accgyro/accgyro_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_bmi160.h"
+#include "drivers/accgyro/accgyro_spi_icm20649.h"
 #include "drivers/accgyro/accgyro_spi_icm20689.h"
 #include "drivers/accgyro/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
@@ -112,7 +113,8 @@ void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
     RESET_CONFIG_2(accelerometerConfig_t, instance,
         .acc_lpf_hz = 10,
         .acc_align = ALIGN_DEFAULT,
-        .acc_hardware = ACC_DEFAULT
+        .acc_hardware = ACC_DEFAULT,
+        .acc_high_fsr = false,
     );
     resetRollAndPitchTrims(&instance->accelerometerTrims);
     resetFlightDynamicsTrims(&instance->accZero);
@@ -245,6 +247,17 @@ retry:
         }
 #endif
         ; // fallthrough
+    case ACC_ICM20649:
+#ifdef USE_ACC_SPI_ICM20649
+        if (icm20649SpiAccDetect(dev)) {
+            accHardware = ACC_ICM20649;
+#ifdef ACC_ICM20649_ALIGN
+            dev->accAlign = ACC_ICM20649_ALIGN;
+#endif
+            break;
+        }
+#endif
+        ; // fallthrough
     case ACC_ICM20689:
 #ifdef USE_ACC_SPI_ICM20689
         if (icm20689SpiAccDetect(dev)) {
@@ -305,6 +318,7 @@ bool accInit(uint32_t gyroSamplingInverval)
     acc.dev.bus = *gyroSensorBus();
     acc.dev.mpuConfiguration = *gyroMpuConfiguration();
     acc.dev.mpuDetectionResult = *gyroMpuDetectionResult();
+    acc.dev.acc_high_fsr = accelerometerConfig()->acc_high_fsr;
     if (!accDetect(&acc.dev, accelerometerConfig()->acc_hardware)) {
         return false;
     }

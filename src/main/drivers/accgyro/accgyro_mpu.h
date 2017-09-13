@@ -23,7 +23,8 @@
 
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 
-#if defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) ||  defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
+#if defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) ||  defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20649) \
+ || defined(USE_GYRO_SPI_ICM20689)
 #define GYRO_USES_SPI
 #endif
 
@@ -40,6 +41,7 @@
 #define ICM20601_WHO_AM_I_CONST             (0xAC)
 #define ICM20602_WHO_AM_I_CONST             (0x12)
 #define ICM20608G_WHO_AM_I_CONST            (0xAF)
+#define ICM20649_WHO_AM_I_CONST             (0xE1)
 #define ICM20689_WHO_AM_I_CONST             (0x98)
 
 
@@ -189,6 +191,7 @@ typedef enum {
     ICM_20601_SPI,
     ICM_20602_SPI,
     ICM_20608_SPI,
+    ICM_20649_SPI,
     ICM_20689_SPI,
     BMI_160_SPI,
 } mpuSensor_e;

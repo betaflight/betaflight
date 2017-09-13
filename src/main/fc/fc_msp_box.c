@@ -76,7 +76,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXCAMERA1, "CAMERA CONTROL 1", 32},
     { BOXCAMERA2, "CAMERA CONTROL 2", 33},
     { BOXCAMERA3, "CAMERA CONTROL 3", 34 },
-    { BOXDSHOTREVERSE, "DSHOT REVERSE MOTORS", 35 },
+    { BOXFLIPOVERAFTERCRASH, "FLIP OVER AFTER CRASH (DSHOT ONLY)", 35 },
     { BOXPREARM, "PREARM", 36 },
 };
 
@@ -217,7 +217,7 @@ void initActiveBoxIds(void)
     }
 
     if (isMotorProtocolDshot()) {
-        BME(BOXDSHOTREVERSE);
+        BME(BOXFLIPOVERAFTERCRASH);
     }
 
     if (feature(FEATURE_SERVO_TILT)) {
@@ -290,7 +290,7 @@ int packFlightModeFlags(boxBitmask_t *mspFlightModeFlags)
     const uint64_t rcModeCopyMask = BM(BOXHEADADJ) | BM(BOXCAMSTAB) | BM(BOXCAMTRIG) | BM(BOXBEEPERON)
         | BM(BOXLEDMAX) | BM(BOXLEDLOW) | BM(BOXLLIGHTS) | BM(BOXCALIB) | BM(BOXGOV) | BM(BOXOSD)
         | BM(BOXTELEMETRY) | BM(BOXGTUNE) | BM(BOXBLACKBOX) | BM(BOXBLACKBOXERASE) | BM(BOXAIRMODE)
-        | BM(BOXANTIGRAVITY) | BM(BOXFPVANGLEMIX) | BM(BOXDSHOTREVERSE) | BM(BOX3DDISABLE);
+        | BM(BOXANTIGRAVITY) | BM(BOXFPVANGLEMIX) | BM(BOXFLIPOVERAFTERCRASH) | BM(BOX3DDISABLE);
     STATIC_ASSERT(sizeof(rcModeCopyMask) * 8 >= CHECKBOX_ITEM_COUNT, copy_mask_too_small_for_boxes);
     for (unsigned i = 0; i < CHECKBOX_ITEM_COUNT; i++) {
         if ((rcModeCopyMask & BM(i))    // mode copy is enabled

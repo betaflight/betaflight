@@ -572,7 +572,7 @@ static void osdDrawSingleElement(uint8_t item)
         }
 
     case OSD_POWER:
-        tfp_sprintf(buff, "%dW", getAmperage() * getBatteryVoltage() / 1000);
+        tfp_sprintf(buff, "%4dW", getAmperage() * getBatteryVoltage() / 1000);
         break;
 
     case OSD_PIDRATE_PROFILE:

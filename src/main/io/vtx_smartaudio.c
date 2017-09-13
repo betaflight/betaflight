@@ -49,6 +49,7 @@
 #include "flight/pid.h"
 
 #include "io/serial.h"
+#include "io/vtx_control.h"
 #include "io/vtx_smartaudio.h"
 #include "io/vtx_string.h"
 
@@ -622,7 +623,14 @@ bool vtxSmartAudioInit()
 
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_SMARTAUDIO);
     if (portConfig) {
-        smartAudioSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_SMARTAUDIO, NULL, 4800, MODE_RXTX, SERIAL_BIDIR|SERIAL_BIDIR_PP);
+        portOptions_e portOptions = 0;
+#if defined(VTX_COMMON)
+        portOptions = portOptions | (vtxConfig()->halfDuplex ? SERIAL_BIDIR | SERIAL_BIDIR_PP : SERIAL_UNIDIR);
+#else
+        portOptions = SERIAL_BIDIR;
+#endif
+
+        smartAudioSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_SMARTAUDIO, NULL, 4800, MODE_RXTX, portOptions);
     }
 
     if (!smartAudioSerialPort) {
