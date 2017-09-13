@@ -170,30 +170,14 @@ static void opentcoReadRegisterProcessPayloadUint16(uint8_t *data, uint8_t lengt
     *target = (data[0] << 8) | data[1];
 }
 
-static void opentcoReadRegisterProcessPayloadTextselection(uint8_t *data, uint8_t length, uint8_t *target) {
-    // copy data to target string
-    strncpy((char *)target, (const char*)data, length);
+static void opentcoReadRegisterProcessPayloadString(uint8_t *data, uint8_t length, char *target) {
+    // copy data to target string (start at offset to skip uint16 data)
+    strncpy((char *)target, (const char*)data + 2, length - 2);
+    // add zero termination:
+    target[length - 2] = 0;
 }
 
-void opentcoReadRegisterProcessPayload(uint8_t type, uint8_t *data, uint8_t length, void *target) {
-    // process response
-    switch (type)
-    {
-    default:
-        // invalid -> ignore
-        break;
-
-    case OPENTCO_RESPONSE_TYPE_UINT16:
-        opentcoReadRegisterProcessPayloadUint16(data, length, target);
-        break;
-
-    case(OPENTCO_RESPONSE_TYPE_TEXTSELECTION):
-        opentcoReadRegisterProcessPayloadTextselection(data, length, target);
-        break;
-    }
-}
-
-static bool opentcoReadRegister(opentcoDevice_t *device, uint8_t reg, void *target)
+static bool opentcoReadRegister(opentcoDevice_t *device, uint8_t reg, uint16_t *val, char *desc)
 {
     uint32_t max_retries = 3;
 
@@ -216,9 +200,8 @@ static bool opentcoReadRegister(opentcoDevice_t *device, uint8_t reg, void *targ
         uint32_t decoder_state = 0;
         uint8_t data_length = 0;
         uint8_t data_pos = 0;
-        uint8_t data_type = 0;
         uint8_t data[OPENTCO_MAX_DATA_LENGTH];
-        uint8_t crc = crc8_dvb_s2(0, OPENTCO_PROTOCOL_HEADER);
+        uint8_t crc = 0;
 
         while (millis() < timeout) {
             if (serialRxBytesWaiting(device->serialPort) > 0) {
@@ -239,9 +222,11 @@ static bool opentcoReadRegister(opentcoDevice_t *device, uint8_t reg, void *targ
                     // expect device id + matching cmd
                     if (rx == valid_devcmd) {
                         // got valid device and cmd
-                        decoder_state = 2;
-                        // reinit crc
+                        // reinit crc, start with header + current byte
                         crc = crc8_dvb_s2(0, OPENTCO_PROTOCOL_HEADER);
+                        crc = crc8_dvb_s2(crc, rx);
+                        // next state
+                        decoder_state = 2;
                     } else if (rx == OPENTCO_PROTOCOL_HEADER) {
                         // this looks like a header, retry decoding on next byte
                     } else {
@@ -272,25 +257,26 @@ static bool opentcoReadRegister(opentcoDevice_t *device, uint8_t reg, void *targ
                     break;
 
                 case 4:
-                    // decode data type
-                    data_type = rx;
-                    decoder_state = 5;
+                    // fetch data
+                    data[data_pos] = rx;
+                    data_pos++;
+                    if (data_pos == data_length) {
+                        decoder_state = 5;
+                    }
                     break;
 
                 case 5:
-                    // fetch data
-                    data[data_pos] = rx;
-                    if (data_pos != data_length) {
-                        decoder_state = 6;
-                    }
-                    data_pos++;
-                    break;
-
-                case 6:
                     // check crc
                     if (crc == 0) {
                         // fine! safe to decode payload
-                        opentcoReadRegisterProcessPayload(data_type, data, data_length, target);
+                        // extract uint16
+                        opentcoReadRegisterProcessPayloadUint16(data, data_length, val);
+                        if (desc != NULL) {
+                            // extract description string (if requested)
+                            opentcoReadRegisterProcessPayloadString(data, data_length, desc);
+                        }
+                        // sucess!
+                        return true;
                     }
                     decoder_state = 0;
                 }
@@ -302,16 +288,16 @@ static bool opentcoReadRegister(opentcoDevice_t *device, uint8_t reg, void *targ
     return false;
 }
 
-// read a register and return a 16 bit value register
+// read a register and return a 16 bit value
 bool opentcoReadRegisterUint16(opentcoDevice_t *device, uint8_t reg, uint16_t *val) {
-    return opentcoReadRegister(device, reg, (void*)val);
+    return opentcoReadRegister(device, reg, val, NULL);
 }
 
 
 // read a register and return a string
-bool opentcoReadRegisterString(opentcoDevice_t *device, uint8_t reg, char *val)
+bool opentcoReadRegisterString(opentcoDevice_t *device, uint8_t reg, uint16_t *val, char *desc)
 {
-    return opentcoReadRegister(device, reg, (void*)val);
+    return opentcoReadRegister(device, reg, val, desc);
 }
 
 

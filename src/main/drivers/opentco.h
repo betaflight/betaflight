@@ -34,9 +34,6 @@ typedef enum {
 #define OPENTCO_MAX_FRAME_LENGTH     (OPENTCO_MAX_DATA_LENGTH + 4)
 
 
-#define OPENTCO_MAX_STRING_LENGTH 16
-
-
 // 0x01..0x07 = valid device ids
 #define OPENTCO_DEVICE_OSD                           0x00
 #define OPENTCO_DEVICE_VTX                           0x01
@@ -96,26 +93,15 @@ typedef enum {
     OPENTCO_VTX_STATUS_PITMODE  = (1 << 1)
 } opentcoVTXStatus_e;
 
-#define OPENTCO_VTX_REGISTER_BAND_AND_CHANNEL        0x01  // R/W ((CH << 8) | BAND) with CH = 0..7, BAND 0 = A, 1 = B, 2 = E, 3 = F, 4 = R
-#define OPENTCO_VTX_REGISTER_FREQUENCY               0x02  // R/W: 5000 ... 6000 MHz
-
-/*typedef enum {
-    OPENTCO_VTX_POWER_NONE    = (1 << 0),
-    OPENTCO_VTX_POWER_5MW     = (1 << 1),
-    OPENTCO_VTX_POWER_10MW    = (1 << 2),
-    OPENTCO_VTX_POWER_25MW    = (1 << 3),
-    OPENTCO_VTX_POWER_100MW   = (1 << 4),
-    OPENTCO_VTX_POWER_200MW   = (1 << 5),
-    OPENTCO_VTX_POWER_500MW   = (1 << 6),
-    OPENTCO_VTX_POWER_600MW   = (1 << 7),
-    OPENTCO_VTX_POWER_800MW   = (1 << 8),
-} opentcoVTXPower_e;*/
+// band, channel, and frequency can only be changed if vtx is disabled!
+#define OPENTCO_VTX_REGISTER_BAND                    0x01  // R/W: 0..n
+#define OPENTCO_VTX_REGISTER_CHANNEL                 0x02  // R/W: 0..7
+#define OPENTCO_VTX_REGISTER_FREQUENCY               0x03  // R/W: 5000 ... 6000 MHz
+#define OPENTCO_VTX_REGISTER_POWER                   0x04  // R/W: opentcoVTXPower_e
 
 #define OPENTCO_VTX_MAX_POWER_COUNT 9
-#define OPENTCO_VTX_POWER_COUNT 9
-
-#define OPENTCO_VTX_REGISTER_SUPPORTED_POWER         0x04  // R/W: (1 << opentcoVTXPower_e)
-#define OPENTCO_VTX_REGISTER_POWER                   0x05  // R/W: opentcoVTXPower_e
+#define OPENTCO_VTX_MAX_CHANNEL_COUNT 8
+#define OPENTCO_VTX_MAX_BAND_COUNT 8
 
 typedef struct opentcoDevice_s{
     serialPort_t *serialPort;
@@ -136,5 +122,4 @@ void opentcoSendFrame(opentcoDevice_t *device);
 
 bool opentcoReadRegisterUint16(opentcoDevice_t *device, uint8_t reg, uint16_t *val);
 bool opentcoWriteRegisterUint16(opentcoDevice_t *device, uint8_t reg, uint16_t val);
-
-bool opentcoReadRegisterString(opentcoDevice_t *device, uint8_t reg, char *val);
+bool opentcoReadRegisterString(opentcoDevice_t *device, uint8_t reg, uint16_t *val, char *desc);

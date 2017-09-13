@@ -52,13 +52,54 @@
 //const char *vtxOpentcoPowerNameDisabled = "";
 
 
-/*const char *vtxOpentcoPowerNames[OPENTCO_VTX_POWER_COUNT] = {
-    "---", "5  ", "10 ", "25 ", "100", "200", "500", "600", "800"
-};*/
 
-char vtxOpentcoPowerNames[OPENTCO_VTX_POWER_COUNT][4];
 
-char *vtxOpentcoSupportedPowerNames[OPENTCO_VTX_POWER_COUNT];
+// power names are 3 chars (+ zero termination char)
+char vtxOpentcoPowerNames[OPENTCO_VTX_MAX_POWER_COUNT+1][3 + 1];
+
+char *vtxOpentcoSupportedPowerNames[OPENTCO_VTX_MAX_POWER_COUNT+1] = {
+    &vtxOpentcoPowerNames[0][0],
+    &vtxOpentcoPowerNames[1][0],
+    &vtxOpentcoPowerNames[2][0],
+    &vtxOpentcoPowerNames[3][0],
+    &vtxOpentcoPowerNames[4][0],
+    &vtxOpentcoPowerNames[5][0],
+    &vtxOpentcoPowerNames[6][0],
+    &vtxOpentcoPowerNames[7][0],
+    &vtxOpentcoPowerNames[8][0],
+    &vtxOpentcoPowerNames[9][0]
+};
+
+// channel names are 1 chars (+ zero termination char)
+char vtxOpentcoChannelNames[OPENTCO_VTX_MAX_CHANNEL_COUNT+1][1 + 1];
+
+char *vtxOpentcoSupportedChannelNames[OPENTCO_VTX_MAX_CHANNEL_COUNT+1] = {
+    &vtxOpentcoChannelNames[0][0],
+    &vtxOpentcoChannelNames[1][0],
+    &vtxOpentcoChannelNames[2][0],
+    &vtxOpentcoChannelNames[3][0],
+    &vtxOpentcoChannelNames[4][0],
+    &vtxOpentcoChannelNames[5][0],
+    &vtxOpentcoChannelNames[6][0],
+    &vtxOpentcoChannelNames[7][0],
+    &vtxOpentcoChannelNames[8][0],
+};
+
+// band names are 8 chars (+ zero termination char)
+char vtxOpentcoBandNames[OPENTCO_VTX_MAX_BAND_COUNT+1][8 + 1];
+
+char *vtxOpentcoSupportedBandNames[OPENTCO_VTX_MAX_BAND_COUNT+1] = {
+    &vtxOpentcoBandNames[0][0],
+    &vtxOpentcoBandNames[1][0],
+    &vtxOpentcoBandNames[2][0],
+    &vtxOpentcoBandNames[3][0],
+    &vtxOpentcoBandNames[4][0],
+    &vtxOpentcoBandNames[5][0],
+    &vtxOpentcoBandNames[6][0],
+    &vtxOpentcoBandNames[7][0],
+    &vtxOpentcoBandNames[8][0]
+};
+
 
 
 static uint16_t vtxOpentcoSupportedPower;
@@ -67,12 +108,13 @@ static bool vtxOpentcoPitmodeActive;
 static vtxVTable_t opentcoVTable;    // Forward
 static vtxDevice_t vtxOpentco = {
     .vTable = &opentcoVTable,
-    .capability.bandCount = 5,
-    .capability.channelCount = 8,
-    .capability.powerCount = OPENTCO_VTX_POWER_COUNT,
-    .bandNames = (char **)vtx58BandNames,
-    .channelNames = (char **)vtx58ChannelNames,
-    .powerNames = (char **)vtxOpentcoSupportedPowerNames,
+    .capability.bandCount    = 0,  // will be updated after device query
+    .capability.channelCount = 0,  // will be updated after device query
+    .capability.powerCount   = 0,  // will be updated after device query
+    // band, channel, and power names will be queried from device
+    .bandNames    = (char **)vtxOpentcoSupportedBandNames,
+    .channelNames = (char **)vtxOpentcoSupportedChannelNames,
+    .powerNames   = (char **)vtxOpentcoSupportedPowerNames,
     .cmsMenu = &cmsx_menuVtxOpenTCO
 };
 
@@ -99,57 +141,98 @@ vtxDevice_t *vtxOpentcoInit(void)
     return &vtxOpentco;
 }
 
-static bool vtxOpentcoQuerySupportedFeatures(void)
+
+static bool vtxOpentcoQueryRegister(uint8_t reg, char **descr, uint8_t *max_descr, uint8_t max_descr_strlen)
 {
     // pre init to none
-    for (uint32_t i = 0; i < OPENTCO_VTX_POWER_COUNT; i++) {
-        vtxOpentcoPowerNames[i][0] = 0;
+    for (uint32_t i = 0; i < *max_descr; i++) {
+        descr[i][0] = 0;
     }
 
-    // fetch available power rates, reset counter to zero
-    if (!opentcoWriteRegisterUint16(device, OPENTCO_VTX_REGISTER_SUPPORTED_POWER,  0)) {
+    // fetch register description
+    if (!opentcoWriteRegisterUint16(device, reg,  0)) {
         return false;
     }
 
     // fetch all available power indices:
-    char result[OPENTCO_MAX_STRING_LENGTH];
-    uint8_t result_len;
-    if (!opentcoReadRegisterString(device, OPENTCO_VTX_REGISTER_SUPPORTED_POWER, &result_len, result)) {
+    char result[OPENTCO_MAX_DATA_LENGTH];
+    uint16_t current_index;
+    if (!opentcoReadRegisterString(device, reg, &current_index, result)) {
         // failed to fetch supported power register, this is bad..
         return false;
     }
-    /*
+
     // fine, sucessfully retrieved string
-    // extract data from e.g. "---10 25 \0"
-    uint32_t result_len = strlen(result);
-    for (uint32_t i = 0; i < OPENTCO_VTX_MAX_POWER_COUNT; i++) {
-        // power names are 3 chars
-        strncpy(vtxOpentcoPowerNames[i], &result[i * 3], 3);
-        // add zero termination
-        vtxOpentcoPowerNames[i][3] = 0;
+    // should be something like "DESC:VAL1|VAL2|VAL3|"
+
+    // extract the register name, start at beginning:
+    char *begin = result;
+    char *end = strchr(begin, ':');
+    if ((*begin == 0) || (end == NULL)) {
+        // failed to extract register name
+        return false;
+    }
+    //
+    // register name is now [begin,end], ignore for now!
+    //
+    begin = end + 1;
+
+    // parse and extract supported values
+    uint32_t array_idx = 0;
+    end = strchr(begin, '|');
+    while ((*begin != 0) && (end != NULL) && (array_idx < (*max_descr))) {
+        // found next occurance at [begin, end]
+        // copy no more than n allowed characters:
+        strncpy(descr[array_idx], begin, max_descr_strlen);
+        // add zero temination
+        descr[array_idx][max_descr_strlen] = 0;
+        // search for next
+        array_idx++;
+        begin = end + 1;
+        end   = strchr(begin, '|');
     }
 
-
-        if (index < OPENTCO_VTX_POWER_COUNT) {
-            // copy first 3 chars + zero temination to string:
-            strncpy(vtxOpentcoPowerNames[index], result, 3);
-            // ensure zero temination
-            vtxOpentcoPowerNames[index][3] = 0;
-            // add pointer to supported power name array
-            vtxOpentcoSupportedPowerNames[index] = &vtxOpentcoPowerNames[index][0];
-        }
-        // check if we finished:
-        if (i >= max_index) {
-            // finished
-            // store maximum power index
-            vtxOpentco.capability.powerCount = max_index + 1;
-            return true;
-        }
+    if (!array_idx) {
+        // no allowed indices could be extracted, error
+        return false;
     }
-*/
-    // device returned more power levels that we can store, abort
-    return false;
+
+    // store correct max value
+    *max_descr = array_idx;
+
+    return true;
 }
+
+
+static bool vtxOpentcoQuerySupportedFeatures(void)
+{
+    // fetch power count, start with max allowed power count, will be set to correct value on sucess
+    vtxOpentco.capability.powerCount = OPENTCO_VTX_MAX_POWER_COUNT;
+    if (!vtxOpentcoQueryRegister(OPENTCO_VTX_REGISTER_POWER, &vtxOpentcoSupportedPowerNames[1], &vtxOpentco.capability.powerCount, 3)){
+        return false;
+    }
+    // add bf specific [0] entry:
+    strcpy(vtxOpentcoPowerNames[0], "-");
+
+    // channels
+    vtxOpentco.capability.channelCount = OPENTCO_VTX_MAX_CHANNEL_COUNT;
+    if (!vtxOpentcoQueryRegister(OPENTCO_VTX_REGISTER_CHANNEL, &vtxOpentcoSupportedChannelNames[1], &vtxOpentco.capability.channelCount, 1)){
+        return false;
+    }
+    // add bf specific [0] entry:
+    strcpy(vtxOpentcoChannelNames[0], "-");
+
+    // bands
+    vtxOpentco.capability.bandCount = OPENTCO_VTX_MAX_BAND_COUNT;
+    if (!vtxOpentcoQueryRegister(OPENTCO_VTX_REGISTER_BAND, &vtxOpentcoSupportedBandNames[1], &vtxOpentco.capability.bandCount, 8)){
+        return false;
+    }
+    // add bf specific [0] entry:
+    strcpy(vtxOpentcoBandNames[0], "---");
+
+    return true;
+}
+
 
 static void vtxOpentcoProcess(uint32_t now)
 {
@@ -179,17 +262,27 @@ static bool vtxOpentcoSetBandAndChannel(uint8_t band, uint8_t channel)
     if (band && channel) {
         // FIXME: add some security measures like writing to a second reg to enable freq changes!
 
+        // backup current enable state
+        uint16_t status;
+        if (!opentcoReadRegisterUint16(device, OPENTCO_VTX_REGISTER_STATUS, &status)){
+            // failed to fetch status
+            return false;
+        }
 
-        // bf uses channel 0 (none) ... N+1 -> correct this here by substracting 1
-        // -> 0..7
-        uint16_t bandAndChannel = ((uint16_t)channel-1) << 8;
+        // disable vtx
+        if (!opentcoWriteRegisterUint16(device, OPENTCO_VTX_REGISTER_STATUS, status ^ OPENTCO_VTX_STATUS_ENABLE)) {
+            // failed to disable vtx, abort
+            return false;
+        }
+
         // bf uses band 0 (none) ... N+1 -> correct this here by substracting 1
-        // 0..x
-        bandAndChannel |= (band - 1);
-
-
-        // set
-        if (!opentcoWriteRegisterUint16(device, OPENTCO_VTX_REGISTER_BAND_AND_CHANNEL, bandAndChannel)){
+        // set band
+        if (!opentcoWriteRegisterUint16(device, OPENTCO_VTX_REGISTER_BAND, band - 1)){
+            // failed to store setting
+            return false;
+        }
+        // bf uses channel 0 (none) ... N+1 -> correct this here by substracting 1
+        if (!opentcoWriteRegisterUint16(device, OPENTCO_VTX_REGISTER_CHANNEL, channel - 1)){
             // failed to store setting
             return false;
         }
@@ -197,6 +290,12 @@ static bool vtxOpentcoSetBandAndChannel(uint8_t band, uint8_t channel)
         // config suceeded, store settings
         vtxDeviceConfigMutable()->band = band;
         vtxDeviceConfigMutable()->channel = channel;
+
+        // re-enable vtx
+        if (!opentcoWriteRegisterUint16(device, OPENTCO_VTX_REGISTER_STATUS, status)) {
+            // failed to disable vtx, abort
+            return false;
+        }
     }
 
     // all fine
