@@ -224,7 +224,7 @@ void beeper(beeperMode_e mode)
     if (
         mode == BEEPER_SILENCE || (
             (getBeeperOffMask() & (1 << (BEEPER_USB - 1)))
-            && (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && (getBatteryCellCount() == 0))
+            && getBatteryState() == BATTERY_NOT_PRESENT
         )
     ) {
         beeperSilence();
