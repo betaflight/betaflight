@@ -108,6 +108,7 @@
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
+#include "sensors/esc_sensor.h"
 
 #include "telemetry/telemetry.h"
 
@@ -927,6 +928,16 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #ifdef MAG
     case MSP_COMPASS_CONFIG:
         sbufWriteU16(dst, compassConfig()->mag_declination / 10);
+        break;
+#endif
+
+#ifdef USE_DSHOT
+    case MSP_ESC_SENSOR_DATA:
+        sbufWriteU8(dst, getMotorCount());
+        for (int i = 0; i < getMotorCount(); i++) {         
+            sbufWriteU8(dst, getEscSensorData(i)->temperature);
+            sbufWriteU16(dst, getEscSensorData(i)->rpm);
+        }
         break;
 #endif
 

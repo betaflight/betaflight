@@ -271,6 +271,7 @@
 #define MSP_MOTOR_CONFIG         131    //out message         Motor configuration (min/max throttle, etc)
 #define MSP_GPS_CONFIG           132    //out message         GPS configuration
 #define MSP_COMPASS_CONFIG       133    //out message         Compass configuration
+#define MSP_ESC_SENSOR_DATA      134    //out message         Extra ESC data from 32-Bit ESCs (Temperature, RPM)
 
 #define MSP_SET_RAW_RC           200    //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed
