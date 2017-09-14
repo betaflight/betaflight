@@ -21,7 +21,8 @@
 
 #include "platform.h"
 
-#ifdef CMS
+#if defined(CMS) && defined(VTX_TRAMP)
+
 #include "common/printf.h"
 #include "common/utils.h"
 

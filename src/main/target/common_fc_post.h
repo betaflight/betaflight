@@ -56,3 +56,11 @@
 #undef USE_MSP_OVER_TELEMETRY
 #endif
 #endif
+
+/* If either VTX_CONTROL or VTX_COMMON is undefined then remove common code and device drivers */
+#if !defined(VTX_COMMON) || !defined(VTX_CONTROL)
+#undef VTX_COMMON
+#undef VTX_CONTROL
+#undef VTX_TRAMP
+#undef VTX_SMARTAUDIO
+#endif
