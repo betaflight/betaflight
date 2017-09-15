@@ -68,6 +68,9 @@ typedef enum {
     TABLE_CAMERA_CONTROL_MODE,
 #endif
     TABLE_BUS_TYPE,
+#ifdef USE_MAX7456
+    TABLE_MAX7456_CLOCK,
+#endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 

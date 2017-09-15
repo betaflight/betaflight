@@ -250,6 +250,12 @@ static const char * const lookupTableBusType[] = {
     "NONE", "I2C", "SPI"
 };
 
+#ifdef USE_MAX7456
+static const char * const lookupTableMax7456Clock[] = {
+    "HALF", "DEFAULT", "FULL"
+};
+#endif
+
 const lookupTableEntry_t lookupTables[] = {
     { lookupTableOffOn, sizeof(lookupTableOffOn) / sizeof(char *) },
     { lookupTableUnit, sizeof(lookupTableUnit) / sizeof(char *) },
@@ -296,6 +302,9 @@ const lookupTableEntry_t lookupTables[] = {
     { lookupTableCameraControlMode, sizeof(lookupTableCameraControlMode) / sizeof(char *) },
 #endif
     { lookupTableBusType, sizeof(lookupTableBusType) / sizeof(char *) },
+#ifdef USE_MAX7456
+    { lookupTableMax7456Clock, sizeof(lookupTableMax7456Clock) / sizeof(char *) },
+#endif
 };
 
 const clivalue_t valueTable[] = {
@@ -744,7 +753,7 @@ const clivalue_t valueTable[] = {
 
 // PG_MAX7456_CONFIG
 #ifdef USE_MAX7456
-    { "max7456_clock",              VAR_UINT8| MASTER_VALUE,    .config.minmax = { 0, 2 }, PG_MAX7456_CONFIG, offsetof(max7456Config_t, clockConfig) },
+    { "max7456_clock",              VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_MAX7456_CLOCK }, PG_MAX7456_CONFIG, offsetof(max7456Config_t, clockConfig) },
 #endif
 
 // PG_DISPLAY_PORT_MSP_CONFIG
