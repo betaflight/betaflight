@@ -48,3 +48,13 @@ void    max7456ClearScreen(void);
 void    max7456RefreshAll(void);
 uint8_t* max7456GetScreenBuffer(void);
 bool    max7456DmaInProgress(void);
+
+typedef struct max7456Config_s {
+    uint8_t clockConfig; // 0 = force half clock, 1 = half if OC, 2 = force full
+} max7456Config_t;
+
+#define MAX7456_CLOCK_CONFIG_HALF 0
+#define MAX7456_CLOCK_CONFIG_OC   1
+#define MAX7456_CLOCK_CONFIG_FULL 2
+
+PG_DECLARE(max7456Config_t, max7456Config);

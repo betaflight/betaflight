@@ -15,6 +15,8 @@
 
 #pragma once
 
+#define TARGET_CONFIG
+
 #if defined(OMNIBUSF4SD)
 #define TARGET_BOARD_IDENTIFIER "OBSD"
 #elif defined(LUXF4OSD)

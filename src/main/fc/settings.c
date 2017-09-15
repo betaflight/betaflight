@@ -38,6 +38,7 @@
 
 #include "drivers/light_led.h"
 #include "drivers/camera_control.h"
+#include "drivers/max7456.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -739,6 +740,11 @@ const clivalue_t valueTable[] = {
     { "vcd_video_system",           VAR_UINT8   | MASTER_VALUE, .config.minmax = { 0, 2 }, PG_VCD_CONFIG, offsetof(vcdProfile_t, video_system) },
     { "vcd_h_offset",               VAR_INT8    | MASTER_VALUE, .config.minmax = { -32, 31 }, PG_VCD_CONFIG, offsetof(vcdProfile_t, h_offset) },
     { "vcd_v_offset",               VAR_INT8    | MASTER_VALUE, .config.minmax = { -15, 16 }, PG_VCD_CONFIG, offsetof(vcdProfile_t, v_offset) },
+#endif
+
+// PG_MAX7456_CONFIG
+#ifdef USE_MAX7456
+    { "max7456_clock",              VAR_UINT8| MASTER_VALUE,    .config.minmax = { 0, 2 }, PG_MAX7456_CONFIG, offsetof(max7456Config_t, clockConfig) },
 #endif
 
 // PG_DISPLAY_PORT_MSP_CONFIG
