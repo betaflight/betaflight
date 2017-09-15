@@ -25,6 +25,7 @@
 #define TARGET_BOARD_IDENTIFIER "DYS4"
 #else
 #define TARGET_BOARD_IDENTIFIER "OBF4"
+#define OMNIBUSF4BASE // For config.c
 #endif
 
 #if defined(LUXF4OSD)

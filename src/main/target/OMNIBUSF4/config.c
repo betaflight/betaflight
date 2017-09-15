@@ -27,8 +27,8 @@
 
 void targetConfiguration(void)
 {
-#ifdef OMNIBUSF4
-// OMNIBUS F4 AIO (1st gen) has a AB7456 chip that is detected as MAX7456
+#ifdef OMNIBUSF4BASE
+    // OMNIBUS F4 AIO (1st gen) has a AB7456 chip that is detected as MAX7456
     max7456ConfigMutable()->clockConfig = MAX7456_CLOCK_CONFIG_FULL;
 #endif
 }
