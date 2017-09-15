@@ -1,11 +1,11 @@
-## CODE NOT TESTED ! 
+## CODE NOT fully tested ! 
 
-
-A fork of betaflight for helicopter mixer. 
+A fork of betaflight for helicopter mixer. (Tested by a Esky belt-cp) 
 
 Introduction：
-Set the mixer to "Heli 120", then change the "resource" in CLI to make servos run. 
-Settings can be modified in "Servos" tab of betaflight configurator(expert mode).  
+The firmware is only designed for SPRacingF3EVO. Just "make" and download. 
+For other boards, pins need to be assigned for servos in CLI(using "resource" command).
+Most settings can be modified in "Servos" tab of betaflight configurator(expert mode).  
 
 
 
