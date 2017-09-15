@@ -135,12 +135,12 @@ static const servoMixer_t servoMixerDual[] = {
 
 
 static const servoMixer_t servoMixerHeli[] = {
-    { SERVO_HELI_LEFT, INPUT_STABILIZED_PITCH,   -100, 0, 0, 100, 0 },
-    { SERVO_HELI_LEFT, INPUT_STABILIZED_ROLL,    100, 0, 0, 100, 0 },
+    { SERVO_HELI_LEFT, INPUT_STABILIZED_PITCH,   -50, 0, 0, 100, 0 },
+    { SERVO_HELI_LEFT, INPUT_STABILIZED_ROLL,    87, 0, 0, 100, 0 },
     { SERVO_HELI_LEFT, INPUT_RC_AUX1,    100, 0, 0, 100, 0 },
 
-    { SERVO_HELI_RIGHT, INPUT_STABILIZED_PITCH,  -100, 0, 0, 100, 0 },
-    { SERVO_HELI_RIGHT, INPUT_STABILIZED_ROLL,  -100, 0, 0, 100, 0 },
+    { SERVO_HELI_RIGHT, INPUT_STABILIZED_PITCH,  -50, 0, 0, 100, 0 },
+    { SERVO_HELI_RIGHT, INPUT_STABILIZED_ROLL,  -87, 0, 0, 100, 0 },
     { SERVO_HELI_RIGHT, INPUT_RC_AUX1,    100, 0, 0, 100, 0 },
 
     { SERVO_HELI_TOP, INPUT_STABILIZED_PITCH,   100, 0, 0, 100, 0 },
@@ -179,7 +179,7 @@ const mixerRules_t servoMixers[] = {
     { 0, NULL },                // MULTITYPE_HEX6H
     { 0, NULL },                // * MULTITYPE_PPM_TO_SERVO
     { COUNT_SERVO_RULES(servoMixerDual), servoMixerDual },      // MULTITYPE_DUALCOPTER
-    { 0, NULL },    // MULTITYPE_SINGLECOPTER
+    { COUNT_SERVO_RULES(servoMixerSingle), servoMixerSingle},    // MULTITYPE_SINGLECOPTER
     { 0, NULL },                // MULTITYPE_ATAIL4
     { 0, NULL },                // MULTITYPE_CUSTOM
     { 0, NULL },                // MULTITYPE_CUSTOM_PLANE
