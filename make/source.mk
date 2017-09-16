@@ -12,6 +12,7 @@ COMMON_SRC = \
             common/huffman_table.c \
             common/maths.c \
             common/printf.c \
+            common/ringbuf.c \
             common/streambuf.c \
             common/typeconversion.c \
             config/config_eeprom.c \

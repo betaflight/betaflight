@@ -277,7 +277,7 @@ huffman_unittest_DEFINES := \
 		USE_HUFFMAN
 
 ringbuffer_unittest_SRC := \
-		$(USER_DIR)/common/ringbuffer.c
+		$(USER_DIR)/common/ringbuf.c
 
 # Please tweak the following variable definitions as needed by your
 # project, except GTEST_HEADERS, which you can use in your own targets

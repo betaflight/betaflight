@@ -29,6 +29,7 @@
 
 #include "common/crc.h"
 #include "common/maths.h"
+#include "common/ringbuf.h"
 #include "common/utils.h"
 
 #include "drivers/serial.h"
@@ -54,9 +55,20 @@
 
 #define CRSF_PAYLOAD_OFFSET offsetof(crsfFrameDef_t, type)
 
-STATIC_UNIT_TESTED bool crsfFrameDone = false;
+typedef struct crsfRingBuffer_s {
+    uint8_t frames;
+    uint8_t buffer[256]; // matches ring buffer size of Crossfire, per Remo Masina.
+    rbuf_t *ring;
+} crsfRingBuffer_t;
+
+
+//STATIC_UNIT_TESTED bool crsfFrameDone = false;
 STATIC_UNIT_TESTED crsfFrame_t crsfFrame;
 STATIC_UNIT_TESTED uint32_t crsfChannelData[CRSF_MAX_CHANNEL];
+static bool crsfConsumerReady = false;
+
+static crsfRingBuffer_t crsfRingBuffer;
+static rbuf_t crsfRing;
 
 static serialPort_t *serialPort;
 static uint32_t crsfFrameStartAtUs = 0;
@@ -112,6 +124,23 @@ struct crsfPayloadRcChannelsPacked_s {
 
 typedef struct crsfPayloadRcChannelsPacked_s crsfPayloadRcChannelsPacked_t;
 
+static void resetRingBuffer(void) {
+    crsfRingBuffer.frames = 0;
+    uint8_t *start = (uint8_t *)&crsfRingBuffer.buffer;
+    uint8_t *end = (uint8_t *)&crsfRingBuffer.buffer + 255;
+    crsfRingBuffer.ring = rbufInit(&crsfRing, start, end);
+}
+
+
+STATIC_UNIT_TESTED uint8_t crsfFrameCRC(crsfFrame_t *crcFrame)
+{
+    // CRC includes type and payload
+    uint8_t crc = crc8_dvb_s2(0, crcFrame->frame.type);
+    for (int ii = 0; ii < crcFrame->frame.frameLength - CRSF_FRAME_LENGTH_TYPE_CRC; ++ii) {
+        crc = crc8_dvb_s2(crc, crcFrame->frame.payload[ii]);
+    }
+    return crc;
+}
 
 // Receive ISR callback, called back from serial port
 STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c)
@@ -138,36 +167,45 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c)
 
     if (crsfFramePosition < fullFrameLength) {
         crsfFrame.bytes[crsfFramePosition++] = (uint8_t)c;
-        crsfFrameDone = crsfFramePosition < fullFrameLength ? false : true;
-        if (crsfFrameDone) {
-            crsfFramePosition = 0;
+        if (crsfFramePosition == fullFrameLength) {
+            crsfFramePosition = 0;     
+            if (!crsfConsumerReady) {
+                resetRingBuffer();
+            } else {
+                rbufWriteData(crsfRingBuffer.ring, crsfFrame.bytes, fullFrameLength);
+                crsfRingBuffer.frames++;
+            }
         }
     }
 }
 
-STATIC_UNIT_TESTED uint8_t crsfFrameCRC(void)
-{
-    // CRC includes type and payload
-    uint8_t crc = crc8_dvb_s2(0, crsfFrame.frame.type);
-    for (int ii = 0; ii < crsfFrame.frame.frameLength - CRSF_FRAME_LENGTH_TYPE_CRC; ++ii) {
-        crc = crc8_dvb_s2(crc, crsfFrame.frame.payload[ii]);
-    }
-    return crc;
-}
-
 STATIC_UNIT_TESTED uint8_t crsfFrameStatus(void)
 {
-    if (crsfFrameDone) {
-        crsfFrameDone = false;
-        if (crsfFrame.frame.type == CRSF_FRAMETYPE_RC_CHANNELS_PACKED) {
-            // CRC includes type and payload of each frame
-            const uint8_t crc = crsfFrameCRC();
-            if (crc != crsfFrame.frame.payload[CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE]) {
-                return RX_FRAME_PENDING;
-            }
-            crsfFrame.frame.frameLength = CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC;
+    crsfFrame_t frame;
+
+    if (!crsfConsumerReady) {
+        crsfConsumerReady = true;
+        return RX_FRAME_PENDING;
+    }
+
+    if (crsfRingBuffer.frames>0) {    
+        crsfRingBuffer.frames--;
+        rbufReadData(crsfRingBuffer.ring, &frame.bytes, 2);
+        const uint8_t length = frame.frame.frameLength;
+        if (length > 2 && length <= rbufReadBytesRemaining(crsfRingBuffer.ring)) {
+            rbufReadData(crsfRingBuffer.ring, &frame.frame.type, length);
+        } else {
+            crsfConsumerReady = false;
+            return RX_FRAME_PENDING;
+        }
+        const uint8_t crc = crsfFrameCRC(&frame);
+        if (crc != frame.bytes[length+1]) {
+           return RX_FRAME_PENDING;
+        }        
+        if (frame.frame.type == CRSF_FRAMETYPE_RC_CHANNELS_PACKED) {
+            frame.frame.frameLength = CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC;
             // unpack the RC channels
-            const crsfPayloadRcChannelsPacked_t* const rcChannels = (crsfPayloadRcChannelsPacked_t*)&crsfFrame.frame.payload;
+            const crsfPayloadRcChannelsPacked_t* const rcChannels = (crsfPayloadRcChannelsPacked_t*)&frame.frame.payload;
             crsfChannelData[0] = rcChannels->chan0;
             crsfChannelData[1] = rcChannels->chan1;
             crsfChannelData[2] = rcChannels->chan2;
@@ -186,15 +224,13 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(void)
             crsfChannelData[15] = rcChannels->chan15;
             return RX_FRAME_COMPLETE;
         } else {
-            if (crsfFrame.frame.type == CRSF_FRAMETYPE_DEVICE_PING) {
-                // TODO: CRC CHECK
+            if (frame.frame.type == CRSF_FRAMETYPE_DEVICE_PING) {
                 crsfScheduleDeviceInfoResponse();
                 return RX_FRAME_COMPLETE;
 #if defined(USE_MSP_OVER_TELEMETRY)
-            } else if (crsfFrame.frame.type == CRSF_FRAMETYPE_MSP_REQ || crsfFrame.frame.type == CRSF_FRAMETYPE_MSP_WRITE) {
-                // TODO: CRC CHECK
-                uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + 2;
-                uint8_t *frameEnd = (uint8_t *)&crsfFrame.frame.payload + 2 + CRSF_FRAME_RX_MSP_PAYLOAD_SIZE;
+            } else if (frame.frame.type == CRSF_FRAMETYPE_MSP_REQ || frame.frame.type == CRSF_FRAMETYPE_MSP_WRITE) {
+                uint8_t *frameStart = (uint8_t *)&frame.frame.payload + 2;
+                uint8_t *frameEnd = (uint8_t *)&frame.frame.payload + 2 + CRSF_FRAME_RX_MSP_PAYLOAD_SIZE;
                 if (handleMspFrame(frameStart, frameEnd)) {
                     crsfScheduleMspResponse();
                 }
@@ -247,6 +283,8 @@ void crsfRxSendTelemetryData(void)
 
 bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
+    resetRingBuffer();
+
     for (int ii = 0; ii < CRSF_MAX_CHANNEL; ++ii) {
         crsfChannelData[ii] = (16 * rxConfig->midrc) / 10 - 1408;
     }

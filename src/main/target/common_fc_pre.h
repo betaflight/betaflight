@@ -140,3 +140,8 @@
 #define USE_NAV
 #define USE_UNCOMMON_MIXERS
 #endif
+
+// #undef OSD
+// #undef USE_CLI
+// #undef BLACKBOX
+// #undef CMS
