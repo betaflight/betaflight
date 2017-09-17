@@ -156,17 +156,10 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
     /* PWM1 Mode configuration: Channel1 */
     TIM_OCInitStructure.OCMode = TIM_OCMODE_PWM1;
-    if (output & TIMER_OUTPUT_N_CHANNEL) {
-        TIM_OCInitStructure.OCIdleState = TIM_OCIDLESTATE_RESET;
-        TIM_OCInitStructure.OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPOLARITY_HIGH : TIM_OCPOLARITY_LOW;
-        TIM_OCInitStructure.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-        TIM_OCInitStructure.OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPOLARITY_HIGH : TIM_OCNPOLARITY_LOW;
-    } else {
-        TIM_OCInitStructure.OCIdleState = TIM_OCIDLESTATE_SET;
-        TIM_OCInitStructure.OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPOLARITY_LOW : TIM_OCPOLARITY_HIGH;
-        TIM_OCInitStructure.OCNIdleState = TIM_OCNIDLESTATE_SET;
-        TIM_OCInitStructure.OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPOLARITY_LOW : TIM_OCNPOLARITY_HIGH;
-    }
+    TIM_OCInitStructure.OCIdleState = TIM_OCIDLESTATE_SET;
+    TIM_OCInitStructure.OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPOLARITY_LOW : TIM_OCPOLARITY_HIGH;
+    TIM_OCInitStructure.OCNIdleState = TIM_OCNIDLESTATE_SET;
+    TIM_OCInitStructure.OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPOLARITY_LOW : TIM_OCNPOLARITY_HIGH;
     TIM_OCInitStructure.OCFastMode = TIM_OCFAST_DISABLE;
     TIM_OCInitStructure.Pulse = 0;
 
