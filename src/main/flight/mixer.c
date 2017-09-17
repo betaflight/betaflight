@@ -543,7 +543,9 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
     float currentThrottleInputRange = 0;
 
     if(feature(FEATURE_3D)) {
-        if (!ARMING_FLAG(ARMED)) rcThrottlePrevious = rxConfig()->midrc; // When disarmed set to mid_rc. It always results in positive direction after arming.
+        if (!ARMING_FLAG(ARMED)) {
+            rcThrottlePrevious = rxConfig()->midrc; // When disarmed set to mid_rc. It always results in positive direction after arming.
+        }
 
         if(rcCommand[THROTTLE] <= rcCommand3dDeadBandLow) {
             // INVERTED
@@ -635,7 +637,7 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
     for (uint32_t i = 0; i < motorCount; i++) {
-        float motorOutput = motorOutputMin + motorOutputRange * (motorMix[i] + (throttle * currentMixer[i].throttle));
+        float motorOutput = motorOutputMin + (ABS(motorOutputRange) * motorMix[i]) + (motorOutputRange * throttle * currentMixer[i].throttle);
 
         if (failsafeIsActive()) {
             if (isMotorProtocolDshot()) {
