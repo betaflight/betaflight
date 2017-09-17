@@ -61,33 +61,29 @@ void pwmWriteDshotInt(uint8_t index, uint16_t value)
 
     uint8_t bufferSize = loadDmaBuffer(motor, packet);
 
-    if (motor->timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
-        if (HAL_TIMEx_PWMN_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, bufferSize) != HAL_OK) {
-            /* Starting PWM generation Error */
-            return;
-        }
-    } else {
-        if (HAL_TIM_PWM_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, bufferSize) != HAL_OK) {
-            /* Starting PWM generation Error */
-            return;
-        }
+    if (DMA_SetCurrDataCounter(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, bufferSize) != HAL_OK) {
+        /* DMA set error */
+        return;
     }
 }
 
 void pwmCompleteDshotMotorUpdate(uint8_t motorCount)
 {
     UNUSED(motorCount);
+    for (int i = 0; i < dmaMotorTimerCount; i++) {
+        /* Reset timer counter */
+        LL_TIM_SetCounter(dmaMotorTimers[i].timer, 0);
+        /* Enable channel DMA requests */
+        dmaMotorTimers[i].timer->DIER |= dmaMotorTimers[i].timerDmaSources;
+    }
 }
 
 static void motor_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];
-    HAL_DMA_IRQHandler(motor->TimHandle.hdma[motor->timerDmaSource]);
-    if (motor->timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
-        HAL_TIMEx_PWMN_Stop_DMA(&motor->TimHandle,motor->timerHardware->channel);
-    } else {
-        HAL_TIM_PWM_Stop_DMA(&motor->TimHandle,motor->timerHardware->channel);
-    }
+    HAL_DMA_IRQHandler(motor->TimHandle.hdma[motor->timerDmaIndex]);
+    __HAL_DMA_DISABLE(&motor->hdma_tim);
+    TIM_DMACmd(&motor->TimHandle, motor->timerHardware->channel, DISABLE);
 }
 
 void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
@@ -119,9 +115,9 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         return;
     }
 
-    motor->timerDmaSource = timerDmaSource(timerHardware->channel);
+    motor->timerDmaIndex = timerDmaIndex(timerHardware->channel);
     motor->timer = &dmaMotorTimers[timerIndex];
-    dmaMotorTimers[timerIndex].timerDmaSources |= motor->timerDmaSource;
+    dmaMotorTimers[timerIndex].timerDmaSources |= timerDmaSource(timerHardware->channel);
 
     /* Set the parameters to be configured */
     motor->hdma_tim.Init.Channel = timerHardware->dmaChannel;
@@ -145,13 +141,13 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     motor->hdma_tim.Instance = timerHardware->dmaRef;
 
     /* Link hdma_tim to hdma[x] (channelx) */
-    __HAL_LINKDMA(&motor->TimHandle, hdma[motor->timerDmaSource], motor->hdma_tim);
+    __HAL_LINKDMA(&motor->TimHandle, hdma[motor->timerDmaIndex], motor->hdma_tim);
 
     dmaInit(timerHardware->dmaIrqHandler, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
     dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
 
     /* Initialize TIMx DMA handle */
-    if (HAL_DMA_Init(motor->TimHandle.hdma[motor->timerDmaSource]) != HAL_OK) {
+    if (HAL_DMA_Init(motor->TimHandle.hdma[motor->timerDmaIndex]) != HAL_OK) {
         /* Initialization Error */
         return;
     }
@@ -177,6 +173,17 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     if (HAL_TIM_PWM_ConfigChannel(&motor->TimHandle, &TIM_OCInitStructure, motor->timerHardware->channel) != HAL_OK) {
         /* Configuration Error */
         return;
+    }
+    if (output & TIMER_OUTPUT_N_CHANNEL) {
+        if (HAL_TIMEx_PWMN_Start(&motor->TimHandle, motor->timerHardware->channel) != HAL_OK) {
+            /* Starting PWM generation Error */
+            return;
+        }
+    } else {
+        if (HAL_TIM_PWM_Start(&motor->TimHandle, motor->timerHardware->channel) != HAL_OK) {
+            /* Starting PWM generation Error */
+            return;
+        }
     }
 }
 
