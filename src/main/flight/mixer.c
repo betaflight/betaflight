@@ -536,6 +536,7 @@ static float motorOutputMin;
 static float motorRangeMin;
 static float motorRangeMax;
 static float motorOutputRange;
+static int8_t motorOutputMixSign;
 
 void calculateThrottleAndCurrentMotorEndpoints(void)
 {
@@ -558,6 +559,7 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
                 motorOutputMin = deadbandMotor3dLow;
                 motorOutputRange = motorOutputLow - deadbandMotor3dLow;
             }
+            motorOutputMixSign = -1;
             rcThrottlePrevious = rcCommand[THROTTLE];
             throttle = rcCommand3dDeadBandLow - rcCommand[THROTTLE];
             currentThrottleInputRange = rcCommandThrottleRange3dLow;
@@ -567,6 +569,7 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
             motorRangeMax = motorOutputHigh;
             motorOutputMin = deadbandMotor3dHigh;
             motorOutputRange = motorOutputHigh - deadbandMotor3dHigh;
+            motorOutputMixSign = 1;
             rcThrottlePrevious = rcCommand[THROTTLE];
             throttle = rcCommand[THROTTLE] - rcCommand3dDeadBandHigh;
             currentThrottleInputRange = rcCommandThrottleRange3dHigh;
@@ -581,6 +584,7 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
                 motorOutputMin = deadbandMotor3dLow;
                 motorOutputRange = motorOutputLow - deadbandMotor3dLow;
             }
+            motorOutputMixSign = -1;
             throttle = 0;
             currentThrottleInputRange = rcCommandThrottleRange3dLow;
         } else {
@@ -589,6 +593,7 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
             motorRangeMax = motorOutputHigh;
             motorOutputMin = deadbandMotor3dHigh;
             motorOutputRange = motorOutputHigh - deadbandMotor3dHigh;
+            motorOutputMixSign = 1;
             throttle = 0;
             currentThrottleInputRange = rcCommandThrottleRange3dHigh;
         }
@@ -637,7 +642,7 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
     for (uint32_t i = 0; i < motorCount; i++) {
-        float motorOutput = motorOutputMin + (ABS(motorOutputRange) * motorMix[i]) + (motorOutputRange * throttle * currentMixer[i].throttle);
+        float motorOutput = motorOutputMin + (motorOutputRange * (motorOutputMixSign * motorMix[i] + throttle * currentMixer[i].throttle));
 
         if (failsafeIsActive()) {
             if (isMotorProtocolDshot()) {
