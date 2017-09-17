@@ -318,9 +318,6 @@ typedef struct blackboxSlowState_s {
     bool rxFlightChannelsValid;
 } __attribute__((__packed__)) blackboxSlowState_t; // We pack this struct so that padding doesn't interfere with memcmp()
 
-//From mixer.c:
-extern float motorOutputHigh, motorOutputLow;
-
 //From rc_controls.c
 extern boxBitmask_t rcModeActivationMask;
 
