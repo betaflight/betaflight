@@ -22,6 +22,8 @@
 
 #ifdef LED_STRIP
 
+#include "build/debug.h"
+
 #include "drivers/io.h"
 #include "drivers/nvic.h"
 
@@ -99,14 +101,17 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     /* PWM1 Mode configuration */
     TIM_OCStructInit(&TIM_OCInitStructure);
     TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+
     if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
         TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Enable;
         TIM_OCInitStructure.TIM_OCNIdleState = TIM_OCNIdleState_Reset;
+        TIM_OCInitStructure.TIM_OCNPolarity =  (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPolarity_Low : TIM_OCNPolarity_High;
     } else {
         TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
         TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
+        TIM_OCInitStructure.TIM_OCPolarity =  (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_Low : TIM_OCPolarity_High;
     }
-    TIM_OCInitStructure.TIM_OCPolarity =  (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_Low : TIM_OCPolarity_High;
+
     TIM_OCInitStructure.TIM_Pulse = 0;
 
     timerOCInit(timer, timerHardware->channel, &TIM_OCInitStructure);
@@ -115,7 +120,11 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     TIM_CtrlPWMOutputs(timer, ENABLE);
     TIM_ARRPreloadConfig(timer, ENABLE);
 
-    TIM_CCxCmd(timer, timerHardware->channel, TIM_CCx_Enable);
+    if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL)
+        TIM_CCxNCmd(timer, timerHardware->channel, TIM_CCxN_Enable);
+    else
+        TIM_CCxCmd(timer, timerHardware->channel, TIM_CCx_Enable);
+
     TIM_Cmd(timer, ENABLE);
 
     dmaInit(timerHardware->dmaIrqHandler, OWNER_LED_STRIP, 0);
