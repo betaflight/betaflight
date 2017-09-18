@@ -105,7 +105,11 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
         TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Enable;
         TIM_OCInitStructure.TIM_OCNIdleState = TIM_OCNIdleState_Reset;
+#ifndef TEMPORARY_FIX_FOR_LED_ON_NCHAN_AND_HAVE_OUTPUT_INVERTED_FIX_ME_FOR_3_3
+        TIM_OCInitStructure.TIM_OCNPolarity =  TIM_OCNPolarity_High;
+#else
         TIM_OCInitStructure.TIM_OCNPolarity =  (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPolarity_Low : TIM_OCNPolarity_High;
+#endif
     } else {
         TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
         TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
@@ -120,10 +124,11 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     TIM_CtrlPWMOutputs(timer, ENABLE);
     TIM_ARRPreloadConfig(timer, ENABLE);
 
-    if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL)
+    if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
         TIM_CCxNCmd(timer, timerHardware->channel, TIM_CCxN_Enable);
-    else
+    } else {
         TIM_CCxCmd(timer, timerHardware->channel, TIM_CCx_Enable);
+    }
 
     TIM_Cmd(timer, ENABLE);
 
