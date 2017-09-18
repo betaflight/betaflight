@@ -26,6 +26,8 @@ extern "C" {
 
     #include "build/debug.h"
 
+    #include "config/parameter_group.h"
+    #include "config/parameter_group_ids.h"
     #include "common/crc.h"
     #include "common/utils.h"
 
@@ -47,6 +49,8 @@ extern "C" {
     extern uint32_t crsfChannelData[CRSF_MAX_CHANNEL];
 
     uint32_t dummyTimeUs;
+
+    PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
