@@ -74,7 +74,7 @@
 // Serial driver for Jeti EX Bus receiver
 //
 #define JETIEXBUS_BAUDRATE 125000                       // EX Bus 125000; EX Bus HS 250000 not supported
-#define JETIEXBUS_OPTIONS (SERIAL_STOPBITS_1 | SERIAL_PARITY_NO | SERIAL_NOT_INVERTED)
+#define JETIEXBUS_OPTIONS (SERIAL_STOPBITS_1 | SERIAL_PARITY_NO)
 #define JETIEXBUS_MIN_FRAME_GAP     1000
 #define JETIEXBUS_CHANNEL_COUNT     16                  // most Jeti TX transmit 16 channels
 
@@ -607,7 +607,7 @@ bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfi
         jetiExBusDataReceive,
         JETIEXBUS_BAUDRATE,
         MODE_RXTX,
-        JETIEXBUS_OPTIONS | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
+        JETIEXBUS_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
         );
     serialSetMode(jetiExBusPort, MODE_RX);
     return jetiExBusPort != NULL;
