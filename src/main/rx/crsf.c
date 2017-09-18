@@ -233,7 +233,7 @@ void crsfRxSendTelemetryData(void)
     if (telemetryBufLen > 0) {
         // check that we are not in bi dir mode or that we are not currently receiving data (ie in the middle of an RX frame)
         // and that there is time to send the telemetry frame before the next RX frame arrives
-        if (CRSF_PORT_OPTIONS & SERIAL_BIDIR) {
+        if (rxConfig()->halfDuplex) {
             const uint32_t timeSinceStartOfFrame = micros() - crsfFrameStartAt;
             if ((timeSinceStartOfFrame < CRSF_TIME_NEEDED_PER_FRAME_US) ||
                 (timeSinceStartOfFrame > CRSF_TIME_BETWEEN_FRAMES_US - CRSF_TIME_NEEDED_PER_FRAME_US)) {
