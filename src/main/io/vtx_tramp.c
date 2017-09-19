@@ -53,9 +53,9 @@ const char * const trampPowerNames[VTX_TRAMP_POWER_COUNT+1] = {
 static const vtxVTable_t trampVTable; // forward
 static vtxDevice_t vtxTramp = {
     .vTable = &trampVTable,
-    .capability.bandCount = 5,
+    .capability.bandCount = VTX_TRAMP_BAND_COUNT,
     .capability.channelCount = 8,
-    .capability.powerCount = sizeof(trampPowerTable),
+    .capability.powerCount = VTX_TRAMP_POWER_COUNT,
     .bandNames = (char **)vtx58BandNames,
     .channelNames = (char **)vtx58ChannelNames,
     .powerNames = (char **)trampPowerNames,

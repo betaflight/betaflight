@@ -4,7 +4,7 @@
 
 #if defined(VTX_COMMON)
 
-extern const uint16_t vtx58frequencyTable[5][8];
+extern const uint16_t vtx58frequencyTable[6][8];
 extern const char * const vtx58BandNames[];
 extern const char * const vtx58ChannelNames[];
 extern const char vtx58BandLetter[];
