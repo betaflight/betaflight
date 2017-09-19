@@ -677,7 +677,7 @@ void init(void)
 #endif
 
 #ifdef VTX_RTC6705
-#ifdef VTX_RTC6705OPTIONAL
+#ifdef VTX_RTC6705_OPTIONAL
     if (!vtxCommonDeviceRegistered()) // external VTX takes precedence when configured.
 #endif
     {
