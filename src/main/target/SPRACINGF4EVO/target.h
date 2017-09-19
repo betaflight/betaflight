@@ -24,7 +24,7 @@
 #define SPRACINGF4EVO_REV 2
 #endif
 
-#define USBD_PRODUCT_STRING     "SP Racing F4 NEO"
+#define USBD_PRODUCT_STRING     "SP Racing F4 EVO"
 
 #define LED0_PIN                PA0
 
