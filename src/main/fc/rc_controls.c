@@ -155,6 +155,32 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
     rcSticks = stTmp;
 
     // perform actions
+#ifdef USE_CAMERA_CONTROL
+    static bool inCameraControlMode = false;
+    if (inCameraControlMode) {
+        if (rcDelayCommand == rcDelayTicks / 4) {
+            if (rcSticks == THR_CE + YAW_HI + PIT_CE + ROL_CE) {
+                cameraControlKeyPress(CAMERA_CONTROL_KEY_ENTER, 0);
+            } else if (rcSticks == THR_CE + YAW_CE + PIT_CE + ROL_LO) {
+                cameraControlKeyPress(CAMERA_CONTROL_KEY_LEFT, 0);
+            } else if (rcSticks == THR_CE + YAW_CE + PIT_HI + ROL_CE) {
+                cameraControlKeyPress(CAMERA_CONTROL_KEY_UP, 0);
+            } else if (rcSticks == THR_CE + YAW_CE + PIT_CE + ROL_HI) {
+                cameraControlKeyPress(CAMERA_CONTROL_KEY_RIGHT, 0);
+            } else if (rcSticks == THR_CE + YAW_CE + PIT_LO + ROL_CE) {
+                cameraControlKeyPress(CAMERA_CONTROL_KEY_DOWN, 0);
+            } else if (rcSticks == THR_LO + YAW_CE + PIT_HI + ROL_CE) {
+                cameraControlKeyPress(CAMERA_CONTROL_KEY_UP, 2000);
+            }
+        }
+        if (rcSticks == THR_CE + YAW_LO + PIT_CE + ROL_CE && rcDelayCommand == rcDelayTicks) {
+            inCameraControlMode = false;
+            beeperConfirmationBeeps(2);
+        }
+        return;
+    }
+#endif
+
     if (!isUsingSticksToArm) {
 
         if (IS_RC_MODE_ACTIVE(BOXARM)) {
@@ -320,18 +346,9 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
 
 #ifdef USE_CAMERA_CONTROL
     if (rcSticks == THR_CE + YAW_HI + PIT_CE + ROL_CE) {
-        cameraControlKeyPress(CAMERA_CONTROL_KEY_ENTER, 0);
-    } else if (rcSticks == THR_CE + YAW_CE + PIT_CE + ROL_LO) {
-        cameraControlKeyPress(CAMERA_CONTROL_KEY_LEFT, 0);
-    } else if (rcSticks == THR_CE + YAW_CE + PIT_HI + ROL_CE) {
-        cameraControlKeyPress(CAMERA_CONTROL_KEY_UP, 0);
-    } else if (rcSticks == THR_CE + YAW_CE + PIT_CE + ROL_HI) {
-        cameraControlKeyPress(CAMERA_CONTROL_KEY_RIGHT, 0);
-    } else if (rcSticks == THR_CE + YAW_CE + PIT_LO + ROL_CE) {
-        cameraControlKeyPress(CAMERA_CONTROL_KEY_DOWN, 0);
-    } else if (rcSticks == THR_LO + YAW_CE + PIT_HI + ROL_CE) {
-        cameraControlKeyPress(CAMERA_CONTROL_KEY_UP, 2000);
-   }
+        inCameraControlMode = true;
+        beeperConfirmationBeeps(1);
+    }
 #endif
 }
 
