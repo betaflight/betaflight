@@ -53,6 +53,12 @@
 #include "io/vtx_smartaudio.h"
 #include "io/vtx_string.h"
 
+// Timing parameters
+// Note that vtxSAProcess() is normally called at 200ms interval
+#define SMARTAUDIO_CMD_TIMEOUT       120    // Time until the command is considered lost
+#define SMARTAUDIO_POLLING_INTERVAL  150    // Minimum time between state polling
+#define SMARTAUDIO_POLLING_WINDOW   1000    // Time window after command polling for state change
+
 //#define SMARTAUDIO_DPRINTF
 //#define SMARTAUDIO_DEBUG_MONITOR
 
@@ -210,8 +216,6 @@ uint16_t sa_smartbaud = SMARTBAUD_MIN;
 static int sa_adjdir = 1; // -1=going down, 1=going up
 static int sa_baudstep = 50;
 
-#define SMARTAUDIO_CMD_TIMEOUT    120
-
 static void saAutobaud(void)
 {
     if (saStat.pktsent < 10)
@@ -252,7 +256,7 @@ static void saAutobaud(void)
 
 // Transport level variables
 
-static uint32_t sa_lastTransmission = 0;
+static uint32_t sa_lastTransmissionMs = 0;
 static uint8_t sa_outstanding = SA_CMD_NONE; // Outstanding command
 static uint8_t sa_osbuf[32]; // Outstanding comamnd frame for retransmission
 static int sa_oslen;         // And associate length
@@ -436,7 +440,7 @@ static void saSendFrame(uint8_t *buf, int len)
 
     serialWrite(smartAudioSerialPort, 0x00); // XXX Probably don't need this
 
-    sa_lastTransmission = millis();
+    sa_lastTransmissionMs = millis();
     saStat.pktsent++;
 }
 
@@ -642,9 +646,13 @@ bool vtxSmartAudioInit()
     return true;
 }
 
-void vtxSAProcess(uint32_t now)
+void vtxSAProcess(uint32_t currentTimeUs)
 {
+    UNUSED(currentTimeUs);
+
     static char initPhase = 0;
+    static uint32_t lastCommandSentMs = 0;
+    uint32_t nowMs = millis();
 
     if (smartAudioSerialPort == NULL)
         return;
@@ -674,18 +682,19 @@ void vtxSAProcess(uint32_t now)
     }
 
     if ((sa_outstanding != SA_CMD_NONE)
-            && (now - sa_lastTransmission > SMARTAUDIO_CMD_TIMEOUT)) {
+            && (nowMs - sa_lastTransmissionMs > SMARTAUDIO_CMD_TIMEOUT)) {
         // Last command timed out
         // dprintf(("process: resending 0x%x\r\n", sa_outstanding));
         // XXX Todo: Resend termination and possible offline transition
         saResendCmd();
+        lastCommandSentMs = nowMs;
     } else if (!saQueueEmpty()) {
         // Command pending. Send it.
         // dprintf(("process: sending queue\r\n"));
         saSendQueue();
-    } else if (now - sa_lastTransmission >= 1000) {
-        // Heart beat for autobauding
-        //dprintf(("process: sending heartbeat\r\n"));
+        lastCommandSentMs = nowMs;
+    } else if ((nowMs - lastCommandSentMs < SMARTAUDIO_POLLING_WINDOW) && (nowMs - sa_lastTransmissionMs >= SMARTAUDIO_POLLING_INTERVAL)) {
+        //dprintf(("process: sending status change polling\r\n"));
         saGetSettings();
         saSendQueue();
     }
