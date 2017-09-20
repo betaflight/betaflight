@@ -368,7 +368,9 @@ void updateMagHold(void)
 }
 #endif
 
-
+/*
+ * processRx called from taskUpdateRxMain
+ */
 void processRx(timeUs_t currentTimeUs)
 {
     static bool armedBeeperOn = false;

@@ -286,7 +286,7 @@ serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, seria
 serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
 bool telemetryCheckRxPortShared(const serialPortConfig_t *) {return false;}
 serialPort_t *telemetrySharedPort = NULL;
-void scheduleDeviceInfoResponse(void) {};
-void scheduleMspResponse(mspPackage_t *package) { UNUSED(package); };
+void crsfScheduleDeviceInfoResponse(void) {};
+void crsfScheduleMspResponse(mspPackage_t *package) { UNUSED(package); };
 bool handleMspFrame(uint8_t *, uint8_t *) { return false; }
 }
