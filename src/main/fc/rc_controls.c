@@ -57,6 +57,7 @@
 #include "sensors/acceleration.h"
 
 #include "rx/rx.h"
+#include "scheduler/scheduler.h"
 
 #include "flight/pid.h"
 #include "flight/navigation.h"
@@ -122,7 +123,7 @@ throttleStatus_e calculateThrottleStatus(void)
 void processRcStickPositions(throttleStatus_e throttleStatus)
 {
     // RC refresh rate converted to number of time the sticks must be maintained
-    uint8_t rcDelayTicks = constrain(RC_DELAY_TIME / rxGetRefreshRate(), 10, 20);
+    uint8_t rcDelayTicks = constrain(RC_DELAY_TIME / getTaskDeltaTime(TASK_RX), 10, 20);
     // indicates the number of time the sticks are maintained
     static uint8_t rcDelayCommand;
     // hold sticks position for command combos
