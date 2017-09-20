@@ -118,11 +118,17 @@ throttleStatus_e calculateThrottleStatus(void)
     return THROTTLE_HIGH;
 }
 
+#define RC_DELAY_TIME 222000 //usec
 void processRcStickPositions(throttleStatus_e throttleStatus)
 {
-    static uint8_t rcDelayCommand;      // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
-    static uint8_t rcSticks;            // this hold sticks position for command combos
-    static uint8_t rcDisarmTicks;       // this is an extra guard for disarming through switch to prevent that one frame can disarm it
+    // RC refresh rate converted to number of time the sticks must be maintained
+    uint8_t rcDelayTicks = constrain(RC_DELAY_TIME / rxGetRefreshRate(), 10, 20);
+    // indicates the number of time the sticks are maintained
+    static uint8_t rcDelayCommand;
+    // hold sticks position for command combos
+    static uint8_t rcSticks;
+    // an extra guard for disarming through switch to prevent that one frame can disarm it
+    static uint8_t rcDisarmTicks;
     uint8_t stTmp = 0;
     int i;
 
@@ -172,7 +178,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
         }
     }
 
-    if (rcDelayCommand != 20) {
+    if (rcDelayCommand != rcDelayTicks) {
         return;
     }
 
