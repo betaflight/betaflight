@@ -63,9 +63,6 @@
 
 static bool crsfTelemetryEnabled;
 static bool deviceInfoReplyPending;
-#if defined(USE_MSP_OVER_TELEMETRY)
-static bool mspReplyPending;
-#endif
 static uint8_t crsfFrame[CRSF_FRAME_SIZE_MAX];
 
 static void crsfInitializeFrame(sbuf_t *dst)
@@ -232,10 +229,6 @@ void crsfFrameFlightMode(sbuf_t *dst)
     *lengthPtr = sbufPtr(dst) - lengthPtr;
 }
 
-void scheduleDeviceInfoResponse() {
-    deviceInfoReplyPending = true;
-}
-
 /*
 0x29 Device Info
 Payload:
@@ -283,7 +276,11 @@ static uint8_t crsfScheduleCount;
 static uint8_t crsfSchedule[CRSF_SCHEDULE_COUNT_MAX];
 
 #if defined(USE_MSP_OVER_TELEMETRY)
-void scheduleMspResponse() {
+
+static bool mspReplyPending;
+
+void crsfScheduleMspResponse(void)
+{
     mspReplyPending = true;
 }
 
@@ -334,6 +331,11 @@ static void processCrsf(void)
     }
 #endif
     crsfScheduleIndex = (crsfScheduleIndex + 1) % crsfScheduleCount;
+}
+
+void crsfScheduleDeviceInfoResponse(void)
+{
+    deviceInfoReplyPending = true;
 }
 
 void initCrsfTelemetry(void)

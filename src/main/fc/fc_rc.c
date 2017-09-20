@@ -134,7 +134,8 @@ static void calculateSetpointRate(int axis)
     setpointRate[axis] = constrainf(angleRate, -SETPOINT_RATE_LIMIT, SETPOINT_RATE_LIMIT); // Rate limit protection (deg/sec)
 }
 
-static void scaleRcCommandToFpvCamAngle(void) {
+static void scaleRcCommandToFpvCamAngle(void)
+{
     //recalculate sin/cos only when rxConfig()->fpvCamAngleDegrees changed
     static uint8_t lastFpvCamAngleDegrees = 0;
     static float cosFactor = 1.0;
@@ -155,7 +156,8 @@ static void scaleRcCommandToFpvCamAngle(void) {
 #define THROTTLE_BUFFER_MAX 20
 #define THROTTLE_DELTA_MS 100
 
- static void checkForThrottleErrorResetState(uint16_t rxRefreshRate) {
+ static void checkForThrottleErrorResetState(uint16_t rxRefreshRate)
+ {
     static int index;
     static int16_t rcCommandThrottlePrevious[THROTTLE_BUFFER_MAX];
     const int rxRefreshRateMs = rxRefreshRate / 1000;
