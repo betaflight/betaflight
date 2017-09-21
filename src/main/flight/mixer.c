@@ -611,9 +611,9 @@ static void applyFlipOverAfterCrashModeToMotors(void)
 
     for (int i = 0; i < motorCount; i++) {
         if (getRcDeflectionAbs(FD_ROLL) > getRcDeflectionAbs(FD_PITCH)) {
-            motorMix[i] = getRcDeflection(FD_ROLL) * pidSumLimit * currentMixer[i].roll * (-1);
+            motorMix[i] = getRcDeflection(FD_ROLL)  * currentMixer[i].roll * (-1);
         } else {
-            motorMix[i] = getRcDeflection(FD_PITCH) * pidSumLimit * currentMixer[i].pitch * (-1);
+            motorMix[i] = getRcDeflection(FD_PITCH)  * currentMixer[i].pitch * (-1);
         }
     }
     // Apply the mix to motor endpoints
