@@ -156,24 +156,27 @@ static void scaleRcCommandToFpvCamAngle(void)
 #define THROTTLE_BUFFER_MAX 20
 #define THROTTLE_DELTA_MS 100
 
- static void checkForThrottleErrorResetState(uint16_t rxRefreshRate)
- {
+static void checkForThrottleErrorResetState(uint16_t rxRefreshRate)
+{
     static int index;
     static int16_t rcCommandThrottlePrevious[THROTTLE_BUFFER_MAX];
+
     const int rxRefreshRateMs = rxRefreshRate / 1000;
     const int indexMax = constrain(THROTTLE_DELTA_MS / rxRefreshRateMs, 1, THROTTLE_BUFFER_MAX);
     const int16_t throttleVelocityThreshold = (feature(FEATURE_3D)) ? currentPidProfile->itermThrottleThreshold / 2 : currentPidProfile->itermThrottleThreshold;
 
     rcCommandThrottlePrevious[index++] = rcCommand[THROTTLE];
-    if (index >= indexMax)
+    if (index >= indexMax) {
         index = 0;
+    }
 
     const int16_t rcCommandSpeed = rcCommand[THROTTLE] - rcCommandThrottlePrevious[index];
 
-    if (ABS(rcCommandSpeed) > throttleVelocityThreshold)
+    if (ABS(rcCommandSpeed) > throttleVelocityThreshold) {
         pidSetItermAccelerator(CONVERT_PARAMETER_TO_FLOAT(currentPidProfile->itermAcceleratorGain));
-    else
+    } else {
         pidSetItermAccelerator(1.0f);
+    }
 }
 
 void processRcCommand(void)
@@ -182,10 +185,6 @@ void processRcCommand(void)
     static float rcStepSize[4] = { 0, 0, 0, 0 };
     static int16_t rcInterpolationStepCount;
     static uint16_t currentRxRefreshRate;
-    const uint8_t interpolationChannels = rxConfig()->rcInterpolationChannels + 2; //"RP", "RPY", "RPYT"
-    uint16_t rxRefreshRate;
-    bool readyToCalculateRate = false;
-    uint8_t readyToCalculateRateAxisCnt = 0;
 
     if (isRXDataNew) {
         currentRxRefreshRate = constrain(getTaskDeltaTime(TASK_RX),1000,20000);
@@ -193,6 +192,11 @@ void processRcCommand(void)
             checkForThrottleErrorResetState(currentRxRefreshRate);
         }
     }
+
+    const uint8_t interpolationChannels = rxConfig()->rcInterpolationChannels + 2; //"RP", "RPY", "RPYT"
+    uint16_t rxRefreshRate;
+    bool readyToCalculateRate = false;
+    uint8_t readyToCalculateRateAxisCnt = 0;
 
     if (rxConfig()->rcInterpolation) {
          // Set RC refresh rate for sampling and channels to filter
@@ -240,19 +244,22 @@ void processRcCommand(void)
     }
 
     if (readyToCalculateRate || isRXDataNew) {
-        if (isRXDataNew)
+        if (isRXDataNew) {
             readyToCalculateRateAxisCnt = FD_YAW;
+        }
 
-        for (int axis = 0; axis <= readyToCalculateRateAxisCnt; axis++)
+        for (int axis = 0; axis <= readyToCalculateRateAxisCnt; axis++) {
             calculateSetpointRate(axis);
+        }
 
         if (debugMode == DEBUG_RC_INTERPOLATION) {
             debug[2] = rcInterpolationStepCount;
             debug[3] = setpointRate[0];
         }
         // Scaling of AngleRate to camera angle (Mixing Roll and Yaw)
-        if (rxConfig()->fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE))
+        if (rxConfig()->fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE)) {
             scaleRcCommandToFpvCamAngle();
+        }
 
         isRXDataNew = false;
     }
@@ -330,7 +337,8 @@ void updateRcCommands(void)
     }
 }
 
-void resetYawAxis(void) {
+void resetYawAxis(void)
+{
     rcCommand[YAW] = 0;
     setpointRate[YAW] = 0;
 }
