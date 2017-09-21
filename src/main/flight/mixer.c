@@ -104,12 +104,7 @@ void pgResetFn_motorConfig(motorConfig_t *motorConfig)
 
 PG_REGISTER_ARRAY(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR_MIXER, 0);
 
-#define EXTERNAL_DSHOT_CONVERSION_FACTOR 2
-// (minimum output value(1001) - (minimum input value(48) / conversion factor(2))
-#define EXTERNAL_DSHOT_CONVERSION_OFFSET 977
-#define EXTERNAL_CONVERSION_MIN_VALUE 1000
-#define EXTERNAL_CONVERSION_MAX_VALUE 2000
-#define EXTERNAL_CONVERSION_3D_MID_VALUE 1500
+#define PWM_RANGE_MID 1500
 
 #define TRICOPTER_ERROR_RATE_YAW_SATURATED 75 // rate at which tricopter yaw axis becomes saturated, determined experimentally by TriFlight
 
@@ -743,44 +738,62 @@ void mixTable(uint8_t vbatPidCompensation)
 
 float convertExternalToMotor(uint16_t externalValue)
 {
-    uint16_t motorValue = externalValue;
+    uint16_t motorValue;
+    switch ((int)isMotorProtocolDshot()) {
 #ifdef USE_DSHOT
-    if (isMotorProtocolDshot()) {
-        // Add 1 to the value, otherwise throttle tops out at 2046
-        motorValue = externalValue <= EXTERNAL_CONVERSION_MIN_VALUE ? DSHOT_DISARM_COMMAND : constrain((externalValue - EXTERNAL_DSHOT_CONVERSION_OFFSET) * EXTERNAL_DSHOT_CONVERSION_FACTOR + 1, DSHOT_MIN_THROTTLE, DSHOT_MAX_THROTTLE);
+    case true:
+        externalValue = constrain(externalValue, PWM_RANGE_MIN, PWM_RANGE_MAX);
 
         if (feature(FEATURE_3D)) {
-            if (externalValue == EXTERNAL_CONVERSION_3D_MID_VALUE) {
+            if (externalValue == PWM_RANGE_MID) {
                 motorValue = DSHOT_DISARM_COMMAND;
-            } else if (motorValue >= DSHOT_MIN_THROTTLE && motorValue <= DSHOT_3D_DEADBAND_LOW) {
-                // Add 1 to the value, otherwise throttle tops out at 2046
-                motorValue = DSHOT_MIN_THROTTLE + (DSHOT_3D_DEADBAND_LOW - motorValue) + 1;
+            } else if (externalValue < PWM_RANGE_MID) {
+                motorValue = scaleRange(externalValue, PWM_RANGE_MIN, PWM_RANGE_MID - 1, DSHOT_3D_DEADBAND_LOW, DSHOT_MIN_THROTTLE);
+            } else {
+                motorValue = scaleRange(externalValue, PWM_RANGE_MID + 1, PWM_RANGE_MAX, DSHOT_3D_DEADBAND_HIGH, DSHOT_MAX_THROTTLE);
             }
+        } else {
+            motorValue = (externalValue == PWM_RANGE_MIN) ? DSHOT_DISARM_COMMAND : scaleRange(externalValue, PWM_RANGE_MIN + 1, PWM_RANGE_MAX, DSHOT_MIN_THROTTLE, DSHOT_MAX_THROTTLE);
         }
-    }
+
+        break;
+    case false:
 #endif
+    default:
+        motorValue = externalValue;
+
+        break;
+    }
 
     return (float)motorValue;
 }
 
 uint16_t convertMotorToExternal(float motorValue)
 {
-    uint16_t externalValue = lrintf(motorValue);
+    uint16_t externalValue;
+    switch ((int)isMotorProtocolDshot()) {
 #ifdef USE_DSHOT
-    if (isMotorProtocolDshot()) {
-        if (feature(FEATURE_3D) && motorValue >= DSHOT_MIN_THROTTLE && motorValue <= DSHOT_3D_DEADBAND_LOW) {
-            // Subtract 1 to compensate for imbalance introduced in convertExternalToMotor()
-            motorValue = DSHOT_MIN_THROTTLE + (DSHOT_3D_DEADBAND_LOW - motorValue) - 1;
+    case true:
+        if (feature(FEATURE_3D)) {
+            if (motorValue == DSHOT_DISARM_COMMAND || motorValue < DSHOT_MIN_THROTTLE) {
+                externalValue = PWM_RANGE_MID;
+            } else if (motorValue <= DSHOT_3D_DEADBAND_LOW) {
+                externalValue = scaleRange(motorValue, DSHOT_MIN_THROTTLE, DSHOT_3D_DEADBAND_LOW, PWM_RANGE_MID - 1, PWM_RANGE_MIN);
+            } else {
+                externalValue = scaleRange(motorValue, DSHOT_3D_DEADBAND_HIGH, DSHOT_MAX_THROTTLE, PWM_RANGE_MID + 1, PWM_RANGE_MAX);
+            }
+        } else {
+            externalValue = (motorValue < DSHOT_MIN_THROTTLE) ? PWM_RANGE_MIN : scaleRange(motorValue, DSHOT_MIN_THROTTLE, DSHOT_MAX_THROTTLE, PWM_RANGE_MIN + 1, PWM_RANGE_MAX);
         }
 
-        // Subtract 1 to compensate for imbalance introduced in convertExternalToMotor()
-        externalValue = motorValue < DSHOT_MIN_THROTTLE ? EXTERNAL_CONVERSION_MIN_VALUE : constrain(((motorValue - 1)/ EXTERNAL_DSHOT_CONVERSION_FACTOR) + EXTERNAL_DSHOT_CONVERSION_OFFSET, EXTERNAL_CONVERSION_MIN_VALUE + 1, EXTERNAL_CONVERSION_MAX_VALUE);
-
-        if (feature(FEATURE_3D) && motorValue == DSHOT_DISARM_COMMAND) {
-            externalValue = EXTERNAL_CONVERSION_3D_MID_VALUE;
-        }
-    }
+        break;
+    case false:
 #endif
+    default:
+        externalValue = motorValue;
+
+        break;
+    }
 
     return externalValue;
 }
