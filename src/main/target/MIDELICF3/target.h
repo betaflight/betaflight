@@ -99,27 +99,35 @@
 #define RX_SPI_INSTANCE         SPI1
 #define RX_NSS_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
 
-#define USE_RX_FRSKY_D
-#define DEFAULT_RX_FEATURE      FEATURE_RX_SPI
-#define RX_SPI_DEFAULT_PROTOCOL RX_SPI_FRSKY_D
 
-#define USE_FRSKY_D_TELEMETRY
+#define USE_RX_FRSKY_SPI_D
+#define USE_RX_FRSKY_SPI_X
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SPI	
+#define RX_SPI_DEFAULT_PROTOCOL RX_SPI_FRSKY_X
+#define USE_RX_FRSKY_SPI_TELEMETRY
 
-#define USE_FRSKY_RX_PA_LNA
-#define USE_FRSKY_RX_DIVERSITY
+#define RX_NSS_PIN               SPI1_NSS_PIN
+#define RX_SCK_PIN               SPI1_SCK_PIN
+#define RX_MISO_PIN              SPI1_MISO_PIN
+#define RX_MOSI_PIN              SPI1_MOSI_PIN
 
-#define RX_NSS_PIN              SPI1_NSS_PIN
-#define RX_SCK_PIN              SPI1_SCK_PIN
-#define RX_MISO_PIN             SPI1_MISO_PIN
-#define RX_MOSI_PIN             SPI1_MOSI_PIN
+#define RX_FRSKY_SPI_GDO_0_PIN   PB0
 
-#define FRSKY_RX_GDO_0_PIN      PB0
-#define FRSKY_RX_ANT_SEL_PIN    PB2
-#define FRSKY_RX_TX_EN_PIN      PB1
-#define FRSKY_RX_RX_EN_PIN      PB11
-#define FRSKY_RX_LED_PIN        PB6
+#define RX_FRSKY_SPI_LED_PIN     PB6
 
-#define BINDPLUG_PIN            PC13
+
+#define USE_RX_FRSKY_SPI_PA_LNA
+
+#define RX_FRSKY_SPI_TX_EN_PIN   PB1
+#define RX_FRSKY_SPI_LNA_EN_PIN  PB11
+
+
+#define USE_RX_FRSKY_SPI_DIVERSITY
+
+#define RX_FRSKY_SPI_ANT_SEL_PIN PB2
+
+
+#define BINDPLUG_PIN             PC13
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 #define USE_ESCSERIAL

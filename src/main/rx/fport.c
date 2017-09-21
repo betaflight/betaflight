@@ -310,7 +310,7 @@ static uint8_t fportFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 #if defined(USE_TELEMETRY_SMARTPORT)
     } else {
         timeUs_t currentTimeUs = micros();
-        if (clearToSend && cmpTimeUs(currentTimeUs, lastTelemetryFrameReceivedUs) >= FPORT_MIN_TELEMETRY_RESPONSE_DELAY_US) {
+        if (telemetryEnabled && clearToSend && cmpTimeUs(currentTimeUs, lastTelemetryFrameReceivedUs) >= FPORT_MIN_TELEMETRY_RESPONSE_DELAY_US) {
             if (cmpTimeUs(currentTimeUs, lastTelemetryFrameReceivedUs) > FPORT_MAX_TELEMETRY_RESPONSE_DELAY_US) {
                 clearToSend = false;
             }

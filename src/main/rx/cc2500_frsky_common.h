@@ -17,23 +17,20 @@
 
 #pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
+//#include <stdbool.h>
+//#include <stdint.h>
 
-#include "rx_spi.h"
+//#include "rx.h"
+//#include "rx_spi.h"
 
-typedef struct frSkyDConfig_s {
+typedef struct rxFrSkySpiConfig_s {
     bool autoBind;
     uint8_t bindTxId[2];
     int8_t  bindOffset;
     uint8_t bindHopData[50];
-} frSkyDConfig_t;
+    uint8_t rxNum;
+} rxFrSkySpiConfig_t;
 
-PG_DECLARE(frSkyDConfig_t, frSkyDConfig);
+PG_DECLARE(rxFrSkySpiConfig_t, rxFrSkySpiConfig);
 
-struct rxConfig_s;
-struct rxRuntimeConfig_s;
-void frSkyDInit(const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig);
-void frSkyDSetRcData(uint16_t *rcData, const uint8_t *payload);
-rx_spi_received_e frSkyDDataReceived(uint8_t *payload);
-void frSkyDBind(void);
+void frSkyBind(void);

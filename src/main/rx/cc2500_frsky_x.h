@@ -15,45 +15,16 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "stdint.h"
+#pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
 
-#include "debug.h"
+#include "rx_spi.h"
 
-int16_t debug[DEBUG16_VALUE_COUNT];
-uint8_t debugMode;
-
-#ifdef DEBUG_SECTION_TIMES
-uint32_t sectionTimes[2][4];
-#endif
-
-const char * const debugModeNames[DEBUG_COUNT] = {
-    "NONE",
-    "CYCLETIME",
-    "BATTERY",
-    "GYRO",
-    "ACCELEROMETER",
-    "MIXER",
-    "AIRMODE",
-    "PIDLOOP",
-    "NOTCH",
-    "RC_INTERPOLATION",
-    "VELOCITY",
-    "DFILTER",
-    "ANGLERATE",
-    "ESC_SENSOR",
-    "SCHEDULER",
-    "STACK",
-    "ESC_SENSOR_RPM",
-    "ESC_SENSOR_TMP",
-    "ALTITUDE",
-    "FFT",
-    "FFT_TIME",
-    "FFT_FREQ",
-    "RX_FRSKY_SPI",
-    "GYRO_RAW",
-    "MAX7456_SIGNAL",
-    "MAX7456_SPICLOCK",
-    "SBUS",
-    "FPORT",
-};
+struct rxConfig_s;
+struct rxRuntimeConfig_s;
+void frSkyXInit(const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig);
+void frSkyXSetRcData(uint16_t *rcData, const uint8_t *payload);
+rx_spi_received_e frSkyXDataReceived(uint8_t *payload);
+void frSkyXBind();

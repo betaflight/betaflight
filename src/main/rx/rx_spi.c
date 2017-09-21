@@ -35,7 +35,8 @@
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
-#include "rx/frsky_d.h"
+#include "cc2500_frsky_d.h"
+#include "cc2500_frsky_x.h"
 #include "rx/nrf24_cx10.h"
 #include "rx/nrf24_syma.h"
 #include "rx/nrf24_v202.h"
@@ -113,11 +114,18 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
         protocolSetRcDataFromPayload = inavNrf24SetRcDataFromPayload;
         break;
 #endif
-#ifdef USE_RX_FRSKY_D
+#ifdef USE_RX_FRSKY_SPI_D
     case RX_SPI_FRSKY_D:
         protocolInit = frSkyDInit;
         protocolDataReceived = frSkyDDataReceived;
         protocolSetRcDataFromPayload = frSkyDSetRcData;
+        break;
+#endif
+#ifdef USE_RX_FRSKY_SPI_X
+    case RX_SPI_FRSKY_X:
+        protocolInit = frSkyXInit;
+        protocolDataReceived = frSkyXDataReceived;
+        protocolSetRcDataFromPayload = frSkyXSetRcData;
         break;
 #endif
 #ifdef USE_RX_FLYSKY
