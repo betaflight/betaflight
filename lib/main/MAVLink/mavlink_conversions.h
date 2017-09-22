@@ -117,12 +117,12 @@ MAVLINK_HELPER void mavlink_quaternion_to_euler(const float quaternion[4], float
  */
 MAVLINK_HELPER void mavlink_euler_to_quaternion(float roll, float pitch, float yaw, float quaternion[4])
 {
-    float cosPhi_2 = cosf(roll / 2);
-    float sinPhi_2 = sinf(roll / 2);
-    float cosTheta_2 = cosf(pitch / 2);
-    float sinTheta_2 = sinf(pitch / 2);
-    float cosPsi_2 = cosf(yaw / 2);
-    float sinPsi_2 = sinf(yaw / 2);
+    float cosPhi_2 = cos_approx(roll / 2);
+    float sinPhi_2 = sin_approx(roll / 2);
+    float cosTheta_2 = cos_approx(pitch / 2);
+    float sinTheta_2 = sin_approx(pitch / 2);
+    float cosPsi_2 = cos_approx(yaw / 2);
+    float sinPsi_2 = sin_approx(yaw / 2);
     quaternion[0] = (cosPhi_2 * cosTheta_2 * cosPsi_2 +
             sinPhi_2 * sinTheta_2 * sinPsi_2);
     quaternion[1] = (sinPhi_2 * cosTheta_2 * cosPsi_2 -
@@ -188,12 +188,12 @@ MAVLINK_HELPER void mavlink_dcm_to_quaternion(const float dcm[3][3], float quate
  */
 MAVLINK_HELPER void mavlink_euler_to_dcm(float roll, float pitch, float yaw, float dcm[3][3])
 {
-    float cosPhi = cosf(roll);
-    float sinPhi = sinf(roll);
-    float cosThe = cosf(pitch);
-    float sinThe = sinf(pitch);
-    float cosPsi = cosf(yaw);
-    float sinPsi = sinf(yaw);
+    float cosPhi = cos_approx(roll);
+    float sinPhi = sin_approx(roll);
+    float cosThe = cos_approx(pitch);
+    float sinThe = sin_approx(pitch);
+    float cosPsi = cos_approx(yaw);
+    float sinPsi = sin_approx(yaw);
 
     dcm[0][0] = cosThe * cosPsi;
     dcm[0][1] = -cosPhi * sinPsi + sinPhi * sinThe * cosPsi;

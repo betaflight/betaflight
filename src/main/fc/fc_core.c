@@ -106,8 +106,6 @@ enum {
 int16_t magHold;
 #endif
 
-int16_t headFreeModeHold;
-
 static bool reverseMotors = false;
 static bool flipOverAfterCrashMode = false;
 
@@ -281,10 +279,11 @@ void tryArm(void)
 
         ENABLE_ARMING_FLAG(ARMED);
         ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
+
         if (isModeActivationConditionPresent(BOXPREARM)) {
             ENABLE_ARMING_FLAG(WAS_ARMED_WITH_PREARM);
         }
-        headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+        imuQuaternionHeadfreeOffsetSet();
 
         disarmAt = millis() + armingConfig()->auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
 
@@ -524,7 +523,9 @@ void processRx(timeUs_t currentTimeUs)
             DISABLE_FLIGHT_MODE(HEADFREE_MODE);
         }
         if (IS_RC_MODE_ACTIVE(BOXHEADADJ)) {
-            headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw); // acquire new heading
+            if (imuQuaternionHeadfreeOffsetSet()){
+               beeper(BEEPER_RX_SET);
+            }
         }
     }
 #endif
