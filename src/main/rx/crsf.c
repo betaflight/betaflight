@@ -62,6 +62,9 @@ static serialPort_t *serialPort;
 static uint32_t crsfFrameStartAtUs = 0;
 static uint8_t telemetryBuf[CRSF_FRAME_SIZE_MAX];
 static uint8_t telemetryBufLen = 0;
+#if defined(USE_MSP_OVER_TELEMETRY)
+static uint8_t mspFrameBuf[CRSF_FRAME_RX_MSP_PAYLOAD_SIZE];
+#endif
 
 /*
  * CRSF protocol
@@ -193,9 +196,8 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(void)
 #if defined(USE_MSP_OVER_TELEMETRY)
             } else if (crsfFrame.frame.type == CRSF_FRAMETYPE_MSP_REQ || crsfFrame.frame.type == CRSF_FRAMETYPE_MSP_WRITE) {
                 // TODO: CRC CHECK
-                uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + 2;
-                uint8_t *frameEnd = (uint8_t *)&crsfFrame.frame.payload + 2 + CRSF_FRAME_RX_MSP_PAYLOAD_SIZE;
-                if (handleMspFrame(frameStart, frameEnd)) {
+                memcpy(mspFrameBuf, (uint8_t *)&crsfFrame.frame.payload + 2, CRSF_FRAME_RX_MSP_PAYLOAD_SIZE);
+                if (handleMspFrame(mspFrameBuf, mspFrameBuf + CRSF_FRAME_RX_MSP_PAYLOAD_SIZE)) {
                     crsfScheduleMspResponse();
                 }
                 return RX_FRAME_COMPLETE;
