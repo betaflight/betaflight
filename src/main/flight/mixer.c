@@ -605,28 +605,29 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
     throttle = constrainf(throttle / currentThrottleInputRange, 0.0f, 1.0f);
 }
 
+#define CRASH_FLIP_DEADBAND 20
+
 static void applyFlipOverAfterCrashModeToMotors(void)
 {
     float motorMix[MAX_SUPPORTED_MOTORS];
 
-    for (int i = 0; i < motorCount; i++) {
-        if (getRcDeflectionAbs(FD_ROLL) > getRcDeflectionAbs(FD_PITCH)) {
-            motorMix[i] = getRcDeflection(FD_ROLL)  * currentMixer[i].roll * (-1);
-        } else {
-            motorMix[i] = getRcDeflection(FD_PITCH)  * currentMixer[i].pitch * (-1);
+    if (ARMING_FLAG(ARMED)) {
+        for (int i = 0; i < motorCount; i++) {
+            if (getRcDeflectionAbs(FD_ROLL) > getRcDeflectionAbs(FD_PITCH)) {
+                motorMix[i] = getRcDeflection(FD_ROLL) * currentMixer[i].roll * -1;
+            } else {
+                motorMix[i] = getRcDeflection(FD_PITCH) * currentMixer[i].pitch * -1;
+            }
+
+            // Apply the mix to motor endpoints
+            float motorOutput =  motorOutputMin + motorOutputRange * motorMix[i];
+            //Add a little bit to the motorOutputMin so props aren't spinning when sticks are centered
+            motorOutput = (motorOutput < motorOutputMin + CRASH_FLIP_DEADBAND ) ? disarmMotorOutput : motorOutput - CRASH_FLIP_DEADBAND;
+
+            motor[i] = motorOutput;
         }
-    }
-    // Apply the mix to motor endpoints
-    for (uint32_t i = 0; i < motorCount; i++) {
-        float motorOutput =  motorOutputMin + motorOutputRange * (motorMix[i]);
-        //Add a little bit to the motorOutputMin so props aren't spinning when sticks are centered
-        motorOutput = (motorOutput < motorOutputMin + 20 ) ? disarmMotorOutput : motorOutput;
-
-        motor[i] = motorOutput;
-    }
-
-    // Disarmed mode
-    if (!ARMING_FLAG(ARMED)) {
+    } else {
+        // Disarmed mode
         for (int i = 0; i < motorCount; i++) {
             motor[i] = motor_disarmed[i];
         }
