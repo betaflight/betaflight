@@ -376,32 +376,6 @@ void init(void)
     serialInit(feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
 #endif
 
-    mixerInit(mixerConfig()->mixerMode);
-#ifdef USE_SERVOS
-    servosInit();
-#endif
-
-    uint16_t idlePulse = motorConfig()->mincommand;
-    if (feature(FEATURE_3D)) {
-        idlePulse = flight3DConfig()->neutral3d;
-    }
-
-    if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) {
-        featureClear(FEATURE_3D);
-        idlePulse = 0; // brushed motors
-    }
-
-    mixerConfigureOutput();
-    motorDevInit(&motorConfig()->dev, idlePulse, getMotorCount());
-
-#ifdef USE_SERVOS
-    servoConfigureOutput();
-    if (isMixerUsingServos()) {
-        //pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
-        servoDevInit(&servoConfig()->dev);
-    }
-#endif
-
     if (0) {}
 #if defined(USE_PPM)
     else if (feature(FEATURE_RX_PPM)) {
@@ -528,10 +502,31 @@ void init(void)
     LED0_OFF;
     LED1_OFF;
 
-    // gyro.targetLooptime set in sensorsAutodetect(), so we are ready to call pidInit()
+    // gyro.targetLooptime set in sensorsAutodetect(),
+    // so we are ready to call setPidLooptime() and pidInit()
+    setPidLooptime();
     pidInit(currentPidProfile);
 
+    mixerInit(mixerConfig()->mixerMode);
+
+    uint16_t idlePulse = motorConfig()->mincommand;
+    if (feature(FEATURE_3D)) {
+        idlePulse = flight3DConfig()->neutral3d;
+    }
+    if (motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) {
+        featureClear(FEATURE_3D);
+        idlePulse = 0; // brushed motors
+    }
+    mixerConfigureOutput();
+    motorDevInit(&motorConfig()->dev, idlePulse, getMotorCount());
+
 #ifdef USE_SERVOS
+    servosInit();
+    servoConfigureOutput();
+    if (isMixerUsingServos()) {
+        //pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
+        servoDevInit(&servoConfig()->dev);
+    }
     servosFilterInit();
 #endif
 
