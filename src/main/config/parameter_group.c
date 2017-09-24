@@ -85,7 +85,7 @@ int pgStore(const pgRegistry_t* reg, void *to, int size)
     return take;
 }
 
-void pgResetAll()
+void pgResetAll(void)
 {
     PG_FOREACH(reg) {
         pgReset(reg);

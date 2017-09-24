@@ -441,7 +441,7 @@ static const struct {
     {0,             LED_MODE_ORIENTATION},
 };
 
-static void applyLedFixedLayers()
+static void applyLedFixedLayers(void)
 {
     for (int ledIndex = 0; ledIndex < ledCounts.count; ledIndex++) {
         const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[ledIndex];
@@ -1146,7 +1146,7 @@ bool setModeColor(ledModeIndex_e modeIndex, int modeColorIndex, int colorIndex)
     return true;
 }
 
-void ledStripInit()
+void ledStripInit(void)
 {
     colors = ledStripConfigMutable()->colors;
     modeColors = ledStripConfig()->modeColors;

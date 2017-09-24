@@ -193,25 +193,25 @@ static void telemetry_build_frame(uint8_t *packet)
 #endif
 
 #if defined(USE_FRSKY_RX_PA_LNA)
-static void RX_enable()
+static void RX_enable(void)
 {
     IOLo(txEnPin);
     IOHi(rxEnPin);
 }
 
-static void TX_enable()
+static void TX_enable(void)
 {
     IOLo(rxEnPin);
     IOHi(txEnPin);
 }
 #endif
 
-void frSkyDBind()
+void frSkyDBind(void)
 {
     bindRequested = true;
 }
 
-static void initialize()
+static void initialize(void)
 {
     cc2500Reset();
     cc2500WriteReg(CC2500_02_IOCFG0, 0x01);

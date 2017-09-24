@@ -69,7 +69,7 @@ static char cmsx_BlackboxStatus[CMS_BLACKBOX_STRING_LENGTH];
 static char cmsx_BlackboxDeviceStorageUsed[CMS_BLACKBOX_STRING_LENGTH];
 static char cmsx_BlackboxDeviceStorageFree[CMS_BLACKBOX_STRING_LENGTH];
 
-static void cmsx_Blackbox_GetDeviceStatus()
+static void cmsx_Blackbox_GetDeviceStatus(void)
 {
     char * unit = "B";
 #if defined(USE_SDCARD) || defined(USE_FLASHFS)

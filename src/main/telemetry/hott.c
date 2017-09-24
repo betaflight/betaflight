@@ -527,7 +527,7 @@ static inline bool shouldPrepareHoTTMessages(uint32_t currentMicros)
     return currentMicros - lastMessagesPreparedAt >= HOTT_MESSAGE_PREPARATION_FREQUENCY_5_HZ;
 }
 
-static inline bool shouldCheckForHoTTRequest()
+static inline bool shouldCheckForHoTTRequest(void)
 {
     if (hottIsSending) {
         return false;
