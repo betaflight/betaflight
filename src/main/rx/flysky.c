@@ -102,15 +102,18 @@ static rx_spi_protocol_e protocol = RX_SPI_A7105_FLYSKY_2A;
 static const timings_t *timings = &flySky2ATimings;
 static uint32_t timeout = 0;
 static uint32_t timeLastPacket = 0;
+static uint32_t timeLastBind = 0;
+static uint32_t timeTxRequest = 0;
 static uint32_t countTimeout = 0;
 static uint32_t countPacket = 0;
 static uint32_t txId = 0;
 static uint32_t rxId = 0;
 static bool bound = false;
 static bool sendTelemetry = false;
+static bool waitTx = false;
 static uint16_t errorRate = 0;
 static uint16_t rssi_dBm = 0;
-static uint8_t rfChannelMap[FLYSKY_FREQUENCY_COUNT];
+static uint8_t rfChannelMap[FLYSKY_FREQUENCY_COUNT] = {0};
 
 
 static uint8_t getNextChannel (uint8_t step)
@@ -148,11 +151,8 @@ static void checkTimeout (void)
     static uint32_t timeLastTelemetry = 0;
     uint32_t time = micros();
 
-    if ((time - timeMeasuareErrRate) > (100 * timings->packet)) {
-        if (countPacket > 100) {
-            countPacket = 100;
-        }
-        errorRate = 100 - countPacket;
+    if ((time - timeMeasuareErrRate) > (101 * timings->packet)) {
+        errorRate = (countPacket >= 100) ? (0) : (100 - countPacket);
         countPacket = 0;
         timeMeasuareErrRate = time;
     }
@@ -240,7 +240,6 @@ static void buildAndWriteTelemetry (uint8_t *packet)
 static rx_spi_received_e flySky2AReadAndProcess (uint8_t *payload, const uint32_t timeStamp)
 {
     rx_spi_received_e result = RX_SPI_RECEIVED_NONE;
-    A7105State_t newState = A7105_RX;
     uint8_t packet[FLYSKY_2A_PAYLOAD_SIZE];
 
     uint8_t bytesToRead = (bound) ? (9 + 2*FLYSKY_2A_CHANNEL_COUNT) : (11 + FLYSKY_FREQUENCY_COUNT);
@@ -263,14 +262,15 @@ static rx_spi_received_e flySky2AReadAndProcess (uint8_t *payload, const uint32_
 
                 if (sendTelemetry) {
                     buildAndWriteTelemetry(packet);
-                    newState = A7105_TX;
                     sendTelemetry = false;
+                    timeTxRequest = timeStamp;
+                    waitTx = true;
                 }
 
                 result = RX_SPI_RECEIVED_DATA;
             }
 
-            if (newState != A7105_TX) {
+            if (!waitTx) {
                 A7105WriteReg(A7105_0F_CHANNEL, getNextChannel(1));
             }
         }
@@ -291,15 +291,10 @@ static rx_spi_received_e flySky2AReadAndProcess (uint8_t *payload, const uint32_
             bindPacket->rxId = rxId;
             memset(bindPacket->rfChannelMap, 0xFF, 26); // erase channelMap and 10 bytes after it
 
-            bound = ((bindPacket->state != 0) && (bindPacket->state != 1));
-
-            if (bound) { // bind complete
-                result = RX_SPI_RECEIVED_BIND;
-            }
+            timeTxRequest = timeLastBind = timeStamp;
+            waitTx = true;
 
             A7105WriteFIFO(packet, FLYSKY_2A_PAYLOAD_SIZE);
-
-            newState = A7105_TX;
         }
         break;
 
@@ -307,7 +302,9 @@ static rx_spi_received_e flySky2AReadAndProcess (uint8_t *payload, const uint32_
         break;
     }
 
-    A7105Strobe(newState);
+    if (!waitTx){
+        A7105Strobe(A7105_RX);
+    }
     return result;
 }
 
@@ -342,9 +339,7 @@ static rx_spi_received_e flySkyReadAndProcess (uint8_t *payload, const uint32_t 
 
         A7105WriteReg(A7105_0F_CHANNEL, getNextChannel(0));
 
-        bound = true;
-
-        result = RX_SPI_RECEIVED_BIND;
+        timeLastBind = timeStamp;
     }
 
     A7105Strobe(A7105_RX);
@@ -431,15 +426,22 @@ rx_spi_received_e flySkyDataReceived (uint8_t *payload)
         }
     }
 
-    if (bound) {
-        checkTimeout();
+    if (waitTx && (micros() - timeTxRequest) > TX_DELAY) {
+        A7105Strobe(A7105_TX);
+        waitTx = false;
     }
 
-    if (result == RX_SPI_RECEIVED_BIND) {
-        flySkyConfigMutable()->txId = txId; // store TXID
-        memcpy (flySkyConfigMutable()->rfChannelMap, rfChannelMap, FLYSKY_FREQUENCY_COUNT);// store channel map
-        flySkyConfigMutable()->protocol = protocol;
-        writeEEPROM();
+    if (bound) {
+        checkTimeout();
+    } else {
+        if ((micros() - timeLastBind) > BIND_TIMEOUT && rfChannelMap[0] != 0 && txId != 0) {
+            result = RX_SPI_RECEIVED_BIND;
+            bound = true;
+            flySkyConfigMutable()->txId = txId; // store TXID
+            memcpy (flySkyConfigMutable()->rfChannelMap, rfChannelMap, FLYSKY_FREQUENCY_COUNT);// store channel map
+            flySkyConfigMutable()->protocol = protocol;
+            writeEEPROM();
+        }
     }
 
     return result;

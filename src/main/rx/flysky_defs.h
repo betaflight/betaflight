@@ -37,6 +37,9 @@
 #define FLYSKY_2A_CHANNEL_COUNT     MAX_FLYSKY_2A_CHANNEL_COUNT
 #endif
 
+#define TX_DELAY        500
+#define BIND_TIMEOUT    200000
+
 typedef struct __attribute__((packed)) {
     uint8_t type;
     uint8_t number;
