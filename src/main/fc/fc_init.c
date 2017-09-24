@@ -506,6 +506,7 @@ void init(void)
     // so we are ready to call validateAndFixGyroConfig() and pidInit()
     validateAndFixGyroConfig();
     pidInit(currentPidProfile);
+    activateConfig();
 
     mixerInit(mixerConfig()->mixerMode);
 
