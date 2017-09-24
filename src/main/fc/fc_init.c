@@ -501,9 +501,10 @@ void init(void)
     LED1_OFF;
 
     // gyro.targetLooptime set in sensorsAutodetect(),
-    // so we are ready to call validateAndFixGyroConfig() and activateConfig()
+    // so we are ready to call validateAndFixGyroConfig(), pidInit(), and setAccelerationFilter()
     validateAndFixGyroConfig();
-    activateConfig();
+    pidInit(currentPidProfile);
+    setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
 
     mixerInit(mixerConfig()->mixerMode);
 
