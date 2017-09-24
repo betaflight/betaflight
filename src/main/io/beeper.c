@@ -319,22 +319,22 @@ void beeperWarningBeeps(uint8_t beepCount)
 }
 
 #ifdef GPS
-void beeperGpsStatus(void)
+static void beeperGpsStatus(void)
 {
-    // if GPS fix then beep out number of satellites
-    if (STATE(GPS_FIX) && gpsSol.numSat >= 5) {
-        uint8_t i = 0;
-        do {
-            beep_multiBeeps[i++] = 5;
-            beep_multiBeeps[i++] = 10;
-        } while (i < MAX_MULTI_BEEPS && gpsSol.numSat > i / 2);
+    if (!(getBeeperOffMask() & (1 << (BEEPER_GPS_STATUS - 1)))) {
+        // if GPS fix then beep out number of satellites
+        if (STATE(GPS_FIX) && gpsSol.numSat >= 5) {
+            uint8_t i = 0;
+            do {
+                beep_multiBeeps[i++] = 5;
+                beep_multiBeeps[i++] = 10;
+            } while (i < MAX_MULTI_BEEPS && gpsSol.numSat > i / 2);
 
-        beep_multiBeeps[i - 1] = 50; // extend last pause
-        beep_multiBeeps[i] = BEEPER_COMMAND_STOP;
+            beep_multiBeeps[i - 1] = 50; // extend last pause
+            beep_multiBeeps[i] = BEEPER_COMMAND_STOP;
 
-        beeper(BEEPER_MULTI_BEEPS);    //initiate sequence
-    } else {
-        beeper(BEEPER_RX_SET);
+            beeper(BEEPER_MULTI_BEEPS);    //initiate sequence
+        }
     }
 }
 #endif
@@ -347,14 +347,10 @@ void beeperUpdate(timeUs_t currentTimeUs)
 {
     // If beeper option from AUX switch has been selected
     if (IS_RC_MODE_ACTIVE(BOXBEEPERON)) {
-#ifdef GPS
-        if (feature(FEATURE_GPS)) {
-            beeperGpsStatus();
-        } else {
-            beeper(BEEPER_RX_SET);
-        }
-#else
         beeper(BEEPER_RX_SET);
+#ifdef GPS
+    } else if (feature(FEATURE_GPS) && IS_RC_MODE_ACTIVE(BOXBEEPGPSCOUNT)) {
+        beeperGpsStatus();
 #endif
     }
 
