@@ -291,7 +291,6 @@ void resetConfigs(void)
 
 #ifndef USE_OSD_SLAVE
     setPidProfile(0);
-    pidInit(currentPidProfile); // re-initialise pid controller to re-initialise filters and config
     setControlRateProfile(0);
 #endif
 
@@ -342,10 +341,10 @@ void validateAndFixConfig(void)
 #endif
 
 #ifndef USE_OSD_SLAVE
-    if (systemConfig()->activeRateProfile >= CONTROL_RATE_PROFILE_COUNT) {// sanity check
+    if (systemConfig()->activeRateProfile >= CONTROL_RATE_PROFILE_COUNT) {
         systemConfigMutable()->activeRateProfile = 0;
     }
-    if (systemConfig()->pidProfileIndex >= MAX_PROFILE_COUNT) {// sanity check
+    if (systemConfig()->pidProfileIndex >= MAX_PROFILE_COUNT) {
         systemConfigMutable()->pidProfileIndex = 0;
     }
 
