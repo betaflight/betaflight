@@ -606,9 +606,7 @@ void max7456DrawScreen(void)
                     if (videoDetectTimeMs) {
                         if (millis() - videoDetectTimeMs > VIDEO_SIGNAL_DEBOUNCE_MS) {
                             max7456ReInit();
-                            if (debugMode == DEBUG_MAX7456_SIGNAL) {
-                                DEBUG_SET(DEBUG_MAX7456_SIGNAL, DEBUG_MAX7456_SIGNAL_REINIT, ++reInitCount);
-                            }
+                            DEBUG_SET(DEBUG_MAX7456_SIGNAL, DEBUG_MAX7456_SIGNAL_REINIT, ++reInitCount);
                         }
                     } else {
                         // Wait for signal to stabilize
