@@ -20,6 +20,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "platform.h"
+
 #include "config/parameter_group.h"
 
 typedef struct vtxRTC6705Config_s {

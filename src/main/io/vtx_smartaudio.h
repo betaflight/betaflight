@@ -1,5 +1,10 @@
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
+
 // opmode flags, GET side
 #define SA_MODE_GET_FREQ_BY_FREQ            1
 #define SA_MODE_GET_PITMODE                 2
