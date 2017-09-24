@@ -207,7 +207,7 @@ static void cliPrint(const char *str)
     bufWriterFlush(cliWriter);
 }
 
-static void cliPrintLinefeed()
+static void cliPrintLinefeed(void)
 {
     cliPrint("\r\n");
 }

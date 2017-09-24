@@ -157,7 +157,7 @@ void trampSendRFPower(uint16_t level)
 }
 
 // return false if error
-bool trampCommitChanges()
+bool trampCommitChanges(void)
 {
     if (trampStatus != TRAMP_STATUS_ONLINE)
         return false;
@@ -233,7 +233,7 @@ typedef enum {
 static trampReceiveState_e trampReceiveState = S_WAIT_LEN;
 static int trampReceivePos = 0;
 
-static void trampResetReceiver()
+static void trampResetReceiver(void)
 {
     trampReceiveState = S_WAIT_LEN;
     trampReceivePos = 0;

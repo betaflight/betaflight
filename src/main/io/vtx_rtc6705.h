@@ -41,4 +41,4 @@ PG_DECLARE(vtxRTC6705Config_t, vtxRTC6705Config);
 extern const char * const rtc6705PowerNames[RTC6705_POWER_COUNT];
 
 void vtxRTC6705Configure(void);
-bool vtxRTC6705Init();
+bool vtxRTC6705Init(void);

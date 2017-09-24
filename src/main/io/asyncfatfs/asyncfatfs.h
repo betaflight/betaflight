@@ -58,7 +58,7 @@ typedef enum {
 } afatfsSeek_e;
 
 typedef void (*afatfsFileCallback_t)(afatfsFilePtr_t file);
-typedef void (*afatfsCallback_t)();
+typedef void (*afatfsCallback_t)(void);
 
 bool afatfs_fopen(const char *filename, const char *mode, afatfsFileCallback_t complete);
 bool afatfs_ftruncate(afatfsFilePtr_t file, afatfsFileCallback_t callback);
@@ -79,14 +79,14 @@ void afatfs_findFirst(afatfsFilePtr_t directory, afatfsFinder_t *finder);
 afatfsOperationStatus_e afatfs_findNext(afatfsFilePtr_t directory, afatfsFinder_t *finder, fatDirectoryEntry_t **dirEntry);
 void afatfs_findLast(afatfsFilePtr_t directory);
 
-bool afatfs_flush();
-void afatfs_init();
+bool afatfs_flush(void);
+void afatfs_init(void);
 bool afatfs_destroy(bool dirty);
-void afatfs_poll();
+void afatfs_poll(void);
 
-uint32_t afatfs_getFreeBufferSpace();
-uint32_t afatfs_getContiguousFreeSpace();
-bool afatfs_isFull();
+uint32_t afatfs_getFreeBufferSpace(void);
+uint32_t afatfs_getContiguousFreeSpace(void);
+bool afatfs_isFull(void);
 
-afatfsFilesystemState_e afatfs_getFilesystemState();
-afatfsError_e afatfs_getLastError();
+afatfsFilesystemState_e afatfs_getFilesystemState(void);
+afatfsError_e afatfs_getLastError(void);

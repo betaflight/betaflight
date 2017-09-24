@@ -60,7 +60,7 @@ void saSetBandAndChannel(uint8_t band, uint8_t channel);
 void saSetMode(int mode);
 void saSetPowerByIndex(uint8_t index);
 void saSetFreq(uint16_t freq);
-bool vtxSmartAudioInit();
+bool vtxSmartAudioInit(void);
 
 #ifdef SMARTAUDIO_DPRINTF
 #ifdef OMNIBUSF4

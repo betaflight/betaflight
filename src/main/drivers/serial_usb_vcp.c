@@ -154,8 +154,9 @@ static void usbVcpBeginWrite(serialPort_t *instance)
     port->buffering = true;
 }
 
-uint32_t usbTxBytesFree()
+static uint32_t usbTxBytesFree(const serialPort_t *instance)
 {
+    UNUSED(instance);
     return CDC_Send_FreeBytes();
 }
 

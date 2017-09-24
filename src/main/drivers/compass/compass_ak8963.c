@@ -152,7 +152,7 @@ static bool ak8963SensorWrite(uint8_t addr_, uint8_t reg_, uint8_t data)
 }
 #endif
 
-static bool ak8963Init()
+static bool ak8963Init(void)
 {
     uint8_t calibration[3];
     uint8_t status;
