@@ -117,7 +117,6 @@ void saveConfigAndNotify(void);
 void validateAndFixConfig(void);
 void validateAndFixGyroConfig(void);
 void activateConfig(void);
-void setPidLooptime(void);
 
 uint8_t getCurrentPidProfileIndex(void);
 void changePidProfile(uint8_t pidProfileIndex);

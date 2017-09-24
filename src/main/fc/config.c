@@ -306,6 +306,7 @@ void activateConfig(void)
 
     resetAdjustmentStates();
 
+    pidInit(currentPidProfile);
     useRcControlsConfig(currentPidProfile);
     useAdjustmentConfig(currentPidProfile);
 
@@ -526,10 +527,7 @@ void validateAndFixGyroConfig(void)
         gyroConfigMutable()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 3);
 #endif
     }
-}
 
-void setPidLooptime(void)
-{
     float samplingTime;
     switch (gyroMpuDetectionResult()->sensor) {
     case ICM_20649_SPI:
@@ -559,7 +557,6 @@ void setPidLooptime(void)
     }
 
     // check for looptime restrictions based on motor protocol. Motor times have safety margin
-    const float pidLooptime = samplingTime * gyroConfig()->gyro_sync_denom * pidConfig()->pid_process_denom;
     float motorUpdateRestriction;
     switch (motorConfig()->dev.motorPwmProtocol) {
         case (PWM_TYPE_STANDARD):
@@ -584,6 +581,7 @@ void setPidLooptime(void)
     }
 
     if (!motorConfig()->dev.useUnsyncedPwm) {
+        const float pidLooptime = samplingTime * gyroConfig()->gyro_sync_denom * pidConfig()->pid_process_denom;
         if (pidLooptime < motorUpdateRestriction) {
             const uint8_t minPidProcessDenom = constrain(motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom), 1, MAX_PID_PROCESS_DENOM);
 
@@ -612,6 +610,7 @@ void readEEPROM(void)
     }
 
     validateAndFixConfig();
+    validateAndFixGyroConfig();
 #ifndef USE_OSD_SLAVE
     setControlRateProfile(systemConfig()->activeRateProfile);
     setPidProfile(systemConfig()->pidProfileIndex);
