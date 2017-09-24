@@ -22,26 +22,33 @@
 
 #ifdef TARGET_CONFIG
 #include "blackbox/blackbox.h"
-
 #include "fc/config.h"
-
 #include "flight/pid.h"
+#include "telemetry/telemetry.h"
 
 #include "hardware_revision.h"
+
 
 
 // alternative defaults settings for YuPiF4 targets
 void targetConfiguration(void)
 {
     /* Changes depending on versions */
-    if (hardwareRevision == YUPIF4_RACE2) {
+    if (hardwareRevision == YUPIF4_RACE3) {
+            beeperDevConfigMutable()->ioTag = IO_TAG(BEEPER_OPT);
+            telemetryConfigMutable()->halfDuplex = false;
+
+    } else if (hardwareRevision == YUPIF4_RACE2) {
         beeperDevConfigMutable()->ioTag = IO_TAG(BEEPER_OPT);
+
     } else if (hardwareRevision == YUPIF4_MINI) {
         beeperDevConfigMutable()->frequency = 0;
         blackboxConfigMutable()->device = BLACKBOX_DEVICE_NONE;
         adcConfigMutable()->current.enabled = 0;
+
     } else if (hardwareRevision == YUPIF4_NAV) {
         beeperDevConfigMutable()->ioTag = IO_TAG(BEEPER_OPT);
+
     } else {
         adcConfigMutable()->current.enabled = 0;
     }

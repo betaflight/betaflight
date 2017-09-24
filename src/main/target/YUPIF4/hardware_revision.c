@@ -52,13 +52,16 @@ void detectHardwareRevision(void)
         no Hardware pins tied to ground => Race V1
         if Pin 1 is the only one tied to ground => Mini
         if Pin 2 is the only one tied to ground => Race V2
+        if Pin 2 and Pin 1 are tied to ground => Race V3
         if Pin 3 is the only one tied to ground => Navigation
         Other combinations available for potential evolutions
     */
-    if (!IORead(pin1)) {
+    if (!IORead(pin1) && IORead(pin2)) {
         hardwareRevision = YUPIF4_MINI;
-    } else if (!IORead(pin2)) {
+    } else if (IORead(pin1) && !IORead(pin2)) {
         hardwareRevision = YUPIF4_RACE2;
+    } else if (!IORead(pin1) && !IORead(pin2)) {
+        hardwareRevision = YUPIF4_RACE3;
     } else if (!IORead(pin3)) {
         hardwareRevision = YUPIF4_NAV;
     } else {
