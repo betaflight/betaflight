@@ -414,7 +414,6 @@ void validateAndFixConfig(void)
         currentPidProfile->dterm_notch_hz = 0;
     }
 
-    validateAndFixGyroConfig();
 #endif // USE_OSD_SLAVE
 
     if (!isSerialConfigValid(serialConfig())) {

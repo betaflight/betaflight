@@ -388,8 +388,6 @@ void init(void)
     }
 #endif
 
-    systemState |= SYSTEM_STATE_MOTORS_READY;
-
 #ifdef BEEPER
     beeperInit(beeperDevConfig());
 #endif
@@ -519,6 +517,7 @@ void init(void)
     }
     mixerConfigureOutput();
     motorDevInit(&motorConfig()->dev, idlePulse, getMotorCount());
+    systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef USE_SERVOS
     servosInit();
