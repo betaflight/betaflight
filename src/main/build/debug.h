@@ -70,6 +70,8 @@ typedef enum {
     DEBUG_FFT_FREQ,
     DEBUG_FRSKY_D_RX,
     DEBUG_GYRO_RAW,
+    DEBUG_MAX7456_SIGNAL,
+    DEBUG_MAX7456_SPICLOCK,
     DEBUG_COUNT
 } debugType_e;
 
