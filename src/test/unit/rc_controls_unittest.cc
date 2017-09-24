@@ -48,6 +48,8 @@ extern "C" {
     #include "fc/rc_adjustments.h"
 
     #include "fc/rc_controls.h"
+
+    #include "scheduler/scheduler.h"
 }
 
 #include "unittest_macros.h"
@@ -703,4 +705,5 @@ int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 rxRuntimeConfig_t rxRuntimeConfig;
 PG_REGISTER(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
 void resetArmingDisabled(void) {}
+timeDelta_t getTaskDeltaTime(cfTaskId_e) { return 20000; }
 }
