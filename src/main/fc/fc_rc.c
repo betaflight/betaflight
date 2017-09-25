@@ -332,7 +332,7 @@ void updateRcCommands(void)
         if (IS_RC_MODE_ACTIVE(BOX3DONASWITCH)) {
             reverseMotors = true;
             fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
-            rcCommand[THROTTLE] = rxConfig()->midrc - qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
+            rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MIN - rxConfig()->midrc);
         }
         else {
             reverseMotors = false;
