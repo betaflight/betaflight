@@ -79,6 +79,8 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXFLIPOVERAFTERCRASH, "FLIP OVER AFTER CRASH", 35 },
     { BOXPREARM, "PREARM", 36 },
     { BOXBEEPGPSCOUNT, "BEEP GPS SATELLITE COUNT", 37 },
+    { BOX3DONASWITCH, "3D ON A SWITCH", 38 },
+
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -216,6 +218,7 @@ void initActiveBoxIds(void)
 
     if (feature(FEATURE_3D)) {
         BME(BOX3DDISABLE);
+        BME(BOX3DONASWITCH);
     }
 
     if (isMotorProtocolDshot()) {

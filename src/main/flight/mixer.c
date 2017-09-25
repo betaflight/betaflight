@@ -559,7 +559,9 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
             rcThrottlePrevious = rcCommand[THROTTLE];
             throttle = rcCommand[THROTTLE] - rcCommand3dDeadBandHigh;
             currentThrottleInputRange = rcCommandThrottleRange3dHigh;
-        } else if((rcThrottlePrevious <= rcCommand3dDeadBandLow)) {
+        } else if((rcThrottlePrevious <= rcCommand3dDeadBandLow &&
+                !isModeActivationConditionPresent(BOX3DONASWITCH)) || 
+                isMotorsReversed()) {
             // INVERTED_TO_DEADBAND
             motorRangeMin = motorOutputLow;
             motorRangeMax = deadbandMotor3dLow;
@@ -676,11 +678,6 @@ void mixTable(uint8_t vbatPidCompensation)
         constrainf(axisPID_P[FD_PITCH] + axisPID_I[FD_PITCH] + axisPID_D[FD_PITCH], -currentPidProfile->pidSumLimit, currentPidProfile->pidSumLimit) / PID_MIXER_SCALING;
     float scaledAxisPidYaw =
         constrainf(axisPID_P[FD_YAW] + axisPID_I[FD_YAW], -currentPidProfile->pidSumLimitYaw, currentPidProfile->pidSumLimitYaw) / PID_MIXER_SCALING;
-    if (isMotorsReversed()) {
-        scaledAxisPidRoll = -scaledAxisPidRoll;
-        scaledAxisPidPitch = -scaledAxisPidPitch;
-        scaledAxisPidYaw = -scaledAxisPidYaw;
-    }
     if (!mixerConfig()->yaw_motors_reversed) {
         scaledAxisPidYaw = -scaledAxisPidYaw;
     }

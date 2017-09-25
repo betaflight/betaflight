@@ -106,7 +106,6 @@ enum {
 int16_t magHold;
 #endif
 
-static bool reverseMotors = false;
 static bool flipOverAfterCrashMode = false;
 
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
@@ -728,10 +727,6 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     }
 }
 
-bool isMotorsReversed(void)
-{
-    return reverseMotors;
-}
 
 bool isFlipOverAfterCrashMode(void)
 {

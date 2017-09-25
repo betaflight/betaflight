@@ -49,6 +49,7 @@
 
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
+static bool reverseMotors = false;
 
 float getSetpointRate(int axis)
 {
@@ -327,6 +328,18 @@ void updateRcCommands(void)
         rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
     }
 
+    if (feature(FEATURE_3D) && isModeActivationConditionPresent(BOX3DONASWITCH) && !failsafeIsActive()) {
+        if (IS_RC_MODE_ACTIVE(BOX3DONASWITCH)) {
+            reverseMotors = true;
+            fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
+            rcCommand[THROTTLE] = rxConfig()->midrc - qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
+        }
+        else {
+            reverseMotors = false;
+            fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
+            rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
+        }
+    }
     if (FLIGHT_MODE(HEADFREE_MODE)) {
         static t_fp_vector_def  rcCommandBuff;
 
@@ -350,4 +363,9 @@ void resetYawAxis(void)
 {
     rcCommand[YAW] = 0;
     setpointRate[YAW] = 0;
+}
+
+bool isMotorsReversed(void)
+{
+    return reverseMotors;
 }
