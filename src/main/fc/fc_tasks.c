@@ -368,6 +368,9 @@ void fcTasksInit(void)
 #ifdef USE_CAMERA_CONTROL
     setTaskEnabled(TASK_CAMCTRL, true);
 #endif
+#ifdef USE_RCSPLIT
+    setTaskEnabled(TASK_RCSPLIT, rcSplitIsEnabled());
+#endif
 }
 #endif
 
@@ -614,7 +617,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #ifdef USE_RCSPLIT
     [TASK_RCSPLIT] = {
         .taskName = "RCSPLIT",
-        .taskFunc = rcSplitProcess,
+        .taskFunc = rcSplitUpdate,
         .desiredPeriod = TASK_PERIOD_HZ(10),        // 10 Hz, 100ms
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },

@@ -17,63 +17,48 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <ctype.h>
 
 #include <platform.h>
 
 #include "common/utils.h"
 
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
-
-#include "drivers/serial.h"
-
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 
-#include "io/beeper.h"
 #include "io/rcsplit.h"
 #include "io/serial.h"
-
-#include "scheduler/scheduler.h"
 
 
 // communicate with camera device variables
 STATIC_UNIT_TESTED serialPort_t *rcSplitSerialPort = NULL;
-STATIC_UNIT_TESTED rcsplitState_e cameraState = RCSPLIT_STATE_UNKNOWN;
 // only for unit test
 STATIC_UNIT_TESTED rcsplitSwitchState_t switchStates[BOXCAMERA3 - BOXCAMERA1 + 1];
 
 static uint8_t crc_high_first(uint8_t *ptr, uint8_t len)
 {
-    uint8_t i;
-    uint8_t crc=0x00;
+    uint8_t crc = 0x00;
     while (len--) {
         crc ^= *ptr++;
-        for (i=8; i>0; --i) {
-            if (crc & 0x80)
+        for (int i=8; i>0; --i) {
+            if (crc & 0x80) {
                 crc = (crc << 1) ^ 0x31;
-            else
+            } else {
                 crc = (crc << 1);
+            }
         }
     }
-    return (crc);
+    return crc;
 }
 
 static void sendCtrlCommand(rcsplit_ctrl_argument_e argument)
 {
-    if (!rcSplitSerialPort)
-        return ;
-
     uint8_t uart_buffer[5] = {0};
-    uint8_t crc = 0;
 
     uart_buffer[0] = RCSPLIT_PACKET_HEADER;
     uart_buffer[1] = RCSPLIT_PACKET_CMD_CTRL;
     uart_buffer[2] = argument;
     uart_buffer[3] = RCSPLIT_PACKET_TAIL;
-    crc = crc_high_first(uart_buffer, 4);
+    uint8_t crc = crc_high_first(uart_buffer, 4);
 
     // build up a full request [header]+[command]+[argument]+[crc]+[tail]
     uart_buffer[3] = crc;
@@ -85,12 +70,8 @@ static void sendCtrlCommand(rcsplit_ctrl_argument_e argument)
 
 static void rcSplitProcessMode(void)
 {
-    // if the device not ready, do not handle any mode change event
-    if (RCSPLIT_STATE_IS_READY != cameraState)
-        return ;
-
     for (boxId_e i = BOXCAMERA1; i <= BOXCAMERA3; i++) {
-        uint8_t switchIndex = i - BOXCAMERA1;
+        const uint8_t switchIndex = i - BOXCAMERA1;
         if (IS_RC_MODE_ACTIVE(i)) {
             // check last state of this mode, if it's true, then ignore it.
             // Here is a logic to make a toggle control for this mode
@@ -124,6 +105,11 @@ static void rcSplitProcessMode(void)
     }
 }
 
+bool rcSplitIsEnabled(void)
+{
+    return rcSplitSerialPort ? true : false;
+}
+
 bool rcSplitInit(void)
 {
     // found the port config with FUNCTION_RUNCAM_SPLIT_CONTROL
@@ -143,21 +129,12 @@ bool rcSplitInit(void)
         switchStates[switchIndex].isActivated = true;
     }
 
-    cameraState = RCSPLIT_STATE_IS_READY;
-
-#ifdef USE_RCSPLIT
-    setTaskEnabled(TASK_RCSPLIT, true);
-#endif
-
     return true;
 }
 
-void rcSplitProcess(timeUs_t currentTimeUs)
+void rcSplitUpdate(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
-
-    if (rcSplitSerialPort == NULL)
-        return ;
 
     // process rcsplit custom mode if has any changed
     rcSplitProcessMode();
