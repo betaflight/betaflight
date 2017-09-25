@@ -609,8 +609,8 @@ void readEEPROM(void)
     }
 
     validateAndFixConfig();
-    validateAndFixGyroConfig();
 #ifndef USE_OSD_SLAVE
+    validateAndFixGyroConfig();
     setControlRateProfile(systemConfig()->activeRateProfile);
     setPidProfile(systemConfig()->pidProfileIndex);
 #endif
