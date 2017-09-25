@@ -508,7 +508,6 @@ void validateAndFixGyroConfig(void)
         gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
     }
 
-
     if (gyroConfig()->gyro_lpf != GYRO_LPF_256HZ && gyroConfig()->gyro_lpf != GYRO_LPF_NONE) {
         pidConfigMutable()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
         gyroConfigMutable()->gyro_sync_denom = 1;
@@ -540,7 +539,6 @@ void validateAndFixGyroConfig(void)
         samplingTime = 0.000125f;
         break;
     }
-
     if (gyroConfig()->gyro_lpf != GYRO_LPF_256HZ && gyroConfig()->gyro_lpf != GYRO_LPF_NONE) {
         switch (gyroMpuDetectionResult()->sensor) {
         case ICM_20649_SPI:
@@ -551,7 +549,6 @@ void validateAndFixGyroConfig(void)
             break;
         }
     }
-
     if (gyroConfig()->gyro_use_32khz) {
         samplingTime = 0.00003125;
     }
@@ -559,40 +556,39 @@ void validateAndFixGyroConfig(void)
     // check for looptime restrictions based on motor protocol. Motor times have safety margin
     float motorUpdateRestriction;
     switch (motorConfig()->dev.motorPwmProtocol) {
-        case (PWM_TYPE_STANDARD):
+    case PWM_TYPE_STANDARD:
             motorUpdateRestriction = 1.0f / BRUSHLESS_MOTORS_PWM_RATE;
             break;
-        case (PWM_TYPE_ONESHOT125):
+    case PWM_TYPE_ONESHOT125:
             motorUpdateRestriction = 0.0005f;
             break;
-        case (PWM_TYPE_ONESHOT42):
+    case PWM_TYPE_ONESHOT42:
             motorUpdateRestriction = 0.0001f;
             break;
 #ifdef USE_DSHOT
-        case (PWM_TYPE_DSHOT150):
+    case PWM_TYPE_DSHOT150:
             motorUpdateRestriction = 0.000250f;
             break;
-        case (PWM_TYPE_DSHOT300):
+    case PWM_TYPE_DSHOT300:
             motorUpdateRestriction = 0.0001f;
             break;
 #endif
-        default:
-            motorUpdateRestriction = 0.00003125f;
+    default:
+        motorUpdateRestriction = 0.00003125f;
+        break;
     }
 
-    if (!motorConfig()->dev.useUnsyncedPwm) {
-        const float pidLooptime = samplingTime * gyroConfig()->gyro_sync_denom * pidConfig()->pid_process_denom;
-        if (pidLooptime < motorUpdateRestriction) {
-            const uint8_t minPidProcessDenom = constrain(motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom), 1, MAX_PID_PROCESS_DENOM);
-
-            pidConfigMutable()->pid_process_denom = MAX(pidConfigMutable()->pid_process_denom, minPidProcessDenom);
-        }
-    } else {
+    if (motorConfig()->dev.useUnsyncedPwm) {
         // Prevent overriding the max rate of motors
         if ((motorConfig()->dev.motorPwmProtocol <= PWM_TYPE_BRUSHED) && (motorConfig()->dev.motorPwmProtocol != PWM_TYPE_STANDARD)) {
             const uint32_t maxEscRate = lrintf(1.0f / motorUpdateRestriction);
-
             motorConfigMutable()->dev.motorPwmRate = MIN(motorConfig()->dev.motorPwmRate, maxEscRate);
+        }
+    } else {
+        const float pidLooptime = samplingTime * gyroConfig()->gyro_sync_denom * pidConfig()->pid_process_denom;
+        if (pidLooptime < motorUpdateRestriction) {
+            const uint8_t minPidProcessDenom = constrain(motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom), 1, MAX_PID_PROCESS_DENOM);
+            pidConfigMutable()->pid_process_denom = MAX(pidConfigMutable()->pid_process_denom, minPidProcessDenom);
         }
     }
 }
