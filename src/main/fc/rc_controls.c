@@ -116,8 +116,9 @@ throttleStatus_e calculateThrottleStatus(void)
             return THROTTLE_LOW;
         }
     } else {
-        if (rcData[THROTTLE] < rxConfig()->mincheck)
+        if (rcData[THROTTLE] < rxConfig()->mincheck) {
             return THROTTLE_LOW;
+            }
     }
 
     return THROTTLE_HIGH;
