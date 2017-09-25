@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 #define VTX_TRAMP_POWER_COUNT 5
 extern const uint16_t trampPowerTable[VTX_TRAMP_POWER_COUNT];
 extern const char * const trampPowerNames[VTX_TRAMP_POWER_COUNT+1];
