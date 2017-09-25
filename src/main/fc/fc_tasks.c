@@ -21,36 +21,32 @@
 
 #include <platform.h>
 
-#include "cms/cms.h"
-
 #include "build/debug.h"
 
-#include "common/axis.h"
+#include "cms/cms.h"
+
 #include "common/color.h"
 #include "common/utils.h"
-#include "common/filter.h"
 
 #include "config/feature.h"
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
 
-#include "drivers/sensor.h"
 #include "drivers/accgyro/accgyro.h"
+#include "drivers/camera_control.h"
 #include "drivers/compass/compass.h"
+#include "drivers/sensor.h"
 #include "drivers/serial.h"
 #include "drivers/stack_check.h"
-#include "drivers/vtx_common.h"
 #include "drivers/transponder_ir.h"
-#include "drivers/camera_control.h"
+#include "drivers/vtx_common.h"
 
+#include "fc/cli.h"
 #include "fc/config.h"
+#include "fc/fc_core.h"
+#include "fc/fc_dispatch.h"
 #include "fc/fc_msp.h"
 #include "fc/fc_tasks.h"
-#include "fc/fc_core.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
-#include "fc/cli.h"
-#include "fc/fc_dispatch.h"
 
 #include "flight/altitude.h"
 #include "flight/imu.h"
@@ -63,6 +59,7 @@
 #include "io/ledstrip.h"
 #include "io/osd.h"
 #include "io/osd_slave.h"
+#include "io/rcsplit.h"
 #include "io/serial.h"
 #include "io/transponder_ir.h"
 #include "io/vtx_tramp.h" // Will be gone
@@ -71,21 +68,19 @@
 
 #include "rx/rx.h"
 
-#include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/compass.h"
-#include "sensors/gyro.h"
-#include "sensors/sonar.h"
 #include "sensors/esc_sensor.h"
+#include "sensors/gyro.h"
+#include "sensors/sensors.h"
+#include "sensors/sonar.h"
 
 #include "scheduler/scheduler.h"
 
 #include "telemetry/telemetry.h"
 
-#include "io/osd_slave.h"
-#include "io/rcsplit.h"
 
 #ifdef USE_BST
 void taskBstMasterProcess(timeUs_t currentTimeUs);
@@ -95,16 +90,8 @@ void taskBstMasterProcess(timeUs_t currentTimeUs);
 #define TASK_PERIOD_MS(ms) ((ms) * 1000)
 #define TASK_PERIOD_US(us) (us)
 
-#ifndef USE_OSD_SLAVE
-static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
+bool taskSerialCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs)
 {
-    UNUSED(currentTimeUs);
-
-    accUpdate(&accelerometerConfigMutable()->accelerometerTrims);
-}
-#endif
-
-bool taskSerialCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs) {
     UNUSED(currentTimeUs);
     UNUSED(currentDeltaTimeUs);
 
@@ -140,6 +127,13 @@ void taskBatteryAlerts(timeUs_t currentTimeUs)
 }
 
 #ifndef USE_OSD_SLAVE
+static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+    accUpdate(&accelerometerConfigMutable()->accelerometerTrims);
+}
+
 static void taskUpdateRxMain(timeUs_t currentTimeUs)
 {
     processRx(currentTimeUs);
@@ -227,39 +221,13 @@ void taskVtxControl(uint32_t currentTime)
 }
 #endif
 
-#ifdef USE_OSD_SLAVE
-void osdSlaveTasksInit(void)
-{
-    schedulerInit();
-    setTaskEnabled(TASK_SERIAL, true);
-
-    bool useBatteryVoltage = batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE;
-    setTaskEnabled(TASK_BATTERY_VOLTAGE, useBatteryVoltage);
-    bool useBatteryCurrent = batteryConfig()->currentMeterSource != CURRENT_METER_NONE;
-    setTaskEnabled(TASK_BATTERY_CURRENT, useBatteryCurrent);
-
-    bool useBatteryAlerts = (batteryConfig()->useVBatAlerts || batteryConfig()->useConsumptionAlerts);
-    setTaskEnabled(TASK_BATTERY_ALERTS, (useBatteryVoltage || useBatteryCurrent) && useBatteryAlerts);
-
-#ifdef TRANSPONDER
-    setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
-#endif
-
-    setTaskEnabled(TASK_OSD_SLAVE, true);
-
-#ifdef STACK_CHECK
-    setTaskEnabled(TASK_STACK_CHECK, true);
-#endif
-}
-#endif
-
-#ifndef USE_OSD_SLAVE
 
 #ifdef USE_CAMERA_CONTROL
 void taskCameraControl(uint32_t currentTime)
 {
-    if (ARMING_FLAG(ARMED))
+    if (ARMING_FLAG(ARMED)) {
         return;
+    }
 
     cameraControlProcess(currentTime);
 }
@@ -268,7 +236,30 @@ void taskCameraControl(uint32_t currentTime)
 void fcTasksInit(void)
 {
     schedulerInit();
+    setTaskEnabled(TASK_SERIAL, true);
 
+    const bool useBatteryVoltage = batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE;
+    setTaskEnabled(TASK_BATTERY_VOLTAGE, useBatteryVoltage);
+    const bool useBatteryCurrent = batteryConfig()->currentMeterSource != CURRENT_METER_NONE;
+    setTaskEnabled(TASK_BATTERY_CURRENT, useBatteryCurrent);
+#ifdef USE_OSD_SLAVE
+    const bool useBatteryAlerts = batteryConfig()->useVBatAlerts || batteryConfig()->useConsumptionAlerts;
+#else
+    const bool useBatteryAlerts = batteryConfig()->useVBatAlerts || batteryConfig()->useConsumptionAlerts || feature(FEATURE_OSD);
+#endif
+    setTaskEnabled(TASK_BATTERY_ALERTS, (useBatteryVoltage || useBatteryCurrent) && useBatteryAlerts);
+
+#ifdef TRANSPONDER
+    setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
+#endif
+
+#ifdef STACK_CHECK
+    setTaskEnabled(TASK_STACK_CHECK, true);
+#endif
+
+#ifdef USE_OSD_SLAVE
+    setTaskEnabled(TASK_OSD_SLAVE, true);
+#else
     if (sensors(SENSOR_GYRO)) {
         rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
         setTaskEnabled(TASK_GYROPID, true);
@@ -280,16 +271,9 @@ void fcTasksInit(void)
     }
 
     setTaskEnabled(TASK_ATTITUDE, sensors(SENSOR_ACC));
-    setTaskEnabled(TASK_SERIAL, true);
+
     rescheduleTask(TASK_SERIAL, TASK_PERIOD_HZ(serialConfig()->serial_update_rate_hz));
 
-    bool useBatteryVoltage = batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE;
-    setTaskEnabled(TASK_BATTERY_VOLTAGE, useBatteryVoltage);
-    bool useBatteryCurrent = batteryConfig()->currentMeterSource != CURRENT_METER_NONE;
-    setTaskEnabled(TASK_BATTERY_CURRENT, useBatteryCurrent);
-
-    bool useBatteryAlerts = batteryConfig()->useVBatAlerts || batteryConfig()->useConsumptionAlerts || feature(FEATURE_OSD);
-    setTaskEnabled(TASK_BATTERY_ALERTS, (useBatteryVoltage || useBatteryCurrent) && useBatteryAlerts);
 
     setTaskEnabled(TASK_RX, true);
 
@@ -341,9 +325,6 @@ void fcTasksInit(void)
 #ifdef OSD
     setTaskEnabled(TASK_OSD, feature(FEATURE_OSD));
 #endif
-#ifdef USE_OSD_SLAVE
-    setTaskEnabled(TASK_OSD_SLAVE, true);
-#endif
 #ifdef USE_BST
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
 #endif
@@ -357,9 +338,6 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_CMS, feature(FEATURE_OSD) || feature(FEATURE_DASHBOARD));
 #endif
 #endif
-#ifdef STACK_CHECK
-    setTaskEnabled(TASK_STACK_CHECK, true);
-#endif
 #ifdef VTX_CONTROL
 #if defined(VTX_RTC6705) || defined(VTX_SMARTAUDIO) || defined(VTX_TRAMP)
     setTaskEnabled(TASK_VTXCTRL, true);
@@ -371,8 +349,8 @@ void fcTasksInit(void)
 #ifdef USE_RCSPLIT
     setTaskEnabled(TASK_RCSPLIT, rcSplitIsEnabled());
 #endif
-}
 #endif
+}
 
 cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SYSTEM] = {
@@ -382,7 +360,68 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_MEDIUM_HIGH,
     },
 
-#ifndef USE_OSD_SLAVE
+    [TASK_SERIAL] = {
+        .taskName = "SERIAL",
+        .taskFunc = taskHandleSerial,
+#ifdef USE_OSD_SLAVE
+        .checkFunc = taskSerialCheck,
+        .desiredPeriod = TASK_PERIOD_HZ(100),
+        .staticPriority = TASK_PRIORITY_REALTIME,
+#else
+        .desiredPeriod = TASK_PERIOD_HZ(100),       // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
+        .staticPriority = TASK_PRIORITY_LOW,
+#endif
+    },
+
+    [TASK_BATTERY_ALERTS] = {
+        .taskName = "BATTERY_ALERTS",
+        .taskFunc = taskBatteryAlerts,
+        .desiredPeriod = TASK_PERIOD_HZ(5),        // 5 Hz
+        .staticPriority = TASK_PRIORITY_MEDIUM,
+    },
+
+    [TASK_BATTERY_VOLTAGE] = {
+        .taskName = "BATTERY_VOLTAGE",
+        .taskFunc = batteryUpdateVoltage,
+        .desiredPeriod = TASK_PERIOD_HZ(50),
+        .staticPriority = TASK_PRIORITY_MEDIUM,
+    },
+    [TASK_BATTERY_CURRENT] = {
+        .taskName = "BATTERY_CURRENT",
+        .taskFunc = batteryUpdateCurrentMeter,
+        .desiredPeriod = TASK_PERIOD_HZ(50),
+        .staticPriority = TASK_PRIORITY_MEDIUM,
+    },
+
+#ifdef TRANSPONDER
+    [TASK_TRANSPONDER] = {
+        .taskName = "TRANSPONDER",
+        .taskFunc = transponderUpdate,
+        .desiredPeriod = TASK_PERIOD_HZ(250),       // 250 Hz, 4ms
+        .staticPriority = TASK_PRIORITY_LOW,
+    },
+#endif
+
+#ifdef STACK_CHECK
+    [TASK_STACK_CHECK] = {
+        .taskName = "STACKCHECK",
+        .taskFunc = taskStackCheck,
+        .desiredPeriod = TASK_PERIOD_HZ(10),          // 10 Hz
+        .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
+
+#ifdef USE_OSD_SLAVE
+    [TASK_OSD_SLAVE] = {
+        .taskName = "OSD_SLAVE",
+        .checkFunc = osdSlaveCheck,
+        .taskFunc = osdSlaveUpdate,
+        .desiredPeriod = TASK_PERIOD_HZ(60),        // 60 Hz
+        .staticPriority = TASK_PRIORITY_HIGH,
+    },
+
+#else
+
     [TASK_GYROPID] = {
         .taskName = "PID",
         .subTaskName = "GYRO",
@@ -412,50 +451,13 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .desiredPeriod = TASK_PERIOD_HZ(50),        // If event-based scheduling doesn't work, fallback to periodic scheduling
         .staticPriority = TASK_PRIORITY_HIGH,
     },
-#endif
 
-    [TASK_SERIAL] = {
-        .taskName = "SERIAL",
-        .taskFunc = taskHandleSerial,
-#ifdef USE_OSD_SLAVE
-        .checkFunc = taskSerialCheck,
-        .desiredPeriod = TASK_PERIOD_HZ(100),
-        .staticPriority = TASK_PRIORITY_REALTIME,
-#else
-        .desiredPeriod = TASK_PERIOD_HZ(100),       // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
-        .staticPriority = TASK_PRIORITY_LOW,
-#endif
-    },
-
-#ifndef USE_OSD_SLAVE
     [TASK_DISPATCH] = {
         .taskName = "DISPATCH",
         .taskFunc = dispatchProcess,
         .desiredPeriod = TASK_PERIOD_HZ(1000),
         .staticPriority = TASK_PRIORITY_HIGH,
     },
-#endif
-
-    [TASK_BATTERY_ALERTS] = {
-        .taskName = "BATTERY_ALERTS",
-        .taskFunc = taskBatteryAlerts,
-        .desiredPeriod = TASK_PERIOD_HZ(5),        // 5 Hz
-        .staticPriority = TASK_PRIORITY_MEDIUM,
-    },
-
-    [TASK_BATTERY_VOLTAGE] = {
-        .taskName = "BATTERY_VOLTAGE",
-        .taskFunc = batteryUpdateVoltage,
-        .desiredPeriod = TASK_PERIOD_HZ(50),
-        .staticPriority = TASK_PRIORITY_MEDIUM,
-    },
-    [TASK_BATTERY_CURRENT] = {
-        .taskName = "BATTERY_CURRENT",
-        .taskFunc = batteryUpdateCurrentMeter,
-        .desiredPeriod = TASK_PERIOD_HZ(50),
-        .staticPriority = TASK_PRIORITY_MEDIUM,
-    },
-#ifndef USE_OSD_SLAVE
 
 #ifdef BEEPER
     [TASK_BEEPER] = {
@@ -510,18 +512,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
-#endif
 
-#ifdef TRANSPONDER
-    [TASK_TRANSPONDER] = {
-        .taskName = "TRANSPONDER",
-        .taskFunc = transponderUpdate,
-        .desiredPeriod = TASK_PERIOD_HZ(250),       // 250 Hz, 4ms
-        .staticPriority = TASK_PRIORITY_LOW,
-    },
-#endif
-
-#ifndef USE_OSD_SLAVE
 #ifdef USE_DASHBOARD
     [TASK_DASHBOARD] = {
         .taskName = "DASHBOARD",
@@ -530,6 +521,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
+
 #ifdef OSD
     [TASK_OSD] = {
         .taskName = "OSD",
@@ -538,19 +530,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
-#endif
 
-#ifdef USE_OSD_SLAVE
-    [TASK_OSD_SLAVE] = {
-        .taskName = "OSD_SLAVE",
-        .checkFunc = osdSlaveCheck,
-        .taskFunc = osdSlaveUpdate,
-        .desiredPeriod = TASK_PERIOD_HZ(60),        // 60 Hz
-        .staticPriority = TASK_PRIORITY_HIGH,
-    },
-#endif
-
-#ifndef USE_OSD_SLAVE
 #ifdef TELEMETRY
     [TASK_TELEMETRY] = {
         .taskName = "TELEMETRY",
@@ -593,15 +573,6 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskFunc = cmsHandler,
         .desiredPeriod = TASK_PERIOD_HZ(60),        // 60 Hz
         .staticPriority = TASK_PRIORITY_LOW,
-    },
-#endif
-
-#ifdef STACK_CHECK
-    [TASK_STACK_CHECK] = {
-        .taskName = "STACKCHECK",
-        .taskFunc = taskStackCheck,
-        .desiredPeriod = TASK_PERIOD_HZ(10),          // 10 Hz
-        .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif
 
