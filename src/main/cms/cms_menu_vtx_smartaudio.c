@@ -80,11 +80,9 @@ void saCmsUpdate(void)
 
         saCmsFselMode = (saDevice.mode & SA_MODE_GET_FREQ_BY_FREQ) ? 1 : 0;
 
-        saCmsBand = (saDevice.channel / 8) + 1;
-        saCmsChan = (saDevice.channel % 8) + 1;
-        saCmsFreqRef = vtx58frequencyTable[saDevice.channel / 8][saDevice.channel % 8];
-
-        saCmsDeviceFreq = vtx58frequencyTable[saDevice.channel / 8][saDevice.channel % 8];
+        saCmsBand = saGetBand(saDevice.channel) + 1;
+        saCmsChan = saGetChannel(saDevice.channel) + 1;
+        saCmsFreqRef = saCmsDeviceFreq = vtx58frequencyTable[saGetBand(saDevice.channel)][saGetChannel(saDevice.channel)];
 
         if ((saDevice.mode & SA_MODE_GET_PITMODE) == 0) {
             saCmsRFState = SACMS_TXMODE_ACTIVE;
@@ -137,8 +135,9 @@ if (saDevice.version == 2) {
     saCmsStatusString[0] = "-FR"[saCmsOpmodel];
 
     if (saCmsFselMode == 0) {
-        saCmsStatusString[2] = "ABEFR"[saDevice.channel / 8];
-        saCmsStatusString[3] = '1' + (saDevice.channel % 8);
+        uint8_t band = saGetBand(saDevice.channel);
+        saCmsStatusString[2] = vtx58BandLetter[band < VTX_SA_BAND_COUNT ? band + 1 : 0];
+        saCmsStatusString[3] = '1' + saGetChannel(saDevice.channel);
     } else {
         saCmsStatusString[2] = 'U';
         saCmsStatusString[3] = 'F';
@@ -151,7 +150,7 @@ if (saDevice.version == 2) {
         tfp_sprintf(&saCmsStatusString[5], "%4d", saDevice.freq);
     else
         tfp_sprintf(&saCmsStatusString[5], "%4d",
-            vtx58frequencyTable[saDevice.channel / 8][saDevice.channel % 8]);
+            vtx58frequencyTable[saGetBand(saDevice.channel)][saGetChannel(saDevice.channel)]);
 
     saCmsStatusString[9] = ' ';
 
@@ -340,7 +339,7 @@ static CMS_Menu saCmsMenuStats = {
     .entries = saCmsMenuStatsEntries
 };
 
-static OSD_TAB_t saCmsEntBand = { &saCmsBand, 5, vtx58BandNames };
+static OSD_TAB_t saCmsEntBand = { &saCmsBand, VTX_SA_BAND_COUNT, vtx58BandNames };
 
 static OSD_TAB_t saCmsEntChan = { &saCmsChan, 8, vtx58ChannelNames };
 
@@ -352,9 +351,9 @@ static const char * const saCmsPowerNames[] = {
     "800",
 };
 
-static OSD_TAB_t saCmsEntPower = { &saCmsPower, 4, saCmsPowerNames};
+static OSD_TAB_t saCmsEntPower = { &saCmsPower, VTX_SA_POWER_COUNT, saCmsPowerNames};
 
-static OSD_UINT16_t saCmsEntFreqRef = { &saCmsFreqRef, 5600, 5900, 0 };
+static OSD_UINT16_t saCmsEntFreqRef = { &saCmsFreqRef, 5300, 5950, 0 };
 
 static const char * const saCmsOpmodelNames[] = {
     "----",

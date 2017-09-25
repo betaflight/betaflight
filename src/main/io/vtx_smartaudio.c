@@ -72,9 +72,9 @@ static const char * const saPowerNames[] = {
 static const vtxVTable_t saVTable;    // Forward
 static vtxDevice_t vtxSmartAudio = {
     .vTable = &saVTable,
-    .capability.bandCount = 5,
+    .capability.bandCount = VTX_SA_BAND_COUNT,
     .capability.channelCount = 8,
-    .capability.powerCount = 4,
+    .capability.powerCount = VTX_SA_POWER_COUNT,
     .bandNames = (char **)vtx58BandNames,
     .channelNames = (char **)vtx58ChannelNames,
     .powerNames = (char **)saPowerNames,
@@ -570,11 +570,32 @@ static void saGetPitFreq(void)
 }
 #endif
 
+#define SA_LOWRACE_BAND 5
+
+uint8_t saGetBand(int8_t deviceChannel)
+{
+    return deviceChannel / 8;
+}
+
+uint8_t saGetChannel(int8_t deviceChannel)
+{
+    uint8_t band = deviceChannel / 8;
+    uint8_t channel = deviceChannel % 8;
+
+    // 'Low Race' band channels are in reversed order on TBS Unify for some reason
+    if (band == SA_LOWRACE_BAND) return 7 - channel;
+
+    return channel;
+}
+
 void saSetBandAndChannel(uint8_t band, uint8_t channel)
 {
     static uint8_t buf[6] = { 0xAA, 0x55, SACMD(SA_CMD_SET_CHAN), 1 };
 
-    buf[4] = band * 8 + channel;
+    // 'Low Race' band channels are in reversed order on TBS Unify for some reason
+    uint8_t fixedChannel = (band == SA_LOWRACE_BAND ? 7 - channel : channel);
+
+    buf[4] = band * 8 + fixedChannel;
     buf[5] = CRC8(buf, 5);
 
     saQueueCmd(buf, 6);
@@ -767,8 +788,8 @@ bool vtxSAGetBandAndChannel(uint8_t *pBand, uint8_t *pChannel)
     if (!vtxSAIsReady())
         return false;
 
-    *pBand = (saDevice.channel / 8) + 1;
-    *pChannel = (saDevice.channel % 8) + 1;
+    *pBand = saGetBand(saDevice.channel) + 1;
+    *pChannel = saGetChannel(saDevice.channel) + 1;
     return true;
 }
 

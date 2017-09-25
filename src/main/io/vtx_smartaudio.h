@@ -1,5 +1,8 @@
 #pragma once
 
+#define VTX_SA_BAND_COUNT 6
+#define VTX_SA_POWER_COUNT 4
+
 // opmode flags, GET side
 #define SA_MODE_GET_FREQ_BY_FREQ            1
 #define SA_MODE_GET_PITMODE                 2
@@ -10,7 +13,7 @@
 
 // opmode flags, SET side
 #define SA_MODE_SET_IN_RANGE_PITMODE        1 // Immediate
-#define SA_MODE_SET_OUT_RANGE_PITMODE        2 // Immediate
+#define SA_MODE_SET_OUT_RANGE_PITMODE       2 // Immediate
 #define SA_MODE_CLR_PITMODE                 4 // Immediate
 #define SA_MODE_SET_UNLOCK                  8
 #define SA_MODE_SET_LOCK                    0 // ~UNLOCK
@@ -56,6 +59,8 @@ extern uint16_t sa_smartbaud;
 extern bool saDeferred;
 
 int saDacToPowerIndex(int dac);
+uint8_t saGetBand(int8_t deviceChannel);
+uint8_t saGetChannel(int8_t deviceChannel);
 void saSetBandAndChannel(uint8_t band, uint8_t channel);
 void saSetMode(int mode);
 void saSetPowerByIndex(uint8_t index);
