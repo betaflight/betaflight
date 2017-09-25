@@ -170,6 +170,14 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 {
     BUILD_BUG_ON(FD_YAW != 2); // only setting up Dterm filters on roll and pitch axes, so ensure yaw axis is 2
 
+    if (targetPidLooptime == 0) {
+        // no looptime set, so set all the filters to null
+        dtermNotchFilterApplyFn = nullFilterApply;
+        dtermLpfApplyFn = nullFilterApply;
+        ptermYawFilterApplyFn = nullFilterApply;
+        return;
+    }
+
     const uint32_t pidFrequencyNyquist = (1.0f / dT) / 2; // No rounding needed
 
     uint16_t dTermNotchHz;

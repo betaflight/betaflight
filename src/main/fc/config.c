@@ -267,7 +267,6 @@ static void setPidProfile(uint8_t pidProfileIndex)
     if (pidProfileIndex < MAX_PROFILE_COUNT) {
         systemConfigMutable()->pidProfileIndex = pidProfileIndex;
         currentPidProfile = pidProfilesMutable(pidProfileIndex);
-        pidInit(currentPidProfile); // re-initialise pid controller to re-initialise filters and config
     }
 }
 
@@ -307,6 +306,7 @@ void activateConfig(void)
 
     resetAdjustmentStates();
 
+    pidInit(currentPidProfile);
     useRcControlsConfig(currentPidProfile);
     useAdjustmentConfig(currentPidProfile);
 
@@ -342,6 +342,13 @@ void validateAndFixConfig(void)
 #endif
 
 #ifndef USE_OSD_SLAVE
+    if (systemConfig()->activeRateProfile >= CONTROL_RATE_PROFILE_COUNT) {
+        systemConfigMutable()->activeRateProfile = 0;
+    }
+    if (systemConfig()->pidProfileIndex >= MAX_PROFILE_COUNT) {
+        systemConfigMutable()->pidProfileIndex = 0;
+    }
+
     if ((motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)) {
         motorConfigMutable()->mincommand = 1000;
     }
@@ -370,7 +377,7 @@ void validateAndFixConfig(void)
     if (featureConfigured(FEATURE_RX_SPI)) {
         featureClear(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_MSP);
     }
-#endif
+#endif // USE_RX_SPI
 
     if (featureConfigured(FEATURE_RX_PARALLEL_PWM)) {
         featureClear(FEATURE_RX_SERIAL | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
@@ -381,7 +388,7 @@ void validateAndFixConfig(void)
         if (batteryConfig()->currentMeterSource == CURRENT_METER_ADC) {
             batteryConfigMutable()->currentMeterSource = CURRENT_METER_NONE;
         }
-#endif
+#endif // STM32F10X
         // software serial needs free PWM ports
         featureClear(FEATURE_SOFTSERIAL);
     }
@@ -398,9 +405,9 @@ void validateAndFixConfig(void)
         if (batteryConfig()->currentMeterSource == CURRENT_METER_ADC) {
             batteryConfigMutable()->currentMeterSource = CURRENT_METER_NONE;
         }
-#endif
+#endif // STM32F10X
     }
-#endif
+#endif // USE_SOFTSPI
 
     // Prevent invalid notch cutoff
     if (currentPidProfile->dterm_notch_cutoff >= currentPidProfile->dterm_notch_hz) {
@@ -408,7 +415,7 @@ void validateAndFixConfig(void)
     }
 
     validateAndFixGyroConfig();
-#endif
+#endif // USE_OSD_SLAVE
 
     if (!isSerialConfigValid(serialConfig())) {
         pgResetFn_serialConfig(serialConfigMutable());
@@ -501,6 +508,26 @@ void validateAndFixGyroConfig(void)
         gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
     }
 
+
+    if (gyroConfig()->gyro_lpf != GYRO_LPF_256HZ && gyroConfig()->gyro_lpf != GYRO_LPF_NONE) {
+        pidConfigMutable()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
+        gyroConfigMutable()->gyro_sync_denom = 1;
+        gyroConfigMutable()->gyro_use_32khz = false;
+    }
+
+    if (gyroConfig()->gyro_use_32khz) {
+        // F1 and F3 can't handle high sample speed.
+#if defined(STM32F1)
+        gyroConfigMutable()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 16);
+#elif defined(STM32F3)
+        gyroConfigMutable()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 4);
+#endif
+    } else {
+#if defined(STM32F1)
+        gyroConfigMutable()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 3);
+#endif
+    }
+
     float samplingTime;
     switch (gyroMpuDetectionResult()->sensor) {
     case ICM_20649_SPI:
@@ -515,9 +542,6 @@ void validateAndFixGyroConfig(void)
     }
 
     if (gyroConfig()->gyro_lpf != GYRO_LPF_256HZ && gyroConfig()->gyro_lpf != GYRO_LPF_NONE) {
-        pidConfigMutable()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
-        gyroConfigMutable()->gyro_sync_denom = 1;
-        gyroConfigMutable()->gyro_use_32khz = false;
         switch (gyroMpuDetectionResult()->sensor) {
         case ICM_20649_SPI:
             samplingTime = 1.0f / 1100.0f;
@@ -530,20 +554,9 @@ void validateAndFixGyroConfig(void)
 
     if (gyroConfig()->gyro_use_32khz) {
         samplingTime = 0.00003125;
-        // F1 and F3 can't handle high sample speed.
-#if defined(STM32F1)
-        gyroConfigMutable()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 16);
-#elif defined(STM32F3)
-        gyroConfigMutable()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 4);
-#endif
-    } else {
-#if defined(STM32F1)
-        gyroConfigMutable()->gyro_sync_denom = MAX(gyroConfig()->gyro_sync_denom, 3);
-#endif
     }
 
     // check for looptime restrictions based on motor protocol. Motor times have safety margin
-    const float pidLooptime = samplingTime * gyroConfig()->gyro_sync_denom * pidConfig()->pid_process_denom;
     float motorUpdateRestriction;
     switch (motorConfig()->dev.motorPwmProtocol) {
         case (PWM_TYPE_STANDARD):
@@ -568,6 +581,7 @@ void validateAndFixGyroConfig(void)
     }
 
     if (!motorConfig()->dev.useUnsyncedPwm) {
+        const float pidLooptime = samplingTime * gyroConfig()->gyro_sync_denom * pidConfig()->pid_process_denom;
         if (pidLooptime < motorUpdateRestriction) {
             const uint8_t minPidProcessDenom = constrain(motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom), 1, MAX_PID_PROCESS_DENOM);
 
@@ -594,19 +608,12 @@ void readEEPROM(void)
     if (!loadEEPROM()) {
         failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
     }
-#ifndef USE_OSD_SLAVE
-    if (systemConfig()->activeRateProfile >= CONTROL_RATE_PROFILE_COUNT) {// sanity check
-        systemConfigMutable()->activeRateProfile = 0;
-    }
-    setControlRateProfile(systemConfig()->activeRateProfile);
-
-    if (systemConfig()->pidProfileIndex >= MAX_PROFILE_COUNT) {// sanity check
-        systemConfigMutable()->pidProfileIndex = 0;
-    }
-    setPidProfile(systemConfig()->pidProfileIndex);
-#endif
 
     validateAndFixConfig();
+#ifndef USE_OSD_SLAVE
+    setControlRateProfile(systemConfig()->activeRateProfile);
+    setPidProfile(systemConfig()->pidProfileIndex);
+#endif
     activateConfig();
 
 #ifndef USE_OSD_SLAVE
