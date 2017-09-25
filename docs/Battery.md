@@ -168,8 +168,8 @@ For example, assuming:
 Then the updated `amperage_meter_scale` is:
 ```
 amperage_meter_scale = old_amperage_meter_scale * (reported_draw_mAh / charging_data_mAh)
-                    = 400 * (1158 / 1260)
-                    = 368
+                    = 400 * (1260 / 1158)
+                    = 435
 ```
 
 
