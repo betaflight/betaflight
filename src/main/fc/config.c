@@ -589,6 +589,7 @@ void validateAndFixGyroConfig(void)
         if (pidLooptime < motorUpdateRestriction) {
             const uint8_t minPidProcessDenom = constrain(motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom), 1, MAX_PID_PROCESS_DENOM);
             pidConfigMutable()->pid_process_denom = MAX(pidConfigMutable()->pid_process_denom, minPidProcessDenom);
+        }
     }
 }
 #endif
