@@ -414,6 +414,7 @@ void validateAndFixConfig(void)
         currentPidProfile->dterm_notch_hz = 0;
     }
 
+    validateAndFixGyroConfig();
 #endif // USE_OSD_SLAVE
 
     if (!isSerialConfigValid(serialConfig())) {
@@ -610,7 +611,6 @@ void readEEPROM(void)
 
     validateAndFixConfig();
 #ifndef USE_OSD_SLAVE
-    validateAndFixGyroConfig();
     setControlRateProfile(systemConfig()->activeRateProfile);
     setPidProfile(systemConfig()->pidProfileIndex);
 #endif
