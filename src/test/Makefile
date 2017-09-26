@@ -313,6 +313,7 @@ COMMON_FLAGS = \
 	-ggdb3 \
 	-O0 \
 	-DUNIT_TEST \
+	-fblocks \
 	-isystem $(GTEST_DIR)/inc \
 	-MMD -MP
 
@@ -478,7 +479,7 @@ $(OBJECT_DIR)/$1/$1 : $$($$1_OBJS) \
 
 	@echo "linking $$@" "$(STDOUT)"
 	$(V1) mkdir -p $(dir $$@)
-	$(V1) $(CXX) $(CXX_FLAGS) $(PG_FLAGS) $$^ -o $$@
+	$(V1) $(CXX) $(CXX_FLAGS) $(PG_FLAGS) -lBlocksRuntime $$^ -o $$@
 
 test_$1: $(OBJECT_DIR)/$1/$1
 	$(V1) $$< $$(EXEC_OPTS) "$(STDOUT)" && echo "running $$@: PASS"
