@@ -35,6 +35,9 @@ arming_prevention_unittest_SRC := \
 		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/common/bitarray.c
 
+atomic_unittest_SRC = \
+		$(USER_DIR)/build/atomic.c \
+		$(TEST_DIR)/atomic_unittest_c.c
 
 baro_bmp085_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_bmp085.c \
@@ -299,6 +302,8 @@ UNAME := $(shell uname -s)
 # Use clang/clang++ by default
 CC  := clang
 CXX := clang++
+#CC  := gcc
+#CXX := g++
 
 COMMON_FLAGS = \
 	-g \
@@ -432,7 +437,7 @@ TEST_CFLAGS	 = $(addprefix -I,$(TEST_INCLUDE_DIRS))
 # param $1 = testname
 define test-specific-stuff
 
-$$1_OBJS = $$(patsubst $$(USER_DIR)%,$$(OBJECT_DIR)/$1%,$$($1_SRC:=.o))
+$$1_OBJS = $$(patsubst $$(TEST_DIR)%,$$(OBJECT_DIR)/$1%, $$(patsubst $$(USER_DIR)%,$$(OBJECT_DIR)/$1%,$$($1_SRC:=.o)))
 
 # $$(info $1 -v-v-------)
 # $$(info $1_SRC:  $($1_SRC))
@@ -452,6 +457,12 @@ $(OBJECT_DIR)/$1/%.c.o: $(USER_DIR)/%.c
                 $(foreach def,$($1_DEFINES),-D $(def)) \
                 -c $$< -o $$@
 
+$(OBJECT_DIR)/$1/%.c.o: $(TEST_DIR)/%.c
+	@echo "compiling test c file: $$<" "$(STDOUT)"
+	$(V1) mkdir -p $$(dir $$@)
+	$(V1) $(CC) $(C_FLAGS) $(TEST_CFLAGS) \
+                $(foreach def,$($1_DEFINES),-D $(def)) \
+                -c $$< -o $$@
 
 $(OBJECT_DIR)/$1/$1.o: $(TEST_DIR)/$1.cc
 	@echo "compiling $$<" "$(STDOUT)"
