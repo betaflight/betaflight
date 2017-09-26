@@ -131,7 +131,7 @@ void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsD
     saveConfigAndNotify();
 }
 
-static bool isCalibrating()
+static bool isCalibrating(void)
 {
 #ifdef BARO
     if (sensors(SENSOR_BARO) && !isBaroCalibrationComplete()) {
@@ -368,7 +368,9 @@ void updateMagHold(void)
 }
 #endif
 
-
+/*
+ * processRx called from taskUpdateRxMain
+ */
 void processRx(timeUs_t currentTimeUs)
 {
     static bool armedBeeperOn = false;

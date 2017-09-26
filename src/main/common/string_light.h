@@ -17,30 +17,12 @@
 
 #pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
+int sl_isalnum(int c);
+int sl_isdigit(int c);
+int sl_isupper(int c);
+int sl_islower(int c);
+int sl_tolower(int c);
+int sl_toupper(int c);
 
-#include "platform.h"
-
-#include "config/parameter_group.h"
-
-typedef struct vtxRTC6705Config_s {
-    uint8_t band;       // 1=A, 2=B, 3=E, 4=F(Airwaves/Fatshark), 5=Raceband
-    uint8_t channel;    // 1-8
-    uint8_t power;      // 0 = lowest
-} vtxRTC6705Config_t;
-
-PG_DECLARE(vtxRTC6705Config_t, vtxRTC6705Config);
-
-#ifdef RTC6705_POWER_PIN
-#define RTC6705_POWER_COUNT 3
-#define VTX_RTC6705_DEFAULT_POWER 1
-#else
-#define RTC6705_POWER_COUNT 2
-#define VTX_RTC6705_DEFAULT_POWER 0
-#endif
-
-extern const char * const rtc6705PowerNames[RTC6705_POWER_COUNT];
-
-void vtxRTC6705Configure(void);
-bool vtxRTC6705Init(void);
+int sl_strcasecmp(const char * s1, const char * s2);
+int sl_strncasecmp(const char * s1, const char * s2, int n);

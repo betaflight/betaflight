@@ -24,7 +24,7 @@
 void initCrsfTelemetry(void);
 bool checkCrsfTelemetryState(void);
 void handleCrsfTelemetry(timeUs_t currentTimeUs);
-void scheduleDeviceInfoResponse();
-void scheduleMspResponse();
+void crsfScheduleDeviceInfoResponse(void);
+void crsfScheduleMspResponse(void);
 
 int getCrsfFrame(uint8_t *frame, crsfFrameType_e frameType);

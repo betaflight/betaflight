@@ -78,6 +78,7 @@ typedef struct vtxVTable_s {
 
 void vtxCommonInit(void);
 void vtxCommonRegisterDevice(vtxDevice_t *pDevice);
+bool vtxCommonDeviceRegistered(void);
 
 // VTable functions
 void vtxCommonProcess(uint32_t currentTimeUs);

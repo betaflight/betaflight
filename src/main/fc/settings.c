@@ -383,7 +383,7 @@ const clivalue_t valueTable[] = {
 #endif
 #ifdef USE_SPEKTRUM_BIND
     { "spektrum_sat_bind",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { SPEKTRUM_SAT_BIND_DISABLED, SPEKTRUM_SAT_BIND_MAX}, PG_RX_CONFIG, offsetof(rxConfig_t, spektrum_sat_bind) },
-    { "spektrum_sat_bind_autoreset",VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 1 }, PG_RX_CONFIG, offsetof(rxConfig_t, spektrum_sat_bind_autoreset) },
+    { "spektrum_sat_bind_autoreset",VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_RX_CONFIG, offsetof(rxConfig_t, spektrum_sat_bind_autoreset) },
 #endif
     { "airmode_start_throttle",     VAR_UINT16 | MASTER_VALUE, .config.minmax = { 1000, 2000 }, PG_RX_CONFIG, offsetof(rxConfig_t, airModeActivateThreshold) },
     { "rx_min_usec",                VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_PULSE_MIN, PWM_PULSE_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rx_min_usec) },
@@ -477,7 +477,7 @@ const clivalue_t valueTable[] = {
 
 // PG_BEEPER_CONFIG
 #ifdef USE_DSHOT
-    { "beeper_dshot",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BEEPER_CONFIG, offsetof(beeperConfig_t, dshotForward) },
+    { "beeper_dshot_beacon_tone",   VAR_UINT8  | MASTER_VALUE, .config.minmax = {0, DSHOT_CMD_BEACON5 }, PG_BEEPER_CONFIG, offsetof(beeperConfig_t, dshotBeaconTone) },
 #endif
 #endif
 

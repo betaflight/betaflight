@@ -632,7 +632,7 @@ static bool sdcard_setBlockLength(uint32_t blockLen)
 /*
  * Returns true if the card is ready to accept read/write commands.
  */
-static bool sdcard_isReady()
+static bool sdcard_isReady(void)
 {
     return sdcard.state == SDCARD_STATE_READY || sdcard.state == SDCARD_STATE_WRITING_MULTIPLE_BLOCKS;
 }
@@ -647,7 +647,7 @@ static bool sdcard_isReady()
  *                                    the SDCARD_READY state.
  *
  */
-static sdcardOperationStatus_e sdcard_endWriteBlocks()
+static sdcardOperationStatus_e sdcard_endWriteBlocks(void)
 {
     sdcard.multiWriteBlocksRemain = 0;
 

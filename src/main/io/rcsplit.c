@@ -83,7 +83,7 @@ static void sendCtrlCommand(rcsplit_ctrl_argument_e argument)
     serialWriteBuf(rcSplitSerialPort, uart_buffer, 5);
 }
 
-static void rcSplitProcessMode()
+static void rcSplitProcessMode(void)
 {
     // if the device not ready, do not handle any mode change event
     if (RCSPLIT_STATE_IS_READY != cameraState)

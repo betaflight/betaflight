@@ -42,6 +42,11 @@ void vtxCommonRegisterDevice(vtxDevice_t *pDevice)
     vtxDevice = pDevice;
 }
 
+bool vtxCommonDeviceRegistered(void)
+{
+    return vtxDevice;
+}
+
 void vtxCommonProcess(uint32_t currentTimeUs)
 {
     if (!vtxDevice)

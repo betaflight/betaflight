@@ -17,6 +17,12 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
+
+#include "config/parameter_group.h"
 #include "fc/rc_modes.h"
 
 #define MAX_CHANNEL_ACTIVATION_CONDITION_COUNT  10

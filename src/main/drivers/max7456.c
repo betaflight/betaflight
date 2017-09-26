@@ -455,10 +455,11 @@ void max7456Init(const vcdProfile_t *pVcdProfile)
         break;
     }
 
-    // XXX Disable for production
+#ifdef DEBUG_MAX7456_SPI_CLOCK
     debug[0] = systemConfig()->cpu_overclock;
     debug[1] = max7456DeviceType;
     debug[2] = max7456SpiClock;
+#endif
 #endif
 
     spiSetDivisor(MAX7456_SPI_INSTANCE, max7456SpiClock);
@@ -546,8 +547,6 @@ bool max7456DmaInProgress(void)
     return false;
 #endif
 }
-
-#include "build/debug.h"
 
 void max7456DrawScreen(void)
 {

@@ -150,4 +150,4 @@ uint8_t cc2500ReadReg(uint8_t reg);
 void cc2500Strobe(uint8_t address);
 uint8_t cc2500WriteReg(uint8_t address, uint8_t data);
 void cc2500SetPower(uint8_t power);
-uint8_t cc2500Reset();
+uint8_t cc2500Reset(void);

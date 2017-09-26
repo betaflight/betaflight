@@ -52,12 +52,12 @@ static uint8_t bufferHead = 0, bufferTail = 0;
 // The position of the buffer's tail in the overall flash address space:
 static uint32_t tailAddress = 0;
 
-static void flashfsClearBuffer()
+static void flashfsClearBuffer(void)
 {
     bufferTail = bufferHead = 0;
 }
 
-static bool flashfsBufferIsEmpty()
+static bool flashfsBufferIsEmpty(void)
 {
     return bufferTail == bufferHead;
 }
@@ -67,7 +67,7 @@ static void flashfsSetTailAddress(uint32_t address)
     tailAddress = address;
 }
 
-void flashfsEraseCompletely()
+void flashfsEraseCompletely(void)
 {
     m25p16_eraseCompletely();
 
@@ -106,17 +106,17 @@ void flashfsEraseRange(uint32_t start, uint32_t end)
 /**
  * Return true if the flash is not currently occupied with an operation.
  */
-bool flashfsIsReady()
+bool flashfsIsReady(void)
 {
     return m25p16_isReady();
 }
 
-uint32_t flashfsGetSize()
+uint32_t flashfsGetSize(void)
 {
     return m25p16_getGeometry()->totalSize;
 }
 
-static uint32_t flashfsTransmitBufferUsed()
+static uint32_t flashfsTransmitBufferUsed(void)
 {
     if (bufferHead >= bufferTail)
         return bufferHead - bufferTail;
@@ -127,7 +127,7 @@ static uint32_t flashfsTransmitBufferUsed()
 /**
  * Get the size of the largest single write that flashfs could ever accept without blocking or data loss.
  */
-uint32_t flashfsGetWriteBufferSize()
+uint32_t flashfsGetWriteBufferSize(void)
 {
     return FLASHFS_WRITE_BUFFER_USABLE;
 }
@@ -135,12 +135,12 @@ uint32_t flashfsGetWriteBufferSize()
 /**
  * Get the number of bytes that can currently be written to flashfs without any blocking or data loss.
  */
-uint32_t flashfsGetWriteBufferFreeSpace()
+uint32_t flashfsGetWriteBufferFreeSpace(void)
 {
     return flashfsGetWriteBufferSize() - flashfsTransmitBufferUsed();
 }
 
-const flashGeometry_t* flashfsGetGeometry()
+const flashGeometry_t* flashfsGetGeometry(void)
 {
     return m25p16_getGeometry();
 }
@@ -270,7 +270,7 @@ static void flashfsGetDirtyDataBuffers(uint8_t const *buffers[], uint32_t buffer
 /**
  * Get the current offset of the file pointer within the volume.
  */
-uint32_t flashfsGetOffset()
+uint32_t flashfsGetOffset(void)
 {
     uint8_t const * buffers[2];
     uint32_t bufferSizes[2];
@@ -305,7 +305,7 @@ static void flashfsAdvanceTailInBuffer(uint32_t delta)
  * Returns true if all data in the buffer has been flushed to the device, or false if
  * there is still data to be written (call flush again later).
  */
-bool flashfsFlushAsync()
+bool flashfsFlushAsync(void)
 {
     if (flashfsBufferIsEmpty()) {
         return true; // Nothing to flush
@@ -328,7 +328,7 @@ bool flashfsFlushAsync()
  * The flash will still be busy some time after this sync completes, but space will
  * be freed up to accept more writes in the write buffer.
  */
-void flashfsFlushSync()
+void flashfsFlushSync(void)
 {
     if (flashfsBufferIsEmpty()) {
         return; // Nothing to flush
@@ -484,7 +484,7 @@ int flashfsReadAbs(uint32_t address, uint8_t *buffer, unsigned int len)
 /**
  * Find the offset of the start of the free space on the device (or the size of the device if it is full).
  */
-int flashfsIdentifyStartOfFreeSpace()
+int flashfsIdentifyStartOfFreeSpace(void)
 {
     /* Find the start of the free space on the device by examining the beginning of blocks with a binary search,
      * looking for ones that appear to be erased. We can achieve this with good accuracy because an erased block
@@ -553,14 +553,15 @@ int flashfsIdentifyStartOfFreeSpace()
 /**
  * Returns true if the file pointer is at the end of the device.
  */
-bool flashfsIsEOF() {
+bool flashfsIsEOF(void)
+{
     return tailAddress >= flashfsGetSize();
 }
 
 /**
  * Call after initializing the flash chip in order to set up the filesystem.
  */
-void flashfsInit()
+void flashfsInit(void)
 {
     // If we have a flash chip present at all
     if (flashfsGetSize() > 0) {

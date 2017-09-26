@@ -88,7 +88,7 @@ RESULT PowerOn(void)
  * Output         : None.
  * Return         : USB_SUCCESS.
  *******************************************************************************/
-RESULT PowerOff()
+RESULT PowerOff(void)
 {
     /* disable all interrupts and force USB reset */
     _SetCNTR(CNTR_FRES);

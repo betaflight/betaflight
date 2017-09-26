@@ -84,6 +84,11 @@ PG_RESET_TEMPLATE(beeperDevConfig_t, beeperDevConfig,
 #define BEEPER_COMMAND_STOP   0xFF
 
 #ifdef BEEPER
+PG_REGISTER_WITH_RESET_TEMPLATE(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 1);
+PG_RESET_TEMPLATE(beeperConfig_t, beeperConfig,
+    .dshotBeaconTone = 0
+);
+
 /* Beeper Sound Sequences: (Square wave generation)
  * Sequence must end with 0xFF or 0xFE. 0xFE repeats the sequence from
  * start when 0xFF stops the sound when it's completed.
@@ -363,11 +368,11 @@ void beeperUpdate(timeUs_t currentTimeUs)
     }
 
     #ifdef USE_DSHOT
-    if (!areMotorsRunning() && beeperConfig()->dshotForward && currentBeeperEntry->mode == BEEPER_RX_SET) {
+    if (!areMotorsRunning() && beeperConfig()->dshotBeaconTone && (beeperConfig()->dshotBeaconTone <= DSHOT_CMD_BEACON5) && currentBeeperEntry->mode == BEEPER_RX_SET) {
         pwmDisableMotors();
         delay(1);
 
-        pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_BEEP3);
+        pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone);
 
         pwmEnableMotors();
     }

@@ -71,7 +71,7 @@ uint8_t interruptCounter = 0;
 #define DELAY_SENDING_BYTE    40
 
 void bstProcessInCommand(void);
-void I2C_EV_IRQHandler()
+void I2C_EV_IRQHandler(void)
 {
     if (I2C_GetITStatus(BSTx, I2C_IT_ADDR)) {
         CRC8 = 0;
@@ -154,17 +154,17 @@ void I2C_EV_IRQHandler()
     }
 }
 
-void I2C1_EV_IRQHandler()
+void I2C1_EV_IRQHandler(void)
 {
     I2C_EV_IRQHandler();
 }
 
-void I2C2_EV_IRQHandler()
+void I2C2_EV_IRQHandler(void)
 {
     I2C_EV_IRQHandler();
 }
 
-uint32_t bstTimeoutUserCallback()
+uint32_t bstTimeoutUserCallback(void)
 {
     bstErrorCount++;
 

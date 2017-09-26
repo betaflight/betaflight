@@ -36,4 +36,4 @@ struct rxRuntimeConfig_s;
 void frSkyDInit(const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig);
 void frSkyDSetRcData(uint16_t *rcData, const uint8_t *payload);
 rx_spi_received_e frSkyDDataReceived(uint8_t *payload);
-void frSkyDBind();
+void frSkyDBind(void);

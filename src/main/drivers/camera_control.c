@@ -77,14 +77,14 @@ static struct {
 static uint32_t endTimeMillis;
 
 #ifdef CAMERA_CONTROL_SOFTWARE_PWM_AVAILABLE
-void TIM6_DAC_IRQHandler()
+void TIM6_DAC_IRQHandler(void)
 {
     IOHi(cameraControlRuntime.io);
 
     TIM6->SR = 0;
 }
 
-void TIM7_IRQHandler()
+void TIM7_IRQHandler(void)
 {
     IOLo(cameraControlRuntime.io);
 
@@ -92,7 +92,7 @@ void TIM7_IRQHandler()
 }
 #endif
 
-void cameraControlInit()
+void cameraControlInit(void)
 {
     if (cameraControlConfig()->ioTag == IO_TAG_NONE)
         return;
@@ -108,10 +108,10 @@ void cameraControlInit()
             return;
         }
 
-        #ifdef USE_HAL_DRIVER
-        IOConfigGPIOAF(cameraControlRuntime.io, IOCFG_AF_PP, timerHardware->alternateFunction);
+        #ifdef STM32F1
+            IOConfigGPIO(cameraControlRuntime.io, IOCFG_AF_PP);
         #else
-        IOConfigGPIO(cameraControlRuntime.io, IOCFG_AF_PP);
+            IOConfigGPIOAF(cameraControlRuntime.io, IOCFG_AF_PP, timerHardware->alternateFunction);
         #endif
 
         pwmOutConfig(&cameraControlRuntime.channel, timerHardware, CAMERA_CONTROL_TIMER_HZ, CAMERA_CONTROL_PWM_RESOLUTION, 0, 0);

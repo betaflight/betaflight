@@ -25,9 +25,9 @@
 #include "platform.h"
 
 #if defined(VTX_SMARTAUDIO) && defined(VTX_CONTROL)
+
 #include "build/build_config.h"
 #include "build/debug.h"
-
 
 #include "cms/cms.h"
 #include "cms/cms_types.h"
@@ -200,8 +200,9 @@ static void saPrintSettings(void)
 int saDacToPowerIndex(int dac)
 {
     for (int idx = 3 ; idx >= 0 ; idx--) {
-        if (saPowerTable[idx].valueV1 <= dac)
+        if (saPowerTable[idx].valueV1 <= dac) {
             return idx;
+        }
     }
     return 0;
 }
@@ -218,9 +219,10 @@ static int sa_baudstep = 50;
 
 static void saAutobaud(void)
 {
-    if (saStat.pktsent < 10)
+    if (saStat.pktsent < 10) {
         // Not enough samples collected
         return;
+    }
 
 #if 0
     dprintf(("autobaud: %d rcvd %d/%d (%d)\r\n",
@@ -281,8 +283,9 @@ static void saProcessResponse(uint8_t *buf, int len)
     switch (resp) {
     case SA_CMD_GET_SETTINGS_V2: // Version 2 Get Settings
     case SA_CMD_GET_SETTINGS:    // Version 1 Get Settings
-        if (len < 7)
+        if (len < 7) {
             break;
+        }
 
         saDevice.version = (buf[0] == SA_CMD_GET_SETTINGS) ? 1 : 2;
         saDevice.channel = buf[2];
@@ -305,10 +308,11 @@ static void saProcessResponse(uint8_t *buf, int len)
         break;
 
     case SA_CMD_SET_FREQ: // Set Frequency
-        if (len < 5)
+        if (len < 5) {
             break;
+        }
 
-        uint16_t freq = (buf[2] << 8)|buf[3];
+        const uint16_t freq = (buf[2] << 8)|buf[3];
 
         if (freq & SA_FREQ_GETPIT) {
             saDevice.orfreq = freq & SA_FREQ_MASK;
@@ -332,8 +336,9 @@ static void saProcessResponse(uint8_t *buf, int len)
     }
 
     // Debug
-    if (memcmp(&saDevice, &saDevicePrev, sizeof(smartAudioDevice_t)))
+    if (memcmp(&saDevice, &saDevicePrev, sizeof(smartAudioDevice_t))) {
         saPrintSettings();
+    }
     saDevicePrev = saDevice;
 
 #ifdef VTX_COMMON
@@ -431,12 +436,11 @@ static void saReceiveFramer(uint8_t c)
 
 static void saSendFrame(uint8_t *buf, int len)
 {
-    int i;
-
     serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start bit
 
-    for (i = 0 ; i < len ; i++)
+    for (int i = 0 ; i < len ; i++) {
         serialWrite(smartAudioSerialPort, buf[i]);
+    }
 
     serialWrite(smartAudioSerialPort, 0x00); // XXX Probably don't need this
 
@@ -471,10 +475,9 @@ static void saResendCmd(void)
 
 static void saSendCmd(uint8_t *buf, int len)
 {
-    int i;
-
-    for (i = 0 ; i < len ; i++)
+    for (int i = 0 ; i < len ; i++) {
         sa_osbuf[i] = buf[i];
+    }
 
     sa_oslen = len;
     sa_outstanding = (buf[2] >> 1);
@@ -495,7 +498,7 @@ static uint8_t sa_qhead = 0;
 static uint8_t sa_qtail = 0;
 
 #ifdef DPRINTF_SMARTAUDIO
-static int saQueueLength()
+static int saQueueLength(void)
 {
     if (sa_qhead >= sa_qtail) {
         return sa_qhead - sa_qtail;
@@ -505,20 +508,21 @@ static int saQueueLength()
 }
 #endif
 
-static bool saQueueEmpty()
+static bool saQueueEmpty(void)
 {
     return sa_qhead == sa_qtail;
 }
 
-static bool saQueueFull()
+static bool saQueueFull(void)
 {
     return ((sa_qhead + 1) % SA_QSIZE) == sa_qtail;
 }
 
 static void saQueueCmd(uint8_t *buf, int len)
 {
-    if (saQueueFull())
+    if (saQueueFull()) {
          return;
+    }
 
     sa_queue[sa_qhead].buf = buf;
     sa_queue[sa_qhead].len = len;
@@ -527,8 +531,9 @@ static void saQueueCmd(uint8_t *buf, int len)
 
 static void saSendQueue(void)
 {
-    if (saQueueEmpty())
+    if (saQueueEmpty()) {
          return;
+    }
 
     saSendCmd(sa_queue[sa_qtail].buf, sa_queue[sa_qtail].len);
     sa_qtail = (sa_qtail + 1) % SA_QSIZE;
@@ -605,15 +610,16 @@ void saSetPowerByIndex(uint8_t index)
         return;
     }
 
-    if (index > 3)
+    if (index > 3) {
         return;
+    }
 
     buf[4] = (saDevice.version == 1) ? saPowerTable[index].valueV1 : saPowerTable[index].valueV2;
     buf[5] = CRC8(buf, 5);
     saQueueCmd(buf, 6);
 }
 
-bool vtxSmartAudioInit()
+bool vtxSmartAudioInit(void)
 {
 #ifdef SMARTAUDIO_DPRINTF
     // Setup debugSerialPort
@@ -654,8 +660,9 @@ void vtxSAProcess(uint32_t currentTimeUs)
     static uint32_t lastCommandSentMs = 0;
     uint32_t nowMs = millis();
 
-    if (smartAudioSerialPort == NULL)
+    if (smartAudioSerialPort == NULL) {
         return;
+    }
 
     while (serialRxBytesWaiting(smartAudioSerialPort) > 0) {
         uint8_t c = serialRead(smartAudioSerialPort);
@@ -703,8 +710,9 @@ void vtxSAProcess(uint32_t currentTimeUs)
     // Testing VTX_COMMON API
     {
         static uint32_t lastMonitorUs = 0;
-        if (cmp32(now, lastMonitorUs) < 5 * 1000 * 1000)
+        if (cmp32(now, lastMonitorUs) < 5 * 1000 * 1000) {
             return;
+        }
 
         static uint8_t monBand;
         static uint8_t monChan;
@@ -734,8 +742,9 @@ bool vtxSAIsReady(void)
 
 void vtxSASetBandAndChannel(uint8_t band, uint8_t channel)
 {
-    if (band && channel)
+    if (band && channel) {
         saSetBandAndChannel(band - 1, channel - 1);
+    }
 }
 
 void vtxSASetPowerByIndex(uint8_t index)
@@ -750,8 +759,9 @@ void vtxSASetPowerByIndex(uint8_t index)
 
 void vtxSASetPitMode(uint8_t onoff)
 {
-    if (!(vtxSAIsReady() && (saDevice.version == 2)))
+    if (!(vtxSAIsReady() && (saDevice.version == 2))) {
         return;
+    }
 
     if (onoff) {
         // SmartAudio can not turn pit mode on by software.
@@ -760,11 +770,13 @@ void vtxSASetPitMode(uint8_t onoff)
 
     uint8_t newmode = SA_MODE_CLR_PITMODE;
 
-    if (saDevice.mode & SA_MODE_GET_IN_RANGE_PITMODE)
+    if (saDevice.mode & SA_MODE_GET_IN_RANGE_PITMODE) {
         newmode |= SA_MODE_SET_IN_RANGE_PITMODE;
+    }
 
-    if (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE)
+    if (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE) {
         newmode |= SA_MODE_SET_OUT_RANGE_PITMODE;
+    }
 
     saSetMode(newmode);
 
@@ -773,8 +785,9 @@ void vtxSASetPitMode(uint8_t onoff)
 
 bool vtxSAGetBandAndChannel(uint8_t *pBand, uint8_t *pChannel)
 {
-    if (!vtxSAIsReady())
+    if (!vtxSAIsReady()) {
         return false;
+    }
 
     *pBand = (saDevice.channel / 8) + 1;
     *pChannel = (saDevice.channel % 8) + 1;
@@ -783,8 +796,9 @@ bool vtxSAGetBandAndChannel(uint8_t *pBand, uint8_t *pChannel)
 
 bool vtxSAGetPowerIndex(uint8_t *pIndex)
 {
-    if (!vtxSAIsReady())
+    if (!vtxSAIsReady()) {
         return false;
+    }
 
     *pIndex = ((saDevice.version == 1) ? saDacToPowerIndex(saDevice.power) : saDevice.power) + 1;
     return true;
@@ -792,8 +806,9 @@ bool vtxSAGetPowerIndex(uint8_t *pIndex)
 
 bool vtxSAGetPitMode(uint8_t *pOnOff)
 {
-    if (!(vtxSAIsReady() && (saDevice.version == 2)))
+    if (!(vtxSAIsReady() && (saDevice.version == 2))) {
         return false;
+    }
 
     *pOnOff = (saDevice.mode & SA_MODE_GET_PITMODE) ? 1 : 0;
     return true;

@@ -49,7 +49,7 @@ typedef struct cameraControlConfig_s {
 
 PG_DECLARE(cameraControlConfig_t, cameraControlConfig);
 
-void cameraControlInit();
+void cameraControlInit(void);
 
 void cameraControlProcess(uint32_t currentTimeUs);
 void cameraControlKeyPress(cameraControlKey_e key, uint32_t holdDurationMs);
