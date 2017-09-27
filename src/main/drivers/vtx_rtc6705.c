@@ -216,7 +216,7 @@ void rtc6705SetFreq(uint16_t frequency)
     const uint32_t val_a = ((((uint64_t)frequency*(uint64_t)RTC6705_SET_DIVMULT*(uint64_t)RTC6705_SET_R)/(uint64_t)RTC6705_SET_DIVMULT) % RTC6705_SET_FDIV) / RTC6705_SET_NDIV; //Casts required to make sure correct math (large numbers)
     const uint32_t val_n = (((uint64_t)frequency*(uint64_t)RTC6705_SET_DIVMULT*(uint64_t)RTC6705_SET_R)/(uint64_t)RTC6705_SET_DIVMULT) / RTC6705_SET_FDIV; //Casts required to make sure correct math (large numbers)
 
-    uint32_t val_hex |= RTC6705_SET_WRITE;
+    uint32_t val_hex = RTC6705_SET_WRITE;
     val_hex |= (val_a << 5);
     val_hex |= (val_n << 12);
 
