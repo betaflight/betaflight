@@ -23,7 +23,7 @@
 #include "platform.h"
 
 #ifdef SERIAL_RX
-#ifdef TELEMETRYx
+#ifdef TELEMETRY
 
 #include "build/build_config.h"
 #include "build/debug.h"
