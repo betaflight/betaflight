@@ -19,8 +19,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
-#include <ctype.h>
 
 #include "platform.h"
 
@@ -174,7 +172,6 @@ void vtxRTC6705SetPowerByIndex(uint8_t index)
 #ifdef RTC6705_POWER_PIN
     if (index == 0) {
         // power device off
-
         if (vtxRTC6705.powerIndex > 0) {
             // on, power it off
             vtxRTC6705.powerIndex = index;
@@ -239,6 +236,5 @@ static vtxVTable_t rtc6705VTable = {
     .getPitMode = vtxRTC6705GetPitMode,
 };
 #endif // VTX_COMMON
-
 
 #endif // VTX_RTC6705
