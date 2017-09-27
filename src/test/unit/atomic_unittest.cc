@@ -61,8 +61,6 @@ TEST(AtomicUnittest, TestAtomicBlockNB)
     EXPECT_EQ(atomic_BASEPRI, 0);          // restore priority to unlocked
 }
 
-#if 1  // not working now ... (CLang needs -fblock + libraries / some unittests don't support gcc)
-
 struct barrierTrace {
     int enter, leave;
 };
@@ -112,5 +110,3 @@ TEST(AtomicUnittest, TestAtomicBarrier)
     //return sIdx;
     EXPECT_EQ(sIdx, sampled);
 }
-
-#endif
