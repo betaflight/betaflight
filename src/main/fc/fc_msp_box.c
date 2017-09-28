@@ -249,7 +249,7 @@ void initActiveBoxIds(void)
     }
 #endif
 
-#ifdef USE_RCSPLIT
+#ifdef USE_RCDEVICE
     BME(BOXCAMERA1);
     BME(BOXCAMERA2);
     BME(BOXCAMERA3);

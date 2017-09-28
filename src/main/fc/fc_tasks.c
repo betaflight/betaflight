@@ -59,10 +59,10 @@
 #include "io/ledstrip.h"
 #include "io/osd.h"
 #include "io/osd_slave.h"
-#include "io/rcsplit.h"
 #include "io/serial.h"
 #include "io/transponder_ir.h"
 #include "io/vtx_tramp.h" // Will be gone
+#include "io/rcdevice_cam.h"
 
 #include "msp/msp_serial.h"
 
@@ -80,7 +80,6 @@
 #include "scheduler/scheduler.h"
 
 #include "telemetry/telemetry.h"
-
 
 #ifdef USE_BST
 void taskBstMasterProcess(timeUs_t currentTimeUs);
@@ -346,8 +345,8 @@ void fcTasksInit(void)
 #ifdef USE_CAMERA_CONTROL
     setTaskEnabled(TASK_CAMCTRL, true);
 #endif
-#ifdef USE_RCSPLIT
-    setTaskEnabled(TASK_RCSPLIT, rcSplitIsEnabled());
+#ifdef USE_RCDEVICE
+    setTaskEnabled(TASK_RCDEVICE, rcdeviceIsEnabled());
 #endif
 #endif
 }
@@ -585,10 +584,10 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef USE_RCSPLIT
-    [TASK_RCSPLIT] = {
-        .taskName = "RCSPLIT",
-        .taskFunc = rcSplitUpdate,
+#ifdef USE_RCDEVICE
+    [TASK_RCDEVICE] = {
+        .taskName = "RCDEVICE",
+        .taskFunc = rcdeviceUpdate,
         .desiredPeriod = TASK_PERIOD_HZ(10),        // 10 Hz, 100ms
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },

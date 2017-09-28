@@ -155,6 +155,16 @@ static const uint8_t beep_gyroCalibrated[] = {
     20, 10, 20, 10, 20, 10, BEEPER_COMMAND_STOP
 };
 
+// Cam connection opened
+static const uint8_t beep_camOpenBeep[] = {
+    5, 15, 10, 15, 20, BEEPER_COMMAND_STOP
+};
+
+// Cam connection close
+static const uint8_t beep_camCloseBeep[] = {
+    10, 8, 5, BEEPER_COMMAND_STOP
+};
+
 // array used for variable # of beeps (reporting GPS sat count, etc)
 static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS + 1];
 
@@ -213,8 +223,10 @@ typedef struct beeperTableEntry_s {
     { BEEPER_ENTRY(BEEPER_USB,                   17, NULL,                 "ON_USB") },
     { BEEPER_ENTRY(BEEPER_BLACKBOX_ERASE,        18, beep_2shortBeeps,     "BLACKBOX_ERASE") },
     { BEEPER_ENTRY(BEEPER_CRASH_FLIP_MODE,       19, beep_2longerBeeps,    "CRASH FLIP") },
-    { BEEPER_ENTRY(BEEPER_ALL,                   20, NULL,                 "ALL") },
-    { BEEPER_ENTRY(BEEPER_PREFERENCE,            21, NULL,                 "PREFERRED") },
+    { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_OPEN,   20, beep_camOpenBeep,     "CAM_CONNECTION_OPEN") },
+    { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_CLOSE,  21, beep_camCloseBeep,    "CAM_CONNECTION_CLOSED") },
+    { BEEPER_ENTRY(BEEPER_ALL,                   22, NULL,                 "ALL") },
+    { BEEPER_ENTRY(BEEPER_PREFERENCE,            23, NULL,                 "PREFERRED") },
 };
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;
