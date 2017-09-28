@@ -24,8 +24,8 @@
 
 #define LED0_PIN                PB5
 
-// Leave beeper here but with none as io - so disabled unless mapped.
 #define BEEPER                  PB4
+#define BEEPER_INVERTED
 
 // PC13 used as inverter select GPIO for UART2
 #define INVERTER_PIN_UART2      PC13
