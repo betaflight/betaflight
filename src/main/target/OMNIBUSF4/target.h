@@ -23,6 +23,8 @@
 #define TARGET_BOARD_IDENTIFIER "LUX4"
 #elif defined(DYSF4PRO)
 #define TARGET_BOARD_IDENTIFIER "DYS4"
+#elif defined(XRACERF4)
+#define TARGET_BOARD_IDENTIFIER "XRF4"
 #else
 #define TARGET_BOARD_IDENTIFIER "OBF4"
 #define OMNIBUSF4BASE // For config.c
@@ -32,6 +34,8 @@
 #define USBD_PRODUCT_STRING "LuxF4osd"
 #elif defined(DYSF4PRO)
 #define USBD_PRODUCT_STRING "DysF4Pro"
+#elif defined(XRACERF4)
+#define USBD_PRODUCT_STRING "XRACERF4"
 #else
 #define USBD_PRODUCT_STRING "OmnibusF4"
 #endif
@@ -68,7 +72,7 @@
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
-#if defined(OMNIBUSF4SD)
+#if defined(OMNIBUSF4SD) || defined(XRACERF4)
 #define GYRO_MPU6000_ALIGN       CW270_DEG
 #define ACC_MPU6000_ALIGN        CW270_DEG
 #else
