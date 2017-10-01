@@ -11,6 +11,7 @@
 
 # Where to find user code.
 USER_DIR = ../main
+TEST_DIR = unit
 
 
 # specify which files that are included in the test in addition to the unittest file.
@@ -35,7 +36,7 @@ arming_prevention_unittest_SRC := \
 		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/common/bitarray.c
 
-atomic_unittest_SRC = \
+atomic_unittest_SRC := \
 		$(USER_DIR)/build/atomic.c \
 		$(TEST_DIR)/atomic_unittest_c.c
 
@@ -291,7 +292,6 @@ ringbuffer_unittest_SRC := \
 GTEST_DIR = ../../lib/test/gtest
 
 
-TEST_DIR = unit
 USER_INCLUDE_DIR = $(USER_DIR)
 
 OBJECT_DIR = ../../obj/test
@@ -313,9 +313,13 @@ COMMON_FLAGS = \
 	-ggdb3 \
 	-O0 \
 	-DUNIT_TEST \
-	-fblocks \
 	-isystem $(GTEST_DIR)/inc \
 	-MMD -MP
+
+ifeq ($(shell $(CC) -v 2>&1 | grep -q "clang version" && echo "clang"),clang)
+COMMON_FLAGS += -fblocks
+LDFLAGS	     += -lBlocksRuntime
+endif
 
 ifneq ($(UNAME), Darwin)
 COMMON_FLAGS += -pthread
@@ -337,9 +341,9 @@ CXX_FLAGS += $(COVERAGE_FLAGS)
 
 # Set up the parameter group linker flags according to OS
 ifeq ($(UNAME), Darwin)
-PG_FLAGS = -Wl,-map,$(OBJECT_DIR)/$@.map
+LDFLAGS  += -Wl,-map,$(OBJECT_DIR)/$@.map
 else
-PG_FLAGS = -Wl,-T,$(TEST_DIR)/parameter_group.ld -Wl,-Map,$(OBJECT_DIR)/$@.map
+LDFLAGS  += -Wl,-T,$(TEST_DIR)/parameter_group.ld -Wl,-Map,$(OBJECT_DIR)/$@.map
 endif
 
 # Gather up all of the tests.
@@ -479,7 +483,7 @@ $(OBJECT_DIR)/$1/$1 : $$($$1_OBJS) \
 
 	@echo "linking $$@" "$(STDOUT)"
 	$(V1) mkdir -p $(dir $$@)
-	$(V1) $(CXX) $(CXX_FLAGS) $(PG_FLAGS) -lBlocksRuntime $$^ -o $$@
+	$(V1) $(CXX) $(CXX_FLAGS) $(LDFLAGS) $$^ -o $$@
 
 test_$1: $(OBJECT_DIR)/$1/$1
 	$(V1) $$< $$(EXEC_OPTS) "$(STDOUT)" && echo "running $$@: PASS"
