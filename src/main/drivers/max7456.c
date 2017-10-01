@@ -349,9 +349,7 @@ uint8_t max7456GetRowsCount(void)
 
 void max7456ReInit(void)
 {
-    uint8_t maxScreenRows;
     uint8_t srdata = 0;
-    uint16_t x;
     static bool firstInit = true;
 
     ENABLE_MAX7456;
@@ -381,17 +379,14 @@ void max7456ReInit(void)
 
     if (videoSignalReg & VIDEO_MODE_PAL) { //PAL
         maxScreenSize = VIDEO_BUFFER_CHARS_PAL;
-        maxScreenRows = VIDEO_LINES_PAL;
     } else {              // NTSC
         maxScreenSize = VIDEO_BUFFER_CHARS_NTSC;
-        maxScreenRows = VIDEO_LINES_NTSC;
     }
 
-    // Set all rows to same charactor black/white level.
-
-    for (x = 0; x < maxScreenRows; x++) {
-        max7456Send(MAX7456ADD_RB0 + x, BWBRIGHTNESS);
-    }
+    /* Set all rows to same charactor black/white level. */
+    max7456Brightness(0, 2);
+    /* Re-enable MAX7456 (last function call disables it) */
+    ENABLE_MAX7456;
 
     // Make sure the Max7456 is enabled
     max7456Send(MAX7456ADD_VM0, videoSignalReg);
@@ -402,7 +397,6 @@ void max7456ReInit(void)
     DISABLE_MAX7456;
 
     // Clear shadow to force redraw all screen in non-dma mode.
-
     memset(shadowBuffer, 0, maxScreenSize);
     if (firstInit)
     {
