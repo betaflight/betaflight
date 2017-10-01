@@ -65,6 +65,7 @@
 #include "io/osd.h"
 #include "io/vtx_control.h"
 #include "io/vtx_rtc6705.h"
+#include "io/vtx_settings_config.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -741,11 +742,14 @@ const clivalue_t valueTable[] = {
 #endif
     { "pwr_on_arm_grace",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 30 }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, powerOnArmingGraceTime) },
 
-// PG_VTX_RTC6705_CONFIG
-#ifdef VTX_RTC6705
-    { "vtx_band",                   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 5 }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, band) },
-    { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1, 8 }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, channel) },
-    { "vtx_power",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, RTC6705_POWER_COUNT - 1 }, PG_VTX_RTC6705_CONFIG, offsetof(vtxRTC6705Config_t, power) },
+// PG_VTX_CONFIG
+#ifdef VTX_SETTINGS_CONFIG
+    { "vtx_band",                   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, VTX_SETTINGS_MAX_BAND }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, band) },
+    { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { VTX_SETTINGS_MIN_CHANNEL, VTX_SETTINGS_MAX_CHANNEL }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, channel) },
+    { "vtx_power",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, VTX_SETTINGS_POWER_COUNT }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, power) },
+#ifdef VTX_SETTINGS_FREQCMD
+    { "vtx_freq",                   VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, VTX_SETTINGS_MAX_FREQUENCY_MHZ }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, freq) },
+#endif
 #endif
 
 // PG_VTX_CONFIG
