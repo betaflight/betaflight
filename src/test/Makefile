@@ -12,7 +12,9 @@
 # Where to find user code.
 USER_DIR = ../main
 TEST_DIR = unit
+ROOT = ../..
 
+include $(ROOT)/make/system-id.mk
 
 # specify which files that are included in the test in addition to the unittest file.
 # variables available:
@@ -296,9 +298,6 @@ USER_INCLUDE_DIR = $(USER_DIR)
 
 OBJECT_DIR = ../../obj/test
 
-# Determine the OS
-UNAME := $(shell uname -s)
-
 # Use clang/clang++ by default
 CC  := clang
 CXX := clang++
@@ -321,7 +320,7 @@ COMMON_FLAGS += -fblocks
 LDFLAGS	     += -lBlocksRuntime
 endif
 
-ifneq ($(UNAME), Darwin)
+ifndef MACOSX
 COMMON_FLAGS += -pthread
 endif
 
@@ -340,7 +339,7 @@ C_FLAGS   += $(COVERAGE_FLAGS)
 CXX_FLAGS += $(COVERAGE_FLAGS)
 
 # Set up the parameter group linker flags according to OS
-ifeq ($(UNAME), Darwin)
+ifdef MACOSX
 LDFLAGS  += -Wl,-map,$(OBJECT_DIR)/$@.map
 else
 LDFLAGS  += -Wl,-T,$(TEST_DIR)/parameter_group.ld -Wl,-Map,$(OBJECT_DIR)/$@.map
