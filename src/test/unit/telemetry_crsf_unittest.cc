@@ -54,6 +54,7 @@ extern "C" {
 
     #include "sensors/battery.h"
     #include "sensors/sensors.h"
+    #include "sensors/acceleration.h"
 
     #include "telemetry/crsf.h"
     #include "telemetry/telemetry.h"
@@ -70,6 +71,7 @@ extern "C" {
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
     PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
+    PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
