@@ -35,7 +35,7 @@
 // file name to save config
 #define EEPROM_FILENAME "eeprom.bin"
 #define EEPROM_IN_RAM
-#define EEPROM_SIZE     8192
+#define EEPROM_SIZE     32768
 
 #define U_ID_0 0
 #define U_ID_1 1
@@ -136,6 +136,15 @@
 #include <stddef.h>
 
 uint32_t SystemCoreClock;
+
+#ifdef EEPROM_IN_RAM
+extern uint8_t eepromData[EEPROM_SIZE];
+#define __config_start (*eepromData)
+#define __config_end (*ARRAYEND(eepromData))
+#else
+extern uint8_t __config_start;   // configured via linker script when building binaries.
+extern uint8_t __config_end;
+#endif
 
 #define UNUSED(x) (void)(x)
 
@@ -241,11 +250,11 @@ void FLASH_Lock(void);
 FLASH_Status FLASH_ErasePage(uintptr_t Page_Address);
 FLASH_Status FLASH_ProgramWord(uintptr_t addr, uint32_t Data);
 
-uint64_t nanos64_real();
-uint64_t micros64_real();
-uint64_t millis64_real();
+uint64_t nanos64_real(void);
+uint64_t micros64_real(void);
+uint64_t millis64_real(void);
 void delayMicroseconds_real(uint32_t us);
-uint64_t micros64();
-uint64_t millis64();
+uint64_t micros64(void);
+uint64_t millis64(void);
 
 int lockMainPID(void);

@@ -21,7 +21,8 @@
 
 #include "platform.h"
 
-#ifdef CMS
+#if defined(CMS) && defined(VTX_TRAMP)
+
 #include "common/printf.h"
 #include "common/utils.h"
 
@@ -155,7 +156,7 @@ static long trampCmsCommence(displayPort_t *pDisp, const void *self)
     return MENU_CHAIN_BACK;
 }
 
-static void trampCmsInitSettings()
+static void trampCmsInitSettings(void)
 {
     if (trampBand > 0) trampCmsBand = trampBand;
     if (trampChannel > 0) trampCmsChan = trampChannel;
@@ -173,7 +174,7 @@ static void trampCmsInitSettings()
     }
 }
 
-static long trampCmsOnEnter()
+static long trampCmsOnEnter(void)
 {
     trampCmsInitSettings();
     return 0;

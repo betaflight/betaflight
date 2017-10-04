@@ -17,6 +17,12 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
+
+#include "config/parameter_group.h"
 #include "fc/rc_modes.h"
 
 #define MAX_CHANNEL_ACTIVATION_CONDITION_COUNT  10
@@ -30,6 +36,7 @@ typedef struct vtxChannelActivationCondition_s {
 
 typedef struct vtxConfig_s {
     vtxChannelActivationCondition_t vtxChannelActivationConditions[MAX_CHANNEL_ACTIVATION_CONDITION_COUNT];
+    uint8_t halfDuplex;
 } vtxConfig_t;
 
 PG_DECLARE(vtxConfig_t, vtxConfig);

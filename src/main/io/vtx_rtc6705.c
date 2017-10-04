@@ -25,7 +25,9 @@
 #include "platform.h"
 
 #if defined(VTX_RTC6705) && defined(VTX_CONTROL)
+
 #include "build/build_config.h"
+#include "build/debug.h"
 
 #include "cms/cms.h"
 #include "cms/cms_types.h"
@@ -45,8 +47,6 @@
 
 #include "io/vtx_rtc6705.h"
 #include "io/vtx_string.h"
-
-#include "build/debug.h"
 
 bool canUpdateVTX(void);
 

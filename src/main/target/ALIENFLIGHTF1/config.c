@@ -49,12 +49,16 @@ void targetConfiguration(void)
         motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
     }
 
-    pidProfilesMutable(0)->pid[PID_ROLL].P = 90;
-    pidProfilesMutable(0)->pid[PID_ROLL].I = 44;
-    pidProfilesMutable(0)->pid[PID_ROLL].D = 60;
-    pidProfilesMutable(0)->pid[PID_PITCH].P = 90;
-    pidProfilesMutable(0)->pid[PID_PITCH].I = 44;
-    pidProfilesMutable(0)->pid[PID_PITCH].D = 60;
+    for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
+        pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
+
+        pidProfile->pid[PID_ROLL].P = 90;
+        pidProfile->pid[PID_ROLL].I = 44;
+        pidProfile->pid[PID_ROLL].D = 60;
+        pidProfile->pid[PID_PITCH].P = 90;
+        pidProfile->pid[PID_PITCH].I = 44;
+        pidProfile->pid[PID_PITCH].D = 60;
+    }
 
     *customMotorMixerMutable(0) = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
     *customMotorMixerMutable(1) = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R

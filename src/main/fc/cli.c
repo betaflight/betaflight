@@ -114,6 +114,8 @@ extern uint8_t __config_end;
 #include "io/vtx_rtc6705.h"
 #include "io/vtx_control.h"
 
+#include "msp/msp_protocol.h"
+
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 #include "rx/frsky_d.h"
@@ -205,7 +207,7 @@ static void cliPrint(const char *str)
     bufWriterFlush(cliWriter);
 }
 
-static void cliPrintLinefeed()
+static void cliPrintLinefeed(void)
 {
     cliPrint("\r\n");
 }
@@ -402,10 +404,16 @@ static uint16_t getValueOffset(const clivalue_t *value)
     return 0;
 }
 
-STATIC_UNIT_TESTED void *getValuePointer(const clivalue_t *value)
+void *cliGetValuePointer(const clivalue_t *value)
 {
     const pgRegistry_t* rec = pgFind(value->pgn);
     return CONST_CAST(void *, rec->address + getValueOffset(value));
+}
+
+const void *cliGetDefaultPointer(const clivalue_t *value)
+{
+    const pgRegistry_t* rec = pgFind(value->pgn);
+    return rec->address + getValueOffset(value);
 }
 
 static void dumpPgValue(const clivalue_t *value, uint8_t dumpMask)
@@ -448,7 +456,7 @@ static void dumpAllValues(uint16_t valueSection, uint8_t dumpMask)
 
 static void cliPrintVar(const clivalue_t *var, bool full)
 {
-    const void *ptr = getValuePointer(var);
+    const void *ptr = cliGetValuePointer(var);
 
     printValuePointer(var, ptr, full);
 }
@@ -481,7 +489,7 @@ static void cliPrintVarRange(const clivalue_t *var)
 
 static void cliSetVar(const clivalue_t *var, const int16_t value)
 {
-    void *ptr = getValuePointer(var);
+    void *ptr = cliGetValuePointer(var);
 
     switch (var->type & VALUE_TYPE_MASK) {
     case VAR_UINT8:
@@ -888,18 +896,18 @@ static void cliSerialPassthrough(char *cmdline)
 
     while (tok != NULL) {
         switch (index) {
-            case 0:
-                id = atoi(tok);
-                break;
-            case 1:
-                baud = atoi(tok);
-                break;
-            case 2:
-                if (strstr(tok, "rx") || strstr(tok, "RX"))
-                    mode |= MODE_RX;
-                if (strstr(tok, "tx") || strstr(tok, "TX"))
-                    mode |= MODE_TX;
-                break;
+        case 0:
+            id = atoi(tok);
+            break;
+        case 1:
+            baud = atoi(tok);
+            break;
+        case 2:
+            if (strstr(tok, "rx") || strstr(tok, "RX"))
+                mode |= MODE_RX;
+            if (strstr(tok, "tx") || strstr(tok, "TX"))
+                mode |= MODE_TX;
+            break;
         }
         index++;
         tok = strtok_r(NULL, " ", &saveptr);
@@ -1696,28 +1704,28 @@ static void cliSdInfo(char *cmdline)
     cliPrint("'\r\n" "Filesystem: ");
 
     switch (afatfs_getFilesystemState()) {
-        case AFATFS_FILESYSTEM_STATE_READY:
-            cliPrint("Ready");
+    case AFATFS_FILESYSTEM_STATE_READY:
+        cliPrint("Ready");
         break;
-        case AFATFS_FILESYSTEM_STATE_INITIALIZATION:
-            cliPrint("Initializing");
+    case AFATFS_FILESYSTEM_STATE_INITIALIZATION:
+        cliPrint("Initializing");
         break;
-        case AFATFS_FILESYSTEM_STATE_UNKNOWN:
-        case AFATFS_FILESYSTEM_STATE_FATAL:
-            cliPrint("Fatal");
+    case AFATFS_FILESYSTEM_STATE_UNKNOWN:
+    case AFATFS_FILESYSTEM_STATE_FATAL:
+        cliPrint("Fatal");
 
-            switch (afatfs_getLastError()) {
-                case AFATFS_ERROR_BAD_MBR:
-                    cliPrint(" - no FAT MBR partitions");
-                break;
-                case AFATFS_ERROR_BAD_FILESYSTEM_HEADER:
-                    cliPrint(" - bad FAT header");
-                break;
-                case AFATFS_ERROR_GENERIC:
-                case AFATFS_ERROR_NONE:
-                    ; // Nothing more detailed to print
-                break;
-            }
+        switch (afatfs_getLastError()) {
+        case AFATFS_ERROR_BAD_MBR:
+            cliPrint(" - no FAT MBR partitions");
+            break;
+        case AFATFS_ERROR_BAD_FILESYSTEM_HEADER:
+            cliPrint(" - bad FAT header");
+            break;
+        case AFATFS_ERROR_GENERIC:
+        case AFATFS_ERROR_NONE:
+            ; // Nothing more detailed to print
+            break;
+        }
         break;
     }
     cliPrintLinefeed();
@@ -2253,64 +2261,98 @@ static int parseOutputIndex(char *pch, bool allowAllEscs) {
 
 #ifdef USE_DSHOT
 
-#define ESC_INFO_V1_EXPECTED_FRAME_SIZE 15
-#define ESC_INFO_V2_EXPECTED_FRAME_SIZE 21
+#define ESC_INFO_KISS_V1_EXPECTED_FRAME_SIZE 15
+#define ESC_INFO_KISS_V2_EXPECTED_FRAME_SIZE 21
+#define ESC_INFO_BLHELI32_EXPECTED_FRAME_SIZE 64
+
+enum {
+    ESC_INFO_KISS_V1,
+    ESC_INFO_KISS_V2,
+    ESC_INFO_BLHELI32
+};
 
 #define ESC_INFO_VERSION_POSITION 12
 
-void printEscInfo(const uint8_t *escInfoBytes, uint8_t bytesRead)
+void printEscInfo(const uint8_t *escInfoBuffer, uint8_t bytesRead)
 {
     bool escInfoReceived = false;
     if (bytesRead > ESC_INFO_VERSION_POSITION) {
-        uint8_t escInfoVersion = 0;
-        uint8_t frameLength = 0;
-        if (escInfoBytes[ESC_INFO_VERSION_POSITION] == 255) {
-            escInfoVersion = 2;
-            frameLength = ESC_INFO_V2_EXPECTED_FRAME_SIZE;
+        uint8_t escInfoVersion;
+        uint8_t frameLength;
+        if (escInfoBuffer[ESC_INFO_VERSION_POSITION] == 254) {
+            escInfoVersion = ESC_INFO_BLHELI32;
+            frameLength = ESC_INFO_BLHELI32_EXPECTED_FRAME_SIZE;
+        } else if (escInfoBuffer[ESC_INFO_VERSION_POSITION] == 255) {
+            escInfoVersion = ESC_INFO_KISS_V2;
+            frameLength = ESC_INFO_KISS_V2_EXPECTED_FRAME_SIZE;
         } else {
-            escInfoVersion = 1;
-            frameLength = ESC_INFO_V1_EXPECTED_FRAME_SIZE;
+            escInfoVersion = ESC_INFO_KISS_V1;
+            frameLength = ESC_INFO_KISS_V1_EXPECTED_FRAME_SIZE;
         }
 
-        if (((escInfoVersion == 1) && (bytesRead == ESC_INFO_V1_EXPECTED_FRAME_SIZE))
-            || ((escInfoVersion == 2) && (bytesRead == ESC_INFO_V2_EXPECTED_FRAME_SIZE))) {
+        if (bytesRead == frameLength) {
             escInfoReceived = true;
 
-            if (calculateCrc8(escInfoBytes, frameLength - 1) == escInfoBytes[frameLength - 1]) {
+            if (calculateCrc8(escInfoBuffer, frameLength - 1) == escInfoBuffer[frameLength - 1]) {
                 uint8_t firmwareVersion = 0;
-                char firmwareSubVersion = 0;
+                uint8_t firmwareSubVersion = 0;
                 uint8_t escType = 0;
                 switch (escInfoVersion) {
-                case 1:
-                    firmwareVersion = escInfoBytes[12];
-                    firmwareSubVersion = (char)((escInfoBytes[13] & 0x1f) + 97);
-                    escType = (escInfoBytes[13] & 0xe0) >> 5;
+                case ESC_INFO_KISS_V1:
+                    firmwareVersion = escInfoBuffer[12];
+                    firmwareSubVersion = (escInfoBuffer[13] & 0x1f) + 97;
+                    escType = (escInfoBuffer[13] & 0xe0) >> 5;
 
                     break;
-                case 2:
-                    firmwareVersion = escInfoBytes[13];
-                    firmwareSubVersion = (char)escInfoBytes[14];
-                    escType = escInfoBytes[15];
+                case ESC_INFO_KISS_V2:
+                    firmwareVersion = escInfoBuffer[13];
+                    firmwareSubVersion = escInfoBuffer[14];
+                    escType = escInfoBuffer[15];
+
+                    break;
+                case ESC_INFO_BLHELI32:
+                    firmwareVersion = escInfoBuffer[13];
+                    firmwareSubVersion = escInfoBuffer[14];
+                    escType = escInfoBuffer[15];
 
                     break;
                 }
 
                 cliPrint("ESC: ");
-                switch (escType) {
-                case 1:
-                    cliPrintLine("KISS8A");
+                switch (escInfoVersion) {
+                case ESC_INFO_KISS_V1:
+                case ESC_INFO_KISS_V2:
+                    switch (escType) {
+                    case 1:
+                        cliPrintLine("KISS8A");
+
+                        break;
+                    case 2:
+                        cliPrintLine("KISS16A");
+
+                        break;
+                    case 3:
+                        cliPrintLine("KISS24A");
+
+                        break;
+                    case 5:
+                        cliPrintLine("KISS Ultralite");
+
+                        break;
+                    default:
+                        cliPrintLine("unknown");
+
+                        break;
+                    }
+
                     break;
-                case 2:
-                    cliPrintLine("KISS16A");
-                    break;
-                case 3:
-                    cliPrintLine("KISS24A");
-                    break;
-                case 5:
-                    cliPrintLine("KISS Ultralite");
-                    break;
-                default:
-                    cliPrintLine("unknown");
+                case ESC_INFO_BLHELI32:
+                    {
+                        char *escType = (char *)(escInfoBuffer + 31);
+                        escType[32] = 0;
+                        cliPrintLine(escType);
+                    }
+
                     break;
                 }
 
@@ -2319,14 +2361,64 @@ void printEscInfo(const uint8_t *escInfoBytes, uint8_t bytesRead)
                     if (i && (i % 3 == 0)) {
                         cliPrint("-");
                     }
-                    cliPrintf("%02x", escInfoBytes[i]);
+                    cliPrintf("%02x", escInfoBuffer[i]);
                 }
                 cliPrintLinefeed();
 
-                cliPrintLinef("Firmware: %d.%02d%c", firmwareVersion / 100, firmwareVersion % 100, firmwareSubVersion);
-                if (escInfoVersion == 2) {
-                    cliPrintLinef("Rotation: %s", escInfoBytes[16] ? "reversed" : "normal");
-                    cliPrintLinef("3D: %s", escInfoBytes[17] ? "on" : "off");
+                switch (escInfoVersion) {
+                case ESC_INFO_KISS_V1:
+                case ESC_INFO_KISS_V2:
+                    cliPrintLinef("Firmware: %d.%02d%c", firmwareVersion / 100, firmwareVersion % 100, (char)firmwareSubVersion);
+
+                    break;
+                case ESC_INFO_BLHELI32:
+                    cliPrintLinef("Firmware: %d.%02d%", firmwareVersion, firmwareSubVersion);
+
+                    break;
+                }
+                if (escInfoVersion == ESC_INFO_KISS_V2 || escInfoVersion == ESC_INFO_BLHELI32) {
+                    cliPrintLinef("Rotation: %s", escInfoBuffer[16] ? "reversed" : "normal");
+                    cliPrintLinef("3D: %s", escInfoBuffer[17] ? "on" : "off");
+                    if (escInfoVersion == ESC_INFO_BLHELI32) {
+                        uint8_t setting = escInfoBuffer[18];
+                        cliPrint("Low voltage limit: ");
+                        switch (setting) {
+                        case 0:
+                            cliPrintLine("off");
+
+                            break;
+                        case 255:
+                            cliPrintLine("unsupported");
+
+                            break;
+                        default:
+                            cliPrintLinef("%d.%01d", setting / 10, setting % 10);
+
+                            break;
+                        }
+
+                        setting = escInfoBuffer[19];
+                        cliPrint("Current limit: ");
+                        switch (setting) {
+                        case 0:
+                            cliPrintLine("off");
+
+                            break;
+                        case 255:
+                            cliPrintLine("unsupported");
+
+                            break;
+                        default:
+                            cliPrintLinef("%d", setting);
+
+                            break;
+                        }
+
+                        for (int i = 0; i < 4; i++) {
+                            setting = escInfoBuffer[i + 20];
+                            cliPrintLinef("LED %d: %s", i, setting ? (setting == 255) ? "unsupported" : "on" : "off");
+                        }
+                    }
                 }
             } else {
                 cliPrintLine("Checksum error.");
@@ -2341,14 +2433,15 @@ void printEscInfo(const uint8_t *escInfoBytes, uint8_t bytesRead)
 
 static void executeEscInfoCommand(uint8_t escIndex)
 {
-    uint8_t escInfoBuffer[ESC_INFO_V2_EXPECTED_FRAME_SIZE];
     cliPrintLinef("Info for ESC %d:", escIndex);
 
-    startEscDataRead(escInfoBuffer, ESC_INFO_V2_EXPECTED_FRAME_SIZE);
+    uint8_t escInfoBuffer[ESC_INFO_BLHELI32_EXPECTED_FRAME_SIZE];
+
+    startEscDataRead(escInfoBuffer, ESC_INFO_BLHELI32_EXPECTED_FRAME_SIZE);
 
     pwmWriteDshotCommand(escIndex, getMotorCount(), DSHOT_CMD_ESC_INFO);
 
-    delay(5);
+    delay(10);
 
     printEscInfo(escInfoBuffer, getNumberEscBytesRead());
 }
@@ -2365,22 +2458,30 @@ static void cliDshotProg(char *cmdline)
     char *pch = strtok_r(cmdline, " ", &saveptr);
     int pos = 0;
     int escIndex = 0;
+    bool firstCommand = true;
     while (pch != NULL) {
         switch (pos) {
-            case 0:
-                escIndex = parseOutputIndex(pch, true);
-                if (escIndex == -1) {
-                    return;
-                }
+        case 0:
+            escIndex = parseOutputIndex(pch, true);
+            if (escIndex == -1) {
+                return;
+            }
 
-                break;
-            default:
-                pwmDisableMotors();
-
+            break;
+        default:
+            {
                 int command = atoi(pch);
                 if (command >= 0 && command < DSHOT_MIN_THROTTLE) {
-                    if (command == DSHOT_CMD_ESC_INFO) {
-                        delay(5); // Wait for potential ESC telemetry transmission to finish
+                    if (firstCommand) {
+                        pwmDisableMotors();
+
+                        if (command == DSHOT_CMD_ESC_INFO) {
+                            delay(5); // Wait for potential ESC telemetry transmission to finish
+                        } else {
+                            delay(1);
+                        }
+
+                        firstCommand = false;
                     }
 
                     if (command != DSHOT_CMD_ESC_INFO) {
@@ -2403,8 +2504,9 @@ static void cliDshotProg(char *cmdline)
                 } else {
                     cliPrintLinef("Invalid command, range 1 to %d.", DSHOT_MIN_THROTTLE - 1);
                 }
+            }
 
-                break;
+            break;
         }
 
         pos++;
@@ -2431,34 +2533,34 @@ static void cliEscPassthrough(char *cmdline)
     int escIndex = 0;
     while (pch != NULL) {
         switch (pos) {
-            case 0:
-                if (strncasecmp(pch, "sk", strlen(pch)) == 0) {
-                    mode = PROTOCOL_SIMONK;
-                } else if (strncasecmp(pch, "bl", strlen(pch)) == 0) {
-                    mode = PROTOCOL_BLHELI;
-                } else if (strncasecmp(pch, "ki", strlen(pch)) == 0) {
-                    mode = PROTOCOL_KISS;
-                } else if (strncasecmp(pch, "cc", strlen(pch)) == 0) {
-                    mode = PROTOCOL_KISSALL;
-                } else {
-                    cliShowParseError();
-
-                    return;
-                }
-                break;
-            case 1:
-                escIndex = parseOutputIndex(pch, mode == PROTOCOL_KISS);
-                if (escIndex == -1) {
-                    return;
-                }
-
-                break;
-            default:
+        case 0:
+            if (strncasecmp(pch, "sk", strlen(pch)) == 0) {
+                mode = PROTOCOL_SIMONK;
+            } else if (strncasecmp(pch, "bl", strlen(pch)) == 0) {
+                mode = PROTOCOL_BLHELI;
+            } else if (strncasecmp(pch, "ki", strlen(pch)) == 0) {
+                mode = PROTOCOL_KISS;
+            } else if (strncasecmp(pch, "cc", strlen(pch)) == 0) {
+                mode = PROTOCOL_KISSALL;
+            } else {
                 cliShowParseError();
 
                 return;
+            }
+            break;
+        case 1:
+            escIndex = parseOutputIndex(pch, mode == PROTOCOL_KISS);
+            if (escIndex == -1) {
+                return;
+            }
 
-                break;
+            break;
+        default:
+            cliShowParseError();
+
+            return;
+
+            break;
 
         }
         pos++;
@@ -2660,11 +2762,21 @@ static void cliSave(char *cmdline)
 
 static void cliDefaults(char *cmdline)
 {
-    UNUSED(cmdline);
+    bool saveConfigs;
+
+    if (isEmpty(cmdline)) {
+        saveConfigs = true;
+    } else if (strncasecmp(cmdline, "nosave", 6) == 0) {
+        saveConfigs = false;
+    } else {
+        return;
+    }
 
     cliPrintHashLine("resetting to defaults");
-    resetEEPROM();
-    cliReboot();
+    resetConfigs();
+    if (saveConfigs) {
+        cliSave(NULL);
+    }
 }
 
 STATIC_UNIT_TESTED void cliGet(char *cmdline)
@@ -2743,7 +2855,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                 bool valueChanged = false;
                 int16_t value  = 0;
                 switch (val->type & VALUE_MODE_MASK) {
-                    case MODE_DIRECT: {
+                case MODE_DIRECT: {
                         int16_t value = atoi(eqptr);
 
                         if (value >= val->config.minmax.min && value <= val->config.minmax.max) {
@@ -2753,7 +2865,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                     }
 
                     break;
-                    case MODE_LOOKUP: {
+                case MODE_LOOKUP: {
                         const lookupTableEntry_t *tableEntry = &lookupTables[val->config.lookup.tableIndex];
                         bool matched = false;
                         for (uint32_t tableValueIndex = 0; tableValueIndex < tableEntry->valueCount && !matched; tableValueIndex++) {
@@ -2769,7 +2881,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                     }
 
                     break;
-                    case MODE_ARRAY: {
+                case MODE_ARRAY: {
                         const uint8_t arrayLength = val->config.array.length;
                         char *valPtr = eqptr;
 
@@ -2788,7 +2900,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                                 default:
                                 case VAR_UINT8: {
                                     // fetch data pointer
-                                    uint8_t *data = (uint8_t *)getValuePointer(val) + i;
+                                    uint8_t *data = (uint8_t *)cliGetValuePointer(val) + i;
                                     // store value
                                     *data = (uint8_t)atoi((const char*) valPtr);
                                     }
@@ -2796,7 +2908,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
 
                                 case VAR_INT8: {
                                     // fetch data pointer
-                                    int8_t *data = (int8_t *)getValuePointer(val) + i;
+                                    int8_t *data = (int8_t *)cliGetValuePointer(val) + i;
                                     // store value
                                     *data = (int8_t)atoi((const char*) valPtr);
                                     }
@@ -2804,7 +2916,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
 
                                 case VAR_UINT16: {
                                     // fetch data pointer
-                                    uint16_t *data = (uint16_t *)getValuePointer(val) + i;
+                                    uint16_t *data = (uint16_t *)cliGetValuePointer(val) + i;
                                     // store value
                                     *data = (uint16_t)atoi((const char*) valPtr);
                                     }
@@ -2812,7 +2924,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
 
                                 case VAR_INT16: {
                                     // fetch data pointer
-                                    int16_t *data = (int16_t *)getValuePointer(val) + i;
+                                    int16_t *data = (int16_t *)cliGetValuePointer(val) + i;
                                     // store value
                                     *data = (int16_t)atoi((const char*) valPtr);
                                     }
@@ -2979,14 +3091,15 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintLinef("# %s / %s (%s) %s %s / %s (%s)",
+    cliPrintLinef("# %s / %s (%s) %s %s / %s (%s) MSP API: %s",
         FC_FIRMWARE_NAME,
         targetName,
         systemConfig()->boardIdentifier,
         FC_VERSION_STRING,
         buildDate,
         buildTime,
-        shortGitRevision
+        shortGitRevision,
+        MSP_API_VERSION_STRING
     );
 }
 
@@ -3332,7 +3445,7 @@ static void printConfig(char *cmdline, bool doDiff)
 
         if ((dumpMask & (DUMP_ALL | DO_DIFF)) == (DUMP_ALL | DO_DIFF)) {
             cliPrintHashLine("reset configuration to default settings");
-            cliPrint("defaults");
+            cliPrint("defaults nosave");
             cliPrintLinefeed();
         }
 
@@ -3493,14 +3606,11 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("beeper", "turn on/off beeper", "list\r\n"
         "\t<+|->[name]", cliBeeper),
 #endif
-#ifdef USE_RX_FRSKY_D
-    CLI_COMMAND_DEF("frsky_bind", NULL, NULL, cliFrSkyBind),
-#endif
+    CLI_COMMAND_DEF("bl", "reboot into bootloader", NULL, cliBootloader),
 #ifdef LED_STRIP
     CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
 #endif
-    CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", NULL, cliDefaults),
-    CLI_COMMAND_DEF("bl", "reboot into bootloader", NULL, cliBootloader),
+    CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", "[nosave]", cliDefaults),
     CLI_COMMAND_DEF("diff", "list configuration changes from default",
         "[master|profile|rates|all] {defaults}", cliDiff),
 #ifdef USE_DSHOT
@@ -3521,6 +3631,9 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_FLASH_TOOLS
     CLI_COMMAND_DEF("flash_read", NULL, "<length> <address>", cliFlashRead),
     CLI_COMMAND_DEF("flash_write", NULL, "<address> <message>", cliFlashWrite),
+#endif
+#ifdef USE_RX_FRSKY_D
+    CLI_COMMAND_DEF("frsky_bind", NULL, NULL, cliFrSkyBind),
 #endif
 #endif
     CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),

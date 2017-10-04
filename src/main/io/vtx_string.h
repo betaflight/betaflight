@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+#include "platform.h"
+
 #if defined(VTX_COMMON)
 
 extern const uint16_t vtx58frequencyTable[5][8];

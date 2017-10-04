@@ -34,8 +34,6 @@
 #define BEEPER_OPT              PB14
 #define BEEPER_PWM_HZ           3150 // Beeper PWM frequency in Hz
 
-#define INVERTER_PIN_UART6      PB15
-
 // Gyro interrupt
 #define USE_EXTI
 #define USE_MPU_DATA_READY_SIGNAL
@@ -72,6 +70,7 @@
 
 // UART Ports
 #define USE_UART1
+#define INVERTER_PIN_UART1      PB12
 #define UART1_RX_PIN            PA10
 #define UART1_TX_PIN            PA9
 
@@ -80,6 +79,7 @@
 #define UART3_TX_PIN            PB10
 
 #define USE_UART6
+#define INVERTER_PIN_UART6      PB15
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
@@ -137,10 +137,12 @@
 
 // ADC inputs
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
+#define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 #define USE_ADC
 #define RSSI_ADC_GPIO_PIN       PC0
 #define VBAT_ADC_PIN            PC1
 #define CURRENT_METER_ADC_PIN   PC2
+#define CURRENT_METER_SCALE_DEFAULT 150
 
 // Default configuration
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL

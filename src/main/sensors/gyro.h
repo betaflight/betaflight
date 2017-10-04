@@ -35,6 +35,7 @@ typedef enum {
     GYRO_ICM20601,
     GYRO_ICM20602,
     GYRO_ICM20608G,
+    GYRO_ICM20649,
     GYRO_ICM20689,
     GYRO_BMI160,
     GYRO_FAKE
@@ -54,6 +55,7 @@ typedef struct gyroConfig_s {
     uint8_t  gyro_lpf;                         // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
     uint8_t  gyro_soft_lpf_type;
     uint8_t  gyro_soft_lpf_hz;
+    bool     gyro_high_fsr;
     bool     gyro_use_32khz;
     uint8_t  gyro_to_use;
     uint16_t gyro_soft_notch_hz_1;

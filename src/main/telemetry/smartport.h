@@ -7,6 +7,9 @@
 
 #pragma once
 
+#define SMARTPORT_MSP_TX_BUF_SIZE 256
+#define SMARTPORT_MSP_RX_BUF_SIZE 64
+
 void initSmartPortTelemetry(void);
 
 void handleSmartPortTelemetry(void);

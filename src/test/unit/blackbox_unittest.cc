@@ -365,7 +365,7 @@ int32_t GPS_home[2];
 
 gyro_t gyro;
 
-uint16_t motorOutputHigh, motorOutputLow;
+float motorOutputHigh, motorOutputLow;
 float motor_disarmed[MAX_SUPPORTED_MOTORS];
 struct pidProfile_s;
 struct pidProfile_s *currentPidProfile;

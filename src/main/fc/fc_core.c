@@ -109,6 +109,8 @@ int16_t magHold;
 int16_t headFreeModeHold;
 
 static bool reverseMotors = false;
+static bool flipOverAfterCrashMode = false;
+
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
 bool isRXDataNew;
@@ -129,7 +131,7 @@ void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsD
     saveConfigAndNotify();
 }
 
-static bool isCalibrating()
+static bool isCalibrating(void)
 {
 #ifdef BARO
     if (sensors(SENSOR_BARO) && !isBaroCalibrationComplete()) {
@@ -188,7 +190,7 @@ void updateArmingStatus(void)
             unsetArmingDisabled(ARMING_DISABLED_THROTTLE);
         }
 
-        if (!STATE(SMALL_ANGLE)) {
+        if (!STATE(SMALL_ANGLE) && !IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
             setArmingDisabled(ARMING_DISABLED_ANGLE);
         } else {
             unsetArmingDisabled(ARMING_DISABLED_ANGLE);
@@ -261,14 +263,19 @@ void tryArm(void)
             return;
         }
 #ifdef USE_DSHOT
-        if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXDSHOTREVERSE)) {
-            if (!IS_RC_MODE_ACTIVE(BOXDSHOTREVERSE)) {
-                reverseMotors = false;
+        if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH)) {
+            pwmDisableMotors();
+            delay(1);
+
+            if (!IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+                flipOverAfterCrashMode = false;
                 pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL);
             } else {
-                reverseMotors = true;
+                flipOverAfterCrashMode = true;
                 pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_REVERSED);
             }
+
+            pwmEnableMotors();
         }
 #endif
 
@@ -361,7 +368,9 @@ void updateMagHold(void)
 }
 #endif
 
-
+/*
+ * processRx called from taskUpdateRxMain
+ */
 void processRx(timeUs_t currentTimeUs)
 {
     static bool armedBeeperOn = false;
@@ -719,7 +728,11 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     }
 }
 
-bool isMotorsReversed()
+bool isMotorsReversed(void)
 {
     return reverseMotors;
+}
+bool isFlipOverAfterCrashMode(void)
+{
+    return flipOverAfterCrashMode;
 }

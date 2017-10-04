@@ -35,10 +35,9 @@
 #include "drivers/vtx_common.h"
 
 #include "io/serial.h"
+#include "io/vtx_control.h"
 #include "io/vtx_string.h"
 #include "io/vtx_tramp.h"
-
-#define TRAMP_SERIAL_OPTIONS (SERIAL_BIDIR)
 
 #if defined(CMS) || defined(VTX_COMMON)
 const uint16_t trampPowerTable[VTX_TRAMP_POWER_COUNT] = {
@@ -108,16 +107,18 @@ static uint8_t trampChecksum(uint8_t *trampBuf)
 {
     uint8_t cksum = 0;
 
-    for (int i = 1 ; i < 14 ; i++)
+    for (int i = 1 ; i < 14 ; i++) {
         cksum += trampBuf[i];
+    }
 
     return cksum;
 }
 
 void trampCmdU16(uint8_t cmd, uint16_t param)
 {
-    if (!trampSerialPort)
+    if (!trampSerialPort) {
         return;
+    }
 
     memset(trampReqBuffer, 0, ARRAYLEN(trampReqBuffer));
     trampReqBuffer[0] = 15;
@@ -131,8 +132,9 @@ void trampCmdU16(uint8_t cmd, uint16_t param)
 void trampSetFreq(uint16_t freq)
 {
     trampConfFreq = freq;
-    if (trampConfFreq != trampCurFreq)
+    if (trampConfFreq != trampCurFreq) {
         trampFreqRetries = TRAMP_MAX_RETRIES;
+    }
 }
 
 void trampSendFreq(uint16_t freq)
@@ -148,8 +150,9 @@ void trampSetBandAndChannel(uint8_t band, uint8_t channel)
 void trampSetRFPower(uint16_t level)
 {
     trampConfPower = level;
-    if (trampConfPower != trampPower)
+    if (trampConfPower != trampPower) {
         trampPowerRetries = TRAMP_MAX_RETRIES;
+    }
 }
 
 void trampSendRFPower(uint16_t level)
@@ -158,10 +161,11 @@ void trampSendRFPower(uint16_t level)
 }
 
 // return false if error
-bool trampCommitChanges()
+bool trampCommitChanges(void)
 {
-    if (trampStatus != TRAMP_STATUS_ONLINE)
+    if (trampStatus != TRAMP_STATUS_ONLINE) {
         return false;
+    }
 
     trampStatus = TRAMP_STATUS_SET_FREQ_PW;
     return true;
@@ -175,12 +179,12 @@ void trampSetPitMode(uint8_t onoff)
 // returns completed response code
 char trampHandleResponse(void)
 {
-    uint8_t respCode = trampRespBuffer[1];
+    const uint8_t respCode = trampRespBuffer[1];
 
     switch (respCode) {
     case 'r':
         {
-            uint16_t min_freq = trampRespBuffer[2]|(trampRespBuffer[3] << 8);
+            const uint16_t min_freq = trampRespBuffer[2]|(trampRespBuffer[3] << 8);
             if (min_freq != 0) {
                 trampRFFreqMin = min_freq;
                 trampRFFreqMax = trampRespBuffer[4]|(trampRespBuffer[5] << 8);
@@ -194,7 +198,7 @@ char trampHandleResponse(void)
 
     case 'v':
         {
-            uint16_t freq = trampRespBuffer[2]|(trampRespBuffer[3] << 8);
+            const uint16_t freq = trampRespBuffer[2]|(trampRespBuffer[3] << 8);
             if (freq != 0) {
                 trampCurFreq = freq;
                 trampConfiguredPower = trampRespBuffer[4]|(trampRespBuffer[5] << 8);
@@ -213,7 +217,7 @@ char trampHandleResponse(void)
 
     case 's':
         {
-            uint16_t temp = (int16_t)(trampRespBuffer[6]|(trampRespBuffer[7] << 8));
+            const uint16_t temp = (int16_t)(trampRespBuffer[6]|(trampRespBuffer[7] << 8));
             if (temp != 0) {
                 trampTemperature = temp;
                 return 's';
@@ -234,7 +238,7 @@ typedef enum {
 static trampReceiveState_e trampReceiveState = S_WAIT_LEN;
 static int trampReceivePos = 0;
 
-static void trampResetReceiver()
+static void trampResetReceiver(void)
 {
     trampReceiveState = S_WAIT_LEN;
     trampReceivePos = 0;
@@ -242,10 +246,11 @@ static void trampResetReceiver()
 
 static bool trampIsValidResponseCode(uint8_t code)
 {
-    if (code == 'r' || code == 'v' || code == 's')
+    if (code == 'r' || code == 'v' || code == 's') {
         return true;
-    else
+    } else {
         return false;
+    }
 }
 
 // returns completed response code or 0
@@ -253,11 +258,12 @@ static char trampReceive(uint32_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
 
-    if (!trampSerialPort)
+    if (!trampSerialPort) {
         return 0;
+    }
 
     while (serialRxBytesWaiting(trampSerialPort)) {
-        uint8_t c = serialRead(trampSerialPort);
+        const uint8_t c = serialRead(trampSerialPort);
         trampRespBuffer[trampReceivePos++] = c;
 
         switch (trampReceiveState) {
@@ -291,6 +297,7 @@ static char trampReceive(uint32_t currentTimeUs)
 
         default:
             trampResetReceiver();
+            break;
         }
     }
 
@@ -327,10 +334,11 @@ void vtxTrampProcess(uint32_t currentTimeUs)
     static uint16_t debugPowReqCounter = 0;
 #endif
 
-    if (trampStatus == TRAMP_STATUS_BAD_DEVICE)
+    if (trampStatus == TRAMP_STATUS_BAD_DEVICE) {
         return;
+    }
 
-    char replyCode = trampReceive(currentTimeUs);
+    const char replyCode = trampReceive(currentTimeUs);
 
 #ifdef TRAMP_DEBUG
     debug[0] = trampStatus;
@@ -338,13 +346,15 @@ void vtxTrampProcess(uint32_t currentTimeUs)
 
     switch (replyCode) {
     case 'r':
-        if (trampStatus <= TRAMP_STATUS_OFFLINE)
+        if (trampStatus <= TRAMP_STATUS_OFFLINE) {
             trampStatus = TRAMP_STATUS_ONLINE;
+        }
         break;
 
     case 'v':
-         if (trampStatus == TRAMP_STATUS_CHECK_FREQ_PW)
+         if (trampStatus == TRAMP_STATUS_CHECK_FREQ_PW) {
              trampStatus = TRAMP_STATUS_SET_FREQ_PW;
+         }
          break;
     }
 
@@ -354,14 +364,15 @@ void vtxTrampProcess(uint32_t currentTimeUs)
     case TRAMP_STATUS_ONLINE:
         if (cmp32(currentTimeUs, lastQueryTimeUs) > 1000 * 1000) { // 1s
 
-            if (trampStatus == TRAMP_STATUS_OFFLINE)
+            if (trampStatus == TRAMP_STATUS_OFFLINE) {
                 trampQueryR();
-            else {
+            } else {
                 static unsigned int cnt = 0;
-                if (((cnt++) & 1) == 0)
+                if (((cnt++) & 1) == 0) {
                     trampQueryV();
-                else
+                } else {
                     trampQueryS();
+                }
             }
 
             lastQueryTimeUs = currentTimeUs;
@@ -378,8 +389,7 @@ void vtxTrampProcess(uint32_t currentTimeUs)
                 debugFreqReqCounter++;
 #endif
                 done = false;
-            }
-            else if (trampConfPower && trampPowerRetries && (trampConfPower != trampConfiguredPower)) {
+            } else if (trampConfPower && trampPowerRetries && (trampConfPower != trampConfiguredPower)) {
                 trampSendRFPower(trampConfPower);
                 trampPowerRetries--;
 #ifdef TRAMP_DEBUG
@@ -393,8 +403,7 @@ void vtxTrampProcess(uint32_t currentTimeUs)
 
                 // delay next status query by 300ms
                 lastQueryTimeUs = currentTimeUs + 300 * 1000;
-            }
-            else {
+            } else {
                 // everything has been done, let's return to original state
                 trampStatus = TRAMP_STATUS_ONLINE;
                 // reset configuration value in case it failed (no more retries)
@@ -465,8 +474,9 @@ void vtxTrampSetPitMode(uint8_t onoff)
 
 bool vtxTrampGetBandAndChannel(uint8_t *pBand, uint8_t *pChannel)
 {
-    if (!vtxTrampIsReady())
+    if (!vtxTrampIsReady()) {
         return false;
+    }
 
     *pBand = trampBand;
     *pChannel = trampChannel;
@@ -475,8 +485,9 @@ bool vtxTrampGetBandAndChannel(uint8_t *pBand, uint8_t *pChannel)
 
 bool vtxTrampGetPowerIndex(uint8_t *pIndex)
 {
-    if (!vtxTrampIsReady())
+    if (!vtxTrampIsReady()) {
         return false;
+    }
 
     if (trampConfiguredPower > 0) {
         for (uint8_t i = 0; i < sizeof(trampPowerTable); i++) {
@@ -492,8 +503,9 @@ bool vtxTrampGetPowerIndex(uint8_t *pIndex)
 
 bool vtxTrampGetPitMode(uint8_t *pOnOff)
 {
-    if (!vtxTrampIsReady())
+    if (!vtxTrampIsReady()) {
         return false;
+    }
 
     *pOnOff = trampPitMode;
     return true;
@@ -518,7 +530,14 @@ bool vtxTrampInit(void)
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_TRAMP);
 
     if (portConfig) {
-        trampSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_TRAMP, NULL, 9600, MODE_RXTX, TRAMP_SERIAL_OPTIONS);
+        portOptions_e portOptions = 0; 
+#if defined(VTX_COMMON)
+        portOptions = portOptions | (vtxConfig()->halfDuplex ? SERIAL_BIDIR : SERIAL_UNIDIR);
+#else
+        portOptions = SERIAL_BIDIR;
+#endif
+
+        trampSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_TRAMP, NULL, 9600, MODE_RXTX, portOptions);
     }
 
     if (!trampSerialPort) {

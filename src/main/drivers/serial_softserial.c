@@ -131,18 +131,14 @@ static void serialInputPortActivate(softSerial_t *softSerial)
     if (softSerial->port.options & SERIAL_INVERTED) {
 #ifdef STM32F1
         IOConfigGPIO(softSerial->rxIO, IOCFG_IPD);
-#elif defined(STM32F7)
-        IOConfigGPIOAF(softSerial->rxIO, IOCFG_AF_PP_PD, softSerial->timerHardware->alternateFunction);
 #else
-        IOConfigGPIO(softSerial->rxIO, IOCFG_AF_PP_PD);
+        IOConfigGPIOAF(softSerial->rxIO, IOCFG_AF_PP_PD, softSerial->timerHardware->alternateFunction);
 #endif
     } else {
 #ifdef STM32F1
         IOConfigGPIO(softSerial->rxIO, IOCFG_IPU);
-#elif defined(STM32F7)
-        IOConfigGPIOAF(softSerial->rxIO, IOCFG_AF_PP_UP, softSerial->timerHardware->alternateFunction);
 #else
-        IOConfigGPIO(softSerial->rxIO, IOCFG_AF_PP_UP);
+        IOConfigGPIOAF(softSerial->rxIO, IOCFG_AF_PP_UP, softSerial->timerHardware->alternateFunction);
 #endif
     }
 
@@ -165,35 +161,35 @@ static void serialInputPortDeActivate(softSerial_t *softSerial)
     TIM_CCxCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_Disable);
 #endif
 
-#ifdef STM32F7
-    IOConfigGPIOAF(softSerial->rxIO, IOCFG_IN_FLOATING, softSerial->timerHardware->alternateFunction);
-#else
+#ifdef STM32F1
     IOConfigGPIO(softSerial->rxIO, IOCFG_IN_FLOATING);
+#else
+    IOConfigGPIOAF(softSerial->rxIO, IOCFG_IN_FLOATING, softSerial->timerHardware->alternateFunction);
 #endif
     softSerial->rxActive = false;
 }
 
 static void serialOutputPortActivate(softSerial_t *softSerial)
 {
-#ifdef STM32F7
+#ifdef STM32F1
+    IOConfigGPIO(softSerial->txIO, IOCFG_OUT_PP);
+#else
     if (softSerial->exTimerHardware)
         IOConfigGPIOAF(softSerial->txIO, IOCFG_OUT_PP, softSerial->exTimerHardware->alternateFunction);
     else
         IOConfigGPIO(softSerial->txIO, IOCFG_OUT_PP);
-#else
-    IOConfigGPIO(softSerial->txIO, IOCFG_OUT_PP);
 #endif
 }
 
 static void serialOutputPortDeActivate(softSerial_t *softSerial)
 {
-#ifdef STM32F7
+#ifdef STM32F1
+    IOConfigGPIO(softSerial->txIO, IOCFG_IN_FLOATING);
+#else
     if (softSerial->exTimerHardware)
         IOConfigGPIOAF(softSerial->txIO, IOCFG_IN_FLOATING, softSerial->exTimerHardware->alternateFunction);
     else
         IOConfigGPIO(softSerial->txIO, IOCFG_IN_FLOATING);
-#else
-    IOConfigGPIO(softSerial->txIO, IOCFG_IN_FLOATING);
 #endif
 }
 
@@ -254,9 +250,10 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
     if (options & SERIAL_BIDIR) {
         // If RX and TX pins are both assigned, we CAN use either with a timer.
         // However, for consistency with hardware UARTs, we only use TX pin,
-        // and this pin must have a timer.
-        if (!timerTx)
+        // and this pin must have a timer, and it should not be N-Channel.
+        if (!timerTx || (timerTx->output & TIMER_OUTPUT_N_CHANNEL)) {
             return NULL;
+        }
 
         softSerial->timerHardware = timerTx;
         softSerial->txIO = txIO;
@@ -264,9 +261,10 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
         IOInit(txIO, OWNER_SERIAL_TX, RESOURCE_INDEX(portIndex + RESOURCE_SOFT_OFFSET));
     } else {
         if (mode & MODE_RX) {
-            // Need a pin & a timer on RX
-            if (!(tagRx && timerRx))
+            // Need a pin & a timer on RX. Channel should not be N-Channel.
+            if (!timerRx || (timerRx->output & TIMER_OUTPUT_N_CHANNEL)) {
                 return NULL;
+            }
 
             softSerial->rxIO = rxIO;
             softSerial->timerHardware = timerRx;

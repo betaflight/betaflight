@@ -32,6 +32,7 @@ addons:
       - git
       - libc6-i386
       - time
+      - libblocksruntime-dev
 
 # We use cpp for unit tests, and c for the main project.
 language: cpp

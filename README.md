@@ -101,7 +101,7 @@ Big thanks to current and past contributors:
 * Blackman, Jason (blckmn)
 * ctzsnooze
 * Höglund, Anders (andershoglund)
-* Ledvin, Peter (ledvinap) - **IO code awesomeness!**
+* Ledvina, Petr (ledvinap) - **IO code awesomeness!**
 * kc10kevin
 * Keeble, Gary (MadmanK)
 * Keller, Michael (mikeller) - **Configurator brilliance**

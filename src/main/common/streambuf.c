@@ -20,6 +20,13 @@
 
 #include "streambuf.h"
 
+sbuf_t *sbufInit(sbuf_t *sbuf, uint8_t *ptr, uint8_t *end)
+{
+    sbuf->ptr = ptr;
+    sbuf->end = end;
+    return sbuf;
+}
+
 void sbufWriteU8(sbuf_t *dst, uint8_t val)
 {
     *dst->ptr++ = val;
@@ -54,6 +61,12 @@ void sbufWriteU32BigEndian(sbuf_t *dst, uint32_t val)
 }
 
 
+void sbufFill(sbuf_t *dst, uint8_t data, int len)
+{
+    memset(dst->ptr, data, len);
+    dst->ptr += len;
+}
+
 void sbufWriteData(sbuf_t *dst, const void *data, int len)
 {
     memcpy(dst->ptr, data, len);
@@ -63,6 +76,11 @@ void sbufWriteData(sbuf_t *dst, const void *data, int len)
 void sbufWriteString(sbuf_t *dst, const char *string)
 {
     sbufWriteData(dst, string, strlen(string));
+}
+
+void sbufWriteStringWithZeroTerminator(sbuf_t *dst, const char *string)
+{
+    sbufWriteData(dst, string, strlen(string) + 1);
 }
 
 uint8_t sbufReadU8(sbuf_t *src)

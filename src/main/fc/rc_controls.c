@@ -57,6 +57,7 @@
 #include "sensors/acceleration.h"
 
 #include "rx/rx.h"
+#include "scheduler/scheduler.h"
 
 #include "flight/pid.h"
 #include "flight/navigation.h"
@@ -118,11 +119,22 @@ throttleStatus_e calculateThrottleStatus(void)
     return THROTTLE_HIGH;
 }
 
+#define ARM_DELAY_MS        500
+#define STICK_DELAY_MS      50
+#define STICK_AUTOREPEAT_MS 250
+#define repeatAfter(t) { \
+    rcDelayMs -= (t); \
+    doNotRepeat = false; \
+}
 void processRcStickPositions(throttleStatus_e throttleStatus)
 {
-    static uint8_t rcDelayCommand;      // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
-    static uint8_t rcSticks;            // this hold sticks position for command combos
-    static uint8_t rcDisarmTicks;       // this is an extra guard for disarming through switch to prevent that one frame can disarm it
+    // time the sticks are maintained
+    static int16_t rcDelayMs;
+    // hold sticks position for command combos
+    static uint8_t rcSticks;
+    // an extra guard for disarming through switch to prevent that one frame can disarm it
+    static uint8_t rcDisarmTicks;
+    static bool doNotRepeat;
     uint8_t stTmp = 0;
     int i;
 
@@ -132,7 +144,6 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
     }
 #endif
 
-    // ------------------ STICKS COMMAND HANDLER --------------------
     // checking sticks positions
     for (i = 0; i < 4; i++) {
         stTmp >>= 2;
@@ -142,15 +153,16 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
             stTmp |= 0x40;  // check for MAX
     }
     if (stTmp == rcSticks) {
-        if (rcDelayCommand < 250)
-            rcDelayCommand++;
-    } else
-        rcDelayCommand = 0;
+        if (rcDelayMs <= INT16_MAX - (getTaskDeltaTime(TASK_SELF) / 1000))
+            rcDelayMs += getTaskDeltaTime(TASK_SELF) / 1000;
+    } else {
+        rcDelayMs = 0;
+        doNotRepeat = false;
+    }
     rcSticks = stTmp;
 
     // perform actions
     if (!isUsingSticksToArm) {
-
         if (IS_RC_MODE_ACTIVE(BOXARM)) {
             rcDisarmTicks = 0;
             // Arming via ARM BOX
@@ -158,7 +170,6 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
         } else {
             // Disarming via ARM BOX
             resetArmingDisabled();
-
             if (ARMING_FLAG(ARMED) && rxIsReceivingSignal() && !failsafeIsActive()  ) {
                 rcDisarmTicks++;
                 if (rcDisarmTicks > 3) {
@@ -170,31 +181,37 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
                 }
             }
         }
-    }
-
-    if (rcDelayCommand != 20) {
-        return;
-    }
-
-    if (isUsingSticksToArm) {
-        // Disarm on throttle down + yaw
-        if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_CE) {
+    } else if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_CE) {
+        if (rcDelayMs >= ARM_DELAY_MS && !doNotRepeat) {
+            doNotRepeat = true;
+            // Disarm on throttle down + yaw
             if (ARMING_FLAG(ARMED))
                 disarm();
             else {
-                beeper(BEEPER_DISARM_REPEAT);    // sound tone while stick held
-                rcDelayCommand = 0;              // reset so disarm tone will repeat
+                beeper(BEEPER_DISARM_REPEAT);     // sound tone while stick held
+                repeatAfter(STICK_AUTOREPEAT_MS); // disarm tone will repeat
             }
         }
-    }
-
-    if (ARMING_FLAG(ARMED)) {
-        // actions during armed
+        return;
+    } else if (rcSticks == THR_LO + YAW_HI + PIT_CE + ROL_CE) {
+        if (rcDelayMs >= ARM_DELAY_MS && !doNotRepeat) {
+            doNotRepeat = true;
+            if (!ARMING_FLAG(ARMED)) {
+                // Arm via YAW
+                tryArm();
+            } else {
+                resetArmingDisabled();
+            }
+        }
         return;
     }
 
+    if (ARMING_FLAG(ARMED) || doNotRepeat || rcDelayMs <= STICK_DELAY_MS) {
+        return;
+    }
+    doNotRepeat = true;
+
     // actions during not armed
-    i = 0;
 
     if (rcSticks == THR_LO + YAW_LO + PIT_LO + ROL_CE) {
         // GYRO calibration
@@ -221,6 +238,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
     }
 
     // Multiple configuration profiles
+    i = 0;
     if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_LO)          // ROLL left  -> Profile 1
         i = 1;
     else if (rcSticks == THR_LO + YAW_LO + PIT_HI + ROL_CE)     // PITCH up   -> Profile 2
@@ -234,18 +252,6 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
 
     if (rcSticks == THR_LO + YAW_LO + PIT_LO + ROL_HI) {
         saveConfigAndNotify();
-    }
-
-    if (isUsingSticksToArm) {
-
-        if (rcSticks == THR_LO + YAW_HI + PIT_CE + ROL_CE) {
-            // Arm via YAW
-            tryArm();
-
-            return;
-        } else {
-            resetArmingDisabled();
-        }
     }
 
     if (rcSticks == THR_HI + YAW_LO + PIT_LO + ROL_CE) {
@@ -283,7 +289,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
     }
     if (shouldApplyRollAndPitchTrimDelta) {
         applyAndSaveAccelerometerTrimsDelta(&accelerometerTrimsDelta);
-        rcDelayCommand = 0; // allow autorepetition
+        repeatAfter(STICK_AUTOREPEAT_MS);
         return;
     }
 
@@ -325,7 +331,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
         cameraControlKeyPress(CAMERA_CONTROL_KEY_DOWN, 0);
     } else if (rcSticks == THR_LO + YAW_CE + PIT_HI + ROL_CE) {
         cameraControlKeyPress(CAMERA_CONTROL_KEY_UP, 2000);
-   }
+    }
 #endif
 }
 

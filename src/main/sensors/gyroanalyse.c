@@ -86,14 +86,14 @@ static biquadFilter_t fftFreqFilter[3];
 // Hanning window, see https://en.wikipedia.org/wiki/Window_function#Hann_.28Hanning.29_window
 static float hanningWindow[FFT_WINDOW_SIZE];
 
-void initHanning()
+void initHanning(void)
 {
     for (int i = 0; i < FFT_WINDOW_SIZE; i++) {
         hanningWindow[i] = (0.5 - 0.5 * cosf(2 * M_PIf * i / (FFT_WINDOW_SIZE - 1)));
     }
 }
 
-void initGyroData()
+void initGyroData(void)
 {
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         for (int i = 0; i < FFT_WINDOW_SIZE; i++) {

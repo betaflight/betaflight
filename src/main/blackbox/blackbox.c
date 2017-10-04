@@ -318,9 +318,6 @@ typedef struct blackboxSlowState_s {
     bool rxFlightChannelsValid;
 } __attribute__((__packed__)) blackboxSlowState_t; // We pack this struct so that padding doesn't interfere with memcmp()
 
-//From mixer.c:
-extern float motorOutputHigh, motorOutputLow;
-
 //From rc_controls.c
 extern boxBitmask_t rcModeActivationMask;
 
@@ -1701,7 +1698,7 @@ void blackboxInit(void)
     // by default p_denom is 32 and a P-frame is written every 1ms
     // if p_denom is zero then no P-frames are logged
     if (blackboxConfig()->p_denom == 0) {
-        blackboxPInterval = 0;
+        blackboxPInterval = 0; // blackboxPInterval not used when p_denom is zero, so just set it to zero
     } else if (blackboxConfig()->p_denom > blackboxIInterval && blackboxIInterval >= 32) {
         blackboxPInterval = 1;
     } else {

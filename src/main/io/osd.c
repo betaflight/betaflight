@@ -163,7 +163,7 @@ static escSensorData_t *escData;
 /**
  * Gets the correct altitude symbol for the current unit system
  */
-static char osdGetMetersToSelectedUnitSymbol()
+static char osdGetMetersToSelectedUnitSymbol(void)
 {
     switch (osdConfig()->units) {
     case OSD_UNIT_IMPERIAL:
@@ -572,7 +572,7 @@ static void osdDrawSingleElement(uint8_t item)
         }
 
     case OSD_POWER:
-        tfp_sprintf(buff, "%dW", getAmperage() * getBatteryVoltage() / 1000);
+        tfp_sprintf(buff, "%4dW", getAmperage() * getBatteryVoltage() / 1000);
         break;
 
     case OSD_PIDRATE_PROFILE:

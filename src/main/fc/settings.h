@@ -17,6 +17,10 @@
 
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
+#include "config/parameter_group.h"
+
 
 typedef enum {
     TABLE_OFF_ON = 0,
@@ -64,6 +68,9 @@ typedef enum {
     TABLE_CAMERA_CONTROL_MODE,
 #endif
     TABLE_BUS_TYPE,
+#ifdef USE_MAX7456
+    TABLE_MAX7456_CLOCK,
+#endif
     LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
@@ -119,7 +126,7 @@ typedef union {
     cliArrayLengthConfig_t array;
 } cliValueConfig_t;
 
-typedef struct {
+typedef struct clivalue_s {
     const char *name;
     const uint8_t type; // see cliValueFlag_e
     const cliValueConfig_t config;

@@ -73,7 +73,7 @@ void cc2500SetPower(uint8_t power)
     cc2500WriteReg(CC2500_3E_PATABLE, patable[power]);
 }
 
-uint8_t cc2500Reset()
+uint8_t cc2500Reset(void)
 {
     cc2500Strobe(CC2500_SRES);
     delayMicroseconds(1000); // 1000us

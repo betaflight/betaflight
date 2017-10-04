@@ -59,7 +59,8 @@ typedef enum {
     BATTERY_OK = 0,
     BATTERY_WARNING,
     BATTERY_CRITICAL,
-    BATTERY_NOT_PRESENT
+    BATTERY_NOT_PRESENT,
+    BATTERY_INIT
 } batteryState_e;
 
 void batteryInit(void);
@@ -87,4 +88,4 @@ int32_t getMAhDrawn(void);
 
 void batteryUpdateCurrentMeter(timeUs_t currentTimeUs);
 
-lowVoltageCutoff_t *getLowVoltageCutoff(void);
+const lowVoltageCutoff_t *getLowVoltageCutoff(void);

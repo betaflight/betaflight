@@ -605,6 +605,68 @@ TEST(OsdTest, TestElementMahDrawn)
 }
 
 /*
+ * Tests the instantaneous electrical power OSD element.
+ */
+TEST(OsdTest, TestElementPower)
+{
+    // given
+    osdConfigMutable()->item_pos[OSD_POWER] = OSD_POS(1, 10)  | VISIBLE_FLAG;
+
+    // and
+    simulationBatteryVoltage = 100; // 10V
+
+    // and
+    simulationBatteryAmperage = 0; // 0A
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 10, "   0W");
+
+    // given
+    simulationBatteryAmperage = 10; // 0.1A
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 10, "   1W");
+
+    // given
+    simulationBatteryAmperage = 120; // 1.2A
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 10, "  12W");
+
+    // given
+    simulationBatteryAmperage = 1230; // 12.3A
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 10, " 123W");
+
+    // given
+    simulationBatteryAmperage = 12340; // 123.4A
+
+    // when
+    displayClearScreen(&testDisplayPort);
+    osdRefresh(simulationTime);
+
+    // then
+    displayPortTestBufferSubstring(1, 10, "1234W");
+}
+
+/*
  * Tests the altitude OSD element.
  */
 TEST(OsdTest, TestElementAltitude)
