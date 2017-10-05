@@ -65,7 +65,8 @@ PG_RESET_TEMPLATE(cameraControlConfig_t, cameraControlConfig,
     .keyDelayMs = 180,
     .internalResistance = 470,
     .ioTag = IO_TAG(CAMERA_CONTROL_PIN),
-    .inverted = 0
+    .inverted = 0,   // Output is inverted externally
+    .boost = 0       // Percentile of target output voltage adjustment (-10,10), negative = lower, positive = higher.
 );
 
 static struct {
@@ -185,8 +186,10 @@ static const int buttonResistanceValues[] = { 45000, 27000, 15000, 6810, 0 };
 
 static float calculateKeyPressVoltage(const cameraControlKey_e key)
 {
+#define BOOST ((100.0 + (float)cameraControlConfig()->boost) / 100.0)
     const int buttonResistance = buttonResistanceValues[key];
-    return 1.0e-2f * cameraControlConfig()->refVoltage * buttonResistance / (100 * cameraControlConfig()->internalResistance + buttonResistance);
+    return 1.0e-2f * cameraControlConfig()->refVoltage * buttonResistance / (100 * cameraControlConfig()->internalResistance + buttonResistance) * BOOST;
+#undef BOOST
 }
 
 #if defined(CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE) || defined(CAMERA_CONTROL_SOFTWARE_PWM_AVAILABLE)

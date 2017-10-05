@@ -46,6 +46,7 @@ typedef struct cameraControlConfig_s {
 
     ioTag_t ioTag;
     uint8_t inverted;
+    int8_t  boost;
 } cameraControlConfig_t;
 
 PG_DECLARE(cameraControlConfig_t, cameraControlConfig);
