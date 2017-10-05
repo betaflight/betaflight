@@ -86,7 +86,7 @@ PG_RESET_TEMPLATE(beeperDevConfig_t, beeperDevConfig,
 #ifdef BEEPER
 PG_REGISTER_WITH_RESET_TEMPLATE(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 1);
 PG_RESET_TEMPLATE(beeperConfig_t, beeperConfig,
-    .dshotBeaconTone = 0
+    .dshotBeaconTone = DSHOT_CMD_BEACON4
 );
 
 /* Beeper Sound Sequences: (Square wave generation)
