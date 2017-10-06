@@ -146,10 +146,8 @@ extern "C" {
 void delay(uint32_t) {}
 void delayMicroseconds(uint32_t) {}
 
-bool i2cBusReadRegisterBuffer(busDevice_t*, uint8_t, uint8_t*, uint8_t) {return true;}
-bool i2cBusWriteRegister(busDevice_t*, uint8_t, uint8_t) {return true;}
-bool spiBusReadRegisterBuffer(busDevice_t*, uint8_t, uint8_t*, uint8_t) {return true;}
-bool spiBusWriteRegister(busDevice_t*, uint8_t, uint8_t) {return true;}
+bool busReadRegisterBuffer(const busDevice_t*, uint8_t, uint8_t*, uint8_t) {return true;}
+bool busWriteRegister(const busDevice_t*, uint8_t, uint8_t) {return true;}
 
 void spiSetDivisor() {
 }

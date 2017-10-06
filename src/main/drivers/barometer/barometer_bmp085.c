@@ -155,16 +155,6 @@ void bmp085Disable(const bmp085Config_t *config)
     BMP085_OFF;
 }
 
-bool bmp085ReadRegister(busDevice_t *busdev, uint8_t cmd, uint8_t len, uint8_t *data)
-{
-    return i2cBusReadRegisterBuffer(busdev, cmd, data, len);
-}
-
-bool bmp085WriteRegister(busDevice_t *busdev, uint8_t cmd, uint8_t byte)
-{
-    return i2cBusWriteRegister(busdev, cmd, byte);
-}
-
 bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro)
 {
     uint8_t data;
@@ -205,13 +195,13 @@ bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro)
         defaultAddressApplied = true;
     }
 
-    ack = bmp085ReadRegister(busdev, BMP085_CHIP_ID__REG, 1, &data); /* read Chip Id */
+    ack = busReadRegisterBuffer(busdev, BMP085_CHIP_ID__REG, &data, 1); /* read Chip Id */
     if (ack) {
         bmp085.chip_id = BMP085_GET_BITSLICE(data, BMP085_CHIP_ID);
         bmp085.oversampling_setting = 3;
 
         if (bmp085.chip_id == BMP085_CHIP_ID) { /* get bitslice */
-            bmp085ReadRegister(busdev, BMP085_VERSION_REG, 1, &data); /* read Version reg */
+            busReadRegisterBuffer(busdev, BMP085_VERSION_REG, &data, 1); /* read Version reg */
             bmp085.ml_version = BMP085_GET_BITSLICE(data, BMP085_ML_VERSION); /* get ML Version */
             bmp085.al_version = BMP085_GET_BITSLICE(data, BMP085_AL_VERSION); /* get AL Version */
             bmp085_get_cal_param(busdev); /* readout bmp085 calibparam structure */
@@ -302,7 +292,7 @@ static void bmp085_start_ut(baroDev_t *baro)
 #if defined(BARO_EOC_GPIO)
     isConversionComplete = false;
 #endif
-    bmp085WriteRegister(&baro->busdev, BMP085_CTRL_MEAS_REG, BMP085_T_MEASURE);
+    busWriteRegister(&baro->busdev, BMP085_CTRL_MEAS_REG, BMP085_T_MEASURE);
 }
 
 static void bmp085_get_ut(baroDev_t *baro)
@@ -316,7 +306,7 @@ static void bmp085_get_ut(baroDev_t *baro)
     }
 #endif
 
-    bmp085ReadRegister(&baro->busdev, BMP085_ADC_OUT_MSB_REG, 2, data);
+    busReadRegisterBuffer(&baro->busdev, BMP085_ADC_OUT_MSB_REG, data, 2);
     bmp085_ut = (data[0] << 8) | data[1];
 }
 
@@ -330,7 +320,7 @@ static void bmp085_start_up(baroDev_t *baro)
     isConversionComplete = false;
 #endif
 
-    bmp085WriteRegister(&baro->busdev, BMP085_CTRL_MEAS_REG, ctrl_reg_data);
+    busWriteRegister(&baro->busdev, BMP085_CTRL_MEAS_REG, ctrl_reg_data);
 }
 
 /** read out up for pressure conversion
@@ -348,7 +338,7 @@ static void bmp085_get_up(baroDev_t *baro)
     }
 #endif
 
-    bmp085ReadRegister(&baro->busdev, BMP085_ADC_OUT_MSB_REG, 3, data);
+    busReadRegisterBuffer(&baro->busdev, BMP085_ADC_OUT_MSB_REG, data, 3);
     bmp085_up = (((uint32_t) data[0] << 16) | ((uint32_t) data[1] << 8) | (uint32_t) data[2])
             >> (8 - bmp085.oversampling_setting);
 }
@@ -368,7 +358,7 @@ STATIC_UNIT_TESTED void bmp085_calculate(int32_t *pressure, int32_t *temperature
 static void bmp085_get_cal_param(busDevice_t *busdev)
 {
     uint8_t data[22];
-    bmp085ReadRegister(busdev, BMP085_PROM_START__ADDR, BMP085_PROM_DATA__LEN, data);
+    busReadRegisterBuffer(busdev, BMP085_PROM_START__ADDR, data, BMP085_PROM_DATA__LEN);
 
     /*parameters AC1-AC6*/
     bmp085.cal_param.ac1 = (data[0] << 8) | data[1];

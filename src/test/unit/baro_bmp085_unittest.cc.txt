@@ -186,11 +186,7 @@ extern "C" {
     void RCC_APB2PeriphClockCmd() {}
     void delay(uint32_t) {}
     void delayMicroseconds(uint32_t) {}
-    bool i2cWrite(uint8_t, uint8_t, uint8_t) {
-        return 1;
-    }
-    bool i2cRead(uint8_t, uint8_t, uint8_t, uint8_t) {
-        return 1;
-    }
+    bool busReadRegisterBuffer(const busDevice_t*, uint8_t, uint8_t*, uint8_t) {return true;}
+    bool busWriteRegister(const busDevice_t*, uint8_t, uint8_t) {return true;}
 
 }

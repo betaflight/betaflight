@@ -61,36 +61,6 @@ STATIC_UNIT_TESTED uint32_t ms5611_up;  // static result of pressure measurement
 STATIC_UNIT_TESTED uint16_t ms5611_c[PROM_NB];  // on-chip ROM
 static uint8_t ms5611_osr = CMD_ADC_4096;
 
-bool ms5611ReadCommand(busDevice_t *busdev, uint8_t cmd, uint8_t len, uint8_t *data)
-{
-    switch (busdev->bustype) {
-#ifdef USE_BARO_SPI_MS5611
-    case BUSTYPE_SPI:
-        return spiBusReadRegisterBuffer(busdev, cmd | 0x80, data, len);
-#endif
-#ifdef USE_BARO_MS5611
-    case BUSTYPE_I2C:
-        return i2cBusReadRegisterBuffer(busdev, cmd, data, len);
-#endif
-    }
-    return false;
-}
-
-bool ms5611WriteCommand(busDevice_t *busdev, uint8_t cmd, uint8_t byte)
-{
-    switch (busdev->bustype) {
-#ifdef USE_BARO_SPI_MS5611
-    case BUSTYPE_SPI:
-        return spiBusWriteRegister(busdev, cmd & 0x7f, byte);
-#endif
-#ifdef USE_BARO_MS5611
-    case BUSTYPE_I2C:
-        return i2cBusWriteRegister(busdev, cmd, byte);
-#endif
-    }
-    return false;
-}
-
 void ms5611BusInit(busDevice_t *busdev)
 {
 #ifdef USE_BARO_SPI_MS5611
@@ -136,7 +106,7 @@ bool ms5611Detect(baroDev_t *baro)
         defaultAddressApplied = true;
     }
 
-    if (!ms5611ReadCommand(busdev, CMD_PROM_RD, 1, &sig) || sig == 0xFF) {
+    if (!busReadRegisterBuffer(busdev, CMD_PROM_RD, &sig, 1) || sig == 0xFF) {
         goto fail;
     }
 
@@ -174,7 +144,7 @@ fail:;
 
 static void ms5611_reset(busDevice_t *busdev)
 {
-    ms5611WriteCommand(busdev, CMD_RESET, 1);
+    busWriteRegister(busdev, CMD_RESET, 1);
 
     delayMicroseconds(2800);
 }
@@ -183,7 +153,7 @@ static uint16_t ms5611_prom(busDevice_t *busdev, int8_t coef_num)
 {
     uint8_t rxbuf[2] = { 0, 0 };
 
-    ms5611ReadCommand(busdev, CMD_PROM_RD + coef_num * 2, 2, rxbuf); // send PROM READ command
+    busReadRegisterBuffer(busdev, CMD_PROM_RD + coef_num * 2, rxbuf, 2); // send PROM READ command
 
     return rxbuf[0] << 8 | rxbuf[1];
 }
@@ -222,14 +192,14 @@ static uint32_t ms5611_read_adc(busDevice_t *busdev)
 {
     uint8_t rxbuf[3];
 
-    ms5611ReadCommand(busdev, CMD_ADC_READ, 3, rxbuf); // read ADC
+    busReadRegisterBuffer(busdev, CMD_ADC_READ, rxbuf, 3); // read ADC
 
     return (rxbuf[0] << 16) | (rxbuf[1] << 8) | rxbuf[2];
 }
 
 static void ms5611_start_ut(baroDev_t *baro)
 {
-    ms5611WriteCommand(&baro->busdev, CMD_ADC_CONV + CMD_ADC_D2 + ms5611_osr, 1); // D2 (temperature) conversion start!
+    busWriteRegister(&baro->busdev, CMD_ADC_CONV + CMD_ADC_D2 + ms5611_osr, 1); // D2 (temperature) conversion start!
 }
 
 static void ms5611_get_ut(baroDev_t *baro)
@@ -239,7 +209,7 @@ static void ms5611_get_ut(baroDev_t *baro)
 
 static void ms5611_start_up(baroDev_t *baro)
 {
-    ms5611WriteCommand(&baro->busdev, CMD_ADC_CONV + CMD_ADC_D1 + ms5611_osr, 1); // D1 (pressure) conversion start!
+    busWriteRegister(&baro->busdev, CMD_ADC_CONV + CMD_ADC_D1 + ms5611_osr, 1); // D1 (pressure) conversion start!
 }
 
 static void ms5611_get_up(baroDev_t *baro)

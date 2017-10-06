@@ -22,8 +22,15 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/io_types.h"
 
+typedef enum {
+    BUSTYPE_NONE = 0,
+    BUSTYPE_I2C,
+    BUSTYPE_SPI,
+    BUSTYPE_SLAVE // Slave I2C on SPI master
+} busType_e;
+
 typedef struct busDevice_s {
-    uint8_t bustype;
+    busType_e bustype;
     union {
         struct deviceSpi_s {
             SPI_TypeDef *instance;
@@ -33,15 +40,12 @@ typedef struct busDevice_s {
             IO_t csnPin;
         } spi;
         struct deviceI2C_s {
+           const struct busDevice_s *master;
            I2CDevice device;
            uint8_t address;
-        } i2c;
+         } i2c;
     } busdev_u;
 } busDevice_t;
-
-#define BUSTYPE_NONE 0
-#define BUSTYPE_I2C  1
-#define BUSTYPE_SPI  2
 
 #ifdef TARGET_BUS_INIT
 void targetBusInit(void);

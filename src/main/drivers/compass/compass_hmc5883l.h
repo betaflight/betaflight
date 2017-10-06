@@ -19,4 +19,4 @@
 
 #include "drivers/io_types.h"
 
-bool hmc5883lDetect(magDev_t* mag, ioTag_t interruptTag);
+bool hmc5883lDetect(magDev_t* mag);
