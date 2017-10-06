@@ -555,7 +555,7 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
                 motorOutputRange = motorOutputLow - deadbandMotor3dLow;
             }
             motorOutputMixSign = -1;
-            mixerConfig->yaw_motors_reversed = true; // Yaw is reversed when inverted for a collective pitch quad
+            // mixerConfig->yaw_motors_reversed = true; // Yaw is reversed when inverted for a collective pitch quad
             rcThrottlePrevious = rcCommand[THROTTLE];
             throttle = rcCommand3dDeadBandLow - rcCommand[THROTTLE];
             currentThrottleInputRange = rcCommandThrottleRange3dLow;
@@ -566,7 +566,7 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
             motorOutputMin = deadbandMotor3dHigh;
             motorOutputRange = motorOutputHigh - deadbandMotor3dHigh;
             motorOutputMixSign = 1;
-            mixerConfig->yaw_motors_reversed = false;
+            // mixerConfig->yaw_motors_reversed = false;
             rcThrottlePrevious = rcCommand[THROTTLE];
             throttle = rcCommand[THROTTLE] - rcCommand3dDeadBandHigh;
             currentThrottleInputRange = rcCommandThrottleRange3dHigh;
@@ -582,7 +582,7 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
                 motorOutputRange = motorOutputLow - deadbandMotor3dLow;
             }
             motorOutputMixSign = -1;
-            mixerConfig->yaw_motors_reversed = true; // Yaw is reversed when inverted for a collective pitch quad
+            // mixerConfig->yaw_motors_reversed = true; // Yaw is reversed when inverted for a collective pitch quad
             throttle = 0;
             currentThrottleInputRange = rcCommandThrottleRange3dLow;
         } else {
@@ -592,7 +592,7 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
             motorOutputMin = deadbandMotor3dHigh;
             motorOutputRange = motorOutputHigh - deadbandMotor3dHigh;
             motorOutputMixSign = 1;
-            mixerConfig->yaw_motors_reversed = false;
+            // mixerConfig->yaw_motors_reversed = false;
             throttle = 0;
             currentThrottleInputRange = rcCommandThrottleRange3dHigh;
         }
@@ -692,7 +692,7 @@ void mixTable(uint8_t vbatPidCompensation)
     if (isMotorsReversed()) {
         scaledAxisPidRoll = -scaledAxisPidRoll;
         scaledAxisPidPitch = -scaledAxisPidPitch;
-        scaledAxisPidYaw = -scaledAxisPidYaw;
+        // scaledAxisPidYaw = -scaledAxisPidYaw;
     }
     if (mixerConfig()->yaw_motors_reversed) {
         scaledAxisPidYaw = -scaledAxisPidYaw;
