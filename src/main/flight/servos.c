@@ -22,7 +22,7 @@
 
 #include "platform.h"
 
-//#ifdef USE_SERVOS
+#ifdef USE_SERVOS
 
 #include "build/build_config.h"
 
@@ -117,8 +117,16 @@ static const servoMixer_t servoMixerFlyingWing[] = {
     { SERVO_THROTTLE,    INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100, 0 },
 };
 
+#if defined(USE_UNCOMMON_MIXERS)
+static const servoMixer_t servoMixerBI[] = {
+    { SERVO_BICOPTER_LEFT, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
+    { SERVO_BICOPTER_LEFT, INPUT_STABILIZED_PITCH, -100, 0, 0, 100, 0 },
+    { SERVO_BICOPTER_RIGHT, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
+    { SERVO_BICOPTER_RIGHT, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
+};
+#else
 #define servoMixerBI NULL
-
+#endif
 
 static const servoMixer_t servoMixerTri[] = {
     { SERVO_RUDDER, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
@@ -148,19 +156,13 @@ static const servoMixer_t servoMixerHeli[] = {
     { SERVO_HELI_LEFT, INPUT_STABILIZED_PITCH,   -50, 0, 0, 100, 0 },
     { SERVO_HELI_LEFT, INPUT_STABILIZED_ROLL,    87, 0, 0, 100, 0 },
     { SERVO_HELI_LEFT, INPUT_RC_AUX1,    100, 0, 0, 100, 0 },
-
     { SERVO_HELI_RIGHT, INPUT_STABILIZED_PITCH,  -50, 0, 0, 100, 0 },
     { SERVO_HELI_RIGHT, INPUT_STABILIZED_ROLL,  -87, 0, 0, 100, 0 },
     { SERVO_HELI_RIGHT, INPUT_RC_AUX1,    100, 0, 0, 100, 0 },
-
     { SERVO_HELI_TOP, INPUT_STABILIZED_PITCH,   100, 0, 0, 100, 0 },
     { SERVO_HELI_TOP, INPUT_RC_AUX1,    100, 0, 0, 100, 0 },
-
     { SERVO_HELI_RUD, INPUT_STABILIZED_YAW, 100, 0, 0, 100, 0 },
-
 };
-
-
 
 static const servoMixer_t servoMixerGimbal[] = {
     { SERVO_GIMBAL_PITCH, INPUT_GIMBAL_PITCH, 125, 0, 0, 100, 0 },
@@ -189,7 +191,7 @@ const mixerRules_t servoMixers[] = {
     { 0, NULL },                // MULTITYPE_HEX6H
     { 0, NULL },                // * MULTITYPE_PPM_TO_SERVO
     { COUNT_SERVO_RULES(servoMixerDual), servoMixerDual },      // MULTITYPE_DUALCOPTER
-    { COUNT_SERVO_RULES(servoMixerSingle), servoMixerSingle},    // MULTITYPE_SINGLECOPTER
+    { COUNT_SERVO_RULES(servoMixerSingle), servoMixerSingle },    // MULTITYPE_SINGLECOPTER
     { 0, NULL },                // MULTITYPE_ATAIL4
     { 0, NULL },                // MULTITYPE_CUSTOM
     { 0, NULL },                // MULTITYPE_CUSTOM_PLANE
@@ -261,15 +263,19 @@ void servoConfigureOutput(void)
     // set flag that we're on something with wings
     if (currentMixerMode == MIXER_FLYING_WING ||
         currentMixerMode == MIXER_AIRPLANE ||
-        currentMixerMode == MIXER_CUSTOM_AIRPLANE)
-    {
+        currentMixerMode == MIXER_CUSTOM_AIRPLANE
+    ) {
         ENABLE_STATE(FIXED_WING);
-        if (currentMixerMode == MIXER_CUSTOM_AIRPLANE) {loadCustomServoMixer();}
-    }
-    else
-    {
-      DISABLE_STATE(FIXED_WING);
-      if (currentMixerMode == MIXER_CUSTOM_TRI) {  loadCustomServoMixer(); }
+        
+        if (currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
+            loadCustomServoMixer();
+        }
+    } else {
+        DISABLE_STATE(FIXED_WING);
+
+        if (currentMixerMode == MIXER_CUSTOM_TRI) {
+            loadCustomServoMixer();
+        }
     }
 }
 
@@ -357,10 +363,10 @@ void writeServos(void)
         break;
 
     case MIXER_SINGLECOPTER:
-      pwmWriteServo(servoIndex++, servo[SERVO_SINGLECOPTER_1]);
-      pwmWriteServo(servoIndex++, servo[SERVO_SINGLECOPTER_2]);
-      pwmWriteServo(servoIndex++, servo[SERVO_SINGLECOPTER_3]);
-      pwmWriteServo(servoIndex++, servo[SERVO_SINGLECOPTER_4]);
+        for (int i = SERVO_SINGLECOPTER_INDEX_MIN; i <= SERVO_SINGLECOPTER_INDEX_MAX; i++) {
+            pwmWriteServo(servoIndex++, servo[i]);
+        }
+        break;
 
     default:
         break;
@@ -470,7 +476,6 @@ static void servoTable(void)
     case MIXER_DUALCOPTER:
     case MIXER_SINGLECOPTER:
     case MIXER_HELI_120_CCPM:
-    case MIXER_HELI_90_DEG:
     case MIXER_GIMBAL:
         servoMixer();
         break;
@@ -542,3 +547,4 @@ static void filterServos(void)
     debug[0] = (int16_t)(micros() - startTime);
 #endif
 }
+#endif
