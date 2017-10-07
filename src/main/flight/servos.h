@@ -81,7 +81,6 @@ typedef enum {
 #define SERVO_FLAPPERONS_MIN SERVO_FLAPPERON_1
 #define SERVO_FLAPPERONS_MAX SERVO_FLAPPERON_2
 
-
 typedef struct servoMixer_s {
     uint8_t targetChannel;                  // servo that receives the output of the rule
     uint8_t inputSource;                    // input channel for this rule
