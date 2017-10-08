@@ -58,33 +58,72 @@ void targetConfiguration(void)
         pidConfigMutable()->pid_process_denom = 1;
     }
 
-#ifndef BEEBRAIN_V2_DSM
-    // Frsky version
-    serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIALRX_UART)].functionMask = FUNCTION_TELEMETRY_FRSKY | FUNCTION_RX_SERIAL;
-#endif
-
     for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
         pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
 
-        pidProfile->pid[PID_ROLL].P = 90;
-        pidProfile->pid[PID_ROLL].I = 44;
-        pidProfile->pid[PID_ROLL].D = 60;
+        pidProfile->pid[PID_ROLL].P  = 86;
+        pidProfile->pid[PID_ROLL].I  = 50;
+        pidProfile->pid[PID_ROLL].D  = 60;
         pidProfile->pid[PID_PITCH].P = 90;
-        pidProfile->pid[PID_PITCH].I = 44;
+        pidProfile->pid[PID_PITCH].I = 55;
         pidProfile->pid[PID_PITCH].D = 60;
+        pidProfile->pid[PID_YAW].P   = 123;
+        pidProfile->pid[PID_YAW].I   = 75;
     }
 
     *customMotorMixerMutable(0) = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
     *customMotorMixerMutable(1) = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
     *customMotorMixerMutable(2) = (motorMixer_t){ 1.0f,  0.414178f,  1.0f,  1.0f };    // REAR_L
     *customMotorMixerMutable(3) = (motorMixer_t){ 1.0f,  0.414178f, -1.0f, -1.0f };    // FRONT_L
-    *customMotorMixerMutable(4) = (motorMixer_t){ 1.0f, -1.0f, -0.414178f, -1.0f };    // MIDFRONT_R
-    *customMotorMixerMutable(5) = (motorMixer_t){ 1.0f,  1.0f, -0.414178f,  1.0f };    // MIDFRONT_L
-    *customMotorMixerMutable(6) = (motorMixer_t){ 1.0f, -1.0f,  0.414178f,  1.0f };    // MIDREAR_R
-    *customMotorMixerMutable(7) = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L
+
+    batteryConfigMutable()->batteryCapacity = 250;
+
+    vcdProfileMutable()->video_system = VIDEO_SYSTEM_NTSC;
 
     strcpy(pilotConfigMutable()->name, "BeeBrain V2");
-    osdConfigMutable()->item_pos[OSD_CRAFT_NAME] = OSD_POS(9, 11) | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_CRAFT_NAME]        = OSD_POS(9, 11)  | VISIBLE_FLAG;
     osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(23, 10) | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_2]      = OSD_POS(2, 10)  | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_FLYMODE]           = OSD_POS(17, 10) | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_VTX_CHANNEL]       = OSD_POS(10, 10) | VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_RSSI_VALUE]         &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_ITEM_TIMER_1]       &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_THROTTLE_POS]       &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_CROSSHAIRS]         &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_HORIZON_SIDEBARS]   &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_ARTIFICIAL_HORIZON] &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_CURRENT_DRAW]       &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_MAH_DRAWN]          &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_GPS_SPEED]          &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_GPS_LON]            &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_GPS_LAT]            &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_GPS_SATS]           &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_HOME_DIR]           &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_HOME_DIST]          &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_COMPASS_BAR]        &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_ALTITUDE]           &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_ROLL_PIDS]          &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_PITCH_PIDS]         &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_YAW_PIDS]           &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_DEBUG]              &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_POWER]              &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_PIDRATE_PROFILE]    &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_WARNINGS]           &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_AVG_CELL_VOLTAGE]   &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_PITCH_ANGLE]        &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_ROLL_ANGLE]         &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_MAIN_BATT_USAGE]    &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_DISARMED]           &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_NUMERICAL_HEADING]  &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_NUMERICAL_VARIO]    &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_ESC_TMP]            &= ~VISIBLE_FLAG;
+    osdConfigMutable()->item_pos[OSD_ESC_RPM]            &= ~VISIBLE_FLAG;
+
+#ifndef BEEBRAIN_V2_DSM
+    // Frsky version
+    serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIALRX_UART)].functionMask = FUNCTION_TELEMETRY_FRSKY | FUNCTION_RX_SERIAL;
+    osdConfigMutable()->item_pos[OSD_RSSI_VALUE] = OSD_POS(25, 1) | VISIBLE_FLAG;
+    rxConfigMutable()->rssi_channel = 9;
+#endif
 }
 #endif
