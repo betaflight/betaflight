@@ -103,6 +103,7 @@ void telemetryInit(void)
 #endif
 #if defined(USE_MSP_OVER_TELEMETRY)
     initSharedMsp();
+    initCrsfMspBuffer();
 #endif
 
     telemetryCheckState();

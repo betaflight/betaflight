@@ -288,5 +288,5 @@ bool telemetryCheckRxPortShared(const serialPortConfig_t *) {return false;}
 serialPort_t *telemetrySharedPort = NULL;
 void crsfScheduleDeviceInfoResponse(void) {};
 void crsfScheduleMspResponse(mspPackage_t *package) { UNUSED(package); };
-bool handleMspFrame(uint8_t *, uint8_t *) { return false; }
+bool bufferMspFrame(uint8_t *, int) {return true;}
 }

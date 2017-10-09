@@ -24,6 +24,7 @@
 #ifdef TELEMETRY
 
 #include "config/feature.h"
+#include "build/atomic.h"
 #include "build/build_config.h"
 #include "build/version.h"
 
@@ -35,6 +36,8 @@
 #include "common/printf.h"
 #include "common/streambuf.h"
 #include "common/utils.h"
+
+#include "drivers/nvic.h"
 
 #include "sensors/battery.h"
 
@@ -60,11 +63,64 @@
 
 #define CRSF_CYCLETIME_US                   100000 // 100ms, 10 Hz
 #define CRSF_DEVICEINFO_VERSION             0x01
-#define CRSF_DEVICEINFO_PARAMETER_COUNT     255
+#define CRSF_DEVICEINFO_PARAMETER_COUNT     0
+
+#define CRSF_MSP_BUFFER_SIZE 96
+#define CRSF_MSP_LENGTH_OFFSET 1
 
 static bool crsfTelemetryEnabled;
 static bool deviceInfoReplyPending;
 static uint8_t crsfFrame[CRSF_FRAME_SIZE_MAX];
+
+#if defined(USE_MSP_OVER_TELEMETRY)
+typedef struct mspBuffer_s {
+    uint8_t bytes[CRSF_MSP_BUFFER_SIZE];
+    int len;
+} mspBuffer_t;
+
+static mspBuffer_t mspRxBuffer;
+
+void initCrsfMspBuffer(void)
+{
+    mspRxBuffer.len = 0;
+}
+
+bool bufferCrsfMspFrame(uint8_t *frameStart, int frameLength)
+{
+    if (mspRxBuffer.len + CRSF_MSP_LENGTH_OFFSET + frameLength > CRSF_MSP_BUFFER_SIZE) {
+        return false;
+    } else {
+        uint8_t *p = mspRxBuffer.bytes + mspRxBuffer.len;
+        *p++ = frameLength;
+        memcpy(p, frameStart, frameLength);
+        mspRxBuffer.len += CRSF_MSP_LENGTH_OFFSET + frameLength;
+        return true;
+    }
+}
+
+bool handleCrsfMspFrameBuffer(uint8_t payloadSize, mspResponseFnPtr responseFn)
+{
+    bool requestHandled = false;
+    if (!mspRxBuffer.len) {
+        return false;
+    }
+    int pos = 0;
+    while (true) {
+        const int mspFrameLength = mspRxBuffer.bytes[pos];
+        if (handleMspFrame(&mspRxBuffer.bytes[CRSF_MSP_LENGTH_OFFSET + pos], mspFrameLength)) {
+            requestHandled |= sendMspReply(payloadSize, responseFn);
+        }
+        pos += CRSF_MSP_LENGTH_OFFSET + mspFrameLength;
+        ATOMIC_BLOCK(NVIC_PRIO_SERIALUART1) {
+            if (pos >= mspRxBuffer.len) {
+                mspRxBuffer.len = 0;
+                return requestHandled;
+            }
+        }
+    }
+    return requestHandled;
+}
+#endif
 
 static void crsfInitializeFrame(sbuf_t *dst)
 {
@@ -291,11 +347,11 @@ void crsfSendMspResponse(uint8_t *payload)
     sbuf_t *dst = &crsfPayloadBuf;
 
     crsfInitializeFrame(dst);
-    sbufWriteU8(dst, CRSF_FRAME_TX_MSP_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_EXT_TYPE_CRC);
+    sbufWriteU8(dst, CRSF_FRAME_TX_MSP_FRAME_SIZE + CRSF_FRAME_LENGTH_EXT_TYPE_CRC);
     sbufWriteU8(dst, CRSF_FRAMETYPE_MSP_RESP);
     sbufWriteU8(dst, CRSF_ADDRESS_RADIO_TRANSMITTER);
     sbufWriteU8(dst, CRSF_ADDRESS_BETAFLIGHT);
-    sbufWriteData(dst, payload, CRSF_FRAME_TX_MSP_PAYLOAD_SIZE);
+    sbufWriteData(dst, payload, CRSF_FRAME_TX_MSP_FRAME_SIZE);
     crsfFinalize(dst);
 }
 #endif
@@ -383,6 +439,12 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
     // in between the RX frames.
     crsfRxSendTelemetryData();
 
+#if defined(USE_MSP_OVER_TELEMETRY)
+    if (mspReplyPending) {
+        mspReplyPending = handleCrsfMspFrameBuffer(CRSF_FRAME_TX_MSP_FRAME_SIZE, &crsfSendMspResponse);
+    }
+#endif
+
     // Actual telemetry data only needs to be sent at a low frequency, ie 10Hz
     if (currentTimeUs >= crsfLastCycleTime + CRSF_CYCLETIME_US) {
         crsfLastCycleTime = currentTimeUs;
@@ -393,10 +455,6 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
             crsfFrameDeviceInfo(dst);
             crsfFinalize(dst);
             deviceInfoReplyPending = false;
-#if defined(USE_MSP_OVER_TELEMETRY)
-        } else if (mspReplyPending) {
-            mspReplyPending = sendMspReply(CRSF_FRAME_TX_MSP_PAYLOAD_SIZE, &crsfSendMspResponse);
-#endif
         } else {
             processCrsf();
         }

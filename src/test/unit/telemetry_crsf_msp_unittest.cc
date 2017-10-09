@@ -26,6 +26,7 @@ extern "C" {
     #include <platform.h>
 
     #include "build/debug.h"
+    #include "build/atomic.h"
 
     #include "common/crc.h"
     #include "common/utils.h"
@@ -37,6 +38,7 @@ extern "C" {
     #include "config/parameter_group.h"
     #include "config/parameter_group_ids.h"
 
+    #include "drivers/nvic.h"
     #include "drivers/serial.h"
     #include "drivers/system.h"
 
@@ -61,7 +63,7 @@ extern "C" {
     #include "telemetry/smartport.h"
     #include "sensors/acceleration.h"
 
-    bool handleMspFrame(uint8_t *frameStart, uint8_t *frameEnd);
+    bool handleMspFrame(uint8_t *frameStart, int frameLength);
     bool sendMspReply(uint8_t payloadSize, mspResponseFnPtr responseFn);
     uint8_t sbufReadU8(sbuf_t *src);
     int sbufBytesRemaining(sbuf_t *buf);
@@ -99,7 +101,7 @@ typedef struct crsfMspFrame_s {
     uint8_t type;
     uint8_t destination;
     uint8_t origin;
-    uint8_t payload[CRSF_FRAME_RX_MSP_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_CRC];
+    uint8_t payload[CRSF_FRAME_RX_MSP_FRAME_SIZE + CRSF_FRAME_LENGTH_CRC];
 } crsfMspFrame_t;
 
 const uint8_t crsfPidRequest[] = {
@@ -108,17 +110,19 @@ const uint8_t crsfPidRequest[] = {
 
 TEST(CrossFireMSPTest, RequestBufferTest)
 {
+    atomic_BASEPRI = 0;
+
     initSharedMsp();
     const crsfMspFrame_t *framePtr = (const crsfMspFrame_t*)crsfPidRequest;
     crsfFrame = *(const crsfFrame_t*)framePtr;
     crsfFrameDone = true;
     EXPECT_EQ(CRSF_ADDRESS_BROADCAST, crsfFrame.frame.deviceAddress);
-    EXPECT_EQ(CRSF_FRAME_LENGTH_ADDRESS + CRSF_FRAME_LENGTH_EXT_TYPE_CRC + CRSF_FRAME_RX_MSP_PAYLOAD_SIZE, crsfFrame.frame.frameLength);
+    EXPECT_EQ(CRSF_FRAME_LENGTH_ADDRESS + CRSF_FRAME_LENGTH_EXT_TYPE_CRC + CRSF_FRAME_RX_MSP_FRAME_SIZE, crsfFrame.frame.frameLength);
     EXPECT_EQ(CRSF_FRAMETYPE_MSP_REQ, crsfFrame.frame.type);
     uint8_t *destination = (uint8_t *)&crsfFrame.frame.payload;
     uint8_t *origin = (uint8_t *)&crsfFrame.frame.payload + 1;
     uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + 2;
-    uint8_t *frameEnd = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_RX_MSP_PAYLOAD_SIZE + 2;
+    uint8_t *frameEnd = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_RX_MSP_FRAME_SIZE + 2;
     EXPECT_EQ(0xC8, *destination);
     EXPECT_EQ(0xEA, *origin);
     EXPECT_EQ(0x30, *frameStart);
@@ -132,8 +136,7 @@ TEST(CrossFireMSPTest, ResponsePacketTest)
     crsfFrame = *(const crsfFrame_t*)framePtr;
     crsfFrameDone = true;
     uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + 2;
-    uint8_t *frameEnd = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_RX_MSP_PAYLOAD_SIZE + 2;
-    handleMspFrame(frameStart, frameEnd);
+    handleMspFrame(frameStart, CRSF_FRAME_RX_MSP_FRAME_SIZE);
     for (unsigned int ii=1; ii<30; ii++) {
         EXPECT_EQ(ii, sbufReadU8(&mspPackage.responsePacket->buf));
     }
@@ -153,8 +156,7 @@ TEST(CrossFireMSPTest, WriteResponseTest)
     crsfFrame = *(const crsfFrame_t*)framePtr1;
     crsfFrameDone = true;
     uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + 2;
-    uint8_t *frameEnd = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_RX_MSP_PAYLOAD_SIZE + 2;
-    bool pending1 = handleMspFrame(frameStart, frameEnd);
+    bool pending1 = handleMspFrame(frameStart, CRSF_FRAME_RX_MSP_FRAME_SIZE);
     EXPECT_FALSE(pending1); // not done yet*/
     EXPECT_EQ(0x29, mspPackage.requestBuffer[0]);
     EXPECT_EQ(0x28, mspPackage.requestBuffer[1]);
@@ -166,8 +168,7 @@ TEST(CrossFireMSPTest, WriteResponseTest)
     crsfFrame = *(const crsfFrame_t*)framePtr2;
     crsfFrameDone = true;
     uint8_t *frameStart2 = (uint8_t *)&crsfFrame.frame.payload + 2;
-    uint8_t *frameEnd2 = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_RX_MSP_PAYLOAD_SIZE + 2;
-    bool pending2 = handleMspFrame(frameStart2, frameEnd2);
+    bool pending2 = handleMspFrame(frameStart2, CRSF_FRAME_RX_MSP_FRAME_SIZE);
     EXPECT_FALSE(pending2); // not done yet
     EXPECT_EQ(0x23, mspPackage.requestBuffer[5]);
     EXPECT_EQ(0x46, mspPackage.requestBuffer[6]);
@@ -181,8 +182,7 @@ TEST(CrossFireMSPTest, WriteResponseTest)
     crsfFrame = *(const crsfFrame_t*)framePtr3;
     crsfFrameDone = true;
     uint8_t *frameStart3 = (uint8_t *)&crsfFrame.frame.payload + 2;
-    uint8_t *frameEnd3 = frameStart3 + CRSF_FRAME_RX_MSP_PAYLOAD_SIZE;
-    bool pending3 = handleMspFrame(frameStart3, frameEnd3);
+    bool pending3 = handleMspFrame(frameStart3, CRSF_FRAME_RX_MSP_FRAME_SIZE);
     EXPECT_FALSE(pending3); // not done yet
     EXPECT_EQ(0x0F, mspPackage.requestBuffer[12]);
     EXPECT_EQ(0x00, mspPackage.requestBuffer[13]);
@@ -196,8 +196,7 @@ TEST(CrossFireMSPTest, WriteResponseTest)
     crsfFrame = *(const crsfFrame_t*)framePtr4;
     crsfFrameDone = true;
     uint8_t *frameStart4 = (uint8_t *)&crsfFrame.frame.payload + 2;
-    uint8_t *frameEnd4 = frameStart4 + CRSF_FRAME_RX_MSP_PAYLOAD_SIZE;
-    bool pending4 = handleMspFrame(frameStart4, frameEnd4);
+    bool pending4 = handleMspFrame(frameStart4, CRSF_FRAME_RX_MSP_FRAME_SIZE);
     EXPECT_FALSE(pending4); // not done yet
     EXPECT_EQ(0x21, mspPackage.requestBuffer[19]);
     EXPECT_EQ(0x53, mspPackage.requestBuffer[20]);
@@ -212,8 +211,7 @@ TEST(CrossFireMSPTest, WriteResponseTest)
     crsfFrame = *(const crsfFrame_t*)framePtr5;
     crsfFrameDone = true;
     uint8_t *frameStart5 = (uint8_t *)&crsfFrame.frame.payload + 2;
-    uint8_t *frameEnd5 = frameStart2 + CRSF_FRAME_RX_MSP_PAYLOAD_SIZE;
-    bool pending5 = handleMspFrame(frameStart5, frameEnd5);
+    bool pending5 = handleMspFrame(frameStart5, CRSF_FRAME_RX_MSP_FRAME_SIZE);
     EXPECT_TRUE(pending5); // not done yet
     EXPECT_EQ(0x00, mspPackage.requestBuffer[26]);
     EXPECT_EQ(0x37, mspPackage.requestBuffer[27]);
@@ -235,8 +233,7 @@ TEST(CrossFireMSPTest, SendMspReply) {
     crsfFrame = *(const crsfFrame_t*)framePtr;
     crsfFrameDone = true;
     uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + 2;
-    uint8_t *frameEnd = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_RX_MSP_PAYLOAD_SIZE + 2;
-    bool handled = handleMspFrame(frameStart, frameEnd);
+    bool handled = handleMspFrame(frameStart, CRSF_FRAME_RX_MSP_FRAME_SIZE);
     EXPECT_TRUE(handled);
     bool replyPending = sendMspReply(64, &testSendMspResponse);
     EXPECT_FALSE(replyPending);
@@ -278,7 +275,6 @@ extern "C" {
         UNUSED(mspPostProcessFn);
 
         sbuf_t *dst = &reply->buf;
-        //sbuf_t *src = &cmd->buf;
         const uint8_t cmdMSP = cmd->cmd;
         reply->cmd = cmd->cmd;
 
@@ -298,5 +294,4 @@ extern "C" {
     int32_t getMAhDrawn(void) {
       return testmAhDrawn;
     }
-
 }
