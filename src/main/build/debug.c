@@ -26,3 +26,30 @@ uint8_t debugMode;
 #ifdef DEBUG_SECTION_TIMES
 uint32_t sectionTimes[2][4];
 #endif
+
+const char * const debugModeNames[DEBUG_COUNT] = {
+    "NONE",
+    "CYCLETIME",
+    "BATTERY",
+    "GYRO",
+    "ACCELEROMETER",
+    "MIXER",
+    "AIRMODE",
+    "PIDLOOP",
+    "NOTCH",
+    "RC_INTERPOLATION",
+    "VELOCITY",
+    "DFILTER",
+    "ANGLERATE",
+    "ESC_SENSOR",
+    "SCHEDULER",
+    "STACK",
+    "ESC_SENSOR_RPM",
+    "ESC_SENSOR_TMP",
+    "ALTITUDE",
+    "FFT",
+    "FFT_TIME",
+    "FFT_FREQ",
+    "FRSKY_D_RX",
+    "GYRO_RAW"
+};

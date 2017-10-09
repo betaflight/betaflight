@@ -341,7 +341,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
         spektrumDataReceive,
         SPEKTRUM_BAUDRATE,
         portShared || srxlEnabled ? MODE_RXTX : MODE_RX,
-        SERIAL_NOT_INVERTED | ((srxlEnabled || rxConfig->halfDuplex) ? SERIAL_BIDIR : 0)
+        (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | ((srxlEnabled || rxConfig->halfDuplex) ? SERIAL_BIDIR : 0)
         );
 
 #ifdef TELEMETRY
@@ -384,4 +384,3 @@ bool srxlRxIsActive(void)
 }
 
 #endif // SERIAL_RX
-

@@ -17,6 +17,13 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
+
+#include "config/parameter_group.h"
+
 typedef struct vtxRTC6705Config_s {
     uint8_t band;       // 1=A, 2=B, 3=E, 4=F(Airwaves/Fatshark), 5=Raceband
     uint8_t channel;    // 1-8
@@ -33,5 +40,7 @@ PG_DECLARE(vtxRTC6705Config_t, vtxRTC6705Config);
 #define VTX_RTC6705_DEFAULT_POWER 0
 #endif
 
-bool vtxRTC6705Init();
+extern const char * const rtc6705PowerNames[RTC6705_POWER_COUNT];
 
+void vtxRTC6705Configure(void);
+bool vtxRTC6705Init(void);

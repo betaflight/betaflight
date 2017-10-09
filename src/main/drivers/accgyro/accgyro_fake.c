@@ -151,4 +151,3 @@ bool fakeAccDetect(accDev_t *acc)
     return true;
 }
 #endif // USE_FAKE_ACC
-

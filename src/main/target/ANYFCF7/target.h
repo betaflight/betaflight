@@ -44,13 +44,16 @@
 #define USE_EXTI
 
 #define MAG
-//#define USE_MAG_HMC5883
-//#define HMC5883_BUS I2C_DEVICE_EXT
+#define USE_MAG_HMC5883
+#define MAG_I2C_INSTANCE           (I2CDEV_2)
+
 //#define MAG_HMC5883_ALIGN CW270_DEG_FLIP
 //#define MAG_HMC5883_ALIGN CW90_DEG
 
 #define BARO
 #define USE_BARO_MS5611
+#define USE_BARO_BMP280
+#define BARO_I2C_INSTANCE           (I2CDEV_2)
 
 #define USABLE_TIMER_CHANNEL_COUNT 16
 
@@ -122,14 +125,18 @@
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 8 // 27MHz
 
-#define SDCARD_DMA_CHANNEL_TX               DMA2_Stream1
+#define SDCARD_DMA_STREAM_TX_FULL           DMA2_Stream1
+#define SDCARD_DMA_TX                       DMA2
+#define SDCARD_DMA_STREAM_TX                1
+#define SDCARD_DMA_CLK                      LL_AHB1_GRP1_PERIPH_DMA2
+
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF1_5
-#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA2
 #define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_4
 
 #define USE_I2C
-#define USE_I2C_DEVICE_4
-#define I2C_DEVICE                  (I2CDEV_4)
+#define USE_I2C_DEVICE_2  // External I2C
+#define USE_I2C_DEVICE_4  // Onboard I2C
+#define I2C_DEVICE                  (I2CDEV_2)
 
 #define USE_ADC
 #define VBAT_ADC_PIN                PC0

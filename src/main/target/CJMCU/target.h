@@ -77,7 +77,7 @@
 #define USE_RX_CX10
 #define USE_RX_H8_3D
 //#define USE_RX_INAV // Temporary disabled to make some room in flash
-#define USE_RX_SYMA
+//#define USE_RX_SYMA
 #define USE_RX_V202
 //#define RX_SPI_DEFAULT_PROTOCOL RX_SPI_NRF24_SYMA_X5
 //#define RX_SPI_DEFAULT_PROTOCOL RX_SPI_NRF24_SYMA_X5C

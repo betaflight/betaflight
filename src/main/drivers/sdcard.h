@@ -25,19 +25,18 @@ typedef struct sdcardConfig_s {
 } sdcardConfig_t;
 
 typedef struct sdcardMetadata_s {
-    uint8_t manufacturerID;
+    uint32_t numBlocks; /* Card capacity in 512-byte blocks*/
     uint16_t oemID;
+    uint8_t manufacturerID;
 
     char productName[5];
 
+    uint32_t productSerial;
     uint8_t productRevisionMajor;
     uint8_t productRevisionMinor;
-    uint32_t productSerial;
 
     uint16_t productionYear;
     uint8_t productionMonth;
-
-    uint32_t numBlocks; /* Card capacity in 512-byte blocks*/
 } sdcardMetadata_t;
 
 typedef enum {
@@ -67,11 +66,11 @@ sdcardOperationStatus_e sdcard_writeBlock(uint32_t blockIndex, uint8_t *buffer, 
 void sdcardInsertionDetectDeinit(void);
 void sdcardInsertionDetectInit(void);
 
-bool sdcard_isInserted();
-bool sdcard_isInitialized();
-bool sdcard_isFunctional();
+bool sdcard_isInserted(void);
+bool sdcard_isInitialized(void);
+bool sdcard_isFunctional(void);
 
-bool sdcard_poll();
-const sdcardMetadata_t* sdcard_getMetadata();
+bool sdcard_poll(void);
+const sdcardMetadata_t* sdcard_getMetadata(void);
 
 void sdcard_setProfilerCallback(sdcard_profilerCallback_c callback);

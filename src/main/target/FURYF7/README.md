@@ -10,7 +10,7 @@
 * SD card (Not currently working, Fatal Error)
 * 16MB Flash (Not currently working, no chip detected)
 * ADC (RSSI, CURR, VBAT)
-* I2C 
+* I2C
 * LED Strip
 * Built in 5v 2A Regulator
 * Spek Sat Connector

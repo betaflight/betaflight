@@ -112,7 +112,7 @@
 #define UARTDEV_COUNT (UARTDEV_COUNT_1 + UARTDEV_COUNT_2 + UARTDEV_COUNT_3 + UARTDEV_COUNT_4 + UARTDEV_COUNT_5 + UARTDEV_COUNT_6 + UARTDEV_COUNT_7 + UARTDEV_COUNT_8)
 
 typedef struct uartHardware_s {
-    UARTDevice device;    // XXX Not required for full allocation
+    UARTDevice_e device;    // XXX Not required for full allocation
     USART_TypeDef* reg;
 #if defined(STM32F1) || defined(STM32F3)
     DMA_Channel_TypeDef *txDMAChannel;
@@ -156,14 +156,17 @@ typedef struct uartDevice_s {
     volatile uint8_t txBuffer[UART_TX_BUFFER_SIZE];
 } uartDevice_t;
 
-extern uartDevice_t uartDevice[];
 extern uartDevice_t *uartDevmap[];
 
 extern const struct serialPortVTable uartVTable[];
 
+#ifdef USE_HAL_DRIVER
 void uartStartTxDMA(uartPort_t *s);
+#else
+void uartTryStartTxDMA(uartPort_t *s);
+#endif
 
-uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, portOptions_t options);
+uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, portOptions_e options);
 
 void uartIrqHandler(uartPort_t *s);
 

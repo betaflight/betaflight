@@ -27,7 +27,7 @@
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
 
-      DEF_TIM(TIM11,  CH1, PB9,   TIM_USE_PPM,                TIMER_OUTPUT_NONE ,                           0), // PPM
+      DEF_TIM(TIM11,  CH1, PB9,   TIM_USE_ANY,                 TIMER_OUTPUT_ENABLED ,                           0), //   CAMERA_CONTROL_PIN
 
       DEF_TIM(TIM1,  CH2N, PB0,  TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED | TIMER_OUTPUT_INVERTED, 0), // M1 - D2_ST6
       DEF_TIM(TIM8,  CH3N, PB1,  TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED | TIMER_OUTPUT_INVERTED, 0), // M2_OUT D2_ST2

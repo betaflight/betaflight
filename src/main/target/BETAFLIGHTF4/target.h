@@ -24,11 +24,11 @@
 
 #define LED0_PIN                PB5
 
-// Leave beeper here but with none as io - so disabled unless mapped.
 #define BEEPER                  PB4
+#define BEEPER_INVERTED
 
-// PC0 used as inverter select GPIO
-#define INVERTER_PIN_UART6      PC13
+// PC13 used as inverter select GPIO for UART2
+#define INVERTER_PIN_UART2      PC13
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
@@ -58,7 +58,7 @@
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      PB12
-#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 #define M25P16_CS_PIN           PA15
@@ -89,7 +89,10 @@
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
-#define SERIAL_PORT_COUNT       5 //VCP, USART1, USART2, USART3, USART6
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#define SERIAL_PORT_COUNT       7 //VCP, USART1, USART2, USART3, USART6, SOFTSERIAL1, SOFTSERIAL2
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PB8 // (Hardware=0, PPM)
@@ -110,6 +113,11 @@
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
 
+#define USE_I2C
+#define USE_I2C_DEVICE_2
+#define I2C2_SCL                NONE // PB10, UART3_TX
+#define I2C2_SDA                NONE // PB11, UART3_RX
+#define I2C_DEVICE              (I2CDEV_2)
 
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PC1
@@ -118,13 +126,12 @@
 #define LED_STRIP
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
-
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART6
+#define SBUS_TELEMETRY_UART     SERIAL_PORT_USART2
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
-#define DEFAULT_FEATURES        (FEATURE_TELEMETRY | FEATURE_OSD)
-
+#define DEFAULT_FEATURES        ( FEATURE_TELEMETRY | FEATURE_OSD )
 
 #define SPEKTRUM_BIND
 // USART3,
@@ -132,12 +139,11 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define TARGET_IO_PORTA         0xffff
-#define TARGET_IO_PORTB         0xffff
-#define TARGET_IO_PORTC         0xffff
-#define TARGET_IO_PORTD         (BIT(2))
+#define TARGET_IO_PORTA (0xffff & ~(BIT(14)|BIT(13)))
+#define TARGET_IO_PORTB (0xffff & ~(BIT(2)))
+#define TARGET_IO_PORTC (0xffff & ~(BIT(15)|BIT(14)))
+#define TARGET_IO_PORTD BIT(2)
 
+#define USABLE_TIMER_CHANNEL_COUNT 12
 
-#define USABLE_TIMER_CHANNEL_COUNT 8
-
-#define USED_TIMERS             ( TIM_N(1) | TIM_N(3) | TIM_N(4) | TIM_N(8) )
+#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(8) | TIM_N(9) | TIM_N(10) )

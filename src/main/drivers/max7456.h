@@ -17,15 +17,6 @@
 
 #pragma once
 
-#ifndef WHITEBRIGHTNESS
-  #define WHITEBRIGHTNESS 0x01
-#endif
-#ifndef BLACKBRIGHTNESS
-  #define BLACKBRIGHTNESS 0x00
-#endif
-
-#define BWBRIGHTNESS ((BLACKBRIGHTNESS << 2) | WHITEBRIGHTNESS)
-
 /** PAL or NTSC, value is number of chars total */
 #define VIDEO_BUFFER_CHARS_NTSC   390
 #define VIDEO_BUFFER_CHARS_PAL    480
@@ -48,3 +39,13 @@ void    max7456ClearScreen(void);
 void    max7456RefreshAll(void);
 uint8_t* max7456GetScreenBuffer(void);
 bool    max7456DmaInProgress(void);
+
+typedef struct max7456Config_s {
+    uint8_t clockConfig; // 0 = force half clock, 1 = half if OC, 2 = force full
+} max7456Config_t;
+
+#define MAX7456_CLOCK_CONFIG_HALF 0
+#define MAX7456_CLOCK_CONFIG_OC   1
+#define MAX7456_CLOCK_CONFIG_FULL 2
+
+PG_DECLARE(max7456Config_t, max7456Config);

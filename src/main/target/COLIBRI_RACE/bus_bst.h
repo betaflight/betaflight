@@ -44,4 +44,3 @@ bool bstSlaveWrite(uint8_t* data);
 void bstMasterWriteLoop(void);
 
 void crc8Cal(uint8_t data_in);
-

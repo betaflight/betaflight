@@ -25,7 +25,14 @@
 
 // Bring a pin for possible CS line to pull-up state in preparation for
 // sequential initialization by relevant drivers.
-// Note that the pin is set to input for safety at this point.
+
+// There are two versions:
+// spiPreInitCs set the pin to input with pullup (IOCFG_IPU) for safety at this point.
+// spiPreInitCsOutPU which actually drive the pin for digital hi.
+//
+// The later is required for SPI slave devices on some targets, interfaced through level shifters, such as Kakute F4.
+// Note that with this handling, a pin declared as CS pin for MAX7456 needs special care when re-purposing the pin for other, especially, input uses.
+// This will/should be fixed when we go fully reconfigurable.
 
 void spiPreInitCs(ioTag_t iotag)
 {
@@ -33,5 +40,15 @@ void spiPreInitCs(ioTag_t iotag)
     if (io) {
         IOInit(io, OWNER_SPI_PREINIT, 0);
         IOConfigGPIO(io, IOCFG_IPU);
+    }
+}
+
+void spiPreInitCsOutPU(ioTag_t iotag)
+{
+    IO_t io = IOGetByTag(iotag);
+    if (io) {
+        IOInit(io, OWNER_SPI_PREINIT, 0);
+        IOConfigGPIO(io, IOCFG_OUT_PP);
+        IOHi(io);
     }
 }

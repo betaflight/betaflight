@@ -49,4 +49,3 @@
 #include "target.h"
 // include template-generated macros for IO pins
 #include "io_def_generated.h"
-

@@ -181,7 +181,7 @@ static void drawHorizonalPercentageBar(uint8_t width,uint8_t percent)
 }
 
 #if 0
-static void fillScreenWithCharacters()
+static void fillScreenWithCharacters(void)
 {
     for (uint8_t row = 0; row < SCREEN_CHARACTER_ROW_COUNT; row++) {
         for (uint8_t column = 0; column < SCREEN_CHARACTER_COLUMN_COUNT; column++) {
@@ -241,7 +241,7 @@ static void updateFailsafeStatus(void)
     i2c_OLED_send_char(bus, failsafeIndicator);
 }
 
-static void showTitle()
+static void showTitle(void)
 {
     i2c_OLED_set_line(bus, 0);
     i2c_OLED_send_string(bus, pageState.page->title);
@@ -346,7 +346,7 @@ static void showProfilePage(void)
 #define SATELLITE_GRAPH_LEFT_OFFSET ((SCREEN_CHARACTER_COLUMN_COUNT - SATELLITE_COUNT) / 2)
 
 #ifdef GPS
-static void showGpsPage()
+static void showGpsPage(void)
 {
     if (!feature(FEATURE_GPS)) {
         pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
@@ -366,7 +366,7 @@ static void showGpsPage()
     i2c_OLED_set_xy(bus, 0, rowIndex);
     i2c_OLED_send_char(bus, tickerCharacters[gpsTicker]);
 
-    i2c_OLED_set_xy(bus, MAX(0, SATELLITE_GRAPH_LEFT_OFFSET), rowIndex++);
+    i2c_OLED_set_xy(bus, MAX(0, (uint8_t)SATELLITE_GRAPH_LEFT_OFFSET), rowIndex++);
 
     uint32_t index;
     for (index = 0; index < SATELLITE_COUNT && index < SCREEN_CHARACTER_COLUMN_COUNT; index++) {
@@ -572,20 +572,20 @@ static void showDebugPage(void)
 #endif
 
 static const pageEntry_t pages[PAGE_COUNT] = {
-    { PAGE_WELCOME, "CLEANFLIGHT",  showWelcomePage,    PAGE_FLAGS_SKIP_CYCLING },
-    { PAGE_ARMED,   "ARMED",        showArmedPage,      PAGE_FLAGS_SKIP_CYCLING },
-    { PAGE_PROFILE, "PROFILE",      showProfilePage,    PAGE_FLAGS_NONE },
+    { PAGE_WELCOME, FC_FIRMWARE_NAME,  showWelcomePage,    PAGE_FLAGS_SKIP_CYCLING },
+    { PAGE_ARMED,   "ARMED",           showArmedPage,      PAGE_FLAGS_SKIP_CYCLING },
+    { PAGE_PROFILE, "PROFILE",         showProfilePage,    PAGE_FLAGS_NONE },
 #ifdef GPS
-    { PAGE_GPS,     "GPS",          showGpsPage,        PAGE_FLAGS_NONE },
+    { PAGE_GPS,     "GPS",             showGpsPage,        PAGE_FLAGS_NONE },
 #endif
-    { PAGE_RX,      "RX",           showRxPage,         PAGE_FLAGS_NONE },
-    { PAGE_BATTERY, "BATTERY",      showBatteryPage,    PAGE_FLAGS_NONE },
-    { PAGE_SENSORS, "SENSORS",      showSensorsPage,    PAGE_FLAGS_NONE },
+    { PAGE_RX,      "RX",              showRxPage,         PAGE_FLAGS_NONE },
+    { PAGE_BATTERY, "BATTERY",         showBatteryPage,    PAGE_FLAGS_NONE },
+    { PAGE_SENSORS, "SENSORS",         showSensorsPage,    PAGE_FLAGS_NONE },
 #ifndef SKIP_TASK_STATISTICS
-    { PAGE_TASKS,   "TASKS",        showTasksPage,      PAGE_FLAGS_NONE },
+    { PAGE_TASKS,   "TASKS",           showTasksPage,      PAGE_FLAGS_NONE },
 #endif
 #ifdef ENABLE_DEBUG_DASHBOARD_PAGE
-    { PAGE_DEBUG,   "DEBUG",        showDebugPage,      PAGE_FLAGS_NONE },
+    { PAGE_DEBUG,   "DEBUG",           showDebugPage,      PAGE_FLAGS_NONE },
 #endif
 };
 
@@ -677,8 +677,8 @@ void dashboardUpdate(timeUs_t currentTimeUs)
 void dashboardInit(void)
 {
     static busDevice_t dashBoardBus;
-    dashBoardBus.i2c.device = I2C_CFG_TO_DEV(dashboardConfig()->device);
-    dashBoardBus.i2c.address = dashboardConfig()->address;
+    dashBoardBus.busdev_u.i2c.device = I2C_CFG_TO_DEV(dashboardConfig()->device);
+    dashBoardBus.busdev_u.i2c.address = dashboardConfig()->address;
     bus = &dashBoardBus;
 
     delay(200);

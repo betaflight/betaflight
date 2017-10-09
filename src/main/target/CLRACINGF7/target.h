@@ -24,6 +24,9 @@
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 
+//define camera control
+#define CAMERA_CONTROL_PIN PB8
+
 #define USE_EXTI
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
@@ -59,16 +62,11 @@
 #define MPU6500_CS_PIN          SPI1_NSS_PIN
 #define MPU6500_SPI_INSTANCE    SPI1
 
-// MPU interrupts
-#define USE_EXTI
-#define MPU_INT_EXTI            PC4
-#define USE_MPU_DATA_READY_SIGNAL
-
 #define OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      PA15
-#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 #define USE_SDCARD
@@ -80,9 +78,12 @@
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 8 // 27MHz
 
-#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
+#define SDCARD_DMA_STREAM_TX_FULL           DMA1_Stream4
+#define SDCARD_DMA_TX                       DMA1
+#define SDCARD_DMA_STREAM_TX                4
+#define SDCARD_DMA_CLK                      LL_AHB1_GRP1_PERIPH_DMA1
+
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF1_4
-#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
 #define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_0
 
 #define USE_VCP
@@ -102,7 +103,9 @@
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
-#define SERIAL_PORT_COUNT       5
+#define USE_SOFTSERIAL1
+
+#define SERIAL_PORT_COUNT       6 //VCP, USART1, USART3,USART4, USART6, SOFT_SERIAL1
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PB8 // (Hardware=0, PPM)
@@ -153,5 +156,5 @@
 #define TARGET_IO_PORTD         (BIT(2))
 
 #define USABLE_TIMER_CHANNEL_COUNT      9
-#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) )
+#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(10) )
 

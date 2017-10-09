@@ -57,4 +57,3 @@
 // 10/16 = 0.625 ms
 
 bool bmp280Detect(baroDev_t *baro);
-

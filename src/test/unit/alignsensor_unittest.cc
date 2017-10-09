@@ -32,9 +32,9 @@ extern "C" {
  * This test file contains an independent method of rotating a vector.
  * The output of alignSensor() is compared to the output of the test
  * rotation method.
- * 
+ *
  * For each alignment condition (CW0, CW90, etc) the source vector under
- * test is set to a unit vector along each axis (x-axis, y-axis, z-axis) 
+ * test is set to a unit vector along each axis (x-axis, y-axis, z-axis)
  * plus one additional random vector is tested.
  */
 
@@ -50,7 +50,7 @@ static void rotateVector(int32_t mat[3][3], int32_t vec[3], int32_t *out)
             tmp[i] += mat[j][i] * vec[j];
         }
     }
-    
+
     out[0]=tmp[0];
     out[1]=tmp[1];
     out[2]=tmp[2];
@@ -105,7 +105,7 @@ static void testCW(sensor_align_e rotation, int32_t angle)
     src[X] = 1;
     src[Y] = 0;
     src[Z] = 0;
-    
+
     int32_t matrix[3][3];
     initZAxisRotation(matrix, angle);
     rotateVector(matrix, src, test);
@@ -162,7 +162,7 @@ static void testCWFlip(sensor_align_e rotation, int32_t angle)
     src[X] = 1;
     src[Y] = 0;
     src[Z] = 0;
-    
+
     int32_t matrix[3][3];
     initYAxisRotation(matrix, 180);
     rotateVector(matrix, src, test);
@@ -223,7 +223,7 @@ static void testCWFlip(sensor_align_e rotation, int32_t angle)
     EXPECT_EQ(test[Y], src[Y]) << "Random alignment does not match in Y-Axis. " << test[Y] << " " << src[Y];
     EXPECT_EQ(test[Z], src[Z]) << "Random alignment does not match in Z-Axis. " << test[Z] << " " << src[Z];
 }
- 
+
 
 TEST(AlignSensorTest, ClockwiseZeroDegrees)
 {
@@ -265,4 +265,3 @@ TEST(AlignSensorTest, ClockwiseTwoSeventyDegreesFlip)
 {
     testCWFlip(CW270_DEG_FLIP, 270);
 }
-

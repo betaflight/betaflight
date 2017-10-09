@@ -250,7 +250,7 @@ void gpsInit(void)
         }
     }
 
-    portMode_t mode = MODE_RXTX;
+    portMode_e mode = MODE_RXTX;
     // only RX is needed for NMEA-style GPS
 #if !defined(COLIBRI_RACE) || !defined(LUX_RACE)
     if (gpsConfig()->provider == GPS_NMEA)

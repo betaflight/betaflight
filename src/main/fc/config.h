@@ -39,7 +39,6 @@ typedef enum {
     FEATURE_SERVO_TILT = 1 << 5,
     FEATURE_SOFTSERIAL = 1 << 6,
     FEATURE_GPS = 1 << 7,
-    FEATURE_FAILSAFE = 1 << 8,
     FEATURE_SONAR = 1 << 9,
     FEATURE_TELEMETRY = 1 << 10,
     FEATURE_3D = 1 << 12,
@@ -59,9 +58,18 @@ typedef enum {
     FEATURE_DYNAMIC_FILTER = 1 << 29,
 } features_e;
 
-#define MAX_NAME_LENGTH 16
+#define MAX_NAME_LENGTH 16u
+typedef struct pilotConfig_s {
+    char name[MAX_NAME_LENGTH + 1];
+} pilotConfig_t;
 
-#ifndef USE_OSD_SLAVE
+#ifdef USE_OSD_SLAVE
+typedef struct systemConfig_s {
+    uint8_t debug_mode;
+    uint8_t task_statistics;
+    char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER) + 1];
+} systemConfig_t;
+#else
 typedef struct systemConfig_s {
     uint8_t pidProfileIndex;
     uint8_t activeRateProfile;
@@ -70,17 +78,13 @@ typedef struct systemConfig_s {
 #if defined(STM32F4) && !defined(DISABLE_OVERCLOCK)
     uint8_t cpu_overclock;
 #endif
-    char name[MAX_NAME_LENGTH + 1]; // FIXME misplaced, see PG_PILOT_CONFIG in CF v1.x
+    uint8_t powerOnArmingGraceTime; // in seconds
+    char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER) + 1];
 } systemConfig_t;
-#endif
+#endif // USE_OSD_SLAVE
 
-#ifdef USE_OSD_SLAVE
-typedef struct systemConfig_s {
-    uint8_t debug_mode;
-    uint8_t task_statistics;
-} systemConfig_t;
-#endif
 
+PG_DECLARE(pilotConfig_t, pilotConfig);
 PG_DECLARE(systemConfig_t, systemConfig);
 PG_DECLARE(adcConfig_t, adcConfig);
 PG_DECLARE(beeperDevConfig_t, beeperDevConfig);
@@ -105,7 +109,7 @@ void setPreferredBeeperOffMask(uint32_t mask);
 void initEEPROM(void);
 void resetEEPROM(void);
 void readEEPROM(void);
-void writeEEPROM();
+void writeEEPROM(void);
 void ensureEEPROMContainsValidData(void);
 
 void saveConfigAndNotify(void);

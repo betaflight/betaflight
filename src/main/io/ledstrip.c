@@ -441,22 +441,35 @@ static const struct {
     {0,             LED_MODE_ORIENTATION},
 };
 
-static void applyLedFixedLayers()
+static void applyLedFixedLayers(void)
 {
     for (int ledIndex = 0; ledIndex < ledCounts.count; ledIndex++) {
         const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[ledIndex];
         hsvColor_t color = *getSC(LED_SCOLOR_BACKGROUND);
-        hsvColor_t nextColor = *getSC(LED_SCOLOR_BACKGROUND); //next color above the one selected, or color 0 if your are at the maximum
-        hsvColor_t previousColor = *getSC(LED_SCOLOR_BACKGROUND); //Previous color to the one selected, modulo color count
 
         int fn = ledGetFunction(ledConfig);
-        int hOffset = HSV_HUE_MAX;
+        int hOffset = HSV_HUE_MAX + 1;
 
         switch (fn) {
         case LED_FUNCTION_COLOR:
             color = ledStripConfig()->colors[ledGetColor(ledConfig)];
-            nextColor = ledStripConfig()->colors[(ledGetColor(ledConfig) + 1 + LED_CONFIGURABLE_COLOR_COUNT) % LED_CONFIGURABLE_COLOR_COUNT];
-            previousColor = ledStripConfig()->colors[(ledGetColor(ledConfig) - 1 + LED_CONFIGURABLE_COLOR_COUNT) % LED_CONFIGURABLE_COLOR_COUNT];
+
+            hsvColor_t nextColor = ledStripConfig()->colors[(ledGetColor(ledConfig) + 1 + LED_CONFIGURABLE_COLOR_COUNT) % LED_CONFIGURABLE_COLOR_COUNT];
+            hsvColor_t previousColor = ledStripConfig()->colors[(ledGetColor(ledConfig) - 1 + LED_CONFIGURABLE_COLOR_COUNT) % LED_CONFIGURABLE_COLOR_COUNT];
+
+            if (ledGetOverlayBit(ledConfig, LED_OVERLAY_THROTTLE)) {   //smooth fade with selected Aux channel of all HSV values from previousColor through color to nextColor
+            	int centerPWM = (PWM_RANGE_MIN + PWM_RANGE_MAX) / 2;
+                if (auxInput < centerPWM) {
+                    color.h = scaleRange(auxInput, PWM_RANGE_MIN, centerPWM, previousColor.h, color.h);
+                    color.s = scaleRange(auxInput, PWM_RANGE_MIN, centerPWM, previousColor.s, color.s);
+                    color.v = scaleRange(auxInput, PWM_RANGE_MIN, centerPWM, previousColor.v, color.v);
+                } else {
+                    color.h = scaleRange(auxInput, centerPWM, PWM_RANGE_MAX, color.h, nextColor.h);
+                    color.s = scaleRange(auxInput, centerPWM, PWM_RANGE_MAX, color.s, nextColor.s);
+                    color.v = scaleRange(auxInput, centerPWM, PWM_RANGE_MAX, color.v, nextColor.v);
+                }
+            }
+
             break;
 
         case LED_FUNCTION_FLIGHT_MODE:
@@ -489,22 +502,10 @@ static void applyLedFixedLayers()
             break;
         }
 
-        if (ledGetOverlayBit(ledConfig, LED_OVERLAY_THROTTLE))   //smooth fade with selected Aux channel of all HSV values from previousColor through color to nextColor
-    {
-        int centerPWM = (PWM_RANGE_MIN + PWM_RANGE_MAX) / 2;
-            if (auxInput < centerPWM)
-                {
-                    color.h = scaleRange(auxInput, PWM_RANGE_MIN, centerPWM, previousColor.h, color.h);
-                    color.s = scaleRange(auxInput, PWM_RANGE_MIN, centerPWM, previousColor.s, color.s);
-                    color.v = scaleRange(auxInput, PWM_RANGE_MIN, centerPWM, previousColor.v, color.v);
-                }
-            else
-                {
-                    color.h = scaleRange(auxInput, centerPWM, PWM_RANGE_MAX, color.h, nextColor.h);
-                    color.s = scaleRange(auxInput, centerPWM, PWM_RANGE_MAX, color.s, nextColor.s);
-                    color.v = scaleRange(auxInput, centerPWM, PWM_RANGE_MAX, color.v, nextColor.v);
-                }
-       }
+        if ((fn != LED_FUNCTION_COLOR) && ledGetOverlayBit(ledConfig, LED_OVERLAY_THROTTLE)) {
+            hOffset += scaleRange(auxInput, PWM_RANGE_MIN, PWM_RANGE_MAX, 0, HSV_HUE_MAX + 1);
+        }
+
         color.h = (color.h + hOffset) % (HSV_HUE_MAX + 1);
         setLedHsv(ledIndex, &color);
     }
@@ -539,7 +540,7 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
             warningFlags = 0;
             if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && getBatteryState() != BATTERY_OK)
                 warningFlags |= 1 << WARNING_LOW_BATTERY;
-            if (feature(FEATURE_FAILSAFE) && failsafeIsActive())
+            if (failsafeIsActive())
                 warningFlags |= 1 << WARNING_FAILSAFE;
             if (!ARMING_FLAG(ARMED) && isArmingDisabled())
                 warningFlags |= 1 << WARNING_ARMING_DISABLED;
@@ -1145,7 +1146,7 @@ bool setModeColor(ledModeIndex_e modeIndex, int modeColorIndex, int colorIndex)
     return true;
 }
 
-void ledStripInit()
+void ledStripInit(void)
 {
     colors = ledStripConfigMutable()->colors;
     modeColors = ledStripConfig()->modeColors;

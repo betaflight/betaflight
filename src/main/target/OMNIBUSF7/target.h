@@ -15,9 +15,15 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "OBF7"
+#define TARGET_CONFIG
 
+#ifdef OMNIBUSF7V2
+#define TARGET_BOARD_IDENTIFIER "OB72"
+#define USBD_PRODUCT_STRING "OmnibusF7V2"
+#else
+#define TARGET_BOARD_IDENTIFIER "OBF7"
 #define USBD_PRODUCT_STRING "OmnibusF7"
+#endif
 
 #define LED0_PIN                PE0
 
@@ -26,14 +32,13 @@
 
 #define ACC
 #define GYRO
+#define USE_DUAL_GYRO
 
 // ICM-20608-G
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define MPU6500_CS_PIN          SPI1_NSS_PIN
-#define MPU6500_SPI_INSTANCE    SPI1
 //#define MPU_INT_EXTI            PE8
 
 // MPU6000
@@ -41,19 +46,30 @@
 #define USE_ACC_SPI_MPU6000
 #define USE_GYRO_MPU6000
 #define USE_GYRO_SPI_MPU6000
-#define MPU6000_CS_PIN          SPI3_NSS_PIN
-#define MPU6000_SPI_INSTANCE    SPI3
 //#define MPU_INT_EXTI            PD0
 
-#define USE_DUAL_GYRO
+#ifdef OMNIBUSF7V2
+#define MPU6000_CS_PIN          SPI1_NSS_PIN
+#define MPU6000_SPI_INSTANCE    SPI1
+#define MPU6500_CS_PIN          SPI3_NSS_PIN
+#define MPU6500_SPI_INSTANCE    SPI3
+#define GYRO_1_CS_PIN           MPU6000_CS_PIN
+#define GYRO_0_CS_PIN           MPU6500_CS_PIN
+#define GYRO_MPU6500_ALIGN      CW90_DEG
+#define ACC_MPU6500_ALIGN       CW90_DEG
+#else
+#define MPU6000_CS_PIN          SPI3_NSS_PIN
+#define MPU6000_SPI_INSTANCE    SPI3
+#define MPU6500_CS_PIN          SPI1_NSS_PIN
+#define MPU6500_SPI_INSTANCE    SPI1
 #define GYRO_0_CS_PIN           MPU6000_CS_PIN
 #define GYRO_1_CS_PIN           MPU6500_CS_PIN
+#endif
 
 // TODO: dual gyro support
 //#define USE_MPU_DATA_READY_SIGNAL
-//#define USE_EXTI
 
-#define USABLE_TIMER_CHANNEL_COUNT 16
+#define USE_EXTI
 
 #define USE_VCP
 #define VBUS_SENSING_PIN        PC4
@@ -62,10 +78,10 @@
 #define UART1_RX_PIN            PA10
 #define UART1_TX_PIN            PA9
 
-//#define AVOID_UART2_FOR_PWM_PPM
-//#define USE_UART2
-//#define UART2_TX_PIN PA2 //not wired
-//#define UART2_RX_PIN PA3
+//#define AVOID_UART2_FOR_PWM_PPM // PPM is not working on RC pin anyway
+#define USE_UART2
+#define UART2_TX_PIN            NONE
+#define UART2_RX_PIN            PA3
 
 // Assigned to shared output I2C2
 #define USE_UART3
@@ -76,10 +92,22 @@
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
-#define SERIAL_PORT_COUNT 4
+#ifdef OMNIBUSF7V2
+#define USE_UART7
+#define UART7_RX_PIN            PE7
+#endif
+
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+
+#ifdef OMNIBUSF7V2
+#define SERIAL_PORT_COUNT 8
+#else
+#define SERIAL_PORT_COUNT 7
+#endif
 
 #define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_PIN  PE13 // (Hardware=0, PPM)
+#define ESCSERIAL_TIMER_TX_PIN  PA2 // (Unwired UART2_TX)
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -112,7 +140,7 @@
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN
-#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 #define USE_SDCARD
@@ -126,9 +154,12 @@
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 8 // 27MHz
 
-#define SDCARD_DMA_CHANNEL_TX               DMA2_Stream1
+#define SDCARD_DMA_STREAM_TX_FULL           DMA2_Stream1
+#define SDCARD_DMA_TX                       DMA2
+#define SDCARD_DMA_STREAM_TX                1
+#define SDCARD_DMA_CLK                      LL_AHB1_GRP1_PERIPH_DMA2
+
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF1_5
-#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA2
 #define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_4
 
 #define USE_I2C
@@ -143,6 +174,9 @@
 #define BMP280_SPI_INSTANCE     SPI1
 #define BMP280_CS_PIN           PA1
 
+#define MAG
+#define USE_MAG_HMC5883
+
 #define SENSORS_SET (SENSOR_ACC | SENSOR_BARO)
 
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
@@ -151,7 +185,7 @@
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PC2
 #define VBAT_ADC_PIN            PC3
-#define RSSI_ADC_GPIO_PIN       PC5
+#define RSSI_ADC_PIN            PC5
 
 #define LED_STRIP
 
@@ -159,8 +193,9 @@
 
 #define DEFAULT_FEATURES        (FEATURE_OSD)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#define SERIALRX_UART           SERIAL_PORT_USART2
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
-#define SERIALRX_UART           SERIAL_PORT_USART1
+#define ESC_SENSOR_UART         SERIAL_PORT_USART7
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -170,4 +205,6 @@
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 
-#define USED_TIMERS  ( TIM_N(1) | TIM_N(3) | TIM_N(4) )
+#define USABLE_TIMER_CHANNEL_COUNT 11
+
+#define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(9) )

@@ -23,10 +23,10 @@
 #include "drivers/rcc_types.h"
 
 #if defined(STM32F4) || defined(STM32F3)
-#define SPI_IO_AF_CFG      IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
-#define SPI_IO_AF_SCK_CFG  IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN)
-#define SPI_IO_AF_MISO_CFG IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
-#define SPI_IO_CS_CFG      IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
+#define SPI_IO_AF_CFG           IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
+#define SPI_IO_AF_SCK_CFG       IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN)
+#define SPI_IO_AF_MISO_CFG      IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
+#define SPI_IO_CS_CFG           IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
 #elif defined(STM32F7)
 #define SPI_IO_AF_CFG           IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
 #define SPI_IO_AF_SCK_CFG_HIGH  IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
@@ -34,10 +34,10 @@
 #define SPI_IO_AF_MISO_CFG      IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
 #define SPI_IO_CS_CFG           IO_CONFIG(GPIO_MODE_OUTPUT_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
 #elif defined(STM32F1)
-#define SPI_IO_AF_SCK_CFG     IO_CONFIG(GPIO_Mode_AF_PP,       GPIO_Speed_50MHz)
-#define SPI_IO_AF_MOSI_CFG    IO_CONFIG(GPIO_Mode_AF_PP,       GPIO_Speed_50MHz)
-#define SPI_IO_AF_MISO_CFG    IO_CONFIG(GPIO_Mode_IN_FLOATING, GPIO_Speed_50MHz)
-#define SPI_IO_CS_CFG         IO_CONFIG(GPIO_Mode_Out_PP,      GPIO_Speed_50MHz)
+#define SPI_IO_AF_SCK_CFG       IO_CONFIG(GPIO_Mode_AF_PP,       GPIO_Speed_50MHz)
+#define SPI_IO_AF_MOSI_CFG      IO_CONFIG(GPIO_Mode_AF_PP,       GPIO_Speed_50MHz)
+#define SPI_IO_AF_MISO_CFG      IO_CONFIG(GPIO_Mode_IN_FLOATING, GPIO_Speed_50MHz)
+#define SPI_IO_CS_CFG           IO_CONFIG(GPIO_Mode_Out_PP,      GPIO_Speed_50MHz)
 #endif
 
 /*
@@ -82,28 +82,30 @@ typedef enum SPIDevice {
 
 #endif
 
+// Macros to convert between CLI bus number and SPIDevice.
+#define SPI_CFG_TO_DEV(x)   ((x) - 1)
+#define SPI_DEV_TO_CFG(x)   ((x) + 1)
+
 void spiPreInitCs(ioTag_t iotag);
+void spiPreInitCsOutPU(ioTag_t iotag);
+
 bool spiInit(SPIDevice device);
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor);
 uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data);
 bool spiIsBusBusy(SPI_TypeDef *instance);
 
-bool spiTransfer(SPI_TypeDef *instance, uint8_t *rxData, const uint8_t *txData, int len);
+bool spiTransfer(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, int len);
 
 uint16_t spiGetErrorCounter(SPI_TypeDef *instance);
 void spiResetErrorCounter(SPI_TypeDef *instance);
 SPIDevice spiDeviceByInstance(SPI_TypeDef *instance);
+SPI_TypeDef *spiInstanceByDevice(SPIDevice device);
 
-bool spiBusTransfer(const busDevice_t *bus, uint8_t *rxData, const uint8_t *txData, int length);
+bool spiBusTransfer(const busDevice_t *bus, const uint8_t *txData, uint8_t *rxData, int length);
 
-#if defined(USE_HAL_DRIVER)
-SPI_HandleTypeDef* spiHandleByInstance(SPI_TypeDef *instance);
-DMA_HandleTypeDef* spiSetDMATransmit(DMA_Stream_TypeDef *Stream, uint32_t Channel, SPI_TypeDef *Instance, uint8_t *pData, uint16_t Size);
-#endif
-
-bool spiWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data);
-bool spiReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t *data);
-uint8_t spiReadRegister(const busDevice_t *bus, uint8_t reg);
+bool spiBusWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data);
+bool spiBusReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data, uint8_t length);
+uint8_t spiBusReadRegister(const busDevice_t *bus, uint8_t reg);
 void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance);
 
 typedef struct spiPinConfig_s {

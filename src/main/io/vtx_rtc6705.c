@@ -19,13 +19,13 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
-#include <ctype.h>
 
 #include "platform.h"
 
 #if defined(VTX_RTC6705) && defined(VTX_CONTROL)
+
 #include "build/build_config.h"
+#include "build/debug.h"
 
 #include "cms/cms.h"
 #include "cms/cms_types.h"
@@ -46,8 +46,6 @@
 #include "io/vtx_rtc6705.h"
 #include "io/vtx_string.h"
 
-#include "build/debug.h"
-
 bool canUpdateVTX(void);
 
 PG_REGISTER_WITH_RESET_TEMPLATE(vtxRTC6705Config_t, vtxRTC6705Config, PG_VTX_RTC6705_CONFIG, 0);
@@ -62,11 +60,11 @@ PG_RESET_TEMPLATE(vtxRTC6705Config_t, vtxRTC6705Config,
 
 #if defined(CMS) || defined(VTX_COMMON)
 #ifdef RTC6705_POWER_PIN
-static const char * const rtc6705PowerNames[RTC6705_POWER_COUNT] = {
+const char * const rtc6705PowerNames[RTC6705_POWER_COUNT] = {
     "---", "25 ", "200",
 };
 #else
-static const char * const rtc6705PowerNames[RTC6705_POWER_COUNT] = {
+const char * const rtc6705PowerNames[RTC6705_POWER_COUNT] = {
     "25 ", "200",
 };
 #endif
@@ -92,7 +90,7 @@ bool vtxRTC6705Init(void)
     return true;
 }
 
-static void vtxRTC6705Configure(void)
+void vtxRTC6705Configure(void)
 {
     rtc6705SetRFPower(vtxRTC6705.powerIndex - 1);
     rtc6705SetBandAndChannel(vtxRTC6705.band - 1, vtxRTC6705.channel - 1);
@@ -174,7 +172,6 @@ void vtxRTC6705SetPowerByIndex(uint8_t index)
 #ifdef RTC6705_POWER_PIN
     if (index == 0) {
         // power device off
-
         if (vtxRTC6705.powerIndex > 0) {
             // on, power it off
             vtxRTC6705.powerIndex = index;
@@ -239,75 +236,5 @@ static vtxVTable_t rtc6705VTable = {
     .getPitMode = vtxRTC6705GetPitMode,
 };
 #endif // VTX_COMMON
-
-#ifdef CMS
-
-static uint8_t cmsx_vtxBand;
-static uint8_t cmsx_vtxChannel;
-static uint8_t cmsx_vtxPower;
-
-static const char * const rtc6705BandNames[] = {
-    "BOSCAM A",
-    "BOSCAM B",
-    "BOSCAM E",
-    "FATSHARK",
-    "RACEBAND",
-};
-
-static OSD_TAB_t entryVtxBand =         {&cmsx_vtxBand, ARRAYLEN(rtc6705BandNames) - 1, &rtc6705BandNames[0]};
-static OSD_UINT8_t entryVtxChannel =    {&cmsx_vtxChannel, 1, 8, 1};
-static OSD_TAB_t entryVtxPower =        {&cmsx_vtxPower, RTC6705_POWER_COUNT - 1, &rtc6705PowerNames[0]};
-
-static void cmsx_Vtx_ConfigRead(void)
-{
-    cmsx_vtxBand = vtxRTC6705Config()->band - 1;
-    cmsx_vtxChannel = vtxRTC6705Config()->channel;
-    cmsx_vtxPower = vtxRTC6705Config()->power;
-}
-
-static void cmsx_Vtx_ConfigWriteback(void)
-{
-    vtxRTC6705ConfigMutable()->band = cmsx_vtxBand + 1;
-    vtxRTC6705ConfigMutable()->channel = cmsx_vtxChannel;
-    vtxRTC6705ConfigMutable()->power = cmsx_vtxPower;
-}
-
-static long cmsx_Vtx_onEnter(void)
-{
-    cmsx_Vtx_ConfigRead();
-
-    return 0;
-}
-
-static long cmsx_Vtx_onExit(const OSD_Entry *self)
-{
-    UNUSED(self);
-
-    cmsx_Vtx_ConfigWriteback();
-
-    return 0;
-}
-
-
-static OSD_Entry cmsx_menuVtxEntries[] =
-{
-    {"--- VTX ---", OME_Label, NULL, NULL, 0},
-    {"BAND", OME_TAB, NULL, &entryVtxBand, 0},
-    {"CHANNEL", OME_UINT8, NULL, &entryVtxChannel, 0},
-    {"POWER", OME_TAB, NULL, &entryVtxPower, 0},
-    {"BACK", OME_Back, NULL, NULL, 0},
-    {NULL, OME_END, NULL, NULL, 0}
-};
-
-CMS_Menu cmsx_menuVtxRTC6705 = {
-    .GUARD_text = "MENUVTX",
-    .GUARD_type = OME_MENU,
-    .onEnter = cmsx_Vtx_onEnter,
-    .onExit= cmsx_Vtx_onExit,
-    .onGlobalExit = NULL,
-    .entries = cmsx_menuVtxEntries
-};
-
-#endif // CMS
 
 #endif // VTX_RTC6705

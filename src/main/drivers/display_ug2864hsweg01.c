@@ -20,6 +20,8 @@
 
 #include "platform.h"
 
+#include "common/utils.h"
+
 #include "drivers/bus_i2c.h"
 
 #include "display_ug2864hsweg01.h"
@@ -178,55 +180,77 @@ static const uint8_t multiWiiFont[][5] = { // Refer to "Times New Roman" Font Da
 
 static bool i2c_OLED_send_cmd(busDevice_t *bus, uint8_t command)
 {
-    return i2cWrite(bus->i2c.device, bus->i2c.address, 0x80, command);
+    return i2cWrite(bus->busdev_u.i2c.device, bus->busdev_u.i2c.address, 0x80, command);
+}
+
+static bool i2c_OLED_send_cmdarray(busDevice_t *bus, const uint8_t *commands, size_t len)
+{
+    for (size_t i = 0 ; i < len ; i++) {
+        if (!i2c_OLED_send_cmd(bus, commands[i])) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 static bool i2c_OLED_send_byte(busDevice_t *bus, uint8_t val)
 {
-    return i2cWrite(bus->i2c.device, bus->i2c.address, 0x40, val);
-}
-
-void i2c_OLED_clear_display(busDevice_t *bus)
-{
-    i2c_OLED_send_cmd(bus, 0xa6);              // Set Normal Display
-    i2c_OLED_send_cmd(bus, 0xae);              // Display OFF
-    i2c_OLED_send_cmd(bus, 0x20);              // Set Memory Addressing Mode
-    i2c_OLED_send_cmd(bus, 0x00);              // Set Memory Addressing Mode to Horizontal addressing mode
-    i2c_OLED_send_cmd(bus, 0xb0);              // set page address to 0
-    i2c_OLED_send_cmd(bus, 0x40);              // Display start line register to 0
-    i2c_OLED_send_cmd(bus, 0);                 // Set low col address to 0
-    i2c_OLED_send_cmd(bus, 0x10);              // Set high col address to 0
-    for (uint16_t i = 0; i < 1024; i++) {  // fill the display's RAM with graphic... 128*64 pixel picture
-        i2c_OLED_send_byte(bus, 0x00);  // clear
-    }
-    i2c_OLED_send_cmd(bus, 0x81);              // Setup CONTRAST CONTROL, following byte is the contrast Value... always a 2 byte instruction
-    i2c_OLED_send_cmd(bus, 200);               // Here you can set the brightness 1 = dull, 255 is very bright
-    i2c_OLED_send_cmd(bus, 0xaf);              // display on
+    return i2cWrite(bus->busdev_u.i2c.device, bus->busdev_u.i2c.address, 0x40, val);
 }
 
 void i2c_OLED_clear_display_quick(busDevice_t *bus)
 {
-    i2c_OLED_send_cmd(bus, 0xb0);              // set page address to 0
-    i2c_OLED_send_cmd(bus, 0x40);              // Display start line register to 0
-    i2c_OLED_send_cmd(bus, 0);                 // Set low col address to 0
-    i2c_OLED_send_cmd(bus, 0x10);              // Set high col address to 0
+    static const uint8_t i2c_OLED_cmd_clear_display_quick[] = {
+        0xb0, // set page address to 0
+        0x40, // Display start line register to 0
+        0,    // Set low col address to 0
+        0x10, // Set high col address to 0
+    };
+
+    i2c_OLED_send_cmdarray(bus, i2c_OLED_cmd_clear_display_quick, ARRAYLEN(i2c_OLED_cmd_clear_display_quick));
+
     for (uint16_t i = 0; i < 1024; i++) {      // fill the display's RAM with graphic... 128*64 pixel picture
         i2c_OLED_send_byte(bus, 0x00);  // clear
     }
 }
 
+void i2c_OLED_clear_display(busDevice_t *bus)
+{
+    static const uint8_t i2c_OLED_cmd_clear_display_pre[] = {
+        0xa6, // Set Normal Display
+        0xae, // Display OFF
+        0x20, // Set Memory Addressing Mode
+        0x00, // Set Memory Addressing Mode to Horizontal addressing mode
+    };
+
+    i2c_OLED_send_cmdarray(bus, i2c_OLED_cmd_clear_display_pre, ARRAYLEN(i2c_OLED_cmd_clear_display_pre));
+
+    i2c_OLED_clear_display_quick(bus);
+
+    static const uint8_t i2c_OLED_cmd_clear_display_post[] = {
+        0x81, // Setup CONTRAST CONTROL, following byte is the contrast Value... always a 2 byte instruction
+        200,  // Here you can set the brightness 1 = dull, 255 is very bright
+        0xaf, // display on
+    };
+
+    i2c_OLED_send_cmdarray(bus, i2c_OLED_cmd_clear_display_post, ARRAYLEN(i2c_OLED_cmd_clear_display_post));
+}
+
 void i2c_OLED_set_xy(busDevice_t *bus, uint8_t col, uint8_t row)
 {
-    i2c_OLED_send_cmd(bus, 0xb0 + row);                      //set page address
-    i2c_OLED_send_cmd(bus, 0x00 + ((CHARACTER_WIDTH_TOTAL * col) & 0x0f));         //set low col address
-    i2c_OLED_send_cmd(bus, 0x10 + (((CHARACTER_WIDTH_TOTAL * col) >> 4) & 0x0f));  //set high col address
+    uint8_t i2c_OLED_cmd_set_xy[] = {
+        0xb0 + row,                                            //set page address
+        0x00 + ((CHARACTER_WIDTH_TOTAL * col) & 0x0f),         //set low col address
+        0x10 + (((CHARACTER_WIDTH_TOTAL * col) >> 4) & 0x0f)   //set high col address
+    };
+
+    i2c_OLED_send_cmdarray(bus, i2c_OLED_cmd_set_xy, ARRAYLEN(i2c_OLED_cmd_set_xy));
 }
 
 void i2c_OLED_set_line(busDevice_t *bus, uint8_t row)
 {
-    i2c_OLED_send_cmd(bus, 0xb0 + row); //set page address
-    i2c_OLED_send_cmd(bus, 0);          //set low col address
-    i2c_OLED_send_cmd(bus, 0x10);       //set high col address
+    i2c_OLED_set_xy(bus, 0, row);
 }
 
 void i2c_OLED_send_char(busDevice_t *bus, unsigned char ascii)
@@ -253,6 +277,7 @@ void i2c_OLED_send_string(busDevice_t *bus, const char *string)
 /**
 * according to http://www.adafruit.com/datasheets/UG-2864HSWEG01.pdf Chapter 4.4 Page 15
 */
+
 bool ug2864hsweg01InitI2C(busDevice_t *bus)
 {
 
@@ -261,28 +286,32 @@ bool ug2864hsweg01InitI2C(busDevice_t *bus)
         return false;
     }
 
-    i2c_OLED_send_cmd(bus, 0xD4); // Set Display Clock Divide Ratio / OSC Frequency
-    i2c_OLED_send_cmd(bus, 0x80); // Display Clock Divide Ratio / OSC Frequency
-    i2c_OLED_send_cmd(bus, 0xA8); // Set Multiplex Ratio
-    i2c_OLED_send_cmd(bus, 0x3F); // Multiplex Ratio for 128x64 (64-1)
-    i2c_OLED_send_cmd(bus, 0xD3); // Set Display Offset
-    i2c_OLED_send_cmd(bus, 0x00); // Display Offset
-    i2c_OLED_send_cmd(bus, 0x40); // Set Display Start Line
-    i2c_OLED_send_cmd(bus, 0x8D); // Set Charge Pump
-    i2c_OLED_send_cmd(bus, 0x14); // Charge Pump (0x10 External, 0x14 Internal DC/DC)
-    i2c_OLED_send_cmd(bus, 0xA1); // Set Segment Re-Map
-    i2c_OLED_send_cmd(bus, 0xC8); // Set Com Output Scan Direction
-    i2c_OLED_send_cmd(bus, 0xDA); // Set COM Hardware Configuration
-    i2c_OLED_send_cmd(bus, 0x12); // COM Hardware Configuration
-    i2c_OLED_send_cmd(bus, 0x81); // Set Contrast
-    i2c_OLED_send_cmd(bus, 0xCF); // Contrast
-    i2c_OLED_send_cmd(bus, 0xD9); // Set Pre-Charge Period
-    i2c_OLED_send_cmd(bus, 0xF1); // Set Pre-Charge Period (0x22 External, 0xF1 Internal)
-    i2c_OLED_send_cmd(bus, 0xDB); // Set VCOMH Deselect Level
-    i2c_OLED_send_cmd(bus, 0x40); // VCOMH Deselect Level
-    i2c_OLED_send_cmd(bus, 0xA4); // Set all pixels OFF
-    i2c_OLED_send_cmd(bus, 0xA6); // Set display not inverted
-    i2c_OLED_send_cmd(bus, 0xAF); // Set display On
+    static const uint8_t i2c_OLED_cmd_init[] = {
+        0xD4, // Set Display Clock Divide Ratio / OSC Frequency
+        0x80, // Display Clock Divide Ratio / OSC Frequency
+        0xA8, // Set Multiplex Ratio
+        0x3F, // Multiplex Ratio for 128x64 (64-1)
+        0xD3, // Set Display Offset
+        0x00, // Display Offset
+        0x40, // Set Display Start Line
+        0x8D, // Set Charge Pump
+        0x14, // Charge Pump (0x10 External, 0x14 Internal DC/DC)
+        0xA1, // Set Segment Re-Map
+        0xC8, // Set Com Output Scan Direction
+        0xDA, // Set COM Hardware Configuration
+        0x12, // COM Hardware Configuration
+        0x81, // Set Contrast
+        0xCF, // Contrast
+        0xD9, // Set Pre-Charge Period
+        0xF1, // Set Pre-Charge Period (0x22 External, 0xF1 Internal)
+        0xDB, // Set VCOMH Deselect Level
+        0x40, // VCOMH Deselect Level
+        0xA4, // Set all pixels OFF
+        0xA6, // Set display not inverted
+        0xAF, // Set display On
+    };
+
+    i2c_OLED_send_cmdarray(bus, i2c_OLED_cmd_init, ARRAYLEN(i2c_OLED_cmd_init));
 
     i2c_OLED_clear_display(bus);
 

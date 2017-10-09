@@ -22,6 +22,8 @@
 
 #ifdef USE_FAKE_BARO
 
+#include "common/utils.h"
+
 #include "barometer.h"
 #include "barometer_fake.h"
 
@@ -30,8 +32,9 @@ static int32_t fakePressure;
 static int32_t fakeTemperature;
 
 
-static void fakeBaroStartGet(void)
+static void fakeBaroStartGet(baroDev_t *baro)
 {
+    UNUSED(baro);
 }
 
 static void fakeBaroCalculate(int32_t *pressure, int32_t *temperature)
@@ -67,4 +70,3 @@ bool fakeBaroDetect(baroDev_t *baro)
     return true;
 }
 #endif // USE_FAKE_BARO
-

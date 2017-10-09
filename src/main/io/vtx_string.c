@@ -19,10 +19,9 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <ctype.h>
-#include <string.h>
 
 #include "platform.h"
+
 #include "build/debug.h"
 
 #if defined(VTX_COMMON)
@@ -53,13 +52,10 @@ const char * const vtx58ChannelNames[] = {
 
 bool vtx58_Freq2Bandchan(uint16_t freq, uint8_t *pBand, uint8_t *pChannel)
 {
-    int8_t band;
-    uint8_t channel;
-
     // Use reverse lookup order so that 5880Mhz
     // get Raceband 7 instead of Fatshark 8.
-    for (band = 4 ; band >= 0 ; band--) {
-        for (channel = 0 ; channel < 8 ; channel++) {
+    for (int band = 4 ; band >= 0 ; band--) {
+        for (int channel = 0 ; channel < 8 ; channel++) {
             if (vtx58frequencyTable[band][channel] == freq) {
                 *pBand = band + 1;
                 *pChannel = channel + 1;

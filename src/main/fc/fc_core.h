@@ -36,7 +36,7 @@ PG_DECLARE(throttleCorrectionConfig_t, throttleCorrectionConfig);
 
 union rollAndPitchTrims_u;
 void applyAndSaveAccelerometerTrimsDelta(union rollAndPitchTrims_u *rollAndPitchTrimsDelta);
-void handleInflightCalibrationStickPosition();
+void handleInflightCalibrationStickPosition(void);
 
 void resetArmingDisabled(void);
 
@@ -49,3 +49,4 @@ void updateRcCommands(void);
 
 void taskMainPidLoop(timeUs_t currentTimeUs);
 bool isMotorsReversed(void);
+bool isFlipOverAfterCrashMode(void);

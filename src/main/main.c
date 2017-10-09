@@ -24,7 +24,6 @@
 
 #include "scheduler/scheduler.h"
 
-
 int main(void)
 {
     init();

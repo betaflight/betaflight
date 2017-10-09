@@ -11,7 +11,10 @@
 
 # Where to find user code.
 USER_DIR = ../main
+TEST_DIR = unit
+ROOT = ../..
 
+include $(ROOT)/make/system-id.mk
 
 # specify which files that are included in the test in addition to the unittest file.
 # variables available:
@@ -28,6 +31,17 @@ altitude_hold_unittest_SRC :=  \
 		$(USER_DIR)/flight/altitude.c
 
 
+arming_prevention_unittest_SRC := \
+		$(USER_DIR)/fc/fc_core.c \
+		$(USER_DIR)/fc/rc_controls.c \
+		$(USER_DIR)/fc/rc_modes.c \
+		$(USER_DIR)/fc/runtime_config.c \
+		$(USER_DIR)/common/bitarray.c
+
+atomic_unittest_SRC := \
+		$(USER_DIR)/build/atomic.c \
+		$(TEST_DIR)/atomic_unittest_c.c
+
 baro_bmp085_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_bmp085.c \
 		$(USER_DIR)/drivers/io.c
@@ -36,15 +50,33 @@ baro_bmp085_unittest_SRC := \
 baro_bmp280_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_bmp280.c
 
+baro_bmp280_unittest_DEFINES := \
+                USE_BARO \
+                USE_BARO_BMP280 \
+                USE_BARO_SPI_BMP280
 
 baro_ms5611_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_ms5611.c
 
+baro_ms5611_unittest_DEFINES := \
+                USE_BARO \
+                USE_BARO_MS5611 \
+                USE_BARO_SPI_MS5611
 
 battery_unittest_SRC := \
 		$(USER_DIR)/sensors/battery.c \
 		$(USER_DIR)/common/maths.c
 
+
+blackbox_unittest_SRC :=  \
+		$(USER_DIR)/blackbox/blackbox.c \
+		$(USER_DIR)/blackbox/blackbox_encoding.c \
+		$(USER_DIR)/blackbox/blackbox_io.c \
+		$(USER_DIR)/common/encoding.c \
+		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/common/maths.c \
+		$(USER_DIR)/common/typeconversion.c \
+		$(USER_DIR)/drivers/gyro_sync.c
 
 blackbox_encoding_unittest_SRC :=  \
 		$(USER_DIR)/blackbox/blackbox_encoding.c \
@@ -52,6 +84,16 @@ blackbox_encoding_unittest_SRC :=  \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/typeconversion.c
 
+cli_unittest_SRC := \
+		$(USER_DIR)/fc/cli.c \
+		$(USER_DIR)/config/feature.c \
+		$(USER_DIR)/config/parameter_group.c \
+                $(USER_DIR)/common/typeconversion.c
+
+cli_unittest_DEFINES := \
+		USE_CLI \
+		SystemCoreClock=1000000 \
+		OSD
 
 cms_unittest_SRC := \
 		$(USER_DIR)/cms/cms.c \
@@ -135,7 +177,11 @@ rc_controls_unittest_SRC := \
 
 rx_crsf_unittest_SRC := \
 		$(USER_DIR)/rx/crsf.c \
-		$(USER_DIR)/common/maths.c
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/common/typeconversion.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/drivers/serial.c
 
 
 rx_ibus_unittest_SRC := \
@@ -158,15 +204,20 @@ rx_rx_unittest_SRC := \
 
 
 scheduler_unittest_SRC := \
-		$(USER_DIR)/scheduler/scheduler.c
+		$(USER_DIR)/scheduler/scheduler.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c
 
 
 telemetry_crsf_unittest_SRC := \
 		$(USER_DIR)/rx/crsf.c \
 		$(USER_DIR)/telemetry/crsf.c \
+		$(USER_DIR)/common/crc.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/common/gps_conversion.c \
+		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/common/typeconversion.c \
 		$(USER_DIR)/fc/runtime_config.c
 
 telemetry_crsf_unittest_DEFINES := \
@@ -174,6 +225,24 @@ telemetry_crsf_unittest_DEFINES := \
 		STM32F10X_MD \
 		__TARGET__="TEST" \
 		__REVISION__="revision"
+
+
+telemetry_crsf_msp_unittest_SRC := \
+		$(USER_DIR)/rx/crsf.c \
+		$(USER_DIR)/build/atomic.c \
+		$(USER_DIR)/common/crc.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/drivers/serial.c \
+		$(USER_DIR)/common/typeconversion.c \
+		$(USER_DIR)/telemetry/crsf.c \
+		$(USER_DIR)/common/gps_conversion.c \
+		$(USER_DIR)/telemetry/msp_shared.c \
+		$(USER_DIR)/fc/runtime_config.c
+
+telemetry_crsf_msp_unittest_DEFINES := \
+		USE_MSP_OVER_TELEMETRY
 
 
 telemetry_hott_unittest_SRC := \
@@ -207,6 +276,13 @@ rcsplit_unitest_DEFINES := \
 		USE_UART3 \
 		USE_RCSPLIT \
 
+huffman_unittest_SRC := \
+		$(USER_DIR)/common/huffman.c \
+		$(USER_DIR)/common/huffman_table.c
+
+huffman_unittest_DEFINES := \
+		USE_HUFFMAN
+
 # Please tweak the following variable definitions as needed by your
 # project, except GTEST_HEADERS, which you can use in your own targets
 # but shouldn't modify.
@@ -216,7 +292,6 @@ rcsplit_unitest_DEFINES := \
 GTEST_DIR = ../../lib/test/gtest
 
 
-TEST_DIR = unit
 USER_INCLUDE_DIR = $(USER_DIR)
 
 OBJECT_DIR = ../../obj/test
@@ -224,6 +299,8 @@ OBJECT_DIR = ../../obj/test
 # Use clang/clang++ by default
 CC  := clang
 CXX := clang++
+#CC  := gcc
+#CXX := g++
 
 COMMON_FLAGS = \
 	-g \
@@ -231,11 +308,19 @@ COMMON_FLAGS = \
 	-Wextra \
 	-Werror \
 	-ggdb3 \
-	-pthread \
 	-O0 \
 	-DUNIT_TEST \
 	-isystem $(GTEST_DIR)/inc \
 	-MMD -MP
+
+ifeq ($(shell $(CC) -v 2>&1 | grep -q "clang version" && echo "clang"),clang)
+COMMON_FLAGS += -fblocks
+LDFLAGS	     += -lBlocksRuntime
+endif
+
+ifndef MACOSX
+COMMON_FLAGS += -pthread
+endif
 
 # Flags passed to the C compiler.
 C_FLAGS = $(COMMON_FLAGS) \
@@ -251,12 +336,11 @@ COVERAGE_FLAGS := --coverage
 C_FLAGS   += $(COVERAGE_FLAGS)
 CXX_FLAGS += $(COVERAGE_FLAGS)
 
-# Determine the OS and set up the parameter group linker flags accordingly
-UNAME := $(shell uname -s)
-ifeq ($(UNAME), Darwin)
-PG_FLAGS = -Wl,-map,$(OBJECT_DIR)/$@.map
+# Set up the parameter group linker flags according to OS
+ifdef MACOSX
+LDFLAGS  += -Wl,-map,$(OBJECT_DIR)/$@.map
 else
-PG_FLAGS = -Wl,-T,$(TEST_DIR)/parameter_group.ld -Wl,-Map,$(OBJECT_DIR)/$@.map
+LDFLAGS  += -Wl,-T,$(TEST_DIR)/parameter_group.ld -Wl,-Map,$(OBJECT_DIR)/$@.map
 endif
 
 # Gather up all of the tests.
@@ -355,7 +439,7 @@ TEST_CFLAGS	 = $(addprefix -I,$(TEST_INCLUDE_DIRS))
 # param $1 = testname
 define test-specific-stuff
 
-$$1_OBJS = $$(patsubst $$(USER_DIR)%,$$(OBJECT_DIR)/$1%,$$($1_SRC:=.o))
+$$1_OBJS = $$(patsubst $$(TEST_DIR)%,$$(OBJECT_DIR)/$1%, $$(patsubst $$(USER_DIR)%,$$(OBJECT_DIR)/$1%,$$($1_SRC:=.o)))
 
 # $$(info $1 -v-v-------)
 # $$(info $1_SRC:  $($1_SRC))
@@ -375,6 +459,12 @@ $(OBJECT_DIR)/$1/%.c.o: $(USER_DIR)/%.c
                 $(foreach def,$($1_DEFINES),-D $(def)) \
                 -c $$< -o $$@
 
+$(OBJECT_DIR)/$1/%.c.o: $(TEST_DIR)/%.c
+	@echo "compiling test c file: $$<" "$(STDOUT)"
+	$(V1) mkdir -p $$(dir $$@)
+	$(V1) $(CC) $(C_FLAGS) $(TEST_CFLAGS) \
+                $(foreach def,$($1_DEFINES),-D $(def)) \
+                -c $$< -o $$@
 
 $(OBJECT_DIR)/$1/$1.o: $(TEST_DIR)/$1.cc
 	@echo "compiling $$<" "$(STDOUT)"
@@ -390,7 +480,7 @@ $(OBJECT_DIR)/$1/$1 : $$($$1_OBJS) \
 
 	@echo "linking $$@" "$(STDOUT)"
 	$(V1) mkdir -p $(dir $$@)
-	$(V1) $(CXX) $(CXX_FLAGS) $(PG_FLAGS) $$^ -o $$@
+	$(V1) $(CXX) $(CXX_FLAGS) $(LDFLAGS) $$^ -o $$@
 
 test_$1: $(OBJECT_DIR)/$1/$1
 	$(V1) $$< $$(EXEC_OPTS) "$(STDOUT)" && echo "running $$@: PASS"
@@ -399,4 +489,3 @@ endef
 
 #apply the canned recipe above to all tests
 $(eval $(foreach test,$(TESTS),$(call test-specific-stuff,$(test))))
-

@@ -213,18 +213,18 @@ bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 
 
     rxBytesToIgnore = 0;
-    serialPort_t *ibusPort = openSerialPort(portConfig->identifier, 
-        FUNCTION_RX_SERIAL, 
-        ibusDataReceive, 
-        IBUS_BAUDRATE, 
-        portShared ? MODE_RXTX : MODE_RX, 
-        SERIAL_NOT_INVERTED | (rxConfig->halfDuplex || portShared ? SERIAL_BIDIR : 0)
+    serialPort_t *ibusPort = openSerialPort(portConfig->identifier,
+        FUNCTION_RX_SERIAL,
+        ibusDataReceive,
+        IBUS_BAUDRATE,
+        portShared ? MODE_RXTX : MODE_RX,
+        (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex || portShared ? SERIAL_BIDIR : 0)
         );
 
 #if defined(TELEMETRY) && defined(TELEMETRY_IBUS)
     if (portShared) {
         initSharedIbusTelemetry(ibusPort);
-    } 
+    }
 #endif
 
     return ibusPort != NULL;

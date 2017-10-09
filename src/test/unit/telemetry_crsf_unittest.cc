@@ -27,9 +27,12 @@ extern "C" {
     #include "build/debug.h"
 
     #include "common/axis.h"
+    #include "common/crc.h"
     #include "common/filter.h"
     #include "common/gps_conversion.h"
     #include "common/maths.h"
+    #include "common/printf.h"
+    #include "common/typeconversion.h"
 
     #include "config/parameter_group.h"
     #include "config/parameter_group_ids.h"
@@ -37,6 +40,7 @@ extern "C" {
     #include "drivers/serial.h"
     #include "drivers/system.h"
 
+    #include "fc/config.h"
     #include "fc/runtime_config.h"
 
     #include "flight/pid.h"
@@ -45,22 +49,29 @@ extern "C" {
     #include "io/gps.h"
     #include "io/serial.h"
 
+    #include "rx/rx.h"
     #include "rx/crsf.h"
 
     #include "sensors/battery.h"
     #include "sensors/sensors.h"
+    #include "sensors/acceleration.h"
 
     #include "telemetry/crsf.h"
     #include "telemetry/telemetry.h"
+    #include "telemetry/msp_shared.h"
 
     bool airMode;
 
     uint16_t testBatteryVoltage = 0;
     int32_t testAmperage = 0;
+    int32_t testmAhDrawn = 0;
 
     serialPort_t *telemetrySharedPort;
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
+    PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
+    PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
+    PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
@@ -90,7 +101,7 @@ TEST(TelemetryCrsfTest, TestGPS)
 {
     uint8_t frame[CRSF_FRAME_SIZE_MAX];
 
-    int frameLen = getCrsfFrame(frame, CRSF_FRAME_GPS);
+    int frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_GPS);
     EXPECT_EQ(CRSF_FRAME_GPS_PAYLOAD_SIZE + FRAME_HEADER_FOOTER_LEN, frameLen);
     EXPECT_EQ(CRSF_ADDRESS_BROADCAST, frame[0]); // address
     EXPECT_EQ(17, frame[1]); // length
@@ -116,7 +127,7 @@ TEST(TelemetryCrsfTest, TestGPS)
     gpsSol.groundSpeed = 163;                 // speed in 0.1m/s, 16.3 m/s = 58.68 km/h, so CRSF (km/h *10) value is 587
     gpsSol.numSat = 9;
     gpsSol.groundCourse = 1479;     // degrees * 10
-    frameLen = getCrsfFrame(frame, CRSF_FRAME_GPS);
+    frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_GPS);
     lattitude = frame[3] << 24 | frame[4] << 16 | frame[5] << 8 | frame[6];
     EXPECT_EQ(560000000, lattitude);
     longitude = frame[7] << 24 | frame[8] << 16 | frame[9] << 8 | frame[10];
@@ -137,7 +148,7 @@ TEST(TelemetryCrsfTest, TestBattery)
     uint8_t frame[CRSF_FRAME_SIZE_MAX];
 
     testBatteryVoltage = 0; // 0.1V units
-    int frameLen = getCrsfFrame(frame, CRSF_FRAME_BATTERY_SENSOR);
+    int frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_BATTERY_SENSOR);
     EXPECT_EQ(CRSF_FRAME_BATTERY_SENSOR_PAYLOAD_SIZE + FRAME_HEADER_FOOTER_LEN, frameLen);
     EXPECT_EQ(CRSF_ADDRESS_BROADCAST, frame[0]); // address
     EXPECT_EQ(10, frame[1]); // length
@@ -154,8 +165,8 @@ TEST(TelemetryCrsfTest, TestBattery)
 
     testBatteryVoltage = 33; // 3.3V = 3300 mv
     testAmperage = 2960; // = 29.60A = 29600mA - amperage is in 0.01A steps
-    batteryConfigMutable()->batteryCapacity = 1234;
-    frameLen = getCrsfFrame(frame, CRSF_FRAME_BATTERY_SENSOR);
+    testmAhDrawn = 1234;
+    frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_BATTERY_SENSOR);
     voltage = frame[3] << 8 | frame[4]; // mV * 100
     EXPECT_EQ(33, voltage);
     current = frame[5] << 8 | frame[6]; // mA * 100
@@ -174,7 +185,7 @@ TEST(TelemetryCrsfTest, TestAttitude)
     attitude.values.pitch = 0;
     attitude.values.roll = 0;
     attitude.values.yaw = 0;
-    int frameLen = getCrsfFrame(frame, CRSF_FRAME_ATTITUDE);
+    int frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_ATTITUDE);
     EXPECT_EQ(CRSF_FRAME_ATTITUDE_PAYLOAD_SIZE + FRAME_HEADER_FOOTER_LEN, frameLen);
     EXPECT_EQ(CRSF_ADDRESS_BROADCAST, frame[0]); // address
     EXPECT_EQ(8, frame[1]); // length
@@ -190,7 +201,7 @@ TEST(TelemetryCrsfTest, TestAttitude)
     attitude.values.pitch = 678; // decidegrees == 1.183333232852155 rad
     attitude.values.roll = 1495; // 2.609267231731523 rad
     attitude.values.yaw = -1799; //3.139847324337799 rad
-    frameLen = getCrsfFrame(frame, CRSF_FRAME_ATTITUDE);
+    frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_ATTITUDE);
     pitch = frame[3] << 8 | frame[4]; // rad / 10000
     EXPECT_EQ(11833, pitch);
     roll = frame[5] << 8 | frame[6];
@@ -206,7 +217,7 @@ TEST(TelemetryCrsfTest, TestFlightMode)
 
     // nothing set, so ACRO mode
     airMode = false;
-    int frameLen = getCrsfFrame(frame, CRSF_FRAME_FLIGHT_MODE);
+    int frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_FLIGHT_MODE);
     EXPECT_EQ(5 + FRAME_HEADER_FOOTER_LEN, frameLen);
     EXPECT_EQ(CRSF_ADDRESS_BROADCAST, frame[0]); // address
     EXPECT_EQ(7, frame[1]); // length
@@ -221,7 +232,7 @@ TEST(TelemetryCrsfTest, TestFlightMode)
 
     enableFlightMode(ANGLE_MODE);
     EXPECT_EQ(ANGLE_MODE, FLIGHT_MODE(ANGLE_MODE));
-    frameLen = getCrsfFrame(frame, CRSF_FRAME_FLIGHT_MODE);
+    frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_FLIGHT_MODE);
     EXPECT_EQ(5 + FRAME_HEADER_FOOTER_LEN, frameLen);
     EXPECT_EQ(CRSF_ADDRESS_BROADCAST, frame[0]); // address
     EXPECT_EQ(7, frame[1]); // length
@@ -236,7 +247,7 @@ TEST(TelemetryCrsfTest, TestFlightMode)
     disableFlightMode(ANGLE_MODE);
     enableFlightMode(HORIZON_MODE);
     EXPECT_EQ(HORIZON_MODE, FLIGHT_MODE(HORIZON_MODE));
-    frameLen = getCrsfFrame(frame, CRSF_FRAME_FLIGHT_MODE);
+    frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_FLIGHT_MODE);
     EXPECT_EQ(4 + FRAME_HEADER_FOOTER_LEN, frameLen);
     EXPECT_EQ(CRSF_ADDRESS_BROADCAST, frame[0]); // address
     EXPECT_EQ(6, frame[1]); // length
@@ -249,7 +260,7 @@ TEST(TelemetryCrsfTest, TestFlightMode)
 
     disableFlightMode(HORIZON_MODE);
     airMode = true;
-    frameLen = getCrsfFrame(frame, CRSF_FRAME_FLIGHT_MODE);
+    frameLen = getCrsfFrame(frame, CRSF_FRAMETYPE_FLIGHT_MODE);
     EXPECT_EQ(4 + FRAME_HEADER_FOOTER_LEN, frameLen);
     EXPECT_EQ(CRSF_ADDRESS_BROADCAST, frame[0]); // address
     EXPECT_EQ(6, frame[1]); // length
@@ -288,9 +299,10 @@ uint32_t serialTxBytesFree(const serialPort_t *) {return 0;}
 uint8_t serialRead(serialPort_t *) {return 0;}
 void serialWrite(serialPort_t *, uint8_t) {}
 void serialWriteBuf(serialPort_t *, const uint8_t *, int) {}
-void serialSetMode(serialPort_t *, portMode_t ) {}
-serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, uint32_t, portMode_t, portOptions_t) {return NULL;}
+void serialSetMode(serialPort_t *, portMode_e) {}
+serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, uint32_t, portMode_e, portOptions_e) {return NULL;}
 void closeSerialPort(serialPort_t *) {}
+bool isSerialTransmitBufferEmpty(const serialPort_t *) { return true; }
 
 serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) {return NULL;}
 
@@ -316,5 +328,13 @@ batteryState_e getBatteryState(void) {
 uint8_t calculateBatteryPercentageRemaining(void) {
     return 67;
 }
+
+int32_t getMAhDrawn(void){
+  return testmAhDrawn;
+}
+
+bool sendMspReply(uint8_t, mspResponseFnPtr) { return false; }
+bool handleMspFrame(uint8_t *, int)  { return false; }
+void crsfScheduleMspResponse(void) {};
 
 }

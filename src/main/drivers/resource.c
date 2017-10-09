@@ -65,5 +65,5 @@ const char * const ownerNames[OWNER_TOTAL_COUNT] = {
     "SPI_PREINIT",
     "RX_BIND_PLUG",
     "ESCSERIAL",
+    "CAMERA_CONTROL",
 };
-

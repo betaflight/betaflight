@@ -31,6 +31,10 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
+#undef TELEMETRY_JETIEXBUS // ROM SAVING
+
+#define CURRENT_TARGET_CPU_VOLTAGE 3.0
+
 #define LED0_PIN                PE8  // Blue LEDs - PE8/PE12
 #define LED0_INVERTED
 #define LED1_PIN                PE10 // Orange LEDs - PE10/PE14
@@ -54,12 +58,11 @@
 //#define SD_CS_PIN               PB12
 //#define SD_SPI_INSTANCE         SPI2
 
-//#define USE_FLASHFS
-//#define USE_FLASH_M25P16
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
 
-//#define M25P16_CS_GPIO          GPIOB
-//#define M25P16_CS_PIN           GPIO_Pin_12
-//#define M25P16_SPI_INSTANCE     SPI2
+#define M25P16_CS_PIN           PB12
+#define M25P16_SPI_INSTANCE     SPI2
 // SPI1
 // PB5  SPI1_MOSI
 // PB4  SPI1_MISO
@@ -93,6 +96,16 @@
 #define USE_GYRO_SPI_MPU9250
 #define MPU9250_CS_PIN          SPI2_NSS_PIN
 #define MPU9250_SPI_INSTANCE    SPI2
+// BMI160 gyro support
+//#define USE_ACCGYRO_BMI160
+#ifdef USE_ACCGYRO_BMI160
+#define BMI160_CS_PIN           SPI2_NSS_PIN
+#define BMI160_SPI_INSTANCE     SPI2
+#define BMI160_SPI_DIVISOR      16
+#define BMI160_INT_EXTI         PC13
+#define USE_MPU_DATA_READY_SIGNAL
+#define USE_EXTI
+#endif
 
 #define ACC
 #define USE_FAKE_ACC
@@ -115,12 +128,12 @@
 #define USE_BARO_BMP280
 #define USE_BARO_MS5611
 
-#define OSD
+//#define OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN
 
-#define CMS
+//#define CMS
 
 //#define USE_SDCARD
 //
@@ -179,6 +192,8 @@
 #define SONAR_ECHO_PIN          PB1
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+#define MAX_SUPPORTED_MOTORS    12
 
 // IO - 303 in 100pin package
 #define TARGET_IO_PORTA         0xffff

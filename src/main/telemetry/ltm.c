@@ -202,7 +202,7 @@ static void ltm_sframe(void)
  * Attitude A-frame - 10 Hz at > 2400 baud
  *  PITCH ROLL HEADING
  */
-static void ltm_aframe()
+static void ltm_aframe(void)
 {
     ltm_initialise_packet('A');
     ltm_serialise_16(DECIDEGREES_TO_DEGREES(attitude.values.pitch));
@@ -216,7 +216,7 @@ static void ltm_aframe()
  *  This frame will be ignored by Ghettostation, but processed by GhettOSD if it is used as standalone onboard OSD
  *  home pos, home alt, direction to home
  */
-static void ltm_oframe()
+static void ltm_oframe(void)
 {
     ltm_initialise_packet('O');
 #if defined(GPS)

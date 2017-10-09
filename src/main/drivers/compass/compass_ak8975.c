@@ -29,7 +29,6 @@
 #include "common/utils.h"
 
 #include "drivers/bus_i2c.h"
-#include "drivers/gpio.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
@@ -60,7 +59,7 @@
 #define AK8975A_ASAY 0x11 // Fuse ROM y-axis sensitivity adjustment value
 #define AK8975A_ASAZ 0x12 // Fuse ROM z-axis sensitivity adjustment value
 
-static bool ak8975Init()
+static bool ak8975Init(void)
 {
     uint8_t buffer[3];
     uint8_t status;

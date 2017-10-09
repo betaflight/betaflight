@@ -37,9 +37,17 @@
 
 #define CM_S_TO_KM_H(centimetersPerSecond) (centimetersPerSecond * 36 / 1000)
 
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#define ABS(x) ((x) > 0 ? (x) : -(x))
+#define MIN(a,b) \
+  __extension__ ({ __typeof__ (a) _a = (a); \
+  __typeof__ (b) _b = (b); \
+  _a < _b ? _a : _b; })
+#define MAX(a,b) \
+  __extension__ ({ __typeof__ (a) _a = (a); \
+  __typeof__ (b) _b = (b); \
+  _a > _b ? _a : _b; })
+#define ABS(x) \
+  __extension__ ({ __typeof__ (x) _x = (x); \
+  _x > 0 ? _x : -_x; })
 
 #define Q12 (1 << 12)
 
@@ -142,6 +150,3 @@ static inline float constrainf(float amt, float low, float high)
     else
         return amt;
 }
-uint16_t crc16_ccitt(uint16_t crc, unsigned char a);
-uint16_t crc16_ccitt_update(uint16_t crc, const void *data, uint32_t length);
-uint8_t crc8_dvb_s2(uint8_t crc, unsigned char a);

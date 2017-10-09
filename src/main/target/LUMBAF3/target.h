@@ -15,12 +15,13 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #define TARGET_BOARD_IDENTIFIER "MCF3" // LumbaF3 Flight Controller by mC
 
 #define LED0_PIN                PB3
 #define BEEPER                  PC15
 
-// MPU6000 interrupts
 #define USE_EXTI
 #define MPU_INT_EXTI            PA3
 #define USE_MPU_DATA_READY_SIGNAL
@@ -76,15 +77,16 @@
 
 #define LED_STRIP
 
+#define CAMERA_CONTROL_PIN      PA15
+
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART1
 #define DEFAULT_FEATURES        FEATURE_TELEMETRY
 
-// IO - from schematics
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
-#define TARGET_IO_PORTC         ( BIT(14) | BIT(15) )
+#define TARGET_IO_PORTC         ( BIT(15) )
 
-#define USABLE_TIMER_CHANNEL_COUNT 8
-#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(15) )
+#define USABLE_TIMER_CHANNEL_COUNT 10
+#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(15) | TIM_N(16) )

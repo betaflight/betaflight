@@ -119,19 +119,26 @@ void pgResetFn_serialConfig(serialConfig_t *serialConfig)
 
     serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
 
+#ifdef SERIALRX_UART
+    serialPortConfig_t *serialRxUartConfig = serialFindPortConfiguration(SERIALRX_UART);
+    if (serialRxUartConfig) {
+        serialRxUartConfig->functionMask = FUNCTION_RX_SERIAL;
+    }
+#endif
+
+#ifdef SBUS_TELEMETRY_UART
+    serialPortConfig_t *serialTlemetryUartConfig = serialFindPortConfiguration(SBUS_TELEMETRY_UART);
+    if (serialTlemetryUartConfig) {
+        serialTlemetryUartConfig->functionMask = FUNCTION_TELEMETRY_SMARTPORT;
+    }
+#endif
+
 #if defined(USE_VCP) && defined(USE_MSP_UART)
     if (serialConfig->portConfigs[0].identifier == SERIAL_PORT_USB_VCP) {
         serialPortConfig_t * uart1Config = serialFindPortConfiguration(SERIAL_PORT_USART1);
         if (uart1Config) {
             uart1Config->functionMask = FUNCTION_MSP;
         }
-    }
-#endif
-
-#ifdef SERIALRX_UART
-    serialPortConfig_t *serialRxUartConfig = serialFindPortConfiguration(SERIALRX_UART);
-    if (serialRxUartConfig) {
-        serialRxUartConfig->functionMask = FUNCTION_RX_SERIAL;
     }
 #endif
 
@@ -252,8 +259,7 @@ serialPort_t *findNextSharedSerialPort(uint16_t functionMask, serialPortFunction
 }
 
 #ifdef TELEMETRY
-#define ALL_TELEMETRY_FUNCTIONS_MASK (TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_SMARTPORT)
-#define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | ALL_TELEMETRY_FUNCTIONS_MASK)
+#define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | TELEMETRY_PORT_FUNCTIONS_MASK)
 #else
 #define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX)
 #endif
@@ -327,8 +333,8 @@ serialPort_t *openSerialPort(
     serialPortFunction_e function,
     serialReceiveCallbackPtr rxCallback,
     uint32_t baudRate,
-    portMode_t mode,
-    portOptions_t options)
+    portMode_e mode,
+    portOptions_e options)
 {
 #if !(defined(USE_UART) || defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
     UNUSED(rxCallback);

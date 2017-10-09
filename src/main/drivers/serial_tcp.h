@@ -38,7 +38,7 @@ typedef struct {
     uint8_t id;
 } tcpPort_t;
 
-serialPort_t *serTcpOpen(int id, serialReceiveCallbackPtr rxCallback, uint32_t baudRate, portMode_t mode, portOptions_t options);
+serialPort_t *serTcpOpen(int id, serialReceiveCallbackPtr rxCallback, uint32_t baudRate, portMode_e mode, portOptions_e options);
 
 // tcpPort API
 void tcpDataIn(tcpPort_t *instance, uint8_t* ch, int size);
@@ -47,4 +47,3 @@ void tcpDataOut(tcpPort_t *instance);
 bool tcpIsStart(void);
 bool* tcpGetUsed(void);
 tcpPort_t* tcpGetPool(void);
-

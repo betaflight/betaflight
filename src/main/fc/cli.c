@@ -28,8 +28,10 @@
 // FIXME remove this for targets that don't need a CLI.  Perhaps use a no-op macro when USE_CLI is not enabled
 // signal that we're in cli mode
 uint8_t cliMode = 0;
+#ifndef EEPROM_IN_RAM
 extern uint8_t __config_start;   // configured via linker script when building binaries.
 extern uint8_t __config_end;
+#endif
 
 #ifdef USE_CLI
 
@@ -77,16 +79,18 @@ extern uint8_t __config_end;
 #include "drivers/timer.h"
 #include "drivers/vcd.h"
 #include "drivers/light_led.h"
+#include "drivers/camera_control.h"
 
 #include "fc/settings.h"
 #include "fc/cli.h"
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
+#include "fc/fc_msp.h"
+#include "fc/fc_msp_box.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
-#include "fc/fc_msp.h"
 
 #include "flight/altitude.h"
 #include "flight/failsafe.h"
@@ -110,8 +114,11 @@ extern uint8_t __config_end;
 #include "io/vtx_rtc6705.h"
 #include "io/vtx_control.h"
 
+#include "msp/msp_protocol.h"
+
 #include "rx/rx.h"
 #include "rx/spektrum.h"
+#include "rx/frsky_d.h"
 
 #include "scheduler/scheduler.h"
 
@@ -147,6 +154,7 @@ static uint32_t bufferIndex = 0;
 static bool configIsInCopy = false;
 
 static const char* const emptyName = "-";
+static const char* const emptryString = "";
 
 #ifndef USE_QUAD_MIXER_ONLY
 // sync this with mixerMode_e
@@ -163,7 +171,7 @@ static const char * const mixerNames[] = {
 // sync this with features_e
 static const char * const featureNames[] = {
     "RX_PPM", "", "INFLIGHT_ACC_CAL", "RX_SERIAL", "MOTOR_STOP",
-    "SERVO_TILT", "SOFTSERIAL", "GPS", "FAILSAFE",
+    "SERVO_TILT", "SOFTSERIAL", "GPS", "",
     "SONAR", "TELEMETRY", "", "3D", "RX_PARALLEL_PWM",
     "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "OSD",
     "", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE",
@@ -199,7 +207,7 @@ static void cliPrint(const char *str)
     bufWriterFlush(cliWriter);
 }
 
-static void cliPrintLinefeed()
+static void cliPrintLinefeed(void)
 {
     cliPrint("\r\n");
 }
@@ -298,13 +306,34 @@ static void cliPrintLinef(const char *format, ...)
     va_end(va);
 }
 
+
 static void printValuePointer(const clivalue_t *var, const void *valuePointer, bool full)
 {
     if ((var->type & VALUE_MODE_MASK) == MODE_ARRAY) {
         for (int i = 0; i < var->config.array.length; i++) {
-            uint8_t value = ((uint8_t *)valuePointer)[i];
+            switch (var->type & VALUE_TYPE_MASK) {
+            default:
+            case VAR_UINT8:
+                // uint8_t array
+                cliPrintf("%d", ((uint8_t *)valuePointer)[i]);
+                break;
 
-            cliPrintf("%d", value);
+            case VAR_INT8:
+                // int8_t array
+                cliPrintf("%d", ((int8_t *)valuePointer)[i]);
+                break;
+
+            case VAR_UINT16:
+                // uin16_t array
+                cliPrintf("%d", ((uint16_t *)valuePointer)[i]);
+                break;
+
+            case VAR_INT16:
+                // int16_t array
+                cliPrintf("%d", ((int16_t *)valuePointer)[i]);
+                break;
+            }
+
             if (i < var->config.array.length - 1) {
                 cliPrint(",");
             }
@@ -375,10 +404,16 @@ static uint16_t getValueOffset(const clivalue_t *value)
     return 0;
 }
 
-static void *getValuePointer(const clivalue_t *value)
+void *cliGetValuePointer(const clivalue_t *value)
 {
     const pgRegistry_t* rec = pgFind(value->pgn);
     return CONST_CAST(void *, rec->address + getValueOffset(value));
+}
+
+const void *cliGetDefaultPointer(const clivalue_t *value)
+{
+    const pgRegistry_t* rec = pgFind(value->pgn);
+    return rec->address + getValueOffset(value);
 }
 
 static void dumpPgValue(const clivalue_t *value, uint8_t dumpMask)
@@ -421,7 +456,7 @@ static void dumpAllValues(uint16_t valueSection, uint8_t dumpMask)
 
 static void cliPrintVar(const clivalue_t *var, bool full)
 {
-    const void *ptr = getValuePointer(var);
+    const void *ptr = cliGetValuePointer(var);
 
     printValuePointer(var, ptr, full);
 }
@@ -454,7 +489,7 @@ static void cliPrintVarRange(const clivalue_t *var)
 
 static void cliSetVar(const clivalue_t *var, const int16_t value)
 {
-    void *ptr = getValuePointer(var);
+    void *ptr = cliGetValuePointer(var);
 
     switch (var->type & VALUE_TYPE_MASK) {
     case VAR_UINT8:
@@ -861,18 +896,18 @@ static void cliSerialPassthrough(char *cmdline)
 
     while (tok != NULL) {
         switch (index) {
-            case 0:
-                id = atoi(tok);
-                break;
-            case 1:
-                baud = atoi(tok);
-                break;
-            case 2:
-                if (strstr(tok, "rx") || strstr(tok, "RX"))
-                    mode |= MODE_RX;
-                if (strstr(tok, "tx") || strstr(tok, "TX"))
-                    mode |= MODE_TX;
-                break;
+        case 0:
+            id = atoi(tok);
+            break;
+        case 1:
+            baud = atoi(tok);
+            break;
+        case 2:
+            if (strstr(tok, "rx") || strstr(tok, "RX"))
+                mode |= MODE_RX;
+            if (strstr(tok, "tx") || strstr(tok, "TX"))
+                mode |= MODE_TX;
+            break;
         }
         index++;
         tok = strtok_r(NULL, " ", &saveptr);
@@ -883,7 +918,7 @@ static void cliSerialPassthrough(char *cmdline)
     serialPortUsage_t *passThroughPortUsage = findSerialPortUsageByIdentifier(id);
     if (!passThroughPortUsage || passThroughPortUsage->serialPort == NULL) {
         if (!baud) {
-            cliPrint("closed, specify baud.\r\n");
+            cliPrintLine("closed, specify baud.");
             return;
         }
         if (!mode)
@@ -893,7 +928,7 @@ static void cliSerialPassthrough(char *cmdline)
                                          baud, mode,
                                          SERIAL_NOT_INVERTED);
         if (!passThroughPort) {
-            cliPrint("could not be opened.\r\n");
+            cliPrintLine("could not be opened.");
             return;
         }
         cliPrintf("opened, baud = %d.\r\n", baud);
@@ -901,7 +936,7 @@ static void cliSerialPassthrough(char *cmdline)
         passThroughPort = passThroughPortUsage->serialPort;
         // If the user supplied a mode, override the port's mode, otherwise
         // leave the mode unchanged. serialPassthrough() handles one-way ports.
-        cliPrint("already open.\r\n");
+        cliPrintLine("already open.");
         if (mode && passThroughPort->mode != mode) {
             cliPrintf("mode changed from %d to %d.\r\n",
                    passThroughPort->mode, mode);
@@ -914,7 +949,7 @@ static void cliSerialPassthrough(char *cmdline)
         }
     }
 
-    cliPrint("Forwarding, power cycle to exit.\r\n");
+    cliPrintLine("Forwarding, power cycle to exit.");
 
     serialPassthrough(cliPort, passThroughPort, NULL, NULL);
 }
@@ -1669,28 +1704,28 @@ static void cliSdInfo(char *cmdline)
     cliPrint("'\r\n" "Filesystem: ");
 
     switch (afatfs_getFilesystemState()) {
-        case AFATFS_FILESYSTEM_STATE_READY:
-            cliPrint("Ready");
+    case AFATFS_FILESYSTEM_STATE_READY:
+        cliPrint("Ready");
         break;
-        case AFATFS_FILESYSTEM_STATE_INITIALIZATION:
-            cliPrint("Initializing");
+    case AFATFS_FILESYSTEM_STATE_INITIALIZATION:
+        cliPrint("Initializing");
         break;
-        case AFATFS_FILESYSTEM_STATE_UNKNOWN:
-        case AFATFS_FILESYSTEM_STATE_FATAL:
-            cliPrint("Fatal");
+    case AFATFS_FILESYSTEM_STATE_UNKNOWN:
+    case AFATFS_FILESYSTEM_STATE_FATAL:
+        cliPrint("Fatal");
 
-            switch (afatfs_getLastError()) {
-                case AFATFS_ERROR_BAD_MBR:
-                    cliPrint(" - no FAT MBR partitions");
-                break;
-                case AFATFS_ERROR_BAD_FILESYSTEM_HEADER:
-                    cliPrint(" - bad FAT header");
-                break;
-                case AFATFS_ERROR_GENERIC:
-                case AFATFS_ERROR_NONE:
-                    ; // Nothing more detailed to print
-                break;
-            }
+        switch (afatfs_getLastError()) {
+        case AFATFS_ERROR_BAD_MBR:
+            cliPrint(" - no FAT MBR partitions");
+            break;
+        case AFATFS_ERROR_BAD_FILESYSTEM_HEADER:
+            cliPrint(" - bad FAT header");
+            break;
+        case AFATFS_ERROR_GENERIC:
+        case AFATFS_ERROR_NONE:
+            ; // Nothing more detailed to print
+            break;
+        }
         break;
     }
     cliPrintLinefeed();
@@ -1889,40 +1924,44 @@ static void cliVtx(char *cmdline)
 
 #endif // VTX_CONTROL
 
-static void printName(uint8_t dumpMask, const systemConfig_t *systemConfig)
+static void printName(uint8_t dumpMask, const pilotConfig_t *pilotConfig)
 {
-    const bool equalsDefault = strlen(systemConfig->name) == 0;
-    cliDumpPrintLinef(dumpMask, equalsDefault, "name %s", equalsDefault ? emptyName : systemConfig->name);
+    const bool equalsDefault = strlen(pilotConfig->name) == 0;
+    cliDumpPrintLinef(dumpMask, equalsDefault, "name %s", equalsDefault ? emptyName : pilotConfig->name);
 }
 
 static void cliName(char *cmdline)
 {
-    const uint32_t len = strlen(cmdline);
+    const unsigned int len = strlen(cmdline);
     if (len > 0) {
-        memset(systemConfigMutable()->name, 0, ARRAYLEN(systemConfig()->name));
+        memset(pilotConfigMutable()->name, 0, ARRAYLEN(pilotConfig()->name));
         if (strncmp(cmdline, emptyName, len)) {
-            strncpy(systemConfigMutable()->name, cmdline, MIN(len, MAX_NAME_LENGTH));
+            strncpy(pilotConfigMutable()->name, cmdline, MIN(len, MAX_NAME_LENGTH));
         }
     }
-    printName(DUMP_MASTER, systemConfig());
+    printName(DUMP_MASTER, pilotConfig());
 }
 
 static void printFeature(uint8_t dumpMask, const featureConfig_t *featureConfig, const featureConfig_t *featureConfigDefault)
 {
     const uint32_t mask = featureConfig->enabledFeatures;
     const uint32_t defaultMask = featureConfigDefault->enabledFeatures;
-    for (uint32_t i = 0; featureNames[i]; i++) { // disable all feature first
-        const char *format = "feature -%s";
-        cliDefaultPrintLinef(dumpMask, (defaultMask | ~mask) & (1 << i), format, featureNames[i]);
-        cliDumpPrintLinef(dumpMask, (~defaultMask | mask) & (1 << i), format, featureNames[i]);
-    }
-    for (uint32_t i = 0; featureNames[i]; i++) {  // reenable what we want.
-        const char *format = "feature %s";
-        if (defaultMask & (1 << i)) {
-            cliDefaultPrintLinef(dumpMask, (~defaultMask | mask) & (1 << i), format, featureNames[i]);
+    for (uint32_t i = 0; featureNames[i]; i++) { // disabled features first
+        if (strcmp(featureNames[i], emptryString) != 0) { //Skip unused
+            const char *format = "feature -%s";
+            cliDefaultPrintLinef(dumpMask, (defaultMask | ~mask) & (1 << i), format, featureNames[i]);
+            cliDumpPrintLinef(dumpMask, (~defaultMask | mask) & (1 << i), format, featureNames[i]);
         }
-        if (mask & (1 << i)) {
-            cliDumpPrintLinef(dumpMask, (defaultMask | ~mask) & (1 << i), format, featureNames[i]);
+    }
+    for (uint32_t i = 0; featureNames[i]; i++) {  // enabled features
+        if (strcmp(featureNames[i], emptryString) != 0) { //Skip unused
+            const char *format = "feature %s";
+            if (defaultMask & (1 << i)) {
+                cliDefaultPrintLinef(dumpMask, (~defaultMask | mask) & (1 << i), format, featureNames[i]);
+            }
+            if (mask & (1 << i)) {
+                cliDumpPrintLinef(dumpMask, (defaultMask | ~mask) & (1 << i), format, featureNames[i]);
+            }
         }
     }
 }
@@ -1946,7 +1985,7 @@ static void cliFeature(char *cmdline)
         for (uint32_t i = 0; ; i++) {
             if (featureNames[i] == NULL)
                 break;
-            if (strcmp(featureNames[i], "") != 0) //Skip unused
+            if (strcmp(featureNames[i], emptryString) != 0) //Skip unused
                 cliPrintf(" %s", featureNames[i]);
         }
         cliPrintLinefeed();
@@ -2004,8 +2043,9 @@ static void printBeeper(uint8_t dumpMask, const beeperConfig_t *beeperConfig, co
     for (int32_t i = 0; i < beeperCount - 2; i++) {
         const char *formatOff = "beeper -%s";
         const char *formatOn = "beeper %s";
-        cliDefaultPrintLinef(dumpMask, ~(mask ^ defaultMask) & (1 << i), mask & (1 << i) ? formatOn : formatOff, beeperNameForTableIndex(i));
-        cliDumpPrintLinef(dumpMask, ~(mask ^ defaultMask) & (1 << i), mask & (1 << i) ? formatOff : formatOn, beeperNameForTableIndex(i));
+        const uint32_t beeperModeMask = beeperModeMaskForTableIndex(i);
+        cliDefaultPrintLinef(dumpMask, ~(mask ^ defaultMask) & beeperModeMask, mask & beeperModeMask ? formatOn : formatOff, beeperNameForTableIndex(i));
+        cliDumpPrintLinef(dumpMask, ~(mask ^ defaultMask) & beeperModeMask, mask & beeperModeMask ? formatOff : formatOn, beeperNameForTableIndex(i));
     }
 }
 
@@ -2023,7 +2063,8 @@ static void cliBeeper(char *cmdline)
                     cliPrint("  none");
                 break;
             }
-            if (mask & (1 << i))
+
+            if (mask & beeperModeMaskForTableIndex(i))
                 cliPrintf("  %s", beeperNameForTableIndex(i));
         }
         cliPrintLinefeed();
@@ -2054,8 +2095,7 @@ static void cliBeeper(char *cmdline)
                         if (i == BEEPER_PREFERENCE-1)
                             setBeeperOffMask(getPreferredBeeperOffMask());
                         else {
-                            mask = 1 << i;
-                            beeperOffSet(mask);
+                            beeperOffSet(beeperModeMaskForTableIndex(i));
                         }
                     cliPrint("Disabled");
                 }
@@ -2066,8 +2106,7 @@ static void cliBeeper(char *cmdline)
                         if (i == BEEPER_PREFERENCE-1)
                             setPreferredBeeperOffMask(getBeeperOffMask());
                         else {
-                            mask = 1 << i;
-                            beeperOffClear(mask);
+                            beeperOffClear(beeperModeMaskForTableIndex(i));
                         }
                     cliPrint("Enabled");
                 }
@@ -2076,6 +2115,13 @@ static void cliBeeper(char *cmdline)
             }
         }
     }
+}
+#endif
+
+#ifdef USE_RX_FRSKY_D
+void cliFrSkyBind(char *cmdline){
+    UNUSED(cmdline);
+    frSkyDBind();
 }
 #endif
 
@@ -2205,7 +2251,7 @@ static int parseOutputIndex(char *pch, bool allowAllEscs) {
     } else if (allowAllEscs && outputIndex == ALL_MOTORS) {
         tfp_printf("Using all outputs.\r\n");
     } else {
-        tfp_printf("Invalid output number, range: 0 to %d.\r\n", getMotorCount() - 1);
+        tfp_printf("Invalid output number. Range: 0  %d.\r\n", getMotorCount() - 1);
 
         return -1;
     }
@@ -2215,95 +2261,189 @@ static int parseOutputIndex(char *pch, bool allowAllEscs) {
 
 #ifdef USE_DSHOT
 
-#define ESC_INFO_V1_EXPECTED_FRAME_SIZE 15
-#define ESC_INFO_V2_EXPECTED_FRAME_SIZE 21
+#define ESC_INFO_KISS_V1_EXPECTED_FRAME_SIZE 15
+#define ESC_INFO_KISS_V2_EXPECTED_FRAME_SIZE 21
+#define ESC_INFO_BLHELI32_EXPECTED_FRAME_SIZE 64
+
+enum {
+    ESC_INFO_KISS_V1,
+    ESC_INFO_KISS_V2,
+    ESC_INFO_BLHELI32
+};
 
 #define ESC_INFO_VERSION_POSITION 12
 
-void printEscInfo(const uint8_t *escInfoBytes, uint8_t bytesRead)
+void printEscInfo(const uint8_t *escInfoBuffer, uint8_t bytesRead)
 {
     bool escInfoReceived = false;
     if (bytesRead > ESC_INFO_VERSION_POSITION) {
-        uint8_t escInfoVersion = 0;
-        uint8_t frameLength = 0;
-        if (escInfoBytes[ESC_INFO_VERSION_POSITION] == 255) {
-            escInfoVersion = 2;
-            frameLength = ESC_INFO_V2_EXPECTED_FRAME_SIZE;
+        uint8_t escInfoVersion;
+        uint8_t frameLength;
+        if (escInfoBuffer[ESC_INFO_VERSION_POSITION] == 254) {
+            escInfoVersion = ESC_INFO_BLHELI32;
+            frameLength = ESC_INFO_BLHELI32_EXPECTED_FRAME_SIZE;
+        } else if (escInfoBuffer[ESC_INFO_VERSION_POSITION] == 255) {
+            escInfoVersion = ESC_INFO_KISS_V2;
+            frameLength = ESC_INFO_KISS_V2_EXPECTED_FRAME_SIZE;
         } else {
-            escInfoVersion = 1;
-            frameLength = ESC_INFO_V1_EXPECTED_FRAME_SIZE;
+            escInfoVersion = ESC_INFO_KISS_V1;
+            frameLength = ESC_INFO_KISS_V1_EXPECTED_FRAME_SIZE;
         }
 
-        if (((escInfoVersion == 1) && (bytesRead == ESC_INFO_V1_EXPECTED_FRAME_SIZE))
-            || ((escInfoVersion == 2) && (bytesRead == ESC_INFO_V2_EXPECTED_FRAME_SIZE))) {
+        if (bytesRead == frameLength) {
             escInfoReceived = true;
 
-            if (calculateCrc8(escInfoBytes, frameLength - 1) == escInfoBytes[frameLength - 1]) {
-                uint8_t firmwareVersion;
-                char firmwareSubVersion;
-                uint8_t escType;
+            if (calculateCrc8(escInfoBuffer, frameLength - 1) == escInfoBuffer[frameLength - 1]) {
+                uint8_t firmwareVersion = 0;
+                uint8_t firmwareSubVersion = 0;
+                uint8_t escType = 0;
                 switch (escInfoVersion) {
-                case 1:
-                    firmwareVersion = escInfoBytes[12];
-                    firmwareSubVersion = (char)((escInfoBytes[13] & 0x1f) + 97);
-                    escType = (escInfoBytes[13] & 0xe0) >> 5;
+                case ESC_INFO_KISS_V1:
+                    firmwareVersion = escInfoBuffer[12];
+                    firmwareSubVersion = (escInfoBuffer[13] & 0x1f) + 97;
+                    escType = (escInfoBuffer[13] & 0xe0) >> 5;
 
                     break;
-                case 2:
-                    firmwareVersion = escInfoBytes[13];
-                    firmwareSubVersion = (char)escInfoBytes[14];
-                    escType = escInfoBytes[15];
+                case ESC_INFO_KISS_V2:
+                    firmwareVersion = escInfoBuffer[13];
+                    firmwareSubVersion = escInfoBuffer[14];
+                    escType = escInfoBuffer[15];
 
                     break;
-                }
-
-                cliPrint("ESC: ");
-                switch (escType) {
-                case 1:
-                    cliPrintLine("KISS8A");
-
-                    break;
-                case 2:
-                    cliPrintLine("KISS16A");
-
-                    break;
-                case 3:
-                    cliPrintLine("KISS24A");
-
-                    break;
-                case 5:
-                    cliPrintLine("KISS Ultralite");
-
-                    break;
-                default:
-                    cliPrintLine("unknown");
+                case ESC_INFO_BLHELI32:
+                    firmwareVersion = escInfoBuffer[13];
+                    firmwareSubVersion = escInfoBuffer[14];
+                    escType = escInfoBuffer[15];
 
                     break;
                 }
 
-                cliPrint("MCU: 0x");
+                cliPrint("ESC Type: ");
+                switch (escInfoVersion) {
+                case ESC_INFO_KISS_V1:
+                case ESC_INFO_KISS_V2:
+                    switch (escType) {
+                    case 1:
+                        cliPrintLine("KISS8A");
+
+                        break;
+                    case 2:
+                        cliPrintLine("KISS16A");
+
+                        break;
+                    case 3:
+                        cliPrintLine("KISS24A");
+
+                        break;
+                    case 5:
+                        cliPrintLine("KISS Ultralite");
+
+                        break;
+                    default:
+                        cliPrintLine("unknown");
+
+                        break;
+                    }
+
+                    break;
+                case ESC_INFO_BLHELI32:
+                    {
+                        char *escType = (char *)(escInfoBuffer + 31);
+                        escType[32] = 0;
+                        cliPrintLine(escType);
+                    }
+
+                    break;
+                }
+
+                cliPrint("MCU Serial No: 0x");
                 for (int i = 0; i < 12; i++) {
                     if (i && (i % 3 == 0)) {
                         cliPrint("-");
                     }
-                    cliPrintf("%02x", escInfoBytes[i]);
+                    cliPrintf("%02x", escInfoBuffer[i]);
                 }
                 cliPrintLinefeed();
 
-                cliPrintLinef("Firmware: %d.%02d%c", firmwareVersion / 100, firmwareVersion % 100, firmwareSubVersion);
-                if (escInfoVersion == 2) {
-                    cliPrintLinef("Rotation: %s", escInfoBytes[16] ? "reversed" : "normal");
-                    cliPrintLinef("3D: %s", escInfoBytes[17] ? "on" : "off");
+                switch (escInfoVersion) {
+                case ESC_INFO_KISS_V1:
+                case ESC_INFO_KISS_V2:
+                    cliPrintLinef("Firmware Version: %d.%02d%c", firmwareVersion / 100, firmwareVersion % 100, (char)firmwareSubVersion);
+
+                    break;
+                case ESC_INFO_BLHELI32:
+                    cliPrintLinef("Firmware Version: %d.%02d%", firmwareVersion, firmwareSubVersion);
+
+                    break;
+                }
+                if (escInfoVersion == ESC_INFO_KISS_V2 || escInfoVersion == ESC_INFO_BLHELI32) {
+                    cliPrintLinef("Rotation Direction: %s", escInfoBuffer[16] ? "reversed" : "normal");
+                    cliPrintLinef("3D: %s", escInfoBuffer[17] ? "on" : "off");
+                    if (escInfoVersion == ESC_INFO_BLHELI32) {
+                        uint8_t setting = escInfoBuffer[18];
+                        cliPrint("Low voltage Limit: ");
+                        switch (setting) {
+                        case 0:
+                            cliPrintLine("off");
+
+                            break;
+                        case 255:
+                            cliPrintLine("unsupported");
+
+                            break;
+                        default:
+                            cliPrintLinef("%d.%01d", setting / 10, setting % 10);
+
+                            break;
+                        }
+
+                        setting = escInfoBuffer[19];
+                        cliPrint("Current Limit: ");
+                        switch (setting) {
+                        case 0:
+                            cliPrintLine("off");
+
+                            break;
+                        case 255:
+                            cliPrintLine("unsupported");
+
+                            break;
+                        default:
+                            cliPrintLinef("%d", setting);
+
+                            break;
+                        }
+
+                        for (int i = 0; i < 4; i++) {
+                            setting = escInfoBuffer[i + 20];
+                            cliPrintLinef("LED %d: %s", i, setting ? (setting == 255) ? "unsupported" : "on" : "off");
+                        }
+                    }
                 }
             } else {
-                cliPrint("Checksum error.");
+                cliPrintLine("Checksum Error.");
             }
         }
     }
 
     if (!escInfoReceived) {
-        cliPrint("No info.");
+        cliPrintLine("No Info.");
     }
+}
+
+static void executeEscInfoCommand(uint8_t escIndex)
+{
+    cliPrintLinef("Info for ESC %d:", escIndex);
+
+    uint8_t escInfoBuffer[ESC_INFO_BLHELI32_EXPECTED_FRAME_SIZE];
+
+    startEscDataRead(escInfoBuffer, ESC_INFO_BLHELI32_EXPECTED_FRAME_SIZE);
+
+    pwmWriteDshotCommand(escIndex, getMotorCount(), DSHOT_CMD_ESC_INFO);
+
+    delay(10);
+
+    printEscInfo(escInfoBuffer, getNumberEscBytesRead());
 }
 
 static void cliDshotProg(char *cmdline)
@@ -2318,53 +2458,55 @@ static void cliDshotProg(char *cmdline)
     char *pch = strtok_r(cmdline, " ", &saveptr);
     int pos = 0;
     int escIndex = 0;
+    bool firstCommand = true;
     while (pch != NULL) {
         switch (pos) {
-            case 0:
-                escIndex = parseOutputIndex(pch, true);
-                if (escIndex == -1) {
-                    return;
-                }
+        case 0:
+            escIndex = parseOutputIndex(pch, true);
+            if (escIndex == -1) {
+                return;
+            }
 
-                break;
-            default:
-                pwmDisableMotors();
-
+            break;
+        default:
+            {
                 int command = atoi(pch);
                 if (command >= 0 && command < DSHOT_MIN_THROTTLE) {
-                    if (escIndex == ALL_MOTORS) {
-                        for (unsigned i = 0; i < getMotorCount(); i++) {
-                            pwmWriteDshotCommand(i, command);
-                        }
-
-                        cliPrintf("Command %d written.\r\n", command);
-                    } else {
-                        uint8_t escInfoBuffer[ESC_INFO_V2_EXPECTED_FRAME_SIZE];
-                        if (command == DSHOT_CMD_ESC_INFO) {
-                            delay(10); // Wait for potential ESC telemetry transmission to finish
-
-                            startEscDataRead(escInfoBuffer, ESC_INFO_V2_EXPECTED_FRAME_SIZE);
-                        }
-
-                        pwmWriteDshotCommand(escIndex, command);
+                    if (firstCommand) {
+                        pwmDisableMotors();
 
                         if (command == DSHOT_CMD_ESC_INFO) {
-                            delay(10);
-
-                            printEscInfo(escInfoBuffer, getNumberEscBytesRead());
+                            delay(5); // Wait for potential ESC telemetry transmission to finish
                         } else {
-                            cliPrintf("Command %d written.\r\n", command);
+                            delay(1);
+                        }
+
+                        firstCommand = false;
+                    }
+
+                    if (command != DSHOT_CMD_ESC_INFO) {
+                        pwmWriteDshotCommand(escIndex, getMotorCount(), command);
+                    } else {
+                        if (escIndex != ALL_MOTORS) {
+                            executeEscInfoCommand(escIndex);
+                        } else {
+                            for (uint8_t i = 0; i < getMotorCount(); i++) {
+                                executeEscInfoCommand(i);
+                            }
                         }
                     }
+
+                    cliPrintLinef("Command Sent: %d", command);
 
                     if (command <= 5) {
-                        delay(10); // wait for sound output to finish
+                        delay(20); // wait for sound output to finish
                     }
                 } else {
-                    cliPrintf("Invalid command, range 1 to %d.\r\n", DSHOT_MIN_THROTTLE - 1);
+                    cliPrintLinef("Invalid command. Range: 1 - %d.", DSHOT_MIN_THROTTLE - 1);
                 }
+            }
 
-                break;
+            break;
         }
 
         pos++;
@@ -2391,34 +2533,34 @@ static void cliEscPassthrough(char *cmdline)
     int escIndex = 0;
     while (pch != NULL) {
         switch (pos) {
-            case 0:
-                if (strncasecmp(pch, "sk", strlen(pch)) == 0) {
-                    mode = PROTOCOL_SIMONK;
-                } else if (strncasecmp(pch, "bl", strlen(pch)) == 0) {
-                    mode = PROTOCOL_BLHELI;
-                } else if (strncasecmp(pch, "ki", strlen(pch)) == 0) {
-                    mode = PROTOCOL_KISS;
-                } else if (strncasecmp(pch, "cc", strlen(pch)) == 0) {
-                    mode = PROTOCOL_KISSALL;
-                } else {
-                    cliShowParseError();
-
-                    return;
-                }
-                break;
-            case 1:
-                escIndex = parseOutputIndex(pch, mode == PROTOCOL_KISS);
-                if (escIndex == -1) {
-                    return;
-                }
-
-                break;
-            default:
+        case 0:
+            if (strncasecmp(pch, "sk", strlen(pch)) == 0) {
+                mode = PROTOCOL_SIMONK;
+            } else if (strncasecmp(pch, "bl", strlen(pch)) == 0) {
+                mode = PROTOCOL_BLHELI;
+            } else if (strncasecmp(pch, "ki", strlen(pch)) == 0) {
+                mode = PROTOCOL_KISS;
+            } else if (strncasecmp(pch, "cc", strlen(pch)) == 0) {
+                mode = PROTOCOL_KISSALL;
+            } else {
                 cliShowParseError();
 
                 return;
+            }
+            break;
+        case 1:
+            escIndex = parseOutputIndex(pch, mode == PROTOCOL_KISS);
+            if (escIndex == -1) {
+                return;
+            }
 
-                break;
+            break;
+        default:
+            cliShowParseError();
+
+            return;
+
+            break;
 
         }
         pos++;
@@ -2473,8 +2615,8 @@ static void cliMotor(char *cmdline)
         return;
     }
 
-    int motorIndex;
-    int motorValue;
+    int motorIndex = 0;
+    int motorValue = 0;
 
     char *saveptr;
     char *pch = strtok_r(cmdline, " ", &saveptr);
@@ -2620,14 +2762,24 @@ static void cliSave(char *cmdline)
 
 static void cliDefaults(char *cmdline)
 {
-    UNUSED(cmdline);
+    bool saveConfigs;
+
+    if (isEmpty(cmdline)) {
+        saveConfigs = true;
+    } else if (strncasecmp(cmdline, "nosave", 6) == 0) {
+        saveConfigs = false;
+    } else {
+        return;
+    }
 
     cliPrintHashLine("resetting to defaults");
-    resetEEPROM();
-    cliReboot();
+    resetConfigs();
+    if (saveConfigs) {
+        cliSave(NULL);
+    }
 }
 
-static void cliGet(char *cmdline)
+STATIC_UNIT_TESTED void cliGet(char *cmdline)
 {
     const clivalue_t *val;
     int matchedCommands = 0;
@@ -2671,7 +2823,7 @@ static uint8_t getWordLength(char *bufBegin, char *bufEnd)
     return bufEnd - bufBegin;
 }
 
-static void cliSet(char *cmdline)
+STATIC_UNIT_TESTED void cliSet(char *cmdline)
 {
     const uint32_t len = strlen(cmdline);
     char *eqptr;
@@ -2696,24 +2848,25 @@ static void cliSet(char *cmdline)
 
         for (uint32_t i = 0; i < valueTableEntryCount; i++) {
             const clivalue_t *val = &valueTable[i];
+
             // ensure exact match when setting to prevent setting variables with shorter names
-            if (strncasecmp(cmdline, valueTable[i].name, strlen(valueTable[i].name)) == 0 && variableNameLength == strlen(valueTable[i].name)) {
+            if (strncasecmp(cmdline, val->name, strlen(val->name)) == 0 && variableNameLength == strlen(val->name)) {
 
                 bool valueChanged = false;
                 int16_t value  = 0;
-                switch (valueTable[i].type & VALUE_MODE_MASK) {
-                    case MODE_DIRECT: {
+                switch (val->type & VALUE_MODE_MASK) {
+                case MODE_DIRECT: {
                         int16_t value = atoi(eqptr);
 
-                        if (value >= valueTable[i].config.minmax.min && value <= valueTable[i].config.minmax.max) {
+                        if (value >= val->config.minmax.min && value <= val->config.minmax.max) {
                             cliSetVar(val, value);
                             valueChanged = true;
                         }
                     }
 
                     break;
-                    case MODE_LOOKUP: {
-                        const lookupTableEntry_t *tableEntry = &lookupTables[valueTable[i].config.lookup.tableIndex];
+                case MODE_LOOKUP: {
+                        const lookupTableEntry_t *tableEntry = &lookupTables[val->config.lookup.tableIndex];
                         bool matched = false;
                         for (uint32_t tableValueIndex = 0; tableValueIndex < tableEntry->valueCount && !matched; tableValueIndex++) {
                             matched = strcasecmp(tableEntry->values[tableValueIndex], eqptr) == 0;
@@ -2728,42 +2881,68 @@ static void cliSet(char *cmdline)
                     }
 
                     break;
-                    case MODE_ARRAY: {
-                        const uint8_t arrayLength = valueTable[i].config.array.length;
+                case MODE_ARRAY: {
+                        const uint8_t arrayLength = val->config.array.length;
                         char *valPtr = eqptr;
-                        uint8_t array[256];
-                        char curVal[4];
+
                         for (int i = 0; i < arrayLength; i++) {
+                            // skip spaces
                             valPtr = skipSpace(valPtr);
-                            char *valEnd = strstr(valPtr, ",");
-                            if ((valEnd != NULL) && (i < arrayLength - 1)) {
-                                uint8_t varLength = getWordLength(valPtr, valEnd);
-                                if (varLength <= 3) {
-                                    strncpy(curVal, valPtr, getWordLength(valPtr, valEnd));
-                                    curVal[varLength] = '\0';
-                                    array[i] = (uint8_t)atoi((const char *)curVal);
-                                    valPtr = valEnd + 1;
-                                } else {
+                            // find next comma (or end of string)
+                            char *valEndPtr = strchr(valPtr, ',');
+
+                            // comma found or last item?
+                            if ((valEndPtr != NULL) || (i == arrayLength - 1)){
+                                // process substring [valPtr, valEndPtr[
+                                // note: no need to copy substrings for atoi()
+                                //       it stops at the first character that cannot be converted...
+                                switch (val->type & VALUE_TYPE_MASK) {
+                                default:
+                                case VAR_UINT8: {
+                                    // fetch data pointer
+                                    uint8_t *data = (uint8_t *)cliGetValuePointer(val) + i;
+                                    // store value
+                                    *data = (uint8_t)atoi((const char*) valPtr);
+                                    }
+                                    break;
+
+                                case VAR_INT8: {
+                                    // fetch data pointer
+                                    int8_t *data = (int8_t *)cliGetValuePointer(val) + i;
+                                    // store value
+                                    *data = (int8_t)atoi((const char*) valPtr);
+                                    }
+                                    break;
+
+                                case VAR_UINT16: {
+                                    // fetch data pointer
+                                    uint16_t *data = (uint16_t *)cliGetValuePointer(val) + i;
+                                    // store value
+                                    *data = (uint16_t)atoi((const char*) valPtr);
+                                    }
+                                    break;
+
+                                case VAR_INT16: {
+                                    // fetch data pointer
+                                    int16_t *data = (int16_t *)cliGetValuePointer(val) + i;
+                                    // store value
+                                    *data = (int16_t)atoi((const char*) valPtr);
+                                    }
                                     break;
                                 }
-                            } else if ((valEnd == NULL) && (i == arrayLength - 1)) {
-                                array[i] = atoi(valPtr);
-
-                                uint8_t *ptr = getValuePointer(val);
-                                memcpy(ptr, array, arrayLength);
+                                // mark as changed
                                 valueChanged = true;
-                            } else {
-                                break;
+
+                                // prepare to parse next item
+                                valPtr = valEndPtr + 1;
                             }
                         }
                     }
-
                     break;
-
                 }
 
                 if (valueChanged) {
-                    cliPrintf("%s set to ", valueTable[i].name);
+                    cliPrintf("%s set to ", val->name);
                     cliPrintVar(val, 0);
                 } else {
                     cliPrintLine("Invalid value");
@@ -2822,8 +3001,12 @@ static void cliStatus(char *cmdline)
     cliPrintf("Stack used: %d, ", stackUsedSize());
 #endif
     cliPrintLinef("Stack size: %d, Stack address: 0x%x", stackTotalSize(), stackHighMem());
-
-    cliPrintLinef("I2C Errors: %d, config size: %d, max available config: %d", i2cErrorCounter, getEEPROMConfigSize(), &__config_end - &__config_start);
+#ifdef EEPROM_IN_RAM
+#define CONFIG_SIZE EEPROM_SIZE
+#else
+#define CONFIG_SIZE (&__config_end - &__config_start)
+#endif
+    cliPrintLinef("I2C Errors: %d, config size: %d, max available config: %d", i2cErrorCounter, getEEPROMConfigSize(), CONFIG_SIZE);
 
     const int gyroRate = getTaskDeltaTime(TASK_GYROPID) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_GYROPID)));
     const int rxRate = getTaskDeltaTime(TASK_RX) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_RX)));
@@ -2908,13 +3091,15 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintLinef("# %s / %s %s %s / %s (%s)",
+    cliPrintLinef("# %s / %s (%s) %s %s / %s (%s) MSP API: %s",
         FC_FIRMWARE_NAME,
         targetName,
+        systemConfig()->boardIdentifier,
         FC_VERSION_STRING,
         buildDate,
         buildTime,
-        shortGitRevision
+        shortGitRevision,
+        MSP_API_VERSION_STRING
     );
 }
 
@@ -2972,6 +3157,18 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 #ifdef USE_ESCSERIAL
     { OWNER_ESCSERIAL,     PG_ESCSERIAL_CONFIG, offsetof(escSerialConfig_t, ioTag), 0 },
+#endif
+#ifdef USE_CAMERA_CONTROL
+    { OWNER_CAMERA_CONTROL, PG_CAMERA_CONTROL_CONFIG, offsetof(cameraControlConfig_t, ioTag), 0 },
+#endif
+#ifdef USE_ADC
+    { OWNER_ADC_BATT,      PG_ADC_CONFIG, offsetof(adcConfig_t, vbat.ioTag), 0 },
+    { OWNER_ADC_RSSI,      PG_ADC_CONFIG, offsetof(adcConfig_t, rssi.ioTag), 0 },
+    { OWNER_ADC_CURR,      PG_ADC_CONFIG, offsetof(adcConfig_t, current.ioTag), 0 },
+    { OWNER_ADC_EXT,       PG_ADC_CONFIG, offsetof(adcConfig_t, external1.ioTag), 0 },
+#endif
+#ifdef BARO
+    { OWNER_BARO_CS,       PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_spi_csn), 0 },
 #endif
 };
 
@@ -3248,12 +3445,12 @@ static void printConfig(char *cmdline, bool doDiff)
 
         if ((dumpMask & (DUMP_ALL | DO_DIFF)) == (DUMP_ALL | DO_DIFF)) {
             cliPrintHashLine("reset configuration to default settings");
-            cliPrint("defaults");
+            cliPrint("defaults nosave");
             cliPrintLinefeed();
         }
 
         cliPrintHashLine("name");
-        printName(dumpMask, &systemConfig_Copy);
+        printName(dumpMask, &pilotConfig_Copy);
 
 #ifdef USE_RESOURCE_MGMT
         cliPrintHashLine("resources");
@@ -3409,18 +3606,18 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("beeper", "turn on/off beeper", "list\r\n"
         "\t<+|->[name]", cliBeeper),
 #endif
+    CLI_COMMAND_DEF("bl", "reboot into bootloader", NULL, cliBootloader),
 #ifdef LED_STRIP
     CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
 #endif
-    CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", NULL, cliDefaults),
-    CLI_COMMAND_DEF("bl", "reboot into bootloader", NULL, cliBootloader),
+    CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", "[nosave]", cliDefaults),
     CLI_COMMAND_DEF("diff", "list configuration changes from default",
-        "[master|profile|rates|all] {showdefaults}", cliDiff),
+        "[master|profile|rates|all] {defaults}", cliDiff),
 #ifdef USE_DSHOT
     CLI_COMMAND_DEF("dshotprog", "program DShot ESC(s)", "<index> <command>+", cliDshotProg),
 #endif
     CLI_COMMAND_DEF("dump", "dump configuration",
-        "[master|profile|rates|all] {showdefaults}", cliDump),
+        "[master|profile|rates|all] {defaults}", cliDump),
 #ifdef USE_ESCSERIAL
     CLI_COMMAND_DEF("escprog", "passthrough esc to serial", "<mode [sk/bl/ki/cc]> <index>", cliEscPassthrough),
 #endif
@@ -3434,6 +3631,9 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_FLASH_TOOLS
     CLI_COMMAND_DEF("flash_read", NULL, "<length> <address>", cliFlashRead),
     CLI_COMMAND_DEF("flash_write", NULL, "<address> <message>", cliFlashWrite),
+#endif
+#ifdef USE_RX_FRSKY_D
+    CLI_COMMAND_DEF("frsky_bind", NULL, NULL, cliFrSkyBind),
 #endif
 #endif
     CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),

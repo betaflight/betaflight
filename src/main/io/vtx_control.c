@@ -16,8 +16,12 @@
  */
 
 
-// Get target build configuration
+#include <stdbool.h>
+#include <stdint.h>
+
 #include "platform.h"
+
+#if defined(VTX_CONTROL) && defined(VTX_COMMON)
 
 #include "common/maths.h"
 
@@ -38,9 +42,13 @@
 #include "io/vtx_control.h"
 
 
-#if defined(VTX_CONTROL) && defined(VTX_COMMON)
 
-PG_REGISTER(vtxConfig_t, vtxConfig, PG_VTX_CONFIG, 1);
+PG_REGISTER_WITH_RESET_TEMPLATE(vtxConfig_t, vtxConfig, PG_VTX_CONFIG, 1);
+
+PG_RESET_TEMPLATE(vtxConfig_t, vtxConfig,
+//    .vtxChannelActivationConditions = { 0 },
+    .halfDuplex = true
+);
 
 static uint8_t locked = 0;
 
@@ -171,7 +179,6 @@ void vtxCyclePower(const uint8_t powerStep)
 void handleVTXControlButton(void)
 {
 #if defined(VTX_RTC6705) && defined(BUTTON_A_PIN)
-    bool buttonHeld;
     bool buttonWasPressed = false;
     uint32_t start = millis();
     uint32_t ledToggleAt = start;
@@ -179,6 +186,7 @@ void handleVTXControlButton(void)
     uint8_t flashesDone = 0;
 
     uint8_t actionCounter = 0;
+    bool buttonHeld;
     while ((buttonHeld = buttonAPressed())) {
         uint32_t end = millis();
 
@@ -227,21 +235,20 @@ void handleVTXControlButton(void)
     LED1_OFF;
 
     switch (actionCounter) {
-        case 4:
-            vtxCycleBandOrChannel(0, +1);
-            break;
-        case 3:
-            vtxCycleBandOrChannel(+1, 0);
-            break;
-        case 2:
-            vtxCyclePower(+1);
-            break;
-        case 1:
-            saveConfigAndNotify();
-            break;
+    case 4:
+        vtxCycleBandOrChannel(0, +1);
+        break;
+    case 3:
+        vtxCycleBandOrChannel(+1, 0);
+        break;
+    case 2:
+        vtxCyclePower(+1);
+        break;
+    case 1:
+        saveConfigAndNotify();
+        break;
     }
 #endif
 }
 
 #endif
-

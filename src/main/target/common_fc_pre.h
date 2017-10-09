@@ -36,7 +36,6 @@
 // Using RX DMA disables the use of receive callbacks
 #define USE_UART1_RX_DMA
 #define USE_UART1_TX_DMA
-#define MAX_SUPPORTED_MOTORS 8
 #endif
 
 #ifdef STM32F3
@@ -124,6 +123,10 @@
 #define VTX_CONTROL
 #define VTX_SMARTAUDIO
 #define VTX_TRAMP
+#define USE_CAMERA_CONTROL
+#define USE_HUFFMAN
+#define USE_COPY_PROFILE_CMS_MENU
+#define USE_MSP_OVER_TELEMETRY
 
 #ifdef USE_SERIALRX_SPEKTRUM
 #define USE_SPEKTRUM_BIND

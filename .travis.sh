@@ -67,7 +67,7 @@ elif [ $TARGET ] ; then
 
 elif [ $GOAL ] ; then
     $MAKE $GOAL || exit $?
-    
+
   if [ $PUBLISHCOV ] ; then
     if [ "test" == "$GOAL" ] ; then
         lcov --directory . -b src/test --capture --output-file coverage.info 2>&1 | grep -E ":version '402\*', prefer.*'406\*" --invert-match
@@ -76,6 +76,6 @@ elif [ $GOAL ] ; then
         coveralls-lcov coverage.info # uploads to coveralls
     fi
   fi
-else 
+else
     $MAKE all
 fi

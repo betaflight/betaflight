@@ -41,3 +41,5 @@ extern controlRateConfig_t *currentControlRateProfile;
 
 void setControlRateProfile(uint8_t controlRateProfileIndex);
 void changeControlRateProfile(uint8_t controlRateProfileIndex);
+
+void copyControlRateProfile(const uint8_t dstControlRateProfileIndex, const uint8_t srcControlRateProfileIndex);

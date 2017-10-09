@@ -53,9 +53,13 @@
 #define USE_MAG_HMC5883
 #define USE_MAG_SPI_HMC5883
 #define USE_MAG_AK8963
+#define USE_MAG_SPI_AK8963
 
 #define HMC5883_CS_PIN          PC15
 #define HMC5883_SPI_INSTANCE    SPI3
+
+#define AK8963_CS_PIN           PC15
+#define AK8963_SPI_INSTANCE     SPI3
 
 #define MAG_HMC5883_ALIGN       CW180_DEG
 #define MAG_AK8963_ALIGN        CW270_DEG
@@ -85,9 +89,12 @@
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 8 // 27MHz
 
-#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
+#define SDCARD_DMA_STREAM_TX_FULL           DMA1_Stream4
+#define SDCARD_DMA_TX                       DMA1
+#define SDCARD_DMA_STREAM_TX                4
+#define SDCARD_DMA_CLK                      LL_AHB1_GRP1_PERIPH_DMA1
+
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF4
-#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
 #define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_0
 
 // Performance logging for SD card operations:
@@ -184,4 +191,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT      13
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(8) )
-

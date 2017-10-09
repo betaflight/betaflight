@@ -282,4 +282,3 @@ float fastA2F(const char *p)
     // Return signed and scaled floating point result.
     return sign * (frac ? (value / scale) : (value * scale));
 }
-

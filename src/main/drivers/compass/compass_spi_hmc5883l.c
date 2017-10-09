@@ -44,7 +44,7 @@ bool hmc5883SpiWriteCommand(uint8_t reg, uint8_t data)
 
     //spiTransferByte(HMC5883_SPI_INSTANCE, reg & 0x7F);
     //spiTransferByte(HMC5883_SPI_INSTANCE, data);
-    spiTransfer(HMC5883_SPI_INSTANCE, NULL, buf, 2);
+    spiTransfer(HMC5883_SPI_INSTANCE, buf, NULL, 2);
     DISABLE_HMC5883;
 
     return true;

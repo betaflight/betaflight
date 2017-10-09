@@ -300,4 +300,3 @@ void symaNrf24Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfi
     symaNrf24Setup((rx_spi_protocol_e)rxConfig->rx_spi_protocol);
 }
 #endif
-

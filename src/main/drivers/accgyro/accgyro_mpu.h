@@ -23,13 +23,28 @@
 
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 
-#if defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) ||  defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
+#if defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) ||  defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20649) \
+ || defined(USE_GYRO_SPI_ICM20689)
 #define GYRO_USES_SPI
 #endif
 
 // MPU6050
 #define MPU_RA_WHO_AM_I         0x75
 #define MPU_RA_WHO_AM_I_LEGACY  0x00
+
+
+#define MPUx0x0_WHO_AM_I_CONST              (0x68) // MPU3050, 6000 and 6050
+#define MPU6000_WHO_AM_I_CONST              (0x68)
+#define MPU6500_WHO_AM_I_CONST              (0x70)
+#define MPU9250_WHO_AM_I_CONST              (0x71)
+#define MPU9255_WHO_AM_I_CONST              (0x73)
+#define ICM20601_WHO_AM_I_CONST             (0xAC)
+#define ICM20602_WHO_AM_I_CONST             (0x12)
+#define ICM20608G_WHO_AM_I_CONST            (0xAF)
+#define ICM20649_WHO_AM_I_CONST             (0xE1)
+#define ICM20689_WHO_AM_I_CONST             (0x98)
+
+
 
 // RA = Register Address
 
@@ -125,7 +140,7 @@
 // RF = Register Flag
 #define MPU_RF_DATA_RDY_EN (1 << 0)
 
-typedef bool (*mpuReadRegisterFnPtr)(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t* data);
+typedef bool (*mpuReadRegisterFnPtr)(const busDevice_t *bus, uint8_t reg, uint8_t* data, uint8_t length);
 typedef bool (*mpuWriteRegisterFnPtr)(const busDevice_t *bus, uint8_t reg, uint8_t data);
 typedef void (*mpuResetFnPtr)(void);
 
@@ -135,7 +150,6 @@ typedef struct mpuConfiguration_s {
     mpuReadRegisterFnPtr readFn;
     mpuWriteRegisterFnPtr writeFn;
     mpuResetFnPtr resetFn;
-    uint8_t gyroReadXRegister; // Y and Z must registers follow this, 2 words each
 } mpuConfiguration_t;
 
 enum gyro_fsr_e {
@@ -177,6 +191,7 @@ typedef enum {
     ICM_20601_SPI,
     ICM_20602_SPI,
     ICM_20608_SPI,
+    ICM_20649_SPI,
     ICM_20689_SPI,
     BMI_160_SPI,
 } mpuSensor_e;
@@ -190,9 +205,6 @@ typedef struct mpuDetectionResult_s {
     mpuSensor_e sensor;
     mpu6050Resolution_e resolution;
 } mpuDetectionResult_t;
-
-bool mpuReadRegisterI2C(const busDevice_t *bus, uint8_t reg, uint8_t length, uint8_t* data);
-bool mpuWriteRegisterI2C(const busDevice_t *bus, uint8_t reg, uint8_t data);
 
 struct gyroDev_s;
 void mpuGyroInit(struct gyroDev_s *gyro);

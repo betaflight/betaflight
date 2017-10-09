@@ -264,4 +264,3 @@ uint16_t i2cGetErrorCounter(void)
 }
 
 #endif
-

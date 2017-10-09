@@ -25,32 +25,28 @@ extern "C" {
 
     #include "platform.h"
 
-    #include "common/utils.h"
-    #include "common/maths.h"
     #include "common/bitarray.h"
+    #include "common/maths.h"
+    #include "common/streambuf.h"
+    #include "common/utils.h"
 
     #include "config/parameter_group.h"
     #include "config/parameter_group_ids.h"
 
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
-    
+
 
     #include "io/beeper.h"
-    #include "io/serial.h"
-
-    #include "scheduler/scheduler.h"
-    #include "drivers/serial.h"
     #include "io/rcsplit.h"
+    #include "io/serial.h"
 
     #include "rx/rx.h"
 
-    int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
+    extern serialPort_t *rcSplitSerialPort;
+    extern rcsplitSwitchState_t switchStates[BOXCAMERA3 - BOXCAMERA1 + 1];
 
-    rcsplitState_e unitTestRCsplitState()
-    {
-        return cameraState;
-    }
+    int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 
     bool unitTestIsSwitchActivited(boxId_e boxId)
     {
@@ -62,7 +58,6 @@ extern "C" {
     void unitTestResetRCSplit()
     {
         rcSplitSerialPort = NULL;
-        cameraState = RCSPLIT_STATE_UNKNOWN;
     }
 }
 
@@ -81,7 +76,7 @@ TEST(RCSplitTest, TestRCSplitInitWithoutPortConfigurated)
     unitTestResetRCSplit();
     bool result = rcSplitInit();
     EXPECT_EQ(false, result);
-    EXPECT_EQ(RCSPLIT_STATE_UNKNOWN, unitTestRCsplitState());
+    EXPECT_EQ(false, rcSplitIsEnabled());
 }
 
 TEST(RCSplitTest, TestRCSplitInitWithoutOpenPortConfigurated)
@@ -93,7 +88,7 @@ TEST(RCSplitTest, TestRCSplitInitWithoutOpenPortConfigurated)
 
     bool result = rcSplitInit();
     EXPECT_EQ(false, result);
-    EXPECT_EQ(RCSPLIT_STATE_UNKNOWN, unitTestRCsplitState());
+    EXPECT_EQ(false, rcSplitIsEnabled());
 }
 
 TEST(RCSplitTest, TestRCSplitInit)
@@ -105,7 +100,7 @@ TEST(RCSplitTest, TestRCSplitInit)
 
     bool result = rcSplitInit();
     EXPECT_EQ(true, result);
-    EXPECT_EQ(RCSPLIT_STATE_IS_READY, unitTestRCsplitState());
+    EXPECT_EQ(true, rcSplitIsEnabled());
 }
 
 TEST(RCSplitTest, TestRecvWhoAreYouResponse)
@@ -114,17 +109,17 @@ TEST(RCSplitTest, TestRecvWhoAreYouResponse)
     unitTestResetRCSplit();
     testData.isRunCamSplitOpenPortSupported = true;
     testData.isRunCamSplitPortConfigurated = true;
-    
+
     bool result = rcSplitInit();
     EXPECT_EQ(true, result);
 
-    // here will generate a number in [6-255], it's make the serialRxBytesWaiting() and serialRead() run at least 5 times, 
+    // here will generate a number in [6-255], it's make the serialRxBytesWaiting() and serialRead() run at least 5 times,
     // so the "who are you response" will full received, and cause the state change to RCSPLIT_STATE_IS_READY;
-    int8_t randNum = rand() % 127 + 6; 
+    int8_t randNum = rand() % 127 + 6;
     testData.maxTimesOfRespDataAvailable = randNum;
-    rcSplitProcess((timeUs_t)0);
+    rcSplitUpdate((timeUs_t)0);
 
-    EXPECT_EQ(RCSPLIT_STATE_IS_READY, unitTestRCsplitState());
+    EXPECT_EQ(true, rcSplitIsEnabled());
 }
 
 TEST(RCSplitTest, TestWifiModeChangeWithDeviceUnready)
@@ -134,7 +129,7 @@ TEST(RCSplitTest, TestWifiModeChangeWithDeviceUnready)
     testData.isRunCamSplitOpenPortSupported = true;
     testData.isRunCamSplitPortConfigurated = true;
     testData.maxTimesOfRespDataAvailable = 0;
-    
+
     bool result = rcSplitInit();
     EXPECT_EQ(true, result);
 
@@ -168,8 +163,8 @@ TEST(RCSplitTest, TestWifiModeChangeWithDeviceUnready)
 
     updateActivatedModes();
 
-    // runn process loop
-    rcSplitProcess(0);
+    // run update
+    rcSplitUpdate(0);
 
     EXPECT_EQ(false, unitTestIsSwitchActivited(BOXCAMERA1));
     EXPECT_EQ(false, unitTestIsSwitchActivited(BOXCAMERA2));
@@ -183,7 +178,7 @@ TEST(RCSplitTest, TestWifiModeChangeWithDeviceReady)
     testData.isRunCamSplitOpenPortSupported = true;
     testData.isRunCamSplitPortConfigurated = true;
     testData.maxTimesOfRespDataAvailable = 0;
-    
+
     bool result = rcSplitInit();
     EXPECT_EQ(true, result);
 
@@ -191,7 +186,7 @@ TEST(RCSplitTest, TestWifiModeChangeWithDeviceReady)
     for (uint8_t i = 0; i <= BOXCAMERA3 - BOXCAMERA1; i++) {
         memset(modeActivationConditionsMutable(i), 0, sizeof(modeActivationCondition_t));
     }
-    
+
 
     // bind aux1 to wifi button with range [900,1600]
     modeActivationConditionsMutable(0)->auxChannelIndex = 0;
@@ -217,12 +212,12 @@ TEST(RCSplitTest, TestWifiModeChangeWithDeviceReady)
 
     updateActivatedModes();
 
-    // runn process loop
-    int8_t randNum = rand() % 127 + 6; 
+    // run update
+    int8_t randNum = rand() % 127 + 6;
     testData.maxTimesOfRespDataAvailable = randNum;
-    rcSplitProcess((timeUs_t)0);
+    rcSplitUpdate((timeUs_t)0);
 
-    EXPECT_EQ(RCSPLIT_STATE_IS_READY, unitTestRCsplitState());
+    EXPECT_EQ(true, rcSplitIsEnabled());
 
     EXPECT_EQ(false, unitTestIsSwitchActivited(BOXCAMERA1));
     EXPECT_EQ(true, unitTestIsSwitchActivited(BOXCAMERA2));
@@ -236,7 +231,7 @@ TEST(RCSplitTest, TestWifiModeChangeCombine)
     testData.isRunCamSplitOpenPortSupported = true;
     testData.isRunCamSplitPortConfigurated = true;
     testData.maxTimesOfRespDataAvailable = 0;
-    
+
     bool result = rcSplitInit();
     EXPECT_EQ(true, result);
 
@@ -244,7 +239,7 @@ TEST(RCSplitTest, TestWifiModeChangeCombine)
     for (uint8_t i = 0; i <= BOXCAMERA3 - BOXCAMERA1; i++) {
         memset(modeActivationConditionsMutable(i), 0, sizeof(modeActivationCondition_t));
     }
-    
+
 
     // bind aux1 to wifi button with range [900,1600]
     modeActivationConditionsMutable(0)->auxChannelIndex = 0;
@@ -270,12 +265,12 @@ TEST(RCSplitTest, TestWifiModeChangeCombine)
     rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1700;
     updateActivatedModes();
 
-    // runn process loop
-    int8_t randNum = rand() % 127 + 6; 
+    // run update
+    int8_t randNum = rand() % 127 + 6;
     testData.maxTimesOfRespDataAvailable = randNum;
-    rcSplitProcess((timeUs_t)0);
+    rcSplitUpdate((timeUs_t)0);
 
-    EXPECT_EQ(RCSPLIT_STATE_IS_READY, unitTestRCsplitState());
+    EXPECT_EQ(true, rcSplitIsEnabled());
 
     EXPECT_EQ(false, unitTestIsSwitchActivited(BOXCAMERA1));
     EXPECT_EQ(true, unitTestIsSwitchActivited(BOXCAMERA2));
@@ -287,7 +282,7 @@ TEST(RCSplitTest, TestWifiModeChangeCombine)
     rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1300;
     rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1900;
     updateActivatedModes();
-    rcSplitProcess((timeUs_t)0);
+    rcSplitUpdate((timeUs_t)0);
     EXPECT_EQ(true, unitTestIsSwitchActivited(BOXCAMERA1));
     EXPECT_EQ(false, unitTestIsSwitchActivited(BOXCAMERA2));
     EXPECT_EQ(true, unitTestIsSwitchActivited(BOXCAMERA3));
@@ -295,19 +290,19 @@ TEST(RCSplitTest, TestWifiModeChangeCombine)
 
     rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1899;
     updateActivatedModes();
-    rcSplitProcess((timeUs_t)0);
+    rcSplitUpdate((timeUs_t)0);
     EXPECT_EQ(false, unitTestIsSwitchActivited(BOXCAMERA3));
 
     rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 2001;
     updateActivatedModes();
-    rcSplitProcess((timeUs_t)0);
+    rcSplitUpdate((timeUs_t)0);
     EXPECT_EQ(true, unitTestIsSwitchActivited(BOXCAMERA1));
     EXPECT_EQ(true, unitTestIsSwitchActivited(BOXCAMERA2));
     EXPECT_EQ(false, unitTestIsSwitchActivited(BOXCAMERA3));
 }
 
 extern "C" {
-    serialPort_t *openSerialPort(serialPortIdentifier_e identifier, serialPortFunction_e functionMask, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, portOptions_t options)
+    serialPort_t *openSerialPort(serialPortIdentifier_e identifier, serialPortFunction_e functionMask, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_e mode, portOptions_e options)
     {
         UNUSED(identifier);
         UNUSED(functionMask);
@@ -357,8 +352,8 @@ extern "C" {
         return NULL;
     }
 
-    uint32_t serialRxBytesWaiting(const serialPort_t *instance) 
-    { 
+    uint32_t serialRxBytesWaiting(const serialPort_t *instance)
+    {
         UNUSED(instance);
 
         testData.maxTimesOfRespDataAvailable--;
@@ -369,9 +364,9 @@ extern "C" {
         return 0;
     }
 
-    uint8_t serialRead(serialPort_t *instance) 
-    { 
-        UNUSED(instance); 
+    uint8_t serialRead(serialPort_t *instance)
+    {
+        UNUSED(instance);
 
         if (testData.maxTimesOfRespDataAvailable > 0) {
             static uint8_t i = 0;
@@ -384,41 +379,41 @@ extern "C" {
             return buffer[i++];
         }
 
-        return 0; 
+        return 0;
     }
 
-    void sbufWriteString(sbuf_t *dst, const char *string) 
-    { 
-        UNUSED(dst); UNUSED(string); 
+    void sbufWriteString(sbuf_t *dst, const char *string)
+    {
+        UNUSED(dst); UNUSED(string);
 
         if (testData.isAllowBufferReadWrite) {
             sbufWriteData(dst, string, strlen(string));
         }
     }
-    void sbufWriteU8(sbuf_t *dst, uint8_t val) 
-    { 
-        UNUSED(dst); UNUSED(val); 
+    void sbufWriteU8(sbuf_t *dst, uint8_t val)
+    {
+        UNUSED(dst); UNUSED(val);
 
         if (testData.isAllowBufferReadWrite) {
             *dst->ptr++ = val;
         }
     }
-    
+
     void sbufWriteData(sbuf_t *dst, const void *data, int len)
     {
-        UNUSED(dst); UNUSED(data); UNUSED(len); 
+        UNUSED(dst); UNUSED(data); UNUSED(len);
 
         if (testData.isAllowBufferReadWrite) {
             memcpy(dst->ptr, data, len);
             dst->ptr += len;
-            
+
         }
     }
 
     // modifies streambuf so that written data are prepared for reading
     void sbufSwitchToReader(sbuf_t *buf, uint8_t *base)
     {
-        UNUSED(buf); UNUSED(base); 
+        UNUSED(buf); UNUSED(base);
 
         if (testData.isAllowBufferReadWrite) {
             buf->end = buf->ptr;

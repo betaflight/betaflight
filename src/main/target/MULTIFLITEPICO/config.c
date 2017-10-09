@@ -77,14 +77,22 @@ void targetConfiguration(void)
     gyroConfigMutable()->gyro_sync_denom = 4;
     pidConfigMutable()->pid_process_denom = 1;
 
-    pidProfilesMutable(0)->pid[PID_ROLL].P = 70;
-    pidProfilesMutable(0)->pid[PID_ROLL].I = 62;
-    pidProfilesMutable(0)->pid[PID_ROLL].D = 19;
-    pidProfilesMutable(0)->pid[PID_PITCH].P = 70;
-    pidProfilesMutable(0)->pid[PID_PITCH].I = 62;
-    pidProfilesMutable(0)->pid[PID_PITCH].D = 19;
+    for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
+        pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
 
-    controlRateProfilesMutable(0)->rcRate8 = 70;
-    pidProfilesMutable(0)->pid[PID_LEVEL].I = 40;
+        pidProfile->pid[PID_ROLL].P = 70;
+        pidProfile->pid[PID_ROLL].I = 62;
+        pidProfile->pid[PID_ROLL].D = 19;
+        pidProfile->pid[PID_PITCH].P = 70;
+        pidProfile->pid[PID_PITCH].I = 62;
+        pidProfile->pid[PID_PITCH].D = 19;
+        pidProfile->pid[PID_LEVEL].I = 40;
+    }
+
+    for (uint8_t rateProfileIndex = 0; rateProfileIndex < CONTROL_RATE_PROFILE_COUNT; rateProfileIndex++) {
+        controlRateConfig_t *controlRateConfig = controlRateProfilesMutable(rateProfileIndex);
+
+        controlRateConfig->rcRate8 = 70;
+    }
 }
 #endif

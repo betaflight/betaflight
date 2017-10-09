@@ -84,6 +84,11 @@ PG_RESET_TEMPLATE(beeperDevConfig_t, beeperDevConfig,
 #define BEEPER_COMMAND_STOP   0xFF
 
 #ifdef BEEPER
+PG_REGISTER_WITH_RESET_TEMPLATE(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 1);
+PG_RESET_TEMPLATE(beeperConfig_t, beeperConfig,
+    .dshotBeaconTone = 0
+);
+
 /* Beeper Sound Sequences: (Square wave generation)
  * Sequence must end with 0xFF or 0xFE. 0xFE repeats the sequence from
  * start when 0xFF stops the sound when it's completed.
@@ -224,7 +229,7 @@ void beeper(beeperMode_e mode)
     if (
         mode == BEEPER_SILENCE || (
             (getBeeperOffMask() & (1 << (BEEPER_USB - 1)))
-            && (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && (getBatteryCellCount() == 0))
+            && getBatteryState() == BATTERY_NOT_PRESENT
         )
     ) {
         beeperSilence();
@@ -314,22 +319,22 @@ void beeperWarningBeeps(uint8_t beepCount)
 }
 
 #ifdef GPS
-void beeperGpsStatus(void)
+static void beeperGpsStatus(void)
 {
-    // if GPS fix then beep out number of satellites
-    if (STATE(GPS_FIX) && gpsSol.numSat >= 5) {
-        uint8_t i = 0;
-        do {
-            beep_multiBeeps[i++] = 5;
-            beep_multiBeeps[i++] = 10;
-        } while (i < MAX_MULTI_BEEPS && gpsSol.numSat > i / 2);
+    if (!(getBeeperOffMask() & (1 << (BEEPER_GPS_STATUS - 1)))) {
+        // if GPS fix then beep out number of satellites
+        if (STATE(GPS_FIX) && gpsSol.numSat >= 5) {
+            uint8_t i = 0;
+            do {
+                beep_multiBeeps[i++] = 5;
+                beep_multiBeeps[i++] = 10;
+            } while (i < MAX_MULTI_BEEPS && gpsSol.numSat > i / 2);
 
-        beep_multiBeeps[i - 1] = 50; // extend last pause
-        beep_multiBeeps[i] = BEEPER_COMMAND_STOP;
+            beep_multiBeeps[i - 1] = 50; // extend last pause
+            beep_multiBeeps[i] = BEEPER_COMMAND_STOP;
 
-        beeper(BEEPER_MULTI_BEEPS);    //initiate sequence
-    } else {
-        beeper(BEEPER_RX_SET);
+            beeper(BEEPER_MULTI_BEEPS);    //initiate sequence
+        }
     }
 }
 #endif
@@ -342,14 +347,10 @@ void beeperUpdate(timeUs_t currentTimeUs)
 {
     // If beeper option from AUX switch has been selected
     if (IS_RC_MODE_ACTIVE(BOXBEEPERON)) {
-#ifdef GPS
-        if (feature(FEATURE_GPS)) {
-            beeperGpsStatus();
-        } else {
-            beeper(BEEPER_RX_SET);
-        }
-#else
         beeper(BEEPER_RX_SET);
+#ifdef GPS
+    } else if (feature(FEATURE_GPS) && IS_RC_MODE_ACTIVE(BOXBEEPGPSCOUNT)) {
+        beeperGpsStatus();
 #endif
     }
 
@@ -363,10 +364,13 @@ void beeperUpdate(timeUs_t currentTimeUs)
     }
 
     #ifdef USE_DSHOT
-    if (!ARMING_FLAG(ARMED) && currentBeeperEntry->mode == BEEPER_RX_SET) {
-        for (unsigned index = 0; index < getMotorCount(); index++) {
-            pwmWriteDshotCommand(index, DSHOT_CMD_BEEP3);
-        }
+    if (!areMotorsRunning() && beeperConfig()->dshotBeaconTone && (beeperConfig()->dshotBeaconTone <= DSHOT_CMD_BEACON5) && (currentBeeperEntry->mode == BEEPER_RX_SET || currentBeeperEntry->mode == BEEPER_RX_LOST)) {
+        pwmDisableMotors();
+        delay(1);
+
+        pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone);
+
+        pwmEnableMotors();
     }
     #endif
 
@@ -432,6 +436,18 @@ beeperMode_e beeperModeForTableIndex(int idx)
 }
 
 /*
+ * Returns the binary mask for the 'beeperMode_e' value corresponding to a given
+ * beeper-table index, or 0 if the beeperMode is BEEPER_SILENCE.
+ */
+uint32_t beeperModeMaskForTableIndex(int idx)
+{
+    beeperMode_e beeperMode = beeperModeForTableIndex(idx);
+    if (beeperMode == BEEPER_SILENCE)
+        return 0;
+    return 1 << (beeperMode - 1);
+}
+
+/*
  * Returns the name for the given beeper-table index, or NULL if none.
  */
 const char *beeperNameForTableIndex(int idx)
@@ -470,6 +486,7 @@ void beeperWarningBeeps(uint8_t beepCount) {UNUSED(beepCount);}
 void beeperUpdate(timeUs_t currentTimeUs) {UNUSED(currentTimeUs);}
 uint32_t getArmingBeepTimeMicros(void) {return 0;}
 beeperMode_e beeperModeForTableIndex(int idx) {UNUSED(idx); return BEEPER_SILENCE;}
+uint32_t beeperModeMaskForTableIndex(int idx) {UNUSED(idx); return 0;}
 const char *beeperNameForTableIndex(int idx) {UNUSED(idx); return NULL;}
 int beeperTableEntryCount(void) {return 0;}
 bool isBeeperOn(void) {return false;}

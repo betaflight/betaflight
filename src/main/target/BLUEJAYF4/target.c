@@ -25,23 +25,16 @@
 #include "drivers/timer_def.h"
 
 /*
-const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM8, IO_TAG(PC7), TIM_Channel_2, TIM_USE_PPM,                 0, GPIO_AF_TIM8, NULL,         0,             0  }, // PPM IN
-    { TIM5, IO_TAG(PA0), TIM_Channel_1, TIM_USE_MOTOR,               1, GPIO_AF_TIM5, DMA1_Stream2, DMA_Channel_6, DMA1_ST2_HANDLER }, // S1_OUT
-    { TIM5, IO_TAG(PA1), TIM_Channel_2, TIM_USE_MOTOR,               1, GPIO_AF_TIM5, DMA1_Stream4, DMA_Channel_6, DMA1_ST4_HANDLER }, // S2_OUT
-    { TIM2, IO_TAG(PA2), TIM_Channel_3, TIM_USE_MOTOR,               1, GPIO_AF_TIM2, DMA1_Stream1, DMA_Channel_3, DMA1_ST1_HANDLER }, // S3_OUT
-    { TIM2, IO_TAG(PA3), TIM_Channel_4, TIM_USE_MOTOR,               1, GPIO_AF_TIM2, DMA1_Stream6, DMA_Channel_3, DMA1_ST6_HANDLER }, // S4_OUT
-    { TIM3, IO_TAG(PB1), TIM_Channel_4, TIM_USE_MOTOR | TIM_USE_LED, 1, GPIO_AF_TIM3, DMA1_Stream2, DMA_Channel_5, DMA1_ST2_HANDLER }, // S5_OUT
-    { TIM3, IO_TAG(PB0), TIM_Channel_3, TIM_USE_MOTOR,               1, GPIO_AF_TIM3, DMA1_Stream7, DMA_Channel_5, DMA1_ST7_HANDLER }, // S6_OUT
-};
-*/
-
+ * - Support HEXA-Dshot
+ * - S5_OUT, S6_OUT and DEBUG can be assigned to any combination of LED, software serial and servos
+ */
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM3, CH2, PC7, TIM_USE_PPM,                 TIMER_OUTPUT_STANDARD, 0 ), // PPM IN
     DEF_TIM(TIM5, CH1, PA0, TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0 ), // S1_OUT - DMA1_ST2
     DEF_TIM(TIM5, CH2, PA1, TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0 ), // S2_OUT - DMA1_ST4
-    DEF_TIM(TIM2, CH3, PA2, TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0 ), // S3_OUT - DMA1_ST1
-    DEF_TIM(TIM2, CH4, PA3, TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 1 ), // S4_OUT - DMA1_ST6
-    DEF_TIM(TIM3, CH3, PB0, TIM_USE_MOTOR | TIM_USE_LED, TIMER_OUTPUT_STANDARD, 0 ), // S5_OUT - DMA1_ST7
-    DEF_TIM(TIM3, CH4, PB1, TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0 ), // S6_OUT - DMA1_ST2
+    DEF_TIM(TIM5, CH3, PA2, TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0 ), // S3_OUT - DMA1_ST0
+    DEF_TIM(TIM5, CH4, PA3, TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 1 ), // S4_OUT - DMA1_ST3 (Could be DMA1_ST1 with dmaopt=0)
+    DEF_TIM(TIM1, CH2N,PB0, TIM_USE_MOTOR | TIM_USE_LED, TIMER_OUTPUT_INVERTED, 0 ), // S5_OUT - DMA2_ST6
+    DEF_TIM(TIM8, CH3N,PB1, TIM_USE_MOTOR,               TIMER_OUTPUT_INVERTED, 0 ), // S6_OUT - DMA2_ST2
+    DEF_TIM(TIM2, CH2, PB3, TIM_USE_NONE,                TIMER_OUTPUT_STANDARD, 0 ), // DEBUG  - DMA1_ST6
 };

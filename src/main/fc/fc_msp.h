@@ -18,19 +18,8 @@
 #pragma once
 
 #include "msp/msp.h"
-#include "fc/rc_modes.h"
 
-typedef struct box_e {
-    const uint8_t boxId;            // see boxId_e
-    const char *boxName;            // GUI-readable box name
-    const uint8_t permanentId;      // permanent ID used to identify BOX. This ID is unique for one function, DO NOT REUSE IT
-} box_t;
-
-const box_t *findBoxByBoxId(boxId_e boxId);
-const box_t *findBoxByPermanentId(uint8_t permenantId);
-
-void mspFcInit(void);
-void mspOsdSlaveInit(void);
+void mspInit(void);
 mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn);
 void mspFcProcessReply(mspPacket_t *reply);
 

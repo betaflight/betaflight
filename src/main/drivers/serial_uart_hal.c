@@ -176,13 +176,14 @@ void uartReconfigure(uartPort_t *uartPort)
 
             __HAL_DMA_SET_COUNTER(&uartPort->txDMAHandle, 0);
         } else {
-            __HAL_UART_ENABLE_IT(&uartPort->Handle, UART_IT_TXE);
+            /* Enable the UART Transmit Data Register Empty Interrupt */
+            SET_BIT(uartPort->USARTx->CR1, USART_CR1_TXEIE);
         }
     }
     return;
 }
 
-serialPort_t *uartOpen(UARTDevice device, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, portOptions_t options)
+serialPort_t *uartOpen(UARTDevice_e device, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_e mode, portOptions_e options)
 {
     uartPort_t *s = serialUART(device, baudRate, mode, options);
 
@@ -213,7 +214,7 @@ void uartSetBaudRate(serialPort_t *instance, uint32_t baudRate)
     uartReconfigure(uartPort);
 }
 
-void uartSetMode(serialPort_t *instance, portMode_t mode)
+void uartSetMode(serialPort_t *instance, portMode_e mode)
 {
     uartPort_t *uartPort = (uartPort_t *)instance;
     uartPort->port.mode = mode;
@@ -300,9 +301,8 @@ uint32_t uartTotalTxBytesFree(const serialPort_t *instance)
 
 bool isUartTransmitBufferEmpty(const serialPort_t *instance)
 {
-    uartPort_t *s = (uartPort_t *)instance;
+    const uartPort_t *s = (uartPort_t *)instance;
     if (s->txDMAStream)
-
         return s->txDMAEmpty;
     else
         return s->port.txBufferTail == s->port.txBufferHead;
@@ -313,9 +313,7 @@ uint8_t uartRead(serialPort_t *instance)
     uint8_t ch;
     uartPort_t *s = (uartPort_t *)instance;
 
-
     if (s->rxDMAStream) {
-
         ch = s->port.rxBuffer[s->port.rxBufferSize - s->rxDMAPos];
         if (--s->rxDMAPos == 0)
             s->rxDMAPos = s->port.rxBufferSize;

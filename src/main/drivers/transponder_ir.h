@@ -50,12 +50,12 @@
 /*** ERLT ***/
 #define TRANSPONDER_DATA_LENGTH_ERLT        1
 
-#define ERLTBitQuiet						0
-#define ERLTCyclesForOneBit					25
-#define ERLTCyclesForZeroBit				10
-#define TRANSPONDER_DMA_BUFFER_SIZE_ERLT  	200 // actually ERLT is variable length 91-196 depending on the ERLT id
-#define TRANSPONDER_TIMER_MHZ_ERLT        	18
-#define TRANSPONDER_CARRIER_HZ_ERLT      	38000
+#define ERLTBitQuiet                        0
+#define ERLTCyclesForOneBit                 25
+#define ERLTCyclesForZeroBit                10
+#define TRANSPONDER_DMA_BUFFER_SIZE_ERLT    200 // actually ERLT is variable length 91-196 depending on the ERLT id
+#define TRANSPONDER_TIMER_MHZ_ERLT          18
+#define TRANSPONDER_CARRIER_HZ_ERLT         38000
 #define TRANSPONDER_TRANSMIT_DELAY_ERLT     22500
 #define TRANSPONDER_TRANSMIT_JITTER_ERLT    5000
 /*** ******** ***/

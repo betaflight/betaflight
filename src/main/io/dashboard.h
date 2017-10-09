@@ -15,6 +15,8 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #include "common/time.h"
 #include "config/parameter_group.h"
 #include "drivers/bus_i2c.h"

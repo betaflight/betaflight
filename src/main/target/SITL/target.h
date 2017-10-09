@@ -34,6 +34,8 @@
 
 // file name to save config
 #define EEPROM_FILENAME "eeprom.bin"
+#define EEPROM_IN_RAM
+#define EEPROM_SIZE     32768
 
 #define U_ID_0 0
 #define U_ID_1 1
@@ -111,6 +113,7 @@
 #undef VTX_CONTROL
 #undef VTX_SMARTAUDIO
 #undef VTX_TRAMP
+#undef USE_CAMERA_CONTROL
 
 #undef USE_I2C
 #undef USE_SPI
@@ -133,6 +136,15 @@
 #include <stddef.h>
 
 uint32_t SystemCoreClock;
+
+#ifdef EEPROM_IN_RAM
+extern uint8_t eepromData[EEPROM_SIZE];
+#define __config_start (*eepromData)
+#define __config_end (*ARRAYEND(eepromData))
+#else
+extern uint8_t __config_start;   // configured via linker script when building binaries.
+extern uint8_t __config_end;
+#endif
 
 #define UNUSED(x) (void)(x)
 
@@ -213,7 +225,7 @@ typedef struct
 } I2C_TypeDef;
 
 typedef enum
-{ 
+{
   FLASH_BUSY = 1,
   FLASH_ERROR_PG,
   FLASH_ERROR_WRP,
@@ -230,7 +242,7 @@ typedef struct {
     double position_xyz[3];             // meters, NED from origin
 } fdm_packet;
 typedef struct {
-	float motor_speed[4];	// normal: [0.0, 1.0], 3D: [-1.0, 1.0]
+    float motor_speed[4];   // normal: [0.0, 1.0], 3D: [-1.0, 1.0]
 } servo_packet;
 
 void FLASH_Unlock(void);
@@ -238,12 +250,11 @@ void FLASH_Lock(void);
 FLASH_Status FLASH_ErasePage(uintptr_t Page_Address);
 FLASH_Status FLASH_ProgramWord(uintptr_t addr, uint32_t Data);
 
-uint64_t nanos64_real();
-uint64_t micros64_real();
-uint64_t millis64_real();
+uint64_t nanos64_real(void);
+uint64_t micros64_real(void);
+uint64_t millis64_real(void);
 void delayMicroseconds_real(uint32_t us);
-uint64_t micros64();
-uint64_t millis64();
+uint64_t micros64(void);
+uint64_t millis64(void);
 
 int lockMainPID(void);
-

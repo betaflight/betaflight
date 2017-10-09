@@ -152,6 +152,18 @@ static const servoMixer_t servoMixerSingle[] = {
     { SERVO_SINGLECOPTER_4, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
 };
 
+static const servoMixer_t servoMixerHeli[] = {
+    { SERVO_HELI_LEFT, INPUT_STABILIZED_PITCH,   -50, 0, 0, 100, 0 },
+    { SERVO_HELI_LEFT, INPUT_STABILIZED_ROLL,    87, 0, 0, 100, 0 },
+    { SERVO_HELI_LEFT, INPUT_RC_AUX1,    100, 0, 0, 100, 0 },
+    { SERVO_HELI_RIGHT, INPUT_STABILIZED_PITCH,  -50, 0, 0, 100, 0 },
+    { SERVO_HELI_RIGHT, INPUT_STABILIZED_ROLL,  -87, 0, 0, 100, 0 },
+    { SERVO_HELI_RIGHT, INPUT_RC_AUX1,    100, 0, 0, 100, 0 },
+    { SERVO_HELI_TOP, INPUT_STABILIZED_PITCH,   100, 0, 0, 100, 0 },
+    { SERVO_HELI_TOP, INPUT_RC_AUX1,    100, 0, 0, 100, 0 },
+    { SERVO_HELI_RUD, INPUT_STABILIZED_YAW, 100, 0, 0, 100, 0 },
+};
+
 static const servoMixer_t servoMixerGimbal[] = {
     { SERVO_GIMBAL_PITCH, INPUT_GIMBAL_PITCH, 125, 0, 0, 100, 0 },
     { SERVO_GIMBAL_ROLL, INPUT_GIMBAL_ROLL,  125, 0, 0, 100, 0 },
@@ -173,7 +185,7 @@ const mixerRules_t servoMixers[] = {
     { 0, NULL },                // MULTITYPE_OCTOFLATP
     { 0, NULL },                // MULTITYPE_OCTOFLATX
     { COUNT_SERVO_RULES(servoMixerAirplane), servoMixerAirplane },  // * MULTITYPE_AIRPLANE
-    { 0, NULL },                // * MULTITYPE_HELI_120_CCPM
+    { COUNT_SERVO_RULES(servoMixerHeli), servoMixerHeli },                // * MULTITYPE_HELI_120_CCPM
     { 0, NULL },                // * MULTITYPE_HELI_90_DEG
     { 0, NULL },                // MULTITYPE_VTAIL4
     { 0, NULL },                // MULTITYPE_HEX6H
@@ -311,6 +323,13 @@ void writeServos(void)
         pwmWriteServo(servoIndex++, servo[SERVO_BICOPTER_LEFT]);
         pwmWriteServo(servoIndex++, servo[SERVO_BICOPTER_RIGHT]);
         break;
+
+    case MIXER_HELI_120_CCPM:
+        pwmWriteServo(servoIndex++, servo[SERVO_HELI_LEFT]);
+        pwmWriteServo(servoIndex++, servo[SERVO_HELI_RIGHT]);
+        pwmWriteServo(servoIndex++, servo[SERVO_HELI_TOP]);
+        pwmWriteServo(servoIndex++, servo[SERVO_HELI_RUD]);
+    break;
 
     case MIXER_TRI:
     case MIXER_CUSTOM_TRI:
@@ -456,6 +475,7 @@ static void servoTable(void)
     case MIXER_TRI:
     case MIXER_DUALCOPTER:
     case MIXER_SINGLECOPTER:
+    case MIXER_HELI_120_CCPM:
     case MIXER_GIMBAL:
         servoMixer();
         break;

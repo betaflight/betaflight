@@ -22,21 +22,31 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/io_types.h"
 
-typedef union busDevice_u {
-    struct deviceSpi_s {
-        SPI_TypeDef *instance;
+typedef struct busDevice_s {
+    uint8_t bustype;
+    union {
+        struct deviceSpi_s {
+            SPI_TypeDef *instance;
 #if defined(USE_HAL_DRIVER)
-        SPI_HandleTypeDef* handle; // cached here for efficiency
+            SPI_HandleTypeDef* handle; // cached here for efficiency
 #endif
-        IO_t csnPin;
-    } spi;
-    struct deviceI2C_s {
-       I2CDevice device;
-       uint8_t address;
-    } i2c;
+            IO_t csnPin;
+        } spi;
+        struct deviceI2C_s {
+           I2CDevice device;
+           uint8_t address;
+        } i2c;
+    } busdev_u;
 } busDevice_t;
 
+#define BUSTYPE_NONE 0
+#define BUSTYPE_I2C  1
+#define BUSTYPE_SPI  2
 
 #ifdef TARGET_BUS_INIT
 void targetBusInit(void);
 #endif
+
+bool busWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data);
+bool busReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data, uint8_t length);
+uint8_t busReadRegister(const busDevice_t *bus, uint8_t reg);

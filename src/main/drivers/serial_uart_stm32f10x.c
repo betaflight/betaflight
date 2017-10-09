@@ -74,7 +74,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     },
 #endif
 #ifdef USE_UART2
-    { 
+    {
         .device = UARTDEV_2,
         .reg = USART2,
         .rxDMAChannel = UART2_RX_DMA_CHANNEL,
@@ -109,17 +109,14 @@ void uart_tx_dma_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     uartPort_t *s = (uartPort_t*)(descriptor->userParam);
     DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
-    DMA_Cmd(descriptor->ref, DISABLE);
+    DMA_Cmd(descriptor->ref, DISABLE); // XXX F1 needs this!!!
 
-    if (s->port.txBufferHead != s->port.txBufferTail)
-        uartStartTxDMA(s);
-    else
-        s->txDMAEmpty = true;
+    uartTryStartTxDMA(s);
 }
 
 // XXX Should serialUART be consolidated?
 
-uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, portOptions_t options)
+uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, portOptions_e options)
 {
     uartDevice_t *uartdev = uartDevmap[device];
     if (!uartdev) {

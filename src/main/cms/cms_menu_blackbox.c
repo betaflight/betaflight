@@ -52,29 +52,6 @@
 #include "io/flashfs.h"
 #include "io/beeper.h"
 
-
-#ifdef USE_FLASHFS
-static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
-{
-    UNUSED(ptr);
-
-    displayClearScreen(pDisplay);
-    displayWrite(pDisplay, 5, 3, "ERASING FLASH...");
-    displayResync(pDisplay); // Was max7456RefreshAll(); Why at this timing?
-
-    flashfsEraseCompletely();
-    while (!flashfsIsReady()) {
-        delay(100);
-    }
-
-    beeper(BEEPER_BLACKBOX_ERASE);
-    displayClearScreen(pDisplay);
-    displayResync(pDisplay); // Was max7456RefreshAll(); wedges during heavy SPI?
-
-    return 0;
-}
-#endif // USE_FLASHFS
-
 static const char * const cmsx_BlackboxDeviceNames[] = {
     "NONE",
     "FLASH ",
@@ -82,7 +59,7 @@ static const char * const cmsx_BlackboxDeviceNames[] = {
     "SERIAL"
 };
 
-static uint8_t blackboxConfig_rate_denom;
+static uint16_t blackboxConfig_p_denom;
 
 static uint8_t cmsx_BlackboxDevice;
 static OSD_TAB_t cmsx_BlackboxDeviceTable = { &cmsx_BlackboxDevice, 2, cmsx_BlackboxDeviceNames };
@@ -92,7 +69,7 @@ static char cmsx_BlackboxStatus[CMS_BLACKBOX_STRING_LENGTH];
 static char cmsx_BlackboxDeviceStorageUsed[CMS_BLACKBOX_STRING_LENGTH];
 static char cmsx_BlackboxDeviceStorageFree[CMS_BLACKBOX_STRING_LENGTH];
 
-static void cmsx_Blackbox_GetDeviceStatus()
+static void cmsx_Blackbox_GetDeviceStatus(void)
 {
     char * unit = "B";
 #if defined(USE_SDCARD) || defined(USE_FLASHFS)
@@ -163,12 +140,37 @@ static void cmsx_Blackbox_GetDeviceStatus()
     tfp_sprintf(cmsx_BlackboxDeviceStorageFree, "%ld%s", storageFree, unit);
 }
 
+#ifdef USE_FLASHFS
+static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
+{
+    UNUSED(ptr);
+
+    displayClearScreen(pDisplay);
+    displayWrite(pDisplay, 5, 3, "ERASING FLASH...");
+    displayResync(pDisplay); // Was max7456RefreshAll(); Why at this timing?
+
+    flashfsEraseCompletely();
+    while (!flashfsIsReady()) {
+        delay(100);
+    }
+
+    beeper(BEEPER_BLACKBOX_ERASE);
+    displayClearScreen(pDisplay);
+    displayResync(pDisplay); // Was max7456RefreshAll(); wedges during heavy SPI?
+
+    // Update storage device status to show new used space amount
+    cmsx_Blackbox_GetDeviceStatus();
+
+    return 0;
+}
+#endif // USE_FLASHFS
+
 static long cmsx_Blackbox_onEnter(void)
 {
     cmsx_Blackbox_GetDeviceStatus();
     cmsx_BlackboxDevice = blackboxConfig()->device;
 
-    blackboxConfig_rate_denom = blackboxConfig()->rate_denom;
+    blackboxConfig_p_denom = blackboxConfig()->p_denom;
     return 0;
 }
 
@@ -180,7 +182,7 @@ static long cmsx_Blackbox_onExit(const OSD_Entry *self)
         blackboxConfigMutable()->device = cmsx_BlackboxDevice;
         blackboxValidateConfig();
     }
-    blackboxConfigMutable()->rate_denom = blackboxConfig_rate_denom;
+    blackboxConfigMutable()->p_denom = blackboxConfig_p_denom;
     return 0;
 }
 
@@ -196,7 +198,7 @@ static OSD_Entry cmsx_menuBlackboxEntries[] =
     { "(STATUS)",    OME_String,  NULL,            &cmsx_BlackboxStatus,                                      0 },
     { "(USED)",      OME_String,  NULL,            &cmsx_BlackboxDeviceStorageUsed,                           0 },
     { "(FREE)",      OME_String,  NULL,            &cmsx_BlackboxDeviceStorageFree,                           0 },
-    { "RATE DENOM",  OME_UINT8,   NULL,            &(OSD_UINT8_t){ &blackboxConfig_rate_denom, 1, 32, 1 },    0 },
+    { "P DENOM",     OME_UINT16,  NULL,            &(OSD_UINT16_t){ &blackboxConfig_p_denom, 1, INT16_MAX, 1 },0 },
 
 #ifdef USE_FLASHFS
     { "ERASE FLASH", OME_Funcall, cmsx_EraseFlash, NULL,                                                      0 },

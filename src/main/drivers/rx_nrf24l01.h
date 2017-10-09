@@ -198,4 +198,3 @@ void NRF24L01_SetTxMode(void);
 void NRF24L01_ClearAllInterrupts(void);
 void NRF24L01_SetChannel(uint8_t channel);
 bool NRF24L01_ReadPayloadIfAvailable(uint8_t *data, uint8_t length);
-

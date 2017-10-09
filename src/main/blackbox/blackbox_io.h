@@ -39,6 +39,7 @@ extern int32_t blackboxHeaderBudget;
 
 void blackboxOpen(void);
 void blackboxWrite(uint8_t value);
+int blackboxWriteString(const char *s);
 
 void blackboxDeviceFlush(void);
 bool blackboxDeviceFlushForce(void);
@@ -52,7 +53,7 @@ bool blackboxDeviceBeginLog(void);
 bool blackboxDeviceEndLog(bool retainLog);
 
 bool isBlackboxDeviceFull(void);
-unsigned int blackboxGetLogNumber();
+unsigned int blackboxGetLogNumber(void);
 
-void blackboxReplenishHeaderBudget();
+void blackboxReplenishHeaderBudget(void);
 blackboxBufferReserveStatus_e blackboxDeviceReserveBufferSpace(int32_t bytes);

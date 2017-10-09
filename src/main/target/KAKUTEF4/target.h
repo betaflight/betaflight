@@ -20,6 +20,8 @@
 
 #define USBD_PRODUCT_STRING "KakuteF4-V1"
 
+#define TARGET_CONFIG
+
 #define LED0_PIN                PB5
 #define LED1_PIN                PB4
 #define LED2_PIN                PB6
@@ -127,10 +129,11 @@
 #define RSSI_ADC_PIN                PC1
 #define RSSI_ADC_CHANNEL            ADC_Channel_11
 
-#define DEFAULT_FEATURES        (FEATURE_OSD)
+#define DEFAULT_FEATURES        ( FEATURE_TELEMETRY | FEATURE_OSD )
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART3
+#define TELEMETRY_UART          SERIAL_PORT_USART1
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -140,4 +143,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 8
 #define USED_TIMERS  ( TIM_N(2) | TIM_N(3) | TIM_N(5)  |  TIM_N(8))
-

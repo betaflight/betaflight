@@ -301,7 +301,7 @@ int mspSerialPush(uint8_t cmd, uint8_t *data, int datalen, mspDirection_e direct
 }
 
 
-uint32_t mspSerialTxBytesFree()
+uint32_t mspSerialTxBytesFree(void)
 {
     uint32_t ret = UINT32_MAX;
 

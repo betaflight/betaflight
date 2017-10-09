@@ -170,13 +170,10 @@ static void handleUsartTxDma(dmaChannelDescriptor_t* descriptor)
     DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
     DMA_Cmd(descriptor->ref, DISABLE);
 
-    if (s->port.txBufferHead != s->port.txBufferTail)
-        uartStartTxDMA(s);
-    else
-        s->txDMAEmpty = true;
+    uartTryStartTxDMA(s);
 }
 
-void serialUARTInitIO(IO_t txIO, IO_t rxIO, portMode_t mode, portOptions_t options, uint8_t af, uint8_t index)
+void serialUARTInitIO(IO_t txIO, IO_t rxIO, portMode_e mode, portOptions_e options, uint8_t af, uint8_t index)
 {
     if ((options & SERIAL_BIDIR) && txIO) {
         ioConfig_t ioCfg = IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz,
@@ -205,16 +202,14 @@ void serialUARTInitIO(IO_t txIO, IO_t rxIO, portMode_t mode, portOptions_t optio
 
 // XXX Should serialUART be consolidated?
 
-uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, portOptions_t options)
+uartPort_t *serialUART(UARTDevice_e device, uint32_t baudRate, portMode_e mode, portOptions_e options)
 {
-    uartPort_t *s;
-
     uartDevice_t *uartDev = uartDevmap[device];
     if (!uartDev) {
         return NULL;
     }
 
-    s = &(uartDev->port);
+    uartPort_t *s = &(uartDev->port);
     s->port.vTable = uartVTable;
 
     s->port.baudRate = baudRate;

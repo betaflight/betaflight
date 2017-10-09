@@ -17,7 +17,6 @@
 
 #pragma once
 
-#ifndef USE_OSD_SLAVE
 #include <stdbool.h>
 #include "common/time.h"
 #include "config/parameter_group.h"
@@ -74,19 +73,17 @@ typedef struct pid8_s {
 typedef struct pidProfile_s {
     pid8_t  pid[PID_ITEM_COUNT];
 
-    uint8_t dterm_filter_type;              // Filter selection for dterm
-    uint16_t dterm_lpf_hz;                  // Delta Filter in hz
     uint16_t yaw_lpf_hz;                    // Additional yaw filter when yaw axis too noisy
+    uint16_t dterm_lpf_hz;                  // Delta Filter in hz
     uint16_t dterm_notch_hz;                // Biquad dterm notch hz
     uint16_t dterm_notch_cutoff;            // Biquad dterm notch low cutoff
+    uint8_t dterm_filter_type;              // Filter selection for dterm
     uint8_t itermWindupPointPercent;        // Experimental ITerm windup threshold, percent motor saturation
     uint16_t pidSumLimit;
     uint16_t pidSumLimitYaw;
-    uint8_t dterm_average_count;            // Configurable delta count for dterm
     uint8_t vbatPidCompensation;            // Scale PIDsum to battery voltage
     uint8_t pidAtMinThrottle;               // Disable/Enable pids on zero throttle. Normally even without airmode P and D would be active.
     uint8_t levelAngleLimit;                // Max angle in degrees in level mode
-    uint8_t levelSensitivity;               // Angle mode sensitivity reflected in degrees assuming user using full stick
 
     uint8_t horizon_tilt_effect;            // inclination factor for Horizon mode
     uint8_t horizon_tilt_expert_mode;       // OFF or ON
@@ -95,18 +92,24 @@ typedef struct pidProfile_s {
     uint16_t itermThrottleThreshold;        // max allowed throttle delta before iterm accelerated in ms
     uint16_t itermAcceleratorGain;          // Iterm Accelerator Gain when itermThrottlethreshold is hit
     uint8_t setpointRelaxRatio;             // Setpoint weight relaxation effect
-    uint8_t dtermSetpointWeight;            // Setpoint weight for Dterm (0= measurement, 1= full error, 1 > agressive derivative)
+    uint8_t dtermSetpointWeight;            // Setpoint weight for Dterm (0= measurement, 1= full error, 1 > aggressive derivative)
     uint16_t yawRateAccelLimit;             // yaw accel limiter for deg/sec/ms
     uint16_t rateAccelLimit;                // accel limiter roll/pitch deg/sec/ms
     uint16_t crash_dthreshold;              // dterm crash value
     uint16_t crash_gthreshold;              // gyro crash value
+    uint16_t crash_setpoint_threshold;      // setpoint must be below this value to detect crash, so flips and rolls are not interpreted as crashes
     uint16_t crash_time;                    // ms
+    uint16_t crash_delay;                   // ms
     uint8_t crash_recovery_angle;           // degrees
     uint8_t crash_recovery_rate;            // degree/second
     pidCrashRecovery_e crash_recovery;      // off, on, on and beeps when it is in crash recovery mode
+    uint16_t crash_limit_yaw;               // limits yaw errorRate, so crashes don't cause huge throttle increase
+    uint16_t itermLimit;
 } pidProfile_t;
 
+#ifndef USE_OSD_SLAVE
 PG_DECLARE_ARRAY(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles);
+#endif
 
 typedef struct pidConfig_s {
     uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate
@@ -126,10 +129,8 @@ extern uint8_t PIDweight[3];
 
 void pidResetErrorGyroState(void);
 void pidStabilisationState(pidStabilisationState_e pidControllerState);
-void pidSetTargetLooptime(uint32_t pidLooptime);
 void pidSetItermAccelerator(float newItermAccelerator);
 void pidInitFilters(const pidProfile_t *pidProfile);
 void pidInitConfig(const pidProfile_t *pidProfile);
 void pidInit(const pidProfile_t *pidProfile);
-
-#endif
+void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex);

@@ -62,7 +62,7 @@ void targetConfiguration(void)
         rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
     } else {
         rxConfigMutable()->serialrx_provider = SERIALRX_SBUS;
-        rxConfigMutable()->sbus_inversion = 0;
+        rxConfigMutable()->serialrx_inverted = true;
         serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIALRX_UART)].functionMask = FUNCTION_TELEMETRY_FRSKY | FUNCTION_RX_SERIAL;
         telemetryConfigMutable()->telemetry_inverted = false;
         batteryConfigMutable()->voltageMeterSource = VOLTAGE_METER_ADC;
@@ -70,14 +70,18 @@ void targetConfiguration(void)
         featureSet(FEATURE_TELEMETRY);
     }
 
-    pidProfilesMutable(0)->pid[FD_ROLL].P = 53;
-    pidProfilesMutable(0)->pid[FD_ROLL].I = 45;
-    pidProfilesMutable(0)->pid[FD_ROLL].D = 52;
-    pidProfilesMutable(0)->pid[FD_PITCH].P = 53;
-    pidProfilesMutable(0)->pid[FD_PITCH].I = 45;
-    pidProfilesMutable(0)->pid[FD_PITCH].D = 52;
-    pidProfilesMutable(0)->pid[FD_YAW].P = 64;
-    pidProfilesMutable(0)->pid[FD_YAW].D = 18;
+    for (uint8_t pidProfileIndex = 0; pidProfileIndex < MAX_PROFILE_COUNT; pidProfileIndex++) {
+        pidProfile_t *pidProfile = pidProfilesMutable(pidProfileIndex);
+
+        pidProfile->pid[FD_ROLL].P = 53;
+        pidProfile->pid[FD_ROLL].I = 45;
+        pidProfile->pid[FD_ROLL].D = 52;
+        pidProfile->pid[FD_PITCH].P = 53;
+        pidProfile->pid[FD_PITCH].I = 45;
+        pidProfile->pid[FD_PITCH].D = 52;
+        pidProfile->pid[FD_YAW].P = 64;
+        pidProfile->pid[FD_YAW].D = 18;
+    }
 
     *customMotorMixerMutable(0) = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
     *customMotorMixerMutable(1) = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R

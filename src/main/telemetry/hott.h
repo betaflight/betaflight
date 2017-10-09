@@ -497,4 +497,3 @@ void freeHoTTTelemetryPort(void);
 uint32_t getHoTTTelemetryProviderBaudRate(void);
 
 void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage);
-

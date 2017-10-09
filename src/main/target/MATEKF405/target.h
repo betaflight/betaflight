@@ -18,7 +18,7 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "MKF4"
-//#define CONFIG_START_FLASH_ADDRESS (0x08080000) 
+//#define CONFIG_START_FLASH_ADDRESS (0x08080000)
 
 #define USBD_PRODUCT_STRING  "MatekF4"
 
@@ -50,6 +50,29 @@
 #define ACC
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW180_DEG
+
+// *************** Baro **************************
+#define USE_I2C
+
+#if defined(BARO_I2C1)
+// Useful for MATEKF405_OSD, since it does not have the SCL / SDA pads
+#define USE_I2C_DEVICE_3
+#define I2C_DEVICE              (I2CDEV_3)
+#define I2C3_SCL                PC9        // S4 pad
+#define I2C3_SDA                PA8        // S6 pad
+#define BARO_I2C_INSTANCE       (I2CDEV_3)
+#else
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
+#define I2C1_SCL                PB6        // SCL pad
+#define I2C1_SDA                PB7        // SDA pad
+#define BARO_I2C_INSTANCE       (I2CDEV_1)
+#endif
+
+#define BARO
+#define USE_BARO_BMP280
+#define USE_BARO_MS5611
+#define USE_BARO_BMP085
 
 // *************** SD Card **************************
 #define USE_SDCARD
@@ -112,7 +135,7 @@
 //#define SOFTSERIAL1_RX_PIN      PA15 // S5
 //#define SOFTSERIAL1_TX_PIN      PA8  // S6
 
-#define SERIAL_PORT_COUNT       7 
+#define SERIAL_PORT_COUNT       7
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
@@ -129,10 +152,8 @@
 
 #define LED_STRIP
 
-#define SPEKTRUM_BIND
-#define BIND_PIN                PA1 // USART4 RX
-
-//#define USE_ESCSERIAL
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_PIN PA3
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA         0xffff

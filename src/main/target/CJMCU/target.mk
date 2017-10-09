@@ -9,4 +9,3 @@ TARGET_SRC = \
             blackbox/blackbox_io.c \
             telemetry/telemetry.c \
             telemetry/ltm.c
-
