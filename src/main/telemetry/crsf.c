@@ -56,6 +56,7 @@
 #include "telemetry/msp_shared.h"
 
 #include "fc/config.h"
+#include "sensors/sensors.h"
 
 #define CRSF_CYCLETIME_US                   100000 // 100ms, 10 Hz
 #define CRSF_DEVICEINFO_VERSION             0x01
@@ -350,7 +351,9 @@ void initCrsfTelemetry(void)
 #endif
 
     int index = 0;
-    crsfSchedule[index++] = BV(CRSF_FRAME_ATTITUDE_INDEX);
+    if (sensors(SENSOR_ACC)) {
+        crsfSchedule[index++] = BV(CRSF_FRAME_ATTITUDE_INDEX);
+    }
     crsfSchedule[index++] = BV(CRSF_FRAME_BATTERY_SENSOR_INDEX);
     crsfSchedule[index++] = BV(CRSF_FRAME_FLIGHT_MODE_INDEX);
     if (feature(FEATURE_GPS)) {
