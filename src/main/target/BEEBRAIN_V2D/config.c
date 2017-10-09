@@ -24,6 +24,7 @@
 #ifdef TARGET_CONFIG
 
 #include "common/axis.h"
+#include "common/maths.h"
 
 #include "config/feature.h"
 
@@ -31,6 +32,7 @@
 #include "drivers/pwm_esc_detect.h"
 
 #include "fc/config.h"
+#include "fc/controlrate_profile.h"
 
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -55,6 +57,7 @@ void targetConfiguration(void)
 {
     if (hardwareMotorType == MOTOR_BRUSHED) {
         motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
+        motorConfigMutable()->minthrottle = 1030;
         pidConfigMutable()->pid_process_denom = 1;
     }
 
@@ -71,16 +74,35 @@ void targetConfiguration(void)
         pidProfile->pid[PID_YAW].I   = 75;
     }
 
+    for (uint8_t rateProfileIndex = 0; rateProfileIndex < CONTROL_RATE_PROFILE_COUNT; rateProfileIndex++) {
+        controlRateConfig_t *controlRateConfig = controlRateProfilesMutable(rateProfileIndex);
+
+        controlRateConfig->rcYawRate8      = 120;
+        controlRateConfig->rcExpo8         = 15;
+        controlRateConfig->rcYawExpo8      = 15;
+        controlRateConfig->rates[FD_ROLL]  = 85;
+        controlRateConfig->rates[FD_PITCH] = 85;
+    }
+
+    for (uint8_t rxRangeIndex = 0; rxRangeIndex < NON_AUX_CHANNEL_COUNT; rxRangeIndex++) {
+        rxChannelRangeConfig_t *channelRangeConfig = rxChannelRangeConfigsMutable(rxRangeIndex);
+
+        channelRangeConfig->min = 1160;
+        channelRangeConfig->max = 1840;
+    }
+
+    batteryConfigMutable()->batteryCapacity = 250;
+    batteryConfigMutable()->vbatmincellvoltage = 28;
+    batteryConfigMutable()->vbatwarningcellvoltage = 33;
+
     *customMotorMixerMutable(0) = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
     *customMotorMixerMutable(1) = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
     *customMotorMixerMutable(2) = (motorMixer_t){ 1.0f,  0.414178f,  1.0f,  1.0f };    // REAR_L
     *customMotorMixerMutable(3) = (motorMixer_t){ 1.0f,  0.414178f, -1.0f, -1.0f };    // FRONT_L
 
-    batteryConfigMutable()->batteryCapacity = 250;
-
     vcdProfileMutable()->video_system = VIDEO_SYSTEM_NTSC;
-
     strcpy(pilotConfigMutable()->name, "BeeBrain V2");
+    osdConfigMutable()->cap_alarm  = 250;
     osdConfigMutable()->item_pos[OSD_CRAFT_NAME]        = OSD_POS(9, 11)  | VISIBLE_FLAG;
     osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(23, 10) | VISIBLE_FLAG;
     osdConfigMutable()->item_pos[OSD_ITEM_TIMER_2]      = OSD_POS(2, 10)  | VISIBLE_FLAG;
@@ -118,12 +140,5 @@ void targetConfiguration(void)
     osdConfigMutable()->item_pos[OSD_NUMERICAL_VARIO]    &= ~VISIBLE_FLAG;
     osdConfigMutable()->item_pos[OSD_ESC_TMP]            &= ~VISIBLE_FLAG;
     osdConfigMutable()->item_pos[OSD_ESC_RPM]            &= ~VISIBLE_FLAG;
-
-#ifndef BEEBRAIN_V2_DSM
-    // Frsky version
-    serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIALRX_UART)].functionMask = FUNCTION_TELEMETRY_FRSKY | FUNCTION_RX_SERIAL;
-    osdConfigMutable()->item_pos[OSD_RSSI_VALUE] = OSD_POS(25, 1) | VISIBLE_FLAG;
-    rxConfigMutable()->rssi_channel = 9;
-#endif
 }
 #endif
