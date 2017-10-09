@@ -532,7 +532,7 @@ void init(void)
 
     imuInit();
 
-    mspFcInit();
+    mspInit();
     mspSerialInit();
 
 #ifdef USE_CLI
@@ -724,11 +724,7 @@ void init(void)
 
     setArmingDisabled(ARMING_DISABLED_BOOT_GRACE_TIME);
 
-#ifdef USE_OSD_SLAVE
-    osdSlaveTasksInit();
-#else
     fcTasksInit();
-#endif
 
     systemState |= SYSTEM_STATE_READY;
 }
