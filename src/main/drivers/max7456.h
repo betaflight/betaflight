@@ -17,15 +17,6 @@
 
 #pragma once
 
-#ifndef WHITEBRIGHTNESS
-  #define WHITEBRIGHTNESS 0x01
-#endif
-#ifndef BLACKBRIGHTNESS
-  #define BLACKBRIGHTNESS 0x00
-#endif
-
-#define BWBRIGHTNESS ((BLACKBRIGHTNESS << 2) | WHITEBRIGHTNESS)
-
 /** PAL or NTSC, value is number of chars total */
 #define VIDEO_BUFFER_CHARS_NTSC   390
 #define VIDEO_BUFFER_CHARS_PAL    480
