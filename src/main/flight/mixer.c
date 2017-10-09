@@ -698,6 +698,10 @@ void mixTable(uint8_t vbatPidCompensation)
         scaledAxisPidYaw = -scaledAxisPidYaw;
     }
 
+    if (motorOutputMixSign = -1) {
+        scaledAxisPidYaw = -scaledAxisPidYaw;
+    }
+    
     // Calculate voltage compensation
     const float vbatCompensationFactor = (vbatPidCompensation)  ? calculateVbatPidCompensation() : 1.0f;
 
