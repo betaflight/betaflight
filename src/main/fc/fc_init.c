@@ -268,9 +268,9 @@ void init(void)
     ensureEEPROMContainsValidData();
     readEEPROM();
 
-    /* TODO: Check to be removed when moving to generic targets */
+    // !!TODO: Check to be removed when moving to generic targets
     if (strncasecmp(systemConfig()->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER))) {
-       resetEEPROM();
+        resetEEPROM();
     }
 
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
@@ -418,7 +418,7 @@ void init(void)
 #ifdef USE_SPI_DEVICE_4
     spiInit(SPIDEV_4);
 #endif
-#endif /* USE_SPI */
+#endif // USE_SPI
 
 #ifdef USE_I2C
     i2cHardwareConfigure();
@@ -438,9 +438,9 @@ void init(void)
 #ifdef USE_I2C_DEVICE_4
     i2cInit(I2CDEV_4);
 #endif
-#endif /* USE_I2C */
+#endif // USE_I2C
 
-#endif /* TARGET_BUS_INIT */
+#endif // TARGET_BUS_INIT
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
     updateHardwareRevision();

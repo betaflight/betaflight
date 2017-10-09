@@ -43,8 +43,8 @@
 #define RTC6705_SPIDATA_ON    IOHi(rtc6705DataPin)
 #define RTC6705_SPIDATA_OFF   IOLo(rtc6705DataPin)
 
-#define RTC6705_SPILE_ON      IOHi(rtc6705LePin)
-#define RTC6705_SPILE_OFF     IOLo(rtc6705LePin)
+#define DISABLE_RTC6705       IOHi(rtc6705CsnPin)
+#define ENABLE_RTC6705        IOLo(rtc6705CsnPin)
 
 const uint16_t vtx_freq[] =
 {
@@ -56,18 +56,18 @@ const uint16_t vtx_freq[] =
 };
 
 static IO_t rtc6705DataPin = IO_NONE;
-static IO_t rtc6705LePin = IO_NONE;
+static IO_t rtc6705CsnPin = IO_NONE;
 static IO_t rtc6705ClkPin = IO_NONE;
 
 void rtc6705IOInit(void)
 {
     rtc6705DataPin = IOGetByTag(IO_TAG(RTC6705_SPIDATA_PIN));
-    rtc6705LePin   = IOGetByTag(IO_TAG(RTC6705_SPILE_PIN));
+    rtc6705CsnPin   = IOGetByTag(IO_TAG(RTC6705_SPILE_PIN));
     rtc6705ClkPin  = IOGetByTag(IO_TAG(RTC6705_SPICLK_PIN));
 
-    IOInit(rtc6705LePin, OWNER_SPI_CS, RESOURCE_SOFT_OFFSET);
-    IOConfigGPIO(rtc6705LePin, IOCFG_OUT_PP);
-    RTC6705_SPILE_ON;
+    IOInit(rtc6705CsnPin, OWNER_SPI_CS, RESOURCE_SOFT_OFFSET);
+    IOConfigGPIO(rtc6705CsnPin, IOCFG_OUT_PP);
+    DISABLE_RTC6705;
 
     IOInit(rtc6705DataPin, OWNER_SPI_MOSI, RESOURCE_SOFT_OFFSET);
     IOConfigGPIO(rtc6705DataPin, IOCFG_OUT_PP);
@@ -78,16 +78,15 @@ void rtc6705IOInit(void)
 
 static void rtc6705_write_register(uint8_t addr, uint32_t data)
 {
-    uint8_t i;
-
-    RTC6705_SPILE_OFF;
+    ENABLE_RTC6705;
     delay(1);
     // send address
-    for (i=0; i<4; i++) {
-        if ((addr >> i) & 1)
+    for (int i = 0; i < 4; i++) {
+        if ((addr >> i) & 1) {
             RTC6705_SPIDATA_ON;
-        else
+        } else {
             RTC6705_SPIDATA_OFF;
+        }
 
         RTC6705_SPICLK_ON;
         delay(1);
@@ -95,46 +94,44 @@ static void rtc6705_write_register(uint8_t addr, uint32_t data)
         delay(1);
     }
     // Write bit
-
     RTC6705_SPIDATA_ON;
     RTC6705_SPICLK_ON;
     delay(1);
     RTC6705_SPICLK_OFF;
     delay(1);
-    for (i=0; i<20; i++) {
-        if ((data >> i) & 1)
+    for (int i = 0; i < 20; i++) {
+        if ((data >> i) & 1) {
             RTC6705_SPIDATA_ON;
-        else
+        } else {
             RTC6705_SPIDATA_OFF;
+        }
         RTC6705_SPICLK_ON;
         delay(1);
         RTC6705_SPICLK_OFF;
         delay(1);
     }
-    RTC6705_SPILE_ON;
+    DISABLE_RTC6705;
 }
 
 void rtc6705SetFreq(uint16_t channel_freq)
 {
     uint32_t freq = (uint32_t)channel_freq * 1000;
-    uint32_t N, A;
-
     freq /= 40;
-    N = freq / 64;
-    A = freq % 64;
+    const uint32_t N = freq / 64;
+    const uint32_t A = freq % 64;
     rtc6705_write_register(0, 400);
     rtc6705_write_register(1, (N << 7) | A);
 }
 
-void rtc6705SetBandAndChannel(const uint8_t band, const uint8_t channel)
+void rtc6705SetBandAndChannel(uint8_t band, uint8_t channel)
 {
-    uint8_t freqIndex = (band * RTC6705_CHANNEL_COUNT) + channel;
+    const uint8_t freqIndex = (band * RTC6705_CHANNEL_COUNT) + channel;
 
-    uint16_t freq = vtx_freq[freqIndex];
+    const uint16_t freq = vtx_freq[freqIndex];
     rtc6705SetFreq(freq);
 }
 
-void rtc6705SetRFPower(const uint8_t rf_power)
+void rtc6705SetRFPower(uint8_t rf_power)
 {
     rtc6705_write_register(7, (rf_power ? PA_CONTROL_DEFAULT : (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK))));
 }
