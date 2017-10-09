@@ -44,7 +44,7 @@ void targetConfiguration(void)
     serialConfigMutable()->portConfigs[index].functionMask = FUNCTION_TELEMETRY_FRSKY | FUNCTION_RX_SERIAL;
 
     rxConfigMutable()->serialrx_provider = SERIALRX_SBUS;
-    rxConfigMutable()->sbus_inversion = 0;
+    rxConfigMutable()->serialrx_inverted = true;
     telemetryConfigMutable()->telemetry_inverted = true;
 }
 #endif
