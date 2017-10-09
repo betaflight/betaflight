@@ -270,7 +270,7 @@
 
 #define DEF_TIM_AF__PA7__TCH_TIM8_CH1N    D(4)
 
-#define DEF_TIM_AF__PA14__TCH_TIM4_CH2    D(5)
+#define DEF_TIM_AF__PA14__TCH_TIM8_CH2    D(5)
 
 #define DEF_TIM_AF__PA7__TCH_TIM1_CH1N    D(6)
 #define DEF_TIM_AF__PA8__TCH_TIM1_CH1     D(6)
