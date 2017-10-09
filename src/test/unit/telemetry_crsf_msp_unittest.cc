@@ -59,6 +59,7 @@ extern "C" {
     #include "telemetry/telemetry.h"
     #include "telemetry/msp_shared.h"
     #include "telemetry/smartport.h"
+    #include "sensors/acceleration.h"
 
     bool handleMspFrame(uint8_t *frameStart, uint8_t *frameEnd);
     bool sendMspReply(uint8_t payloadSize, mspResponseFnPtr responseFn);
@@ -78,6 +79,7 @@ extern "C" {
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
     PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
+    PG_REGISTER(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG,0);
 
     extern bool crsfFrameDone;
     extern crsfFrame_t crsfFrame;
