@@ -120,6 +120,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     }
 
     motor->timerDmaSource = timerDmaSource(timerHardware->channel);
+    motor->timer = &dmaMotorTimers[timerIndex];
     dmaMotorTimers[timerIndex].timerDmaSources |= motor->timerDmaSource;
 
     /* Set the parameters to be configured */
