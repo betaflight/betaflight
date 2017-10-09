@@ -36,9 +36,6 @@ enum {
     TELEMETRY_MSP_ERROR=2
 };
 
-#define REQUEST_BUFFER_SIZE 64
-#define RESPONSE_BUFFER_SIZE 64
-
 STATIC_UNIT_TESTED uint8_t checksum = 0;
 STATIC_UNIT_TESTED mspPackage_t mspPackage;
 static mspRxBuffer_t mspRxBuffer;
@@ -87,7 +84,7 @@ void sendMspErrorResponse(uint8_t error, int16_t cmd)
     sbufSwitchToReader(&mspPackage.responsePacket->buf, mspPackage.responseBuffer);
 }
 
-bool handleMspFrame(uint8_t *frameStart, uint8_t *frameEnd)
+bool handleMspFrame(uint8_t *frameStart, int frameLength)
 {
     static uint8_t mspStarted = 0;
     static uint8_t lastSeq = 0;
@@ -101,7 +98,7 @@ bool handleMspFrame(uint8_t *frameStart, uint8_t *frameEnd)
     }
 
     mspPacket_t *packet = mspPackage.requestPacket;
-    sbuf_t *frameBuf = sbufInit(&mspPackage.requestFrame, frameStart, frameEnd);
+    sbuf_t *frameBuf = sbufInit(&mspPackage.requestFrame, frameStart, frameStart + (uint8_t)frameLength);
     sbuf_t *rxBuf = &mspPackage.requestPacket->buf;
     const uint8_t header = sbufReadU8(frameBuf);
     const uint8_t seqNumber = header & TELEMETRY_MSP_SEQ_MASK;

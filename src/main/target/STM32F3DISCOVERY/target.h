@@ -33,7 +33,6 @@
 
 #undef TELEMETRY_JETIEXBUS // ROM SAVING
 
-
 #define CURRENT_TARGET_CPU_VOLTAGE 3.0
 
 #define LED0_PIN                PE8  // Blue LEDs - PE8/PE12
