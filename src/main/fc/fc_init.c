@@ -714,6 +714,10 @@ void init(void)
     LED2_ON;
 #endif
 
+#ifdef USE_RCSPLIT
+    rcSplitInit();
+#endif // USE_RCSPLIT
+
     // Latch active features AGAIN since some may be modified by init().
     latchActiveFeatures();
     pwmEnableMotors();
@@ -725,10 +729,6 @@ void init(void)
 #else
     fcTasksInit();
 #endif
-
-#ifdef USE_RCSPLIT
-    rcSplitInit();
-#endif // USE_RCSPLIT
 
     systemState |= SYSTEM_STATE_READY;
 }

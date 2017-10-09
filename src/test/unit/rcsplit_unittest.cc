@@ -25,9 +25,10 @@ extern "C" {
 
     #include "platform.h"
 
-    #include "common/utils.h"
-    #include "common/maths.h"
     #include "common/bitarray.h"
+    #include "common/maths.h"
+    #include "common/streambuf.h"
+    #include "common/utils.h"
 
     #include "config/parameter_group.h"
     #include "config/parameter_group_ids.h"
@@ -37,24 +38,15 @@ extern "C" {
 
 
     #include "io/beeper.h"
-    #include "io/serial.h"
-
-    #include "scheduler/scheduler.h"
-    #include "drivers/serial.h"
     #include "io/rcsplit.h"
+    #include "io/serial.h"
 
     #include "rx/rx.h"
 
-    extern rcsplitState_e cameraState;
     extern serialPort_t *rcSplitSerialPort;
     extern rcsplitSwitchState_t switchStates[BOXCAMERA3 - BOXCAMERA1 + 1];
 
     int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
-
-    rcsplitState_e unitTestRCsplitState()
-    {
-        return cameraState;
-    }
 
     bool unitTestIsSwitchActivited(boxId_e boxId)
     {
@@ -66,7 +58,6 @@ extern "C" {
     void unitTestResetRCSplit()
     {
         rcSplitSerialPort = NULL;
-        cameraState = RCSPLIT_STATE_UNKNOWN;
     }
 }
 
@@ -85,7 +76,7 @@ TEST(RCSplitTest, TestRCSplitInitWithoutPortConfigurated)
     unitTestResetRCSplit();
     bool result = rcSplitInit();
     EXPECT_EQ(false, result);
-    EXPECT_EQ(RCSPLIT_STATE_UNKNOWN, unitTestRCsplitState());
+    EXPECT_EQ(false, rcSplitIsEnabled());
 }
 
 TEST(RCSplitTest, TestRCSplitInitWithoutOpenPortConfigurated)
@@ -97,7 +88,7 @@ TEST(RCSplitTest, TestRCSplitInitWithoutOpenPortConfigurated)
 
     bool result = rcSplitInit();
     EXPECT_EQ(false, result);
-    EXPECT_EQ(RCSPLIT_STATE_UNKNOWN, unitTestRCsplitState());
+    EXPECT_EQ(false, rcSplitIsEnabled());
 }
 
 TEST(RCSplitTest, TestRCSplitInit)
@@ -109,7 +100,7 @@ TEST(RCSplitTest, TestRCSplitInit)
 
     bool result = rcSplitInit();
     EXPECT_EQ(true, result);
-    EXPECT_EQ(RCSPLIT_STATE_IS_READY, unitTestRCsplitState());
+    EXPECT_EQ(true, rcSplitIsEnabled());
 }
 
 TEST(RCSplitTest, TestRecvWhoAreYouResponse)
@@ -126,9 +117,9 @@ TEST(RCSplitTest, TestRecvWhoAreYouResponse)
     // so the "who are you response" will full received, and cause the state change to RCSPLIT_STATE_IS_READY;
     int8_t randNum = rand() % 127 + 6;
     testData.maxTimesOfRespDataAvailable = randNum;
-    rcSplitProcess((timeUs_t)0);
+    rcSplitUpdate((timeUs_t)0);
 
-    EXPECT_EQ(RCSPLIT_STATE_IS_READY, unitTestRCsplitState());
+    EXPECT_EQ(true, rcSplitIsEnabled());
 }
 
 TEST(RCSplitTest, TestWifiModeChangeWithDeviceUnready)
@@ -172,8 +163,8 @@ TEST(RCSplitTest, TestWifiModeChangeWithDeviceUnready)
 
     updateActivatedModes();
 
-    // runn process loop
-    rcSplitProcess(0);
+    // run update
+    rcSplitUpdate(0);
 
     EXPECT_EQ(false, unitTestIsSwitchActivited(BOXCAMERA1));
     EXPECT_EQ(false, unitTestIsSwitchActivited(BOXCAMERA2));
@@ -221,12 +212,12 @@ TEST(RCSplitTest, TestWifiModeChangeWithDeviceReady)
 
     updateActivatedModes();
 
-    // runn process loop
+    // run update
     int8_t randNum = rand() % 127 + 6;
     testData.maxTimesOfRespDataAvailable = randNum;
-    rcSplitProcess((timeUs_t)0);
+    rcSplitUpdate((timeUs_t)0);
 
-    EXPECT_EQ(RCSPLIT_STATE_IS_READY, unitTestRCsplitState());
+    EXPECT_EQ(true, rcSplitIsEnabled());
 
     EXPECT_EQ(false, unitTestIsSwitchActivited(BOXCAMERA1));
     EXPECT_EQ(true, unitTestIsSwitchActivited(BOXCAMERA2));
@@ -274,12 +265,12 @@ TEST(RCSplitTest, TestWifiModeChangeCombine)
     rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1700;
     updateActivatedModes();
 
-    // runn process loop
+    // run update
     int8_t randNum = rand() % 127 + 6;
     testData.maxTimesOfRespDataAvailable = randNum;
-    rcSplitProcess((timeUs_t)0);
+    rcSplitUpdate((timeUs_t)0);
 
-    EXPECT_EQ(RCSPLIT_STATE_IS_READY, unitTestRCsplitState());
+    EXPECT_EQ(true, rcSplitIsEnabled());
 
     EXPECT_EQ(false, unitTestIsSwitchActivited(BOXCAMERA1));
     EXPECT_EQ(true, unitTestIsSwitchActivited(BOXCAMERA2));
@@ -291,7 +282,7 @@ TEST(RCSplitTest, TestWifiModeChangeCombine)
     rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1300;
     rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1900;
     updateActivatedModes();
-    rcSplitProcess((timeUs_t)0);
+    rcSplitUpdate((timeUs_t)0);
     EXPECT_EQ(true, unitTestIsSwitchActivited(BOXCAMERA1));
     EXPECT_EQ(false, unitTestIsSwitchActivited(BOXCAMERA2));
     EXPECT_EQ(true, unitTestIsSwitchActivited(BOXCAMERA3));
@@ -299,12 +290,12 @@ TEST(RCSplitTest, TestWifiModeChangeCombine)
 
     rcData[modeActivationConditions(2)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 1899;
     updateActivatedModes();
-    rcSplitProcess((timeUs_t)0);
+    rcSplitUpdate((timeUs_t)0);
     EXPECT_EQ(false, unitTestIsSwitchActivited(BOXCAMERA3));
 
     rcData[modeActivationConditions(1)->auxChannelIndex + NON_AUX_CHANNEL_COUNT] = 2001;
     updateActivatedModes();
-    rcSplitProcess((timeUs_t)0);
+    rcSplitUpdate((timeUs_t)0);
     EXPECT_EQ(true, unitTestIsSwitchActivited(BOXCAMERA1));
     EXPECT_EQ(true, unitTestIsSwitchActivited(BOXCAMERA2));
     EXPECT_EQ(false, unitTestIsSwitchActivited(BOXCAMERA3));
