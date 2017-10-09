@@ -2251,7 +2251,7 @@ static int parseOutputIndex(char *pch, bool allowAllEscs) {
     } else if (allowAllEscs && outputIndex == ALL_MOTORS) {
         tfp_printf("Using all outputs.\r\n");
     } else {
-        tfp_printf("Invalid output number, range: 0 to %d.\r\n", getMotorCount() - 1);
+        tfp_printf("Invalid output number. Range: 0  %d.\r\n", getMotorCount() - 1);
 
         return -1;
     }
@@ -2318,7 +2318,7 @@ void printEscInfo(const uint8_t *escInfoBuffer, uint8_t bytesRead)
                     break;
                 }
 
-                cliPrint("ESC: ");
+                cliPrint("ESC Type: ");
                 switch (escInfoVersion) {
                 case ESC_INFO_KISS_V1:
                 case ESC_INFO_KISS_V2:
@@ -2356,7 +2356,7 @@ void printEscInfo(const uint8_t *escInfoBuffer, uint8_t bytesRead)
                     break;
                 }
 
-                cliPrint("MCU: 0x");
+                cliPrint("MCU Serial No: 0x");
                 for (int i = 0; i < 12; i++) {
                     if (i && (i % 3 == 0)) {
                         cliPrint("-");
@@ -2368,20 +2368,20 @@ void printEscInfo(const uint8_t *escInfoBuffer, uint8_t bytesRead)
                 switch (escInfoVersion) {
                 case ESC_INFO_KISS_V1:
                 case ESC_INFO_KISS_V2:
-                    cliPrintLinef("Firmware: %d.%02d%c", firmwareVersion / 100, firmwareVersion % 100, (char)firmwareSubVersion);
+                    cliPrintLinef("Firmware Version: %d.%02d%c", firmwareVersion / 100, firmwareVersion % 100, (char)firmwareSubVersion);
 
                     break;
                 case ESC_INFO_BLHELI32:
-                    cliPrintLinef("Firmware: %d.%02d%", firmwareVersion, firmwareSubVersion);
+                    cliPrintLinef("Firmware Version: %d.%02d%", firmwareVersion, firmwareSubVersion);
 
                     break;
                 }
                 if (escInfoVersion == ESC_INFO_KISS_V2 || escInfoVersion == ESC_INFO_BLHELI32) {
-                    cliPrintLinef("Rotation: %s", escInfoBuffer[16] ? "reversed" : "normal");
+                    cliPrintLinef("Rotation Direction: %s", escInfoBuffer[16] ? "reversed" : "normal");
                     cliPrintLinef("3D: %s", escInfoBuffer[17] ? "on" : "off");
                     if (escInfoVersion == ESC_INFO_BLHELI32) {
                         uint8_t setting = escInfoBuffer[18];
-                        cliPrint("Low voltage limit: ");
+                        cliPrint("Low voltage Limit: ");
                         switch (setting) {
                         case 0:
                             cliPrintLine("off");
@@ -2398,7 +2398,7 @@ void printEscInfo(const uint8_t *escInfoBuffer, uint8_t bytesRead)
                         }
 
                         setting = escInfoBuffer[19];
-                        cliPrint("Current limit: ");
+                        cliPrint("Current Limit: ");
                         switch (setting) {
                         case 0:
                             cliPrintLine("off");
@@ -2421,13 +2421,13 @@ void printEscInfo(const uint8_t *escInfoBuffer, uint8_t bytesRead)
                     }
                 }
             } else {
-                cliPrintLine("Checksum error.");
+                cliPrintLine("Checksum Error.");
             }
         }
     }
 
     if (!escInfoReceived) {
-        cliPrintLine("No info.");
+        cliPrintLine("No Info.");
     }
 }
 
@@ -2496,13 +2496,13 @@ static void cliDshotProg(char *cmdline)
                         }
                     }
 
-                    cliPrintLinef("Command %d written.", command);
+                    cliPrintLinef("Command Sent: %d", command);
 
                     if (command <= 5) {
                         delay(20); // wait for sound output to finish
                     }
                 } else {
-                    cliPrintLinef("Invalid command, range 1 to %d.", DSHOT_MIN_THROTTLE - 1);
+                    cliPrintLinef("Invalid command. Range: 1 - %d.", DSHOT_MIN_THROTTLE - 1);
                 }
             }
 
