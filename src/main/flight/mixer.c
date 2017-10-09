@@ -698,7 +698,7 @@ void mixTable(uint8_t vbatPidCompensation)
         scaledAxisPidYaw = -scaledAxisPidYaw;
     }
 
-    if (motorOutputMixSign = -1) {
+    if (motorOutputMixSign == -1) {
         scaledAxisPidYaw = -scaledAxisPidYaw;
     }
     
