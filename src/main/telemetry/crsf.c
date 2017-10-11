@@ -130,19 +130,9 @@ static void crsfInitializeFrame(sbuf_t *dst)
     sbufWriteU8(dst, CRSF_ADDRESS_BROADCAST);
 }
 
-static void crsfWriteCrc(sbuf_t *dst, uint8_t *start)
-{
-    uint8_t crc = 0;
-    uint8_t *end = sbufPtr(dst);
-    for (uint8_t *ptr = start; ptr < end; ++ptr) {
-        crc = crc8_dvb_s2(crc, *ptr);
-    }
-    sbufWriteU8(dst, crc);
-}
-
 static void crsfFinalize(sbuf_t *dst)
 {
-    crsfWriteCrc(dst, &crsfFrame[2]); // start at byte 2, since CRC does not include device address and frame length
+    crc8_dvb_s2_sbuf_append(dst, &crsfFrame[2]); // start at byte 2, since CRC does not include device address and frame length
     sbufSwitchToReader(dst, crsfFrame);
     // write the telemetry frame to the receiver.
     crsfRxWriteTelemetryData(sbufPtr(dst), sbufBytesRemaining(dst));
@@ -150,7 +140,7 @@ static void crsfFinalize(sbuf_t *dst)
 
 static int crsfFinalizeBuf(sbuf_t *dst, uint8_t *frame)
 {
-    crsfWriteCrc(dst, &crsfFrame[2]); // start at byte 2, since CRC does not include device address and frame length
+    crc8_dvb_s2_sbuf_append(dst, &crsfFrame[2]); // start at byte 2, since CRC does not include device address and frame length
     sbufSwitchToReader(dst, crsfFrame);
     const int frameSize = sbufBytesRemaining(dst);
     for (int ii = 0; sbufBytesRemaining(dst); ++ii) {
