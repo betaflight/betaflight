@@ -17,7 +17,7 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "BBV2F" // BeeBrain V2 Frsky
+#define TARGET_BOARD_IDENTIFIER "BBV2" // BeeBrain V2.
 #define TARGET_CONFIG
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
@@ -28,7 +28,6 @@
 #define LED1_PIN                PB2
 
 #define USE_EXTI
-// #define DEBUG_MPU_DATA_READY_INTERRUPT
 #define MPU_INT_EXTI            PB6
 #define USE_MPU_DATA_READY_SIGNAL
 
@@ -100,9 +99,15 @@
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define RX_CHANNELS_TAER
 
-// Receiver - Frsky
-#define DEFAULT_FEATURES        (FEATURE_TRANSPONDER | FEATURE_MOTOR_STOP | FEATURE_OSD | FEATURE_TELEMETRY)
-#define SERIALRX_PROVIDER       SERIALRX_SBUS
+#if defined(BEEBRAIN_V2D)
+    // Receiver - DSM
+    #define DEFAULT_FEATURES        (FEATURE_TRANSPONDER | FEATURE_MOTOR_STOP | FEATURE_OSD)
+    #define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM2048
+#else
+    // Receiver - Frsky
+    #define DEFAULT_FEATURES        (FEATURE_TRANSPONDER | FEATURE_MOTOR_STOP | FEATURE_OSD | FEATURE_TELEMETRY)
+    #define SERIALRX_PROVIDER       SERIALRX_SBUS
+#endif
 
 // IO - stm32f303cc in 48pin package
 #define TARGET_IO_PORTA         0xffff
