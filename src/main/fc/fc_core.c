@@ -106,7 +106,6 @@ enum {
 int16_t magHold;
 #endif
 
-static bool reverseMotors = false;
 static bool flipOverAfterCrashMode = false;
 
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
@@ -393,7 +392,7 @@ void processRx(timeUs_t currentTimeUs)
     const throttleStatus_e throttleStatus = calculateThrottleStatus();
 
     if (isAirmodeActive() && ARMING_FLAG(ARMED)) {
-        if (rcCommand[THROTTLE] >= rxConfig()->airModeActivateThreshold) airmodeIsActivated = true; // Prevent Iterm from being reset
+        if (rcData[THROTTLE] >= rxConfig()->airModeActivateThreshold) airmodeIsActivated = true; // Prevent Iterm from being reset
     } else {
         airmodeIsActivated = false;
     }
@@ -728,10 +727,6 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     }
 }
 
-bool isMotorsReversed(void)
-{
-    return reverseMotors;
-}
 
 bool isFlipOverAfterCrashMode(void)
 {
