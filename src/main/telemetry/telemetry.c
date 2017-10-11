@@ -54,7 +54,6 @@
 #include "telemetry/ibus.h"
 #include "telemetry/msp_shared.h"
 
-
 PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
 
 PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
@@ -175,7 +174,9 @@ void telemetryCheckState(void)
 void telemetryProcess(uint32_t currentTime)
 {
 #ifdef TELEMETRY_FRSKY
-    handleFrSkyTelemetry();
+    handleFrSkyTelemetry(currentTime);
+#else
+    UNUSED(currentTime);
 #endif
 #ifdef TELEMETRY_HOTT
     handleHoTTTelemetry(currentTime);
