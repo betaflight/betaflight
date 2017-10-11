@@ -656,7 +656,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 #ifdef TRANSPONDER
     transponderUpdate(currentTimeUs);
 #endif
-    DEBUG_SET(DEBUG_PIDLOOP, 2, micros() - startTime);
+    DEBUG_SET(DEBUG_PIDLOOP, 3, micros() - startTime);
 }
 
 static void subTaskMotorUpdate(void)
@@ -684,7 +684,7 @@ static void subTaskMotorUpdate(void)
 
     writeMotors();
 
-    DEBUG_SET(DEBUG_PIDLOOP, 3, micros() - startTime);
+    DEBUG_SET(DEBUG_PIDLOOP, 2, micros() - startTime);
 }
 
 uint8_t setPidUpdateCountDown(void)
@@ -699,32 +699,19 @@ uint8_t setPidUpdateCountDown(void)
 // Function for loop trigger
 void taskMainPidLoop(timeUs_t currentTimeUs)
 {
-    static bool runTaskMainSubprocesses;
-    static uint8_t pidUpdateCountdown;
+    static uint8_t pidUpdateCountdown = 0;
 
 #if defined(SIMULATOR_BUILD) && defined(SIMULATOR_GYROPID_SYNC)
     if (lockMainPID() != 0) return;
 #endif
 
-    if (debugMode == DEBUG_CYCLETIME) {
-        debug[0] = getTaskDeltaTime(TASK_SELF);
-        debug[1] = averageSystemLoadPercent;
-    }
-
-    if (runTaskMainSubprocesses) {
-        subTaskMainSubprocesses(currentTimeUs);
-        runTaskMainSubprocesses = false;
-    }
-
     // DEBUG_PIDLOOP, timings for:
     // 0 - gyroUpdate()
     // 1 - pidController()
-    // 2 - subTaskMainSubprocesses()
-    // 3 - subTaskMotorUpdate()
-    uint32_t startTime = 0;
-    if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
+    // 2 - subTaskMotorUpdate()
+    // 3 - subTaskMainSubprocesses()
     gyroUpdate();
-    DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - startTime);
+    DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);
 
     if (pidUpdateCountdown) {
         pidUpdateCountdown--;
@@ -732,7 +719,12 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
         pidUpdateCountdown = setPidUpdateCountDown();
         subTaskPidController(currentTimeUs);
         subTaskMotorUpdate();
-        runTaskMainSubprocesses = true;
+        subTaskMainSubprocesses(currentTimeUs);
+    }
+
+    if (debugMode == DEBUG_CYCLETIME) {
+        debug[0] = getTaskDeltaTime(TASK_SELF);
+        debug[1] = averageSystemLoadPercent;
     }
 }
 
