@@ -843,12 +843,13 @@ TEST(OsdTest, TestFormatTimeString)
 
 // STUBS
 extern "C" {
-    void beeperConfirmationBeeps(uint8_t beepCount) {
-        UNUSED(beepCount);
+    void beeperConfirmationBeeps(uint8_t) {}
+
+    bool isModeActivationConditionPresent(boxId_e) {
+        return false;
     }
 
-    bool IS_RC_MODE_ACTIVE(boxId_e boxId) {
-        UNUSED(boxId);
+    bool IS_RC_MODE_ACTIVE(boxId_e) {
         return false;
     }
 
@@ -908,18 +909,13 @@ extern "C" {
         return 0;
     }
 
-    bool isSerialTransmitBufferEmpty(const serialPort_t *instance) {
-        UNUSED(instance);
+    bool isSerialTransmitBufferEmpty(const serialPort_t *) {
         return false;
     }
 
-    void serialWrite(serialPort_t *instance, uint8_t ch) {
-        UNUSED(instance);
-        UNUSED(ch);
-    }
+    void serialWrite(serialPort_t *, uint8_t) {}
 
-    bool cmsDisplayPortRegister(displayPort_t *pDisplay) {
-        UNUSED(pDisplay);
+    bool cmsDisplayPortRegister(displayPort_t *) {
         return false;
     }
 }

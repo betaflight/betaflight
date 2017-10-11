@@ -464,6 +464,13 @@ void processRx(timeUs_t currentTimeUs)
 
     updateActivatedModes();
 
+#ifdef USE_DSHOT
+    /* Enable beep warning when the crash flip mode is active */
+    if (isMotorProtocolDshot() && isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH) && IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+        beeper(BEEPER_CRASH_FLIP_MODE);
+    }
+#endif
+
     if (!cliMode) {
         updateAdjustmentStates();
         processRcAdjustments(currentControlRateProfile);
@@ -733,6 +740,7 @@ bool isMotorsReversed(void)
 {
     return reverseMotors;
 }
+
 bool isFlipOverAfterCrashMode(void)
 {
     return flipOverAfterCrashMode;

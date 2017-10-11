@@ -584,7 +584,13 @@ static void osdDrawSingleElement(uint8_t item)
         }
 
     case OSD_WARNINGS:
-        /* Show common reason for arming being disabled */
+        /* Warn when in flip over after crash mode */
+        if ((isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH)) && IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+            tfp_sprintf(buff, "CRASH FLIP");
+            break;
+        }
+
+        /* Show most severe reason for arming being disabled */
         if (IS_RC_MODE_ACTIVE(BOXARM) && isArmingDisabled()) {
             const armingDisableFlags_e flags = getArmingDisableFlags();
             for (int i = 0; i < NUM_ARMING_DISABLE_FLAGS; i++) {
