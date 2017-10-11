@@ -328,12 +328,21 @@ void updateRcCommands(void)
     }
 
     if (FLIGHT_MODE(HEADFREE_MODE)) {
-        const float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
-        const float cosDiff = cos_approx(radDiff);
-        const float sinDiff = sin_approx(radDiff);
-        const float rcCommand_PITCH = rcCommand[PITCH] * cosDiff + rcCommand[ROLL] * sinDiff;
-        rcCommand[ROLL] = rcCommand[ROLL] * cosDiff - rcCommand[PITCH] * sinDiff;
-        rcCommand[PITCH] = rcCommand_PITCH;
+        static t_fp_vector_def  rcCommandBuff;
+
+        rcCommandBuff.X = rcCommand[ROLL];
+        rcCommandBuff.Y = rcCommand[PITCH];
+        if ((!FLIGHT_MODE(ANGLE_MODE)&&(!FLIGHT_MODE(HORIZON_MODE)))) {
+            rcCommandBuff.Z = rcCommand[YAW];
+        } else {
+            rcCommandBuff.Z = 0;
+        }
+        imuQuaternionHeadfreeTransformVectorEarthToBody(&rcCommandBuff);
+        rcCommand[ROLL] = rcCommandBuff.X;
+        rcCommand[PITCH] = rcCommandBuff.Y;
+        if ((!FLIGHT_MODE(ANGLE_MODE)&&(!FLIGHT_MODE(HORIZON_MODE)))) {
+            rcCommand[YAW] = rcCommandBuff.Z;
+        }
     }
 }
 

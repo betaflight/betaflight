@@ -89,7 +89,7 @@ static float hanningWindow[FFT_WINDOW_SIZE];
 void initHanning(void)
 {
     for (int i = 0; i < FFT_WINDOW_SIZE; i++) {
-        hanningWindow[i] = (0.5 - 0.5 * cosf(2 * M_PIf * i / (FFT_WINDOW_SIZE - 1)));
+        hanningWindow[i] = (0.5 - 0.5 * cos_approx(2 * M_PIf * i / (FFT_WINDOW_SIZE - 1)));
     }
 }
 
