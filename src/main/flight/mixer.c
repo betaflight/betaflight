@@ -528,16 +528,52 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
 {
     static uint16_t rcThrottlePrevious = 0;   // Store the last throttle direction for deadband transitions
     float currentThrottleInputRange = 0;
+    static bool motorReversedPrev = false; 
+    static bool motorReversedTransistion = false; 
+    static timeUs_t transistionTimeStart;
+    static float maxMotor;
+    static float minMotor;
+    float transistion; 
 
     if(feature(FEATURE_3D)) {
         if (!ARMING_FLAG(ARMED)) {
             rcThrottlePrevious = rxConfig()->midrc; // When disarmed set to mid_rc. It always results in positive direction after arming.
         }
 
+        if (motorReversedPrev != isMotorsReversed() && isModeActivationConditionPresent(BOX3DONASWITCH)) {
+            motorReversedPrev = isMotorsReversed();
+            motorReversedTransistion = true;
+            transistionTimeStart = micros();
+            maxMotor = motorOutputHigh;
+            minMotor = motorOutputLow;
+            // Sends commands to all motors
+            for (int i = 0; i < motorCount; i++) {
+                minMotor = MIN(minMotor, motor[i]);
+                maxMotor = MAX(maxMotor, motor[i]);
+            }
+        }
+        if (motorReversedTransistion) {
+            if ((micros() - transistionTimeStart) > 100e3) {
+                motorReversedTransistion = false;
+                if (isMotorsReversed()) {
+                    rcCommand[THROTTLE] = rcCommand3dDeadBandLow;
+                    rcThrottlePrevious = rcCommand3dDeadBandLow;
+                } else {
+                    rcCommand[THROTTLE] = rcCommand3dDeadBandHigh;
+                    rcThrottlePrevious = rcCommand3dDeadBandHigh;
+                }
+            } else {
+                rcCommand[THROTTLE] = rcThrottlePrevious;
+            }
+            
+        }
+        
+
         if(rcCommand[THROTTLE] <= rcCommand3dDeadBandLow) {
             // INVERTED
             motorRangeMin = motorOutputLow;
             motorRangeMax = deadbandMotor3dLow;
+
             if(isMotorProtocolDshot()) {
                 motorOutputMin = motorOutputLow;
                 motorOutputRange = deadbandMotor3dLow - motorOutputLow;
@@ -559,9 +595,7 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
             rcThrottlePrevious = rcCommand[THROTTLE];
             throttle = rcCommand[THROTTLE] - rcCommand3dDeadBandHigh;
             currentThrottleInputRange = rcCommandThrottleRange3dHigh;
-        } else if((rcThrottlePrevious <= rcCommand3dDeadBandLow &&
-                !isModeActivationConditionPresent(BOX3DONASWITCH)) || 
-                isMotorsReversed()) {
+        } else if(rcThrottlePrevious <= rcCommand3dDeadBandLow) {
             // INVERTED_TO_DEADBAND
             motorRangeMin = motorOutputLow;
             motorRangeMax = deadbandMotor3dLow;
@@ -595,6 +629,10 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
         motorOutputMixSign = 1;
     }
 
+    if (motorReversedTransistion) {
+        transistion = (float)(micros() - transistionTimeStart) / 100e3;
+        motorOutputRange = motorOutputRange * (1 - transistion);
+    }
     throttle = constrainf(throttle / currentThrottleInputRange, 0.0f, 1.0f);
 }
 
