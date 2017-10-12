@@ -24,6 +24,25 @@
 #define SRXL_FRAME_OVERHEAD         5
 #define SRXL_FRAME_SIZE_MAX         (SPEK_FRAME_SIZE + SRXL_FRAME_OVERHEAD)
 
+// Spektrum system type values
+#define SPEKTRUM_DSM2_22 0x01
+#define SPEKTRUM_DSM2_11 0x12
+#define SPEKTRUM_DSMX_22 0xa2
+#define SPEKTRUM_DSMX_11 0xb2
+
+// Spektrum RSSI signal strength range, in dBm
+#define SPEKTRUM_RSSI_MAX         (-42)
+#define SPEKTRUM_RSSI_MIN         (-92)
+
+// Spektrum RSSI reported value limit at or below which signals a fade instead of a real RSSI
+#define SPEKTRUM_RSSI_FADE_LIMIT (-100)
+
+typedef struct
+{
+  int8_t  dBm;
+  uint8_t reportAs;
+} stru_dbm_table;
+
 void spektrumBind(rxConfig_t *rxConfig);
 bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
 

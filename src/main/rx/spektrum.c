@@ -64,12 +64,19 @@ static uint8_t spek_chan_mask;
 static bool rcFrameComplete = false;
 static bool spekHiRes = false;
 static bool srxlEnabled = false;
+static int32_t resolution;
+
+#ifdef USE_SPEKTRUM_FAKE_RSSI
+// Spektrum Rx type. Determined by bind method.
+static bool spektrumSatInternal = true; // Assume internal,bound by BF.
 
 // Variables used for calculating a signal strength from satellite fade.
 //  This is time-variant and computed every second based on the fade
 //  count over the last second.
 static uint32_t spek_fade_last_sec = 0; // Stores the timestamp of the last second.
 static uint16_t spek_fade_last_sec_count = 0; // Stores the fade count at the last second.
+#endif
+
 static uint8_t rssi_channel; // Stores the RX RSSI channel.
 
 static volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
@@ -81,6 +88,75 @@ static uint8_t telemetryBuf[SRXL_FRAME_SIZE_MAX];
 static uint8_t telemetryBufLen = 0;
 
 void srxlRxSendTelemetryDataDispatch(dispatchEntry_t *self);
+
+// Linear mapping and interpolation function
+int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_t out_max)
+{
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+#ifdef USE_SPEKTRUM_RSSI_PERCENT_CONVERSION
+
+// Conversion table from dBm to a percentage scale aproximating a more linear RSSI vs Distance curve.
+
+static const stru_dbm_table dbmTable[] = {
+  {SPEKTRUM_RSSI_MAX, 101},
+  {-49,	100},
+  {-56, 98},
+  {-61,	95},
+  {-66,	89},
+  {-69,	83},
+  {-71,	78},
+  {-73,	72},
+  {-74,	69},
+  {-75,	66},
+  {-76,	63},
+  {-77,	60},
+#if 0 // Linear part of the table, can be interpolated
+  {-78,	56},
+  {-79,	52},
+  {-80,	48},
+  {-81,	44},
+  {-82,	40},
+  {-83,	36},
+  {-84,	32},
+  {-85,	28},
+  {-86,	24},
+  {-87,	20}, // Beta Flight default RSSI % alatm point
+  {-88,	16},
+  {-89,	12},
+  {-90,	 8}, // Failsafe usually hits here
+  {-91,	 4},
+#endif // Linear part of the table, end
+  {SPEKTRUM_RSSI_MIN, 0}};
+
+#define SIZEOF_dbmTable  (sizeof(dbmTable)/sizeof(dbmTable[0]))
+
+// Convert dBm to Range %
+static int8_t dBm2range (int8_t dBm)
+{
+  int8_t  retval = dbmTable[0].reportAs;
+  uint8_t i = 1;
+
+  while (i < SIZEOF_dbmTable) {
+    if (dBm >= dbmTable[i].dBm) {
+      // Linear interpolation between table points.
+      retval = map(dBm, dbmTable[i-1].dBm, dbmTable[i].dBm, dbmTable[i-1].reportAs, dbmTable[i].reportAs);
+      i = SIZEOF_dbmTable;
+    }
+    i++;
+  }
+
+  if (retval < 0) {
+    retval = 0;
+  }
+  else if (retval > 100) {
+    retval = 100;
+  }
+  return (retval);
+}
+#endif
+
 
 // Receive ISR callback
 static void spektrumDataReceive(uint16_t c)
@@ -118,29 +194,96 @@ static uint8_t spektrumFrameStatus(void)
 
     rcFrameComplete = false;
 
-    // Fetch the fade count
-    const uint16_t fade = (spekFrame[0] << 8) + spekFrame[1];
-    const uint32_t current_secs = micros() / 1000 / (1000 / SPEKTRUM_FADE_REPORTS_PER_SEC);
+#ifdef USE_SPEKTRUM_REAL_RSSI
+    static int8_t spek_last_rssi = SPEKTRUM_RSSI_MAX;
 
-    if (spek_fade_last_sec == 0) {
+    // Fetch RSSI
+    if (srxlEnabled) {
+       // Real RSSI reported omly by SRXL Telemetry Rx, in dBm.
+      int8_t rssi = spekFrame[0];
+
+      if (rssi <= SPEKTRUM_RSSI_FADE_LIMIT ) {
+        // If Rx reports -100 dBm or less, it is a fade out and frame loss.
+        // If it is a temporary fade, real RSSI will come back in the next frame, in that case.
+        // we should not report 0% back as OSD keeps a "minimum RSSI" value. Instead keep last good report
+        // If it is a total link loss, failsafe will kick in.
+        // We could count the fades here, but currentlly to no use
+
+        // Ignore report and Keep last known good value
+        rssi = spek_last_rssi;
+      }
+
+      if(rssi_channel != 0) {
+#ifdef USE_SPEKTRUM_RSSI_PERCENT_CONVERSION
+        // Do an dBm to percent conversion with an approxatelly linear distance
+        // and map the percentage to RSSI RC channel range
+        spekChannelData[rssi_channel] = (uint16_t)(map(dBm2range (rssi),
+                                                       0, 100,
+                                                       0,resolution));
+#else
+        // Do a direkt dBm to percent mapping, keeping the non-linear dBm logarithmic curve.
+        spekChannelData[rssi_channel] = (uint16_t)(map(rssi),
+                                                       SPEKTRUM_RSSI_MIN, SPEKTRUM_RSSI_MAX,
+                                                       0,resolution));
+#endif
+      }
+      spek_last_rssi = rssi;
+    }
+
+#ifdef USE_SPEKTRUM_FAKE_RSSI
+    else
+#endif
+#endif // USE_SPEKTRUM_REAL_RSSI
+
+#ifdef USE_SPEKTRUM_FAKE_RSSI
+    {
+      // Fake RSSI value computed from fades
+
+      const uint32_t current_secs = micros() / 1000 / (1000 / SPEKTRUM_FADE_REPORTS_PER_SEC);
+      uint16_t fade;
+      uint8_t system;
+
+      // Get fade count, different format depending on Rx rype and how Rx is bound. Initially assumed Internal 
+      if (spektrumSatInternal) {
+        // Internal Rx, bind values 3, 5, 7, 9
+        fade = (uint16_t) spekFrame[0];
+        system = spekFrame[1];
+
+        // Try to detect system type by assuming Internal until we find ANY frame telling otherwise.
+        if ( !( (system == SPEKTRUM_DSM2_22) |
+                (system == SPEKTRUM_DSM2_11) |
+                (system == SPEKTRUM_DSMX_22) |
+                (system == SPEKTRUM_DSMX_11) ) ){
+          spektrumSatInternal =false; // Nope, this is an externally bound Sat Rx
+        }
+      }
+
+      if (!spektrumSatInternal) {
+        // External Rx, bind values 4, 6, 8, 10
+        fade = ((spekFrame[0] << 8) + spekFrame[1]);
+      }
+
+      if (spek_fade_last_sec == 0) {
         // This is the first frame status received.
         spek_fade_last_sec_count = fade;
         spek_fade_last_sec = current_secs;
-    } else if (spek_fade_last_sec != current_secs) {
+      } else if (spek_fade_last_sec != current_secs) {
         // If the difference is > 1, then we missed several seconds worth of frames and
         // should just throw out the fade calc (as it's likely a full signal loss).
         if ((current_secs - spek_fade_last_sec) == 1) {
-            if (rssi_channel != 0) {
-                if (spekHiRes)
-                    spekChannelData[rssi_channel] = 2048 - ((fade - spek_fade_last_sec_count) * 2048 / (SPEKTRUM_MAX_FADE_PER_SEC / SPEKTRUM_FADE_REPORTS_PER_SEC));
-                else
-                    spekChannelData[rssi_channel] = 1024 - ((fade - spek_fade_last_sec_count) * 1024 / (SPEKTRUM_MAX_FADE_PER_SEC / SPEKTRUM_FADE_REPORTS_PER_SEC));
-            }
+          if (rssi_channel != 0) {
+            spekChannelData[rssi_channel] = (uint16_t)(map(fade - spek_fade_last_sec_count,
+                                                           SPEKTRUM_MAX_FADE_PER_SEC / SPEKTRUM_FADE_REPORTS_PER_SEC, 0,
+                                                           0, resolution));
+          }
         }
         spek_fade_last_sec_count = fade;
         spek_fade_last_sec = current_secs;
+      }
     }
+#endif
 
+    // Get the RC control channel inputs
     for (int b = 3; b < SPEK_FRAME_SIZE; b += 2) {
         const uint8_t spekChannel = 0x0F & (spekFrame[b - 1] >> spek_chan_shift);
         if (spekChannel < rxRuntimeConfigPtr->channelCount && spekChannel < SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT) {
@@ -320,6 +463,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
         spek_chan_shift = 3;
         spek_chan_mask = 0x07;
         spekHiRes = true;
+        resolution = 2048;
         rxRuntimeConfig->channelCount = SPEKTRUM_2048_CHANNEL_COUNT;
         rxRuntimeConfig->rxRefreshRate = 11000;
         break;
@@ -328,6 +472,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
         spek_chan_shift = 2;
         spek_chan_mask = 0x03;
         spekHiRes = false;
+        resolution = 1024;
         rxRuntimeConfig->channelCount = SPEKTRUM_1024_CHANNEL_COUNT;
         rxRuntimeConfig->rxRefreshRate = 22000;
         break;
