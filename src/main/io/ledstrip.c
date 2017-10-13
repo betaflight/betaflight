@@ -647,35 +647,36 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
     else { // show frequency
         // calculate the VTX color based on frequency
 	    color.s = 0;
-        switch (floor((Frequency-5633)/39)) {
-            case 0:
+	    int channel = constrain(floor((Frequency-5633)/39)+1, 1, 8);
+        switch (channel) {
+            case 1:
                 color.h = HSV(WHITE).h;
                 color.s = HSV(WHITE).s;
                 break;
-            case 1:
+            case 2:
                 color.h = HSV(RED).h;
                 break;
-            case 2:
+            case 3:
                 color.h = HSV(ORANGE).h;
                 break;
-            case 3:
+            case 4:
                 color.h = HSV(YELLOW).h;
                 break;
-            case 4:
+            case 5:
                 color.h = HSV(GREEN).h;
                 break;
-            case 5:
+            case 6:
                 color.h = HSV(BLUE).h;
                 break;
-            case 6:
+            case 7:
                 color.h = HSV(DARK_VIOLET).h;
                 break;
-            case 7:
+            case 8:
                 color.h = HSV(MAGENTA).h;
                 break;
             default:
                 color.h = HSV(BLACK).h;
-		        break;
+		break;
         color.v = pit ? (blink ? 15 : 0) : 255; // blink when in pit mode`
         applyLedHsv(LED_MOV_OVERLAY(LED_FLAG_OVERLAY(LED_OVERLAY_VTX)), &color);
     }
