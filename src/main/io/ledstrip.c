@@ -157,9 +157,6 @@ static const specialColorIndexes_t defaultSpecialColors[] = {
     }}
 };
 
-// custom LED colours for VTX frequency or auxillary channel
-static const colorId_e customColors[] = { COLOR_WHITE, COLOR_RED, COLOR_ORANGE, COLOR_YELLOW, COLOR_GREEN, COLOR_BLUE, COLOR_DARK_VIOLET, COLOR_MAGENTA };
-
 void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
 {
     memset(ledStripConfig->ledConfigs, 0, LED_MAX_STRIP_LENGTH * sizeof(ledConfig_t));
@@ -650,21 +647,21 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
     else { // show frequency
         // calculate the VTX color based on frequency
         if (frequency <= 5672) {
-            color = hsv[customColors[0]];
+            color = HSV(WHITE);
         } else if (frequency <= 5711) {
-            color = hsv[customColors[1]];
+            color = HSV(RED);
         } else if (frequency <= 5750) {
-            color = hsv[customColors[2]];
+            color = HSV(ORANGE);
         } else if (frequency <= 5789) {
-            color = hsv[customColors[3]];
+            color = HSV(YELLOW);
         } else if (frequency <= 5828) {
-            color = hsv[customColors[4]];
+            color = HSV(GREEN);
         } else if (frequency <= 5867) {
-            color = hsv[customColors[5]];
+            color = HSV(BLUE);
         } else if (frequency <= 5906) {
-            color = hsv[customColors[6]];
+            color = HSV(DARK_VIOLET);
         } else {
-            color = hsv[customColors[7]];
+            color = HSV(MAGENTA);
         }        
         color.v = pit ? (blink ? 15 : 0) : 255; // blink when in pit mode
         applyLedHsv(LED_MOV_OVERLAY(LED_FLAG_OVERLAY(LED_OVERLAY_VTX)), &color);
