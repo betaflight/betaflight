@@ -157,6 +157,9 @@ static const specialColorIndexes_t defaultSpecialColors[] = {
     }}
 };
 
+// custom LED colours for VTX frequency or auxillary channel
+static const colorId_e customColors[] = { COLOR_WHITE, COLOR_RED, COLOR_ORANGE, COLOR_YELLOW, COLOR_GREEN, COLOR_BLUE, COLOR_DARK_VIOLET, COLOR_MAGENTA };
+
 void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
 {
     memset(ledStripConfig->ledConfigs, 0, LED_MAX_STRIP_LENGTH * sizeof(ledConfig_t));
@@ -646,38 +649,24 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
     }
     else { // show frequency
         // calculate the VTX color based on frequency
-	    color.s = 0;
-	    int channel = constrain(floor((Frequency-5633)/39)+1, 1, 8);
-        switch (channel) {
-            case 1:
-                color.h = HSV(WHITE).h;
-                color.s = HSV(WHITE).s;
-                break;
-            case 2:
-                color.h = HSV(RED).h;
-                break;
-            case 3:
-                color.h = HSV(ORANGE).h;
-                break;
-            case 4:
-                color.h = HSV(YELLOW).h;
-                break;
-            case 5:
-                color.h = HSV(GREEN).h;
-                break;
-            case 6:
-                color.h = HSV(BLUE).h;
-                break;
-            case 7:
-                color.h = HSV(DARK_VIOLET).h;
-                break;
-            case 8:
-                color.h = HSV(MAGENTA).h;
-                break;
-            default:
-                color.h = HSV(BLACK).h;
-		break;
-        color.v = pit ? (blink ? 15 : 0) : 255; // blink when in pit mode`
+        if (frequency <= 5672) {
+            color = hsv[customColors[0]];
+        } else if (frequency <= 5711) {
+            color = hsv[customColors[1]];
+        } else if (frequency <= 5750) {
+            color = hsv[customColors[2]];
+        } else if (frequency <= 5789) {
+            color = hsv[customColors[3]];
+        } else if (frequency <= 5828) {
+            color = hsv[customColors[4]];
+        } else if (frequency <= 5867) {
+            color = hsv[customColors[5]];
+        } else if (frequency <= 5906) {
+            color = hsv[customColors[6]];
+        } else {
+            color = hsv[customColors[7]];
+        }        
+        color.v = pit ? (blink ? 15 : 0) : 255; // blink when in pit mode
         applyLedHsv(LED_MOV_OVERLAY(LED_FLAG_OVERLAY(LED_OVERLAY_VTX)), &color);
     }
 }
