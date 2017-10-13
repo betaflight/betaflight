@@ -654,7 +654,7 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
             color = HSV(ORANGE);
         } else if (frequency <= 5789) {
             color = HSV(YELLOW);
-        } else if (frequency <= 5828) {
+        } else if (frequency <= 5829) {
             color = HSV(GREEN);
         } else if (frequency <= 5867) {
             color = HSV(BLUE);
