@@ -396,9 +396,9 @@ void beeperUpdate(timeUs_t currentTimeUs)
 /*
  * Beeper motor/esc handler function to be called periodically in loop. 
  */
+#ifdef USE_DSHOT
 void beeperMotorUpdate(timeUs_t currentTimeUs)
 {
-#ifdef USE_DSHOT
     static timeUs_t nextBeepTime = 0;
     if (areMotorsRunning() || currentTimeUs < nextBeepTime) {
         return;
@@ -415,9 +415,9 @@ void beeperMotorUpdate(timeUs_t currentTimeUs)
         pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_BEACON3);
         pwmEnableMotors();
     }
-
-#endif
 }
+#elsevoid beeperMotorUpdate(timeUs_t currentTimeUs) {UNUSED(currentTimeUs);}
+#endif
 /*
  * Calculates array position when next to change beeper state is due.
  */
