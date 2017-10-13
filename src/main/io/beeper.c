@@ -416,7 +416,8 @@ void beeperMotorUpdate(timeUs_t currentTimeUs)
         pwmEnableMotors();
     }
 }
-#elsevoid beeperMotorUpdate(timeUs_t currentTimeUs) {UNUSED(currentTimeUs);}
+#else
+void beeperMotorUpdate(timeUs_t currentTimeUs) {UNUSED(currentTimeUs);}
 #endif
 /*
  * Calculates array position when next to change beeper state is due.
