@@ -163,7 +163,7 @@ amperage_meter_scale = old_amperage_meter_scale * (mAh_recharged / cleanflight_r
 For example, assuming:
 + An amount recharged of 1500 mAh
 + A Cleanflight reported current drawn of 2000 mAh
-+ A existing `amperage_meter_scale` value of 400 (the default)
++ An existing `amperage_meter_scale` value of 400 (the default)
 
 Then the updated `amperage_meter_scale` is:
 ```
