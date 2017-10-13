@@ -646,12 +646,24 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
     }
     else { // show frequency
         // calculate the VTX color based on frequency
-        int hue = constrain((frequency - 5645.0 ) * 1.2, 0, 360);
-        // if we ever want to wrap the hue around the wheel for L band frequencies...
-        //hue = (hue+(hue<0)*((0-hue)/360+1)*361)%361;
-        color.h = hue;
-        color.s = 0;
-        color.v = pit ? (blink ? 15 : 0) : 255; // blink when in pit mode`
+        if (frequency <= 5672) {
+            color = HSV(WHITE);
+        } else if (frequency <= 5711) {
+            color = HSV(RED);
+        } else if (frequency <= 5750) {
+            color = HSV(ORANGE);
+        } else if (frequency <= 5789) {
+            color = HSV(YELLOW);
+        } else if (frequency <= 5829) {
+            color = HSV(GREEN);
+        } else if (frequency <= 5867) {
+            color = HSV(BLUE);
+        } else if (frequency <= 5906) {
+            color = HSV(DARK_VIOLET);
+        } else {
+            color = HSV(MAGENTA);
+        }        
+        color.v = pit ? (blink ? 15 : 0) : 255; // blink when in pit mode
         applyLedHsv(LED_MOV_OVERLAY(LED_FLAG_OVERLAY(LED_OVERLAY_VTX)), &color);
     }
 }
