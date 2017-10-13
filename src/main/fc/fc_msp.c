@@ -862,6 +862,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
     case MSP_ARMING_CONFIG:
         sbufWriteU8(dst, armingConfig()->auto_disarm_delay);
         sbufWriteU8(dst, armingConfig()->disarm_kill_switch);
+        sbufWriteU8(dst, imuConfig()->small_angle);
         break;
 
     case MSP_RC_TUNING:
@@ -1374,6 +1375,9 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_ARMING_CONFIG:
         armingConfigMutable()->auto_disarm_delay = sbufReadU8(src);
         armingConfigMutable()->disarm_kill_switch = sbufReadU8(src);
+        if (sbufBytesRemaining(src)) {
+          imuConfigMutable()->small_angle = sbufReadU8(src);
+        }
         break;
 
     case MSP_SET_PID_CONTROLLER:
