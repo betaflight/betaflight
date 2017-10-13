@@ -86,7 +86,7 @@ PG_RESET_TEMPLATE(beeperDevConfig_t, beeperDevConfig,
 #ifdef BEEPER
 PG_REGISTER_WITH_RESET_TEMPLATE(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 1);
 PG_RESET_TEMPLATE(beeperConfig_t, beeperConfig,
-    .dshotBeaconTone = 0
+    .dshotBeaconTone = 4
 );
 
 /* Beeper Sound Sequences: (Square wave generation)
@@ -346,6 +346,8 @@ static void beeperGpsStatus(void)
  */
 void beeperUpdate(timeUs_t currentTimeUs)
 {
+    beeperMotorUpdate(currentTimeUs);
+
     // If beeper option from AUX switch has been selected
     if (IS_RC_MODE_ACTIVE(BOXBEEPERON)) {
         beeper(BEEPER_RX_SET);
@@ -354,7 +356,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
         beeperGpsStatus();
 #endif
     }
-
+    
     // Beeper routine doesn't need to update if there aren't any sounds ongoing
     if (currentBeeperEntry == NULL) {
         return;
@@ -363,18 +365,7 @@ void beeperUpdate(timeUs_t currentTimeUs)
     if (beeperNextToggleTime > currentTimeUs) {
         return;
     }
-
-#ifdef USE_DSHOT
-    if (!areMotorsRunning() && beeperConfig()->dshotBeaconTone && (beeperConfig()->dshotBeaconTone <= DSHOT_CMD_BEACON5) && (currentBeeperEntry->mode == BEEPER_RX_SET || currentBeeperEntry->mode == BEEPER_RX_LOST)) {
-        pwmDisableMotors();
-        delay(1);
-
-        pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone);
-
-        pwmEnableMotors();
-    }
-#endif
-
+        
     if (!beeperIsOn) {
         beeperIsOn = 1;
         if (currentBeeperEntry->sequence[beeperPos] != 0) {
@@ -402,6 +393,31 @@ void beeperUpdate(timeUs_t currentTimeUs)
     beeperProcessCommand(currentTimeUs);
 }
 
+/*
+ * Beeper motor/esc handler function to be called periodically in loop. 
+ */
+void beeperMotorUpdate(timeUs_t currentTimeUs)
+{
+#ifdef USE_DSHOT
+    static timeUs_t nextBeepTime = 0;
+    if (areMotorsRunning() || currentTimeUs < nextBeepTime) {
+        return;
+    }
+    
+    if (IS_RC_MODE_ACTIVE(BOXMOTORBEEPER)) {
+        nextBeepTime = currentTimeUs + 1000000;
+        delay(1);
+        pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone);
+        pwmEnableMotors();
+    } else if (currentBeeperEntry->mode == BEEPER_RX_LOST) {
+        nextBeepTime = currentTimeUs + 2000000;
+        delay(1);
+        pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_BEACON3);
+        pwmEnableMotors();
+    }
+
+#endif
+}
 /*
  * Calculates array position when next to change beeper state is due.
  */
@@ -485,6 +501,8 @@ void beeperSilence(void) {}
 void beeperConfirmationBeeps(uint8_t beepCount) {UNUSED(beepCount);}
 void beeperWarningBeeps(uint8_t beepCount) {UNUSED(beepCount);}
 void beeperUpdate(timeUs_t currentTimeUs) {UNUSED(currentTimeUs);}
+void beeperMotorUpdate(timeUs_t currentTimeUs) {UNUSED(currentTimeUs);}
+
 uint32_t getArmingBeepTimeMicros(void) {return 0;}
 beeperMode_e beeperModeForTableIndex(int idx) {UNUSED(idx); return BEEPER_SILENCE;}
 uint32_t beeperModeMaskForTableIndex(int idx) {UNUSED(idx); return 0;}

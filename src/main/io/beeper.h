@@ -62,6 +62,7 @@ PG_DECLARE(beeperConfig_t, beeperConfig);
 void beeper(beeperMode_e mode);
 void beeperSilence(void);
 void beeperUpdate(timeUs_t currentTimeUs);
+void beeperMotorUpdate(timeUs_t currentTimeUs);
 void beeperConfirmationBeeps(uint8_t beepCount);
 void beeperWarningBeeps(uint8_t beepCount);
 uint32_t getArmingBeepTimeMicros(void);

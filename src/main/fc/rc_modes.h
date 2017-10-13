@@ -61,6 +61,7 @@ typedef enum {
     BOXPREARM,
     BOXBEEPGPSCOUNT,
     BOX3DONASWITCH,
+    BOXMOTORBEEPER,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 
