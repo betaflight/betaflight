@@ -524,7 +524,8 @@ static float motorRangeMax;
 static float motorOutputRange;
 static int8_t motorOutputMixSign;
 
-#define TRANSITION_TIME_US 50e3
+
+#define TRANSITION_TIME_US 50000
 
 void calculateThrottleAndCurrentMotorEndpoints(void)
 {   
@@ -557,22 +558,21 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
                 }
             } else {
                 if (isMotorsReversed()) {
-                    rcCommand[THROTTLE] = rcCommand3dDeadBandHigh+1; //keep
-                    rcThrottlePrevious = rcCommand3dDeadBandHigh+1;
+                    rcCommand[THROTTLE] = rcCommand3dDeadBandHigh + 1; //keep
+                    rcThrottlePrevious = rcCommand3dDeadBandHigh + 1;
                 } else {
-                    rcCommand[THROTTLE] = rcCommand3dDeadBandLow-1;
-                    rcThrottlePrevious = rcCommand3dDeadBandLow-1;
+                    rcCommand[THROTTLE] = rcCommand3dDeadBandLow - 1;
+                    rcThrottlePrevious = rcCommand3dDeadBandLow - 1;
                 }
             }
-            
         }
 
-        if(rcCommand[THROTTLE] <= rcCommand3dDeadBandLow) {
+        if (rcCommand[THROTTLE] <= rcCommand3dDeadBandLow) {
             // INVERTED
             motorRangeMin = motorOutputLow;
             motorRangeMax = deadbandMotor3dLow;
 
-            if(isMotorProtocolDshot()) {
+            if (isMotorProtocolDshot()) {
                 motorOutputMin = motorOutputLow;
                 motorOutputRange = deadbandMotor3dLow - motorOutputLow;
             } else {
@@ -583,7 +583,7 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
             rcThrottlePrevious = rcCommand[THROTTLE];
             throttle = rcCommand3dDeadBandLow - rcCommand[THROTTLE];
             currentThrottleInputRange = rcCommandThrottleRange3dLow;
-        } else if(rcCommand[THROTTLE] >= rcCommand3dDeadBandHigh) {
+        } else if (rcCommand[THROTTLE] >= rcCommand3dDeadBandHigh) {
             // NORMAL
             motorRangeMin = deadbandMotor3dHigh;
             motorRangeMax = motorOutputHigh;
@@ -593,11 +593,11 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
             rcThrottlePrevious = rcCommand[THROTTLE];
             throttle = rcCommand[THROTTLE] - rcCommand3dDeadBandHigh;
             currentThrottleInputRange = rcCommandThrottleRange3dHigh;
-        } else if(rcThrottlePrevious <= rcCommand3dDeadBandLow) {
+        } else if (rcThrottlePrevious <= rcCommand3dDeadBandLow) {
             // INVERTED_TO_DEADBAND
             motorRangeMin = motorOutputLow;
             motorRangeMax = deadbandMotor3dLow;
-            if(isMotorProtocolDshot()) {
+            if (isMotorProtocolDshot()) {
                 motorOutputMin = motorOutputLow;
                 motorOutputRange = deadbandMotor3dLow - motorOutputLow;
             } else {
@@ -657,7 +657,7 @@ static void applyFlipOverAfterCrashModeToMotors(void)
             // Apply the mix to motor endpoints
             float motorOutput =  motorOutputMin + motorOutputRange * motorMix[i];
             //Add a little bit to the motorOutputMin so props aren't spinning when sticks are centered
-            motorOutput = (motorOutput < motorOutputMin + CRASH_FLIP_DEADBAND ) ? disarmMotorOutput : motorOutput - CRASH_FLIP_DEADBAND;
+            motorOutput = (motorOutput < motorOutputMin + CRASH_FLIP_DEADBAND) ? disarmMotorOutput : motorOutput - CRASH_FLIP_DEADBAND;
 
             motor[i] = motorOutput;
         }
