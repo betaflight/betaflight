@@ -54,7 +54,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXGPSHOME, "GPS HOME", 10 },
     { BOXGPSHOLD, "GPS HOLD", 11 },
     { BOXPASSTHRU, "PASSTHRU", 12 },
-    { BOXBEEPERON, "PIEZO BEEPER", 13 },
+    { BOXBEEPERON, "BEEPER", 13 },
     { BOXLEDMAX, "LEDMAX", 14 },
     { BOXLEDLOW, "LEDLOW", 15 },
     { BOXLLIGHTS, "LLIGHTS", 16 },
@@ -80,7 +80,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXPREARM, "PREARM", 36 },
     { BOXBEEPGPSCOUNT, "BEEP GPS SATELLITE COUNT", 37 },
     { BOX3DONASWITCH, "3D ON A SWITCH", 38 },
-    { BOXMOTORBEEPER, "MOTOR BEEPER", 39 },
+    { BOXMOTORBEACON, "MOTOR BEACON", 39 },
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -223,7 +223,7 @@ void initActiveBoxIds(void)
 
     if (isMotorProtocolDshot()) {
         BME(BOXFLIPOVERAFTERCRASH);
-        BME(BOXMOTORBEEPER);
+        BME(BOXMOTORBEACON);
     }
 
     if (feature(FEATURE_SERVO_TILT)) {
@@ -297,7 +297,7 @@ int packFlightModeFlags(boxBitmask_t *mspFlightModeFlags)
         | BM(BOXLEDMAX) | BM(BOXLEDLOW) | BM(BOXLLIGHTS) | BM(BOXCALIB) | BM(BOXGOV) | BM(BOXOSD)
         | BM(BOXTELEMETRY) | BM(BOXGTUNE) | BM(BOXBLACKBOX) | BM(BOXBLACKBOXERASE) | BM(BOXAIRMODE)
         | BM(BOXANTIGRAVITY) | BM(BOXFPVANGLEMIX) | BM(BOXFLIPOVERAFTERCRASH) | BM(BOX3DDISABLE)
-        | BM(BOXBEEPGPSCOUNT) | BM(BOXMOTORBEEPER); 
+        | BM(BOXBEEPGPSCOUNT) | BM(BOXMOTORBEACON); 
     STATIC_ASSERT(sizeof(rcModeCopyMask) * 8 >= CHECKBOX_ITEM_COUNT, copy_mask_too_small_for_boxes);
     for (unsigned i = 0; i < CHECKBOX_ITEM_COUNT; i++) {
         if ((rcModeCopyMask & BM(i))    // mode copy is enabled

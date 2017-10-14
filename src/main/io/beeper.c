@@ -86,7 +86,7 @@ PG_RESET_TEMPLATE(beeperDevConfig_t, beeperDevConfig,
 #ifdef BEEPER
 PG_REGISTER_WITH_RESET_TEMPLATE(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 1);
 PG_RESET_TEMPLATE(beeperConfig_t, beeperConfig,
-    .dshotBeaconTone = 4
+    .beacon_dshot_enable = true
 );
 
 /* Beeper Sound Sequences: (Square wave generation)
@@ -397,6 +397,8 @@ void beeperUpdate(timeUs_t currentTimeUs)
  * Beeper motor/esc handler function to be called periodically in loop. 
  */
 #ifdef USE_DSHOT
+#define MOTOR_BEACON_SWITCH_US 1000000
+#define MOTOR_BEACON_RX_LOST_TIME_US 2000000
 void beeperMotorUpdate(timeUs_t currentTimeUs)
 {
     static timeUs_t nextBeepTime = 0;
@@ -404,13 +406,15 @@ void beeperMotorUpdate(timeUs_t currentTimeUs)
         return;
     }
     
-    if (IS_RC_MODE_ACTIVE(BOXMOTORBEEPER)) {
-        nextBeepTime = currentTimeUs + 1000000;
+    if (IS_RC_MODE_ACTIVE(BOXMOTORBEACON)) {
+        nextBeepTime = currentTimeUs + MOTOR_BEACON_SWITCH_US;
+        pwmDisableMotors();
         delay(1);
-        pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone);
+        pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_BEACON4);
         pwmEnableMotors();
     } else if (currentBeeperEntry->mode == BEEPER_RX_LOST) {
-        nextBeepTime = currentTimeUs + 2000000;
+        nextBeepTime = currentTimeUs + MOTOR_BEACON_RX_LOST_TIME_US;
+        pwmDisableMotors();
         delay(1);
         pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_BEACON3);
         pwmEnableMotors();
