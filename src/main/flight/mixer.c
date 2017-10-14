@@ -528,7 +528,7 @@ static int8_t motorOutputMixSign;
 #define TRANSITION_TIME_US 50000
 
 void calculateThrottleAndCurrentMotorEndpoints(void)
-{   
+{
     static uint16_t rcThrottlePrevious = 0;   // Store the last throttle direction for deadband transitions
     float currentThrottleInputRange = 0;
     
@@ -632,8 +632,6 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
         if (motorOutputRange < 0) {
             motorOutputRange = 0;
         }
-
-        
 
         throttle = 0;
     }
