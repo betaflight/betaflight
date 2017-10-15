@@ -24,6 +24,7 @@
 
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
+#include "fc/runtime_config.h"
 
 #include "io/rcsplit.h"
 #include "io/serial.h"
@@ -82,7 +83,11 @@ static void rcSplitProcessMode(void)
             uint8_t argument = RCSPLIT_CTRL_ARGU_INVALID;
             switch (i) {
             case BOXCAMERA1:
-                argument = RCSPLIT_CTRL_ARGU_WIFI_BTN;
+                // check  whether arm unlock, we found a bug in rcsplit firmware:
+                // if rcsplit running without Wi-Fi module, and user try to turn on wifi, it'll cause rcsplit to turn off itself, this is danger
+                if (!ARMING_FLAG(ARMED)) {
+                    argument = RCSPLIT_CTRL_ARGU_WIFI_BTN;
+                }
                 break;
             case BOXCAMERA2:
                 argument = RCSPLIT_CTRL_ARGU_POWER_BTN;
