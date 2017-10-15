@@ -131,6 +131,7 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .serialrx_provider = SERIALRX_PROVIDER,
         .rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL,
         .serialrx_inverted = 0,
+        .serialrx_parity = PARITY_EVEN,
         .spektrum_bind_pin_override_ioTag = IO_TAG(SPEKTRUM_BIND_PIN),
         .spektrum_bind_plug_ioTag = IO_TAG(BINDPLUG_PIN),
         .spektrum_sat_bind = 0,

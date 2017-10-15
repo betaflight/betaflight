@@ -181,6 +181,12 @@ static const char * const lookupTableSerialRX[] = {
     "CUSTOM",
     "FPORT",
 };
+
+static const char * const lookupTableSerialParity[] = {
+    "NO",
+    "EVEN",
+    "ODD"
+};
 #endif
 
 #ifdef USE_RX_SPI
@@ -284,6 +290,7 @@ const lookupTableEntry_t lookupTables[] = {
 #endif
 #ifdef USE_SERIAL_RX
     { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) },
+    { lookupTableSerialParity, sizeof(lookupTableSerialParity) / sizeof(char *) },
 #endif
 #ifdef USE_RX_SPI
     { lookupTableRxSpi, sizeof(lookupTableRxSpi) / sizeof(char *) },
@@ -393,6 +400,7 @@ const clivalue_t valueTable[] = {
 #ifdef USE_SERIAL_RX
     { "serialrx_provider",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_SERIAL_RX }, PG_RX_CONFIG, offsetof(rxConfig_t, serialrx_provider) },
     { "serialrx_inverted",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_RX_CONFIG, offsetof(rxConfig_t, serialrx_inverted) },
+    { "serialrx_parity",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_SERIAL_PARITY }, PG_RX_CONFIG, offsetof(rxConfig_t, serialrx_parity) },
 #endif
 #ifdef USE_SPEKTRUM_BIND
     { "spektrum_sat_bind",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { SPEKTRUM_SAT_BIND_DISABLED, SPEKTRUM_SAT_BIND_MAX}, PG_RX_CONFIG, offsetof(rxConfig_t, spektrum_sat_bind) },

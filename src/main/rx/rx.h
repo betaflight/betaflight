@@ -120,6 +120,7 @@ typedef struct rxConfig_s {
     uint8_t rcmap[RX_MAPPABLE_CHANNEL_COUNT];  // mapping of radio channels to internal RPYTA+ order
     uint8_t serialrx_provider;              // type of UART-based receiver (0 = spek 10, 1 = spek 11, 2 = sbus). Must be enabled by FEATURE_RX_SERIAL first.
     uint8_t serialrx_inverted;              // invert the serial RX protocol compared to it's default setting
+    uint8_t serialrx_parity;                // odd, even or no parity. Some SBUS receivers are different in this regard
     uint8_t halfDuplex;                     // allow rx to operate in half duplex mode on F4, ignored for F1 and F3.
     uint8_t rx_spi_protocol;                // type of SPI RX protocol
                                             // nrf24: 0 = v202 250kbps. (Must be enabled by FEATURE_RX_NRF24 first.)

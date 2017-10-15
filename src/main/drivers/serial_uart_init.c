@@ -83,14 +83,15 @@ void uartReconfigure(uartPort_t *uartPort)
 #if defined(STM32F1)
             false &&
 #endif
-            (uartPort->port.options & SERIAL_PARITY_EVEN)) {
+    (uartPort->port.options & SERIAL_PARITY)) {
         USART_InitStructure.USART_WordLength = USART_WordLength_9b;
     } else {
         USART_InitStructure.USART_WordLength = USART_WordLength_8b;
     }
 
     USART_InitStructure.USART_StopBits = (uartPort->port.options & SERIAL_STOPBITS_2) ? USART_StopBits_2 : USART_StopBits_1;
-    USART_InitStructure.USART_Parity   = (uartPort->port.options & SERIAL_PARITY_EVEN) ? USART_Parity_Even : USART_Parity_No;
+    USART_InitStructure.USART_Parity   = ((uartPort->port.options & SERIAL_PARITY) == SERIAL_PARITY_ODD) ? USART_Parity_Odd :
+        ((uartPort->port.options & SERIAL_PARITY) == SERIAL_PARITY_EVEN) ? USART_Parity_Even : USART_Parity_No;
 
     USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
     USART_InitStructure.USART_Mode = 0;
