@@ -125,6 +125,7 @@ typedef struct {
 #if defined(STM32F7)
     TIM_HandleTypeDef TimHandle;
     DMA_HandleTypeDef hdma_tim;
+    uint16_t timerDmaIndex;
 #endif
 } motorDmaOutput_t;
 
