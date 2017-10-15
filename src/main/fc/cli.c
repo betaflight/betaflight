@@ -3013,9 +3013,8 @@ static void cliStatus(char *cmdline)
     const int systemRate = getTaskDeltaTime(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_SYSTEM)));
     cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
             constrain(averageSystemLoadPercent, 0, 100), getTaskDeltaTime(TASK_GYROPID), gyroRate, rxRate, systemRate);
-#ifdef MINIMAL_CLI
-    cliPrintLinef("Arming disable flags: 0x%x", getArmingDisableFlags());
-#else
+#if defined(OSD) || !defined(MINIMAL_CLI)
+    /* Flag strings are present if OSD is compiled so may as well use them even with MINIMAL_CLI */
     cliPrint("Arming disable flags:");
     uint16_t flags = getArmingDisableFlags();
     while (flags) {
@@ -3024,6 +3023,8 @@ static void cliStatus(char *cmdline)
         cliPrintf(" %s", armingDisableFlagNames[bitpos]);
     }
     cliPrintLinefeed();
+#else
+    cliPrintLinef("Arming disable flags: 0x%x", getArmingDisableFlags());
 #endif
 }
 
