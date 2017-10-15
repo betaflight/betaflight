@@ -108,7 +108,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     RCC_ClockCmd(timerRCC(timer), ENABLE);
 
     motor->TimHandle.Instance = timerHardware->tim;
-    motor->TimHandle.Init.Prescaler = (timerClock(timer) / getDshotHz(pwmProtocolType)) - 1;
+    motor->TimHandle.Init.Prescaler = lrintf((float) timerClock(timer) / getDshotHz(pwmProtocolType) + 0.01f) - 1;
     motor->TimHandle.Init.Period = pwmProtocolType == PWM_TYPE_PROSHOT1000 ? MOTOR_NIBBLE_LENGTH_PROSHOT : MOTOR_BITLENGTH;
     motor->TimHandle.Init.RepetitionCounter = 0;
     motor->TimHandle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
