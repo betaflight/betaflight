@@ -423,4 +423,5 @@ extern "C" {
 
     bool feature(uint32_t) { return false;}
     void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count) { UNUSED(instance); UNUSED(data); UNUSED(count); }
+    uint8_t armingFlags = 0;
 }
