@@ -90,7 +90,7 @@ void pgResetFn_compassConfig(compassConfig_t *compassConfig)
     compassConfig->mag_spi_device = SPI_DEV_TO_CFG(SPIINVALID);
     compassConfig->mag_spi_csn = IO_TAG_NONE;
 #elif defined(USE_MAG_AK8963) && (defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250))
-    compassConfig->mag_bustype = BUSTYPE_SLAVE;
+    compassConfig->mag_bustype = BUSTYPE_MPU_SLAVE;
     compassConfig->mag_i2c_device = I2C_DEV_TO_CFG(I2CINVALID);
     compassConfig->mag_i2c_address = 0;
     compassConfig->mag_spi_device = SPI_DEV_TO_CFG(SPIINVALID);
@@ -141,12 +141,12 @@ bool compassDetect(magDev_t *dev)
         break;
 
 #if defined(USE_MAG_AK8963) && (defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU9250))
-    case BUSTYPE_SLAVE:
+    case BUSTYPE_MPU_SLAVE:
         {
             if (gyroMpuDetectionResult()->sensor == MPU_9250_SPI) {
-                busdev->bustype = BUSTYPE_SLAVE;
-                busdev->busdev_u.i2c.master = gyroSensorBus();
-                busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
+                busdev->bustype = BUSTYPE_MPU_SLAVE;
+                busdev->busdev_u.mpuSlave.master = gyroSensorBus();
+                busdev->busdev_u.mpuSlave.address = compassConfig()->mag_i2c_address;
             } else {
                 return false;
             }
@@ -202,9 +202,9 @@ bool compassDetect(magDev_t *dev)
             busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
         }
         if (gyroMpuDetectionResult()->sensor == MPU_9250_SPI) {
-            dev->busdev.bustype = BUSTYPE_SLAVE;
-            busdev->busdev_u.i2c.address = compassConfig()->mag_i2c_address;
-            dev->busdev.busdev_u.i2c.master = gyroSensorBus();
+            dev->busdev.bustype = BUSTYPE_MPU_SLAVE;
+            busdev->busdev_u.mpuSlave.address = compassConfig()->mag_i2c_address;
+            dev->busdev.busdev_u.mpuSlave.master = gyroSensorBus();
         }
 
         if (ak8963Detect(dev)) {

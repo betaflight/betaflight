@@ -173,6 +173,7 @@ static void hmc5883lConfigureDataReadyInterruptHandling(magDev_t* mag)
     IOInit(magIntIO, OWNER_COMPASS_EXTI, 0);
     EXTIHandlerInit(&mag->exti, hmc5883_extiHandler);
     EXTIConfig(magIntIO, &gmag->exti, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_INPUT,0,GPIO_NOPULL));
+    EXTIEnable(magIntIO, true);
 #else
     IOInit(magIntIO, OWNER_COMPASS_EXTI, 0);
     IOConfigGPIO(magIntIO, IOCFG_IN_FLOATING);
@@ -186,39 +187,27 @@ static void hmc5883lConfigureDataReadyInterruptHandling(magDev_t* mag)
 }
 
 #ifdef USE_MAG_SPI_HMC5883
-/*
- * XXX Fixme
- * HMC5983 datasheet states SPI mode is
- *     SCK is high when CS is high
- *     Data is sampled at the rising edge of SCK
- * However, it seems that SCK condition is ignored (works with SCK low when CS is high).
- * Nevertheless, it is nice to conform to the datasheet specification when per device SPI mode
- * is implemented.
- */
 static void hmc5883SpiInit(busDevice_t *busdev)
 {   
-    static bool hardwareInitialised = false;
-
-    if (hardwareInitialised) {
-        return;
-    }
+    IOHi(busdev->busdev_u.spi.csnPin); // Disable
 
     IOInit(busdev->busdev_u.spi.csnPin, OWNER_COMPASS_CS, 0);
     IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
 
-    IOHi(busdev->busdev_u.spi.csnPin); // Disable
-
     spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD);
-
-    hardwareInitialised = true;
 }
 #endif
 
-static bool hmc5883lRead(magDev_t *magdev, int16_t *magData)
+static int16_t parseMag(uint8_t *raw, int16_t gain) {
+  int ret = (int16_t)(raw[1] << 8 | raw[0]) * gain / 256;
+  return constrain(ret, INT16_MIN, INT16_MAX);
+}
+
+static bool hmc5883lRead(magDev_t *mag, int16_t *magData)
 {
     uint8_t buf[6];
 
-    busDevice_t *busdev = &magdev->busdev;
+    busDevice_t *busdev = &mag->busdev;
 
     bool ack = busReadRegisterBuffer(busdev, HMC58X3_REG_DATA, buf, 6);
 
@@ -228,25 +217,30 @@ static bool hmc5883lRead(magDev_t *magdev, int16_t *magData)
     // During calibration, magGain is 1.0, so the read returns normal non-calibrated values.
     // After calibration is done, magGain is set to calculated gain values.
 
-    magData[X] = (int16_t)(buf[0] << 8 | buf[1]) * magdev->magGain[X] / 256;
-    magData[Z] = (int16_t)(buf[2] << 8 | buf[3]) * magdev->magGain[Z] / 256;
-    magData[Y] = (int16_t)(buf[4] << 8 | buf[5]) * magdev->magGain[Y] / 256;
+    magData[X] = parseMag(buf + 0, mag->magGain[X]);
+    magData[Z] = parseMag(buf + 2, mag->magGain[Z]);
+    magData[Y] = parseMag(buf + 4, mag->magGain[Y]);
 
     return true;
 }
 
-static bool hmc5883lInit(magDev_t *magdev)
+static bool hmc5883lInit(magDev_t *mag)
 {
-    busDevice_t *busdev = &magdev->busdev;
+    enum {
+        polPos,
+        polNeg
+    };
+
+    busDevice_t *busdev = &mag->busdev;
 
     int16_t magADC[3];
     int i;
     int32_t xyz_total[3] = { 0, 0, 0 }; // 32 bit totals so they won't overflow.
     bool bret = true;           // Error indicator
 
-    magdev->magGain[X] = 256;
-    magdev->magGain[Y] = 256;
-    magdev->magGain[Z] = 256;
+    mag->magGain[X] = 256;
+    mag->magGain[Y] = 256;
+    mag->magGain[Z] = 256;
 
     delay(50);
 
@@ -259,53 +253,40 @@ static bool hmc5883lInit(magDev_t *magdev)
 
     delay(100);
 
-    hmc5883lRead(magdev, magADC);
+    hmc5883lRead(mag, magADC);
 
-    for (i = 0; i < 10; i++) {  // Collect 10 samples
-        busWriteRegister(busdev, HMC58X3_REG_MODE, HMC_MODE_SINGLE);
-        delay(20);
-        hmc5883lRead(magdev, magADC);       // Get the raw values in case the scales have already been changed.
-
-        // Since the measurements are noisy, they should be averaged rather than taking the max.
-
-        xyz_total[X] += magADC[X];
-        xyz_total[Y] += magADC[Y];
-        xyz_total[Z] += magADC[Z];
-
-        // Detect saturation.
-        if (-4096 >= MIN(magADC[X], MIN(magADC[Y], magADC[Z]))) {
-            bret = false;
-            break;              // Breaks out of the for loop.  No sense in continuing if we saturated.
+    for (int polarity = polPos; polarity <= polNeg; polarity++) {
+        switch(polarity) {
+        case polPos:
+            busWriteRegister(busdev, HMC58X3_REG_CONFA, HMC_CONFA_DOR_15HZ | HMC_CONFA_POS_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to pos bias
+            break;
+        case polNeg:
+            busWriteRegister(busdev, HMC58X3_REG_CONFA, HMC_CONFA_DOR_15HZ | HMC_CONFA_NEG_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to negative bias.
+            break;
         }
-        LED1_TOGGLE;
+        for (i = 0; i < 10; i++) {  // Collect 10 samples
+            busWriteRegister(busdev, HMC58X3_REG_MODE, HMC_MODE_SINGLE);
+            delay(20);
+            hmc5883lRead(mag, magADC);       // Get the raw values in case the scales have already been changed.
+
+            // Since the measurements are noisy, they should be averaged rather than taking the max.
+
+            xyz_total[X] += ((polarity == polPos) ? 1 : -1) * magADC[X];
+            xyz_total[Y] += ((polarity == polPos) ? 1 : -1) * magADC[Y];
+            xyz_total[Z] += ((polarity == polPos) ? 1 : -1) * magADC[Z];
+
+            // Detect saturation.
+            if (-4096 >= MIN(magADC[X], MIN(magADC[Y], magADC[Z]))) {
+                bret = false;
+                break;              // Breaks out of the for loop.  No sense in continuing if we saturated.
+            }
+            LED1_TOGGLE;
+        }
     }
 
-    // Apply the negative bias. (Same gain)
-
-    busWriteRegister(busdev, HMC58X3_REG_CONFA, HMC_CONFA_DOR_15HZ | HMC_CONFA_NEG_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to negative bias.
-
-    for (i = 0; i < 10; i++) {
-        busWriteRegister(busdev, HMC58X3_REG_MODE, HMC_MODE_SINGLE);
-        delay(20);
-        hmc5883lRead(magdev, magADC);               // Get the raw values in case the scales have already been changed.
-
-        // Since the measurements are noisy, they should be averaged.
-
-        xyz_total[X] -= magADC[X];
-        xyz_total[Y] -= magADC[Y];
-        xyz_total[Z] -= magADC[Z];
-
-        // Detect saturation.
-        if (-4096 >= MIN(magADC[X], MIN(magADC[Y], magADC[Z]))) {
-            bret = false;
-            break;              // Breaks out of the for loop.  No sense in continuing if we saturated.
-        }
-        LED1_TOGGLE;
-    }
-
-    magdev->magGain[X] = ABS((int32_t)(660.0f * HMC58X3_X_SELF_TEST_GAUSS * 2.0f * 10.0f * 256.0f) / xyz_total[X]);
-    magdev->magGain[Y] = ABS((int32_t)(660.0f * HMC58X3_Y_SELF_TEST_GAUSS * 2.0f * 10.0f * 256.0f) / xyz_total[Y]);
-    magdev->magGain[Z] = ABS((int32_t)(660.0f * HMC58X3_Z_SELF_TEST_GAUSS * 2.0f * 10.0f * 256.0f) / xyz_total[Z]);
+    mag->magGain[X] = (int)(660.0f * HMC58X3_X_SELF_TEST_GAUSS * 2.0f * 10.0f * 256.0f) / xyz_total[X];
+    mag->magGain[Y] = (int)(660.0f * HMC58X3_Y_SELF_TEST_GAUSS * 2.0f * 10.0f * 256.0f) / xyz_total[Y];
+    mag->magGain[Z] = (int)(660.0f * HMC58X3_Z_SELF_TEST_GAUSS * 2.0f * 10.0f * 256.0f) / xyz_total[Z];
 
     // leave test mode
 
@@ -316,12 +297,12 @@ static bool hmc5883lInit(magDev_t *magdev)
     delay(100);
 
     if (!bret) {                // Something went wrong so get a best guess
-        magdev->magGain[X] = 256;
-        magdev->magGain[Y] = 256;
-        magdev->magGain[Z] = 256;
+        mag->magGain[X] = 256;
+        mag->magGain[Y] = 256;
+        mag->magGain[Z] = 256;
     }
 
-    hmc5883lConfigureDataReadyInterruptHandling(magdev);
+    hmc5883lConfigureDataReadyInterruptHandling(mag);
     return true;
 }
 

@@ -68,18 +68,12 @@ bool busReadRegisterBuffer(const busDevice_t *busdev, uint8_t reg, uint8_t *data
 uint8_t busReadRegister(const busDevice_t *busdev, uint8_t reg)
 {
 #if !defined(USE_SPI) && !defined(USE_I2C)
+    UNUSED(busdev);
     UNUSED(reg);
+    return false;
+#else
+    uint8_t data;
+    busReadRegisterBuffer(busdev, reg, &data, 1);
+    return data;
 #endif
-    switch (busdev->bustype) {
-#ifdef USE_SPI
-    case BUSTYPE_SPI:
-        return spiBusReadRegister(busdev, reg & 0x7f);
-#endif
-#ifdef USE_I2C
-    case BUSTYPE_I2C:
-        return i2cBusReadRegister(busdev, reg);
-#endif
-    default:
-        return false;
-    }
 }

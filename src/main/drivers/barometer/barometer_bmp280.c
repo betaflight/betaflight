@@ -69,9 +69,9 @@ void bmp280BusInit(busDevice_t *busdev)
 {
 #ifdef USE_BARO_SPI_BMP280
     if (busdev->bustype == BUSTYPE_SPI) {
+        IOHi(busdev->busdev_u.spi.csnPin); // Disable
         IOInit(busdev->busdev_u.spi.csnPin, OWNER_BARO_CS, 0);
         IOConfigGPIO(busdev->busdev_u.spi.csnPin, IOCFG_OUT_PP);
-        IOHi(busdev->busdev_u.spi.csnPin); // Disable
         spiSetDivisor(busdev->busdev_u.spi.instance, SPI_CLOCK_STANDARD); // XXX
     }
 #else

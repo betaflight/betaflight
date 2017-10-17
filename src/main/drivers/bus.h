@@ -26,7 +26,7 @@ typedef enum {
     BUSTYPE_NONE = 0,
     BUSTYPE_I2C,
     BUSTYPE_SPI,
-    BUSTYPE_SLAVE // Slave I2C on SPI master
+    BUSTYPE_MPU_SLAVE // Slave I2C on SPI master
 } busType_e;
 
 typedef struct busDevice_s {
@@ -40,10 +40,13 @@ typedef struct busDevice_s {
             IO_t csnPin;
         } spi;
         struct deviceI2C_s {
-           const struct busDevice_s *master;
-           I2CDevice device;
-           uint8_t address;
+            I2CDevice device;
+            uint8_t address;
          } i2c;
+         struct deviceMpuSlave_s {
+            const struct busDevice_s *master;
+            uint8_t address;
+         } mpuSlave;
     } busdev_u;
 } busDevice_t;
 
