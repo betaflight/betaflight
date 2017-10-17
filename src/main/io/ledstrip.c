@@ -664,7 +664,7 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
         } else {
             colorIndex = COLOR_DEEP_PINK;
         }
-        hsvColor_t color = ledStripConfig()->colors[i];
+        hsvColor_t color = ledStripConfig()->colors[colorIndex];
         color.v = pit ? (blink ? 15 : 0) : 255; // blink when in pit mode
         applyLedHsv(LED_MOV_OVERLAY(LED_FLAG_OVERLAY(LED_OVERLAY_VTX)), &color);
     }
