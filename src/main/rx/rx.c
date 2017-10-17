@@ -105,6 +105,14 @@ static uint8_t rcSampleIndex = 0;
 #define SERIALRX_PROVIDER 0
 #endif
 
+#ifndef SERIALRX_INVERTED
+#if (SERIALRX_PROVIDER == SERIALRX_PROVIDER_SBUS)
+#define SERIALRX_INVERTED 1
+#else
+#define SERIALRX_INVERTED 0
+#endif
+#endif
+
 #define RX_MIN_USEC 885
 #define RX_MAX_USEC 2115
 #define RX_MID_USEC 1500
@@ -124,7 +132,7 @@ void pgResetFn_rxConfig(rxConfig_t *rxConfig)
         .halfDuplex = 0,
         .serialrx_provider = SERIALRX_PROVIDER,
         .rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL,
-        .serialrx_inverted = 0,
+        .serialrx_inverted = SERIALRX_INVERTED,
         .spektrum_bind_pin_override_ioTag = IO_TAG(SPEKTRUM_BIND_PIN),
         .spektrum_bind_plug_ioTag = IO_TAG(BINDPLUG_PIN),
         .spektrum_sat_bind = 0,
