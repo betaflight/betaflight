@@ -15,6 +15,18 @@ ALTERNATES    := $(sort $(filter-out target, $(basename $(notdir $(wildcard $(RO
 $(error The target specified, $(TARGET), cannot be built. Use one of the ALT targets: $(ALTERNATES))
 endif
 
+UNSUPPORTED_TARGETS := \
+	AFROMINI \
+	ALIENFLIGHTF1 \
+	BEEBRAIN \
+	CC3D \
+	CC3D_OPBL \
+	CJMCU \
+	MICROSCISKY \
+	NAZE
+
+SUPPORTED_TARGETS := $(filter-out $(UNSUPPORTED_TARGETS), $(VALID_TARGETS))
+
 GROUP_1_TARGETS := \
 	AIORACERF3 \
 	AIR32 \
@@ -98,17 +110,7 @@ GROUP_4_TARGETS := \
 	STM32F3DISCOVERY \
 	TINYBEEF3
 
-LEGACY_TARGETS := \
-	AFROMINI \
-	ALIENFLIGHTF1 \
-	BEEBRAIN \
-	CC3D \
-	CC3D_OPBL \
-	CJMCU \
-	MICROSCISKY \
-	NAZE
-
-GROUP_OTHER_TARGETS := $(filter-out $(GROUP_1_TARGETS) $(GROUP_2_TARGETS) $(GROUP_3_TARGETS) $(GROUP_4_TARGETS) $(LEGACY_TARGETS), $(VALID_TARGETS))
+GROUP_OTHER_TARGETS := $(filter-out $(GROUP_1_TARGETS) $(GROUP_2_TARGETS) $(GROUP_3_TARGETS) $(GROUP_4_TARGETS), $(SUPPORTED_TARGETS))
 
 ifeq ($(filter $(TARGET),$(ALT_TARGETS)), $(TARGET))
 BASE_TARGET    := $(firstword $(subst /,, $(subst ./src/main/target/,, $(dir $(wildcard $(ROOT)/src/main/target/*/$(TARGET).mk)))))
