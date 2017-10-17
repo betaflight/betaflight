@@ -646,23 +646,23 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
     }
     else { // show frequency
         // calculate the VTX color based on frequency
-        int i = 0;
+        int colorIndex = 0;
         if (frequency <= 5672) {
-            int i = 1;
+            colorIndex = COLOR_WHITE;
         } else if (frequency <= 5711) {
-            int i = 2;
+            colorIndex = COLOR_RED;
         } else if (frequency <= 5750) {
-            int i = 3;
+            colorIndex = COLOR_ORANGE;
         } else if (frequency <= 5789) {
-            int i = 4;
+            colorIndex = COLOR_YELLOW;
         } else if (frequency <= 5829) {
-            int i = 6;
+            colorIndex = COLOR_GREEN;
         } else if (frequency <= 5867) {
-            int i = 10;
+            colorIndex = COLOR_BLUE;
         } else if (frequency <= 5906) {
-            int i = 11;
+            colorIndex = COLOR_DARK_VIOLET;
         } else {
-            int i = 13;
+            colorIndex = COLOR_DEEP_PINK;
         }
         hsvColor_t color = ledStripConfig()->colors[i];
         color.v = pit ? (blink ? 15 : 0) : 255; // blink when in pit mode
