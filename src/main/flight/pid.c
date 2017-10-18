@@ -52,6 +52,8 @@
 uint32_t targetPidLooptime;
 static bool pidStabilisationEnabled;
 
+static bool inCrashRecoveryMode = false;
+
 float axisPID_P[3], axisPID_I[3], axisPID_D[3];
 
 static float dT;
@@ -406,7 +408,6 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     static float previousRateError[2];
     const float tpaFactor = getThrottlePIDAttenuation();
     const float motorMixRange = getMotorMixRange();
-    static bool inCrashRecoveryMode = false;
     static timeUs_t crashDetectedAtUs;
 
     // Dynamic ki component to gradually scale back integration when above windup point
@@ -538,4 +539,9 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             axisPID_D[axis] = 0;
         }
     }
+}
+
+bool crashRecoveryModeActive(void)
+{
+	return inCrashRecoveryMode;
 }
