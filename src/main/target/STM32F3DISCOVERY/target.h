@@ -178,6 +178,14 @@
 #define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
 
+#define LSM303DLHC_I2C                       I2C1
+#define LSM303DLHC_I2C_SCK_PIN               PB6
+#define LSM303DLHC_I2C_SDA_PIN               PB7
+#define LSM303DLHC_DRDY_PIN                  PE2
+#define LSM303DLHC_I2C_INT1_PIN              PE4
+#define LSM303DLHC_I2C_INT2_PIN              PE5
+
+
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
 #define VBAT_ADC_PIN            PC0

@@ -71,15 +71,6 @@ typedef struct {
    conditions (interrupts routines ...). */
 #define LSM303DLHC_FLAG_TIMEOUT             ((uint32_t)0x1000)
 #define LSM303DLHC_LONG_TIMEOUT             ((uint32_t)(10 * LSM303DLHC_FLAG_TIMEOUT))
-/**
-  * @brief  LSM303DLHC I2C Interface pins
-  */
-#define LSM303DLHC_I2C                       I2C1
-#define LSM303DLHC_I2C_SCK_PIN               PB6                         /* PB.06 */
-#define LSM303DLHC_I2C_SDA_PIN               PB7                         /* PB.7 */
-#define LSM303DLHC_DRDY_PIN                  PE2                         /* PE.02 */
-#define LSM303DLHC_I2C_INT1_PIN              PE4                         /* PE.04 */
-#define LSM303DLHC_I2C_INT2_PIN              PE5                         /* PE.05 */
 
 /******************************************************************************/
 /*************************** START REGISTER MAPPING  **************************/
