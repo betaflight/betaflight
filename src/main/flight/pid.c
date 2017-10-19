@@ -516,7 +516,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
             // if crash recovery is on and accelerometer enabled then check for a crash
             if (pidProfile->crash_recovery) {
-		if (ARMING_FLAG(ARMED)) {
+                if (ARMING_FLAG(ARMED)) {
                 if (motorMixRange >= 1.0f && inCrashRecoveryMode == false
                         && ABS(delta) > crashDtermThreshold
                         && ABS(errorRate) > crashGyroThreshold
