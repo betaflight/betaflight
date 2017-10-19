@@ -235,6 +235,8 @@ void updateArmingStatus(void)
     }
 }
 
+extern bool inCrashRecoveryMode;
+
 void disarm(void)
 {
     if (ARMING_FLAG(ARMED)) {
@@ -245,6 +247,9 @@ void disarm(void)
             blackboxFinish();
         }
 #endif
+
+        inCrashRecoveryMode = false;
+
         BEEP_OFF;
         beeper(BEEPER_DISARMING);      // emit disarm tone
     }
