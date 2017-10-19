@@ -105,6 +105,7 @@
 
 #undef VTX_SMARTAUDIO           // Disabled due to flash size
 #undef VTX_TRAMP                // Disabled due to flash size
+#undef VTX_FURIOUS
 
 #define RTC6705_CS_PIN          PF4
 #define RTC6705_SPI_INSTANCE    SPI3

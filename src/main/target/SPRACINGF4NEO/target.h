@@ -219,6 +219,7 @@
 // Temporarily disable SMARTAUDIO and TRAMP VTX support due to flash size issues.
 #undef VTX_SMARTAUDIO
 #undef VTX_TRAMP
+#undef VTX_FURIOUS
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

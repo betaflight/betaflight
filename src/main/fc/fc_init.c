@@ -103,6 +103,7 @@
 #include "io/vtx_control.h"
 #include "io/vtx_smartaudio.h"
 #include "io/vtx_tramp.h"
+#include "io/vtx_furious.h"
 
 #include "scheduler/scheduler.h"
 
@@ -672,6 +673,10 @@ void init(void)
 
 #ifdef VTX_TRAMP
     vtxTrampInit();
+#endif
+
+#ifdef VTX_FURIOUS
+    vtxFuriousInit();
 #endif
 
 #ifdef VTX_RTC6705

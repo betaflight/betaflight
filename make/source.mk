@@ -134,6 +134,7 @@ FC_SRC = \
             cms/cms_menu_vtx_rtc6705.c \
             cms/cms_menu_vtx_smartaudio.c \
             cms/cms_menu_vtx_tramp.c \
+            cms/cms_menu_vtx_furious.c \
             common/colorconversion.c \
             common/gps_conversion.c \
             drivers/display_ug2864hsweg01.c \
@@ -168,6 +169,7 @@ FC_SRC = \
             io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c \
+            io/vtx_furious.c \
             io/vtx_control.c
 
 COMMON_DEVICE_SRC = \
@@ -266,6 +268,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c \
+            io/vtx_furious.c \
             io/vtx_control.c
 endif #!F1
 

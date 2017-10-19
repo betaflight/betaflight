@@ -49,7 +49,7 @@
 #include "cms/cms_menu_vtx_rtc6705.h"
 #include "cms/cms_menu_vtx_smartaudio.h"
 #include "cms/cms_menu_vtx_tramp.h"
-
+#include "cms/cms_menu_vtx_furious.h"
 
 // Info
 
@@ -107,6 +107,9 @@ static OSD_Entry menuFeaturesEntries[] =
 #endif
 #if defined(VTX_TRAMP)
     {"VTX TR", OME_Submenu, cmsMenuChange, &cmsx_menuVtxTramp, 0},
+#endif
+#if defined(VTX_FURIOUS)
+    {"VTX FURIOUS", OME_Submenu, cmsMenuChange, &cmsx_menuVtxFurious, 0},
 #endif
 #endif // VTX_CONTROL
 #ifdef LED_STRIP

@@ -195,6 +195,8 @@
 
 #define MAX_SUPPORTED_MOTORS    12
 
+#undef VTX_FURIOUS
+
 // IO - 303 in 100pin package
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

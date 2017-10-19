@@ -25,6 +25,7 @@ typedef enum {
     // 2 reserved
     VTXDEV_SMARTAUDIO = 3,
     VTXDEV_TRAMP      = 4,
+    VTXDEV_FURIOUS    = 5,
     VTXDEV_UNKNOWN    = 0xFF,
 } vtxDevType_e;
 

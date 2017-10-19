@@ -206,6 +206,7 @@
 #undef VTX_CONTROL
 #undef VTX_SMARTAUDIO
 #undef VTX_TRAMP
+#undef VTX_FURIOUS
 */
 
 /* OLED Support
