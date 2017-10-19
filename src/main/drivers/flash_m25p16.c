@@ -42,14 +42,15 @@
 #define M25P16_STATUS_FLAG_WRITE_ENABLED     0x02
 
 // Format is manufacturer, memory type, then capacity
-#define JEDEC_ID_MICRON_M25P16         0x202015
-#define JEDEC_ID_MICRON_N25Q064        0x20BA17
-#define JEDEC_ID_WINBOND_W25Q64        0xEF4017
 #define JEDEC_ID_MACRONIX_MX25L3206E   0xC22016
 #define JEDEC_ID_MACRONIX_MX25L6406E   0xC22017
-#define JEDEC_ID_MICRON_N25Q128        0x20ba18
-#define JEDEC_ID_WINBOND_W25Q128       0xEF4018
 #define JEDEC_ID_MACRONIX_MX25L25635E  0xC22019
+#define JEDEC_ID_MICRON_M25P16         0x202015
+#define JEDEC_ID_MICRON_N25Q064        0x20BA17
+#define JEDEC_ID_MICRON_N25Q128        0x20ba18
+#define JEDEC_ID_WINBOND_W25Q64        0xEF4017
+#define JEDEC_ID_WINBOND_W25Q128       0xEF4018
+#define JEDEC_ID_WINBOND_W25Q256       0xEF4019
 
 #define DISABLE_M25P16       IOHi(bus->busdev_u.spi.csnPin); __NOP()
 #define ENABLE_M25P16        __NOP(); IOLo(bus->busdev_u.spi.csnPin)
@@ -180,6 +181,7 @@ static bool m25p16_readIdentification(void)
         geometry.sectors = 256;
         geometry.pagesPerSector = 256;
         break;
+    case JEDEC_ID_WINBOND_W25Q256:
     case JEDEC_ID_MACRONIX_MX25L25635E:
         geometry.sectors = 512;
         geometry.pagesPerSector = 256;
