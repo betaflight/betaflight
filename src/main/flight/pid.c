@@ -460,7 +460,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             // reset ITerm, since accumulated error before crash is now meaningless
             // and ITerm windup during crash recovery can be extreme, especially on yaw axis
             axisPID_I[axis] = 0.0f;
-            if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeLimitUs || ARMING_FLAG(DISARMED)
+            if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeLimitUs || !ARMING_FLAG(ARMED)
                 || (motorMixRange < 1.0f
                        && ABS(gyro.gyroADCf[FD_ROLL]) < crashRecoveryRate
                        && ABS(gyro.gyroADCf[FD_PITCH]) < crashRecoveryRate
