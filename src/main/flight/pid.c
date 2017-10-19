@@ -530,8 +530,10 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                         inCrashRecoveryMode = false;
                     }
                 } else {
+                    if (inCrashRecoveryMode) {
+                       BEEP_OFF;
+                    }
                     inCrashRecoveryMode = false;
-                    BEEP_OFF;
                 }
             }
             axisPID_D[axis] = Kd[axis] * delta * tpaFactor;
