@@ -465,13 +465,12 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                        && ABS(gyro.gyroADCf[FD_ROLL]) < crashRecoveryRate
                        && ABS(gyro.gyroADCf[FD_PITCH]) < crashRecoveryRate
                        && ABS(gyro.gyroADCf[FD_YAW]) < crashRecoveryRate)) {
-                    // check aircraft nearly level
-                    if (ABS(attitude.raw[FD_ROLL] - angleTrim->raw[FD_ROLL]) < crashRecoveryAngleDeciDegrees
-                       && ABS(attitude.raw[FD_PITCH] - angleTrim->raw[FD_PITCH]) < crashRecoveryAngleDeciDegrees) {
-                        inCrashRecoveryMode = false;
-                        BEEP_OFF;
-                    }
-                } else {
+                    inCrashRecoveryMode = false;
+                    BEEP_OFF;
+            }
+	    // check aircraft nearly level
+	    if (ABS(attitude.raw[FD_ROLL] - angleTrim->raw[FD_ROLL]) < crashRecoveryAngleDeciDegrees
+               && ABS(attitude.raw[FD_PITCH] - angleTrim->raw[FD_PITCH]) < crashRecoveryAngleDeciDegrees) {
                     inCrashRecoveryMode = false;
                     BEEP_OFF;
             }
