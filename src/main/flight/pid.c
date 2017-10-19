@@ -517,22 +517,21 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             // if crash recovery is on and accelerometer enabled then check for a crash
             if (pidProfile->crash_recovery) {
                 if (ARMING_FLAG(ARMED)) {
-                    if (motorMixRange >= 1.0f && inCrashRecoveryMode == false
-                       && ABS(delta) > crashDtermThreshold
-                       && ABS(errorRate) > crashGyroThreshold
-                       && ABS(getSetpointRate(axis)) < crashSetpointThreshold) {
+                    if (motorMixRange >= 1.0f && !inCrashRecoveryMode
+                        && ABS(delta) > crashDtermThreshold
+                        && ABS(errorRate) > crashGyroThreshold
+                        && ABS(getSetpointRate(axis)) < crashSetpointThreshold) {
                         inCrashRecoveryMode = true;
                         crashDetectedAtUs = currentTimeUs;
                     }
-                    if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) < crashTimeDelayUs && (ABS(errorRate) < crashGyroThreshold
-                       || ABS(getSetpointRate(axis)) > crashSetpointThreshold)) {
+                    if (inCrashRecoveryMode && cmpTimeUs(currentTimeUs, crashDetectedAtUs) < crashTimeDelayUs && (ABS(errorRate) < crashGyroThreshold
+                        || ABS(getSetpointRate(axis)) > crashSetpointThreshold)) {
                         inCrashRecoveryMode = false;
+                        BEEP_OFF;
                     }
-                } else {
-                    if (inCrashRecoveryMode) {
-                       BEEP_OFF;
-                    }
+                } else if (inCrashRecoveryMode) {
                     inCrashRecoveryMode = false;
+                    BEEP_OFF;
                 }
             }
             axisPID_D[axis] = Kd[axis] * delta * tpaFactor;
