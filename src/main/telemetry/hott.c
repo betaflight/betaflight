@@ -346,6 +346,8 @@ static void hottConfigurePortForTX(void)
     } else {
         serialSetMode(hottPort, MODE_TX);
     }
+    hottIsSending = true;
+    hottMsgCrc = 0;
 }
 
 static void hottConfigurePortForRX(void)
@@ -356,24 +358,9 @@ static void hottConfigurePortForRX(void)
     } else {
         serialSetMode(hottPort, MODE_RX);
     }
+    hottMsg = NULL;
+    hottIsSending = false;
     flushHottRxBuffer();
-}
-
-static void hottReconfigurePort(void)
-{
-    if (!hottIsSending) {
-        hottIsSending = true;
-        hottMsgCrc = 0;
-        hottConfigurePortForTX();
-        return;
-    }
-
-    if (hottMsgRemainingBytesToSendCount == 0) {
-        hottMsg = NULL;
-        hottIsSending = false;
-        hottConfigurePortForRX();
-        return;
-    }
 }
 
 void configureHoTTTelemetryPort(void)
@@ -510,7 +497,15 @@ static void hottCheckSerialData(uint32_t currentMicros)
 
 static void hottSendTelemetryData(void) {
 
-    hottReconfigurePort();
+    if (!hottIsSending) {
+        hottConfigurePortForTX();
+        return;
+    }
+
+    if (hottMsgRemainingBytesToSendCount == 0) {
+        hottConfigurePortForRX();
+        return;
+    }
 
     --hottMsgRemainingBytesToSendCount;
     if (hottMsgRemainingBytesToSendCount == 0) {
