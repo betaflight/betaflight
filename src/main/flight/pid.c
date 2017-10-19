@@ -460,19 +460,22 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             // reset ITerm, since accumulated error before crash is now meaningless
             // and ITerm windup during crash recovery can be extreme, especially on yaw axis
             axisPID_I[axis] = 0.0f;
-            if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeLimitUs || !ARMING_FLAG(ARMED)
+            if (cmpTimeUs(currentTimeUs, crashDetectedAtUs) > crashTimeLimitUs
                 || (motorMixRange < 1.0f
                        && ABS(gyro.gyroADCf[FD_ROLL]) < crashRecoveryRate
                        && ABS(gyro.gyroADCf[FD_PITCH]) < crashRecoveryRate
                        && ABS(gyro.gyroADCf[FD_YAW]) < crashRecoveryRate)) {
+                if (sensors(SENSOR_ACC)) {
+                    // check aircraft nearly level
+                    if (ABS(attitude.raw[FD_ROLL] - angleTrim->raw[FD_ROLL]) < crashRecoveryAngleDeciDegrees
+                       && ABS(attitude.raw[FD_PITCH] - angleTrim->raw[FD_PITCH]) < crashRecoveryAngleDeciDegrees) {
+                        inCrashRecoveryMode = false;
+                        BEEP_OFF;
+                    }
+                } else {
                     inCrashRecoveryMode = false;
                     BEEP_OFF;
-            }
-	    // check aircraft nearly level
-	    if (ABS(attitude.raw[FD_ROLL] - angleTrim->raw[FD_ROLL]) < crashRecoveryAngleDeciDegrees
-               && ABS(attitude.raw[FD_PITCH] - angleTrim->raw[FD_PITCH]) < crashRecoveryAngleDeciDegrees) {
-                    inCrashRecoveryMode = false;
-                    BEEP_OFF;
+                }
             }
         }
 
@@ -512,7 +515,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             previousRateError[axis] = rD;
 
             // if crash recovery is on and accelerometer enabled then check for a crash
-            if (pidProfile->crash_recovery && sensors(SENSOR_ACC) && ARMING_FLAG(ARMED)) {
+            if (pidProfile->crash_recovery && ARMING_FLAG(ARMED)) {
                 if (motorMixRange >= 1.0f && inCrashRecoveryMode == false
                         && ABS(delta) > crashDtermThreshold
                         && ABS(errorRate) > crashGyroThreshold
@@ -525,6 +528,9 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                     inCrashRecoveryMode = false;
                 }
             }
+	    if (!ARMING_FLAG(ARMED)) {
+	    	inCrashRecoveryMode = false;
+	    }
 
             axisPID_D[axis] = Kd[axis] * delta * tpaFactor;
         }
