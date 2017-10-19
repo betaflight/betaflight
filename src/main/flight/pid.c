@@ -515,7 +515,8 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             previousRateError[axis] = rD;
 
             // if crash recovery is on and accelerometer enabled then check for a crash
-            if (pidProfile->crash_recovery && ARMING_FLAG(ARMED)) {
+            if (pidProfile->crash_recovery) {
+		if (ARMING_FLAG(ARMED)) {
                 if (motorMixRange >= 1.0f && inCrashRecoveryMode == false
                         && ABS(delta) > crashDtermThreshold
                         && ABS(errorRate) > crashGyroThreshold
@@ -527,11 +528,10 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                     || ABS(getSetpointRate(axis)) > crashSetpointThreshold)) {
                     inCrashRecoveryMode = false;
                 }
-            }
-	    if (!ARMING_FLAG(ARMED)) {
+            } else {
 	    	inCrashRecoveryMode = false;
 	    }
-
+	}
             axisPID_D[axis] = Kd[axis] * delta * tpaFactor;
         }
 
