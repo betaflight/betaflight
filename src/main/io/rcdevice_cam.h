@@ -18,33 +18,28 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdint.h>
+
 #include "common/time.h"
+#include "io/rcdevice.h"
+#include "fc/rc_modes.h"
 
-typedef struct rcsplitSwitchState_s {
+#define FIVE_KEY_CABLE_JOYSTICK_MIN 1080
+#define FIVE_KEY_CABLE_JOYSTICK_MAX 1920
+#define FIVE_KEY_CABLE_JOYSTICK_MID_START 1350
+#define FIVE_KEY_CABLE_JOYSTICK_MID_END 1650
+
+typedef struct rcdeviceSwitchState_s {
     bool isActivated;
-} rcsplitSwitchState_t;
+} rcdeviceSwitchState_t;
 
-typedef enum {
-    RCSPLIT_STATE_UNKNOWN = 0,
-    RCSPLIT_STATE_INITIALIZING,
-    RCSPLIT_STATE_IS_READY,
-} rcsplitState_e;
+extern runcamDevice_t *camDevice;
+extern bool rcdeviceInMenu;
 
-// packet header and tail
-#define RCSPLIT_PACKET_HEADER   0x55
-#define RCSPLIT_PACKET_CMD_CTRL 0x01
-#define RCSPLIT_PACKET_TAIL     0xaa
+bool rcdeviceInit(void);
+void rcdeviceUpdate(timeUs_t currentTimeUs);
 
+bool rcdeviceIsEnabled(void);
 
-// the commands of RunCam Split serial protocol
-typedef enum {
-    RCSPLIT_CTRL_ARGU_INVALID = 0x0,
-    RCSPLIT_CTRL_ARGU_WIFI_BTN = 0x1,
-    RCSPLIT_CTRL_ARGU_POWER_BTN = 0x2,
-    RCSPLIT_CTRL_ARGU_CHANGE_MODE = 0x3,
-    RCSPLIT_CTRL_ARGU_WHO_ARE_YOU = 0xFF,
-} rcsplit_ctrl_argument_e;
-
-bool rcSplitInit(void);
-bool rcSplitIsEnabled(void);
-void rcSplitUpdate(timeUs_t currentTimeUs);
+// used for unit test
+rcdeviceSwitchState_t switchStates[BOXCAMERA3 - BOXCAMERA1 + 1];

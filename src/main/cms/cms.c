@@ -61,6 +61,7 @@
 
 // For VISIBLE*
 #include "io/osd.h"
+#include "io/rcdevice_cam.h"
 
 #include "rx/rx.h"
 
@@ -887,6 +888,12 @@ uint16_t cmsHandleKeyWithRepeat(displayPort_t *pDisplay, uint8_t key, int repeat
 
 void cmsUpdate(uint32_t currentTimeUs)
 {
+#ifdef USE_RCDEVICE
+    if(rcdeviceInMenu) {
+        return ;
+    }
+#endif
+
     static int16_t rcDelayMs = BUTTON_TIME;
     static int holdCount = 1;
     static int repeatCount = 1;
@@ -999,6 +1006,8 @@ void cmsHandler(timeUs_t currentTimeUs)
 {
     if (cmsDeviceCount < 0)
         return;
+
+
 
     static timeUs_t lastCalledUs = 0;
 

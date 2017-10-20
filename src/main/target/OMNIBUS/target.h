@@ -21,6 +21,7 @@
 #undef TELEMETRY_HOTT   //no space left
 #undef TELEMETRY_JETIEXBUS // no space left
 #undef TELEMETRY_MAVLINK   // no space left
+#undef USE_RCDEVICE // no space left
 
 #define TARGET_BOARD_IDENTIFIER "OMNI" // https://en.wikipedia.org/wiki/Omnibus
 
