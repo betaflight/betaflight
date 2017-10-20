@@ -12,5 +12,6 @@ extern const char * const vtx58ChannelNames[];
 extern const char vtx58BandLetter[];
 
 bool vtx58_Freq2Bandchan(uint16_t freq, uint8_t *pBand, uint8_t *pChannel);
+uint16_t vtx58_Bandchan2Freq(uint8_t band, uint8_t channel);
 
 #endif

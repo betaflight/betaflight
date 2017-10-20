@@ -1207,14 +1207,17 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
                 uint8_t pitmode=0;
                 vtxCommonGetPitMode(&pitmode);
 
+                uint16_t freq = 0;
+                vtxCommonGetFrequency(&freq);
+
                 sbufWriteU8(dst, deviceType);
                 sbufWriteU8(dst, band);
                 sbufWriteU8(dst, channel);
                 sbufWriteU8(dst, powerIdx);
                 sbufWriteU8(dst, pitmode);
+                sbufWriteU16(dst, freq);
                 // future extensions here...
-            }
-            else {
+            } else {
                 sbufWriteU8(dst, VTXDEV_UNKNOWN); // no VTX detected
             }
         }
@@ -1668,29 +1671,42 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_VTX_CONFIG:
         {
             const uint16_t tmp = sbufReadU16(src);
-            const uint8_t band    = (tmp / 8) + 1;
-            const uint8_t channel = (tmp % 8) + 1;
 
             if (vtxCommonGetDeviceType() != VTXDEV_UNKNOWN) {
-                uint8_t current_band=0, current_channel=0;
-                vtxCommonGetBandAndChannel(&current_band,&current_channel);
-                if ((current_band != band) || (current_channel != channel))
-                    vtxCommonSetBandAndChannel(band,channel);
 
-                if (sbufBytesRemaining(src) < 2)
+                if (tmp <= VTXCOMMON_MSP_BANDCHAN_CHKVAL) {  //value is band and channel
+                    const uint8_t band    = (tmp / 8) + 1;
+                    const uint8_t channel = (tmp % 8) + 1;
+                    uint8_t current_band = 0, current_channel = 0;
+                    vtxCommonGetBandAndChannel(&current_band, &current_channel);
+                    if ((current_band != band) || (current_channel != channel)) {
+                        vtxCommonSetBandAndChannel(band, channel);
+                    }
+                } else {  //value is frequency in MHz
+                    uint16_t currentFreq;
+                    vtxCommonGetFrequency(&currentFreq);
+                    if (currentFreq != tmp) {
+                        vtxCommonSetFrequency(tmp);
+                    }
+                }
+
+                if (sbufBytesRemaining(src) < 2) {
                     break;
+                }
 
                 uint8_t power = sbufReadU8(src);
                 uint8_t current_power = 0;
                 vtxCommonGetPowerIndex(&current_power);
-                if (current_power != power)
+                if (current_power != power) {
                     vtxCommonSetPowerByIndex(power);
+                }
 
                 uint8_t pitmode = sbufReadU8(src);
                 uint8_t current_pitmode = 0;
                 vtxCommonGetPitMode(&current_pitmode);
-                if (current_pitmode != pitmode)
+                if (current_pitmode != pitmode) {
                     vtxCommonSetPitMode(pitmode);
+                }
             }
         }
         break;

@@ -111,8 +111,8 @@ extern uint8_t __config_end;
 #include "io/osd.h"
 #include "io/serial.h"
 #include "io/transponder_ir.h"
-#include "io/vtx_rtc6705.h"
 #include "io/vtx_control.h"
+#include "io/vtx_settings_config.h"
 
 #include "msp/msp_protocol.h"
 
@@ -1866,12 +1866,6 @@ static void printVtx(uint8_t dumpMask, const vtxConfig_t *vtxConfig, const vtxCo
     }
 }
 
-// FIXME remove these and use the VTX API
-#define VTX_BAND_MIN                            1
-#define VTX_BAND_MAX                            5
-#define VTX_CHANNEL_MIN                         1
-#define VTX_CHANNEL_MAX                         8
-
 static void cliVtx(char *cmdline)
 {
     int i, val = 0;
@@ -1897,7 +1891,7 @@ static void cliVtx(char *cmdline)
             if (ptr) {
                 val = atoi(ptr);
                 // FIXME Use VTX API to get min/max
-                if (val >= VTX_BAND_MIN && val <= VTX_BAND_MAX) {
+                if (val >= VTX_SETTINGS_MIN_BAND && val <= VTX_SETTINGS_MAX_BAND) {
                     cac->band = val;
                     validArgumentCount++;
                 }
@@ -1906,7 +1900,7 @@ static void cliVtx(char *cmdline)
             if (ptr) {
                 val = atoi(ptr);
                 // FIXME Use VTX API to get min/max
-                if (val >= VTX_CHANNEL_MIN && val <= VTX_CHANNEL_MAX) {
+                if (val >= VTX_SETTINGS_MIN_CHANNEL && val <= VTX_SETTINGS_MAX_CHANNEL) {
                     cac->channel = val;
                     validArgumentCount++;
                 }

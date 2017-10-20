@@ -31,6 +31,7 @@
 
 #include "io/vtx_string.h"
 #include "io/vtx_rtc6705.h"
+#include "io/vtx_settings_config.h"
 
 
 static uint8_t cmsx_vtxBand;
@@ -46,21 +47,19 @@ static const char * const rtc6705BandNames[] = {
 };
 
 static OSD_TAB_t entryVtxBand =         {&cmsx_vtxBand, ARRAYLEN(rtc6705BandNames) - 1, &rtc6705BandNames[0]};
-static OSD_UINT8_t entryVtxChannel =    {&cmsx_vtxChannel, 1, 8, 1};
-static OSD_TAB_t entryVtxPower =        {&cmsx_vtxPower, RTC6705_POWER_COUNT - 1, &rtc6705PowerNames[0]};
+static OSD_UINT8_t entryVtxChannel =    {&cmsx_vtxChannel, 1, VTX_RTC6705_CHANNEL_COUNT, 1};
+static OSD_TAB_t entryVtxPower =        {&cmsx_vtxPower, VTX_RTC6705_POWER_COUNT - 1, &rtc6705PowerNames[0]};
 
 static void cmsx_Vtx_ConfigRead(void)
 {
-    cmsx_vtxBand = vtxRTC6705Config()->band - 1;
-    cmsx_vtxChannel = vtxRTC6705Config()->channel;
-    cmsx_vtxPower = vtxRTC6705Config()->power;
+    cmsx_vtxBand = vtxSettingsConfig()->band - 1;
+    cmsx_vtxChannel = vtxSettingsConfig()->channel;
+    cmsx_vtxPower = vtxSettingsConfig()->power;
 }
 
 static void cmsx_Vtx_ConfigWriteback(void)
 {
-    vtxRTC6705ConfigMutable()->band = cmsx_vtxBand + 1;
-    vtxRTC6705ConfigMutable()->channel = cmsx_vtxChannel;
-    vtxRTC6705ConfigMutable()->power = cmsx_vtxPower;
+    vtxSettingsSaveBandChanAndPower(cmsx_vtxBand + 1, cmsx_vtxChannel, cmsx_vtxPower);
 }
 
 static long cmsx_Vtx_onEnter(void)
