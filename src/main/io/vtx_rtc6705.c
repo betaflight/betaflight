@@ -30,6 +30,7 @@
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 
+#include "common/maths.h"
 #include "common/utils.h"
 
 #include "config/parameter_group.h"
@@ -52,15 +53,9 @@ bool canUpdateVTX(void);
 #define WAIT_FOR_VTX while (!canUpdateVTX()) {}
 
 #if defined(CMS) || defined(VTX_COMMON)
-#ifdef RTC6705_POWER_PIN
 const char * const rtc6705PowerNames[VTX_RTC6705_POWER_COUNT] = {
     "---", "25 ", "200",
 };
-#else
-const char * const rtc6705PowerNames[VTX_RTC6705_POWER_COUNT] = {
-    "25 ", "200",
-};
-#endif
 #endif
 
 #ifdef VTX_COMMON
@@ -110,7 +105,7 @@ void vtxRTC6705Process(uint32_t now)
     if (!configured) {
         vtxRTC6705.band = vtxSettingsConfig()->band;
         vtxRTC6705.channel = vtxSettingsConfig()->channel;
-        vtxRTC6705.powerIndex = vtxSettingsConfig()->power;
+        vtxRTC6705.powerIndex = MAX(vtxSettingsConfig()->power, VTX_RTC6705_MIN_POWER);
 
 #ifdef RTC6705_POWER_PIN
         if (vtxRTC6705.powerIndex > 0) {
@@ -186,7 +181,7 @@ void vtxRTC6705SetPowerByIndex(uint8_t index)
         }
     }
 #else
-    vtxRTC6705.powerIndex = index;
+    vtxRTC6705.powerIndex = MAX(index, VTX_RTC6705_MIN_POWER);
     rtc6705SetRFPower(index);
 #endif
 }
