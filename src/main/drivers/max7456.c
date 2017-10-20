@@ -256,6 +256,7 @@ static void max7456SendDma(void* tx_buffer, void* rx_buffer, uint16_t buffer_siz
     // Rx Channel
 
 #ifdef STM32F4
+    DMA_InitStructure.DMA_Channel = MAX7456_DMA_CHANNEL_RX_CHANNEL;
     DMA_InitStructure.DMA_Memory0BaseAddr = rx_buffer ? (uint32_t)rx_buffer : (uint32_t)(dummy);
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;
 #else
@@ -271,6 +272,7 @@ static void max7456SendDma(void* tx_buffer, void* rx_buffer, uint16_t buffer_siz
     // Tx channel
 
 #ifdef STM32F4
+    DMA_InitStructure.DMA_Channel = MAX7456_DMA_CHANNEL_TX_CHANNEL;
     DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)tx_buffer; //max7456_screen;
     DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
 #else
@@ -281,6 +283,11 @@ static void max7456SendDma(void* tx_buffer, void* rx_buffer, uint16_t buffer_siz
 
     DMA_Init(MAX7456_DMA_CHANNEL_TX, &DMA_InitStructure);
     DMA_Cmd(MAX7456_DMA_CHANNEL_TX, ENABLE);
+
+#if defined(STM32F4) && !defined(MAX_DMA_CHANNEL_RX)
+    // XXX DMA doesn't start without this when using TX channel only!?
+    MAX7456_DMA_CHANNEL_TX->CR;
+#endif
 
 #ifdef MAX7456_DMA_CHANNEL_RX
     DMA_ITConfig(MAX7456_DMA_CHANNEL_RX, DMA_IT_TC, ENABLE);
@@ -338,8 +345,15 @@ void max7456_dma_irq_handler(dmaChannelDescriptor_t* descriptor)
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF)) {
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TEIF);
     }
-}
 
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_FEIF)) {
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_FEIF);
+    }
+
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_DMEIF)) {
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_DMEIF);
+    }
+}
 #endif
 
 uint8_t max7456GetRowsCount(void)
@@ -469,7 +483,19 @@ void max7456Init(const vcdProfile_t *pVcdProfile)
     vosRegValue = 16 - pVcdProfile->v_offset;
 
 #ifdef MAX7456_DMA_CHANNEL_TX
-    dmaSetHandler(MAX7456_DMA_IRQ_HANDLER_ID, max7456_dma_irq_handler, NVIC_PRIO_MAX7456_DMA, 0);
+    dmaIdentifier_e txHandlerId;
+    txHandlerId = dmaGetIdentifier(MAX7456_DMA_CHANNEL_TX);
+    dmaInit(txHandlerId, OWNER_OSD, 1);
+
+#ifdef MAX7456_DMA_CHANNEL_RX
+    dmaIdentifier_e rxHandlerId;
+    rxHandlerId = dmaGetIdentifier(MAX7456_DMA_CHANNEL_RX);
+    dmaInit(rxHandlerId, OWNER_OSD, 2);
+    dmaSetHandler(rxHandlerId, max7456_dma_irq_handler, NVIC_PRIO_MAX7456_DMA, 0);
+#else
+    dmaSetHandler(txHandlerId, max7456_dma_irq_handler, NVIC_PRIO_MAX7456_DMA, 0);
+#endif
+
 #endif
 
     // Real init will be made later when driver detect idle.
@@ -552,6 +578,10 @@ void max7456DrawScreen(void)
     static uint16_t pos = 0;
     int k = 0, buff_len=0;
 
+    if (max7456DmaInProgress()) {
+        return;
+    }
+
     if (!max7456Lock && !fontIsLoading) {
 
         // (Re)Initialize MAX7456 at startup or stall is detected.
@@ -624,15 +654,15 @@ void max7456DrawScreen(void)
         }
 
         if (buff_len) {
-            #ifdef MAX7456_DMA_CHANNEL_TX
+#ifdef MAX7456_DMA_CHANNEL_TX
             if (buff_len > 0)
                 max7456SendDma(spiBuff, NULL, buff_len);
-            #else
+#else
             ENABLE_MAX7456;
             for (k=0; k < buff_len; k++)
                 spiTransferByte(MAX7456_SPI_INSTANCE, spiBuff[k]);
             DISABLE_MAX7456;
-            #endif // MAX7456_DMA_CHANNEL_TX
+#endif // MAX7456_DMA_CHANNEL_TX
         }
         max7456Lock = false;
     }
@@ -644,7 +674,7 @@ void max7456RefreshAll(void)
 {
     if (!max7456Lock) {
 #ifdef MAX7456_DMA_CHANNEL_TX
-    while (dmaTransactionInProgress);
+        while (dmaTransactionInProgress);
 #endif
         uint16_t xx;
         max7456Lock = true;
