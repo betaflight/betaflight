@@ -51,5 +51,7 @@ const char * const debugModeNames[DEBUG_COUNT] = {
     "FFT_TIME",
     "FFT_FREQ",
     "FRSKY_D_RX",
-    "GYRO_RAW"
+    "GYRO_RAW",
+    "MAX7456_SIGNAL",
+    "MAX7456_SPICLOCK"
 };
