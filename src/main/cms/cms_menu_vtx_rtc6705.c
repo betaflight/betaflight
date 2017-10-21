@@ -48,18 +48,18 @@ static const char * const rtc6705BandNames[] = {
 
 static OSD_TAB_t entryVtxBand =         {&cmsx_vtxBand, ARRAYLEN(rtc6705BandNames) - 1, &rtc6705BandNames[0]};
 static OSD_UINT8_t entryVtxChannel =    {&cmsx_vtxChannel, 1, VTX_RTC6705_CHANNEL_COUNT, 1};
-static OSD_TAB_t entryVtxPower =        {&cmsx_vtxPower, VTX_RTC6705_POWER_COUNT - 1, &rtc6705PowerNames[0]};
+static OSD_TAB_t entryVtxPower =        {&cmsx_vtxPower, VTX_RTC6705_POWER_COUNT - 1 - VTX_RTC6705_MIN_POWER, &rtc6705PowerNames[VTX_RTC6705_MIN_POWER]};
 
 static void cmsx_Vtx_ConfigRead(void)
 {
     cmsx_vtxBand = vtxSettingsConfig()->band - 1;
     cmsx_vtxChannel = vtxSettingsConfig()->channel;
-    cmsx_vtxPower = vtxSettingsConfig()->power;
+    cmsx_vtxPower = vtxSettingsConfig()->power - VTX_RTC6705_MIN_POWER;
 }
 
 static void cmsx_Vtx_ConfigWriteback(void)
 {
-    vtxSettingsSaveBandChanAndPower(cmsx_vtxBand + 1, cmsx_vtxChannel, cmsx_vtxPower);
+    vtxSettingsSaveBandChanAndPower(cmsx_vtxBand + 1, cmsx_vtxChannel, cmsx_vtxPower + VTX_RTC6705_MIN_POWER);
 }
 
 static long cmsx_Vtx_onEnter(void)
