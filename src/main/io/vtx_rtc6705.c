@@ -80,7 +80,11 @@ bool vtxRTC6705Init(void)
 
 void vtxRTC6705Configure(void)
 {
+#ifdef RTC6705_POWER_PIN
     rtc6705SetRFPower(vtxRTC6705.powerIndex - 1);
+#else
+    rtc6705SetRFPower(vtxRTC6705.powerIndex);
+#endif
     rtc6705SetBandAndChannel(vtxRTC6705.band - 1, vtxRTC6705.channel - 1);
 }
 
