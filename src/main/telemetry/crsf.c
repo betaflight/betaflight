@@ -410,7 +410,9 @@ void initCrsfTelemetry(void)
     if (sensors(SENSOR_ACC)) {
         crsfSchedule[index++] = BV(CRSF_FRAME_ATTITUDE_INDEX);
     }
-    crsfSchedule[index++] = BV(CRSF_FRAME_BATTERY_SENSOR_INDEX);
+    if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE || batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
+        crsfSchedule[index++] = BV(CRSF_FRAME_BATTERY_SENSOR_INDEX);
+    }
     crsfSchedule[index++] = BV(CRSF_FRAME_FLIGHT_MODE_INDEX);
     if (feature(FEATURE_GPS)) {
         crsfSchedule[index++] = BV(CRSF_FRAME_GPS_INDEX);
@@ -439,25 +441,31 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
     // in between the RX frames.
     crsfRxSendTelemetryData();
 
+    // Send ad-hoc response frames as soon as possible
 #if defined(USE_MSP_OVER_TELEMETRY)
     if (mspReplyPending) {
         mspReplyPending = handleCrsfMspFrameBuffer(CRSF_FRAME_TX_MSP_FRAME_SIZE, &crsfSendMspResponse);
+        crsfLastCycleTime = currentTimeUs; // reset telemetry timing due to ad-hoc request
+        return;
     }
 #endif
 
+    if (deviceInfoReplyPending) {
+        sbuf_t crsfPayloadBuf;
+        sbuf_t *dst = &crsfPayloadBuf;
+        crsfInitializeFrame(dst);
+        crsfFrameDeviceInfo(dst);
+        crsfFinalize(dst);
+        deviceInfoReplyPending = false;
+        crsfLastCycleTime = currentTimeUs; // reset telemetry timing due to ad-hoc request
+        return;
+    }
+
     // Actual telemetry data only needs to be sent at a low frequency, ie 10Hz
-    if (currentTimeUs >= crsfLastCycleTime + CRSF_CYCLETIME_US) {
+    // Spread out scheduled frames evenly so each frame is sent at the same frequency.
+    if (currentTimeUs >= crsfLastCycleTime + (CRSF_CYCLETIME_US / crsfScheduleCount)) {
         crsfLastCycleTime = currentTimeUs;
-        if (deviceInfoReplyPending) {
-            sbuf_t crsfPayloadBuf;
-            sbuf_t *dst = &crsfPayloadBuf;
-            crsfInitializeFrame(dst);
-            crsfFrameDeviceInfo(dst);
-            crsfFinalize(dst);
-            deviceInfoReplyPending = false;
-        } else {
-            processCrsf();
-        }
+        processCrsf();
     }
 }
 
