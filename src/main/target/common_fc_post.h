@@ -29,6 +29,10 @@
 #undef USE_SERVOS
 #endif
 
+#ifndef USE_DSHOT
+#undef USE_ESC_SENSOR
+#endif
+
 // XXX Followup implicit dependencies among DASHBOARD, display_xxx and USE_I2C.
 // XXX This should eventually be cleaned up.
 #ifndef USE_I2C
