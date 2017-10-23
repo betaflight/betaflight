@@ -123,8 +123,8 @@ float pidSumLimitYaw;
 
 static const motorMixer_t mixerQuadX[] = {
     { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
-    { -1.0f, 1.0f, 1.0f,  -1.0f },          // FRONT_R
-    { -1.0f,  -1.0f,  -1.0f,  -1.0f },          // REAR_L
+    { 1.0f, -1.0f, -1.0f,  1.0f },          // FRONT_R
+    { 1.0f,  1.0f,  1.0f,  1.0f },          // REAR_L
     { 1.0f,  1.0f, -1.0f, -1.0f },          // FRONT_L
 };
 #ifndef USE_QUAD_MIXER_ONLY
