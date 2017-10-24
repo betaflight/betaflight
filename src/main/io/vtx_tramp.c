@@ -175,7 +175,7 @@ void trampSetBandAndChannel(uint8_t band, uint8_t channel)
     vtxSettingsSaveBandAndChannel(band, channel);
 }
 
-void trampSetRFPower(uint16_t level)
+static void trampSetRFPower(uint16_t level)
 {
     trampConfPower = level;
     if (trampConfPower != trampPower) {
