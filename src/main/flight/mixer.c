@@ -525,46 +525,15 @@ static float motorOutputRange;
 static int8_t motorOutputMixSign;
 
 
-#define TRANSITION_TIME_US 50000
 
 void calculateThrottleAndCurrentMotorEndpoints(void)
 {
     static uint16_t rcThrottlePrevious = 0;   // Store the last throttle direction for deadband transitions
     float currentThrottleInputRange = 0;
     
-    static bool motorReversedPrev = false;  
-    static bool motorReversedTransistion = false; 
-    static timeUs_t transistionTimeStart;
-
     if (feature(FEATURE_3D)) {
         if (!ARMING_FLAG(ARMED)) {
             rcThrottlePrevious = rxConfig()->midrc; // When disarmed set to mid_rc. It always results in positive direction after arming.
-        }
-
-        if (motorReversedPrev != isMotorsReversed() && isModeActivationConditionPresent(BOX3DONASWITCH)) {
-            motorReversedPrev = isMotorsReversed();
-            motorReversedTransistion = true;
-            transistionTimeStart = micros();
-        }
-        if (motorReversedTransistion) {
-            if ((micros() - transistionTimeStart) > TRANSITION_TIME_US) {
-                motorReversedTransistion = false;
-                if (isMotorsReversed()) {
-                    rcCommand[THROTTLE] = rcCommand3dDeadBandLow;
-                    rcThrottlePrevious = rcCommand3dDeadBandLow;
-                } else {
-                    rcCommand[THROTTLE] = rcCommand3dDeadBandHigh;
-                    rcThrottlePrevious = rcCommand3dDeadBandHigh;
-                }
-            } else {
-                if (isMotorsReversed()) {
-                    rcCommand[THROTTLE] = rcCommand3dDeadBandHigh + 1; //keep
-                    rcThrottlePrevious = rcCommand3dDeadBandHigh + 1;
-                } else {
-                    rcCommand[THROTTLE] = rcCommand3dDeadBandLow - 1;
-                    rcThrottlePrevious = rcCommand3dDeadBandLow - 1;
-                }
-            }
         }
 
         if (rcCommand[THROTTLE] <= rcCommand3dDeadBandLow) {
@@ -593,7 +562,9 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
             rcThrottlePrevious = rcCommand[THROTTLE];
             throttle = rcCommand[THROTTLE] - rcCommand3dDeadBandHigh;
             currentThrottleInputRange = rcCommandThrottleRange3dHigh;
-        } else if (rcThrottlePrevious <= rcCommand3dDeadBandLow) {
+        } else if((rcThrottlePrevious <= rcCommand3dDeadBandLow &&
+                !isModeActivationConditionPresent(BOX3DONASWITCH)) || 
+                isMotorsReversed()) {
             // INVERTED_TO_DEADBAND
             motorRangeMin = motorOutputLow;
             motorRangeMax = deadbandMotor3dLow;
@@ -626,16 +597,10 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
         motorOutputRange = motorOutputHigh - motorOutputLow;
         motorOutputMixSign = 1;
     }
+    motorOutputRange = getMotors3dTransistion() * motorOutputRange;
 
-    if (motorReversedTransistion) {
-        motorOutputRange = motorOutputRange *  (1 - ((float)(micros() - transistionTimeStart) / TRANSITION_TIME_US));
-        if (motorOutputRange < 0) {
-            motorOutputRange = 0;
-        }
-
-        throttle = 0;
-    }
     throttle = constrainf(throttle / currentThrottleInputRange, 0.0f, 1.0f);
+
 }
 
 #define CRASH_FLIP_DEADBAND 20

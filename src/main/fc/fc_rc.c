@@ -29,6 +29,8 @@
 
 #include "config/feature.h"
 
+#include "drivers/time.h"
+
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
@@ -50,6 +52,7 @@
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
 static bool reverseMotors = false;
+static float transition3dRatio = 0;
 
 float getSetpointRate(int axis)
 {
@@ -266,6 +269,8 @@ void processRcCommand(void)
     }
 }
 
+#define TRANSITION_TIME_3D_US 100000
+
 void updateRcCommands(void)
 {
     // PITCH & ROLL only dynamic PID adjustment,  depending on throttle value
@@ -329,16 +334,42 @@ void updateRcCommands(void)
     }
 
     if (feature(FEATURE_3D) && isModeActivationConditionPresent(BOX3DONASWITCH) && !failsafeIsActive()) {
+        static bool reverseMotorsPrev = false;  
+        static bool reverseMotorsCurrent = false;  
+        static timeUs_t transistionTimeStart;
+        fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
+
         if (IS_RC_MODE_ACTIVE(BOX3DONASWITCH)) {
-            reverseMotors = true;
-            fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
-            rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MIN - rxConfig()->midrc);
+            reverseMotorsCurrent = true;
+        } else {
+            reverseMotorsCurrent = false;
         }
-        else {
-            reverseMotors = false;
-            fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
-            rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
+        if (reverseMotorsPrev != reverseMotorsCurrent) {
+            transistionTimeStart = micros();
+            reverseMotorsPrev = reverseMotorsCurrent;
         }
+        if ((micros() - transistionTimeStart) < (TRANSITION_TIME_3D_US / 2)) {
+            transition3dRatio = 1 - ((float)(micros() - transistionTimeStart) / (TRANSITION_TIME_3D_US / 2));
+            rcCommand[YAW] = rcCommand[YAW] * transition3dRatio;
+            rcCommand[PITCH] = rcCommand[PITCH] * transition3dRatio;
+            rcCommand[ROLL] = rcCommand[ROLL] * transition3dRatio;
+        } else if ((micros() - transistionTimeStart) < (TRANSITION_TIME_3D_US)) {
+            transition3dRatio = ((float)(micros() - (transistionTimeStart + TRANSITION_TIME_3D_US/2)) / (TRANSITION_TIME_3D_US / 2));
+            reverseMotors = reverseMotorsCurrent;
+            pidResetErrorGyroState();
+            rcCommand[YAW] = rcCommand[YAW] * transition3dRatio;
+            rcCommand[PITCH] = rcCommand[PITCH] * transition3dRatio;
+            rcCommand[ROLL] = rcCommand[ROLL] * transition3dRatio;
+        } else {
+            transition3dRatio = 1;
+        }
+        if (reverseMotors) {
+            rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MIN - rxConfig()->midrc) * transition3dRatio;
+        } else {
+            rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc) * transition3dRatio;
+        }
+
+
     }
     if (FLIGHT_MODE(HEADFREE_MODE)) {
         static t_fp_vector_def  rcCommandBuff;
@@ -368,4 +399,8 @@ void resetYawAxis(void)
 bool isMotorsReversed(void)
 {
     return reverseMotors;
+}
+float getMotors3dTransistion(void)
+{
+    return transition3dRatio;
 }
