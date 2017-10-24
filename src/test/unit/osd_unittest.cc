@@ -132,6 +132,18 @@ void doTestArm(bool testEmpty = true)
 }
 
 /*
+ * Auxiliary function. Test is there're stats that must be shown
+ */
+bool isSomeStatEnabled(void) {
+    for (int i = 0; i < OSD_STAT_COUNT; i++) {
+            if (osdConfigMutable()->enabled_stats[i]) {
+                return true;
+            }
+        }
+    return false;
+}
+
+/*
  * Performs a test of the OSD actions on disarming.
  * (reused throughout the test suite)
  */
@@ -147,9 +159,10 @@ void doTestDisarm()
 
     // then
     // post flight statistics displayed
-    displayPortTestBufferSubstring(2, 2, "  --- STATS ---");
+    if (isSomeStatEnabled()) {
+        displayPortTestBufferSubstring(2, 2, "  --- STATS ---");
+    }
 }
-
 
 /*
  * Tests initialisation of the OSD and the power on splash screen.
