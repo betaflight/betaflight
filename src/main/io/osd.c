@@ -1015,8 +1015,25 @@ static void osdDisplayStatisticLabel(uint8_t y, const char * text, const char * 
     displayWrite(osdDisplayPort, 22, y, value);
 }
 
+/*
+ * Test if there's some stat enabled
+ */
+static bool isSomeStatEnabled(void) {
+    for (int i = 0; i < OSD_STAT_COUNT; i++) {
+            if (osdConfig()->enabled_stats[i]) {
+                return true;
+            }
+        }
+    return false;
+}
+
 static void osdShowStats(void)
 {
+
+    if (!isSomeStatEnabled()) {
+        return;
+    }
+
     uint8_t top = 2;
     char buff[10];
 
