@@ -653,9 +653,9 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
             motorOutput = constrain(motorOutput, disarmMotorOutput, motorRangeMax);
         } else {
             motorOutput = constrain(motorOutput, motorRangeMin, motorRangeMax);
-			if (i==1 || i == 2) {
-				motorOutput = -(motorOutput-1500)+1500;
-			}
+	    if (i==1 || i == 2) {
+		motorOutput = -(motorOutput-1500)+1500;
+	    }
         }
 
         // Motor stop handling
