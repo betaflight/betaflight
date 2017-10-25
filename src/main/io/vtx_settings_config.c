@@ -15,6 +15,8 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "platform.h"
+
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 #include "fc/config.h"
