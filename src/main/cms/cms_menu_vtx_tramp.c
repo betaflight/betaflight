@@ -148,7 +148,7 @@ static long trampCmsCommence(displayPort_t *pDisp, const void *self)
     UNUSED(self);
 
     trampSetBandAndChannel(trampCmsBand, trampCmsChan);
-    trampSetRFPower(trampPowerTable[trampCmsPower-1]);
+    vtxTrampSetPowerByIndex(trampCmsPower);
 
     // If it fails, the user should retry later
     trampCommitChanges();

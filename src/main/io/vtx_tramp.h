@@ -45,7 +45,7 @@ extern uint16_t trampConfiguredPower; // Configured transmitting power
 extern int16_t trampTemperature;
 
 bool vtxTrampInit(void);
+void vtxTrampSetPowerByIndex(uint8_t index);
 bool trampCommitChanges(void);
 void trampSetPitMode(uint8_t onoff);
 void trampSetBandAndChannel(uint8_t band, uint8_t channel);
-void trampSetRFPower(uint16_t level);
