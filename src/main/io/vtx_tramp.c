@@ -172,7 +172,6 @@ void trampSetBandAndChannel(uint8_t band, uint8_t channel)
 {
     trampSetByFreqFlag = false;        //set freq via band/channel
     trampDevSetBandAndChannel(band, channel);
-    vtxSettingsSaveBandAndChannel(band, channel);
 }
 
 void trampSetRFPower(uint16_t level)
@@ -545,6 +544,7 @@ void vtxTrampSetBandAndChannel(uint8_t band, uint8_t channel)
     if (trampValidateBandAndChannel(band, channel)) {
         trampSetBandAndChannel(band, channel);
         trampCommitChanges();
+        vtxSettingsSaveBandAndChannel(band, channel);
     }
 }
 

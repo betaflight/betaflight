@@ -153,6 +153,8 @@ static long trampCmsCommence(displayPort_t *pDisp, const void *self)
     // If it fails, the user should retry later
     trampCommitChanges();
 
+    // update'vtx_' settings
+    vtxSettingsSaveBandChanAndPower(trampCmsBand, trampCmsChan, trampCmsPower);
 
     return MENU_CHAIN_BACK;
 }
