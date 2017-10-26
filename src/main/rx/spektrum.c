@@ -31,6 +31,7 @@
 #include "drivers/light_led.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
+#include "drivers/vtx_common.h"
 
 #include "io/serial.h"
 
@@ -156,6 +157,145 @@ static int8_t dBm2range (int8_t dBm)
   return (retval);
 }
 #endif
+
+#if defined(USE_SPEKTRUM_VTX_CONTROL) && defined(VTX_COMMON)
+
+// We can not use the common set/get-frequncy API.
+// Some VTX devices do not support it.
+//#define USE_VTX_COMMON_FREQ_API
+
+#ifdef USE_VTX_COMMON_FREQ_API
+    const uint16_t SpektrumVtxfrequencyTable[SPEKTRUM_VTX_BAND_COUNT][SPEKTRUM_VTX_CHAN_COUNT] =
+      {
+        { 5740, 5760, 5780, 5800, 5820, 5840, 5860, 5880 }, // FatShark
+        { 5658, 5695, 5732, 5769, 5806, 5843, 5880, 5917 }, // RaceBand
+        { 5705, 5685, 5665, 5645, 5885, 5905, 5925, 5945 }, // Boscam E
+        { 5733, 5752, 5771, 5790, 5809, 5828, 5847, 5866 }, // Boscam B
+        { 5865, 5845, 5825, 5805, 5785, 5765, 5745, 5725 }, // Boscam A
+      };
+#else
+    // Translation table, Spektrum bands to BF internal vtx_common bands
+    const uint8_t spek2commonBand[]= {
+      VTX_COMMON_BAND_FS,
+      VTX_COMMON_BAND_RACE,
+      VTX_COMMON_BAND_E,
+      VTX_COMMON_BAND_B,
+      VTX_COMMON_BAND_A,
+    };
+#endif
+
+    // RF Power Index translation tables. No generic power API available.....
+
+    // Tramp "---", 25, 200, 400. 600 mW
+const uint8_t vtxTrampPi[] = {           // Spektrum Spec    Tx menu  Tx sends   To VTX    Wand
+      VTX_TRAMP_POWER_OFF,               //         Off      INHIBIT         0        0     -
+      VTX_TRAMP_POWER_OFF,               //   1 -  14mW            -         -        -     -
+      VTX_TRAMP_POWER_25,                //  15 -  25mW   15 -  25mW         2        1    25mW
+      VTX_TRAMP_POWER_100,               //  26 -  99mW   26 -  99mW         3        2   100mW Slightly outside range
+      VTX_TRAMP_POWER_200,               // 100 - 299mW  100 - 200mW         4        3   200mW
+      VTX_TRAMP_POWER_400,               // 300 - 600mW  300 - 600mW         5        4   400mW
+      VTX_TRAMP_POWER_600,               // 601 - max    601+ mW             6        5   600mW Slightly outside range
+      VTX_TRAMP_POWER_200                // Manual               -           -        -     -
+    };
+
+    // RTC6705 "---", 25 or 200 mW
+    const uint8_t vtxRTC6705Pi[] = {
+      VTX_6705_POWER_OFF,                // Off
+      VTX_6705_POWER_OFF,                //   1 -  14mW
+      VTX_6705_POWER_25,                 //  15 -  25mW
+      VTX_6705_POWER_25,                 //  26 -  99mW
+      VTX_6705_POWER_200,                // 100 - 299mW
+      VTX_6705_POWER_200,                // 300 - 600mW
+      VTX_6705_POWER_200,                // 601 - max
+      VTX_6705_POWER_200                 // Manual
+    };
+
+    // SmartAudio "---", 25, 200, 500. 800 mW
+    const uint8_t vtxSaPi[] = {
+      VTX_SA_POWER_OFF,                  // Off
+      VTX_SA_POWER_OFF,                  //   1 -  14mW
+      VTX_SA_POWER_25,                   //  15 -  25mW
+      VTX_SA_POWER_25,                   //  26 -  99mW
+      VTX_SA_POWER_200,                  // 100 - 299mW
+      VTX_SA_POWER_500,                  // 300 - 600mW
+      VTX_SA_POWER_800,                  // 601 - max
+      VTX_SA_POWER_200                   // Manual
+    };
+
+    uint8_t convertSpektrumVtxPowerIndex(uint8_t sPower)
+    {
+      uint8_t devicePower = 0;
+
+      switch (vtxCommonGetDeviceType()) {
+      case VTXDEV_RTC6705:
+        devicePower = vtxRTC6705Pi[sPower];
+        break;
+
+      case VTXDEV_SMARTAUDIO:
+        devicePower = vtxSaPi[sPower];
+        break;
+
+      case VTXDEV_TRAMP:
+        devicePower = vtxTrampPi[sPower];
+        break;
+
+      case VTXDEV_UNKNOWN:
+      case VTXDEV_UNSUPPORTED:
+      default:
+        break;
+
+      }
+      return devicePower;
+    }
+
+    void handleSpektrumVtxControl(uint32_t vtxControl)
+    {
+      stru_vtx vtx;
+
+      vtx.pitMode = (vtxControl & SPEKTRUM_VTX_PIT_MODE_MASK) >> SPEKTRUM_VTX_PIT_MODE_SHIFT;;
+      vtx.region  = (vtxControl & SPEKTRUM_VTX_REGION_MASK)   >> SPEKTRUM_VTX_REGION_SHIFT;
+      vtx.power   = (vtxControl & SPEKTRUM_VTX_POWER_MASK)    >> SPEKTRUM_VTX_POWER_SHIFT;
+      vtx.band    = (vtxControl & SPEKTRUM_VTX_BAND_MASK)     >> SPEKTRUM_VTX_BAND_SHIFT;
+      vtx.channel = (vtxControl & SPEKTRUM_VTX_CHANNEL_MASK)  >> SPEKTRUM_VTX_CHANNEL_SHIFT;
+
+#ifdef USE_VTX_COMMON_FREQ_API
+      uint16_t freq = SpektrumVtxfrequencyTable[vtx.band][vtx.channel];
+      uint16_t currentFreq = 0;
+      vtxCommonGetFrequency(&currentFreq);
+      if (currentFreq != freq) {
+        vtxCommonSetBandAndChannel(VTX_COMMON_BAND_USER, vtx.channel);
+        vtxCommonSetFrequency(freq);
+      }
+
+#else
+      // Convert to the internal Common Band index
+      uint8_t band    = spek2commonBand[vtx.band];
+      uint8_t channel = vtx.channel +1; // 0 based to 1 based
+
+      uint8_t currentBand = 0, currentChannel = 0;
+      vtxCommonGetBandAndChannel(&currentBand, &currentChannel);
+      if ((currentBand != band) || (currentChannel != channel)) {
+        vtxCommonSetBandAndChannel(band, channel);
+      }
+#endif
+
+      // Seems to be no unified internal VTX API std for popwer levels/indexes, VTX device brand specific.
+      uint8_t power = convertSpektrumVtxPowerIndex(vtx.power);
+      uint8_t currentPower = 0;
+      vtxCommonGetPowerIndex(&currentPower);
+      if (currentPower != power) {
+        vtxCommonSetPowerByIndex(power);
+      }
+
+      // Everyone seems to agree on what PIT ON/OFF means
+      uint8_t currentPitMode = 0;
+      vtxCommonGetPitMode(&currentPitMode);
+      if (currentPitMode != vtx.pitMode) {
+        vtxCommonSetPitMode(vtx.pitMode);
+      }
+    }
+
+#endif // USE_SPEKTRUM_VTX_CONTROL && VTX_COMMON
 
 
 // Receive ISR callback
@@ -292,6 +432,21 @@ static uint8_t spektrumFrameStatus(void)
             }
         }
     }
+
+#if defined(USE_SPEKTRUM_VTX_CONTROL) && defined(VTX_COMMON)
+
+    // Get the VTX control bytes in a frame
+    uint32_t vtxControl = ((spekFrame[SPEKTRUM_VTX_CONTROL_1] << 24) |
+                           (spekFrame[SPEKTRUM_VTX_CONTROL_2] << 16) |
+                           (spekFrame[SPEKTRUM_VTX_CONTROL_3] <<  8) |
+                           (spekFrame[SPEKTRUM_VTX_CONTROL_4] <<  0) );
+
+    // Handle VTX control frame.
+    if ( (vtxControl & SPEKTRUM_VTX_CONTROL_FRAME_MASK) == SPEKTRUM_VTX_CONTROL_FRAME ) {
+      handleSpektrumVtxControl(vtxControl);
+    }
+
+#endif // USE_SPEKTRUM_VTX_CONTROL && VTX_COMMON
 
     /* only process if srxl enabled, some data in buffer AND servos in phase 0 */
     if (srxlEnabled && telemetryBufLen && (spekFrame[2] & 0x80)) {

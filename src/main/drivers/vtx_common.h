@@ -32,6 +32,36 @@ typedef enum {
     VTXDEV_UNKNOWN    = 0xFF,
 } vtxDevType_e;
 
+
+// VTX magic numbers
+
+#define VTX_COMMON_BAND_USER      0
+#define VTX_COMMON_BAND_A         1
+#define VTX_COMMON_BAND_B         2
+#define VTX_COMMON_BAND_E         3
+#define VTX_COMMON_BAND_FS        4
+#define VTX_COMMON_BAND_RACE      5
+
+// RTC6705 RF Power index "---", 25 or 200 mW
+#define VTX_6705_POWER_OFF     0
+#define VTX_6705_POWER_25      1
+#define VTX_6705_POWER_200     2
+
+// SmartAudio "---", 25, 200, 500. 800 mW
+#define VTX_SA_POWER_OFF          0
+#define VTX_SA_POWER_25           1
+#define VTX_SA_POWER_200          2
+#define VTX_SA_POWER_500          3
+#define VTX_SA_POWER_800          4
+
+// Tramp "---", 25, 200, 400. 600 mW
+#define VTX_TRAMP_POWER_OFF       0
+#define VTX_TRAMP_POWER_25        1
+#define VTX_TRAMP_POWER_100       2
+#define VTX_TRAMP_POWER_200       3
+#define VTX_TRAMP_POWER_400       4
+#define VTX_TRAMP_POWER_600       5
+
 struct vtxVTable_s;
 
 typedef struct vtxDeviceCapability_s {
