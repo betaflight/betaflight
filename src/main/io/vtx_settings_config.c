@@ -35,43 +35,86 @@ PG_RESET_TEMPLATE(vtxSettingsConfig_t, vtxSettingsConfig,
     .freq = 0
 );
 
+static bool vtxChangePending = false;
+
+static void vtxChangeSetting(bool changed)
+{
+    if (changed && !vtxChangePending) {
+        vtxChangePending = true;
+    }
+}
+
+static bool vtxSetBand(uint8_t band)
+{
+    if (band != vtxSettingsConfig()->band) {
+        vtxSettingsConfigMutable()->band = band;
+        return true;
+    }
+    return false;
+}
+
+static bool vtxSetChannel(uint8_t channel)
+{
+    if (channel != vtxSettingsConfig()->channel) {
+        vtxSettingsConfigMutable()->channel = channel;
+        return true;
+    }
+    return false;
+}
+
+static bool vtxSetFreq(uint16_t freq)
+{
+    if (freq && freq != vtxSettingsConfig()->freq) {
+        uint8_t band;
+        uint8_t channel;
+        if (vtx58_Freq2Bandchan(freq, &band, &channel)) {
+            vtxChangeSetting(vtxSetBand(band));
+            vtxChangeSetting(vtxSetChannel(channel));
+        } else {
+            vtxChangeSetting(vtxSetBand(0));
+        }
+        vtxSettingsConfigMutable()->freq = freq;
+        return true;
+    }
+    return false;
+}
+
+static bool vtxSetPower(uint8_t powerIndex)
+{
+    if (powerIndex != vtxSettingsConfig()->power) {
+        vtxSettingsConfigMutable()->power = powerIndex;
+        return true;
+    }
+    return false;
+}
+
+static void vtxCommitChanges(void)
+{
+    if (vtxChangePending) {
+        saveConfigAndNotify();
+    }
+    vtxChangePending = false;
+}
+
 //Saves the given band/channel values to configuration settings.
 // band:  Band value (1 to 5).
 // channel:  Channel value (1 to 8).
 void vtxSettingsSaveBandAndChannel(uint8_t band, uint8_t channel)
 {
-    bool modFlag = false;
-    if (band != vtxSettingsConfigMutable()->band) {
-        vtxSettingsConfigMutable()->band = band;
-        modFlag = true;
+    vtxChangeSetting(vtxSetBand(band));
+    vtxChangeSetting(vtxSetChannel(channel));
+    if (band) {
+        vtxChangeSetting(vtxSetFreq(vtx58_Bandchan2Freq(band, channel)));
     }
-    if (channel != vtxSettingsConfigMutable()->channel) {
-        vtxSettingsConfigMutable()->channel = channel;
-        modFlag = true;
-    }
-    if (band != 0) {    //enter freq value to band/channel
-        uint16_t freq;
-        if ((freq = vtx58_Bandchan2Freq(band, channel)) != 0 &&
-                        freq != vtxSettingsConfigMutable()->freq) {
-            vtxSettingsConfigMutable()->freq = freq;
-            modFlag = true;
-        }
-    }
-    if (modFlag) {
-        // need to save config so vtx settings in place after reboot
-        saveConfigAndNotify();
-    }
+    vtxCommitChanges();
 }
 
 //Saves the given power-index value to the configuration setting.
 // index:  Power-index value.
 void vtxSettingsSavePowerByIndex(uint8_t index)
 {
-    if (index != vtxSettingsConfigMutable()->power) {
-        vtxSettingsConfigMutable()->power = index;
-        // need to save config so vtx settings in place after reboot
-        saveConfigAndNotify();
-    }
+    vtxChangeSetting(vtxSetPower(index));
+    vtxCommitChanges();
 }
 
 //Saves the given band/channel/power values to configuration settings.
@@ -80,51 +123,21 @@ void vtxSettingsSavePowerByIndex(uint8_t index)
 // index:  Power-index value.
 void vtxSettingsSaveBandChanAndPower(uint8_t band, uint8_t channel, uint8_t index)
 {
-    bool modFlag = false;
-    if (band != vtxSettingsConfigMutable()->band) {
-        vtxSettingsConfigMutable()->band = band;
-        modFlag = true;
+    vtxChangeSetting(vtxSetBand(band));
+    vtxChangeSetting(vtxSetChannel(channel));
+    vtxChangeSetting(vtxSetPower(index));
+    if (band) {
+        vtxChangeSetting(vtxSetFreq(vtx58_Bandchan2Freq(band, channel)));
     }
-    if (channel != vtxSettingsConfigMutable()->channel) {
-        vtxSettingsConfigMutable()->channel = channel;
-        modFlag = true;
-    }
-    if (index != vtxSettingsConfigMutable()->power) {
-        vtxSettingsConfigMutable()->power = index;
-        modFlag = true;
-    }
-    if (band != 0) {    //enter freq value to band/channel
-        uint16_t freq;
-        if ((freq=vtx58_Bandchan2Freq(band, channel)) != 0 &&
-                                 freq != vtxSettingsConfigMutable()->freq) {
-            vtxSettingsConfigMutable()->freq = freq;
-            modFlag = true;
-        }
-    }
-    if (modFlag) {
-        // need to save config so vtx settings in place after reboot
-        saveConfigAndNotify();
-    }
+    vtxCommitChanges();
 }
 
 //Saves the given frequency value to the configuration setting.
 // freq:  Frequency value in MHz.
 void vtxSettingsSaveFrequency(uint16_t freq)
 {
-    bool modFlag = false;
-    if (freq != vtxSettingsConfigMutable()->freq) {
-        vtxSettingsConfigMutable()->freq = freq;
-        modFlag = true;
-    }
-    if (vtxSettingsConfigMutable()->band != 0) {
-        // set band=0 so freq setting will be used
-        vtxSettingsConfigMutable()->band = 0;
-        modFlag = true;
-    }
-    if (modFlag) {
-        // need to save config so vtx settings in place after reboot
-        saveConfigAndNotify();
-    }
+    vtxChangeSetting(vtxSetFreq(freq));
+    vtxCommitChanges();
 }
 
 //Saves the given frequency/power values to configuration settings.
@@ -132,19 +145,9 @@ void vtxSettingsSaveFrequency(uint16_t freq)
 // index:  Power-index value.
 void vtxSettingsSaveFreqAndPower(uint16_t freq, uint8_t index)
 {
-    bool modFlag = false;
-    if (freq != vtxSettingsConfigMutable()->freq) {
-        vtxSettingsConfigMutable()->freq = freq;
-        modFlag = true;
-    }
-    if (index != vtxSettingsConfigMutable()->power) {
-        vtxSettingsConfigMutable()->power = index;
-        modFlag = true;
-    }
-    if (modFlag) {
-        // need to save config so vtx settings in place after reboot
-        saveConfigAndNotify();
-    }
+    vtxChangeSetting(vtxSetFreq(freq));
+    vtxChangeSetting(vtxSetPower(index));
+    vtxCommitChanges();
 }
 
 #endif  //VTX_SETTINGS_CONFIG
