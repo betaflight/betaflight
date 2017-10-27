@@ -1029,11 +1029,6 @@ static bool isSomeStatEnabled(void) {
 
 static void osdShowStats(void)
 {
-
-    if (!isSomeStatEnabled()) {
-        return;
-    }
-
     uint8_t top = 2;
     char buff[10];
 
@@ -1126,7 +1121,7 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
             osdResetStats();
             osdShowArmed();
             resumeRefreshAt = currentTimeUs + (REFRESH_1S / 2);
-        } else {
+        } else if (isSomeStatEnabled()) {
             osdShowStats();
             resumeRefreshAt = currentTimeUs + (60 * REFRESH_1S);
         }
