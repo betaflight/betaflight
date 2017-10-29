@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include "platform.h"
 
@@ -1956,6 +1957,22 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             pilotConfigMutable()->name[i] = sbufReadU8(src);
         }
         break;
+
+#ifdef USE_RTC_TIME
+    case MSP_SET_RTC:
+    {
+        dateTime_t dt;
+        dt.year = sbufReadU16(src);
+        dt.month = sbufReadU8(src);
+        dt.day = sbufReadU8(src);
+        dt.hours = sbufReadU8(src);
+        dt.minutes = sbufReadU8(src);
+        dt.seconds = sbufReadU8(src);
+        dt.millis = 0;
+        rtcSetDateTime(&dt);
+    }
+    break;
+#endif
 
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!

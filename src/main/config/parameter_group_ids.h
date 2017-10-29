@@ -116,7 +116,8 @@
 #define PG_FRSKY_D_CONFIG 523
 #define PG_MAX7456_CONFIG 524
 #define PG_FLYSKY_CONFIG 525
-#define PG_BETAFLIGHT_END 525
+#define PG_TIME_CONFIG 526
+#define PG_BETAFLIGHT_END 526
 
 
 // OSD configuration (subject to change)

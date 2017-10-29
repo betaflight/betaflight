@@ -28,7 +28,7 @@
 #define TARGET_CONFIG
 
 #ifdef AIORACERF3
-#undef TARGET_CONFIG
+#undef TARGET_CONFIG // no space left
 #endif
 
 #ifdef SPRACINGF3MQ
@@ -38,11 +38,12 @@
 #define SPRACINGF3MQ_REV 2
 #endif
 
-#undef USE_UNCOMMON_MIXERS
+#undef USE_UNCOMMON_MIXERS // no space left
 #endif
-#undef TELEMETRY_JETIEXBUS
-#undef USE_SERIALRX_JETIEXBUS
-#undef USE_DASHBOARD
+#undef TELEMETRY_JETIEXBUS // no space left
+#undef USE_SERIALRX_JETIEXBUS // no space left 
+#undef USE_DASHBOARD // no space left
+#undef USE_RTC_TIME // no space left
 
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
@@ -189,5 +190,3 @@
 #else
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(15) | TIM_N(16))
 #endif
-
-#undef USE_DASHBOARD
