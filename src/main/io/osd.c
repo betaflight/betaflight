@@ -584,52 +584,56 @@ static void osdDrawSingleElement(uint8_t item)
         }
 
     case OSD_WARNINGS:
-        /* Warn when in flip over after crash mode */
-        if ((isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH)) && IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
-            tfp_sprintf(buff, "CRASH FLIP");
-            break;
-        }
+        {
+            uint16_t enabledWarnings = osdConfig()->enabledWarnings;
 
-        /* Show most severe reason for arming being disabled */
-        if (IS_RC_MODE_ACTIVE(BOXARM) && isArmingDisabled()) {
-            const armingDisableFlags_e flags = getArmingDisableFlags();
-            for (int i = 0; i < NUM_ARMING_DISABLE_FLAGS; i++) {
-                if (flags & (1 << i)) {
-                    tfp_sprintf(buff, "%s", armingDisableFlagNames[i]);
-                    break;
+            /* Warn when in flip over after crash mode */
+            if ((enabledWarnings & OSD_WARNING_CRASH_FLIP)
+                  && (isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH))
+                  && IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+                tfp_sprintf(buff, "CRASH FLIP");
+                break;
+            }
+
+            /* Show most severe reason for arming being disabled */
+            if (enabledWarnings & OSD_WARNING_ARMING_DISABLE && IS_RC_MODE_ACTIVE(BOXARM) && isArmingDisabled()) {
+                const armingDisableFlags_e flags = getArmingDisableFlags();
+                for (int i = 0; i < NUM_ARMING_DISABLE_FLAGS; i++) {
+                    if (flags & (1 << i)) {
+                        tfp_sprintf(buff, "%s", armingDisableFlagNames[i]);
+                        break;
+                    }
                 }
+                break;
             }
-            break;
-        }
 
-        /* Show warning if battery is not fresh */
-        if (!ARMING_FLAG(WAS_EVER_ARMED) && (getBatteryState() == BATTERY_OK)
-              && getBatteryAverageCellVoltage() < batteryConfig()->vbatfullcellvoltage) {
-            tfp_sprintf(buff, "BATT NOT FULL");
-            break;
-        }
+            /* Show warning if battery is not fresh */
+            if (enabledWarnings & OSD_WARNING_BATTERY_NOT_FULL && !ARMING_FLAG(WAS_EVER_ARMED) && (getBatteryState() == BATTERY_OK)
+                  && getBatteryAverageCellVoltage() < batteryConfig()->vbatfullcellvoltage) {
+                tfp_sprintf(buff, "BATT NOT FULL");
+                break;
+            }
 
-        /* Show battery state warning */
-        switch (getBatteryState()) {
-        case BATTERY_WARNING:
-            tfp_sprintf(buff, "LOW BATTERY");
-            break;
+            const batteryState_e batteryState = getBatteryState();
 
-        case BATTERY_CRITICAL:
-            tfp_sprintf(buff, " LAND NOW");
-            break;
+            if (enabledWarnings & OSD_WARNING_BATTERY_WARNING && batteryState == BATTERY_WARNING) {
+                tfp_sprintf(buff, "LOW BATTERY");
+                break;
+            }
 
-        default:
-            /* Show visual beeper if battery is OK */
-            if (showVisualBeeper) {
+            if (enabledWarnings & OSD_WARNING_BATTERY_CRITICAL && batteryState == BATTERY_CRITICAL) {
+                tfp_sprintf(buff, " LAND NOW");
+                break;
+            }
+
+            /* Visual beeper */
+            if (enabledWarnings & OSD_WARNING_VISUAL_BEEPER && showVisualBeeper) {
                 tfp_sprintf(buff, "  * * * *");
-            } else {
-                return;
+                break;
             }
-            break;
 
+            return;
         }
-        break;
 
     case OSD_AVG_CELL_VOLTAGE:
         {
@@ -803,6 +807,9 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->enabled_stats[OSD_STAT_TIMER_2]         = true;
 
     osdConfig->units = OSD_UNIT_METRIC;
+
+    /* Enable all warnings by default */
+    osdConfig->enabledWarnings = UINT16_MAX;
 
     osdConfig->timers[OSD_TIMER_1] = OSD_TIMER(OSD_TIMER_SRC_ON, OSD_TIMER_PREC_SECOND, 10);
     osdConfig->timers[OSD_TIMER_2] = OSD_TIMER(OSD_TIMER_SRC_TOTAL_ARMED, OSD_TIMER_PREC_SECOND, 10);

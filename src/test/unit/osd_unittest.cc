@@ -730,6 +730,7 @@ TEST(OsdTest, TestElementWarningsBattery)
 {
     // given
     osdConfigMutable()->item_pos[OSD_WARNINGS] = OSD_POS(9, 10) | VISIBLE_FLAG;
+    osdConfigMutable()->enabledWarnings = OSD_WARNING_BATTERY_WARNING | OSD_WARNING_BATTERY_CRITICAL | OSD_WARNING_BATTERY_NOT_FULL;
 
     // and
     batteryConfigMutable()->vbatfullcellvoltage = 41;
