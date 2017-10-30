@@ -19,6 +19,9 @@
 #include <stdint.h>
 
 #include "platform.h"
+
+#ifdef USE_GYRO_L3GD20
+
 #include "build/build_config.h"
 #include "build/debug.h"
 
@@ -159,3 +162,5 @@ bool l3gd20Detect(gyroDev_t *gyro)
 
     return true;  // blindly assume it's present, for now.
 }
+
+#endif // USE_GYRO_L3GD20
