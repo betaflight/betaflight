@@ -3706,8 +3706,8 @@ const clicmd_t cmdTable[] = {
         "[master|profile|rates|all] {defaults}", cliDiff),
 #ifdef USE_DSHOT
     CLI_COMMAND_DEF("dshotprog", "program DShot ESC(s)", "<index> <command>+", cliDshotProg),
+    CLI_COMMAND_DEF("dshotscriptexecute", "execute script DShot ESC(s)", "<scriptnum>", cliDshotScriptExecute),
     CLI_COMMAND_DEF("dshotscriptsave", "save script DShot ESC(s)", "<scriptnum> <index> <command>+", cliDshotScriptSave),
-    CLI_COMMAND_DEF("dshotscriptexecute", "excute script DShot ESC(s)", "<scriptnum>", cliDshotScriptExecute),
 
 #endif
     CLI_COMMAND_DEF("dump", "dump configuration",
