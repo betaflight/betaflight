@@ -78,6 +78,13 @@
 #define ACC
 #define USE_ACC_MPU6050
 #define USE_ACC_LSM303DLHC
+#define LSM303DLHC_I2C                       I2C1
+#define LSM303DLHC_I2C_SCK_PIN               PB6
+#define LSM303DLHC_I2C_SDA_PIN               PB7
+#define LSM303DLHC_DRDY_PIN                  PE2
+#define LSM303DLHC_I2C_INT1_PIN              PE4
+#define LSM303DLHC_I2C_INT2_PIN              PE5
+
 #define ACC_MPU6050_ALIGN       CW0_DEG
 
 #define BARO
