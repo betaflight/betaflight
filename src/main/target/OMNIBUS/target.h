@@ -54,9 +54,6 @@
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 
-#define MAG // External
-#define USE_MAG_HMC5883
-
 //#define SONAR
 //#define SONAR_ECHO_PIN          PB1
 //#define SONAR_TRIGGER_PIN       PB0
