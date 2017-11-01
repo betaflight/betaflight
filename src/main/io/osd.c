@@ -587,6 +587,13 @@ static void osdDrawSingleElement(uint8_t item)
         {
             uint16_t enabledWarnings = osdConfig()->enabledWarnings;
 
+            const batteryState_e batteryState = getBatteryState();
+
+            if (enabledWarnings & OSD_WARNING_BATTERY_CRITICAL && batteryState == BATTERY_CRITICAL) {
+                tfp_sprintf(buff, " LAND NOW");
+                break;
+            }
+
             /* Warn when in flip over after crash mode */
             if ((enabledWarnings & OSD_WARNING_CRASH_FLIP)
                   && (isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH))
@@ -607,22 +614,15 @@ static void osdDrawSingleElement(uint8_t item)
                 break;
             }
 
-            /* Show warning if battery is not fresh */
-            if (enabledWarnings & OSD_WARNING_BATTERY_NOT_FULL && !ARMING_FLAG(WAS_EVER_ARMED) && (getBatteryState() == BATTERY_OK)
-                  && getBatteryAverageCellVoltage() < batteryConfig()->vbatfullcellvoltage) {
-                tfp_sprintf(buff, "BATT NOT FULL");
-                break;
-            }
-
-            const batteryState_e batteryState = getBatteryState();
-
             if (enabledWarnings & OSD_WARNING_BATTERY_WARNING && batteryState == BATTERY_WARNING) {
                 tfp_sprintf(buff, "LOW BATTERY");
                 break;
             }
 
-            if (enabledWarnings & OSD_WARNING_BATTERY_CRITICAL && batteryState == BATTERY_CRITICAL) {
-                tfp_sprintf(buff, " LAND NOW");
+            /* Show warning if battery is not fresh */
+            if (enabledWarnings & OSD_WARNING_BATTERY_NOT_FULL && !ARMING_FLAG(WAS_EVER_ARMED) && (getBatteryState() == BATTERY_OK)
+                  && getBatteryAverageCellVoltage() < batteryConfig()->vbatfullcellvoltage) {
+                tfp_sprintf(buff, "BATT NOT FULL");
                 break;
             }
 
