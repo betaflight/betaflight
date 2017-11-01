@@ -100,6 +100,7 @@
 #include "io/osd.h"
 #include "io/osd_slave.h"
 #include "io/displayport_msp.h"
+#include "io/vtx.h"
 #include "io/vtx_rtc6705.h"
 #include "io/vtx_control.h"
 #include "io/vtx_smartaudio.h"
@@ -388,10 +389,10 @@ void init(void)
         featureClear(FEATURE_3D);
         idlePulse = 0; // brushed motors
     }
-    /* Motors needs to be initialized soon as posible because hardware initialization 
+    /* Motors needs to be initialized soon as posible because hardware initialization
      * may send spurious pulses to esc's causing their early initialization. Also ppm
      * receiver may share timer with motors so motors MUST be initialized here. */
-    motorDevInit(&motorConfig()->dev, idlePulse, getMotorCount()); 
+    motorDevInit(&motorConfig()->dev, idlePulse, getMotorCount());
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
     if (0) {}
@@ -665,7 +666,10 @@ void init(void)
 #ifdef VTX_CONTROL
     vtxControlInit();
 
+#if defined(VTX_COMMON)
     vtxCommonInit();
+    vtxInit();
+#endif
 
 #ifdef VTX_SMARTAUDIO
     vtxSmartAudioInit();

@@ -41,6 +41,7 @@
 #include "drivers/light_led.h"
 #include "drivers/camera_control.h"
 #include "drivers/max7456.h"
+#include "drivers/vtx_common.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -65,7 +66,6 @@
 #include "io/osd.h"
 #include "io/vtx_control.h"
 #include "io/vtx_rtc6705.h"
-#include "io/vtx_settings_config.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -744,7 +744,7 @@ const clivalue_t valueTable[] = {
     { "pwr_on_arm_grace",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 30 }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, powerOnArmingGraceTime) },
 
 // PG_VTX_CONFIG
-#ifdef VTX_SETTINGS_CONFIG
+#ifdef VTX_COMMON
     { "vtx_band",                   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, VTX_SETTINGS_MAX_BAND }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, band) },
     { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { VTX_SETTINGS_MIN_CHANNEL, VTX_SETTINGS_MAX_CHANNEL }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, channel) },
     { "vtx_power",                  VAR_UINT8  | MASTER_VALUE, .config.minmax = { VTX_SETTINGS_MIN_POWER, VTX_SETTINGS_POWER_COUNT }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, power) },
