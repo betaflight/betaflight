@@ -452,6 +452,21 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
+    case OSD_REMAINING_TIME_ESTIMATE:
+        {
+            const int mAhDrawn = getMAhDrawn();
+            int remaining_time = (int)((osdConfig()->cap_alarm - mAhDrawn) * ((float)flyTime) / mAhDrawn);
+
+            if (mAhDrawn < 0.1 * osdConfig()->cap_alarm) {
+                tfp_sprintf(buff, "--:--");
+            } else if (mAhDrawn > osdConfig()->cap_alarm) {
+                tfp_sprintf(buff, "00:00");
+            } else {
+                osdFormatTime(buff, OSD_TIMER_PREC_SECOND, remaining_time);
+            }
+        break;
+        }
+
     case OSD_FLYMODE:
         {
             char *p = "ACRO";
@@ -769,6 +784,7 @@ static void osdDrawElements(void)
     osdDrawSingleElement(OSD_CROSSHAIRS);
     osdDrawSingleElement(OSD_ITEM_TIMER_1);
     osdDrawSingleElement(OSD_ITEM_TIMER_2);
+    osdDrawSingleElement(OSD_REMAINING_TIME_ESTIMATE);
     osdDrawSingleElement(OSD_FLYMODE);
     osdDrawSingleElement(OSD_THROTTLE_POS);
     osdDrawSingleElement(OSD_VTX_CHANNEL);
@@ -950,9 +966,11 @@ void osdUpdateAlarms(void)
     if (getMAhDrawn() >= osdConfig()->cap_alarm) {
         SET_BLINK(OSD_MAH_DRAWN);
         SET_BLINK(OSD_MAIN_BATT_USAGE);
+        SET_BLINK(OSD_REMAINING_TIME_ESTIMATE);
     } else {
         CLR_BLINK(OSD_MAH_DRAWN);
         CLR_BLINK(OSD_MAIN_BATT_USAGE);
+        CLR_BLINK(OSD_REMAINING_TIME_ESTIMATE);
     }
 
     if (alt >= osdConfig()->alt_alarm)
@@ -973,6 +991,7 @@ void osdResetAlarms(void)
     CLR_BLINK(OSD_MAIN_BATT_USAGE);
     CLR_BLINK(OSD_ITEM_TIMER_1);
     CLR_BLINK(OSD_ITEM_TIMER_2);
+    CLR_BLINK(OSD_REMAINING_TIME_ESTIMATE);
 }
 
 static void osdResetStats(void)
