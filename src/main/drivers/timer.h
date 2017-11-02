@@ -104,6 +104,12 @@ typedef struct timerHardware_s {
     DMA_Channel_TypeDef *dmaRef;
 #endif
     uint8_t dmaIrqHandler;
+#if defined(STM32F7)
+    // TIMUP
+    DMA_Stream_TypeDef *dmaTimUPRef;
+    uint32_t dmaTimUPChannel;
+    uint8_t dmaTimUPIrqHandler;
+#endif
 #endif
 } timerHardware_t;
 
