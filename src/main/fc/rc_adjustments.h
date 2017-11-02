@@ -50,7 +50,6 @@ typedef enum {
     ADJUSTMENT_FUNCTION_COUNT
 } adjustmentFunction_e;
 
-
 typedef enum {
     ADJUSTMENT_MODE_STEP,
     ADJUSTMENT_MODE_SELECT
@@ -88,7 +87,6 @@ typedef struct adjustmentState_s {
     uint32_t timeoutAt;
 } adjustmentState_t;
 
-
 #ifndef MAX_SIMULTANEOUS_ADJUSTMENT_COUNT
 #define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 4 // enough for 4 x 3position switches / 4 aux channel
 #endif
@@ -103,3 +101,4 @@ struct controlRateConfig_s;
 void processRcAdjustments(struct controlRateConfig_s *controlRateConfig);
 struct pidProfile_s;
 void useAdjustmentConfig(struct pidProfile_s *pidProfileToUse);
+bool isAnyAdjustmentFunctionBusy();

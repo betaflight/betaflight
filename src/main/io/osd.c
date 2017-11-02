@@ -70,6 +70,7 @@
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+#include "fc/rc_adjustments.h"
 
 #include "flight/altitude.h"
 #include "flight/navigation.h"
@@ -1127,6 +1128,12 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
 {
     static timeUs_t lastTimeUs = 0;
 
+#ifdef USE_OSD_ADJUSTMENTS
+    if (isAnyAdjustmentFunctionBusy()) {
+        return;
+    }
+#endif
+ 
     // detect arm/disarm
     if (armState != ARMING_FLAG(ARMED)) {
         if (ARMING_FLAG(ARMED)) {
@@ -1239,4 +1246,14 @@ void osdUpdate(timeUs_t currentTimeUs)
     }
 #endif
 }
+
+#ifdef USE_OSD_ADJUSTMENTS
+void osdShowAdjustment(const char * type, int newValue)
+{
+    char buff[OSD_ELEMENT_BUFFER_LENGTH];
+    tfp_sprintf(buff, "%s: %3d", type, newValue);
+    displayWrite(osdDisplayPort, round(15 - strlen(buff) / 2), 7, buff);
+}
+#endif
+ 
 #endif // OSD

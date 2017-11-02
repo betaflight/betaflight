@@ -162,5 +162,6 @@ void osdInit(struct displayPort_s *osdDisplayPort);
 void osdResetConfig(osdConfig_t *osdProfile);
 void osdResetAlarms(void);
 void osdUpdate(timeUs_t currentTimeUs);
+void osdShowAdjustment(const char * type, int newValue);
 
 #endif
