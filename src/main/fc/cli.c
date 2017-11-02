@@ -3016,7 +3016,7 @@ static void cliStatus(char *cmdline)
 #if defined(OSD) || !defined(MINIMAL_CLI)
     /* Flag strings are present if OSD is compiled so may as well use them even with MINIMAL_CLI */
     cliPrint("Arming disable flags:");
-    uint16_t flags = getArmingDisableFlags();
+    armingDisableFlags_e flags = getArmingDisableFlags();
     while (flags) {
         int bitpos = ffs(flags) - 1;
         flags &= ~(1 << bitpos);
