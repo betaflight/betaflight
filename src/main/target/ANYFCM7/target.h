@@ -94,6 +94,7 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
+#define USE_SPI_DEVICE_3
 
 #define SPI1_NSS_PIN            PA4
 #define SPI1_SCK_PIN            PA5
@@ -105,12 +106,23 @@
 #define SPI2_MISO_PIN           PC2
 #define SPI2_MOSI_PIN           PC1
 
+#define SPI3_NSS_PIN            PD2
+#define SPI3_SCK_PIN            PC10
+#define SPI3_MISO_PIN           PC11
+#define SPI3_MOSI_PIN           PC12
 
 #define M25P16_CS_PIN           PB12
 #define M25P16_SPI_INSTANCE     SPI2
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+
+#define OSD
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE    SPI3
+#define MAX7456_SPI_CS_PIN      SPI3_NSS_PIN
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
+#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 #define USE_I2C
 #define USE_I2C_DEVICE_2
