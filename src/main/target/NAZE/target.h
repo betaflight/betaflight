@@ -100,9 +100,9 @@
 #define ACC_BMA280_ALIGN        CW0_DEG
 #define ACC_MPU6500_ALIGN       CW0_DEG
 
-#define BARO
-#define USE_BARO_MS5611 // needed for Flip32 board
-#define USE_BARO_BMP280
+//#define BARO
+//#define USE_BARO_MS5611 // needed for Flip32 board
+//#define USE_BARO_BMP280
 
 /*
 #define MAG
@@ -150,6 +150,8 @@
 #define USE_SPEKTRUM_BIND_PIN
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
+
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - assuming all IOs on 48pin package
 #define TARGET_IO_PORTA         0xffff
