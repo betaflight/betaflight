@@ -120,10 +120,6 @@
 #define USE_QUAD_MIXER_ONLY
 #undef USE_SERVOS
 
-#if (FLASH_SIZE <= 64)
-#undef BLACKBOX
-#endif
-
 // Number of available PWM outputs
 //#define MAX_PWM_OUTPUT_PORTS    4
 

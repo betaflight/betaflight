@@ -95,9 +95,9 @@
 #define VBAT_SCALE_DEFAULT      40
 
 
-#undef GPS
-#undef MAG
-#undef SONAR
+#undef USE_GPS
+#undef USE_MAG
+#undef USE_SONAR
 #undef USE_SERVOS
 #undef BEEPER
 
