@@ -101,13 +101,13 @@
 //#define SONAR_ECHO_PIN          PB0
 //#define SONAR_TRIGGER_PIN       PB5
 
-#undef MAG
+#undef USE_MAG
 
 #ifdef CC3D_OPBL
 #define SKIP_CLI_COMMAND_HELP
 //#undef USE_SERVOS
-#undef BARO
-#undef SONAR
+#undef USE_BARO
+#undef USE_SONAR
 #undef USE_SERIAL_4WAY_BLHELI_INTERFACE
 //#undef USE_SERIALRX_SPEKTRUM   // SRXL, DSM2 and DSMX protocol
 //#undef USE_SERIALRX_SBUS       // Frsky and Futaba receivers

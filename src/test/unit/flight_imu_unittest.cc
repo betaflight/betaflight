@@ -20,8 +20,6 @@
 #include <limits.h>
 #include <cmath>
 
-#undef BARO
-
 extern "C" {
     #include "build/debug.h"
 
