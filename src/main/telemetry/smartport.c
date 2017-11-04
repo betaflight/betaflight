@@ -197,6 +197,7 @@ static void smartPortDataReceive(uint16_t c)
             // our slot is starting...
             smartPortLastRequestTime = now;
             smartPortHasRequest = 1;
+            serialStatRxFrame(smartPortSerialPort);
         } else if (c == FSSP_SENSOR_ID2) {
             rxBuffer[smartPortRxBytes++] = c;
             checksum = 0;
@@ -222,6 +223,9 @@ static void smartPortDataReceive(uint16_t c)
         if (smartPortRxBytes == SMARTPORT_FRAME_SIZE) {
             if (c == (0xFF - checksum)) {
                 smartPortFrameReceived = true;
+                serialStatRxFrame(smartPortSerialPort);
+            } else {
+                serialStatError(smartPortSerialPort);
             }
             skipUntilStart = true;
         } else if (smartPortRxBytes < SMARTPORT_FRAME_SIZE) {
@@ -255,6 +259,7 @@ static void smartPortSendByte(uint8_t c, uint16_t *crcp)
 
 static void smartPortSendPackageEx(uint8_t frameId, uint8_t* data)
 {
+    serialStatTxFrame(smartPortSerialPort);
     uint16_t crc = 0;
     smartPortSendByte(frameId, &crc);
     for (unsigned i = 0; i < SMARTPORT_PAYLOAD_SIZE; i++) {
@@ -285,6 +290,8 @@ void initSmartPortTelemetry(void)
 
 void freeSmartPortTelemetryPort(void)
 {
+    serialStatSetState(smartPortSerialPort, -1);
+
     closeSerialPort(smartPortSerialPort);
     smartPortSerialPort = NULL;
 
@@ -305,6 +312,8 @@ void configureSmartPortTelemetryPort(void)
     if (!smartPortSerialPort) {
         return;
     }
+
+    serialStatSetState(smartPortSerialPort, 1);
 
     smartPortState = SPSTATE_INITIALIZED;
     smartPortTelemetryEnabled = true;
@@ -370,14 +379,14 @@ void handleSmartPortTelemetry(void)
         // Ensure we won't get stuck in the loop if there happens to be nothing available to send in a timely manner - dump the slot if we loop in there for too long.
         if ((millis() - smartPortLastServiceTime) > SMARTPORT_SERVICE_TIMEOUT_MS) {
             smartPortHasRequest = 0;
-            return;
+            goto out;
         }
 
 #if defined(USE_MSP_OVER_TELEMETRY)
         if (smartPortMspReplyPending) {
             smartPortMspReplyPending = sendMspReply(SMARTPORT_PAYLOAD_SIZE, &smartPortSendMspResponse);
             smartPortHasRequest = 0;
-            return;
+            goto out;
         }
 #endif
 
@@ -591,6 +600,9 @@ void handleSmartPortTelemetry(void)
                 // if nothing is sent, smartPortHasRequest isn't cleared, we already incremented the counter, just loop back to the start
         }
     }
+
+out:;
+    serialStatCopyToDebug(smartPortSerialPort);
 }
 
 #endif

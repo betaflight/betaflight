@@ -20,6 +20,8 @@
 
 #include "platform.h"
 
+#include "build/debug.h"
+
 #include "serial.h"
 
 void serialPrint(serialPort_t *instance, const char *str)
@@ -38,6 +40,7 @@ uint32_t serialGetBaudRate(serialPort_t *instance)
 void serialWrite(serialPort_t *instance, uint8_t ch)
 {
     instance->vTable->serialWrite(instance, ch);
+    ++instance->statTxBytes;
 }
 
 
@@ -54,6 +57,7 @@ void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count)
             serialWrite(instance, *p);
         }
     }
+    instance->statTxBytes += count;
 }
 
 uint32_t serialRxBytesWaiting(const serialPort_t *instance)
@@ -68,6 +72,7 @@ uint32_t serialTxBytesFree(const serialPort_t *instance)
 
 uint8_t serialRead(serialPort_t *instance)
 {
+    ++instance->statRxBytes;
     return instance->vTable->serialRead(instance);
 }
 
@@ -101,4 +106,46 @@ void serialEndWrite(serialPort_t *instance)
 {
     if (instance->vTable->endWrite)
         instance->vTable->endWrite(instance);
+}
+
+// Statistics
+
+void serialStatSetState(serialPort_t *instance, int state)
+{
+    if (instance) {
+        instance->statState = state;
+    }
+}
+
+void serialStatRxFrame(serialPort_t *instance)
+{
+    if (instance) {
+        ++instance->statRxFrames;
+    }
+}
+
+void serialStatTxFrame(serialPort_t *instance)
+{
+    if (instance) {
+        ++instance->statTxFrames;
+    }
+}
+
+void serialStatError(serialPort_t *instance)
+{
+    if (instance) {
+        ++instance->statErrors;
+    }
+}
+
+void serialStatCopyToDebug(serialPort_t *instance)
+{
+    static uint32_t count = 0;
+
+    if (instance) {
+        debug[0] = instance->statState * 1000 + (++count % 1000);
+        debug[1] = (instance->statRxBytes % 100) * 100 + (instance->statTxBytes % 100);
+        debug[2] = (instance->statRxFrames % 100) * 100 + (instance->statTxFrames % 100);
+        debug[3] = instance->statErrors;
+    }
 }
