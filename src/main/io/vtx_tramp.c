@@ -41,7 +41,7 @@
 #include "io/vtx_control.h"
 #include "io/vtx_string.h"
 
-#if defined(CMS) || defined(VTX_COMMON)
+#if defined(USE_CMS) || defined(VTX_COMMON)
 const uint16_t trampPowerTable[VTX_TRAMP_POWER_COUNT] = {
     25, 100, 200, 400, 600
 };
@@ -519,7 +519,7 @@ void vtxTrampProcess(uint32_t currentTimeUs)
     debug[3] = 0;
 #endif
 
-#ifdef CMS
+#ifdef USE_CMS
     trampCmsUpdateStatusString();
 #endif
 }

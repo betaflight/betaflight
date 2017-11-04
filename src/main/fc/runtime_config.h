@@ -56,7 +56,7 @@ typedef enum {
 
 #define NUM_ARMING_DISABLE_FLAGS 17
 
-#if defined(OSD) || !defined(MINIMAL_CLI)
+#if defined(USE_OSD) || !defined(MINIMAL_CLI)
 extern const char *armingDisableFlagNames[NUM_ARMING_DISABLE_FLAGS];
 #endif
 

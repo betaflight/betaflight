@@ -26,11 +26,11 @@ typedef enum {
     TABLE_OFF_ON = 0,
     TABLE_UNIT,
     TABLE_ALIGNMENT,
-#ifdef GPS
+#ifdef USE_GPS
     TABLE_GPS_PROVIDER,
     TABLE_GPS_SBAS_MODE,
 #endif
-#ifdef BLACKBOX
+#ifdef USE_BLACKBOX
     TABLE_BLACKBOX_DEVICE,
 #endif
     TABLE_CURRENT_METER,
@@ -47,10 +47,10 @@ typedef enum {
     TABLE_GYRO_LPF,
     TABLE_GYRO_HARDWARE,
     TABLE_ACC_HARDWARE,
-#ifdef BARO
+#ifdef USE_BARO
     TABLE_BARO_HARDWARE,
 #endif
-#ifdef MAG
+#ifdef USE_MAG
     TABLE_MAG_HARDWARE,
 #endif
     TABLE_DEBUG,
@@ -61,7 +61,7 @@ typedef enum {
     TABLE_LOWPASS_TYPE,
     TABLE_FAILSAFE,
     TABLE_CRASH_RECOVERY,
-#ifdef OSD
+#ifdef USE_OSD
     TABLE_OSD,
 #endif
 #ifdef USE_CAMERA_CONTROL

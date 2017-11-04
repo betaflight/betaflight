@@ -52,7 +52,7 @@ bool canUpdateVTX(void);
 
 #define WAIT_FOR_VTX while (!canUpdateVTX()) {}
 
-#if defined(CMS) || defined(VTX_COMMON)
+#if defined(USE_CMS) || defined(VTX_COMMON)
 const char * const rtc6705PowerNames[VTX_RTC6705_POWER_COUNT] = {
     "---", "25 ", "200",
 };

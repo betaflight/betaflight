@@ -22,7 +22,7 @@
 
 #include "platform.h"
 
-#if defined(OSD) && defined(CMS)
+#if defined(USE_OSD) && defined(USE_CMS)
 
 #include "build/version.h"
 
@@ -76,7 +76,7 @@ OSD_Entry menuOsdActiveElemsEntries[] =
 #endif // VTX
     {"CURRENT (A)",        OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_CURRENT_DRAW], 0},
     {"USED MAH",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_MAH_DRAWN], 0},
-#ifdef GPS
+#ifdef USE_GPS
     {"GPS SPEED",          OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_SPEED], 0},
     {"GPS SATS",           OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_SATS], 0},
     {"GPS LAT",            OME_VISIBLE, NULL, &osdConfig_item_pos[OSD_GPS_LAT], 0},

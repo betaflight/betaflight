@@ -34,7 +34,7 @@
 
 #include "barometer_bmp085.h"
 
-#ifdef BARO
+#ifdef USE_BARO
 
 #if defined(BARO_EOC_GPIO)
 

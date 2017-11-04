@@ -37,7 +37,7 @@
  *
  */
 
-#if defined(SONAR)
+#if defined(USE_SONAR)
 STATIC_UNIT_TESTED volatile int32_t measurement = -1;
 static uint32_t lastMeasurementAt;
 

@@ -102,7 +102,7 @@ enum {
 
 #define AIRMODE_THOTTLE_THRESHOLD 1350 // Make configurable in the future. ~35% throttle should be fine
 
-#if defined(GPS) || defined(MAG)
+#if defined(USE_GPS) || defined(USE_MAG)
 int16_t magHold;
 #endif
 
@@ -130,7 +130,7 @@ void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsD
 
 static bool isCalibrating(void)
 {
-#ifdef BARO
+#ifdef USE_BARO
     if (sensors(SENSOR_BARO) && !isBaroCalibrationComplete()) {
         return true;
     }
@@ -237,7 +237,7 @@ void disarm(void)
     if (ARMING_FLAG(ARMED)) {
         DISABLE_ARMING_FLAG(ARMED);
 
-#ifdef BLACKBOX
+#ifdef USE_BLACKBOX
         if (blackboxConfig()->device) {
             blackboxFinish();
         }
@@ -289,7 +289,7 @@ void tryArm(void)
         lastArmingDisabledReason = 0;
 
         //beep to indicate arming
-#ifdef GPS
+#ifdef USE_GPS
         if (feature(FEATURE_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5) {
             beeper(BEEPER_ARMING_GPS_FIX);
         } else {
@@ -349,7 +349,7 @@ static void updateInflightCalibrationState(void)
     }
 }
 
-#if defined(GPS) || defined(MAG)
+#if defined(USE_GPS) || defined(USE_MAG)
 void updateMagHold(void)
 {
     if (ABS(rcCommand[YAW]) < 15 && FLIGHT_MODE(MAG_MODE)) {
@@ -509,9 +509,9 @@ void processRx(timeUs_t currentTimeUs)
         DISABLE_ARMING_FLAG(WAS_ARMED_WITH_PREARM);
     }
 
-#if defined(ACC) || defined(MAG)
+#if defined(USE_ACC) || defined(USE_MAG)
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
-#if defined(GPS) || defined(MAG)
+#if defined(USE_GPS) || defined(USE_MAG)
         if (IS_RC_MODE_ACTIVE(BOXMAG)) {
             if (!FLIGHT_MODE(MAG_MODE)) {
                 ENABLE_FLIGHT_MODE(MAG_MODE);
@@ -536,7 +536,7 @@ void processRx(timeUs_t currentTimeUs)
     }
 #endif
 
-#ifdef GPS
+#ifdef USE_GPS
     if (sensors(SENSOR_GPS)) {
         updateGpsWaypointsAndMode();
     }
@@ -594,13 +594,13 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
         gyroReadTemperature();
     }
 
-#ifdef MAG
+#ifdef USE_MAG
     if (sensors(SENSOR_MAG)) {
         updateMagHold();
     }
 #endif
 
-#if defined(BARO) || defined(SONAR)
+#if defined(USE_BARO) || defined(USE_SONAR)
     // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
     updateRcCommands();
     if (sensors(SENSOR_BARO) || sensors(SENSOR_SONAR)) {
@@ -632,7 +632,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 
     processRcCommand();
 
-#ifdef GPS
+#ifdef USE_GPS
     if (sensors(SENSOR_GPS)) {
         if ((FLIGHT_MODE(GPS_HOME_MODE) || FLIGHT_MODE(GPS_HOLD_MODE)) && STATE(GPS_FIX_HOME)) {
             updateGpsStateForHomeAndHoldMode();
@@ -644,7 +644,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
     afatfs_poll();
 #endif
 
-#ifdef BLACKBOX
+#ifdef USE_BLACKBOX
     if (!cliMode && blackboxConfig()->device) {
         blackboxUpdate(currentTimeUs);
     }

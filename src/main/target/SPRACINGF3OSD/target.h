@@ -27,10 +27,10 @@
 #define USE_EXTI
 
 
-#define GYRO
+#define USE_GYRO
 #define USE_FAKE_GYRO
 
-#define ACC
+#define USE_ACC
 #define USE_FAKE_ACC
 
 #define REMAP_TIM16_DMA

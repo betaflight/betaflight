@@ -34,7 +34,7 @@
 
 #include "barometer_bmp280.h"
 
-#if defined(BARO) && (defined(USE_BARO_BMP280) || defined(USE_BARO_SPI_BMP280))
+#if defined(USE_BARO) && (defined(USE_BARO_BMP280) || defined(USE_BARO_SPI_BMP280))
 
 typedef struct bmp280_calib_param_s {
     uint16_t dig_T1; /* calibration T1 data */

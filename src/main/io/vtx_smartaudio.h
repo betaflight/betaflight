@@ -112,7 +112,7 @@ extern serialPort_t *debugSerialPort;
 #endif // SMARTAUDIO_DPRINTF
 
 #if 0
-#ifdef CMS
+#ifdef USE_CMS
 
 uint16_t smartAudioSmartbaud;
 

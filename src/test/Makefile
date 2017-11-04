@@ -51,7 +51,6 @@ baro_bmp280_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_bmp280.c
 
 baro_bmp280_unittest_DEFINES := \
-                USE_BARO \
                 USE_BARO_BMP280 \
                 USE_BARO_SPI_BMP280
 
@@ -59,7 +58,6 @@ baro_ms5611_unittest_SRC := \
 		$(USER_DIR)/drivers/barometer/barometer_ms5611.c
 
 baro_ms5611_unittest_DEFINES := \
-                USE_BARO \
                 USE_BARO_MS5611 \
                 USE_BARO_SPI_MS5611
 
@@ -91,9 +89,9 @@ cli_unittest_SRC := \
                 $(USER_DIR)/common/typeconversion.c
 
 cli_unittest_DEFINES := \
+		USE_OSD \
 		USE_CLI \
-		SystemCoreClock=1000000 \
-		OSD
+		SystemCoreClock=1000000
 
 cms_unittest_SRC := \
 		$(USER_DIR)/cms/cms.c \
@@ -160,7 +158,7 @@ osd_unittest_SRC := \
 		$(USER_DIR)/fc/runtime_config.c
 
 osd_unittest_DEFINES := \
-		OSD
+		USE_OSD
 
 
 parameter_groups_unittest_SRC := \

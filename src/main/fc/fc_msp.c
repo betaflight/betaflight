@@ -413,7 +413,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #ifdef USE_OSD_SLAVE
         sbufWriteU8(dst, 1);  // 1 == OSD
 #else
-#if defined(OSD) && defined(USE_MAX7456)
+#if defined(USE_OSD) && defined(USE_MAX7456)
         sbufWriteU8(dst, 2);  // 2 == FC with OSD
 #else
         sbufWriteU8(dst, 0);  // 0 == FC
@@ -617,7 +617,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #define OSD_FLAGS_OSD_HARDWARE_MAX_7456 (1 << 4)
 
         uint8_t osdFlags = 0;
-#if defined(OSD)
+#if defined(USE_OSD)
         osdFlags |= OSD_FLAGS_OSD_FEATURE;
 #endif
 #if defined(USE_OSD_SLAVE)
@@ -636,7 +636,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, 0);
 #endif
 
-#ifdef OSD
+#ifdef USE_OSD
         // OSD specific, not applicable to OSD slaves.
 
         // Configuration
@@ -840,7 +840,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         break;
 
     case MSP_ALTITUDE:
-#if defined(BARO) || defined(SONAR)
+#if defined(USE_BARO) || defined(USE_SONAR)
         sbufWriteU32(dst, getEstimatedAltitude());
 #else
         sbufWriteU32(dst, 0);
@@ -849,7 +849,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         break;
 
     case MSP_SONAR_ALTITUDE:
-#if defined(SONAR)
+#if defined(USE_SONAR)
         sbufWriteU32(dst, sonarGetLatestAltitude());
 #else
         sbufWriteU32(dst, 0);
@@ -929,7 +929,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, motorConfig()->mincommand);
         break;
 
-#ifdef MAG
+#ifdef USE_MAG
     case MSP_COMPASS_CONFIG:
         sbufWriteU16(dst, compassConfig()->mag_declination / 10);
         break;
@@ -945,7 +945,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         break;
 #endif
 
-#ifdef GPS
+#ifdef USE_GPS
     case MSP_GPS_CONFIG:
         sbufWriteU8(dst, gpsConfig()->provider);
         sbufWriteU8(dst, gpsConfig()->sbasMode);
@@ -1103,7 +1103,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         break;
 
     case MSP_BLACKBOX_CONFIG:
-#ifdef BLACKBOX
+#ifdef USE_BLACKBOX
         sbufWriteU8(dst, 1); //Blackbox supported
         sbufWriteU8(dst, blackboxConfig()->device);
         sbufWriteU8(dst, blackboxGetRateNum());
@@ -1255,7 +1255,7 @@ static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *arg, sb
 }
 #endif // USE_OSD_SLAVE
 
-#ifdef GPS
+#ifdef USE_GPS
 static void mspFcWpCommand(sbuf_t *dst, sbuf_t *src)
 {
     uint8_t wp_no;
@@ -1316,7 +1316,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     uint32_t i;
     uint8_t value;
     const unsigned int dataSize = sbufBytesRemaining(src);
-#ifdef GPS
+#ifdef USE_GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
 #endif
@@ -1352,7 +1352,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         break;
 
-#if defined(GPS) || defined(MAG)
+#if defined(USE_GPS) || defined(USE_MAG)
     case MSP_SET_HEADING:
         magHold = sbufReadU16(src);
         break;
@@ -1470,7 +1470,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         motorConfigMutable()->mincommand = sbufReadU16(src);
         break;
 
-#ifdef GPS
+#ifdef USE_GPS
     case MSP_SET_GPS_CONFIG:
         gpsConfigMutable()->provider = sbufReadU8(src);
         gpsConfigMutable()->sbasMode = sbufReadU8(src);
@@ -1479,7 +1479,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 #endif
 
-#ifdef MAG
+#ifdef USE_MAG
     case MSP_SET_COMPASS_CONFIG:
         compassConfigMutable()->mag_declination = sbufReadU16(src) * 10;
         break;
@@ -1652,7 +1652,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         readEEPROM();
         break;
 
-#ifdef BLACKBOX
+#ifdef USE_BLACKBOX
     case MSP_SET_BLACKBOX_CONFIG:
         // Don't allow config to be updated while Blackbox is logging
         if (blackboxMayEditConfig()) {
@@ -1745,7 +1745,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 #endif
 
-#ifdef GPS
+#ifdef USE_GPS
     case MSP_SET_RAW_GPS:
         if (sbufReadU8(src)) {
             ENABLE_STATE(GPS_FIX);
@@ -2066,7 +2066,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         batteryConfigMutable()->currentMeterSource = sbufReadU8(src);
         break;
 
-#if defined(OSD) || defined (USE_OSD_SLAVE)
+#if defined(USE_OSD) || defined (USE_OSD_SLAVE)
     case MSP_SET_OSD_CONFIG:
         {
             const uint8_t addr = sbufReadU8(src);
@@ -2078,7 +2078,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
                 sbufReadU8(src); // Skip video system
 #endif
-#if defined(OSD)
+#if defined(USE_OSD)
                 osdConfigMutable()->units = sbufReadU8(src);
 
                 // Alarms
@@ -2093,7 +2093,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 }
 #endif
             } else if ((int8_t)addr == -2) {
-#if defined(OSD)
+#if defined(USE_OSD)
                 // Timers
                 uint8_t index = sbufReadU8(src);
                 if (index > OSD_TIMER_COUNT) {
@@ -2103,7 +2103,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
                 return MSP_RESULT_ERROR;
             } else {
-#if defined(OSD)
+#if defined(USE_OSD)
                 const uint16_t value = sbufReadU16(src);
 
                 /* Get screen index, 0 is post flight statistics, 1 and above are in flight OSD screens */
@@ -2173,7 +2173,7 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
         mspFc4waySerialCommand(dst, src, mspPostProcessFn);
         ret = MSP_RESULT_ACK;
 #endif
-#ifdef GPS
+#ifdef USE_GPS
     } else if (cmdMSP == MSP_WP) {
         mspFcWpCommand(dst, src);
         ret = MSP_RESULT_ACK;

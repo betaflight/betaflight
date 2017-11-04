@@ -31,28 +31,28 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define MPU_INT_EXTI PA15
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define USE_ACC_SPI_MPU6000
 
 #define MPU6000_CS_PIN          PB12
 #define MPU6000_SPI_INSTANCE    SPI2
 
-#define ACC
+#define USE_ACC
 
 #define ACC_MPU6000_ALIGN CW180_DEG
 #define GYRO_MPU6000_ALIGN CW180_DEG
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_MS5611
 
-#define MAG
+#define USE_MAG
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883 // External
 
 #define MAG_AK8975_ALIGN CW180_DEG
 
-#define SONAR
+#define USE_SONAR
 #define SONAR_TRIGGER_PIN           PA6   // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
 #define SONAR_ECHO_PIN              PB1   // RC_CH8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
 

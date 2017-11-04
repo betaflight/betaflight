@@ -124,7 +124,7 @@ static void ltm_finalise(void)
  */
 static void ltm_gframe(void)
 {
-#if defined(GPS)
+#if defined(USE_GPS)
     uint8_t gps_fix_type = 0;
     int32_t ltm_alt;
 
@@ -143,7 +143,7 @@ static void ltm_gframe(void)
     ltm_serialise_32(gpsSol.llh.lon);
     ltm_serialise_8((uint8_t)(gpsSol.groundSpeed / 100));
 
-#if defined(BARO) || defined(SONAR)
+#if defined(USE_BARO) || defined(USE_SONAR)
     ltm_alt = (sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) ? getEstimatedAltitude() : gpsSol.llh.alt * 100;
 #else
     ltm_alt = gpsSol.llh.alt * 100;
@@ -219,7 +219,7 @@ static void ltm_aframe(void)
 static void ltm_oframe(void)
 {
     ltm_initialise_packet('O');
-#if defined(GPS)
+#if defined(USE_GPS)
     ltm_serialise_32(GPS_home[LAT]);
     ltm_serialise_32(GPS_home[LON]);
 #else

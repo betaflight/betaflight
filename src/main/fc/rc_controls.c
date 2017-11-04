@@ -141,7 +141,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
     static uint8_t rcDisarmTicks;
     static bool doNotRepeat;
 
-#ifdef CMS
+#ifdef USE_CMS
     if (cmsInMenu) {
         return;
     }
@@ -224,13 +224,13 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
         // GYRO calibration
         gyroStartCalibration(false);
 
-#ifdef GPS
+#ifdef USE_GPS
         if (feature(FEATURE_GPS)) {
             GPS_reset_home_position();
         }
 #endif
 
-#ifdef BARO
+#ifdef USE_BARO
         if (sensors(SENSOR_BARO))
             baroSetCalibrationCycles(10); // calibrate baro to new ground level (10 * 25 ms = ~250 ms non blocking)
 #endif

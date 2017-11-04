@@ -22,7 +22,7 @@
 
 #include <math.h>
 
-#define BARO
+#define USE_BARO
 
 extern "C" {
     #include "common/maths.h"

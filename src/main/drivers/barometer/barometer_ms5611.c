@@ -20,7 +20,7 @@
 
 #include <platform.h>
 
-#if defined(BARO) && (defined(USE_BARO_MS5611) || defined(USE_BARO_SPI_MS5611))
+#if defined(USE_BARO) && (defined(USE_BARO_MS5611) || defined(USE_BARO_SPI_MS5611))
 
 #include "build/build_config.h"
 

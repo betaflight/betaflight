@@ -95,7 +95,7 @@
 #endif
 
 #if (FLASH_SIZE > 64)
-#define BLACKBOX
+#define USE_BLACKBOX
 #define LED_STRIP
 #define TELEMETRY
 #define TELEMETRY_FRSKY
@@ -107,7 +107,7 @@
 #endif
 
 #if (FLASH_SIZE > 128)
-#define CMS
+#define USE_CMS
 #define TELEMETRY_CRSF
 #define TELEMETRY_IBUS
 #define TELEMETRY_JETIEXBUS
@@ -141,7 +141,7 @@
 
 #if (FLASH_SIZE > 256)
 // Temporarily moved GPS here because of overflowing flash size on F3
-#define GPS
+#define USE_GPS
 #define USE_NAV
 #define USE_UNCOMMON_MIXERS
 #endif

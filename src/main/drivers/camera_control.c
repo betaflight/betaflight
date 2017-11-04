@@ -56,7 +56,7 @@
 #define CAMERA_CONTROL_PIN NONE
 #endif
 
-#ifdef OSD
+#ifdef USE_OSD
 #include "io/osd.h"
 #endif
 
@@ -193,7 +193,7 @@ void cameraControlKeyPress(cameraControlKey_e key, uint32_t holdDurationMs)
     (void) holdDurationMs;
 #endif
 
-#ifdef OSD
+#ifdef USE_OSD
     // Force OSD timeout so we are alone on the display.
     resumeRefreshAt = 0;
 #endif

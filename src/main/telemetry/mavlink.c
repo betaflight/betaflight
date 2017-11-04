@@ -273,7 +273,7 @@ void mavlinkSendRCChannelsAndRSSI(void)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
-#if defined(GPS)
+#if defined(USE_GPS)
 void mavlinkSendPosition(void)
 {
     uint16_t msgLength;
@@ -329,7 +329,7 @@ void mavlinkSendPosition(void)
         // alt Altitude in 1E3 meters (millimeters) above MSL
         gpsSol.llh.alt * 1000,
         // relative_alt Altitude above ground in meters, expressed as * 1000 (millimeters)
-#if defined(BARO) || defined(SONAR)
+#if defined(USE_BARO) || defined(USE_SONAR)
         (sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) ? getEstimatedAltitude() * 10 : gpsSol.llh.alt * 1000,
 #else
         gpsSol.llh.alt * 1000,
@@ -388,7 +388,7 @@ void mavlinkSendHUDAndHeartbeat(void)
     float mavAirSpeed = 0;
     float mavClimbRate = 0;
 
-#if defined(GPS)
+#if defined(USE_GPS)
     // use ground speed if source available
     if (sensors(SENSOR_GPS)) {
         mavGroundSpeed = gpsSol.groundSpeed / 100.0f;
@@ -396,18 +396,18 @@ void mavlinkSendHUDAndHeartbeat(void)
 #endif
 
     // select best source for altitude
-#if defined(BARO) || defined(SONAR)
+#if defined(USE_BARO) || defined(USE_SONAR)
     if (sensors(SENSOR_SONAR) || sensors(SENSOR_BARO)) {
         // Baro or sonar generally is a better estimate of altitude than GPS MSL altitude
         mavAltitude = getEstimatedAltitude() / 100.0;
     }
-#if defined(GPS)
+#if defined(USE_GPS)
     else if (sensors(SENSOR_GPS)) {
         // No sonar or baro, just display altitude above MLS
         mavAltitude = gpsSol.llh.alt;
     }
 #endif
-#elif defined(GPS)
+#elif defined(USE_GPS)
     if (sensors(SENSOR_GPS)) {
         // No sonar or baro, just display altitude above MLS
         mavAltitude = gpsSol.llh.alt;
@@ -524,7 +524,7 @@ void processMAVLinkTelemetry(void)
         mavlinkSendRCChannelsAndRSSI();
     }
 
-#ifdef GPS
+#ifdef USE_GPS
     if (mavlinkStreamTrigger(MAV_DATA_STREAM_POSITION)) {
         mavlinkSendPosition();
     }

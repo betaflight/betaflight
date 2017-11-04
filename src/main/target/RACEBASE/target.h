@@ -39,10 +39,10 @@
 #define MPU6000_CS_PIN          PB5
 #define MPU6000_SPI_INSTANCE    SPI2
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 
 #define ACC_MPU6000_ALIGN CW90_DEG
@@ -99,7 +99,7 @@
 #define CURRENT_METER_ADC_PIN   PA5
 #define RSSI_ADC_PIN            PA6
 
-#define OSD
+#define USE_OSD
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 

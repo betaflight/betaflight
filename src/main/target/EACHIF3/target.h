@@ -39,11 +39,11 @@
 #define MPU6500_CS_PIN          PA5
 
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW90_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW90_DEG
 
@@ -70,7 +70,7 @@
 #define I2C2_SCL PA9
 
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_BMP280
 #define USE_BARO_MS5611
 
@@ -102,7 +102,7 @@
 #undef BEEPER
 
 
-#define BLACKBOX
+#define USE_BLACKBOX
 #define LED_STRIP
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 #define BRUSHED_MOTORS

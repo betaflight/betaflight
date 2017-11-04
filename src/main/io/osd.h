@@ -17,7 +17,7 @@
 
 #pragma once
 
-#ifdef OSD
+#ifdef USE_OSD
 #include "common/time.h"
 #include "config/parameter_group.h"
 
