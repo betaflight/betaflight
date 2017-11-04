@@ -6,7 +6,7 @@
 
 #include "platform.h"
 
-#ifdef BLACKBOX
+#ifdef USE_BLACKBOX
 
 #include "blackbox_encoding.h"
 #include "blackbox_io.h"

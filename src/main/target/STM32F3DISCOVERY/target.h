@@ -75,7 +75,7 @@
 // PB13 SPI2_SCK
 // PB12 SPI2_NSS
 
-#define GYRO
+#define USE_GYRO
 #define USE_FAKE_GYRO
 #define USE_GYRO_L3GD20
 #define L3GD20_SPI              SPI1
@@ -107,7 +107,7 @@
 #define USE_EXTI
 #endif
 
-#define ACC
+#define USE_ACC
 #define USE_FAKE_ACC
 #define USE_ACC_ADXL345
 #define USE_ACC_BMA280
@@ -122,18 +122,18 @@
 #define USE_ACC_SPI_MPU9250
 #define ACC_MPU6500_ALIGN       CW270_DEG_FLIP
 
-#define BARO
+#define USE_BARO
 #define USE_FAKE_BARO
 #define USE_BARO_BMP085
 #define USE_BARO_BMP280
 #define USE_BARO_MS5611
 
-//#define OSD
+//#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN
 
-//#define CMS
+//#define USE_CMS
 
 //#define USE_SDCARD
 //
@@ -151,7 +151,7 @@
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
 
-#define MAG
+#define USE_MAG
 #define USE_FAKE_MAG
 #define USE_MAG_AK8963
 #define USE_MAG_AK8975
@@ -195,7 +195,7 @@
 
 #define USE_ESC_SENSOR
 
-#define SONAR
+#define USE_SONAR
 #define SONAR_TRIGGER_PIN       PB0
 #define SONAR_ECHO_PIN          PB1
 

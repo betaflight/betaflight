@@ -472,13 +472,13 @@ void init(void)
     cameraControlInit();
 #endif
 
-#if defined(SONAR_SOFTSERIAL2_EXCLUSIVE) && defined(SONAR) && defined(USE_SOFTSERIAL2)
+#if defined(SONAR_SOFTSERIAL2_EXCLUSIVE) && defined(USE_SONAR) && defined(USE_SOFTSERIAL2)
     if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
     }
 #endif
 
-#if defined(SONAR_SOFTSERIAL1_EXCLUSIVE) && defined(SONAR) && defined(USE_SOFTSERIAL1)
+#if defined(SONAR_SOFTSERIAL1_EXCLUSIVE) && defined(USE_SONAR) && defined(USE_SOFTSERIAL1)
     if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL1);
     }
@@ -550,15 +550,15 @@ void init(void)
 /*
  * CMS, display devices and OSD
  */
-#ifdef CMS
+#ifdef USE_CMS
     cmsInit();
 #endif
 
-#if (defined(OSD) || (defined(USE_MSP_DISPLAYPORT) && defined(CMS)) || defined(USE_OSD_SLAVE))
+#if (defined(USE_OSD) || (defined(USE_MSP_DISPLAYPORT) && defined(USE_CMS)) || defined(USE_OSD_SLAVE))
     displayPort_t *osdDisplayPort = NULL;
 #endif
 
-#if defined(OSD) && !defined(USE_OSD_SLAVE)
+#if defined(USE_OSD) && !defined(USE_OSD_SLAVE)
     //The OSD need to be initialised after GYRO to avoid GYRO initialisation failure on some targets
 
     if (feature(FEATURE_OSD)) {
@@ -573,7 +573,7 @@ void init(void)
     }
 #endif
 
-#if defined(USE_OSD_SLAVE) && !defined(OSD)
+#if defined(USE_OSD_SLAVE) && !defined(USE_OSD)
 #if defined(USE_MAX7456)
     // If there is a max7456 chip for the OSD then use it
     osdDisplayPort = max7456DisplayPortInit(vcdProfile());
@@ -582,7 +582,7 @@ void init(void)
 #endif
 #endif
 
-#if defined(CMS) && defined(USE_MSP_DISPLAYPORT)
+#if defined(USE_CMS) && defined(USE_MSP_DISPLAYPORT)
     // If BFOSD is not active, then register MSP_DISPLAYPORT as a CMS device.
     if (!osdDisplayPort)
         cmsDisplayPortRegister(displayPortMspInit());
@@ -596,7 +596,7 @@ void init(void)
 #endif
 
 
-#ifdef GPS
+#ifdef USE_GPS
     if (feature(FEATURE_GPS)) {
         gpsInit();
         navigationInit();
@@ -650,7 +650,7 @@ void init(void)
     }
 #endif
 
-#ifdef BLACKBOX
+#ifdef USE_BLACKBOX
     blackboxInit();
 #endif
 
@@ -658,7 +658,7 @@ void init(void)
         accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
     }
     gyroStartCalibration(false);
-#ifdef BARO
+#ifdef USE_BARO
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
 #endif
 

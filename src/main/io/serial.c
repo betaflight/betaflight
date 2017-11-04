@@ -514,7 +514,7 @@ void serialEvaluateNonMspData(serialPort_t *serialPort, uint8_t receivedChar)
     }
 }
 
-#if defined(GPS) || ! defined(SKIP_SERIAL_PASSTHROUGH)
+#if defined(USE_GPS) || ! defined(SKIP_SERIAL_PASSTHROUGH)
 // Default data consumer for serialPassThrough.
 static void nopConsumer(uint8_t data)
 {

@@ -44,11 +44,11 @@
 #define  ICM20689_CS_PIN          PC4
 #define ICM20689_SPI_INSTANCE    SPI1
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_ICM20689
 #define ACC_ICM20689_ALIGN       CW270_DEG
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_ICM20689
 #define GYRO_ICM20689_ALIGN      CW270_DEG
 
@@ -65,12 +65,12 @@
 #define USE_MAG_HMC5883                   //External, connect to I2C1
 #define MAG_HMC5883_ALIGN       CW180_DEG
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_MS5611                  //External, connect to I2C1
 #define USE_BARO_BMP280                  //onboard
 #endif
 
-#define OSD
+#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      PB14

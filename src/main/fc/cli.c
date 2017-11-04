@@ -2229,7 +2229,7 @@ static void cliExit(char *cmdline)
     cliWriter = NULL;
 }
 
-#ifdef GPS
+#ifdef USE_GPS
 static void cliGpsPassthrough(char *cmdline)
 {
     UNUSED(cmdline);
@@ -3007,7 +3007,7 @@ static void cliStatus(char *cmdline)
     const int systemRate = getTaskDeltaTime(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_SYSTEM)));
     cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
             constrain(averageSystemLoadPercent, 0, 100), getTaskDeltaTime(TASK_GYROPID), gyroRate, rxRate, systemRate);
-#if defined(OSD) || !defined(MINIMAL_CLI)
+#if defined(USE_OSD) || !defined(MINIMAL_CLI)
     /* Flag strings are present if OSD is compiled so may as well use them even with MINIMAL_CLI */
     cliPrint("Arming disable flags:");
     armingDisableFlags_e flags = getArmingDisableFlags();
@@ -3121,7 +3121,7 @@ const cliResourceValue_t resourceTable[] = {
     { OWNER_PPMINPUT,      PG_PPM_CONFIG, offsetof(ppmConfig_t, ioTag), 0 },
     { OWNER_PWMINPUT,      PG_PWM_CONFIG, offsetof(pwmConfig_t, ioTags[0]), PWM_INPUT_PORT_COUNT },
 #endif
-#ifdef SONAR
+#ifdef USE_SONAR
     { OWNER_SONAR_TRIGGER, PG_SONAR_CONFIG, offsetof(sonarConfig_t, triggerTag), 0 },
     { OWNER_SONAR_ECHO,    PG_SONAR_CONFIG, offsetof(sonarConfig_t, echoTag),    0 },
 #endif
@@ -3162,10 +3162,10 @@ const cliResourceValue_t resourceTable[] = {
     { OWNER_ADC_CURR,      PG_ADC_CONFIG, offsetof(adcConfig_t, current.ioTag), 0 },
     { OWNER_ADC_EXT,       PG_ADC_CONFIG, offsetof(adcConfig_t, external1.ioTag), 0 },
 #endif
-#ifdef BARO
+#ifdef USE_BARO
     { OWNER_BARO_CS,       PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_spi_csn), 0 },
 #endif
-#ifdef MAG
+#ifdef USE_MAG
     { OWNER_COMPASS_CS,    PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_spi_csn), 0 },
 #endif
 };
@@ -3635,7 +3635,7 @@ const clicmd_t cmdTable[] = {
 #endif
 #endif
     CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),
-#ifdef GPS
+#ifdef USE_GPS
     CLI_COMMAND_DEF("gpspassthrough", "passthrough gps to serial", NULL, cliGpsPassthrough),
 #endif
     CLI_COMMAND_DEF("help", NULL, NULL, cliHelp),

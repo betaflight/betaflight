@@ -21,7 +21,7 @@
 
 #include "platform.h"
 
-#ifdef CMS
+#if defined(USE_CMS)
 
 #include "common/printf.h"
 #include "common/utils.h"
@@ -33,6 +33,7 @@
 #include "io/vtx_rtc6705.h"
 #include "io/vtx_settings_config.h"
 
+#if defined(VTX_SETTINGS_CONFIG)
 
 static uint8_t cmsx_vtxBand;
 static uint8_t cmsx_vtxChannel;
@@ -97,5 +98,7 @@ CMS_Menu cmsx_menuVtxRTC6705 = {
     .onGlobalExit = NULL,
     .entries = cmsx_menuVtxEntries
 };
+
+#endif // VTX_SETTINGS_CONFIG
 
 #endif // CMS

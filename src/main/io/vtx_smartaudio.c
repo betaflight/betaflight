@@ -64,7 +64,7 @@ serialPort_t *debugSerialPort = NULL;
 
 static serialPort_t *smartAudioSerialPort = NULL;
 
-#if defined(CMS) || defined(VTX_COMMON)
+#if defined(USE_CMS) || defined(VTX_COMMON)
 static const char * const saPowerNames[VTX_SMARTAUDIO_POWER_COUNT+1] = {
     "---", "25 ", "200", "500", "800",
 };
@@ -349,7 +349,7 @@ static void saProcessResponse(uint8_t *buf, int len)
     // Todo: Update states in saVtxDevice?
 #endif
 
-#ifdef CMS
+#ifdef USE_CMS
     // Export current device status for CMS
     saCmsUpdate();
     saUpdateStatusString();

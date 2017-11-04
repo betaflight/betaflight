@@ -31,7 +31,7 @@
 
 #include "platform.h"
 
-#ifdef OSD
+#ifdef USE_OSD
 
 #include "blackbox/blackbox.h"
 #include "blackbox/blackbox_io.h"
@@ -346,7 +346,7 @@ static void osdDrawSingleElement(uint8_t item)
         tfp_sprintf(buff, "%4d%c", getMAhDrawn(), SYM_MAH);
         break;
 
-#ifdef GPS
+#ifdef USE_GPS
     case OSD_GPS_SATS:
         tfp_sprintf(buff, "%c%c%d", SYM_SAT_L, SYM_SAT_R, gpsSol.numSat);
         break;
@@ -769,7 +769,7 @@ static void osdDrawElements(void)
     osdDrawSingleElement(OSD_NUMERICAL_VARIO);
     osdDrawSingleElement(OSD_COMPASS_BAR);
 
-#ifdef GPS
+#ifdef USE_GPS
     if (sensors(SENSOR_GPS)) {
         osdDrawSingleElement(OSD_GPS_SATS);
         osdDrawSingleElement(OSD_GPS_SPEED);
@@ -847,7 +847,7 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
     BUILD_BUG_ON(OSD_POS_MAX != OSD_POS(31,31));
 
     osdDisplayPort = osdDisplayPortToUse;
-#ifdef CMS
+#ifdef USE_CMS
     cmsDisplayPortRegister(osdDisplayPort);
 #endif
 
@@ -862,7 +862,7 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
     char string_buffer[30];
     tfp_sprintf(string_buffer, "V%s", FC_VERSION_STRING);
     displayWrite(osdDisplayPort, 20, 6, string_buffer);
-#ifdef CMS
+#ifdef USE_CMS
     displayWrite(osdDisplayPort, 7, 8,  CMS_STARTUP_HELP_TEXT1);
     displayWrite(osdDisplayPort, 11, 9, CMS_STARTUP_HELP_TEXT2);
     displayWrite(osdDisplayPort, 11, 10, CMS_STARTUP_HELP_TEXT3);
@@ -952,7 +952,7 @@ static void osdResetStats(void)
 static void osdUpdateStats(void)
 {
     int16_t value = 0;
-#ifdef GPS
+#ifdef USE_GPS
     value = CM_S_TO_KM_H(gpsSol.groundSpeed);
 #endif
     if (stats.max_speed < value)
@@ -971,14 +971,14 @@ static void osdUpdateStats(void)
     if (stats.max_altitude < getEstimatedAltitude())
         stats.max_altitude = getEstimatedAltitude();
 
-#ifdef GPS
+#ifdef USE_GPS
     if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME) && (stats.max_distance < GPS_distanceToHome)) {
             stats.max_distance = GPS_distanceToHome;
     }
 #endif
 }
 
-#ifdef BLACKBOX
+#ifdef USE_BLACKBOX
 static void osdGetBlackboxStatusString(char * buff)
 {
     bool storageDeviceIsWorking = false;
@@ -1101,7 +1101,7 @@ static void osdShowStats(void)
         osdDisplayStatisticLabel(top++, "MAX ALTITUDE", buff);
     }
 
-#ifdef BLACKBOX
+#ifdef USE_BLACKBOX
     if (osdConfig()->enabled_stats[OSD_STAT_BLACKBOX] && blackboxConfig()->device && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
         osdGetBlackboxStatusString(buff);
         osdDisplayStatisticLabel(top++, "BLACKBOX", buff);
@@ -1175,7 +1175,7 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
     }
 #endif
 
-#ifdef CMS
+#ifdef USE_CMS
     if (!displayIsGrabbed(osdDisplayPort)) {
         osdUpdateAlarms();
         osdDrawElements();
@@ -1230,7 +1230,7 @@ void osdUpdate(timeUs_t currentTimeUs)
         displayDrawScreen(osdDisplayPort);
     }
 
-#ifdef CMS
+#ifdef USE_CMS
     // do not allow ARM if we are in menu
     if (displayIsGrabbed(osdDisplayPort)) {
         setArmingDisabled(ARMING_DISABLED_OSD_MENU);

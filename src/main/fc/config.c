@@ -310,7 +310,7 @@ void activateConfig(void)
     useRcControlsConfig(currentPidProfile);
     useAdjustmentConfig(currentPidProfile);
 
-#ifdef GPS
+#ifdef USE_GPS
     gpsUsePIDs(currentPidProfile);
 #endif
 

@@ -46,11 +46,11 @@
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN CW270_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN CW270_DEG
 
@@ -61,13 +61,13 @@
 //#define I2C_DEVICE (I2CDEV_2) // Flex port - SCL/PB10, SDA/PB11
 
 // External I2C BARO
-//#define BARO
+//#define USE_BARO
 //#define USE_BARO_MS5611
 //#define USE_BARO_BMP085
 //#define USE_BARO_BMP280
 
 // External I2C MAG
-//#define MAG
+//#define USE_MAG
 //#define USE_MAG_HMC5883
 
 #define USE_VCP
@@ -97,7 +97,7 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-//#define SONAR
+//#define USE_SONAR
 //#define SONAR_ECHO_PIN          PB0
 //#define SONAR_TRIGGER_PIN       PB5
 

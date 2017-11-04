@@ -39,7 +39,7 @@ typedef enum
     OME_String,
     OME_FLOAT, //only up to 255 value and cant be 2.55 or 25.5, just for PID's
     //wlasciwosci elementow
-#ifdef OSD
+#ifdef USE_OSD
     OME_VISIBLE,
 #endif
     OME_TAB,

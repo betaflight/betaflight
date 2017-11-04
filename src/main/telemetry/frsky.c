@@ -197,7 +197,7 @@ static void sendTemperature1(void)
 #if defined(USE_ESC_SENSOR)
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
     serialize16(escData->dataAge < ESC_DATA_INVALID ? escData->temperature : 0);
-#elif defined(BARO)
+#elif defined(USE_BARO)
     serialize16((baro.baroTemperature + 50)/ 100); // Airmamaf
 #else
     serialize16(gyroGetTemperature() / 10);
@@ -216,7 +216,7 @@ static void sendTime(void)
     serialize16(seconds % 60);
 }
 
-#if defined(GPS) || defined(MAG)
+#if defined(USE_GPS) || defined(USE_MAG)
 // Frsky pdf: dddmm.mmmm
 // .mmmm is returned in decimal fraction of minutes.
 static void GPStoDDDMM_MMMM(int32_t mwiigps, gpsCoordinateDDDMMmmmm_t *result)
@@ -257,7 +257,7 @@ static void sendLatLong(int32_t coord[2])
     serialize16(coord[LON] < 0 ? 'W' : 'E');
 }
 
-#if defined(GPS)
+#if defined(USE_GPS)
 static void sendGpsAltitude(void)
 {
     uint16_t altitude = gpsSol.llh.alt;
@@ -334,7 +334,7 @@ static void sendGPSLatLong(void)
 #endif
 #endif
 
-#if defined(BARO) || defined(SONAR)
+#if defined(USE_BARO) || defined(USE_SONAR)
 /*
  * Send vertical speed for opentx. ID_VERT_SPEED
  * Unit is cm/s
@@ -429,7 +429,7 @@ static void sendFuelLevel(void)
     }
 }
 
-#if defined(MAG)
+#if defined(USE_MAG)
 static void sendFakeLatLongThatAllowsHeadingDisplay(void)
 {
     // Heading is only displayed on OpenTX if non-zero lat/long is also sent
@@ -545,7 +545,7 @@ void handleFrSkyTelemetry(timeUs_t currentTimeUs)
         sendAccel();
     }
 
-#if defined(BARO) || defined(SONAR)
+#if defined(USE_BARO) || defined(USE_SONAR)
     if (sensors(SENSOR_BARO | SENSOR_SONAR)) {
         // Sent every 125ms
         sendVario();
@@ -568,7 +568,7 @@ void handleFrSkyTelemetry(timeUs_t currentTimeUs)
     }
 #endif
 
-#if defined(MAG)
+#if defined(USE_MAG)
     if (sensors(SENSOR_MAG)) {
         // Sent every 500ms
         if ((cycleNum % 4) == 0) {
@@ -592,7 +592,7 @@ void handleFrSkyTelemetry(timeUs_t currentTimeUs)
             }
         }
 
-#if defined(GPS)
+#if defined(USE_GPS)
         if (sensors(SENSOR_GPS)) {
             sendSpeed();
             sendGpsAltitude();
@@ -600,7 +600,7 @@ void handleFrSkyTelemetry(timeUs_t currentTimeUs)
             sendGPSLatLong();
         } else
 #endif
-#if defined(MAG)
+#if defined(USE_MAG)
         if (sensors(SENSOR_MAG)) {
             sendFakeLatLongThatAllowsHeadingDisplay();
         }

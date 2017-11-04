@@ -40,11 +40,11 @@
 #define ICM20689_CS_PIN         PA4
 #define ICM20689_SPI_INSTANCE   SPI1
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_ICM20689
 #define ACC_ICM20689_ALIGN      CW90_DEG
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_ICM20689
 #define GYRO_ICM20689_ALIGN     CW90_DEG
 
@@ -87,7 +87,7 @@
 #define SPI3_MOSI_PIN           PC12
 
 // OSD
-#define OSD
+#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI1
 #define MAX7456_SPI_CS_PIN      PA14

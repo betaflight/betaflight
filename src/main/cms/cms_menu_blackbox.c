@@ -26,7 +26,7 @@
 
 #include "platform.h"
 
-#if defined(CMS) && defined(BLACKBOX)
+#if defined(USE_CMS) && defined(USE_BLACKBOX)
 
 #include "build/version.h"
 

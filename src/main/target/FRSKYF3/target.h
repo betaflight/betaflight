@@ -36,19 +36,19 @@
 #ifdef MYMPU6000
 #define MPU6000_SPI_INSTANCE    SPI2
 #define MPU6000_CS_PIN          PB12
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW270_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW270_DEG
 #else
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_MPU6050
 #define GYRO_MPU6050_ALIGN      CW270_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_MPU6050
 #define ACC_MPU6050_ALIGN       CW270_DEG
 #endif
@@ -80,7 +80,7 @@
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PB9  // (HARDARE=0)
 #define USE_SPI
-#define OSD
+#define USE_OSD
 
 // include the max7456 driver
 #define USE_MAX7456

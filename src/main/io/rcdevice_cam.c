@@ -195,7 +195,7 @@ static void rcdevice5KeySimulationProcess(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
 
-#ifdef CMS
+#ifdef USE_CMS
     if (cmsInMenu) {
         return;
     }

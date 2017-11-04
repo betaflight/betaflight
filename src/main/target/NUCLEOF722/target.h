@@ -29,12 +29,12 @@
 #define BEEPER   PA0
 #define BEEPER_INVERTED
 
-#define ACC
+#define USE_ACC
 #define USE_FAKE_ACC
 #define USE_ACC_MPU6050
 #define ACC_MPU6050_ALIGN CW270_DEG
 
-#define GYRO
+#define USE_GYRO
 #define USE_FAKE_GYRO
 #define USE_GYRO_MPU6050
 #define GYRO_MPU6050_ALIGN CW270_DEG
@@ -44,12 +44,12 @@
 #define MPU_INT_EXTI PB15
 #define USE_EXTI
 
-#define MAG
+#define USE_MAG
 #define USE_FAKE_MAG
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN CW270_DEG_FLIP
 
-#define BARO
+#define USE_BARO
 #define USE_FAKE_BARO
 #define USE_BARO_MS5611
 

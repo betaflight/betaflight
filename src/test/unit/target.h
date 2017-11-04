@@ -20,14 +20,14 @@
 #define SCHEDULER_DELAY_LIMIT 1
 #define TASK_GYROPID_DESIRED_PERIOD 100
 
-#define CMS
+#define USE_CMS
 #define CMS_MAX_DEVICE 4
 #define USE_FAKE_GYRO
 #define BEEPER
-#define BLACKBOX
-#define MAG
-#define BARO
-#define GPS
+#define USE_BLACKBOX
+#define USE_MAG
+#define USE_BARO
+#define USE_GPS
 #define USE_DASHBOARD
 #define SERIAL_RX
 #define USE_RX_MSP

@@ -167,19 +167,19 @@ void initActiveBoxIds(void)
         BME(BOXHEADADJ);
     }
 
-#ifdef BARO
+#ifdef USE_BARO
     if (sensors(SENSOR_BARO)) {
         BME(BOXBARO);
     }
 #endif
 
-#ifdef MAG
+#ifdef USE_MAG
     if (sensors(SENSOR_MAG)) {
         BME(BOXMAG);
     }
 #endif
 
-#ifdef GPS
+#ifdef USE_GPS
     if (feature(FEATURE_GPS)) {
         BME(BOXGPSHOME);
         BME(BOXGPSHOLD);
@@ -187,7 +187,7 @@ void initActiveBoxIds(void)
     }
 #endif
 
-#ifdef SONAR
+#ifdef USE_SONAR
     if (feature(FEATURE_SONAR)) {
         BME(BOXSONAR);
     }
@@ -207,7 +207,7 @@ void initActiveBoxIds(void)
     }
 #endif
 
-#ifdef BLACKBOX
+#ifdef USE_BLACKBOX
     BME(BOXBLACKBOX);
 #ifdef USE_FLASHFS
     BME(BOXBLACKBOXERASE);

@@ -41,7 +41,7 @@
 uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE };
 
 
-#ifdef SONAR
+#ifdef USE_SONAR
 static bool sonarDetect(void)
 {
     if (feature(FEATURE_SONAR)) {
@@ -65,15 +65,15 @@ bool sensorsAutodetect(void)
         accInit(gyro.targetLooptime);
     }
 
-#ifdef MAG
+#ifdef USE_MAG
     compassInit();
 #endif
 
-#ifdef BARO
+#ifdef USE_BARO
     baroDetect(&baro.dev, barometerConfig()->baro_hardware);
 #endif
 
-#ifdef SONAR
+#ifdef USE_SONAR
     if (sonarDetect()) {
         sonarInit(sonarConfig());
     }

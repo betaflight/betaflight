@@ -49,16 +49,16 @@
 
 #define USE_FAKE_LED
 
-#define ACC
+#define USE_ACC
 #define USE_FAKE_ACC
 
-#define GYRO
+#define USE_GYRO
 #define USE_FAKE_GYRO
 
-#define MAG
+#define USE_MAG
 #define USE_FAKE_MAG
 
-#define BARO
+#define USE_BARO
 #define USE_FAKE_BARO
 
 #define USABLE_TIMER_CHANNEL_COUNT 0
@@ -103,7 +103,7 @@
 #undef TELEMETRY_SMARTPORT
 #undef TELEMETRY_MAVLINK
 #undef USE_RESOURCE_MGMT
-#undef CMS
+#undef USE_CMS
 #undef TELEMETRY_CRSF
 #undef TELEMETRY_IBUS
 #undef TELEMETRY_JETIEXBUS
