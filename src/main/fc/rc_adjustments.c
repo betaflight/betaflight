@@ -56,7 +56,7 @@ static pidProfile_t *pidProfile;
 
 static void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue)
 {
-#ifndef BLACKBOX
+#ifndef USE_BLACKBOX
     UNUSED(adjustmentFunction);
     UNUSED(newValue);
 #else
@@ -73,7 +73,7 @@ static void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFu
 #if 0
 static void blackboxLogInflightAdjustmentEventFloat(adjustmentFunction_e adjustmentFunction, float newFloatValue)
 {
-#ifndef BLACKBOX
+#ifndef USE_BLACKBOX
     UNUSED(adjustmentFunction);
     UNUSED(newFloatValue);
 #else

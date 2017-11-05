@@ -440,11 +440,11 @@ static void validateAndFixConfig(void)
     featureClear(FEATURE_SOFTSERIAL);
 #endif
 
-#ifndef GPS
+#ifndef USE_GPS
     featureClear(FEATURE_GPS);
 #endif
 
-#ifndef SONAR
+#ifndef USE_SONAR
     featureClear(FEATURE_SONAR);
 #endif
 
@@ -468,7 +468,7 @@ static void validateAndFixConfig(void)
     featureClear(FEATURE_DASHBOARD);
 #endif
 
-#ifndef OSD
+#ifndef USE_OSD
     featureClear(FEATURE_OSD);
 #endif
 
