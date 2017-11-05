@@ -8,6 +8,7 @@
 *.elf -crlf -diff
 *.ld text eol=lf
 Makefile text eol=lf
+*.mk text eol=lf
 *.bat eol=crlf
 *.txt text eol=lf
 *.sh text eol=lf
