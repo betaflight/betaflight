@@ -61,7 +61,7 @@
 #define BARO_I2C_INSTANCE       I2C_DEVICE
 #define MAG_I2C_INSTANCE        I2C_DEVICE
 
-#define MAG           
+#define USE_MAG
 #define USE_MAG_HMC5883                   //External, connect to I2C1
 #define MAG_HMC5883_ALIGN       CW180_DEG
 
