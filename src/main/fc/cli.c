@@ -2002,13 +2002,13 @@ static void cliFeature(char *cmdline)
             if (strncasecmp(cmdline, featureNames[i], len) == 0) {
 
                 mask = 1 << i;
-#ifndef GPS
+#ifndef USE_GPS
                 if (mask & FEATURE_GPS) {
                     cliPrintLine("unavailable");
                     break;
                 }
 #endif
-#ifndef SONAR
+#ifndef USE_SONAR
                 if (mask & FEATURE_SONAR) {
                     cliPrintLine("unavailable");
                     break;
