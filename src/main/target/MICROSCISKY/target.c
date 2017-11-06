@@ -34,11 +34,11 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM3, CH2, PA7,  TIM_USE_PWM,               0), // PWM6 - RC6
     DEF_TIM(TIM3, CH3, PB0,  TIM_USE_PWM,               0), // PWM7 - RC7
     DEF_TIM(TIM3, CH4, PB1,  TIM_USE_PWM,               0), // PWM8 - RC8
-    DEF_TIM(TIM1, CH1, PA8,  TIM_USE_MOTOR,             1), // PWM9 - OUT1
-    DEF_TIM(TIM1, CH4, PA11, TIM_USE_MOTOR,             1), // PWM10 - OUT2
-    DEF_TIM(TIM4, CH1, PB6,  TIM_USE_MOTOR,             1), // PWM11 - OUT3
-    DEF_TIM(TIM4, CH2, PB7,  TIM_USE_MOTOR,             1), // PWM12 - OUT4
-    DEF_TIM(TIM4, CH3, PB8,  TIM_USE_MOTOR,             1), // PWM13 - OUT5
-    DEF_TIM(TIM4, CH4, PB9,  TIM_USE_MOTOR,             1)  // PWM14 - OUT6
+    DEF_TIM(TIM1, CH1, PA8,  TIM_USE_MOTOR,             0), // PWM9 - OUT1
+    DEF_TIM(TIM1, CH4, PA11, TIM_USE_MOTOR,             0), // PWM10 - OUT2
+    DEF_TIM(TIM4, CH1, PB6,  TIM_USE_MOTOR,             0), // PWM11 - OUT3
+    DEF_TIM(TIM4, CH2, PB7,  TIM_USE_MOTOR,             0), // PWM12 - OUT4
+    DEF_TIM(TIM4, CH3, PB8,  TIM_USE_MOTOR,             0), // PWM13 - OUT5
+    DEF_TIM(TIM4, CH4, PB9,  TIM_USE_MOTOR,             0), // PWM14 - OUT6
 
 };

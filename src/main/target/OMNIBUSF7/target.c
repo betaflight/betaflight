@@ -23,21 +23,21 @@
 #include "drivers/timer_def.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    DEF_TIM(TIM1,  CH3, PE13, TIM_USE_NONE,  0, 1), // RC1 / PPM, unusable
+    DEF_TIM(TIM1, CH3, PE13, TIM_USE_NONE,  0, 1 ), // RC1 / PPM, unusable
 
-    DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_MOTOR, 1, 0), // M1
-    DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_MOTOR, 1, 0), // M2
-    DEF_TIM(TIM1,  CH1, PE9,  TIM_USE_MOTOR, 1, 2), // M3
-    DEF_TIM(TIM1,  CH2, PE11, TIM_USE_MOTOR, 1, 1), // M4
+    DEF_TIM(TIM3, CH3, PB0,  TIM_USE_MOTOR, 0, 0 ), // M1
+    DEF_TIM(TIM3, CH4, PB1,  TIM_USE_MOTOR, 0, 0 ), // M2
+    DEF_TIM(TIM1, CH1, PE9,  TIM_USE_MOTOR, 0, 2 ), // M3
+    DEF_TIM(TIM1, CH2, PE11, TIM_USE_MOTOR, 0, 1 ), // M4
 
-    DEF_TIM(TIM4,  CH1, PD12,  TIM_USE_LED,  1,  0 ), // LED
+    DEF_TIM(TIM4, CH1, PD12, TIM_USE_LED,   0, 0 ), // LED
 
     // Backdoor timers
-    DEF_TIM(TIM2,  CH3, PB10,  TIM_USE_NONE, 1,  0 ), // UART3_TX, I2C2_SCL
-    DEF_TIM(TIM2,  CH4, PB11,  TIM_USE_NONE, 1,  0 ), // UART3_RX, I2C2_SDA
-    DEF_TIM(TIM8,  CH1, PC6,   TIM_USE_NONE, 1,  0 ), // UART6_TX
-    DEF_TIM(TIM8,  CH2, PC7,   TIM_USE_NONE, 1,  0 ), // UART6_RX
+    DEF_TIM(TIM2, CH3, PB10, TIM_USE_NONE,  0, 0 ), // UART3_TX, I2C2_SCL
+    DEF_TIM(TIM2, CH4, PB11, TIM_USE_NONE,  0, 0 ), // UART3_RX, I2C2_SDA
+    DEF_TIM(TIM8, CH1, PC6,  TIM_USE_NONE,  0, 0 ), // UART6_TX
+    DEF_TIM(TIM8, CH2, PC7,  TIM_USE_NONE,  0, 0 ), // UART6_RX
 
     // For ESC serial
-    DEF_TIM(TIM9,  CH1, PA2,   TIM_USE_NONE, 1,  0 ), // UART2_TX (unwired)
+    DEF_TIM(TIM9, CH1, PA2,  TIM_USE_NONE,  0, 0 ), // UART2_TX (unwired)
 };
