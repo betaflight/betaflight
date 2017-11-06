@@ -70,6 +70,11 @@
 #include "sensors/gyro.h"
 #include "sensors/sonar.h"
 
+enum {
+    BLACKBOX_MODE_NORMAL = 0,
+    BLACKBOX_MODE_MOTOR_TEST,
+    BLACKBOX_MODE_ALWAYS_ON
+};
 
 #if defined(ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT)
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_FLASH
@@ -79,13 +84,13 @@
 #define DEFAULT_BLACKBOX_DEVICE     BLACKBOX_DEVICE_SERIAL
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 1);
 
 PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
     .p_denom = 32,
     .device = DEFAULT_BLACKBOX_DEVICE,
-    .on_motor_test = 0, // default off
-    .record_acc = 1
+    .record_acc = 1,
+    .mode = BLACKBOX_MODE_NORMAL
 );
 
 #define BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS 200
@@ -888,9 +893,9 @@ void blackboxFinish(void)
 /**
  * Test Motors Blackbox Logging
  */
-bool startedLoggingInTestMode = false;
+static bool startedLoggingInTestMode = false;
 
-void startInTestMode(void)
+static void startInTestMode(void)
 {
     if (!startedLoggingInTestMode) {
         if (blackboxConfig()->device == BLACKBOX_DEVICE_SERIAL) {
@@ -903,7 +908,8 @@ void startInTestMode(void)
         startedLoggingInTestMode = true;
     }
 }
-void stopInTestMode(void)
+
+static void stopInTestMode(void)
 {
     if (startedLoggingInTestMode) {
         blackboxFinish();
@@ -920,7 +926,7 @@ void stopInTestMode(void)
  * Of course, after the 5 seconds and shutdown of the logger, the system will be re-enabled to allow the
  * test mode to trigger again; its just that the data will be in a second, third, fourth etc log file.
  */
-bool inMotorTestMode(void) {
+static bool inMotorTestMode(void) {
     static uint32_t resetTime = 0;
 
     if (!ARMING_FLAG(ARMED) && areMotorsRunning()) {
@@ -1630,20 +1636,37 @@ void blackboxUpdate(timeUs_t currentTimeUs)
 #endif
             blackboxSetState(BLACKBOX_STATE_STOPPED);
             // ensure we reset the test mode flag if we stop due to full memory card
-            if (startedLoggingInTestMode) startedLoggingInTestMode = false;
+            if (startedLoggingInTestMode) {
+                startedLoggingInTestMode = false;
+            }
 #ifdef USE_FLASHFS
         }
 #endif
     } else { // Only log in test mode if there is room!
-        if (blackboxConfig()->on_motor_test) {
+        switch (blackboxConfig()->mode) {
+        case BLACKBOX_MODE_MOTOR_TEST:
             // Handle Motor Test Mode
             if (inMotorTestMode()) {
-                if (blackboxState==BLACKBOX_STATE_STOPPED)
+                if (blackboxState==BLACKBOX_STATE_STOPPED) {
                     startInTestMode();
+                }
             } else {
-                if (blackboxState!=BLACKBOX_STATE_STOPPED)
+                if (blackboxState!=BLACKBOX_STATE_STOPPED) {
                     stopInTestMode();
+                }
             }
+
+            break;
+        case BLACKBOX_MODE_ALWAYS_ON:
+            if (blackboxState==BLACKBOX_STATE_STOPPED) {
+                startInTestMode();
+            }
+
+            break;
+        case BLACKBOX_MODE_NORMAL:
+        default:
+
+            break;
         }
     }
 }
