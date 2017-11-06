@@ -429,7 +429,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
         return batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE;
 
     case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC:
-        return batteryConfig()->currentMeterSource == CURRENT_METER_ADC;
+        return (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) && (batteryConfig()->currentMeterSource != CURRENT_METER_VIRTUAL);
 
     case FLIGHT_LOG_FIELD_CONDITION_SONAR:
 #ifdef SONAR
