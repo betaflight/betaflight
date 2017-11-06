@@ -29,6 +29,7 @@
 #include "fat_standard.h"
 #include "drivers/sdcard.h"
 #include "common/maths.h"
+#include "common/time.h"
 
 #ifdef AFATFS_DEBUG
     #define ONLY_EXPOSE_FOR_TESTING
@@ -2600,10 +2601,25 @@ static void afatfs_createFileContinue(afatfsFile_t *file)
 
                 memcpy(entry->filename, opState->filename, FAT_FILENAME_LENGTH);
                 entry->attrib = file->attrib;
-                entry->creationDate = AFATFS_DEFAULT_FILE_DATE;
-                entry->creationTime = AFATFS_DEFAULT_FILE_TIME;
-                entry->lastWriteDate = AFATFS_DEFAULT_FILE_DATE;
-                entry->lastWriteTime = AFATFS_DEFAULT_FILE_TIME;
+
+                uint16_t fileDate = AFATFS_DEFAULT_FILE_DATE;
+                uint16_t fileTime = AFATFS_DEFAULT_FILE_TIME;
+
+                #ifdef USE_RTC_TIME
+                // rtcGetDateTime will fill dt with 0000-01-01T00:00:00
+                // when time is not known.
+                dateTime_t dt;
+                rtcGetDateTime(&dt);
+                if (dt.year != 0) {
+                    fileDate = FAT_MAKE_DATE(dt.year, dt.month, dt.day);
+                    fileTime = FAT_MAKE_TIME(dt.hours, dt.minutes, dt.seconds);
+                }
+                #endif
+
+                entry->creationDate = fileDate;
+                entry->creationTime = fileTime;
+                entry->lastWriteDate = fileDate;
+                entry->lastWriteTime = fileTime;
 
 #ifdef AFATFS_DEBUG_VERBOSE
                 fprintf(stderr, "Adding directory entry for %.*s to sector %u\n", FAT_FILENAME_LENGTH, opState->filename, file->directoryEntryPos.sectorNumberPhysical);

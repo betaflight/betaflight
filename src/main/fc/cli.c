@@ -24,6 +24,7 @@
 #include <ctype.h>
 
 #include "platform.h"
+#include "common/time.h"
 
 // FIXME remove this for targets that don't need a CLI.  Perhaps use a no-op macro when USE_CLI is not enabled
 // signal that we're in cli mode
@@ -2958,6 +2959,15 @@ static void cliStatus(char *cmdline)
     UNUSED(cmdline);
 
     cliPrintLinef("System Uptime: %d seconds", millis() / 1000);
+    
+    #ifdef USE_RTC_TIME
+    char buf[FORMATTED_DATE_TIME_BUFSIZE];
+    dateTime_t dt;
+    rtcGetDateTime(&dt);
+    dateTimeFormatLocal(buf, &dt);
+    cliPrintLinef("Current Time: %s", buf);
+    #endif
+
     cliPrintLinef("Voltage: %d * 0.1V (%dS battery - %s)", getBatteryVoltage(), getBatteryCellCount(), getBatteryStateString());
 
     cliPrintf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
@@ -3689,6 +3699,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
 #endif
 };
+
 static void cliHelp(char *cmdline)
 {
     UNUSED(cmdline);

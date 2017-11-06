@@ -47,7 +47,6 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data);
 
 void blackboxInit(void);
 void blackboxUpdate(timeUs_t currentTimeUs);
-const char *blackboxGetStartDateTime(void);
 void blackboxSetStartDateTime(const char *dateTime, timeMs_t timeNowMs);
 int blackboxCalculatePDenom(int rateNum, int rateDenom);
 uint8_t blackboxGetRateNum(void);

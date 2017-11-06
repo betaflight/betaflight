@@ -35,6 +35,7 @@
 #include "common/axis.h"
 #include "common/encoding.h"
 #include "common/maths.h"
+#include "common/time.h"
 #include "common/utils.h"
 
 #include "config/feature.h"
@@ -1147,6 +1148,22 @@ static bool sendFieldDefinition(char mainFrameChar, char deltaFrameChar, const v
     return xmitState.headerIndex < headerCount;
 }
 
+// Buf must be at least FORMATTED_DATE_TIME_BUFSIZE
+STATIC_UNIT_TESTED char *blackboxGetStartDateTime(char *buf)
+{
+    #ifdef USE_RTC_TIME
+    dateTime_t dt;
+    // rtcGetDateTime will fill dt with 0000-01-01T00:00:00
+    // when time is not known.
+    rtcGetDateTime(&dt);
+    dateTimeFormatLocal(buf, &dt);
+    #else
+    buf = "0000-01-01T00:00:00.000";
+    #endif
+
+    return buf;
+}
+
 #ifndef BLACKBOX_PRINT_HEADER_LINE
 #define BLACKBOX_PRINT_HEADER_LINE(name, format, ...) case __COUNTER__: \
                                                 blackboxPrintfHeaderLine(name, format, __VA_ARGS__); \
@@ -1171,12 +1188,14 @@ static bool blackboxWriteSysinfo(void)
         return false;
     }
 
+    char buf[FORMATTED_DATE_TIME_BUFSIZE];
+
     const controlRateConfig_t *currentControlRateProfile = controlRateProfiles(systemConfig()->activeRateProfile);
     switch (xmitState.headerIndex) {
         BLACKBOX_PRINT_HEADER_LINE("Firmware type", "%s",                   "Cleanflight");
         BLACKBOX_PRINT_HEADER_LINE("Firmware revision", "%s %s (%s) %s",    FC_FIRMWARE_NAME, FC_VERSION_STRING, shortGitRevision, targetName);
         BLACKBOX_PRINT_HEADER_LINE("Firmware date", "%s %s",                buildDate, buildTime);
-        BLACKBOX_PRINT_HEADER_LINE("Log start datetime", "%s",              blackboxGetStartDateTime());
+        BLACKBOX_PRINT_HEADER_LINE("Log start datetime", "%s",              blackboxGetStartDateTime(buf));
         BLACKBOX_PRINT_HEADER_LINE("Craft name", "%s",                      pilotConfig()->name);
         BLACKBOX_PRINT_HEADER_LINE("I interval", "%d",                      blackboxIInterval);
         BLACKBOX_PRINT_HEADER_LINE("P interval", "%d/%d",                   blackboxGetRateNum(), blackboxGetRateDenom());
@@ -1646,22 +1665,6 @@ void blackboxUpdate(timeUs_t currentTimeUs)
             }
         }
     }
-}
-
-/*
- * Returns start time in ISO 8601 format, YYYY-MM-DDThh:mm:ss
- * Year value of "0000" indicates time not set
- */
-static char startDateTime[20] = "0000-01-01T00:00:00";
-const char *blackboxGetStartDateTime(void)
-{
-    return startDateTime;
-}
-
-void blackboxSetStartDateTime(const char *dateTime, timeMs_t timeNowMs)
-{
-    (void)dateTime;
-    (void)timeNowMs;
 }
 
 int blackboxCalculatePDenom(int rateNum, int rateDenom)

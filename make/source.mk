@@ -13,6 +13,7 @@ COMMON_SRC = \
             common/maths.c \
             common/printf.c \
             common/streambuf.c \
+            common/time.c \
             common/typeconversion.c \
             config/config_eeprom.c \
             config/feature.c \
