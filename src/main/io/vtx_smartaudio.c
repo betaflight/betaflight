@@ -336,7 +336,7 @@ static void saProcessResponse(uint8_t *buf, int len)
     }
 
     if (memcmp(&saDevice, &saDevicePrev, sizeof(smartAudioDevice_t))) {
-#ifdef CMS    //if changes then trigger saCms update
+#ifdef USE_CMS    //if changes then trigger saCms update
         saCmsResetOpmodel();
 #endif
 #ifdef SMARTAUDIO_DPRINTF    // Debug
