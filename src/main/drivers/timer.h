@@ -114,12 +114,9 @@ typedef struct timerHardware_s {
 } timerHardware_t;
 
 typedef enum {
-    TIMER_OUTPUT_NONE      = 0x00,
-    TIMER_INPUT_ENABLED    = 0x01, /* TODO: remove this */
-    TIMER_OUTPUT_ENABLED   = 0x01, /* TODO: remove this */
-    TIMER_OUTPUT_STANDARD  = 0x01,
-    TIMER_OUTPUT_INVERTED  = 0x02,
-    TIMER_OUTPUT_N_CHANNEL = 0x04
+    TIMER_OUTPUT_NONE      = 0,
+    TIMER_OUTPUT_INVERTED  = (1 << 0),
+    TIMER_OUTPUT_N_CHANNEL = (1 << 1),
 } timerFlag_e;
 
 #ifdef STM32F1

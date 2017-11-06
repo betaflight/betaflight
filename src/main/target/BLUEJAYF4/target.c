@@ -29,12 +29,12 @@
  * - S5_OUT, S6_OUT and DEBUG can be assigned to any combination of LED, software serial and servos
  */
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    DEF_TIM(TIM3, CH2, PC7, TIM_USE_PPM,                 TIMER_OUTPUT_STANDARD, 0 ), // PPM IN
-    DEF_TIM(TIM5, CH1, PA0, TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0 ), // S1_OUT - DMA1_ST2
-    DEF_TIM(TIM5, CH2, PA1, TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0 ), // S2_OUT - DMA1_ST4
-    DEF_TIM(TIM5, CH3, PA2, TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 0 ), // S3_OUT - DMA1_ST0
-    DEF_TIM(TIM5, CH4, PA3, TIM_USE_MOTOR,               TIMER_OUTPUT_STANDARD, 1 ), // S4_OUT - DMA1_ST3 (Could be DMA1_ST1 with dmaopt=0)
-    DEF_TIM(TIM1, CH2N,PB0, TIM_USE_MOTOR | TIM_USE_LED, TIMER_OUTPUT_INVERTED, 0 ), // S5_OUT - DMA2_ST6
-    DEF_TIM(TIM8, CH3N,PB1, TIM_USE_MOTOR,               TIMER_OUTPUT_INVERTED, 0 ), // S6_OUT - DMA2_ST2
-    DEF_TIM(TIM2, CH2, PB3, TIM_USE_NONE,                TIMER_OUTPUT_STANDARD, 0 ), // DEBUG  - DMA1_ST6
+    DEF_TIM(TIM3, CH2,  PC7, TIM_USE_PPM,                 0, 0 ), // PPM IN
+    DEF_TIM(TIM5, CH1,  PA0, TIM_USE_MOTOR,               0, 0 ), // S1_OUT - DMA1_ST2
+    DEF_TIM(TIM5, CH2,  PA1, TIM_USE_MOTOR,               0, 0 ), // S2_OUT - DMA1_ST4
+    DEF_TIM(TIM5, CH3,  PA2, TIM_USE_MOTOR,               0, 0 ), // S3_OUT - DMA1_ST0
+    DEF_TIM(TIM5, CH4,  PA3, TIM_USE_MOTOR,               0, 1 ), // S4_OUT - DMA1_ST3 (Could be DMA1_ST1 with dmaopt=0)
+    DEF_TIM(TIM1, CH2N, PB0, TIM_USE_MOTOR | TIM_USE_LED, 0, 0 ), // S5_OUT - DMA2_ST6
+    DEF_TIM(TIM8, CH3N, PB1, TIM_USE_MOTOR,               0, 0 ), // S6_OUT - DMA2_ST2
+    DEF_TIM(TIM2, CH2,  PB3, TIM_USE_NONE,                0, 0 ), // DEBUG  - DMA1_ST6
 };
