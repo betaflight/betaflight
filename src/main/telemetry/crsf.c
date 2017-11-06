@@ -21,7 +21,7 @@
 
 #include "platform.h"
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
 
 #include "config/feature.h"
 #include "build/atomic.h"

@@ -22,7 +22,7 @@
 
 #include "platform.h"
 
-#ifdef SERIAL_RX
+#ifdef USE_SERIAL_RX
 
 #include "build/build_config.h"
 #include "build/debug.h"

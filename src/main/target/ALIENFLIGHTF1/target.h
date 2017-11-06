@@ -18,9 +18,9 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "AFF1" // AlienFlight F1.
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
-#define BRUSHED_ESC_AUTODETECT
+#define USE_BRUSHED_ESC_AUTODETECT
 
 #define LED0_PIN                PB3
 #define LED1_PIN                PB4

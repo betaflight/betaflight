@@ -15,7 +15,7 @@
 
 #pragma once
 
-//#define TARGET_CONFIG
+//#define USE_TARGET_CONFIG
 
 #define TARGET_BOARD_IDENTIFIER "KTF7"
 #define USBD_PRODUCT_STRING "KakuteF7"
@@ -168,7 +168,7 @@
 #define VBAT_ADC_PIN            PC3
 #define RSSI_ADC_PIN            PC5
 
-#define LED_STRIP
+#define USE_LED_STRIP
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 

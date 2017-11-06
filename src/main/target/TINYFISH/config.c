@@ -19,7 +19,7 @@
 
 #include <platform.h>
 
-#ifdef TARGET_CONFIG
+#ifdef USE_TARGET_CONFIG
 #include "drivers/dma.h"
 #include "drivers/io.h"
 #include "drivers/timer.h"

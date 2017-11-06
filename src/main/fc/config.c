@@ -285,7 +285,7 @@ void resetConfigs(void)
 {
     pgResetAll();
 
-#if defined(TARGET_CONFIG)
+#if defined(USE_TARGET_CONFIG)
     targetConfiguration();
 #endif
 
@@ -294,7 +294,7 @@ void resetConfigs(void)
     setControlRateProfile(0);
 #endif
 
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
     reevaluateLedConfig();
 #endif
 }
@@ -432,7 +432,7 @@ static void validateAndFixConfig(void)
     featureClear(FEATURE_RX_PPM);
 #endif
 
-#ifndef SERIAL_RX
+#ifndef USE_SERIAL_RX
     featureClear(FEATURE_RX_SERIAL);
 #endif
 
@@ -448,7 +448,7 @@ static void validateAndFixConfig(void)
     featureClear(FEATURE_SONAR);
 #endif
 
-#ifndef TELEMETRY
+#ifndef USE_TELEMETRY
     featureClear(FEATURE_TELEMETRY);
 #endif
 
@@ -460,7 +460,7 @@ static void validateAndFixConfig(void)
     featureClear(FEATURE_RX_MSP);
 #endif
 
-#ifndef LED_STRIP
+#ifndef USE_LED_STRIP
     featureClear(FEATURE_LED_STRIP);
 #endif
 

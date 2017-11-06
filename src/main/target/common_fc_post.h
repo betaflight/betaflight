@@ -56,7 +56,7 @@
 #endif
 
 #if defined(USE_MSP_OVER_TELEMETRY)
-#if !defined(TELEMETRY_SMARTPORT) && !defined(TELEMETRY_CRSF)
+#if !defined(USE_TELEMETRY_SMARTPORT) && !defined(USE_TELEMETRY_CRSF)
 #undef USE_MSP_OVER_TELEMETRY
 #endif
 #endif

@@ -17,7 +17,7 @@
 
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "YPF7"
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
 #define USBD_PRODUCT_STRING "YUPIF7"
 
@@ -110,7 +110,7 @@
 #define CURRENT_METER_SCALE_DEFAULT 250                     // 3.3/120A  = 25mv/A
 
 // LED strip configuration.
-#define LED_STRIP
+#define USE_LED_STRIP
 
 // Default configuration
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL

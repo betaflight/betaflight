@@ -127,9 +127,9 @@
 
 #define DEFAULT_FEATURES        (FEATURE_OSD )
 
-#define LED_STRIP
+#define USE_LED_STRIP
 
-#define SPEKTRUM_BIND
+#define USE_SPEKTRUM_BIND
 #define BIND_PIN                PA1 // USART4 RX
 
 #define USE_ESCSERIAL

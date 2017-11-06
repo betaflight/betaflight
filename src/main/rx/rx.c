@@ -223,7 +223,7 @@ STATIC_UNIT_TESTED void rxUpdateFlightChannelStatus(uint8_t channel, bool valid)
     }
 }
 
-#ifdef SERIAL_RX
+#ifdef USE_SERIAL_RX
 bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     bool enabled = false;
@@ -315,7 +315,7 @@ void rxInit(void)
         }
     }
 
-#ifdef SERIAL_RX
+#ifdef USE_SERIAL_RX
     if (feature(FEATURE_RX_SERIAL)) {
         const bool enabled = serialRxInit(rxConfig(), &rxRuntimeConfig);
         if (!enabled) {

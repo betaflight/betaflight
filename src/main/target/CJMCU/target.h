@@ -87,9 +87,9 @@
 //#define RX_SPI_DEFAULT_PROTOCOL RX_SPI_NRF24_V202_1M
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SPI
-//#define TELEMETRY
-//#define TELEMETRY_LTM
-//#define TELEMETRY_NRF24_LTM
+//#define USE_TELEMETRY
+//#define USE_TELEMETRY_LTM
+//#define USE_TELEMETRY_NRF24_LTM
 #ifdef USE_PWM
 #undef USE_PWM
 #endif
@@ -98,8 +98,8 @@
 #undef USE_PPM
 #endif
 
-#ifdef SERIAL_RX
-#undef SERIAL_RX
+#ifdef USE_SERIAL_RX
+#undef USE_SERIAL_RX
 #endif
 //#undef SKIP_TASK_STATISTICS
 

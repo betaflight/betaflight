@@ -150,7 +150,7 @@
 
 #define DEFAULT_FEATURES        (FEATURE_OSD )
 
-#define LED_STRIP
+#define USE_LED_STRIP
 
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN PA3

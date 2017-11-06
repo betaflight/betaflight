@@ -22,7 +22,7 @@
 #include "platform.h"
 #include "common/maths.h"
 
-#ifdef SERIAL_RX
+#ifdef USE_SERIAL_RX
 
 #include "build/debug.h"
 
@@ -38,7 +38,7 @@
 #include "fc/config.h"
 #include "fc/fc_dispatch.h"
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
 #include "telemetry/telemetry.h"
 #endif
 
@@ -527,7 +527,7 @@ void spektrumBind(rxConfig_t *rxConfig)
         // Take care half-duplex case
         switch (rxConfig->serialrx_provider) {
         case SERIALRX_SRXL:
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
             if (feature(FEATURE_TELEMETRY) && !telemetryCheckRxPortShared(portConfig)) {
                 bindPin = txPin;
             }
@@ -602,7 +602,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
     }
 
     srxlEnabled = false;
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
     bool portShared = telemetryCheckRxPortShared(portConfig);
 #else
     bool portShared = false;
@@ -610,7 +610,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 
     switch (rxConfig->serialrx_provider) {
     case SERIALRX_SRXL:
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
         srxlEnabled = (feature(FEATURE_TELEMETRY) && !portShared);
 #endif
     case SERIALRX_SPEKTRUM2048:
@@ -644,7 +644,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
         (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | ((srxlEnabled || rxConfig->halfDuplex) ? SERIAL_BIDIR : 0)
         );
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
     if (portShared) {
         telemetrySharedPort = serialPort;
     }

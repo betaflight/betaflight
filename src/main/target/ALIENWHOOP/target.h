@@ -44,18 +44,18 @@
 #define USBD_PRODUCT_STRING     "AlienWhoopF7"
 #endif
 
-#define TARGET_CONFIG // see config.c for target specific customizations
+#define USE_TARGET_CONFIG // see config.c for target specific customizations
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 #define BRUSHED_MOTORS
-#define BRUSHED_ESC_AUTODETECT
+#define USE_BRUSHED_ESC_AUTODETECT
 
 /* Visual Alerts - SMD LEDs
  */
 #define LED0_PIN                PC12 // conflicts UART5
 #define LED1_PIN                PD2  // conflicts UART5
 
-#define LED_STRIP
+#define USE_LED_STRIP
 
 /* Lost Quad Mode and Alerts - RCX03-787 Low Voltage Active Buzzer
  */
@@ -219,7 +219,7 @@
 #define I2C1_SCL                PB6
 #define I2C1_SDA                PB7
 #else
-//#undef CMS // TODO: OSD depends upon CMS
+//#undef USE_CMS // TODO: OSD depends upon CMS
 #undef USE_I2C
 #endif
 

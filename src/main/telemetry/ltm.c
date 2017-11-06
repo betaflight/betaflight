@@ -33,7 +33,7 @@
 
 #include "platform.h"
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
 
 #include "build/build_config.h"
 

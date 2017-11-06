@@ -260,7 +260,7 @@ void init(void)
     osdSlaveInit(osdDisplayPort);
 #endif
 
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
     ledStripInit();
 
     if (feature(FEATURE_LED_STRIP)) {

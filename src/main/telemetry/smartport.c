@@ -9,7 +9,7 @@
 
 #include "platform.h"
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
 
 #include "common/axis.h"
 #include "common/color.h"

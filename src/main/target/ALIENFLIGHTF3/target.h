@@ -18,14 +18,14 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "AFF3" // AlienFlight F3.
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 #define REMAP_TIM17_DMA
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
 #define USE_HARDWARE_REVISION_DETECTION
 #define HW_PIN                  PB2
-#define BRUSHED_ESC_AUTODETECT
+#define USE_BRUSHED_ESC_AUTODETECT
 
 // LED's V1
 #define LED0_PIN                PB4
@@ -113,7 +113,7 @@
 #define VBAT_SCALE_DEFAULT      20
 
 // LED strip configuration.
-#define LED_STRIP
+#define USE_LED_STRIP
 
 #define BINDPLUG_PIN            PB12
 

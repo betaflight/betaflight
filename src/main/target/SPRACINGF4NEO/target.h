@@ -18,7 +18,7 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER             "SP4N"
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
 #ifndef SPRACINGF4NEO_REV
     #define SPRACINGF4NEO_REV 3
@@ -73,8 +73,6 @@
 #define USE_MAG
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883
-
-#define USB_IO
 
 #define USE_VCP
 #define USE_UART1
@@ -190,7 +188,7 @@
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 
-#define LED_STRIP
+#define USE_LED_STRIP
 #define TRANSPONDER
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
@@ -206,7 +204,7 @@
 #define TELEMETRY_UART                      SERIAL_PORT_UART5
 #define TELEMETRY_PROVIDER_DEFAULT          FUNCTION_TELEMETRY_SMARTPORT
 
-#define BUTTONS // Physically located on the optional OSD/VTX board.
+#define USE_BUTTONS // Physically located on the optional OSD/VTX board.
 #if (SPRACINGF4NEO_REV >= 3)
     #define BUTTON_A_PIN                    PB0
 #else

@@ -17,11 +17,11 @@
 
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "AFF7"
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
 #define USE_HARDWARE_REVISION_DETECTION
 #define HW_PIN                  PC13
-#define BRUSHED_ESC_AUTODETECT
+#define USE_BRUSHED_ESC_AUTODETECT
 
 #define USBD_PRODUCT_STRING "AlienFlightNG F7"
 
@@ -171,7 +171,7 @@
 #define CURRENT_METER_SCALE_DEFAULT -667                       // ACS712/714-30A - 66.666 mV/A inverted mode
 
 // LED strip configuration.
-#define LED_STRIP
+#define USE_LED_STRIP
 
 #define BINDPLUG_PIN            PB2
 

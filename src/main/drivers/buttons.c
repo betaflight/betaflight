@@ -25,7 +25,7 @@
 
 #include "drivers/buttons.h"
 
-#if defined(BUTTONS)
+#if defined(USE_BUTTONS)
 
 #ifdef BUTTON_A_PIN
 static IO_t buttonAPin = IO_NONE;

@@ -25,10 +25,10 @@
 #define TARGET_BOARD_IDENTIFIER "SPEV"
 #endif
 
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
 #ifdef AIORACERF3
-#undef TARGET_CONFIG // no space left
+#undef USE_TARGET_CONFIG // no space left
 #endif
 
 #ifdef SPRACINGF3MQ
@@ -40,15 +40,14 @@
 
 #undef USE_UNCOMMON_MIXERS // no space left
 #endif
-#undef TELEMETRY_JETIEXBUS // no space left
+#undef USE_TELEMETRY_JETIEXBUS // no space left
 #undef USE_SERIALRX_JETIEXBUS // no space left 
 #undef USE_DASHBOARD // no space left
 #undef USE_RTC_TIME // no space left
 
-
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
-#define BRUSHED_ESC_AUTODETECT
+#define USE_BRUSHED_ESC_AUTODETECT
 
 #define LED0_PIN                PB8
 

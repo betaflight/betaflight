@@ -88,7 +88,7 @@ static int16_t RSSI_dBm;
 static uint8_t telemetry_id;
 static uint32_t telemetryTime;
 
-#if defined(TELEMETRY_FRSKY)
+#if defined(USE_TELEMETRY_FRSKY)
 #define MAX_SERIAL_BYTES 64
 static uint8_t hub_index;
 static uint8_t idxx = 0;
@@ -136,7 +136,7 @@ static void compute_RSSIdbm(uint8_t *packet)
     processRssi(constrain((RSSI_dBm << 3) / 10, 0, 100));
 }
 
-#if defined(TELEMETRY_FRSKY)
+#if defined(USE_TELEMETRY_FRSKY)
 static uint8_t frsky_append_hub_data(uint8_t *buf)
 {
     if (telemetry_id == telemetry_expected_id)
@@ -183,7 +183,7 @@ static void telemetry_build_frame(uint8_t *packet)
     frame[3] = (uint8_t)((adcExternal1Sample & 0xff0) >> 4); // A1
     frame[4] = (uint8_t)((adcRssiSample & 0xff0) >> 4);      // A2
     frame[5] = (uint8_t)RSSI_dBm;
-#if defined(TELEMETRY_FRSKY)
+#if defined(USE_TELEMETRY_FRSKY)
     bytes_used = frsky_append_hub_data(&frame[8]);
 #endif
     frame[6] = bytes_used;
@@ -714,7 +714,7 @@ static void frskyD_Rx_Setup(rx_spi_protocol_e protocol)
     RX_enable();
 #endif
 
-#if defined(TELEMETRY_FRSKY)
+#if defined(USE_TELEMETRY_FRSKY)
     initFrSkyExternalTelemetry(&frSkyTelemetryInitFrameSpi,
                                &frSkyTelemetryWriteSpi);
 #endif

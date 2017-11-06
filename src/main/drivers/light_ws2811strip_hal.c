@@ -20,7 +20,7 @@
 
 #include "platform.h"
 
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
 
 #include "common/color.h"
 #include "light_ws2811strip.h"

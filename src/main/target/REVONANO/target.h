@@ -76,7 +76,7 @@
 #define USE_I2C_DEVICE_1        // UART1/FlexiPort (PB6,PB7)
 #define I2C_DEVICE (I2CDEV_1)
 
-#undef LED_STRIP
+#undef USE_LED_STRIP
 
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PA7

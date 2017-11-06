@@ -80,10 +80,10 @@ typedef enum {
 #ifdef USE_DASHBOARD
     TASK_DASHBOARD,
 #endif
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
     TASK_TELEMETRY,
 #endif
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
     TASK_LEDSTRIP,
 #endif
 #ifdef TRANSPONDER

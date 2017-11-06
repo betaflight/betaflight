@@ -29,7 +29,7 @@
 #include "pwm_esc_detect.h"
 #include "timer.h"
 
-#ifdef BRUSHED_ESC_AUTODETECT
+#ifdef USE_BRUSHED_ESC_AUTODETECT
 uint8_t hardwareMotorType = MOTOR_UNKNOWN;
 
 void detectBrushedESC(void)

@@ -17,10 +17,10 @@
 
 #pragma once
 
-#undef TELEMETRY_IBUS   //no space left
-#undef TELEMETRY_HOTT   //no space left
-#undef TELEMETRY_JETIEXBUS // no space left
-#undef TELEMETRY_MAVLINK   // no space left
+#undef USE_TELEMETRY_IBUS   //no space left
+#undef USE_TELEMETRY_HOTT   //no space left
+#undef USE_TELEMETRY_JETIEXBUS // no space left
+#undef USE_TELEMETRY_MAVLINK   // no space left
 #undef USE_RCDEVICE // no space left
 #undef USE_RTC_TIME // no space left
 
@@ -161,7 +161,7 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define DEFAULT_FEATURES        (FEATURE_OSD)
 
-#define BUTTONS
+#define USE_BUTTONS
 #define BUTTON_A_PIN            PB1
 #define BUTTON_B_PIN            PB0
 
