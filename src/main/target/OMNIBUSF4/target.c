@@ -27,7 +27,7 @@
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
 #if defined(OMNIBUSF4SD)
-    DEF_TIM( TIM4,  CH3, PB8,  TIM_USE_PWM | TIM_USE_PPM,   0, 0 ), // PPM
+    DEF_TIM( TIM10, CH1, PB8,  TIM_USE_PWM | TIM_USE_PPM,   0, 0 ), // PPM
     DEF_TIM( TIM4,  CH4, PB9,  TIM_USE_PWM,                 0, 0 ), // S2_IN
 #else
     DEF_TIM( TIM12, CH1, PB14, TIM_USE_PWM | TIM_USE_PPM,   0, 0 ), // PPM
