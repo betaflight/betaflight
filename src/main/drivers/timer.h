@@ -115,9 +115,6 @@ typedef struct timerHardware_s {
 
 typedef enum {
     TIMER_OUTPUT_NONE      = 0x00,
-    TIMER_INPUT_ENABLED    = 0x01, /* TODO: remove this */
-    TIMER_OUTPUT_ENABLED   = 0x01, /* TODO: remove this */
-    TIMER_OUTPUT_STANDARD  = 0x01,
     TIMER_OUTPUT_INVERTED  = 0x02,
     TIMER_OUTPUT_N_CHANNEL = 0x04
 } timerFlag_e;
