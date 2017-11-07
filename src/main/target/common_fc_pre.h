@@ -105,7 +105,7 @@
 #define USE_RESOURCE_MGMT
 #define USE_SERVOS
 #endif
-
+ 
 #if (FLASH_SIZE > 128)
 #define USE_CMS
 #define USE_TELEMETRY_CRSF
@@ -146,4 +146,5 @@
 #define USE_GPS
 #define USE_NAV
 #define USE_UNCOMMON_MIXERS
+#define USE_OSD_ADJUSTMENTS
 #endif

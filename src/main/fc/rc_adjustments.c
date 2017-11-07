@@ -42,6 +42,10 @@
 #include "io/beeper.h"
 #include "io/motors.h"
 
+#if defined(OSD) && defined(USE_OSD_ADJUSTMENTS) 
+#include "io/osd.h"
+#endif
+
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc_adjustments.h"
@@ -94,6 +98,11 @@ STATIC_UNIT_TESTED uint8_t adjustmentStateMask = 0;
 #define MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentIndex) adjustmentStateMask &= ~(1 << adjustmentIndex)
 
 #define IS_ADJUSTMENT_FUNCTION_BUSY(adjustmentIndex) (adjustmentStateMask & (1 << adjustmentIndex))
+
+bool isAnyAdjustmentFunctionBusy()
+{
+    return adjustmentStateMask != 0;
+}
 
 // sync with adjustmentFunction_e
 static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COUNT - 1] = {
@@ -197,6 +206,35 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
     }
 };
 
+#if defined(OSD) && defined(USE_OSD_ADJUSTMENTS)
+static const char * adjustmentLabels[] = {
+    "RC RATE",
+    "RC EXPO",
+    "THROTTLE EXPO",
+    "ROLL RATE",
+    "YAW RATE",
+    "PITCH/ROLL P",
+    "PITCH/ROLL I",
+    "PITCH/ROLL D",
+    "YAW P",
+    "YAW I",
+    "YAW D",
+    "RATE PROFILE",
+    "PITCH RATE",
+    "ROLL RATE",
+    "PITCH P",
+    "PITCH I",
+    "PITCH D",
+    "ROLL P",
+    "ROLL I",
+    "ROLL D",
+    "RC RATE YAW",
+    "D SETPOINT",
+    "D SETPOINT TRANSITION",
+    "HORIZON STRENGTH",
+};
+#endif
+
 #define ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET 1
 
 STATIC_UNIT_TESTED adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENT_COUNT];
@@ -216,7 +254,7 @@ STATIC_UNIT_TESTED void configureAdjustment(uint8_t index, uint8_t auxSwitchChan
     MARK_ADJUSTMENT_FUNCTION_AS_READY(index);
 }
 
-static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentFunction, int delta)
+static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentFunction, int delta)
 {
 
     beeperConfirmationBeeps(delta > 0 ? 2 : 1);
@@ -331,11 +369,14 @@ static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t 
         blackboxLogInflightAdjustmentEvent(ADJUSTMENT_D_SETPOINT_TRANSITION, newValue);
         break;
     default:
+        newValue = -1;
         break;
     };
+
+    return newValue;
 }
 
-static void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
+static uint8_t applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
 {
     uint8_t beeps = 0;
 
@@ -345,6 +386,7 @@ static void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
             if (getCurrentControlRateProfileIndex() != position) {
                 changeControlRateProfile(position);
                 blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RATE_PROFILE, position);
+
                 beeps = position + 1;
             }
             break;
@@ -365,6 +407,7 @@ static void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
         beeperConfirmationBeeps(beeps);
     }
 
+    return position;
 }
 
 #define RESET_FREQUENCY_2HZ (1000 / 2)
@@ -372,6 +415,8 @@ static void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
 void processRcAdjustments(controlRateConfig_t *controlRateConfig)
 {
     const uint32_t now = millis();
+
+    int newValue = -1;
 
     const bool canUseRxData = rxIsReceivingSignal();
 
@@ -413,13 +458,21 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
                 continue;
             }
 
-            applyStepAdjustment(controlRateConfig, adjustmentFunction, delta);
+            newValue = applyStepAdjustment(controlRateConfig, adjustmentFunction, delta);
             pidInitConfig(pidProfile);
         } else if (adjustmentState->config->mode == ADJUSTMENT_MODE_SELECT) {
             const uint16_t rangeWidth = ((2100 - 900) / adjustmentState->config->data.switchPositions);
             const uint8_t position = (constrain(rcData[channelIndex], 900, 2100 - 1) - 900) / rangeWidth;
-            applySelectAdjustment(adjustmentFunction, position);
+            newValue = applySelectAdjustment(adjustmentFunction, position);
         }
+
+#if defined(OSD) && defined(USE_OSD_ADJUSTMENTS)
+        if (newValue != -1) {
+            osdShowAdjustment(adjustmentLabels[adjustmentFunction], newValue);
+        }
+#else
+        UNUSED(newValue);
+#endif
         MARK_ADJUSTMENT_FUNCTION_AS_BUSY(adjustmentIndex);
     }
 }
