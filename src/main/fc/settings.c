@@ -162,6 +162,10 @@ static const char * const lookupTableGimbalMode[] = {
 static const char * const lookupTableBlackboxDevice[] = {
     "NONE", "SPIFLASH", "SDCARD", "SERIAL"
 };
+
+static const char * const lookupTableBlackboxMode[] = {
+    "NORMAL", "MOTOR_TEST", "ALWAYS"
+};
 #endif
 
 #ifdef SERIAL_RX
@@ -271,6 +275,7 @@ const lookupTableEntry_t lookupTables[] = {
 #endif
 #ifdef USE_BLACKBOX
     { lookupTableBlackboxDevice, sizeof(lookupTableBlackboxDevice) / sizeof(char *) },
+    { lookupTableBlackboxMode, sizeof(lookupTableBlackboxMode) / sizeof(char *) },
 #endif
     { lookupTableCurrentSensor, sizeof(lookupTableCurrentSensor) / sizeof(char *) },
     { lookupTableBatterySensor, sizeof(lookupTableBatterySensor) / sizeof(char *) },
@@ -410,8 +415,8 @@ const clivalue_t valueTable[] = {
 #ifdef USE_BLACKBOX
     { "blackbox_p_ratio",           VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, INT16_MAX }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, p_denom) },
     { "blackbox_device",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BLACKBOX_DEVICE }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, device) },
-    { "blackbox_on_motor_test",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, on_motor_test) },
     { "blackbox_record_acc",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, record_acc) },
+    { "blackbox_mode",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BLACKBOX_MODE }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, mode) },
 #endif
 
 // PG_MOTOR_CONFIG

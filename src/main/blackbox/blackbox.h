@@ -37,8 +37,8 @@ typedef enum BlackboxDevice {
 typedef struct blackboxConfig_s {
     uint16_t p_denom; // I-frame interval / P-frame interval
     uint8_t device;
-    uint8_t on_motor_test;
     uint8_t record_acc;
+    uint8_t mode;
 } blackboxConfig_t;
 
 PG_DECLARE(blackboxConfig_t, blackboxConfig);

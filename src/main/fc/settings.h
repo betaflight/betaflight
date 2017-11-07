@@ -32,6 +32,7 @@ typedef enum {
 #endif
 #ifdef USE_BLACKBOX
     TABLE_BLACKBOX_DEVICE,
+    TABLE_BLACKBOX_MODE,
 #endif
     TABLE_CURRENT_METER,
     TABLE_VOLTAGE_METER,
