@@ -230,6 +230,8 @@
 #define MSP_BEEPER_CONFIG               184
 #define MSP_SET_BEEPER_CONFIG           185
 
+#define MSP_TX_INFO                     186
+
 //
 // Multwii original MSP commands
 //
