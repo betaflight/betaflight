@@ -17,7 +17,10 @@
 
 #pragma once
 
-#undef TELEMETRY_JETIEXBUS // no space left
+// no space left
+#undef TELEMETRY_JETIEXBUS
+#undef USE_TELEMETRY_HOTT
+#undef USE_TELEMETRY_LTM
 
 #define TARGET_BOARD_IDENTIFIER "FRF3"
 #define TARGET_CONFIG
