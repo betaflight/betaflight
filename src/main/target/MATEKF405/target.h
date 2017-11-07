@@ -18,8 +18,6 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "MKF4"
-//#define CONFIG_START_FLASH_ADDRESS (0x08080000)
-
 #define USBD_PRODUCT_STRING  "MatekF4"
 
 #define LED0_PIN                PB9
@@ -36,6 +34,9 @@
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
 
+#define MPU6000_CS_PIN          PC2
+#define MPU6000_SPI_INSTANCE    SPI1
+
 #define MPU6500_CS_PIN          PC2
 #define MPU6500_SPI_INSTANCE    SPI1
 
@@ -44,10 +45,16 @@
 #define USE_MPU_DATA_READY_SIGNAL
 
 #define GYRO
+#define USE_GYRO_SPI_MPU6000
+#define GYRO_MPU6000_ALIGN      CW270_DEG
+
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW180_DEG
 
 #define ACC
+#define USE_ACC_SPI_MPU6000
+#define ACC_MPU6000_ALIGN       CW270_DEG
+
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW180_DEG
 
@@ -57,6 +64,7 @@
 #if defined(BARO_I2C1)
 // Useful for MATEKF405_OSD, since it does not have the SCL / SDA pads
 #define USE_I2C_DEVICE_3
+
 #define I2C_DEVICE              (I2CDEV_3)
 #define I2C3_SCL                PC9        // S4 pad
 #define I2C3_SDA                PA8        // S6 pad
@@ -74,14 +82,19 @@
 #define USE_BARO_MS5611
 #define USE_BARO_BMP085
 
-// *************** SD Card **************************
-#define USE_SDCARD
-#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
-
 #define USE_SPI_DEVICE_3
 #define SPI3_SCK_PIN            PB3
 #define SPI3_MISO_PIN           PB4
 #define SPI3_MOSI_PIN           PB5
+
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
+#define M25P16_CS_PIN           PC0
+#define M25P16_SPI_INSTANCE     SPI3
+
+// *************** SD Card **************************
+#define USE_SDCARD
+#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #define SDCARD_SPI_INSTANCE     SPI3
 #define SDCARD_SPI_CS_PIN       PC1
@@ -132,8 +145,6 @@
 #define UART5_TX_PIN            PC12
 
 #define USE_SOFTSERIAL1
-//#define SOFTSERIAL1_RX_PIN      PA15 // S5
-//#define SOFTSERIAL1_TX_PIN      PA8  // S6
 
 #define SERIAL_PORT_COUNT       7
 
@@ -148,7 +159,9 @@
 #define CURRENT_METER_ADC_PIN   PC4
 #define RSSI_ADC_PIN            PB1
 
-#define DEFAULT_FEATURES        (FEATURE_OSD )
+#define DEFAULT_FEATURES        (FEATURE_OSD | FEATURE_TELEMETRY | FEATURE_SOFTSERIAL)
+#define DEFAULT_VOLTAGE_METER_SOURCE    VOLTAGE_METER_ADC
+#define DEFAULT_CURRENT_METER_SOURCE    CURRENT_METER_ADC
 
 #define LED_STRIP
 
