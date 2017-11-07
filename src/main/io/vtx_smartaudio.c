@@ -802,7 +802,7 @@ void vtxSAProcess(uint32_t currentTimeUs)
                     saEnterInitFreqAndPower(vtxSettingsConfig()->freq, vtxSettingsConfig()->power);
                 }
             }
-        } else if (now - sa_lastTransmission >= 100) {
+        } else if (nowMs - sa_lastTransmissionMs >= 100) {
             // device is not ready; repeat query
             saGetSettings();
             saSendQueue();
