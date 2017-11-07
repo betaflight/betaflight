@@ -119,6 +119,7 @@
 #define USE_RX_MSP
 #define USE_SERIALRX_JETIEXBUS
 #define USE_SENSOR_NAMES
+#define USE_SERIALRX_FPORT      // FrSky FPort
 #define USE_VIRTUAL_CURRENT_METER
 #define VTX_COMMON
 #define VTX_CONTROL
