@@ -1974,6 +1974,17 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     break;
 #endif
 
+    case MSP_TX_INFO:
+    {
+        uint8_t rssi_tx = sbufReadU8(src);
+        // Ignore rssi from MSP when RSSI channel or RSSIPWM feature is enabled
+        if (rxConfig()->rssi_channel == 0 && !featureConfigured(FEATURE_RSSI_ADC)) {
+            // Range of rssi_tx is [1;100]. rssi should be in [0;1023];
+            rssi = (uint16_t)((rssi_tx / 100.0f) * 1023.0f);
+        }
+    }
+    break;
+
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
         return MSP_RESULT_ERROR;
