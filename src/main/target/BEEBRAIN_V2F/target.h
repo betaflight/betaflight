@@ -18,11 +18,11 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "BBV2" // BeeBrain V2.
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
-#define BRUSHED_ESC_AUTODETECT
+#define USE_BRUSHED_ESC_AUTODETECT
 
 #define LED0_PIN                PB1
 #define LED1_PIN                PB2

@@ -139,7 +139,7 @@
 
 #define RSSI_ADC_PIN            PC2
 
-#define LED_STRIP
+#define USE_LED_STRIP
 
 #define TRANSPONDER
 

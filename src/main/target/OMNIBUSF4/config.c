@@ -20,7 +20,7 @@
 
 #include <platform.h>
 
-#ifdef TARGET_CONFIG
+#ifdef USE_TARGET_CONFIG
 
 #include "config/parameter_group.h"
 #include "drivers/max7456.h"

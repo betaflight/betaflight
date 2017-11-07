@@ -552,7 +552,7 @@ void processRx(timeUs_t currentTimeUs)
         DISABLE_FLIGHT_MODE(HEADFREE_MODE);
     }
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
     if (feature(FEATURE_TELEMETRY)) {
         if ((!telemetryConfig()->telemetry_switch && ARMING_FLAG(ARMED)) ||
                 (telemetryConfig()->telemetry_switch && IS_RC_MODE_ACTIVE(BOXTELEMETRY))) {

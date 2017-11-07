@@ -201,7 +201,7 @@ void initActiveBoxIds(void)
 
     BME(BOXBEEPERON);
 
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
     if (feature(FEATURE_LED_STRIP)) {
         BME(BOXLEDLOW);
     }
@@ -235,7 +235,7 @@ void initActiveBoxIds(void)
 
     BME(BOXOSD);
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
     if (feature(FEATURE_TELEMETRY) && telemetryConfig()->telemetry_switch) {
         BME(BOXTELEMETRY);
     }

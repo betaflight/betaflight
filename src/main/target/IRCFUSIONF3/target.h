@@ -79,7 +79,7 @@
 #define CURRENT_METER_ADC_PIN   PA5
 #define RSSI_ADC_PIN            PB2
 
-#undef LED_STRIP
+#undef USE_LED_STRIP
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

@@ -260,7 +260,7 @@ void init(void)
     detectHardwareRevision();
 #endif
 
-#ifdef BRUSHED_ESC_AUTODETECT
+#ifdef USE_BRUSHED_ESC_AUTODETECT
     detectBrushedESC();
 #endif
 
@@ -296,7 +296,7 @@ void init(void)
     EXTIInit();
 #endif
 
-#if defined(BUTTONS)
+#if defined(USE_BUTTONS)
 
     buttonsInit();
 
@@ -603,7 +603,7 @@ void init(void)
     }
 #endif
 
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
     ledStripInit();
 
     if (feature(FEATURE_LED_STRIP)) {
@@ -611,7 +611,7 @@ void init(void)
     }
 #endif
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
     if (feature(FEATURE_TELEMETRY)) {
         telemetryInit();
     }

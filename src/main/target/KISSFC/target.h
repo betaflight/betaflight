@@ -39,7 +39,7 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 #ifdef KISSCC
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
 #define USE_GYRO
 #define USE_GYRO_MPU6050
@@ -48,7 +48,7 @@
 #define USE_ACC
 #define USE_ACC_MPU6050
 #define ACC_MPU6050_ALIGN       CW90_DEG
-#undef LED_STRIP
+#undef USE_LED_STRIP
 #else
 #define USE_GYRO
 #define USE_GYRO_MPU6050

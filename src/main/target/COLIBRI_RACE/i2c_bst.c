@@ -415,7 +415,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
 
 
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
         case BST_LED_COLORS:
             for (i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
                 hsvColor_t *color = &ledStripConfigMutable()->colors[i];
@@ -567,7 +567,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             }
             break;
 
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
         case BST_SET_LED_COLORS:
            //for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
            {

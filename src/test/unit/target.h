@@ -29,7 +29,7 @@
 #define USE_BARO
 #define USE_GPS
 #define USE_DASHBOARD
-#define SERIAL_RX
+#define USE_SERIAL_RX
 #define USE_RX_MSP
 #define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
 #define USE_SERIALRX_SPEKTRUM   // DSM2 and DSMX protocol
@@ -39,16 +39,16 @@
 #define USE_SERIALRX_SUMD       // Graupner Hott protocol
 #define USE_SERIALRX_SUMH       // Graupner legacy protocol
 #define USE_SERIALRX_XBUS       // JR
-#define TELEMETRY
-#define TELEMETRY_CRSF
-#define TELEMETRY_FRSKY
-#define TELEMETRY_HOTT
-#define TELEMETRY_IBUS
-#define TELEMETRY_JETIEXBUS
-#define TELEMETRY_LTM
-#define TELEMETRY_MAVLINK
-#define TELEMETRY_SMARTPORT
-#define LED_STRIP
+#define USE_TELEMETRY
+#define USE_TELEMETRY_CRSF
+#define USE_TELEMETRY_FRSKY
+#define USE_TELEMETRY_HOTT
+#define USE_TELEMETRY_IBUS
+#define USE_TELEMETRY_JETIEXBUS
+#define USE_TELEMETRY_LTM
+#define USE_TELEMETRY_MAVLINK
+#define USE_TELEMETRY_SMARTPORT
+#define USE_LED_STRIP
 #define USE_SERVOS
 #define TRANSPONDER
 #define USE_VCP

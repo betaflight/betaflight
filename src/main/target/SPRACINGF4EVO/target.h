@@ -18,7 +18,7 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "SP4E"
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
 #ifndef SPRACINGF4EVO_REV
 #define SPRACINGF4EVO_REV 2
@@ -58,8 +58,6 @@
 #define USE_MAG
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883
-
-#define USB_IO
 
 #define USE_VCP
 #define USE_UART1
@@ -163,7 +161,7 @@
 #define USE_OSD_OVER_MSP_DISPLAYPORT
 #define USE_MSP_CURRENT_METER
 
-#define LED_STRIP
+#define USE_LED_STRIP
 #define TRANSPONDER
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT

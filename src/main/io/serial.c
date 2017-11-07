@@ -54,7 +54,7 @@
 
 #include "msp/msp_serial.h"
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
 #include "telemetry/telemetry.h"
 #endif
 
@@ -258,7 +258,7 @@ serialPort_t *findNextSharedSerialPort(uint16_t functionMask, serialPortFunction
     return NULL;
 }
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
 #define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | TELEMETRY_PORT_FUNCTIONS_MASK)
 #else
 #define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX)
@@ -294,7 +294,7 @@ bool isSerialConfigValid(const serialConfig_t *serialConfigToCheck)
 
             if ((portConfig->functionMask & FUNCTION_MSP) && (portConfig->functionMask & ALL_FUNCTIONS_SHARABLE_WITH_MSP)) {
                 // MSP & telemetry
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
             } else if (telemetryCheckRxPortShared(portConfig)) {
                 // serial RX & telemetry
 #endif

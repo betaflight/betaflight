@@ -78,7 +78,7 @@
 //#define SONAR_ECHO_PIN          PB1
 //#define SONAR_TRIGGER_PIN       PB0
 
-#define BRUSHED_ESC_AUTODETECT
+#define USE_BRUSHED_ESC_AUTODETECT
 
 #define USE_VCP
 #define USE_UART1
@@ -186,7 +186,7 @@
 
 #ifndef TINYBEEF3
 
-#define BUTTONS
+#define USE_BUTTONS
 #define BUTTON_A_PIN            PB1
 #define BUTTON_B_PIN            PB0
 

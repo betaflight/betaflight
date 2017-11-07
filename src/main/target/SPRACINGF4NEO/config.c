@@ -26,7 +26,7 @@
 
 #include "fc/config.h"
 
-#ifdef TARGET_CONFIG
+#ifdef USE_TARGET_CONFIG
 void targetConfiguration(void)
 {
     serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(GPS_UART)].functionMask = FUNCTION_GPS;

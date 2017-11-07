@@ -37,7 +37,7 @@
 #include "fc/config.h"
 
 
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
 
 static bool featureRead = false;
 static uint8_t cmsx_FeatureLedstrip;

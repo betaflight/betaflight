@@ -18,13 +18,13 @@
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "FORT"
 #define USBD_PRODUCT_STRING     "FortiniF4"
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 #define USE_HARDWARE_REVISION_DETECTION
 #define HW_PIN                  PC14
 /*--------------LED----------------*/
 #define LED0_PIN                PB5
 #define LED1_PIN                PB6
-#define LED_STRIP
+#define USE_LED_STRIP
 /*---------------------------------*/
 
 /*------------BEEPER---------------*/

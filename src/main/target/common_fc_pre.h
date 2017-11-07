@@ -48,7 +48,7 @@
 #define USE_DSHOT
 #define USE_ESC_SENSOR
 #define I2C3_OVERCLOCK true
-#define TELEMETRY_IBUS
+#define USE_TELEMETRY_IBUS
 #define USE_GYRO_DATA_ANALYSE
 #endif
 
@@ -58,7 +58,7 @@
 #define USE_ESC_SENSOR
 #define I2C3_OVERCLOCK true
 #define I2C4_OVERCLOCK true
-#define TELEMETRY_IBUS
+#define USE_TELEMETRY_IBUS
 #define USE_GYRO_DATA_ANALYSE
 #endif
 
@@ -79,7 +79,7 @@
 #define USE_CLI
 #define USE_PPM
 #define USE_PWM
-#define SERIAL_RX
+#define USE_SERIAL_RX
 #define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
 #define USE_SERIALRX_IBUS       // FlySky and Turnigy receivers
 #define USE_SERIALRX_SBUS       // Frsky and Futaba receivers
@@ -96,23 +96,23 @@
 
 #if (FLASH_SIZE > 64)
 #define USE_BLACKBOX
-#define LED_STRIP
-#define TELEMETRY
-#define TELEMETRY_FRSKY
-#define TELEMETRY_HOTT
-#define TELEMETRY_LTM
-#define TELEMETRY_SMARTPORT
+#define USE_LED_STRIP
+#define USE_TELEMETRY
+#define USE_TELEMETRY_FRSKY
+#define USE_TELEMETRY_HOTT
+#define USE_TELEMETRY_LTM
+#define USE_TELEMETRY_SMARTPORT
 #define USE_RESOURCE_MGMT
 #define USE_SERVOS
 #endif
 
 #if (FLASH_SIZE > 128)
 #define USE_CMS
-#define TELEMETRY_CRSF
-#define TELEMETRY_IBUS
-#define TELEMETRY_JETIEXBUS
-#define TELEMETRY_MAVLINK
-#define TELEMETRY_SRXL
+#define USE_TELEMETRY_CRSF
+#define USE_TELEMETRY_IBUS
+#define USE_TELEMETRY_JETIEXBUS
+#define USE_TELEMETRY_MAVLINK
+#define USE_TELEMETRY_SRXL
 #define USE_DASHBOARD
 #define USE_MSP_DISPLAYPORT
 #define USE_RCDEVICE

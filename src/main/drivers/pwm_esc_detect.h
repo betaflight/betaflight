@@ -16,7 +16,7 @@
  */
 #pragma once
 
-#ifdef BRUSHED_ESC_AUTODETECT
+#ifdef USE_BRUSHED_ESC_AUTODETECT
 typedef enum {
     MOTOR_UNKNOWN = 0,
     MOTOR_BRUSHED,

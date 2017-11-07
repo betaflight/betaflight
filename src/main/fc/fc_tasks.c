@@ -196,7 +196,7 @@ static void taskCalculateAltitude(timeUs_t currentTimeUs)
     }}
 #endif
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
 static void taskTelemetry(timeUs_t currentTimeUs)
 {
     telemetryCheckState();
@@ -299,7 +299,7 @@ void fcTasksInit(void)
 #ifdef USE_DASHBOARD
     setTaskEnabled(TASK_DASHBOARD, feature(FEATURE_DASHBOARD));
 #endif
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
     setTaskEnabled(TASK_TELEMETRY, feature(FEATURE_TELEMETRY));
     if (feature(FEATURE_TELEMETRY)) {
         if (rxConfig()->serialrx_provider == SERIALRX_JETIEXBUS) {
@@ -311,7 +311,7 @@ void fcTasksInit(void)
         }
     }
 #endif
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
     setTaskEnabled(TASK_LEDSTRIP, feature(FEATURE_LED_STRIP));
 #endif
 #ifdef TRANSPONDER
@@ -526,7 +526,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef TELEMETRY
+#ifdef USE_TELEMETRY
     [TASK_TELEMETRY] = {
         .taskName = "TELEMETRY",
         .taskFunc = taskTelemetry,
@@ -535,7 +535,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef LED_STRIP
+#ifdef USE_LED_STRIP
     [TASK_LEDSTRIP] = {
         .taskName = "LEDSTRIP",
         .taskFunc = ledStripUpdate,

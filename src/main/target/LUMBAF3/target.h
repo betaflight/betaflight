@@ -75,7 +75,7 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define LED_STRIP
+#define USE_LED_STRIP
 
 #define CAMERA_CONTROL_PIN      PA15
 

@@ -161,7 +161,7 @@
 #define I2C1_SDA                PB7
 */
 
-#define LED_STRIP
+#define USE_LED_STRIP
 
 #define USE_ADC
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC

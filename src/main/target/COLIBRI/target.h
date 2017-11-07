@@ -120,7 +120,7 @@
 #define I2C3_SDA                PC9
 
 // alternative defaults for Colibri/Gemini target
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 

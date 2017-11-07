@@ -24,7 +24,7 @@
 
 #define USBD_PRODUCT_STRING     "KroozX"
 
-#define TARGET_CONFIG
+#define USE_TARGET_CONFIG
 #define TARGET_PREINIT
 
 #define LED0_PIN                PA14 // Red LED
@@ -149,7 +149,7 @@
 #define RX_CHANNELS_TAER
 #define DEFAULT_FEATURES        (FEATURE_OSD)
 
-#define LED_STRIP
+#define USE_LED_STRIP
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

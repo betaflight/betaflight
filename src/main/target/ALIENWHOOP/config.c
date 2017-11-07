@@ -37,7 +37,7 @@
 
 #include <platform.h>
 
-#ifdef TARGET_CONFIG
+#ifdef USE_TARGET_CONFIG
 
 #include "fc/rc_modes.h"
 #include "common/axis.h"
