@@ -85,7 +85,7 @@
 #define PG_CURRENT_SENSOR_ADC_CONFIG 256
 #define PG_CURRENT_SENSOR_VIRTUAL_CONFIG 257
 #define PG_VOLTAGE_SENSOR_ADC_CONFIG 258
-#define PG_VTX_RTC6705_CONFIG 259
+#define PG_VTX_SETTINGS_CONFIG 259
 
 
 // betaflight specific parameter group ids start at 500
@@ -115,7 +115,9 @@
 #define PG_CAMERA_CONTROL_CONFIG 522
 #define PG_FRSKY_D_CONFIG 523
 #define PG_MAX7456_CONFIG 524
-#define PG_BETAFLIGHT_END 524
+#define PG_FLYSKY_CONFIG 525
+#define PG_TIME_CONFIG 526
+#define PG_BETAFLIGHT_END 526
 
 
 // OSD configuration (subject to change)

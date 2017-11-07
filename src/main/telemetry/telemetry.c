@@ -54,7 +54,6 @@
 #include "telemetry/ibus.h"
 #include "telemetry/msp_shared.h"
 
-
 PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
 
 PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
@@ -103,6 +102,7 @@ void telemetryInit(void)
 #endif
 #if defined(USE_MSP_OVER_TELEMETRY)
     initSharedMsp();
+    initCrsfMspBuffer();
 #endif
 
     telemetryCheckState();
@@ -174,7 +174,9 @@ void telemetryCheckState(void)
 void telemetryProcess(uint32_t currentTime)
 {
 #ifdef TELEMETRY_FRSKY
-    handleFrSkyTelemetry();
+    handleFrSkyTelemetry(currentTime);
+#else
+    UNUSED(currentTime);
 #endif
 #ifdef TELEMETRY_HOTT
     handleHoTTTelemetry(currentTime);
@@ -204,13 +206,11 @@ void telemetryProcess(uint32_t currentTime)
 #endif
 }
 
-#define TELEMETRY_FUNCTION_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_SMARTPORT)
-
 void releaseSharedTelemetryPorts(void) {
-    serialPort_t *sharedPort = findSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
+    serialPort_t *sharedPort = findSharedSerialPort(TELEMETRY_PORT_FUNCTIONS_MASK, FUNCTION_MSP);
     while (sharedPort) {
         mspSerialReleasePortIfAllocated(sharedPort);
-        sharedPort = findNextSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
+        sharedPort = findNextSharedSerialPort(TELEMETRY_PORT_FUNCTIONS_MASK, FUNCTION_MSP);
     }
 }
 #endif

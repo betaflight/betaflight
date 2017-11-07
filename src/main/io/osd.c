@@ -31,7 +31,7 @@
 
 #include "platform.h"
 
-#ifdef OSD
+#ifdef USE_OSD
 
 #include "blackbox/blackbox.h"
 #include "blackbox/blackbox_io.h"
@@ -88,6 +88,7 @@
 #endif
 
 #define VIDEO_BUFFER_CHARS_PAL    480
+#define FULL_CIRCLE 360
 
 const char * const osdTimerSourceNames[] = {
     "ON TIME  ",
@@ -221,14 +222,18 @@ static void osdFormatPID(char * buff, const char * label, const pid8_t * pid)
     tfp_sprintf(buff, "%s %3d %3d %3d", label, pid->P, pid->I, pid->D);
 }
 
-static uint8_t osdGetHeadingIntoDiscreteDirections(int heading, int directions)
+static uint8_t osdGetHeadingIntoDiscreteDirections(int heading, unsigned directions)
 {
+    heading += FULL_CIRCLE;  // Ensure positive value
+
     // Split input heading 0..359 into sectors 0..(directions-1), but offset
     // by half a sector so that sector 0 gets centered around heading 0.
-    heading = (heading * 2 + 360 / directions) % 720;
-    heading = heading / (360 * 2 / directions);
+    // We multiply heading by directions to not loose precision in divisions
+    // In this way each segment will be a FULL_CIRCLE length
+    int direction = (heading * directions + FULL_CIRCLE / 2) /  FULL_CIRCLE; // scale with rounding
+    direction %= directions; // normalize
 
-    return heading;
+    return direction; // return segment number
 }
 
 static uint8_t osdGetDirectionSymbolFromHeading(int heading)
@@ -341,9 +346,9 @@ static void osdDrawSingleElement(uint8_t item)
         tfp_sprintf(buff, "%4d%c", getMAhDrawn(), SYM_MAH);
         break;
 
-#ifdef GPS
+#ifdef USE_GPS
     case OSD_GPS_SATS:
-        tfp_sprintf(buff, "%c%d", 0x1f, gpsSol.numSat);
+        tfp_sprintf(buff, "%c%c%d", SYM_SAT_L, SYM_SAT_R, gpsSol.numSat);
         break;
 
     case OSD_GPS_SPEED:
@@ -584,46 +589,56 @@ static void osdDrawSingleElement(uint8_t item)
         }
 
     case OSD_WARNINGS:
-        /* Show common reason for arming being disabled */
-        if (IS_RC_MODE_ACTIVE(BOXARM) && isArmingDisabled()) {
-            const armingDisableFlags_e flags = getArmingDisableFlags();
-            for (int i = 0; i < NUM_ARMING_DISABLE_FLAGS; i++) {
-                if (flags & (1 << i)) {
-                    tfp_sprintf(buff, "%s", armingDisableFlagNames[i]);
-                    break;
+        {
+            uint16_t enabledWarnings = osdConfig()->enabledWarnings;
+
+            const batteryState_e batteryState = getBatteryState();
+
+            if (enabledWarnings & OSD_WARNING_BATTERY_CRITICAL && batteryState == BATTERY_CRITICAL) {
+                tfp_sprintf(buff, " LAND NOW");
+                break;
+            }
+
+            /* Warn when in flip over after crash mode */
+            if ((enabledWarnings & OSD_WARNING_CRASH_FLIP)
+                  && (isModeActivationConditionPresent(BOXFLIPOVERAFTERCRASH))
+                  && IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
+                tfp_sprintf(buff, "CRASH FLIP");
+                break;
+            }
+
+            /* Show most severe reason for arming being disabled */
+            if (enabledWarnings & OSD_WARNING_ARMING_DISABLE && IS_RC_MODE_ACTIVE(BOXARM) && isArmingDisabled()) {
+                const armingDisableFlags_e flags = getArmingDisableFlags();
+                for (int i = 0; i < NUM_ARMING_DISABLE_FLAGS; i++) {
+                    if (flags & (1 << i)) {
+                        tfp_sprintf(buff, "%s", armingDisableFlagNames[i]);
+                        break;
+                    }
                 }
+                break;
             }
-            break;
-        }
 
-        /* Show warning if battery is not fresh */
-        if (!ARMING_FLAG(WAS_EVER_ARMED) && (getBatteryState() == BATTERY_OK)
-              && getBatteryAverageCellVoltage() < batteryConfig()->vbatfullcellvoltage) {
-            tfp_sprintf(buff, "BATT NOT FULL");
-            break;
-        }
+            if (enabledWarnings & OSD_WARNING_BATTERY_WARNING && batteryState == BATTERY_WARNING) {
+                tfp_sprintf(buff, "LOW BATTERY");
+                break;
+            }
 
-        /* Show battery state warning */
-        switch (getBatteryState()) {
-        case BATTERY_WARNING:
-            tfp_sprintf(buff, "LOW BATTERY");
-            break;
+            /* Show warning if battery is not fresh */
+            if (enabledWarnings & OSD_WARNING_BATTERY_NOT_FULL && !ARMING_FLAG(WAS_EVER_ARMED) && (getBatteryState() == BATTERY_OK)
+                  && getBatteryAverageCellVoltage() < batteryConfig()->vbatfullcellvoltage) {
+                tfp_sprintf(buff, "BATT NOT FULL");
+                break;
+            }
 
-        case BATTERY_CRITICAL:
-            tfp_sprintf(buff, " LAND NOW");
-            break;
-
-        default:
-            /* Show visual beeper if battery is OK */
-            if (showVisualBeeper) {
+            /* Visual beeper */
+            if (enabledWarnings & OSD_WARNING_VISUAL_BEEPER && showVisualBeeper) {
                 tfp_sprintf(buff, "  * * * *");
-            } else {
-                return;
+                break;
             }
-            break;
 
+            return;
         }
-        break;
 
     case OSD_AVG_CELL_VOLTAGE:
         {
@@ -754,7 +769,7 @@ static void osdDrawElements(void)
     osdDrawSingleElement(OSD_NUMERICAL_VARIO);
     osdDrawSingleElement(OSD_COMPASS_BAR);
 
-#ifdef GPS
+#ifdef USE_GPS
     if (sensors(SENSOR_GPS)) {
         osdDrawSingleElement(OSD_GPS_SATS);
         osdDrawSingleElement(OSD_GPS_SPEED);
@@ -775,43 +790,13 @@ static void osdDrawElements(void)
 
 void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 {
-    osdConfig->item_pos[OSD_RSSI_VALUE]         = OSD_POS(8, 1)   | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_MAIN_BATT_VOLTAGE]  = OSD_POS(12, 1)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_CROSSHAIRS]         = OSD_POS(8, 6)   | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(8, 6)   | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_HORIZON_SIDEBARS]   = OSD_POS(8, 6)   | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ITEM_TIMER_1]       = OSD_POS(22, 1)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ITEM_TIMER_2]       = OSD_POS(1, 1)   | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_FLYMODE]            = OSD_POS(13, 10) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_CRAFT_NAME]         = OSD_POS(10, 11) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_THROTTLE_POS]       = OSD_POS(1, 7)   | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_VTX_CHANNEL]        = OSD_POS(25, 11) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_CURRENT_DRAW]       = OSD_POS(1, 12)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_MAH_DRAWN]          = OSD_POS(1, 11)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_GPS_SPEED]          = OSD_POS(26, 6)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_GPS_SATS]           = OSD_POS(19, 1)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ALTITUDE]           = OSD_POS(23, 7)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ROLL_PIDS]          = OSD_POS(7, 13)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_PITCH_PIDS]         = OSD_POS(7, 14)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_YAW_PIDS]           = OSD_POS(7, 15)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_POWER]              = OSD_POS(1, 10)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_PIDRATE_PROFILE]    = OSD_POS(25, 10) | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_WARNINGS]           = OSD_POS(9, 10)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_AVG_CELL_VOLTAGE]   = OSD_POS(12, 2)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_DEBUG]              = OSD_POS(1, 0)   | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_PITCH_ANGLE]        = OSD_POS(1, 8)   | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ROLL_ANGLE]         = OSD_POS(1, 9)   | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_GPS_LAT]            = OSD_POS(1, 2)   | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_GPS_LON]            = OSD_POS(18, 2)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_HOME_DIST]          = OSD_POS(15, 9)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_HOME_DIR]           = OSD_POS(14, 9)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_COMPASS_BAR]        = OSD_POS(10, 8)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_MAIN_BATT_USAGE]    = OSD_POS(8, 12)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_DISARMED]           = OSD_POS(10, 4)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_NUMERICAL_HEADING]  = OSD_POS(23, 9)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_NUMERICAL_VARIO]    = OSD_POS(23, 8)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ESC_TMP]            = OSD_POS(18, 2)  | VISIBLE_FLAG;
-    osdConfig->item_pos[OSD_ESC_RPM]            = OSD_POS(19, 2)  | VISIBLE_FLAG;
+    /* Position elements near centre of screen and disabled by default */
+    for (int i = 0; i < OSD_ITEM_COUNT; i++) {
+        osdConfig->item_pos[i] = OSD_POS(10, 6);
+    }
+
+    /* Always enable warnings elements by default */
+    osdConfig->item_pos[OSD_WARNINGS] = OSD_POS(9, 10) | VISIBLE_FLAG;
 
     osdConfig->enabled_stats[OSD_STAT_MAX_SPEED]       = true;
     osdConfig->enabled_stats[OSD_STAT_MIN_BATTERY]     = true;
@@ -827,6 +812,9 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->enabled_stats[OSD_STAT_TIMER_2]         = true;
 
     osdConfig->units = OSD_UNIT_METRIC;
+
+    /* Enable all warnings by default */
+    osdConfig->enabledWarnings = UINT16_MAX;
 
     osdConfig->timers[OSD_TIMER_1] = OSD_TIMER(OSD_TIMER_SRC_ON, OSD_TIMER_PREC_SECOND, 10);
     osdConfig->timers[OSD_TIMER_2] = OSD_TIMER(OSD_TIMER_SRC_TOTAL_ARMED, OSD_TIMER_PREC_SECOND, 10);
@@ -859,7 +847,7 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
     BUILD_BUG_ON(OSD_POS_MAX != OSD_POS(31,31));
 
     osdDisplayPort = osdDisplayPortToUse;
-#ifdef CMS
+#ifdef USE_CMS
     cmsDisplayPortRegister(osdDisplayPort);
 #endif
 
@@ -874,7 +862,7 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
     char string_buffer[30];
     tfp_sprintf(string_buffer, "V%s", FC_VERSION_STRING);
     displayWrite(osdDisplayPort, 20, 6, string_buffer);
-#ifdef CMS
+#ifdef USE_CMS
     displayWrite(osdDisplayPort, 7, 8,  CMS_STARTUP_HELP_TEXT1);
     displayWrite(osdDisplayPort, 11, 9, CMS_STARTUP_HELP_TEXT2);
     displayWrite(osdDisplayPort, 11, 10, CMS_STARTUP_HELP_TEXT3);
@@ -964,7 +952,7 @@ static void osdResetStats(void)
 static void osdUpdateStats(void)
 {
     int16_t value = 0;
-#ifdef GPS
+#ifdef USE_GPS
     value = CM_S_TO_KM_H(gpsSol.groundSpeed);
 #endif
     if (stats.max_speed < value)
@@ -983,14 +971,14 @@ static void osdUpdateStats(void)
     if (stats.max_altitude < getEstimatedAltitude())
         stats.max_altitude = getEstimatedAltitude();
 
-#ifdef GPS
+#ifdef USE_GPS
     if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME) && (stats.max_distance < GPS_distanceToHome)) {
             stats.max_distance = GPS_distanceToHome;
     }
 #endif
 }
 
-#ifdef BLACKBOX
+#ifdef USE_BLACKBOX
 static void osdGetBlackboxStatusString(char * buff)
 {
     bool storageDeviceIsWorking = false;
@@ -1037,6 +1025,18 @@ static void osdDisplayStatisticLabel(uint8_t y, const char * text, const char * 
     displayWrite(osdDisplayPort, 2, y, text);
     displayWrite(osdDisplayPort, 20, y, ":");
     displayWrite(osdDisplayPort, 22, y, value);
+}
+
+/*
+ * Test if there's some stat enabled
+ */
+static bool isSomeStatEnabled(void) {
+    for (int i = 0; i < OSD_STAT_COUNT; i++) {
+            if (osdConfig()->enabled_stats[i]) {
+                return true;
+            }
+        }
+    return false;
 }
 
 static void osdShowStats(void)
@@ -1101,7 +1101,7 @@ static void osdShowStats(void)
         osdDisplayStatisticLabel(top++, "MAX ALTITUDE", buff);
     }
 
-#ifdef BLACKBOX
+#ifdef USE_BLACKBOX
     if (osdConfig()->enabled_stats[OSD_STAT_BLACKBOX] && blackboxConfig()->device && blackboxConfig()->device != BLACKBOX_DEVICE_SERIAL) {
         osdGetBlackboxStatusString(buff);
         osdDisplayStatisticLabel(top++, "BLACKBOX", buff);
@@ -1133,7 +1133,7 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
             osdResetStats();
             osdShowArmed();
             resumeRefreshAt = currentTimeUs + (REFRESH_1S / 2);
-        } else {
+        } else if (isSomeStatEnabled()) {
             osdShowStats();
             resumeRefreshAt = currentTimeUs + (60 * REFRESH_1S);
         }
@@ -1175,7 +1175,7 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
     }
 #endif
 
-#ifdef CMS
+#ifdef USE_CMS
     if (!displayIsGrabbed(osdDisplayPort)) {
         osdUpdateAlarms();
         osdDrawElements();
@@ -1230,7 +1230,7 @@ void osdUpdate(timeUs_t currentTimeUs)
         displayDrawScreen(osdDisplayPort);
     }
 
-#ifdef CMS
+#ifdef USE_CMS
     // do not allow ARM if we are in menu
     if (displayIsGrabbed(osdDisplayPort)) {
         setArmingDisabled(ARMING_DISABLED_OSD_MENU);

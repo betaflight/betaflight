@@ -279,7 +279,7 @@ uint16_t getCurrentMinthrottle(void)
 {
     return motorConfig()->minthrottle;
 }
-#endif
+#endif // USE_OSD_SLAVE
 
 void resetConfigs(void)
 {
@@ -310,7 +310,7 @@ void activateConfig(void)
     useRcControlsConfig(currentPidProfile);
     useAdjustmentConfig(currentPidProfile);
 
-#ifdef GPS
+#ifdef USE_GPS
     gpsUsePIDs(currentPidProfile);
 #endif
 
@@ -319,10 +319,10 @@ void activateConfig(void)
     setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
 
     imuConfigure(throttleCorrectionConfig()->throttle_correction_angle);
-#endif
+#endif // USE_OSD_SLAVE
 }
 
-void validateAndFixConfig(void)
+static void validateAndFixConfig(void)
 {
 #if !defined(USE_QUAD_MIXER_ONLY) && !defined(USE_OSD_SLAVE)
     // Reset unsupported mixer mode to default.
@@ -345,8 +345,16 @@ void validateAndFixConfig(void)
     if (systemConfig()->activeRateProfile >= CONTROL_RATE_PROFILE_COUNT) {
         systemConfigMutable()->activeRateProfile = 0;
     }
+    setControlRateProfile(systemConfig()->activeRateProfile);
+
     if (systemConfig()->pidProfileIndex >= MAX_PROFILE_COUNT) {
         systemConfigMutable()->pidProfileIndex = 0;
+    }
+    setPidProfile(systemConfig()->pidProfileIndex);
+
+    // Prevent invalid notch cutoff
+    if (currentPidProfile->dterm_notch_cutoff >= currentPidProfile->dterm_notch_hz) {
+        currentPidProfile->dterm_notch_hz = 0;
     }
 
     if ((motorConfig()->dev.motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)) {
@@ -356,6 +364,8 @@ void validateAndFixConfig(void)
     if ((motorConfig()->dev.motorPwmProtocol == PWM_TYPE_STANDARD) && (motorConfig()->dev.motorPwmRate > BRUSHLESS_MOTORS_PWM_RATE)) {
         motorConfigMutable()->dev.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
     }
+
+    validateAndFixGyroConfig();
 
     if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP) || featureConfigured(FEATURE_RX_SPI))) {
         featureSet(DEFAULT_RX_FEATURE);
@@ -409,12 +419,6 @@ void validateAndFixConfig(void)
     }
 #endif // USE_SOFTSPI
 
-    // Prevent invalid notch cutoff
-    if (currentPidProfile->dterm_notch_cutoff >= currentPidProfile->dterm_notch_hz) {
-        currentPidProfile->dterm_notch_hz = 0;
-    }
-
-    validateAndFixGyroConfig();
 #endif // USE_OSD_SLAVE
 
     if (!isSerialConfigValid(serialConfig())) {
@@ -436,11 +440,11 @@ void validateAndFixConfig(void)
     featureClear(FEATURE_SOFTSERIAL);
 #endif
 
-#ifndef GPS
+#ifndef USE_GPS
     featureClear(FEATURE_GPS);
 #endif
 
-#ifndef SONAR
+#ifndef USE_SONAR
     featureClear(FEATURE_SONAR);
 #endif
 
@@ -464,7 +468,7 @@ void validateAndFixConfig(void)
     featureClear(FEATURE_DASHBOARD);
 #endif
 
-#ifndef OSD
+#ifndef USE_OSD
     featureClear(FEATURE_OSD);
 #endif
 
@@ -592,7 +596,7 @@ void validateAndFixGyroConfig(void)
         }
     }
 }
-#endif
+#endif // USE_OSD_SLAVE
 
 void readEEPROM(void)
 {
@@ -606,10 +610,6 @@ void readEEPROM(void)
     }
 
     validateAndFixConfig();
-#ifndef USE_OSD_SLAVE
-    setControlRateProfile(systemConfig()->activeRateProfile);
-    setPidProfile(systemConfig()->pidProfileIndex);
-#endif
     activateConfig();
 
 #ifndef USE_OSD_SLAVE

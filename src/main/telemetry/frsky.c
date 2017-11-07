@@ -26,7 +26,7 @@
 
 #include "platform.h"
 
-#ifdef TELEMETRY
+#if defined(TELEMETRY) && defined(TELEMETRY_FRSKY)
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -64,7 +64,7 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/frsky.h"
 
-#ifdef USE_ESC_SENSOR
+#if defined(USE_ESC_SENSOR)
 #include "sensors/esc_sensor.h"
 #endif
 
@@ -79,7 +79,7 @@ static portSharing_e frskyPortSharing;
 static frSkyTelemetryWriteFn *frSkyTelemetryWrite = NULL;
 static frSkyTelemetryInitFrameFn *frSkyTelemetryInitFrame = NULL;
 
-#define CYCLETIME             125
+#define FRSKY_CYCLETIME_US    125000
 
 #define PROTOCOL_HEADER       0x5E
 #define PROTOCOL_TAIL         0x5E
@@ -121,14 +121,14 @@ static frSkyTelemetryInitFrameFn *frSkyTelemetryInitFrame = NULL;
 #define ID_GYRO_Y             0x41
 #define ID_GYRO_Z             0x42
 
-#define ID_VERT_SPEED         0x30 //opentx vario
+#define ID_VERT_SPEED         0x30 // opentx vario
 
 #define GPS_BAD_QUALITY       300
 #define GPS_MAX_HDOP_VAL      9999
-#define DELAY_FOR_BARO_INITIALISATION (5 * 1000) //5s
+#define DELAY_FOR_BARO_INITIALISATION_US 5000000
 #define BLADE_NUMBER_DIVIDER  5 // should set 12 blades in Taranis
 
-static uint32_t lastCycleTime = 0;
+static uint32_t frskyLastCycleTime = 0;
 static uint8_t cycleNum = 0;
 
 static void sendDataHead(uint8_t id)
@@ -156,13 +156,10 @@ static void serializeFrsky(uint8_t data)
     }
 }
 
-static void serialize16(int16_t a)
+static void serialize16(int16_t data)
 {
-    uint8_t t;
-    t = a;
-    serializeFrsky(t);
-    t = a >> 8 & 0xff;
-    serializeFrsky(t);
+    serializeFrsky((uint8_t)data);
+    serializeFrsky(data >> 8);
 }
 
 static void sendAccel(void)
@@ -175,33 +172,10 @@ static void sendAccel(void)
     }
 }
 
-static void sendBaro(void)
-{
-    sendDataHead(ID_ALTITUDE_BP);
-    serialize16(getEstimatedAltitude() / 100);
-    sendDataHead(ID_ALTITUDE_AP);
-    serialize16(ABS(getEstimatedAltitude() % 100));
-}
-
-#ifdef GPS
-static void sendGpsAltitude(void)
-{
-    uint16_t altitude = gpsSol.llh.alt;
-    //Send real GPS altitude only if it's reliable (there's a GPS fix)
-    if (!STATE(GPS_FIX)) {
-        altitude = 0;
-    }
-    sendDataHead(ID_GPS_ALTIDUTE_BP);
-    serialize16(altitude);
-    sendDataHead(ID_GPS_ALTIDUTE_AP);
-    serialize16(0);
-}
-#endif
-
 static void sendThrottleOrBatterySizeAsRpm(void)
 {
     sendDataHead(ID_RPM);
-#ifdef USE_ESC_SENSOR
+#if defined(USE_ESC_SENSOR)
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
     serialize16(escData->dataAge < ESC_DATA_INVALID ? escData->rpm : 0);
 #else
@@ -223,45 +197,12 @@ static void sendTemperature1(void)
 #if defined(USE_ESC_SENSOR)
     escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
     serialize16(escData->dataAge < ESC_DATA_INVALID ? escData->temperature : 0);
-#elif defined(BARO)
-    serialize16((baro.baroTemperature + 50)/ 100); //Airmamaf
+#elif defined(USE_BARO)
+    serialize16((baro.baroTemperature + 50)/ 100); // Airmamaf
 #else
     serialize16(gyroGetTemperature() / 10);
 #endif
 }
-
-#ifdef GPS
-static void sendSatalliteSignalQualityAsTemperature2(void)
-{
-    uint16_t satellite = gpsSol.numSat;
-    if (gpsSol.hdop > GPS_BAD_QUALITY && ( (cycleNum % 16 ) < 8)) {//Every 1s
-        satellite = constrain(gpsSol.hdop, 0, GPS_MAX_HDOP_VAL);
-    }
-    sendDataHead(ID_TEMPRATURE2);
-
-    if (telemetryConfig()->frsky_unit == FRSKY_UNIT_METRICS) {
-        serialize16(satellite);
-    } else {
-        float tmp = (satellite - 32) / 1.8f;
-        //Round the value
-        tmp += (tmp < 0) ? -0.5f : 0.5f;
-        serialize16(tmp);
-    }
-}
-
-static void sendSpeed(void)
-{
-    if (!STATE(GPS_FIX)) {
-        return;
-    }
-    //Speed should be sent in knots (GPS speed is in cm/s)
-    sendDataHead(ID_GPS_SPEED_BP);
-    //convert to knots: 1cm/s = 0.0194384449 knots
-    serialize16(gpsSol.groundSpeed * 1944 / 100000);
-    sendDataHead(ID_GPS_SPEED_AP);
-    serialize16((gpsSol.groundSpeed * 1944 / 100) % 100);
-}
-#endif
 
 static void sendTime(void)
 {
@@ -275,11 +216,13 @@ static void sendTime(void)
     serialize16(seconds % 60);
 }
 
+#if defined(USE_GPS) || defined(USE_MAG)
 // Frsky pdf: dddmm.mmmm
 // .mmmm is returned in decimal fraction of minutes.
 static void GPStoDDDMM_MMMM(int32_t mwiigps, gpsCoordinateDDDMMmmmm_t *result)
 {
     int32_t absgps, deg, min;
+
     absgps = ABS(mwiigps);
     deg    = absgps / GPS_DEGREES_DIVIDER;
     absgps = (absgps - deg * GPS_DEGREES_DIVIDER) * 60;        // absgps = Minutes left * 10^7
@@ -314,18 +257,52 @@ static void sendLatLong(int32_t coord[2])
     serialize16(coord[LON] < 0 ? 'W' : 'E');
 }
 
-static void sendFakeLatLongThatAllowsHeadingDisplay(void)
+#if defined(USE_GPS)
+static void sendGpsAltitude(void)
 {
-    // Heading is only displayed on OpenTX if non-zero lat/long is also sent
-    int32_t coord[2] = {
-        1 * GPS_DEGREES_DIVIDER,
-        1 * GPS_DEGREES_DIVIDER
-    };
+    uint16_t altitude = gpsSol.llh.alt;
 
-    sendLatLong(coord);
+    // Send real GPS altitude only if it's reliable (there's a GPS fix)
+    if (!STATE(GPS_FIX)) {
+        altitude = 0;
+    }
+    sendDataHead(ID_GPS_ALTIDUTE_BP);
+    serialize16(altitude);
+    sendDataHead(ID_GPS_ALTIDUTE_AP);
+    serialize16(0);
 }
 
-#ifdef GPS
+static void sendSatalliteSignalQualityAsTemperature2(void)
+{
+    uint16_t satellite = gpsSol.numSat;
+
+    if (gpsSol.hdop > GPS_BAD_QUALITY && ( (cycleNum % 16 ) < 8)) { // Every 1s
+        satellite = constrain(gpsSol.hdop, 0, GPS_MAX_HDOP_VAL);
+    }
+    sendDataHead(ID_TEMPRATURE2);
+    if (telemetryConfig()->frsky_unit == FRSKY_UNIT_METRICS) {
+        serialize16(satellite);
+    } else {
+        float tmp = (satellite - 32) / 1.8f;
+        // Round the value
+        tmp += (tmp < 0) ? -0.5f : 0.5f;
+        serialize16(tmp);
+    }
+}
+
+static void sendSpeed(void)
+{
+    if (!STATE(GPS_FIX)) {
+        return;
+    }
+    // Speed should be sent in knots (GPS speed is in cm/s)
+    sendDataHead(ID_GPS_SPEED_BP);
+    // convert to knots: 1cm/s = 0.0194384449 knots
+    serialize16(gpsSol.groundSpeed * 1944 / 100000);
+    sendDataHead(ID_GPS_SPEED_AP);
+    serialize16((gpsSol.groundSpeed * 1944 / 100) % 100);
+}
+
 static void sendFakeLatLong(void)
 {
     // Heading is only displayed on OpenTX if non-zero lat/long is also sent
@@ -353,8 +330,11 @@ static void sendGPSLatLong(void)
         sendFakeLatLong();
     }
 }
+
+#endif
 #endif
 
+#if defined(USE_BARO) || defined(USE_SONAR)
 /*
  * Send vertical speed for opentx. ID_VERT_SPEED
  * Unit is cm/s
@@ -364,6 +344,7 @@ static void sendVario(void)
     sendDataHead(ID_VERT_SPEED);
     serialize16(getEstimatedVario());
 }
+#endif
 
 /*
  * Send voltage via ID_VOLT
@@ -371,13 +352,13 @@ static void sendVario(void)
  * NOTE: This sends voltage divided by batteryCellCount. To get the real
  * battery voltage, you need to multiply the value by batteryCellCount.
  */
-static void sendVoltage(void)
+static void sendVoltageCells(void)
 {
-    static uint16_t currentCell = 0;
-    uint32_t cellVoltage;
-    uint16_t payload;
+    static uint16_t currentCell;
 
     uint8_t cellCount = getBatteryCellCount();
+    currentCell %= cellCount;
+
     /*
      * Format for Voltage Data for single cells is like this:
      *
@@ -389,10 +370,10 @@ static void sendVoltage(void)
      * The actual value sent for cell voltage has resolution of 0.002 volts
      * Since vbat has resolution of 0.1 volts it has to be multiplied by 50
      */
-    cellVoltage = ((uint32_t)getBatteryVoltage() * 100 + cellCount) / (cellCount * 2);
+    uint32_t cellVoltage = ((uint32_t)getBatteryVoltage() * 100 + cellCount) / (cellCount * 2);
 
     // Cell number is at bit 9-12
-    payload = (currentCell << 4);
+    uint16_t payload = (currentCell << 4);
 
     // Lower voltage bits are at bit 0-8
     payload |= ((cellVoltage & 0x0ff) << 8);
@@ -404,7 +385,6 @@ static void sendVoltage(void)
     serialize16(payload);
 
     currentCell++;
-    currentCell %= cellCount;
 }
 
 /*
@@ -412,25 +392,23 @@ static void sendVoltage(void)
  */
 static void sendVoltageAmp(void)
 {
-    uint16_t batteryVoltage = getBatteryVoltage();
+    uint16_t voltage = getBatteryVoltage();
+
     if (telemetryConfig()->frsky_vfas_precision == FRSKY_VFAS_PRECISION_HIGH) {
-        /*
-         * Use new ID 0x39 to send voltage directly in 0.1 volts resolution
-         */
+        // Use new ID 0x39 to send voltage directly in 0.1 volts resolution
         sendDataHead(ID_VOLTAGE_AMP);
-        serialize16(batteryVoltage);
+        serialize16(voltage);
     } else {
-        uint16_t voltage = (batteryVoltage * 110) / 21;
-        uint16_t vfasVoltage;
+        // send in 0.2 volts resolution
+        voltage *= 110 / 21;
         if (telemetryConfig()->report_cell_voltage) {
-            vfasVoltage = voltage / getBatteryCellCount();
-        } else {
-            vfasVoltage = voltage;
+            voltage /= getBatteryCellCount();
         }
+
         sendDataHead(ID_VOLTAGE_AMP_BP);
-        serialize16(vfasVoltage / 100);
+        serialize16(voltage / 100);
         sendDataHead(ID_VOLTAGE_AMP_AP);
-        serialize16(((vfasVoltage % 100) + 5) / 10);
+        serialize16(((voltage % 100) + 5) / 10);
     }
 }
 
@@ -451,6 +429,18 @@ static void sendFuelLevel(void)
     }
 }
 
+#if defined(USE_MAG)
+static void sendFakeLatLongThatAllowsHeadingDisplay(void)
+{
+    // Heading is only displayed on OpenTX if non-zero lat/long is also sent
+    int32_t coord[2] = {
+        1 * GPS_DEGREES_DIVIDER,
+        1 * GPS_DEGREES_DIVIDER
+    };
+
+    sendLatLong(coord);
+}
+
 static void sendHeading(void)
 {
     sendDataHead(ID_COURSE_BP);
@@ -458,8 +448,9 @@ static void sendHeading(void)
     sendDataHead(ID_COURSE_AP);
     serialize16(0);
 }
+#endif
 
-void frSkyTelemetryWriteSerial(uint8_t ch)
+static void frSkyTelemetryWriteSerial(uint8_t ch)
 {
     serialWrite(frskyPort, ch);
 }
@@ -504,11 +495,6 @@ static void configureFrSkyTelemetryPort(void)
     }
 }
 
-bool hasEnoughTimeLapsedSinceLastTelemetryTransmission(uint32_t currentMillis)
-{
-    return currentMillis - lastCycleTime >= CYCLETIME;
-}
-
 bool checkFrSkySerialTelemetryEnabled(void)
 {
     return frSkyTelemetryWrite == &frSkyTelemetryWriteSerial;
@@ -538,72 +524,97 @@ void checkFrSkyTelemetryState(void)
     }
 }
 
-void handleFrSkyTelemetry(void)
+void handleFrSkyTelemetry(timeUs_t currentTimeUs)
 {
     if (frSkyTelemetryWrite == NULL) {
         return;
     }
 
-    uint32_t now = millis();
-
-    if (!hasEnoughTimeLapsedSinceLastTelemetryTransmission(now)) {
+    if (currentTimeUs < frskyLastCycleTime + FRSKY_CYCLETIME_US) {
         return;
     }
-
-    lastCycleTime = now;
-
+    frskyLastCycleTime = currentTimeUs;
     cycleNum++;
 
     if (frSkyTelemetryInitFrame) {
         frSkyTelemetryInitFrame();
     }
 
-    // Sent every 125ms
-    sendAccel();
-    sendVario();
-    sendTelemetryTail();
-
-    if ((cycleNum % 4) == 0) {      // Sent every 500ms
-        if (lastCycleTime > DELAY_FOR_BARO_INITIALISATION) { //Allow 5s to boot correctly
-            sendBaro();
-        }
-        sendHeading();
-        sendTelemetryTail();
+    if (sensors(SENSOR_ACC)) {
+        // Sent every 125ms
+        sendAccel();
     }
 
-    if ((cycleNum % 8) == 0) {      // Sent every 1s
+#if defined(USE_BARO) || defined(USE_SONAR)
+    if (sensors(SENSOR_BARO | SENSOR_SONAR)) {
+        // Sent every 125ms
+        sendVario();
+
+        // Sent every 500ms
+        if ((cycleNum % 4) == 0) {
+            int16_t altitude = ABS(getEstimatedAltitude());
+
+            /* Allow 5s to boot correctly othervise send zero to prevent OpenTX
+             * sensor lost notifications after warm boot. */
+            if (frskyLastCycleTime < DELAY_FOR_BARO_INITIALISATION_US) {
+                altitude = 0;
+            }
+
+            sendDataHead(ID_ALTITUDE_BP);
+            serialize16(altitude / 100);
+            sendDataHead(ID_ALTITUDE_AP);
+            serialize16(altitude % 100);
+        }
+    }
+#endif
+
+#if defined(USE_MAG)
+    if (sensors(SENSOR_MAG)) {
+        // Sent every 500ms
+        if ((cycleNum % 4) == 0) {
+            sendHeading();
+        }
+    }
+#endif
+
+    // Sent every 1s
+    if ((cycleNum % 8) == 0) {
         sendTemperature1();
         sendThrottleOrBatterySizeAsRpm();
 
-        if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && getBatteryCellCount() > 0) {
-            sendVoltage();
+        if (getBatteryState() != BATTERY_INIT) {
+            sendVoltageCells();
             sendVoltageAmp();
-            sendAmperage();
-            sendFuelLevel();
+
+            if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
+                sendAmperage();
+                sendFuelLevel();
+            }
         }
 
-#ifdef GPS
+#if defined(USE_GPS)
         if (sensors(SENSOR_GPS)) {
             sendSpeed();
             sendGpsAltitude();
             sendSatalliteSignalQualityAsTemperature2();
             sendGPSLatLong();
-        }
-        else {
+        } else
+#endif
+#if defined(USE_MAG)
+        if (sensors(SENSOR_MAG)) {
             sendFakeLatLongThatAllowsHeadingDisplay();
         }
 #else
-        sendFakeLatLongThatAllowsHeadingDisplay();
+        {}
 #endif
-
-        sendTelemetryTail();
     }
 
-    if (cycleNum == 40) {     //Frame 3: Sent every 5s
+    // Sent every 5s
+    if (cycleNum == 40) {
         cycleNum = 0;
         sendTime();
-        sendTelemetryTail();
     }
-}
 
+    sendTelemetryTail();
+}
 #endif

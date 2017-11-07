@@ -26,9 +26,9 @@
 #define U_ID_2 2
 
 #define MAX_PROFILE_COUNT 3
-#define MAG
-#define BARO
-#define GPS
+#define USE_MAG
+#define USE_BARO
+#define USE_GPS
 #define USE_DASHBOARD
 #define TELEMETRY
 #define LED_STRIP
@@ -94,5 +94,6 @@ typedef struct
 
 #define WS2811_DMA_TC_FLAG (void *)1
 #define WS2811_DMA_HANDLER_IDENTIFER 0
+#define NVIC_PriorityGroup_2 0x500
 
 #include "target.h"

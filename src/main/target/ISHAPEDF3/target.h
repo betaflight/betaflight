@@ -35,21 +35,21 @@
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_MPU6500
 //#define USE_GYRO_SPI_MPU6500
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_MPU6500
 //#define USE_ACC_SPI_MPU6500
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_BMP280
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
-#define SONAR
+#define USE_SONAR
 #define SONAR_TRIGGER_PIN       PB0
 #define SONAR_ECHO_PIN          PB1
 

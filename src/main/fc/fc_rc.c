@@ -49,6 +49,7 @@
 
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 static float throttlePIDAttenuation;
+static bool reverseMotors = false;
 
 float getSetpointRate(int axis)
 {
@@ -327,13 +328,34 @@ void updateRcCommands(void)
         rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
     }
 
+    if (feature(FEATURE_3D) && isModeActivationConditionPresent(BOX3DONASWITCH) && !failsafeIsActive()) {
+        if (IS_RC_MODE_ACTIVE(BOX3DONASWITCH)) {
+            reverseMotors = true;
+            fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
+            rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MIN - rxConfig()->midrc);
+        }
+        else {
+            reverseMotors = false;
+            fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
+            rcCommand[THROTTLE] = rxConfig()->midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - rxConfig()->midrc);
+        }
+    }
     if (FLIGHT_MODE(HEADFREE_MODE)) {
-        const float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
-        const float cosDiff = cos_approx(radDiff);
-        const float sinDiff = sin_approx(radDiff);
-        const float rcCommand_PITCH = rcCommand[PITCH] * cosDiff + rcCommand[ROLL] * sinDiff;
-        rcCommand[ROLL] = rcCommand[ROLL] * cosDiff - rcCommand[PITCH] * sinDiff;
-        rcCommand[PITCH] = rcCommand_PITCH;
+        static t_fp_vector_def  rcCommandBuff;
+
+        rcCommandBuff.X = rcCommand[ROLL];
+        rcCommandBuff.Y = rcCommand[PITCH];
+        if ((!FLIGHT_MODE(ANGLE_MODE)&&(!FLIGHT_MODE(HORIZON_MODE)))) {
+            rcCommandBuff.Z = rcCommand[YAW];
+        } else {
+            rcCommandBuff.Z = 0;
+        }
+        imuQuaternionHeadfreeTransformVectorEarthToBody(&rcCommandBuff);
+        rcCommand[ROLL] = rcCommandBuff.X;
+        rcCommand[PITCH] = rcCommandBuff.Y;
+        if ((!FLIGHT_MODE(ANGLE_MODE)&&(!FLIGHT_MODE(HORIZON_MODE)))) {
+            rcCommand[YAW] = rcCommandBuff.Z;
+        }
     }
 }
 
@@ -341,4 +363,9 @@ void resetYawAxis(void)
 {
     rcCommand[YAW] = 0;
     setpointRate[YAW] = 0;
+}
+
+bool isMotorsReversed(void)
+{
+    return reverseMotors;
 }

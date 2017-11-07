@@ -27,13 +27,13 @@
 
 #undef BEEPER
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_MPU6050
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_MPU6050
 
-//#define MAG
+//#define USE_MAG
 //#define USE_MAG_HMC5883
 
 #define BRUSHED_MOTORS
@@ -119,10 +119,6 @@
 // Since the CJMCU PCB has holes for 4 motors in each corner we can save same flash space by disabling support for other mixers.
 #define USE_QUAD_MIXER_ONLY
 #undef USE_SERVOS
-
-#if (FLASH_SIZE <= 64)
-#undef BLACKBOX
-#endif
 
 // Number of available PWM outputs
 //#define MAX_PWM_OUTPUT_PORTS    4

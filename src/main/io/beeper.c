@@ -39,7 +39,7 @@
 #include "io/statusindicator.h"
 #include "io/vtx_control.h"
 
-#ifdef GPS
+#ifdef USE_GPS
 #include "io/gps.h"
 #endif
 
@@ -155,6 +155,16 @@ static const uint8_t beep_gyroCalibrated[] = {
     20, 10, 20, 10, 20, 10, BEEPER_COMMAND_STOP
 };
 
+// Cam connection opened
+static const uint8_t beep_camOpenBeep[] = {
+    5, 15, 10, 15, 20, BEEPER_COMMAND_STOP
+};
+
+// Cam connection close
+static const uint8_t beep_camCloseBeep[] = {
+    10, 8, 5, BEEPER_COMMAND_STOP
+};
+
 // array used for variable # of beeps (reporting GPS sat count, etc)
 static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS + 1];
 
@@ -212,8 +222,11 @@ typedef struct beeperTableEntry_s {
     { BEEPER_ENTRY(BEEPER_SYSTEM_INIT,           16, NULL,                 "SYSTEM_INIT") },
     { BEEPER_ENTRY(BEEPER_USB,                   17, NULL,                 "ON_USB") },
     { BEEPER_ENTRY(BEEPER_BLACKBOX_ERASE,        18, beep_2shortBeeps,     "BLACKBOX_ERASE") },
-    { BEEPER_ENTRY(BEEPER_ALL,                   19, NULL,                 "ALL") },
-    { BEEPER_ENTRY(BEEPER_PREFERENCE,            20, NULL,                 "PREFERRED") },
+    { BEEPER_ENTRY(BEEPER_CRASH_FLIP_MODE,       19, beep_2longerBeeps,    "CRASH FLIP") },
+    { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_OPEN,   20, beep_camOpenBeep,     "CAM_CONNECTION_OPEN") },
+    { BEEPER_ENTRY(BEEPER_CAM_CONNECTION_CLOSE,  21, beep_camCloseBeep,    "CAM_CONNECTION_CLOSED") },
+    { BEEPER_ENTRY(BEEPER_ALL,                   22, NULL,                 "ALL") },
+    { BEEPER_ENTRY(BEEPER_PREFERENCE,            23, NULL,                 "PREFERRED") },
 };
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;
@@ -318,23 +331,23 @@ void beeperWarningBeeps(uint8_t beepCount)
     beeper(BEEPER_MULTI_BEEPS);
 }
 
-#ifdef GPS
-void beeperGpsStatus(void)
+#ifdef USE_GPS
+static void beeperGpsStatus(void)
 {
-    // if GPS fix then beep out number of satellites
-    if (STATE(GPS_FIX) && gpsSol.numSat >= 5) {
-        uint8_t i = 0;
-        do {
-            beep_multiBeeps[i++] = 5;
-            beep_multiBeeps[i++] = 10;
-        } while (i < MAX_MULTI_BEEPS && gpsSol.numSat > i / 2);
+    if (!(getBeeperOffMask() & (1 << (BEEPER_GPS_STATUS - 1)))) {
+        // if GPS fix then beep out number of satellites
+        if (STATE(GPS_FIX) && gpsSol.numSat >= 5) {
+            uint8_t i = 0;
+            do {
+                beep_multiBeeps[i++] = 5;
+                beep_multiBeeps[i++] = 10;
+            } while (i < MAX_MULTI_BEEPS && gpsSol.numSat > i / 2);
 
-        beep_multiBeeps[i - 1] = 50; // extend last pause
-        beep_multiBeeps[i] = BEEPER_COMMAND_STOP;
+            beep_multiBeeps[i - 1] = 50; // extend last pause
+            beep_multiBeeps[i] = BEEPER_COMMAND_STOP;
 
-        beeper(BEEPER_MULTI_BEEPS);    //initiate sequence
-    } else {
-        beeper(BEEPER_RX_SET);
+            beeper(BEEPER_MULTI_BEEPS);    //initiate sequence
+        }
     }
 }
 #endif
@@ -347,14 +360,10 @@ void beeperUpdate(timeUs_t currentTimeUs)
 {
     // If beeper option from AUX switch has been selected
     if (IS_RC_MODE_ACTIVE(BOXBEEPERON)) {
-#ifdef GPS
-        if (feature(FEATURE_GPS)) {
-            beeperGpsStatus();
-        } else {
-            beeper(BEEPER_RX_SET);
-        }
-#else
         beeper(BEEPER_RX_SET);
+#ifdef USE_GPS
+    } else if (feature(FEATURE_GPS) && IS_RC_MODE_ACTIVE(BOXBEEPGPSCOUNT)) {
+        beeperGpsStatus();
 #endif
     }
 
@@ -367,19 +376,20 @@ void beeperUpdate(timeUs_t currentTimeUs)
         return;
     }
 
-    #ifdef USE_DSHOT
-    if (!areMotorsRunning() && beeperConfig()->dshotBeaconTone && (beeperConfig()->dshotBeaconTone <= DSHOT_CMD_BEACON5) && currentBeeperEntry->mode == BEEPER_RX_SET) {
-        pwmDisableMotors();
-        delay(1);
-
-        pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone);
-
-        pwmEnableMotors();
-    }
-    #endif
-
     if (!beeperIsOn) {
         beeperIsOn = 1;
+
+#ifdef USE_DSHOT
+        if (!areMotorsRunning() && beeperConfig()->dshotBeaconTone && (beeperConfig()->dshotBeaconTone <= DSHOT_CMD_BEACON5) && (currentBeeperEntry->mode == BEEPER_RX_SET || currentBeeperEntry->mode == BEEPER_RX_LOST)) {
+            pwmDisableMotors();
+            delay(1);
+
+            pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), beeperConfig()->dshotBeaconTone);
+
+            pwmEnableMotors();
+        }
+#endif
+
         if (currentBeeperEntry->sequence[beeperPos] != 0) {
             if (!(getBeeperOffMask() & (1 << (currentBeeperEntry->mode - 1))))
                 BEEP_ON;

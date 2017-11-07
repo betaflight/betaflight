@@ -21,7 +21,7 @@
 
 #include "platform.h"
 
-#if defined(CMS) && defined(VTX_TRAMP)
+#if defined(USE_CMS) && defined(VTX_TRAMP)
 
 #include "common/printf.h"
 #include "common/utils.h"
@@ -31,6 +31,7 @@
 
 #include "io/vtx_string.h"
 #include "io/vtx_tramp.h"
+#include "io/vtx_settings_config.h"
 
 
 char trampCmsStatusString[31] = "- -- ---- ----";
@@ -62,15 +63,15 @@ uint8_t trampCmsBand = 1;
 uint8_t trampCmsChan = 1;
 uint16_t trampCmsFreqRef;
 
-static OSD_TAB_t trampCmsEntBand = { &trampCmsBand, 5, vtx58BandNames };
+static OSD_TAB_t trampCmsEntBand = { &trampCmsBand, VTX_TRAMP_BAND_COUNT, vtx58BandNames };
 
-static OSD_TAB_t trampCmsEntChan = { &trampCmsChan, 8, vtx58ChannelNames };
+static OSD_TAB_t trampCmsEntChan = { &trampCmsChan, VTX_TRAMP_CHANNEL_COUNT, vtx58ChannelNames };
 
 static OSD_UINT16_t trampCmsEntFreqRef = { &trampCmsFreqRef, 5600, 5900, 0 };
 
 static uint8_t trampCmsPower = 1;
 
-static OSD_TAB_t trampCmsEntPower = { &trampCmsPower, 5, trampPowerNames };
+static OSD_TAB_t trampCmsEntPower = { &trampCmsPower, sizeof(trampPowerTable), trampPowerNames };
 
 static void trampCmsUpdateFreqRef(void)
 {
@@ -152,6 +153,8 @@ static long trampCmsCommence(displayPort_t *pDisp, const void *self)
     // If it fails, the user should retry later
     trampCommitChanges();
 
+    // update'vtx_' settings
+    vtxSettingsSaveBandChanAndPower(trampCmsBand, trampCmsChan, trampCmsPower);
 
     return MENU_CHAIN_BACK;
 }

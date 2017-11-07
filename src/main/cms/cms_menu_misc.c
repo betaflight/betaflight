@@ -22,7 +22,7 @@
 
 #include "platform.h"
 
-#ifdef CMS
+#ifdef USE_CMS
 
 #include "build/debug.h"
 #include "build/version.h"

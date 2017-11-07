@@ -244,7 +244,7 @@ void init(void)
     LED0_OFF;
     LED1_OFF;
 
-    mspOsdSlaveInit();
+    mspInit();
     mspSerialInit();
 
 #ifdef USE_CLI
@@ -287,7 +287,7 @@ void init(void)
     // Latch active features AGAIN since some may be modified by init().
     latchActiveFeatures();
 
-    osdSlaveTasksInit();
+    fcTasksInit();
 
     systemState |= SYSTEM_STATE_READY;
 }

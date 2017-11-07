@@ -20,12 +20,11 @@
 #include "common/time.h"
 #include "config/parameter_group.h"
 
-#if defined(GPS) || defined(MAG)
+#if defined(USE_GPS) || defined(USE_MAG)
 extern int16_t magHold;
 #endif
 
 extern bool isRXDataNew;
-extern int16_t headFreeModeHold;
 
 typedef struct throttleCorrectionConfig_s {
     uint16_t throttle_correction_angle;     // the angle when the throttle correction is maximal. in 0.1 degres, ex 225 = 22.5 ,30.0, 450 = 45.0 deg
@@ -48,5 +47,4 @@ void updateArmingStatus(void);
 void updateRcCommands(void);
 
 void taskMainPidLoop(timeUs_t currentTimeUs);
-bool isMotorsReversed(void);
 bool isFlipOverAfterCrashMode(void);

@@ -56,6 +56,9 @@
 #define CAMERA_CONTROL_PIN NONE
 #endif
 
+#ifdef USE_OSD
+#include "io/osd.h"
+#endif
 
 PG_REGISTER_WITH_RESET_TEMPLATE(cameraControlConfig_t, cameraControlConfig, PG_CAMERA_CONTROL_CONFIG, 0);
 
@@ -188,6 +191,11 @@ void cameraControlKeyPress(cameraControlKey_e key, uint32_t holdDurationMs)
     const float dutyCycle = calculatePWMDutyCycle(key);
 #else
     (void) holdDurationMs;
+#endif
+
+#ifdef USE_OSD
+    // Force OSD timeout so we are alone on the display.
+    resumeRefreshAt = 0;
 #endif
 
     if (CAMERA_CONTROL_MODE_HARDWARE_PWM == cameraControlConfig()->mode) {

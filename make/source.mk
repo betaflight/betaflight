@@ -13,6 +13,7 @@ COMMON_SRC = \
             common/maths.c \
             common/printf.c \
             common/streambuf.c \
+            common/time.c \
             common/typeconversion.c \
             config/config_eeprom.c \
             config/feature.c \
@@ -58,7 +59,6 @@ COMMON_SRC = \
             io/serial.c \
             io/statusindicator.c \
             io/transponder_ir.c \
-            io/rcsplit.c \
             msp/msp_serial.c \
             scheduler/scheduler.c \
             sensors/battery.c \
@@ -146,6 +146,10 @@ FC_SRC = \
             io/displayport_max7456.c \
             io/displayport_msp.c \
             io/displayport_oled.c \
+            io/displayport_rcdevice.c \
+            io/rcdevice_cam.c \
+            io/rcdevice.c \
+            io/rcdevice_osd.c \
             io/gps.c \
             io/ledstrip.c \
             io/osd.c \
@@ -156,6 +160,7 @@ FC_SRC = \
             telemetry/srxl.c \
             telemetry/frsky.c \
             telemetry/hott.c \
+            telemetry/jetiexbus.c \
             telemetry/smartport.c \
             telemetry/ltm.c \
             telemetry/mavlink.c \
@@ -164,6 +169,7 @@ FC_SRC = \
             telemetry/ibus_shared.c \
             sensors/esc_sensor.c \
             io/vtx_string.c \
+            io/vtx_settings_config.c \
             io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c \
@@ -262,6 +268,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             cms/cms_menu_misc.c \
             cms/cms_menu_osd.c \
             io/vtx_string.c \
+            io/vtx_settings_config.c \
             io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c \

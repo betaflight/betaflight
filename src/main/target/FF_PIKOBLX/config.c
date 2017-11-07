@@ -59,7 +59,7 @@ void targetConfiguration(void)
         rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
 #else
         serialConfigMutable()->portConfigs[findSerialPortIndexByIdentifier(SERIAL_PORT_USART2)].functionMask = FUNCTION_TELEMETRY_FRSKY;
-        rxConfigMutable()->sbus_inversion = 0;
+        rxConfigMutable()->serialrx_inverted = true;
         featureSet(FEATURE_TELEMETRY);
 #endif
         parseRcChannels("TAER1234", rxConfigMutable());

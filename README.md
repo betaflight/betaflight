@@ -33,7 +33,7 @@ See: https://github.com/betaflight/betaflight/wiki
 
 There's a dedicated Slack chat channel here:
 
-http://www.betaflight.tk/
+http://www.betaflight.ch/
 
 Etiquette: Don't ask to ask and please wait around long enough for a reply - sometimes people are out flying, asleep or at work and can't answer immediately.
 
@@ -101,7 +101,7 @@ Big thanks to current and past contributors:
 * Blackman, Jason (blckmn)
 * ctzsnooze
 * Höglund, Anders (andershoglund)
-* Ledvin, Peter (ledvinap) - **IO code awesomeness!**
+* Ledvina, Petr (ledvinap) - **IO code awesomeness!**
 * kc10kevin
 * Keeble, Gary (MadmanK)
 * Keller, Michael (mikeller) - **Configurator brilliance**

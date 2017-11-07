@@ -52,7 +52,7 @@ static int32_t estimatedVario = 0;                      // variometer in cm/s
 static int32_t estimatedAltitude = 0;                // in cm
 
 
-#if defined(BARO) || defined(SONAR)
+#if defined(USE_BARO) || defined(USE_SONAR)
 
 enum {
     DEBUG_ALTITUDE_ACC,
@@ -216,7 +216,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     static float accAlt = 0.0f;
 
     int32_t baroAlt = 0;
-#ifdef BARO
+#ifdef USE_BARO
     if (sensors(SENSOR_BARO)) {
         if (!isBaroCalibrationComplete()) {
             performBaroCalibrationCycle();
@@ -229,7 +229,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     }
 #endif
 
-#ifdef SONAR
+#ifdef USE_SONAR
     if (sensors(SENSOR_SONAR)) {
         int32_t sonarAlt = sonarCalculateAltitude(sonarRead(), getCosTiltAngle());
         if (sonarAlt > 0 && sonarAlt >= sonarCfAltCm && sonarAlt <= sonarMaxAltWithTiltCm) {
@@ -242,7 +242,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 #endif
 
     float accZ_tmp = 0;
-#ifdef ACC
+#ifdef USE_ACC
     if (sensors(SENSOR_ACC)) {
         const float dt = accTimeSum * 1e-6f; // delta acc reading time in seconds
 
@@ -267,7 +267,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     imuResetAccelerationSum();
 
     int32_t baroVel = 0;
-#ifdef BARO
+#ifdef USE_BARO
     if (sensors(SENSOR_BARO)) {
         if (!isBaroCalibrationComplete()) {
             return;
@@ -294,7 +294,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     altHoldThrottleAdjustment = calculateAltHoldThrottleAdjustment(vel_tmp, accZ_tmp, accZ_old);
     accZ_old = accZ_tmp;
 }
-#endif // defined(BARO) || defined(SONAR)
+#endif // defined(USE_BARO) || defined(USE_SONAR)
 
 int32_t getEstimatedAltitude(void)
 {

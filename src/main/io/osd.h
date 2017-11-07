@@ -17,7 +17,7 @@
 
 #pragma once
 
-#ifdef OSD
+#ifdef USE_OSD
 #include "common/time.h"
 #include "config/parameter_group.h"
 
@@ -126,6 +126,15 @@ typedef enum {
     OSD_TIMER_PREC_COUNT
 } osd_timer_precision_e;
 
+typedef enum {
+    OSD_WARNING_ARMING_DISABLE    = (1 << 0),
+    OSD_WARNING_BATTERY_NOT_FULL  = (1 << 1),
+    OSD_WARNING_BATTERY_WARNING   = (1 << 2),
+    OSD_WARNING_BATTERY_CRITICAL  = (1 << 3),
+    OSD_WARNING_VISUAL_BEEPER     = (1 << 4),
+    OSD_WARNING_CRASH_FLIP        = (1 << 5)
+} osdWarningsFlags_e;
+
 typedef struct osdConfig_s {
     uint16_t item_pos[OSD_ITEM_COUNT];
     bool enabled_stats[OSD_STAT_COUNT];
@@ -138,6 +147,7 @@ typedef struct osdConfig_s {
     osd_unit_e units;
 
     uint16_t timers[OSD_TIMER_COUNT];
+    uint16_t enabledWarnings;
 
     uint8_t ahMaxPitch;
     uint8_t ahMaxRoll;

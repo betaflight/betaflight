@@ -134,8 +134,7 @@ static uint32_t reverse32(uint32_t in)
 {
     uint32_t out = 0;
 
-    for (uint8_t i = 0 ; i < 32 ; i++)
-    {
+    for (uint8_t i = 0 ; i < 32 ; i++) {
         out |= ((in>>i) & 1)<<(31-i);
     }
 
@@ -145,11 +144,9 @@ static uint32_t reverse32(uint32_t in)
 /**
  * Start chip if available
  */
-
 void rtc6705IOInit(void)
 {
 #ifdef RTC6705_POWER_PIN
-
     vtxPowerPin = IOGetByTag(IO_TAG(RTC6705_POWER_PIN));
     IOInit(vtxPowerPin, OWNER_VTX, 0);
 
@@ -216,12 +213,10 @@ void rtc6705SetFreq(uint16_t frequency)
 {
     frequency = constrain(frequency, RTC6705_FREQ_MIN, RTC6705_FREQ_MAX);
 
-    uint32_t val_hex = 0;
+    const uint32_t val_a = ((((uint64_t)frequency*(uint64_t)RTC6705_SET_DIVMULT*(uint64_t)RTC6705_SET_R)/(uint64_t)RTC6705_SET_DIVMULT) % RTC6705_SET_FDIV) / RTC6705_SET_NDIV; //Casts required to make sure correct math (large numbers)
+    const uint32_t val_n = (((uint64_t)frequency*(uint64_t)RTC6705_SET_DIVMULT*(uint64_t)RTC6705_SET_R)/(uint64_t)RTC6705_SET_DIVMULT) / RTC6705_SET_FDIV; //Casts required to make sure correct math (large numbers)
 
-    uint32_t val_a = ((((uint64_t)frequency*(uint64_t)RTC6705_SET_DIVMULT*(uint64_t)RTC6705_SET_R)/(uint64_t)RTC6705_SET_DIVMULT) % RTC6705_SET_FDIV) / RTC6705_SET_NDIV; //Casts required to make sure correct math (large numbers)
-    uint32_t val_n = (((uint64_t)frequency*(uint64_t)RTC6705_SET_DIVMULT*(uint64_t)RTC6705_SET_R)/(uint64_t)RTC6705_SET_DIVMULT) / RTC6705_SET_FDIV; //Casts required to make sure correct math (large numbers)
-
-    val_hex |= RTC6705_SET_WRITE;
+    uint32_t val_hex = RTC6705_SET_WRITE;
     val_hex |= (val_a << 5);
     val_hex |= (val_n << 12);
 
@@ -240,7 +235,7 @@ void rtc6705SetRFPower(uint8_t rf_power)
 
     uint32_t val_hex = RTC6705_RW_CONTROL_BIT; // write
     val_hex |= RTC6705_ADDRESS; // address
-    uint32_t data = rf_power == 0 ? (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK)) : PA_CONTROL_DEFAULT;
+    const uint32_t data = rf_power == 0 ? (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK)) : PA_CONTROL_DEFAULT;
     val_hex |= data << 5; // 4 address bits and 1 rw bit.
 
     rtc6705Transfer(val_hex);

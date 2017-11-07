@@ -47,7 +47,7 @@
 #define MPU6500_CS_PIN          PA4
 #define MPU6500_SPI_INSTANCE    SPI1
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_ICM20689
 #define GYRO_ICM20689_ALIGN      CW180_DEG
 
@@ -60,7 +60,7 @@
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW180_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_ICM20689
 #define ACC_ICM20689_ALIGN       CW180_DEG
 
@@ -72,7 +72,7 @@
 #define ACC_MPU6500_ALIGN       CW180_DEG
 
 #ifdef FURYF4OSD
-    #define OSD
+    #define USE_OSD
     #define USE_MAX7456
     #define MAX7456_SPI_INSTANCE    SPI2
     #define MAX7456_SPI_CS_PIN      PB12
@@ -85,7 +85,7 @@
 
 #else
 
-    #define BARO
+    #define USE_BARO
     #define USE_BARO_MS5611
     #define MS5611_I2C_INSTANCE     I2CDEV_1
 

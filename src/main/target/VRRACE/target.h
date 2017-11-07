@@ -31,11 +31,11 @@
 #define MPU6500_CS_PIN        PE10
 #define MPU6500_SPI_INSTANCE  SPI2
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN CW270_DEG
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN CW270_DEG
 
@@ -45,7 +45,7 @@
 #define USE_MPU_DATA_READY_SIGNAL
 
 /*
-#define BARO
+#define USE_BARO
 #define USE_BARO_MS5611
 #define MS5611_I2C_INSTANCE I2CDEV_1
 

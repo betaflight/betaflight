@@ -32,9 +32,10 @@ typedef enum {
     CW270_DEG_FLIP = 8
 } sensor_align_e;
 
-typedef bool (*sensorInitFuncPtr)(void);                    // sensor init prototype
-typedef bool (*sensorReadFuncPtr)(int16_t *data);           // sensor read and align prototype
 typedef bool (*sensorInterruptFuncPtr)(void);
+struct magDev_s;
+typedef bool (*sensorMagInitFuncPtr)(struct magDev_s *magdev);
+typedef bool (*sensorMagReadFuncPtr)(struct magDev_s *magdev, int16_t *data);
 struct accDev_s;
 typedef void (*sensorAccInitFuncPtr)(struct accDev_s *acc);
 typedef bool (*sensorAccReadFuncPtr)(struct accDev_s *acc);

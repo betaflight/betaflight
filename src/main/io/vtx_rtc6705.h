@@ -22,25 +22,24 @@
 
 #include "platform.h"
 
-#include "config/parameter_group.h"
+#define VTX_RTC6705_MIN_BAND 1
+#define VTX_RTC6705_MAX_BAND 5
+#define VTX_RTC6705_MIN_CHANNEL 1
+#define VTX_RTC6705_MAX_CHANNEL 8
 
-typedef struct vtxRTC6705Config_s {
-    uint8_t band;       // 1=A, 2=B, 3=E, 4=F(Airwaves/Fatshark), 5=Raceband
-    uint8_t channel;    // 1-8
-    uint8_t power;      // 0 = lowest
-} vtxRTC6705Config_t;
+#define VTX_RTC6705_BAND_COUNT (VTX_RTC6705_MAX_BAND - VTX_RTC6705_MIN_BAND + 1)
+#define VTX_RTC6705_CHANNEL_COUNT (VTX_RTC6705_MAX_CHANNEL - VTX_RTC6705_MIN_CHANNEL + 1)
 
-PG_DECLARE(vtxRTC6705Config_t, vtxRTC6705Config);
-
-#ifdef RTC6705_POWER_PIN
-#define RTC6705_POWER_COUNT 3
+#define VTX_RTC6705_POWER_COUNT 3
 #define VTX_RTC6705_DEFAULT_POWER 1
+
+#if defined(RTC6705_POWER_PIN)
+#define VTX_RTC6705_MIN_POWER 0
 #else
-#define RTC6705_POWER_COUNT 2
-#define VTX_RTC6705_DEFAULT_POWER 0
+#define VTX_RTC6705_MIN_POWER 1
 #endif
 
-extern const char * const rtc6705PowerNames[RTC6705_POWER_COUNT];
+extern const char * const rtc6705PowerNames[VTX_RTC6705_POWER_COUNT];
 
 void vtxRTC6705Configure(void);
 bool vtxRTC6705Init(void);

@@ -361,9 +361,7 @@ void handleSmartPortTelemetry(void)
         if (smartPortRxBuffer.frameId == FSSP_MSPC_FRAME) {
             // Pass only the payload: skip sensorId & frameId
             uint8_t *frameStart = (uint8_t *)&smartPortRxBuffer + SMARTPORT_PAYLOAD_OFFSET;
-            uint8_t *frameEnd = (uint8_t *)&smartPortRxBuffer + SMARTPORT_PAYLOAD_OFFSET + SMARTPORT_PAYLOAD_SIZE;
-
-            smartPortMspReplyPending = handleMspFrame(frameStart, frameEnd);
+            smartPortMspReplyPending = handleMspFrame(frameStart, SMARTPORT_PAYLOAD_SIZE);
         }
 #endif
     }
@@ -397,7 +395,7 @@ void handleSmartPortTelemetry(void)
         static uint8_t t2Cnt = 0;
 
         switch (id) {
-#ifdef GPS
+#ifdef USE_GPS
             case FSSP_DATAID_SPEED      :
                 if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
                     //convert to knots: 1cm/s = 0.0194384449 knots
@@ -441,7 +439,7 @@ void handleSmartPortTelemetry(void)
                 break;
             //case FSSP_DATAID_ADC1       :
             //case FSSP_DATAID_ADC2       :
-#ifdef GPS
+#ifdef USE_GPS
             case FSSP_DATAID_LATLONG    :
                 if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
                     uint32_t tmpui = 0;
@@ -534,7 +532,7 @@ void handleSmartPortTelemetry(void)
                 break;
             case FSSP_DATAID_T2         :
                 if (sensors(SENSOR_GPS)) {
-#ifdef GPS
+#ifdef USE_GPS
                     // provide GPS lock status
                     smartPortSendPackage(id, (STATE(GPS_FIX) ? 1000 : 0) + (STATE(GPS_FIX_HOME) ? 2000 : 0) + gpsSol.numSat);
                     smartPortHasRequest = 0;
@@ -574,7 +572,7 @@ void handleSmartPortTelemetry(void)
                     smartPortHasRequest = 0;
                 }
                 break;
-#ifdef GPS
+#ifdef USE_GPS
             case FSSP_DATAID_GPS_ALT    :
                 if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
                     smartPortSendPackage(id, gpsSol.llh.alt * 100); // given in 0.1m , requested in 10 = 1m (should be in mm, probably a bug in opentx, tested on 2.0.1.7)

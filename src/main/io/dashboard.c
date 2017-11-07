@@ -148,7 +148,7 @@ static void padLineBuffer(void)
     lineBuffer[length] = 0;
 }
 
-#ifdef GPS
+#ifdef USE_GPS
 static void padHalfLineBuffer(void)
 {
     uint8_t halfLineIndex = sizeof(lineBuffer) / 2;
@@ -345,7 +345,7 @@ static void showProfilePage(void)
 #define SATELLITE_COUNT (sizeof(GPS_svinfo_cno) / sizeof(GPS_svinfo_cno[0]))
 #define SATELLITE_GRAPH_LEFT_OFFSET ((SCREEN_CHARACTER_COLUMN_COUNT - SATELLITE_COUNT) / 2)
 
-#ifdef GPS
+#ifdef USE_GPS
 static void showGpsPage(void)
 {
     if (!feature(FEATURE_GPS)) {
@@ -489,7 +489,7 @@ static void showSensorsPage(void)
         i2c_OLED_send_string(bus, lineBuffer);
     }
 
-#ifdef MAG
+#ifdef USE_MAG
     if (sensors(SENSOR_MAG)) {
         tfp_sprintf(lineBuffer, format, "MAG", mag.magADC[X], mag.magADC[Y], mag.magADC[Z]);
         padLineBuffer();
@@ -575,7 +575,7 @@ static const pageEntry_t pages[PAGE_COUNT] = {
     { PAGE_WELCOME, FC_FIRMWARE_NAME,  showWelcomePage,    PAGE_FLAGS_SKIP_CYCLING },
     { PAGE_ARMED,   "ARMED",           showArmedPage,      PAGE_FLAGS_SKIP_CYCLING },
     { PAGE_PROFILE, "PROFILE",         showProfilePage,    PAGE_FLAGS_NONE },
-#ifdef GPS
+#ifdef USE_GPS
     { PAGE_GPS,     "GPS",             showGpsPage,        PAGE_FLAGS_NONE },
 #endif
     { PAGE_RX,      "RX",              showRxPage,         PAGE_FLAGS_NONE },
@@ -605,7 +605,7 @@ void dashboardUpdate(timeUs_t currentTimeUs)
 {
     static uint8_t previousArmedState = 0;
 
-#ifdef CMS
+#ifdef USE_CMS
     if (displayIsGrabbed(displayPort)) {
         return;
     }
@@ -686,7 +686,7 @@ void dashboardInit(void)
     delay(200);
 
     displayPort = displayPortOledInit(bus);
-#if defined(CMS)
+#if defined(USE_CMS)
     if (dashboardPresent) {
         cmsDisplayPortRegister(displayPort);
     }

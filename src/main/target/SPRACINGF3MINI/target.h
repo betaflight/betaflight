@@ -43,8 +43,8 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define GYRO
-#define ACC
+#define USE_GYRO
+#define USE_ACC
 
 #ifdef TINYBEEF3
 
@@ -64,17 +64,17 @@
 #define USE_ACC_MPU6500
 #define ACC_MPU6500_ALIGN       CW180_DEG
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_BMP280
 
-#define MAG
+#define USE_MAG
 #define USE_MPU9250_MAG // Enables bypass configuration
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883 // External
 #define MAG_AK8975_ALIGN        CW90_DEG_FLIP
 #endif
 
-//#define SONAR
+//#define USE_SONAR
 //#define SONAR_ECHO_PIN          PB1
 //#define SONAR_TRIGGER_PIN       PB0
 

@@ -21,6 +21,8 @@
 #undef TELEMETRY_HOTT   //no space left
 #undef TELEMETRY_JETIEXBUS // no space left
 #undef TELEMETRY_MAVLINK   // no space left
+#undef USE_RCDEVICE // no space left
+#undef USE_RTC_TIME // no space left
 
 #define TARGET_BOARD_IDENTIFIER "OMNI" // https://en.wikipedia.org/wiki/Omnibus
 
@@ -38,25 +40,22 @@
 #define MPU6000_SPI_INSTANCE    SPI1
 #define MPU6000_CS_PIN          PA4
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW90_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW90_DEG
 
 #define BMP280_SPI_INSTANCE     SPI1
 #define BMP280_CS_PIN           PA13
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 
-#define MAG // External
-#define USE_MAG_HMC5883
-
-//#define SONAR
+//#define USE_SONAR
 //#define SONAR_ECHO_PIN          PB1
 //#define SONAR_TRIGGER_PIN       PB0
 
@@ -100,7 +99,7 @@
 // OSD define info:
 //   feature name (includes source) -> MAX_OSD, used in target.mk
 // include the osd code
-#define OSD
+#define USE_OSD
 
 // include the max7456 driver
 #define USE_MAX7456

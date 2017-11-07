@@ -24,6 +24,7 @@
 #include <ctype.h>
 
 #include "platform.h"
+#include "common/time.h"
 
 // FIXME remove this for targets that don't need a CLI.  Perhaps use a no-op macro when USE_CLI is not enabled
 // signal that we're in cli mode
@@ -111,8 +112,8 @@ extern uint8_t __config_end;
 #include "io/osd.h"
 #include "io/serial.h"
 #include "io/transponder_ir.h"
-#include "io/vtx_rtc6705.h"
 #include "io/vtx_control.h"
+#include "io/vtx_settings_config.h"
 
 #include "msp/msp_protocol.h"
 
@@ -1866,12 +1867,6 @@ static void printVtx(uint8_t dumpMask, const vtxConfig_t *vtxConfig, const vtxCo
     }
 }
 
-// FIXME remove these and use the VTX API
-#define VTX_BAND_MIN                            1
-#define VTX_BAND_MAX                            5
-#define VTX_CHANNEL_MIN                         1
-#define VTX_CHANNEL_MAX                         8
-
 static void cliVtx(char *cmdline)
 {
     int i, val = 0;
@@ -1897,7 +1892,7 @@ static void cliVtx(char *cmdline)
             if (ptr) {
                 val = atoi(ptr);
                 // FIXME Use VTX API to get min/max
-                if (val >= VTX_BAND_MIN && val <= VTX_BAND_MAX) {
+                if (val >= VTX_SETTINGS_MIN_BAND && val <= VTX_SETTINGS_MAX_BAND) {
                     cac->band = val;
                     validArgumentCount++;
                 }
@@ -1906,7 +1901,7 @@ static void cliVtx(char *cmdline)
             if (ptr) {
                 val = atoi(ptr);
                 // FIXME Use VTX API to get min/max
-                if (val >= VTX_CHANNEL_MIN && val <= VTX_CHANNEL_MAX) {
+                if (val >= VTX_SETTINGS_MIN_CHANNEL && val <= VTX_SETTINGS_MAX_CHANNEL) {
                     cac->channel = val;
                     validArgumentCount++;
                 }
@@ -2008,13 +2003,13 @@ static void cliFeature(char *cmdline)
             if (strncasecmp(cmdline, featureNames[i], len) == 0) {
 
                 mask = 1 << i;
-#ifndef GPS
+#ifndef USE_GPS
                 if (mask & FEATURE_GPS) {
                     cliPrintLine("unavailable");
                     break;
                 }
 #endif
-#ifndef SONAR
+#ifndef USE_SONAR
                 if (mask & FEATURE_SONAR) {
                     cliPrintLine("unavailable");
                     break;
@@ -2235,7 +2230,7 @@ static void cliExit(char *cmdline)
     cliWriter = NULL;
 }
 
-#ifdef GPS
+#ifdef USE_GPS
 static void cliGpsPassthrough(char *cmdline)
 {
     UNUSED(cmdline);
@@ -2251,7 +2246,7 @@ static int parseOutputIndex(char *pch, bool allowAllEscs) {
     } else if (allowAllEscs && outputIndex == ALL_MOTORS) {
         tfp_printf("Using all outputs.\r\n");
     } else {
-        tfp_printf("Invalid output number, range: 0 to %d.\r\n", getMotorCount() - 1);
+        tfp_printf("Invalid output number. Range: 0  %d.\r\n", getMotorCount() - 1);
 
         return -1;
     }
@@ -2318,7 +2313,7 @@ void printEscInfo(const uint8_t *escInfoBuffer, uint8_t bytesRead)
                     break;
                 }
 
-                cliPrint("ESC: ");
+                cliPrint("ESC Type: ");
                 switch (escInfoVersion) {
                 case ESC_INFO_KISS_V1:
                 case ESC_INFO_KISS_V2:
@@ -2356,7 +2351,7 @@ void printEscInfo(const uint8_t *escInfoBuffer, uint8_t bytesRead)
                     break;
                 }
 
-                cliPrint("MCU: 0x");
+                cliPrint("MCU Serial No: 0x");
                 for (int i = 0; i < 12; i++) {
                     if (i && (i % 3 == 0)) {
                         cliPrint("-");
@@ -2368,20 +2363,20 @@ void printEscInfo(const uint8_t *escInfoBuffer, uint8_t bytesRead)
                 switch (escInfoVersion) {
                 case ESC_INFO_KISS_V1:
                 case ESC_INFO_KISS_V2:
-                    cliPrintLinef("Firmware: %d.%02d%c", firmwareVersion / 100, firmwareVersion % 100, (char)firmwareSubVersion);
+                    cliPrintLinef("Firmware Version: %d.%02d%c", firmwareVersion / 100, firmwareVersion % 100, (char)firmwareSubVersion);
 
                     break;
                 case ESC_INFO_BLHELI32:
-                    cliPrintLinef("Firmware: %d.%02d%", firmwareVersion, firmwareSubVersion);
+                    cliPrintLinef("Firmware Version: %d.%02d%", firmwareVersion, firmwareSubVersion);
 
                     break;
                 }
                 if (escInfoVersion == ESC_INFO_KISS_V2 || escInfoVersion == ESC_INFO_BLHELI32) {
-                    cliPrintLinef("Rotation: %s", escInfoBuffer[16] ? "reversed" : "normal");
+                    cliPrintLinef("Rotation Direction: %s", escInfoBuffer[16] ? "reversed" : "normal");
                     cliPrintLinef("3D: %s", escInfoBuffer[17] ? "on" : "off");
                     if (escInfoVersion == ESC_INFO_BLHELI32) {
                         uint8_t setting = escInfoBuffer[18];
-                        cliPrint("Low voltage limit: ");
+                        cliPrint("Low voltage Limit: ");
                         switch (setting) {
                         case 0:
                             cliPrintLine("off");
@@ -2398,7 +2393,7 @@ void printEscInfo(const uint8_t *escInfoBuffer, uint8_t bytesRead)
                         }
 
                         setting = escInfoBuffer[19];
-                        cliPrint("Current limit: ");
+                        cliPrint("Current Limit: ");
                         switch (setting) {
                         case 0:
                             cliPrintLine("off");
@@ -2421,13 +2416,13 @@ void printEscInfo(const uint8_t *escInfoBuffer, uint8_t bytesRead)
                     }
                 }
             } else {
-                cliPrintLine("Checksum error.");
+                cliPrintLine("Checksum Error.");
             }
         }
     }
 
     if (!escInfoReceived) {
-        cliPrintLine("No info.");
+        cliPrintLine("No Info.");
     }
 }
 
@@ -2496,13 +2491,13 @@ static void cliDshotProg(char *cmdline)
                         }
                     }
 
-                    cliPrintLinef("Command %d written.", command);
+                    cliPrintLinef("Command Sent: %d", command);
 
                     if (command <= 5) {
                         delay(20); // wait for sound output to finish
                     }
                 } else {
-                    cliPrintLinef("Invalid command, range 1 to %d.", DSHOT_MIN_THROTTLE - 1);
+                    cliPrintLinef("Invalid command. Range: 1 - %d.", DSHOT_MIN_THROTTLE - 1);
                 }
             }
 
@@ -2964,6 +2959,15 @@ static void cliStatus(char *cmdline)
     UNUSED(cmdline);
 
     cliPrintLinef("System Uptime: %d seconds", millis() / 1000);
+    
+    #ifdef USE_RTC_TIME
+    char buf[FORMATTED_DATE_TIME_BUFSIZE];
+    dateTime_t dt;
+    rtcGetDateTime(&dt);
+    dateTimeFormatLocal(buf, &dt);
+    cliPrintLinef("Current Time: %s", buf);
+    #endif
+
     cliPrintLinef("Voltage: %d * 0.1V (%dS battery - %s)", getBatteryVoltage(), getBatteryCellCount(), getBatteryStateString());
 
     cliPrintf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
@@ -3013,17 +3017,18 @@ static void cliStatus(char *cmdline)
     const int systemRate = getTaskDeltaTime(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_SYSTEM)));
     cliPrintLinef("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d",
             constrain(averageSystemLoadPercent, 0, 100), getTaskDeltaTime(TASK_GYROPID), gyroRate, rxRate, systemRate);
-#ifdef MINIMAL_CLI
-    cliPrintLinef("Arming disable flags: 0x%x", getArmingDisableFlags());
-#else
+#if defined(USE_OSD) || !defined(MINIMAL_CLI)
+    /* Flag strings are present if OSD is compiled so may as well use them even with MINIMAL_CLI */
     cliPrint("Arming disable flags:");
-    uint16_t flags = getArmingDisableFlags();
+    armingDisableFlags_e flags = getArmingDisableFlags();
     while (flags) {
         int bitpos = ffs(flags) - 1;
         flags &= ~(1 << bitpos);
         cliPrintf(" %s", armingDisableFlagNames[bitpos]);
     }
     cliPrintLinefeed();
+#else
+    cliPrintLinef("Arming disable flags: 0x%x", getArmingDisableFlags());
 #endif
 }
 
@@ -3126,7 +3131,7 @@ const cliResourceValue_t resourceTable[] = {
     { OWNER_PPMINPUT,      PG_PPM_CONFIG, offsetof(ppmConfig_t, ioTag), 0 },
     { OWNER_PWMINPUT,      PG_PWM_CONFIG, offsetof(pwmConfig_t, ioTags[0]), PWM_INPUT_PORT_COUNT },
 #endif
-#ifdef SONAR
+#ifdef USE_SONAR
     { OWNER_SONAR_TRIGGER, PG_SONAR_CONFIG, offsetof(sonarConfig_t, triggerTag), 0 },
     { OWNER_SONAR_ECHO,    PG_SONAR_CONFIG, offsetof(sonarConfig_t, echoTag),    0 },
 #endif
@@ -3167,8 +3172,11 @@ const cliResourceValue_t resourceTable[] = {
     { OWNER_ADC_CURR,      PG_ADC_CONFIG, offsetof(adcConfig_t, current.ioTag), 0 },
     { OWNER_ADC_EXT,       PG_ADC_CONFIG, offsetof(adcConfig_t, external1.ioTag), 0 },
 #endif
-#ifdef BARO
+#ifdef USE_BARO
     { OWNER_BARO_CS,       PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_spi_csn), 0 },
+#endif
+#ifdef USE_MAG
+    { OWNER_COMPASS_CS,    PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_spi_csn), 0 },
 #endif
 };
 
@@ -3637,7 +3645,7 @@ const clicmd_t cmdTable[] = {
 #endif
 #endif
     CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),
-#ifdef GPS
+#ifdef USE_GPS
     CLI_COMMAND_DEF("gpspassthrough", "passthrough gps to serial", NULL, cliGpsPassthrough),
 #endif
     CLI_COMMAND_DEF("help", NULL, NULL, cliHelp),
@@ -3691,6 +3699,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
 #endif
 };
+
 static void cliHelp(char *cmdline)
 {
     UNUSED(cmdline);

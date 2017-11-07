@@ -20,8 +20,6 @@
 #include <limits.h>
 #include <cmath>
 
-#undef BARO
-
 extern "C" {
     #include "build/debug.h"
 
@@ -56,7 +54,7 @@ extern "C" {
     void imuComputeRotationMatrix(void);
     void imuUpdateEulerAngles(void);
 
-    extern float q0, q1, q2, q3;
+    extern quaternion q;
     extern float rMat[3][3];
 
     PG_REGISTER(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
@@ -79,10 +77,10 @@ TEST(FlightImuTest, TestCalculateRotationMatrix)
     #define TOL 1e-6
 
     // No rotation
-    q0 = 1.0f;
-    q1 = 0.0f;
-    q2 = 0.0f;
-    q3 = 0.0f;
+    q.w = 1.0f;
+    q.x = 0.0f;
+    q.y = 0.0f;
+    q.z = 0.0f;
 
     imuComputeRotationMatrix();
 
@@ -97,10 +95,10 @@ TEST(FlightImuTest, TestCalculateRotationMatrix)
     EXPECT_FLOAT_EQ(1.0f, rMat[2][2]);
 
     // 90 degrees around Z axis
-    q0 = sqrt2over2;
-    q1 = 0.0f;
-    q2 = 0.0f;
-    q3 = sqrt2over2;
+    q.w = sqrt2over2;
+    q.x = 0.0f;
+    q.y = 0.0f;
+    q.z = sqrt2over2;
 
     imuComputeRotationMatrix();
 
@@ -115,10 +113,10 @@ TEST(FlightImuTest, TestCalculateRotationMatrix)
     EXPECT_NEAR(1.0f, rMat[2][2], TOL);
 
     // 60 degrees around X axis
-    q0 = 0.866f;
-    q1 = 0.5f;
-    q2 = 0.0f;
-    q3 = 0.0f;
+    q.w = 0.866f;
+    q.x = 0.5f;
+    q.y = 0.0f;
+    q.z = 0.0f;
 
     imuComputeRotationMatrix();
 

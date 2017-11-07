@@ -43,6 +43,17 @@
 
 #include "fc/config.h" // For systemConfig()
 
+// DEBUG_MAX7456_SIGNAL
+#define DEBUG_MAX7456_SIGNAL_MODEREG       0
+#define DEBUG_MAX7456_SIGNAL_SENSE         1
+#define DEBUG_MAX7456_SIGNAL_REINIT        2
+#define DEBUG_MAX7456_SIGNAL_ROWS          3
+
+// DEBUG_MAX7456_SPICLOCK
+#define DEBUG_MAX7456_SPICLOCK_OVERCLOCK   0
+#define DEBUG_MAX7456_SPICLOCK_DEVTYPE     1
+#define DEBUG_MAX7456_SPICLOCK_DIVISOR     2
+
 // VM0 bits
 #define VIDEO_BUFFER_DISABLE        0x01
 #define MAX7456_RESET               0x02
@@ -349,9 +360,7 @@ uint8_t max7456GetRowsCount(void)
 
 void max7456ReInit(void)
 {
-    uint8_t maxScreenRows;
     uint8_t srdata = 0;
-    uint16_t x;
     static bool firstInit = true;
 
     ENABLE_MAX7456;
@@ -381,17 +390,14 @@ void max7456ReInit(void)
 
     if (videoSignalReg & VIDEO_MODE_PAL) { //PAL
         maxScreenSize = VIDEO_BUFFER_CHARS_PAL;
-        maxScreenRows = VIDEO_LINES_PAL;
     } else {              // NTSC
         maxScreenSize = VIDEO_BUFFER_CHARS_NTSC;
-        maxScreenRows = VIDEO_LINES_NTSC;
     }
 
-    // Set all rows to same charactor black/white level.
-
-    for (x = 0; x < maxScreenRows; x++) {
-        max7456Send(MAX7456ADD_RB0 + x, BWBRIGHTNESS);
-    }
+    /* Set all rows to same charactor black/white level. */
+    max7456Brightness(0, 2);
+    /* Re-enable MAX7456 (last function call disables it) */
+    ENABLE_MAX7456;
 
     // Make sure the Max7456 is enabled
     max7456Send(MAX7456ADD_VM0, videoSignalReg);
@@ -402,7 +408,6 @@ void max7456ReInit(void)
     DISABLE_MAX7456;
 
     // Clear shadow to force redraw all screen in non-dma mode.
-
     memset(shadowBuffer, 0, maxScreenSize);
     if (firstInit)
     {
@@ -455,11 +460,9 @@ void max7456Init(const vcdProfile_t *pVcdProfile)
         break;
     }
 
-#ifdef DEBUG_MAX7456_SPI_CLOCK
-    debug[0] = systemConfig()->cpu_overclock;
-    debug[1] = max7456DeviceType;
-    debug[2] = max7456SpiClock;
-#endif
+    DEBUG_SET(DEBUG_MAX7456_SPICLOCK, DEBUG_MAX7456_SPICLOCK_OVERCLOCK, systemConfig()->cpu_overclock);
+    DEBUG_SET(DEBUG_MAX7456_SPICLOCK, DEBUG_MAX7456_SPICLOCK_DEVTYPE, max7456DeviceType);
+    DEBUG_SET(DEBUG_MAX7456_SPICLOCK, DEBUG_MAX7456_SPICLOCK_DIVISOR, max7456SpiClock);
 #endif
 
     spiSetDivisor(MAX7456_SPI_INSTANCE, max7456SpiClock);
@@ -558,6 +561,8 @@ void max7456DrawScreen(void)
     static uint16_t pos = 0;
     int k = 0, buff_len=0;
 
+    static uint16_t reInitCount = 0;
+
     if (!max7456Lock && !fontIsLoading) {
 
         // (Re)Initialize MAX7456 at startup or stall is detected.
@@ -581,11 +586,9 @@ void max7456DrawScreen(void)
             videoSense = max7456Send(MAX7456ADD_STAT, 0x00);
             DISABLE_MAX7456;
 
-#ifdef DEBUG_MAX7456_SIGNAL
-            debug[0] = videoSignalReg & VIDEO_MODE_MASK;
-            debug[1] = videoSense & 0x7;
-            debug[3] = max7456GetRowsCount();
-#endif
+            DEBUG_SET(DEBUG_MAX7456_SIGNAL, DEBUG_MAX7456_SIGNAL_MODEREG, videoSignalReg & VIDEO_MODE_MASK);
+            DEBUG_SET(DEBUG_MAX7456_SIGNAL, DEBUG_MAX7456_SIGNAL_SENSE, videoSense & 0x7);
+            DEBUG_SET(DEBUG_MAX7456_SIGNAL, DEBUG_MAX7456_SIGNAL_ROWS, max7456GetRowsCount());
 
             if (videoSense & STAT_LOS) {
                 videoDetectTimeMs = 0;
@@ -595,9 +598,7 @@ void max7456DrawScreen(void)
                     if (videoDetectTimeMs) {
                         if (millis() - videoDetectTimeMs > VIDEO_SIGNAL_DEBOUNCE_MS) {
                             max7456ReInit();
-#ifdef DEBUG_MAX7456_SIGNAL
-                            debug[2]++;
-#endif
+                            DEBUG_SET(DEBUG_MAX7456_SIGNAL, DEBUG_MAX7456_SIGNAL_REINIT, ++reInitCount);
                         }
                     } else {
                         // Wait for signal to stabilize

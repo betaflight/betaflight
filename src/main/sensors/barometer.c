@@ -111,7 +111,7 @@ void pgResetFn_barometerConfig(barometerConfig_t *barometerConfig)
 #endif
 }
 
-#ifdef BARO
+#ifdef USE_BARO
 
 static uint16_t calibratingB = 0;      // baro calibration = get new ground pressure value
 static int32_t baroPressure = 0;

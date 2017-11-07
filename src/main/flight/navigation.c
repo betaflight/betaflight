@@ -22,7 +22,7 @@
 
 #include "platform.h"
 
-#ifdef GPS
+#ifdef USE_GPS
 
 #include "build/debug.h"
 

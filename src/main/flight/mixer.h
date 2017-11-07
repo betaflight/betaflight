@@ -115,8 +115,6 @@ bool mixerIsOutputSaturated(int axis, float errorRate);
 
 void mixerLoadMix(int index, motorMixer_t *customMixers);
 void mixerInit(mixerMode_e mixerMode);
-struct pidProfile_s;
-void pidInitMixer(const struct pidProfile_s *pidProfile);
 
 void mixerConfigureOutput(void);
 

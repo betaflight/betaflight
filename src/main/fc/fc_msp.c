@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include "platform.h"
 
@@ -413,7 +414,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #ifdef USE_OSD_SLAVE
         sbufWriteU8(dst, 1);  // 1 == OSD
 #else
-#if defined(OSD) && defined(USE_MAX7456)
+#if defined(USE_OSD) && defined(USE_MAX7456)
         sbufWriteU8(dst, 2);  // 2 == FC with OSD
 #else
         sbufWriteU8(dst, 0);  // 0 == FC
@@ -617,7 +618,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 #define OSD_FLAGS_OSD_HARDWARE_MAX_7456 (1 << 4)
 
         uint8_t osdFlags = 0;
-#if defined(OSD)
+#if defined(USE_OSD)
         osdFlags |= OSD_FLAGS_OSD_FEATURE;
 #endif
 #if defined(USE_OSD_SLAVE)
@@ -636,7 +637,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, 0);
 #endif
 
-#ifdef OSD
+#ifdef USE_OSD
         // OSD specific, not applicable to OSD slaves.
 
         // Configuration
@@ -664,6 +665,9 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         for (int i = 0; i < OSD_TIMER_COUNT; i++) {
             sbufWriteU16(dst, osdConfig()->timers[i]);
         }
+
+        // Enabled warnings
+        sbufWriteU16(dst, osdConfig()->enabledWarnings);
 #endif
         break;
     }
@@ -675,7 +679,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
 }
 
 #ifdef USE_OSD_SLAVE
-static bool mspOsdSlaveProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
+static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 {
     switch (cmdMSP) {
     case MSP_STATUS_EX:
@@ -703,10 +707,10 @@ static bool mspOsdSlaveProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
     }
     return true;
 }
-#endif
 
-#ifndef USE_OSD_SLAVE
-static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
+#else
+
+static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 {
     switch (cmdMSP) {
     case MSP_STATUS_EX:
@@ -743,7 +747,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
             // 1 byte, flag count
             sbufWriteU8(dst, NUM_ARMING_DISABLE_FLAGS);
             // 4 bytes, flags
-            uint32_t armingDisableFlags = getArmingDisableFlags();
+            const uint32_t armingDisableFlags = getArmingDisableFlags();
             sbufWriteU32(dst, armingDisableFlags);
         }
         break;
@@ -837,7 +841,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         break;
 
     case MSP_ALTITUDE:
-#if defined(BARO) || defined(SONAR)
+#if defined(USE_BARO) || defined(USE_SONAR)
         sbufWriteU32(dst, getEstimatedAltitude());
 #else
         sbufWriteU32(dst, 0);
@@ -846,7 +850,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         break;
 
     case MSP_SONAR_ALTITUDE:
-#if defined(SONAR)
+#if defined(USE_SONAR)
         sbufWriteU32(dst, sonarGetLatestAltitude());
 #else
         sbufWriteU32(dst, 0);
@@ -862,6 +866,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
     case MSP_ARMING_CONFIG:
         sbufWriteU8(dst, armingConfig()->auto_disarm_delay);
         sbufWriteU8(dst, armingConfig()->disarm_kill_switch);
+        sbufWriteU8(dst, imuConfig()->small_angle);
         break;
 
     case MSP_RC_TUNING:
@@ -925,7 +930,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, motorConfig()->mincommand);
         break;
 
-#ifdef MAG
+#ifdef USE_MAG
     case MSP_COMPASS_CONFIG:
         sbufWriteU16(dst, compassConfig()->mag_declination / 10);
         break;
@@ -941,7 +946,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         break;
 #endif
 
-#ifdef GPS
+#ifdef USE_GPS
     case MSP_GPS_CONFIG:
         sbufWriteU8(dst, gpsConfig()->provider);
         sbufWriteU8(dst, gpsConfig()->sbasMode);
@@ -1099,7 +1104,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         break;
 
     case MSP_BLACKBOX_CONFIG:
-#ifdef BLACKBOX
+#ifdef USE_BLACKBOX
         sbufWriteU8(dst, 1); //Blackbox supported
         sbufWriteU8(dst, blackboxConfig()->device);
         sbufWriteU8(dst, blackboxGetRateNum());
@@ -1206,14 +1211,17 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
                 uint8_t pitmode=0;
                 vtxCommonGetPitMode(&pitmode);
 
+                uint16_t freq = 0;
+                vtxCommonGetFrequency(&freq);
+
                 sbufWriteU8(dst, deviceType);
                 sbufWriteU8(dst, band);
                 sbufWriteU8(dst, channel);
                 sbufWriteU8(dst, powerIdx);
                 sbufWriteU8(dst, pitmode);
+                sbufWriteU16(dst, freq);
                 // future extensions here...
-            }
-            else {
+            } else {
                 sbufWriteU8(dst, VTXDEV_UNKNOWN); // no VTX detected
             }
         }
@@ -1246,9 +1254,9 @@ static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *arg, sb
     }
     return MSP_RESULT_ACK;
 }
-#endif
+#endif // USE_OSD_SLAVE
 
-#ifdef GPS
+#ifdef USE_GPS
 static void mspFcWpCommand(sbuf_t *dst, sbuf_t *src)
 {
     uint8_t wp_no;
@@ -1295,20 +1303,21 @@ static void mspFcDataFlashReadCommand(sbuf_t *dst, sbuf_t *src)
 #endif
 
 #ifdef USE_OSD_SLAVE
-static mspResult_e mspOsdSlaveProcessInCommand(uint8_t cmdMSP, sbuf_t *src) {
+static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
+{
     UNUSED(cmdMSP);
     UNUSED(src);
     return MSP_RESULT_ERROR;
 }
-#endif
 
-#ifndef USE_OSD_SLAVE
-static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
+#else
+
+static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 {
     uint32_t i;
     uint8_t value;
     const unsigned int dataSize = sbufBytesRemaining(src);
-#ifdef GPS
+#ifdef USE_GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
 #endif
@@ -1344,7 +1353,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         break;
 
-#if defined(GPS) || defined(MAG)
+#if defined(USE_GPS) || defined(USE_MAG)
     case MSP_SET_HEADING:
         magHold = sbufReadU16(src);
         break;
@@ -1373,6 +1382,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_ARMING_CONFIG:
         armingConfigMutable()->auto_disarm_delay = sbufReadU8(src);
         armingConfigMutable()->disarm_kill_switch = sbufReadU8(src);
+        if (sbufBytesRemaining(src)) {
+          imuConfigMutable()->small_angle = sbufReadU8(src);
+        }
         break;
 
     case MSP_SET_PID_CONTROLLER:
@@ -1459,7 +1471,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         motorConfigMutable()->mincommand = sbufReadU16(src);
         break;
 
-#ifdef GPS
+#ifdef USE_GPS
     case MSP_SET_GPS_CONFIG:
         gpsConfigMutable()->provider = sbufReadU8(src);
         gpsConfigMutable()->sbasMode = sbufReadU8(src);
@@ -1468,7 +1480,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 #endif
 
-#ifdef MAG
+#ifdef USE_MAG
     case MSP_SET_COMPASS_CONFIG:
         compassConfigMutable()->mag_declination = sbufReadU16(src) * 10;
         break;
@@ -1641,7 +1653,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         readEEPROM();
         break;
 
-#ifdef BLACKBOX
+#ifdef USE_BLACKBOX
     case MSP_SET_BLACKBOX_CONFIG:
         // Don't allow config to be updated while Blackbox is logging
         if (blackboxMayEditConfig()) {
@@ -1663,29 +1675,42 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_VTX_CONFIG:
         {
             const uint16_t tmp = sbufReadU16(src);
-            const uint8_t band    = (tmp / 8) + 1;
-            const uint8_t channel = (tmp % 8) + 1;
 
             if (vtxCommonGetDeviceType() != VTXDEV_UNKNOWN) {
-                uint8_t current_band=0, current_channel=0;
-                vtxCommonGetBandAndChannel(&current_band,&current_channel);
-                if ((current_band != band) || (current_channel != channel))
-                    vtxCommonSetBandAndChannel(band,channel);
 
-                if (sbufBytesRemaining(src) < 2)
+                if (tmp <= VTXCOMMON_MSP_BANDCHAN_CHKVAL) {  //value is band and channel
+                    const uint8_t band    = (tmp / 8) + 1;
+                    const uint8_t channel = (tmp % 8) + 1;
+                    uint8_t current_band = 0, current_channel = 0;
+                    vtxCommonGetBandAndChannel(&current_band, &current_channel);
+                    if ((current_band != band) || (current_channel != channel)) {
+                        vtxCommonSetBandAndChannel(band, channel);
+                    }
+                } else {  //value is frequency in MHz
+                    uint16_t currentFreq;
+                    vtxCommonGetFrequency(&currentFreq);
+                    if (currentFreq != tmp) {
+                        vtxCommonSetFrequency(tmp);
+                    }
+                }
+
+                if (sbufBytesRemaining(src) < 2) {
                     break;
+                }
 
                 uint8_t power = sbufReadU8(src);
                 uint8_t current_power = 0;
                 vtxCommonGetPowerIndex(&current_power);
-                if (current_power != power)
+                if (current_power != power) {
                     vtxCommonSetPowerByIndex(power);
+                }
 
                 uint8_t pitmode = sbufReadU8(src);
                 uint8_t current_pitmode = 0;
                 vtxCommonGetPitMode(&current_pitmode);
-                if (current_pitmode != pitmode)
+                if (current_pitmode != pitmode) {
                     vtxCommonSetPitMode(pitmode);
+                }
             }
         }
         break;
@@ -1704,13 +1729,24 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 #endif
 
+    case MSP_ARMING_DISABLE:
+        {
+            const uint8_t command = sbufReadU8(src);
+            if (command) {
+                setArmingDisabled(ARMING_DISABLED_MSP);
+            } else {
+                unsetArmingDisabled(ARMING_DISABLED_MSP);
+            }
+        }
+        break;
+
 #ifdef USE_FLASHFS
     case MSP_DATAFLASH_ERASE:
         flashfsEraseCompletely();
         break;
 #endif
 
-#ifdef GPS
+#ifdef USE_GPS
     case MSP_SET_RAW_GPS:
         if (sbufReadU8(src)) {
             ENABLE_STATE(GPS_FIX);
@@ -1922,13 +1958,29 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         break;
 
+#ifdef USE_RTC_TIME
+    case MSP_SET_RTC:
+    {
+        dateTime_t dt;
+        dt.year = sbufReadU16(src);
+        dt.month = sbufReadU8(src);
+        dt.day = sbufReadU8(src);
+        dt.hours = sbufReadU8(src);
+        dt.minutes = sbufReadU8(src);
+        dt.seconds = sbufReadU8(src);
+        dt.millis = 0;
+        rtcSetDateTime(&dt);
+    }
+    break;
+#endif
+
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
         return MSP_RESULT_ERROR;
     }
     return MSP_RESULT_ACK;
 }
-#endif
+#endif // USE_OSD_SLAVE
 
 static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 {
@@ -2031,7 +2083,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         batteryConfigMutable()->currentMeterSource = sbufReadU8(src);
         break;
 
-#if defined(OSD) || defined (USE_OSD_SLAVE)
+#if defined(USE_OSD) || defined (USE_OSD_SLAVE)
     case MSP_SET_OSD_CONFIG:
         {
             const uint8_t addr = sbufReadU8(src);
@@ -2043,7 +2095,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
                 sbufReadU8(src); // Skip video system
 #endif
-#if defined(OSD)
+#if defined(USE_OSD)
                 osdConfigMutable()->units = sbufReadU8(src);
 
                 // Alarms
@@ -2051,9 +2103,14 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 osdConfigMutable()->cap_alarm = sbufReadU16(src);
                 sbufReadU16(src); // Skip unused (previously fly timer)
                 osdConfigMutable()->alt_alarm = sbufReadU16(src);
+
+                if (sbufBytesRemaining(src) >= 2) {
+                    /* Enabled warnings */
+                    osdConfigMutable()->enabledWarnings = sbufReadU16(src);
+                }
 #endif
             } else if ((int8_t)addr == -2) {
-#if defined(OSD)
+#if defined(USE_OSD)
                 // Timers
                 uint8_t index = sbufReadU8(src);
                 if (index > OSD_TIMER_COUNT) {
@@ -2063,7 +2120,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
                 return MSP_RESULT_ERROR;
             } else {
-#if defined(OSD)
+#if defined(USE_OSD)
                 const uint16_t value = sbufReadU16(src);
 
                 /* Get screen index, 0 is post flight statistics, 1 and above are in flight OSD screens */
@@ -2103,11 +2160,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif // OSD || USE_OSD_SLAVE
 
     default:
-#ifdef USE_OSD_SLAVE
-        return mspOsdSlaveProcessInCommand(cmdMSP, src);
-#else
-        return mspFcProcessInCommand(cmdMSP, src);
-#endif
+        return mspProcessInCommand(cmdMSP, src);
     }
     return MSP_RESULT_ACK;
 }
@@ -2126,22 +2179,18 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
 
     if (mspCommonProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
-#ifndef USE_OSD_SLAVE
-    } else if (mspFcProcessOutCommand(cmdMSP, dst)) {
+    } else if (mspProcessOutCommand(cmdMSP, dst)) {
         ret = MSP_RESULT_ACK;
+#ifndef USE_OSD_SLAVE
     } else if ((ret = mspFcProcessOutCommandWithArg(cmdMSP, src, dst)) != MSP_RESULT_CMD_UNKNOWN) {
         /* ret */;
-#endif
-#ifdef USE_OSD_SLAVE
-    } else if (mspOsdSlaveProcessOutCommand(cmdMSP, dst)) {
-        ret = MSP_RESULT_ACK;
 #endif
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
     } else if (cmdMSP == MSP_SET_4WAY_IF) {
         mspFc4waySerialCommand(dst, src, mspPostProcessFn);
         ret = MSP_RESULT_ACK;
 #endif
-#ifdef GPS
+#ifdef USE_GPS
     } else if (cmdMSP == MSP_WP) {
         mspFcWpCommand(dst, src);
         ret = MSP_RESULT_ACK;
@@ -2180,8 +2229,8 @@ void mspFcProcessReply(mspPacket_t *reply)
 #ifdef USE_MSP_CURRENT_METER
             currentMeterMSPSet(amperage, mAhDrawn);
 #endif
-            break;
         }
+        break;
 #endif
 
 #ifdef USE_OSD_SLAVE
@@ -2189,56 +2238,47 @@ void mspFcProcessReply(mspPacket_t *reply)
         {
             osdSlaveIsLocked = true; // lock it as soon as a MSP_DISPLAYPORT message is received to prevent accidental CLI/DFU mode.
 
-            int subCmd = sbufReadU8(src);
+            const int subCmd = sbufReadU8(src);
 
             switch (subCmd) {
-                case 0: // HEARTBEAT
-                    //debug[0]++;
-                    osdSlaveHeartbeat();
-                    break;
-                case 1: // RELEASE
-                    //debug[1]++;
-                    break;
-                case 2: // CLEAR
-                    //debug[2]++;
-                    osdSlaveClearScreen();
-                    break;
-                case 3: {
+            case 0: // HEARTBEAT
+                //debug[0]++;
+                osdSlaveHeartbeat();
+                break;
+            case 1: // RELEASE
+                //debug[1]++;
+                break;
+            case 2: // CLEAR
+                //debug[2]++;
+                osdSlaveClearScreen();
+                break;
+            case 3:
+                {
                     //debug[3]++;
-
 #define MSP_OSD_MAX_STRING_LENGTH 30 // FIXME move this
                     const uint8_t y = sbufReadU8(src); // row
                     const uint8_t x = sbufReadU8(src); // column
-                    const uint8_t reserved = sbufReadU8(src);
-                    UNUSED(reserved);
-
+                    sbufReadU8(src); // reserved
                     char buf[MSP_OSD_MAX_STRING_LENGTH + 1];
                     const int len = MIN(sbufBytesRemaining(src), MSP_OSD_MAX_STRING_LENGTH);
                     sbufReadData(src, &buf, len);
-
                     buf[len] = 0;
-
                     osdSlaveWrite(x, y, buf);
-
-                    break;
                 }
-                case 4: {
-                    osdSlaveDrawScreen();
-                }
+                break;
+            case 4:
+                osdSlaveDrawScreen();
+                break;
             }
-            break;
         }
+        break;
 #endif
     }
 }
 
-#ifdef USE_OSD_SLAVE
-void mspOsdSlaveInit(void)
+void mspInit(void)
 {
-}
-#else
-void mspFcInit(void)
-{
+#ifndef USE_OSD_SLAVE
     initActiveBoxIds();
+#endif
 }
-#endif // USE_OSD_SLAVE

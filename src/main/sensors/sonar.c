@@ -21,7 +21,7 @@
 
 #include "platform.h"
 
-#ifdef SONAR
+#ifdef USE_SONAR
 
 #include "build/build_config.h"
 

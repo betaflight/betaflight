@@ -77,9 +77,7 @@ void targetConfiguration(void)
     rxConfigMutable()->spektrum_sat_bind_autoreset = 1;
     parseRcChannels("TAER1234", rxConfigMutable());
 #if defined(ALIENWHOOPF4)
-    rxConfigMutable()->sbus_inversion = 0; // TODO: what to do about F4 inversion?
-#else
-    rxConfigMutable()->sbus_inversion = 1; // invert on F7
+    rxConfigMutable()->serialrx_inverted = true; // TODO: what to do about F4 inversion?
 #endif
 
     beeperOffSet((BEEPER_BAT_CRIT_LOW | BEEPER_BAT_LOW | BEEPER_RX_SET) ^ BEEPER_GYRO_CALIBRATED);

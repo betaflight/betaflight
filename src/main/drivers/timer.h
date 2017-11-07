@@ -104,16 +104,19 @@ typedef struct timerHardware_s {
     DMA_Channel_TypeDef *dmaRef;
 #endif
     uint8_t dmaIrqHandler;
+#if defined(STM32F7)
+    // TIMUP
+    DMA_Stream_TypeDef *dmaTimUPRef;
+    uint32_t dmaTimUPChannel;
+    uint8_t dmaTimUPIrqHandler;
+#endif
 #endif
 } timerHardware_t;
 
 typedef enum {
-    TIMER_OUTPUT_NONE      = 0x00,
-    TIMER_INPUT_ENABLED    = 0x01, /* TODO: remove this */
-    TIMER_OUTPUT_ENABLED   = 0x01, /* TODO: remove this */
-    TIMER_OUTPUT_STANDARD  = 0x01,
-    TIMER_OUTPUT_INVERTED  = 0x02,
-    TIMER_OUTPUT_N_CHANNEL = 0x04
+    TIMER_OUTPUT_NONE      = 0,
+    TIMER_OUTPUT_INVERTED  = (1 << 0),
+    TIMER_OUTPUT_N_CHANNEL = (1 << 1),
 } timerFlag_e;
 
 #ifdef STM32F1
@@ -193,6 +196,9 @@ const timerHardware_t *timerGetByTag(ioTag_t tag, timerUsageFlag_e flag);
 
 #if defined(USE_HAL_DRIVER)
 TIM_HandleTypeDef* timerFindTimerHandle(TIM_TypeDef *tim);
+HAL_StatusTypeDef TIM_DMACmd(TIM_HandleTypeDef *htim, uint32_t Channel, FunctionalState NewState);
+HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Channel, uint32_t *pData, uint16_t Length);
+uint16_t timerDmaIndex(uint8_t channel);
 #else
 void timerOCInit(TIM_TypeDef *tim, uint8_t channel, TIM_OCInitTypeDef *init);
 void timerOCPreloadConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t preload);

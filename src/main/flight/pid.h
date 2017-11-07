@@ -17,7 +17,6 @@
 
 #pragma once
 
-#ifndef USE_OSD_SLAVE
 #include <stdbool.h>
 #include "common/time.h"
 #include "config/parameter_group.h"
@@ -108,7 +107,9 @@ typedef struct pidProfile_s {
     uint16_t itermLimit;
 } pidProfile_t;
 
+#ifndef USE_OSD_SLAVE
 PG_DECLARE_ARRAY(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles);
+#endif
 
 typedef struct pidConfig_s {
     uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate
@@ -133,5 +134,4 @@ void pidInitFilters(const pidProfile_t *pidProfile);
 void pidInitConfig(const pidProfile_t *pidProfile);
 void pidInit(const pidProfile_t *pidProfile);
 void pidCopyProfile(uint8_t dstPidProfileIndex, uint8_t srcPidProfileIndex);
-
-#endif
+bool crashRecoveryModeActive(void);

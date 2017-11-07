@@ -24,3 +24,5 @@ float getThrottlePIDAttenuation(void);
 void updateRcCommands(void);
 void resetYawAxis(void);
 void generateThrottleCurve(void);
+bool isMotorsReversed(void);
+

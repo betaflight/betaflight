@@ -28,7 +28,7 @@
 
 void targetConfiguration(void)
 {
-    rxConfigMutable()->sbus_inversion = 0;
+    rxConfigMutable()->serialrx_inverted = true;
     rxConfigMutable()->rssi_scale = 19;
     rxConfigMutable()->serialrx_provider = SERIALRX_SBUS;
 }

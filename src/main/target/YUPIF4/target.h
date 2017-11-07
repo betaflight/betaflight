@@ -34,8 +34,6 @@
 #define BEEPER_OPT              PB14
 #define BEEPER_PWM_HZ           3150 // Beeper PWM frequency in Hz
 
-#define INVERTER_PIN_UART6      PB15
-
 // Gyro interrupt
 #define USE_EXTI
 #define USE_MPU_DATA_READY_SIGNAL
@@ -45,11 +43,11 @@
 #define ICM20689_CS_PIN         PA4
 #define ICM20689_SPI_INSTANCE   SPI1
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_ICM20689
 #define ACC_ICM20689_ALIGN      CW90_DEG
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_ICM20689
 #define GYRO_ICM20689_ALIGN     CW90_DEG
 
@@ -57,12 +55,12 @@
 #define MPU6500_CS_PIN          PA4
 #define MPU6500_SPI_INSTANCE    SPI1
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW90_DEG
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW90_DEG
@@ -72,6 +70,7 @@
 
 // UART Ports
 #define USE_UART1
+#define INVERTER_PIN_UART1      PB12
 #define UART1_RX_PIN            PA10
 #define UART1_TX_PIN            PA9
 
@@ -80,6 +79,7 @@
 #define UART3_TX_PIN            PB10
 
 #define USE_UART6
+#define INVERTER_PIN_UART6      PB15
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
@@ -128,7 +128,7 @@
 #define SPI3_MOSI_PIN           PC12
 
 // OSD
-#define OSD
+#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI1
 #define MAX7456_SPI_CS_PIN      PA14

@@ -34,12 +34,12 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM8,  CH4, PC9,  TIM_USE_PWM,                 0, 0), // S5_IN
     DEF_TIM(TIM8,  CH3, PC8,  TIM_USE_PWM,                 0, 0), // S6_IN
 
-    DEF_TIM(TIM4,  CH3, PB8,  TIM_USE_MOTOR,               1, 0), // S10_OUT 1
-    DEF_TIM(TIM2,  CH4, PA3,  TIM_USE_MOTOR,               1, 1), // S1_OUT  4
-    DEF_TIM(TIM3,  CH2, PB5,  TIM_USE_MOTOR,               1, 0), // S4_OUT
-    DEF_TIM(TIM4,  CH4, PB9,  TIM_USE_MOTOR,               1, 0), // S5_OUT  3
-    DEF_TIM(TIM9,  CH2, PE6,  TIM_USE_MOTOR,               1, 0), // S3_OUT
-    DEF_TIM(TIM3,  CH1, PB4,  TIM_USE_MOTOR,               1, 0), // S9_OUT
+    DEF_TIM(TIM4,  CH3, PB8,  TIM_USE_MOTOR,               0, 0), // S10_OUT 1
+    DEF_TIM(TIM2,  CH4, PA3,  TIM_USE_MOTOR,               0, 1), // S1_OUT  4
+    DEF_TIM(TIM3,  CH2, PB5,  TIM_USE_MOTOR,               0, 0), // S4_OUT
+    DEF_TIM(TIM4,  CH4, PB9,  TIM_USE_MOTOR,               0, 0), // S5_OUT  3
+    DEF_TIM(TIM9,  CH2, PE6,  TIM_USE_MOTOR,               0, 0), // S3_OUT
+    DEF_TIM(TIM3,  CH1, PB4,  TIM_USE_MOTOR,               0, 0), // S9_OUT
 
 };
 #else
@@ -52,12 +52,12 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM8,  CH4, PC9,  TIM_USE_PWM,                 0, 0), // S5_IN
     DEF_TIM(TIM8,  CH3, PC8,  TIM_USE_PWM,                 0, 0), // S6_IN
 
-    DEF_TIM(TIM4,  CH3, PB8,  TIM_USE_MOTOR | TIM_USE_LED, 1, 0), // S10_OUT 1
-    DEF_TIM(TIM4,  CH4, PB9,  TIM_USE_MOTOR,               1, 0), // S5_OUT  3
-    DEF_TIM(TIM2,  CH4, PA3,  TIM_USE_MOTOR,               1, 0), // S1_OUT  4
-    DEF_TIM(TIM9,  CH2, PE6,  TIM_USE_MOTOR,               1, 0), // S3_OUT
-    DEF_TIM(TIM3,  CH2, PB5,  TIM_USE_MOTOR,               1, 0), // S4_OUT
-    DEF_TIM(TIM3,  CH1, PB4,  TIM_USE_MOTOR,               1, 0), // S9_OUT
+    DEF_TIM(TIM4,  CH3, PB8,  TIM_USE_MOTOR | TIM_USE_LED, 0, 0), // S10_OUT 1
+    DEF_TIM(TIM4,  CH4, PB9,  TIM_USE_MOTOR,               0, 0), // S5_OUT  3
+    DEF_TIM(TIM2,  CH4, PA3,  TIM_USE_MOTOR,               0, 0), // S1_OUT  4
+    DEF_TIM(TIM9,  CH2, PE6,  TIM_USE_MOTOR,               0, 0), // S3_OUT
+    DEF_TIM(TIM3,  CH2, PB5,  TIM_USE_MOTOR,               0, 0), // S4_OUT
+    DEF_TIM(TIM3,  CH1, PB4,  TIM_USE_MOTOR,               0, 0), // S9_OUT
 
 };
 #endif

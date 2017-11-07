@@ -28,7 +28,7 @@
 #define TARGET_CONFIG
 
 #ifdef AIORACERF3
-#undef TARGET_CONFIG
+#undef TARGET_CONFIG // no space left
 #endif
 
 #ifdef SPRACINGF3MQ
@@ -38,11 +38,12 @@
 #define SPRACINGF3MQ_REV 2
 #endif
 
-#undef USE_UNCOMMON_MIXERS
+#undef USE_UNCOMMON_MIXERS // no space left
 #endif
-#undef TELEMETRY_JETIEXBUS
-#undef USE_SERIALRX_JETIEXBUS
-#undef USE_DASHBOARD
+#undef TELEMETRY_JETIEXBUS // no space left
+#undef USE_SERIALRX_JETIEXBUS // no space left 
+#undef USE_DASHBOARD // no space left
+#undef USE_RTC_TIME // no space left
 
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
@@ -64,25 +65,25 @@
 
 #define USE_ESC_SENSOR
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6500
 
 #define ACC_MPU6500_ALIGN       CW180_DEG
 #define GYRO_MPU6500_ALIGN      CW180_DEG
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_BMP280
 
-#define MAG
+#define USE_MAG
 #define USE_MAG_AK8963
 //#define USE_MAG_HMC5883 // External
 
 #define MAG_AK8963_ALIGN CW90_DEG_FLIP
 
-//#define SONAR
+//#define USE_SONAR
 
 #define USE_VCP
 #define USE_UART1
@@ -163,7 +164,7 @@
 #define CURRENT_METER_ADC_PIN   PA5
 #endif
 
-#define OSD
+#define USE_OSD
 #define DISABLE_EXTENDED_CMS_OSD_MENU
 #define USE_OSD_OVER_MSP_DISPLAYPORT
 #define USE_MSP_CURRENT_METER
@@ -189,5 +190,3 @@
 #else
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(15) | TIM_N(16))
 #endif
-
-#undef USE_DASHBOARD

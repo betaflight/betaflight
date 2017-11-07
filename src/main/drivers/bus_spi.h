@@ -87,6 +87,8 @@ typedef enum SPIDevice {
 #define SPI_DEV_TO_CFG(x)   ((x) + 1)
 
 void spiPreInitCs(ioTag_t iotag);
+void spiPreInitCsOutPU(ioTag_t iotag);
+
 bool spiInit(SPIDevice device);
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor);
 uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data);

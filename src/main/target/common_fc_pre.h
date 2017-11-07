@@ -54,6 +54,7 @@
 
 #ifdef STM32F7
 #define USE_DSHOT
+#define USE_DSHOT_DMAR
 #define USE_ESC_SENSOR
 #define I2C3_OVERCLOCK true
 #define I2C4_OVERCLOCK true
@@ -94,7 +95,7 @@
 #endif
 
 #if (FLASH_SIZE > 64)
-#define BLACKBOX
+#define USE_BLACKBOX
 #define LED_STRIP
 #define TELEMETRY
 #define TELEMETRY_FRSKY
@@ -106,7 +107,7 @@
 #endif
 
 #if (FLASH_SIZE > 128)
-#define CMS
+#define USE_CMS
 #define TELEMETRY_CRSF
 #define TELEMETRY_IBUS
 #define TELEMETRY_JETIEXBUS
@@ -114,7 +115,7 @@
 #define TELEMETRY_SRXL
 #define USE_DASHBOARD
 #define USE_MSP_DISPLAYPORT
-#define USE_RCSPLIT
+#define USE_RCDEVICE
 #define USE_RX_MSP
 #define USE_SERIALRX_JETIEXBUS
 #define USE_SENSOR_NAMES
@@ -127,16 +128,21 @@
 #define USE_HUFFMAN
 #define USE_COPY_PROFILE_CMS_MENU
 #define USE_MSP_OVER_TELEMETRY
+#define USE_RTC_TIME
 
 #ifdef USE_SERIALRX_SPEKTRUM
 #define USE_SPEKTRUM_BIND
 #define USE_SPEKTRUM_BIND_PLUG
+#define USE_SPEKTRUM_REAL_RSSI
+#define USE_SPEKTRUM_FAKE_RSSI
+#define USE_SPEKTRUM_RSSI_PERCENT_CONVERSION
+#define USE_SPEKTRUM_VTX_CONTROL
 #endif
 #endif
 
 #if (FLASH_SIZE > 256)
 // Temporarily moved GPS here because of overflowing flash size on F3
-#define GPS
+#define USE_GPS
 #define USE_NAV
 #define USE_UNCOMMON_MIXERS
 #endif

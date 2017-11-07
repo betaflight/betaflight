@@ -44,10 +44,9 @@
 #include "rx/crsf.h"
 
 #include "telemetry/crsf.h"
-#include "telemetry/msp_shared.h"
 
-#define CRSF_TIME_NEEDED_PER_FRAME_US   1000
-#define CRSF_TIME_BETWEEN_FRAMES_US     4000 // a frame is sent by the transmitter every 4 milliseconds
+#define CRSF_TIME_NEEDED_PER_FRAME_US   1100 // 700 ms + 400 ms for potential ad-hoc request
+#define CRSF_TIME_BETWEEN_FRAMES_US     6667 // At fastest, frames are sent by the transmitter every 6.667 milliseconds, 150 Hz
 
 #define CRSF_DIGITAL_CHANNEL_MIN 172
 #define CRSF_DIGITAL_CHANNEL_MAX 1811
@@ -112,6 +111,15 @@ struct crsfPayloadRcChannelsPacked_s {
 
 typedef struct crsfPayloadRcChannelsPacked_s crsfPayloadRcChannelsPacked_t;
 
+STATIC_UNIT_TESTED uint8_t crsfFrameCRC(void)
+{
+    // CRC includes type and payload
+    uint8_t crc = crc8_dvb_s2(0, crsfFrame.frame.type);
+    for (int ii = 0; ii < crsfFrame.frame.frameLength - CRSF_FRAME_LENGTH_TYPE_CRC; ++ii) {
+        crc = crc8_dvb_s2(crc, crsfFrame.frame.payload[ii]);
+    }
+    return crc;
+}
 
 // Receive ISR callback, called back from serial port
 STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c)
@@ -141,18 +149,30 @@ STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c)
         crsfFrameDone = crsfFramePosition < fullFrameLength ? false : true;
         if (crsfFrameDone) {
             crsfFramePosition = 0;
+            if (crsfFrame.frame.type != CRSF_FRAMETYPE_RC_CHANNELS_PACKED) {
+                const uint8_t crc = crsfFrameCRC();
+                if (crc == crsfFrame.bytes[fullFrameLength - 1]) {
+                    switch (crsfFrame.frame.type)
+                    {
+#if defined(USE_MSP_OVER_TELEMETRY)
+                        case CRSF_FRAMETYPE_MSP_REQ:
+                        case CRSF_FRAMETYPE_MSP_WRITE: ;
+                            uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + CRSF_FRAME_ORIGIN_DEST_SIZE;
+                            if (bufferCrsfMspFrame(frameStart, CRSF_FRAME_RX_MSP_FRAME_SIZE)) {
+                                crsfScheduleMspResponse();
+                            }
+                            break;
+#endif
+                        case CRSF_FRAMETYPE_DEVICE_PING:
+                            crsfScheduleDeviceInfoResponse();
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
         }
     }
-}
-
-STATIC_UNIT_TESTED uint8_t crsfFrameCRC(void)
-{
-    // CRC includes type and payload
-    uint8_t crc = crc8_dvb_s2(0, crsfFrame.frame.type);
-    for (int ii = 0; ii < crsfFrame.frame.frameLength - CRSF_FRAME_LENGTH_TYPE_CRC; ++ii) {
-        crc = crc8_dvb_s2(crc, crsfFrame.frame.payload[ii]);
-    }
-    return crc;
 }
 
 STATIC_UNIT_TESTED uint8_t crsfFrameStatus(void)
@@ -165,7 +185,6 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(void)
             if (crc != crsfFrame.frame.payload[CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE]) {
                 return RX_FRAME_PENDING;
             }
-            crsfFrame.frame.frameLength = CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC;
             // unpack the RC channels
             const crsfPayloadRcChannelsPacked_t* const rcChannels = (crsfPayloadRcChannelsPacked_t*)&crsfFrame.frame.payload;
             crsfChannelData[0] = rcChannels->chan0;
@@ -185,22 +204,6 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(void)
             crsfChannelData[14] = rcChannels->chan14;
             crsfChannelData[15] = rcChannels->chan15;
             return RX_FRAME_COMPLETE;
-        } else {
-            if (crsfFrame.frame.type == CRSF_FRAMETYPE_DEVICE_PING) {
-                // TODO: CRC CHECK
-                crsfScheduleDeviceInfoResponse();
-                return RX_FRAME_COMPLETE;
-#if defined(USE_MSP_OVER_TELEMETRY)
-            } else if (crsfFrame.frame.type == CRSF_FRAMETYPE_MSP_REQ || crsfFrame.frame.type == CRSF_FRAMETYPE_MSP_WRITE) {
-                // TODO: CRC CHECK
-                uint8_t *frameStart = (uint8_t *)&crsfFrame.frame.payload + 2;
-                uint8_t *frameEnd = (uint8_t *)&crsfFrame.frame.payload + 2 + CRSF_FRAME_RX_MSP_PAYLOAD_SIZE;
-                if (handleMspFrame(frameStart, frameEnd)) {
-                    crsfScheduleMspResponse();
-                }
-                return RX_FRAME_COMPLETE;
-#endif
-            }
         }
     }
     return RX_FRAME_PENDING;
@@ -231,15 +234,6 @@ void crsfRxSendTelemetryData(void)
 {
     // if there is telemetry data to write
     if (telemetryBufLen > 0) {
-        // check that we are not in bi dir mode or that we are not currently receiving data (ie in the middle of an RX frame)
-        // and that there is time to send the telemetry frame before the next RX frame arrives
-        if (rxConfig()->halfDuplex) {
-            const uint32_t timeSinceStartOfFrameUs = micros() - crsfFrameStartAtUs;
-            if ((timeSinceStartOfFrameUs < CRSF_TIME_NEEDED_PER_FRAME_US) ||
-                (timeSinceStartOfFrameUs > CRSF_TIME_BETWEEN_FRAMES_US - CRSF_TIME_NEEDED_PER_FRAME_US)) {
-                return;
-            }
-        }
         serialWriteBuf(serialPort, telemetryBuf, telemetryBufLen);
         telemetryBufLen = 0; // reset telemetry buffer
     }
@@ -252,7 +246,7 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     }
 
     rxRuntimeConfig->channelCount = CRSF_MAX_CHANNEL;
-    rxRuntimeConfig->rxRefreshRate = 11000; //!!TODO this needs checking
+    rxRuntimeConfig->rxRefreshRate = CRSF_TIME_BETWEEN_FRAMES_US; //!!TODO this needs checking
 
     rxRuntimeConfig->rcReadRawFn = crsfReadRawRC;
     rxRuntimeConfig->rcFrameStatusFn = crsfFrameStatus;
@@ -267,7 +261,7 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         crsfDataReceive,
         CRSF_BAUDRATE,
         CRSF_PORT_MODE,
-        CRSF_PORT_OPTIONS | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)
+        CRSF_PORT_OPTIONS | (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0)
         );
 
     return serialPort != NULL;

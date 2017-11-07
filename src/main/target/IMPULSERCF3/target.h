@@ -32,11 +32,11 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW0_DEG
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW0_DEG
 
@@ -79,7 +79,7 @@
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
 
-#define OSD
+#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI1
 #define MAX7456_SPI_CS_PIN      PA3
@@ -109,8 +109,6 @@
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
-//#define TARGET_IO_PORTF (BIT(0)|BIT(1))
-// !!TODO - check the following line is correct
-#define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(3)|BIT(4))
+#define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
-#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(16) |TIM_N(17))
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(8) | TIM_N(16) |TIM_N(17))

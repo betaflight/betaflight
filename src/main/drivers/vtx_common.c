@@ -100,6 +100,16 @@ void vtxCommonSetPitMode(uint8_t onoff)
         vtxDevice->vTable->setPitMode(onoff);
 }
 
+void vtxCommonSetFrequency(uint16_t freq)
+{
+    if (!vtxDevice) {
+        return;
+    }
+    if (vtxDevice->vTable->setFrequency) {
+        vtxDevice->vTable->setFrequency(freq);
+    }
+}
+
 bool vtxCommonGetBandAndChannel(uint8_t *pBand, uint8_t *pChannel)
 {
     if (!vtxDevice)
@@ -131,6 +141,18 @@ bool vtxCommonGetPitMode(uint8_t *pOnOff)
         return vtxDevice->vTable->getPitMode(pOnOff);
     else
         return false;
+}
+
+bool vtxCommonGetFrequency(uint16_t *pFreq)
+{
+    if (!vtxDevice) {
+        return false;
+    }
+    if (vtxDevice->vTable->getFrequency) {
+        return vtxDevice->vTable->getFrequency(pFreq);
+    } else {
+        return false;
+    }
 }
 
 bool vtxCommonGetDeviceCapability(vtxDeviceCapability_t *pDeviceCapability)

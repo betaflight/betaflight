@@ -59,7 +59,7 @@
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1  // increment when major changes are made
-#define API_VERSION_MINOR                   36 // increment after a release, to set the version for all changes to go into the following release (if no changes to MSP are made between the releases, this can be reverted before the release)
+#define API_VERSION_MINOR                   37 // increment after a release, to set the version for all changes to go into the following release (if no changes to MSP are made between the releases, this can be reverted before the release)
 
 #define API_VERSION_LENGTH                  2
 
@@ -149,8 +149,8 @@
 #define MSP_PID_CONTROLLER              59
 #define MSP_SET_PID_CONTROLLER          60
 
-#define MSP_ARMING_CONFIG               61 //out message         Returns auto_disarm_delay and disarm_kill_switch parameters
-#define MSP_SET_ARMING_CONFIG           62 //in message          Sets auto_disarm_delay and disarm_kill_switch parameters
+#define MSP_ARMING_CONFIG               61
+#define MSP_SET_ARMING_CONFIG           62
 
 //
 // Baseflight MSP commands (if enabled they exist in Cleanflight)
@@ -213,6 +213,8 @@
 #define MSP_SET_SENSOR_CONFIG           97
 
 #define MSP_CAMERA_CONTROL              98
+
+#define MSP_ARMING_DISABLE              99
 
 //
 // OSD specific

@@ -63,7 +63,13 @@ typedef struct pilotConfig_s {
     char name[MAX_NAME_LENGTH + 1];
 } pilotConfig_t;
 
-#ifndef USE_OSD_SLAVE
+#ifdef USE_OSD_SLAVE
+typedef struct systemConfig_s {
+    uint8_t debug_mode;
+    uint8_t task_statistics;
+    char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER) + 1];
+} systemConfig_t;
+#else
 typedef struct systemConfig_s {
     uint8_t pidProfileIndex;
     uint8_t activeRateProfile;
@@ -75,15 +81,8 @@ typedef struct systemConfig_s {
     uint8_t powerOnArmingGraceTime; // in seconds
     char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER) + 1];
 } systemConfig_t;
-#endif
+#endif // USE_OSD_SLAVE
 
-#ifdef USE_OSD_SLAVE
-typedef struct systemConfig_s {
-    uint8_t debug_mode;
-    uint8_t task_statistics;
-    char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER) + 1];
-} systemConfig_t;
-#endif
 
 PG_DECLARE(pilotConfig_t, pilotConfig);
 PG_DECLARE(systemConfig_t, systemConfig);
@@ -114,7 +113,6 @@ void writeEEPROM(void);
 void ensureEEPROMContainsValidData(void);
 
 void saveConfigAndNotify(void);
-void validateAndFixConfig(void);
 void validateAndFixGyroConfig(void);
 void activateConfig(void);
 
