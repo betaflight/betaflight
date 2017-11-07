@@ -33,10 +33,6 @@
 #include "rcc.h"
 #include "dma.h"
 
-#ifndef ADC_INSTANCE
-#define ADC_INSTANCE   ADC1
-#endif
-
 const adcDevice_t adcHardware[] = {
     { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Channelx = DMA1_Channel1 }
 };

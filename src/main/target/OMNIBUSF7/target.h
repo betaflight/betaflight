@@ -183,6 +183,7 @@
 #define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 
 #define USE_ADC
+#define ADC_INSTANCE            ADC2
 #define CURRENT_METER_ADC_PIN   PC2
 #define VBAT_ADC_PIN            PC3
 #define RSSI_ADC_PIN            PC5

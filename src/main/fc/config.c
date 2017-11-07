@@ -194,6 +194,8 @@ PG_REGISTER(vcdProfile_t, vcdProfile, PG_VCD_CONFIG, 0);
 #ifdef USE_ADC
 void pgResetFn_adcConfig(adcConfig_t *adcConfig)
 {
+    adcConfig->device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_INSTANCE));
+
 #ifdef VBAT_ADC_PIN
     adcConfig->vbat.enabled = true;
     adcConfig->vbat.ioTag = IO_TAG(VBAT_ADC_PIN);

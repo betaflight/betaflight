@@ -216,6 +216,7 @@
 #define I2C_DEVICE              (I2CDEV_2)
 
 #define USE_ADC
+#define ADC_INSTANCE            ADC2
 #define CURRENT_METER_ADC_PIN   PC1  // Direct from CRNT pad (part of onboard sensor for Pro)
 #define VBAT_ADC_PIN            PC2  // 11:1 (10K + 1K) divider
 #ifdef DYSF4PRO

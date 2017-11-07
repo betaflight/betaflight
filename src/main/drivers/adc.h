@@ -19,6 +19,40 @@
 
 #include "drivers/io_types.h"
 
+#ifndef ADC_INSTANCE
+#define ADC_INSTANCE                ADC1
+#endif
+
+#if defined(STM32F4) || defined(STM32F7)
+#ifndef ADC1_DMA_STREAM
+#define ADC1_DMA_STREAM DMA2_Stream4 // ST0 or ST4
+#endif
+
+#ifndef ADC2_DMA_STREAM
+#define ADC2_DMA_STREAM DMA2_Stream3 // ST2 or ST3
+#endif
+
+#ifndef ADC3_DMA_STREAM
+#define ADC3_DMA_STREAM DMA2_Stream0 // ST0 or ST1
+#endif
+#endif
+
+typedef enum ADCDevice {
+    ADCINVALID = -1,
+    ADCDEV_1   = 0,
+#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
+    ADCDEV_2,
+    ADCDEV_3,
+#endif
+#if defined(STM32F3)
+    ADCDEV_4,
+#endif
+    ADCDEV_COUNT
+} ADCDevice;
+
+#define ADC_CFG_TO_DEV(x) ((x) - 1)
+#define ADC_DEV_TO_CFG(x) ((x) + 1)
+
 typedef enum {
     ADC_BATTERY = 0,
     ADC_CURRENT = 1,
@@ -45,7 +79,12 @@ typedef struct adcConfig_s {
     adcChannelConfig_t rssi;
     adcChannelConfig_t current;
     adcChannelConfig_t external1;
+    int8_t device; // ADCDevice
 } adcConfig_t;
 
 void adcInit(const adcConfig_t *config);
 uint16_t adcGetChannel(uint8_t channel);
+
+#ifndef SITL
+ADCDevice adcDeviceByInstance(ADC_TypeDef *instance);
+#endif
