@@ -214,8 +214,17 @@ void updateArmingStatus(void)
         }
 
         if (!isUsingSticksForArming()) {
+          /* Ignore ARMING_DISABLED_CALIBRATING if we are going to calibrate gyro on first arm */
+          bool ignoreGyro = armingConfig()->gyro_cal_on_first_arm && !(getArmingDisableFlags() & ~(ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_CALIBRATING));
+
+          /* Ignore ARMING_DISABLED_THROTTLE (once arm switch is on) if we are in 3D mode */
+          bool ignoreThrottle = feature(FEATURE_3D) && !(getArmingDisableFlags() & ~(ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE));
+
           // If arming is disabled and the ARM switch is on
-          if (isArmingDisabled() && !(armingConfig()->gyro_cal_on_first_arm && !(getArmingDisableFlags() & ~(ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_CALIBRATING))) && IS_RC_MODE_ACTIVE(BOXARM)) {
+          if (isArmingDisabled()
+              && !ignoreGyro
+              && !ignoreThrottle
+              && IS_RC_MODE_ACTIVE(BOXARM)) {
               setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
           } else if (!IS_RC_MODE_ACTIVE(BOXARM)) {
               unsetArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
