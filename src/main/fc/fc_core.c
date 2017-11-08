@@ -221,6 +221,7 @@ void updateArmingStatus(void)
           /* Ignore ARMING_DISABLED_THROTTLE (once arm switch is on) if we are in 3D mode */
           bool ignoreThrottle = feature(FEATURE_3D)
                              && !IS_RC_MODE_ACTIVE(BOX3DDISABLE)
+                             && !isModeActivationConditionPresent(BOX3DONASWITCH)
                              && !(getArmingDisableFlags() & ~(ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_THROTTLE));
 
           // If arming is disabled and the ARM switch is on
