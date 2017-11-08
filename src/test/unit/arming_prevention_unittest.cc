@@ -161,6 +161,7 @@ TEST(ArmingPreventionTest, CalibrationPowerOnGraceAngleThrottleArmSwitch)
     EXPECT_EQ(0, getArmingDisableFlags());
     EXPECT_FALSE(isArmingDisabled());
 }
+
 TEST(ArmingPreventionTest, ArmingGuardRadioLeftOnAndArmed)
 {
     // given
@@ -347,7 +348,7 @@ TEST(ArmingPreventionTest, RadioTurnedOnAtAnyTimeArmed)
     EXPECT_EQ(0, getArmingDisableFlags());
 }
 
-TEST(ArmingPreventionTest, In3DModeAllowArmingWhenEnteringThrottleDeadbandFromNegativeSide)
+TEST(ArmingPreventionTest, In3DModeAllowArmingWhenEnteringThrottleDeadband)
 {
     // given
     simulationFeatureFlags = FEATURE_3D; // Using 3D mode
@@ -402,6 +403,110 @@ TEST(ArmingPreventionTest, In3DModeAllowArmingWhenEnteringThrottleDeadbandFromNe
     // given
     // throttle moved to centre
     rcData[THROTTLE] = 1496;
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(isUsingSticksForArming());
+    EXPECT_FALSE(isArmingDisabled());
+    EXPECT_EQ(0, getArmingDisableFlags());
+}
+
+TEST(ArmingPreventionTest, When3DModeDisabledThenNormalThrottleArmingConditionApplies)
+{
+    // given
+    simulationFeatureFlags = FEATURE_3D; // Using 3D mode
+    simulationTime = 30e6; // 30 seconds after boot
+    gyroCalibDone = true;
+
+    // and
+    modeActivationConditionsMutable(0)->auxChannelIndex = 0;
+    modeActivationConditionsMutable(0)->modeId = BOXARM;
+    modeActivationConditionsMutable(0)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(0)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    modeActivationConditionsMutable(1)->auxChannelIndex = 1;
+    modeActivationConditionsMutable(1)->modeId = BOX3DDISABLE;
+    modeActivationConditionsMutable(1)->range.startStep = CHANNEL_VALUE_TO_STEP(1750);
+    modeActivationConditionsMutable(1)->range.endStep = CHANNEL_VALUE_TO_STEP(CHANNEL_RANGE_MAX);
+    useRcControlsConfig(NULL);
+
+    // and
+    rxConfigMutable()->mincheck = 1050;
+    rxConfigMutable()->midrc = 1500;
+    flight3DConfigMutable()->deadband3d_throttle = 5;
+
+    // and
+    // safe throttle value for 3D mode
+    rcData[THROTTLE] = 1500;
+    ENABLE_STATE(SMALL_ANGLE);
+
+    // and
+    // RX has no link to radio
+    simulationHaveRx = false;
+
+    // and
+    // arm channel has a safe default value
+    rcData[4] = 1100;
+
+    // and
+    // disable 3D mode is off (i.e. 3D mode is on)
+    rcData[5] = 1100;
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    // ok to arm in 3D mode
+    EXPECT_FALSE(isUsingSticksForArming());
+    EXPECT_FALSE(isArmingDisabled());
+    EXPECT_EQ(0, getArmingDisableFlags());
+
+    // given
+    // disable 3D mode
+    rcData[5] = 1800;
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    // ok to arm in 3D mode
+    EXPECT_FALSE(isUsingSticksForArming());
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_THROTTLE, getArmingDisableFlags());
+
+    // given
+    // attempt to arm
+    rcData[4] = 1800;
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(isUsingSticksForArming());
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_THROTTLE | ARMING_DISABLED_ARM_SWITCH, getArmingDisableFlags());
+
+    // given
+    // throttle moved low
+    rcData[THROTTLE] = 1000;
+
+    // when
+    updateActivatedModes();
+    updateArmingStatus();
+
+    // expect
+    EXPECT_FALSE(isUsingSticksForArming());
+    EXPECT_TRUE(isArmingDisabled());
+    EXPECT_EQ(ARMING_DISABLED_ARM_SWITCH, getArmingDisableFlags());
+
+    // given
+    // arm switch turned off
+    rcData[4] = 1000;
 
     // when
     updateActivatedModes();
