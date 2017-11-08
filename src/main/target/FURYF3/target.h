@@ -143,10 +143,6 @@
 #define SOFTSERIAL1_RX_PIN      PB0
 #define SOFTSERIAL1_TX_PIN      PB1
 
-#define USE_SONAR
-#define SONAR_ECHO_PIN          PB1
-#define SONAR_TRIGGER_PIN       PB0
-
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_PIN  PB3  // (HARDARE=0,PPM)
 
