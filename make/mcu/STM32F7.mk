@@ -69,7 +69,6 @@ EXCLUDES        = stm32f7xx_hal_can.c \
                   stm32f7xx_ll_rng.c \
                   stm32f7xx_ll_rtc.c \
                   stm32f7xx_ll_sdmmc.c \
-                  stm32f7xx_ll_tim.c \
                   stm32f7xx_ll_usart.c
 
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
