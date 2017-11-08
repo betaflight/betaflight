@@ -1,5 +1,5 @@
 #
-# F4 Make file include
+# F1 Make file include
 #
 
 ifeq ($(OPBL),yes)
