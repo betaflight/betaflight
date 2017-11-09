@@ -492,7 +492,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
 
 static void cmsMenuCountPage(displayPort_t *pDisplay)
 {
-    OSD_Entry *p;
+    const OSD_Entry *p;
     for (p = currentCtx.menu->entries; p->type != OME_END; p++);
     pageCount = (p - currentCtx.menu->entries - 1) / MAX_MENU_ITEMS(pDisplay) + 1;
 }
@@ -501,7 +501,7 @@ STATIC_UNIT_TESTED long cmsMenuBack(displayPort_t *pDisplay); // Forward; will b
 
 long cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
 {
-    CMS_Menu *pMenu = (CMS_Menu *)ptr;
+    const CMS_Menu *pMenu = (const CMS_Menu *)ptr;
 
     if (!pMenu) {
         return 0;
