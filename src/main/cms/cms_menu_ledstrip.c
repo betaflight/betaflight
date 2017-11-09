@@ -74,8 +74,10 @@ static OSD_Entry cmsx_menuLedstripEntries[] =
 };
 
 CMS_Menu cmsx_menuLedstrip = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENULED",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = cmsx_Ledstrip_FeatureRead,
     .onExit = NULL,
     .onGlobalExit = cmsx_Ledstrip_FeatureWriteback,

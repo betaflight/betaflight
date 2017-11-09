@@ -125,8 +125,10 @@ static OSD_Entry menuMainEntries[] =
     {NULL, OME_END, NULL, NULL, 0}
 };
 CMS_Menu menuMain = {
+#ifdef CMS_MENU_DEBUG
     "MENUMAIN",
     OME_MENU,
+#endif
     NULL,
     NULL,
     NULL,
