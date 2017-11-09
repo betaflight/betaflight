@@ -85,7 +85,6 @@ static CMS_Menu menuInfo = {
     .GUARD_type = OME_MENU,
     .onEnter = cmsx_InfoInit,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = menuInfoEntries
 };
 
@@ -121,7 +120,6 @@ static CMS_Menu menuFeatures = {
     .GUARD_type = OME_MENU,
     .onEnter = NULL,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = menuFeaturesEntries,
 };
 
@@ -153,7 +151,6 @@ CMS_Menu menuMain = {
     .GUARD_type = OME_MENU,
     .onEnter = NULL,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = menuMainEntries,
 };
 #endif

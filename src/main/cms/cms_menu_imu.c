@@ -165,7 +165,6 @@ static CMS_Menu cmsx_menuPid = {
     .GUARD_type = OME_MENU,
     .onEnter = cmsx_PidOnEnter,
     .onExit = cmsx_PidWriteback,
-    .onGlobalExit = NULL,
     .entries = cmsx_menuPidEntries
 };
 
@@ -226,7 +225,6 @@ static CMS_Menu cmsx_menuRateProfile = {
     .GUARD_type = OME_MENU,
     .onEnter = cmsx_RateProfileOnEnter,
     .onExit = cmsx_RateProfileWriteback,
-    .onGlobalExit = NULL,
     .entries = cmsx_menuRateProfileEntries
 };
 
@@ -295,7 +293,6 @@ static CMS_Menu cmsx_menuProfileOther = {
     .GUARD_type = OME_MENU,
     .onEnter = cmsx_profileOtherOnEnter,
     .onExit = cmsx_profileOtherOnExit,
-    .onGlobalExit = NULL,
     .entries = cmsx_menuProfileOtherEntries,
 };
 
@@ -348,7 +345,6 @@ static CMS_Menu cmsx_menuFilterGlobal = {
     .GUARD_type = OME_MENU,
     .onEnter = cmsx_menuGyro_onEnter,
     .onExit = cmsx_menuGyro_onExit,
-    .onGlobalExit = NULL,
     .entries = cmsx_menuFilterGlobalEntries,
 };
 
@@ -399,7 +395,6 @@ static CMS_Menu cmsx_menuFilterPerProfile = {
     .GUARD_type = OME_MENU,
     .onEnter = cmsx_FilterPerProfileRead,
     .onExit = cmsx_FilterPerProfileWriteback,
-    .onGlobalExit = NULL,
     .entries = cmsx_menuFilterPerProfileEntries,
 };
 
@@ -468,7 +463,6 @@ CMS_Menu cmsx_menuCopyProfile = {
     .GUARD_type = OME_MENU,
     .onEnter = cmsx_menuCopyProfile_onEnter,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = cmsx_menuCopyProfileEntries,
 };
 
@@ -500,7 +494,6 @@ CMS_Menu cmsx_menuImu = {
     .GUARD_type = OME_MENU,
     .onEnter = cmsx_menuImu_onEnter,
     .onExit = cmsx_menuImu_onExit,
-    .onGlobalExit = NULL,
     .entries = cmsx_menuImuEntries,
 };
 

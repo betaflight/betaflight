@@ -107,7 +107,6 @@ CMS_Menu menuOsdActiveElems = {
     .GUARD_type = OME_MENU,
     .onEnter = menuOsdActiveElemsOnEnter,
     .onExit = menuOsdActiveElemsOnExit,
-    .onGlobalExit = NULL,
     .entries = menuOsdActiveElemsEntries
 };
 
@@ -150,7 +149,6 @@ CMS_Menu menuAlarms = {
     .GUARD_type = OME_MENU,
     .onEnter = menuAlarmsOnEnter,
     .onExit = menuAlarmsOnExit,
-    .onGlobalExit = NULL,
     .entries = menuAlarmsEntries,
 };
 
@@ -201,7 +199,6 @@ CMS_Menu menuTimers = {
     .GUARD_type = OME_MENU,
     .onEnter = menuTimersOnEnter,
     .onExit = menuTimersOnExit,
-    .onGlobalExit = NULL,
     .entries = menuTimersEntries,
 };
 #endif /* DISABLE_EXTENDED_CMS_OSD_MENU */
@@ -258,7 +255,6 @@ CMS_Menu cmsx_menuOsd = {
     .GUARD_type = OME_MENU,
     .onEnter = cmsx_menuOsdOnEnter,
     .onExit = cmsx_menuOsdOnExit,
-    .onGlobalExit = NULL,
     .entries = cmsx_menuOsdEntries
 };
 #endif // CMS

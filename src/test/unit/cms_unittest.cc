@@ -129,7 +129,6 @@ CMS_Menu menuMain = {
     OME_MENU,
     NULL,
     NULL,
-    NULL,
     menuMainEntries,
 };
 uint8_t armingFlags;

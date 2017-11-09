@@ -95,7 +95,6 @@ CMS_Menu cmsx_menuVtxRTC6705 = {
     .GUARD_type = OME_MENU,
     .onEnter = cmsx_Vtx_onEnter,
     .onExit= cmsx_Vtx_onExit,
-    .onGlobalExit = NULL,
     .entries = cmsx_menuVtxEntries
 };
 

@@ -186,11 +186,6 @@ static long cmsx_Blackbox_onExit(const OSD_Entry *self)
     return 0;
 }
 
-static long cmsx_Blackbox_FeatureWriteback(void)
-{
-    return 0;
-}
-
 static OSD_Entry cmsx_menuBlackboxEntries[] =
 {
     { "-- BLACKBOX --", OME_Label, NULL, NULL, 0},
@@ -213,7 +208,6 @@ CMS_Menu cmsx_menuBlackbox = {
     .GUARD_type = OME_MENU,
     .onEnter = cmsx_Blackbox_onEnter,
     .onExit = cmsx_Blackbox_onExit,
-    .onGlobalExit = cmsx_Blackbox_FeatureWriteback,
     .entries = cmsx_menuBlackboxEntries
 };
 

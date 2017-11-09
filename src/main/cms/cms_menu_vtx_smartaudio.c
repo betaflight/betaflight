@@ -352,7 +352,6 @@ static CMS_Menu saCmsMenuStats = {
     .GUARD_type = OME_MENU,
     .onEnter = NULL,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = saCmsMenuStatsEntries
 };
 
@@ -518,7 +517,6 @@ static CMS_Menu saCmsMenuPORFreq =
     .GUARD_type = OME_MENU,
     .onEnter = saCmsSetPORFreqOnEnter,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = saCmsMenuPORFreqEntries,
 };
 
@@ -539,7 +537,6 @@ static CMS_Menu saCmsMenuUserFreq =
     .GUARD_type = OME_MENU,
     .onEnter = saCmsSetUserFreqOnEnter,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = saCmsMenuUserFreqEntries,
 };
 
@@ -563,7 +560,6 @@ static CMS_Menu saCmsMenuConfig = {
     .GUARD_type = OME_MENU,
     .onEnter = NULL,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = saCmsMenuConfigEntries
 };
 
@@ -581,7 +577,6 @@ static CMS_Menu saCmsMenuCommence = {
     .GUARD_type = OME_MENU,
     .onEnter = NULL,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = saCmsMenuCommenceEntries,
 };
 
@@ -646,7 +641,6 @@ CMS_Menu cmsx_menuVtxSmartAudio = {
     .GUARD_type = OME_MENU,
     .onEnter = sacms_SetupTopMenu,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = saCmsMenuOfflineEntries,
 };
 

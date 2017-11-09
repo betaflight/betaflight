@@ -52,8 +52,9 @@ static long cmsx_Ledstrip_FeatureRead(void)
     return 0;
 }
 
-static long cmsx_Ledstrip_FeatureWriteback(void)
+static long cmsx_Ledstrip_FeatureWriteback(const OSD_Entry *self)
 {
+    UNUSED(self);
     if (featureRead) {
         if (cmsx_FeatureLedstrip)
             featureSet(FEATURE_LED_STRIP);
@@ -77,8 +78,7 @@ CMS_Menu cmsx_menuLedstrip = {
     .GUARD_text = "MENULED",
     .GUARD_type = OME_MENU,
     .onEnter = cmsx_Ledstrip_FeatureRead,
-    .onExit = NULL,
-    .onGlobalExit = cmsx_Ledstrip_FeatureWriteback,
+    .onExit = cmsx_Ledstrip_FeatureWriteback,
     .entries = cmsx_menuLedstripEntries
 };
 #endif // LED_STRIP

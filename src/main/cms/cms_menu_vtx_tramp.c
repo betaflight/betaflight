@@ -195,7 +195,6 @@ static CMS_Menu trampCmsMenuCommence = {
     .GUARD_type = OME_MENU,
     .onEnter = NULL,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = trampCmsMenuCommenceEntries,
 };
 
@@ -221,7 +220,6 @@ CMS_Menu cmsx_menuVtxTramp = {
     .GUARD_type = OME_MENU,
     .onEnter = trampCmsOnEnter,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = trampMenuEntries,
 };
 #endif
