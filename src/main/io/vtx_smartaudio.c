@@ -742,7 +742,6 @@ void vtxSAProcess(uint32_t currentTimeUs)
     static char initPhase = 0;
     static uint32_t lastCommandSentMs = 0;
     uint32_t nowMs = millis();
-    static bool initSettingsDoneFlag = false;
 
     if (smartAudioSerialPort == NULL) {
         return;
@@ -760,17 +759,50 @@ void vtxSAProcess(uint32_t currentTimeUs)
     case 0:
         saGetSettings();
         saSendQueue();
-        ++initPhase;
+        initPhase = 1;
         return;
 
     case 1:
-        // Don't send SA_FREQ_GETPIT to V1 device; it act as plain SA_CMD_SET_FREQ,
-        // and put the device into user frequency mode with uninitialized freq.
-        if (saDevice.version == 2)
-            saDoDevSetFreq(SA_FREQ_GETPIT);
-        ++initPhase;
+        // SA_CMD_GET_SETTINGS was sent and waiting for reply.
+        // Command resending for unresponsive device will be taken care of below
+        debug[1] = saDevice.version;
+        if (saDevice.version) {
+            // Don't send SA_FREQ_GETPIT to V1 device; it act as plain SA_CMD_SET_FREQ,
+            // and put the device into user frequency mode with uninitialized freq.
+            if (saDevice.version == 2) {
+                saDoDevSetFreq(SA_FREQ_GETPIT);
+                initPhase = 2;
+            } else {
+                initPhase = 3;
+            }
+            return;
+        }
+        break;
+
+    case 2:
+        // SA_FREQ_GETPIT sent and waiting for reply.
+        // Command resending for unresponsive device will be taken care of below
+        if (saDevice.orfreq) {
+            initPhase = 3;
+        }
+        break;
+
+    case 3:
+        // Once the device is ready, enter vtx settings.
+        // if vtx_band!=0 then enter 'vtx_band/chan' values (and power)
+        if (!saEnterInitBandChanAndPower(vtxSettingsConfig()->band, vtxSettingsConfig()->channel, vtxSettingsConfig()->power)) {
+            // if vtx_band==0 then enter 'vtx_freq' value (and power)
+            if (vtxSettingsConfig()->band == 0) {
+                saEnterInitFreqAndPower(vtxSettingsConfig()->freq, vtxSettingsConfig()->power);
+            }
+        }
+        initPhase = 4;
+        break;
+
+    default:
         break;
     }
+debug[0] = initPhase;
 
     if ((sa_outstanding != SA_CMD_NONE)
             && (nowMs - sa_lastTransmissionMs > SMARTAUDIO_CMD_TIMEOUT)) {
@@ -790,24 +822,6 @@ void vtxSAProcess(uint32_t currentTimeUs)
         saSendQueue();
     }
 
-    // once device is ready enter vtx settings
-    if (!initSettingsDoneFlag) {
-        if (saDevice.version != 0) {
-            initSettingsDoneFlag = true;
-            // if vtx_band!=0 then enter 'vtx_band/chan' values (and power)
-            if (!saEnterInitBandChanAndPower(vtxSettingsConfig()->band,
-                           vtxSettingsConfig()->channel, vtxSettingsConfig()->power)) {
-                // if vtx_band==0 then enter 'vtx_freq' value (and power)
-                if (vtxSettingsConfig()->band == 0) {
-                    saEnterInitFreqAndPower(vtxSettingsConfig()->freq, vtxSettingsConfig()->power);
-                }
-            }
-        } else if (nowMs - sa_lastTransmissionMs >= 100) {
-            // device is not ready; repeat query
-            saGetSettings();
-            saSendQueue();
-        }
-    }
 
 #ifdef SMARTAUDIO_TEST_VTX_COMMON
     // Testing VTX_COMMON API
