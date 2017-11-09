@@ -15,13 +15,24 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdint.h>
+
+#include "platform.h"
+
+#if defined(VTX_COMMON)
+
 #include "common/time.h"
+
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/vtx_common.h"
+
 #include "fc/config.h"
+
 #include "io/vtx.h"
 #include "io/vtx_string.h"
 
-#if defined(VTX_COMMON)
 
 PG_REGISTER_WITH_RESET_TEMPLATE(vtxSettingsConfig_t, vtxSettingsConfig, PG_VTX_SETTINGS_CONFIG, 0);
 
@@ -64,41 +75,40 @@ void vtxProcess(timeUs_t currentTimeUs)
     static uint8_t scheduleIndex;
 
     if (vtxCommonDeviceRegistered()) {
-        uint8_t currentSchedule = vtxParamSchedule[scheduleIndex];
+        const uint8_t currentSchedule = vtxParamSchedule[scheduleIndex];
         // Process VTX changes from the parameter group at 10Hz
         if (currentTimeUs > lastCycleTimeUs + VTX_PARAM_CYCLE_TIME_US) {
-            switch (currentSchedule)
-            {
-                case VTX_PARAM_BANDCHAN:
-                    if (vtxSettingsConfig()->band) {
-                        uint8_t vtxBand;
-                        uint8_t vtxChan;
-                        if (vtxCommonGetBandAndChannel(&vtxBand, &vtxChan)) {
-                            if (vtxSettingsConfig()->band != vtxBand || vtxSettingsConfig()->channel != vtxChan) {
-                                vtxCommonSetBandAndChannel(vtxSettingsConfig()->band, vtxSettingsConfig()->channel);
-                            }
+            switch (currentSchedule) {
+            case VTX_PARAM_BANDCHAN:
+                if (vtxSettingsConfig()->band) {
+                    uint8_t vtxBand;
+                    uint8_t vtxChan;
+                    if (vtxCommonGetBandAndChannel(&vtxBand, &vtxChan)) {
+                        if (vtxSettingsConfig()->band != vtxBand || vtxSettingsConfig()->channel != vtxChan) {
+                            vtxCommonSetBandAndChannel(vtxSettingsConfig()->band, vtxSettingsConfig()->channel);
                         }
+                    }
 #if defined(VTX_SETTINGS_FREQCMD)
-                    } else {
-                        uint16_t vtxFreq;
-                        if (vtxCommonGetFrequency(&vtxFreq)) {
-                            if (vtxSettingsConfig()->freq != vtxFreq) {
-                                vtxCommonSetFrequency(vtxSettingsConfig()->freq);
-                            }
+                } else {
+                    uint16_t vtxFreq;
+                    if (vtxCommonGetFrequency(&vtxFreq)) {
+                        if (vtxSettingsConfig()->freq != vtxFreq) {
+                            vtxCommonSetFrequency(vtxSettingsConfig()->freq);
                         }
+                    }
 #endif
+                }
+                break;
+            case VTX_PARAM_POWER: ;
+                uint8_t vtxPower;
+                if (vtxCommonGetPowerIndex(&vtxPower)) {
+                    if (vtxSettingsConfig()->power != vtxPower) {
+                        vtxCommonSetPowerByIndex(vtxSettingsConfig()->power);
                     }
-                    break;
-                case VTX_PARAM_POWER: ;
-                    uint8_t vtxPower;
-                    if (vtxCommonGetPowerIndex(&vtxPower)) {
-                        if (vtxSettingsConfig()->power != vtxPower) {
-                            vtxCommonSetPowerByIndex(vtxSettingsConfig()->power);
-                        }
-                    }
-                    break;
-                default:
-                    break;
+                }
+                break;
+            default:
+                break;
             }
             lastCycleTimeUs = currentTimeUs;
             scheduleIndex = (scheduleIndex + 1) % vtxParamScheduleCount;

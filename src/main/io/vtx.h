@@ -17,10 +17,11 @@
 
 #pragma once
 
-#include "drivers/vtx_common.h"
+#include <stdint.h>
 
+#include "platform.h"
+#include "common/time.h"
 #include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
 
 typedef struct vtxSettingsConfig_s {
     uint8_t band;       // 1=A, 2=B, 3=E, 4=F(Airwaves/Fatshark), 5=Raceband
@@ -32,4 +33,4 @@ typedef struct vtxSettingsConfig_s {
 PG_DECLARE(vtxSettingsConfig_t, vtxSettingsConfig);
 
 void vtxInit(void);
-void vtxProcess(uint32_t currentTimeUs);
+void vtxProcess(timeUs_t currentTimeUs);

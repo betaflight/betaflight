@@ -62,8 +62,8 @@ const char * const rtc6705PowerNames[VTX_RTC6705_POWER_COUNT] = {
 static vtxVTable_t rtc6705VTable;    // Forward
 static vtxDevice_t vtxRTC6705 = {
     .vTable = &rtc6705VTable,
-    .capability.bandCount = VTX_RTC6705_BAND_COUNT,
-    .capability.channelCount = VTX_RTC6705_CHANNEL_COUNT,
+    .capability.bandCount = VTX_SETTINGS_BAND_COUNT,
+    .capability.channelCount = VTX_SETTINGS_CHANNEL_COUNT,
     .capability.powerCount = VTX_RTC6705_POWER_COUNT,
     .bandNames = (char **)vtx58BandNames,
     .channelNames = (char **)vtx58ChannelNames,
