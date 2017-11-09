@@ -131,7 +131,6 @@ CMS_Menu menuMain = {
 #endif
     NULL,
     NULL,
-    NULL,
     menuMainEntries,
 };
 uint8_t armingFlags;

@@ -605,9 +605,6 @@ static void cmsTraverseGlobalExit(const CMS_Menu *pMenu)
         }
     }
 
-    if (pMenu->onGlobalExit) {
-        pMenu->onGlobalExit();
-    }
 }
 
 long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)

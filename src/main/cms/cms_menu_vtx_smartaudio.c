@@ -354,7 +354,6 @@ static CMS_Menu saCmsMenuStats = {
 #endif
     .onEnter = NULL,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = saCmsMenuStatsEntries
 };
 
@@ -541,7 +540,6 @@ static CMS_Menu saCmsMenuPORFreq =
 #endif
     .onEnter = saCmsSetPORFreqOnEnter,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = saCmsMenuPORFreqEntries,
 };
 
@@ -564,7 +562,6 @@ static CMS_Menu saCmsMenuUserFreq =
 #endif
     .onEnter = saCmsSetUserFreqOnEnter,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = saCmsMenuUserFreqEntries,
 };
 
@@ -590,7 +587,6 @@ static CMS_Menu saCmsMenuConfig = {
 #endif
     .onEnter = NULL,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = saCmsMenuConfigEntries
 };
 
@@ -610,7 +606,6 @@ static CMS_Menu saCmsMenuCommence = {
 #endif
     .onEnter = NULL,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = saCmsMenuCommenceEntries,
 };
 
@@ -677,7 +672,6 @@ CMS_Menu cmsx_menuVtxSmartAudio = {
 #endif
     .onEnter = sacms_SetupTopMenu,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = saCmsMenuOfflineEntries,
 };
 

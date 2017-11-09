@@ -105,7 +105,6 @@ CMS_Menu cmsx_menuVtxRTC6705 = {
 #endif
     .onEnter = cmsx_Vtx_onEnter,
     .onExit= cmsx_Vtx_onExit,
-    .onGlobalExit = NULL,
     .entries = cmsx_menuVtxEntries
 };
 

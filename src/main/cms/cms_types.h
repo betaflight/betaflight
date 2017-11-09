@@ -101,7 +101,6 @@ typedef struct
 #endif
     const CMSMenuFuncPtr onEnter;
     const CMSMenuOnExitPtr onExit;
-    const CMSMenuFuncPtr onGlobalExit;
     OSD_Entry *entries;
 } CMS_Menu;
 

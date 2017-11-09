@@ -87,7 +87,6 @@ static CMS_Menu menuInfo = {
 #endif
     .onEnter = cmsx_InfoInit,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = menuInfoEntries
 };
 
@@ -125,7 +124,6 @@ static CMS_Menu menuFeatures = {
 #endif
     .onEnter = NULL,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = menuFeaturesEntries,
 };
 
@@ -159,7 +157,6 @@ CMS_Menu menuMain = {
 #endif
     .onEnter = NULL,
     .onExit = NULL,
-    .onGlobalExit = NULL,
     .entries = menuMainEntries,
 };
 #endif
