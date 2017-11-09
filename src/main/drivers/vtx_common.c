@@ -23,12 +23,12 @@
 #include <string.h>
 
 #include "platform.h"
-#include "build/debug.h"
-#include "common/time.h"
-#include "drivers/vtx_common.h"
-#include "fc/config.h"
 
 #if defined(VTX_COMMON)
+
+#include "common/time.h"
+#include "drivers/vtx_common.h"
+
 
 vtxDevice_t *vtxDevice = NULL;
 
@@ -48,8 +48,9 @@ bool vtxCommonDeviceRegistered(void)
 
 vtxDevType_e vtxCommonGetDeviceType(void)
 {
-    if (!vtxDevice || !vtxDevice->vTable->getDeviceType)
+    if (!vtxDevice || !vtxDevice->vTable->getDeviceType) {
         return VTXDEV_UNKNOWN;
+    }
 
     return vtxDevice->vTable->getDeviceType();
 }
@@ -83,8 +84,9 @@ void vtxCommonSetPowerByIndex(uint8_t index)
 // on = 1, off = 0
 void vtxCommonSetPitMode(uint8_t onoff)
 {
-    if (vtxDevice->vTable->setPitMode)
+    if (vtxDevice->vTable->setPitMode) {
         vtxDevice->vTable->setPitMode(onoff);
+    }
 }
 
 void vtxCommonSetFrequency(uint16_t freq)
@@ -96,32 +98,37 @@ void vtxCommonSetFrequency(uint16_t freq)
 
 bool vtxCommonGetBandAndChannel(uint8_t *pBand, uint8_t *pChannel)
 {
-    if (vtxDevice->vTable->getBandAndChannel)
+    if (vtxDevice->vTable->getBandAndChannel) {
         return vtxDevice->vTable->getBandAndChannel(pBand, pChannel);
-    else
+    } else {
         return false;
+    }
 }
 
 bool vtxCommonGetPowerIndex(uint8_t *pIndex)
 {
-    if (!vtxDevice)
+    if (!vtxDevice) {
         return false;
+    }
 
-    if (vtxDevice->vTable->getPowerIndex)
+    if (vtxDevice->vTable->getPowerIndex) {
         return vtxDevice->vTable->getPowerIndex(pIndex);
-    else
+    } else {
         return false;
+    }
 }
 
 bool vtxCommonGetPitMode(uint8_t *pOnOff)
 {
-    if (!vtxDevice)
+    if (!vtxDevice) {
         return false;
+    }
 
-    if (vtxDevice->vTable->getPitMode)
+    if (vtxDevice->vTable->getPitMode) {
         return vtxDevice->vTable->getPitMode(pOnOff);
-    else
+    } else {
         return false;
+    }
 }
 
 bool vtxCommonGetFrequency(uint16_t *pFreq)
@@ -138,8 +145,9 @@ bool vtxCommonGetFrequency(uint16_t *pFreq)
 
 bool vtxCommonGetDeviceCapability(vtxDeviceCapability_t *pDeviceCapability)
 {
-    if (!vtxDevice)
+    if (!vtxDevice) {
         return false;
+    }
 
     memcpy(pDeviceCapability, &vtxDevice->capability, sizeof(vtxDeviceCapability_t));
     return true;

@@ -34,6 +34,7 @@
 #include "drivers/vtx_common.h"
 
 #include "io/serial.h"
+#include "io/vtx.h"
 #include "io/vtx_string.h"
 
 #include "fc/config.h"
