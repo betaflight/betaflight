@@ -38,14 +38,14 @@
 
 #include "drivers/system.h"
 #include "drivers/time.h"
-#include "drivers/vtx_common.h"
 #include "drivers/vtx_rtc6705.h"
+#include "drivers/vtx_common.h"
 
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "io/vtx.h"
 #include "io/vtx_rtc6705.h"
-#include "io/vtx_settings_config.h"
 #include "io/vtx_string.h"
 
 bool canUpdateVTX(void);
@@ -97,28 +97,9 @@ static void vtxRTC6705EnableAndConfigure(void)
 }
 #endif
 
-void vtxRTC6705Process(uint32_t now)
+void vtxRTC6705Process(timeUs_t now)
 {
     UNUSED(now);
-
-    static bool configured = false;
-    if (!configured) {
-        vtxRTC6705.band = vtxSettingsConfig()->band;
-        vtxRTC6705.channel = vtxSettingsConfig()->channel;
-        vtxRTC6705.powerIndex = MAX(vtxSettingsConfig()->power, VTX_RTC6705_MIN_POWER);
-
-#ifdef RTC6705_POWER_PIN
-        if (vtxRTC6705.powerIndex > 0) {
-            vtxRTC6705EnableAndConfigure();
-        } else {
-            rtc6705Disable();
-        }
-#else
-        vtxRTC6705Configure();
-#endif
-
-        configured = true;
-    }
 }
 
 #ifdef VTX_COMMON
@@ -145,16 +126,12 @@ void vtxRTC6705SetBandAndChannel(uint8_t band, uint8_t channel)
 
         vtxRTC6705.band = band;
         vtxRTC6705.channel = channel;
-
-        vtxSettingsSaveBandAndChannel(band, channel);
     }
 }
 
 void vtxRTC6705SetPowerByIndex(uint8_t index)
 {
     WAIT_FOR_VTX;
-
-    vtxSettingsSavePowerByIndex(index);
 
 #ifdef RTC6705_POWER_PIN
     if (index == 0) {

@@ -19,22 +19,54 @@
 
 #pragma once
 
+#include "common/time.h"
+#include "io/vtx.h"
+
+#define VTX_SETTINGS_MIN_BAND       1
+#define VTX_SETTINGS_MAX_BAND       5
+#define VTX_SETTINGS_MIN_CHANNEL    1
+#define VTX_SETTINGS_MAX_CHANNEL    8
+
+#define VTX_SETTINGS_BAND_COUNT     (VTX_SETTINGS_MAX_BAND - VTX_SETTINGS_MIN_BAND + 1)
+#define VTX_SETTINGS_CHANNEL_COUNT  (VTX_SETTINGS_MAX_CHANNEL - VTX_SETTINGS_MIN_CHANNEL + 1)
+
+#define VTX_SETTINGS_DEFAULT_BAND       4
+#define VTX_SETTINGS_DEFAULT_CHANNEL    1
+#define VTX_SETTINGS_DEFAULT_FREQ       5740
+
+#define VTX_SETTINGS_MAX_FREQUENCY_MHZ 5999          //max freq (in MHz) for 'vtx_freq' setting
+
+#if defined(VTX_SMARTAUDIO) || defined(VTX_TRAMP)
+
+#define VTX_SETTINGS_POWER_COUNT        5
+#define VTX_SETTINGS_DEFAULT_POWER      1
+#define VTX_SETTINGS_MIN_POWER          0
+#define VTX_SETTINGS_FREQCMD
+
+#elif defined(VTX_RTC6705)
+
+#include "io/vtx_rtc6705.h"
+
+#define VTX_SETTINGS_POWER_COUNT    VTX_RTC6705_POWER_COUNT
+#define VTX_SETTINGS_DEFAULT_POWER  VTX_RTC6705_DEFAULT_POWER
+#define VTX_SETTINGS_MIN_POWER      VTX_RTC6705_MIN_POWER
+
+#endif
+
 // check value for MSP_SET_VTX_CONFIG to determine if value is encoded
 // band/channel or frequency in MHz (3 bits for band and 3 bits for channel)
 #define VTXCOMMON_MSP_BANDCHAN_CHKVAL ((uint16_t)((7 << 3) + 7))
 
 typedef enum {
     VTXDEV_UNSUPPORTED = 0, // reserved for MSP
-    VTXDEV_RTC6705    = 1,
+    VTXDEV_RTC6705     = 1,
     // 2 reserved
-    VTXDEV_SMARTAUDIO = 3,
-    VTXDEV_TRAMP      = 4,
-    VTXDEV_UNKNOWN    = 0xFF,
+    VTXDEV_SMARTAUDIO  = 3,
+    VTXDEV_TRAMP       = 4,
+    VTXDEV_UNKNOWN     = 0xFF,
 } vtxDevType_e;
 
-
 // VTX magic numbers
-
 #define VTX_COMMON_BAND_USER      0
 #define VTX_COMMON_BAND_A         1
 #define VTX_COMMON_BAND_B         2
@@ -47,14 +79,14 @@ typedef enum {
 #define VTX_6705_POWER_25      1
 #define VTX_6705_POWER_200     2
 
-// SmartAudio "---", 25, 200, 500. 800 mW
+// SmartAudio "---", 25, 200, 500, 800 mW
 #define VTX_SA_POWER_OFF          0
 #define VTX_SA_POWER_25           1
 #define VTX_SA_POWER_200          2
 #define VTX_SA_POWER_500          3
 #define VTX_SA_POWER_800          4
 
-// Tramp "---", 25, 200, 400. 600 mW
+// Tramp "---", 25, 100, 200, 400, 600 mW
 #define VTX_TRAMP_POWER_OFF       0
 #define VTX_TRAMP_POWER_25        1
 #define VTX_TRAMP_POWER_100       2
@@ -117,7 +149,7 @@ void vtxCommonRegisterDevice(vtxDevice_t *pDevice);
 bool vtxCommonDeviceRegistered(void);
 
 // VTable functions
-void vtxCommonProcess(uint32_t currentTimeUs);
+void vtxCommonProcess(timeUs_t currentTimeUs);
 uint8_t vtxCommonGetDeviceType(void);
 void vtxCommonSetBandAndChannel(uint8_t band, uint8_t channel);
 void vtxCommonSetPowerByIndex(uint8_t level);

@@ -34,6 +34,7 @@
 #include "drivers/vtx_common.h"
 
 #include "io/serial.h"
+#include "io/vtx_string.h"
 
 #include "fc/config.h"
 #include "fc/fc_dispatch.h"
@@ -258,40 +259,60 @@ const uint8_t vtxTrampPi[] = {           // Spektrum Spec    Tx menu  Tx sends  
       vtx.band    = (vtxControl & SPEKTRUM_VTX_BAND_MASK)     >> SPEKTRUM_VTX_BAND_SHIFT;
       vtx.channel = (vtxControl & SPEKTRUM_VTX_CHANNEL_MASK)  >> SPEKTRUM_VTX_CHANNEL_SHIFT;
 
+      const vtxSettingsConfig_t prevSettings = {
+        .band = vtxSettingsConfig()->band,
+        .channel = vtxSettingsConfig()->channel,
+        .freq = vtxSettingsConfig()->freq,
+        .power = vtxSettingsConfig()->power,
+      };
+      vtxSettingsConfig_t newSettings = prevSettings;
+
 #ifdef USE_VTX_COMMON_FREQ_API
       uint16_t freq = SpektrumVtxfrequencyTable[vtx.band][vtx.channel];
-      uint16_t currentFreq = 0;
-      vtxCommonGetFrequency(&currentFreq);
-      if (currentFreq != freq) {
-        vtxCommonSetBandAndChannel(VTX_COMMON_BAND_USER, vtx.channel);
-        vtxCommonSetFrequency(freq);
+      if (vtxCommonDeviceRegistered()) {
+        if (prevSettings.freq != freq) {
+          newSettings.band = VTX_COMMON_BAND_USER;
+          newSettings.channel = vtx.channel;
+          newSettings.freq = freq;
+        }
       }
 
 #else
       // Convert to the internal Common Band index
       uint8_t band    = spek2commonBand[vtx.band];
       uint8_t channel = vtx.channel +1; // 0 based to 1 based
-
-      uint8_t currentBand = 0, currentChannel = 0;
-      vtxCommonGetBandAndChannel(&currentBand, &currentChannel);
-      if ((currentBand != band) || (currentChannel != channel)) {
-        vtxCommonSetBandAndChannel(band, channel);
+      if (vtxCommonDeviceRegistered()) {
+        if ((prevSettings.band != band) || (prevSettings.channel != channel)) {
+          newSettings.band = band;
+          newSettings.channel = channel;
+          newSettings.freq = vtx58_Bandchan2Freq(band, channel);
+        }
       }
 #endif
 
       // Seems to be no unified internal VTX API std for popwer levels/indexes, VTX device brand specific.
       uint8_t power = convertSpektrumVtxPowerIndex(vtx.power);
-      uint8_t currentPower = 0;
-      vtxCommonGetPowerIndex(&currentPower);
-      if (currentPower != power) {
-        vtxCommonSetPowerByIndex(power);
+      if (vtxCommonDeviceRegistered()) {
+        if (prevSettings.power != power) {
+          newSettings.power = power;
+        }
       }
 
       // Everyone seems to agree on what PIT ON/OFF means
       uint8_t currentPitMode = 0;
-      vtxCommonGetPitMode(&currentPitMode);
-      if (currentPitMode != vtx.pitMode) {
-        vtxCommonSetPitMode(vtx.pitMode);
+      if (vtxCommonDeviceRegistered()) {
+        vtxCommonGetPitMode(&currentPitMode);
+        if (currentPitMode != vtx.pitMode) {
+            vtxCommonSetPitMode(vtx.pitMode);
+        }
+      }
+
+      if(memcmp(&prevSettings,&newSettings,sizeof(vtxSettingsConfig_t))) {
+          vtxSettingsConfigMutable()->band = newSettings.band;
+          vtxSettingsConfigMutable()->channel = newSettings.channel;
+          vtxSettingsConfigMutable()->power = newSettings.power;
+          vtxSettingsConfigMutable()->freq = newSettings.freq;
+          saveConfigAndNotify();
       }
     }
 
@@ -383,7 +404,7 @@ static uint8_t spektrumFrameStatus(void)
       uint16_t fade;
       uint8_t system;
 
-      // Get fade count, different format depending on Rx rype and how Rx is bound. Initially assumed Internal 
+      // Get fade count, different format depending on Rx rype and how Rx is bound. Initially assumed Internal
       if (spektrumSatInternal) {
         // Internal Rx, bind values 3, 5, 7, 9
         fade = (uint16_t) spekFrame[0];

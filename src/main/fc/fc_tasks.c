@@ -63,6 +63,7 @@
 #include "io/transponder_ir.h"
 #include "io/vtx_tramp.h" // Will be gone
 #include "io/rcdevice_cam.h"
+#include "io/vtx.h"
 
 #include "msp/msp_serial.h"
 
@@ -209,13 +210,13 @@ static void taskTelemetry(timeUs_t currentTimeUs)
 
 #ifdef VTX_CONTROL
 // Everything that listens to VTX devices
-void taskVtxControl(uint32_t currentTime)
+void taskVtxControl(timeUs_t currentTime)
 {
-    if (ARMING_FLAG(ARMED))
+    if (ARMING_FLAG(ARMED) || cliMode)
         return;
 
 #ifdef VTX_COMMON
-    vtxCommonProcess(currentTime);
+    vtxProcess(currentTime);
 #endif
 }
 #endif

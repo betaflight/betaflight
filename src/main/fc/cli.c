@@ -81,6 +81,7 @@ extern uint8_t __config_end;
 #include "drivers/vcd.h"
 #include "drivers/light_led.h"
 #include "drivers/camera_control.h"
+#include "drivers/vtx_common.h"
 
 #include "fc/settings.h"
 #include "fc/cli.h"
@@ -113,7 +114,7 @@ extern uint8_t __config_end;
 #include "io/serial.h"
 #include "io/transponder_ir.h"
 #include "io/vtx_control.h"
-#include "io/vtx_settings_config.h"
+#include "io/vtx.h"
 
 #include "msp/msp_protocol.h"
 

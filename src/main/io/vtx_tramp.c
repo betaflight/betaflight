@@ -37,8 +37,8 @@
 
 #include "io/serial.h"
 #include "io/vtx_tramp.h"
-#include "io/vtx_settings_config.h"
 #include "io/vtx_control.h"
+#include "io/vtx.h"
 #include "io/vtx_string.h"
 
 #if defined(USE_CMS) || defined(VTX_COMMON)
@@ -149,7 +149,6 @@ void trampSetFreq(uint16_t freq)
 {
     trampSetByFreqFlag = true;         //set freq via MHz value
     trampDevSetFreq(freq);
-    vtxSettingsSaveFrequency(freq);
 }
 
 void trampSendFreq(uint16_t freq)
@@ -367,41 +366,9 @@ void trampQueryS(void)
     trampQuery('s');
 }
 
-static bool trampEnterInitBandChanAndPower(uint8_t band, uint8_t channel, uint8_t power)
+void vtxTrampProcess(timeUs_t currentTimeUs)
 {
-    if (!trampValidateBandAndChannel(band, channel)) {
-        return false;
-    }
-    trampSetByFreqFlag = false;        //set freq via band/channel
-    trampDevSetBandAndChannel(band, channel);
-
-    uint8_t pwrIdx = constrain(power, 1, sizeof(trampPowerTable));
-    trampDevSetPowerByIndex(pwrIdx);
-
-    // update 'vtx_freq' via band/channel table and enter
-    //  power-index value (in case current value is out of range)
-    vtxSettingsSaveFreqAndPower(vtx58_Bandchan2Freq(band, channel), pwrIdx);
-
-    return true;
-}
-
-static void trampEnterInitFreqAndPower(uint16_t freq, uint8_t power)
-{
-    if (trampValidateFreq(freq)) {
-        trampSetByFreqFlag = true;          //set freq via MHz value
-        trampDevSetFreq(freq);
-    }
-
-    uint8_t pwrIdx = constrain(power, 1, sizeof(trampPowerTable));
-    trampDevSetPowerByIndex(pwrIdx);
-
-    // enter power-index value (in case current value is out of range)
-    vtxSettingsSavePowerByIndex(pwrIdx);
-}
-
-void vtxTrampProcess(uint32_t currentTimeUs)
-{
-    static uint32_t lastQueryTimeUs = 0;
+    static timeUs_t lastQueryTimeUs = 0;
     static bool initSettingsDoneFlag = false;
 
 #ifdef TRAMP_DEBUG
@@ -428,13 +395,6 @@ void vtxTrampProcess(uint32_t currentTimeUs)
             if (!initSettingsDoneFlag) {
                 initSettingsDoneFlag = true;
                 // if vtx_band!=0 then enter 'vtx_band/chan' values (and power)
-                if (!trampEnterInitBandChanAndPower(vtxSettingsConfig()->band, vtxSettingsConfig()->channel,
-                                                    vtxSettingsConfig()->power)) {
-                    // if vtx_band=0 then enter 'vtx_freq' value (and power)
-                    if (vtxSettingsConfig()->band == 0) {
-                        trampEnterInitFreqAndPower(vtxSettingsConfig()->freq, vtxSettingsConfig()->power);
-                    }
-                }
             }
         }
         break;
@@ -544,15 +504,12 @@ void vtxTrampSetBandAndChannel(uint8_t band, uint8_t channel)
     if (trampValidateBandAndChannel(band, channel)) {
         trampSetBandAndChannel(band, channel);
         trampCommitChanges();
-        vtxSettingsSaveBandAndChannel(band, channel);
     }
 }
 
 void vtxTrampSetPowerByIndex(uint8_t index)
 {
-    if (trampDevSetPowerByIndex(index)) {
-        vtxSettingsSavePowerByIndex(index);
-    }
+    trampDevSetPowerByIndex(index);
 }
 
 void vtxTrampSetPitMode(uint8_t onoff)
@@ -639,7 +596,7 @@ bool vtxTrampInit(void)
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_TRAMP);
 
     if (portConfig) {
-        portOptions_e portOptions = 0; 
+        portOptions_e portOptions = 0;
 #if defined(VTX_COMMON)
         portOptions = portOptions | (vtxConfig()->halfDuplex ? SERIAL_BIDIR : SERIAL_UNIDIR);
 #else

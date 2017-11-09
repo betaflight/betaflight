@@ -185,7 +185,6 @@
 #define LSM303DLHC_I2C_INT1_PIN              PE4
 #define LSM303DLHC_I2C_INT2_PIN              PE5
 
-
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
 #define VBAT_ADC_PIN            PC0
