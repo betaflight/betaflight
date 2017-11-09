@@ -209,13 +209,13 @@ static void taskTelemetry(timeUs_t currentTimeUs)
 
 #ifdef VTX_CONTROL
 // Everything that listens to VTX devices
-void taskVtxControl(uint32_t currentTime)
+void taskVtxControl(uint32_t currentTimeUs)
 {
     if (ARMING_FLAG(ARMED))
         return;
 
 #ifdef VTX_COMMON
-    vtxCommonProcess(currentTime);
+    vtxCommonProcess(currentTimeUs);
 #endif
 }
 #endif

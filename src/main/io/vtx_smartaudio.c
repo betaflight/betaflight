@@ -55,6 +55,12 @@
 #include "io/vtx_settings_config.h"
 #include "io/vtx_string.h"
 
+// Timing parameters
+// Note that vtxSAProcess() is normally called at 200ms interval
+#define SMARTAUDIO_CMD_TIMEOUT       120    // Time until the command is considered lost
+#define SMARTAUDIO_POLLING_INTERVAL  150    // Minimum time between state polling
+#define SMARTAUDIO_POLLING_WINDOW   1000    // Time window after command polling for state change
+
 //#define SMARTAUDIO_DPRINTF
 //#define SMARTAUDIO_DEBUG_MONITOR
 
@@ -219,8 +225,6 @@ uint16_t sa_smartbaud = SMARTBAUD_MIN;
 static int sa_adjdir = 1; // -1=going down, 1=going up
 static int sa_baudstep = 50;
 
-#define SMARTAUDIO_CMD_TIMEOUT    120
-
 static void saAutobaud(void)
 {
     if (saStat.pktsent < 10) {
@@ -262,7 +266,7 @@ static void saAutobaud(void)
 
 // Transport level variables
 
-static uint32_t sa_lastTransmission = 0;
+static uint32_t sa_lastTransmissionMs = 0;
 static uint8_t sa_outstanding = SA_CMD_NONE; // Outstanding command
 static uint8_t sa_osbuf[32]; // Outstanding comamnd frame for retransmission
 static int sa_oslen;         // And associate length
@@ -448,7 +452,7 @@ static void saSendFrame(uint8_t *buf, int len)
 
     serialWrite(smartAudioSerialPort, 0x00); // XXX Probably don't need this
 
-    sa_lastTransmission = millis();
+    sa_lastTransmissionMs = millis();
     saStat.pktsent++;
 }
 
@@ -731,10 +735,13 @@ bool vtxSmartAudioInit(void)
     return true;
 }
 
-void vtxSAProcess(uint32_t now)
+void vtxSAProcess(uint32_t currentTimeUs)
 {
+    UNUSED(currentTimeUs);
+
     static char initPhase = 0;
-    static bool initSettingsDoneFlag = false;
+    static uint32_t lastCommandSentMs = 0;
+    uint32_t nowMs = millis();
 
     if (smartAudioSerialPort == NULL) {
         return;
@@ -752,52 +759,69 @@ void vtxSAProcess(uint32_t now)
     case 0:
         saGetSettings();
         saSendQueue();
-        ++initPhase;
+        initPhase = 1;
         return;
 
     case 1:
-        // Don't send SA_FREQ_GETPIT to V1 device; it act as plain SA_CMD_SET_FREQ,
-        // and put the device into user frequency mode with uninitialized freq.
-        if (saDevice.version == 2)
-            saDoDevSetFreq(SA_FREQ_GETPIT);
-        ++initPhase;
+        // SA_CMD_GET_SETTINGS was sent and waiting for reply.
+        // Command resending for unresponsive device will be taken care of below
+        debug[1] = saDevice.version;
+        if (saDevice.version) {
+            // Don't send SA_FREQ_GETPIT to V1 device; it act as plain SA_CMD_SET_FREQ,
+            // and put the device into user frequency mode with uninitialized freq.
+            if (saDevice.version == 2) {
+                saDoDevSetFreq(SA_FREQ_GETPIT);
+                initPhase = 2;
+            } else {
+                initPhase = 3;
+            }
+            return;
+        }
+        break;
+
+    case 2:
+        // SA_FREQ_GETPIT sent and waiting for reply.
+        // Command resending for unresponsive device will be taken care of below
+        if (saDevice.orfreq) {
+            initPhase = 3;
+        }
+        break;
+
+    case 3:
+        // Once the device is ready, enter vtx settings.
+        // if vtx_band!=0 then enter 'vtx_band/chan' values (and power)
+        if (!saEnterInitBandChanAndPower(vtxSettingsConfig()->band, vtxSettingsConfig()->channel, vtxSettingsConfig()->power)) {
+            // if vtx_band==0 then enter 'vtx_freq' value (and power)
+            if (vtxSettingsConfig()->band == 0) {
+                saEnterInitFreqAndPower(vtxSettingsConfig()->freq, vtxSettingsConfig()->power);
+            }
+        }
+        initPhase = 4;
+        break;
+
+    default:
         break;
     }
+debug[0] = initPhase;
 
-    if ((sa_outstanding != SA_CMD_NONE) && (now - sa_lastTransmission > SMARTAUDIO_CMD_TIMEOUT)) {
+    if ((sa_outstanding != SA_CMD_NONE)
+            && (nowMs - sa_lastTransmissionMs > SMARTAUDIO_CMD_TIMEOUT)) {
         // Last command timed out
         // dprintf(("process: resending 0x%x\r\n", sa_outstanding));
         // XXX Todo: Resend termination and possible offline transition
         saResendCmd();
+        lastCommandSentMs = nowMs;
     } else if (!saQueueEmpty()) {
         // Command pending. Send it.
         // dprintf(("process: sending queue\r\n"));
         saSendQueue();
-    } else if (saDevice.version != 0 && now - sa_lastTransmission >= 1000) {
-        // Heart beat for autobauding
-        //dprintf(("process: sending heartbeat\r\n"));
+        lastCommandSentMs = nowMs;
+    } else if ((nowMs - lastCommandSentMs < SMARTAUDIO_POLLING_WINDOW) && (nowMs - sa_lastTransmissionMs >= SMARTAUDIO_POLLING_INTERVAL)) {
+        //dprintf(("process: sending status change polling\r\n"));
         saGetSettings();
         saSendQueue();
     }
 
-    // once device is ready enter vtx settings
-    if (!initSettingsDoneFlag) {
-        if (saDevice.version != 0) {
-            initSettingsDoneFlag = true;
-            // if vtx_band!=0 then enter 'vtx_band/chan' values (and power)
-            if (!saEnterInitBandChanAndPower(vtxSettingsConfig()->band,
-                           vtxSettingsConfig()->channel, vtxSettingsConfig()->power)) {
-                // if vtx_band==0 then enter 'vtx_freq' value (and power)
-                if (vtxSettingsConfig()->band == 0) {
-                    saEnterInitFreqAndPower(vtxSettingsConfig()->freq, vtxSettingsConfig()->power);
-                }
-            }
-        } else if (now - sa_lastTransmission >= 100) {
-            // device is not ready; repeat query
-            saGetSettings();
-            saSendQueue();
-        }
-    }
 
 #ifdef SMARTAUDIO_TEST_VTX_COMMON
     // Testing VTX_COMMON API
