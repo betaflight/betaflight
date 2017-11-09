@@ -81,8 +81,10 @@ static OSD_Entry menuInfoEntries[] = {
 };
 
 static CMS_Menu menuInfo = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENUINFO",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = cmsx_InfoInit,
     .onExit = NULL,
     .onGlobalExit = NULL,
@@ -117,8 +119,10 @@ static OSD_Entry menuFeaturesEntries[] =
 };
 
 static CMS_Menu menuFeatures = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENUFEATURES",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = NULL,
     .onExit = NULL,
     .onGlobalExit = NULL,
@@ -149,8 +153,10 @@ static OSD_Entry menuMainEntries[] =
 };
 
 CMS_Menu menuMain = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENUMAIN",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = NULL,
     .onExit = NULL,
     .onGlobalExit = NULL,

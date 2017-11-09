@@ -161,8 +161,10 @@ static OSD_Entry cmsx_menuPidEntries[] =
 };
 
 static CMS_Menu cmsx_menuPid = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "XPID",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = cmsx_PidOnEnter,
     .onExit = cmsx_PidWriteback,
     .onGlobalExit = NULL,
@@ -222,8 +224,10 @@ static OSD_Entry cmsx_menuRateProfileEntries[] =
 };
 
 static CMS_Menu cmsx_menuRateProfile = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "MENURATE",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = cmsx_RateProfileOnEnter,
     .onExit = cmsx_RateProfileWriteback,
     .onGlobalExit = NULL,
@@ -291,8 +295,10 @@ static OSD_Entry cmsx_menuProfileOtherEntries[] = {
 };
 
 static CMS_Menu cmsx_menuProfileOther = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "XPROFOTHER",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = cmsx_profileOtherOnEnter,
     .onExit = cmsx_profileOtherOnExit,
     .onGlobalExit = NULL,
@@ -344,8 +350,10 @@ static OSD_Entry cmsx_menuFilterGlobalEntries[] =
 };
 
 static CMS_Menu cmsx_menuFilterGlobal = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "XFLTGLB",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = cmsx_menuGyro_onEnter,
     .onExit = cmsx_menuGyro_onExit,
     .onGlobalExit = NULL,
@@ -395,8 +403,10 @@ static OSD_Entry cmsx_menuFilterPerProfileEntries[] =
 };
 
 static CMS_Menu cmsx_menuFilterPerProfile = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "XFLTPP",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = cmsx_FilterPerProfileRead,
     .onExit = cmsx_FilterPerProfileWriteback,
     .onGlobalExit = NULL,
@@ -464,8 +474,10 @@ static OSD_Entry cmsx_menuCopyProfileEntries[] =
 };
 
 CMS_Menu cmsx_menuCopyProfile = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "XCPY",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = cmsx_menuCopyProfile_onEnter,
     .onExit = NULL,
     .onGlobalExit = NULL,
@@ -496,8 +508,10 @@ static OSD_Entry cmsx_menuImuEntries[] =
 };
 
 CMS_Menu cmsx_menuImu = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "XIMU",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = cmsx_menuImu_onEnter,
     .onExit = cmsx_menuImu_onExit,
     .onGlobalExit = NULL,

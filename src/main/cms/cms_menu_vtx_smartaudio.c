@@ -348,8 +348,10 @@ static OSD_Entry saCmsMenuStatsEntries[] = {
 };
 
 static CMS_Menu saCmsMenuStats = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "XSAST",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = NULL,
     .onExit = NULL,
     .onGlobalExit = NULL,
@@ -514,8 +516,10 @@ static OSD_Entry saCmsMenuPORFreqEntries[] = {
 
 static CMS_Menu saCmsMenuPORFreq =
 {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "XSAPOR",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = saCmsSetPORFreqOnEnter,
     .onExit = NULL,
     .onGlobalExit = NULL,
@@ -535,8 +539,10 @@ static OSD_Entry saCmsMenuUserFreqEntries[] = {
 
 static CMS_Menu saCmsMenuUserFreq =
 {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "XSAUFQ",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = saCmsSetUserFreqOnEnter,
     .onExit = NULL,
     .onGlobalExit = NULL,
@@ -559,8 +565,10 @@ static OSD_Entry saCmsMenuConfigEntries[] = {
 };
 
 static CMS_Menu saCmsMenuConfig = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "XSACFG",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = NULL,
     .onExit = NULL,
     .onGlobalExit = NULL,
@@ -577,8 +585,10 @@ static OSD_Entry saCmsMenuCommenceEntries[] = {
 };
 
 static CMS_Menu saCmsMenuCommence = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "XVTXCOM",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = NULL,
     .onExit = NULL,
     .onGlobalExit = NULL,
@@ -642,8 +652,10 @@ static long sacms_SetupTopMenu(void)
 }
 
 CMS_Menu cmsx_menuVtxSmartAudio = {
+#ifdef CMS_MENU_DEBUG
     .GUARD_text = "XVTXSA",
     .GUARD_type = OME_MENU,
+#endif
     .onEnter = sacms_SetupTopMenu,
     .onExit = NULL,
     .onGlobalExit = NULL,
