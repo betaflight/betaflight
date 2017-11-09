@@ -55,7 +55,7 @@ typedef long (*CMSEntryFuncPtr)(displayPort_t *displayPort, const void *ptr);
 
 typedef struct
 {
-    const char *text;
+    const char * const text;
     const OSD_MenuElement type;
     const CMSEntryFuncPtr func;
     void *data;
