@@ -53,7 +53,6 @@ typedef struct gyroDev_s {
     sensorGyroInitFuncPtr initFn;                             // initialize function
     sensorGyroReadFuncPtr readFn;                             // read 3 axis data function
     sensorGyroReadDataFuncPtr temperatureFn;                  // read temperature if available
-    sensorGyroUpdateFuncPtr updateFn;
     extiCallbackRec_t exti;
     busDevice_t bus;
     float scale;                                            // scalefactor
@@ -66,14 +65,14 @@ typedef struct gyroDev_s {
     gyroRateKHz_e gyroRateKHz;
     uint8_t mpuDividerDrops;
     bool dataReady;
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-    pthread_mutex_t lock;
-#endif
     sensor_align_e gyroAlign;
     mpuDetectionResult_t mpuDetectionResult;
     ioTag_t mpuIntExtiTag;
     mpuConfiguration_t mpuConfiguration;
     bool gyro_high_fsr;
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+    pthread_mutex_t lock;
+#endif
 } gyroDev_t;
 
 typedef struct accDev_s {
@@ -84,13 +83,13 @@ typedef struct accDev_s {
     int16_t ADCRaw[XYZ_AXIS_COUNT];
     char revisionCode;                                      // a revision code for the sensor, if known
     bool dataReady;
-#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
-    pthread_mutex_t lock;
-#endif
     sensor_align_e accAlign;
     mpuDetectionResult_t mpuDetectionResult;
     mpuConfiguration_t mpuConfiguration;
     bool acc_high_fsr;
+#if defined(SIMULATOR_BUILD) && defined(SIMULATOR_MULTITHREAD)
+    pthread_mutex_t lock;
+#endif
 } accDev_t;
 
 static inline void accDevLock(accDev_t *acc)

@@ -140,15 +140,11 @@
 // RF = Register Flag
 #define MPU_RF_DATA_RDY_EN (1 << 0)
 
-typedef bool (*mpuReadRegisterFnPtr)(const busDevice_t *bus, uint8_t reg, uint8_t* data, uint8_t length);
-typedef bool (*mpuWriteRegisterFnPtr)(const busDevice_t *bus, uint8_t reg, uint8_t data);
 typedef void (*mpuResetFnPtr)(void);
 
 extern mpuResetFnPtr mpuResetFn;
 
 typedef struct mpuConfiguration_s {
-    mpuReadRegisterFnPtr readFn;
-    mpuWriteRegisterFnPtr writeFn;
     mpuResetFnPtr resetFn;
 } mpuConfiguration_t;
 
@@ -213,4 +209,3 @@ bool mpuAccRead(struct accDev_s *acc);
 bool mpuGyroRead(struct gyroDev_s *gyro);
 bool mpuGyroReadSPI(struct gyroDev_s *gyro);
 void mpuDetect(struct gyroDev_s *gyro);
-void mpuGyroSetIsrUpdate(struct gyroDev_s *gyro, sensorGyroUpdateFuncPtr updateFn);
