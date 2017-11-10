@@ -354,9 +354,9 @@ void flySkyInit (const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rx
         PG_RESET(flySkyConfig);
     }
 
-    IO_t bindIO = IOGetByTag(IO_TAG(RX_FLYSKY_BIND_PIN));
-    IOInit(bindIO, OWNER_RX_SPI_CS, 0);
-    IOConfigGPIO(bindIO, IOCFG_IPU);
+    IO_t bindPin = IOGetByTag(IO_TAG(BINDPLUG_PIN));
+    IOInit(bindPin, OWNER_RX_SPI_CS, 0);
+    IOConfigGPIO(bindPin, IOCFG_IPU);
 
     uint8_t startRxChannel;
 
@@ -375,7 +375,7 @@ void flySkyInit (const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rx
         A7105Config(flySkyRegs, sizeof(flySkyRegs));
     }
 
-    if ( !IORead(bindIO) || flySkyConfig()->txId == 0) {
+    if ( !IORead(bindPin) || flySkyConfig()->txId == 0) {
         bound = false;
     } else {
         bound = true;

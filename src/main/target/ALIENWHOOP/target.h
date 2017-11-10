@@ -184,11 +184,9 @@
  */
 /* Assume Spektrum following defines inherited from common_fc_pre.h:
 //#define USE_SERIALRX_SPEKTRUM
-//#define USE_SPEKTRUM_BIND
-//#define USE_SPEKTRUM_BIND_PLUG
 */
+
 #define BINDPLUG_PIN            PC13 // PC13 Current Limited (3 mA). Not suitable for LED/Beeper
-#define SPEKTRUM_BIND_PIN       UART3_RX_PIN
 #define SERIALRX_UART           SERIAL_PORT_USART3
 #define RX_CHANNELS_TAER        //RX_CHANNELS_AETR
 #define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM1024 //SERIALRX_SBUS
