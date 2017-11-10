@@ -697,10 +697,14 @@ bool vtxSmartAudioInit(void)
     return true;
 }
 
+#define SA_INITPHASE_START         0
+#define SA_INITPHASE_WAIT_SETTINGS 1 // SA_CMD_GET_SETTINGS was sent and waiting for reply.
+#define SA_INITPHASE_WAIT_PITFREQ  2 // SA_FREQ_GETPIT sent and waiting for reply.
+#define SA_INITPHASE_DONE          3
+
 void vtxSAProcess(timeUs_t now)
 {
-    static char initPhase = 0;
-    static bool initSettingsDoneFlag = false;
+    static char initPhase = SA_INITPHASE_START;
 
     if (smartAudioSerialPort == NULL) {
         return;
@@ -715,20 +719,36 @@ void vtxSAProcess(timeUs_t now)
     saAutobaud();
 
     switch (initPhase) {
-    case 0:
+    case SA_INITPHASE_START:
         saGetSettings();
-        saSendQueue();
-        ++initPhase;
-        return;
+        //saSendQueue();
+        initPhase = SA_INITPHASE_WAIT_SETTINGS;
+        break;
 
-    case 1:
+    case SA_INITPHASE_WAIT_SETTINGS:
         // Don't send SA_FREQ_GETPIT to V1 device; it act as plain SA_CMD_SET_FREQ,
         // and put the device into user frequency mode with uninitialized freq.
-        if (saDevice.version == 2)
-            saDoDevSetFreq(SA_FREQ_GETPIT);
-        ++initPhase;
+        if (saDevice.version) {
+            if (saDevice.version == 2) {
+                saDoDevSetFreq(SA_FREQ_GETPIT);
+                initPhase = SA_INITPHASE_WAIT_PITFREQ;
+            } else {
+                initPhase = SA_INITPHASE_DONE;
+            }
+        }
+        break;
+
+    case SA_INITPHASE_WAIT_PITFREQ:
+        if (saDevice.orfreq) {
+            initPhase = SA_INITPHASE_DONE;
+        }
+        break;
+
+    case SA_INITPHASE_DONE:
         break;
     }
+
+    // Command queue control
 
     if ((sa_outstanding != SA_CMD_NONE) && (now - sa_lastTransmission > SMARTAUDIO_CMD_TIMEOUT)) {
         // Last command timed out
@@ -744,17 +764,6 @@ void vtxSAProcess(timeUs_t now)
         //dprintf(("process: sending heartbeat\r\n"));
         saGetSettings();
         saSendQueue();
-    }
-
-    // once device is ready enter vtx settings
-    if (!initSettingsDoneFlag) {
-        if (saDevice.version != 0) {
-            initSettingsDoneFlag = true;
-        } else if (now - sa_lastTransmission >= 100) {
-            // device is not ready; repeat query
-            saGetSettings();
-            saSendQueue();
-        }
     }
 
 #ifdef SMARTAUDIO_TEST_VTX_COMMON
