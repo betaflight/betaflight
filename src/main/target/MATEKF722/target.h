@@ -35,6 +35,9 @@
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
 
+#define MPU6500_CS_PIN          PC2
+#define MPU6500_SPI_INSTANCE    SPI1
+
 #define ICM20689_CS_PIN         PC2
 #define ICM20689_SPI_INSTANCE   SPI1
 
@@ -43,12 +46,32 @@
 #define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_GYRO
+#define USE_GYRO_SPI_MPU6500
+#define GYRO_MPU6500_ALIGN      CW180_DEG
+
 #define USE_GYRO_SPI_ICM20689
 #define GYRO_ICM20689_ALIGN     CW90_DEG
 
 #define USE_ACC
+#define USE_ACC_SPI_MPU6500
+#define ACC_MPU6500_ALIGN       CW180_DEG
+
 #define USE_ACC_SPI_ICM20689
 #define ACC_ICM20689_ALIGN      CW90_DEG
+
+// *************** Baro **************************
+#define USE_I2C
+
+#define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
+#define I2C1_SCL                PB6        // SCL pad
+#define I2C1_SDA                PB7        // SDA pad
+#define BARO_I2C_INSTANCE       (I2CDEV_1)
+
+#define USE_BARO
+#define USE_BARO_BMP280
+#define USE_BARO_MS5611
+#define USE_BARO_BMP085
 
 // *************** SD Card **************************
 #define USE_SDCARD
@@ -125,12 +148,11 @@
 #define CURRENT_METER_ADC_PIN   PC4
 #define RSSI_ADC_PIN            PB0
 
-#define DEFAULT_FEATURES        (FEATURE_OSD )
+#define DEFAULT_FEATURES        (FEATURE_OSD | FEATURE_TELEMETRY )
+#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
+#define DEFAULT_CURRENT_METER_SOURCE CURRENT_METER_ADC
 
 #define USE_LED_STRIP
-
-#define USE_SPEKTRUM_BIND
-#define BIND_PIN                PA1 // USART4 RX
 
 #define USE_ESCSERIAL
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
@@ -140,5 +162,5 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
-#define USABLE_TIMER_CHANNEL_COUNT 8
-#define USED_TIMERS             (TIM_N(1)|TIM_N(2)|TIM_N(3)|TIM_N(5)|TIM_N(8))
+#define USABLE_TIMER_CHANNEL_COUNT 9
+#define USED_TIMERS             (TIM_N(1)|TIM_N(2)|TIM_N(3)|TIM_N(4)|TIM_N(5)|TIM_N(8))
