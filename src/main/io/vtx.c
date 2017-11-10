@@ -29,6 +29,7 @@
 #include "drivers/vtx_common.h"
 
 #include "fc/config.h"
+#include "fc/runtime_config.h"
 
 #include "io/vtx.h"
 #include "io/vtx_string.h"
@@ -40,7 +41,8 @@ PG_RESET_TEMPLATE(vtxSettingsConfig_t, vtxSettingsConfig,
     .band = VTX_SETTINGS_DEFAULT_BAND,
     .channel = VTX_SETTINGS_DEFAULT_CHANNEL,
     .power = VTX_SETTINGS_DEFAULT_POWER,
-    .freq = VTX_SETTINGS_DEFAULT_FREQ
+    .freq = VTX_SETTINGS_DEFAULT_FREQ,
+    .benchMode = 0,
 );
 
 #define VTX_PARAM_CYCLE_TIME_US 100000 // 10Hz
@@ -80,30 +82,36 @@ void vtxProcess(timeUs_t currentTimeUs)
         if (currentTimeUs > lastCycleTimeUs + VTX_PARAM_CYCLE_TIME_US) {
             switch (currentSchedule) {
             case VTX_PARAM_BANDCHAN:
-                if (vtxSettingsConfig()->band) {
-                    uint8_t vtxBand;
-                    uint8_t vtxChan;
-                    if (vtxCommonGetBandAndChannel(&vtxBand, &vtxChan)) {
-                        if (vtxSettingsConfig()->band != vtxBand || vtxSettingsConfig()->channel != vtxChan) {
-                            vtxCommonSetBandAndChannel(vtxSettingsConfig()->band, vtxSettingsConfig()->channel);
+                if(!ARMING_FLAG(ARMED)) {
+                    if (vtxSettingsConfig()->band) {
+                        uint8_t vtxBand;
+                        uint8_t vtxChan;
+                        if (vtxCommonGetBandAndChannel(&vtxBand, &vtxChan)) {
+                            if (vtxSettingsConfig()->band != vtxBand || vtxSettingsConfig()->channel != vtxChan) {
+                                vtxCommonSetBandAndChannel(vtxSettingsConfig()->band, vtxSettingsConfig()->channel);
+                            }
                         }
-                    }
 #if defined(VTX_SETTINGS_FREQCMD)
-                } else {
-                    uint16_t vtxFreq;
-                    if (vtxCommonGetFrequency(&vtxFreq)) {
-                        if (vtxSettingsConfig()->freq != vtxFreq) {
-                            vtxCommonSetFrequency(vtxSettingsConfig()->freq);
+                    } else {
+                        uint16_t vtxFreq;
+                        if (vtxCommonGetFrequency(&vtxFreq)) {
+                            if (vtxSettingsConfig()->freq != vtxFreq) {
+                                vtxCommonSetFrequency(vtxSettingsConfig()->freq);
+                            }
                         }
-                    }
 #endif
+                    }
                 }
                 break;
             case VTX_PARAM_POWER: ;
                 uint8_t vtxPower;
+                uint8_t newPower = vtxSettingsConfig()->power;
                 if (vtxCommonGetPowerIndex(&vtxPower)) {
-                    if (vtxSettingsConfig()->power != vtxPower) {
-                        vtxCommonSetPowerByIndex(vtxSettingsConfig()->power);
+                    if (!ARMING_FLAG(ARMED) && vtxSettingsConfig()->benchMode) {
+                        newPower = VTX_SETTINGS_MIN_POWER;
+                    }
+                    if (vtxPower != newPower) {
+                        vtxCommonSetPowerByIndex(newPower);
                     }
                 }
                 break;
