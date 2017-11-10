@@ -75,6 +75,7 @@ void vtxProcess(timeUs_t currentTimeUs)
 {
     static timeUs_t lastCycleTimeUs;
     static uint8_t scheduleIndex;
+    bool powerUpdatePending = false;
 
     if (vtxCommonDeviceRegistered()) {
         const uint8_t currentSchedule = vtxParamSchedule[scheduleIndex];
@@ -112,6 +113,7 @@ void vtxProcess(timeUs_t currentTimeUs)
                     }
                     if (vtxPower != newPower) {
                         vtxCommonSetPowerByIndex(newPower);
+                        powerUpdatePending = true;
                     }
                 }
                 break;
@@ -120,6 +122,9 @@ void vtxProcess(timeUs_t currentTimeUs)
             }
             lastCycleTimeUs = currentTimeUs;
             scheduleIndex = (scheduleIndex + 1) % vtxParamScheduleCount;
+        }
+        if (ARMING_FLAG(ARMED) || !powerUpdatePending) {
+            return;
         }
         vtxCommonProcess(currentTimeUs);
     }
