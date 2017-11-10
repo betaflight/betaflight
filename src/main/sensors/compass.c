@@ -262,9 +262,9 @@ bool compassInit(void)
     return true;
 }
 
-void compassUpdate(uint32_t currentTime, flightDynamicsTrims_t *magZero)
+void compassUpdate(timeUs_t currentTimeUs)
 {
-    static uint32_t tCal = 0;
+    static timeUs_t tCal = 0;
     static flightDynamicsTrims_t magZeroTempMin;
     static flightDynamicsTrims_t magZeroTempMax;
 
@@ -274,8 +274,9 @@ void compassUpdate(uint32_t currentTime, flightDynamicsTrims_t *magZero)
     }
     alignSensors(mag.magADC, magDev.magAlign);
 
+    flightDynamicsTrims_t *magZero = &compassConfigMutable()->magZero;
     if (STATE(CALIBRATE_MAG)) {
-        tCal = currentTime;
+        tCal = currentTimeUs;
         for (int axis = 0; axis < 3; axis++) {
             magZero->raw[axis] = 0;
             magZeroTempMin.raw[axis] = mag.magADC[axis];
@@ -291,7 +292,7 @@ void compassUpdate(uint32_t currentTime, flightDynamicsTrims_t *magZero)
     }
 
     if (tCal != 0) {
-        if ((currentTime - tCal) < 30000000) {    // 30s: you have 30s to turn the multi in all directions
+        if ((currentTimeUs - tCal) < 30000000) {    // 30s: you have 30s to turn the multi in all directions
             LED0_TOGGLE;
             for (int axis = 0; axis < 3; axis++) {
                 if (mag.magADC[axis] < magZeroTempMin.raw[axis])
