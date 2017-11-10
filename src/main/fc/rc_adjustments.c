@@ -42,7 +42,7 @@
 #include "io/beeper.h"
 #include "io/motors.h"
 
-#if defined(OSD) && defined(USE_OSD_ADJUSTMENTS) 
+#if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS) 
 #include "io/osd.h"
 #endif
 
@@ -206,7 +206,7 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
     }
 };
 
-#if defined(OSD) && defined(USE_OSD_ADJUSTMENTS)
+#if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
 static const char * adjustmentLabels[] = {
     "RC RATE",
     "RC EXPO",
@@ -466,7 +466,7 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
             newValue = applySelectAdjustment(adjustmentFunction, position);
         }
 
-#if defined(OSD) && defined(USE_OSD_ADJUSTMENTS)
+#if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
         if (newValue != -1) {
             osdShowAdjustment(adjustmentLabels[adjustmentFunction], newValue);
         }
