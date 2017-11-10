@@ -147,8 +147,6 @@
 #define RSSI_ADC_PIN            PA1
 #define EXTERNAL1_ADC_PIN       PA5
 
-#define USE_SPEKTRUM_BIND_PIN
-
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
 // IO - assuming all IOs on 48pin package
