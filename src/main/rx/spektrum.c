@@ -265,6 +265,7 @@ const uint8_t vtxTrampPi[] = {           // Spektrum Spec    Tx menu  Tx sends  
         .channel = vtxSettingsConfig()->channel,
         .freq = vtxSettingsConfig()->freq,
         .power = vtxSettingsConfig()->power,
+        .lowPowerDisarm = vtxSettingsConfig()->lowPowerDisarm,
       };
       vtxSettingsConfig_t newSettings = prevSettings;
 

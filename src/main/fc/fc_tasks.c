@@ -212,11 +212,11 @@ static void taskTelemetry(timeUs_t currentTimeUs)
 // Everything that listens to VTX devices
 void taskVtxControl(timeUs_t currentTime)
 {
-    if (ARMING_FLAG(ARMED) || cliMode)
+    if (cliMode)
         return;
 
 #ifdef VTX_COMMON
-    vtxProcess(currentTime);
+    vtxProcessSchedule(currentTime);
 #endif
 }
 #endif

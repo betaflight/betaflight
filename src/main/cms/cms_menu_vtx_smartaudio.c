@@ -423,6 +423,7 @@ static long saCmsCommence(displayPort_t *pDisp, const void *self)
         .channel = vtxSettingsConfig()->channel,
         .freq = vtxSettingsConfig()->freq,
         .power = vtxSettingsConfig()->power,
+        .lowPowerDisarm = vtxSettingsConfig()->lowPowerDisarm,
     };
     vtxSettingsConfig_t newSettings = prevSettings;
 
