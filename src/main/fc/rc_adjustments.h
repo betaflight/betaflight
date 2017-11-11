@@ -93,6 +93,9 @@ typedef struct adjustmentState_s {
 
 #define MAX_ADJUSTMENT_RANGE_COUNT 15
 
+extern char const *adjustmentRangeName;
+extern int adjustmentRangeValue;
+
 PG_DECLARE_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges);
 
 void resetAdjustmentStates(void);

@@ -738,6 +738,13 @@ static void osdDrawSingleElement(uint8_t item)
         printRtcDateTime(&buff[0]);
         break;
 #endif
+
+#ifdef USE_OSD_ADJUSTMENTS
+    case OSD_ADJUSTMENT_RANGE:
+        tfp_sprintf(buff, "%s: %3d", adjustmentRangeName, adjustmentRangeValue);
+
+        break;
+#endif
     default:
         return;
     }
@@ -807,6 +814,9 @@ static void osdDrawElements(void)
   osdDrawSingleElement(OSD_RTC_DATETIME);
 #endif
 
+#ifdef USE_OSD_ADJUSTMENTS
+    osdDrawSingleElement(OSD_ADJUSTMENT_RANGE);
+#endif
 }
 
 void pgResetFn_osdConfig(osdConfig_t *osdConfig)
@@ -1155,12 +1165,6 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
 {
     static timeUs_t lastTimeUs = 0;
 
-#ifdef USE_OSD_ADJUSTMENTS
-    if (isAnyAdjustmentFunctionBusy()) {
-        return;
-    }
-#endif
-
     // detect arm/disarm
     if (armState != ARMING_FLAG(ARMED)) {
         if (ARMING_FLAG(ARMED)) {
@@ -1273,14 +1277,5 @@ void osdUpdate(timeUs_t currentTimeUs)
     }
 #endif
 }
-
-#ifdef USE_OSD_ADJUSTMENTS
-void osdShowAdjustment(const char * type, int newValue)
-{
-    char buff[OSD_ELEMENT_BUFFER_LENGTH];
-    tfp_sprintf(buff, "%s: %3d", type, newValue);
-    displayWrite(osdDisplayPort, round(15 - strlen(buff) / 2), 7, buff);
-}
-#endif
 
 #endif // OSD

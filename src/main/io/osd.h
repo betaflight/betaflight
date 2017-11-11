@@ -84,6 +84,7 @@ typedef enum {
     OSD_ESC_TMP,
     OSD_ESC_RPM,
     OSD_RTC_DATETIME,
+    OSD_ADJUSTMENT_RANGE,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -163,6 +164,5 @@ void osdInit(struct displayPort_s *osdDisplayPort);
 void osdResetConfig(osdConfig_t *osdProfile);
 void osdResetAlarms(void);
 void osdUpdate(timeUs_t currentTimeUs);
-void osdShowAdjustment(const char * type, int newValue);
 
 #endif
