@@ -42,10 +42,6 @@
 #include "io/beeper.h"
 #include "io/motors.h"
 
-#if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS) 
-#include "io/osd.h"
-#endif
-
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc_adjustments.h"
@@ -207,7 +203,7 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
 };
 
 #if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
-static const char * adjustmentLabels[] = {
+static const char const *adjustmentLabels[] = {
     "RC RATE",
     "RC EXPO",
     "THROTTLE EXPO",
@@ -233,6 +229,9 @@ static const char * adjustmentLabels[] = {
     "D SETPOINT TRANSITION",
     "HORIZON STRENGTH",
 };
+
+const char const *adjustmentRangeName;
+int adjustmentRangeValue = -1;
 #endif
 
 #define ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET 1
@@ -434,6 +433,10 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
         if (cmp32(now, adjustmentState->timeoutAt) >= 0) {
             adjustmentState->timeoutAt = now + RESET_FREQUENCY_2HZ;
             MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentIndex);
+
+#if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
+            adjustmentRangeValue = -1;
+#endif
         }
 
         if (!canUseRxData) {
@@ -467,8 +470,9 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
         }
 
 #if defined(USE_OSD) && defined(USE_OSD_ADJUSTMENTS)
-        if (newValue != -1) {
-            osdShowAdjustment(adjustmentLabels[adjustmentFunction], newValue);
+        if (newValue != -1 && adjustmentState->config->adjustmentFunction != ADJUSTMENT_RATE_PROFILE) { // Rate profile already has an OSD element
+            adjustmentRangeName = &adjustmentLabels[adjustmentFunction - 1][0];
+            adjustmentRangeValue = newValue;
         }
 #else
         UNUSED(newValue);
