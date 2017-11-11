@@ -586,14 +586,18 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
     static uint8_t pit = 255;
     static uint8_t showSettings = false;
     static uint16_t lastCheck = 0;
-    static bool active = false;
     static bool blink = false;
+
+    if (!vtxCommonDeviceRegistered()) {
+        return;
+    }
+
     uint8_t band = 255, channel = 255;
     uint16_t check = 0;
 
     if (updateNow) {
         // keep counter running, so it stays in sync with vtx
-        active = vtxCommonGetBandAndChannel(&band, &channel);
+        vtxCommonGetBandAndChannel(&band, &channel);
         vtxCommonGetPowerIndex(&power);
         vtxCommonGetPitMode(&pit);
 
@@ -612,10 +616,6 @@ static void applyLedVtxLayer(bool updateNow, timeUs_t *timer)
         }
         blink = !blink;
         *timer += HZ_TO_US(5); // check 5 times a second
-    }
-
-    if (!active) { // no vtx device detected
-        return;
     }
 
     hsvColor_t color = {0, 0, 0};
