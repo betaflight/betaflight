@@ -71,34 +71,36 @@ void vtxInit(void)
     }
 }
 
-static void vtxProcessBandAndChannel(timeUs_t currentTimeUs) {
+static bool vtxProcessBandAndChannel(void) {
     if(!ARMING_FLAG(ARMED)) {
         uint8_t vtxBand;
         uint8_t vtxChan;
         if (vtxCommonGetBandAndChannel(&vtxBand, &vtxChan)) {
             if (vtxSettingsConfig()->band != vtxBand || vtxSettingsConfig()->channel != vtxChan) {
                 vtxCommonSetBandAndChannel(vtxSettingsConfig()->band, vtxSettingsConfig()->channel);
-                vtxCommonProcess(currentTimeUs);
+                return true;
             }
         }
     }
+    return false;
 }
 
 #if defined(VTX_SETTINGS_FREQCMD)
-static void vtxProcessFrequency(timeUs_t currentTimeUs) {
+static bool vtxProcessFrequency(void) {
     if(!ARMING_FLAG(ARMED)) {
         uint16_t vtxFreq;
         if (vtxCommonGetFrequency(&vtxFreq)) {
             if (vtxSettingsConfig()->freq != vtxFreq) {
                 vtxCommonSetFrequency(vtxSettingsConfig()->freq);
-                vtxCommonProcess(currentTimeUs);
+                return true;
             }
         }
     }
+    return false;
 }
 #endif
 
-static void vtxProcessPower(timeUs_t currentTimeUs) {
+static bool vtxProcessPower(void) {
     uint8_t vtxPower;
     uint8_t newPower = vtxSettingsConfig()->power;
     if (vtxCommonGetPowerIndex(&vtxPower)) {
@@ -107,15 +109,17 @@ static void vtxProcessPower(timeUs_t currentTimeUs) {
         }
         if (vtxPower != newPower) {
             vtxCommonSetPowerByIndex(newPower);
-            vtxCommonProcess(currentTimeUs);
+            return true;
         }
     }
+    return false;
 }
 
 void vtxProcessSchedule(timeUs_t currentTimeUs)
 {
     static timeUs_t lastCycleTimeUs;
     static uint8_t scheduleIndex;
+    bool vtxUpdatePending = false;
 
     if (vtxCommonDeviceRegistered()) {
         const uint8_t currentSchedule = vtxParamSchedule[scheduleIndex];
@@ -124,21 +128,24 @@ void vtxProcessSchedule(timeUs_t currentTimeUs)
             switch (currentSchedule) {
             case VTX_PARAM_BANDCHAN:
                 if (vtxSettingsConfig()->band) {
-                    vtxProcessBandAndChannel(currentTimeUs);
+                    vtxUpdatePending = vtxProcessBandAndChannel();
 #if defined(VTX_SETTINGS_FREQCMD)
                 } else {
-                    vtxProcessFrequency(currentTimeUs);
+                    vtxUpdatePending = vtxProcessFrequency();
 #endif
                 }
                 break;
             case VTX_PARAM_POWER:
-                vtxProcessPower(currentTimeUs);
+                vtxUpdatePending = vtxProcessPower();
                 break;
             default:
                 break;
             }
             lastCycleTimeUs = currentTimeUs;
             scheduleIndex = (scheduleIndex + 1) % vtxParamScheduleCount;
+        }
+        if (!ARMING_FLAG(ARMED) || vtxUpdatePending) {
+            vtxCommonProcess(currentTimeUs);
         }
     }
 }
