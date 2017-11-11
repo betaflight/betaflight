@@ -1027,7 +1027,7 @@ static void loadMainState(timeUs_t currentTimeUs)
     blackboxCurrent->sonarRaw = sonarRead();
 #endif
 
-    blackboxCurrent->rssi = rssi;
+    blackboxCurrent->rssi = getRssi();
 
 #ifdef USE_SERVOS
     //Tail servo for tricopters

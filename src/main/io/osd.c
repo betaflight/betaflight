@@ -323,7 +323,7 @@ static void osdDrawSingleElement(uint8_t item)
     switch (item) {
     case OSD_RSSI_VALUE:
         {
-            uint16_t osdRssi = rssi * 100 / 1024; // change range
+            uint16_t osdRssi = getRssi() * 100 / 1024; // change range
             if (osdRssi >= 100)
                 osdRssi = 99;
 
@@ -1148,7 +1148,7 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
         armState = ARMING_FLAG(ARMED);
     }
 
-    statRssi = scaleRange(rssi, 0, 1024, 0, 100);
+    statRssi = scaleRange(getRssi(), 0, 1024, 0, 100);
 
     osdUpdateStats();
 

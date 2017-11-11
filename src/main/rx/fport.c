@@ -260,7 +260,7 @@ static uint8_t fportFrameStatus(void)
                     } else {
                         result = sbusChannelsDecode(&frame->data.controlData.channels);
 
-                        processRssi(constrain(frame->data.controlData.rssi, 0, 100));
+                        setRssiUnfiltered(scaleRange(frame->data.controlData.rssi, 0, 100, 0, 1024));
                     }
 
                     break;

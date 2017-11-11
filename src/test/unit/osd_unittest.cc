@@ -932,4 +932,6 @@ extern "C" {
     bool cmsDisplayPortRegister(displayPort_t *) {
         return false;
     }
+
+    uint16_t getRssi(void) { return rssi; }
 }

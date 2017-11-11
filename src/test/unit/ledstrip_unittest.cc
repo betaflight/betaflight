@@ -298,7 +298,6 @@ uint16_t flightModeFlags = 0;
 float rcCommand[4];
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 uint32_t rcModeActivationMask;
-uint16_t rssi = 0;
 gpsSolutionData_t gpsSol;
 
 batteryState_e getBatteryState(void) {
@@ -383,5 +382,7 @@ bool sensors(uint32_t mask)
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {};
 
 bool isArmingDisabled(void) { return false; }
+
+uint16_t getRssi(void) { return 0; }
 
 }

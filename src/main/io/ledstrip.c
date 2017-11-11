@@ -495,7 +495,7 @@ static void applyLedFixedLayers(void)
 
         case LED_FUNCTION_RSSI:
             color = HSV(RED);
-            hOffset += scaleRange(rssi * 100, 0, 1023, -30, 120);
+            hOffset += scaleRange(getRssi() * 100, 0, 1023, -30, 120);
             break;
 
         default:
@@ -713,7 +713,7 @@ static void applyLedRssiLayer(bool updateNow, timeUs_t *timer)
     int timerDelay = HZ_TO_US(1);
 
     if (updateNow) {
-        int state = (rssi * 100) / 1023;
+        int state = (getRssi() * 100) / 1023;
 
         if (state > 50) {
             flash = true;
