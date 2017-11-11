@@ -2964,9 +2964,10 @@ static void cliStatus(char *cmdline)
     #ifdef USE_RTC_TIME
     char buf[FORMATTED_DATE_TIME_BUFSIZE];
     dateTime_t dt;
-    rtcGetDateTime(&dt);
-    dateTimeFormatLocal(buf, &dt);
-    cliPrintLinef("Current Time: %s", buf);
+    if (rtcGetDateTime(&dt)) {
+        dateTimeFormatLocal(buf, &dt);
+        cliPrintLinef("Current Time: %s", buf);
+    }
     #endif
 
     cliPrintLinef("Voltage: %d * 0.1V (%dS battery - %s)", getBatteryVoltage(), getBatteryCellCount(), getBatteryStateString());
