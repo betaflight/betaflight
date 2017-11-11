@@ -158,6 +158,11 @@ static bool configIsInCopy = false;
 static const char* const emptyName = "-";
 static const char* const emptryString = "";
 
+//DSHOT TEST CODE - This needs to be a program group 
+#define DSHOT_SCRIPT_SIZE 20
+#define DSHOT_SCRIPT_OUT_OF_BOUNDS 254
+static uint8_t dshotScript[3][DSHOT_SCRIPT_SIZE];
+
 #ifndef USE_QUAD_MIXER_ONLY
 // sync this with mixerMode_e
 static const char * const mixerNames[] = {
@@ -2511,6 +2516,94 @@ static void cliDshotProg(char *cmdline)
 
     pwmEnableMotors();
 }
+
+static void cliDshotScriptSave(char *cmdline)
+{
+    uint8_t dshotScriptTemp[DSHOT_SCRIPT_SIZE];
+    uint8_t scriptIndex = 0;
+    uint8_t scriptNumber = 0;
+
+    if (isEmpty(cmdline) || motorConfig()->dev.motorPwmProtocol < PWM_TYPE_DSHOT150) {
+        cliShowParseError();
+
+        return;
+    }
+
+    char *saveptr;
+    char *pch = strtok_r(cmdline, " ", &saveptr);
+    int pos = 0;
+    int escIndex = 0;
+    while (pch != NULL) {
+        switch (pos) {
+        case 0:
+            scriptNumber = atoi(pch);
+            if (scriptNumber >= sizeof(dshotScript) / sizeof(dshotScript[0])) {
+                cliPrintLinef("scriptNumber too large- %d.", sizeof(dshotScript) / sizeof(dshotScript[0]));
+                return;
+            }
+            break;
+        default:
+            {
+                if (scriptIndex > DSHOT_SCRIPT_SIZE-2) {
+                    cliPrintLinef("script too long - %d", DSHOT_SCRIPT_SIZE);
+                    return;
+                }
+                //Alternate index and command
+                if (scriptIndex % 2 == 0) {
+                    escIndex = parseOutputIndex(pch, true);
+                    if (escIndex == -1) {
+                        cliPrintLinef("escIndex out of bounds - %d", escIndex);
+                        return;
+                    }
+                    dshotScriptTemp[scriptIndex] = escIndex;
+                } else {
+                    int command = atoi(pch);
+                    if (command < 0 && command > DSHOT_MIN_THROTTLE) {
+                        cliPrintLinef("command out of bounds - %d", command);
+                        return;
+                    }
+                    dshotScriptTemp[scriptIndex] = command;
+                    
+                }
+                scriptIndex++;
+            }
+            break;
+        }
+        pos++;
+        pch = strtok_r(NULL, " ", &saveptr);
+    }
+    if (scriptIndex % 2 == 1)
+    {
+        cliPrintLinef("script wrong size - %d", scriptIndex);
+        return;
+    }
+    dshotScriptTemp[scriptIndex] = DSHOT_SCRIPT_OUT_OF_BOUNDS;
+
+    memcpy(dshotScript[scriptNumber], dshotScriptTemp, DSHOT_SCRIPT_SIZE);
+    cliPrintLinef("script saved - %d", scriptIndex);
+
+}
+
+static void cliDshotScriptExecute(char *cmdline) 
+{
+
+    uint8_t scriptNumber = atoi(cmdline);
+    uint8_t scriptIndex = 0;
+    pwmDisableMotors();
+    while (scriptIndex < DSHOT_SCRIPT_SIZE) {
+        if (dshotScript[scriptNumber][scriptIndex] == DSHOT_SCRIPT_OUT_OF_BOUNDS) {
+            break;
+        }
+        delay(1);
+        pwmWriteDshotCommand(dshotScript[scriptNumber][scriptIndex], getMotorCount(), dshotScript[scriptNumber][scriptIndex + 1]);
+        delay(100);
+        cliPrintLinef("Script Execute ESC: %d Command: %d ", dshotScript[scriptNumber][scriptIndex], dshotScript[scriptNumber][scriptIndex + 1]);
+
+        scriptIndex = scriptIndex + 2;
+    }
+    pwmEnableMotors();
+
+}
 #endif
 
 #ifdef USE_ESCSERIAL
@@ -3624,6 +3717,9 @@ const clicmd_t cmdTable[] = {
         "[master|profile|rates|all] {defaults}", cliDiff),
 #ifdef USE_DSHOT
     CLI_COMMAND_DEF("dshotprog", "program DShot ESC(s)", "<index> <command>+", cliDshotProg),
+    CLI_COMMAND_DEF("dshotscriptexecute", "execute script DShot ESC(s)", "<scriptnum>", cliDshotScriptExecute),
+    CLI_COMMAND_DEF("dshotscriptsave", "save script DShot ESC(s)", "<scriptnum> <index> <command>+", cliDshotScriptSave),
+
 #endif
     CLI_COMMAND_DEF("dump", "dump configuration",
         "[master|profile|rates|all] {defaults}", cliDump),
