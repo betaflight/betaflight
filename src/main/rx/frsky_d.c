@@ -133,7 +133,7 @@ static void compute_RSSIdbm(uint8_t *packet)
         RSSI_dBm = ((((uint16_t)packet[18]) * 18) >> 5) + 65;
     }
 
-    processRssi(constrain((RSSI_dBm << 3) / 10, 0, 100));
+    setRssiUnfiltered(constrain(RSSI_dBm << 3, 0, 1024));
 }
 
 #if defined(USE_TELEMETRY_FRSKY)

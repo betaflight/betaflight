@@ -173,7 +173,7 @@ static void checkTimeout (void)
 
         if(countTimeout > 31) {
             timeout = timings->syncPacket;
-            rssi = 0;
+            setRssiFiltered(0);
         } else {
             timeout = timings->packet;
             countTimeout++;
@@ -197,7 +197,7 @@ static void checkRSSI (void)
     rssi_dBm = 50 + sum / (3 * FLYSKY_RSSI_SAMPLE_COUNT); // range about [95...52], -dBm
 
     int16_t tmp = 2280 - 24 * rssi_dBm;// convert to [0...1023]
-    rssi = (uint16_t) constrain(tmp, 0, 1023);// external variable from "rx/rx.h"
+    setRssiFiltered(constrain(tmp, 0, 1023));
 }
 
 static bool isValidPacket (const uint8_t *packet) {
