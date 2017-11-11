@@ -56,7 +56,6 @@
 #include "drivers/display.h"
 #include "drivers/max7456_symbols.h"
 #include "drivers/time.h"
-#include "drivers/vtx_common.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
@@ -66,6 +65,7 @@
 #include "io/vtx_rtc6705.h"
 #include "io/vtx_control.h"
 #include "io/vtx_string.h"
+#include "io/vtx.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -475,15 +475,9 @@ static void osdDrawSingleElement(uint8_t item)
 #if defined(VTX_COMMON)
     case OSD_VTX_CHANNEL:
         {
-            uint8_t band=0, channel=0;
-            vtxCommonGetBandAndChannel(&band,&channel);
-
-            uint8_t power = 0;
-            vtxCommonGetPowerIndex(&power);
-
-            const char vtxBandLetter = vtx58BandLetter[band];
-            const char *vtxChannelName = vtx58ChannelNames[channel];
-            tfp_sprintf(buff, "%c:%s:%d", vtxBandLetter, vtxChannelName, power);
+            const char vtxBandLetter = vtx58BandLetter[vtxSettingsConfig()->band];
+            const char *vtxChannelName = vtx58ChannelNames[vtxSettingsConfig()->channel];
+            tfp_sprintf(buff, "%c:%s:%d", vtxBandLetter, vtxChannelName, vtxSettingsConfig()->power);
             break;
         }
 #endif
@@ -1133,7 +1127,7 @@ STATIC_UNIT_TESTED void osdRefresh(timeUs_t currentTimeUs)
         return;
     }
 #endif
- 
+
     // detect arm/disarm
     if (armState != ARMING_FLAG(ARMED)) {
         if (ARMING_FLAG(ARMED)) {
@@ -1255,5 +1249,5 @@ void osdShowAdjustment(const char * type, int newValue)
     displayWrite(osdDisplayPort, round(15 - strlen(buff) / 2), 7, buff);
 }
 #endif
- 
+
 #endif // OSD
