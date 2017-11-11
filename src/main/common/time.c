@@ -131,7 +131,7 @@ static void dateTimeWithOffset(dateTime_t *dateTimeOffset, dateTime_t *dateTimeI
     rtcTimeToDateTime(dateTimeOffset, offsetTime);
 }
 
-static bool dateTimeFormat(char *buf, dateTime_t *dateTime, int16_t offsetMinutes)
+static bool dateTimeFormat(char *buf, dateTime_t *dateTime, int16_t offsetMinutes, bool shortVersion)
 {
     dateTime_t local;
 
@@ -153,13 +153,19 @@ static bool dateTimeFormat(char *buf, dateTime_t *dateTime, int16_t offsetMinute
         retVal = false;
     }
 
-    // Changes to this format might require updates in
-    // dateTimeSplitFormatted()
-    // Datetime is in ISO_8601 format, https://en.wikipedia.org/wiki/ISO_8601
-    tfp_sprintf(buf, "%04u-%02u-%02uT%02u:%02u:%02u.%03u%c%02d:%02d",
-        dateTime->year, dateTime->month, dateTime->day,
-        dateTime->hours, dateTime->minutes, dateTime->seconds, dateTime->millis,
-        tz_hours >= 0 ? '+' : '-', ABS(tz_hours), tz_minutes);
+    if (shortVersion) {
+        tfp_sprintf(buf, "%04u-%02u-%02u %02u:%02u:%02u",
+            dateTime->year, dateTime->month, dateTime->day,
+            dateTime->hours, dateTime->minutes, dateTime->seconds);
+    } else {
+        // Changes to this format might require updates in
+        // dateTimeSplitFormatted()
+        // Datetime is in ISO_8601 format, https://en.wikipedia.org/wiki/ISO_8601
+        tfp_sprintf(buf, "%04u-%02u-%02uT%02u:%02u:%02u.%03u%c%02d:%02d",
+            dateTime->year, dateTime->month, dateTime->day,
+            dateTime->hours, dateTime->minutes, dateTime->seconds, dateTime->millis,
+            tz_hours >= 0 ? '+' : '-', ABS(tz_hours), tz_minutes);
+    }
 
     return retVal;
 }
@@ -181,12 +187,17 @@ uint16_t rtcTimeGetMillis(rtcTime_t *t)
 
 bool dateTimeFormatUTC(char *buf, dateTime_t *dt)
 {
-    return dateTimeFormat(buf, dt, 0);
+    return dateTimeFormat(buf, dt, 0, false);
 }
 
 bool dateTimeFormatLocal(char *buf, dateTime_t *dt)
 {
-    return dateTimeFormat(buf, dt, timeConfig()->tz_offsetMinutes);
+    return dateTimeFormat(buf, dt, timeConfig()->tz_offsetMinutes, false);
+}
+
+bool dateTimeFormatLocalShort(char *buf, dateTime_t *dt)
+{
+    return dateTimeFormat(buf, dt, timeConfig()->tz_offsetMinutes, true);
 }
 
 void dateTimeUTCToLocal(dateTime_t *utcDateTime, dateTime_t *localDateTime)

@@ -309,6 +309,22 @@ STATIC_UNIT_TESTED void osdFormatTimer(char *buff, bool showSymbol, int timerInd
     osdFormatTime(buff, OSD_TIMER_PRECISION(timer), osdGetTimerValue(src));
 }
 
+#ifdef USE_RTC_TIME
+bool printRtcDateTime(char *buffer)
+{
+    dateTime_t dateTime;
+    if (!rtcGetDateTime(&dateTime)) {
+        buffer[0] = '\0';
+
+        return false;
+    }
+
+    dateTimeFormatLocalShort(buffer, &dateTime);
+
+    return true;
+}
+#endif
+
 static void osdDrawSingleElement(uint8_t item)
 {
     if (!VISIBLE(osdConfig()->item_pos[item]) || BLINK(item)) {
@@ -717,6 +733,11 @@ static void osdDrawSingleElement(uint8_t item)
         break;
 #endif
 
+#ifdef USE_RTC_TIME
+    case OSD_RTC_DATETIME:
+        printRtcDateTime(&buff[0]);
+        break;
+#endif
     default:
         return;
     }
@@ -781,6 +802,11 @@ static void osdDrawElements(void)
       osdDrawSingleElement(OSD_ESC_RPM);
   }
 #endif
+
+#ifdef USE_RTC_TIME
+  osdDrawSingleElement(OSD_RTC_DATETIME);
+#endif
+
 }
 
 void pgResetFn_osdConfig(osdConfig_t *osdConfig)
@@ -863,7 +889,14 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
     displayWrite(osdDisplayPort, 11, 10, CMS_STARTUP_HELP_TEXT3);
 #endif
 
-    displayResync(osdDisplayPort);
+#ifdef USE_RTC_TIME
+    char dateTimeBuffer[FORMATTED_DATE_TIME_BUFSIZE];
+    if (printRtcDateTime(&dateTimeBuffer[0])) {
+        displayWrite(osdDisplayPort, 5, 12, dateTimeBuffer);
+    }
+#endif
+
+displayResync(osdDisplayPort);
 
     resumeRefreshAt = micros() + (4 * REFRESH_1S);
 }

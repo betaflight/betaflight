@@ -76,6 +76,7 @@ typedef struct _dateTime_s {
 // buf must be at least FORMATTED_DATE_TIME_BUFSIZE
 bool dateTimeFormatUTC(char *buf, dateTime_t *dt);
 bool dateTimeFormatLocal(char *buf, dateTime_t *dt);
+bool dateTimeFormatLocalShort(char *buf, dateTime_t *dt);
 
 void dateTimeUTCToLocal(dateTime_t *utcDateTime, dateTime_t *localDateTime);
 // dateTimeSplitFormatted splits a formatted date into its date

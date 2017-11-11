@@ -83,6 +83,7 @@ typedef enum {
     OSD_COMPASS_BAR,
     OSD_ESC_TMP,
     OSD_ESC_RPM,
+    OSD_RTC_DATETIME,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
