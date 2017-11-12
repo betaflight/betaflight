@@ -32,7 +32,7 @@
 
 #include "flight/mixer.h"
 
-#include "interface/fc_msp_box.h"
+#include "interface/msp_box.h"
 
 #include "sensors/sensors.h"
 

@@ -52,7 +52,7 @@
 #include "flight/pid.h"
 
 #include "interface/cli.h"
-#include "interface/fc_msp.h"
+#include "interface/msp.h"
 
 #include "io/beeper.h"
 #include "io/dashboard.h"

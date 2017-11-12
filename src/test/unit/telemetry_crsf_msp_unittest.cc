@@ -46,12 +46,10 @@ extern "C" {
     #include "fc/config.h"
     #include "flight/imu.h"
 
-    #include "interface/fc_msp.h"
+    #include "interface/msp.h"
 
     #include "io/serial.h"
     #include "io/gps.h"
-
-    #include "msp/msp.h"
 
     #include "rx/rx.h"
     #include "rx/crsf.h"

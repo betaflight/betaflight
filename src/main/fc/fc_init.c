@@ -76,8 +76,8 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "interface/fc_msp.h"
 #include "interface/cli.h"
+#include "interface/msp.h"
 
 #include "msp/msp_serial.h"
 

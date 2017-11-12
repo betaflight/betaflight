@@ -10,7 +10,7 @@
 
 #include "common/utils.h"
 
-#include "interface/fc_msp.h"
+#include "interface/msp.h"
 
 #include "rx/crsf.h"
 
