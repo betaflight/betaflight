@@ -17,11 +17,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <math.h>
-#include <ctype.h>
 
 #include "platform.h"
 

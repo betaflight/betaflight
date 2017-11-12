@@ -38,8 +38,6 @@
 
 #include "io/serial.h"
 
-#include "msp/msp.h"
-
 #include "rx/rx.h"
 #include "rx/crsf.h"
 

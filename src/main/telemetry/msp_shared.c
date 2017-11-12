@@ -1,7 +1,5 @@
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
-#include <math.h>
 #include <string.h>
 
 #include "platform.h"
@@ -14,10 +12,7 @@
 
 #include "interface/fc_msp.h"
 
-#include "msp/msp.h"
-
 #include "rx/crsf.h"
-#include "rx/msp.h"
 
 #include "telemetry/msp_shared.h"
 #include "telemetry/smartport.h"
