@@ -39,11 +39,9 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/vtx_common.h"
 
-#include "fc/cli.h"
 #include "fc/config.h"
 #include "fc/fc_core.h"
 #include "fc/fc_dispatch.h"
-#include "fc/fc_msp.h"
 #include "fc/fc_tasks.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -52,6 +50,9 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
+
+#include "interface/cli.h"
+#include "interface/fc_msp.h"
 
 #include "io/beeper.h"
 #include "io/dashboard.h"

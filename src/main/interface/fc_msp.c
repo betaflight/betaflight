@@ -60,8 +60,6 @@
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
-#include "fc/fc_msp.h"
-#include "fc/fc_msp_box.h"
 #include "fc/fc_rc.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
@@ -75,6 +73,10 @@
 #include "flight/navigation.h"
 #include "flight/pid.h"
 #include "flight/servos.h"
+
+#include "interface/fc_msp.h"
+#include "interface/fc_msp_box.h"
+#include "interface/msp_protocol.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
@@ -94,7 +96,6 @@
 #include "io/vtx_string.h"
 
 #include "msp/msp.h"
-#include "msp/msp_protocol.h"
 #include "msp/msp_serial.h"
 
 #include "rx/msp.h"

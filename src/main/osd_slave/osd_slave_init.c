@@ -54,12 +54,13 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/usb_io.h"
 
-#include "fc/cli.h"
 #include "fc/config.h"
 #include "fc/rc_controls.h"
-#include "fc/fc_msp.h"
 #include "fc/fc_tasks.h"
 #include "fc/runtime_config.h"
+
+#include "interface/cli.h"
+#include "interface/fc_msp.h"
 
 #include "msp/msp_serial.h"
 

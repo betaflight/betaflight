@@ -51,10 +51,10 @@ COMMON_SRC = \
             fc/config.c \
             fc/fc_dispatch.c \
             fc/fc_hardfaults.c \
-            fc/fc_msp.c \
-            fc/fc_msp_box.c \
             fc/fc_tasks.c \
             fc/runtime_config.c \
+            interface/fc_msp.c \
+            interface/fc_msp_box.c \
             io/beeper.c \
             io/serial.c \
             io/statusindicator.c \
@@ -87,14 +87,14 @@ FC_SRC = \
             fc/rc_adjustments.c \
             fc/rc_controls.c \
             fc/rc_modes.c \
-            fc/cli.c \
-            fc/settings.c \
             flight/altitude.c \
             flight/failsafe.c \
             flight/imu.c \
             flight/mixer.c \
             flight/pid.c \
             flight/servos.c \
+            interface/cli.c \
+            interface/settings.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
@@ -253,12 +253,12 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/vtx_rtc6705.c \
             drivers/vtx_common.c \
             fc/fc_init.c \
-            fc/cli.c \
-            fc/settings.c \
             config/config_eeprom.c \
             config/feature.c \
             config/parameter_group.c \
             config/config_streamer.c \
+            interface/cli.c \
+            interface/settings.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \

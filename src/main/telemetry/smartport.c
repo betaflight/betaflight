@@ -28,7 +28,6 @@
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
-#include "fc/fc_msp.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -38,6 +37,8 @@
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/navigation.h"
+
+#include "interface/fc_msp.h"
 
 #include "io/beeper.h"
 #include "io/motors.h"

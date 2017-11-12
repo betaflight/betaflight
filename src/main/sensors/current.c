@@ -229,7 +229,7 @@ void currentMeterESCReadMotor(uint8_t motorNumber, currentMeter_t *meter)
 
 #ifdef USE_MSP_CURRENT_METER
 #include "common/streambuf.h"
-#include "msp/msp_protocol.h"
+#include "interface/msp_protocol.h"
 #include "msp/msp_serial.h"
 
 currentMeterMSPState_t currentMeterMSPState;

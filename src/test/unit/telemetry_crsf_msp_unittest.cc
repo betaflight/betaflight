@@ -45,7 +45,8 @@ extern "C" {
     #include "fc/runtime_config.h"
     #include "fc/config.h"
     #include "flight/imu.h"
-    #include "fc/fc_msp.h"
+
+    #include "interface/fc_msp.h"
 
     #include "io/serial.h"
     #include "io/gps.h"
