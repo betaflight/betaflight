@@ -629,7 +629,7 @@ static void updateRSSIPWM(void)
     }
 
     // Range of rawPwmRssi is [1000;2000]. rssi should be in [0;1023];
-    setRssiFiltered((uint16_t)((constrain(pwmRssi - 1000, 0, 1000) / 1000.0f) * 1023.0f));
+    setRssiFiltered(constrain((uint16_t)(((pwmRssi - 1000) / 1000.0f) * 1024.0f), 0, 1023));
 }
 
 static void updateRSSIADC(timeUs_t currentTimeUs)
@@ -645,8 +645,8 @@ static void updateRSSIADC(timeUs_t currentTimeUs)
     rssiUpdateAt = currentTimeUs + DELAY_50_HZ;
 
     const uint16_t adcRssiSample = adcGetChannel(ADC_RSSI);
-    unsigned rssiValue = (1024 * adcRssiSample) / (rxConfig()->rssi_scale * 100);
-    rssiValue = constrain(rssiValue, 0, 1024);
+    uint16_t rssiValue = (uint16_t)((1024.0f * adcRssiSample) / (rxConfig()->rssi_scale * 100.0f));
+    rssiValue = constrain(rssiValue, 0, 1023);
 
     // RSSI_Invert option
     if (rxConfig()->rssi_invert) {
@@ -672,7 +672,7 @@ void setRssiUnfiltered(uint16_t rssiValue)
 
     int16_t rssiMean = sum / RSSI_SAMPLE_COUNT;
 
-    setRssiFiltered((uint16_t)((rssiMean / 100.0f) * 1023.0f));
+    setRssiFiltered(rssiMean);
 }
 
 void setRssiMsp(uint8_t newMspRssi)
