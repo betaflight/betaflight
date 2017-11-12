@@ -73,7 +73,8 @@ typedef struct pid8_s {
 typedef struct pidProfile_s {
     pid8_t  pid[PID_ITEM_COUNT];
 
-    uint16_t yaw_lpf_hz;                    // Additional yaw filter when yaw axis too noisy
+    uint16_t yaw_filter_hz;                 // Yaw filter frequency for PT1 or notch filter
+    uint16_t yaw_filter_cutoff;             // Yaw filter notch cutoff, if zero PT1 filter used
     uint16_t dterm_lpf_hz;                  // Delta Filter in hz
     uint16_t dterm_notch_hz;                // Biquad dterm notch hz
     uint16_t dterm_notch_cutoff;            // Biquad dterm notch low cutoff

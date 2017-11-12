@@ -71,7 +71,7 @@ PG_RESET_TEMPLATE(pidConfig_t, pidConfig,
     .pid_process_denom = PID_PROCESS_DENOM_DEFAULT
 );
 
-PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 2);
+PG_REGISTER_ARRAY_WITH_RESET_FN(pidProfile_t, MAX_PROFILE_COUNT, pidProfiles, PG_PID_PROFILE, 3);
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -91,7 +91,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
 
         .pidSumLimit = PIDSUM_LIMIT,
         .pidSumLimitYaw = PIDSUM_LIMIT_YAW,
-        .yaw_lpf_hz = 0,
+        .yaw_filter_hz = 0,
+        .yaw_filter_cutoff = 0,
         .dterm_lpf_hz = 100,    // filtering ON by default
         .dterm_notch_hz = 260,
         .dterm_notch_cutoff = 160,
@@ -237,13 +238,23 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         }
     }
 
-    static pt1Filter_t pt1FilterYaw;
-    if (pidProfile->yaw_lpf_hz == 0 || pidProfile->yaw_lpf_hz > pidFrequencyNyquist) {
+    if (pidProfile->yaw_filter_hz == 0 || pidProfile->yaw_filter_hz > pidFrequencyNyquist) {
         ptermYawFilterApplyFn = nullFilterApply;
     } else {
-        ptermYawFilterApplyFn = (filterApplyFnPtr)pt1FilterApply;
-        ptermYawFilter = &pt1FilterYaw;
-        pt1FilterInit(ptermYawFilter, pidProfile->yaw_lpf_hz, dT);
+        if (pidProfile->yaw_filter_cutoff) {
+            // use notch filter for yaw if cutoff frequency specified
+            static biquadFilter_t yawFilterNotch;
+            ptermYawFilterApplyFn = (filterApplyFnPtr)biquadFilterApply;
+            ptermYawFilter = &yawFilterNotch;
+            const float notchQ = filterGetNotchQ(pidProfile->yaw_filter_hz, pidProfile->yaw_filter_cutoff);
+            biquadFilterInit(&yawFilterNotch, pidProfile->yaw_filter_hz, targetPidLooptime, notchQ, FILTER_NOTCH);
+        } else {
+            // use PT1 filter for yaw
+            static pt1Filter_t yawFilterPt1;
+            ptermYawFilterApplyFn = (filterApplyFnPtr)pt1FilterApply;
+            ptermYawFilter = &yawFilterPt1;
+            pt1FilterInit(ptermYawFilter, pidProfile->yaw_filter_hz, dT);
+        }
     }
 }
 

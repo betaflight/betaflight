@@ -1273,9 +1273,10 @@ static bool blackboxWriteSysinfo(void)
         BLACKBOX_PRINT_HEADER_LINE("velPID", "%d,%d,%d",                    currentPidProfile->pid[PID_VEL].P,
                                                                             currentPidProfile->pid[PID_VEL].I,
                                                                             currentPidProfile->pid[PID_VEL].D);
+        BLACKBOX_PRINT_HEADER_LINE("yaw_filter_hz", "%d",                   currentPidProfile->yaw_filter_hz);
+        BLACKBOX_PRINT_HEADER_LINE("yaw_filter_cutoff", "%d",               currentPidProfile->yaw_filter_cutoff);
         BLACKBOX_PRINT_HEADER_LINE("dterm_filter_type", "%d",               currentPidProfile->dterm_filter_type);
         BLACKBOX_PRINT_HEADER_LINE("dterm_lpf_hz", "%d",                    currentPidProfile->dterm_lpf_hz);
-        BLACKBOX_PRINT_HEADER_LINE("yaw_lpf_hz", "%d",                      currentPidProfile->yaw_lpf_hz);
         BLACKBOX_PRINT_HEADER_LINE("dterm_notch_hz", "%d",                  currentPidProfile->dterm_notch_hz);
         BLACKBOX_PRINT_HEADER_LINE("dterm_notch_cutoff", "%d",              currentPidProfile->dterm_notch_cutoff);
         BLACKBOX_PRINT_HEADER_LINE("iterm_windup", "%d",                    currentPidProfile->itermWindupPointPercent);
