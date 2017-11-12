@@ -95,11 +95,6 @@ STATIC_UNIT_TESTED uint8_t adjustmentStateMask = 0;
 
 #define IS_ADJUSTMENT_FUNCTION_BUSY(adjustmentIndex) (adjustmentStateMask & (1 << adjustmentIndex))
 
-bool isAnyAdjustmentFunctionBusy()
-{
-    return adjustmentStateMask != 0;
-}
-
 // sync with adjustmentFunction_e
 static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COUNT - 1] = {
     {
