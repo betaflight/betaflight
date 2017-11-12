@@ -649,7 +649,11 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         // Alarms
         sbufWriteU8(dst, osdConfig()->rssi_alarm);
         sbufWriteU16(dst, osdConfig()->cap_alarm);
-        sbufWriteU16(dst, 0);
+
+        // Reuse old timer alarm (U16) as OSD_ITEM_COUNT
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, OSD_ITEM_COUNT);
+
         sbufWriteU16(dst, osdConfig()->alt_alarm);
 
         // Element position and visibility
