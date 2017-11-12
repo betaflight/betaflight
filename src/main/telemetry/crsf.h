@@ -17,9 +17,11 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+
 #include "common/time.h"
 #include "rx/crsf.h"
-#include "telemetry/msp_shared.h"
 
 void initCrsfTelemetry(void);
 bool checkCrsfTelemetryState(void);
