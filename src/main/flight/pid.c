@@ -413,9 +413,6 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     static timeUs_t previousTime;
 
     // calculate actual deltaT
-#ifndef SITL
-    currentTimeUs = microsISR(); // re-get current time, since there can be variations in timing since scheduler invocation
-#endif
     const float deltaT = currentTimeUs - previousTime;
     previousTime = currentTimeUs;
 
