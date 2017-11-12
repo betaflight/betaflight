@@ -16,6 +16,7 @@
  */
 
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -50,6 +51,7 @@ PG_RESET_TEMPLATE(vtxSettingsConfig_t, vtxSettingsConfig,
 typedef enum {
     VTX_PARAM_BANDCHAN = 0,
     VTX_PARAM_POWER,
+    VTX_PARAM_CONFIRM,
     VTX_PARAM_COUNT
 } vtxScheduleParams_e;
 
@@ -61,6 +63,8 @@ void vtxInit(void)
     uint8_t index = 0;
     vtxParamSchedule[index++] = VTX_PARAM_BANDCHAN;
     vtxParamSchedule[index++] = VTX_PARAM_POWER;
+    vtxParamSchedule[index++] = VTX_PARAM_CONFIRM;
+
     vtxParamScheduleCount = index;
 
     // sync frequency in parameter group when band/channel are specified
@@ -102,10 +106,12 @@ static bool vtxProcessFrequency(void) {
 
 static bool vtxProcessPower(void) {
     uint8_t vtxPower;
-    uint8_t newPower = vtxSettingsConfig()->power;
+    uint8_t newPower;
     if (vtxCommonGetPowerIndex(&vtxPower)) {
         if (!ARMING_FLAG(ARMED) && vtxSettingsConfig()->lowPowerDisarm) {
-            newPower = VTX_SETTINGS_MIN_POWER;
+            newPower = VTX_SETTINGS_DEFAULT_POWER;
+        } else {
+            newPower = vtxSettingsConfig()->power;
         }
         if (vtxPower != newPower) {
             vtxCommonSetPowerByIndex(newPower);
@@ -113,6 +119,29 @@ static bool vtxProcessPower(void) {
         }
     }
     return false;
+}
+
+static bool vtxProcessStateUpdate(void) {
+    const vtxSettingsConfig_t vtxSettingsState = {
+      .band = vtxSettingsConfig()->band,
+      .channel = vtxSettingsConfig()->channel,
+      .power = vtxSettingsConfig()->power,
+      .freq = vtxSettingsConfig()->freq,
+      .lowPowerDisarm = vtxSettingsConfig()->lowPowerDisarm,
+    };
+    vtxSettingsConfig_t vtxState = vtxSettingsState;
+
+    if (vtxSettingsState.band) {
+        vtxCommonGetBandAndChannel(&vtxState.band, &vtxState.channel);
+#if defined(VTX_SETTINGS_FREQCMD)
+    } else {
+        vtxCommonGetFrequency(&vtxState.freq);
+#endif
+    }
+
+    vtxCommonGetPowerIndex(&vtxState.power);
+
+    return (bool) memcmp(&vtxSettingsState, &vtxState, sizeof(vtxSettingsConfig_t));
 }
 
 void vtxProcessSchedule(timeUs_t currentTimeUs)
@@ -138,6 +167,9 @@ void vtxProcessSchedule(timeUs_t currentTimeUs)
             case VTX_PARAM_POWER:
                 vtxUpdatePending = vtxProcessPower();
                 break;
+            case VTX_PARAM_CONFIRM:
+                 vtxUpdatePending = vtxProcessStateUpdate();
+                 break;
             default:
                 break;
             }
