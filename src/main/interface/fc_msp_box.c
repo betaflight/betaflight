@@ -28,10 +28,11 @@
 #include "config/feature.h"
 
 #include "fc/config.h"
-#include "fc/fc_msp_box.h"
 #include "fc/runtime_config.h"
 
 #include "flight/mixer.h"
+
+#include "interface/fc_msp_box.h"
 
 #include "sensors/sensors.h"
 

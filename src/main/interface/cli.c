@@ -83,13 +83,9 @@ extern uint8_t __config_end;
 #include "drivers/camera_control.h"
 #include "drivers/vtx_common.h"
 
-#include "fc/settings.h"
-#include "fc/cli.h"
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
-#include "fc/fc_msp.h"
-#include "fc/fc_msp_box.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -101,6 +97,12 @@ extern uint8_t __config_end;
 #include "flight/navigation.h"
 #include "flight/pid.h"
 #include "flight/servos.h"
+
+#include "interface/cli.h"
+#include "interface/fc_msp.h"
+#include "interface/fc_msp_box.h"
+#include "interface/msp_protocol.h"
+#include "interface/settings.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
@@ -115,8 +117,6 @@ extern uint8_t __config_end;
 #include "io/transponder_ir.h"
 #include "io/vtx_control.h"
 #include "io/vtx.h"
-
-#include "msp/msp_protocol.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"

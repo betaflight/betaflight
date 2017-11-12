@@ -48,7 +48,6 @@
 #include "fc/fc_core.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
-#include "fc/settings.h"
 
 #include "flight/altitude.h"
 #include "flight/failsafe.h"
@@ -57,6 +56,8 @@
 #include "flight/navigation.h"
 #include "flight/pid.h"
 #include "flight/servos.h"
+
+#include "interface/settings.h"
 
 #include "io/beeper.h"
 #include "io/dashboard.h"

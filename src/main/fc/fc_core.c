@@ -47,7 +47,6 @@
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
-#include "fc/cli.h"
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/fc_core.h"
@@ -58,6 +57,8 @@
 
 #include "msp/msp_serial.h"
 
+#include "interface/cli.h"
+
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/gps.h"
@@ -67,6 +68,7 @@
 #include "io/statusindicator.h"
 #include "io/transponder_ir.h"
 #include "io/vtx_control.h"
+
 #include "rx/rx.h"
 
 #include "scheduler/scheduler.h"

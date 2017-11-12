@@ -72,11 +72,12 @@
 
 #include "fc/config.h"
 #include "fc/fc_init.h"
-#include "fc/fc_msp.h"
 #include "fc/fc_tasks.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
-#include "fc/cli.h"
+
+#include "interface/fc_msp.h"
+#include "interface/cli.h"
 
 #include "msp/msp_serial.h"
 

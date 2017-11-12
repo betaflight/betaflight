@@ -50,7 +50,7 @@
 
 #include "io/serial.h"
 
-#include "fc/cli.h"
+#include "interface/cli.h"
 
 #include "msp/msp_serial.h"
 
