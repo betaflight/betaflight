@@ -104,4 +104,3 @@ struct controlRateConfig_s;
 void processRcAdjustments(struct controlRateConfig_s *controlRateConfig);
 struct pidProfile_s;
 void useAdjustmentConfig(struct pidProfile_s *pidProfileToUse);
-bool isAnyAdjustmentFunctionBusy();
