@@ -53,8 +53,8 @@ COMMON_SRC = \
             fc/fc_hardfaults.c \
             fc/fc_tasks.c \
             fc/runtime_config.c \
-            interface/fc_msp.c \
-            interface/fc_msp_box.c \
+            interface/msp.c \
+            interface/msp_box.c \
             io/beeper.c \
             io/serial.c \
             io/statusindicator.c \

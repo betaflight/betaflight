@@ -99,8 +99,8 @@ extern uint8_t __config_end;
 #include "flight/servos.h"
 
 #include "interface/cli.h"
-#include "interface/fc_msp.h"
-#include "interface/fc_msp_box.h"
+#include "interface/msp.h"
+#include "interface/msp_box.h"
 #include "interface/msp_protocol.h"
 #include "interface/settings.h"
 

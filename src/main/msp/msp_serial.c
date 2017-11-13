@@ -21,13 +21,15 @@
 
 #include "platform.h"
 
+#include "build/debug.h"
+
 #include "common/streambuf.h"
 #include "common/utils.h"
-#include "build/debug.h"
+
+#include "interface/msp.h"
 
 #include "io/serial.h"
 
-#include "msp/msp.h"
 #include "msp/msp_serial.h"
 
 static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];

@@ -60,7 +60,7 @@
 #include "fc/runtime_config.h"
 
 #include "interface/cli.h"
-#include "interface/fc_msp.h"
+#include "interface/msp.h"
 
 #include "msp/msp_serial.h"
 

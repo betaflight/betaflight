@@ -31,7 +31,7 @@
 
 #include "drivers/display.h"
 
-#include "interface/fc_msp.h"
+#include "interface/msp.h"
 #include "interface/msp_protocol.h"
 
 #include "io/displayport_msp.h"

@@ -74,8 +74,8 @@
 #include "flight/pid.h"
 #include "flight/servos.h"
 
-#include "interface/fc_msp.h"
-#include "interface/fc_msp_box.h"
+#include "interface/msp.h"
+#include "interface/msp_box.h"
 #include "interface/msp_protocol.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -95,11 +95,10 @@
 #include "io/vtx.h"
 #include "io/vtx_string.h"
 
-#include "msp/msp.h"
 #include "msp/msp_serial.h"
 
-#include "rx/msp.h"
 #include "rx/rx.h"
+#include "rx/msp.h"
 
 #include "scheduler/scheduler.h"
 
