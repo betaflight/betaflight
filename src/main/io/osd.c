@@ -843,7 +843,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
 {
     /* Position elements near centre of screen and disabled by default */
     for (int i = 0; i < OSD_ITEM_COUNT; i++) {
-        osdConfig->item_pos[i] = OSD_POS(10, 6);
+        osdConfig->item_pos[i] = OSD_POS(10, 7);
     }
 
     /* Always enable warnings elements by default */
