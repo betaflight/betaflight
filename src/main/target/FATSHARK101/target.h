@@ -20,27 +20,35 @@
 #define TARGET_BOARD_IDENTIFIER "FSFC"
 #define USE_TARGET_CONFIG
 
-#ifndef SPRACINGF4EVO_REV
-#define SPRACINGF4EVO_REV 2
-#endif
+#define BRUSHED_MOTORS
 
-#define USBD_PRODUCT_STRING     "FatShark 101"
 
-#define LED0_PIN                PA0
+#undef USE_UNCOMMON_MIXERS // no space left
+
+#undef USE_TELEMETRY_JETIEXBUS // no space left
+#undef USE_SERIALRX_JETIEXBUS // no space left 
+#undef USE_DASHBOARD // no space left
+#undef USE_RTC_TIME // no space left
+
+#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
+
+#define USE_BRUSHED_ESC_AUTODETECT
+
+#define LED0_PIN                PB8
+#define LED2                    PA5	//Used to switch camera to black and white mode as battery low voltage indicator
 
 #define BEEPER                  PC15
 #define BEEPER_INVERTED
 
-#define INVERTER_PIN_UART2      PB2
-
 #define USE_EXTI
 #define MPU_INT_EXTI            PC13
-
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
+
+#define USE_ESC_SENSOR
 
 #define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
@@ -48,146 +56,83 @@
 #define USE_ACC
 #define USE_ACC_SPI_MPU6500
 
-#define ACC_MPU6500_ALIGN       CW0_DEG
-#define GYRO_MPU6500_ALIGN      CW0_DEG
+#define ACC_MPU6500_ALIGN       CW180_DEG
+#define GYRO_MPU6500_ALIGN      CW180_DEG
 
-#define USE_BARO
-#define USE_BARO_BMP280
-#define USE_BARO_MS5611
 
-#define USE_MAG
-#define USE_MAG_AK8975
-#define USE_MAG_HMC5883
+//#define USE_SONAR
 
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-#define USE_UART4
-#define USE_UART5
-#define SERIAL_PORT_COUNT       6
+
+
+#define SOFTSERIAL1_RX_PIN      PA6 // PWM 5
+#define SOFTSERIAL1_TX_PIN      PA7 // PWM 6
+
+#define SOFTSERIAL2_RX_PIN      PB0 // PWM 7
+#define SOFTSERIAL2_TX_PIN      PB1 // PWM 8
+
+#define SERIAL_PORT_COUNT       4
+
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_PIN  PA15  // (HARDARE=0,PPM)
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
 
-#define UART2_TX_PIN            PA2
-#define UART2_RX_PIN            PA3
+#define UART2_TX_PIN            PA14 // PA14 / SWCLK
+#define UART2_RX_PIN            PA15
 
-#define UART3_TX_PIN            PB10
-#define UART3_RX_PIN            PB11
-
-#define UART4_TX_PIN            PC10
-#define UART4_RX_PIN            PC11
-
-#define UART5_TX_PIN            PC12
-#define UART5_RX_PIN            PD2
-
-#define USE_ESCSERIAL
-#define ESCSERIAL_TIMER_TX_PIN  PA3  // (HARDARE=0,PPM)
+#define UART3_TX_PIN            PB10 // PB10 (AF7)
+#define UART3_RX_PIN            PB11 // PB11 (AF7)
 
 #define USE_I2C
 #define USE_I2C_DEVICE_1
 #define I2C_DEVICE              (I2CDEV_1)
-#if (SPRACINGF4EVO_REV >= 2)
-    #define I2C1_SCL                PB8
-    #define I2C1_SDA                PB9
-#else
-    #define I2C1_SCL                PB6
-    #define I2C1_SDA                PB7
-#endif
 
 #define USE_SPI
-#define USE_SPI_DEVICE_1 // MPU
-#define USE_SPI_DEVICE_2 // SDCard
-#define USE_SPI_DEVICE_3 // External
+#define USE_SPI_DEVICE_1 // PB9,3,4,5 on AF5 SPI1 (MPU)
+#define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5 SPI2 (SDCard)
 
-#define SPI1_NSS_PIN            PA4
-#define SPI1_SCK_PIN            PA5
-#define SPI1_MISO_PIN           PA6
-#define SPI1_MOSI_PIN           PA7
+#define SPI1_NSS_PIN            PB9
+#define SPI1_SCK_PIN            PB3
+#define SPI1_MISO_PIN           PB4
+#define SPI1_MOSI_PIN           PB5
 
 #define SPI2_NSS_PIN            PB12
 #define SPI2_SCK_PIN            PB13
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
 
-#define SPI3_NSS_PIN            PA15 // NC
-#define SPI3_SCK_PIN            PB3  // NC
-#define SPI3_MISO_PIN           PB4  // NC
-#define SPI3_MOSI_PIN           PB5  // NC
 
-#define VTX_RTC6705
-#define VTX_RTC6705_OPTIONAL    // SPI3 on an F4 EVO may be used for RTC6705 VTX control.
-
-#define RTC6705_CS_PIN          SPI3_NSS_PIN
-#define RTC6705_SPI_INSTANCE    SPI3
-
-#define USE_SDCARD
-
-#define SDCARD_DETECT_INVERTED
-#define SDCARD_DETECT_PIN                   PC14
-
-#define SDCARD_SPI_INSTANCE                 SPI2
-#define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
-
-// SPI3 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
-#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
-// Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
-
-#define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF4
-#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
-#define SDCARD_DMA_CHANNEL                  DMA_Channel_0
-
-
-#define MPU6500_CS_PIN                      SPI1_NSS_PIN
-#define MPU6500_SPI_INSTANCE                SPI1
-
-#define USE_ADC
-#define ADC_INSTANCE            ADC1
-#define ADC1_DMA_STREAM DMA2_Stream0
-
-#define VBAT_ADC_PIN            PC1
-#define CURRENT_METER_ADC_PIN   PC2
-#define RSSI_ADC_PIN            PC0
-
-// PC4 - NC - Free for ADC12_IN14 / VTX CS
-// PC5 - NC - Free for ADC12_IN15 / VTX Enable / OSD VSYNC
+#define MPU6500_CS_PIN                   PB9
+#define MPU6500_SPI_INSTANCE             SPI1
 
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
 
-#define USE_OSD
-#define USE_OSD_OVER_MSP_DISPLAYPORT
-#define USE_MSP_CURRENT_METER
+#define USE_ADC
+#define ADC_INSTANCE            ADC2
+#define RSSI_ADC_PIN            PB2
 
-#define USE_LED_STRIP
-#define TRANSPONDER
+#define VBAT_ADC_PIN            PA4
+#define CURRENT_METER_ADC_PIN   PA5
 
-#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
+#define LED_STRIP
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
-#define DEFAULT_FEATURES        (FEATURE_TRANSPONDER | FEATURE_RSSI_ADC | FEATURE_TELEMETRY | FEATURE_OSD | FEATURE_LED_STRIP)
-#define SERIALRX_UART           SERIAL_PORT_USART2
-#define TELEMETRY_UART          SERIAL_PORT_UART5
-#define SERIALRX_PROVIDER       SERIALRX_SBUS
+#define DEFAULT_FEATURES        (FEATURE_LED_STRIP)
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
+// IO - stm32f303cc in 48pin package
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
-#define TARGET_IO_PORTC         0xffff
-#define TARGET_IO_PORTD         (BIT(2))
+#define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
+#define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
-#define USABLE_TIMER_CHANNEL_COUNT 16 // 4xPWM, 8xESC, 2xESC via UART3 RX/TX, 1xLED Strip, 1xIR.
-#if (SPRACINGF4NEO_REV >= 2)
-#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(9))
-#else
-#define USE_TIM10_TIM11_FOR_MOTORS
-#ifdef USE_TIM10_TIM11_FOR_MOTORS
-#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(9) | TIM_N(10) | TIM_N(11))
-#else
-#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(9))
-#endif
-#endif
+#define USABLE_TIMER_CHANNEL_COUNT 12 // PPM, 8 PWM, UART3 RX/TX, LED Strip
+
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(15) | TIM_N(16))
 
