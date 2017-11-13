@@ -22,7 +22,6 @@
 
 #define BRUSHED_MOTORS
 
-
 #undef USE_UNCOMMON_MIXERS // no space left
 
 #undef USE_TELEMETRY_JETIEXBUS // no space left
@@ -59,14 +58,12 @@
 #define ACC_MPU6500_ALIGN       CW180_DEG
 #define GYRO_MPU6500_ALIGN      CW180_DEG
 
-
 //#define USE_SONAR
 
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-
 
 #define SOFTSERIAL1_RX_PIN      PA6 // PWM 5
 #define SOFTSERIAL1_TX_PIN      PA7 // PWM 6
@@ -105,7 +102,6 @@
 #define SPI2_SCK_PIN            PB13
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
-
 
 #define MPU6500_CS_PIN                   PB9
 #define MPU6500_SPI_INSTANCE             SPI1

@@ -15,8 +15,6 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-
 #include <platform.h>
 
 //#ifdef USE_TARGET_CONFIG
@@ -36,17 +34,15 @@
 #include "io/ledstrip.h"
 #include "rx/rx.h"
 
+void targetConfiguration(void) {
+    //Set the UART2 as RX serial port
+    serialConfigMutable()->portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
+    rxConfigMutable()->serialrx_provider = 2;
 
-void targetConfiguration(void)
-{
-	//Set the UART2 as RX serial port
-	serialConfigMutable()->portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
-	rxConfigMutable()->serialrx_provider = 2;
+    //Set the alignment for the board, as it is vertical
+    boardAlignmentMutable()->rollDegrees = 90;
 
-	//Set the alignment for the board, as it is vertical
-	boardAlignmentMutable()->rollDegrees = 90;
-
-	//Set the motor PWM rate and minmum throttle value when ESC armed
+    //Set the motor PWM rate and minmum throttle value when ESC armed
     motorConfigMutable()->dev.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
     motorConfigMutable()->minthrottle = 1080;
 
@@ -63,9 +59,9 @@ void targetConfiguration(void)
         pidProfile->pid[FD_PITCH].P = 80;
         pidProfile->pid[FD_PITCH].I = 50;
         pidProfile->pid[FD_PITCH].D = 50;
-		pidProfile->pid[FD_YAW].P = 90;
-		pidProfile->pid[FD_YAW].I = 50;
-		pidProfile->levelAngleLimit = 13;
+        pidProfile->pid[FD_YAW].P = 90;
+        pidProfile->pid[FD_YAW].I = 50;
+        pidProfile->levelAngleLimit = 13;
     }
 
     /*setup the different rates and expo for the 3 rate profiles
@@ -101,27 +97,26 @@ void targetConfiguration(void)
      * Second mode sets the range for angle/ acro mode selection
      */
     modeActivationConditionsMutable(0)->modeId = BOXARM;
-	modeActivationConditionsMutable(0)->auxChannelIndex = 1;
-	modeActivationConditionsMutable(0)->range.startStep = 33;	//Start point set at 1725
-	modeActivationConditionsMutable(0)->range.endStep = 48;		//End point set at 2100
+    modeActivationConditionsMutable(0)->auxChannelIndex = 1;
+    modeActivationConditionsMutable(0)->range.startStep = 33; //Start point set at 1725
+    modeActivationConditionsMutable(0)->range.endStep = 48;	//End point set at 2100
 
     modeActivationConditionsMutable(1)->modeId = BOXANGLE;
-	modeActivationConditionsMutable(1)->auxChannelIndex = 0;
-	modeActivationConditionsMutable(1)->range.startStep = 0;	//Start point set at 900
-	modeActivationConditionsMutable(1)->range.endStep = 15;		//End point set at 1275
+    modeActivationConditionsMutable(1)->auxChannelIndex = 0;
+    modeActivationConditionsMutable(1)->range.startStep = 0;	//Start point set at 900
+    modeActivationConditionsMutable(1)->range.endStep = 15;	//End point set at 1275
 
-	//Setup the adjustment ranges and function to switch rate profiles via the 3 pos switch
-	adjustmentRangesMutable(0)->adjustmentFunction = ADJUSTMENT_RATE_PROFILE;
-	adjustmentRangesMutable(0)->range.startStep = 0;
-	adjustmentRangesMutable(0)->range.endStep = 48;
+    //Setup the adjustment ranges and function to switch rate profiles via the 3 pos switch
+    adjustmentRangesMutable(0)->adjustmentFunction = ADJUSTMENT_RATE_PROFILE;
+    adjustmentRangesMutable(0)->range.startStep = 0;
+    adjustmentRangesMutable(0)->range.endStep = 48;
 
-
-	/*Attempt to configure LED strip here... quite messy uncommented code behind to kept for later
-	 *it's working but not exactly using Flags correctly... good enough for now
-	 *also need to find how to use correct colors for arm state
-	 */
-	ledStripConfigMutable()->ledConfigs[0] = DEFINE_LED(0, 0, 3, LED_DIRECTION_NORTH, LED_FUNCTION_ARM_STATE, 32, 0);
-	ledStripConfigMutable()->ledConfigs[1] = DEFINE_LED(1, 0, 3, LED_DIRECTION_NORTH, LED_FUNCTION_ARM_STATE, 32, 0);
+    /*Attempt to configure LED strip here... quite messy uncommented code behind to kept for later
+     *it's working but not exactly using Flags correctly... good enough for now
+     *also need to find how to use correct colors for arm state
+     */
+    ledStripConfigMutable()->ledConfigs[0] = DEFINE_LED(0, 0, 3, LED_DIRECTION_NORTH, LED_FUNCTION_ARM_STATE, 32, 0);
+    ledStripConfigMutable()->ledConfigs[1] = DEFINE_LED(1, 0, 3, LED_DIRECTION_NORTH, LED_FUNCTION_ARM_STATE, 32, 0);
 
 }
 //#endif
