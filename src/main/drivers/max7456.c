@@ -175,7 +175,7 @@
 // On shared SPI buss we want to change clock for OSD chip and restore for other devices.
 
 #ifdef MAX7456_SPI_CLK
-    #define ENABLE_MAX7456        {spiSetDivisor(MAX7456_SPI_INSTANCE, MAX7456_SPI_CLK);IOLo(max7456CsPin);}
+    #define ENABLE_MAX7456        {spiSetDivisor(MAX7456_SPI_INSTANCE, max7456SpiClock);IOLo(max7456CsPin);}
 #else
     #define ENABLE_MAX7456        IOLo(max7456CsPin)
 #endif
