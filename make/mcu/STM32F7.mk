@@ -157,7 +157,6 @@ MCU_COMMON_SRC = \
             drivers/serial_uart_hal.c
 
 MCU_EXCLUDES = \
-            drivers/bus_spi.c \
             drivers/bus_i2c.c \
             drivers/timer.c \
             drivers/serial_uart.c

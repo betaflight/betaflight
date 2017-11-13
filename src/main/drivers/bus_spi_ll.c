@@ -71,40 +71,6 @@ spiDevice_t spiDevice[SPIDEV_COUNT];
 
 #define SPI_DEFAULT_TIMEOUT 10
 
-SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
-{
-#ifdef USE_SPI_DEVICE_1
-    if (instance == SPI1)
-        return SPIDEV_1;
-#endif
-
-#ifdef USE_SPI_DEVICE_2
-    if (instance == SPI2)
-        return SPIDEV_2;
-#endif
-
-#ifdef USE_SPI_DEVICE_3
-    if (instance == SPI3)
-        return SPIDEV_3;
-#endif
-
-#ifdef USE_SPI_DEVICE_4
-    if (instance == SPI4)
-        return SPIDEV_4;
-#endif
-
-    return SPIINVALID;
-}
-
-SPI_TypeDef *spiInstanceByDevice(SPIDevice device)
-{
-    if (device >= SPIDEV_COUNT) {
-        return NULL;
-    }
-
-    return spiDevice[device].dev;
-}
-
 void spiInitDevice(SPIDevice device)
 {
     spiDevice_t *spi = &(spiDevice[device]);
@@ -155,53 +121,6 @@ void spiInitDevice(SPIDevice device)
 
     LL_SPI_Init(spi->dev, &init);
     LL_SPI_Enable(spi->dev);
-}
-
-bool spiInit(SPIDevice device)
-{
-    switch (device) {
-    case SPIINVALID:
-        return false;
-    case SPIDEV_1:
-#if defined(USE_SPI_DEVICE_1)
-        spiInitDevice(device);
-        return true;
-#else
-        break;
-#endif
-    case SPIDEV_2:
-#if defined(USE_SPI_DEVICE_2)
-        spiInitDevice(device);
-        return true;
-#else
-        break;
-#endif
-    case SPIDEV_3:
-#if defined(USE_SPI_DEVICE_3)
-        spiInitDevice(device);
-        return true;
-#else
-        break;
-#endif
-    case SPIDEV_4:
-#if defined(USE_SPI_DEVICE_4)
-        spiInitDevice(device);
-        return true;
-#else
-        break;
-#endif
-    }
-    return false;
-}
-
-uint32_t spiTimeoutUserCallback(SPI_TypeDef *instance)
-{
-    SPIDevice device = spiDeviceByInstance(instance);
-    if (device == SPIINVALID) {
-        return -1;
-    }
-    spiDevice[device].errorCount++;
-    return spiDevice[device].errorCount;
 }
 
 uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t txByte)
@@ -292,14 +211,6 @@ bool spiTransfer(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, 
     return true;
 }
 
-bool spiBusTransfer(const busDevice_t *bus, const uint8_t *txData, uint8_t *rxData, int length)
-{
-    IOLo(bus->busdev_u.spi.csnPin);
-    spiTransfer(bus->busdev_u.spi.instance, txData, rxData, length);
-    IOHi(bus->busdev_u.spi.csnPin);
-    return true;
-}
-
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
 {
 #if !(defined(STM32F1) || defined(STM32F3))
@@ -314,58 +225,4 @@ void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
     LL_SPI_SetBaudRatePrescaler(instance, divisor ? (ffs(divisor | 0x100) - 2) << SPI_CR1_BR_Pos : 0);
     LL_SPI_Enable(instance);
 }
-
-uint16_t spiGetErrorCounter(SPI_TypeDef *instance)
-{
-    SPIDevice device = spiDeviceByInstance(instance);
-    if (device == SPIINVALID) {
-        return 0;
-    }
-    return spiDevice[device].errorCount;
-}
-
-void spiResetErrorCounter(SPI_TypeDef *instance)
-{
-    SPIDevice device = spiDeviceByInstance(instance);
-    if (device != SPIINVALID) {
-        spiDevice[device].errorCount = 0;
-    }
-}
-
-bool spiBusWriteRegister(const busDevice_t *bus, uint8_t reg, uint8_t data)
-{
-    IOLo(bus->busdev_u.spi.csnPin);
-    spiTransferByte(bus->busdev_u.spi.instance, reg);
-    spiTransferByte(bus->busdev_u.spi.instance, data);
-    IOHi(bus->busdev_u.spi.csnPin);
-
-    return true;
-}
-
-bool spiBusReadRegisterBuffer(const busDevice_t *bus, uint8_t reg, uint8_t *data, uint8_t length)
-{
-    IOLo(bus->busdev_u.spi.csnPin);
-    spiTransferByte(bus->busdev_u.spi.instance, reg | 0x80); // read transaction
-    spiTransfer(bus->busdev_u.spi.instance, NULL, data, length);
-    IOHi(bus->busdev_u.spi.csnPin);
-
-    return true;
-}
-
-uint8_t spiBusReadRegister(const busDevice_t *bus, uint8_t reg)
-{
-    uint8_t data;
-    IOLo(bus->busdev_u.spi.csnPin);
-    spiTransferByte(bus->busdev_u.spi.instance, reg | 0x80); // read transaction
-    spiTransfer(bus->busdev_u.spi.instance, NULL, &data, 1);
-    IOHi(bus->busdev_u.spi.csnPin);
-
-    return data;
-}
-
-void spiBusSetInstance(busDevice_t *bus, SPI_TypeDef *instance)
-{
-    bus->busdev_u.spi.instance = instance;
-}
-
 #endif

@@ -157,6 +157,7 @@ MCU_COMMON_SRC = \
             drivers/accgyro/accgyro_mpu.c \
             drivers/adc_stm32f4xx.c \
             drivers/bus_i2c_stm32f10x.c \
+            drivers/bus_spi_stdperiph.c \
             drivers/dma_stm32f4xx.c \
             drivers/inverter.c \
             drivers/light_ws2811strip_stdperiph.c \
