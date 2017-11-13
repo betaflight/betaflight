@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common/streambuf.h"
-#include "rx/crsf.h"
+#include "telemetry/crsf.h"
 #include "telemetry/smartport.h"
 
 typedef void (*mspResponseFnPtr)(uint8_t *payload);

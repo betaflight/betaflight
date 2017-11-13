@@ -12,8 +12,7 @@
 
 #include "interface/msp.h"
 
-#include "rx/crsf.h"
-
+#include "telemetry/crsf.h"
 #include "telemetry/msp_shared.h"
 #include "telemetry/smartport.h"
 
