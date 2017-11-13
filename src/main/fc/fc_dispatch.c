@@ -55,6 +55,7 @@ void dispatchProcess(uint32_t currentTime)
 void dispatchAdd(dispatchEntry_t *entry, int delayUs)
 {
     uint32_t delayedUntil = micros() + delayUs;
+    entry->delayedUntil = delayedUntil;
     dispatchEntry_t **p = &head;
     while (*p && cmp32((*p)->delayedUntil, delayedUntil) < 0)
         p = &(*p)->next;
