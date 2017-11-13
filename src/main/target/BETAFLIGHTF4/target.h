@@ -49,10 +49,11 @@
 #define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_BARO
-#define USE_BARO_SPI_BMP280
+#define USE_BARO_BMP280
+#define USE_BARO_MS5611
 
-#define BMP280_SPI_INSTANCE     SPI2
-#define BMP280_CS_PIN           PB3
+#define USE_MAG
+#define USE_MAG_HMC5883
 
 #define USE_OSD
 #define USE_MAX7456
