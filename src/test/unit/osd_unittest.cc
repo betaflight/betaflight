@@ -188,7 +188,7 @@ TEST(OsdTest, TestInit)
 
     // then
     // display buffer should contain splash screen
-    displayPortTestBufferSubstring(7, 8, "MENU: THR MID");
+    displayPortTestBufferSubstring(7, 8, "MENU:THR MID");
     displayPortTestBufferSubstring(11, 9, "+ YAW LEFT");
     displayPortTestBufferSubstring(11, 10, "+ PITCH UP");
 

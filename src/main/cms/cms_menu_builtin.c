@@ -53,20 +53,22 @@
 
 // Info
 
-static char infoGitRev[GIT_SHORT_REVISION_LENGTH];
+static char infoGitRev[GIT_SHORT_REVISION_LENGTH + 1];
 static char infoTargetName[] = __TARGET__;
 
 #include "interface/msp_protocol.h" // XXX for FC identification... not available elsewhere
 
 static long cmsx_InfoInit(void)
 {
-    for (int i = 0 ; i < GIT_SHORT_REVISION_LENGTH ; i++) {
+    int i;
+    for ( i = 0 ; i < GIT_SHORT_REVISION_LENGTH ; i++) {
         if (shortGitRevision[i] >= 'a' && shortGitRevision[i] <= 'f')
             infoGitRev[i] = shortGitRevision[i] - 'a' + 'A';
         else
             infoGitRev[i] = shortGitRevision[i];
     }
 
+    infoGitRev[i] = 0x0; // Terminate string
     return 0;
 }
 
