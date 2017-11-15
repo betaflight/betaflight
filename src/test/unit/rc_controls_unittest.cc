@@ -699,6 +699,7 @@ void blackboxLogEvent(FlightLogEvent, flightLogEventData_t *) {}
 
 bool cmsInMenu = false;
 uint8_t armingFlags = 0;
+uint16_t flightModeFlags = 0;
 int16_t heading;
 uint8_t stateFlags = 0;
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
