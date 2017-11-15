@@ -157,6 +157,13 @@
 #define I2C1_SCL                PB6
 #define I2C1_SDA                PB7
 
+#define USE_OSD
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE    SPI3
+#define MAX7456_SPI_CS_PIN      PB12
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD) // 10MHz
+#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
+
 #define USE_ADC
 #define ADC1_DMA_STREAM         DMA2_Stream0
 //#define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_ADC
