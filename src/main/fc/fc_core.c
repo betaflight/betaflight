@@ -681,7 +681,7 @@ static void subTaskMotorUpdate(void)
         static uint32_t previousMotorUpdateTime;
         const uint32_t currentDeltaTime = startTime - previousMotorUpdateTime;
         debug[2] = currentDeltaTime;
-        debug[3] = currentDeltaTime - targetPidLooptime;
+        debug[3] = currentDeltaTime - targetPidLooptimeUs;
         previousMotorUpdateTime = startTime;
     } else if (debugMode == DEBUG_PIDLOOP) {
         startTime = micros();

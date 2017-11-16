@@ -50,7 +50,7 @@
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
 
-uint32_t targetPidLooptime;
+uint32_t targetPidLooptimeUs;
 static bool pidStabilisationEnabled;
 
 static bool inCrashRecoveryMode = false;
@@ -118,7 +118,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
         .horizon_tilt_effect = 75,
         .horizon_tilt_expert_mode = false,
         .crash_limit_yaw = 200,
-        .itermLimit = 150
+        .itermLimit = 150,
+        .useDynamicDeltaT = false
     );
 }
 
@@ -129,10 +130,10 @@ void pgResetFn_pidProfiles(pidProfile_t *pidProfiles)
     }
 }
 
-static void pidSetTargetLooptime(uint32_t pidLooptime)
+static void pidSetTargetLooptime(uint32_t pidLooptimeUs)
 {
-    targetPidLooptime = pidLooptime;
-    dT = (float)targetPidLooptime * 0.000001f;
+    targetPidLooptimeUs = pidLooptimeUs;
+    dT = (float)targetPidLooptimeUs * 0.000001f;
 }
 
 void pidResetErrorGyroState(void)
@@ -173,7 +174,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 {
     BUILD_BUG_ON(FD_YAW != 2); // only setting up Dterm filters on roll and pitch axes, so ensure yaw axis is 2
 
-    if (targetPidLooptime == 0) {
+    if (targetPidLooptimeUs == 0) {
         // no looptime set, so set all the filters to null
         dtermNotchFilterApplyFn = nullFilterApply;
         dtermLpfApplyFn = nullFilterApply;
@@ -181,7 +182,8 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         return;
     }
 
-    const uint32_t pidFrequencyNyquist = (1.0f / dT) / 2; // No rounding needed
+    const float targetPidLooptime = (float)targetPidLooptimeUs * 0.000001f;
+    const uint32_t pidFrequencyNyquist = (1.0f / targetPidLooptime) / 2; // No rounding needed
 
     uint16_t dTermNotchHz;
     if (pidProfile->dterm_notch_hz <= pidFrequencyNyquist) {
@@ -200,7 +202,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         const float notchQ = filterGetNotchQ(dTermNotchHz, pidProfile->dterm_notch_cutoff);
         for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
             dtermFilterNotch[axis] = &biquadFilterNotch[axis];
-            biquadFilterInit(dtermFilterNotch[axis], dTermNotchHz, targetPidLooptime, notchQ, FILTER_NOTCH);
+            biquadFilterInit(dtermFilterNotch[axis], dTermNotchHz, targetPidLooptimeUs, notchQ, FILTER_NOTCH);
         }
     } else {
         dtermNotchFilterApplyFn = nullFilterApply;
@@ -218,21 +220,21 @@ void pidInitFilters(const pidProfile_t *pidProfile)
             dtermLpfApplyFn = (filterApplyFnPtr)pt1FilterApply;
             for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
                 dtermFilterLpf[axis] = &dtermFilterLpfUnion.pt1Filter[axis];
-                pt1FilterInit(dtermFilterLpf[axis], pidProfile->dterm_lpf_hz, dT);
+                pt1FilterInit(dtermFilterLpf[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
             }
             break;
         case FILTER_BIQUAD:
             dtermLpfApplyFn = (filterApplyFnPtr)biquadFilterApply;
             for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
                 dtermFilterLpf[axis] = &dtermFilterLpfUnion.biquadFilter[axis];
-                biquadFilterInitLPF(dtermFilterLpf[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
+                biquadFilterInitLPF(dtermFilterLpf[axis], pidProfile->dterm_lpf_hz, targetPidLooptimeUs);
             }
             break;
         case FILTER_FIR:
             dtermLpfApplyFn = (filterApplyFnPtr)firFilterDenoiseUpdate;
             for (int axis = FD_ROLL; axis <= FD_PITCH; axis++) {
                 dtermFilterLpf[axis] = &dtermFilterLpfUnion.denoisingFilter[axis];
-                firFilterDenoiseInit(dtermFilterLpf[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
+                firFilterDenoiseInit(dtermFilterLpf[axis], pidProfile->dterm_lpf_hz, targetPidLooptimeUs);
             }
             break;
         }
@@ -244,7 +246,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     } else {
         ptermYawFilterApplyFn = (filterApplyFnPtr)pt1FilterApply;
         ptermYawFilter = &pt1FilterYaw;
-        pt1FilterInit(ptermYawFilter, pidProfile->yaw_lpf_hz, dT);
+        pt1FilterInit(ptermYawFilter, pidProfile->yaw_lpf_hz, targetPidLooptime);
     }
 }
 
@@ -264,6 +266,7 @@ static float crashGyroThreshold;
 static float crashSetpointThreshold;
 static float crashLimitYaw;
 static float itermLimit;
+static bool useDynamicDeltaT;
 
 void pidInitConfig(const pidProfile_t *pidProfile)
 {
@@ -280,8 +283,9 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     horizonTiltExpertMode = pidProfile->horizon_tilt_expert_mode;
     horizonCutoffDegrees = (175 - pidProfile->horizon_tilt_effect) * 1.8f;
     horizonFactorRatio = (100 - pidProfile->horizon_tilt_effect) * 0.01f;
-    maxVelocity[FD_ROLL] = maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 100 * dT;
-    maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 100 * dT;
+    const float targetPidLooptime = (float)targetPidLooptimeUs * 0.000001f;
+    maxVelocity[FD_ROLL] = maxVelocity[FD_PITCH] = pidProfile->rateAccelLimit * 100 * targetPidLooptime;
+    maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 100 * targetPidLooptime;
     const float ITermWindupPoint = (float)pidProfile->itermWindupPointPercent / 100.0f;
     ITermWindupPointInv = 1.0f / (1.0f - ITermWindupPoint);
     crashTimeLimitUs = pidProfile->crash_time * 1000;
@@ -293,6 +297,7 @@ void pidInitConfig(const pidProfile_t *pidProfile)
     crashSetpointThreshold = pidProfile->crash_setpoint_threshold;
     crashLimitYaw = pidProfile->crash_limit_yaw;
     itermLimit = pidProfile->itermLimit;
+    useDynamicDeltaT = pidProfile->useDynamicDeltaT;
 }
 
 void pidInit(const pidProfile_t *pidProfile)
@@ -412,9 +417,11 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     static timeUs_t crashDetectedAtUs;
     static timeUs_t previousTime;
 
-    // calculate actual deltaT
-    const float deltaT = currentTimeUs - previousTime;
-    previousTime = currentTimeUs;
+    if (useDynamicDeltaT) {
+        // calculate actual dT
+        dT = currentTimeUs - previousTime;
+        previousTime = currentTimeUs;
+    }
 
     // Dynamic ki component to gradually scale back integration when above windup point
     const float dynKi = MIN((1.0f - motorMixRange) * ITermWindupPointInv, 1.0f);
@@ -497,7 +504,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
         // -----calculate I component
         const float ITerm = axisPID_I[axis];
-        const float ITermNew = constrainf(ITerm + Ki[axis] * errorRate * deltaT * dynKi * itermAccelerator, -itermLimit, itermLimit);
+        const float ITermNew = constrainf(ITerm + Ki[axis] * errorRate * dT * dynKi * itermAccelerator, -itermLimit, itermLimit);
         const bool outputSaturated = mixerIsOutputSaturated(axis, errorRate);
         if (outputSaturated == false || ABS(ITermNew) < ABS(ITerm)) {
             // Only increase ITerm if output is not saturated
@@ -515,8 +522,8 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                 dynC = dtermSetpointWeight * MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f);
             }
             const float rD = dynC * currentPidSetpoint - gyroRateFiltered;    // cr - y
-            // Divide rate change by deltaT to get differential (ie dr/dt)
-            float delta = (rD - previousRateError[axis]) / deltaT;
+            // Divide rate change by dT to get differential (ie dr/dt)
+            float delta = (rD - previousRateError[axis]) / dT;
 
             previousRateError[axis] = rD;
 

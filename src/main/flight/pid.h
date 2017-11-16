@@ -105,6 +105,7 @@ typedef struct pidProfile_s {
     pidCrashRecovery_e crash_recovery;      // off, on, on and beeps when it is in crash recovery mode
     uint16_t crash_limit_yaw;               // limits yaw errorRate, so crashes don't cause huge throttle increase
     uint16_t itermLimit;
+    uint8_t useDynamicDeltaT;               // Use dynamic delta T based on PID loop execution start time
 } pidProfile_t;
 
 #ifndef USE_OSD_SLAVE
@@ -122,7 +123,7 @@ void pidController(const pidProfile_t *pidProfile, const union rollAndPitchTrims
 
 extern float axisPID_P[3], axisPID_I[3], axisPID_D[3];
 bool airmodeWasActivated;
-extern uint32_t targetPidLooptime;
+extern uint32_t targetPidLooptimeUs;
 
 // PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
 extern uint8_t PIDweight[3];
