@@ -199,6 +199,22 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             common/filter.c \
             common/maths.c \
             common/typeconversion.c \
+            drivers/accgyro/accgyro_adxl345.c \
+            drivers/accgyro/accgyro_bma280.c \
+            drivers/accgyro/accgyro_fake.c \
+            drivers/accgyro/accgyro_l3g4200d.c \
+            drivers/accgyro/accgyro_l3gd20.c \
+            drivers/accgyro/accgyro_lsm303dlhc.c \
+            drivers/accgyro/accgyro_mma845x.c \
+            drivers/accgyro/accgyro_mpu3050.c \
+            drivers/accgyro/accgyro_mpu6050.c \
+            drivers/accgyro/accgyro_mpu6500.c \
+            drivers/accgyro/accgyro_mpu.c \
+            drivers/accgyro/accgyro_spi_bmi160.c \
+            drivers/accgyro/accgyro_spi_icm20689.c \
+            drivers/accgyro/accgyro_spi_mpu6000.c \
+            drivers/accgyro/accgyro_spi_mpu6500.c \
+            drivers/accgyro/accgyro_spi_mpu9250.c \
             drivers/adc.c \
             drivers/buf_writer.c \
             drivers/bus.c \
@@ -237,19 +253,31 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             sensors/gyroanalyse.c \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC) \
-            drivers/light_ws2811strip.c \
-            io/displayport_max7456.c \
-            io/osd.c \
-            io/osd_slave.c
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
+            bus_bst_stm32f30x.c \
+            drivers/barometer/barometer_bmp085.c \
+            drivers/barometer/barometer_bmp280.c \
+            drivers/barometer/barometer_fake.c \
+            drivers/barometer/barometer_ms5611.c \
             drivers/bus_i2c_config.c \
             drivers/bus_spi_config.c \
             drivers/bus_spi_pinconfig.c \
+            drivers/compass/compass_ak8963.c \
+            drivers/compass/compass_ak8975.c \
+            drivers/compass/compass_fake.c \
+            drivers/compass/compass_hmc5883l.c \
+            drivers/display_ug2864hsweg01.c \
+            drivers/inverter.c \
+            drivers/light_ws2811strip.c \
+            drivers/light_ws2811strip_hal.c \
             drivers/serial_escserial.c \
             drivers/serial_pinconfig.c \
+            drivers/serial_tcp.c \
             drivers/serial_uart_init.c \
             drivers/serial_uart_pinconfig.c \
+            drivers/serial_usb_vcp.c \
+            drivers/transponder_ir.c \
             drivers/vtx_rtc6705_soft_spi.c \
             drivers/vtx_rtc6705.c \
             drivers/vtx_common.c \
@@ -258,12 +286,15 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             config/feature.c \
             config/parameter_group.c \
             config/config_streamer.c \
+            i2c_bst.c \
             interface/cli.c \
             interface/settings.c \
+            io/dashboard.c \
+            io/osd.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
-            io/dashboard.c \
+            io/transponder_ir.c \
             msp/msp_serial.c \
             cms/cms.c \
             cms/cms_menu_blackbox.c \
