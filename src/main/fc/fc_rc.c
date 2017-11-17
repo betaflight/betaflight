@@ -215,7 +215,7 @@ void processRcCommand(void)
         }
 
         if (isRXDataNew && rxRefreshRate > 0) {
-            rcInterpolationStepCount = rxRefreshRate / targetPidLooptime;
+            rcInterpolationStepCount = rxRefreshRate / targetPidLooptimeUs;
 
             for (int channel=ROLL; channel < interpolationChannels; channel++) {
                 rcStepSize[channel] = (rcCommand[channel] - rcCommandInterp[channel]) / (float)rcInterpolationStepCount;
