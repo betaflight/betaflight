@@ -497,7 +497,8 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
         // -----calculate I component
         const float ITerm = axisPID_I[axis];
-        const float ITermNew = constrainf(ITerm + Ki[axis] * errorRate * deltaT * dynKi * itermAccelerator, -itermLimit, itermLimit);
+        // use dT (not deltaT) for ITerm calculation to avoid wind-up caused by jitter
+        const float ITermNew = constrainf(ITerm + Ki[axis] * errorRate * dT * dynKi * itermAccelerator, -itermLimit, itermLimit);
         const bool outputSaturated = mixerIsOutputSaturated(axis, errorRate);
         if (outputSaturated == false || ABS(ITermNew) < ABS(ITerm)) {
             // Only increase ITerm if output is not saturated
