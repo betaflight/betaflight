@@ -407,7 +407,9 @@ void processRx(timeUs_t currentTimeUs)
     const throttleStatus_e throttleStatus = calculateThrottleStatus();
 
     if (isAirmodeActive() && ARMING_FLAG(ARMED)) {
-        if (rcData[THROTTLE] >= rxConfig()->airModeActivateThreshold) airmodeIsActivated = true; // Prevent Iterm from being reset
+        if (rcData[THROTTLE] >= rxConfig()->airModeActivateThreshold) {
+            airmodeIsActivated = true; // Prevent Iterm from being reset
+        }
     } else {
         airmodeIsActivated = false;
     }
