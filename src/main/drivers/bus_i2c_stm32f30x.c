@@ -129,6 +129,12 @@ uint16_t i2cGetErrorCounter(void)
 
 bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
 {
+    return i2cWriteBuffer(device, addr_, reg, 1, &data);
+}
+
+
+bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t *data)
+{
     if (device == I2CINVALID || device > I2CDEV_COUNT) {
         return false;
     }
@@ -173,18 +179,21 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
     }
 
     /* Configure slave address, nbytes, reload, end mode and start or stop generation */
-    I2C_TransferHandling(I2Cx, addr_, 1, I2C_AutoEnd_Mode, I2C_No_StartStop);
+    I2C_TransferHandling(I2Cx, addr_, len, I2C_AutoEnd_Mode, I2C_No_StartStop);
 
-    /* Wait until TXIS flag is set */
-    i2cTimeout = I2C_LONG_TIMEOUT;
-    while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TXIS) == RESET) {
-        if ((i2cTimeout--) == 0) {
-            return i2cTimeoutUserCallback();
+    while (len) {
+        /* Wait until TXIS flag is set */
+        i2cTimeout = I2C_LONG_TIMEOUT;
+        while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TXIS) == RESET) {
+            if ((i2cTimeout--) == 0) {
+                return i2cTimeoutUserCallback();
+            }
         }
-    }
 
-    /* Write data to TXDR */
-    I2C_SendData(I2Cx, data);
+        /* Write data to TXDR */
+        I2C_SendData(I2Cx, *data++);
+        len--;
+    }
 
     /* Wait until STOPF flag is set */
     i2cTimeout = I2C_LONG_TIMEOUT;

@@ -119,6 +119,26 @@ static int writeString(displayPort_t *displayPort, uint8_t col, uint8_t row, con
     return output(displayPort, MSP_DISPLAYPORT, buf, len + 4);
 }
 
+static int writeStringVertical(displayPort_t *displayPort, uint8_t col, uint8_t row, const char *string)
+{
+    // NOTE: this could be a nice enhancement to the displayport msp command
+    // set as well. By adding a vertical draw sub command (e.g. 0x04)
+    // this could speed up the drawing of vertical elements a lot!
+    // for now stick to the standard and issue single x/y draw commands:
+    char buf[2];
+    buf[1] = 0;
+
+    uint16_t bytes_sent = 0;
+
+    while ((*string) && (row < displayPort->rows)){
+        buf[0] = *string++;
+        bytes_sent += writeString(displayPort, col, row, buf);
+        row++;
+    }
+
+    return bytes_sent;
+}
+
 static int writeChar(displayPort_t *displayPort, uint8_t col, uint8_t row, uint8_t c)
 {
     char buf[2];
@@ -153,6 +173,7 @@ static const displayPortVTable_t mspDisplayPortVTable = {
     .drawScreen = drawScreen,
     .screenSize = screenSize,
     .writeString = writeString,
+    .writeStringVertical = writeStringVertical,
     .writeChar = writeChar,
     .isTransferInProgress = isTransferInProgress,
     .heartbeat = heartbeat,

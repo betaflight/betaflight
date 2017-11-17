@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -215,6 +216,24 @@ void i2c_OLED_clear_display_quick(busDevice_t *bus)
     }
 }
 
+void i2c_OLED_set_horizontal_adressing_mode(busDevice_t *bus)
+{
+    static const uint8_t i2c_OLED_cmd_clear_display_pre[] = {
+        0x00, // Set Memory Addressing Mode to Horizontal addressing mode
+    };
+
+    i2c_OLED_send_cmdarray(bus, i2c_OLED_cmd_clear_display_pre, ARRAYLEN(i2c_OLED_cmd_clear_display_pre));
+}
+
+void i2c_OLED_set_vertical_adressing_mode(busDevice_t *bus)
+{
+    static const uint8_t i2c_OLED_cmd_clear_display_pre[] = {
+        0x01, // Set Memory Addressing Mode to Vertical addressing mode
+    };
+
+    i2c_OLED_send_cmdarray(bus, i2c_OLED_cmd_clear_display_pre, ARRAYLEN(i2c_OLED_cmd_clear_display_pre));
+}
+
 void i2c_OLED_clear_display(busDevice_t *bus)
 {
     static const uint8_t i2c_OLED_cmd_clear_display_pre[] = {
@@ -273,6 +292,43 @@ void i2c_OLED_send_string(busDevice_t *bus, const char *string)
         string++;
     }
 }
+
+void i2c_OLED_send_string_vertical(busDevice_t *bus, uint8_t x, uint8_t y, const char *string)
+{
+    // vertical mode
+    i2c_OLED_set_vertical_adressing_mode(bus);
+
+    uint8_t buffer[SCREEN_HEIGHT/8];
+
+    // Sends a string of chars until null terminator
+    const char *sptr;
+    uint8_t i;
+    uint8_t j;
+
+    uint8_t len = strlen(string);
+    if (len > SCREEN_HEIGHT/8) len = SCREEN_HEIGHT/8;
+
+    for (i = 0; i < 5; i++) {
+        i2c_OLED_set_xy(bus, x + i, y);
+        sptr = string;
+        for(j = 0; j<len; j++) {
+            buffer[j] = multiWiiFont[*sptr - 32][i];
+            buffer[j] ^= CHAR_FORMAT;  // apply
+            sptr++;
+        }
+        i2cWriteBuffer(bus->busdev_u.i2c.device, bus->busdev_u.i2c.address, 0x40, len, buffer);
+    }
+    // send blank line after string:
+    for(j = 0; j<len; j++) {
+        buffer[j] = 0;
+    }
+    i2c_OLED_set_xy(bus, x + 5, y);
+    i2cWriteBuffer(bus->busdev_u.i2c.device, bus->busdev_u.i2c.address, 0x40, len, buffer);
+
+    // back to normal
+    i2c_OLED_set_horizontal_adressing_mode(bus);
+}
+
 
 /**
 * according to http://www.adafruit.com/datasheets/UG-2864HSWEG01.pdf Chapter 4.4 Page 15

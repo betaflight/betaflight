@@ -571,16 +571,28 @@ static void osdDrawSingleElement(uint8_t item)
             }
 
             // Draw AH sides
-            const int8_t hudwidth = AH_SIDEBAR_WIDTH_POS;
-            const int8_t hudheight = AH_SIDEBAR_HEIGHT_POS;
-            for (int y = -hudheight; y <= hudheight; y++) {
-                displayWriteChar(osdDisplayPort, elemPosX - hudwidth, elemPosY + y, SYM_AH_DECORATION);
-                displayWriteChar(osdDisplayPort, elemPosX + hudwidth, elemPosY + y, SYM_AH_DECORATION);
-            }
+            uint8_t hudHeight = AH_SIDEBAR_HEIGHT_POS;
+            uint8_t hudWidth = AH_SIDEBAR_WIDTH_POS;
 
-            // AH level indicators
-            displayWriteChar(osdDisplayPort, elemPosX - hudwidth + 1, elemPosY, SYM_AH_LEFT);
-            displayWriteChar(osdDisplayPort, elemPosX + hudwidth - 1, elemPosY, SYM_AH_RIGHT);
+            // draw the left uppermost icon in combination with the special symbol:
+            buff[0] = SYM_AH_LEFT;
+            buff[1] = SYM_AH_DECORATION;
+            buff[2] = 0;
+            displayWriteVertical(osdDisplayPort, elemPosX - hudWidth, elemPosY, buff);
+            // right uppermost icon
+            buff[0] = SYM_AH_DECORATION;
+            buff[1] = SYM_AH_RIGHT;
+            displayWriteVertical(osdDisplayPort, elemPosX + hudWidth, elemPosY, buff);
+
+            // the first row of side bars has already been drawn
+            elemPosY++;
+
+            // draw the remaining side bars in vertical mode
+            for (int i=0 ; i<=hudHeight*2 - 1; i++) {
+                buff[i] = SYM_AH_DECORATION;
+            }
+            displayWriteVertical(osdDisplayPort, elemPosX - hudWidth, elemPosY, buff);
+            displayWriteVertical(osdDisplayPort, elemPosX + hudWidth, elemPosY, buff);
 
             return;
         }

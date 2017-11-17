@@ -42,5 +42,6 @@ void i2c_OLED_set_xy(busDevice_t *bus, uint8_t col, uint8_t row);
 void i2c_OLED_set_line(busDevice_t *bus, uint8_t row);
 void i2c_OLED_send_char(busDevice_t *bus, unsigned char ascii);
 void i2c_OLED_send_string(busDevice_t *bus, const char *string);
+void i2c_OLED_send_string_vertical(busDevice_t *bus, uint8_t x, uint8_t y, const char *string);
 void i2c_OLED_clear_display(busDevice_t *bus);
 void i2c_OLED_clear_display_quick(busDevice_t *bus);
