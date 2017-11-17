@@ -86,7 +86,8 @@ cli_unittest_SRC := \
 		$(USER_DIR)/interface/cli.c \
 		$(USER_DIR)/config/feature.c \
 		$(USER_DIR)/config/parameter_group.c \
-                $(USER_DIR)/common/typeconversion.c
+		$(USER_DIR)/common/string_light.c \
+		$(USER_DIR)/common/typeconversion.c
 
 cli_unittest_DEFINES := \
 		USE_OSD \
@@ -131,7 +132,8 @@ flight_mixer_unittest :=  \
 
 
 gps_conversion_unittest_SRC := \
-		$(USER_DIR)/common/gps_conversion.c
+		$(USER_DIR)/common/gps_conversion.c \
+		$(USER_DIR)/common/string_light.c
 
 
 io_serial_unittest_SRC := \
@@ -151,10 +153,11 @@ maths_unittest_SRC := \
 
 osd_unittest_SRC := \
 		$(USER_DIR)/io/osd.c \
-		$(USER_DIR)/common/typeconversion.c \
-		$(USER_DIR)/drivers/display.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/common/string_light.c \
+		$(USER_DIR)/common/typeconversion.c \
+		$(USER_DIR)/drivers/display.c \
 		$(USER_DIR)/fc/runtime_config.c
 
 osd_unittest_DEFINES := \
@@ -212,10 +215,11 @@ telemetry_crsf_unittest_SRC := \
 		$(USER_DIR)/rx/crsf.c \
 		$(USER_DIR)/telemetry/crsf.c \
 		$(USER_DIR)/common/crc.c \
-		$(USER_DIR)/common/maths.c \
-		$(USER_DIR)/common/streambuf.c \
 		$(USER_DIR)/common/gps_conversion.c \
+		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/string_light.c \
 		$(USER_DIR)/common/typeconversion.c \
 		$(USER_DIR)/fc/runtime_config.c
 
@@ -230,15 +234,15 @@ telemetry_crsf_msp_unittest_SRC := \
 		$(USER_DIR)/rx/crsf.c \
 		$(USER_DIR)/build/atomic.c \
 		$(USER_DIR)/common/crc.c \
-		$(USER_DIR)/common/streambuf.c \
+		$(USER_DIR)/common/gps_conversion.c \
 		$(USER_DIR)/common/printf.c \
 		$(USER_DIR)/common/streambuf.c \
-		$(USER_DIR)/drivers/serial.c \
+		$(USER_DIR)/common/string_light.c \
 		$(USER_DIR)/common/typeconversion.c \
+		$(USER_DIR)/drivers/serial.c \
+		$(USER_DIR)/fc/runtime_config.c \
 		$(USER_DIR)/telemetry/crsf.c \
-		$(USER_DIR)/common/gps_conversion.c \
-		$(USER_DIR)/telemetry/msp_shared.c \
-		$(USER_DIR)/fc/runtime_config.c
+		$(USER_DIR)/telemetry/msp_shared.c
 
 telemetry_crsf_msp_unittest_DEFINES := \
 		USE_MSP_OVER_TELEMETRY
@@ -246,7 +250,8 @@ telemetry_crsf_msp_unittest_DEFINES := \
 
 telemetry_hott_unittest_SRC := \
 		$(USER_DIR)/telemetry/hott.c \
-		$(USER_DIR)/common/gps_conversion.c
+		$(USER_DIR)/common/gps_conversion.c \
+		$(USER_DIR)/common/string_light.c
 
 
 telemetry_ibus_unittest_SRC := \

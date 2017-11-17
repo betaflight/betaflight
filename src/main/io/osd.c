@@ -26,7 +26,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 #include <math.h>
 
 #include "platform.h"
@@ -46,6 +45,7 @@
 
 #include "common/maths.h"
 #include "common/printf.h"
+#include "common/string_light.h"
 #include "common/typeconversion.h"
 #include "common/utils.h"
 
@@ -490,7 +490,7 @@ static void osdDrawSingleElement(uint8_t item)
             strcpy(buff, "CRAFT_NAME");
         else {
             for (unsigned int i = 0; i < MAX_NAME_LENGTH; i++) {
-                buff[i] = toupper((unsigned char)pilotConfig()->name[i]);
+                buff[i] = sl_toupper((unsigned char)pilotConfig()->name[i]);
                 if (pilotConfig()->name[i] == 0)
                     break;
             }

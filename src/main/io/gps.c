@@ -18,7 +18,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <ctype.h>
 #include <string.h>
 #include <math.h>
 

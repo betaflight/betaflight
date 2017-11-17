@@ -19,6 +19,8 @@
 
 #if !defined(UNIT_TEST) && !defined(SITL) && !(USBD_DEBUG_LEVEL > 0)
 #pragma GCC poison sprintf snprintf
+#pragma GCC poison isalnum isalpha isblank isdigit isupper islower isxdigit
+#pragma GCC poison toupper tolower
 #endif
 
 #if defined(STM32F745xx) || defined(STM32F746xx) || defined(STM32F722xx)

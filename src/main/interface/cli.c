@@ -21,10 +21,8 @@
 #include <stdarg.h>
 #include <string.h>
 #include <math.h>
-#include <ctype.h>
 
 #include "platform.h"
-#include "common/time.h"
 
 // FIXME remove this for targets that don't need a CLI.  Perhaps use a no-op macro when USE_CLI is not enabled
 // signal that we're in cli mode
@@ -48,6 +46,8 @@ extern uint8_t __config_end;
 #include "common/color.h"
 #include "common/maths.h"
 #include "common/printf.h"
+#include "common/string_light.h"
+#include "common/time.h"
 #include "common/typeconversion.h"
 #include "common/utils.h"
 
@@ -1105,12 +1105,12 @@ static void cliMotorMix(char *cmdline)
 
     if (isEmpty(cmdline)) {
         printMotorMix(DUMP_MASTER, customMotorMixer(0), NULL);
-    } else if (strncasecmp(cmdline, "reset", 5) == 0) {
+    } else if (sl_strncasecmp(cmdline, "reset", 5) == 0) {
         // erase custom mixer
         for (uint32_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
             customMotorMixerMutable(i)->throttle = 0.0f;
         }
-    } else if (strncasecmp(cmdline, "load", 4) == 0) {
+    } else if (sl_strncasecmp(cmdline, "load", 4) == 0) {
         ptr = nextArg(cmdline);
         if (ptr) {
             len = strlen(ptr);
@@ -1119,7 +1119,7 @@ static void cliMotorMix(char *cmdline)
                     cliPrintLine("Invalid name");
                     break;
                 }
-                if (strncasecmp(ptr, mixerNames[i], len) == 0) {
+                if (sl_strncasecmp(ptr, mixerNames[i], len) == 0) {
                     mixerLoadMix(i, customMotorMixerMutable(0));
                     cliPrintLinef("Loaded %s", mixerNames[i]);
                     cliMotorMix("");
@@ -1192,7 +1192,7 @@ static void cliRxRange(char *cmdline)
 
     if (isEmpty(cmdline)) {
         printRxRange(DUMP_MASTER, rxChannelRangeConfigs(0), NULL);
-    } else if (strcasecmp(cmdline, "reset") == 0) {
+    } else if (sl_strcasecmp(cmdline, "reset") == 0) {
         resetAllRxChannelRangeConfigurations(rxChannelRangeConfigsMutable(0));
     } else {
         ptr = cmdline;
@@ -1559,13 +1559,13 @@ static void cliServoMix(char *cmdline)
 
     if (len == 0) {
         printServoMix(DUMP_MASTER, customServoMixers(0), NULL);
-    } else if (strncasecmp(cmdline, "reset", 5) == 0) {
+    } else if (sl_strncasecmp(cmdline, "reset", 5) == 0) {
         // erase custom mixer
         memset(customServoMixers_array(), 0, sizeof(*customServoMixers_array()));
         for (uint32_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             servoParamsMutable(i)->reversedSources = 0;
         }
-    } else if (strncasecmp(cmdline, "load", 4) == 0) {
+    } else if (sl_strncasecmp(cmdline, "load", 4) == 0) {
         const char *ptr = nextArg(cmdline);
         if (ptr) {
             len = strlen(ptr);
@@ -1574,7 +1574,7 @@ static void cliServoMix(char *cmdline)
                     cliPrintLine("Invalid name");
                     break;
                 }
-                if (strncasecmp(ptr, mixerNames[i], len) == 0) {
+                if (sl_strncasecmp(ptr, mixerNames[i], len) == 0) {
                     servoMixerLoadMix(i);
                     cliPrintLinef("Loaded %s", mixerNames[i]);
                     cliServoMix("");
@@ -1582,7 +1582,7 @@ static void cliServoMix(char *cmdline)
                 }
             }
         }
-    } else if (strncasecmp(cmdline, "reverse", 7) == 0) {
+    } else if (sl_strncasecmp(cmdline, "reverse", 7) == 0) {
         enum {SERVO = 0, INPUT, REVERSE, ARGS_COUNT};
         char *ptr = strchr(cmdline, ' ');
 
@@ -1976,7 +1976,7 @@ static void cliFeature(char *cmdline)
                 cliPrintf("%s ", featureNames[i]);
         }
         cliPrintLinefeed();
-    } else if (strncasecmp(cmdline, "list", len) == 0) {
+    } else if (sl_strncasecmp(cmdline, "list", len) == 0) {
         cliPrint("Available:");
         for (uint32_t i = 0; ; i++) {
             if (featureNames[i] == NULL)
@@ -2001,7 +2001,7 @@ static void cliFeature(char *cmdline)
                 break;
             }
 
-            if (strncasecmp(cmdline, featureNames[i], len) == 0) {
+            if (sl_strncasecmp(cmdline, featureNames[i], len) == 0) {
 
                 mask = 1 << i;
 #ifndef USE_GPS
@@ -2064,7 +2064,7 @@ static void cliBeeper(char *cmdline)
                 cliPrintf("  %s", beeperNameForTableIndex(i));
         }
         cliPrintLinefeed();
-    } else if (strncasecmp(cmdline, "list", len) == 0) {
+    } else if (sl_strncasecmp(cmdline, "list", len) == 0) {
         cliPrint("Available:");
         for (uint32_t i = 0; i < beeperCount; i++)
             cliPrintf(" %s", beeperNameForTableIndex(i));
@@ -2083,7 +2083,7 @@ static void cliBeeper(char *cmdline)
                 cliPrintLine("Invalid name");
                 break;
             }
-            if (strncasecmp(cmdline, beeperNameForTableIndex(i), len) == 0) {
+            if (sl_strncasecmp(cmdline, beeperNameForTableIndex(i), len) == 0) {
                 if (remove) { // beeper off
                     if (i == BEEPER_ALL-1)
                         beeperOffSetAll(beeperCount-2);
@@ -2151,12 +2151,12 @@ static void cliMap(char *cmdline)
     if (len == RX_MAPPABLE_CHANNEL_COUNT) {
 
         for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
-            buf[i] = toupper((unsigned char)cmdline[i]);
+            buf[i] = sl_toupper((unsigned char)cmdline[i]);
         }
         buf[i] = '\0';
 
         for (i = 0; i < RX_MAPPABLE_CHANNEL_COUNT; i++) {
-            buf[i] = toupper((unsigned char)cmdline[i]);
+            buf[i] = sl_toupper((unsigned char)cmdline[i]);
 
             if (strchr(rcChannelLetters, buf[i]) && !strchr(buf + i + 1, buf[i]))
                 continue;
@@ -2180,8 +2180,8 @@ static void cliMap(char *cmdline)
 
 static char *checkCommand(char *cmdLine, const char *command)
 {
-    if (!strncasecmp(cmdLine, command, strlen(command))   // command names match
-        && (isspace((unsigned)cmdLine[strlen(command)]) || cmdLine[strlen(command)] == 0)) {
+    if (!sl_strncasecmp(cmdLine, command, strlen(command))   // command names match
+        && (sl_isspace((unsigned)cmdLine[strlen(command)]) || cmdLine[strlen(command)] == 0)) {
         return cmdLine + strlen(command) + 1;
     } else {
         return 0;
@@ -2530,13 +2530,13 @@ static void cliEscPassthrough(char *cmdline)
     while (pch != NULL) {
         switch (pos) {
         case 0:
-            if (strncasecmp(pch, "sk", strlen(pch)) == 0) {
+            if (sl_strncasecmp(pch, "sk", strlen(pch)) == 0) {
                 mode = PROTOCOL_SIMONK;
-            } else if (strncasecmp(pch, "bl", strlen(pch)) == 0) {
+            } else if (sl_strncasecmp(pch, "bl", strlen(pch)) == 0) {
                 mode = PROTOCOL_BLHELI;
-            } else if (strncasecmp(pch, "ki", strlen(pch)) == 0) {
+            } else if (sl_strncasecmp(pch, "ki", strlen(pch)) == 0) {
                 mode = PROTOCOL_KISS;
-            } else if (strncasecmp(pch, "cc", strlen(pch)) == 0) {
+            } else if (sl_strncasecmp(pch, "cc", strlen(pch)) == 0) {
                 mode = PROTOCOL_KISSALL;
             } else {
                 cliShowParseError();
@@ -2577,7 +2577,7 @@ static void cliMixer(char *cmdline)
     if (len == 0) {
         cliPrintLinef("Mixer: %s", mixerNames[mixerConfig()->mixerMode - 1]);
         return;
-    } else if (strncasecmp(cmdline, "list", len) == 0) {
+    } else if (sl_strncasecmp(cmdline, "list", len) == 0) {
         cliPrint("Available:");
         for (uint32_t i = 0; ; i++) {
             if (mixerNames[i] == NULL)
@@ -2593,7 +2593,7 @@ static void cliMixer(char *cmdline)
             cliPrintLine("Invalid name");
             return;
         }
-        if (strncasecmp(cmdline, mixerNames[i], len) == 0) {
+        if (sl_strncasecmp(cmdline, mixerNames[i], len) == 0) {
             mixerConfigMutable()->mixerMode = i + 1;
             break;
         }
@@ -2762,7 +2762,7 @@ static void cliDefaults(char *cmdline)
 
     if (isEmpty(cmdline)) {
         saveConfigs = true;
-    } else if (strncasecmp(cmdline, "nosave", 6) == 0) {
+    } else if (sl_strncasecmp(cmdline, "nosave", 6) == 0) {
         saveConfigs = false;
     } else {
         return;
@@ -2846,7 +2846,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
             const clivalue_t *val = &valueTable[i];
 
             // ensure exact match when setting to prevent setting variables with shorter names
-            if (strncasecmp(cmdline, val->name, strlen(val->name)) == 0 && variableNameLength == strlen(val->name)) {
+            if (sl_strncasecmp(cmdline, val->name, strlen(val->name)) == 0 && variableNameLength == strlen(val->name)) {
 
                 bool valueChanged = false;
                 int16_t value  = 0;
@@ -2865,7 +2865,7 @@ STATIC_UNIT_TESTED void cliSet(char *cmdline)
                         const lookupTableEntry_t *tableEntry = &lookupTables[val->config.lookup.tableIndex];
                         bool matched = false;
                         for (uint32_t tableValueIndex = 0; tableValueIndex < tableEntry->valueCount && !matched; tableValueIndex++) {
-                            matched = strcasecmp(tableEntry->values[tableValueIndex], eqptr) == 0;
+                            matched = sl_strcasecmp(tableEntry->values[tableValueIndex], eqptr) == 0;
 
                             if (matched) {
                                 value = tableValueIndex;
@@ -3279,7 +3279,7 @@ static void cliResource(char *cmdline)
         printResource(DUMP_MASTER | HIDE_UNUSED);
 
         return;
-    } else if (strncasecmp(cmdline, "list", len) == 0) {
+    } else if (sl_strncasecmp(cmdline, "list", len) == 0) {
 #ifdef MINIMAL_CLI
         cliPrintLine("IO");
 #else
@@ -3337,7 +3337,7 @@ static void cliResource(char *cmdline)
             return;
         }
 
-        if (strncasecmp(pch, ownerNames[resourceTable[resourceIndex].owner], len) == 0) {
+        if (sl_strncasecmp(pch, ownerNames[resourceTable[resourceIndex].owner], len) == 0) {
             break;
         }
     }
@@ -3359,7 +3359,7 @@ static void cliResource(char *cmdline)
 
     uint8_t pin = 0;
     if (strlen(pch) > 0) {
-        if (strcasecmp(pch, "NONE") == 0) {
+        if (sl_strcasecmp(pch, "NONE") == 0) {
             *tag = IO_TAG_NONE;
 #ifdef MINIMAL_CLI
             cliPrintLine("Freed");
@@ -3736,7 +3736,7 @@ void cliProcess(void)
             const clicmd_t *cmd, *pstart = NULL, *pend = NULL;
             uint32_t i = bufferIndex;
             for (cmd = cmdTable; cmd < cmdTable + ARRAYLEN(cmdTable); cmd++) {
-                if (bufferIndex && (strncasecmp(cliBuffer, cmd->name, bufferIndex) != 0))
+                if (bufferIndex && (sl_strncasecmp(cliBuffer, cmd->name, bufferIndex) != 0))
                     continue;
                 if (!pstart)
                     pstart = cmd;
