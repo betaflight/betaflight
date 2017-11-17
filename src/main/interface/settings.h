@@ -21,7 +21,6 @@
 #include <stdbool.h>
 #include "config/parameter_group.h"
 
-
 typedef enum {
     TABLE_OFF_ON = 0,
     TABLE_UNIT,
@@ -109,16 +108,16 @@ typedef enum {
 #define VALUE_MODE_MASK (0x30)
 
 typedef struct cliMinMaxConfig_s {
-    const int16_t min;
-    const int16_t max;
+    CONST_DEFINITION(int16_t min);
+    CONST_DEFINITION(int16_t max);
 } cliMinMaxConfig_t;
 
 typedef struct cliLookupTableConfig_s {
-    const lookupTableIndex_e tableIndex;
+    CONST_DEFINITION(lookupTableIndex_e tableIndex);
 } cliLookupTableConfig_t;
 
 typedef struct cliArrayLengthConfig_s {
-    const uint8_t length;
+    CONST_DEFINITION(uint8_t length);
 } cliArrayLengthConfig_t;
 
 typedef union {
@@ -130,7 +129,7 @@ typedef union {
 typedef struct clivalue_s {
     const char *name;
     const uint8_t type; // see cliValueFlag_e
-    const cliValueConfig_t config;
+    CONST_DEFINITION(cliValueConfig_t config);
 
     pgn_t pgn;
     uint16_t offset;
