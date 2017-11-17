@@ -132,15 +132,15 @@ typedef struct {
     const char * subTaskName;
     bool (*checkFunc)(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
     void (*taskFunc)(timeUs_t currentTimeUs);
-    timeDelta_t desiredPeriod;      // target period of execution
-    const uint8_t staticPriority;   // dynamicPriority grows in steps of this size, shouldn't be zero
+    timeDelta_t desiredPeriod;               // target period of execution
+    CONST_DEFINITION(uint8_t staticPriority); // dynamicPriority grows in steps of this size, shouldn't be zero
 
     // Scheduling
-    uint16_t dynamicPriority;       // measurement of how old task was last executed, used to avoid task starvation
+    uint16_t dynamicPriority;                // measurement of how old task was last executed, used to avoid task starvation
     uint16_t taskAgeCycles;
     timeDelta_t taskLatestDeltaTime;
-    timeUs_t lastExecutedAt;        // last time of invocation
-    timeUs_t lastSignaledAt;        // time of invocation event for event-driven tasks
+    timeUs_t lastExecutedAt;                 // last time of invocation
+    timeUs_t lastSignaledAt;                 // time of invocation event for event-driven tasks
 
 #ifndef SKIP_TASK_STATISTICS
     // Statistics

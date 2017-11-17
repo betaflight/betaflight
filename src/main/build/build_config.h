@@ -32,6 +32,16 @@
 #define UNIT_TESTED
 #endif
 
+#ifndef __has_feature
+  #define __has_feature(x) 0  // Compatibility with non-clang compilers.
+#endif
+
+#if __has_feature(cxx_aggregate_nsdmi)
+#define CONST_DEFINITION(member)  const member
+#else
+#define CONST_DEFINITION(member) member
+#endif
+
 //#define SOFT_I2C // enable to test software i2c
 
 #ifndef __CC_ARM
