@@ -46,6 +46,7 @@
 #define FPORT_TIME_NEEDED_PER_FRAME_US 3000
 #define FPORT_MAX_TELEMETRY_RESPONSE_DELAY_US 2000
 #define FPORT_MIN_TELEMETRY_RESPONSE_DELAY_US 500
+#define FPORT_MAX_TELEMETRY_AGE_MS 500
 
 
 #define FPORT_FRAME_MARKER 0x7E
@@ -132,7 +133,7 @@ static serialPort_t *fportPort;
 static bool telemetryEnabled = false;
 
 static void reportFrameError(uint8_t errorReason) {
-static volatile uint16_t frameErrors = 0;
+    static volatile uint16_t frameErrors = 0;
 
     DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_FRAME_ERRORS, ++frameErrors);
     DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_FRAME_LAST_ERROR, errorReason);
@@ -237,6 +238,7 @@ static uint8_t fportFrameStatus(void)
     static smartPortPayload_t payloadBuffer;
     static smartPortPayload_t *mspPayload = NULL;
     static bool hasTelemetryRequest = false;
+    static timeUs_t lastRcFrameReceivedMs = 0;
 
     uint8_t result = RX_FRAME_PENDING;
 
@@ -258,7 +260,9 @@ static uint8_t fportFrameStatus(void)
                     } else {
                         result = sbusChannelsDecode(&frame->data.controlData.channels);
 
-                        setRssiUnfiltered(scaleRange(constrain(frame->data.controlData.rssi, 0, 100), 0, 100, 0, 1024));
+                        setRssiUnfiltered(scaleRange(constrain(frame->data.controlData.rssi, 0, 100), 0, 100, 0, 1024), RSSI_SOURCE_RX_PROTOCOL);
+
+                        lastRcFrameReceivedMs = millis();
                     }
 
                     break;
@@ -323,6 +327,11 @@ static uint8_t fportFrameStatus(void)
 #endif
     }
 
+    if (lastRcFrameReceivedMs && ((millis() - lastRcFrameReceivedMs) > FPORT_MAX_TELEMETRY_AGE_MS)) {
+        setRssiFiltered(0, RSSI_SOURCE_RX_PROTOCOL);
+        lastRcFrameReceivedMs = 0;
+    }
+
     return result;
 }
 
@@ -353,6 +362,10 @@ bool fportRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 #if defined(USE_TELEMETRY_SMARTPORT)
         telemetryEnabled = initSmartPortTelemetryExternal(smartPortWriteFrameFport);
 #endif
+
+        if (rssiSource == RSSI_SOURCE_NONE) {
+            rssiSource = RSSI_SOURCE_RX_PROTOCOL;
+        }
     }
 
     return fportPort != NULL;

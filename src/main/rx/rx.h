@@ -159,6 +159,16 @@ typedef struct rxRuntimeConfig_s {
     rcFrameStatusFnPtr rcFrameStatusFn;
 } rxRuntimeConfig_t;
 
+typedef enum rssiSource_e {
+    RSSI_SOURCE_NONE = 0,
+    RSSI_SOURCE_ADC,
+    RSSI_SOURCE_RX_CHANNEL,
+    RSSI_SOURCE_RX_PROTOCOL,
+    RSSI_SOURCE_MSP,
+} rssiSource_t;
+
+extern rssiSource_t rssiSource;
+
 extern rxRuntimeConfig_t rxRuntimeConfig; //!!TODO remove this extern, only needed once for channelCount
 
 void rxInit(void);
@@ -169,10 +179,10 @@ void calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs);
 
 void parseRcChannels(const char *input, rxConfig_t *rxConfig);
 
-void setRssiFiltered(uint16_t newRssi);
-void setRssiUnfiltered(uint16_t rssiValue);
-void setRssiMsp(uint8_t newMspRssi);
-void updateRSSI(timeUs_t currentTimeUs);
+void setRssiFiltered(const uint16_t newRssi, const rssiSource_t source);
+void setRssiUnfiltered(const uint16_t rssiValue, const rssiSource_t source);
+void setRssiMsp(const uint8_t newMspRssi);
+void updateRSSI(const timeUs_t currentTimeUs);
 uint16_t getRssi(void);
 
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRangeConfig);
