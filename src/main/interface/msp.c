@@ -1712,7 +1712,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 #endif
 
-    case MSP_ARMING_DISABLE:
+    case MSP_SET_ARMING_DISABLED:
         {
             const uint8_t command = sbufReadU8(src);
             if (command) {

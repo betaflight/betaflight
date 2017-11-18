@@ -214,7 +214,7 @@
 
 #define MSP_CAMERA_CONTROL              98
 
-#define MSP_ARMING_DISABLE              99
+#define MSP_SET_ARMING_DISABLED         99
 
 //
 // OSD specific
