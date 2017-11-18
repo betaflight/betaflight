@@ -150,6 +150,8 @@ typedef enum {
 #define RATEPROFILE_MASK (1 << 7)
 #endif //USE_OSD_SLAVE
 
+#define RTC_NOT_SUPPORTED 0xff
+
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
 #define ESC_4WAY 0xff
 
@@ -1220,9 +1222,41 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
                 sbufWriteU8(dst, VTXDEV_UNKNOWN); // no VTX detected
             }
         }
-#endif
-        break;
 
+        break;
+#endif
+
+    case MSP_TX_INFO:
+        sbufWriteU8(dst, rssiSource);
+        uint8_t rtcDateTimeIsSet = 0;
+#ifdef USE_RTC_TIME
+        dateTime_t dt;
+        if (rtcGetDateTime(&dt)) {
+            rtcDateTimeIsSet = 1;
+        }
+#else
+        rtcDateTimeIsSet = RTC_NOT_SUPPORTED;
+#endif
+        sbufWriteU8(dst, rtcDateTimeIsSet);
+
+        break;
+#ifdef USE_RTC_TIME
+    case MSP_RTC:
+        {
+            dateTime_t dt;
+            if (rtcGetDateTime(&dt)) {
+                sbufWriteU16(dst, dt.year);
+                sbufWriteU8(dst, dt.month);
+                sbufWriteU8(dst, dt.day);
+                sbufWriteU8(dst, dt.hours);
+                sbufWriteU8(dst, dt.minutes);
+                sbufWriteU8(dst, dt.seconds);
+                sbufWriteU16(dst, dt.millis);
+            }
+        }
+
+        break;
+#endif
     default:
         return false;
     }
@@ -1943,18 +1977,19 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
 #ifdef USE_RTC_TIME
     case MSP_SET_RTC:
-    {
-        dateTime_t dt;
-        dt.year = sbufReadU16(src);
-        dt.month = sbufReadU8(src);
-        dt.day = sbufReadU8(src);
-        dt.hours = sbufReadU8(src);
-        dt.minutes = sbufReadU8(src);
-        dt.seconds = sbufReadU8(src);
-        dt.millis = 0;
-        rtcSetDateTime(&dt);
-    }
-    break;
+        {
+            dateTime_t dt;
+            dt.year = sbufReadU16(src);
+            dt.month = sbufReadU8(src);
+            dt.day = sbufReadU8(src);
+            dt.hours = sbufReadU8(src);
+            dt.minutes = sbufReadU8(src);
+            dt.seconds = sbufReadU8(src);
+            dt.millis = 0;
+            rtcSetDateTime(&dt);
+        }
+
+        break;
 #endif
 
     case MSP_TX_INFO:
