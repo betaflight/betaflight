@@ -75,9 +75,7 @@ typedef struct systemConfig_s {
     uint8_t activeRateProfile;
     uint8_t debug_mode;
     uint8_t task_statistics;
-#if defined(STM32F4) && !defined(DISABLE_OVERCLOCK)
     uint8_t cpu_overclock;
-#endif
     uint8_t powerOnArmingGraceTime; // in seconds
     char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER) + 1];
 } systemConfig_t;
