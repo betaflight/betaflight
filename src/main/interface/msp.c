@@ -1251,7 +1251,7 @@ static mspResult_e mspFcProcessOutCommandWithArg(uint8_t cmdMSP, sbuf_t *arg, sb
 }
 #endif // USE_OSD_SLAVE
 
-#ifdef USE_GPS
+#ifdef USE_NAV
 static void mspFcWpCommand(sbuf_t *dst, sbuf_t *src)
 {
     uint8_t wp_no;
@@ -1312,7 +1312,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     uint32_t i;
     uint8_t value;
     const unsigned int dataSize = sbufBytesRemaining(src);
-#ifdef USE_GPS
+#ifdef USE_NAV
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
 #endif
@@ -1743,7 +1743,8 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         gpsSol.groundSpeed = sbufReadU16(src);
         GPS_update |= 2;        // New data signalisation to GPS functions // FIXME Magic Numbers
         break;
-
+#endif // USE_GPS
+#ifdef USE_NAV
     case MSP_SET_WP:
         wp_no = sbufReadU8(src);    //get the wp number
         lat = sbufReadU32(src);
@@ -1768,7 +1769,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             GPS_set_next_wp(&GPS_hold[LAT], &GPS_hold[LON]);
         }
         break;
-#endif
+#endif // USE_NAV
 
     case MSP_SET_FEATURE_CONFIG:
         featureClearAll();
@@ -2177,7 +2178,7 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
         mspFc4waySerialCommand(dst, src, mspPostProcessFn);
         ret = MSP_RESULT_ACK;
 #endif
-#ifdef USE_GPS
+#ifdef USE_NAV
     } else if (cmdMSP == MSP_WP) {
         mspFcWpCommand(dst, src);
         ret = MSP_RESULT_ACK;

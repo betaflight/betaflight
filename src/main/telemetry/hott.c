@@ -74,7 +74,6 @@
 
 #include "flight/altitude.h"
 #include "flight/pid.h"
-#include "flight/navigation.h"
 
 #include "io/gps.h"
 

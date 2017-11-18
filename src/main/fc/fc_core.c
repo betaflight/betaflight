@@ -553,7 +553,7 @@ void processRx(timeUs_t currentTimeUs)
     }
 #endif
 
-#ifdef USE_GPS
+#ifdef USE_NAV
     if (sensors(SENSOR_GPS)) {
         updateGpsWaypointsAndMode();
     }
@@ -649,7 +649,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 
     processRcCommand();
 
-#ifdef USE_GPS
+#ifdef USE_NAV
     if (sensors(SENSOR_GPS)) {
         if ((FLIGHT_MODE(GPS_HOME_MODE) || FLIGHT_MODE(GPS_HOLD_MODE)) && STATE(GPS_FIX_HOME)) {
             updateGpsStateForHomeAndHoldMode();
