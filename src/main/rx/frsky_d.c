@@ -133,7 +133,7 @@ static void compute_RSSIdbm(uint8_t *packet)
         RSSI_dBm = ((((uint16_t)packet[18]) * 18) >> 5) + 65;
     }
 
-    setRssiUnfiltered(constrain(RSSI_dBm << 3, 0, 1024));
+    setRssiUnfiltered(constrain(RSSI_dBm << 3, 0, 1024), RSSI_SOURCE_RX_PROTOCOL);
 }
 
 #if defined(USE_TELEMETRY_FRSKY)
@@ -714,9 +714,15 @@ static void frskyD_Rx_Setup(rx_spi_protocol_e protocol)
     RX_enable();
 #endif
 
+#if defined(USE_FRSKY_D_TELEMETRY)
 #if defined(USE_TELEMETRY_FRSKY)
     initFrSkyExternalTelemetry(&frSkyTelemetryInitFrameSpi,
                                &frSkyTelemetryWriteSpi);
+#endif
+
+    if (rssiSource == RSSI_SOURCE_NONE) {
+        rssiSource = RSSI_SOURCE_RX_PROTOCOL;
+    }
 #endif
 
     // if(!frSkySpiDetect())//detect spi working routine
