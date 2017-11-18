@@ -48,6 +48,7 @@
 #define JEDEC_ID_MICRON_M25P16         0x202015
 #define JEDEC_ID_MICRON_N25Q064        0x20BA17
 #define JEDEC_ID_MICRON_N25Q128        0x20ba18
+#define JEDEC_ID_WINBOND_W25Q16        0xEF4015
 #define JEDEC_ID_WINBOND_W25Q64        0xEF4017
 #define JEDEC_ID_WINBOND_W25Q128       0xEF4018
 #define JEDEC_ID_WINBOND_W25Q256       0xEF4019
@@ -162,6 +163,7 @@ static bool m25p16_readIdentification(void)
     // All supported chips use the same pagesize of 256 bytes
 
     switch (chipID) {
+    case JEDEC_ID_WINBOND_W25Q16:
     case JEDEC_ID_MICRON_M25P16:
         geometry.sectors = 32;
         geometry.pagesPerSector = 256;
