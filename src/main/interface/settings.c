@@ -764,6 +764,7 @@ const clivalue_t valueTable[] = {
     { "vtx_low_power_disarm",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, lowPowerDisarm) },
 #ifdef VTX_SETTINGS_FREQCMD
     { "vtx_freq",                   VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, VTX_SETTINGS_MAX_FREQUENCY_MHZ }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, freq) },
+    { "vtx_pit_mode_freq",          VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, VTX_SETTINGS_MAX_FREQUENCY_MHZ }, PG_VTX_SETTINGS_CONFIG, offsetof(vtxSettingsConfig_t, pitModeFreq) },
 #endif
 #endif
 
