@@ -17,10 +17,11 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <ctype.h>
 #include <string.h>
 
 #include "platform.h"
+
+#include "common/string_light.h"
 
 #ifdef USE_GPS
 
@@ -34,7 +35,7 @@ uint32_t GPS_coord_to_degrees(const char* coordinateString)
     uint8_t digitIndex;
 
     // scan for decimal point or end of field
-    for (fieldSeparator = coordinateString; isdigit((unsigned char)*fieldSeparator); fieldSeparator++) {
+    for (fieldSeparator = coordinateString; sl_isdigit((unsigned char)*fieldSeparator); fieldSeparator++) {
         if (fieldSeparator >= coordinateString + 15)
             return 0; // stop potential fail
     }
@@ -59,7 +60,7 @@ uint32_t GPS_coord_to_degrees(const char* coordinateString)
         remainingString = fieldSeparator + 1;
         for (digitIndex = 0; digitIndex < 4; digitIndex++) {
             fractionalMinutes *= 10;
-            if (isdigit((unsigned char)*remainingString))
+            if (sl_isdigit((unsigned char)*remainingString))
                 fractionalMinutes += *remainingString++ - '0';
         }
     }

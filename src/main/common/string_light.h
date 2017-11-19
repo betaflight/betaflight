@@ -19,6 +19,7 @@
 
 int sl_isalnum(int c);
 int sl_isdigit(int c);
+int sl_isspace(int c);
 int sl_isupper(int c);
 int sl_islower(int c);
 int sl_tolower(int c);

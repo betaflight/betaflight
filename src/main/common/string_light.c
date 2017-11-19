@@ -40,6 +40,11 @@ int sl_islower(int c)
     return (c >= 'a' && c <= 'z');
 }
 
+int sl_isspace(int c)
+{
+    return (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\v');
+}
+
 int sl_tolower(int c)
 {
     return sl_isupper(c) ? (c) - 'A' + 'a' : c;

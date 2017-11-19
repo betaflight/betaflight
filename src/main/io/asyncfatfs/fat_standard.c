@@ -15,8 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <ctype.h>
-
+#include "common/string_light.h"
 #include "fat_standard.h"
 
 bool fat16_isEndOfChainMarker(uint16_t clusterNumber)
@@ -67,7 +66,7 @@ void fat_convertFilenameToFATStyle(const char *filename, uint8_t *fatFilename)
         if (*filename == '\0' || *filename == '.') {
             *fatFilename = ' ';
         } else {
-            *fatFilename = toupper((unsigned char)*filename);
+            *fatFilename = sl_toupper((unsigned char)*filename);
             filename++;
         }
         fatFilename++;
@@ -81,7 +80,7 @@ void fat_convertFilenameToFATStyle(const char *filename, uint8_t *fatFilename)
          if (*filename == '\0') {
              *fatFilename = ' ';
          } else {
-             *fatFilename = toupper((unsigned char)*filename);
+             *fatFilename = sl_toupper((unsigned char)*filename);
              filename++;
          }
          fatFilename++;
