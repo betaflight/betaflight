@@ -411,11 +411,11 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     const float tpaFactor = getThrottlePIDAttenuation();
     const float motorMixRange = getMotorMixRange();
     static timeUs_t crashDetectedAtUs;
-    static timeUs_t previousTime;
+    static timeUs_t previousTimeUs;
 
-    // calculate actual deltaT
-    const float deltaT = currentTimeUs - previousTime;
-    previousTime = currentTimeUs;
+    // calculate actual deltaT in seconds
+    const float deltaT = (currentTimeUs - previousTimeUs) * 0.000001f;
+    previousTimeUs = currentTimeUs;
 
     // Dynamic ki component to gradually scale back integration when above windup point
     const float dynKi = MIN((1.0f - motorMixRange) * ITermWindupPointInv, 1.0f);
