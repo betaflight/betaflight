@@ -185,7 +185,7 @@ static void taskUpdateBaro(timeUs_t currentTimeUs)
 }
 #endif
 
-#if defined(USE_ALT_HOLD)
+#if defined(USE_BARO) || defined(USE_SONAR)
 static void taskCalculateAltitude(timeUs_t currentTimeUs)
 {
     if (false
@@ -198,7 +198,7 @@ static void taskCalculateAltitude(timeUs_t currentTimeUs)
         ) {
         calculateEstimatedAltitude(currentTimeUs);
     }}
-#endif // USE_ALT_HOLD
+#endif // USE_BARO || USE_SONAR
 
 #ifdef USE_TELEMETRY
 static void taskTelemetry(timeUs_t currentTimeUs)
@@ -297,7 +297,7 @@ void fcTasksInit(void)
 #ifdef USE_SONAR
     setTaskEnabled(TASK_SONAR, sensors(SENSOR_SONAR));
 #endif
-#ifdef USE_ALT_HOLD
+#if defined(USE_BARO) || defined(USE_SONAR)
     setTaskEnabled(TASK_ALTITUDE, sensors(SENSOR_BARO) || sensors(SENSOR_SONAR));
 #endif
 #ifdef USE_DASHBOARD
@@ -503,7 +503,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#if defined(USE_ALT_HOLD)
+#if defined(USE_BARO) || defined(USE_SONAR)
     [TASK_ALTITUDE] = {
         .taskName = "ALTITUDE",
         .taskFunc = taskCalculateAltitude,
