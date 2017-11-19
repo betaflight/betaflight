@@ -40,8 +40,6 @@ extern "C" {
     bool isPulseValid(uint16_t pulseDuration);
     void rxUpdateFlightChannelStatus(uint8_t channel, uint16_t pulseDuration);
 
-    PG_REGISTER_WITH_RESET_TEMPLATE(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
-
     PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
         .enabledFeatures = 0
     );

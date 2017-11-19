@@ -402,7 +402,6 @@ void pwmRxInit(const pwmConfig_t *pwmConfig)
     }
 }
 
-#define UNUSED_PPM_TIMER_REFERENCE 0
 #define FIRST_PWM_PORT 0
 
 void ppmAvoidPWMTimerClash(TIM_TypeDef *pwmTimer)

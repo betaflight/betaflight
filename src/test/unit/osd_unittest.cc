@@ -32,6 +32,7 @@ extern "C" {
     #include "common/time.h"
 
     #include "drivers/max7456_symbols.h"
+    #include "drivers/serial.h"
 
     #include "fc/config.h"
     #include "fc/rc_controls.h"

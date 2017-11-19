@@ -31,8 +31,8 @@
 #include "drivers/adc.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
-#include "drivers/light_led.h"
 #include "drivers/camera_control.h"
+#include "drivers/light_led.h"
 #include "drivers/vtx_common.h"
 
 #include "fc/config.h"

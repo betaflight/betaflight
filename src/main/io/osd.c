@@ -51,6 +51,7 @@
 #include "config/feature.h"
 
 #include "drivers/display.h"
+#include "drivers/flash.h"
 #include "drivers/max7456_symbols.h"
 #include "drivers/sdcard.h"
 #include "drivers/time.h"

@@ -28,8 +28,7 @@
 
 #include "drivers/light_led.h"
 #include "drivers/pwm_esc_detect.h"
-
-#include "fc/config.h"
+#include "drivers/sound_beeper.h"
 
 #include "flight/mixer.h"
 #include "flight/pid.h"

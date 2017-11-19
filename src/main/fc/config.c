@@ -22,35 +22,12 @@
 
 #include "platform.h"
 
-#include "build/build_config.h"
 #include "build/debug.h"
-
-#include "blackbox/blackbox_io.h"
-
-#include "cms/cms.h"
-
-#include "common/axis.h"
-#include "common/color.h"
-#include "common/filter.h"
-#include "common/maths.h"
 
 #include "config/config_eeprom.h"
 #include "config/feature.h"
 
-#include "drivers/accgyro/accgyro.h"
-#include "drivers/bus_spi.h"
-#include "drivers/compass/compass.h"
-#include "drivers/inverter.h"
-#include "drivers/io.h"
-#include "drivers/light_led.h"
-#include "drivers/light_ws2811strip.h"
-#include "drivers/max7456.h"
-#include "drivers/pwm_esc_detect.h"
-#include "drivers/pwm_output.h"
-#include "drivers/rx/rx_spi.h"
-#include "drivers/sensor.h"
 #include "drivers/system.h"
-#include "drivers/timer.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -58,9 +35,7 @@
 #include "fc/fc_rc.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
-#include "fc/runtime_config.h"
 
-#include "flight/altitude.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
@@ -69,51 +44,25 @@
 #include "flight/servos.h"
 
 #include "io/beeper.h"
-#include "io/gimbal.h"
-#include "io/gps.h"
 #include "io/ledstrip.h"
-#include "io/motors.h"
-#include "io/osd.h"
 #include "io/serial.h"
-#include "io/servos.h"
-#include "io/vtx_control.h"
 
 #include "pg/beeper.h"
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 
 #include "rx/rx.h"
-#include "rx/rx_spi.h"
 
 #include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/battery.h"
-#include "sensors/boardalignment.h"
-#include "sensors/compass.h"
 #include "sensors/gyro.h"
-#include "sensors/sensors.h"
-
-#include "telemetry/telemetry.h"
 
 #ifndef USE_OSD_SLAVE
 pidProfile_t *currentPidProfile;
 #endif
 
-#ifndef DEFAULT_FEATURES
-#define DEFAULT_FEATURES 0
-#endif
-#ifndef DEFAULT_RX_FEATURE
-#define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
-#endif
 #ifndef RX_SPI_DEFAULT_PROTOCOL
 #define RX_SPI_DEFAULT_PROTOCOL 0
 #endif
-
-PG_REGISTER_WITH_RESET_TEMPLATE(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
-
-PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
-    .enabledFeatures = DEFAULT_FEATURES | DEFAULT_RX_FEATURE
-);
 
 PG_REGISTER_WITH_RESET_TEMPLATE(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 0);
 
@@ -123,13 +72,6 @@ PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
 
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 2);
 
-#ifdef USE_OSD_SLAVE
-PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
-    .debug_mode = DEBUG_MODE,
-    .task_statistics = true,
-    .boardIdentifier = TARGET_BOARD_IDENTIFIER
-);
-#else
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .pidProfileIndex = 0,
     .activeRateProfile = 0,
@@ -139,7 +81,6 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .powerOnArmingGraceTime = 5,
     .boardIdentifier = TARGET_BOARD_IDENTIFIER
 );
-#endif
 
 #ifdef SWAP_SERIAL_PORT_0_AND_1_DEFAULTS
 #define FIRST_PORT_INDEX 1

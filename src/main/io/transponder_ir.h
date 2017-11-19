@@ -34,9 +34,9 @@ typedef struct transponderRequirement_s {
     uint16_t transmitJitter;
 } transponderRequirement_t;
 
-extern const transponderRequirement_t transponderRequirements[TRANSPONDER_PROVIDER_COUNT];
-
 PG_DECLARE(transponderConfig_t, transponderConfig);
+
+extern const transponderRequirement_t transponderRequirements[TRANSPONDER_PROVIDER_COUNT];
 
 void transponderInit(void);
 

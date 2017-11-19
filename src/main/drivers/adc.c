@@ -19,15 +19,20 @@
 #include <stdint.h>
 
 #include "platform.h"
-#include "common/utils.h"
 
 #ifdef USE_ADC
+
+#include "common/utils.h"
 
 #include "build/build_config.h"
 #include "build/debug.h"
 
+#include "drivers/adc_impl.h"
+#include "drivers/io.h"
+
+#include "pg/adc.h"
+
 #include "adc.h"
-#include "adc_impl.h"
 
 
 //#define DEBUG_ADC_CHANNELS
@@ -110,12 +115,5 @@ bool adcVerifyPin(ioTag_t tag, ADCDevice device)
     }
 
     return false;
-}
-
-#else
-uint16_t adcGetChannel(uint8_t channel)
-{
-    UNUSED(channel);
-    return 0;
 }
 #endif
