@@ -58,6 +58,9 @@
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW180_DEG
 
+#define MAG
+#define USE_MAG_HMC5883
+
 // *************** Baro **************************
 #define USE_I2C
 
