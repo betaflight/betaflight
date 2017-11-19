@@ -861,6 +861,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->enabled_stats[OSD_STAT_BLACKBOX_NUMBER] = true;
     osdConfig->enabled_stats[OSD_STAT_TIMER_1]         = false;
     osdConfig->enabled_stats[OSD_STAT_TIMER_2]         = true;
+    osdConfig->enabled_stats[OSD_STAT_RTC_DATE_TIME]   = false;
 
     osdConfig->units = OSD_UNIT_METRIC;
 
@@ -1103,10 +1104,22 @@ static bool isSomeStatEnabled(void) {
 static void osdShowStats(void)
 {
     uint8_t top = 2;
-    char buff[10];
+    char buff[OSD_ELEMENT_BUFFER_LENGTH];
 
     displayClearScreen(osdDisplayPort);
     displayWrite(osdDisplayPort, 2, top++, "  --- STATS ---");
+
+    if (osdConfig()->enabled_stats[OSD_STAT_RTC_DATE_TIME]) {
+        bool success = false;
+#ifdef USE_RTC_TIME
+        success = printRtcDateTime(&buff[0]);
+#endif
+        if (!success) {
+            tfp_sprintf(buff, "NO RTC");
+        }
+
+        displayWrite(osdDisplayPort, 2, top++, buff);
+    }
 
     if (osdConfig()->enabled_stats[OSD_STAT_TIMER_1]) {
         osdFormatTimer(buff, false, OSD_TIMER_1);

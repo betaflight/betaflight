@@ -102,6 +102,7 @@ typedef enum {
     OSD_STAT_TIMER_2,
     OSD_STAT_MAX_DISTANCE,
     OSD_STAT_BLACKBOX_NUMBER,
+    OSD_STAT_RTC_DATE_TIME,
     OSD_STAT_COUNT // MUST BE LAST
 } osd_stats_e;
 
