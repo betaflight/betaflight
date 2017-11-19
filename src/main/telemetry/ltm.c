@@ -70,7 +70,6 @@
 #include "flight/imu.h"
 #include "flight/failsafe.h"
 #include "flight/altitude.h"
-#include "flight/navigation.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/ltm.h"

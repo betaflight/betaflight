@@ -57,7 +57,7 @@ extern "C" {
     int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
     uint8_t GPS_numSat;
     uint16_t GPS_distanceToHome;
-    uint16_t GPS_directionToHome;
+    int16_t GPS_directionToHome;
     int32_t GPS_coord[2];
     gpsSolutionData_t gpsSol;
 

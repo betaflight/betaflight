@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "common/axis.h"
 #include "common/time.h"
 
 #include "config/parameter_group.h"
@@ -25,6 +26,8 @@
 #define LON 1
 
 #define GPS_DEGREES_DIVIDER 10000000L
+#define GPS_X 1
+#define GPS_Y 0
 
 typedef enum {
     GPS_NMEA = 0,
@@ -114,6 +117,22 @@ typedef struct gpsData_s {
 #define GPS_PACKET_LOG_ENTRY_COUNT 21 // To make this useful we should log as many packets as we can fit characters a single line of a OLED display.
 extern char gpsPacketLog[GPS_PACKET_LOG_ENTRY_COUNT];
 
+extern int32_t GPS_home[2];
+extern uint16_t GPS_distanceToHome;        // distance to home point in meters
+extern int16_t GPS_directionToHome;        // direction to home or hol point in degrees
+extern int16_t GPS_angle[ANGLE_INDEX_COUNT];                // it's the angles that must be applied for GPS correction
+extern float dTnav;             // Delta Time in milliseconds for navigation computations, updated with every good GPS read
+extern float GPS_scaleLonDown;  // this is used to offset the shrinking longitude as we go towards the poles
+extern int16_t actual_speed[2];
+extern int16_t nav_takeoff_bearing;
+// navigation mode
+typedef enum {
+    NAV_MODE_NONE = 0,
+    NAV_MODE_POSHOLD,
+    NAV_MODE_WP
+} navigationMode_e;
+extern navigationMode_e nav_mode;          // Navigation mode
+
 extern gpsData_t gpsData;
 extern gpsSolutionData_t gpsSol;
 
@@ -134,4 +153,9 @@ void gpsUpdate(timeUs_t currentTimeUs);
 bool gpsNewFrame(uint8_t c);
 struct serialPort_s;
 void gpsEnablePassthrough(struct serialPort_s *gpsPassthroughPort);
+void onGpsNewData(void);
+void GPS_reset_home_position(void);
+void GPS_calc_longitude_scaling(int32_t lat);
+void navNewGpsData(void);
+void GPS_distance_cm_bearing(int32_t *currentLat1, int32_t *currentLon1, int32_t *destinationLat2, int32_t *destinationLon2, uint32_t *dist, int32_t *bearing);
 

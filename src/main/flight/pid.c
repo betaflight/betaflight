@@ -45,7 +45,8 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
-#include "flight/navigation.h"
+
+#include "io/gps.h"
 
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"

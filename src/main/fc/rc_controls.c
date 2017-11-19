@@ -60,7 +60,6 @@
 #include "scheduler/scheduler.h"
 
 #include "flight/pid.h"
-#include "flight/navigation.h"
 #include "flight/failsafe.h"
 
 static pidProfile_t *pidProfile;

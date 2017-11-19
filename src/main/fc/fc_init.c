@@ -607,7 +607,9 @@ void init(void)
 #ifdef USE_GPS
     if (feature(FEATURE_GPS)) {
         gpsInit();
+#ifdef USE_NAV
         navigationInit();
+#endif
     }
 #endif
 
