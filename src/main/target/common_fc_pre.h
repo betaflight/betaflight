@@ -148,6 +148,7 @@
 #define USE_GPS_UBLOX
 #define USE_GPS_NMEA
 #define USE_NAV
+#define USE_ALT_HOLD
 #define USE_UNCOMMON_MIXERS
 #define USE_OSD_ADJUSTMENTS
 #endif

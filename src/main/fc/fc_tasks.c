@@ -140,12 +140,13 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
     processRx(currentTimeUs);
     isRXDataNew = true;
 
-#if !defined(USE_BARO) && !defined(USE_SONAR)
+#if !defined(USE_ALT_HOLD)
     // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
     updateRcCommands();
 #endif
     updateArmingStatus();
 
+#ifdef USE_ALT_HOLD
 #ifdef USE_BARO
     if (sensors(SENSOR_BARO)) {
         updateAltHoldState();
@@ -157,6 +158,7 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
         updateSonarAltHoldState();
     }
 #endif
+#endif // USE_ALT_HOLD
 }
 #endif
 
@@ -183,7 +185,7 @@ static void taskUpdateBaro(timeUs_t currentTimeUs)
 }
 #endif
 
-#if defined(USE_BARO) || defined(USE_SONAR)
+#if defined(USE_ALT_HOLD)
 static void taskCalculateAltitude(timeUs_t currentTimeUs)
 {
     if (false
@@ -196,7 +198,7 @@ static void taskCalculateAltitude(timeUs_t currentTimeUs)
         ) {
         calculateEstimatedAltitude(currentTimeUs);
     }}
-#endif
+#endif // USE_ALT_HOLD
 
 #ifdef USE_TELEMETRY
 static void taskTelemetry(timeUs_t currentTimeUs)
@@ -295,7 +297,7 @@ void fcTasksInit(void)
 #ifdef USE_SONAR
     setTaskEnabled(TASK_SONAR, sensors(SENSOR_SONAR));
 #endif
-#if defined(USE_BARO) || defined(USE_SONAR)
+#ifdef USE_ALT_HOLD
     setTaskEnabled(TASK_ALTITUDE, sensors(SENSOR_BARO) || sensors(SENSOR_SONAR));
 #endif
 #ifdef USE_DASHBOARD
@@ -501,7 +503,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#if defined(USE_BARO) || defined(USE_SONAR)
+#if defined(USE_ALT_HOLD)
     [TASK_ALTITUDE] = {
         .taskName = "ALTITUDE",
         .taskFunc = taskCalculateAltitude,

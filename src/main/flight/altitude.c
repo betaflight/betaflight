@@ -52,7 +52,7 @@ static int32_t estimatedVario = 0;                      // variometer in cm/s
 static int32_t estimatedAltitude = 0;                // in cm
 
 
-#if defined(USE_BARO) || defined(USE_SONAR)
+#if defined(USE_ALT_HOLD)
 
 enum {
     DEBUG_ALTITUDE_ACC,
@@ -294,7 +294,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     altHoldThrottleAdjustment = calculateAltHoldThrottleAdjustment(vel_tmp, accZ_tmp, accZ_old);
     accZ_old = accZ_tmp;
 }
-#endif // defined(USE_BARO) || defined(USE_SONAR)
+#endif // USE_ALT_HOLD
 
 int32_t getEstimatedAltitude(void)
 {
