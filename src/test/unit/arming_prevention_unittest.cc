@@ -662,6 +662,7 @@ extern "C" {
     void accSetCalibrationCycles(uint16_t) {}
     void baroSetCalibrationCycles(uint16_t) {}
     void changePidProfile(uint8_t) {}
+    void changeControlRateProfile(uint8_t) {}
     void dashboardEnablePageCycling(void) {}
     void dashboardDisablePageCycling(void) {}
     bool imuQuaternionHeadfreeOffsetSet(void) { return true; }
