@@ -140,12 +140,13 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
     processRx(currentTimeUs);
     isRXDataNew = true;
 
-#if !defined(USE_BARO) && !defined(USE_SONAR)
+#if !defined(USE_ALT_HOLD)
     // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
     updateRcCommands();
 #endif
     updateArmingStatus();
 
+#ifdef USE_ALT_HOLD
 #ifdef USE_BARO
     if (sensors(SENSOR_BARO)) {
         updateAltHoldState();
@@ -157,6 +158,7 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
         updateSonarAltHoldState();
     }
 #endif
+#endif // USE_ALT_HOLD
 }
 #endif
 
@@ -196,7 +198,7 @@ static void taskCalculateAltitude(timeUs_t currentTimeUs)
         ) {
         calculateEstimatedAltitude(currentTimeUs);
     }}
-#endif
+#endif // USE_BARO || USE_SONAR
 
 #ifdef USE_TELEMETRY
 static void taskTelemetry(timeUs_t currentTimeUs)

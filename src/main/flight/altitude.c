@@ -52,13 +52,16 @@ static int32_t estimatedVario = 0;                      // variometer in cm/s
 static int32_t estimatedAltitude = 0;                // in cm
 
 
-#if defined(USE_BARO) || defined(USE_SONAR)
 
 enum {
     DEBUG_ALTITUDE_ACC,
     DEBUG_ALTITUDE_VEL,
     DEBUG_ALTITUDE_HEIGHT
 };
+// 40hz update rate (20hz LPF on acc)
+#define BARO_UPDATE_FREQUENCY_40HZ (1000 * 25)
+
+#if defined(USE_ALT_HOLD)
 
 PG_REGISTER_WITH_RESET_TEMPLATE(airplaneConfig_t, airplaneConfig, PG_AIRPLANE_CONFIG, 0);
 
@@ -72,8 +75,6 @@ static int32_t errorVelocityI = 0;
 static int32_t altHoldThrottleAdjustment = 0;
 static int16_t initialThrottleHold;
 
-// 40hz update rate (20hz LPF on acc)
-#define BARO_UPDATE_FREQUENCY_40HZ (1000 * 25)
 
 #define DEGREES_80_IN_DECIDEGREES 800
 
@@ -202,7 +203,9 @@ int32_t calculateAltHoldThrottleAdjustment(int32_t vel_tmp, float accZ_tmp, floa
 
     return result;
 }
+#endif // USE_ALT_HOLD
 
+#if defined(USE_BARO) || defined(USE_SONAR)
 void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 {
     static timeUs_t previousTimeUs = 0;
@@ -280,7 +283,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
         baroVel = constrain(baroVel, -1500, 1500);  // constrain baro velocity +/- 1500cm/s
         baroVel = applyDeadband(baroVel, 10);       // to reduce noise near zero
     }
-#endif // BARO
+#endif // USE_BARO
 
     // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity).
     // By using CF it's possible to correct the drift of integrated accZ (velocity) without loosing the phase, i.e without delay
@@ -290,11 +293,15 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     // set vario
     estimatedVario = applyDeadband(vel_tmp, 5);
 
+#ifdef USE_ALT_HOLD
     static float accZ_old = 0.0f;
     altHoldThrottleAdjustment = calculateAltHoldThrottleAdjustment(vel_tmp, accZ_tmp, accZ_old);
     accZ_old = accZ_tmp;
+#else
+    UNUSED(accZ_tmp);
+#endif
 }
-#endif // defined(USE_BARO) || defined(USE_SONAR)
+#endif // USE_BARO || USE_SONAR
 
 int32_t getEstimatedAltitude(void)
 {
