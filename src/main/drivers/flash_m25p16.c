@@ -52,6 +52,8 @@
 #define JEDEC_ID_WINBOND_W25Q64        0xEF4017
 #define JEDEC_ID_WINBOND_W25Q128       0xEF4018
 #define JEDEC_ID_WINBOND_W25Q256       0xEF4019
+#define JEDEC_ID_ADESTO_AT25DF256      0x1F4000
+#define JEDEC_ID_ADESTO_AT25DF512C     0x1F6501
 
 #define DISABLE_M25P16       IOHi(bus->busdev_u.spi.csnPin); __NOP()
 #define ENABLE_M25P16        __NOP(); IOLo(bus->busdev_u.spi.csnPin)
@@ -185,6 +187,7 @@ static bool m25p16_readIdentification(void)
         break;
     case JEDEC_ID_WINBOND_W25Q256:
     case JEDEC_ID_MACRONIX_MX25L25635E:
+    case JEDEC_ID_ADESTO_AT25DF256:
         geometry.sectors = 512;
         geometry.pagesPerSector = 256;
         break;
