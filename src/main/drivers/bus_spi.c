@@ -26,7 +26,6 @@
 #include "drivers/bus.h"
 #include "drivers/bus_spi.h"
 #include "drivers/bus_spi_impl.h"
-#include "drivers/exti.h"
 #include "drivers/io.h"
 #include "drivers/rcc.h"
 
@@ -66,6 +65,7 @@ SPI_TypeDef *spiInstanceByDevice(SPIDevice device)
     return spiDevice[device].dev;
 }
 
+#if !defined(STM32F7)
 void spiInitDevice(SPIDevice device)
 {
     spiDevice_t *spi = &(spiDevice[device]);
@@ -128,6 +128,7 @@ void spiInitDevice(SPIDevice device)
     SPI_Init(spi->dev, &spiInit);
     SPI_Cmd(spi->dev, ENABLE);
 }
+#endif // !defined(STM32F7)
 
 bool spiInit(SPIDevice device)
 {
@@ -149,7 +150,7 @@ bool spiInit(SPIDevice device)
         break;
 #endif
     case SPIDEV_3:
-#if defined(USE_SPI_DEVICE_3) && (defined(STM32F303xC) || defined(STM32F4))
+#if defined(USE_SPI_DEVICE_3) && (defined(STM32F303xC) || defined(STM32F4) || defined(STM32F7))
         spiInitDevice(device);
         return true;
 #else
@@ -176,6 +177,7 @@ uint32_t spiTimeoutUserCallback(SPI_TypeDef *instance)
     return spiDevice[device].errorCount;
 }
 
+#if !defined(STM32F7)
 // return uint8_t value or -1 when failure
 uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t txByte)
 {
@@ -248,6 +250,7 @@ bool spiTransfer(SPI_TypeDef *instance, const uint8_t *txData, uint8_t *rxData, 
 
     return true;
 }
+#endif // !defined(STM32F7)
 
 #include "build/debug.h"
 
@@ -259,6 +262,7 @@ bool spiBusTransfer(const busDevice_t *bus, const uint8_t *txData, uint8_t *rxDa
     return true;
 }
 
+#if !defined(STM32F7)
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
 {
 #define BR_BITS ((BIT(5) | BIT(4) | BIT(3)))
@@ -280,6 +284,7 @@ void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
 
 #undef BR_BITS
 }
+#endif // !defined(STM32F7)
 
 uint16_t spiGetErrorCounter(SPI_TypeDef *instance)
 {
