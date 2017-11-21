@@ -90,7 +90,9 @@ void spiPreInitCs(ioTag_t iotag);
 void spiPreInitCsOutPU(ioTag_t iotag);
 
 bool spiInit(SPIDevice device);
+void spiInitDevice(SPIDevice device);
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor);
+uint32_t spiTimeoutUserCallback(SPI_TypeDef *instance);
 uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data);
 bool spiIsBusBusy(SPI_TypeDef *instance);
 
