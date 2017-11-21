@@ -450,8 +450,6 @@ static void saSendFrame(uint8_t *buf, int len)
         serialWrite(smartAudioSerialPort, buf[i]);
     }
 
-    serialWrite(smartAudioSerialPort, 0x00); // XXX Probably don't need this
-
     sa_lastTransmissionMs = millis();
     saStat.pktsent++;
 }
@@ -500,7 +498,7 @@ typedef struct saCmdQueue_s {
     int len;
 } saCmdQueue_t;
 
-#define SA_QSIZE 4     // 1 heartbeat (GetSettings) + 2 commands + 1 slack
+#define SA_QSIZE 6     // 1 heartbeat (GetSettings) + 2 commands + 1 slack
 static saCmdQueue_t sa_queue[SA_QSIZE];
 static uint8_t sa_qhead = 0;
 static uint8_t sa_qtail = 0;
@@ -564,6 +562,7 @@ static bool saValidateFreq(uint16_t freq)
 static void saDoDevSetFreq(uint16_t freq)
 {
     static uint8_t buf[7] = { 0xAA, 0x55, SACMD(SA_CMD_SET_FREQ), 2 };
+    static uint8_t switchBuf[7];
 
     if (freq & SA_FREQ_GETPIT) {
         dprintf(("smartAudioSetFreq: GETPIT\r\n"));
@@ -577,27 +576,25 @@ static void saDoDevSetFreq(uint16_t freq)
     buf[5] = freq & 0xff;
     buf[6] = CRC8(buf, 6);
 
-    saQueueCmd(buf, 7);
-}
-
-static void saDevSetFreq(uint16_t freq)
-{
     // Need to work around apparent SmartAudio bug when going from 'channel'
     // to 'user-freq' mode, where the set-freq command will fail if the freq
     // value is unchanged from the previous 'user-freq' mode
-    if ((saDevice.mode & SA_MODE_GET_FREQ_BY_FREQ) == 0 &&
-                                                    freq == saDevice.freq) {
-        saDoDevSetFreq(freq + 1);
-        saSendQueue();
-        saGetSettings();
-        saSendQueue();
+    if ((saDevice.mode & SA_MODE_GET_FREQ_BY_FREQ) == 0 && freq == saDevice.freq) {
+        memcpy(&switchBuf, &buf, sizeof(buf));
+        const uint16_t switchFreq = freq + ((freq == VTX_SMARTAUDIO_MAX_FREQUENCY_MHZ) ? -1 : 1);
+        switchBuf[4] = (switchFreq >> 8);
+        switchBuf[5] = switchFreq & 0xff;
+        switchBuf[6] = CRC8(switchBuf, 6);
+
+        saQueueCmd(switchBuf, 7);
     }
-    saDoDevSetFreq(freq);          //enter desired frequency
+
+    saQueueCmd(buf, 7);
 }
 
 void saSetFreq(uint16_t freq)
 {
-    saDevSetFreq(freq);
+    saDoDevSetFreq(freq);
 }
 
 void saSetPitFreq(uint16_t freq)
@@ -682,7 +679,7 @@ bool vtxSmartAudioInit(void)
 
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_SMARTAUDIO);
     if (portConfig) {
-        portOptions_e portOptions = 0;
+        portOptions_e portOptions = SERIAL_STOPBITS_2;
 #if defined(VTX_COMMON)
         portOptions = portOptions | (vtxConfig()->halfDuplex ? SERIAL_BIDIR | SERIAL_BIDIR_PP : SERIAL_UNIDIR);
 #else
@@ -882,8 +879,8 @@ bool vtxSAGetFreq(uint16_t *pFreq)
 
 	// if not in user-freq mode then convert band/chan to frequency
 	*pFreq = (saDevice.mode & SA_MODE_GET_FREQ_BY_FREQ) ? saDevice.freq :
-		vtx58_Bandchan2Freq(SA_DEVICE_CHVAL_TO_BAND(saDevice.channel) + 1,
-				SA_DEVICE_CHVAL_TO_CHANNEL(saDevice.channel) + 1);
+        vtx58_Bandchan2Freq(SA_DEVICE_CHVAL_TO_BAND(saDevice.channel) + 1,
+        SA_DEVICE_CHVAL_TO_CHANNEL(saDevice.channel) + 1);
 	return true;
 }
 
