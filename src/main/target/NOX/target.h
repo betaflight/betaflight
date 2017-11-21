@@ -27,11 +27,11 @@
 
 #define INVERTER_PIN_UART2      PC14
 
-#define ACC
+#define USE_ACC
 #define USE_ACC_SPI_MPU6500
 #define USE_ACC_SPI_MPU6000
 
-#define GYRO
+#define USE_GYRO
 #define USE_GYRO_SPI_MPU6500
 #define USE_GYRO_SPI_MPU6000
 
@@ -45,13 +45,13 @@
 #define MPU_INT_EXTI            PA8
 #define USE_MPU_DATA_READY_SIGNAL
 
-#define BARO
+#define USE_BARO
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 #define BMP280_SPI_INSTANCE     SPI2
 #define BMP280_CS_PIN           PA9
 
-#define OSD
+#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      PA10
@@ -114,5 +114,5 @@
 #define TARGET_IO_PORTB (0xffff & ~(BIT(2)|BIT(11)))
 #define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
 
-#define USABLE_TIMER_CHANNEL_COUNT 9
+#define USABLE_TIMER_CHANNEL_COUNT 8
 #define USED_TIMERS ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(9) )
