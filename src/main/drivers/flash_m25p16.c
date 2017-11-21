@@ -251,7 +251,7 @@ bool m25p16_init(const flashConfig_t *flashConfig)
     return m25p16_readIdentification();
 }
 
-void m25p16_setAddress(bool useLongAddress, uint32_t address, uint8_t *buf)
+void m25p16_setCommandAddress(uint8_t *buf, uint32_t address, bool useLongAddress)
 {
     if (useLongAddress) {
         *buf++ = (address >> 24) & 0xff;
@@ -268,7 +268,7 @@ void m25p16_eraseSector(uint32_t address)
 {
     uint8_t out[5] = { M25P16_INSTRUCTION_SECTOR_ERASE };
 
-    m25p16_setAddress(isLargeFlash, address, &out[1]);
+    m25p16_setCommandAddress(&out[1], address, isLargeFlash);
 
     m25p16_waitForReady(SECTOR_ERASE_TIMEOUT_MILLIS);
 
@@ -294,7 +294,7 @@ void m25p16_pageProgramBegin(uint32_t address)
 {
     uint8_t command[5] = { M25P16_INSTRUCTION_PAGE_PROGRAM };
 
-    m25p16_setAddress(isLargeFlash, address, &command[1]);
+    m25p16_setCommandAddress(&command[1], address, isLargeFlash);
 
     m25p16_waitForReady(DEFAULT_TIMEOUT_MILLIS);
 
@@ -351,7 +351,7 @@ int m25p16_readBytes(uint32_t address, uint8_t *buffer, int length)
 {
     uint8_t command[5] = { M25P16_INSTRUCTION_READ_BYTES };
 
-    m25p16_setAddress(isLargeFlash, address, &command[1]);
+    m25p16_setCommandAddress(&command[1], address, isLargeFlash);
 
     if (!m25p16_waitForReady(DEFAULT_TIMEOUT_MILLIS)) {
         return 0;
