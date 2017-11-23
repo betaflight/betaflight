@@ -68,6 +68,7 @@
 #include "io/statusindicator.h"
 #include "io/transponder_ir.h"
 #include "io/vtx_control.h"
+#include "io/vtx_rtc6705.h"
 
 #include "rx/rx.h"
 
@@ -85,13 +86,6 @@
 
 
 // June 2013     V2.2-dev
-
-#ifdef VTX_RTC6705
-bool canUpdateVTX(void);
-#define VTX_IF_READY if (canUpdateVTX())
-#else
-#define VTX_IF_READY
-#endif
 
 enum {
     ALIGN_GYRO = 0,
@@ -381,6 +375,16 @@ void updateMagHold(void)
 }
 #endif
 
+#ifdef VTX_CONTROL
+static bool canUpdateVTX(void)
+{
+#ifdef VTX_RTC6705
+    return vtxRTC6705CanUpdate();
+#endif
+    return true;
+}
+#endif
+
 /*
  * processRx called from taskUpdateRxMain
  */
@@ -586,7 +590,7 @@ void processRx(timeUs_t currentTimeUs)
 #ifdef VTX_CONTROL
     vtxUpdateActivatedChannel();
 
-    VTX_IF_READY {
+    if (canUpdateVTX()) {
         handleVTXControlButton();
     }
 #endif

@@ -33,24 +33,23 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
+#include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "drivers/max7456.h"
 #include "drivers/system.h"
 #include "drivers/time.h"
 #include "drivers/vtx_rtc6705.h"
 #include "drivers/vtx_common.h"
 
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
 #include "io/vtx.h"
 #include "io/vtx_rtc6705.h"
 #include "io/vtx_string.h"
-
-bool canUpdateVTX(void);
-
-#define WAIT_FOR_VTX while (!canUpdateVTX()) {}
 
 #if defined(USE_CMS) || defined(VTX_COMMON)
 const char * const rtc6705PowerNames[VTX_RTC6705_POWER_COUNT] = {
@@ -84,10 +83,20 @@ void vtxRTC6705Configure(void)
     rtc6705SetBandAndChannel(vtxRTC6705.band - 1, vtxRTC6705.channel - 1);
 }
 
+bool vtxRTC6705CanUpdate(void)
+{
+#if defined(MAX7456_SPI_INSTANCE) && defined(RTC6705_SPI_INSTANCE) && defined(SPI_SHARED_MAX7456_AND_RTC6705)
+    if (feature(FEATURE_OSD)) {
+        return !max7456DmaInProgress();
+    }
+#endif
+    return true;
+}
+
 #ifdef RTC6705_POWER_PIN
 static void vtxRTC6705EnableAndConfigure(void)
 {
-    WAIT_FOR_VTX;
+    while (!vtxRTC6705CanUpdate());
 
     rtc6705Enable();
 
@@ -117,7 +126,7 @@ bool vtxRTC6705IsReady(void)
 
 void vtxRTC6705SetBandAndChannel(uint8_t band, uint8_t channel)
 {
-    WAIT_FOR_VTX;
+    while (!vtxRTC6705CanUpdate());
 
     if (band && channel) {
         if (vtxRTC6705.powerIndex > 0) {
@@ -131,7 +140,7 @@ void vtxRTC6705SetBandAndChannel(uint8_t band, uint8_t channel)
 
 void vtxRTC6705SetPowerByIndex(uint8_t index)
 {
-    WAIT_FOR_VTX;
+    while (!vtxRTC6705CanUpdate());
 
 #ifdef RTC6705_POWER_PIN
     if (index == 0) {
