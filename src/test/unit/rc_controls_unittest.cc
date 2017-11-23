@@ -31,6 +31,7 @@ extern "C" {
     #include "config/parameter_group_ids.h"
 
     #include "blackbox/blackbox.h"
+    #include "blackbox/blackbox_fielddefs.h"
 
     #include "drivers/sensor.h"
 
