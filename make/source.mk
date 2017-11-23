@@ -219,8 +219,10 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/buf_writer.c \
             drivers/bus.c \
             drivers/bus_spi.c \
+            drivers/bus_spi_ll.c \
             drivers/exti.c \
             drivers/io.c \
+            drivers/max7456.c \
             drivers/pwm_output.c \
             drivers/rcc.c \
             drivers/serial.c \
