@@ -71,7 +71,7 @@ serialPort_t *debugSerialPort = NULL;
 static serialPort_t *smartAudioSerialPort = NULL;
 
 #if defined(USE_CMS) || defined(VTX_COMMON)
-static const char * const saPowerNames[VTX_SMARTAUDIO_POWER_COUNT+1] = {
+const char * const saPowerNames[VTX_SMARTAUDIO_POWER_COUNT+1] = {
     "---", "25 ", "200", "500", "800",
 };
 #endif
