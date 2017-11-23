@@ -42,11 +42,11 @@ typedef struct busDevice_s {
         struct deviceI2C_s {
             I2CDevice device;
             uint8_t address;
-         } i2c;
-         struct deviceMpuSlave_s {
+        } i2c;
+        struct deviceMpuSlave_s {
             const struct busDevice_s *master;
             uint8_t address;
-         } mpuSlave;
+        } mpuSlave;
     } busdev_u;
 } busDevice_t;
 
