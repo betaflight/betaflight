@@ -20,6 +20,12 @@
 
 #define TARGET_BOARD_IDENTIFIER "BFF3"
 
+// Removing some features to make the firmware fit the flash space
+#undef USE_TELEMETRY_HOTT
+#undef USE_TELEMETRY_JETIEXBUS
+#undef USE_TELEMETRY_LTM
+
+
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
 #define BEEPER                  PC15

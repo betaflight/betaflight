@@ -126,10 +126,18 @@ static displayPort_t *cmsDisplayPortSelectNext(void)
 // HoTT Telemetry Screen
 //   21 cols x 8 rows
 //
+// Spektrum SRXL Telemtry Textgenerator
+//   13 cols x 9 rows, top row printed as a Bold Heading
+//   Needs the "smallScreen" adaptions
 
-#define LEFT_MENU_COLUMN  1
-#define RIGHT_MENU_COLUMN(p) ((p)->cols - 8)
-#define MAX_MENU_ITEMS(p)    ((p)->rows - 2)
+
+
+#define NORMAL_SCREEN_MIN_COLS 18      // Less is a small screen
+static bool    smallScreen;
+static uint8_t leftMenuColumn;
+static uint8_t rightMenuColumn;
+static uint8_t maxMenuItems;
+static uint8_t linesPerMenuItem;
 
 bool cmsInMenu = false;
 
@@ -181,14 +189,15 @@ static CMS_Menu menuErr = {
 
 static void cmsUpdateMaxRow(displayPort_t *instance)
 {
+    UNUSED(instance);
     pageMaxRow = 0;
 
     for (const OSD_Entry *ptr = pageTop; ptr->type != OME_END; ptr++) {
         pageMaxRow++;
     }
 
-    if (pageMaxRow >  MAX_MENU_ITEMS(instance)) {
-        pageMaxRow = MAX_MENU_ITEMS(instance);
+    if (pageMaxRow > maxMenuItems) {
+        pageMaxRow = maxMenuItems;
     }
 
     pageMaxRow--;
@@ -196,13 +205,14 @@ static void cmsUpdateMaxRow(displayPort_t *instance)
 
 static uint8_t cmsCursorAbsolute(displayPort_t *instance)
 {
-    return currentCtx.cursorRow + currentCtx.page * MAX_MENU_ITEMS(instance);
+    UNUSED(instance);
+    return currentCtx.cursorRow + currentCtx.page * maxMenuItems;
 }
 
 static void cmsPageSelect(displayPort_t *instance, int8_t newpage)
 {
     currentCtx.page = (newpage + pageCount) % pageCount;
-    pageTop = &currentCtx.menu->entries[currentCtx.page * MAX_MENU_ITEMS(instance)];
+    pageTop = &currentCtx.menu->entries[currentCtx.page * maxMenuItems];
     cmsUpdateMaxRow(instance);
     displayClearScreen(instance);
 }
@@ -244,7 +254,13 @@ static void cmsFormatFloat(int32_t value, char *floatString)
         floatString[0] = ' ';
 }
 
-static void cmsPadToSize(char *buf, int size)
+// CMS on OSD legacy was to use LEFT aligned values, not the RIGHT way ;-)
+#define CMS_OSD_RIGHT_ALIGNED_VALUES
+
+#ifndef CMS_OSD_RIGHT_ALIGNED_VALUES
+
+// Pad buffer to the left, i.e. align left
+static void cmsPadRightToSize(char *buf, int size)
 {
     int i;
 
@@ -259,17 +275,69 @@ static void cmsPadToSize(char *buf, int size)
 
     buf[size] = 0;
 }
+#endif
+
+// Pad buffer to the left, i.e. align right
+static void cmsPadLeftToSize(char *buf, int size)
+{
+    int i,j;
+    int len = strlen(buf);
+
+    for (i = size - 1, j = size - len ; i - j >= 0 ; i--) {
+      buf[i] = buf[i - j];
+    }
+
+    for ( ; i >= 0 ; i--) {
+      buf[i] = ' ';
+    }
+
+    buf[size] = 0;
+}
+
+static void cmsPadToSize(char *buf, int size)
+{
+    // Make absolutely sure the string terminated.
+    buf[size] = 0x00,
+
+#ifdef CMS_OSD_RIGHT_ALIGNED_VALUES
+    cmsPadLeftToSize(buf, size);
+#else
+    smallScreen ? cmsPadLeftToSize(buf, size) : cmsPadRightToSize(buf, size);
+#endif
+}
+
+static int cmsDrawMenuItemValue(displayPort_t *pDisplay, char *buff, uint8_t row, uint8_t maxSize)
+{
+    int colpos;
+    int cnt;
+
+    cmsPadToSize(buff, maxSize);
+#ifdef CMS_OSD_RIGHT_ALIGNED_VALUES
+    colpos = rightMenuColumn - maxSize;
+#else
+    colpos = smallScreen ? rightMenuColumn - maxSize : rightMenuColumn;
+#endif
+    cnt = displayWrite(pDisplay, colpos, row, buff);
+    return cnt;
+}
 
 static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
 {
-    #define CMS_DRAW_BUFFER_LEN 10u
-    char buff[CMS_DRAW_BUFFER_LEN];
+    #define CMS_DRAW_BUFFER_LEN 12
+    #define CMS_NUM_FIELD_LEN 5
+
+    char buff[CMS_DRAW_BUFFER_LEN +1]; // Make room for null terminator.
     int cnt = 0;
+
+    if (smallScreen) {
+        row++;
+    }
 
     switch (p->type) {
     case OME_String:
         if (IS_PRINTVALUE(p) && p->data) {
-            cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, p->data);
+            strncpy(buff, p->data, CMS_DRAW_BUFFER_LEN);
+            cnt = cmsDrawMenuItemValue(pDisplay, buff, row, CMS_DRAW_BUFFER_LEN);
             CLR_PRINTVALUE(p);
         }
         break;
@@ -278,19 +346,19 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
     case OME_Funcall:
         if (IS_PRINTVALUE(p))  {
 
-            int colPos = RIGHT_MENU_COLUMN(pDisplay);
+            buff[0]= 0x0;
 
             if ((p->type == OME_Submenu) && p->func && (p->flags & OPTSTRING)) {
 
                 // Special case of sub menu entry with optional value display.
 
                 char *str = ((CMSMenuOptFuncPtr)p->func)();
-                cnt = displayWrite(pDisplay, colPos, row, str);
-                colPos += strlen(str);
+                strncpy( buff, str, CMS_DRAW_BUFFER_LEN);
             }
+            strncat(buff, ">", CMS_DRAW_BUFFER_LEN);
 
-            cnt += displayWrite(pDisplay, colPos, row, ">");
-
+            row = smallScreen  ? row - 1  : row;
+            cnt = cmsDrawMenuItemValue(pDisplay, buff, row, strlen(buff));
             CLR_PRINTVALUE(p);
         }
         break;
@@ -298,10 +366,12 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
     case OME_Bool:
         if (IS_PRINTVALUE(p) && p->data) {
             if (*((uint8_t *)(p->data))) {
-                cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "YES");
+              strcpy(buff, "YES");
             } else {
-                cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "NO ");
+              strcpy(buff, "NO ");
             }
+
+            cnt = cmsDrawMenuItemValue(pDisplay, buff, row, 3);
             CLR_PRINTVALUE(p);
         }
         break;
@@ -310,9 +380,8 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
         if (IS_PRINTVALUE(p)) {
             OSD_TAB_t *ptr = p->data;
             char * str = (char *)ptr->names[*ptr->val];
-            memcpy(buff, str, MAX(CMS_DRAW_BUFFER_LEN, strlen(str)));
-            cmsPadToSize(buff, CMS_DRAW_BUFFER_LEN);
-            cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, buff);
+            strncpy(buff, str, CMS_DRAW_BUFFER_LEN);
+            cnt = cmsDrawMenuItemValue(pDisplay, buff, row, CMS_DRAW_BUFFER_LEN);
             CLR_PRINTVALUE(p);
         }
         break;
@@ -323,10 +392,11 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
             uint16_t *val = (uint16_t *)p->data;
 
             if (VISIBLE(*val)) {
-                cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "YES");
+                strcpy(buff, "YES");
             } else {
-                cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "NO ");
+              strcpy(buff, "NO ");
             }
+            cnt = cmsDrawMenuItemValue(pDisplay, buff, row, 3);
             CLR_PRINTVALUE(p);
         }
         break;
@@ -336,8 +406,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
         if (IS_PRINTVALUE(p) && p->data) {
             OSD_UINT8_t *ptr = p->data;
             itoa(*ptr->val, buff, 10);
-            cmsPadToSize(buff, 5);
-            cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, buff);
+            cnt = cmsDrawMenuItemValue(pDisplay, buff, row, CMS_NUM_FIELD_LEN);
             CLR_PRINTVALUE(p);
         }
         break;
@@ -346,8 +415,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
         if (IS_PRINTVALUE(p) && p->data) {
             OSD_INT8_t *ptr = p->data;
             itoa(*ptr->val, buff, 10);
-            cmsPadToSize(buff, 5);
-            cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, buff);
+            cnt = cmsDrawMenuItemValue(pDisplay, buff, row, CMS_NUM_FIELD_LEN);
             CLR_PRINTVALUE(p);
         }
         break;
@@ -356,8 +424,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
         if (IS_PRINTVALUE(p) && p->data) {
             OSD_UINT16_t *ptr = p->data;
             itoa(*ptr->val, buff, 10);
-            cmsPadToSize(buff, 5);
-            cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, buff);
+            cnt = cmsDrawMenuItemValue(pDisplay, buff, row, CMS_NUM_FIELD_LEN);
             CLR_PRINTVALUE(p);
         }
         break;
@@ -366,8 +433,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
         if (IS_PRINTVALUE(p) && p->data) {
             OSD_UINT16_t *ptr = p->data;
             itoa(*ptr->val, buff, 10);
-            cmsPadToSize(buff, 5);
-            cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, buff);
+            cnt = cmsDrawMenuItemValue(pDisplay, buff, row, CMS_NUM_FIELD_LEN);
             CLR_PRINTVALUE(p);
         }
         break;
@@ -376,8 +442,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
         if (IS_PRINTVALUE(p) && p->data) {
             OSD_FLOAT_t *ptr = p->data;
             cmsFormatFloat(*ptr->val * ptr->multipler, buff);
-            cmsPadToSize(buff, 5);
-            cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay) - 1, row, buff); // XXX One char left ???
+            cnt = cmsDrawMenuItemValue(pDisplay, buff, row, CMS_NUM_FIELD_LEN);
             CLR_PRINTVALUE(p);
         }
         break;
@@ -385,7 +450,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
     case OME_Label:
         if (IS_PRINTVALUE(p) && p->data) {
             // A label with optional string, immediately following text
-            cnt = displayWrite(pDisplay, LEFT_MENU_COLUMN + 2 + strlen(p->text), row, p->data);
+            cnt = displayWrite(pDisplay, leftMenuColumn + 1 + (uint8_t)strlen(p->text), row, p->data);
             CLR_PRINTVALUE(p);
         }
         break;
@@ -399,8 +464,12 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
         // Fall through
     default:
 #ifdef CMS_MENU_DEBUG
-        // Shouldn't happen. Notify creator of this menu content.
-        cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "BADENT");
+        // Shouldn't happen. Notify creator of this menu content
+#ifdef CMS_OSD_RIGHT_ALIGNED_VALUES
+        cnt = displayWrite(pDisplay, rightMenuColumn - 6, row, "BADENT");
+#else.
+        cnt = displayWrite(pDisplay, rightMenuColumn, row, "BADENT");
+#endif
 #endif
         break;
     }
@@ -415,7 +484,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
 
     uint8_t i;
     OSD_Entry *p;
-    uint8_t top = (pDisplay->rows - pageMaxRow) / 2 - 1;
+    uint8_t top = smallScreen ? 1 : (pDisplay->rows - pageMaxRow)/2;
 
     // Polled (dynamic) value display denominator.
 
@@ -450,14 +519,14 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
     cmsPageDebug();
 
     if (pDisplay->cursorRow >= 0 && currentCtx.cursorRow != pDisplay->cursorRow) {
-        room -= displayWrite(pDisplay, LEFT_MENU_COLUMN, pDisplay->cursorRow + top, "  ");
+        room -= displayWrite(pDisplay, leftMenuColumn, top + pDisplay->cursorRow * linesPerMenuItem, " ");
     }
 
     if (room < 30)
         return;
 
     if (pDisplay->cursorRow != currentCtx.cursorRow) {
-        room -= displayWrite(pDisplay, LEFT_MENU_COLUMN, currentCtx.cursorRow + top, " >");
+        room -= displayWrite(pDisplay, leftMenuColumn, top + currentCtx.cursorRow * linesPerMenuItem, ">");
         pDisplay->cursorRow = currentCtx.cursorRow;
     }
 
@@ -465,25 +534,23 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
         return;
 
     // Print text labels
-    for (i = 0, p = pageTop; i < MAX_MENU_ITEMS(pDisplay) && p->type != OME_END; i++, p++) {
+    for (i = 0, p = pageTop; i < maxMenuItems && p->type != OME_END; i++, p++) {
         if (IS_PRINTLABEL(p)) {
-            uint8_t coloff = LEFT_MENU_COLUMN;
-            coloff += (p->type == OME_Label) ? 1 : 2;
-            room -= displayWrite(pDisplay, coloff, i + top, p->text);
+            uint8_t coloff = leftMenuColumn;
+            coloff += (p->type == OME_Label) ? 0 : 1;
+            room -= displayWrite(pDisplay, coloff, top + i * linesPerMenuItem, p->text);
             CLR_PRINTLABEL(p);
             if (room < 30)
                 return;
         }
-    }
 
     // Print values
 
     // XXX Polled values at latter positions in the list may not be
     // XXX printed if not enough room in the middle of the list.
 
-    for (i = 0, p = pageTop; i < MAX_MENU_ITEMS(pDisplay) && p->type != OME_END; i++, p++) {
         if (IS_PRINTVALUE(p)) {
-            room -= cmsDrawMenuEntry(pDisplay, p, top + i);
+            room -= cmsDrawMenuEntry(pDisplay, p, top + i * linesPerMenuItem);
             if (room < 30)
                 return;
         }
@@ -492,9 +559,10 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
 
 static void cmsMenuCountPage(displayPort_t *pDisplay)
 {
+    UNUSED(pDisplay);
     const OSD_Entry *p;
     for (p = currentCtx.menu->entries; p->type != OME_END; p++);
-    pageCount = (p - currentCtx.menu->entries - 1) / MAX_MENU_ITEMS(pDisplay) + 1;
+    pageCount = (p - currentCtx.menu->entries - 1) / maxMenuItems + 1;
 }
 
 STATIC_UNIT_TESTED long cmsMenuBack(displayPort_t *pDisplay); // Forward; will be resolved after merging
@@ -538,9 +606,9 @@ long cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
         // currentCtx.cursorRow has been saved as absolute; convert it back to page + relative
 
         int8_t cursorAbs = currentCtx.cursorRow;
-        currentCtx.cursorRow = cursorAbs % MAX_MENU_ITEMS(pDisplay);
+        currentCtx.cursorRow = cursorAbs % maxMenuItems;
         cmsMenuCountPage(pDisplay);
-        cmsPageSelect(pDisplay, cursorAbs / MAX_MENU_ITEMS(pDisplay));
+        cmsPageSelect(pDisplay, cursorAbs / maxMenuItems);
     }
 
     cmsPageDebug();
@@ -594,6 +662,25 @@ STATIC_UNIT_TESTED void cmsMenuOpen(void)
         }
     }
     displayGrab(pCurrentDisplay); // grab the display for use by the CMS
+
+    if ( pCurrentDisplay->cols < NORMAL_SCREEN_MIN_COLS) {
+      smallScreen       = true;
+      linesPerMenuItem  = 2;
+      leftMenuColumn    = 0;
+      rightMenuColumn   = pCurrentDisplay->cols;
+      maxMenuItems      = (pCurrentDisplay->rows) / linesPerMenuItem;
+    } else {
+      smallScreen       = false;
+      linesPerMenuItem  = 1;
+      leftMenuColumn    = 2;
+#ifdef CMS_OSD_RIGHT_ALIGNED_VALUES
+      rightMenuColumn   = pCurrentDisplay->cols - 2;
+#else
+      rightMenuColumn   = pCurrentDisplay->cols - CMS_DRAW_BUFFER_LEN;
+#endif
+      maxMenuItems      = pCurrentDisplay->rows - 2;
+    }
+
     cmsMenuChange(pCurrentDisplay, currentCtx.menu);
 }
 

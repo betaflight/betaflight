@@ -56,6 +56,7 @@
 #define SPEKTRUM_1024_CHANNEL_COUNT     7
 
 #define SPEKTRUM_NEEDED_FRAME_INTERVAL  5000
+#define SPEKTRUM_TELEMETRY_FRAME_DELAY  1000   // Gap between received Rc frame and transmited TM frame, uS
 
 #define SPEKTRUM_BAUDRATE               115200
 
@@ -473,7 +474,7 @@ static uint8_t spektrumFrameStatus(void)
 
     /* only process if srxl enabled, some data in buffer AND servos in phase 0 */
     if (srxlEnabled && telemetryBufLen && (spekFrame[2] & 0x80)) {
-        dispatchAdd(&srxlTelemetryDispatch, 100);
+        dispatchAdd(&srxlTelemetryDispatch, SPEKTRUM_TELEMETRY_FRAME_DELAY);
     }
     return RX_FRAME_COMPLETE;
 }

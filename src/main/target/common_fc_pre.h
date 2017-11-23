@@ -138,13 +138,17 @@
 #define USE_SPEKTRUM_FAKE_RSSI
 #define USE_SPEKTRUM_RSSI_PERCENT_CONVERSION
 #define USE_SPEKTRUM_VTX_CONTROL
+#define USE_SPEKTRUM_CMS_TELEMETRY
 #endif
 #endif
 
 #if (FLASH_SIZE > 256)
 // Temporarily moved GPS here because of overflowing flash size on F3
 #define USE_GPS
+#define USE_GPS_UBLOX
+#define USE_GPS_NMEA
 #define USE_NAV
+#define USE_ALT_HOLD
 #define USE_UNCOMMON_MIXERS
 #define USE_OSD_ADJUSTMENTS
 #endif

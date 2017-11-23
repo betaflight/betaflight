@@ -48,7 +48,7 @@
 #include "fc/config.h"
 #include "fc/runtime_config.h"
 
-#include "flight/navigation.h"
+#include "flight/imu.h"
 #include "flight/pid.h"
 
 #include "sensors/sensors.h"
@@ -71,6 +71,28 @@ static char *gpsPacketLogChar = gpsPacketLog;
 // **********************
 // GPS
 // **********************
+int32_t GPS_home[2];
+uint16_t GPS_distanceToHome;        // distance to home point in meters
+int16_t GPS_directionToHome;        // direction to home or hol point in degrees
+int16_t GPS_angle[ANGLE_INDEX_COUNT] = { 0, 0 };    // it's the angles that must be applied for GPS correction
+float dTnav;             // Delta Time in milliseconds for navigation computations, updated with every good GPS read
+int16_t actual_speed[2] = { 0, 0 };
+int16_t nav_takeoff_bearing;
+navigationMode_e nav_mode = NAV_MODE_NONE;    // Navigation mode
+
+// moving average filter variables
+#define GPS_FILTERING              1    // add a 5 element moving average filter to GPS coordinates, helps eliminate gps noise but adds latency
+#ifdef GPS_FILTERING
+#define GPS_FILTER_VECTOR_LENGTH 5
+static uint8_t GPS_filter_index = 0;
+static int32_t GPS_filter[2][GPS_FILTER_VECTOR_LENGTH];
+static int32_t GPS_filter_sum[2];
+static int32_t GPS_read[2];
+static int32_t GPS_filtered[2];
+static int32_t GPS_degree[2];   //the lat lon degree without any decimals (lat/10 000 000)
+static uint16_t fraction3[2];
+#endif
+
 gpsSolutionData_t gpsSol;
 uint32_t GPS_packetCount = 0;
 uint32_t GPS_svInfoReceivedCount = 0; // SV = Space Vehicle, counter increments each time SV info is received.
@@ -111,6 +133,7 @@ static const gpsInitData_t gpsInitData[] = {
 
 #define DEFAULT_BAUD_RATE_INDEX 0
 
+#ifdef USE_GPS_UBLOX
 static const uint8_t ubloxInit[] = {
     //Preprocessor Pedestrian Dynamic Platform Model Option
     #if defined(GPS_UBLOX_MODE_PEDESTRIAN)
@@ -179,7 +202,7 @@ static const ubloxSbas_t ubloxSbas[] = {
     { SBAS_MSAS,  { 0x00, 0x02, 0x02, 0x00, 0x35, 0xEF}},
     { SBAS_GAGAN, { 0x80, 0x01, 0x00, 0x00, 0xB2, 0xE8}}
 };
-
+#endif // USE_GPS_UBLOX
 
 typedef enum {
     GPS_UNKNOWN,
@@ -212,8 +235,12 @@ static void shiftPacketLog(void)
 }
 
 static void gpsNewData(uint16_t c);
+#ifdef USE_GPS_NMEA
 static bool gpsNewFrameNMEA(char c);
+#endif
+#ifdef USE_GPS_UBLOX
 static bool gpsNewFrameUBLOX(uint8_t data);
+#endif
 
 static void gpsSetState(gpsState_e state)
 {
@@ -268,6 +295,7 @@ void gpsInit(void)
     gpsSetState(GPS_INITIALIZING);
 }
 
+#ifdef USE_GPS_NMEA
 void gpsInitNmea(void)
 {
 #if defined(COLIBRI_RACE) || defined(LUX_RACE)
@@ -316,7 +344,9 @@ void gpsInitNmea(void)
             break;
     }
 }
+#endif // USE_GPS_NMEA
 
+#ifdef USE_GPS_UBLOX
 void gpsInitUblox(void)
 {
     uint32_t now;
@@ -400,17 +430,22 @@ void gpsInitUblox(void)
             break;
     }
 }
+#endif // USE_GPS_UBLOX
 
 void gpsInitHardware(void)
 {
     switch (gpsConfig()->provider) {
-        case GPS_NMEA:
-            gpsInitNmea();
-            break;
+    case GPS_NMEA:
+#ifdef USE_GPS_NMEA
+        gpsInitNmea();
+#endif
+        break;
 
-        case GPS_UBLOX:
-            gpsInitUblox();
-            break;
+    case GPS_UBLOX:
+#ifdef USE_GPS_UBLOX
+        gpsInitUblox();
+#endif
+        break;
     }
 }
 
@@ -494,12 +529,17 @@ static void gpsNewData(uint16_t c)
 bool gpsNewFrame(uint8_t c)
 {
     switch (gpsConfig()->provider) {
-        case GPS_NMEA:          // NMEA
-            return gpsNewFrameNMEA(c);
-        case GPS_UBLOX:         // UBX binary
-            return gpsNewFrameUBLOX(c);
+    case GPS_NMEA:          // NMEA
+#ifdef USE_GPS_NMEA
+        return gpsNewFrameNMEA(c);
+#endif
+        break;
+    case GPS_UBLOX:         // UBX binary
+#ifdef USE_GPS_UBLOX
+        return gpsNewFrameUBLOX(c);
+#endif
+        break;
     }
-
     return false;
 }
 
@@ -566,6 +606,7 @@ static uint32_t GPS_coord_to_degrees(char *coordinateString)
 */
 
 // helper functions
+#ifdef USE_GPS_NMEA
 static uint32_t grab_fields(char *src, uint8_t mult)
 {                               // convert string to uint32
     uint32_t i;
@@ -764,7 +805,9 @@ static bool gpsNewFrameNMEA(char c)
     }
     return frameOK;
 }
+#endif // USE_GPS_NMEA
 
+#ifdef USE_GPS_UBLOX
 // UBX support
 typedef struct {
     uint8_t preamble1;
@@ -1086,9 +1129,10 @@ static bool gpsNewFrameUBLOX(uint8_t data)
     }
     return parsed;
 }
+#endif // USE_GPS_UBLOX
 
 static void gpsHandlePassthrough(uint8_t data)
- {
+{
      gpsNewData(data);
  #ifdef USE_DASHBOARD
      if (feature(FEATURE_DASHBOARD)) {
@@ -1114,4 +1158,142 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
 
     serialPassthrough(gpsPort, gpsPassthroughPort, &gpsHandlePassthrough, NULL);
 }
+
+float GPS_scaleLonDown = 1.0f;  // this is used to offset the shrinking longitude as we go towards the poles
+
+void GPS_calc_longitude_scaling(int32_t lat)
+{
+    float rads = (ABS((float)lat) / 10000000.0f) * 0.0174532925f;
+    GPS_scaleLonDown = cos_approx(rads);
+}
+
+
+void GPS_reset_home_position(void)
+{
+    if (STATE(GPS_FIX) && gpsSol.numSat >= 5) {
+        GPS_home[LAT] = gpsSol.llh.lat;
+        GPS_home[LON] = gpsSol.llh.lon;
+        GPS_calc_longitude_scaling(gpsSol.llh.lat); // need an initial value for distance and bearing calc
+#ifdef USE_NAV
+        nav_takeoff_bearing = DECIDEGREES_TO_DEGREES(attitude.values.yaw);              // save takeoff heading
+#endif
+        // Set ground altitude
+        ENABLE_STATE(GPS_FIX_HOME);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+#define DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR_IN_HUNDREDS_OF_KILOMETERS 1.113195f
+#define TAN_89_99_DEGREES 5729.57795f
+// Get distance between two points in cm
+// Get bearing from pos1 to pos2, returns an 1deg = 100 precision
+void GPS_distance_cm_bearing(int32_t *currentLat1, int32_t *currentLon1, int32_t *destinationLat2, int32_t *destinationLon2, uint32_t *dist, int32_t *bearing)
+{
+    float dLat = *destinationLat2 - *currentLat1; // difference of latitude in 1/10 000 000 degrees
+    float dLon = (float)(*destinationLon2 - *currentLon1) * GPS_scaleLonDown;
+    *dist = sqrtf(sq(dLat) + sq(dLon)) * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR_IN_HUNDREDS_OF_KILOMETERS;
+
+    *bearing = 9000.0f + atan2_approx(-dLat, dLon) * TAN_89_99_DEGREES;      // Convert the output radians to 100xdeg
+    if (*bearing < 0)
+        *bearing += 36000;
+}
+
+void GPS_calculateDistanceAndDirectionToHome(void)
+{
+    if (STATE(GPS_FIX_HOME)) {      // If we don't have home set, do not display anything
+        uint32_t dist;
+        int32_t dir;
+        GPS_distance_cm_bearing(&gpsSol.llh.lat, &gpsSol.llh.lon, &GPS_home[LAT], &GPS_home[LON], &dist, &dir);
+        GPS_distanceToHome = dist / 100;
+        GPS_directionToHome = dir / 100;
+    } else {
+        GPS_distanceToHome = 0;
+        GPS_directionToHome = 0;
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+// Calculate our current speed vector from gps position data
+//
+static void GPS_calc_velocity(void)
+{
+    static int16_t speed_old[2] = { 0, 0 };
+    static int32_t last_coord[2] = { 0, 0 };
+    static uint8_t init = 0;
+
+    if (init) {
+        float tmp = 1.0f / dTnav;
+        actual_speed[GPS_X] = (float)(gpsSol.llh.lon - last_coord[LON]) * GPS_scaleLonDown * tmp;
+        actual_speed[GPS_Y] = (float)(gpsSol.llh.lat - last_coord[LAT]) * tmp;
+
+        actual_speed[GPS_X] = (actual_speed[GPS_X] + speed_old[GPS_X]) / 2;
+        actual_speed[GPS_Y] = (actual_speed[GPS_Y] + speed_old[GPS_Y]) / 2;
+
+        speed_old[GPS_X] = actual_speed[GPS_X];
+        speed_old[GPS_Y] = actual_speed[GPS_Y];
+    }
+    init = 1;
+
+    last_coord[LON] = gpsSol.llh.lon;
+    last_coord[LAT] = gpsSol.llh.lat;
+}
+
+void onGpsNewData(void)
+{
+    if (!(STATE(GPS_FIX) && gpsSol.numSat >= 5)) {
+        return;
+    }
+
+    if (!ARMING_FLAG(ARMED))
+        DISABLE_STATE(GPS_FIX_HOME);
+
+    if (!STATE(GPS_FIX_HOME) && ARMING_FLAG(ARMED))
+        GPS_reset_home_position();
+
+    // Apply moving average filter to GPS data
+#if defined(GPS_FILTERING)
+    GPS_filter_index = (GPS_filter_index + 1) % GPS_FILTER_VECTOR_LENGTH;
+    for (int axis = 0; axis < 2; axis++) {
+        GPS_read[axis] = axis == LAT ? gpsSol.llh.lat : gpsSol.llh.lon; // latest unfiltered data is in GPS_latitude and GPS_longitude
+        GPS_degree[axis] = GPS_read[axis] / 10000000;   // get the degree to assure the sum fits to the int32_t
+
+        // How close we are to a degree line ? its the first three digits from the fractions of degree
+        // later we use it to Check if we are close to a degree line, if yes, disable averaging,
+        fraction3[axis] = (GPS_read[axis] - GPS_degree[axis] * 10000000) / 10000;
+
+        GPS_filter_sum[axis] -= GPS_filter[axis][GPS_filter_index];
+        GPS_filter[axis][GPS_filter_index] = GPS_read[axis] - (GPS_degree[axis] * 10000000);
+        GPS_filter_sum[axis] += GPS_filter[axis][GPS_filter_index];
+        GPS_filtered[axis] = GPS_filter_sum[axis] / GPS_FILTER_VECTOR_LENGTH + (GPS_degree[axis] * 10000000);
+        if (nav_mode == NAV_MODE_POSHOLD) {             // we use gps averaging only in poshold mode...
+            if (fraction3[axis] > 1 && fraction3[axis] < 999) {
+                if (axis == LAT) {
+                    gpsSol.llh.lat = GPS_filtered[LAT];
+                } else {
+                    gpsSol.llh.lon = GPS_filtered[LON];
+                }
+            }
+        }
+    }
+#endif
+
+    //
+    // Calculate time delta for navigation loop, range 0-1.0f, in seconds
+    //
+    // Time for calculating x,y speed and navigation pids
+    static uint32_t nav_loopTimer;
+    dTnav = (float)(millis() - nav_loopTimer) / 1000.0f;
+    nav_loopTimer = millis();
+    // prevent runup from bad GPS
+    dTnav = MIN(dTnav, 1.0f);
+
+    GPS_calculateDistanceAndDirectionToHome();
+    // calculate the current velocity based on gps coordinates continously to get a valid speed at the moment when we start navigating
+    GPS_calc_velocity();
+
+#ifdef USE_NAV
+    navNewGpsData();
+#endif
+}
+
 #endif

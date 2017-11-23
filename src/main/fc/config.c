@@ -124,10 +124,15 @@ PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
     .name = { 0 }
 );
 
-PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 1);
+PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 2);
 
-#ifndef USE_OSD_SLAVE
-#if defined(STM32F4) && !defined(DISABLE_OVERCLOCK)
+#ifdef USE_OSD_SLAVE
+PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
+    .debug_mode = DEBUG_MODE,
+    .task_statistics = true,
+    .boardIdentifier = TARGET_BOARD_IDENTIFIER
+);
+#else
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .pidProfileIndex = 0,
     .activeRateProfile = 0,
@@ -137,24 +142,8 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .powerOnArmingGraceTime = 5,
     .boardIdentifier = TARGET_BOARD_IDENTIFIER
 );
-#else
-PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
-    .pidProfileIndex = 0,
-    .activeRateProfile = 0,
-    .debug_mode = DEBUG_MODE,
-    .task_statistics = true,
-    .boardIdentifier = TARGET_BOARD_IDENTIFIER
-);
-#endif
 #endif
 
-#ifdef USE_OSD_SLAVE
-PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
-    .debug_mode = DEBUG_MODE,
-    .task_statistics = true,
-    .boardIdentifier = TARGET_BOARD_IDENTIFIER
-);
-#endif
 
 #ifdef USE_ADC
 PG_REGISTER_WITH_RESET_FN(adcConfig_t, adcConfig, PG_ADC_CONFIG, 0);
@@ -312,7 +301,7 @@ void activateConfig(void)
     useRcControlsConfig(currentPidProfile);
     useAdjustmentConfig(currentPidProfile);
 
-#ifdef USE_GPS
+#ifdef USE_NAV
     gpsUsePIDs(currentPidProfile);
 #endif
 

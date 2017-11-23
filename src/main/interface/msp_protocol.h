@@ -214,7 +214,7 @@
 
 #define MSP_CAMERA_CONTROL              98
 
-#define MSP_ARMING_DISABLE              99
+#define MSP_SET_ARMING_DISABLED         99
 
 //
 // OSD specific
@@ -230,7 +230,8 @@
 #define MSP_BEEPER_CONFIG               184
 #define MSP_SET_BEEPER_CONFIG           185
 
-#define MSP_TX_INFO                     186
+#define MSP_SET_TX_INFO                 186 // in message           Used to send runtime information from TX lua scripts to the firmware
+#define MSP_TX_INFO                     187 // out message          Used by TX lua scripts to read information from the firmware
 
 //
 // Multwii original MSP commands
@@ -324,3 +325,4 @@
 #define MSP_SET_SERVO_MIX_RULE   242    //in message          Sets servo mixer configuration
 #define MSP_SET_4WAY_IF          245    //in message          Sets 4way interface
 #define MSP_SET_RTC              246    //in message          Sets the RTC clock
+#define MSP_RTC                  247    //out message         Gets the RTC clock

@@ -107,6 +107,8 @@
 #include "io/vtx_smartaudio.h"
 #include "io/vtx_tramp.h"
 
+#include "io/displayport_srxl.h"
+
 #include "scheduler/scheduler.h"
 
 #include "sensors/acceleration.h"
@@ -597,11 +599,17 @@ void init(void)
     }
 #endif
 
+#if defined(USE_CMS) && defined(USE_SPEKTRUM_CMS_TELEMETRY)
+    // Register the srxl Textgen telemetry sensor as a displayport device
+    cmsDisplayPortRegister(displayPortSrxlInit());
+#endif
 
 #ifdef USE_GPS
     if (feature(FEATURE_GPS)) {
         gpsInit();
+#ifdef USE_NAV
         navigationInit();
+#endif
     }
 #endif
 

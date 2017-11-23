@@ -155,10 +155,12 @@ osd_unittest_SRC := \
 		$(USER_DIR)/drivers/display.c \
 		$(USER_DIR)/common/maths.c \
 		$(USER_DIR)/common/printf.c \
+		$(USER_DIR)/common/time.c \
 		$(USER_DIR)/fc/runtime_config.c
 
 osd_unittest_DEFINES := \
-		USE_OSD
+		USE_OSD \
+		USE_RTC_TIME
 
 
 parameter_groups_unittest_SRC := \

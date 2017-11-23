@@ -29,6 +29,8 @@ extern "C" {
 
     #include "config/parameter_group_ids.h"
 
+    #include "common/time.h"
+
     #include "drivers/max7456_symbols.h"
 
     #include "fc/config.h"
@@ -57,7 +59,7 @@ extern "C" {
     int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
     uint8_t GPS_numSat;
     uint16_t GPS_distanceToHome;
-    uint16_t GPS_directionToHome;
+    int16_t GPS_directionToHome;
     int32_t GPS_coord[2];
     gpsSolutionData_t gpsSol;
 
@@ -188,7 +190,7 @@ TEST(OsdTest, TestInit)
 
     // then
     // display buffer should contain splash screen
-    displayPortTestBufferSubstring(7, 8, "MENU: THR MID");
+    displayPortTestBufferSubstring(7, 8, "MENU:THR MID");
     displayPortTestBufferSubstring(11, 9, "+ YAW LEFT");
     displayPortTestBufferSubstring(11, 10, "+ PITCH UP");
 
@@ -291,6 +293,7 @@ TEST(OsdTest, TestStatsImperial)
     osdConfigMutable()->enabled_stats[OSD_STAT_END_BATTERY]     = true;
     osdConfigMutable()->enabled_stats[OSD_STAT_TIMER_1]         = true;
     osdConfigMutable()->enabled_stats[OSD_STAT_TIMER_2]         = true;
+    osdConfigMutable()->enabled_stats[OSD_STAT_RTC_DATE_TIME]   = true;
     osdConfigMutable()->enabled_stats[OSD_STAT_MAX_DISTANCE]    = true;
     osdConfigMutable()->enabled_stats[OSD_STAT_BLACKBOX_NUMBER] = false;
 
@@ -309,6 +312,18 @@ TEST(OsdTest, TestStatsImperial)
     // and
     // a GPS fix is present
     stateFlags |= GPS_FIX | GPS_FIX_HOME;
+
+    // and
+    // this RTC time
+    dateTime_t dateTime;
+    dateTime.year = 2017;
+    dateTime.month = 11;
+    dateTime.day = 19;
+    dateTime.hours = 10;
+    dateTime.minutes = 12;
+    dateTime.seconds = 0;
+    dateTime.millis = 0;
+    rtcSetDateTime(&dateTime);
 
     // when
     // the craft is armed
@@ -347,6 +362,7 @@ TEST(OsdTest, TestStatsImperial)
     // then
     // statistics screen should display the following
     int row = 3;
+    displayPortTestBufferSubstring(2, row++, "2017-11-19 10:12:");
     displayPortTestBufferSubstring(2, row++, "TOTAL ARM         : 00:05.00");
     displayPortTestBufferSubstring(2, row++, "LAST ARM          : 00:03");
     displayPortTestBufferSubstring(2, row++, "MAX SPEED         : 28");
@@ -397,6 +413,7 @@ TEST(OsdTest, TestStatsMetric)
     // then
     // statistics screen should display the following
     int row = 3;
+    displayPortTestBufferSubstring(2, row++, "2017-11-19 10:12:");
     displayPortTestBufferSubstring(2, row++, "TOTAL ARM         : 00:07.50");
     displayPortTestBufferSubstring(2, row++, "LAST ARM          : 00:02");
     displayPortTestBufferSubstring(2, row++, "MAX SPEED         : 28");
@@ -871,6 +888,10 @@ extern "C" {
 
     uint32_t micros() {
         return simulationTime;
+    }
+
+    uint32_t millis() {
+        return micros() / 1000;
     }
 
     bool isBeeperOn() {

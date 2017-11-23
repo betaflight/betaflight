@@ -407,7 +407,9 @@ void processRx(timeUs_t currentTimeUs)
     const throttleStatus_e throttleStatus = calculateThrottleStatus();
 
     if (isAirmodeActive() && ARMING_FLAG(ARMED)) {
-        if (rcData[THROTTLE] >= rxConfig()->airModeActivateThreshold) airmodeIsActivated = true; // Prevent Iterm from being reset
+        if (rcData[THROTTLE] >= rxConfig()->airModeActivateThreshold) {
+            airmodeIsActivated = true; // Prevent Iterm from being reset
+        }
     } else {
         airmodeIsActivated = false;
     }
@@ -551,7 +553,7 @@ void processRx(timeUs_t currentTimeUs)
     }
 #endif
 
-#ifdef USE_GPS
+#ifdef USE_NAV
     if (sensors(SENSOR_GPS)) {
         updateGpsWaypointsAndMode();
     }
@@ -615,7 +617,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
     }
 #endif
 
-#if defined(USE_BARO) || defined(USE_SONAR)
+#if defined(USE_ALT_HOLD)
     // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
     updateRcCommands();
     if (sensors(SENSOR_BARO) || sensors(SENSOR_SONAR)) {
@@ -647,7 +649,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 
     processRcCommand();
 
-#ifdef USE_GPS
+#ifdef USE_NAV
     if (sensors(SENSOR_GPS)) {
         if ((FLIGHT_MODE(GPS_HOME_MODE) || FLIGHT_MODE(GPS_HOLD_MODE)) && STATE(GPS_FIX_HOME)) {
             updateGpsStateForHomeAndHoldMode();

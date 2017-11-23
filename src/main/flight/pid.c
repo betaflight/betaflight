@@ -34,6 +34,7 @@
 #include "config/parameter_group_ids.h"
 
 #include "drivers/sound_beeper.h"
+#include "drivers/time.h"
 
 #include "fc/fc_core.h"
 #include "fc/fc_rc.h"
@@ -44,7 +45,8 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
-#include "flight/navigation.h"
+
+#include "io/gps.h"
 
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
@@ -409,6 +411,11 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     const float tpaFactor = getThrottlePIDAttenuation();
     const float motorMixRange = getMotorMixRange();
     static timeUs_t crashDetectedAtUs;
+    static timeUs_t previousTimeUs;
+
+    // calculate actual deltaT in seconds
+    const float deltaT = (currentTimeUs - previousTimeUs) * 0.000001f;
+    previousTimeUs = currentTimeUs;
 
     // Dynamic ki component to gradually scale back integration when above windup point
     const float dynKi = MIN((1.0f - motorMixRange) * ITermWindupPointInv, 1.0f);
@@ -491,6 +498,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
         // -----calculate I component
         const float ITerm = axisPID_I[axis];
+        // use dT (not deltaT) for ITerm calculation to avoid wind-up caused by jitter
         const float ITermNew = constrainf(ITerm + Ki[axis] * errorRate * dT * dynKi * itermAccelerator, -itermLimit, itermLimit);
         const bool outputSaturated = mixerIsOutputSaturated(axis, errorRate);
         if (outputSaturated == false || ABS(ITermNew) < ABS(ITerm)) {
@@ -509,8 +517,8 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
                 dynC = dtermSetpointWeight * MIN(getRcDeflectionAbs(axis) * relaxFactor, 1.0f);
             }
             const float rD = dynC * currentPidSetpoint - gyroRateFiltered;    // cr - y
-            // Divide rate change by dT to get differential (ie dr/dt)
-            float delta = (rD - previousRateError[axis]) / dT;
+            // Divide rate change by deltaT to get differential (ie dr/dt)
+            float delta = (rD - previousRateError[axis]) / deltaT;
 
             previousRateError[axis] = rD;
 

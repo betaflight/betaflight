@@ -68,10 +68,11 @@
 const char rcChannelLetters[] = "AERT12345678abcdefgh";
 
 static uint16_t rssi = 0;                  // range: [0;1023]
-static bool useMspRssi = true;
 static timeUs_t lastMspRssiUpdateUs = 0;
 
 #define MSP_RSSI_TIMEOUT_US 1500000   // 1.5 sec
+
+rssiSource_t rssiSource;
 
 static bool rxDataReceived = false;
 static bool rxSignalReceived = false;
@@ -360,6 +361,15 @@ void rxInit(void)
     }
 #endif
 
+#if defined(USE_ADC)
+    if (feature(FEATURE_RSSI_ADC)) {
+        rssiSource = RSSI_SOURCE_ADC;
+    } else
+#endif
+    if (rxConfig()->rssi_channel > 0) {
+        rssiSource = RSSI_SOURCE_RX_CHANNEL;
+    }
+
     rxChannelCount = MIN(rxConfig()->max_aux_channel + NON_AUX_CHANNEL_COUNT, rxRuntimeConfig.channelCount);
 }
 
@@ -612,10 +622,48 @@ void parseRcChannels(const char *input, rxConfig_t *rxConfig)
     }
 }
 
-void setRssiFiltered(uint16_t newRssi)
+void setRssiFiltered(uint16_t newRssi, rssiSource_t source)
 {
+    if (source != rssiSource) {
+        return;
+    }
+
     rssi = newRssi;
-    useMspRssi = false;
+}
+
+#define RSSI_SAMPLE_COUNT 16
+#define RSSI_MAX_VALUE 1023
+
+void setRssiUnfiltered(uint16_t rssiValue, rssiSource_t source)
+{
+    if (source != rssiSource) {
+        return;
+    }
+
+    static uint16_t rssiSamples[RSSI_SAMPLE_COUNT];
+    static uint8_t rssiSampleIndex = 0;
+    static unsigned sum = 0;
+
+    sum = sum + rssiValue;
+    sum = sum - rssiSamples[rssiSampleIndex];
+    rssiSamples[rssiSampleIndex] = rssiValue;
+    rssiSampleIndex = (rssiSampleIndex + 1) % RSSI_SAMPLE_COUNT;
+
+    int16_t rssiMean = sum / RSSI_SAMPLE_COUNT;
+
+    rssi = rssiMean;
+}
+
+void setRssiMsp(uint8_t newMspRssi)
+{
+    if (rssiSource == RSSI_SOURCE_NONE) {
+        rssiSource = RSSI_SOURCE_MSP;
+    }
+
+    if (rssiSource == RSSI_SOURCE_MSP) {
+        rssi = ((uint16_t)newMspRssi) << 2;
+        lastMspRssiUpdateUs = micros();
+    }
 }
 
 static void updateRSSIPWM(void)
@@ -629,7 +677,7 @@ static void updateRSSIPWM(void)
     }
 
     // Range of rawPwmRssi is [1000;2000]. rssi should be in [0;1023];
-    setRssiFiltered(constrain((uint16_t)(((pwmRssi - 1000) / 1000.0f) * 1024.0f), 0, 1023));
+    setRssiFiltered(constrain((uint16_t)(((pwmRssi - 1000) / 1000.0f) * 1024.0f), 0, RSSI_MAX_VALUE), RSSI_SOURCE_RX_CHANNEL);
 }
 
 static void updateRSSIADC(timeUs_t currentTimeUs)
@@ -646,54 +694,36 @@ static void updateRSSIADC(timeUs_t currentTimeUs)
 
     const uint16_t adcRssiSample = adcGetChannel(ADC_RSSI);
     uint16_t rssiValue = (uint16_t)((1024.0f * adcRssiSample) / (rxConfig()->rssi_scale * 100.0f));
-    rssiValue = constrain(rssiValue, 0, 1023);
+    rssiValue = constrain(rssiValue, 0, RSSI_MAX_VALUE);
 
     // RSSI_Invert option
     if (rxConfig()->rssi_invert) {
-        rssiValue = 1024 - rssiValue;
+        rssiValue = RSSI_MAX_VALUE - rssiValue;
     }
 
-    setRssiUnfiltered((uint16_t)rssiValue);
+    setRssiUnfiltered((uint16_t)rssiValue, RSSI_SOURCE_ADC);
 #endif
-}
-
-#define RSSI_SAMPLE_COUNT 16
-
-void setRssiUnfiltered(uint16_t rssiValue)
-{
-    static uint16_t rssiSamples[RSSI_SAMPLE_COUNT];
-    static uint8_t rssiSampleIndex = 0;
-    static unsigned sum = 0;
-
-    sum = sum + rssiValue;
-    sum = sum - rssiSamples[rssiSampleIndex];
-    rssiSamples[rssiSampleIndex] = rssiValue;
-    rssiSampleIndex = (rssiSampleIndex + 1) % RSSI_SAMPLE_COUNT;
-
-    int16_t rssiMean = sum / RSSI_SAMPLE_COUNT;
-
-    setRssiFiltered(rssiMean);
-}
-
-void setRssiMsp(uint8_t newMspRssi)
-{
-    if (useMspRssi) {
-        rssi = ((uint16_t)newMspRssi) << 2;
-        lastMspRssiUpdateUs = micros();
-    }
 }
 
 void updateRSSI(timeUs_t currentTimeUs)
 {
-
-    if (rxConfig()->rssi_channel > 0) {
+    switch (rssiSource) {
+    case RSSI_SOURCE_RX_CHANNEL:
         updateRSSIPWM();
-    } else if (feature(FEATURE_RSSI_ADC)) {
+
+        break;
+    case RSSI_SOURCE_ADC:
         updateRSSIADC(currentTimeUs);
-    } else if (useMspRssi) {
+
+        break;
+    case RSSI_SOURCE_MSP:
         if (cmpTimeUs(micros(), lastMspRssiUpdateUs) > MSP_RSSI_TIMEOUT_US) {
             rssi = 0;
         }
+
+        break;
+    default:
+        break;
     }
 }
 
