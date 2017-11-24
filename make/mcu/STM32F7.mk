@@ -163,3 +163,14 @@ MCU_EXCLUDES = \
 
 DSP_LIB := $(ROOT)/lib/main/DSP_Lib
 DEVICE_FLAGS += -DARM_MATH_MATRIX_CHECK -DARM_MATH_ROUNDING -D__FPU_PRESENT=1 -DUNALIGNED_SUPPORT_DISABLE -DARM_MATH_CM7
+
+# MCU dependent optimization
+SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
+            drivers/serial_uart_stm32f7xx.c
+
+# MCU dependent library optimization
+SPEED_OPTIMISED_LIBSRC := $(SPEED_OPTIMISED_LIBSRC) \
+            $(STDPERIPH_DIR)/Src/stm32f7xx_ll_spi.c
+
+# This goes to Makefile (at the end of inclusion)?
+SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) $(SPEED_OPTIMISED_LIBSRC)

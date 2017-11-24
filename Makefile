@@ -87,6 +87,10 @@ HSE_VALUE       ?= 8000000
 # used for turning on features like VCP and SDCARD
 FEATURES        =
 
+# clear optimization list
+SPEED_OPTIMISED_SRC := ""
+SIZE_OPTIMISED_SRC  := ""
+
 include $(ROOT)/make/targets.mk
 
 REVISION := $(shell git log -1 --format="%h")

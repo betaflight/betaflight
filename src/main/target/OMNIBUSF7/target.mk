@@ -11,3 +11,7 @@ TARGET_SRC = \
             drivers/light_ws2811strip.c \
             drivers/light_ws2811strip_hal.c \
             drivers/max7456.c
+
+# Target dependent optimization (if any)
+SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
+            drivers/max7456.c # Just an example
