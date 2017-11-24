@@ -154,7 +154,7 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 
     switch (baroHardware) {
     case BARO_DEFAULT:
-        ; // fallthough
+        FALLTHROUGH;
 
     case BARO_BMP085:
 #ifdef USE_BARO_BMP085
@@ -175,7 +175,7 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
             }
         }
 #endif
-        ; // fallthough
+        FALLTHROUGH;
 
     case BARO_MS5611:
 #if defined(USE_BARO_MS5611) || defined(USE_BARO_SPI_MS5611)
@@ -184,7 +184,7 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
             break;
         }
 #endif
-        ; // fallthough
+        FALLTHROUGH;
 
     case BARO_BMP280:
 #if defined(USE_BARO_BMP280) || defined(USE_BARO_SPI_BMP280)
@@ -193,7 +193,7 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
             break;
         }
 #endif
-        ; // fallthough
+        FALLTHROUGH;
 
     case BARO_NONE:
         baroHardware = BARO_NONE;

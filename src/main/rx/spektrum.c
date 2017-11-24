@@ -299,6 +299,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
     case SERIALRX_SRXL:
 #ifdef USE_TELEMETRY
         srxlEnabled = (feature(FEATURE_TELEMETRY) && !portShared);
+        FALLTHROUGH;
 #endif
     case SERIALRX_SPEKTRUM2048:
         // 11 bit frames

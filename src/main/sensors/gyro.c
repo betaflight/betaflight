@@ -175,6 +175,8 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
 
     switch (gyroHardware) {
     case GYRO_DEFAULT:
+        FALLTHROUGH;
+
 #ifdef USE_GYRO_MPU6050
     case GYRO_MPU6050:
         if (mpu6050GyroDetect(dev)) {
@@ -184,6 +186,7 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
 #endif
             break;
         }
+        FALLTHROUGH;
 #endif
 
 #ifdef USE_GYRO_L3G4200D
@@ -195,6 +198,7 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
 #endif
             break;
         }
+        FALLTHROUGH;
 #endif
 
 #ifdef USE_GYRO_MPU3050
@@ -206,6 +210,7 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
 #endif
             break;
         }
+        FALLTHROUGH;
 #endif
 
 #ifdef USE_GYRO_L3GD20
@@ -217,6 +222,7 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
 #endif
             break;
         }
+        FALLTHROUGH;
 #endif
 
 #ifdef USE_GYRO_SPI_MPU6000
@@ -228,6 +234,7 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
 #endif
             break;
         }
+        FALLTHROUGH;
 #endif
 
 #if defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500)
@@ -261,19 +268,19 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
 #endif
             break;
         }
+        FALLTHROUGH;
 #endif
 
 #ifdef USE_GYRO_SPI_MPU9250
     case GYRO_MPU9250:
-
-        if (mpu9250SpiGyroDetect(dev))
-        {
+        if (mpu9250SpiGyroDetect(dev)) {
             gyroHardware = GYRO_MPU9250;
 #ifdef GYRO_MPU9250_ALIGN
             dev->gyroAlign = GYRO_MPU9250_ALIGN;
 #endif
-        break;
-    }
+            break;
+        }
+        FALLTHROUGH;
 #endif
 
 #ifdef USE_GYRO_SPI_ICM20649
@@ -285,6 +292,7 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
 #endif
             break;
         }
+        FALLTHROUGH;
 #endif
 
 #ifdef USE_GYRO_SPI_ICM20689
@@ -296,6 +304,7 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
 #endif
             break;
         }
+        FALLTHROUGH;
 #endif
 
 #ifdef USE_ACCGYRO_BMI160
@@ -307,6 +316,7 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
 #endif
             break;
         }
+        FALLTHROUGH;
 #endif
 
 #ifdef USE_FAKE_GYRO
@@ -315,7 +325,9 @@ STATIC_UNIT_TESTED gyroSensor_e gyroDetect(gyroDev_t *dev)
             gyroHardware = GYRO_FAKE;
             break;
         }
+        FALLTHROUGH;
 #endif
+
     default:
         gyroHardware = GYRO_NONE;
     }

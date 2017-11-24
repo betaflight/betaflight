@@ -279,7 +279,8 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
         if (adjustmentFunction == ADJUSTMENT_PITCH_RATE) {
             break;
         }
-        // follow though for combined ADJUSTMENT_PITCH_ROLL_RATE
+        // fall through for combined ADJUSTMENT_PITCH_ROLL_RATE
+        FALLTHROUGH;
     case ADJUSTMENT_ROLL_RATE:
         newValue = constrain((int)controlRateConfig->rates[FD_ROLL] + delta, 0, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX);
         controlRateConfig->rates[FD_ROLL] = newValue;
@@ -299,7 +300,8 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
         if (adjustmentFunction == ADJUSTMENT_PITCH_P) {
             break;
         }
-        // follow though for combined ADJUSTMENT_PITCH_ROLL_P
+        // fall through for combined ADJUSTMENT_PITCH_ROLL_P
+        FALLTHROUGH;
     case ADJUSTMENT_ROLL_P:
         newValue = constrain((int)pidProfile->pid[PID_ROLL].P + delta, 0, 200); // FIXME magic numbers repeated in cli.c
         pidProfile->pid[PID_ROLL].P = newValue;
@@ -313,7 +315,8 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
         if (adjustmentFunction == ADJUSTMENT_PITCH_I) {
             break;
         }
-        // fall though for combined ADJUSTMENT_PITCH_ROLL_I
+        // fall through for combined ADJUSTMENT_PITCH_ROLL_I
+        FALLTHROUGH;
     case ADJUSTMENT_ROLL_I:
         newValue = constrain((int)pidProfile->pid[PID_ROLL].I + delta, 0, 200); // FIXME magic numbers repeated in cli.c
         pidProfile->pid[PID_ROLL].I = newValue;
@@ -327,7 +330,8 @@ static int applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t a
         if (adjustmentFunction == ADJUSTMENT_PITCH_D) {
             break;
         }
-        // fall though for combined ADJUSTMENT_PITCH_ROLL_D
+        // fall through for combined ADJUSTMENT_PITCH_ROLL_D
+        FALLTHROUGH;
     case ADJUSTMENT_ROLL_D:
         newValue = constrain((int)pidProfile->pid[PID_ROLL].D + delta, 0, 200); // FIXME magic numbers repeated in cli.c
         pidProfile->pid[PID_ROLL].D = newValue;

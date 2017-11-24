@@ -26,6 +26,7 @@
 
 #include "common/axis.h"
 #include "common/filter.h"
+#include "common/utils.h"
 
 #include "config/config_reset.h"
 #include "config/feature.h"
@@ -136,9 +137,10 @@ retry:
 
     switch (accHardwareToUse) {
     case ACC_DEFAULT:
-        ; // fallthrough
-    case ACC_ADXL345: // ADXL345
+        FALLTHROUGH;
+
 #ifdef USE_ACC_ADXL345
+    case ACC_ADXL345: // ADXL345
         acc_params.useFifo = false;
         acc_params.dataRate = 800; // unused currently
         if (adxl345Detect(&acc_params, dev)) {
@@ -148,10 +150,11 @@ retry:
             accHardware = ACC_ADXL345;
             break;
         }
+        FALLTHROUGH;
 #endif
-        ; // fallthrough
-    case ACC_LSM303DLHC:
+
 #ifdef USE_ACC_LSM303DLHC
+    case ACC_LSM303DLHC:
         if (lsm303dlhcAccDetect(dev)) {
 #ifdef ACC_LSM303DLHC_ALIGN
             dev->accAlign = ACC_LSM303DLHC_ALIGN;
@@ -159,10 +162,11 @@ retry:
             accHardware = ACC_LSM303DLHC;
             break;
         }
+        FALLTHROUGH;
 #endif
-        ; // fallthrough
-    case ACC_MPU6050: // MPU6050
+
 #ifdef USE_ACC_MPU6050
+    case ACC_MPU6050: // MPU6050
         if (mpu6050AccDetect(dev)) {
 #ifdef ACC_MPU6050_ALIGN
             dev->accAlign = ACC_MPU6050_ALIGN;
@@ -170,10 +174,11 @@ retry:
             accHardware = ACC_MPU6050;
             break;
         }
+        FALLTHROUGH;
 #endif
-        ; // fallthrough
-    case ACC_MMA8452: // MMA8452
+
 #ifdef USE_ACC_MMA8452
+    case ACC_MMA8452: // MMA8452
         if (mma8452Detect(dev)) {
 #ifdef ACC_MMA8452_ALIGN
             dev->accAlign = ACC_MMA8452_ALIGN;
@@ -181,10 +186,11 @@ retry:
             accHardware = ACC_MMA8452;
             break;
         }
+        FALLTHROUGH;
 #endif
-        ; // fallthrough
-    case ACC_BMA280: // BMA280
+
 #ifdef USE_ACC_BMA280
+    case ACC_BMA280: // BMA280
         if (bma280Detect(dev)) {
 #ifdef ACC_BMA280_ALIGN
             dev->accAlign = ACC_BMA280_ALIGN;
@@ -192,10 +198,11 @@ retry:
             accHardware = ACC_BMA280;
             break;
         }
+        FALLTHROUGH;
 #endif
-        ; // fallthrough
-    case ACC_MPU6000:
+
 #ifdef USE_ACC_SPI_MPU6000
+    case ACC_MPU6000:
         if (mpu6000SpiAccDetect(dev)) {
 #ifdef ACC_MPU6000_ALIGN
             dev->accAlign = ACC_MPU6000_ALIGN;
@@ -203,10 +210,11 @@ retry:
             accHardware = ACC_MPU6000;
             break;
         }
+        FALLTHROUGH;
 #endif
-        ; // fallthrough
-    case ACC_MPU9250:
+
 #ifdef USE_ACC_SPI_MPU9250
+    case ACC_MPU9250:
         if (mpu9250SpiAccDetect(dev)) {
 #ifdef ACC_MPU9250_ALIGN
             dev->accAlign = ACC_MPU9250_ALIGN;
@@ -214,8 +222,9 @@ retry:
             accHardware = ACC_MPU9250;
             break;
         }
+        FALLTHROUGH;
 #endif
-        ; // fallthrough
+
     case ACC_MPU6500:
     case ACC_ICM20601:
     case ACC_ICM20602:
@@ -249,9 +258,10 @@ retry:
             break;
         }
 #endif
-        ; // fallthrough
-    case ACC_ICM20649:
+        FALLTHROUGH;
+
 #ifdef USE_ACC_SPI_ICM20649
+    case ACC_ICM20649:
         if (icm20649SpiAccDetect(dev)) {
             accHardware = ACC_ICM20649;
 #ifdef ACC_ICM20649_ALIGN
@@ -259,10 +269,11 @@ retry:
 #endif
             break;
         }
+        FALLTHROUGH;
 #endif
-        ; // fallthrough
-    case ACC_ICM20689:
+
 #ifdef USE_ACC_SPI_ICM20689
+    case ACC_ICM20689:
         if (icm20689SpiAccDetect(dev)) {
             accHardware = ACC_ICM20689;
 #ifdef ACC_ICM20689_ALIGN
@@ -270,10 +281,11 @@ retry:
 #endif
             break;
         }
+        FALLTHROUGH;
 #endif
-        ; // fallthrough
-    case ACC_BMI160:
+
 #ifdef USE_ACCGYRO_BMI160
+    case ACC_BMI160:
         if (bmi160SpiAccDetect(dev)) {
             accHardware = ACC_BMI160;
 #ifdef ACC_BMI160_ALIGN
@@ -281,20 +293,22 @@ retry:
 #endif
             break;
         }
+        FALLTHROUGH;
 #endif
-        ; // fallthrough
-    case ACC_FAKE:
+
 #ifdef USE_FAKE_ACC
+    case ACC_FAKE:
         if (fakeAccDetect(dev)) {
             accHardware = ACC_FAKE;
             break;
         }
+        FALLTHROUGH;
 #endif
-        ; // fallthrough
+
+    default:
     case ACC_NONE: // disable ACC
         accHardware = ACC_NONE;
         break;
-
     }
 
     // Found anything? Check if error or ACC is really missing.
@@ -303,7 +317,6 @@ retry:
         accHardwareToUse = ACC_DEFAULT;
         goto retry;
     }
-
 
     if (accHardware == ACC_NONE) {
         return false;
