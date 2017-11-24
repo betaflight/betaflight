@@ -511,7 +511,7 @@ void init(void)
     // so we are ready to call validateAndFixGyroConfig(), pidInit(), and setAccelerationFilter()
     validateAndFixGyroConfig();
     pidInit(currentPidProfile);
-    setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
+    accInitFilters();
 
 #ifdef USE_SERVOS
     servosInit();

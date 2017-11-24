@@ -499,9 +499,9 @@ void setAccelerationTrims(flightDynamicsTrims_t *accelerationTrimsToUse)
     accelerationTrims = accelerationTrimsToUse;
 }
 
-void setAccelerationFilter(uint16_t initialAccLpfCutHz)
+void accInitFilters(void)
 {
-    accLpfCutHz = initialAccLpfCutHz;
+    accLpfCutHz = accelerometerConfig()->acc_lpf_hz;
     if (acc.accSamplingInterval) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, acc.accSamplingInterval);

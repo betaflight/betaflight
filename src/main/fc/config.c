@@ -307,7 +307,7 @@ void activateConfig(void)
 
     failsafeReset();
     setAccelerationTrims(&accelerometerConfigMutable()->accZero);
-    setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
+    accInitFilters();
 
     imuConfigure(throttleCorrectionConfig()->throttle_correction_angle);
 #endif // USE_OSD_SLAVE
