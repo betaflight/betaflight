@@ -24,8 +24,6 @@
 
 #include "io/serial.h"
 
-#include "build/debug.h"
-
 void targetConfiguration(void)
 {
     const int index = findSerialPortIndexByIdentifier(ESC_SENSOR_UART);
