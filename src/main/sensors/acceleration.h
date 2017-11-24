@@ -80,4 +80,4 @@ void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims);
 void accUpdate(rollAndPitchTrims_t *rollAndPitchTrims);
 union flightDynamicsTrims_u;
 void setAccelerationTrims(union flightDynamicsTrims_u *accelerationTrimsToUse);
-void setAccelerationFilter(uint16_t initialAccLpfCutHz);
+void accInitFilters(void);
