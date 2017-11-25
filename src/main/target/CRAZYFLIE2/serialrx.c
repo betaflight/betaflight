@@ -121,8 +121,10 @@ static void routeIncommingPacket(syslinkPacket_t* slp)
 }
 
 // Receive ISR callback
-static void dataReceive(uint16_t c)
+static void dataReceive(uint16_t c, void *data)
 {
+    UNUSED(data);
+
     counter++;
     switch (rxState) {
         case waitForFirstStart:
@@ -223,6 +225,7 @@ bool targetCustomSerialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxR
     serialPort = openSerialPort(portConfig->identifier,
         FUNCTION_RX_SERIAL,
         dataReceive,
+        NULL,
         SYSLINK_BAUDRATE,
         MODE_RX,
         SERIAL_NOT_INVERTED | SERIAL_STOPBITS_1 | SERIAL_PARITY_NO

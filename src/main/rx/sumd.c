@@ -55,8 +55,10 @@ static uint8_t sumd[SUMD_BUFFSIZE] = { 0, };
 static uint8_t sumdChannelCount;
 
 // Receive ISR callback
-static void sumdDataReceive(uint16_t c)
+static void sumdDataReceive(uint16_t c, void *data)
 {
+    UNUSED(data);
+
     uint32_t sumdTime;
     static uint32_t sumdTimeLast;
     static uint8_t sumdIndex;
@@ -167,6 +169,7 @@ bool sumdInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     serialPort_t *sumdPort = openSerialPort(portConfig->identifier,
         FUNCTION_RX_SERIAL,
         sumdDataReceive,
+        NULL,
         SUMD_BAUDRATE,
         portShared ? MODE_RXTX : MODE_RX,
         (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)

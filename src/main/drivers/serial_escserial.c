@@ -284,7 +284,7 @@ static void extractAndStoreRxByteBL(escSerial_t *escSerial)
     uint8_t rxByte = (escSerial->internalRxBuffer >> 1) & 0xFF;
 
     if (escSerial->port.rxCallback) {
-        escSerial->port.rxCallback(rxByte);
+        escSerial->port.rxCallback(rxByte, escSerial->port.rxCallbackData);
     } else {
         escSerial->port.rxBuffer[escSerial->port.rxBufferHead] = rxByte;
         escSerial->port.rxBufferHead = (escSerial->port.rxBufferHead + 1) % escSerial->port.rxBufferSize;
@@ -560,7 +560,7 @@ static void extractAndStoreRxByteEsc(escSerial_t *escSerial)
     uint8_t rxByte = (escSerial->internalRxBuffer) & 0xFF;
 
     if (escSerial->port.rxCallback) {
-        escSerial->port.rxCallback(rxByte);
+        escSerial->port.rxCallback(rxByte, escSerial->port.rxCallbackData);
     } else {
         escSerial->port.rxBuffer[escSerial->port.rxBufferHead] = rxByte;
         escSerial->port.rxBufferHead = (escSerial->port.rxBufferHead + 1) % escSerial->port.rxBufferSize;

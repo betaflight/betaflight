@@ -332,12 +332,14 @@ serialPort_t *openSerialPort(
     serialPortIdentifier_e identifier,
     serialPortFunction_e function,
     serialReceiveCallbackPtr rxCallback,
+    void *rxCallbackData,
     uint32_t baudRate,
     portMode_e mode,
     portOptions_e options)
 {
 #if !(defined(USE_UART) || defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
     UNUSED(rxCallback);
+    UNUSED(rxCallbackData);
     UNUSED(baudRate);
     UNUSED(mode);
     UNUSED(options);
@@ -385,21 +387,21 @@ serialPort_t *openSerialPort(
 #endif
 #ifdef SITL
             // SITL emulates serial ports over TCP
-            serialPort = serTcpOpen(SERIAL_PORT_IDENTIFIER_TO_UARTDEV(identifier), rxCallback, baudRate, mode, options);
+            serialPort = serTcpOpen(SERIAL_PORT_IDENTIFIER_TO_UARTDEV(identifier), rxCallback, rxCallbackData, baudRate, mode, options);
 #else
-            serialPort = uartOpen(SERIAL_PORT_IDENTIFIER_TO_UARTDEV(identifier), rxCallback, baudRate, mode, options);
+            serialPort = uartOpen(SERIAL_PORT_IDENTIFIER_TO_UARTDEV(identifier), rxCallback, rxCallbackData, baudRate, mode, options);
 #endif
             break;
 #endif
 
 #ifdef USE_SOFTSERIAL1
         case SERIAL_PORT_SOFTSERIAL1:
-            serialPort = openSoftSerial(SOFTSERIAL1, rxCallback, baudRate, mode, options);
+            serialPort = openSoftSerial(SOFTSERIAL1, rxCallback, rxCallbackData, baudRate, mode, options);
             break;
 #endif
 #ifdef USE_SOFTSERIAL2
         case SERIAL_PORT_SOFTSERIAL2:
-            serialPort = openSoftSerial(SOFTSERIAL2, rxCallback, baudRate, mode, options);
+            serialPort = openSoftSerial(SOFTSERIAL2, rxCallback, rxCallbackData, baudRate, mode, options);
             break;
 #endif
         default:

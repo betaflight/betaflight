@@ -251,7 +251,7 @@ bool runcamDeviceInit(runcamDevice_t *device)
     serialPortFunction_e portID = FUNCTION_RCDEVICE;
     serialPortConfig_t *portConfig = findSerialPortConfig(portID);
     if (portConfig != NULL) {
-        device->serialPort = openSerialPort(portConfig->identifier, portID, NULL, 115200, MODE_RXTX, SERIAL_NOT_INVERTED);
+        device->serialPort = openSerialPort(portConfig->identifier, portID, NULL, NULL, 115200, MODE_RXTX, SERIAL_NOT_INVERTED);
 
         if (device->serialPort != NULL) {
             // send RCDEVICE_PROTOCOL_COMMAND_GET_DEVICE_INFO to device to retrive

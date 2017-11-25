@@ -76,8 +76,10 @@ static bool isValidIa6bIbusPacketLength(uint8_t length)
 
 
 // Receive ISR callback
-static void ibusDataReceive(uint16_t c)
+static void ibusDataReceive(uint16_t c, void *data)
 {
+    UNUSED(data);
+
     uint32_t ibusTime;
     static uint32_t ibusTimeLast;
     static uint8_t ibusFramePosition;
@@ -216,6 +218,7 @@ bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     serialPort_t *ibusPort = openSerialPort(portConfig->identifier,
         FUNCTION_RX_SERIAL,
         ibusDataReceive,
+        NULL,
         IBUS_BAUDRATE,
         portShared ? MODE_RXTX : MODE_RX,
         (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex || portShared ? SERIAL_BIDIR : 0)

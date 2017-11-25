@@ -181,8 +181,10 @@ static void xBusUnpackRJ01Frame(void)
 }
 
 // Receive ISR callback
-static void xBusDataReceive(uint16_t c)
+static void xBusDataReceive(uint16_t c, void *data)
 {
+    UNUSED(data);
+
     uint32_t now;
     static uint32_t xBusTimeLast, xBusTimeInterval;
 
@@ -301,6 +303,7 @@ bool xBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     serialPort_t *xBusPort = openSerialPort(portConfig->identifier,
         FUNCTION_RX_SERIAL,
         xBusDataReceive,
+        NULL,
         baudRate,
         portShared ? MODE_RXTX : MODE_RX,
         (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)

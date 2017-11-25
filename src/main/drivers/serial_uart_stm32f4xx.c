@@ -270,7 +270,7 @@ void uartIrqHandler(uartPort_t *s)
 {
     if (!s->rxDMAStream && (USART_GetITStatus(s->USARTx, USART_IT_RXNE) == SET)) {
         if (s->port.rxCallback) {
-            s->port.rxCallback(s->USARTx->DR);
+            s->port.rxCallback(s->USARTx->DR, s->port.rxCallbackData);
         } else {
             s->port.rxBuffer[s->port.rxBufferHead] = s->USARTx->DR;
             s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;

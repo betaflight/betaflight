@@ -329,7 +329,7 @@ static void workAroundForHottTelemetryOnUsart(serialPort_t *instance, portMode_e
         portOptions |= SERIAL_BIDIR;
     }
 
-    hottPort = openSerialPort(instance->identifier, FUNCTION_TELEMETRY_HOTT, NULL, HOTT_BAUDRATE, mode, portOptions);
+    hottPort = openSerialPort(instance->identifier, FUNCTION_TELEMETRY_HOTT, NULL, NULL, HOTT_BAUDRATE, mode, portOptions);
 }
 
 static bool hottIsUsingHardwareUART(void)
@@ -374,7 +374,7 @@ void configureHoTTTelemetryPort(void)
         portOptions |= SERIAL_BIDIR;
     }
 
-    hottPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_HOTT, NULL, HOTT_BAUDRATE, HOTT_PORT_MODE, portOptions);
+    hottPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_HOTT, NULL, NULL, HOTT_BAUDRATE, HOTT_PORT_MODE, portOptions);
 
     if (!hottPort) {
         return;
