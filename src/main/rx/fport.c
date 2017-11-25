@@ -140,8 +140,10 @@ static void reportFrameError(uint8_t errorReason) {
 }
 
 // Receive ISR callback
-static void fportDataReceive(uint16_t c)
+static void fportDataReceive(uint16_t c, void *data)
 {
+    UNUSED(data);
+
     static timeUs_t frameStartAt = 0;
     static bool frameStarting = false;
     static bool escapedCharacter = false;
@@ -353,6 +355,7 @@ bool fportRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     fportPort = openSerialPort(portConfig->identifier,
         FUNCTION_RX_SERIAL,
         fportDataReceive,
+        NULL,
         FPORT_BAUDRATE,
         MODE_RXTX,
         FPORT_PORT_OPTIONS | (rxConfig->serialrx_inverted ? 0: SERIAL_INVERTED) | (rxConfig->halfDuplex ? SERIAL_BIDIR : 0)

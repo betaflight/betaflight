@@ -673,7 +673,7 @@ bool vtxSmartAudioInit(void)
 #ifdef SMARTAUDIO_DPRINTF
     // Setup debugSerialPort
 
-    debugSerialPort = openSerialPort(DPRINTF_SERIAL_PORT, FUNCTION_NONE, NULL, 115200, MODE_RXTX, 0);
+    debugSerialPort = openSerialPort(DPRINTF_SERIAL_PORT, FUNCTION_NONE, NULL, NULL, 115200, MODE_RXTX, 0);
     if (debugSerialPort) {
         setPrintfSerialPort(debugSerialPort);
         dprintf(("smartAudioInit: OK\r\n"));
@@ -689,7 +689,7 @@ bool vtxSmartAudioInit(void)
         portOptions = SERIAL_BIDIR;
 #endif
 
-        smartAudioSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_SMARTAUDIO, NULL, 4800, MODE_RXTX, portOptions);
+        smartAudioSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_SMARTAUDIO, NULL, NULL, 4800, MODE_RXTX, portOptions);
     }
 
     if (!smartAudioSerialPort) {

@@ -111,6 +111,7 @@ serialPort_t *openSerialPort(
     serialPortIdentifier_e identifier,
     serialPortFunction_e function,
     serialReceiveCallbackPtr callback,
+    void *callbackData,
     uint32_t baudrate,
     portMode_e mode,
     portOptions_e options
@@ -118,6 +119,7 @@ serialPort_t *openSerialPort(
 {
     openSerial_called = true;
     EXPECT_FALSE(NULL == callback);
+    EXPECT_TRUE(NULL == callbackData);
     EXPECT_EQ(identifier, SERIAL_PORT_DUMMY_IDENTIFIER);
     EXPECT_EQ(options, serialExpectedOptions);
     EXPECT_EQ(function, FUNCTION_RX_SERIAL);
@@ -263,7 +265,7 @@ protected:
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
         for (size_t i=0; i < length; i++) {
             EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
-            stub_serialRxCallback(packet[i]);
+            stub_serialRxCallback(packet[i], NULL);
         }
     }
 };
@@ -287,7 +289,7 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6B_OnePacketReceived)
 
     for (size_t i=0; i < sizeof(packet); i++) {
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
-        stub_serialRxCallback(packet[i]);
+        stub_serialRxCallback(packet[i], NULL);
     }
 
     //report frame complete once
@@ -312,7 +314,7 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6B_OnePacketReceivedWithBadCrc)
     isChecksumOkReturnValue = false;
     for (size_t i=0; i < sizeof(packet); i++) {
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
-        stub_serialRxCallback(packet[i]);
+        stub_serialRxCallback(packet[i], NULL);
     }
 
     //no frame complete
@@ -338,7 +340,7 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6B_HalfPacketReceived_then_interPacketGap
 
     for (size_t i=0; i < sizeof(packet_half); i++) {
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
-        stub_serialRxCallback(packet_half[i]);
+        stub_serialRxCallback(packet_half[i], NULL);
     }
 
     microseconds_stub_value += 5000;
@@ -346,7 +348,7 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6B_HalfPacketReceived_then_interPacketGap
 
     for (size_t i=0; i < sizeof(packet_full); i++) {
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
-        stub_serialRxCallback(packet_full[i]);
+        stub_serialRxCallback(packet_full[i], NULL);
     }
 
     //report frame complete once
@@ -370,7 +372,7 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6_OnePacketReceived)
 
     for (size_t i=0; i < sizeof(packet); i++) {
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
-        stub_serialRxCallback(packet[i]);
+        stub_serialRxCallback(packet[i], NULL);
     }
 
     //report frame complete once
@@ -394,7 +396,7 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6_OnePacketReceivedBadCrc)
 
     for (size_t i=0; i < sizeof(packet); i++) {
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
-        stub_serialRxCallback(packet[i]);
+        stub_serialRxCallback(packet[i], NULL);
     }
 
     //no frame complete
@@ -436,7 +438,7 @@ TEST_F(IbusRxProtocollUnitTest, Test_IA6B_OnePacketReceived_not_shared_port)
 
     for (size_t i=0; i < sizeof(packet); i++) {
         EXPECT_EQ(RX_FRAME_PENDING, rxRuntimeConfig.rcFrameStatusFn());
-        stub_serialRxCallback(packet[i]);
+        stub_serialRxCallback(packet[i], NULL);
     }
 
     //report frame complete once

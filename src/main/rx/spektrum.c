@@ -323,8 +323,10 @@ const uint8_t vtxTrampPi[] = {           // Spektrum Spec    Tx menu  Tx sends  
 
 
 // Receive ISR callback
-static void spektrumDataReceive(uint16_t c)
+static void spektrumDataReceive(uint16_t c, void *data)
 {
+    UNUSED(data);
+
     uint32_t spekTime, spekTimeInterval;
     static uint32_t spekTimeLast = 0;
     static uint8_t spekFramePosition = 0;
@@ -663,6 +665,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
     serialPort = openSerialPort(portConfig->identifier,
         FUNCTION_RX_SERIAL,
         spektrumDataReceive,
+        NULL,
         SPEKTRUM_BAUDRATE,
         portShared || srxlEnabled ? MODE_RXTX : MODE_RX,
         (rxConfig->serialrx_inverted ? SERIAL_INVERTED : 0) | ((srxlEnabled || rxConfig->halfDuplex) ? SERIAL_BIDIR : 0)

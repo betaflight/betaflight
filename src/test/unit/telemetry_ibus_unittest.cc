@@ -20,6 +20,7 @@
 
 extern "C" {
 #include <platform.h>
+#include "common/utils.h"
 #include "config/parameter_group.h"
 #include "drivers/serial.h"
 #include "io/serial.h"
@@ -140,13 +141,15 @@ serialPort_t *openSerialPort(
     serialPortIdentifier_e identifier,
     serialPortFunction_e function,
     serialReceiveCallbackPtr callback,
+    void *callbackData,
     uint32_t baudrate,
     portMode_e mode,
     portOptions_e options
 )
 {
     openSerial_called = true;
-    (void) callback;
+    UNUSED(callback);
+    UNUSED(callbackData);
     EXPECT_EQ(SERIAL_PORT_DUMMY_IDENTIFIER, identifier);
     EXPECT_EQ(SERIAL_BIDIR, options);
     EXPECT_EQ(FUNCTION_TELEMETRY_IBUS, function);

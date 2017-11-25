@@ -252,7 +252,7 @@ extern "C" {
     attitudeEulerAngles_t attitude = { { 0, 0, 0 } };
 
     uint32_t micros(void) {return dummyTimeUs;}
-    serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, uint32_t, portMode_e, portOptions_e) {return NULL;}
+    serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, void *, uint32_t, portMode_e, portOptions_e) {return NULL;}
     serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
     uint16_t getBatteryVoltage(void) {
         return testBatteryVoltage;
