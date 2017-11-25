@@ -156,8 +156,10 @@ static void updateChannelData(void) {
     }
 }
 
-static uint8_t ibusFrameStatus(void)
+static uint8_t ibusFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 {
+    UNUSED(rxRuntimeConfig);
+
     uint8_t frameStatus = RX_FRAME_PENDING;
 
     if (!ibusFrameDone) {

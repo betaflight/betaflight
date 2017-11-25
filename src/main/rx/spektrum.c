@@ -352,8 +352,10 @@ static void spektrumDataReceive(uint16_t c, void *data)
 static uint32_t spekChannelData[SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT];
 static dispatchEntry_t srxlTelemetryDispatch = { .dispatch = srxlRxSendTelemetryDataDispatch};
 
-static uint8_t spektrumFrameStatus(void)
+static uint8_t spektrumFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 {
+    UNUSED(rxRuntimeConfig);
+
     if (!rcFrameComplete) {
         return RX_FRAME_PENDING;
     }

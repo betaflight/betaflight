@@ -24,10 +24,12 @@
 
 #include "build/build_config.h"
 
-#include "drivers/cc2500.h"
-#include "drivers/rx_nrf24l01.h"
+#include "common/utils.h"
 
 #include "config/feature.h"
+
+#include "drivers/cc2500.h"
+#include "drivers/rx_nrf24l01.h"
 
 #include "fc/config.h"
 
@@ -135,8 +137,10 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
  * Called from updateRx in rx.c, updateRx called from taskUpdateRxCheck.
  * If taskUpdateRxCheck returns true, then taskUpdateRxMain will shortly be called.
  */
-static uint8_t rxSpiFrameStatus(void)
+static uint8_t rxSpiFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 {
+    UNUSED(rxRuntimeConfig);
+
     if (protocolDataReceived(rxSpiPayload) == RX_SPI_RECEIVED_DATA) {
         rxSpiNewPacketAvailable = true;
         return RX_FRAME_COMPLETE;

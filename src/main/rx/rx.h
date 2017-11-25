@@ -150,13 +150,15 @@ PG_DECLARE(rxConfig_t, rxConfig);
 
 struct rxRuntimeConfig_s;
 typedef uint16_t (*rcReadRawDataFnPtr)(const struct rxRuntimeConfig_s *rxRuntimeConfig, uint8_t chan); // used by receiver driver to return channel data
-typedef uint8_t (*rcFrameStatusFnPtr)(void);
+typedef uint8_t (*rcFrameStatusFnPtr)(struct rxRuntimeConfig_s *rxRuntimeConfig);
 
 typedef struct rxRuntimeConfig_s {
-    uint8_t          channelCount; // number of RC channels as reported by current input driver
-    uint16_t         rxRefreshRate;
-    rcReadRawDataFnPtr rcReadRawFn;
-    rcFrameStatusFnPtr rcFrameStatusFn;
+    uint8_t             channelCount; // number of RC channels as reported by current input driver
+    uint16_t            rxRefreshRate;
+    rcReadRawDataFnPtr  rcReadRawFn;
+    rcFrameStatusFnPtr  rcFrameStatusFn;
+    uint32_t            *channelData;
+    void                *frameData;
 } rxRuntimeConfig_t;
 
 typedef enum rssiSource_e {

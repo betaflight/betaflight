@@ -82,8 +82,10 @@ static void sumhDataReceive(uint16_t c, void *data)
     }
 }
 
-static uint8_t sumhFrameStatus(void)
+static uint8_t sumhFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 {
+    UNUSED(rxRuntimeConfig);
+
     uint8_t channelIndex;
 
     if (!sumhFrameDone) {
