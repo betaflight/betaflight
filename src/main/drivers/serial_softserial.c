@@ -498,6 +498,12 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
         return;
     }
 
+    // XXX Workaround for disappearing start bit in SERIAL_BIDIR case.
+    // This shouldn't happen, since edge interrupt is disabled by serialInputPortDeActivate when going into transmit mode...
+    if ((self->port.options & SERIAL_BIDIR) && (self->isTransmittingData)) {
+        return;
+    }
+
     if (self->isSearchingForStartBit) {
         // Synchronize the bit timing so that it will interrupt at the center
         // of the bit period.
