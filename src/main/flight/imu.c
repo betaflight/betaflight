@@ -178,6 +178,7 @@ void imuResetAccelerationSum(void)
     accTimeSum = 0;
 }
 
+#if defined(USE_ALT_HOLD)
 static void imuTransformVectorBodyToEarth(t_fp_vector * v)
 {
     /* From body frame to earth frame */
@@ -227,6 +228,7 @@ static void imuCalculateAcceleration(uint32_t deltaT)
     accTimeSum += deltaT;
     accSumCount++;
 }
+#endif // USE_ALT_HOLD
 
 static float invSqrt(float x)
 {
@@ -452,7 +454,9 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 
     imuUpdateEulerAngles();
 #endif
+#if defined(USE_ALT_HOLD)
     imuCalculateAcceleration(deltaT); // rotate acc vector into earth frame
+#endif
 }
 
 void imuUpdateAttitude(timeUs_t currentTimeUs)
