@@ -726,7 +726,7 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     // 1 - pidController()
     // 2 - subTaskMotorUpdate()
     // 3 - subTaskMainSubprocesses()
-    gyroUpdate();
+    gyroUpdate(currentTimeUs);
     DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - currentTimeUs);
 
     if (pidUpdateCountdown) {

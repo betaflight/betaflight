@@ -69,6 +69,10 @@
 
 acc_t acc;                       // acc access functions
 
+static float accumulator[XYZ_AXIS_COUNT];
+static timeUs_t accumulatedTimeUs;
+static timeUs_t lastTimeSampledUs;
+
 static uint16_t calibratingA = 0;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 
 extern uint16_t InflightcalibratingA;
@@ -463,7 +467,7 @@ static void applyAccelerationTrims(const flightDynamicsTrims_t *accelerationTrim
     acc.accSmooth[Z] -= accelerationTrims->raw[Z];
 }
 
-void accUpdate(rollAndPitchTrims_t *rollAndPitchTrims)
+void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims)
 {
     if (!acc.dev.readFn(&acc.dev)) {
         return;
@@ -492,6 +496,32 @@ void accUpdate(rollAndPitchTrims_t *rollAndPitchTrims)
     }
 
     applyAccelerationTrims(accelerationTrims);
+
+    const timeDelta_t sampleDeltaUs = currentTimeUs - lastTimeSampledUs;
+    lastTimeSampledUs = currentTimeUs;
+    accumulatedTimeUs += sampleDeltaUs;
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        accumulator[axis] += acc.accSmooth[axis] * sampleDeltaUs;
+    }
+}
+
+bool accGetAccumulationAverage(float *accumulation)
+{
+    if (accumulatedTimeUs > 0) {
+        const float accumulatedTimeS = accumulatedTimeUs * 1e-6;
+        // If we have gyro data accumulated, calculate average rate that will yield the same rotation
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            accumulation[axis] = accumulator[axis] / accumulatedTimeS;
+            accumulator[axis] = 0.0f;
+        }
+        accumulatedTimeUs = 0;
+        return true;
+    } else {
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            accumulation[axis] = 0.0f;
+        }
+        return false;
+    }
 }
 
 void setAccelerationTrims(flightDynamicsTrims_t *accelerationTrimsToUse)
