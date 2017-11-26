@@ -198,6 +198,75 @@ TIM_TypeDef * const usedTimers[USED_TIMER_COUNT] = {
 #undef _DEF
 };
 
+// Map timer index to timer number (Straight copy of usedTimers array)
+const int8_t timerNumbers[USED_TIMER_COUNT] = {
+#define _DEF(i) i
+
+#if USED_TIMERS & TIM_N(1)
+    _DEF(1),
+#endif
+#if USED_TIMERS & TIM_N(2)
+    _DEF(2),
+#endif
+#if USED_TIMERS & TIM_N(3)
+    _DEF(3),
+#endif
+#if USED_TIMERS & TIM_N(4)
+    _DEF(4),
+#endif
+#if USED_TIMERS & TIM_N(5)
+    _DEF(5),
+#endif
+#if USED_TIMERS & TIM_N(6)
+    _DEF(6),
+#endif
+#if USED_TIMERS & TIM_N(7)
+    _DEF(7),
+#endif
+#if USED_TIMERS & TIM_N(8)
+    _DEF(8),
+#endif
+#if USED_TIMERS & TIM_N(9)
+    _DEF(9),
+#endif
+#if USED_TIMERS & TIM_N(10)
+    _DEF(10),
+#endif
+#if USED_TIMERS & TIM_N(11)
+    _DEF(11),
+#endif
+#if USED_TIMERS & TIM_N(12)
+    _DEF(12),
+#endif
+#if USED_TIMERS & TIM_N(13)
+    _DEF(13),
+#endif
+#if USED_TIMERS & TIM_N(14)
+    _DEF(14),
+#endif
+#if USED_TIMERS & TIM_N(15)
+    _DEF(15),
+#endif
+#if USED_TIMERS & TIM_N(16)
+    _DEF(16),
+#endif
+#if USED_TIMERS & TIM_N(17)
+    _DEF(17),
+#endif
+#undef _DEF
+};
+
+int8_t timerGetTIMNumber(const TIM_TypeDef *tim)
+{
+    uint8_t index = lookupTimerIndex(tim);
+
+    if (index < USED_TIMER_COUNT) {
+        return timerNumbers[index];
+    } else {
+        return 0;
+    }
+}
+
 static inline uint8_t lookupChannelIndex(const uint16_t channel)
 {
     return channel >> 2;
@@ -1049,4 +1118,3 @@ HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Chann
     /* Return function status */
     return HAL_OK;
 }
-
