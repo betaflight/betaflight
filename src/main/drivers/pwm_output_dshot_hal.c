@@ -235,19 +235,33 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 #ifdef USE_DSHOT_DMAR
     /* Enable the Output compare channel */
     uint32_t channels = 0;
-    switch(motor->timerHardware->channel) {
-    case TIM_CHANNEL_1:
-        channels = LL_TIM_CHANNEL_CH1;
-        break;
-    case TIM_CHANNEL_2:
-        channels = LL_TIM_CHANNEL_CH2;
-        break;
-    case TIM_CHANNEL_3:
-        channels = LL_TIM_CHANNEL_CH3;
-        break;
-    case TIM_CHANNEL_4:
-        channels = LL_TIM_CHANNEL_CH4;
-        break;
+    if(output & TIMER_OUTPUT_N_CHANNEL) {
+        switch(motor->timerHardware->channel) {
+        case TIM_CHANNEL_1:
+            channels = LL_TIM_CHANNEL_CH1N;
+            break;
+        case TIM_CHANNEL_2:
+            channels = LL_TIM_CHANNEL_CH2N;
+            break;
+        case TIM_CHANNEL_3:
+            channels = LL_TIM_CHANNEL_CH3N;
+            break;
+        }
+    } else {
+        switch(motor->timerHardware->channel) {
+        case TIM_CHANNEL_1:
+            channels = LL_TIM_CHANNEL_CH1;
+            break;
+        case TIM_CHANNEL_2:
+            channels = LL_TIM_CHANNEL_CH2;
+            break;
+        case TIM_CHANNEL_3:
+            channels = LL_TIM_CHANNEL_CH3;
+            break;
+        case TIM_CHANNEL_4:
+            channels = LL_TIM_CHANNEL_CH4;
+            break;
+        }
     }
     motor->timerIndex = timerIndex;
     LL_TIM_CC_EnableChannel(motor->timerHardware->tim, channels);
