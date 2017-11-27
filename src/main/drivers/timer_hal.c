@@ -1050,3 +1050,22 @@ HAL_StatusTypeDef DMA_SetCurrDataCounter(TIM_HandleTypeDef *htim, uint32_t Chann
     return HAL_OK;
 }
 
+int8_t timerGetNumber(const TIM_TypeDef *tim)
+{
+#define TIM_COUNT(tim, base) (((unsigned)tim - base) >> 10)
+
+    if (tim >= TIM2 && tim <= TIM7) {
+        return TIM_COUNT(tim, TIM2_BASE) + 2;
+    } else if (tim >= TIM12 && tim <= TIM14) {
+        return TIM_COUNT(tim, TIM12_BASE) + 12;
+    } else if (tim == TIM1) {
+        return 1;
+    } else if (tim == TIM8) {
+        return 8;
+    } else if (tim >= TIM9 && tim <= TIM11) {
+        return TIM_COUNT(tim, TIM9_BASE) + 9;
+    } else {
+        return -1;
+    }
+#undef TIM_COUNT
+}

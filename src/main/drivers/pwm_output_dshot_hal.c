@@ -177,7 +177,7 @@ void pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     /* Link hdma_tim to hdma[x] (channelx) */
     __HAL_LINKDMA(&motor->TimHandle, hdma[motor->timerDmaIndex], motor->hdma_tim);
 
-    dmaInit(timerHardware->dmaTimUPIrqHandler, OWNER_TIMUP, RESOURCE_INDEX(motorIndex)); // XXX May be better to use timer number as index for clarity?
+    dmaInit(timerHardware->dmaTimUPIrqHandler, OWNER_TIMUP, timerGetNumber(timerHardware->tim));
     dmaSetHandler(timerHardware->dmaTimUPIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
 #else
     motor->timerDmaIndex = timerDmaIndex(timerHardware->channel);
