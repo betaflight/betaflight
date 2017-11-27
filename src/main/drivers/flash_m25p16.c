@@ -41,6 +41,8 @@
 #define M25P16_STATUS_FLAG_WRITE_IN_PROGRESS 0x01
 #define M25P16_STATUS_FLAG_WRITE_ENABLED     0x02
 
+#define W25Q256_INSTRUCTION_ENTER_4BYTE_ADDRESS_MODE 0xB7
+
 // Format is manufacturer, memory type, then capacity
 #define JEDEC_ID_MACRONIX_MX25L3206E   0xC22016
 #define JEDEC_ID_MACRONIX_MX25L6406E   0xC22017
@@ -58,6 +60,7 @@
 
 static busDevice_t busInstance;
 static busDevice_t *bus;
+static bool isLargeFlash = false;
 
 // The timeout we expect between being able to issue page program instructions
 #define DEFAULT_TIMEOUT_MILLIS       6
@@ -201,6 +204,11 @@ static bool m25p16_readIdentification(void)
     geometry.sectorSize = geometry.pagesPerSector * geometry.pageSize;
     geometry.totalSize = geometry.sectorSize * geometry.sectors;
 
+    if (geometry.totalSize > 16 * 1024 * 1024) {
+        isLargeFlash = true;
+        m25p16_performOneByteCommand(W25Q256_INSTRUCTION_ENTER_4BYTE_ADDRESS_MODE);
+    }
+
     couldBeBusy = true; // Just for luck we'll assume the chip could be busy even though it isn't specced to be
 
     return true;
@@ -243,12 +251,24 @@ bool m25p16_init(const flashConfig_t *flashConfig)
     return m25p16_readIdentification();
 }
 
+void m25p16_setCommandAddress(uint8_t *buf, uint32_t address, bool useLongAddress)
+{
+    if (useLongAddress) {
+        *buf++ = (address >> 24) & 0xff;
+    }
+    *buf++ = (address >> 16) & 0xff;
+    *buf++ = (address >> 8) & 0xff;
+    *buf = address & 0xff;
+}
+
 /**
  * Erase a sector full of bytes to all 1's at the given byte offset in the flash chip.
  */
 void m25p16_eraseSector(uint32_t address)
 {
-    const uint8_t out[] = { M25P16_INSTRUCTION_SECTOR_ERASE, (address >> 16) & 0xFF, (address >> 8) & 0xFF, address & 0xFF};
+    uint8_t out[5] = { M25P16_INSTRUCTION_SECTOR_ERASE };
+
+    m25p16_setCommandAddress(&out[1], address, isLargeFlash);
 
     m25p16_waitForReady(SECTOR_ERASE_TIMEOUT_MILLIS);
 
@@ -256,7 +276,7 @@ void m25p16_eraseSector(uint32_t address)
 
     ENABLE_M25P16;
 
-    spiTransfer(bus->busdev_u.spi.instance, out, NULL, sizeof(out));
+    spiTransfer(bus->busdev_u.spi.instance, out, NULL, isLargeFlash ? 5 : 4);
 
     DISABLE_M25P16;
 }
@@ -272,7 +292,9 @@ void m25p16_eraseCompletely(void)
 
 void m25p16_pageProgramBegin(uint32_t address)
 {
-    const uint8_t command[] = { M25P16_INSTRUCTION_PAGE_PROGRAM, (address >> 16) & 0xFF, (address >> 8) & 0xFF, address & 0xFF};
+    uint8_t command[5] = { M25P16_INSTRUCTION_PAGE_PROGRAM };
+
+    m25p16_setCommandAddress(&command[1], address, isLargeFlash);
 
     m25p16_waitForReady(DEFAULT_TIMEOUT_MILLIS);
 
@@ -280,7 +302,7 @@ void m25p16_pageProgramBegin(uint32_t address)
 
     ENABLE_M25P16;
 
-    spiTransfer(bus->busdev_u.spi.instance, command, NULL, sizeof(command));
+    spiTransfer(bus->busdev_u.spi.instance, command, NULL, isLargeFlash ? 5 : 4);
 }
 
 void m25p16_pageProgramContinue(const uint8_t *data, int length)
@@ -327,7 +349,9 @@ void m25p16_pageProgram(uint32_t address, const uint8_t *data, int length)
  */
 int m25p16_readBytes(uint32_t address, uint8_t *buffer, int length)
 {
-    const uint8_t command[] = { M25P16_INSTRUCTION_READ_BYTES, (address >> 16) & 0xFF, (address >> 8) & 0xFF, address & 0xFF};
+    uint8_t command[5] = { M25P16_INSTRUCTION_READ_BYTES };
+
+    m25p16_setCommandAddress(&command[1], address, isLargeFlash);
 
     if (!m25p16_waitForReady(DEFAULT_TIMEOUT_MILLIS)) {
         return 0;
@@ -335,7 +359,7 @@ int m25p16_readBytes(uint32_t address, uint8_t *buffer, int length)
 
     ENABLE_M25P16;
 
-    spiTransfer(bus->busdev_u.spi.instance, command, NULL, sizeof(command));
+    spiTransfer(bus->busdev_u.spi.instance, command, NULL, isLargeFlash ? 5 : 4);
     spiTransfer(bus->busdev_u.spi.instance, NULL, buffer, length);
 
     DISABLE_M25P16;
