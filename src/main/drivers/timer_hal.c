@@ -141,64 +141,6 @@ static uint8_t lookupTimerIndex(const TIM_TypeDef *tim)
 #undef _CASE_
 }
 
-TIM_TypeDef * const usedTimers[USED_TIMER_COUNT] = {
-#define _DEF(i) TIM##i
-
-#if USED_TIMERS & TIM_N(1)
-    _DEF(1),
-#endif
-#if USED_TIMERS & TIM_N(2)
-    _DEF(2),
-#endif
-#if USED_TIMERS & TIM_N(3)
-    _DEF(3),
-#endif
-#if USED_TIMERS & TIM_N(4)
-    _DEF(4),
-#endif
-#if USED_TIMERS & TIM_N(5)
-    _DEF(5),
-#endif
-#if USED_TIMERS & TIM_N(6)
-    _DEF(6),
-#endif
-#if USED_TIMERS & TIM_N(7)
-    _DEF(7),
-#endif
-#if USED_TIMERS & TIM_N(8)
-    _DEF(8),
-#endif
-#if USED_TIMERS & TIM_N(9)
-    _DEF(9),
-#endif
-#if USED_TIMERS & TIM_N(10)
-    _DEF(10),
-#endif
-#if USED_TIMERS & TIM_N(11)
-    _DEF(11),
-#endif
-#if USED_TIMERS & TIM_N(12)
-    _DEF(12),
-#endif
-#if USED_TIMERS & TIM_N(13)
-    _DEF(13),
-#endif
-#if USED_TIMERS & TIM_N(14)
-    _DEF(14),
-#endif
-#if USED_TIMERS & TIM_N(15)
-    _DEF(15),
-#endif
-#if USED_TIMERS & TIM_N(16)
-    _DEF(16),
-#endif
-#if USED_TIMERS & TIM_N(17)
-    _DEF(17),
-#endif
-#undef _DEF
-};
-
-// Map timer index to timer number (Straight copy of usedTimers array)
 const int8_t timerNumbers[USED_TIMER_COUNT] = {
 #define _DEF(i) i
 
@@ -274,20 +216,20 @@ static inline uint8_t lookupChannelIndex(const uint16_t channel)
 
 rccPeriphTag_t timerRCC(TIM_TypeDef *tim)
 {
-    for (int i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
-        if (timerDefinitions[i].TIMx == tim) {
-            return timerDefinitions[i].rcc;
-        }
+    uint8_t index = lookupTimerIndex(tim);
+
+    if (index < USED_TIMER_COUNT) {
+        return timerDefinitions[index].rcc;
     }
     return 0;
 }
 
 uint8_t timerInputIrq(TIM_TypeDef *tim)
 {
-    for (int i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
-        if (timerDefinitions[i].TIMx == tim) {
-            return timerDefinitions[i].inputIrq;
-        }
+    uint8_t index = lookupTimerIndex(tim);
+
+    if (index < USED_TIMER_COUNT) {
+        return timerDefinitions[index].inputIrq;
     }
     return 0;
 }
@@ -390,7 +332,7 @@ void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriori
         return;
     if (irqPriority < timerInfo[timer].priority) {
         // it would be better to set priority in the end, but current startup sequence is not ready
-        configTimeBase(usedTimers[timer], 0, 1);
+        configTimeBase(timerDefinitions[timer].TIMx, 0, 1);
         HAL_TIM_Base_Start(&timerHandle[timerIndex].Handle);
 
         HAL_NVIC_SetPriority(irq, NVIC_PRIORITY_BASE(irqPriority), NVIC_PRIORITY_SUB(irqPriority));
@@ -893,14 +835,14 @@ void timerStart(void)
         int priority = -1;
         int irq = -1;
         for (unsigned hwc = 0; hwc < USABLE_TIMER_CHANNEL_COUNT; hwc++) {
-            if ((timerChannelInfo[hwc].type != TYPE_FREE) && (timerHardware[hwc].tim == usedTimers[timer])) {
+            if ((timerChannelInfo[hwc].type != TYPE_FREE) && (timerHardware[hwc].tim == timerDefinitions[timer].TIMx)) {
                 // TODO - move IRQ to timer info
                 irq = timerHardware[hwc].irq;
             }
         }
         // TODO - aggregate required timer paramaters
-        configTimeBase(usedTimers[timer], 0, 1);
-        TIM_Cmd(usedTimers[timer], ENABLE);
+        configTimeBase(timerDefinitions[timer].TIMx, 0, 1);
+        TIM_Cmd(timerDefinitions[timer].TIMx, ENABLE);
         if (priority >= 0) {  // maybe none of the channels was configured
             NVIC_InitTypeDef NVIC_InitStructure;
 
