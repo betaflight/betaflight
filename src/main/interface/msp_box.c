@@ -81,7 +81,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXPREARM, "PREARM", 36 },
     { BOXBEEPGPSCOUNT, "BEEP GPS SATELLITE COUNT", 37 },
     { BOX3DONASWITCH, "3D ON A SWITCH", 38 },
-
+    { BOXVTXPITMODE, "VTX PIT MODE", 39 },
 };
 
 // mask of enabled IDs, calculated on startup based on enabled features. boxId_e is used as bit index
@@ -256,6 +256,10 @@ void initActiveBoxIds(void)
     BME(BOXCAMERA3);
 #endif
 
+#if defined(VTX_SMARTAUDIO) || defined(VTX_TRAMP)
+    BME(BOXVTXPITMODE);
+#endif
+
 #undef BME
     // check that all enabled IDs are in boxes array (check may be skipped when using findBoxById() functions)
     for (boxId_e boxId = 0;  boxId < CHECKBOX_ITEM_COUNT; boxId++)
@@ -296,7 +300,8 @@ int packFlightModeFlags(boxBitmask_t *mspFlightModeFlags)
     const uint64_t rcModeCopyMask = BM(BOXHEADADJ) | BM(BOXCAMSTAB) | BM(BOXCAMTRIG) | BM(BOXBEEPERON)
         | BM(BOXLEDMAX) | BM(BOXLEDLOW) | BM(BOXLLIGHTS) | BM(BOXCALIB) | BM(BOXGOV) | BM(BOXOSD)
         | BM(BOXTELEMETRY) | BM(BOXGTUNE) | BM(BOXBLACKBOX) | BM(BOXBLACKBOXERASE) | BM(BOXAIRMODE)
-        | BM(BOXANTIGRAVITY) | BM(BOXFPVANGLEMIX) | BM(BOXFLIPOVERAFTERCRASH) | BM(BOX3DDISABLE) | BM(BOXBEEPGPSCOUNT);
+        | BM(BOXANTIGRAVITY) | BM(BOXFPVANGLEMIX) | BM(BOXFLIPOVERAFTERCRASH) | BM(BOX3DDISABLE)
+        | BM(BOXBEEPGPSCOUNT) | BM(BOXVTXPITMODE);
     STATIC_ASSERT(sizeof(rcModeCopyMask) * 8 >= CHECKBOX_ITEM_COUNT, copy_mask_too_small_for_boxes);
     for (unsigned i = 0; i < CHECKBOX_ITEM_COUNT; i++) {
         if ((rcModeCopyMask & BM(i))    // mode copy is enabled

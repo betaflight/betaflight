@@ -107,7 +107,6 @@
 #define USE_GPS
 #define USE_GPS_UBLOX
 #define USE_GPS_NMEA
-#define USE_NAV
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
