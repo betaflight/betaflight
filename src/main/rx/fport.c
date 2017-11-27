@@ -43,7 +43,7 @@
 #include "rx/fport.h"
 
 
-#define FPORT_TIME_NEEDED_PER_FRAME_US 5200 // Empirically established
+#define FPORT_TIME_NEEDED_PER_FRAME_US 3000
 #define FPORT_MAX_TELEMETRY_RESPONSE_DELAY_US 2000
 #define FPORT_MIN_TELEMETRY_RESPONSE_DELAY_US 500
 #define FPORT_MAX_TELEMETRY_AGE_MS 500
@@ -129,7 +129,7 @@ static volatile uint8_t rxBufferReadIndex = 0;
 static volatile timeUs_t lastTelemetryFrameReceivedUs;
 static volatile bool clearToSend = false;
 
-static volatile bool skipUntilStart = false;
+static volatile uint8_t framePosition = 0;
 
 static serialPort_t *fportPort;
 static bool telemetryEnabled = false;
@@ -147,57 +147,50 @@ static void fportDataReceive(uint16_t c, void *data)
     UNUSED(data);
 
     static timeUs_t frameStartAt = 0;
-    static bool frameStarting = false;
     static bool escapedCharacter = false;
-    static uint8_t bufferPosition = 0;
     static timeUs_t lastFrameReceivedUs = 0;
     static bool telemetryFrame = false;
 
     const timeUs_t currentTimeUs = micros();
 
-    if (!skipUntilStart && (frameStarting || bufferPosition > 0) && cmpTimeUs(currentTimeUs, frameStartAt) > FPORT_TIME_NEEDED_PER_FRAME_US + 500) {
-         reportFrameError(DEBUG_FPORT_ERROR_TIMEOUT);
+    clearToSend = false;
 
-         bufferPosition = 0;
-         clearToSend = false;
+    if (framePosition > 1 && cmpTimeUs(currentTimeUs, frameStartAt) > FPORT_TIME_NEEDED_PER_FRAME_US + 500) {
+        reportFrameError(DEBUG_FPORT_ERROR_TIMEOUT);
+
+        framePosition = 0;
      }
 
     uint8_t val = (uint8_t)c;
 
     if (val == FPORT_FRAME_MARKER) {
-        skipUntilStart = false;
-        frameStarting = true;
-        escapedCharacter = false;
-        frameStartAt = currentTimeUs;
-
-        if (bufferPosition > 0) {
-            uint8_t nextWriteIndex = (rxBufferWriteIndex + 1) % NUM_RX_BUFFERS;
+        if (framePosition > 1) {
+            const uint8_t nextWriteIndex = (rxBufferWriteIndex + 1) % NUM_RX_BUFFERS;
             if (nextWriteIndex != rxBufferReadIndex) {
-                rxBuffer[rxBufferWriteIndex].length = bufferPosition;
+                rxBuffer[rxBufferWriteIndex].length = framePosition - 1;
                 rxBufferWriteIndex = nextWriteIndex;
             }
-
-            bufferPosition = 0;
 
             if (telemetryFrame) {
                 clearToSend = true;
                 lastTelemetryFrameReceivedUs = currentTimeUs;
+                telemetryFrame = false;
             }
 
-            if (lastFrameReceivedUs) {
-                DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_FRAME_INTERVAL, currentTimeUs - lastFrameReceivedUs);
-            }
+            DEBUG_SET(DEBUG_FPORT, DEBUG_FPORT_FRAME_INTERVAL, currentTimeUs - lastFrameReceivedUs);
             lastFrameReceivedUs = currentTimeUs;
-        } else {
-            clearToSend = false;
+
+            escapedCharacter = false;
         }
 
-        telemetryFrame = false;
-    } else if (skipUntilStart) {
-        frameStarting = false;
-        bufferPosition = 0;
-    } else {
-        if ((frameStarting || bufferPosition > 0) && bufferPosition < BUFFER_SIZE) {
+        frameStartAt = currentTimeUs;
+        framePosition = 1;
+    } else if (framePosition > 0) {
+        if (framePosition >= BUFFER_SIZE + 1) {
+                framePosition = 0;
+
+                reportFrameError(DEBUG_FPORT_ERROR_OVERSIZE);
+        } else {
             if (escapedCharacter) {
                 val = val ^ FPORT_ESCAPE_MASK;
                 escapedCharacter = false;
@@ -207,25 +200,20 @@ static void fportDataReceive(uint16_t c, void *data)
                 return;
             }
 
-            if (bufferPosition == 1 && val == FPORT_FRAME_TYPE_TELEMETRY_REQUEST) {
+            if (framePosition == 2 && val == FPORT_FRAME_TYPE_TELEMETRY_REQUEST) {
                 telemetryFrame = true;
             }
 
-            frameStarting = false;
-            rxBuffer[rxBufferWriteIndex].data[bufferPosition++] = val;
-        } else if (bufferPosition >= BUFFER_SIZE) {
-            bufferPosition = 0;
-
-            reportFrameError(DEBUG_FPORT_ERROR_OVERSIZE);
+            rxBuffer[rxBufferWriteIndex].data[framePosition - 1] = val;
+            framePosition = framePosition + 1;
         }
-
     }
 }
 
 #if defined(USE_TELEMETRY_SMARTPORT)
 static void smartPortWriteFrameFport(const smartPortPayload_t *payload)
 {
-    skipUntilStart = true;
+    framePosition = 0;
 
     uint16_t checksum = 0;
     smartPortSendByte(FPORT_RESPONSE_FRAME_LENGTH, &checksum, fportPort);
