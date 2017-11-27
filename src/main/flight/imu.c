@@ -389,9 +389,10 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void){
 
 static bool imuIsAccelerometerHealthy(void)
 {
-    int32_t accMagnitude = 0;
+    float accMagnitude = 0;
     for (int axis = 0; axis < 3; axis++) {
-        accMagnitude += (int32_t)acc.accSmooth[axis] * acc.accSmooth[axis];
+        const float a = acc.accSmooth[axis];
+        accMagnitude += a * a;
     }
 
     accMagnitude = accMagnitude * 100 / (sq((int32_t)acc.dev.acc_1G));
