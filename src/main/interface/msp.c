@@ -1979,15 +1979,13 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef USE_RTC_TIME
     case MSP_SET_RTC:
         {
-            dateTime_t dt;
-            dt.year = sbufReadU16(src);
-            dt.month = sbufReadU8(src);
-            dt.day = sbufReadU8(src);
-            dt.hours = sbufReadU8(src);
-            dt.minutes = sbufReadU8(src);
-            dt.seconds = sbufReadU8(src);
-            dt.millis = 0;
-            rtcSetDateTime(&dt);
+            // Use seconds and milliseconds to make senders
+            // easier to implement. Generating a 64 bit value
+            // might not be trivial in some platforms.
+            int32_t secs = (int32_t)sbufReadU32(src);
+            uint16_t millis = sbufReadU16(src);
+            rtcTime_t t = rtcTimeMake(secs, millis);
+            rtcSet(&t);
         }
 
         break;
