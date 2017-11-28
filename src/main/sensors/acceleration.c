@@ -69,9 +69,8 @@
 
 acc_t acc;                       // acc access functions
 
-static float accumulator[XYZ_AXIS_COUNT];
-static timeUs_t accumulatedTimeUs;
-static timeUs_t lastTimeSampledUs;
+static float accumulatedMeasurements[XYZ_AXIS_COUNT];
+static int accumulatedMeasurementCount;
 
 static uint16_t calibratingA = 0;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 
@@ -469,6 +468,8 @@ static void applyAccelerationTrims(const flightDynamicsTrims_t *accelerationTrim
 
 void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims)
 {
+    UNUSED(currentTimeUs);
+
     if (!acc.dev.readFn(&acc.dev)) {
         return;
     }
@@ -497,28 +498,25 @@ void accUpdate(timeUs_t currentTimeUs, rollAndPitchTrims_t *rollAndPitchTrims)
 
     applyAccelerationTrims(accelerationTrims);
 
-    const timeDelta_t sampleDeltaUs = currentTimeUs - lastTimeSampledUs;
-    lastTimeSampledUs = currentTimeUs;
-    accumulatedTimeUs += sampleDeltaUs;
+    ++accumulatedMeasurementCount;
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        accumulator[axis] += acc.accSmooth[axis] * sampleDeltaUs;
+        accumulatedMeasurements[axis] += acc.accSmooth[axis];
     }
 }
 
-bool accGetAccumulationAverage(float *accumulation)
+bool accGetAccumulationAverage(float *accumulationAverage)
 {
-    if (accumulatedTimeUs > 0) {
-        const float accumulatedTimeS = accumulatedTimeUs * 1e-6;
+    if (accumulatedMeasurementCount > 0) {
         // If we have gyro data accumulated, calculate average rate that will yield the same rotation
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            accumulation[axis] = accumulator[axis] / accumulatedTimeS;
-            accumulator[axis] = 0.0f;
+            accumulationAverage[axis] = accumulatedMeasurements[axis] / accumulatedMeasurementCount;
+            accumulatedMeasurements[axis] = 0.0f;
         }
-        accumulatedTimeUs = 0;
+        accumulatedMeasurementCount = 0;
         return true;
     } else {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            accumulation[axis] = 0.0f;
+            accumulationAverage[axis] = 0.0f;
         }
         return false;
     }
