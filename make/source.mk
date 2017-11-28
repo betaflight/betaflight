@@ -313,6 +313,16 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c \
             io/vtx_control.c
+
+# F4 and F7 optimizations
+ifneq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
+SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
+            drivers/bus_i2c_hal.c \
+            drivers/bus_spi_ll.c \
+            drivers/max7456.c \
+            drivers/pwm_output_dshot.c \
+            drivers/pwm_output_dshot_hal.c
+endif #!F3
 endif #!F1
 
 # check if target.mk supplied
