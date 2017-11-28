@@ -22,22 +22,54 @@
 #include "stm32f7xx.h"
 #include "rcc.h"
 #include "timer.h"
+#include "timer_impl.h"
 
-const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
+#define TIM_N(n) (1 << (n))
+#define USED_TIMER_COUNT BITCOUNT(USED_TIMERS)
+
+const timerDef_t timerDefinitions[USED_TIMER_COUNT] = {
+#if USED_TIMERS & TIM_N(1)
     { .TIMx = TIM1,  .rcc = RCC_APB2(TIM1),  .inputIrq = TIM1_CC_IRQn},
+#endif
+#if USED_TIMERS & TIM_N(2)
     { .TIMx = TIM2,  .rcc = RCC_APB1(TIM2),  .inputIrq = TIM2_IRQn},
+#endif
+#if USED_TIMERS & TIM_N(3)
     { .TIMx = TIM3,  .rcc = RCC_APB1(TIM3),  .inputIrq = TIM3_IRQn},
+#endif
+#if USED_TIMERS & TIM_N(4)
     { .TIMx = TIM4,  .rcc = RCC_APB1(TIM4),  .inputIrq = TIM4_IRQn},
+#endif
+#if USED_TIMERS & TIM_N(5)
     { .TIMx = TIM5,  .rcc = RCC_APB1(TIM5),  .inputIrq = TIM5_IRQn},
+#endif
+#if USED_TIMERS & TIM_N(6)
     { .TIMx = TIM6,  .rcc = RCC_APB1(TIM6),  .inputIrq = 0},
+#endif
+#if USED_TIMERS & TIM_N(7)
     { .TIMx = TIM7,  .rcc = RCC_APB1(TIM7),  .inputIrq = 0},
+#endif
+#if USED_TIMERS & TIM_N(8)
     { .TIMx = TIM8,  .rcc = RCC_APB2(TIM8),  .inputIrq = TIM8_CC_IRQn},
+#endif
+#if USED_TIMERS & TIM_N(9)
     { .TIMx = TIM9,  .rcc = RCC_APB2(TIM9),  .inputIrq = TIM1_BRK_TIM9_IRQn},
+#endif
+#if USED_TIMERS & TIM_N(10)
     { .TIMx = TIM10, .rcc = RCC_APB2(TIM10), .inputIrq = TIM1_UP_TIM10_IRQn},
+#endif
+#if USED_TIMERS & TIM_N(11)
     { .TIMx = TIM11, .rcc = RCC_APB2(TIM11), .inputIrq = TIM1_TRG_COM_TIM11_IRQn},
+#endif
+#if USED_TIMERS & TIM_N(12)
     { .TIMx = TIM12, .rcc = RCC_APB1(TIM12), .inputIrq = TIM8_BRK_TIM12_IRQn},
+#endif
+#if USED_TIMERS & TIM_N(13)
     { .TIMx = TIM13, .rcc = RCC_APB1(TIM13), .inputIrq = TIM8_UP_TIM13_IRQn},
+#endif
+#if USED_TIMERS & TIM_N(14)
     { .TIMx = TIM14, .rcc = RCC_APB1(TIM14), .inputIrq = TIM8_TRG_COM_TIM14_IRQn},
+#endif
 };
 
 /*
