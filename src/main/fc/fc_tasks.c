@@ -76,6 +76,7 @@
 #include "sensors/compass.h"
 #include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
+#include "sensors/lidar_tf.h"
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
 
@@ -349,6 +350,9 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_RCDEVICE, rcdeviceIsEnabled());
 #endif
 #endif
+#ifdef USE_LIDAR_TF
+    setTaskEnabled(TASK_LIDAR_TF, true);
+#endif
 }
 
 cfTask_t cfTasks[TASK_COUNT] = {
@@ -598,6 +602,15 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "CAMCTRL",
         .taskFunc = taskCameraControl,
         .desiredPeriod = TASK_PERIOD_HZ(5),
+        .staticPriority = TASK_PRIORITY_IDLE
+    },
+#endif
+
+#ifdef USE_LIDAR_TF
+    [TASK_LIDAR_TF] = {
+        .taskName = "LIDAR_TF",
+        .taskFunc = lidarTFUpdate,
+        .desiredPeriod = TASK_PERIOD_HZ(100),
         .staticPriority = TASK_PRIORITY_IDLE
     },
 #endif

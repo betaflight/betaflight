@@ -119,6 +119,7 @@
 #include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
 #include "sensors/initialisation.h"
+#include "sensors/lidar_tf.h"
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
 
@@ -734,6 +735,10 @@ void init(void)
 #ifdef USE_RCDEVICE
     rcdeviceInit();
 #endif // USE_RCDEVICE
+
+#ifdef USE_LIDAR_TF
+    lidarTFInit();
+#endif
 
     // Latch active features AGAIN since some may be modified by init().
     latchActiveFeatures();
