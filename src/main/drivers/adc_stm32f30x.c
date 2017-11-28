@@ -21,17 +21,20 @@
 
 #include "platform.h"
 
+#include "common/utils.h"
+
 #include "drivers/accgyro/accgyro.h"
+
+#include "drivers/dma.h"
 #include "drivers/io.h"
+#include "drivers/rcc.h"
 #include "drivers/sensor.h"
 #include "drivers/time.h"
 
+#include "parameter_groups/adc.h"
+
 #include "adc.h"
 #include "adc_impl.h"
-#include "rcc.h"
-#include "dma.h"
-
-#include "common/utils.h"
 
 const adcDevice_t adcHardware[] = {
     { .ADCx = ADC1, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA1_Channel1 },

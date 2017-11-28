@@ -30,6 +30,8 @@
 
 #include "fc/config.h"
 
+#include "parameter_groups/adc_pg.h"
+
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 

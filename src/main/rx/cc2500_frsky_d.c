@@ -30,6 +30,7 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
+#include "drivers/adc.h"
 #include "drivers/cc2500.h"
 #include "drivers/io.h"
 #include "drivers/system.h"

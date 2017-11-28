@@ -22,7 +22,6 @@
 
 #include "config/parameter_group.h"
 
-#include "drivers/adc.h"
 #include "drivers/flash.h"
 #include "drivers/rx_pwm.h"
 #include "drivers/sdcard.h"
@@ -84,7 +83,6 @@ typedef struct systemConfig_s {
 
 PG_DECLARE(pilotConfig_t, pilotConfig);
 PG_DECLARE(systemConfig_t, systemConfig);
-PG_DECLARE(adcConfig_t, adcConfig);
 PG_DECLARE(beeperDevConfig_t, beeperDevConfig);
 PG_DECLARE(flashConfig_t, flashConfig);
 PG_DECLARE(ppmConfig_t, ppmConfig);

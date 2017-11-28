@@ -36,6 +36,7 @@
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 
+#include "drivers/adc.h"
 #include "drivers/nvic.h"
 #include "drivers/sensor.h"
 #include "drivers/system.h"
@@ -53,7 +54,6 @@
 #include "drivers/pwm_esc_detect.h"
 #include "drivers/rx_pwm.h"
 #include "drivers/pwm_output.h"
-#include "drivers/adc.h"
 #include "drivers/bus.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
@@ -79,6 +79,8 @@
 #include "interface/msp.h"
 
 #include "msp/msp_serial.h"
+
+#include "parameter_groups/adc_pg.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"

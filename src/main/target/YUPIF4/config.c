@@ -22,12 +22,16 @@
 
 #ifdef USE_TARGET_CONFIG
 #include "blackbox/blackbox.h"
+
 #include "fc/config.h"
+
 #include "flight/pid.h"
+
+#include "parameter_groups/adc_pg.h"
+
 #include "telemetry/telemetry.h"
 
 #include "hardware_revision.h"
-
 
 
 // alternative defaults settings for YuPiF4 targets
