@@ -1993,7 +1993,7 @@ static mspResult_e mspProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 #endif
 
-    case MSP_TX_INFO:
+    case MSP_SET_TX_INFO:
         setRssiMsp(sbufReadU8(src));
 
         break;
