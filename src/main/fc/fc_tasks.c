@@ -130,9 +130,7 @@ void taskBatteryAlerts(timeUs_t currentTimeUs)
 #ifndef USE_OSD_SLAVE
 static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
 {
-    UNUSED(currentTimeUs);
-
-    accUpdate(&accelerometerConfigMutable()->accelerometerTrims);
+    accUpdate(currentTimeUs, &accelerometerConfigMutable()->accelerometerTrims);
 }
 
 static void taskUpdateRxMain(timeUs_t currentTimeUs)

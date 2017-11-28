@@ -446,10 +446,13 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 //  printf("[imu]deltaT = %u, imuDeltaT = %u, currentTimeUs = %u, micros64_real = %lu\n", deltaT, imuDeltaT, currentTimeUs, micros64_real());
     deltaT = imuDeltaT;
 #endif
-
+    float gyroAverage[XYZ_AXIS_COUNT];
+    gyroGetAccumulationAverage(gyroAverage);
+    float accAverage[XYZ_AXIS_COUNT];
+    accGetAccumulationAverage(accAverage);
     imuMahonyAHRSupdate(deltaT * 1e-6f,
-                        DEGREES_TO_RADIANS(gyro.gyroADCf[X]), DEGREES_TO_RADIANS(gyro.gyroADCf[Y]), DEGREES_TO_RADIANS(gyro.gyroADCf[Z]),
-                        useAcc, acc.accSmooth[X], acc.accSmooth[Y], acc.accSmooth[Z],
+                        DEGREES_TO_RADIANS(gyroAverage[X]), DEGREES_TO_RADIANS(gyroAverage[Y]), DEGREES_TO_RADIANS(gyroAverage[Z]),
+                        useAcc, accAverage[X], accAverage[Y], accAverage[Z],
                         useMag, mag.magADC[X], mag.magADC[Y], mag.magADC[Z],
                         useYaw, rawYawError);
 

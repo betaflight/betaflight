@@ -635,7 +635,7 @@ extern "C" {
     void writeServos(void) {};
     void calculateRxChannelsAndUpdateFailsafe(timeUs_t) {}
     bool isMixerUsingServos(void) { return false; }
-    void gyroUpdate(void) {}
+    void gyroUpdate(timeUs_t) {}
     timeDelta_t getTaskDeltaTime(cfTaskId_e) { return 0; }
     void updateRSSI(timeUs_t) {}
     bool failsafeIsMonitoring(void) { return false; }
