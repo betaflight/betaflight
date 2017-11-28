@@ -116,6 +116,8 @@ extern uint8_t __config_end;
 #include "io/vtx_control.h"
 #include "io/vtx.h"
 
+#include "pg/adc.h"
+
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 #include "../rx/cc2500_frsky_common.h"

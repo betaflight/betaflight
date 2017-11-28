@@ -80,6 +80,8 @@
 
 #include "msp/msp_serial.h"
 
+#include "pg/adc.h"
+
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
 #include "rx/spektrum.h"

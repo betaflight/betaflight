@@ -34,6 +34,9 @@
 #include "adc.h"
 #include "adc_impl.h"
 
+#include "pg/adc.h"
+
+
 #ifndef ADC_INSTANCE
 #define ADC_INSTANCE                ADC1
 #endif

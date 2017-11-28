@@ -33,6 +33,9 @@
 #include "rcc.h"
 #include "dma.h"
 
+#include "pg/adc.h"
+
+
 const adcDevice_t adcHardware[] = {
     { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Channelx = DMA1_Channel1 }
 };

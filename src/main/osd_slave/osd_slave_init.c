@@ -77,6 +77,8 @@
 
 #include "osd_slave/osd_slave_init.h"
 
+#include "pg/adc.h"
+
 #include "scheduler/scheduler.h"
 
 #include "sensors/acceleration.h"

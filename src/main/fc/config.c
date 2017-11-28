@@ -145,9 +145,6 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
 #endif
 
 
-#ifdef USE_ADC
-PG_REGISTER_WITH_RESET_FN(adcConfig_t, adcConfig, PG_ADC_CONFIG, 0);
-#endif
 #ifdef USE_PWM
 PG_REGISTER_WITH_RESET_FN(pwmConfig_t, pwmConfig, PG_PWM_CONFIG, 0);
 #endif
@@ -179,35 +176,6 @@ PG_RESET_TEMPLATE(sdcardConfig_t, sdcardConfig,
 
 // no template required since defaults are zero
 PG_REGISTER(vcdProfile_t, vcdProfile, PG_VCD_CONFIG, 0);
-
-#ifdef USE_ADC
-void pgResetFn_adcConfig(adcConfig_t *adcConfig)
-{
-    adcConfig->device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_INSTANCE));
-
-#ifdef VBAT_ADC_PIN
-    adcConfig->vbat.enabled = true;
-    adcConfig->vbat.ioTag = IO_TAG(VBAT_ADC_PIN);
-#endif
-
-#ifdef EXTERNAL1_ADC_PIN
-    adcConfig->external1.enabled = true;
-    adcConfig->external1.ioTag = IO_TAG(EXTERNAL1_ADC_PIN);
-#endif
-
-#ifdef CURRENT_METER_ADC_PIN
-    adcConfig->current.enabled = true;
-    adcConfig->current.ioTag = IO_TAG(CURRENT_METER_ADC_PIN);
-#endif
-
-#ifdef RSSI_ADC_PIN
-    adcConfig->rssi.enabled = true;
-    adcConfig->rssi.ioTag = IO_TAG(RSSI_ADC_PIN);
-#endif
-
-}
-#endif // USE_ADC
-
 
 #if defined(USE_PWM) || defined(USE_PPM)
 void pgResetFn_ppmConfig(ppmConfig_t *ppmConfig)
