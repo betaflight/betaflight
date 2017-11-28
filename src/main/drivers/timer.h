@@ -210,3 +210,5 @@ uint16_t timerDmaSource(uint8_t channel);
 uint16_t timerGetPrescalerByDesiredHertz(TIM_TypeDef *tim, uint32_t hz);
 uint16_t timerGetPrescalerByDesiredMhz(TIM_TypeDef *tim, uint16_t mhz);
 uint16_t timerGetPeriodByPrescaler(TIM_TypeDef *tim, uint16_t prescaler, uint32_t hz);
+
+int8_t timerGetTIMNumber(const TIM_TypeDef *tim);
