@@ -182,8 +182,10 @@ static void dataReceive(uint16_t c, void *data)
     }
 }
 
-static uint8_t frameStatus(void)
+static uint8_t frameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 {
+    UNUSED(rxRuntimeConfig);
+
     if (!rcFrameComplete) {
         return RX_FRAME_PENDING;
     }

@@ -234,7 +234,7 @@ static bool checkChecksum(uint8_t *data, uint8_t length)
     return checksum == FPORT_CRC_VALUE;
 }
 
-static uint8_t fportFrameStatus(void)
+static uint8_t fportFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 {
     static smartPortPayload_t payloadBuffer;
     static smartPortPayload_t *mspPayload = NULL;
@@ -259,7 +259,7 @@ static uint8_t fportFrameStatus(void)
                     if (frameLength != FPORT_FRAME_PAYLOAD_LENGTH_CONTROL) {
                         reportFrameError(DEBUG_FPORT_ERROR_TYPE_SIZE);
                     } else {
-                        result = sbusChannelsDecode(&frame->data.controlData.channels);
+                        result = sbusChannelsDecode(rxRuntimeConfig, &frame->data.controlData.channels);
 
                         setRssiUnfiltered(scaleRange(constrain(frame->data.controlData.rssi, 0, 100), 0, 100, 0, 1024), RSSI_SOURCE_RX_PROTOCOL);
 
@@ -338,12 +338,13 @@ static uint8_t fportFrameStatus(void)
 
 bool fportRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
-    sbusChannelsInit(rxConfig);
+    static uint32_t sbusChannelData[SBUS_MAX_CHANNEL];
+    rxRuntimeConfig->channelData = sbusChannelData;
+    sbusChannelsInit(rxConfig, rxRuntimeConfig);
 
     rxRuntimeConfig->channelCount = SBUS_MAX_CHANNEL;
     rxRuntimeConfig->rxRefreshRate = 11000;
 
-    rxRuntimeConfig->rcReadRawFn = sbusChannelsReadRawRC;
     rxRuntimeConfig->rcFrameStatusFn = fportFrameStatus;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);

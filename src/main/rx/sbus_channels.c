@@ -30,16 +30,15 @@
 
 #define DEBUG_SBUS_FRAME_INTERVAL 3
 
-static uint32_t sbusChannelData[SBUS_MAX_CHANNEL];
-
 #define SBUS_FLAG_CHANNEL_17        (1 << 0)
 #define SBUS_FLAG_CHANNEL_18        (1 << 1)
 
 #define SBUS_DIGITAL_CHANNEL_MIN 173
 #define SBUS_DIGITAL_CHANNEL_MAX 1812
 
-uint8_t sbusChannelsDecode(const sbusChannels_t *channels)
+uint8_t sbusChannelsDecode(rxRuntimeConfig_t *rxRuntimeConfig, const sbusChannels_t *channels)
 {
+    uint32_t *sbusChannelData = rxRuntimeConfig->channelData;
     sbusChannelData[0] = channels->chan0;
     sbusChannelData[1] = channels->chan1;
     sbusChannelData[2] = channels->chan2;
@@ -80,19 +79,18 @@ uint8_t sbusChannelsDecode(const sbusChannels_t *channels)
     return RX_FRAME_COMPLETE;
 }
 
-uint16_t sbusChannelsReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
+static uint16_t sbusChannelsReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
-    UNUSED(rxRuntimeConfig);
     // Linear fitting values read from OpenTX-ppmus and comparing with values received by X4R
     // http://www.wolframalpha.com/input/?i=linear+fit+%7B173%2C+988%7D%2C+%7B1812%2C+2012%7D%2C+%7B993%2C+1500%7D
-    return (5 * sbusChannelData[chan] / 8) + 880;
+    return (5 * rxRuntimeConfig->channelData[chan] / 8) + 880;
 }
 
-void sbusChannelsInit(const rxConfig_t *rxConfig)
+void sbusChannelsInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
+    rxRuntimeConfig->rcReadRawFn = sbusChannelsReadRawRC;
     for (int b = 0; b < SBUS_MAX_CHANNEL; b++) {
-        sbusChannelData[b] = (16 * rxConfig->midrc) / 10 - 1408;
+        rxRuntimeConfig->channelData[b] = (16 * rxConfig->midrc) / 10 - 1408;
     }
 }
-
 #endif
