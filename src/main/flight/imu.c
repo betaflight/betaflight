@@ -449,7 +449,9 @@ static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
     float gyroAverage[XYZ_AXIS_COUNT];
     gyroGetAccumulationAverage(gyroAverage);
     float accAverage[XYZ_AXIS_COUNT];
-    accGetAccumulationAverage(accAverage);
+    if (!accGetAccumulationAverage(accAverage)) {
+        useAcc = false;
+    }
     imuMahonyAHRSupdate(deltaT * 1e-6f,
                         DEGREES_TO_RADIANS(gyroAverage[X]), DEGREES_TO_RADIANS(gyroAverage[Y]), DEGREES_TO_RADIANS(gyroAverage[Z]),
                         useAcc, accAverage[X], accAverage[Y], accAverage[Z],
