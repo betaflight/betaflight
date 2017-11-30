@@ -31,6 +31,8 @@
 #include "drivers/max7456.h"
 #include "drivers/vcd.h"
 
+#include "fc/config.h"
+
 #include "io/displayport_max7456.h"
 #include "io/osd.h"
 #include "io/osd_slave.h"
@@ -154,7 +156,11 @@ static const displayPortVTable_t max7456VTable = {
 displayPort_t *max7456DisplayPortInit(const vcdProfile_t *vcdProfile)
 {
     displayInit(&max7456DisplayPort, &max7456VTable);
-    max7456Init(vcdProfile);
+#ifdef USE_OSD_SLAVE
+    max7456Init(vcdProfile, false);
+#else
+    max7456Init(vcdProfile, systemConfig()->cpu_overclock);
+#endif
     resync(&max7456DisplayPort);
     return &max7456DisplayPort;
 }

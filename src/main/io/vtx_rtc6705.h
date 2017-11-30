@@ -35,4 +35,5 @@
 extern const char * const rtc6705PowerNames[VTX_RTC6705_POWER_COUNT];
 
 void vtxRTC6705Configure(void);
+bool vtxRTC6705CanUpdate(void);
 bool vtxRTC6705Init(void);
