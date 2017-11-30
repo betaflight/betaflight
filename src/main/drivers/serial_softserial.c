@@ -161,11 +161,7 @@ static void serialInputPortDeActivate(softSerial_t *softSerial)
     TIM_CCxCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_Disable);
 #endif
 
-#ifdef STM32F1
     IOConfigGPIO(softSerial->rxIO, IOCFG_IN_FLOATING);
-#else
-    IOConfigGPIOAF(softSerial->rxIO, IOCFG_IN_FLOATING, softSerial->timerHardware->alternateFunction);
-#endif
     softSerial->rxActive = false;
 }
 
@@ -381,9 +377,14 @@ void processTxState(softSerial_t *softSerial)
             // Half-duplex: Deactivate receiver, activate transmitter
             serialInputPortDeActivate(softSerial);
             serialOutputPortActivate(softSerial);
-        }
 
-        return;
+            // Start sending on next bit timing, as port manipulation takes time,
+            // and continuing here may cause bit period to decrease causing sampling errors
+            // at the receiver under high rates.
+            // Note that there will be (little less than) 1-bit delay; take it as "turn around time".
+            // XXX We may be able to reload counter and continue. (Future work.)
+            return;
+        }
     }
 
     if (softSerial->bitsLeftToTransmit) {
