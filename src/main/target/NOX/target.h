@@ -15,7 +15,7 @@
 
 #pragma once
 
-#define USE_TARGET_CONFIG
+#define TARGET_CONFIG
 
 #define TARGET_BOARD_IDENTIFIER "NOX1"
 #define USBD_PRODUCT_STRING "NoxF4V1"
@@ -27,11 +27,11 @@
 
 #define INVERTER_PIN_UART2      PC14
 
-#define USE_ACC
+#define ACC
 #define USE_ACC_SPI_MPU6500
 #define USE_ACC_SPI_MPU6000
 
-#define USE_GYRO
+#define GYRO
 #define USE_GYRO_SPI_MPU6500
 #define USE_GYRO_SPI_MPU6000
 
@@ -45,13 +45,13 @@
 #define MPU_INT_EXTI            PA8
 #define USE_MPU_DATA_READY_SIGNAL
 
-#define USE_BARO
+#define BARO
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 #define BMP280_SPI_INSTANCE     SPI2
 #define BMP280_CS_PIN           PA9
 
-#define USE_OSD
+#define OSD
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      PA10
