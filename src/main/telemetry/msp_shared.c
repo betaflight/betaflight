@@ -132,6 +132,7 @@ bool handleMspFrame(uint8_t *frameStart, int frameLength)
         sbufAdvance(frameBuf, frameBytesRemaining);
         sbufWriteData(rxBuf, payload, frameBytesRemaining);
         lastSeq = seqNumber;
+
         return false;
     } else {
         sbufReadData(frameBuf, payload, bufferBytesRemaining);
