@@ -136,7 +136,7 @@ static void pidSetTargetLooptime(uint32_t pidLooptime)
     dT = (float)targetPidLooptime * 0.000001f;
 }
 
-void pidResetErrorGyroState(void)
+void pidResetITerm(void)
 {
     for (int axis = 0; axis < 3; axis++) {
         axisPID_I[axis] = 0.0f;

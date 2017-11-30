@@ -545,6 +545,10 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
                 motorOutputMin = deadbandMotor3dLow;
                 motorOutputRange = motorOutputLow - deadbandMotor3dLow;
             }
+            if (motorOutputMixSign != -1) {
+                // reset ITerm on motor reversal
+                pidResetITerm();
+            }
             motorOutputMixSign = -1;
             rcThrottlePrevious = rcCommand[THROTTLE];
             throttle = rcCommand3dDeadBandLow - rcCommand[THROTTLE];
@@ -555,6 +559,10 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
             motorRangeMax = motorOutputHigh;
             motorOutputMin = deadbandMotor3dHigh;
             motorOutputRange = motorOutputHigh - deadbandMotor3dHigh;
+            if (motorOutputMixSign != 1) {
+                // reset ITerm on motor reversal
+                pidResetITerm();
+            }
             motorOutputMixSign = 1;
             rcThrottlePrevious = rcCommand[THROTTLE];
             throttle = rcCommand[THROTTLE] - rcCommand3dDeadBandHigh;
@@ -572,6 +580,10 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
                 motorOutputMin = deadbandMotor3dLow;
                 motorOutputRange = motorOutputLow - deadbandMotor3dLow;
             }
+            if (motorOutputMixSign != -1) {
+                // reset ITerm on motor reversal
+                pidResetITerm();
+            }
             motorOutputMixSign = -1;
             throttle = 0;
             currentThrottleInputRange = rcCommandThrottleRange3dLow;
@@ -581,6 +593,10 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
             motorRangeMax = motorOutputHigh;
             motorOutputMin = deadbandMotor3dHigh;
             motorOutputRange = motorOutputHigh - deadbandMotor3dHigh;
+            if (motorOutputMixSign != 1) {
+                // reset ITerm on motor reversal
+                pidResetITerm();
+            }
             motorOutputMixSign = 1;
             throttle = 0;
             currentThrottleInputRange = rcCommandThrottleRange3dHigh;

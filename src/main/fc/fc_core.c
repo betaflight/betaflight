@@ -421,7 +421,7 @@ void processRx(timeUs_t currentTimeUs)
     /* In airmode Iterm should be prevented to grow when Low thottle and Roll + Pitch Centered.
      This is needed to prevent Iterm winding on the ground, but keep full stabilisation on 0 throttle while in air */
     if (throttleStatus == THROTTLE_LOW && !airmodeIsActivated) {
-        pidResetErrorGyroState();
+        pidResetITerm();
         if (currentPidProfile->pidAtMinThrottle)
             pidStabilisationState(PID_STABILISATION_ON);
         else

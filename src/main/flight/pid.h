@@ -127,7 +127,7 @@ extern uint32_t targetPidLooptime;
 // PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
 extern uint8_t PIDweight[3];
 
-void pidResetErrorGyroState(void);
+void pidResetITerm(void);
 void pidStabilisationState(pidStabilisationState_e pidControllerState);
 void pidSetItermAccelerator(float newItermAccelerator);
 void pidInitFilters(const pidProfile_t *pidProfile);
