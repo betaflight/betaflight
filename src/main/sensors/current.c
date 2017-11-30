@@ -77,7 +77,9 @@ void currentMeterReset(currentMeter_t *meter)
 // ADC/Virtual shared
 //
 
+#if !defined(ADCVREF)
 #define ADCVREF 3300   // in mV
+#endif
 
 #define IBAT_LPF_FREQ  0.4f
 static biquadFilter_t adciBatFilter;
