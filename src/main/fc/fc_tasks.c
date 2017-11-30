@@ -33,6 +33,7 @@
 #include "drivers/accgyro/accgyro.h"
 #include "drivers/camera_control.h"
 #include "drivers/compass/compass.h"
+#include "drivers/lidar_tf.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
 #include "drivers/stack_check.h"
@@ -76,7 +77,6 @@
 #include "sensors/compass.h"
 #include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
-#include "sensors/lidar_tf.h"
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
 

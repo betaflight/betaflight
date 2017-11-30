@@ -26,7 +26,7 @@
 
 #include "io/serial.h"
 
-#include "sensors/lidar_tf.h"
+#include "lidar_tf.h"
 
 #ifdef USE_LIDAR_TF
 
@@ -43,6 +43,25 @@ typedef enum {
 } tfFrameState_e;
 
 static tfFrameState_e tfFrameState;
+
+//
+// Benewake TFmini frame format
+// Byte
+// 0: SYNC
+// 1: SYNC
+// 2: Measured distance (LSB)
+// 3: Measured distance (MSB)
+// 4: Signal strength (LSB)
+// 5: Signal strength (MSB)
+// 6: Quality (*1)
+// 7: ?
+// 8: Checksum (Unsigned 8-bit sum of bytes 0~7)
+//
+// Note *1: TFmini product specification (Version A00) specifies byte 6 is
+// reserved and byte 7 is quality, but it seems like byte 7 contains
+// 7 for good measurement and 2 for bad measurement.
+// 
+
 static uint8_t tfFrame[TF_FRAME_LENGTH];
 static uint8_t tfPosition;
 
@@ -51,9 +70,7 @@ static uint8_t tfPosition;
 // At 100Hz scheduling, skew will cause 10msec delay at the most.
 static uint8_t tfCmdStandard[] = { 0x42, 0x57, 0x02, 0x00, 0x00, 0x00, 0x01, 0x06 };
 
-bool lidarTFValid = false;
-uint32_t lidarTFAltitude;
-uint32_t lidarTFQuality;
+int32_t lidarTFValue;
 
 void lidarTFInit(void)
 {
@@ -79,21 +96,18 @@ void lidarTFInit(void)
 
 void lidarTFCompute(uint16_t distance, uint16_t strength, uint8_t quality)
 {
-    UNUSED(quality);
+    UNUSED(strength);
 
-    lidarTFQuality = quality;
-
-    if (distance < 20 || strength > 300) {
+    if (quality < 7) {
         goto invalid;
     }
 
     // XXX Todo: attitude compensation
-    lidarTFAltitude = distance;
-    lidarTFValid = true;
+    lidarTFValue = distance;
     return;
 
 invalid:;
-    lidarTFValid = false;
+    lidarTFValue = -1;
     return;
 }
 
@@ -137,13 +151,18 @@ void lidarTFUpdate(timeUs_t currentTimeUs)
                 }
 
                 if (c == cksum) {
-                    lidarTFCompute((tfFrame[3] << 8) | tfFrame[2], (tfFrame[5] << 8) | tfFrame[4], tfFrame[7]);
-                    debug[0]++;
-                    debug[1] = (tfFrame[3] << 8) | tfFrame[2];
-                    debug[2] = (tfFrame[5] << 8) | tfFrame[4];
-                    debug[3] = lidarTFValid;
+                    lidarTFCompute(tfFrame[2] | (tfFrame[3] << 8), tfFrame[4] | (tfFrame[5] << 8), tfFrame[6]);
+#if 0
+                    debug[0] = (tfFrame[3] << 8) | tfFrame[2];
+                    debug[1] = (tfFrame[5] << 8) | tfFrame[4];
+                    debug[2] = (tfFrame[7] << 8) | tfFrame[6];
+#endif
+                    debug[0] = lidarTFValue;
                 } else {
+#if 0
                     // Checksum error. Simply discard the current frame.
+                    debug[3]++;
+#endif
                 }
             }
 
@@ -153,5 +172,10 @@ void lidarTFUpdate(timeUs_t currentTimeUs)
             break;
         }
     }
+}
+
+int32_t lidarTFGetDistance(void)
+{
+    return lidarTFValue;
 }
 #endif

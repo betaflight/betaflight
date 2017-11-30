@@ -60,6 +60,7 @@
 #include "drivers/buttons.h"
 #include "drivers/inverter.h"
 #include "drivers/flash_m25p16.h"
+#include "drivers/lidar_tf.h"
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/sdcard.h"
 #include "drivers/usb_io.h"
@@ -119,7 +120,6 @@
 #include "sensors/esc_sensor.h"
 #include "sensors/gyro.h"
 #include "sensors/initialisation.h"
-#include "sensors/lidar_tf.h"
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
 
