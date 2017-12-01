@@ -416,8 +416,9 @@ void mixerConfigureOutput(void)
         // load custom mixer into currentMixer
         for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
             // check if done
-            if (customMotorMixer(i)->throttle == 0.0f)
+            if (customMotorMixer(i)->throttle == 0.0f) {
                 break;
+            }
             currentMixer[i] = *customMotorMixer(i);
             motorCount++;
         }
@@ -455,7 +456,6 @@ void mixerLoadMix(int index, motorMixer_t *customMixers)
     for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
         customMixers[i].throttle = 0.0f;
     }
-
     // do we have anything here to begin with?
     if (mixers[index].motor != NULL) {
         for (int i = 0; i < mixers[index].motorCount; i++) {
@@ -467,14 +467,12 @@ void mixerLoadMix(int index, motorMixer_t *customMixers)
 void mixerConfigureOutput(void)
 {
     motorCount = QUAD_MOTOR_COUNT;
-
     for (int i = 0; i < motorCount; i++) {
         currentMixer[i] = mixerQuadX[i];
     }
-
     mixerResetDisarmedMotors();
 }
-#endif
+#endif // USE_QUAD_MIXER_ONLY
 
 void mixerResetDisarmedMotors(void)
 {
@@ -500,14 +498,12 @@ static void writeAllMotors(int16_t mc)
     for (int i = 0; i < motorCount; i++) {
         motor[i] = mc;
     }
-
     writeMotors();
 }
 
 void stopMotors(void)
 {
     writeAllMotors(disarmMotorOutput);
-
     delay(50); // give the timers and ESCs a chance to react.
 }
 
@@ -524,21 +520,21 @@ static float motorRangeMax;
 static float motorOutputRange;
 static int8_t motorOutputMixSign;
 
-void calculateThrottleAndCurrentMotorEndpoints(void)
+static void calculateThrottleAndCurrentMotorEndpoints(void)
 {
     static uint16_t rcThrottlePrevious = 0;   // Store the last throttle direction for deadband transitions
     float currentThrottleInputRange = 0;
 
-    if(feature(FEATURE_3D)) {
+    if (feature(FEATURE_3D)) {
         if (!ARMING_FLAG(ARMED)) {
             rcThrottlePrevious = rxConfig()->midrc; // When disarmed set to mid_rc. It always results in positive direction after arming.
         }
 
-        if(rcCommand[THROTTLE] <= rcCommand3dDeadBandLow) {
+        if (rcCommand[THROTTLE] <= rcCommand3dDeadBandLow) {
             // INVERTED
             motorRangeMin = motorOutputLow;
             motorRangeMax = deadbandMotor3dLow;
-            if(isMotorProtocolDshot()) {
+            if (isMotorProtocolDshot()) {
                 motorOutputMin = motorOutputLow;
                 motorOutputRange = deadbandMotor3dLow - motorOutputLow;
             } else {
@@ -549,7 +545,7 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
             rcThrottlePrevious = rcCommand[THROTTLE];
             throttle = rcCommand3dDeadBandLow - rcCommand[THROTTLE];
             currentThrottleInputRange = rcCommandThrottleRange3dLow;
-        } else if(rcCommand[THROTTLE] >= rcCommand3dDeadBandHigh) {
+        } else if (rcCommand[THROTTLE] >= rcCommand3dDeadBandHigh) {
             // NORMAL
             motorRangeMin = deadbandMotor3dHigh;
             motorRangeMax = motorOutputHigh;
@@ -559,13 +555,13 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
             rcThrottlePrevious = rcCommand[THROTTLE];
             throttle = rcCommand[THROTTLE] - rcCommand3dDeadBandHigh;
             currentThrottleInputRange = rcCommandThrottleRange3dHigh;
-        } else if((rcThrottlePrevious <= rcCommand3dDeadBandLow &&
-                !isModeActivationConditionPresent(BOX3DONASWITCH)) || 
+        } else if ((rcThrottlePrevious <= rcCommand3dDeadBandLow &&
+                !isModeActivationConditionPresent(BOX3DONASWITCH)) ||
                 isMotorsReversed()) {
             // INVERTED_TO_DEADBAND
             motorRangeMin = motorOutputLow;
             motorRangeMax = deadbandMotor3dLow;
-            if(isMotorProtocolDshot()) {
+            if (isMotorProtocolDshot()) {
                 motorOutputMin = motorOutputLow;
                 motorOutputRange = deadbandMotor3dLow - motorOutputLow;
             } else {
@@ -602,21 +598,18 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
 
 static void applyFlipOverAfterCrashModeToMotors(void)
 {
-    float motorMix[MAX_SUPPORTED_MOTORS];
-
     if (ARMING_FLAG(ARMED)) {
+        float motorMix[MAX_SUPPORTED_MOTORS];
         for (int i = 0; i < motorCount; i++) {
             if (getRcDeflectionAbs(FD_ROLL) > getRcDeflectionAbs(FD_PITCH)) {
                 motorMix[i] = getRcDeflection(FD_ROLL) * currentMixer[i].roll * -1;
             } else {
                 motorMix[i] = getRcDeflection(FD_PITCH) * currentMixer[i].pitch * -1;
             }
-
             // Apply the mix to motor endpoints
             float motorOutput =  motorOutputMin + motorOutputRange * motorMix[i];
-            //Add a little bit to the motorOutputMin so props aren't spinning when sticks are centered
+            // Add a little bit to the motorOutputMin so props aren't spinning when sticks are centered
             motorOutput = (motorOutput < motorOutputMin + CRASH_FLIP_DEADBAND ) ? disarmMotorOutput : motorOutput - CRASH_FLIP_DEADBAND;
-
             motor[i] = motorOutput;
         }
     } else {
@@ -633,17 +626,14 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
     for (uint32_t i = 0; i < motorCount; i++) {
         float motorOutput = motorOutputMin + (motorOutputRange * (motorOutputMixSign * motorMix[i] + throttle * currentMixer[i].throttle));
-
         if (failsafeIsActive()) {
             if (isMotorProtocolDshot()) {
                 motorOutput = (motorOutput < motorRangeMin) ? disarmMotorOutput : motorOutput; // Prevent getting into special reserved range
             }
-
             motorOutput = constrain(motorOutput, disarmMotorOutput, motorRangeMax);
         } else {
             motorOutput = constrain(motorOutput, motorRangeMin, motorRangeMax);
         }
-
         // Motor stop handling
         if (feature(FEATURE_MOTOR_STOP) && ARMING_FLAG(ARMED) && !feature(FEATURE_3D) && !isAirmodeActive()) {
             if (((rcData[THROTTLE]) < rxConfig()->mincheck)) {
@@ -664,7 +654,7 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
 void mixTable(uint8_t vbatPidCompensation)
 {
     if (isFlipOverAfterCrashMode()) {
-        applyFlipOverAfterCrashModeToMotors();        
+        applyFlipOverAfterCrashModeToMotors();
         return;
     }
 
@@ -672,9 +662,9 @@ void mixTable(uint8_t vbatPidCompensation)
     calculateThrottleAndCurrentMotorEndpoints();
 
     // Calculate and Limit the PIDsum
-    float scaledAxisPidRoll =
+    const float scaledAxisPidRoll =
         constrainf(axisPID_P[FD_ROLL] + axisPID_I[FD_ROLL] + axisPID_D[FD_ROLL], -currentPidProfile->pidSumLimit, currentPidProfile->pidSumLimit) / PID_MIXER_SCALING;
-    float scaledAxisPidPitch =
+    const float scaledAxisPidPitch =
         constrainf(axisPID_P[FD_PITCH] + axisPID_I[FD_PITCH] + axisPID_D[FD_PITCH], -currentPidProfile->pidSumLimit, currentPidProfile->pidSumLimit) / PID_MIXER_SCALING;
     float scaledAxisPidYaw =
         constrainf(axisPID_P[FD_YAW] + axisPID_I[FD_YAW], -currentPidProfile->pidSumLimitYaw, currentPidProfile->pidSumLimitYaw) / PID_MIXER_SCALING;
@@ -683,7 +673,7 @@ void mixTable(uint8_t vbatPidCompensation)
     }
 
     // Calculate voltage compensation
-    const float vbatCompensationFactor = (vbatPidCompensation)  ? calculateVbatPidCompensation() : 1.0f;
+    const float vbatCompensationFactor = vbatPidCompensation ? calculateVbatPidCompensation() : 1.0f;
 
     // Find roll/pitch/yaw desired output
     float motorMix[MAX_SUPPORTED_MOTORS];
@@ -750,7 +740,6 @@ float convertExternalToMotor(uint16_t externalValue)
 #endif
     default:
         motorValue = externalValue;
-
         break;
     }
 
@@ -774,13 +763,11 @@ uint16_t convertMotorToExternal(float motorValue)
         } else {
             externalValue = (motorValue < DSHOT_MIN_THROTTLE) ? PWM_RANGE_MIN : scaleRange(motorValue, DSHOT_MIN_THROTTLE, DSHOT_MAX_THROTTLE, PWM_RANGE_MIN + 1, PWM_RANGE_MAX);
         }
-
         break;
     case false:
 #endif
     default:
         externalValue = motorValue;
-
         break;
     }
 
