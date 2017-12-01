@@ -520,9 +520,10 @@ static float motorRangeMax;
 static float motorOutputRange;
 static int8_t motorOutputMixSign;
 
-static void calculateThrottleAndCurrentMotorEndpoints(void)
+static void calculateThrottleAndCurrentMotorEndpoints(timeUs_t currentTimeUs)
 {
     static uint16_t rcThrottlePrevious = 0;   // Store the last throttle direction for deadband transitions
+    static timeUs_t reversalTimeUs = 0; // time when motors last reversed in 3D mode
     float currentThrottleInputRange = 0;
 
     if (feature(FEATURE_3D)) {
@@ -542,8 +543,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(void)
                 motorOutputRange = motorOutputLow - deadbandMotor3dLow;
             }
             if (motorOutputMixSign != -1) {
-                // reset ITerm on motor reversal
-                pidResetITerm();
+                reversalTimeUs = currentTimeUs;
             }
             motorOutputMixSign = -1;
             rcThrottlePrevious = rcCommand[THROTTLE];
@@ -556,8 +556,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(void)
             motorOutputMin = deadbandMotor3dHigh;
             motorOutputRange = motorOutputHigh - deadbandMotor3dHigh;
             if (motorOutputMixSign != 1) {
-                // reset ITerm on motor reversal
-                pidResetITerm();
+                reversalTimeUs = currentTimeUs;
             }
             motorOutputMixSign = 1;
             rcThrottlePrevious = rcCommand[THROTTLE];
@@ -577,8 +576,7 @@ static void calculateThrottleAndCurrentMotorEndpoints(void)
                 motorOutputRange = motorOutputLow - deadbandMotor3dLow;
             }
             if (motorOutputMixSign != -1) {
-                // reset ITerm on motor reversal
-                pidResetITerm();
+                reversalTimeUs = currentTimeUs;
             }
             motorOutputMixSign = -1;
             throttle = 0;
@@ -590,12 +588,15 @@ static void calculateThrottleAndCurrentMotorEndpoints(void)
             motorOutputMin = deadbandMotor3dHigh;
             motorOutputRange = motorOutputHigh - deadbandMotor3dHigh;
             if (motorOutputMixSign != 1) {
-                // reset ITerm on motor reversal
-                pidResetITerm();
+                reversalTimeUs = currentTimeUs;
             }
             motorOutputMixSign = 1;
             throttle = 0;
             currentThrottleInputRange = rcCommandThrottleRange3dHigh;
+        }
+        if (currentTimeUs - reversalTimeUs < 250000) {
+            // keep ITerm zero for 250ms after motor reversal
+            pidResetITerm();
         }
     } else {
         throttle = rcCommand[THROTTLE] - rxConfig()->mincheck;
@@ -667,7 +668,7 @@ static void applyMixToMotors(float motorMix[MAX_SUPPORTED_MOTORS])
     }
 }
 
-void mixTable(uint8_t vbatPidCompensation)
+void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation)
 {
     if (isFlipOverAfterCrashMode()) {
         applyFlipOverAfterCrashModeToMotors();
@@ -675,7 +676,7 @@ void mixTable(uint8_t vbatPidCompensation)
     }
 
     // Find min and max throttle based on conditions. Throttle has to be known before mixing
-    calculateThrottleAndCurrentMotorEndpoints();
+    calculateThrottleAndCurrentMotorEndpoints(currentTimeUs);
 
     // Calculate and Limit the PIDsum
     const float scaledAxisPidRoll =

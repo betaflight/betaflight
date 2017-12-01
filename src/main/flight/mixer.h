@@ -19,6 +19,7 @@
 
 #include "platform.h"
 
+#include "common/time.h"
 #include "config/parameter_group.h"
 #include "drivers/pwm_output_counts.h"
 #include "drivers/io_types.h"
@@ -119,7 +120,7 @@ void mixerInit(mixerMode_e mixerMode);
 void mixerConfigureOutput(void);
 
 void mixerResetDisarmedMotors(void);
-void mixTable(uint8_t vbatPidCompensation);
+void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensation);
 void syncMotors(bool enabled);
 void writeMotors(void);
 void stopMotors(void);
