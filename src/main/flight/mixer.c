@@ -524,21 +524,24 @@ static float motorRangeMax;
 static float motorOutputRange;
 static int8_t motorOutputMixSign;
 
+
+
 void calculateThrottleAndCurrentMotorEndpoints(void)
 {
     static uint16_t rcThrottlePrevious = 0;   // Store the last throttle direction for deadband transitions
     float currentThrottleInputRange = 0;
-
-    if(feature(FEATURE_3D)) {
+    
+    if (feature(FEATURE_3D)) {
         if (!ARMING_FLAG(ARMED)) {
             rcThrottlePrevious = rxConfig()->midrc; // When disarmed set to mid_rc. It always results in positive direction after arming.
         }
 
-        if(rcCommand[THROTTLE] <= rcCommand3dDeadBandLow) {
+        if (rcCommand[THROTTLE] <= rcCommand3dDeadBandLow) {
             // INVERTED
             motorRangeMin = motorOutputLow;
             motorRangeMax = deadbandMotor3dLow;
-            if(isMotorProtocolDshot()) {
+
+            if (isMotorProtocolDshot()) {
                 motorOutputMin = motorOutputLow;
                 motorOutputRange = deadbandMotor3dLow - motorOutputLow;
             } else {
@@ -549,7 +552,7 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
             rcThrottlePrevious = rcCommand[THROTTLE];
             throttle = rcCommand3dDeadBandLow - rcCommand[THROTTLE];
             currentThrottleInputRange = rcCommandThrottleRange3dLow;
-        } else if(rcCommand[THROTTLE] >= rcCommand3dDeadBandHigh) {
+        } else if (rcCommand[THROTTLE] >= rcCommand3dDeadBandHigh) {
             // NORMAL
             motorRangeMin = deadbandMotor3dHigh;
             motorRangeMax = motorOutputHigh;
@@ -565,7 +568,7 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
             // INVERTED_TO_DEADBAND
             motorRangeMin = motorOutputLow;
             motorRangeMax = deadbandMotor3dLow;
-            if(isMotorProtocolDshot()) {
+            if (isMotorProtocolDshot()) {
                 motorOutputMin = motorOutputLow;
                 motorOutputRange = deadbandMotor3dLow - motorOutputLow;
             } else {
@@ -594,8 +597,10 @@ void calculateThrottleAndCurrentMotorEndpoints(void)
         motorOutputRange = motorOutputHigh - motorOutputLow;
         motorOutputMixSign = 1;
     }
+    motorOutputRange = getMotors3dTransistion() * motorOutputRange;
 
     throttle = constrainf(throttle / currentThrottleInputRange, 0.0f, 1.0f);
+
 }
 
 #define CRASH_FLIP_DEADBAND 20
@@ -615,7 +620,7 @@ static void applyFlipOverAfterCrashModeToMotors(void)
             // Apply the mix to motor endpoints
             float motorOutput =  motorOutputMin + motorOutputRange * motorMix[i];
             //Add a little bit to the motorOutputMin so props aren't spinning when sticks are centered
-            motorOutput = (motorOutput < motorOutputMin + CRASH_FLIP_DEADBAND ) ? disarmMotorOutput : motorOutput - CRASH_FLIP_DEADBAND;
+            motorOutput = (motorOutput < motorOutputMin + CRASH_FLIP_DEADBAND) ? disarmMotorOutput : motorOutput - CRASH_FLIP_DEADBAND;
 
             motor[i] = motorOutput;
         }

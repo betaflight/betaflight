@@ -25,4 +25,4 @@ void updateRcCommands(void);
 void resetYawAxis(void);
 void generateThrottleCurve(void);
 bool isMotorsReversed(void);
-
+float getMotors3dTransistion(void);
