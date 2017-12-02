@@ -173,7 +173,7 @@ static uint16_t spektrumReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint
     return data;
 }
 
-#ifdef USE_SPEKTRUM_BIND
+#ifdef SPEKTRUM_BIND
 
 bool spekShouldBind(uint8_t spektrum_sat_bind)
 {

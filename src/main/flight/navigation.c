@@ -113,7 +113,7 @@ static void GPS_calc_longitude_scaling(int32_t lat);
 static void GPS_calc_velocity(void);
 static void GPS_calc_location_error(int32_t * target_lat, int32_t * target_lng, int32_t * gps_lat, int32_t * gps_lng);
 
-#ifdef USE_NAV
+#ifdef NAV
 static bool check_missed_wp(void);
 static void GPS_calc_poshold(void);
 static void GPS_calc_nav_rate(uint16_t max_speed);
@@ -149,7 +149,7 @@ typedef struct {
 static PID posholdPID[2];
 static PID poshold_ratePID[2];
 
-#ifdef USE_NAV
+#ifdef NAV
 static PID_PARAM navPID_PARAM;
 static PID navPID[2];
 
@@ -205,7 +205,7 @@ static int16_t actual_speed[2] = { 0, 0 };
 static float GPS_scaleLonDown = 1.0f;  // this is used to offset the shrinking longitude as we go towards the poles
 static int32_t error[2];
 
-#ifdef USE_NAV
+#ifdef NAV
 // The difference between the desired rate of travel and the actual rate of travel
 // updated after GPS read - 5-10hz
 static int16_t rate_error[2];
@@ -326,7 +326,7 @@ void onGpsNewData(void)
     // calculate the current velocity based on gps coordinates continously to get a valid speed at the moment when we start navigating
     GPS_calc_velocity();
 
-#ifdef USE_NAV
+#ifdef NAV
     if (FLIGHT_MODE(GPS_HOLD_MODE) || FLIGHT_MODE(GPS_HOME_MODE)) {
         // we are navigating
 
@@ -393,7 +393,7 @@ void GPS_reset_nav(void)
         nav[i] = 0;
         reset_PID(&posholdPID[i]);
         reset_PID(&poshold_ratePID[i]);
-#ifdef USE_NAV
+#ifdef NAV
         reset_PID(&navPID[i]);
 #endif
     }
@@ -411,7 +411,7 @@ void gpsUsePIDs(pidProfile_t *pidProfile)
     poshold_ratePID_PARAM.kD = (float)pidProfile->pid[PID_POSR].D / 1000.0f;
     poshold_ratePID_PARAM.Imax = POSHOLD_RATE_IMAX * 100;
 
-#ifdef USE_NAV
+#ifdef NAV
     navPID_PARAM.kP = (float)pidProfile->pid[PID_NAVR].P / 10.0f;
     navPID_PARAM.kI = (float)pidProfile->pid[PID_NAVR].I / 100.0f;
     navPID_PARAM.kD = (float)pidProfile->pid[PID_NAVR].D / 1000.0f;
@@ -454,7 +454,7 @@ void GPS_set_next_wp(int32_t *lat, int32_t *lon)
     waypoint_speed_gov = navigationConfig()->nav_speed_min;
 }
 
-#ifdef USE_NAV
+#ifdef NAV
 ////////////////////////////////////////////////////////////////////////////////////
 // Check if we missed the destination somehow
 //
@@ -536,7 +536,7 @@ static void GPS_calc_location_error(int32_t *target_lat, int32_t *target_lng, in
     error[LAT] = *target_lat - *gps_lat;        // Y Error
 }
 
-#ifdef USE_NAV
+#ifdef NAV
 ////////////////////////////////////////////////////////////////////////////////////
 // Calculate nav_lat and nav_lon from the x and y error and the speed
 //
@@ -656,7 +656,7 @@ static int32_t wrap_18000(int32_t error)
     return error;
 }
 
-#ifdef USE_NAV
+#ifdef NAV
 static int32_t wrap_36000(int32_t angle)
 {
     if (angle > 36000)

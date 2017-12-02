@@ -129,7 +129,7 @@
 #define USE_MSP_OVER_TELEMETRY
 
 #ifdef USE_SERIALRX_SPEKTRUM
-#define USE_SPEKTRUM_BIND
+#define SPEKTRUM_BIND
 #define USE_SPEKTRUM_BIND_PLUG
 #endif
 #endif
@@ -137,6 +137,6 @@
 #if (FLASH_SIZE > 256)
 // Temporarily moved GPS here because of overflowing flash size on F3
 #define GPS
-#define USE_NAV
+#define NAV
 #define USE_UNCOMMON_MIXERS
 #endif
