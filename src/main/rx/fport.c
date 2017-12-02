@@ -338,7 +338,7 @@ static uint8_t fportFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 
 bool fportRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
-    static uint32_t sbusChannelData[SBUS_MAX_CHANNEL];
+    static uint16_t sbusChannelData[SBUS_MAX_CHANNEL];
     rxRuntimeConfig->channelData = sbusChannelData;
     sbusChannelsInit(rxConfig, rxRuntimeConfig);
 

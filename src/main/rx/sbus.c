@@ -160,7 +160,7 @@ static uint8_t sbusFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
 
 bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
-    static uint32_t sbusChannelData[SBUS_MAX_CHANNEL];
+    static uint16_t sbusChannelData[SBUS_MAX_CHANNEL];
     static sbusFrameData_t sbusFrameData;
 
     rxRuntimeConfig->channelData = sbusChannelData;

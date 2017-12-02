@@ -38,7 +38,7 @@
 
 uint8_t sbusChannelsDecode(rxRuntimeConfig_t *rxRuntimeConfig, const sbusChannels_t *channels)
 {
-    uint32_t *sbusChannelData = rxRuntimeConfig->channelData;
+    uint16_t *sbusChannelData = rxRuntimeConfig->channelData;
     sbusChannelData[0] = channels->chan0;
     sbusChannelData[1] = channels->chan1;
     sbusChannelData[2] = channels->chan2;

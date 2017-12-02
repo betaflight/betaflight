@@ -157,7 +157,7 @@ typedef struct rxRuntimeConfig_s {
     uint16_t            rxRefreshRate;
     rcReadRawDataFnPtr  rcReadRawFn;
     rcFrameStatusFnPtr  rcFrameStatusFn;
-    uint32_t            *channelData;
+    uint16_t            *channelData;
     void                *frameData;
 } rxRuntimeConfig_t;
 
