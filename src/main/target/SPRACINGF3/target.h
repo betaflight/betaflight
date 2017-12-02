@@ -94,7 +94,7 @@
 #define SONAR_ECHO_PIN          PB1
 
 #elif defined(RMDO)
-#undef USE_GPS
+#undef GPS
 
 #elif defined(ZCOREF3)
 #define USE_MAG_DATA_READY_SIGNAL
