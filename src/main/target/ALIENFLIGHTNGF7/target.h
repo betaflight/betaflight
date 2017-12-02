@@ -61,8 +61,7 @@
 #define AK8963_CS_PIN           PC15
 #define AK8963_SPI_INSTANCE     SPI3
 
-#define MAG_HMC5883_ALIGN       CW180_DEG
-#define MAG_AK8963_ALIGN        CW270_DEG
+#define MAG_AK8963_ALIGN        CW180_DEG_FLIP
 
 #define USE_BARO
 #define USE_BARO_MS5611
