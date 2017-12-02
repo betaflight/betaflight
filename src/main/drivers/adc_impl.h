@@ -69,3 +69,9 @@ extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 uint8_t adcChannelByTag(ioTag_t ioTag);
 ADCDevice adcDeviceByInstance(ADC_TypeDef *instance);
 bool adcVerifyPin(ioTag_t tag, ADCDevice device);
+
+#ifdef USE_VREFINT
+extern uint16_t adcVrefCalibration;
+extern volatile uint16_t *adcVrefInternal;
+extern uint16_t adcVrefInternalStatic;
+#endif

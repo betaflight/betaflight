@@ -34,6 +34,12 @@
 adcOperatingConfig_t adcOperatingConfig[ADC_CHANNEL_COUNT];
 volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 
+#if defined(STM32F4)
+uint16_t adcVrefCalibration;
+volatile uint16_t *adcVrefInternal;
+uint16_t adcVrefInternalStatic;
+#endif
+
 uint8_t adcChannelByTag(ioTag_t ioTag)
 {
     for (uint8_t i = 0; i < ARRAYLEN(adcTagMap); i++) {
@@ -84,7 +90,18 @@ uint16_t adcGetChannel(uint8_t channel)
         debug[3] = adcValues[adcOperatingConfig[3].dmaIndex];
     }
 #endif
+#if 1
+    debug[0] = adcValues[adcOperatingConfig[ADC_BATTERY].dmaIndex];
+    debug[1] = *adcVrefInternal;
+    debug[2] = adcVrefCalibration;
+    debug[3] = *adcVrefInternal * 3300 / adcVrefCalibration;
+#endif
+
+#if defined(USE_VREFINT)
+    return (uint32_t)adcVrefCalibration * adcValues[adcOperatingConfig[channel].dmaIndex] / *adcVrefInternal;
+#else
     return adcValues[adcOperatingConfig[channel].dmaIndex];
+#endif
 }
 
 // Verify a pin designated by tag has connection to an ADC instance designated by device
