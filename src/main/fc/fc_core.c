@@ -679,7 +679,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
     DEBUG_SET(DEBUG_PIDLOOP, 3, micros() - startTime);
 }
 
-static void subTaskMotorUpdate(void)
+static void subTaskMotorUpdate(timeUs_t currentTimeUs)
 {
     uint32_t startTime = 0;
     if (debugMode == DEBUG_CYCLETIME) {
@@ -693,7 +693,7 @@ static void subTaskMotorUpdate(void)
         startTime = micros();
     }
 
-    mixTable(currentPidProfile->vbatPidCompensation);
+    mixTable(currentTimeUs, currentPidProfile->vbatPidCompensation);
 
 #ifdef USE_SERVOS
     // motor outputs are used as sources for servo mixing, so motors must be calculated using mixTable() before servos.
@@ -738,7 +738,7 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     } else {
         pidUpdateCountdown = setPidUpdateCountDown();
         subTaskPidController(currentTimeUs);
-        subTaskMotorUpdate();
+        subTaskMotorUpdate(currentTimeUs);
         subTaskMainSubprocesses(currentTimeUs);
     }
 
