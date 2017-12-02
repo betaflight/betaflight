@@ -55,8 +55,7 @@
 #define USE_MAG_HMC5883
 #define USE_MAG_AK8963
 
-#define MAG_HMC5883_ALIGN       CW180_DEG
-#define MAG_AK8963_ALIGN        CW270_DEG
+#define MAG_AK8963_ALIGN        CW180_DEG_FLIP
 
 #define USE_BARO
 #define USE_BARO_MS5611

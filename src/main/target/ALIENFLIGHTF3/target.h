@@ -63,7 +63,7 @@
 // option to use MPU9150 or MPU9250 integrated AK89xx Mag
 #define USE_MAG
 #define USE_MAG_AK8963
-#define MAG_AK8963_ALIGN        CW0_DEG_FLIP
+#define MAG_AK8963_ALIGN        CW180_DEG_FLIP
 
 #define USE_VCP
 #define USE_UART1 // Not connected - TX (PB6) RX PB7 (AF7)
