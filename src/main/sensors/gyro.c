@@ -117,7 +117,11 @@ typedef struct gyroSensor_s {
     bool overflowDetected;
 } gyroSensor_t;
 
-static FAST_RAM gyroSensor_t gyroSensor1;
+STATIC_UNIT_TESTED FAST_RAM gyroSensor_t gyroSensor1;
+#ifdef UNIT_TEST
+STATIC_UNIT_TESTED gyroSensor_t * const gyroSensorPtr = &gyroSensor1;
+STATIC_UNIT_TESTED gyroDev_t * const gyroDevPtr = &gyroSensor1.gyroDev;
+#endif
 
 static void gyroInitSensorFilters(gyroSensor_t *gyroSensor);
 
@@ -424,6 +428,7 @@ bool gyroInit(void)
         gyroDebugMode = DEBUG_NONE;
         break;
     }
+    firstArmingCalibrationWasStarted = false;
     memset(&gyro, 0, sizeof(gyro));
     return gyroInitSensor(&gyroSensor1);
 }
