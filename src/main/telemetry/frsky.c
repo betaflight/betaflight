@@ -586,7 +586,7 @@ void handleFrSkyTelemetry(timeUs_t currentTimeUs)
             sendVoltageCells();
             sendVoltageAmp();
 
-            if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
+            if (isAmperageAvailable()) {
                 sendAmperage();
                 sendFuelLevel();
             }
