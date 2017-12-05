@@ -77,11 +77,13 @@ struct rxConfig_s;
 
 float calculateVbatPidCompensation(void);
 uint8_t calculateBatteryPercentageRemaining(void);
+bool isBatteryVoltageAvailable(void);
 uint16_t getBatteryVoltage(void);
 uint16_t getBatteryVoltageLatest(void);
 uint8_t getBatteryCellCount(void);
 uint16_t getBatteryAverageCellVoltage(void);
 
+bool isAmperageAvailable(void);
 int32_t getAmperage(void);
 int32_t getAmperageLatest(void);
 int32_t getMAhDrawn(void);

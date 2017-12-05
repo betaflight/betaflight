@@ -376,7 +376,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
 
         switch (id) {
             case FSSP_DATAID_VFAS       :
-                if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && getBatteryCellCount() > 0) {
+                if (isBatteryVoltageAvailable()) {
                     uint16_t vfasVoltage;
                     if (telemetryConfig()->report_cell_voltage) {
                         vfasVoltage = getBatteryVoltage() / getBatteryCellCount();
@@ -388,7 +388,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 }
                 break;
             case FSSP_DATAID_CURRENT    :
-                if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
+                if (isAmperageAvailable()) {
                     smartPortSendPackage(id, getAmperage() / 10); // given in 10mA steps, unknown requested unit
                     *clearToSend = false;
                 }
@@ -401,7 +401,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 }
                 break;
             case FSSP_DATAID_FUEL       :
-                if (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) {
+                if (isAmperageAvailable()) {
                     smartPortSendPackage(id, getMAhDrawn()); // given in mAh, unknown requested unit
                     *clearToSend = false;
                 }
@@ -563,7 +563,7 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                 break;
 #endif
             case FSSP_DATAID_A4         :
-                if (batteryConfig()->voltageMeterSource != VOLTAGE_METER_NONE && getBatteryCellCount() > 0) {
+                if (isBatteryVoltageAvailable()) {
                     smartPortSendPackage(id, getBatteryVoltage() * 10 / getBatteryCellCount()); // given in 0.1V, convert to volts
                     *clearToSend = false;
                 }

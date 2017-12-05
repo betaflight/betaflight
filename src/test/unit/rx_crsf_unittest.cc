@@ -288,4 +288,6 @@ serialPort_t *telemetrySharedPort = NULL;
 void crsfScheduleDeviceInfoResponse(void) {};
 void crsfScheduleMspResponse(void) {};
 bool bufferMspFrame(uint8_t *, int) {return true;}
+bool isBatteryVoltageAvailable(void) { return true; }
+bool isAmperageAvailable(void) { return true; }
 }
