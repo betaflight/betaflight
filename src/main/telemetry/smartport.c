@@ -87,7 +87,9 @@ enum
     FSSP_DATAID_ACCZ       = 0x0720 ,
     FSSP_DATAID_T1         = 0x0400 ,
     FSSP_DATAID_T2         = 0x0410 ,
+    FSSP_DATAID_HOME_DIST  = 0x0420 ,
     FSSP_DATAID_GPS_ALT    = 0x0820 ,
+    FSSP_DATAID_ASPD       = 0x0A00 ,
     FSSP_DATAID_A3         = 0x0900 ,
     FSSP_DATAID_A4         = 0x0910
 };
@@ -113,7 +115,9 @@ const uint16_t frSkyDataIdTable[] = {
     FSSP_DATAID_ACCZ      ,
     FSSP_DATAID_T1        ,
     FSSP_DATAID_T2        ,
+    FSSP_DATAID_HOME_DIST ,
     FSSP_DATAID_GPS_ALT   ,
+    FSSP_DATAID_ASPD      ,
     FSSP_DATAID_A4        ,
     0
 };
@@ -545,6 +549,12 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                     *clearToSend = false;
                 }
                 break;
+            case FSSP_DATAID_HOME_DIST  :
+                if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
+                    smartPortSendPackage(id, GPS_distanceToHome);
+                     *clearToSend = false;
+                }
+                break;
             case FSSP_DATAID_GPS_ALT    :
                 if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
                     smartPortSendPackage(id, gpsSol.llh.alt * 100); // given in 0.1m , requested in 10 = 1m (should be in mm, probably a bug in opentx, tested on 2.0.1.7)
@@ -557,6 +567,9 @@ void processSmartPortTelemetry(smartPortPayload_t *payload, volatile bool *clear
                     smartPortSendPackage(id, getBatteryVoltage() * 10 / getBatteryCellCount()); // given in 0.1V, convert to volts
                     *clearToSend = false;
                 }
+                break;
+            case FSSP_DATAID_ASPD       :
+                // Air speed. Not supported in BF yet.
                 break;
             default:
                 break;
