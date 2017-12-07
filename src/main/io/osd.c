@@ -1025,7 +1025,7 @@ static void osdGetBlackboxStatusString(char * buff)
 #endif
 
     default:
-        storageDeviceIsWorking = true;
+        break;
     }
 
     if (storageDeviceIsWorking) {
