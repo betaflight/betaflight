@@ -295,11 +295,18 @@ void m25p16_eraseCompletely(void)
     m25p16_performOneByteCommand(bus, M25P16_INSTRUCTION_BULK_ERASE);
 }
 
+static uint32_t currentWriteAddress;
+
 void m25p16_pageProgramBegin(uint32_t address)
+{
+    currentWriteAddress = address;
+}
+
+void m25p16_pageProgramContinue(const uint8_t *data, int length)
 {
     uint8_t command[5] = { M25P16_INSTRUCTION_PAGE_PROGRAM };
 
-    m25p16_setCommandAddress(&command[1], address, isLargeFlash);
+    m25p16_setCommandAddress(&command[1], currentWriteAddress, isLargeFlash);
 
     m25p16_waitForReady(DEFAULT_TIMEOUT_MILLIS);
 
@@ -308,16 +315,16 @@ void m25p16_pageProgramBegin(uint32_t address)
     m25p16_enable(bus);
 
     spiTransfer(bus->busdev_u.spi.instance, command, NULL, isLargeFlash ? 5 : 4);
-}
 
-void m25p16_pageProgramContinue(const uint8_t *data, int length)
-{
     spiTransfer(bus->busdev_u.spi.instance, data, NULL, length);
+
+    m25p16_disable(bus);
+
+    currentWriteAddress += length;
 }
 
 void m25p16_pageProgramFinish(void)
 {
-    m25p16_disable(bus);
 }
 
 /**
