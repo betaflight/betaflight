@@ -281,10 +281,14 @@ void tryArm(void)
 
             if (!IS_RC_MODE_ACTIVE(BOXFLIPOVERAFTERCRASH)) {
                 flipOverAfterCrashMode = false;
-                pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL);
+                if (!feature(FEATURE_3D)) {
+                    pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_NORMAL);
+                }
             } else {
                 flipOverAfterCrashMode = true;
-                pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_REVERSED);
+                if (!feature(FEATURE_3D)) {
+                    pwmWriteDshotCommand(ALL_MOTORS, getMotorCount(), DSHOT_CMD_SPIN_DIRECTION_REVERSED);
+                }
             }
 
             pwmEnableMotors();
