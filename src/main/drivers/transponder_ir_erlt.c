@@ -18,6 +18,9 @@
 #include <stdint.h>
 #include <string.h>
 #include <platform.h>
+
+#ifdef USE_TRANSPONDER
+
 #include "drivers/transponder_ir.h"
 #include "drivers/transponder_ir_erlt.h"
 
@@ -76,4 +79,5 @@ const struct transponderVTable erltTansponderVTable = {
      updateTransponderDMABufferERLT,
 };
 
+#endif
 #endif

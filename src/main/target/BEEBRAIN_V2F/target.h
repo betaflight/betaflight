@@ -94,7 +94,7 @@
 #define ADC_INSTANCE            ADC3
 #define VBAT_ADC_PIN            PB13
 
-#define TRANSPONDER
+#define USE_TRANSPONDER
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define RX_CHANNELS_TAER

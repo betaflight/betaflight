@@ -22,7 +22,7 @@
 #include "common/utils.h"
 
 // allow conditional definition of DMA related members
-#if defined(USE_DSHOT) || defined(USE_LED_STRIP) || defined(TRANSPONDER)
+#if defined(USE_DSHOT) || defined(USE_LED_STRIP) || defined(USE_TRANSPONDER)
 # define DEF_TIM_DMA_COND(...) __VA_ARGS__
 #else
 # define DEF_TIM_DMA_COND(...)

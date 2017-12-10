@@ -250,7 +250,7 @@ void fcTasksInit(void)
 #endif
     setTaskEnabled(TASK_BATTERY_ALERTS, (useBatteryVoltage || useBatteryCurrent) && useBatteryAlerts);
 
-#ifdef TRANSPONDER
+#ifdef USE_TRANSPONDER
     setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
 #endif
 
@@ -316,7 +316,7 @@ void fcTasksInit(void)
 #ifdef USE_LED_STRIP
     setTaskEnabled(TASK_LEDSTRIP, feature(FEATURE_LED_STRIP));
 #endif
-#ifdef TRANSPONDER
+#ifdef USE_TRANSPONDER
     setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
 #endif
 #ifdef USE_OSD
@@ -390,7 +390,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
-#ifdef TRANSPONDER
+#ifdef USE_TRANSPONDER
     [TASK_TRANSPONDER] = {
         .taskName = "TRANSPONDER",
         .taskFunc = transponderUpdate,

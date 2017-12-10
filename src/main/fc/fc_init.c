@@ -624,7 +624,7 @@ void init(void)
     usbCableDetectInit();
 #endif
 
-#ifdef TRANSPONDER
+#ifdef USE_TRANSPONDER
     if (feature(FEATURE_TRANSPONDER)) {
         transponderInit();
         transponderStartRepeating();

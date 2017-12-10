@@ -225,7 +225,7 @@
 #define RSSI_ADC_PIN            PA0  // Direct from RSSI pad
 #endif
 
-#define TRANSPONDER
+#define USE_TRANSPONDER
 
 #define USE_SONAR
 

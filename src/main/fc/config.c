@@ -467,7 +467,7 @@ static void validateAndFixConfig(void)
     featureClear(FEATURE_SERVO_TILT | FEATURE_CHANNEL_FORWARDING);
 #endif
 
-#ifndef TRANSPONDER
+#ifndef USE_TRANSPONDER
     featureClear(FEATURE_TRANSPONDER);
 #endif
 

@@ -589,7 +589,7 @@ static bool mspCommonProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProce
         break;
 
     case MSP_TRANSPONDER_CONFIG: {
-#ifdef TRANSPONDER
+#ifdef USE_TRANSPONDER
         // Backward compatibility to BFC 3.1.1 is lost for this message type
         sbufWriteU8(dst, TRANSPONDER_PROVIDER_COUNT);
         for (unsigned int i = 0; i < TRANSPONDER_PROVIDER_COUNT; i++) {
@@ -2011,7 +2011,7 @@ static mspResult_e mspCommonProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     UNUSED(dataSize); // maybe unused due to compiler options
 
     switch (cmdMSP) {
-#ifdef TRANSPONDER
+#ifdef USE_TRANSPONDER
     case MSP_SET_TRANSPONDER_CONFIG: {
         // Backward compatibility to BFC 3.1.1 is lost for this message type
 

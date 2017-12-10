@@ -50,7 +50,7 @@
 #define USE_TELEMETRY_SMARTPORT
 #define USE_LED_STRIP
 #define USE_SERVOS
-#define TRANSPONDER
+#define USE_TRANSPONDER
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
