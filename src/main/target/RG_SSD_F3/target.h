@@ -123,17 +123,6 @@
 #define VBAT_SCALE_DEFAULT       119
 
 #define USE_TRANSPONDER
-#define TRANSPONDER_GPIO                     GPIOA
-#define TRANSPONDER_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-#define TRANSPONDER_GPIO_AF                  GPIO_AF_1
-#define TRANSPONDER_PIN                      GPIO_Pin_6
-#define TRANSPONDER_PIN_SOURCE               GPIO_PinSource6
-#define TRANSPONDER_TIMER                    TIM16
-#define TRANSPONDER_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
-#define TRANSPONDER_DMA_CHANNEL              DMA1_Channel6
-#define TRANSPONDER_IRQ                      DMA1_Channel6_IRQn
-#define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC6
-#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
 
 #define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 
