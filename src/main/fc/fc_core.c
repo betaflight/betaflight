@@ -673,7 +673,7 @@ static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
     UNUSED(currentTimeUs);
 #endif
 
-#ifdef TRANSPONDER
+#ifdef USE_TRANSPONDER
     transponderUpdate(currentTimeUs);
 #endif
     DEBUG_SET(DEBUG_PIDLOOP, 3, micros() - startTime);

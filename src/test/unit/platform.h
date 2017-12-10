@@ -33,7 +33,7 @@
 #define USE_TELEMETRY
 #define USE_LED_STRIP
 #define USE_SERVOS
-#define TRANSPONDER
+#define USE_TRANSPONDER
 
 typedef enum
 {

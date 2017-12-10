@@ -23,7 +23,7 @@
 
 #include <platform.h>
 
-#ifdef TRANSPONDER
+#ifdef USE_TRANSPONDER
 #include "build/build_config.h"
 
 #include "config/config_reset.h"

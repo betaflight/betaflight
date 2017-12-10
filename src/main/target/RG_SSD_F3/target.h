@@ -122,7 +122,7 @@
 #define CURRENT_METER_ADC_PIN    PA5
 #define VBAT_SCALE_DEFAULT       119
 
-#define TRANSPONDER
+#define USE_TRANSPONDER
 #define TRANSPONDER_GPIO                     GPIOA
 #define TRANSPONDER_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
 #define TRANSPONDER_GPIO_AF                  GPIO_AF_1
