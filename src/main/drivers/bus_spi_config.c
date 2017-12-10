@@ -20,6 +20,8 @@
 
 #include <platform.h>
 
+#ifdef USE_SPI
+
 #include "drivers/bus_spi.h"
 #include "drivers/io.h"
 
@@ -52,3 +54,4 @@ void spiPreInitCsOutPU(ioTag_t iotag)
         IOHi(io);
     }
 }
+#endif

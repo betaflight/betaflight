@@ -21,6 +21,8 @@
 
 #include <platform.h>
 
+#if defined(USE_I2C) && !defined(SOFT_I2C)
+
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/nvic.h"
@@ -29,8 +31,6 @@
 
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_impl.h"
-
-#if defined(USE_I2C) && !defined(SOFT_I2C)
 
 #define CLOCKSPEED 800000    // i2c clockspeed 400kHz default (conform specs), 800kHz  and  1200kHz (Betaflight default)
 
