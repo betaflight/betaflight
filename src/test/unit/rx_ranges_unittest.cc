@@ -34,10 +34,8 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-#define DE_ACTIVATE_ALL_BOXES   0
-
 extern "C" {
-uint32_t rcModeActivationMask;
+boxBitmask_t rcModeActivationMask;
 
 extern uint16_t applyRxChannelRangeConfiguraton(int sample, const rxChannelRangeConfig_t *range);
 }
@@ -46,7 +44,7 @@ extern uint16_t applyRxChannelRangeConfiguraton(int sample, const rxChannelRange
 
 TEST(RxChannelRangeTest, TestRxChannelRanges)
 {
-    rcModeActivationMask = DE_ACTIVATE_ALL_BOXES;   // BOXFAILSAFE must be OFF
+    memset(&rcModeActivationMask, 0, sizeof(rcModeActivationMask)); // BOXFAILSAFE must be OFF
 
     // No signal, special condition
     EXPECT_EQ(0, applyRxChannelRangeConfiguraton(0, RANGE_CONFIGURATION(1000, 2000)));

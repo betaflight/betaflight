@@ -297,7 +297,7 @@ uint8_t stateFlags = 0;
 uint16_t flightModeFlags = 0;
 float rcCommand[4];
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
-uint32_t rcModeActivationMask;
+boxBitmask_t rcModeActivationMask;
 gpsSolutionData_t gpsSol;
 
 batteryState_e getBatteryState(void) {
