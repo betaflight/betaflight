@@ -144,7 +144,7 @@
 #define MSP_VOLTAGE_METER_CONFIG        56
 #define MSP_SET_VOLTAGE_METER_CONFIG    57
 
-#define MSP_SONAR_ALTITUDE              58 //out message get sonar altitude [cm]
+#define MSP_ALTIMETER_ALTITUDE          58 //out message get sonar altitude [cm]
 
 #define MSP_PID_CONTROLLER              59
 #define MSP_SET_PID_CONTROLLER          60

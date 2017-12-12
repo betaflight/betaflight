@@ -69,7 +69,7 @@
 #include "sensors/battery.h"
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
-#include "sensors/sonar.h"
+#include "sensors/altimeter.h"
 
 enum {
     BLACKBOX_MODE_NORMAL = 0,
@@ -201,8 +201,8 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
 #ifdef USE_BARO
     {"BaroAlt",    -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_BARO},
 #endif
-#ifdef USE_SONAR
-    {"sonarRaw",   -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_SONAR},
+#ifdef USE_ALTIMETER
+    {"altimeterRaw",   -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_ALTIMETER},
 #endif
     {"rssi",       -1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_RSSI},
 
@@ -303,8 +303,8 @@ typedef struct blackboxMainState_s {
 #ifdef USE_MAG
     int16_t magADC[XYZ_AXIS_COUNT];
 #endif
-#ifdef USE_SONAR
-    int32_t sonarRaw;
+#ifdef USE_ALTIMETER
+    int32_t altimeterRaw;
 #endif
     uint16_t rssi;
 } blackboxMainState_t;
@@ -437,9 +437,9 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
     case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC:
         return (batteryConfig()->currentMeterSource != CURRENT_METER_NONE) && (batteryConfig()->currentMeterSource != CURRENT_METER_VIRTUAL);
 
-    case FLIGHT_LOG_FIELD_CONDITION_SONAR:
-#ifdef USE_SONAR
-        return feature(FEATURE_SONAR);
+    case FLIGHT_LOG_FIELD_CONDITION_ALTIMETER:
+#ifdef USE_ALTIMETER
+        return true;
 #else
         return false;
 #endif
@@ -568,9 +568,9 @@ static void writeIntraframe(void)
     }
 #endif
 
-#ifdef USE_SONAR
-    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_SONAR)) {
-        blackboxWriteSignedVB(blackboxCurrent->sonarRaw);
+#ifdef USE_ALTIMETER
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_ALTIMETER)) {
+        blackboxWriteSignedVB(blackboxCurrent->altimeterRaw);
     }
 #endif
 
@@ -698,9 +698,9 @@ static void writeInterframe(void)
     }
 #endif
 
-#ifdef USE_SONAR
-    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_SONAR)) {
-        deltas[optionalFieldCount++] = blackboxCurrent->sonarRaw - blackboxLast->sonarRaw;
+#ifdef USE_ALTIMETER
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_ALTIMETER)) {
+        deltas[optionalFieldCount++] = blackboxCurrent->altimeterRaw - blackboxLast->altimeterRaw;
     }
 #endif
 
@@ -1022,9 +1022,9 @@ static void loadMainState(timeUs_t currentTimeUs)
     blackboxCurrent->BaroAlt = baro.BaroAlt;
 #endif
 
-#ifdef USE_SONAR
-    // Store the raw sonar value without applying tilt correction
-    blackboxCurrent->sonarRaw = sonarRead();
+#ifdef USE_ALTIMETER
+    // Store the raw altimeter value without applying tilt correction
+    blackboxCurrent->altimeterRaw = altimeterRead();
 #endif
 
     blackboxCurrent->rssi = getRssi();

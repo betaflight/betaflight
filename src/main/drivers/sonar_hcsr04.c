@@ -27,6 +27,7 @@
 #include "drivers/nvic.h"
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/time.h"
+#include "drivers/altimeter.h"
 
 /* HC-SR04 consists of ultrasonic transmitter, receiver, and control circuits.
  * When triggered it sends out a series of 40KHz ultrasonic pulses and receives
@@ -46,6 +47,8 @@ extiCallbackRec_t hcsr04_extiCallbackRec;
 static IO_t echoIO;
 static IO_t triggerIO;
 
+static const altimeterDevice_t hcsr04Device; // Forward
+
 void hcsr04_extiHandler(extiCallbackRec_t* cb)
 {
     static uint32_t timing_start;
@@ -63,12 +66,8 @@ void hcsr04_extiHandler(extiCallbackRec_t* cb)
     }
 }
 
-void hcsr04_init(const sonarConfig_t *sonarConfig, sonarRange_t *sonarRange)
+const altimeterDevice_t *hcsr04_init(const sonarConfig_t *sonarConfig)
 {
-    sonarRange->maxRangeCm = HCSR04_MAX_RANGE_CM;
-    sonarRange->detectionConeDeciDegrees = HCSR04_DETECTION_CONE_DECIDEGREES;
-    sonarRange->detectionConeExtendedDeciDegrees = HCSR04_DETECTION_CONE_EXTENDED_DECIDEGREES;
-
 #if !defined(UNIT_TEST)
 
 #ifdef STM32F10X
@@ -81,13 +80,17 @@ void hcsr04_init(const sonarConfig_t *sonarConfig, sonarRange_t *sonarRange)
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
 #endif
 
-    // trigger pin
+    // trigger and echo pin
     triggerIO = IOGetByTag(sonarConfig->triggerTag);
+    echoIO = IOGetByTag(sonarConfig->echoTag);
+
+    if (!triggerIO || !echoIO) {
+        return NULL;
+    }
+
     IOInit(triggerIO, OWNER_SONAR_TRIGGER, 0);
     IOConfigGPIO(triggerIO, IOCFG_OUT_PP);
 
-    // echo pin
-    echoIO = IOGetByTag(sonarConfig->echoTag);
     IOInit(echoIO, OWNER_SONAR_ECHO, 0);
     IOConfigGPIO(echoIO, IOCFG_IN_FLOATING);
 
@@ -101,6 +104,8 @@ void hcsr04_init(const sonarConfig_t *sonarConfig, sonarRange_t *sonarRange)
 #else
     UNUSED(lastMeasurementAt); // to avoid "unused" compiler warning
 #endif
+
+    return (&hcsr04Device);
 }
 
 // measurement reading is done asynchronously, using interrupt
@@ -136,6 +141,26 @@ int32_t hcsr04_get_distance(void)
     // 340 m/s = 0.034 cm/microsecond = 29.41176471 *2 = 58.82352941 rounded to 59
     int32_t distance = measurement / 59;
 
+    if (distance > HCSR04_MAX_RANGE_CM) {
+        distance = ALTIMETER_OUT_OF_RANGE;
+    }
+
     return distance;
 }
+
+static const altimeterVTable_t hcsr04VTable = {
+    hcsr04_start_reading,
+    hcsr04_get_distance,
+};
+
+static const altimeterRange_t hcsr04Range = {
+    .maxRangeCm = HCSR04_MAX_RANGE_CM,
+    .detectionConeDeciDegrees = HCSR04_DETECTION_CONE_DECIDEGREES,
+    .detectionConeExtendedDeciDegrees = HCSR04_DETECTION_CONE_EXTENDED_DECIDEGREES
+};
+
+static const altimeterDevice_t hcsr04Device = {
+    &hcsr04Range,
+    &hcsr04VTable,
+};
 #endif

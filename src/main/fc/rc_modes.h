@@ -44,7 +44,7 @@ typedef enum {
     BOXOSD,
     BOXTELEMETRY,
     BOXGTUNE,
-    BOXSONAR,
+    BOXALTIMETER,
     BOXSERVO1,
     BOXSERVO2,
     BOXSERVO3,

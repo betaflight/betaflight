@@ -82,6 +82,7 @@
 
 #define MAG_AK8963_ALIGN CW90_DEG_FLIP
 
+//#define USE_ALTIMETER
 //#define USE_SONAR
 
 #define USE_VCP

@@ -59,6 +59,7 @@
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 
+//#define USE_ALTIMETER
 //#define USE_SONAR
 //#define SONAR_ECHO_PIN          PB1
 //#define SONAR_TRIGGER_PIN       PB0

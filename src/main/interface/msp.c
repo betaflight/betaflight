@@ -110,7 +110,7 @@
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
-#include "sensors/sonar.h"
+#include "sensors/altimeter.h"
 #include "sensors/esc_sensor.h"
 
 #include "telemetry/telemetry.h"
@@ -733,7 +733,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
 #else
             sbufWriteU16(dst, 0);
 #endif
-            sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4 | sensors(SENSOR_GYRO) << 5);
+            sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_ALTIMETER) << 4 | sensors(SENSOR_GYRO) << 5);
             sbufWriteData(dst, &flightModeFlags, 4);        // unconditional part of flags, first 32 bits
             sbufWriteU8(dst, getCurrentPidProfileIndex());
             sbufWriteU16(dst, constrain(averageSystemLoadPercent, 0, 100));
@@ -849,7 +849,7 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         break;
 
     case MSP_ALTITUDE:
-#if defined(USE_BARO) || defined(USE_SONAR)
+#if defined(USE_BARO) || defined(USE_ALTIMETER)
         sbufWriteU32(dst, getEstimatedAltitude());
 #else
         sbufWriteU32(dst, 0);
@@ -857,9 +857,9 @@ static bool mspProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst)
         sbufWriteU16(dst, getEstimatedVario());
         break;
 
-    case MSP_SONAR_ALTITUDE:
-#if defined(USE_SONAR)
-        sbufWriteU32(dst, sonarGetLatestAltitude());
+    case MSP_ALTIMETER_ALTITUDE:
+#if defined(USE_ALTIMETER)
+        sbufWriteU32(dst, altimeterGetLatestAltitude());
 #else
         sbufWriteU32(dst, 0);
 #endif

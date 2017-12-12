@@ -49,6 +49,7 @@
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
+#define USE_ALTIMETER
 #define USE_SONAR
 #define SONAR_TRIGGER_PIN       PB0
 #define SONAR_ECHO_PIN          PB1
