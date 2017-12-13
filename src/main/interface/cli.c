@@ -689,7 +689,7 @@ static void cliRxFailsafe(char *cmdline)
 
 static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActivationConditions, const modeActivationCondition_t *defaultModeActivationConditions)
 {
-    const char *format = "aux %u %u %u %u %u";
+    const char *format = "aux %u %u %u %u %u %u";
     // print out aux channel settings
     for (uint32_t i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
         const modeActivationCondition_t *mac = &modeActivationConditions[i];
@@ -699,7 +699,8 @@ static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActi
             equalsDefault = mac->modeId == macDefault->modeId
                 && mac->auxChannelIndex == macDefault->auxChannelIndex
                 && mac->range.startStep == macDefault->range.startStep
-                && mac->range.endStep == macDefault->range.endStep;
+                && mac->range.endStep == macDefault->range.endStep
+                && mac->modeLogic == macDefault->modeLogic;
             const box_t *box = findBoxByBoxId(macDefault->modeId);
             if (box) {
                 cliDefaultPrintLinef(dumpMask, equalsDefault, format,
@@ -707,7 +708,8 @@ static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActi
                     box->permanentId,
                     macDefault->auxChannelIndex,
                     MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.startStep),
-                    MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.endStep)
+                    MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.endStep),
+                    macDefault->modeLogic
                 );
             }
         }
@@ -718,7 +720,8 @@ static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActi
                 box->permanentId,
                 mac->auxChannelIndex,
                 MODE_STEP_TO_CHANNEL_VALUE(mac->range.startStep),
-                MODE_STEP_TO_CHANNEL_VALUE(mac->range.endStep)
+                MODE_STEP_TO_CHANNEL_VALUE(mac->range.endStep),
+                mac->modeLogic
             );
         }
     }
@@ -755,10 +758,27 @@ static void cliAux(char *cmdline)
                 }
             }
             ptr = processChannelRangeArgs(ptr, &mac->range, &validArgumentCount);
-
-            if (validArgumentCount != 4) {
+            ptr = nextArg(ptr);
+            if (ptr) {
+                val = atoi(ptr);
+                if (val == MODELOGIC_OR || val == MODELOGIC_AND) {
+                    mac->modeLogic = val;
+                    validArgumentCount++;
+                }
+            }
+            if (validArgumentCount == 4) { // for backwards compatibility
+                mac->modeLogic = MODELOGIC_OR;
+            } else if (validArgumentCount != 5) {
                 memset(mac, 0, sizeof(modeActivationCondition_t));
             }
+            cliPrintLinef( "aux %u %u %u %u %u %u",
+                i,
+                mac->modeId,
+                mac->auxChannelIndex,
+                MODE_STEP_TO_CHANNEL_VALUE(mac->range.startStep),
+                MODE_STEP_TO_CHANNEL_VALUE(mac->range.endStep),
+                mac->modeLogic
+            );
         } else {
             cliShowArgumentRangeError("index", 0, MAX_MODE_ACTIVATION_CONDITION_COUNT - 1);
         }
@@ -3622,7 +3642,7 @@ static void cliHelp(char *cmdline);
 // should be sorted a..z for bsearch()
 const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("adjrange", "configure adjustment ranges", NULL, cliAdjustmentRange),
-    CLI_COMMAND_DEF("aux", "configure modes", NULL, cliAux),
+    CLI_COMMAND_DEF("aux", "configure modes", "<index> <mode> <aux> <start> <end> <logic>", cliAux),
 #ifdef BEEPER
     CLI_COMMAND_DEF("beeper", "turn on/off beeper", "list\r\n"
         "\t<+|->[name]", cliBeeper),
